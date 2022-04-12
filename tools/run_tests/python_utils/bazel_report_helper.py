@@ -224,29 +224,31 @@ def _create_bazel_wrapper(report_path, report_suite_name, invocation_id,
           file=sys.stderr)
 
 
-# parse command line
-argp = argparse.ArgumentParser(
-    description='Generate bazel wrapper to help with bazel test reports in CI.')
-argp.add_argument(
-    '--report_path',
-    required=True,
-    type=str,
-    help=
-    'Path under which the bazel wrapper and other files are going to be generated'
-)
-argp.add_argument('--report_suite_name',
-                  default='bazel_invocations',
-                  type=str,
-                  help='Test suite name to use in generated XML report')
-args = argp.parse_args()
+if __name__ == '__main__':
+    # parse command line
+    argp = argparse.ArgumentParser(
+        description=
+        'Generate bazel wrapper to help with bazel test reports in CI.')
+    argp.add_argument(
+        '--report_path',
+        required=True,
+        type=str,
+        help=
+        'Path under which the bazel wrapper and other files are going to be generated'
+    )
+    argp.add_argument('--report_suite_name',
+                      default='bazel_invocations',
+                      type=str,
+                      help='Test suite name to use in generated XML report')
+    args = argp.parse_args()
 
-# generate new bazel invocation ID
-invocation_id = str(uuid.uuid4())
+    # generate new bazel invocation ID
+    invocation_id = str(uuid.uuid4())
 
-report_path = args.report_path
-report_suite_name = args.report_suite_name
-upload_results = True if os.getenv('UPLOAD_TEST_RESULTS') else False
+    report_path = args.report_path
+    report_suite_name = args.report_suite_name
+    upload_results = True if os.getenv('UPLOAD_TEST_RESULTS') else False
 
-_append_to_kokoro_bazel_invocations(invocation_id)
-_create_bazel_wrapper(report_path, report_suite_name, invocation_id,
-                      upload_results)
+    _append_to_kokoro_bazel_invocations(invocation_id)
+    _create_bazel_wrapper(report_path, report_suite_name, invocation_id,
+                          upload_results)
