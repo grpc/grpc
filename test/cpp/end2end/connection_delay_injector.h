@@ -45,7 +45,8 @@ class ConnectionAttemptInjector {
   // Invoked for every TCP connection attempt.
   // Implementations must eventually either invoke the closure
   // themselves or delegate to the iomgr implementation by calling
-  // AttemptConnection().
+  // AttemptConnection().  QueuedAttempt may be used to queue an attempt
+  // for asynchronous processing.
   virtual void HandleConnection(grpc_closure* closure, grpc_endpoint** ep,
                                 grpc_pollset_set* interested_parties,
                                 const grpc_channel_args* channel_args,
@@ -53,6 +54,51 @@ class ConnectionAttemptInjector {
                                 grpc_core::Timestamp deadline) = 0;
 
  protected:
+  // Represents a queued attempt.
+  // The caller must invoke either Resume() or Fail() before destroying.
+  class QueuedAttempt {
+   public:
+    QueuedAttempt(grpc_closure* closure, grpc_endpoint** ep,
+                  grpc_pollset_set* interested_parties,
+                  const grpc_channel_args* channel_args,
+                  const grpc_resolved_address* addr,
+                  grpc_core::Timestamp deadline)
+        : closure_(closure),
+          endpoint_(ep),
+          interested_parties_(interested_parties),
+          channel_args_(grpc_channel_args_copy(channel_args)),
+          deadline_(deadline) {
+      memcpy(&address_, addr, sizeof(address_));
+    }
+
+    ~QueuedAttempt() {
+      GPR_ASSERT(closure_ == nullptr);
+      grpc_channel_args_destroy(channel_args_);
+    }
+
+    void Resume() {
+      GPR_ASSERT(closure_ != nullptr);
+      AttemptConnection(closure_, endpoint_, interested_parties_,
+                        channel_args_, &address_, deadline_);
+      closure_ = nullptr;
+    }
+
+    void Fail(grpc_error_handle error) {
+      GPR_ASSERT(closure_ != nullptr);
+      grpc_core::ExecCtx exec_ctx;
+      grpc_core::ExecCtx::Run(DEBUG_LOCATION, closure_, error);
+      closure_ = nullptr;
+    }
+
+   private:
+    grpc_closure* closure_;
+    grpc_endpoint** endpoint_;
+    grpc_pollset_set* interested_parties_;
+    const grpc_channel_args* channel_args_;
+    grpc_resolved_address address_;
+    grpc_core::Timestamp deadline_;
+  };
+
   static void AttemptConnection(grpc_closure* closure, grpc_endpoint** ep,
                                 grpc_pollset_set* interested_parties,
                                 const grpc_channel_args* channel_args,

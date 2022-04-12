@@ -6605,42 +6605,10 @@ TEST_P(CdsTest, AggregateClusterFallBackWithConnectivityChurn) {
         GPR_ASSERT(state_ == kDone);
         attempt = std::move(queued_p1_attempt_);
       }
+      attempt->Resume();
     }
 
    private:
-    // Data for queued P1 connection attempt.
-    // The connection attempt automatically proceeds when this object is
-    // destroyed.
-    class QueuedAttempt {
-     public:
-      QueuedAttempt(grpc_closure* closure, grpc_endpoint** ep,
-                    grpc_pollset_set* interested_parties,
-                    const grpc_channel_args* channel_args,
-                    const grpc_resolved_address* addr,
-                    grpc_core::Timestamp deadline)
-          : closure_(closure),
-            endpoint_(ep),
-            interested_parties_(interested_parties),
-            channel_args_(grpc_channel_args_copy(channel_args)),
-            deadline_(deadline) {
-        memcpy(&address_, addr, sizeof(address_));
-      }
-
-      ~QueuedAttempt() {
-        AttemptConnection(closure_, endpoint_, interested_parties_,
-                          channel_args_, &address_, deadline_);
-        grpc_channel_args_destroy(channel_args_);
-      }
-
-     private:
-      grpc_closure* closure_;
-      grpc_endpoint** endpoint_;
-      grpc_pollset_set* interested_parties_;
-      const grpc_channel_args* channel_args_;
-      grpc_resolved_address address_;
-      grpc_core::Timestamp deadline_;
-    };
-
     const int p0_port_;
     const int p1_port_;
 

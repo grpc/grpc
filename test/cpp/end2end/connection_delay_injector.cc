@@ -78,39 +78,24 @@ class ConnectionDelayInjector::InjectedDelay {
                 const grpc_channel_args* channel_args,
                 const grpc_resolved_address* addr,
                 grpc_core::Timestamp deadline)
-      : closure_(closure),
-        endpoint_(ep),
-        interested_parties_(interested_parties),
-        channel_args_(grpc_channel_args_copy(channel_args)),
-        deadline_(deadline) {
-    memcpy(&address_, addr, sizeof(grpc_resolved_address));
+      : attempt_(closure, ep, interested_parties, channel_args, addr,
+                 deadline) {
     GRPC_CLOSURE_INIT(&timer_callback_, TimerCallback, this, nullptr);
     grpc_core::Timestamp now = grpc_core::ExecCtx::Get()->Now();
-    duration = std::min(duration, deadline_ - now);
+    duration = std::min(duration, deadline - now);
     grpc_timer_init(&timer_, now + duration, &timer_callback_);
   }
-
-  ~InjectedDelay() { grpc_channel_args_destroy(channel_args_); }
 
  private:
   static void TimerCallback(void* arg, grpc_error_handle /*error*/) {
     auto* self = static_cast<InjectedDelay*>(arg);
-    AttemptConnection(self->closure_, self->endpoint_,
-                      self->interested_parties_, self->channel_args_,
-                      &self->address_, self->deadline_);
+    self->attempt_.Resume();
     delete self;
   }
 
+  QueuedAttempt attempt_;
   grpc_timer timer_;
   grpc_closure timer_callback_;
-
-  // Original args.
-  grpc_closure* closure_;
-  grpc_endpoint** endpoint_;
-  grpc_pollset_set* interested_parties_;
-  const grpc_channel_args* channel_args_;
-  grpc_resolved_address address_;
-  grpc_core::Timestamp deadline_;
 };
 
 void ConnectionDelayInjector::HandleConnection(
