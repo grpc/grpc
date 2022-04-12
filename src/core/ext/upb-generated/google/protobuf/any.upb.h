@@ -57,8 +57,14 @@ UPB_INLINE char* google_protobuf_Any_serialize_ex(const google_protobuf_Any* msg
                                  upb_Arena* arena, size_t* len) {
   return upb_Encode(msg, &google_protobuf_Any_msginit, options, arena, len);
 }
+UPB_INLINE void google_protobuf_Any_clear_type_url(const google_protobuf_Any* msg) {
+  *UPB_PTR_AT(msg, UPB_SIZE(0, 0), upb_StringView) = upb_StringView_FromDataAndSize(NULL, 0);
+}
 UPB_INLINE upb_StringView google_protobuf_Any_type_url(const google_protobuf_Any* msg) {
   return *UPB_PTR_AT(msg, UPB_SIZE(0, 0), upb_StringView);
+}
+UPB_INLINE void google_protobuf_Any_clear_value(const google_protobuf_Any* msg) {
+  *UPB_PTR_AT(msg, UPB_SIZE(8, 16), upb_StringView) = upb_StringView_FromDataAndSize(NULL, 0);
 }
 UPB_INLINE upb_StringView google_protobuf_Any_value(const google_protobuf_Any* msg) {
   return *UPB_PTR_AT(msg, UPB_SIZE(8, 16), upb_StringView);

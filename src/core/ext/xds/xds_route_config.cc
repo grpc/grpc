@@ -325,26 +325,43 @@ grpc_error_handle ClusterSpecifierPluginParse(
             cluster_specifier_plugin[i]);
     std::string name = UpbStringToStdString(
         envoy_config_core_v3_TypedExtensionConfig_name(extension));
+    if (rds_update->cluster_specifier_plugin_map.find(name) !=
+        rds_update->cluster_specifier_plugin_map.end()) {
+      return GRPC_ERROR_CREATE_FROM_CPP_STRING(absl::StrCat(
+          "Duplicated definition of cluster_specifier_plugin ", name));
+    }
     const google_protobuf_Any* any =
         envoy_config_core_v3_TypedExtensionConfig_typed_config(extension);
     if (any == nullptr) {
       return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-          "could not obtrain TypedExtensionConfig for plugin config");
+          "Could not obtrain TypedExtensionConfig for plugin config.");
     }
     absl::string_view plugin_type;
     grpc_error_handle error =
         ExtractExtensionTypeName(context, any, &plugin_type);
     if (error != GRPC_ERROR_NONE) return error;
-    // Find the plugin and generate the policy.
-    auto lb_policy_config =
-        XdsClusterSpecifierPluginRegistry::GenerateLoadBalancingPolicyConfig(
-            plugin_type, google_protobuf_Any_value(any), context.arena,
-            context.symtab);
-    if (!lb_policy_config.ok()) {
-      return absl_status_to_grpc_error(lb_policy_config.status());
+    bool is_optional = envoy_config_route_v3_ClusterSpecifierPlugin_is_optional(
+        cluster_specifier_plugin[i]);
+    const XdsClusterSpecifierPluginImpl* cluster_specifier_plugin_impl =
+        XdsClusterSpecifierPluginRegistry::GetPluginForType(plugin_type);
+    std::string lb_policy_config;
+    if (cluster_specifier_plugin_impl == nullptr) {
+      if (!is_optional) {
+        return GRPC_ERROR_CREATE_FROM_CPP_STRING(
+            absl::StrCat("Unknown ClusterSpecifierPlugin type ", plugin_type));
+      }
+      // Optional plugin, leave lb_policy_config empty.
+    } else {
+      auto config =
+          cluster_specifier_plugin_impl->GenerateLoadBalancingPolicyConfig(
+              google_protobuf_Any_value(any), context.arena, context.symtab);
+      if (!config.ok()) {
+        return absl_status_to_grpc_error(config.status());
+      }
+      lb_policy_config = std::move(*config);
     }
     rds_update->cluster_specifier_plugin_map[std::move(name)] =
-        std::move(lb_policy_config.value());
+        std::move(lb_policy_config);
   }
   return GRPC_ERROR_NONE;
 }
@@ -773,12 +790,14 @@ grpc_error_handle RouteActionParse(
       return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
           "RouteAction cluster contains empty cluster specifier plugin name.");
     }
-    if (cluster_specifier_plugin_map.find(plugin_name) ==
-        cluster_specifier_plugin_map.end()) {
-      return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-          "RouteAction cluster contains cluster specifier plugin name not "
-          "configured.");
+    auto it = cluster_specifier_plugin_map.find(plugin_name);
+    if (it == cluster_specifier_plugin_map.end()) {
+      return GRPC_ERROR_CREATE_FROM_CPP_STRING(
+          absl::StrCat("RouteAction cluster contains cluster specifier plugin "
+                       "name not configured: ",
+                       plugin_name));
     }
+    if (it->second.empty()) *ignore_route = true;
     route->action.emplace<XdsRouteConfigResource::Route::RouteAction::
                               kClusterSpecifierPluginIndex>(
         std::move(plugin_name));

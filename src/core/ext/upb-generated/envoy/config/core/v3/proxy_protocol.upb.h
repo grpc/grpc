@@ -62,6 +62,9 @@ UPB_INLINE char* envoy_config_core_v3_ProxyProtocolConfig_serialize_ex(const env
                                  upb_Arena* arena, size_t* len) {
   return upb_Encode(msg, &envoy_config_core_v3_ProxyProtocolConfig_msginit, options, arena, len);
 }
+UPB_INLINE void envoy_config_core_v3_ProxyProtocolConfig_clear_version(const envoy_config_core_v3_ProxyProtocolConfig* msg) {
+  *UPB_PTR_AT(msg, UPB_SIZE(0, 0), int32_t) = 0;
+}
 UPB_INLINE int32_t envoy_config_core_v3_ProxyProtocolConfig_version(const envoy_config_core_v3_ProxyProtocolConfig* msg) {
   return *UPB_PTR_AT(msg, UPB_SIZE(0, 0), int32_t);
 }
