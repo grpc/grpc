@@ -6695,9 +6695,10 @@ TEST_P(CdsTest, AggregateClusterRecursionLoop) {
   // RPCs should fail with the right status.
   const Status status = SendRpc();
   EXPECT_EQ(StatusCode::UNAVAILABLE, status.error_code());
-  EXPECT_THAT(status.error_message(), ::testing::HasSubstr(absl::StrCat(
-      "aggregate cluster graph contains a loop for cluster ",
-      kDefaultClusterName)));
+  EXPECT_THAT(status.error_message(),
+              ::testing::HasSubstr(absl::StrCat(
+                  "aggregate cluster graph contains a loop for cluster ",
+                  kDefaultClusterName)));
 }
 
 // Test that CDS client should send a NACK if cluster type is Logical DNS but
