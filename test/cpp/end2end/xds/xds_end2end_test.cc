@@ -1895,6 +1895,8 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
       if (sender_thread_.joinable()) sender_thread_.join();
     }
 
+    void CancelWithoutJoining() { context_.TryCancel(); }
+
     Status GetStatus() {
       if (sender_thread_.joinable()) sender_thread_.join();
       return status_;
@@ -6553,13 +6555,14 @@ TEST_P(CdsTest, AggregateClusterFallBackWithConnectivityChurn) {
                           grpc_core::Timestamp deadline) override {
       {
         grpc_core::MutexLock lock(&mu_);
+        const int port = grpc_sockaddr_get_port(addr);
         gpr_log(GPR_INFO, "==> HandleConnection(): state_=%d, port=%d", state_,
-                grpc_sockaddr_get_port(addr));
+                port);
         switch (state_) {
           case kInit:
             // Make P0 report TF, which should trigger us to try to connect to
             // P1.
-            if (grpc_sockaddr_get_port(addr) == p0_port_) {
+            if (port == p0_port_) {
               gpr_log(GPR_INFO, "*** INJECTING FAILURE FOR P0 ENDPOINT");
               grpc_core::ExecCtx::Run(DEBUG_LOCATION, closure,
                                       GRPC_ERROR_CREATE_FROM_STATIC_STRING(
@@ -6570,7 +6573,7 @@ TEST_P(CdsTest, AggregateClusterFallBackWithConnectivityChurn) {
             break;
           case kP0Failed:
             // Hold connection attempt to P1 so that it stays in CONNECTING.
-            if (grpc_sockaddr_get_port(addr) == p1_port_) {
+            if (port == p1_port_) {
               gpr_log(GPR_INFO,
                       "*** DELAYING CONNECTION ATTEMPT FOR P1 ENDPOINT");
               queued_p1_attempt_ = absl::make_unique<QueuedAttempt>(
@@ -6584,7 +6587,7 @@ TEST_P(CdsTest, AggregateClusterFallBackWithConnectivityChurn) {
             // P0 should attempt reconnection.  Log it to make the test
             // easier to debug, but allow it to complete, so that the
             // priority policy deactivates P1.
-            if (grpc_sockaddr_get_port(addr) == p0_port_) {
+            if (port == p0_port_) {
               gpr_log(GPR_INFO,
                       "*** INTERCEPTING CONNECTION ATTEMPT FOR P0 ENDPOINT");
             }
@@ -7483,6 +7486,80 @@ TEST_P(CdsTest, RingHashIdleToReady) {
   EXPECT_EQ(GRPC_CHANNEL_IDLE, channel_->GetState(false));
   CheckRpcSendOk();
   EXPECT_EQ(GRPC_CHANNEL_READY, channel_->GetState(false));
+}
+
+// Test that the channel will transition to READY once it starts
+// connecting even if there are no RPCs being sent to the picker.
+TEST_P(CdsTest, RingHashContinuesConnectingWithoutPicks) {
+  // Create EDS resource.
+  CreateAndStartBackends(1);
+  auto non_existant_endpoint = MakeNonExistantEndpoint();
+  EdsResourceArgs args(
+      {{"locality0", {non_existant_endpoint, CreateEndpoint(0)}}});
+  balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
+  // Change CDS resource to use RING_HASH.
+  auto cluster = default_cluster_;
+  cluster.set_lb_policy(Cluster::RING_HASH);
+  balancer_->ads_service()->SetCdsResource(cluster);
+  // Add hash policy to RDS resource.
+  auto new_route_config = default_route_config_;
+  auto* route = new_route_config.mutable_virtual_hosts(0)->mutable_routes(0);
+  auto* hash_policy = route->mutable_route()->add_hash_policy();
+  hash_policy->mutable_header()->set_header_name("address_hash");
+  SetListenerAndRouteConfiguration(balancer_.get(), default_listener_,
+                                   new_route_config);
+  // A long-running RPC, just used to send the RPC in another thread.
+  LongRunningRpc rpc;
+  // A connection injector that cancels the RPC after seeing the
+  // connection attempt for the non-existant endpoint.
+  class ConnectionInjector : public ConnectionAttemptInjector {
+   public:
+    ConnectionInjector(int port, LongRunningRpc* rpc)
+        : port_(port), rpc_(rpc) {}
+
+    void HandleConnection(grpc_closure* closure, grpc_endpoint** ep,
+                          grpc_pollset_set* interested_parties,
+                          const grpc_channel_args* channel_args,
+                          const grpc_resolved_address* addr,
+                          grpc_core::Timestamp deadline) override {
+      {
+        grpc_core::MutexLock lock(&mu_);
+        const int port = grpc_sockaddr_get_port(addr);
+        gpr_log(GPR_INFO, "==> HandleConnection(): seen_port_=%d, port=%d",
+                seen_port_, port);
+        // Initial attempt should be for port0_, which should fail.
+        // Cancel the RPC at this point, so that it's no longer
+        // queued when the LB policy updates the picker.
+        if (!seen_port_ && port == port_) {
+          gpr_log(GPR_INFO, "*** CANCELLING RPC");
+          rpc_->CancelWithoutJoining();
+          seen_port_ = true;
+        }
+      }
+      AttemptConnection(closure, ep, interested_parties, channel_args, addr,
+                        deadline);
+    }
+
+   private:
+    const int port_;
+    LongRunningRpc* rpc_;
+
+    grpc_core::Mutex mu_;
+    bool seen_port_ ABSL_GUARDED_BY(mu_) = false;
+  };
+  ConnectionInjector connection_injector(non_existant_endpoint.port, &rpc);
+  std::vector<std::pair<std::string, std::string>> metadata = {
+      {"address_hash",
+       CreateMetadataValueThatHashesToBackendPort(non_existant_endpoint.port)}};
+  rpc.StartRpc(
+      stub_.get(),
+      RpcOptions().set_timeout_ms(0).set_metadata(std::move(metadata)));
+  // Wait for channel to become connected, after the RPC has been cancelled.
+  EXPECT_TRUE(channel_->WaitForConnected(grpc_timeout_seconds_to_deadline(5)));
+  // RPC should have been cancelled.
+  EXPECT_EQ(StatusCode::CANCELLED, rpc.GetStatus().error_code());
+  // Make sure the backend did not get any requests.
+  EXPECT_EQ(0UL, backends_[0]->backend_service()->request_count());
 }
 
 // Test that when the first pick is down leading to a transient failure, we

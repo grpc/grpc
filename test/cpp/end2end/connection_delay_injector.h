@@ -76,6 +76,7 @@ class ConnectionAttemptInjector {
       grpc_channel_args_destroy(channel_args_);
     }
 
+    // Caller must invoke this from a thread with an ExecCtx.
     void Resume() {
       GPR_ASSERT(closure_ != nullptr);
       AttemptConnection(closure_, endpoint_, interested_parties_,
@@ -83,9 +84,9 @@ class ConnectionAttemptInjector {
       closure_ = nullptr;
     }
 
+    // Caller must invoke this from a thread with an ExecCtx.
     void Fail(grpc_error_handle error) {
       GPR_ASSERT(closure_ != nullptr);
-      grpc_core::ExecCtx exec_ctx;
       grpc_core::ExecCtx::Run(DEBUG_LOCATION, closure_, error);
       closure_ = nullptr;
     }
