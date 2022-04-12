@@ -7676,7 +7676,7 @@ TEST_P(RlsTest, XdsRoutingClusterSpecifierPluginNacksUndefinedSpecifier) {
 }
 
 TEST_P(RlsTest, XdsRoutingClusterSpecifierPluginNacksDuplicateSpecifier) {
-  gpr_setenv("GRPC_EXPERIMENTAL_XDS_RLS_LB", "true");
+  ScopedExperimentalEnvVar env_var("GRPC_EXPERIMENTAL_XDS_RLS_LB");
   // Prepare the RLSLookupConfig: change route configurations to use cluster
   // specifier plugin.
   RouteLookupConfig route_lookup_config;
@@ -7711,7 +7711,6 @@ TEST_P(RlsTest, XdsRoutingClusterSpecifierPluginNacksDuplicateSpecifier) {
               ::testing::HasSubstr(absl::StrCat(
                   "Duplicated definition of cluster_specifier_plugin ",
                   kRlsClusterSpecifierPluginInstanceName)));
-  gpr_unsetenv("GRPC_XDS_EXPERIMENTAL_XDS_RLS_LB");
 }
 
 TEST_P(RlsTest,
@@ -7741,7 +7740,8 @@ TEST_P(RlsTest,
 
 TEST_P(RlsTest,
        XdsRoutingClusterSpecifierPluginIgnoreUnknownSpecifierProtoOptional) {
-  gpr_setenv("GRPC_EXPERIMENTAL_XDS_RLS_LB", "true");
+  ScopedExperimentalEnvVar env_var("GRPC_EXPERIMENTAL_XDS_RLS_LB");
+  CreateAndStartBackends(1);
   EdsResourceArgs args({
       {"locality0", CreateEndpointsForBackends(0, 1)},
   });
@@ -7767,7 +7767,6 @@ TEST_P(RlsTest,
   // Ensure we ignore the cluster specifier plugin and send traffic according to
   // the default route.
   WaitForAllBackends(0, 1);
-  gpr_unsetenv("GRPC_XDS_EXPERIMENTAL_XDS_RLS_LB");
 }
 
 TEST_P(RlsTest, XdsRoutingRlsClusterSpecifierPluginNacksRequiredMatch) {
