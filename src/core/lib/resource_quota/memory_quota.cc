@@ -400,8 +400,7 @@ void BasicMemoryQuota::Start() {
           std::tuple<const char*, RefCountedPtr<ReclaimerQueue::Handle>> arg) {
         auto reclaimer = std::move(std::get<1>(arg));
         if (GRPC_TRACE_FLAG_ENABLED(grpc_resource_quota_trace)) {
-          double free = self->free_bytes_.load();
-          if (free < 0) free = 0;
+          double free = std::max(0L, self->free_bytes_.load());
           size_t quota_size = self->quota_size_.load();
           gpr_log(GPR_INFO,
                   "RQ: %s perform %s reclamation. Available free bytes: %f, "
@@ -465,8 +464,7 @@ void BasicMemoryQuota::FinishReclamation(uint64_t token, Waker waker) {
                                                    std::memory_order_relaxed,
                                                    std::memory_order_relaxed)) {
     if (GRPC_TRACE_FLAG_ENABLED(grpc_resource_quota_trace)) {
-      double free = free_bytes_.load();
-      if (free < 0) free = 0;
+      double free = std::max(0L, free_bytes_.load());
       size_t quota_size = quota_size_.load();
       gpr_log(GPR_INFO,
               "RQ: %s reclamation complete. Available free bytes: %f, "
