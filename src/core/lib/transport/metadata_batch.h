@@ -236,6 +236,12 @@ struct HttpMethodMetadata {
     auto value_string = value.as_string_view();
     if (value_string == "POST") {
       out = kPost;
+    } else if (value_string == "PUT") {
+      // Legacy workaround for b/228865836
+      // gRPC used to support an experimental extension whereby we
+      // used PUT to indicate an idempotent request. Whilst we're
+      // deprecating this treat PUT as POST.
+      out = kPost;
     } else if (value_string == "GET") {
       out = kGet;
     } else {
