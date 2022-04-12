@@ -142,39 +142,51 @@ TEST_F(ServerLoadReportingEnd2endTest, BasicReport) {
   const std::string& lb_id = response.initial_response().load_balancer_id();
   gpr_log(GPR_INFO, "Initial response received (lb_id: %s).", lb_id.c_str());
   ClientMakeEchoCalls(lb_id, "LB_TAG", kOkMessage, 1);
-  while (true) {
+
+  unsigned loadCount = 0;
+  bool gotInProgress = false;
+  bool gotOrphaned = false;
+  bool gotCalls = false;
+  while (loadCount < 3) {
     stream->Read(&response);
-    if (!response.load().empty()) {
-      ASSERT_EQ(response.load().size(), 3) << response.DebugString();
-      for (const auto& load : response.load()) {
-        if (load.in_progress_report_case()) {
-          // The special load record that reports the number of in-progress
-          // calls.
-          ASSERT_EQ(load.num_calls_in_progress(), 1);
-        } else if (load.orphaned_load_case()) {
-          // The call from the balancer doesn't have any valid LB token.
-          ASSERT_EQ(load.orphaned_load_case(), load.kLoadKeyUnknown);
-          ASSERT_EQ(load.num_calls_started(), 1);
-          ASSERT_EQ(load.num_calls_finished_without_error(), 0);
-          ASSERT_EQ(load.num_calls_finished_with_error(), 0);
-        } else {
-          // This corresponds to the calls from the client.
-          ASSERT_EQ(load.num_calls_started(), 1);
-          ASSERT_EQ(load.num_calls_finished_without_error(), 1);
-          ASSERT_EQ(load.num_calls_finished_with_error(), 0);
-          ASSERT_GE(load.total_bytes_received(), sizeof(kOkMessage));
-          ASSERT_GE(load.total_bytes_sent(), sizeof(kOkMessage));
-          ASSERT_EQ(load.metric_data().size(), 1);
-          ASSERT_EQ(load.metric_data().Get(0).metric_name(), kMetricName);
-          ASSERT_EQ(load.metric_data().Get(0).num_calls_finished_with_metric(),
-                    1);
-          ASSERT_EQ(load.metric_data().Get(0).total_metric_value(),
-                    kMetricValue);
-        }
+    for (const auto& load : response.load()) {
+      loadCount++;
+      if (load.in_progress_report_case()) {
+        // The special load record that reports the number of in-progress
+        // calls.
+        ASSERT_EQ(load.num_calls_in_progress(), 1);
+        ASSERT_FALSE(gotInProgress);
+        gotInProgress = true;
+      } else if (load.orphaned_load_case()) {
+        // The call from the balancer doesn't have any valid LB token.
+        ASSERT_EQ(load.orphaned_load_case(), load.kLoadKeyUnknown);
+        ASSERT_EQ(load.num_calls_started(), 1);
+        ASSERT_EQ(load.num_calls_finished_without_error(), 0);
+        ASSERT_EQ(load.num_calls_finished_with_error(), 0);
+        ASSERT_FALSE(gotOrphaned);
+        gotOrphaned = true;
+      } else {
+        // This corresponds to the calls from the client.
+        ASSERT_EQ(load.num_calls_started(), 1);
+        ASSERT_EQ(load.num_calls_finished_without_error(), 1);
+        ASSERT_EQ(load.num_calls_finished_with_error(), 0);
+        ASSERT_GE(load.total_bytes_received(), sizeof(kOkMessage));
+        ASSERT_GE(load.total_bytes_sent(), sizeof(kOkMessage));
+        ASSERT_EQ(load.metric_data().size(), 1);
+        ASSERT_EQ(load.metric_data().Get(0).metric_name(), kMetricName);
+        ASSERT_EQ(load.metric_data().Get(0).num_calls_finished_with_metric(),
+                  1);
+        ASSERT_EQ(load.metric_data().Get(0).total_metric_value(),
+                  kMetricValue);
+        ASSERT_FALSE(gotCalls);
+        gotCalls = true;
       }
-      break;
     }
   }
+  ASSERT_EQ(loadCount, 3);
+  ASSERT_TRUE(gotInProgress);
+  ASSERT_TRUE(gotOrphaned);
+  ASSERT_TRUE(gotCalls);
   stream->WritesDone();
   ASSERT_EQ(stream->Finish().error_code(), StatusCode::CANCELLED);
 }
