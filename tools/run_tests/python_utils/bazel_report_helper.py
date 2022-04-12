@@ -54,11 +54,13 @@ def _append_to_kokoro_bazel_invocations(invocation_id: str) -> None:
                   'a') as f:
             f.write(invocation_id + '\n')
         print(
-            f'Added invocation ID {invocation_id} to kokoro "bazel_invocation_ids" artifact',
+            'Added invocation ID %s to kokoro "bazel_invocation_ids" artifact' %
+            invocation_id,
             file=sys.stderr)
     else:
         print(
-            f'Skipped adding invocation ID {invocation_id} to kokoro "bazel_invocation_ids" artifact',
+            'Skipped adding invocation ID %s to kokoro "bazel_invocation_ids" artifact'
+            % invocation_id,
             file=sys.stderr)
         pass
 
@@ -66,7 +68,7 @@ def _append_to_kokoro_bazel_invocations(invocation_id: str) -> None:
 def _generate_junit_report_string(report_suite_name: str, invocation_id: str,
                                   success: bool) -> None:
     """Generate sponge_log.xml formatted report, that will make the bazel invocation reachable as a target in resultstore UI / sponge."""
-    bazel_invocation_url = f'https://source.cloud.google.com/results/invocations/{invocation_id}'
+    bazel_invocation_url = 'https://source.cloud.google.com/results/invocations/%s' % invocation_id
     package_name = report_suite_name
     # set testcase name to invocation URL. That way, the link will be displayed in some form
     # resultstore UI and sponge even in case the bazel invocation succeeds.
@@ -74,15 +76,16 @@ def _generate_junit_report_string(report_suite_name: str, invocation_id: str,
     if success:
         # unfortunately, neither resultstore UI nor sponge display the "system-err" output (or any other tags)
         # on a passing test case. But at least we tried.
-        test_output_tag = f'<system-err>PASSED. See invocation results here: {bazel_invocation_url}</system-err>'
+        test_output_tag = '<system-err>PASSED. See invocation results here: %s</system-err>' % bazel_invocation_url
     else:
         # The failure output will be displayes in both resultstore UI and sponge when clicking on the failing testcase.
-        test_output_tag = f'<failure message="Failure">FAILED. See bazel invocation results here: {bazel_invocation_url}</failure>'
+        test_output_tag = '<failure message="Failure">FAILED. See bazel invocation results here: %s</failure>' % bazel_invocation_url
 
     lines = [
         '<testsuites>',
-        f'<testsuite id="1" name="{report_suite_name}" package="{package_name}">',
-        f'<testcase name="{testcase_name}">',
+        '<testsuite id="1" name="%s" package="%s">' %
+        (report_suite_name, package_name),
+        '<testcase name="%s">' % testcase_name,
         test_output_tag,
         '</testcase>'
         '</testsuite>',
@@ -121,9 +124,9 @@ def _create_bazel_wrapper(report_path: str, report_suite_name: str,
     # Using an RC file solves problems with flag ordering in the wrapper.
     # (e.g. some flags need to come after the build/test command)
     with open(bazel_rc_filename, 'w') as f:
-        f.write(f'build --invocation_id="{invocation_id}"\n')
-        f.write(
-            f'build --workspace_status_command="{workspace_status_command}"\n')
+        f.write('build --invocation_id="%s"\n' % invocation_id)
+        f.write('build --workspace_status_command="%s"\n' %
+                workspace_status_command)
 
     # generate "failing" and "success" report
     # the "failing" is named as "sponge_log.xml", which is the name picked up by sponge/resultstore
@@ -147,14 +150,16 @@ def _create_bazel_wrapper(report_path: str, report_suite_name: str,
             '#!/bin/bash',
             'set -ex',
             '',
-            f'tools/bazel --bazelrc="{bazel_rc_filename}" "$@" || FAILED=true',
+            'tools/bazel --bazelrc="%s" "$@" || FAILED=true' %
+            bazel_rc_filename,
             '',
         ]
 
         if upload_results:
             upload_results_lines = [
-                f'sleep {_UPLOAD_RBE_RESULTS_DELAY_SECONDS}',
-                f'PYTHONHTTPSVERIFY=0 python3 ./tools/run_tests/python_utils/upload_rbe_results.py --invocation_id="{invocation_id}"',
+                'sleep %s' % _UPLOAD_RBE_RESULTS_DELAY_SECONDS,
+                'PYTHONHTTPSVERIFY=0 python3 ./tools/run_tests/python_utils/upload_rbe_results.py --invocation_id="%s"'
+                % invocation_id,
                 '',
             ]
         else:
@@ -166,7 +171,8 @@ def _create_bazel_wrapper(report_path: str, report_suite_name: str,
             '  exit 1',
             'else',
             '  # success: plant the pre-generated xml report that says "success"',
-            f'  mv -f {success_report_filename} {failing_report_filename}',
+            '  mv -f %s %s' %
+            (success_report_filename, failing_report_filename),
             'fi',
         ]
 
@@ -182,15 +188,16 @@ def _create_bazel_wrapper(report_path: str, report_suite_name: str,
         intro_lines = [
             '@echo on',
             '',
-            f'bazel --bazelrc="{bazel_rc_filename}" %*',
+            'bazel --bazelrc="%s" %%*' % bazel_rc_filename,
             'set BAZEL_EXITCODE=%errorlevel%',
             '',
         ]
 
         if upload_results:
             upload_results_lines = [
-                f'sleep {_UPLOAD_RBE_RESULTS_DELAY_SECONDS}',
-                f'python3 tools/run_tests/python_utils/upload_rbe_results.py --invocation_id="{invocation_id}" || exit /b 1'
+                'sleep %s' % _UPLOAD_RBE_RESULTS_DELAY_SECONDS,
+                'python3 tools/run_tests/python_utils/upload_rbe_results.py --invocation_id="%s" || exit /b 1'
+                % invocation_id,
                 '',
             ]
         else:
@@ -199,7 +206,8 @@ def _create_bazel_wrapper(report_path: str, report_suite_name: str,
         outro_lines = [
             'if %BAZEL_EXITCODE% == 0 (',
             '  @rem success: plant the pre-generated xml report that says "success"',
-            f'  mv -f {success_report_filename} {failing_report_filename}',
+            '  mv -f %s %s' %
+            (success_report_filename, failing_report_filename),
             ')',
             'exit /b %BAZEL_EXITCODE%',
         ]
@@ -210,11 +218,13 @@ def _create_bazel_wrapper(report_path: str, report_suite_name: str,
         ]
         f.writelines(lines)
 
-    print(f'Bazel invocation ID: {invocation_id}', file=sys.stderr)
-    print(f'Upload test results to BigQuery after bazel runs: {upload_results}',
+    print('Bazel invocation ID: %s' % invocation_id, file=sys.stderr)
+    print('Upload test results to BigQuery after bazel runs: %s' %
+          upload_results,
           file=sys.stderr)
-    print(f'Generated bazel wrapper: {bazel_wrapper_filename}', file=sys.stderr)
-    print(f'Generated bazel wrapper: {bazel_wrapper_bat_filename}',
+    print('Generated bazel wrapper: %s' % bazel_wrapper_filename,
+          file=sys.stderr)
+    print('Generated bazel wrapper: %s' % bazel_wrapper_bat_filename,
           file=sys.stderr)
 
 
