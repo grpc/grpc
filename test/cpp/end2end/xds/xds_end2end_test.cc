@@ -6056,16 +6056,52 @@ TEST_P(RlsTest, XdsRoutingClusterSpecifierPluginNacksUndefinedSpecifier) {
   const auto response_state = WaitForRdsNack();
   ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
   EXPECT_THAT(response_state->error_message,
-              ::testing::HasSubstr("RouteAction cluster contains cluster "
-                                   "specifier plugin name not configured."));
+              ::testing::HasSubstr(absl::StrCat(
+                  "RouteAction cluster contains cluster specifier plugin "
+                  "name not configured: ",
+                  kRlsClusterSpecifierPluginInstanceName)));
 }
 
-TEST_P(RlsTest, XdsRoutingClusterSpecifierPluginNacksUnknownSpecifierProto) {
-  // TODO(donnadionne): Doug is working on adding a new is_optional field to
-  // ClusterSpecifierPlugin in envoyproxy/envoy#20301. Once that goes in, the
-  // behavior we want in this case is that if is_optional is true, then we
-  // ignore that plugin and ignore any routes that refer to that plugin.
-  // However, if is_optional is false, then we want to NACK.
+TEST_P(RlsTest, XdsRoutingClusterSpecifierPluginNacksDuplicateSpecifier) {
+  ScopedExperimentalEnvVar env_var("GRPC_EXPERIMENTAL_XDS_RLS_LB");
+  // Prepare the RLSLookupConfig: change route configurations to use cluster
+  // specifier plugin.
+  RouteLookupConfig route_lookup_config;
+  auto* key_builder = route_lookup_config.add_grpc_keybuilders();
+  auto* name = key_builder->add_names();
+  name->set_service(kRlsServiceValue);
+  name->set_method(kRlsMethodValue);
+  auto* header = key_builder->add_headers();
+  header->set_key(kRlsTestKey);
+  header->add_names(kRlsTestKey1);
+  route_lookup_config.set_lookup_service(
+      absl::StrCat("localhost:", rls_server_->port()));
+  route_lookup_config.set_cache_size_bytes(5000);
+  RouteLookupClusterSpecifier rls;
+  *rls.mutable_route_lookup_config() = std::move(route_lookup_config);
+  RouteConfiguration new_route_config = default_route_config_;
+  auto* plugin = new_route_config.add_cluster_specifier_plugins();
+  plugin->mutable_extension()->set_name(kRlsClusterSpecifierPluginInstanceName);
+  plugin->mutable_extension()->mutable_typed_config()->PackFrom(rls);
+  auto* duplicate_plugin = new_route_config.add_cluster_specifier_plugins();
+  duplicate_plugin->mutable_extension()->set_name(
+      kRlsClusterSpecifierPluginInstanceName);
+  duplicate_plugin->mutable_extension()->mutable_typed_config()->PackFrom(rls);
+  auto* default_route =
+      new_route_config.mutable_virtual_hosts(0)->mutable_routes(0);
+  default_route->mutable_route()->set_cluster_specifier_plugin(
+      kRlsClusterSpecifierPluginInstanceName);
+  SetRouteConfiguration(balancer_.get(), new_route_config);
+  const auto response_state = WaitForRdsNack();
+  ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
+  EXPECT_THAT(response_state->error_message,
+              ::testing::HasSubstr(absl::StrCat(
+                  "Duplicated definition of cluster_specifier_plugin ",
+                  kRlsClusterSpecifierPluginInstanceName)));
+}
+
+TEST_P(RlsTest,
+       XdsRoutingClusterSpecifierPluginNacksUnknownSpecifierProtoNotOptional) {
   ScopedExperimentalEnvVar env_var("GRPC_EXPERIMENTAL_XDS_RLS_LB");
   // Prepare the RLSLookupConfig: change route configurations to use cluster
   // specifier plugin.
@@ -6084,10 +6120,38 @@ TEST_P(RlsTest, XdsRoutingClusterSpecifierPluginNacksUnknownSpecifierProto) {
   SetRouteConfiguration(balancer_.get(), new_route_config);
   const auto response_state = WaitForRdsNack();
   ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
-  EXPECT_THAT(
-      response_state->error_message,
-      ::testing::HasSubstr(
-          "Unable to locate the cluster specifier plugin in the registry"));
+  EXPECT_THAT(response_state->error_message,
+              ::testing::HasSubstr("Unknown ClusterSpecifierPlugin type "
+                                   "grpc.lookup.v1.RouteLookupConfig"));
+}
+
+TEST_P(RlsTest,
+       XdsRoutingClusterSpecifierPluginIgnoreUnknownSpecifierProtoOptional) {
+  ScopedExperimentalEnvVar env_var("GRPC_EXPERIMENTAL_XDS_RLS_LB");
+  CreateAndStartBackends(1);
+  EdsResourceArgs args({{"locality0", CreateEndpointsForBackends()}});
+  balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
+  // Prepare the RLSLookupConfig: change route configurations to use cluster
+  // specifier plugin.
+  RouteLookupConfig route_lookup_config;
+  RouteConfiguration new_route_config = default_route_config_;
+  auto* plugin = new_route_config.add_cluster_specifier_plugins();
+  plugin->mutable_extension()->set_name(kRlsClusterSpecifierPluginInstanceName);
+  // Instead of grpc.lookup.v1.RouteLookupClusterSpecifier, let's say we
+  // mistakenly packed the inner RouteLookupConfig instead.
+  plugin->mutable_extension()->mutable_typed_config()->PackFrom(
+      route_lookup_config);
+  plugin->set_is_optional(true);
+  auto* route = new_route_config.mutable_virtual_hosts(0)->mutable_routes(0);
+  route->mutable_route()->set_cluster_specifier_plugin(
+      kRlsClusterSpecifierPluginInstanceName);
+  auto* default_route = new_route_config.mutable_virtual_hosts(0)->add_routes();
+  default_route->mutable_match()->set_prefix("");
+  default_route->mutable_route()->set_cluster(kDefaultClusterName);
+  SetRouteConfiguration(balancer_.get(), new_route_config);
+  // Ensure we ignore the cluster specifier plugin and send traffic according to
+  // the default route.
+  WaitForAllBackends();
 }
 
 TEST_P(RlsTest, XdsRoutingRlsClusterSpecifierPluginNacksRequiredMatch) {
@@ -10245,6 +10309,34 @@ TEST_P(LocalityMapTest, ReplaceAllLocalitiesInPriority) {
   WaitForBackend(1);
 }
 
+TEST_P(LocalityMapTest, ConsistentWeightedTargetUpdates) {
+  CreateAndStartBackends(4);
+  // Initial update has two localities.
+  EdsResourceArgs args({
+      {"locality0", CreateEndpointsForBackends(1, 2)},
+      {"locality1", CreateEndpointsForBackends(2, 3)},
+  });
+  balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
+  WaitForAllBackends(1, 3);
+  // Next update removes locality1.
+  // Also add backend 0 to locality0, so that we can tell when the
+  // update has been seen.
+  args = EdsResourceArgs({
+      {"locality0", CreateEndpointsForBackends(0, 2)},
+  });
+  balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
+  WaitForBackend(0);
+  // Next update re-adds locality1.
+  // Also add backend 3 to locality1, so that we can tell when the
+  // update has been seen.
+  args = EdsResourceArgs({
+      {"locality0", CreateEndpointsForBackends(0, 2)},
+      {"locality1", CreateEndpointsForBackends(2, 4)},
+  });
+  balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
+  WaitForBackend(3);
+}
+
 class FailoverTest : public XdsEnd2endTest {
  public:
   void SetUp() override {
@@ -10442,6 +10534,57 @@ TEST_P(FailoverTest, MoveAllLocalitiesInCurrentPriorityToHigherPriority) {
   WaitForBackend(2);
   // The xDS server got at least 1 response.
   EXPECT_TRUE(balancer_->ads_service()->eds_response_state().has_value());
+}
+
+// This tests a bug triggered by the xds_cluster_resolver policy reusing
+// a child name for the priority policy when that child name was still
+// present but deactivated.
+TEST_P(FailoverTest, PriorityChildNameChurn) {
+  CreateAndStartBackends(4);
+  auto non_existant_endpoint = MakeNonExistantEndpoint();
+  // Initial update:
+  // - P0:locality0, child number 0 (unreachable)
+  // - P1:locality1, child number 1
+  // - P2:locality2, child number 2
+  EdsResourceArgs args({
+      {"locality0", {non_existant_endpoint}, kDefaultLocalityWeight, 0},
+      {"locality1", CreateEndpointsForBackends(0, 1), kDefaultLocalityWeight,
+       1},
+      {"locality2", CreateEndpointsForBackends(1, 2), kDefaultLocalityWeight,
+       2},
+  });
+  balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
+  WaitForBackend(0);
+  // Next update:
+  // - P0:locality0, child number 0 (still unreachable)
+  // - P1:locality2, child number 2 (moved from P2 to P1)
+  // - P2:locality3, child number 3 (new child)
+  // Child number 1 will be deactivated.
+  args = EdsResourceArgs({
+      {"locality0", {non_existant_endpoint}, kDefaultLocalityWeight, 0},
+      {"locality2", CreateEndpointsForBackends(1, 2), kDefaultLocalityWeight,
+       1},
+      {"locality3", CreateEndpointsForBackends(2, 3), kDefaultLocalityWeight,
+       2},
+  });
+  balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
+  WaitForBackend(1);
+  // Next update:
+  // - P0:locality0, child number 0 (still unreachable)
+  // - P1:locality4, child number 4 (new child number -- should not reuse #1)
+  // - P2:locality3, child number 3
+  // Child number 1 will be deactivated.
+  args = EdsResourceArgs({
+      {"locality0", {non_existant_endpoint}, kDefaultLocalityWeight, 0},
+      {"locality4", CreateEndpointsForBackends(3, 4), kDefaultLocalityWeight,
+       1},
+      {"locality3", CreateEndpointsForBackends(2, 3), kDefaultLocalityWeight,
+       2},
+  });
+  balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
+  WaitForBackend(3, WaitForBackendOptions().set_reset_counters(false));
+  // P2 should not have gotten any traffic in this change.
+  EXPECT_EQ(0UL, backends_[2]->backend_service()->request_count());
 }
 
 using DropTest = XdsEnd2endTest;

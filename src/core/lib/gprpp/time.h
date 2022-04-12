@@ -120,7 +120,7 @@ class Timestamp {
 // Duration represents a span of time.
 class Duration {
  public:
-  constexpr Duration() : millis_(0) {}
+  constexpr Duration() noexcept : millis_(0) {}
 
   static Duration FromTimespec(gpr_timespec t);
   static Duration FromSecondsAndNanoseconds(int64_t seconds, int32_t nanos);
