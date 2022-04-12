@@ -43,7 +43,7 @@ def _platform_string():
         return 'posix'
 
 
-def _append_to_kokoro_bazel_invocations(invocation_id):
+def _append_to_kokoro_bazel_invocations(invocation_id: str) -> None:
     """Kokoro can display "Bazel" result link on kokoro jobs if told so."""
     # to get "bazel" link for kokoro build, we need to upload
     # the "bazel_invocation_ids" file with bazel invocation ID as artifact.
@@ -65,7 +65,8 @@ def _append_to_kokoro_bazel_invocations(invocation_id):
         pass
 
 
-def _generate_junit_report_string(report_suite_name, invocation_id, success):
+def _generate_junit_report_string(report_suite_name: str, invocation_id: str,
+                                  success: bool) -> None:
     """Generate sponge_log.xml formatted report, that will make the bazel invocation reachable as a target in resultstore UI / sponge."""
     bazel_invocation_url = 'https://source.cloud.google.com/results/invocations/%s' % invocation_id
     package_name = report_suite_name
@@ -93,8 +94,8 @@ def _generate_junit_report_string(report_suite_name, invocation_id, success):
     return '\n'.join(lines)
 
 
-def _create_bazel_wrapper(report_path, report_suite_name, invocation_id,
-                          upload_results):
+def _create_bazel_wrapper(report_path: str, report_suite_name: str,
+                          invocation_id: str, upload_results: bool) -> None:
     """Create a "bazel wrapper" script that will execute bazel with extra settings and postprocessing."""
 
     os.makedirs(report_path, exist_ok=True)
