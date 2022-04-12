@@ -314,9 +314,9 @@ RingHash::Ring::Ring(RingHash* parent,
     const ServerAddressWeightAttribute* weight_attribute = static_cast<
         const ServerAddressWeightAttribute*>(sd->address().GetAttribute(
         ServerAddressWeightAttribute::kServerAddressWeightAttributeKey));
-    auto addr_str = grpc_sockaddr_to_string(&sd->address().address(), false);
     AddressWeight address_weight;
-    address_weight.address = std::string(addr_str.value());
+    address_weight.address =
+        grpc_sockaddr_to_string(&sd->address().address(), false).value();
     if (weight_attribute != nullptr) {
       GPR_ASSERT(weight_attribute->weight() != 0);
       address_weight.weight = weight_attribute->weight();

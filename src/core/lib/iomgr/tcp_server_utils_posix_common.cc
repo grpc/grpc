@@ -94,8 +94,7 @@ static grpc_error_handle add_socket_to_server(grpc_tcp_server* s, int fd,
   GPR_ASSERT(port > 0);
   absl::StatusOr<std::string> addr_str = grpc_sockaddr_to_string(addr, true);
   if (!addr_str.ok()) {
-    return GRPC_ERROR_CREATE_FROM_CPP_STRING(
-        addr_str.status().ToString().c_str());
+    return GRPC_ERROR_CREATE_FROM_CPP_STRING(addr_str.status().ToString());
   }
   std::string name = absl::StrCat("tcp-server-listener:", addr_str.value());
   gpr_mu_lock(&s->mu);

@@ -151,8 +151,7 @@ ServerAddress ServerAddress::WithAttribute(
 std::string ServerAddress::ToString() const {
   auto addr_str = grpc_sockaddr_to_string(&address_, false);
   std::vector<std::string> parts = {
-      std::string(addr_str.ok() ? addr_str.value()
-                                : addr_str.status().ToString()),
+      addr_str.ok() ? addr_str.value() : addr_str.status().ToString(),
   };
   if (args_ != nullptr) {
     parts.emplace_back(

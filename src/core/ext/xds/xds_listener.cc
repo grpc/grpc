@@ -780,11 +780,10 @@ grpc_error_handle AddFilterChainDataForSourceIpRange(
          filter_chain.filter_chain_match.source_prefix_ranges) {
       auto addr_str = grpc_sockaddr_to_string(&prefix_range.address, false);
       if (!addr_str.ok()) {
-        return GRPC_ERROR_CREATE_FROM_CPP_STRING(
-            addr_str.status().ToString().c_str());
+        return GRPC_ERROR_CREATE_FROM_CPP_STRING(addr_str.status().ToString());
       }
       auto insert_result = source_ip_map->emplace(
-          absl::StrCat(addr_str.value(), "/", prefix_range.prefix_len),
+          absl::StrCat(*addr_str, "/", prefix_range.prefix_len),
           XdsListenerResource::FilterChainMap::SourceIp());
       if (insert_result.second) {
         insert_result.first->second.prefix_range.emplace(prefix_range);
@@ -868,11 +867,10 @@ grpc_error_handle AddFilterChainDataForDestinationIpRange(
          filter_chain.filter_chain_match.prefix_ranges) {
       auto addr_str = grpc_sockaddr_to_string(&prefix_range.address, false);
       if (!addr_str.ok()) {
-        return GRPC_ERROR_CREATE_FROM_CPP_STRING(
-            addr_str.status().ToString().c_str());
+        return GRPC_ERROR_CREATE_FROM_CPP_STRING(addr_str.status().ToString());
       }
       auto insert_result = destination_ip_map->emplace(
-          absl::StrCat(addr_str.value(), "/", prefix_range.prefix_len),
+          absl::StrCat(*addr_str, "/", prefix_range.prefix_len),
           InternalFilterChainMap::DestinationIp());
       if (insert_result.second) {
         insert_result.first->second.prefix_range.emplace(prefix_range);
