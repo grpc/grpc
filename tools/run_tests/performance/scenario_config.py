@@ -256,7 +256,7 @@ class CXXLanguage(Language):
 
     def scenarios(self):
         yield _ping_pong_scenario(
-            'psm_cpp_generic_async_unary_1channel_5000rpcs_1KBmsg',
+            'cpp_generic_async_unary_1channel_5000rpcs_1KBmsg_insecure',
             rpc_type='UNARY',
             client_type='ASYNC_CLIENT',
             server_type='ASYNC_SERVER',
@@ -268,6 +268,7 @@ class CXXLanguage(Language):
             secure=False,
             async_server_threads=1,
             categories=[PSM])
+
         # TODO(ctiller): add 70% load latency test
         yield _ping_pong_scenario(
             'cpp_protobuf_async_unary_1channel_100rpcs_1MB',
@@ -626,7 +627,7 @@ class CSharpLanguage(Language):
 
     def scenarios(self):
         yield _ping_pong_scenario(
-            'psm_csharp_generic_async_unary_1channel_5000rpcs_1KBmsg',
+            'csharp_generic_async_unary_1channel_5000rpc_1KBmsgs_insecure',
             rpc_type='UNARY',
             client_type='ASYNC_CLIENT',
             server_type='ASYNC_SERVER',
@@ -638,6 +639,7 @@ class CSharpLanguage(Language):
             secure=False,
             async_server_threads=1,
             categories=[PSM])
+
         yield _ping_pong_scenario('csharp_generic_async_streaming_ping_pong',
                                   rpc_type='STREAMING',
                                   client_type='ASYNC_CLIENT',
@@ -892,7 +894,7 @@ class PythonLanguage(Language):
 
     def scenarios(self):
         yield _ping_pong_scenario(
-            'psm_python_generic_async_unary_1channel_5000rpcs_1KBmsg',
+            'python_generic_async_unary_1channel_5000rpcs_1KBmsgs_insecure',
             rpc_type='UNARY',
             client_type='ASYNC_CLIENT',
             server_type='ASYNC_SERVER',
@@ -904,6 +906,7 @@ class PythonLanguage(Language):
             secure=False,
             async_server_threads=1,
             categories=[PSM])
+
         yield _ping_pong_scenario('python_generic_sync_streaming_ping_pong',
                                   rpc_type='STREAMING',
                                   client_type='SYNC_CLIENT',
@@ -979,7 +982,7 @@ class PythonAsyncIOLanguage(Language):
 
     def scenarios(self):
         yield _ping_pong_scenario(
-            'psm_python_asyncio_generic_async_unary_1channel_5000rpcs_1KBmsg',
+            'python_asyncio_generic_async_unary_1channel_5000rpcs_1KBs_insecure',
             rpc_type='UNARY',
             client_type='ASYNC_CLIENT',
             server_type='ASYNC_SERVER',
@@ -991,6 +994,7 @@ class PythonAsyncIOLanguage(Language):
             secure=False,
             async_server_threads=1,
             categories=[PSM])
+
         for outstanding in [64, 128, 256, 512]:
             for channels in [1, 4]:
                 yield _ping_pong_scenario(
@@ -1137,7 +1141,7 @@ class RubyLanguage(Language):
 
     def scenarios(self):
         yield _ping_pong_scenario(
-            'psm_ruby_asyncio_generic_async_unary_1channel_5000rpcs_1KBmsg',
+            'ruby_asyncio_generic_async_unary_1channel_5000rpcs_1KBmsgs_insecure',
             rpc_type='UNARY',
             client_type='ASYNC_CLIENT',
             server_type='ASYNC_SERVER',
@@ -1149,6 +1153,7 @@ class RubyLanguage(Language):
             secure=False,
             async_server_threads=1,
             categories=[PSM])
+
         yield _ping_pong_scenario('ruby_protobuf_sync_streaming_ping_pong',
                                   rpc_type='STREAMING',
                                   client_type='SYNC_CLIENT',
@@ -1226,7 +1231,7 @@ class Php7Language(Language):
             php7_extension_mode = 'php7_protobuf_c_extension'
 
         yield _ping_pong_scenario(
-            'psm_%s_to_cpp_generic_async_unary_1channel_5000rpcs_1KBmsg' %
+            '%s_to_cpp_generic_async_unary_1channel_5000rpcs_1KBmsgs_insecure' %
             php7_extension_mode,
             rpc_type='UNARY',
             client_type='ASYNC_CLIENT',
@@ -1297,7 +1302,7 @@ class JavaLanguage(Language):
 
     def scenarios(self):
         yield _ping_pong_scenario(
-            'psm_java_generic_async_unary_1channel_5000rpcs_1KBmsg',
+            'java_generic_async_unary_1channel_5000rpcs_1KBmsg_insecure',
             rpc_type='UNARY',
             client_type='ASYNC_CLIENT',
             server_type='ASYNC_SERVER',
@@ -1309,6 +1314,7 @@ class JavaLanguage(Language):
             secure=False,
             async_server_threads=1,
             categories=[PSM])
+
         for secure in [True, False]:
             secstr = 'secure' if secure else 'insecure'
             smoketest_categories = ([SMOKETEST] if secure else []) + [SCALABLE]
@@ -1410,7 +1416,7 @@ class GoLanguage(Language):
 
     def scenarios(self):
         yield _ping_pong_scenario(
-            'psm_go_generic_async_unary_1channel_5000rpcs_1KBmsg',
+            'go_generic_async_unary_1channel_5000rpcs_1KBmsg_insecure',
             rpc_type='UNARY',
             client_type='ASYNC_CLIENT',
             server_type='ASYNC_SERVER',
@@ -1422,6 +1428,7 @@ class GoLanguage(Language):
             secure=False,
             async_server_threads=1,
             categories=[PSM])
+
         for secure in [True, False]:
             secstr = 'secure' if secure else 'insecure'
             smoketest_categories = ([SMOKETEST] if secure else []) + [SCALABLE]
@@ -1516,7 +1523,7 @@ class NodeLanguage(Language):
         node_implementation = 'node_purejs' if self.node_purejs else 'node'
 
         yield _ping_pong_scenario(
-            'psm_%s_to_node_generic_async_unary_1channel_5000rpcs_1KBmsg' %
+            '%s_to_node_generic_async_unary_1channel_5000rpcs_1KBmsg_insecure' %
             (node_implementation),
             rpc_type='UNARY',
             client_type='ASYNC_CLIENT',
