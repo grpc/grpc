@@ -8473,7 +8473,6 @@ targets:
 - name: xds_fault_injection_end2end_test
   gtest: true
   build: test
-  run: false
   language: c++
   headers:
   - test/cpp/end2end/counted_service.h
