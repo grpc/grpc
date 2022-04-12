@@ -176,8 +176,7 @@ TEST_F(ServerLoadReportingEnd2endTest, BasicReport) {
         ASSERT_EQ(load.metric_data().Get(0).metric_name(), kMetricName);
         ASSERT_EQ(load.metric_data().Get(0).num_calls_finished_with_metric(),
                   1);
-        ASSERT_EQ(load.metric_data().Get(0).total_metric_value(),
-                  kMetricValue);
+        ASSERT_EQ(load.metric_data().Get(0).total_metric_value(), kMetricValue);
         ASSERT_FALSE(gotCalls);
         gotCalls = true;
       }
