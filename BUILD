@@ -1474,6 +1474,29 @@ grpc_cc_library(
     ],
 )
 
+grpc_cc_library(
+    name = "handshaker",
+    srcs = [
+        "src/core/lib/transport/handshaker.cc",
+    ],
+    language = "c++",
+    public_hdrs = [
+        "src/core/lib/transport/handshaker.h",
+    ],
+    external_deps = [
+        "absl/strings",
+        "absl/strings:str_format",
+    ],
+    deps = [
+        "channel_args",
+        "closure",
+        "gpr_base", 
+        "grpc_base", 
+        "grpc_codegen",
+        "grpc_trace",
+        "slice",     
+    ],
+)
 
 grpc_cc_library(
     name = "handshaker_factory",
@@ -1517,6 +1540,7 @@ grpc_cc_library(
         "config",
         "gpr_base",
         "grpc_base",
+        "handshaker",
         "handshaker_registry",
         "httpcli",
         "uri_parser",
@@ -1536,6 +1560,7 @@ grpc_cc_library(
         "config",
         "gpr_platform",
         "grpc_base",
+        "handshaker",
         "handshaker_registry",
     ],
 )
@@ -2033,7 +2058,6 @@ grpc_cc_library(
         "src/core/lib/transport/byte_stream.cc",
         "src/core/lib/transport/connectivity_state.cc",
         "src/core/lib/transport/error_utils.cc",
-        "src/core/lib/transport/handshaker.cc",
         "src/core/lib/transport/parsed_metadata.cc",
         "src/core/lib/transport/pid_controller.cc",
         "src/core/lib/transport/status_conversion.cc",
@@ -2149,7 +2173,6 @@ grpc_cc_library(
         "src/core/lib/transport/bdp_estimator.h",
         "src/core/lib/transport/byte_stream.h",
         "src/core/lib/transport/connectivity_state.h",
-        "src/core/lib/transport/handshaker.h",
         "src/core/lib/transport/metadata_batch.h",
         "src/core/lib/transport/parsed_metadata.h",
         "src/core/lib/transport/pid_controller.h",
@@ -3817,6 +3840,7 @@ grpc_cc_library(
         "gpr_base",
         "grpc_base",
         "grpc_security_base",
+        "handshaker",
         "promise",
         "ref_counted_ptr",
         "tsi_fake_credentials",
@@ -3938,6 +3962,7 @@ grpc_cc_library(
         "grpc_credentials_util",
         "grpc_security_base",
         "grpc_transport_chttp2_alpn",
+        "handshaker",
         "promise",
         "ref_counted_ptr",
         "tsi_base",
@@ -4256,6 +4281,7 @@ grpc_cc_library(
         "gpr_base",
         "grpc_base",
         "grpc_trace",
+        "handshaker",
         "json",
         "memory_quota",
         "promise",
@@ -4665,6 +4691,7 @@ grpc_cc_library(
         "grpc_resolver",
         "grpc_security_base",
         "grpc_transport_chttp2",
+        "handshaker",
         "slice",
         "sockaddr_utils",
         "tcp_connect_handshaker",
@@ -4694,6 +4721,7 @@ grpc_cc_library(
         "grpc_insecure_credentials",
         "grpc_security_base",
         "grpc_transport_chttp2",
+        "handshaker",
         "memory_quota",
         "ref_counted",
         "ref_counted_ptr",
