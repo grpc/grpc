@@ -136,7 +136,7 @@ class CdsLb : public LoadBalancingPolicy {
 
   void ShutdownLocked() override;
 
-  bool GenerateDiscoveryMechanismForCluster(
+  absl::StatusOr<bool> GenerateDiscoveryMechanismForCluster(
       const std::string& name, Json::Array* discovery_mechanisms,
       std::set<std::string>* clusters_needed);
   void OnClusterChanged(const std::string& name,
@@ -307,18 +307,21 @@ void CdsLb::UpdateLocked(UpdateArgs args) {
   }
 }
 
-// This method will attempt to generate one or multiple entries of discovery
-// mechanism recursively:
-// For cluster types EDS or LOGICAL_DNS, one discovery mechanism entry may be
-// generated cluster name, type and other data from the CdsUpdate inserted into
-// the entry and the entry appended to the array of entries.
-// Note, discovery mechanism entry can be generated if an CdsUpdate is
-// available; otherwise, just return false. For cluster type AGGREGATE,
-// recursively call the method for each child cluster.
-bool CdsLb::GenerateDiscoveryMechanismForCluster(
+// Generates the discovery mechanism config for the specified cluster name.
+//
+// If no CdsUpdate has been received for the cluster, starts the watcher
+// if needed, and returns false.  Otherwise, generates the discovery
+// mechanism config, adds it to *discovery_mechanisms, and returns true.
+//
+// For aggregate clusters, may call itself recursively.  Returns an
+// error if there is a loop in the aggregate cluster graph.
+absl::StatusOr<bool> CdsLb::GenerateDiscoveryMechanismForCluster(
     const std::string& name, Json::Array* discovery_mechanisms,
     std::set<std::string>* clusters_needed) {
-  clusters_needed->insert(name);
+  if (!clusters_needed->insert(name).second) {
+    return absl::FailedPreconditionError(absl::StrCat(
+        "aggregate cluster graph contains a loop for cluster ", name));
+  }
   auto& state = watchers_[name];
   // Create a new watcher if needed.
   if (state.watcher == nullptr) {
@@ -340,10 +343,10 @@ bool CdsLb::GenerateDiscoveryMechanismForCluster(
     bool missing_cluster = false;
     for (const std::string& child_name :
          state.update->prioritized_cluster_names) {
-      if (!GenerateDiscoveryMechanismForCluster(
-              child_name, discovery_mechanisms, clusters_needed)) {
-        missing_cluster = true;
-      }
+      auto result = GenerateDiscoveryMechanismForCluster(
+          child_name, discovery_mechanisms, clusters_needed);
+      if (!result.ok()) return result;
+      if (!*result) missing_cluster = true;
     }
     return !missing_cluster;
   }
@@ -401,8 +404,12 @@ void CdsLb::OnClusterChanged(const std::string& name,
   // update the child policy at all.
   Json::Array discovery_mechanisms;
   std::set<std::string> clusters_needed;
-  if (GenerateDiscoveryMechanismForCluster(
-          config_->cluster(), &discovery_mechanisms, &clusters_needed)) {
+  auto result = GenerateDiscoveryMechanismForCluster(
+      config_->cluster(), &discovery_mechanisms, &clusters_needed);
+  if (!result.ok()) {
+    return OnError(name, result.status());
+  }
+  if (*result) {
     // LB policy is configured by aggregate cluster, not by the individual
     // underlying cluster that we may be processing an update for.
     auto it = watchers_.find(config_->cluster());
