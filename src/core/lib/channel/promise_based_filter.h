@@ -43,20 +43,15 @@ class ChannelFilter {
  public:
   class Args {
    public:
-    Args() : Args(nullptr, nullptr) {}
-    explicit Args(grpc_channel_stack* channel_stack,
-                  grpc_channel_element* channel_element)
-        : channel_stack_(channel_stack), channel_element_(channel_element) {}
+    Args() : Args(nullptr) {}
+    explicit Args(grpc_channel_stack* channel_stack)
+        : channel_stack_(channel_stack) {}
 
     grpc_channel_stack* channel_stack() const { return channel_stack_; }
-    grpc_channel_element* uninitialized_channel_element() {
-      return channel_element_;
-    }
 
    private:
     friend class ChannelFilter;
     grpc_channel_stack* channel_stack_;
-    grpc_channel_element* channel_element_;
   };
 
   // Construct a promise for one call.
@@ -416,7 +411,7 @@ MakePromiseBasedFilter(const char* name) {
       [](grpc_channel_element* elem, grpc_channel_element_args* args) {
         GPR_ASSERT(!args->is_last);
         auto status = F::Create(ChannelArgs::FromC(args->channel_args),
-                                ChannelFilter::Args(args->channel_stack, elem));
+                                ChannelFilter::Args(args->channel_stack));
         if (!status.ok()) return absl_status_to_grpc_error(status.status());
         new (elem->channel_data) F(std::move(*status));
         return GRPC_ERROR_NONE;
