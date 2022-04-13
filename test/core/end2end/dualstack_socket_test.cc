@@ -70,7 +70,7 @@ static void log_resolved_addrs(const char* label, const char* hostname) {
   }
   for (const auto& addr : *addresses_or) {
     gpr_log(GPR_INFO, "%s: %s", label,
-            grpc_sockaddr_to_uri_decoded(&addr).c_str());
+            grpc_sockaddr_to_uri(&addr).c_str());
   }
 }
 
