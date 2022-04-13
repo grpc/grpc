@@ -670,7 +670,7 @@ grpc_error_handle Chttp2ServerListener::Create(
     // Create channelz node.
     if (grpc_channel_args_find_bool(args, GRPC_ARG_ENABLE_CHANNELZ,
                                     GRPC_ENABLE_CHANNELZ_DEFAULT)) {
-      std::string string_address = grpc_sockaddr_to_uri_decoded(addr);
+      std::string string_address = grpc_sockaddr_to_uri(addr);
       listener->channelz_listen_socket_ =
           MakeRefCounted<channelz::ListenSocketNode>(
               string_address.c_str(),

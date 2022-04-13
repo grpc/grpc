@@ -355,7 +355,7 @@ grpc_endpoint* grpc_cfstream_endpoint_create(CFReadStreamRef read_stream,
                   &resolved_local_addr.len) < 0) {
     ep_impl->local_address = "";
   } else {
-    ep_impl->local_address = grpc_sockaddr_to_uri_decoded(&resolved_local_addr);
+    ep_impl->local_address = grpc_sockaddr_to_uri(&resolved_local_addr);
   }
   ep_impl->read_cb = nil;
   ep_impl->write_cb = nil;

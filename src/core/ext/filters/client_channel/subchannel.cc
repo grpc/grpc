@@ -675,8 +675,7 @@ Subchannel::Subchannel(SubchannelKey key,
             {GRPC_MAX_CHANNEL_TRACE_EVENT_MEMORY_PER_NODE_DEFAULT, 0,
              INT_MAX}));
     channelz_node_ = MakeRefCounted<channelz::SubchannelNode>(
-        grpc_sockaddr_to_uri_decoded(&key_.address()),
-        channel_tracer_max_memory);
+        grpc_sockaddr_to_uri(&key_.address()), channel_tracer_max_memory);
     channelz_node_->AddTraceEvent(
         channelz::ChannelTrace::Severity::Info,
         grpc_slice_from_static_string("subchannel created"));
