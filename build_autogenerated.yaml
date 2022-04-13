@@ -8404,7 +8404,6 @@ targets:
 - name: xds_csds_end2end_test
   gtest: true
   build: test
-  run: false
   language: c++
   headers:
   - src/cpp/server/csds/csds.h

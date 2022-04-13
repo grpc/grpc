@@ -146,7 +146,6 @@ grpc_cc_test(
     external_deps = [
         "gtest",
     ],
-    flaky = True,  # TODO(b/144705388)
     linkstatic = True,  # Fixes dyld error on MacOS
     tags = [
         "no_test_ios",
