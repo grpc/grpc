@@ -12029,7 +12029,7 @@ int main(int argc, char** argv) {
   // updates from all the subchannels's FDs.
   GPR_GLOBAL_CONFIG_SET(grpc_client_channel_backup_poll_interval_ms, 1);
   // Allow testing PUT requests.
-  grpc_core::AllowPutRequests();
+  grpc_core::InternalOnlyAllowPutRequests();
 #if TARGET_OS_IPHONE
   // Workaround Apple CFStream bug
   gpr_setenv("grpc_cfstream", "0");
