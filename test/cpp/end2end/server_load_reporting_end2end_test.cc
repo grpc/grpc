@@ -143,28 +143,28 @@ TEST_F(ServerLoadReportingEnd2endTest, BasicReport) {
   gpr_log(GPR_INFO, "Initial response received (lb_id: %s).", lb_id.c_str());
   ClientMakeEchoCalls(lb_id, "LB_TAG", kOkMessage, 1);
 
-  unsigned loadCount = 0;
-  bool gotInProgress = false;
-  bool gotOrphaned = false;
-  bool gotCalls = false;
-  while (loadCount < 3) {
+  unsigned load_count = 0;
+  bool got_in_progress = false;
+  bool got_orphaned = false;
+  bool got_calls = false;
+  while (load_count < 3) {
     stream->Read(&response);
     for (const auto& load : response.load()) {
-      loadCount++;
+      load_count++;
       if (load.in_progress_report_case()) {
         // The special load record that reports the number of in-progress
         // calls.
         ASSERT_EQ(load.num_calls_in_progress(), 1);
-        ASSERT_FALSE(gotInProgress);
-        gotInProgress = true;
+        ASSERT_FALSE(got_in_progress);
+        got_in_progress = true;
       } else if (load.orphaned_load_case()) {
         // The call from the balancer doesn't have any valid LB token.
         ASSERT_EQ(load.orphaned_load_case(), load.kLoadKeyUnknown);
         ASSERT_EQ(load.num_calls_started(), 1);
         ASSERT_EQ(load.num_calls_finished_without_error(), 0);
         ASSERT_EQ(load.num_calls_finished_with_error(), 0);
-        ASSERT_FALSE(gotOrphaned);
-        gotOrphaned = true;
+        ASSERT_FALSE(got_orphaned);
+        got_orphaned = true;
       } else {
         // This corresponds to the calls from the client.
         ASSERT_EQ(load.num_calls_started(), 1);
@@ -178,15 +178,15 @@ TEST_F(ServerLoadReportingEnd2endTest, BasicReport) {
                   1);
         ASSERT_EQ(load.metric_data().Get(0).total_metric_value(),
                   kMetricValue);
-        ASSERT_FALSE(gotCalls);
-        gotCalls = true;
+        ASSERT_FALSE(got_calls);
+        got_calls = true;
       }
     }
   }
-  ASSERT_EQ(loadCount, 3);
-  ASSERT_TRUE(gotInProgress);
-  ASSERT_TRUE(gotOrphaned);
-  ASSERT_TRUE(gotCalls);
+  ASSERT_EQ(load_count, 3);
+  ASSERT_TRUE(got_in_progress);
+  ASSERT_TRUE(got_orphaned);
+  ASSERT_TRUE(got_calls);
   stream->WritesDone();
   ASSERT_EQ(stream->Finish().error_code(), StatusCode::CANCELLED);
 }
