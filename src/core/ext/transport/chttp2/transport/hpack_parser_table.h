@@ -32,7 +32,6 @@ namespace grpc_core {
 
 using Memento = ParsedMetadata<grpc_metadata_batch>;
 
-
 class MementoRingBuffer {
  public:
   // Rebuild this buffer with a new max_entries_ size.
@@ -114,7 +113,7 @@ class HPackTable {
   }
 
   void EvictOne();
-  
+
   // The amount of memory used by the table, according to the hpack algorithm
   uint32_t mem_used_ = 0;
   // The max memory allowed to be used by the table, according to the hpack

@@ -16,16 +16,19 @@
  *
  */
 
+#include <grpc/support/port_platform.h>
+
 #include "src/core/ext/transport/chttp2/transport/hpack_parser_table.h"
 
 #include <cassert>
-#include <cstring>
 #include <cstddef>
-#include <grpc/support/alloc.h>
-#include <grpc/support/log.h>
-#include <grpc/support/port_platform.h>
+#include <cstring>
 
 #include "absl/strings/str_format.h"
+
+#include <grpc/support/alloc.h>
+#include <grpc/support/log.h>
+
 #include "src/core/ext/transport/chttp2/transport/hpack_constants.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/gpr/murmur_hash.h"
