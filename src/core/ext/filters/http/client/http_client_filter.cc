@@ -141,11 +141,9 @@ absl::StatusOr<HttpClientFilter> HttpClientFilter::Create(ChannelArgs args,
   if (transport == nullptr) {
     return absl::InvalidArgumentError("HttpClientFilter needs a transport");
   }
-  absl::optional<int> use_put_requests =
-      args.GetInt(GRPC_ARG_TEST_ONLY_USE_PUT_REQUESTS);
   return HttpClientFilter(
       SchemeFromArgs(args), UserAgentFromArgs(args, transport->vtable->name),
-      use_put_requests.has_value() ? *use_put_requests : false);
+      args.GetInt(GRPC_ARG_TEST_ONLY_USE_PUT_REQUESTS).value_or(false));
 }
 
 }  // namespace grpc_core

@@ -80,7 +80,9 @@ struct channel_data {
 
 namespace grpc_core {
 
-void AllowPutRequests() { g_allow_put_requests = true; }
+void InternalOnlyDoNotUseUnlessYouHavePermissionFromGrpcTeamAllowBrokenPutRequests() {
+  g_allow_put_requests = true;
+}
 
 }  // namespace grpc_core
 
