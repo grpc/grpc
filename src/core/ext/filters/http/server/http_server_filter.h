@@ -26,4 +26,9 @@
 /* Processes metadata on the server side for HTTP2 transports */
 extern const grpc_channel_filter grpc_http_server_filter;
 
+namespace grpc_core {
+// Temporary code that allows servers to accept PUT requests.
+void AllowPutRequests();
+}  // namespace grpc_core
+
 #endif /* GRPC_CORE_EXT_FILTERS_HTTP_SERVER_HTTP_SERVER_FILTER_H */

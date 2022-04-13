@@ -40,6 +40,8 @@ static void hs_recv_trailing_metadata_ready(void* user_data,
 
 namespace {
 
+bool g_allow_put_requests;
+
 struct call_data {
   call_data(grpc_call_element* elem, const grpc_call_element_args& args)
       : call_combiner(args.call_combiner) {
@@ -76,6 +78,12 @@ struct channel_data {
 
 }  // namespace
 
+namespace grpc_core {
+
+void AllowPutRequests() { g_allow_put_requests = true; }
+
+}  // namespace grpc_core
+
 static grpc_error_handle hs_filter_outgoing_metadata(grpc_metadata_batch* b) {
   if (grpc_core::Slice* grpc_message =
           b->get_pointer(grpc_core::GrpcMessageMetadata())) {
@@ -103,8 +111,9 @@ static grpc_error_handle hs_filter_incoming_metadata(grpc_call_element* elem,
   if (method.has_value()) {
     switch (*method) {
       case grpc_core::HttpMethodMetadata::kPost:
-      case grpc_core::HttpMethodMetadata::kPut:
         break;
+      case grpc_core::HttpMethodMetadata::kPut:
+        if (g_allow_put_requests) break;
       case grpc_core::HttpMethodMetadata::kInvalid:
       case grpc_core::HttpMethodMetadata::kGet:
         hs_add_error(error_name, &error,
