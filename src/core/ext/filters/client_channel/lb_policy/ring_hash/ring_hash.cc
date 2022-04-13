@@ -143,8 +143,6 @@ class RingHash : public LoadBalancingPolicy {
 
     const ServerAddress& address() const { return address_; }
 
-    bool seen_failure_since_ready() const { return seen_failure_since_ready_; }
-
     // Performs connectivity state updates that need to be done both when we
     // first start watching and when a watcher notification is received.
     void UpdateConnectivityStateLocked(
@@ -157,10 +155,18 @@ class RingHash : public LoadBalancingPolicy {
         grpc_connectivity_state connectivity_state) override;
 
     ServerAddress address_;
+
+    // Last logical connectivity state seen.
+    // Note that this may differ from the state actually reported by the
+    // subchannel in some cases; for example, once this is set to
+    // TRANSIENT_FAILURE, we do not change it again until we get READY,
+    // so we skip any interim stops in CONNECTING.
     grpc_connectivity_state last_connectivity_state_ = GRPC_CHANNEL_SHUTDOWN;
+
+    // Connectivity state seen by picker.
+    // Uses an atomic so that it can be accessed outside of the WorkSerializer.
     std::atomic<grpc_connectivity_state> connectivity_state_for_picker_{
         GRPC_CHANNEL_IDLE};
-    bool seen_failure_since_ready_ = false;
   };
 
   // A list of subchannels.
@@ -652,18 +658,14 @@ void RingHash::RingHashSubchannelData::UpdateConnectivityStateLocked(
   // READY, then we report the state change as-is.  However, once we do see
   // a failure, we report TRANSIENT_FAILURE and do not report any subsequent
   // state changes until we go back into state READY.
-  if (seen_failure_since_ready_) {
+  if (last_connectivity_state_ == GRPC_CHANNEL_TRANSIENT_FAILURE) {
     // If not transitioning to READY, ignore the update, since we want
     // to continue to consider ourselves in TRANSIENT_FAILURE.
     if (connectivity_state != GRPC_CHANNEL_READY) return;
-    // Otherwise, update from TF to READY.
-    seen_failure_since_ready_ = false;
   } else if (connectivity_state == GRPC_CHANNEL_TRANSIENT_FAILURE) {
     // If we go from READY to TF, treat it as IDLE.
     if (last_connectivity_state_ == GRPC_CHANNEL_READY) {
       connectivity_state = GRPC_CHANNEL_IDLE;
-    } else {
-      seen_failure_since_ready_ = true;
     }
   }
   // Update state counters used for aggregation.
