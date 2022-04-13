@@ -1734,7 +1734,7 @@ grpc_endpoint* grpc_tcp_create(grpc_fd* em_fd,
                   &resolved_local_addr.len) < 0) {
     tcp->local_address = "";
   } else {
-    tcp->local_address = grpc_sockaddr_to_uri_decoded(&resolved_local_addr);
+    tcp->local_address = grpc_sockaddr_to_uri(&resolved_local_addr);
   }
   tcp->read_cb = nullptr;
   tcp->write_cb = nullptr;

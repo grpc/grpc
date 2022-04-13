@@ -199,7 +199,7 @@ static void tcp_connect(grpc_closure* on_done, grpc_endpoint** endpoint,
   ac->socket = socket;
   gpr_mu_init(&ac->mu);
   ac->refs = 2;
-  ac->addr_name = grpc_sockaddr_to_uri_decoded(addr);
+  ac->addr_name = grpc_sockaddr_to_uri(addr);
   ac->endpoint = endpoint;
   ac->channel_args = grpc_channel_args_copy(channel_args);
   GRPC_CLOSURE_INIT(&ac->on_connect, on_connect, ac, grpc_schedule_on_exec_ctx);
@@ -213,7 +213,7 @@ static void tcp_connect(grpc_closure* on_done, grpc_endpoint** endpoint,
 
 failure:
   GPR_ASSERT(error != GRPC_ERROR_NONE);
-  std::string target_uri = grpc_sockaddr_to_uri_decoded(addr);
+  std::string target_uri = grpc_sockaddr_to_uri(addr);
   grpc_error_handle final_error =
       grpc_error_set_str(GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(
                              "Failed to connect", &error, 1),
