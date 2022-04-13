@@ -253,14 +253,6 @@ std::string grpc_sockaddr_to_uri(const grpc_resolved_address* resolved_addr) {
   return uri->ToString();
 }
 
-std::string grpc_sockaddr_to_uri_decoded(
-    const grpc_resolved_address* resolved_addr) {
-  absl::StatusOr<grpc_core::URI> uri =
-      grpc_core::URI::Parse(grpc_sockaddr_to_uri(resolved_addr));
-  if (!uri.ok()) return "";
-  return absl::StrCat(uri->scheme(), ":", uri->path());
-}
-
 const char* grpc_sockaddr_get_uri_scheme(
     const grpc_resolved_address* resolved_addr) {
   const grpc_sockaddr* addr =
