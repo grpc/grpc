@@ -8572,4 +8572,33 @@ targets:
   - grpcpp_channelz
   - grpc_test_util
   - grpc++_test_config
+external_proto_libraries:
+- destination: third_party/envoy-api
+  hash: c5807010b67033330915ca5a20483e30538ae5e689aa14b3631d6284beca4630
+  proto_prefix: third_party/envoy-api/
+  strip_prefix: data-plane-api-9c42588c956220b48eb3099d186487c2f04d32ec
+  urls:
+  - https://storage.googleapis.com/grpc-bazel-mirror/github.com/envoyproxy/data-plane-api/archive/9c42588c956220b48eb3099d186487c2f04d32ec.tar.gz
+  - https://github.com/envoyproxy/data-plane-api/archive/9c42588c956220b48eb3099d186487c2f04d32ec.tar.gz
+- destination: third_party/googleapis
+  hash: 5bb6b0253ccf64b53d6c7249625a7e3f6c3bc6402abd52d3778bfa48258703a0
+  proto_prefix: third_party/googleapis/
+  strip_prefix: googleapis-2f9af297c84c55c8b871ba4495e01ade42476c92
+  urls:
+  - https://storage.googleapis.com/grpc-bazel-mirror/github.com/googleapis/googleapis/archive/2f9af297c84c55c8b871ba4495e01ade42476c92.tar.gz
+  - https://github.com/googleapis/googleapis/archive/2f9af297c84c55c8b871ba4495e01ade42476c92.tar.gz
+- destination: third_party/opencensus-proto/src
+  hash: b7e13f0b4259e80c3070b583c2f39e53153085a6918718b1c710caf7037572b0
+  proto_prefix: third_party/opencensus-proto/src/
+  strip_prefix: opencensus-proto-0.3.0/src
+  urls:
+  - https://storage.googleapis.com/grpc-bazel-mirror/github.com/census-instrumentation/opencensus-proto/archive/v0.3.0.tar.gz
+  - https://github.com/census-instrumentation/opencensus-proto/archive/v0.3.0.tar.gz
+- destination: third_party/xds
+  hash: 5bc8365613fe2f8ce6cc33959b7667b13b7fe56cb9d16ba740c06e1a7c4242fc
+  proto_prefix: third_party/xds/
+  strip_prefix: xds-cb28da3451f158a947dfc45090fe92b07b243bc1
+  urls:
+  - https://storage.googleapis.com/grpc-bazel-mirror/github.com/cncf/xds/archive/cb28da3451f158a947dfc45090fe92b07b243bc1.tar.gz
+  - https://github.com/cncf/xds/archive/cb28da3451f158a947dfc45090fe92b07b243bc1.tar.gz
 tests: []
