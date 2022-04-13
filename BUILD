@@ -2692,8 +2692,6 @@ grpc_cc_library(
         "grpc_base",
         "grpc_service_config",
         "json_util",
-        "sleep",
-        "try_seq",
     ],
 )
 
