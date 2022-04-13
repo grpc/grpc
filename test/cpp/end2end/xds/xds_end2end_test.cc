@@ -5117,34 +5117,60 @@ TEST_P(CdsTest, AggregateClusterMultipleClustersWithSameLocalities) {
   WaitForBackend(1);
 }
 
-TEST_P(CdsTest, AggregateClusterRecursionLoop) {
+TEST_P(CdsTest, AggregateClusterRecursionDepthJustBelowMax) {
   ScopedExperimentalEnvVar env_var(
       "GRPC_XDS_EXPERIMENTAL_ENABLE_AGGREGATE_AND_LOGICAL_DNS_CLUSTER");
-  const char* kNewClusterName = "new_cluster";
   // Populate EDS resource.
   CreateAndStartBackends(1);
   EdsResourceArgs args({{"locality0", CreateEndpointsForBackends()}});
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
   // Populate new CDS resource.
   Cluster new_cluster = default_cluster_;
-  new_cluster.set_name(kNewClusterName);
+  new_cluster.set_name(absl::StrCat(kDefaultClusterName, 15));
   balancer_->ads_service()->SetCdsResource(new_cluster);
-  // Populate Aggregate Cluster.
-  auto cluster = default_cluster_;
-  CustomClusterType* custom_cluster = cluster.mutable_cluster_type();
-  custom_cluster->set_name("envoy.clusters.aggregate");
-  ClusterConfig cluster_config;
-  cluster_config.add_clusters(kNewClusterName);
-  cluster_config.add_clusters(kDefaultClusterName);  // Self-reference.
-  custom_cluster->mutable_typed_config()->PackFrom(cluster_config);
-  balancer_->ads_service()->SetCdsResource(cluster);
+  // Populate aggregate cluster chain.
+  for (int i = 14; i >= 0; --i) {
+    auto cluster = default_cluster_;
+    if (i > 0) cluster.set_name(absl::StrCat(kDefaultClusterName, i));
+    CustomClusterType* custom_cluster = cluster.mutable_cluster_type();
+    custom_cluster->set_name("envoy.clusters.aggregate");
+    ClusterConfig cluster_config;
+    cluster_config.add_clusters(absl::StrCat(kDefaultClusterName, i + 1));
+    custom_cluster->mutable_typed_config()->PackFrom(cluster_config);
+    balancer_->ads_service()->SetCdsResource(cluster);
+  }
+  // RPCs should fail with the right status.
+  CheckRpcSendOk();
+}
+
+TEST_P(CdsTest, AggregateClusterRecursionMaxDepth) {
+  ScopedExperimentalEnvVar env_var(
+      "GRPC_XDS_EXPERIMENTAL_ENABLE_AGGREGATE_AND_LOGICAL_DNS_CLUSTER");
+  // Populate EDS resource.
+  CreateAndStartBackends(1);
+  EdsResourceArgs args({{"locality0", CreateEndpointsForBackends()}});
+  balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
+  // Populate new CDS resource.
+  Cluster new_cluster = default_cluster_;
+  new_cluster.set_name(absl::StrCat(kDefaultClusterName, 16));
+  balancer_->ads_service()->SetCdsResource(new_cluster);
+  // Populate aggregate cluster chain.
+  for (int i = 15; i >= 0; --i) {
+    auto cluster = default_cluster_;
+    if (i > 0) cluster.set_name(absl::StrCat(kDefaultClusterName, i));
+    CustomClusterType* custom_cluster = cluster.mutable_cluster_type();
+    custom_cluster->set_name("envoy.clusters.aggregate");
+    ClusterConfig cluster_config;
+    cluster_config.add_clusters(absl::StrCat(kDefaultClusterName, i + 1));
+    custom_cluster->mutable_typed_config()->PackFrom(cluster_config);
+    balancer_->ads_service()->SetCdsResource(cluster);
+  }
   // RPCs should fail with the right status.
   const Status status = SendRpc();
   EXPECT_EQ(StatusCode::UNAVAILABLE, status.error_code());
-  EXPECT_THAT(status.error_message(),
-              ::testing::HasSubstr(absl::StrCat(
-                  "aggregate cluster graph contains a loop for cluster ",
-                  kDefaultClusterName)));
+  EXPECT_THAT(
+      status.error_message(),
+      ::testing::HasSubstr("aggregate cluster graph exceeds max depth"));
 }
 
 // Test that CDS client should send a NACK if cluster type is Logical DNS but

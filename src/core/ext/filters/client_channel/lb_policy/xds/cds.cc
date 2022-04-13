@@ -43,6 +43,8 @@ namespace {
 
 constexpr char kCds[] = "cds_experimental";
 
+constexpr int kMaxAggregateClusterRecursionDepth = 16;
+
 // Config for this LB policy.
 class CdsLbConfig : public LoadBalancingPolicy::Config {
  public:
@@ -137,8 +139,8 @@ class CdsLb : public LoadBalancingPolicy {
   void ShutdownLocked() override;
 
   absl::StatusOr<bool> GenerateDiscoveryMechanismForCluster(
-      const std::string& name, std::set<std::string> clusters_in_current_path,
-      Json::Array* discovery_mechanisms, std::set<std::string>* clusters_added);
+      const std::string& name, int depth, Json::Array* discovery_mechanisms,
+      std::set<std::string>* clusters_added);
   void OnClusterChanged(const std::string& name,
                         XdsClusterResource cluster_data);
   void OnError(const std::string& name, absl::Status status);
@@ -314,13 +316,13 @@ void CdsLb::UpdateLocked(UpdateArgs args) {
 // mechanism config, adds it to *discovery_mechanisms, and returns true.
 //
 // For aggregate clusters, may call itself recursively.  Returns an
-// error if there is a loop in the aggregate cluster graph.
+// error if depth exceeds kMaxAggregateClusterRecursionDepth.
 absl::StatusOr<bool> CdsLb::GenerateDiscoveryMechanismForCluster(
-    const std::string& name, std::set<std::string> clusters_in_current_path,
-    Json::Array* discovery_mechanisms, std::set<std::string>* clusters_added) {
-  if (!clusters_in_current_path.insert(name).second) {
-    return absl::FailedPreconditionError(absl::StrCat(
-        "aggregate cluster graph contains a loop for cluster ", name));
+    const std::string& name, int depth, Json::Array* discovery_mechanisms,
+    std::set<std::string>* clusters_added) {
+  if (depth == kMaxAggregateClusterRecursionDepth) {
+    return absl::FailedPreconditionError(
+        "aggregate cluster graph exceeds max depth");
   }
   if (!clusters_added->insert(name).second) {
     return true;  // Discovery mechanism already added from some other branch.
@@ -347,8 +349,7 @@ absl::StatusOr<bool> CdsLb::GenerateDiscoveryMechanismForCluster(
     for (const std::string& child_name :
          state.update->prioritized_cluster_names) {
       auto result = GenerateDiscoveryMechanismForCluster(
-          child_name, clusters_in_current_path, discovery_mechanisms,
-          clusters_added);
+          child_name, depth + 1, discovery_mechanisms, clusters_added);
       if (!result.ok()) return result;
       if (!*result) missing_cluster = true;
     }
@@ -409,8 +410,7 @@ void CdsLb::OnClusterChanged(const std::string& name,
   Json::Array discovery_mechanisms;
   std::set<std::string> clusters_added;
   auto result = GenerateDiscoveryMechanismForCluster(
-      config_->cluster(), /*clusters_in_current_path=*/{},
-      &discovery_mechanisms, &clusters_added);
+      config_->cluster(), /*depth=*/0, &discovery_mechanisms, &clusters_added);
   if (!result.ok()) {
     return OnError(name, result.status());
   }
