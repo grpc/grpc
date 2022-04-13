@@ -114,6 +114,30 @@ namespace Grpc.Core.Tests
         }
 
         [Test]
+        public async Task ResponseHeadersAsync_ServerStreamingCall_Issue25682()
+        {
+            var responseHeadersReceivedOnClientTcs = new TaskCompletionSource<object>();
+
+            helper.ServerStreamingHandler = new ServerStreamingServerMethod<string, string>(async (request, responseStream, context) =>
+            {
+                await context.WriteResponseHeadersAsync(headers);
+                // don't proceed until the response headers are confirmed to be received
+                // by the client.
+                await responseHeadersReceivedOnClientTcs.Task;
+                await responseStream.WriteAsync("PASS");
+            });
+
+            var call = Calls.AsyncServerStreamingCall(helper.CreateServerStreamingCall(), "");
+            var responseHeaders = await call.ResponseHeadersAsync;
+
+            // signal the response headers have been seen by the client
+            responseHeadersReceivedOnClientTcs.SetResult(null);
+
+            Assert.AreEqual("ascii-header", responseHeaders[0].Key);
+            CollectionAssert.AreEqual(new[] { "PASS" }, await call.ResponseStream.ToListAsync());
+        }
+
+        [Test]
         public async Task ResponseHeadersAsync_DuplexStreamingCall()
         {
             helper.DuplexStreamingHandler = new DuplexStreamingServerMethod<string, string>(async (requestStream, responseStream, context) =>
@@ -127,6 +151,36 @@ namespace Grpc.Core.Tests
 
             var call = Calls.AsyncDuplexStreamingCall(helper.CreateDuplexStreamingCall());
             var responseHeaders = await call.ResponseHeadersAsync;
+
+            var messages = new[] { "PASS" };
+            await call.RequestStream.WriteAllAsync(messages);
+
+            Assert.AreEqual("ascii-header", responseHeaders[0].Key);
+            CollectionAssert.AreEqual(messages, await call.ResponseStream.ToListAsync());
+        }
+
+        [Test]
+        public async Task ResponseHeadersAsync_DuplexStreamingCall_Issue25682()
+        {
+            var responseHeadersReceivedOnClientTcs = new TaskCompletionSource<object>();
+
+            helper.DuplexStreamingHandler = new DuplexStreamingServerMethod<string, string>(async (requestStream, responseStream, context) =>
+            {
+                await context.WriteResponseHeadersAsync(headers);
+                // don't proceed until the response headers are confirmed to be received
+                // by the client.
+                await responseHeadersReceivedOnClientTcs.Task;
+                while (await requestStream.MoveNext())
+                {
+                    await responseStream.WriteAsync(requestStream.Current);
+                }
+            });
+
+            var call = Calls.AsyncDuplexStreamingCall(helper.CreateDuplexStreamingCall());
+            var responseHeaders = await call.ResponseHeadersAsync;
+
+            // signal the response headers have been seen by the client
+            responseHeadersReceivedOnClientTcs.SetResult(null);
 
             var messages = new[] { "PASS" };
             await call.RequestStream.WriteAllAsync(messages);
