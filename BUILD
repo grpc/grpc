@@ -3133,7 +3133,6 @@ grpc_cc_library(
         "grpc_base",
         "grpc_client_channel",
         "grpc_lb_address_filtering",
-        "grpc_lb_policy_outlier_detection",
         "grpc_lb_policy_ring_hash",
         "grpc_lb_xds_channel_args",
         "grpc_lb_xds_common",
@@ -3284,9 +3283,6 @@ grpc_cc_library(
     srcs = [
         "src/core/ext/filters/client_channel/lb_policy/outlier_detection/outlier_detection.cc",
     ],
-    hdrs = [
-        "src/core/ext/filters/client_channel/lb_policy/outlier_detection/outlier_detection.h",
-    ],
     external_deps = [
         "absl/strings",
         "absl/strings:str_format",
@@ -3298,7 +3294,9 @@ grpc_cc_library(
         "gpr_base",
         "grpc_base",
         "grpc_client_channel",
-        "grpc_lb_address_filtering",
+        "grpc_lb_xds_channel_args",
+        "grpc_lb_xds_common",
+        "grpc_xds_client",
         "orphanable",
         "ref_counted_ptr",
     ],

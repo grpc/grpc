@@ -28,7 +28,6 @@
 #include "src/core/ext/filters/client_channel/lb_policy.h"
 #include "src/core/ext/filters/client_channel/lb_policy/address_filtering.h"
 #include "src/core/ext/filters/client_channel/lb_policy/child_policy_handler.h"
-#include "src/core/ext/filters/client_channel/lb_policy/outlier_detection/outlier_detection.h"
 #include "src/core/ext/filters/client_channel/lb_policy/ring_hash/ring_hash.h"
 #include "src/core/ext/filters/client_channel/lb_policy/xds/xds.h"
 #include "src/core/ext/filters/client_channel/lb_policy/xds/xds_channel_args.h"
@@ -77,6 +76,7 @@ class XdsClusterResolverLbConfig : public LoadBalancingPolicy::Config {
     DiscoveryMechanismType type;
     std::string eds_service_name;
     std::string dns_hostname;
+    absl::optional<Json> outlier_detection_lb_config;
 
     bool operator==(const DiscoveryMechanism& other) const {
       return (cluster_name == other.cluster_name &&
@@ -84,7 +84,8 @@ class XdsClusterResolverLbConfig : public LoadBalancingPolicy::Config {
               max_concurrent_requests == other.max_concurrent_requests &&
               type == other.type &&
               eds_service_name == other.eds_service_name &&
-              dns_hostname == other.dns_hostname);
+              dns_hostname == other.dns_hostname &&
+              outlier_detection_lb_config == other.outlier_detection_lb_config);
     }
   };
 
@@ -276,8 +277,6 @@ class XdsClusterResolverLb : public LoadBalancingPolicy {
     std::vector<size_t /*child_number*/> priority_child_numbers;
 
     const XdsClusterResolverLbConfig::DiscoveryMechanism& config() const;
-
-    RefCountedPtr<OutlierDetectionLbConfig> outlier_detection_lb_config;
 
     // Returns the child policy name for a given priority.
     std::string GetChildPolicyName(size_t priority) const;
@@ -856,11 +855,9 @@ XdsClusterResolverLb::CreateChildPolicyConfigLocked() {
         xds_cluster_impl_config["lrsLoadReportingServer"] =
             discovery_config.lrs_load_reporting_server->ToJson();
       }
-      Json locality_picking_policy;
       Json::Object outlier_detection_config;
-      if (discovery_entry.outlier_detection_lb_config != nullptr) {
+      if (discovery_entry.config().outlier_detection_lb_config.has_value()) {
         // TODO@donnadionne: get the config from the OutlierDetectionLbConfig
-        // from the entry
       } else {
         // outlier detection will be a no-op
         outlier_detection_config["interval"] = absl::StrCat(UINT32_MAX, "s");
@@ -868,6 +865,7 @@ XdsClusterResolverLb::CreateChildPolicyConfigLocked() {
       outlier_detection_config["childPolicy"] = Json::Array{Json::Object{
           {"xds_cluster_impl_experimental", std::move(xds_cluster_impl_config)},
       }};
+      Json locality_picking_policy;
       locality_picking_policy = Json::Array{Json::Object{
           {"outlier_detection_experimental",
            std::move(outlier_detection_config)},

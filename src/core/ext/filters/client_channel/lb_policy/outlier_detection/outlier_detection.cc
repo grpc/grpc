@@ -1,5 +1,5 @@
 //
-// Copyright 2022 gRPC authors.
+// Copyright 2018 gRPC authors.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -16,264 +16,329 @@
 
 #include <grpc/support/port_platform.h>
 
-#include "src/core/ext/filters/client_channel/lb_policy/outlier_detection/outlier_detection.h"
+#include <atomic>
 
-#include <inttypes.h>
-#include <limits.h>
-
-#include "absl/debugging/stacktrace.h"
-#include "absl/debugging/symbolize.h"
-#include "absl/strings/str_cat.h"
-#include "absl/strings/str_format.h"
+#include "absl/strings/string_view.h"
 
 #include <grpc/grpc.h>
 
 #include "src/core/ext/filters/client_channel/lb_policy.h"
-#include "src/core/ext/filters/client_channel/lb_policy/address_filtering.h"
 #include "src/core/ext/filters/client_channel/lb_policy/child_policy_handler.h"
+#include "src/core/ext/filters/client_channel/lb_policy/xds/xds.h"
+#include "src/core/ext/filters/client_channel/lb_policy/xds/xds_channel_args.h"
 #include "src/core/ext/filters/client_channel/lb_policy_factory.h"
 #include "src/core/ext/filters/client_channel/lb_policy_registry.h"
+#include "src/core/ext/xds/xds_client.h"
+#include "src/core/ext/xds/xds_client_stats.h"
+#include "src/core/ext/xds/xds_endpoint.h"
 #include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/gpr/env.h"
+#include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
-#include "src/core/lib/iomgr/timer.h"
+#include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/iomgr/work_serializer.h"
-#include "src/core/lib/transport/error_utils.h"
 
 namespace grpc_core {
 
-TraceFlag grpc_lb_outlier_detection_trace(false, "outlier_detection_lb");
+TraceFlag grpc_outlier_detection_lb_trace(false, "outlier_detection_lb");
+
+namespace {
+
+//
+// LB policy
+//
 
 constexpr char kOutlierDetection[] = "outlier_detection_experimental";
 
-// OutlierDetectionLbConfig
-const char* OutlierDetectionLbConfig::name() const { return kOutlierDetection; }
+// Config for xDS Cluster Impl LB policy.
+class OutlierDetectionLbConfig : public LoadBalancingPolicy::Config {
+ public:
+  OutlierDetectionLbConfig(
+      RefCountedPtr<LoadBalancingPolicy::Config> child_policy)
+      : child_policy_(std::move(child_policy)) {}
+
+  const char* name() const override { return kOutlierDetection; }
+
+  RefCountedPtr<LoadBalancingPolicy::Config> child_policy() const {
+    return child_policy_;
+  }
+
+ private:
+  RefCountedPtr<LoadBalancingPolicy::Config> child_policy_;
+};
+
+// xDS Cluster Impl LB policy.
+class OutlierDetectionLb : public LoadBalancingPolicy {
+ public:
+  OutlierDetectionLb(RefCountedPtr<XdsClient> xds_client, Args args);
+
+  const char* name() const override { return kOutlierDetection; }
+
+  void UpdateLocked(UpdateArgs args) override;
+  void ExitIdleLocked() override;
+  void ResetBackoffLocked() override;
+
+ private:
+  // A simple wrapper for ref-counting a picker from the child policy.
+  class RefCountedPicker : public RefCounted<RefCountedPicker> {
+   public:
+    explicit RefCountedPicker(std::unique_ptr<SubchannelPicker> picker)
+        : picker_(std::move(picker)) {}
+    PickResult Pick(PickArgs args) { return picker_->Pick(args); }
+
+   private:
+    std::unique_ptr<SubchannelPicker> picker_;
+  };
+
+  // A picker that wraps the picker from the child to perform drops.
+  class Picker : public SubchannelPicker {
+   public:
+    Picker(OutlierDetectionLb* outlier_detection_lb,
+           RefCountedPtr<RefCountedPicker> picker);
+
+    PickResult Pick(PickArgs args) override;
+
+   private:
+    RefCountedPtr<RefCountedPicker> picker_;
+  };
+
+  class Helper : public ChannelControlHelper {
+   public:
+    explicit Helper(RefCountedPtr<OutlierDetectionLb> outlier_detection_policy)
+        : outlier_detection_policy_(std::move(outlier_detection_policy)) {}
+
+    ~Helper() override {
+      outlier_detection_policy_.reset(DEBUG_LOCATION, "Helper");
+    }
+
+    RefCountedPtr<SubchannelInterface> CreateSubchannel(
+        ServerAddress address, const grpc_channel_args& args) override;
+    void UpdateState(grpc_connectivity_state state, const absl::Status& status,
+                     std::unique_ptr<SubchannelPicker> picker) override;
+    void RequestReresolution() override;
+    absl::string_view GetAuthority() override;
+    void AddTraceEvent(TraceSeverity severity,
+                       absl::string_view message) override;
+
+   private:
+    RefCountedPtr<OutlierDetectionLb> outlier_detection_policy_;
+  };
+
+  ~OutlierDetectionLb() override;
+
+  void ShutdownLocked() override;
+
+  OrphanablePtr<LoadBalancingPolicy> CreateChildPolicyLocked(
+      const grpc_channel_args* args);
+
+  void MaybeUpdatePickerLocked();
+
+  // Current config from the resolver.
+  RefCountedPtr<OutlierDetectionLbConfig> config_;
+
+  // Internal state.
+  bool shutting_down_ = false;
+
+  // The xds client.
+  RefCountedPtr<XdsClient> xds_client_;
+
+  OrphanablePtr<LoadBalancingPolicy> child_policy_;
+
+  // Latest state and picker reported by the child policy.
+  grpc_connectivity_state state_ = GRPC_CHANNEL_IDLE;
+  absl::Status status_;
+  RefCountedPtr<RefCountedPicker> picker_;
+};
+
+//
+// OutlierDetectionLb::Picker
+//
+
+OutlierDetectionLb::Picker::Picker(OutlierDetectionLb* outlier_detection_lb,
+                                   RefCountedPtr<RefCountedPicker> picker)
+    : picker_(std::move(picker)) {
+  if (GRPC_TRACE_FLAG_ENABLED(grpc_outlier_detection_lb_trace)) {
+    gpr_log(GPR_INFO, "[outlier_detection_lb %p] constructed new picker %p",
+            outlier_detection_lb, this);
+  }
+}
+
+LoadBalancingPolicy::PickResult OutlierDetectionLb::Picker::Pick(
+    LoadBalancingPolicy::PickArgs args) {
+  if (picker_ == nullptr) {  // Should never happen.
+    return PickResult::Fail(absl::InternalError(
+        "outlier_detection picker not given any child picker"));
+  }
+  // Not dropping, so delegate to child picker.
+  PickResult result = picker_->Pick(args);
+  return result;
+}
 
 //
 // OutlierDetectionLb
 //
 
-OutlierDetectionLb::OutlierDetectionLb(Args args)
-    : LoadBalancingPolicy(std::move(args)) {
-  if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_outlier_detection_trace)) {
-    gpr_log(GPR_INFO, "[outlier_detection_lb %p] created", this);
+OutlierDetectionLb::OutlierDetectionLb(RefCountedPtr<XdsClient> xds_client,
+                                       Args args)
+    : LoadBalancingPolicy(std::move(args)), xds_client_(std::move(xds_client)) {
+  if (GRPC_TRACE_FLAG_ENABLED(grpc_outlier_detection_lb_trace)) {
+    gpr_log(GPR_INFO,
+            "[outlier_detection_lb %p] created -- using xds client %p", this,
+            xds_client_.get());
   }
 }
 
-const char* OutlierDetectionLb::name() const { return kOutlierDetection; }
-
 OutlierDetectionLb::~OutlierDetectionLb() {
-  if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_outlier_detection_trace)) {
+  if (GRPC_TRACE_FLAG_ENABLED(grpc_outlier_detection_lb_trace)) {
     gpr_log(GPR_INFO,
             "[outlier_detection_lb %p] destroying outlier_detection LB policy",
             this);
   }
-  grpc_channel_args_destroy(args_);
 }
 
 void OutlierDetectionLb::ShutdownLocked() {
-  if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_outlier_detection_trace)) {
+  if (GRPC_TRACE_FLAG_ENABLED(grpc_outlier_detection_lb_trace)) {
     gpr_log(GPR_INFO, "[outlier_detection_lb %p] shutting down", this);
   }
   shutting_down_ = true;
+  // Remove the child policy's interested_parties pollset_set from the
+  // xDS policy.
+  if (child_policy_ != nullptr) {
+    grpc_pollset_set_del_pollset_set(child_policy_->interested_parties(),
+                                     interested_parties());
+    child_policy_.reset();
+  }
+  // Drop our ref to the child's picker, in case it's holding a ref to
+  // the child.
+  picker_.reset();
+  xds_client_.reset();
 }
 
-void OutlierDetectionLb::ExitIdleLocked() { child_->ExitIdleLocked(); }
+void OutlierDetectionLb::ExitIdleLocked() {
+  if (child_policy_ != nullptr) child_policy_->ExitIdleLocked();
+}
 
-void OutlierDetectionLb::ResetBackoffLocked() { child_->ResetBackoffLocked(); }
+void OutlierDetectionLb::ResetBackoffLocked() {
+  // The XdsClient will have its backoff reset by the xds resolver, so we
+  // don't need to do it here.
+  if (child_policy_ != nullptr) child_policy_->ResetBackoffLocked();
+}
 
 void OutlierDetectionLb::UpdateLocked(UpdateArgs args) {
-  if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_outlier_detection_trace)) {
-    gpr_log(GPR_INFO, "[outlier_detection_lb %p] received update", this);
+  if (GRPC_TRACE_FLAG_ENABLED(grpc_outlier_detection_lb_trace)) {
+    gpr_log(GPR_INFO, "[outlier_detection_lb %p] Received update", this);
   }
   // Update config.
   config_ = std::move(args.config);
-  // Update args.
-  grpc_channel_args_destroy(args_);
-  args_ = args.args;
-  args.args = nullptr;
-  update_in_progress_ = true;
-  if (child_ == nullptr) {
-    child_ = MakeOrphanable<ChildOutlierDetection>(
-        Ref(DEBUG_LOCATION, "ChildOutlierDetection"),
-        "outlier_detection_child");
-  }
-  child_->UpdateLocked(std::move(args.addresses), config_->child_policy(), false);
-  update_in_progress_ = false;
-}
-
-void OutlierDetectionLb::HandleChildConnectivityStateChangeLocked(
-    ChildOutlierDetection* child) {
-  if (update_in_progress_) return;
-  if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_outlier_detection_trace)) {
-    gpr_log(
-        GPR_INFO,
-        "[outlier_detection_lb %p] state update for outlier_detection child %s",
-        this, child->name().c_str());
-  }
-  channel_control_helper()->UpdateState(child->connectivity_state(),
-                                        child->connectivity_status(),
-                                        child->GetPicker());
-}
-
-//
-// OutlierDetectionLb::ChildOutlierDetection
-//
-
-OutlierDetectionLb::ChildOutlierDetection::ChildOutlierDetection(
-    RefCountedPtr<OutlierDetectionLb> outlier_detection_policy,
-    std::string name)
-    : outlier_detection_policy_(std::move(outlier_detection_policy)),
-      name_(std::move(name)) {
-  if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_outlier_detection_trace)) {
-    gpr_log(GPR_INFO, "[outlier_detection_lb %p] creating child %s (%p)",
-            outlier_detection_policy_.get(), name_.c_str(), this);
-  }
-}
-
-void OutlierDetectionLb::ChildOutlierDetection::Orphan() {
-  if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_outlier_detection_trace)) {
-    gpr_log(GPR_INFO, "[outlier_detection_lb %p] child %s (%p): orphaned",
-            outlier_detection_policy_.get(), name_.c_str(), this);
-  }
-  // Remove the child policy's interested_parties pollset_set from the
-  // xDS policy.
-  grpc_pollset_set_del_pollset_set(
-      child_policy_->interested_parties(),
-      outlier_detection_policy_->interested_parties());
-  child_policy_.reset();
-  // Drop our ref to the child's picker, in case it's holding a ref to
-  // the child.
-  picker_wrapper_.reset();
-  Unref(DEBUG_LOCATION, "ChildOutlierDetection+Orphan");
-}
-
-void OutlierDetectionLb::ChildOutlierDetection::UpdateLocked(
-    absl::StatusOr<ServerAddressList> addresses,
-    RefCountedPtr<LoadBalancingPolicy::Config> config,
-    bool ignore_reresolution_requests) {
-  if (outlier_detection_policy_->shutting_down_) return;
-  if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_outlier_detection_trace)) {
-    gpr_log(GPR_INFO, "[outlier_detection_lb %p] child %s (%p): start update",
-            outlier_detection_policy_.get(), name_.c_str(), this);
-  }
-  ignore_reresolution_requests_ = ignore_reresolution_requests;
   // Create policy if needed.
   if (child_policy_ == nullptr) {
-    child_policy_ = CreateChildPolicyLocked(outlier_detection_policy_->args_);
+    child_policy_ = CreateChildPolicyLocked(args.args);
   }
   // Construct update args.
+  gpr_log(GPR_INFO, "donna");
   UpdateArgs update_args;
-  update_args.addresses = std::move(addresses);
-  update_args.config = std::move(config);
-  update_args.args = grpc_channel_args_copy(outlier_detection_policy_->args_);
+  update_args.addresses = std::move(args.addresses);
+  gpr_log(GPR_INFO, "donna");
+  update_args.config = config_->child_policy();
+  gpr_log(GPR_INFO, "donna");
+  update_args.args = grpc_channel_args_copy(args.args);
+  gpr_log(GPR_INFO, "donna");
   // Update the policy.
-  if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_outlier_detection_trace)) {
+  if (GRPC_TRACE_FLAG_ENABLED(grpc_outlier_detection_lb_trace)) {
     gpr_log(GPR_INFO,
-            "[outlier_detection_lb %p] child %s (%p): updating child policy "
-            "handler %p",
-            outlier_detection_policy_.get(), name_.c_str(), this,
+            "[outlier_detection_lb %p] Updating child policy handler %p", this,
             child_policy_.get());
   }
   child_policy_->UpdateLocked(std::move(update_args));
 }
 
-OrphanablePtr<LoadBalancingPolicy>
-OutlierDetectionLb::ChildOutlierDetection::CreateChildPolicyLocked(
+void OutlierDetectionLb::MaybeUpdatePickerLocked() {
+  if (picker_ != nullptr) {
+    auto outlier_detection_picker = absl::make_unique<Picker>(this, picker_);
+    if (GRPC_TRACE_FLAG_ENABLED(grpc_outlier_detection_lb_trace)) {
+      gpr_log(GPR_INFO,
+              "[outlier_detection_lb %p] updating connectivity: state=%s "
+              "status=(%s) "
+              "picker=%p",
+              this, ConnectivityStateName(state_), status_.ToString().c_str(),
+              outlier_detection_picker.get());
+    }
+    channel_control_helper()->UpdateState(state_, status_,
+                                          std::move(outlier_detection_picker));
+  }
+}
+
+OrphanablePtr<LoadBalancingPolicy> OutlierDetectionLb::CreateChildPolicyLocked(
     const grpc_channel_args* args) {
   LoadBalancingPolicy::Args lb_policy_args;
-  lb_policy_args.work_serializer = outlier_detection_policy_->work_serializer();
+  lb_policy_args.work_serializer = work_serializer();
   lb_policy_args.args = args;
   lb_policy_args.channel_control_helper =
-      absl::make_unique<Helper>(this->Ref(DEBUG_LOCATION, "Helper"));
+      absl::make_unique<Helper>(Ref(DEBUG_LOCATION, "Helper"));
   OrphanablePtr<LoadBalancingPolicy> lb_policy =
       MakeOrphanable<ChildPolicyHandler>(std::move(lb_policy_args),
-                                         &grpc_lb_outlier_detection_trace);
-  if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_outlier_detection_trace)) {
+                                         &grpc_outlier_detection_lb_trace);
+  if (GRPC_TRACE_FLAG_ENABLED(grpc_outlier_detection_lb_trace)) {
     gpr_log(GPR_INFO,
-            "[outlier_detection_lb %p] child %s (%p): created new child policy "
-            "handler %p",
-            outlier_detection_policy_.get(), name_.c_str(), this,
-            lb_policy.get());
+            "[outlier_detection_lb %p] Created new child policy handler %p",
+            this, lb_policy.get());
   }
-  // Add the parent's interested_parties pollset_set to that of the newly
-  // created child policy. This will make the child policy progress upon
-  // activity on the parent LB, which in turn is tied to the application's call.
-  grpc_pollset_set_add_pollset_set(
-      lb_policy->interested_parties(),
-      outlier_detection_policy_->interested_parties());
+  // Add our interested_parties pollset_set to that of the newly created
+  // child policy. This will make the child policy progress upon activity on
+  // this policy, which in turn is tied to the application's call.
+  grpc_pollset_set_add_pollset_set(lb_policy->interested_parties(),
+                                   interested_parties());
   return lb_policy;
 }
 
-void OutlierDetectionLb::ChildOutlierDetection::ExitIdleLocked() {
-  child_policy_->ExitIdleLocked();
-}
-
-void OutlierDetectionLb::ChildOutlierDetection::ResetBackoffLocked() {
-  child_policy_->ResetBackoffLocked();
-}
-
-void OutlierDetectionLb::ChildOutlierDetection::OnConnectivityStateUpdateLocked(
-    grpc_connectivity_state state, const absl::Status& status,
-    std::unique_ptr<SubchannelPicker> picker) {
-  if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_outlier_detection_trace)) {
-    gpr_log(GPR_INFO,
-            "[outlier_detection_lb %p] child %s (%p): state update: %s (%s) "
-            "picker %p",
-            outlier_detection_policy_.get(), name_.c_str(), this,
-            ConnectivityStateName(state), status.ToString().c_str(),
-            picker.get());
-  }
-  // Store the state and picker.
-  connectivity_state_ = state;
-  connectivity_status_ = status;
-  picker_wrapper_ = MakeRefCounted<RefCountedPicker>(std::move(picker));
-  // Notify the parent policy.
-  outlier_detection_policy_->HandleChildConnectivityStateChangeLocked(this);
-}
-
 //
-// OutlierDetectionLb::ChildOutlierDetection::Helper
+// OutlierDetectionLb::Helper
 //
 
-RefCountedPtr<SubchannelInterface>
-OutlierDetectionLb::ChildOutlierDetection::Helper::CreateSubchannel(
+RefCountedPtr<SubchannelInterface> OutlierDetectionLb::Helper::CreateSubchannel(
     ServerAddress address, const grpc_channel_args& args) {
-  if (outlier_detection_->outlier_detection_policy_->shutting_down_)
-    return nullptr;
-  return outlier_detection_->outlier_detection_policy_->channel_control_helper()
-      ->CreateSubchannel(std::move(address), args);
+  if (outlier_detection_policy_->shutting_down_) return nullptr;
+  // Load reporting not enabled, so don't wrap the subchannel.
+  return outlier_detection_policy_->channel_control_helper()->CreateSubchannel(
+      std::move(address), args);
 }
 
-void OutlierDetectionLb::ChildOutlierDetection::Helper::UpdateState(
+void OutlierDetectionLb::Helper::UpdateState(
     grpc_connectivity_state state, const absl::Status& status,
     std::unique_ptr<SubchannelPicker> picker) {
-  if (outlier_detection_->outlier_detection_policy_->shutting_down_) return;
-  // Notify the outlier_detection.
-  outlier_detection_->OnConnectivityStateUpdateLocked(state, status,
-                                                      std::move(picker));
-}
-
-void OutlierDetectionLb::ChildOutlierDetection::Helper::RequestReresolution() {
-  if (outlier_detection_->outlier_detection_policy_->shutting_down_) return;
-  if (outlier_detection_->ignore_reresolution_requests_) {
-    return;
+  if (outlier_detection_policy_->shutting_down_) return;
+  if (GRPC_TRACE_FLAG_ENABLED(grpc_outlier_detection_lb_trace)) {
+    gpr_log(GPR_INFO,
+            "[outlier_detection_lb %p] child connectivity state update: "
+            "state=%s (%s) "
+            "picker=%p",
+            outlier_detection_policy_.get(), ConnectivityStateName(state),
+            status.ToString().c_str(), picker.get());
   }
-  outlier_detection_->outlier_detection_policy_->channel_control_helper()
-      ->RequestReresolution();
+  // Save the state and picker.
+  outlier_detection_policy_->state_ = state;
+  outlier_detection_policy_->status_ = status;
+  outlier_detection_policy_->picker_ =
+      MakeRefCounted<RefCountedPicker>(std::move(picker));
+  // Wrap the picker and return it to the channel.
+  outlier_detection_policy_->MaybeUpdatePickerLocked();
 }
 
-absl::string_view
-OutlierDetectionLb::ChildOutlierDetection::Helper::GetAuthority() {
-  return outlier_detection_->outlier_detection_policy_->channel_control_helper()
-      ->GetAuthority();
+void OutlierDetectionLb::Helper::RequestReresolution() {
+  if (outlier_detection_policy_->shutting_down_) return;
+  outlier_detection_policy_->channel_control_helper()->RequestReresolution();
 }
 
-void OutlierDetectionLb::ChildOutlierDetection::Helper::AddTraceEvent(
-    TraceSeverity severity, absl::string_view message) {
-  if (outlier_detection_->outlier_detection_policy_->shutting_down_) return;
-  outlier_detection_->outlier_detection_policy_->channel_control_helper()
-      ->AddTraceEvent(severity, message);
+absl::string_view OutlierDetectionLb::Helper::GetAuthority() {
+  return outlier_detection_policy_->channel_control_helper()->GetAuthority();
+}
+
+void OutlierDetectionLb::Helper::AddTraceEvent(TraceSeverity severity,
+                                               absl::string_view message) {
+  if (outlier_detection_policy_->shutting_down_) return;
+  outlier_detection_policy_->channel_control_helper()->AddTraceEvent(severity,
+                                                                     message);
 }
 
 //
@@ -284,7 +349,16 @@ class OutlierDetectionLbFactory : public LoadBalancingPolicyFactory {
  public:
   OrphanablePtr<LoadBalancingPolicy> CreateLoadBalancingPolicy(
       LoadBalancingPolicy::Args args) const override {
-    return MakeOrphanable<OutlierDetectionLb>(std::move(args));
+    RefCountedPtr<XdsClient> xds_client =
+        XdsClient::GetFromChannelArgs(*args.args);
+    if (xds_client == nullptr) {
+      gpr_log(GPR_ERROR,
+              "XdsClient not present in channel args -- cannot instantiate "
+              "outlier_detection LB policy");
+      return nullptr;
+    }
+    return MakeOrphanable<OutlierDetectionLb>(std::move(xds_client),
+                                              std::move(args));
   }
 
   const char* name() const override { return kOutlierDetection; }
@@ -293,8 +367,8 @@ class OutlierDetectionLbFactory : public LoadBalancingPolicyFactory {
       const Json& json, grpc_error_handle* error) const override {
     GPR_DEBUG_ASSERT(error != nullptr && *error == GRPC_ERROR_NONE);
     if (json.type() == Json::Type::JSON_NULL) {
-      // outlier_detection was mentioned as a policy in the deprecated
-      // loadBalancingPolicy field or in the client API.
+      // This policy was configured in the deprecated loadBalancingPolicy
+      // field or in the client API.
       *error = GRPC_ERROR_CREATE_FROM_STATIC_STRING(
           "field:loadBalancingPolicy error:outlier_detection policy requires "
           "configuration. Please use loadBalancingConfig field of service "
@@ -312,19 +386,6 @@ class OutlierDetectionLbFactory : public LoadBalancingPolicyFactory {
       grpc_error_handle parse_error = GRPC_ERROR_NONE;
       child_policy = LoadBalancingPolicyRegistry::ParseLoadBalancingConfig(
           it->second, &parse_error);
-      bool ignore_reresolution_requests = false;
-      // If present, ignore_reresolution_requests must be of type
-      // boolean.
-      auto ignore = json.object_value().find("ignore_reresolution_requests");
-      if (ignore != json.object_value().end()) {
-        if (ignore->second.type() == Json::Type::JSON_TRUE) {
-          ignore_reresolution_requests = true;
-        } else if (ignore->second.type() != Json::Type::JSON_FALSE) {
-          error_list.push_back(GRPC_ERROR_CREATE_FROM_CPP_STRING(
-              absl::StrCat("child field:ignore_reresolution_requests:should "
-                           "be type boolean")));
-        }
-      }
       if (child_policy == nullptr) {
         GPR_DEBUG_ASSERT(parse_error != GRPC_ERROR_NONE);
         std::vector<grpc_error_handle> child_errors;
@@ -333,21 +394,11 @@ class OutlierDetectionLbFactory : public LoadBalancingPolicyFactory {
             GRPC_ERROR_CREATE_FROM_VECTOR("field:childPolicy", &child_errors));
       }
     }
-    // TODO@donnadionne more parsing of outlier detection here
-    std::string interval;
-    it = json.object_value().find("interval");
-    if (it == json.object_value().end()) {
-      error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-          "field:interval error:required field missing"));
-    } else if (it->second.type() != Json::Type::STRING) {
-      error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-          "field:interval error:type should be string"));
-    } else {
-      interval = it->second.string_value();
-    }
     return MakeRefCounted<OutlierDetectionLbConfig>(std::move(child_policy));
   }
 };
+
+}  // namespace
 
 }  // namespace grpc_core
 
