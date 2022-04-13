@@ -3286,8 +3286,6 @@ grpc_cc_library(
     external_deps = [
         "absl/strings",
         "absl/strings:str_format",
-        "absl/debugging:stacktrace",
-        "absl/debugging:symbolize",
     ],
     language = "c++",
     deps = [

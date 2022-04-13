@@ -236,14 +236,10 @@ void OutlierDetectionLb::UpdateLocked(UpdateArgs args) {
     child_policy_ = CreateChildPolicyLocked(args.args);
   }
   // Construct update args.
-  gpr_log(GPR_INFO, "donna");
   UpdateArgs update_args;
   update_args.addresses = std::move(args.addresses);
-  gpr_log(GPR_INFO, "donna");
   update_args.config = config_->child_policy();
-  gpr_log(GPR_INFO, "donna");
   update_args.args = grpc_channel_args_copy(args.args);
-  gpr_log(GPR_INFO, "donna");
   // Update the policy.
   if (GRPC_TRACE_FLAG_ENABLED(grpc_outlier_detection_lb_trace)) {
     gpr_log(GPR_INFO,
