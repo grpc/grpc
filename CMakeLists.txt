@@ -459,14 +459,32 @@ function(protobuf_generate_grpc_cpp_with_import_path_correction FILE_LOCATION IM
     return()
   endif()
 
+  # Sets the include path for ProtoBuf files
   set(_protobuf_include_path -I . -I ${_gRPC_PROTOBUF_WELLKNOWN_INCLUDE_DIR})
-  # compute the relative path
+  # The absolute path of the expected place for the input proto file
+  # For example, health proto has package name grpc.health.v1, it's expected to be:
+  #   ${_gRPC_PROTO_SRCS_DIR}/grpc/health/v1/health.proto
   get_filename_component(ABS_FIL ${_gRPC_PROTO_SRCS_DIR}/${IMPORT_PATH} ABSOLUTE)
+  # Get the name of the file, which used to generate output file names for
+  # this command.
+  # Example: "health" for "health.proto"
   get_filename_component(FIL_WE ${_gRPC_PROTO_SRCS_DIR}/${IMPORT_PATH} NAME_WE)
+  # Get the relative path between the expected place for the proto and the
+  # working directory. In normal cases, it would be equal IMPORT_PATH, but
+  # it's better to be agnostic to all the global folder locations (like the
+  # centralized location ${_gRPC_PROTO_SRCS_DIR}).
+  # Example: grpc/health/v1/health.proto
   file(RELATIVE_PATH REL_FIL ${_gRPC_PROTO_SRCS_DIR} ${ABS_FIL})
+  # Get the directory of the relative path.
+  # Example: grpc/health/v1
   get_filename_component(REL_DIR ${REL_FIL} DIRECTORY)
+  # Get the directory and name for output filenames generation.
+  # Example: "grpc/health/v1/health", the file name extension is omitted.
   set(RELFIL_WE "${REL_DIR}/${FIL_WE}")
-  # copy the proto file to a centralized location
+  # Copy the proto file to a centralized location, with the correct import
+  # path. For example, health proto has package name grpc.health.v1, the bash
+  # equivalent would be:
+  #   cp src/proto/grpc/health/v1/health.proto ${_gRPC_PROTO_SRCS_DIR}/grpc/health/v1
   file(MAKE_DIRECTORY ${_gRPC_PROTO_SRCS_DIR}/${REL_DIR})
   file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/${FILE_LOCATION} DESTINATION ${_gRPC_PROTO_SRCS_DIR}/${REL_DIR})
 

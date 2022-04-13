@@ -448,14 +448,32 @@
       return()
     endif()
 
+    # Sets the include path for ProtoBuf files
     set(_protobuf_include_path -I . -I <%text>${_gRPC_PROTOBUF_WELLKNOWN_INCLUDE_DIR}</%text>)
-    # compute the relative path
+    # The absolute path of the expected place for the input proto file
+    # For example, health proto has package name grpc.health.v1, it's expected to be:
+    #   <%text>${_gRPC_PROTO_SRCS_DIR}/grpc/health/v1/health.proto</%text>
     get_filename_component(ABS_FIL <%text>${_gRPC_PROTO_SRCS_DIR}/${IMPORT_PATH}</%text> ABSOLUTE)
+    # Get the name of the file, which used to generate output file names for
+    # this command.
+    # Example: "health" for "health.proto"
     get_filename_component(FIL_WE <%text>${_gRPC_PROTO_SRCS_DIR}/${IMPORT_PATH}</%text> NAME_WE)
+    # Get the relative path between the expected place for the proto and the
+    # working directory. In normal cases, it would be equal IMPORT_PATH, but
+    # it's better to be agnostic to all the global folder locations (like the
+    # centralized location <%text>${_gRPC_PROTO_SRCS_DIR})</%text>.
+    # Example: grpc/health/v1/health.proto
     file(RELATIVE_PATH REL_FIL <%text>${_gRPC_PROTO_SRCS_DIR}</%text> <%text>${ABS_FIL}</%text>)
+    # Get the directory of the relative path.
+    # Example: grpc/health/v1
     get_filename_component(REL_DIR <%text>${REL_FIL}</%text> DIRECTORY)
+    # Get the directory and name for output filenames generation.
+    # Example: "grpc/health/v1/health", the file name extension is omitted.
     set(RELFIL_WE "<%text>${REL_DIR}/${FIL_WE}</%text>")
-    # copy the proto file to a centralized location
+    # Copy the proto file to a centralized location, with the correct import
+    # path. For example, health proto has package name grpc.health.v1, the bash
+    # equivalent would be:
+    #   cp src/proto/grpc/health/v1/health.proto <%text>${_gRPC_PROTO_SRCS_DIR}/grpc/health/v1</%text>
     file(MAKE_DIRECTORY <%text>${_gRPC_PROTO_SRCS_DIR}/${REL_DIR}</%text>)
     file(COPY <%text>${CMAKE_CURRENT_SOURCE_DIR}/${FILE_LOCATION}</%text> DESTINATION <%text>${_gRPC_PROTO_SRCS_DIR}/${REL_DIR}</%text>)
 
