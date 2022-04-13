@@ -139,14 +139,12 @@ void AwsExternalAccountCredentials::RetrieveSubjectToken(
   }
   ctx_ = ctx;
   cb_ = cb;
-  if (imdsv2_session_token_url_.empty()) {
-    if (signer_ != nullptr) {
-      BuildSubjectToken();
-    } else {
-      RetrieveRegion();
-    }
-  } else {
+  if (!imdsv2_session_token_url_.empty()) {
     RetrieveImdsV2SessionToken();
+  } else if (signer_ != nullptr) {
+    BuildSubjectToken();
+  } else {
+    RetrieveRegion();
   }
 }
 
@@ -197,7 +195,6 @@ void AwsExternalAccountCredentials::OnRetrieveImdsV2SessionTokenInternal(
   }
   imdsv2_session_token_ =
       std::string(ctx_->response.body, ctx_->response.body_length);
-
   if (signer_ != nullptr) {
     BuildSubjectToken();
   } else {
@@ -208,6 +205,8 @@ void AwsExternalAccountCredentials::OnRetrieveImdsV2SessionTokenInternal(
 void AwsExternalAccountCredentials::AddMetadataRequestHeaders(
     grpc_http_request* request) {
   if (!imdsv2_session_token_.empty()) {
+    GPR_ASSERT(request->hdr_count == 0);
+    GPR_ASSERT(request->hdrs == nullptr);
     grpc_http_header* headers =
         static_cast<grpc_http_header*>(gpr_malloc(sizeof(grpc_http_header)));
     headers[0].key = gpr_strdup("x-aws-ec2-metadata-token");
