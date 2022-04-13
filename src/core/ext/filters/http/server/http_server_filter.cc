@@ -114,6 +114,7 @@ static grpc_error_handle hs_filter_incoming_metadata(grpc_call_element* elem,
         break;
       case grpc_core::HttpMethodMetadata::kPut:
         if (g_allow_put_requests) break;
+        ABSL_FALLTHROUGH_INTENDED;
       case grpc_core::HttpMethodMetadata::kInvalid:
       case grpc_core::HttpMethodMetadata::kGet:
         hs_add_error(error_name, &error,
