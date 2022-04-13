@@ -16,5 +16,4 @@
 set -ex
 
 export UPLOAD_TEST_RESULTS=true
-EXTRA_FLAGS="--config=opt --cache_test_results=no"
-github/grpc/tools/internal_ci/linux/grpc_bazel_on_foundry_base.sh "${EXTRA_FLAGS}"
+github/grpc/tools/internal_ci/linux/grpc_bazel_on_foundry_base.sh --config=opt --cache_test_results=no

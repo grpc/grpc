@@ -15,5 +15,4 @@
 
 set -ex
 
-EXTRA_FLAGS="--config=dbg"
-github/grpc/tools/internal_ci/linux/grpc_bazel_on_foundry_base.sh "${EXTRA_FLAGS}"
+github/grpc/tools/internal_ci/linux/grpc_bazel_on_foundry_base.sh --config=dbg
