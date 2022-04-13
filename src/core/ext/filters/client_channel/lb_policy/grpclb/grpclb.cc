@@ -585,7 +585,7 @@ ServerAddressList GrpcLb::Serverlist::GetServerAddressList(
       gpr_log(GPR_INFO,
               "Missing LB token for backend address '%s'. The empty token will "
               "be used instead",
-              grpc_sockaddr_to_uri_decoded(&addr).c_str());
+              grpc_sockaddr_to_uri(&addr).c_str());
     }
     // Attach attribute to address containing LB token and stats object.
     std::map<const char*, std::unique_ptr<ServerAddress::AttributeInterface>>

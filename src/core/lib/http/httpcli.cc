@@ -215,7 +215,7 @@ void HttpRequest::AppendError(grpc_error_handle error) {
         GRPC_ERROR_CREATE_FROM_STATIC_STRING("Failed HTTP/1 client request");
   }
   const grpc_resolved_address* addr = &addresses_[next_address_ - 1];
-  std::string addr_text = grpc_sockaddr_to_uri_decoded(addr);
+  std::string addr_text = grpc_sockaddr_to_uri(addr);
   overall_error_ = grpc_error_add_child(
       overall_error_,
       grpc_error_set_str(error, GRPC_ERROR_STR_TARGET_ADDRESS, addr_text));
