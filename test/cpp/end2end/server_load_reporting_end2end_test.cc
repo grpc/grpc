@@ -154,41 +154,41 @@ TEST_F(ServerLoadReportingEnd2endTest, BasicReport) {
       if (load.in_progress_report_case()) {
         // The special load record that reports the number of in-progress
         // calls.
-        ASSERT_EQ(load.num_calls_in_progress(), 1);
-        ASSERT_FALSE(got_in_progress);
+        EXPECT_EQ(load.num_calls_in_progress(), 1);
+        EXPECT_FALSE(got_in_progress);
         got_in_progress = true;
       } else if (load.orphaned_load_case()) {
         // The call from the balancer doesn't have any valid LB token.
-        ASSERT_EQ(load.orphaned_load_case(), load.kLoadKeyUnknown);
-        ASSERT_EQ(load.num_calls_started(), 1);
-        ASSERT_EQ(load.num_calls_finished_without_error(), 0);
-        ASSERT_EQ(load.num_calls_finished_with_error(), 0);
-        ASSERT_FALSE(got_orphaned);
+        EXPECT_EQ(load.orphaned_load_case(), load.kLoadKeyUnknown);
+        EXPECT_EQ(load.num_calls_started(), 1);
+        EXPECT_EQ(load.num_calls_finished_without_error(), 0);
+        EXPECT_EQ(load.num_calls_finished_with_error(), 0);
+        EXPECT_FALSE(got_orphaned);
         got_orphaned = true;
       } else {
         // This corresponds to the calls from the client.
-        ASSERT_EQ(load.num_calls_started(), 1);
-        ASSERT_EQ(load.num_calls_finished_without_error(), 1);
-        ASSERT_EQ(load.num_calls_finished_with_error(), 0);
-        ASSERT_GE(load.total_bytes_received(), sizeof(kOkMessage));
-        ASSERT_GE(load.total_bytes_sent(), sizeof(kOkMessage));
-        ASSERT_EQ(load.metric_data().size(), 1);
-        ASSERT_EQ(load.metric_data().Get(0).metric_name(), kMetricName);
-        ASSERT_EQ(load.metric_data().Get(0).num_calls_finished_with_metric(),
+        EXPECT_EQ(load.num_calls_started(), 1);
+        EXPECT_EQ(load.num_calls_finished_without_error(), 1);
+        EXPECT_EQ(load.num_calls_finished_with_error(), 0);
+        EXPECT_GE(load.total_bytes_received(), sizeof(kOkMessage));
+        EXPECT_GE(load.total_bytes_sent(), sizeof(kOkMessage));
+        EXPECT_EQ(load.metric_data().size(), 1);
+        EXPECT_EQ(load.metric_data().Get(0).metric_name(), kMetricName);
+        EXPECT_EQ(load.metric_data().Get(0).num_calls_finished_with_metric(),
                   1);
-        ASSERT_EQ(load.metric_data().Get(0).total_metric_value(),
+        EXPECT_EQ(load.metric_data().Get(0).total_metric_value(),
                   kMetricValue);
-        ASSERT_FALSE(got_calls);
+        EXPECT_FALSE(got_calls);
         got_calls = true;
       }
     }
   }
-  ASSERT_EQ(load_count, 3);
-  ASSERT_TRUE(got_in_progress);
-  ASSERT_TRUE(got_orphaned);
-  ASSERT_TRUE(got_calls);
+  EXPECT_EQ(load_count, 3);
+  EXPECT_TRUE(got_in_progress);
+  EXPECT_TRUE(got_orphaned);
+  EXPECT_TRUE(got_calls);
   stream->WritesDone();
-  ASSERT_EQ(stream->Finish().error_code(), StatusCode::CANCELLED);
+  EXPECT_EQ(stream->Finish().error_code(), StatusCode::CANCELLED);
 }
 
 // TODO(juanlishen): Add more tests.
