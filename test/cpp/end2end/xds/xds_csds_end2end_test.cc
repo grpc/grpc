@@ -693,11 +693,11 @@ TEST_P(CsdsShortAdsTimeoutTest, XdsConfigDumpEndpointDoesNotExist) {
           ClientResourceStatus::DOES_NOT_EXIST, ::testing::_)));
 }
 
-#endif  // DISABLED_XDS_PROTO_IN_CC
-
 }  // namespace
 }  // namespace testing
 }  // namespace grpc
+
+#endif  // DISABLED_XDS_PROTO_IN_CC
 
 int main(int argc, char** argv) {
   grpc::testing::TestEnvironment env(&argc, argv);
