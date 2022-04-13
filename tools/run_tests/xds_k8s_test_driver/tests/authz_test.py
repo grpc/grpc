@@ -194,6 +194,11 @@ class AuthzTest(xds_k8s_testcase.SecurityXdsKubernetesTestCase):
             metadata = ((rpc_type, "test", test_metadata_val),)
         test_client.update_config.configure(rpc_types=[rpc_type],
                                             metadata=metadata)
+        # After the configuration is sent, wait a moment before querying the
+        # status code stats. Certain interop clients might take longer to apply
+        # the new configuration, causing flakes if we check the status code
+        # stats immediately.
+        time.sleep(1)
         self.assertRpcStatusCodes(test_client,
                                   status_code=status_code,
                                   duration=_SAMPLE_DURATION,
