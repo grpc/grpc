@@ -23,229 +23,42 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-py_test(
-    name = "descriptor_database_test",
-    main = "descriptor_database_test_wrapper.py",
-    srcs = ["descriptor_database_test_wrapper.py"],
-    deps = [
-        "//python:message_ext",
-        "@com_google_protobuf//:python_srcs",
-        "@com_google_protobuf//:python_common_test_protos",
-        "@com_google_protobuf//:python_specific_test_protos",
-    ],
-    legacy_create_init = False,
-)
+load("//bazel:pyproto_test_wrapper.bzl", "pyproto_test_wrapper")
 
-py_test(
-    name = "descriptor_pool_test",
-    main = "descriptor_pool_test_wrapper.py",
-    srcs = ["descriptor_pool_test_wrapper.py"],
-    deps = [
-        "//python:message_ext",
-        "@com_google_protobuf//:python_srcs",
-        "@com_google_protobuf//:python_common_test_protos",
-        "@com_google_protobuf//:python_specific_test_protos",
-    ],
-    legacy_create_init = False,
-)
+licenses(["notice"])
 
-py_test(
-    name = "descriptor_test",
-    main = "descriptor_test_wrapper.py",
-    srcs = ["descriptor_test_wrapper.py"],
-    deps = [
-        "//python:message_ext",
-        "@com_google_protobuf//:python_srcs",
-        "@com_google_protobuf//:python_common_test_protos",
-        "@com_google_protobuf//:python_specific_test_protos",
-    ],
-    legacy_create_init = False,
-)
+pyproto_test_wrapper(name = "descriptor_database_test")
 
-py_test(
-    name = "generator_test",
-    main = "generator_test_wrapper.py",
-    srcs = ["generator_test_wrapper.py"],
-    deps = [
-        "//python:message_ext",
-        "@com_google_protobuf//:python_srcs",
-        "@com_google_protobuf//:python_common_test_protos",
-        "@com_google_protobuf//:python_specific_test_protos",
-    ],
-    legacy_create_init = False,
-)
+pyproto_test_wrapper(name = "descriptor_pool_test")
 
-py_test(
-    name = "json_format_test",
-    main = "json_format_test_wrapper.py",
-    srcs = ["json_format_test_wrapper.py"],
-    deps = [
-        "//python:message_ext",
-        "@com_google_protobuf//:python_srcs",
-        "@com_google_protobuf//:python_common_test_protos",
-        "@com_google_protobuf//:python_specific_test_protos",
-    ],
-    legacy_create_init = False,
-)
+pyproto_test_wrapper(name = "descriptor_test")
 
-py_test(
-    name = "keywords_test",
-    main = "keywords_test_wrapper.py",
-    srcs = ["keywords_test_wrapper.py"],
-    deps = [
-        "//python:message_ext",
-        "@com_google_protobuf//:python_srcs",
-        "@com_google_protobuf//:python_common_test_protos",
-        "@com_google_protobuf//:python_specific_test_protos",
-    ],
-    legacy_create_init = False,
-)
+# begin:github_only
+pyproto_test_wrapper(name = "generator_test")
+# end:github_only
 
-py_test(
-    name = "message_factory_test",
-    main = "message_factory_test_wrapper.py",
-    srcs = ["message_factory_test_wrapper.py"],
-    deps = [
-        "//python:message_ext",
-        "@com_google_protobuf//:python_srcs",
-        "@com_google_protobuf//:python_common_test_protos",
-        "@com_google_protobuf//:python_specific_test_protos",
-    ],
-    legacy_create_init = False,
-)
+pyproto_test_wrapper(name = "json_format_test")
 
-py_test(
-    name = "message_test",
-    main = "message_test_wrapper.py",
-    srcs = ["message_test_wrapper.py"],
-    deps = [
-        "//python:message_ext",
-        "@com_google_protobuf//:python_srcs",
-        "@com_google_protobuf//:python_common_test_protos",
-        "@com_google_protobuf//:python_specific_test_protos",
-    ],
-    data = [
-        "@com_google_protobuf//:testdata",
-    ],
-    legacy_create_init = False,
-)
+pyproto_test_wrapper(name = "keywords_test")
 
-py_test(
-    name = "proto_builder_test",
-    main = "proto_builder_test_wrapper.py",
-    srcs = ["proto_builder_test_wrapper.py"],
-    deps = [
-        "//python:message_ext",
-        "@com_google_protobuf//:python_srcs",
-        "@com_google_protobuf//:python_common_test_protos",
-        "@com_google_protobuf//:python_specific_test_protos",
-    ],
-    legacy_create_init = False,
-)
+pyproto_test_wrapper(name = "message_factory_test")
 
-py_test(
-    name = "reflection_test",
-    main = "reflection_test_wrapper.py",
-    srcs = ["reflection_test_wrapper.py"],
-    deps = [
-        "//python:message_ext",
-        "@com_google_protobuf//:python_srcs",
-        "@com_google_protobuf//:python_common_test_protos",
-        "@com_google_protobuf//:python_specific_test_protos",
-    ],
-    legacy_create_init = False,
-)
+pyproto_test_wrapper(name = "message_test")
 
-py_test(
-    name = "service_reflection_test",
-    main = "service_reflection_test_wrapper.py",
-    srcs = ["service_reflection_test_wrapper.py"],
-    deps = [
-        "//python:message_ext",
-        "@com_google_protobuf//:python_srcs",
-        "@com_google_protobuf//:python_common_test_protos",
-        "@com_google_protobuf//:python_specific_test_protos",
-    ],
-    legacy_create_init = False,
-)
+pyproto_test_wrapper(name = "proto_builder_test")
 
-py_test(
-    name = "symbol_database_test",
-    main = "symbol_database_test_wrapper.py",
-    srcs = ["symbol_database_test_wrapper.py"],
-    deps = [
-        "//python:message_ext",
-        "@com_google_protobuf//:python_srcs",
-        "@com_google_protobuf//:python_common_test_protos",
-        "@com_google_protobuf//:python_specific_test_protos",
-    ],
-    legacy_create_init = False,
-)
+pyproto_test_wrapper(name = "reflection_test")
 
-py_test(
-    name = "text_encoding_test",
-    main = "text_encoding_test_wrapper.py",
-    srcs = ["text_encoding_test_wrapper.py"],
-    deps = [
-        "//python:message_ext",
-        "@com_google_protobuf//:python_srcs",
-        "@com_google_protobuf//:python_common_test_protos",
-        "@com_google_protobuf//:python_specific_test_protos",
-    ],
-    legacy_create_init = False,
-)
+pyproto_test_wrapper(name = "service_reflection_test")
 
-py_test(
-    name = "text_format_test",
-    main = "text_format_test_wrapper.py",
-    srcs = ["text_format_test_wrapper.py"],
-    deps = [
-        "//python:message_ext",
-        "@com_google_protobuf//:python_srcs",
-        "@com_google_protobuf//:python_common_test_protos",
-        "@com_google_protobuf//:python_specific_test_protos",
-    ],
-    data = [
-        "@com_google_protobuf//:testdata",
-    ],
-    legacy_create_init = False,
-)
+pyproto_test_wrapper(name = "symbol_database_test")
 
-py_test(
-    name = "unknown_fields_test",
-    main = "unknown_fields_test_wrapper.py",
-    srcs = ["unknown_fields_test_wrapper.py"],
-    deps = [
-        "//python:message_ext",
-        "@com_google_protobuf//:python_srcs",
-        "@com_google_protobuf//:python_common_test_protos",
-        "@com_google_protobuf//:python_specific_test_protos",
-    ],
-    legacy_create_init = False,
-)
+pyproto_test_wrapper(name = "text_encoding_test")
 
-py_test(
-    name = "well_known_types_test",
-    main = "well_known_types_test_wrapper.py",
-    srcs = ["well_known_types_test_wrapper.py"],
-    deps = [
-        "//python:message_ext",
-        "@com_google_protobuf//:python_srcs",
-        "@com_google_protobuf//:python_common_test_protos",
-        "@com_google_protobuf//:python_specific_test_protos",
-    ],
-    legacy_create_init = False,
-)
+pyproto_test_wrapper(name = "text_format_test")
 
-py_test(
-    name = "wire_format_test",
-    main = "wire_format_test_wrapper.py",
-    srcs = ["wire_format_test_wrapper.py"],
-    deps = [
-        "//python:message_ext",
-        "@com_google_protobuf//:python_srcs",
-        "@com_google_protobuf//:python_common_test_protos",
-        "@com_google_protobuf//:python_specific_test_protos",
-    ],
-    legacy_create_init = False,
-)
+pyproto_test_wrapper(name = "unknown_fields_test")
+
+pyproto_test_wrapper(name = "well_known_types_test")
+
+pyproto_test_wrapper(name = "wire_format_test")
