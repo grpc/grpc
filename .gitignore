@@ -63,6 +63,7 @@ Gemfile.lock
 # Temporary test reports
 report.xml
 */sponge_log.xml
+*/success_log_to_rename.xml
 latency_trace.txt
 latency_trace.*.txt
 
@@ -121,6 +122,11 @@ Podfile.lock
 bazel-*
 bazel_format_virtual_environment/
 tools/bazel-*
+
+# Bazel wrapper
+bazel_wrapper
+bazel_wrapper.bat
+bazel_wrapper.bazelrc
 
 # Debug output
 gdb.txt

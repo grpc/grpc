@@ -66,6 +66,9 @@ UPB_INLINE char* envoy_type_v3_Percent_serialize_ex(const envoy_type_v3_Percent*
                                  upb_Arena* arena, size_t* len) {
   return upb_Encode(msg, &envoy_type_v3_Percent_msginit, options, arena, len);
 }
+UPB_INLINE void envoy_type_v3_Percent_clear_value(const envoy_type_v3_Percent* msg) {
+  *UPB_PTR_AT(msg, UPB_SIZE(0, 0), double) = 0;
+}
 UPB_INLINE double envoy_type_v3_Percent_value(const envoy_type_v3_Percent* msg) {
   return *UPB_PTR_AT(msg, UPB_SIZE(0, 0), double);
 }
@@ -105,18 +108,24 @@ UPB_INLINE char* envoy_type_v3_FractionalPercent_serialize_ex(const envoy_type_v
                                  upb_Arena* arena, size_t* len) {
   return upb_Encode(msg, &envoy_type_v3_FractionalPercent_msginit, options, arena, len);
 }
+UPB_INLINE void envoy_type_v3_FractionalPercent_clear_numerator(const envoy_type_v3_FractionalPercent* msg) {
+  *UPB_PTR_AT(msg, UPB_SIZE(0, 0), uint32_t) = 0;
+}
 UPB_INLINE uint32_t envoy_type_v3_FractionalPercent_numerator(const envoy_type_v3_FractionalPercent* msg) {
-  return *UPB_PTR_AT(msg, UPB_SIZE(4, 4), uint32_t);
+  return *UPB_PTR_AT(msg, UPB_SIZE(0, 0), uint32_t);
+}
+UPB_INLINE void envoy_type_v3_FractionalPercent_clear_denominator(const envoy_type_v3_FractionalPercent* msg) {
+  *UPB_PTR_AT(msg, UPB_SIZE(4, 4), int32_t) = 0;
 }
 UPB_INLINE int32_t envoy_type_v3_FractionalPercent_denominator(const envoy_type_v3_FractionalPercent* msg) {
-  return *UPB_PTR_AT(msg, UPB_SIZE(0, 0), int32_t);
+  return *UPB_PTR_AT(msg, UPB_SIZE(4, 4), int32_t);
 }
 
 UPB_INLINE void envoy_type_v3_FractionalPercent_set_numerator(envoy_type_v3_FractionalPercent *msg, uint32_t value) {
-  *UPB_PTR_AT(msg, UPB_SIZE(4, 4), uint32_t) = value;
+  *UPB_PTR_AT(msg, UPB_SIZE(0, 0), uint32_t) = value;
 }
 UPB_INLINE void envoy_type_v3_FractionalPercent_set_denominator(envoy_type_v3_FractionalPercent *msg, int32_t value) {
-  *UPB_PTR_AT(msg, UPB_SIZE(0, 0), int32_t) = value;
+  *UPB_PTR_AT(msg, UPB_SIZE(4, 4), int32_t) = value;
 }
 
 extern const upb_MiniTable_File envoy_type_v3_percent_proto_upb_file_layout;

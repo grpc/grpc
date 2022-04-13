@@ -23,28 +23,10 @@ source tools/internal_ci/helper_scripts/prepare_build_linux_rc
 # make sure bazel is available
 tools/bazel version
 
-# to get "bazel" link for kokoro build, we need to generate
-# invocation UUID, set a flag for bazel to use it
-# and upload "bazel_invocation_ids" file as artifact.
-BAZEL_INVOCATION_ID="$(uuidgen)"
-echo "${BAZEL_INVOCATION_ID}" >"${KOKORO_ARTIFACTS_DIR}/bazel_invocation_ids"
+python3 tools/run_tests/python_utils/bazel_report_helper.py --report_path bazel_rbe
 
-tools/bazel \
+bazel_rbe/bazel_wrapper \
   --bazelrc=tools/remote_build/linux_kokoro.bazelrc \
   test \
-  --invocation_id="${BAZEL_INVOCATION_ID}" \
-  --workspace_status_command=tools/remote_build/workspace_status_kokoro.sh \
-  $@ \
-  -- //test/... || FAILED="true"
-
-if [ "$UPLOAD_TEST_RESULTS" != "" ]
-then
-  # Sleep to let ResultStore finish writing results before querying
-  sleep 60
-  python3 ./tools/run_tests/python_utils/upload_rbe_results.py
-fi
-
-if [ "$FAILED" != "" ]
-then
-  exit 1
-fi
+  "$@" \
+  -- //test/...
