@@ -200,6 +200,20 @@ TEST_P(XdsClientTest, MultipleBadCdsResources) {
       RpcOptions().set_metadata(std::move(metadata_cluster_2))));
 }
 
+TEST_P(XdsClientTest, XdsStreamErrorPropagation) {
+  const std::string kErrorMessage = "test forced ADS stream failure";
+  balancer_->ads_service()->ForceADSFailure(
+      Status(StatusCode::RESOURCE_EXHAUSTED, kErrorMessage));
+  auto status = SendRpc();
+  gpr_log(GPR_INFO,
+          "XdsStreamErrorPropagation test: RPC got error: code=%d message=%s",
+          status.error_code(), status.error_message().c_str());
+  EXPECT_THAT(status.error_code(), StatusCode::UNAVAILABLE);
+  EXPECT_THAT(status.error_message(), ::testing::HasSubstr(kErrorMessage));
+  EXPECT_THAT(status.error_message(),
+              ::testing::HasSubstr("(node ID:xds_end2end_test)"));
+}
+
 //
 // GlobalXdsClientTest - tests that need to run with a global XdsClient
 // (this is the default in production)
@@ -992,6 +1006,46 @@ TEST_P(XdsFederationLoadReportingTest, FederationMultipleLoadReportingTest) {
   EXPECT_EQ(0U, default_client_stats.total_dropped_requests());
   EXPECT_EQ(1U, balancer_->lrs_service()->request_count());
   EXPECT_EQ(1U, balancer_->lrs_service()->response_count());
+}
+
+//
+// SecureNamingTest - test that the right authority is used for the xDS server
+//
+
+class SecureNamingTest : public XdsEnd2endTest {
+ public:
+  void SetUp() override {
+    // Each test calls InitClient() on its own.
+  }
+};
+
+INSTANTIATE_TEST_SUITE_P(XdsTest, SecureNamingTest,
+                         ::testing::Values(XdsTestType()), &XdsTestType::Name);
+
+// Tests that secure naming check passes if target name is expected.
+TEST_P(SecureNamingTest, TargetNameIsExpected) {
+  InitClient(BootstrapBuilder(), /*lb_expected_authority=*/"localhost:%d");
+  CreateAndStartBackends(4);
+  EdsResourceArgs args({
+      {"locality0", CreateEndpointsForBackends()},
+  });
+  balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
+  CheckRpcSendOk();
+}
+
+// Tests that secure naming check fails if target name is unexpected.
+TEST_P(SecureNamingTest, TargetNameIsUnexpected) {
+  GTEST_FLAG_SET(death_test_style, "threadsafe");
+  InitClient(BootstrapBuilder(),
+             /*lb_expected_authority=*/"incorrect_server_name");
+  CreateAndStartBackends(4);
+  EdsResourceArgs args({
+      {"locality0", CreateEndpointsForBackends()},
+  });
+  balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
+  // Make sure that we blow up (via abort() from the security connector) when
+  // the name from the balancer doesn't match expectations.
+  ASSERT_DEATH_IF_SUPPORTED({ CheckRpcSendOk(); }, "");
 }
 
 }  // namespace

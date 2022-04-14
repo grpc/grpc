@@ -666,53 +666,6 @@ TEST_P(XdsResolverOnlyTest, KeepUsingLastDataIfBalancerGoesDown) {
   WaitForBackend(1);
 }
 
-TEST_P(XdsResolverOnlyTest, XdsStreamErrorPropagation) {
-  const std::string kErrorMessage = "test forced ADS stream failure";
-  balancer_->ads_service()->ForceADSFailure(
-      Status(StatusCode::RESOURCE_EXHAUSTED, kErrorMessage));
-  auto status = SendRpc();
-  gpr_log(GPR_INFO,
-          "XdsStreamErrorPropagation test: RPC got error: code=%d message=%s",
-          status.error_code(), status.error_message().c_str());
-  EXPECT_THAT(status.error_code(), StatusCode::UNAVAILABLE);
-  EXPECT_THAT(status.error_message(), ::testing::HasSubstr(kErrorMessage));
-  EXPECT_THAT(status.error_message(),
-              ::testing::HasSubstr("(node ID:xds_end2end_test)"));
-}
-
-class SecureNamingTest : public XdsEnd2endTest {
- public:
-  void SetUp() override {
-    // Each test calls InitClient() on its own.
-  }
-};
-
-// Tests that secure naming check passes if target name is expected.
-TEST_P(SecureNamingTest, TargetNameIsExpected) {
-  InitClient(BootstrapBuilder(), /*lb_expected_authority=*/"localhost:%d");
-  CreateAndStartBackends(4);
-  EdsResourceArgs args({
-      {"locality0", CreateEndpointsForBackends()},
-  });
-  balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
-  CheckRpcSendOk();
-}
-
-// Tests that secure naming check fails if target name is unexpected.
-TEST_P(SecureNamingTest, TargetNameIsUnexpected) {
-  GTEST_FLAG_SET(death_test_style, "threadsafe");
-  InitClient(BootstrapBuilder(),
-             /*lb_expected_authority=*/"incorrect_server_name");
-  CreateAndStartBackends(4);
-  EdsResourceArgs args({
-      {"locality0", CreateEndpointsForBackends()},
-  });
-  balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
-  // Make sure that we blow up (via abort() from the security connector) when
-  // the name from the balancer doesn't match expectations.
-  ASSERT_DEATH_IF_SUPPORTED({ CheckRpcSendOk(); }, "");
-}
-
 using LdsTest = XdsEnd2endTest;
 
 // Tests that LDS client should send a NACK if there is no API listener in the
@@ -10030,11 +9983,6 @@ INSTANTIATE_TEST_SUITE_P(
     XdsTest, BasicTest,
     ::testing::Values(XdsTestType(), XdsTestType().set_enable_load_reporting()),
     &XdsTestType::Name);
-
-// Don't run with load reporting or v2 or RDS, since they are irrelevant to
-// the tests.
-INSTANTIATE_TEST_SUITE_P(XdsTest, SecureNamingTest,
-                         ::testing::Values(XdsTestType()), &XdsTestType::Name);
 
 // LDS depends on XdsResolver.
 INSTANTIATE_TEST_SUITE_P(XdsTest, LdsTest, ::testing::Values(XdsTestType()),
