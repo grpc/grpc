@@ -25,6 +25,7 @@
 #include "envoy/config/cluster/v3/circuit_breaker.upb.h"
 #include "envoy/config/cluster/v3/cluster.upb.h"
 #include "envoy/config/cluster/v3/cluster.upbdefs.h"
+#include "envoy/config/cluster/v3/outlier_detection.upb.h"
 #include "envoy/config/core/v3/address.upb.h"
 #include "envoy/config/core/v3/base.upb.h"
 #include "envoy/config/core/v3/config_source.upb.h"
@@ -36,6 +37,7 @@
 
 #include <grpc/support/alloc.h>
 
+#include "src/core/ext/xds/xds_common_types.h"
 #include "src/core/lib/gpr/env.h"
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gprpp/host_port.h"
@@ -397,6 +399,18 @@ grpc_error_handle CdsResourceParse(
         break;
       }
     }
+  }
+  if (envoy_config_cluster_v3_Cluster_has_outlier_detection(cluster)) {
+    XdsClusterResource::OutlierDetection outlier_detection_update;
+    const envoy_config_cluster_v3_OutlierDetection* outlier_detection =
+        envoy_config_cluster_v3_Cluster_outlier_detection(cluster);
+    if (envoy_config_cluster_v3_OutlierDetection_has_interval(
+            outlier_detection)) {
+      const google_protobuf_Duration* duration =
+          envoy_config_cluster_v3_OutlierDetection_interval(outlier_detection);
+      outlier_detection_update.interval = ParseDuration(duration);
+    }
+    cds_update->outlier_detection = std::move(outlier_detection_update);
   }
   return GRPC_ERROR_CREATE_FROM_VECTOR("errors parsing CDS resource", &errors);
 }

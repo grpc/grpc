@@ -76,7 +76,7 @@ class XdsClusterResolverLbConfig : public LoadBalancingPolicy::Config {
     DiscoveryMechanismType type;
     std::string eds_service_name;
     std::string dns_hostname;
-    absl::optional<Json> outlier_detection_lb_config;
+    absl::optional<Json::Object> outlier_detection_lb_config;
 
     bool operator==(const DiscoveryMechanism& other) const {
       return (cluster_name == other.cluster_name &&
@@ -857,10 +857,11 @@ XdsClusterResolverLb::CreateChildPolicyConfigLocked() {
       }
       Json::Object outlier_detection_config;
       if (discovery_entry.config().outlier_detection_lb_config.has_value()) {
-        // TODO@donnadionne: get the config from the OutlierDetectionLbConfig
+        outlier_detection_config =
+            discovery_entry.config().outlier_detection_lb_config.value();
       } else {
         // outlier detection will be a no-op
-        outlier_detection_config["interval"] = absl::StrCat(UINT32_MAX, "s");
+        outlier_detection_config["interval"] = Duration::Infinity().ToString();
       }
       outlier_detection_config["childPolicy"] = Json::Array{Json::Object{
           {"xds_cluster_impl_experimental", std::move(xds_cluster_impl_config)},
@@ -1135,6 +1136,17 @@ class XdsClusterResolverLbFactory : public LoadBalancingPolicyFactory {
       } else {
         discovery_mechanism->max_concurrent_requests =
             gpr_parse_nonnegative_int(it->second.string_value().c_str());
+      }
+    }
+    it = json.object_value().find("outlierDetection");
+    if (it != json.object_value().end()) {
+      if (it->second.type() != Json::Type::OBJECT) {
+        error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+            "field:outlierDetection error:type should be object"));
+      } else {
+        // TODO@donnadionne: maybe parse to make sure there are no errors
+        discovery_mechanism->outlier_detection_lb_config =
+            it->second.object_value();
       }
     }
     // Discovery Mechanism type
