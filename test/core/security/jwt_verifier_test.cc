@@ -349,10 +349,10 @@ static int httpcli_post_should_not_be_called(
 }
 
 static int httpcli_put_should_not_be_called(
-    const grpc_http_request* /*request*/, const grpc_http_request* /*request*/,
-    const char* /*host*/, const char* /*path*/, const char* /*body_bytes*/,
-    size_t /*body_size*/, grpc_core::Timestamp /*deadline*/,
-    grpc_closure* /*on_done*/, grpc_http_response* /*response*/) {
+    const grpc_http_request* /*request*/, const char* /*host*/,
+    const char* /*path*/, const char* /*body_bytes*/, size_t /*body_size*/,
+    grpc_core::Timestamp /*deadline*/, grpc_closure* /*on_done*/,
+    grpc_http_response* /*response*/) {
   GPR_ASSERT("HTTP PUT should not be called" == nullptr);
   return 1;
 }
