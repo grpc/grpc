@@ -30,6 +30,7 @@
 #include "src/core/ext/filters/client_channel/lb_policy_registry.h"
 #include "src/core/ext/xds/xds_client.h"
 #include "src/core/ext/xds/xds_client_stats.h"
+#include "src/core/ext/xds/xds_cluster.h"
 #include "src/core/ext/xds/xds_endpoint.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/gpr/env.h"
@@ -38,6 +39,7 @@
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/iomgr/work_serializer.h"
+#include "src/core/lib/json/json_util.h"
 
 namespace grpc_core {
 
@@ -55,16 +57,23 @@ constexpr char kOutlierDetection[] = "outlier_detection_experimental";
 class OutlierDetectionLbConfig : public LoadBalancingPolicy::Config {
  public:
   OutlierDetectionLbConfig(
+      XdsClusterResource::OutlierDetection outlier_detection_info,
       RefCountedPtr<LoadBalancingPolicy::Config> child_policy)
-      : child_policy_(std::move(child_policy)) {}
+      : outlier_detection_info_(outlier_detection_info),
+        child_policy_(std::move(child_policy)) {}
 
   const char* name() const override { return kOutlierDetection; }
+
+  const XdsClusterResource::OutlierDetection& outlier_detection_info() const {
+    return outlier_detection_info_;
+  }
 
   RefCountedPtr<LoadBalancingPolicy::Config> child_policy() const {
     return child_policy_;
   }
 
  private:
+  XdsClusterResource::OutlierDetection outlier_detection_info_;
   RefCountedPtr<LoadBalancingPolicy::Config> child_policy_;
 };
 
@@ -372,9 +381,78 @@ class OutlierDetectionLbFactory : public LoadBalancingPolicyFactory {
       return nullptr;
     }
     std::vector<grpc_error_handle> error_list;
+    // Outlier detection policy
+    XdsClusterResource::OutlierDetection outlier_detection_policy;
+    Duration temp_duration;
+    if (ParseJsonObjectFieldAsDuration(json.object_value(), "interval",
+                                       &temp_duration, &error_list)) {
+      outlier_detection_policy.interval = temp_duration;
+    }
+    if (ParseJsonObjectFieldAsDuration(json.object_value(), "baseEjectionTime",
+                                       &temp_duration, &error_list)) {
+      outlier_detection_policy.base_ejection_time = temp_duration;
+    }
+    if (ParseJsonObjectFieldAsDuration(json.object_value(), "maxEjectionTime",
+                                       &temp_duration, &error_list)) {
+      outlier_detection_policy.max_ejection_time = temp_duration;
+    }
+    ParseJsonObjectField(json.object_value(), "maxEjectionPercent",
+                         &outlier_detection_policy.max_ejection_percent,
+                         &error_list);
+    auto it = json.object_value().find("successRateEjection");
+    if (it != json.object_value().end()) {
+      if (it->second.type() != Json::Type::OBJECT) {
+        error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+            "field:successRateEjection error:type must be object"));
+      } else {
+        const Json::Object& object = it->second.object_value();
+        ParseJsonObjectField(
+            object, "stdevFactor",
+            &outlier_detection_policy.success_rate_ejection->stdev_factor,
+            &error_list);
+        ParseJsonObjectField(object, "enforcementPercentage",
+                             &outlier_detection_policy.success_rate_ejection
+                                  ->enforcement_percentage,
+                             &error_list);
+        ParseJsonObjectField(
+            object, "minimumHosts",
+            &outlier_detection_policy.success_rate_ejection->minimum_hosts,
+            &error_list);
+        ParseJsonObjectField(
+            object, "requestVolumn",
+            &outlier_detection_policy.success_rate_ejection->request_volumn,
+            &error_list);
+      }
+    }
+    it = json.object_value().find("failurePercentageEjection");
+    if (it != json.object_value().end()) {
+      if (it->second.type() != Json::Type::OBJECT) {
+        error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+            "field:successRateEjection error:type must be object"));
+      } else {
+        const Json::Object& object = it->second.object_value();
+        ParseJsonObjectField(
+            object, "threshold",
+            &outlier_detection_policy.failure_percentage_ejection->threshold,
+            &error_list);
+        ParseJsonObjectField(
+            object, "enforcementPercentage",
+            &outlier_detection_policy.failure_percentage_ejection
+                 ->enforcement_percentage,
+            &error_list);
+        ParseJsonObjectField(object, "minimumHosts",
+                             &outlier_detection_policy
+                                  .failure_percentage_ejection->minimum_hosts,
+                             &error_list);
+        ParseJsonObjectField(object, "requestVolumn",
+                             &outlier_detection_policy
+                                  .failure_percentage_ejection->request_volumn,
+                             &error_list);
+      }
+    }
     // Child policy.
     RefCountedPtr<LoadBalancingPolicy::Config> child_policy;
-    auto it = json.object_value().find("childPolicy");
+    it = json.object_value().find("childPolicy");
     if (it == json.object_value().end()) {
       error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
           "field:childPolicy error:required field missing"));
@@ -390,7 +468,8 @@ class OutlierDetectionLbFactory : public LoadBalancingPolicyFactory {
             GRPC_ERROR_CREATE_FROM_VECTOR("field:childPolicy", &child_errors));
       }
     }
-    return MakeRefCounted<OutlierDetectionLbConfig>(std::move(child_policy));
+    return MakeRefCounted<OutlierDetectionLbConfig>(
+        std::move(outlier_detection_policy), std::move(child_policy));
   }
 };
 

@@ -3295,6 +3295,7 @@ grpc_cc_library(
         "grpc_lb_xds_channel_args",
         "grpc_lb_xds_common",
         "grpc_xds_client",
+        "json_util",
         "orphanable",
         "ref_counted_ptr",
     ],
