@@ -200,9 +200,7 @@ class RouteGuideImpl final : public RouteGuide::CallbackService {
           : mu_(mu), received_notes_(received_notes) {
         StartRead(&note_);
       }
-      void OnDone() override {
-        delete this;
-      }
+      void OnDone() override { delete this; }
       void OnReadDone(bool ok) override {
         if (ok) {
           // Unlike the other example in this directory that's not using
@@ -216,8 +214,10 @@ class RouteGuideImpl final : public RouteGuide::CallbackService {
           std::copy_if(received_notes_->begin(), received_notes_->end(),
                        std::back_inserter(to_send_notes_),
                        [this](const RouteNote& note) {
-                         return note.location().latitude() == note_.location().latitude() &&
-                                note.location().longitude() == note_.location().longitude();
+                         return note.location().latitude() ==
+                                    note_.location().latitude() &&
+                                note.location().longitude() ==
+                                    note_.location().longitude();
                        });
           mu_->unlock();
           notes_iterator_ = to_send_notes_.begin();
