@@ -208,11 +208,10 @@ TEST_P(XdsClientTest, MultipleBadCdsResources) {
 using GlobalXdsClientTest = XdsEnd2endTest;
 
 // Get bootstrap from env var, so that there's a global XdsClient.
-INSTANTIATE_TEST_SUITE_P(
-    XdsTest, GlobalXdsClientTest,
-    ::testing::Values(
-        XdsTestType().set_bootstrap_source(XdsTestType::kBootstrapFromEnvVar)),
-    &XdsTestType::Name);
+INSTANTIATE_TEST_SUITE_P(XdsTest, GlobalXdsClientTest,
+                         ::testing::Values(XdsTestType().set_bootstrap_source(
+                             XdsTestType::kBootstrapFromEnvVar)),
+                         &XdsTestType::Name);
 
 TEST_P(GlobalXdsClientTest, MultipleChannelsShareXdsClient) {
   CreateAndStartBackends(1);
