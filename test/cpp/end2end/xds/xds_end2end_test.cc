@@ -5994,14 +5994,11 @@ TEST_P(CdsTest, RingHashContinuesConnectingWithoutPicks) {
   hash_policy->mutable_header()->set_header_name("address_hash");
   SetListenerAndRouteConfiguration(balancer_.get(), default_listener_,
                                    new_route_config);
-  // A long-running RPC, just used to send the RPC in another thread.
-  LongRunningRpc rpc;
   // A connection injector that cancels the RPC after seeing the
   // connection attempt for the non-existant endpoint.
   class ConnectionInjector : public ConnectionAttemptInjector {
    public:
-    ConnectionInjector(int port, LongRunningRpc* rpc)
-        : port_(port), rpc_(rpc) {}
+    explicit ConnectionInjector(int port) : port_(port) {}
 
     void HandleConnection(grpc_closure* closure, grpc_endpoint** ep,
                           grpc_pollset_set* interested_parties,
@@ -6017,29 +6014,41 @@ TEST_P(CdsTest, RingHashContinuesConnectingWithoutPicks) {
         // Cancel the RPC at this point, so that it's no longer
         // queued when the LB policy updates the picker.
         if (!seen_port_ && port == port_) {
-          gpr_log(GPR_INFO, "*** CANCELLING RPC");
-          rpc_->CancelWithoutJoining();
+          gpr_log(GPR_INFO, "*** SEEN P0 CONNECTION ATTEMPT");
           seen_port_ = true;
+          cond_.Signal();
         }
       }
       AttemptConnection(closure, ep, interested_parties, channel_args, addr,
                         deadline);
     }
 
+    void WaitForP0ConnectionAttempt() {
+      grpc_core::MutexLock lock(&mu_);
+      while (!seen_port_) {
+        cond_.Wait(&mu_);
+      }
+    }
+
    private:
     const int port_;
-    LongRunningRpc* rpc_;
 
     grpc_core::Mutex mu_;
+    grpc_core::CondVar cond_;
     bool seen_port_ ABSL_GUARDED_BY(mu_) = false;
   };
-  ConnectionInjector connection_injector(non_existant_endpoint.port, &rpc);
+  ConnectionInjector connection_injector(non_existant_endpoint.port);
+  // A long-running RPC, just used to send the RPC in another thread.
+  LongRunningRpc rpc;
   std::vector<std::pair<std::string, std::string>> metadata = {
       {"address_hash",
        CreateMetadataValueThatHashesToBackendPort(non_existant_endpoint.port)}};
   rpc.StartRpc(stub_.get(), RpcOptions().set_timeout_ms(0).set_metadata(
                                 std::move(metadata)));
-  // Wait for channel to become connected, after the RPC has been cancelled.
+  // Wait for the RPC to trigger the P0 connection attempt, then cancel it.
+  connection_injector.WaitForP0ConnectionAttempt();
+  rpc.CancelRpc();
+  // Wait for channel to become connected without any pending RPC.
   EXPECT_TRUE(channel_->WaitForConnected(grpc_timeout_seconds_to_deadline(5)));
   // RPC should have been cancelled.
   EXPECT_EQ(StatusCode::CANCELLED, rpc.GetStatus().error_code());

@@ -871,10 +871,6 @@ void XdsEnd2endTest::LongRunningRpc::CancelRpc() {
   if (sender_thread_.joinable()) sender_thread_.join();
 }
 
-void XdsEnd2endTest::LongRunningRpc::CancelWithoutJoining() {
-  context_.TryCancel();
-}
-
 Status XdsEnd2endTest::LongRunningRpc::GetStatus() {
   if (sender_thread_.joinable()) sender_thread_.join();
   return status_;

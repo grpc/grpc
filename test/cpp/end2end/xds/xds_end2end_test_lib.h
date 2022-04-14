@@ -856,11 +856,6 @@ class XdsEnd2endTest : public ::testing::TestWithParam<XdsTestType> {
     // Cancels the RPC.
     void CancelRpc();
 
-    // Same as CancelRpc(), but does not join the thread sending the RPC.
-    // To be used in cases where the cancel is triggered in that thread.
-    // The caller must later call GetStatus() from outside the thread.
-    void CancelWithoutJoining();
-
     // Gets the RPC's status.  Blocks if the RPC is not yet complete.
     Status GetStatus();
 

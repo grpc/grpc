@@ -664,6 +664,11 @@ void RingHash::RingHashSubchannelData::UpdateConnectivityStateLocked(
     if (connectivity_state != GRPC_CHANNEL_READY) return;
   } else if (connectivity_state == GRPC_CHANNEL_TRANSIENT_FAILURE) {
     // If we go from READY to TF, treat it as IDLE.
+    // This transition can be caused by a "normal" connection failure, such
+    // as the server closing the connection due to a max-age setting.  In
+    // this case, we want to have RPCs that hash to this subchannel wait for
+    // the reconnection attempt rather than assuming that the subchannel is
+    // bad and moving on to a subsequent subchannel in the ring.
     if (last_connectivity_state_ == GRPC_CHANNEL_READY) {
       connectivity_state = GRPC_CHANNEL_IDLE;
     }
