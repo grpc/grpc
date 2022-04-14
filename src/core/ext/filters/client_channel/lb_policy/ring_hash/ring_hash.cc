@@ -521,12 +521,8 @@ void RingHash::RingHashSubchannelList::StartWatchingLocked() {
       subchannel(i)->StartConnectivityWatchLocked();
     }
   }
-  RingHash* p = static_cast<RingHash*>(policy());
-  // Sending up the initial picker while all subchannels are in IDLE state.
-  p->channel_control_helper()->UpdateState(
-      GRPC_CHANNEL_READY, absl::Status(),
-      absl::make_unique<Picker>(p->Ref(DEBUG_LOCATION, "RingHashPicker"),
-                                p->ring_));
+  // Send updated state to parent based on reported subchannel states.
+  UpdateRingHashConnectivityStateLocked();
 }
 
 void RingHash::RingHashSubchannelList::UpdateStateCountersLocked(

@@ -193,6 +193,7 @@ Pod::Spec.new do |s|
 
     ss.source_files = 'src/core/ext/filters/census/grpc_context.cc',
                       'src/core/ext/filters/channel_idle/channel_idle_filter.cc',
+                      'src/core/ext/filters/channel_idle/channel_idle_filter.h',
                       'src/core/ext/filters/channel_idle/idle_filter_state.cc',
                       'src/core/ext/filters/channel_idle/idle_filter_state.h',
                       'src/core/ext/filters/client_channel/backend_metric.cc',
@@ -1663,7 +1664,8 @@ Pod::Spec.new do |s|
                       'third_party/upb/upb/upb.hpp',
                       'third_party/upb/upb/upb_internal.h',
                       'third_party/xxhash/xxhash.h'
-    ss.private_header_files = 'src/core/ext/filters/channel_idle/idle_filter_state.h',
+    ss.private_header_files = 'src/core/ext/filters/channel_idle/channel_idle_filter.h',
+                              'src/core/ext/filters/channel_idle/idle_filter_state.h',
                               'src/core/ext/filters/client_channel/backend_metric.h',
                               'src/core/ext/filters/client_channel/backup_poller.h',
                               'src/core/ext/filters/client_channel/client_channel.h',
@@ -2477,6 +2479,7 @@ Pod::Spec.new do |s|
                       'test/core/end2end/tests/filter_init_fails.cc',
                       'test/core/end2end/tests/filter_latency.cc',
                       'test/core/end2end/tests/filter_status_code.cc',
+                      'test/core/end2end/tests/filtered_metadata.cc',
                       'test/core/end2end/tests/graceful_server_shutdown.cc',
                       'test/core/end2end/tests/grpc_authz.cc',
                       'test/core/end2end/tests/high_initial_seqno.cc',

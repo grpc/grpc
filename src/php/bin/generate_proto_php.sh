@@ -38,7 +38,8 @@ sed 's/grpc\.testing\.Empty/grpc\.testing\.EmptyMessage/g' \
 mv $output_file ./src/proto/grpc/testing/test.proto
 
 # interop test protos
-$PROTOC --proto_path=. \
+$PROTOC -I . \
+       -I third_party/protobuf/src \
        --php_out=src/php/tests/interop \
        --grpc_out=generate_server:src/php/tests/interop \
        --plugin=$PLUGIN \

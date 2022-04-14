@@ -29,6 +29,7 @@
 
 #include <errno.h>
 #include <fcntl.h>
+#include <inttypes.h>
 #include <netinet/in.h>
 #include <netinet/tcp.h>
 #include <string.h>
@@ -60,6 +61,8 @@
 #include "src/core/lib/iomgr/tcp_server_utils_posix.h"
 #include "src/core/lib/iomgr/unix_sockets_posix.h"
 #include "src/core/lib/resource_quota/api.h"
+
+static std::atomic<int64_t> num_dropped_connections{0};
 
 static grpc_error_handle tcp_server_create(grpc_closure* shutdown_complete,
                                            const grpc_channel_args* args,
@@ -201,27 +204,33 @@ static void on_read(void* arg, grpc_error_handle err) {
        strip off the ::ffff:0.0.0.0/96 prefix first. */
     int fd = grpc_accept4(sp->fd, &addr, 1, 1);
     if (fd < 0) {
-      switch (errno) {
-        case EINTR:
-          continue;
-        case EAGAIN:
-          grpc_fd_notify_on_read(sp->emfd, &sp->read_closure);
-          return;
-        default:
-          gpr_mu_lock(&sp->server->mu);
-          if (!sp->server->shutdown_listeners) {
-            gpr_log(GPR_ERROR, "Failed accept4: %s", strerror(errno));
-          } else {
-            /* if we have shutdown listeners, accept4 could fail, and we
-               needn't notify users */
-          }
-          gpr_mu_unlock(&sp->server->mu);
-          goto error;
+      if (errno == EINTR) {
+        continue;
+      } else if (errno == EAGAIN || errno == ECONNABORTED ||
+                 errno == EWOULDBLOCK) {
+        grpc_fd_notify_on_read(sp->emfd, &sp->read_closure);
+        return;
+      } else {
+        gpr_mu_lock(&sp->server->mu);
+        if (!sp->server->shutdown_listeners) {
+          gpr_log(GPR_ERROR, "Failed accept4: %s", strerror(errno));
+        } else {
+          /* if we have shutdown listeners, accept4 could fail, and we
+             needn't notify users */
+        }
+        gpr_mu_unlock(&sp->server->mu);
+        goto error;
       }
     }
 
     if (sp->server->memory_quota->IsMemoryPressureHigh()) {
-      gpr_log(GPR_INFO, "Drop incoming connection: high memory pressure");
+      int64_t dropped_connections_count = ++num_dropped_connections;
+      if (dropped_connections_count % 1000 == 0) {
+        gpr_log(GPR_INFO,
+                "Dropped >= %" PRId64
+                " new connection attempts due to high memory pressure",
+                dropped_connections_count);
+      }
       close(fd);
       continue;
     }

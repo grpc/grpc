@@ -62,8 +62,14 @@ UPB_INLINE char* envoy_config_core_v3_DnsResolverOptions_serialize_ex(const envo
                                  upb_Arena* arena, size_t* len) {
   return upb_Encode(msg, &envoy_config_core_v3_DnsResolverOptions_msginit, options, arena, len);
 }
+UPB_INLINE void envoy_config_core_v3_DnsResolverOptions_clear_use_tcp_for_dns_lookups(const envoy_config_core_v3_DnsResolverOptions* msg) {
+  *UPB_PTR_AT(msg, UPB_SIZE(0, 0), bool) = 0;
+}
 UPB_INLINE bool envoy_config_core_v3_DnsResolverOptions_use_tcp_for_dns_lookups(const envoy_config_core_v3_DnsResolverOptions* msg) {
   return *UPB_PTR_AT(msg, UPB_SIZE(0, 0), bool);
+}
+UPB_INLINE void envoy_config_core_v3_DnsResolverOptions_clear_no_default_search_domain(const envoy_config_core_v3_DnsResolverOptions* msg) {
+  *UPB_PTR_AT(msg, UPB_SIZE(1, 1), bool) = 0;
 }
 UPB_INLINE bool envoy_config_core_v3_DnsResolverOptions_no_default_search_domain(const envoy_config_core_v3_DnsResolverOptions* msg) {
   return *UPB_PTR_AT(msg, UPB_SIZE(1, 1), bool);
@@ -107,31 +113,42 @@ UPB_INLINE char* envoy_config_core_v3_DnsResolutionConfig_serialize_ex(const env
                                  upb_Arena* arena, size_t* len) {
   return upb_Encode(msg, &envoy_config_core_v3_DnsResolutionConfig_msginit, options, arena, len);
 }
-UPB_INLINE bool envoy_config_core_v3_DnsResolutionConfig_has_resolvers(const envoy_config_core_v3_DnsResolutionConfig *msg) { return _upb_has_submsg_nohasbit(msg, UPB_SIZE(8, 16)); }
-UPB_INLINE const struct envoy_config_core_v3_Address* const* envoy_config_core_v3_DnsResolutionConfig_resolvers(const envoy_config_core_v3_DnsResolutionConfig *msg, size_t *len) { return (const struct envoy_config_core_v3_Address* const*)_upb_array_accessor(msg, UPB_SIZE(8, 16), len); }
-UPB_INLINE bool envoy_config_core_v3_DnsResolutionConfig_has_dns_resolver_options(const envoy_config_core_v3_DnsResolutionConfig *msg) { return _upb_hasbit(msg, 1); }
+UPB_INLINE bool envoy_config_core_v3_DnsResolutionConfig_has_resolvers(const envoy_config_core_v3_DnsResolutionConfig* msg) {
+  return _upb_has_submsg_nohasbit(msg, UPB_SIZE(4, 8));
+}
+UPB_INLINE void envoy_config_core_v3_DnsResolutionConfig_clear_resolvers(const envoy_config_core_v3_DnsResolutionConfig* msg) {
+  _upb_array_detach(msg, UPB_SIZE(4, 8));
+}
+UPB_INLINE const struct envoy_config_core_v3_Address* const* envoy_config_core_v3_DnsResolutionConfig_resolvers(const envoy_config_core_v3_DnsResolutionConfig* msg, size_t* len) {
+  return (const struct envoy_config_core_v3_Address* const*)_upb_array_accessor(msg, UPB_SIZE(4, 8), len);
+}
+UPB_INLINE bool envoy_config_core_v3_DnsResolutionConfig_has_dns_resolver_options(const envoy_config_core_v3_DnsResolutionConfig* msg) {
+  return _upb_hasbit(msg, 1);
+}
+UPB_INLINE void envoy_config_core_v3_DnsResolutionConfig_clear_dns_resolver_options(const envoy_config_core_v3_DnsResolutionConfig* msg) {
+  *UPB_PTR_AT(msg, UPB_SIZE(8, 16), const upb_Message*) = NULL;
+}
 UPB_INLINE const envoy_config_core_v3_DnsResolverOptions* envoy_config_core_v3_DnsResolutionConfig_dns_resolver_options(const envoy_config_core_v3_DnsResolutionConfig* msg) {
-  return *UPB_PTR_AT(msg, UPB_SIZE(4, 8), const envoy_config_core_v3_DnsResolverOptions*);
+  return *UPB_PTR_AT(msg, UPB_SIZE(8, 16), const envoy_config_core_v3_DnsResolverOptions*);
 }
 
-UPB_INLINE struct envoy_config_core_v3_Address** envoy_config_core_v3_DnsResolutionConfig_mutable_resolvers(envoy_config_core_v3_DnsResolutionConfig *msg, size_t *len) {
-  return (struct envoy_config_core_v3_Address**)_upb_array_mutable_accessor(msg, UPB_SIZE(8, 16), len);
+UPB_INLINE struct envoy_config_core_v3_Address** envoy_config_core_v3_DnsResolutionConfig_mutable_resolvers(envoy_config_core_v3_DnsResolutionConfig* msg, size_t* len) {
+  return (struct envoy_config_core_v3_Address**)_upb_array_mutable_accessor(msg, UPB_SIZE(4, 8), len);
 }
-UPB_INLINE struct envoy_config_core_v3_Address** envoy_config_core_v3_DnsResolutionConfig_resize_resolvers(envoy_config_core_v3_DnsResolutionConfig *msg, size_t len, upb_Arena *arena) {
-  return (struct envoy_config_core_v3_Address**)_upb_Array_Resize_accessor2(msg, UPB_SIZE(8, 16), len, UPB_SIZE(2, 3), arena);
+UPB_INLINE struct envoy_config_core_v3_Address** envoy_config_core_v3_DnsResolutionConfig_resize_resolvers(envoy_config_core_v3_DnsResolutionConfig* msg, size_t len, upb_Arena* arena) {
+  return (struct envoy_config_core_v3_Address**)_upb_Array_Resize_accessor2(msg, UPB_SIZE(4, 8), len, UPB_SIZE(2, 3), arena);
 }
-UPB_INLINE struct envoy_config_core_v3_Address* envoy_config_core_v3_DnsResolutionConfig_add_resolvers(envoy_config_core_v3_DnsResolutionConfig *msg, upb_Arena *arena) {
+UPB_INLINE struct envoy_config_core_v3_Address* envoy_config_core_v3_DnsResolutionConfig_add_resolvers(envoy_config_core_v3_DnsResolutionConfig* msg, upb_Arena* arena) {
   struct envoy_config_core_v3_Address* sub = (struct envoy_config_core_v3_Address*)_upb_Message_New(&envoy_config_core_v3_Address_msginit, arena);
-  bool ok = _upb_Array_Append_accessor2(
-      msg, UPB_SIZE(8, 16), UPB_SIZE(2, 3), &sub, arena);
+  bool ok = _upb_Array_Append_accessor2(msg, UPB_SIZE(4, 8), UPB_SIZE(2, 3), &sub, arena);
   if (!ok) return NULL;
   return sub;
 }
 UPB_INLINE void envoy_config_core_v3_DnsResolutionConfig_set_dns_resolver_options(envoy_config_core_v3_DnsResolutionConfig *msg, envoy_config_core_v3_DnsResolverOptions* value) {
   _upb_sethas(msg, 1);
-  *UPB_PTR_AT(msg, UPB_SIZE(4, 8), envoy_config_core_v3_DnsResolverOptions*) = value;
+  *UPB_PTR_AT(msg, UPB_SIZE(8, 16), envoy_config_core_v3_DnsResolverOptions*) = value;
 }
-UPB_INLINE struct envoy_config_core_v3_DnsResolverOptions* envoy_config_core_v3_DnsResolutionConfig_mutable_dns_resolver_options(envoy_config_core_v3_DnsResolutionConfig *msg, upb_Arena *arena) {
+UPB_INLINE struct envoy_config_core_v3_DnsResolverOptions* envoy_config_core_v3_DnsResolutionConfig_mutable_dns_resolver_options(envoy_config_core_v3_DnsResolutionConfig* msg, upb_Arena* arena) {
   struct envoy_config_core_v3_DnsResolverOptions* sub = (struct envoy_config_core_v3_DnsResolverOptions*)envoy_config_core_v3_DnsResolutionConfig_dns_resolver_options(msg);
   if (sub == NULL) {
     sub = (struct envoy_config_core_v3_DnsResolverOptions*)_upb_Message_New(&envoy_config_core_v3_DnsResolverOptions_msginit, arena);

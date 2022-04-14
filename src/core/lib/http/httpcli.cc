@@ -53,6 +53,7 @@ namespace {
 
 grpc_httpcli_get_override g_get_override;
 grpc_httpcli_post_override g_post_override;
+grpc_httpcli_put_override g_put_override;
 void (*g_test_only_on_handshake_done_intercept)(HttpRequest* req);
 
 }  // namespace
@@ -107,10 +108,36 @@ OrphanablePtr<HttpRequest> HttpRequest::Post(
       std::move(channel_creds));
 }
 
+OrphanablePtr<HttpRequest> HttpRequest::Put(
+    URI uri, const grpc_channel_args* channel_args,
+    grpc_polling_entity* pollent, const grpc_http_request* request,
+    Timestamp deadline, grpc_closure* on_done, grpc_http_response* response,
+    RefCountedPtr<grpc_channel_credentials> channel_creds) {
+  absl::optional<std::function<void()>> test_only_generate_response;
+  if (g_put_override != nullptr) {
+    test_only_generate_response = [request, uri, deadline, on_done,
+                                   response]() {
+      g_put_override(request, uri.authority().c_str(), uri.path().c_str(),
+                     request->body, request->body_length, deadline, on_done,
+                     response);
+    };
+  }
+  std::string name =
+      absl::StrFormat("HTTP:PUT:%s:%s", uri.authority(), uri.path());
+  const grpc_slice request_text = grpc_httpcli_format_put_request(
+      request, uri.authority().c_str(), uri.path().c_str());
+  return MakeOrphanable<HttpRequest>(
+      std::move(uri), request_text, response, deadline, channel_args, on_done,
+      pollent, name.c_str(), std::move(test_only_generate_response),
+      std::move(channel_creds));
+}
+
 void HttpRequest::SetOverride(grpc_httpcli_get_override get,
-                              grpc_httpcli_post_override post) {
+                              grpc_httpcli_post_override post,
+                              grpc_httpcli_put_override put) {
   g_get_override = get;
   g_post_override = post;
+  g_put_override = put;
 }
 
 void HttpRequest::TestOnlySetOnHandshakeDoneIntercept(
