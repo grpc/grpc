@@ -776,7 +776,7 @@ int httpcli_put_should_not_be_called(const grpc_http_request* /*request*/,
                                      const char* /*host*/, const char* /*path*/,
                                      const char* /*body_bytes*/,
                                      size_t /*body_size*/,
-                                     grpc_core::Timestamp /*deadline*/,
+                                     Timestamp /*deadline*/,
                                      grpc_closure* /*on_done*/,
                                      grpc_http_response* /*response*/) {
   GPR_ASSERT("HTTP PUT should not be called" == nullptr);
@@ -2364,8 +2364,8 @@ int aws_imdsv2_external_account_creds_httpcli_get_success(
 }
 
 int aws_imdsv2_external_account_creds_httpcli_put_success(
-    const grpc_http_request* request, const char* host, const char* path,
-    const char* body, size_t body_size, Timestamp /*deadline*/,
+    const grpc_http_request* request, const char* /*host*/, const char* path,
+    const char* /*body*/, size_t /*body_size*/, Timestamp /*deadline*/,
     grpc_closure* on_done, grpc_http_response* response) {
   GPR_ASSERT(request->hdr_count == 1);
   GPR_ASSERT(strcmp(request->hdrs[0].key,
