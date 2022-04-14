@@ -43,11 +43,12 @@ else
   docker build -t "$DOCKER_IMAGE_NAME" "$DOCKERFILE_DIR"
 fi
 
+# If TTY is available, the running container can be conveniently terminated with Ctrl+C.
 if [[ -t 0 ]]; then
-  DOCKER_TTY_ARGS="-it"
+  DOCKER_TTY_ARGS=("-it")
 else
   # The input device on kokoro is not a TTY, so -it does not work.
-  DOCKER_TTY_ARGS=
+  DOCKER_TTY_ARGS=()
 fi
 
 # Git root as seen by the docker instance
@@ -64,11 +65,11 @@ TEMP_OUTPUT_DIR="$(mktemp -d)"
 
 # Run tests inside docker
 DOCKER_EXIT_CODE=0
-# TODO: silence complaint about $DOCKER_TTY_ARGS expansion in some other way
+# TODO: silence complaint about ${EXTRA_DOCKER_ARGS} expansion in some other way
 # shellcheck disable=SC2086,SC2154
 docker run \
   "$@" \
-  ${DOCKER_TTY_ARGS} \
+  "${DOCKER_TTY_ARGS[@]}" \
   ${EXTRA_DOCKER_ARGS} \
   --cap-add SYS_PTRACE \
   -e "DOCKER_RUN_SCRIPT_COMMAND=${DOCKER_RUN_SCRIPT_COMMAND}" \
