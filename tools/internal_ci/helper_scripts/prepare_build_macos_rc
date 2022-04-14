@@ -21,6 +21,7 @@ echo "CPU type: $(sysctl -n machdep.cpu.brand_string)"
 echo "CPU: $(sysctl -n machdep.cpu.vendor) $(uname -m) Family $(sysctl -n machdep.cpu.family) Model $(sysctl -n machdep.cpu.brand_string)"
 echo "CPU Cores: $(sysctl -n hw.ncpu)"
 echo "Memory: $(sysctl -n hw.memsize)"
+echo "Kokoro image version: $(cat /VERSION)"
 
 # Info on disk usage and mounted volumes
 mount
@@ -77,7 +78,7 @@ then
   set +x
   source $HOME/.rvm/scripts/rvm
 
-  for RUBY_VERSION in 2.5.0 2.7.0 3.0.0; do
+  for RUBY_VERSION in 2.5.0 2.7.0 3.0.0 3.1.0; do
     echo "Installing ruby-${RUBY_VERSION}"
     time rvm install "ruby-${RUBY_VERSION}"
   done;

@@ -61,6 +61,7 @@
 #include "src/core/lib/profiling/timers.h"
 #include "src/core/lib/resource_quota/api.h"
 #include "src/core/lib/resource_quota/memory_quota.h"
+#include "src/core/lib/resource_quota/trace.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/slice/slice_string_helpers.h"
 
@@ -365,6 +366,7 @@ struct grpc_tcp {
   /* Used by the endpoint read function to distinguish the very first read call
    * from the rest */
   bool is_first_read;
+  bool has_posted_reclaimer;
   double target_length;
   double bytes_read_this_round;
   grpc_core::RefCount refcount;
@@ -376,7 +378,8 @@ struct grpc_tcp {
   /* garbage after the last read */
   grpc_slice_buffer last_read_buffer;
 
-  grpc_slice_buffer* incoming_buffer;
+  absl::Mutex read_mu;
+  grpc_slice_buffer* incoming_buffer ABSL_GUARDED_BY(read_mu) = nullptr;
   int inq;          /* bytes pending on the socket from the last read. */
   bool inq_capable; /* cache whether kernel supports inq */
 
@@ -423,6 +426,9 @@ struct grpc_tcp {
                                       on errors anymore */
   TcpZerocopySendCtx tcp_zerocopy_send_ctx;
   TcpZerocopySendRecord* current_zerocopy_send = nullptr;
+
+  bool curr_read_completed;
+  int curr_min_read_chunk_size;
 };
 
 struct backup_poller {
@@ -661,9 +667,35 @@ static void tcp_destroy(grpc_endpoint* ep) {
   TCP_UNREF(tcp, "destroy");
 }
 
-static void call_read_cb(grpc_tcp* tcp, grpc_error_handle error) {
-  grpc_closure* cb = tcp->read_cb;
+static void perform_reclamation(grpc_tcp* tcp)
+    ABSL_LOCKS_EXCLUDED(tcp->read_mu) {
+  if (GRPC_TRACE_FLAG_ENABLED(grpc_resource_quota_trace)) {
+    gpr_log(GPR_INFO, "TCP: benign reclamation to free memory");
+  }
+  tcp->read_mu.Lock();
+  if (tcp->incoming_buffer != nullptr) {
+    grpc_slice_buffer_reset_and_unref_internal(tcp->incoming_buffer);
+  }
+  tcp->read_mu.Unlock();
+  tcp->has_posted_reclaimer = false;
+}
 
+static void maybe_post_reclaimer(grpc_tcp* tcp)
+    ABSL_EXCLUSIVE_LOCKS_REQUIRED(tcp->read_mu) {
+  if (!tcp->has_posted_reclaimer) {
+    tcp->has_posted_reclaimer = true;
+    tcp->memory_owner.PostReclaimer(
+        grpc_core::ReclamationPass::kBenign,
+        [tcp](absl::optional<grpc_core::ReclamationSweep> sweep) {
+          if (!sweep.has_value()) return;
+          perform_reclamation(tcp);
+        });
+  }
+}
+
+static void tcp_trace_read(grpc_tcp* tcp, grpc_error_handle error)
+    ABSL_EXCLUSIVE_LOCKS_REQUIRED(tcp->read_mu) {
+  grpc_closure* cb = tcp->read_cb;
   if (GRPC_TRACE_FLAG_ENABLED(grpc_tcp_trace)) {
     gpr_log(GPR_INFO, "TCP:%p call_cb %p %p:%p", tcp, cb, cb->cb, cb->cb_arg);
     size_t i;
@@ -678,15 +710,16 @@ static void call_read_cb(grpc_tcp* tcp, grpc_error_handle error) {
       }
     }
   }
-
-  tcp->read_cb = nullptr;
-  tcp->incoming_buffer = nullptr;
-  grpc_core::Closure::Run(DEBUG_LOCATION, cb, error);
 }
 
+/* Returns true if data available to read or error other than EAGAIN. */
 #define MAX_READ_IOVEC 4
-static void tcp_do_read(grpc_tcp* tcp) {
+static bool tcp_do_read(grpc_tcp* tcp, grpc_error_handle* error)
+    ABSL_EXCLUSIVE_LOCKS_REQUIRED(tcp->read_mu) {
   GPR_TIMER_SCOPE("tcp_do_read", 0);
+  if (GRPC_TRACE_FLAG_ENABLED(grpc_tcp_trace)) {
+    gpr_log(GPR_INFO, "TCP:%p do_read", tcp);
+  }
   struct msghdr msg;
   struct iovec iov[MAX_READ_IOVEC];
   ssize_t read_bytes;
@@ -746,17 +779,16 @@ static void tcp_do_read(grpc_tcp* tcp) {
       /* NB: After calling call_read_cb a parallel call of the read handler may
        * be running. */
       if (errno == EAGAIN) {
+        tcp->curr_read_completed = true;
         finish_estimate(tcp);
         tcp->inq = 0;
-        /* We've consumed the edge, request a new one */
-        notify_on_read(tcp);
+        return false;
       } else {
+        tcp->curr_read_completed = false;
         grpc_slice_buffer_reset_and_unref_internal(tcp->incoming_buffer);
-        call_read_cb(tcp,
-                     tcp_annotate_error(GRPC_OS_ERROR(errno, "recvmsg"), tcp));
-        TCP_UNREF(tcp, "read");
+        *error = tcp_annotate_error(GRPC_OS_ERROR(errno, "recvmsg"), tcp);
+        return true;
       }
-      return;
     }
     if (read_bytes == 0) {
       /* 0 read size ==> end of stream
@@ -764,12 +796,11 @@ static void tcp_do_read(grpc_tcp* tcp) {
        * We may have read something, i.e., total_read_bytes > 0, but
        * since the connection is closed we will drop the data here, because we
        * can't call the callback multiple times. */
+      tcp->curr_read_completed = true;
       grpc_slice_buffer_reset_and_unref_internal(tcp->incoming_buffer);
-      call_read_cb(
-          tcp, tcp_annotate_error(
-                   GRPC_ERROR_CREATE_FROM_STATIC_STRING("Socket closed"), tcp));
-      TCP_UNREF(tcp, "read");
-      return;
+      *error = tcp_annotate_error(
+          GRPC_ERROR_CREATE_FROM_STATIC_STRING("Socket closed"), tcp);
+      return true;
     }
 
     GRPC_STATS_INC_TCP_READ_SIZE(read_bytes);
@@ -822,17 +853,20 @@ static void tcp_do_read(grpc_tcp* tcp) {
     finish_estimate(tcp);
   }
 
+  // There may be more data to be read because recvmsg did not return EAGAIN.
+  tcp->curr_read_completed = false;
   GPR_DEBUG_ASSERT(total_read_bytes > 0);
   if (total_read_bytes < tcp->incoming_buffer->length) {
     grpc_slice_buffer_trim_end(tcp->incoming_buffer,
                                tcp->incoming_buffer->length - total_read_bytes,
                                &tcp->last_read_buffer);
   }
-  call_read_cb(tcp, GRPC_ERROR_NONE);
-  TCP_UNREF(tcp, "read");
+  *error = GRPC_ERROR_NONE;
+  return true;
 }
 
-static void tcp_continue_read(grpc_tcp* tcp) {
+static void maybe_make_read_slices(grpc_tcp* tcp)
+    ABSL_EXCLUSIVE_LOCKS_REQUIRED(tcp->read_mu) {
   if (tcp->incoming_buffer->length == 0 &&
       tcp->incoming_buffer->count < MAX_READ_IOVEC) {
     if (GRPC_TRACE_FLAG_ENABLED(grpc_tcp_trace)) {
@@ -845,17 +879,24 @@ static void tcp_continue_read(grpc_tcp* tcp) {
     int target_length = static_cast<int>(tcp->target_length);
     int extra_wanted =
         target_length - static_cast<int>(tcp->incoming_buffer->length);
+    if (tcp->curr_read_completed) {
+      // Set it to false again to start the next block of reads
+      tcp->curr_read_completed = false;
+      // Reset curr_min_read_chunk_size for the next block of reads
+      tcp->curr_min_read_chunk_size = tcp->min_read_chunk_size;
+    } else {
+      // Last read is not completed yet. Double the last min read chunk size.
+      tcp->curr_min_read_chunk_size =
+          std::min(2 * tcp->curr_min_read_chunk_size, tcp->max_read_chunk_size);
+    }
     grpc_slice_buffer_add_indexed(
         tcp->incoming_buffer,
         tcp->memory_owner.MakeSlice(grpc_core::MemoryRequest(
-            tcp->min_read_chunk_size,
-            grpc_core::Clamp(extra_wanted, tcp->min_read_chunk_size,
+            tcp->curr_min_read_chunk_size,
+            grpc_core::Clamp(extra_wanted, tcp->curr_min_read_chunk_size,
                              tcp->max_read_chunk_size))));
+    maybe_post_reclaimer(tcp);
   }
-  if (GRPC_TRACE_FLAG_ENABLED(grpc_tcp_trace)) {
-    gpr_log(GPR_INFO, "TCP:%p do_read", tcp);
-  }
-  tcp_do_read(tcp);
 }
 
 static void tcp_handle_read(void* arg /* grpc_tcp */, grpc_error_handle error) {
@@ -864,15 +905,28 @@ static void tcp_handle_read(void* arg /* grpc_tcp */, grpc_error_handle error) {
     gpr_log(GPR_INFO, "TCP:%p got_read: %s", tcp,
             grpc_error_std_string(error).c_str());
   }
-
-  if (GPR_UNLIKELY(error != GRPC_ERROR_NONE)) {
+  tcp->read_mu.Lock();
+  grpc_error_handle tcp_read_error;
+  if (GPR_LIKELY(error == GRPC_ERROR_NONE)) {
+    maybe_make_read_slices(tcp);
+    if (!tcp_do_read(tcp, &tcp_read_error)) {
+      /* We've consumed the edge, request a new one */
+      tcp->read_mu.Unlock();
+      notify_on_read(tcp);
+      return;
+    }
+    tcp_trace_read(tcp, tcp_read_error);
+  } else {
+    tcp_read_error = GRPC_ERROR_REF(error);
     grpc_slice_buffer_reset_and_unref_internal(tcp->incoming_buffer);
     grpc_slice_buffer_reset_and_unref_internal(&tcp->last_read_buffer);
-    call_read_cb(tcp, GRPC_ERROR_REF(error));
-    TCP_UNREF(tcp, "read");
-  } else {
-    tcp_continue_read(tcp);
   }
+  grpc_closure* cb = tcp->read_cb;
+  tcp->read_cb = nullptr;
+  tcp->incoming_buffer = nullptr;
+  tcp->read_mu.Unlock();
+  grpc_core::Closure::Run(DEBUG_LOCATION, cb, tcp_read_error);
+  TCP_UNREF(tcp, "read");
 }
 
 static void tcp_read(grpc_endpoint* ep, grpc_slice_buffer* incoming_buffer,
@@ -880,9 +934,11 @@ static void tcp_read(grpc_endpoint* ep, grpc_slice_buffer* incoming_buffer,
   grpc_tcp* tcp = reinterpret_cast<grpc_tcp*>(ep);
   GPR_ASSERT(tcp->read_cb == nullptr);
   tcp->read_cb = cb;
+  tcp->read_mu.Lock();
   tcp->incoming_buffer = incoming_buffer;
   grpc_slice_buffer_reset_and_unref_internal(incoming_buffer);
   grpc_slice_buffer_swap(incoming_buffer, &tcp->last_read_buffer);
+  tcp->read_mu.Unlock();
   TCP_REF(tcp, "read");
   if (tcp->is_first_read) {
     /* Endpoint read called for the very first time. Register read callback with
@@ -1741,17 +1797,19 @@ grpc_endpoint* grpc_tcp_create(grpc_fd* em_fd,
   tcp->current_zerocopy_send = nullptr;
   tcp->release_fd_cb = nullptr;
   tcp->release_fd = nullptr;
-  tcp->incoming_buffer = nullptr;
   tcp->target_length = static_cast<double>(tcp_read_chunk_size);
   tcp->min_read_chunk_size = tcp_min_read_chunk_size;
   tcp->max_read_chunk_size = tcp_max_read_chunk_size;
   tcp->bytes_read_this_round = 0;
   /* Will be set to false by the very first endpoint read function */
   tcp->is_first_read = true;
+  tcp->has_posted_reclaimer = false;
   tcp->bytes_counter = -1;
   tcp->socket_ts_enabled = false;
   tcp->ts_capable = true;
   tcp->outgoing_buffer_arg = nullptr;
+  tcp->curr_read_completed = true;
+  tcp->curr_min_read_chunk_size = tcp->min_read_chunk_size;
   if (tcp_tx_zerocopy_enabled && !tcp->tcp_zerocopy_send_ctx.memory_limited()) {
 #ifdef GRPC_LINUX_ERRQUEUE
     const int enable = 1;

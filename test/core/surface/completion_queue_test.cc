@@ -487,7 +487,7 @@ struct thread_state {
 };
 
 int main(int argc, char** argv) {
-  grpc::testing::TestEnvironment env(argc, argv);
+  grpc::testing::TestEnvironment env(&argc, argv);
   grpc_init();
   test_no_op();
   test_pollset_conversion();

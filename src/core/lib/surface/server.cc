@@ -479,7 +479,6 @@ class ChannelBroadcaster {
                   GRPC_ERROR_CREATE_FROM_STATIC_STRING("Server shutdown"),
                   GRPC_ERROR_INT_GRPC_STATUS, GRPC_STATUS_OK)
             : GRPC_ERROR_NONE;
-    op->set_accept_stream = true;
     sc->slice = grpc_slice_from_copied_string("Server shutdown");
     op->disconnect_with_error = send_disconnect;
     elem =

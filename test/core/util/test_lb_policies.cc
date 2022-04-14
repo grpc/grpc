@@ -281,6 +281,7 @@ class InterceptRecvTrailingMetadataLoadBalancingPolicy
 
     void Finish(FinishArgs args) override {
       TrailingMetadataArgsSeen args_seen;
+      args_seen.status = args.status;
       args_seen.backend_metric_data =
           args.backend_metric_accessor->GetBackendMetricData();
       args_seen.metadata = args.trailing_metadata->TestOnlyCopyToVector();

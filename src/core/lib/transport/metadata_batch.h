@@ -45,6 +45,8 @@
 #include "src/core/lib/transport/parsed_metadata.h"
 #include "src/core/lib/transport/timeout_encoding.h"
 
+struct grpc_call_final_info;
+
 namespace grpc_core {
 
 // grpc-timeout metadata trait.
@@ -225,6 +227,7 @@ struct HttpMethodMetadata {
   enum ValueType {
     kPost,
     kGet,
+    kPut,
     kInvalid,
   };
   using MementoType = ValueType;
@@ -234,6 +237,8 @@ struct HttpMethodMetadata {
     auto value_string = value.as_string_view();
     if (value_string == "POST") {
       out = kPost;
+    } else if (value_string == "PUT") {
+      out = kPut;
     } else if (value_string == "GET") {
       out = kGet;
     } else {
@@ -248,6 +253,8 @@ struct HttpMethodMetadata {
     switch (x) {
       case kPost:
         return StaticSlice::FromStaticString("POST");
+      case kPut:
+        return StaticSlice::FromStaticString("PUT");
       case kGet:
         return StaticSlice::FromStaticString("GET");
       default:
@@ -260,6 +267,8 @@ struct HttpMethodMetadata {
         return "POST";
       case kGet:
         return "GET";
+      case kPut:
+        return "PUT";
       default:
         return "<discarded-invalid-value>";
     }
@@ -524,6 +533,14 @@ struct GrpcStreamNetworkState {
         return "not seen by server";
     }
   }
+};
+
+// Annotation added by a server transport to note the peer making a request.
+struct PeerString {
+  static absl::string_view DebugKey() { return "PeerString"; }
+  static constexpr bool kRepeatable = false;
+  using ValueType = absl::string_view;
+  static std::string DisplayValue(ValueType x) { return std::string(x); }
 };
 
 // Annotation added by various systems to describe the reason for a failure.
@@ -1374,7 +1391,8 @@ using grpc_metadata_batch_base = grpc_core::MetadataMap<
     grpc_core::GrpcTagsBinMetadata, grpc_core::GrpcLbClientStatsMetadata,
     grpc_core::LbCostBinMetadata, grpc_core::LbTokenMetadata,
     // Non-encodable things
-    grpc_core::GrpcStreamNetworkState, grpc_core::GrpcStatusContext>;
+    grpc_core::GrpcStreamNetworkState, grpc_core::PeerString,
+    grpc_core::GrpcStatusContext>;
 
 struct grpc_metadata_batch : public grpc_metadata_batch_base {
   using grpc_metadata_batch_base::grpc_metadata_batch_base;

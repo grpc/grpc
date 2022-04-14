@@ -391,9 +391,22 @@ void SubchannelStreamClient::CallState::DoneReadingRecvMessage(
   {
     MutexLock lock(&subchannel_stream_client_->mu_);
     if (subchannel_stream_client_->event_handler_ != nullptr) {
-      subchannel_stream_client_->event_handler_->RecvMessageReadyLocked(
-          subchannel_stream_client_.get(),
+      absl::string_view serialized_message(
           reinterpret_cast<char*>(recv_message), recv_message_buffer_.length);
+      absl::Status status =
+          subchannel_stream_client_->event_handler_->RecvMessageReadyLocked(
+              subchannel_stream_client_.get(), serialized_message);
+      if (!status.ok()) {
+        if (GPR_UNLIKELY(subchannel_stream_client_->tracer_ != nullptr)) {
+          gpr_log(GPR_INFO,
+                  "%s %p: SubchannelStreamClient CallState %p: failed to "
+                  "parse response message: %s",
+                  subchannel_stream_client_->tracer_,
+                  subchannel_stream_client_.get(), this,
+                  status.ToString().c_str());
+        }
+        Cancel();
+      }
     }
   }
   seen_response_.store(true, std::memory_order_release);

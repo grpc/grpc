@@ -284,7 +284,7 @@ TEST(SockAddrUtilsTest, SockAddrMatchSubnet) {
 }  // namespace
 
 int main(int argc, char** argv) {
-  grpc::testing::TestEnvironment env(argc, argv);
+  grpc::testing::TestEnvironment env(&argc, argv);
   ::testing::InitGoogleTest(&argc, argv);
   int retval = RUN_ALL_TESTS();
   return retval;

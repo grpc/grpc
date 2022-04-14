@@ -14,4 +14,5 @@ exports_files([
     "libuv.patch",
     "protobuf.patch",
     "rules_python.patch",
+    "protoc-gen-validate.patch",
 ])

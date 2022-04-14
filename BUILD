@@ -153,7 +153,7 @@ python_config_settings()
 # This should be updated along with build_handwritten.yaml
 g_stands_for = "golazo"  # @unused
 
-core_version = "23.0.0"  # @unused
+core_version = "24.0.0"  # @unused
 
 version = "1.46.0-dev"  # @unused
 
@@ -1687,6 +1687,9 @@ grpc_cc_library(
     hdrs = [
         "src/core/lib/gprpp/time.h",
     ],
+    external_deps = [
+        "absl/strings:str_format",
+    ],
     deps = [
         "gpr",
         "gpr_codegen",
@@ -1915,7 +1918,6 @@ grpc_cc_library(
         "src/core/lib/iomgr/error_cfstream.cc",
         "src/core/lib/iomgr/ev_apple.cc",
         "src/core/lib/iomgr/ev_epoll1_linux.cc",
-        "src/core/lib/iomgr/ev_epollex_linux.cc",
         "src/core/lib/iomgr/ev_poll_posix.cc",
         "src/core/lib/iomgr/ev_posix.cc",
         "src/core/lib/iomgr/ev_windows.cc",
@@ -1934,7 +1936,6 @@ grpc_cc_library(
         "src/core/lib/iomgr/iomgr_posix.cc",
         "src/core/lib/iomgr/iomgr_posix_cfstream.cc",
         "src/core/lib/iomgr/iomgr_windows.cc",
-        "src/core/lib/iomgr/is_epollexclusive_available.cc",
         "src/core/lib/iomgr/load_file.cc",
         "src/core/lib/iomgr/lockfree_event.cc",
         "src/core/lib/iomgr/polling_entity.cc",
@@ -2057,7 +2058,6 @@ grpc_cc_library(
         "src/core/lib/iomgr/error_cfstream.h",
         "src/core/lib/iomgr/ev_apple.h",
         "src/core/lib/iomgr/ev_epoll1_linux.h",
-        "src/core/lib/iomgr/ev_epollex_linux.h",
         "src/core/lib/iomgr/ev_poll_posix.h",
         "src/core/lib/iomgr/ev_posix.h",
         "src/core/lib/iomgr/executor/mpmcqueue.h",
@@ -2067,7 +2067,6 @@ grpc_cc_library(
         "src/core/lib/iomgr/internal_errqueue.h",
         "src/core/lib/iomgr/iocp_windows.h",
         "src/core/lib/iomgr/iomgr.h",
-        "src/core/lib/iomgr/is_epollexclusive_available.h",
         "src/core/lib/iomgr/load_file.h",
         "src/core/lib/iomgr/lockfree_event.h",
         "src/core/lib/iomgr/nameser.h",
@@ -2088,7 +2087,6 @@ grpc_cc_library(
         "src/core/lib/iomgr/socket_mutator.h",
         "src/core/lib/iomgr/socket_utils_posix.h",
         "src/core/lib/iomgr/socket_windows.h",
-        "src/core/lib/iomgr/sys_epoll_wrapper.h",
         "src/core/lib/iomgr/tcp_client.h",
         "src/core/lib/iomgr/tcp_client_posix.h",
         "src/core/lib/iomgr/tcp_posix.h",
@@ -2206,6 +2204,7 @@ grpc_cc_library(
         "ref_counted_ptr",
         "resolved_address",
         "resource_quota",
+        "resource_quota_trace",
         "slice",
         "slice_refcount",
         "sockaddr_utils",
@@ -2301,8 +2300,7 @@ grpc_cc_library(
         "grpc_lb_policy_ring_hash",
         "grpc_lb_policy_round_robin",
         "grpc_lb_policy_weighted_target",
-        "grpc_client_idle_filter",
-        "grpc_max_age_filter",
+        "grpc_channel_idle_filter",
         "grpc_message_size_filter",
         "grpc_resolver_binder",
         "grpc_resolver_dns_ares",
@@ -2445,11 +2443,13 @@ grpc_cc_library(
     deps = [
         "avl",
         "channel_stack_type",
+        "dual_ref_counted",
         "gpr_base",
         "grpc_codegen",
         "match",
         "ref_counted",
         "ref_counted_ptr",
+        "time",
         "useful",
     ],
 )
@@ -2588,20 +2588,22 @@ grpc_cc_library(
     ],
     language = "c++",
     deps = [
+        "arena",
         "gpr_base",
         "grpc_base",
         "grpc_server_config_selector",
         "grpc_service_config",
+        "promise",
     ],
 )
 
 grpc_cc_library(
     name = "idle_filter_state",
     srcs = [
-        "src/core/ext/filters/client_idle/idle_filter_state.cc",
+        "src/core/ext/filters/channel_idle/idle_filter_state.cc",
     ],
     hdrs = [
-        "src/core/ext/filters/client_idle/idle_filter_state.h",
+        "src/core/ext/filters/channel_idle/idle_filter_state.h",
     ],
     language = "c++",
     deps = [
@@ -2610,9 +2612,12 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
-    name = "grpc_client_idle_filter",
+    name = "grpc_channel_idle_filter",
     srcs = [
-        "src/core/ext/filters/client_idle/client_idle_filter.cc",
+        "src/core/ext/filters/channel_idle/channel_idle_filter.cc",
+    ],
+    hdrs = [
+        "src/core/ext/filters/channel_idle/channel_idle_filter.h",
     ],
     deps = [
         "capture",
@@ -2622,24 +2627,9 @@ grpc_cc_library(
         "grpc_base",
         "idle_filter_state",
         "loop",
+        "single_set_ptr",
         "sleep",
         "try_seq",
-    ],
-)
-
-grpc_cc_library(
-    name = "grpc_max_age_filter",
-    srcs = [
-        "src/core/ext/filters/max_age/max_age_filter.cc",
-    ],
-    hdrs = [
-        "src/core/ext/filters/max_age/max_age_filter.h",
-    ],
-    language = "c++",
-    deps = [
-        "config",
-        "gpr_base",
-        "grpc_base",
     ],
 )
 
@@ -2762,10 +2752,12 @@ grpc_cc_library(
     ],
     language = "c++",
     deps = [
+        "call_push_pull",
         "config",
         "gpr_base",
         "grpc_base",
         "grpc_message_size_filter",
+        "seq",
         "slice",
     ],
 )
@@ -2897,6 +2889,7 @@ grpc_cc_library(
         "src/core/ext/xds/xds_client.cc",
         "src/core/ext/xds/xds_client_stats.cc",
         "src/core/ext/xds/xds_cluster.cc",
+        "src/core/ext/xds/xds_cluster_specifier_plugin.cc",
         "src/core/ext/xds/xds_common_types.cc",
         "src/core/ext/xds/xds_endpoint.cc",
         "src/core/ext/xds/xds_http_fault_filter.cc",
@@ -2921,6 +2914,7 @@ grpc_cc_library(
         "src/core/ext/xds/xds_client.h",
         "src/core/ext/xds/xds_client_stats.h",
         "src/core/ext/xds/xds_cluster.h",
+        "src/core/ext/xds/xds_cluster_specifier_plugin.h",
         "src/core/ext/xds/xds_common_types.h",
         "src/core/ext/xds/xds_endpoint.h",
         "src/core/ext/xds/xds_http_fault_filter.h",
@@ -3009,6 +3003,8 @@ grpc_cc_library(
         "protobuf_timestamp_upb",
         "protobuf_wrappers_upb",
         "ref_counted_ptr",
+        "rls_config_upb",
+        "rls_config_upbdefs",
         "slice",
         "slice_refcount",
         "sockaddr_utils",
@@ -3357,6 +3353,7 @@ grpc_cc_library(
     ],
     language = "c++",
     deps = [
+        "config",
         "error",
         "gpr",
         "grpc++_base",
@@ -3364,6 +3361,7 @@ grpc_cc_library(
         "grpc_lb_policy_grpclb",
         "grpc_security_base",
         "grpc_sockaddr",
+        "seq",
         "slice",
         "uri_parser",
     ],
@@ -4987,6 +4985,31 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "grpcpp_orca",
+    srcs = [
+        "src/cpp/server/orca/orca_service.cc",
+    ],
+    external_deps = [
+        "upb_lib",
+    ],
+    language = "c++",
+    public_hdrs = [
+        "include/grpcpp/ext/orca_service.h",
+    ],
+    visibility = ["@grpc:public"],
+    deps = [
+        "grpc++",
+        "grpc++_codegen_base",
+        "grpc_base",
+        "protobuf_duration_upb",
+        "time",
+        "xds_orca_service_upb",
+        "xds_orca_upb",
+    ],
+    alwayslink = 1,
+)
+
+grpc_cc_library(
     name = "grpcpp_channelz",
     srcs = [
         "src/cpp/server/channelz/channelz_service.cc",
@@ -5356,6 +5379,11 @@ grpc_upb_proto_library(
 )
 
 grpc_upb_proto_library(
+    name = "xds_orca_service_upb",
+    deps = ["@com_github_cncf_udpa//xds/service/orca/v3:pkg"],
+)
+
+grpc_upb_proto_library(
     name = "grpc_health_upb",
     deps = ["//src/proto/grpc/health/v1:health_proto_descriptor"],
 )
@@ -5383,6 +5411,16 @@ grpc_upb_proto_library(
 grpc_upb_proto_library(
     name = "rls_upb",
     deps = ["//src/proto/grpc/lookup/v1:rls_proto_descriptor"],
+)
+
+grpc_upb_proto_library(
+    name = "rls_config_upb",
+    deps = ["//src/proto/grpc/lookup/v1:rls_config_proto_descriptor"],
+)
+
+grpc_upb_proto_reflection_library(
+    name = "rls_config_upbdefs",
+    deps = ["//src/proto/grpc/lookup/v1:rls_config_proto_descriptor"],
 )
 
 WELL_KNOWN_PROTO_TARGETS = [

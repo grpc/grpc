@@ -25,7 +25,7 @@ echo "Change repo manager to $1"
 
 BASE_PATH=$(dirname $0)
 
-for file in bug_report.md cleanup_request.md feature_request.md question.md
+for file in bug_report_core.md bug_report_cpp.md cleanup_request.md feature_request.md question.md
 do
 	sed -i".bak" -E "s/assignees: ([a-zA-Z0-9-]+)/assignees: $1/" "$BASE_PATH/ISSUE_TEMPLATE/$file"
   rm "$BASE_PATH/ISSUE_TEMPLATE/$file.bak"

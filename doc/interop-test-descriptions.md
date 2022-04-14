@@ -1045,6 +1045,9 @@ This test must be configurable via a few different command line flags:
   completed. This should default to
   `soak_per_iteration_max_acceptable_latency_ms` * `soak_iterations`.
 
+* `soak_min_time_ms_between_rpcs`: The minimum time in milliseconds between
+  consecutive RPCs. Useful for limiting QPS.
+
 The following is optional but encouraged to improve debuggability:
 
 * Implementations should log the number of milliseconds that each RPC takes.

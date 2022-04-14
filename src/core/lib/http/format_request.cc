@@ -40,8 +40,7 @@ static void fill_common_header(const grpc_http_request* request,
                                bool connection_close,
                                std::vector<std::string>* buf) {
   buf->push_back(path);
-  buf->push_back(" HTTP/1.0\r\n");
-  /* just in case some crazy server really expects HTTP/1.1 */
+  buf->push_back(" HTTP/1.1\r\n");
   buf->push_back("Host: ");
   buf->push_back(host);
   buf->push_back("\r\n");

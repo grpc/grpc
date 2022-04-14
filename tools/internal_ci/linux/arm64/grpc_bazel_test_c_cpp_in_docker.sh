@@ -26,4 +26,11 @@ cd /var/local/git/grpc
 python3 tools/run_tests/start_port_server.py
 
 # test gRPC C/C++ with bazel
-tools/bazel test --config=opt --test_output=errors --test_tag_filters=-no_linux,-no_arm64 --build_tag_filters=-no_linux,-no_arm64 --flaky_test_attempts=1 --runs_per_test=1 //test/...
+python3 tools/run_tests/python_utils/bazel_report_helper.py --report_path bazel_test_c_cpp
+bazel_test_c_cpp/bazel_wrapper \
+  --bazelrc=tools/remote_build/include/test_locally_with_resultstore_results.bazelrc \
+  test --config=opt \
+  --test_tag_filters=-no_linux,-no_arm64 \
+  --build_tag_filters=-no_linux,-no_arm64 \
+  -- \
+  //test/...
