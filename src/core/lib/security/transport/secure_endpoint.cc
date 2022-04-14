@@ -72,10 +72,15 @@ struct secure_endpoint {
             ->CreateMemoryOwner(absl::StrCat(grpc_endpoint_get_peer(transport),
                                              ":secure_endpoint"));
     self_reservation = memory_owner.MakeReservation(sizeof(*this));
-    read_staging_buffer =
-        memory_owner.MakeSlice(grpc_core::MemoryRequest(STAGING_BUFFER_SIZE));
-    write_staging_buffer =
-        memory_owner.MakeSlice(grpc_core::MemoryRequest(STAGING_BUFFER_SIZE));
+    if (zero_copy_protector) {
+      read_staging_buffer = grpc_empty_slice();
+      write_staging_buffer = grpc_empty_slice();
+    } else {
+      read_staging_buffer =
+          memory_owner.MakeSlice(grpc_core::MemoryRequest(STAGING_BUFFER_SIZE));
+      write_staging_buffer =
+          memory_owner.MakeSlice(grpc_core::MemoryRequest(STAGING_BUFFER_SIZE));
+    }
     has_posted_reclaimer.store(false, std::memory_order_relaxed);
     gpr_ref_init(&ref, 1);
   }
