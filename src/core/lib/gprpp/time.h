@@ -211,6 +211,11 @@ class Duration {
 
   std::string ToString() const;
 
+  // Returns the duration in the JSON form corresponding to a
+  // google.protobuf.Duration proto, as defined here:
+  // https://developers.google.com/protocol-buffers/docs/proto3#json
+  std::string ToJsonString() const;
+
  private:
   explicit constexpr Duration(int64_t millis) : millis_(millis) {}
 
