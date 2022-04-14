@@ -419,8 +419,8 @@ class OutlierDetectionLbFactory : public LoadBalancingPolicyFactory {
             &outlier_detection_policy.success_rate_ejection->minimum_hosts,
             &error_list);
         ParseJsonObjectField(
-            object, "requestVolumn",
-            &outlier_detection_policy.success_rate_ejection->request_volumn,
+            object, "requestVolume",
+            &outlier_detection_policy.success_rate_ejection->request_volume,
             &error_list);
       }
     }
@@ -444,9 +444,9 @@ class OutlierDetectionLbFactory : public LoadBalancingPolicyFactory {
                              &outlier_detection_policy
                                   .failure_percentage_ejection->minimum_hosts,
                              &error_list);
-        ParseJsonObjectField(object, "requestVolumn",
+        ParseJsonObjectField(object, "requestVolume",
                              &outlier_detection_policy
-                                  .failure_percentage_ejection->request_volumn,
+                                  .failure_percentage_ejection->request_volume,
                              &error_list);
       }
     }

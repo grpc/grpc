@@ -44,13 +44,13 @@ struct XdsClusterResource {
       uint32_t stdev_factor;
       uint32_t enforcement_percentage;
       uint32_t minimum_hosts;
-      uint32_t request_volumn;
+      uint32_t request_volume;
     };
     struct FailurePercentageEjection {
       uint32_t threshold;
       uint32_t enforcement_percentage;
       uint32_t minimum_hosts;
-      uint32_t request_volumn;
+      uint32_t request_volume;
     };
     absl::optional<SuccessRateEjection> success_rate_ejection;
     absl::optional<FailurePercentageEjection> failure_percentage_ejection;

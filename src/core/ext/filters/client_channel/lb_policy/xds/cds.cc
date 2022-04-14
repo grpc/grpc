@@ -377,8 +377,8 @@ bool CdsLb::GenerateDiscoveryMechanismForCluster(
               ->enforcement_percentage;
       success_rate_ejection["minimumHosts"] =
           outlier_detection_update.success_rate_ejection->minimum_hosts;
-      success_rate_ejection["requestVolumn"] =
-          outlier_detection_update.success_rate_ejection->request_volumn;
+      success_rate_ejection["requestVolume"] =
+          outlier_detection_update.success_rate_ejection->request_volume;
       outlier_detection["successRateEjection"] = success_rate_ejection;
     }
     if (outlier_detection_update.failure_percentage_ejection.has_value()) {
@@ -390,8 +390,8 @@ bool CdsLb::GenerateDiscoveryMechanismForCluster(
               ->enforcement_percentage;
       failure_percentage_ejection["minimumHosts"] =
           outlier_detection_update.failure_percentage_ejection->minimum_hosts;
-      failure_percentage_ejection["requestVolumn"] =
-          outlier_detection_update.failure_percentage_ejection->request_volumn;
+      failure_percentage_ejection["requestVolume"] =
+          outlier_detection_update.failure_percentage_ejection->request_volume;
       outlier_detection["failurePercentageEjection"] =
           failure_percentage_ejection;
     }
