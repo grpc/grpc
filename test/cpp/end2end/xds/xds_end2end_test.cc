@@ -59,6 +59,8 @@
 #include "src/core/ext/filters/client_channel/backup_poller.h"
 #include "src/core/ext/filters/client_channel/lb_policy/xds/xds_channel_args.h"
 #include "src/core/ext/filters/client_channel/resolver/fake/fake_resolver.h"
+#include "src/core/ext/filters/http/client/http_client_filter.h"
+#include "src/core/ext/filters/http/server/http_server_filter.h"
 #include "src/core/ext/xds/certificate_provider_registry.h"
 #include "src/core/ext/xds/xds_api.h"
 #include "src/core/ext/xds/xds_channel_args.h"
@@ -7576,12 +7578,16 @@ class XdsServerSecurityTest : public XdsEnd2endTest {
     return CreateCustomChannel(uri, channel_creds, args);
   }
 
-  std::shared_ptr<grpc::Channel> CreateInsecureChannel() {
+  std::shared_ptr<grpc::Channel> CreateInsecureChannel(
+      bool use_put_requests = false) {
     ChannelArguments args;
     // Override target name for host name check
     args.SetString(GRPC_SSL_TARGET_NAME_OVERRIDE_ARG,
                    ipv6_only_ ? "::1" : "127.0.0.1");
     args.SetInt(GRPC_ARG_USE_LOCAL_SUBCHANNEL_POOL, 1);
+    if (use_put_requests) {
+      args.SetInt(GRPC_ARG_TEST_ONLY_USE_PUT_REQUESTS, 1);
+    }
     std::string uri = absl::StrCat(
         ipv6_only_ ? "ipv6:[::1]:" : "ipv4:127.0.0.1:", backends_[0]->port());
     return CreateCustomChannel(uri, InsecureChannelCredentials(), args);
@@ -9384,8 +9390,11 @@ TEST_P(XdsRbacTestWithActionPermutations, MethodPostPermissionAnyPrincipal) {
   SendRpc([this]() { return CreateInsecureChannel(); }, {}, {},
           /*test_expects_failure=*/GetParam().rbac_action() == RBAC_Action_DENY,
           grpc::StatusCode::PERMISSION_DENIED);
-  // TODO(yashykt): When we start supporting GET/PUT requests in the future,
-  // this should be modified to test that they are NOT accepted with this rule.
+  // Test that an RPC with PUT method is handled properly.
+  SendRpc([this]() { return CreateInsecureChannel(/*use_put_requests=*/true); },
+          {}, {},
+          /*test_expects_failure=*/GetParam().rbac_action() != RBAC_Action_DENY,
+          grpc::StatusCode::PERMISSION_DENIED);
 }
 
 TEST_P(XdsRbacTestWithActionPermutations, MethodGetPermissionAnyPrincipal) {
@@ -9432,8 +9441,12 @@ TEST_P(XdsRbacTestWithActionPermutations, MethodPutPermissionAnyPrincipal) {
       [this]() { return CreateInsecureChannel(); }, {}, {},
       /*test_expects_failure=*/GetParam().rbac_action() == RBAC_Action_ALLOW,
       grpc::StatusCode::PERMISSION_DENIED);
-  // TODO(yashykt): When we start supporting PUT requests in the future, this
-  // should be modified to test that they are accepted with this rule.
+  // Test that an RPC with a PUT method gets accepted
+  SendRpc(
+      [this]() { return CreateInsecureChannel(/*use_put_requests=*/true); }, {},
+      {},
+      /*test_expects_failure=*/GetParam().rbac_action() != RBAC_Action_ALLOW,
+      grpc::StatusCode::PERMISSION_DENIED);
 }
 
 TEST_P(XdsRbacTestWithActionPermutations, UrlPathPermissionAnyPrincipal) {
@@ -9688,8 +9701,11 @@ TEST_P(XdsRbacTestWithActionPermutations, AnyPermissionMethodPostPrincipal) {
   SendRpc([this]() { return CreateInsecureChannel(); }, {}, {},
           /*test_expects_failure=*/GetParam().rbac_action() == RBAC_Action_DENY,
           grpc::StatusCode::PERMISSION_DENIED);
-  // TODO(yashykt): When we start supporting GET/PUT requests in the future,
-  // this should be modified to test that they are NOT accepted with this rule.
+  // Test that an RPC with PUT method is handled properly.
+  SendRpc([this]() { return CreateInsecureChannel(/*use_put_requests=*/true); },
+          {}, {},
+          /*test_expects_failure=*/GetParam().rbac_action() != RBAC_Action_DENY,
+          grpc::StatusCode::PERMISSION_DENIED);
 }
 
 TEST_P(XdsRbacTestWithActionPermutations, AnyPermissionMethodGetPrincipal) {
@@ -9731,13 +9747,17 @@ TEST_P(XdsRbacTestWithActionPermutations, AnyPermissionMethodPutPrincipal) {
   backends_[0]->notifier()->WaitOnServingStatusChange(
       absl::StrCat(ipv6_only_ ? "[::1]:" : "127.0.0.1:", backends_[0]->port()),
       grpc::StatusCode::OK);
+  // Test that an RPC with a PUT method gets accepted
+  SendRpc(
+      [this]() { return CreateInsecureChannel(/*use_put_requests=*/true); }, {},
+      {},
+      /*test_expects_failure=*/GetParam().rbac_action() != RBAC_Action_ALLOW,
+      grpc::StatusCode::PERMISSION_DENIED);
   // Test that an RPC with a POST method gets rejected
   SendRpc(
       [this]() { return CreateInsecureChannel(); }, {}, {},
       /*test_expects_failure=*/GetParam().rbac_action() == RBAC_Action_ALLOW,
       grpc::StatusCode::PERMISSION_DENIED);
-  // TODO(yashykt): When we start supporting PUT requests in the future, this
-  // should be modified to test that they are accepted with this rule.
 }
 
 TEST_P(XdsRbacTestWithActionPermutations, AnyPermissionUrlPathPrincipal) {
@@ -12008,6 +12028,9 @@ int main(int argc, char** argv) {
   // Make the backup poller poll very frequently in order to pick up
   // updates from all the subchannels's FDs.
   GPR_GLOBAL_CONFIG_SET(grpc_client_channel_backup_poll_interval_ms, 1);
+  // Allow testing PUT requests.
+  grpc_core::
+      InternalOnlyDoNotUseUnlessYouHavePermissionFromGrpcTeamAllowBrokenPutRequests();
 #if TARGET_OS_IPHONE
   // Workaround Apple CFStream bug
   gpr_setenv("grpc_cfstream", "0");

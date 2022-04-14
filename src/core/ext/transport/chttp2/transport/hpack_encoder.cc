@@ -487,6 +487,12 @@ void HPackCompressor::Framer::Encode(HttpMethodMetadata,
     case HttpMethodMetadata::ValueType::kGet:
       EmitIndexed(2);  // :method: GET
       break;
+    case HttpMethodMetadata::ValueType::kPut:
+      // Right now, we only emit PUT as a method for testing purposes, so it's
+      // fine to not index it.
+      EmitLitHdrWithNonBinaryStringKeyNotIdx(Slice::FromStaticString(":method"),
+                                             Slice::FromStaticString("PUT"));
+      break;
     case HttpMethodMetadata::ValueType::kInvalid:
       GPR_ASSERT(false);
       break;
