@@ -14,8 +14,7 @@
 # limitations under the License.
 
 # Runs C# build in a docker container, but using the local workspace.
-# Example usage:
-# src/csharp/run_in_docker.sh tools/run_tests/run_tests.py -l csharp
+# See tools/docker_runners/examples for more usage info.
 
 set -e
 
@@ -54,16 +53,21 @@ fi
 
 # args required to be able to run gdb/strace under the docker container
 DOCKER_PRIVILEGED_ARGS=(
-  "--privileged"
   "--cap-add=SYS_PTRACE"
-  "--security-opt=seccomp=unconfined"
+  # The following option was disabled to match the options used in build_and_run_docker.sh
+  # TODO(jtattermusch): is "--privileged" needed for coredumps inside docker containers?
+  # "--privileged"
+  # The following option was disabled to match the options used in build_and_run_docker.sh
+  # TODO(jtattermusch): is "--privileged" needed for coredumps inside docker containers?
+  # "--security-opt=seccomp=unconfined"
 )
 
 DOCKER_NETWORK_ARGS=(
   # enable IPv6
   "--sysctl=net.ipv6.conf.all.disable_ipv6=0"
-  # use host network, required for the port server to work correctly
-  "--network=host"
+  # The following option was disabled to match the options used in build_and_run_docker.sh
+  # TODO(jtattermusch): Option is required for local port_server.py to work correctly?
+  # "--network=host"
 )
 
 DOCKER_CLEANUP_ARGS=(
@@ -73,7 +77,7 @@ DOCKER_CLEANUP_ARGS=(
 )
 
 DOCKER_PROPAGATE_ENV_ARGS=(
-  "--env-file=tools/run_tests/dockerize/docker_propagate_env.list" \
+  "--env-file=tools/run_tests/dockerize/docker_propagate_env.list"
 )
 
 # Uncomment to run the docker container as current user's UID and GID.
@@ -87,9 +91,42 @@ DOCKER_PROPAGATE_ENV_ARGS=(
 #   "--user=$(id -u):$(id -g)"
 # )
 
+# If available, make KOKORO_KEYSTORE_DIR accessible from the container (as readonly)
+if [ "${KOKORO_KEYSTORE_DIR}" != "" ]
+then
+  MOUNT_KEYSTORE_DIR_ARGS=(
+    "-v=${KOKORO_KEYSTORE_DIR}:/kokoro_keystore:ro"
+    "-e=KOKORO_KEYSTORE_DIR=/kokoro_keystore"
+  )
+else
+  MOUNT_KEYSTORE_DIR_ARGS=()
+fi
+
+# If available, make KOKORO_GFILE_DIR accessible from the container (as readonly)
+if [ "${KOKORO_GFILE_DIR}" != "" ]
+then
+  MOUNT_GFILE_DIR_ARGS=(
+    "-v=${KOKORO_GFILE_DIR}:/kokoro_gfile:ro"
+    "-e=KOKORO_GFILE_DIR=/kokoro_gfile"
+  )
+else
+  MOUNT_GFILE_DIR_ARGS=()
+fi
+
+# If available, make KOKORO_ARTIFACTS_DIR accessible from the container
+if [ "${KOKORO_ARTIFACTS_DIR}" != "" ]
+then
+  MOUNT_ARTIFACTS_DIR_ARGS=(
+    "-v=${KOKORO_ARTIFACTS_DIR}:/kokoro_artifacts"
+    "-e=KOKORO_ARTIFACTS_DIR=/kokoro_artifacts"
+  )
+else
+  MOUNT_ARTIFACTS_DIR_ARGS=()
+fi
+
 # Enable command echo just before running the final docker command to make the docker args visible.
 set -ex
 
 # Run command inside C# docker container.
 # - the local clone of grpc repository will be mounted as /workspace.
-exec docker run "${DOCKER_TTY_ARGS[@]}" "${DOCKER_PRIVILEGED_ARGS[@]}" "${DOCKER_NETWORK_ARGS[@]}" "${DOCKER_CLEANUP_ARGS[@]}" "${DOCKER_PROPAGATE_ENV_ARGS[@]}" ${DOCKER_EXTRA_ARGS} -v "${grpc_rootdir}":/workspace -w /workspace "${DOCKER_IMAGE}" bash -c "$*"
+exec docker run "${DOCKER_TTY_ARGS[@]}" "${DOCKER_PRIVILEGED_ARGS[@]}" "${DOCKER_NETWORK_ARGS[@]}" "${DOCKER_CLEANUP_ARGS[@]}" "${DOCKER_PROPAGATE_ENV_ARGS[@]}" "${MOUNT_KEYSTORE_DIR_ARGS[@]}" "${MOUNT_GFILE_DIR_ARGS[@]}" "${MOUNT_ARTIFACTS_DIR_ARGS[@]}" ${DOCKER_EXTRA_ARGS} -v "${grpc_rootdir}":/workspace -w /workspace "${DOCKER_IMAGE}" "$@"
