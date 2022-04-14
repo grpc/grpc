@@ -1687,6 +1687,9 @@ grpc_cc_library(
     hdrs = [
         "src/core/lib/gprpp/time.h",
     ],
+    external_deps = [
+        "absl/strings:str_format",
+    ],
     deps = [
         "gpr",
         "gpr_codegen",
@@ -2692,8 +2695,6 @@ grpc_cc_library(
         "grpc_base",
         "grpc_service_config",
         "json_util",
-        "sleep",
-        "try_seq",
     ],
 )
 

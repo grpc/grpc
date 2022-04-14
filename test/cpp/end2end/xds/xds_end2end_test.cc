@@ -59,6 +59,8 @@
 #include "src/core/ext/filters/client_channel/backup_poller.h"
 #include "src/core/ext/filters/client_channel/lb_policy/xds/xds_channel_args.h"
 #include "src/core/ext/filters/client_channel/resolver/fake/fake_resolver.h"
+#include "src/core/ext/filters/http/client/http_client_filter.h"
+#include "src/core/ext/filters/http/server/http_server_filter.h"
 #include "src/core/ext/xds/certificate_provider_registry.h"
 #include "src/core/ext/xds/xds_api.h"
 #include "src/core/ext/xds/xds_channel_args.h"
@@ -81,9 +83,6 @@
 #include "src/core/lib/security/credentials/fake/fake_credentials.h"
 #include "src/cpp/client/secure_credentials.h"
 #include "src/cpp/server/secure_server_credentials.h"
-#include "src/proto/grpc/lookup/v1/rls.grpc.pb.h"
-#include "src/proto/grpc/lookup/v1/rls.pb.h"
-#include "src/proto/grpc/lookup/v1/rls_config.pb.h"
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
 #include "src/proto/grpc/testing/xds/ads_for_test.grpc.pb.h"
 #include "src/proto/grpc/testing/xds/cds_for_test.grpc.pb.h"
@@ -106,7 +105,6 @@
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
 #include "test/cpp/end2end/connection_delay_injector.h"
-#include "test/cpp/end2end/rls_server.h"
 #include "test/cpp/end2end/xds/xds_end2end_test_lib.h"
 #include "test/cpp/util/test_config.h"
 #include "test/cpp/util/tls_test_utils.h"
@@ -131,8 +129,6 @@ using ::envoy::extensions::clusters::aggregate::v3::ClusterConfig;
 using ::envoy::extensions::filters::http::fault::v3::HTTPFault;
 using ::envoy::extensions::filters::http::rbac::v3::RBAC;
 using ::envoy::extensions::filters::http::rbac::v3::RBACPerRoute;
-using ::envoy::extensions::filters::network::http_connection_manager::v3::
-    HttpFilter;
 using ::envoy::extensions::transport_sockets::tls::v3::DownstreamTlsContext;
 using ::envoy::extensions::transport_sockets::tls::v3::UpstreamTlsContext;
 using ::envoy::type::matcher::v3::StringMatcher;
@@ -142,8 +138,6 @@ using ClientStats = LrsServiceImpl::ClientStats;
 using ::grpc::experimental::ExternalCertificateVerifier;
 using ::grpc::experimental::IdentityKeyCertPair;
 using ::grpc::experimental::StaticDataCertificateProvider;
-using ::grpc::lookup::v1::RouteLookupClusterSpecifier;
-using ::grpc::lookup::v1::RouteLookupConfig;
 
 constexpr char kLbDropType[] = "lb";
 constexpr char kThrottleDropType[] = "throttle";
@@ -152,18 +146,6 @@ constexpr char kClientCertPath[] = "src/core/tsi/test_creds/client.pem";
 constexpr char kClientKeyPath[] = "src/core/tsi/test_creds/client.key";
 constexpr char kBadClientCertPath[] = "src/core/tsi/test_creds/badclient.pem";
 constexpr char kBadClientKeyPath[] = "src/core/tsi/test_creds/badclient.key";
-
-constexpr char kRlsTestKey[] = "test_key";
-constexpr char kRlsTestKey1[] = "key1";
-constexpr char kRlsTestValue[] = "test_value";
-constexpr char kRlsHostKey[] = "host_key";
-constexpr char kRlsServiceKey[] = "service_key";
-constexpr char kRlsServiceValue[] = "grpc.testing.EchoTestService";
-constexpr char kRlsMethodKey[] = "method_key";
-constexpr char kRlsMethodValue[] = "Echo";
-constexpr char kRlsConstantKey[] = "constant_key";
-constexpr char kRlsConstantValue[] = "constant_value";
-constexpr char kRlsClusterSpecifierPluginInstanceName[] = "rls_plugin_instance";
 
 // Based on StaticDataCertificateProvider, but provides alternate certificates
 // if the certificate name is not empty.
@@ -6331,290 +6313,6 @@ TEST_P(CdsTest, RingHashPolicyHasInvalidRingSizeMinGreaterThanMax) {
                   "min_ring_size cannot be greater than max_ring_size."));
 }
 
-class RlsTest : public XdsEnd2endTest {
- protected:
-  class RlsServerThread : public ServerThread {
-   public:
-    explicit RlsServerThread(XdsEnd2endTest* test_obj)
-        : ServerThread(test_obj, /*use_xds_enabled_server=*/false),
-          rls_service_(new RlsServiceImpl()) {}
-
-    RlsServiceImpl* rls_service() { return rls_service_.get(); }
-
-   private:
-    const char* Type() override { return "Rls"; }
-
-    void RegisterAllServices(ServerBuilder* builder) override {
-      builder->RegisterService(rls_service_.get());
-    }
-
-    void StartAllServices() override { rls_service_->Start(); }
-
-    void ShutdownAllServices() override { rls_service_->Shutdown(); }
-
-    std::shared_ptr<RlsServiceImpl> rls_service_;
-  };
-
-  RlsTest() {
-    rls_server_ = absl::make_unique<RlsServerThread>(this);
-    rls_server_->Start();
-  }
-
-  void TearDown() override {
-    rls_server_->Shutdown();
-    XdsEnd2endTest::TearDown();
-  }
-
-  std::unique_ptr<RlsServerThread> rls_server_;
-};
-
-TEST_P(RlsTest, XdsRoutingClusterSpecifierPlugin) {
-  ScopedExperimentalEnvVar env_var("GRPC_EXPERIMENTAL_XDS_RLS_LB");
-  CreateAndStartBackends(2);
-  const char* kNewClusterName = "new_cluster";
-  const char* kNewEdsServiceName = "new_eds_service_name";
-  const size_t kNumEchoRpcs = 5;
-  // Populate new EDS resources.
-  EdsResourceArgs args({
-      {"locality0", CreateEndpointsForBackends(0, 1)},
-  });
-  EdsResourceArgs args1({
-      {"locality0", CreateEndpointsForBackends(1, 2)},
-  });
-  balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
-  balancer_->ads_service()->SetEdsResource(
-      BuildEdsResource(args1, kNewEdsServiceName));
-  // Populate new CDS resources.
-  Cluster new_cluster = default_cluster_;
-  new_cluster.set_name(kNewClusterName);
-  new_cluster.mutable_eds_cluster_config()->set_service_name(
-      kNewEdsServiceName);
-  balancer_->ads_service()->SetCdsResource(new_cluster);
-  // Prepare the RLSLookupConfig and configure all the keys; change route
-  // configurations to use cluster specifier plugin.
-  rls_server_->rls_service()->SetResponse(
-      BuildRlsRequest({{kRlsTestKey, kRlsTestValue},
-                       {kRlsHostKey, kServerName},
-                       {kRlsServiceKey, kRlsServiceValue},
-                       {kRlsMethodKey, kRlsMethodValue},
-                       {kRlsConstantKey, kRlsConstantValue}}),
-      BuildRlsResponse({kNewClusterName}));
-  RouteLookupConfig route_lookup_config;
-  auto* key_builder = route_lookup_config.add_grpc_keybuilders();
-  auto* name = key_builder->add_names();
-  name->set_service(kRlsServiceValue);
-  name->set_method(kRlsMethodValue);
-  auto* header = key_builder->add_headers();
-  header->set_key(kRlsTestKey);
-  header->add_names(kRlsTestKey1);
-  header->add_names("key2");
-  auto* extra_keys = key_builder->mutable_extra_keys();
-  extra_keys->set_host(kRlsHostKey);
-  extra_keys->set_service(kRlsServiceKey);
-  extra_keys->set_method(kRlsMethodKey);
-  (*key_builder->mutable_constant_keys())[kRlsConstantKey] = kRlsConstantValue;
-  route_lookup_config.set_lookup_service(
-      absl::StrCat("localhost:", rls_server_->port()));
-  route_lookup_config.set_cache_size_bytes(5000);
-  RouteLookupClusterSpecifier rls;
-  *rls.mutable_route_lookup_config() = std::move(route_lookup_config);
-  RouteConfiguration new_route_config = default_route_config_;
-  auto* plugin = new_route_config.add_cluster_specifier_plugins();
-  plugin->mutable_extension()->set_name(kRlsClusterSpecifierPluginInstanceName);
-  plugin->mutable_extension()->mutable_typed_config()->PackFrom(rls);
-  auto* default_route =
-      new_route_config.mutable_virtual_hosts(0)->mutable_routes(0);
-  default_route->mutable_route()->set_cluster_specifier_plugin(
-      kRlsClusterSpecifierPluginInstanceName);
-  SetRouteConfiguration(balancer_.get(), new_route_config);
-  auto rpc_options = RpcOptions().set_metadata({{kRlsTestKey1, kRlsTestValue}});
-  WaitForAllBackends(1, 2, WaitForBackendOptions(), rpc_options);
-  CheckRpcSendOk(kNumEchoRpcs, rpc_options);
-  // Make sure RPCs all go to the correct backend.
-  EXPECT_EQ(kNumEchoRpcs, backends_[1]->backend_service()->request_count());
-}
-
-TEST_P(RlsTest, XdsRoutingClusterSpecifierPluginNacksUndefinedSpecifier) {
-  ScopedExperimentalEnvVar env_var("GRPC_EXPERIMENTAL_XDS_RLS_LB");
-  RouteConfiguration new_route_config = default_route_config_;
-  auto* default_route =
-      new_route_config.mutable_virtual_hosts(0)->mutable_routes(0);
-  // Set Cluster Specifier Plugin to something that does not exist.
-  default_route->mutable_route()->set_cluster_specifier_plugin(
-      kRlsClusterSpecifierPluginInstanceName);
-  SetRouteConfiguration(balancer_.get(), new_route_config);
-  const auto response_state = WaitForRdsNack();
-  ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
-  EXPECT_THAT(response_state->error_message,
-              ::testing::HasSubstr(absl::StrCat(
-                  "RouteAction cluster contains cluster specifier plugin "
-                  "name not configured: ",
-                  kRlsClusterSpecifierPluginInstanceName)));
-}
-
-TEST_P(RlsTest, XdsRoutingClusterSpecifierPluginNacksDuplicateSpecifier) {
-  ScopedExperimentalEnvVar env_var("GRPC_EXPERIMENTAL_XDS_RLS_LB");
-  // Prepare the RLSLookupConfig: change route configurations to use cluster
-  // specifier plugin.
-  RouteLookupConfig route_lookup_config;
-  auto* key_builder = route_lookup_config.add_grpc_keybuilders();
-  auto* name = key_builder->add_names();
-  name->set_service(kRlsServiceValue);
-  name->set_method(kRlsMethodValue);
-  auto* header = key_builder->add_headers();
-  header->set_key(kRlsTestKey);
-  header->add_names(kRlsTestKey1);
-  route_lookup_config.set_lookup_service(
-      absl::StrCat("localhost:", rls_server_->port()));
-  route_lookup_config.set_cache_size_bytes(5000);
-  RouteLookupClusterSpecifier rls;
-  *rls.mutable_route_lookup_config() = std::move(route_lookup_config);
-  RouteConfiguration new_route_config = default_route_config_;
-  auto* plugin = new_route_config.add_cluster_specifier_plugins();
-  plugin->mutable_extension()->set_name(kRlsClusterSpecifierPluginInstanceName);
-  plugin->mutable_extension()->mutable_typed_config()->PackFrom(rls);
-  auto* duplicate_plugin = new_route_config.add_cluster_specifier_plugins();
-  duplicate_plugin->mutable_extension()->set_name(
-      kRlsClusterSpecifierPluginInstanceName);
-  duplicate_plugin->mutable_extension()->mutable_typed_config()->PackFrom(rls);
-  auto* default_route =
-      new_route_config.mutable_virtual_hosts(0)->mutable_routes(0);
-  default_route->mutable_route()->set_cluster_specifier_plugin(
-      kRlsClusterSpecifierPluginInstanceName);
-  SetRouteConfiguration(balancer_.get(), new_route_config);
-  const auto response_state = WaitForRdsNack();
-  ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
-  EXPECT_THAT(response_state->error_message,
-              ::testing::HasSubstr(absl::StrCat(
-                  "Duplicated definition of cluster_specifier_plugin ",
-                  kRlsClusterSpecifierPluginInstanceName)));
-}
-
-TEST_P(RlsTest,
-       XdsRoutingClusterSpecifierPluginNacksUnknownSpecifierProtoNotOptional) {
-  ScopedExperimentalEnvVar env_var("GRPC_EXPERIMENTAL_XDS_RLS_LB");
-  // Prepare the RLSLookupConfig: change route configurations to use cluster
-  // specifier plugin.
-  RouteLookupConfig route_lookup_config;
-  RouteConfiguration new_route_config = default_route_config_;
-  auto* plugin = new_route_config.add_cluster_specifier_plugins();
-  plugin->mutable_extension()->set_name(kRlsClusterSpecifierPluginInstanceName);
-  // Instead of grpc.lookup.v1.RouteLookupClusterSpecifier, let's say we
-  // mistakenly packed the inner RouteLookupConfig instead.
-  plugin->mutable_extension()->mutable_typed_config()->PackFrom(
-      route_lookup_config);
-  auto* default_route =
-      new_route_config.mutable_virtual_hosts(0)->mutable_routes(0);
-  default_route->mutable_route()->set_cluster_specifier_plugin(
-      kRlsClusterSpecifierPluginInstanceName);
-  SetRouteConfiguration(balancer_.get(), new_route_config);
-  const auto response_state = WaitForRdsNack();
-  ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
-  EXPECT_THAT(response_state->error_message,
-              ::testing::HasSubstr("Unknown ClusterSpecifierPlugin type "
-                                   "grpc.lookup.v1.RouteLookupConfig"));
-}
-
-TEST_P(RlsTest,
-       XdsRoutingClusterSpecifierPluginIgnoreUnknownSpecifierProtoOptional) {
-  ScopedExperimentalEnvVar env_var("GRPC_EXPERIMENTAL_XDS_RLS_LB");
-  CreateAndStartBackends(1);
-  EdsResourceArgs args({{"locality0", CreateEndpointsForBackends()}});
-  balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
-  // Prepare the RLSLookupConfig: change route configurations to use cluster
-  // specifier plugin.
-  RouteLookupConfig route_lookup_config;
-  RouteConfiguration new_route_config = default_route_config_;
-  auto* plugin = new_route_config.add_cluster_specifier_plugins();
-  plugin->mutable_extension()->set_name(kRlsClusterSpecifierPluginInstanceName);
-  // Instead of grpc.lookup.v1.RouteLookupClusterSpecifier, let's say we
-  // mistakenly packed the inner RouteLookupConfig instead.
-  plugin->mutable_extension()->mutable_typed_config()->PackFrom(
-      route_lookup_config);
-  plugin->set_is_optional(true);
-  auto* route = new_route_config.mutable_virtual_hosts(0)->mutable_routes(0);
-  route->mutable_route()->set_cluster_specifier_plugin(
-      kRlsClusterSpecifierPluginInstanceName);
-  auto* default_route = new_route_config.mutable_virtual_hosts(0)->add_routes();
-  default_route->mutable_match()->set_prefix("");
-  default_route->mutable_route()->set_cluster(kDefaultClusterName);
-  SetRouteConfiguration(balancer_.get(), new_route_config);
-  // Ensure we ignore the cluster specifier plugin and send traffic according to
-  // the default route.
-  WaitForAllBackends();
-}
-
-TEST_P(RlsTest, XdsRoutingRlsClusterSpecifierPluginNacksRequiredMatch) {
-  ScopedExperimentalEnvVar env_var("GRPC_EXPERIMENTAL_XDS_RLS_LB");
-  // Prepare the RLSLookupConfig and configure all the keys; add required_match
-  // field which should not be there.
-  RouteLookupConfig route_lookup_config;
-  auto* key_builder = route_lookup_config.add_grpc_keybuilders();
-  auto* name = key_builder->add_names();
-  name->set_service(kRlsServiceValue);
-  name->set_method(kRlsMethodValue);
-  auto* header = key_builder->add_headers();
-  header->set_key(kRlsTestKey);
-  header->add_names(kRlsTestKey1);
-  header->set_required_match(true);
-  route_lookup_config.set_lookup_service(
-      absl::StrCat("localhost:", rls_server_->port()));
-  route_lookup_config.set_cache_size_bytes(5000);
-  RouteLookupClusterSpecifier rls;
-  *rls.mutable_route_lookup_config() = std::move(route_lookup_config);
-  RouteConfiguration new_route_config = default_route_config_;
-  auto* plugin = new_route_config.add_cluster_specifier_plugins();
-  plugin->mutable_extension()->set_name(kRlsClusterSpecifierPluginInstanceName);
-  plugin->mutable_extension()->mutable_typed_config()->PackFrom(rls);
-  auto* default_route =
-      new_route_config.mutable_virtual_hosts(0)->mutable_routes(0);
-  default_route->mutable_route()->set_cluster_specifier_plugin(
-      kRlsClusterSpecifierPluginInstanceName);
-  SetRouteConfiguration(balancer_.get(), new_route_config);
-  const auto response_state = WaitForRdsNack();
-  ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
-  EXPECT_THAT(
-      response_state->error_message,
-      ::testing::HasSubstr("field:requiredMatch error:must not be present"));
-}
-
-TEST_P(RlsTest, XdsRoutingClusterSpecifierPluginDisabled) {
-  CreateAndStartBackends(1);
-  // Populate new EDS resources.
-  EdsResourceArgs args({{"locality0", CreateEndpointsForBackends()}});
-  balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
-  // Prepare the RLSLookupConfig and configure all the keys; change route
-  // configurations to use cluster specifier plugin.
-  RouteLookupConfig route_lookup_config;
-  auto* key_builder = route_lookup_config.add_grpc_keybuilders();
-  auto* name = key_builder->add_names();
-  name->set_service(kRlsServiceValue);
-  name->set_method(kRlsMethodValue);
-  auto* header = key_builder->add_headers();
-  header->set_key(kRlsTestKey);
-  header->add_names(kRlsTestKey1);
-  route_lookup_config.set_lookup_service(
-      absl::StrCat("localhost:", rls_server_->port()));
-  route_lookup_config.set_cache_size_bytes(5000);
-  RouteLookupClusterSpecifier rls;
-  *rls.mutable_route_lookup_config() = std::move(route_lookup_config);
-  RouteConfiguration new_route_config = default_route_config_;
-  auto* plugin = new_route_config.add_cluster_specifier_plugins();
-  plugin->mutable_extension()->set_name(kRlsClusterSpecifierPluginInstanceName);
-  plugin->mutable_extension()->mutable_typed_config()->PackFrom(rls);
-  auto* route = new_route_config.mutable_virtual_hosts(0)->mutable_routes(0);
-  route->mutable_route()->set_cluster_specifier_plugin(
-      kRlsClusterSpecifierPluginInstanceName);
-  auto* default_route = new_route_config.mutable_virtual_hosts(0)->add_routes();
-  default_route->mutable_match()->set_prefix("");
-  default_route->mutable_route()->set_cluster(kDefaultClusterName);
-  SetRouteConfiguration(balancer_.get(), new_route_config);
-  // Ensure we ignore the cluster specifier plugin and send traffic according to
-  // the default route.
-  auto rpc_options = RpcOptions().set_metadata({{kRlsTestKey1, kRlsTestValue}});
-  WaitForAllBackends(0, 1, WaitForBackendOptions(), rpc_options);
-}
-
 class XdsSecurityTest : public XdsEnd2endTest {
  protected:
   void SetUp() override {
@@ -7863,12 +7561,16 @@ class XdsServerSecurityTest : public XdsEnd2endTest {
     return CreateCustomChannel(uri, channel_creds, args);
   }
 
-  std::shared_ptr<grpc::Channel> CreateInsecureChannel() {
+  std::shared_ptr<grpc::Channel> CreateInsecureChannel(
+      bool use_put_requests = false) {
     ChannelArguments args;
     // Override target name for host name check
     args.SetString(GRPC_SSL_TARGET_NAME_OVERRIDE_ARG,
                    ipv6_only_ ? "::1" : "127.0.0.1");
     args.SetInt(GRPC_ARG_USE_LOCAL_SUBCHANNEL_POOL, 1);
+    if (use_put_requests) {
+      args.SetInt(GRPC_ARG_TEST_ONLY_USE_PUT_REQUESTS, 1);
+    }
     std::string uri = absl::StrCat(
         ipv6_only_ ? "ipv6:[::1]:" : "ipv4:127.0.0.1:", backends_[0]->port());
     return CreateCustomChannel(uri, InsecureChannelCredentials(), args);
@@ -9671,8 +9373,11 @@ TEST_P(XdsRbacTestWithActionPermutations, MethodPostPermissionAnyPrincipal) {
   SendRpc([this]() { return CreateInsecureChannel(); }, {}, {},
           /*test_expects_failure=*/GetParam().rbac_action() == RBAC_Action_DENY,
           grpc::StatusCode::PERMISSION_DENIED);
-  // TODO(yashykt): When we start supporting GET/PUT requests in the future,
-  // this should be modified to test that they are NOT accepted with this rule.
+  // Test that an RPC with PUT method is handled properly.
+  SendRpc([this]() { return CreateInsecureChannel(/*use_put_requests=*/true); },
+          {}, {},
+          /*test_expects_failure=*/GetParam().rbac_action() != RBAC_Action_DENY,
+          grpc::StatusCode::PERMISSION_DENIED);
 }
 
 TEST_P(XdsRbacTestWithActionPermutations, MethodGetPermissionAnyPrincipal) {
@@ -9719,8 +9424,12 @@ TEST_P(XdsRbacTestWithActionPermutations, MethodPutPermissionAnyPrincipal) {
       [this]() { return CreateInsecureChannel(); }, {}, {},
       /*test_expects_failure=*/GetParam().rbac_action() == RBAC_Action_ALLOW,
       grpc::StatusCode::PERMISSION_DENIED);
-  // TODO(yashykt): When we start supporting PUT requests in the future, this
-  // should be modified to test that they are accepted with this rule.
+  // Test that an RPC with a PUT method gets accepted
+  SendRpc(
+      [this]() { return CreateInsecureChannel(/*use_put_requests=*/true); }, {},
+      {},
+      /*test_expects_failure=*/GetParam().rbac_action() != RBAC_Action_ALLOW,
+      grpc::StatusCode::PERMISSION_DENIED);
 }
 
 TEST_P(XdsRbacTestWithActionPermutations, UrlPathPermissionAnyPrincipal) {
@@ -9975,8 +9684,11 @@ TEST_P(XdsRbacTestWithActionPermutations, AnyPermissionMethodPostPrincipal) {
   SendRpc([this]() { return CreateInsecureChannel(); }, {}, {},
           /*test_expects_failure=*/GetParam().rbac_action() == RBAC_Action_DENY,
           grpc::StatusCode::PERMISSION_DENIED);
-  // TODO(yashykt): When we start supporting GET/PUT requests in the future,
-  // this should be modified to test that they are NOT accepted with this rule.
+  // Test that an RPC with PUT method is handled properly.
+  SendRpc([this]() { return CreateInsecureChannel(/*use_put_requests=*/true); },
+          {}, {},
+          /*test_expects_failure=*/GetParam().rbac_action() != RBAC_Action_DENY,
+          grpc::StatusCode::PERMISSION_DENIED);
 }
 
 TEST_P(XdsRbacTestWithActionPermutations, AnyPermissionMethodGetPrincipal) {
@@ -10018,13 +9730,17 @@ TEST_P(XdsRbacTestWithActionPermutations, AnyPermissionMethodPutPrincipal) {
   backends_[0]->notifier()->WaitOnServingStatusChange(
       absl::StrCat(ipv6_only_ ? "[::1]:" : "127.0.0.1:", backends_[0]->port()),
       grpc::StatusCode::OK);
+  // Test that an RPC with a PUT method gets accepted
+  SendRpc(
+      [this]() { return CreateInsecureChannel(/*use_put_requests=*/true); }, {},
+      {},
+      /*test_expects_failure=*/GetParam().rbac_action() != RBAC_Action_ALLOW,
+      grpc::StatusCode::PERMISSION_DENIED);
   // Test that an RPC with a POST method gets rejected
   SendRpc(
       [this]() { return CreateInsecureChannel(); }, {}, {},
       /*test_expects_failure=*/GetParam().rbac_action() == RBAC_Action_ALLOW,
       grpc::StatusCode::PERMISSION_DENIED);
-  // TODO(yashykt): When we start supporting PUT requests in the future, this
-  // should be modified to test that they are accepted with this rule.
 }
 
 TEST_P(XdsRbacTestWithActionPermutations, AnyPermissionUrlPathPrincipal) {
@@ -11469,501 +11185,6 @@ TEST_P(ClientLoadReportingTest, DropStats) {
       ::testing::DoubleNear(kDropRateForThrottle, kErrorTolerance));
 }
 
-class FaultInjectionTest : public XdsEnd2endTest {
- public:
-  // Builds a Listener with Fault Injection filter config. If the http_fault
-  // is nullptr, then assign an empty filter config. This filter config is
-  // required to enable the fault injection features.
-  static Listener BuildListenerWithFaultInjection(
-      const HTTPFault& http_fault = HTTPFault()) {
-    HttpConnectionManager http_connection_manager;
-    Listener listener;
-    listener.set_name(kServerName);
-    HttpFilter* fault_filter = http_connection_manager.add_http_filters();
-    fault_filter->set_name("envoy.fault");
-    fault_filter->mutable_typed_config()->PackFrom(http_fault);
-    HttpFilter* router_filter = http_connection_manager.add_http_filters();
-    router_filter->set_name("router");
-    router_filter->mutable_typed_config()->PackFrom(
-        envoy::extensions::filters::http::router::v3::Router());
-    listener.mutable_api_listener()->mutable_api_listener()->PackFrom(
-        http_connection_manager);
-    return listener;
-  }
-
-  RouteConfiguration BuildRouteConfigurationWithFaultInjection(
-      const HTTPFault& http_fault) {
-    // Package as Any
-    google::protobuf::Any filter_config;
-    filter_config.PackFrom(http_fault);
-    // Plug into the RouteConfiguration
-    RouteConfiguration new_route_config = default_route_config_;
-    auto* config_map = new_route_config.mutable_virtual_hosts(0)
-                           ->mutable_routes(0)
-                           ->mutable_typed_per_filter_config();
-    (*config_map)["envoy.fault"] = std::move(filter_config);
-    return new_route_config;
-  }
-
-  void SetFilterConfig(HTTPFault& http_fault) {
-    switch (GetParam().filter_config_setup()) {
-      case XdsTestType::HttpFilterConfigLocation::kHttpFilterConfigInRoute: {
-        Listener listener = BuildListenerWithFaultInjection();
-        RouteConfiguration route =
-            BuildRouteConfigurationWithFaultInjection(http_fault);
-        SetListenerAndRouteConfiguration(balancer_.get(), listener, route);
-        break;
-      }
-      case XdsTestType::HttpFilterConfigLocation::kHttpFilterConfigInListener: {
-        Listener listener = BuildListenerWithFaultInjection(http_fault);
-        SetListenerAndRouteConfiguration(balancer_.get(), listener,
-                                         default_route_config_);
-      }
-    };
-  }
-};
-
-// Test to ensure the most basic fault injection config works.
-TEST_P(FaultInjectionTest, XdsFaultInjectionAlwaysAbort) {
-  const uint32_t kAbortPercentagePerHundred = 100;
-  // Construct the fault injection filter config
-  HTTPFault http_fault;
-  auto* abort_percentage = http_fault.mutable_abort()->mutable_percentage();
-  abort_percentage->set_numerator(kAbortPercentagePerHundred);
-  abort_percentage->set_denominator(FractionalPercent::HUNDRED);
-  http_fault.mutable_abort()->set_grpc_status(
-      static_cast<uint32_t>(StatusCode::ABORTED));
-  // Config fault injection via different setup
-  SetFilterConfig(http_fault);
-  // Fire several RPCs, and expect all of them to be aborted.
-  CheckRpcSendFailure(
-      CheckRpcSendFailureOptions()
-          .set_times(5)
-          .set_rpc_options(RpcOptions().set_wait_for_ready(true))
-          .set_expected_error_code(StatusCode::ABORTED));
-}
-
-// Without the listener config, the fault injection won't be enabled.
-TEST_P(FaultInjectionTest, XdsFaultInjectionWithoutListenerFilter) {
-  CreateAndStartBackends(1);
-  const uint32_t kAbortPercentagePerHundred = 100;
-  // Create an EDS resource
-  EdsResourceArgs args({{"locality0", CreateEndpointsForBackends()}});
-  balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
-  // Construct the fault injection filter config
-  HTTPFault http_fault;
-  auto* abort_percentage = http_fault.mutable_abort()->mutable_percentage();
-  abort_percentage->set_numerator(kAbortPercentagePerHundred);
-  abort_percentage->set_denominator(FractionalPercent::HUNDRED);
-  http_fault.mutable_abort()->set_grpc_status(
-      static_cast<uint32_t>(StatusCode::ABORTED));
-  // Turn on fault injection
-  RouteConfiguration route =
-      BuildRouteConfigurationWithFaultInjection(http_fault);
-  SetListenerAndRouteConfiguration(balancer_.get(), default_listener_, route);
-  // Fire several RPCs, and expect all of them to be pass.
-  CheckRpcSendOk(5, RpcOptions().set_wait_for_ready(true));
-}
-
-TEST_P(FaultInjectionTest, XdsFaultInjectionPercentageAbort) {
-  CreateAndStartBackends(1);
-  const uint32_t kAbortPercentagePerHundred = 50;
-  const double kAbortRate = kAbortPercentagePerHundred / 100.0;
-  const double kErrorTolerance = 0.05;
-  const size_t kNumRpcs = ComputeIdealNumRpcs(kAbortRate, kErrorTolerance);
-  // Create an EDS resource
-  EdsResourceArgs args({{"locality0", CreateEndpointsForBackends()}});
-  balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
-  // Construct the fault injection filter config
-  HTTPFault http_fault;
-  auto* abort_percentage = http_fault.mutable_abort()->mutable_percentage();
-  abort_percentage->set_numerator(kAbortPercentagePerHundred);
-  abort_percentage->set_denominator(FractionalPercent::HUNDRED);
-  http_fault.mutable_abort()->set_grpc_status(
-      static_cast<uint32_t>(StatusCode::ABORTED));
-  // Config fault injection via different setup
-  SetFilterConfig(http_fault);
-  // Send kNumRpcs RPCs and count the aborts.
-  size_t num_aborted =
-      SendRpcsAndCountFailuresWithMessage(kNumRpcs, "Fault injected");
-  // The abort rate should be roughly equal to the expectation.
-  const double seen_abort_rate = static_cast<double>(num_aborted) / kNumRpcs;
-  EXPECT_THAT(seen_abort_rate,
-              ::testing::DoubleNear(kAbortRate, kErrorTolerance));
-}
-
-TEST_P(FaultInjectionTest, XdsFaultInjectionPercentageAbortViaHeaders) {
-  CreateAndStartBackends(1);
-  const uint32_t kAbortPercentageCap = 100;
-  const uint32_t kAbortPercentage = 50;
-  const double kAbortRate = kAbortPercentage / 100.0;
-  const double kErrorTolerance = 0.05;
-  const size_t kNumRpcs = ComputeIdealNumRpcs(kAbortRate, kErrorTolerance);
-  // Create an EDS resource
-  EdsResourceArgs args({{"locality0", CreateEndpointsForBackends()}});
-  balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
-  // Construct the fault injection filter config
-  HTTPFault http_fault;
-  http_fault.mutable_abort()->mutable_header_abort();
-  http_fault.mutable_abort()->mutable_percentage()->set_numerator(
-      kAbortPercentageCap);
-  // Config fault injection via different setup
-  SetFilterConfig(http_fault);
-  // Send kNumRpcs RPCs and count the aborts.
-  std::vector<std::pair<std::string, std::string>> metadata = {
-      {"x-envoy-fault-abort-grpc-request", "10"},
-      {"x-envoy-fault-abort-percentage", std::to_string(kAbortPercentage)},
-  };
-  size_t num_aborted = SendRpcsAndCountFailuresWithMessage(
-      kNumRpcs, "Fault injected", RpcOptions().set_metadata(metadata));
-  // The abort rate should be roughly equal to the expectation.
-  const double seen_abort_rate = static_cast<double>(num_aborted) / kNumRpcs;
-  EXPECT_THAT(seen_abort_rate,
-              ::testing::DoubleNear(kAbortRate, kErrorTolerance));
-}
-
-TEST_P(FaultInjectionTest, XdsFaultInjectionPercentageDelay) {
-  CreateAndStartBackends(1);
-  const uint32_t kRpcTimeoutMilliseconds = grpc_test_slowdown_factor() * 3000;
-  const uint32_t kFixedDelaySeconds = 100;
-  const uint32_t kDelayPercentagePerHundred = 50;
-  const double kDelayRate = kDelayPercentagePerHundred / 100.0;
-  const double kErrorTolerance = 0.05;
-  const size_t kNumRpcs = ComputeIdealNumRpcs(kDelayRate, kErrorTolerance);
-  const size_t kMaxConcurrentRequests = kNumRpcs;
-  // Create an EDS resource
-  EdsResourceArgs args({{"locality0", CreateEndpointsForBackends()}});
-  balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
-  // Loosen the max concurrent request limit
-  Cluster cluster = default_cluster_;
-  auto* threshold = cluster.mutable_circuit_breakers()->add_thresholds();
-  threshold->set_priority(RoutingPriority::DEFAULT);
-  threshold->mutable_max_requests()->set_value(kMaxConcurrentRequests);
-  balancer_->ads_service()->SetCdsResource(cluster);
-  // Construct the fault injection filter config
-  HTTPFault http_fault;
-  auto* delay_percentage = http_fault.mutable_delay()->mutable_percentage();
-  delay_percentage->set_numerator(kDelayPercentagePerHundred);
-  delay_percentage->set_denominator(FractionalPercent::HUNDRED);
-  auto* fixed_delay = http_fault.mutable_delay()->mutable_fixed_delay();
-  fixed_delay->set_seconds(kFixedDelaySeconds);
-  // Config fault injection via different setup
-  SetFilterConfig(http_fault);
-  // Send kNumRpcs RPCs and count the delays.
-  RpcOptions rpc_options = RpcOptions()
-                               .set_timeout_ms(kRpcTimeoutMilliseconds)
-                               .set_skip_cancelled_check(true);
-  std::vector<ConcurrentRpc> rpcs =
-      SendConcurrentRpcs(stub_.get(), kNumRpcs, rpc_options);
-  size_t num_delayed = 0;
-  for (auto& rpc : rpcs) {
-    if (rpc.status.error_code() == StatusCode::OK) continue;
-    EXPECT_EQ(StatusCode::DEADLINE_EXCEEDED, rpc.status.error_code());
-    ++num_delayed;
-  }
-  // The delay rate should be roughly equal to the expectation.
-  const double seen_delay_rate = static_cast<double>(num_delayed) / kNumRpcs;
-  EXPECT_THAT(seen_delay_rate,
-              ::testing::DoubleNear(kDelayRate, kErrorTolerance));
-}
-
-TEST_P(FaultInjectionTest, XdsFaultInjectionPercentageDelayViaHeaders) {
-  CreateAndStartBackends(1);
-  const uint32_t kFixedDelayMilliseconds = 100000;
-  const uint32_t kRpcTimeoutMilliseconds = grpc_test_slowdown_factor() * 3000;
-  const uint32_t kDelayPercentageCap = 100;
-  const uint32_t kDelayPercentage = 50;
-  const double kDelayRate = kDelayPercentage / 100.0;
-  const double kErrorTolerance = 0.05;
-  const size_t kNumRpcs = ComputeIdealNumRpcs(kDelayRate, kErrorTolerance);
-  const size_t kMaxConcurrentRequests = kNumRpcs;
-  // Create an EDS resource
-  EdsResourceArgs args({{"locality0", CreateEndpointsForBackends()}});
-  balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
-  // Loosen the max concurrent request limit
-  Cluster cluster = default_cluster_;
-  auto* threshold = cluster.mutable_circuit_breakers()->add_thresholds();
-  threshold->set_priority(RoutingPriority::DEFAULT);
-  threshold->mutable_max_requests()->set_value(kMaxConcurrentRequests);
-  balancer_->ads_service()->SetCdsResource(cluster);
-  // Construct the fault injection filter config
-  HTTPFault http_fault;
-  http_fault.mutable_delay()->mutable_header_delay();
-  http_fault.mutable_delay()->mutable_percentage()->set_numerator(
-      kDelayPercentageCap);
-  // Config fault injection via different setup
-  SetFilterConfig(http_fault);
-  // Send kNumRpcs RPCs and count the delays.
-  std::vector<std::pair<std::string, std::string>> metadata = {
-      {"x-envoy-fault-delay-request", std::to_string(kFixedDelayMilliseconds)},
-      {"x-envoy-fault-delay-request-percentage",
-       std::to_string(kDelayPercentage)},
-  };
-  RpcOptions rpc_options = RpcOptions()
-                               .set_metadata(metadata)
-                               .set_timeout_ms(kRpcTimeoutMilliseconds)
-                               .set_skip_cancelled_check(true);
-  std::vector<ConcurrentRpc> rpcs =
-      SendConcurrentRpcs(stub_.get(), kNumRpcs, rpc_options);
-  size_t num_delayed = 0;
-  for (auto& rpc : rpcs) {
-    if (rpc.status.error_code() == StatusCode::OK) continue;
-    EXPECT_EQ(StatusCode::DEADLINE_EXCEEDED, rpc.status.error_code());
-    ++num_delayed;
-  }
-  // The delay rate should be roughly equal to the expectation.
-  const double seen_delay_rate = static_cast<double>(num_delayed) / kNumRpcs;
-  EXPECT_THAT(seen_delay_rate,
-              ::testing::DoubleNear(kDelayRate, kErrorTolerance));
-}
-
-TEST_P(FaultInjectionTest, XdsFaultInjectionAbortAfterDelayForStreamCall) {
-  CreateAndStartBackends(1);
-  const uint32_t kFixedDelaySeconds = 1;
-  const uint32_t kRpcTimeoutMilliseconds = 100 * 1000;  // 100s should not reach
-  // Create an EDS resource
-  EdsResourceArgs args({{"locality0", CreateEndpointsForBackends()}});
-  balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
-  // Construct the fault injection filter config
-  HTTPFault http_fault;
-  auto* abort_percentage = http_fault.mutable_abort()->mutable_percentage();
-  abort_percentage->set_numerator(100);  // Always inject ABORT!
-  abort_percentage->set_denominator(FractionalPercent::HUNDRED);
-  http_fault.mutable_abort()->set_grpc_status(
-      static_cast<uint32_t>(StatusCode::ABORTED));
-  auto* delay_percentage = http_fault.mutable_delay()->mutable_percentage();
-  delay_percentage->set_numerator(100);  // Always inject DELAY!
-  delay_percentage->set_denominator(FractionalPercent::HUNDRED);
-  auto* fixed_delay = http_fault.mutable_delay()->mutable_fixed_delay();
-  fixed_delay->set_seconds(kFixedDelaySeconds);
-  // Config fault injection via different setup
-  SetFilterConfig(http_fault);
-  // Send a stream RPC and check its status code
-  ClientContext context;
-  context.set_deadline(
-      grpc_timeout_milliseconds_to_deadline(kRpcTimeoutMilliseconds));
-  auto stream = stub_->BidiStream(&context);
-  stream->WritesDone();
-  auto status = stream->Finish();
-  EXPECT_EQ(StatusCode::ABORTED, status.error_code())
-      << status.error_message() << ", " << status.error_details() << ", "
-      << context.debug_error_string();
-}
-
-TEST_P(FaultInjectionTest, XdsFaultInjectionAlwaysDelayPercentageAbort) {
-  CreateAndStartBackends(1);
-  const uint32_t kAbortPercentagePerHundred = 50;
-  const double kAbortRate = kAbortPercentagePerHundred / 100.0;
-  const uint32_t kFixedDelaySeconds = 1;
-  const uint32_t kRpcTimeoutMilliseconds = 100 * 1000;  // 100s should not reach
-  const uint32_t kConnectionTimeoutMilliseconds =
-      10 * 1000;  // 10s should not reach
-  const double kErrorTolerance = 0.05;
-  const size_t kNumRpcs = ComputeIdealNumRpcs(kAbortRate, kErrorTolerance);
-  const size_t kMaxConcurrentRequests = kNumRpcs;
-  // Create an EDS resource
-  EdsResourceArgs args({{"locality0", CreateEndpointsForBackends()}});
-  balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
-  // Loosen the max concurrent request limit
-  Cluster cluster = default_cluster_;
-  auto* threshold = cluster.mutable_circuit_breakers()->add_thresholds();
-  threshold->set_priority(RoutingPriority::DEFAULT);
-  threshold->mutable_max_requests()->set_value(kMaxConcurrentRequests);
-  balancer_->ads_service()->SetCdsResource(cluster);
-  // Construct the fault injection filter config
-  HTTPFault http_fault;
-  auto* abort_percentage = http_fault.mutable_abort()->mutable_percentage();
-  abort_percentage->set_numerator(kAbortPercentagePerHundred);
-  abort_percentage->set_denominator(FractionalPercent::HUNDRED);
-  http_fault.mutable_abort()->set_grpc_status(
-      static_cast<uint32_t>(StatusCode::ABORTED));
-  auto* delay_percentage = http_fault.mutable_delay()->mutable_percentage();
-  delay_percentage->set_numerator(1000000);  // Always inject DELAY!
-  delay_percentage->set_denominator(FractionalPercent::MILLION);
-  auto* fixed_delay = http_fault.mutable_delay()->mutable_fixed_delay();
-  fixed_delay->set_seconds(kFixedDelaySeconds);
-  // Config fault injection via different setup
-  SetFilterConfig(http_fault);
-  // Allow the channel to connect to one backends, so the herd of queued RPCs
-  // won't be executed on the same ExecCtx object and using the cached Now()
-  // value, which causes millisecond level delay error.
-  channel_->WaitForConnected(
-      grpc_timeout_milliseconds_to_deadline(kConnectionTimeoutMilliseconds));
-  // Send kNumRpcs RPCs and count the aborts.
-  int num_aborted = 0;
-  RpcOptions rpc_options = RpcOptions().set_timeout_ms(kRpcTimeoutMilliseconds);
-  std::vector<ConcurrentRpc> rpcs =
-      SendConcurrentRpcs(stub_.get(), kNumRpcs, rpc_options);
-  for (auto& rpc : rpcs) {
-    EXPECT_GE(rpc.elapsed_time,
-              grpc_core::Duration::Seconds(kFixedDelaySeconds));
-    if (rpc.status.error_code() == StatusCode::OK) continue;
-    EXPECT_EQ("Fault injected", rpc.status.error_message());
-    ++num_aborted;
-  }
-  // The abort rate should be roughly equal to the expectation.
-  const double seen_abort_rate = static_cast<double>(num_aborted) / kNumRpcs;
-  EXPECT_THAT(seen_abort_rate,
-              ::testing::DoubleNear(kAbortRate, kErrorTolerance));
-}
-
-// This test and the above test apply different denominators to delay and
-// abort. This ensures that we are using the right denominator for each
-// injected fault in our code.
-TEST_P(FaultInjectionTest,
-       XdsFaultInjectionAlwaysDelayPercentageAbortSwitchDenominator) {
-  CreateAndStartBackends(1);
-  const uint32_t kAbortPercentagePerMillion = 500000;
-  const double kAbortRate = kAbortPercentagePerMillion / 1000000.0;
-  const uint32_t kFixedDelaySeconds = 1;                // 1s
-  const uint32_t kRpcTimeoutMilliseconds = 100 * 1000;  // 100s should not reach
-  const uint32_t kConnectionTimeoutMilliseconds =
-      10 * 1000;  // 10s should not reach
-  const double kErrorTolerance = 0.05;
-  const size_t kNumRpcs = ComputeIdealNumRpcs(kAbortRate, kErrorTolerance);
-  const size_t kMaxConcurrentRequests = kNumRpcs;
-  // Create an EDS resource
-  EdsResourceArgs args({{"locality0", CreateEndpointsForBackends()}});
-  balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
-  // Loosen the max concurrent request limit
-  Cluster cluster = default_cluster_;
-  auto* threshold = cluster.mutable_circuit_breakers()->add_thresholds();
-  threshold->set_priority(RoutingPriority::DEFAULT);
-  threshold->mutable_max_requests()->set_value(kMaxConcurrentRequests);
-  balancer_->ads_service()->SetCdsResource(cluster);
-  // Construct the fault injection filter config
-  HTTPFault http_fault;
-  auto* abort_percentage = http_fault.mutable_abort()->mutable_percentage();
-  abort_percentage->set_numerator(kAbortPercentagePerMillion);
-  abort_percentage->set_denominator(FractionalPercent::MILLION);
-  http_fault.mutable_abort()->set_grpc_status(
-      static_cast<uint32_t>(StatusCode::ABORTED));
-  auto* delay_percentage = http_fault.mutable_delay()->mutable_percentage();
-  delay_percentage->set_numerator(100);  // Always inject DELAY!
-  delay_percentage->set_denominator(FractionalPercent::HUNDRED);
-  auto* fixed_delay = http_fault.mutable_delay()->mutable_fixed_delay();
-  fixed_delay->set_seconds(kFixedDelaySeconds);
-  // Config fault injection via different setup
-  SetFilterConfig(http_fault);
-  // Allow the channel to connect to one backends, so the herd of queued RPCs
-  // won't be executed on the same ExecCtx object and using the cached Now()
-  // value, which causes millisecond level delay error.
-  channel_->WaitForConnected(
-      grpc_timeout_milliseconds_to_deadline(kConnectionTimeoutMilliseconds));
-  // Send kNumRpcs RPCs and count the aborts.
-  int num_aborted = 0;
-  RpcOptions rpc_options = RpcOptions().set_timeout_ms(kRpcTimeoutMilliseconds);
-  std::vector<ConcurrentRpc> rpcs =
-      SendConcurrentRpcs(stub_.get(), kNumRpcs, rpc_options);
-  for (auto& rpc : rpcs) {
-    EXPECT_GE(rpc.elapsed_time,
-              grpc_core::Duration::Seconds(kFixedDelaySeconds));
-    if (rpc.status.error_code() == StatusCode::OK) continue;
-    EXPECT_EQ("Fault injected", rpc.status.error_message());
-    ++num_aborted;
-  }
-  // The abort rate should be roughly equal to the expectation.
-  const double seen_abort_rate = static_cast<double>(num_aborted) / kNumRpcs;
-  EXPECT_THAT(seen_abort_rate,
-              ::testing::DoubleNear(kAbortRate, kErrorTolerance));
-}
-
-TEST_P(FaultInjectionTest, XdsFaultInjectionMaxFault) {
-  CreateAndStartBackends(1);
-  const uint32_t kMaxFault = 10;
-  const uint32_t kNumRpcs = 30;  // kNumRpcs should be bigger than kMaxFault
-  const uint32_t kRpcTimeoutMs = 4000;     // 4 seconds
-  const uint32_t kLongDelaySeconds = 100;  // 100 seconds
-  const uint32_t kAlwaysDelayPercentage = 100;
-  // Create an EDS resource
-  EdsResourceArgs args({{"locality0", CreateEndpointsForBackends()}});
-  balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
-  // Construct the fault injection filter config
-  HTTPFault http_fault;
-  auto* delay_percentage = http_fault.mutable_delay()->mutable_percentage();
-  delay_percentage->set_numerator(
-      kAlwaysDelayPercentage);  // Always inject DELAY!
-  delay_percentage->set_denominator(FractionalPercent::HUNDRED);
-  auto* fixed_delay = http_fault.mutable_delay()->mutable_fixed_delay();
-  fixed_delay->set_seconds(kLongDelaySeconds);
-  http_fault.mutable_max_active_faults()->set_value(kMaxFault);
-  // Config fault injection via different setup
-  SetFilterConfig(http_fault);
-  // Sends a batch of long running RPCs with long timeout to consume all
-  // active faults quota.
-  int num_delayed = 0;
-  RpcOptions rpc_options = RpcOptions().set_timeout_ms(kRpcTimeoutMs);
-  std::vector<ConcurrentRpc> rpcs =
-      SendConcurrentRpcs(stub_.get(), kNumRpcs, rpc_options);
-  for (auto& rpc : rpcs) {
-    if (rpc.status.error_code() == StatusCode::OK) continue;
-    EXPECT_EQ(StatusCode::DEADLINE_EXCEEDED, rpc.status.error_code());
-    ++num_delayed;
-  }
-  // Only kMaxFault number of RPC should be fault injected..
-  EXPECT_EQ(kMaxFault, num_delayed);
-}
-
-TEST_P(FaultInjectionTest, XdsFaultInjectionBidiStreamDelayOk) {
-  CreateAndStartBackends(1);
-  // kRpcTimeoutMilliseconds is 10s should never be reached.
-  const uint32_t kRpcTimeoutMilliseconds = grpc_test_slowdown_factor() * 10000;
-  const uint32_t kFixedDelaySeconds = 1;
-  const uint32_t kDelayPercentagePerHundred = 100;
-  // Create an EDS resource
-  EdsResourceArgs args({{"locality0", CreateEndpointsForBackends()}});
-  balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
-  // Construct the fault injection filter config
-  HTTPFault http_fault;
-  auto* delay_percentage = http_fault.mutable_delay()->mutable_percentage();
-  delay_percentage->set_numerator(kDelayPercentagePerHundred);
-  delay_percentage->set_denominator(FractionalPercent::HUNDRED);
-  auto* fixed_delay = http_fault.mutable_delay()->mutable_fixed_delay();
-  fixed_delay->set_seconds(kFixedDelaySeconds);
-  // Config fault injection via different setup
-  SetFilterConfig(http_fault);
-  ClientContext context;
-  context.set_deadline(
-      grpc_timeout_milliseconds_to_deadline(kRpcTimeoutMilliseconds));
-  auto stream = stub_->BidiStream(&context);
-  stream->WritesDone();
-  auto status = stream->Finish();
-  EXPECT_TRUE(status.ok()) << status.error_message() << ", "
-                           << status.error_details() << ", "
-                           << context.debug_error_string();
-}
-
-// This case catches a bug in the retry code that was triggered by a bad
-// interaction with the FI code.  See https://github.com/grpc/grpc/pull/27217
-// for description.
-TEST_P(FaultInjectionTest, XdsFaultInjectionBidiStreamDelayError) {
-  CreateAndStartBackends(1);
-  const uint32_t kRpcTimeoutMilliseconds = grpc_test_slowdown_factor() * 500;
-  const uint32_t kFixedDelaySeconds = 100;
-  const uint32_t kDelayPercentagePerHundred = 100;
-  // Create an EDS resource
-  EdsResourceArgs args({{"locality0", CreateEndpointsForBackends()}});
-  balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
-  // Construct the fault injection filter config
-  HTTPFault http_fault;
-  auto* delay_percentage = http_fault.mutable_delay()->mutable_percentage();
-  delay_percentage->set_numerator(kDelayPercentagePerHundred);
-  delay_percentage->set_denominator(FractionalPercent::HUNDRED);
-  auto* fixed_delay = http_fault.mutable_delay()->mutable_fixed_delay();
-  fixed_delay->set_seconds(kFixedDelaySeconds);
-  // Config fault injection via different setup
-  SetFilterConfig(http_fault);
-  ClientContext context;
-  context.set_deadline(
-      grpc_timeout_milliseconds_to_deadline(kRpcTimeoutMilliseconds));
-  auto stream = stub_->BidiStream(&context);
-  stream->WritesDone();
-  auto status = stream->Finish();
-  EXPECT_EQ(StatusCode::DEADLINE_EXCEEDED, status.error_code())
-      << status.error_message() << ", " << status.error_details() << ", "
-      << context.debug_error_string();
-}
-
 using BootstrapSourceTest = XdsEnd2endTest;
 
 TEST_P(BootstrapSourceTest, Vanilla) {
@@ -11994,14 +11215,6 @@ INSTANTIATE_TEST_SUITE_P(XdsTest, LdsV2Test,
 // LDS/RDS commmon tests depend on XdsResolver.
 INSTANTIATE_TEST_SUITE_P(
     XdsTest, LdsRdsTest,
-    ::testing::Values(XdsTestType(), XdsTestType().set_enable_rds_testing(),
-                      // Also test with xDS v2.
-                      XdsTestType().set_enable_rds_testing().set_use_v2()),
-    &XdsTestType::Name);
-
-// Rls tests depend on XdsResolver.
-INSTANTIATE_TEST_SUITE_P(
-    XdsTest, RlsTest,
     ::testing::Values(XdsTestType(), XdsTestType().set_enable_rds_testing(),
                       // Also test with xDS v2.
                       XdsTestType().set_enable_rds_testing().set_use_v2()),
@@ -12269,16 +11482,6 @@ INSTANTIATE_TEST_SUITE_P(
     &XdsTestType::Name);
 
 INSTANTIATE_TEST_SUITE_P(
-    XdsTest, FaultInjectionTest,
-    ::testing::Values(
-        XdsTestType(), XdsTestType().set_enable_rds_testing(),
-        XdsTestType().set_filter_config_setup(
-            XdsTestType::HttpFilterConfigLocation::kHttpFilterConfigInRoute),
-        XdsTestType().set_enable_rds_testing().set_filter_config_setup(
-            XdsTestType::HttpFilterConfigLocation::kHttpFilterConfigInRoute)),
-    &XdsTestType::Name);
-
-INSTANTIATE_TEST_SUITE_P(
     XdsTest, BootstrapSourceTest,
     ::testing::Values(
         XdsTestType().set_bootstrap_source(XdsTestType::kBootstrapFromEnvVar),
@@ -12295,6 +11498,9 @@ int main(int argc, char** argv) {
   // Make the backup poller poll very frequently in order to pick up
   // updates from all the subchannels's FDs.
   GPR_GLOBAL_CONFIG_SET(grpc_client_channel_backup_poll_interval_ms, 1);
+  // Allow testing PUT requests.
+  grpc_core::
+      InternalOnlyDoNotUseUnlessYouHavePermissionFromGrpcTeamAllowBrokenPutRequests();
 #if TARGET_OS_IPHONE
   // Workaround Apple CFStream bug
   gpr_setenv("grpc_cfstream", "0");
