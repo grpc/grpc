@@ -12297,6 +12297,7 @@ int main(int argc, char** argv) {
       absl::make_unique<grpc::testing::FakeCertificateProviderFactory>(
           "fake2", &grpc::testing::g_fake2_cert_data_map));
   grpc_init();
+  grpc::testing::ConnectionAttemptInjector::Init();
   grpc_core::XdsHttpFilterRegistry::RegisterFilter(
       absl::make_unique<grpc::testing::NoOpHttpFilter>(
           "grpc.testing.client_only_http_filter",

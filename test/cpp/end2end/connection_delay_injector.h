@@ -28,17 +28,20 @@ namespace testing {
 // Allows injecting connection-establishment delays into C-core.
 // Typical usage:
 //
-//  ConnectionDelayInjector delay_injector(grpc_core::Duration::Seconds(10));
+//  // At grpc_init() time.
+//  ConnectionAttemptInjector::Init();
 //
-// When ConnectionDelayInjector (or any other subclass of
-// ConnectionAttemptInjector) is instantiated, it replaces the iomgr
-// TCP client vtable, and it sets it back to the original value when it
-// is destroyed.
+//  // When an injection is desired.
+//  ConnectionDelayInjector delay_injector(grpc_core::Duration::Seconds(10));
 //
 // The injection is global, so there must be only one ConnectionAttemptInjector
 // object at any one time.
 class ConnectionAttemptInjector {
  public:
+  // Global initializer.  Replaces the iomgr TCP client vtable.
+  // Must be called exactly once before any TCP connections are established.
+  static void Init();
+
   ConnectionAttemptInjector();
   virtual ~ConnectionAttemptInjector();
 

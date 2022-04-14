@@ -14,6 +14,7 @@
 
 #include "test/cpp/end2end/connection_delay_injector.h"
 
+#include <atomic>
 #include <memory>
 
 #include "absl/memory/memory.h"
@@ -32,31 +33,38 @@ namespace testing {
 namespace {
 
 grpc_tcp_client_vtable* g_original_vtable = nullptr;
-ConnectionAttemptInjector* g_injector = nullptr;
+std::atomic<ConnectionAttemptInjector*> g_injector{nullptr};
 
 void TcpConnectWithDelay(grpc_closure* closure, grpc_endpoint** ep,
                          grpc_pollset_set* interested_parties,
                          const grpc_channel_args* channel_args,
                          const grpc_resolved_address* addr,
                          grpc_core::Timestamp deadline) {
-  GPR_ASSERT(g_injector != nullptr);
-  g_injector->HandleConnection(closure, ep, interested_parties, channel_args,
+  ConnectionAttemptInjector* injector = g_injector.load();
+  if (injector == nullptr) {
+    g_original_vtable->connect(closure, ep, interested_parties, channel_args,
                                addr, deadline);
+    return;
+  }
+  injector->HandleConnection(closure, ep, interested_parties, channel_args,
+                             addr, deadline);
 }
 
 grpc_tcp_client_vtable kDelayedConnectVTable = {TcpConnectWithDelay};
 
 }  // namespace
 
+void ConnectionAttemptInjector::Init() {
+  g_original_vtable = grpc_tcp_client_impl;
+  grpc_tcp_client_impl = &kDelayedConnectVTable;
+}
+
 ConnectionAttemptInjector::ConnectionAttemptInjector() {
-  g_original_vtable =
-      absl::exchange(grpc_tcp_client_impl, &kDelayedConnectVTable);
-  GPR_ASSERT(absl::exchange(g_injector, this) == nullptr);
+  GPR_ASSERT(g_injector.exchange(this) == nullptr);
 }
 
 ConnectionAttemptInjector::~ConnectionAttemptInjector() {
-  g_injector = nullptr;
-  grpc_tcp_client_impl = g_original_vtable;
+  g_injector.store(nullptr);
 }
 
 void ConnectionAttemptInjector::AttemptConnection(
