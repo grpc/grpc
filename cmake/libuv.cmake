@@ -22,22 +22,17 @@ if(gRPC_LIBUV_PROVIDER STREQUAL "module")
   add_subdirectory("${LIBUV_ROOT_DIR}" third_party/libuv)
   if(TARGET uv)
     set(_gRPC_LIBUV_LIBRARIES uv)
-    if(gRPC_INSTALL)
-      if(_gRPC_INSTALL_SUPPORTED_FROM_MODULE)
-        install(TARGETS uv EXPORT gRPCTargets
-          RUNTIME DESTINATION ${gRPC_INSTALL_BINDIR}
-          LIBRARY DESTINATION ${gRPC_INSTALL_LIBDIR}
-          ARCHIVE DESTINATION ${gRPC_INSTALL_LIBDIR})
-      else()
-        message(WARNING "gRPC_INSTALL will be forced to FALSE because gRPC_LIBUV_PROVIDER is \"module\" and CMake version (${CMAKE_VERSION}) is less than 3.13.")
-        set(gRPC_INSTALL FALSE)
-      endif()
+    if(gRPC_INSTALL AND _gRPC_INSTALL_SUPPORTED_FROM_MODULE)
+      install(TARGETS libuv::uv EXPORT gRPCTargets
+        RUNTIME DESTINATION ${gRPC_INSTALL_BINDIR}
+        LIBRARY DESTINATION ${gRPC_INSTALL_LIBDIR}
+        ARCHIVE DESTINATION ${gRPC_INSTALL_LIBDIR})
     endif()
   endif()
 elseif(gRPC_LIBUV_PROVIDER STREQUAL "package")
   find_package(libuv REQUIRED)
-  if(TARGET libuv::uv)
-    set(_gRPC_LIBUV_LIBRARIES libuv::uv)
+  if(TARGET uv)
+    set(_gRPC_LIBUV_LIBRARIES uv)
   endif()
   set(_gRPC_FIND_LIBUV "if(NOT libuv_FOUND)\n  find_package(libuv)\nendif()")
 endif()
