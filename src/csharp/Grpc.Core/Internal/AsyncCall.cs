@@ -648,7 +648,7 @@ namespace Grpc.Core.Internal
             if (status.StatusCode != StatusCode.OK)
             {
                 streamingResponseCallFinishedTcs.SetException(new RpcException(status, receivedStatus.Trailers));
-                if (status.StatusCode == StatusCode.Cancelled || origCancelRequested)
+                if (status.StatusCode == StatusCode.Cancelled || status.StatusCode == StatusCode.Unavailable || origCancelRequested)
                 {
                     // Make sure the exception set to the Task is observed,
                     // otherwise this can trigger "Unobserved exception" when the response stream
