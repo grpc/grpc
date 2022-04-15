@@ -117,11 +117,9 @@ namespace {
 using std::chrono::system_clock;
 
 using ::envoy::config::cluster::v3::CircuitBreakers;
-using ::envoy::config::cluster::v3::Cluster;
 using ::envoy::config::cluster::v3::Cluster_CustomClusterType;
 using ::envoy::config::core::v3::HealthStatus;
 using ::envoy::config::core::v3::RoutingPriority;
-using ::envoy::config::endpoint::v3::ClusterLoadAssignment;
 using ::envoy::config::listener::v3::FilterChainMatch;
 using ::envoy::config::rbac::v3::Policy;
 using ::envoy::config::rbac::v3::RBAC_Action;
@@ -4886,7 +4884,7 @@ TEST_P(CdsTest, AggregateClusterFallBackFromRingHashToLogicalDnsAtStartup) {
   // Create Aggregate Cluster
   auto cluster = default_cluster_;
   cluster.set_lb_policy(Cluster::RING_HASH);
-  CustomClusterType* custom_cluster = cluster.mutable_cluster_type();
+  Cluster_CustomClusterType* custom_cluster = cluster.mutable_cluster_type();
   custom_cluster->set_name("envoy.clusters.aggregate");
   ClusterConfig cluster_config;
   cluster_config.add_clusters(kEdsClusterName);
