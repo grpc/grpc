@@ -28,8 +28,8 @@
 #include "src/core/lib/gpr/env.h"
 #include "src/core/lib/resolver/server_address.h"
 #include "src/proto/grpc/testing/xds/v3/aggregate_cluster.grpc.pb.h"
-#include "test/cpp/end2end/xds/xds_end2end_test_lib.h"
 #include "test/cpp/end2end/connection_delay_injector.h"
+#include "test/cpp/end2end/xds/xds_end2end_test_lib.h"
 
 namespace grpc {
 namespace testing {
