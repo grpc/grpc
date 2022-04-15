@@ -19,15 +19,14 @@
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
-#include "src/core/ext/filters/client_channel/backup_poller.h"
-#include "envoy/extensions/filters/http/router/v3/router.pb.h"
-#include "envoy/extensions/filters/network/http_connection_manager/v3/http_connection_manager.pb.h"
-#include "envoy/extensions/filters/common/fault/v3/fault.pb.h"
-#include "envoy/extensions/filters/http/fault/v3/fault.pb.h"
 #include "envoy/config/cluster/v3/cluster.pb.h"
 #include "envoy/config/route/v3/route.pb.h"
+#include "envoy/extensions/filters/common/fault/v3/fault.pb.h"
+#include "envoy/extensions/filters/http/fault/v3/fault.pb.h"
+#include "envoy/extensions/filters/http/router/v3/router.pb.h"
+#include "envoy/extensions/filters/network/http_connection_manager/v3/http_connection_manager.pb.h"
 
-
+#include "src/core/ext/filters/client_channel/backup_poller.h"
 #include "test/core/util/test_config.h"
 #include "test/cpp/end2end/xds/xds_end2end_test_lib.h"
 

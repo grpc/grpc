@@ -33,6 +33,7 @@
 #include "absl/strings/str_replace.h"
 #include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
+#include "envoy/extensions/filters/http/router/v3/router.pb.h"
 
 #include <grpcpp/security/tls_certificate_provider.h>
 
@@ -41,15 +42,14 @@
 #include "src/core/lib/gpr/env.h"
 #include "src/core/lib/gpr/tmpfile.h"
 #include "src/cpp/client/secure_credentials.h"
-#include "envoy/extensions/filters/http/router/v3/router.pb.h"
 #include "test/core/util/resolve_localhost_ip46.h"
 #include "test/cpp/util/tls_test_utils.h"
 
 namespace grpc {
 namespace testing {
 
-using ::envoy::config::endpoint::v3::ClusterLoadAssignment;
 using ::envoy::config::core::v3::HealthStatus;
+using ::envoy::config::endpoint::v3::ClusterLoadAssignment;
 using ::envoy::config::listener::v3::Listener;
 using ::envoy::extensions::filters::network::http_connection_manager::v3::
     HttpConnectionManager;

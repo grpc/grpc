@@ -26,6 +26,8 @@
 #include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
+#include "envoy/extensions/filters/http/rbac/v3/rbac.pb.h"
+#include "envoy/extensions/filters/network/http_connection_manager/v3/http_connection_manager.pb.h"
 
 #include <grpc/grpc.h>
 #include <grpc/grpc_security.h>
@@ -38,8 +40,6 @@
 #include "src/core/lib/security/security_connector/ssl_utils.h"
 #include "src/cpp/server/secure_server_credentials.h"
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
-#include "envoy/extensions/filters/network/http_connection_manager/v3/http_connection_manager.pb.h"
-#include "envoy/extensions/filters/http/rbac/v3/rbac.pb.h"
 #include "test/core/util/port.h"
 #include "test/cpp/end2end/counted_service.h"
 #include "test/cpp/end2end/test_service_impl.h"
@@ -555,11 +555,10 @@ class XdsEnd2endTest : public ::testing::TestWithParam<XdsTestType> {
   struct EdsResourceArgs {
     // An individual endpoint for a backend running on a specified port.
     struct Endpoint {
-      explicit Endpoint(
-          int port,
-          ::envoy::config::core::v3::HealthStatus health_status =
-              ::envoy::config::core::v3::HealthStatus::UNKNOWN,
-          int lb_weight = 1)
+      explicit Endpoint(int port,
+                        ::envoy::config::core::v3::HealthStatus health_status =
+                            ::envoy::config::core::v3::HealthStatus::UNKNOWN,
+                        int lb_weight = 1)
           : port(port), health_status(health_status), lb_weight(lb_weight) {}
 
       int port;

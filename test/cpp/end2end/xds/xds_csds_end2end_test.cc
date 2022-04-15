@@ -22,15 +22,15 @@
 
 #include "absl/memory/memory.h"
 #include "absl/strings/str_cat.h"
-
-#include <grpcpp/create_channel.h>
-#include <grpcpp/security/credentials.h>
-
-#include "envoy/extensions/filters/network/http_connection_manager/v3/http_connection_manager.pb.h"
 #include "envoy/config/cluster/v3/cluster.pb.h"
 #include "envoy/config/endpoint/v3/endpoint.pb.h"
 #include "envoy/config/listener/v3/listener.pb.h"
 #include "envoy/config/route/v3/route.pb.h"
+#include "envoy/extensions/filters/network/http_connection_manager/v3/http_connection_manager.pb.h"
+
+#include <grpcpp/create_channel.h>
+#include <grpcpp/security/credentials.h>
+
 #include "src/core/ext/filters/client_channel/backup_poller.h"
 #include "src/cpp/client/secure_credentials.h"
 #include "test/core/util/test_config.h"
@@ -38,8 +38,9 @@
 
 #ifndef DISABLED_XDS_PROTO_IN_CC
 
-#include "src/cpp/server/csds/csds.h"
 #include "envoy/service/status/v3/csds.grpc.pb.h"
+
+#include "src/cpp/server/csds/csds.h"
 
 namespace grpc {
 namespace testing {
