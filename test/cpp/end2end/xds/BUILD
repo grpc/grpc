@@ -138,6 +138,27 @@ grpc_cc_test(
 )
 
 grpc_cc_test(
+    name = "xds_core_end2end_test",
+    size = "large",
+    srcs = ["xds_core_end2end_test.cc"],
+    external_deps = [
+        "gtest",
+    ],
+    linkstatic = True,  # Fixes dyld error on MacOS
+    tags = [
+        "no_test_ios",
+        "no_windows",
+    ],  # TODO(jtattermusch): fix test on windows
+    deps = [
+        ":xds_end2end_test_lib",
+        "//:gpr",
+        "//:grpc",
+        "//:grpc++",
+        "//test/core/util:grpc_test_util",
+    ],
+)
+
+grpc_cc_test(
     name = "xds_csds_end2end_test",
     size = "large",
     srcs = ["xds_csds_end2end_test.cc"],
