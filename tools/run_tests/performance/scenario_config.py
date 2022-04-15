@@ -602,6 +602,7 @@ class CXXLanguage(Language):
 
 
 class CSharpLanguage(Language):
+    """The legacy Grpc.Core implementation from grpc/grpc."""
 
     def worker_cmdline(self):
         return ['tools/run_tests/performance/run_worker_csharp.sh']
@@ -724,6 +725,134 @@ class CSharpLanguage(Language):
 
     def __str__(self):
         return 'csharp'
+
+
+class DotnetLanguage(Language):
+    """The pure C# implementation from grpc/grpc-dotnet."""
+
+    def worker_cmdline(self):
+        # grpc-dotnet worker is only supported by the new GKE based OSS benchmark
+        # framework, and the worker_cmdline() is only used by run_performance_tests.py
+        return ['grpc_dotnet_not_supported_by_legacy_performance_runner.sh']
+
+    def worker_port_offset(self):
+        return 1100
+
+    def scenarios(self):
+        yield _ping_pong_scenario('dotnet_generic_async_streaming_ping_pong',
+                                  rpc_type='STREAMING',
+                                  client_type='ASYNC_CLIENT',
+                                  server_type='ASYNC_GENERIC_SERVER',
+                                  use_generic_payload=True,
+                                  categories=[SMOKETEST, SCALABLE])
+
+        yield _ping_pong_scenario(
+            'dotnet_generic_async_streaming_ping_pong_insecure_1MB',
+            rpc_type='STREAMING',
+            client_type='ASYNC_CLIENT',
+            server_type='ASYNC_GENERIC_SERVER',
+            req_size=1024 * 1024,
+            resp_size=1024 * 1024,
+            use_generic_payload=True,
+            secure=False,
+            categories=[SMOKETEST, SCALABLE])
+
+        yield _ping_pong_scenario(
+            'dotnet_generic_async_streaming_qps_unconstrained_insecure',
+            rpc_type='STREAMING',
+            client_type='ASYNC_CLIENT',
+            server_type='ASYNC_GENERIC_SERVER',
+            unconstrained_client='async',
+            use_generic_payload=True,
+            secure=False,
+            categories=[SMOKETEST, SCALABLE])
+
+        yield _ping_pong_scenario('dotnet_protobuf_async_streaming_ping_pong',
+                                  rpc_type='STREAMING',
+                                  client_type='ASYNC_CLIENT',
+                                  server_type='ASYNC_SERVER')
+
+        yield _ping_pong_scenario('dotnet_protobuf_async_unary_ping_pong',
+                                  rpc_type='UNARY',
+                                  client_type='ASYNC_CLIENT',
+                                  server_type='ASYNC_SERVER',
+                                  categories=[SMOKETEST, SCALABLE])
+
+        yield _ping_pong_scenario(
+            'dotnet_protobuf_sync_to_async_unary_ping_pong',
+            rpc_type='UNARY',
+            client_type='SYNC_CLIENT',
+            server_type='ASYNC_SERVER')
+
+        yield _ping_pong_scenario(
+            'dotnet_protobuf_async_unary_qps_unconstrained',
+            rpc_type='UNARY',
+            client_type='ASYNC_CLIENT',
+            server_type='ASYNC_SERVER',
+            unconstrained_client='async',
+            categories=[SMOKETEST, SCALABLE])
+
+        yield _ping_pong_scenario(
+            'dotnet_protobuf_async_streaming_qps_unconstrained',
+            rpc_type='STREAMING',
+            client_type='ASYNC_CLIENT',
+            server_type='ASYNC_SERVER',
+            unconstrained_client='async',
+            categories=[SCALABLE])
+
+        yield _ping_pong_scenario('dotnet_to_cpp_protobuf_sync_unary_ping_pong',
+                                  rpc_type='UNARY',
+                                  client_type='SYNC_CLIENT',
+                                  server_type='SYNC_SERVER',
+                                  server_language='c++',
+                                  async_server_threads=1,
+                                  categories=[SMOKETEST, SCALABLE])
+
+        yield _ping_pong_scenario(
+            'dotnet_to_cpp_protobuf_async_streaming_ping_pong',
+            rpc_type='STREAMING',
+            client_type='ASYNC_CLIENT',
+            server_type='ASYNC_SERVER',
+            server_language='c++',
+            async_server_threads=1)
+
+        yield _ping_pong_scenario(
+            'dotnet_to_cpp_protobuf_async_unary_qps_unconstrained',
+            rpc_type='UNARY',
+            client_type='ASYNC_CLIENT',
+            server_type='ASYNC_SERVER',
+            unconstrained_client='async',
+            server_language='c++',
+            categories=[SCALABLE])
+
+        yield _ping_pong_scenario(
+            'dotnet_to_cpp_protobuf_sync_to_async_unary_qps_unconstrained',
+            rpc_type='UNARY',
+            client_type='SYNC_CLIENT',
+            server_type='ASYNC_SERVER',
+            unconstrained_client='sync',
+            server_language='c++',
+            categories=[SCALABLE])
+
+        yield _ping_pong_scenario(
+            'cpp_to_dotnet_protobuf_async_unary_qps_unconstrained',
+            rpc_type='UNARY',
+            client_type='ASYNC_CLIENT',
+            server_type='ASYNC_SERVER',
+            unconstrained_client='async',
+            client_language='c++',
+            categories=[SCALABLE])
+
+        yield _ping_pong_scenario('dotnet_protobuf_async_unary_ping_pong_1MB',
+                                  rpc_type='UNARY',
+                                  client_type='ASYNC_CLIENT',
+                                  server_type='ASYNC_SERVER',
+                                  req_size=1024 * 1024,
+                                  resp_size=1024 * 1024,
+                                  categories=[SMOKETEST, SCALABLE])
+
+    def __str__(self):
+        return 'dotnet'
 
 
 class PythonLanguage(Language):
@@ -1359,6 +1488,7 @@ class NodeLanguage(Language):
 LANGUAGES = {
     'c++': CXXLanguage(),
     'csharp': CSharpLanguage(),
+    'dotnet': DotnetLanguage(),
     'ruby': RubyLanguage(),
     'php7': Php7Language(),
     'php7_protobuf_c': Php7Language(php7_protobuf_c=True),

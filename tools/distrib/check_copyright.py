@@ -200,6 +200,18 @@ def log(cond, why, filename):
         print(filename)
 
 
+def write_copyright(license_text, file_text, filename):
+    shebang = ""
+    lines = file_text.split("\n")
+    if lines and lines[0].startswith("#!"):
+        shebang = lines[0] + "\n"
+        file_text = file_text[len(shebang):]
+
+    rewritten_text = shebang + license_text + "\n" + file_text
+    with open(filename, 'w') as f:
+        f.write(rewritten_text)
+
+
 # scan files, validate the text
 ok = True
 filename_list = []
@@ -236,8 +248,7 @@ for filename in filename_list:
         pass
     elif 'DO NOT EDIT' not in text:
         if args.fix:
-            text = license_text + '\n' + text
-            open(filename, 'w').write(text)
+            write_copyright(license_text, text, filename)
             log(1, 'copyright missing (fixed)', filename)
         else:
             log(1, 'copyright missing', filename)

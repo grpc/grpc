@@ -1,4 +1,5 @@
-# Copyright 2021 The gRPC Authors
+#!/bin/bash
+# Copyright 2022 gRPC authors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -12,8 +13,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# Config file for the internal CI (in protobuf text format)
+cd "$(dirname "$0")"
 
-# Location of the continuous shell script in repository.
-build_file: "grpc/tools/internal_ci/macos/grpc_run_bazel_core_ios_tests.sh"
+# Shellcheck cant find the included file.
+# shellcheck disable=SC1091
+source common.sh
 
+set -euxo pipefail
+
+gcloud functions list | grep "${FUNCTION_PREFIX}" | awk '{print $1;}' |  xargs -n1 gcloud functions delete
