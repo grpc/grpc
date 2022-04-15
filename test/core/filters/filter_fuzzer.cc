@@ -304,12 +304,13 @@ class MainLoop {
     switch (action.type_case()) {
       case filter_fuzzer::Action::TYPE_NOT_SET:
         break;
-      case filter_fuzzer::Action::kAdvanceTimeMicroseconds:
+      case filter_fuzzer::Action::kAdvanceTimeMicroseconds: {
         grpc_core::MutexLock lock(&g_now_mu);
         g_now = gpr_time_add(
             g_now, gpr_time_from_micros(action.advance_time_microseconds(),
                                         GPR_TIMESPAN));
         break;
+      }
       case filter_fuzzer::Action::kCancel:
         calls_.erase(action.call());
         break;
