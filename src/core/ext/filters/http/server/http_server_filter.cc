@@ -106,8 +106,9 @@ static grpc_error_handle hs_filter_incoming_metadata(grpc_call_element* elem,
       case grpc_core::HttpMethodMetadata::kPost:
         break;
       case grpc_core::HttpMethodMetadata::kPut:
-        if (static_cast<channel_data*>(elem->channel_data)->allow_put_requests)
+        if (static_cast<channel_data*>(elem->channel_data)->allow_put_requests) {
           break;
+        }
         ABSL_FALLTHROUGH_INTENDED;
       case grpc_core::HttpMethodMetadata::kInvalid:
       case grpc_core::HttpMethodMetadata::kGet:

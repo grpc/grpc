@@ -7154,7 +7154,7 @@ class XdsServerSecurityTest : public XdsEnd2endTest {
     builder.AddCertificateProviderPlugin("file_plugin", "file_watcher",
                                          absl::StrJoin(fields, ",\n"));
     InitClient(builder);
-    CreateBackends(1, /*xds_enabled=*/true, /*allow_put_requests=*/true);
+    CreateBackends(1, /*xds_enabled=*/true);
     root_cert_ = ReadFile(kCaCertPath);
     bad_root_cert_ = ReadFile(kBadClientCertPath);
     identity_pair_ = ReadTlsIdentityPair(kServerKeyPath, kServerCertPath);
@@ -9071,6 +9071,7 @@ TEST_P(XdsRbacTestWithActionPermutations, MethodPostPermissionAnyPrincipal) {
   policy.add_principals()->set_any(true);
   (*rules->mutable_policies())["policy"] = policy;
   SetServerRbacPolicy(rbac);
+  backends_[0]->set_allow_put_requests(true);
   backends_[0]->Start();
   backends_[0]->notifier()->WaitOnServingStatusChange(
       absl::StrCat(ipv6_only_ ? "[::1]:" : "127.0.0.1:", backends_[0]->port()),
@@ -9121,6 +9122,7 @@ TEST_P(XdsRbacTestWithActionPermutations, MethodPutPermissionAnyPrincipal) {
   policy.add_principals()->set_any(true);
   (*rules->mutable_policies())["policy"] = policy;
   SetServerRbacPolicy(rbac);
+  backends_[0]->set_allow_put_requests(true);
   backends_[0]->Start();
   backends_[0]->notifier()->WaitOnServingStatusChange(
       absl::StrCat(ipv6_only_ ? "[::1]:" : "127.0.0.1:", backends_[0]->port()),
@@ -9382,6 +9384,7 @@ TEST_P(XdsRbacTestWithActionPermutations, AnyPermissionMethodPostPrincipal) {
   policy.add_permissions()->set_any(true);
   (*rules->mutable_policies())["policy"] = policy;
   SetServerRbacPolicy(rbac);
+  backends_[0]->set_allow_put_requests(true);
   backends_[0]->Start();
   backends_[0]->notifier()->WaitOnServingStatusChange(
       absl::StrCat(ipv6_only_ ? "[::1]:" : "127.0.0.1:", backends_[0]->port()),
@@ -9432,6 +9435,7 @@ TEST_P(XdsRbacTestWithActionPermutations, AnyPermissionMethodPutPrincipal) {
   policy.add_permissions()->set_any(true);
   (*rules->mutable_policies())["policy"] = policy;
   SetServerRbacPolicy(rbac);
+  backends_[0]->set_allow_put_requests(true);
   backends_[0]->Start();
   backends_[0]->notifier()->WaitOnServingStatusChange(
       absl::StrCat(ipv6_only_ ? "[::1]:" : "127.0.0.1:", backends_[0]->port()),
