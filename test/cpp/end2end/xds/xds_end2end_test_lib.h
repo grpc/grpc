@@ -38,8 +38,8 @@
 #include "src/core/lib/security/security_connector/ssl_utils.h"
 #include "src/cpp/server/secure_server_credentials.h"
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
-#include "src/proto/grpc/testing/xds/v3/http_connection_manager.grpc.pb.h"
-#include "src/proto/grpc/testing/xds/v3/http_filter_rbac.grpc.pb.h"
+#include "envoy/extensions/filters/network/http_connection_manager/v3/http_connection_manager.pb.h"
+#include "envoy/extensions/filters/http/rbac/v3/rbac.pb.h"
 #include "test/core/util/port.h"
 #include "test/cpp/end2end/counted_service.h"
 #include "test/cpp/end2end/test_service_impl.h"
@@ -557,13 +557,13 @@ class XdsEnd2endTest : public ::testing::TestWithParam<XdsTestType> {
     struct Endpoint {
       explicit Endpoint(
           int port,
-          ::envoy::config::endpoint::v3::HealthStatus health_status =
-              ::envoy::config::endpoint::v3::HealthStatus::UNKNOWN,
+          ::envoy::config::core::v3::HealthStatus health_status =
+              ::envoy::config::core::v3::HealthStatus::UNKNOWN,
           int lb_weight = 1)
           : port(port), health_status(health_status), lb_weight(lb_weight) {}
 
       int port;
-      ::envoy::config::endpoint::v3::HealthStatus health_status;
+      ::envoy::config::core::v3::HealthStatus health_status;
       int lb_weight;
     };
 
@@ -597,8 +597,8 @@ class XdsEnd2endTest : public ::testing::TestWithParam<XdsTestType> {
   // constructing an EDS resource.
   EdsResourceArgs::Endpoint CreateEndpoint(
       size_t backend_idx,
-      ::envoy::config::endpoint::v3::HealthStatus health_status =
-          ::envoy::config::endpoint::v3::HealthStatus::UNKNOWN,
+      ::envoy::config::core::v3::HealthStatus health_status =
+          ::envoy::config::core::v3::HealthStatus::UNKNOWN,
       int lb_weight = 1) {
     return EdsResourceArgs::Endpoint(backends_[backend_idx]->port(),
                                      health_status, lb_weight);
@@ -608,8 +608,8 @@ class XdsEnd2endTest : public ::testing::TestWithParam<XdsTestType> {
   // for use in constructing an EDS resource.
   std::vector<EdsResourceArgs::Endpoint> CreateEndpointsForBackends(
       size_t start_index = 0, size_t stop_index = 0,
-      ::envoy::config::endpoint::v3::HealthStatus health_status =
-          ::envoy::config::endpoint::v3::HealthStatus::UNKNOWN,
+      ::envoy::config::core::v3::HealthStatus health_status =
+          ::envoy::config::core::v3::HealthStatus::UNKNOWN,
       int lb_weight = 1);
 
   // Returns an endpoint for an unused port, for use in constructing an

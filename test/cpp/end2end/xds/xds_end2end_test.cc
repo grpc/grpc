@@ -4755,7 +4755,7 @@ TEST_P(CdsTest, AggregateClusterDiamondDependency) {
   // Populate top-level aggregate cluster pointing to kNewClusterName1
   // and kNewAggregateClusterName.
   auto cluster = default_cluster_;
-  CustomClusterType* custom_cluster = cluster.mutable_cluster_type();
+  Cluster_CustomClusterType* custom_cluster = cluster.mutable_cluster_type();
   custom_cluster->set_name("envoy.clusters.aggregate");
   ClusterConfig cluster_config;
   cluster_config.add_clusters(kNewClusterName1);
@@ -5217,7 +5217,7 @@ TEST_P(CdsTest, AggregateClusterReconfigEdsWhileLogicalDnsChildFails) {
   balancer_->ads_service()->SetCdsResource(logical_dns_cluster);
   // Create Aggregate Cluster
   auto cluster = default_cluster_;
-  CustomClusterType* custom_cluster = cluster.mutable_cluster_type();
+  Cluster_CustomClusterType* custom_cluster = cluster.mutable_cluster_type();
   custom_cluster->set_name("envoy.clusters.aggregate");
   ClusterConfig cluster_config;
   cluster_config.add_clusters(kNewCluster1Name);
@@ -5276,7 +5276,7 @@ TEST_P(CdsTest, AggregateClusterMultipleClustersWithSameLocalities) {
   balancer_->ads_service()->SetCdsResource(new_cluster2);
   // Create Aggregate Cluster
   auto cluster = default_cluster_;
-  CustomClusterType* custom_cluster = cluster.mutable_cluster_type();
+  Cluster_CustomClusterType* custom_cluster = cluster.mutable_cluster_type();
   custom_cluster->set_name("envoy.clusters.aggregate");
   ClusterConfig cluster_config;
   cluster_config.add_clusters(kNewClusterName1);
@@ -5308,7 +5308,7 @@ TEST_P(CdsTest, AggregateClusterRecursionDepthJustBelowMax) {
   for (int i = 14; i >= 0; --i) {
     auto cluster = default_cluster_;
     if (i > 0) cluster.set_name(absl::StrCat(kDefaultClusterName, i));
-    CustomClusterType* custom_cluster = cluster.mutable_cluster_type();
+    Cluster_CustomClusterType* custom_cluster = cluster.mutable_cluster_type();
     custom_cluster->set_name("envoy.clusters.aggregate");
     ClusterConfig cluster_config;
     cluster_config.add_clusters(absl::StrCat(kDefaultClusterName, i + 1));
@@ -5334,7 +5334,7 @@ TEST_P(CdsTest, AggregateClusterRecursionMaxDepth) {
   for (int i = 15; i >= 0; --i) {
     auto cluster = default_cluster_;
     if (i > 0) cluster.set_name(absl::StrCat(kDefaultClusterName, i));
-    CustomClusterType* custom_cluster = cluster.mutable_cluster_type();
+    Cluster_CustomClusterType* custom_cluster = cluster.mutable_cluster_type();
     custom_cluster->set_name("envoy.clusters.aggregate");
     ClusterConfig cluster_config;
     cluster_config.add_clusters(absl::StrCat(kDefaultClusterName, i + 1));
