@@ -27,5 +27,14 @@ cd $(dirname $0)/../../..
 export PREPARE_BUILD_INSTALL_DEPS_OBJC=true
 source tools/internal_ci/helper_scripts/prepare_build_macos_rc
 
+if [ "${KOKORO_GITHUB_PULL_REQUEST_TARGET_BRANCH}" != "" ]
+then
+  # running on PR, generate size diff
+  DIFF_BASE="origin/${KOKORO_GITHUB_PULL_REQUEST_TARGET_BRANCH}"
+else
+  # running as continous build, only generate numbers for the current revision
+  DIFF_BASE=""
+fi
+
 tools/profiling/ios_bin/binary_size.py \
-  -d "origin/$KOKORO_GITHUB_PULL_REQUEST_TARGET_BRANCH"
+  --diff_base="${DIFF_BASE}"
