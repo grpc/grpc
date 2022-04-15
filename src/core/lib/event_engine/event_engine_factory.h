@@ -27,6 +27,19 @@ namespace experimental {
 /// Strongly consider whether you could use \a CreateEventEngine instead.
 EventEngine* GetDefaultEventEngine();
 
+/// Destroy the shared global EventEngine instance
+///
+/// Called upon gRPC shutdown. A default engine will be created again if
+/// \a GetDefaultEventEngine is called, allowing for a multiple cycles of
+/// grpc_init and grpc_shutdown.
+///
+/// Behavior is undefined if \a GetDefaultEventEngine has not been called at
+/// least once.
+///
+/// The concept of a global EventEngine may go away in a post-iomgr world.
+/// Strongly consider whether you could use \a CreateEventEngine instead.
+void DestroyDefaultEventEngine();
+
 /// Create an EventEngine using the default factory provided at link time.
 std::unique_ptr<EventEngine> DefaultEventEngineFactory();
 

@@ -27,6 +27,7 @@ namespace {
 const std::function<std::unique_ptr<EventEngine>()>* g_event_engine_factory =
     nullptr;
 grpc_core::Mutex* g_mu = new grpc_core::Mutex();
+EventEngine* g_event_engine = nullptr;
 }  // namespace
 
 void SetDefaultEventEngineFactory(
@@ -44,8 +45,16 @@ std::unique_ptr<EventEngine> CreateEventEngine() {
 }
 
 EventEngine* GetDefaultEventEngine() {
-  static EventEngine* default_event_engine = CreateEventEngine().release();
-  return default_event_engine;
+  if (g_event_engine == nullptr) {
+    g_event_engine = CreateEventEngine().release();
+  }
+  return g_event_engine;
+}
+
+void DestroyDefaultEventEngine() {
+  GPR_ASSERT(g_event_engine != nullptr);
+  delete g_event_engine;
+  g_event_engine = nullptr;
 }
 
 }  // namespace experimental

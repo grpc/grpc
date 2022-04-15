@@ -204,7 +204,7 @@ void grpc_shutdown_internal_locked(void)
   int i;
   {
     grpc_core::ExecCtx exec_ctx(0);
-    delete grpc_event_engine::experimental::GetDefaultEventEngine();
+    grpc_event_engine::experimental::DestroyDefaultEventEngine();
     grpc_iomgr_shutdown_background_closure();
     {
       grpc_timer_manager_set_threading(false);  // shutdown timer_manager thread
