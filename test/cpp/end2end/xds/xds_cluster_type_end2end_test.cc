@@ -24,10 +24,12 @@
 #include "src/core/ext/filters/client_channel/backup_poller.h"
 #include "src/core/ext/filters/client_channel/lb_policy/xds/xds_channel_args.h"
 #include "src/core/ext/filters/client_channel/resolver/fake/fake_resolver.h"
+#include "src/core/lib/address_utils/sockaddr_utils.h"
 #include "src/core/lib/gpr/env.h"
 #include "src/core/lib/resolver/server_address.h"
 #include "src/proto/grpc/testing/xds/v3/aggregate_cluster.grpc.pb.h"
 #include "test/cpp/end2end/xds/xds_end2end_test_lib.h"
+#include "test/cpp/end2end/connection_delay_injector.h"
 
 namespace grpc {
 namespace testing {
@@ -345,6 +347,202 @@ TEST_P(CdsTest, AggregateClusterType) {
   WaitForBackend(0);
 }
 
+TEST_P(CdsTest, AggregateClusterDiamondDependency) {
+  ScopedExperimentalEnvVar env_var(
+      "GRPC_XDS_EXPERIMENTAL_ENABLE_AGGREGATE_AND_LOGICAL_DNS_CLUSTER");
+  const char* kNewClusterName1 = "new_cluster_1";
+  const char* kNewEdsServiceName1 = "new_eds_service_name_1";
+  const char* kNewClusterName2 = "new_cluster_2";
+  const char* kNewEdsServiceName2 = "new_eds_service_name_2";
+  const char* kNewAggregateClusterName = "new_aggregate_cluster";
+  // Populate new EDS resources.
+  CreateAndStartBackends(2);
+  EdsResourceArgs args1({{"locality0", CreateEndpointsForBackends(0, 1)}});
+  balancer_->ads_service()->SetEdsResource(
+      BuildEdsResource(args1, kNewEdsServiceName1));
+  EdsResourceArgs args2({{"locality0", CreateEndpointsForBackends(1, 2)}});
+  balancer_->ads_service()->SetEdsResource(
+      BuildEdsResource(args2, kNewEdsServiceName2));
+  // Populate new CDS resources.
+  Cluster new_cluster1 = default_cluster_;
+  new_cluster1.set_name(kNewClusterName1);
+  new_cluster1.mutable_eds_cluster_config()->set_service_name(
+      kNewEdsServiceName1);
+  balancer_->ads_service()->SetCdsResource(new_cluster1);
+  Cluster new_cluster2 = default_cluster_;
+  new_cluster2.set_name(kNewClusterName2);
+  new_cluster2.mutable_eds_cluster_config()->set_service_name(
+      kNewEdsServiceName2);
+  balancer_->ads_service()->SetCdsResource(new_cluster2);
+  // Populate top-level aggregate cluster pointing to kNewClusterName1
+  // and kNewAggregateClusterName.
+  auto cluster = default_cluster_;
+  CustomClusterType* custom_cluster = cluster.mutable_cluster_type();
+  custom_cluster->set_name("envoy.clusters.aggregate");
+  ClusterConfig cluster_config;
+  cluster_config.add_clusters(kNewClusterName1);
+  cluster_config.add_clusters(kNewAggregateClusterName);
+  custom_cluster->mutable_typed_config()->PackFrom(cluster_config);
+  balancer_->ads_service()->SetCdsResource(cluster);
+  // Populate kNewAggregateClusterName aggregate cluster pointing to
+  // kNewClusterName1 and kNewClusterName2.
+  auto aggregate_cluster2 = default_cluster_;
+  aggregate_cluster2.set_name(kNewAggregateClusterName);
+  custom_cluster = aggregate_cluster2.mutable_cluster_type();
+  custom_cluster->set_name("envoy.clusters.aggregate");
+  cluster_config.Clear();
+  cluster_config.add_clusters(kNewClusterName1);
+  cluster_config.add_clusters(kNewClusterName2);
+  custom_cluster->mutable_typed_config()->PackFrom(cluster_config);
+  balancer_->ads_service()->SetCdsResource(aggregate_cluster2);
+  // Wait for traffic to go to backend 0.
+  WaitForBackend(0);
+  // Shutdown backend 0 and wait for all traffic to go to backend 1.
+  ShutdownBackend(0);
+  WaitForBackend(1, WaitForBackendOptions().set_allow_failures(true));
+  auto response_state = balancer_->ads_service()->cds_response_state();
+  ASSERT_TRUE(response_state.has_value());
+  EXPECT_EQ(response_state->state, AdsServiceImpl::ResponseState::ACKED);
+  // Bring backend 0 back and ensure all traffic go back to it.
+  StartBackend(0);
+  WaitForBackend(0);
+}
+
+// This test covers a bug found in the following scenario:
+// 1. P0 reports TRANSIENT_FAILURE, so we start connecting to P1.
+// 2. While P1 is still in CONNECTING, P0 goes back to READY, so we
+//    switch back to P0, deactivating P1.
+// 3. P0 then goes back to TRANSIENT_FAILURE, and we reactivate P1.
+// The bug caused us to fail to choose P1 even though it is in state
+// CONNECTING (because the failover timer was not running), so we
+// incorrectly failed the RPCs.
+TEST_P(CdsTest, AggregateClusterFallBackWithConnectivityChurn) {
+  ScopedExperimentalEnvVar env_var(
+      "GRPC_XDS_EXPERIMENTAL_ENABLE_AGGREGATE_AND_LOGICAL_DNS_CLUSTER");
+  CreateAndStartBackends(2);
+  const char* kClusterName1 = "cluster1";
+  const char* kClusterName2 = "cluster2";
+  const char* kEdsServiceName2 = "eds_service_name2";
+  // Populate EDS resources.
+  EdsResourceArgs args({{"locality0", CreateEndpointsForBackends(0, 1)}});
+  balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
+  args = EdsResourceArgs({{"locality1", CreateEndpointsForBackends(1, 2)}});
+  balancer_->ads_service()->SetEdsResource(
+      BuildEdsResource(args, kEdsServiceName2));
+  // Populate new CDS resources.
+  Cluster cluster1 = default_cluster_;
+  cluster1.set_name(kClusterName1);
+  balancer_->ads_service()->SetCdsResource(cluster1);
+  Cluster cluster2 = default_cluster_;
+  cluster2.set_name(kClusterName2);
+  cluster2.mutable_eds_cluster_config()->set_service_name(kEdsServiceName2);
+  balancer_->ads_service()->SetCdsResource(cluster2);
+  // Create Aggregate Cluster
+  auto cluster = default_cluster_;
+  CustomClusterType* custom_cluster = cluster.mutable_cluster_type();
+  custom_cluster->set_name("envoy.clusters.aggregate");
+  ClusterConfig cluster_config;
+  cluster_config.add_clusters(kClusterName1);
+  cluster_config.add_clusters(kClusterName2);
+  custom_cluster->mutable_typed_config()->PackFrom(cluster_config);
+  balancer_->ads_service()->SetCdsResource(cluster);
+  // This class injects itself into all TCP connection attempts made
+  // against iomgr.  It intercepts the attempts for the P0 and P1
+  // backends and allows them to proceed as desired to simulate the case
+  // being tested.
+  class ConnectionInjector : public ConnectionAttemptInjector {
+   public:
+    ConnectionInjector(int p0_port, int p1_port)
+        : p0_port_(p0_port), p1_port_(p1_port) {}
+
+    void HandleConnection(grpc_closure* closure, grpc_endpoint** ep,
+                          grpc_pollset_set* interested_parties,
+                          const grpc_channel_args* channel_args,
+                          const grpc_resolved_address* addr,
+                          grpc_core::Timestamp deadline) override {
+      {
+        grpc_core::MutexLock lock(&mu_);
+        const int port = grpc_sockaddr_get_port(addr);
+        gpr_log(GPR_INFO, "==> HandleConnection(): state_=%d, port=%d", state_,
+                port);
+        switch (state_) {
+          case kInit:
+            // Make P0 report TF, which should trigger us to try to connect to
+            // P1.
+            if (port == p0_port_) {
+              gpr_log(GPR_INFO, "*** INJECTING FAILURE FOR P0 ENDPOINT");
+              grpc_core::ExecCtx::Run(DEBUG_LOCATION, closure,
+                                      GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+                                          "injected connection failure"));
+              state_ = kP0Failed;
+              return;
+            }
+            break;
+          case kP0Failed:
+            // Hold connection attempt to P1 so that it stays in CONNECTING.
+            if (port == p1_port_) {
+              gpr_log(GPR_INFO,
+                      "*** DELAYING CONNECTION ATTEMPT FOR P1 ENDPOINT");
+              queued_p1_attempt_ = absl::make_unique<QueuedAttempt>(
+                  closure, ep, interested_parties, channel_args, addr,
+                  deadline);
+              state_ = kDone;
+              return;
+            }
+            break;
+          case kDone:
+            // P0 should attempt reconnection.  Log it to make the test
+            // easier to debug, but allow it to complete, so that the
+            // priority policy deactivates P1.
+            if (port == p0_port_) {
+              gpr_log(GPR_INFO,
+                      "*** INTERCEPTING CONNECTION ATTEMPT FOR P0 ENDPOINT");
+            }
+            break;
+        }
+      }
+      AttemptConnection(closure, ep, interested_parties, channel_args, addr,
+                        deadline);
+    }
+
+    // Invoked by the test when the RPC to the P0 backend has succeeded
+    // and it's ready to allow the P1 connection attempt to proceed.
+    void CompletePriority1Connection() {
+      grpc_core::ExecCtx exec_ctx;
+      std::unique_ptr<QueuedAttempt> attempt;
+      {
+        grpc_core::MutexLock lock(&mu_);
+        GPR_ASSERT(state_ == kDone);
+        attempt = std::move(queued_p1_attempt_);
+      }
+      attempt->Resume();
+    }
+
+   private:
+    const int p0_port_;
+    const int p1_port_;
+
+    grpc_core::Mutex mu_;
+    enum {
+      kInit,
+      kP0Failed,
+      kDone,
+    } state_ ABSL_GUARDED_BY(mu_) = kInit;
+    std::unique_ptr<QueuedAttempt> queued_p1_attempt_ ABSL_GUARDED_BY(mu_);
+  };
+  ConnectionInjector connection_attempt_injector(backends_[0]->port(),
+                                                 backends_[1]->port());
+  // Wait for P0 backend.
+  // Increase timeout to account for subchannel connection delays.
+  WaitForBackend(0, WaitForBackendOptions(), RpcOptions().set_timeout_ms(2000));
+  // Bring down the P0 backend.
+  ShutdownBackend(0);
+  // Allow the connection attempt to the P1 backend to resume.
+  connection_attempt_injector.CompletePriority1Connection();
+  // Wait for P1 backend to start getting traffic.
+  WaitForBackend(1);
+}
+
 TEST_P(CdsTest, AggregateClusterEdsToLogicalDns) {
   ScopedExperimentalEnvVar env_var(
       "GRPC_XDS_EXPERIMENTAL_ENABLE_AGGREGATE_AND_LOGICAL_DNS_CLUSTER");
@@ -587,6 +785,62 @@ TEST_P(CdsTest, AggregateClusterMultipleClustersWithSameLocalities) {
   WaitForBackend(1);
 }
 
+TEST_P(CdsTest, AggregateClusterRecursionDepthJustBelowMax) {
+  ScopedExperimentalEnvVar env_var(
+      "GRPC_XDS_EXPERIMENTAL_ENABLE_AGGREGATE_AND_LOGICAL_DNS_CLUSTER");
+  // Populate EDS resource.
+  CreateAndStartBackends(1);
+  EdsResourceArgs args({{"locality0", CreateEndpointsForBackends()}});
+  balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
+  // Populate new CDS resource.
+  Cluster new_cluster = default_cluster_;
+  new_cluster.set_name(absl::StrCat(kDefaultClusterName, 15));
+  balancer_->ads_service()->SetCdsResource(new_cluster);
+  // Populate aggregate cluster chain.
+  for (int i = 14; i >= 0; --i) {
+    auto cluster = default_cluster_;
+    if (i > 0) cluster.set_name(absl::StrCat(kDefaultClusterName, i));
+    CustomClusterType* custom_cluster = cluster.mutable_cluster_type();
+    custom_cluster->set_name("envoy.clusters.aggregate");
+    ClusterConfig cluster_config;
+    cluster_config.add_clusters(absl::StrCat(kDefaultClusterName, i + 1));
+    custom_cluster->mutable_typed_config()->PackFrom(cluster_config);
+    balancer_->ads_service()->SetCdsResource(cluster);
+  }
+  // RPCs should fail with the right status.
+  CheckRpcSendOk();
+}
+
+TEST_P(CdsTest, AggregateClusterRecursionMaxDepth) {
+  ScopedExperimentalEnvVar env_var(
+      "GRPC_XDS_EXPERIMENTAL_ENABLE_AGGREGATE_AND_LOGICAL_DNS_CLUSTER");
+  // Populate EDS resource.
+  CreateAndStartBackends(1);
+  EdsResourceArgs args({{"locality0", CreateEndpointsForBackends()}});
+  balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
+  // Populate new CDS resource.
+  Cluster new_cluster = default_cluster_;
+  new_cluster.set_name(absl::StrCat(kDefaultClusterName, 16));
+  balancer_->ads_service()->SetCdsResource(new_cluster);
+  // Populate aggregate cluster chain.
+  for (int i = 15; i >= 0; --i) {
+    auto cluster = default_cluster_;
+    if (i > 0) cluster.set_name(absl::StrCat(kDefaultClusterName, i));
+    CustomClusterType* custom_cluster = cluster.mutable_cluster_type();
+    custom_cluster->set_name("envoy.clusters.aggregate");
+    ClusterConfig cluster_config;
+    cluster_config.add_clusters(absl::StrCat(kDefaultClusterName, i + 1));
+    custom_cluster->mutable_typed_config()->PackFrom(cluster_config);
+    balancer_->ads_service()->SetCdsResource(cluster);
+  }
+  // RPCs should fail with the right status.
+  const Status status = SendRpc();
+  EXPECT_EQ(StatusCode::UNAVAILABLE, status.error_code());
+  EXPECT_THAT(
+      status.error_message(),
+      ::testing::HasSubstr("aggregate cluster graph exceeds max depth"));
+}
+
 // Test that CDS client should send a NACK if cluster type is Logical DNS but
 // the feature is not yet supported.
 TEST_P(CdsTest, LogicalDNSClusterTypeDisabled) {
@@ -632,6 +886,7 @@ int main(int argc, char** argv) {
   gpr_setenv("grpc_cfstream", "0");
 #endif
   grpc_init();
+  grpc::testing::ConnectionAttemptInjector::Init();
   const auto result = RUN_ALL_TESTS();
   grpc_shutdown();
   return result;

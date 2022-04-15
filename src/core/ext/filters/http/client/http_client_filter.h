@@ -37,11 +37,17 @@ class HttpClientFilter : public ChannelFilter {
       CallArgs call_args, NextPromiseFactory next_promise_factory) override;
 
  private:
-  HttpClientFilter(HttpSchemeMetadata::ValueType scheme, Slice user_agent);
+  HttpClientFilter(HttpSchemeMetadata::ValueType scheme, Slice user_agent,
+                   bool test_only_use_put_requests);
 
   HttpSchemeMetadata::ValueType scheme_;
   Slice user_agent_;
+  bool test_only_use_put_requests_;
 };
+
+// A test-only channel arg to allow testing gRPC Core server behavior on PUT
+// requests.
+#define GRPC_ARG_TEST_ONLY_USE_PUT_REQUESTS "grpc.testing.use_put_requests"
 
 }  // namespace grpc_core
 
