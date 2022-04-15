@@ -244,7 +244,8 @@ std::string grpc_sockaddr_to_uri(const grpc_resolved_address* resolved_addr) {
   if (scheme == nullptr || strcmp("unix", scheme) == 0) {
     return grpc_sockaddr_to_uri_unix_if_possible(resolved_addr);
   }
-  // TODO(anramach): Encode the string using URI::Parse before returning.
+  // TODO(anramach): Encode the string using URI::Create() and URI::ToString()
+  // before returning.
   std::string path =
       grpc_sockaddr_to_string(resolved_addr, false /* normalize */);
   std::string uri_str;
