@@ -151,11 +151,11 @@ config_setting(
 python_config_settings()
 
 # This should be updated along with build_handwritten.yaml
-g_stands_for = "golazo"  # @unused
+g_stands_for = "gridman"  # @unused
 
 core_version = "24.0.0"  # @unused
 
-version = "1.46.0-dev"  # @unused
+version = "1.47.0-dev"  # @unused
 
 GPR_PUBLIC_HDRS = [
     "include/grpc/support/alloc.h",
