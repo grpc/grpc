@@ -220,11 +220,6 @@ def _on_rpc_done(rpc_id: int, future: grpc.Future, method: str,
                 _global_rpcs_succeeded[method] += 1
         else:
             with _global_lock:
-                _global_rpcs_failed[method] += 1
-        if print_response:
-            if future.code() == grpc.StatusCode.OK:
-                logger.debug("Successful response.")
-            else:
                 logger.debug(f"RPC failed: {call}")
     with _global_lock:
         for watcher in _watchers:
