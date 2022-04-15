@@ -67,6 +67,7 @@
 #include "src/core/ext/xds/xds_client.h"
 #include "src/core/ext/xds/xds_listener.h"
 #include "src/core/lib/address_utils/parse_address.h"
+#include "src/core/lib/address_utils/sockaddr_utils.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/gpr/env.h"
 #include "src/core/lib/gpr/string.h"
@@ -103,6 +104,7 @@
 #include "src/proto/grpc/testing/xds/v3/tls.grpc.pb.h"
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
+#include "test/cpp/end2end/connection_delay_injector.h"
 #include "test/cpp/end2end/xds/xds_end2end_test_lib.h"
 #include "test/cpp/util/test_config.h"
 #include "test/cpp/util/tls_test_utils.h"
@@ -328,31 +330,6 @@ TEST_P(BasicTest, Vanilla) {
             channel_->GetLoadBalancingPolicyName());
 }
 
-// Tests that the client can handle resource wrapped in a Resource message.
-TEST_P(BasicTest, ResourceWrappedInResourceMessage) {
-  CreateAndStartBackends(1);
-  balancer_->ads_service()->set_wrap_resources(true);
-  const size_t kNumRpcsPerAddress = 100;
-  EdsResourceArgs args({
-      {"locality0", CreateEndpointsForBackends()},
-  });
-  balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
-  // Make sure that trying to connect works without a call.
-  channel_->GetState(true /* try_to_connect */);
-  // We need to wait for all backends to come online.
-  WaitForAllBackends();
-  // Send kNumRpcsPerAddress RPCs per server.
-  CheckRpcSendOk(kNumRpcsPerAddress * backends_.size());
-  // Each backend should have gotten 100 requests.
-  for (size_t i = 0; i < backends_.size(); ++i) {
-    EXPECT_EQ(kNumRpcsPerAddress,
-              backends_[i]->backend_service()->request_count());
-  }
-  // Check LB policy name for the channel.
-  EXPECT_EQ("xds_cluster_manager_experimental",
-            channel_->GetLoadBalancingPolicyName());
-}
-
 TEST_P(BasicTest, IgnoresUnhealthyEndpoints) {
   CreateAndStartBackends(2);
   const size_t kNumRpcsPerAddress = 100;
@@ -483,29 +460,6 @@ TEST_P(BasicTest, IgnoresDuplicateUpdates) {
 
 using XdsResolverOnlyTest = XdsEnd2endTest;
 
-TEST_P(XdsResolverOnlyTest, ResourceTypeVersionPersistsAcrossStreamRestarts) {
-  CreateAndStartBackends(2);
-  EdsResourceArgs args({{"locality0", CreateEndpointsForBackends(0, 1)}});
-  balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
-  // Wait for backends to come online.
-  WaitForAllBackends(0, 1);
-  // Stop balancer.
-  balancer_->Shutdown();
-  // Tell balancer to require minimum version 1 for all resource types.
-  balancer_->ads_service()->SetResourceMinVersion(kLdsTypeUrl, 1);
-  balancer_->ads_service()->SetResourceMinVersion(kRdsTypeUrl, 1);
-  balancer_->ads_service()->SetResourceMinVersion(kCdsTypeUrl, 1);
-  balancer_->ads_service()->SetResourceMinVersion(kEdsTypeUrl, 1);
-  // Update backend, just so we can be sure that the client has
-  // reconnected to the balancer.
-  args = EdsResourceArgs({{"locality0", CreateEndpointsForBackends(1, 2)}});
-  balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
-  // Restart balancer.
-  balancer_->Start();
-  // Make sure client has reconnected.
-  WaitForAllBackends(1, 2);
-}
-
 // Tests switching over from one cluster to another.
 TEST_P(XdsResolverOnlyTest, ChangeClusters) {
   CreateAndStartBackends(2);
@@ -555,55 +509,6 @@ TEST_P(XdsResolverOnlyTest, ClusterRemoved) {
   auto response_state = balancer_->ads_service()->cds_response_state();
   ASSERT_TRUE(response_state.has_value());
   EXPECT_EQ(response_state->state, AdsServiceImpl::ResponseState::ACKED);
-}
-
-// Tests that we restart all xDS requests when we reestablish the ADS call.
-TEST_P(XdsResolverOnlyTest, RestartsRequestsUponReconnection) {
-  CreateAndStartBackends(2);
-  // Manually configure use of RDS.
-  auto listener = default_listener_;
-  HttpConnectionManager http_connection_manager;
-  listener.mutable_api_listener()->mutable_api_listener()->UnpackTo(
-      &http_connection_manager);
-  auto* rds = http_connection_manager.mutable_rds();
-  rds->set_route_config_name(kDefaultRouteConfigurationName);
-  rds->mutable_config_source()->mutable_self();
-  listener.mutable_api_listener()->mutable_api_listener()->PackFrom(
-      http_connection_manager);
-  balancer_->ads_service()->SetLdsResource(listener);
-  balancer_->ads_service()->SetRdsResource(default_route_config_);
-  const char* kNewClusterName = "new_cluster_name";
-  const char* kNewEdsServiceName = "new_eds_service_name";
-  EdsResourceArgs args({{"locality0", CreateEndpointsForBackends(0, 1)}});
-  balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
-  // We need to wait for all backends to come online.
-  WaitForAllBackends(0, 1);
-  // Now shut down and restart the balancer.  When the client
-  // reconnects, it should automatically restart the requests for all
-  // resource types.
-  balancer_->Shutdown();
-  balancer_->Start();
-  // Make sure things are still working.
-  CheckRpcSendOk(100);
-  // Populate new EDS resource.
-  args = EdsResourceArgs({{"locality0", CreateEndpointsForBackends(1, 2)}});
-  balancer_->ads_service()->SetEdsResource(
-      BuildEdsResource(args, kNewEdsServiceName));
-  // Populate new CDS resource.
-  Cluster new_cluster = default_cluster_;
-  new_cluster.set_name(kNewClusterName);
-  new_cluster.mutable_eds_cluster_config()->set_service_name(
-      kNewEdsServiceName);
-  balancer_->ads_service()->SetCdsResource(new_cluster);
-  // Change RDS resource to point to new cluster.
-  RouteConfiguration new_route_config = default_route_config_;
-  new_route_config.mutable_virtual_hosts(0)
-      ->mutable_routes(0)
-      ->mutable_route()
-      ->set_cluster(kNewClusterName);
-  balancer_->ads_service()->SetRdsResource(new_route_config);
-  // Wait for all new backends to be used.
-  WaitForAllBackends(1, 2);
 }
 
 TEST_P(XdsResolverOnlyTest, DefaultRouteSpecifiesSlashPrefix) {
@@ -761,597 +666,6 @@ TEST_P(XdsResolverOnlyTest, KeepUsingLastDataIfBalancerGoesDown) {
   balancer_->Start();
   // Wait for client to see backend 1.
   WaitForBackend(1);
-}
-
-TEST_P(XdsResolverOnlyTest, XdsStreamErrorPropagation) {
-  const std::string kErrorMessage = "test forced ADS stream failure";
-  balancer_->ads_service()->ForceADSFailure(
-      Status(StatusCode::RESOURCE_EXHAUSTED, kErrorMessage));
-  auto status = SendRpc();
-  gpr_log(GPR_INFO,
-          "XdsStreamErrorPropagation test: RPC got error: code=%d message=%s",
-          status.error_code(), status.error_message().c_str());
-  EXPECT_THAT(status.error_code(), StatusCode::UNAVAILABLE);
-  EXPECT_THAT(status.error_message(), ::testing::HasSubstr(kErrorMessage));
-  EXPECT_THAT(status.error_message(),
-              ::testing::HasSubstr("(node ID:xds_end2end_test)"));
-}
-
-using GlobalXdsClientTest = XdsEnd2endTest;
-
-TEST_P(GlobalXdsClientTest, MultipleChannelsShareXdsClient) {
-  CreateAndStartBackends(1);
-  const char* kNewServerName = "new-server.example.com";
-  Listener listener = default_listener_;
-  listener.set_name(kNewServerName);
-  SetListenerAndRouteConfiguration(balancer_.get(), listener,
-                                   default_route_config_);
-  EdsResourceArgs args({{"locality0", CreateEndpointsForBackends()}});
-  balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
-  WaitForAllBackends();
-  // Create second channel and tell it to connect to kNewServerName.
-  auto channel2 = CreateChannel(/*failover_timeout_ms=*/0, kNewServerName);
-  channel2->GetState(/*try_to_connect=*/true);
-  ASSERT_TRUE(
-      channel2->WaitForConnected(grpc_timeout_milliseconds_to_deadline(100)));
-  // Make sure there's only one client connected.
-  EXPECT_EQ(1UL, balancer_->ads_service()->clients().size());
-}
-
-TEST_P(
-    GlobalXdsClientTest,
-    MultipleChannelsShareXdsClientWithResourceUpdateAfterOneChannelGoesAway) {
-  CreateAndStartBackends(2);
-  // Test for https://github.com/grpc/grpc/issues/28468. Makes sure that the
-  // XdsClient properly handles the case where there are multiple watchers on
-  // the same resource and one of them unsubscribes.
-  const char* kNewServerName = "new-server.example.com";
-  Listener listener = default_listener_;
-  listener.set_name(kNewServerName);
-  SetListenerAndRouteConfiguration(balancer_.get(), listener,
-                                   default_route_config_);
-  balancer_->ads_service()->SetEdsResource(BuildEdsResource(EdsResourceArgs({
-      {"locality0", CreateEndpointsForBackends(0, 1)},
-  })));
-  WaitForBackend(0);
-  // Create second channel and tell it to connect to kNewServerName.
-  auto channel2 = CreateChannel(/*failover_timeout_ms=*/0, kNewServerName);
-  channel2->GetState(/*try_to_connect=*/true);
-  ASSERT_TRUE(
-      channel2->WaitForConnected(grpc_timeout_milliseconds_to_deadline(100)));
-  // Now, destroy the new channel, send an EDS update to use a different backend
-  // and test that the channel switches to that backend.
-  channel2.reset();
-  // This sleep is needed to be able to reproduce the bug and to give time for
-  // the buggy unsubscription to take place.
-  // TODO(yashykt): Figure out a way to do this without the sleep.
-  gpr_sleep_until(grpc_timeout_milliseconds_to_deadline(10));
-  balancer_->ads_service()->SetEdsResource(BuildEdsResource(EdsResourceArgs({
-      {"locality0", CreateEndpointsForBackends(1, 2)},
-  })));
-  WaitForBackend(1);
-}
-
-// Tests that the NACK for multiple bad LDS resources includes both errors.
-TEST_P(GlobalXdsClientTest, MultipleBadResources) {
-  CreateAndStartBackends(1);
-  constexpr char kServerName2[] = "server.other.com";
-  constexpr char kServerName3[] = "server.another.com";
-  auto listener = default_listener_;
-  listener.clear_api_listener();
-  balancer_->ads_service()->SetLdsResource(listener);
-  listener.set_name(kServerName2);
-  balancer_->ads_service()->SetLdsResource(listener);
-  listener = default_listener_;
-  listener.set_name(kServerName3);
-  SetListenerAndRouteConfiguration(balancer_.get(), listener,
-                                   default_route_config_);
-  EdsResourceArgs args({{"locality0", CreateEndpointsForBackends()}});
-  balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
-  const auto response_state = WaitForLdsNack();
-  ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
-  EXPECT_THAT(response_state->error_message,
-              ::testing::ContainsRegex(absl::StrCat(
-                  kServerName,
-                  ": validation error.*"
-                  "Listener has neither address nor ApiListener.*")));
-  // Need to create a second channel to subscribe to a second LDS resource.
-  auto channel2 = CreateChannel(0, kServerName2);
-  auto stub2 = grpc::testing::EchoTestService::NewStub(channel2);
-  {
-    ClientContext context;
-    EchoRequest request;
-    request.set_message(kRequestMessage);
-    EchoResponse response;
-    grpc::Status status = stub2->Echo(&context, request, &response);
-    EXPECT_FALSE(status.ok());
-    // Wait for second NACK to be reported to xDS server.
-    const auto response_state = WaitForLdsNack();
-    ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
-    EXPECT_THAT(response_state->error_message,
-                ::testing::ContainsRegex(absl::StrCat(
-                    kServerName,
-                    ": validation error.*"
-                    "Listener has neither address nor ApiListener.*")));
-    EXPECT_THAT(response_state->error_message,
-                ::testing::ContainsRegex(absl::StrCat(
-                    kServerName2,
-                    ": validation error.*"
-                    "Listener has neither address nor ApiListener.*")));
-  }
-  // Now start a new channel with a third server name, this one with a
-  // valid resource.
-  auto channel3 = CreateChannel(0, kServerName3);
-  auto stub3 = grpc::testing::EchoTestService::NewStub(channel3);
-  {
-    ClientContext context;
-    EchoRequest request;
-    request.set_message(kRequestMessage);
-    EchoResponse response;
-    grpc::Status status = stub3->Echo(&context, request, &response);
-    EXPECT_TRUE(status.ok()) << "code=" << status.error_code()
-                             << " message=" << status.error_message();
-  }
-}
-
-// Tests that we don't trigger does-not-exist callbacks for a resource
-// that was previously valid but is updated to be invalid.
-TEST_P(GlobalXdsClientTest, InvalidListenerStillExistsIfPreviouslyCached) {
-  CreateAndStartBackends(1);
-  // Set up valid resources and check that the channel works.
-  EdsResourceArgs args({{"locality0", CreateEndpointsForBackends()}});
-  balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
-  CheckRpcSendOk();
-  // Now send an update changing the Listener to be invalid.
-  auto listener = default_listener_;
-  listener.clear_api_listener();
-  balancer_->ads_service()->SetLdsResource(listener);
-  const auto response_state = WaitForLdsNack(StatusCode::OK);
-  ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
-  EXPECT_THAT(response_state->error_message,
-              ::testing::ContainsRegex(absl::StrCat(
-                  kServerName,
-                  ": validation error.*"
-                  "Listener has neither address nor ApiListener")));
-  CheckRpcSendOk();
-}
-
-class XdsFederationTest : public XdsEnd2endTest {
- protected:
-  XdsFederationTest() : authority_balancer_(CreateAndStartBalancer()) {}
-
-  void SetUp() override {
-    // Each test will use a slightly different bootstrapfile,
-    // so SetUp() is intentionally empty here and the real
-    // setup (calling of InitClient()) is moved into each test.
-  }
-
-  void TearDown() override {
-    authority_balancer_->Shutdown();
-    XdsEnd2endTest::TearDown();
-  }
-
-  std::unique_ptr<BalancerServerThread> authority_balancer_;
-};
-
-// Channel is created with URI "xds:server.example.com".
-// Bootstrap config default client listener template uses new-style name with
-// authority "xds.example.com".
-TEST_P(XdsFederationTest, FederationTargetNoAuthorityWithResourceTemplate) {
-  ScopedExperimentalEnvVar env_var("GRPC_EXPERIMENTAL_XDS_FEDERATION");
-  const char* kAuthority = "xds.example.com";
-  const char* kNewListenerTemplate =
-      "xdstp://xds.example.com/envoy.config.listener.v3.Listener/"
-      "client/%s?psm_project_id=1234";
-  const char* kNewListenerName =
-      "xdstp://xds.example.com/envoy.config.listener.v3.Listener/"
-      "client/server.example.com?psm_project_id=1234";
-  const char* kNewRouteConfigName =
-      "xdstp://xds.example.com/envoy.config.route.v3.RouteConfiguration/"
-      "new_route_config_name";
-  const char* kNewEdsServiceName =
-      "xdstp://xds.example.com/envoy.config.endpoint.v3.ClusterLoadAssignment/"
-      "new_edsservice_name";
-  const char* kNewClusterName =
-      "xdstp://xds.example.com/envoy.config.cluster.v3.Cluster/"
-      "new_cluster_name";
-  BootstrapBuilder builder = BootstrapBuilder();
-  builder.SetClientDefaultListenerResourceNameTemplate(kNewListenerTemplate);
-  builder.AddAuthority(
-      kAuthority, absl::StrCat("localhost:", authority_balancer_->port()),
-      // Note we will not use the client_listener_resource_name_template field
-      // in the authority.
-      "xdstp://xds.example.com/envoy.config.listener.v3.Listener"
-      "client/%s?client_listener_resource_name_template_not_in_use");
-  InitClient(builder);
-  CreateAndStartBackends(2, /*xds_enabled=*/true);
-  // Eds for the new authority balancer.
-  EdsResourceArgs args =
-      EdsResourceArgs({{"locality0", CreateEndpointsForBackends()}});
-  authority_balancer_->ads_service()->SetEdsResource(
-      BuildEdsResource(args, kNewEdsServiceName));
-  // New cluster
-  Cluster new_cluster = default_cluster_;
-  new_cluster.set_name(kNewClusterName);
-  new_cluster.mutable_eds_cluster_config()->set_service_name(
-      kNewEdsServiceName);
-  authority_balancer_->ads_service()->SetCdsResource(new_cluster);
-  // New Route
-  RouteConfiguration new_route_config = default_route_config_;
-  new_route_config.set_name(kNewRouteConfigName);
-  new_route_config.mutable_virtual_hosts(0)
-      ->mutable_routes(0)
-      ->mutable_route()
-      ->set_cluster(kNewClusterName);
-  // New Listener
-  Listener listener = default_listener_;
-  listener.set_name(kNewListenerName);
-  SetListenerAndRouteConfiguration(authority_balancer_.get(), listener,
-                                   new_route_config);
-  WaitForAllBackends();
-}
-
-// Channel is created with URI "xds://xds.example.com/server.example.com".
-// In bootstrap config, authority has no client listener template, so we use the
-// default.
-TEST_P(XdsFederationTest, FederationTargetAuthorityDefaultResourceTemplate) {
-  ScopedExperimentalEnvVar env_var("GRPC_EXPERIMENTAL_XDS_FEDERATION");
-  const char* kAuthority = "xds.example.com";
-  const char* kNewServerName = "whee%/server.example.com";
-  const char* kNewListenerName =
-      "xdstp://xds.example.com/envoy.config.listener.v3.Listener/"
-      "whee%25/server.example.com";
-  const char* kNewRouteConfigName =
-      "xdstp://xds.example.com/envoy.config.route.v3.RouteConfiguration/"
-      "new_route_config_name";
-  const char* kNewEdsServiceName =
-      "xdstp://xds.example.com/envoy.config.endpoint.v3.ClusterLoadAssignment/"
-      "edsservice_name";
-  const char* kNewClusterName =
-      "xdstp://xds.example.com/envoy.config.cluster.v3.Cluster/"
-      "cluster_name";
-  BootstrapBuilder builder = BootstrapBuilder();
-  builder.AddAuthority(kAuthority,
-                       absl::StrCat("localhost:", authority_balancer_->port()));
-  InitClient(builder);
-  CreateAndStartBackends(2, /*xds_enabled=*/true);
-  // Eds for 2 balancers to ensure RPCs sent using current stub go to backend 0
-  // and RPCs sent using the new stub go to backend 1.
-  EdsResourceArgs args({{"locality0", CreateEndpointsForBackends(0, 1)}});
-  balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
-  args = EdsResourceArgs({{"locality0", CreateEndpointsForBackends(1, 2)}});
-  authority_balancer_->ads_service()->SetEdsResource(
-      BuildEdsResource(args, kNewEdsServiceName));
-  // New cluster
-  Cluster new_cluster = default_cluster_;
-  new_cluster.set_name(kNewClusterName);
-  new_cluster.mutable_eds_cluster_config()->set_service_name(
-      kNewEdsServiceName);
-  authority_balancer_->ads_service()->SetCdsResource(new_cluster);
-  // New Route
-  RouteConfiguration new_route_config = default_route_config_;
-  new_route_config.set_name(kNewRouteConfigName);
-  new_route_config.mutable_virtual_hosts(0)
-      ->mutable_routes(0)
-      ->mutable_route()
-      ->set_cluster(kNewClusterName);
-  // New Listener
-  Listener listener = default_listener_;
-  listener.set_name(kNewListenerName);
-  SetListenerAndRouteConfiguration(authority_balancer_.get(), listener,
-                                   new_route_config);
-  // Ensure update has reached and send 10 RPCs to the current stub.
-  WaitForAllBackends(0, 1);
-  // Create second channel to new target uri and send 1 RPC .
-  auto channel2 =
-      CreateChannel(/*failover_timeout_ms=*/0, kNewServerName, kAuthority);
-  channel2->GetState(/*try_to_connect=*/true);
-  ASSERT_TRUE(
-      channel2->WaitForConnected(grpc_timeout_milliseconds_to_deadline(100)));
-  auto stub2 = grpc::testing::EchoTestService::NewStub(channel2);
-  ClientContext context;
-  EchoRequest request;
-  request.set_message(kRequestMessage);
-  EchoResponse response;
-  grpc::Status status = stub2->Echo(&context, request, &response);
-  EXPECT_TRUE(status.ok()) << "code=" << status.error_code()
-                           << " message=" << status.error_message();
-  // We should be reaching backend 1, not 0, as balanced by the authority xds
-  // server.
-  EXPECT_EQ(0U, backends_[0]->backend_service()->request_count());
-  EXPECT_EQ(1U, backends_[1]->backend_service()->request_count());
-}
-
-// Channel is created with URI "xds://xds.example.com/server.example.com".
-// Bootstrap entry for that authority specifies a client listener name template.
-TEST_P(XdsFederationTest, FederationTargetAuthorityWithResourceTemplate) {
-  ScopedExperimentalEnvVar env_var("GRPC_EXPERIMENTAL_XDS_FEDERATION");
-  const char* kAuthority = "xds.example.com";
-  const char* kNewServerName = "whee%/server.example.com";
-  const char* kNewListenerTemplate =
-      "xdstp://xds.example.com/envoy.config.listener.v3.Listener/"
-      "client/%s?psm_project_id=1234";
-  const char* kNewListenerName =
-      "xdstp://xds.example.com/envoy.config.listener.v3.Listener/"
-      "client/whee%25/server.example.com?psm_project_id=1234";
-  const char* kNewRouteConfigName =
-      "xdstp://xds.example.com/envoy.config.route.v3.RouteConfiguration/"
-      "new_route_config_name";
-  const char* kNewEdsServiceName =
-      "xdstp://xds.example.com/envoy.config.endpoint.v3.ClusterLoadAssignment/"
-      "edsservice_name";
-  const char* kNewClusterName =
-      "xdstp://xds.example.com/envoy.config.cluster.v3.Cluster/"
-      "cluster_name";
-  BootstrapBuilder builder = BootstrapBuilder();
-  builder.AddAuthority(kAuthority,
-                       absl::StrCat("localhost:", authority_balancer_->port()),
-                       kNewListenerTemplate);
-  InitClient(builder);
-  CreateAndStartBackends(2, /*xds_enabled=*/true);
-  // Eds for 2 balancers to ensure RPCs sent using current stub go to backend 0
-  // and RPCs sent using the new stub go to backend 1.
-  EdsResourceArgs args({{"locality0", CreateEndpointsForBackends(0, 1)}});
-  balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
-  args = EdsResourceArgs({{"locality0", CreateEndpointsForBackends(1, 2)}});
-  authority_balancer_->ads_service()->SetEdsResource(
-      BuildEdsResource(args, kNewEdsServiceName));
-  // New cluster
-  Cluster new_cluster = default_cluster_;
-  new_cluster.set_name(kNewClusterName);
-  new_cluster.mutable_eds_cluster_config()->set_service_name(
-      kNewEdsServiceName);
-  authority_balancer_->ads_service()->SetCdsResource(new_cluster);
-  // New Route
-  RouteConfiguration new_route_config = default_route_config_;
-  new_route_config.set_name(kNewRouteConfigName);
-  new_route_config.mutable_virtual_hosts(0)
-      ->mutable_routes(0)
-      ->mutable_route()
-      ->set_cluster(kNewClusterName);
-  // New Listener
-  Listener listener = default_listener_;
-  listener.set_name(kNewListenerName);
-  SetListenerAndRouteConfiguration(authority_balancer_.get(), listener,
-                                   new_route_config);
-  // Ensure update has reached and send 10 RPCs to the current stub.
-  WaitForAllBackends(0, 1);
-  // Create second channel to new target uri and send 1 RPC .
-  auto channel2 =
-      CreateChannel(/*failover_timeout_ms=*/0, kNewServerName, kAuthority);
-  channel2->GetState(/*try_to_connect=*/true);
-  ASSERT_TRUE(
-      channel2->WaitForConnected(grpc_timeout_milliseconds_to_deadline(100)));
-  auto stub2 = grpc::testing::EchoTestService::NewStub(channel2);
-  ClientContext context;
-  EchoRequest request;
-  request.set_message(kRequestMessage);
-  EchoResponse response;
-  grpc::Status status = stub2->Echo(&context, request, &response);
-  EXPECT_TRUE(status.ok()) << "code=" << status.error_code()
-                           << " message=" << status.error_message();
-  // We should be reaching backend 1, not 0, as balanced by the authority xds
-  // server.
-  EXPECT_EQ(0U, backends_[0]->backend_service()->request_count());
-  EXPECT_EQ(1U, backends_[1]->backend_service()->request_count());
-}
-
-// Setting server_listener_resource_name_template to start with "xdstp:" and
-// look up xds server under an authority map.
-TEST_P(XdsFederationTest, FederationServer) {
-  ScopedExperimentalEnvVar env_var("GRPC_EXPERIMENTAL_XDS_FEDERATION");
-  const char* kAuthority = "xds.example.com";
-  const char* kNewListenerTemplate =
-      "xdstp://xds.example.com/envoy.config.listener.v3.Listener/"
-      "client/%s?psm_project_id=1234";
-  const char* kNewServerListenerTemplate =
-      "xdstp://xds.example.com/envoy.config.listener.v3.Listener/"
-      "server/%s?psm_project_id=1234";
-  const char* kNewListenerName =
-      "xdstp://xds.example.com/envoy.config.listener.v3.Listener/"
-      "client/server.example.com?psm_project_id=1234";
-  const char* kNewRouteConfigName =
-      "xdstp://xds.example.com/envoy.config.route.v3.RouteConfiguration/"
-      "new_route_config_name";
-  const char* kNewEdsServiceName =
-      "xdstp://xds.example.com/envoy.config.endpoint.v3.ClusterLoadAssignment/"
-      "new_edsservice_name";
-  const char* kNewClusterName =
-      "xdstp://xds.example.com/envoy.config.cluster.v3.Cluster/"
-      "new_cluster_name";
-  BootstrapBuilder builder = BootstrapBuilder();
-  builder.SetClientDefaultListenerResourceNameTemplate(kNewListenerTemplate);
-  builder.SetServerListenerResourceNameTemplate(kNewServerListenerTemplate);
-  builder.AddAuthority(
-      kAuthority, absl::StrCat("localhost:", authority_balancer_->port()),
-      // Note we will not use the client_listener_resource_name_template field
-      // in the authority.
-      "xdstp://xds.example.com/envoy.config.listener.v3.Listener"
-      "client/%s?client_listener_resource_name_template_not_in_use");
-  InitClient(builder);
-  CreateAndStartBackends(2, /*xds_enabled=*/true);
-  // Eds for new authority balancer.
-  EdsResourceArgs args =
-      EdsResourceArgs({{"locality0", CreateEndpointsForBackends()}});
-  authority_balancer_->ads_service()->SetEdsResource(
-      BuildEdsResource(args, kNewEdsServiceName));
-  // New cluster
-  Cluster new_cluster = default_cluster_;
-  new_cluster.set_name(kNewClusterName);
-  new_cluster.mutable_eds_cluster_config()->set_service_name(
-      kNewEdsServiceName);
-  authority_balancer_->ads_service()->SetCdsResource(new_cluster);
-  // New Route
-  RouteConfiguration new_route_config = default_route_config_;
-  new_route_config.set_name(kNewRouteConfigName);
-  new_route_config.mutable_virtual_hosts(0)
-      ->mutable_routes(0)
-      ->mutable_route()
-      ->set_cluster(kNewClusterName);
-  // New Listener
-  Listener listener = default_listener_;
-  listener.set_name(kNewListenerName);
-  SetListenerAndRouteConfiguration(authority_balancer_.get(), listener,
-                                   new_route_config);
-  // New Server Listeners
-  for (int port : GetBackendPorts()) {
-    Listener server_listener = default_server_listener_;
-    server_listener.set_name(absl::StrCat(
-        "xdstp://xds.example.com/envoy.config.listener.v3.Listener/server/",
-        ipv6_only_ ? "%5B::1%5D:" : "127.0.0.1:", port,
-        "?psm_project_id=1234"));
-    server_listener.mutable_address()->mutable_socket_address()->set_port_value(
-        port);
-    authority_balancer_->ads_service()->SetLdsResource(server_listener);
-  }
-  WaitForAllBackends();
-}
-
-using XdsFederationLoadReportingTest = XdsFederationTest;
-
-// Channel is created with URI "xds://xds.example.com/server.example.com".
-// Bootstrap entry for that authority specifies a client listener name template.
-// Sending traffic to both default balancer and authority balancer and checking
-// load reporting with each one.
-TEST_P(XdsFederationLoadReportingTest, FederationMultipleLoadReportingTest) {
-  ScopedExperimentalEnvVar env_var("GRPC_EXPERIMENTAL_XDS_FEDERATION");
-  const char* kAuthority = "xds.example.com";
-  const char* kNewServerName = "whee%/server.example.com";
-  const char* kNewListenerTemplate =
-      "xdstp://xds.example.com/envoy.config.listener.v3.Listener/"
-      "client/%s?psm_project_id=1234";
-  const char* kNewListenerName =
-      "xdstp://xds.example.com/envoy.config.listener.v3.Listener/"
-      "client/whee%25/server.example.com?psm_project_id=1234";
-  const char* kNewRouteConfigName =
-      "xdstp://xds.example.com/envoy.config.route.v3.RouteConfiguration/"
-      "new_route_config_name";
-  const char* kNewEdsServiceName =
-      "xdstp://xds.example.com/envoy.config.endpoint.v3.ClusterLoadAssignment/"
-      "edsservice_name";
-  const char* kNewClusterName =
-      "xdstp://xds.example.com/envoy.config.cluster.v3.Cluster/"
-      "cluster_name";
-  const size_t kNumRpcsToDefaultBalancer = 5;
-  const size_t kNumRpcsToAuthorityBalancer = 10;
-  BootstrapBuilder builder = BootstrapBuilder();
-  builder.AddAuthority(kAuthority,
-                       absl::StrCat("localhost:", authority_balancer_->port()),
-                       kNewListenerTemplate);
-  InitClient(builder);
-  CreateAndStartBackends(2, /*xds_enabled=*/true);
-  // Eds for 2 balancers to ensure RPCs sent using current stub go to backend 0
-  // and RPCs sent using the new stub go to backend 1.
-  EdsResourceArgs args({{"locality0", CreateEndpointsForBackends(0, 1)}});
-  balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
-  args = EdsResourceArgs({{"locality0", CreateEndpointsForBackends(1, 2)}});
-  authority_balancer_->ads_service()->SetEdsResource(
-      BuildEdsResource(args, kNewEdsServiceName));
-  authority_balancer_->lrs_service()->set_cluster_names({kNewClusterName});
-  // New cluster
-  Cluster new_cluster = default_cluster_;
-  new_cluster.set_name(kNewClusterName);
-  new_cluster.mutable_lrs_server()->mutable_self();
-  new_cluster.mutable_eds_cluster_config()->set_service_name(
-      kNewEdsServiceName);
-  authority_balancer_->ads_service()->SetCdsResource(new_cluster);
-  // New Route
-  RouteConfiguration new_route_config = default_route_config_;
-  new_route_config.set_name(kNewRouteConfigName);
-  new_route_config.mutable_virtual_hosts(0)
-      ->mutable_routes(0)
-      ->mutable_route()
-      ->set_cluster(kNewClusterName);
-  // New Listener
-  Listener listener = default_listener_;
-  listener.set_name(kNewListenerName);
-  SetListenerAndRouteConfiguration(authority_balancer_.get(), listener,
-                                   new_route_config);
-  // Ensure update has reached and send 10 RPCs to the current stub.
-  CheckRpcSendOk(kNumRpcsToDefaultBalancer);
-  // Create second channel to new target uri and send 1 RPC .
-  auto channel2 =
-      CreateChannel(/*failover_timeout_ms=*/0, kNewServerName, kAuthority);
-  channel2->GetState(/*try_to_connect=*/true);
-  ASSERT_TRUE(
-      channel2->WaitForConnected(grpc_timeout_milliseconds_to_deadline(100)));
-  auto stub2 = grpc::testing::EchoTestService::NewStub(channel2);
-  for (size_t i = 0; i < kNumRpcsToAuthorityBalancer; ++i) {
-    ClientContext context;
-    EchoRequest request;
-    request.set_message(kRequestMessage);
-    EchoResponse response;
-    grpc::Status status = stub2->Echo(&context, request, &response);
-    EXPECT_TRUE(status.ok()) << "code=" << status.error_code()
-                             << " message=" << status.error_message();
-  }
-  // Each backend should have received the expected number of RPCs,
-  // and the load report also reflect the correct numbers.
-  EXPECT_EQ(kNumRpcsToAuthorityBalancer,
-            backends_[1]->backend_service()->request_count());
-  EXPECT_EQ(kNumRpcsToDefaultBalancer,
-            backends_[0]->backend_service()->request_count());
-  // Load report for authority LRS.
-  std::vector<ClientStats> authority_load_report =
-      authority_balancer_->lrs_service()->WaitForLoadReport();
-  ASSERT_EQ(authority_load_report.size(), 1UL);
-  ClientStats& authority_client_stats = authority_load_report.front();
-  EXPECT_EQ(kNumRpcsToAuthorityBalancer,
-            authority_client_stats.total_successful_requests());
-  EXPECT_EQ(0U, authority_client_stats.total_requests_in_progress());
-  EXPECT_EQ(kNumRpcsToAuthorityBalancer,
-            authority_client_stats.total_issued_requests());
-  EXPECT_EQ(0U, authority_client_stats.total_error_requests());
-  EXPECT_EQ(0U, authority_client_stats.total_dropped_requests());
-  EXPECT_EQ(1U, authority_balancer_->lrs_service()->request_count());
-  EXPECT_EQ(1U, authority_balancer_->lrs_service()->response_count());
-  // Load report for default LRS.
-  std::vector<ClientStats> default_load_report =
-      balancer_->lrs_service()->WaitForLoadReport();
-  ASSERT_EQ(default_load_report.size(), 1UL);
-  ClientStats& default_client_stats = default_load_report.front();
-  EXPECT_EQ(kNumRpcsToDefaultBalancer,
-            default_client_stats.total_successful_requests());
-  EXPECT_EQ(0U, default_client_stats.total_requests_in_progress());
-  EXPECT_EQ(kNumRpcsToDefaultBalancer,
-            default_client_stats.total_issued_requests());
-  EXPECT_EQ(0U, default_client_stats.total_error_requests());
-  EXPECT_EQ(0U, default_client_stats.total_dropped_requests());
-  EXPECT_EQ(1U, balancer_->lrs_service()->request_count());
-  EXPECT_EQ(1U, balancer_->lrs_service()->response_count());
-}
-
-class SecureNamingTest : public XdsEnd2endTest {
- public:
-  void SetUp() override {
-    // Each test calls InitClient() on its own.
-  }
-};
-
-// Tests that secure naming check passes if target name is expected.
-TEST_P(SecureNamingTest, TargetNameIsExpected) {
-  InitClient(BootstrapBuilder(), /*lb_expected_authority=*/"localhost:%d");
-  CreateAndStartBackends(4);
-  EdsResourceArgs args({
-      {"locality0", CreateEndpointsForBackends()},
-  });
-  balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
-  CheckRpcSendOk();
-}
-
-// Tests that secure naming check fails if target name is unexpected.
-TEST_P(SecureNamingTest, TargetNameIsUnexpected) {
-  GTEST_FLAG_SET(death_test_style, "threadsafe");
-  InitClient(BootstrapBuilder(),
-             /*lb_expected_authority=*/"incorrect_server_name");
-  CreateAndStartBackends(4);
-  EdsResourceArgs args({
-      {"locality0", CreateEndpointsForBackends()},
-  });
-  balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
-  // Make sure that we blow up (via abort() from the security connector) when
-  // the name from the balancer doesn't match expectations.
-  ASSERT_DEATH_IF_SUPPORTED({ CheckRpcSendOk(); }, "");
 }
 
 using LdsTest = XdsEnd2endTest;
@@ -4843,6 +4157,209 @@ TEST_P(CdsTest, AggregateClusterFallBackFromRingHashAtStartup) {
   EXPECT_TRUE(found);
 }
 
+TEST_P(CdsTest, AggregateClusterFallBackFromRingHashToLogicalDnsAtStartup) {
+  ScopedExperimentalEnvVar env_var(
+      "GRPC_XDS_EXPERIMENTAL_ENABLE_AGGREGATE_AND_LOGICAL_DNS_CLUSTER");
+  CreateAndStartBackends(1);
+  const char* kEdsClusterName = "eds_cluster";
+  const char* kLogicalDNSClusterName = "logical_dns_cluster";
+  // Populate EDS resource.
+  EdsResourceArgs args({
+      {"locality0",
+       {MakeNonExistantEndpoint(), MakeNonExistantEndpoint()},
+       kDefaultLocalityWeight,
+       0},
+      {"locality1",
+       {MakeNonExistantEndpoint(), MakeNonExistantEndpoint()},
+       kDefaultLocalityWeight,
+       1},
+  });
+  balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
+  // Populate new CDS resources.
+  Cluster eds_cluster = default_cluster_;
+  eds_cluster.set_name(kEdsClusterName);
+  balancer_->ads_service()->SetCdsResource(eds_cluster);
+  // Populate LOGICAL_DNS cluster.
+  auto logical_dns_cluster = default_cluster_;
+  logical_dns_cluster.set_name(kLogicalDNSClusterName);
+  logical_dns_cluster.set_type(Cluster::LOGICAL_DNS);
+  auto* address = logical_dns_cluster.mutable_load_assignment()
+                      ->add_endpoints()
+                      ->add_lb_endpoints()
+                      ->mutable_endpoint()
+                      ->mutable_address()
+                      ->mutable_socket_address();
+  address->set_address(kServerName);
+  address->set_port_value(443);
+  balancer_->ads_service()->SetCdsResource(logical_dns_cluster);
+  // Create Aggregate Cluster
+  auto cluster = default_cluster_;
+  cluster.set_lb_policy(Cluster::RING_HASH);
+  CustomClusterType* custom_cluster = cluster.mutable_cluster_type();
+  custom_cluster->set_name("envoy.clusters.aggregate");
+  ClusterConfig cluster_config;
+  cluster_config.add_clusters(kEdsClusterName);
+  cluster_config.add_clusters(kLogicalDNSClusterName);
+  custom_cluster->mutable_typed_config()->PackFrom(cluster_config);
+  balancer_->ads_service()->SetCdsResource(cluster);
+  // Set up route with channel id hashing
+  auto new_route_config = default_route_config_;
+  auto* route = new_route_config.mutable_virtual_hosts(0)->mutable_routes(0);
+  auto* hash_policy = route->mutable_route()->add_hash_policy();
+  hash_policy->mutable_filter_state()->set_key("io.grpc.channel_id");
+  SetListenerAndRouteConfiguration(balancer_.get(), default_listener_,
+                                   new_route_config);
+  // Set Logical DNS result
+  {
+    grpc_core::ExecCtx exec_ctx;
+    grpc_core::Resolver::Result result;
+    result.addresses = CreateAddressListFromPortList(GetBackendPorts());
+    logical_dns_cluster_resolver_response_generator_->SetResponse(
+        std::move(result));
+  }
+  // Inject connection delay to make this act more realistically.
+  ConnectionDelayInjector delay_injector(
+      grpc_core::Duration::Milliseconds(500) * grpc_test_slowdown_factor());
+  // Send RPC.  Need the timeout to be long enough to account for the
+  // subchannel connection delays.
+  CheckRpcSendOk(1, RpcOptions().set_timeout_ms(3500));
+}
+
+// This test covers a bug found in the following scenario:
+// 1. P0 reports TRANSIENT_FAILURE, so we start connecting to P1.
+// 2. While P1 is still in CONNECTING, P0 goes back to READY, so we
+//    switch back to P0, deactivating P1.
+// 3. P0 then goes back to TRANSIENT_FAILURE, and we reactivate P1.
+// The bug caused us to fail to choose P1 even though it is in state
+// CONNECTING (because the failover timer was not running), so we
+// incorrectly failed the RPCs.
+TEST_P(CdsTest, AggregateClusterFallBackWithConnectivityChurn) {
+  ScopedExperimentalEnvVar env_var(
+      "GRPC_XDS_EXPERIMENTAL_ENABLE_AGGREGATE_AND_LOGICAL_DNS_CLUSTER");
+  CreateAndStartBackends(2);
+  const char* kClusterName1 = "cluster1";
+  const char* kClusterName2 = "cluster2";
+  const char* kEdsServiceName2 = "eds_service_name2";
+  // Populate EDS resources.
+  EdsResourceArgs args({{"locality0", CreateEndpointsForBackends(0, 1)}});
+  balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
+  args = EdsResourceArgs({{"locality1", CreateEndpointsForBackends(1, 2)}});
+  balancer_->ads_service()->SetEdsResource(
+      BuildEdsResource(args, kEdsServiceName2));
+  // Populate new CDS resources.
+  Cluster cluster1 = default_cluster_;
+  cluster1.set_name(kClusterName1);
+  balancer_->ads_service()->SetCdsResource(cluster1);
+  Cluster cluster2 = default_cluster_;
+  cluster2.set_name(kClusterName2);
+  cluster2.mutable_eds_cluster_config()->set_service_name(kEdsServiceName2);
+  balancer_->ads_service()->SetCdsResource(cluster2);
+  // Create Aggregate Cluster
+  auto cluster = default_cluster_;
+  CustomClusterType* custom_cluster = cluster.mutable_cluster_type();
+  custom_cluster->set_name("envoy.clusters.aggregate");
+  ClusterConfig cluster_config;
+  cluster_config.add_clusters(kClusterName1);
+  cluster_config.add_clusters(kClusterName2);
+  custom_cluster->mutable_typed_config()->PackFrom(cluster_config);
+  balancer_->ads_service()->SetCdsResource(cluster);
+  // This class injects itself into all TCP connection attempts made
+  // against iomgr.  It intercepts the attempts for the P0 and P1
+  // backends and allows them to proceed as desired to simulate the case
+  // being tested.
+  class ConnectionInjector : public ConnectionAttemptInjector {
+   public:
+    ConnectionInjector(int p0_port, int p1_port)
+        : p0_port_(p0_port), p1_port_(p1_port) {}
+
+    void HandleConnection(grpc_closure* closure, grpc_endpoint** ep,
+                          grpc_pollset_set* interested_parties,
+                          const grpc_channel_args* channel_args,
+                          const grpc_resolved_address* addr,
+                          grpc_core::Timestamp deadline) override {
+      {
+        grpc_core::MutexLock lock(&mu_);
+        const int port = grpc_sockaddr_get_port(addr);
+        gpr_log(GPR_INFO, "==> HandleConnection(): state_=%d, port=%d", state_,
+                port);
+        switch (state_) {
+          case kInit:
+            // Make P0 report TF, which should trigger us to try to connect to
+            // P1.
+            if (port == p0_port_) {
+              gpr_log(GPR_INFO, "*** INJECTING FAILURE FOR P0 ENDPOINT");
+              grpc_core::ExecCtx::Run(DEBUG_LOCATION, closure,
+                                      GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+                                          "injected connection failure"));
+              state_ = kP0Failed;
+              return;
+            }
+            break;
+          case kP0Failed:
+            // Hold connection attempt to P1 so that it stays in CONNECTING.
+            if (port == p1_port_) {
+              gpr_log(GPR_INFO,
+                      "*** DELAYING CONNECTION ATTEMPT FOR P1 ENDPOINT");
+              queued_p1_attempt_ = absl::make_unique<QueuedAttempt>(
+                  closure, ep, interested_parties, channel_args, addr,
+                  deadline);
+              state_ = kDone;
+              return;
+            }
+            break;
+          case kDone:
+            // P0 should attempt reconnection.  Log it to make the test
+            // easier to debug, but allow it to complete, so that the
+            // priority policy deactivates P1.
+            if (port == p0_port_) {
+              gpr_log(GPR_INFO,
+                      "*** INTERCEPTING CONNECTION ATTEMPT FOR P0 ENDPOINT");
+            }
+            break;
+        }
+      }
+      AttemptConnection(closure, ep, interested_parties, channel_args, addr,
+                        deadline);
+    }
+
+    // Invoked by the test when the RPC to the P0 backend has succeeded
+    // and it's ready to allow the P1 connection attempt to proceed.
+    void CompletePriority1Connection() {
+      grpc_core::ExecCtx exec_ctx;
+      std::unique_ptr<QueuedAttempt> attempt;
+      {
+        grpc_core::MutexLock lock(&mu_);
+        GPR_ASSERT(state_ == kDone);
+        attempt = std::move(queued_p1_attempt_);
+      }
+      attempt->Resume();
+    }
+
+   private:
+    const int p0_port_;
+    const int p1_port_;
+
+    grpc_core::Mutex mu_;
+    enum {
+      kInit,
+      kP0Failed,
+      kDone,
+    } state_ ABSL_GUARDED_BY(mu_) = kInit;
+    std::unique_ptr<QueuedAttempt> queued_p1_attempt_ ABSL_GUARDED_BY(mu_);
+  };
+  ConnectionInjector connection_attempt_injector(backends_[0]->port(),
+                                                 backends_[1]->port());
+  // Wait for P0 backend.
+  // Increase timeout to account for subchannel connection delays.
+  WaitForBackend(0, WaitForBackendOptions(), RpcOptions().set_timeout_ms(2000));
+  // Bring down the P0 backend.
+  ShutdownBackend(0);
+  // Allow the connection attempt to the P1 backend to resume.
+  connection_attempt_injector.CompletePriority1Connection();
+  // Wait for P1 backend to start getting traffic.
+  WaitForBackend(1);
+}
+
 TEST_P(CdsTest, AggregateClusterEdsToLogicalDns) {
   ScopedExperimentalEnvVar env_var(
       "GRPC_XDS_EXPERIMENTAL_ENABLE_AGGREGATE_AND_LOGICAL_DNS_CLUSTER");
@@ -5181,69 +4698,6 @@ TEST_P(CdsTest, UnsupportedClusterType) {
   ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
   EXPECT_THAT(response_state->error_message,
               ::testing::HasSubstr("DiscoveryType is not valid."));
-}
-
-// Tests that the NACK for multiple bad resources includes both errors.
-TEST_P(CdsTest, MultipleBadResources) {
-  constexpr char kClusterName2[] = "cluster_name_2";
-  constexpr char kClusterName3[] = "cluster_name_3";
-  CreateAndStartBackends(1);
-  // Add cluster with unsupported type.
-  auto cluster = default_cluster_;
-  cluster.set_name(kClusterName2);
-  cluster.set_type(Cluster::STATIC);
-  balancer_->ads_service()->SetCdsResource(cluster);
-  // Add second cluster with the same error.
-  cluster.set_name(kClusterName3);
-  balancer_->ads_service()->SetCdsResource(cluster);
-  // Change RouteConfig to point to all clusters.
-  RouteConfiguration route_config = default_route_config_;
-  route_config.mutable_virtual_hosts(0)->clear_routes();
-  // First route: default cluster, selected based on header.
-  auto* route = route_config.mutable_virtual_hosts(0)->add_routes();
-  route->mutable_match()->set_prefix("");
-  auto* header_matcher = route->mutable_match()->add_headers();
-  header_matcher->set_name("cluster");
-  header_matcher->set_exact_match(kDefaultClusterName);
-  route->mutable_route()->set_cluster(kDefaultClusterName);
-  // Second route: cluster 2, selected based on header.
-  route = route_config.mutable_virtual_hosts(0)->add_routes();
-  route->mutable_match()->set_prefix("");
-  header_matcher = route->mutable_match()->add_headers();
-  header_matcher->set_name("cluster");
-  header_matcher->set_exact_match(kClusterName2);
-  route->mutable_route()->set_cluster(kClusterName2);
-  // Third route: cluster 3, used by default.
-  route = route_config.mutable_virtual_hosts(0)->add_routes();
-  route->mutable_match()->set_prefix("");
-  route->mutable_route()->set_cluster(kClusterName3);
-  SetRouteConfiguration(balancer_.get(), route_config);
-  // Add EDS resource.
-  EdsResourceArgs args({{"locality0", CreateEndpointsForBackends()}});
-  balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
-  // Send RPC.
-  const auto response_state = WaitForCdsNack();
-  ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
-  EXPECT_THAT(
-      response_state->error_message,
-      ::testing::ContainsRegex(absl::StrCat(kClusterName2,
-                                            ": validation error.*"
-                                            "DiscoveryType is not valid.*",
-                                            kClusterName3,
-                                            ": validation error.*"
-                                            "DiscoveryType is not valid")));
-  // RPCs for default cluster should succeed.
-  std::vector<std::pair<std::string, std::string>> metadata_default_cluster = {
-      {"cluster", kDefaultClusterName},
-  };
-  CheckRpcSendOk(
-      1, RpcOptions().set_metadata(std::move(metadata_default_cluster)));
-  // RPCs for cluster 2 should fail.
-  std::vector<std::pair<std::string, std::string>> metadata_cluster_2 = {
-      {"cluster", kClusterName2},
-  };
-  CheckRpcSendFailure(CheckRpcSendFailureOptions().set_rpc_options(
-      RpcOptions().set_metadata(std::move(metadata_cluster_2))));
 }
 
 // Tests that we don't trigger does-not-exist callbacks for a resource
@@ -5749,6 +5203,88 @@ TEST_P(CdsTest, RingHashIdleToReady) {
   EXPECT_EQ(GRPC_CHANNEL_IDLE, channel_->GetState(false));
   CheckRpcSendOk();
   EXPECT_EQ(GRPC_CHANNEL_READY, channel_->GetState(false));
+}
+
+// Test that the channel will transition to READY once it starts
+// connecting even if there are no RPCs being sent to the picker.
+TEST_P(CdsTest, RingHashContinuesConnectingWithoutPicks) {
+  // Create EDS resource.
+  CreateAndStartBackends(1);
+  auto non_existant_endpoint = MakeNonExistantEndpoint();
+  EdsResourceArgs args(
+      {{"locality0", {non_existant_endpoint, CreateEndpoint(0)}}});
+  balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
+  // Change CDS resource to use RING_HASH.
+  auto cluster = default_cluster_;
+  cluster.set_lb_policy(Cluster::RING_HASH);
+  balancer_->ads_service()->SetCdsResource(cluster);
+  // Add hash policy to RDS resource.
+  auto new_route_config = default_route_config_;
+  auto* route = new_route_config.mutable_virtual_hosts(0)->mutable_routes(0);
+  auto* hash_policy = route->mutable_route()->add_hash_policy();
+  hash_policy->mutable_header()->set_header_name("address_hash");
+  SetListenerAndRouteConfiguration(balancer_.get(), default_listener_,
+                                   new_route_config);
+  // A connection injector that cancels the RPC after seeing the
+  // connection attempt for the non-existant endpoint.
+  class ConnectionInjector : public ConnectionAttemptInjector {
+   public:
+    explicit ConnectionInjector(int port) : port_(port) {}
+
+    void HandleConnection(grpc_closure* closure, grpc_endpoint** ep,
+                          grpc_pollset_set* interested_parties,
+                          const grpc_channel_args* channel_args,
+                          const grpc_resolved_address* addr,
+                          grpc_core::Timestamp deadline) override {
+      {
+        grpc_core::MutexLock lock(&mu_);
+        const int port = grpc_sockaddr_get_port(addr);
+        gpr_log(GPR_INFO, "==> HandleConnection(): seen_port_=%d, port=%d",
+                seen_port_, port);
+        // Initial attempt should be for port0_, which should fail.
+        // Cancel the RPC at this point, so that it's no longer
+        // queued when the LB policy updates the picker.
+        if (!seen_port_ && port == port_) {
+          gpr_log(GPR_INFO, "*** SEEN P0 CONNECTION ATTEMPT");
+          seen_port_ = true;
+          cond_.Signal();
+        }
+      }
+      AttemptConnection(closure, ep, interested_parties, channel_args, addr,
+                        deadline);
+    }
+
+    void WaitForP0ConnectionAttempt() {
+      grpc_core::MutexLock lock(&mu_);
+      while (!seen_port_) {
+        cond_.Wait(&mu_);
+      }
+    }
+
+   private:
+    const int port_;
+
+    grpc_core::Mutex mu_;
+    grpc_core::CondVar cond_;
+    bool seen_port_ ABSL_GUARDED_BY(mu_) = false;
+  };
+  ConnectionInjector connection_injector(non_existant_endpoint.port);
+  // A long-running RPC, just used to send the RPC in another thread.
+  LongRunningRpc rpc;
+  std::vector<std::pair<std::string, std::string>> metadata = {
+      {"address_hash",
+       CreateMetadataValueThatHashesToBackendPort(non_existant_endpoint.port)}};
+  rpc.StartRpc(stub_.get(), RpcOptions().set_timeout_ms(0).set_metadata(
+                                std::move(metadata)));
+  // Wait for the RPC to trigger the P0 connection attempt, then cancel it.
+  connection_injector.WaitForP0ConnectionAttempt();
+  rpc.CancelRpc();
+  // Wait for channel to become connected without any pending RPC.
+  EXPECT_TRUE(channel_->WaitForConnected(grpc_timeout_seconds_to_deadline(5)));
+  // RPC should have been cancelled.
+  EXPECT_EQ(StatusCode::CANCELLED, rpc.GetStatus().error_code());
+  // Make sure the backend did not get any requests.
+  EXPECT_EQ(0UL, backends_[0]->backend_service()->request_count());
 }
 
 // Test that when the first pick is down leading to a transient failure, we
@@ -9758,175 +9294,6 @@ TEST_P(EdsTest, EdsServiceNameDefaultsToClusterName) {
   CheckRpcSendOk();
 }
 
-class TimeoutTest : public XdsEnd2endTest {
- protected:
-  void SetUp() override {
-    InitClient(BootstrapBuilder(), /*lb_expected_authority=*/"",
-               /*xds_resource_does_not_exist_timeout_ms=*/500);
-  }
-};
-
-TEST_P(TimeoutTest, LdsServerIgnoresRequest) {
-  balancer_->ads_service()->IgnoreResourceType(kLdsTypeUrl);
-  CheckRpcSendFailure();
-}
-
-TEST_P(TimeoutTest, LdsResourceNotPresentInRequest) {
-  balancer_->ads_service()->UnsetResource(kLdsTypeUrl, kServerName);
-  CheckRpcSendFailure();
-}
-
-TEST_P(TimeoutTest, LdsSecondResourceNotPresentInRequest) {
-  ASSERT_NE(GetParam().bootstrap_source(),
-            XdsTestType::kBootstrapFromChannelArg)
-      << "This test cannot use bootstrap from channel args, because it "
-         "needs two channels to use the same XdsClient instance.";
-  CreateAndStartBackends(1);
-  EdsResourceArgs args({{"locality0", CreateEndpointsForBackends()}});
-  balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
-  WaitForAllBackends();
-  // Create second channel for a new server name.
-  // This should fail because there is no LDS resource for this server name.
-  auto channel2 =
-      CreateChannel(/*failover_timeout_ms=*/0, "new-server.example.com");
-  auto stub2 = grpc::testing::EchoTestService::NewStub(channel2);
-  ClientContext context;
-  EchoRequest request;
-  EchoResponse response;
-  RpcOptions rpc_options;
-  rpc_options.SetupRpc(&context, &request);
-  auto status =
-      SendRpcMethod(stub2.get(), rpc_options, &context, request, &response);
-  EXPECT_EQ(StatusCode::UNAVAILABLE, status.error_code());
-}
-
-TEST_P(TimeoutTest, RdsServerIgnoresRequest) {
-  balancer_->ads_service()->IgnoreResourceType(kRdsTypeUrl);
-  CheckRpcSendFailure();
-}
-
-TEST_P(TimeoutTest, RdsResourceNotPresentInRequest) {
-  balancer_->ads_service()->UnsetResource(kRdsTypeUrl,
-                                          kDefaultRouteConfigurationName);
-  CheckRpcSendFailure();
-}
-
-TEST_P(TimeoutTest, RdsSecondResourceNotPresentInRequest) {
-  ASSERT_NE(GetParam().bootstrap_source(),
-            XdsTestType::kBootstrapFromChannelArg)
-      << "This test cannot use bootstrap from channel args, because it "
-         "needs two channels to use the same XdsClient instance.";
-  CreateAndStartBackends(1);
-  EdsResourceArgs args({{"locality0", CreateEndpointsForBackends()}});
-  balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
-  // Add listener for 2nd channel, but no RDS resource.
-  const char* kNewServerName = "new-server.example.com";
-  Listener listener = default_listener_;
-  listener.set_name(kNewServerName);
-  HttpConnectionManager http_connection_manager =
-      ClientHcmAccessor().Unpack(listener);
-  auto* rds = http_connection_manager.mutable_rds();
-  rds->set_route_config_name("rds_resource_does_not_exist");
-  rds->mutable_config_source()->mutable_self();
-  ClientHcmAccessor().Pack(http_connection_manager, &listener);
-  balancer_->ads_service()->SetLdsResource(listener);
-  WaitForAllBackends();
-  // Create second channel for a new server name.
-  // This should fail because the LDS resource points to a non-existent RDS
-  // resource.
-  auto channel2 = CreateChannel(/*failover_timeout_ms=*/0, kNewServerName);
-  auto stub2 = grpc::testing::EchoTestService::NewStub(channel2);
-  ClientContext context;
-  EchoRequest request;
-  EchoResponse response;
-  RpcOptions rpc_options;
-  rpc_options.SetupRpc(&context, &request);
-  auto status =
-      SendRpcMethod(stub2.get(), rpc_options, &context, request, &response);
-  EXPECT_EQ(StatusCode::UNAVAILABLE, status.error_code());
-}
-
-TEST_P(TimeoutTest, CdsServerIgnoresRequest) {
-  balancer_->ads_service()->IgnoreResourceType(kCdsTypeUrl);
-  CheckRpcSendFailure();
-}
-
-TEST_P(TimeoutTest, CdsResourceNotPresentInRequest) {
-  balancer_->ads_service()->UnsetResource(kCdsTypeUrl, kDefaultClusterName);
-  CheckRpcSendFailure();
-}
-
-TEST_P(TimeoutTest, CdsSecondResourceNotPresentInRequest) {
-  CreateAndStartBackends(1);
-  EdsResourceArgs args({{"locality0", CreateEndpointsForBackends()}});
-  balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
-  WaitForAllBackends();
-  // Change route config to point to non-existing cluster.
-  const char* kNewClusterName = "new_cluster_name";
-  RouteConfiguration route_config = default_route_config_;
-  route_config.mutable_virtual_hosts(0)
-      ->mutable_routes(0)
-      ->mutable_route()
-      ->set_cluster(kNewClusterName);
-  balancer_->ads_service()->SetRdsResource(route_config);
-  // New cluster times out.
-  // May need to wait a bit for the change to propagate to the client.
-  gpr_timespec deadline = grpc_timeout_seconds_to_deadline(10);
-  bool error_seen = false;
-  do {
-    auto status = SendRpc();
-    if (status.error_code() == StatusCode::UNAVAILABLE) {
-      error_seen = true;
-      break;
-    }
-  } while (gpr_time_cmp(gpr_now(GPR_CLOCK_MONOTONIC), deadline) < 0);
-  EXPECT_TRUE(error_seen);
-}
-
-TEST_P(TimeoutTest, EdsServerIgnoresRequest) {
-  balancer_->ads_service()->IgnoreResourceType(kEdsTypeUrl);
-  CheckRpcSendFailure();
-}
-
-TEST_P(TimeoutTest, EdsResourceNotPresentInRequest) {
-  // No need to remove EDS resource, since the test suite does not add it
-  // by default.
-  CheckRpcSendFailure();
-}
-
-TEST_P(TimeoutTest, EdsSecondResourceNotPresentInRequest) {
-  CreateAndStartBackends(1);
-  EdsResourceArgs args({{"locality0", CreateEndpointsForBackends()}});
-  balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
-  WaitForAllBackends();
-  // New cluster that points to a non-existant EDS resource.
-  const char* kNewClusterName = "new_cluster_name";
-  Cluster cluster = default_cluster_;
-  cluster.set_name(kNewClusterName);
-  cluster.mutable_eds_cluster_config()->set_service_name(
-      "eds_service_name_does_not_exist");
-  balancer_->ads_service()->SetCdsResource(cluster);
-  // Now add a route pointing to the new cluster.
-  RouteConfiguration route_config = default_route_config_;
-  auto* route = route_config.mutable_virtual_hosts(0)->mutable_routes(0);
-  *route_config.mutable_virtual_hosts(0)->add_routes() = *route;
-  route->mutable_match()->set_path("/grpc.testing.EchoTestService/Echo1");
-  route->mutable_route()->set_cluster(kNewClusterName);
-  balancer_->ads_service()->SetRdsResource(route_config);
-  // New EDS resource times out.
-  // May need to wait a bit for the RDS change to propagate to the client.
-  gpr_timespec deadline = grpc_timeout_seconds_to_deadline(10);
-  bool error_seen = false;
-  do {
-    auto status = SendRpc(RpcOptions().set_rpc_method(METHOD_ECHO1));
-    if (status.error_code() == StatusCode::UNAVAILABLE) {
-      error_seen = true;
-      break;
-    }
-  } while (gpr_time_cmp(gpr_now(GPR_CLOCK_MONOTONIC), deadline) < 0);
-  EXPECT_TRUE(error_seen);
-}
-
 using LocalityMapTest = XdsEnd2endTest;
 
 // Tests that the localities in a locality map are picked according to their
@@ -10898,25 +10265,11 @@ TEST_P(ClientLoadReportingTest, DropStats) {
       ::testing::DoubleNear(kDropRateForThrottle, kErrorTolerance));
 }
 
-using BootstrapSourceTest = XdsEnd2endTest;
-
-TEST_P(BootstrapSourceTest, Vanilla) {
-  CreateAndStartBackends(1);
-  EdsResourceArgs args({{"locality0", CreateEndpointsForBackends()}});
-  balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
-  WaitForAllBackends();
-}
-
 // Run both with and without load reporting.
 INSTANTIATE_TEST_SUITE_P(
     XdsTest, BasicTest,
     ::testing::Values(XdsTestType(), XdsTestType().set_enable_load_reporting()),
     &XdsTestType::Name);
-
-// Don't run with load reporting or v2 or RDS, since they are irrelevant to
-// the tests.
-INSTANTIATE_TEST_SUITE_P(XdsTest, SecureNamingTest,
-                         ::testing::Values(XdsTestType()), &XdsTestType::Name);
 
 // LDS depends on XdsResolver.
 INSTANTIATE_TEST_SUITE_P(XdsTest, LdsTest, ::testing::Values(XdsTestType()),
@@ -11125,54 +10478,10 @@ INSTANTIATE_TEST_SUITE_P(
     ::testing::Values(XdsTestType(), XdsTestType().set_enable_load_reporting()),
     &XdsTestType::Name);
 
-// Test initial resource timeouts for each resource type.
-// Do this only for XdsResolver with RDS enabled, so that we can test
-// all resource types.
-// Run with V3 only, since the functionality is no different in V2.
-// Run with bootstrap from env var so that multiple channels share the same
-// XdsClient (needed for testing the timeout for the 2nd LDS and RDS resource).
-INSTANTIATE_TEST_SUITE_P(
-    XdsTest, TimeoutTest,
-    ::testing::Values(
-        XdsTestType().set_enable_rds_testing().set_bootstrap_source(
-            XdsTestType::kBootstrapFromEnvVar)),
-    &XdsTestType::Name);
-
 // XdsResolverOnlyTest depends on XdsResolver.
 INSTANTIATE_TEST_SUITE_P(
     XdsTest, XdsResolverOnlyTest,
     ::testing::Values(XdsTestType(), XdsTestType().set_enable_load_reporting()),
-    &XdsTestType::Name);
-
-// Runs with bootstrap from env var, so that there's a global XdsClient.
-INSTANTIATE_TEST_SUITE_P(
-    XdsTest, GlobalXdsClientTest,
-    ::testing::Values(
-        XdsTestType().set_bootstrap_source(XdsTestType::kBootstrapFromEnvVar),
-        XdsTestType()
-            .set_bootstrap_source(XdsTestType::kBootstrapFromEnvVar)
-            .set_enable_load_reporting()),
-    &XdsTestType::Name);
-
-INSTANTIATE_TEST_SUITE_P(
-    XdsTest, XdsFederationTest,
-    ::testing::Values(
-        XdsTestType().set_bootstrap_source(XdsTestType::kBootstrapFromEnvVar),
-        XdsTestType()
-            .set_bootstrap_source(XdsTestType::kBootstrapFromEnvVar)
-            .set_enable_rds_testing()),
-    &XdsTestType::Name);
-
-INSTANTIATE_TEST_SUITE_P(
-    XdsTest, XdsFederationLoadReportingTest,
-    ::testing::Values(
-        XdsTestType()
-            .set_bootstrap_source(XdsTestType::kBootstrapFromEnvVar)
-            .set_enable_load_reporting(),
-        XdsTestType()
-            .set_bootstrap_source(XdsTestType::kBootstrapFromEnvVar)
-            .set_enable_load_reporting()
-            .set_enable_rds_testing()),
     &XdsTestType::Name);
 
 INSTANTIATE_TEST_SUITE_P(
@@ -11192,13 +10501,6 @@ INSTANTIATE_TEST_SUITE_P(
 INSTANTIATE_TEST_SUITE_P(
     XdsTest, ClientLoadReportingTest,
     ::testing::Values(XdsTestType().set_enable_load_reporting()),
-    &XdsTestType::Name);
-
-INSTANTIATE_TEST_SUITE_P(
-    XdsTest, BootstrapSourceTest,
-    ::testing::Values(
-        XdsTestType().set_bootstrap_source(XdsTestType::kBootstrapFromEnvVar),
-        XdsTestType().set_bootstrap_source(XdsTestType::kBootstrapFromFile)),
     &XdsTestType::Name);
 
 }  // namespace
@@ -11225,6 +10527,7 @@ int main(int argc, char** argv) {
       absl::make_unique<grpc::testing::FakeCertificateProviderFactory>(
           "fake2", &grpc::testing::g_fake2_cert_data_map));
   grpc_init();
+  grpc::testing::ConnectionAttemptInjector::Init();
   grpc_core::XdsHttpFilterRegistry::RegisterFilter(
       absl::make_unique<grpc::testing::NoOpHttpFilter>(
           "grpc.testing.client_only_http_filter",
