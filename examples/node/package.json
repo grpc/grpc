@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "dependencies": {
     "@grpc/proto-loader": "^0.5.0",
-    "async": "^1.5.2",
+    "async": "^2.6.4",
     "google-protobuf": "^3.0.0",
     "@grpc/grpc-js": "^1.1.0",
     "lodash": "^4.6.1",
