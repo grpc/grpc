@@ -244,13 +244,14 @@ std::string grpc_sockaddr_to_uri(const grpc_resolved_address* resolved_addr) {
   if (scheme == nullptr || strcmp("unix", scheme) == 0) {
     return grpc_sockaddr_to_uri_unix_if_possible(resolved_addr);
   }
+  // TODO(anramach): Encode the string using URI::Parse before returning.
   std::string path =
       grpc_sockaddr_to_string(resolved_addr, false /* normalize */);
-  absl::StatusOr<grpc_core::URI> uri =
-      grpc_core::URI::Create(scheme, /*authority=*/"", std::move(path),
-                             /*query_parameter_pairs=*/{}, /*fragment=*/"");
-  if (!uri.ok()) return "";
-  return uri->ToString();
+  std::string uri_str;
+  if (scheme != nullptr) {
+    uri_str = absl::StrCat(scheme, ":", path);
+  }
+  return uri_str;
 }
 
 const char* grpc_sockaddr_get_uri_scheme(
