@@ -38,7 +38,7 @@ namespace {
 using ::envoy::config::cluster::v3::CustomClusterType;
 using ::envoy::extensions::clusters::aggregate::v3::ClusterConfig;
 
-class CdsTest : public XdsEnd2endTest {
+class ClusterTypeTest : public XdsEnd2endTest {
  protected:
   void SetUp() override {
     logical_dns_cluster_resolver_response_generator_ =
@@ -70,13 +70,16 @@ class CdsTest : public XdsEnd2endTest {
       logical_dns_cluster_resolver_response_generator_;
 };
 
-// CDS depends on XdsResolver.
-INSTANTIATE_TEST_SUITE_P(
-    XdsTest, CdsTest,
-    ::testing::Values(XdsTestType(), XdsTestType().set_enable_load_reporting()),
-    &XdsTestType::Name);
+//
+// LOGICAL_DNS cluster tests
+//
 
-TEST_P(CdsTest, LogicalDNSClusterType) {
+using LogicalDNSClusterTest = ClusterTypeTest;
+
+INSTANTIATE_TEST_SUITE_P(XdsTest, LogicalDNSClusterTest,
+                         ::testing::Values(XdsTestType()), &XdsTestType::Name);
+
+TEST_P(LogicalDNSClusterTest, Basic) {
   ScopedExperimentalEnvVar env_var(
       "GRPC_XDS_EXPERIMENTAL_ENABLE_AGGREGATE_AND_LOGICAL_DNS_CLUSTER");
   CreateAndStartBackends(1);
@@ -104,7 +107,7 @@ TEST_P(CdsTest, LogicalDNSClusterType) {
   CheckRpcSendOk();
 }
 
-TEST_P(CdsTest, LogicalDNSClusterTypeMissingLoadAssignment) {
+TEST_P(LogicalDNSClusterTest, MissingLoadAssignment) {
   ScopedExperimentalEnvVar env_var(
       "GRPC_XDS_EXPERIMENTAL_ENABLE_AGGREGATE_AND_LOGICAL_DNS_CLUSTER");
   // Create Logical DNS Cluster
@@ -118,7 +121,7 @@ TEST_P(CdsTest, LogicalDNSClusterTypeMissingLoadAssignment) {
                   "load_assignment not present for LOGICAL_DNS cluster"));
 }
 
-TEST_P(CdsTest, LogicalDNSClusterTypeMissingLocalities) {
+TEST_P(LogicalDNSClusterTest, MissingLocalities) {
   ScopedExperimentalEnvVar env_var(
       "GRPC_XDS_EXPERIMENTAL_ENABLE_AGGREGATE_AND_LOGICAL_DNS_CLUSTER");
   // Create Logical DNS Cluster
@@ -134,7 +137,7 @@ TEST_P(CdsTest, LogicalDNSClusterTypeMissingLocalities) {
                            "exactly one locality, found 0"));
 }
 
-TEST_P(CdsTest, LogicalDNSClusterTypeMultipleLocalities) {
+TEST_P(LogicalDNSClusterTest, MultipleLocalities) {
   ScopedExperimentalEnvVar env_var(
       "GRPC_XDS_EXPERIMENTAL_ENABLE_AGGREGATE_AND_LOGICAL_DNS_CLUSTER");
   // Create Logical DNS Cluster
@@ -152,7 +155,7 @@ TEST_P(CdsTest, LogicalDNSClusterTypeMultipleLocalities) {
                            "exactly one locality, found 2"));
 }
 
-TEST_P(CdsTest, LogicalDNSClusterTypeMissingEndpoints) {
+TEST_P(LogicalDNSClusterTest, MissingEndpoints) {
   ScopedExperimentalEnvVar env_var(
       "GRPC_XDS_EXPERIMENTAL_ENABLE_AGGREGATE_AND_LOGICAL_DNS_CLUSTER");
   // Create Logical DNS Cluster
@@ -168,7 +171,7 @@ TEST_P(CdsTest, LogicalDNSClusterTypeMissingEndpoints) {
                   "endpoint, found 0"));
 }
 
-TEST_P(CdsTest, LogicalDNSClusterTypeMultipleEndpoints) {
+TEST_P(LogicalDNSClusterTest, MultipleEndpoints) {
   ScopedExperimentalEnvVar env_var(
       "GRPC_XDS_EXPERIMENTAL_ENABLE_AGGREGATE_AND_LOGICAL_DNS_CLUSTER");
   // Create Logical DNS Cluster
@@ -186,7 +189,7 @@ TEST_P(CdsTest, LogicalDNSClusterTypeMultipleEndpoints) {
                   "endpoint, found 2"));
 }
 
-TEST_P(CdsTest, LogicalDNSClusterTypeEmptyEndpoint) {
+TEST_P(LogicalDNSClusterTest, EmptyEndpoint) {
   ScopedExperimentalEnvVar env_var(
       "GRPC_XDS_EXPERIMENTAL_ENABLE_AGGREGATE_AND_LOGICAL_DNS_CLUSTER");
   // Create Logical DNS Cluster
@@ -200,7 +203,7 @@ TEST_P(CdsTest, LogicalDNSClusterTypeEmptyEndpoint) {
               ::testing::HasSubstr("LbEndpoint endpoint field not set"));
 }
 
-TEST_P(CdsTest, LogicalDNSClusterTypeEndpointMissingAddress) {
+TEST_P(LogicalDNSClusterTest, EndpointMissingAddress) {
   ScopedExperimentalEnvVar env_var(
       "GRPC_XDS_EXPERIMENTAL_ENABLE_AGGREGATE_AND_LOGICAL_DNS_CLUSTER");
   // Create Logical DNS Cluster
@@ -217,7 +220,7 @@ TEST_P(CdsTest, LogicalDNSClusterTypeEndpointMissingAddress) {
               ::testing::HasSubstr("Endpoint address field not set"));
 }
 
-TEST_P(CdsTest, LogicalDNSClusterTypeAddressMissingSocketAddress) {
+TEST_P(LogicalDNSClusterTest, AddressMissingSocketAddress) {
   ScopedExperimentalEnvVar env_var(
       "GRPC_XDS_EXPERIMENTAL_ENABLE_AGGREGATE_AND_LOGICAL_DNS_CLUSTER");
   // Create Logical DNS Cluster
@@ -235,7 +238,7 @@ TEST_P(CdsTest, LogicalDNSClusterTypeAddressMissingSocketAddress) {
               ::testing::HasSubstr("Address socket_address field not set"));
 }
 
-TEST_P(CdsTest, LogicalDNSClusterTypeSocketAddressHasResolverName) {
+TEST_P(LogicalDNSClusterTest, SocketAddressHasResolverName) {
   ScopedExperimentalEnvVar env_var(
       "GRPC_XDS_EXPERIMENTAL_ENABLE_AGGREGATE_AND_LOGICAL_DNS_CLUSTER");
   // Create Logical DNS Cluster
@@ -256,7 +259,7 @@ TEST_P(CdsTest, LogicalDNSClusterTypeSocketAddressHasResolverName) {
                                    "custom resolver name set"));
 }
 
-TEST_P(CdsTest, LogicalDNSClusterTypeSocketAddressMissingAddress) {
+TEST_P(LogicalDNSClusterTest, SocketAddressMissingAddress) {
   ScopedExperimentalEnvVar env_var(
       "GRPC_XDS_EXPERIMENTAL_ENABLE_AGGREGATE_AND_LOGICAL_DNS_CLUSTER");
   // Create Logical DNS Cluster
@@ -275,7 +278,7 @@ TEST_P(CdsTest, LogicalDNSClusterTypeSocketAddressMissingAddress) {
               ::testing::HasSubstr("SocketAddress address field not set"));
 }
 
-TEST_P(CdsTest, LogicalDNSClusterTypeSocketAddressMissingPort) {
+TEST_P(LogicalDNSClusterTest, SocketAddressMissingPort) {
   ScopedExperimentalEnvVar env_var(
       "GRPC_XDS_EXPERIMENTAL_ENABLE_AGGREGATE_AND_LOGICAL_DNS_CLUSTER");
   // Create Logical DNS Cluster
@@ -295,7 +298,31 @@ TEST_P(CdsTest, LogicalDNSClusterTypeSocketAddressMissingPort) {
               ::testing::HasSubstr("SocketAddress port_value field not set"));
 }
 
-TEST_P(CdsTest, AggregateClusterType) {
+// Test that CDS client should send a NACK if cluster type is Logical DNS but
+// the feature is not yet supported.
+TEST_P(LogicalDNSClusterTest, Disabled) {
+  auto cluster = default_cluster_;
+  cluster.set_type(Cluster::LOGICAL_DNS);
+  balancer_->ads_service()->SetCdsResource(cluster);
+  const auto response_state = WaitForCdsNack();
+  ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
+  EXPECT_THAT(response_state->error_message,
+              ::testing::HasSubstr("DiscoveryType is not valid."));
+}
+
+//
+// aggregate cluster tests
+//
+
+// TODO(roth): Add tests showing that load reporting is enabled on a
+// per-underlying-cluster basis.
+
+using AggregateClusterTest = ClusterTypeTest;
+
+INSTANTIATE_TEST_SUITE_P(XdsTest, AggregateClusterTest,
+                         ::testing::Values(XdsTestType()), &XdsTestType::Name);
+
+TEST_P(AggregateClusterTest, ) {
   ScopedExperimentalEnvVar env_var(
       "GRPC_XDS_EXPERIMENTAL_ENABLE_AGGREGATE_AND_LOGICAL_DNS_CLUSTER");
   CreateAndStartBackends(2);
@@ -347,7 +374,7 @@ TEST_P(CdsTest, AggregateClusterType) {
   WaitForBackend(0);
 }
 
-TEST_P(CdsTest, AggregateClusterDiamondDependency) {
+TEST_P(AggregateClusterTest, DiamondDependency) {
   ScopedExperimentalEnvVar env_var(
       "GRPC_XDS_EXPERIMENTAL_ENABLE_AGGREGATE_AND_LOGICAL_DNS_CLUSTER");
   const char* kNewClusterName1 = "new_cluster_1";
@@ -416,7 +443,7 @@ TEST_P(CdsTest, AggregateClusterDiamondDependency) {
 // The bug caused us to fail to choose P1 even though it is in state
 // CONNECTING (because the failover timer was not running), so we
 // incorrectly failed the RPCs.
-TEST_P(CdsTest, AggregateClusterFallBackWithConnectivityChurn) {
+TEST_P(AggregateClusterTest, FallBackWithConnectivityChurn) {
   ScopedExperimentalEnvVar env_var(
       "GRPC_XDS_EXPERIMENTAL_ENABLE_AGGREGATE_AND_LOGICAL_DNS_CLUSTER");
   CreateAndStartBackends(2);
@@ -543,7 +570,7 @@ TEST_P(CdsTest, AggregateClusterFallBackWithConnectivityChurn) {
   WaitForBackend(1);
 }
 
-TEST_P(CdsTest, AggregateClusterEdsToLogicalDns) {
+TEST_P(AggregateClusterTest, EdsToLogicalDns) {
   ScopedExperimentalEnvVar env_var(
       "GRPC_XDS_EXPERIMENTAL_ENABLE_AGGREGATE_AND_LOGICAL_DNS_CLUSTER");
   CreateAndStartBackends(2);
@@ -603,7 +630,7 @@ TEST_P(CdsTest, AggregateClusterEdsToLogicalDns) {
   WaitForBackend(0);
 }
 
-TEST_P(CdsTest, AggregateClusterLogicalDnsToEds) {
+TEST_P(AggregateClusterTest, LogicalDnsToEds) {
   ScopedExperimentalEnvVar env_var(
       "GRPC_XDS_EXPERIMENTAL_ENABLE_AGGREGATE_AND_LOGICAL_DNS_CLUSTER");
   CreateAndStartBackends(2);
@@ -671,7 +698,7 @@ TEST_P(CdsTest, AggregateClusterLogicalDnsToEds) {
 // thus returning a priority with no localities.  This caused the child
 // name to be reused incorrectly, which triggered an assertion failure
 // in the xds_cluster_impl policy caused by changing its cluster name.
-TEST_P(CdsTest, AggregateClusterReconfigEdsWhileLogicalDnsChildFails) {
+TEST_P(AggregateClusterTest, ReconfigEdsWhileLogicalDnsChildFails) {
   ScopedExperimentalEnvVar env_var(
       "GRPC_XDS_EXPERIMENTAL_ENABLE_AGGREGATE_AND_LOGICAL_DNS_CLUSTER");
   CreateAndStartBackends(2);
@@ -738,7 +765,7 @@ TEST_P(CdsTest, AggregateClusterReconfigEdsWhileLogicalDnsChildFails) {
   WaitForBackend(0, WaitForBackendOptions().set_allow_failures(true));
 }
 
-TEST_P(CdsTest, AggregateClusterMultipleClustersWithSameLocalities) {
+TEST_P(AggregateClusterTest, MultipleClustersWithSameLocalities) {
   ScopedExperimentalEnvVar env_var(
       "GRPC_XDS_EXPERIMENTAL_ENABLE_AGGREGATE_AND_LOGICAL_DNS_CLUSTER");
   CreateAndStartBackends(2);
@@ -785,7 +812,7 @@ TEST_P(CdsTest, AggregateClusterMultipleClustersWithSameLocalities) {
   WaitForBackend(1);
 }
 
-TEST_P(CdsTest, AggregateClusterRecursionDepthJustBelowMax) {
+TEST_P(AggregateClusterTest, RecursionDepthJustBelowMax) {
   ScopedExperimentalEnvVar env_var(
       "GRPC_XDS_EXPERIMENTAL_ENABLE_AGGREGATE_AND_LOGICAL_DNS_CLUSTER");
   // Populate EDS resource.
@@ -811,7 +838,7 @@ TEST_P(CdsTest, AggregateClusterRecursionDepthJustBelowMax) {
   CheckRpcSendOk();
 }
 
-TEST_P(CdsTest, AggregateClusterRecursionMaxDepth) {
+TEST_P(AggregateClusterTest, RecursionMaxDepth) {
   ScopedExperimentalEnvVar env_var(
       "GRPC_XDS_EXPERIMENTAL_ENABLE_AGGREGATE_AND_LOGICAL_DNS_CLUSTER");
   // Populate EDS resource.
@@ -841,21 +868,9 @@ TEST_P(CdsTest, AggregateClusterRecursionMaxDepth) {
       ::testing::HasSubstr("aggregate cluster graph exceeds max depth"));
 }
 
-// Test that CDS client should send a NACK if cluster type is Logical DNS but
-// the feature is not yet supported.
-TEST_P(CdsTest, LogicalDNSClusterTypeDisabled) {
-  auto cluster = default_cluster_;
-  cluster.set_type(Cluster::LOGICAL_DNS);
-  balancer_->ads_service()->SetCdsResource(cluster);
-  const auto response_state = WaitForCdsNack();
-  ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
-  EXPECT_THAT(response_state->error_message,
-              ::testing::HasSubstr("DiscoveryType is not valid."));
-}
-
 // Test that CDS client should send a NACK if cluster type is AGGREGATE but
 // the feature is not yet supported.
-TEST_P(CdsTest, AggregateClusterTypeDisabled) {
+TEST_P(AggregateClusterTest, Disabled) {
   auto cluster = default_cluster_;
   CustomClusterType* custom_cluster = cluster.mutable_cluster_type();
   custom_cluster->set_name("envoy.clusters.aggregate");
