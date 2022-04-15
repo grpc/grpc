@@ -6090,8 +6090,6 @@ class XdsSecurityTest : public XdsEnd2endTest {
     balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
   }
 
-  void TearDown() override { XdsEnd2endTest::TearDown(); }
-
   // Sends CDS updates with the new security configuration and verifies that
   // after propagation, this new configuration is used for connections. If \a
   // identity_instance_name and \a root_instance_name are both empty,
@@ -6684,7 +6682,6 @@ TEST_P(XdsSecurityTest,
        TestMtlsConfigurationWithIdentityCertificateNameUpdate) {
   g_fake1_cert_data_map->Set({{"", {root_cert_, identity_pair_}},
                               {"bad", {bad_root_cert_, bad_identity_pair_}}});
-  ;
   UpdateAndVerifyXdsSecurityConfiguration("fake_plugin1", "", "fake_plugin1",
                                           "", {server_san_exact_},
                                           authenticated_identity_);
@@ -11061,13 +11058,13 @@ int main(int argc, char** argv) {
   // Workaround Apple CFStream bug
   gpr_setenv("grpc_cfstream", "0");
 #endif
-  grpc::testing::g_fake1_cert_data_map =
-      new grpc::testing::FakeCertificateProvider::CertDataMapWrapper();
+  grpc::testing::FakeCertificateProvider::CertDataMapWrapper cert_data_map_1;
+  grpc::testing::g_fake1_cert_data_map = &cert_data_map_1;
   grpc_core::CertificateProviderRegistry::RegisterCertificateProviderFactory(
       absl::make_unique<grpc::testing::FakeCertificateProviderFactory>(
           "fake1", grpc::testing::g_fake1_cert_data_map));
-  grpc::testing::g_fake2_cert_data_map =
-      new grpc::testing::FakeCertificateProvider::CertDataMapWrapper();
+  grpc::testing::FakeCertificateProvider::CertDataMapWrapper cert_data_map_2;
+  grpc::testing::g_fake2_cert_data_map = &cert_data_map_2;
   grpc_core::CertificateProviderRegistry::RegisterCertificateProviderFactory(
       absl::make_unique<grpc::testing::FakeCertificateProviderFactory>(
           "fake2", grpc::testing::g_fake2_cert_data_map));
@@ -11092,7 +11089,5 @@ int main(int argc, char** argv) {
       {"grpc.testing.terminal_http_filter"});
   const auto result = RUN_ALL_TESTS();
   grpc_shutdown();
-  delete grpc::testing::g_fake1_cert_data_map;
-  delete grpc::testing::g_fake2_cert_data_map;
   return result;
 }
