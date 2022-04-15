@@ -4945,7 +4945,7 @@ TEST_P(CdsTest, AggregateClusterFallBackWithConnectivityChurn) {
   balancer_->ads_service()->SetCdsResource(cluster2);
   // Create Aggregate Cluster
   auto cluster = default_cluster_;
-  CustomClusterType* custom_cluster = cluster.mutable_cluster_type();
+  Cluster_CustomClusterType* custom_cluster = cluster.mutable_cluster_type();
   custom_cluster->set_name("envoy.clusters.aggregate");
   ClusterConfig cluster_config;
   cluster_config.add_clusters(kClusterName1);
