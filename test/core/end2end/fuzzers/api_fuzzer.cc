@@ -26,6 +26,7 @@
 
 #include "src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper.h"
 #include "src/core/ext/transport/chttp2/transport/chttp2_transport.h"
+#include "src/core/lib/address_utils/parse_address.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/gpr/env.h"
 #include "src/core/lib/iomgr/executor.h"
@@ -95,8 +96,8 @@ static void finish_resolve(void* arg, grpc_error_handle error) {
   if (error == GRPC_ERROR_NONE && 0 == strcmp(r->addr, "server")) {
     *r->addresses = absl::make_unique<grpc_core::ServerAddressList>();
     grpc_resolved_address fake_resolved_address;
-    memset(&fake_resolved_address, 0, sizeof(fake_resolved_address));
-    fake_resolved_address.len = 0;
+    GPR_ASSERT(
+        grpc_parse_ipv4_hostport("1.2.3.4:5", &fake_resolved_address, false));
     (*r->addresses)->emplace_back(fake_resolved_address, nullptr);
     grpc_core::ExecCtx::Run(DEBUG_LOCATION, r->on_done, GRPC_ERROR_NONE);
   } else {

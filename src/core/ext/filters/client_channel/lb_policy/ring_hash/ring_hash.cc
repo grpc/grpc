@@ -323,7 +323,7 @@ RingHash::Ring::Ring(RingHash* parent,
         ServerAddressWeightAttribute::kServerAddressWeightAttributeKey));
     AddressWeight address_weight;
     address_weight.address =
-        grpc_sockaddr_to_string(&sd->address().address(), false);
+        grpc_sockaddr_to_string(&sd->address().address(), false).value();
     if (weight_attribute != nullptr) {
       GPR_ASSERT(weight_attribute->weight() != 0);
       address_weight.weight = weight_attribute->weight();
