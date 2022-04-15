@@ -154,10 +154,18 @@ static void CFStreamClientConnect(grpc_closure* closure, grpc_endpoint** ep,
                                   const grpc_channel_args* channel_args,
                                   const grpc_resolved_address* resolved_addr,
                                   grpc_core::Timestamp deadline) {
+  auto addr_uri = grpc_sockaddr_to_uri(resolved_addr);
+  if (!addr_uri.ok()) {
+    grpc_error_handle error =
+        GRPC_ERROR_CREATE_FROM_CPP_STRING(addr_uri.status().ToString());
+    grpc_core::ExecCtx::Run(DEBUG_LOCATION, closure, error);
+    return;
+  }
+
   CFStreamConnect* connect = new CFStreamConnect();
   connect->closure = closure;
   connect->endpoint = ep;
-  connect->addr_name = grpc_sockaddr_to_uri(resolved_addr);
+  connect->addr_name = addr_uri.value();
   connect->refs = 2;  // One for the connect operation, one for the timer.
   gpr_ref_init(&connect->refcount, 1);
   gpr_mu_init(&connect->mu);
