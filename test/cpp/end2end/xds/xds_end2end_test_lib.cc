@@ -178,9 +178,11 @@ void XdsEnd2endTest::ServerThread::Serve(grpc_core::Mutex* mu,
     builder.AddListeningPort(server_address, Credentials());
     // Allow gRPC Core's HTTP server to accept PUT requests for testing
     // purposes.
-    builder.AddChannelArgument(
-        GRPC_ARG_INTERNAL_ONLY_DO_NOT_USE_UNLESS_YOU_HAVE_PERMISSION_FROM_ALLOW_GRPC_TEAM_ALLOW_BROKEN_PUT_REQUESTS,
-        true);
+    if (allow_put_requests_) {
+      builder.AddChannelArgument(
+          GRPC_ARG_INTERNAL_ONLY_DO_NOT_USE_UNLESS_YOU_HAVE_PERMISSION_FROM_GRPC_TEAM_ALLOW_BROKEN_PUT_REQUESTS,
+          true);
+    }
     RegisterAllServices(&builder);
     server_ = builder.BuildAndStart();
   } else {
@@ -197,8 +199,9 @@ void XdsEnd2endTest::ServerThread::Serve(grpc_core::Mutex* mu,
 //
 
 XdsEnd2endTest::BackendServerThread::BackendServerThread(
-    XdsEnd2endTest* test_obj, bool use_xds_enabled_server)
-    : ServerThread(test_obj, use_xds_enabled_server) {
+    XdsEnd2endTest* test_obj, bool use_xds_enabled_server,
+    bool allow_put_requests)
+    : ServerThread(test_obj, use_xds_enabled_server, allow_put_requests) {
   if (use_xds_enabled_server) {
     test_obj->SetServerListenerNameAndRouteConfiguration(
         test_obj->balancer_.get(), test_obj->default_server_listener_, port(),

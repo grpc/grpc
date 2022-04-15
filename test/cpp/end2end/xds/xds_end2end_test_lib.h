@@ -232,10 +232,12 @@ class XdsEnd2endTest : public ::testing::TestWithParam<XdsTestType> {
 
     // If use_xds_enabled_server is true, the server will use xDS.
     explicit ServerThread(XdsEnd2endTest* test_obj,
-                          bool use_xds_enabled_server = false)
+                          bool use_xds_enabled_server = false,
+                          bool allow_put_requests = false)
         : test_obj_(test_obj),
           port_(grpc_pick_unused_port_or_die()),
-          use_xds_enabled_server_(use_xds_enabled_server) {}
+          use_xds_enabled_server_(use_xds_enabled_server),
+          allow_put_requests_(allow_put_requests) {}
 
     virtual ~ServerThread() { Shutdown(); }
 
@@ -270,6 +272,7 @@ class XdsEnd2endTest : public ::testing::TestWithParam<XdsTestType> {
     std::unique_ptr<std::thread> thread_;
     bool running_ = false;
     const bool use_xds_enabled_server_;
+    const bool allow_put_requests_;
   };
 
   // A server thread for a backend server.
@@ -333,7 +336,8 @@ class XdsEnd2endTest : public ::testing::TestWithParam<XdsTestType> {
     };
 
     // If use_xds_enabled_server is true, the server will use xDS.
-    BackendServerThread(XdsEnd2endTest* test_obj, bool use_xds_enabled_server);
+    BackendServerThread(XdsEnd2endTest* test_obj, bool use_xds_enabled_server,
+                        bool allow_put_requests);
 
     BackendServiceImpl<grpc::testing::EchoTestService::Service>*
     backend_service() {
@@ -630,9 +634,11 @@ class XdsEnd2endTest : public ::testing::TestWithParam<XdsTestType> {
   // Creates num_backends backends and stores them in backends_, but
   // does not actually start them.  If xds_enabled is true, the backends
   // are xDS-enabled.
-  void CreateBackends(size_t num_backends, bool xds_enabled = false) {
+  void CreateBackends(size_t num_backends, bool xds_enabled = false,
+                      bool allow_put_requests = false) {
     for (size_t i = 0; i < num_backends; ++i) {
-      backends_.emplace_back(new BackendServerThread(this, xds_enabled));
+      backends_.emplace_back(
+          new BackendServerThread(this, xds_enabled, allow_put_requests));
     }
   }
 
@@ -642,8 +648,9 @@ class XdsEnd2endTest : public ::testing::TestWithParam<XdsTestType> {
   }
 
   // Same as CreateBackends(), but also starts the backends.
-  void CreateAndStartBackends(size_t num_backends, bool xds_enabled = false) {
-    CreateBackends(num_backends, xds_enabled);
+  void CreateAndStartBackends(size_t num_backends, bool xds_enabled = false,
+                              bool allow_put_requests = false) {
+    CreateBackends(num_backends, xds_enabled, allow_put_requests);
     StartAllBackends();
   }
 

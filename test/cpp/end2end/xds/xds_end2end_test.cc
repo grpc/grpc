@@ -6070,12 +6070,6 @@ class XdsSecurityTest : public XdsEnd2endTest {
     balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
   }
 
-  void TearDown() override {
-    g_fake1_cert_data_map = nullptr;
-    g_fake2_cert_data_map = nullptr;
-    XdsEnd2endTest::TearDown();
-  }
-
   // Sends CDS updates with the new security configuration and verifies that
   // after propagation, this new configuration is used for connections. If \a
   // identity_instance_name and \a root_instance_name are both empty,
@@ -7160,7 +7154,7 @@ class XdsServerSecurityTest : public XdsEnd2endTest {
     builder.AddCertificateProviderPlugin("file_plugin", "file_watcher",
                                          absl::StrJoin(fields, ",\n"));
     InitClient(builder);
-    CreateBackends(1, /*xds_enabled=*/true);
+    CreateBackends(1, /*xds_enabled=*/true, /*allow_put_requests=*/true);
     root_cert_ = ReadFile(kCaCertPath);
     bad_root_cert_ = ReadFile(kBadClientCertPath);
     identity_pair_ = ReadTlsIdentityPair(kServerKeyPath, kServerCertPath);
