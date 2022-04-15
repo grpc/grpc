@@ -116,7 +116,7 @@ class Loop {
 
  private:
   GPR_NO_UNIQUE_ADDRESS Factory factory_;
-  GPR_NO_UNIQUE_ADDRESS union { GPR_NO_UNIQUE_ADDRESS PromiseType promise_; };
+  union GPR_NO_UNIQUE_ADDRESS { GPR_NO_UNIQUE_ADDRESS PromiseType promise_; };
 };
 
 }  // namespace promise_detail

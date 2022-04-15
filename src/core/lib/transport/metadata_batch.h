@@ -532,6 +532,7 @@ struct GrpcStreamNetworkState {
       case kNotSeenByServer:
         return "not seen by server";
     }
+    GPR_UNREACHABLE_CODE(return "");
   }
 };
 

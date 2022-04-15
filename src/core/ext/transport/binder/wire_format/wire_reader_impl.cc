@@ -151,7 +151,7 @@ std::unique_ptr<Binder> WireReaderImpl::RecvSetupTransport() {
 absl::Status WireReaderImpl::ProcessTransaction(transaction_code_t code,
                                                 ReadableParcel* parcel,
                                                 int uid) {
-  gpr_log(GPR_INFO, __func__);
+  gpr_log(GPR_INFO, "%s", __func__);
   gpr_log(GPR_INFO, "tx code = %u", code);
   if (code >= static_cast<unsigned>(kFirstCallId)) {
     gpr_log(GPR_INFO, "This is probably a Streaming Tx");

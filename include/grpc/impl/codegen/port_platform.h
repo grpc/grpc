@@ -611,6 +611,14 @@ typedef unsigned __int64 uint64_t;
 #endif
 #endif /* GPR_NO_UNIQUE_ADDRESS */
 
+#ifndef GPR_MAYBE_UNUSED
+#if GPR_HAS_CPP_ATTRIBUTE(maybe_unused)
+#define GPR_MAYBE_UNUSED [[maybe_unused]]
+#else
+#define GPR_MAYBE_UNUSED
+#endif
+#endif /* GPR_MAYBE_UNUSED */
+
 #ifndef GRPC_DEPRECATED
 #if GPR_HAS_CPP_ATTRIBUTE(deprecated)
 #define GRPC_DEPRECATED(reason) [[deprecated(reason)]]

@@ -218,7 +218,9 @@ class ActivityContexts : public ContextHolder<Contexts>... {
 
   class ScopedContext : public Context<ContextTypeFromHeld<Contexts>>... {
    public:
-    explicit ScopedContext(ActivityContexts* contexts)
+    // Use [[maybe_unused]] suffix instead of prefix due to gcc bug present in
+    // in versions < 9.3: https://gcc.gnu.org/bugzilla/show_bug.cgi?id=81429
+    explicit ScopedContext(ActivityContexts* contexts GPR_MAYBE_UNUSED)
         : Context<ContextTypeFromHeld<Contexts>>(
               static_cast<ContextHolder<Contexts>*>(contexts)
                   ->GetContext())... {}

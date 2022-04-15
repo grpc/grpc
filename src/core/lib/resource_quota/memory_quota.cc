@@ -448,7 +448,8 @@ void BasicMemoryQuota::SetSize(size_t new_size) {
 void BasicMemoryQuota::Take(size_t amount) {
   // If there's a request for nothing, then do nothing!
   if (amount == 0) return;
-  GPR_DEBUG_ASSERT(amount <= std::numeric_limits<intptr_t>::max());
+  GPR_DEBUG_ASSERT(amount <=
+                   static_cast<size_t>(std::numeric_limits<intptr_t>::max()));
   // Grab memory from the quota.
   auto prior = free_bytes_.fetch_sub(amount, std::memory_order_acq_rel);
   // If we push into overcommit, awake the reclaimer.

@@ -100,7 +100,8 @@ class grpc_httpcli_ssl_channel_security_connector final
     if (secure_peer_name_ != nullptr &&
         !tsi_ssl_peer_matches_name(&peer, secure_peer_name_)) {
       error = GRPC_ERROR_CREATE_FROM_CPP_STRING(absl::StrCat(
-          "Peer name ", secure_peer_name_, " is not in peer certificate"));
+          "Peer name ", absl::NullSafeStringView(secure_peer_name_),
+          " is not in peer certificate"));
     }
     ExecCtx::Run(DEBUG_LOCATION, on_peer_checked, error);
     tsi_peer_destruct(&peer);
