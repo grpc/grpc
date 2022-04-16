@@ -1785,12 +1785,14 @@ grpc_endpoint* grpc_tcp_create(grpc_fd* em_fd,
   grpc_resolved_address resolved_local_addr;
   memset(&resolved_local_addr, 0, sizeof(resolved_local_addr));
   resolved_local_addr.len = sizeof(resolved_local_addr.addr);
+  absl::StatusOr<std::string> addr_uri;
   if (getsockname(tcp->fd,
                   reinterpret_cast<sockaddr*>(resolved_local_addr.addr),
-                  &resolved_local_addr.len) < 0) {
+                  &resolved_local_addr.len) < 0 ||
+      !(addr_uri = grpc_sockaddr_to_uri(&resolved_local_addr)).ok()) {
     tcp->local_address = "";
   } else {
-    tcp->local_address = grpc_sockaddr_to_uri(&resolved_local_addr);
+    tcp->local_address = addr_uri.value();
   }
   tcp->read_cb = nullptr;
   tcp->write_cb = nullptr;
