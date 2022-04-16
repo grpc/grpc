@@ -884,7 +884,7 @@ std::vector<XdsEnd2endTest::ConcurrentRpc> XdsEnd2endTest::SendConcurrentRpcs(
   EchoRequest request;
   // Variables for synchronization
   grpc_core::Mutex mu;
-  absl::CondVar cv;
+  grpc_core::CondVar cv;
   size_t completed = 0;
   // Set-off callback RPCs
   for (size_t i = 0; i < num_rpcs; i++) {

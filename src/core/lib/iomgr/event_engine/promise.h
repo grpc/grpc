@@ -41,7 +41,7 @@ class Promise {
 
  private:
   grpc_core::Mutex mu_;
-  absl::CondVar cv_;
+  grpc_core::CondVar cv_;
   T val_;
 };
 

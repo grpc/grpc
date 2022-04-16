@@ -344,7 +344,7 @@ class AresDNSResolver : public DNSResolver {
     }
 
     void Start() override {
-      grpc_core::MutexLock lock(&mu_);
+      MutexLock lock(&mu_);
       Ref().release();  // ref held by resolution
       ares_request_ = std::unique_ptr<grpc_ares_request>(grpc_dns_lookup_ares(
           "" /* dns_server */, name_.c_str(), default_port_.c_str(),
@@ -357,7 +357,7 @@ class AresDNSResolver : public DNSResolver {
 
     void Orphan() override {
       {
-        grpc_core::MutexLock lock(&mu_);
+        MutexLock lock(&mu_);
         GRPC_CARES_TRACE_LOG("AresRequest:%p Orphan ares_request_:%p", this,
                              ares_request_.get());
         if (ares_request_ != nullptr) {
@@ -372,7 +372,7 @@ class AresDNSResolver : public DNSResolver {
       AresRequest* r = static_cast<AresRequest*>(arg);
       std::vector<grpc_resolved_address> resolved_addresses;
       {
-        grpc_core::MutexLock lock(&r->mu_);
+        MutexLock lock(&r->mu_);
         GRPC_CARES_TRACE_LOG("AresRequest:%p OnDnsLookupDone error:%s", r,
                              grpc_error_std_string(error).c_str());
         if (r->addresses_ != nullptr) {
@@ -394,7 +394,7 @@ class AresDNSResolver : public DNSResolver {
 
     // mutex to synchronize access to this object (but not to the ares_request
     // object itself).
-    grpc_core::Mutex mu_;
+    Mutex mu_;
     // the name to resolve
     const std::string name_;
     // the default port to use if name doesn't have one

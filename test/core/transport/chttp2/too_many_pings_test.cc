@@ -89,8 +89,8 @@ class TransportCounter {
     return *mu;
   }
 
-  static absl::CondVar& cv() {
-    static absl::CondVar* cv = new absl::CondVar();
+  static grpc_core::CondVar& cv() {
+    static grpc_core::CondVar* cv = new grpc_core::CondVar();
     return *cv;
   }
 
