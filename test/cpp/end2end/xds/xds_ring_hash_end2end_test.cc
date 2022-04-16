@@ -23,8 +23,8 @@
 #include "absl/strings/str_format.h"
 
 #include "src/core/ext/filters/client_channel/backup_poller.h"
-#include "src/core/ext/filters/client_channel/resolver/fake/fake_resolver.h"
 #include "src/core/ext/filters/client_channel/lb_policy/xds/xds_channel_args.h"
+#include "src/core/ext/filters/client_channel/resolver/fake/fake_resolver.h"
 #include "src/core/lib/address_utils/sockaddr_utils.h"
 #include "src/core/lib/gpr/env.h"
 #include "src/proto/grpc/testing/xds/v3/aggregate_cluster.grpc.pb.h"
@@ -640,7 +640,7 @@ TEST_P(RingHashTest, ContinuesConnectingWithoutPicks) {
                           const grpc_channel_args* channel_args,
                           const grpc_resolved_address* addr,
                           grpc_core::Timestamp deadline) override {
-      { 
+      {
         grpc_core::MutexLock lock(&mu_);
         const int port = grpc_sockaddr_get_port(addr);
         gpr_log(GPR_INFO, "==> HandleConnection(): seen_port_=%d, port=%d",
