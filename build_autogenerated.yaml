@@ -8381,6 +8381,7 @@ targets:
 - name: xds_cluster_type_end2end_test
   gtest: true
   build: test
+  run: false
   language: c++
   headers:
   - test/cpp/end2end/connection_delay_injector.h
