@@ -255,19 +255,18 @@ class CXXLanguage(Language):
         return 0
 
     def scenarios(self):
-        yield _ping_pong_scenario(
-            'cpp_generic_async_unary_5000rpcs_1KBmsg_psm',
-            rpc_type='UNARY',
-            client_type='ASYNC_CLIENT',
-            server_type='ASYNC_SERVER',
-            req_size=1024,
-            resp_size=1024,
-            outstanding=5000,
-            channels=1,
-            num_clients=1,
-            secure=False,
-            async_server_threads=1,
-            categories=[PSM])
+        yield _ping_pong_scenario('cpp_generic_async_unary_5000rpcs_1KBmsg_psm',
+                                  rpc_type='UNARY',
+                                  client_type='ASYNC_CLIENT',
+                                  server_type='ASYNC_SERVER',
+                                  req_size=1024,
+                                  resp_size=1024,
+                                  outstanding=5000,
+                                  channels=1,
+                                  num_clients=1,
+                                  secure=False,
+                                  async_server_threads=1,
+                                  categories=[PSM])
 
         # TODO(ctiller): add 70% load latency test
         yield _ping_pong_scenario(
@@ -1415,19 +1414,18 @@ class GoLanguage(Language):
         return 600
 
     def scenarios(self):
-        yield _ping_pong_scenario(
-            'go_generic_async_unary_5000rpcs_1KBmsg_psm',
-            rpc_type='UNARY',
-            client_type='ASYNC_CLIENT',
-            server_type='ASYNC_SERVER',
-            req_size=1024,
-            resp_size=1024,
-            outstanding=5000,
-            channels=1,
-            num_clients=1,
-            secure=False,
-            async_server_threads=1,
-            categories=[PSM])
+        yield _ping_pong_scenario('go_generic_async_unary_5000rpcs_1KBmsg_psm',
+                                  rpc_type='UNARY',
+                                  client_type='ASYNC_CLIENT',
+                                  server_type='ASYNC_SERVER',
+                                  req_size=1024,
+                                  resp_size=1024,
+                                  outstanding=5000,
+                                  channels=1,
+                                  num_clients=1,
+                                  secure=False,
+                                  async_server_threads=1,
+                                  categories=[PSM])
 
         for secure in [True, False]:
             secstr = 'secure' if secure else 'insecure'

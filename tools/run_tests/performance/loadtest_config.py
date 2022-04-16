@@ -141,8 +141,7 @@ def scenario_transform_function(
             for offered_load in offered_loads:
                 scenario = copy.deepcopy(base_scenario)
                 name = base_name + '%dchannel_%dasync_server_thread_%dload' % (
-                        client_channels, async_server_threads,
-                        offered_load)
+                    client_channels, async_server_threads, offered_load)
                 load = {}
                 load['offered_load'] = offered_load
                 scenario['client_config']['load_params'] = {}
