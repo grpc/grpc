@@ -148,11 +148,6 @@ class RingHash : public LoadBalancingPolicy {
     void UpdateConnectivityStateLocked(
         grpc_connectivity_state connectivity_state);
 
-    void TriggerInternalConnectionAttempt() {
-      internal_connection_attempt_pending_ = true;
-      subchannel()->AttemptToConnect();
-    }
-
    private:
     // Performs connectivity state updates that need to be done only
     // after we have started watching.
@@ -172,11 +167,6 @@ class RingHash : public LoadBalancingPolicy {
     // Uses an atomic so that it can be accessed outside of the WorkSerializer.
     std::atomic<grpc_connectivity_state> connectivity_state_for_picker_{
         GRPC_CHANNEL_IDLE};
-
-    // Whether we have explicitly triggered a connection attempt in
-    // aggregate states CONNECTING and TRANSIENT_FAILURE to ensure that
-    // we continue connecting even without receiving picks.
-    bool internal_connection_attempt_pending_ = false;
   };
 
   // A list of subchannels.
@@ -212,10 +202,10 @@ class RingHash : public LoadBalancingPolicy {
     // The index parameter indicates the index into the list of the subchannel
     // whose status report triggered the call to
     // UpdateRingHashConnectivityStateLocked().
-    // The internal_connection_attempt_complete parameter is true if the
-    // subchannel finished an internally triggered connection attempt.
+    // connection_attempt_complete is true if the subchannel just
+    // finished a connection attempt.
     void UpdateRingHashConnectivityStateLocked(
-        size_t index, bool internal_connection_attempt_complete);
+        size_t index, bool connection_attempt_complete);
 
     // Create a new ring from this subchannel list.
     RefCountedPtr<Ring> MakeRing();
@@ -226,10 +216,9 @@ class RingHash : public LoadBalancingPolicy {
     size_t num_connecting_ = 0;
     size_t num_transient_failure_ = 0;
 
-    // Whether we have explicitly triggered a connection attempt on a
-    // subchannel in aggregate states CONNECTING and TRANSIENT_FAILURE to
-    // ensure that we continue connecting even without receiving picks.
-    bool internal_connection_attempt_pending_ = false;
+    // The index of the subchannel currently doing an internally
+    // triggered connection attempt, if any.
+    absl::optional<size_t> internally_triggered_connection_index_;
   };
 
   class Ring : public RefCounted<Ring> {
@@ -550,8 +539,8 @@ void RingHash::RingHashSubchannelList::StartWatchingLocked() {
   // Pretend we're getting this update from the last subchannel, so that
   // if we need to proactively start connecting, we'll start from the
   // first subchannel.
-  UpdateRingHashConnectivityStateLocked(
-      num_subchannels() - 1, /*internal_connection_attempt_complete=*/false);
+  UpdateRingHashConnectivityStateLocked(num_subchannels() - 1,
+                                        /*connection_attempt_complete=*/false);
 }
 
 void RingHash::RingHashSubchannelList::UpdateStateCountersLocked(
@@ -582,7 +571,7 @@ void RingHash::RingHashSubchannelList::UpdateStateCountersLocked(
 }
 
 void RingHash::RingHashSubchannelList::UpdateRingHashConnectivityStateLocked(
-    size_t index, bool internal_connection_attempt_complete) {
+    size_t index, bool connection_attempt_complete) {
   RingHash* p = static_cast<RingHash*>(policy());
   // Only set connectivity state if this is the current subchannel list.
   if (p->subchannel_list_.get() != this) return;
@@ -643,13 +632,16 @@ void RingHash::RingHashSubchannelList::UpdateRingHashConnectivityStateLocked(
   // Note that we do the same thing when the policy is in state
   // CONNECTING, just to ensure that we don't remain in CONNECTING state
   // indefinitely if there are no new picks coming in.
-  if (internal_connection_attempt_complete) {
-    internal_connection_attempt_pending_ = false;
+  if (internally_triggered_connection_index_.has_value() &&
+      *internally_triggered_connection_index_ == index &&
+      connection_attempt_complete) {
+    internally_triggered_connection_index_.reset();
   }
-  if (start_connection_attempt && !internal_connection_attempt_pending_) {
-    internal_connection_attempt_pending_ = true;
+  if (start_connection_attempt &&
+      !internally_triggered_connection_index_.has_value()) {
     size_t next_index = (index + 1) % num_subchannels();
-    subchannel(next_index)->TriggerInternalConnectionAttempt();
+    internally_triggered_connection_index_ = next_index;
+    subchannel(next_index)->subchannel()->AttemptToConnect();
   }
 }
 
@@ -724,20 +716,14 @@ void RingHash::RingHashSubchannelData::ProcessConnectivityChangeLocked(
     }
     p->channel_control_helper()->RequestReresolution();
   }
-  // Update bookkeeping if we were finished an internally triggered
-  // connection attempt.
-  bool internal_connection_attempt_complete =
-      internal_connection_attempt_pending_ &&
-      connectivity_state != GRPC_CHANNEL_CONNECTING;
-  if (internal_connection_attempt_complete) {
-    internal_connection_attempt_pending_ = false;
-  }
   // Update state counters.
   UpdateConnectivityStateLocked(connectivity_state);
   // Update the RH policy's connectivity state, creating new picker and new
   // ring.
+  bool connection_attempt_complete =
+      connectivity_state != GRPC_CHANNEL_CONNECTING;
   subchannel_list()->UpdateRingHashConnectivityStateLocked(
-      Index(), internal_connection_attempt_complete);
+      Index(), connection_attempt_complete);
 }
 
 //
