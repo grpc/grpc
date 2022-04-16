@@ -138,15 +138,13 @@ def scenario_transform_function(
             base_scenario['server_config'][
                 'async_server_threads'] = async_server_threads
             base_name = base_scenario['name']
-            name_components = base_name.split('1channel')
             for offered_load in offered_loads:
                 scenario = copy.deepcopy(base_scenario)
-                name = name_components[
-                    0] + '%dchannel_%dasync_server_thread_%dload' % (
-                        client_channels, async_server_threads,
-                        offered_load) + name_components[1]
+                name = base_name + '_%dchannels_%dthreads_%dload' % (
+                    client_channels, async_server_threads, offered_load)
                 load = {}
                 load['offered_load'] = offered_load
+                scenario['client_config']['load_params'] = {}
                 scenario['client_config']['load_params']['poisson'] = load
                 scenario['name'] = name
                 yield scenario
