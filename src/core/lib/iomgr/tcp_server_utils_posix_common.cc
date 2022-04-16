@@ -85,38 +85,41 @@ static grpc_error_handle add_socket_to_server(grpc_tcp_server* s, int fd,
                                               unsigned port_index,
                                               unsigned fd_index,
                                               grpc_tcp_listener** listener) {
-  grpc_tcp_listener* sp = nullptr;
+  *listener = nullptr;
   int port = -1;
 
   grpc_error_handle err =
       grpc_tcp_server_prepare_socket(s, fd, addr, s->so_reuseport, &port);
-  if (err == GRPC_ERROR_NONE) {
-    GPR_ASSERT(port > 0);
-    std::string addr_str = grpc_sockaddr_to_string(addr, true);
-    std::string name = absl::StrCat("tcp-server-listener:", addr_str);
-    gpr_mu_lock(&s->mu);
-    s->nports++;
-    GPR_ASSERT(!s->on_accept_cb && "must add ports before starting server");
-    sp = static_cast<grpc_tcp_listener*>(gpr_malloc(sizeof(grpc_tcp_listener)));
-    sp->next = nullptr;
-    if (s->head == nullptr) {
-      s->head = sp;
-    } else {
-      s->tail->next = sp;
-    }
-    s->tail = sp;
-    sp->server = s;
-    sp->fd = fd;
-    sp->emfd = grpc_fd_create(fd, name.c_str(), true);
-    memcpy(&sp->addr, addr, sizeof(grpc_resolved_address));
-    sp->port = port;
-    sp->port_index = port_index;
-    sp->fd_index = fd_index;
-    sp->is_sibling = 0;
-    sp->sibling = nullptr;
-    GPR_ASSERT(sp->emfd);
-    gpr_mu_unlock(&s->mu);
+  if (err != GRPC_ERROR_NONE) return err;
+  GPR_ASSERT(port > 0);
+  absl::StatusOr<std::string> addr_str = grpc_sockaddr_to_string(addr, true);
+  if (!addr_str.ok()) {
+    return GRPC_ERROR_CREATE_FROM_CPP_STRING(addr_str.status().ToString());
   }
+  std::string name = absl::StrCat("tcp-server-listener:", addr_str.value());
+  gpr_mu_lock(&s->mu);
+  s->nports++;
+  GPR_ASSERT(!s->on_accept_cb && "must add ports before starting server");
+  grpc_tcp_listener* sp =
+      static_cast<grpc_tcp_listener*>(gpr_malloc(sizeof(grpc_tcp_listener)));
+  sp->next = nullptr;
+  if (s->head == nullptr) {
+    s->head = sp;
+  } else {
+    s->tail->next = sp;
+  }
+  s->tail = sp;
+  sp->server = s;
+  sp->fd = fd;
+  sp->emfd = grpc_fd_create(fd, name.c_str(), true);
+  memcpy(&sp->addr, addr, sizeof(grpc_resolved_address));
+  sp->port = port;
+  sp->port_index = port_index;
+  sp->fd_index = fd_index;
+  sp->is_sibling = 0;
+  sp->sibling = nullptr;
+  GPR_ASSERT(sp->emfd);
+  gpr_mu_unlock(&s->mu);
 
   *listener = sp;
   return err;

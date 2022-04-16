@@ -480,7 +480,19 @@ TEST_P(FaultInjectionTest, XdsFaultInjectionMaxFault) {
     EXPECT_EQ(StatusCode::DEADLINE_EXCEEDED, rpc.status.error_code());
     ++num_delayed;
   }
-  // Only kMaxFault number of RPC should be fault injected..
+  // Only kMaxFault number of RPC should be fault injected.
+  EXPECT_EQ(kMaxFault, num_delayed);
+  // Conduct one more round of RPCs after previous calls are finished. The goal
+  // is to validate if the max fault counter is restored to zero.
+  num_delayed = 0;
+  rpcs = SendConcurrentRpcs(stub_.get(), kNumRpcs, rpc_options);
+  for (auto& rpc : rpcs) {
+    if (rpc.status.error_code() == StatusCode::OK) continue;
+    EXPECT_EQ(StatusCode::DEADLINE_EXCEEDED, rpc.status.error_code());
+    ++num_delayed;
+  }
+  // Only kMaxFault number of RPC should be fault injected. If the max fault
+  // isn't restored to zero, none of the new RPCs will be fault injected.
   EXPECT_EQ(kMaxFault, num_delayed);
 }
 

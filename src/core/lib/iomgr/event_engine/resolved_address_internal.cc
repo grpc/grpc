@@ -38,7 +38,8 @@ grpc_resolved_address CreateGRPCResolvedAddress(
 }
 
 // TODO(ctiller): Move this to somewhere more permanent as we're deleting iomgr.
-std::string ResolvedAddressToURI(const EventEngine::ResolvedAddress& addr) {
+absl::StatusOr<std::string> ResolvedAddressToURI(
+    const EventEngine::ResolvedAddress& addr) {
   auto gra = CreateGRPCResolvedAddress(addr);
   return grpc_sockaddr_to_uri(&gra);
 }
