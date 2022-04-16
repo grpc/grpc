@@ -103,6 +103,28 @@ class ConnectionAttemptInjector {
     grpc_core::Timestamp deadline_;
   };
 
+  // Injects a delay before continuing a connection attempt.
+  class InjectedDelay {
+   public:
+    virtual ~InjectedDelay() = default;
+
+    InjectedDelay(grpc_core::Duration duration, grpc_closure* closure,
+                  grpc_endpoint** ep, grpc_pollset_set* interested_parties,
+                  const grpc_channel_args* channel_args,
+                  const grpc_resolved_address* addr,
+                  grpc_core::Timestamp deadline);
+
+   private:
+    // Subclasses can override to perform an action when the attempt resumes.
+    virtual void BeforeResumingAction() {}
+
+    static void TimerCallback(void* arg, grpc_error_handle /*error*/);
+
+    QueuedAttempt attempt_;
+    grpc_timer timer_;
+    grpc_closure timer_callback_;
+  };
+
   static void AttemptConnection(grpc_closure* closure, grpc_endpoint** ep,
                                 grpc_pollset_set* interested_parties,
                                 const grpc_channel_args* channel_args,
@@ -123,8 +145,6 @@ class ConnectionDelayInjector : public ConnectionAttemptInjector {
                         grpc_core::Timestamp deadline) override;
 
  private:
-  class InjectedDelay;
-
   grpc_core::Duration duration_;
 };
 

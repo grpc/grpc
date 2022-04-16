@@ -640,6 +640,13 @@ void RingHash::RingHashSubchannelList::UpdateRingHashConnectivityStateLocked(
   if (start_connection_attempt &&
       !internally_triggered_connection_index_.has_value()) {
     size_t next_index = (index + 1) % num_subchannels();
+    if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_ring_hash_trace)) {
+      gpr_log(GPR_INFO,
+              "[RH %p] triggering internal connection attempt for subchannel "
+              "%p, subchannel_list %p (index %" PRIuPTR " of %" PRIuPTR ")",
+              p, subchannel(next_index)->subchannel(), this, next_index,
+              num_subchannels());
+    }
     internally_triggered_connection_index_ = next_index;
     subchannel(next_index)->subchannel()->AttemptToConnect();
   }
