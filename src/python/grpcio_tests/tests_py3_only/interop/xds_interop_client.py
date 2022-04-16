@@ -116,6 +116,7 @@ _global_server = None
 _global_rpcs_started: Mapping[str, int] = collections.defaultdict(int)
 _global_rpcs_succeeded: Mapping[str, int] = collections.defaultdict(int)
 _global_rpcs_failed: Mapping[str, int] = collections.defaultdict(int)
+_global_config_condition = threading.Condition()
 
 # Mapping[method, Mapping[status_code, count]]
 _global_rpc_statuses: Mapping[str, Mapping[int, int]] = collections.defaultdict(
@@ -255,9 +256,6 @@ class _ChannelConfiguration:
     def __init__(self, method: str, metadata: Sequence[Tuple[str, str]],
                  qps: int, server: str, rpc_timeout_sec: int,
                  print_response: bool, secure_mode: bool):
-        # condition is signalled when a change is made to the config.
-        self.condition = threading.Condition()
-
         self.method = method
         self.metadata = metadata
         self.qps = qps
@@ -269,7 +267,7 @@ class _ChannelConfiguration:
 
 def _run_single_channel(config: _ChannelConfiguration) -> None:
     global _global_rpc_id  # pylint: disable=global-statement
-    with config.condition:
+    with _global_config_condition:
         server = config.server
     channel = None
     if config.secure_mode:
@@ -281,26 +279,26 @@ def _run_single_channel(config: _ChannelConfiguration) -> None:
     with channel:
         stub = test_pb2_grpc.TestServiceStub(channel)
         futures: Dict[int, Tuple[grpc.Future, str]] = {}
+        print_response = False
         while not _stop_event.is_set():
-            with config.condition:
+            with _global_config_condition:
                 if config.qps == 0:
-                    config.condition.wait(
+                    _global_config_condition.wait(
                         timeout=_CONFIG_CHANGE_TIMEOUT.total_seconds())
                     continue
                 else:
                     duration_per_query = 1.0 / float(config.qps)
-            request_id = None
-            with _global_lock:
-                request_id = _global_rpc_id
-                _global_rpc_id += 1
-                _global_rpcs_started[config.method] += 1
-            start = time.time()
-            end = start + duration_per_query
-            with config.condition:
+                request_id = None
+                with _global_lock:
+                    request_id = _global_rpc_id
+                    _global_rpc_id += 1
+                    _global_rpcs_started[config.method] += 1
+                start = time.time()
+                end = start + duration_per_query
                 _start_rpc(config.method, config.metadata, request_id, stub,
                            float(config.rpc_timeout_sec), futures)
-            with config.condition:
-                _remove_completed_rpcs(futures, config.print_response)
+                print_response = config.print_response
+            _remove_completed_rpcs(futures, print_response)
             logger.debug(f"Currently {len(futures)} in-flight RPCs")
             now = time.time()
             while now < end:
@@ -324,30 +322,32 @@ class _XdsUpdateClientConfigureServicer(
     ) -> messages_pb2.ClientConfigureResponse:
         logger.info("Received Configure RPC: %s", request)
         method_strs = [_METHOD_ENUM_TO_STR[t] for t in request.types]
-        for method in _SUPPORTED_METHODS:
-            method_enum = _METHOD_STR_TO_ENUM[method]
-            channel_config = self._per_method_configs[method]
-            if method in method_strs:
-                qps = self._qps
-                metadata = ((md.key, md.value)
-                            for md in request.metadata
-                            if md.type == method_enum)
-                # For backward compatibility, do not change timeout when we
-                # receive a default value timeout.
-                if request.timeout_sec == 0:
-                    timeout_sec = channel_config.rpc_timeout_sec
+
+        with _global_config_condition:
+            for method in _SUPPORTED_METHODS:
+                method_enum = _METHOD_STR_TO_ENUM[method]
+                channel_config = self._per_method_configs[method]
+                if method in method_strs:
+                    qps = self._qps
+                    metadata = ((md.key, md.value)
+                                for md in request.metadata
+                                if md.type == method_enum)
+                    # For backward compatibility, do not change timeout when we
+                    # receive a default value timeout.
+                    if request.timeout_sec == 0:
+                        timeout_sec = channel_config.rpc_timeout_sec
+                    else:
+                        timeout_sec = request.timeout_sec
                 else:
-                    timeout_sec = request.timeout_sec
-            else:
-                qps = 0
-                metadata = ()
-                # Leave timeout unchanged for backward compatibility.
-                timeout_sec = channel_config.rpc_timeout_sec
-            with channel_config.condition:
+                    qps = 0
+                    metadata = ()
+                    # Leave timeout unchanged for backward compatibility.
+                    timeout_sec = channel_config.rpc_timeout_sec
                 channel_config.qps = qps
                 channel_config.metadata = list(metadata)
                 channel_config.rpc_timeout_sec = timeout_sec
-                channel_config.condition.notify_all()
+            _global_config_condition.notify_all()
+        # import time; time.sleep(3)
         return messages_pb2.ClientConfigureResponse()
 
 
