@@ -105,7 +105,6 @@
 #include "src/proto/grpc/testing/xds/v3/tls.grpc.pb.h"
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
-#include "test/cpp/end2end/connection_delay_injector.h"
 #include "test/cpp/end2end/xds/no_op_http_filter.h"
 #include "test/cpp/end2end/xds/xds_end2end_test_lib.h"
 #include "test/cpp/util/test_config.h"
@@ -116,7 +115,6 @@ namespace testing {
 namespace {
 
 using ::envoy::config::cluster::v3::CircuitBreakers;
-using ::envoy::config::cluster::v3::CustomClusterType;
 using ::envoy::config::cluster::v3::RoutingPriority;
 using ::envoy::config::endpoint::v3::HealthStatus;
 using ::envoy::config::listener::v3::FilterChainMatch;
@@ -125,7 +123,6 @@ using ::envoy::config::rbac::v3::RBAC_Action;
 using ::envoy::config::rbac::v3::RBAC_Action_ALLOW;
 using ::envoy::config::rbac::v3::RBAC_Action_DENY;
 using ::envoy::config::rbac::v3::RBAC_Action_LOG;
-using ::envoy::extensions::clusters::aggregate::v3::ClusterConfig;
 using ::envoy::extensions::filters::http::rbac::v3::RBAC;
 using ::envoy::extensions::filters::http::rbac::v3::RBACPerRoute;
 using ::envoy::extensions::transport_sockets::tls::v3::DownstreamTlsContext;
@@ -5534,7 +5531,6 @@ int main(int argc, char** argv) {
       absl::make_unique<grpc::testing::FakeCertificateProviderFactory>(
           "fake2", grpc::testing::g_fake2_cert_data_map));
   grpc_init();
-  grpc::testing::ConnectionAttemptInjector::Init();
   grpc_core::XdsHttpFilterRegistry::RegisterFilter(
       absl::make_unique<grpc::testing::NoOpHttpFilter>(
           "grpc.testing.client_only_http_filter",
