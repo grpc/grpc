@@ -41,7 +41,6 @@
 #include "absl/strings/str_format.h"
 #include "absl/strings/str_join.h"
 #include "absl/strings/str_replace.h"
-#include "absl/synchronization/mutex.h"
 #include "absl/types/optional.h"
 
 #include <grpc/grpc.h>
@@ -161,17 +160,17 @@ class FakeCertificateProvider final : public grpc_tls_certificate_provider {
   class CertDataMapWrapper {
    public:
     CertDataMap Get() {
-      absl::MutexLock lock(&mu_);
+      grpc_core::MutexLock lock(&mu_);
       return cert_data_map_;
     }
 
     void Set(CertDataMap data) {
-      absl::MutexLock lock(&mu_);
+      grpc_core::MutexLock lock(&mu_);
       cert_data_map_ = std::move(data);
     }
 
    private:
-    absl::Mutex mu_;
+    grpc_core::Mutex mu_;
     CertDataMap cert_data_map_ ABSL_GUARDED_BY(mu_);
   };
 

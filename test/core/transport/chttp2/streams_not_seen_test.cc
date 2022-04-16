@@ -25,7 +25,6 @@
 
 #include <gmock/gmock.h>
 
-#include "absl/synchronization/mutex.h"
 #include "absl/synchronization/notification.h"
 
 #include <grpc/grpc.h>
@@ -332,7 +331,7 @@ class StreamsNotSeenTest : public ::testing::Test {
     StreamsNotSeenTest* self = static_cast<StreamsNotSeenTest*>(arg);
     if (error == GRPC_ERROR_NONE) {
       {
-        absl::MutexLock lock(&self->mu_);
+        grpc_core::MutexLock lock(&self->mu_);
         for (size_t i = 0; i < self->read_buffer_.count; ++i) {
           absl::StrAppend(&self->read_bytes_,
                           StringViewFromSlice(self->read_buffer_.slices[i]));
@@ -359,7 +358,7 @@ class StreamsNotSeenTest : public ::testing::Test {
       }
     });
     {
-      absl::MutexLock lock(&mu_);
+      grpc_core::MutexLock lock(&mu_);
       while (!absl::StrContains(read_bytes_, bytes)) {
         read_cv_.WaitWithTimeout(&mu_, absl::Seconds(5));
       }
@@ -384,7 +383,7 @@ class StreamsNotSeenTest : public ::testing::Test {
   grpc_channel* channel_ = nullptr;
   grpc_completion_queue* cq_ = nullptr;
   cq_verifier* cqv_ = nullptr;
-  absl::Mutex mu_;
+  grpc_core::Mutex mu_;
   absl::CondVar read_cv_;
   std::atomic<bool> shutdown_{false};
 };
