@@ -81,11 +81,9 @@ void ConnectionAttemptInjector::AttemptConnection(
 
 ConnectionAttemptInjector::InjectedDelay::InjectedDelay(
     grpc_core::Duration duration, grpc_closure* closure, grpc_endpoint** ep,
-    grpc_pollset_set* interested_parties,
-    const grpc_channel_args* channel_args,
+    grpc_pollset_set* interested_parties, const grpc_channel_args* channel_args,
     const grpc_resolved_address* addr, grpc_core::Timestamp deadline)
-    : attempt_(closure, ep, interested_parties, channel_args, addr,
-               deadline) {
+    : attempt_(closure, ep, interested_parties, channel_args, addr, deadline) {
   GRPC_CLOSURE_INIT(&timer_callback_, TimerCallback, this, nullptr);
   grpc_core::Timestamp now = grpc_core::ExecCtx::Get()->Now();
   duration = std::min(duration, deadline - now);

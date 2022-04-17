@@ -696,9 +696,9 @@ TEST_P(RingHashTest, ContinuesConnectingWithoutPicksOneSubchannelAtATime) {
   auto non_existant_endpoint0 = MakeNonExistantEndpoint();
   auto non_existant_endpoint1 = MakeNonExistantEndpoint();
   auto non_existant_endpoint2 = MakeNonExistantEndpoint();
-  EdsResourceArgs args(
-      {{"locality0", {non_existant_endpoint0, non_existant_endpoint1,
-                      non_existant_endpoint2, CreateEndpoint(0)}}});
+  EdsResourceArgs args({{"locality0",
+                         {non_existant_endpoint0, non_existant_endpoint1,
+                          non_existant_endpoint2, CreateEndpoint(0)}}});
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
   // Change CDS resource to use RING_HASH.
   auto cluster = default_cluster_;
@@ -858,9 +858,8 @@ TEST_P(RingHashTest, ContinuesConnectingWithoutPicksOneSubchannelAtATime) {
   // A long-running RPC, just used to send the RPC in another thread.
   LongRunningRpc rpc;
   std::vector<std::pair<std::string, std::string>> metadata = {
-      {"address_hash",
-       CreateMetadataValueThatHashesToBackendPort(
-           non_existant_endpoint0.port)}};
+      {"address_hash", CreateMetadataValueThatHashesToBackendPort(
+                           non_existant_endpoint0.port)}};
   rpc.StartRpc(stub_.get(), RpcOptions().set_timeout_ms(0).set_metadata(
                                 std::move(metadata)));
   // Wait for the RPC to trigger the first connection attempt, then cancel it.
