@@ -34,10 +34,10 @@ grpc_extra_deps()
 
 ## Supported Versions
 
-In general, gRPC supports building with the latest patch release of the most
-recent two major versions of Bazel. However individual releases may have a
-broader compatibility range. The currently supported versions are captured by
-the following list:
+In general, gRPC supports building with the latest patch release of the two most
+recent LTS versions of Bazel. However individual releases may have a broader
+compatibility range. The currently supported versions are captured by the
+following list:
 
 - [`5.0.0`](https://github.com/bazelbuild/bazel/releases/tag/5.0.0)
 - [`4.2.2`](https://github.com/bazelbuild/bazel/releases/tag/4.2.2)
