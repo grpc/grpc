@@ -308,9 +308,11 @@ class Subchannel::ConnectedSubchannelStateWatcher
                                  const absl::Status& status) override {
     Subchannel* c = subchannel_.get();
     MutexLock lock(&c->mu_);
-    if (c->shutdown_) return;
+    // If we're either shutting down or have already seen this
+    // connection failure, do nothing.
     // TODO(yashkt): Why does the transport sometimes report TF and then
     // SHUTDOWN and other times report only SHUTDOWN?
+    if (c->connected_subchannel_ == nullptr) return;
     if (new_state == GRPC_CHANNEL_TRANSIENT_FAILURE ||
         new_state == GRPC_CHANNEL_SHUTDOWN) {
       if (GRPC_TRACE_FLAG_ENABLED(grpc_trace_subchannel)) {
