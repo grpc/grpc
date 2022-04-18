@@ -309,7 +309,10 @@ class Subchannel::ConnectedSubchannelStateWatcher
     Subchannel* c = subchannel_.get();
     MutexLock lock(&c->mu_);
     if (c->shutdown_) return;
-    if (new_state == GRPC_CHANNEL_TRANSIENT_FAILURE) {
+    // TODO(yashkt): Why does the transport sometimes report TF and then
+    // SHUTDOWN and other times report only SHUTDOWN?
+    if (new_state == GRPC_CHANNEL_TRANSIENT_FAILURE ||
+        new_state == GRPC_CHANNEL_SHUTDOWN) {
       if (GRPC_TRACE_FLAG_ENABLED(grpc_trace_subchannel)) {
         gpr_log(GPR_INFO,
                 "subchannel %p %s: Connected subchannel %p reports %s: %s", c,
