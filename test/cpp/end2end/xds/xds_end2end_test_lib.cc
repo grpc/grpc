@@ -199,9 +199,8 @@ void XdsEnd2endTest::ServerThread::Serve(grpc_core::Mutex* mu,
 //
 
 XdsEnd2endTest::BackendServerThread::BackendServerThread(
-    XdsEnd2endTest* test_obj, bool use_xds_enabled_server,
-    bool allow_put_requests)
-    : ServerThread(test_obj, use_xds_enabled_server, allow_put_requests) {
+    XdsEnd2endTest* test_obj, bool use_xds_enabled_server)
+    : ServerThread(test_obj, use_xds_enabled_server) {
   if (use_xds_enabled_server) {
     test_obj->SetServerListenerNameAndRouteConfiguration(
         test_obj->balancer_.get(), test_obj->default_server_listener_, port(),
