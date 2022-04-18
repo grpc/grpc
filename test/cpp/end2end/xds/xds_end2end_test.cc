@@ -113,9 +113,6 @@ namespace grpc {
 namespace testing {
 namespace {
 
-using ::envoy::config::cluster::v3::CircuitBreakers;
-using ::envoy::config::cluster::v3::RoutingPriority;
-using ::envoy::config::endpoint::v3::HealthStatus;
 using ::envoy::config::listener::v3::FilterChainMatch;
 using ::envoy::config::rbac::v3::Policy;
 using ::envoy::config::rbac::v3::RBAC_Action;
@@ -127,9 +124,7 @@ using ::envoy::extensions::filters::http::rbac::v3::RBACPerRoute;
 using ::envoy::extensions::transport_sockets::tls::v3::DownstreamTlsContext;
 using ::envoy::extensions::transport_sockets::tls::v3::UpstreamTlsContext;
 using ::envoy::type::matcher::v3::StringMatcher;
-using ::envoy::type::v3::FractionalPercent;
 
-using ClientStats = LrsServiceImpl::ClientStats;
 using ::grpc::experimental::ExternalCertificateVerifier;
 using ::grpc::experimental::IdentityKeyCertPair;
 using ::grpc::experimental::StaticDataCertificateProvider;
