@@ -60,7 +60,6 @@
 #include "src/core/ext/filters/client_channel/lb_policy/xds/xds_channel_args.h"
 #include "src/core/ext/filters/client_channel/resolver/fake/fake_resolver.h"
 #include "src/core/ext/filters/http/client/http_client_filter.h"
-#include "src/core/ext/filters/http/server/http_server_filter.h"
 #include "src/core/ext/xds/certificate_provider_registry.h"
 #include "src/core/ext/xds/xds_api.h"
 #include "src/core/ext/xds/xds_channel_args.h"
@@ -3137,6 +3136,7 @@ TEST_P(XdsRbacTestWithActionPermutations, MethodPostPermissionAnyPrincipal) {
   policy.add_principals()->set_any(true);
   (*rules->mutable_policies())["policy"] = policy;
   SetServerRbacPolicy(rbac);
+  backends_[0]->set_allow_put_requests(true);
   backends_[0]->Start();
   backends_[0]->notifier()->WaitOnServingStatusChange(
       absl::StrCat(ipv6_only_ ? "[::1]:" : "127.0.0.1:", backends_[0]->port()),
@@ -3187,6 +3187,7 @@ TEST_P(XdsRbacTestWithActionPermutations, MethodPutPermissionAnyPrincipal) {
   policy.add_principals()->set_any(true);
   (*rules->mutable_policies())["policy"] = policy;
   SetServerRbacPolicy(rbac);
+  backends_[0]->set_allow_put_requests(true);
   backends_[0]->Start();
   backends_[0]->notifier()->WaitOnServingStatusChange(
       absl::StrCat(ipv6_only_ ? "[::1]:" : "127.0.0.1:", backends_[0]->port()),
@@ -3448,6 +3449,7 @@ TEST_P(XdsRbacTestWithActionPermutations, AnyPermissionMethodPostPrincipal) {
   policy.add_permissions()->set_any(true);
   (*rules->mutable_policies())["policy"] = policy;
   SetServerRbacPolicy(rbac);
+  backends_[0]->set_allow_put_requests(true);
   backends_[0]->Start();
   backends_[0]->notifier()->WaitOnServingStatusChange(
       absl::StrCat(ipv6_only_ ? "[::1]:" : "127.0.0.1:", backends_[0]->port()),
@@ -3498,6 +3500,7 @@ TEST_P(XdsRbacTestWithActionPermutations, AnyPermissionMethodPutPrincipal) {
   policy.add_permissions()->set_any(true);
   (*rules->mutable_policies())["policy"] = policy;
   SetServerRbacPolicy(rbac);
+  backends_[0]->set_allow_put_requests(true);
   backends_[0]->Start();
   backends_[0]->notifier()->WaitOnServingStatusChange(
       absl::StrCat(ipv6_only_ ? "[::1]:" : "127.0.0.1:", backends_[0]->port()),
@@ -3956,9 +3959,6 @@ int main(int argc, char** argv) {
   // Make the backup poller poll very frequently in order to pick up
   // updates from all the subchannels's FDs.
   GPR_GLOBAL_CONFIG_SET(grpc_client_channel_backup_poll_interval_ms, 1);
-  // Allow testing PUT requests.
-  grpc_core::
-      InternalOnlyDoNotUseUnlessYouHavePermissionFromGrpcTeamAllowBrokenPutRequests();
 #if TARGET_OS_IPHONE
   // Workaround Apple CFStream bug
   gpr_setenv("grpc_cfstream", "0");

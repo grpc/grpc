@@ -2743,6 +2743,7 @@ grpc_cc_library(
         "absl/types:optional",
     ],
     language = "c++",
+    visibility = ["@grpc:http"],
     deps = [
         "call_push_pull",
         "config",

@@ -253,6 +253,10 @@ class XdsEnd2endTest : public ::testing::TestWithParam<XdsTestType> {
 
     XdsServingStatusNotifier* notifier() { return &notifier_; }
 
+    void set_allow_put_requests(bool allow_put_requests) {
+      allow_put_requests_ = allow_put_requests;
+    }
+
    private:
     class XdsChannelArgsServerBuilderOption;
 
@@ -270,6 +274,7 @@ class XdsEnd2endTest : public ::testing::TestWithParam<XdsTestType> {
     std::unique_ptr<std::thread> thread_;
     bool running_ = false;
     const bool use_xds_enabled_server_;
+    bool allow_put_requests_;
   };
 
   // A server thread for a backend server.

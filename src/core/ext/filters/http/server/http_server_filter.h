@@ -26,10 +26,10 @@
 /* Processes metadata on the server side for HTTP2 transports */
 extern const grpc_channel_filter grpc_http_server_filter;
 
-namespace grpc_core {
-// Temporary code that allows servers to accept PUT requests. DO NOT USE WITHOUT
-// PERMISSION.
-void InternalOnlyDoNotUseUnlessYouHavePermissionFromGrpcTeamAllowBrokenPutRequests();
-}  // namespace grpc_core
+// A Temporary channel arg that allows servers to accept PUT requests. DO NOT
+// USE WITHOUT PERMISSION.
+#define GRPC_ARG_INTERNAL_ONLY_DO_NOT_USE_UNLESS_YOU_HAVE_PERMISSION_FROM_GRPC_TEAM_ALLOW_BROKEN_PUT_REQUESTS \
+  "grpc.http.internal_only_do_not_use_unless_you_have_permission_from_grpc_"                                  \
+  "team_allow_broken_put_requests"
 
 #endif /* GRPC_CORE_EXT_FILTERS_HTTP_SERVER_HTTP_SERVER_FILTER_H */

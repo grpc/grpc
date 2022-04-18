@@ -40,8 +40,6 @@ static void hs_recv_trailing_metadata_ready(void* user_data,
 
 namespace {
 
-bool g_allow_put_requests;
-
 struct call_data {
   call_data(grpc_call_element* elem, const grpc_call_element_args& args)
       : call_combiner(args.call_combiner) {
@@ -74,17 +72,10 @@ struct call_data {
 
 struct channel_data {
   bool surface_user_agent;
+  bool allow_put_requests;
 };
 
 }  // namespace
-
-namespace grpc_core {
-
-void InternalOnlyDoNotUseUnlessYouHavePermissionFromGrpcTeamAllowBrokenPutRequests() {
-  g_allow_put_requests = true;
-}
-
-}  // namespace grpc_core
 
 static grpc_error_handle hs_filter_outgoing_metadata(grpc_metadata_batch* b) {
   if (grpc_core::Slice* grpc_message =
@@ -115,7 +106,10 @@ static grpc_error_handle hs_filter_incoming_metadata(grpc_call_element* elem,
       case grpc_core::HttpMethodMetadata::kPost:
         break;
       case grpc_core::HttpMethodMetadata::kPut:
-        if (g_allow_put_requests) break;
+        if (static_cast<channel_data*>(elem->channel_data)
+                ->allow_put_requests) {
+          break;
+        }
         ABSL_FALLTHROUGH_INTENDED;
       case grpc_core::HttpMethodMetadata::kInvalid:
       case grpc_core::HttpMethodMetadata::kGet:
@@ -314,6 +308,10 @@ static grpc_error_handle hs_init_channel_elem(grpc_channel_element* elem,
       grpc_channel_args_find(args->channel_args,
                              const_cast<char*>(GRPC_ARG_SURFACE_USER_AGENT)),
       true);
+  chand->allow_put_requests = grpc_channel_args_find_bool(
+      args->channel_args,
+      GRPC_ARG_INTERNAL_ONLY_DO_NOT_USE_UNLESS_YOU_HAVE_PERMISSION_FROM_GRPC_TEAM_ALLOW_BROKEN_PUT_REQUESTS,
+      false);
   return GRPC_ERROR_NONE;
 }
 

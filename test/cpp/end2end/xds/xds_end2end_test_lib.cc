@@ -36,6 +36,7 @@
 
 #include <grpcpp/security/tls_certificate_provider.h>
 
+#include "src/core/ext/filters/http/server/http_server_filter.h"
 #include "src/core/ext/xds/xds_channel_args.h"
 #include "src/core/ext/xds/xds_client.h"
 #include "src/core/lib/gpr/env.h"
@@ -175,6 +176,13 @@ void XdsEnd2endTest::ServerThread::Serve(grpc_core::Mutex* mu,
     builder.experimental().set_drain_grace_time(
         test_obj_->xds_drain_grace_time_ms_);
     builder.AddListeningPort(server_address, Credentials());
+    // Allow gRPC Core's HTTP server to accept PUT requests for testing
+    // purposes.
+    if (allow_put_requests_) {
+      builder.AddChannelArgument(
+          GRPC_ARG_INTERNAL_ONLY_DO_NOT_USE_UNLESS_YOU_HAVE_PERMISSION_FROM_GRPC_TEAM_ALLOW_BROKEN_PUT_REQUESTS,
+          true);
+    }
     RegisterAllServices(&builder);
     server_ = builder.BuildAndStart();
   } else {
