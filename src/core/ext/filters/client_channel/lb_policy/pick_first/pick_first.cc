@@ -307,10 +307,13 @@ void PickFirst::PickFirstSubchannelData::ProcessConnectivityChangeLocked(
               "Pick First %p selected subchannel connectivity changed to %s", p,
               ConnectivityStateName(connectivity_state));
     }
-    // If the new state is anything other than READY and there is a
-    // pending update, switch to the pending update.
-    if (connectivity_state != GRPC_CHANNEL_READY &&
-        p->latest_pending_subchannel_list_ != nullptr) {
+    // We might miss a connectivity state update between calling
+    // CheckConnectivityStateLocked() and StartConnectivityWatchLocked().
+    // If the new state is READY, just ignore it; otherwise, regardless of
+    // what state it is, we treat it as a failure of the existing connection.
+    if (connectivity_state == GRPC_CHANNEL_READY) return;
+    // If there is a pending update, switch to the pending update.
+    if (p->latest_pending_subchannel_list_ != nullptr) {
       if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_pick_first_trace)) {
         gpr_log(GPR_INFO,
                 "Pick First %p promoting pending subchannel list %p to "
@@ -335,38 +338,19 @@ void PickFirst::PickFirstSubchannelData::ProcessConnectivityChangeLocked(
             absl::make_unique<QueuePicker>(
                 p->Ref(DEBUG_LOCATION, "QueuePicker")));
       }
-    } else {
-      if (connectivity_state == GRPC_CHANNEL_TRANSIENT_FAILURE) {
-        // If the selected subchannel goes bad, request a re-resolution. We
-        // also set the channel state to IDLE. The reason is that if the new
-        // state is TRANSIENT_FAILURE due to a GOAWAY reception we don't want
-        // to connect to the re-resolved backends until we leave IDLE state.
-        // TODO(qianchengz): We may want to request re-resolution in
-        // ExitIdleLocked().
-        p->idle_ = true;
-        p->channel_control_helper()->RequestReresolution();
-        p->selected_ = nullptr;
-        p->subchannel_list_.reset();
-        p->channel_control_helper()->UpdateState(
-            GRPC_CHANNEL_IDLE, absl::Status(),
-            absl::make_unique<QueuePicker>(
-                p->Ref(DEBUG_LOCATION, "QueuePicker")));
-      } else {
-        // This is unlikely but can happen when a subchannel has been asked
-        // to reconnect by a different channel and this channel has dropped
-        // some connectivity state notifications.
-        if (connectivity_state == GRPC_CHANNEL_READY) {
-          p->channel_control_helper()->UpdateState(
-              GRPC_CHANNEL_READY, absl::Status(),
-              absl::make_unique<Picker>(subchannel()->Ref()));
-        } else {  // CONNECTING
-          p->channel_control_helper()->UpdateState(
-              connectivity_state, absl::Status(),
-              absl::make_unique<QueuePicker>(
-                  p->Ref(DEBUG_LOCATION, "QueuePicker")));
-        }
-      }
+      return;
     }
+    // If the selected subchannel goes bad, request a re-resolution.
+    // TODO(qianchengz): We may want to request re-resolution in
+    // ExitIdleLocked().
+    p->channel_control_helper()->RequestReresolution();
+    // Enter idle.
+    p->idle_ = true;
+    p->selected_ = nullptr;
+    p->subchannel_list_.reset();
+    p->channel_control_helper()->UpdateState(
+        GRPC_CHANNEL_IDLE, absl::Status(),
+        absl::make_unique<QueuePicker>(p->Ref(DEBUG_LOCATION, "QueuePicker")));
     return;
   }
   // If we get here, there are two possible cases:
@@ -384,7 +368,8 @@ void PickFirst::PickFirstSubchannelData::ProcessConnectivityChangeLocked(
       ProcessUnselectedReadyLocked();
       break;
     }
-    case GRPC_CHANNEL_TRANSIENT_FAILURE: {
+    case GRPC_CHANNEL_TRANSIENT_FAILURE:
+    case GRPC_CHANNEL_IDLE: {
       CancelConnectivityWatchLocked("connection attempt failed");
       PickFirstSubchannelData* sd = this;
       size_t next_index =
@@ -428,8 +413,7 @@ void PickFirst::PickFirstSubchannelData::ProcessConnectivityChangeLocked(
       sd->CheckConnectivityStateAndStartWatchingLocked();
       break;
     }
-    case GRPC_CHANNEL_CONNECTING:
-    case GRPC_CHANNEL_IDLE: {
+    case GRPC_CHANNEL_CONNECTING: {
       // Only update connectivity state in case 1, and only if we're not
       // already in TRANSIENT_FAILURE.
       if (subchannel_list() == p->subchannel_list_.get() &&
