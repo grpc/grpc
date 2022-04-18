@@ -66,12 +66,6 @@ def _dump_streams(process_name: str, stdout: tempfile.TemporaryFile,
 
 def _test_client(server_port: int, stats_port: int, qps: int,
                  num_channels: int):
-    # Send RPC to server to make sure it's running.
-    test_pb2_grpc.TestService.EmptyCall(empty_pb2.Empty(),
-                                        f"localhost:{server_port}",
-                                        insecure=True,
-                                        wait_for_ready=True)
-    logging.info("Successfully sent RPC to server.")
     settings = {
         "target": f"localhost:{stats_port}",
         "insecure": True,
@@ -97,9 +91,9 @@ def _test_client(server_port: int, stats_port: int, qps: int,
         logging.info("Delta: %s", delta)
         for _, method_str in _METHODS:
             if method_str == target_method_str:
-                assert delta[method_str] > 0
+                assert delta[method_str] > 0, delta
             else:
-                assert delta[method_str] == 0
+                assert delta[method_str] == 0, delta
 
 
 class XdsInteropClientTest(unittest.TestCase):
@@ -111,6 +105,14 @@ class XdsInteropClientTest(unittest.TestCase):
                 _SERVER_PATH,
             [f"--port={server_port}", f"--maintenance_port={server_port}"
             ]) as (server, server_stdout, server_stderr):
+            # Send RPC to server to make sure it's running.
+            logging.fino("Sending RPC to server.")
+            test_pb2_grpc.TestService.EmptyCall(empty_pb2.Empty(),
+                                                f"localhost:{server_port}",
+                                                insecure=True,
+                                                wait_for_ready=True)
+            logging.info("Server successfully started.")
+            logging.info("Successfully sent RPC to server.")
             socket.close()
             _, stats_port, stats_socket = framework_common.get_socket()
             with _start_python_with_args(_CLIENT_PATH, [
