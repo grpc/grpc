@@ -256,6 +256,27 @@ TEST(SockAddrUtilsTest, SockAddrToString) {
 #endif
 }
 
+#ifdef GRPC_HAVE_UNIX_SOCKET
+
+TEST(SockAddrUtilsTest, UnixSockAddrToUri) {
+  grpc_resolved_address addr;
+  ASSERT_TRUE(GRPC_ERROR_NONE ==
+              grpc_core::UnixSockaddrPopulate("sample-path", &addr));
+  EXPECT_EQ(grpc_sockaddr_to_uri(&addr).value(), "unix:sample-path");
+
+  ASSERT_TRUE(GRPC_ERROR_NONE ==
+              grpc_core::UnixAbstractSockaddrPopulate("no-nulls", &addr));
+  EXPECT_EQ(grpc_sockaddr_to_uri(&addr).value(), "unix-abstract:no-nulls");
+
+  ASSERT_TRUE(GRPC_ERROR_NONE ==
+              grpc_core::UnixAbstractSockaddrPopulate(
+                  std::string("path_\0with_null", 15), &addr));
+  EXPECT_EQ(grpc_sockaddr_to_uri(&addr).value(),
+            "unix-abstract:path_%00with_null");
+}
+
+#endif /* GRPC_HAVE_UNIX_SOCKET */
+
 TEST(SockAddrUtilsTest, SockAddrSetGetPort) {
   grpc_resolved_address input4 = MakeAddr4(kIPv4, sizeof(kIPv4));
   ASSERT_EQ(grpc_sockaddr_get_port(&input4), 12345);
