@@ -843,7 +843,7 @@ void Subchannel::SetConnectivityStateLocked(grpc_connectivity_state state,
   health_watcher_map_.NotifyLocked(state, status);
 }
 
-void Subchannel::OnRetryTimer(void* arg, grpc_error_handle error) {
+void Subchannel::OnRetryTimer(void* arg, grpc_error_handle /*error*/) {
   WeakRefCountedPtr<Subchannel> c(static_cast<Subchannel*>(arg));
   {
     MutexLock lock(&c->mu_);
