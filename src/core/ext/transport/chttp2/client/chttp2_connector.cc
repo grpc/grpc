@@ -61,6 +61,15 @@
 
 namespace grpc_core {
 
+namespace {
+void NullThenSchedClosure(const DebugLocation& location, grpc_closure** closure,
+                          grpc_error_handle error) {
+  grpc_closure* c = *closure;
+  *closure = nullptr;
+  ExecCtx::Run(location, c, error);
+}
+}  // namespace
+
 Chttp2Connector::~Chttp2Connector() {
   if (endpoint_ != nullptr) {
     grpc_endpoint_destroy(endpoint_);
@@ -77,11 +86,17 @@ void Chttp2Connector::Connect(const Args& args, Result* result,
     notify_ = notify;
     GPR_ASSERT(endpoint_ == nullptr);
   }
-  std::string address = grpc_sockaddr_to_uri(args.address);
+  absl::StatusOr<std::string> address = grpc_sockaddr_to_uri(args.address);
+  if (!address.ok()) {
+    grpc_error_handle error =
+        GRPC_ERROR_CREATE_FROM_CPP_STRING(address.status().ToString());
+    NullThenSchedClosure(DEBUG_LOCATION, &notify_, error);
+    return;
+  }
   absl::InlinedVector<grpc_arg, 2> args_to_add = {
       grpc_channel_arg_string_create(
           const_cast<char*>(GRPC_ARG_TCP_HANDSHAKER_RESOLVED_ADDRESS),
-          const_cast<char*>(address.c_str())),
+          const_cast<char*>(address.value().c_str())),
       grpc_channel_arg_integer_create(
           const_cast<char*>(GRPC_ARG_TCP_HANDSHAKER_BIND_ENDPOINT_TO_POLLSET),
           1),
@@ -108,15 +123,6 @@ void Chttp2Connector::Shutdown(grpc_error_handle error) {
   }
   GRPC_ERROR_UNREF(error);
 }
-
-namespace {
-void NullThenSchedClosure(const DebugLocation& location, grpc_closure** closure,
-                          grpc_error_handle error) {
-  grpc_closure* c = *closure;
-  *closure = nullptr;
-  ExecCtx::Run(location, c, error);
-}
-}  // namespace
 
 void Chttp2Connector::OnHandshakeDone(void* arg, grpc_error_handle error) {
   auto* args = static_cast<HandshakerArgs*>(arg);

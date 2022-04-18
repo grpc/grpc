@@ -324,12 +324,17 @@ void HttpRequest::DoHandshake(const grpc_resolved_address* addr) {
         "failed to create security connector", &overall_error_, 1));
     return;
   }
-  std::string address = grpc_sockaddr_to_uri(addr);
+  absl::StatusOr<std::string> address = grpc_sockaddr_to_uri(addr);
+  if (!address.ok()) {
+    Finish(GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(
+        "Failed to extract URI from address", &overall_error_, 1));
+    return;
+  }
   absl::InlinedVector<grpc_arg, 2> args_to_add = {
       grpc_security_connector_to_arg(sc.get()),
       grpc_channel_arg_string_create(
           const_cast<char*>(GRPC_ARG_TCP_HANDSHAKER_RESOLVED_ADDRESS),
-          const_cast<char*>(address.c_str())),
+          const_cast<char*>(address.value().c_str())),
   };
   const grpc_channel_args* new_args = grpc_channel_args_copy_and_add(
       new_args_from_connector != nullptr ? new_args_from_connector
