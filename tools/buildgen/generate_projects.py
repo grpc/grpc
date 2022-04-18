@@ -25,7 +25,7 @@ from typing import Dict, List, Union
 import _utils
 import yaml
 
-if sys.version_info < (3,6):
+if sys.version_info < (3, 6):
     raise RuntimeError('Expected Python version > 3.6, but got %s at %s' %
                        (sys.version_info, sys.executable))
 
