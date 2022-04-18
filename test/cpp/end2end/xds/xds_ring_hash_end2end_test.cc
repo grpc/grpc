@@ -214,7 +214,7 @@ TEST_P(RingHashTest,
       grpc_core::Duration::Milliseconds(500) * grpc_test_slowdown_factor());
   // Send RPC.  Need the timeout to be long enough to account for the
   // subchannel connection delays.
-  CheckRpcSendOk(1, RpcOptions().set_timeout_ms(3500));
+  CheckRpcSendOk(1, RpcOptions().set_timeout_ms(5000));
 }
 
 // Tests that ring hash policy that hashes using channel id ensures all RPCs
