@@ -26,7 +26,7 @@ import _utils
 import yaml
 
 if sys.version_info < (3,6):
-    raise RuntimeError('expect Python version > 3.6, but got %s at %s' % (sys.version_info, sys.executable))
+    raise RuntimeError('Expected Python version > 3.6, but got %s at %s' % (sys.version_info, sys.executable))
 
 PROJECT_ROOT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..",
                             "..")
