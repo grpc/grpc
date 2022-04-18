@@ -76,35 +76,31 @@ void ConnectionAttemptInjector::AttemptConnection(
 }
 
 //
-// ConnectionDelayInjector
+// ConnectionAttemptInjector::InjectedDelay
 //
 
-class ConnectionDelayInjector::InjectedDelay {
- public:
-  InjectedDelay(grpc_core::Duration duration, grpc_closure* closure,
-                grpc_endpoint** ep, grpc_pollset_set* interested_parties,
-                const grpc_channel_args* channel_args,
-                const grpc_resolved_address* addr,
-                grpc_core::Timestamp deadline)
-      : attempt_(closure, ep, interested_parties, channel_args, addr,
-                 deadline) {
-    GRPC_CLOSURE_INIT(&timer_callback_, TimerCallback, this, nullptr);
-    grpc_core::Timestamp now = grpc_core::ExecCtx::Get()->Now();
-    duration = std::min(duration, deadline - now);
-    grpc_timer_init(&timer_, now + duration, &timer_callback_);
-  }
+ConnectionAttemptInjector::InjectedDelay::InjectedDelay(
+    grpc_core::Duration duration, grpc_closure* closure, grpc_endpoint** ep,
+    grpc_pollset_set* interested_parties, const grpc_channel_args* channel_args,
+    const grpc_resolved_address* addr, grpc_core::Timestamp deadline)
+    : attempt_(closure, ep, interested_parties, channel_args, addr, deadline) {
+  GRPC_CLOSURE_INIT(&timer_callback_, TimerCallback, this, nullptr);
+  grpc_core::Timestamp now = grpc_core::ExecCtx::Get()->Now();
+  duration = std::min(duration, deadline - now);
+  grpc_timer_init(&timer_, now + duration, &timer_callback_);
+}
 
- private:
-  static void TimerCallback(void* arg, grpc_error_handle /*error*/) {
-    auto* self = static_cast<InjectedDelay*>(arg);
-    self->attempt_.Resume();
-    delete self;
-  }
+void ConnectionAttemptInjector::InjectedDelay::TimerCallback(
+    void* arg, grpc_error_handle /*error*/) {
+  auto* self = static_cast<InjectedDelay*>(arg);
+  self->BeforeResumingAction();
+  self->attempt_.Resume();
+  delete self;
+}
 
-  QueuedAttempt attempt_;
-  grpc_timer timer_;
-  grpc_closure timer_callback_;
-};
+//
+// ConnectionDelayInjector
+//
 
 void ConnectionDelayInjector::HandleConnection(
     grpc_closure* closure, grpc_endpoint** ep,
