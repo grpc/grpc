@@ -1479,22 +1479,22 @@ grpc_cc_library(
     srcs = [
         "src/core/lib/transport/handshaker.cc",
     ],
-    language = "c++",
-    public_hdrs = [
-        "src/core/lib/transport/handshaker.h",
-    ],
     external_deps = [
         "absl/strings",
         "absl/strings:str_format",
     ],
+    language = "c++",
+    public_hdrs = [
+        "src/core/lib/transport/handshaker.h",
+    ],
     deps = [
         "channel_args",
         "closure",
-        "gpr_base", 
-        "grpc_base", 
+        "gpr_base",
+        "grpc_base",
         "grpc_codegen",
         "grpc_trace",
-        "slice",     
+        "slice",
     ],
 )
 
