@@ -22,30 +22,26 @@
 #import "test/task.h"
 
 // Tests in:
-// libuv/test/test-getaddrinfo.c
+// libuv/test/test-getnameinfo.c
 
-TEST_DECLARE(getaddrinfo_fail)
-TEST_DECLARE(getaddrinfo_fail_sync)
-TEST_DECLARE(getaddrinfo_basic)
-TEST_DECLARE(getaddrinfo_basic_sync)
-TEST_DECLARE(getaddrinfo_concurrent)
+TEST_DECLARE(getnameinfo_basic_ip4)
+TEST_DECLARE(getnameinfo_basic_ip4_sync)
+TEST_DECLARE(getnameinfo_basic_ip6)
 
 #define TASK_LIST_START_LOCAL static task_entry_t TEST_TASKS[] = {
 TASK_LIST_START_LOCAL
-TEST_ENTRY(getaddrinfo_fail)
-TEST_ENTRY(getaddrinfo_fail_sync)
-TEST_ENTRY(getaddrinfo_basic)
-TEST_ENTRY(getaddrinfo_basic_sync)
-TEST_ENTRY(getaddrinfo_concurrent)
+TEST_ENTRY(getnameinfo_basic_ip4)
+TEST_ENTRY(getnameinfo_basic_ip4_sync)
+TEST_ENTRY(getnameinfo_basic_ip6)
 TASK_LIST_END
 
-@interface LibuvGetAddrInfoTests : XCTestCase
+@interface LibuvGetNameInfoTests : XCTestCase
 
 @end
 
-@implementation LibuvGetAddrInfoTests
+@implementation LibuvGetNameInfoTests
 
-- (void)testGetAddrInfoAll {
+- (void)testGetHostNameAll {
   for (task_entry_t* task = TEST_TASKS; task->main; task++) {
     task->main();
   }
