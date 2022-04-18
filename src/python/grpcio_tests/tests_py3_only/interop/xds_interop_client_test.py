@@ -106,7 +106,7 @@ class XdsInteropClientTest(unittest.TestCase):
             [f"--port={server_port}", f"--maintenance_port={server_port}"
             ]) as (server, server_stdout, server_stderr):
             # Send RPC to server to make sure it's running.
-            logging.fino("Sending RPC to server.")
+            logging.info("Sending RPC to server.")
             test_pb2_grpc.TestService.EmptyCall(empty_pb2.Empty(),
                                                 f"localhost:{server_port}",
                                                 insecure=True,
