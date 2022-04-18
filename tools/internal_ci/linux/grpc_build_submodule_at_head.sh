@@ -20,6 +20,7 @@ set -ex
 # change to grpc repo root
 cd $(dirname $0)/../../..
 
+export GRPC_BUILD_COMPILE_PYTHON=TRUE
 source tools/internal_ci/helper_scripts/prepare_build_linux_rc
 
 # Submodule name is passed as the RUN_TESTS_FLAGS variable

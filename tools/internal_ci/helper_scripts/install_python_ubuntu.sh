@@ -33,5 +33,4 @@ popd
 echo "abc7f7f83ea8614800b73c45cf3262d3 Python-3.9.12.tgz" > checksum.md5
 md5sum -c checksum.md5
 
-python3.10 -m ensurepip
-python3.10 -m pip install coverage
+python3.9 -m ensurepip
