@@ -883,8 +883,8 @@ std::vector<XdsEnd2endTest::ConcurrentRpc> XdsEnd2endTest::SendConcurrentRpcs(
   std::vector<ConcurrentRpc> rpcs(num_rpcs);
   EchoRequest request;
   // Variables for synchronization
-  absl::Mutex mu;
-  absl::CondVar cv;
+  grpc_core::Mutex mu;
+  grpc_core::CondVar cv;
   size_t completed = 0;
   // Set-off callback RPCs
   for (size_t i = 0; i < num_rpcs; i++) {
@@ -897,14 +897,14 @@ std::vector<XdsEnd2endTest::ConcurrentRpc> XdsEnd2endTest::SendConcurrentRpcs(
                           rpc->elapsed_time = NowFromCycleCounter() - t0;
                           bool done;
                           {
-                            absl::MutexLock lock(&mu);
+                            grpc_core::MutexLock lock(&mu);
                             done = (++completed) == num_rpcs;
                           }
                           if (done) cv.Signal();
                         });
   }
   {
-    absl::MutexLock lock(&mu);
+    grpc_core::MutexLock lock(&mu);
     cv.Wait(&mu);
   }
   EXPECT_EQ(completed, num_rpcs);

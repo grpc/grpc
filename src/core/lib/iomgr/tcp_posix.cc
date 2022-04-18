@@ -378,7 +378,7 @@ struct grpc_tcp {
   /* garbage after the last read */
   grpc_slice_buffer last_read_buffer;
 
-  absl::Mutex read_mu;
+  grpc_core::Mutex read_mu;
   grpc_slice_buffer* incoming_buffer ABSL_GUARDED_BY(read_mu) = nullptr;
   int inq;          /* bytes pending on the socket from the last read. */
   bool inq_capable; /* cache whether kernel supports inq */

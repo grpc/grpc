@@ -142,7 +142,7 @@ class GracefulShutdownTest : public ::testing::Test {
     GracefulShutdownTest* self = static_cast<GracefulShutdownTest*>(arg);
     if (error == GRPC_ERROR_NONE) {
       {
-        absl::MutexLock lock(&self->mu_);
+        MutexLock lock(&self->mu_);
         for (size_t i = 0; i < self->read_buffer_.count; ++i) {
           absl::StrAppend(&self->read_bytes_,
                           StringViewFromSlice(self->read_buffer_.slices[i]));
@@ -162,7 +162,7 @@ class GracefulShutdownTest : public ::testing::Test {
   void WaitForReadBytes(absl::string_view bytes) {
     std::atomic<bool> done{false};
     {
-      absl::MutexLock lock(&mu_);
+      MutexLock lock(&mu_);
       while (!absl::StrContains(read_bytes_, bytes)) {
         read_cv_.WaitWithTimeout(&mu_, absl::Seconds(5));
       }
@@ -230,8 +230,8 @@ class GracefulShutdownTest : public ::testing::Test {
   std::unique_ptr<std::thread> client_poll_thread_;
   std::atomic<bool> shutdown_{false};
   grpc_closure on_read_done_;
-  absl::Mutex mu_;
-  absl::CondVar read_cv_;
+  Mutex mu_;
+  CondVar read_cv_;
   absl::Notification read_end_notification_;
   grpc_slice_buffer read_buffer_;
   std::string read_bytes_ ABSL_GUARDED_BY(mu_);
