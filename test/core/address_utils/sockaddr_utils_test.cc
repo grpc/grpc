@@ -262,16 +262,16 @@ TEST(SockAddrUtilsTest, UnixSockAddrToUri) {
   grpc_resolved_address addr;
   ASSERT_TRUE(GRPC_ERROR_NONE ==
               grpc_core::UnixSockaddrPopulate("sample-path", &addr));
-  EXPECT_EQ(grpc_sockaddr_to_uri(&addr), "unix:sample-path");
+  EXPECT_EQ(grpc_sockaddr_to_uri(&addr).value(), "unix:sample-path");
 
   ASSERT_TRUE(GRPC_ERROR_NONE ==
               grpc_core::UnixAbstractSockaddrPopulate("no-nulls", &addr));
-  EXPECT_EQ(grpc_sockaddr_to_uri(&addr), "unix-abstract:no-nulls");
+  EXPECT_EQ(grpc_sockaddr_to_uri(&addr).value(), "unix-abstract:no-nulls");
 
   ASSERT_TRUE(GRPC_ERROR_NONE ==
               grpc_core::UnixAbstractSockaddrPopulate(
                   std::string("path_\0with_null", 15), &addr));
-  EXPECT_EQ(grpc_sockaddr_to_uri(&addr), "unix-abstract:path_%00with_null");
+  EXPECT_EQ(grpc_sockaddr_to_uri(&addr).value(), "unix-abstract:path_%00with_null");
 }
 
 #endif /* GRPC_HAVE_UNIX_SOCKET */

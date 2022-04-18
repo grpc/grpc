@@ -66,7 +66,7 @@ static absl::StatusOr<std::string> grpc_sockaddr_to_uri_unix_if_possible(
   absl::StatusOr<grpc_core::URI> uri = grpc_core::URI::Create(
       std::move(scheme), /*authority=*/"", std::move(path),
       /*query_parameter_pairs=*/{}, /*fragment=*/"");
-  if (!uri.ok()) return uri;
+  if (!uri.ok()) return uri.status();
   return uri->ToString();
 }
 #else
