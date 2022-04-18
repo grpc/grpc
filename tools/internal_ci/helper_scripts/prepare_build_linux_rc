@@ -59,6 +59,10 @@ then
   sudo make install
   popd # ./Python-3.9.12
   popd # /tmp
+
+  # Python YAML module is pre-isntalled for Kokoro default interpretor, so for
+  # newly compiled interpretor, we need to explicitly install it.
+  python3 -m pip install PyYAML
 fi
 
 python3 --version
