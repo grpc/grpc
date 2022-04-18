@@ -517,7 +517,8 @@ class CheckingResultHandler : public ResultHandler {
     for (size_t i = 0; i < addresses.size(); i++) {
       const grpc_core::ServerAddress& addr = addresses[i];
       std::string str =
-          grpc_sockaddr_to_string(&addr.address(), true /* normalize */);
+          grpc_sockaddr_to_string(&addr.address(), true /* normalize */)
+              .value();
       gpr_log(GPR_INFO, "%s", str.c_str());
       out->emplace_back(GrpcLBAddress(std::move(str), is_balancer));
     }
@@ -674,7 +675,7 @@ TEST(ResolverComponentTest, TestResolvesRelevantRecordsWithConcurrentFdStress) {
 
 int main(int argc, char** argv) {
   grpc_init();
-  grpc::testing::TestEnvironment env(argc, argv);
+  grpc::testing::TestEnvironment env(&argc, argv);
   ::testing::InitGoogleTest(&argc, argv);
   grpc::testing::InitTest(&argc, &argv, true);
   if (absl::GetFlag(FLAGS_target_name).empty()) {

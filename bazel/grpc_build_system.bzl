@@ -34,7 +34,10 @@ load("@build_bazel_rules_apple//apple:ios.bzl", "ios_unit_test")
 load("@build_bazel_rules_apple//apple/testing/default_runner:ios_test_runner.bzl", "ios_test_runner")
 
 # The set of pollers to test against if a test exercises polling
-POLLERS = ["epollex", "epoll1", "poll"]
+POLLERS = ["epoll1", "poll"]
+
+# The set of known EventEngines to test
+EVENT_ENGINES = {"default": {"tags": []}}
 
 def if_not_windows(a):
     return select({
@@ -47,12 +50,6 @@ def if_windows(a):
     return select({
         "//:windows": a,
         "//:windows_msvc": a,
-        "//conditions:default": [],
-    })
-
-def if_mac(a):
-    return select({
-        "//:mac_x86_64": a,
         "//conditions:default": [],
     })
 
@@ -130,7 +127,6 @@ def grpc_cc_library(
         visibility = None,
         alwayslink = 0,
         data = [],
-        use_cfstream = False,
         tags = [],
         linkstatic = False):
     """An internal wrapper around cc_library.
@@ -150,24 +146,17 @@ def grpc_cc_library(
       visibility: The visibility of the target.
       alwayslink: Whether to enable alwayslink on the cc_library.
       data: Data dependencies.
-      use_cfstream: Whether to use cfstream.
       tags: Tags to apply to the rule.
       linkstatic: Whether to enable linkstatic on the cc_library.
     """
     visibility = _update_visibility(visibility)
     copts = []
-    if use_cfstream:
-        copts = if_mac(["-DGRPC_CFSTREAM"])
     if language.upper() == "C":
         copts = copts + if_not_windows(["-std=c99"])
     linkopts = if_not_windows(["-pthread"]) + if_windows(["-defaultlib:ws2_32.lib"])
-    if use_cfstream:
-        linkopts = linkopts + if_mac(["-framework CoreFoundation"])
-
     if select_deps:
         for select_deps_entry in select_deps:
             deps += select(select_deps_entry)
-
     native.cc_library(
         name = name,
         srcs = srcs,
@@ -271,7 +260,76 @@ def ios_cc_test(
             deps = ios_test_deps,
         )
 
-def grpc_cc_test(name, srcs = [], deps = [], external_deps = [], args = [], data = [], uses_polling = True, language = "C++", size = "medium", timeout = None, tags = [], exec_compatible_with = [], exec_properties = {}, shard_count = None, flaky = None, copts = [], linkstatic = None):
+def expand_tests_for_each_poller_and_engine(name, srcs, deps, tags, args, exclude_pollers, uses_event_engine):
+    """Common logic used to parameterize tests for every poller and EventEngine.
+
+    Args:
+        name: base name of the test
+        srcs: source files
+        deps: base deps
+        tags: base tags
+        args: base args
+        exclude_pollers: list of poller names to exclude for this set of tests.
+        uses_event_engine: set to False if the test is not sensitive to
+            EventEngine implementation differences
+
+    Returns:
+        A list of dictionaries containing modified values of name, srcs, deps, tags, and args.
+    """
+    poller_config = []
+
+    # On linux we run the same test with the default EventEngine, once for each
+    # poller
+    for poller in POLLERS:
+        if poller in exclude_pollers:
+            continue
+        poller_config.append({
+            "name": name + "@poller=" + poller,
+            "srcs": srcs,
+            "deps": deps,
+            "tags": (tags + EVENT_ENGINES["default"]["tags"] + [
+                "no_windows",
+                "no_mac",
+                "bazel_only",
+            ]),
+            "args": args + ["--poller=" + poller],
+        })
+
+    # Now generate one test for each subsequent EventEngine, all using the
+    # default poller. These tests will have `@engine=<name>` appended to the
+    # test target name. If a test target name has no `@engine=<name>` component,
+    # that indicates that the default EventEngine is being used.
+    if not uses_event_engine:
+        # The poller tests exercise the default engine on Linux. This test
+        # handles other platforms.
+        poller_config.append({
+            "name": name,
+            "srcs": srcs,
+            "deps": deps,
+            "tags": tags + ["no_linux"],
+            "args": args,
+        })
+    else:
+        for engine_name, engine in EVENT_ENGINES.items():
+            test_name = name + "@engine=" + engine_name
+            test_tags = tags + engine["tags"] + ["bazel_only"]
+            test_args = args + ["--engine=" + engine_name]
+            if engine_name == "default":
+                # The poller tests exercise the default engine on Linux.
+                # This test handles other platforms.
+                test_name = name
+                test_tags = tags + engine["tags"] + ["no_linux"]
+                test_args = args
+            poller_config.append({
+                "name": test_name,
+                "srcs": srcs,
+                "deps": deps,
+                "tags": test_tags,
+                "args": test_args,
+            })
+    return poller_config
+
+def grpc_cc_test(name, srcs = [], deps = [], external_deps = [], args = [], data = [], uses_polling = True, language = "C++", size = "medium", timeout = None, tags = [], exec_compatible_with = [], exec_properties = {}, shard_count = None, flaky = None, copts = [], linkstatic = None, exclude_pollers = [], uses_event_engine = True):
     """A cc_test target for use in the gRPC repo.
 
     Args:
@@ -294,18 +352,18 @@ def grpc_cc_test(name, srcs = [], deps = [], external_deps = [], args = [], data
         flaky: Whether this test is flaky.
         copts: Add these to the compiler invocation.
         linkstatic: link the binary in static mode
+        exclude_pollers: list of poller names to exclude for this set of tests.
+        uses_event_engine: set to False if the test is not sensitive to
+            EventEngine implementation differences
     """
-    copts = copts + if_mac(["-DGRPC_CFSTREAM"])
     if language.upper() == "C":
         copts = copts + if_not_windows(["-std=c99"])
 
-    # NOTE: these attributes won't be used for the poller-specific versions of a test
-    # automatically, you need to set them explicitly (if applicable)
-    args = {
-        "srcs": srcs,
-        "args": args,
+    core_deps = deps + _get_external_deps(external_deps)
+
+    # Test args for all tests
+    test_args = {
         "data": data,
-        "deps": deps + _get_external_deps(external_deps),
         "copts": GRPC_DEFAULT_COPTS + copts,
         "linkopts": if_not_windows(["-pthread"]) + if_windows(["-defaultlib:ws2_32.lib"]),
         "size": size,
@@ -316,46 +374,36 @@ def grpc_cc_test(name, srcs = [], deps = [], external_deps = [], args = [], data
         "flaky": flaky,
         "linkstatic": linkstatic,
     }
-    if uses_polling:
-        # the vanilla version of the test should run on platforms that only
-        # support a single poller
-        native.cc_test(
-            name = name,
-            testonly = True,
-            tags = (tags + [
-                "no_linux",  # linux supports multiple pollers
-            ]),
-            **args
-        )
 
-        # on linux we run the same test multiple times, once for each poller
-        for poller in POLLERS:
-            native.sh_test(
-                name = name + "@poller=" + poller,
-                data = [name] + data,
-                srcs = [
-                    "//test/core/util:run_with_poller_sh",
-                ],
-                size = size,
-                timeout = timeout,
-                args = [
-                    poller,
-                    "$(location %s)" % name,
-                ] + args["args"],
-                tags = (tags + ["no_windows", "no_mac"]),
-                exec_compatible_with = exec_compatible_with,
-                exec_properties = exec_properties,
-                shard_count = shard_count,
-                flaky = flaky,
-            )
-    else:
-        # the test behavior doesn't depend on polling, just generate the test
-        native.cc_test(name = name, tags = tags + ["no_uses_polling"], **args)
     ios_cc_test(
         name = name,
+        srcs = srcs,
         tags = tags,
-        **args
+        deps = core_deps,
+        args = args,
+        **test_args
     )
+    if not uses_polling:
+        # the test behavior doesn't depend on polling, just generate the test
+        native.cc_test(
+            name = name,
+            srcs = srcs,
+            tags = tags + ["no_uses_polling"],
+            deps = core_deps,
+            args = args,
+            **test_args
+        )
+        return
+
+    for poller_config in expand_tests_for_each_poller_and_engine(name, srcs, core_deps, tags, args, exclude_pollers, uses_event_engine):
+        native.cc_test(
+            name = poller_config["name"],
+            srcs = poller_config["srcs"],
+            deps = poller_config["deps"],
+            tags = poller_config["tags"],
+            args = poller_config["args"],
+            **test_args
+        )
 
 def grpc_cc_binary(name, srcs = [], deps = [], external_deps = [], args = [], data = [], language = "C++", testonly = False, linkshared = False, linkopts = [], tags = [], features = []):
     """Generates a cc_binary for use in the gRPC repo.
@@ -402,14 +450,56 @@ def grpc_generate_one_off_targets():
 def grpc_generate_objc_one_off_targets():
     pass
 
-def grpc_sh_test(name, srcs, args = [], data = [], tags = []):
-    native.sh_test(
-        name = name,
-        srcs = srcs,
-        args = args,
-        data = data,
-        tags = tags,
-    )
+def grpc_sh_test(name, srcs = [], args = [], data = [], uses_polling = True, size = "medium", timeout = None, tags = [], exec_compatible_with = [], exec_properties = {}, shard_count = None, flaky = None, exclude_pollers = [], uses_event_engine = True):
+    """Execute an sh_test for every <poller> x <EventEngine> combination
+
+    Args:
+        name: The name of the test.
+        srcs: The source files.
+        args: The args to supply to the test binary.
+        data: Data dependencies.
+        uses_polling: Whether the test uses polling.
+        size: The size of the test.
+        timeout: The test timeout.
+        tags: The tags for the test.
+        exec_compatible_with: A list of constraint values that must be
+            satisifed for the platform.
+        exec_properties: A dictionary of strings that will be added to the
+            exec_properties of a platform selected for this target.
+        shard_count: The number of shards for this test.
+        flaky: Whether this test is flaky.
+        exclude_pollers: list of poller names to exclude for this set of tests.
+        uses_event_engine: set to False if the test is not sensitive to
+            EventEngine implementation differences
+    """
+    test_args = {
+        "data": data,
+        "size": size,
+        "timeout": timeout,
+        "exec_compatible_with": exec_compatible_with,
+        "exec_properties": exec_properties,
+        "shard_count": shard_count,
+        "flaky": flaky,
+    }
+    if not uses_polling:
+        native.sh_test(
+            name = name,
+            srcs = srcs,
+            args = args,
+            tags = tags,
+            **test_args
+        )
+        return
+
+    for poller_config in expand_tests_for_each_poller_and_engine(name, srcs, [], tags, args, exclude_pollers, uses_event_engine):
+        native.sh_test(
+            name = poller_config["name"],
+            srcs = poller_config["srcs"],
+            deps = poller_config["deps"],
+            tags = poller_config["tags"],
+            args = poller_config["args"],
+            **test_args
+        )
 
 def grpc_sh_binary(name, srcs, data = []):
     native.sh_binary(

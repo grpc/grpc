@@ -21,14 +21,25 @@ source $(dirname $0)/../../../tools/internal_ci/helper_scripts/move_src_tree_and
 # change to grpc repo root
 cd $(dirname $0)/../../..
 
+source tools/internal_ci/helper_scripts/prepare_build_macos_rc
+
+# make sure bazel is available
+tools/bazel version
+
 ./tools/run_tests/start_port_server.py
 
-dirs=(end2end server client common codegen util grpclb test)
-for dir in ${dirs[*]}; do
-  echo $dir
-  out=`tools/bazel query "kind(ios_unit_test, tests(//test/cpp/$dir/...))" 2>/dev/null | grep '^//'`
-  for test in $out; do
-    echo "Running: $test"
-    tools/bazel test --test_summary=detailed --test_output=all $test
-  done
-done
+# only select ObjC test from the following subdirs
+# TODO(jtattermusch): start running selected tests from //test/core too.
+test_pattern="//test/cpp/end2end/... + //test/cpp/server/... + //test/cpp/client/... + //test/cpp/common/... + //test/cpp/codegen/... + //test/cpp/util/... + //test/cpp/grpclb/... + //test/cpp/test/..."
+
+# iOS tests are marked as "manual" to prevent them from running by default. To run them, we need to use "bazel query" to list them first.
+ios_tests=$(tools/bazel query "kind(ios_unit_test, tests($test_pattern))" | grep '^//')
+
+python3 tools/run_tests/python_utils/bazel_report_helper.py --report_path bazel_cpp_ios_tests
+
+bazel_cpp_ios_tests/bazel_wrapper \
+  --bazelrc=tools/remote_build/include/test_locally_with_resultstore_results.bazelrc \
+  test \
+  --google_credentials="${KOKORO_GFILE_DIR}/GrpcTesting-d0eeee2db331.json" \
+  $BAZEL_FLAGS \
+  -- ${ios_tests}

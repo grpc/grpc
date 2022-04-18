@@ -55,6 +55,7 @@
 #include "src/core/lib/resource_quota/memory_quota.h"
 #include "src/core/lib/security/context/security_context.h"
 #include "src/core/lib/security/credentials/credentials.h"
+#include "src/core/lib/security/credentials/insecure/insecure_credentials.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/surface/api_trace.h"
 #include "src/core/lib/surface/server.h"
@@ -670,11 +671,15 @@ grpc_error_handle Chttp2ServerListener::Create(
     // Create channelz node.
     if (grpc_channel_args_find_bool(args, GRPC_ARG_ENABLE_CHANNELZ,
                                     GRPC_ENABLE_CHANNELZ_DEFAULT)) {
-      std::string string_address = grpc_sockaddr_to_uri(addr);
+      auto string_address = grpc_sockaddr_to_uri(addr);
+      if (!string_address.ok()) {
+        return GRPC_ERROR_CREATE_FROM_CPP_STRING(
+            string_address.status().ToString());
+      }
       listener->channelz_listen_socket_ =
           MakeRefCounted<channelz::ListenSocketNode>(
-              string_address.c_str(),
-              absl::StrFormat("chttp2 listener %s", string_address.c_str()));
+              *string_address,
+              absl::StrCat("chttp2 listener ", *string_address));
     }
     // Register with the server only upon success
     server->AddListener(OrphanablePtr<Server::ListenerInterface>(listener));
@@ -743,7 +748,8 @@ void Chttp2ServerListener::Start(
     auto watcher = absl::make_unique<ConfigFetcherWatcher>(Ref());
     config_fetcher_watcher_ = watcher.get();
     server_->config_fetcher()->StartWatch(
-        grpc_sockaddr_to_string(&resolved_address_, false), std::move(watcher));
+        grpc_sockaddr_to_string(&resolved_address_, false).value(),
+        std::move(watcher));
   } else {
     {
       MutexLock lock(&mu_);
@@ -940,9 +946,9 @@ grpc_error_handle Chttp2ServerAddPort(Server* server, const char* addr,
       }
     }
     if (error_list.size() == resolved_or->size()) {
-      std::string msg =
-          absl::StrFormat("No address added out of total %" PRIuPTR " resolved",
-                          resolved_or->size());
+      std::string msg = absl::StrFormat(
+          "No address added out of total %" PRIuPTR " resolved for '%s'",
+          resolved_or->size(), addr);
       return GRPC_ERROR_CREATE_REFERENCING_FROM_COPIED_STRING(
           msg.c_str(), error_list.data(), error_list.size());
     } else if (!error_list.empty()) {
@@ -1059,7 +1065,7 @@ void grpc_server_add_channel_from_fd(grpc_server* server, int fd,
                                      grpc_server_credentials* creds) {
   // For now, we only support insecure server credentials
   if (creds == nullptr ||
-      strcmp(creds->type(), GRPC_CREDENTIALS_TYPE_INSECURE) != 0) {
+      creds->type() != grpc_core::InsecureServerCredentials::Type()) {
     gpr_log(GPR_ERROR, "Failed to create channel due to invalid creds");
     return;
   }

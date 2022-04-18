@@ -14,25 +14,23 @@
 # limitations under the License.
 #
 # Test full Bazel
-#
-# NOTE: No empty lines should appear in this file before igncr is set!
-set -ex -o igncr || set -ex
+
+set -ex
 
 mkdir -p /var/local/git
 git clone /var/local/jenkins/grpc /var/local/git/grpc
 (cd /var/local/jenkins/grpc/ && git submodule foreach 'cd /var/local/git/grpc \
 && git submodule update --init --reference /var/local/jenkins/grpc/${name} \
 ${name}')
-cd /var/local/git/grpc/test
+cd /var/local/git/grpc
 TEST_TARGETS="//src/python/... //tools/distrib/python/grpcio_tools/... //examples/python/..."
 BAZEL_FLAGS="--test_output=errors"
-bazel test ${BAZEL_FLAGS} ${TEST_TARGETS}
-bazel test --config=python_single_threaded_unary_stream ${BAZEL_FLAGS} ${TEST_TARGETS}
-bazel test --config=python_poller_engine ${BAZEL_FLAGS} ${TEST_TARGETS}
 
+python3 tools/run_tests/python_utils/bazel_report_helper.py --report_path python_bazel_tests
+python_bazel_tests/bazel_wrapper test ${BAZEL_FLAGS} ${TEST_TARGETS}
 
-# TODO(https://github.com/grpc/grpc/issues/19854): Move this to a new Kokoro
-# job.
-(cd /var/local/git/grpc/bazel/test/python_test_repo;
-  bazel test --test_output=errors //...
-)
+python3 tools/run_tests/python_utils/bazel_report_helper.py --report_path python_bazel_tests_single_threaded_unary_streams
+python_bazel_tests_single_threaded_unary_streams/bazel_wrapper test --config=python_single_threaded_unary_stream ${BAZEL_FLAGS} ${TEST_TARGETS}
+
+python3 tools/run_tests/python_utils/bazel_report_helper.py --report_path python_bazel_tests_poller_engine
+python_bazel_tests_poller_engine/bazel_wrapper test --config=python_poller_engine ${BAZEL_FLAGS} ${TEST_TARGETS}

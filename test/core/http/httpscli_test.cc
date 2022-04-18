@@ -281,7 +281,7 @@ TEST_F(HttpsCliTest, CancelGetDuringSSLHandshake) {
 
 int main(int argc, char** argv) {
   ::testing::InitGoogleTest(&argc, argv);
-  grpc::testing::TestEnvironment env(argc, argv);
+  grpc::testing::TestEnvironment env(&argc, argv);
   // launch the test server later, so that --gtest_list_tests works
   g_argc = argc;
   g_argv = argv;

@@ -27,6 +27,7 @@ export PREPARE_BUILD_INSTALL_DEPS_RUBY=true
 export PREPARE_BUILD_INSTALL_DEPS_PHP=true
 source tools/internal_ci/helper_scripts/prepare_build_macos_rc
 
+# TODO(jtattermusch): cleanup this prepare build step (needed for python artifact build)
 # install cython for all python versions
 python2.7 -m pip install -U cython setuptools==44.1.1 wheel --user
 python3.5 -m pip install -U cython setuptools==44.1.1 wheel --user

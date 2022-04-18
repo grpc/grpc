@@ -28,6 +28,8 @@
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
 
+#include "src/core/lib/channel/channel_stack.h"
+#include "src/core/lib/channel/channel_stack_builder_impl.h"
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/surface/channel_init.h"
@@ -123,7 +125,7 @@ bool AddOriginalFilter(ChannelStackBuilder* builder) {
 }
 
 TEST(ChannelStackBuilder, UnknownTarget) {
-  ChannelStackBuilder builder("alpha-beta-gamma");
+  ChannelStackBuilderImpl builder("alpha-beta-gamma", GRPC_CLIENT_CHANNEL);
   EXPECT_EQ(builder.target(), "unknown");
 }
 
@@ -133,7 +135,7 @@ TEST(ChannelStackBuilder, UnknownTarget) {
 
 int main(int argc, char** argv) {
   ::testing::InitGoogleTest(&argc, argv);
-  grpc::testing::TestEnvironment env(argc, argv);
+  grpc::testing::TestEnvironment env(&argc, argv);
   grpc_core::CoreConfiguration::RegisterBuilder(
       [](grpc_core::CoreConfiguration::Builder* builder) {
         builder->channel_init()->RegisterStage(

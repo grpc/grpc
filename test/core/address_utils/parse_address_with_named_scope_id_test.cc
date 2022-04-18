@@ -98,7 +98,7 @@ struct sockaddr_in6 resolve_with_gettaddrinfo(const char* uri_text) {
 }
 
 int main(int argc, char** argv) {
-  grpc::testing::TestEnvironment env(argc, argv);
+  grpc::testing::TestEnvironment env(&argc, argv);
   grpc_init();
   char* arbitrary_interface_name = static_cast<char*>(gpr_zalloc(IF_NAMESIZE));
   // Per RFC 3493, an interface index is a "small positive integer starts at 1".

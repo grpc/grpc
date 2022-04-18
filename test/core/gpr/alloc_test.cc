@@ -34,7 +34,7 @@ static void test_malloc_aligned() {
 }
 
 int main(int argc, char** argv) {
-  grpc::testing::TestEnvironment env(argc, argv);
+  grpc::testing::TestEnvironment env(&argc, argv);
   test_malloc_aligned();
   return 0;
 }

@@ -38,6 +38,7 @@
 #include "src/core/lib/address_utils/sockaddr_utils.h"
 #include "src/core/lib/backoff/backoff.h"
 #include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/channel/channel_stack_builder_impl.h"
 #include "src/core/lib/channel/connected_channel.h"
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/debug/stats.h"
@@ -675,7 +676,8 @@ Subchannel::Subchannel(SubchannelKey key,
             {GRPC_MAX_CHANNEL_TRACE_EVENT_MEMORY_PER_NODE_DEFAULT, 0,
              INT_MAX}));
     channelz_node_ = MakeRefCounted<channelz::SubchannelNode>(
-        grpc_sockaddr_to_uri(&key_.address()), channel_tracer_max_memory);
+        grpc_sockaddr_to_uri(&key_.address()).value(),
+        channel_tracer_max_memory);
     channelz_node_->AddTraceEvent(
         channelz::ChannelTrace::Severity::Info,
         grpc_slice_from_static_string("subchannel created"));
@@ -966,11 +968,10 @@ void ConnectionDestroy(void* arg, grpc_error_handle /*error*/) {
 
 bool Subchannel::PublishTransportLocked() {
   // Construct channel stack.
-  ChannelStackBuilder builder("subchannel");
+  ChannelStackBuilderImpl builder("subchannel", GRPC_CLIENT_SUBCHANNEL);
   builder.SetChannelArgs(connecting_result_.channel_args)
       .SetTransport(connecting_result_.transport);
-  if (!CoreConfiguration::Get().channel_init().CreateStack(
-          &builder, GRPC_CLIENT_SUBCHANNEL)) {
+  if (!CoreConfiguration::Get().channel_init().CreateStack(&builder)) {
     return false;
   }
   grpc_channel_stack* stk;

@@ -33,25 +33,23 @@ class OpenCensusCallTracer : public grpc_core::CallTracer {
     OpenCensusCallAttemptTracer(OpenCensusCallTracer* parent,
                                 uint64_t attempt_num, bool is_transparent_retry,
                                 bool arena_allocated);
-    void RecordSendInitialMetadata(
-        grpc_metadata_batch* /* send_initial_metadata */,
-        uint32_t /* flags */) override;
-    void RecordOnDoneSendInitialMetadata(gpr_atm* /* peer_string */) override {}
+    void RecordSendInitialMetadata(grpc_metadata_batch* send_initial_metadata,
+                                   uint32_t /*flags*/) override;
+    void RecordOnDoneSendInitialMetadata(gpr_atm* /*peer_string*/) override {}
     void RecordSendTrailingMetadata(
-        grpc_metadata_batch* /* send_trailing_metadata */) override {}
+        grpc_metadata_batch* /*send_trailing_metadata*/) override {}
     void RecordSendMessage(
-        const grpc_core::ByteStream& /* send_message */) override;
+        const grpc_core::ByteStream& /*send_message*/) override;
     void RecordReceivedInitialMetadata(
-        grpc_metadata_batch* /* recv_initial_metadata */,
-        uint32_t /* flags */) override {}
+        grpc_metadata_batch* /*recv_initial_metadata*/,
+        uint32_t /*flags*/) override {}
     void RecordReceivedMessage(
-        const grpc_core::ByteStream& /* recv_message */) override;
+        const grpc_core::ByteStream& /*recv_message*/) override;
     void RecordReceivedTrailingMetadata(
-        absl::Status /* status */, grpc_metadata_batch* recv_trailing_metadata,
-        const grpc_transport_stream_stats& /* transport_stream_stats */)
-        override;
+        absl::Status status, grpc_metadata_batch* recv_trailing_metadata,
+        const grpc_transport_stream_stats* transport_stream_stats) override;
     void RecordCancel(grpc_error_handle cancel_error) override;
-    void RecordEnd(const gpr_timespec& /* latency */) override;
+    void RecordEnd(const gpr_timespec& /*latency*/) override;
 
     CensusContext* context() { return &context_; }
 
@@ -65,8 +63,6 @@ class OpenCensusCallTracer : public grpc_core::CallTracer {
     CensusContext context_;
     // Start time (for measuring latency).
     absl::Time start_time_;
-    // Server elapsed time in nanoseconds.
-    uint64_t elapsed_time_ = 0;
     // Number of messages in this RPC.
     uint64_t recv_message_count_ = 0;
     uint64_t sent_message_count_ = 0;

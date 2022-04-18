@@ -37,11 +37,6 @@
 namespace {
 class grpc_fake_channel_credentials final : public grpc_channel_credentials {
  public:
-  grpc_fake_channel_credentials()
-      : grpc_channel_credentials(
-            GRPC_CHANNEL_CREDENTIALS_TYPE_FAKE_TRANSPORT_SECURITY) {}
-  ~grpc_fake_channel_credentials() override = default;
-
   grpc_core::RefCountedPtr<grpc_channel_security_connector>
   create_security_connector(
       grpc_core::RefCountedPtr<grpc_call_credentials> call_creds,
@@ -50,6 +45,8 @@ class grpc_fake_channel_credentials final : public grpc_channel_credentials {
     return grpc_fake_channel_security_connector_create(
         this->Ref(), std::move(call_creds), target, args);
   }
+
+  const char* type() const override { return "Fake"; }
 
  private:
   int cmp_impl(const grpc_channel_credentials* other) const override {
@@ -61,15 +58,12 @@ class grpc_fake_channel_credentials final : public grpc_channel_credentials {
 
 class grpc_fake_server_credentials final : public grpc_server_credentials {
  public:
-  grpc_fake_server_credentials()
-      : grpc_server_credentials(
-            GRPC_CHANNEL_CREDENTIALS_TYPE_FAKE_TRANSPORT_SECURITY) {}
-  ~grpc_fake_server_credentials() override = default;
-
   grpc_core::RefCountedPtr<grpc_server_security_connector>
   create_security_connector(const grpc_channel_args* /*args*/) override {
     return grpc_fake_server_security_connector_create(this->Ref());
   }
+
+  const char* type() const override { return "Fake"; }
 };
 }  // namespace
 
@@ -106,6 +100,8 @@ grpc_md_only_test_credentials::GetRequestMetadata(
       [](absl::string_view, const grpc_core::Slice&) { abort(); });
   return grpc_core::Immediate(std::move(initial_metadata));
 }
+
+const char* grpc_md_only_test_credentials::Type() { return "MdOnlyTest"; }
 
 grpc_call_credentials* grpc_md_only_test_credentials_create(
     const char* md_key, const char* md_value) {

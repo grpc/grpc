@@ -30,6 +30,7 @@
 #include <grpc/support/log.h>
 #include <grpc/support/time.h>
 
+#include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/gpr/env.h"
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gpr/useful.h"
@@ -214,6 +215,7 @@ std::pair<MemStats, MemStats> run_test_loop(int iterations, int* call_idx) {
 ABSL_FLAG(std::string, target, "localhost:443", "Target host:port");
 ABSL_FLAG(int, warmup, 100, "Warmup iterations");
 ABSL_FLAG(int, benchmark, 1000, "Benchmark iterations");
+ABSL_FLAG(bool, minstack, false, "Use minimal stack");
 
 int main(int argc, char** argv) {
   absl::ParseCommandLine(argc, argv);
@@ -223,7 +225,7 @@ int main(int argc, char** argv) {
 
   GPR_ASSERT(argc >= 1);
   fake_argv[0] = argv[0];
-  grpc::testing::TestEnvironment env(1, fake_argv);
+  grpc::testing::TestEnvironment env(&argc, argv);
 
   grpc_init();
 
@@ -233,8 +235,15 @@ int main(int argc, char** argv) {
 
   cq = grpc_completion_queue_create_for_next(nullptr);
 
+  std::vector<grpc_arg> args_vec;
+  if (absl::GetFlag(FLAGS_minstack)) {
+    args_vec.push_back(grpc_channel_arg_integer_create(
+        const_cast<char*>(GRPC_ARG_MINIMAL_STACK), 1));
+  }
+  grpc_channel_args args = {args_vec.size(), args_vec.data()};
+
   channel = grpc_channel_create(absl::GetFlag(FLAGS_target).c_str(),
-                                grpc_insecure_credentials_create(), nullptr);
+                                grpc_insecure_credentials_create(), &args);
 
   int call_idx = 0;
   const int warmup_iterations = absl::GetFlag(FLAGS_warmup);

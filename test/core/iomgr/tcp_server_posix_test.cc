@@ -137,7 +137,7 @@ static void server_weak_ref_set(server_weak_ref* weak_ref,
 }
 
 static void test_addr_init_str(test_addr* addr) {
-  std::string str = grpc_sockaddr_to_string(&addr->addr, false);
+  std::string str = grpc_sockaddr_to_string(&addr->addr, false).value();
   size_t str_len = std::min(str.size(), sizeof(addr->str) - 1);
   memcpy(addr->str, str.c_str(), str_len);
   addr->str[str_len] = '\0';
@@ -461,7 +461,7 @@ int main(int argc, char** argv) {
   struct ifaddrs* ifa_it;
   // Zalloc dst_addrs to avoid oversized frames.
   test_addrs* dst_addrs = grpc_core::Zalloc<test_addrs>();
-  grpc::testing::TestEnvironment env(argc, argv);
+  grpc::testing::TestEnvironment env(&argc, argv);
   grpc_init();
   // wait a few seconds to make sure IPv6 link-local addresses can be bound
   // if we are running under docker container that has just started.
