@@ -41,7 +41,8 @@ export DOCKERHUB_ORGANIZATION=grpctesting
 
 git submodule update --init
 
-if [[ $GRPC_BUILD_COMPILE_PYTHON == "TRUE"]]; then
+if [ "$GRPC_BUILD_COMPILE_PYTHON" == "TRUE" ]
+then
   $(dirname $0)/install_python_ubuntu.sh
 fi
 
