@@ -147,6 +147,29 @@ grpc_cc_test(
 )
 
 grpc_cc_test(
+    name = "xds_cluster_end2end_test",
+    size = "large",
+    srcs = ["xds_cluster_end2end_test.cc"],
+    external_deps = [
+        "gtest",
+    ],
+    flaky = True,  # TODO(b/144705388)
+    linkstatic = True,  # Fixes dyld error on MacOS
+    shard_count = 10,
+    tags = [
+        "no_test_ios",
+        "no_windows",
+    ],  # TODO(jtattermusch): fix test on windows
+    deps = [
+        ":xds_end2end_test_lib",
+        "//:gpr",
+        "//:grpc",
+        "//:grpc++",
+        "//test/core/util:grpc_test_util",
+    ],
+)
+
+grpc_cc_test(
     name = "xds_cluster_type_end2end_test",
     size = "large",
     srcs = ["xds_cluster_type_end2end_test.cc"],
