@@ -647,8 +647,7 @@ class XdsEnd2endTest : public ::testing::TestWithParam<XdsTestType> {
   }
 
   // Same as CreateBackends(), but also starts the backends.
-  void CreateAndStartBackends(size_t num_backends, bool xds_enabled = false,
-                              bool allow_put_requests = false) {
+  void CreateAndStartBackends(size_t num_backends, bool xds_enabled = false) {
     CreateBackends(num_backends, xds_enabled);
     StartAllBackends();
   }
