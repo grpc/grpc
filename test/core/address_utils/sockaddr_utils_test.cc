@@ -271,7 +271,8 @@ TEST(SockAddrUtilsTest, UnixSockAddrToUri) {
   ASSERT_TRUE(GRPC_ERROR_NONE ==
               grpc_core::UnixAbstractSockaddrPopulate(
                   std::string("path_\0with_null", 15), &addr));
-  EXPECT_EQ(grpc_sockaddr_to_uri(&addr).value(), "unix-abstract:path_%00with_null");
+  EXPECT_EQ(grpc_sockaddr_to_uri(&addr).value(),
+            "unix-abstract:path_%00with_null");
 }
 
 #endif /* GRPC_HAVE_UNIX_SOCKET */
