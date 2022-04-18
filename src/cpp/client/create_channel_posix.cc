@@ -34,7 +34,7 @@ class ChannelArguments;
 
 std::shared_ptr<Channel> CreateInsecureChannelFromFd(const std::string& target,
                                                      int fd) {
-  grpc::internal::GrpcLibrary init_lib;
+  internal::GrpcLibrary init_lib;
   init_lib.init();
   grpc_channel_credentials* creds = grpc_insecure_credentials_create();
   auto channel = CreateChannelInternal(
@@ -42,6 +42,8 @@ std::shared_ptr<Channel> CreateInsecureChannelFromFd(const std::string& target,
       std::vector<
           std::unique_ptr<experimental::ClientInterceptorFactoryInterface>>());
   grpc_channel_credentials_release(creds);
+  // Channel also initializes gRPC, so we can decrement the init ref count here.
+  init_lib.shutdown();
   return channel;
 }
 
@@ -57,6 +59,8 @@ std::shared_ptr<Channel> CreateCustomInsecureChannelFromFd(
       std::vector<
           std::unique_ptr<experimental::ClientInterceptorFactoryInterface>>());
   grpc_channel_credentials_release(creds);
+  // Channel also initializes gRPC, so we can decrement the init ref count here.
+  init_lib.shutdown();
   return channel;
 }
 
@@ -67,7 +71,7 @@ std::shared_ptr<Channel> CreateCustomInsecureChannelWithInterceptorsFromFd(
     std::vector<
         std::unique_ptr<grpc::experimental::ClientInterceptorFactoryInterface>>
         interceptor_creators) {
-  grpc::internal::GrpcLibrary init_lib;
+  internal::GrpcLibrary init_lib;
   init_lib.init();
   grpc_channel_args channel_args;
   args.SetChannelArgs(&channel_args);
@@ -76,6 +80,8 @@ std::shared_ptr<Channel> CreateCustomInsecureChannelWithInterceptorsFromFd(
       "", grpc_channel_create_from_fd(target.c_str(), fd, creds, &channel_args),
       std::move(interceptor_creators));
   grpc_channel_credentials_release(creds);
+  // Channel also initializes gRPC, so we can decrement the init ref count here.
+  init_lib.shutdown();
   return channel;
 }
 
