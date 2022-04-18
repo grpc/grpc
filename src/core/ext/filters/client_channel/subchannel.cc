@@ -770,7 +770,7 @@ void Subchannel::CancelConnectivityStateWatch(
   }
 }
 
-void Subchannel::AttemptToConnect() {
+void Subchannel::RequestConnection() {
   MutexLock lock(&mu_);
   if (state_ == GRPC_CHANNEL_IDLE) {
     StartConnectingLocked();

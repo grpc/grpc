@@ -266,7 +266,7 @@ class RingHash : public LoadBalancingPolicy {
             [self]() {
               if (!self->ring_hash_lb_->shutdown_) {
                 for (auto& subchannel : self->subchannels_) {
-                  subchannel->AttemptToConnect();
+                  subchannel->RequestConnection();
                 }
               }
               delete self;
@@ -626,7 +626,7 @@ void RingHash::RingHashSubchannelList::UpdateRingHashConnectivityStateLocked(
   // indefinitely if there are no new picks coming in.
   if (start_connection_attempt) {
     size_t next_index = (index + 1) % num_subchannels();
-    subchannel(next_index)->subchannel()->AttemptToConnect();
+    subchannel(next_index)->subchannel()->RequestConnection();
   }
 }
 

@@ -232,7 +232,7 @@ void PickFirst::AttemptToConnectUsingLatestUpdateArgsLocked() {
     // here, since we've already checked the initial connectivity
     // state of all subchannels above.
     subchannel_list_->subchannel(0)->StartConnectivityWatchLocked();
-    subchannel_list_->subchannel(0)->subchannel()->AttemptToConnect();
+    subchannel_list_->subchannel(0)->subchannel()->RequestConnection();
   } else {
     // We do have a selected subchannel (which means it's READY), so keep
     // using it until one of the subchannels in the new list reports READY.
@@ -255,7 +255,7 @@ void PickFirst::AttemptToConnectUsingLatestUpdateArgsLocked() {
         ->StartConnectivityWatchLocked();
     latest_pending_subchannel_list_->subchannel(0)
         ->subchannel()
-        ->AttemptToConnect();
+        ->RequestConnection();
   }
 }
 
@@ -483,7 +483,7 @@ void PickFirst::PickFirstSubchannelData::
   if (current_state == GRPC_CHANNEL_READY) {
     if (p->selected_ != this) ProcessUnselectedReadyLocked();
   } else {
-    subchannel()->AttemptToConnect();
+    subchannel()->RequestConnection();
   }
 }
 

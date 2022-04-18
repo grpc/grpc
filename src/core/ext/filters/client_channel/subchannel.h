@@ -237,7 +237,7 @@ class Subchannel : public DualRefCounted<Subchannel> {
   }
 
   // Attempt to connect to the backend.  Has no effect if already connected.
-  void AttemptToConnect() ABSL_LOCKS_EXCLUDED(mu_);
+  void RequestConnection() ABSL_LOCKS_EXCLUDED(mu_);
 
   // Resets the connection backoff of the subchannel.
   void ResetBackoff() ABSL_LOCKS_EXCLUDED(mu_);
@@ -353,7 +353,7 @@ class Subchannel : public DualRefCounted<Subchannel> {
 
   bool shutdown_ ABSL_GUARDED_BY(mu_) = false;
 
-  // Records if AttemptToConnect() was called while in backoff.
+  // Records if RequestConnection() was called while in backoff.
   bool connection_requested_ ABSL_GUARDED_BY(mu_) = false;
 
   // Connectivity state tracking.
