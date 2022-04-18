@@ -1,26 +1,36 @@
-import os
-import sys
-import subprocess
-import tempfile
+# Copyright 2022 gRPC authors.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
 import contextlib
+import logging
+import os
+import subprocess
+import sys
+import tempfile
 import time
+from typing import List, Tuple
 import unittest
 
+import grpc.experimental
 import xds_interop_client
 import xds_interop_server
 
-import grpc.experimental
-
-from src.proto.grpc.testing import test_pb2
 from src.proto.grpc.testing import empty_pb2
-from src.proto.grpc.testing import test_pb2_grpc
 from src.proto.grpc.testing import messages_pb2
-
+from src.proto.grpc.testing import test_pb2
+from src.proto.grpc.testing import test_pb2_grpc
 import src.python.grpcio_tests.tests.unit.framework.common as framework_common
-
-from typing import List, Tuple
-
-import logging
 
 _CLIENT_PATH = os.path.abspath(os.path.realpath(xds_interop_client.__file__))
 _SERVER_PATH = os.path.abspath(os.path.realpath(xds_interop_server.__file__))
