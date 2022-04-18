@@ -198,7 +198,8 @@ def _on_rpc_done(rpc_id: int, future: grpc.Future, method: str,
                  print_response: bool) -> None:
     exception = future.exception()
     hostname = ""
-    _global_rpc_statuses[method][future.code().value[0]] += 1
+    with _global_lock:
+        _global_rpc_statuses[method][future.code().value[0]] += 1
     if exception is not None:
         with _global_lock:
             _global_rpcs_failed[method] += 1
