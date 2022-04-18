@@ -41,9 +41,25 @@ export DOCKERHUB_ORGANIZATION=grpctesting
 
 git submodule update --init
 
-if [ "$GRPC_BUILD_COMPILE_PYTHON" == "TRUE" ]
+if [ "${PREPARE_BUILD_INSTALL_DEPS_PYTHON}" == "true" ]
 then
-  $(dirname $0)/install_python_ubuntu.sh
+  # Prepares the build dependencies
+  sudo apt update
+  sudo apt install -y zlib1g-dev libssl-dev jq build-essential libffi-dev wget
+
+  # Downloads and compiles Python 3.9.12
+  cd /tmp
+  wget -q https://www.python.org/ftp/python/3.9.12/Python-3.9.12.tgz
+  echo "abc7f7f83ea8614800b73c45cf3262d3 Python-3.9.12.tgz" > checksum.md5
+  md5sum -c checksum.md5
+
+  tar xzvf Python-3.9.12.tgz
+  pushd ./Python-3.9.12
+  ./configure --enable-optimizations
+  make -j8
+  make install
+  popd
 fi
 
+python3 --version
 python3 -m pip install six
