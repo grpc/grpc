@@ -57,7 +57,7 @@ then
   pushd ./Python-3.9.12
   ./configure --enable-optimizations
   make -j8
-  make install
+  sudo make install
   popd
 fi
 
