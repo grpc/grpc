@@ -151,11 +151,11 @@ config_setting(
 python_config_settings()
 
 # This should be updated along with build_handwritten.yaml
-g_stands_for = "golazo"  # @unused
+g_stands_for = "gridman"  # @unused
 
-core_version = "23.0.0"  # @unused
+core_version = "24.0.0"  # @unused
 
-version = "1.46.0-dev"  # @unused
+version = "1.47.0-dev"  # @unused
 
 GPR_PUBLIC_HDRS = [
     "include/grpc/support/alloc.h",
@@ -1756,6 +1756,9 @@ grpc_cc_library(
     hdrs = [
         "src/core/lib/gprpp/time.h",
     ],
+    external_deps = [
+        "absl/strings:str_format",
+    ],
     deps = [
         "gpr",
         "gpr_codegen",
@@ -1795,6 +1798,8 @@ grpc_cc_library(
         "src/core/lib/address_utils/sockaddr_utils.h",
     ],
     external_deps = [
+        "absl/status",
+        "absl/status:statusor",
         "absl/strings",
         "absl/strings:str_format",
     ],
@@ -1803,6 +1808,7 @@ grpc_cc_library(
         "gpr_base",
         "grpc_sockaddr",
         "resolved_address",
+        "uri_parser",
     ],
 )
 
@@ -2258,6 +2264,7 @@ grpc_cc_library(
         "ref_counted_ptr",
         "resolved_address",
         "resource_quota",
+        "resource_quota_trace",
         "slice",
         "slice_refcount",
         "sockaddr_utils",
@@ -2496,6 +2503,7 @@ grpc_cc_library(
     deps = [
         "avl",
         "channel_stack_type",
+        "dual_ref_counted",
         "gpr_base",
         "grpc_codegen",
         "match",
@@ -2639,10 +2647,12 @@ grpc_cc_library(
     ],
     language = "c++",
     deps = [
+        "arena",
         "gpr_base",
         "grpc_base",
         "grpc_server_config_selector",
         "grpc_service_config",
+        "promise",
     ],
 )
 
@@ -2664,6 +2674,9 @@ grpc_cc_library(
     name = "grpc_channel_idle_filter",
     srcs = [
         "src/core/ext/filters/channel_idle/channel_idle_filter.cc",
+    ],
+    hdrs = [
+        "src/core/ext/filters/channel_idle/channel_idle_filter.h",
     ],
     deps = [
         "capture",
@@ -5038,6 +5051,31 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "grpcpp_orca",
+    srcs = [
+        "src/cpp/server/orca/orca_service.cc",
+    ],
+    external_deps = [
+        "upb_lib",
+    ],
+    language = "c++",
+    public_hdrs = [
+        "include/grpcpp/ext/orca_service.h",
+    ],
+    visibility = ["@grpc:public"],
+    deps = [
+        "grpc++",
+        "grpc++_codegen_base",
+        "grpc_base",
+        "protobuf_duration_upb",
+        "time",
+        "xds_orca_service_upb",
+        "xds_orca_upb",
+    ],
+    alwayslink = 1,
+)
+
+grpc_cc_library(
     name = "grpcpp_channelz",
     srcs = [
         "src/cpp/server/channelz/channelz_service.cc",
@@ -5404,6 +5442,11 @@ grpc_upb_proto_reflection_library(
 grpc_upb_proto_library(
     name = "xds_orca_upb",
     deps = ["@com_github_cncf_udpa//xds/data/orca/v3:pkg"],
+)
+
+grpc_upb_proto_library(
+    name = "xds_orca_service_upb",
+    deps = ["@com_github_cncf_udpa//xds/service/orca/v3:pkg"],
 )
 
 grpc_upb_proto_library(

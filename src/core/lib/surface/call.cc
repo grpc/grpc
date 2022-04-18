@@ -836,6 +836,9 @@ bool FilterStackCall::PrepareApplicationMetadata(size_t count,
     } else if (GRPC_SLICE_LENGTH(md->value) >= UINT32_MAX) {
       // HTTP2 hpack encoding has a maximum limit.
       return false;
+    } else if (grpc_slice_str_cmp(md->key, "content-length") == 0) {
+      // Filter "content-length metadata"
+      continue;
     }
     batch->Append(StringViewFromSlice(md->key),
                   Slice(grpc_slice_ref_internal(md->value)),

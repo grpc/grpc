@@ -33,6 +33,8 @@ namespace grpc_core {
 
 class ClientAuthorityFilter final : public ChannelFilter {
  public:
+  static const grpc_channel_filter kFilter;
+
   static absl::StatusOr<ClientAuthorityFilter> Create(ChannelArgs args,
                                                       ChannelFilter::Args);
 
