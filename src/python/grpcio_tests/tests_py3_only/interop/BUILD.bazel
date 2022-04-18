@@ -50,8 +50,10 @@ py_test(
     deps = [
         ":xds_interop_client",
         ":xds_interop_server",
+        "//src/proto/grpc/testing:empty_py_pb2",
         "//src/proto/grpc/testing:py_test_proto",
         "//src/proto/grpc/testing:test_py_pb2_grpc",
         "//src/proto/grpc/testing:py_messages_proto",
+        "//src/python/grpcio_tests/tests/unit/framework/common",
     ],
 )
