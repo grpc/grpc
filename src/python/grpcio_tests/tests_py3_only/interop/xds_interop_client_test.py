@@ -34,30 +34,38 @@ _QPS = 100
 _NUM_CHANNELS = 20
 
 _TEST_ITERATIONS = 10
-_ITERATION_DURATION_SECONDS = 2
+_ITERATION_DURATION_SECONDS = 1
 _SUBPROCESS_TIMEOUT_SECONDS = 2
 
+
 @contextlib.contextmanager
-def _start_python_with_args(file: str, args: List[str]) -> Tuple[subprocess.Popen, tempfile.TemporaryFile, tempfile.TemporaryFile]:
+def _start_python_with_args(
+    file: str, args: List[str]
+) -> Tuple[subprocess.Popen, tempfile.TemporaryFile, tempfile.TemporaryFile]:
     with tempfile.TemporaryFile(mode='r') as stdout:
         with tempfile.TemporaryFile(mode='r') as stderr:
-            proc = subprocess.Popen((sys.executable, file) + tuple(args), stdout=stdout, stderr=stderr)
+            proc = subprocess.Popen((sys.executable, file) + tuple(args),
+                                    stdout=stdout,
+                                    stderr=stderr)
             yield proc, stdout, stderr
 
 
-def _dump_stream(process_name: str, stream_name: str, stream: tempfile.TemporaryFile):
+def _dump_stream(process_name: str, stream_name: str,
+                 stream: tempfile.TemporaryFile):
     sys.stderr.write(f"{process_name} {stream_name}:\n")
     stream.seek(0)
     sys.stderr.write(stream.read())
 
 
-def _dump_streams(process_name: str, stdout: tempfile.TemporaryFile, stderr: tempfile.TemporaryFile):
+def _dump_streams(process_name: str, stdout: tempfile.TemporaryFile,
+                  stderr: tempfile.TemporaryFile):
     _dump_stream(process_name, "stdout", stdout)
     _dump_stream(process_name, "stderr", stderr)
     sys.stderr.write(f"End {process_name} output.\n")
 
 
-def _test_client(server_port: int, stats_port: int, qps: int, num_channels: int):
+def _test_client(server_port: int, stats_port: int, qps: int,
+                 num_channels: int):
     # Send RPC to server to make sure it's running.
     test_pb2_grpc.TestService.EmptyCall(empty_pb2.Empty(),
                                         f"localhost:{server_port}",
@@ -65,24 +73,22 @@ def _test_client(server_port: int, stats_port: int, qps: int, num_channels: int)
                                         wait_for_ready=True)
     logging.info("Successfully sent RPC to server.")
     settings = {
-            "target": f"localhost:{stats_port}",
-            "insecure": True,
+        "target": f"localhost:{stats_port}",
+        "insecure": True,
     }
     for i in range(_TEST_ITERATIONS):
         target_method, target_method_str = _METHODS[i % len(_METHODS)]
         test_pb2_grpc.XdsUpdateClientConfigureService.Configure(
-                messages_pb2.ClientConfigureRequest(types=[target_method]),
-                **settings)
+            messages_pb2.ClientConfigureRequest(types=[target_method]),
+            **settings)
         response = test_pb2_grpc.LoadBalancerStatsService.GetClientAccumulatedStats(
-                messages_pb2.LoadBalancerAccumulatedStatsRequest(),
-                **settings)
+            messages_pb2.LoadBalancerAccumulatedStatsRequest(), **settings)
         before = {}
         for _, method_str in _METHODS:
             before[method_str] = response.stats_per_method[method_str].result[0]
         time.sleep(_ITERATION_DURATION_SECONDS)
         response = test_pb2_grpc.LoadBalancerStatsService.GetClientAccumulatedStats(
-                messages_pb2.LoadBalancerAccumulatedStatsRequest(),
-                **settings)
+            messages_pb2.LoadBalancerAccumulatedStatsRequest(), **settings)
         after = {}
         delta = {}
         for _, method_str in _METHODS:
@@ -96,16 +102,22 @@ def _test_client(server_port: int, stats_port: int, qps: int, num_channels: int)
                 assert delta[method_str] == 0
 
 
-
 class XdsInteropClientTest(unittest.TestCase):
 
     def test_configure_consistenc(self):
         _, server_port, socket = framework_common.get_socket()
 
-        with _start_python_with_args(_SERVER_PATH, [f"--port={server_port}", f"--maintenance_port={server_port}"]) as (server, server_stdout, server_stderr):
+        with _start_python_with_args(
+                _SERVER_PATH,
+            [f"--port={server_port}", f"--maintenance_port={server_port}"
+            ]) as (server, server_stdout, server_stderr):
             socket.close()
             _, stats_port, stats_socket = framework_common.get_socket()
-            with _start_python_with_args(_CLIENT_PATH, [f"--server=localhost:{server_port}", f"--stats_port={stats_port}", f"--qps={_QPS}", f"--num_channels={_NUM_CHANNELS}"]) as (client, client_stdout, client_stderr):
+            with _start_python_with_args(_CLIENT_PATH, [
+                    f"--server=localhost:{server_port}",
+                    f"--stats_port={stats_port}", f"--qps={_QPS}",
+                    f"--num_channels={_NUM_CHANNELS}"
+            ]) as (client, client_stdout, client_stderr):
                 stats_socket.close()
                 try:
                     _test_client(server_port, stats_port, _QPS, _NUM_CHANNELS)
