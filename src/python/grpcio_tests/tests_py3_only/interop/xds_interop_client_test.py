@@ -112,7 +112,6 @@ class XdsInteropClientTest(unittest.TestCase):
                                                 insecure=True,
                                                 wait_for_ready=True)
             logging.info("Server successfully started.")
-            logging.info("Successfully sent RPC to server.")
             socket.close()
             _, stats_port, stats_socket = framework_common.get_socket()
             with _start_python_with_args(_CLIENT_PATH, [
