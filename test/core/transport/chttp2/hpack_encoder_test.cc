@@ -257,7 +257,7 @@ static void run_test(void (*test)(), const char* name) {
 
 int main(int argc, char** argv) {
   grpc_test_only_set_slice_hash_seed(0);
-  grpc::testing::TestEnvironment env(argc, argv);
+  grpc::testing::TestEnvironment env(&argc, argv);
   grpc_init();
   TEST(test_basic_headers);
   TEST(test_continuation_headers);

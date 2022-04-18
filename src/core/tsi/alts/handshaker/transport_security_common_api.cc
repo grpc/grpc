@@ -68,7 +68,7 @@ bool grpc_gcp_rpc_protocol_versions_encode(
 }
 
 bool grpc_gcp_rpc_protocol_versions_encode(
-    const grpc_gcp_RpcProtocolVersions* versions, upb_arena* arena,
+    const grpc_gcp_RpcProtocolVersions* versions, upb_Arena* arena,
     grpc_slice* slice) {
   if (versions == nullptr || arena == nullptr || slice == nullptr) {
     gpr_log(GPR_ERROR,
@@ -135,7 +135,7 @@ void grpc_gcp_rpc_protocol_versions_assign_from_upb(
 }
 
 void grpc_gcp_RpcProtocolVersions_assign_from_struct(
-    grpc_gcp_RpcProtocolVersions* versions, upb_arena* arena,
+    grpc_gcp_RpcProtocolVersions* versions, upb_Arena* arena,
     const grpc_gcp_rpc_protocol_versions* value) {
   grpc_gcp_RpcProtocolVersions_Version* max_version_msg =
       grpc_gcp_RpcProtocolVersions_mutable_max_rpc_version(versions, arena);

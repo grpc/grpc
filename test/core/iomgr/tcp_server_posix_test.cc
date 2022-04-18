@@ -16,6 +16,7 @@
  *
  */
 
+#include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/iomgr/port.h"
 
 // This test won't work except with posix sockets enabled
@@ -136,7 +137,7 @@ static void server_weak_ref_set(server_weak_ref* weak_ref,
 }
 
 static void test_addr_init_str(test_addr* addr) {
-  std::string str = grpc_sockaddr_to_string(&addr->addr, false);
+  std::string str = grpc_sockaddr_to_string(&addr->addr, false).value();
   size_t str_len = std::min(str.size(), sizeof(addr->str) - 1);
   memcpy(addr->str, str.c_str(), str_len);
   addr->str[str_len] = '\0';
@@ -239,8 +240,8 @@ static void test_no_op_with_port_and_start(void) {
 
 static grpc_error_handle tcp_connect(const test_addr* remote,
                                      on_connect_result* result) {
-  grpc_millis deadline =
-      grpc_timespec_to_millis_round_up(grpc_timeout_seconds_to_deadline(10));
+  grpc_core::Timestamp deadline = grpc_core::Timestamp::FromTimespecRoundUp(
+      grpc_timeout_seconds_to_deadline(10));
   int clifd;
   int nconnects_before;
   const struct sockaddr* remote_addr =
@@ -460,7 +461,7 @@ int main(int argc, char** argv) {
   struct ifaddrs* ifa_it;
   // Zalloc dst_addrs to avoid oversized frames.
   test_addrs* dst_addrs = grpc_core::Zalloc<test_addrs>();
-  grpc::testing::TestEnvironment env(argc, argv);
+  grpc::testing::TestEnvironment env(&argc, argv);
   grpc_init();
   // wait a few seconds to make sure IPv6 link-local addresses can be bound
   // if we are running under docker container that has just started.

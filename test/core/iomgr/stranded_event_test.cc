@@ -52,7 +52,6 @@
 #include "src/core/lib/slice/slice_string_helpers.h"
 #include "src/core/lib/uri/uri_parser.h"
 #include "test/core/end2end/cq_verifier.h"
-#include "test/core/util/memory_counters.h"
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
 
@@ -444,7 +443,7 @@ TEST(Pollers, TestReadabilityNotificationsDontGetStrandedOnOneCq) {
 
 int main(int argc, char** argv) {
   ::testing::InitGoogleTest(&argc, argv);
-  grpc::testing::TestEnvironment env(argc, argv);
+  grpc::testing::TestEnvironment env(&argc, argv);
   grpc_init();
   auto result = RUN_ALL_TESTS();
   grpc_shutdown();

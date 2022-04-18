@@ -10,12 +10,12 @@
 #include "envoy/config/trace/v3/lightstep.upbdefs.h"
 #include "envoy/config/trace/v3/lightstep.upb.h"
 
-extern upb_def_init envoy_config_core_v3_base_proto_upbdefinit;
-extern upb_def_init envoy_annotations_deprecation_proto_upbdefinit;
-extern upb_def_init udpa_annotations_migrate_proto_upbdefinit;
-extern upb_def_init udpa_annotations_status_proto_upbdefinit;
-extern upb_def_init udpa_annotations_versioning_proto_upbdefinit;
-extern upb_def_init validate_validate_proto_upbdefinit;
+extern _upb_DefPool_Init envoy_config_core_v3_base_proto_upbdefinit;
+extern _upb_DefPool_Init envoy_annotations_deprecation_proto_upbdefinit;
+extern _upb_DefPool_Init udpa_annotations_migrate_proto_upbdefinit;
+extern _upb_DefPool_Init udpa_annotations_status_proto_upbdefinit;
+extern _upb_DefPool_Init udpa_annotations_versioning_proto_upbdefinit;
+extern _upb_DefPool_Init validate_validate_proto_upbdefinit;
 static const char descriptor[883] = {'\n', '%', 'e', 'n', 'v', 'o', 'y', '/', 'c', 'o', 'n', 'f', 'i', 'g', '/', 't', 'r', 'a', 'c', 'e', '/', 'v', '3', '/', 'l', 
 'i', 'g', 'h', 't', 's', 't', 'e', 'p', '.', 'p', 'r', 'o', 't', 'o', '\022', '\025', 'e', 'n', 'v', 'o', 'y', '.', 'c', 'o', 'n', 
 'f', 'i', 'g', '.', 't', 'r', 'a', 'c', 'e', '.', 'v', '3', '\032', '\037', 'e', 'n', 'v', 'o', 'y', '/', 'c', 'o', 'n', 'f', 'i', 
@@ -54,7 +54,7 @@ static const char descriptor[883] = {'\n', '%', 'e', 'n', 'v', 'o', 'y', '/', 'c
 'b', '\006', 'p', 'r', 'o', 't', 'o', '3', 
 };
 
-static upb_def_init *deps[7] = {
+static _upb_DefPool_Init *deps[7] = {
   &envoy_config_core_v3_base_proto_upbdefinit,
   &envoy_annotations_deprecation_proto_upbdefinit,
   &udpa_annotations_migrate_proto_upbdefinit,
@@ -64,9 +64,9 @@ static upb_def_init *deps[7] = {
   NULL
 };
 
-upb_def_init envoy_config_trace_v3_lightstep_proto_upbdefinit = {
+_upb_DefPool_Init envoy_config_trace_v3_lightstep_proto_upbdefinit = {
   deps,
   &envoy_config_trace_v3_lightstep_proto_upb_file_layout,
   "envoy/config/trace/v3/lightstep.proto",
-  UPB_STRVIEW_INIT(descriptor, 883)
+  UPB_STRINGVIEW_INIT(descriptor, 883)
 };

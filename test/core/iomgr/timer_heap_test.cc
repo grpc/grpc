@@ -203,7 +203,7 @@ static void test2(void) {
     }
 
     if (num_inserted) {
-      grpc_millis* min_deadline = nullptr;
+      int64_t* min_deadline = nullptr;
       for (size_t i = 0; i < elems_size; i++) {
         if (elems[i].inserted) {
           if (min_deadline == nullptr) {
@@ -285,7 +285,7 @@ static void shrink_test(void) {
 int main(int argc, char** argv) {
   int i;
 
-  grpc::testing::TestEnvironment env(argc, argv);
+  grpc::testing::TestEnvironment env(&argc, argv);
 
   for (i = 0; i < 5; i++) {
     test1();

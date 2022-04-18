@@ -19,31 +19,31 @@ extern "C" {
 
 #include "upb/port_def.inc"
 
-extern upb_def_init envoy_service_status_v3_csds_proto_upbdefinit;
+extern _upb_DefPool_Init envoy_service_status_v3_csds_proto_upbdefinit;
 
-UPB_INLINE const upb_msgdef *envoy_service_status_v3_ClientStatusRequest_getmsgdef(upb_symtab *s) {
-  _upb_symtab_loaddefinit(s, &envoy_service_status_v3_csds_proto_upbdefinit);
-  return upb_symtab_lookupmsg(s, "envoy.service.status.v3.ClientStatusRequest");
+UPB_INLINE const upb_MessageDef *envoy_service_status_v3_ClientStatusRequest_getmsgdef(upb_DefPool *s) {
+  _upb_DefPool_LoadDefInit(s, &envoy_service_status_v3_csds_proto_upbdefinit);
+  return upb_DefPool_FindMessageByName(s, "envoy.service.status.v3.ClientStatusRequest");
 }
 
-UPB_INLINE const upb_msgdef *envoy_service_status_v3_PerXdsConfig_getmsgdef(upb_symtab *s) {
-  _upb_symtab_loaddefinit(s, &envoy_service_status_v3_csds_proto_upbdefinit);
-  return upb_symtab_lookupmsg(s, "envoy.service.status.v3.PerXdsConfig");
+UPB_INLINE const upb_MessageDef *envoy_service_status_v3_PerXdsConfig_getmsgdef(upb_DefPool *s) {
+  _upb_DefPool_LoadDefInit(s, &envoy_service_status_v3_csds_proto_upbdefinit);
+  return upb_DefPool_FindMessageByName(s, "envoy.service.status.v3.PerXdsConfig");
 }
 
-UPB_INLINE const upb_msgdef *envoy_service_status_v3_ClientConfig_getmsgdef(upb_symtab *s) {
-  _upb_symtab_loaddefinit(s, &envoy_service_status_v3_csds_proto_upbdefinit);
-  return upb_symtab_lookupmsg(s, "envoy.service.status.v3.ClientConfig");
+UPB_INLINE const upb_MessageDef *envoy_service_status_v3_ClientConfig_getmsgdef(upb_DefPool *s) {
+  _upb_DefPool_LoadDefInit(s, &envoy_service_status_v3_csds_proto_upbdefinit);
+  return upb_DefPool_FindMessageByName(s, "envoy.service.status.v3.ClientConfig");
 }
 
-UPB_INLINE const upb_msgdef *envoy_service_status_v3_ClientConfig_GenericXdsConfig_getmsgdef(upb_symtab *s) {
-  _upb_symtab_loaddefinit(s, &envoy_service_status_v3_csds_proto_upbdefinit);
-  return upb_symtab_lookupmsg(s, "envoy.service.status.v3.ClientConfig.GenericXdsConfig");
+UPB_INLINE const upb_MessageDef *envoy_service_status_v3_ClientConfig_GenericXdsConfig_getmsgdef(upb_DefPool *s) {
+  _upb_DefPool_LoadDefInit(s, &envoy_service_status_v3_csds_proto_upbdefinit);
+  return upb_DefPool_FindMessageByName(s, "envoy.service.status.v3.ClientConfig.GenericXdsConfig");
 }
 
-UPB_INLINE const upb_msgdef *envoy_service_status_v3_ClientStatusResponse_getmsgdef(upb_symtab *s) {
-  _upb_symtab_loaddefinit(s, &envoy_service_status_v3_csds_proto_upbdefinit);
-  return upb_symtab_lookupmsg(s, "envoy.service.status.v3.ClientStatusResponse");
+UPB_INLINE const upb_MessageDef *envoy_service_status_v3_ClientStatusResponse_getmsgdef(upb_DefPool *s) {
+  _upb_DefPool_LoadDefInit(s, &envoy_service_status_v3_csds_proto_upbdefinit);
+  return upb_DefPool_FindMessageByName(s, "envoy.service.status.v3.ClientStatusResponse");
 }
 
 #ifdef __cplusplus

@@ -26,7 +26,7 @@ void grpc_tcp_client_connect(grpc_closure* on_connect, grpc_endpoint** endpoint,
                              grpc_pollset_set* interested_parties,
                              const grpc_channel_args* channel_args,
                              const grpc_resolved_address* addr,
-                             grpc_millis deadline) {
+                             grpc_core::Timestamp deadline) {
   grpc_tcp_client_impl->connect(on_connect, endpoint, interested_parties,
                                 channel_args, addr, deadline);
 }

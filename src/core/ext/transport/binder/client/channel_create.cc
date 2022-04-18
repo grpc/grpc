@@ -144,7 +144,7 @@ std::shared_ptr<grpc::Channel> CreateCustomBinderChannel(
   grpc_binder::GetSecurityPolicySetting()->Set(connection_id, security_policy);
 
   auto channel = CreateChannelInternal(
-      "", ::grpc::internal::CreateClientBinderChannelImpl(new_args),
+      "", grpc::internal::CreateClientBinderChannelImpl(new_args),
       std::vector<
           std::unique_ptr<experimental::ClientInterceptorFactoryInterface>>());
 

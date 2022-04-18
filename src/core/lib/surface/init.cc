@@ -72,7 +72,11 @@ extern void grpc_register_built_in_plugins(void);
 
 static gpr_once g_basic_init = GPR_ONCE_INIT;
 static grpc_core::Mutex* g_init_mu;
-static int g_initializations ABSL_GUARDED_BY(g_init_mu) = 0;
+static int g_initializations ABSL_GUARDED_BY(g_init_mu) = []() {
+  grpc_core::CoreConfiguration::SetDefaultBuilder(
+      grpc_core::BuildCoreConfiguration);
+  return 0;
+}();
 static grpc_core::CondVar* g_shutting_down_cv;
 static bool g_shutting_down ABSL_GUARDED_BY(g_init_mu) = false;
 
@@ -82,7 +86,7 @@ static bool maybe_prepend_client_auth_filter(
   if (args) {
     for (size_t i = 0; i < args->num_args; i++) {
       if (0 == strcmp(GRPC_ARG_SECURITY_CONNECTOR, args->args[i].key)) {
-        builder->PrependFilter(&grpc_client_auth_filter, nullptr);
+        builder->PrependFilter(&grpc_core::ClientAuthFilter::kFilter, nullptr);
         break;
       }
     }
@@ -178,7 +182,6 @@ void grpc_init(void) {
     grpc_stats_init();
     grpc_core::channelz::ChannelzRegistry::Init();
     grpc_core::ApplicationCallbackExecCtx::GlobalInit();
-    grpc_core::ExecCtx::GlobalInit();
     grpc_iomgr_init();
     gpr_timers_global_init();
     for (int i = 0; i < g_number_of_plugins; i++) {
@@ -214,7 +217,6 @@ void grpc_shutdown_internal_locked(void)
     grpc_stats_shutdown();
     grpc_core::Fork::GlobalShutdown();
   }
-  grpc_core::ExecCtx::GlobalShutdown();
   grpc_core::ApplicationCallbackExecCtx::GlobalShutdown();
   g_shutting_down = false;
   g_shutting_down_cv->SignalAll();

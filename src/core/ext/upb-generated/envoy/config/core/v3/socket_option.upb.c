@@ -15,29 +15,31 @@
 
 #include "upb/port_def.inc"
 
-static const upb_msglayout_field envoy_config_core_v3_SocketOption__fields[6] = {
-  {1, UPB_SIZE(20, 24), 0, 0, 9, _UPB_MODE_SCALAR | (_UPB_REP_STRVIEW << _UPB_REP_SHIFT)},
-  {2, UPB_SIZE(0, 0), 0, 0, 3, _UPB_MODE_SCALAR | (_UPB_REP_8BYTE << _UPB_REP_SHIFT)},
-  {3, UPB_SIZE(8, 8), 0, 0, 3, _UPB_MODE_SCALAR | (_UPB_REP_8BYTE << _UPB_REP_SHIFT)},
-  {4, UPB_SIZE(32, 40), UPB_SIZE(-41, -57), 0, 3, _UPB_MODE_SCALAR | (_UPB_REP_8BYTE << _UPB_REP_SHIFT)},
-  {5, UPB_SIZE(32, 40), UPB_SIZE(-41, -57), 0, 12, _UPB_MODE_SCALAR | (_UPB_REP_STRVIEW << _UPB_REP_SHIFT)},
-  {6, UPB_SIZE(16, 16), 0, 0, 14, _UPB_MODE_SCALAR | (_UPB_REP_4BYTE << _UPB_REP_SHIFT)},
+static const upb_MiniTable_Field envoy_config_core_v3_SocketOption__fields[6] = {
+  {1, UPB_SIZE(8, 24), UPB_SIZE(0, 0), kUpb_NoSub, 9, kUpb_FieldMode_Scalar | (kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)},
+  {2, UPB_SIZE(24, 40), UPB_SIZE(0, 0), kUpb_NoSub, 3, kUpb_FieldMode_Scalar | (kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)},
+  {3, UPB_SIZE(32, 48), UPB_SIZE(0, 0), kUpb_NoSub, 3, kUpb_FieldMode_Scalar | (kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)},
+  {4, UPB_SIZE(16, 8), UPB_SIZE(-1, -1), kUpb_NoSub, 3, kUpb_FieldMode_Scalar | (kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)},
+  {5, UPB_SIZE(16, 8), UPB_SIZE(-1, -1), kUpb_NoSub, 12, kUpb_FieldMode_Scalar | (kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)},
+  {6, UPB_SIZE(4, 4), UPB_SIZE(0, 0), kUpb_NoSub, 5, kUpb_FieldMode_Scalar | (kUpb_FieldRep_4Byte << kUpb_FieldRep_Shift)},
 };
 
-const upb_msglayout envoy_config_core_v3_SocketOption_msginit = {
+const upb_MiniTable envoy_config_core_v3_SocketOption_msginit = {
   NULL,
   &envoy_config_core_v3_SocketOption__fields[0],
-  UPB_SIZE(48, 64), 6, _UPB_MSGEXT_NONE, 6, 255,
+  UPB_SIZE(40, 56), 6, kUpb_ExtMode_NonExtendable, 6, 255, 0,
 };
 
-static const upb_msglayout *messages_layout[1] = {
+static const upb_MiniTable *messages_layout[1] = {
   &envoy_config_core_v3_SocketOption_msginit,
 };
 
-const upb_msglayout_file envoy_config_core_v3_socket_option_proto_upb_file_layout = {
+const upb_MiniTable_File envoy_config_core_v3_socket_option_proto_upb_file_layout = {
   messages_layout,
   NULL,
+  NULL,
   1,
+  0,
   0,
 };
 

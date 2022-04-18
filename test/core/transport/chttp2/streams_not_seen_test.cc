@@ -25,7 +25,6 @@
 
 #include <gmock/gmock.h>
 
-#include "absl/synchronization/mutex.h"
 #include "absl/synchronization/notification.h"
 
 #include <grpc/grpc.h>
@@ -39,7 +38,6 @@
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/surface/channel.h"
 #include "test/core/end2end/cq_verifier.h"
-#include "test/core/util/memory_counters.h"
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
 #include "test/core/util/test_tcp_server.h"
@@ -207,7 +205,9 @@ class StreamsNotSeenTest : public ::testing::Test {
         grpc_channel_arg_integer_create(
             const_cast<char*>(GRPC_ARG_HTTP2_MAX_PINGS_WITHOUT_DATA), 0),
         grpc_channel_arg_integer_create(
-            const_cast<char*>(GRPC_ARG_HTTP2_BDP_PROBE), 0)};
+            const_cast<char*>(GRPC_ARG_HTTP2_BDP_PROBE), 0),
+        grpc_channel_arg_integer_create(
+            const_cast<char*>(GRPC_ARG_ENABLE_RETRIES), 0)};
     grpc_channel_args client_channel_args = {GPR_ARRAY_SIZE(client_args),
                                              client_args};
     grpc_channel_credentials* creds = grpc_insecure_credentials_create();
@@ -331,7 +331,7 @@ class StreamsNotSeenTest : public ::testing::Test {
     StreamsNotSeenTest* self = static_cast<StreamsNotSeenTest*>(arg);
     if (error == GRPC_ERROR_NONE) {
       {
-        absl::MutexLock lock(&self->mu_);
+        MutexLock lock(&self->mu_);
         for (size_t i = 0; i < self->read_buffer_.count; ++i) {
           absl::StrAppend(&self->read_bytes_,
                           StringViewFromSlice(self->read_buffer_.slices[i]));
@@ -358,7 +358,7 @@ class StreamsNotSeenTest : public ::testing::Test {
       }
     });
     {
-      absl::MutexLock lock(&mu_);
+      MutexLock lock(&mu_);
       while (!absl::StrContains(read_bytes_, bytes)) {
         read_cv_.WaitWithTimeout(&mu_, absl::Seconds(5));
       }
@@ -383,8 +383,8 @@ class StreamsNotSeenTest : public ::testing::Test {
   grpc_channel* channel_ = nullptr;
   grpc_completion_queue* cq_ = nullptr;
   cq_verifier* cqv_ = nullptr;
-  absl::Mutex mu_;
-  absl::CondVar read_cv_;
+  Mutex mu_;
+  CondVar read_cv_;
   std::atomic<bool> shutdown_{false};
 };
 
@@ -751,7 +751,7 @@ TEST_F(ZeroConcurrencyTest, TransportDestroyed) {
 
 int main(int argc, char** argv) {
   ::testing::InitGoogleTest(&argc, argv);
-  grpc::testing::TestEnvironment env(argc, argv);
+  grpc::testing::TestEnvironment env(&argc, argv);
   int result;
   grpc_core::CoreConfiguration::RunWithSpecialConfiguration(
       [](grpc_core::CoreConfiguration::Builder* builder) {

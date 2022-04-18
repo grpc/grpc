@@ -32,11 +32,9 @@ GrpcServerAuthzFilter::GrpcServerAuthzFilter(
       provider_(std::move(provider)) {}
 
 absl::StatusOr<GrpcServerAuthzFilter> GrpcServerAuthzFilter::Create(
-    const grpc_channel_args* args, ChannelFilter::Args) {
-  grpc_auth_context* auth_context = grpc_find_auth_context_in_args(args);
-  grpc_authorization_policy_provider* provider =
-      grpc_channel_args_find_pointer<grpc_authorization_policy_provider>(
-          args, GRPC_ARG_AUTHORIZATION_POLICY_PROVIDER);
+    ChannelArgs args, ChannelFilter::Args) {
+  auto* auth_context = args.GetObject<grpc_auth_context>();
+  auto* provider = args.GetObject<grpc_authorization_policy_provider>();
   if (provider == nullptr) {
     return absl::InvalidArgumentError("Failed to get authorization provider.");
   }
@@ -49,7 +47,7 @@ absl::StatusOr<GrpcServerAuthzFilter> GrpcServerAuthzFilter::Create(
 }
 
 bool GrpcServerAuthzFilter::IsAuthorized(
-    const ClientInitialMetadata& initial_metadata) {
+    const ClientMetadataHandle& initial_metadata) {
   EvaluateArgs args(initial_metadata.get(), &per_channel_evaluate_args_);
   if (GRPC_TRACE_FLAG_ENABLED(grpc_authz_trace)) {
     gpr_log(GPR_DEBUG,
@@ -92,14 +90,13 @@ bool GrpcServerAuthzFilter::IsAuthorized(
   return false;
 }
 
-ArenaPromise<TrailingMetadata> GrpcServerAuthzFilter::MakeCallPromise(
-    ClientInitialMetadata initial_metadata,
-    NextPromiseFactory next_promise_factory) {
-  if (!IsAuthorized(initial_metadata)) {
-    return ArenaPromise<TrailingMetadata>(Immediate(TrailingMetadata(
+ArenaPromise<ServerMetadataHandle> GrpcServerAuthzFilter::MakeCallPromise(
+    CallArgs call_args, NextPromiseFactory next_promise_factory) {
+  if (!IsAuthorized(call_args.client_initial_metadata)) {
+    return ArenaPromise<ServerMetadataHandle>(Immediate(ServerMetadataHandle(
         absl::PermissionDeniedError("Unauthorized RPC request rejected."))));
   }
-  return next_promise_factory(std::move(initial_metadata));
+  return next_promise_factory(std::move(call_args));
 }
 
 const grpc_channel_filter GrpcServerAuthzFilter::kFilterVtable =

@@ -31,6 +31,7 @@
 #include <grpc/support/string_util.h>
 
 #include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/channel/channel_stack_builder_impl.h"
 #include "src/core/lib/channel/channel_trace.h"
 #include "src/core/lib/channel/channelz.h"
 #include "src/core/lib/channel/channelz_registry.h"
@@ -241,8 +242,8 @@ grpc_channel* grpc_channel_create_internal(
   // grpc_shutdown() when the channel is actually destroyed, thus
   // ensuring that shutdown is deferred until that point.
   grpc_init();
-  grpc_core::ChannelStackBuilder builder(
-      grpc_channel_stack_type_string(channel_stack_type));
+  grpc_core::ChannelStackBuilderImpl builder(
+      grpc_channel_stack_type_string(channel_stack_type), channel_stack_type);
   const grpc_core::UniquePtr<char> default_authority =
       get_default_authority(input_args);
   grpc_channel_args* args =
@@ -258,7 +259,7 @@ grpc_channel* grpc_channel_create_internal(
       optional_transport);
   grpc_channel_args_destroy(args);
   if (!grpc_core::CoreConfiguration::Get().channel_init().CreateStack(
-          &builder, channel_stack_type)) {
+          &builder)) {
     grpc_shutdown();  // Since we won't call destroy_channel().
     return nullptr;
   }
@@ -340,7 +341,7 @@ static grpc_call* grpc_channel_create_call_internal(
     grpc_channel* channel, grpc_call* parent_call, uint32_t propagation_mask,
     grpc_completion_queue* cq, grpc_pollset_set* pollset_set_alternative,
     grpc_core::Slice path, absl::optional<grpc_core::Slice> authority,
-    grpc_millis deadline) {
+    grpc_core::Timestamp deadline) {
   GPR_ASSERT(channel->is_client);
   GPR_ASSERT(!(cq != nullptr && pollset_set_alternative != nullptr));
 
@@ -376,7 +377,7 @@ grpc_call* grpc_channel_create_call(grpc_channel* channel,
       host != nullptr
           ? absl::optional<grpc_core::Slice>(grpc_slice_ref_internal(*host))
           : absl::nullopt,
-      grpc_timespec_to_millis_round_up(deadline));
+      grpc_core::Timestamp::FromTimespecRoundUp(deadline));
 
   return call;
 }
@@ -384,7 +385,7 @@ grpc_call* grpc_channel_create_call(grpc_channel* channel,
 grpc_call* grpc_channel_create_pollset_set_call(
     grpc_channel* channel, grpc_call* parent_call, uint32_t propagation_mask,
     grpc_pollset_set* pollset_set, const grpc_slice& method,
-    const grpc_slice* host, grpc_millis deadline, void* reserved) {
+    const grpc_slice* host, grpc_core::Timestamp deadline, void* reserved) {
   GPR_ASSERT(!reserved);
   return grpc_channel_create_call_internal(
       channel, parent_call, propagation_mask, nullptr, pollset_set,
@@ -463,7 +464,7 @@ grpc_call* grpc_channel_create_registered_call(
       rc->authority.has_value()
           ? absl::optional<grpc_core::Slice>(rc->authority->Ref())
           : absl::nullopt,
-      grpc_timespec_to_millis_round_up(deadline));
+      grpc_core::Timestamp::FromTimespecRoundUp(deadline));
 
   return call;
 }

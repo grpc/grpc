@@ -19,26 +19,26 @@ extern "C" {
 
 #include "upb/port_def.inc"
 
-extern upb_def_init opencensus_proto_trace_v1_trace_config_proto_upbdefinit;
+extern _upb_DefPool_Init opencensus_proto_trace_v1_trace_config_proto_upbdefinit;
 
-UPB_INLINE const upb_msgdef *opencensus_proto_trace_v1_TraceConfig_getmsgdef(upb_symtab *s) {
-  _upb_symtab_loaddefinit(s, &opencensus_proto_trace_v1_trace_config_proto_upbdefinit);
-  return upb_symtab_lookupmsg(s, "opencensus.proto.trace.v1.TraceConfig");
+UPB_INLINE const upb_MessageDef *opencensus_proto_trace_v1_TraceConfig_getmsgdef(upb_DefPool *s) {
+  _upb_DefPool_LoadDefInit(s, &opencensus_proto_trace_v1_trace_config_proto_upbdefinit);
+  return upb_DefPool_FindMessageByName(s, "opencensus.proto.trace.v1.TraceConfig");
 }
 
-UPB_INLINE const upb_msgdef *opencensus_proto_trace_v1_ProbabilitySampler_getmsgdef(upb_symtab *s) {
-  _upb_symtab_loaddefinit(s, &opencensus_proto_trace_v1_trace_config_proto_upbdefinit);
-  return upb_symtab_lookupmsg(s, "opencensus.proto.trace.v1.ProbabilitySampler");
+UPB_INLINE const upb_MessageDef *opencensus_proto_trace_v1_ProbabilitySampler_getmsgdef(upb_DefPool *s) {
+  _upb_DefPool_LoadDefInit(s, &opencensus_proto_trace_v1_trace_config_proto_upbdefinit);
+  return upb_DefPool_FindMessageByName(s, "opencensus.proto.trace.v1.ProbabilitySampler");
 }
 
-UPB_INLINE const upb_msgdef *opencensus_proto_trace_v1_ConstantSampler_getmsgdef(upb_symtab *s) {
-  _upb_symtab_loaddefinit(s, &opencensus_proto_trace_v1_trace_config_proto_upbdefinit);
-  return upb_symtab_lookupmsg(s, "opencensus.proto.trace.v1.ConstantSampler");
+UPB_INLINE const upb_MessageDef *opencensus_proto_trace_v1_ConstantSampler_getmsgdef(upb_DefPool *s) {
+  _upb_DefPool_LoadDefInit(s, &opencensus_proto_trace_v1_trace_config_proto_upbdefinit);
+  return upb_DefPool_FindMessageByName(s, "opencensus.proto.trace.v1.ConstantSampler");
 }
 
-UPB_INLINE const upb_msgdef *opencensus_proto_trace_v1_RateLimitingSampler_getmsgdef(upb_symtab *s) {
-  _upb_symtab_loaddefinit(s, &opencensus_proto_trace_v1_trace_config_proto_upbdefinit);
-  return upb_symtab_lookupmsg(s, "opencensus.proto.trace.v1.RateLimitingSampler");
+UPB_INLINE const upb_MessageDef *opencensus_proto_trace_v1_RateLimitingSampler_getmsgdef(upb_DefPool *s) {
+  _upb_DefPool_LoadDefInit(s, &opencensus_proto_trace_v1_trace_config_proto_upbdefinit);
+  return upb_DefPool_FindMessageByName(s, "opencensus.proto.trace.v1.RateLimitingSampler");
 }
 
 #ifdef __cplusplus

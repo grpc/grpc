@@ -229,7 +229,7 @@ class DefaultHealthCheckService final : public HealthCheckServiceInterface {
     // we don't enqueue new tags into cq_ after it is already shut down.
     grpc_core::Mutex cq_shutdown_mu_;
     std::atomic_bool shutdown_{false};
-    std::unique_ptr<::grpc_core::Thread> thread_;
+    std::unique_ptr<grpc_core::Thread> thread_;
   };
 
   DefaultHealthCheckService();

@@ -10,15 +10,15 @@
 #include "envoy/config/accesslog/v3/accesslog.upbdefs.h"
 #include "envoy/config/accesslog/v3/accesslog.upb.h"
 
-extern upb_def_init envoy_config_core_v3_base_proto_upbdefinit;
-extern upb_def_init envoy_config_route_v3_route_components_proto_upbdefinit;
-extern upb_def_init envoy_type_matcher_v3_metadata_proto_upbdefinit;
-extern upb_def_init envoy_type_v3_percent_proto_upbdefinit;
-extern upb_def_init google_protobuf_any_proto_upbdefinit;
-extern upb_def_init google_protobuf_wrappers_proto_upbdefinit;
-extern upb_def_init udpa_annotations_status_proto_upbdefinit;
-extern upb_def_init udpa_annotations_versioning_proto_upbdefinit;
-extern upb_def_init validate_validate_proto_upbdefinit;
+extern _upb_DefPool_Init envoy_config_core_v3_base_proto_upbdefinit;
+extern _upb_DefPool_Init envoy_config_route_v3_route_components_proto_upbdefinit;
+extern _upb_DefPool_Init envoy_type_matcher_v3_metadata_proto_upbdefinit;
+extern _upb_DefPool_Init envoy_type_v3_percent_proto_upbdefinit;
+extern _upb_DefPool_Init google_protobuf_any_proto_upbdefinit;
+extern _upb_DefPool_Init google_protobuf_wrappers_proto_upbdefinit;
+extern _upb_DefPool_Init udpa_annotations_status_proto_upbdefinit;
+extern _upb_DefPool_Init udpa_annotations_versioning_proto_upbdefinit;
+extern _upb_DefPool_Init validate_validate_proto_upbdefinit;
 static const char descriptor[4481] = {'\n', ')', 'e', 'n', 'v', 'o', 'y', '/', 'c', 'o', 'n', 'f', 'i', 'g', '/', 'a', 'c', 'c', 'e', 's', 's', 'l', 'o', 'g', '/', 
 'v', '3', '/', 'a', 'c', 'c', 'e', 's', 's', 'l', 'o', 'g', '.', 'p', 'r', 'o', 't', 'o', '\022', '\031', 'e', 'n', 'v', 'o', 'y', 
 '.', 'c', 'o', 'n', 'f', 'i', 'g', '.', 'a', 'c', 'c', 'e', 's', 's', 'l', 'o', 'g', '.', 'v', '3', '\032', '\037', 'e', 'n', 'v', 
@@ -201,7 +201,7 @@ static const char descriptor[4481] = {'\n', ')', 'e', 'n', 'v', 'o', 'y', '/', '
 'p', 'r', 'o', 't', 'o', '3', 
 };
 
-static upb_def_init *deps[10] = {
+static _upb_DefPool_Init *deps[10] = {
   &envoy_config_core_v3_base_proto_upbdefinit,
   &envoy_config_route_v3_route_components_proto_upbdefinit,
   &envoy_type_matcher_v3_metadata_proto_upbdefinit,
@@ -214,9 +214,9 @@ static upb_def_init *deps[10] = {
   NULL
 };
 
-upb_def_init envoy_config_accesslog_v3_accesslog_proto_upbdefinit = {
+_upb_DefPool_Init envoy_config_accesslog_v3_accesslog_proto_upbdefinit = {
   deps,
   &envoy_config_accesslog_v3_accesslog_proto_upb_file_layout,
   "envoy/config/accesslog/v3/accesslog.proto",
-  UPB_STRVIEW_INIT(descriptor, 4481)
+  UPB_STRINGVIEW_INIT(descriptor, 4481)
 };

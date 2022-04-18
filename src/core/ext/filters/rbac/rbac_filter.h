@@ -65,6 +65,8 @@ class RbacFilter {
 
   // The index of this filter instance among instances of the same filter.
   size_t index_;
+  // Assigned index for service config data from the parser.
+  const size_t service_config_parser_index_;
   // Per channel args used for authorization.
   EvaluateArgs::PerChannelArgs per_channel_evaluate_args_;
 };

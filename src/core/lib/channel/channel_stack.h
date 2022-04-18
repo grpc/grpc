@@ -69,8 +69,6 @@ typedef struct grpc_call_element grpc_call_element;
 typedef struct grpc_channel_stack grpc_channel_stack;
 typedef struct grpc_call_stack grpc_call_stack;
 
-#define GRPC_ARG_TRANSPORT "grpc.internal.transport"
-
 struct grpc_channel_element_args {
   grpc_channel_stack* channel_stack;
   const grpc_channel_args* channel_args;
@@ -83,7 +81,7 @@ struct grpc_call_element_args {
   grpc_call_context_element* context;
   const grpc_slice& path;
   gpr_cycle_counter start_time;  // Note: not populated in subchannel stack.
-  grpc_millis deadline;
+  grpc_core::Timestamp deadline;
   grpc_core::Arena* arena;
   grpc_core::CallCombiner* call_combiner;
 };
@@ -122,9 +120,8 @@ struct grpc_channel_filter {
        - allocation of memory for call data
      There is an on-going migration to move all filters to providing this, and
      then to drop start_transport_stream_op_batch. */
-  grpc_core::ArenaPromise<grpc_core::TrailingMetadata> (*make_call_promise)(
-      grpc_channel_element* elem,
-      grpc_core::ClientInitialMetadata initial_metadata,
+  grpc_core::ArenaPromise<grpc_core::ServerMetadataHandle> (*make_call_promise)(
+      grpc_channel_element* elem, grpc_core::CallArgs call_args,
       grpc_core::NextPromiseFactory next_promise_factory);
   /* Called to handle channel level operations - e.g. new calls, or transport
      closure.

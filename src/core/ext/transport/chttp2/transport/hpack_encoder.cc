@@ -481,13 +481,15 @@ void HPackCompressor::Framer::Encode(HttpStatusMetadata, uint32_t status) {
 void HPackCompressor::Framer::Encode(HttpMethodMetadata,
                                      HttpMethodMetadata::ValueType method) {
   switch (method) {
-    case HttpMethodMetadata::ValueType::kGet:
-      EmitIndexed(2);  // :method: GET
-      break;
     case HttpMethodMetadata::ValueType::kPost:
       EmitIndexed(3);  // :method: POST
       break;
+    case HttpMethodMetadata::ValueType::kGet:
+      EmitIndexed(2);  // :method: GET
+      break;
     case HttpMethodMetadata::ValueType::kPut:
+      // Right now, we only emit PUT as a method for testing purposes, so it's
+      // fine to not index it.
       EmitLitHdrWithNonBinaryStringKeyNotIdx(Slice::FromStaticString(":method"),
                                              Slice::FromStaticString("PUT"));
       break;
@@ -523,8 +525,7 @@ void HPackCompressor::Framer::EncodeIndexedKeyWithBinaryValue(
   }
 }
 
-void HPackCompressor::Framer::Encode(GrpcTimeoutMetadata,
-                                     grpc_millis deadline) {
+void HPackCompressor::Framer::Encode(GrpcTimeoutMetadata, Timestamp deadline) {
   Timeout timeout = Timeout::FromDuration(deadline - ExecCtx::Get()->Now());
   for (auto it = compressor_->previous_timeouts_.begin();
        it != compressor_->previous_timeouts_.end(); ++it) {

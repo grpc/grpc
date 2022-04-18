@@ -95,7 +95,7 @@ class StateWatcher : public DualRefCounted<StateWatcher> {
       // watch, but we are hiding that fact from the application.
       if (IsLameChannel(channel)) {
         // Ref from object creation is held by timer callback.
-        StartTimer(grpc_timespec_to_millis_round_up(deadline));
+        StartTimer(Timestamp::FromTimespecRoundUp(deadline));
         return;
       }
       gpr_log(GPR_ERROR,
@@ -108,7 +108,7 @@ class StateWatcher : public DualRefCounted<StateWatcher> {
     // the other by the watcher callback.
     Ref().release();
     auto* watcher_timer_init_state = new WatcherTimerInitState(
-        this, grpc_timespec_to_millis_round_up(deadline));
+        this, Timestamp::FromTimespecRoundUp(deadline));
     client_channel->AddExternalConnectivityWatcher(
         grpc_polling_entity_create_from_pollset(grpc_cq_pollset(cq)), &state_,
         &on_complete_, watcher_timer_init_state->closure());
@@ -123,7 +123,7 @@ class StateWatcher : public DualRefCounted<StateWatcher> {
   // ClientChannel actually starts the watch.
   class WatcherTimerInitState {
    public:
-    WatcherTimerInitState(StateWatcher* state_watcher, grpc_millis deadline)
+    WatcherTimerInitState(StateWatcher* state_watcher, Timestamp deadline)
         : state_watcher_(state_watcher), deadline_(deadline) {
       GRPC_CLOSURE_INIT(&closure_, WatcherTimerInit, this, nullptr);
     }
@@ -138,11 +138,11 @@ class StateWatcher : public DualRefCounted<StateWatcher> {
     }
 
     StateWatcher* state_watcher_;
-    grpc_millis deadline_;
+    Timestamp deadline_;
     grpc_closure closure_;
   };
 
-  void StartTimer(grpc_millis deadline) {
+  void StartTimer(Timestamp deadline) {
     grpc_timer_init(&timer_, deadline, &on_timeout_);
   }
 

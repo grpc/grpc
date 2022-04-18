@@ -101,6 +101,7 @@ grpc_cc_test(
         "no_windows",
         "notsan",
     ],
+    uses_event_engine = False,
     uses_polling = False,
     deps = [":helpers"],
 )
@@ -113,6 +114,7 @@ grpc_cc_test(
         "no_mac",
         "no_windows",
     ],
+    uses_event_engine = False,
     uses_polling = False,
     deps = [":helpers"],
 )
@@ -125,6 +127,7 @@ grpc_cc_test(
         "no_mac",
         "no_windows",
     ],
+    uses_event_engine = False,
     uses_polling = False,
     deps = [":helpers"],
 )
@@ -137,6 +140,7 @@ grpc_cc_test(
         "no_mac",
         "no_windows",
     ],
+    uses_event_engine = False,
     uses_polling = False,
     deps = [":helpers"],
 )
@@ -160,18 +164,7 @@ grpc_cc_test(
         "no_mac",
         "no_windows",
     ],
-    uses_polling = False,
-    deps = [":helpers"],
-)
-
-grpc_cc_test(
-    name = "bm_error",
-    srcs = ["bm_error.cc"],
-    args = grpc_benchmark_args(),
-    tags = [
-        "no_mac",
-        "no_windows",
-    ],
+    uses_event_engine = False,
     uses_polling = False,
     deps = [":helpers"],
 )
@@ -256,6 +249,7 @@ grpc_cc_test(
         "no_mac",
         "no_windows",
     ],
+    uses_event_engine = False,
     uses_polling = False,
     deps = [":helpers"],
 )
@@ -285,18 +279,6 @@ grpc_cc_test(
 )
 
 grpc_cc_test(
-    name = "bm_timer",
-    srcs = ["bm_timer.cc"],
-    args = grpc_benchmark_args(),
-    tags = [
-        "no_mac",
-        "no_windows",
-    ],
-    uses_polling = False,
-    deps = [":helpers"],
-)
-
-grpc_cc_test(
     name = "bm_pollset",
     srcs = ["bm_pollset.cc"],
     args = grpc_benchmark_args(),
@@ -317,6 +299,7 @@ grpc_cc_test(
         "no_windows",
         "notap",
     ],
+    uses_event_engine = False,
     uses_polling = False,
     deps = [":helpers"],
 )

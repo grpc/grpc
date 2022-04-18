@@ -33,7 +33,7 @@ namespace {
 TEST(Sleep, Zzzz) {
   ExecCtx exec_ctx;
   absl::Notification done;
-  grpc_millis done_time = ExecCtx::Get()->Now() + 1000;
+  Timestamp done_time = ExecCtx::Get()->Now() + Duration::Seconds(1);
   // Sleep for one second then set done to true.
   auto activity = MakeActivity(Sleep(done_time), InlineWakeupScheduler(),
                                [&done](absl::Status r) {
@@ -48,7 +48,7 @@ TEST(Sleep, Zzzz) {
 TEST(Sleep, AlreadyDone) {
   ExecCtx exec_ctx;
   absl::Notification done;
-  grpc_millis done_time = ExecCtx::Get()->Now() - 1000;
+  Timestamp done_time = ExecCtx::Get()->Now() - Duration::Seconds(1);
   // Sleep for no time at all then set done to true.
   auto activity = MakeActivity(Sleep(done_time), InlineWakeupScheduler(),
                                [&done](absl::Status r) {
@@ -61,7 +61,7 @@ TEST(Sleep, AlreadyDone) {
 TEST(Sleep, Cancel) {
   ExecCtx exec_ctx;
   absl::Notification done;
-  grpc_millis done_time = ExecCtx::Get()->Now() + 1000;
+  Timestamp done_time = ExecCtx::Get()->Now() + Duration::Seconds(1);
   // Sleep for one second but race it to complete immediately
   auto activity = MakeActivity(
       Race(Sleep(done_time), [] { return absl::CancelledError(); }),

@@ -19,21 +19,21 @@ extern "C" {
 
 #include "upb/port_def.inc"
 
-extern upb_def_init envoy_type_v3_hash_policy_proto_upbdefinit;
+extern _upb_DefPool_Init envoy_type_v3_hash_policy_proto_upbdefinit;
 
-UPB_INLINE const upb_msgdef *envoy_type_v3_HashPolicy_getmsgdef(upb_symtab *s) {
-  _upb_symtab_loaddefinit(s, &envoy_type_v3_hash_policy_proto_upbdefinit);
-  return upb_symtab_lookupmsg(s, "envoy.type.v3.HashPolicy");
+UPB_INLINE const upb_MessageDef *envoy_type_v3_HashPolicy_getmsgdef(upb_DefPool *s) {
+  _upb_DefPool_LoadDefInit(s, &envoy_type_v3_hash_policy_proto_upbdefinit);
+  return upb_DefPool_FindMessageByName(s, "envoy.type.v3.HashPolicy");
 }
 
-UPB_INLINE const upb_msgdef *envoy_type_v3_HashPolicy_SourceIp_getmsgdef(upb_symtab *s) {
-  _upb_symtab_loaddefinit(s, &envoy_type_v3_hash_policy_proto_upbdefinit);
-  return upb_symtab_lookupmsg(s, "envoy.type.v3.HashPolicy.SourceIp");
+UPB_INLINE const upb_MessageDef *envoy_type_v3_HashPolicy_SourceIp_getmsgdef(upb_DefPool *s) {
+  _upb_DefPool_LoadDefInit(s, &envoy_type_v3_hash_policy_proto_upbdefinit);
+  return upb_DefPool_FindMessageByName(s, "envoy.type.v3.HashPolicy.SourceIp");
 }
 
-UPB_INLINE const upb_msgdef *envoy_type_v3_HashPolicy_FilterState_getmsgdef(upb_symtab *s) {
-  _upb_symtab_loaddefinit(s, &envoy_type_v3_hash_policy_proto_upbdefinit);
-  return upb_symtab_lookupmsg(s, "envoy.type.v3.HashPolicy.FilterState");
+UPB_INLINE const upb_MessageDef *envoy_type_v3_HashPolicy_FilterState_getmsgdef(upb_DefPool *s) {
+  _upb_DefPool_LoadDefInit(s, &envoy_type_v3_hash_policy_proto_upbdefinit);
+  return upb_DefPool_FindMessageByName(s, "envoy.type.v3.HashPolicy.FilterState");
 }
 
 #ifdef __cplusplus

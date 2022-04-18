@@ -27,6 +27,7 @@
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 
+#include "src/core/ext/filters/message_size/message_size_filter.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_stack_builder.h"
 #include "src/core/lib/config/core_configuration.h"
@@ -42,23 +43,19 @@ static void recv_trailing_metadata_ready(void* user_data,
 
 namespace grpc_core {
 
-namespace {
-size_t g_message_size_parser_index;
-}  // namespace
-
 //
 // MessageSizeParsedConfig
 //
 
 const MessageSizeParsedConfig* MessageSizeParsedConfig::GetFromCallContext(
-    const grpc_call_context_element* context) {
+    const grpc_call_context_element* context,
+    size_t service_config_parser_index) {
   if (context == nullptr) return nullptr;
   auto* svc_cfg_call_data = static_cast<ServiceConfigCallData*>(
       context[GRPC_CONTEXT_SERVICE_CONFIG_CALL_DATA].value);
   if (svc_cfg_call_data == nullptr) return nullptr;
   return static_cast<const MessageSizeParsedConfig*>(
-      svc_cfg_call_data->GetMethodParsedConfig(
-          MessageSizeParser::ParserIndex()));
+      svc_cfg_call_data->GetMethodParsedConfig(service_config_parser_index));
 }
 
 //
@@ -113,12 +110,15 @@ MessageSizeParser::ParsePerMethodParams(const grpc_channel_args* /*args*/,
                                                     max_response_message_bytes);
 }
 
-void MessageSizeParser::Register() {
-  g_message_size_parser_index = ServiceConfigParser::RegisterParser(
+void MessageSizeParser::Register(CoreConfiguration::Builder* builder) {
+  builder->service_config_parser()->RegisterParser(
       absl::make_unique<MessageSizeParser>());
 }
 
-size_t MessageSizeParser::ParserIndex() { return g_message_size_parser_index; }
+size_t MessageSizeParser::ParserIndex() {
+  return CoreConfiguration::Get().service_config_parser().GetParserIndex(
+      parser_name());
+}
 
 int GetMaxRecvSizeFromChannelArgs(const grpc_channel_args* args) {
   if (grpc_channel_args_want_minimal_stack(args)) return -1;
@@ -139,6 +139,8 @@ int GetMaxSendSizeFromChannelArgs(const grpc_channel_args* args) {
 namespace {
 struct channel_data {
   grpc_core::MessageSizeParsedConfig::message_size_limits limits;
+  const size_t service_config_parser_index{
+      grpc_core::MessageSizeParser::ParserIndex()};
 };
 
 struct call_data {
@@ -155,7 +157,8 @@ struct call_data {
     // apply the max request size to the send limit and the max response
     // size to the receive limit.
     const grpc_core::MessageSizeParsedConfig* limits =
-        grpc_core::MessageSizeParsedConfig::GetFromCallContext(args.context);
+        grpc_core::MessageSizeParsedConfig::GetFromCallContext(
+            args.context, chand.service_config_parser_index);
     if (limits != nullptr) {
       if (limits->limits().max_send_size >= 0 &&
           (limits->limits().max_send_size < this->limits.max_send_size ||
@@ -375,14 +378,9 @@ static bool maybe_add_message_size_filter(
   return true;
 }
 
-void grpc_message_size_filter_init(void) {
-  grpc_core::MessageSizeParser::Register();
-}
-
-void grpc_message_size_filter_shutdown(void) {}
-
 namespace grpc_core {
 void RegisterMessageSizeFilter(CoreConfiguration::Builder* builder) {
+  MessageSizeParser::Register(builder);
   builder->channel_init()->RegisterStage(
       GRPC_CLIENT_SUBCHANNEL, GRPC_CHANNEL_INIT_BUILTIN_PRIORITY,
       maybe_add_message_size_filter_subchannel);

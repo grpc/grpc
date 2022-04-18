@@ -58,7 +58,7 @@ class TransportTargetWindowSizeMocker
       double /* current_target */) override {
     // Protecting access to variable window_size_ shared between client and
     // server.
-    absl::MutexLock lock(&mu_);
+    grpc_core::MutexLock lock(&mu_);
     if (alternating_initial_window_sizes_) {
       window_size_ = (window_size_ == kLargeInitialWindowSize)
                          ? kSmallInitialWindowSize
@@ -70,20 +70,20 @@ class TransportTargetWindowSizeMocker
   // Alternates the initial window size targets. Computes a low values if it was
   // previously high, or a high value if it was previously low.
   void AlternateTargetInitialWindowSizes() {
-    absl::MutexLock lock(&mu_);
+    grpc_core::MutexLock lock(&mu_);
     alternating_initial_window_sizes_ = true;
   }
 
   void Reset() {
     // Protecting access to variable window_size_ shared between client and
     // server.
-    absl::MutexLock lock(&mu_);
+    grpc_core::MutexLock lock(&mu_);
     alternating_initial_window_sizes_ = false;
     window_size_ = kLargeInitialWindowSize;
   }
 
  private:
-  absl::Mutex mu_;
+  grpc_core::Mutex mu_;
   bool alternating_initial_window_sizes_ ABSL_GUARDED_BY(mu_) = false;
   double window_size_ ABSL_GUARDED_BY(mu_) = kLargeInitialWindowSize;
 };
@@ -368,11 +368,11 @@ int main(int argc, char** argv) {
   // are capable of sending and receiving even in the case that we don't have an
   // active RPC operation on the fd.
   GPR_GLOBAL_CONFIG_SET(grpc_client_channel_backup_poll_interval_ms, 1);
-  ::grpc_core::chttp2::g_test_only_transport_flow_control_window_check = true;
+  grpc_core::chttp2::g_test_only_transport_flow_control_window_check = true;
   g_target_initial_window_size_mocker = new TransportTargetWindowSizeMocker();
   grpc_core::chttp2::g_test_only_transport_target_window_estimates_mocker =
       g_target_initial_window_size_mocker;
-  grpc::testing::TestEnvironment env(argc, argv);
+  grpc::testing::TestEnvironment env(&argc, argv);
   grpc_init();
   auto result = RUN_ALL_TESTS();
   grpc_shutdown();

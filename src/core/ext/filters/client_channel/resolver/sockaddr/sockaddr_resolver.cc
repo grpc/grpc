@@ -1,20 +1,18 @@
-/*
- *
- * Copyright 2015-2016 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+// Copyright 2015 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
 
 #include <grpc/support/port_platform.h>
 
@@ -30,6 +28,7 @@
 
 #include "src/core/lib/address_utils/parse_address.h"
 #include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/iomgr/resolve_address.h"
 #include "src/core/lib/iomgr/unix_sockets_posix.h"
@@ -127,7 +126,7 @@ class IPv4ResolverFactory : public ResolverFactory {
     return CreateSockaddrResolver(std::move(args), grpc_parse_ipv4);
   }
 
-  const char* scheme() const override { return "ipv4"; }
+  absl::string_view scheme() const override { return "ipv4"; }
 };
 
 class IPv6ResolverFactory : public ResolverFactory {
@@ -140,7 +139,7 @@ class IPv6ResolverFactory : public ResolverFactory {
     return CreateSockaddrResolver(std::move(args), grpc_parse_ipv6);
   }
 
-  const char* scheme() const override { return "ipv6"; }
+  absl::string_view scheme() const override { return "ipv6"; }
 };
 
 #ifdef GRPC_HAVE_UNIX_SOCKET
@@ -158,11 +157,13 @@ class UnixResolverFactory : public ResolverFactory {
     return "localhost";
   }
 
-  const char* scheme() const override { return "unix"; }
+  absl::string_view scheme() const override { return "unix"; }
 };
 
 class UnixAbstractResolverFactory : public ResolverFactory {
  public:
+  absl::string_view scheme() const override { return "unix-abstract"; }
+
   bool IsValidUri(const URI& uri) const override {
     return ParseUri(uri, grpc_parse_unix_abstract, nullptr);
   }
@@ -174,26 +175,22 @@ class UnixAbstractResolverFactory : public ResolverFactory {
   std::string GetDefaultAuthority(const URI& /*uri*/) const override {
     return "localhost";
   }
-
-  const char* scheme() const override { return "unix-abstract"; }
 };
 #endif  // GRPC_HAVE_UNIX_SOCKET
 
 }  // namespace
 
-}  // namespace grpc_core
-
-void grpc_resolver_sockaddr_init() {
-  grpc_core::ResolverRegistry::Builder::RegisterResolverFactory(
-      absl::make_unique<grpc_core::IPv4ResolverFactory>());
-  grpc_core::ResolverRegistry::Builder::RegisterResolverFactory(
-      absl::make_unique<grpc_core::IPv6ResolverFactory>());
+void RegisterSockaddrResolver(CoreConfiguration::Builder* builder) {
+  builder->resolver_registry()->RegisterResolverFactory(
+      absl::make_unique<IPv4ResolverFactory>());
+  builder->resolver_registry()->RegisterResolverFactory(
+      absl::make_unique<IPv6ResolverFactory>());
 #ifdef GRPC_HAVE_UNIX_SOCKET
-  grpc_core::ResolverRegistry::Builder::RegisterResolverFactory(
-      absl::make_unique<grpc_core::UnixResolverFactory>());
-  grpc_core::ResolverRegistry::Builder::RegisterResolverFactory(
-      absl::make_unique<grpc_core::UnixAbstractResolverFactory>());
+  builder->resolver_registry()->RegisterResolverFactory(
+      absl::make_unique<UnixResolverFactory>());
+  builder->resolver_registry()->RegisterResolverFactory(
+      absl::make_unique<UnixAbstractResolverFactory>());
 #endif
 }
 
-void grpc_resolver_sockaddr_shutdown() {}
+}  // namespace grpc_core

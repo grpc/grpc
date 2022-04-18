@@ -10,9 +10,9 @@
 #include "xds/core/v3/resource_name.upbdefs.h"
 #include "xds/core/v3/resource_name.upb.h"
 
-extern upb_def_init xds_annotations_v3_status_proto_upbdefinit;
-extern upb_def_init xds_core_v3_context_params_proto_upbdefinit;
-extern upb_def_init validate_validate_proto_upbdefinit;
+extern _upb_DefPool_Init xds_annotations_v3_status_proto_upbdefinit;
+extern _upb_DefPool_Init xds_core_v3_context_params_proto_upbdefinit;
+extern _upb_DefPool_Init validate_validate_proto_upbdefinit;
 static const char descriptor[400] = {'\n', '\037', 'x', 'd', 's', '/', 'c', 'o', 'r', 'e', '/', 'v', '3', '/', 'r', 'e', 's', 'o', 'u', 'r', 'c', 'e', '_', 'n', 'a', 
 'm', 'e', '.', 'p', 'r', 'o', 't', 'o', '\022', '\013', 'x', 'd', 's', '.', 'c', 'o', 'r', 'e', '.', 'v', '3', '\032', '\037', 'x', 'd', 
 's', '/', 'a', 'n', 'n', 'o', 't', 'a', 't', 'i', 'o', 'n', 's', '/', 'v', '3', '/', 's', 't', 'a', 't', 'u', 's', '.', 'p', 
@@ -31,16 +31,16 @@ static const char descriptor[400] = {'\n', '\037', 'x', 'd', 's', '/', 'c', 'o',
 's', '/', 'c', 'o', 'r', 'e', '/', 'v', '3', '\322', '\306', '\244', '\341', '\006', '\002', '\010', '\001', 'b', '\006', 'p', 'r', 'o', 't', 'o', '3', 
 };
 
-static upb_def_init *deps[4] = {
+static _upb_DefPool_Init *deps[4] = {
   &xds_annotations_v3_status_proto_upbdefinit,
   &xds_core_v3_context_params_proto_upbdefinit,
   &validate_validate_proto_upbdefinit,
   NULL
 };
 
-upb_def_init xds_core_v3_resource_name_proto_upbdefinit = {
+_upb_DefPool_Init xds_core_v3_resource_name_proto_upbdefinit = {
   deps,
   &xds_core_v3_resource_name_proto_upb_file_layout,
   "xds/core/v3/resource_name.proto",
-  UPB_STRVIEW_INIT(descriptor, 400)
+  UPB_STRINGVIEW_INIT(descriptor, 400)
 };

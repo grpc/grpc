@@ -55,7 +55,7 @@ class XdsClient : public DualRefCounted<XdsClient> {
     virtual void OnGenericResourceChanged(
         const XdsResourceType::ResourceData* resource)
         ABSL_EXCLUSIVE_LOCKS_REQUIRED(&work_serializer_) = 0;
-    virtual void OnError(grpc_error_handle error)
+    virtual void OnError(absl::Status status)
         ABSL_EXCLUSIVE_LOCKS_REQUIRED(&work_serializer_) = 0;
     virtual void OnResourceDoesNotExist()
         ABSL_EXCLUSIVE_LOCKS_REQUIRED(&work_serializer_) = 0;
@@ -253,7 +253,7 @@ class XdsClient : public DualRefCounted<XdsClient> {
     std::map<RefCountedPtr<XdsLocalityName>, LocalityState,
              XdsLocalityName::Less>
         locality_stats;
-    grpc_millis last_report_time = ExecCtx::Get()->Now();
+    Timestamp last_report_time = ExecCtx::Get()->Now();
   };
 
   // Load report data.
@@ -266,11 +266,18 @@ class XdsClient : public DualRefCounted<XdsClient> {
     LoadReportMap load_report_map;
   };
 
-  class Notifier;
-
   // Sends an error notification to all watchers.
-  void NotifyOnErrorLocked(grpc_error_handle error)
+  void NotifyOnErrorLocked(absl::Status status)
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
+  // Sends an error notification to a specific set of watchers.
+  void NotifyWatchersOnErrorLocked(
+      const std::map<ResourceWatcherInterface*,
+                     RefCountedPtr<ResourceWatcherInterface>>& watchers,
+      absl::Status status);
+  // Sends a resource-does-not-exist notification to a specific set of watchers.
+  void NotifyWatchersOnResourceDoesNotExist(
+      const std::map<ResourceWatcherInterface*,
+                     RefCountedPtr<ResourceWatcherInterface>>& watchers);
 
   void MaybeRegisterResourceTypeLocked(const XdsResourceType* resource_type)
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
@@ -294,7 +301,7 @@ class XdsClient : public DualRefCounted<XdsClient> {
 
   std::unique_ptr<XdsBootstrap> bootstrap_;
   grpc_channel_args* args_;
-  const grpc_millis request_timeout_;
+  const Duration request_timeout_;
   grpc_pollset_set* interested_parties_;
   OrphanablePtr<CertificateProviderStore> certificate_provider_store_;
   XdsApi api_;

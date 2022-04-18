@@ -37,7 +37,6 @@ grpc_cc_library(
         "fuzzer_util.cc",
         "grpc_profiler.cc",
         "histogram.cc",
-        "memory_counters.cc",
         "mock_endpoint.cc",
         "parse_hexstring.cc",
         "passthru_endpoint.cc",
@@ -59,7 +58,6 @@ grpc_cc_library(
         "fuzzer_util.h",
         "grpc_profiler.h",
         "histogram.h",
-        "memory_counters.h",
         "mock_authorization_endpoint.h",
         "mock_endpoint.h",
         "parse_hexstring.h",
@@ -87,6 +85,7 @@ grpc_cc_library(
         "//:gpr",
         "//:grpc_base",
         "//:grpc_common",
+        "//test/core/event_engine:test_init",
     ],
 )
 
@@ -116,6 +115,7 @@ grpc_cc_test(
     name = "cmdline_test",
     srcs = ["cmdline_test.cc"],
     language = "C++",
+    uses_event_engine = False,
     uses_polling = False,
     deps = [
         ":grpc_test_util",
@@ -144,6 +144,7 @@ grpc_cc_test(
     name = "histogram_test",
     srcs = ["histogram_test.cc"],
     language = "C++",
+    uses_event_engine = False,
     uses_polling = False,
     deps = [
         ":grpc_test_util",
@@ -154,11 +155,6 @@ grpc_cc_test(
 sh_library(
     name = "fuzzer_one_entry_runner",
     srcs = ["fuzzer_one_entry_runner.sh"],
-)
-
-sh_library(
-    name = "run_with_poller_sh",
-    srcs = ["run_with_poller.sh"],
 )
 
 grpc_cc_library(
@@ -191,6 +187,7 @@ grpc_cc_test(
     language = "C++",
     # TODO(https://github.com/grpc/grpc/issues/24627): Disable this on Windows
     tags = ["no_windows"],
+    uses_event_engine = False,
     uses_polling = False,
     deps = [
         ":grpc_test_util",

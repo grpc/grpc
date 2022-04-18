@@ -37,6 +37,7 @@
 #include "src/cpp/ext/filters/census/grpc_plugin.h"
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
 #include "test/core/util/test_config.h"
+#include "test/cpp/end2end/test_service_impl.h"
 
 namespace grpc {
 namespace testing {
@@ -54,13 +55,25 @@ const auto TEST_TAG_KEY = TagKey::Register("my_key");
 const auto TEST_TAG_VALUE = "my_value";
 const char* kExpectedTraceIdKey = "expected_trace_id";
 
-class EchoServer final : public EchoTestService::Service {
-  ::grpc::Status Echo(::grpc::ServerContext* context,
-                      const EchoRequest* request,
-                      EchoResponse* response) override {
+class EchoServer final : public TestServiceImpl {
+  Status Echo(ServerContext* context, const EchoRequest* request,
+              EchoResponse* response) override {
+    CheckMetadata(context);
+    return TestServiceImpl::Echo(context, request, response);
+  }
+
+  Status BidiStream(
+      ServerContext* context,
+      ServerReaderWriter<EchoResponse, EchoRequest>* stream) override {
+    CheckMetadata(context);
+    return TestServiceImpl::BidiStream(context, stream);
+  }
+
+ private:
+  void CheckMetadata(ServerContext* context) {
     for (const auto& metadata : context->client_metadata()) {
       if (metadata.first == kExpectedTraceIdKey) {
-        EXPECT_EQ(metadata.second, reinterpret_cast<const grpc::CensusContext*>(
+        EXPECT_EQ(metadata.second, reinterpret_cast<const CensusContext*>(
                                        context->census_context())
                                        ->Span()
                                        .context()
@@ -68,14 +81,6 @@ class EchoServer final : public EchoTestService::Service {
                                        .ToHex());
         break;
       }
-    }
-    if (request->param().expected_error().code() == 0) {
-      response->set_message(request->message());
-      return ::grpc::Status::OK;
-    } else {
-      return ::grpc::Status(static_cast<::grpc::StatusCode>(
-                                request->param().expected_error().code()),
-                            "");
     }
   }
 };
@@ -87,10 +92,10 @@ class StatsPluginEnd2EndTest : public ::testing::Test {
   void SetUp() override {
     // Set up a synchronous server on a different thread to avoid the asynch
     // interface.
-    ::grpc::ServerBuilder builder;
+    grpc::ServerBuilder builder;
     int port;
     // Use IPv4 here because it's less flaky than IPv6 ("[::]:0") on Travis.
-    builder.AddListeningPort("0.0.0.0:0", ::grpc::InsecureServerCredentials(),
+    builder.AddListeningPort("0.0.0.0:0", grpc::InsecureServerCredentials(),
                              &port);
     builder.RegisterService(&service_);
     server_ = builder.BuildAndStart();
@@ -99,8 +104,8 @@ class StatsPluginEnd2EndTest : public ::testing::Test {
     server_address_ = absl::StrCat("localhost:", port);
     server_thread_ = std::thread(&StatsPluginEnd2EndTest::RunServerLoop, this);
 
-    stub_ = EchoTestService::NewStub(::grpc::CreateChannel(
-        server_address_, ::grpc::InsecureChannelCredentials()));
+    stub_ = EchoTestService::NewStub(grpc::CreateChannel(
+        server_address_, grpc::InsecureChannelCredentials()));
   }
 
   void ResetStub(std::shared_ptr<Channel> channel) {
@@ -165,10 +170,10 @@ TEST_F(StatsPluginEnd2EndTest, ErrorCount) {
     request.set_message("foo");
     request.mutable_param()->mutable_expected_error()->set_code(i);
     EchoResponse response;
-    ::grpc::ClientContext context;
+    grpc::ClientContext context;
     {
       WithTagMap tags({{TEST_TAG_KEY, TEST_TAG_VALUE}});
-      ::grpc::Status status = stub_->Echo(&context, request, &response);
+      grpc::Status status = stub_->Echo(&context, request, &response);
     }
   }
   absl::SleepFor(absl::Milliseconds(500));
@@ -253,8 +258,8 @@ TEST_F(StatsPluginEnd2EndTest, RequestReceivedBytesPerRpc) {
     EchoRequest request;
     request.set_message("foo");
     EchoResponse response;
-    ::grpc::ClientContext context;
-    ::grpc::Status status = stub_->Echo(&context, request, &response);
+    grpc::ClientContext context;
+    grpc::Status status = stub_->Echo(&context, request, &response);
     ASSERT_TRUE(status.ok());
     EXPECT_EQ("foo", response.message());
   }
@@ -297,8 +302,8 @@ TEST_F(StatsPluginEnd2EndTest, Latency) {
     EchoRequest request;
     request.set_message("foo");
     EchoResponse response;
-    ::grpc::ClientContext context;
-    ::grpc::Status status = stub_->Echo(&context, request, &response);
+    grpc::ClientContext context;
+    grpc::Status status = stub_->Echo(&context, request, &response);
     ASSERT_TRUE(status.ok());
     EXPECT_EQ("foo", response.message());
   }
@@ -360,8 +365,8 @@ TEST_F(StatsPluginEnd2EndTest, CompletedRpcs) {
   const int count = 5;
   for (int i = 0; i < count; ++i) {
     {
-      ::grpc::ClientContext context;
-      ::grpc::Status status = stub_->Echo(&context, request, &response);
+      grpc::ClientContext context;
+      grpc::Status status = stub_->Echo(&context, request, &response);
       ASSERT_TRUE(status.ok());
       EXPECT_EQ("foo", response.message());
     }
@@ -375,6 +380,20 @@ TEST_F(StatsPluginEnd2EndTest, CompletedRpcs) {
                 ::testing::UnorderedElementsAre(::testing::Pair(
                     ::testing::ElementsAre(server_method_name_, "OK"), i + 1)));
   }
+
+  // Client should see calls that are cancelled without calling Finish().
+  {
+    ClientContext ctx;
+    auto stream = stub_->BidiStream(&ctx);
+    ctx.TryCancel();
+  }
+  absl::SleepFor(absl::Milliseconds(500));
+  TestUtils::Flush();
+  EXPECT_THAT(client_completed_rpcs_view.GetData().int_data(),
+              ::testing::Contains(::testing::Pair(
+                  ::testing::ElementsAre(
+                      "grpc.testing.EchoTestService/BidiStream", "CANCELLED"),
+                  1)));
 }
 
 TEST_F(StatsPluginEnd2EndTest, RequestReceivedMessagesPerRpc) {
@@ -394,8 +413,8 @@ TEST_F(StatsPluginEnd2EndTest, RequestReceivedMessagesPerRpc) {
   const int count = 5;
   for (int i = 0; i < count; ++i) {
     {
-      ::grpc::ClientContext context;
-      ::grpc::Status status = stub_->Echo(&context, request, &response);
+      grpc::ClientContext context;
+      grpc::Status status = stub_->Echo(&context, request, &response);
       ASSERT_TRUE(status.ok());
       EXPECT_EQ("foo", response.message());
     }
@@ -444,8 +463,8 @@ TEST_F(StatsPluginEnd2EndTest, TestRetryStatsWithoutAdditionalRetries) {
   const int count = 5;
   for (int i = 0; i < count; ++i) {
     {
-      ::grpc::ClientContext context;
-      ::grpc::Status status = stub_->Echo(&context, request, &response);
+      grpc::ClientContext context;
+      grpc::Status status = stub_->Echo(&context, request, &response);
       ASSERT_TRUE(status.ok());
       EXPECT_EQ("foo", response.message());
     }
@@ -473,7 +492,6 @@ TEST_F(StatsPluginEnd2EndTest, TestRetryStatsWithAdditionalRetries) {
       ClientTransparentRetriesCumulative());
   View client_retry_delay_per_call_view(ClientRetryDelayPerCallCumulative());
   ChannelArguments args;
-  args.SetInt(GRPC_ARG_ENABLE_RETRIES, 1);
   args.SetString(GRPC_ARG_SERVICE_CONFIG,
                  "{\n"
                  "  \"methodConfig\": [ {\n"
@@ -500,8 +518,8 @@ TEST_F(StatsPluginEnd2EndTest, TestRetryStatsWithAdditionalRetries) {
   const int count = 5;
   for (int i = 0; i < count; ++i) {
     {
-      ::grpc::ClientContext context;
-      ::grpc::Status status = stub_->Echo(&context, request, &response);
+      grpc::ClientContext context;
+      grpc::Status status = stub_->Echo(&context, request, &response);
       EXPECT_EQ(status.error_code(), StatusCode::ABORTED);
     }
     absl::SleepFor(absl::Milliseconds(500));
@@ -537,14 +555,13 @@ TEST_F(StatsPluginEnd2EndTest, TestApplicationCensusContextFlows) {
   EchoRequest request;
   request.set_message("foo");
   EchoResponse response;
-  ::grpc::ClientContext context;
-  ::grpc::CensusContext app_census_context("root",
-                                           ::opencensus::tags::TagMap{});
+  grpc::ClientContext context;
+  grpc::CensusContext app_census_context("root", ::opencensus::tags::TagMap{});
   context.set_census_context(
       reinterpret_cast<census_context*>(&app_census_context));
   context.AddMetadata(kExpectedTraceIdKey,
                       app_census_context.Span().context().trace_id().ToHex());
-  ::grpc::Status status = stub_->Echo(&context, request, &response);
+  grpc::Status status = stub_->Echo(&context, request, &response);
   EXPECT_TRUE(status.ok());
 }
 
@@ -553,7 +570,7 @@ TEST_F(StatsPluginEnd2EndTest, TestApplicationCensusContextFlows) {
 }  // namespace grpc
 
 int main(int argc, char** argv) {
-  grpc::testing::TestEnvironment env(argc, argv);
+  grpc::testing::TestEnvironment env(&argc, argv);
   ::testing::InitGoogleTest(&argc, argv);
   return RUN_ALL_TESTS();
 }

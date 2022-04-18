@@ -23,11 +23,217 @@
 
 #include <string>
 
+#include "absl/strings/string_view.h"
+#include "absl/types/optional.h"
+#include "absl/types/variant.h"
+#include "absl/utility/utility.h"
+
 #include <grpc/impl/codegen/grpc_types.h>
 
+#include "src/core/lib/avl/avl.h"
+#include "src/core/lib/gpr/useful.h"
+#include "src/core/lib/gprpp/dual_ref_counted.h"
+#include "src/core/lib/gprpp/ref_counted.h"
+#include "src/core/lib/gprpp/ref_counted_ptr.h"
+#include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/surface/channel_stack_type.h"
 
 // Channel args are intentionally immutable, to avoid the need for locking.
+
+namespace grpc_core {
+
+// Define a traits object for vtable lookup - allows us to integrate with
+// existing code easily (just define the trait!) and allows some magic in
+// ChannelArgs to automatically derive a vtable from a T*.
+// To participate as a pointer, instances should expose the function:
+//   // Gets the vtable for this type
+//   static const grpc_channel_arg_vtable* VTable();
+//   // Performs any mutations required for channel args to own a pointer
+//   // Only needed if ChannelArgs::Set is to be called with a raw pointer.
+//   static void* TakeUnownedPointer(T* p);
+template <typename T, typename Ignored = void /* for SFINAE */>
+struct ChannelArgTypeTraits;
+
+// Specialization for ref-counted pointers.
+// Types should expose:
+// static int ChannelArgsCompare(const T* a, const T* b);
+template <typename T>
+struct ChannelArgTypeTraits<
+    T,
+    absl::enable_if_t<
+        std::is_base_of<RefCounted<T>, T>::value ||
+            std::is_base_of<RefCounted<T, NonPolymorphicRefCount>, T>::value ||
+            std::is_base_of<DualRefCounted<T>, T>::value,
+        void>> {
+  static const grpc_arg_pointer_vtable* VTable() {
+    static const grpc_arg_pointer_vtable tbl = {
+        // copy
+        [](void* p) -> void* { return static_cast<T*>(p)->Ref().release(); },
+        // destroy
+        [](void* p) { static_cast<T*>(p)->Unref(); },
+        // compare
+        [](void* p1, void* p2) {
+          return T::ChannelArgsCompare(static_cast<const T*>(p1),
+                                       static_cast<const T*>(p2));
+        },
+    };
+    return &tbl;
+  };
+};
+
+template <typename T>
+struct ChannelArgTypeTraits<T,
+                            absl::void_t<typename T::RawPointerChannelArgTag>> {
+  static void* TakeUnownedPointer(T* p) { return p; }
+  static const grpc_arg_pointer_vtable* VTable() {
+    static const grpc_arg_pointer_vtable tbl = {
+        // copy
+        [](void* p) -> void* { return p; },
+        // destroy
+        [](void*) {},
+        // compare
+        [](void* p1, void* p2) { return QsortCompare(p1, p2); },
+    };
+    return &tbl;
+  };
+};
+
+class ChannelArgs {
+ public:
+  class Pointer {
+   public:
+    Pointer(void* p, const grpc_arg_pointer_vtable* vtable)
+        : p_(p), vtable_(vtable == nullptr ? EmptyVTable() : vtable) {}
+    ~Pointer() { vtable_->destroy(p_); }
+
+    Pointer(const Pointer& other)
+        : p_(other.vtable_->copy(other.p_)), vtable_(other.vtable_) {}
+    Pointer& operator=(Pointer other) {
+      std::swap(p_, other.p_);
+      std::swap(vtable_, other.vtable_);
+      return *this;
+    }
+    Pointer(Pointer&& other) noexcept : p_(other.p_), vtable_(other.vtable_) {
+      other.p_ = nullptr;
+      other.vtable_ = EmptyVTable();
+    }
+    Pointer& operator=(Pointer&& other) noexcept {
+      std::swap(p_, other.p_);
+      std::swap(vtable_, other.vtable_);
+      return *this;
+    }
+
+    bool operator==(const Pointer& rhs) const;
+    bool operator<(const Pointer& rhs) const;
+    bool operator!=(const Pointer& rhs) const { return !(*this == rhs); }
+
+    void* c_pointer() const { return p_; }
+
+    const grpc_arg_pointer_vtable* c_vtable() const { return vtable_; }
+
+   private:
+    static const grpc_arg_pointer_vtable* EmptyVTable() {
+      static const grpc_arg_pointer_vtable vtable = {
+          // copy
+          [](void* p) { return p; },
+          // destroy
+          [](void*) {},
+          // cmp
+          [](void* p1, void* p2) -> int { return QsortCompare(p1, p2); },
+      };
+      return &vtable;
+    }
+
+    void* p_;
+    const grpc_arg_pointer_vtable* vtable_;
+  };
+  using Value = absl::variant<int, std::string, Pointer>;
+
+  ChannelArgs();
+
+  static ChannelArgs FromC(const grpc_channel_args* args);
+  // Construct a new grpc_channel_args struct which the caller will own.
+  // It should be destroyed with grpc_channel_args_destroy.
+  const grpc_channel_args* ToC() const;
+
+  const Value* Get(absl::string_view name) const { return args_.Lookup(name); }
+  GRPC_MUST_USE_RESULT ChannelArgs Set(absl::string_view name,
+                                       Value value) const;
+  GRPC_MUST_USE_RESULT ChannelArgs Set(absl::string_view name,
+                                       absl::string_view value) const;
+  GRPC_MUST_USE_RESULT ChannelArgs Set(absl::string_view name,
+                                       std::string value) const;
+  GRPC_MUST_USE_RESULT ChannelArgs Set(absl::string_view name,
+                                       const char* value) const;
+  GRPC_MUST_USE_RESULT ChannelArgs Set(grpc_arg arg) const;
+  template <typename T>
+  GRPC_MUST_USE_RESULT absl::enable_if_t<
+      std::is_same<const grpc_arg_pointer_vtable*,
+                   decltype(ChannelArgTypeTraits<T>::VTable())>::value,
+      ChannelArgs>
+  Set(absl::string_view name, T* value) const {
+    return Set(name, Pointer(ChannelArgTypeTraits<T>::TakeUnownedPointer(value),
+                             ChannelArgTypeTraits<T>::VTable()));
+  }
+  template <typename T>
+  GRPC_MUST_USE_RESULT auto Set(absl::string_view name,
+                                const RefCountedPtr<T>& value) const
+      -> absl::enable_if_t<
+          std::is_same<
+              const grpc_arg_pointer_vtable*,
+              decltype(ChannelArgTypeTraits<absl::remove_cvref_t<
+                           decltype(*value->Ref())>>::VTable())>::value,
+          ChannelArgs> {
+    auto store_value = value->Ref();
+    return Set(
+        name,
+        Pointer(store_value.release(),
+                ChannelArgTypeTraits<
+                    absl::remove_cvref_t<decltype(*store_value)>>::VTable()));
+  }
+  GRPC_MUST_USE_RESULT ChannelArgs Remove(absl::string_view name) const;
+  bool Contains(absl::string_view name) const { return Get(name) != nullptr; }
+
+  absl::optional<int> GetInt(absl::string_view name) const;
+  absl::optional<absl::string_view> GetString(absl::string_view name) const;
+  void* GetVoidPointer(absl::string_view name) const;
+  template <typename T>
+  T* GetPointer(absl::string_view name) const {
+    return static_cast<T*>(GetVoidPointer(name));
+  }
+  absl::optional<Duration> GetDurationFromIntMillis(
+      absl::string_view name) const;
+
+  // Object based get/set.
+  // Deal with the common case that we set a pointer to an object under
+  // the same name in every usage.
+  // Expects ChannelArgTypeTraits to exist for T, and T to expose:
+  //   static string_view ChannelArgName();
+  template <typename T>
+  GRPC_MUST_USE_RESULT ChannelArgs SetObject(T* p) const {
+    return Set(T::ChannelArgName(), p);
+  }
+  template <typename T>
+  GRPC_MUST_USE_RESULT ChannelArgs SetObject(RefCountedPtr<T> p) const {
+    return Set(T::ChannelArgName(), std::move(p));
+  }
+  template <typename T>
+  T* GetObject() {
+    return GetPointer<T>(T::ChannelArgName());
+  }
+
+  bool operator<(const ChannelArgs& other) const { return args_ < other.args_; }
+  bool operator==(const ChannelArgs& other) const {
+    return args_ == other.args_;
+  }
+
+ private:
+  explicit ChannelArgs(AVL<std::string, Value> args) : args_(std::move(args)) {}
+
+  AVL<std::string, Value> args_;
+};
+
+}  // namespace grpc_core
 
 /** Copy the arguments in \a src into a new instance */
 grpc_channel_args* grpc_channel_args_copy(const grpc_channel_args* src);
@@ -120,15 +326,10 @@ grpc_arg grpc_channel_arg_pointer_create(char* name, void* value,
 std::string grpc_channel_args_string(const grpc_channel_args* args);
 
 namespace grpc_core {
-/** Remove any channel args prefixed with 'grpc.internal.'
- *  These are used for internal implementation details and are not intended to
- *  be exposed to users.
- *  Returns a new channel args instance.
- *  Does not take ownership of \a src.
- *  Should be called by any public API that receives channel args. */
-const grpc_channel_args* RemoveGrpcInternalArgs(const grpc_channel_args* src);
-/** Ensure no duplicate channel args, in preparation for moving to a map<> */
-const grpc_channel_args* UniquifyChannelArgKeys(const grpc_channel_args* src);
+// Ensure no duplicate channel args (with some backwards compatibility hacks).
+// Eliminate any grpc.internal.* args.
+// Return a C++ object.
+ChannelArgs ChannelArgsBuiltinPrecondition(const grpc_channel_args* src);
 }  // namespace grpc_core
 
 // Takes ownership of the old_args

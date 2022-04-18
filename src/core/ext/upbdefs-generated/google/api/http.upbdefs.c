@@ -40,13 +40,13 @@ static const char descriptor[684] = {'\n', '\025', 'g', 'o', 'o', 'g', 'l', 'e',
 'I', 'b', '\006', 'p', 'r', 'o', 't', 'o', '3', 
 };
 
-static upb_def_init *deps[1] = {
+static _upb_DefPool_Init *deps[1] = {
   NULL
 };
 
-upb_def_init google_api_http_proto_upbdefinit = {
+_upb_DefPool_Init google_api_http_proto_upbdefinit = {
   deps,
   &google_api_http_proto_upb_file_layout,
   "google/api/http.proto",
-  UPB_STRVIEW_INIT(descriptor, 684)
+  UPB_STRINGVIEW_INIT(descriptor, 684)
 };

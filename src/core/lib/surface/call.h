@@ -49,7 +49,7 @@ typedef struct grpc_call_create_args {
   absl::optional<grpc_core::Slice> path;
   absl::optional<grpc_core::Slice> authority;
 
-  grpc_millis send_deadline;
+  grpc_core::Timestamp send_deadline;
 } grpc_call_create_args;
 
 /* Create a new call based on \a args.
@@ -59,20 +59,6 @@ grpc_error_handle grpc_call_create(grpc_call_create_args* args,
                                    grpc_call** call);
 
 void grpc_call_set_completion_queue(grpc_call* call, grpc_completion_queue* cq);
-
-#ifndef NDEBUG
-void grpc_call_internal_ref(grpc_call* call, const char* reason);
-void grpc_call_internal_unref(grpc_call* call, const char* reason);
-#define GRPC_CALL_INTERNAL_REF(call, reason) \
-  grpc_call_internal_ref(call, reason)
-#define GRPC_CALL_INTERNAL_UNREF(call, reason) \
-  grpc_call_internal_unref(call, reason)
-#else
-void grpc_call_internal_ref(grpc_call* call);
-void grpc_call_internal_unref(grpc_call* call);
-#define GRPC_CALL_INTERNAL_REF(call, reason) grpc_call_internal_ref(call)
-#define GRPC_CALL_INTERNAL_UNREF(call, reason) grpc_call_internal_unref(call)
-#endif
 
 grpc_core::Arena* grpc_call_get_arena(grpc_call* call);
 

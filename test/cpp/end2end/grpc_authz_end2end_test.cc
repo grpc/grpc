@@ -126,7 +126,7 @@ class GrpcAuthzEnd2EndTest : public ::testing::Test {
     ChannelArguments args;
     // Override target name for host name check
     args.SetSslTargetNameOverride("foo.test.google.fr");
-    return ::grpc::CreateCustomChannel(server_address_, channel_creds_, args);
+    return grpc::CreateCustomChannel(server_address_, channel_creds_, args);
   }
 
   grpc::Status SendRpc(const std::shared_ptr<Channel>& channel,
@@ -811,7 +811,7 @@ TEST_F(GrpcAuthzEnd2EndTest, FileWatcherRecoversFromFailure) {
 
 int main(int argc, char** argv) {
   ::testing::InitGoogleTest(&argc, argv);
-  grpc::testing::TestEnvironment env(argc, argv);
+  grpc::testing::TestEnvironment env(&argc, argv);
   const auto result = RUN_ALL_TESTS();
   return result;
 }

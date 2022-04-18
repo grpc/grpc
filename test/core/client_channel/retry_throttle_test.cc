@@ -97,14 +97,13 @@ TEST(ServerRetryThrottleData, Replacement) {
 }
 
 TEST(ServerRetryThrottleMap, Replacement) {
-  ServerRetryThrottleMap::Init();
   const std::string kServerName = "server_name";
   // Create old throttle data.
   // Max token count is 4, so threshold for retrying is 2.
   // Token count starts at 4.
   // Each failure decrements by 1.  Each success increments by 1.
   auto old_throttle_data =
-      ServerRetryThrottleMap::GetDataForServer(kServerName, 4000, 1000);
+      ServerRetryThrottleMap::Get()->GetDataForServer(kServerName, 4000, 1000);
   // Failure: token_count=3.  Above threshold.
   EXPECT_TRUE(old_throttle_data->RecordFailure());
   // Create new throttle data.
@@ -112,7 +111,7 @@ TEST(ServerRetryThrottleMap, Replacement) {
   // Token count starts at 7.5 (ratio inherited from old_throttle_data).
   // Each failure decrements by 1.  Each success increments by 3.
   auto throttle_data =
-      ServerRetryThrottleMap::GetDataForServer(kServerName, 10000, 3000);
+      ServerRetryThrottleMap::Get()->GetDataForServer(kServerName, 10000, 3000);
   // Failure via old_throttle_data: token_count=6.5.
   EXPECT_TRUE(old_throttle_data->RecordFailure());
   // Failure: token_count=5.5.
@@ -127,8 +126,6 @@ TEST(ServerRetryThrottleMap, Replacement) {
   EXPECT_TRUE(old_throttle_data->RecordFailure());
   // Failure: token_count=4.5.  Below threshold.
   EXPECT_FALSE(throttle_data->RecordFailure());
-  // Clean up.
-  ServerRetryThrottleMap::Shutdown();
 }
 
 }  // namespace
@@ -136,7 +133,7 @@ TEST(ServerRetryThrottleMap, Replacement) {
 }  // namespace grpc_core
 
 int main(int argc, char** argv) {
-  grpc::testing::TestEnvironment env(argc, argv);
+  grpc::testing::TestEnvironment env(&argc, argv);
   ::testing::InitGoogleTest(&argc, argv);
   return RUN_ALL_TESTS();
 }

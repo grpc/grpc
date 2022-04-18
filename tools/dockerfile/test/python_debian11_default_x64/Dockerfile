@@ -13,7 +13,7 @@
 # limitations under the License.
 
 FROM debian:11
-  
+
 #=================
 # Basic C core dependencies
 
@@ -28,9 +28,7 @@ RUN apt-get update && apt-get install -y \
 # GCC
 RUN apt-get update && apt-get install -y \
   gcc \
-  gcc-multilib \
   g++ \
-  g++-multilib  \
   && apt-get clean
 
 # libc6
@@ -60,84 +58,84 @@ RUN mkdir /var/local/jenkins
 
 
 #=================
-# Compile CPython 3.6.9 from source
+# Compile CPython 3.6.15 from source
 
 RUN apt-get update && apt-get install -y zlib1g-dev libssl-dev && apt-get clean
 RUN apt-get update && apt-get install -y jq build-essential libffi-dev && apt-get clean
 
 RUN cd /tmp && \
-    wget -q https://www.python.org/ftp/python/3.6.9/Python-3.6.9.tgz && \
-    tar xzvf Python-3.6.9.tgz && \
-    cd Python-3.6.9 && \
+    wget -q https://www.python.org/ftp/python/3.6.15/Python-3.6.15.tgz && \
+    tar xzvf Python-3.6.15.tgz && \
+    cd Python-3.6.15 && \
     ./configure && \
     make -j4 && \
     make install
 
 RUN cd /tmp && \
-    echo "ff7cdaef4846c89c1ec0d7b709bbd54d Python-3.6.9.tgz" > checksum.md5 && \
+    echo "f9e6f91c754a604f4fc6f6c7683723fb Python-3.6.15.tgz" > checksum.md5 && \
     md5sum -c checksum.md5
 
 RUN python3.6 -m ensurepip && \
     python3.6 -m pip install coverage
 
 #=================
-# Compile CPython 3.7.12 from source
+# Compile CPython 3.7.13 from source
 
 RUN apt-get update && apt-get install -y zlib1g-dev libssl-dev && apt-get clean
 RUN apt-get update && apt-get install -y jq build-essential libffi-dev && apt-get clean
 
 RUN cd /tmp && \
-    wget -q https://www.python.org/ftp/python/3.7.12/Python-3.7.12.tgz && \
-    tar xzvf Python-3.7.12.tgz && \
-    cd Python-3.7.12 && \
+    wget -q https://www.python.org/ftp/python/3.7.13/Python-3.7.13.tgz && \
+    tar xzvf Python-3.7.13.tgz && \
+    cd Python-3.7.13 && \
     ./configure && \
     make -j4 && \
     make install
 
 RUN cd /tmp && \
-    echo "6fe83678c085a7735a943cf1e4d41c14 Python-3.7.12.tgz" > checksum.md5 && \
+    echo "e0d3321026d4a5f3a3890b5d821ad762 Python-3.7.13.tgz" > checksum.md5 && \
     md5sum -c checksum.md5
 
 RUN python3.7 -m ensurepip && \
     python3.7 -m pip install coverage
 
 #=================
-# Compile CPython 3.8.0b4 from source
+# Compile CPython 3.8.13 from source
 
 RUN apt-get update && apt-get install -y zlib1g-dev libssl-dev && apt-get clean
 RUN apt-get update && apt-get install -y jq build-essential libffi-dev && apt-get clean
 
 RUN cd /tmp && \
-    wget -q https://www.python.org/ftp/python/3.8.0/Python-3.8.0b4.tgz && \
-    tar xzvf Python-3.8.0b4.tgz && \
-    cd Python-3.8.0b4 && \
+    wget -q https://www.python.org/ftp/python/3.8.13/Python-3.8.13.tgz && \
+    tar xzvf Python-3.8.13.tgz && \
+    cd Python-3.8.13 && \
     ./configure && \
     make -j4 && \
     make install
 
 RUN cd /tmp && \
-    echo "b8f4f897df967014ddb42033b90c3058 Python-3.8.0b4.tgz" > checksum.md5 && \
+    echo "3c49180c6b43df3519849b7e390af0b9 Python-3.8.13.tgz" > checksum.md5 && \
     md5sum -c checksum.md5
 
 RUN python3.8 -m ensurepip && \
     python3.8 -m pip install coverage
 
 #=================
-# Compile CPython 3.10.2 from source
+# Compile CPython 3.10.3 from source
 
 RUN apt-get update && apt-get install -y zlib1g-dev libssl-dev && apt-get clean
 RUN apt-get update && apt-get install -y jq build-essential libffi-dev && apt-get clean
 
 RUN cd /tmp && \
-    wget -q https://www.python.org/ftp/python/3.10.2/Python-3.10.2.tgz && \
-    tar xzvf Python-3.10.2.tgz && \
-    cd Python-3.10.2 && \
+    wget -q https://www.python.org/ftp/python/3.10.3/Python-3.10.3.tgz && \
+    tar xzvf Python-3.10.3.tgz && \
+    cd Python-3.10.3 && \
     ./configure && \
     make -j4 && \
     make install
 
 RUN cd /tmp && \
-    echo "67c92270be6701f4a6fed57c4530139b Python-3.10.2.tgz" > checksum.md5 && \
+    echo "f276ffcd05bccafe46da023d0a5bb04a Python-3.10.3.tgz" > checksum.md5 && \
     md5sum -c checksum.md5
 
 RUN python3.10 -m ensurepip && \
