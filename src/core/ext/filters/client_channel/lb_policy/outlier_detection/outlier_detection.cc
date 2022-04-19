@@ -101,9 +101,9 @@ class OutlierDetectionLb : public LoadBalancingPolicy {
       return subchannel_;
     }
 
-    void eject() { eject_ = true; }
+    void eject();
 
-    void uneject() { eject_ = false; }
+    void uneject();
 
     grpc_connectivity_state CheckConnectivityState() override;
 
@@ -130,6 +130,16 @@ class OutlierDetectionLb : public LoadBalancingPolicy {
 
       ~WatcherWrapper() override {}
 
+      void eject() {
+        eject_ = true;
+        watcher_->OnConnectivityStateChange(GRPC_CHANNEL_TRANSIENT_FAILURE);
+      }
+
+      void uneject() {
+        eject_ = false;
+        watcher_->OnConnectivityStateChange(last_seen_state_);
+      }
+
       void OnConnectivityStateChange(
           grpc_connectivity_state new_state) override {
         void* trace[256];
@@ -145,8 +155,11 @@ class OutlierDetectionLb : public LoadBalancingPolicy {
                   new_state, trace[i], symbol);
         }
         last_seen_state_ = new_state;
-        // TODO@donnadionne change state based on eject
-        watcher_->OnConnectivityStateChange(new_state);
+        if (eject_) {
+          watcher_->OnConnectivityStateChange(GRPC_CHANNEL_TRANSIENT_FAILURE);
+        } else {
+          watcher_->OnConnectivityStateChange(new_state);
+        }
       }
 
       grpc_pollset_set* interested_parties() override {
@@ -162,12 +175,14 @@ class OutlierDetectionLb : public LoadBalancingPolicy {
       std::unique_ptr<SubchannelInterface::ConnectivityStateWatcherInterface>
           watcher_;
       grpc_connectivity_state last_seen_state_;
+      bool eject_ = false;
     };
 
    private:
     RefCountedPtr<SubchannelInterface> subchannel_;
     bool eject_;
-    SubchannelInterface::ConnectivityStateWatcherInterface* watcher_;
+    // SubchannelInterface::ConnectivityStateWatcherInterface* watcher_;
+    WatcherWrapper* watcher_;
   };
 
   // A simple wrapper for ref-counting a picker from the child policy.
@@ -244,6 +259,21 @@ class OutlierDetectionLb : public LoadBalancingPolicy {
 ///
 /// OutlierDetectionLb::SubchannelWrapper
 ///
+
+void OutlierDetectionLb::SubchannelWrapper::eject() {
+  eject_ = true;
+  if (watcher_ != nullptr) {
+    watcher_->eject();
+  }
+}
+
+void OutlierDetectionLb::SubchannelWrapper::uneject() {
+  eject_ = false;
+  if (watcher_ != nullptr) {
+    watcher_->uneject();
+  }
+}
+
 grpc_connectivity_state
 OutlierDetectionLb::SubchannelWrapper::CheckConnectivityState() {
   void* trace[256];
