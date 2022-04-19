@@ -14,35 +14,35 @@
 #include "upb/port_def.inc"
 
 static const upb_MiniTable_Sub grpc_gcp_AltsContext_submsgs[2] = {
-  {.submsg = &grpc_gcp_AltsContext_PeerAttributesEntry_msginit},
   {.submsg = &grpc_gcp_RpcProtocolVersions_msginit},
+  {.submsg = &grpc_gcp_AltsContext_PeerAttributesEntry_msginit},
 };
 
 static const upb_MiniTable_Field grpc_gcp_AltsContext__fields[7] = {
-  {1, UPB_SIZE(8, 8), 0, 0, 9, kUpb_FieldMode_Scalar | (upb_FieldRep_StringView << upb_FieldRep_Shift)},
-  {2, UPB_SIZE(16, 24), 0, 0, 9, kUpb_FieldMode_Scalar | (upb_FieldRep_StringView << upb_FieldRep_Shift)},
-  {3, UPB_SIZE(4, 4), 0, 0, 5, kUpb_FieldMode_Scalar | (upb_FieldRep_4Byte << upb_FieldRep_Shift)},
-  {4, UPB_SIZE(24, 40), 0, 0, 9, kUpb_FieldMode_Scalar | (upb_FieldRep_StringView << upb_FieldRep_Shift)},
-  {5, UPB_SIZE(32, 56), 0, 0, 9, kUpb_FieldMode_Scalar | (upb_FieldRep_StringView << upb_FieldRep_Shift)},
-  {6, UPB_SIZE(40, 72), 1, 1, 11, kUpb_FieldMode_Scalar | (upb_FieldRep_Pointer << upb_FieldRep_Shift)},
-  {7, UPB_SIZE(44, 80), 0, 0, 11, kUpb_FieldMode_Map | (upb_FieldRep_Pointer << upb_FieldRep_Shift)},
+  {1, UPB_SIZE(8, 8), UPB_SIZE(0, 0), kUpb_NoSub, 9, kUpb_FieldMode_Scalar | (kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)},
+  {2, UPB_SIZE(16, 24), UPB_SIZE(0, 0), kUpb_NoSub, 9, kUpb_FieldMode_Scalar | (kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)},
+  {3, UPB_SIZE(4, 4), UPB_SIZE(0, 0), kUpb_NoSub, 5, kUpb_FieldMode_Scalar | (kUpb_FieldRep_4Byte << kUpb_FieldRep_Shift)},
+  {4, UPB_SIZE(24, 40), UPB_SIZE(0, 0), kUpb_NoSub, 9, kUpb_FieldMode_Scalar | (kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)},
+  {5, UPB_SIZE(32, 56), UPB_SIZE(0, 0), kUpb_NoSub, 9, kUpb_FieldMode_Scalar | (kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)},
+  {6, UPB_SIZE(40, 72), UPB_SIZE(1, 1), 0, 11, kUpb_FieldMode_Scalar | (kUpb_FieldRep_Pointer << kUpb_FieldRep_Shift)},
+  {7, UPB_SIZE(44, 80), UPB_SIZE(0, 0), 1, 11, kUpb_FieldMode_Map | (kUpb_FieldRep_Pointer << kUpb_FieldRep_Shift)},
 };
 
 const upb_MiniTable grpc_gcp_AltsContext_msginit = {
   &grpc_gcp_AltsContext_submsgs[0],
   &grpc_gcp_AltsContext__fields[0],
-  UPB_SIZE(48, 96), 7, upb_ExtMode_NonExtendable, 7, 255, 0,
+  UPB_SIZE(48, 88), 7, kUpb_ExtMode_NonExtendable, 7, 255, 0,
 };
 
 static const upb_MiniTable_Field grpc_gcp_AltsContext_PeerAttributesEntry__fields[2] = {
-  {1, UPB_SIZE(0, 0), 0, 0, 9, kUpb_FieldMode_Scalar | (upb_FieldRep_StringView << upb_FieldRep_Shift)},
-  {2, UPB_SIZE(8, 16), 0, 0, 9, kUpb_FieldMode_Scalar | (upb_FieldRep_StringView << upb_FieldRep_Shift)},
+  {1, UPB_SIZE(0, 0), UPB_SIZE(0, 0), kUpb_NoSub, 12, kUpb_FieldMode_Scalar | (kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)},
+  {2, UPB_SIZE(8, 16), UPB_SIZE(0, 0), kUpb_NoSub, 12, kUpb_FieldMode_Scalar | (kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)},
 };
 
 const upb_MiniTable grpc_gcp_AltsContext_PeerAttributesEntry_msginit = {
   NULL,
   &grpc_gcp_AltsContext_PeerAttributesEntry__fields[0],
-  UPB_SIZE(16, 32), 2, upb_ExtMode_NonExtendable, 2, 255, 0,
+  UPB_SIZE(16, 32), 2, kUpb_ExtMode_NonExtendable, 2, 255, 0,
 };
 
 static const upb_MiniTable *messages_layout[2] = {

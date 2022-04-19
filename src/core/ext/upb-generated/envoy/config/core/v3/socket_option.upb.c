@@ -16,18 +16,18 @@
 #include "upb/port_def.inc"
 
 static const upb_MiniTable_Field envoy_config_core_v3_SocketOption__fields[6] = {
-  {1, UPB_SIZE(20, 24), 0, 0, 9, kUpb_FieldMode_Scalar | (upb_FieldRep_StringView << upb_FieldRep_Shift)},
-  {2, UPB_SIZE(0, 0), 0, 0, 3, kUpb_FieldMode_Scalar | (upb_FieldRep_8Byte << upb_FieldRep_Shift)},
-  {3, UPB_SIZE(8, 8), 0, 0, 3, kUpb_FieldMode_Scalar | (upb_FieldRep_8Byte << upb_FieldRep_Shift)},
-  {4, UPB_SIZE(32, 40), UPB_SIZE(-41, -57), 0, 3, kUpb_FieldMode_Scalar | (upb_FieldRep_8Byte << upb_FieldRep_Shift)},
-  {5, UPB_SIZE(32, 40), UPB_SIZE(-41, -57), 0, 12, kUpb_FieldMode_Scalar | (upb_FieldRep_StringView << upb_FieldRep_Shift)},
-  {6, UPB_SIZE(16, 16), 0, 0, 5, kUpb_FieldMode_Scalar | (upb_FieldRep_4Byte << upb_FieldRep_Shift)},
+  {1, UPB_SIZE(8, 24), UPB_SIZE(0, 0), kUpb_NoSub, 9, kUpb_FieldMode_Scalar | (kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)},
+  {2, UPB_SIZE(24, 40), UPB_SIZE(0, 0), kUpb_NoSub, 3, kUpb_FieldMode_Scalar | (kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)},
+  {3, UPB_SIZE(32, 48), UPB_SIZE(0, 0), kUpb_NoSub, 3, kUpb_FieldMode_Scalar | (kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)},
+  {4, UPB_SIZE(16, 8), UPB_SIZE(-1, -1), kUpb_NoSub, 3, kUpb_FieldMode_Scalar | (kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)},
+  {5, UPB_SIZE(16, 8), UPB_SIZE(-1, -1), kUpb_NoSub, 12, kUpb_FieldMode_Scalar | (kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)},
+  {6, UPB_SIZE(4, 4), UPB_SIZE(0, 0), kUpb_NoSub, 5, kUpb_FieldMode_Scalar | (kUpb_FieldRep_4Byte << kUpb_FieldRep_Shift)},
 };
 
 const upb_MiniTable envoy_config_core_v3_SocketOption_msginit = {
   NULL,
   &envoy_config_core_v3_SocketOption__fields[0],
-  UPB_SIZE(48, 64), 6, upb_ExtMode_NonExtendable, 6, 255, 0,
+  UPB_SIZE(40, 56), 6, kUpb_ExtMode_NonExtendable, 6, 255, 0,
 };
 
 static const upb_MiniTable *messages_layout[1] = {

@@ -19,6 +19,7 @@
 
 #include <grpc/impl/codegen/grpc_types.h>
 
+#include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/gprpp/cpp_impl_of.h"
 #include "src/core/lib/resource_quota/memory_quota.h"
 #include "src/core/lib/resource_quota/thread_quota.h"
@@ -46,7 +47,10 @@ class ResourceQuota : public RefCounted<ResourceQuota>,
   // The default global resource quota
   static ResourceQuotaRefPtr Default();
 
-  bool operator<(const ResourceQuota& other) const { return this < &other; }
+  static int ChannelArgsCompare(const ResourceQuota* a,
+                                const ResourceQuota* b) {
+    return QsortCompare(a, b);
+  }
 
  private:
   MemoryQuotaRefPtr memory_quota_;

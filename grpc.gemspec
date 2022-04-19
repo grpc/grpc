@@ -41,7 +41,7 @@ Gem::Specification.new do |s|
   s.add_development_dependency 'simplecov',          '~> 0.14.1'
   s.add_development_dependency 'rake',               '~> 13.0'
   s.add_development_dependency 'rake-compiler',      '<= 1.1.1'
-  s.add_development_dependency 'rake-compiler-dock', '~> 1.1'
+  s.add_development_dependency 'rake-compiler-dock', '~> 1.2'
   s.add_development_dependency 'rspec',              '~> 3.6'
   s.add_development_dependency 'rubocop',            '~> 0.49.1'
   s.add_development_dependency 'signet',             '~> 0.7'
@@ -112,6 +112,7 @@ Gem::Specification.new do |s|
   s.files += %w( include/grpc/support/workaround_list.h )
   s.files += %w( src/core/ext/filters/census/grpc_context.cc )
   s.files += %w( src/core/ext/filters/channel_idle/channel_idle_filter.cc )
+  s.files += %w( src/core/ext/filters/channel_idle/channel_idle_filter.h )
   s.files += %w( src/core/ext/filters/channel_idle/idle_filter_state.cc )
   s.files += %w( src/core/ext/filters/channel_idle/idle_filter_state.h )
   s.files += %w( src/core/ext/filters/client_channel/backend_metric.cc )

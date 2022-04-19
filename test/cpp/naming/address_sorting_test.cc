@@ -111,8 +111,10 @@ class MockSourceAddrFactory : public address_sorting_source_addr_factory {
     grpc_resolved_address dest_addr_as_resolved_addr;
     memcpy(&dest_addr_as_resolved_addr.addr, dest_addr, dest_addr->len);
     dest_addr_as_resolved_addr.len = dest_addr->len;
-    std::string ip_addr_str = grpc_sockaddr_to_string(
-        &dest_addr_as_resolved_addr, false /* normalize */);
+    std::string ip_addr_str =
+        grpc_sockaddr_to_string(&dest_addr_as_resolved_addr,
+                                false /* normalize */)
+            .value();
     auto it = dest_addr_to_src_addr_.find(ip_addr_str);
     if (it == dest_addr_to_src_addr_.end()) {
       gpr_log(GPR_DEBUG, "can't find |%s| in dest to src map",
@@ -179,7 +181,8 @@ void VerifyLbAddrOutputs(const grpc_core::ServerAddressList& addresses,
   EXPECT_EQ(addresses.size(), expected_addrs.size());
   for (size_t i = 0; i < addresses.size(); ++i) {
     std::string ip_addr_str =
-        grpc_sockaddr_to_string(&addresses[i].address(), false /* normalize */);
+        grpc_sockaddr_to_string(&addresses[i].address(), false /* normalize */)
+            .value();
     EXPECT_EQ(expected_addrs[i], ip_addr_str);
   }
 }

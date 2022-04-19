@@ -76,6 +76,10 @@ struct grpc_auth_context
   }
 
   static absl::string_view ChannelArgName() { return GRPC_AUTH_CONTEXT_ARG; }
+  static int ChannelArgsCompare(const grpc_auth_context* a,
+                                const grpc_auth_context* b) {
+    return QsortCompare(a, b);
+  }
 
   const grpc_auth_context* chained() const { return chained_.get(); }
   const grpc_auth_property_array& properties() const { return properties_; }

@@ -86,7 +86,7 @@ static bool maybe_prepend_client_auth_filter(
   if (args) {
     for (size_t i = 0; i < args->num_args; i++) {
       if (0 == strcmp(GRPC_ARG_SECURITY_CONNECTOR, args->args[i].key)) {
-        builder->PrependFilter(&grpc_client_auth_filter, nullptr);
+        builder->PrependFilter(&grpc_core::ClientAuthFilter::kFilter, nullptr);
         break;
       }
     }

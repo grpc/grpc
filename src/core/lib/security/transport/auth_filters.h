@@ -29,7 +29,6 @@
 #include "src/core/lib/security/security_connector/security_connector.h"
 #include "src/core/lib/transport/transport.h"
 
-extern const grpc_channel_filter grpc_client_auth_filter;
 extern const grpc_channel_filter grpc_server_auth_filter;
 
 namespace grpc_core {
@@ -37,6 +36,8 @@ namespace grpc_core {
 // Handles calling out to credentials to fill in metadata per call.
 class ClientAuthFilter final : public ChannelFilter {
  public:
+  static const grpc_channel_filter kFilter;
+
   static absl::StatusOr<ClientAuthFilter> Create(ChannelArgs args,
                                                  ChannelFilter::Args);
 

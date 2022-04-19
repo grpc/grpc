@@ -16,24 +16,24 @@
 #include "upb/port_def.inc"
 
 static const upb_MiniTable_Field envoy_type_v3_Percent__fields[1] = {
-  {1, UPB_SIZE(0, 0), 0, 0, 1, kUpb_FieldMode_Scalar | (upb_FieldRep_8Byte << upb_FieldRep_Shift)},
+  {1, UPB_SIZE(0, 0), UPB_SIZE(0, 0), kUpb_NoSub, 1, kUpb_FieldMode_Scalar | (kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)},
 };
 
 const upb_MiniTable envoy_type_v3_Percent_msginit = {
   NULL,
   &envoy_type_v3_Percent__fields[0],
-  UPB_SIZE(8, 8), 1, upb_ExtMode_NonExtendable, 1, 255, 0,
+  UPB_SIZE(8, 8), 1, kUpb_ExtMode_NonExtendable, 1, 255, 0,
 };
 
 static const upb_MiniTable_Field envoy_type_v3_FractionalPercent__fields[2] = {
-  {1, UPB_SIZE(4, 4), 0, 0, 13, kUpb_FieldMode_Scalar | (upb_FieldRep_4Byte << upb_FieldRep_Shift)},
-  {2, UPB_SIZE(0, 0), 0, 0, 5, kUpb_FieldMode_Scalar | (upb_FieldRep_4Byte << upb_FieldRep_Shift)},
+  {1, UPB_SIZE(0, 0), UPB_SIZE(0, 0), kUpb_NoSub, 13, kUpb_FieldMode_Scalar | (kUpb_FieldRep_4Byte << kUpb_FieldRep_Shift)},
+  {2, UPB_SIZE(4, 4), UPB_SIZE(0, 0), kUpb_NoSub, 5, kUpb_FieldMode_Scalar | (kUpb_FieldRep_4Byte << kUpb_FieldRep_Shift)},
 };
 
 const upb_MiniTable envoy_type_v3_FractionalPercent_msginit = {
   NULL,
   &envoy_type_v3_FractionalPercent__fields[0],
-  UPB_SIZE(8, 8), 2, upb_ExtMode_NonExtendable, 2, 255, 0,
+  UPB_SIZE(8, 8), 2, kUpb_ExtMode_NonExtendable, 2, 255, 0,
 };
 
 static const upb_MiniTable *messages_layout[2] = {

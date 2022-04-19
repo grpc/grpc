@@ -72,10 +72,15 @@ struct secure_endpoint {
             ->CreateMemoryOwner(absl::StrCat(grpc_endpoint_get_peer(transport),
                                              ":secure_endpoint"));
     self_reservation = memory_owner.MakeReservation(sizeof(*this));
-    read_staging_buffer =
-        memory_owner.MakeSlice(grpc_core::MemoryRequest(STAGING_BUFFER_SIZE));
-    write_staging_buffer =
-        memory_owner.MakeSlice(grpc_core::MemoryRequest(STAGING_BUFFER_SIZE));
+    if (zero_copy_protector) {
+      read_staging_buffer = grpc_empty_slice();
+      write_staging_buffer = grpc_empty_slice();
+    } else {
+      read_staging_buffer =
+          memory_owner.MakeSlice(grpc_core::MemoryRequest(STAGING_BUFFER_SIZE));
+      write_staging_buffer =
+          memory_owner.MakeSlice(grpc_core::MemoryRequest(STAGING_BUFFER_SIZE));
+    }
     has_posted_reclaimer.store(false, std::memory_order_relaxed);
     gpr_ref_init(&ref, 1);
   }
@@ -97,8 +102,8 @@ struct secure_endpoint {
   struct tsi_frame_protector* protector;
   struct tsi_zero_copy_grpc_protector* zero_copy_protector;
   gpr_mu protector_mu;
-  absl::Mutex read_mu;
-  absl::Mutex write_mu;
+  grpc_core::Mutex read_mu;
+  grpc_core::Mutex write_mu;
   /* saved upper level callbacks and user_data. */
   grpc_closure* read_cb = nullptr;
   grpc_closure* write_cb = nullptr;
@@ -229,7 +234,7 @@ static void on_read(void* user_data, grpc_error_handle error) {
   secure_endpoint* ep = static_cast<secure_endpoint*>(user_data);
 
   {
-    absl::MutexLock l(&ep->read_mu);
+    grpc_core::MutexLock l(&ep->read_mu);
     uint8_t* cur = GRPC_SLICE_START_PTR(ep->read_staging_buffer);
     uint8_t* end = GRPC_SLICE_END_PTR(ep->read_staging_buffer);
 
@@ -350,7 +355,7 @@ static void endpoint_write(grpc_endpoint* secure_ep, grpc_slice_buffer* slices,
   secure_endpoint* ep = reinterpret_cast<secure_endpoint*>(secure_ep);
 
   {
-    absl::MutexLock l(&ep->write_mu);
+    grpc_core::MutexLock l(&ep->write_mu);
     uint8_t* cur = GRPC_SLICE_START_PTR(ep->write_staging_buffer);
     uint8_t* end = GRPC_SLICE_END_PTR(ep->write_staging_buffer);
 
