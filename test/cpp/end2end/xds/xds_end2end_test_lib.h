@@ -274,7 +274,7 @@ class XdsEnd2endTest : public ::testing::TestWithParam<XdsTestType> {
     std::unique_ptr<std::thread> thread_;
     bool running_ = false;
     const bool use_xds_enabled_server_;
-    bool allow_put_requests_;
+    bool allow_put_requests_ = false;
   };
 
   // A server thread for a backend server.
