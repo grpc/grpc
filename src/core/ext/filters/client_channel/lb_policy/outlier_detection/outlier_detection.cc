@@ -18,12 +18,15 @@
 
 #include <atomic>
 
+#include "absl/debugging/stacktrace.h"
+#include "absl/debugging/symbolize.h"
 #include "absl/strings/string_view.h"
 
 #include <grpc/grpc.h>
 
 #include "src/core/ext/filters/client_channel/lb_policy.h"
 #include "src/core/ext/filters/client_channel/lb_policy/child_policy_handler.h"
+#include "src/core/ext/filters/client_channel/lb_policy/subchannel_list.h"
 #include "src/core/ext/filters/client_channel/lb_policy/xds/xds.h"
 #include "src/core/ext/filters/client_channel/lb_policy/xds/xds_channel_args.h"
 #include "src/core/ext/filters/client_channel/lb_policy_factory.h"
@@ -89,6 +92,84 @@ class OutlierDetectionLb : public LoadBalancingPolicy {
   void ResetBackoffLocked() override;
 
  private:
+  class SubchannelWrapper : public SubchannelInterface {
+   public:
+    SubchannelWrapper(RefCountedPtr<SubchannelInterface> subchannel)
+        : subchannel_(std::move(subchannel)), eject_(false) {}
+
+    RefCountedPtr<SubchannelInterface> subchannel() const {
+      return subchannel_;
+    }
+
+    void eject() { eject_ = true; }
+
+    void uneject() { eject_ = false; }
+
+    grpc_connectivity_state CheckConnectivityState() override;
+
+    void WatchConnectivityState(
+        grpc_connectivity_state initial_state,
+        std::unique_ptr<ConnectivityStateWatcherInterface> watcher) override;
+
+    void CancelConnectivityStateWatch(
+        ConnectivityStateWatcherInterface* watcher) override;
+
+    void AttemptToConnect() override { subchannel_->AttemptToConnect(); }
+    void ResetBackoff() override { subchannel_->ResetBackoff(); }
+    const grpc_channel_args* channel_args() override {
+      return subchannel_->channel_args();
+    }
+
+    class WatcherWrapper
+        : public SubchannelInterface::ConnectivityStateWatcherInterface {
+     public:
+      WatcherWrapper(std::unique_ptr<
+                     SubchannelInterface::ConnectivityStateWatcherInterface>
+                         watcher)
+          : watcher_(std::move(watcher)) {}
+
+      ~WatcherWrapper() override {}
+
+      void OnConnectivityStateChange(
+          grpc_connectivity_state new_state) override {
+        void* trace[256];
+        int n = absl::GetStackTrace(trace, 256, 0);
+        for (int i = 0; i <= n; ++i) {
+          char tmp[1024];
+          const char* symbol = "(unknown)";
+          if (absl::Symbolize(trace[i], tmp, sizeof(tmp))) {
+            symbol = tmp;
+          }
+          gpr_log(GPR_ERROR,
+                  "Watcher OnConnectivityStateChange stack state %d %p %s",
+                  new_state, trace[i], symbol);
+        }
+        last_seen_state_ = new_state;
+        // TODO@donnadionne change state based on eject
+        watcher_->OnConnectivityStateChange(new_state);
+      }
+
+      grpc_pollset_set* interested_parties() override {
+        SubchannelInterface::ConnectivityStateWatcherInterface* watcher =
+            watcher_.get();
+        return watcher->interested_parties();
+      }
+      grpc_connectivity_state last_seen_state() const {
+        return last_seen_state_;
+      }
+
+     private:
+      std::unique_ptr<SubchannelInterface::ConnectivityStateWatcherInterface>
+          watcher_;
+      grpc_connectivity_state last_seen_state_;
+    };
+
+   private:
+    RefCountedPtr<SubchannelInterface> subchannel_;
+    bool eject_;
+    SubchannelInterface::ConnectivityStateWatcherInterface* watcher_;
+  };
+
   // A simple wrapper for ref-counting a picker from the child policy.
   class RefCountedPicker : public RefCounted<RefCountedPicker> {
    public:
@@ -160,6 +241,62 @@ class OutlierDetectionLb : public LoadBalancingPolicy {
   RefCountedPtr<RefCountedPicker> picker_;
 };
 
+///
+/// OutlierDetectionLb::SubchannelWrapper
+///
+grpc_connectivity_state
+OutlierDetectionLb::SubchannelWrapper::CheckConnectivityState() {
+  void* trace[256];
+  int n = absl::GetStackTrace(trace, 256, 0);
+  for (int i = 0; i <= n; ++i) {
+    char tmp[1024];
+    const char* symbol = "(unknown)";
+    if (absl::Symbolize(trace[i], tmp, sizeof(tmp))) {
+      symbol = tmp;
+    }
+    gpr_log(GPR_ERROR, "CheckConnectivityState stack %p %s", trace[i], symbol);
+  }
+  if (eject_) return GRPC_CHANNEL_TRANSIENT_FAILURE;
+  return subchannel_->CheckConnectivityState();
+}
+
+void OutlierDetectionLb::SubchannelWrapper::WatchConnectivityState(
+    grpc_connectivity_state initial_state,
+    std::unique_ptr<ConnectivityStateWatcherInterface> watcher) {
+  void* trace[256];
+  int n = absl::GetStackTrace(trace, 256, 0);
+  for (int i = 0; i <= n; ++i) {
+    char tmp[1024];
+    const char* symbol = "(unknown)";
+    if (absl::Symbolize(trace[i], tmp, sizeof(tmp))) {
+      symbol = tmp;
+    }
+    gpr_log(GPR_ERROR, "WatchConnectivityState stack %p %s", trace[i], symbol);
+  }
+  watcher_ = new SubchannelWrapper::WatcherWrapper(std::move(watcher));
+  subchannel_->WatchConnectivityState(
+      initial_state,
+      std::unique_ptr<SubchannelInterface::ConnectivityStateWatcherInterface>(
+          watcher_));
+}
+
+void OutlierDetectionLb::SubchannelWrapper::CancelConnectivityStateWatch(
+    ConnectivityStateWatcherInterface* watcher) {
+  void* trace[256];
+  int n = absl::GetStackTrace(trace, 256, 0);
+  for (int i = 0; i <= n; ++i) {
+    char tmp[1024];
+    const char* symbol = "(unknown)";
+    if (absl::Symbolize(trace[i], tmp, sizeof(tmp))) {
+      symbol = tmp;
+    }
+    gpr_log(GPR_ERROR, "CancelConnectivityStateWatch stack %p %s", trace[i],
+            symbol);
+  }
+  subchannel_->CancelConnectivityStateWatch(watcher_);
+  watcher_ = nullptr;
+}
+
 //
 // OutlierDetectionLb::Picker
 //
@@ -179,8 +316,16 @@ LoadBalancingPolicy::PickResult OutlierDetectionLb::Picker::Pick(
     return PickResult::Fail(absl::InternalError(
         "outlier_detection picker not given any child picker"));
   }
-  // Not dropping, so delegate to child picker.
+  // Delegate to child picker
   PickResult result = picker_->Pick(args);
+  auto* complete_pick = absl::get_if<PickResult::Complete>(&result.result);
+  if (complete_pick != nullptr) {
+    gpr_log(GPR_INFO, "donna unwrapping");
+    // Unwrap subchannel to pass back up the stack.
+    auto* subchannel_wrapper =
+        static_cast<SubchannelWrapper*>(complete_pick->subchannel.get());
+    complete_pick->subchannel = subchannel_wrapper->subchannel();
+  }
   return result;
 }
 
@@ -304,9 +449,9 @@ OrphanablePtr<LoadBalancingPolicy> OutlierDetectionLb::CreateChildPolicyLocked(
 RefCountedPtr<SubchannelInterface> OutlierDetectionLb::Helper::CreateSubchannel(
     ServerAddress address, const grpc_channel_args& args) {
   if (outlier_detection_policy_->shutting_down_) return nullptr;
-  // Load reporting not enabled, so don't wrap the subchannel.
-  return outlier_detection_policy_->channel_control_helper()->CreateSubchannel(
-      std::move(address), args);
+  return MakeRefCounted<SubchannelWrapper>(
+      outlier_detection_policy_->channel_control_helper()->CreateSubchannel(
+          std::move(address), args));
 }
 
 void OutlierDetectionLb::Helper::UpdateState(
