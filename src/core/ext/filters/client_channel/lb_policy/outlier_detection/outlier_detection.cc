@@ -19,7 +19,9 @@
 #include "src/core/ext/filters/client_channel/lb_policy/outlier_detection/outlier_detection.h"
 
 #include <atomic>
+#include <set>
 
+#include "absl/container/inlined_vector.h"
 #include "absl/strings/string_view.h"
 
 #include <grpc/grpc.h>
@@ -81,10 +83,28 @@ class OutlierDetectionLb : public LoadBalancingPolicy {
   void ResetBackoffLocked() override;
 
  private:
+  class SubchannelWrapper;
+  struct Ejection {
+    struct CallResultCounter {
+      struct Bucket {
+        uint64_t success;
+        uint64_t failure;
+      };
+      Bucket active;
+      Bucket inactive;
+    };
+    CallResultCounter call_result_counter;
+    absl::optional<Timestamp> ejection_time;
+    uint32_t mutiplier;
+    absl::InlinedVector<RefCountedPtr<SubchannelWrapper>, 1> subchannels;
+  };
+
   class SubchannelWrapper : public SubchannelInterface {
    public:
     explicit SubchannelWrapper(RefCountedPtr<SubchannelInterface> subchannel)
-        : subchannel_(std::move(subchannel)), ejected_(false) {}
+        : subchannel_(std::move(subchannel)), ejected_(false) {
+      gpr_log(GPR_INFO, "SubchannelWrapper ref is %p", this);
+    }
 
     RefCountedPtr<SubchannelInterface> subchannel() const {
       return subchannel_;
@@ -222,6 +242,7 @@ class OutlierDetectionLb : public LoadBalancingPolicy {
   grpc_connectivity_state state_ = GRPC_CHANNEL_IDLE;
   absl::Status status_;
   RefCountedPtr<RefCountedPicker> picker_;
+  std::map<std::string, Ejection> ejection_map_;
 };
 
 //
@@ -349,6 +370,23 @@ void OutlierDetectionLb::UpdateLocked(UpdateArgs args) {
   if (child_policy_ == nullptr) {
     child_policy_ = CreateChildPolicyLocked(args.args);
   }
+  std::set<std::string> current_addresses;
+  if (args.addresses.ok()) {
+    for (ServerAddress address : *args.addresses) {
+      ejection_map_[address.ToString()] = {};
+      gpr_log(GPR_INFO, "donna print address %s", address.ToString().c_str());
+      current_addresses.emplace(address.ToString());
+    }
+    for (auto it = ejection_map_.begin(); it != ejection_map_.end();) {
+      if (current_addresses.find(it->first) == current_addresses.end()) {
+        // remove each map entry for a subchannel address not in the updated
+        // address list.
+        gpr_log(GPR_INFO, "donna erased %s", it->first.c_str());
+        it = ejection_map_.erase(it);
+      }
+      ++it;
+    }
+  }
   // Construct update args.
   UpdateArgs update_args;
   update_args.addresses = std::move(args.addresses);
@@ -408,9 +446,25 @@ OrphanablePtr<LoadBalancingPolicy> OutlierDetectionLb::CreateChildPolicyLocked(
 RefCountedPtr<SubchannelInterface> OutlierDetectionLb::Helper::CreateSubchannel(
     ServerAddress address, const grpc_channel_args& args) {
   if (outlier_detection_policy_->shutting_down_) return nullptr;
-  return MakeRefCounted<SubchannelWrapper>(
-      outlier_detection_policy_->channel_control_helper()->CreateSubchannel(
-          std::move(address), args));
+  std::string address_string = address.ToString();
+  RefCountedPtr<SubchannelWrapper> subchannel =
+      MakeRefCounted<SubchannelWrapper>(
+          outlier_detection_policy_->channel_control_helper()->CreateSubchannel(
+              std::move(address), args));
+  gpr_log(GPR_INFO,
+          "donna create subchannel wrapper for address %s with wrapper %p",
+          address_string.c_str(), subchannel.get());
+  auto& ejection_map = outlier_detection_policy_->ejection_map_;
+  auto ejection_entry = ejection_map.find(address_string);
+  // TODO@donnadionne: subchannel created with multiple addresses case?
+  if (ejection_entry != ejection_map.end()) {
+    ejection_entry->second.subchannels.emplace_back(subchannel);
+    if (ejection_entry->second.ejection_time.has_value()) {
+      // currently ejected
+      subchannel->Eject();
+    }
+  }
+  return subchannel;
 }
 
 void OutlierDetectionLb::Helper::UpdateState(

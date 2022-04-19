@@ -3300,6 +3300,7 @@ grpc_cc_library(
         "src/core/ext/filters/client_channel/lb_policy/outlier_detection/outlier_detection.h",
     ],
     external_deps = [
+        "absl/container:inlined_vector",
         "absl/strings",
         "absl/strings:str_format",
     ],
