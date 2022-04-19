@@ -485,19 +485,15 @@ class OutlierDetectionLbFactory : public LoadBalancingPolicyFactory {
     std::vector<grpc_error_handle> error_list;
     // Outlier detection config
     OutlierDetectionConfig outlier_detection_config;
-    Duration temp_duration;
-    if (ParseJsonObjectFieldAsDuration(json.object_value(), "interval",
-                                       &temp_duration, &error_list)) {
-      outlier_detection_config.interval = temp_duration;
-    }
-    if (ParseJsonObjectFieldAsDuration(json.object_value(), "baseEjectionTime",
-                                       &temp_duration, &error_list)) {
-      outlier_detection_config.base_ejection_time = temp_duration;
-    }
-    if (ParseJsonObjectFieldAsDuration(json.object_value(), "maxEjectionTime",
-                                       &temp_duration, &error_list)) {
-      outlier_detection_config.max_ejection_time = temp_duration;
-    }
+    ParseJsonObjectFieldAsDuration(json.object_value(), "interval",
+                                   &outlier_detection_config.interval,
+                                   &error_list);
+    ParseJsonObjectFieldAsDuration(json.object_value(), "baseEjectionTime",
+                                   &outlier_detection_config.base_ejection_time,
+                                   &error_list);
+    ParseJsonObjectFieldAsDuration(json.object_value(), "maxEjectionTime",
+                                   &outlier_detection_config.max_ejection_time,
+                                   &error_list);
     ParseJsonObjectField(json.object_value(), "maxEjectionPercent",
                          &outlier_detection_config.max_ejection_percent,
                          &error_list);

@@ -409,65 +409,55 @@ grpc_error_handle CdsResourceParse(
     OutlierDetectionConfig outlier_detection_update;
     const envoy_config_cluster_v3_OutlierDetection* outlier_detection =
         envoy_config_cluster_v3_Cluster_outlier_detection(cluster);
-    if (envoy_config_cluster_v3_OutlierDetection_has_interval(
-            outlier_detection)) {
-      const google_protobuf_Duration* duration =
-          envoy_config_cluster_v3_OutlierDetection_interval(outlier_detection);
+    const google_protobuf_Duration* duration =
+        envoy_config_cluster_v3_OutlierDetection_interval(outlier_detection);
+    if (duration != nullptr) {
       outlier_detection_update.interval = ParseDuration(duration);
     }
-    if (envoy_config_cluster_v3_OutlierDetection_has_base_ejection_time(
-            outlier_detection)) {
-      const google_protobuf_Duration* duration =
-          envoy_config_cluster_v3_OutlierDetection_base_ejection_time(
-              outlier_detection);
+    duration = envoy_config_cluster_v3_OutlierDetection_base_ejection_time(
+        outlier_detection);
+    if (duration != nullptr) {
       outlier_detection_update.base_ejection_time = ParseDuration(duration);
     }
-    if (envoy_config_cluster_v3_OutlierDetection_has_max_ejection_time(
-            outlier_detection)) {
-      const google_protobuf_Duration* duration =
-          envoy_config_cluster_v3_OutlierDetection_max_ejection_time(
-              outlier_detection);
+    duration = envoy_config_cluster_v3_OutlierDetection_max_ejection_time(
+        outlier_detection);
+    if (duration != nullptr) {
       outlier_detection_update.max_ejection_time = ParseDuration(duration);
     }
-    if (envoy_config_cluster_v3_OutlierDetection_has_max_ejection_percent(
-            outlier_detection)) {
-      const google_protobuf_UInt32Value* max_ejection_percent =
-          envoy_config_cluster_v3_OutlierDetection_max_ejection_percent(
-              outlier_detection);
+    const google_protobuf_UInt32Value* max_ejection_percent =
+        envoy_config_cluster_v3_OutlierDetection_max_ejection_percent(
+            outlier_detection);
+    if (max_ejection_percent != nullptr) {
       outlier_detection_update.max_ejection_percent =
           google_protobuf_UInt32Value_value(max_ejection_percent);
     }
-    if (envoy_config_cluster_v3_OutlierDetection_has_enforcing_success_rate(
-            outlier_detection)) {
-      const google_protobuf_UInt32Value* enforcing_success_rate =
-          envoy_config_cluster_v3_OutlierDetection_enforcing_success_rate(
-              outlier_detection);
+    const google_protobuf_UInt32Value* enforcing_success_rate =
+        envoy_config_cluster_v3_OutlierDetection_enforcing_success_rate(
+            outlier_detection);
+    if (enforcing_success_rate != nullptr) {
       uint32_t enforcement_percentage =
           google_protobuf_UInt32Value_value(enforcing_success_rate);
       if (enforcement_percentage != 0) {
         OutlierDetectionConfig::SuccessRateEjection success_rate_ejection;
         success_rate_ejection.enforcement_percentage = enforcement_percentage;
-        if (envoy_config_cluster_v3_OutlierDetection_has_success_rate_minimum_hosts(
-                outlier_detection)) {
-          const google_protobuf_UInt32Value* minimum_hosts =
-              envoy_config_cluster_v3_OutlierDetection_success_rate_minimum_hosts(
-                  outlier_detection);
+        const google_protobuf_UInt32Value* minimum_hosts =
+            envoy_config_cluster_v3_OutlierDetection_success_rate_minimum_hosts(
+                outlier_detection);
+        if (minimum_hosts != nullptr) {
           success_rate_ejection.minimum_hosts =
               google_protobuf_UInt32Value_value(minimum_hosts);
         }
-        if (envoy_config_cluster_v3_OutlierDetection_has_success_rate_request_volume(
-                outlier_detection)) {
-          const google_protobuf_UInt32Value* request_volume =
-              envoy_config_cluster_v3_OutlierDetection_success_rate_request_volume(
-                  outlier_detection);
+        const google_protobuf_UInt32Value* request_volume =
+            envoy_config_cluster_v3_OutlierDetection_success_rate_request_volume(
+                outlier_detection);
+        if (request_volume != nullptr) {
           success_rate_ejection.request_volume =
               google_protobuf_UInt32Value_value(request_volume);
         }
-        if (envoy_config_cluster_v3_OutlierDetection_has_success_rate_stdev_factor(
-                outlier_detection)) {
-          const google_protobuf_UInt32Value* stdev_factor =
-              envoy_config_cluster_v3_OutlierDetection_success_rate_stdev_factor(
-                  outlier_detection);
+        const google_protobuf_UInt32Value* stdev_factor =
+            envoy_config_cluster_v3_OutlierDetection_success_rate_stdev_factor(
+                outlier_detection);
+        if (stdev_factor != nullptr) {
           success_rate_ejection.stdev_factor =
               google_protobuf_UInt32Value_value(stdev_factor);
         }
@@ -475,11 +465,10 @@ grpc_error_handle CdsResourceParse(
             std::move(success_rate_ejection);
       }
     }
-    if (envoy_config_cluster_v3_OutlierDetection_has_enforcing_failure_percentage(
-            outlier_detection)) {
-      const google_protobuf_UInt32Value* enforcing_failure_percentage =
-          envoy_config_cluster_v3_OutlierDetection_enforcing_failure_percentage(
-              outlier_detection);
+    const google_protobuf_UInt32Value* enforcing_failure_percentage =
+        envoy_config_cluster_v3_OutlierDetection_enforcing_failure_percentage(
+            outlier_detection);
+    if (enforcing_failure_percentage != nullptr) {
       uint32_t enforcement_percentage =
           google_protobuf_UInt32Value_value(enforcing_failure_percentage);
       if (enforcement_percentage != 0) {
@@ -487,27 +476,24 @@ grpc_error_handle CdsResourceParse(
             failure_percentage_ejection;
         failure_percentage_ejection.enforcement_percentage =
             enforcement_percentage;
-        if (envoy_config_cluster_v3_OutlierDetection_has_failure_percentage_minimum_hosts(
-                outlier_detection)) {
-          const google_protobuf_UInt32Value* minimum_hosts =
-              envoy_config_cluster_v3_OutlierDetection_failure_percentage_minimum_hosts(
-                  outlier_detection);
+        const google_protobuf_UInt32Value* minimum_hosts =
+            envoy_config_cluster_v3_OutlierDetection_failure_percentage_minimum_hosts(
+                outlier_detection);
+        if (minimum_hosts != nullptr) {
           failure_percentage_ejection.minimum_hosts =
               google_protobuf_UInt32Value_value(minimum_hosts);
         }
-        if (envoy_config_cluster_v3_OutlierDetection_has_failure_percentage_request_volume(
-                outlier_detection)) {
-          const google_protobuf_UInt32Value* request_volume =
-              envoy_config_cluster_v3_OutlierDetection_failure_percentage_request_volume(
-                  outlier_detection);
+        const google_protobuf_UInt32Value* request_volume =
+            envoy_config_cluster_v3_OutlierDetection_failure_percentage_request_volume(
+                outlier_detection);
+        if (request_volume != nullptr) {
           failure_percentage_ejection.request_volume =
               google_protobuf_UInt32Value_value(request_volume);
         }
-        if (envoy_config_cluster_v3_OutlierDetection_has_failure_percentage_threshold(
-                outlier_detection)) {
-          const google_protobuf_UInt32Value* threshold =
-              envoy_config_cluster_v3_OutlierDetection_failure_percentage_threshold(
-                  outlier_detection);
+        const google_protobuf_UInt32Value* threshold =
+            envoy_config_cluster_v3_OutlierDetection_failure_percentage_threshold(
+                outlier_detection);
+        if (threshold != nullptr) {
           failure_percentage_ejection.threshold =
               google_protobuf_UInt32Value_value(threshold);
         }
