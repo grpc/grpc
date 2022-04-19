@@ -60,9 +60,9 @@ then
   popd # ./Python-3.9.12
   popd # /tmp
 
-  # Python YAML module is pre-isntalled for Kokoro default interpretor, so for
-  # newly compiled interpretor, we need to explicitly install it.
-  python3 -m pip install PyYAML
+  # Mako and YAML modules are pre-isntalled for Kokoro default interpretor, we
+  # need to explicitly install them for the compiled Python interpretor.
+  python3 -m pip install PyYAML==5.4.1 mako==1.2.0
 fi
 
 python3 --version
