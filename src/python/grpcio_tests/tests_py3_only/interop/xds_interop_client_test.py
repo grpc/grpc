@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import collections
 import contextlib
 import logging
 import os
@@ -19,7 +20,7 @@ import subprocess
 import sys
 import tempfile
 import time
-from typing import List, Tuple
+from typing import Iterable, List, Mapping, Set, Tuple
 import unittest
 
 import grpc.experimental
@@ -48,6 +49,12 @@ _ITERATION_DURATION_SECONDS = 1
 _SUBPROCESS_TIMEOUT_SECONDS = 2
 
 
+def _set_union(a: Iterable, b: Iterable) -> Set:
+    c = set(a)
+    c.update(b)
+    return c
+
+
 @contextlib.contextmanager
 def _start_python_with_args(
     file: str, args: List[str]
@@ -74,41 +81,67 @@ def _dump_streams(process_name: str, stdout: tempfile.TemporaryFile,
     sys.stderr.write(f"End {process_name} output.\n")
 
 
-def _test_client(server_port: int, stats_port: int, qps: int,
-                 num_channels: int):
+def _index_accumulated_stats(
+    response: messages_pb2.LoadBalancerAccumulatedStatsResponse
+) -> Mapping[str, Mapping[int, int]]:
+    indexed = collections.defaultdict(lambda: collections.defaultdict(int))
+    for _, method_str in _METHODS:
+        for status in response.stats_per_method[method_str].result.keys():
+            indexed[method_str][status] = response.stats_per_method[
+                method_str].result[status]
+    return indexed
+
+
+def _subtract_indexed_stats(a: Mapping[str, Mapping[int, int]],
+                            b: Mapping[str, Mapping[int, int]]):
+    c = collections.defaultdict(lambda: collections.defaultdict(int))
+    all_methods = _set_union(a.keys(), b.keys())
+    for method in all_methods:
+        all_statuses = _set_union(a[method].keys(), b[method].keys())
+        for status in all_statuses:
+            c[method][status] = a[method][status] - b[method][status]
+    return c
+
+
+def _collect_stats(stats_port: int,
+                   duration: int) -> Mapping[str, Mapping[int, int]]:
     settings = {
         "target": f"localhost:{stats_port}",
         "insecure": True,
     }
-    for i in range(_TEST_ITERATIONS):
-        target_method, target_method_str = _METHODS[i % len(_METHODS)]
-        test_pb2_grpc.XdsUpdateClientConfigureService.Configure(
-            messages_pb2.ClientConfigureRequest(types=[target_method]),
-            **settings)
-        response = test_pb2_grpc.LoadBalancerStatsService.GetClientAccumulatedStats(
-            messages_pb2.LoadBalancerAccumulatedStatsRequest(), **settings)
-        before = {}
-        for _, method_str in _METHODS:
-            before[method_str] = response.stats_per_method[method_str].result[0]
-        time.sleep(_ITERATION_DURATION_SECONDS)
-        response = test_pb2_grpc.LoadBalancerStatsService.GetClientAccumulatedStats(
-            messages_pb2.LoadBalancerAccumulatedStatsRequest(), **settings)
-        after = {}
-        delta = {}
-        for _, method_str in _METHODS:
-            after[method_str] = response.stats_per_method[method_str].result[0]
-            delta[method_str] = after[method_str] - before[method_str]
-        logging.info("Delta: %s", delta)
-        for _, method_str in _METHODS:
-            if method_str == target_method_str:
-                assert delta[method_str] > 0, delta
-            else:
-                assert delta[method_str] == 0, delta
+    response = test_pb2_grpc.LoadBalancerStatsService.GetClientAccumulatedStats(
+        messages_pb2.LoadBalancerAccumulatedStatsRequest(), **settings)
+    before = _index_accumulated_stats(response)
+    time.sleep(duration)
+    response = test_pb2_grpc.LoadBalancerStatsService.GetClientAccumulatedStats(
+        messages_pb2.LoadBalancerAccumulatedStatsRequest(), **settings)
+    after = _index_accumulated_stats(response)
+    return _subtract_indexed_stats(after, before)
 
 
 class XdsInteropClientTest(unittest.TestCase):
 
-    def test_configure_consistenc(self):
+    def _assert_client_consistent(self, server_port: int, stats_port: int,
+                                  qps: int, num_channels: int):
+        settings = {
+            "target": f"localhost:{stats_port}",
+            "insecure": True,
+        }
+        for i in range(_TEST_ITERATIONS):
+            target_method, target_method_str = _METHODS[i % len(_METHODS)]
+            test_pb2_grpc.XdsUpdateClientConfigureService.Configure(
+                messages_pb2.ClientConfigureRequest(types=[target_method]),
+                **settings)
+            delta = _collect_stats(stats_port, _ITERATION_DURATION_SECONDS)
+            logging.info("Delta: %s", delta)
+            for _, method_str in _METHODS:
+                for status in delta[method_str]:
+                    if status == 0 and method_str == target_method_str:
+                        self.assertGreater(delta[method_str][status], 0, delta)
+                    else:
+                        self.assertEqual(delta[method_str][status], 0, delta)
+
+    def test_configure_consistency(self):
         _, server_port, socket = framework_common.get_socket()
 
         with _start_python_with_args(
@@ -131,7 +164,8 @@ class XdsInteropClientTest(unittest.TestCase):
             ]) as (client, client_stdout, client_stderr):
                 stats_socket.close()
                 try:
-                    _test_client(server_port, stats_port, _QPS, _NUM_CHANNELS)
+                    self._assert_client_consistent(server_port, stats_port,
+                                                   _QPS, _NUM_CHANNELS)
                 except:
                     _dump_streams("server", server_stdout, server_stderr)
                     _dump_streams("client", client_stdout, client_stderr)
