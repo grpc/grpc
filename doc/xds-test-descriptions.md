@@ -12,7 +12,7 @@ Server should accept these arguments:
 *   --port=PORT
     *   The port the test server will run on.
 *   --maintenance_port=PORT
-    *   The port for the maintenance server running health, channelz, and admin(CSDS) services.
+    *   The port for the maintenance server running health, channelz, configuration, and admin(CSDS) services.
 *   --secure_mode=BOOLEAN
     *   When set to true it uses XdsServerCredentials with the test server for security test cases.
         In case of secure mode, port and maintenance_port should be different.
@@ -92,6 +92,35 @@ service XdsUpdateClientConfigureService {
 The test client changes its behavior right after receiving the
 `ClientConfigureRequest`. Currently it only supports configuring the type(s) 
 of RPCs sent by the test client, metadata attached to each type of RPCs, and the timeout.
+
+### XdsUpdateServerConfigureService
+
+The xDS test server's behavior can be dynamically changed in the middle of tests.
+This is achieved by invoking the `XdsUpdateClientConfigureService` gRPC service
+on the test server.
+
+```
+message EchoStatus {
+  int32 code = 1;
+  string message = 2;
+}
+
+message ServerConfigureRequest {
+  // The status code with which to respond to all requests
+  EchoStatus response_status = 1;
+}
+
+message ServerConfigureResponse {}
+
+service XdsUpdateServerConfigureService {
+  // Update the test server's configuration.
+  rpc Configure(ServerConfigureRequest) returns (ServerConfigureResponse);
+}
+```
+
+The test server changes its behavior right after receiving the
+`ServerConfigureRequest`. Currently it only supports configuring the status
+the server uses to respond to requests.
 
 ## Test Driver
 

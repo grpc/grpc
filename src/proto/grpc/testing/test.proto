@@ -97,6 +97,12 @@ service XdsUpdateHealthService {
 
 // A service to dynamically update the configuration of an xDS test client.
 service XdsUpdateClientConfigureService {
-  // Update the tes client's configuration.
+  // Update the test client's configuration.
   rpc Configure(ClientConfigureRequest) returns (ClientConfigureResponse);
+}
+
+// A service to dynamically update the configuration of an xDS test server.
+service XdsUpdateServerConfigureService {
+  // Update the test server's configuration.
+  rpc Configure(ServerConfigureRequest) returns (ServerConfigureResponse);
 }

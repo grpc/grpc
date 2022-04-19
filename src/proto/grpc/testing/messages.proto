@@ -268,3 +268,12 @@ message ClientConfigureRequest {
 
 // Response for updating a test client's configuration.
 message ClientConfigureResponse {}
+
+// Configurations for a test server
+message ServerConfigureRequest {
+  // The status code with which to respond to all requests
+  EchoStatus response_status = 1;
+}
+
+// Response for updating a test server's configuration.
+message ServerConfigureResponse {}
