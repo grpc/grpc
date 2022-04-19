@@ -406,11 +406,7 @@ grpc_error_handle CdsResourceParse(
   // for outlier detection will be based on fields received and
   // default values.
   if (envoy_config_cluster_v3_Cluster_has_outlier_detection(cluster)) {
-    XdsClusterResource::OutlierDetection outlier_detection_update;
-    outlier_detection_update.interval = Duration::Milliseconds(10000);
-    outlier_detection_update.base_ejection_time = Duration::Milliseconds(30000);
-    outlier_detection_update.max_ejection_time = Duration::Milliseconds(30000);
-    outlier_detection_update.max_ejection_percent = 10;
+    OutlierDetectionConfig outlier_detection_update;
     const envoy_config_cluster_v3_OutlierDetection* outlier_detection =
         envoy_config_cluster_v3_Cluster_outlier_detection(cluster);
     if (envoy_config_cluster_v3_OutlierDetection_has_interval(
@@ -449,12 +445,8 @@ grpc_error_handle CdsResourceParse(
       uint32_t enforcement_percentage =
           google_protobuf_UInt32Value_value(enforcing_success_rate);
       if (enforcement_percentage != 0) {
-        XdsClusterResource::OutlierDetection::SuccessRateEjection
-            success_rate_ejection;
+        OutlierDetectionConfig::SuccessRateEjection success_rate_ejection;
         success_rate_ejection.enforcement_percentage = enforcement_percentage;
-        success_rate_ejection.minimum_hosts = 5;
-        success_rate_ejection.stdev_factor = 1900;
-        success_rate_ejection.request_volume = 100;
         if (envoy_config_cluster_v3_OutlierDetection_has_success_rate_minimum_hosts(
                 outlier_detection)) {
           const google_protobuf_UInt32Value* minimum_hosts =
@@ -491,13 +483,10 @@ grpc_error_handle CdsResourceParse(
       uint32_t enforcement_percentage =
           google_protobuf_UInt32Value_value(enforcing_failure_percentage);
       if (enforcement_percentage != 0) {
-        XdsClusterResource::OutlierDetection::FailurePercentageEjection
+        OutlierDetectionConfig::FailurePercentageEjection
             failure_percentage_ejection;
         failure_percentage_ejection.enforcement_percentage =
             enforcement_percentage;
-        failure_percentage_ejection.minimum_hosts = 5;
-        failure_percentage_ejection.threshold = 85;
-        failure_percentage_ejection.request_volume = 50;
         if (envoy_config_cluster_v3_OutlierDetection_has_failure_percentage_minimum_hosts(
                 outlier_detection)) {
           const google_protobuf_UInt32Value* minimum_hosts =

@@ -27,6 +27,7 @@
 #include "envoy/extensions/clusters/aggregate/v3/cluster.upbdefs.h"
 #include "envoy/extensions/transport_sockets/tls/v3/tls.upbdefs.h"
 
+#include "src/core/ext/filters/client_channel/lb_policy/outlier_detection/outlier_detection.h"
 #include "src/core/ext/xds/xds_client.h"
 #include "src/core/ext/xds/xds_common_types.h"
 #include "src/core/ext/xds/xds_resource_type_impl.h"
@@ -35,26 +36,6 @@ namespace grpc_core {
 
 struct XdsClusterResource {
   enum ClusterType { EDS, LOGICAL_DNS, AGGREGATE };
-  struct OutlierDetection {
-    absl::optional<Duration> interval;
-    absl::optional<Duration> base_ejection_time;
-    absl::optional<Duration> max_ejection_time;
-    uint32_t max_ejection_percent;
-    struct SuccessRateEjection {
-      uint32_t stdev_factor;
-      uint32_t enforcement_percentage;
-      uint32_t minimum_hosts;
-      uint32_t request_volume;
-    };
-    struct FailurePercentageEjection {
-      uint32_t threshold;
-      uint32_t enforcement_percentage;
-      uint32_t minimum_hosts;
-      uint32_t request_volume;
-    };
-    absl::optional<SuccessRateEjection> success_rate_ejection;
-    absl::optional<FailurePercentageEjection> failure_percentage_ejection;
-  };
   ClusterType cluster_type;
   // For cluster type EDS.
   // The name to use in the EDS request.
@@ -83,7 +64,7 @@ struct XdsClusterResource {
   // cluster.
   uint32_t max_concurrent_requests = 1024;
 
-  absl::optional<OutlierDetection> outlier_detection;
+  absl::optional<OutlierDetectionConfig> outlier_detection;
 
   bool operator==(const XdsClusterResource& other) const {
     return cluster_type == other.cluster_type &&

@@ -1,5 +1,5 @@
 //
-// Copyright 2018 gRPC authors.
+// Copyright 2022 gRPC authors.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -16,6 +16,8 @@
 
 #include <grpc/support/port_platform.h>
 
+#include "src/core/ext/filters/client_channel/lb_policy/outlier_detection/outlier_detection.h"
+
 #include <atomic>
 
 #include "absl/debugging/stacktrace.h"
@@ -27,13 +29,9 @@
 #include "src/core/ext/filters/client_channel/lb_policy.h"
 #include "src/core/ext/filters/client_channel/lb_policy/child_policy_handler.h"
 #include "src/core/ext/filters/client_channel/lb_policy/subchannel_list.h"
-#include "src/core/ext/filters/client_channel/lb_policy/xds/xds.h"
 #include "src/core/ext/filters/client_channel/lb_policy/xds/xds_channel_args.h"
 #include "src/core/ext/filters/client_channel/lb_policy_factory.h"
 #include "src/core/ext/filters/client_channel/lb_policy_registry.h"
-#include "src/core/ext/xds/xds_client_stats.h"
-#include "src/core/ext/xds/xds_cluster.h"
-#include "src/core/ext/xds/xds_endpoint.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/gpr/env.h"
 #include "src/core/lib/gpr/string.h"
@@ -55,14 +53,14 @@ constexpr char kOutlierDetection[] = "outlier_detection_experimental";
 class OutlierDetectionLbConfig : public LoadBalancingPolicy::Config {
  public:
   OutlierDetectionLbConfig(
-      XdsClusterResource::OutlierDetection outlier_detection_config,
+      OutlierDetectionConfig outlier_detection_config,
       RefCountedPtr<LoadBalancingPolicy::Config> child_policy)
       : outlier_detection_config_(outlier_detection_config),
         child_policy_(std::move(child_policy)) {}
 
   const char* name() const override { return kOutlierDetection; }
 
-  const XdsClusterResource::OutlierDetection& outlier_detection_config() const {
+  const OutlierDetectionConfig& outlier_detection_config() const {
     return outlier_detection_config_;
   }
 
@@ -71,7 +69,7 @@ class OutlierDetectionLbConfig : public LoadBalancingPolicy::Config {
   }
 
  private:
-  XdsClusterResource::OutlierDetection outlier_detection_config_;
+  OutlierDetectionConfig outlier_detection_config_;
   RefCountedPtr<LoadBalancingPolicy::Config> child_policy_;
 };
 
@@ -532,7 +530,7 @@ class OutlierDetectionLbFactory : public LoadBalancingPolicyFactory {
     }
     std::vector<grpc_error_handle> error_list;
     // Outlier detection config
-    XdsClusterResource::OutlierDetection outlier_detection_config;
+    OutlierDetectionConfig outlier_detection_config;
     Duration temp_duration;
     if (ParseJsonObjectFieldAsDuration(json.object_value(), "interval",
                                        &temp_duration, &error_list)) {

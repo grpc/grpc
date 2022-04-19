@@ -362,18 +362,12 @@ absl::StatusOr<bool> CdsLb::GenerateDiscoveryMechanismForCluster(
   if (state.update->outlier_detection.has_value()) {
     auto& outlier_detection_update = state.update->outlier_detection.value();
     Json::Object outlier_detection;
-    if (outlier_detection_update.interval.has_value()) {
-      outlier_detection["interval"] =
-          outlier_detection_update.interval->ToJsonString();
-    }
-    if (outlier_detection_update.base_ejection_time.has_value()) {
-      outlier_detection["baseEjectionTime"] =
-          outlier_detection_update.base_ejection_time->ToJsonString();
-    }
-    if (outlier_detection_update.max_ejection_time.has_value()) {
-      outlier_detection["maxEjectionTime"] =
-          outlier_detection_update.max_ejection_time->ToJsonString();
-    }
+    outlier_detection["interval"] =
+        outlier_detection_update.interval.ToJsonString();
+    outlier_detection["baseEjectionTime"] =
+        outlier_detection_update.base_ejection_time.ToJsonString();
+    outlier_detection["maxEjectionTime"] =
+        outlier_detection_update.max_ejection_time.ToJsonString();
     outlier_detection["maxEjectionPercent"] =
         outlier_detection_update.max_ejection_percent;
     if (outlier_detection_update.success_rate_ejection.has_value()) {
