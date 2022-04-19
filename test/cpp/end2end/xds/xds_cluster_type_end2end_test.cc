@@ -559,6 +559,7 @@ TEST_P(AggregateClusterTest, FallBackWithConnectivityChurn) {
   };
   ConnectionInjector connection_attempt_injector(backends_[0]->port(),
                                                  backends_[1]->port());
+  connection_attempt_injector.Start();
   // Wait for P0 backend.
   // Increase timeout to account for subchannel connection delays.
   WaitForBackend(0, WaitForBackendOptions(), RpcOptions().set_timeout_ms(2000));

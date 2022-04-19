@@ -212,6 +212,7 @@ TEST_P(RingHashTest,
   // Inject connection delay to make this act more realistically.
   ConnectionDelayInjector delay_injector(
       grpc_core::Duration::Milliseconds(500) * grpc_test_slowdown_factor());
+  delay_injector.Start();
   // Send RPC.  Need the timeout to be long enough to account for the
   // subchannel connection delays.
   CheckRpcSendOk(1, RpcOptions().set_timeout_ms(5000));
@@ -670,6 +671,7 @@ TEST_P(RingHashTest, ContinuesConnectingWithoutPicks) {
     bool seen_port_ ABSL_GUARDED_BY(mu_) = false;
   };
   ConnectionInjector connection_injector(non_existant_endpoint.port);
+  connection_injector.Start();
   // A long-running RPC, just used to send the RPC in another thread.
   LongRunningRpc rpc;
   std::vector<std::pair<std::string, std::string>> metadata = {
@@ -855,6 +857,7 @@ TEST_P(RingHashTest, ContinuesConnectingWithoutPicksOneSubchannelAtATime) {
   ConnectionInjector connection_injector(
       non_existant_endpoint0.port, non_existant_endpoint1.port,
       non_existant_endpoint2.port, backends_[0]->port());
+  connection_injector.Start();
   // A long-running RPC, just used to send the RPC in another thread.
   LongRunningRpc rpc;
   std::vector<std::pair<std::string, std::string>> metadata = {
