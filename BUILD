@@ -3302,8 +3302,6 @@ grpc_cc_library(
     external_deps = [
         "absl/strings",
         "absl/strings:str_format",
-        "absl/debugging:stacktrace",
-        "absl/debugging:symbolize",
     ],
     language = "c++",
     deps = [
@@ -3311,7 +3309,6 @@ grpc_cc_library(
         "grpc_base",
         "grpc_client_channel",
         "grpc_lb_subchannel_list",
-        "grpc_lb_xds_channel_args",
         "json_util",
         "orphanable",
         "ref_counted_ptr",

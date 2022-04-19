@@ -20,8 +20,6 @@
 
 #include <atomic>
 
-#include "absl/debugging/stacktrace.h"
-#include "absl/debugging/symbolize.h"
 #include "absl/strings/string_view.h"
 
 #include <grpc/grpc.h>
@@ -29,7 +27,6 @@
 #include "src/core/ext/filters/client_channel/lb_policy.h"
 #include "src/core/ext/filters/client_channel/lb_policy/child_policy_handler.h"
 #include "src/core/ext/filters/client_channel/lb_policy/subchannel_list.h"
-#include "src/core/ext/filters/client_channel/lb_policy/xds/xds_channel_args.h"
 #include "src/core/ext/filters/client_channel/lb_policy_factory.h"
 #include "src/core/ext/filters/client_channel/lb_policy_registry.h"
 #include "src/core/lib/channel/channel_args.h"
@@ -135,18 +132,6 @@ class OutlierDetectionLb : public LoadBalancingPolicy {
 
       void OnConnectivityStateChange(
           grpc_connectivity_state new_state) override {
-        void* trace[256];
-        int n = absl::GetStackTrace(trace, 256, 0);
-        for (int i = 0; i <= n; ++i) {
-          char tmp[1024];
-          const char* symbol = "(unknown)";
-          if (absl::Symbolize(trace[i], tmp, sizeof(tmp))) {
-            symbol = tmp;
-          }
-          gpr_log(GPR_ERROR,
-                  "Watcher OnConnectivityStateChange stack state %d %p %s",
-                  new_state, trace[i], symbol);
-        }
         last_seen_state_ = new_state;
         if (eject_) {
           watcher_->OnConnectivityStateChange(GRPC_CHANNEL_TRANSIENT_FAILURE);
@@ -266,16 +251,6 @@ void OutlierDetectionLb::SubchannelWrapper::uneject() {
 
 grpc_connectivity_state
 OutlierDetectionLb::SubchannelWrapper::CheckConnectivityState() {
-  void* trace[256];
-  int n = absl::GetStackTrace(trace, 256, 0);
-  for (int i = 0; i <= n; ++i) {
-    char tmp[1024];
-    const char* symbol = "(unknown)";
-    if (absl::Symbolize(trace[i], tmp, sizeof(tmp))) {
-      symbol = tmp;
-    }
-    gpr_log(GPR_ERROR, "CheckConnectivityState stack %p %s", trace[i], symbol);
-  }
   if (eject_) return GRPC_CHANNEL_TRANSIENT_FAILURE;
   return subchannel_->CheckConnectivityState();
 }
@@ -283,16 +258,6 @@ OutlierDetectionLb::SubchannelWrapper::CheckConnectivityState() {
 void OutlierDetectionLb::SubchannelWrapper::WatchConnectivityState(
     grpc_connectivity_state initial_state,
     std::unique_ptr<ConnectivityStateWatcherInterface> watcher) {
-  void* trace[256];
-  int n = absl::GetStackTrace(trace, 256, 0);
-  for (int i = 0; i <= n; ++i) {
-    char tmp[1024];
-    const char* symbol = "(unknown)";
-    if (absl::Symbolize(trace[i], tmp, sizeof(tmp))) {
-      symbol = tmp;
-    }
-    gpr_log(GPR_ERROR, "WatchConnectivityState stack %p %s", trace[i], symbol);
-  }
   watcher_ = new SubchannelWrapper::WatcherWrapper(std::move(watcher));
   subchannel_->WatchConnectivityState(
       initial_state,
@@ -302,17 +267,6 @@ void OutlierDetectionLb::SubchannelWrapper::WatchConnectivityState(
 
 void OutlierDetectionLb::SubchannelWrapper::CancelConnectivityStateWatch(
     ConnectivityStateWatcherInterface* watcher) {
-  void* trace[256];
-  int n = absl::GetStackTrace(trace, 256, 0);
-  for (int i = 0; i <= n; ++i) {
-    char tmp[1024];
-    const char* symbol = "(unknown)";
-    if (absl::Symbolize(trace[i], tmp, sizeof(tmp))) {
-      symbol = tmp;
-    }
-    gpr_log(GPR_ERROR, "CancelConnectivityStateWatch stack %p %s", trace[i],
-            symbol);
-  }
   subchannel_->CancelConnectivityStateWatch(watcher_);
   watcher_ = nullptr;
 }
