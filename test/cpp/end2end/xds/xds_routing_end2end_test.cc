@@ -44,7 +44,7 @@ TEST_P(LdsTest, NoApiListener) {
   auto listener = default_listener_;
   listener.clear_api_listener();
   balancer_->ads_service()->SetLdsResource(listener);
-  const auto response_state = WaitForLdsNack();
+  const auto response_state = WaitForLdsNack(DEBUG_LOCATION);
   ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
   EXPECT_THAT(
       response_state->error_message,
@@ -62,7 +62,7 @@ TEST_P(LdsTest, WrongRouteSpecifier) {
   listener.mutable_api_listener()->mutable_api_listener()->PackFrom(
       http_connection_manager);
   balancer_->ads_service()->SetLdsResource(listener);
-  const auto response_state = WaitForLdsNack();
+  const auto response_state = WaitForLdsNack(DEBUG_LOCATION);
   ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
   EXPECT_THAT(
       response_state->error_message,
@@ -82,7 +82,7 @@ TEST_P(LdsTest, RdsMissingConfigSource) {
   listener.mutable_api_listener()->mutable_api_listener()->PackFrom(
       http_connection_manager);
   balancer_->ads_service()->SetLdsResource(listener);
-  const auto response_state = WaitForLdsNack();
+  const auto response_state = WaitForLdsNack(DEBUG_LOCATION);
   ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
   EXPECT_THAT(response_state->error_message,
               ::testing::HasSubstr(
@@ -103,7 +103,7 @@ TEST_P(LdsTest, RdsConfigSourceDoesNotSpecifyAdsOrSelf) {
   listener.mutable_api_listener()->mutable_api_listener()->PackFrom(
       http_connection_manager);
   balancer_->ads_service()->SetLdsResource(listener);
-  const auto response_state = WaitForLdsNack();
+  const auto response_state = WaitForLdsNack(DEBUG_LOCATION);
   ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
   EXPECT_THAT(response_state->error_message,
               ::testing::HasSubstr("HttpConnectionManager ConfigSource for "
@@ -127,7 +127,7 @@ TEST_P(LdsTest, AcceptsRdsConfigSourceOfTypeAds) {
                                    default_route_config_);
   EdsResourceArgs args({{"locality0", CreateEndpointsForBackends()}});
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
-  WaitForAllBackends();
+  WaitForAllBackends(DEBUG_LOCATION);
   auto response_state = balancer_->ads_service()->lds_response_state();
   ASSERT_TRUE(response_state.has_value());
   EXPECT_EQ(response_state->state, AdsServiceImpl::ResponseState::ACKED);
@@ -147,7 +147,7 @@ TEST_P(LdsTest, NacksNonTerminalHttpFilterAtEndOfList) {
       http_connection_manager);
   SetListenerAndRouteConfiguration(balancer_.get(), listener,
                                    default_route_config_);
-  const auto response_state = WaitForLdsNack();
+  const auto response_state = WaitForLdsNack(DEBUG_LOCATION);
   ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
   EXPECT_THAT(response_state->error_message,
               ::testing::HasSubstr(
@@ -171,7 +171,7 @@ TEST_P(LdsTest, NacksTerminalFilterBeforeEndOfList) {
       http_connection_manager);
   SetListenerAndRouteConfiguration(balancer_.get(), listener,
                                    default_route_config_);
-  const auto response_state = WaitForLdsNack();
+  const auto response_state = WaitForLdsNack(DEBUG_LOCATION);
   ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
   EXPECT_THAT(
       response_state->error_message,
@@ -195,7 +195,7 @@ TEST_P(LdsTest, RejectsEmptyHttpFilterName) {
       http_connection_manager);
   SetListenerAndRouteConfiguration(balancer_.get(), listener,
                                    default_route_config_);
-  const auto response_state = WaitForLdsNack();
+  const auto response_state = WaitForLdsNack(DEBUG_LOCATION);
   ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
   EXPECT_THAT(response_state->error_message,
               ::testing::HasSubstr("empty filter name at index 0"));
@@ -216,7 +216,7 @@ TEST_P(LdsTest, RejectsDuplicateHttpFilterName) {
       http_connection_manager);
   SetListenerAndRouteConfiguration(balancer_.get(), listener,
                                    default_route_config_);
-  const auto response_state = WaitForLdsNack();
+  const auto response_state = WaitForLdsNack(DEBUG_LOCATION);
   ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
   EXPECT_THAT(response_state->error_message,
               ::testing::HasSubstr("duplicate HTTP filter name: router"));
@@ -237,7 +237,7 @@ TEST_P(LdsTest, RejectsUnknownHttpFilterType) {
       http_connection_manager);
   SetListenerAndRouteConfiguration(balancer_.get(), listener,
                                    default_route_config_);
-  const auto response_state = WaitForLdsNack();
+  const auto response_state = WaitForLdsNack(DEBUG_LOCATION);
   ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
   EXPECT_THAT(response_state->error_message,
               ::testing::HasSubstr("no filter registered for config type "
@@ -263,7 +263,7 @@ TEST_P(LdsTest, IgnoresOptionalUnknownHttpFilterType) {
                                    default_route_config_);
   EdsResourceArgs args({{"locality0", CreateEndpointsForBackends()}});
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
-  WaitForAllBackends();
+  WaitForAllBackends(DEBUG_LOCATION);
   auto response_state = balancer_->ads_service()->lds_response_state();
   ASSERT_TRUE(response_state.has_value());
   EXPECT_EQ(response_state->state, AdsServiceImpl::ResponseState::ACKED);
@@ -284,7 +284,7 @@ TEST_P(LdsTest, RejectsHttpFilterWithoutConfig) {
       http_connection_manager);
   SetListenerAndRouteConfiguration(balancer_.get(), listener,
                                    default_route_config_);
-  const auto response_state = WaitForLdsNack();
+  const auto response_state = WaitForLdsNack(DEBUG_LOCATION);
   ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
   EXPECT_THAT(response_state->error_message,
               ::testing::HasSubstr(
@@ -310,7 +310,7 @@ TEST_P(LdsTest, IgnoresOptionalHttpFilterWithoutConfig) {
                                    default_route_config_);
   EdsResourceArgs args({{"locality0", CreateEndpointsForBackends()}});
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
-  WaitForAllBackends();
+  WaitForAllBackends(DEBUG_LOCATION);
   auto response_state = balancer_->ads_service()->lds_response_state();
   ASSERT_TRUE(response_state.has_value());
   EXPECT_EQ(response_state->state, AdsServiceImpl::ResponseState::ACKED);
@@ -333,7 +333,7 @@ TEST_P(LdsTest, RejectsUnparseableHttpFilterType) {
       http_connection_manager);
   SetListenerAndRouteConfiguration(balancer_.get(), listener,
                                    default_route_config_);
-  const auto response_state = WaitForLdsNack();
+  const auto response_state = WaitForLdsNack(DEBUG_LOCATION);
   ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
   EXPECT_THAT(
       response_state->error_message,
@@ -358,7 +358,7 @@ TEST_P(LdsTest, RejectsHttpFiltersNotSupportedOnClients) {
       http_connection_manager);
   SetListenerAndRouteConfiguration(balancer_.get(), listener,
                                    default_route_config_);
-  const auto response_state = WaitForLdsNack();
+  const auto response_state = WaitForLdsNack(DEBUG_LOCATION);
   ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
   EXPECT_THAT(
       response_state->error_message,
@@ -386,7 +386,7 @@ TEST_P(LdsTest, IgnoresOptionalHttpFiltersNotSupportedOnClients) {
                                    default_route_config_);
   EdsResourceArgs args({{"locality0", CreateEndpointsForBackends()}});
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
-  WaitForAllBackends();
+  WaitForAllBackends(DEBUG_LOCATION);
   auto response_state = balancer_->ads_service()->lds_response_state();
   ASSERT_TRUE(response_state.has_value());
   EXPECT_EQ(response_state->state, AdsServiceImpl::ResponseState::ACKED);
@@ -403,7 +403,7 @@ TEST_P(LdsTest, RejectsNonZeroXffNumTrusterHops) {
       http_connection_manager);
   SetListenerAndRouteConfiguration(balancer_.get(), listener,
                                    default_route_config_);
-  const auto response_state = WaitForLdsNack();
+  const auto response_state = WaitForLdsNack(DEBUG_LOCATION);
   ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
   EXPECT_THAT(response_state->error_message,
               ::testing::HasSubstr("'xff_num_trusted_hops' must be zero"));
@@ -420,7 +420,7 @@ TEST_P(LdsTest, RejectsNonEmptyOriginalIpDetectionExtensions) {
       http_connection_manager);
   SetListenerAndRouteConfiguration(balancer_.get(), listener,
                                    default_route_config_);
-  const auto response_state = WaitForLdsNack();
+  const auto response_state = WaitForLdsNack(DEBUG_LOCATION);
   ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
   EXPECT_THAT(
       response_state->error_message,
@@ -452,7 +452,7 @@ TEST_P(LdsV2Test, IgnoresHttpFilters) {
                                    default_route_config_);
   EdsResourceArgs args({{"locality0", CreateEndpointsForBackends()}});
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
-  CheckRpcSendOk();
+  CheckRpcSendOk(DEBUG_LOCATION);
 }
 
 using LdsRdsTest = XdsEnd2endTest;
@@ -502,7 +502,7 @@ TEST_P(LdsRdsTest, DefaultRouteSpecifiesSlashPrefix) {
   EdsResourceArgs args({{"locality0", CreateEndpointsForBackends()}});
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
   // We need to wait for all backends to come online.
-  WaitForAllBackends();
+  WaitForAllBackends(DEBUG_LOCATION);
 }
 
 // Tests that we go into TRANSIENT_FAILURE if the Listener is removed.
@@ -511,14 +511,15 @@ TEST_P(LdsRdsTest, ListenerRemoved) {
   EdsResourceArgs args({{"locality0", CreateEndpointsForBackends()}});
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
   // We need to wait for all backends to come online.
-  WaitForAllBackends();
+  WaitForAllBackends(DEBUG_LOCATION);
   // Unset LDS resource.
   balancer_->ads_service()->UnsetResource(kLdsTypeUrl, kServerName);
   // Wait for RPCs to start failing.
   do {
   } while (SendRpc(RpcOptions(), nullptr).ok());
   // Make sure RPCs are still failing.
-  CheckRpcSendFailure(CheckRpcSendFailureOptions().set_times(1000));
+  CheckRpcSendFailure(DEBUG_LOCATION,
+                      CheckRpcSendFailureOptions().set_times(1000));
   // Make sure we ACK'ed the update.
   auto response_state = balancer_->ads_service()->lds_response_state();
   ASSERT_TRUE(response_state.has_value());
@@ -532,7 +533,7 @@ TEST_P(LdsRdsTest, NoMatchedDomain) {
   route_config.mutable_virtual_hosts(0)->clear_domains();
   route_config.mutable_virtual_hosts(0)->add_domains("unmatched_domain");
   SetRouteConfiguration(balancer_.get(), route_config);
-  CheckRpcSendFailure();
+  CheckRpcSendFailure(DEBUG_LOCATION);
   // Do a bit of polling, to allow the ACK to get to the ADS server.
   channel_->WaitForConnected(grpc_timeout_milliseconds_to_deadline(100));
   auto response_state = RouteConfigurationResponseState(balancer_.get());
@@ -578,7 +579,7 @@ TEST_P(LdsRdsTest, RouteMatchHasQueryParameters) {
   route1->mutable_match()->set_prefix("/grpc.testing.EchoTest1Service/");
   route1->mutable_match()->add_query_parameters();
   SetRouteConfiguration(balancer_.get(), route_config);
-  const auto response_state = WaitForRdsNack();
+  const auto response_state = WaitForRdsNack(DEBUG_LOCATION);
   ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
   EXPECT_THAT(response_state->error_message,
               ::testing::HasSubstr("No valid routes specified."));
@@ -607,7 +608,7 @@ TEST_P(LdsRdsTest, RouteMatchHasInvalidPrefixNoLeadingSlash) {
   auto* route1 = route_config.mutable_virtual_hosts(0)->mutable_routes(0);
   route1->mutable_match()->set_prefix("grpc.testing.EchoTest1Service/");
   SetRouteConfiguration(balancer_.get(), route_config);
-  const auto response_state = WaitForRdsNack();
+  const auto response_state = WaitForRdsNack(DEBUG_LOCATION);
   ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
   EXPECT_THAT(response_state->error_message,
               ::testing::HasSubstr("No valid routes specified."));
@@ -620,7 +621,7 @@ TEST_P(LdsRdsTest, RouteMatchHasInvalidPrefixExtraContent) {
   auto* route1 = route_config.mutable_virtual_hosts(0)->mutable_routes(0);
   route1->mutable_match()->set_prefix("/grpc.testing.EchoTest1Service/Echo1/");
   SetRouteConfiguration(balancer_.get(), route_config);
-  const auto response_state = WaitForRdsNack();
+  const auto response_state = WaitForRdsNack(DEBUG_LOCATION);
   ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
   EXPECT_THAT(response_state->error_message,
               ::testing::HasSubstr("No valid routes specified."));
@@ -633,7 +634,7 @@ TEST_P(LdsRdsTest, RouteMatchHasInvalidPrefixDoubleSlash) {
   auto* route1 = route_config.mutable_virtual_hosts(0)->mutable_routes(0);
   route1->mutable_match()->set_prefix("//");
   SetRouteConfiguration(balancer_.get(), route_config);
-  const auto response_state = WaitForRdsNack();
+  const auto response_state = WaitForRdsNack(DEBUG_LOCATION);
   ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
   EXPECT_THAT(response_state->error_message,
               ::testing::HasSubstr("No valid routes specified."));
@@ -646,7 +647,7 @@ TEST_P(LdsRdsTest, RouteMatchHasInvalidPathEmptyPath) {
   auto* route1 = route_config.mutable_virtual_hosts(0)->mutable_routes(0);
   route1->mutable_match()->set_path("");
   SetRouteConfiguration(balancer_.get(), route_config);
-  const auto response_state = WaitForRdsNack();
+  const auto response_state = WaitForRdsNack(DEBUG_LOCATION);
   ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
   EXPECT_THAT(response_state->error_message,
               ::testing::HasSubstr("No valid routes specified."));
@@ -659,7 +660,7 @@ TEST_P(LdsRdsTest, RouteMatchHasInvalidPathNoLeadingSlash) {
   auto* route1 = route_config.mutable_virtual_hosts(0)->mutable_routes(0);
   route1->mutable_match()->set_path("grpc.testing.EchoTest1Service/Echo1");
   SetRouteConfiguration(balancer_.get(), route_config);
-  const auto response_state = WaitForRdsNack();
+  const auto response_state = WaitForRdsNack(DEBUG_LOCATION);
   ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
   EXPECT_THAT(response_state->error_message,
               ::testing::HasSubstr("No valid routes specified."));
@@ -672,7 +673,7 @@ TEST_P(LdsRdsTest, RouteMatchHasInvalidPathTooManySlashes) {
   auto* route1 = route_config.mutable_virtual_hosts(0)->mutable_routes(0);
   route1->mutable_match()->set_path("/grpc.testing.EchoTest1Service/Echo1/");
   SetRouteConfiguration(balancer_.get(), route_config);
-  const auto response_state = WaitForRdsNack();
+  const auto response_state = WaitForRdsNack(DEBUG_LOCATION);
   ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
   EXPECT_THAT(response_state->error_message,
               ::testing::HasSubstr("No valid routes specified."));
@@ -685,7 +686,7 @@ TEST_P(LdsRdsTest, RouteMatchHasInvalidPathOnlyOneSlash) {
   auto* route1 = route_config.mutable_virtual_hosts(0)->mutable_routes(0);
   route1->mutable_match()->set_path("/grpc.testing.EchoTest1Service.Echo1");
   SetRouteConfiguration(balancer_.get(), route_config);
-  const auto response_state = WaitForRdsNack();
+  const auto response_state = WaitForRdsNack(DEBUG_LOCATION);
   ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
   EXPECT_THAT(response_state->error_message,
               ::testing::HasSubstr("No valid routes specified."));
@@ -698,7 +699,7 @@ TEST_P(LdsRdsTest, RouteMatchHasInvalidPathMissingService) {
   auto* route1 = route_config.mutable_virtual_hosts(0)->mutable_routes(0);
   route1->mutable_match()->set_path("//Echo1");
   SetRouteConfiguration(balancer_.get(), route_config);
-  const auto response_state = WaitForRdsNack();
+  const auto response_state = WaitForRdsNack(DEBUG_LOCATION);
   ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
   EXPECT_THAT(response_state->error_message,
               ::testing::HasSubstr("No valid routes specified."));
@@ -711,7 +712,7 @@ TEST_P(LdsRdsTest, RouteMatchHasInvalidPathMissingMethod) {
   auto* route1 = route_config.mutable_virtual_hosts(0)->mutable_routes(0);
   route1->mutable_match()->set_path("/grpc.testing.EchoTest1Service/");
   SetRouteConfiguration(balancer_.get(), route_config);
-  const auto response_state = WaitForRdsNack();
+  const auto response_state = WaitForRdsNack(DEBUG_LOCATION);
   ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
   EXPECT_THAT(response_state->error_message,
               ::testing::HasSubstr("No valid routes specified."));
@@ -725,7 +726,7 @@ TEST_P(LdsRdsTest, RouteMatchHasInvalidPathRegex) {
   route1->mutable_match()->mutable_safe_regex()->set_regex("a[z-a]");
   route1->mutable_route()->set_cluster(kNewCluster1Name);
   SetRouteConfiguration(balancer_.get(), route_config);
-  const auto response_state = WaitForRdsNack();
+  const auto response_state = WaitForRdsNack(DEBUG_LOCATION);
   ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
   EXPECT_THAT(response_state->error_message,
               ::testing::HasSubstr(
@@ -745,8 +746,9 @@ TEST_P(LdsRdsTest, MatchingRouteHasNoRouteAction) {
   route->mutable_match()->set_prefix("");
   route->mutable_route()->set_cluster(kDefaultClusterName);
   SetRouteConfiguration(balancer_.get(), route_config);
-  CheckRpcSendFailure(CheckRpcSendFailureOptions().set_expected_error_code(
-      StatusCode::UNAVAILABLE));
+  CheckRpcSendFailure(DEBUG_LOCATION,
+                      CheckRpcSendFailureOptions().set_expected_error_code(
+                          StatusCode::UNAVAILABLE));
 }
 
 TEST_P(LdsRdsTest, RouteActionClusterHasEmptyClusterName) {
@@ -758,7 +760,7 @@ TEST_P(LdsRdsTest, RouteActionClusterHasEmptyClusterName) {
   default_route->mutable_match()->set_prefix("");
   default_route->mutable_route()->set_cluster(kDefaultClusterName);
   SetRouteConfiguration(balancer_.get(), route_config);
-  const auto response_state = WaitForRdsNack();
+  const auto response_state = WaitForRdsNack(DEBUG_LOCATION);
   ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
   EXPECT_THAT(
       response_state->error_message,
@@ -783,7 +785,7 @@ TEST_P(LdsRdsTest, RouteActionWeightedTargetHasIncorrectTotalWeightSet) {
   default_route->mutable_match()->set_prefix("");
   default_route->mutable_route()->set_cluster(kDefaultClusterName);
   SetRouteConfiguration(balancer_.get(), route_config);
-  const auto response_state = WaitForRdsNack();
+  const auto response_state = WaitForRdsNack(DEBUG_LOCATION);
   ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
   EXPECT_THAT(response_state->error_message,
               ::testing::HasSubstr(
@@ -807,7 +809,7 @@ TEST_P(LdsRdsTest, RouteActionWeightedClusterHasZeroTotalWeight) {
   default_route->mutable_match()->set_prefix("");
   default_route->mutable_route()->set_cluster(kDefaultClusterName);
   SetRouteConfiguration(balancer_.get(), route_config);
-  const auto response_state = WaitForRdsNack();
+  const auto response_state = WaitForRdsNack(DEBUG_LOCATION);
   ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
   EXPECT_THAT(
       response_state->error_message,
@@ -832,7 +834,7 @@ TEST_P(LdsRdsTest, RouteActionWeightedTargetClusterHasEmptyClusterName) {
   default_route->mutable_match()->set_prefix("");
   default_route->mutable_route()->set_cluster(kDefaultClusterName);
   SetRouteConfiguration(balancer_.get(), route_config);
-  const auto response_state = WaitForRdsNack();
+  const auto response_state = WaitForRdsNack(DEBUG_LOCATION);
   ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
   EXPECT_THAT(response_state->error_message,
               ::testing::HasSubstr("RouteAction weighted_cluster cluster "
@@ -856,7 +858,7 @@ TEST_P(LdsRdsTest, RouteActionWeightedTargetClusterHasNoWeight) {
   default_route->mutable_match()->set_prefix("");
   default_route->mutable_route()->set_cluster(kDefaultClusterName);
   SetRouteConfiguration(balancer_.get(), route_config);
-  const auto response_state = WaitForRdsNack();
+  const auto response_state = WaitForRdsNack(DEBUG_LOCATION);
   ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
   EXPECT_THAT(response_state->error_message,
               ::testing::HasSubstr(
@@ -873,7 +875,7 @@ TEST_P(LdsRdsTest, RouteHeaderMatchInvalidRegex) {
   header_matcher1->mutable_safe_regex_match()->set_regex("a[z-a]");
   route1->mutable_route()->set_cluster(kNewCluster1Name);
   SetRouteConfiguration(balancer_.get(), route_config);
-  const auto response_state = WaitForRdsNack();
+  const auto response_state = WaitForRdsNack(DEBUG_LOCATION);
   ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
   EXPECT_THAT(
       response_state->error_message,
@@ -892,7 +894,7 @@ TEST_P(LdsRdsTest, RouteHeaderMatchInvalidRange) {
   header_matcher1->mutable_range_match()->set_end(1000);
   route1->mutable_route()->set_cluster(kNewCluster1Name);
   SetRouteConfiguration(balancer_.get(), route_config);
-  const auto response_state = WaitForRdsNack();
+  const auto response_state = WaitForRdsNack(DEBUG_LOCATION);
   ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
   EXPECT_THAT(
       response_state->error_message,
@@ -953,16 +955,19 @@ TEST_P(LdsRdsTest, XdsRoutingPathMatching) {
   default_route->mutable_match()->set_prefix("");
   default_route->mutable_route()->set_cluster(kDefaultClusterName);
   SetRouteConfiguration(balancer_.get(), new_route_config);
-  WaitForAllBackends(0, 2);
-  CheckRpcSendOk(kNumEchoRpcs, RpcOptions().set_wait_for_ready(true));
-  CheckRpcSendOk(kNumEcho1Rpcs, RpcOptions()
-                                    .set_rpc_service(SERVICE_ECHO1)
-                                    .set_rpc_method(METHOD_ECHO1)
-                                    .set_wait_for_ready(true));
-  CheckRpcSendOk(kNumEcho2Rpcs, RpcOptions()
-                                    .set_rpc_service(SERVICE_ECHO2)
-                                    .set_rpc_method(METHOD_ECHO2)
-                                    .set_wait_for_ready(true));
+  WaitForAllBackends(DEBUG_LOCATION, 0, 2);
+  CheckRpcSendOk(DEBUG_LOCATION, kNumEchoRpcs,
+                 RpcOptions().set_wait_for_ready(true));
+  CheckRpcSendOk(DEBUG_LOCATION, kNumEcho1Rpcs,
+                 RpcOptions()
+                     .set_rpc_service(SERVICE_ECHO1)
+                     .set_rpc_method(METHOD_ECHO1)
+                     .set_wait_for_ready(true));
+  CheckRpcSendOk(DEBUG_LOCATION, kNumEcho2Rpcs,
+                 RpcOptions()
+                     .set_rpc_service(SERVICE_ECHO2)
+                     .set_rpc_method(METHOD_ECHO2)
+                     .set_wait_for_ready(true));
   // Make sure RPCs all go to the correct backend.
   for (size_t i = 0; i < 2; ++i) {
     EXPECT_EQ(kNumEchoRpcs / 2,
@@ -1027,11 +1032,13 @@ TEST_P(LdsRdsTest, XdsRoutingPathMatchingCaseInsensitive) {
   default_route->mutable_match()->set_prefix("");
   default_route->mutable_route()->set_cluster(kDefaultClusterName);
   SetRouteConfiguration(balancer_.get(), new_route_config);
-  CheckRpcSendOk(kNumEchoRpcs, RpcOptions().set_wait_for_ready(true));
-  CheckRpcSendOk(kNumEcho1Rpcs, RpcOptions()
-                                    .set_rpc_service(SERVICE_ECHO1)
-                                    .set_rpc_method(METHOD_ECHO1)
-                                    .set_wait_for_ready(true));
+  CheckRpcSendOk(DEBUG_LOCATION, kNumEchoRpcs,
+                 RpcOptions().set_wait_for_ready(true));
+  CheckRpcSendOk(DEBUG_LOCATION, kNumEcho1Rpcs,
+                 RpcOptions()
+                     .set_rpc_service(SERVICE_ECHO1)
+                     .set_rpc_method(METHOD_ECHO1)
+                     .set_wait_for_ready(true));
   // Make sure RPCs all go to the correct backend.
   EXPECT_EQ(kNumEchoRpcs, backends_[0]->backend_service()->request_count());
   EXPECT_EQ(0, backends_[0]->backend_service1()->request_count());
@@ -1088,13 +1095,14 @@ TEST_P(LdsRdsTest, XdsRoutingPrefixMatching) {
   default_route->mutable_match()->set_prefix("");
   default_route->mutable_route()->set_cluster(kDefaultClusterName);
   SetRouteConfiguration(balancer_.get(), new_route_config);
-  WaitForAllBackends(0, 2);
-  CheckRpcSendOk(kNumEchoRpcs, RpcOptions().set_wait_for_ready(true));
+  WaitForAllBackends(DEBUG_LOCATION, 0, 2);
+  CheckRpcSendOk(DEBUG_LOCATION, kNumEchoRpcs,
+                 RpcOptions().set_wait_for_ready(true));
   CheckRpcSendOk(
-      kNumEcho1Rpcs,
+      DEBUG_LOCATION, kNumEcho1Rpcs,
       RpcOptions().set_rpc_service(SERVICE_ECHO1).set_wait_for_ready(true));
   CheckRpcSendOk(
-      kNumEcho2Rpcs,
+      DEBUG_LOCATION, kNumEcho2Rpcs,
       RpcOptions().set_rpc_service(SERVICE_ECHO2).set_wait_for_ready(true));
   // Make sure RPCs all go to the correct backend.
   for (size_t i = 0; i < 2; ++i) {
@@ -1160,11 +1168,13 @@ TEST_P(LdsRdsTest, XdsRoutingPrefixMatchingCaseInsensitive) {
   default_route->mutable_match()->set_prefix("");
   default_route->mutable_route()->set_cluster(kDefaultClusterName);
   SetRouteConfiguration(balancer_.get(), new_route_config);
-  CheckRpcSendOk(kNumEchoRpcs, RpcOptions().set_wait_for_ready(true));
-  CheckRpcSendOk(kNumEcho1Rpcs, RpcOptions()
-                                    .set_rpc_service(SERVICE_ECHO1)
-                                    .set_rpc_method(METHOD_ECHO1)
-                                    .set_wait_for_ready(true));
+  CheckRpcSendOk(DEBUG_LOCATION, kNumEchoRpcs,
+                 RpcOptions().set_wait_for_ready(true));
+  CheckRpcSendOk(DEBUG_LOCATION, kNumEcho1Rpcs,
+                 RpcOptions()
+                     .set_rpc_service(SERVICE_ECHO1)
+                     .set_rpc_method(METHOD_ECHO1)
+                     .set_wait_for_ready(true));
   // Make sure RPCs all go to the correct backend.
   EXPECT_EQ(kNumEchoRpcs, backends_[0]->backend_service()->request_count());
   EXPECT_EQ(0, backends_[0]->backend_service1()->request_count());
@@ -1223,13 +1233,14 @@ TEST_P(LdsRdsTest, XdsRoutingPathRegexMatching) {
   default_route->mutable_match()->set_prefix("");
   default_route->mutable_route()->set_cluster(kDefaultClusterName);
   SetRouteConfiguration(balancer_.get(), new_route_config);
-  WaitForAllBackends(0, 2);
-  CheckRpcSendOk(kNumEchoRpcs, RpcOptions().set_wait_for_ready(true));
+  WaitForAllBackends(DEBUG_LOCATION, 0, 2);
+  CheckRpcSendOk(DEBUG_LOCATION, kNumEchoRpcs,
+                 RpcOptions().set_wait_for_ready(true));
   CheckRpcSendOk(
-      kNumEcho1Rpcs,
+      DEBUG_LOCATION, kNumEcho1Rpcs,
       RpcOptions().set_rpc_service(SERVICE_ECHO1).set_wait_for_ready(true));
   CheckRpcSendOk(
-      kNumEcho2Rpcs,
+      DEBUG_LOCATION, kNumEcho2Rpcs,
       RpcOptions().set_rpc_service(SERVICE_ECHO2).set_wait_for_ready(true));
   // Make sure RPCs all go to the correct backend.
   for (size_t i = 0; i < 2; ++i) {
@@ -1312,11 +1323,12 @@ TEST_P(LdsRdsTest, XdsRoutingWeightedCluster) {
   default_route->mutable_match()->set_prefix("");
   default_route->mutable_route()->set_cluster(kDefaultClusterName);
   SetRouteConfiguration(balancer_.get(), new_route_config);
-  WaitForAllBackends(0, 1);
-  WaitForAllBackends(1, 3, WaitForBackendOptions(),
+  WaitForAllBackends(DEBUG_LOCATION, 0, 1);
+  WaitForAllBackends(DEBUG_LOCATION, 1, 3, WaitForBackendOptions(),
                      RpcOptions().set_rpc_service(SERVICE_ECHO1));
-  CheckRpcSendOk(kNumEchoRpcs);
-  CheckRpcSendOk(kNumEcho1Rpcs, RpcOptions().set_rpc_service(SERVICE_ECHO1));
+  CheckRpcSendOk(DEBUG_LOCATION, kNumEchoRpcs);
+  CheckRpcSendOk(DEBUG_LOCATION, kNumEcho1Rpcs,
+                 RpcOptions().set_rpc_service(SERVICE_ECHO1));
   // Make sure RPCs all go to the correct backend.
   EXPECT_EQ(kNumEchoRpcs, backends_[0]->backend_service()->request_count());
   EXPECT_EQ(0, backends_[0]->backend_service1()->request_count());
@@ -1390,8 +1402,8 @@ TEST_P(LdsRdsTest, RouteActionWeightedTargetDefaultRoute) {
       ->mutable_total_weight()
       ->set_value(kWeight75 + kWeight25);
   SetRouteConfiguration(balancer_.get(), new_route_config);
-  WaitForAllBackends(1, 3);
-  CheckRpcSendOk(kNumEchoRpcs);
+  WaitForAllBackends(DEBUG_LOCATION, 1, 3);
+  CheckRpcSendOk(DEBUG_LOCATION, kNumEchoRpcs);
   // Make sure RPCs all go to the correct backend.
   EXPECT_EQ(0, backends_[0]->backend_service()->request_count());
   const int weight_75_request_count =
@@ -1482,11 +1494,11 @@ TEST_P(LdsRdsTest, XdsRoutingWeightedClusterUpdateWeights) {
   default_route->mutable_match()->set_prefix("");
   default_route->mutable_route()->set_cluster(kDefaultClusterName);
   SetRouteConfiguration(balancer_.get(), new_route_config);
-  WaitForAllBackends(0, 1);
-  WaitForAllBackends(1, 3, WaitForBackendOptions(),
+  WaitForAllBackends(DEBUG_LOCATION, 0, 1);
+  WaitForAllBackends(DEBUG_LOCATION, 1, 3, WaitForBackendOptions(),
                      RpcOptions().set_rpc_service(SERVICE_ECHO1));
-  CheckRpcSendOk(kNumEchoRpcs);
-  CheckRpcSendOk(kNumEcho1Rpcs7525,
+  CheckRpcSendOk(DEBUG_LOCATION, kNumEchoRpcs);
+  CheckRpcSendOk(DEBUG_LOCATION, kNumEcho1Rpcs7525,
                  RpcOptions().set_rpc_service(SERVICE_ECHO1));
   // Make sure RPCs all go to the correct backend.
   EXPECT_EQ(kNumEchoRpcs, backends_[0]->backend_service()->request_count());
@@ -1514,9 +1526,9 @@ TEST_P(LdsRdsTest, XdsRoutingWeightedClusterUpdateWeights) {
   default_route->mutable_route()->set_cluster(kNewCluster3Name);
   SetRouteConfiguration(balancer_.get(), new_route_config);
   ResetBackendCounters();
-  WaitForAllBackends(3, 4);
-  CheckRpcSendOk(kNumEchoRpcs);
-  CheckRpcSendOk(kNumEcho1Rpcs5050,
+  WaitForAllBackends(DEBUG_LOCATION, 3, 4);
+  CheckRpcSendOk(DEBUG_LOCATION, kNumEchoRpcs);
+  CheckRpcSendOk(DEBUG_LOCATION, kNumEcho1Rpcs5050,
                  RpcOptions().set_rpc_service(SERVICE_ECHO1));
   // Make sure RPCs all go to the correct backend.
   EXPECT_EQ(0, backends_[0]->backend_service()->request_count());
@@ -1613,11 +1625,11 @@ TEST_P(LdsRdsTest, XdsRoutingWeightedClusterUpdateClusters) {
   default_route->mutable_match()->set_prefix("");
   default_route->mutable_route()->set_cluster(kDefaultClusterName);
   SetRouteConfiguration(balancer_.get(), new_route_config);
-  WaitForBackend(0);
-  WaitForBackend(1, WaitForBackendOptions(),
+  WaitForBackend(DEBUG_LOCATION, 0);
+  WaitForBackend(DEBUG_LOCATION, 1, WaitForBackendOptions(),
                  RpcOptions().set_rpc_service(SERVICE_ECHO1));
-  CheckRpcSendOk(kNumEchoRpcs);
-  CheckRpcSendOk(kNumEcho1Rpcs7525,
+  CheckRpcSendOk(DEBUG_LOCATION, kNumEchoRpcs);
+  CheckRpcSendOk(DEBUG_LOCATION, kNumEcho1Rpcs7525,
                  RpcOptions().set_rpc_service(SERVICE_ECHO1));
   // Make sure RPCs all go to the correct backend.
   EXPECT_EQ(kNumEchoRpcs, backends_[0]->backend_service()->request_count());
@@ -1642,10 +1654,10 @@ TEST_P(LdsRdsTest, XdsRoutingWeightedClusterUpdateClusters) {
   weighted_cluster2->mutable_weight()->set_value(kWeight50);
   SetRouteConfiguration(balancer_.get(), new_route_config);
   ResetBackendCounters();
-  WaitForBackend(2, WaitForBackendOptions(),
+  WaitForBackend(DEBUG_LOCATION, 2, WaitForBackendOptions(),
                  RpcOptions().set_rpc_service(SERVICE_ECHO1));
-  CheckRpcSendOk(kNumEchoRpcs);
-  CheckRpcSendOk(kNumEcho1Rpcs5050,
+  CheckRpcSendOk(DEBUG_LOCATION, kNumEchoRpcs);
+  CheckRpcSendOk(DEBUG_LOCATION, kNumEcho1Rpcs5050,
                  RpcOptions().set_rpc_service(SERVICE_ECHO1));
   // Make sure RPCs all go to the correct backend.
   EXPECT_EQ(kNumEchoRpcs, backends_[0]->backend_service()->request_count());
@@ -1670,10 +1682,10 @@ TEST_P(LdsRdsTest, XdsRoutingWeightedClusterUpdateClusters) {
   weighted_cluster2->mutable_weight()->set_value(kWeight25);
   SetRouteConfiguration(balancer_.get(), new_route_config);
   ResetBackendCounters();
-  WaitForBackend(3, WaitForBackendOptions(),
+  WaitForBackend(DEBUG_LOCATION, 3, WaitForBackendOptions(),
                  RpcOptions().set_rpc_service(SERVICE_ECHO1));
-  CheckRpcSendOk(kNumEchoRpcs);
-  CheckRpcSendOk(kNumEcho1Rpcs7525,
+  CheckRpcSendOk(DEBUG_LOCATION, kNumEchoRpcs);
+  CheckRpcSendOk(DEBUG_LOCATION, kNumEcho1Rpcs7525,
                  RpcOptions().set_rpc_service(SERVICE_ECHO1));
   // Make sure RPCs all go to the correct backend.
   EXPECT_EQ(kNumEchoRpcs, backends_[0]->backend_service()->request_count());
@@ -1716,8 +1728,8 @@ TEST_P(LdsRdsTest, XdsRoutingClusterUpdateClusters) {
   // Send Route Configuration.
   RouteConfiguration new_route_config = default_route_config_;
   SetRouteConfiguration(balancer_.get(), new_route_config);
-  WaitForAllBackends(0, 1);
-  CheckRpcSendOk(kNumEchoRpcs);
+  WaitForAllBackends(DEBUG_LOCATION, 0, 1);
+  CheckRpcSendOk(DEBUG_LOCATION, kNumEchoRpcs);
   // Make sure RPCs all go to the correct backend.
   EXPECT_EQ(kNumEchoRpcs, backends_[0]->backend_service()->request_count());
   // Change Route Configurations: new default cluster.
@@ -1725,8 +1737,8 @@ TEST_P(LdsRdsTest, XdsRoutingClusterUpdateClusters) {
       new_route_config.mutable_virtual_hosts(0)->mutable_routes(0);
   default_route->mutable_route()->set_cluster(kNewClusterName);
   SetRouteConfiguration(balancer_.get(), new_route_config);
-  WaitForAllBackends(1, 2);
-  CheckRpcSendOk(kNumEchoRpcs);
+  WaitForAllBackends(DEBUG_LOCATION, 1, 2);
+  CheckRpcSendOk(DEBUG_LOCATION, kNumEchoRpcs);
   // Make sure RPCs all go to the correct backend.
   EXPECT_EQ(kNumEchoRpcs, backends_[1]->backend_service()->request_count());
 }
@@ -1761,7 +1773,8 @@ TEST_P(LdsRdsTest, XdsRoutingClusterUpdateClustersWithPickingDelays) {
   // Send exactly one RPC with no deadline and with wait_for_ready=true.
   // This RPC will not complete until after backend 0 is started.
   std::thread sending_rpc([this]() {
-    CheckRpcSendOk(1, RpcOptions().set_wait_for_ready(true).set_timeout_ms(0));
+    CheckRpcSendOk(DEBUG_LOCATION, 1,
+                   RpcOptions().set_wait_for_ready(true).set_timeout_ms(0));
   });
   // Send a non-wait_for_ready RPC which should fail, this will tell us
   // that the client has received the update and attempted to connect.
@@ -1775,8 +1788,9 @@ TEST_P(LdsRdsTest, XdsRoutingClusterUpdateClustersWithPickingDelays) {
   // Wait for RPCs to go to the new backend: 1, this ensures that the client
   // has processed the update.
   WaitForBackend(
-      1, WaitForBackendOptions().set_reset_counters(false).set_allow_failures(
-             true));
+      DEBUG_LOCATION, 1,
+      WaitForBackendOptions().set_reset_counters(false).set_allow_failures(
+          true));
   // Bring up the previous backend: 0, this will allow the delayed RPC to
   // finally call on_call_committed upon completion.
   StartBackend(0);
@@ -1879,6 +1893,7 @@ TEST_P(LdsRdsTest, XdsRoutingApplyXdsTimeout) {
       t0 + grpc_core::Duration::Seconds(kTimeoutMaxStreamDurationSecond) +
       grpc_core::Duration::Milliseconds(kTimeoutMillis);
   CheckRpcSendFailure(
+      DEBUG_LOCATION,
       CheckRpcSendFailureOptions()
           .set_rpc_options(RpcOptions()
                                .set_rpc_service(SERVICE_ECHO1)
@@ -1896,6 +1911,7 @@ TEST_P(LdsRdsTest, XdsRoutingApplyXdsTimeout) {
   t2 = t0 + grpc_core::Duration::Seconds(kTimeoutHttpMaxStreamDurationSecond) +
        grpc_core::Duration::Milliseconds(kTimeoutMillis);
   CheckRpcSendFailure(
+      DEBUG_LOCATION,
       CheckRpcSendFailureOptions()
           .set_rpc_options(RpcOptions()
                                .set_rpc_service(SERVICE_ECHO2)
@@ -1913,6 +1929,7 @@ TEST_P(LdsRdsTest, XdsRoutingApplyXdsTimeout) {
   t2 = t0 + grpc_core::Duration::Seconds(kTimeoutApplicationSecond) +
        grpc_core::Duration::Milliseconds(kTimeoutMillis);
   CheckRpcSendFailure(
+      DEBUG_LOCATION,
       CheckRpcSendFailureOptions()
           .set_rpc_options(RpcOptions().set_wait_for_ready(true).set_timeout_ms(
               grpc_core::Duration::Seconds(kTimeoutApplicationSecond).millis()))
@@ -1991,6 +2008,7 @@ TEST_P(LdsRdsTest, XdsRoutingApplyApplicationTimeoutWhenXdsTimeoutExplicit0) {
   // Test application timeout is applied for route 1
   auto t0 = system_clock::now();
   CheckRpcSendFailure(
+      DEBUG_LOCATION,
       CheckRpcSendFailureOptions()
           .set_rpc_options(
               RpcOptions()
@@ -2007,6 +2025,7 @@ TEST_P(LdsRdsTest, XdsRoutingApplyApplicationTimeoutWhenXdsTimeoutExplicit0) {
   // Test application timeout is applied for route 2
   t0 = system_clock::now();
   CheckRpcSendFailure(
+      DEBUG_LOCATION,
       CheckRpcSendFailureOptions()
           .set_rpc_options(
               RpcOptions()
@@ -2044,6 +2063,7 @@ TEST_P(LdsRdsTest, XdsRoutingApplyApplicationTimeoutWhenHttpTimeoutExplicit0) {
   // Test application timeout is applied for route 1
   auto t0 = system_clock::now();
   CheckRpcSendFailure(
+      DEBUG_LOCATION,
       CheckRpcSendFailureOptions()
           .set_rpc_options(RpcOptions().set_wait_for_ready(true).set_timeout_ms(
               grpc_core::Duration::Seconds(kTimeoutApplicationSecond).millis()))
@@ -2064,6 +2084,7 @@ TEST_P(LdsRdsTest, XdsRoutingWithOnlyApplicationTimeout) {
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
   auto t0 = system_clock::now();
   CheckRpcSendFailure(
+      DEBUG_LOCATION,
       CheckRpcSendFailureOptions()
           .set_rpc_options(RpcOptions().set_wait_for_ready(true).set_timeout_ms(
               grpc_core::Duration::Seconds(kTimeoutApplicationSecond).millis()))
@@ -2094,6 +2115,7 @@ TEST_P(LdsRdsTest, XdsRetryPolicyNumRetries) {
   SetRouteConfiguration(balancer_.get(), new_route_config);
   // Ensure we retried the correct number of times on all supported status.
   CheckRpcSendFailure(
+      DEBUG_LOCATION,
       CheckRpcSendFailureOptions()
           .set_rpc_options(
               RpcOptions().set_server_expected_error(StatusCode::CANCELLED))
@@ -2101,6 +2123,7 @@ TEST_P(LdsRdsTest, XdsRetryPolicyNumRetries) {
   EXPECT_EQ(kNumRetries + 1, backends_[0]->backend_service()->request_count());
   ResetBackendCounters();
   CheckRpcSendFailure(
+      DEBUG_LOCATION,
       CheckRpcSendFailureOptions()
           .set_rpc_options(RpcOptions().set_server_expected_error(
               StatusCode::DEADLINE_EXCEEDED))
@@ -2108,6 +2131,7 @@ TEST_P(LdsRdsTest, XdsRetryPolicyNumRetries) {
   EXPECT_EQ(kNumRetries + 1, backends_[0]->backend_service()->request_count());
   ResetBackendCounters();
   CheckRpcSendFailure(
+      DEBUG_LOCATION,
       CheckRpcSendFailureOptions()
           .set_rpc_options(
               RpcOptions().set_server_expected_error(StatusCode::INTERNAL))
@@ -2115,6 +2139,7 @@ TEST_P(LdsRdsTest, XdsRetryPolicyNumRetries) {
   EXPECT_EQ(kNumRetries + 1, backends_[0]->backend_service()->request_count());
   ResetBackendCounters();
   CheckRpcSendFailure(
+      DEBUG_LOCATION,
       CheckRpcSendFailureOptions()
           .set_rpc_options(RpcOptions().set_server_expected_error(
               StatusCode::RESOURCE_EXHAUSTED))
@@ -2122,6 +2147,7 @@ TEST_P(LdsRdsTest, XdsRetryPolicyNumRetries) {
   EXPECT_EQ(kNumRetries + 1, backends_[0]->backend_service()->request_count());
   ResetBackendCounters();
   CheckRpcSendFailure(
+      DEBUG_LOCATION,
       CheckRpcSendFailureOptions()
           .set_rpc_options(
               RpcOptions().set_server_expected_error(StatusCode::UNAVAILABLE))
@@ -2130,6 +2156,7 @@ TEST_P(LdsRdsTest, XdsRetryPolicyNumRetries) {
   ResetBackendCounters();
   // Ensure we don't retry on an unsupported status.
   CheckRpcSendFailure(
+      DEBUG_LOCATION,
       CheckRpcSendFailureOptions()
           .set_rpc_options(RpcOptions().set_server_expected_error(
               StatusCode::UNAUTHENTICATED))
@@ -2155,6 +2182,7 @@ TEST_P(LdsRdsTest, XdsRetryPolicyAtVirtualHostLevel) {
   SetRouteConfiguration(balancer_.get(), new_route_config);
   // Ensure we retried the correct number of times on a supported status.
   CheckRpcSendFailure(
+      DEBUG_LOCATION,
       CheckRpcSendFailureOptions()
           .set_rpc_options(RpcOptions().set_server_expected_error(
               StatusCode::DEADLINE_EXCEEDED))
@@ -2189,6 +2217,7 @@ TEST_P(LdsRdsTest, XdsRetryPolicyLongBackOff) {
   // No need to set max interval and just let it be the default of 10x of base.
   // We expect 1 retry before the RPC times out with DEADLINE_EXCEEDED.
   CheckRpcSendFailure(
+      DEBUG_LOCATION,
       CheckRpcSendFailureOptions()
           .set_rpc_options(
               RpcOptions().set_timeout_ms(2500).set_server_expected_error(
@@ -2231,6 +2260,7 @@ TEST_P(LdsRdsTest, XdsRetryPolicyMaxBackOff) {
   SetRouteConfiguration(balancer_.get(), new_route_config);
   // We expect 2 retry before the RPC times out with DEADLINE_EXCEEDED.
   CheckRpcSendFailure(
+      DEBUG_LOCATION,
       CheckRpcSendFailureOptions()
           .set_rpc_options(
               RpcOptions().set_timeout_ms(2500).set_server_expected_error(
@@ -2256,6 +2286,7 @@ TEST_P(LdsRdsTest, XdsRetryPolicyUnsupportedStatusCode) {
   SetRouteConfiguration(balancer_.get(), new_route_config);
   // We expect no retry.
   CheckRpcSendFailure(
+      DEBUG_LOCATION,
       CheckRpcSendFailureOptions()
           .set_rpc_options(RpcOptions().set_server_expected_error(
               StatusCode::DEADLINE_EXCEEDED))
@@ -2288,6 +2319,7 @@ TEST_P(LdsRdsTest,
   SetRouteConfiguration(balancer_.get(), new_route_config);
   // We expect no retry.
   CheckRpcSendFailure(
+      DEBUG_LOCATION,
       CheckRpcSendFailureOptions()
           .set_rpc_options(RpcOptions().set_server_expected_error(
               StatusCode::DEADLINE_EXCEEDED))
@@ -2310,7 +2342,7 @@ TEST_P(LdsRdsTest, XdsRetryPolicyInvalidNumRetriesZero) {
   // Setting num_retries to zero is not valid.
   retry_policy->mutable_num_retries()->set_value(0);
   SetRouteConfiguration(balancer_.get(), new_route_config);
-  const auto response_state = WaitForRdsNack();
+  const auto response_state = WaitForRdsNack(DEBUG_LOCATION);
   ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
   EXPECT_THAT(
       response_state->error_message,
@@ -2337,7 +2369,7 @@ TEST_P(LdsRdsTest, XdsRetryPolicyRetryBackOffMissingBaseInterval) {
   max_interval->set_seconds(0);
   max_interval->set_nanos(250000000);
   SetRouteConfiguration(balancer_.get(), new_route_config);
-  const auto response_state = WaitForRdsNack();
+  const auto response_state = WaitForRdsNack(DEBUG_LOCATION);
   ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
   EXPECT_THAT(
       response_state->error_message,
@@ -2414,11 +2446,12 @@ TEST_P(LdsRdsTest, XdsRoutingHeadersMatching) {
                                             .set_rpc_method(METHOD_ECHO1)
                                             .set_metadata(std::move(metadata));
   // Make sure all backends are up.
-  WaitForBackend(0);
-  WaitForBackend(1, WaitForBackendOptions(), header_match_rpc_options);
+  WaitForBackend(DEBUG_LOCATION, 0);
+  WaitForBackend(DEBUG_LOCATION, 1, WaitForBackendOptions(),
+                 header_match_rpc_options);
   // Send RPCs.
-  CheckRpcSendOk(kNumEchoRpcs);
-  CheckRpcSendOk(kNumEcho1Rpcs, header_match_rpc_options);
+  CheckRpcSendOk(DEBUG_LOCATION, kNumEchoRpcs);
+  CheckRpcSendOk(DEBUG_LOCATION, kNumEcho1Rpcs, header_match_rpc_options);
   EXPECT_EQ(kNumEchoRpcs, backends_[0]->backend_service()->request_count());
   EXPECT_EQ(0, backends_[0]->backend_service1()->request_count());
   EXPECT_EQ(0, backends_[0]->backend_service2()->request_count());
@@ -2467,9 +2500,9 @@ TEST_P(LdsRdsTest, XdsRoutingHeadersMatchingSpecialHeaderContentType) {
   default_route->mutable_route()->set_cluster(kDefaultClusterName);
   SetRouteConfiguration(balancer_.get(), route_config);
   // Make sure the backend is up.
-  WaitForAllBackends(0, 1);
+  WaitForAllBackends(DEBUG_LOCATION, 0, 1);
   // Send RPCs.
-  CheckRpcSendOk(kNumEchoRpcs);
+  CheckRpcSendOk(DEBUG_LOCATION, kNumEchoRpcs);
   EXPECT_EQ(kNumEchoRpcs, backends_[0]->backend_service()->request_count());
   EXPECT_EQ(0, backends_[1]->backend_service()->request_count());
   auto response_state = RouteConfigurationResponseState(balancer_.get());
@@ -2514,8 +2547,9 @@ TEST_P(LdsRdsTest, XdsRoutingHeadersMatchingSpecialCasesToIgnore) {
   std::vector<std::pair<std::string, std::string>> metadata = {
       {"grpc-foo-bin", "grpc-foo-bin"},
   };
-  WaitForAllBackends(0, 1);
-  CheckRpcSendOk(kNumEchoRpcs, RpcOptions().set_metadata(metadata));
+  WaitForAllBackends(DEBUG_LOCATION, 0, 1);
+  CheckRpcSendOk(DEBUG_LOCATION, kNumEchoRpcs,
+                 RpcOptions().set_metadata(metadata));
   // Verify that only the default backend got RPCs since all previous routes
   // were mismatched.
   EXPECT_EQ(kNumEchoRpcs, backends_[0]->backend_service()->request_count());
@@ -2563,8 +2597,8 @@ TEST_P(LdsRdsTest, XdsRoutingRuntimeFractionMatching) {
   default_route->mutable_match()->set_prefix("");
   default_route->mutable_route()->set_cluster(kDefaultClusterName);
   SetRouteConfiguration(balancer_.get(), route_config);
-  WaitForAllBackends(0, 2);
-  CheckRpcSendOk(kNumRpcs);
+  WaitForAllBackends(DEBUG_LOCATION, 0, 2);
+  CheckRpcSendOk(DEBUG_LOCATION, kNumRpcs);
   const int default_backend_count =
       backends_[0]->backend_service()->request_count();
   const int matched_backend_count =
@@ -2656,12 +2690,14 @@ TEST_P(LdsRdsTest, XdsRoutingHeadersMatchingUnmatchCases) {
       {"header3", "123"},
       {"header1", "GET"},
   };
-  WaitForAllBackends(0, 1);
-  CheckRpcSendOk(kNumEchoRpcs, RpcOptions().set_metadata(metadata));
-  CheckRpcSendOk(kNumEcho1Rpcs, RpcOptions()
-                                    .set_rpc_service(SERVICE_ECHO1)
-                                    .set_rpc_method(METHOD_ECHO1)
-                                    .set_metadata(metadata));
+  WaitForAllBackends(DEBUG_LOCATION, 0, 1);
+  CheckRpcSendOk(DEBUG_LOCATION, kNumEchoRpcs,
+                 RpcOptions().set_metadata(metadata));
+  CheckRpcSendOk(DEBUG_LOCATION, kNumEcho1Rpcs,
+                 RpcOptions()
+                     .set_rpc_service(SERVICE_ECHO1)
+                     .set_rpc_method(METHOD_ECHO1)
+                     .set_metadata(metadata));
   // Verify that only the default backend got RPCs since all previous routes
   // were mismatched.
   for (size_t i = 1; i < 4; ++i) {
@@ -2708,10 +2744,13 @@ TEST_P(LdsRdsTest, XdsRoutingChangeRoutesWithoutChangingClusters) {
   SetRouteConfiguration(balancer_.get(), route_config);
   // Make sure all backends are up and that requests for each RPC
   // service go to the right backends.
-  WaitForBackend(0, WaitForBackendOptions().set_reset_counters(false));
-  WaitForBackend(1, WaitForBackendOptions().set_reset_counters(false),
+  WaitForBackend(DEBUG_LOCATION, 0,
+                 WaitForBackendOptions().set_reset_counters(false));
+  WaitForBackend(DEBUG_LOCATION, 1,
+                 WaitForBackendOptions().set_reset_counters(false),
                  RpcOptions().set_rpc_service(SERVICE_ECHO1));
-  WaitForBackend(0, WaitForBackendOptions().set_reset_counters(false),
+  WaitForBackend(DEBUG_LOCATION, 0,
+                 WaitForBackendOptions().set_reset_counters(false),
                  RpcOptions().set_rpc_service(SERVICE_ECHO2));
   // Requests for services Echo and Echo2 should have gone to backend 0.
   EXPECT_EQ(1, backends_[0]->backend_service()->request_count());
@@ -2725,14 +2764,17 @@ TEST_P(LdsRdsTest, XdsRoutingChangeRoutesWithoutChangingClusters) {
   // different RPC service, and wait for the client to make the change.
   route1->mutable_match()->set_prefix("/grpc.testing.EchoTest2Service/");
   SetRouteConfiguration(balancer_.get(), route_config);
-  WaitForBackend(1, WaitForBackendOptions(),
+  WaitForBackend(DEBUG_LOCATION, 1, WaitForBackendOptions(),
                  RpcOptions().set_rpc_service(SERVICE_ECHO2));
   // Now repeat the earlier test, making sure all traffic goes to the
   // right place.
-  WaitForBackend(0, WaitForBackendOptions().set_reset_counters(false));
-  WaitForBackend(0, WaitForBackendOptions().set_reset_counters(false),
+  WaitForBackend(DEBUG_LOCATION, 0,
+                 WaitForBackendOptions().set_reset_counters(false));
+  WaitForBackend(DEBUG_LOCATION, 0,
+                 WaitForBackendOptions().set_reset_counters(false),
                  RpcOptions().set_rpc_service(SERVICE_ECHO1));
-  WaitForBackend(1, WaitForBackendOptions().set_reset_counters(false),
+  WaitForBackend(DEBUG_LOCATION, 1,
+                 WaitForBackendOptions().set_reset_counters(false),
                  RpcOptions().set_rpc_service(SERVICE_ECHO2));
   // Requests for services Echo and Echo1 should have gone to backend 0.
   EXPECT_EQ(1, backends_[0]->backend_service()->request_count());
@@ -2753,7 +2795,7 @@ TEST_P(LdsRdsTest, RejectsUnknownHttpFilterTypeInVirtualHost) {
   (*per_filter_config)["unknown"].PackFrom(Listener());
   SetListenerAndRouteConfiguration(balancer_.get(), default_listener_,
                                    route_config);
-  const auto response_state = WaitForRdsNack();
+  const auto response_state = WaitForRdsNack(DEBUG_LOCATION);
   ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
   EXPECT_THAT(response_state->error_message,
               ::testing::HasSubstr("no filter registered for config type "
@@ -2775,7 +2817,7 @@ TEST_P(LdsRdsTest, IgnoresOptionalUnknownHttpFilterTypeInVirtualHost) {
                                    route_config);
   EdsResourceArgs args({{"locality0", CreateEndpointsForBackends()}});
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
-  WaitForAllBackends();
+  WaitForAllBackends(DEBUG_LOCATION);
   auto response_state = RouteConfigurationResponseState(balancer_.get());
   ASSERT_TRUE(response_state.has_value());
   EXPECT_EQ(response_state->state, AdsServiceImpl::ResponseState::ACKED);
@@ -2790,7 +2832,7 @@ TEST_P(LdsRdsTest, RejectsHttpFilterWithoutConfigInVirtualHost) {
   (*per_filter_config)["unknown"];
   SetListenerAndRouteConfiguration(balancer_.get(), default_listener_,
                                    route_config);
-  const auto response_state = WaitForRdsNack();
+  const auto response_state = WaitForRdsNack(DEBUG_LOCATION);
   ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
   EXPECT_THAT(response_state->error_message,
               ::testing::HasSubstr(
@@ -2807,7 +2849,7 @@ TEST_P(LdsRdsTest, RejectsHttpFilterWithoutConfigInFilterConfigInVirtualHost) {
       ::envoy::config::route::v3::FilterConfig());
   SetListenerAndRouteConfiguration(balancer_.get(), default_listener_,
                                    route_config);
-  const auto response_state = WaitForRdsNack();
+  const auto response_state = WaitForRdsNack(DEBUG_LOCATION);
   ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
   EXPECT_THAT(response_state->error_message,
               ::testing::HasSubstr(
@@ -2830,7 +2872,7 @@ TEST_P(LdsRdsTest, IgnoresOptionalHttpFilterWithoutConfigInVirtualHost) {
       {"locality0", CreateEndpointsForBackends()},
   });
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
-  WaitForAllBackends();
+  WaitForAllBackends(DEBUG_LOCATION);
   auto response_state = RouteConfigurationResponseState(balancer_.get());
   ASSERT_TRUE(response_state.has_value());
   EXPECT_EQ(response_state->state, AdsServiceImpl::ResponseState::ACKED);
@@ -2846,7 +2888,7 @@ TEST_P(LdsRdsTest, RejectsUnparseableHttpFilterTypeInVirtualHost) {
       envoy::extensions::filters::http::router::v3::Router());
   SetListenerAndRouteConfiguration(balancer_.get(), default_listener_,
                                    route_config);
-  const auto response_state = WaitForRdsNack();
+  const auto response_state = WaitForRdsNack(DEBUG_LOCATION);
   ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
   EXPECT_THAT(
       response_state->error_message,
@@ -2863,7 +2905,7 @@ TEST_P(LdsRdsTest, RejectsUnknownHttpFilterTypeInRoute) {
   (*per_filter_config)["unknown"].PackFrom(Listener());
   SetListenerAndRouteConfiguration(balancer_.get(), default_listener_,
                                    route_config);
-  const auto response_state = WaitForRdsNack();
+  const auto response_state = WaitForRdsNack(DEBUG_LOCATION);
   ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
   EXPECT_THAT(response_state->error_message,
               ::testing::HasSubstr("no filter registered for config type "
@@ -2886,7 +2928,7 @@ TEST_P(LdsRdsTest, IgnoresOptionalUnknownHttpFilterTypeInRoute) {
                                    route_config);
   EdsResourceArgs args({{"locality0", CreateEndpointsForBackends()}});
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
-  WaitForAllBackends();
+  WaitForAllBackends(DEBUG_LOCATION);
   auto response_state = RouteConfigurationResponseState(balancer_.get());
   ASSERT_TRUE(response_state.has_value());
   EXPECT_EQ(response_state->state, AdsServiceImpl::ResponseState::ACKED);
@@ -2902,7 +2944,7 @@ TEST_P(LdsRdsTest, RejectsHttpFilterWithoutConfigInRoute) {
   (*per_filter_config)["unknown"];
   SetListenerAndRouteConfiguration(balancer_.get(), default_listener_,
                                    route_config);
-  const auto response_state = WaitForRdsNack();
+  const auto response_state = WaitForRdsNack(DEBUG_LOCATION);
   ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
   EXPECT_THAT(response_state->error_message,
               ::testing::HasSubstr(
@@ -2920,7 +2962,7 @@ TEST_P(LdsRdsTest, RejectsHttpFilterWithoutConfigInFilterConfigInRoute) {
       ::envoy::config::route::v3::FilterConfig());
   SetListenerAndRouteConfiguration(balancer_.get(), default_listener_,
                                    route_config);
-  const auto response_state = WaitForRdsNack();
+  const auto response_state = WaitForRdsNack(DEBUG_LOCATION);
   ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
   EXPECT_THAT(response_state->error_message,
               ::testing::HasSubstr(
@@ -2942,7 +2984,7 @@ TEST_P(LdsRdsTest, IgnoresOptionalHttpFilterWithoutConfigInRoute) {
                                    route_config);
   EdsResourceArgs args({{"locality0", CreateEndpointsForBackends()}});
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
-  WaitForAllBackends();
+  WaitForAllBackends(DEBUG_LOCATION);
   auto response_state = RouteConfigurationResponseState(balancer_.get());
   ASSERT_TRUE(response_state.has_value());
   EXPECT_EQ(response_state->state, AdsServiceImpl::ResponseState::ACKED);
@@ -2959,7 +3001,7 @@ TEST_P(LdsRdsTest, RejectsUnparseableHttpFilterTypeInRoute) {
       envoy::extensions::filters::http::router::v3::Router());
   SetListenerAndRouteConfiguration(balancer_.get(), default_listener_,
                                    route_config);
-  const auto response_state = WaitForRdsNack();
+  const auto response_state = WaitForRdsNack(DEBUG_LOCATION);
   ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
   EXPECT_THAT(
       response_state->error_message,
@@ -2981,7 +3023,7 @@ TEST_P(LdsRdsTest, RejectsUnknownHttpFilterTypeInClusterWeight) {
   (*per_filter_config)["unknown"].PackFrom(Listener());
   SetListenerAndRouteConfiguration(balancer_.get(), default_listener_,
                                    route_config);
-  const auto response_state = WaitForRdsNack();
+  const auto response_state = WaitForRdsNack(DEBUG_LOCATION);
   ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
   EXPECT_THAT(response_state->error_message,
               ::testing::HasSubstr("no filter registered for config type "
@@ -3009,7 +3051,7 @@ TEST_P(LdsRdsTest, IgnoresOptionalUnknownHttpFilterTypeInClusterWeight) {
                                    route_config);
   EdsResourceArgs args({{"locality0", CreateEndpointsForBackends()}});
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
-  WaitForAllBackends();
+  WaitForAllBackends(DEBUG_LOCATION);
   auto response_state = RouteConfigurationResponseState(balancer_.get());
   ASSERT_TRUE(response_state.has_value());
   EXPECT_EQ(response_state->state, AdsServiceImpl::ResponseState::ACKED);
@@ -3030,7 +3072,7 @@ TEST_P(LdsRdsTest, RejectsHttpFilterWithoutConfigInClusterWeight) {
   (*per_filter_config)["unknown"];
   SetListenerAndRouteConfiguration(balancer_.get(), default_listener_,
                                    route_config);
-  const auto response_state = WaitForRdsNack();
+  const auto response_state = WaitForRdsNack(DEBUG_LOCATION);
   ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
   EXPECT_THAT(response_state->error_message,
               ::testing::HasSubstr(
@@ -3054,7 +3096,7 @@ TEST_P(LdsRdsTest,
       ::envoy::config::route::v3::FilterConfig());
   SetListenerAndRouteConfiguration(balancer_.get(), default_listener_,
                                    route_config);
-  const auto response_state = WaitForRdsNack();
+  const auto response_state = WaitForRdsNack(DEBUG_LOCATION);
   ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
   EXPECT_THAT(response_state->error_message,
               ::testing::HasSubstr(
@@ -3081,7 +3123,7 @@ TEST_P(LdsRdsTest, IgnoresOptionalHttpFilterWithoutConfigInClusterWeight) {
                                    route_config);
   EdsResourceArgs args({{"locality0", CreateEndpointsForBackends()}});
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
-  WaitForAllBackends();
+  WaitForAllBackends(DEBUG_LOCATION);
   auto response_state = RouteConfigurationResponseState(balancer_.get());
   ASSERT_TRUE(response_state.has_value());
   EXPECT_EQ(response_state->state, AdsServiceImpl::ResponseState::ACKED);
@@ -3103,7 +3145,7 @@ TEST_P(LdsRdsTest, RejectsUnparseableHttpFilterTypeInClusterWeight) {
       envoy::extensions::filters::http::router::v3::Router());
   SetListenerAndRouteConfiguration(balancer_.get(), default_listener_,
                                    route_config);
-  const auto response_state = WaitForRdsNack();
+  const auto response_state = WaitForRdsNack(DEBUG_LOCATION);
   ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
   EXPECT_THAT(
       response_state->error_message,

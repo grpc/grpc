@@ -63,7 +63,7 @@ TEST_P(CdsTest, UnsupportedClusterType) {
   auto cluster = default_cluster_;
   cluster.set_type(Cluster::STATIC);
   balancer_->ads_service()->SetCdsResource(cluster);
-  const auto response_state = WaitForCdsNack();
+  const auto response_state = WaitForCdsNack(DEBUG_LOCATION);
   ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
   EXPECT_THAT(response_state->error_message,
               ::testing::HasSubstr("DiscoveryType is not valid."));
@@ -76,18 +76,18 @@ TEST_P(CdsTest, InvalidClusterStillExistsIfPreviouslyCached) {
   EdsResourceArgs args({{"locality0", CreateEndpointsForBackends()}});
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
   // Check that everything works.
-  CheckRpcSendOk();
+  CheckRpcSendOk(DEBUG_LOCATION);
   // Now send an update changing the Cluster to be invalid.
   auto cluster = default_cluster_;
   cluster.set_type(Cluster::STATIC);
   balancer_->ads_service()->SetCdsResource(cluster);
-  const auto response_state = WaitForCdsNack(StatusCode::OK);
+  const auto response_state = WaitForCdsNack(DEBUG_LOCATION, StatusCode::OK);
   ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
   EXPECT_THAT(response_state->error_message,
               ::testing::ContainsRegex(absl::StrCat(
                   kDefaultClusterName,
                   ": validation error.*DiscoveryType is not valid")));
-  CheckRpcSendOk();
+  CheckRpcSendOk(DEBUG_LOCATION);
 }
 
 // Tests that CDS client should send a NACK if the eds_config in CDS response
@@ -97,7 +97,7 @@ TEST_P(CdsTest, EdsConfigSourceDoesNotSpecifyAdsOrSelf) {
   cluster.mutable_eds_cluster_config()->mutable_eds_config()->set_path(
       "/foo/bar");
   balancer_->ads_service()->SetCdsResource(cluster);
-  const auto response_state = WaitForCdsNack();
+  const auto response_state = WaitForCdsNack(DEBUG_LOCATION);
   ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
   EXPECT_THAT(response_state->error_message,
               ::testing::HasSubstr("EDS ConfigSource is not ADS or SELF."));
@@ -111,7 +111,7 @@ TEST_P(CdsTest, AcceptsEdsConfigSourceOfTypeAds) {
   balancer_->ads_service()->SetCdsResource(cluster);
   EdsResourceArgs args({{"locality0", CreateEndpointsForBackends()}});
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
-  WaitForAllBackends();
+  WaitForAllBackends(DEBUG_LOCATION);
   auto response_state = balancer_->ads_service()->cds_response_state();
   ASSERT_TRUE(response_state.has_value());
   EXPECT_EQ(response_state->state, AdsServiceImpl::ResponseState::ACKED);
@@ -123,7 +123,7 @@ TEST_P(CdsTest, WrongLbPolicy) {
   auto cluster = default_cluster_;
   cluster.set_lb_policy(Cluster::LEAST_REQUEST);
   balancer_->ads_service()->SetCdsResource(cluster);
-  const auto response_state = WaitForCdsNack();
+  const auto response_state = WaitForCdsNack(DEBUG_LOCATION);
   ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
   EXPECT_THAT(response_state->error_message,
               ::testing::HasSubstr("LB policy is not supported."));
@@ -135,7 +135,7 @@ TEST_P(CdsTest, WrongLrsServer) {
   auto cluster = default_cluster_;
   cluster.mutable_lrs_server()->mutable_ads();
   balancer_->ads_service()->SetCdsResource(cluster);
-  const auto response_state = WaitForCdsNack();
+  const auto response_state = WaitForCdsNack(DEBUG_LOCATION);
   ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
   EXPECT_THAT(response_state->error_message,
               ::testing::HasSubstr("LRS ConfigSource is not self."));
@@ -166,9 +166,9 @@ TEST_P(CdsTest, EndpointWeightDoesNotImpactWeightedRoundRobin) {
   });
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
   // Wait for both backends to be ready.
-  WaitForAllBackends(0, 2);
+  WaitForAllBackends(DEBUG_LOCATION, 0, 2);
   // Send kNumRpcs RPCs.
-  CheckRpcSendOk(kNumRpcs);
+  CheckRpcSendOk(DEBUG_LOCATION, kNumRpcs);
   // The locality picking rates should be roughly equal to the expectation.
   const double locality_picked_rate_0 =
       static_cast<double>(backends_[0]->backend_service()->request_count()) /
@@ -195,7 +195,7 @@ TEST_P(CdsTest, EdsServiceNameDefaultsToClusterName) {
   Cluster cluster = default_cluster_;
   cluster.mutable_eds_cluster_config()->clear_service_name();
   balancer_->ads_service()->SetCdsResource(cluster);
-  CheckRpcSendOk();
+  CheckRpcSendOk(DEBUG_LOCATION);
 }
 
 // Tests switching over from one cluster to another.
@@ -206,7 +206,7 @@ TEST_P(CdsTest, ChangeClusters) {
   EdsResourceArgs args({{"locality0", CreateEndpointsForBackends(0, 1)}});
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
   // We need to wait for all backends to come online.
-  WaitForAllBackends(0, 1);
+  WaitForAllBackends(DEBUG_LOCATION, 0, 1);
   // Populate new EDS resource.
   args = EdsResourceArgs({{"locality0", CreateEndpointsForBackends(1, 2)}});
   balancer_->ads_service()->SetEdsResource(
@@ -226,7 +226,7 @@ TEST_P(CdsTest, ChangeClusters) {
   SetListenerAndRouteConfiguration(balancer_.get(), default_listener_,
                                    new_route_config);
   // Wait for all new backends to be used.
-  WaitForAllBackends(1, 2);
+  WaitForAllBackends(DEBUG_LOCATION, 1, 2);
 }
 
 // Tests that we go into TRANSIENT_FAILURE if the Cluster disappears.
@@ -235,14 +235,15 @@ TEST_P(CdsTest, ClusterRemoved) {
   EdsResourceArgs args({{"locality0", CreateEndpointsForBackends()}});
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
   // We need to wait for all backends to come online.
-  WaitForAllBackends();
+  WaitForAllBackends(DEBUG_LOCATION);
   // Unset CDS resource.
   balancer_->ads_service()->UnsetResource(kCdsTypeUrl, kDefaultClusterName);
   // Wait for RPCs to start failing.
   do {
   } while (SendRpc(RpcOptions(), nullptr).ok());
   // Make sure RPCs are still failing.
-  CheckRpcSendFailure(CheckRpcSendFailureOptions().set_times(1000));
+  CheckRpcSendFailure(DEBUG_LOCATION,
+                      CheckRpcSendFailureOptions().set_times(1000));
   // Make sure we ACK'ed the update.
   auto response_state = balancer_->ads_service()->cds_response_state();
   ASSERT_TRUE(response_state.has_value());
@@ -335,7 +336,7 @@ TEST_P(CdsTest, ClusterChangeAfterAdsCallFails) {
   EdsResourceArgs args({{"locality0", CreateEndpointsForBackends(0, 1)}});
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
   // Check that the channel is working.
-  CheckRpcSendOk();
+  CheckRpcSendOk(DEBUG_LOCATION);
   // Stop and restart the balancer.
   balancer_->Shutdown();
   balancer_->Start();
@@ -363,7 +364,8 @@ TEST_P(CdsTest, ClusterChangeAfterAdsCallFails) {
   //
   // Need to figure out a way to fix this bug, and then change this to
   // not allow failures.
-  WaitForBackend(1, WaitForBackendOptions().set_allow_failures(true));
+  WaitForBackend(DEBUG_LOCATION, 1,
+                 WaitForBackendOptions().set_allow_failures(true));
 }
 
 //
@@ -389,9 +391,9 @@ TEST_P(EdsTest, Vanilla) {
   // Make sure that trying to connect works without a call.
   channel_->GetState(true /* try_to_connect */);
   // We need to wait for all backends to come online.
-  WaitForAllBackends();
+  WaitForAllBackends(DEBUG_LOCATION);
   // Send kNumRpcsPerAddress RPCs per server.
-  CheckRpcSendOk(kNumRpcsPerAddress * backends_.size());
+  CheckRpcSendOk(DEBUG_LOCATION, kNumRpcsPerAddress * backends_.size());
   // Each backend should have gotten 100 requests.
   for (size_t i = 0; i < backends_.size(); ++i) {
     EXPECT_EQ(kNumRpcsPerAddress,
@@ -416,9 +418,9 @@ TEST_P(EdsTest, IgnoresUnhealthyEndpoints) {
   // Make sure that trying to connect works without a call.
   channel_->GetState(true /* try_to_connect */);
   // We need to wait for all backends to come online.
-  WaitForAllBackends();
+  WaitForAllBackends(DEBUG_LOCATION);
   // Send kNumRpcsPerAddress RPCs per server.
-  CheckRpcSendOk(kNumRpcsPerAddress * backends_.size());
+  CheckRpcSendOk(DEBUG_LOCATION, kNumRpcsPerAddress * backends_.size());
   // Each backend should have gotten 100 requests.
   for (size_t i = 0; i < backends_.size(); ++i) {
     EXPECT_EQ(kNumRpcsPerAddress,
@@ -436,10 +438,10 @@ TEST_P(EdsTest, SameBackendListedMultipleTimes) {
   EdsResourceArgs args({{"locality0", endpoints}});
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
   // We need to wait for the backend to come online.
-  WaitForAllBackends();
+  WaitForAllBackends(DEBUG_LOCATION);
   // Send kNumRpcsPerAddress RPCs per server.
   const size_t kNumRpcsPerAddress = 10;
-  CheckRpcSendOk(kNumRpcsPerAddress * endpoints.size());
+  CheckRpcSendOk(DEBUG_LOCATION, kNumRpcsPerAddress * endpoints.size());
   // Backend should have gotten 20 requests.
   EXPECT_EQ(kNumRpcsPerAddress * endpoints.size(),
             backends_[0]->backend_service()->request_count());
@@ -453,12 +455,13 @@ TEST_P(EdsTest, InitiallyEmptyServerlist) {
   EdsResourceArgs args({std::move(empty_locality)});
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
   // RPCs should fail.
-  CheckRpcSendFailure();
+  CheckRpcSendFailure(DEBUG_LOCATION);
   // Send non-empty serverlist.
   args = EdsResourceArgs({{"locality0", CreateEndpointsForBackends()}});
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
   // RPCs should eventually succeed.
-  WaitForAllBackends(0, 1, WaitForBackendOptions().set_allow_failures(true));
+  WaitForAllBackends(DEBUG_LOCATION, 0, 1,
+                     WaitForBackendOptions().set_allow_failures(true));
 }
 
 // Tests that RPCs will fail with UNAVAILABLE instead of DEADLINE_EXCEEDED if
@@ -487,7 +490,7 @@ TEST_P(EdsTest, BackendsRestart) {
   CreateAndStartBackends(3);
   EdsResourceArgs args({{"locality0", CreateEndpointsForBackends()}});
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
-  WaitForAllBackends();
+  WaitForAllBackends(DEBUG_LOCATION);
   // Stop backends.  RPCs should fail.
   ShutdownAllBackends();
   // Sending multiple failed requests instead of just one to ensure that the
@@ -499,10 +502,12 @@ TEST_P(EdsTest, BackendsRestart) {
   // below (which we expect to succeed), if the callbacks happen in the wrong
   // order, the same race condition could happen again due to the client not
   // yet having noticed that the backends were all down.
-  CheckRpcSendFailure(CheckRpcSendFailureOptions().set_times(backends_.size()));
+  CheckRpcSendFailure(DEBUG_LOCATION,
+                      CheckRpcSendFailureOptions().set_times(backends_.size()));
   // Restart all backends.  RPCs should start succeeding again.
   StartAllBackends();
-  CheckRpcSendOk(1, RpcOptions().set_timeout_ms(2000).set_wait_for_ready(true));
+  CheckRpcSendOk(DEBUG_LOCATION, 1,
+                 RpcOptions().set_timeout_ms(2000).set_wait_for_ready(true));
 }
 
 TEST_P(EdsTest, IgnoresDuplicateUpdates) {
@@ -513,15 +518,15 @@ TEST_P(EdsTest, IgnoresDuplicateUpdates) {
   });
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
   // Wait for all backends to come online.
-  WaitForAllBackends();
+  WaitForAllBackends(DEBUG_LOCATION);
   // Send kNumRpcsPerAddress RPCs per server, but send an EDS update in
   // between.  If the update is not ignored, this will cause the
   // round_robin policy to see an update, which will randomly reset its
   // position in the address list.
   for (size_t i = 0; i < kNumRpcsPerAddress; ++i) {
-    CheckRpcSendOk(2);
+    CheckRpcSendOk(DEBUG_LOCATION, 2);
     balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
-    CheckRpcSendOk(2);
+    CheckRpcSendOk(DEBUG_LOCATION, 2);
   }
   // Each backend should have gotten the right number of requests.
   for (size_t i = 1; i < backends_.size(); ++i) {
@@ -537,7 +542,7 @@ TEST_P(EdsTest, NacksSparsePriorityList) {
       {"locality0", {MakeNonExistantEndpoint()}, kDefaultLocalityWeight, 1},
   });
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
-  const auto response_state = WaitForEdsNack();
+  const auto response_state = WaitForEdsNack(DEBUG_LOCATION);
   ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
   EXPECT_THAT(response_state->error_message,
               ::testing::HasSubstr("sparse priority list"));
@@ -551,7 +556,7 @@ TEST_P(EdsTest, NacksDuplicateLocalityInSamePriority) {
       {"locality0", {MakeNonExistantEndpoint()}, kDefaultLocalityWeight, 0},
   });
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
-  const auto response_state = WaitForEdsNack();
+  const auto response_state = WaitForEdsNack(DEBUG_LOCATION);
   ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
   EXPECT_THAT(response_state->error_message,
               ::testing::HasSubstr(
@@ -569,12 +574,12 @@ TEST_P(EdsTest, KeepUsingLastDataIfBalancerGoesDown) {
   EdsResourceArgs args({{"locality0", CreateEndpointsForBackends(0, 1)}});
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
   // Start the client and make sure it sees the backend.
-  WaitForBackend(0);
+  WaitForBackend(DEBUG_LOCATION, 0);
   // Stop the balancer, and verify that RPCs continue to flow to backend 0.
   balancer_->Shutdown();
   auto deadline = grpc_timeout_seconds_to_deadline(5);
   do {
-    CheckRpcSendOk();
+    CheckRpcSendOk(DEBUG_LOCATION);
   } while (gpr_time_cmp(gpr_now(GPR_CLOCK_MONOTONIC), deadline) < 0);
   // Check the EDS resource to point to backend 1 and bring the balancer
   // back up.
@@ -582,7 +587,7 @@ TEST_P(EdsTest, KeepUsingLastDataIfBalancerGoesDown) {
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
   balancer_->Start();
   // Wait for client to see backend 1.
-  WaitForBackend(1);
+  WaitForBackend(DEBUG_LOCATION, 1);
 }
 
 // Tests that the localities in a locality map are picked according to their
@@ -606,9 +611,9 @@ TEST_P(EdsTest, WeightedRoundRobin) {
   });
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
   // Wait for both backends to be ready.
-  WaitForAllBackends(0, 2);
+  WaitForAllBackends(DEBUG_LOCATION, 0, 2);
   // Send kNumRpcs RPCs.
-  CheckRpcSendOk(kNumRpcs);
+  CheckRpcSendOk(DEBUG_LOCATION, kNumRpcs);
   // The locality picking rates should be roughly equal to the expectation.
   const double locality_picked_rate_0 =
       static_cast<double>(backends_[0]->backend_service()->request_count()) /
@@ -633,9 +638,9 @@ TEST_P(EdsTest, LocalityContainingNoEndpoints) {
   });
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
   // Wait for both backends to be ready.
-  WaitForAllBackends();
+  WaitForAllBackends(DEBUG_LOCATION);
   // Send kNumRpcs RPCs.
-  CheckRpcSendOk(kNumRpcs);
+  CheckRpcSendOk(DEBUG_LOCATION, kNumRpcs);
   // All traffic should go to the reachable locality.
   EXPECT_EQ(backends_[0]->backend_service()->request_count(),
             kNumRpcs / backends_.size());
@@ -667,14 +672,15 @@ TEST_P(EdsTest, ManyLocalitiesStressTest) {
   }
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
   // Wait until backend 0 is ready.
-  WaitForBackend(0, WaitForBackendOptions().set_reset_counters(false),
+  WaitForBackend(DEBUG_LOCATION, 0,
+                 WaitForBackendOptions().set_reset_counters(false),
                  RpcOptions().set_timeout_ms(kRpcTimeoutMs));
   EXPECT_EQ(0U, backends_[1]->backend_service()->request_count());
   // The second ADS response contains 1 locality, which contains backend 1.
   args = EdsResourceArgs({{"locality0", CreateEndpointsForBackends(1, 2)}});
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
   // Wait until backend 1 is ready.
-  WaitForBackend(1);
+  WaitForBackend(DEBUG_LOCATION, 1);
 }
 
 // Tests that the localities in a locality map are picked correctly after
@@ -708,10 +714,10 @@ TEST_P(EdsTest, LocalityMapUpdateChurn) {
   });
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
   // Wait for the first 3 backends to be ready.
-  WaitForAllBackends(0, 3);
+  WaitForAllBackends(DEBUG_LOCATION, 0, 3);
   gpr_log(GPR_INFO, "========= BEFORE FIRST BATCH ==========");
   // Send kNumRpcs RPCs.
-  CheckRpcSendOk(kNumRpcs);
+  CheckRpcSendOk(DEBUG_LOCATION, kNumRpcs);
   gpr_log(GPR_INFO, "========= DONE WITH FIRST BATCH ==========");
   // The picking rates of the first 3 backends should be roughly equal to the
   // expectation.
@@ -741,10 +747,10 @@ TEST_P(EdsTest, LocalityMapUpdateChurn) {
   EXPECT_EQ(0U, backends_[3]->backend_service()->request_count());
   // Wait until the locality update has been processed, as signaled by backend
   // 3 receiving a request.
-  WaitForAllBackends(3, 4);
+  WaitForAllBackends(DEBUG_LOCATION, 3, 4);
   gpr_log(GPR_INFO, "========= BEFORE SECOND BATCH ==========");
   // Send kNumRpcs RPCs.
-  CheckRpcSendOk(kNumRpcs);
+  CheckRpcSendOk(DEBUG_LOCATION, kNumRpcs);
   gpr_log(GPR_INFO, "========= DONE WITH SECOND BATCH ==========");
   // Backend 0 no longer receives any request.
   EXPECT_EQ(0U, backends_[0]->backend_service()->request_count());
@@ -775,13 +781,13 @@ TEST_P(EdsTest, ReplaceAllLocalitiesInPriority) {
   EdsResourceArgs args({{"locality0", CreateEndpointsForBackends(0, 1)}});
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
   // Wait for the first backend to be ready.
-  WaitForBackend(0);
+  WaitForBackend(DEBUG_LOCATION, 0);
   // Send EDS update that replaces the locality and switches to backend 1.
   args = EdsResourceArgs({{"locality1", CreateEndpointsForBackends(1, 2)}});
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
   // When the client sees the update, RPCs should start going to backend 1.
   // No RPCs should fail during this change.
-  WaitForBackend(1);
+  WaitForBackend(DEBUG_LOCATION, 1);
 }
 
 TEST_P(EdsTest, ConsistentWeightedTargetUpdates) {
@@ -792,7 +798,7 @@ TEST_P(EdsTest, ConsistentWeightedTargetUpdates) {
       {"locality1", CreateEndpointsForBackends(2, 3)},
   });
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
-  WaitForAllBackends(1, 3);
+  WaitForAllBackends(DEBUG_LOCATION, 1, 3);
   // Next update removes locality1.
   // Also add backend 0 to locality0, so that we can tell when the
   // update has been seen.
@@ -800,7 +806,7 @@ TEST_P(EdsTest, ConsistentWeightedTargetUpdates) {
       {"locality0", CreateEndpointsForBackends(0, 2)},
   });
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
-  WaitForBackend(0);
+  WaitForBackend(DEBUG_LOCATION, 0);
   // Next update re-adds locality1.
   // Also add backend 3 to locality1, so that we can tell when the
   // update has been seen.
@@ -809,7 +815,7 @@ TEST_P(EdsTest, ConsistentWeightedTargetUpdates) {
       {"locality1", CreateEndpointsForBackends(2, 4)},
   });
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
-  WaitForBackend(3);
+  WaitForBackend(DEBUG_LOCATION, 3);
 }
 
 // Tests that RPCs are dropped according to the drop config.
@@ -830,8 +836,8 @@ TEST_P(EdsTest, Drops) {
                           {kThrottleDropType, kDropPerMillionForThrottle}};
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
   // Send kNumRpcs RPCs and count the drops.
-  size_t num_drops =
-      SendRpcsAndCountFailuresWithMessage(kNumRpcs, "EDS-configured drop: ");
+  size_t num_drops = SendRpcsAndCountFailuresWithMessage(
+      DEBUG_LOCATION, kNumRpcs, "EDS-configured drop: ");
   // The drop rate should be roughly equal to the expectation.
   const double seen_drop_rate = static_cast<double>(num_drops) / kNumRpcs;
   EXPECT_THAT(seen_drop_rate, ::testing::DoubleNear(kDropRateForLbAndThrottle,
@@ -851,8 +857,8 @@ TEST_P(EdsTest, DropPerHundred) {
   args.drop_denominator = FractionalPercent::HUNDRED;
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
   // Send kNumRpcs RPCs and count the drops.
-  size_t num_drops =
-      SendRpcsAndCountFailuresWithMessage(kNumRpcs, "EDS-configured drop: ");
+  size_t num_drops = SendRpcsAndCountFailuresWithMessage(
+      DEBUG_LOCATION, kNumRpcs, "EDS-configured drop: ");
   // The drop rate should be roughly equal to the expectation.
   const double seen_drop_rate = static_cast<double>(num_drops) / kNumRpcs;
   EXPECT_THAT(seen_drop_rate,
@@ -872,8 +878,8 @@ TEST_P(EdsTest, DropPerTenThousand) {
   args.drop_denominator = FractionalPercent::TEN_THOUSAND;
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
   // Send kNumRpcs RPCs and count the drops.
-  size_t num_drops =
-      SendRpcsAndCountFailuresWithMessage(kNumRpcs, "EDS-configured drop: ");
+  size_t num_drops = SendRpcsAndCountFailuresWithMessage(
+      DEBUG_LOCATION, kNumRpcs, "EDS-configured drop: ");
   // The drop rate should be roughly equal to the expectation.
   const double seen_drop_rate = static_cast<double>(num_drops) / kNumRpcs;
   EXPECT_THAT(seen_drop_rate,
@@ -901,7 +907,7 @@ TEST_P(EdsTest, DropConfigUpdate) {
   // Send kNumRpcsLbOnly RPCs and count the drops.
   gpr_log(GPR_INFO, "========= BEFORE FIRST BATCH ==========");
   size_t num_drops = SendRpcsAndCountFailuresWithMessage(
-      kNumRpcsLbOnly, "EDS-configured drop: ");
+      DEBUG_LOCATION, kNumRpcsLbOnly, "EDS-configured drop: ");
   gpr_log(GPR_INFO, "========= DONE WITH FIRST BATCH ==========");
   // The drop rate should be roughly equal to the expectation.
   double seen_drop_rate = static_cast<double>(num_drops) / kNumRpcsLbOnly;
@@ -934,7 +940,7 @@ TEST_P(EdsTest, DropConfigUpdate) {
   }
   // Send kNumRpcsBoth RPCs and count the drops.
   gpr_log(GPR_INFO, "========= BEFORE SECOND BATCH ==========");
-  num_drops = SendRpcsAndCountFailuresWithMessage(kNumRpcsBoth,
+  num_drops = SendRpcsAndCountFailuresWithMessage(DEBUG_LOCATION, kNumRpcsBoth,
                                                   "EDS-configured drop: ");
   gpr_log(GPR_INFO, "========= DONE WITH SECOND BATCH ==========");
   // The new drop rate should be roughly equal to the expectation.
@@ -955,8 +961,8 @@ TEST_P(EdsTest, DropAll) {
                           {kThrottleDropType, kDropPerMillionForThrottle}};
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
   // Send kNumRpcs RPCs and all of them are dropped.
-  size_t num_drops =
-      SendRpcsAndCountFailuresWithMessage(kNumRpcs, "EDS-configured drop: ");
+  size_t num_drops = SendRpcsAndCountFailuresWithMessage(
+      DEBUG_LOCATION, kNumRpcs, "EDS-configured drop: ");
   EXPECT_EQ(num_drops, kNumRpcs);
 }
 
@@ -991,7 +997,8 @@ TEST_P(FailoverTest, ChooseHighestPriority) {
        0},
   });
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
-  WaitForBackend(3, WaitForBackendOptions().set_reset_counters(false));
+  WaitForBackend(DEBUG_LOCATION, 3,
+                 WaitForBackendOptions().set_reset_counters(false));
   for (size_t i = 0; i < 3; ++i) {
     EXPECT_EQ(0U, backends_[i]->backend_service()->request_count());
   }
@@ -1010,7 +1017,8 @@ TEST_P(FailoverTest, DoesNotUsePriorityWithNoEndpoints) {
       {"locality3", {}, kDefaultLocalityWeight, 0},
   });
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
-  WaitForBackend(0, WaitForBackendOptions().set_reset_counters(false));
+  WaitForBackend(DEBUG_LOCATION, 0,
+                 WaitForBackendOptions().set_reset_counters(false));
   for (size_t i = 1; i < 3; ++i) {
     EXPECT_EQ(0U, backends_[i]->backend_service()->request_count());
   }
@@ -1025,7 +1033,7 @@ TEST_P(FailoverTest, DoesNotUseLocalityWithNoEndpoints) {
   });
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
   // Wait for all backends to be used.
-  WaitForAllBackends();
+  WaitForAllBackends(DEBUG_LOCATION);
 }
 
 // If the higher priority localities are not reachable, failover to the
@@ -1041,7 +1049,8 @@ TEST_P(FailoverTest, Failover) {
       {"locality3", {MakeNonExistantEndpoint()}, kDefaultLocalityWeight, 0},
   });
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
-  WaitForBackend(0, WaitForBackendOptions().set_reset_counters(false));
+  WaitForBackend(DEBUG_LOCATION, 0,
+                 WaitForBackendOptions().set_reset_counters(false));
   EXPECT_EQ(0U, backends_[1]->backend_service()->request_count());
 }
 
@@ -1061,19 +1070,20 @@ TEST_P(FailoverTest, SwitchBackToHigherPriority) {
        0},
   });
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
-  WaitForBackend(3);
+  WaitForBackend(DEBUG_LOCATION, 3);
   ShutdownBackend(3);
   ShutdownBackend(0);
   WaitForBackend(
-      1, WaitForBackendOptions().set_reset_counters(false).set_allow_failures(
-             true));
+      DEBUG_LOCATION, 1,
+      WaitForBackendOptions().set_reset_counters(false).set_allow_failures(
+          true));
   for (size_t i = 0; i < backends_.size(); ++i) {
     if (i == 1) continue;
     EXPECT_EQ(0U, backends_[i]->backend_service()->request_count());
   }
   StartBackend(0);
-  WaitForBackend(0);
-  CheckRpcSendOk(kNumRpcs);
+  WaitForBackend(DEBUG_LOCATION, 0);
+  CheckRpcSendOk(DEBUG_LOCATION, kNumRpcs);
   EXPECT_EQ(kNumRpcs, backends_[0]->backend_service()->request_count());
 }
 
@@ -1086,7 +1096,7 @@ TEST_P(FailoverTest, UpdateInitialUnavailable) {
       {"locality1", {MakeNonExistantEndpoint()}, kDefaultLocalityWeight, 1},
   });
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
-  CheckRpcSendFailure();
+  CheckRpcSendFailure(DEBUG_LOCATION);
   args = EdsResourceArgs({
       {"locality0", CreateEndpointsForBackends(0, 1), kDefaultLocalityWeight,
        0},
@@ -1094,7 +1104,8 @@ TEST_P(FailoverTest, UpdateInitialUnavailable) {
        1},
   });
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
-  WaitForBackend(0, WaitForBackendOptions().set_allow_failures(true));
+  WaitForBackend(DEBUG_LOCATION, 0,
+                 WaitForBackendOptions().set_allow_failures(true));
 }
 
 // Tests that after the localities' priorities are updated, we still choose
@@ -1113,7 +1124,8 @@ TEST_P(FailoverTest, UpdatePriority) {
        0},
   });
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
-  WaitForBackend(3, WaitForBackendOptions().set_reset_counters(false));
+  WaitForBackend(DEBUG_LOCATION, 3,
+                 WaitForBackendOptions().set_reset_counters(false));
   EXPECT_EQ(0U, backends_[0]->backend_service()->request_count());
   EXPECT_EQ(0U, backends_[1]->backend_service()->request_count());
   EXPECT_EQ(0U, backends_[2]->backend_service()->request_count());
@@ -1128,8 +1140,8 @@ TEST_P(FailoverTest, UpdatePriority) {
        3},
   });
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
-  WaitForBackend(1);
-  CheckRpcSendOk(kNumRpcs);
+  WaitForBackend(DEBUG_LOCATION, 1);
+  CheckRpcSendOk(DEBUG_LOCATION, kNumRpcs);
   EXPECT_EQ(kNumRpcs, backends_[1]->backend_service()->request_count());
 }
 
@@ -1149,7 +1161,8 @@ TEST_P(FailoverTest, MoveAllLocalitiesInCurrentPriorityToHigherPriority) {
   // When we get the first update, all backends in priority 0 are down,
   // so we will create priority 1.  Backends 0 and 1 should have traffic,
   // but backend 2 should not.
-  WaitForAllBackends(0, 2, WaitForBackendOptions().set_reset_counters(false));
+  WaitForAllBackends(DEBUG_LOCATION, 0, 2,
+                     WaitForBackendOptions().set_reset_counters(false));
   EXPECT_EQ(0UL, backends_[2]->backend_service()->request_count());
   // Second update:
   // - Priority 0 contains both localities 0 and 1.
@@ -1163,7 +1176,7 @@ TEST_P(FailoverTest, MoveAllLocalitiesInCurrentPriorityToHigherPriority) {
   });
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
   // When backend 2 gets traffic, we know the second update has been seen.
-  WaitForBackend(2);
+  WaitForBackend(DEBUG_LOCATION, 2);
   // The xDS server got at least 1 response.
   EXPECT_TRUE(balancer_->ads_service()->eds_response_state().has_value());
 }
@@ -1186,7 +1199,7 @@ TEST_P(FailoverTest, PriorityChildNameChurn) {
        2},
   });
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
-  WaitForBackend(0);
+  WaitForBackend(DEBUG_LOCATION, 0);
   // Next update:
   // - P0:locality0, child number 0 (still unreachable)
   // - P1:locality2, child number 2 (moved from P2 to P1)
@@ -1200,7 +1213,7 @@ TEST_P(FailoverTest, PriorityChildNameChurn) {
        2},
   });
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
-  WaitForBackend(1);
+  WaitForBackend(DEBUG_LOCATION, 1);
   // Next update:
   // - P0:locality0, child number 0 (still unreachable)
   // - P1:locality4, child number 4 (new child number -- should not reuse #1)
@@ -1214,7 +1227,8 @@ TEST_P(FailoverTest, PriorityChildNameChurn) {
        2},
   });
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
-  WaitForBackend(3, WaitForBackendOptions().set_reset_counters(false));
+  WaitForBackend(DEBUG_LOCATION, 3,
+                 WaitForBackendOptions().set_reset_counters(false));
   // P2 should not have gotten any traffic in this change.
   EXPECT_EQ(0UL, backends_[2]->backend_service()->request_count());
 }
@@ -1242,10 +1256,11 @@ TEST_P(ClientLoadReportingTest, Vanilla) {
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
   // Wait until all backends are ready.
   size_t num_warmup_rpcs = WaitForAllBackends(
-      0, 4, WaitForBackendOptions().set_reset_counters(false));
+      DEBUG_LOCATION, 0, 4, WaitForBackendOptions().set_reset_counters(false));
   // Send kNumRpcsPerAddress RPCs per server.
-  CheckRpcSendOk(kNumRpcsPerAddress * backends_.size());
-  CheckRpcSendFailure(CheckRpcSendFailureOptions()
+  CheckRpcSendOk(DEBUG_LOCATION, kNumRpcsPerAddress * backends_.size());
+  CheckRpcSendFailure(DEBUG_LOCATION,
+                      CheckRpcSendFailureOptions()
                           .set_times(kNumFailuresPerAddress * backends_.size())
                           .set_rpc_options(RpcOptions().set_server_fail(true)));
   const size_t total_successful_rpcs_sent =
@@ -1303,10 +1318,11 @@ TEST_P(ClientLoadReportingTest, SendAllClusters) {
   EdsResourceArgs args({{"locality0", CreateEndpointsForBackends()}});
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
   // Wait until all backends are ready.
-  size_t num_warmup_rpcs = WaitForAllBackends();
+  size_t num_warmup_rpcs = WaitForAllBackends(DEBUG_LOCATION);
   // Send kNumRpcsPerAddress RPCs per server.
-  CheckRpcSendOk(kNumRpcsPerAddress * backends_.size());
-  CheckRpcSendFailure(CheckRpcSendFailureOptions()
+  CheckRpcSendOk(DEBUG_LOCATION, kNumRpcsPerAddress * backends_.size());
+  CheckRpcSendFailure(DEBUG_LOCATION,
+                      CheckRpcSendFailureOptions()
                           .set_times(kNumFailuresPerAddress * backends_.size())
                           .set_rpc_options(RpcOptions().set_server_fail(true)));
   // Check that each backend got the right number of requests.
@@ -1341,7 +1357,7 @@ TEST_P(ClientLoadReportingTest, HonorsClustersRequestedByLrsServer) {
   EdsResourceArgs args({{"locality0", CreateEndpointsForBackends()}});
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
   // Wait until all backends are ready.
-  WaitForAllBackends();
+  WaitForAllBackends(DEBUG_LOCATION);
   // The load report received at the balancer should be correct.
   std::vector<ClientStats> load_report =
       balancer_->lrs_service()->WaitForLoadReport();
@@ -1358,7 +1374,7 @@ TEST_P(ClientLoadReportingTest, BalancerRestart) {
   EdsResourceArgs args({{"locality0", CreateEndpointsForBackends(0, 2)}});
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
   // Wait until all backends returned by the balancer are ready.
-  size_t num_rpcs = WaitForAllBackends(0, 2);
+  size_t num_rpcs = WaitForAllBackends(DEBUG_LOCATION, 0, 2);
   std::vector<ClientStats> load_report =
       balancer_->lrs_service()->WaitForLoadReport();
   ASSERT_EQ(load_report.size(), 1UL);
@@ -1380,16 +1396,16 @@ TEST_P(ClientLoadReportingTest, BalancerRestart) {
   // subchannel list, which resets the start index randomly.  So we need
   // to be a little more permissive here to avoid spurious failures.
   ResetBackendCounters();
-  num_rpcs = WaitForAllBackends(0, 2);
+  num_rpcs = WaitForAllBackends(DEBUG_LOCATION, 0, 2);
   // Now restart the balancer, this time pointing to the new backends.
   balancer_->Start();
   args = EdsResourceArgs({{"locality0", CreateEndpointsForBackends(2, 4)}});
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
   // Wait for queries to start going to one of the new backends.
   // This tells us that we're now using the new serverlist.
-  num_rpcs += WaitForAllBackends(2, 4);
+  num_rpcs += WaitForAllBackends(DEBUG_LOCATION, 2, 4);
   // Send one RPC per backend.
-  CheckRpcSendOk(2);
+  CheckRpcSendOk(DEBUG_LOCATION, 2);
   num_rpcs += 2;
   // Check client stats.
   load_report = balancer_->lrs_service()->WaitForLoadReport();
@@ -1426,7 +1442,7 @@ TEST_P(ClientLoadReportingTest, ChangeClusters) {
       kNewEdsServiceName);
   balancer_->ads_service()->SetCdsResource(new_cluster);
   // Wait for all backends to come online.
-  size_t num_rpcs = WaitForAllBackends(0, 2);
+  size_t num_rpcs = WaitForAllBackends(DEBUG_LOCATION, 0, 2);
   // The load report received at the balancer should be correct.
   std::vector<ClientStats> load_report =
       balancer_->lrs_service()->WaitForLoadReport();
@@ -1463,7 +1479,7 @@ TEST_P(ClientLoadReportingTest, ChangeClusters) {
   SetListenerAndRouteConfiguration(balancer_.get(), default_listener_,
                                    new_route_config);
   // Wait for all new backends to be used.
-  num_rpcs = WaitForAllBackends(2, 4);
+  num_rpcs = WaitForAllBackends(DEBUG_LOCATION, 2, 4);
   // The load report received at the balancer should be correct.
   load_report = balancer_->lrs_service()->WaitForLoadReport();
   EXPECT_THAT(
@@ -1543,8 +1559,8 @@ TEST_P(ClientLoadReportingTest, DropStats) {
                           {kThrottleDropType, kDropPerMillionForThrottle}};
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
   // Send kNumRpcs RPCs and count the drops.
-  size_t num_drops =
-      SendRpcsAndCountFailuresWithMessage(kNumRpcs, kStatusMessageDropPrefix);
+  size_t num_drops = SendRpcsAndCountFailuresWithMessage(
+      DEBUG_LOCATION, kNumRpcs, kStatusMessageDropPrefix);
   // The drop rate should be roughly equal to the expectation.
   const double seen_drop_rate = static_cast<double>(num_drops) / kNumRpcs;
   EXPECT_THAT(seen_drop_rate, ::testing::DoubleNear(kDropRateForLbAndThrottle,
