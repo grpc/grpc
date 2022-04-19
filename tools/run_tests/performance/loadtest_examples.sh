@@ -80,6 +80,19 @@ scenarios=(
     "ruby_protobuf_sync_streaming_ping_pong"
 )
 
+psm_scenarios=(
+    "cpp_generic_async_unary_5000rpcs_1KB_psm"
+    "csharp_generic_async_unary_5000rpcs_1KB_psm"
+    "go_generic_async_unary_5000rpcs_1KB_psm"
+    "java_generic_async_unary_5000rpcs_1KB_psm"
+    "node_to_node_generic_async_unary_5000rpcs_1KB_psm"
+    "php7_protobuf_php_extension_to_cpp_generic_async_unary_5000rpcs_1KB_psm"
+    "php7_protobuf_c_extension_to_cpp_generic_async_unary_5000rpcs_1KB_psm"
+    "python_generic_async_unary_5000rpcs_1KB_psm"
+    "python_asyncio_generic_async_unary_5000rpcs_1KB_psm"
+    "ruby_generic_async_unary_5000rpcs_1KB_psm"
+)
+
 # Basic examples are intended to be runnable _as is_, so substitution keys
 # are stripped. Fields can be inserted manually following the pattern of the
 # prebuilt examples.
@@ -121,10 +134,76 @@ prebuilt_example() {
     echo "Created example: ${outputdir}/${outputfile}"
 }
 
+# PSM basic examples are intended to be runnable with only subsituding the
+# xds-server and sidecar images, so substitution keys for xds-server and 
+# sidecar images are kept. 
+psm_basic_example() {
+    local -r scenario="${1}"
+    local -r outputdir="${2}"
+    local -r uniquifier="${3}"
+    local -r outputfile="$(example_file "${scenario}" _example_loadtest_"${uniquifier}".yaml)"
+    local -r language="$(example_language "${outputfile}")"
+    ${LOADTEST_CONFIG} \
+        -l "${language}" \
+        -t ./tools/run_tests/performance/templates/loadtest_template_psm_"${uniquifier}"_basic_all_languages.yaml \
+        -s client_pool= -s server_pool= -s big_query_table= \
+        -s psm_image_prefix="\${psm_image_prefix}" \
+        -s psm_image_tag="\${psm_image_tag}" \
+        -s timeout_seconds=900 --prefix=psm-examples -u "${uniquifier}" -r "^${scenario}$" \
+        --allow_client_language=c++ --allow_server_language=c++ \
+        --allow_server_language=node \
+        --client_channels=8 \
+        --category=psm \
+        --server_threads=16 \
+        --offered_loads 5000 \
+        -o "${outputdir}/${outputfile}"
+    echo "Created example: ${outputdir}/${outputfile}"
+}
+
+# PSM prebuilt examples contain substitution keys, so must be processed before
+# running.
+psm_prebuilt_example() {
+    local -r scenario="${1}"
+    local -r outputdir="${2}"
+    local -r uniquifier="${3}"
+    local -r outputfile="$(example_file "${scenario}" _example_loadtest_"${uniquifier}"_with_prebuilt_workers.yaml)"
+    local -r language="$(example_language "${outputfile}")"
+    ${LOADTEST_CONFIG} \
+        -l "${language}" \
+        -t ./tools/run_tests/performance/templates/loadtest_template_psm_"${uniquifier}"_prebuilt_all_languages.yaml \
+        -s driver_pool="\${driver_pool}" -s driver_image="\${driver_image}" \
+        -s client_pool="\${workers_pool}" -s server_pool="\${workers_pool}" \
+        -s big_query_table="\${big_query_table}" -s timeout_seconds=900 \
+        -s prebuilt_image_prefix="\${prebuilt_image_prefix}" \
+        -s prebuilt_image_tag="\${prebuilt_image_tag}" \
+        -s psm_image_prefix="\${psm_image_prefix}" \
+        -s psm_image_tag="\${psm_image_tag}" \
+        --prefix=psm-examples -u prebuilt-"${uniquifier}" -r "^${scenario}$" \
+        -a pool="\${workers_pool}" \
+        --allow_client_language=c++ --allow_server_language=c++ \
+        --allow_server_language=node \
+        --client_channels=8 \
+        --category=psm \
+        --server_threads=16 \
+        --offered_loads 5000 \
+        -o "${outputdir}/${outputfile}"
+    echo "Created example: ${outputdir}/${outputfile}"
+}
+
 for scenario in "${scenarios[@]}"; do
     basic_example "${scenario}" "${outputbasedir}"
 done
 
 for scenario in "${scenarios[@]}"; do
     prebuilt_example "${scenario}" "${outputbasedir}/templates"
+done
+
+for scenario in "${psm_scenarios[@]}"; do
+    psm_basic_example "${scenario}" "${outputbasedir}/templates/psm" "proxied"
+    psm_basic_example "${scenario}" "${outputbasedir}/templates/psm" "proxyless"
+done
+
+for scenario in "${psm_scenarios[@]}"; do
+    psm_prebuilt_example "${scenario}" "${outputbasedir}/templates/psm/prebuilt" "proxied"
+    psm_prebuilt_example "${scenario}" "${outputbasedir}/templates/psm/prebuilt" "proxyless"
 done
