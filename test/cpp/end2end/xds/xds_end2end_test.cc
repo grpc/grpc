@@ -2373,7 +2373,7 @@ TEST_P(XdsResolverOnlyTest, CircuitBreakingMultipleChannelsShareCallCounter) {
   }
 }
 
-/*TEST_P(XdsResolverOnlyTest, ClusterChangeAfterAdsCallFails) {
+TEST_P(XdsResolverOnlyTest, ClusterChangeAfterAdsCallFails) {
   CreateAndStartBackends(2);
   const char* kNewEdsResourceName = "new_eds_resource_name";
   // Populate EDS resources.
@@ -2409,7 +2409,7 @@ TEST_P(XdsResolverOnlyTest, CircuitBreakingMultipleChannelsShareCallCounter) {
   // Need to figure out a way to fix this bug, and then change this to
   // not allow failures.
   WaitForBackend(1, WaitForBackendOptions().set_allow_failures(true));
-}*/
+}
 
 // Tests that if the balancer is down, the RPCs will still be sent to the
 // backends according to the last balancer response, until a new balancer is
