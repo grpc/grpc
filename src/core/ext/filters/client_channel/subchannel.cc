@@ -325,7 +325,11 @@ class Subchannel::ConnectedSubchannelStateWatcher
       if (c->channelz_node() != nullptr) {
         c->channelz_node()->SetChildSocket(nullptr);
       }
-      c->SetConnectivityStateLocked(GRPC_CHANNEL_IDLE, absl::OkStatus());
+      // Even though we're reporting IDLE instead of TRANSIENT_FAILURE here,
+      // pass along the status from the transport, since it may have
+      // keepalive info attached to it that the channel needs.
+      // TODO(roth): Consider whether there's a cleaner way to do this.
+      c->SetConnectivityStateLocked(GRPC_CHANNEL_IDLE, status);
       c->backoff_.Reset();
     }
   }
