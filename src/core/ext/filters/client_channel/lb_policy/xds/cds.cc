@@ -364,46 +364,45 @@ absl::StatusOr<bool> CdsLb::GenerateDiscoveryMechanismForCluster(
     Json::Object outlier_detection;
     if (outlier_detection_update.interval.has_value()) {
       outlier_detection["interval"] =
-          outlier_detection_update.interval->ToString();
+          outlier_detection_update.interval->ToJsonString();
     }
     if (outlier_detection_update.base_ejection_time.has_value()) {
       outlier_detection["baseEjectionTime"] =
-          outlier_detection_update.base_ejection_time->ToString();
+          outlier_detection_update.base_ejection_time->ToJsonString();
     }
     if (outlier_detection_update.max_ejection_time.has_value()) {
       outlier_detection["maxEjectionTime"] =
-          outlier_detection_update.max_ejection_time->ToString();
+          outlier_detection_update.max_ejection_time->ToJsonString();
     }
     outlier_detection["maxEjectionPercent"] =
         outlier_detection_update.max_ejection_percent;
     if (outlier_detection_update.success_rate_ejection.has_value()) {
-      Json::Object success_rate_ejection;
-      success_rate_ejection["stdevFactor"] =
-          outlier_detection_update.success_rate_ejection->stdev_factor;
-      success_rate_ejection["enforcementPercentage"] =
-          outlier_detection_update.success_rate_ejection
-              ->enforcement_percentage;
-      success_rate_ejection["minimumHosts"] =
-          outlier_detection_update.success_rate_ejection->minimum_hosts;
-      success_rate_ejection["requestVolume"] =
-          outlier_detection_update.success_rate_ejection->request_volume;
-      outlier_detection["successRateEjection"] = success_rate_ejection;
+      outlier_detection["successRateEjection"] = Json::Object{
+          {"stdevFactor",
+           outlier_detection_update.success_rate_ejection->stdev_factor},
+          {"enforcementPercentage",
+           outlier_detection_update.success_rate_ejection
+               ->enforcement_percentage},
+          {"minimumHosts",
+           outlier_detection_update.success_rate_ejection->minimum_hosts},
+          {"requestVolume",
+           outlier_detection_update.success_rate_ejection->request_volume},
+      };
     }
     if (outlier_detection_update.failure_percentage_ejection.has_value()) {
-      Json::Object failure_percentage_ejection;
-      failure_percentage_ejection["threshold"] =
-          outlier_detection_update.failure_percentage_ejection->threshold;
-      failure_percentage_ejection["enforcementPercentage"] =
-          outlier_detection_update.failure_percentage_ejection
-              ->enforcement_percentage;
-      failure_percentage_ejection["minimumHosts"] =
-          outlier_detection_update.failure_percentage_ejection->minimum_hosts;
-      failure_percentage_ejection["requestVolume"] =
-          outlier_detection_update.failure_percentage_ejection->request_volume;
-      outlier_detection["failurePercentageEjection"] =
-          failure_percentage_ejection;
+      outlier_detection["failurePercentageEjection"] = Json::Object{
+          {"threshold",
+           outlier_detection_update.failure_percentage_ejection->threshold},
+          {"enforcementPercentage",
+           outlier_detection_update.failure_percentage_ejection
+               ->enforcement_percentage},
+          {"minimumHosts",
+           outlier_detection_update.failure_percentage_ejection->minimum_hosts},
+          {"requestVolume", outlier_detection_update
+                                .failure_percentage_ejection->request_volume},
+      };
     }
-    mechanism["outlierDetection"] = outlier_detection;
+    mechanism["outlierDetection"] = std::move(outlier_detection);
   }
   switch (state.update->cluster_type) {
     case XdsClusterResource::ClusterType::EDS:
