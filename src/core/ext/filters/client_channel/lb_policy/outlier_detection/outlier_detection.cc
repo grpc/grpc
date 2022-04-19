@@ -26,7 +26,6 @@
 
 #include "src/core/ext/filters/client_channel/lb_policy.h"
 #include "src/core/ext/filters/client_channel/lb_policy/child_policy_handler.h"
-#include "src/core/ext/filters/client_channel/lb_policy/subchannel_list.h"
 #include "src/core/ext/filters/client_channel/lb_policy_factory.h"
 #include "src/core/ext/filters/client_channel/lb_policy_registry.h"
 #include "src/core/lib/channel/channel_args.h"
@@ -73,7 +72,7 @@ class OutlierDetectionLbConfig : public LoadBalancingPolicy::Config {
 // xDS Cluster Impl LB policy.
 class OutlierDetectionLb : public LoadBalancingPolicy {
  public:
-  OutlierDetectionLb(Args args);
+  explicit OutlierDetectionLb(Args args);
 
   const char* name() const override { return kOutlierDetection; }
 
@@ -84,16 +83,16 @@ class OutlierDetectionLb : public LoadBalancingPolicy {
  private:
   class SubchannelWrapper : public SubchannelInterface {
    public:
-    SubchannelWrapper(RefCountedPtr<SubchannelInterface> subchannel)
-        : subchannel_(std::move(subchannel)), eject_(false) {}
+    explicit SubchannelWrapper(RefCountedPtr<SubchannelInterface> subchannel)
+        : subchannel_(std::move(subchannel)), ejected_(false) {}
 
     RefCountedPtr<SubchannelInterface> subchannel() const {
       return subchannel_;
     }
 
-    void eject();
+    void Eject();
 
-    void uneject();
+    void Uneject();
 
     grpc_connectivity_state CheckConnectivityState() override;
 
@@ -110,6 +109,7 @@ class OutlierDetectionLb : public LoadBalancingPolicy {
       return subchannel_->channel_args();
     }
 
+   private:
     class WatcherWrapper
         : public SubchannelInterface::ConnectivityStateWatcherInterface {
      public:
@@ -118,48 +118,41 @@ class OutlierDetectionLb : public LoadBalancingPolicy {
                          watcher)
           : watcher_(std::move(watcher)) {}
 
-      ~WatcherWrapper() override {}
-
-      void eject() {
-        eject_ = true;
-        watcher_->OnConnectivityStateChange(GRPC_CHANNEL_TRANSIENT_FAILURE);
+      void Eject() {
+        ejected_ = true;
+        if (last_seen_state_ != GRPC_CHANNEL_TRANSIENT_FAILURE) {
+          watcher_->OnConnectivityStateChange(GRPC_CHANNEL_TRANSIENT_FAILURE);
+        }
       }
 
-      void uneject() {
-        eject_ = false;
-        watcher_->OnConnectivityStateChange(last_seen_state_);
+      void Uneject() {
+        ejected_ = false;
+        if (last_seen_state_ != GRPC_CHANNEL_TRANSIENT_FAILURE) {
+          watcher_->OnConnectivityStateChange(last_seen_state_);
+        }
       }
 
       void OnConnectivityStateChange(
           grpc_connectivity_state new_state) override {
         last_seen_state_ = new_state;
-        if (eject_) {
-          watcher_->OnConnectivityStateChange(GRPC_CHANNEL_TRANSIENT_FAILURE);
-        } else {
+        if (!ejected_) {
           watcher_->OnConnectivityStateChange(new_state);
         }
       }
 
       grpc_pollset_set* interested_parties() override {
-        SubchannelInterface::ConnectivityStateWatcherInterface* watcher =
-            watcher_.get();
-        return watcher->interested_parties();
-      }
-      grpc_connectivity_state last_seen_state() const {
-        return last_seen_state_;
+        return watcher_->interested_parties();
       }
 
      private:
       std::unique_ptr<SubchannelInterface::ConnectivityStateWatcherInterface>
           watcher_;
       grpc_connectivity_state last_seen_state_;
-      bool eject_ = false;
+      bool ejected_ = false;
     };
 
-   private:
     RefCountedPtr<SubchannelInterface> subchannel_;
-    bool eject_;
-    // SubchannelInterface::ConnectivityStateWatcherInterface* watcher_;
+    bool ejected_;
     WatcherWrapper* watcher_;
   };
 
@@ -231,34 +224,34 @@ class OutlierDetectionLb : public LoadBalancingPolicy {
   RefCountedPtr<RefCountedPicker> picker_;
 };
 
-///
-/// OutlierDetectionLb::SubchannelWrapper
-///
+//
+// OutlierDetectionLb::SubchannelWrapper
+//
 
-void OutlierDetectionLb::SubchannelWrapper::eject() {
-  eject_ = true;
+void OutlierDetectionLb::SubchannelWrapper::Eject() {
+  ejected_ = true;
   if (watcher_ != nullptr) {
-    watcher_->eject();
+    watcher_->Eject();
   }
 }
 
-void OutlierDetectionLb::SubchannelWrapper::uneject() {
-  eject_ = false;
+void OutlierDetectionLb::SubchannelWrapper::Uneject() {
+  ejected_ = false;
   if (watcher_ != nullptr) {
-    watcher_->uneject();
+    watcher_->Uneject();
   }
 }
 
 grpc_connectivity_state
 OutlierDetectionLb::SubchannelWrapper::CheckConnectivityState() {
-  if (eject_) return GRPC_CHANNEL_TRANSIENT_FAILURE;
+  if (ejected_) return GRPC_CHANNEL_TRANSIENT_FAILURE;
   return subchannel_->CheckConnectivityState();
 }
 
 void OutlierDetectionLb::SubchannelWrapper::WatchConnectivityState(
     grpc_connectivity_state initial_state,
     std::unique_ptr<ConnectivityStateWatcherInterface> watcher) {
-  watcher_ = new SubchannelWrapper::WatcherWrapper(std::move(watcher));
+  watcher_ = new WatcherWrapper(std::move(watcher));
   subchannel_->WatchConnectivityState(
       initial_state,
       std::unique_ptr<SubchannelInterface::ConnectivityStateWatcherInterface>(

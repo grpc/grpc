@@ -3308,7 +3308,6 @@ grpc_cc_library(
         "gpr_base",
         "grpc_base",
         "grpc_client_channel",
-        "grpc_lb_subchannel_list",
         "json_util",
         "orphanable",
         "ref_counted_ptr",
