@@ -31,7 +31,6 @@
 #include "src/core/ext/filters/client_channel/lb_policy/xds/xds_channel_args.h"
 #include "src/core/ext/filters/client_channel/lb_policy_factory.h"
 #include "src/core/ext/filters/client_channel/lb_policy_registry.h"
-#include "src/core/ext/xds/xds_client.h"
 #include "src/core/ext/xds/xds_client_stats.h"
 #include "src/core/ext/xds/xds_cluster.h"
 #include "src/core/ext/xds/xds_endpoint.h"
@@ -50,25 +49,21 @@ TraceFlag grpc_outlier_detection_lb_trace(false, "outlier_detection_lb");
 
 namespace {
 
-//
-// LB policy
-//
-
 constexpr char kOutlierDetection[] = "outlier_detection_experimental";
 
 // Config for xDS Cluster Impl LB policy.
 class OutlierDetectionLbConfig : public LoadBalancingPolicy::Config {
  public:
   OutlierDetectionLbConfig(
-      XdsClusterResource::OutlierDetection outlier_detection_info,
+      XdsClusterResource::OutlierDetection outlier_detection_config,
       RefCountedPtr<LoadBalancingPolicy::Config> child_policy)
-      : outlier_detection_info_(outlier_detection_info),
+      : outlier_detection_config_(outlier_detection_config),
         child_policy_(std::move(child_policy)) {}
 
   const char* name() const override { return kOutlierDetection; }
 
-  const XdsClusterResource::OutlierDetection& outlier_detection_info() const {
-    return outlier_detection_info_;
+  const XdsClusterResource::OutlierDetection& outlier_detection_config() const {
+    return outlier_detection_config_;
   }
 
   RefCountedPtr<LoadBalancingPolicy::Config> child_policy() const {
@@ -76,14 +71,14 @@ class OutlierDetectionLbConfig : public LoadBalancingPolicy::Config {
   }
 
  private:
-  XdsClusterResource::OutlierDetection outlier_detection_info_;
+  XdsClusterResource::OutlierDetection outlier_detection_config_;
   RefCountedPtr<LoadBalancingPolicy::Config> child_policy_;
 };
 
 // xDS Cluster Impl LB policy.
 class OutlierDetectionLb : public LoadBalancingPolicy {
  public:
-  OutlierDetectionLb(RefCountedPtr<XdsClient> xds_client, Args args);
+  OutlierDetectionLb(Args args);
 
   const char* name() const override { return kOutlierDetection; }
 
@@ -196,7 +191,7 @@ class OutlierDetectionLb : public LoadBalancingPolicy {
     std::unique_ptr<SubchannelPicker> picker_;
   };
 
-  // A picker that wraps the picker from the child to perform drops.
+  // A picker that wraps the picker from the child to perform outlier detection.
   class Picker : public SubchannelPicker {
    public:
     Picker(OutlierDetectionLb* outlier_detection_lb,
@@ -244,9 +239,6 @@ class OutlierDetectionLb : public LoadBalancingPolicy {
 
   // Internal state.
   bool shutting_down_ = false;
-
-  // The xds client.
-  RefCountedPtr<XdsClient> xds_client_;
 
   OrphanablePtr<LoadBalancingPolicy> child_policy_;
 
@@ -350,7 +342,6 @@ LoadBalancingPolicy::PickResult OutlierDetectionLb::Picker::Pick(
   PickResult result = picker_->Pick(args);
   auto* complete_pick = absl::get_if<PickResult::Complete>(&result.result);
   if (complete_pick != nullptr) {
-    gpr_log(GPR_INFO, "donna unwrapping");
     // Unwrap subchannel to pass back up the stack.
     auto* subchannel_wrapper =
         static_cast<SubchannelWrapper*>(complete_pick->subchannel.get());
@@ -363,13 +354,10 @@ LoadBalancingPolicy::PickResult OutlierDetectionLb::Picker::Pick(
 // OutlierDetectionLb
 //
 
-OutlierDetectionLb::OutlierDetectionLb(RefCountedPtr<XdsClient> xds_client,
-                                       Args args)
-    : LoadBalancingPolicy(std::move(args)), xds_client_(std::move(xds_client)) {
+OutlierDetectionLb::OutlierDetectionLb(Args args)
+    : LoadBalancingPolicy(std::move(args)) {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_outlier_detection_lb_trace)) {
-    gpr_log(GPR_INFO,
-            "[outlier_detection_lb %p] created -- using xds client %p", this,
-            xds_client_.get());
+    gpr_log(GPR_INFO, "[outlier_detection_lb %p] created", this);
   }
 }
 
@@ -396,7 +384,6 @@ void OutlierDetectionLb::ShutdownLocked() {
   // Drop our ref to the child's picker, in case it's holding a ref to
   // the child.
   picker_.reset();
-  xds_client_.reset();
 }
 
 void OutlierDetectionLb::ExitIdleLocked() {
@@ -404,8 +391,6 @@ void OutlierDetectionLb::ExitIdleLocked() {
 }
 
 void OutlierDetectionLb::ResetBackoffLocked() {
-  // The XdsClient will have its backoff reset by the xds resolver, so we
-  // don't need to do it here.
   if (child_policy_ != nullptr) child_policy_->ResetBackoffLocked();
 }
 
@@ -439,8 +424,7 @@ void OutlierDetectionLb::MaybeUpdatePickerLocked() {
     if (GRPC_TRACE_FLAG_ENABLED(grpc_outlier_detection_lb_trace)) {
       gpr_log(GPR_INFO,
               "[outlier_detection_lb %p] updating connectivity: state=%s "
-              "status=(%s) "
-              "picker=%p",
+              "status=(%s) picker=%p",
               this, ConnectivityStateName(state_), status_.ToString().c_str(),
               outlier_detection_picker.get());
     }
@@ -529,16 +513,7 @@ class OutlierDetectionLbFactory : public LoadBalancingPolicyFactory {
  public:
   OrphanablePtr<LoadBalancingPolicy> CreateLoadBalancingPolicy(
       LoadBalancingPolicy::Args args) const override {
-    RefCountedPtr<XdsClient> xds_client =
-        XdsClient::GetFromChannelArgs(*args.args);
-    if (xds_client == nullptr) {
-      gpr_log(GPR_ERROR,
-              "XdsClient not present in channel args -- cannot instantiate "
-              "outlier_detection LB policy");
-      return nullptr;
-    }
-    return MakeOrphanable<OutlierDetectionLb>(std::move(xds_client),
-                                              std::move(args));
+    return MakeOrphanable<OutlierDetectionLb>(std::move(args));
   }
 
   const char* name() const override { return kOutlierDetection; }
@@ -556,23 +531,23 @@ class OutlierDetectionLbFactory : public LoadBalancingPolicyFactory {
       return nullptr;
     }
     std::vector<grpc_error_handle> error_list;
-    // Outlier detection policy
-    XdsClusterResource::OutlierDetection outlier_detection_policy;
+    // Outlier detection config
+    XdsClusterResource::OutlierDetection outlier_detection_config;
     Duration temp_duration;
     if (ParseJsonObjectFieldAsDuration(json.object_value(), "interval",
                                        &temp_duration, &error_list)) {
-      outlier_detection_policy.interval = temp_duration;
+      outlier_detection_config.interval = temp_duration;
     }
     if (ParseJsonObjectFieldAsDuration(json.object_value(), "baseEjectionTime",
                                        &temp_duration, &error_list)) {
-      outlier_detection_policy.base_ejection_time = temp_duration;
+      outlier_detection_config.base_ejection_time = temp_duration;
     }
     if (ParseJsonObjectFieldAsDuration(json.object_value(), "maxEjectionTime",
                                        &temp_duration, &error_list)) {
-      outlier_detection_policy.max_ejection_time = temp_duration;
+      outlier_detection_config.max_ejection_time = temp_duration;
     }
     ParseJsonObjectField(json.object_value(), "maxEjectionPercent",
-                         &outlier_detection_policy.max_ejection_percent,
+                         &outlier_detection_config.max_ejection_percent,
                          &error_list);
     auto it = json.object_value().find("successRateEjection");
     if (it != json.object_value().end()) {
@@ -583,19 +558,19 @@ class OutlierDetectionLbFactory : public LoadBalancingPolicyFactory {
         const Json::Object& object = it->second.object_value();
         ParseJsonObjectField(
             object, "stdevFactor",
-            &outlier_detection_policy.success_rate_ejection->stdev_factor,
+            &outlier_detection_config.success_rate_ejection->stdev_factor,
             &error_list);
         ParseJsonObjectField(object, "enforcementPercentage",
-                             &outlier_detection_policy.success_rate_ejection
+                             &outlier_detection_config.success_rate_ejection
                                   ->enforcement_percentage,
                              &error_list);
         ParseJsonObjectField(
             object, "minimumHosts",
-            &outlier_detection_policy.success_rate_ejection->minimum_hosts,
+            &outlier_detection_config.success_rate_ejection->minimum_hosts,
             &error_list);
         ParseJsonObjectField(
             object, "requestVolume",
-            &outlier_detection_policy.success_rate_ejection->request_volume,
+            &outlier_detection_config.success_rate_ejection->request_volume,
             &error_list);
       }
     }
@@ -608,19 +583,19 @@ class OutlierDetectionLbFactory : public LoadBalancingPolicyFactory {
         const Json::Object& object = it->second.object_value();
         ParseJsonObjectField(
             object, "threshold",
-            &outlier_detection_policy.failure_percentage_ejection->threshold,
+            &outlier_detection_config.failure_percentage_ejection->threshold,
             &error_list);
         ParseJsonObjectField(
             object, "enforcementPercentage",
-            &outlier_detection_policy.failure_percentage_ejection
+            &outlier_detection_config.failure_percentage_ejection
                  ->enforcement_percentage,
             &error_list);
         ParseJsonObjectField(object, "minimumHosts",
-                             &outlier_detection_policy
+                             &outlier_detection_config
                                   .failure_percentage_ejection->minimum_hosts,
                              &error_list);
         ParseJsonObjectField(object, "requestVolume",
-                             &outlier_detection_policy
+                             &outlier_detection_config
                                   .failure_percentage_ejection->request_volume,
                              &error_list);
       }
@@ -644,7 +619,7 @@ class OutlierDetectionLbFactory : public LoadBalancingPolicyFactory {
       }
     }
     return MakeRefCounted<OutlierDetectionLbConfig>(
-        std::move(outlier_detection_policy), std::move(child_policy));
+        std::move(outlier_detection_config), std::move(child_policy));
   }
 };
 
