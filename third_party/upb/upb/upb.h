@@ -199,7 +199,7 @@ UPB_INLINE size_t _upb_ArenaHas(upb_Arena* a) {
 UPB_INLINE void* _upb_Arena_FastMalloc(upb_Arena* a, size_t size) {
   _upb_ArenaHead* h = (_upb_ArenaHead*)a;
   void* ret = h->ptr;
-  UPB_ASSERT(UPB_ALIGN_MALLOC((uintptr_t)ret) == (uintptr_t)ret);
+  //UPB_ASSERT(UPB_ALIGN_MALLOC((uintptr_t)ret) == (uintptr_t)ret);
   UPB_ASSERT(UPB_ALIGN_MALLOC(size) == size);
   UPB_UNPOISON_MEMORY_REGION(ret, size);
 

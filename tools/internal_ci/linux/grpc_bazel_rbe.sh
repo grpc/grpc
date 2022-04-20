@@ -15,6 +15,22 @@
 
 set -ex
 
-export UPLOAD_TEST_RESULTS=true
-EXTRA_FLAGS="--config=opt --cache_test_results=no"
-github/grpc/tools/internal_ci/linux/grpc_bazel_on_foundry_base.sh "${EXTRA_FLAGS}"
+# avoid slow finalization after the script has exited.
+source $(dirname $0)/../../../tools/internal_ci/helper_scripts/move_src_tree_and_respawn_itself_rc
+
+# change to grpc repo root
+cd $(dirname $0)/../../..
+
+source tools/internal_ci/helper_scripts/prepare_build_linux_rc
+
+# make sure bazel is available
+tools/bazel version
+
+python3 tools/run_tests/python_utils/bazel_report_helper.py --report_path bazel_rbe
+
+bazel_rbe/bazel_wrapper \
+  --bazelrc=tools/remote_build/linux_kokoro.bazelrc \
+  test \
+  $BAZEL_FLAGS \
+  "$@" \
+  -- //test/...

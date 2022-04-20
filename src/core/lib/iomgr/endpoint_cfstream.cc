@@ -351,11 +351,13 @@ grpc_endpoint* grpc_cfstream_endpoint_create(CFReadStreamRef read_stream,
   if (native_handle) {
     CFRelease(native_handle);
   }
+  absl::StatusOr<std::string> addr_uri;
   if (getsockname(sockfd, reinterpret_cast<sockaddr*>(resolved_local_addr.addr),
-                  &resolved_local_addr.len) < 0) {
+                  &resolved_local_addr.len) < 0 ||
+      !(addr_uri = grpc_sockaddr_to_uri(&resolved_local_addr)).ok()) {
     ep_impl->local_address = "";
   } else {
-    ep_impl->local_address = grpc_sockaddr_to_uri(&resolved_local_addr);
+    ep_impl->local_address = addr_uri.value();
   }
   ep_impl->read_cb = nil;
   ep_impl->write_cb = nil;

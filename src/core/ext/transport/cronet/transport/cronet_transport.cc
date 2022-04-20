@@ -741,6 +741,7 @@ class CronetMetadataEncoder {
         break;
       case grpc_core::HttpMethodMetadata::kInvalid:
       case grpc_core::HttpMethodMetadata::kGet:
+      case grpc_core::HttpMethodMetadata::kPut:
         abort();
     }
   }

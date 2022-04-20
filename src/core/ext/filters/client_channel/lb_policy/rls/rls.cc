@@ -269,7 +269,6 @@ class RlsLb : public LoadBalancingPolicy {
     //
     // Both methods grab the data they need from the parent object.
     void StartUpdate() ABSL_EXCLUSIVE_LOCKS_REQUIRED(&RlsLb::mu_);
-    // Does not take ownership of channel_args.
     void MaybeFinishUpdate() ABSL_LOCKS_EXCLUDED(&RlsLb::mu_);
 
     void ExitIdleLocked() {
@@ -668,6 +667,7 @@ class RlsLb : public LoadBalancingPolicy {
   // Mutex to guard LB policy state that is accessed by the picker.
   Mutex mu_;
   bool is_shutdown_ ABSL_GUARDED_BY(mu_) = false;
+  bool update_in_progress_ = false;
   Cache cache_ ABSL_GUARDED_BY(mu_);
   // Maps an RLS request key to an RlsRequest object that represents a pending
   // RLS request.
@@ -1882,6 +1882,7 @@ void RlsLb::UpdateLocked(UpdateArgs args) {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_rls_trace)) {
     gpr_log(GPR_INFO, "[rlslb %p] policy updated", this);
   }
+  update_in_progress_ = true;
   // Swap out config.
   RefCountedPtr<RlsLbConfig> old_config = std::move(config_);
   config_ = std::move(args.config);
@@ -1984,6 +1985,7 @@ void RlsLb::UpdateLocked(UpdateArgs args) {
     }
     default_child_policy_->MaybeFinishUpdate();
   }
+  update_in_progress_ = false;
   // In principle, we need to update the picker here only if the config
   // fields used by the picker have changed.  However, it seems fragile
   // to check individual fields, since the picker logic could change in
@@ -2051,6 +2053,12 @@ void RlsLb::UpdatePickerCallback(void* arg, grpc_error_handle /*error*/) {
 }
 
 void RlsLb::UpdatePickerLocked() {
+  // If we're in the process of propagating an update from our parent to
+  // our children, ignore any updates that come from the children.  We
+  // will instead return a new picker once the update has been seen by
+  // all children.  This avoids unnecessary picker churn while an update
+  // is being propagated to our children.
+  if (update_in_progress_) return;
   if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_rls_trace)) {
     gpr_log(GPR_INFO, "[rlslb %p] updating picker", this);
   }

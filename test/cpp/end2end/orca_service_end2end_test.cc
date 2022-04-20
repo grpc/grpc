@@ -71,7 +71,8 @@ class OrcaServiceEnd2endTest : public ::testing::Test {
       if (last_response_time_.has_value()) {
         // Allow a small fudge factor to avoid test flakiness.
         const grpc_core::Duration fudge_factor =
-            grpc_core::Duration::Milliseconds(50) * grpc_test_slowdown_factor();
+            grpc_core::Duration::Milliseconds(750) *
+            grpc_test_slowdown_factor();
         auto elapsed = now - *last_response_time_;
         EXPECT_GE(elapsed, requested_interval_ - fudge_factor)
             << elapsed.ToString();
