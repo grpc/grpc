@@ -180,7 +180,7 @@ void XdsEnd2endTest::ServerThread::Serve(grpc_core::Mutex* mu,
     // purposes.
     if (allow_put_requests_) {
       builder.AddChannelArgument(
-          GRPC_ARG_INTERNAL_ONLY_DO_NOT_USE_UNLESS_YOU_HAVE_PERMISSION_FROM_GRPC_TEAM_ALLOW_BROKEN_PUT_REQUESTS,
+          GRPC_ARG_DO_NOT_USE_UNLESS_YOU_HAVE_PERMISSION_FROM_GRPC_TEAM_ALLOW_BROKEN_PUT_REQUESTS,
           true);
     }
     RegisterAllServices(&builder);
