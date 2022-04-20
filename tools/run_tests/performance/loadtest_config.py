@@ -119,13 +119,15 @@ def gen_run_indices(runs_per_test: int) -> Iterable[str]:
 
 
 def scenario_name(base_name, client_channels, server_threads, offered_load):
+    """Constructs scenario name from base name and modifiers."""
+
     elements = [base_name]
     if client_channels:
-        elements.append(f'{client_channels}channels')
+        elements.append('{:d}channels'.format(client_channels))
     if server_threads:
-        elements.append(f'{server_threads}threads')
+        elements.append('{:d}threads'.format(server_threads))
     if offered_load:
-        elements.append(f'{offered_load}load')
+        elements.append('{:d}offered_load'.format(offered_load))
     return '_'.join(elements)
 
 
@@ -134,7 +136,7 @@ def scenario_transform_function(
 ) -> Optional[Callable[[Iterable[Mapping[str, Any]]], Iterable[Mapping[str,
                                                                        Any]]]]:
     """Returns a transform to be applied to a list of scenarios."""
-    if not any([client_channels, server_threads, len(offered_loads)]):
+    if not any((client_channels, server_threads, len(offered_loads))):
         return lambda s: s
 
     def _transform(
@@ -147,15 +149,18 @@ def scenario_transform_function(
             if client_channels:
                 base_scenario['client_config'][
                     'client_channels'] = client_channels
+
             if server_threads:
                 base_scenario['server_config'][
                     'async_server_threads'] = server_threads
+
             if not offered_loads:
                 base_scenario['name'] = scenario_name(base_name,
                                                       client_channels,
                                                       server_threads, 0)
                 yield base_scenario
                 return
+
             for offered_load in offered_loads:
                 scenario = copy.deepcopy(base_scenario)
                 scenario['client_config']['load_params'] = {
