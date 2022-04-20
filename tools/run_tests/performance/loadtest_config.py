@@ -118,7 +118,8 @@ def gen_run_indices(runs_per_test: int) -> Iterable[str]:
         yield index_fmt.format(i)
 
 
-def scenario_name(base_name, client_channels, server_threads, offered_load):
+def scenario_name(base_name: str, client_channels: Optional[int],
+                  server_threads: Optional[int], offered_load: Optional[int]):
     """Constructs scenario name from base name and modifiers."""
 
     elements = [base_name]
@@ -132,7 +133,8 @@ def scenario_name(base_name, client_channels, server_threads, offered_load):
 
 
 def scenario_transform_function(
-    client_channels: int, server_threads: int, offered_loads: Iterable[int]
+    client_channels: Optional[int], server_threads: Optional[int],
+    offered_loads: Optional[Iterable[int]]
 ) -> Optional[Callable[[Iterable[Mapping[str, Any]]], Iterable[Mapping[str,
                                                                        Any]]]]:
     """Returns a transform to be applied to a list of scenarios."""
@@ -451,7 +453,8 @@ def main() -> None:
         nargs="*",
         type=int,
         default=[],
-        help='A list of offered loads that the tests are running with.')
+        help='A list of QPS values at which each load test scenario will be run.'
+    )
     args = argp.parse_args()
 
     if args.instances_per_client < 1:
