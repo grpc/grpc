@@ -222,7 +222,7 @@ def _extract_sources(bazel_rule: BuildMetadata) -> List[str]:
                 if external_proto_library_name is not None:
                     result.append(
                         src.replace(
-                            f'@{external_proto_library_name}//',
+                            '@%s//' % external_proto_library_name,
                             EXTERNAL_PROTO_LIBRARIES[
                                 external_proto_library_name].proto_prefix).
                         replace(':', '/'))
