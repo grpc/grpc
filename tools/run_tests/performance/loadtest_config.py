@@ -128,7 +128,7 @@ def scenario_name(base_name: str, client_channels: Optional[int],
     if server_threads:
         elements.append('{:d}threads'.format(server_threads))
     if offered_load:
-        elements.append('{:d}offered_load'.format(offered_load))
+        elements.append('{:d}load'.format(offered_load))
     return '_'.join(elements)
 
 
