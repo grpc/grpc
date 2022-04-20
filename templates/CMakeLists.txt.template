@@ -589,11 +589,11 @@
   %   else:
   ${cc_library(lib)}
   %     if not lib.build in ["tool"]:
-  %       if any(proto_re.match(src) for src in lib.src):
+  %       if any(proto_re.match(src) for src in lib.src) or lib.name == 'grpc_plugin_support':
   if(gRPC_BUILD_CODEGEN)
   %       endif
   ${cc_install(lib)}
-  %       if any(proto_re.match(src) for src in lib.src):
+  %       if any(proto_re.match(src) for src in lib.src) or lib.name == 'grpc_plugin_support':
   endif()
   %       endif
   %     endif
@@ -627,7 +627,7 @@
   % endfor
 
   <%def name="cc_library(lib)">
-  % if any(proto_re.match(src) for src in lib.src):
+  % if any(proto_re.match(src) for src in lib.src) or lib.name == 'grpc_plugin_support':
   % if lib.name == 'grpcpp_channelz':
   # grpcpp_channelz doesn't build with protobuf-lite
   # See https://github.com/grpc/grpc/issues/19473
@@ -734,7 +734,7 @@
     )
   endforeach()
   % endif
-  % if any(proto_re.match(src) for src in lib.src):
+  % if any(proto_re.match(src) for src in lib.src) or lib.name == 'grpc_plugin_support':
   endif()
   % endif
   </%def>
