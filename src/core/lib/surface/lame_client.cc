@@ -194,5 +194,6 @@ grpc_channel* grpc_lame_client_channel_create(const char* target,
                    &grpc_core::kLameFilterErrorArgVtable));
   auto channel = grpc_core::Channel::Create(target, std::move(args),
                                             GRPC_CLIENT_LAME_CHANNEL, nullptr);
-  return channel.ok() ? channel->release()->c_ptr() : nullptr;
+  GPR_ASSERT(channel.ok());
+  return channel->release()->c_ptr();
 }

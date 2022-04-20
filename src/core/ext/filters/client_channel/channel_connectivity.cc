@@ -47,7 +47,7 @@ grpc_connectivity_state grpc_channel_check_connectivity_state(
   grpc_core::Channel* channel = grpc_core::Channel::FromC(c_channel);
   // Forward through to the underlying client channel.
   grpc_core::ClientChannel* client_channel =
-      grpc_core::ClientChannel::GetFromChannel(c_channel);
+      grpc_core::ClientChannel::GetFromChannel(channel);
   if (GPR_UNLIKELY(client_channel == nullptr)) {
     if (grpc_core::IsLameChannel(channel)) {
       return GRPC_CHANNEL_TRANSIENT_FAILURE;
@@ -60,11 +60,12 @@ grpc_connectivity_state grpc_channel_check_connectivity_state(
   return client_channel->CheckConnectivityState(try_to_connect);
 }
 
-int grpc_channel_num_external_connectivity_watchers(grpc_channel* channel) {
+int grpc_channel_num_external_connectivity_watchers(grpc_channel* c_channel) {
+  grpc_core::Channel* channel = grpc_core::Channel::FromC(c_channel);
   grpc_core::ClientChannel* client_channel =
       grpc_core::ClientChannel::GetFromChannel(channel);
   if (client_channel == nullptr) {
-    if (!grpc_core::IsLameChannel(grpc_core::Channel::FromC(channel))) {
+    if (!grpc_core::IsLameChannel(channel)) {
       gpr_log(GPR_ERROR,
               "grpc_channel_num_external_connectivity_watchers called on "
               "something that is not a client channel");
@@ -75,7 +76,8 @@ int grpc_channel_num_external_connectivity_watchers(grpc_channel* channel) {
 }
 
 int grpc_channel_support_connectivity_watcher(grpc_channel* channel) {
-  return grpc_core::ClientChannel::GetFromChannel(channel) != nullptr;
+  return grpc_core::ClientChannel::GetFromChannel(
+             grpc_core::Channel::FromC(channel)) != nullptr;
 }
 
 namespace grpc_core {
@@ -83,24 +85,25 @@ namespace {
 
 class StateWatcher : public DualRefCounted<StateWatcher> {
  public:
-  StateWatcher(grpc_channel* channel, grpc_completion_queue* cq, void* tag,
+  StateWatcher(grpc_channel* c_channel, grpc_completion_queue* cq, void* tag,
                grpc_connectivity_state last_observed_state,
                gpr_timespec deadline)
-      : channel_(Channel::FromC(channel)->Ref()),
+      : channel_(Channel::FromC(c_channel)->Ref()),
         cq_(cq),
         tag_(tag),
         state_(last_observed_state) {
     GPR_ASSERT(grpc_cq_begin_op(cq, tag));
     GRPC_CLOSURE_INIT(&on_complete_, WatchComplete, this, nullptr);
     GRPC_CLOSURE_INIT(&on_timeout_, TimeoutComplete, this, nullptr);
-    ClientChannel* client_channel = ClientChannel::GetFromChannel(channel);
+    ClientChannel* client_channel =
+        ClientChannel::GetFromChannel(channel_.get());
     if (client_channel == nullptr) {
       // If the target URI used to create the channel was invalid, channel
       // stack initialization failed, and that caused us to create a lame
       // channel.  In that case, connectivity state will never change (it
       // will always be TRANSIENT_FAILURE), so we don't actually start a
       // watch, but we are hiding that fact from the application.
-      if (IsLameChannel(Channel::FromC(channel))) {
+      if (IsLameChannel(channel_.get())) {
         // Ref from object creation is held by timer callback.
         StartTimer(Timestamp::FromTimespecRoundUp(deadline));
         return;
@@ -163,7 +166,7 @@ class StateWatcher : public DualRefCounted<StateWatcher> {
     self->timer_fired_ = error == GRPC_ERROR_NONE;
     // If this is a client channel (not a lame channel), cancel the watch.
     ClientChannel* client_channel =
-        ClientChannel::GetFromChannel(self->channel_->c_ptr());
+        ClientChannel::GetFromChannel(self->channel_.get());
     if (client_channel != nullptr) {
       client_channel->CancelExternalConnectivityWatcher(&self->on_complete_);
     }

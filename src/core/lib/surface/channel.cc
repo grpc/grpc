@@ -280,12 +280,12 @@ static grpc_call* grpc_channel_create_call_internal(
     grpc_completion_queue* cq, grpc_pollset_set* pollset_set_alternative,
     grpc_core::Slice path, absl::optional<grpc_core::Slice> authority,
     grpc_core::Timestamp deadline) {
-  auto* channel = grpc_core::Channel::FromC(c_channel);
+  auto channel = grpc_core::Channel::FromC(c_channel)->Ref();
   GPR_ASSERT(channel->is_client());
   GPR_ASSERT(!(cq != nullptr && pollset_set_alternative != nullptr));
 
   grpc_call_create_args args;
-  args.channel = channel;
+  args.channel = std::move(channel);
   args.server = nullptr;
   args.parent = parent_call;
   args.propagation_mask = propagation_mask;

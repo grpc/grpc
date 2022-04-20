@@ -307,8 +307,7 @@ class Chttp2SecureClientChannelFactory : public ClientChannelFactory {
     if (channel_credentials == nullptr) {
       gpr_log(GPR_ERROR,
               "Can't create subchannel: channel credentials missing for secure "
-              "channel.");
-      gpr_log(GPR_ERROR, "Got args: %s",
+              "channel. Got args: %s",
               grpc_channel_args_string(args).c_str());
       return nullptr;
     }

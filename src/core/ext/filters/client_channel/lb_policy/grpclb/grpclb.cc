@@ -1484,7 +1484,8 @@ void GrpcLb::UpdateLocked(UpdateArgs args) {
     // Start watching the channel's connectivity state.  If the channel
     // goes into state TRANSIENT_FAILURE before the timer fires, we go into
     // fallback mode even if the fallback timeout has not elapsed.
-    ClientChannel* client_channel = ClientChannel::GetFromChannel(lb_channel_);
+    ClientChannel* client_channel =
+        ClientChannel::GetFromChannel(Channel::FromC(lb_channel_));
     GPR_ASSERT(client_channel != nullptr);
     // Ref held by callback.
     watcher_ = new StateWatcher(Ref(DEBUG_LOCATION, "StateWatcher"));
@@ -1545,7 +1546,8 @@ void GrpcLb::UpdateBalancerChannelLocked(const grpc_channel_args& args) {
 }
 
 void GrpcLb::CancelBalancerChannelConnectivityWatchLocked() {
-  ClientChannel* client_channel = ClientChannel::GetFromChannel(lb_channel_);
+  ClientChannel* client_channel =
+      ClientChannel::GetFromChannel(Channel::FromC(lb_channel_));
   GPR_ASSERT(client_channel != nullptr);
   client_channel->RemoveConnectivityWatcher(watcher_);
 }

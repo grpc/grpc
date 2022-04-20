@@ -1088,7 +1088,7 @@ void Server::ChannelData::AcceptStream(void* arg, grpc_transport* /*transport*/,
   auto* chand = static_cast<Server::ChannelData*>(arg);
   /* create a call */
   grpc_call_create_args args;
-  args.channel = chand->channel_.get();
+  args.channel = chand->channel_;
   args.server = chand->server_.get();
   args.parent = nullptr;
   args.propagation_mask = 0;
