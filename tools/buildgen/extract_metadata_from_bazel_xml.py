@@ -30,16 +30,13 @@
 # format entirely or simplify it to a point where it becomes self-explanatory
 # and doesn't need any detailed documentation.
 
-from dataclasses import asdict
-from dataclasses import dataclass
-from dataclasses import field
+import collections
 import os
 import subprocess
 from typing import Any, Dict, Iterable, List, Optional
 import xml.etree.ElementTree as ET
 
 import build_cleaner
-import yaml
 
 BuildMetadata = Dict[str, Any]
 BuildDict = Dict[str, BuildMetadata]
@@ -50,19 +47,24 @@ BuildDict = Dict[str, BuildMetadata]
 BuildYaml = Dict[str, Any]
 
 
-# This is basically a Python dict with predefined fields and types
-@dataclass()
-class ExternalProtoLibrary:
-    # The relative path of this proto library should be. Preferably, it should
-    # match the submodule path.
-    destination: str
-    # The prefix to remove in order to insure the proto import is correct. For
-    # more info, see description of https://github.com/grpc/grpc/pull/25272.
-    proto_prefix: str
-    # Following 3 fields should be filled by build metadata from Bazel.
-    urls: List[str] = field(default_factory=list)
-    hash: str = ''
-    strip_prefix: str = ''
+# ExternalProtoLibrary is the struct storing info about an external proto
+# library.
+#
+# Fields:
+# - destination(int): The relative path of this proto library should be.
+#     Preferably, it should match the submodule path.
+# - proto_prefix(str): The prefix to remove in order to insure the proto import
+#     is correct. For more info, see description of
+#      https://github.com/grpc/grpc/pull/25272.
+# - urls(List[str]): Following 3 fields should be filled by build metadata from
+#     Bazel.
+# - hash(str): The hash of the downloaded archive
+# - strip_prefix(str): The path to be stripped from the extracted directory, see
+#     http_archive in Bazel.
+ExternalProtoLibrary = collections.namedtuple(
+    'ExternalProtoLibrary',
+    ['destination', 'proto_prefix', 'urls', 'hash', 'strip_prefix'],
+    defaults=["", "", [], "", ""])
 
 
 EXTERNAL_PROTO_LIBRARIES = {
@@ -790,7 +792,7 @@ def _generate_build_extra_metadata_for_tests(
     return test_metadata
 
 
-def _parse_http_archives(xml_tree: ET.Element) -> List[ExternalProtoLibrary]:
+def _parse_http_archives(xml_tree: ET.Element) -> 'List[ExternalProtoLibrary]':
     """Parse Bazel http_archive rule into ExternalProtoLibrary objects."""
     result = []
     for xml_http_archive in xml_tree:
@@ -829,7 +831,7 @@ def _generate_external_proto_libraries() -> List[Dict[str, Any]]:
     xml_tree = _bazel_query_xml_tree('kind(http_archive, //external:*)')
     libraries = _parse_http_archives(xml_tree)
     libraries.sort(key=lambda x: x.destination)
-    return list(map(asdict, libraries))
+    return list(map(lambda x: x._asdict(), libraries))
 
 
 def _detect_and_print_issues(build_yaml_like: BuildYaml) -> None:
