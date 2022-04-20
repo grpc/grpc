@@ -29,6 +29,7 @@
 #include "src/core/ext/filters/fault_injection/service_config_parser.h"
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/channel/status_util.h"
+#include "src/core/lib/gprpp/capture.h"
 #include "src/core/lib/promise/sleep.h"
 #include "src/core/lib/promise/try_seq.h"
 #include "src/core/lib/service_config/service_config_call_data.h"
@@ -62,6 +63,33 @@ inline bool UnderFraction(const uint32_t numerator,
   return random_number < numerator;
 }
 
+// Tracks an active faults lifetime.
+// Increments g_active_faults when created, and decrements it when destroyed.
+class FaultHandle {
+ public:
+  explicit FaultHandle(bool active) : active_(active) {
+    if (active) {
+      g_active_faults.fetch_add(1, std::memory_order_relaxed);
+    }
+  }
+  ~FaultHandle() {
+    if (active_) {
+      g_active_faults.fetch_sub(1, std::memory_order_relaxed);
+    }
+  }
+  FaultHandle(const FaultHandle&) = delete;
+  FaultHandle& operator=(const FaultHandle&) = delete;
+  FaultHandle(FaultHandle&& other) noexcept
+      : active_(absl::exchange(other.active_, false)) {}
+  FaultHandle& operator=(FaultHandle&& other) noexcept {
+    std::swap(active_, other.active_);
+    return *this;
+  }
+
+ private:
+  bool active_;
+};
+
 }  // namespace
 
 class FaultInjectionFilter::InjectionDecision {
@@ -73,15 +101,16 @@ class FaultInjectionFilter::InjectionDecision {
         abort_request_(abort_request) {}
 
   std::string ToString() const;
-  Timestamp DelayUntil() const;
+  Timestamp DelayUntil();
   absl::Status MaybeAbort() const;
 
  private:
-  bool HaveActiveFaultsQuota(bool increment) const;
+  bool HaveActiveFaultsQuota() const;
 
   uint32_t max_faults_;
   Duration delay_time_;
   absl::optional<absl::Status> abort_request_;
+  FaultHandle active_fault_{false};
 };
 
 absl::StatusOr<FaultInjectionFilter> FaultInjectionFilter::Create(
@@ -104,9 +133,12 @@ ArenaPromise<ServerMetadataHandle> FaultInjectionFilter::MakeCallPromise(
     gpr_log(GPR_INFO, "chand=%p: Fault injection triggered %s", this,
             decision.ToString().c_str());
   }
+  auto delay = decision.DelayUntil();
   return TrySeq(
-      Sleep(decision.DelayUntil()),
-      [decision]() { return decision.MaybeAbort(); },
+      Sleep(delay),
+      Capture(
+          [](InjectionDecision* decision) { return decision->MaybeAbort(); },
+          std::move(decision)),
       next_promise_factory(std::move(call_args)));
 }
 
@@ -190,17 +222,13 @@ FaultInjectionFilter::MakeInjectionDecision(
                     : absl::nullopt);
 }
 
-bool FaultInjectionFilter::InjectionDecision::HaveActiveFaultsQuota(
-    bool increment) const {
-  if (g_active_faults.load(std::memory_order_acquire) >= max_faults_) {
-    return false;
-  }
-  if (increment) g_active_faults.fetch_add(1, std::memory_order_relaxed);
-  return true;
+bool FaultInjectionFilter::InjectionDecision::HaveActiveFaultsQuota() const {
+  return g_active_faults.load(std::memory_order_acquire) < max_faults_;
 }
 
-Timestamp FaultInjectionFilter::InjectionDecision::DelayUntil() const {
-  if (delay_time_ != Duration::Zero() && HaveActiveFaultsQuota(true)) {
+Timestamp FaultInjectionFilter::InjectionDecision::DelayUntil() {
+  if (delay_time_ != Duration::Zero() && HaveActiveFaultsQuota()) {
+    active_fault_ = FaultHandle{true};
     return ExecCtx::Get()->Now() + delay_time_;
   }
   return Timestamp::InfPast();
@@ -208,7 +236,7 @@ Timestamp FaultInjectionFilter::InjectionDecision::DelayUntil() const {
 
 absl::Status FaultInjectionFilter::InjectionDecision::MaybeAbort() const {
   if (abort_request_.has_value() &&
-      (delay_time_ != Duration::Zero() || HaveActiveFaultsQuota(false))) {
+      (delay_time_ != Duration::Zero() || HaveActiveFaultsQuota())) {
     return abort_request_.value();
   }
   return absl::OkStatus();
