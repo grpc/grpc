@@ -141,9 +141,15 @@ void tcp_connect(grpc_closure* on_connect, grpc_endpoint** endpoint,
                  const grpc_channel_args* channel_args,
                  const grpc_resolved_address* addr,
                  grpc_core::Timestamp deadline) {
+  auto addr_uri = grpc_sockaddr_to_uri(addr);
+  if (!addr_uri.ok()) {
+    grpc_core::ExecCtx::Run(DEBUG_LOCATION, on_connect,
+                            absl_status_to_grpc_error(addr_uri.status()));
+    return;
+  }
   grpc_event_engine_endpoint* ee_endpoint =
       reinterpret_cast<grpc_event_engine_endpoint*>(
-          grpc_tcp_create(channel_args, grpc_sockaddr_to_uri(addr)));
+          grpc_tcp_create(channel_args, addr_uri.value()));
   *endpoint = &ee_endpoint->base;
   EventEngine::OnConnectCallback ee_on_connect =
       GrpcClosureToOnConnectCallback(on_connect, endpoint);

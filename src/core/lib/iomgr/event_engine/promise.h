@@ -29,19 +29,19 @@ template <typename T>
 class Promise {
  public:
   T& Get() {
-    absl::MutexLock lock(&mu_);
+    grpc_core::MutexLock lock(&mu_);
     cv_.Wait(&mu_);
     return val_;
   }
   void Set(T&& val) {
-    absl::MutexLock lock(&mu_);
+    grpc_core::MutexLock lock(&mu_);
     val_ = std::move(val);
     cv_.Signal();
   }
 
  private:
-  absl::Mutex mu_;
-  absl::CondVar cv_;
+  grpc_core::Mutex mu_;
+  grpc_core::CondVar cv_;
   T val_;
 };
 

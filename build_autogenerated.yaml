@@ -335,6 +335,7 @@ libs:
   - src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_balancer_addresses.h
   - src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_client_stats.h
   - src/core/ext/filters/client_channel/lb_policy/grpclb/load_balancer_api.h
+  - src/core/ext/filters/client_channel/lb_policy/oob_backend_metric.h
   - src/core/ext/filters/client_channel/lb_policy/ring_hash/ring_hash.h
   - src/core/ext/filters/client_channel/lb_policy/subchannel_list.h
   - src/core/ext/filters/client_channel/lb_policy/xds/xds.h
@@ -356,6 +357,7 @@ libs:
   - src/core/ext/filters/client_channel/retry_throttle.h
   - src/core/ext/filters/client_channel/subchannel.h
   - src/core/ext/filters/client_channel/subchannel_interface.h
+  - src/core/ext/filters/client_channel/subchannel_interface_internal.h
   - src/core/ext/filters/client_channel/subchannel_pool_interface.h
   - src/core/ext/filters/client_channel/subchannel_stream_client.h
   - src/core/ext/filters/deadline/deadline_filter.h
@@ -534,6 +536,7 @@ libs:
   - src/core/ext/upb-generated/xds/core/v3/resource_locator.upb.h
   - src/core/ext/upb-generated/xds/core/v3/resource_name.upb.h
   - src/core/ext/upb-generated/xds/data/orca/v3/orca_load_report.upb.h
+  - src/core/ext/upb-generated/xds/service/orca/v3/orca.upb.h
   - src/core/ext/upb-generated/xds/type/matcher/v3/matcher.upb.h
   - src/core/ext/upb-generated/xds/type/matcher/v3/regex.upb.h
   - src/core/ext/upb-generated/xds/type/matcher/v3/string.upb.h
@@ -995,6 +998,7 @@ libs:
   - src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_balancer_addresses.cc
   - src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_client_stats.cc
   - src/core/ext/filters/client_channel/lb_policy/grpclb/load_balancer_api.cc
+  - src/core/ext/filters/client_channel/lb_policy/oob_backend_metric.cc
   - src/core/ext/filters/client_channel/lb_policy/pick_first/pick_first.cc
   - src/core/ext/filters/client_channel/lb_policy/priority/priority.cc
   - src/core/ext/filters/client_channel/lb_policy/ring_hash/ring_hash.cc
@@ -1210,6 +1214,7 @@ libs:
   - src/core/ext/upb-generated/xds/core/v3/resource_locator.upb.c
   - src/core/ext/upb-generated/xds/core/v3/resource_name.upb.c
   - src/core/ext/upb-generated/xds/data/orca/v3/orca_load_report.upb.c
+  - src/core/ext/upb-generated/xds/service/orca/v3/orca.upb.c
   - src/core/ext/upb-generated/xds/type/matcher/v3/matcher.upb.c
   - src/core/ext/upb-generated/xds/type/matcher/v3/regex.upb.c
   - src/core/ext/upb-generated/xds/type/matcher/v3/string.upb.c
@@ -1811,6 +1816,7 @@ libs:
   - src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_balancer_addresses.h
   - src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_client_stats.h
   - src/core/ext/filters/client_channel/lb_policy/grpclb/load_balancer_api.h
+  - src/core/ext/filters/client_channel/lb_policy/oob_backend_metric.h
   - src/core/ext/filters/client_channel/lb_policy/ring_hash/ring_hash.h
   - src/core/ext/filters/client_channel/lb_policy/subchannel_list.h
   - src/core/ext/filters/client_channel/lb_policy_factory.h
@@ -1829,6 +1835,7 @@ libs:
   - src/core/ext/filters/client_channel/retry_throttle.h
   - src/core/ext/filters/client_channel/subchannel.h
   - src/core/ext/filters/client_channel/subchannel_interface.h
+  - src/core/ext/filters/client_channel/subchannel_interface_internal.h
   - src/core/ext/filters/client_channel/subchannel_pool_interface.h
   - src/core/ext/filters/client_channel/subchannel_stream_client.h
   - src/core/ext/filters/deadline/deadline_filter.h
@@ -1881,6 +1888,7 @@ libs:
   - src/core/ext/upb-generated/src/proto/grpc/lookup/v1/rls.upb.h
   - src/core/ext/upb-generated/validate/validate.upb.h
   - src/core/ext/upb-generated/xds/data/orca/v3/orca_load_report.upb.h
+  - src/core/ext/upb-generated/xds/service/orca/v3/orca.upb.h
   - src/core/lib/address_utils/parse_address.h
   - src/core/lib/address_utils/sockaddr_utils.h
   - src/core/lib/avl/avl.h
@@ -2124,6 +2132,7 @@ libs:
   - src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_balancer_addresses.cc
   - src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_client_stats.cc
   - src/core/ext/filters/client_channel/lb_policy/grpclb/load_balancer_api.cc
+  - src/core/ext/filters/client_channel/lb_policy/oob_backend_metric.cc
   - src/core/ext/filters/client_channel/lb_policy/pick_first/pick_first.cc
   - src/core/ext/filters/client_channel/lb_policy/priority/priority.cc
   - src/core/ext/filters/client_channel/lb_policy/ring_hash/ring_hash.cc
@@ -2207,6 +2216,7 @@ libs:
   - src/core/ext/upb-generated/src/proto/grpc/lookup/v1/rls.upb.c
   - src/core/ext/upb-generated/validate/validate.upb.c
   - src/core/ext/upb-generated/xds/data/orca/v3/orca_load_report.upb.c
+  - src/core/ext/upb-generated/xds/service/orca/v3/orca.upb.c
   - src/core/lib/address_utils/parse_address.cc
   - src/core/lib/address_utils/sockaddr_utils.cc
   - src/core/lib/backoff/backoff.cc
@@ -5137,6 +5147,7 @@ targets:
   - src/proto/grpc/testing/echo_messages.proto
   - src/proto/grpc/testing/simple_messages.proto
   - src/proto/grpc/testing/xds/v3/orca_load_report.proto
+  - src/cpp/server/orca/orca_service.cc
   - test/core/util/test_lb_policies.cc
   - test/cpp/end2end/client_lb_end2end_test.cc
   - test/cpp/end2end/connection_delay_injector.cc
@@ -6651,36 +6662,10 @@ targets:
   gtest: true
   build: test
   language: c++
-  headers:
-  - src/core/ext/upb-generated/google/api/annotations.upb.h
-  - src/core/ext/upb-generated/google/api/http.upb.h
-  - src/core/ext/upb-generated/google/protobuf/any.upb.h
-  - src/core/ext/upb-generated/google/protobuf/descriptor.upb.h
-  - src/core/ext/upb-generated/google/protobuf/duration.upb.h
-  - src/core/ext/upb-generated/google/protobuf/empty.upb.h
-  - src/core/ext/upb-generated/google/protobuf/struct.upb.h
-  - src/core/ext/upb-generated/google/protobuf/timestamp.upb.h
-  - src/core/ext/upb-generated/google/protobuf/wrappers.upb.h
-  - src/core/ext/upb-generated/google/rpc/status.upb.h
-  - src/core/ext/upb-generated/validate/validate.upb.h
-  - src/core/ext/upb-generated/xds/data/orca/v3/orca_load_report.upb.h
-  - src/core/ext/upb-generated/xds/service/orca/v3/orca.upb.h
+  headers: []
   src:
   - src/proto/grpc/testing/xds/v3/orca_load_report.proto
   - src/proto/grpc/testing/xds/v3/orca_service.proto
-  - src/core/ext/upb-generated/google/api/annotations.upb.c
-  - src/core/ext/upb-generated/google/api/http.upb.c
-  - src/core/ext/upb-generated/google/protobuf/any.upb.c
-  - src/core/ext/upb-generated/google/protobuf/descriptor.upb.c
-  - src/core/ext/upb-generated/google/protobuf/duration.upb.c
-  - src/core/ext/upb-generated/google/protobuf/empty.upb.c
-  - src/core/ext/upb-generated/google/protobuf/struct.upb.c
-  - src/core/ext/upb-generated/google/protobuf/timestamp.upb.c
-  - src/core/ext/upb-generated/google/protobuf/wrappers.upb.c
-  - src/core/ext/upb-generated/google/rpc/status.upb.c
-  - src/core/ext/upb-generated/validate/validate.upb.c
-  - src/core/ext/upb-generated/xds/data/orca/v3/orca_load_report.upb.c
-  - src/core/ext/upb-generated/xds/service/orca/v3/orca.upb.c
   - src/cpp/server/orca/orca_service.cc
   - test/cpp/end2end/orca_service_end2end_test.cc
   deps:
@@ -8378,6 +8363,170 @@ targets:
   - test/core/xds/xds_certificate_provider_test.cc
   deps:
   - grpc_test_util
+- name: xds_cluster_end2end_test
+  gtest: true
+  build: test
+  run: false
+  language: c++
+  headers:
+  - test/cpp/end2end/counted_service.h
+  - test/cpp/end2end/test_service_impl.h
+  - test/cpp/end2end/xds/xds_end2end_test_lib.h
+  - test/cpp/end2end/xds/xds_server.h
+  - test/cpp/util/tls_test_utils.h
+  src:
+  - src/proto/grpc/testing/duplicate/echo_duplicate.proto
+  - src/proto/grpc/testing/echo.proto
+  - src/proto/grpc/testing/echo_messages.proto
+  - src/proto/grpc/testing/simple_messages.proto
+  - src/proto/grpc/testing/xds/ads_for_test.proto
+  - src/proto/grpc/testing/xds/eds_for_test.proto
+  - src/proto/grpc/testing/xds/lrs_for_test.proto
+  - src/proto/grpc/testing/xds/v3/address.proto
+  - src/proto/grpc/testing/xds/v3/ads.proto
+  - src/proto/grpc/testing/xds/v3/base.proto
+  - src/proto/grpc/testing/xds/v3/cluster.proto
+  - src/proto/grpc/testing/xds/v3/config_source.proto
+  - src/proto/grpc/testing/xds/v3/discovery.proto
+  - src/proto/grpc/testing/xds/v3/endpoint.proto
+  - src/proto/grpc/testing/xds/v3/expr.proto
+  - src/proto/grpc/testing/xds/v3/extension.proto
+  - src/proto/grpc/testing/xds/v3/http_connection_manager.proto
+  - src/proto/grpc/testing/xds/v3/http_filter_rbac.proto
+  - src/proto/grpc/testing/xds/v3/listener.proto
+  - src/proto/grpc/testing/xds/v3/load_report.proto
+  - src/proto/grpc/testing/xds/v3/lrs.proto
+  - src/proto/grpc/testing/xds/v3/metadata.proto
+  - src/proto/grpc/testing/xds/v3/path.proto
+  - src/proto/grpc/testing/xds/v3/percent.proto
+  - src/proto/grpc/testing/xds/v3/protocol.proto
+  - src/proto/grpc/testing/xds/v3/range.proto
+  - src/proto/grpc/testing/xds/v3/rbac.proto
+  - src/proto/grpc/testing/xds/v3/regex.proto
+  - src/proto/grpc/testing/xds/v3/route.proto
+  - src/proto/grpc/testing/xds/v3/router.proto
+  - src/proto/grpc/testing/xds/v3/string.proto
+  - test/cpp/end2end/test_service_impl.cc
+  - test/cpp/end2end/xds/xds_cluster_end2end_test.cc
+  - test/cpp/end2end/xds/xds_end2end_test_lib.cc
+  - test/cpp/end2end/xds/xds_server.cc
+  - test/cpp/util/tls_test_utils.cc
+  deps:
+  - grpc++_test_util
+  platforms:
+  - linux
+  - posix
+  - mac
+- name: xds_cluster_type_end2end_test
+  gtest: true
+  build: test
+  run: false
+  language: c++
+  headers:
+  - test/cpp/end2end/connection_delay_injector.h
+  - test/cpp/end2end/counted_service.h
+  - test/cpp/end2end/test_service_impl.h
+  - test/cpp/end2end/xds/xds_end2end_test_lib.h
+  - test/cpp/end2end/xds/xds_server.h
+  - test/cpp/util/tls_test_utils.h
+  src:
+  - src/proto/grpc/testing/duplicate/echo_duplicate.proto
+  - src/proto/grpc/testing/echo.proto
+  - src/proto/grpc/testing/echo_messages.proto
+  - src/proto/grpc/testing/simple_messages.proto
+  - src/proto/grpc/testing/xds/ads_for_test.proto
+  - src/proto/grpc/testing/xds/eds_for_test.proto
+  - src/proto/grpc/testing/xds/lrs_for_test.proto
+  - src/proto/grpc/testing/xds/v3/address.proto
+  - src/proto/grpc/testing/xds/v3/ads.proto
+  - src/proto/grpc/testing/xds/v3/aggregate_cluster.proto
+  - src/proto/grpc/testing/xds/v3/base.proto
+  - src/proto/grpc/testing/xds/v3/cluster.proto
+  - src/proto/grpc/testing/xds/v3/config_source.proto
+  - src/proto/grpc/testing/xds/v3/discovery.proto
+  - src/proto/grpc/testing/xds/v3/endpoint.proto
+  - src/proto/grpc/testing/xds/v3/expr.proto
+  - src/proto/grpc/testing/xds/v3/extension.proto
+  - src/proto/grpc/testing/xds/v3/http_connection_manager.proto
+  - src/proto/grpc/testing/xds/v3/http_filter_rbac.proto
+  - src/proto/grpc/testing/xds/v3/listener.proto
+  - src/proto/grpc/testing/xds/v3/load_report.proto
+  - src/proto/grpc/testing/xds/v3/lrs.proto
+  - src/proto/grpc/testing/xds/v3/metadata.proto
+  - src/proto/grpc/testing/xds/v3/path.proto
+  - src/proto/grpc/testing/xds/v3/percent.proto
+  - src/proto/grpc/testing/xds/v3/protocol.proto
+  - src/proto/grpc/testing/xds/v3/range.proto
+  - src/proto/grpc/testing/xds/v3/rbac.proto
+  - src/proto/grpc/testing/xds/v3/regex.proto
+  - src/proto/grpc/testing/xds/v3/route.proto
+  - src/proto/grpc/testing/xds/v3/router.proto
+  - src/proto/grpc/testing/xds/v3/string.proto
+  - test/cpp/end2end/connection_delay_injector.cc
+  - test/cpp/end2end/test_service_impl.cc
+  - test/cpp/end2end/xds/xds_cluster_type_end2end_test.cc
+  - test/cpp/end2end/xds/xds_end2end_test_lib.cc
+  - test/cpp/end2end/xds/xds_server.cc
+  - test/cpp/util/tls_test_utils.cc
+  deps:
+  - grpc++_test_util
+  platforms:
+  - linux
+  - posix
+  - mac
+- name: xds_core_end2end_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - test/cpp/end2end/counted_service.h
+  - test/cpp/end2end/test_service_impl.h
+  - test/cpp/end2end/xds/xds_end2end_test_lib.h
+  - test/cpp/end2end/xds/xds_server.h
+  - test/cpp/util/tls_test_utils.h
+  src:
+  - src/proto/grpc/testing/duplicate/echo_duplicate.proto
+  - src/proto/grpc/testing/echo.proto
+  - src/proto/grpc/testing/echo_messages.proto
+  - src/proto/grpc/testing/simple_messages.proto
+  - src/proto/grpc/testing/xds/ads_for_test.proto
+  - src/proto/grpc/testing/xds/eds_for_test.proto
+  - src/proto/grpc/testing/xds/lrs_for_test.proto
+  - src/proto/grpc/testing/xds/v3/address.proto
+  - src/proto/grpc/testing/xds/v3/ads.proto
+  - src/proto/grpc/testing/xds/v3/base.proto
+  - src/proto/grpc/testing/xds/v3/cluster.proto
+  - src/proto/grpc/testing/xds/v3/config_source.proto
+  - src/proto/grpc/testing/xds/v3/discovery.proto
+  - src/proto/grpc/testing/xds/v3/endpoint.proto
+  - src/proto/grpc/testing/xds/v3/expr.proto
+  - src/proto/grpc/testing/xds/v3/extension.proto
+  - src/proto/grpc/testing/xds/v3/http_connection_manager.proto
+  - src/proto/grpc/testing/xds/v3/http_filter_rbac.proto
+  - src/proto/grpc/testing/xds/v3/listener.proto
+  - src/proto/grpc/testing/xds/v3/load_report.proto
+  - src/proto/grpc/testing/xds/v3/lrs.proto
+  - src/proto/grpc/testing/xds/v3/metadata.proto
+  - src/proto/grpc/testing/xds/v3/path.proto
+  - src/proto/grpc/testing/xds/v3/percent.proto
+  - src/proto/grpc/testing/xds/v3/protocol.proto
+  - src/proto/grpc/testing/xds/v3/range.proto
+  - src/proto/grpc/testing/xds/v3/rbac.proto
+  - src/proto/grpc/testing/xds/v3/regex.proto
+  - src/proto/grpc/testing/xds/v3/route.proto
+  - src/proto/grpc/testing/xds/v3/router.proto
+  - src/proto/grpc/testing/xds/v3/string.proto
+  - test/cpp/end2end/test_service_impl.cc
+  - test/cpp/end2end/xds/xds_core_end2end_test.cc
+  - test/cpp/end2end/xds/xds_end2end_test_lib.cc
+  - test/cpp/end2end/xds/xds_server.cc
+  - test/cpp/util/tls_test_utils.cc
+  deps:
+  - grpc++_test_util
+  platforms:
+  - linux
+  - posix
+  - mac
 - name: xds_credentials_end2end_test
   gtest: true
   build: test
@@ -8465,14 +8614,12 @@ targets:
   language: c++
   headers:
   - test/cpp/end2end/counted_service.h
-  - test/cpp/end2end/rls_server.h
   - test/cpp/end2end/test_service_impl.h
+  - test/cpp/end2end/xds/no_op_http_filter.h
   - test/cpp/end2end/xds/xds_end2end_test_lib.h
   - test/cpp/end2end/xds/xds_server.h
   - test/cpp/util/tls_test_utils.h
   src:
-  - src/proto/grpc/lookup/v1/rls.proto
-  - src/proto/grpc/lookup/v1/rls_config.proto
   - src/proto/grpc/testing/duplicate/echo_duplicate.proto
   - src/proto/grpc/testing/echo.proto
   - src/proto/grpc/testing/echo_messages.proto
@@ -8510,7 +8657,6 @@ targets:
   - src/proto/grpc/testing/xds/v3/router.proto
   - src/proto/grpc/testing/xds/v3/string.proto
   - src/proto/grpc/testing/xds/v3/tls.proto
-  - test/cpp/end2end/rls_server.cc
   - test/cpp/end2end/test_service_impl.cc
   - test/cpp/end2end/xds/xds_end2end_test.cc
   - test/cpp/end2end/xds/xds_end2end_test_lib.cc
@@ -8627,6 +8773,177 @@ targets:
   - grpcpp_channelz
   - grpc_test_util
   - grpc++_test_config
+- name: xds_ring_hash_end2end_test
+  gtest: true
+  build: test
+  run: false
+  language: c++
+  headers:
+  - test/cpp/end2end/connection_delay_injector.h
+  - test/cpp/end2end/counted_service.h
+  - test/cpp/end2end/test_service_impl.h
+  - test/cpp/end2end/xds/xds_end2end_test_lib.h
+  - test/cpp/end2end/xds/xds_server.h
+  - test/cpp/util/tls_test_utils.h
+  src:
+  - src/proto/grpc/testing/duplicate/echo_duplicate.proto
+  - src/proto/grpc/testing/echo.proto
+  - src/proto/grpc/testing/echo_messages.proto
+  - src/proto/grpc/testing/simple_messages.proto
+  - src/proto/grpc/testing/xds/ads_for_test.proto
+  - src/proto/grpc/testing/xds/eds_for_test.proto
+  - src/proto/grpc/testing/xds/lrs_for_test.proto
+  - src/proto/grpc/testing/xds/v3/address.proto
+  - src/proto/grpc/testing/xds/v3/ads.proto
+  - src/proto/grpc/testing/xds/v3/aggregate_cluster.proto
+  - src/proto/grpc/testing/xds/v3/base.proto
+  - src/proto/grpc/testing/xds/v3/cluster.proto
+  - src/proto/grpc/testing/xds/v3/config_source.proto
+  - src/proto/grpc/testing/xds/v3/discovery.proto
+  - src/proto/grpc/testing/xds/v3/endpoint.proto
+  - src/proto/grpc/testing/xds/v3/expr.proto
+  - src/proto/grpc/testing/xds/v3/extension.proto
+  - src/proto/grpc/testing/xds/v3/http_connection_manager.proto
+  - src/proto/grpc/testing/xds/v3/http_filter_rbac.proto
+  - src/proto/grpc/testing/xds/v3/listener.proto
+  - src/proto/grpc/testing/xds/v3/load_report.proto
+  - src/proto/grpc/testing/xds/v3/lrs.proto
+  - src/proto/grpc/testing/xds/v3/metadata.proto
+  - src/proto/grpc/testing/xds/v3/path.proto
+  - src/proto/grpc/testing/xds/v3/percent.proto
+  - src/proto/grpc/testing/xds/v3/protocol.proto
+  - src/proto/grpc/testing/xds/v3/range.proto
+  - src/proto/grpc/testing/xds/v3/rbac.proto
+  - src/proto/grpc/testing/xds/v3/regex.proto
+  - src/proto/grpc/testing/xds/v3/route.proto
+  - src/proto/grpc/testing/xds/v3/router.proto
+  - src/proto/grpc/testing/xds/v3/string.proto
+  - test/cpp/end2end/connection_delay_injector.cc
+  - test/cpp/end2end/test_service_impl.cc
+  - test/cpp/end2end/xds/xds_end2end_test_lib.cc
+  - test/cpp/end2end/xds/xds_ring_hash_end2end_test.cc
+  - test/cpp/end2end/xds/xds_server.cc
+  - test/cpp/util/tls_test_utils.cc
+  deps:
+  - grpc++_test_util
+  platforms:
+  - linux
+  - posix
+  - mac
+- name: xds_rls_end2end_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - test/cpp/end2end/counted_service.h
+  - test/cpp/end2end/rls_server.h
+  - test/cpp/end2end/test_service_impl.h
+  - test/cpp/end2end/xds/xds_end2end_test_lib.h
+  - test/cpp/end2end/xds/xds_server.h
+  - test/cpp/util/tls_test_utils.h
+  src:
+  - src/proto/grpc/lookup/v1/rls.proto
+  - src/proto/grpc/lookup/v1/rls_config.proto
+  - src/proto/grpc/testing/duplicate/echo_duplicate.proto
+  - src/proto/grpc/testing/echo.proto
+  - src/proto/grpc/testing/echo_messages.proto
+  - src/proto/grpc/testing/simple_messages.proto
+  - src/proto/grpc/testing/xds/ads_for_test.proto
+  - src/proto/grpc/testing/xds/eds_for_test.proto
+  - src/proto/grpc/testing/xds/lrs_for_test.proto
+  - src/proto/grpc/testing/xds/v3/address.proto
+  - src/proto/grpc/testing/xds/v3/ads.proto
+  - src/proto/grpc/testing/xds/v3/base.proto
+  - src/proto/grpc/testing/xds/v3/cluster.proto
+  - src/proto/grpc/testing/xds/v3/config_source.proto
+  - src/proto/grpc/testing/xds/v3/discovery.proto
+  - src/proto/grpc/testing/xds/v3/endpoint.proto
+  - src/proto/grpc/testing/xds/v3/expr.proto
+  - src/proto/grpc/testing/xds/v3/extension.proto
+  - src/proto/grpc/testing/xds/v3/http_connection_manager.proto
+  - src/proto/grpc/testing/xds/v3/http_filter_rbac.proto
+  - src/proto/grpc/testing/xds/v3/listener.proto
+  - src/proto/grpc/testing/xds/v3/load_report.proto
+  - src/proto/grpc/testing/xds/v3/lrs.proto
+  - src/proto/grpc/testing/xds/v3/metadata.proto
+  - src/proto/grpc/testing/xds/v3/path.proto
+  - src/proto/grpc/testing/xds/v3/percent.proto
+  - src/proto/grpc/testing/xds/v3/protocol.proto
+  - src/proto/grpc/testing/xds/v3/range.proto
+  - src/proto/grpc/testing/xds/v3/rbac.proto
+  - src/proto/grpc/testing/xds/v3/regex.proto
+  - src/proto/grpc/testing/xds/v3/route.proto
+  - src/proto/grpc/testing/xds/v3/router.proto
+  - src/proto/grpc/testing/xds/v3/string.proto
+  - test/cpp/end2end/rls_server.cc
+  - test/cpp/end2end/test_service_impl.cc
+  - test/cpp/end2end/xds/xds_end2end_test_lib.cc
+  - test/cpp/end2end/xds/xds_rls_end2end_test.cc
+  - test/cpp/end2end/xds/xds_server.cc
+  - test/cpp/util/tls_test_utils.cc
+  deps:
+  - grpc++_test_util
+  platforms:
+  - linux
+  - posix
+  - mac
+- name: xds_routing_end2end_test
+  gtest: true
+  build: test
+  run: false
+  language: c++
+  headers:
+  - test/cpp/end2end/counted_service.h
+  - test/cpp/end2end/test_service_impl.h
+  - test/cpp/end2end/xds/no_op_http_filter.h
+  - test/cpp/end2end/xds/xds_end2end_test_lib.h
+  - test/cpp/end2end/xds/xds_server.h
+  - test/cpp/util/tls_test_utils.h
+  src:
+  - src/proto/grpc/testing/duplicate/echo_duplicate.proto
+  - src/proto/grpc/testing/echo.proto
+  - src/proto/grpc/testing/echo_messages.proto
+  - src/proto/grpc/testing/simple_messages.proto
+  - src/proto/grpc/testing/xds/ads_for_test.proto
+  - src/proto/grpc/testing/xds/eds_for_test.proto
+  - src/proto/grpc/testing/xds/lrs_for_test.proto
+  - src/proto/grpc/testing/xds/v3/address.proto
+  - src/proto/grpc/testing/xds/v3/ads.proto
+  - src/proto/grpc/testing/xds/v3/base.proto
+  - src/proto/grpc/testing/xds/v3/cluster.proto
+  - src/proto/grpc/testing/xds/v3/config_source.proto
+  - src/proto/grpc/testing/xds/v3/discovery.proto
+  - src/proto/grpc/testing/xds/v3/endpoint.proto
+  - src/proto/grpc/testing/xds/v3/expr.proto
+  - src/proto/grpc/testing/xds/v3/extension.proto
+  - src/proto/grpc/testing/xds/v3/fault.proto
+  - src/proto/grpc/testing/xds/v3/fault_common.proto
+  - src/proto/grpc/testing/xds/v3/http_connection_manager.proto
+  - src/proto/grpc/testing/xds/v3/http_filter_rbac.proto
+  - src/proto/grpc/testing/xds/v3/listener.proto
+  - src/proto/grpc/testing/xds/v3/load_report.proto
+  - src/proto/grpc/testing/xds/v3/lrs.proto
+  - src/proto/grpc/testing/xds/v3/metadata.proto
+  - src/proto/grpc/testing/xds/v3/path.proto
+  - src/proto/grpc/testing/xds/v3/percent.proto
+  - src/proto/grpc/testing/xds/v3/protocol.proto
+  - src/proto/grpc/testing/xds/v3/range.proto
+  - src/proto/grpc/testing/xds/v3/rbac.proto
+  - src/proto/grpc/testing/xds/v3/regex.proto
+  - src/proto/grpc/testing/xds/v3/route.proto
+  - src/proto/grpc/testing/xds/v3/router.proto
+  - src/proto/grpc/testing/xds/v3/string.proto
+  - test/cpp/end2end/test_service_impl.cc
+  - test/cpp/end2end/xds/xds_end2end_test_lib.cc
+  - test/cpp/end2end/xds/xds_routing_end2end_test.cc
+  - test/cpp/end2end/xds/xds_server.cc
+  - test/cpp/util/tls_test_utils.cc
+  deps:
+  - grpc++_test_util
+  platforms:
+  - linux
+  - posix
+  - mac
 external_proto_libraries:
 - destination: third_party/envoy-api
   hash: c5807010b67033330915ca5a20483e30538ae5e689aa14b3631d6284beca4630

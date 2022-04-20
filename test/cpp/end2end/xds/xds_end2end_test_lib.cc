@@ -36,6 +36,7 @@
 
 #include <grpcpp/security/tls_certificate_provider.h>
 
+#include "src/core/ext/filters/http/server/http_server_filter.h"
 #include "src/core/ext/xds/xds_channel_args.h"
 #include "src/core/ext/xds/xds_client.h"
 #include "src/core/lib/gpr/env.h"
@@ -175,6 +176,13 @@ void XdsEnd2endTest::ServerThread::Serve(grpc_core::Mutex* mu,
     builder.experimental().set_drain_grace_time(
         test_obj_->xds_drain_grace_time_ms_);
     builder.AddListeningPort(server_address, Credentials());
+    // Allow gRPC Core's HTTP server to accept PUT requests for testing
+    // purposes.
+    if (allow_put_requests_) {
+      builder.AddChannelArgument(
+          GRPC_ARG_DO_NOT_USE_UNLESS_YOU_HAVE_PERMISSION_FROM_GRPC_TEAM_ALLOW_BROKEN_PUT_REQUESTS,
+          true);
+    }
     RegisterAllServices(&builder);
     server_ = builder.BuildAndStart();
   } else {
@@ -814,34 +822,39 @@ Status XdsEnd2endTest::SendRpc(const RpcOptions& rpc_options,
   return status;
 }
 
-void XdsEnd2endTest::CheckRpcSendOk(const size_t times,
-                                    const RpcOptions& rpc_options) {
+void XdsEnd2endTest::CheckRpcSendOk(
+    const grpc_core::DebugLocation& debug_location, const size_t times,
+    const RpcOptions& rpc_options) {
   for (size_t i = 0; i < times; ++i) {
     EchoResponse response;
     const Status status = SendRpc(rpc_options, &response);
-    EXPECT_TRUE(status.ok()) << "code=" << status.error_code()
-                             << " message=" << status.error_message();
+    EXPECT_TRUE(status.ok())
+        << "code=" << status.error_code()
+        << " message=" << status.error_message() << " at "
+        << debug_location.file() << ":" << debug_location.line();
     EXPECT_EQ(response.message(), kRequestMessage);
   }
 }
 
 void XdsEnd2endTest::CheckRpcSendFailure(
+    const grpc_core::DebugLocation& debug_location,
     const CheckRpcSendFailureOptions& options) {
   for (size_t i = 0; options.continue_predicate(i); ++i) {
     const Status status = SendRpc(options.rpc_options);
-    EXPECT_FALSE(status.ok());
+    EXPECT_FALSE(status.ok())
+        << " at " << debug_location.file() << ":" << debug_location.line();
     if (options.expected_error_code != StatusCode::OK) {
       EXPECT_EQ(options.expected_error_code, status.error_code())
           << "code=" << status.error_code()
-          << " message=" << status.error_message();
-      ;
+          << " message=" << status.error_message() << " at "
+          << debug_location.file() << ":" << debug_location.line();
     }
   }
 }
 
 size_t XdsEnd2endTest::SendRpcsAndCountFailuresWithMessage(
-    size_t num_rpcs, const char* drop_error_message_prefix,
-    const RpcOptions& rpc_options) {
+    const grpc_core::DebugLocation& debug_location, size_t num_rpcs,
+    const char* drop_error_message_prefix, const RpcOptions& rpc_options) {
   size_t num_failed = 0;
   for (size_t i = 0; i < num_rpcs; ++i) {
     Status status = SendRpc(rpc_options);
@@ -849,7 +862,8 @@ size_t XdsEnd2endTest::SendRpcsAndCountFailuresWithMessage(
       EXPECT_THAT(status.error_message(),
                   ::testing::StartsWith(drop_error_message_prefix))
           << "code=" << status.error_code()
-          << " message=" << status.error_message();
+          << " message=" << status.error_message() << " at "
+          << debug_location.file() << ":" << debug_location.line();
       ++num_failed;
     }
   }
@@ -877,14 +891,15 @@ Status XdsEnd2endTest::LongRunningRpc::GetStatus() {
 }
 
 std::vector<XdsEnd2endTest::ConcurrentRpc> XdsEnd2endTest::SendConcurrentRpcs(
+    const grpc_core::DebugLocation& debug_location,
     grpc::testing::EchoTestService::Stub* stub, size_t num_rpcs,
     const RpcOptions& rpc_options) {
   // Variables for RPCs.
   std::vector<ConcurrentRpc> rpcs(num_rpcs);
   EchoRequest request;
   // Variables for synchronization
-  absl::Mutex mu;
-  absl::CondVar cv;
+  grpc_core::Mutex mu;
+  grpc_core::CondVar cv;
   size_t completed = 0;
   // Set-off callback RPCs
   for (size_t i = 0; i < num_rpcs; i++) {
@@ -897,23 +912,25 @@ std::vector<XdsEnd2endTest::ConcurrentRpc> XdsEnd2endTest::SendConcurrentRpcs(
                           rpc->elapsed_time = NowFromCycleCounter() - t0;
                           bool done;
                           {
-                            absl::MutexLock lock(&mu);
+                            grpc_core::MutexLock lock(&mu);
                             done = (++completed) == num_rpcs;
                           }
                           if (done) cv.Signal();
                         });
   }
   {
-    absl::MutexLock lock(&mu);
+    grpc_core::MutexLock lock(&mu);
     cv.Wait(&mu);
   }
-  EXPECT_EQ(completed, num_rpcs);
+  EXPECT_EQ(completed, num_rpcs)
+      << " at " << debug_location.file() << ":" << debug_location.line();
   return rpcs;
 }
 
 size_t XdsEnd2endTest::WaitForAllBackends(
-    size_t start_index, size_t stop_index,
-    const WaitForBackendOptions& wait_options, const RpcOptions& rpc_options) {
+    const grpc_core::DebugLocation& debug_location, size_t start_index,
+    size_t stop_index, const WaitForBackendOptions& wait_options,
+    const RpcOptions& rpc_options) {
   size_t num_rpcs = 0;
   auto deadline = absl::Now() + (absl::Milliseconds(wait_options.timeout_ms) *
                                  grpc_test_slowdown_factor());
@@ -924,10 +941,13 @@ size_t XdsEnd2endTest::WaitForAllBackends(
   while (!SeenAllBackends(start_index, stop_index, rpc_options.service)) {
     Status status = SendRpc(rpc_options);
     if (!wait_options.allow_failures) {
-      EXPECT_TRUE(status.ok()) << "code=" << status.error_code()
-                               << " message=" << status.error_message();
+      EXPECT_TRUE(status.ok())
+          << "code=" << status.error_code()
+          << " message=" << status.error_message() << " at "
+          << debug_location.file() << ":" << debug_location.line();
     }
-    EXPECT_LE(absl::Now(), deadline);
+    EXPECT_LE(absl::Now(), deadline)
+        << " at " << debug_location.file() << ":" << debug_location.line();
     if (absl::Now() >= deadline) break;
     ++num_rpcs;
   }
@@ -938,6 +958,7 @@ size_t XdsEnd2endTest::WaitForAllBackends(
 }
 
 absl::optional<AdsServiceImpl::ResponseState> XdsEnd2endTest::WaitForNack(
+    const grpc_core::DebugLocation& debug_location,
     std::function<absl::optional<AdsServiceImpl::ResponseState>()> get_state,
     StatusCode expected_status) {
   absl::optional<AdsServiceImpl::ResponseState> response_state;
@@ -954,8 +975,8 @@ absl::optional<AdsServiceImpl::ResponseState> XdsEnd2endTest::WaitForNack(
     const Status status = SendRpc();
     EXPECT_EQ(expected_status, status.error_code())
         << "code=" << status.error_code()
-        << " message=" << status.error_message();
-    ;
+        << " message=" << status.error_message() << " at "
+        << debug_location.file() << ":" << debug_location.line();
   } while (continue_predicate());
   return response_state;
 }
