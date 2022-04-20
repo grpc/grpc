@@ -104,7 +104,7 @@ TEST_P(LogicalDNSClusterTest, Basic) {
         std::move(result));
   }
   // RPCs should succeed.
-  CheckRpcSendOk();
+  CheckRpcSendOk(DEBUG_LOCATION);
 }
 
 TEST_P(LogicalDNSClusterTest, MissingLoadAssignment) {
@@ -114,7 +114,7 @@ TEST_P(LogicalDNSClusterTest, MissingLoadAssignment) {
   auto cluster = default_cluster_;
   cluster.set_type(Cluster::LOGICAL_DNS);
   balancer_->ads_service()->SetCdsResource(cluster);
-  const auto response_state = WaitForCdsNack();
+  const auto response_state = WaitForCdsNack(DEBUG_LOCATION);
   ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
   EXPECT_THAT(response_state->error_message,
               ::testing::HasSubstr(
@@ -129,7 +129,7 @@ TEST_P(LogicalDNSClusterTest, MissingLocalities) {
   cluster.set_type(Cluster::LOGICAL_DNS);
   cluster.mutable_load_assignment();
   balancer_->ads_service()->SetCdsResource(cluster);
-  const auto response_state = WaitForCdsNack();
+  const auto response_state = WaitForCdsNack(DEBUG_LOCATION);
   ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
   EXPECT_THAT(
       response_state->error_message,
@@ -147,7 +147,7 @@ TEST_P(LogicalDNSClusterTest, MultipleLocalities) {
   load_assignment->add_endpoints();
   load_assignment->add_endpoints();
   balancer_->ads_service()->SetCdsResource(cluster);
-  const auto response_state = WaitForCdsNack();
+  const auto response_state = WaitForCdsNack(DEBUG_LOCATION);
   ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
   EXPECT_THAT(
       response_state->error_message,
@@ -163,7 +163,7 @@ TEST_P(LogicalDNSClusterTest, MissingEndpoints) {
   cluster.set_type(Cluster::LOGICAL_DNS);
   cluster.mutable_load_assignment()->add_endpoints();
   balancer_->ads_service()->SetCdsResource(cluster);
-  const auto response_state = WaitForCdsNack();
+  const auto response_state = WaitForCdsNack(DEBUG_LOCATION);
   ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
   EXPECT_THAT(response_state->error_message,
               ::testing::HasSubstr(
@@ -181,7 +181,7 @@ TEST_P(LogicalDNSClusterTest, MultipleEndpoints) {
   locality->add_lb_endpoints();
   locality->add_lb_endpoints();
   balancer_->ads_service()->SetCdsResource(cluster);
-  const auto response_state = WaitForCdsNack();
+  const auto response_state = WaitForCdsNack(DEBUG_LOCATION);
   ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
   EXPECT_THAT(response_state->error_message,
               ::testing::HasSubstr(
@@ -197,7 +197,7 @@ TEST_P(LogicalDNSClusterTest, EmptyEndpoint) {
   cluster.set_type(Cluster::LOGICAL_DNS);
   cluster.mutable_load_assignment()->add_endpoints()->add_lb_endpoints();
   balancer_->ads_service()->SetCdsResource(cluster);
-  const auto response_state = WaitForCdsNack();
+  const auto response_state = WaitForCdsNack(DEBUG_LOCATION);
   ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
   EXPECT_THAT(response_state->error_message,
               ::testing::HasSubstr("LbEndpoint endpoint field not set"));
@@ -214,7 +214,7 @@ TEST_P(LogicalDNSClusterTest, EndpointMissingAddress) {
       ->add_lb_endpoints()
       ->mutable_endpoint();
   balancer_->ads_service()->SetCdsResource(cluster);
-  const auto response_state = WaitForCdsNack();
+  const auto response_state = WaitForCdsNack(DEBUG_LOCATION);
   ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
   EXPECT_THAT(response_state->error_message,
               ::testing::HasSubstr("Endpoint address field not set"));
@@ -232,7 +232,7 @@ TEST_P(LogicalDNSClusterTest, AddressMissingSocketAddress) {
       ->mutable_endpoint()
       ->mutable_address();
   balancer_->ads_service()->SetCdsResource(cluster);
-  const auto response_state = WaitForCdsNack();
+  const auto response_state = WaitForCdsNack(DEBUG_LOCATION);
   ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
   EXPECT_THAT(response_state->error_message,
               ::testing::HasSubstr("Address socket_address field not set"));
@@ -252,7 +252,7 @@ TEST_P(LogicalDNSClusterTest, SocketAddressHasResolverName) {
       ->mutable_socket_address()
       ->set_resolver_name("foo");
   balancer_->ads_service()->SetCdsResource(cluster);
-  const auto response_state = WaitForCdsNack();
+  const auto response_state = WaitForCdsNack(DEBUG_LOCATION);
   ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
   EXPECT_THAT(response_state->error_message,
               ::testing::HasSubstr("LOGICAL_DNS clusters must NOT have a "
@@ -272,7 +272,7 @@ TEST_P(LogicalDNSClusterTest, SocketAddressMissingAddress) {
       ->mutable_address()
       ->mutable_socket_address();
   balancer_->ads_service()->SetCdsResource(cluster);
-  const auto response_state = WaitForCdsNack();
+  const auto response_state = WaitForCdsNack(DEBUG_LOCATION);
   ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
   EXPECT_THAT(response_state->error_message,
               ::testing::HasSubstr("SocketAddress address field not set"));
@@ -292,7 +292,7 @@ TEST_P(LogicalDNSClusterTest, SocketAddressMissingPort) {
       ->mutable_socket_address()
       ->set_address(kServerName);
   balancer_->ads_service()->SetCdsResource(cluster);
-  const auto response_state = WaitForCdsNack();
+  const auto response_state = WaitForCdsNack(DEBUG_LOCATION);
   ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
   EXPECT_THAT(response_state->error_message,
               ::testing::HasSubstr("SocketAddress port_value field not set"));
@@ -304,7 +304,7 @@ TEST_P(LogicalDNSClusterTest, Disabled) {
   auto cluster = default_cluster_;
   cluster.set_type(Cluster::LOGICAL_DNS);
   balancer_->ads_service()->SetCdsResource(cluster);
-  const auto response_state = WaitForCdsNack();
+  const auto response_state = WaitForCdsNack(DEBUG_LOCATION);
   ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
   EXPECT_THAT(response_state->error_message,
               ::testing::HasSubstr("DiscoveryType is not valid."));
@@ -362,16 +362,17 @@ TEST_P(AggregateClusterTest, ) {
   custom_cluster->mutable_typed_config()->PackFrom(cluster_config);
   balancer_->ads_service()->SetCdsResource(cluster);
   // Wait for traffic to go to backend 0.
-  WaitForBackend(0);
+  WaitForBackend(DEBUG_LOCATION, 0);
   // Shutdown backend 0 and wait for all traffic to go to backend 1.
   ShutdownBackend(0);
-  WaitForBackend(1, WaitForBackendOptions().set_allow_failures(true));
+  WaitForBackend(DEBUG_LOCATION, 1,
+                 WaitForBackendOptions().set_allow_failures(true));
   auto response_state = balancer_->ads_service()->cds_response_state();
   ASSERT_TRUE(response_state.has_value());
   EXPECT_EQ(response_state->state, AdsServiceImpl::ResponseState::ACKED);
   // Bring backend 0 back and ensure all traffic go back to it.
   StartBackend(0);
-  WaitForBackend(0);
+  WaitForBackend(DEBUG_LOCATION, 0);
 }
 
 TEST_P(AggregateClusterTest, DiamondDependency) {
@@ -423,16 +424,17 @@ TEST_P(AggregateClusterTest, DiamondDependency) {
   custom_cluster->mutable_typed_config()->PackFrom(cluster_config);
   balancer_->ads_service()->SetCdsResource(aggregate_cluster2);
   // Wait for traffic to go to backend 0.
-  WaitForBackend(0);
+  WaitForBackend(DEBUG_LOCATION, 0);
   // Shutdown backend 0 and wait for all traffic to go to backend 1.
   ShutdownBackend(0);
-  WaitForBackend(1, WaitForBackendOptions().set_allow_failures(true));
+  WaitForBackend(DEBUG_LOCATION, 1,
+                 WaitForBackendOptions().set_allow_failures(true));
   auto response_state = balancer_->ads_service()->cds_response_state();
   ASSERT_TRUE(response_state.has_value());
   EXPECT_EQ(response_state->state, AdsServiceImpl::ResponseState::ACKED);
   // Bring backend 0 back and ensure all traffic go back to it.
   StartBackend(0);
-  WaitForBackend(0);
+  WaitForBackend(DEBUG_LOCATION, 0);
 }
 
 // This test covers a bug found in the following scenario:
@@ -559,15 +561,17 @@ TEST_P(AggregateClusterTest, FallBackWithConnectivityChurn) {
   };
   ConnectionInjector connection_attempt_injector(backends_[0]->port(),
                                                  backends_[1]->port());
+  connection_attempt_injector.Start();
   // Wait for P0 backend.
   // Increase timeout to account for subchannel connection delays.
-  WaitForBackend(0, WaitForBackendOptions(), RpcOptions().set_timeout_ms(2000));
+  WaitForBackend(DEBUG_LOCATION, 0, WaitForBackendOptions(),
+                 RpcOptions().set_timeout_ms(2000));
   // Bring down the P0 backend.
   ShutdownBackend(0);
   // Allow the connection attempt to the P1 backend to resume.
   connection_attempt_injector.CompletePriority1Connection();
   // Wait for P1 backend to start getting traffic.
-  WaitForBackend(1);
+  WaitForBackend(DEBUG_LOCATION, 1);
 }
 
 TEST_P(AggregateClusterTest, EdsToLogicalDns) {
@@ -618,16 +622,17 @@ TEST_P(AggregateClusterTest, EdsToLogicalDns) {
         std::move(result));
   }
   // Wait for traffic to go to backend 0.
-  WaitForBackend(0);
+  WaitForBackend(DEBUG_LOCATION, 0);
   // Shutdown backend 0 and wait for all traffic to go to backend 1.
   ShutdownBackend(0);
-  WaitForBackend(1, WaitForBackendOptions().set_allow_failures(true));
+  WaitForBackend(DEBUG_LOCATION, 1,
+                 WaitForBackendOptions().set_allow_failures(true));
   auto response_state = balancer_->ads_service()->cds_response_state();
   ASSERT_TRUE(response_state.has_value());
   EXPECT_EQ(response_state->state, AdsServiceImpl::ResponseState::ACKED);
   // Bring backend 0 back and ensure all traffic go back to it.
   StartBackend(0);
-  WaitForBackend(0);
+  WaitForBackend(DEBUG_LOCATION, 0);
 }
 
 TEST_P(AggregateClusterTest, LogicalDnsToEds) {
@@ -680,16 +685,17 @@ TEST_P(AggregateClusterTest, LogicalDnsToEds) {
         std::move(result));
   }
   // Wait for traffic to go to backend 0.
-  WaitForBackend(0);
+  WaitForBackend(DEBUG_LOCATION, 0);
   // Shutdown backend 0 and wait for all traffic to go to backend 1.
   ShutdownBackend(0);
-  WaitForBackend(1, WaitForBackendOptions().set_allow_failures(true));
+  WaitForBackend(DEBUG_LOCATION, 1,
+                 WaitForBackendOptions().set_allow_failures(true));
   auto response_state = balancer_->ads_service()->cds_response_state();
   ASSERT_TRUE(response_state.has_value());
   EXPECT_EQ(response_state->state, AdsServiceImpl::ResponseState::ACKED);
   // Bring backend 0 back and ensure all traffic go back to it.
   StartBackend(0);
-  WaitForBackend(0);
+  WaitForBackend(DEBUG_LOCATION, 0);
 }
 
 // This test covers a bug seen in the wild where the
@@ -752,7 +758,7 @@ TEST_P(AggregateClusterTest, ReconfigEdsWhileLogicalDnsChildFails) {
         std::move(result));
   }
   // When an RPC fails, we know the channel has seen the update.
-  CheckRpcSendFailure();
+  CheckRpcSendFailure(DEBUG_LOCATION);
   // Send an EDS update that moves locality1 to priority 0.
   args1 = EdsResourceArgs({
       {"locality1", CreateEndpointsForBackends(0, 1), kDefaultLocalityWeight,
@@ -762,7 +768,8 @@ TEST_P(AggregateClusterTest, ReconfigEdsWhileLogicalDnsChildFails) {
   });
   balancer_->ads_service()->SetEdsResource(
       BuildEdsResource(args1, kNewEdsService1Name));
-  WaitForBackend(0, WaitForBackendOptions().set_allow_failures(true));
+  WaitForBackend(DEBUG_LOCATION, 0,
+                 WaitForBackendOptions().set_allow_failures(true));
 }
 
 TEST_P(AggregateClusterTest, MultipleClustersWithSameLocalities) {
@@ -803,13 +810,13 @@ TEST_P(AggregateClusterTest, MultipleClustersWithSameLocalities) {
   custom_cluster->mutable_typed_config()->PackFrom(cluster_config);
   balancer_->ads_service()->SetCdsResource(cluster);
   // Wait for channel to get the resources and get connected.
-  WaitForBackend(0);
+  WaitForBackend(DEBUG_LOCATION, 0);
   // Send an EDS update for cluster 1 that reuses the locality name from
   // cluster 1 and points traffic to backend 1.
   args1 = EdsResourceArgs({{"locality1", CreateEndpointsForBackends(1, 2)}});
   balancer_->ads_service()->SetEdsResource(
       BuildEdsResource(args1, kNewEdsServiceName1));
-  WaitForBackend(1);
+  WaitForBackend(DEBUG_LOCATION, 1);
 }
 
 TEST_P(AggregateClusterTest, RecursionDepthJustBelowMax) {
@@ -835,7 +842,7 @@ TEST_P(AggregateClusterTest, RecursionDepthJustBelowMax) {
     balancer_->ads_service()->SetCdsResource(cluster);
   }
   // RPCs should fail with the right status.
-  CheckRpcSendOk();
+  CheckRpcSendOk(DEBUG_LOCATION);
 }
 
 TEST_P(AggregateClusterTest, RecursionMaxDepth) {
@@ -880,7 +887,7 @@ TEST_P(AggregateClusterTest, Disabled) {
   custom_cluster->mutable_typed_config()->PackFrom(cluster_config);
   cluster.set_type(Cluster::LOGICAL_DNS);
   balancer_->ads_service()->SetCdsResource(cluster);
-  const auto response_state = WaitForCdsNack();
+  const auto response_state = WaitForCdsNack(DEBUG_LOCATION);
   ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
   EXPECT_THAT(response_state->error_message,
               ::testing::HasSubstr("DiscoveryType is not valid."));

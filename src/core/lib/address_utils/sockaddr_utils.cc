@@ -29,6 +29,7 @@
 #include "absl/status/status.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
+#include "absl/strings/str_replace.h"
 
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
@@ -37,6 +38,7 @@
 #include "src/core/lib/gprpp/host_port.h"
 #include "src/core/lib/iomgr/sockaddr.h"
 #include "src/core/lib/iomgr/socket_utils.h"
+#include "src/core/lib/uri/uri_parser.h"
 
 #ifdef GRPC_HAVE_UNIX_SOCKET
 #include <sys/un.h>
@@ -52,14 +54,20 @@ static absl::StatusOr<std::string> grpc_sockaddr_to_uri_unix_if_possible(
         absl::StrCat("Socket family is not AF_UNIX: ", addr->sa_family));
   }
   const auto* unix_addr = reinterpret_cast<const struct sockaddr_un*>(addr);
+  std::string scheme, path;
   if (unix_addr->sun_path[0] == '\0' && unix_addr->sun_path[1] != '\0') {
-    return absl::StrCat(
-        "unix-abstract:",
-        absl::string_view(
-            unix_addr->sun_path + 1,
-            resolved_addr->len - sizeof(unix_addr->sun_family) - 1));
+    scheme = "unix-abstract";
+    path = std::string(unix_addr->sun_path + 1,
+                       resolved_addr->len - sizeof(unix_addr->sun_family) - 1);
+  } else {
+    scheme = "unix";
+    path = unix_addr->sun_path;
   }
-  return absl::StrCat("unix:", unix_addr->sun_path);
+  absl::StatusOr<grpc_core::URI> uri = grpc_core::URI::Create(
+      std::move(scheme), /*authority=*/"", std::move(path),
+      /*query_parameter_pairs=*/{}, /*fragment=*/"");
+  if (!uri.ok()) return uri.status();
+  return uri->ToString();
 }
 #else
 static absl::StatusOr<std::string> grpc_sockaddr_to_uri_unix_if_possible(
@@ -263,6 +271,8 @@ absl::StatusOr<std::string> grpc_sockaddr_to_uri(
   if (scheme == nullptr || strcmp("unix", scheme) == 0) {
     return grpc_sockaddr_to_uri_unix_if_possible(resolved_addr);
   }
+  // TODO(anramach): Encode the string using URI::Create() and URI::ToString()
+  // before returning.
   auto path = grpc_sockaddr_to_string(resolved_addr, false /* normalize */);
   if (!path.ok()) return path;
   return absl::StrCat(scheme, ":", path.value());

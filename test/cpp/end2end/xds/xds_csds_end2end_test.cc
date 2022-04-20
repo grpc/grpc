@@ -338,7 +338,7 @@ TEST_P(ClientStatusDiscoveryServiceTest, XdsConfigDumpVanilla) {
   EdsResourceArgs args({{"locality0", CreateEndpointsForBackends(0, 1)}});
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
   // Send several RPCs to ensure the xDS setup works
-  CheckRpcSendOk(kNumRpcs);
+  CheckRpcSendOk(DEBUG_LOCATION, kNumRpcs);
   // Fetches the client config
   auto csds_response = FetchCsdsResponse();
   gpr_log(GPR_INFO, "xDS config dump: %s", csds_response.DebugString().c_str());
@@ -406,13 +406,13 @@ TEST_P(ClientStatusDiscoveryServiceTest, XdsConfigDumpListenerError) {
   EdsResourceArgs args({{"locality0", CreateEndpointsForBackends(0, 1)}});
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
   // Ensure the xDS resolver has working configs.
-  CheckRpcSendOk();
+  CheckRpcSendOk(DEBUG_LOCATION);
   // Bad Listener should be rejected.
   Listener listener;
   listener.set_name(kServerName);
   balancer_->ads_service()->SetLdsResource(listener);
   // The old xDS configs should still be effective.
-  CheckRpcSendOk();
+  CheckRpcSendOk(DEBUG_LOCATION);
   ::testing::Matcher<google::protobuf::Any> api_listener_matcher;
   if (GetParam().enable_rds_testing()) {
     api_listener_matcher = IsRdsEnabledHCM();
@@ -447,14 +447,14 @@ TEST_P(ClientStatusDiscoveryServiceTest, XdsConfigDumpRouteError) {
   EdsResourceArgs args({{"locality0", CreateEndpointsForBackends(0, 1)}});
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
   // Ensure the xDS resolver has working configs.
-  CheckRpcSendOk();
+  CheckRpcSendOk(DEBUG_LOCATION);
   // Bad route config will be rejected.
   RouteConfiguration route_config;
   route_config.set_name(kDefaultRouteConfigurationName);
   route_config.add_virtual_hosts();
   SetRouteConfiguration(balancer_.get(), route_config);
   // The old xDS configs should still be effective.
-  CheckRpcSendOk();
+  CheckRpcSendOk(DEBUG_LOCATION);
   for (int i = 0; i < kFetchConfigRetries; ++i) {
     auto csds_response = FetchCsdsResponse();
     bool ok = false;
@@ -494,13 +494,13 @@ TEST_P(ClientStatusDiscoveryServiceTest, XdsConfigDumpClusterError) {
   EdsResourceArgs args({{"locality0", CreateEndpointsForBackends(0, 1)}});
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
   // Ensure the xDS resolver has working configs.
-  CheckRpcSendOk();
+  CheckRpcSendOk(DEBUG_LOCATION);
   // Listener without any route, will be rejected.
   Cluster cluster;
   cluster.set_name(kDefaultClusterName);
   balancer_->ads_service()->SetCdsResource(cluster);
   // The old xDS configs should still be effective.
-  CheckRpcSendOk();
+  CheckRpcSendOk(DEBUG_LOCATION);
   for (int i = 0; i < kFetchConfigRetries; ++i) {
     auto csds_response = FetchCsdsResponse();
     // Check if error state is propagated
@@ -526,7 +526,7 @@ TEST_P(ClientStatusDiscoveryServiceTest, XdsConfigDumpEndpointError) {
   EdsResourceArgs args({{"locality0", CreateEndpointsForBackends(0, 1)}});
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
   // Ensure the xDS resolver has working configs.
-  CheckRpcSendOk();
+  CheckRpcSendOk(DEBUG_LOCATION);
   // Bad endpoint config will be rejected.
   ClusterLoadAssignment cluster_load_assignment;
   cluster_load_assignment.set_cluster_name(kDefaultEdsServiceName);
@@ -536,7 +536,7 @@ TEST_P(ClientStatusDiscoveryServiceTest, XdsConfigDumpEndpointError) {
   endpoint->mutable_address()->mutable_socket_address()->set_port_value(1 << 1);
   balancer_->ads_service()->SetEdsResource(cluster_load_assignment);
   // The old xDS configs should still be effective.
-  CheckRpcSendOk();
+  CheckRpcSendOk(DEBUG_LOCATION);
   for (int i = 0; i < kFetchConfigRetries; ++i) {
     auto csds_response = FetchCsdsResponse();
     // Check if error state is propagated
@@ -561,6 +561,7 @@ TEST_P(ClientStatusDiscoveryServiceTest, XdsConfigDumpListenerRequested) {
   int kTimeoutMillisecond = 1000;
   balancer_->ads_service()->UnsetResource(kLdsTypeUrl, kServerName);
   CheckRpcSendFailure(
+      DEBUG_LOCATION,
       CheckRpcSendFailureOptions()
           .set_rpc_options(RpcOptions().set_timeout_ms(kTimeoutMillisecond))
           .set_expected_error_code(StatusCode::DEADLINE_EXCEEDED));
@@ -591,6 +592,7 @@ TEST_P(ClientStatusDiscoveryServiceTest, XdsConfigDumpClusterRequested) {
   SetRouteConfiguration(balancer_.get(), route_config);
   // Try to get the configs plumb through
   CheckRpcSendFailure(
+      DEBUG_LOCATION,
       CheckRpcSendFailureOptions()
           .set_rpc_options(RpcOptions().set_timeout_ms(kTimeoutMillisecond))
           .set_expected_error_code(StatusCode::DEADLINE_EXCEEDED));
@@ -637,6 +639,7 @@ TEST_P(CsdsShortAdsTimeoutTest, XdsConfigDumpListenerDoesNotExist) {
   int kTimeoutMillisecond = 1000000;  // 1000s wait for the transient failure.
   balancer_->ads_service()->UnsetResource(kLdsTypeUrl, kServerName);
   CheckRpcSendFailure(
+      DEBUG_LOCATION,
       CheckRpcSendFailureOptions()
           .set_rpc_options(RpcOptions().set_timeout_ms(kTimeoutMillisecond))
           .set_expected_error_code(grpc::StatusCode::UNAVAILABLE));
@@ -653,6 +656,7 @@ TEST_P(CsdsShortAdsTimeoutTest, XdsConfigDumpRouteConfigDoesNotExist) {
   balancer_->ads_service()->UnsetResource(kRdsTypeUrl,
                                           kDefaultRouteConfigurationName);
   CheckRpcSendFailure(
+      DEBUG_LOCATION,
       CheckRpcSendFailureOptions()
           .set_rpc_options(RpcOptions().set_timeout_ms(kTimeoutMillisecond))
           .set_expected_error_code(grpc::StatusCode::UNAVAILABLE));
@@ -668,6 +672,7 @@ TEST_P(CsdsShortAdsTimeoutTest, XdsConfigDumpClusterDoesNotExist) {
   int kTimeoutMillisecond = 1000000;  // 1000s wait for the transient failure.
   balancer_->ads_service()->UnsetResource(kCdsTypeUrl, kDefaultClusterName);
   CheckRpcSendFailure(
+      DEBUG_LOCATION,
       CheckRpcSendFailureOptions()
           .set_rpc_options(RpcOptions().set_timeout_ms(kTimeoutMillisecond))
           .set_expected_error_code(grpc::StatusCode::UNAVAILABLE));
@@ -682,6 +687,7 @@ TEST_P(CsdsShortAdsTimeoutTest, XdsConfigDumpEndpointDoesNotExist) {
   int kTimeoutMillisecond = 1000000;  // 1000s wait for the transient failure.
   balancer_->ads_service()->UnsetResource(kEdsTypeUrl, kDefaultEdsServiceName);
   CheckRpcSendFailure(
+      DEBUG_LOCATION,
       CheckRpcSendFailureOptions()
           .set_rpc_options(RpcOptions().set_timeout_ms(kTimeoutMillisecond))
           .set_expected_error_code(grpc::StatusCode::UNAVAILABLE));
