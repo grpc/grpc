@@ -2980,9 +2980,9 @@ grpc_cc_library(
         "grpc_credentials_util",
         "grpc_fake_credentials",
         "grpc_fault_injection_filter",
-        "grpc_lb_policy_outlier_detection",
         "grpc_lb_xds_channel_args",
         "grpc_matchers",
+        "grpc_outlier_detection_header",
         "grpc_rbac_filter",
         "grpc_secure",
         "grpc_security_base",
@@ -3292,12 +3292,17 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "grpc_outlier_detection_header",
+    hdrs = [
+        "src/core/ext/filters/client_channel/lb_policy/outlier_detection/outlier_detection.h",
+    ],
+    language = "c++",
+)
+
+grpc_cc_library(
     name = "grpc_lb_policy_outlier_detection",
     srcs = [
         "src/core/ext/filters/client_channel/lb_policy/outlier_detection/outlier_detection.cc",
-    ],
-    hdrs = [
-        "src/core/ext/filters/client_channel/lb_policy/outlier_detection/outlier_detection.h",
     ],
     external_deps = [
         "absl/container:inlined_vector",
@@ -3309,6 +3314,7 @@ grpc_cc_library(
         "gpr_base",
         "grpc_base",
         "grpc_client_channel",
+        "grpc_outlier_detection_header",
         "json_util",
         "orphanable",
         "ref_counted_ptr",
