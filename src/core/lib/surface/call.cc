@@ -499,7 +499,7 @@ grpc_error_handle FilterStackCall::Create(grpc_call_create_args* args,
                                           grpc_call** out_call) {
   GPR_TIMER_SCOPE("grpc_call_create", 0);
 
-  RefCountedPtr<Channel> channel = std::move(args->channel);
+  Channel* channel = args->channel.get();
 
   auto add_init_error = [](grpc_error_handle* composite,
                            grpc_error_handle new_err) {
