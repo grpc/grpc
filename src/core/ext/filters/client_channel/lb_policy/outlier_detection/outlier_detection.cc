@@ -84,11 +84,12 @@ class OutlierDetectionLb : public LoadBalancingPolicy {
 
  private:
   class SubchannelWrapper;
+  class CallCounter;
   struct Ejection {
     struct CallResultCounter {
       struct Bucket {
-        uint64_t success;
-        uint64_t failure;
+        std::unique_ptr<CallCounter> success;
+        std::unique_ptr<CallCounter> failure;
       };
       Bucket active;
       Bucket inactive;
@@ -97,6 +98,13 @@ class OutlierDetectionLb : public LoadBalancingPolicy {
     absl::optional<Timestamp> ejection_time;
     uint32_t mutiplier;
     absl::InlinedVector<RefCountedPtr<SubchannelWrapper>, 1> subchannels;
+
+    Ejection() {
+      call_result_counter.active.success = absl::make_unique<CallCounter>();
+      call_result_counter.active.failure = absl::make_unique<CallCounter>();
+      call_result_counter.inactive.success = absl::make_unique<CallCounter>();
+      call_result_counter.inactive.failure = absl::make_unique<CallCounter>();
+    }
   };
 
   class SubchannelWrapper : public DelegatingSubchannel {
@@ -164,6 +172,21 @@ class OutlierDetectionLb : public LoadBalancingPolicy {
     std::map<SubchannelInterface::ConnectivityStateWatcherInterface*,
              WatcherWrapper*>
         watchers_;
+  };
+
+  class CallCounter {
+   public:
+    explicit CallCounter() {}
+
+    uint64_t Load() { return requests_.load(std::memory_order_seq_cst); }
+    uint64_t Exchange(uint64_t value) {
+      return requests_.exchange(value, std::memory_order_seq_cst);
+    }
+    uint64_t Increment() { return requests_.fetch_add(1); }
+    void Decrement() { requests_.fetch_sub(1); }
+
+   private:
+    std::atomic<uint64_t> requests_{0};
   };
 
   // A simple wrapper for ref-counting a picker from the child policy.
@@ -300,6 +323,11 @@ LoadBalancingPolicy::PickResult OutlierDetectionLb::Picker::Pick(
   // Delegate to child picker
   PickResult result = picker_->Pick(args);
   auto* complete_pick = absl::get_if<PickResult::Complete>(&result.result);
+  // TODO@donnadionne: I think this is where we increment the call result
+  // counter: complete_pick = success; otherwise = failure
+  // But how do I index into my ejection_map_ which is keyed by subchannel
+  // address and each entry can have a list of subchannel wrappers like the one
+  // found here.
   if (complete_pick != nullptr) {
     // Unwrap subchannel to pass back up the stack.
     auto* subchannel_wrapper =
