@@ -2694,10 +2694,13 @@ grpc_cc_library(
     external_deps = ["absl/strings"],
     language = "c++",
     deps = [
+        "capture",
         "gpr_base",
         "grpc_base",
         "grpc_service_config",
         "json_util",
+        "sleep",
+        "try_seq",
     ],
 )
 
