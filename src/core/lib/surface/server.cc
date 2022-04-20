@@ -849,7 +849,9 @@ void Server::CancelAllCalls() {
   }
   broadcaster.BroadcastShutdown(
       /*send_goaway=*/false,
-      GRPC_ERROR_CREATE_FROM_STATIC_STRING("Cancelling all calls"));
+      grpc_error_set_int(
+          GRPC_ERROR_CREATE_FROM_STATIC_STRING("Cancelling all calls"),
+          GRPC_ERROR_INT_GRPC_STATUS, GRPC_STATUS_OK));
 }
 
 void Server::Orphan() {
