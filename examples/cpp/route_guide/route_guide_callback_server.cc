@@ -196,7 +196,7 @@ class RouteGuideImpl final : public RouteGuide::CallbackService {
       CallbackServerContext* context) override {
     class Chatter : public grpc::ServerBidiReactor<RouteNote, RouteNote> {
      public:
-      Chatter(std::mutex* mu, std::vector<RouteNote>* received_notes)
+      Chatter(absl::Mutex* mu, std::vector<RouteNote>* received_notes)
           : mu_(mu), received_notes_(received_notes) {
         StartRead(&note_);
       }
@@ -210,7 +210,7 @@ class RouteGuideImpl final : public RouteGuide::CallbackService {
           // strategy. We'll grab the lock locally to build a copy of the
           // list of nodes we're going to send, then we'll grab the lock
           // again to append the received note to the existing vector.
-          mu_->lock();
+          mu_->Lock();
           std::copy_if(received_notes_->begin(), received_notes_->end(),
                        std::back_inserter(to_send_notes_),
                        [this](const RouteNote& note) {
@@ -219,7 +219,7 @@ class RouteGuideImpl final : public RouteGuide::CallbackService {
                                 note.location().longitude() ==
                                     note_.location().longitude();
                        });
-          mu_->unlock();
+          mu_->Unlock();
           notes_iterator_ = to_send_notes_.begin();
           NextWrite();
         } else {
@@ -234,14 +234,14 @@ class RouteGuideImpl final : public RouteGuide::CallbackService {
           StartWrite(&*notes_iterator_);
           notes_iterator_++;
         } else {
-          mu_->lock();
+          mu_->Lock();
           received_notes_->push_back(note_);
-          mu_->unlock();
+          mu_->Unlock();
           StartRead(&note_);
         }
       }
       RouteNote note_;
-      std::mutex* mu_;
+      absl::Mutex* mu_;
       std::vector<RouteNote>* received_notes_;
       std::vector<RouteNote> to_send_notes_;
       std::vector<RouteNote>::iterator notes_iterator_;
@@ -251,8 +251,8 @@ class RouteGuideImpl final : public RouteGuide::CallbackService {
 
  private:
   std::vector<Feature> feature_list_;
-  std::mutex mu_;
-  std::vector<RouteNote> received_notes_;
+  absl::Mutex mu_;
+  std::vector<RouteNote> received_notes_ ABSL_GUARDED_BY(mu_);
 };
 
 void RunServer(const std::string& db_path) {
