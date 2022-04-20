@@ -118,14 +118,23 @@ def gen_run_indices(runs_per_test: int) -> Iterable[str]:
         yield index_fmt.format(i)
 
 
+def scenario_name(base_name, client_channels, server_threads, offered_load):
+    elements = [base_name]
+    if client_channels:
+        elements.append(f'{client_channels}channels')
+    if server_threads:
+        elements.append(f'{server_threads}threads')
+    if offered_load:
+        elements.append(f'{offered_load}load')
+    return '_'.join(elements)
+
+
 def scenario_transform_function(
-    client_channels: int, offered_loads: Iterable[int],
-    async_server_threads: int
+    client_channels: int, server_threads: int, offered_loads: Iterable[int]
 ) -> Optional[Callable[[Iterable[Mapping[str, Any]]], Iterable[Mapping[str,
                                                                        Any]]]]:
     """Returns a transform to be applied to a list of scenarios."""
-    if client_channels == 0 or len(
-            offered_loads) == 0 or async_server_threads == 0:
+    if not any([client_channels, server_threads, len(offered_loads)]):
         return lambda s: s
 
     def _transform(
@@ -134,19 +143,28 @@ def scenario_transform_function(
         """Transforms scenarios by inserting num of client channels, number of async_server_threads and offered_load."""
 
         for base_scenario in scenarios:
-            base_scenario['client_config']['client_channels'] = client_channels
-            base_scenario['server_config'][
-                'async_server_threads'] = async_server_threads
             base_name = base_scenario['name']
+            if client_channels:
+                base_scenario['client_config'][
+                    'client_channels'] = client_channels
+            if server_threads:
+                base_scenario['server_config'][
+                    'async_server_threads'] = server_threads
+            if not offered_loads:
+                base_scenario['name'] = scenario_name(base_name,
+                                                      client_channels,
+                                                      server_threads, 0)
+                yield base_scenario
+                return
             for offered_load in offered_loads:
                 scenario = copy.deepcopy(base_scenario)
-                name = base_name + '_%dchannels_%dthreads_%dload' % (
-                    client_channels, async_server_threads, offered_load)
-                load = {}
-                load['offered_load'] = offered_load
-                scenario['client_config']['load_params'] = {}
-                scenario['client_config']['load_params']['poisson'] = load
-                scenario['name'] = name
+                scenario['client_config']['load_params'] = {
+                    'poisson': {
+                        'offered_load': offered_load
+                    }
+                }
+                scenario['name'] = scenario_name(base_name, client_channels,
+                                                 server_threads, offered_load)
                 yield scenario
 
     return _transform
@@ -417,19 +435,18 @@ def main() -> None:
                       '--output',
                       type=str,
                       help='Output file name. Output to stdout if not set.')
+    argp.add_argument('--client_channels',
+                      type=int,
+                      help='Number of client channels.')
+    argp.add_argument('--server_threads',
+                      type=int,
+                      help='Number of async server threads.')
     argp.add_argument(
-        '-offered_loads_list',
+        '--offered_loads',
         nargs="*",
         type=int,
         default=[],
         help='A list of offered loads that the tests are running with.')
-    argp.add_argument('-client_channel',
-                      type=int,
-                      help='Number of client channel opened for the test')
-    argp.add_argument(
-        '-async_server_threads',
-        type=int,
-        help='Number of server threads to handle the request in the test')
     args = argp.parse_args()
 
     if args.instances_per_client < 1:
@@ -456,9 +473,9 @@ def main() -> None:
 
     annotations = parse_key_value_args(args.annotations)
 
-    transform = scenario_transform_function(args.client_channel,
-                                            args.offered_loads_list,
-                                            args.async_server_threads)
+    transform = scenario_transform_function(args.client_channels,
+                                            args.server_threads,
+                                            args.offered_loads)
 
     with open(args.template) as f:
         base_config = yaml.safe_load(
