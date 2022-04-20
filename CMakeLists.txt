@@ -3974,6 +3974,7 @@ if(gRPC_INSTALL)
 endif()
 
 
+if(gRPC_BUILD_CODEGEN)
 add_library(grpc_plugin_support
   src/compiler/cpp_generator.cc
   src/compiler/csharp_generator.cc
@@ -4030,7 +4031,9 @@ foreach(_hdr
     DESTINATION "${gRPC_INSTALL_INCLUDEDIR}/${_path}"
   )
 endforeach()
+endif()
 
+if(gRPC_BUILD_CODEGEN)
 
 if(gRPC_INSTALL)
   install(TARGETS grpc_plugin_support EXPORT gRPCTargets
@@ -4041,6 +4044,7 @@ if(gRPC_INSTALL)
   )
 endif()
 
+endif()
 
 # grpcpp_channelz doesn't build with protobuf-lite
 # See https://github.com/grpc/grpc/issues/19473
