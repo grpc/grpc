@@ -125,10 +125,6 @@ void MaxAgeFilter::Shutdown() {
 }
 
 void MaxAgeFilter::Start() {
-  // Trigger idle timer immediately
-  IncreaseCallCount();
-  DecreaseCallCount();
-
   struct StartupClosure {
     RefCountedPtr<grpc_channel_stack> channel_stack;
     MaxAgeFilter* filter;
@@ -136,6 +132,9 @@ void MaxAgeFilter::Start() {
   };
   auto run_startup = [](void* p, grpc_error_handle) {
     auto* startup = static_cast<StartupClosure*>(p);
+    // Trigger idle timer
+    startup->filter->IncreaseCallCount();
+    startup->filter->DecreaseCallCount();
     grpc_transport_op* op = grpc_make_transport_op(nullptr);
     op->start_connectivity_watch.reset(
         new ConnectivityWatcher(startup->filter));

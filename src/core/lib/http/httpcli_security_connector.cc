@@ -48,7 +48,7 @@ class grpc_httpcli_ssl_channel_security_connector final
  public:
   explicit grpc_httpcli_ssl_channel_security_connector(char* secure_peer_name)
       : grpc_channel_security_connector(
-            /*url_scheme=*/nullptr,
+            /*url_scheme=*/{},
             /*channel_creds=*/nullptr,
             /*request_metadata_creds=*/nullptr),
         secure_peer_name_(secure_peer_name) {}

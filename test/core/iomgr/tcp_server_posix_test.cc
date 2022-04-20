@@ -137,7 +137,7 @@ static void server_weak_ref_set(server_weak_ref* weak_ref,
 }
 
 static void test_addr_init_str(test_addr* addr) {
-  std::string str = grpc_sockaddr_to_string(&addr->addr, false);
+  std::string str = grpc_sockaddr_to_string(&addr->addr, false).value();
   size_t str_len = std::min(str.size(), sizeof(addr->str) - 1);
   memcpy(addr->str, str.c_str(), str_len);
   addr->str[str_len] = '\0';

@@ -81,6 +81,9 @@ UPB_INLINE char* google_protobuf_DoubleValue_serialize_ex(const google_protobuf_
                                  upb_Arena* arena, size_t* len) {
   return upb_Encode(msg, &google_protobuf_DoubleValue_msginit, options, arena, len);
 }
+UPB_INLINE void google_protobuf_DoubleValue_clear_value(const google_protobuf_DoubleValue* msg) {
+  *UPB_PTR_AT(msg, UPB_SIZE(0, 0), double) = 0;
+}
 UPB_INLINE double google_protobuf_DoubleValue_value(const google_protobuf_DoubleValue* msg) {
   return *UPB_PTR_AT(msg, UPB_SIZE(0, 0), double);
 }
@@ -119,6 +122,9 @@ UPB_INLINE char* google_protobuf_FloatValue_serialize(const google_protobuf_Floa
 UPB_INLINE char* google_protobuf_FloatValue_serialize_ex(const google_protobuf_FloatValue* msg, int options,
                                  upb_Arena* arena, size_t* len) {
   return upb_Encode(msg, &google_protobuf_FloatValue_msginit, options, arena, len);
+}
+UPB_INLINE void google_protobuf_FloatValue_clear_value(const google_protobuf_FloatValue* msg) {
+  *UPB_PTR_AT(msg, UPB_SIZE(0, 0), float) = 0;
 }
 UPB_INLINE float google_protobuf_FloatValue_value(const google_protobuf_FloatValue* msg) {
   return *UPB_PTR_AT(msg, UPB_SIZE(0, 0), float);
@@ -159,6 +165,9 @@ UPB_INLINE char* google_protobuf_Int64Value_serialize_ex(const google_protobuf_I
                                  upb_Arena* arena, size_t* len) {
   return upb_Encode(msg, &google_protobuf_Int64Value_msginit, options, arena, len);
 }
+UPB_INLINE void google_protobuf_Int64Value_clear_value(const google_protobuf_Int64Value* msg) {
+  *UPB_PTR_AT(msg, UPB_SIZE(0, 0), int64_t) = 0;
+}
 UPB_INLINE int64_t google_protobuf_Int64Value_value(const google_protobuf_Int64Value* msg) {
   return *UPB_PTR_AT(msg, UPB_SIZE(0, 0), int64_t);
 }
@@ -197,6 +206,9 @@ UPB_INLINE char* google_protobuf_UInt64Value_serialize(const google_protobuf_UIn
 UPB_INLINE char* google_protobuf_UInt64Value_serialize_ex(const google_protobuf_UInt64Value* msg, int options,
                                  upb_Arena* arena, size_t* len) {
   return upb_Encode(msg, &google_protobuf_UInt64Value_msginit, options, arena, len);
+}
+UPB_INLINE void google_protobuf_UInt64Value_clear_value(const google_protobuf_UInt64Value* msg) {
+  *UPB_PTR_AT(msg, UPB_SIZE(0, 0), uint64_t) = 0;
 }
 UPB_INLINE uint64_t google_protobuf_UInt64Value_value(const google_protobuf_UInt64Value* msg) {
   return *UPB_PTR_AT(msg, UPB_SIZE(0, 0), uint64_t);
@@ -237,6 +249,9 @@ UPB_INLINE char* google_protobuf_Int32Value_serialize_ex(const google_protobuf_I
                                  upb_Arena* arena, size_t* len) {
   return upb_Encode(msg, &google_protobuf_Int32Value_msginit, options, arena, len);
 }
+UPB_INLINE void google_protobuf_Int32Value_clear_value(const google_protobuf_Int32Value* msg) {
+  *UPB_PTR_AT(msg, UPB_SIZE(0, 0), int32_t) = 0;
+}
 UPB_INLINE int32_t google_protobuf_Int32Value_value(const google_protobuf_Int32Value* msg) {
   return *UPB_PTR_AT(msg, UPB_SIZE(0, 0), int32_t);
 }
@@ -275,6 +290,9 @@ UPB_INLINE char* google_protobuf_UInt32Value_serialize(const google_protobuf_UIn
 UPB_INLINE char* google_protobuf_UInt32Value_serialize_ex(const google_protobuf_UInt32Value* msg, int options,
                                  upb_Arena* arena, size_t* len) {
   return upb_Encode(msg, &google_protobuf_UInt32Value_msginit, options, arena, len);
+}
+UPB_INLINE void google_protobuf_UInt32Value_clear_value(const google_protobuf_UInt32Value* msg) {
+  *UPB_PTR_AT(msg, UPB_SIZE(0, 0), uint32_t) = 0;
 }
 UPB_INLINE uint32_t google_protobuf_UInt32Value_value(const google_protobuf_UInt32Value* msg) {
   return *UPB_PTR_AT(msg, UPB_SIZE(0, 0), uint32_t);
@@ -315,6 +333,9 @@ UPB_INLINE char* google_protobuf_BoolValue_serialize_ex(const google_protobuf_Bo
                                  upb_Arena* arena, size_t* len) {
   return upb_Encode(msg, &google_protobuf_BoolValue_msginit, options, arena, len);
 }
+UPB_INLINE void google_protobuf_BoolValue_clear_value(const google_protobuf_BoolValue* msg) {
+  *UPB_PTR_AT(msg, UPB_SIZE(0, 0), bool) = 0;
+}
 UPB_INLINE bool google_protobuf_BoolValue_value(const google_protobuf_BoolValue* msg) {
   return *UPB_PTR_AT(msg, UPB_SIZE(0, 0), bool);
 }
@@ -354,6 +375,9 @@ UPB_INLINE char* google_protobuf_StringValue_serialize_ex(const google_protobuf_
                                  upb_Arena* arena, size_t* len) {
   return upb_Encode(msg, &google_protobuf_StringValue_msginit, options, arena, len);
 }
+UPB_INLINE void google_protobuf_StringValue_clear_value(const google_protobuf_StringValue* msg) {
+  *UPB_PTR_AT(msg, UPB_SIZE(0, 0), upb_StringView) = upb_StringView_FromDataAndSize(NULL, 0);
+}
 UPB_INLINE upb_StringView google_protobuf_StringValue_value(const google_protobuf_StringValue* msg) {
   return *UPB_PTR_AT(msg, UPB_SIZE(0, 0), upb_StringView);
 }
@@ -392,6 +416,9 @@ UPB_INLINE char* google_protobuf_BytesValue_serialize(const google_protobuf_Byte
 UPB_INLINE char* google_protobuf_BytesValue_serialize_ex(const google_protobuf_BytesValue* msg, int options,
                                  upb_Arena* arena, size_t* len) {
   return upb_Encode(msg, &google_protobuf_BytesValue_msginit, options, arena, len);
+}
+UPB_INLINE void google_protobuf_BytesValue_clear_value(const google_protobuf_BytesValue* msg) {
+  *UPB_PTR_AT(msg, UPB_SIZE(0, 0), upb_StringView) = upb_StringView_FromDataAndSize(NULL, 0);
 }
 UPB_INLINE upb_StringView google_protobuf_BytesValue_value(const google_protobuf_BytesValue* msg) {
   return *UPB_PTR_AT(msg, UPB_SIZE(0, 0), upb_StringView);

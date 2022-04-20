@@ -57,20 +57,38 @@ UPB_INLINE char* envoy_admin_v3_Memory_serialize_ex(const envoy_admin_v3_Memory*
                                  upb_Arena* arena, size_t* len) {
   return upb_Encode(msg, &envoy_admin_v3_Memory_msginit, options, arena, len);
 }
+UPB_INLINE void envoy_admin_v3_Memory_clear_allocated(const envoy_admin_v3_Memory* msg) {
+  *UPB_PTR_AT(msg, UPB_SIZE(0, 0), uint64_t) = 0;
+}
 UPB_INLINE uint64_t envoy_admin_v3_Memory_allocated(const envoy_admin_v3_Memory* msg) {
   return *UPB_PTR_AT(msg, UPB_SIZE(0, 0), uint64_t);
+}
+UPB_INLINE void envoy_admin_v3_Memory_clear_heap_size(const envoy_admin_v3_Memory* msg) {
+  *UPB_PTR_AT(msg, UPB_SIZE(8, 8), uint64_t) = 0;
 }
 UPB_INLINE uint64_t envoy_admin_v3_Memory_heap_size(const envoy_admin_v3_Memory* msg) {
   return *UPB_PTR_AT(msg, UPB_SIZE(8, 8), uint64_t);
 }
+UPB_INLINE void envoy_admin_v3_Memory_clear_pageheap_unmapped(const envoy_admin_v3_Memory* msg) {
+  *UPB_PTR_AT(msg, UPB_SIZE(16, 16), uint64_t) = 0;
+}
 UPB_INLINE uint64_t envoy_admin_v3_Memory_pageheap_unmapped(const envoy_admin_v3_Memory* msg) {
   return *UPB_PTR_AT(msg, UPB_SIZE(16, 16), uint64_t);
+}
+UPB_INLINE void envoy_admin_v3_Memory_clear_pageheap_free(const envoy_admin_v3_Memory* msg) {
+  *UPB_PTR_AT(msg, UPB_SIZE(24, 24), uint64_t) = 0;
 }
 UPB_INLINE uint64_t envoy_admin_v3_Memory_pageheap_free(const envoy_admin_v3_Memory* msg) {
   return *UPB_PTR_AT(msg, UPB_SIZE(24, 24), uint64_t);
 }
+UPB_INLINE void envoy_admin_v3_Memory_clear_total_thread_cache(const envoy_admin_v3_Memory* msg) {
+  *UPB_PTR_AT(msg, UPB_SIZE(32, 32), uint64_t) = 0;
+}
 UPB_INLINE uint64_t envoy_admin_v3_Memory_total_thread_cache(const envoy_admin_v3_Memory* msg) {
   return *UPB_PTR_AT(msg, UPB_SIZE(32, 32), uint64_t);
+}
+UPB_INLINE void envoy_admin_v3_Memory_clear_total_physical_bytes(const envoy_admin_v3_Memory* msg) {
+  *UPB_PTR_AT(msg, UPB_SIZE(40, 40), uint64_t) = 0;
 }
 UPB_INLINE uint64_t envoy_admin_v3_Memory_total_physical_bytes(const envoy_admin_v3_Memory* msg) {
   return *UPB_PTR_AT(msg, UPB_SIZE(40, 40), uint64_t);
