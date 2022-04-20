@@ -135,7 +135,7 @@ TEST_P(RingHashTest, AggregateClusterFallBackFromRingHashAtStartup) {
                                    new_route_config);
   // Verifying that we are using ring hash as only 1 endpoint is receiving all
   // the traffic.
-  CheckRpcSendOk(100);
+  CheckRpcSendOk(DEBUG_LOCATION, 100);
   bool found = false;
   for (size_t i = 0; i < backends_.size(); ++i) {
     if (backends_[i]->backend_service()->request_count() > 0) {
@@ -212,9 +212,10 @@ TEST_P(RingHashTest,
   // Inject connection delay to make this act more realistically.
   ConnectionDelayInjector delay_injector(
       grpc_core::Duration::Milliseconds(500) * grpc_test_slowdown_factor());
+  delay_injector.Start();
   // Send RPC.  Need the timeout to be long enough to account for the
   // subchannel connection delays.
-  CheckRpcSendOk(1, RpcOptions().set_timeout_ms(5000));
+  CheckRpcSendOk(DEBUG_LOCATION, 1, RpcOptions().set_timeout_ms(5000));
 }
 
 // Tests that ring hash policy that hashes using channel id ensures all RPCs
@@ -232,7 +233,7 @@ TEST_P(RingHashTest, ChannelIdHashing) {
                                    new_route_config);
   EdsResourceArgs args({{"locality0", CreateEndpointsForBackends()}});
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
-  CheckRpcSendOk(100);
+  CheckRpcSendOk(DEBUG_LOCATION, 100);
   bool found = false;
   for (size_t i = 0; i < backends_.size(); ++i) {
     if (backends_[i]->backend_service()->request_count() > 0) {
@@ -275,14 +276,14 @@ TEST_P(RingHashTest, HeaderHashing) {
   const auto rpc_options1 = RpcOptions().set_metadata(std::move(metadata1));
   const auto rpc_options2 = RpcOptions().set_metadata(std::move(metadata2));
   const auto rpc_options3 = RpcOptions().set_metadata(std::move(metadata3));
-  WaitForBackend(0, WaitForBackendOptions(), rpc_options);
-  WaitForBackend(1, WaitForBackendOptions(), rpc_options1);
-  WaitForBackend(2, WaitForBackendOptions(), rpc_options2);
-  WaitForBackend(3, WaitForBackendOptions(), rpc_options3);
-  CheckRpcSendOk(100, rpc_options);
-  CheckRpcSendOk(100, rpc_options1);
-  CheckRpcSendOk(100, rpc_options2);
-  CheckRpcSendOk(100, rpc_options3);
+  WaitForBackend(DEBUG_LOCATION, 0, WaitForBackendOptions(), rpc_options);
+  WaitForBackend(DEBUG_LOCATION, 1, WaitForBackendOptions(), rpc_options1);
+  WaitForBackend(DEBUG_LOCATION, 2, WaitForBackendOptions(), rpc_options2);
+  WaitForBackend(DEBUG_LOCATION, 3, WaitForBackendOptions(), rpc_options3);
+  CheckRpcSendOk(DEBUG_LOCATION, 100, rpc_options);
+  CheckRpcSendOk(DEBUG_LOCATION, 100, rpc_options1);
+  CheckRpcSendOk(DEBUG_LOCATION, 100, rpc_options2);
+  CheckRpcSendOk(DEBUG_LOCATION, 100, rpc_options3);
   for (size_t i = 0; i < backends_.size(); ++i) {
     EXPECT_EQ(100, backends_[i]->backend_service()->request_count());
   }
@@ -321,10 +322,10 @@ TEST_P(RingHashTest, HeaderHashingWithRegexRewrite) {
   const auto rpc_options1 = RpcOptions().set_metadata(std::move(metadata1));
   const auto rpc_options2 = RpcOptions().set_metadata(std::move(metadata2));
   const auto rpc_options3 = RpcOptions().set_metadata(std::move(metadata3));
-  CheckRpcSendOk(100, rpc_options);
-  CheckRpcSendOk(100, rpc_options1);
-  CheckRpcSendOk(100, rpc_options2);
-  CheckRpcSendOk(100, rpc_options3);
+  CheckRpcSendOk(DEBUG_LOCATION, 100, rpc_options);
+  CheckRpcSendOk(DEBUG_LOCATION, 100, rpc_options1);
+  CheckRpcSendOk(DEBUG_LOCATION, 100, rpc_options2);
+  CheckRpcSendOk(DEBUG_LOCATION, 100, rpc_options3);
   bool found = false;
   for (size_t i = 0; i < backends_.size(); ++i) {
     if (backends_[i]->backend_service()->request_count() > 0) {
@@ -355,9 +356,9 @@ TEST_P(RingHashTest, NoHashPolicy) {
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
   // TODO(donnadionne): remove extended timeout after ring creation
   // optimization.
-  WaitForAllBackends(0, 2, WaitForBackendOptions(),
+  WaitForAllBackends(DEBUG_LOCATION, 0, 2, WaitForBackendOptions(),
                      RpcOptions().set_timeout_ms(kRpcTimeoutMs));
-  CheckRpcSendOk(kNumRpcs);
+  CheckRpcSendOk(DEBUG_LOCATION, kNumRpcs);
   const int request_count_1 = backends_[0]->backend_service()->request_count();
   const int request_count_2 = backends_[1]->backend_service()->request_count();
   EXPECT_THAT(static_cast<double>(request_count_1) / kNumRpcs,
@@ -387,7 +388,7 @@ TEST_P(RingHashTest, ContinuesPastTerminalPolicyThatDoesNotProduceResult) {
   std::vector<std::pair<std::string, std::string>> metadata = {
       {"address_hash", CreateMetadataValueThatHashesToBackend(0)}};
   const auto rpc_options = RpcOptions().set_metadata(std::move(metadata));
-  CheckRpcSendOk(100, rpc_options);
+  CheckRpcSendOk(DEBUG_LOCATION, 100, rpc_options);
   EXPECT_EQ(backends_[0]->backend_service()->request_count(), 100);
   EXPECT_EQ(backends_[1]->backend_service()->request_count(), 0);
 }
@@ -421,9 +422,9 @@ TEST_P(RingHashTest, HashOnHeaderThatIsNotPresent) {
   const auto rpc_options = RpcOptions().set_metadata(std::move(metadata));
   // TODO(donnadionne): remove extended timeout after ring creation
   // optimization.
-  WaitForAllBackends(0, 2, WaitForBackendOptions(),
+  WaitForAllBackends(DEBUG_LOCATION, 0, 2, WaitForBackendOptions(),
                      RpcOptions().set_timeout_ms(kRpcTimeoutMs));
-  CheckRpcSendOk(kNumRpcs, rpc_options);
+  CheckRpcSendOk(DEBUG_LOCATION, kNumRpcs, rpc_options);
   const int request_count_1 = backends_[0]->backend_service()->request_count();
   const int request_count_2 = backends_[1]->backend_service()->request_count();
   EXPECT_THAT(static_cast<double>(request_count_1) / kNumRpcs,
@@ -463,9 +464,9 @@ TEST_P(RingHashTest, UnsupportedHashPolicyDefaultToRandomHashing) {
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
   // TODO(donnadionne): remove extended timeout after ring creation
   // optimization.
-  WaitForAllBackends(0, 2, WaitForBackendOptions(),
+  WaitForAllBackends(DEBUG_LOCATION, 0, 2, WaitForBackendOptions(),
                      RpcOptions().set_timeout_ms(kRpcTimeoutMs));
-  CheckRpcSendOk(kNumRpcs);
+  CheckRpcSendOk(DEBUG_LOCATION, kNumRpcs);
   const int request_count_1 = backends_[0]->backend_service()->request_count();
   const int request_count_2 = backends_[1]->backend_service()->request_count();
   EXPECT_THAT(static_cast<double>(request_count_1) / kNumRpcs,
@@ -499,9 +500,9 @@ TEST_P(RingHashTest, RandomHashingDistributionAccordingToEndpointWeight) {
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
   // TODO(donnadionne): remove extended timeout after ring creation
   // optimization.
-  WaitForAllBackends(0, 2, WaitForBackendOptions(),
+  WaitForAllBackends(DEBUG_LOCATION, 0, 2, WaitForBackendOptions(),
                      RpcOptions().set_timeout_ms(kRpcTimeoutMs));
-  CheckRpcSendOk(kNumRpcs);
+  CheckRpcSendOk(DEBUG_LOCATION, kNumRpcs);
   const int weight_33_request_count =
       backends_[0]->backend_service()->request_count();
   const int weight_66_request_count =
@@ -538,9 +539,9 @@ TEST_P(RingHashTest,
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
   // TODO(donnadionne): remove extended timeout after ring creation
   // optimization.
-  WaitForAllBackends(0, 2, WaitForBackendOptions(),
+  WaitForAllBackends(DEBUG_LOCATION, 0, 2, WaitForBackendOptions(),
                      RpcOptions().set_timeout_ms(kRpcTimeoutMs));
-  CheckRpcSendOk(kNumRpcs);
+  CheckRpcSendOk(DEBUG_LOCATION, kNumRpcs);
   const int weight_20_request_count =
       backends_[0]->backend_service()->request_count();
   const int weight_80_request_count =
@@ -575,7 +576,7 @@ TEST_P(RingHashTest, FixedHashingTerminalPolicy) {
       {"random_string", absl::StrFormat("%" PRIu32, rand())},
   };
   const auto rpc_options = RpcOptions().set_metadata(std::move(metadata));
-  CheckRpcSendOk(100, rpc_options);
+  CheckRpcSendOk(DEBUG_LOCATION, 100, rpc_options);
   bool found = false;
   for (size_t i = 0; i < backends_.size(); ++i) {
     if (backends_[i]->backend_service()->request_count() > 0) {
@@ -605,7 +606,7 @@ TEST_P(RingHashTest, IdleToReady) {
   EdsResourceArgs args({{"locality0", CreateEndpointsForBackends()}});
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
   EXPECT_EQ(GRPC_CHANNEL_IDLE, channel_->GetState(false));
-  CheckRpcSendOk();
+  CheckRpcSendOk(DEBUG_LOCATION);
   EXPECT_EQ(GRPC_CHANNEL_READY, channel_->GetState(false));
 }
 
@@ -670,6 +671,7 @@ TEST_P(RingHashTest, ContinuesConnectingWithoutPicks) {
     bool seen_port_ ABSL_GUARDED_BY(mu_) = false;
   };
   ConnectionInjector connection_injector(non_existant_endpoint.port);
+  connection_injector.Start();
   // A long-running RPC, just used to send the RPC in another thread.
   LongRunningRpc rpc;
   std::vector<std::pair<std::string, std::string>> metadata = {
@@ -855,6 +857,7 @@ TEST_P(RingHashTest, ContinuesConnectingWithoutPicksOneSubchannelAtATime) {
   ConnectionInjector connection_injector(
       non_existant_endpoint0.port, non_existant_endpoint1.port,
       non_existant_endpoint2.port, backends_[0]->port());
+  connection_injector.Start();
   // A long-running RPC, just used to send the RPC in another thread.
   LongRunningRpc rpc;
   std::vector<std::pair<std::string, std::string>> metadata = {
@@ -896,8 +899,8 @@ TEST_P(RingHashTest, TransientFailureCheckNextOne) {
       {"address_hash",
        CreateMetadataValueThatHashesToBackendPort(unused_port)}};
   const auto rpc_options = RpcOptions().set_metadata(std::move(metadata));
-  WaitForBackend(0, WaitForBackendOptions(), rpc_options);
-  CheckRpcSendOk(100, rpc_options);
+  WaitForBackend(DEBUG_LOCATION, 0, WaitForBackendOptions(), rpc_options);
+  CheckRpcSendOk(DEBUG_LOCATION, 100, rpc_options);
 }
 
 // Test that when a backend goes down, we will move on to the next subchannel
@@ -924,13 +927,13 @@ TEST_P(RingHashTest, SwitchToLowerPrioirtyAndThenBack) {
   std::vector<std::pair<std::string, std::string>> metadata = {
       {"address_hash", CreateMetadataValueThatHashesToBackend(0)}};
   const auto rpc_options = RpcOptions().set_metadata(std::move(metadata));
-  WaitForBackend(0, WaitForBackendOptions(), rpc_options);
+  WaitForBackend(DEBUG_LOCATION, 0, WaitForBackendOptions(), rpc_options);
   ShutdownBackend(0);
-  WaitForBackend(1, WaitForBackendOptions().set_allow_failures(true),
-                 rpc_options);
+  WaitForBackend(DEBUG_LOCATION, 1,
+                 WaitForBackendOptions().set_allow_failures(true), rpc_options);
   StartBackend(0);
-  WaitForBackend(0, WaitForBackendOptions(), rpc_options);
-  CheckRpcSendOk(100, rpc_options);
+  WaitForBackend(DEBUG_LOCATION, 0, WaitForBackendOptions(), rpc_options);
+  CheckRpcSendOk(DEBUG_LOCATION, 100, rpc_options);
   EXPECT_EQ(100, backends_[0]->backend_service()->request_count());
   EXPECT_EQ(0, backends_[1]->backend_service()->request_count());
 }
@@ -955,8 +958,9 @@ TEST_P(RingHashTest, ReattemptWhenAllEndpointsUnreachable) {
       {"address_hash", CreateMetadataValueThatHashesToBackend(0)}};
   EXPECT_EQ(GRPC_CHANNEL_IDLE, channel_->GetState(false));
   ShutdownBackend(0);
-  CheckRpcSendFailure(CheckRpcSendFailureOptions().set_rpc_options(
-      RpcOptions().set_metadata(std::move(metadata))));
+  CheckRpcSendFailure(DEBUG_LOCATION,
+                      CheckRpcSendFailureOptions().set_rpc_options(
+                          RpcOptions().set_metadata(std::move(metadata))));
   StartBackend(0);
   // Ensure we are actively connecting without any traffic.
   EXPECT_TRUE(channel_->WaitForConnected(
@@ -991,13 +995,14 @@ TEST_P(RingHashTest, TransientFailureSkipToAvailableReady) {
   ShutdownBackend(0);
   ShutdownBackend(1);
   CheckRpcSendFailure(
+      DEBUG_LOCATION,
       CheckRpcSendFailureOptions().set_rpc_options(rpc_options));
   EXPECT_EQ(GRPC_CHANNEL_TRANSIENT_FAILURE, channel_->GetState(false));
   // Bring up 0, should be picked as the RPC is hashed to it.
   StartBackend(0);
   EXPECT_TRUE(channel_->WaitForConnected(
       grpc_timeout_milliseconds_to_deadline(kConnectionTimeoutMilliseconds)));
-  WaitForBackend(0, WaitForBackendOptions(), rpc_options);
+  WaitForBackend(DEBUG_LOCATION, 0, WaitForBackendOptions(), rpc_options);
   // Bring down 0 and bring up 1.
   // Note the RPC contains a header value that will always be hashed to
   // backend 0. So by purposely bring down backend 0 and bring up another
@@ -1010,11 +1015,12 @@ TEST_P(RingHashTest, TransientFailureSkipToAvailableReady) {
   // will go through some non-READY entries and skip them as per design.
   ShutdownBackend(0);
   CheckRpcSendFailure(
+      DEBUG_LOCATION,
       CheckRpcSendFailureOptions().set_rpc_options(rpc_options));
   StartBackend(1);
   EXPECT_TRUE(channel_->WaitForConnected(
       grpc_timeout_milliseconds_to_deadline(kConnectionTimeoutMilliseconds)));
-  WaitForBackend(1, WaitForBackendOptions(), rpc_options);
+  WaitForBackend(DEBUG_LOCATION, 1, WaitForBackendOptions(), rpc_options);
 }
 
 // Test unspported hash policy types are all ignored before a supported
@@ -1040,7 +1046,7 @@ TEST_P(RingHashTest, UnsupportedHashPolicyUntilChannelIdHashing) {
                                    new_route_config);
   EdsResourceArgs args({{"locality0", CreateEndpointsForBackends()}});
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
-  CheckRpcSendOk(100);
+  CheckRpcSendOk(DEBUG_LOCATION, 100);
   bool found = false;
   for (size_t i = 0; i < backends_.size(); ++i) {
     if (backends_[i]->backend_service()->request_count() > 0) {
@@ -1070,7 +1076,7 @@ TEST_P(RingHashTest, InvalidHashFunction) {
                                    new_route_config);
   EdsResourceArgs args({{"locality0", CreateEndpointsForBackends()}});
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
-  const auto response_state = WaitForCdsNack();
+  const auto response_state = WaitForCdsNack(DEBUG_LOCATION);
   ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
   EXPECT_THAT(
       response_state->error_message,
@@ -1093,7 +1099,7 @@ TEST_P(RingHashTest, InvalidMinimumRingSize) {
                                    new_route_config);
   EdsResourceArgs args({{"locality0", CreateEndpointsForBackends()}});
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
-  const auto response_state = WaitForCdsNack();
+  const auto response_state = WaitForCdsNack(DEBUG_LOCATION);
   ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
   EXPECT_THAT(response_state->error_message,
               ::testing::HasSubstr(
@@ -1116,7 +1122,7 @@ TEST_P(RingHashTest, InvalidMaxmumRingSize) {
                                    new_route_config);
   EdsResourceArgs args({{"locality0", CreateEndpointsForBackends()}});
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
-  const auto response_state = WaitForCdsNack();
+  const auto response_state = WaitForCdsNack(DEBUG_LOCATION);
   ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
   EXPECT_THAT(response_state->error_message,
               ::testing::HasSubstr(
@@ -1141,7 +1147,7 @@ TEST_P(RingHashTest, InvalidRingSizeMinGreaterThanMax) {
                                    new_route_config);
   EdsResourceArgs args({{"locality0", CreateEndpointsForBackends()}});
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
-  const auto response_state = WaitForCdsNack();
+  const auto response_state = WaitForCdsNack(DEBUG_LOCATION);
   ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
   EXPECT_THAT(response_state->error_message,
               ::testing::HasSubstr(

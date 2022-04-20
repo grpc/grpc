@@ -117,6 +117,7 @@ TEST_P(FaultInjectionTest, XdsFaultInjectionAlwaysAbort) {
   SetFilterConfig(http_fault);
   // Fire several RPCs, and expect all of them to be aborted.
   CheckRpcSendFailure(
+      DEBUG_LOCATION,
       CheckRpcSendFailureOptions()
           .set_times(5)
           .set_rpc_options(RpcOptions().set_wait_for_ready(true))
@@ -142,7 +143,7 @@ TEST_P(FaultInjectionTest, XdsFaultInjectionWithoutListenerFilter) {
       BuildRouteConfigurationWithFaultInjection(http_fault);
   SetListenerAndRouteConfiguration(balancer_.get(), default_listener_, route);
   // Fire several RPCs, and expect all of them to be pass.
-  CheckRpcSendOk(5, RpcOptions().set_wait_for_ready(true));
+  CheckRpcSendOk(DEBUG_LOCATION, 5, RpcOptions().set_wait_for_ready(true));
 }
 
 TEST_P(FaultInjectionTest, XdsFaultInjectionPercentageAbort) {
@@ -164,8 +165,8 @@ TEST_P(FaultInjectionTest, XdsFaultInjectionPercentageAbort) {
   // Config fault injection via different setup
   SetFilterConfig(http_fault);
   // Send kNumRpcs RPCs and count the aborts.
-  size_t num_aborted =
-      SendRpcsAndCountFailuresWithMessage(kNumRpcs, "Fault injected");
+  size_t num_aborted = SendRpcsAndCountFailuresWithMessage(
+      DEBUG_LOCATION, kNumRpcs, "Fault injected");
   // The abort rate should be roughly equal to the expectation.
   const double seen_abort_rate = static_cast<double>(num_aborted) / kNumRpcs;
   EXPECT_THAT(seen_abort_rate,
@@ -195,7 +196,8 @@ TEST_P(FaultInjectionTest, XdsFaultInjectionPercentageAbortViaHeaders) {
       {"x-envoy-fault-abort-percentage", std::to_string(kAbortPercentage)},
   };
   size_t num_aborted = SendRpcsAndCountFailuresWithMessage(
-      kNumRpcs, "Fault injected", RpcOptions().set_metadata(metadata));
+      DEBUG_LOCATION, kNumRpcs, "Fault injected",
+      RpcOptions().set_metadata(metadata));
   // The abort rate should be roughly equal to the expectation.
   const double seen_abort_rate = static_cast<double>(num_aborted) / kNumRpcs;
   EXPECT_THAT(seen_abort_rate,
@@ -234,7 +236,7 @@ TEST_P(FaultInjectionTest, XdsFaultInjectionPercentageDelay) {
                                .set_timeout_ms(kRpcTimeoutMilliseconds)
                                .set_skip_cancelled_check(true);
   std::vector<ConcurrentRpc> rpcs =
-      SendConcurrentRpcs(stub_.get(), kNumRpcs, rpc_options);
+      SendConcurrentRpcs(DEBUG_LOCATION, stub_.get(), kNumRpcs, rpc_options);
   size_t num_delayed = 0;
   for (auto& rpc : rpcs) {
     if (rpc.status.error_code() == StatusCode::OK) continue;
@@ -284,7 +286,7 @@ TEST_P(FaultInjectionTest, XdsFaultInjectionPercentageDelayViaHeaders) {
                                .set_timeout_ms(kRpcTimeoutMilliseconds)
                                .set_skip_cancelled_check(true);
   std::vector<ConcurrentRpc> rpcs =
-      SendConcurrentRpcs(stub_.get(), kNumRpcs, rpc_options);
+      SendConcurrentRpcs(DEBUG_LOCATION, stub_.get(), kNumRpcs, rpc_options);
   size_t num_delayed = 0;
   for (auto& rpc : rpcs) {
     if (rpc.status.error_code() == StatusCode::OK) continue;
@@ -373,7 +375,7 @@ TEST_P(FaultInjectionTest, XdsFaultInjectionAlwaysDelayPercentageAbort) {
   int num_aborted = 0;
   RpcOptions rpc_options = RpcOptions().set_timeout_ms(kRpcTimeoutMilliseconds);
   std::vector<ConcurrentRpc> rpcs =
-      SendConcurrentRpcs(stub_.get(), kNumRpcs, rpc_options);
+      SendConcurrentRpcs(DEBUG_LOCATION, stub_.get(), kNumRpcs, rpc_options);
   for (auto& rpc : rpcs) {
     EXPECT_GE(rpc.elapsed_time,
               grpc_core::Duration::Seconds(kFixedDelaySeconds));
@@ -434,7 +436,7 @@ TEST_P(FaultInjectionTest,
   int num_aborted = 0;
   RpcOptions rpc_options = RpcOptions().set_timeout_ms(kRpcTimeoutMilliseconds);
   std::vector<ConcurrentRpc> rpcs =
-      SendConcurrentRpcs(stub_.get(), kNumRpcs, rpc_options);
+      SendConcurrentRpcs(DEBUG_LOCATION, stub_.get(), kNumRpcs, rpc_options);
   for (auto& rpc : rpcs) {
     EXPECT_GE(rpc.elapsed_time,
               grpc_core::Duration::Seconds(kFixedDelaySeconds));
@@ -474,7 +476,7 @@ TEST_P(FaultInjectionTest, XdsFaultInjectionMaxFault) {
   int num_delayed = 0;
   RpcOptions rpc_options = RpcOptions().set_timeout_ms(kRpcTimeoutMs);
   std::vector<ConcurrentRpc> rpcs =
-      SendConcurrentRpcs(stub_.get(), kNumRpcs, rpc_options);
+      SendConcurrentRpcs(DEBUG_LOCATION, stub_.get(), kNumRpcs, rpc_options);
   for (auto& rpc : rpcs) {
     if (rpc.status.error_code() == StatusCode::OK) continue;
     EXPECT_EQ(StatusCode::DEADLINE_EXCEEDED, rpc.status.error_code());
@@ -485,7 +487,7 @@ TEST_P(FaultInjectionTest, XdsFaultInjectionMaxFault) {
   // Conduct one more round of RPCs after previous calls are finished. The goal
   // is to validate if the max fault counter is restored to zero.
   num_delayed = 0;
-  rpcs = SendConcurrentRpcs(stub_.get(), kNumRpcs, rpc_options);
+  rpcs = SendConcurrentRpcs(DEBUG_LOCATION, stub_.get(), kNumRpcs, rpc_options);
   for (auto& rpc : rpcs) {
     if (rpc.status.error_code() == StatusCode::OK) continue;
     EXPECT_EQ(StatusCode::DEADLINE_EXCEEDED, rpc.status.error_code());

@@ -607,6 +607,7 @@ TEST_F(ClientLbEnd2endTest, PickFirstBackOffMinReconnect) {
   // sure we are hitting the codepath that waits for the min reconnect backoff.
   ConnectionDelayInjector delay_injector(
       grpc_core::Duration::Milliseconds(kMinReconnectBackOffMs * 1.10));
+  delay_injector.Start();
   const gpr_timespec t0 = gpr_now(GPR_CLOCK_MONOTONIC);
   channel->WaitForConnected(
       grpc_timeout_milliseconds_to_deadline(kMinReconnectBackOffMs * 2));
