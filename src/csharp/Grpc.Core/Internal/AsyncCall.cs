@@ -654,7 +654,7 @@ namespace Grpc.Core.Internal
                     // otherwise this can trigger "Unobserved exception" when the response stream
                     // is not read until its end and the task created by the TCS is garbage collected.
                     // See https://github.com/grpc/grpc/issues/17458
-                    var _ = streamingResponseCallFinishedTcs.Task.Exception;
+                    streamingResponseCallFinishedTcs.Task.ObserveException();
                 }
                 return;
             }
