@@ -35,7 +35,7 @@ class AppNetTest(xds_k8s_testcase.AppNetXdsKubernetesTestCase):
             self.td.create_backend_service()
 
         with self.subTest('2_create_mesh'):
-            self.td.create_mesh()
+            mesh = self.td.create_mesh()
 
         with self.subTest('3_create_grpc_route'):
             self.td.create_grpc_route(self.server_xds_host,
@@ -49,7 +49,11 @@ class AppNetTest(xds_k8s_testcase.AppNetXdsKubernetesTestCase):
             self.setupServerBackends()
 
         with self.subTest('6_start_test_client'):
-            test_client: _XdsTestClient = self.startTestClient(test_server)
+            try:
+                print("Mesh: {}".format(dir(mesh)))
+                print("Mesh: {}".format(mesh.__dict__))
+            test_client: _XdsTestClient = self.startTestClient(test_server,
+                                                               config_mesh=mesh.name)
 
         with self.subTest('7_assert_xds_config_exists'):
             self.assertXdsConfigExists(test_client)

@@ -238,7 +238,6 @@ class KubernetesClientRunner(base_runner.KubernetesBaseRunner):
                  gcp_service_account: str,
                  xds_server_uri=None,
                  network='default',
-                 config_scope=None,
                  service_account_name=None,
                  stats_port=8079,
                  deployment_template='client.deployment.yaml',
@@ -257,7 +256,6 @@ class KubernetesClientRunner(base_runner.KubernetesBaseRunner):
         self.td_bootstrap_image = td_bootstrap_image
         self.xds_server_uri = xds_server_uri
         self.network = network
-        self.config_scope = config_scope
         self.deployment_template = deployment_template
         self.debug_use_port_forwarding = debug_use_port_forwarding
         self.enable_workload_identity = enable_workload_identity
@@ -291,7 +289,8 @@ class KubernetesClientRunner(base_runner.KubernetesBaseRunner):
             qps=25,
             metadata='',
             secure_mode=False,
-            print_response=False) -> XdsTestClient:
+            print_response=False,
+            config_mesh=None) -> XdsTestClient:
         logger.info(
             'Deploying xDS test client "%s" to k8s namespace %s: '
             'server_target=%s rpc=%s qps=%s metadata=%r secure_mode=%s '
@@ -329,14 +328,14 @@ class KubernetesClientRunner(base_runner.KubernetesBaseRunner):
             td_bootstrap_image=self.td_bootstrap_image,
             xds_server_uri=self.xds_server_uri,
             network=self.network,
-            config_scope=self.config_scope,
             stats_port=self.stats_port,
             server_target=server_target,
             rpc=rpc,
             qps=qps,
             metadata=metadata,
             secure_mode=secure_mode,
-            print_response=print_response)
+            print_response=print_response,
+            config_mesh=config_mesh)
 
         self._wait_deployment_with_available_replicas(self.deployment_name)
 

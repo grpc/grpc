@@ -59,9 +59,6 @@ class Mesh:
 
     name: str
     url: str
-    type: str
-    scope: Optional[str]
-    network: Optional[str]
     routes: Optional[List[str]]
 
     @classmethod
@@ -69,9 +66,6 @@ class Mesh:
         return cls(
             name=name,
             url=d["name"],
-            type=d["type"],
-            scope=d.get("scope"),
-            network=d.get("network"),
             routes=list(d["routes"]) if "routes" in d else None,
         )
 
@@ -139,7 +133,6 @@ class GrpcRoute:
     @dataclasses.dataclass(frozen=True)
     class RouteAction:
         destinations: List['Destination']
-        drop: Optional[int]
 
         @classmethod
         def from_response(cls, d: Dict[str, Any]) -> 'RouteAction':
@@ -148,7 +141,6 @@ class GrpcRoute:
             ] if "destinations" in d else []
             return cls(
                 destinations=destinations,
-                drop=d.get("drop"),
             )
 
     @dataclasses.dataclass(frozen=True)
