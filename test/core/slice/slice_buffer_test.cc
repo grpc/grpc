@@ -69,7 +69,7 @@ static void free_data(void* data, size_t len) {
 void test_slice_buffer_add_contiguous_slices() {
   grpc_slice_buffer buf;
   grpc_slice_buffer_init(&buf);
-  char * data = reinterpret_cast<char*>(gpr_malloc(kTotalDataLength));
+  char* data = reinterpret_cast<char*>(gpr_malloc(kTotalDataLength));
   GPR_ASSERT(data != nullptr);
   grpc_slice a = grpc_slice_new_with_len(data, kTotalDataLength, free_data);
   grpc_slice s1 = grpc_slice_split_head(&a, kTotalDataLength / 4);
