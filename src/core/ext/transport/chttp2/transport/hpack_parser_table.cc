@@ -58,7 +58,7 @@ auto MementoRingBuffer::PopOne() -> Memento {
   return std::move(entries_[index]);
 }
 
-auto MementoRingBuffer::Lookup(uint32_t index) const -> const Memento* {
+const Memento* MementoRingBuffer::Lookup(uint32_t index) const {
   if (index >= num_entries_) return nullptr;
   uint32_t offset = (num_entries_ - 1u - index + first_entry_) % max_entries_;
   return &entries_[offset];
@@ -85,16 +85,6 @@ void HPackTable::EvictOne() {
   auto first_entry = entries_.PopOne();
   GPR_ASSERT(first_entry.transport_size() <= mem_used_);
   mem_used_ -= first_entry.transport_size();
-}
-
-void HPackTable::Rebuild(uint32_t new_cap) {
-  EntriesVec entries;
-  entries.resize(new_cap);
-  for (size_t i = 0; i < num_entries_; i++) {
-    entries[i] = std::move(entries_[(first_entry_ + i) % entries_.size()]);
-  }
-  first_entry_ = 0;
-  entries_.swap(entries);
 }
 
 void HPackTable::SetMaxBytes(uint32_t max_bytes) {
