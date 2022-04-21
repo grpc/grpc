@@ -155,42 +155,23 @@ class OutlierDetectionLb : public LoadBalancingPolicy {
         watchers_;
   };
 
-  class CallCounter {
-   public:
-    explicit CallCounter() {}
-
-    uint64_t Load() { return requests_.load(std::memory_order_seq_cst); }
-    uint64_t Exchange(uint64_t value) {
-      return requests_.exchange(value, std::memory_order_seq_cst);
-    }
-    uint64_t Increment() { return requests_.fetch_add(1); }
-    void Decrement() { requests_.fetch_sub(1); }
-
-   private:
-    std::atomic<uint64_t> requests_{0};
-  };
-
   class SubchannelState : public RefCounted<SubchannelState> {
    public:
-    struct CallResultCounter {
-      struct Bucket {
-        std::unique_ptr<CallCounter> success;
-        std::unique_ptr<CallCounter> failure;
+    struct Bucket {
+      struct CallCounter {
+        std::atomic<uint64_t> successes;
+        std::atomic<uint64_t> failures;
       };
-      Bucket active;
-      Bucket inactive;
+      std::unique_ptr<Bucket> current_bucket;
+      std::unique_ptr<Bucket> backup_bucket;
+      // The bucket used to update call counts.
+      // Points to either current_bucket or active_bucket.
+      std::atomic<Bucket*> active_bucket;
     };
-    CallResultCounter call_result_counter;
+    Bucket bucket;
     absl::optional<Timestamp> ejection_time;
     uint32_t mutiplier;
     absl::InlinedVector<RefCountedPtr<SubchannelWrapper>, 1> subchannels;
-
-    SubchannelState() {
-      call_result_counter.active.success = absl::make_unique<CallCounter>();
-      call_result_counter.active.failure = absl::make_unique<CallCounter>();
-      call_result_counter.inactive.success = absl::make_unique<CallCounter>();
-      call_result_counter.inactive.failure = absl::make_unique<CallCounter>();
-    }
   };
 
   // A simple wrapper for ref-counting a picker from the child policy.
@@ -259,7 +240,7 @@ class OutlierDetectionLb : public LoadBalancingPolicy {
   grpc_connectivity_state state_ = GRPC_CHANNEL_IDLE;
   absl::Status status_;
   RefCountedPtr<RefCountedPicker> picker_;
-  std::map<std::string, RefCountedPtr<SubchannelState>> ejection_map_;
+  std::map<std::string, RefCountedPtr<SubchannelState>> subchannel_state_map_;
 };
 
 //
@@ -329,9 +310,9 @@ LoadBalancingPolicy::PickResult OutlierDetectionLb::Picker::Pick(
   auto* complete_pick = absl::get_if<PickResult::Complete>(&result.result);
   // TODO@donnadionne: I think this is where we increment the call result
   // counter: complete_pick = success; otherwise = failure
-  // But how do I index into my ejection_map_ which is keyed by subchannel
-  // address and each entry can have a list of subchannel wrappers like the one
-  // found here.
+  // But how do I index into my subchannel_state_map_ which is keyed by
+  // subchannel address and each entry can have a list of subchannel wrappers
+  // like the one found here.
   if (complete_pick != nullptr) {
     // Unwrap subchannel to pass back up the stack.
     auto* subchannel_wrapper =
@@ -398,16 +379,18 @@ void OutlierDetectionLb::UpdateLocked(UpdateArgs args) {
   std::set<std::string> current_addresses;
   if (args.addresses.ok()) {
     for (ServerAddress address : *args.addresses) {
-      ejection_map_[address.ToString()] = MakeRefCounted<SubchannelState>();
+      subchannel_state_map_[address.ToString()] =
+          MakeRefCounted<SubchannelState>();
       gpr_log(GPR_INFO, "donna print address %s", address.ToString().c_str());
       current_addresses.emplace(address.ToString());
     }
-    for (auto it = ejection_map_.begin(); it != ejection_map_.end();) {
+    for (auto it = subchannel_state_map_.begin();
+         it != subchannel_state_map_.end();) {
       if (current_addresses.find(it->first) == current_addresses.end()) {
         // remove each map entry for a subchannel address not in the updated
         // address list.
         gpr_log(GPR_INFO, "donna erased %s", it->first.c_str());
-        it = ejection_map_.erase(it);
+        it = subchannel_state_map_.erase(it);
       }
       ++it;
     }
@@ -472,7 +455,7 @@ RefCountedPtr<SubchannelInterface> OutlierDetectionLb::Helper::CreateSubchannel(
     ServerAddress address, const grpc_channel_args& args) {
   if (outlier_detection_policy_->shutting_down_) return nullptr;
   std::string address_string = address.ToString();
-  auto& ejection_map = outlier_detection_policy_->ejection_map_;
+  auto& ejection_map = outlier_detection_policy_->subchannel_state_map_;
   auto ejection_entry = ejection_map.find(address_string);
   // TODO@donnadionne: subchannel created with multiple addresses case?
   RefCountedPtr<SubchannelWrapper> subchannel =
