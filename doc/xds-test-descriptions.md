@@ -20,8 +20,12 @@ Server should accept these arguments:
 In addition, when handling requests, if the initial request metadata contains the `rpc-behavior` key, it should modify its handling of the request as follows:
 
  - If the value matches `sleep-<int>`, the server should wait the specified number of seconds before responding.
- - If the value matches `fail=<status code as int>`, the server should respond with the specified status code.
- - A value can have a prefix `hostname=<string>` followed by a space. In that case, the rest of the value should only be applied if the specified hostname matches the server's hostname. 
+ - If the value matches `keep-open`, the server should never respond to the request.
+ - If the value matches `success-on-retry-attempt-<int>`, the server should force an OK response if the value of the `grpc-previous-rpc-attempts` metadata field is equal to the specified number.
+ - If the value matches `error-code-<int>`, the server should respond with the specified status code.
+ - A value can have a prefix `hostname=<string>` followed by a space. In that case, the rest of the value should only be applied if the specified hostname matches the server's hostname.
+
+If a request has multiple `rpc-behavior` metadata values, they should be applied in the order listed.
 
 ## Client
 
