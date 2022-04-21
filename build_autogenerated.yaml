@@ -8523,37 +8523,12 @@ targets:
   - test/cpp/end2end/xds/xds_server.h
   - test/cpp/util/tls_test_utils.h
   src:
+  - src/proto/grpc/lookup/v1/rls.proto
+  - src/proto/grpc/lookup/v1/rls_config.proto
   - src/proto/grpc/testing/duplicate/echo_duplicate.proto
   - src/proto/grpc/testing/echo.proto
   - src/proto/grpc/testing/echo_messages.proto
   - src/proto/grpc/testing/simple_messages.proto
-  - src/proto/grpc/testing/xds/ads_for_test.proto
-  - src/proto/grpc/testing/xds/eds_for_test.proto
-  - src/proto/grpc/testing/xds/lrs_for_test.proto
-  - src/proto/grpc/testing/xds/v3/address.proto
-  - src/proto/grpc/testing/xds/v3/ads.proto
-  - src/proto/grpc/testing/xds/v3/base.proto
-  - src/proto/grpc/testing/xds/v3/cluster.proto
-  - src/proto/grpc/testing/xds/v3/config_source.proto
-  - src/proto/grpc/testing/xds/v3/discovery.proto
-  - src/proto/grpc/testing/xds/v3/endpoint.proto
-  - src/proto/grpc/testing/xds/v3/expr.proto
-  - src/proto/grpc/testing/xds/v3/extension.proto
-  - src/proto/grpc/testing/xds/v3/http_connection_manager.proto
-  - src/proto/grpc/testing/xds/v3/http_filter_rbac.proto
-  - src/proto/grpc/testing/xds/v3/listener.proto
-  - src/proto/grpc/testing/xds/v3/load_report.proto
-  - src/proto/grpc/testing/xds/v3/lrs.proto
-  - src/proto/grpc/testing/xds/v3/metadata.proto
-  - src/proto/grpc/testing/xds/v3/path.proto
-  - src/proto/grpc/testing/xds/v3/percent.proto
-  - src/proto/grpc/testing/xds/v3/protocol.proto
-  - src/proto/grpc/testing/xds/v3/range.proto
-  - src/proto/grpc/testing/xds/v3/rbac.proto
-  - src/proto/grpc/testing/xds/v3/regex.proto
-  - src/proto/grpc/testing/xds/v3/route.proto
-  - src/proto/grpc/testing/xds/v3/router.proto
-  - src/proto/grpc/testing/xds/v3/string.proto
   - third_party/envoy-api/envoy/admin/v3/certs.proto
   - third_party/envoy-api/envoy/admin/v3/clusters.proto
   - third_party/envoy-api/envoy/admin/v3/config_dump.proto
@@ -8640,6 +8615,7 @@ targets:
   - third_party/envoy-api/envoy/config/metrics/v3/metrics_service.proto
   - third_party/envoy-api/envoy/config/metrics/v3/stats.proto
   - third_party/envoy-api/envoy/config/overload/v3/overload.proto
+  - third_party/envoy-api/envoy/config/rbac/v3/rbac.proto
   - third_party/envoy-api/envoy/config/route/v3/route.proto
   - third_party/envoy-api/envoy/config/route/v3/route_components.proto
   - third_party/envoy-api/envoy/config/route/v3/scoped_route.proto
@@ -8657,6 +8633,7 @@ targets:
   - third_party/envoy-api/envoy/extensions/clusters/aggregate/v3/cluster.proto
   - third_party/envoy-api/envoy/extensions/filters/common/fault/v3/fault.proto
   - third_party/envoy-api/envoy/extensions/filters/http/fault/v3/fault.proto
+  - third_party/envoy-api/envoy/extensions/filters/http/rbac/v3/rbac.proto
   - third_party/envoy-api/envoy/extensions/filters/http/router/v3/router.proto
   - third_party/envoy-api/envoy/extensions/filters/network/http_connection_manager/v3/http_connection_manager.proto
   - third_party/envoy-api/envoy/extensions/transport_sockets/tls/v3/cert.proto
@@ -8712,6 +8689,8 @@ targets:
   - third_party/envoy-api/envoy/type/v3/semantic_version.proto
   - third_party/envoy-api/envoy/type/v3/token_bucket.proto
   - third_party/googleapis/google/api/annotations.proto
+  - third_party/googleapis/google/api/expr/v1alpha1/checked.proto
+  - third_party/googleapis/google/api/expr/v1alpha1/syntax.proto
   - third_party/googleapis/google/api/http.proto
   - third_party/googleapis/google/api/httpbody.proto
   - third_party/googleapis/google/rpc/status.proto
@@ -8761,37 +8740,12 @@ targets:
   - test/cpp/end2end/xds/xds_server.h
   - test/cpp/util/tls_test_utils.h
   src:
+  - src/proto/grpc/lookup/v1/rls.proto
+  - src/proto/grpc/lookup/v1/rls_config.proto
   - src/proto/grpc/testing/duplicate/echo_duplicate.proto
   - src/proto/grpc/testing/echo.proto
   - src/proto/grpc/testing/echo_messages.proto
   - src/proto/grpc/testing/simple_messages.proto
-  - src/proto/grpc/testing/xds/ads_for_test.proto
-  - src/proto/grpc/testing/xds/eds_for_test.proto
-  - src/proto/grpc/testing/xds/lrs_for_test.proto
-  - src/proto/grpc/testing/xds/v3/address.proto
-  - src/proto/grpc/testing/xds/v3/ads.proto
-  - src/proto/grpc/testing/xds/v3/base.proto
-  - src/proto/grpc/testing/xds/v3/cluster.proto
-  - src/proto/grpc/testing/xds/v3/config_source.proto
-  - src/proto/grpc/testing/xds/v3/discovery.proto
-  - src/proto/grpc/testing/xds/v3/endpoint.proto
-  - src/proto/grpc/testing/xds/v3/expr.proto
-  - src/proto/grpc/testing/xds/v3/extension.proto
-  - src/proto/grpc/testing/xds/v3/http_connection_manager.proto
-  - src/proto/grpc/testing/xds/v3/http_filter_rbac.proto
-  - src/proto/grpc/testing/xds/v3/listener.proto
-  - src/proto/grpc/testing/xds/v3/load_report.proto
-  - src/proto/grpc/testing/xds/v3/lrs.proto
-  - src/proto/grpc/testing/xds/v3/metadata.proto
-  - src/proto/grpc/testing/xds/v3/path.proto
-  - src/proto/grpc/testing/xds/v3/percent.proto
-  - src/proto/grpc/testing/xds/v3/protocol.proto
-  - src/proto/grpc/testing/xds/v3/range.proto
-  - src/proto/grpc/testing/xds/v3/rbac.proto
-  - src/proto/grpc/testing/xds/v3/regex.proto
-  - src/proto/grpc/testing/xds/v3/route.proto
-  - src/proto/grpc/testing/xds/v3/router.proto
-  - src/proto/grpc/testing/xds/v3/string.proto
   - third_party/envoy-api/envoy/admin/v3/certs.proto
   - third_party/envoy-api/envoy/admin/v3/clusters.proto
   - third_party/envoy-api/envoy/admin/v3/config_dump.proto
@@ -9002,39 +8956,12 @@ targets:
   - test/cpp/end2end/xds/xds_server.h
   - test/cpp/util/tls_test_utils.h
   src:
+  - src/proto/grpc/lookup/v1/rls.proto
+  - src/proto/grpc/lookup/v1/rls_config.proto
   - src/proto/grpc/testing/duplicate/echo_duplicate.proto
   - src/proto/grpc/testing/echo.proto
   - src/proto/grpc/testing/echo_messages.proto
   - src/proto/grpc/testing/simple_messages.proto
-  - src/proto/grpc/testing/xds/ads_for_test.proto
-  - src/proto/grpc/testing/xds/eds_for_test.proto
-  - src/proto/grpc/testing/xds/lrs_for_test.proto
-  - src/proto/grpc/testing/xds/v3/address.proto
-  - src/proto/grpc/testing/xds/v3/ads.proto
-  - src/proto/grpc/testing/xds/v3/base.proto
-  - src/proto/grpc/testing/xds/v3/cluster.proto
-  - src/proto/grpc/testing/xds/v3/config_source.proto
-  - src/proto/grpc/testing/xds/v3/discovery.proto
-  - src/proto/grpc/testing/xds/v3/endpoint.proto
-  - src/proto/grpc/testing/xds/v3/expr.proto
-  - src/proto/grpc/testing/xds/v3/extension.proto
-  - src/proto/grpc/testing/xds/v3/fault.proto
-  - src/proto/grpc/testing/xds/v3/fault_common.proto
-  - src/proto/grpc/testing/xds/v3/http_connection_manager.proto
-  - src/proto/grpc/testing/xds/v3/http_filter_rbac.proto
-  - src/proto/grpc/testing/xds/v3/listener.proto
-  - src/proto/grpc/testing/xds/v3/load_report.proto
-  - src/proto/grpc/testing/xds/v3/lrs.proto
-  - src/proto/grpc/testing/xds/v3/metadata.proto
-  - src/proto/grpc/testing/xds/v3/path.proto
-  - src/proto/grpc/testing/xds/v3/percent.proto
-  - src/proto/grpc/testing/xds/v3/protocol.proto
-  - src/proto/grpc/testing/xds/v3/range.proto
-  - src/proto/grpc/testing/xds/v3/rbac.proto
-  - src/proto/grpc/testing/xds/v3/regex.proto
-  - src/proto/grpc/testing/xds/v3/route.proto
-  - src/proto/grpc/testing/xds/v3/router.proto
-  - src/proto/grpc/testing/xds/v3/string.proto
   - third_party/envoy-api/envoy/admin/v3/certs.proto
   - third_party/envoy-api/envoy/admin/v3/clusters.proto
   - third_party/envoy-api/envoy/admin/v3/config_dump.proto
@@ -9121,6 +9048,7 @@ targets:
   - third_party/envoy-api/envoy/config/metrics/v3/metrics_service.proto
   - third_party/envoy-api/envoy/config/metrics/v3/stats.proto
   - third_party/envoy-api/envoy/config/overload/v3/overload.proto
+  - third_party/envoy-api/envoy/config/rbac/v3/rbac.proto
   - third_party/envoy-api/envoy/config/route/v3/route.proto
   - third_party/envoy-api/envoy/config/route/v3/route_components.proto
   - third_party/envoy-api/envoy/config/route/v3/scoped_route.proto
@@ -9138,6 +9066,7 @@ targets:
   - third_party/envoy-api/envoy/extensions/clusters/aggregate/v3/cluster.proto
   - third_party/envoy-api/envoy/extensions/filters/common/fault/v3/fault.proto
   - third_party/envoy-api/envoy/extensions/filters/http/fault/v3/fault.proto
+  - third_party/envoy-api/envoy/extensions/filters/http/rbac/v3/rbac.proto
   - third_party/envoy-api/envoy/extensions/filters/http/router/v3/router.proto
   - third_party/envoy-api/envoy/extensions/filters/network/http_connection_manager/v3/http_connection_manager.proto
   - third_party/envoy-api/envoy/extensions/transport_sockets/tls/v3/cert.proto
@@ -9193,6 +9122,8 @@ targets:
   - third_party/envoy-api/envoy/type/v3/semantic_version.proto
   - third_party/envoy-api/envoy/type/v3/token_bucket.proto
   - third_party/googleapis/google/api/annotations.proto
+  - third_party/googleapis/google/api/expr/v1alpha1/checked.proto
+  - third_party/googleapis/google/api/expr/v1alpha1/syntax.proto
   - third_party/googleapis/google/api/http.proto
   - third_party/googleapis/google/api/httpbody.proto
   - third_party/googleapis/google/rpc/status.proto
@@ -9507,33 +9438,6 @@ targets:
   - src/proto/grpc/testing/echo.proto
   - src/proto/grpc/testing/echo_messages.proto
   - src/proto/grpc/testing/simple_messages.proto
-  - src/proto/grpc/testing/xds/ads_for_test.proto
-  - src/proto/grpc/testing/xds/eds_for_test.proto
-  - src/proto/grpc/testing/xds/lrs_for_test.proto
-  - src/proto/grpc/testing/xds/v3/address.proto
-  - src/proto/grpc/testing/xds/v3/ads.proto
-  - src/proto/grpc/testing/xds/v3/base.proto
-  - src/proto/grpc/testing/xds/v3/cluster.proto
-  - src/proto/grpc/testing/xds/v3/config_source.proto
-  - src/proto/grpc/testing/xds/v3/discovery.proto
-  - src/proto/grpc/testing/xds/v3/endpoint.proto
-  - src/proto/grpc/testing/xds/v3/expr.proto
-  - src/proto/grpc/testing/xds/v3/extension.proto
-  - src/proto/grpc/testing/xds/v3/http_connection_manager.proto
-  - src/proto/grpc/testing/xds/v3/http_filter_rbac.proto
-  - src/proto/grpc/testing/xds/v3/listener.proto
-  - src/proto/grpc/testing/xds/v3/load_report.proto
-  - src/proto/grpc/testing/xds/v3/lrs.proto
-  - src/proto/grpc/testing/xds/v3/metadata.proto
-  - src/proto/grpc/testing/xds/v3/path.proto
-  - src/proto/grpc/testing/xds/v3/percent.proto
-  - src/proto/grpc/testing/xds/v3/protocol.proto
-  - src/proto/grpc/testing/xds/v3/range.proto
-  - src/proto/grpc/testing/xds/v3/rbac.proto
-  - src/proto/grpc/testing/xds/v3/regex.proto
-  - src/proto/grpc/testing/xds/v3/route.proto
-  - src/proto/grpc/testing/xds/v3/router.proto
-  - src/proto/grpc/testing/xds/v3/string.proto
   - third_party/envoy-api/envoy/admin/v3/certs.proto
   - third_party/envoy-api/envoy/admin/v3/clusters.proto
   - third_party/envoy-api/envoy/admin/v3/config_dump.proto
@@ -9620,6 +9524,7 @@ targets:
   - third_party/envoy-api/envoy/config/metrics/v3/metrics_service.proto
   - third_party/envoy-api/envoy/config/metrics/v3/stats.proto
   - third_party/envoy-api/envoy/config/overload/v3/overload.proto
+  - third_party/envoy-api/envoy/config/rbac/v3/rbac.proto
   - third_party/envoy-api/envoy/config/route/v3/route.proto
   - third_party/envoy-api/envoy/config/route/v3/route_components.proto
   - third_party/envoy-api/envoy/config/route/v3/scoped_route.proto
@@ -9637,6 +9542,7 @@ targets:
   - third_party/envoy-api/envoy/extensions/clusters/aggregate/v3/cluster.proto
   - third_party/envoy-api/envoy/extensions/filters/common/fault/v3/fault.proto
   - third_party/envoy-api/envoy/extensions/filters/http/fault/v3/fault.proto
+  - third_party/envoy-api/envoy/extensions/filters/http/rbac/v3/rbac.proto
   - third_party/envoy-api/envoy/extensions/filters/http/router/v3/router.proto
   - third_party/envoy-api/envoy/extensions/filters/network/http_connection_manager/v3/http_connection_manager.proto
   - third_party/envoy-api/envoy/extensions/transport_sockets/tls/v3/cert.proto
@@ -9692,6 +9598,8 @@ targets:
   - third_party/envoy-api/envoy/type/v3/semantic_version.proto
   - third_party/envoy-api/envoy/type/v3/token_bucket.proto
   - third_party/googleapis/google/api/annotations.proto
+  - third_party/googleapis/google/api/expr/v1alpha1/checked.proto
+  - third_party/googleapis/google/api/expr/v1alpha1/syntax.proto
   - third_party/googleapis/google/api/http.proto
   - third_party/googleapis/google/api/httpbody.proto
   - third_party/googleapis/google/rpc/status.proto
