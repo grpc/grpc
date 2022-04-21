@@ -1554,7 +1554,7 @@ TEST_F(RoundRobinTest, DoesNotFailRpcsUponDisconnection) {
   std::thread thd([&]() {
     gpr_log(GPR_INFO, "sending first RPC");
     CheckRpcSendOk(stub, DEBUG_LOCATION);
-    gpr_event_set(&ev, (void*)1);
+    gpr_event_set(&ev, reinterpret_cast<void*>(1));
     while (!shutdown.load()) {
       gpr_log(GPR_INFO, "sending RPC");
       CheckRpcSendOk(stub, DEBUG_LOCATION);
@@ -1562,7 +1562,8 @@ TEST_F(RoundRobinTest, DoesNotFailRpcsUponDisconnection) {
   });
   // Wait for first RPC to complete.
   gpr_log(GPR_ERROR, "=== WAITING FOR FIRST RPC TO COMPLETE ===");
-  ASSERT_EQ((void*)1, gpr_event_wait(&ev, grpc_timeout_seconds_to_deadline(1)));
+  ASSERT_EQ(reinterpret_cast<void*>(1),
+            gpr_event_wait(&ev, grpc_timeout_seconds_to_deadline(1)));
   // Channel should now be READY.
   ASSERT_EQ(GRPC_CHANNEL_READY, channel->GetState(false));
   // Tell injector to intercept the next connection attempt.
