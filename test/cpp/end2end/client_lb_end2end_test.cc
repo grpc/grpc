@@ -58,6 +58,7 @@
 #include "src/core/lib/security/credentials/fake/fake_credentials.h"
 #include "src/core/lib/service_config/service_config.h"
 #include "src/core/lib/service_config/service_config_impl.h"
+#include "src/core/lib/surface/server.h"
 #include "src/cpp/client/secure_credentials.h"
 #include "src/cpp/server/secure_server_credentials.h"
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
@@ -1572,6 +1573,11 @@ TEST_F(RoundRobinTest, DoesNotFailRpcsUponDisconnection) {
   // immediately reconnected to, but this should not cause any test
   // failures.
   gpr_log(GPR_ERROR, "=== SHUTTING DOWN SERVER ===");
+  {
+    grpc_core::ExecCtx exec_ctx;
+    grpc_core::Server::FromC(servers_[0]->server_->c_server())->SendGoaways();
+  }
+  gpr_sleep_until(grpc_timeout_seconds_to_deadline(1));
   servers_[0]->Shutdown();
   // Wait for next attempt to start.
   gpr_log(GPR_ERROR, "=== WAITING FOR RECONNECTION ATTEMPT ===");

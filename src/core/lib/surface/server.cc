@@ -849,6 +849,15 @@ void Server::CancelAllCalls() {
       GRPC_ERROR_CREATE_FROM_STATIC_STRING("Cancelling all calls"));
 }
 
+void Server::SendGoaways() {
+  ChannelBroadcaster broadcaster;
+  {
+    MutexLock lock(&mu_global_);
+    broadcaster.FillChannelsLocked(GetChannelsLocked());
+  }
+  broadcaster.BroadcastShutdown(/*send_goaway=*/true, GRPC_ERROR_NONE);
+}
+
 void Server::Orphan() {
   {
     MutexLock lock(&mu_global_);
