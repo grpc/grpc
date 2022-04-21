@@ -199,6 +199,11 @@ struct grpc_channel_stack {
   /* Memory required for a call stack (computed at channel stack
      initialization) */
   size_t call_stack_size;
+  // TODO(ctiller): remove this mechanism... it's a hack to allow
+  // Channel to be separated from grpc_channel_stack's allocation. As the
+  // promise conversion continues, we'll reconsider what grpc_channel_stack
+  // should look like and this can go.
+  grpc_core::ManualConstructor<std::function<void()>> on_destroy;
 
   // Minimal infrastructure to act like a RefCounted thing without converting
   // everything.

@@ -2256,6 +2256,9 @@ grpc_cc_library(
     hdrs = [
         "src/core/lib/channel/channel_stack_builder.h",
     ],
+    external_deps = [
+        "absl/status:statusor",
+    ],
     language = "c++",
     visibility = ["@grpc:alt_grpc_base_legacy"],
     deps = [

@@ -138,7 +138,8 @@ void bad_server_thread(void* vargs) {
   grpc_tcp_server* s;
   const grpc_channel_args* channel_args = grpc_core::CoreConfiguration::Get()
                                               .channel_args_preconditioning()
-                                              .PreconditionChannelArgs(nullptr);
+                                              .PreconditionChannelArgs(nullptr)
+                                              .ToC();
   grpc_error_handle error = grpc_tcp_server_create(nullptr, channel_args, &s);
   grpc_channel_args_destroy(channel_args);
   GPR_ASSERT(error == GRPC_ERROR_NONE);

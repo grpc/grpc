@@ -722,20 +722,19 @@ class IsolatedCallFixture : public TrackCounters {
     // the grpc_shutdown() run by grpc_channel_destroy().  So we need to
     // call grpc_init() manually here to balance things out.
     grpc_init();
-    const grpc_channel_args* args = grpc_core::CoreConfiguration::Get()
-                                        .channel_args_preconditioning()
-                                        .PreconditionChannelArgs(nullptr);
+    auto args = grpc_core::CoreConfiguration::Get()
+                    .channel_args_preconditioning()
+                    .PreconditionChannelArgs(nullptr);
     grpc_core::ChannelStackBuilderImpl builder("phony", GRPC_CLIENT_CHANNEL);
     builder.SetTarget("phony_target");
     builder.SetChannelArgs(args);
     builder.AppendFilter(&isolated_call_filter::isolated_call_filter, nullptr);
     {
       grpc_core::ExecCtx exec_ctx;
-      channel_ = grpc_channel_create_with_builder(&builder, GRPC_CLIENT_CHANNEL,
-                                                  nullptr);
+      channel_ =
+          grpc_core::Channel::CreateWithBuilder(&builder)->release()->c_ptr();
     }
     cq_ = grpc_completion_queue_create_for_next(nullptr);
-    grpc_channel_args_destroy(args);
   }
 
   void Finish(benchmark::State& state) override {

@@ -82,39 +82,24 @@ static bool g_shutting_down ABSL_GUARDED_BY(g_init_mu) = false;
 
 static bool maybe_prepend_client_auth_filter(
     grpc_core::ChannelStackBuilder* builder) {
-  const grpc_channel_args* args = builder->channel_args();
-  if (args) {
-    for (size_t i = 0; i < args->num_args; i++) {
-      if (0 == strcmp(GRPC_ARG_SECURITY_CONNECTOR, args->args[i].key)) {
-        builder->PrependFilter(&grpc_core::ClientAuthFilter::kFilter, nullptr);
-        break;
-      }
-    }
+  if (builder->channel_args().Contains(GRPC_ARG_SECURITY_CONNECTOR)) {
+    builder->PrependFilter(&grpc_core::ClientAuthFilter::kFilter, nullptr);
   }
   return true;
 }
 
 static bool maybe_prepend_server_auth_filter(
     grpc_core::ChannelStackBuilder* builder) {
-  const grpc_channel_args* args = builder->channel_args();
-  if (args) {
-    for (size_t i = 0; i < args->num_args; i++) {
-      if (0 == strcmp(GRPC_SERVER_CREDENTIALS_ARG, args->args[i].key)) {
-        builder->PrependFilter(&grpc_server_auth_filter, nullptr);
-        break;
-      }
-    }
+  if (builder->channel_args().Contains(GRPC_SERVER_CREDENTIALS_ARG)) {
+    builder->PrependFilter(&grpc_server_auth_filter, nullptr);
   }
   return true;
 }
 
 static bool maybe_prepend_grpc_server_authz_filter(
     grpc_core::ChannelStackBuilder* builder) {
-  const grpc_channel_args* args = builder->channel_args();
-  const auto* provider =
-      grpc_channel_args_find_pointer<grpc_authorization_policy_provider>(
-          args, GRPC_ARG_AUTHORIZATION_POLICY_PROVIDER);
-  if (provider != nullptr) {
+  if (builder->channel_args().GetPointer<grpc_authorization_policy_provider>(
+          GRPC_ARG_AUTHORIZATION_POLICY_PROVIDER) != nullptr) {
     builder->PrependFilter(&grpc_core::GrpcServerAuthzFilter::kFilterVtable,
                            nullptr);
   }

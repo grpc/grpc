@@ -45,7 +45,8 @@ namespace {
 class ChannelData {
  public:
   explicit ChannelData(const grpc_channel_element_args* args)
-      : max_recv_size_(GetMaxRecvSizeFromChannelArgs(args->channel_args)),
+      : max_recv_size_(GetMaxRecvSizeFromChannelArgs(
+            ChannelArgs::FromC(args->channel_args))),
         message_size_service_config_parser_index_(
             MessageSizeParser::ParserIndex()) {}
 

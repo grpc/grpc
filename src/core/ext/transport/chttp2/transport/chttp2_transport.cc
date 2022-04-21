@@ -708,7 +708,7 @@ grpc_chttp2_stream::~grpc_chttp2_stream() {
   grpc_slice_buffer_destroy_internal(&frame_storage);
 
   for (int i = 0; i < STREAM_LIST_COUNT; i++) {
-    if (GPR_UNLIKELY(included[i])) {
+    if (GPR_UNLIKELY(included.is_set(i))) {
       gpr_log(GPR_ERROR, "%s stream %d still included in list %d",
               t->is_client ? "client" : "server", id, i);
       abort();

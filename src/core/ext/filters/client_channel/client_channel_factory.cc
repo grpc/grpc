@@ -39,6 +39,10 @@ const grpc_arg_pointer_vtable factory_arg_vtable = {
 
 }  // namespace
 
+absl::string_view ClientChannelFactory::ChannelArgName() {
+  return GRPC_ARG_CLIENT_CHANNEL_FACTORY;
+}
+
 grpc_arg ClientChannelFactory::CreateChannelArg(ClientChannelFactory* factory) {
   return grpc_channel_arg_pointer_create(
       const_cast<char*>(GRPC_ARG_CLIENT_CHANNEL_FACTORY), factory,

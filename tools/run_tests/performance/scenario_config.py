@@ -1310,6 +1310,7 @@ class JavaLanguage(Language):
                                   num_clients=1,
                                   secure=False,
                                   async_server_threads=1,
+                                  warmup_seconds=JAVA_WARMUP_SECONDS,
                                   categories=[PSM])
 
         for secure in [True, False]:
