@@ -142,7 +142,8 @@ void grpc_slice_buffer_add(grpc_slice_buffer* sb, grpc_slice s) {
   if (n) {
     back = &sb->slices[n - 1];
   }
-  if (s.refcount != nullptr && back != nullptr && s.refcount == back->refcount &&
+  if (s.refcount != nullptr && back != nullptr &&
+      s.refcount == back->refcount &&
       GRPC_SLICE_START_PTR(s) == GRPC_SLICE_END_PTR(*back)) {
     // Merge the two slices into one because they are contiguous and share the
     // same refcount object.

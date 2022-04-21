@@ -113,8 +113,9 @@ class ProtoBufferWriter : public grpc::protobuf::io::ZeroCopyOutputStream {
     // Using grpc_slice_buffer_add could modify slice_ and merge it with the
     // previous slice. Therefore, use grpc_slice_buffer_add_indexed method to
     // ensure the slice gets added at a separate index. It can then be kept
-    // around and accessed later.
-    g_core_codegen_interface->grpc_slice_buffer_add_indexed(slice_buffer_, slice_);
+    // around and popped later in the BackUp function.
+    g_core_codegen_interface->grpc_slice_buffer_add_indexed(slice_buffer_,
+                                                            slice_);
     return true;
   }
 
