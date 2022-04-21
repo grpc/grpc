@@ -17,6 +17,11 @@ Server should accept these arguments:
     *   When set to true it uses XdsServerCredentials with the test server for security test cases.
         In case of secure mode, port and maintenance_port should be different.
 
+In addition, when handling requests, if the initial request metadata contains the `rpc-behavior` key, it should modify its handling of the request as follows:
+
+ - If the value matches `sleep-<number>`, the server should wait the specified number of seconds before responding.
+ - If the value matches `fail-on=<hostname>`, and the specified hostname matches the server's hostname, the server should respond to the request with an error with the code `ABORTED`.
+
 ## Client
 
 The base behavior of the xDS test client is to send a constant QPS of unary
