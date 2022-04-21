@@ -75,7 +75,7 @@ class DumpedXdsConfig(dict):
     Feel free to add more pre-compute fields.
     """
 
-    def __init__(self, xds_json: JsonType):
+    def __init__(self, xds_json: JsonType):  # pylint: disable=too-many-branches
         super().__init__(xds_json)
         self.json_config = xds_json
         self.lds = None
@@ -102,7 +102,7 @@ class DumpedXdsConfig(dict):
                     for endpoint in xds_config['endpointConfig'][
                             'dynamicEndpointConfigs']:
                         self.eds.append(endpoint['endpointConfig'])
-            except Exception as e:
+            except Exception as e:  # pylint: disable=broad-except
                 logging.debug('Parsing dumped xDS config failed with %s: %s',
                               type(e), e)
         for generic_xds_config in self.get('genericXdsConfigs', []):
@@ -118,7 +118,7 @@ class DumpedXdsConfig(dict):
                 elif re.search(r'\.ClusterLoadAssignment$',
                                generic_xds_config['typeUrl']):
                     self.eds.append(generic_xds_config["xdsConfig"])
-            except Exception as e:
+            except Exception as e:  # pylint: disable=broad-except
                 logging.debug('Parsing dumped xDS config failed with %s: %s',
                               type(e), e)
         for endpoint_config in self.eds:
@@ -131,7 +131,7 @@ class DumpedXdsConfig(dict):
                                            ['socketAddress']['address'],
                                            lb_endpoint['endpoint']['address']
                                            ['socketAddress']['portValue']))
-                    except Exception as e:
+                    except Exception as e:  # pylint: disable=broad-except
                         logging.debug('Parse endpoint failed with %s: %s',
                                       type(e), e)
 
@@ -250,6 +250,7 @@ class XdsUrlMapTestCase(absltest.TestCase, metaclass=_MetaXdsUrlMapTestCase):
         Returns:
           A bool indicates if the given config is supported.
         """
+        del config
         return True
 
     @staticmethod
@@ -293,7 +294,6 @@ class XdsUrlMapTestCase(absltest.TestCase, metaclass=_MetaXdsUrlMapTestCase):
             A tuple contains the updated version of given HostRule and
             PathMatcher.
         """
-        pass
 
     @abc.abstractmethod
     def xds_config_validate(self, xds_config: DumpedXdsConfig) -> None:
@@ -306,16 +306,14 @@ class XdsUrlMapTestCase(absltest.TestCase, metaclass=_MetaXdsUrlMapTestCase):
             xds_config: A DumpedXdsConfig instance can be used as a JSON dict,
               but also provides helper fields for commonly checked xDS config.
         """
-        pass
 
     @abc.abstractmethod
-    def rpc_distribution_validate(self, client: XdsTestClient) -> None:
+    def rpc_distribution_validate(self, test_client: XdsTestClient) -> None:
         """Validates the routing behavior, if any is wrong, raise.
 
         Args:
-            client: A XdsTestClient instance for all sorts of end2end testing.
+            test_client: A XdsTestClient instance for all sorts of end2end testing.
         """
-        pass
 
     @classmethod
     def hostname(cls):
@@ -359,6 +357,10 @@ class XdsUrlMapTestCase(absltest.TestCase, metaclass=_MetaXdsUrlMapTestCase):
         if cls.finished_test_cases == cls.test_case_names:
             # Tear down the GCP resource after all tests finished
             GcpResourceManager().cleanup()
+
+    def __init__(self):
+        # Stores the last seen xDS config
+        self._xds_json_config = None
 
     def _fetch_and_check_xds_config(self):
         # Cleanup state for this attempt
@@ -427,7 +429,7 @@ class XdsUrlMapTestCase(absltest.TestCase, metaclass=_MetaXdsUrlMapTestCase):
             f'insufficient endpoints in EDS: want={k} seen={xds_config.endpoints}'
         )
 
-    def assertRpcStatusCode(self, test_client: XdsTestClient, *,
+    def assertRpcStatusCode(self, test_client: XdsTestClient, *,  # pylint: disable=too-many-locals
                             expected: Iterable[ExpectedResult], length: int,
                             tolerance: float) -> None:
         """Assert the distribution of RPC statuses over a period of time."""
@@ -468,6 +470,7 @@ class XdsUrlMapTestCase(absltest.TestCase, metaclass=_MetaXdsUrlMapTestCase):
             diff_ratio = abs(seen - want) / total
             self.assertLessEqual(
                 diff_ratio, tolerance,
-                'Expect rpc [%s] to return [%s] at %.2f ratio: seen=%d want=%d total=%d diff_ratio=%.4f > %.2f'
+                ('Expect rpc [%s] to return [%s] at %.2f ratio: '
+                 'seen=%d want=%d total=%d diff_ratio=%.4f > %.2f')
                 % (rpc, expected_result.status_code, expected_result.ratio,
                    seen, want, total, diff_ratio, tolerance))

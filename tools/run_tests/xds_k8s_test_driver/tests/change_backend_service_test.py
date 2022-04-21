@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 import logging
-from typing import List, Optional
+from typing import List
 
 from absl import flags
 from absl.testing import absltest
@@ -71,9 +71,9 @@ class ChangeBackendServiceTest(xds_k8s_testcase.RegularXdsKubernetesTestCase):
             self.td.create_forwarding_rule(self.server_xds_port)
 
         with self.subTest('05_start_test_servers'):
-            self.default_test_servers: List[
+            default_test_servers: List[
                 _XdsTestServer] = self.startTestServers()
-            self.same_zone_test_servers: List[
+            same_zone_test_servers: List[
                 _XdsTestServer] = self.startTestServers(
                     server_runner=self.alternate_server_runner)
 
@@ -86,20 +86,20 @@ class ChangeBackendServiceTest(xds_k8s_testcase.RegularXdsKubernetesTestCase):
                 neg_name_alt, neg_zones_alt)
 
         with self.subTest('07_start_test_client'):
-            self.test_client: _XdsTestClient = self.startTestClient(
-                self.default_test_servers[0])
+            test_client: _XdsTestClient = self.startTestClient(
+                default_test_servers[0])
 
         with self.subTest('08_test_client_xds_config_exists'):
-            self.assertXdsConfigExists(self.test_client)
+            self.assertXdsConfigExists(test_client)
 
         with self.subTest('09_test_server_received_rpcs_from_test_client'):
-            self.assertSuccessfulRpcs(self.test_client)
+            self.assertSuccessfulRpcs(test_client)
 
         with self.subTest('10_change_backend_service'):
             self.td.patch_url_map(self.server_xds_host, self.server_xds_port,
                                   self.td.alternative_backend_service)
             self.assertRpcsEventuallyGoToGivenServers(
-                self.test_client, self.same_zone_test_servers)
+                test_client, same_zone_test_servers)
 
 
 if __name__ == '__main__':

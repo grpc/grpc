@@ -227,7 +227,7 @@ class XdsTestClient(framework.rpc.grpc.GrpcApp):
 
 class KubernetesClientRunner(base_runner.KubernetesBaseRunner):
 
-    def __init__(self,
+    def __init__(self,  # pylint: disable=too-many-locals
                  k8s_namespace,
                  *,
                  deployment_name,
@@ -284,7 +284,7 @@ class KubernetesClientRunner(base_runner.KubernetesBaseRunner):
         self.port_forwarder: Optional[k8s.PortForwarder] = None
 
     # TODO(sergiitk): make rpc UnaryCall enum or get it from proto
-    def run(self,
+    def run(self,  # pylint: disable=arguments-differ
             *,
             server_target,
             rpc='UnaryCall',
@@ -361,7 +361,7 @@ class KubernetesClientRunner(base_runner.KubernetesBaseRunner):
                              server_target=server_target,
                              rpc_host=rpc_host)
 
-    def cleanup(self, *, force=False, force_namespace=False):
+    def cleanup(self, *, force=False, force_namespace=False):  # pylint: disable=arguments-differ
         if self.port_forwarder:
             self.port_forwarder.close()
             self.port_forwarder = None

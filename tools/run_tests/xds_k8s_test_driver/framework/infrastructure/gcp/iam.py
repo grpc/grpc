@@ -33,7 +33,6 @@ class EtagConflict(gcp.api.Error):
 
     https://cloud.google.com/iam/docs/policies#etag
     """
-    pass
 
 
 def handle_etag_conflict(func):
@@ -54,7 +53,7 @@ def _replace_binding(policy: 'Policy', binding: 'Policy.Binding',
     new_bindings = set(policy.bindings)
     new_bindings.discard(binding)
     new_bindings.add(new_binding)
-    return dataclasses.replace(policy, bindings=frozenset(new_bindings))
+    return dataclasses.replace(policy, bindings=frozenset(new_bindings))  # pylint: disable=too-many-function-args
 
 
 @dataclasses.dataclass(frozen=True)
@@ -271,7 +270,7 @@ class IamV1(gcp.api.GcpProjectApiResource):
             updated_binding = Policy.Binding(role, frozenset([member]))
         else:
             updated_members: FrozenSet[str] = binding.members.union({member})
-            updated_binding: Policy.Binding = dataclasses.replace(
+            updated_binding: Policy.Binding = dataclasses.replace(  # pylint: disable=too-many-function-args
                 binding, members=updated_members)
 
         updated_policy: Policy = _replace_binding(policy, binding,
@@ -303,7 +302,7 @@ class IamV1(gcp.api.GcpProjectApiResource):
             return
 
         updated_members: FrozenSet[str] = binding.members.difference({member})
-        updated_binding: Policy.Binding = dataclasses.replace(
+        updated_binding: Policy.Binding = dataclasses.replace(  # pylint: disable=too-many-function-args
             binding, members=updated_members)
         updated_policy: Policy = _replace_binding(policy, binding,
                                                   updated_binding)

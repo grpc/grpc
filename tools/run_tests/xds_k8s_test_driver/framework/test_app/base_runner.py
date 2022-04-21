@@ -70,6 +70,7 @@ class KubernetesBaseRunner:
         self.namespace: Optional[k8s.V1Namespace] = None
 
     def run(self, **kwargs):
+        del kwargs
         if self.reuse_namespace:
             self.namespace = self._reuse_namespace()
         if not self.namespace:
