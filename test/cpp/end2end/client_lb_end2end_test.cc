@@ -1455,6 +1455,140 @@ TEST_F(RoundRobinTest, TransientFailureAtStartup) {
   EXPECT_TRUE(WaitForChannelState(channel.get(), predicate, true));
 }
 
+TEST_F(RoundRobinTest, DoesNotFailRpcsUponDisconnection) {
+  // A connection attempt injector that allows us to control timing.
+  class ConnectionInjector : public ConnectionAttemptInjector {
+   public:
+    explicit ConnectionInjector(int port) : port_(port) {}
+
+    void InterceptNextAttempt() {
+      grpc_core::MutexLock lock(&mu_);
+      intercept_next_attempt_ = true;
+    }
+
+    void WaitForAttemptToStart() {
+      grpc_core::MutexLock lock(&mu_);
+      while (queued_attempt_ == nullptr) {
+        start_cond_.Wait(&mu_);
+      }
+    }
+
+    void ResumeAttempt() {
+      grpc_core::ExecCtx exec_ctx;
+      std::unique_ptr<QueuedAttempt> attempt;
+      {
+        grpc_core::MutexLock lock(&mu_);
+        attempt = std::move(queued_attempt_);
+      }
+      attempt->Resume();
+    }
+
+    void WaitForAttemptComplete() {
+      grpc_core::MutexLock lock(&mu_);
+      while (!attempt_complete_) {
+        complete_cond_.Wait(&mu_);
+      }
+    }
+
+    void HandleConnection(grpc_closure* closure, grpc_endpoint** ep,
+                          grpc_pollset_set* interested_parties,
+                          const grpc_channel_args* channel_args,
+                          const grpc_resolved_address* addr,
+                          grpc_core::Timestamp deadline) override {
+      const int port = grpc_sockaddr_get_port(addr);
+      gpr_log(GPR_INFO, "==> HandleConnection(): port=%d", port);
+      if (port == port_) {
+        grpc_core::MutexLock lock(&mu_);
+        if (intercept_next_attempt_) {
+          gpr_log(GPR_INFO, "*** INTERCEPTING CONNECTION ATTEMPT");
+          original_closure_ = closure;
+          closure = GRPC_CLOSURE_INIT(&closure_, OnComplete, this, nullptr);
+          intercept_next_attempt_ = false;
+          queued_attempt_ = absl::make_unique<QueuedAttempt>(
+              closure, ep, interested_parties, channel_args, addr, deadline);
+          start_cond_.Signal();
+          return;
+        }
+      }
+      AttemptConnection(closure, ep, interested_parties, channel_args, addr,
+                        deadline);
+    }
+
+   private:
+    static void OnComplete(void* arg, grpc_error_handle error) {
+      auto* self = static_cast<ConnectionInjector*>(arg);
+      {
+        grpc_core::MutexLock lock(&self->mu_);
+        self->attempt_complete_ = true;
+        self->complete_cond_.Signal();
+      }
+      grpc_core::Closure::Run(DEBUG_LOCATION, self->original_closure_,
+                              GRPC_ERROR_REF(error));
+    }
+
+    const int port_;
+
+    grpc_core::Mutex mu_;
+    bool intercept_next_attempt_ ABSL_GUARDED_BY(mu_) = false;
+    grpc_core::CondVar start_cond_;
+    std::unique_ptr<QueuedAttempt> queued_attempt_ ABSL_GUARDED_BY(mu_);
+    grpc_closure* original_closure_ = nullptr;
+    grpc_closure closure_;
+    grpc_core::CondVar complete_cond_;
+    bool attempt_complete_ ABSL_GUARDED_BY(mu_) = false;
+  };
+  // Start server.
+  StartServers(1);
+  ConnectionInjector injector(servers_[0]->port_);
+  injector.Start();
+  // Create channel.
+  auto response_generator = BuildResolverResponseGenerator();
+  auto channel = BuildChannel("round_robin", response_generator);
+  auto stub = BuildStub(channel);
+  response_generator.SetNextResolution(GetServersPorts());
+  // Start a thread constantly sending RPCs in a loop.
+  gpr_log(GPR_ERROR, "=== STARTING CLIENT THREAD ===");
+  std::atomic<bool> shutdown{false};
+  gpr_event ev;
+  gpr_event_init(&ev);
+  std::thread thd(
+      [&]() {
+        gpr_log(GPR_INFO, "sending first RPC");
+        CheckRpcSendOk(stub, DEBUG_LOCATION);
+        gpr_event_set(&ev, (void*)1);
+        while (!shutdown.load()) {
+          gpr_log(GPR_INFO, "sending RPC");
+          CheckRpcSendOk(stub, DEBUG_LOCATION);
+        }
+      });
+  // Wait for first RPC to complete.
+  gpr_log(GPR_ERROR, "=== WAITING FOR FIRST RPC TO COMPLETE ===");
+  ASSERT_EQ((void*)1, gpr_event_wait(&ev, grpc_timeout_seconds_to_deadline(1)));
+  // Channel should now be READY.
+  ASSERT_EQ(GRPC_CHANNEL_READY, channel->GetState(false));
+  // Tell injector to intercept the next connection attempt.
+  injector.InterceptNextAttempt();
+  // Now kill the server.  The subchannel should report IDLE and be
+  // immediately reconnected to, but this should not cause any test
+  // failures.
+  gpr_log(GPR_ERROR, "=== SHUTTING DOWN SERVER ===");
+  servers_[0]->Shutdown();
+  // Wait for next attempt to start.
+  gpr_log(GPR_ERROR, "=== WAITING FOR RECONNECTION ATTEMPT ===");
+  injector.WaitForAttemptToStart();
+  // Start server and allow attempt to continue.
+  gpr_log(GPR_ERROR, "=== RESTARTING SERVER ===");
+  StartServer(0);
+  injector.ResumeAttempt();
+  // Wait for next attempt to complete.
+  gpr_log(GPR_ERROR, "=== WAITING FOR RECONNECTION ATTEMPT TO COMPLETE ===");
+  injector.WaitForAttemptComplete();
+  // Now shut down the thread.
+  gpr_log(GPR_ERROR, "=== SHUTTING DOWN CLIENT THREAD ===");
+  shutdown.store(true);
+  thd.join();
+}
+
 TEST_F(RoundRobinTest, SingleReconnect) {
   const int kNumServers = 3;
   StartServers(kNumServers);
@@ -2259,7 +2393,9 @@ TEST_F(OobBackendMetricTest, Basic) {
 int main(int argc, char** argv) {
   ::testing::InitGoogleTest(&argc, argv);
   grpc::testing::TestEnvironment env(&argc, argv);
+  grpc_init();
   grpc::testing::ConnectionAttemptInjector::Init();
   const auto result = RUN_ALL_TESTS();
+  grpc_shutdown();
   return result;
 }

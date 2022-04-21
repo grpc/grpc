@@ -40,7 +40,8 @@ namespace testing {
 class ConnectionAttemptInjector {
  public:
   // Global initializer.  Replaces the iomgr TCP client vtable.
-  // Must be called exactly once before any TCP connections are established.
+  // Must be called exactly once after grpc_init() but before any TCP
+  // connections are established.
   static void Init();
 
   virtual ~ConnectionAttemptInjector();
