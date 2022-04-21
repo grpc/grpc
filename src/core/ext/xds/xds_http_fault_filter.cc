@@ -198,7 +198,7 @@ XdsHttpFaultFilter::GenerateFilterConfigOverride(
 }
 
 const grpc_channel_filter* XdsHttpFaultFilter::channel_filter() const {
-  return &FaultInjectionFilterVtable;
+  return &FaultInjectionFilter::kFilter;
 }
 
 grpc_channel_args* XdsHttpFaultFilter::ModifyChannelArgs(

@@ -1264,7 +1264,8 @@ grpc_channel* grpc_inproc_channel_create(grpc_server* server,
   args = grpc_channel_args_copy_and_add(args, &default_authority_arg, 1);
   const grpc_channel_args* client_args = grpc_core::CoreConfiguration::Get()
                                              .channel_args_preconditioning()
-                                             .PreconditionChannelArgs(args);
+                                             .PreconditionChannelArgs(args)
+                                             .ToC();
   grpc_channel_args_destroy(args);
   grpc_transport* server_transport;
   grpc_transport* client_transport;
@@ -1276,10 +1277,10 @@ grpc_channel* grpc_inproc_channel_create(grpc_server* server,
       server_transport, nullptr, server_args, nullptr);
   grpc_channel* channel = nullptr;
   if (error == GRPC_ERROR_NONE) {
-    channel = grpc_channel_create_internal("inproc", client_args,
-                                           GRPC_CLIENT_DIRECT_CHANNEL,
-                                           client_transport, &error);
-    if (error != GRPC_ERROR_NONE) {
+    auto new_channel = grpc_core::Channel::Create(
+        "inproc", grpc_core::ChannelArgs::FromC(client_args),
+        GRPC_CLIENT_DIRECT_CHANNEL, client_transport);
+    if (!new_channel.ok()) {
       GPR_ASSERT(!channel);
       gpr_log(GPR_ERROR, "Failed to create client channel: %s",
               grpc_error_std_string(error).c_str());
@@ -1294,6 +1295,8 @@ grpc_channel* grpc_inproc_channel_create(grpc_server* server,
       grpc_transport_destroy(server_transport);
       channel = grpc_lame_client_channel_create(
           nullptr, status, "Failed to create client channel");
+    } else {
+      channel = new_channel->release()->c_ptr();
     }
   } else {
     GPR_ASSERT(!channel);

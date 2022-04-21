@@ -335,6 +335,7 @@ libs:
   - src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_balancer_addresses.h
   - src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_client_stats.h
   - src/core/ext/filters/client_channel/lb_policy/grpclb/load_balancer_api.h
+  - src/core/ext/filters/client_channel/lb_policy/oob_backend_metric.h
   - src/core/ext/filters/client_channel/lb_policy/ring_hash/ring_hash.h
   - src/core/ext/filters/client_channel/lb_policy/subchannel_list.h
   - src/core/ext/filters/client_channel/lb_policy/xds/xds.h
@@ -356,6 +357,7 @@ libs:
   - src/core/ext/filters/client_channel/retry_throttle.h
   - src/core/ext/filters/client_channel/subchannel.h
   - src/core/ext/filters/client_channel/subchannel_interface.h
+  - src/core/ext/filters/client_channel/subchannel_interface_internal.h
   - src/core/ext/filters/client_channel/subchannel_pool_interface.h
   - src/core/ext/filters/client_channel/subchannel_stream_client.h
   - src/core/ext/filters/deadline/deadline_filter.h
@@ -534,6 +536,7 @@ libs:
   - src/core/ext/upb-generated/xds/core/v3/resource_locator.upb.h
   - src/core/ext/upb-generated/xds/core/v3/resource_name.upb.h
   - src/core/ext/upb-generated/xds/data/orca/v3/orca_load_report.upb.h
+  - src/core/ext/upb-generated/xds/service/orca/v3/orca.upb.h
   - src/core/ext/upb-generated/xds/type/matcher/v3/matcher.upb.h
   - src/core/ext/upb-generated/xds/type/matcher/v3/regex.upb.h
   - src/core/ext/upb-generated/xds/type/matcher/v3/string.upb.h
@@ -995,6 +998,7 @@ libs:
   - src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_balancer_addresses.cc
   - src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_client_stats.cc
   - src/core/ext/filters/client_channel/lb_policy/grpclb/load_balancer_api.cc
+  - src/core/ext/filters/client_channel/lb_policy/oob_backend_metric.cc
   - src/core/ext/filters/client_channel/lb_policy/pick_first/pick_first.cc
   - src/core/ext/filters/client_channel/lb_policy/priority/priority.cc
   - src/core/ext/filters/client_channel/lb_policy/ring_hash/ring_hash.cc
@@ -1210,6 +1214,7 @@ libs:
   - src/core/ext/upb-generated/xds/core/v3/resource_locator.upb.c
   - src/core/ext/upb-generated/xds/core/v3/resource_name.upb.c
   - src/core/ext/upb-generated/xds/data/orca/v3/orca_load_report.upb.c
+  - src/core/ext/upb-generated/xds/service/orca/v3/orca.upb.c
   - src/core/ext/upb-generated/xds/type/matcher/v3/matcher.upb.c
   - src/core/ext/upb-generated/xds/type/matcher/v3/regex.upb.c
   - src/core/ext/upb-generated/xds/type/matcher/v3/string.upb.c
@@ -1811,6 +1816,7 @@ libs:
   - src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_balancer_addresses.h
   - src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_client_stats.h
   - src/core/ext/filters/client_channel/lb_policy/grpclb/load_balancer_api.h
+  - src/core/ext/filters/client_channel/lb_policy/oob_backend_metric.h
   - src/core/ext/filters/client_channel/lb_policy/ring_hash/ring_hash.h
   - src/core/ext/filters/client_channel/lb_policy/subchannel_list.h
   - src/core/ext/filters/client_channel/lb_policy_factory.h
@@ -1829,6 +1835,7 @@ libs:
   - src/core/ext/filters/client_channel/retry_throttle.h
   - src/core/ext/filters/client_channel/subchannel.h
   - src/core/ext/filters/client_channel/subchannel_interface.h
+  - src/core/ext/filters/client_channel/subchannel_interface_internal.h
   - src/core/ext/filters/client_channel/subchannel_pool_interface.h
   - src/core/ext/filters/client_channel/subchannel_stream_client.h
   - src/core/ext/filters/deadline/deadline_filter.h
@@ -1881,6 +1888,7 @@ libs:
   - src/core/ext/upb-generated/src/proto/grpc/lookup/v1/rls.upb.h
   - src/core/ext/upb-generated/validate/validate.upb.h
   - src/core/ext/upb-generated/xds/data/orca/v3/orca_load_report.upb.h
+  - src/core/ext/upb-generated/xds/service/orca/v3/orca.upb.h
   - src/core/lib/address_utils/parse_address.h
   - src/core/lib/address_utils/sockaddr_utils.h
   - src/core/lib/avl/avl.h
@@ -2124,6 +2132,7 @@ libs:
   - src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_balancer_addresses.cc
   - src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_client_stats.cc
   - src/core/ext/filters/client_channel/lb_policy/grpclb/load_balancer_api.cc
+  - src/core/ext/filters/client_channel/lb_policy/oob_backend_metric.cc
   - src/core/ext/filters/client_channel/lb_policy/pick_first/pick_first.cc
   - src/core/ext/filters/client_channel/lb_policy/priority/priority.cc
   - src/core/ext/filters/client_channel/lb_policy/ring_hash/ring_hash.cc
@@ -2207,6 +2216,7 @@ libs:
   - src/core/ext/upb-generated/src/proto/grpc/lookup/v1/rls.upb.c
   - src/core/ext/upb-generated/validate/validate.upb.c
   - src/core/ext/upb-generated/xds/data/orca/v3/orca_load_report.upb.c
+  - src/core/ext/upb-generated/xds/service/orca/v3/orca.upb.c
   - src/core/lib/address_utils/parse_address.cc
   - src/core/lib/address_utils/sockaddr_utils.cc
   - src/core/lib/backoff/backoff.cc
@@ -5247,6 +5257,7 @@ targets:
   - third_party/googleapis/google/api/httpbody.proto
   - third_party/googleapis/google/rpc/status.proto
   - third_party/xds/xds/data/orca/v3/orca_load_report.proto
+  - src/cpp/server/orca/orca_service.cc
   - test/core/util/test_lb_policies.cc
   - test/cpp/end2end/client_lb_end2end_test.cc
   - test/cpp/end2end/connection_delay_injector.cc
@@ -6761,36 +6772,10 @@ targets:
   gtest: true
   build: test
   language: c++
-  headers:
-  - src/core/ext/upb-generated/google/api/annotations.upb.h
-  - src/core/ext/upb-generated/google/api/http.upb.h
-  - src/core/ext/upb-generated/google/protobuf/any.upb.h
-  - src/core/ext/upb-generated/google/protobuf/descriptor.upb.h
-  - src/core/ext/upb-generated/google/protobuf/duration.upb.h
-  - src/core/ext/upb-generated/google/protobuf/empty.upb.h
-  - src/core/ext/upb-generated/google/protobuf/struct.upb.h
-  - src/core/ext/upb-generated/google/protobuf/timestamp.upb.h
-  - src/core/ext/upb-generated/google/protobuf/wrappers.upb.h
-  - src/core/ext/upb-generated/google/rpc/status.upb.h
-  - src/core/ext/upb-generated/validate/validate.upb.h
-  - src/core/ext/upb-generated/xds/data/orca/v3/orca_load_report.upb.h
-  - src/core/ext/upb-generated/xds/service/orca/v3/orca.upb.h
+  headers: []
   src:
   - src/proto/grpc/testing/xds/v3/orca_load_report.proto
   - src/proto/grpc/testing/xds/v3/orca_service.proto
-  - src/core/ext/upb-generated/google/api/annotations.upb.c
-  - src/core/ext/upb-generated/google/api/http.upb.c
-  - src/core/ext/upb-generated/google/protobuf/any.upb.c
-  - src/core/ext/upb-generated/google/protobuf/descriptor.upb.c
-  - src/core/ext/upb-generated/google/protobuf/duration.upb.c
-  - src/core/ext/upb-generated/google/protobuf/empty.upb.c
-  - src/core/ext/upb-generated/google/protobuf/struct.upb.c
-  - src/core/ext/upb-generated/google/protobuf/timestamp.upb.c
-  - src/core/ext/upb-generated/google/protobuf/wrappers.upb.c
-  - src/core/ext/upb-generated/google/rpc/status.upb.c
-  - src/core/ext/upb-generated/validate/validate.upb.c
-  - src/core/ext/upb-generated/xds/data/orca/v3/orca_load_report.upb.c
-  - src/core/ext/upb-generated/xds/service/orca/v3/orca.upb.c
   - src/cpp/server/orca/orca_service.cc
   - test/cpp/end2end/orca_service_end2end_test.cc
   deps:
@@ -8488,6 +8473,655 @@ targets:
   - test/core/xds/xds_certificate_provider_test.cc
   deps:
   - grpc_test_util
+- name: xds_cluster_end2end_test
+  gtest: true
+  build: test
+  run: false
+  language: c++
+  headers:
+  - test/cpp/end2end/counted_service.h
+  - test/cpp/end2end/test_service_impl.h
+  - test/cpp/end2end/xds/xds_end2end_test_lib.h
+  - test/cpp/end2end/xds/xds_server.h
+  - test/cpp/util/tls_test_utils.h
+  src:
+  - src/proto/grpc/lookup/v1/rls.proto
+  - src/proto/grpc/lookup/v1/rls_config.proto
+  - src/proto/grpc/testing/duplicate/echo_duplicate.proto
+  - src/proto/grpc/testing/echo.proto
+  - src/proto/grpc/testing/echo_messages.proto
+  - src/proto/grpc/testing/simple_messages.proto
+  - third_party/envoy-api/envoy/admin/v3/certs.proto
+  - third_party/envoy-api/envoy/admin/v3/clusters.proto
+  - third_party/envoy-api/envoy/admin/v3/config_dump.proto
+  - third_party/envoy-api/envoy/admin/v3/init_dump.proto
+  - third_party/envoy-api/envoy/admin/v3/listeners.proto
+  - third_party/envoy-api/envoy/admin/v3/memory.proto
+  - third_party/envoy-api/envoy/admin/v3/metrics.proto
+  - third_party/envoy-api/envoy/admin/v3/mutex_stats.proto
+  - third_party/envoy-api/envoy/admin/v3/server_info.proto
+  - third_party/envoy-api/envoy/admin/v3/tap.proto
+  - third_party/envoy-api/envoy/annotations/deprecation.proto
+  - third_party/envoy-api/envoy/annotations/resource.proto
+  - third_party/envoy-api/envoy/api/v2/auth/cert.proto
+  - third_party/envoy-api/envoy/api/v2/auth/common.proto
+  - third_party/envoy-api/envoy/api/v2/auth/secret.proto
+  - third_party/envoy-api/envoy/api/v2/auth/tls.proto
+  - third_party/envoy-api/envoy/api/v2/cds.proto
+  - third_party/envoy-api/envoy/api/v2/cluster.proto
+  - third_party/envoy-api/envoy/api/v2/cluster/circuit_breaker.proto
+  - third_party/envoy-api/envoy/api/v2/cluster/filter.proto
+  - third_party/envoy-api/envoy/api/v2/cluster/outlier_detection.proto
+  - third_party/envoy-api/envoy/api/v2/core/address.proto
+  - third_party/envoy-api/envoy/api/v2/core/backoff.proto
+  - third_party/envoy-api/envoy/api/v2/core/base.proto
+  - third_party/envoy-api/envoy/api/v2/core/config_source.proto
+  - third_party/envoy-api/envoy/api/v2/core/event_service_config.proto
+  - third_party/envoy-api/envoy/api/v2/core/grpc_method_list.proto
+  - third_party/envoy-api/envoy/api/v2/core/grpc_service.proto
+  - third_party/envoy-api/envoy/api/v2/core/health_check.proto
+  - third_party/envoy-api/envoy/api/v2/core/http_uri.proto
+  - third_party/envoy-api/envoy/api/v2/core/protocol.proto
+  - third_party/envoy-api/envoy/api/v2/core/socket_option.proto
+  - third_party/envoy-api/envoy/api/v2/discovery.proto
+  - third_party/envoy-api/envoy/api/v2/eds.proto
+  - third_party/envoy-api/envoy/api/v2/endpoint.proto
+  - third_party/envoy-api/envoy/api/v2/endpoint/endpoint.proto
+  - third_party/envoy-api/envoy/api/v2/endpoint/endpoint_components.proto
+  - third_party/envoy-api/envoy/api/v2/endpoint/load_report.proto
+  - third_party/envoy-api/envoy/api/v2/lds.proto
+  - third_party/envoy-api/envoy/api/v2/listener.proto
+  - third_party/envoy-api/envoy/api/v2/listener/listener.proto
+  - third_party/envoy-api/envoy/api/v2/listener/listener_components.proto
+  - third_party/envoy-api/envoy/api/v2/listener/quic_config.proto
+  - third_party/envoy-api/envoy/api/v2/listener/udp_listener_config.proto
+  - third_party/envoy-api/envoy/api/v2/rds.proto
+  - third_party/envoy-api/envoy/api/v2/route.proto
+  - third_party/envoy-api/envoy/api/v2/route/route.proto
+  - third_party/envoy-api/envoy/api/v2/route/route_components.proto
+  - third_party/envoy-api/envoy/api/v2/scoped_route.proto
+  - third_party/envoy-api/envoy/api/v2/srds.proto
+  - third_party/envoy-api/envoy/config/accesslog/v3/accesslog.proto
+  - third_party/envoy-api/envoy/config/bootstrap/v3/bootstrap.proto
+  - third_party/envoy-api/envoy/config/cluster/v3/circuit_breaker.proto
+  - third_party/envoy-api/envoy/config/cluster/v3/cluster.proto
+  - third_party/envoy-api/envoy/config/cluster/v3/filter.proto
+  - third_party/envoy-api/envoy/config/cluster/v3/outlier_detection.proto
+  - third_party/envoy-api/envoy/config/common/matcher/v3/matcher.proto
+  - third_party/envoy-api/envoy/config/core/v3/address.proto
+  - third_party/envoy-api/envoy/config/core/v3/backoff.proto
+  - third_party/envoy-api/envoy/config/core/v3/base.proto
+  - third_party/envoy-api/envoy/config/core/v3/config_source.proto
+  - third_party/envoy-api/envoy/config/core/v3/event_service_config.proto
+  - third_party/envoy-api/envoy/config/core/v3/extension.proto
+  - third_party/envoy-api/envoy/config/core/v3/grpc_method_list.proto
+  - third_party/envoy-api/envoy/config/core/v3/grpc_service.proto
+  - third_party/envoy-api/envoy/config/core/v3/health_check.proto
+  - third_party/envoy-api/envoy/config/core/v3/http_uri.proto
+  - third_party/envoy-api/envoy/config/core/v3/protocol.proto
+  - third_party/envoy-api/envoy/config/core/v3/proxy_protocol.proto
+  - third_party/envoy-api/envoy/config/core/v3/resolver.proto
+  - third_party/envoy-api/envoy/config/core/v3/socket_option.proto
+  - third_party/envoy-api/envoy/config/core/v3/substitution_format_string.proto
+  - third_party/envoy-api/envoy/config/core/v3/udp_socket_config.proto
+  - third_party/envoy-api/envoy/config/endpoint/v3/endpoint.proto
+  - third_party/envoy-api/envoy/config/endpoint/v3/endpoint_components.proto
+  - third_party/envoy-api/envoy/config/endpoint/v3/load_report.proto
+  - third_party/envoy-api/envoy/config/filter/accesslog/v2/accesslog.proto
+  - third_party/envoy-api/envoy/config/listener/v2/api_listener.proto
+  - third_party/envoy-api/envoy/config/listener/v3/api_listener.proto
+  - third_party/envoy-api/envoy/config/listener/v3/listener.proto
+  - third_party/envoy-api/envoy/config/listener/v3/listener_components.proto
+  - third_party/envoy-api/envoy/config/listener/v3/quic_config.proto
+  - third_party/envoy-api/envoy/config/listener/v3/udp_listener_config.proto
+  - third_party/envoy-api/envoy/config/metrics/v3/metrics_service.proto
+  - third_party/envoy-api/envoy/config/metrics/v3/stats.proto
+  - third_party/envoy-api/envoy/config/overload/v3/overload.proto
+  - third_party/envoy-api/envoy/config/rbac/v3/rbac.proto
+  - third_party/envoy-api/envoy/config/route/v3/route.proto
+  - third_party/envoy-api/envoy/config/route/v3/route_components.proto
+  - third_party/envoy-api/envoy/config/route/v3/scoped_route.proto
+  - third_party/envoy-api/envoy/config/tap/v3/common.proto
+  - third_party/envoy-api/envoy/config/trace/v3/datadog.proto
+  - third_party/envoy-api/envoy/config/trace/v3/dynamic_ot.proto
+  - third_party/envoy-api/envoy/config/trace/v3/http_tracer.proto
+  - third_party/envoy-api/envoy/config/trace/v3/lightstep.proto
+  - third_party/envoy-api/envoy/config/trace/v3/opencensus.proto
+  - third_party/envoy-api/envoy/config/trace/v3/service.proto
+  - third_party/envoy-api/envoy/config/trace/v3/skywalking.proto
+  - third_party/envoy-api/envoy/config/trace/v3/trace.proto
+  - third_party/envoy-api/envoy/config/trace/v3/xray.proto
+  - third_party/envoy-api/envoy/config/trace/v3/zipkin.proto
+  - third_party/envoy-api/envoy/extensions/clusters/aggregate/v3/cluster.proto
+  - third_party/envoy-api/envoy/extensions/filters/common/fault/v3/fault.proto
+  - third_party/envoy-api/envoy/extensions/filters/http/fault/v3/fault.proto
+  - third_party/envoy-api/envoy/extensions/filters/http/rbac/v3/rbac.proto
+  - third_party/envoy-api/envoy/extensions/filters/http/router/v3/router.proto
+  - third_party/envoy-api/envoy/extensions/filters/network/http_connection_manager/v3/http_connection_manager.proto
+  - third_party/envoy-api/envoy/extensions/transport_sockets/tls/v3/cert.proto
+  - third_party/envoy-api/envoy/extensions/transport_sockets/tls/v3/common.proto
+  - third_party/envoy-api/envoy/extensions/transport_sockets/tls/v3/secret.proto
+  - third_party/envoy-api/envoy/extensions/transport_sockets/tls/v3/tls.proto
+  - third_party/envoy-api/envoy/extensions/transport_sockets/tls/v3/tls_spiffe_validator_config.proto
+  - third_party/envoy-api/envoy/service/discovery/v2/ads.proto
+  - third_party/envoy-api/envoy/service/discovery/v2/hds.proto
+  - third_party/envoy-api/envoy/service/discovery/v2/rtds.proto
+  - third_party/envoy-api/envoy/service/discovery/v2/sds.proto
+  - third_party/envoy-api/envoy/service/discovery/v3/ads.proto
+  - third_party/envoy-api/envoy/service/discovery/v3/discovery.proto
+  - third_party/envoy-api/envoy/service/load_stats/v2/lrs.proto
+  - third_party/envoy-api/envoy/service/load_stats/v3/lrs.proto
+  - third_party/envoy-api/envoy/service/status/v3/csds.proto
+  - third_party/envoy-api/envoy/type/hash_policy.proto
+  - third_party/envoy-api/envoy/type/http.proto
+  - third_party/envoy-api/envoy/type/http/v3/cookie.proto
+  - third_party/envoy-api/envoy/type/http/v3/path_transformation.proto
+  - third_party/envoy-api/envoy/type/http_status.proto
+  - third_party/envoy-api/envoy/type/matcher/metadata.proto
+  - third_party/envoy-api/envoy/type/matcher/node.proto
+  - third_party/envoy-api/envoy/type/matcher/number.proto
+  - third_party/envoy-api/envoy/type/matcher/path.proto
+  - third_party/envoy-api/envoy/type/matcher/regex.proto
+  - third_party/envoy-api/envoy/type/matcher/string.proto
+  - third_party/envoy-api/envoy/type/matcher/struct.proto
+  - third_party/envoy-api/envoy/type/matcher/v3/http_inputs.proto
+  - third_party/envoy-api/envoy/type/matcher/v3/metadata.proto
+  - third_party/envoy-api/envoy/type/matcher/v3/node.proto
+  - third_party/envoy-api/envoy/type/matcher/v3/number.proto
+  - third_party/envoy-api/envoy/type/matcher/v3/path.proto
+  - third_party/envoy-api/envoy/type/matcher/v3/regex.proto
+  - third_party/envoy-api/envoy/type/matcher/v3/string.proto
+  - third_party/envoy-api/envoy/type/matcher/v3/struct.proto
+  - third_party/envoy-api/envoy/type/matcher/v3/value.proto
+  - third_party/envoy-api/envoy/type/matcher/value.proto
+  - third_party/envoy-api/envoy/type/metadata/v2/metadata.proto
+  - third_party/envoy-api/envoy/type/metadata/v3/metadata.proto
+  - third_party/envoy-api/envoy/type/percent.proto
+  - third_party/envoy-api/envoy/type/range.proto
+  - third_party/envoy-api/envoy/type/semantic_version.proto
+  - third_party/envoy-api/envoy/type/token_bucket.proto
+  - third_party/envoy-api/envoy/type/tracing/v2/custom_tag.proto
+  - third_party/envoy-api/envoy/type/tracing/v3/custom_tag.proto
+  - third_party/envoy-api/envoy/type/v3/hash_policy.proto
+  - third_party/envoy-api/envoy/type/v3/http.proto
+  - third_party/envoy-api/envoy/type/v3/http_status.proto
+  - third_party/envoy-api/envoy/type/v3/percent.proto
+  - third_party/envoy-api/envoy/type/v3/range.proto
+  - third_party/envoy-api/envoy/type/v3/ratelimit_unit.proto
+  - third_party/envoy-api/envoy/type/v3/semantic_version.proto
+  - third_party/envoy-api/envoy/type/v3/token_bucket.proto
+  - third_party/googleapis/google/api/annotations.proto
+  - third_party/googleapis/google/api/expr/v1alpha1/checked.proto
+  - third_party/googleapis/google/api/expr/v1alpha1/syntax.proto
+  - third_party/googleapis/google/api/http.proto
+  - third_party/googleapis/google/api/httpbody.proto
+  - third_party/googleapis/google/rpc/status.proto
+  - third_party/opencensus-proto/src/opencensus/proto/trace/v1/trace_config.proto
+  - third_party/xds/udpa/annotations/migrate.proto
+  - third_party/xds/udpa/annotations/security.proto
+  - third_party/xds/udpa/annotations/sensitive.proto
+  - third_party/xds/udpa/annotations/status.proto
+  - third_party/xds/udpa/annotations/versioning.proto
+  - third_party/xds/xds/annotations/v3/migrate.proto
+  - third_party/xds/xds/annotations/v3/security.proto
+  - third_party/xds/xds/annotations/v3/sensitive.proto
+  - third_party/xds/xds/annotations/v3/status.proto
+  - third_party/xds/xds/annotations/v3/versioning.proto
+  - third_party/xds/xds/core/v3/authority.proto
+  - third_party/xds/xds/core/v3/collection_entry.proto
+  - third_party/xds/xds/core/v3/context_params.proto
+  - third_party/xds/xds/core/v3/extension.proto
+  - third_party/xds/xds/core/v3/resource.proto
+  - third_party/xds/xds/core/v3/resource_locator.proto
+  - third_party/xds/xds/core/v3/resource_name.proto
+  - third_party/xds/xds/type/matcher/v3/matcher.proto
+  - third_party/xds/xds/type/matcher/v3/regex.proto
+  - third_party/xds/xds/type/matcher/v3/string.proto
+  - test/cpp/end2end/test_service_impl.cc
+  - test/cpp/end2end/xds/xds_cluster_end2end_test.cc
+  - test/cpp/end2end/xds/xds_end2end_test_lib.cc
+  - test/cpp/end2end/xds/xds_server.cc
+  - test/cpp/util/tls_test_utils.cc
+  deps:
+  - grpc++_test_util
+  platforms:
+  - linux
+  - posix
+  - mac
+- name: xds_cluster_type_end2end_test
+  gtest: true
+  build: test
+  run: false
+  language: c++
+  headers:
+  - test/cpp/end2end/connection_delay_injector.h
+  - test/cpp/end2end/counted_service.h
+  - test/cpp/end2end/test_service_impl.h
+  - test/cpp/end2end/xds/xds_end2end_test_lib.h
+  - test/cpp/end2end/xds/xds_server.h
+  - test/cpp/util/tls_test_utils.h
+  src:
+  - src/proto/grpc/lookup/v1/rls.proto
+  - src/proto/grpc/lookup/v1/rls_config.proto
+  - src/proto/grpc/testing/duplicate/echo_duplicate.proto
+  - src/proto/grpc/testing/echo.proto
+  - src/proto/grpc/testing/echo_messages.proto
+  - src/proto/grpc/testing/simple_messages.proto
+  - src/proto/grpc/testing/xds/v3/aggregate_cluster.proto
+  - src/proto/grpc/testing/xds/v3/regex.proto
+  - src/proto/grpc/testing/xds/v3/string.proto
+  - third_party/envoy-api/envoy/admin/v3/certs.proto
+  - third_party/envoy-api/envoy/admin/v3/clusters.proto
+  - third_party/envoy-api/envoy/admin/v3/config_dump.proto
+  - third_party/envoy-api/envoy/admin/v3/init_dump.proto
+  - third_party/envoy-api/envoy/admin/v3/listeners.proto
+  - third_party/envoy-api/envoy/admin/v3/memory.proto
+  - third_party/envoy-api/envoy/admin/v3/metrics.proto
+  - third_party/envoy-api/envoy/admin/v3/mutex_stats.proto
+  - third_party/envoy-api/envoy/admin/v3/server_info.proto
+  - third_party/envoy-api/envoy/admin/v3/tap.proto
+  - third_party/envoy-api/envoy/annotations/deprecation.proto
+  - third_party/envoy-api/envoy/annotations/resource.proto
+  - third_party/envoy-api/envoy/api/v2/auth/cert.proto
+  - third_party/envoy-api/envoy/api/v2/auth/common.proto
+  - third_party/envoy-api/envoy/api/v2/auth/secret.proto
+  - third_party/envoy-api/envoy/api/v2/auth/tls.proto
+  - third_party/envoy-api/envoy/api/v2/cds.proto
+  - third_party/envoy-api/envoy/api/v2/cluster.proto
+  - third_party/envoy-api/envoy/api/v2/cluster/circuit_breaker.proto
+  - third_party/envoy-api/envoy/api/v2/cluster/filter.proto
+  - third_party/envoy-api/envoy/api/v2/cluster/outlier_detection.proto
+  - third_party/envoy-api/envoy/api/v2/core/address.proto
+  - third_party/envoy-api/envoy/api/v2/core/backoff.proto
+  - third_party/envoy-api/envoy/api/v2/core/base.proto
+  - third_party/envoy-api/envoy/api/v2/core/config_source.proto
+  - third_party/envoy-api/envoy/api/v2/core/event_service_config.proto
+  - third_party/envoy-api/envoy/api/v2/core/grpc_method_list.proto
+  - third_party/envoy-api/envoy/api/v2/core/grpc_service.proto
+  - third_party/envoy-api/envoy/api/v2/core/health_check.proto
+  - third_party/envoy-api/envoy/api/v2/core/http_uri.proto
+  - third_party/envoy-api/envoy/api/v2/core/protocol.proto
+  - third_party/envoy-api/envoy/api/v2/core/socket_option.proto
+  - third_party/envoy-api/envoy/api/v2/discovery.proto
+  - third_party/envoy-api/envoy/api/v2/eds.proto
+  - third_party/envoy-api/envoy/api/v2/endpoint.proto
+  - third_party/envoy-api/envoy/api/v2/endpoint/endpoint.proto
+  - third_party/envoy-api/envoy/api/v2/endpoint/endpoint_components.proto
+  - third_party/envoy-api/envoy/api/v2/endpoint/load_report.proto
+  - third_party/envoy-api/envoy/api/v2/lds.proto
+  - third_party/envoy-api/envoy/api/v2/listener.proto
+  - third_party/envoy-api/envoy/api/v2/listener/listener.proto
+  - third_party/envoy-api/envoy/api/v2/listener/listener_components.proto
+  - third_party/envoy-api/envoy/api/v2/listener/quic_config.proto
+  - third_party/envoy-api/envoy/api/v2/listener/udp_listener_config.proto
+  - third_party/envoy-api/envoy/api/v2/rds.proto
+  - third_party/envoy-api/envoy/api/v2/route.proto
+  - third_party/envoy-api/envoy/api/v2/route/route.proto
+  - third_party/envoy-api/envoy/api/v2/route/route_components.proto
+  - third_party/envoy-api/envoy/api/v2/scoped_route.proto
+  - third_party/envoy-api/envoy/api/v2/srds.proto
+  - third_party/envoy-api/envoy/config/accesslog/v3/accesslog.proto
+  - third_party/envoy-api/envoy/config/bootstrap/v3/bootstrap.proto
+  - third_party/envoy-api/envoy/config/cluster/v3/circuit_breaker.proto
+  - third_party/envoy-api/envoy/config/cluster/v3/cluster.proto
+  - third_party/envoy-api/envoy/config/cluster/v3/filter.proto
+  - third_party/envoy-api/envoy/config/cluster/v3/outlier_detection.proto
+  - third_party/envoy-api/envoy/config/common/matcher/v3/matcher.proto
+  - third_party/envoy-api/envoy/config/core/v3/address.proto
+  - third_party/envoy-api/envoy/config/core/v3/backoff.proto
+  - third_party/envoy-api/envoy/config/core/v3/base.proto
+  - third_party/envoy-api/envoy/config/core/v3/config_source.proto
+  - third_party/envoy-api/envoy/config/core/v3/event_service_config.proto
+  - third_party/envoy-api/envoy/config/core/v3/extension.proto
+  - third_party/envoy-api/envoy/config/core/v3/grpc_method_list.proto
+  - third_party/envoy-api/envoy/config/core/v3/grpc_service.proto
+  - third_party/envoy-api/envoy/config/core/v3/health_check.proto
+  - third_party/envoy-api/envoy/config/core/v3/http_uri.proto
+  - third_party/envoy-api/envoy/config/core/v3/protocol.proto
+  - third_party/envoy-api/envoy/config/core/v3/proxy_protocol.proto
+  - third_party/envoy-api/envoy/config/core/v3/resolver.proto
+  - third_party/envoy-api/envoy/config/core/v3/socket_option.proto
+  - third_party/envoy-api/envoy/config/core/v3/substitution_format_string.proto
+  - third_party/envoy-api/envoy/config/core/v3/udp_socket_config.proto
+  - third_party/envoy-api/envoy/config/endpoint/v3/endpoint.proto
+  - third_party/envoy-api/envoy/config/endpoint/v3/endpoint_components.proto
+  - third_party/envoy-api/envoy/config/endpoint/v3/load_report.proto
+  - third_party/envoy-api/envoy/config/filter/accesslog/v2/accesslog.proto
+  - third_party/envoy-api/envoy/config/listener/v2/api_listener.proto
+  - third_party/envoy-api/envoy/config/listener/v3/api_listener.proto
+  - third_party/envoy-api/envoy/config/listener/v3/listener.proto
+  - third_party/envoy-api/envoy/config/listener/v3/listener_components.proto
+  - third_party/envoy-api/envoy/config/listener/v3/quic_config.proto
+  - third_party/envoy-api/envoy/config/listener/v3/udp_listener_config.proto
+  - third_party/envoy-api/envoy/config/metrics/v3/metrics_service.proto
+  - third_party/envoy-api/envoy/config/metrics/v3/stats.proto
+  - third_party/envoy-api/envoy/config/overload/v3/overload.proto
+  - third_party/envoy-api/envoy/config/rbac/v3/rbac.proto
+  - third_party/envoy-api/envoy/config/route/v3/route.proto
+  - third_party/envoy-api/envoy/config/route/v3/route_components.proto
+  - third_party/envoy-api/envoy/config/route/v3/scoped_route.proto
+  - third_party/envoy-api/envoy/config/tap/v3/common.proto
+  - third_party/envoy-api/envoy/config/trace/v3/datadog.proto
+  - third_party/envoy-api/envoy/config/trace/v3/dynamic_ot.proto
+  - third_party/envoy-api/envoy/config/trace/v3/http_tracer.proto
+  - third_party/envoy-api/envoy/config/trace/v3/lightstep.proto
+  - third_party/envoy-api/envoy/config/trace/v3/opencensus.proto
+  - third_party/envoy-api/envoy/config/trace/v3/service.proto
+  - third_party/envoy-api/envoy/config/trace/v3/skywalking.proto
+  - third_party/envoy-api/envoy/config/trace/v3/trace.proto
+  - third_party/envoy-api/envoy/config/trace/v3/xray.proto
+  - third_party/envoy-api/envoy/config/trace/v3/zipkin.proto
+  - third_party/envoy-api/envoy/extensions/clusters/aggregate/v3/cluster.proto
+  - third_party/envoy-api/envoy/extensions/filters/common/fault/v3/fault.proto
+  - third_party/envoy-api/envoy/extensions/filters/http/fault/v3/fault.proto
+  - third_party/envoy-api/envoy/extensions/filters/http/rbac/v3/rbac.proto
+  - third_party/envoy-api/envoy/extensions/filters/http/router/v3/router.proto
+  - third_party/envoy-api/envoy/extensions/filters/network/http_connection_manager/v3/http_connection_manager.proto
+  - third_party/envoy-api/envoy/extensions/transport_sockets/tls/v3/cert.proto
+  - third_party/envoy-api/envoy/extensions/transport_sockets/tls/v3/common.proto
+  - third_party/envoy-api/envoy/extensions/transport_sockets/tls/v3/secret.proto
+  - third_party/envoy-api/envoy/extensions/transport_sockets/tls/v3/tls.proto
+  - third_party/envoy-api/envoy/extensions/transport_sockets/tls/v3/tls_spiffe_validator_config.proto
+  - third_party/envoy-api/envoy/service/discovery/v2/ads.proto
+  - third_party/envoy-api/envoy/service/discovery/v2/hds.proto
+  - third_party/envoy-api/envoy/service/discovery/v2/rtds.proto
+  - third_party/envoy-api/envoy/service/discovery/v2/sds.proto
+  - third_party/envoy-api/envoy/service/discovery/v3/ads.proto
+  - third_party/envoy-api/envoy/service/discovery/v3/discovery.proto
+  - third_party/envoy-api/envoy/service/load_stats/v2/lrs.proto
+  - third_party/envoy-api/envoy/service/load_stats/v3/lrs.proto
+  - third_party/envoy-api/envoy/service/status/v3/csds.proto
+  - third_party/envoy-api/envoy/type/hash_policy.proto
+  - third_party/envoy-api/envoy/type/http.proto
+  - third_party/envoy-api/envoy/type/http/v3/cookie.proto
+  - third_party/envoy-api/envoy/type/http/v3/path_transformation.proto
+  - third_party/envoy-api/envoy/type/http_status.proto
+  - third_party/envoy-api/envoy/type/matcher/metadata.proto
+  - third_party/envoy-api/envoy/type/matcher/node.proto
+  - third_party/envoy-api/envoy/type/matcher/number.proto
+  - third_party/envoy-api/envoy/type/matcher/path.proto
+  - third_party/envoy-api/envoy/type/matcher/regex.proto
+  - third_party/envoy-api/envoy/type/matcher/string.proto
+  - third_party/envoy-api/envoy/type/matcher/struct.proto
+  - third_party/envoy-api/envoy/type/matcher/v3/http_inputs.proto
+  - third_party/envoy-api/envoy/type/matcher/v3/metadata.proto
+  - third_party/envoy-api/envoy/type/matcher/v3/node.proto
+  - third_party/envoy-api/envoy/type/matcher/v3/number.proto
+  - third_party/envoy-api/envoy/type/matcher/v3/path.proto
+  - third_party/envoy-api/envoy/type/matcher/v3/regex.proto
+  - third_party/envoy-api/envoy/type/matcher/v3/string.proto
+  - third_party/envoy-api/envoy/type/matcher/v3/struct.proto
+  - third_party/envoy-api/envoy/type/matcher/v3/value.proto
+  - third_party/envoy-api/envoy/type/matcher/value.proto
+  - third_party/envoy-api/envoy/type/metadata/v2/metadata.proto
+  - third_party/envoy-api/envoy/type/metadata/v3/metadata.proto
+  - third_party/envoy-api/envoy/type/percent.proto
+  - third_party/envoy-api/envoy/type/range.proto
+  - third_party/envoy-api/envoy/type/semantic_version.proto
+  - third_party/envoy-api/envoy/type/token_bucket.proto
+  - third_party/envoy-api/envoy/type/tracing/v2/custom_tag.proto
+  - third_party/envoy-api/envoy/type/tracing/v3/custom_tag.proto
+  - third_party/envoy-api/envoy/type/v3/hash_policy.proto
+  - third_party/envoy-api/envoy/type/v3/http.proto
+  - third_party/envoy-api/envoy/type/v3/http_status.proto
+  - third_party/envoy-api/envoy/type/v3/percent.proto
+  - third_party/envoy-api/envoy/type/v3/range.proto
+  - third_party/envoy-api/envoy/type/v3/ratelimit_unit.proto
+  - third_party/envoy-api/envoy/type/v3/semantic_version.proto
+  - third_party/envoy-api/envoy/type/v3/token_bucket.proto
+  - third_party/googleapis/google/api/annotations.proto
+  - third_party/googleapis/google/api/expr/v1alpha1/checked.proto
+  - third_party/googleapis/google/api/expr/v1alpha1/syntax.proto
+  - third_party/googleapis/google/api/http.proto
+  - third_party/googleapis/google/api/httpbody.proto
+  - third_party/googleapis/google/rpc/status.proto
+  - third_party/opencensus-proto/src/opencensus/proto/trace/v1/trace_config.proto
+  - third_party/xds/udpa/annotations/migrate.proto
+  - third_party/xds/udpa/annotations/security.proto
+  - third_party/xds/udpa/annotations/sensitive.proto
+  - third_party/xds/udpa/annotations/status.proto
+  - third_party/xds/udpa/annotations/versioning.proto
+  - third_party/xds/xds/annotations/v3/migrate.proto
+  - third_party/xds/xds/annotations/v3/security.proto
+  - third_party/xds/xds/annotations/v3/sensitive.proto
+  - third_party/xds/xds/annotations/v3/status.proto
+  - third_party/xds/xds/annotations/v3/versioning.proto
+  - third_party/xds/xds/core/v3/authority.proto
+  - third_party/xds/xds/core/v3/collection_entry.proto
+  - third_party/xds/xds/core/v3/context_params.proto
+  - third_party/xds/xds/core/v3/extension.proto
+  - third_party/xds/xds/core/v3/resource.proto
+  - third_party/xds/xds/core/v3/resource_locator.proto
+  - third_party/xds/xds/core/v3/resource_name.proto
+  - third_party/xds/xds/type/matcher/v3/matcher.proto
+  - third_party/xds/xds/type/matcher/v3/regex.proto
+  - third_party/xds/xds/type/matcher/v3/string.proto
+  - test/cpp/end2end/connection_delay_injector.cc
+  - test/cpp/end2end/test_service_impl.cc
+  - test/cpp/end2end/xds/xds_cluster_type_end2end_test.cc
+  - test/cpp/end2end/xds/xds_end2end_test_lib.cc
+  - test/cpp/end2end/xds/xds_server.cc
+  - test/cpp/util/tls_test_utils.cc
+  deps:
+  - grpc++_test_util
+  platforms:
+  - linux
+  - posix
+  - mac
+- name: xds_core_end2end_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - test/cpp/end2end/counted_service.h
+  - test/cpp/end2end/test_service_impl.h
+  - test/cpp/end2end/xds/xds_end2end_test_lib.h
+  - test/cpp/end2end/xds/xds_server.h
+  - test/cpp/util/tls_test_utils.h
+  src:
+  - src/proto/grpc/lookup/v1/rls.proto
+  - src/proto/grpc/lookup/v1/rls_config.proto
+  - src/proto/grpc/testing/duplicate/echo_duplicate.proto
+  - src/proto/grpc/testing/echo.proto
+  - src/proto/grpc/testing/echo_messages.proto
+  - src/proto/grpc/testing/simple_messages.proto
+  - third_party/envoy-api/envoy/admin/v3/certs.proto
+  - third_party/envoy-api/envoy/admin/v3/clusters.proto
+  - third_party/envoy-api/envoy/admin/v3/config_dump.proto
+  - third_party/envoy-api/envoy/admin/v3/init_dump.proto
+  - third_party/envoy-api/envoy/admin/v3/listeners.proto
+  - third_party/envoy-api/envoy/admin/v3/memory.proto
+  - third_party/envoy-api/envoy/admin/v3/metrics.proto
+  - third_party/envoy-api/envoy/admin/v3/mutex_stats.proto
+  - third_party/envoy-api/envoy/admin/v3/server_info.proto
+  - third_party/envoy-api/envoy/admin/v3/tap.proto
+  - third_party/envoy-api/envoy/annotations/deprecation.proto
+  - third_party/envoy-api/envoy/annotations/resource.proto
+  - third_party/envoy-api/envoy/api/v2/auth/cert.proto
+  - third_party/envoy-api/envoy/api/v2/auth/common.proto
+  - third_party/envoy-api/envoy/api/v2/auth/secret.proto
+  - third_party/envoy-api/envoy/api/v2/auth/tls.proto
+  - third_party/envoy-api/envoy/api/v2/cds.proto
+  - third_party/envoy-api/envoy/api/v2/cluster.proto
+  - third_party/envoy-api/envoy/api/v2/cluster/circuit_breaker.proto
+  - third_party/envoy-api/envoy/api/v2/cluster/filter.proto
+  - third_party/envoy-api/envoy/api/v2/cluster/outlier_detection.proto
+  - third_party/envoy-api/envoy/api/v2/core/address.proto
+  - third_party/envoy-api/envoy/api/v2/core/backoff.proto
+  - third_party/envoy-api/envoy/api/v2/core/base.proto
+  - third_party/envoy-api/envoy/api/v2/core/config_source.proto
+  - third_party/envoy-api/envoy/api/v2/core/event_service_config.proto
+  - third_party/envoy-api/envoy/api/v2/core/grpc_method_list.proto
+  - third_party/envoy-api/envoy/api/v2/core/grpc_service.proto
+  - third_party/envoy-api/envoy/api/v2/core/health_check.proto
+  - third_party/envoy-api/envoy/api/v2/core/http_uri.proto
+  - third_party/envoy-api/envoy/api/v2/core/protocol.proto
+  - third_party/envoy-api/envoy/api/v2/core/socket_option.proto
+  - third_party/envoy-api/envoy/api/v2/discovery.proto
+  - third_party/envoy-api/envoy/api/v2/eds.proto
+  - third_party/envoy-api/envoy/api/v2/endpoint.proto
+  - third_party/envoy-api/envoy/api/v2/endpoint/endpoint.proto
+  - third_party/envoy-api/envoy/api/v2/endpoint/endpoint_components.proto
+  - third_party/envoy-api/envoy/api/v2/endpoint/load_report.proto
+  - third_party/envoy-api/envoy/api/v2/lds.proto
+  - third_party/envoy-api/envoy/api/v2/listener.proto
+  - third_party/envoy-api/envoy/api/v2/listener/listener.proto
+  - third_party/envoy-api/envoy/api/v2/listener/listener_components.proto
+  - third_party/envoy-api/envoy/api/v2/listener/quic_config.proto
+  - third_party/envoy-api/envoy/api/v2/listener/udp_listener_config.proto
+  - third_party/envoy-api/envoy/api/v2/rds.proto
+  - third_party/envoy-api/envoy/api/v2/route.proto
+  - third_party/envoy-api/envoy/api/v2/route/route.proto
+  - third_party/envoy-api/envoy/api/v2/route/route_components.proto
+  - third_party/envoy-api/envoy/api/v2/scoped_route.proto
+  - third_party/envoy-api/envoy/api/v2/srds.proto
+  - third_party/envoy-api/envoy/config/accesslog/v3/accesslog.proto
+  - third_party/envoy-api/envoy/config/bootstrap/v3/bootstrap.proto
+  - third_party/envoy-api/envoy/config/cluster/v3/circuit_breaker.proto
+  - third_party/envoy-api/envoy/config/cluster/v3/cluster.proto
+  - third_party/envoy-api/envoy/config/cluster/v3/filter.proto
+  - third_party/envoy-api/envoy/config/cluster/v3/outlier_detection.proto
+  - third_party/envoy-api/envoy/config/common/matcher/v3/matcher.proto
+  - third_party/envoy-api/envoy/config/core/v3/address.proto
+  - third_party/envoy-api/envoy/config/core/v3/backoff.proto
+  - third_party/envoy-api/envoy/config/core/v3/base.proto
+  - third_party/envoy-api/envoy/config/core/v3/config_source.proto
+  - third_party/envoy-api/envoy/config/core/v3/event_service_config.proto
+  - third_party/envoy-api/envoy/config/core/v3/extension.proto
+  - third_party/envoy-api/envoy/config/core/v3/grpc_method_list.proto
+  - third_party/envoy-api/envoy/config/core/v3/grpc_service.proto
+  - third_party/envoy-api/envoy/config/core/v3/health_check.proto
+  - third_party/envoy-api/envoy/config/core/v3/http_uri.proto
+  - third_party/envoy-api/envoy/config/core/v3/protocol.proto
+  - third_party/envoy-api/envoy/config/core/v3/proxy_protocol.proto
+  - third_party/envoy-api/envoy/config/core/v3/resolver.proto
+  - third_party/envoy-api/envoy/config/core/v3/socket_option.proto
+  - third_party/envoy-api/envoy/config/core/v3/substitution_format_string.proto
+  - third_party/envoy-api/envoy/config/core/v3/udp_socket_config.proto
+  - third_party/envoy-api/envoy/config/endpoint/v3/endpoint.proto
+  - third_party/envoy-api/envoy/config/endpoint/v3/endpoint_components.proto
+  - third_party/envoy-api/envoy/config/endpoint/v3/load_report.proto
+  - third_party/envoy-api/envoy/config/filter/accesslog/v2/accesslog.proto
+  - third_party/envoy-api/envoy/config/listener/v2/api_listener.proto
+  - third_party/envoy-api/envoy/config/listener/v3/api_listener.proto
+  - third_party/envoy-api/envoy/config/listener/v3/listener.proto
+  - third_party/envoy-api/envoy/config/listener/v3/listener_components.proto
+  - third_party/envoy-api/envoy/config/listener/v3/quic_config.proto
+  - third_party/envoy-api/envoy/config/listener/v3/udp_listener_config.proto
+  - third_party/envoy-api/envoy/config/metrics/v3/metrics_service.proto
+  - third_party/envoy-api/envoy/config/metrics/v3/stats.proto
+  - third_party/envoy-api/envoy/config/overload/v3/overload.proto
+  - third_party/envoy-api/envoy/config/rbac/v3/rbac.proto
+  - third_party/envoy-api/envoy/config/route/v3/route.proto
+  - third_party/envoy-api/envoy/config/route/v3/route_components.proto
+  - third_party/envoy-api/envoy/config/route/v3/scoped_route.proto
+  - third_party/envoy-api/envoy/config/tap/v3/common.proto
+  - third_party/envoy-api/envoy/config/trace/v3/datadog.proto
+  - third_party/envoy-api/envoy/config/trace/v3/dynamic_ot.proto
+  - third_party/envoy-api/envoy/config/trace/v3/http_tracer.proto
+  - third_party/envoy-api/envoy/config/trace/v3/lightstep.proto
+  - third_party/envoy-api/envoy/config/trace/v3/opencensus.proto
+  - third_party/envoy-api/envoy/config/trace/v3/service.proto
+  - third_party/envoy-api/envoy/config/trace/v3/skywalking.proto
+  - third_party/envoy-api/envoy/config/trace/v3/trace.proto
+  - third_party/envoy-api/envoy/config/trace/v3/xray.proto
+  - third_party/envoy-api/envoy/config/trace/v3/zipkin.proto
+  - third_party/envoy-api/envoy/extensions/clusters/aggregate/v3/cluster.proto
+  - third_party/envoy-api/envoy/extensions/filters/common/fault/v3/fault.proto
+  - third_party/envoy-api/envoy/extensions/filters/http/fault/v3/fault.proto
+  - third_party/envoy-api/envoy/extensions/filters/http/rbac/v3/rbac.proto
+  - third_party/envoy-api/envoy/extensions/filters/http/router/v3/router.proto
+  - third_party/envoy-api/envoy/extensions/filters/network/http_connection_manager/v3/http_connection_manager.proto
+  - third_party/envoy-api/envoy/extensions/transport_sockets/tls/v3/cert.proto
+  - third_party/envoy-api/envoy/extensions/transport_sockets/tls/v3/common.proto
+  - third_party/envoy-api/envoy/extensions/transport_sockets/tls/v3/secret.proto
+  - third_party/envoy-api/envoy/extensions/transport_sockets/tls/v3/tls.proto
+  - third_party/envoy-api/envoy/extensions/transport_sockets/tls/v3/tls_spiffe_validator_config.proto
+  - third_party/envoy-api/envoy/service/discovery/v2/ads.proto
+  - third_party/envoy-api/envoy/service/discovery/v2/hds.proto
+  - third_party/envoy-api/envoy/service/discovery/v2/rtds.proto
+  - third_party/envoy-api/envoy/service/discovery/v2/sds.proto
+  - third_party/envoy-api/envoy/service/discovery/v3/ads.proto
+  - third_party/envoy-api/envoy/service/discovery/v3/discovery.proto
+  - third_party/envoy-api/envoy/service/load_stats/v2/lrs.proto
+  - third_party/envoy-api/envoy/service/load_stats/v3/lrs.proto
+  - third_party/envoy-api/envoy/service/status/v3/csds.proto
+  - third_party/envoy-api/envoy/type/hash_policy.proto
+  - third_party/envoy-api/envoy/type/http.proto
+  - third_party/envoy-api/envoy/type/http/v3/cookie.proto
+  - third_party/envoy-api/envoy/type/http/v3/path_transformation.proto
+  - third_party/envoy-api/envoy/type/http_status.proto
+  - third_party/envoy-api/envoy/type/matcher/metadata.proto
+  - third_party/envoy-api/envoy/type/matcher/node.proto
+  - third_party/envoy-api/envoy/type/matcher/number.proto
+  - third_party/envoy-api/envoy/type/matcher/path.proto
+  - third_party/envoy-api/envoy/type/matcher/regex.proto
+  - third_party/envoy-api/envoy/type/matcher/string.proto
+  - third_party/envoy-api/envoy/type/matcher/struct.proto
+  - third_party/envoy-api/envoy/type/matcher/v3/http_inputs.proto
+  - third_party/envoy-api/envoy/type/matcher/v3/metadata.proto
+  - third_party/envoy-api/envoy/type/matcher/v3/node.proto
+  - third_party/envoy-api/envoy/type/matcher/v3/number.proto
+  - third_party/envoy-api/envoy/type/matcher/v3/path.proto
+  - third_party/envoy-api/envoy/type/matcher/v3/regex.proto
+  - third_party/envoy-api/envoy/type/matcher/v3/string.proto
+  - third_party/envoy-api/envoy/type/matcher/v3/struct.proto
+  - third_party/envoy-api/envoy/type/matcher/v3/value.proto
+  - third_party/envoy-api/envoy/type/matcher/value.proto
+  - third_party/envoy-api/envoy/type/metadata/v2/metadata.proto
+  - third_party/envoy-api/envoy/type/metadata/v3/metadata.proto
+  - third_party/envoy-api/envoy/type/percent.proto
+  - third_party/envoy-api/envoy/type/range.proto
+  - third_party/envoy-api/envoy/type/semantic_version.proto
+  - third_party/envoy-api/envoy/type/token_bucket.proto
+  - third_party/envoy-api/envoy/type/tracing/v2/custom_tag.proto
+  - third_party/envoy-api/envoy/type/tracing/v3/custom_tag.proto
+  - third_party/envoy-api/envoy/type/v3/hash_policy.proto
+  - third_party/envoy-api/envoy/type/v3/http.proto
+  - third_party/envoy-api/envoy/type/v3/http_status.proto
+  - third_party/envoy-api/envoy/type/v3/percent.proto
+  - third_party/envoy-api/envoy/type/v3/range.proto
+  - third_party/envoy-api/envoy/type/v3/ratelimit_unit.proto
+  - third_party/envoy-api/envoy/type/v3/semantic_version.proto
+  - third_party/envoy-api/envoy/type/v3/token_bucket.proto
+  - third_party/googleapis/google/api/annotations.proto
+  - third_party/googleapis/google/api/expr/v1alpha1/checked.proto
+  - third_party/googleapis/google/api/expr/v1alpha1/syntax.proto
+  - third_party/googleapis/google/api/http.proto
+  - third_party/googleapis/google/api/httpbody.proto
+  - third_party/googleapis/google/rpc/status.proto
+  - third_party/opencensus-proto/src/opencensus/proto/trace/v1/trace_config.proto
+  - third_party/xds/udpa/annotations/migrate.proto
+  - third_party/xds/udpa/annotations/security.proto
+  - third_party/xds/udpa/annotations/sensitive.proto
+  - third_party/xds/udpa/annotations/status.proto
+  - third_party/xds/udpa/annotations/versioning.proto
+  - third_party/xds/xds/annotations/v3/migrate.proto
+  - third_party/xds/xds/annotations/v3/security.proto
+  - third_party/xds/xds/annotations/v3/sensitive.proto
+  - third_party/xds/xds/annotations/v3/status.proto
+  - third_party/xds/xds/annotations/v3/versioning.proto
+  - third_party/xds/xds/core/v3/authority.proto
+  - third_party/xds/xds/core/v3/collection_entry.proto
+  - third_party/xds/xds/core/v3/context_params.proto
+  - third_party/xds/xds/core/v3/extension.proto
+  - third_party/xds/xds/core/v3/resource.proto
+  - third_party/xds/xds/core/v3/resource_locator.proto
+  - third_party/xds/xds/core/v3/resource_name.proto
+  - third_party/xds/xds/type/matcher/v3/matcher.proto
+  - third_party/xds/xds/type/matcher/v3/regex.proto
+  - third_party/xds/xds/type/matcher/v3/string.proto
+  - test/cpp/end2end/test_service_impl.cc
+  - test/cpp/end2end/xds/xds_core_end2end_test.cc
+  - test/cpp/end2end/xds/xds_end2end_test_lib.cc
+  - test/cpp/end2end/xds/xds_server.cc
+  - test/cpp/util/tls_test_utils.cc
+  deps:
+  - grpc++_test_util
+  platforms:
+  - linux
+  - posix
+  - mac
 - name: xds_credentials_end2end_test
   gtest: true
   build: test
@@ -8733,9 +9367,9 @@ targets:
   run: false
   language: c++
   headers:
-  - test/cpp/end2end/connection_delay_injector.h
   - test/cpp/end2end/counted_service.h
   - test/cpp/end2end/test_service_impl.h
+  - test/cpp/end2end/xds/no_op_http_filter.h
   - test/cpp/end2end/xds/xds_end2end_test_lib.h
   - test/cpp/end2end/xds/xds_server.h
   - test/cpp/util/tls_test_utils.h
@@ -8932,7 +9566,6 @@ targets:
   - third_party/xds/xds/type/matcher/v3/matcher.proto
   - third_party/xds/xds/type/matcher/v3/regex.proto
   - third_party/xds/xds/type/matcher/v3/string.proto
-  - test/cpp/end2end/connection_delay_injector.cc
   - test/cpp/end2end/test_service_impl.cc
   - test/cpp/end2end/xds/xds_end2end_test.cc
   - test/cpp/end2end/xds/xds_end2end_test_lib.cc
@@ -9420,6 +10053,236 @@ targets:
   - grpcpp_channelz
   - grpc_test_util
   - grpc++_test_config
+- name: xds_ring_hash_end2end_test
+  gtest: true
+  build: test
+  run: false
+  language: c++
+  headers:
+  - test/cpp/end2end/connection_delay_injector.h
+  - test/cpp/end2end/counted_service.h
+  - test/cpp/end2end/test_service_impl.h
+  - test/cpp/end2end/xds/xds_end2end_test_lib.h
+  - test/cpp/end2end/xds/xds_server.h
+  - test/cpp/util/tls_test_utils.h
+  src:
+  - src/proto/grpc/lookup/v1/rls.proto
+  - src/proto/grpc/lookup/v1/rls_config.proto
+  - src/proto/grpc/testing/duplicate/echo_duplicate.proto
+  - src/proto/grpc/testing/echo.proto
+  - src/proto/grpc/testing/echo_messages.proto
+  - src/proto/grpc/testing/simple_messages.proto
+  - src/proto/grpc/testing/xds/v3/address.proto
+  - src/proto/grpc/testing/xds/v3/aggregate_cluster.proto
+  - src/proto/grpc/testing/xds/v3/base.proto
+  - src/proto/grpc/testing/xds/v3/cluster.proto
+  - src/proto/grpc/testing/xds/v3/config_source.proto
+  - src/proto/grpc/testing/xds/v3/endpoint.proto
+  - src/proto/grpc/testing/xds/v3/extension.proto
+  - src/proto/grpc/testing/xds/v3/listener.proto
+  - src/proto/grpc/testing/xds/v3/percent.proto
+  - src/proto/grpc/testing/xds/v3/range.proto
+  - src/proto/grpc/testing/xds/v3/regex.proto
+  - src/proto/grpc/testing/xds/v3/route.proto
+  - src/proto/grpc/testing/xds/v3/string.proto
+  - third_party/envoy-api/envoy/admin/v3/certs.proto
+  - third_party/envoy-api/envoy/admin/v3/clusters.proto
+  - third_party/envoy-api/envoy/admin/v3/config_dump.proto
+  - third_party/envoy-api/envoy/admin/v3/init_dump.proto
+  - third_party/envoy-api/envoy/admin/v3/listeners.proto
+  - third_party/envoy-api/envoy/admin/v3/memory.proto
+  - third_party/envoy-api/envoy/admin/v3/metrics.proto
+  - third_party/envoy-api/envoy/admin/v3/mutex_stats.proto
+  - third_party/envoy-api/envoy/admin/v3/server_info.proto
+  - third_party/envoy-api/envoy/admin/v3/tap.proto
+  - third_party/envoy-api/envoy/annotations/deprecation.proto
+  - third_party/envoy-api/envoy/annotations/resource.proto
+  - third_party/envoy-api/envoy/api/v2/auth/cert.proto
+  - third_party/envoy-api/envoy/api/v2/auth/common.proto
+  - third_party/envoy-api/envoy/api/v2/auth/secret.proto
+  - third_party/envoy-api/envoy/api/v2/auth/tls.proto
+  - third_party/envoy-api/envoy/api/v2/cds.proto
+  - third_party/envoy-api/envoy/api/v2/cluster.proto
+  - third_party/envoy-api/envoy/api/v2/cluster/circuit_breaker.proto
+  - third_party/envoy-api/envoy/api/v2/cluster/filter.proto
+  - third_party/envoy-api/envoy/api/v2/cluster/outlier_detection.proto
+  - third_party/envoy-api/envoy/api/v2/core/address.proto
+  - third_party/envoy-api/envoy/api/v2/core/backoff.proto
+  - third_party/envoy-api/envoy/api/v2/core/base.proto
+  - third_party/envoy-api/envoy/api/v2/core/config_source.proto
+  - third_party/envoy-api/envoy/api/v2/core/event_service_config.proto
+  - third_party/envoy-api/envoy/api/v2/core/grpc_method_list.proto
+  - third_party/envoy-api/envoy/api/v2/core/grpc_service.proto
+  - third_party/envoy-api/envoy/api/v2/core/health_check.proto
+  - third_party/envoy-api/envoy/api/v2/core/http_uri.proto
+  - third_party/envoy-api/envoy/api/v2/core/protocol.proto
+  - third_party/envoy-api/envoy/api/v2/core/socket_option.proto
+  - third_party/envoy-api/envoy/api/v2/discovery.proto
+  - third_party/envoy-api/envoy/api/v2/eds.proto
+  - third_party/envoy-api/envoy/api/v2/endpoint.proto
+  - third_party/envoy-api/envoy/api/v2/endpoint/endpoint.proto
+  - third_party/envoy-api/envoy/api/v2/endpoint/endpoint_components.proto
+  - third_party/envoy-api/envoy/api/v2/endpoint/load_report.proto
+  - third_party/envoy-api/envoy/api/v2/lds.proto
+  - third_party/envoy-api/envoy/api/v2/listener.proto
+  - third_party/envoy-api/envoy/api/v2/listener/listener.proto
+  - third_party/envoy-api/envoy/api/v2/listener/listener_components.proto
+  - third_party/envoy-api/envoy/api/v2/listener/quic_config.proto
+  - third_party/envoy-api/envoy/api/v2/listener/udp_listener_config.proto
+  - third_party/envoy-api/envoy/api/v2/rds.proto
+  - third_party/envoy-api/envoy/api/v2/route.proto
+  - third_party/envoy-api/envoy/api/v2/route/route.proto
+  - third_party/envoy-api/envoy/api/v2/route/route_components.proto
+  - third_party/envoy-api/envoy/api/v2/scoped_route.proto
+  - third_party/envoy-api/envoy/api/v2/srds.proto
+  - third_party/envoy-api/envoy/config/accesslog/v3/accesslog.proto
+  - third_party/envoy-api/envoy/config/bootstrap/v3/bootstrap.proto
+  - third_party/envoy-api/envoy/config/cluster/v3/circuit_breaker.proto
+  - third_party/envoy-api/envoy/config/cluster/v3/cluster.proto
+  - third_party/envoy-api/envoy/config/cluster/v3/filter.proto
+  - third_party/envoy-api/envoy/config/cluster/v3/outlier_detection.proto
+  - third_party/envoy-api/envoy/config/common/matcher/v3/matcher.proto
+  - third_party/envoy-api/envoy/config/core/v3/address.proto
+  - third_party/envoy-api/envoy/config/core/v3/backoff.proto
+  - third_party/envoy-api/envoy/config/core/v3/base.proto
+  - third_party/envoy-api/envoy/config/core/v3/config_source.proto
+  - third_party/envoy-api/envoy/config/core/v3/event_service_config.proto
+  - third_party/envoy-api/envoy/config/core/v3/extension.proto
+  - third_party/envoy-api/envoy/config/core/v3/grpc_method_list.proto
+  - third_party/envoy-api/envoy/config/core/v3/grpc_service.proto
+  - third_party/envoy-api/envoy/config/core/v3/health_check.proto
+  - third_party/envoy-api/envoy/config/core/v3/http_uri.proto
+  - third_party/envoy-api/envoy/config/core/v3/protocol.proto
+  - third_party/envoy-api/envoy/config/core/v3/proxy_protocol.proto
+  - third_party/envoy-api/envoy/config/core/v3/resolver.proto
+  - third_party/envoy-api/envoy/config/core/v3/socket_option.proto
+  - third_party/envoy-api/envoy/config/core/v3/substitution_format_string.proto
+  - third_party/envoy-api/envoy/config/core/v3/udp_socket_config.proto
+  - third_party/envoy-api/envoy/config/endpoint/v3/endpoint.proto
+  - third_party/envoy-api/envoy/config/endpoint/v3/endpoint_components.proto
+  - third_party/envoy-api/envoy/config/endpoint/v3/load_report.proto
+  - third_party/envoy-api/envoy/config/filter/accesslog/v2/accesslog.proto
+  - third_party/envoy-api/envoy/config/listener/v2/api_listener.proto
+  - third_party/envoy-api/envoy/config/listener/v3/api_listener.proto
+  - third_party/envoy-api/envoy/config/listener/v3/listener.proto
+  - third_party/envoy-api/envoy/config/listener/v3/listener_components.proto
+  - third_party/envoy-api/envoy/config/listener/v3/quic_config.proto
+  - third_party/envoy-api/envoy/config/listener/v3/udp_listener_config.proto
+  - third_party/envoy-api/envoy/config/metrics/v3/metrics_service.proto
+  - third_party/envoy-api/envoy/config/metrics/v3/stats.proto
+  - third_party/envoy-api/envoy/config/overload/v3/overload.proto
+  - third_party/envoy-api/envoy/config/rbac/v3/rbac.proto
+  - third_party/envoy-api/envoy/config/route/v3/route.proto
+  - third_party/envoy-api/envoy/config/route/v3/route_components.proto
+  - third_party/envoy-api/envoy/config/route/v3/scoped_route.proto
+  - third_party/envoy-api/envoy/config/tap/v3/common.proto
+  - third_party/envoy-api/envoy/config/trace/v3/datadog.proto
+  - third_party/envoy-api/envoy/config/trace/v3/dynamic_ot.proto
+  - third_party/envoy-api/envoy/config/trace/v3/http_tracer.proto
+  - third_party/envoy-api/envoy/config/trace/v3/lightstep.proto
+  - third_party/envoy-api/envoy/config/trace/v3/opencensus.proto
+  - third_party/envoy-api/envoy/config/trace/v3/service.proto
+  - third_party/envoy-api/envoy/config/trace/v3/skywalking.proto
+  - third_party/envoy-api/envoy/config/trace/v3/trace.proto
+  - third_party/envoy-api/envoy/config/trace/v3/xray.proto
+  - third_party/envoy-api/envoy/config/trace/v3/zipkin.proto
+  - third_party/envoy-api/envoy/extensions/clusters/aggregate/v3/cluster.proto
+  - third_party/envoy-api/envoy/extensions/filters/common/fault/v3/fault.proto
+  - third_party/envoy-api/envoy/extensions/filters/http/fault/v3/fault.proto
+  - third_party/envoy-api/envoy/extensions/filters/http/rbac/v3/rbac.proto
+  - third_party/envoy-api/envoy/extensions/filters/http/router/v3/router.proto
+  - third_party/envoy-api/envoy/extensions/filters/network/http_connection_manager/v3/http_connection_manager.proto
+  - third_party/envoy-api/envoy/extensions/transport_sockets/tls/v3/cert.proto
+  - third_party/envoy-api/envoy/extensions/transport_sockets/tls/v3/common.proto
+  - third_party/envoy-api/envoy/extensions/transport_sockets/tls/v3/secret.proto
+  - third_party/envoy-api/envoy/extensions/transport_sockets/tls/v3/tls.proto
+  - third_party/envoy-api/envoy/extensions/transport_sockets/tls/v3/tls_spiffe_validator_config.proto
+  - third_party/envoy-api/envoy/service/discovery/v2/ads.proto
+  - third_party/envoy-api/envoy/service/discovery/v2/hds.proto
+  - third_party/envoy-api/envoy/service/discovery/v2/rtds.proto
+  - third_party/envoy-api/envoy/service/discovery/v2/sds.proto
+  - third_party/envoy-api/envoy/service/discovery/v3/ads.proto
+  - third_party/envoy-api/envoy/service/discovery/v3/discovery.proto
+  - third_party/envoy-api/envoy/service/load_stats/v2/lrs.proto
+  - third_party/envoy-api/envoy/service/load_stats/v3/lrs.proto
+  - third_party/envoy-api/envoy/service/status/v3/csds.proto
+  - third_party/envoy-api/envoy/type/hash_policy.proto
+  - third_party/envoy-api/envoy/type/http.proto
+  - third_party/envoy-api/envoy/type/http/v3/cookie.proto
+  - third_party/envoy-api/envoy/type/http/v3/path_transformation.proto
+  - third_party/envoy-api/envoy/type/http_status.proto
+  - third_party/envoy-api/envoy/type/matcher/metadata.proto
+  - third_party/envoy-api/envoy/type/matcher/node.proto
+  - third_party/envoy-api/envoy/type/matcher/number.proto
+  - third_party/envoy-api/envoy/type/matcher/path.proto
+  - third_party/envoy-api/envoy/type/matcher/regex.proto
+  - third_party/envoy-api/envoy/type/matcher/string.proto
+  - third_party/envoy-api/envoy/type/matcher/struct.proto
+  - third_party/envoy-api/envoy/type/matcher/v3/http_inputs.proto
+  - third_party/envoy-api/envoy/type/matcher/v3/metadata.proto
+  - third_party/envoy-api/envoy/type/matcher/v3/node.proto
+  - third_party/envoy-api/envoy/type/matcher/v3/number.proto
+  - third_party/envoy-api/envoy/type/matcher/v3/path.proto
+  - third_party/envoy-api/envoy/type/matcher/v3/regex.proto
+  - third_party/envoy-api/envoy/type/matcher/v3/string.proto
+  - third_party/envoy-api/envoy/type/matcher/v3/struct.proto
+  - third_party/envoy-api/envoy/type/matcher/v3/value.proto
+  - third_party/envoy-api/envoy/type/matcher/value.proto
+  - third_party/envoy-api/envoy/type/metadata/v2/metadata.proto
+  - third_party/envoy-api/envoy/type/metadata/v3/metadata.proto
+  - third_party/envoy-api/envoy/type/percent.proto
+  - third_party/envoy-api/envoy/type/range.proto
+  - third_party/envoy-api/envoy/type/semantic_version.proto
+  - third_party/envoy-api/envoy/type/token_bucket.proto
+  - third_party/envoy-api/envoy/type/tracing/v2/custom_tag.proto
+  - third_party/envoy-api/envoy/type/tracing/v3/custom_tag.proto
+  - third_party/envoy-api/envoy/type/v3/hash_policy.proto
+  - third_party/envoy-api/envoy/type/v3/http.proto
+  - third_party/envoy-api/envoy/type/v3/http_status.proto
+  - third_party/envoy-api/envoy/type/v3/percent.proto
+  - third_party/envoy-api/envoy/type/v3/range.proto
+  - third_party/envoy-api/envoy/type/v3/ratelimit_unit.proto
+  - third_party/envoy-api/envoy/type/v3/semantic_version.proto
+  - third_party/envoy-api/envoy/type/v3/token_bucket.proto
+  - third_party/googleapis/google/api/annotations.proto
+  - third_party/googleapis/google/api/expr/v1alpha1/checked.proto
+  - third_party/googleapis/google/api/expr/v1alpha1/syntax.proto
+  - third_party/googleapis/google/api/http.proto
+  - third_party/googleapis/google/api/httpbody.proto
+  - third_party/googleapis/google/rpc/status.proto
+  - third_party/opencensus-proto/src/opencensus/proto/trace/v1/trace_config.proto
+  - third_party/xds/udpa/annotations/migrate.proto
+  - third_party/xds/udpa/annotations/security.proto
+  - third_party/xds/udpa/annotations/sensitive.proto
+  - third_party/xds/udpa/annotations/status.proto
+  - third_party/xds/udpa/annotations/versioning.proto
+  - third_party/xds/xds/annotations/v3/migrate.proto
+  - third_party/xds/xds/annotations/v3/security.proto
+  - third_party/xds/xds/annotations/v3/sensitive.proto
+  - third_party/xds/xds/annotations/v3/status.proto
+  - third_party/xds/xds/annotations/v3/versioning.proto
+  - third_party/xds/xds/core/v3/authority.proto
+  - third_party/xds/xds/core/v3/collection_entry.proto
+  - third_party/xds/xds/core/v3/context_params.proto
+  - third_party/xds/xds/core/v3/extension.proto
+  - third_party/xds/xds/core/v3/resource.proto
+  - third_party/xds/xds/core/v3/resource_locator.proto
+  - third_party/xds/xds/core/v3/resource_name.proto
+  - third_party/xds/xds/type/matcher/v3/matcher.proto
+  - third_party/xds/xds/type/matcher/v3/regex.proto
+  - third_party/xds/xds/type/matcher/v3/string.proto
+  - test/cpp/end2end/connection_delay_injector.cc
+  - test/cpp/end2end/test_service_impl.cc
+  - test/cpp/end2end/xds/xds_end2end_test_lib.cc
+  - test/cpp/end2end/xds/xds_ring_hash_end2end_test.cc
+  - test/cpp/end2end/xds/xds_server.cc
+  - test/cpp/util/tls_test_utils.cc
+  deps:
+  - grpc++_test_util
+  platforms:
+  - linux
+  - posix
+  - mac
 - name: xds_rls_end2end_test
   gtest: true
   build: test
@@ -9628,6 +10491,231 @@ targets:
   - test/cpp/end2end/test_service_impl.cc
   - test/cpp/end2end/xds/xds_end2end_test_lib.cc
   - test/cpp/end2end/xds/xds_rls_end2end_test.cc
+  - test/cpp/end2end/xds/xds_server.cc
+  - test/cpp/util/tls_test_utils.cc
+  deps:
+  - grpc++_test_util
+  platforms:
+  - linux
+  - posix
+  - mac
+- name: xds_routing_end2end_test
+  gtest: true
+  build: test
+  run: false
+  language: c++
+  headers:
+  - test/cpp/end2end/counted_service.h
+  - test/cpp/end2end/test_service_impl.h
+  - test/cpp/end2end/xds/no_op_http_filter.h
+  - test/cpp/end2end/xds/xds_end2end_test_lib.h
+  - test/cpp/end2end/xds/xds_server.h
+  - test/cpp/util/tls_test_utils.h
+  src:
+  - src/proto/grpc/lookup/v1/rls.proto
+  - src/proto/grpc/lookup/v1/rls_config.proto
+  - src/proto/grpc/testing/duplicate/echo_duplicate.proto
+  - src/proto/grpc/testing/echo.proto
+  - src/proto/grpc/testing/echo_messages.proto
+  - src/proto/grpc/testing/simple_messages.proto
+  - src/proto/grpc/testing/xds/v3/base.proto
+  - src/proto/grpc/testing/xds/v3/extension.proto
+  - src/proto/grpc/testing/xds/v3/fault.proto
+  - src/proto/grpc/testing/xds/v3/fault_common.proto
+  - src/proto/grpc/testing/xds/v3/percent.proto
+  - src/proto/grpc/testing/xds/v3/range.proto
+  - src/proto/grpc/testing/xds/v3/regex.proto
+  - src/proto/grpc/testing/xds/v3/route.proto
+  - src/proto/grpc/testing/xds/v3/router.proto
+  - third_party/envoy-api/envoy/admin/v3/certs.proto
+  - third_party/envoy-api/envoy/admin/v3/clusters.proto
+  - third_party/envoy-api/envoy/admin/v3/config_dump.proto
+  - third_party/envoy-api/envoy/admin/v3/init_dump.proto
+  - third_party/envoy-api/envoy/admin/v3/listeners.proto
+  - third_party/envoy-api/envoy/admin/v3/memory.proto
+  - third_party/envoy-api/envoy/admin/v3/metrics.proto
+  - third_party/envoy-api/envoy/admin/v3/mutex_stats.proto
+  - third_party/envoy-api/envoy/admin/v3/server_info.proto
+  - third_party/envoy-api/envoy/admin/v3/tap.proto
+  - third_party/envoy-api/envoy/annotations/deprecation.proto
+  - third_party/envoy-api/envoy/annotations/resource.proto
+  - third_party/envoy-api/envoy/api/v2/auth/cert.proto
+  - third_party/envoy-api/envoy/api/v2/auth/common.proto
+  - third_party/envoy-api/envoy/api/v2/auth/secret.proto
+  - third_party/envoy-api/envoy/api/v2/auth/tls.proto
+  - third_party/envoy-api/envoy/api/v2/cds.proto
+  - third_party/envoy-api/envoy/api/v2/cluster.proto
+  - third_party/envoy-api/envoy/api/v2/cluster/circuit_breaker.proto
+  - third_party/envoy-api/envoy/api/v2/cluster/filter.proto
+  - third_party/envoy-api/envoy/api/v2/cluster/outlier_detection.proto
+  - third_party/envoy-api/envoy/api/v2/core/address.proto
+  - third_party/envoy-api/envoy/api/v2/core/backoff.proto
+  - third_party/envoy-api/envoy/api/v2/core/base.proto
+  - third_party/envoy-api/envoy/api/v2/core/config_source.proto
+  - third_party/envoy-api/envoy/api/v2/core/event_service_config.proto
+  - third_party/envoy-api/envoy/api/v2/core/grpc_method_list.proto
+  - third_party/envoy-api/envoy/api/v2/core/grpc_service.proto
+  - third_party/envoy-api/envoy/api/v2/core/health_check.proto
+  - third_party/envoy-api/envoy/api/v2/core/http_uri.proto
+  - third_party/envoy-api/envoy/api/v2/core/protocol.proto
+  - third_party/envoy-api/envoy/api/v2/core/socket_option.proto
+  - third_party/envoy-api/envoy/api/v2/discovery.proto
+  - third_party/envoy-api/envoy/api/v2/eds.proto
+  - third_party/envoy-api/envoy/api/v2/endpoint.proto
+  - third_party/envoy-api/envoy/api/v2/endpoint/endpoint.proto
+  - third_party/envoy-api/envoy/api/v2/endpoint/endpoint_components.proto
+  - third_party/envoy-api/envoy/api/v2/endpoint/load_report.proto
+  - third_party/envoy-api/envoy/api/v2/lds.proto
+  - third_party/envoy-api/envoy/api/v2/listener.proto
+  - third_party/envoy-api/envoy/api/v2/listener/listener.proto
+  - third_party/envoy-api/envoy/api/v2/listener/listener_components.proto
+  - third_party/envoy-api/envoy/api/v2/listener/quic_config.proto
+  - third_party/envoy-api/envoy/api/v2/listener/udp_listener_config.proto
+  - third_party/envoy-api/envoy/api/v2/rds.proto
+  - third_party/envoy-api/envoy/api/v2/route.proto
+  - third_party/envoy-api/envoy/api/v2/route/route.proto
+  - third_party/envoy-api/envoy/api/v2/route/route_components.proto
+  - third_party/envoy-api/envoy/api/v2/scoped_route.proto
+  - third_party/envoy-api/envoy/api/v2/srds.proto
+  - third_party/envoy-api/envoy/config/accesslog/v3/accesslog.proto
+  - third_party/envoy-api/envoy/config/bootstrap/v3/bootstrap.proto
+  - third_party/envoy-api/envoy/config/cluster/v3/circuit_breaker.proto
+  - third_party/envoy-api/envoy/config/cluster/v3/cluster.proto
+  - third_party/envoy-api/envoy/config/cluster/v3/filter.proto
+  - third_party/envoy-api/envoy/config/cluster/v3/outlier_detection.proto
+  - third_party/envoy-api/envoy/config/common/matcher/v3/matcher.proto
+  - third_party/envoy-api/envoy/config/core/v3/address.proto
+  - third_party/envoy-api/envoy/config/core/v3/backoff.proto
+  - third_party/envoy-api/envoy/config/core/v3/base.proto
+  - third_party/envoy-api/envoy/config/core/v3/config_source.proto
+  - third_party/envoy-api/envoy/config/core/v3/event_service_config.proto
+  - third_party/envoy-api/envoy/config/core/v3/extension.proto
+  - third_party/envoy-api/envoy/config/core/v3/grpc_method_list.proto
+  - third_party/envoy-api/envoy/config/core/v3/grpc_service.proto
+  - third_party/envoy-api/envoy/config/core/v3/health_check.proto
+  - third_party/envoy-api/envoy/config/core/v3/http_uri.proto
+  - third_party/envoy-api/envoy/config/core/v3/protocol.proto
+  - third_party/envoy-api/envoy/config/core/v3/proxy_protocol.proto
+  - third_party/envoy-api/envoy/config/core/v3/resolver.proto
+  - third_party/envoy-api/envoy/config/core/v3/socket_option.proto
+  - third_party/envoy-api/envoy/config/core/v3/substitution_format_string.proto
+  - third_party/envoy-api/envoy/config/core/v3/udp_socket_config.proto
+  - third_party/envoy-api/envoy/config/endpoint/v3/endpoint.proto
+  - third_party/envoy-api/envoy/config/endpoint/v3/endpoint_components.proto
+  - third_party/envoy-api/envoy/config/endpoint/v3/load_report.proto
+  - third_party/envoy-api/envoy/config/filter/accesslog/v2/accesslog.proto
+  - third_party/envoy-api/envoy/config/listener/v2/api_listener.proto
+  - third_party/envoy-api/envoy/config/listener/v3/api_listener.proto
+  - third_party/envoy-api/envoy/config/listener/v3/listener.proto
+  - third_party/envoy-api/envoy/config/listener/v3/listener_components.proto
+  - third_party/envoy-api/envoy/config/listener/v3/quic_config.proto
+  - third_party/envoy-api/envoy/config/listener/v3/udp_listener_config.proto
+  - third_party/envoy-api/envoy/config/metrics/v3/metrics_service.proto
+  - third_party/envoy-api/envoy/config/metrics/v3/stats.proto
+  - third_party/envoy-api/envoy/config/overload/v3/overload.proto
+  - third_party/envoy-api/envoy/config/rbac/v3/rbac.proto
+  - third_party/envoy-api/envoy/config/route/v3/route.proto
+  - third_party/envoy-api/envoy/config/route/v3/route_components.proto
+  - third_party/envoy-api/envoy/config/route/v3/scoped_route.proto
+  - third_party/envoy-api/envoy/config/tap/v3/common.proto
+  - third_party/envoy-api/envoy/config/trace/v3/datadog.proto
+  - third_party/envoy-api/envoy/config/trace/v3/dynamic_ot.proto
+  - third_party/envoy-api/envoy/config/trace/v3/http_tracer.proto
+  - third_party/envoy-api/envoy/config/trace/v3/lightstep.proto
+  - third_party/envoy-api/envoy/config/trace/v3/opencensus.proto
+  - third_party/envoy-api/envoy/config/trace/v3/service.proto
+  - third_party/envoy-api/envoy/config/trace/v3/skywalking.proto
+  - third_party/envoy-api/envoy/config/trace/v3/trace.proto
+  - third_party/envoy-api/envoy/config/trace/v3/xray.proto
+  - third_party/envoy-api/envoy/config/trace/v3/zipkin.proto
+  - third_party/envoy-api/envoy/extensions/clusters/aggregate/v3/cluster.proto
+  - third_party/envoy-api/envoy/extensions/filters/common/fault/v3/fault.proto
+  - third_party/envoy-api/envoy/extensions/filters/http/fault/v3/fault.proto
+  - third_party/envoy-api/envoy/extensions/filters/http/rbac/v3/rbac.proto
+  - third_party/envoy-api/envoy/extensions/filters/http/router/v3/router.proto
+  - third_party/envoy-api/envoy/extensions/filters/network/http_connection_manager/v3/http_connection_manager.proto
+  - third_party/envoy-api/envoy/extensions/transport_sockets/tls/v3/cert.proto
+  - third_party/envoy-api/envoy/extensions/transport_sockets/tls/v3/common.proto
+  - third_party/envoy-api/envoy/extensions/transport_sockets/tls/v3/secret.proto
+  - third_party/envoy-api/envoy/extensions/transport_sockets/tls/v3/tls.proto
+  - third_party/envoy-api/envoy/extensions/transport_sockets/tls/v3/tls_spiffe_validator_config.proto
+  - third_party/envoy-api/envoy/service/discovery/v2/ads.proto
+  - third_party/envoy-api/envoy/service/discovery/v2/hds.proto
+  - third_party/envoy-api/envoy/service/discovery/v2/rtds.proto
+  - third_party/envoy-api/envoy/service/discovery/v2/sds.proto
+  - third_party/envoy-api/envoy/service/discovery/v3/ads.proto
+  - third_party/envoy-api/envoy/service/discovery/v3/discovery.proto
+  - third_party/envoy-api/envoy/service/load_stats/v2/lrs.proto
+  - third_party/envoy-api/envoy/service/load_stats/v3/lrs.proto
+  - third_party/envoy-api/envoy/service/status/v3/csds.proto
+  - third_party/envoy-api/envoy/type/hash_policy.proto
+  - third_party/envoy-api/envoy/type/http.proto
+  - third_party/envoy-api/envoy/type/http/v3/cookie.proto
+  - third_party/envoy-api/envoy/type/http/v3/path_transformation.proto
+  - third_party/envoy-api/envoy/type/http_status.proto
+  - third_party/envoy-api/envoy/type/matcher/metadata.proto
+  - third_party/envoy-api/envoy/type/matcher/node.proto
+  - third_party/envoy-api/envoy/type/matcher/number.proto
+  - third_party/envoy-api/envoy/type/matcher/path.proto
+  - third_party/envoy-api/envoy/type/matcher/regex.proto
+  - third_party/envoy-api/envoy/type/matcher/string.proto
+  - third_party/envoy-api/envoy/type/matcher/struct.proto
+  - third_party/envoy-api/envoy/type/matcher/v3/http_inputs.proto
+  - third_party/envoy-api/envoy/type/matcher/v3/metadata.proto
+  - third_party/envoy-api/envoy/type/matcher/v3/node.proto
+  - third_party/envoy-api/envoy/type/matcher/v3/number.proto
+  - third_party/envoy-api/envoy/type/matcher/v3/path.proto
+  - third_party/envoy-api/envoy/type/matcher/v3/regex.proto
+  - third_party/envoy-api/envoy/type/matcher/v3/string.proto
+  - third_party/envoy-api/envoy/type/matcher/v3/struct.proto
+  - third_party/envoy-api/envoy/type/matcher/v3/value.proto
+  - third_party/envoy-api/envoy/type/matcher/value.proto
+  - third_party/envoy-api/envoy/type/metadata/v2/metadata.proto
+  - third_party/envoy-api/envoy/type/metadata/v3/metadata.proto
+  - third_party/envoy-api/envoy/type/percent.proto
+  - third_party/envoy-api/envoy/type/range.proto
+  - third_party/envoy-api/envoy/type/semantic_version.proto
+  - third_party/envoy-api/envoy/type/token_bucket.proto
+  - third_party/envoy-api/envoy/type/tracing/v2/custom_tag.proto
+  - third_party/envoy-api/envoy/type/tracing/v3/custom_tag.proto
+  - third_party/envoy-api/envoy/type/v3/hash_policy.proto
+  - third_party/envoy-api/envoy/type/v3/http.proto
+  - third_party/envoy-api/envoy/type/v3/http_status.proto
+  - third_party/envoy-api/envoy/type/v3/percent.proto
+  - third_party/envoy-api/envoy/type/v3/range.proto
+  - third_party/envoy-api/envoy/type/v3/ratelimit_unit.proto
+  - third_party/envoy-api/envoy/type/v3/semantic_version.proto
+  - third_party/envoy-api/envoy/type/v3/token_bucket.proto
+  - third_party/googleapis/google/api/annotations.proto
+  - third_party/googleapis/google/api/expr/v1alpha1/checked.proto
+  - third_party/googleapis/google/api/expr/v1alpha1/syntax.proto
+  - third_party/googleapis/google/api/http.proto
+  - third_party/googleapis/google/api/httpbody.proto
+  - third_party/googleapis/google/rpc/status.proto
+  - third_party/opencensus-proto/src/opencensus/proto/trace/v1/trace_config.proto
+  - third_party/xds/udpa/annotations/migrate.proto
+  - third_party/xds/udpa/annotations/security.proto
+  - third_party/xds/udpa/annotations/sensitive.proto
+  - third_party/xds/udpa/annotations/status.proto
+  - third_party/xds/udpa/annotations/versioning.proto
+  - third_party/xds/xds/annotations/v3/migrate.proto
+  - third_party/xds/xds/annotations/v3/security.proto
+  - third_party/xds/xds/annotations/v3/sensitive.proto
+  - third_party/xds/xds/annotations/v3/status.proto
+  - third_party/xds/xds/annotations/v3/versioning.proto
+  - third_party/xds/xds/core/v3/authority.proto
+  - third_party/xds/xds/core/v3/collection_entry.proto
+  - third_party/xds/xds/core/v3/context_params.proto
+  - third_party/xds/xds/core/v3/extension.proto
+  - third_party/xds/xds/core/v3/resource.proto
+  - third_party/xds/xds/core/v3/resource_locator.proto
+  - third_party/xds/xds/core/v3/resource_name.proto
+  - third_party/xds/xds/type/matcher/v3/matcher.proto
+  - third_party/xds/xds/type/matcher/v3/regex.proto
+  - third_party/xds/xds/type/matcher/v3/string.proto
+  - test/cpp/end2end/test_service_impl.cc
+  - test/cpp/end2end/xds/xds_end2end_test_lib.cc
+  - test/cpp/end2end/xds/xds_routing_end2end_test.cc
   - test/cpp/end2end/xds/xds_server.cc
   - test/cpp/util/tls_test_utils.cc
   deps:

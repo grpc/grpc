@@ -91,9 +91,10 @@ static void client_setup_transport(grpc_transport* transport) {
       grpc_channel_args_copy_and_add(nullptr, &authority_arg, 1);
   /* TODO (pjaikumar): use GRPC_CLIENT_CHANNEL instead of
    * GRPC_CLIENT_DIRECT_CHANNEL */
-  g_ctx.client = grpc_channel_create_internal("socketpair-target", args,
-                                              GRPC_CLIENT_DIRECT_CHANNEL,
-                                              transport, nullptr);
+  g_ctx.client = (*grpc_core::Channel::Create(
+                      "socketpair-target", grpc_core::ChannelArgs::FromC(args),
+                      GRPC_CLIENT_DIRECT_CHANNEL, transport))
+                     ->c_ptr();
   grpc_channel_args_destroy(args);
 }
 

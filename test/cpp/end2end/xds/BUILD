@@ -55,6 +55,15 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "no_op_http_filter",
+    testonly = True,
+    hdrs = ["no_op_http_filter.h"],
+    deps = [
+        "//:grpc",
+    ],
+)
+
+grpc_cc_library(
     name = "xds_end2end_test_lib",
     testonly = True,
     srcs = ["xds_end2end_test_lib.cc"],
@@ -122,6 +131,7 @@ grpc_cc_test(
         "no_windows",
     ],  # TODO(jtattermusch): fix test on windows
     deps = [
+        ":no_op_http_filter",
         ":xds_end2end_test_lib",
         "//:gpr",
         "//:grpc",
@@ -131,7 +141,6 @@ grpc_cc_test(
         "//src/proto/grpc/testing:echo_proto",
         "//src/proto/grpc/testing/duplicate:echo_duplicate_proto",
         "//test/core/util:grpc_test_util",
-        "//test/cpp/end2end:connection_delay_injector",
         "//test/cpp/util:test_config",
         "//test/cpp/util:test_util",
         "//test/cpp/util:tls_test_utils",
@@ -152,6 +161,75 @@ grpc_cc_test(
         "@envoy_api//envoy/service/load_stats/v2:pkg_cc_grpc",
         "@envoy_api//envoy/service/load_stats/v3:pkg_cc_grpc",
         "@envoy_api//envoy/service/status/v3:pkg_cc_grpc",
+    ],
+)
+
+grpc_cc_test(
+    name = "xds_cluster_end2end_test",
+    size = "large",
+    srcs = ["xds_cluster_end2end_test.cc"],
+    external_deps = [
+        "gtest",
+    ],
+    flaky = True,  # TODO(b/144705388)
+    linkstatic = True,  # Fixes dyld error on MacOS
+    shard_count = 10,
+    tags = [
+        "no_test_ios",
+        "no_windows",
+    ],  # TODO(jtattermusch): fix test on windows
+    deps = [
+        ":xds_end2end_test_lib",
+        "//:gpr",
+        "//:grpc",
+        "//:grpc++",
+        "//test/core/util:grpc_test_util",
+    ],
+)
+
+grpc_cc_test(
+    name = "xds_cluster_type_end2end_test",
+    size = "large",
+    srcs = ["xds_cluster_type_end2end_test.cc"],
+    external_deps = [
+        "gtest",
+    ],
+    flaky = True,  # TODO(b/144705388)
+    linkstatic = True,  # Fixes dyld error on MacOS
+    tags = [
+        "no_test_ios",
+        "no_windows",
+    ],  # TODO(jtattermusch): fix test on windows
+    deps = [
+        ":xds_end2end_test_lib",
+        "//:gpr",
+        "//:grpc",
+        "//:grpc++",
+        "//:grpc_resolver_fake",
+        "//src/proto/grpc/testing/xds/v3:aggregate_cluster_proto",
+        "//test/core/util:grpc_test_util",
+        "//test/cpp/end2end:connection_delay_injector",
+    ],
+)
+
+grpc_cc_test(
+    name = "xds_core_end2end_test",
+    size = "large",
+    srcs = ["xds_core_end2end_test.cc"],
+    external_deps = [
+        "gtest",
+    ],
+    linkstatic = True,  # Fixes dyld error on MacOS
+    tags = [
+        "no_test_ios",
+        "no_windows",
+    ],  # TODO(jtattermusch): fix test on windows
+    deps = [
+        ":xds_end2end_test_lib",
+        "//:gpr",
+        "//:grpc",
+        "//:grpc++",
+        "//test/core/util:grpc_test_util",
     ],
 )
 
@@ -199,6 +277,35 @@ grpc_cc_test(
 )
 
 grpc_cc_test(
+    name = "xds_ring_hash_end2end_test",
+    size = "large",
+    srcs = ["xds_ring_hash_end2end_test.cc"],
+    external_deps = [
+        "gtest",
+    ],
+    flaky = True,  # TODO(b/144705388)
+    linkstatic = True,  # Fixes dyld error on MacOS
+    tags = [
+        "no_test_ios",
+        "no_windows",
+    ],  # TODO(jtattermusch): fix test on windows
+    deps = [
+        ":xds_end2end_test_lib",
+        "//:gpr",
+        "//:grpc",
+        "//:grpc++",
+        "//:grpc_resolver_fake",
+        "//src/proto/grpc/testing/xds/v3:aggregate_cluster_proto",
+        "//src/proto/grpc/testing/xds/v3:cluster_proto",
+        "//src/proto/grpc/testing/xds/v3:endpoint_proto",
+        "//src/proto/grpc/testing/xds/v3:listener_proto",
+        "//src/proto/grpc/testing/xds/v3:route_proto",
+        "//test/core/util:grpc_test_util",
+        "//test/cpp/end2end:connection_delay_injector",
+    ],
+)
+
+grpc_cc_test(
     name = "xds_rls_end2end_test",
     size = "large",
     srcs = ["xds_rls_end2end_test.cc"],
@@ -219,6 +326,32 @@ grpc_cc_test(
         "//src/proto/grpc/lookup/v1:rls_proto",
         "//test/core/util:grpc_test_util",
         "//test/cpp/end2end:rls_server",
+    ],
+)
+
+grpc_cc_test(
+    name = "xds_routing_end2end_test",
+    size = "large",
+    srcs = ["xds_routing_end2end_test.cc"],
+    external_deps = [
+        "gtest",
+    ],
+    flaky = True,  # TODO(b/144705388)
+    linkstatic = True,  # Fixes dyld error on MacOS
+    shard_count = 10,
+    tags = [
+        "no_test_ios",
+        "no_windows",
+    ],  # TODO(jtattermusch): fix test on windows
+    deps = [
+        ":no_op_http_filter",
+        ":xds_end2end_test_lib",
+        "//:gpr",
+        "//:grpc",
+        "//:grpc++",
+        "//src/proto/grpc/testing/xds/v3:fault_proto",
+        "//src/proto/grpc/testing/xds/v3:router_proto",
+        "//test/core/util:grpc_test_util",
     ],
 )
 

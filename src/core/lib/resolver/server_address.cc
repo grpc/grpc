@@ -149,12 +149,12 @@ ServerAddress ServerAddress::WithAttribute(
 }
 
 std::string ServerAddress::ToString() const {
+  auto addr_str = grpc_sockaddr_to_string(&address_, false);
   std::vector<std::string> parts = {
-      grpc_sockaddr_to_string(&address_, false),
+      addr_str.ok() ? addr_str.value() : addr_str.status().ToString(),
   };
   if (args_ != nullptr) {
-    parts.emplace_back(
-        absl::StrCat("args={", grpc_channel_args_string(args_), "}"));
+    parts.emplace_back(absl::StrCat("args=", grpc_channel_args_string(args_)));
   }
   if (!attributes_.empty()) {
     std::vector<std::string> attrs;
