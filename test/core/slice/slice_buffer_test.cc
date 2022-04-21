@@ -76,8 +76,14 @@ void test_slice_buffer_add_contiguous_slices() {
   grpc_slice s2 = grpc_slice_split_head(&a, kTotalDataLength / 4);
   grpc_slice s3 = grpc_slice_split_head(&a, kTotalDataLength / 4);
   grpc_slice_buffer_add(&buf, s1);
+  GPR_ASSERT(buf.count == 1);
+  GPR_ASSERT(buf.length == kTotalDataLength / 4);
   grpc_slice_buffer_add(&buf, s2);
+  GPR_ASSERT(buf.count == 1);
+  GPR_ASSERT(buf.length == kTotalDataLength / 2);
   grpc_slice_buffer_add(&buf, s3);
+  GPR_ASSERT(buf.count == 1);
+  GPR_ASSERT(buf.length == 3 * kTotalDataLength / 4);
   grpc_slice_buffer_add(&buf, a);
   GPR_ASSERT(buf.count == 1);
   GPR_ASSERT(buf.length == kTotalDataLength);
