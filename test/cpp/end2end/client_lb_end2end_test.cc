@@ -1551,16 +1551,15 @@ TEST_F(RoundRobinTest, DoesNotFailRpcsUponDisconnection) {
   std::atomic<bool> shutdown{false};
   gpr_event ev;
   gpr_event_init(&ev);
-  std::thread thd(
-      [&]() {
-        gpr_log(GPR_INFO, "sending first RPC");
-        CheckRpcSendOk(stub, DEBUG_LOCATION);
-        gpr_event_set(&ev, (void*)1);
-        while (!shutdown.load()) {
-          gpr_log(GPR_INFO, "sending RPC");
-          CheckRpcSendOk(stub, DEBUG_LOCATION);
-        }
-      });
+  std::thread thd([&]() {
+    gpr_log(GPR_INFO, "sending first RPC");
+    CheckRpcSendOk(stub, DEBUG_LOCATION);
+    gpr_event_set(&ev, (void*)1);
+    while (!shutdown.load()) {
+      gpr_log(GPR_INFO, "sending RPC");
+      CheckRpcSendOk(stub, DEBUG_LOCATION);
+    }
+  });
   // Wait for first RPC to complete.
   gpr_log(GPR_ERROR, "=== WAITING FOR FIRST RPC TO COMPLETE ===");
   ASSERT_EQ((void*)1, gpr_event_wait(&ev, grpc_timeout_seconds_to_deadline(1)));

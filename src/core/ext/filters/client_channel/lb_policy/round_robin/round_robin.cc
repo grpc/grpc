@@ -397,8 +397,8 @@ void RoundRobin::RoundRobinSubchannelData::ProcessConnectivityChangeLocked(
       connectivity_state == GRPC_CHANNEL_IDLE) {
     if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_round_robin_trace)) {
       gpr_log(GPR_INFO,
-              "[RR %p] Subchannel %p reported %s; requesting re-resolution",
-              p, subchannel(), ConnectivityStateName(connectivity_state));
+              "[RR %p] Subchannel %p reported %s; requesting re-resolution", p,
+              subchannel(), ConnectivityStateName(connectivity_state));
     }
     p->channel_control_helper()->RequestReresolution();
     subchannel()->RequestConnection();
