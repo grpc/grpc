@@ -13,7 +13,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# Runs C# build in a docker container, but using the local workspace.
 # See tools/docker_runners/examples for more usage info.
 
 set -e
@@ -35,49 +34,17 @@ then
     exit 1
 fi
 
-# Use image name based on Dockerfile location checksum
-# For simplicity, currently only testing docker images that have already been pushed
-# to dockerhub are supported (see tools/dockerfile/push_testing_images.sh)
-# TODO(jtattermusch): add support for building dockerimages locally.
-DOCKER_IMAGE=grpctesting/$(basename "$DOCKERFILE_DIR"):$(sha1sum "$DOCKERFILE_DIR/Dockerfile" | cut -f1 -d\ )
-
-# TODO: support building dockerimage locally / pulling it from dockerhub
-
-# If TTY is available, the running container can be conveniently terminated with Ctrl+C.
-if [[ -t 0 ]]; then
-  DOCKER_TTY_ARGS=("-it")
-else
-  # The input device on kokoro is not a TTY, so -it does not work.
-  DOCKER_TTY_ARGS=()
-fi
-
-# args required to be able to run gdb/strace under the docker container
-DOCKER_PRIVILEGED_ARGS=(
-  "--cap-add=SYS_PTRACE"
-  # The following option was disabled to match the options used in build_and_run_docker.sh
-  # TODO(jtattermusch): is "--privileged" needed for coredumps inside docker containers?
-  # "--privileged"
-  # The following option was disabled to match the options used in build_and_run_docker.sh
-  # TODO(jtattermusch): is "--privileged" needed for coredumps inside docker containers?
-  # "--security-opt=seccomp=unconfined"
+# Args on top of what's already set by build_and_run_docker.sh
+DOCKER_EXTRA_PRIVILEGED_ARGS=(
+  # TODO(jtattermusch): is "--privileged" actually needed for coredumps inside docker containers?
+  "--privileged"
+  # TODO(jtattermusch): is "--privileged" actually needed for coredumps inside docker containers?
+  "--security-opt=seccomp=unconfined"
 )
-
-DOCKER_NETWORK_ARGS=(
-  # enable IPv6
-  "--sysctl=net.ipv6.conf.all.disable_ipv6=0"
-  # The following option was disabled to match the options used in build_and_run_docker.sh
-  # TODO(jtattermusch): Option is required for local port_server.py to work correctly?
-  # "--network=host"
-)
-
-DOCKER_CLEANUP_ARGS=(
-  # delete the container when the containers exits
-  # (otherwise the container will not release the disk space it used)
-  "--rm=true"
-)
-
-DOCKER_PROPAGATE_ENV_ARGS=(
-  "--env-file=tools/run_tests/dockerize/docker_propagate_env.list"
+# Args on top of what's already set by build_and_run_docker.sh
+DOCKER_EXTRA_NETWORK_ARGS=(
+  # Using host network allows using port server running on the host machine (and not just in the docker container)
+  "--network=host"
 )
 
 # Uncomment to run the docker container as current user's UID and GID.
@@ -91,42 +58,9 @@ DOCKER_PROPAGATE_ENV_ARGS=(
 #   "--user=$(id -u):$(id -g)"
 # )
 
-# If available, make KOKORO_KEYSTORE_DIR accessible from the container (as readonly)
-if [ "${KOKORO_KEYSTORE_DIR}" != "" ]
-then
-  MOUNT_KEYSTORE_DIR_ARGS=(
-    "-v=${KOKORO_KEYSTORE_DIR}:/kokoro_keystore:ro"
-    "-e=KOKORO_KEYSTORE_DIR=/kokoro_keystore"
-  )
-else
-  MOUNT_KEYSTORE_DIR_ARGS=()
-fi
+# the original DOCKER_EXTRA_ARGS + all the args defined in this script
+export DOCKER_EXTRA_ARGS=""${DOCKER_EXTRA_PRIVILEGED_ARGS[@]}" ${DOCKER_EXTRA_NETWORK_ARGS[@]} ${DOCKER_EXTRA_ARGS}"
+# download the docker images from dockerhub instead of building them locally
+export DOCKERHUB_ORGANIZATION=grpctesting
 
-# If available, make KOKORO_GFILE_DIR accessible from the container (as readonly)
-if [ "${KOKORO_GFILE_DIR}" != "" ]
-then
-  MOUNT_GFILE_DIR_ARGS=(
-    "-v=${KOKORO_GFILE_DIR}:/kokoro_gfile:ro"
-    "-e=KOKORO_GFILE_DIR=/kokoro_gfile"
-  )
-else
-  MOUNT_GFILE_DIR_ARGS=()
-fi
-
-# If available, make KOKORO_ARTIFACTS_DIR accessible from the container
-if [ "${KOKORO_ARTIFACTS_DIR}" != "" ]
-then
-  MOUNT_ARTIFACTS_DIR_ARGS=(
-    "-v=${KOKORO_ARTIFACTS_DIR}:/kokoro_artifacts"
-    "-e=KOKORO_ARTIFACTS_DIR=/kokoro_artifacts"
-  )
-else
-  MOUNT_ARTIFACTS_DIR_ARGS=()
-fi
-
-# Enable command echo just before running the final docker command to make the docker args visible.
-set -ex
-
-# Run command inside C# docker container.
-# - the local clone of grpc repository will be mounted as /workspace.
-exec docker run "${DOCKER_TTY_ARGS[@]}" "${DOCKER_PRIVILEGED_ARGS[@]}" "${DOCKER_NETWORK_ARGS[@]}" "${DOCKER_CLEANUP_ARGS[@]}" "${DOCKER_PROPAGATE_ENV_ARGS[@]}" "${MOUNT_KEYSTORE_DIR_ARGS[@]}" "${MOUNT_GFILE_DIR_ARGS[@]}" "${MOUNT_ARTIFACTS_DIR_ARGS[@]}" ${DOCKER_EXTRA_ARGS} -v "${grpc_rootdir}":/workspace -w /workspace "${DOCKER_IMAGE}" "$@"
+exec tools/run_tests/dockerize/build_and_run_docker.sh "$@"
