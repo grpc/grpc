@@ -456,11 +456,6 @@ spec:
             /src/workspace/bin/worker --driver_port="${DRIVER_PORT}"
       command:
       - bash
-      env:
-      - name: GRPC_GO_LOG_VERBOSITY_LEVEL
-        value: '99'
-      - name: GRPC_GO_LOG_SEVERITY_LEVEL
-        value: info
       name: main
   - build:
       args:
