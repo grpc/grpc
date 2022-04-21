@@ -19,8 +19,9 @@ Server should accept these arguments:
 
 In addition, when handling requests, if the initial request metadata contains the `rpc-behavior` key, it should modify its handling of the request as follows:
 
- - If the value matches `sleep-<number>`, the server should wait the specified number of seconds before responding.
- - If the value matches `fail-on=<hostname>`, and the specified hostname matches the server's hostname, the server should respond to the request with an error with the code `ABORTED`.
+ - If the value matches `sleep-<int>`, the server should wait the specified number of seconds before responding.
+ - If the value matches `fail=<status code as int>`, the server should respond with the specified status code.
+ - A value can have a prefix `hostname=<string>` followed by a space. In that case, the rest of the value should only be applied if the specified hostname matches the server's hostname. 
 
 ## Client
 
