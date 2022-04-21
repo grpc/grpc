@@ -60,6 +60,15 @@ void RegisterAddressTestLoadBalancingPolicy(AddressTestCallback cb);
 // single subchannel whose address is in its configuration.
 void RegisterFixedAddressLoadBalancingPolicy();
 
+using OobBackendMetricCallback = std::function<void(
+    ServerAddress,
+    const LoadBalancingPolicy::BackendMetricAccessor::BackendMetricData&)>;
+
+// Registers an LB policy called "oob_backend_metric_test_lb" that invokes
+// cb for each OOB backend metric report on each subchannel.
+void RegisterOobBackendMetricTestLoadBalancingPolicy(
+    OobBackendMetricCallback cb);
+
 }  // namespace grpc_core
 
 #endif  // GRPC_TEST_CORE_UTIL_TEST_LB_POLICIES_H

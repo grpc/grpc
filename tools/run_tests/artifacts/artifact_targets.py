@@ -22,6 +22,8 @@ import sys
 sys.path.insert(0, os.path.abspath('..'))
 import python_utils.jobset as jobset
 
+_LATEST_MANYLINUX = "manylinux2014"
+
 
 def create_docker_jobspec(name,
                           dockerfile_dir,
@@ -107,6 +109,8 @@ class PythonArtifact:
         if presubmit:
             self.labels.append('presubmit')
         self.py_version = py_version
+        if platform == _LATEST_MANYLINUX:
+            self.labels.append('latest-manylinux')
         if 'manylinux' in platform:
             self.labels.append('linux')
         if 'linux_extra' in platform:
@@ -182,10 +186,7 @@ class PythonArtifact:
                 environ=environ,
                 timeout_seconds=60 * 60 * 2)
         elif self.platform == 'windows':
-            if 'Python27' in self.py_version:
-                environ['EXT_COMPILER'] = 'mingw32'
-            else:
-                environ['EXT_COMPILER'] = 'msvc'
+            environ['EXT_COMPILER'] = 'msvc'
             # For some reason, the batch script %random% always runs with the same
             # seed.  We create a random temp-dir here
             dir = ''.join(

@@ -125,10 +125,6 @@ void MaxAgeFilter::Shutdown() {
 }
 
 void MaxAgeFilter::Start() {
-  // Trigger idle timer immediately
-  IncreaseCallCount();
-  DecreaseCallCount();
-
   struct StartupClosure {
     RefCountedPtr<grpc_channel_stack> channel_stack;
     MaxAgeFilter* filter;
@@ -136,6 +132,9 @@ void MaxAgeFilter::Start() {
   };
   auto run_startup = [](void* p, grpc_error_handle) {
     auto* startup = static_cast<StartupClosure*>(p);
+    // Trigger idle timer
+    startup->filter->IncreaseCallCount();
+    startup->filter->DecreaseCallCount();
     grpc_transport_op* op = grpc_make_transport_op(nullptr);
     op->start_connectivity_watch.reset(
         new ConnectivityWatcher(startup->filter));
@@ -274,10 +273,9 @@ void RegisterChannelIdleFilters(CoreConfiguration::Builder* builder) {
   builder->channel_init()->RegisterStage(
       GRPC_CLIENT_CHANNEL, GRPC_CHANNEL_INIT_BUILTIN_PRIORITY,
       [](ChannelStackBuilder* builder) {
-        const grpc_channel_args* channel_args = builder->channel_args();
-        if (!grpc_channel_args_want_minimal_stack(channel_args) &&
-            GetClientIdleTimeout(ChannelArgs::FromC(channel_args)) !=
-                Duration::Infinity()) {
+        auto channel_args = builder->channel_args();
+        if (!channel_args.WantMinimalStack() &&
+            GetClientIdleTimeout(channel_args) != Duration::Infinity()) {
           builder->PrependFilter(&grpc_client_idle_filter, nullptr);
         }
         return true;
@@ -285,11 +283,9 @@ void RegisterChannelIdleFilters(CoreConfiguration::Builder* builder) {
   builder->channel_init()->RegisterStage(
       GRPC_SERVER_CHANNEL, GRPC_CHANNEL_INIT_BUILTIN_PRIORITY,
       [](ChannelStackBuilder* builder) {
-        const grpc_channel_args* channel_args = builder->channel_args();
-        if (!grpc_channel_args_want_minimal_stack(channel_args) &&
-            MaxAgeFilter::Config::FromChannelArgs(
-                ChannelArgs::FromC(channel_args))
-                .enable()) {
+        auto channel_args = builder->channel_args();
+        if (!channel_args.WantMinimalStack() &&
+            MaxAgeFilter::Config::FromChannelArgs(channel_args).enable()) {
           builder->PrependFilter(
               &grpc_max_age_filter,
               [](grpc_channel_stack*, grpc_channel_element* elem) {

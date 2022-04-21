@@ -227,6 +227,7 @@ struct HttpMethodMetadata {
   enum ValueType {
     kPost,
     kGet,
+    kPut,
     kInvalid,
   };
   using MementoType = ValueType;
@@ -236,6 +237,8 @@ struct HttpMethodMetadata {
     auto value_string = value.as_string_view();
     if (value_string == "POST") {
       out = kPost;
+    } else if (value_string == "PUT") {
+      out = kPut;
     } else if (value_string == "GET") {
       out = kGet;
     } else {
@@ -250,6 +253,8 @@ struct HttpMethodMetadata {
     switch (x) {
       case kPost:
         return StaticSlice::FromStaticString("POST");
+      case kPut:
+        return StaticSlice::FromStaticString("PUT");
       case kGet:
         return StaticSlice::FromStaticString("GET");
       default:
@@ -262,6 +267,8 @@ struct HttpMethodMetadata {
         return "POST";
       case kGet:
         return "GET";
+      case kPut:
+        return "PUT";
       default:
         return "<discarded-invalid-value>";
     }

@@ -676,7 +676,8 @@ Subchannel::Subchannel(SubchannelKey key,
             {GRPC_MAX_CHANNEL_TRACE_EVENT_MEMORY_PER_NODE_DEFAULT, 0,
              INT_MAX}));
     channelz_node_ = MakeRefCounted<channelz::SubchannelNode>(
-        grpc_sockaddr_to_uri(&key_.address()), channel_tracer_max_memory);
+        grpc_sockaddr_to_uri(&key_.address()).value(),
+        channel_tracer_max_memory);
     channelz_node_->AddTraceEvent(
         channelz::ChannelTrace::Severity::Info,
         grpc_slice_from_static_string("subchannel created"));
@@ -819,6 +820,29 @@ void Subchannel::Orphan() {
   health_watcher_map_.ShutdownLocked();
 }
 
+void Subchannel::AddDataProducer(DataProducerInterface* data_producer) {
+  MutexLock lock(&mu_);
+  auto& entry = data_producer_map_[data_producer->type()];
+  GPR_ASSERT(entry == nullptr);
+  entry = data_producer;
+}
+
+void Subchannel::RemoveDataProducer(DataProducerInterface* data_producer) {
+  MutexLock lock(&mu_);
+  auto it = data_producer_map_.find(data_producer->type());
+  GPR_ASSERT(it != data_producer_map_.end());
+  GPR_ASSERT(it->second == data_producer);
+  data_producer_map_.erase(it);
+}
+
+Subchannel::DataProducerInterface* Subchannel::GetDataProducer(
+    const char* type) {
+  MutexLock lock(&mu_);
+  auto it = data_producer_map_.find(type);
+  if (it == data_producer_map_.end()) return nullptr;
+  return it->second;
+}
+
 namespace {
 
 // Returns a string indicating the subchannel's connectivity state change to
@@ -955,28 +979,17 @@ void Subchannel::OnConnectingFinished(void* arg, grpc_error_handle error) {
   c.reset(DEBUG_LOCATION, "connecting");
 }
 
-namespace {
-
-void ConnectionDestroy(void* arg, grpc_error_handle /*error*/) {
-  grpc_channel_stack* stk = static_cast<grpc_channel_stack*>(arg);
-  grpc_channel_stack_destroy(stk);
-  gpr_free(stk);
-}
-
-}  // namespace
-
 bool Subchannel::PublishTransportLocked() {
   // Construct channel stack.
   ChannelStackBuilderImpl builder("subchannel", GRPC_CLIENT_SUBCHANNEL);
-  builder.SetChannelArgs(connecting_result_.channel_args)
+  builder.SetChannelArgs(ChannelArgs::FromC(connecting_result_.channel_args))
       .SetTransport(connecting_result_.transport);
   if (!CoreConfiguration::Get().channel_init().CreateStack(&builder)) {
     return false;
   }
-  grpc_channel_stack* stk;
-  grpc_error_handle error = builder.Build(0, 1, ConnectionDestroy, nullptr,
-                                          reinterpret_cast<void**>(&stk));
-  if (error != GRPC_ERROR_NONE) {
+  absl::StatusOr<RefCountedPtr<grpc_channel_stack>> stk = builder.Build();
+  if (!stk.ok()) {
+    auto error = absl_status_to_grpc_error(stk.status());
     grpc_transport_destroy(connecting_result_.transport);
     gpr_log(GPR_ERROR,
             "subchannel %p %s: error initializing subchannel stack: %s", this,
@@ -987,14 +1000,10 @@ bool Subchannel::PublishTransportLocked() {
   RefCountedPtr<channelz::SocketNode> socket =
       std::move(connecting_result_.socket_node);
   connecting_result_.Reset();
-  if (disconnected_) {
-    grpc_channel_stack_destroy(stk);
-    gpr_free(stk);
-    return false;
-  }
+  if (disconnected_) return false;
   // Publish.
   connected_subchannel_.reset(
-      new ConnectedSubchannel(stk, args_, channelz_node_));
+      new ConnectedSubchannel(stk->release(), args_, channelz_node_));
   if (GRPC_TRACE_FLAG_ENABLED(grpc_trace_subchannel)) {
     gpr_log(GPR_INFO, "subchannel %p %s: new connected subchannel at %p", this,
             key_.ToString().c_str(), connected_subchannel_.get());

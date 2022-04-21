@@ -82,6 +82,9 @@ UPB_INLINE char* xds_annotations_v3_FileStatusAnnotation_serialize_ex(const xds_
                                  upb_Arena* arena, size_t* len) {
   return upb_Encode(msg, &xds_annotations_v3_FileStatusAnnotation_msginit, options, arena, len);
 }
+UPB_INLINE void xds_annotations_v3_FileStatusAnnotation_clear_work_in_progress(const xds_annotations_v3_FileStatusAnnotation* msg) {
+  *UPB_PTR_AT(msg, UPB_SIZE(0, 0), bool) = 0;
+}
 UPB_INLINE bool xds_annotations_v3_FileStatusAnnotation_work_in_progress(const xds_annotations_v3_FileStatusAnnotation* msg) {
   return *UPB_PTR_AT(msg, UPB_SIZE(0, 0), bool);
 }
@@ -120,6 +123,9 @@ UPB_INLINE char* xds_annotations_v3_MessageStatusAnnotation_serialize(const xds_
 UPB_INLINE char* xds_annotations_v3_MessageStatusAnnotation_serialize_ex(const xds_annotations_v3_MessageStatusAnnotation* msg, int options,
                                  upb_Arena* arena, size_t* len) {
   return upb_Encode(msg, &xds_annotations_v3_MessageStatusAnnotation_msginit, options, arena, len);
+}
+UPB_INLINE void xds_annotations_v3_MessageStatusAnnotation_clear_work_in_progress(const xds_annotations_v3_MessageStatusAnnotation* msg) {
+  *UPB_PTR_AT(msg, UPB_SIZE(0, 0), bool) = 0;
 }
 UPB_INLINE bool xds_annotations_v3_MessageStatusAnnotation_work_in_progress(const xds_annotations_v3_MessageStatusAnnotation* msg) {
   return *UPB_PTR_AT(msg, UPB_SIZE(0, 0), bool);
@@ -160,6 +166,9 @@ UPB_INLINE char* xds_annotations_v3_FieldStatusAnnotation_serialize_ex(const xds
                                  upb_Arena* arena, size_t* len) {
   return upb_Encode(msg, &xds_annotations_v3_FieldStatusAnnotation_msginit, options, arena, len);
 }
+UPB_INLINE void xds_annotations_v3_FieldStatusAnnotation_clear_work_in_progress(const xds_annotations_v3_FieldStatusAnnotation* msg) {
+  *UPB_PTR_AT(msg, UPB_SIZE(0, 0), bool) = 0;
+}
 UPB_INLINE bool xds_annotations_v3_FieldStatusAnnotation_work_in_progress(const xds_annotations_v3_FieldStatusAnnotation* msg) {
   return *UPB_PTR_AT(msg, UPB_SIZE(0, 0), bool);
 }
@@ -199,26 +208,77 @@ UPB_INLINE char* xds_annotations_v3_StatusAnnotation_serialize_ex(const xds_anno
                                  upb_Arena* arena, size_t* len) {
   return upb_Encode(msg, &xds_annotations_v3_StatusAnnotation_msginit, options, arena, len);
 }
+UPB_INLINE void xds_annotations_v3_StatusAnnotation_clear_work_in_progress(const xds_annotations_v3_StatusAnnotation* msg) {
+  *UPB_PTR_AT(msg, UPB_SIZE(0, 0), bool) = 0;
+}
 UPB_INLINE bool xds_annotations_v3_StatusAnnotation_work_in_progress(const xds_annotations_v3_StatusAnnotation* msg) {
-  return *UPB_PTR_AT(msg, UPB_SIZE(4, 4), bool);
+  return *UPB_PTR_AT(msg, UPB_SIZE(0, 0), bool);
+}
+UPB_INLINE void xds_annotations_v3_StatusAnnotation_clear_package_version_status(const xds_annotations_v3_StatusAnnotation* msg) {
+  *UPB_PTR_AT(msg, UPB_SIZE(4, 4), int32_t) = 0;
 }
 UPB_INLINE int32_t xds_annotations_v3_StatusAnnotation_package_version_status(const xds_annotations_v3_StatusAnnotation* msg) {
-  return *UPB_PTR_AT(msg, UPB_SIZE(0, 0), int32_t);
+  return *UPB_PTR_AT(msg, UPB_SIZE(4, 4), int32_t);
 }
 
 UPB_INLINE void xds_annotations_v3_StatusAnnotation_set_work_in_progress(xds_annotations_v3_StatusAnnotation *msg, bool value) {
-  *UPB_PTR_AT(msg, UPB_SIZE(4, 4), bool) = value;
+  *UPB_PTR_AT(msg, UPB_SIZE(0, 0), bool) = value;
 }
 UPB_INLINE void xds_annotations_v3_StatusAnnotation_set_package_version_status(xds_annotations_v3_StatusAnnotation *msg, int32_t value) {
-  *UPB_PTR_AT(msg, UPB_SIZE(0, 0), int32_t) = value;
+  *UPB_PTR_AT(msg, UPB_SIZE(4, 4), int32_t) = value;
 }
 
-UPB_INLINE bool xds_annotations_v3_has_file_status(const struct google_protobuf_FileOptions *msg) { return _upb_Message_Getext(msg, &xds_annotations_v3_file_status_ext) != NULL; }
-UPB_INLINE const xds_annotations_v3_FileStatusAnnotation* xds_annotations_v3_file_status(const struct google_protobuf_FileOptions *msg) { const upb_Message_Extension *ext = _upb_Message_Getext(msg, &xds_annotations_v3_file_status_ext); UPB_ASSERT(ext); return *UPB_PTR_AT(&ext->data, 0, const xds_annotations_v3_FileStatusAnnotation*); }
-UPB_INLINE bool xds_annotations_v3_has_message_status(const struct google_protobuf_MessageOptions *msg) { return _upb_Message_Getext(msg, &xds_annotations_v3_message_status_ext) != NULL; }
-UPB_INLINE const xds_annotations_v3_MessageStatusAnnotation* xds_annotations_v3_message_status(const struct google_protobuf_MessageOptions *msg) { const upb_Message_Extension *ext = _upb_Message_Getext(msg, &xds_annotations_v3_message_status_ext); UPB_ASSERT(ext); return *UPB_PTR_AT(&ext->data, 0, const xds_annotations_v3_MessageStatusAnnotation*); }
-UPB_INLINE bool xds_annotations_v3_has_field_status(const struct google_protobuf_FieldOptions *msg) { return _upb_Message_Getext(msg, &xds_annotations_v3_field_status_ext) != NULL; }
-UPB_INLINE const xds_annotations_v3_FieldStatusAnnotation* xds_annotations_v3_field_status(const struct google_protobuf_FieldOptions *msg) { const upb_Message_Extension *ext = _upb_Message_Getext(msg, &xds_annotations_v3_field_status_ext); UPB_ASSERT(ext); return *UPB_PTR_AT(&ext->data, 0, const xds_annotations_v3_FieldStatusAnnotation*); }
+UPB_INLINE bool xds_annotations_v3_has_file_status(const struct google_protobuf_FileOptions* msg) {
+  return _upb_Message_Getext(msg, &xds_annotations_v3_file_status_ext) != NULL;
+}
+UPB_INLINE void xds_annotations_v3_clear_file_status(struct google_protobuf_FileOptions* msg) {
+  _upb_Message_Clearext(msg, &xds_annotations_v3_file_status_ext);
+}
+UPB_INLINE const xds_annotations_v3_FileStatusAnnotation* xds_annotations_v3_file_status(const struct google_protobuf_FileOptions* msg) {
+  const upb_Message_Extension* ext = _upb_Message_Getext(msg, &xds_annotations_v3_file_status_ext);
+  UPB_ASSERT(ext);
+  return *UPB_PTR_AT(&ext->data, 0, const xds_annotations_v3_FileStatusAnnotation*);
+}
+UPB_INLINE void xds_annotations_v3_set_file_status(struct google_protobuf_FileOptions* msg, const xds_annotations_v3_FileStatusAnnotation* ext, upb_Arena* arena) {
+  const upb_Message_Extension* msg_ext =
+      _upb_Message_Getorcreateext(msg, &xds_annotations_v3_file_status_ext, arena);
+  UPB_ASSERT(msg_ext);
+  *UPB_PTR_AT(&msg_ext->data, 0, const xds_annotations_v3_FileStatusAnnotation*) = ext;
+}
+UPB_INLINE bool xds_annotations_v3_has_message_status(const struct google_protobuf_MessageOptions* msg) {
+  return _upb_Message_Getext(msg, &xds_annotations_v3_message_status_ext) != NULL;
+}
+UPB_INLINE void xds_annotations_v3_clear_message_status(struct google_protobuf_MessageOptions* msg) {
+  _upb_Message_Clearext(msg, &xds_annotations_v3_message_status_ext);
+}
+UPB_INLINE const xds_annotations_v3_MessageStatusAnnotation* xds_annotations_v3_message_status(const struct google_protobuf_MessageOptions* msg) {
+  const upb_Message_Extension* ext = _upb_Message_Getext(msg, &xds_annotations_v3_message_status_ext);
+  UPB_ASSERT(ext);
+  return *UPB_PTR_AT(&ext->data, 0, const xds_annotations_v3_MessageStatusAnnotation*);
+}
+UPB_INLINE void xds_annotations_v3_set_message_status(struct google_protobuf_MessageOptions* msg, const xds_annotations_v3_MessageStatusAnnotation* ext, upb_Arena* arena) {
+  const upb_Message_Extension* msg_ext =
+      _upb_Message_Getorcreateext(msg, &xds_annotations_v3_message_status_ext, arena);
+  UPB_ASSERT(msg_ext);
+  *UPB_PTR_AT(&msg_ext->data, 0, const xds_annotations_v3_MessageStatusAnnotation*) = ext;
+}
+UPB_INLINE bool xds_annotations_v3_has_field_status(const struct google_protobuf_FieldOptions* msg) {
+  return _upb_Message_Getext(msg, &xds_annotations_v3_field_status_ext) != NULL;
+}
+UPB_INLINE void xds_annotations_v3_clear_field_status(struct google_protobuf_FieldOptions* msg) {
+  _upb_Message_Clearext(msg, &xds_annotations_v3_field_status_ext);
+}
+UPB_INLINE const xds_annotations_v3_FieldStatusAnnotation* xds_annotations_v3_field_status(const struct google_protobuf_FieldOptions* msg) {
+  const upb_Message_Extension* ext = _upb_Message_Getext(msg, &xds_annotations_v3_field_status_ext);
+  UPB_ASSERT(ext);
+  return *UPB_PTR_AT(&ext->data, 0, const xds_annotations_v3_FieldStatusAnnotation*);
+}
+UPB_INLINE void xds_annotations_v3_set_field_status(struct google_protobuf_FieldOptions* msg, const xds_annotations_v3_FieldStatusAnnotation* ext, upb_Arena* arena) {
+  const upb_Message_Extension* msg_ext =
+      _upb_Message_Getorcreateext(msg, &xds_annotations_v3_field_status_ext, arena);
+  UPB_ASSERT(msg_ext);
+  *UPB_PTR_AT(&msg_ext->data, 0, const xds_annotations_v3_FieldStatusAnnotation*) = ext;
+}
 extern const upb_MiniTable_File xds_annotations_v3_status_proto_upb_file_layout;
 
 #ifdef __cplusplus

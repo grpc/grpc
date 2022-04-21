@@ -110,7 +110,8 @@ void test_succeeds(void) {
   GRPC_CLOSURE_INIT(&done, must_succeed, nullptr, grpc_schedule_on_exec_ctx);
   const grpc_channel_args* args = grpc_core::CoreConfiguration::Get()
                                       .channel_args_preconditioning()
-                                      .PreconditionChannelArgs(nullptr);
+                                      .PreconditionChannelArgs(nullptr)
+                                      .ToC();
   grpc_tcp_client_connect(&done, &g_connecting, g_pollset_set, args,
                           &resolved_addr, grpc_core::Timestamp::InfFuture());
   grpc_channel_args_destroy(args);
