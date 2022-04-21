@@ -308,10 +308,14 @@ class Subchannel::ConnectedSubchannelStateWatcher
                                  const absl::Status& status) override {
     Subchannel* c = subchannel_.get();
     MutexLock lock(&c->mu_);
-    // If we're either shutting down or have already seen this
-    // connection failure, do nothing.
-    // TODO(yashkt): Why does the transport sometimes report TF and then
-    // SHUTDOWN and other times report only SHUTDOWN?
+    // If we're either shutting down or have already seen this connection
+    // failure (i.e., c->connected_subchannel_ is null), do nothing.
+    //
+    // The transport reports TRANSIENT_FAILURE upon GOAWAY but SHUTDOWN
+    // upon connection close.  So if the server gracefully shuts down,
+    // we will see TRANSIENT_FAILURE followed by SHUTDOWN, but if not, we
+    // will see only SHUTDOWN.  Either way, we react to the first one we
+    // see, ignoring anything that happens after that.
     if (c->connected_subchannel_ == nullptr) return;
     if (new_state == GRPC_CHANNEL_TRANSIENT_FAILURE ||
         new_state == GRPC_CHANNEL_SHUTDOWN) {
