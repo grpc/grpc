@@ -26,4 +26,4 @@ cd "$(dirname "$0")/../../.."
 # use, since they usually influence with docker image will be used
 # by run_tests.py
 export DOCKERFILE_DIR=tools/dockerfile/test/cxx_debian11_x64
-tools/docker_runners/run_in_docker.sh tools/run_tests/run_tests.py -l c c++ -c dbg
+tools/docker_runners/run_in_docker.sh tools/run_tests/run_tests.py -l c -c dbg

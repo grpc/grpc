@@ -34,32 +34,19 @@ then
     exit 1
 fi
 
-# Args on top of what's already set by build_and_run_docker.sh
-DOCKER_EXTRA_PRIVILEGED_ARGS=(
-  # TODO(jtattermusch): is "--privileged" actually needed for coredumps inside docker containers?
-  "--privileged"
-  # TODO(jtattermusch): is "--privileged" actually needed for coredumps inside docker containers?
-  "--security-opt=seccomp=unconfined"
+DOCKER_NONROOT_ARGS=(
+  # run under current user's UID and GID
+  # Uncomment to run the docker container as current user's UID and GID.
+  # That way, the files written by the container won't be owned by root (=you won't end up with polluted workspace),
+  # but it can have some other disadvantages. E.g.:
+  # - you won't be able install stuff inside the container
+  # - the home directory inside the container will be broken (you won't be able to write in it).
+  #   That may actually break some language runtimes completely (e.g. grpc python might not build)
+  # "--user=$(id -u):$(id -g)"
 )
-# Args on top of what's already set by build_and_run_docker.sh
-DOCKER_EXTRA_NETWORK_ARGS=(
-  # Using host network allows using port server running on the host machine (and not just in the docker container)
-  "--network=host"
-)
-
-# Uncomment to run the docker container as current user's UID and GID.
-# That way, the files written by the container won't be owned by root (=you won't end up with polluted workspace),
-# but it can have some other disadvantages. E.g.:
-# - you won't be able install stuff inside the container
-# - the home directory inside the container will be broken (you won't be able to write in it).
-#   That may actually break some language runtimes completely (e.g. grpc python might not build)
-# DOCKER_NONROOT_ARGS=(
-#   # run under current user's UID and GID
-#   "--user=$(id -u):$(id -g)"
-# )
 
 # the original DOCKER_EXTRA_ARGS + all the args defined in this script
-export DOCKER_EXTRA_ARGS=""${DOCKER_EXTRA_PRIVILEGED_ARGS[@]}" ${DOCKER_EXTRA_NETWORK_ARGS[@]} ${DOCKER_EXTRA_ARGS}"
+export DOCKER_EXTRA_ARGS="${DOCKER_NONROOT_ARGS[@]} ${DOCKER_EXTRA_ARGS}"
 # download the docker images from dockerhub instead of building them locally
 export DOCKERHUB_ORGANIZATION=grpctesting
 

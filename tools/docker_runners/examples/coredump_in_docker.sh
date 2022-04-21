@@ -27,8 +27,8 @@ cd "$(dirname "$0")/../../.."
 # by run_tests.py
 export DOCKERFILE_DIR=tools/dockerfile/test/cxx_debian11_x64
 
-# add extra docker args if needed
-export DOCKER_EXTRA_ARGS=""
+# "--privileged" docker arg is required to be able to update /proc/sys/kernel/core_pattern
+export DOCKER_EXTRA_ARGS="--privileged"
 
 # start the docker container with interactive shell
 tools/docker_runners/run_in_docker.sh bash
