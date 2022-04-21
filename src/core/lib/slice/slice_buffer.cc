@@ -142,7 +142,7 @@ void grpc_slice_buffer_add(grpc_slice_buffer* sb, grpc_slice s) {
   if (n) {
     back = &sb->slices[n - 1];
   }
-  if (s.refcount && back && s.refcount == back->refcount &&
+  if (s.refcount != nullptr && back != nullptr && s.refcount == back->refcount &&
       GRPC_SLICE_START_PTR(s) == GRPC_SLICE_END_PTR(*back)) {
     // Merge the two slices into one because they are contiguous and share the
     // same refcount object.
@@ -152,7 +152,9 @@ void grpc_slice_buffer_add(grpc_slice_buffer* sb, grpc_slice s) {
     grpc_slice_unref_internal(s);
     // early out
     return;
-  } else if (!s.refcount && n) {
+  }
+
+  if (!s.refcount && n) {
     /* if both the last slice in the slice buffer and the slice being added
      are inlined (that is, that they carry their data inside the slice data
      structure), and the back slice is not full, then concatenate directly
