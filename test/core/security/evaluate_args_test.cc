@@ -91,7 +91,7 @@ TEST_F(EvaluateArgsTest, TestPeerAddressAndPort) {
   util_.SetPeerEndpoint("ipv4:255.255.255.255:123");
   EvaluateArgs args = util_.MakeEvaluateArgs();
   grpc_resolved_address peer_address = args.GetPeerAddress();
-  EXPECT_EQ(grpc_sockaddr_to_uri(&local_address).value(),
+  EXPECT_EQ(grpc_sockaddr_to_uri(&peer_address).value(),
             "ipv6:%5B2001:db8:85a3::8a2e:370:7334%5D:456");
   EXPECT_EQ(args.GetPeerAddressString(), "255.255.255.255");
   EXPECT_EQ(args.GetPeerPort(), 123);
