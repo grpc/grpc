@@ -170,11 +170,11 @@ class GracefulShutdownTest : public ::testing::Test {
     done = true;
   }
 
-  void WaitForGoaway(uint32_t last_stream_id,
+  void WaitForGoaway(uint32_t last_stream_id, uint32_t error_code = 0,
                      grpc_slice slice = grpc_empty_slice()) {
     grpc_slice_buffer buffer;
     grpc_slice_buffer_init(&buffer);
-    grpc_chttp2_goaway_append(last_stream_id, 0, slice, &buffer);
+    grpc_chttp2_goaway_append(last_stream_id, error_code, slice, &buffer);
     std::string expected_bytes;
     for (size_t i = 0; i < buffer.count; ++i) {
       absl::StrAppend(&expected_bytes, StringViewFromSlice(buffer.slices[i]));
@@ -420,8 +420,8 @@ TEST_F(GracefulShutdownTest, GoawayReceivedOnServerDisconnect) {
   grpc_server_shutdown_and_notify(server_, cq_, Tag(1));
   grpc_server_cancel_all_calls(server_);
   // Wait for final goaway.
-  WaitForGoaway(0, grpc_slice_from_static_string("Cancelling all calls"));
-  gpr_log(GPR_ERROR, "Goaway received");
+  WaitForGoaway(/*last_stream_id=*/0, /*error_code=*/2,
+                grpc_slice_from_static_string("Cancelling all calls"));
   // The shutdown should successfully complete.
   CQ_EXPECT_COMPLETION(cqv_, Tag(1), true);
   cq_verify(cqv_);
