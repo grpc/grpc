@@ -999,9 +999,9 @@ class ClientChannel::ClientChannelControlHelper
 // ClientChannel implementation
 //
 
-ClientChannel* ClientChannel::GetFromChannel(grpc_channel* channel) {
+ClientChannel* ClientChannel::GetFromChannel(Channel* channel) {
   grpc_channel_element* elem =
-      grpc_channel_stack_last_element(grpc_channel_get_channel_stack(channel));
+      grpc_channel_stack_last_element(channel->channel_stack());
   if (elem->filter != &kFilterVtable) return nullptr;
   return static_cast<ClientChannel*>(elem->channel_data);
 }

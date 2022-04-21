@@ -96,6 +96,9 @@ class ServerAddress {
   ServerAddress WithAttribute(const char* key,
                               std::unique_ptr<AttributeInterface> value) const;
 
+  // TODO(ctiller): Prior to making this a public API we should ensure that the
+  // channel args are not part of the generated string, lest we make that debug
+  // format load-bearing via Hyrum's law.
   std::string ToString() const;
 
  private:

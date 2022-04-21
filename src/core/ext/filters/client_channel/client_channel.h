@@ -91,7 +91,7 @@ class ClientChannel {
 
   // Returns the ClientChannel object from channel, or null if channel
   // is not a client channel.
-  static ClientChannel* GetFromChannel(grpc_channel* channel);
+  static ClientChannel* GetFromChannel(Channel* channel);
 
   grpc_connectivity_state CheckConnectivityState(bool try_to_connect);
 
