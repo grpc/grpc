@@ -105,6 +105,10 @@ class OutlierDetectionLb : public LoadBalancingPolicy {
     void CancelConnectivityStateWatch(
         ConnectivityStateWatcherInterface* watcher) override;
 
+    RefCountedPtr<SubchannelState> subchannel_state() const {
+      return subchannel_state_;
+    }
+
    private:
     class WatcherWrapper
         : public SubchannelInterface::ConnectivityStateWatcherInterface {
@@ -194,6 +198,7 @@ class OutlierDetectionLb : public LoadBalancingPolicy {
     PickResult Pick(PickArgs args) override;
 
    private:
+    class SubchannelCallTracker;
     RefCountedPtr<RefCountedPicker> picker_;
   };
 
@@ -287,6 +292,61 @@ void OutlierDetectionLb::SubchannelWrapper::CancelConnectivityStateWatch(
 }
 
 //
+// OutlierDetectionLb::Picker::SubchannelCallTracker
+//
+
+class OutlierDetectionLb::Picker::SubchannelCallTracker
+    : public LoadBalancingPolicy::SubchannelCallTrackerInterface {
+ public:
+  SubchannelCallTracker(
+      std::unique_ptr<LoadBalancingPolicy::SubchannelCallTrackerInterface>
+          original_subchannel_call_tracker,
+      // TODO@donna: prob RefCountedPtr
+      RefCountedPtr<SubchannelState> subchannel_state)
+      : original_subchannel_call_tracker_(
+            std::move(original_subchannel_call_tracker)),
+        subchannel_state_(std::move(subchannel_state)) {}
+
+  ~SubchannelCallTracker() override {
+    subchannel_state_.reset(DEBUG_LOCATION, "SubchannelCallTracker");
+    GPR_DEBUG_ASSERT(!started_);
+  }
+
+  void Start() override {
+    // Increment number of calls in flight.
+    // Record a call started.
+    // Delegate if needed.
+    if (original_subchannel_call_tracker_ != nullptr) {
+      original_subchannel_call_tracker_->Start();
+    }
+#ifndef NDEBUG
+    started_ = true;
+#endif
+  }
+
+  void Finish(FinishArgs args) override {
+    // Delegate if needed.
+    if (original_subchannel_call_tracker_ != nullptr) {
+      original_subchannel_call_tracker_->Finish(args);
+    }
+    // Record call completion for load reporting.
+    // Decrement number of calls in flight.
+#ifndef NDEBUG
+    started_ = false;
+#endif
+  }
+
+ private:
+  std::unique_ptr<LoadBalancingPolicy::SubchannelCallTrackerInterface>
+      original_subchannel_call_tracker_;
+  // TODO@donnadionne: RefCountedPtr
+  RefCountedPtr<SubchannelState> subchannel_state_;
+#ifndef NDEBUG
+  bool started_ = false;
+#endif
+};
+
+//
 // OutlierDetectionLb::Picker
 //
 
@@ -318,6 +378,11 @@ LoadBalancingPolicy::PickResult OutlierDetectionLb::Picker::Pick(
     auto* subchannel_wrapper =
         static_cast<SubchannelWrapper*>(complete_pick->subchannel.get());
     complete_pick->subchannel = subchannel_wrapper->wrapped_subchannel();
+    // Inject subchannel call tracker to record call completion.
+    complete_pick->subchannel_call_tracker =
+        absl::make_unique<SubchannelCallTracker>(
+            std::move(complete_pick->subchannel_call_tracker),
+            subchannel_wrapper->subchannel_state());
   }
   return result;
 }
