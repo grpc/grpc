@@ -224,7 +224,8 @@ static void on_read(void* arg, grpc_error_handle err) {
     }
 
     if (sp->server->memory_quota->IsMemoryPressureHigh()) {
-      int64_t dropped_connections_count = ++num_dropped_connections;
+      int64_t dropped_connections_count =
+          num_dropped_connections.fetch_add(1, std::memory_order_relaxed);
       if (dropped_connections_count % 1000 == 0) {
         gpr_log(GPR_INFO,
                 "Dropped >= %" PRId64
