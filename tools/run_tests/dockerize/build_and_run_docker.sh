@@ -135,14 +135,13 @@ DOCKER_IMAGE_IDENTITY_ARGS=(
   "-e=GRPC_TEST_DOCKER_IMAGE_IDENTITY=${DOCKER_IMAGE_NAME}"
 )
 
+# TODO: silence complaint about lack of quotes in some other way
+# shellcheck disable=SC2206
 DOCKER_EXTRA_ARGS_FROM_ENV=(
   # Not quoting the variable is intentional, since the env variable may contain
   # multiple arguments and we want to interpret it as such.
   # TODO: get rid of EXTRA_DOCKER_ARGS occurrences and replace with DOCKER_EXTRA_ARGS
-  # TODO: silence complaint about lack of quotes in some other way
-  # shellcheck disable=SC2086,SC2154
   ${EXTRA_DOCKER_ARGS}
-  # shellcheck disable=SC2086,SC2154
   ${DOCKER_EXTRA_ARGS}
 )
 
