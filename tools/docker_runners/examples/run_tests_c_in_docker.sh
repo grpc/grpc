@@ -18,7 +18,7 @@ set -ex
 # change to grpc repo root
 cd "$(dirname "$0")/../../.."
 
-# Use the docker image used as the default for C++ by run_tests.py
+# use the docker image used as the default for C++ by run_tests.py
 # To use the correct docker image for your experiments,
 # note that every invocation of run_tests.py with "--use_docker"
 # prints the docker image used as a debug message at the end of the run.
@@ -26,25 +26,4 @@ cd "$(dirname "$0")/../../.."
 # use, since they usually influence with docker image will be used
 # by run_tests.py
 export DOCKERFILE_DIR=tools/dockerfile/test/cxx_debian11_x64
-
-# "--privileged" docker arg is required to be disable address randomization by gdb
-# TODO: is "--security-opt=seccomp=unconfined" actually needed?
-export DOCKER_EXTRA_ARGS="--privileged --security-opt=seccomp=unconfined"
-
-# start the docker container with interactive shell
-tools/docker_runners/run_in_docker.sh bash
-
-# Run these commands under the docker container
-#
-# Install gdb (or similar command for non-debian based distros)
-# $ apt-get update && apt-get install -y gdb
-#
-# Build e.g. the C tests
-# $ ./tools/run_tests/run_tests.py -l c -c dbg --build_only
-#
-# Run a test under gdb
-# NOTE: Some old distros (e.g. debian 8 "jessie") might have a gdb version
-# that doesn't work with C++11 symbols properly and crashes when
-# loading the symbols.
-# See https://gcc.gnu.org/bugzilla/show_bug.cgi?id=61233
-# $ gdb cmake/build/histogram_test
+tools/docker_runners/run_in_docker.sh tools/run_tests/run_tests.py -l c -c dbg
