@@ -50,12 +50,12 @@ class AppNetTest(xds_k8s_testcase.AppNetXdsKubernetesTestCase):
 
         with self.subTest('6_start_test_client'):
             try:
-                print("Mesh: {}".format(dir(mesh)))
-                print("Mesh: {}".format(mesh.__dict__))
+                print("Mesh: {}".format(dir(self.td.mesh)))
+                print("Mesh: {}".format(self.td.mesh.__dict__))
             except:
                 pass
             test_client: _XdsTestClient = self.startTestClient(test_server,
-                                                               config_mesh=mesh.name)
+                                                               config_mesh=self.td.mesh.name)
 
         with self.subTest('7_assert_xds_config_exists'):
             self.assertXdsConfigExists(test_client)
