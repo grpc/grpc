@@ -36,6 +36,7 @@
 #include "src/core/ext/transport/chttp2/transport/hpack_parser.h"
 #include "src/core/ext/transport/chttp2/transport/stream_map.h"
 #include "src/core/lib/channel/channelz.h"
+#include "src/core/lib/gprpp/bitset.h"
 #include "src/core/lib/gprpp/manual_constructor.h"
 #include "src/core/lib/iomgr/combiner.h"
 #include "src/core/lib/iomgr/endpoint.h"
@@ -526,7 +527,7 @@ struct grpc_chttp2_stream {
   grpc_closure* destroy_stream_arg;
 
   grpc_chttp2_stream_link links[STREAM_LIST_COUNT];
-  uint8_t included[STREAM_LIST_COUNT] = {};
+  grpc_core::BitSet<STREAM_LIST_COUNT> included;
 
   /** HTTP2 stream id for this stream, or zero if one has not been assigned */
   uint32_t id = 0;

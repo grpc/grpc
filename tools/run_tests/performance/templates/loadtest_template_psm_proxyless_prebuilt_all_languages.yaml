@@ -232,6 +232,9 @@ spec:
             --driver_port="${DRIVER_PORT}"
       command:
       - bash
+      env:
+      - name: GRPC_XDS_BOOTSTRAP
+        value: /bootstrap/bootstrap.json
       image: ${prebuilt_image_prefix}/python:${prebuilt_image_tag}
       name: main
     - args:
@@ -241,9 +244,6 @@ spec:
       - containers/runtime/xds-server/bootstrap.json
       command:
       - main
-      env:
-      - name: GRPC_XDS_BOOTSTRAP
-        value: /bootstrap/bootstrap.json
       image: ${psm_image_prefix}/xds-server:${psm_image_tag}
       livenessProbe:
         initialDelaySeconds: 30
