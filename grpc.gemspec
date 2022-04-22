@@ -41,7 +41,7 @@ Gem::Specification.new do |s|
   s.add_development_dependency 'simplecov',          '~> 0.14.1'
   s.add_development_dependency 'rake',               '~> 13.0'
   s.add_development_dependency 'rake-compiler',      '<= 1.1.1'
-  s.add_development_dependency 'rake-compiler-dock', '~> 1.1'
+  s.add_development_dependency 'rake-compiler-dock', '~> 1.2'
   s.add_development_dependency 'rspec',              '~> 3.6'
   s.add_development_dependency 'rubocop',            '~> 0.49.1'
   s.add_development_dependency 'signet',             '~> 0.7'
@@ -156,6 +156,8 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_client_stats.h )
   s.files += %w( src/core/ext/filters/client_channel/lb_policy/grpclb/load_balancer_api.cc )
   s.files += %w( src/core/ext/filters/client_channel/lb_policy/grpclb/load_balancer_api.h )
+  s.files += %w( src/core/ext/filters/client_channel/lb_policy/oob_backend_metric.cc )
+  s.files += %w( src/core/ext/filters/client_channel/lb_policy/oob_backend_metric.h )
   s.files += %w( src/core/ext/filters/client_channel/lb_policy/pick_first/pick_first.cc )
   s.files += %w( src/core/ext/filters/client_channel/lb_policy/priority/priority.cc )
   s.files += %w( src/core/ext/filters/client_channel/lb_policy/ring_hash/ring_hash.cc )
@@ -212,6 +214,7 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/ext/filters/client_channel/subchannel.cc )
   s.files += %w( src/core/ext/filters/client_channel/subchannel.h )
   s.files += %w( src/core/ext/filters/client_channel/subchannel_interface.h )
+  s.files += %w( src/core/ext/filters/client_channel/subchannel_interface_internal.h )
   s.files += %w( src/core/ext/filters/client_channel/subchannel_pool_interface.cc )
   s.files += %w( src/core/ext/filters/client_channel/subchannel_pool_interface.h )
   s.files += %w( src/core/ext/filters/client_channel/subchannel_stream_client.cc )
@@ -570,6 +573,8 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/ext/upb-generated/xds/core/v3/resource_name.upb.h )
   s.files += %w( src/core/ext/upb-generated/xds/data/orca/v3/orca_load_report.upb.c )
   s.files += %w( src/core/ext/upb-generated/xds/data/orca/v3/orca_load_report.upb.h )
+  s.files += %w( src/core/ext/upb-generated/xds/service/orca/v3/orca.upb.c )
+  s.files += %w( src/core/ext/upb-generated/xds/service/orca/v3/orca.upb.h )
   s.files += %w( src/core/ext/upb-generated/xds/type/matcher/v3/matcher.upb.c )
   s.files += %w( src/core/ext/upb-generated/xds/type/matcher/v3/matcher.upb.h )
   s.files += %w( src/core/ext/upb-generated/xds/type/matcher/v3/regex.upb.c )

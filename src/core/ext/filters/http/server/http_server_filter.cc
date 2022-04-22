@@ -72,6 +72,7 @@ struct call_data {
 
 struct channel_data {
   bool surface_user_agent;
+  bool allow_put_requests;
 };
 
 }  // namespace
@@ -104,6 +105,12 @@ static grpc_error_handle hs_filter_incoming_metadata(grpc_call_element* elem,
     switch (*method) {
       case grpc_core::HttpMethodMetadata::kPost:
         break;
+      case grpc_core::HttpMethodMetadata::kPut:
+        if (static_cast<channel_data*>(elem->channel_data)
+                ->allow_put_requests) {
+          break;
+        }
+        ABSL_FALLTHROUGH_INTENDED;
       case grpc_core::HttpMethodMetadata::kInvalid:
       case grpc_core::HttpMethodMetadata::kGet:
         hs_add_error(error_name, &error,
@@ -301,6 +308,10 @@ static grpc_error_handle hs_init_channel_elem(grpc_channel_element* elem,
       grpc_channel_args_find(args->channel_args,
                              const_cast<char*>(GRPC_ARG_SURFACE_USER_AGENT)),
       true);
+  chand->allow_put_requests = grpc_channel_args_find_bool(
+      args->channel_args,
+      GRPC_ARG_DO_NOT_USE_UNLESS_YOU_HAVE_PERMISSION_FROM_GRPC_TEAM_ALLOW_BROKEN_PUT_REQUESTS,
+      false);
   return GRPC_ERROR_NONE;
 }
 

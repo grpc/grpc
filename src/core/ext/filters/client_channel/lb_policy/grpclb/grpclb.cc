@@ -534,7 +534,8 @@ std::string GrpcLb::Serverlist::AsText() const {
     } else {
       grpc_resolved_address addr;
       ParseServer(server, &addr);
-      ipport = grpc_sockaddr_to_string(&addr, false);
+      auto addr_str = grpc_sockaddr_to_string(&addr, false);
+      ipport = addr_str.ok() ? *addr_str : addr_str.status().ToString();
     }
     entries.push_back(absl::StrFormat("  %" PRIuPTR ": %s token=%s\n", i,
                                       ipport, server.load_balance_token));
@@ -582,10 +583,12 @@ ServerAddressList GrpcLb::Serverlist::GetServerAddressList(
         server.load_balance_token, GPR_ARRAY_SIZE(server.load_balance_token));
     std::string lb_token(server.load_balance_token, lb_token_length);
     if (lb_token.empty()) {
+      auto addr_uri = grpc_sockaddr_to_uri(&addr);
       gpr_log(GPR_INFO,
               "Missing LB token for backend address '%s'. The empty token will "
               "be used instead",
-              grpc_sockaddr_to_uri(&addr).c_str());
+              addr_uri.ok() ? addr_uri->c_str()
+                            : addr_uri.status().ToString().c_str());
     }
     // Attach attribute to address containing LB token and stats object.
     std::map<const char*, std::unique_ptr<ServerAddress::AttributeInterface>>
@@ -1481,7 +1484,8 @@ void GrpcLb::UpdateLocked(UpdateArgs args) {
     // Start watching the channel's connectivity state.  If the channel
     // goes into state TRANSIENT_FAILURE before the timer fires, we go into
     // fallback mode even if the fallback timeout has not elapsed.
-    ClientChannel* client_channel = ClientChannel::GetFromChannel(lb_channel_);
+    ClientChannel* client_channel =
+        ClientChannel::GetFromChannel(Channel::FromC(lb_channel_));
     GPR_ASSERT(client_channel != nullptr);
     // Ref held by callback.
     watcher_ = new StateWatcher(Ref(DEBUG_LOCATION, "StateWatcher"));
@@ -1542,7 +1546,8 @@ void GrpcLb::UpdateBalancerChannelLocked(const grpc_channel_args& args) {
 }
 
 void GrpcLb::CancelBalancerChannelConnectivityWatchLocked() {
-  ClientChannel* client_channel = ClientChannel::GetFromChannel(lb_channel_);
+  ClientChannel* client_channel =
+      ClientChannel::GetFromChannel(Channel::FromC(lb_channel_));
   GPR_ASSERT(client_channel != nullptr);
   client_channel->RemoveConnectivityWatcher(watcher_);
 }
@@ -1867,11 +1872,8 @@ void RegisterGrpcLbLoadReportingFilter(CoreConfiguration::Builder* builder) {
   builder->channel_init()->RegisterStage(
       GRPC_CLIENT_SUBCHANNEL, GRPC_CHANNEL_INIT_BUILTIN_PRIORITY,
       [](ChannelStackBuilder* builder) {
-        const grpc_channel_args* args = builder->channel_args();
-        const grpc_arg* channel_arg =
-            grpc_channel_args_find(args, GRPC_ARG_LB_POLICY_NAME);
-        if (channel_arg != nullptr && channel_arg->type == GRPC_ARG_STRING &&
-            strcmp(channel_arg->value.string, "grpclb") == 0) {
+        if (builder->channel_args().GetString(GRPC_ARG_LB_POLICY_NAME) ==
+            "grpclb") {
           // TODO(roth): When we get around to re-attempting
           // https://github.com/grpc/grpc/pull/16214, we should try to keep
           // this filter at the very top of the subchannel stack, since that

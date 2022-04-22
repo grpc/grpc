@@ -23,6 +23,8 @@
 #include "src/core/lib/slice/slice_internal.h"
 #include "test/core/util/test_config.h"
 
+static constexpr size_t kTotalDataLength = 4096;
+
 void test_slice_buffer_add() {
   grpc_slice_buffer buf;
   grpc_slice aaa = grpc_slice_from_copied_string("aaa");
@@ -56,6 +58,35 @@ void test_slice_buffer_add() {
   }
   GPR_ASSERT(buf.count == 0);
   GPR_ASSERT(buf.length == 0);
+  grpc_slice_buffer_destroy(&buf);
+}
+
+static void free_data(void* data, size_t len) {
+  GPR_ASSERT(len == kTotalDataLength);
+  gpr_free(data);
+}
+
+void test_slice_buffer_add_contiguous_slices() {
+  grpc_slice_buffer buf;
+  grpc_slice_buffer_init(&buf);
+  char* data = reinterpret_cast<char*>(gpr_malloc(kTotalDataLength));
+  GPR_ASSERT(data != nullptr);
+  grpc_slice a = grpc_slice_new_with_len(data, kTotalDataLength, free_data);
+  grpc_slice s1 = grpc_slice_split_head(&a, kTotalDataLength / 4);
+  grpc_slice s2 = grpc_slice_split_head(&a, kTotalDataLength / 4);
+  grpc_slice s3 = grpc_slice_split_head(&a, kTotalDataLength / 4);
+  grpc_slice_buffer_add(&buf, s1);
+  GPR_ASSERT(buf.count == 1);
+  GPR_ASSERT(buf.length == kTotalDataLength / 4);
+  grpc_slice_buffer_add(&buf, s2);
+  GPR_ASSERT(buf.count == 1);
+  GPR_ASSERT(buf.length == kTotalDataLength / 2);
+  grpc_slice_buffer_add(&buf, s3);
+  GPR_ASSERT(buf.count == 1);
+  GPR_ASSERT(buf.length == 3 * kTotalDataLength / 4);
+  grpc_slice_buffer_add(&buf, a);
+  GPR_ASSERT(buf.count == 1);
+  GPR_ASSERT(buf.length == kTotalDataLength);
   grpc_slice_buffer_destroy(&buf);
 }
 
@@ -153,6 +184,7 @@ int main(int argc, char** argv) {
   grpc_init();
 
   test_slice_buffer_add();
+  test_slice_buffer_add_contiguous_slices();
   test_slice_buffer_move_first();
   test_slice_buffer_first();
 
