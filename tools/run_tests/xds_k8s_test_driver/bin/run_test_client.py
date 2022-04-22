@@ -35,9 +35,10 @@ _QPS = flags.DEFINE_integer('qps', default=25, help='Queries per second')
 _PRINT_RESPONSE = flags.DEFINE_bool("print_response",
                                     default=False,
                                     help="Client prints responses")
-_CONFIG_MESH = flags.DEFINE_bool("config_mesh",
-                            default=None,
-                            help="Optional. Supplied to bootstrap generator to indicate AppNet mesh.")
+_CONFIG_MESH = flags.DEFINE_bool(
+    "config_mesh",
+    default=None,
+    help="Optional. Supplied to bootstrap generator to indicate AppNet mesh.")
 _REUSE_NAMESPACE = flags.DEFINE_bool("reuse_namespace",
                                      default=True,
                                      help="Use existing namespace if exists")

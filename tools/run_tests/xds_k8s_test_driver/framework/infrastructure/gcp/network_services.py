@@ -139,9 +139,7 @@ class GrpcRoute:
             destinations = [
                 Destination.from_response(dest) for dest in d["destinations"]
             ] if "destinations" in d else []
-            return cls(
-                destinations=destinations,
-            )
+            return cls(destinations=destinations,)
 
     @dataclasses.dataclass(frozen=True)
     class RouteRule:
