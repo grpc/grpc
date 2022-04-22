@@ -664,7 +664,7 @@ class TrafficDirectorAppNetManager(TrafficDirectorManager):
         logger.info("Creating Mesh %s", name)
         body = {}
         resource = self.netsvc.create_mesh(name, body)
-        logger.info("Mesh: {} {} {}".format(resource, type(resource), dir(resource)))
+        logger.info("Mesh: {} {} {}".format(mesh, type(mesh), dir(mesh)))
         self.mesh = self.netsvc.get_mesh(name)
         logger.debug("Loaded Mesh: %s", self.mesh)
         return resource
