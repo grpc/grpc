@@ -139,7 +139,7 @@ size_t grpc_slice_buffer_add_indexed(grpc_slice_buffer* sb, grpc_slice s) {
 void grpc_slice_buffer_add(grpc_slice_buffer* sb, grpc_slice s) {
   size_t n = sb->count;
   grpc_slice* back = nullptr;
-  if (n) {
+  if (n != 0) {
     back = &sb->slices[n - 1];
   }
   if (s.refcount != nullptr && back != nullptr &&
