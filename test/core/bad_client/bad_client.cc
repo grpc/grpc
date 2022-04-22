@@ -214,7 +214,8 @@ void grpc_run_bad_client_test(
   grpc_server_start(a.server);
   const grpc_channel_args* channel_args = grpc_core::CoreConfiguration::Get()
                                               .channel_args_preconditioning()
-                                              .PreconditionChannelArgs(nullptr);
+                                              .PreconditionChannelArgs(nullptr)
+                                              .ToC();
   transport = grpc_create_chttp2_transport(channel_args, sfd.server, false);
   grpc_channel_args_destroy(channel_args);
   server_setup_transport(&a, transport);

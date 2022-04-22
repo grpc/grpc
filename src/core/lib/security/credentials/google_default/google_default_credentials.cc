@@ -125,17 +125,10 @@ grpc_google_default_channel_credentials::create_security_connector(
   return sc;
 }
 
-grpc_channel_args* grpc_google_default_channel_credentials::update_arguments(
-    grpc_channel_args* args) {
-  grpc_channel_args* updated = args;
-  if (grpc_channel_args_find(args, GRPC_ARG_DNS_ENABLE_SRV_QUERIES) ==
-      nullptr) {
-    grpc_arg new_srv_arg = grpc_channel_arg_integer_create(
-        const_cast<char*>(GRPC_ARG_DNS_ENABLE_SRV_QUERIES), true);
-    updated = grpc_channel_args_copy_and_add(args, &new_srv_arg, 1);
-    grpc_channel_args_destroy(args);
-  }
-  return updated;
+grpc_core::ChannelArgs
+grpc_google_default_channel_credentials::update_arguments(
+    grpc_core::ChannelArgs args) {
+  return args.SetIfUnset(GRPC_ARG_DNS_ENABLE_SRV_QUERIES, true);
 }
 
 const char* grpc_google_default_channel_credentials::type() const {

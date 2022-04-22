@@ -50,6 +50,8 @@
 #include "src/core/ext/filters/client_channel/resolver_result_parsing.h"
 #include "src/core/ext/filters/client_channel/retry_filter.h"
 #include "src/core/ext/filters/client_channel/subchannel.h"
+#include "src/core/ext/filters/client_channel/subchannel_interface.h"
+#include "src/core/ext/filters/client_channel/subchannel_interface_internal.h"
 #include "src/core/ext/filters/deadline/deadline_filter.h"
 #include "src/core/lib/backoff/backoff.h"
 #include "src/core/lib/channel/channel_args.h"
@@ -526,6 +528,15 @@ class ClientChannel::SubchannelWrapper : public SubchannelInterface {
 
   void ResetBackoff() override { subchannel_->ResetBackoff(); }
 
+  void AddDataWatcher(std::unique_ptr<DataWatcherInterface> watcher) override
+      ABSL_EXCLUSIVE_LOCKS_REQUIRED(*chand_->work_serializer_) {
+    std::unique_ptr<InternalSubchannelDataWatcherInterface> internal_watcher(
+        static_cast<InternalSubchannelDataWatcherInterface*>(
+            watcher.release()));
+    internal_watcher->SetSubchannel(subchannel_.get());
+    data_watchers_.push_back(std::move(internal_watcher));
+  }
+
   const grpc_channel_args* channel_args() override {
     return subchannel_->channel_args();
   }
@@ -666,6 +677,8 @@ class ClientChannel::SubchannelWrapper : public SubchannelInterface {
   // corresponding WrapperWatcher to cancel on the underlying subchannel.
   std::map<ConnectivityStateWatcherInterface*, WatcherWrapper*> watcher_map_
       ABSL_GUARDED_BY(*chand_->work_serializer_);
+  std::vector<std::unique_ptr<InternalSubchannelDataWatcherInterface>>
+      data_watchers_ ABSL_GUARDED_BY(*chand_->work_serializer_);
 };
 
 //
@@ -985,9 +998,9 @@ class ClientChannel::ClientChannelControlHelper
 // ClientChannel implementation
 //
 
-ClientChannel* ClientChannel::GetFromChannel(grpc_channel* channel) {
+ClientChannel* ClientChannel::GetFromChannel(Channel* channel) {
   grpc_channel_element* elem =
-      grpc_channel_stack_last_element(grpc_channel_get_channel_stack(channel));
+      grpc_channel_stack_last_element(channel->channel_stack());
   if (elem->filter != &kFilterVtable) return nullptr;
   return static_cast<ClientChannel*>(elem->channel_data);
 }
@@ -2547,14 +2560,33 @@ class ClientChannel::LoadBalancedCall::BackendMetricAccessor
         lb_call_->recv_trailing_metadata_ != nullptr) {
       if (const auto* md = lb_call_->recv_trailing_metadata_->get_pointer(
               XEndpointLoadMetricsBinMetadata())) {
+        BackendMetricAllocator allocator(lb_call_->arena_);
         lb_call_->backend_metric_data_ =
-            ParseBackendMetricData(*md, lb_call_->arena_);
+            ParseBackendMetricData(md->as_string_view(), &allocator);
       }
     }
     return lb_call_->backend_metric_data_;
   }
 
  private:
+  class BackendMetricAllocator : public BackendMetricAllocatorInterface {
+   public:
+    explicit BackendMetricAllocator(Arena* arena) : arena_(arena) {}
+
+    LoadBalancingPolicy::BackendMetricAccessor::BackendMetricData*
+    AllocateBackendMetricData() override {
+      return arena_->New<
+          LoadBalancingPolicy::BackendMetricAccessor::BackendMetricData>();
+    }
+
+    char* AllocateString(size_t size) override {
+      return static_cast<char*>(arena_->Alloc(size));
+    }
+
+   private:
+    Arena* arena_;
+  };
+
   LoadBalancedCall* lb_call_;
 };
 

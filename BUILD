@@ -2324,6 +2324,9 @@ grpc_cc_library(
     hdrs = [
         "src/core/lib/channel/channel_stack_builder.h",
     ],
+    external_deps = [
+        "absl/status:statusor",
+    ],
     language = "c++",
     visibility = ["@grpc:alt_grpc_base_legacy"],
     deps = [
@@ -2540,6 +2543,7 @@ grpc_cc_library(
         "src/core/ext/filters/client_channel/http_proxy.cc",
         "src/core/ext/filters/client_channel/lb_policy.cc",
         "src/core/ext/filters/client_channel/lb_policy/child_policy_handler.cc",
+        "src/core/ext/filters/client_channel/lb_policy/oob_backend_metric.cc",
         "src/core/ext/filters/client_channel/lb_policy_registry.cc",
         "src/core/ext/filters/client_channel/local_subchannel_pool.cc",
         "src/core/ext/filters/client_channel/proxy_mapper_registry.cc",
@@ -2566,6 +2570,7 @@ grpc_cc_library(
         "src/core/ext/filters/client_channel/http_proxy.h",
         "src/core/ext/filters/client_channel/lb_policy.h",
         "src/core/ext/filters/client_channel/lb_policy/child_policy_handler.h",
+        "src/core/ext/filters/client_channel/lb_policy/oob_backend_metric.h",
         "src/core/ext/filters/client_channel/lb_policy_factory.h",
         "src/core/ext/filters/client_channel/lb_policy_registry.h",
         "src/core/ext/filters/client_channel/local_subchannel_pool.h",
@@ -2577,6 +2582,7 @@ grpc_cc_library(
         "src/core/ext/filters/client_channel/retry_throttle.h",
         "src/core/ext/filters/client_channel/subchannel.h",
         "src/core/ext/filters/client_channel/subchannel_interface.h",
+        "src/core/ext/filters/client_channel/subchannel_interface_internal.h",
         "src/core/ext/filters/client_channel/subchannel_pool_interface.h",
         "src/core/ext/filters/client_channel/subchannel_stream_client.h",
     ],
@@ -2609,6 +2615,7 @@ grpc_cc_library(
         "json",
         "json_util",
         "orphanable",
+        "protobuf_duration_upb",
         "ref_counted",
         "ref_counted_ptr",
         "server_address",
@@ -2617,6 +2624,7 @@ grpc_cc_library(
         "time",
         "uri_parser",
         "useful",
+        "xds_orca_service_upb",
         "xds_orca_upb",
     ],
 )
@@ -2761,10 +2769,13 @@ grpc_cc_library(
     external_deps = ["absl/strings"],
     language = "c++",
     deps = [
+        "capture",
         "gpr_base",
         "grpc_base",
         "grpc_service_config",
         "json_util",
+        "sleep",
+        "try_seq",
     ],
 )
 

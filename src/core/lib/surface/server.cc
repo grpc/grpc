@@ -53,6 +53,7 @@
 #include "src/core/lib/surface/channel.h"
 #include "src/core/lib/surface/completion_queue.h"
 #include "src/core/lib/surface/init.h"
+#include "src/core/lib/transport/error_utils.h"
 
 namespace grpc_core {
 
@@ -439,16 +440,16 @@ class ChannelBroadcaster {
   // when the actual setup and shutdown broadcast take place.
 
   // Copies over the channels from the locked server.
-  void FillChannelsLocked(std::vector<grpc_channel*> channels) {
+  void FillChannelsLocked(std::vector<RefCountedPtr<Channel>> channels) {
     GPR_DEBUG_ASSERT(channels_.empty());
     channels_ = std::move(channels);
   }
 
   // Broadcasts a shutdown on each channel.
   void BroadcastShutdown(bool send_goaway, grpc_error_handle force_disconnect) {
-    for (grpc_channel* channel : channels_) {
-      SendShutdown(channel, send_goaway, GRPC_ERROR_REF(force_disconnect));
-      GRPC_CHANNEL_INTERNAL_UNREF(channel, "broadcast");
+    for (const RefCountedPtr<Channel>& channel : channels_) {
+      SendShutdown(channel->c_ptr(), send_goaway,
+                   GRPC_ERROR_REF(force_disconnect));
     }
     channels_.clear();  // just for safety against double broadcast
     GRPC_ERROR_UNREF(force_disconnect);
@@ -486,7 +487,7 @@ class ChannelBroadcaster {
     elem->filter->start_transport_op(elem, op);
   }
 
-  std::vector<grpc_channel*> channels_;
+  std::vector<RefCountedPtr<Channel>> channels_;
 };
 
 }  // namespace
@@ -512,14 +513,13 @@ const grpc_channel_filter Server::kServerTopFilter = {
 
 namespace {
 
-RefCountedPtr<channelz::ServerNode> CreateChannelzNode(
-    const grpc_channel_args* args) {
+RefCountedPtr<channelz::ServerNode> CreateChannelzNode(ChannelArgs args) {
   RefCountedPtr<channelz::ServerNode> channelz_node;
-  if (grpc_channel_args_find_bool(args, GRPC_ARG_ENABLE_CHANNELZ,
-                                  GRPC_ENABLE_CHANNELZ_DEFAULT)) {
-    size_t channel_tracer_max_memory = grpc_channel_args_find_integer(
-        args, GRPC_ARG_MAX_CHANNEL_TRACE_EVENT_MEMORY_PER_NODE,
-        {GRPC_MAX_CHANNEL_TRACE_EVENT_MEMORY_PER_NODE_DEFAULT, 0, INT_MAX});
+  if (args.GetBool(GRPC_ARG_ENABLE_CHANNELZ)
+          .value_or(GRPC_ENABLE_CHANNELZ_DEFAULT)) {
+    size_t channel_tracer_max_memory = std::max(
+        0, args.GetInt(GRPC_ARG_MAX_CHANNEL_TRACE_EVENT_MEMORY_PER_NODE)
+               .value_or(GRPC_MAX_CHANNEL_TRACE_EVENT_MEMORY_PER_NODE_DEFAULT));
     channelz_node =
         MakeRefCounted<channelz::ServerNode>(channel_tracer_max_memory);
     channelz_node->AddTraceEvent(
@@ -531,9 +531,8 @@ RefCountedPtr<channelz::ServerNode> CreateChannelzNode(
 
 }  // namespace
 
-Server::Server(const grpc_channel_args* args)
-    : channel_args_(grpc_channel_args_copy(args)),
-      channelz_node_(CreateChannelzNode(args)) {}
+Server::Server(ChannelArgs args)
+    : channel_args_(args.ToC()), channelz_node_(CreateChannelzNode(args)) {}
 
 Server::~Server() {
   grpc_channel_args_destroy(channel_args_);
@@ -601,15 +600,13 @@ grpc_error_handle Server::SetupTransport(
     const grpc_channel_args* args,
     const RefCountedPtr<channelz::SocketNode>& socket_node) {
   // Create channel.
-  grpc_error_handle error = GRPC_ERROR_NONE;
-  grpc_channel* channel = grpc_channel_create_internal(
-      nullptr, args, GRPC_SERVER_CHANNEL, transport, &error);
-  if (channel == nullptr) {
-    return error;
+  absl::StatusOr<RefCountedPtr<Channel>> channel = Channel::Create(
+      nullptr, ChannelArgs::FromC(args), GRPC_SERVER_CHANNEL, transport);
+  if (!channel.ok()) {
+    return absl_status_to_grpc_error(channel.status());
   }
   ChannelData* chand = static_cast<ChannelData*>(
-      grpc_channel_stack_element(grpc_channel_get_channel_stack(channel), 0)
-          ->channel_data);
+      grpc_channel_stack_element((*channel)->channel_stack(), 0)->channel_data);
   // Set up CQs.
   size_t cq_idx;
   for (cq_idx = 0; cq_idx < cqs_.size(); cq_idx++) {
@@ -626,7 +623,8 @@ grpc_error_handle Server::SetupTransport(
     channelz_node_->AddChildSocket(socket_node);
   }
   // Initialize chand.
-  chand->InitTransport(Ref(), channel, cq_idx, transport, channelz_socket_uuid);
+  chand->InitTransport(Ref(), std::move(*channel), cq_idx, transport,
+                       channelz_socket_uuid);
   return GRPC_ERROR_NONE;
 }
 
@@ -751,12 +749,11 @@ void Server::KillPendingWorkLocked(grpc_error_handle error) {
   GRPC_ERROR_UNREF(error);
 }
 
-std::vector<grpc_channel*> Server::GetChannelsLocked() const {
-  std::vector<grpc_channel*> channels;
+std::vector<RefCountedPtr<Channel>> Server::GetChannelsLocked() const {
+  std::vector<RefCountedPtr<Channel>> channels;
   channels.reserve(channels_.size());
   for (const ChannelData* chand : channels_) {
-    channels.push_back(chand->channel());
-    GRPC_CHANNEL_INTERNAL_REF(chand->channel(), "broadcast");
+    channels.push_back(chand->channel()->Ref());
   }
   return channels;
 }
@@ -956,13 +953,8 @@ grpc_call_error Server::RequestRegisteredCall(
 class Server::ChannelData::ConnectivityWatcher
     : public AsyncConnectivityStateWatcherInterface {
  public:
-  explicit ConnectivityWatcher(ChannelData* chand) : chand_(chand) {
-    GRPC_CHANNEL_INTERNAL_REF(chand_->channel_, "connectivity");
-  }
-
-  ~ConnectivityWatcher() override {
-    GRPC_CHANNEL_INTERNAL_UNREF(chand_->channel_, "connectivity");
-  }
+  explicit ConnectivityWatcher(ChannelData* chand)
+      : chand_(chand), channel_(chand_->channel_->Ref()) {}
 
  private:
   void OnConnectivityStateChange(grpc_connectivity_state new_state,
@@ -974,7 +966,8 @@ class Server::ChannelData::ConnectivityWatcher
     chand_->Destroy();
   }
 
-  ChannelData* chand_;
+  ChannelData* const chand_;
+  const RefCountedPtr<Channel> channel_;
 };
 
 //
@@ -999,7 +992,8 @@ Server::ChannelData::~ChannelData() {
 }
 
 void Server::ChannelData::InitTransport(RefCountedPtr<Server> server,
-                                        grpc_channel* channel, size_t cq_idx,
+                                        RefCountedPtr<Channel> channel,
+                                        size_t cq_idx,
                                         grpc_transport* transport,
                                         intptr_t channelz_socket_uuid) {
   server_ = std::move(server);
@@ -1119,8 +1113,10 @@ void Server::ChannelData::FinishDestroy(void* arg,
                                         grpc_error_handle /*error*/) {
   auto* chand = static_cast<Server::ChannelData*>(arg);
   Server* server = chand->server_.get();
-  GRPC_CHANNEL_INTERNAL_UNREF(chand->channel_, "server");
+  auto* channel_stack = chand->channel_->channel_stack();
+  chand->channel_.reset();
   server->Unref();
+  GRPC_CHANNEL_STACK_UNREF(channel_stack, "Server::ChannelData::Destroy");
 }
 
 void Server::ChannelData::Destroy() {
@@ -1130,6 +1126,9 @@ void Server::ChannelData::Destroy() {
   list_position_.reset();
   server_->Ref().release();
   server_->MaybeFinishShutdown();
+  // Unreffed by FinishDestroy
+  GRPC_CHANNEL_STACK_REF(channel_->channel_stack(),
+                         "Server::ChannelData::Destroy");
   GRPC_CLOSURE_INIT(&finish_destroy_channel_closure_, FinishDestroy, this,
                     grpc_schedule_on_exec_ctx);
   if (GRPC_TRACE_FLAG_ENABLED(grpc_server_channel_trace)) {
@@ -1138,9 +1137,8 @@ void Server::ChannelData::Destroy() {
   grpc_transport_op* op =
       grpc_make_transport_op(&finish_destroy_channel_closure_);
   op->set_accept_stream = true;
-  grpc_channel_next_op(
-      grpc_channel_stack_element(grpc_channel_get_channel_stack(channel_), 0),
-      op);
+  grpc_channel_next_op(grpc_channel_stack_element(channel_->channel_stack(), 0),
+                       op);
 }
 
 grpc_error_handle Server::ChannelData::InitChannelElement(
@@ -1436,11 +1434,10 @@ void Server::CallData::StartTransportStreamOpBatch(
 grpc_server* grpc_server_create(const grpc_channel_args* args, void* reserved) {
   grpc_core::ExecCtx exec_ctx;
   GRPC_API_TRACE("grpc_server_create(%p, %p)", 2, (args, reserved));
-  const grpc_channel_args* new_args = grpc_core::CoreConfiguration::Get()
-                                          .channel_args_preconditioning()
-                                          .PreconditionChannelArgs(args);
-  grpc_core::Server* server = new grpc_core::Server(new_args);
-  grpc_channel_args_destroy(new_args);
+  grpc_core::Server* server =
+      new grpc_core::Server(grpc_core::CoreConfiguration::Get()
+                                .channel_args_preconditioning()
+                                .PreconditionChannelArgs(args));
   return server->c_ptr();
 }
 

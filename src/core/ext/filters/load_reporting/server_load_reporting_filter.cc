@@ -237,9 +237,8 @@ ArenaPromise<ServerMetadataHandle> ServerLoadReportingFilter::MakeCallPromise(
 }
 
 namespace {
-bool MaybeAddServerLoadReportingFilter(const grpc_channel_args& args) {
-  return grpc_channel_arg_get_bool(
-      grpc_channel_args_find(&args, GRPC_ARG_ENABLE_LOAD_REPORTING), false);
+bool MaybeAddServerLoadReportingFilter(const ChannelArgs& args) {
+  return args.GetBool(GRPC_ARG_ENABLE_LOAD_REPORTING).value_or(false);
 }
 
 const grpc_channel_filter kFilter =
@@ -264,8 +263,7 @@ struct ServerLoadReportingFilterStaticRegistrar {
       grpc::load_reporter::MeasureOtherCallMetric();
       builder->channel_init()->RegisterStage(
           GRPC_SERVER_CHANNEL, INT_MAX, [](ChannelStackBuilder* cs_builder) {
-            if (MaybeAddServerLoadReportingFilter(
-                    *cs_builder->channel_args())) {
+            if (MaybeAddServerLoadReportingFilter(cs_builder->channel_args())) {
               cs_builder->PrependFilter(&kFilter, nullptr);
             }
             return true;
