@@ -181,9 +181,9 @@ BaseCallData::Flusher::~Flusher() {
         delete self;
       }
     };
-    auto* op = new CallNextOp;
-    GRPC_CLOSURE_INIT(&op->closure, CallNextOp::Run, op, nullptr);
+    auto* op = absl::make_unique<CallNextOp>().release();
     op->batch = release_[i];
+    GRPC_CLOSURE_INIT(&op->closure, CallNextOp::Run, op, nullptr);
     GRPC_CALL_STACK_REF(*CallStackField(op->batch), "flusher_batch");
     call_closures_.Add(&op->closure, GRPC_ERROR_NONE, "flusher_batch");
   }
