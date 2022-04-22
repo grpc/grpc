@@ -263,8 +263,8 @@ class EventEngine {
     };
     /// Optional configuration for DNSResolvers.
     struct ResolverOptions {
-      /// Override the DNSResolver's default authority.
-      std::string authority;
+      /// If empty, default DNS servers will be used.
+      std::string dns_server;
     };
     /// DNS SRV record type.
     struct SRVRecord {
@@ -339,8 +339,7 @@ class EventEngine {
   /// Creates and returns an instance of a DNSResolver, optionally configured by
   /// the \a options struct.
   virtual std::unique_ptr<DNSResolver> GetDNSResolver(
-      const DNSResolver::ResolverOptions& options =
-          DNSResolver::ResolverOptions{}) = 0;
+      const DNSResolver::ResolverOptions& options) = 0;
 
   /// Asynchronously executes a task as soon as possible.
   ///
