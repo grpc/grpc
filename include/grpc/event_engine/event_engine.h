@@ -264,6 +264,7 @@ class EventEngine {
     /// Optional configuration for DNSResolvers.
     struct ResolverOptions {
       /// If empty, default DNS servers will be used.
+      /// Must be in the "IP:port" format as described in naming.md.
       std::string dns_server;
     };
     /// DNS SRV record type.
