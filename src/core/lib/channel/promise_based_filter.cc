@@ -376,15 +376,17 @@ class ClientCallData::PollContext {
                   self_->recv_trailing_state_ == RecvTrailingState::kInitial ||
                   self_->recv_trailing_state_ == RecvTrailingState::kForwarded);
               self_->call_combiner()->Cancel(GRPC_ERROR_REF(error));
-              auto* b = grpc_make_transport_stream_op(GRPC_CLOSURE_CREATE(
-                  [](void* p, grpc_error_handle) {
-                    GRPC_CALL_COMBINER_STOP(static_cast<CallCombiner*>(p),
-                                            "finish_cancel");
-                  },
-                  self_->call_combiner(), nullptr));
+              CapturedBatch b(grpc_make_transport_stream_op(GRPC_CLOSURE_CREATE(
+                                  [](void* p, grpc_error_handle) {
+                                    GRPC_CALL_COMBINER_STOP(
+                                        static_cast<CallCombiner*>(p),
+                                        "finish_cancel");
+                                  },
+                                  self_->call_combiner(), nullptr)),
+                              self_->call_stack(), self_->elem());
               b->cancel_stream = true;
               b->payload->cancel_stream.cancel_error = error;
-              flusher_->Release(b);
+              b.Release(flusher_);
             }
             self_->recv_trailing_state_ = RecvTrailingState::kCancelled;
           }
@@ -487,9 +489,6 @@ void ClientCallData::StartBatch(grpc_transport_stream_op_batch* batch) {
   // Fake out the activity based context.
   ScopedContext context(this);
 
-  CapturedBatch captured(batch, call_stack(), elem());
-  Flusher flusher(call_combiner());
-
   // If this is a cancel stream, cancel anything we have pending and propagate
   // the cancellation.
   if (batch->cancel_stream) {
@@ -501,6 +500,9 @@ void ClientCallData::StartBatch(grpc_transport_stream_op_batch* batch) {
     grpc_call_next_op(elem(), batch);
     return;
   }
+
+  CapturedBatch captured(batch, call_stack(), elem());
+  Flusher flusher(call_combiner());
 
   if (recv_initial_metadata_ != nullptr && batch->recv_initial_metadata) {
     bool hook = true;
@@ -544,37 +546,35 @@ void ClientCallData::StartBatch(grpc_transport_stream_op_batch* batch) {
     // If we're already cancelled, just terminate the batch.
     if (send_initial_state_ == SendInitialState::kCancelled ||
         recv_trailing_state_ == RecvTrailingState::kCancelled) {
-      grpc_transport_stream_op_batch_finish_with_failure(
-          batch, GRPC_ERROR_REF(cancelled_error_), call_combiner());
-      return;
+      captured.Cancel(GRPC_ERROR_REF(cancelled_error_), &flusher);
+    } else {
+      // Otherwise, we should not have seen a send_initial_metadata op yet.
+      GPR_ASSERT(send_initial_state_ == SendInitialState::kInitial);
+      // Mark ourselves as queued.
+      send_initial_state_ = SendInitialState::kQueued;
+      if (batch->recv_trailing_metadata) {
+        // If there's a recv_trailing_metadata op, we queue that too.
+        GPR_ASSERT(recv_trailing_state_ == RecvTrailingState::kInitial);
+        recv_trailing_state_ = RecvTrailingState::kQueued;
+      }
+      // This is the queuing!
+      send_initial_metadata_batch_ = captured;
+      // And kick start the promise.
+      StartPromise(&flusher);
     }
-    // Otherwise, we should not have seen a send_initial_metadata op yet.
-    GPR_ASSERT(send_initial_state_ == SendInitialState::kInitial);
-    // Mark ourselves as queued.
-    send_initial_state_ = SendInitialState::kQueued;
-    if (batch->recv_trailing_metadata) {
-      // If there's a recv_trailing_metadata op, we queue that too.
-      GPR_ASSERT(recv_trailing_state_ == RecvTrailingState::kInitial);
-      recv_trailing_state_ = RecvTrailingState::kQueued;
-    }
-    // This is the queuing!
-    send_initial_metadata_batch_ = captured;
-    // And kick start the promise.
-    StartPromise(&flusher);
   } else if (batch->recv_trailing_metadata) {
     // recv_trailing_metadata *without* send_initial_metadata: hook it so we
     // can respond to it, and push it down.
     if (recv_trailing_state_ == RecvTrailingState::kCancelled) {
-      grpc_transport_stream_op_batch_finish_with_failure(
-          batch, GRPC_ERROR_REF(cancelled_error_), call_combiner());
-      return;
+      captured.Cancel(GRPC_ERROR_REF(cancelled_error_), &flusher);
+    } else {
+      GPR_ASSERT(recv_trailing_state_ == RecvTrailingState::kInitial);
+      recv_trailing_state_ = RecvTrailingState::kForwarded;
+      HookRecvTrailingMetadata(captured);
     }
-    GPR_ASSERT(recv_trailing_state_ == RecvTrailingState::kInitial);
-    recv_trailing_state_ = RecvTrailingState::kForwarded;
-    HookRecvTrailingMetadata(captured);
   }
 
-  captured.Release(&flusher);
+  if (captured.is_captured()) captured.Release(&flusher);
 }
 
 // Handle cancellation.
