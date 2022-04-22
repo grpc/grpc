@@ -49,11 +49,6 @@ class AppNetTest(xds_k8s_testcase.AppNetXdsKubernetesTestCase):
             self.setupServerBackends()
 
         with self.subTest('6_start_test_client'):
-            try:
-                print("Mesh: {}".format(dir(self.td.mesh)))
-                print("Mesh: {}".format(self.td.mesh.__dict__))
-            except:
-                pass
             test_client: _XdsTestClient = self.startTestClient(test_server,
                                                                config_mesh=self.td.mesh.name)
 
