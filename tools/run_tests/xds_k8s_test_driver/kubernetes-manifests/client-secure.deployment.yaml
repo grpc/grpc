@@ -64,7 +64,7 @@ spec:
             - "--xds-server-uri=${xds_server_uri}"
             % endif
             % if config_mesh:
-            - "--config-mesh-experimental=${config_mesh_experimental}"
+            - "--config-mesh-experimental=${config_mesh}"
             % endif
             - "--include-v3-features-experimental"
             - "--include-psm-security-experimental"

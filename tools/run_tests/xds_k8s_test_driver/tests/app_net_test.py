@@ -35,7 +35,7 @@ class AppNetTest(xds_k8s_testcase.AppNetXdsKubernetesTestCase):
             self.td.create_backend_service()
 
         with self.subTest('2_create_mesh'):
-            mesh = self.td.create_mesh()
+            self.td.create_mesh()
 
         with self.subTest('3_create_grpc_route'):
             self.td.create_grpc_route(self.server_xds_host,

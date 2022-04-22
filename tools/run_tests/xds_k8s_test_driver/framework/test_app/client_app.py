@@ -289,8 +289,8 @@ class KubernetesClientRunner(base_runner.KubernetesBaseRunner):
             qps=25,
             metadata='',
             secure_mode=False,
-            print_response=False,
-            config_mesh=None) -> XdsTestClient:
+            config_mesh=None,
+            print_response=False) -> XdsTestClient:
         logger.info(
             'Deploying xDS test client "%s" to k8s namespace %s: '
             'server_target=%s rpc=%s qps=%s metadata=%r secure_mode=%s '
@@ -334,8 +334,8 @@ class KubernetesClientRunner(base_runner.KubernetesBaseRunner):
             qps=qps,
             metadata=metadata,
             secure_mode=secure_mode,
-            print_response=print_response,
-            config_mesh=config_mesh)
+            config_mesh=config_mesh,
+            print_response=print_response)
 
         self._wait_deployment_with_available_replicas(self.deployment_name)
 
