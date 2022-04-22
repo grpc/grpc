@@ -446,4 +446,5 @@ def grpc_end2end_tests():
                 ],
                 flaky = t in fopt.flaky_tests,
                 exclude_pollers = topt.exclude_pollers,
+                size = "large",
             )

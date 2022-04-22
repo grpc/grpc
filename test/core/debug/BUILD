@@ -20,11 +20,13 @@ licenses(["notice"])
 
 grpc_cc_test(
     name = "stats_test",
+    size = "large",
     srcs = ["stats_test.cc"],
     external_deps = [
         "gtest",
     ],
     language = "C++",
+    tags = ["manual"],  # we don't use this code much anymore
     uses_event_engine = False,
     uses_polling = False,
     deps = [

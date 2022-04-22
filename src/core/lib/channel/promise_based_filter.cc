@@ -473,9 +473,11 @@ void ClientCallData::ForceImmediateRepoll() {
 }
 
 // Handle one grpc_transport_stream_op_batch
-void ClientCallData::StartBatch(grpc_transport_stream_op_batch* batch) {
+void ClientCallData::StartBatch(grpc_transport_stream_op_batch* b) {
   // Fake out the activity based context.
   ScopedContext context(this);
+  CapturedBatch batch(b);
+  Flusher flusher(this);
 
   // If this is a cancel stream, cancel anything we have pending and propagate
   // the cancellation.
@@ -485,12 +487,9 @@ void ClientCallData::StartBatch(grpc_transport_stream_op_batch* batch) {
                !batch->recv_initial_metadata && !batch->recv_message &&
                !batch->recv_trailing_metadata);
     Cancel(batch->payload->cancel_stream.cancel_error);
-    grpc_call_next_op(elem(), batch);
+    batch.Release(&flusher);
     return;
   }
-
-  CapturedBatch captured(batch);
-  Flusher flusher(this);
 
   if (recv_initial_metadata_ != nullptr && batch->recv_initial_metadata) {
     bool hook = true;
@@ -534,7 +533,7 @@ void ClientCallData::StartBatch(grpc_transport_stream_op_batch* batch) {
     // If we're already cancelled, just terminate the batch.
     if (send_initial_state_ == SendInitialState::kCancelled ||
         recv_trailing_state_ == RecvTrailingState::kCancelled) {
-      captured.Cancel(GRPC_ERROR_REF(cancelled_error_), &flusher);
+      batch.Cancel(GRPC_ERROR_REF(cancelled_error_), &flusher);
     } else {
       // Otherwise, we should not have seen a send_initial_metadata op yet.
       GPR_ASSERT(send_initial_state_ == SendInitialState::kInitial);
@@ -546,7 +545,7 @@ void ClientCallData::StartBatch(grpc_transport_stream_op_batch* batch) {
         recv_trailing_state_ = RecvTrailingState::kQueued;
       }
       // This is the queuing!
-      send_initial_metadata_batch_ = captured;
+      send_initial_metadata_batch_ = batch;
       // And kick start the promise.
       StartPromise(&flusher);
     }
@@ -554,15 +553,15 @@ void ClientCallData::StartBatch(grpc_transport_stream_op_batch* batch) {
     // recv_trailing_metadata *without* send_initial_metadata: hook it so we
     // can respond to it, and push it down.
     if (recv_trailing_state_ == RecvTrailingState::kCancelled) {
-      captured.Cancel(GRPC_ERROR_REF(cancelled_error_), &flusher);
+      batch.Cancel(GRPC_ERROR_REF(cancelled_error_), &flusher);
     } else {
       GPR_ASSERT(recv_trailing_state_ == RecvTrailingState::kInitial);
       recv_trailing_state_ = RecvTrailingState::kForwarded;
-      HookRecvTrailingMetadata(captured);
+      HookRecvTrailingMetadata(batch);
     }
   }
 
-  if (captured.is_captured()) captured.Release(&flusher);
+  if (batch.is_captured()) batch.Release(&flusher);
 }
 
 // Handle cancellation.
