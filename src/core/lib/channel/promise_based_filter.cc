@@ -439,9 +439,8 @@ class ClientCallData::PollContext {
       GRPC_CALL_STACK_REF(self_->call_stack(), "re-poll");
       GRPC_CLOSURE_INIT(p, run, p, nullptr);
       flusher_->AddClosure(p, GRPC_ERROR_NONE, "re-poll");
-
-      GRPC_CALL_STACK_UNREF(self_->call_stack(), "finish_poll");
     }
+    GRPC_CALL_STACK_UNREF(self_->call_stack(), "finish_poll");
   }
 
   void Repoll() { repoll_ = true; }
