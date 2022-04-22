@@ -418,7 +418,6 @@ class ClientCallData::PollContext {
     self_->poll_ctx_ = nullptr;
     if (have_scoped_activity_) scoped_activity_.Destroy();
     GRPC_CALL_STACK_REF(self_->call_stack(), "finish_poll");
-
     if (repoll_) {
       struct NextPoll : public grpc_closure {
         grpc_call_stack* call_stack;
