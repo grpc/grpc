@@ -51,6 +51,7 @@ grpc_cc_test(
 grpc_fuzzer(
     name = "sockaddr_utils_fuzzer_test",
     srcs = ["sockaddr_utils_fuzzer_test.cc"],
+    tags = ["no_windows"],
     corpus = "sockaddr_uri_corpus",
     uses_event_engine = False,
     uses_polling = False,
