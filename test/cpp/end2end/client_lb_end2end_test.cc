@@ -325,8 +325,7 @@ class ClientLbEnd2endTest : public ::testing::Test {
     const bool success =
         SendRpc(stub, &response, 2000, &status, wait_for_ready);
     ASSERT_TRUE(success) << "From " << location.file() << ":" << location.line()
-                         << "\n"
-                         << "Error: " << status.error_message() << " "
+                         << "\nError: " << status.error_message() << " "
                          << status.error_details();
     ASSERT_EQ(response.message(), kRequestMessage)
         << "From " << location.file() << ":" << location.line();
@@ -400,18 +399,42 @@ class ClientLbEnd2endTest : public ::testing::Test {
     for (const auto& server : servers_) server->service_.ResetCounters();
   }
 
-  void WaitForServer(
+  bool SeenAllServers(size_t start_index, size_t stop_index) {
+    for (size_t i = start_index; i < stop_index; ++i) {
+      if (servers_[i]->service_.request_count() == 0) return false;
+    }
+    return true;
+  }
+
+  void WaitForServers(
       const std::unique_ptr<grpc::testing::EchoTestService::Stub>& stub,
-      size_t server_idx, const grpc_core::DebugLocation& location,
-      bool ignore_failure = false) {
-    do {
+      size_t start_index, size_t stop_index,
+      const grpc_core::DebugLocation& location, bool ignore_failure = false) {
+    auto deadline =
+        absl::Now() + (absl::Seconds(30) * grpc_test_slowdown_factor());
+    gpr_log(GPR_INFO,
+            "========= WAITING FOR BACKENDS [%" PRIuPTR ", %" PRIuPTR
+            ") ==========",
+            start_index, stop_index);
+    while (!SeenAllServers(start_index, stop_index)) {
       if (ignore_failure) {
         SendRpc(stub);
       } else {
         CheckRpcSendOk(stub, location, true);
       }
-    } while (servers_[server_idx]->service_.request_count() == 0);
+      EXPECT_LE(absl::Now(), deadline)
+          << " at " << location.file() << ":" << location.line();
+      if (absl::Now() >= deadline) break;
+    }
     ResetCounters();
+  }
+
+  void WaitForServer(
+      const std::unique_ptr<grpc::testing::EchoTestService::Stub>& stub,
+      size_t server_index, const grpc_core::DebugLocation& location,
+      bool ignore_failure = false) {
+    WaitForServers(stub, server_index, server_index + 1, location,
+                   ignore_failure);
   }
 
   bool WaitForChannelState(
@@ -1217,16 +1240,15 @@ TEST_F(RoundRobinTest, ProcessPending) {
 }
 
 TEST_F(RoundRobinTest, Updates) {
-  // Start servers and send one RPC per server.
+  // Start servers.
   const int kNumServers = 3;
   StartServers(kNumServers);
   auto response_generator = BuildResolverResponseGenerator();
   auto channel = BuildChannel("round_robin", response_generator);
   auto stub = BuildStub(channel);
-  std::vector<int> ports;
   // Start with a single server.
   gpr_log(GPR_INFO, "*** FIRST BACKEND ***");
-  ports.emplace_back(servers_[0]->port_);
+  std::vector<int> ports = {servers_[0]->port_};
   response_generator.SetNextResolution(ports);
   WaitForServer(stub, 0, DEBUG_LOCATION);
   // Send RPCs. They should all go servers_[0]
@@ -1234,7 +1256,7 @@ TEST_F(RoundRobinTest, Updates) {
   EXPECT_EQ(10, servers_[0]->service_.request_count());
   EXPECT_EQ(0, servers_[1]->service_.request_count());
   EXPECT_EQ(0, servers_[2]->service_.request_count());
-  servers_[0]->service_.ResetCounters();
+  ResetCounters();
   // And now for the second server.
   gpr_log(GPR_INFO, "*** SECOND BACKEND ***");
   ports.clear();
@@ -1248,7 +1270,7 @@ TEST_F(RoundRobinTest, Updates) {
   EXPECT_EQ(0, servers_[0]->service_.request_count());
   EXPECT_EQ(10, servers_[1]->service_.request_count());
   EXPECT_EQ(0, servers_[2]->service_.request_count());
-  servers_[1]->service_.ResetCounters();
+  ResetCounters();
   // ... and for the last server.
   gpr_log(GPR_INFO, "*** THIRD BACKEND ***");
   ports.clear();
@@ -1259,7 +1281,7 @@ TEST_F(RoundRobinTest, Updates) {
   EXPECT_EQ(0, servers_[0]->service_.request_count());
   EXPECT_EQ(0, servers_[1]->service_.request_count());
   EXPECT_EQ(10, servers_[2]->service_.request_count());
-  servers_[2]->service_.ResetCounters();
+  ResetCounters();
   // Back to all servers.
   gpr_log(GPR_INFO, "*** ALL BACKENDS ***");
   ports.clear();
@@ -1267,23 +1289,19 @@ TEST_F(RoundRobinTest, Updates) {
   ports.emplace_back(servers_[1]->port_);
   ports.emplace_back(servers_[2]->port_);
   response_generator.SetNextResolution(ports);
-  WaitForServer(stub, 0, DEBUG_LOCATION);
-  WaitForServer(stub, 1, DEBUG_LOCATION);
-  WaitForServer(stub, 2, DEBUG_LOCATION);
+  WaitForServers(stub, 0, 3, DEBUG_LOCATION);
   // Send three RPCs, one per server.
   for (size_t i = 0; i < 3; ++i) CheckRpcSendOk(stub, DEBUG_LOCATION);
   EXPECT_EQ(1, servers_[0]->service_.request_count());
   EXPECT_EQ(1, servers_[1]->service_.request_count());
   EXPECT_EQ(1, servers_[2]->service_.request_count());
+  ResetCounters();
   // An empty update will result in the channel going into TRANSIENT_FAILURE.
   gpr_log(GPR_INFO, "*** NO BACKENDS ***");
   ports.clear();
   response_generator.SetNextResolution(ports);
-  grpc_connectivity_state channel_state;
-  do {
-    channel_state = channel->GetState(true /* try to connect */);
-  } while (channel_state == GRPC_CHANNEL_READY);
-  ASSERT_NE(channel_state, GRPC_CHANNEL_READY);
+  WaitForChannelNotReady(channel.get());
+  CheckRpcSendFailure(stub);
   servers_[0]->service_.ResetCounters();
   // Next update introduces servers_[1], making the channel recover.
   gpr_log(GPR_INFO, "*** BACK TO SECOND BACKEND ***");
@@ -1291,8 +1309,7 @@ TEST_F(RoundRobinTest, Updates) {
   ports.emplace_back(servers_[1]->port_);
   response_generator.SetNextResolution(ports);
   WaitForServer(stub, 1, DEBUG_LOCATION);
-  channel_state = channel->GetState(false /* try to connect */);
-  ASSERT_EQ(channel_state, GRPC_CHANNEL_READY);
+  EXPECT_EQ(GRPC_CHANNEL_READY, channel->GetState(/*try_to_connect=*/false));
   // Check LB policy name for the channel.
   EXPECT_EQ("round_robin", channel->GetLoadBalancingPolicyName());
 }
@@ -1345,58 +1362,30 @@ TEST_F(RoundRobinTest, ManyUpdates) {
   EXPECT_EQ("round_robin", channel->GetLoadBalancingPolicyName());
 }
 
-TEST_F(RoundRobinTest, Reresolve) {
-  // Start servers and send one RPC per server.
-  const int kNumServers = 3;
-  std::vector<int> first_ports;
-  std::vector<int> second_ports;
-  first_ports.reserve(kNumServers);
-  for (int i = 0; i < kNumServers; ++i) {
-    first_ports.push_back(grpc_pick_unused_port_or_die());
-  }
-  second_ports.reserve(kNumServers);
-  for (int i = 0; i < kNumServers; ++i) {
-    second_ports.push_back(grpc_pick_unused_port_or_die());
-  }
-  StartServers(kNumServers, first_ports);
+TEST_F(RoundRobinTest, ReresolveOnSubchannelConnectionFailure) {
+  // Start 3 servers.
+  StartServers(3);
+  // Create channel.
   auto response_generator = BuildResolverResponseGenerator();
   auto channel = BuildChannel("round_robin", response_generator);
   auto stub = BuildStub(channel);
-  response_generator.SetNextResolution(first_ports);
-  // Send a number of RPCs, which succeed.
-  for (size_t i = 0; i < 100; ++i) {
-    CheckRpcSendOk(stub, DEBUG_LOCATION);
+  // Initially, tell the channel about only the first two servers.
+  std::vector<int> ports = {servers_[0]->port_, servers_[1]->port_};
+  response_generator.SetNextResolution(ports);
+  // Wait for both servers to be seen.
+  WaitForServers(stub, 0, 2, DEBUG_LOCATION);
+  // Tell the fake resolver to send an update that adds the last server, but
+  // only when the LB policy requests re-resolution.
+  ports.push_back(servers_[2]->port_);
+  response_generator.SetNextResolutionUponError(ports);
+  // Have server 0 send a GOAWAY.  This should trigger a re-resolution.
+  gpr_log(GPR_INFO, "****** SENDING GOAWAY FROM SERVER 0 *******");
+  {
+    grpc_core::ExecCtx exec_ctx;
+    grpc_core::Server::FromC(servers_[0]->server_->c_server())->SendGoaways();
   }
-  // Kill all servers
-  gpr_log(GPR_INFO, "****** ABOUT TO KILL SERVERS *******");
-  for (size_t i = 0; i < servers_.size(); ++i) {
-    servers_[i]->Shutdown();
-  }
-  gpr_log(GPR_INFO, "****** SERVERS KILLED *******");
-  gpr_log(GPR_INFO, "****** SENDING DOOMED REQUESTS *******");
-  // Client requests should fail. Send enough to tickle all subchannels.
-  for (size_t i = 0; i < servers_.size(); ++i) CheckRpcSendFailure(stub);
-  gpr_log(GPR_INFO, "****** DOOMED REQUESTS SENT *******");
-  // Bring servers back up on a different set of ports. We need to do this to be
-  // sure that the eventual success is *not* due to subchannel reconnection
-  // attempts and that an actual re-resolution has happened as a result of the
-  // RR policy going into transient failure when all its subchannels become
-  // unavailable (in transient failure as well).
-  gpr_log(GPR_INFO, "****** RESTARTING SERVERS *******");
-  StartServers(kNumServers, second_ports);
-  // Don't notify of the update. Wait for the LB policy's re-resolution to
-  // "pull" the new ports.
-  response_generator.SetNextResolutionUponError(second_ports);
-  gpr_log(GPR_INFO, "****** SERVERS RESTARTED *******");
-  gpr_log(GPR_INFO, "****** SENDING REQUEST TO SUCCEED *******");
-  // Client request should eventually (but still fairly soon) succeed.
-  const gpr_timespec deadline = grpc_timeout_seconds_to_deadline(5);
-  gpr_timespec now = gpr_now(GPR_CLOCK_MONOTONIC);
-  while (gpr_time_cmp(deadline, now) > 0) {
-    if (SendRpc(stub)) break;
-    now = gpr_now(GPR_CLOCK_MONOTONIC);
-  }
-  ASSERT_GT(gpr_time_cmp(deadline, now), 0);
+  // Wait for the client to see server 2.
+  WaitForServer(stub, 2, DEBUG_LOCATION);
 }
 
 TEST_F(RoundRobinTest, TransientFailure) {

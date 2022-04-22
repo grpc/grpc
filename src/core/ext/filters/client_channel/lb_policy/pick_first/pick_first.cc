@@ -201,6 +201,10 @@ void PickFirst::AttemptToConnectUsingLatestUpdateArgsLocked() {
     channel_control_helper()->UpdateState(
         GRPC_CHANNEL_TRANSIENT_FAILURE, status,
         absl::make_unique<TransientFailurePicker>(status));
+    // If there was a previously pending update (which may or may
+    // not have contained the currently selected subchannel), drop
+    // it, so that it doesn't override what we've done here.
+    latest_pending_subchannel_list_.reset();
     return;
   }
   // If one of the subchannels in the new list is already in state
