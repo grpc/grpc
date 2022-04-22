@@ -143,9 +143,10 @@ void RegisterServiceConfigChannelArgFilter(
   builder->channel_init()->RegisterStage(
       GRPC_CLIENT_DIRECT_CHANNEL, GRPC_CHANNEL_INIT_BUILTIN_PRIORITY,
       [](ChannelStackBuilder* builder) {
-        auto channel_args = builder->channel_args();
-        if (channel_args.WantMinimalStack() ||
-            !channel_args.GetString(GRPC_ARG_SERVICE_CONFIG).has_value()) {
+        const grpc_channel_args* channel_args = builder->channel_args();
+        if (grpc_channel_args_want_minimal_stack(channel_args) ||
+            grpc_channel_args_find_string(channel_args,
+                                          GRPC_ARG_SERVICE_CONFIG) == nullptr) {
           return true;
         }
         builder->PrependFilter(&ServiceConfigChannelArgFilter, nullptr);

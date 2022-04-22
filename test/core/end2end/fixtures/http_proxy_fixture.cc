@@ -537,8 +537,7 @@ static void on_read_request_done_locked(void* arg, grpc_error_handle error) {
                     grpc_schedule_on_exec_ctx);
   const grpc_channel_args* args = grpc_core::CoreConfiguration::Get()
                                       .channel_args_preconditioning()
-                                      .PreconditionChannelArgs(nullptr)
-                                      .ToC();
+                                      .PreconditionChannelArgs(nullptr);
   grpc_tcp_client_connect(&conn->on_server_connect_done, &conn->server_endpoint,
                           conn->pollset_set, args, &(*addresses_or)[0],
                           deadline);
@@ -614,8 +613,7 @@ grpc_end2end_http_proxy* grpc_end2end_http_proxy_create(
   // Create TCP server.
   proxy->channel_args = grpc_core::CoreConfiguration::Get()
                             .channel_args_preconditioning()
-                            .PreconditionChannelArgs(args)
-                            .ToC();
+                            .PreconditionChannelArgs(args);
   grpc_error_handle error =
       grpc_tcp_server_create(nullptr, proxy->channel_args, &proxy->server);
   GPR_ASSERT(error == GRPC_ERROR_NONE);

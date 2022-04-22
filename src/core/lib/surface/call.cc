@@ -297,7 +297,7 @@ class FilterStackCall final : public Call {
   FilterStackCall(Arena* arena, const grpc_call_create_args& args)
       : Call(arena, args.server_transport_data == nullptr, args.send_deadline),
         cq_(args.cq),
-        channel_(args.channel->Ref()),
+        channel_(args.channel),
         stream_op_payload_(context_) {}
 
   static void ReleaseCall(void* call, grpc_error_handle);
@@ -328,7 +328,7 @@ class FilterStackCall final : public Call {
   CallCombiner call_combiner_;
   grpc_completion_queue* cq_;
   grpc_polling_entity pollent_;
-  RefCountedPtr<Channel> channel_;
+  grpc_channel* channel_;
   gpr_cycle_counter start_time_ = gpr_get_cycle_counter();
 
   /** has grpc_call_unref been called */
@@ -499,7 +499,7 @@ grpc_error_handle FilterStackCall::Create(grpc_call_create_args* args,
                                           grpc_call** out_call) {
   GPR_TIMER_SCOPE("grpc_call_create", 0);
 
-  Channel* channel = args->channel.get();
+  GRPC_CHANNEL_INTERNAL_REF(args->channel, "call");
 
   auto add_init_error = [](grpc_error_handle* composite,
                            grpc_error_handle new_err) {
@@ -513,15 +513,16 @@ grpc_error_handle FilterStackCall::Create(grpc_call_create_args* args,
   Arena* arena;
   FilterStackCall* call;
   grpc_error_handle error = GRPC_ERROR_NONE;
-  grpc_channel_stack* channel_stack = channel->channel_stack();
-  size_t initial_size = channel->CallSizeEstimate();
+  grpc_channel_stack* channel_stack =
+      grpc_channel_get_channel_stack(args->channel);
+  size_t initial_size = grpc_channel_get_call_size_estimate(args->channel);
   GRPC_STATS_INC_CALL_INITIAL_SIZE(initial_size);
   size_t call_alloc_size =
       GPR_ROUND_UP_TO_ALIGNMENT_SIZE(sizeof(FilterStackCall)) +
       channel_stack->call_stack_size;
 
   std::pair<Arena*, void*> arena_with_call = Arena::CreateWithAlloc(
-      initial_size, call_alloc_size, channel->allocator());
+      initial_size, call_alloc_size, &*args->channel->allocator);
   arena = arena_with_call.first;
   call = new (arena_with_call.second) FilterStackCall(arena, *args);
   GPR_DEBUG_ASSERT(FromC(call->c_ptr()) == call);
@@ -585,7 +586,8 @@ grpc_error_handle FilterStackCall::Create(grpc_call_create_args* args,
   }
 
   if (call->is_client()) {
-    channelz::ChannelNode* channelz_channel = channel->channelz_node();
+    channelz::ChannelNode* channelz_channel =
+        grpc_channel_get_channelz_node(call->channel_);
     if (channelz_channel != nullptr) {
       channelz_channel->RecordCallStarted();
     }
@@ -617,10 +619,11 @@ void FilterStackCall::SetCompletionQueue(grpc_completion_queue* cq) {
 
 void FilterStackCall::ReleaseCall(void* call, grpc_error_handle /*error*/) {
   auto* c = static_cast<FilterStackCall*>(call);
-  RefCountedPtr<Channel> channel = std::move(c->channel_);
+  grpc_channel* channel = c->channel_;
   Arena* arena = c->arena();
   c->~FilterStackCall();
-  channel->UpdateCallSizeEstimate(arena->Destroy());
+  grpc_channel_update_call_size_estimate(channel, arena->Destroy());
+  GRPC_CHANNEL_INTERNAL_UNREF(channel, "call");
 }
 
 void FilterStackCall::DestroyCall(void* call, grpc_error_handle /*error*/) {
@@ -699,7 +702,7 @@ void FilterStackCall::ExternalUnref() {
 char* FilterStackCall::GetPeer() {
   char* peer_string = reinterpret_cast<char*>(gpr_atm_acq_load(&peer_string_));
   if (peer_string != nullptr) return gpr_strdup(peer_string);
-  peer_string = grpc_channel_get_target(channel_->c_ptr());
+  peer_string = grpc_channel_get_target(channel_);
   if (peer_string != nullptr) return peer_string;
   return gpr_strdup("unknown");
 }
@@ -790,7 +793,8 @@ void FilterStackCall::SetFinalStatus(grpc_error_handle error) {
         grpc_slice_from_cpp_string(std::move(status_details));
     status_error_.set(error);
     GRPC_ERROR_UNREF(error);
-    channelz::ChannelNode* channelz_channel = channel_->channelz_node();
+    channelz::ChannelNode* channelz_channel =
+        grpc_channel_get_channelz_node(channel_);
     if (channelz_channel != nullptr) {
       if (*final_op_.client.status != GRPC_STATUS_OK) {
         channelz_channel->RecordCallFailed();
@@ -1246,7 +1250,7 @@ void FilterStackCall::BatchControl::ValidateFilteredMetadata() {
   FilterStackCall* call = call_;
 
   const grpc_compression_options compression_options =
-      call->channel_->compression_options();
+      grpc_channel_compression_options(call->channel_);
   const grpc_compression_algorithm compression_algorithm =
       call->incoming_compression_algorithm_;
   if (GPR_UNLIKELY(!CompressionAlgorithmSet::FromUint32(
@@ -1428,7 +1432,7 @@ grpc_call_error FilterStackCall::StartBatch(const grpc_op* ops, size_t nops,
           level_set = true;
         } else {
           const grpc_compression_options copts =
-              channel_->compression_options();
+              grpc_channel_compression_options(channel_);
           if (copts.default_level.is_set) {
             level_set = true;
             effective_compression_level = copts.default_level.level;

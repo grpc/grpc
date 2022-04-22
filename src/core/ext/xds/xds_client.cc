@@ -566,8 +566,7 @@ void XdsClient::ChannelState::StartConnectivityWatchLocked() {
         absl::UnavailableError("xds client has a lame channel"));
     return;
   }
-  ClientChannel* client_channel =
-      ClientChannel::GetFromChannel(Channel::FromC(channel_));
+  ClientChannel* client_channel = ClientChannel::GetFromChannel(channel_);
   GPR_ASSERT(client_channel != nullptr);
   watcher_ = new StateWatcher(WeakRef(DEBUG_LOCATION, "ChannelState+watch"));
   client_channel->AddConnectivityWatcher(
@@ -579,8 +578,7 @@ void XdsClient::ChannelState::CancelConnectivityWatchLocked() {
   if (IsLameChannel(channel_)) {
     return;
   }
-  ClientChannel* client_channel =
-      ClientChannel::GetFromChannel(Channel::FromC(channel_));
+  ClientChannel* client_channel = ClientChannel::GetFromChannel(channel_);
   GPR_ASSERT(client_channel != nullptr);
   client_channel->RemoveConnectivityWatcher(watcher_);
 }

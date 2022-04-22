@@ -178,6 +178,10 @@ class HttpRequestSSLCredentials : public grpc_channel_credentials {
     return Ref();
   }
 
+  grpc_channel_args* update_arguments(grpc_channel_args* args) override {
+    return args;
+  }
+
   const char* type() const override { return "HttpRequestSSL"; }
 
  private:

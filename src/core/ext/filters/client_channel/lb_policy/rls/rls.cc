@@ -1568,8 +1568,7 @@ RlsLb::RlsChannel::RlsChannel(RefCountedPtr<RlsLb> lb_policy)
       parent_channelz_node_ = parent_channelz_node->Ref();
     }
     // Start connectivity watch.
-    ClientChannel* client_channel =
-        ClientChannel::GetFromChannel(Channel::FromC(channel_));
+    ClientChannel* client_channel = ClientChannel::GetFromChannel(channel_);
     GPR_ASSERT(client_channel != nullptr);
     watcher_ = new StateWatcher(Ref(DEBUG_LOCATION, "StateWatcher"));
     client_channel->AddConnectivityWatcher(
@@ -1594,8 +1593,7 @@ void RlsLb::RlsChannel::Orphan() {
     }
     // Stop connectivity watch.
     if (watcher_ != nullptr) {
-      ClientChannel* client_channel =
-          ClientChannel::GetFromChannel(Channel::FromC(channel_));
+      ClientChannel* client_channel = ClientChannel::GetFromChannel(channel_);
       GPR_ASSERT(client_channel != nullptr);
       client_channel->RemoveConnectivityWatcher(watcher_);
       watcher_ = nullptr;

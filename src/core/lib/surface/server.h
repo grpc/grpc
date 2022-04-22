@@ -37,7 +37,6 @@
 #include "src/core/lib/gprpp/dual_ref_counted.h"
 #include "src/core/lib/iomgr/resolve_address.h"
 #include "src/core/lib/resource_quota/memory_quota.h"
-#include "src/core/lib/surface/channel.h"
 #include "src/core/lib/surface/completion_queue.h"
 #include "src/core/lib/transport/transport.h"
 
@@ -97,7 +96,7 @@ class Server : public InternallyRefCounted<Server>,
     virtual void SetOnDestroyDone(grpc_closure* on_destroy_done) = 0;
   };
 
-  explicit Server(ChannelArgs args);
+  explicit Server(const grpc_channel_args* args);
   ~Server() override;
 
   void Orphan() ABSL_LOCKS_EXCLUDED(mu_global_) override;
@@ -192,13 +191,12 @@ class Server : public InternallyRefCounted<Server>,
     ChannelData() = default;
     ~ChannelData();
 
-    void InitTransport(RefCountedPtr<Server> server,
-                       RefCountedPtr<Channel> channel, size_t cq_idx,
-                       grpc_transport* transport,
+    void InitTransport(RefCountedPtr<Server> server, grpc_channel* channel,
+                       size_t cq_idx, grpc_transport* transport,
                        intptr_t channelz_socket_uuid);
 
     RefCountedPtr<Server> server() const { return server_; }
-    Channel* channel() const { return channel_.get(); }
+    grpc_channel* channel() const { return channel_; }
     size_t cq_idx() const { return cq_idx_; }
 
     ChannelRegisteredMethod* GetRegisteredMethod(const grpc_slice& host,
@@ -220,7 +218,7 @@ class Server : public InternallyRefCounted<Server>,
     static void FinishDestroy(void* arg, grpc_error_handle error);
 
     RefCountedPtr<Server> server_;
-    RefCountedPtr<Channel> channel_;
+    grpc_channel* channel_;
     // The index into Server::cqs_ of the CQ used as a starting point for
     // where to publish new incoming calls.
     size_t cq_idx_;
@@ -365,7 +363,7 @@ class Server : public InternallyRefCounted<Server>,
       size_t* cq_idx, grpc_completion_queue* cq_for_notification, void* tag,
       grpc_byte_buffer** optional_payload, RegisteredMethod* rm);
 
-  std::vector<RefCountedPtr<Channel>> GetChannelsLocked() const;
+  std::vector<grpc_channel*> GetChannelsLocked() const;
 
   // Take a shutdown ref for a request (increment by 2) and return if shutdown
   // has not been called.
@@ -412,7 +410,7 @@ class Server : public InternallyRefCounted<Server>,
     return shutdown_refs_.load(std::memory_order_acquire) == 0;
   }
 
-  const grpc_channel_args* const channel_args_;
+  grpc_channel_args* const channel_args_;
   RefCountedPtr<channelz::ServerNode> channelz_node_;
   std::unique_ptr<grpc_server_config_fetcher> config_fetcher_;
 

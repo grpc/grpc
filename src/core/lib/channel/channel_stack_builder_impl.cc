@@ -28,12 +28,14 @@
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/gprpp/memory.h"
-#include "src/core/lib/transport/error_utils.h"
 
 namespace grpc_core {
 
-absl::StatusOr<RefCountedPtr<grpc_channel_stack>>
-ChannelStackBuilderImpl::Build() {
+grpc_error_handle ChannelStackBuilderImpl::Build(size_t prefix_bytes,
+                                                 int initial_refs,
+                                                 grpc_iomgr_cb_func destroy,
+                                                 void* destroy_arg,
+                                                 void** result) {
   auto* stack = mutable_stack();
 
   // create an array of filters
@@ -47,11 +49,13 @@ ChannelStackBuilderImpl::Build() {
   size_t channel_stack_size =
       grpc_channel_stack_size(filters.data(), filters.size());
 
-  // allocate memory
-  auto* channel_stack =
-      static_cast<grpc_channel_stack*>(gpr_zalloc(channel_stack_size));
+  // allocate memory, with prefix_bytes followed by channel_stack_size
+  *result = gpr_zalloc(prefix_bytes + channel_stack_size);
+  // fetch a pointer to the channel stack
+  grpc_channel_stack* channel_stack = reinterpret_cast<grpc_channel_stack*>(
+      static_cast<char*>(*result) + prefix_bytes);
 
-  ChannelArgs final_args = channel_args();
+  const grpc_channel_args* final_args;
   if (transport() != nullptr) {
     static const grpc_arg_pointer_vtable vtable = {
         // copy
@@ -61,29 +65,27 @@ ChannelStackBuilderImpl::Build() {
         // cmp
         [](void* a, void* b) { return QsortCompare(a, b); },
     };
-    final_args = final_args.Set(GRPC_ARG_TRANSPORT,
-                                ChannelArgs::Pointer(transport(), &vtable));
+    grpc_arg arg = grpc_channel_arg_pointer_create(
+        const_cast<char*>(GRPC_ARG_TRANSPORT), transport(), &vtable);
+    final_args = grpc_channel_args_copy_and_add(channel_args(), &arg, 1);
+  } else {
+    final_args = channel_args();
   }
 
   // and initialize it
-  const grpc_channel_args* c_args = final_args.ToC();
   grpc_error_handle error = grpc_channel_stack_init(
-      1,
-      [](void* p, grpc_error_handle) {
-        auto* stk = static_cast<grpc_channel_stack*>(p);
-        grpc_channel_stack_destroy(stk);
-        gpr_free(stk);
-      },
-      channel_stack, filters.data(), filters.size(), c_args, name(),
-      channel_stack);
-  grpc_channel_args_destroy(c_args);
+      initial_refs, destroy, destroy_arg == nullptr ? *result : destroy_arg,
+      filters.data(), filters.size(), final_args, name(), channel_stack);
+
+  if (final_args != channel_args()) {
+    grpc_channel_args_destroy(final_args);
+  }
 
   if (error != GRPC_ERROR_NONE) {
     grpc_channel_stack_destroy(channel_stack);
-    gpr_free(channel_stack);
-    auto status = grpc_error_to_absl_status(error);
-    GRPC_ERROR_UNREF(error);
-    return status;
+    gpr_free(*result);
+    *result = nullptr;
+    return error;
   }
 
   // run post-initialization functions
@@ -94,7 +96,7 @@ ChannelStackBuilderImpl::Build() {
     }
   }
 
-  return RefCountedPtr<grpc_channel_stack>(channel_stack);
+  return GRPC_ERROR_NONE;
 }
 
 }  // namespace grpc_core

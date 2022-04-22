@@ -31,7 +31,9 @@
 
 namespace grpc_core {
 
-ChannelStackBuilder::~ChannelStackBuilder() = default;
+ChannelStackBuilder::~ChannelStackBuilder() {
+  grpc_channel_args_destroy(args_);
+}
 
 ChannelStackBuilder& ChannelStackBuilder::SetTarget(const char* target) {
   if (target == nullptr) {
@@ -42,8 +44,10 @@ ChannelStackBuilder& ChannelStackBuilder::SetTarget(const char* target) {
   return *this;
 }
 
-ChannelStackBuilder& ChannelStackBuilder::SetChannelArgs(ChannelArgs args) {
-  args_ = std::move(args);
+ChannelStackBuilder& ChannelStackBuilder::SetChannelArgs(
+    const grpc_channel_args* args) {
+  grpc_channel_args_destroy(args_);
+  args_ = grpc_channel_args_copy(args);
   return *this;
 }
 

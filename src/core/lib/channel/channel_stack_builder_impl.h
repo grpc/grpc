@@ -39,7 +39,9 @@ class ChannelStackBuilderImpl final : public ChannelStackBuilder {
   // prefix_bytes are allocated before the channel stack,
   // initial_refs, destroy, destroy_arg are as per grpc_channel_stack_init
   // On failure, *result is nullptr.
-  absl::StatusOr<RefCountedPtr<grpc_channel_stack>> Build() override;
+  grpc_error_handle Build(size_t prefix_bytes, int initial_refs,
+                          grpc_iomgr_cb_func destroy, void* destroy_arg,
+                          void** result) override;
 };
 }  // namespace grpc_core
 

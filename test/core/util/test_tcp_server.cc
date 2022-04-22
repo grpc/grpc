@@ -68,8 +68,7 @@ void test_tcp_server_start(test_tcp_server* server, int port) {
 
   const grpc_channel_args* args = grpc_core::CoreConfiguration::Get()
                                       .channel_args_preconditioning()
-                                      .PreconditionChannelArgs(nullptr)
-                                      .ToC();
+                                      .PreconditionChannelArgs(nullptr);
   grpc_error_handle error = grpc_tcp_server_create(&server->shutdown_complete,
                                                    args, &server->tcp_server);
   grpc_channel_args_destroy(args);

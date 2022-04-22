@@ -22,7 +22,6 @@
 #include <functional>
 #include <vector>
 
-#include "absl/status/statusor.h"
 #include "absl/strings/string_view.h"
 
 #include "src/core/lib/channel/channel_args.h"
@@ -78,10 +77,10 @@ class ChannelStackBuilder {
   grpc_transport* transport() const { return transport_; }
 
   // Set channel args (takes a copy of them).
-  ChannelStackBuilder& SetChannelArgs(ChannelArgs args);
+  ChannelStackBuilder& SetChannelArgs(const grpc_channel_args* args);
 
   // Query the channel args.
-  const ChannelArgs& channel_args() const { return args_; }
+  const grpc_channel_args* channel_args() const { return args_; }
 
   // Mutable vector of proposed stack entries.
   std::vector<StackEntry>* mutable_stack() { return &stack_; }
@@ -98,9 +97,11 @@ class ChannelStackBuilder {
   // Build the channel stack.
   // After success, *result holds the new channel stack,
   // prefix_bytes are allocated before the channel stack,
-  // destroy is as per grpc_channel_stack_init
+  // initial_refs, destroy, destroy_arg are as per grpc_channel_stack_init
   // On failure, *result is nullptr.
-  virtual absl::StatusOr<RefCountedPtr<grpc_channel_stack>> Build() = 0;
+  virtual grpc_error_handle Build(size_t prefix_bytes, int initial_refs,
+                                  grpc_iomgr_cb_func destroy, void* destroy_arg,
+                                  void** result) = 0;
 
  protected:
   ~ChannelStackBuilder();
@@ -117,11 +118,10 @@ class ChannelStackBuilder {
   // The transport
   grpc_transport* transport_ = nullptr;
   // Channel args
-  ChannelArgs args_;
+  const grpc_channel_args* args_ = nullptr;
   // The in-progress stack
   std::vector<StackEntry> stack_;
 };
-
 }  // namespace grpc_core
 
 #endif  // GRPC_CORE_LIB_CHANNEL_CHANNEL_STACK_BUILDER_H

@@ -308,9 +308,8 @@ grpc_channel_filter FailSendOpsFilter::kFilterVtable = {
 
 bool MaybeAddFilter(grpc_core::ChannelStackBuilder* builder) {
   // Skip on proxy (which explicitly disables retries).
-  if (!builder->channel_args()
-           .GetBool(GRPC_ARG_ENABLE_RETRIES)
-           .value_or(true)) {
+  const grpc_channel_args* args = builder->channel_args();
+  if (!grpc_channel_args_find_bool(args, GRPC_ARG_ENABLE_RETRIES, true)) {
     return true;
   }
   // Install filter.
