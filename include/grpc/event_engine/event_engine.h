@@ -261,6 +261,11 @@ class EventEngine {
     struct LookupTaskHandle {
       intptr_t key[2];
     };
+    /// Optional configuration for DNSResolvers.
+    struct ResolverOptions {
+      /// Override the DNSResolver's default authority.
+      std::string authority;
+    };
     /// DNS SRV record type.
     struct SRVRecord {
       std::string host;
@@ -280,13 +285,6 @@ class EventEngine {
 
     virtual ~DNSResolver() = default;
 
-    /// Override the Resolver's default DNS Servers to query.
-    ///
-    /// Each \a names_server must be a rfc3986-compliant URI authority. The
-    /// implementation may determine how to best query the set of DNS servers
-    /// provided (e.g., round robin, primary-first).
-    virtual void SetNameServers(std::vector<std::string> name_servers) = 0;
-
     /// Asynchronously resolve an address.
     ///
     /// \a default_port may be a non-numeric named service port, and will only
@@ -300,7 +298,7 @@ class EventEngine {
     ///
     /// If cancelled, \a on_resolve will not be executed.
     virtual LookupTaskHandle LookupHostname(LookupHostnameCallback on_resolve,
-                                            absl::string_view address,
+                                            absl::string_view name,
                                             absl::string_view default_port,
                                             absl::Time deadline) = 0;
     /// Asynchronously perform an SRV record lookup.
@@ -338,8 +336,11 @@ class EventEngine {
   // de-experimentalize this API.
   virtual bool IsWorkerThread() = 0;
 
-  /// Creates and returns an instance of a DNSResolver.
-  virtual std::unique_ptr<DNSResolver> GetDNSResolver() = 0;
+  /// Creates and returns an instance of a DNSResolver, optionally configured by
+  /// the \a options struct.
+  virtual std::unique_ptr<DNSResolver> GetDNSResolver(
+      const DNSResolver::ResolverOptions& options =
+          DNSResolver::ResolverOptions{}) = 0;
 
   /// Asynchronously executes a task as soon as possible.
   ///
