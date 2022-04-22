@@ -76,15 +76,6 @@ void BaseCallData::Drop() { GRPC_CALL_STACK_UNREF(call_stack_, "waker"); }
 // BaseCallData::CapturedBatch
 
 namespace {
-// Access a field to store a grpc_call_stack*
-grpc_call_stack** CallStackField(grpc_transport_stream_op_batch* b) {
-  return reinterpret_cast<grpc_call_stack**>(&b->handler_private.extra_arg);
-}
-// Access a field to store a grpc_call_element*
-grpc_call_element** CallElementField(grpc_transport_stream_op_batch* b) {
-  return reinterpret_cast<grpc_call_element**>(
-      &b->handler_private.closure.cb_arg);
-}
 uintptr_t* RefCountField(grpc_transport_stream_op_batch* b) {
   return &b->handler_private.closure.error_data.scratch;
 }
@@ -93,10 +84,7 @@ uintptr_t* RefCountField(grpc_transport_stream_op_batch* b) {
 BaseCallData::CapturedBatch::CapturedBatch() : batch_(nullptr) {}
 
 BaseCallData::CapturedBatch::CapturedBatch(
-    grpc_transport_stream_op_batch* batch, grpc_call_stack* call_stack,
-    grpc_call_element* elem) {
-  *CallStackField(batch) = call_stack;
-  *CallElementField(batch) = elem;
+    grpc_transport_stream_op_batch* batch) {
   *RefCountField(batch) = 1;
   batch_ = batch;
 }
@@ -158,37 +146,43 @@ void BaseCallData::CapturedBatch::Cancel(grpc_error_handle error,
 ///////////////////////////////////////////////////////////////////////////////
 // BaseCallData::Flusher
 
+BaseCallData::Flusher::Flusher(BaseCallData* call) : call_(call) {
+  GRPC_CALL_STACK_REF(call_->call_stack(), "flusher");
+}
+
 BaseCallData::Flusher::~Flusher() {
   if (release_.empty()) {
     if (call_closures_.size() == 0) {
-      GRPC_CALL_COMBINER_STOP(call_combiner_, "nothing to flush");
+      GRPC_CALL_COMBINER_STOP(call_->call_combiner(), "nothing to flush");
+      GRPC_CALL_STACK_UNREF(call_->call_stack(), "flusher");
       return;
     }
-    call_closures_.RunClosures(call_combiner_);
+    call_closures_.RunClosures(call_->call_combiner());
+    GRPC_CALL_STACK_UNREF(call_->call_stack(), "flusher");
     return;
   }
   for (size_t i = 1; i < release_.size(); i++) {
     struct CallNextOp {
       grpc_closure closure;
       grpc_transport_stream_op_batch* batch;
+      BaseCallData* call;
 
       static void Run(void* p, grpc_error_handle error) {
         auto* self = static_cast<CallNextOp*>(p);
-        auto* call_stack = *CallStackField(self->batch);
-        auto* elem = *CallElementField(self->batch);
-        grpc_call_next_op(elem, self->batch);
-        GRPC_CALL_STACK_UNREF(call_stack, "flusher_batch");
+        grpc_call_next_op(self->call->elem(), self->batch);
+        GRPC_CALL_STACK_UNREF(self->call->call_stack(), "flusher_batch");
         delete self;
       }
     };
     auto* op = absl::make_unique<CallNextOp>().release();
     op->batch = release_[i];
     GRPC_CLOSURE_INIT(&op->closure, CallNextOp::Run, op, nullptr);
-    GRPC_CALL_STACK_REF(*CallStackField(op->batch), "flusher_batch");
+    GRPC_CALL_STACK_REF(call_->call_stack(), "flusher_batch");
     call_closures_.Add(&op->closure, GRPC_ERROR_NONE, "flusher_batch");
   }
-  call_closures_.RunClosuresWithoutYielding(call_combiner_);
-  grpc_call_next_op(*CallElementField(release_[0]), release_[0]);
+  call_closures_.RunClosuresWithoutYielding(call_->call_combiner());
+  grpc_call_next_op(call_->elem(), release_[0]);
+  GRPC_CALL_STACK_UNREF(call_->call_stack(), "flusher");
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -377,13 +371,11 @@ class ClientCallData::PollContext {
                   self_->recv_trailing_state_ == RecvTrailingState::kForwarded);
               self_->call_combiner()->Cancel(GRPC_ERROR_REF(error));
               CapturedBatch b(grpc_make_transport_stream_op(GRPC_CLOSURE_CREATE(
-                                  [](void* p, grpc_error_handle) {
-                                    GRPC_CALL_COMBINER_STOP(
-                                        static_cast<CallCombiner*>(p),
-                                        "finish_cancel");
-                                  },
-                                  self_->call_combiner(), nullptr)),
-                              self_->call_stack(), self_->elem());
+                  [](void* p, grpc_error_handle) {
+                    GRPC_CALL_COMBINER_STOP(static_cast<CallCombiner*>(p),
+                                            "finish_cancel");
+                  },
+                  self_->call_combiner(), nullptr)));
               b->cancel_stream = true;
               b->payload->cancel_stream.cancel_error = error;
               b.Release(flusher_);
@@ -417,7 +409,6 @@ class ClientCallData::PollContext {
   ~PollContext() {
     self_->poll_ctx_ = nullptr;
     if (have_scoped_activity_) scoped_activity_.Destroy();
-    GRPC_CALL_STACK_REF(self_->call_stack(), "finish_poll");
     if (repoll_) {
       struct NextPoll : public grpc_closure {
         grpc_call_stack* call_stack;
@@ -426,7 +417,7 @@ class ClientCallData::PollContext {
       auto run = [](void* p, grpc_error_handle) {
         auto* next_poll = static_cast<NextPoll*>(p);
         {
-          Flusher flusher(next_poll->call_data->call_combiner());
+          Flusher flusher(next_poll->call_data);
           next_poll->call_data->WakeInsideCombiner(&flusher);
         }
         GRPC_CALL_STACK_UNREF(next_poll->call_stack, "re-poll");
@@ -439,7 +430,6 @@ class ClientCallData::PollContext {
       GRPC_CLOSURE_INIT(p, run, p, nullptr);
       flusher_->AddClosure(p, GRPC_ERROR_NONE, "re-poll");
     }
-    GRPC_CALL_STACK_UNREF(self_->call_stack(), "finish_poll");
   }
 
   void Repoll() { repoll_ = true; }
@@ -499,8 +489,8 @@ void ClientCallData::StartBatch(grpc_transport_stream_op_batch* batch) {
     return;
   }
 
-  CapturedBatch captured(batch, call_stack(), elem());
-  Flusher flusher(call_combiner());
+  CapturedBatch captured(batch);
+  Flusher flusher(this);
 
   if (recv_initial_metadata_ != nullptr && batch->recv_initial_metadata) {
     bool hook = true;
@@ -591,20 +581,22 @@ void ClientCallData::Cancel(grpc_error_handle error) {
     }
     struct FailBatch : public grpc_closure {
       CapturedBatch batch;
-      CallCombiner* call_combiner;
+      ClientCallData* call;
     };
     auto fail = [](void* p, grpc_error_handle error) {
       auto* f = static_cast<FailBatch*>(p);
       {
-        Flusher flusher(f->call_combiner);
+        Flusher flusher(f->call);
         f->batch.Cancel(GRPC_ERROR_REF(error), &flusher);
+        GRPC_CALL_STACK_UNREF(f->call->call_stack(), "cancel pending batch");
       }
       delete f;
     };
     auto* b = new FailBatch();
     GRPC_CLOSURE_INIT(b, fail, b, nullptr);
     b->batch = std::move(send_initial_metadata_batch_);
-    b->call_combiner = call_combiner();
+    b->call = this;
+    GRPC_CALL_STACK_REF(call_stack(), "cancel pending batch");
     GRPC_CALL_COMBINER_START(call_combiner(), b,
                              GRPC_ERROR_REF(cancelled_error_),
                              "cancel pending batch");
@@ -670,7 +662,7 @@ void ClientCallData::RecvInitialMetadataReady(grpc_error_handle error) {
     case RecvInitialMetadata::kRespondedToTrailingMetadataPriorToHook:
       abort();  // unreachable
   }
-  Flusher flusher(call_combiner());
+  Flusher flusher(this);
   if (error != GRPC_ERROR_NONE) {
     recv_initial_metadata_->state = RecvInitialMetadata::kResponded;
     flusher.AddClosure(
@@ -795,7 +787,7 @@ void ClientCallData::RecvTrailingMetadataReadyCallback(
 }
 
 void ClientCallData::RecvTrailingMetadataReady(grpc_error_handle error) {
-  Flusher flusher(call_combiner());
+  Flusher flusher(this);
   // If we were cancelled prior to receiving this callback, we should simply
   // forward the callback up with the same error.
   if (recv_trailing_state_ == RecvTrailingState::kCancelled) {
@@ -838,7 +830,7 @@ void ClientCallData::WakeInsideCombiner(Flusher* flusher) {
 }
 
 void ClientCallData::OnWakeup() {
-  Flusher flusher(call_combiner());
+  Flusher flusher(this);
   ScopedContext context(this);
   WakeInsideCombiner(&flusher);
 }

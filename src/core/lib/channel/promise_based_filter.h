@@ -126,8 +126,7 @@ class BaseCallData : public Activity, private Wakeable {
 
   class Flusher {
    public:
-    explicit Flusher(CallCombiner* call_combiner)
-        : call_combiner_(call_combiner) {}
+    explicit Flusher(BaseCallData* call);
     // Calls closures, schedules batches, relinquishes call combiner.
     ~Flusher();
 
@@ -149,7 +148,7 @@ class BaseCallData : public Activity, private Wakeable {
    private:
     absl::InlinedVector<grpc_transport_stream_op_batch*, 1> release_;
     CallCombinerClosureList call_closures_;
-    CallCombiner* call_combiner_;
+    BaseCallData* const call_;
   };
 
   // Smart pointer like wrapper around a batch.
@@ -159,8 +158,7 @@ class BaseCallData : public Activity, private Wakeable {
   class CapturedBatch final {
    public:
     CapturedBatch();
-    CapturedBatch(grpc_transport_stream_op_batch* batch,
-                  grpc_call_stack* call_stack, grpc_call_element* elem);
+    CapturedBatch(grpc_transport_stream_op_batch* batch);
     ~CapturedBatch();
     CapturedBatch(const CapturedBatch&);
     CapturedBatch& operator=(const CapturedBatch&);
