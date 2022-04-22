@@ -24,7 +24,10 @@ echo $ANDROID_NDK_HOME
 # defined as int due to an accident).
 # The python option is for disabling python2 enforcement when packing APK
 python3 tools/run_tests/python_utils/bazel_report_helper.py --report_path bazel_binder_example_app
-bazel_binder_example_app/bazel_wrapper build --define=use_strict_warning=true \
+bazel_binder_example_app/bazel_wrapper \
+  --bazelrc=tools/remote_build/include/test_locally_with_resultstore_results.bazelrc \
+  build \
+  --define=use_strict_warning=true \
   --fat_apk_cpu=x86_64,arm64-v8a \
   --extra_toolchains=@rules_python//python:autodetecting_toolchain_nonstrict \
   //examples/android/binder/java/io/grpc/binder/cpp/exampleclient:app \
@@ -33,5 +36,8 @@ bazel_binder_example_app/bazel_wrapper build --define=use_strict_warning=true \
 # Make sure the Java code that will be invoked by binder transport
 # implementation builds
 python3 tools/run_tests/python_utils/bazel_report_helper.py --report_path bazel_binder_connection_helper
-bazel_binder_connection_helper/bazel_wrapper build --define=use_strict_warning=true \
+bazel_binder_connection_helper/bazel_wrapper \
+  --bazelrc=tools/remote_build/include/test_locally_with_resultstore_results.bazelrc \
+  build \
+  --define=use_strict_warning=true \
   @binder_transport_android_helper//io/grpc/binder/cpp:connection_helper
