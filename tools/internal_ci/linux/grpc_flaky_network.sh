@@ -15,12 +15,15 @@
 
 set -ex
 
+# avoid slow finalization after the script has exited.
+source $(dirname $0)/../../../tools/internal_ci/helper_scripts/move_src_tree_and_respawn_itself_rc
+
 # change to grpc repo root
 cd $(dirname $0)/../../..
 
 source tools/internal_ci/helper_scripts/prepare_build_linux_rc
 
 export DOCKERFILE_DIR=tools/dockerfile/test/bazel
-export DOCKER_RUN_SCRIPT=$BAZEL_SCRIPT
 # NET_ADMIN capability allows tests to manipulate network interfaces
-exec tools/run_tests/dockerize/build_and_run_docker.sh --cap-add NET_ADMIN
+export EXTRA_DOCKER_ARGS="--cap-add NET_ADMIN"
+exec tools/run_tests/dockerize/build_and_run_docker.sh tools/internal_ci/linux/grpc_flaky_network_in_docker.sh
