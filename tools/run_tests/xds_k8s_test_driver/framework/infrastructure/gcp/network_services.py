@@ -246,9 +246,12 @@ class NetworkServicesV1Alpha1(NetworkServicesV1Beta1):
         return 'v1alpha1'
 
     def create_mesh(self, name: str, body: dict) -> GcpResource:
-        return self._create_resource(collection=self._api_locations.meshes(),
+        logger.info("Creating mesh")
+        mesh = self._create_resource(collection=self._api_locations.meshes(),
                                      body=body,
                                      meshId=name)
+        logger.info("Created mesh: {} {} {}".format(mesh, type(mesh), dir(mesh)))
+        return mesh
 
     def get_mesh(self, name: str) -> Mesh:
         full_name = self.resource_full_name(name, self.MESHES)
