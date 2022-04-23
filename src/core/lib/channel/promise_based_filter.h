@@ -158,7 +158,7 @@ class BaseCallData : public Activity, private Wakeable {
   class CapturedBatch final {
    public:
     CapturedBatch();
-    CapturedBatch(grpc_transport_stream_op_batch* batch);
+    explicit CapturedBatch(grpc_transport_stream_op_batch* batch);
     ~CapturedBatch();
     CapturedBatch(const CapturedBatch&);
     CapturedBatch& operator=(const CapturedBatch&);
