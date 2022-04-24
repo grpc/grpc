@@ -93,6 +93,9 @@ class OutlierDetectionLb : public LoadBalancingPolicy {
           ejected_(false) {
       if (subchannel_state_ != nullptr) {
         subchannel_state_->subchannels.emplace_back(Ref());
+        if (subchannel_state_->ejection_time.has_value()) {
+          ejected_ = true;
+        }
       }
     }
 
@@ -543,20 +546,21 @@ RefCountedPtr<SubchannelInterface> OutlierDetectionLb::Helper::CreateSubchannel(
   if (outlier_detection_policy_->shutting_down_) return nullptr;
   gpr_log(GPR_INFO, "donna address string to search %s",
           address.ToString().c_str());
-  auto& ejection_map = outlier_detection_policy_->subchannel_state_map_;
-  auto ejection_entry = ejection_map.find(MakeKeyForAddress(address));
-  RefCountedPtr<SubchannelWrapper> subchannel =
-      MakeRefCounted<SubchannelWrapper>(
-          (ejection_entry != ejection_map.end()) ? ejection_entry->second
-                                                 : nullptr,
-          outlier_detection_policy_->channel_control_helper()->CreateSubchannel(
-              std::move(address), args));
-  if (ejection_entry != ejection_map.end() &&
-      (ejection_entry->second->ejection_time.has_value())) {
-    // currently ejected
-    subchannel->Eject();
+  std::string key = MakeKeyForAddress(address);
+  RefCountedPtr<SubchannelState> subchannel_state;
+  auto it = outlier_detection_policy_->subchannel_state_map_.find(key);
+  if (it != outlier_detection_policy_->subchannel_state_map_.end()) {
+    subchannel_state = it->second->Ref();
   }
-  return std::move(subchannel);
+  auto subchannel = MakeRefCounted<SubchannelWrapper>(
+      std::move(subchannel_state),
+      outlier_detection_policy_->channel_control_helper()->CreateSubchannel(
+          std::move(address), args));
+  if (subchannel_state != nullptr) {
+    subchannel_state->subchannels.push_back(subchannel);
+  }
+  // TODO@donnadionne: do we need to eject here if channel state says so?
+  return subchannel;
 }
 
 void OutlierDetectionLb::Helper::UpdateState(
