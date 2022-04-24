@@ -25,7 +25,6 @@ grpc_cc_test(
         "gtest",
     ],
     language = "C++",
-    tags = ["manual"],  # we don't use this code much anymore
     uses_event_engine = False,
     uses_polling = False,
     deps = [
