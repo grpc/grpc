@@ -90,7 +90,11 @@ class OutlierDetectionLb : public LoadBalancingPolicy {
                       RefCountedPtr<SubchannelInterface> subchannel)
         : DelegatingSubchannel(std::move(subchannel)),
           subchannel_state_(std::move(subchannel_state)),
-          ejected_(false) {}
+          ejected_(false) {
+      if (subchannel_state_ != nullptr) {
+        subchannel_state_->subchannels.emplace_back(Ref());
+      }
+    }
 
     void Eject();
 
@@ -116,8 +120,10 @@ class OutlierDetectionLb : public LoadBalancingPolicy {
       WatcherWrapper(std::unique_ptr<
                          SubchannelInterface::ConnectivityStateWatcherInterface>
                          watcher,
-                     bool ejected)
-          : watcher_(std::move(watcher)), ejected_(ejected) {}
+                     grpc_connectivity_state initial_state, bool ejected)
+          : watcher_(std::move(watcher)),
+            last_seen_state_(initial_state),
+            ejected_(ejected) {}
 
       void Eject() {
         ejected_ = true;
@@ -282,8 +288,8 @@ void OutlierDetectionLb::SubchannelWrapper::WatchConnectivityState(
     grpc_connectivity_state initial_state,
     std::unique_ptr<ConnectivityStateWatcherInterface> watcher) {
   ConnectivityStateWatcherInterface* watcher_ptr = watcher.get();
-  auto watcher_wrapper =
-      absl::make_unique<WatcherWrapper>(std::move(watcher), ejected_);
+  auto watcher_wrapper = absl::make_unique<WatcherWrapper>(
+      std::move(watcher), initial_state, ejected_);
   watchers_.emplace(watcher_ptr, watcher_wrapper.get());
   wrapped_subchannel()->WatchConnectivityState(initial_state,
                                                std::move(watcher_wrapper));
@@ -352,7 +358,6 @@ class OutlierDetectionLb::Picker::SubchannelCallTracker
  private:
   std::unique_ptr<LoadBalancingPolicy::SubchannelCallTrackerInterface>
       original_subchannel_call_tracker_;
-  // TODO@donnadionne: RefCountedPtr
   RefCountedPtr<SubchannelState> subchannel_state_;
 #ifndef NDEBUG
   bool started_ = false;
@@ -381,11 +386,6 @@ LoadBalancingPolicy::PickResult OutlierDetectionLb::Picker::Pick(
   // Delegate to child picker
   PickResult result = picker_->Pick(args);
   auto* complete_pick = absl::get_if<PickResult::Complete>(&result.result);
-  // TODO@donnadionne: I think this is where we increment the call result
-  // counter: complete_pick = success; otherwise = failure
-  // But how do I index into my subchannel_state_map_ which is keyed by
-  // subchannel address and each entry can have a list of subchannel wrappers
-  // like the one found here.
   if (complete_pick != nullptr) {
     // Unwrap subchannel to pass back up the stack.
     auto* subchannel_wrapper =
@@ -460,11 +460,13 @@ void OutlierDetectionLb::UpdateLocked(UpdateArgs args) {
   if (child_policy_ == nullptr) {
     child_policy_ = CreateChildPolicyLocked(args.args);
   }
-  std::set<std::string> current_addresses;
   if (args.addresses.ok()) {
+    std::set<std::string> current_addresses;
     for (ServerAddress address : *args.addresses) {
       std::string address_key = MakeKeyForAddress(address);
-      subchannel_state_map_[address_key] = MakeRefCounted<SubchannelState>();
+      if (subchannel_state_map_[address_key] == nullptr) {
+        subchannel_state_map_[address_key] = MakeRefCounted<SubchannelState>();
+      }
       gpr_log(GPR_INFO, "donna print address %s", address_key.c_str());
       current_addresses.emplace(address_key);
     }
@@ -475,8 +477,9 @@ void OutlierDetectionLb::UpdateLocked(UpdateArgs args) {
         // address list.
         gpr_log(GPR_INFO, "donna erased %s", it->first.c_str());
         it = subchannel_state_map_.erase(it);
+      } else {
+        ++it;
       }
-      ++it;
     }
   }
   // Construct update args.
@@ -542,24 +545,16 @@ RefCountedPtr<SubchannelInterface> OutlierDetectionLb::Helper::CreateSubchannel(
           address.ToString().c_str());
   auto& ejection_map = outlier_detection_policy_->subchannel_state_map_;
   auto ejection_entry = ejection_map.find(MakeKeyForAddress(address));
-  if (ejection_entry == ejection_map.end()) {
-    gpr_log(GPR_INFO, "donna did not insert an entry");
-  } else {
-    gpr_log(GPR_INFO, "donna did insert an entry");
-  }
-  // TODO@donnadionne: subchannel created with multiple addresses case?
   RefCountedPtr<SubchannelWrapper> subchannel =
       MakeRefCounted<SubchannelWrapper>(
           (ejection_entry != ejection_map.end()) ? ejection_entry->second
                                                  : nullptr,
           outlier_detection_policy_->channel_control_helper()->CreateSubchannel(
               std::move(address), args));
-  if (ejection_entry != ejection_map.end()) {
-    ejection_entry->second->subchannels.emplace_back(subchannel);
-    if (ejection_entry->second->ejection_time.has_value()) {
-      // currently ejected
-      subchannel->Eject();
-    }
+  if (ejection_entry != ejection_map.end() &&
+      (ejection_entry->second->ejection_time.has_value())) {
+    // currently ejected
+    subchannel->Eject();
   }
   return std::move(subchannel);
 }
