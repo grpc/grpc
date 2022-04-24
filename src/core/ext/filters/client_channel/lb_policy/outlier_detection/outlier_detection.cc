@@ -162,12 +162,16 @@ class OutlierDetectionLb : public LoadBalancingPolicy {
   class SubchannelState : public RefCounted<SubchannelState> {
    public:
     struct Bucket {
-      struct CallCounter {
+      struct CallCounters {
         std::atomic<uint64_t> successes;
         std::atomic<uint64_t> failures;
       };
-      std::unique_ptr<Bucket> current_bucket;
-      std::unique_ptr<Bucket> backup_bucket;
+      Bucket() {
+        current_bucket = absl::make_unique<CallCounters>();
+        backup_bucket = absl::make_unique<CallCounters>();
+      }
+      std::unique_ptr<CallCounters> current_bucket;
+      std::unique_ptr<CallCounters> backup_bucket;
       // The bucket used to update call counts.
       // Points to either current_bucket or active_bucket.
       std::atomic<Bucket*> active_bucket;
@@ -223,6 +227,8 @@ class OutlierDetectionLb : public LoadBalancingPolicy {
    private:
     RefCountedPtr<OutlierDetectionLb> outlier_detection_policy_;
   };
+
+  static std::string MakeKeyForAddress(const ServerAddress& address);
 
   ~OutlierDetectionLb() override;
 
@@ -301,7 +307,6 @@ class OutlierDetectionLb::Picker::SubchannelCallTracker
   SubchannelCallTracker(
       std::unique_ptr<LoadBalancingPolicy::SubchannelCallTrackerInterface>
           original_subchannel_call_tracker,
-      // TODO@donna: prob RefCountedPtr
       RefCountedPtr<SubchannelState> subchannel_state)
       : original_subchannel_call_tracker_(
             std::move(original_subchannel_call_tracker)),
@@ -313,8 +318,7 @@ class OutlierDetectionLb::Picker::SubchannelCallTracker
   }
 
   void Start() override {
-    // Increment number of calls in flight.
-    // Record a call started.
+    // This tracker does not care about started calls only finished calls.
     // Delegate if needed.
     if (original_subchannel_call_tracker_ != nullptr) {
       original_subchannel_call_tracker_->Start();
@@ -329,8 +333,17 @@ class OutlierDetectionLb::Picker::SubchannelCallTracker
     if (original_subchannel_call_tracker_ != nullptr) {
       original_subchannel_call_tracker_->Finish(args);
     }
-    // Record call completion for load reporting.
-    // Decrement number of calls in flight.
+    // Record call completion based on status for outlier detection
+    // calculations.
+    if (subchannel_state_ != nullptr) {
+      if (args.status.ok()) {
+        gpr_log(GPR_INFO, "donna report success");
+        subchannel_state_->bucket.current_bucket->successes.fetch_add(1);
+      } else {
+        gpr_log(GPR_INFO, "donna report failure");
+        subchannel_state_->bucket.current_bucket->failures.fetch_add(1);
+      }
+    }
 #ifndef NDEBUG
     started_ = false;
 #endif
@@ -391,6 +404,12 @@ LoadBalancingPolicy::PickResult OutlierDetectionLb::Picker::Pick(
 // OutlierDetectionLb
 //
 
+std::string OutlierDetectionLb::MakeKeyForAddress(
+    const ServerAddress& address) {
+  // Strip off attributes to construct the key.
+  return ServerAddress(address.address(), nullptr).ToString();
+}
+
 OutlierDetectionLb::OutlierDetectionLb(Args args)
     : LoadBalancingPolicy(std::move(args)) {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_outlier_detection_lb_trace)) {
@@ -444,10 +463,10 @@ void OutlierDetectionLb::UpdateLocked(UpdateArgs args) {
   std::set<std::string> current_addresses;
   if (args.addresses.ok()) {
     for (ServerAddress address : *args.addresses) {
-      subchannel_state_map_[address.ToString()] =
-          MakeRefCounted<SubchannelState>();
-      gpr_log(GPR_INFO, "donna print address %s", address.ToString().c_str());
-      current_addresses.emplace(address.ToString());
+      std::string address_key = MakeKeyForAddress(address);
+      subchannel_state_map_[address_key] = MakeRefCounted<SubchannelState>();
+      gpr_log(GPR_INFO, "donna print address %s", address_key.c_str());
+      current_addresses.emplace(address_key);
     }
     for (auto it = subchannel_state_map_.begin();
          it != subchannel_state_map_.end();) {
@@ -519,9 +538,15 @@ OrphanablePtr<LoadBalancingPolicy> OutlierDetectionLb::CreateChildPolicyLocked(
 RefCountedPtr<SubchannelInterface> OutlierDetectionLb::Helper::CreateSubchannel(
     ServerAddress address, const grpc_channel_args& args) {
   if (outlier_detection_policy_->shutting_down_) return nullptr;
-  std::string address_string = address.ToString();
+  gpr_log(GPR_INFO, "donna address string to search %s",
+          address.ToString().c_str());
   auto& ejection_map = outlier_detection_policy_->subchannel_state_map_;
-  auto ejection_entry = ejection_map.find(address_string);
+  auto ejection_entry = ejection_map.find(MakeKeyForAddress(address));
+  if (ejection_entry == ejection_map.end()) {
+    gpr_log(GPR_INFO, "donna did not insert an entry");
+  } else {
+    gpr_log(GPR_INFO, "donna did insert an entry");
+  }
   // TODO@donnadionne: subchannel created with multiple addresses case?
   RefCountedPtr<SubchannelWrapper> subchannel =
       MakeRefCounted<SubchannelWrapper>(
