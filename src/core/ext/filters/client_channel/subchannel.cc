@@ -196,7 +196,7 @@ RefCountedPtr<SubchannelCall> SubchannelCall::Ref(const DebugLocation& location,
 }
 
 void SubchannelCall::Unref() {
-  GRPC_CALL_STACK_UNREF(SUBCHANNEL_CALL_TO_CALL_STACK(this), "");
+  GRPC_CALL_STACK_UNREF(SUBCHANNEL_CALL_TO_CALL_STACK(this), "subchannel");
 }
 
 void SubchannelCall::Unref(const DebugLocation& /*location*/,
