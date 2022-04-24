@@ -125,7 +125,8 @@ class Client {
     EventState state;
     const grpc_channel_args* args = CoreConfiguration::Get()
                                         .channel_args_preconditioning()
-                                        .PreconditionChannelArgs(nullptr);
+                                        .PreconditionChannelArgs(nullptr)
+                                        .ToC();
     grpc_tcp_client_connect(state.closure(), &endpoint_, pollset_set, args,
                             addresses_or->data(),
                             ExecCtx::Get()->Now() + Duration::Seconds(1));

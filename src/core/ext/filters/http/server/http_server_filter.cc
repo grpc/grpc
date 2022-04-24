@@ -310,7 +310,7 @@ static grpc_error_handle hs_init_channel_elem(grpc_channel_element* elem,
       true);
   chand->allow_put_requests = grpc_channel_args_find_bool(
       args->channel_args,
-      GRPC_ARG_INTERNAL_ONLY_DO_NOT_USE_UNLESS_YOU_HAVE_PERMISSION_FROM_GRPC_TEAM_ALLOW_BROKEN_PUT_REQUESTS,
+      GRPC_ARG_DO_NOT_USE_UNLESS_YOU_HAVE_PERMISSION_FROM_GRPC_TEAM_ALLOW_BROKEN_PUT_REQUESTS,
       false);
   return GRPC_ERROR_NONE;
 }

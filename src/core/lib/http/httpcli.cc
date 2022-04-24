@@ -156,7 +156,8 @@ HttpRequest::HttpRequest(
       deadline_(deadline),
       channel_args_(CoreConfiguration::Get()
                         .channel_args_preconditioning()
-                        .PreconditionChannelArgs(channel_args)),
+                        .PreconditionChannelArgs(channel_args)
+                        .ToC()),
       channel_creds_(std::move(channel_creds)),
       on_done_(on_done),
       resource_quota_(ResourceQuotaFromChannelArgs(channel_args_)),

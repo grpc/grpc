@@ -1287,7 +1287,8 @@ grpc_server_config_fetcher* grpc_server_config_fetcher_xds_create(
   grpc_core::ExecCtx exec_ctx;
   args = grpc_core::CoreConfiguration::Get()
              .channel_args_preconditioning()
-             .PreconditionChannelArgs(args);
+             .PreconditionChannelArgs(args)
+             .ToC();
   GRPC_API_TRACE(
       "grpc_server_config_fetcher_xds_create(notifier={on_serving_status_"
       "update=%p, user_data=%p}, args=%p)",

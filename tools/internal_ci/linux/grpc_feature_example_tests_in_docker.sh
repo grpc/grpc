@@ -1,5 +1,5 @@
-#!/usr/bin/env bash
-# Copyright 2019 gRPC authors.
+#!/bin/bash
+# Copyright 2021 The gRPC authors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -15,12 +15,6 @@
 
 set -ex
 
-# change to grpc repo root
-cd $(dirname $0)/../../..
+apt-get install -y lsof
 
-source tools/internal_ci/helper_scripts/prepare_build_linux_rc
-
-export DOCKERFILE_DIR=tools/dockerfile/test/bazel
-export DOCKER_RUN_SCRIPT=$BAZEL_SCRIPT
-# NET_ADMIN capability allows tests to manipulate network interfaces
-exec tools/run_tests/dockerize/build_and_run_docker.sh --cap-add NET_ADMIN
+./examples/cpp/features/run_tests.sh

@@ -800,7 +800,8 @@ class XdsEnd2endTest : public ::testing::TestWithParam<XdsTestType> {
   }
 
   // Sends the specified number of RPCs and fails if the RPC fails.
-  void CheckRpcSendOk(const size_t times = 1,
+  void CheckRpcSendOk(const grpc_core::DebugLocation& debug_location,
+                      const size_t times = 1,
                       const RpcOptions& rpc_options = RpcOptions());
 
   // Options to use with CheckRpcSendFailure().
@@ -837,13 +838,15 @@ class XdsEnd2endTest : public ::testing::TestWithParam<XdsTestType> {
 
   // Sends RPCs and expects them to fail.
   void CheckRpcSendFailure(
+      const grpc_core::DebugLocation& debug_location,
       const CheckRpcSendFailureOptions& options = CheckRpcSendFailureOptions());
 
   // Sends num_rpcs RPCs, counting how many of them fail with a message
   // matching the specfied drop_error_message_prefix.
   // Any failure with a non-matching message is a test failure.
   size_t SendRpcsAndCountFailuresWithMessage(
-      size_t num_rpcs, const char* drop_error_message_prefix,
+      const grpc_core::DebugLocation& debug_location, size_t num_rpcs,
+      const char* drop_error_message_prefix,
       const RpcOptions& rpc_options = RpcOptions());
 
   // A class for running a long-running RPC in its own thread.
@@ -878,6 +881,7 @@ class XdsEnd2endTest : public ::testing::TestWithParam<XdsTestType> {
     EchoResponse response;
   };
   std::vector<ConcurrentRpc> SendConcurrentRpcs(
+      const grpc_core::DebugLocation& debug_location,
       grpc::testing::EchoTestService::Stub* stub, size_t num_rpcs,
       const RpcOptions& rpc_options);
 
@@ -914,16 +918,18 @@ class XdsEnd2endTest : public ::testing::TestWithParam<XdsTestType> {
   // Sends RPCs until all of the backends in the specified range see requests.
   // Returns the total number of RPCs sent.
   size_t WaitForAllBackends(
-      size_t start_index = 0, size_t stop_index = 0,
+      const grpc_core::DebugLocation& debug_location, size_t start_index = 0,
+      size_t stop_index = 0,
       const WaitForBackendOptions& wait_options = WaitForBackendOptions(),
       const RpcOptions& rpc_options = RpcOptions());
 
   // Sends RPCs until the backend at index backend_idx sees requests.
   void WaitForBackend(
-      size_t backend_idx,
+      const grpc_core::DebugLocation& debug_location, size_t backend_idx,
       const WaitForBackendOptions& wait_options = WaitForBackendOptions(),
       const RpcOptions& rpc_options = RpcOptions()) {
-    WaitForAllBackends(backend_idx, backend_idx + 1, wait_options, rpc_options);
+    WaitForAllBackends(debug_location, backend_idx, backend_idx + 1,
+                       wait_options, rpc_options);
   }
 
   //
@@ -934,47 +940,57 @@ class XdsEnd2endTest : public ::testing::TestWithParam<XdsTestType> {
 
   // Sends RPCs until get_state() returns a response.
   absl::optional<AdsServiceImpl::ResponseState> WaitForNack(
+      const grpc_core::DebugLocation& debug_location,
       std::function<absl::optional<AdsServiceImpl::ResponseState>()> get_state,
       StatusCode expected_status = StatusCode::UNAVAILABLE);
 
   // Sends RPCs until an LDS NACK is seen.
   absl::optional<AdsServiceImpl::ResponseState> WaitForLdsNack(
+      const grpc_core::DebugLocation& debug_location,
       StatusCode expected_status = StatusCode::UNAVAILABLE) {
     return WaitForNack(
+        debug_location,
         [&]() { return balancer_->ads_service()->lds_response_state(); },
         expected_status);
   }
 
   // Sends RPCs until an RDS NACK is seen.
   absl::optional<AdsServiceImpl::ResponseState> WaitForRdsNack(
+      const grpc_core::DebugLocation& debug_location,
       StatusCode expected_status = StatusCode::UNAVAILABLE) {
     return WaitForNack(
+        debug_location,
         [&]() { return RouteConfigurationResponseState(balancer_.get()); },
         expected_status);
   }
 
   // Sends RPCs until a CDS NACK is seen.
   absl::optional<AdsServiceImpl::ResponseState> WaitForCdsNack(
+      const grpc_core::DebugLocation& debug_location,
       StatusCode expected_status = StatusCode::UNAVAILABLE) {
     return WaitForNack(
+        debug_location,
         [&]() { return balancer_->ads_service()->cds_response_state(); },
         expected_status);
   }
 
   // Sends RPCs until an EDS NACK is seen.
-  absl::optional<AdsServiceImpl::ResponseState> WaitForEdsNack() {
-    return WaitForNack(
-        [&]() { return balancer_->ads_service()->eds_response_state(); });
+  absl::optional<AdsServiceImpl::ResponseState> WaitForEdsNack(
+      const grpc_core::DebugLocation& debug_location) {
+    return WaitForNack(debug_location, [&]() {
+      return balancer_->ads_service()->eds_response_state();
+    });
   }
 
   // Convenient front-end to wait for RouteConfiguration to be NACKed,
   // regardless of whether it's sent in LDS or RDS.
   absl::optional<AdsServiceImpl::ResponseState> WaitForRouteConfigNack(
+      const grpc_core::DebugLocation& debug_location,
       StatusCode expected_status = StatusCode::UNAVAILABLE) {
     if (GetParam().enable_rds_testing()) {
-      return WaitForRdsNack(expected_status);
+      return WaitForRdsNack(debug_location, expected_status);
     }
-    return WaitForLdsNack(expected_status);
+    return WaitForLdsNack(debug_location, expected_status);
   }
 
   // Convenient front-end for accessing xDS response state for a

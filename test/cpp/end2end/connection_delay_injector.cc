@@ -14,11 +14,12 @@
 
 #include "test/cpp/end2end/connection_delay_injector.h"
 
-#include <atomic>
 #include <memory>
 
 #include "absl/memory/memory.h"
 #include "absl/utility/utility.h"
+
+#include "src/core/lib/gprpp/sync.h"
 
 // defined in tcp_client.cc
 extern grpc_tcp_client_vtable* grpc_tcp_client_impl;
@@ -33,21 +34,23 @@ namespace testing {
 namespace {
 
 grpc_tcp_client_vtable* g_original_vtable = nullptr;
-std::atomic<ConnectionAttemptInjector*> g_injector{nullptr};
+
+grpc_core::Mutex* g_mu = nullptr;
+ConnectionAttemptInjector* g_injector ABSL_GUARDED_BY(*g_mu) = nullptr;
 
 void TcpConnectWithDelay(grpc_closure* closure, grpc_endpoint** ep,
                          grpc_pollset_set* interested_parties,
                          const grpc_channel_args* channel_args,
                          const grpc_resolved_address* addr,
                          grpc_core::Timestamp deadline) {
-  ConnectionAttemptInjector* injector = g_injector.load();
-  if (injector == nullptr) {
+  grpc_core::MutexLock lock(g_mu);
+  if (g_injector == nullptr) {
     g_original_vtable->connect(closure, ep, interested_parties, channel_args,
                                addr, deadline);
     return;
   }
-  injector->HandleConnection(closure, ep, interested_parties, channel_args,
-                             addr, deadline);
+  g_injector->HandleConnection(closure, ep, interested_parties, channel_args,
+                               addr, deadline);
 }
 
 grpc_tcp_client_vtable kDelayedConnectVTable = {TcpConnectWithDelay};
@@ -55,16 +58,20 @@ grpc_tcp_client_vtable kDelayedConnectVTable = {TcpConnectWithDelay};
 }  // namespace
 
 void ConnectionAttemptInjector::Init() {
+  g_mu = new grpc_core::Mutex();
   g_original_vtable = grpc_tcp_client_impl;
   grpc_tcp_client_impl = &kDelayedConnectVTable;
 }
 
-ConnectionAttemptInjector::ConnectionAttemptInjector() {
-  GPR_ASSERT(g_injector.exchange(this) == nullptr);
+ConnectionAttemptInjector::~ConnectionAttemptInjector() {
+  grpc_core::MutexLock lock(g_mu);
+  g_injector = nullptr;
 }
 
-ConnectionAttemptInjector::~ConnectionAttemptInjector() {
-  g_injector.store(nullptr);
+void ConnectionAttemptInjector::Start() {
+  grpc_core::MutexLock lock(g_mu);
+  GPR_ASSERT(g_injector == nullptr);
+  g_injector = this;
 }
 
 void ConnectionAttemptInjector::AttemptConnection(
