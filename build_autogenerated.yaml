@@ -7566,6 +7566,7 @@ targets:
 - name: stats_test
   gtest: true
   build: test
+  run: false
   language: c++
   headers: []
   src:
