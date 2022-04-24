@@ -20,7 +20,6 @@ licenses(["notice"])
 
 grpc_cc_test(
     name = "stats_test",
-    size = "large",
     srcs = ["stats_test.cc"],
     external_deps = [
         "gtest",
