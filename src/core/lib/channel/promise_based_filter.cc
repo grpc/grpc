@@ -167,7 +167,7 @@ BaseCallData::Flusher::~Flusher() {
       grpc_transport_stream_op_batch* batch;
       BaseCallData* call;
 
-      static void Run(void* p, grpc_error_handle error) {
+      static void Run(void* p, grpc_error_handle) {
         auto* self = static_cast<CallNextOp*>(p);
         grpc_call_next_op(self->call->elem(), self->batch);
         GRPC_CALL_STACK_UNREF(self->call->call_stack(), "flusher_batch");
