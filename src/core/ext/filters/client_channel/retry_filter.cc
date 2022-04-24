@@ -1693,6 +1693,8 @@ void RetryFilter::CallData::CallAttempt::BatchData::RunClosuresForCompletedCall(
 
 void RetryFilter::CallData::CallAttempt::BatchData::RecvTrailingMetadataReady(
     void* arg, grpc_error_handle error) {
+  RefCountedPtr<grpc_call_stack> owning_call_stack =
+      static_cast<BatchData*>(arg)->call_attempt_->calld_->owning_call_->Ref();
   RefCountedPtr<BatchData> batch_data(static_cast<BatchData*>(arg));
   CallAttempt* call_attempt = batch_data->call_attempt_.get();
   CallData* calld = call_attempt->calld_;
