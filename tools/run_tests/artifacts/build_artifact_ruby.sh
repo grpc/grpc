@@ -38,6 +38,9 @@ fi
 # (e.g. by the top-level CI script or with rvm locally)
 ruby --version
 
+gem -v
+bundler -v
+
 # log gem versions for easier debugging if things go wrong
 gem list || true
 
