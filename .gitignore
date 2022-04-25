@@ -167,3 +167,6 @@ compile_commands.json
 compile_commands_for_iwyu.json
 iwyu.out
 iwyu_files.txt
+
+# clang toolchain with instrumented libcxx, for running msan locally. See tools/local_msan/README.md
+tools/local_msan/clang_msan/
