@@ -127,9 +127,8 @@ class ExternalCertificateVerifier : public grpc_tls_certificate_verifier {
 // attacks. Users should avoid doing so in production environments.
 class NoOpCertificateVerifier : public grpc_tls_certificate_verifier {
  public:
-  bool Verify(grpc_tls_custom_verification_check_request* request,
-              std::function<void(absl::Status)> callback,
-              absl::Status* sync_status) override {
+  bool Verify(grpc_tls_custom_verification_check_request*,
+              std::function<void(absl::Status)>, absl::Status*) override {
     return true;  // synchronous check
   };
   void Cancel(grpc_tls_custom_verification_check_request*) override {}
