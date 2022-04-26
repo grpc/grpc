@@ -33,6 +33,7 @@ namespace {
 
 using ::grpc::experimental::ExternalCertificateVerifier;
 using ::grpc::experimental::HostNameCertificateVerifier;
+using ::grpc::experimental::NoOpCertificateVerifier;
 using ::grpc::experimental::TlsCustomVerificationCheckRequest;
 
 }  // namespace
@@ -87,6 +88,17 @@ TEST(TlsCertificateVerifierTest, AsyncCertificateVerifierFails) {
   };
   grpc::Status sync_status;
   EXPECT_FALSE(verifier->Verify(&cpp_request, callback, &sync_status));
+}
+
+TEST(TlsCertificateVerifierTest, NoOpCertificateVerifierSucceeds) {
+  grpc_tls_custom_verification_check_request request;
+  memset(&request, 0, sizeof(request));
+  auto verifier = std::make_shared<NoOpCertificateVerifier>();
+  TlsCustomVerificationCheckRequest cpp_request(&request);
+  grpc::Status sync_status;
+  verifier->Verify(&cpp_request, nullptr, &sync_status);
+  EXPECT_TRUE(sync_status.ok())
+      << sync_status.error_code() << " " << sync_status.error_message();
 }
 
 TEST(TlsCertificateVerifierTest, HostNameCertificateVerifierSucceeds) {
@@ -147,17 +159,6 @@ TEST(TlsCertificateVerifierTest,
   verifier->Verify(&cpp_request, nullptr, &sync_status);
   EXPECT_EQ(sync_status.error_code(), grpc::StatusCode::UNAUTHENTICATED);
   EXPECT_EQ(sync_status.error_message(), "Hostname Verification Check failed.");
-}
-
-TEST(TlsCertificateVerifierTest, NoOpCertificateVerifierSucceeds) {
-  grpc_tls_custom_verification_check_request request;
-  auto verifier = ExternalCertificateVerifier::Create<
-      experimental::NoOpCertificateVerifier>();
-  TlsCustomVerificationCheckRequest cpp_request(&request);
-  grpc::Status sync_status;
-  verifier->Verify(&cpp_request, nullptr, &sync_status);
-  EXPECT_TRUE(sync_status.ok())
-      << sync_status.error_code() << " " << sync_status.error_message();
 }
 
 }  // namespace
