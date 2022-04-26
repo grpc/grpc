@@ -1,0 +1,9 @@
+%YAML 1.2
+--- |
+  <!-- This file is generated -->
+  <Project>
+    <PropertyGroup>
+      <GrpcCsharpVersion>${settings.csharp_version}</GrpcCsharpVersion>
+      <GoogleProtobufVersion>${settings.protobuf_version}</GoogleProtobufVersion>
+    </PropertyGroup>
+  </Project>
