@@ -227,6 +227,16 @@ struct grpc_call_stack {
      about the address of the call stack itself. */
   grpc_stream_refcount refcount;
   size_t count;
+
+  // Minimal infrastructure to act like a RefCounted thing without converting
+  // everything.
+  // grpc_call_stack will be eliminated once the promise conversion completes.
+  void IncrementRefCount();
+  void Unref();
+  grpc_core::RefCountedPtr<grpc_call_stack> Ref() {
+    IncrementRefCount();
+    return grpc_core::RefCountedPtr<grpc_call_stack>(this);
+  }
 };
 
 /* Get a channel element given a channel stack and its index */
@@ -307,6 +317,14 @@ inline void grpc_channel_stack::IncrementRefCount() {
 
 inline void grpc_channel_stack::Unref() {
   GRPC_CHANNEL_STACK_UNREF(this, "smart_pointer");
+}
+
+inline void grpc_call_stack::IncrementRefCount() {
+  GRPC_CALL_STACK_REF(this, "smart_pointer");
+}
+
+inline void grpc_call_stack::Unref() {
+  GRPC_CALL_STACK_UNREF(this, "smart_pointer");
 }
 
 /* Destroy a call stack */
