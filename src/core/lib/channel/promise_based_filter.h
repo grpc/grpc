@@ -154,7 +154,7 @@ class BaseCallData : public Activity, private Wakeable {
   // Smart pointer like wrapper around a batch.
   // Creation makes a ref count of one capture.
   // Copying increments.
-  // Must be moved from or released or cancelled before destruction.
+  // Must be moved from or resumed or cancelled before destruction.
   class CapturedBatch final {
    public:
     CapturedBatch();
