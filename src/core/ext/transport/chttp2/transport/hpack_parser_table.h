@@ -30,40 +30,6 @@
 
 namespace grpc_core {
 
-using Memento = ParsedMetadata<grpc_metadata_batch>;
-
-class MementoRingBuffer {
- public:
-  // Rebuild this buffer with a new max_entries_ size.
-  void Rebuild(uint32_t max_entries);
-
-  // Put a new memento.
-  // REQUIRES: num_entries < max_entries
-  void Put(Memento m);
-
-  // Pop the oldest memento.
-  // REQUIRES: num_entries > 0
-  Memento PopOne();
-
-  // Lookup the entry at index, or return nullptr if none exists.
-  const Memento* Lookup(uint32_t index) const;
-
-  uint32_t max_entries() const { return max_entries_; }
-  uint32_t num_entries() const { return num_entries_; }
-
- private:
-  // The index of the first entry in the buffer. May be greater than
-  // max_entries_, in which case a wraparound has occurred.
-  uint32_t first_entry_ = 0;
-  // How many entries are in the table.
-  uint32_t num_entries_ = 0;
-  // Maximum number of entries we could possibly fit in the table, given defined
-  // overheads.
-  uint32_t max_entries_ = hpack_constants::kInitialTableEntries;
-
-  std::vector<Memento> entries_;
-};
-
 // HPACK header table
 class HPackTable {
  public:
@@ -76,7 +42,7 @@ class HPackTable {
   void SetMaxBytes(uint32_t max_bytes);
   grpc_error_handle SetCurrentTableSize(uint32_t bytes);
 
-  using Memento = Memento;
+  using Memento = ParsedMetadata<grpc_metadata_batch>;
 
   // Lookup, but don't ref.
   const Memento* Lookup(uint32_t index) const {
@@ -105,6 +71,38 @@ class HPackTable {
     Memento memento[hpack_constants::kLastStaticEntry];
   };
   static const StaticMementos& GetStaticMementos() GPR_ATTRIBUTE_NOINLINE;
+
+  class MementoRingBuffer {
+   public:
+    // Rebuild this buffer with a new max_entries_ size.
+    void Rebuild(uint32_t max_entries);
+
+    // Put a new memento.
+    // REQUIRES: num_entries < max_entries
+    void Put(Memento m);
+
+    // Pop the oldest memento.
+    // REQUIRES: num_entries > 0
+    Memento PopOne();
+
+    // Lookup the entry at index, or return nullptr if none exists.
+    const Memento* Lookup(uint32_t index) const;
+
+    uint32_t max_entries() const { return max_entries_; }
+    uint32_t num_entries() const { return num_entries_; }
+
+   private:
+    // The index of the first entry in the buffer. May be greater than
+    // max_entries_, in which case a wraparound has occurred.
+    uint32_t first_entry_ = 0;
+    // How many entries are in the table.
+    uint32_t num_entries_ = 0;
+    // Maximum number of entries we could possibly fit in the table, given defined
+    // overheads.
+    uint32_t max_entries_ = hpack_constants::kInitialTableEntries;
+
+    std::vector<Memento> entries_;
+  };
 
   const Memento* LookupDynamic(uint32_t index) const {
     // Not static - find the value in the list of valid entries

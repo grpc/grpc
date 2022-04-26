@@ -39,7 +39,7 @@ extern grpc_core::TraceFlag grpc_http_trace;
 
 namespace grpc_core {
 
-void MementoRingBuffer::Put(Memento m) {
+void HPackTable::MementoRingBuffer::Put(Memento m) {
   GPR_ASSERT(num_entries_ < max_entries_);
   if (entries_.size() < max_entries_) {
     ++num_entries_;
@@ -50,7 +50,7 @@ void MementoRingBuffer::Put(Memento m) {
   ++num_entries_;
 }
 
-auto MementoRingBuffer::PopOne() -> Memento {
+auto HPackTable::MementoRingBuffer::PopOne() -> Memento {
   GPR_ASSERT(num_entries_ > 0);
   size_t index = first_entry_ % max_entries_;
   ++first_entry_;
@@ -58,13 +58,13 @@ auto MementoRingBuffer::PopOne() -> Memento {
   return std::move(entries_[index]);
 }
 
-const Memento* MementoRingBuffer::Lookup(uint32_t index) const {
+auto HPackTable::MementoRingBuffer::Lookup(uint32_t index) const -> const Memento* {
   if (index >= num_entries_) return nullptr;
   uint32_t offset = (num_entries_ - 1u - index + first_entry_) % max_entries_;
   return &entries_[offset];
 }
 
-void MementoRingBuffer::Rebuild(uint32_t max_entries) {
+void HPackTable::MementoRingBuffer::Rebuild(uint32_t max_entries) {
   if (max_entries == max_entries_) return;
   std::vector<Memento> entries;
   entries.reserve(num_entries_);
@@ -239,7 +239,7 @@ GPR_ATTRIBUTE_NOINLINE HPackTable::Memento MakeMemento(size_t i) {
 
 }  // namespace
 
-const HPackTable::StaticMementos& HPackTable::GetStaticMementos() {
+auto HPackTable::GetStaticMementos() -> const StaticMementos& {
   static const StaticMementos* const static_mementos = new StaticMementos();
   return *static_mementos;
 }
