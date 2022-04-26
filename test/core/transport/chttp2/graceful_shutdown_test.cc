@@ -170,10 +170,11 @@ class GracefulShutdownTest : public ::testing::Test {
     done = true;
   }
 
-  void WaitForGoaway(uint32_t last_stream_id) {
+  void WaitForGoaway(uint32_t last_stream_id, uint32_t error_code = 0,
+                     grpc_slice slice = grpc_empty_slice()) {
     grpc_slice_buffer buffer;
     grpc_slice_buffer_init(&buffer);
-    grpc_chttp2_goaway_append(last_stream_id, 0, grpc_empty_slice(), &buffer);
+    grpc_chttp2_goaway_append(last_stream_id, error_code, slice, &buffer);
     std::string expected_bytes;
     for (size_t i = 0; i < buffer.count; ++i) {
       absl::StrAppend(&expected_bytes, StringViewFromSlice(buffer.slices[i]));
@@ -406,6 +407,21 @@ TEST_F(GracefulShutdownTest, UnresponsiveClient) {
             absl::Seconds(20) -
                 absl::Seconds(
                     1) /* clock skew between threads due to time caching */);
+  // The shutdown should successfully complete.
+  CQ_EXPECT_COMPLETION(cqv_, Tag(1), true);
+  cq_verify(cqv_);
+}
+
+// Test that servers send a GOAWAY with the last stream ID even when the
+// transport is disconnected without letting Graceful GOAWAY complete
+// successfully.
+TEST_F(GracefulShutdownTest, GoawayReceivedOnServerDisconnect) {
+  // Initiate shutdown on the server and immediately disconnect.
+  grpc_server_shutdown_and_notify(server_, cq_, Tag(1));
+  grpc_server_cancel_all_calls(server_);
+  // Wait for final goaway.
+  WaitForGoaway(/*last_stream_id=*/0, /*error_code=*/2,
+                grpc_slice_from_static_string("Cancelling all calls"));
   // The shutdown should successfully complete.
   CQ_EXPECT_COMPLETION(cqv_, Tag(1), true);
   cq_verify(cqv_);
