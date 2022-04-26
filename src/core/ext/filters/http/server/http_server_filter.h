@@ -39,7 +39,9 @@ class HttpServerFilter : public ChannelFilter {
       CallArgs call_args, NextPromiseFactory next_promise_factory) override;
 
  private:
-  HttpServerFilter(bool surface_user_agent, bool allow_put_requests);
+  HttpServerFilter(bool surface_user_agent, bool allow_put_requests)
+      : surface_user_agent_(surface_user_agent),
+        allow_put_requests_(allow_put_requests) {}
 
   bool surface_user_agent_;
   bool allow_put_requests_;
