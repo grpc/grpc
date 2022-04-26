@@ -95,9 +95,7 @@ class CSharpPackage:
                 os.getenv('GRPC_CSHARP_BUILD_SINGLE_PLATFORM_NUGET', '')
         }
 
-        # C# has been removed from the repo. Provide a dummy script to prevent
-        # the build task from failing.
-        build_script = 'tools/run_tests/artifacts/build_package_csharp.sh'
+        build_script = 'src/csharp/build_unitypackage.sh' if self.unity else 'src/csharp/build_nuget.sh'
 
         if self.platform == 'linux':
             return create_docker_jobspec(
