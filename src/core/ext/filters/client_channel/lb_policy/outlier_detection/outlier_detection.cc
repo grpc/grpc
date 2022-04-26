@@ -36,6 +36,7 @@
 #include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/gprpp/sync.h"
+#include "src/core/lib/iomgr/timer.h"
 #include "src/core/lib/iomgr/work_serializer.h"
 #include "src/core/lib/json/json_util.h"
 
@@ -183,7 +184,7 @@ class OutlierDetectionLb : public LoadBalancingPolicy {
       std::unique_ptr<CallCounters> backup_bucket;
       // The bucket used to update call counts.
       // Points to either current_bucket or active_bucket.
-      std::atomic<Bucket*> active_bucket;
+      std::atomic<CallCounters*> active_bucket;
     };
     Bucket bucket;
     absl::optional<Timestamp> ejection_time;
@@ -237,6 +238,22 @@ class OutlierDetectionLb : public LoadBalancingPolicy {
     RefCountedPtr<OutlierDetectionLb> outlier_detection_policy_;
   };
 
+  class DetectionTimer : public InternallyRefCounted<DetectionTimer> {
+   public:
+    explicit DetectionTimer(RefCountedPtr<OutlierDetectionLb> parent);
+
+    void Orphan() override;
+
+   private:
+    static void OnTimer(void* arg, grpc_error_handle error);
+    void OnTimerLocked(grpc_error_handle);
+
+    RefCountedPtr<OutlierDetectionLb> parent_;
+    grpc_timer timer_;
+    grpc_closure on_timer_;
+    bool timer_pending_ = true;
+  };
+
   static std::string MakeKeyForAddress(const ServerAddress& address);
 
   ~OutlierDetectionLb() override;
@@ -261,6 +278,7 @@ class OutlierDetectionLb : public LoadBalancingPolicy {
   absl::Status status_;
   RefCountedPtr<RefCountedPicker> picker_;
   std::map<std::string, RefCountedPtr<SubchannelState>> subchannel_state_map_;
+  OrphanablePtr<DetectionTimer> detection_timer_;
 };
 
 //
@@ -459,6 +477,8 @@ void OutlierDetectionLb::UpdateLocked(UpdateArgs args) {
   }
   // Update config.
   config_ = std::move(args.config);
+  // Update outlier detection timer.
+  detection_timer_ = MakeOrphanable<DetectionTimer>(Ref());
   // Create policy if needed.
   if (child_policy_ == nullptr) {
     child_policy_ = CreateChildPolicyLocked(args.args);
@@ -598,6 +618,71 @@ void OutlierDetectionLb::Helper::AddTraceEvent(TraceSeverity severity,
   if (outlier_detection_policy_->shutting_down_) return;
   outlier_detection_policy_->channel_control_helper()->AddTraceEvent(severity,
                                                                      message);
+}
+
+//
+// OutlierDetectionLb::DetectionTimer
+//
+
+OutlierDetectionLb::DetectionTimer::DetectionTimer(
+    RefCountedPtr<OutlierDetectionLb> parent)
+    : parent_(std::move(parent)) {
+  GRPC_CLOSURE_INIT(&on_timer_, OnTimer, this, nullptr);
+  Ref().release();
+  grpc_timer_init(&timer_,
+                  ExecCtx::Get()->Now() +
+                      parent_->config_->outlier_detection_config().interval,
+                  &on_timer_);
+}
+
+void OutlierDetectionLb::DetectionTimer::Orphan() {
+  if (timer_pending_) {
+    timer_pending_ = false;
+    grpc_timer_cancel(&timer_);
+  }
+  Unref();
+}
+
+void OutlierDetectionLb::DetectionTimer::OnTimer(void* arg,
+                                                 grpc_error_handle error) {
+  gpr_log(GPR_INFO, "donna in OnTimer");
+  auto* self = static_cast<DetectionTimer*>(arg);
+  (void)GRPC_ERROR_REF(error);  // ref owned by lambda
+  self->parent_->work_serializer()->Run(
+      [self, error]() { self->OnTimerLocked(error); }, DEBUG_LOCATION);
+}
+
+void OutlierDetectionLb::DetectionTimer::OnTimerLocked(
+    grpc_error_handle error) {
+  gpr_log(GPR_INFO, "donna in OnTimerLocked");
+  if (error == GRPC_ERROR_NONE && timer_pending_) {
+    for (auto& entry : parent_->subchannel_state_map_) {
+      // 1. Record the timestamp for use when ejecting addresses in this
+      // iteration.
+      entry.second->ejection_time = ExecCtx::Get()->Now();
+      // 2. For each address, swap the call counter's buckets in that address's
+      // map entry.
+      entry.second->bucket.backup_bucket->successes = 0;
+      entry.second->bucket.backup_bucket->failures = 0;
+      entry.second->bucket.current_bucket.swap(
+          entry.second->bucket.backup_bucket);
+      entry.second->bucket.active_bucket.store(
+          entry.second->bucket.current_bucket.get());
+      // 3. If the success_rate_ejection configuration field is set, run the
+      // success rate algorithm.
+      // 4. If the failure_percentage_ejection configuration field is set, run
+      // the falure percentage algorithm.
+      // 5. For each address in the map:
+      //   If the address is not ejected and the multiplier is greater than 0,
+      //   decrease the multiplier by 1. If the address is ejected, and the
+      //   current time is after ejection_timestamp + min(base_ejection_time *
+      //   multiplier, max(base_ejection_time, max_ejection_time)), un-eject the
+      //   address.
+    }
+    timer_pending_ = false;
+  }
+  Unref(DEBUG_LOCATION, "Timer");
+  GRPC_ERROR_UNREF(error);
 }
 
 //
