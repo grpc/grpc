@@ -1,0 +1,52 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <Authors>The gRPC Authors</Authors>
+    <Copyright>Copyright 2015 The gRPC Authors</Copyright>
+    <Description>gRPC C# Health Checking (for Grpc.Core)</Description>
+    <PackageIcon>packageIcon.png</PackageIcon>
+    <PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>
+    <PackageProjectUrl>https://github.com/grpc/grpc</PackageProjectUrl>
+    <PackageTags>gRPC health check</PackageTags>
+    <VersionPrefix>$(GrpcCsharpVersion)</VersionPrefix> 
+  </PropertyGroup>
+
+  <PropertyGroup>
+    <TargetFrameworks>net45;net462;netstandard1.5;netstandard2.0</TargetFrameworks>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+  </PropertyGroup>
+
+  <PropertyGroup Condition=" '$(TargetFramework)' == 'net462' or '$(TargetFramework)' == 'netstandard1.5' or '$(TargetFramework)' == 'netstandard2.0' ">
+    <DefineConstants>$(DefineConstants);GRPC_SUPPORT_WATCH;</DefineConstants>
+  </PropertyGroup>
+
+  <Import Project="..\Grpc.Core\SourceLink.csproj.include" />
+
+  <ItemGroup>
+    <None Include="../packageIcon.png" Pack="true" PackagePath="\"/>
+  </ItemGroup>
+
+  <ItemGroup>
+    <Compile Include="..\Grpc.Core.Api\Version.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="../Grpc.Core.Api/Grpc.Core.Api.csproj">
+      <PrivateAssets>None</PrivateAssets>
+    </ProjectReference>
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Google.Protobuf" Version="$(GoogleProtobufVersion)" />
+  </ItemGroup>
+
+  <ItemGroup Condition=" '$(TargetFramework)' == 'net462' or '$(TargetFramework)' == 'netstandard1.5' or '$(TargetFramework)' == 'netstandard2.0' ">
+    <PackageReference Include="System.Threading.Channels" Version="4.6.0" />
+  </ItemGroup>
+
+  <ItemGroup Condition=" '$(TargetFramework)' == 'net45' or '$(TargetFramework)' == 'net462' ">
+    <Reference Include="System" />
+    <Reference Include="Microsoft.CSharp" />
+  </ItemGroup>
+
+</Project>

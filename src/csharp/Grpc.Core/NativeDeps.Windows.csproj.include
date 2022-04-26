@@ -1,0 +1,9 @@
+<Project>
+  <ItemGroup>
+    <Content Include="..\..\..\cmake\build\grpc_csharp_ext.dll">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <Link>grpc_csharp_ext.x64.dll</Link>
+      <Pack>false</Pack>
+    </Content>
+  </ItemGroup>
+</Project>

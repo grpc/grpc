@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <!-- Ensure projects which depend on projects which depend on Grpc.Core receive this build logic. -->
+  <!-- We still need both "build" and "buildTransitive" directories since "buildTransitive" is only supported starting from nuget 5.0 -->
+  <Import Project="$(MSBuildThisFileDirectory)..\..\build\net45\Grpc.Core.targets" />
+</Project>

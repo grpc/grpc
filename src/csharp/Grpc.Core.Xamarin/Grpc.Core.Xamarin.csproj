@@ -1,0 +1,65 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <Authors>The gRPC Authors</Authors>
+    <Copyright>Copyright 2015 The gRPC Authors</Copyright>
+    <Description>Xamarin support for gRPC C#. Note that the gRPC C# support for the Xamarin platform is considered experimental.
+
+This package contains the native grpc_csharp_ext libraries that are needed to run gRPC C# on mobile platforms (Android, iOS).
+WARNING: Versions of Grpc.Core.Xamarin and Grpc.Core dependencies being used in your project must always match exactly, otherwise things will be badly broken.
+
+Note that the Grpc.Core implementation of gRPC for C# is in maintenance mode and will be replaced by grpc-dotnet in the future.
+See https://grpc.io/blog/grpc-csharp-future/ for details.</Description>
+    <PackageIcon>packageIcon.png</PackageIcon>
+    <PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>
+    <PackageProjectUrl>https://github.com/grpc/grpc</PackageProjectUrl>
+    <PackageTags>gRPC RPC HTTP/2</PackageTags>
+    <VersionPrefix>$(GrpcCsharpVersion)</VersionPrefix>
+  </PropertyGroup>
+
+  <PropertyGroup>
+    <TargetFrameworks>net45;netstandard1.5;netstandard2.0</TargetFrameworks>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+  </PropertyGroup>
+
+  <Import Project="..\Grpc.Core\SourceLink.csproj.include" />
+
+  <ItemGroup>
+    <None Include="../packageIcon.png" Pack="true" PackagePath="\"/>
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Include="..\nativelibs\csharp_ext_linux_android_armeabi-v7a\libgrpc_csharp_ext.so">
+      <PackagePath>native/android/armeabi-v7a/libgrpc_csharp_ext.so</PackagePath>
+      <Pack>true</Pack>
+    </Content>
+    <Content Include="..\nativelibs\csharp_ext_linux_android_arm64-v8a\libgrpc_csharp_ext.so">
+      <PackagePath>native/android/arm64-v8a/libgrpc_csharp_ext.so</PackagePath>
+      <Pack>true</Pack>
+    </Content>
+    <Content Include="..\nativelibs\csharp_ext_linux_android_x86\libgrpc_csharp_ext.so">
+      <PackagePath>native/android/x86/libgrpc_csharp_ext.so</PackagePath>
+      <Pack>true</Pack>
+    </Content>
+    <Content Include="..\nativelibs\csharp_ext_macos_ios\libgrpc_csharp_ext.a">
+      <PackagePath>native/ios/universal/libgrpc_csharp_ext.a</PackagePath>
+      <Pack>true</Pack>
+    </Content>
+    <Content Include="..\nativelibs\csharp_ext_macos_ios\libgrpc.a">
+      <PackagePath>native/ios/universal/libgrpc.a</PackagePath>
+      <Pack>true</Pack>
+    </Content>
+    <Content Include="build\MonoAndroid10\Grpc.Core.Xamarin.targets">
+      <PackagePath>build/MonoAndroid10/</PackagePath>
+      <Pack>true</Pack>
+    </Content>
+    <Content Include="build\Xamarin.iOS10\Grpc.Core.Xamarin.targets">
+      <PackagePath>build/Xamarin.iOS10/</PackagePath>
+      <Pack>true</Pack>
+    </Content>
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="../Grpc.Core/Grpc.Core.csproj" />
+  </ItemGroup>
+</Project>

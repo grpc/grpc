@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+
+  <ItemGroup>
+    <NativeReference Include="$(MSBuildThisFileDirectory)..\..\native\ios\universal\libgrpc_csharp_ext.a">
+      <Kind>Static</Kind>
+      <ForceLoad>True</ForceLoad>
+      <IsCxx>true</IsCxx>
+    </NativeReference>
+    <NativeReference Include="$(MSBuildThisFileDirectory)..\..\native\ios\universal\libgrpc.a">
+      <Kind>Static</Kind>
+      <ForceLoad>True</ForceLoad>
+      <IsCxx>true</IsCxx>
+    </NativeReference>
+  </ItemGroup>
+
+</Project>

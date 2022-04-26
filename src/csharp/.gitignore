@@ -1,0 +1,17 @@
+*.userprefs
+*.user
+*.lock.json
+/*.suo
+/*.sdf
+/.vs/
+bin/
+obj/
+*.nupkg
+StyleCop.Cache
+/packages/
+/protoc_plugins/
+
+test-results/
+TestResult.xml
+coverage_results.xml
+/TestResults

@@ -1,0 +1,99 @@
+<Project Sdk="Microsoft.NET.Sdk" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <AssemblyName>Protobuf.MSBuild</AssemblyName>
+    <VersionPrefix>$(GrpcCsharpVersion)</VersionPrefix>
+    <!-- If changing targets, change also paths in Google.Protobuf.Tools.targets. -->
+    <TargetFrameworks>net45;netstandard1.3</TargetFrameworks>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+  </PropertyGroup>
+
+  <Import Project="..\Grpc.Core\SourceLink.csproj.include" />
+
+  <PropertyGroup Label="Asset root folders. TODO(kkm): Change with package separation.">
+    <!-- TODO(kkm): Rework whole section when splitting packages.  -->
+    <!-- GRPC: ../../third_party/protobuf/src/google/protobuf/  -->
+    <!-- GPB:  ../src/google/protobuf/ -->
+    <Assets_ProtoInclude>../../../third_party/protobuf/src/google/protobuf/</Assets_ProtoInclude>
+
+    <!-- GPB:  ../protoc/ -->
+    <!-- GRPC: ../protoc_plugins/protoc_ -->
+    <Assets_ProtoCompiler>../protoc_plugins/protoc_</Assets_ProtoCompiler>
+
+    <!-- GRPC: ../protoc_plugins/ -->
+    <Assets_GrpcPlugins>../protoc_plugins/</Assets_GrpcPlugins>
+  </PropertyGroup>
+
+  <PropertyGroup Condition=" '$(TargetFramework)' != 'net45' ">
+    <DefineConstants>$(DefineConstants);NETCORE</DefineConstants>
+  </PropertyGroup>
+
+  <PropertyGroup Label="NuGet package definition" Condition=" '$(Configuration)' == 'Release' ">
+    <!-- TODO(kkm): Change to "build\" after splitting. -->
+    <BuildOutputTargetFolder>build\_protobuf\</BuildOutputTargetFolder>
+    <DevelopmentDependency>true</DevelopmentDependency>
+    <NoPackageAnalysis>true</NoPackageAnalysis>
+    <PackageId>Grpc.Tools</PackageId>
+    <Authors>The gRPC Authors</Authors>
+    <Copyright>Copyright 2018 The gRPC Authors</Copyright>
+    <Description>gRPC and Protocol Buffer compiler for managed C# and native C++ projects.
+
+Add this package to a project that contains .proto files to be compiled to code.
+It contains the compilers, include files and project system integration for gRPC
+and Protocol buffer service description files necessary to build them on Windows,
+Linux and MacOS. Managed runtime is supplied separately in the Grpc.Core package.</Description>
+    <PackageIcon>packageIcon.png</PackageIcon>
+    <PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>
+    <PackageProjectUrl>https://github.com/grpc/grpc</PackageProjectUrl>
+    <PackageTags>gRPC RPC HTTP/2</PackageTags>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <None Include="../packageIcon.png" Pack="true" PackagePath="\"/>
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- include common code for platform detection to avoid duplicating the logic -->
+    <Compile Include="..\Grpc.Core\Internal\CommonPlatformDetection.cs" Link="CommonPlatformDetection.cs" />
+  </ItemGroup>
+
+  <ItemGroup Label="NuGet package assets">
+    <None Pack="true" PackagePath="build\" Include="build\**\*.xml; build\**\*.props; build\**\*.targets;" />
+
+    <!-- Protobuf assets (for Google.Protobuf.Tools) -->
+    <_ProtoAssetName Include="any;api;descriptor;duration;empty;field_mask;
+                              source_context;struct;timestamp;type;wrappers" />
+    <_Asset PackagePath="build/native/include/google/protobuf/" Include="@(_ProtoAssetName->'$(Assets_ProtoInclude)%(Identity).proto')" />
+
+    <!-- TODO(kkm): GPB builds assets into "macosx", GRPC into "macos". -->
+    <!-- TODO(kkm): Do not place non-tools under tools/, use build/native/bin/. -->
+    <!-- TODO(kkm): Do not package windows x64 builds (#13098). -->
+    <_Asset PackagePath="tools/windows_x86/" Include="$(Assets_ProtoCompiler)windows_x86/protoc.exe" />
+    <_Asset PackagePath="tools/windows_x64/" Include="$(Assets_ProtoCompiler)windows_x64/protoc.exe" />
+    <_Asset PackagePath="tools/linux_x86/" Include="$(Assets_ProtoCompiler)linux_x86/protoc" />
+    <_Asset PackagePath="tools/linux_x64/" Include="$(Assets_ProtoCompiler)linux_x64/protoc" />
+    <_Asset PackagePath="tools/linux_arm64/" Include="$(Assets_ProtoCompiler)linux_aarch64/protoc" />
+    <_Asset PackagePath="tools/macosx_x64/" Include="$(Assets_ProtoCompiler)macos_x64/protoc" /> <!-- GPB: macosx-->
+
+    <!-- gRPC assets (for Grpc.Tools) -->
+    <_Asset PackagePath="tools/windows_x86/" Include="$(Assets_GrpcPlugins)protoc_windows_x86/grpc_csharp_plugin.exe" />
+    <_Asset PackagePath="tools/windows_x64/" Include="$(Assets_GrpcPlugins)protoc_windows_x64/grpc_csharp_plugin.exe" />
+    <_Asset PackagePath="tools/linux_x86/" Include="$(Assets_GrpcPlugins)protoc_linux_x86/grpc_csharp_plugin" />
+    <_Asset PackagePath="tools/linux_x64/" Include="$(Assets_GrpcPlugins)protoc_linux_x64/grpc_csharp_plugin" />
+    <_Asset PackagePath="tools/linux_arm64/" Include="$(Assets_GrpcPlugins)protoc_linux_aarch64/grpc_csharp_plugin" />
+    <_Asset PackagePath="tools/macosx_x64/" Include="$(Assets_GrpcPlugins)protoc_macos_x64/grpc_csharp_plugin" />
+
+    <None Include="@(_Asset)" Pack="true" Visible="false" />
+  </ItemGroup>
+
+  <ItemGroup Condition=" '$(TargetFramework)' == 'net45' ">
+    <Reference Include="Microsoft.Build.Framework; Microsoft.Build.Utilities.v4.0" Pack="false" />
+  </ItemGroup>
+
+  <ItemGroup Condition=" '$(TargetFramework)' != 'net45' ">
+    <PackageReference Include="Microsoft.Build.Framework; Microsoft.Build.Utilities.Core" Version="15.6.*" />
+    <!--  Set PrivateAssets="All" on all items, even those implicitly added,
+          so that they do not become dependencies of this package. -->
+    <PackageReference Update="@(PackageReference)" PrivateAssets="All" />
+  </ItemGroup>
+
+</Project>

@@ -1,0 +1,15 @@
+<Project>
+  <ItemGroup>
+    <Content Include="..\..\..\cmake\build\libgrpc_csharp_ext.so">
+      <Link>libgrpc_csharp_ext.x64.so</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <Pack>false</Pack>
+    </Content>
+    <Content Include="..\..\..\cmake\build\libgrpc_csharp_ext.so">
+      <!-- make sure the developer build works when on arm64 linux as well -->
+      <Link>libgrpc_csharp_ext.arm64.so</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <Pack>false</Pack>
+    </Content>
+  </ItemGroup>
+</Project>
