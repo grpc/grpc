@@ -352,6 +352,7 @@ class ServerCallData : public BaseCallData {
   };
 
   class PollContext;
+  struct SendInitialMetadata;
 
   // Handle cancellation.
   void Cancel(grpc_error_handle error, Flusher* flusher);
@@ -375,6 +376,8 @@ class ServerCallData : public BaseCallData {
   ArenaPromise<ServerMetadataHandle> promise_;
   // Pointer to where initial metadata will be stored.
   grpc_metadata_batch* recv_initial_metadata_ = nullptr;
+  // State for sending initial metadata.
+  SendInitialMetadata* send_initial_metadata_ = nullptr;
   // Closure to call when we're done with the trailing metadata.
   grpc_closure* original_recv_initial_metadata_ready_ = nullptr;
   // Our closure pointing to RecvInitialMetadataReadyCallback.

@@ -836,6 +836,16 @@ void ClientCallData::OnWakeup() {
 ///////////////////////////////////////////////////////////////////////////////
 // ServerCallData
 
+struct ServerCallData::SendInitialMetadata {
+  enum State {
+    kInitial,
+    kQueued,
+    kForwarded,
+  };
+  State state;
+  CapturedBatch batch;
+};
+
 class ServerCallData::PollContext {
  public:
   explicit PollContext(ServerCallData* self, Flusher* flusher)
@@ -887,6 +897,9 @@ ServerCallData::ServerCallData(grpc_call_element* elem,
                                const grpc_call_element_args* args,
                                uint8_t flags)
     : BaseCallData(elem, args, flags) {
+  if (server_initial_metadata_latch() != nullptr) {
+    send_initial_metadata_ = arena()->New<SendInitialMetadata>();
+  }
   GRPC_CLOSURE_INIT(&recv_initial_metadata_ready_,
                     RecvInitialMetadataReadyCallback, this,
                     grpc_schedule_on_exec_ctx);
@@ -935,6 +948,13 @@ void ServerCallData::StartBatch(grpc_transport_stream_op_batch* b) {
     batch->payload->recv_initial_metadata.recv_initial_metadata_ready =
         &recv_initial_metadata_ready_;
     recv_initial_state_ = RecvInitialState::kForwarded;
+  }
+
+  // send_initial_metadata
+  if (send_initial_metadata_ != nullptr && batch->send_initial_metadata) {
+    GPR_ASSERT(send_initial_metadata_->state == SendInitialMetadata::kInitial);
+    send_initial_metadata_->batch = batch;
+    send_initial_metadata_->state = SendInitialMetadata::kQueued;
   }
 
   // send_trailing_metadata
