@@ -3,8 +3,7 @@ Server-side API for Authenticating Clients
 
 NOTE: This document describes how server-side authentication works in C-core based gRPC implementations only. In gRPC Java and Go, server side authentication is handled differently.
 
-NOTE2: `CallCredentials` class is only valid if its security level is less than or equal to the security level of the associated connection. See the [gRFC](https://github.com/grpc/proposal/blob/master/L62-core-call-credential-security-level.md) for more.
-
+NOTE2: `CallCredentials` class is only valid if the security level it requires is less than or equal to the security level of connection used to transfer it. See the [gRFC](https://github.com/grpc/proposal/blob/master/L62-core-call-credential-security-level.md) for more information.
 ## AuthContext
 
 To perform server-side authentication, gRPC exposes the *authentication context* for each call. The context exposes important authentication-related information about the RPC such as the type of security/authentication type being used and the peer identity.
