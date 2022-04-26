@@ -2,6 +2,7 @@
 - script: tools/run_tests/sanity/check_absl_mutex.sh
 - script: tools/run_tests/sanity/check_bad_dependencies.sh
 - script: tools/run_tests/sanity/check_bazel_workspace.py
+- script: tools/run_tests/sanity/check_banned_filenames.py
 - script: tools/run_tests/sanity/check_buildifier.sh
 - script: tools/run_tests/sanity/check_cache_mk.sh
 - script: tools/run_tests/sanity/check_deprecated_grpc++.py
