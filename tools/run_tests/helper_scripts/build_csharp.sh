@@ -15,5 +15,9 @@
 
 set -ex
 
-# Nothing to do here. C# has been removed from this repository. This script is a placeholder
-# to prevent C# tests from becoming red (until they get eventually disabled).
+cd "$(dirname "$0")/../../.."
+
+pushd src/csharp
+
+# remove once Grpc.Tools has been removed from this repository
+dotnet build --configuration "$MSBUILD_CONFIG" Grpc.sln

@@ -12,5 +12,15 @@
 @rem See the License for the specific language governing permissions and
 @rem limitations under the License.
 
-@rem Nothing to do here. C# has been removed from this repository. This script is a placeholder
-@rem to prevent C# tests from becoming red (until they get eventually disabled).
+cd /d %~dp0\..\..\..
+
+cd src\csharp
+
+@rem remove once Grpc.Tools has been removed from this repository
+dotnet build --configuration %MSBUILD_CONFIG% Grpc.sln || goto :error
+
+goto :EOF
+
+:error
+echo Failed!
+exit /b %errorlevel%
