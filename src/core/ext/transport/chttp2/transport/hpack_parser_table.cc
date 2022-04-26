@@ -58,7 +58,8 @@ auto HPackTable::MementoRingBuffer::PopOne() -> Memento {
   return std::move(entries_[index]);
 }
 
-auto HPackTable::MementoRingBuffer::Lookup(uint32_t index) const -> const Memento* {
+auto HPackTable::MementoRingBuffer::Lookup(uint32_t index) const
+    -> const Memento* {
   if (index >= num_entries_) return nullptr;
   uint32_t offset = (num_entries_ - 1u - index + first_entry_) % max_entries_;
   return &entries_[offset];

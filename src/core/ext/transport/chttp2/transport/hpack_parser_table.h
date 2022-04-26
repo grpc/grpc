@@ -97,8 +97,8 @@ class HPackTable {
     uint32_t first_entry_ = 0;
     // How many entries are in the table.
     uint32_t num_entries_ = 0;
-    // Maximum number of entries we could possibly fit in the table, given defined
-    // overheads.
+    // Maximum number of entries we could possibly fit in the table, given
+    // defined overheads.
     uint32_t max_entries_ = hpack_constants::kInitialTableEntries;
 
     std::vector<Memento> entries_;
