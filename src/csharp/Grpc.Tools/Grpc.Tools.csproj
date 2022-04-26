@@ -7,7 +7,7 @@
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
   </PropertyGroup>
 
-  <Import Project="..\Grpc.Core\SourceLink.csproj.include" />
+  <Import Project="SourceLink.csproj.include" />
 
   <PropertyGroup Label="Asset root folders. TODO(kkm): Change with package separation.">
     <!-- TODO(kkm): Rework whole section when splitting packages.  -->
@@ -49,11 +49,6 @@ Linux and MacOS. Managed runtime is supplied separately in the Grpc.Core package
 
   <ItemGroup>
     <None Include="../packageIcon.png" Pack="true" PackagePath="\"/>
-  </ItemGroup>
-
-  <ItemGroup>
-    <!-- include common code for platform detection to avoid duplicating the logic -->
-    <Compile Include="..\Grpc.Core\Internal\CommonPlatformDetection.cs" Link="CommonPlatformDetection.cs" />
   </ItemGroup>
 
   <ItemGroup Label="NuGet package assets">
