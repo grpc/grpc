@@ -893,7 +893,7 @@ ServerCallData::ServerCallData(grpc_call_element* elem,
 }
 
 ServerCallData::~ServerCallData() {
-  GPR_ASSERT(!is_polling_);
+  GPR_ASSERT(poll_ctx_ == nullptr);
   GRPC_ERROR_UNREF(cancelled_error_);
 }
 
@@ -914,8 +914,8 @@ void ServerCallData::StartBatch(grpc_transport_stream_op_batch* b) {
                !batch->send_trailing_metadata && !batch->send_message &&
                !batch->recv_initial_metadata && !batch->recv_message &&
                !batch->recv_trailing_metadata);
-    Cancel(batch->payload->cancel_stream.cancel_error);
-    batch.Release(&flusher);
+    Cancel(batch->payload->cancel_stream.cancel_error, &flusher);
+    batch.ResumeWith(&flusher);
     return;
   }
 
@@ -950,13 +950,13 @@ void ServerCallData::StartBatch(grpc_transport_stream_op_batch* b) {
         abort();  // unreachable
         break;
       case SendTrailingState::kCancelled:
-        batch.Cancel(GRPC_ERROR_REF(cancelled_error_), &flusher);
+        batch.CancelWith(GRPC_ERROR_REF(cancelled_error_), &flusher);
         break;
     }
     return;
   }
 
-  if (batch.is_captured()) batch.Release(&flusher);
+  if (batch.is_captured()) batch.ResumeWith(&flusher);
 }
 
 // Handle cancellation.
@@ -968,7 +968,7 @@ void ServerCallData::Cancel(grpc_error_handle error, Flusher* flusher) {
   promise_ = ArenaPromise<ServerMetadataHandle>();
   if (send_trailing_state_ == SendTrailingState::kQueued) {
     send_trailing_state_ = SendTrailingState::kCancelled;
-    send_trailing_metadata_batch_.Cancel(GRPC_ERROR_REF(error), flusher);
+    send_trailing_metadata_batch_.CancelWith(GRPC_ERROR_REF(error), flusher);
   } else {
     send_trailing_state_ = SendTrailingState::kCancelled;
   }
@@ -1073,7 +1073,7 @@ void ServerCallData::WakeInsideCombiner(Flusher* flusher) {
           } else {
             destroy_md = false;
           }
-          send_trailing_metadata_batch_.Release(flusher);
+          send_trailing_metadata_batch_.ResumeWith(flusher);
           send_trailing_state_ = SendTrailingState::kForwarded;
         } break;
         case SendTrailingState::kForwarded:
