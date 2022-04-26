@@ -133,12 +133,11 @@ class CSharpDistribTest(object):
                 }
             else:
                 environ = {'DISTRIBTEST_OUTPATH': 'DistribTest\\bin\\Debug'}
-            return create_jobspec(self.name, [
-                'bash',
-                'tools/run_tests/artifacts/run_distribtest_csharp.sh'
-            ],
-                                  environ=environ,
-                                  use_workspace=True)
+            return create_jobspec(
+                self.name,
+                ['bash', 'tools/run_tests/artifacts/run_distribtest_csharp.sh'],
+                environ=environ,
+                use_workspace=True)
         else:
             raise Exception("Not supported yet.")
 
