@@ -58,8 +58,25 @@ ccache --version
 
 @rem Only install C# dependencies if we are running C# tests
 If "%PREPARE_BUILD_INSTALL_DEPS_CSHARP%" == "true" (
-  @rem Nothing to do here. C# has been removed from this repository.
+  @rem C# prerequisites: Install dotnet SDK
+  powershell -File src\csharp\install_dotnet_sdk.ps1 || goto :error
+
+  @rem Explicitly add default nuget source.
+  @rem (on Kokoro grpc-win2016 workers, the default nuget source is not configured,
+  @rem which results in errors when "dotnet restore" is run)
+  %LOCALAPPDATA%\Microsoft\dotnet\dotnet nuget add source https://api.nuget.org/v3/index.json -n "nuget.org"
 )
+
+@rem Add dotnet on path and disable some unwanted dotnet
+@rem option regardless of PREPARE_BUILD_INSTALL_DEPS_CSHARP value.
+@rem Always setting the env vars is fine since its instantaneous,
+@rem it can't fail and it avoids possible issues with
+@rem "setlocal" and "EnableDelayedExpansion" which would be required if
+@rem we wanted to do the same under the IF block.
+set PATH=%LOCALAPPDATA%\Microsoft\dotnet;%PATH%
+set NUGET_XMLDOC_MODE=skip
+set DOTNET_SKIP_FIRST_TIME_EXPERIENCE=true
+set DOTNET_CLI_TELEMETRY_OPTOUT=true
 
 @rem Only install Python interpreters if we are running Python tests
 If "%PREPARE_BUILD_INSTALL_DEPS_PYTHON%" == "true" (
