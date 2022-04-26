@@ -1239,6 +1239,7 @@ void GrpcLb::BalancerCallState::OnBalancerStatusReceivedLocked(
     // If the fallback-at-startup checks are pending, go into fallback mode
     // immediately.  This short-circuits the timeout for the fallback-at-startup
     // case.
+    grpclb_policy()->lb_calld_.reset();
     if (grpclb_policy()->fallback_at_startup_checks_pending_) {
       GPR_ASSERT(!seen_serverlist_);
       gpr_log(GPR_INFO,
@@ -1254,7 +1255,6 @@ void GrpcLb::BalancerCallState::OnBalancerStatusReceivedLocked(
       // This handles the fallback-after-startup case.
       grpclb_policy()->MaybeEnterFallbackModeAfterStartup();
     }
-    grpclb_policy()->lb_calld_.reset();
     GPR_ASSERT(!grpclb_policy()->shutting_down_);
     grpclb_policy()->channel_control_helper()->RequestReresolution();
     if (seen_initial_response_) {

@@ -84,12 +84,12 @@ class SubchannelInterface : public RefCounted<SubchannelInterface> {
   // If the subchannel is currently in backoff delay due to a previously
   // failed attempt, the new connection attempt will not start until the
   // backoff delay has elapsed.
-  virtual void AttemptToConnect() = 0;
+  virtual void RequestConnection() = 0;
 
-  // Resets the subchannel's connection backoff state.  If AttemptToConnect()
+  // Resets the subchannel's connection backoff state.  If RequestConnection()
   // has been called since the subchannel entered TRANSIENT_FAILURE state,
   // starts a new connection attempt immediately; otherwise, a new connection
-  // attempt will be started as soon as AttemptToConnect() is called.
+  // attempt will be started as soon as RequestConnection() is called.
   virtual void ResetBackoff() = 0;
 
   // Registers a new data watcher.
@@ -124,7 +124,9 @@ class DelegatingSubchannel : public SubchannelInterface {
       ConnectivityStateWatcherInterface* watcher) override {
     return wrapped_subchannel_->CancelConnectivityStateWatch(watcher);
   }
-  void AttemptToConnect() override { wrapped_subchannel_->AttemptToConnect(); }
+  void RequestConnection() override {
+    wrapped_subchannel_->RequestConnection();
+  }
   void ResetBackoff() override { wrapped_subchannel_->ResetBackoff(); }
   const grpc_channel_args* channel_args() override {
     return wrapped_subchannel_->channel_args();
