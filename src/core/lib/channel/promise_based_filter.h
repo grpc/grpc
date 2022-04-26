@@ -130,7 +130,7 @@ class BaseCallData : public Activity, private Wakeable {
     // Calls closures, schedules batches, relinquishes call combiner.
     ~Flusher();
 
-    void Release(grpc_transport_stream_op_batch* batch) {
+    void Resume(grpc_transport_stream_op_batch* batch) {
       release_.push_back(batch);
     }
 
@@ -168,8 +168,8 @@ class BaseCallData : public Activity, private Wakeable {
     grpc_transport_stream_op_batch* operator->() { return batch_; }
     bool is_captured() const { return batch_ != nullptr; }
 
-    void Release(Flusher* releaser);
-    void Cancel(grpc_error_handle error, Flusher* releaser);
+    void ResumeWith(Flusher* releaser);
+    void CancelWith(grpc_error_handle error, Flusher* releaser);
 
     void Swap(CapturedBatch* other) { std::swap(batch_, other->batch_); }
 
