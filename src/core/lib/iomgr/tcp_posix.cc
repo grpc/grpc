@@ -863,7 +863,8 @@ static bool tcp_do_read(grpc_tcp* tcp, grpc_error_handle* error)
 
 static void maybe_make_read_slices(grpc_tcp* tcp)
     ABSL_EXCLUSIVE_LOCKS_REQUIRED(tcp->read_mu) {
-  if (tcp->incoming_buffer->length < tcp->min_progress_size &&
+  if (tcp->incoming_buffer->length <
+          static_cast<size_t>(tcp->min_progress_size) &&
       tcp->incoming_buffer->count < MAX_READ_IOVEC) {
     if (GRPC_TRACE_FLAG_ENABLED(grpc_tcp_trace)) {
       gpr_log(GPR_INFO,
