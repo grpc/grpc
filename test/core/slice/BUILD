@@ -71,6 +71,7 @@ grpc_cc_test(
     name = "percent_encoding_test",
     srcs = ["percent_encoding_test.cc"],
     language = "C++",
+    uses_event_engine = False,
     uses_polling = False,
     deps = [
         "//:gpr",
@@ -86,6 +87,7 @@ grpc_cc_test(
         "gtest",
     ],
     language = "C++",
+    uses_event_engine = False,
     uses_polling = False,
     deps = [
         "//:gpr",
@@ -96,21 +98,10 @@ grpc_cc_test(
 )
 
 grpc_cc_test(
-    name = "slice_intern_test",
-    srcs = ["slice_intern_test.cc"],
-    language = "C++",
-    uses_polling = False,
-    deps = [
-        "//:gpr",
-        "//:grpc",
-        "//test/core/util:grpc_test_util",
-    ],
-)
-
-grpc_cc_test(
     name = "slice_string_helpers_test",
     srcs = ["slice_string_helpers_test.cc"],
     language = "C++",
+    uses_event_engine = False,
     uses_polling = False,
     deps = [
         "//:gpr",
@@ -123,6 +114,7 @@ grpc_cc_test(
     name = "slice_split_test",
     srcs = ["slice_split_test.cc"],
     language = "C++",
+    uses_event_engine = False,
     uses_polling = False,
     deps = [
         "//:gpr",
@@ -135,6 +127,7 @@ grpc_cc_test(
     name = "slice_buffer_test",
     srcs = ["slice_buffer_test.cc"],
     language = "C++",
+    uses_event_engine = False,
     uses_polling = False,
     deps = [
         "//:gpr",
@@ -147,6 +140,7 @@ grpc_cc_test(
     name = "b64_test",
     srcs = ["b64_test.cc"],
     language = "C++",
+    uses_event_engine = False,
     uses_polling = False,
     deps = [
         "//:gpr",

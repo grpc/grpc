@@ -399,7 +399,9 @@ namespace Grpc.Core.Tests
             helper.UnaryHandler = new UnaryServerMethod<string, string>((request, context) =>
             {
                 Assert.IsFalse(context.AuthContext.IsPeerAuthenticated);
-                Assert.AreEqual(0, context.AuthContext.Properties.Count());
+                // 1) security_level: TSI_SECURITY_NONE
+                // 2) transport_security_type: 'insecure'
+                Assert.AreEqual(2, context.AuthContext.Properties.Count());
                 return Task.FromResult("PASS");
             });
             Assert.AreEqual("PASS", Calls.BlockingUnaryCall(helper.CreateUnaryCall(), "abc"));

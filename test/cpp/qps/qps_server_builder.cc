@@ -16,7 +16,7 @@
  *
  */
 
-#include "qps_server_builder.h"
+#include "test/cpp/qps/qps_server_builder.h"
 
 #include "absl/memory/memory.h"
 

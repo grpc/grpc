@@ -238,7 +238,6 @@ class KubernetesClientRunner(base_runner.KubernetesBaseRunner):
                  gcp_service_account: str,
                  xds_server_uri=None,
                  network='default',
-                 config_scope=None,
                  service_account_name=None,
                  stats_port=8079,
                  deployment_template='client.deployment.yaml',
@@ -257,7 +256,6 @@ class KubernetesClientRunner(base_runner.KubernetesBaseRunner):
         self.td_bootstrap_image = td_bootstrap_image
         self.xds_server_uri = xds_server_uri
         self.network = network
-        self.config_scope = config_scope
         self.deployment_template = deployment_template
         self.debug_use_port_forwarding = debug_use_port_forwarding
         self.enable_workload_identity = enable_workload_identity
@@ -281,7 +279,7 @@ class KubernetesClientRunner(base_runner.KubernetesBaseRunner):
         # Mutable state
         self.deployment: Optional[k8s.V1Deployment] = None
         self.service_account: Optional[k8s.V1ServiceAccount] = None
-        self.port_forwarder = None
+        self.port_forwarder: Optional[k8s.PortForwarder] = None
 
     # TODO(sergiitk): make rpc UnaryCall enum or get it from proto
     def run(self,
@@ -291,6 +289,7 @@ class KubernetesClientRunner(base_runner.KubernetesBaseRunner):
             qps=25,
             metadata='',
             secure_mode=False,
+            config_mesh=None,
             print_response=False) -> XdsTestClient:
         logger.info(
             'Deploying xDS test client "%s" to k8s namespace %s: '
@@ -329,13 +328,13 @@ class KubernetesClientRunner(base_runner.KubernetesBaseRunner):
             td_bootstrap_image=self.td_bootstrap_image,
             xds_server_uri=self.xds_server_uri,
             network=self.network,
-            config_scope=self.config_scope,
             stats_port=self.stats_port,
             server_target=server_target,
             rpc=rpc,
             qps=qps,
             metadata=metadata,
             secure_mode=secure_mode,
+            config_mesh=config_mesh,
             print_response=print_response)
 
         self._wait_deployment_with_available_replicas(self.deployment_name)
@@ -344,6 +343,7 @@ class KubernetesClientRunner(base_runner.KubernetesBaseRunner):
         pod = self.k8s_namespace.list_deployment_pods(self.deployment)[0]
         self._wait_pod_started(pod.metadata.name)
         pod_ip = pod.status.pod_ip
+        rpc_port = self.stats_port
         rpc_host = None
 
         # Experimental, for local debugging.
@@ -352,16 +352,17 @@ class KubernetesClientRunner(base_runner.KubernetesBaseRunner):
                         pod_ip, self.stats_port)
             self.port_forwarder = self.k8s_namespace.port_forward_pod(
                 pod, remote_port=self.stats_port)
-            rpc_host = self.k8s_namespace.PORT_FORWARD_LOCAL_ADDRESS
+            rpc_port = self.port_forwarder.local_port
+            rpc_host = self.port_forwarder.local_address
 
         return XdsTestClient(ip=pod_ip,
-                             rpc_port=self.stats_port,
+                             rpc_port=rpc_port,
                              server_target=server_target,
                              rpc_host=rpc_host)
 
     def cleanup(self, *, force=False, force_namespace=False):
         if self.port_forwarder:
-            self.k8s_namespace.port_forward_stop(self.port_forwarder)
+            self.port_forwarder.close()
             self.port_forwarder = None
         if self.deployment or force:
             self._delete_deployment(self.deployment_name)

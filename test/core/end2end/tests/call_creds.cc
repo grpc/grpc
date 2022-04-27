@@ -86,11 +86,12 @@ static void drain_cq(grpc_completion_queue* cq) {
 
 static void shutdown_server(grpc_end2end_test_fixture* f) {
   if (!f->server) return;
-  grpc_server_shutdown_and_notify(f->server, f->shutdown_cq, tag(1000));
-  GPR_ASSERT(grpc_completion_queue_pluck(f->shutdown_cq, tag(1000),
-                                         grpc_timeout_seconds_to_deadline(5),
-                                         nullptr)
-                 .type == GRPC_OP_COMPLETE);
+  grpc_server_shutdown_and_notify(f->server, f->cq, tag(1000));
+  grpc_event ev;
+  do {
+    ev = grpc_completion_queue_next(f->cq, grpc_timeout_seconds_to_deadline(5),
+                                    nullptr);
+  } while (ev.type != GRPC_OP_COMPLETE || ev.tag != tag(1000));
   grpc_server_destroy(f->server);
   f->server = nullptr;
 }
@@ -108,7 +109,6 @@ static void end_test(grpc_end2end_test_fixture* f) {
   grpc_completion_queue_shutdown(f->cq);
   drain_cq(f->cq);
   grpc_completion_queue_destroy(f->cq);
-  grpc_completion_queue_destroy(f->shutdown_cq);
 }
 
 static void print_auth_context(int is_client, const grpc_auth_context* ctx) {
@@ -156,8 +156,8 @@ static void request_response_with_payload_and_call_creds(
   grpc_slice details;
   int was_cancelled = 2;
   grpc_call_credentials* creds = nullptr;
-  grpc_auth_context* s_auth_context = nullptr;
-  grpc_auth_context* c_auth_context = nullptr;
+  grpc_auth_context* server_auth_context = nullptr;
+  grpc_auth_context* client_auth_context = nullptr;
 
   f = begin_test(config, test_name, use_secure_call_creds, 0);
   cqv = cq_verifier_create(f.cq);
@@ -171,8 +171,7 @@ static void request_response_with_payload_and_call_creds(
     creds =
         grpc_google_iam_credentials_create(iam_token, iam_selector, nullptr);
   } else {
-    creds =
-        grpc_md_only_test_credentials_create(fake_md_key, fake_md_value, false);
+    creds = grpc_md_only_test_credentials_create(fake_md_key, fake_md_value);
   }
   GPR_ASSERT(creds != nullptr);
   GPR_ASSERT(grpc_call_set_credentials(c, creds) == GRPC_CALL_OK);
@@ -185,8 +184,8 @@ static void request_response_with_payload_and_call_creds(
         creds = grpc_google_iam_credentials_create(
             overridden_iam_token, overridden_iam_selector, nullptr);
       } else {
-        creds = grpc_md_only_test_credentials_create(
-            overridden_fake_md_key, overridden_fake_md_value, false);
+        creds = grpc_md_only_test_credentials_create(overridden_fake_md_key,
+                                                     overridden_fake_md_value);
       }
       GPR_ASSERT(creds != nullptr);
       GPR_ASSERT(grpc_call_set_credentials(c, creds) == GRPC_CALL_OK);
@@ -255,15 +254,15 @@ static void request_response_with_payload_and_call_creds(
     GPR_ASSERT(GRPC_CALL_OK == error);
     CQ_EXPECT_COMPLETION(cqv, tag(101), 1);
     cq_verify(cqv);
-    s_auth_context = grpc_call_auth_context(s);
-    GPR_ASSERT(s_auth_context != nullptr);
-    print_auth_context(0, s_auth_context);
-    grpc_auth_context_release(s_auth_context);
+    server_auth_context = grpc_call_auth_context(s);
+    GPR_ASSERT(server_auth_context != nullptr);
+    print_auth_context(0, server_auth_context);
+    grpc_auth_context_release(server_auth_context);
 
-    c_auth_context = grpc_call_auth_context(c);
-    GPR_ASSERT(c_auth_context != nullptr);
-    print_auth_context(1, c_auth_context);
-    grpc_auth_context_release(c_auth_context);
+    client_auth_context = grpc_call_auth_context(c);
+    GPR_ASSERT(client_auth_context != nullptr);
+    print_auth_context(1, client_auth_context);
+    grpc_auth_context_release(client_auth_context);
 
     /* Cannot set creds on the server call object. */
     GPR_ASSERT(grpc_call_set_credentials(s, nullptr) != GRPC_CALL_OK);
@@ -453,8 +452,7 @@ static void test_request_with_server_rejecting_client_creds(
                                deadline, nullptr);
   GPR_ASSERT(c);
 
-  creds =
-      grpc_md_only_test_credentials_create(fake_md_key, fake_md_value, false);
+  creds = grpc_md_only_test_credentials_create(fake_md_key, fake_md_value);
   GPR_ASSERT(creds != nullptr);
   GPR_ASSERT(grpc_call_set_credentials(c, creds) == GRPC_CALL_OK);
   grpc_call_credentials_release(creds);

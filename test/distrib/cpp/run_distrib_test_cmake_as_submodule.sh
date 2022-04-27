@@ -17,9 +17,12 @@ set -ex
 
 cd "$(dirname "$0")/../../.."
 
+# Use externally provided env to determine build parallelism, otherwise use default.
+GRPC_CPP_DISTRIBTEST_BUILD_COMPILER_JOBS=${GRPC_CPP_DISTRIBTEST_BUILD_COMPILER_JOBS:-4}
+
 # Build helloworld example using cmake, including grpc with "add_subdirectory"
 cd examples/cpp/helloworld
 mkdir -p cmake/build
 cd cmake/build
 cmake -DGRPC_AS_SUBMODULE=ON ../..
-make
+make "-j${GRPC_CPP_DISTRIBTEST_BUILD_COMPILER_JOBS}"

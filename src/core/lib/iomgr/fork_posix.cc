@@ -70,9 +70,10 @@ void grpc_prefork() {
     gpr_log(GPR_INFO,
             "Fork support is only compatible with the epoll1 and poll polling "
             "strategies");
+    return;
   }
   if (!grpc_core::Fork::BlockExecCtx()) {
-    gpr_log(GPR_INFO,
+    gpr_log(GPR_ERROR,
             "Other threads are currently calling into gRPC, skipping fork() "
             "handlers");
     return;

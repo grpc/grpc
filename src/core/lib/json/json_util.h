@@ -33,7 +33,7 @@ namespace grpc_core {
 // proto message, as per:
 //   https://developers.google.com/protocol-buffers/docs/proto3#json
 // Returns true on success, false otherwise.
-bool ParseDurationFromJson(const Json& field, grpc_millis* duration);
+bool ParseDurationFromJson(const Json& field, Duration* duration);
 
 //
 // Helper functions for extracting types from JSON.
@@ -45,9 +45,9 @@ bool ExtractJsonNumber(const Json& json, absl::string_view field_name,
                        NumericType* output,
                        std::vector<grpc_error_handle>* error_list) {
   static_assert(std::is_integral<NumericType>::value, "Integral required");
-  if (json.type() != Json::Type::NUMBER) {
-    error_list->push_back(GRPC_ERROR_CREATE_FROM_CPP_STRING(
-        absl::StrCat("field:", field_name, " error:type should be NUMBER")));
+  if (json.type() != Json::Type::NUMBER && json.type() != Json::Type::STRING) {
+    error_list->push_back(GRPC_ERROR_CREATE_FROM_CPP_STRING(absl::StrCat(
+        "field:", field_name, " error:type should be NUMBER or STRING")));
     return false;
   }
   if (!absl::SimpleAtoi(json.string_value(), output)) {
@@ -145,7 +145,7 @@ bool ParseJsonObjectField(const Json::Object& object,
 // Alternative to ParseJsonObjectField() for duration-value fields.
 bool ParseJsonObjectFieldAsDuration(const Json::Object& object,
                                     absl::string_view field_name,
-                                    grpc_millis* output,
+                                    Duration* output,
                                     std::vector<grpc_error_handle>* error_list,
                                     bool required = true);
 

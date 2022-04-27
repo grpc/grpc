@@ -52,7 +52,7 @@ const int kProtoBufferWriterMaxBufferLength = 1024 * 1024;
 ///
 /// Read more about ZeroCopyOutputStream interface here:
 /// https://developers.google.com/protocol-buffers/docs/reference/cpp/google.protobuf.io.zero_copy_stream#ZeroCopyOutputStream
-class ProtoBufferWriter : public ::grpc::protobuf::io::ZeroCopyOutputStream {
+class ProtoBufferWriter : public grpc::protobuf::io::ZeroCopyOutputStream {
  public:
   /// Constructor for this derived class
   ///
@@ -110,7 +110,12 @@ class ProtoBufferWriter : public ::grpc::protobuf::io::ZeroCopyOutputStream {
     // On win x64, int is only 32bit
     GPR_CODEGEN_ASSERT(GRPC_SLICE_LENGTH(slice_) <= INT_MAX);
     byte_count_ += * size = static_cast<int>(GRPC_SLICE_LENGTH(slice_));
-    g_core_codegen_interface->grpc_slice_buffer_add(slice_buffer_, slice_);
+    // Using grpc_slice_buffer_add could modify slice_ and merge it with the
+    // previous slice. Therefore, use grpc_slice_buffer_add_indexed method to
+    // ensure the slice gets added at a separate index. It can then be kept
+    // around and popped later in the BackUp function.
+    g_core_codegen_interface->grpc_slice_buffer_add_indexed(slice_buffer_,
+                                                            slice_);
     return true;
   }
 

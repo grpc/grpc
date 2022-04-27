@@ -24,6 +24,14 @@
 
 namespace grpc_core {
 
+//
+// CertificateProviderStore::CertificateProviderWrapper
+//
+
+const char* CertificateProviderStore::CertificateProviderWrapper::type() const {
+  return "Wrapper";
+}
+
 // If a certificate provider is created, the CertificateProviderStore
 // maintains a raw pointer to the created CertificateProviderWrapper so that
 // future calls to `CreateOrGetCertificateProvider()` with the same key result

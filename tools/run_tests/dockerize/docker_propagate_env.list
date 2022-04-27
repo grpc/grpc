@@ -1,0 +1,22 @@
+# Pass this file to "docker run" using --env-file argument.
+# Variables listed in this file will be set or propagated
+# to the docker container.
+
+# TODO(jtattermusch): revisit whether this very old hack is still needed.
+THIS_IS_REALLY_NEEDED="see https://github.com/docker/docker/issues/14203 for why docker is awful"
+
+# Kokoro sets environment variables for each build and we want them to be
+# available inside the test docker containers.
+KOKORO_BUILD_ID
+KOKORO_BUILD_INITIATOR
+KOKORO_BUILD_NUMBER
+KOKORO_BUILD_URL
+KOKORO_GIT_COMMIT
+KOKORO_GITHUB_COMMIT
+KOKORO_JOB_NAME
+KOKORO_GITHUB_PULL_REQUEST_NUMBER
+KOKORO_GITHUB_PULL_REQUEST_TARGET_BRANCH
+
+# Propagate ccache configuration to the docker containers.
+GRPC_BUILD_ENABLE_CCACHE
+CCACHE_SECONDARY_STORAGE

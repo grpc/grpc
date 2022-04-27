@@ -291,7 +291,7 @@ bool HeaderMatcher::Match(
     match = value.has_value() == present_match_;
   } else if (!value.has_value()) {
     // All other types fail to match if field is not present.
-    match = false;
+    return false;
   } else if (type_ == Type::kRange) {
     int64_t int_value;
     match = absl::SimpleAtoi(value.value(), &int_value) &&

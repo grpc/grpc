@@ -17,7 +17,7 @@ spec:
   - language: csharp
     pool: ${client_pool}
     run:
-      args:
+    - args:
       - -c
       - |
         timeout --kill-after="${KILL_AFTER}" "${POD_TIMEOUT}" dotnet exec \
@@ -26,10 +26,24 @@ spec:
       command:
       - bash
       image: ${prebuilt_image_prefix}/csharp:${prebuilt_image_tag}
+      name: main
+  - language: dotnet
+    pool: ${client_pool}
+    run:
+    - args:
+      - -c
+      # TODO(jtattermusch): why is the extra "--" in cmdline needed?
+      - |
+        timeout --kill-after="${KILL_AFTER}" "${POD_TIMEOUT}" \
+            /execute/qps_worker/QpsWorker -- --driver_port="${DRIVER_PORT}"
+      command:
+      - bash
+      image: ${prebuilt_image_prefix}/dotnet:${prebuilt_image_tag}
+      name: main
   - language: cxx
     pool: ${client_pool}
     run:
-      args:
+    - args:
       - -c
       - |
         timeout --kill-after="${KILL_AFTER}" "${POD_TIMEOUT}" \
@@ -38,10 +52,11 @@ spec:
       command:
       - bash
       image: ${prebuilt_image_prefix}/cxx:${prebuilt_image_tag}
+      name: main
   - language: go
     pool: ${client_pool}
     run:
-      args:
+    - args:
       - -c
       - |
         timeout --kill-after="${KILL_AFTER}" "${POD_TIMEOUT}" \
@@ -50,10 +65,11 @@ spec:
       command:
       - bash
       image: ${prebuilt_image_prefix}/go:${prebuilt_image_tag}
+      name: main
   - language: java
     pool: ${client_pool}
     run:
-      args:
+    - args:
       - -c
       - |
         timeout --kill-after="${KILL_AFTER}" "${POD_TIMEOUT}" \
@@ -61,10 +77,11 @@ spec:
       command:
       - bash
       image: ${prebuilt_image_prefix}/java:${prebuilt_image_tag}
+      name: main
   - language: node
     pool: ${client_pool}
     run:
-      args:
+    - args:
       - -c
       - |
         timeout --kill-after="${KILL_AFTER}" "${POD_TIMEOUT}" \
@@ -73,10 +90,11 @@ spec:
       command:
       - bash
       image: ${prebuilt_image_prefix}/node:${prebuilt_image_tag}
+      name: main
   - language: php7
     pool: ${client_pool}
     run:
-      args:
+    - args:
       - -c
       - |
         timeout --kill-after="${KILL_AFTER}" "${POD_TIMEOUT}" \
@@ -84,10 +102,11 @@ spec:
       command:
       - bash
       image: ${prebuilt_image_prefix}/php7:${prebuilt_image_tag}
+      name: main
   - language: php7_protobuf_c
     pool: ${client_pool}
     run:
-      args:
+    - args:
       - -c
       - |
         timeout --kill-after="${KILL_AFTER}" "${POD_TIMEOUT}" \
@@ -95,10 +114,11 @@ spec:
       command:
       - bash
       image: ${prebuilt_image_prefix}/php7:${prebuilt_image_tag}
+      name: main
   - language: python
     pool: ${client_pool}
     run:
-      args:
+    - args:
       - -c
       - |
         timeout --kill-after="${KILL_AFTER}" "${POD_TIMEOUT}" \
@@ -107,10 +127,11 @@ spec:
       command:
       - bash
       image: ${prebuilt_image_prefix}/python:${prebuilt_image_tag}
+      name: main
   - language: python_asyncio
     pool: ${client_pool}
     run:
-      args:
+    - args:
       - -c
       - |
         timeout --kill-after="${KILL_AFTER}" "${POD_TIMEOUT}" \
@@ -119,10 +140,11 @@ spec:
       command:
       - bash
       image: ${prebuilt_image_prefix}/python:${prebuilt_image_tag}
+      name: main
   - language: ruby
     pool: ${client_pool}
     run:
-      args:
+    - args:
       - -c
       - |
         timeout --kill-after="${KILL_AFTER}" "${POD_TIMEOUT}" \
@@ -131,18 +153,20 @@ spec:
       command:
       - bash
       image: ${prebuilt_image_prefix}/ruby:${prebuilt_image_tag}
+      name: main
   driver:
     language: cxx
     pool: ${driver_pool}
     run:
-      image: ${driver_image}
+    - image: ${driver_image}
+      name: main
   results:
     bigQueryTable: ${big_query_table}
   servers:
   - language: csharp
     pool: ${server_pool}
     run:
-      args:
+    - args:
       - -c
       - |
         timeout --kill-after="${KILL_AFTER}" "${POD_TIMEOUT}" dotnet exec \
@@ -151,10 +175,23 @@ spec:
       command:
       - bash
       image: ${prebuilt_image_prefix}/csharp:${prebuilt_image_tag}
+      name: main
+  - language: dotnet
+    pool: ${server_pool}
+    run:
+    - args:
+      - -c
+      - |
+        timeout --kill-after="${KILL_AFTER}" "${POD_TIMEOUT}" \
+            /execute/qps_worker/QpsWorker -- --driver_port="${DRIVER_PORT}"
+      command:
+      - bash
+      image: ${prebuilt_image_prefix}/dotnet:${prebuilt_image_tag}
+      name: main
   - language: cxx
     pool: ${server_pool}
     run:
-      args:
+    - args:
       - -c
       - |
         timeout --kill-after="${KILL_AFTER}" "${POD_TIMEOUT}" \
@@ -163,10 +200,11 @@ spec:
       command:
       - bash
       image: ${prebuilt_image_prefix}/cxx:${prebuilt_image_tag}
+      name: main
   - language: go
     pool: ${server_pool}
     run:
-      args:
+    - args:
       - -c
       - |
         timeout --kill-after="${KILL_AFTER}" "${POD_TIMEOUT}" \
@@ -175,10 +213,11 @@ spec:
       command:
       - bash
       image: ${prebuilt_image_prefix}/go:${prebuilt_image_tag}
+      name: main
   - language: java
     pool: ${server_pool}
     run:
-      args:
+    - args:
       - -c
       - |
         timeout --kill-after="${KILL_AFTER}" "${POD_TIMEOUT}" \
@@ -186,10 +225,11 @@ spec:
       command:
       - bash
       image: ${prebuilt_image_prefix}/java:${prebuilt_image_tag}
+      name: main
   - language: node
     pool: ${server_pool}
     run:
-      args:
+    - args:
       - -c
       - |
         timeout --kill-after="${KILL_AFTER}" "${POD_TIMEOUT}" \
@@ -198,10 +238,11 @@ spec:
       command:
       - bash
       image: ${prebuilt_image_prefix}/node:${prebuilt_image_tag}
+      name: main
   - language: python
     pool: ${server_pool}
     run:
-      args:
+    - args:
       - -c
       - |
         timeout --kill-after="${KILL_AFTER}" "${POD_TIMEOUT}" \
@@ -210,12 +251,14 @@ spec:
       command:
       - bash
       image: ${prebuilt_image_prefix}/python:${prebuilt_image_tag}
+      name: main
   - language: python_asyncio
     pool: ${server_pool}
     run:
-      command:
+    - command:
       - bash
       image: ${prebuilt_image_prefix}/python:${prebuilt_image_tag}
+      name: main
       rgs:
       - -c
       - |
@@ -225,7 +268,7 @@ spec:
   - language: ruby
     pool: ${server_pool}
     run:
-      args:
+    - args:
       - -c
       - |
         timeout --kill-after="${KILL_AFTER}" "${POD_TIMEOUT}" \
@@ -234,5 +277,6 @@ spec:
       command:
       - bash
       image: ${prebuilt_image_prefix}/ruby:${prebuilt_image_tag}
+      name: main
   timeoutSeconds: ${timeout_seconds}
   ttlSeconds: 86400

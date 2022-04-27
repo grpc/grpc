@@ -26,6 +26,7 @@
 #include <grpc/support/log.h>
 #include <grpc/support/time.h>
 
+#include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/channel/channel_stack_builder.h"
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/surface/channel_init.h"
@@ -69,11 +70,12 @@ static void drain_cq(grpc_completion_queue* cq) {
 
 static void shutdown_server(grpc_end2end_test_fixture* f) {
   if (!f->server) return;
-  grpc_server_shutdown_and_notify(f->server, f->shutdown_cq, tag(1000));
-  GPR_ASSERT(grpc_completion_queue_pluck(f->shutdown_cq, tag(1000),
-                                         grpc_timeout_seconds_to_deadline(5),
-                                         nullptr)
-                 .type == GRPC_OP_COMPLETE);
+  grpc_server_shutdown_and_notify(f->server, f->cq, tag(1000));
+  grpc_event ev;
+  do {
+    ev = grpc_completion_queue_next(f->cq, grpc_timeout_seconds_to_deadline(5),
+                                    nullptr);
+  } while (ev.type != GRPC_OP_COMPLETE || ev.tag != tag(1000));
   grpc_server_destroy(f->server);
   f->server = nullptr;
 }
@@ -91,7 +93,6 @@ static void end_test(grpc_end2end_test_fixture* f) {
   grpc_completion_queue_shutdown(f->cq);
   drain_cq(f->cq);
   grpc_completion_queue_destroy(f->cq);
-  grpc_completion_queue_destroy(f->shutdown_cq);
 }
 
 // Simple request via a server filter that saves the reported latency value.
@@ -276,6 +277,7 @@ static void destroy_channel_elem(grpc_channel_element* /*elem*/) {}
 
 static const grpc_channel_filter test_client_filter = {
     grpc_call_next_op,
+    nullptr,
     grpc_channel_next_op,
     0,
     init_call_elem,
@@ -289,6 +291,7 @@ static const grpc_channel_filter test_client_filter = {
 
 static const grpc_channel_filter test_server_filter = {
     grpc_call_next_op,
+    nullptr,
     grpc_channel_next_op,
     0,
     init_call_elem,
@@ -311,20 +314,16 @@ void filter_latency(grpc_end2end_test_config config) {
         auto register_stage = [builder](grpc_channel_stack_type type,
                                         const grpc_channel_filter* filter) {
           builder->channel_init()->RegisterStage(
-              type, INT_MAX, [filter](grpc_channel_stack_builder* builder) {
+              type, INT_MAX, [filter](grpc_core::ChannelStackBuilder* builder) {
                 // Want to add the filter as close to the end as possible, to
                 // make sure that all of the filters work well together.
                 // However, we can't add it at the very end, because the
                 // connected channel filter must be the last one.  So we add it
                 // right before the last one.
-                grpc_channel_stack_builder_iterator* it =
-                    grpc_channel_stack_builder_create_iterator_at_last(builder);
-                GPR_ASSERT(grpc_channel_stack_builder_move_prev(it));
-                const bool retval =
-                    grpc_channel_stack_builder_add_filter_before(
-                        it, filter, nullptr, nullptr);
-                grpc_channel_stack_builder_iterator_destroy(it);
-                return retval;
+                auto it = builder->mutable_stack()->end();
+                --it;
+                builder->mutable_stack()->insert(it, {filter, nullptr});
+                return true;
               });
         };
         register_stage(GRPC_CLIENT_CHANNEL, &test_client_filter);

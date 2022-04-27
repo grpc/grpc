@@ -29,11 +29,11 @@ namespace Grpc.Core
         /// <summary>
         /// Consumes configuration for composite call credentials.
         /// </summary>
-        public abstract void SetCompositeCredentials(object state, IReadOnlyList<CallCredentials> credentials);
+        public abstract void SetCompositeCredentials(object? state, IReadOnlyList<CallCredentials> credentials);
 
         /// <summary>
         /// Consumes configuration for call credentials created from <c>AsyncAuthInterceptor</c>
         /// </summary>
-        public abstract void SetAsyncAuthInterceptorCredentials(object state, AsyncAuthInterceptor interceptor);
+        public abstract void SetAsyncAuthInterceptorCredentials(object? state, AsyncAuthInterceptor interceptor);
     }
 }

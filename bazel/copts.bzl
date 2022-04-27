@@ -47,6 +47,8 @@ GRPC_LLVM_WARNING_FLAGS = [
     "-Wthread-safety-beta",
     "-Wunused-comparison",
     "-Wvla",
+    # -Wextra compatibility between gcc and clang
+    "-Wtype-limits",
     # A list of disabled flags coming from internal build system
     "-Wno-string-concatenation",
     # Exceptions but will be removed

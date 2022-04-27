@@ -23,10 +23,13 @@
 
 #include <gtest/gtest.h>
 
+#include <grpc/grpc_security.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
 
+#include "src/core/lib/channel/channel_stack.h"
+#include "src/core/lib/channel/channel_stack_builder_impl.h"
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/surface/channel_init.h"
@@ -54,17 +57,12 @@ void CallDestroyFunc(grpc_call_element* /*elem*/,
 
 bool g_replacement_fn_called = false;
 bool g_original_fn_called = false;
-void SetArgOnceFn(grpc_channel_stack* /*channel_stack*/,
-                  grpc_channel_element* /*elem*/, void* arg) {
-  bool* called = static_cast<bool*>(arg);
-  // Make sure this function is only called once per arg.
-  GPR_ASSERT(*called == false);
-  *called = true;
-}
 
 TEST(ChannelStackBuilderTest, ReplaceFilter) {
+  grpc_channel_credentials* creds = grpc_insecure_credentials_create();
   grpc_channel* channel =
-      grpc_insecure_channel_create("target name isn't used", nullptr, nullptr);
+      grpc_channel_create("target name isn't used", creds, nullptr);
+  grpc_channel_credentials_release(creds);
   GPR_ASSERT(channel != nullptr);
   // Make sure the high priority filter has been created.
   GPR_ASSERT(g_replacement_fn_called);
@@ -75,6 +73,7 @@ TEST(ChannelStackBuilderTest, ReplaceFilter) {
 
 const grpc_channel_filter replacement_filter = {
     grpc_call_next_op,
+    nullptr,
     grpc_channel_next_op,
     0,
     CallInitFunc,
@@ -88,6 +87,7 @@ const grpc_channel_filter replacement_filter = {
 
 const grpc_channel_filter original_filter = {
     grpc_call_next_op,
+    nullptr,
     grpc_channel_next_op,
     0,
     CallInitFunc,
@@ -99,18 +99,34 @@ const grpc_channel_filter original_filter = {
     grpc_channel_next_get_info,
     "filter_name"};
 
-bool AddReplacementFilter(grpc_channel_stack_builder* builder) {
+bool AddReplacementFilter(ChannelStackBuilder* builder) {
   // Get rid of any other version of the filter, as determined by having the
   // same name.
-  GPR_ASSERT(grpc_channel_stack_builder_remove_filter(builder,
-                                                      replacement_filter.name));
-  return grpc_channel_stack_builder_prepend_filter(
-      builder, &replacement_filter, SetArgOnceFn, &g_replacement_fn_called);
+  auto* stk = builder->mutable_stack();
+  stk->erase(std::remove_if(stk->begin(), stk->end(),
+                            [](const ChannelStackBuilder::StackEntry& entry) {
+                              return strcmp(entry.filter->name,
+                                            "filter_name") == 0;
+                            }),
+             stk->end());
+  builder->PrependFilter(&replacement_filter,
+                         [](grpc_channel_stack*, grpc_channel_element*) {
+                           g_replacement_fn_called = true;
+                         });
+  return true;
 }
 
-bool AddOriginalFilter(grpc_channel_stack_builder* builder) {
-  return grpc_channel_stack_builder_prepend_filter(
-      builder, &original_filter, SetArgOnceFn, &g_original_fn_called);
+bool AddOriginalFilter(ChannelStackBuilder* builder) {
+  builder->PrependFilter(&original_filter,
+                         [](grpc_channel_stack*, grpc_channel_element*) {
+                           g_original_fn_called = true;
+                         });
+  return true;
+}
+
+TEST(ChannelStackBuilder, UnknownTarget) {
+  ChannelStackBuilderImpl builder("alpha-beta-gamma", GRPC_CLIENT_CHANNEL);
+  EXPECT_EQ(builder.target(), "unknown");
 }
 
 }  // namespace
@@ -119,7 +135,7 @@ bool AddOriginalFilter(grpc_channel_stack_builder* builder) {
 
 int main(int argc, char** argv) {
   ::testing::InitGoogleTest(&argc, argv);
-  grpc::testing::TestEnvironment env(argc, argv);
+  grpc::testing::TestEnvironment env(&argc, argv);
   grpc_core::CoreConfiguration::RegisterBuilder(
       [](grpc_core::CoreConfiguration::Builder* builder) {
         builder->channel_init()->RegisterStage(

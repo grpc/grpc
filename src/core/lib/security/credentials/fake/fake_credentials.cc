@@ -29,6 +29,7 @@
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/iomgr/executor.h"
+#include "src/core/lib/promise/promise.h"
 #include "src/core/lib/security/security_connector/fake/fake_security_connector.h"
 
 /* -- Fake transport security credentials. -- */
@@ -36,11 +37,6 @@
 namespace {
 class grpc_fake_channel_credentials final : public grpc_channel_credentials {
  public:
-  grpc_fake_channel_credentials()
-      : grpc_channel_credentials(
-            GRPC_CHANNEL_CREDENTIALS_TYPE_FAKE_TRANSPORT_SECURITY) {}
-  ~grpc_fake_channel_credentials() override = default;
-
   grpc_core::RefCountedPtr<grpc_channel_security_connector>
   create_security_connector(
       grpc_core::RefCountedPtr<grpc_call_credentials> call_creds,
@@ -49,19 +45,25 @@ class grpc_fake_channel_credentials final : public grpc_channel_credentials {
     return grpc_fake_channel_security_connector_create(
         this->Ref(), std::move(call_creds), target, args);
   }
+
+  const char* type() const override { return "Fake"; }
+
+ private:
+  int cmp_impl(const grpc_channel_credentials* other) const override {
+    // TODO(yashykt): Check if we can do something better here
+    return grpc_core::QsortCompare(
+        static_cast<const grpc_channel_credentials*>(this), other);
+  }
 };
 
 class grpc_fake_server_credentials final : public grpc_server_credentials {
  public:
-  grpc_fake_server_credentials()
-      : grpc_server_credentials(
-            GRPC_CHANNEL_CREDENTIALS_TYPE_FAKE_TRANSPORT_SECURITY) {}
-  ~grpc_fake_server_credentials() override = default;
-
   grpc_core::RefCountedPtr<grpc_server_security_connector>
   create_security_connector(const grpc_channel_args* /*args*/) override {
     return grpc_fake_server_security_connector_create(this->Ref());
   }
+
+  const char* type() const override { return "Fake"; }
 };
 }  // namespace
 
@@ -89,25 +91,19 @@ const char* grpc_fake_transport_get_expected_targets(
 
 /* -- Metadata-only test credentials. -- */
 
-bool grpc_md_only_test_credentials::get_request_metadata(
-    grpc_polling_entity* /*pollent*/, grpc_auth_metadata_context /*context*/,
-    grpc_credentials_mdelem_array* md_array, grpc_closure* on_request_metadata,
-    grpc_error_handle* /*error*/) {
-  grpc_credentials_mdelem_array_add(md_array, md_);
-  if (is_async_) {
-    grpc_core::ExecCtx::Run(DEBUG_LOCATION, on_request_metadata,
-                            GRPC_ERROR_NONE);
-    return false;
-  }
-  return true;
+grpc_core::ArenaPromise<absl::StatusOr<grpc_core::ClientMetadataHandle>>
+grpc_md_only_test_credentials::GetRequestMetadata(
+    grpc_core::ClientMetadataHandle initial_metadata,
+    const grpc_call_credentials::GetRequestMetadataArgs*) {
+  initial_metadata->Append(
+      key_.as_string_view(), value_.Ref(),
+      [](absl::string_view, const grpc_core::Slice&) { abort(); });
+  return grpc_core::Immediate(std::move(initial_metadata));
 }
 
-void grpc_md_only_test_credentials::cancel_get_request_metadata(
-    grpc_credentials_mdelem_array* /*md_array*/, grpc_error_handle error) {
-  GRPC_ERROR_UNREF(error);
-}
+const char* grpc_md_only_test_credentials::Type() { return "MdOnlyTest"; }
 
 grpc_call_credentials* grpc_md_only_test_credentials_create(
-    const char* md_key, const char* md_value, bool is_async) {
-  return new grpc_md_only_test_credentials(md_key, md_value, is_async);
+    const char* md_key, const char* md_value) {
+  return new grpc_md_only_test_credentials(md_key, md_value);
 }

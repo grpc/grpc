@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-FROM debian:buster
+FROM debian:11
 
 #=================
 # Basic C core dependencies
@@ -28,9 +28,7 @@ RUN apt-get update && apt-get install -y \
 # GCC
 RUN apt-get update && apt-get install -y \
   gcc \
-  gcc-multilib \
   g++ \
-  g++-multilib  \
   && apt-get clean
 
 # libc6
@@ -97,13 +95,17 @@ RUN apt-get update && apt-get install -y \
     && apt-get clean
 
 # Install .NET Core 3.1 (to be able to run the netcoreapp3.1 targets)
-RUN curl -sSL -o dotnet.tar.gz https://dotnetcli.blob.core.windows.net/dotnet/Sdk/3.1.415/dotnet-sdk-3.1.415-linux-x64.tar.gz \
+RUN DOTNET_DOWNLOAD_VERSION=3.1.415 \
+    && DOTNET_DOWNLOAD_ARCH="$(uname -m | sed s/x86_64/x64/ | sed s/aarch64/arm64/)" \
+    && curl -sSL -o dotnet.tar.gz https://dotnetcli.blob.core.windows.net/dotnet/Sdk/$DOTNET_DOWNLOAD_VERSION/dotnet-sdk-$DOTNET_DOWNLOAD_VERSION-linux-$DOTNET_DOWNLOAD_ARCH.tar.gz \
     && mkdir -p /usr/share/dotnet \
     && tar -zxf dotnet.tar.gz -C /usr/share/dotnet \
     && rm dotnet.tar.gz
 
 # Install .NET 6
-RUN curl -sSL -o dotnet.tar.gz https://dotnetcli.blob.core.windows.net/dotnet/Sdk/6.0.100/dotnet-sdk-6.0.100-linux-x64.tar.gz \
+RUN DOTNET_DOWNLOAD_VERSION=6.0.100 \
+    && DOTNET_DOWNLOAD_ARCH="$(uname -m | sed s/x86_64/x64/ | sed s/aarch64/arm64/)" \
+    && curl -sSL -o dotnet.tar.gz https://dotnetcli.blob.core.windows.net/dotnet/Sdk/$DOTNET_DOWNLOAD_VERSION/dotnet-sdk-$DOTNET_DOWNLOAD_VERSION-linux-$DOTNET_DOWNLOAD_ARCH.tar.gz \
     && mkdir -p /usr/share/dotnet \
     && tar -zxf dotnet.tar.gz -C /usr/share/dotnet \
     && rm dotnet.tar.gz
@@ -119,8 +121,23 @@ RUN mkdir warmup \
     && cd .. \
     && rm -rf warmup
 
+#=================
+# Install ccache
+
+# Install ccache from source since ccache 3.x packaged with most linux distributions
+# does not support Redis backend for caching.
+RUN curl -sSL -o ccache.tar.gz https://github.com/ccache/ccache/releases/download/v4.5.1/ccache-4.5.1.tar.gz \
+    && tar -zxf ccache.tar.gz \
+    && cd ccache-4.5.1 \
+    && mkdir build && cd build \
+    && cmake -DCMAKE_BUILD_TYPE=Release -DZSTD_FROM_INTERNET=ON -DHIREDIS_FROM_INTERNET=ON .. \
+    && make -j4 && make install \
+    && cd ../.. \
+    && rm -rf ccache-4.5.1 ccache.tar.gz
+
 
 RUN mkdir /var/local/jenkins
+
 
 # Define the default command.
 CMD ["bash"]

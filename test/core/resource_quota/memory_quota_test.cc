@@ -178,6 +178,27 @@ TEST(MemoryQuotaTest, ContainerAllocator) {
   }
 }
 
+TEST(MemoryQuotaTest, NoBunchingIfIdle) {
+  // Ensure that we don't queue up useless reclamations even if there are no
+  // memory reclamations needed.
+  MemoryQuota memory_quota("foo");
+  std::atomic<size_t> count_reclaimers_called{0};
+
+  for (size_t i = 0; i < 10000; i++) {
+    ExecCtx exec_ctx;
+    auto memory_owner = memory_quota.CreateMemoryOwner("bar");
+    memory_owner.PostReclaimer(
+        ReclamationPass::kDestructive,
+        [&count_reclaimers_called](absl::optional<ReclamationSweep> sweep) {
+          EXPECT_FALSE(sweep.has_value());
+          count_reclaimers_called.fetch_add(1, std::memory_order_relaxed);
+        });
+    auto object = memory_owner.MakeUnique<Sized<2048>>();
+  }
+
+  EXPECT_GE(count_reclaimers_called.load(std::memory_order_relaxed), 8000);
+}
+
 }  // namespace testing
 }  // namespace grpc_core
 

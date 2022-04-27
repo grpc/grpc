@@ -24,10 +24,10 @@
 #include <grpc/support/string_util.h>
 
 #include "src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper.h"
-#include "src/core/ext/filters/client_channel/server_address.h"
 #include "src/core/lib/address_utils/parse_address.h"
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/iomgr/socket_windows.h"
+#include "src/core/lib/resolver/server_address.h"
 
 bool grpc_ares_query_ipv6() { return grpc_ipv6_loopback_available(); }
 

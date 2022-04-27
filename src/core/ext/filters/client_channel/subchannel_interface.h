@@ -45,6 +45,13 @@ class SubchannelInterface : public RefCounted<SubchannelInterface> {
     virtual grpc_pollset_set* interested_parties() = 0;
   };
 
+  // Opaque interface for watching data of a particular type for this
+  // subchannel.
+  class DataWatcherInterface {
+   public:
+    virtual ~DataWatcherInterface() = default;
+  };
+
   explicit SubchannelInterface(const char* trace = nullptr)
       : RefCounted<SubchannelInterface>(trace) {}
 
@@ -71,13 +78,17 @@ class SubchannelInterface : public RefCounted<SubchannelInterface> {
   // If the subchannel is currently in backoff delay due to a previously
   // failed attempt, the new connection attempt will not start until the
   // backoff delay has elapsed.
-  virtual void AttemptToConnect() = 0;
+  virtual void RequestConnection() = 0;
 
-  // Resets the subchannel's connection backoff state.  If AttemptToConnect()
+  // Resets the subchannel's connection backoff state.  If RequestConnection()
   // has been called since the subchannel entered TRANSIENT_FAILURE state,
   // starts a new connection attempt immediately; otherwise, a new connection
-  // attempt will be started as soon as AttemptToConnect() is called.
+  // attempt will be started as soon as RequestConnection() is called.
   virtual void ResetBackoff() = 0;
+
+  // Registers a new data watcher.
+  virtual void AddDataWatcher(
+      std::unique_ptr<DataWatcherInterface> watcher) = 0;
 
   // TODO(roth): Need a better non-grpc-specific abstraction here.
   virtual const grpc_channel_args* channel_args() = 0;
@@ -102,10 +113,15 @@ class DelegatingSubchannel : public SubchannelInterface {
       ConnectivityStateWatcherInterface* watcher) override {
     return wrapped_subchannel_->CancelConnectivityStateWatch(watcher);
   }
-  void AttemptToConnect() override { wrapped_subchannel_->AttemptToConnect(); }
+  void RequestConnection() override {
+    wrapped_subchannel_->RequestConnection();
+  }
   void ResetBackoff() override { wrapped_subchannel_->ResetBackoff(); }
   const grpc_channel_args* channel_args() override {
     return wrapped_subchannel_->channel_args();
+  }
+  void AddDataWatcher(std::unique_ptr<DataWatcherInterface> watcher) override {
+    wrapped_subchannel_->AddDataWatcher(std::move(watcher));
   }
 
  private:

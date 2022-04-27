@@ -41,7 +41,7 @@ BIGQUERY_TABLE_8CORE=e2e_benchmarks.ci_master_results_8core
 BIGQUERY_TABLE_32CORE=e2e_benchmarks.ci_master_results_32core
 # END differentiate experimental configuration from master configuration.
 CLOUD_LOGGING_URL="https://source.cloud.google.com/results/invocations/${KOKORO_BUILD_ID}"
-PREBUILT_IMAGE_PREFIX="gcr.io/grpc-testing/e2etesting/pre_built_workers/${LOAD_TEST_PREFIX}"
+PREBUILT_IMAGE_PREFIX="gcr.io/grpc-testing/e2etest/prebuilt/${LOAD_TEST_PREFIX}"
 UNIQUE_IDENTIFIER="$(date +%Y%m%d%H%M%S)"
 ROOT_DIRECTORY_OF_DOCKERFILES="../test-infra/containers/pre_built_workers/"
 # Head of the workspace checked out by Kokoro.
@@ -52,6 +52,7 @@ if [[ "${KOKORO_GITHUB_COMMIT_URL%/*}" == "https://github.com/grpc/grpc/commit" 
 else
     GRPC_CORE_GITREF="$(git ls-remote https://github.com/grpc/grpc.git master | cut -f1)"
 fi
+GRPC_DOTNET_GITREF="$(git ls-remote https://github.com/grpc/grpc-dotnet.git master | cut -f1)"
 GRPC_GO_GITREF="$(git ls-remote https://github.com/grpc/grpc-go.git master | cut -f1)"
 GRPC_JAVA_GITREF="$(git ls-remote https://github.com/grpc/grpc-java.git master | cut -f1)"
 # Kokoro jobs run on dedicated pools.
@@ -65,12 +66,12 @@ TEST_INFRA_GOVERSION=go1.17.1
 go get "golang.org/dl/${TEST_INFRA_GOVERSION}"
 "${TEST_INFRA_GOVERSION}" download
 
-# Fetch test-infra repository and build all tools.
-# Note: Submodules are not required for tools build.
+# Clone test-infra repository and build all tools.
 pushd ..
-git clone --depth 1 https://github.com/grpc/test-infra.git
+git clone https://github.com/grpc/test-infra.git
 cd test-infra
-git log -1 --oneline
+# Tools are built from HEAD.
+git checkout --detach
 make GOCMD="${TEST_INFRA_GOVERSION}" all-tools
 popd
 
@@ -96,11 +97,11 @@ buildConfigs() {
         --prefix="${LOAD_TEST_PREFIX}" -u "${UNIQUE_IDENTIFIER}" -u "${pool}" \
         -a pool="${pool}" --category=scalable \
         --allow_client_language=c++ --allow_server_language=c++ \
-        -o "./loadtest_with_prebuilt_workers_${pool}.yaml"
+        -o "loadtest_with_prebuilt_workers_${pool}.yaml"
 }
 
-buildConfigs "${WORKER_POOL_8CORE}" "${BIGQUERY_TABLE_8CORE}" -l c++ -l csharp -l go -l java -l php7 -l php7_protobuf_c -l python -l ruby
-buildConfigs "${WORKER_POOL_32CORE}" "${BIGQUERY_TABLE_32CORE}" -l c++ -l csharp -l go -l java
+buildConfigs "${WORKER_POOL_8CORE}" "${BIGQUERY_TABLE_8CORE}" -l c++ -l csharp -l dotnet -l go -l java -l php7 -l php7_protobuf_c -l python -l ruby
+buildConfigs "${WORKER_POOL_32CORE}" "${BIGQUERY_TABLE_32CORE}" -l c++ -l csharp -l dotnet -l go -l java
 
 # Delete prebuilt images on exit.
 deleteImages() {
@@ -115,6 +116,7 @@ trap deleteImages EXIT
 time ../test-infra/bin/prepare_prebuilt_workers \
     -l "cxx:${GRPC_CORE_GITREF}" \
     -l "csharp:${GRPC_CORE_GITREF}" \
+    -l "dotnet:${GRPC_DOTNET_GITREF}" \
     -l "go:${GRPC_GO_GITREF}" \
     -l "java:${GRPC_JAVA_GITREF}" \
     -l "php7:${GRPC_CORE_GITREF}" \
@@ -126,8 +128,8 @@ time ../test-infra/bin/prepare_prebuilt_workers \
 
 # Run tests.
 time ../test-infra/bin/runner \
-    -i "../grpc/loadtest_with_prebuilt_workers_${WORKER_POOL_8CORE}.yaml" \
-    -i "../grpc/loadtest_with_prebuilt_workers_${WORKER_POOL_32CORE}.yaml" \
+    -i "loadtest_with_prebuilt_workers_${WORKER_POOL_8CORE}.yaml" \
+    -i "loadtest_with_prebuilt_workers_${WORKER_POOL_32CORE}.yaml" \
     -polling-interval 5s \
     -delete-successful-tests \
     -c "${WORKER_POOL_8CORE}:2" -c "${WORKER_POOL_32CORE}:2" \

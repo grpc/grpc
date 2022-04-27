@@ -26,3 +26,8 @@ enum:api_fuzzer
 # https://github.com/GoogleCloudPlatform/layer-definitions/issues/531 is
 # addressed.
 alignment:grpc_core::XdsPriorityListUpdate::*
+# Benign pointer-overflow error in boringssl
+# (ref: https://github.com/openssl/openssl/issues/16816)
+pointer-overflow:mem_ctrl
+# https://github.com/protocolbuffers/upb/issues/452
+pointer-overflow:_upb_extreg_add

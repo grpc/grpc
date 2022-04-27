@@ -32,559 +32,118 @@
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 
-#include "src/core/lib/gpr/string.h"
-#include "src/core/lib/gprpp/manual_constructor.h"
-#include "src/core/lib/profiling/timers.h"
-#include "src/core/lib/slice/b64.h"
+#include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/promise/call_push_pull.h"
+#include "src/core/lib/promise/seq.h"
 #include "src/core/lib/slice/percent_encoding.h"
-#include "src/core/lib/slice/slice_internal.h"
-#include "src/core/lib/slice/slice_string_helpers.h"
-#include "src/core/lib/transport/static_metadata.h"
 #include "src/core/lib/transport/status_conversion.h"
 #include "src/core/lib/transport/transport_impl.h"
 
-#define EXPECTED_CONTENT_TYPE "application/grpc"
-#define EXPECTED_CONTENT_TYPE_LENGTH (sizeof(EXPECTED_CONTENT_TYPE) - 1)
+namespace grpc_core {
 
-/* default maximum size of payload eligible for GET request */
-static constexpr size_t kMaxPayloadSizeForGet = 2048;
-
-static void recv_initial_metadata_ready(void* user_data,
-                                        grpc_error_handle error);
-static void recv_trailing_metadata_ready(void* user_data,
-                                         grpc_error_handle error);
-static void on_send_message_next_done(void* arg, grpc_error_handle error);
-static void send_message_on_complete(void* arg, grpc_error_handle error);
+const grpc_channel_filter HttpClientFilter::kFilter =
+    MakePromiseBasedFilter<HttpClientFilter, FilterEndpoint::kClient,
+                           kFilterExaminesServerInitialMetadata>("http-client");
 
 namespace {
-struct call_data {
-  call_data(grpc_call_element* elem, const grpc_call_element_args& args)
-      : call_combiner(args.call_combiner) {
-    GRPC_CLOSURE_INIT(&recv_initial_metadata_ready,
-                      ::recv_initial_metadata_ready, elem,
-                      grpc_schedule_on_exec_ctx);
-    GRPC_CLOSURE_INIT(&recv_trailing_metadata_ready,
-                      ::recv_trailing_metadata_ready, elem,
-                      grpc_schedule_on_exec_ctx);
-    GRPC_CLOSURE_INIT(&on_send_message_next_done, ::on_send_message_next_done,
-                      elem, grpc_schedule_on_exec_ctx);
-    GRPC_CLOSURE_INIT(&send_message_on_complete, ::send_message_on_complete,
-                      elem, grpc_schedule_on_exec_ctx);
-  }
-
-  ~call_data() { GRPC_ERROR_UNREF(recv_initial_metadata_error); }
-
-  grpc_core::CallCombiner* call_combiner;
-  // State for handling send_initial_metadata ops.
-  grpc_linked_mdelem method;
-  grpc_linked_mdelem scheme;
-  grpc_linked_mdelem content_type;
-  // State for handling recv_initial_metadata ops.
-  grpc_metadata_batch* recv_initial_metadata;
-  grpc_error_handle recv_initial_metadata_error = GRPC_ERROR_NONE;
-  grpc_closure* original_recv_initial_metadata_ready = nullptr;
-  grpc_closure recv_initial_metadata_ready;
-  // State for handling recv_trailing_metadata ops.
-  grpc_metadata_batch* recv_trailing_metadata;
-  grpc_closure* original_recv_trailing_metadata_ready;
-  grpc_closure recv_trailing_metadata_ready;
-  grpc_error_handle recv_trailing_metadata_error = GRPC_ERROR_NONE;
-  bool seen_recv_trailing_metadata_ready = false;
-  // State for handling send_message ops.
-  grpc_transport_stream_op_batch* send_message_batch;
-  size_t send_message_bytes_read = 0;
-  grpc_core::ManualConstructor<grpc_core::ByteStreamCache> send_message_cache;
-  grpc_core::ManualConstructor<grpc_core::ByteStreamCache::CachingByteStream>
-      send_message_caching_stream;
-  grpc_closure on_send_message_next_done;
-  grpc_closure* original_send_message_on_complete;
-  grpc_closure send_message_on_complete;
-};
-
-struct channel_data {
-  grpc_mdelem static_scheme;
-  grpc_core::Slice user_agent;
-  size_t max_payload_size_for_get;
-};
-}  // namespace
-
-static grpc_error_handle client_filter_incoming_metadata(
-    grpc_metadata_batch* b) {
-  if (b->legacy_index()->named.status != nullptr) {
+absl::Status CheckServerMetadata(ServerMetadata* b) {
+  if (auto* status = b->get_pointer(HttpStatusMetadata())) {
     /* If both gRPC status and HTTP status are provided in the response, we
      * should prefer the gRPC status code, as mentioned in
      * https://github.com/grpc/grpc/blob/master/doc/http-grpc-status-mapping.md.
      */
-    const grpc_status_code* grpc_status =
-        b->get_pointer(grpc_core::GrpcStatusMetadata());
-    if (grpc_status != nullptr ||
-        grpc_mdelem_static_value_eq(b->legacy_index()->named.status->md,
-                                    GRPC_MDELEM_STATUS_200)) {
-      b->Remove(GRPC_BATCH_STATUS);
+    const grpc_status_code* grpc_status = b->get_pointer(GrpcStatusMetadata());
+    if (grpc_status != nullptr || *status == 200) {
+      b->Remove(HttpStatusMetadata());
     } else {
-      char* val = grpc_dump_slice(
-          GRPC_MDVALUE(b->legacy_index()->named.status->md), GPR_DUMP_ASCII);
-      std::string msg =
-          absl::StrCat("Received http2 header with status: ", val);
-      grpc_error_handle e = grpc_error_set_str(
-          grpc_error_set_int(
-              grpc_error_set_str(
-                  GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-                      "Received http2 :status header with non-200 OK status"),
-                  GRPC_ERROR_STR_VALUE, val),
-              GRPC_ERROR_INT_GRPC_STATUS,
-              grpc_http2_status_to_grpc_status(atoi(val))),
-          GRPC_ERROR_STR_GRPC_MESSAGE, msg);
-      gpr_free(val);
-      return e;
+      return absl::Status(
+          static_cast<absl::StatusCode>(
+              grpc_http2_status_to_grpc_status(*status)),
+          absl::StrCat("Received http2 header with status: ", *status));
     }
   }
 
-  if (grpc_core::Slice* grpc_message =
-          b->get_pointer(grpc_core::GrpcMessageMetadata())) {
-    *grpc_message =
-        grpc_core::PermissivePercentDecodeSlice(std::move(*grpc_message));
+  if (Slice* grpc_message = b->get_pointer(GrpcMessageMetadata())) {
+    *grpc_message = PermissivePercentDecodeSlice(std::move(*grpc_message));
   }
 
-  if (b->legacy_index()->named.content_type != nullptr) {
-    if (!grpc_mdelem_static_value_eq(
-            b->legacy_index()->named.content_type->md,
-            GRPC_MDELEM_CONTENT_TYPE_APPLICATION_SLASH_GRPC)) {
-      if (grpc_slice_buf_start_eq(
-              GRPC_MDVALUE(b->legacy_index()->named.content_type->md),
-              EXPECTED_CONTENT_TYPE, EXPECTED_CONTENT_TYPE_LENGTH) &&
-          (GRPC_SLICE_START_PTR(GRPC_MDVALUE(
-               b->legacy_index()
-                   ->named.content_type->md))[EXPECTED_CONTENT_TYPE_LENGTH] ==
-               '+' ||
-           GRPC_SLICE_START_PTR(GRPC_MDVALUE(
-               b->legacy_index()
-                   ->named.content_type->md))[EXPECTED_CONTENT_TYPE_LENGTH] ==
-               ';')) {
-        /* Although the C implementation doesn't (currently) generate them,
-           any custom +-suffix is explicitly valid. */
-        /* TODO(klempner): We should consider preallocating common values such
-           as +proto or +json, or at least stashing them if we see them. */
-        /* TODO(klempner): Should we be surfacing this to application code? */
-      } else {
-        /* TODO(klempner): We're currently allowing this, but we shouldn't
-           see it without a proxy so log for now. */
-        char* val = grpc_dump_slice(
-            GRPC_MDVALUE(b->legacy_index()->named.content_type->md),
-            GPR_DUMP_ASCII);
-        gpr_log(GPR_INFO, "Unexpected content-type '%s'", val);
-        gpr_free(val);
-      }
-    }
-    b->Remove(GRPC_BATCH_CONTENT_TYPE);
-  }
-
-  return GRPC_ERROR_NONE;
+  b->Remove(ContentTypeMetadata());
+  return absl::OkStatus();
 }
 
-static void recv_initial_metadata_ready(void* user_data,
-                                        grpc_error_handle error) {
-  grpc_call_element* elem = static_cast<grpc_call_element*>(user_data);
-  call_data* calld = static_cast<call_data*>(elem->call_data);
-  if (error == GRPC_ERROR_NONE) {
-    error = client_filter_incoming_metadata(calld->recv_initial_metadata);
-    calld->recv_initial_metadata_error = GRPC_ERROR_REF(error);
-  } else {
-    (void)GRPC_ERROR_REF(error);
-  }
-  grpc_closure* closure = calld->original_recv_initial_metadata_ready;
-  calld->original_recv_initial_metadata_ready = nullptr;
-  if (calld->seen_recv_trailing_metadata_ready) {
-    GRPC_CALL_COMBINER_START(
-        calld->call_combiner, &calld->recv_trailing_metadata_ready,
-        calld->recv_trailing_metadata_error, "continue recv_trailing_metadata");
-  }
-  grpc_core::Closure::Run(DEBUG_LOCATION, closure, error);
+HttpSchemeMetadata::ValueType SchemeFromArgs(const ChannelArgs& args) {
+  HttpSchemeMetadata::ValueType scheme = HttpSchemeMetadata::Parse(
+      args.GetString(GRPC_ARG_HTTP2_SCHEME).value_or(""),
+      [](absl::string_view, const Slice&) {});
+  if (scheme == HttpSchemeMetadata::kInvalid) return HttpSchemeMetadata::kHttp;
+  return scheme;
 }
 
-static void recv_trailing_metadata_ready(void* user_data,
-                                         grpc_error_handle error) {
-  grpc_call_element* elem = static_cast<grpc_call_element*>(user_data);
-  call_data* calld = static_cast<call_data*>(elem->call_data);
-  if (calld->original_recv_initial_metadata_ready != nullptr) {
-    calld->recv_trailing_metadata_error = GRPC_ERROR_REF(error);
-    calld->seen_recv_trailing_metadata_ready = true;
-    GRPC_CALL_COMBINER_STOP(calld->call_combiner,
-                            "deferring recv_trailing_metadata_ready until "
-                            "after recv_initial_metadata_ready");
-    return;
-  }
-  if (error == GRPC_ERROR_NONE) {
-    error = client_filter_incoming_metadata(calld->recv_trailing_metadata);
-  } else {
-    (void)GRPC_ERROR_REF(error);
-  }
-  error = grpc_error_add_child(
-      error, GRPC_ERROR_REF(calld->recv_initial_metadata_error));
-  grpc_core::Closure::Run(DEBUG_LOCATION,
-                          calld->original_recv_trailing_metadata_ready, error);
-}
+Slice UserAgentFromArgs(const ChannelArgs& args, const char* transport_name) {
+  std::vector<std::string> fields;
+  auto add = [&fields](absl::string_view x) {
+    if (!x.empty()) fields.push_back(std::string(x));
+  };
 
-static void send_message_on_complete(void* arg, grpc_error_handle error) {
-  grpc_call_element* elem = static_cast<grpc_call_element*>(arg);
-  call_data* calld = static_cast<call_data*>(elem->call_data);
-  calld->send_message_cache.Destroy();
-  // Set the batch's send_message bit back to true, so the retry code
-  // above knows what was in this batch.
-  calld->send_message_batch->send_message = true;
-  grpc_core::Closure::Run(DEBUG_LOCATION,
-                          calld->original_send_message_on_complete,
-                          GRPC_ERROR_REF(error));
-}
-
-// Pulls a slice from the send_message byte stream, updating
-// calld->send_message_bytes_read.
-static grpc_error_handle pull_slice_from_send_message(call_data* calld) {
-  grpc_slice incoming_slice;
-  grpc_error_handle error =
-      calld->send_message_caching_stream->Pull(&incoming_slice);
-  if (error == GRPC_ERROR_NONE) {
-    calld->send_message_bytes_read += GRPC_SLICE_LENGTH(incoming_slice);
-    grpc_slice_unref_internal(incoming_slice);
-  }
-  return error;
-}
-
-// Reads as many slices as possible from the send_message byte stream.
-// Upon successful return, if calld->send_message_bytes_read ==
-// calld->send_message_caching_stream->length(), then we have completed
-// reading from the byte stream; otherwise, an async read has been dispatched
-// and on_send_message_next_done() will be invoked when it is complete.
-static grpc_error_handle read_all_available_send_message_data(
-    call_data* calld) {
-  while (calld->send_message_caching_stream->Next(
-      SIZE_MAX, &calld->on_send_message_next_done)) {
-    grpc_error_handle error = pull_slice_from_send_message(calld);
-    if (error != GRPC_ERROR_NONE) return error;
-    if (calld->send_message_bytes_read ==
-        calld->send_message_caching_stream->length()) {
-      break;
-    }
-  }
-  return GRPC_ERROR_NONE;
-}
-
-// Async callback for ByteStream::Next().
-static void on_send_message_next_done(void* arg, grpc_error_handle error) {
-  grpc_call_element* elem = static_cast<grpc_call_element*>(arg);
-  call_data* calld = static_cast<call_data*>(elem->call_data);
-  if (error != GRPC_ERROR_NONE) {
-    grpc_transport_stream_op_batch_finish_with_failure(
-        calld->send_message_batch, error, calld->call_combiner);
-    return;
-  }
-  error = pull_slice_from_send_message(calld);
-  if (error != GRPC_ERROR_NONE) {
-    grpc_transport_stream_op_batch_finish_with_failure(
-        calld->send_message_batch, error, calld->call_combiner);
-    return;
-  }
-  // There may or may not be more to read, but we don't care.  If we got
-  // here, then we know that all of the data was not available
-  // synchronously, so we were not able to do a cached call.  Instead,
-  // we just reset the byte stream and then send down the batch as-is.
-  calld->send_message_caching_stream->Reset();
-  grpc_call_next_op(elem, calld->send_message_batch);
-}
-
-static char* slice_buffer_to_string(grpc_slice_buffer* slice_buffer) {
-  char* payload_bytes =
-      static_cast<char*>(gpr_malloc(slice_buffer->length + 1));
-  size_t offset = 0;
-  for (size_t i = 0; i < slice_buffer->count; ++i) {
-    memcpy(payload_bytes + offset,
-           GRPC_SLICE_START_PTR(slice_buffer->slices[i]),
-           GRPC_SLICE_LENGTH(slice_buffer->slices[i]));
-    offset += GRPC_SLICE_LENGTH(slice_buffer->slices[i]);
-  }
-  *(payload_bytes + offset) = '\0';
-  return payload_bytes;
-}
-
-// Modifies the path entry in the batch's send_initial_metadata to
-// append the base64-encoded query for a GET request.
-static grpc_error_handle update_path_for_get(
-    grpc_call_element* elem, grpc_transport_stream_op_batch* batch) {
-  call_data* calld = static_cast<call_data*>(elem->call_data);
-  grpc_slice path_slice =
-      GRPC_MDVALUE(batch->payload->send_initial_metadata.send_initial_metadata
-                       ->legacy_index()
-                       ->named.path->md);
-  /* sum up individual component's lengths and allocate enough memory to
-   * hold combined path+query */
-  size_t estimated_len = GRPC_SLICE_LENGTH(path_slice);
-  estimated_len++; /* for the '?' */
-  estimated_len += grpc_base64_estimate_encoded_size(
-      batch->payload->send_message.send_message->length(),
-      false /* multi_line */);
-  grpc_core::UnmanagedMemorySlice path_with_query_slice(estimated_len);
-  /* memcopy individual pieces into this slice */
-  char* write_ptr =
-      reinterpret_cast<char*> GRPC_SLICE_START_PTR(path_with_query_slice);
-  char* original_path =
-      reinterpret_cast<char*> GRPC_SLICE_START_PTR(path_slice);
-  memcpy(write_ptr, original_path, GRPC_SLICE_LENGTH(path_slice));
-  write_ptr += GRPC_SLICE_LENGTH(path_slice);
-  *write_ptr++ = '?';
-  char* payload_bytes =
-      slice_buffer_to_string(calld->send_message_cache->cache_buffer());
-  grpc_base64_encode_core(write_ptr, payload_bytes,
-                          batch->payload->send_message.send_message->length(),
-                          true /* url_safe */, false /* multi_line */);
-  gpr_free(payload_bytes);
-  /* remove trailing unused memory and add trailing 0 to terminate string */
-  char* t =
-      reinterpret_cast<char*> GRPC_SLICE_START_PTR(path_with_query_slice) +
-      GRPC_SLICE_LENGTH(path_slice);
-  /* safe to use strlen since base64_encode will always add '\0' */
-  path_with_query_slice = grpc_slice_sub_no_ref(
-      path_with_query_slice, 0, GRPC_SLICE_LENGTH(path_slice) + strlen(t));
-  /* substitute previous path with the new path+query */
-  grpc_mdelem mdelem_path_and_query =
-      grpc_mdelem_from_slices(GRPC_MDSTR_PATH, path_with_query_slice);
-  grpc_metadata_batch* b =
-      batch->payload->send_initial_metadata.send_initial_metadata;
-  return b->Substitute(b->legacy_index()->named.path, mdelem_path_and_query);
-}
-
-static void remove_if_present(grpc_metadata_batch* batch,
-                              grpc_metadata_batch_callouts_index idx) {
-  batch->Remove(idx);
-}
-
-static void http_client_start_transport_stream_op_batch(
-    grpc_call_element* elem, grpc_transport_stream_op_batch* batch) {
-  call_data* calld = static_cast<call_data*>(elem->call_data);
-  channel_data* channeld = static_cast<channel_data*>(elem->channel_data);
-  GPR_TIMER_SCOPE("http_client_start_transport_stream_op_batch", 0);
-
-  if (batch->recv_initial_metadata) {
-    /* substitute our callback for the higher callback */
-    calld->recv_initial_metadata =
-        batch->payload->recv_initial_metadata.recv_initial_metadata;
-    calld->original_recv_initial_metadata_ready =
-        batch->payload->recv_initial_metadata.recv_initial_metadata_ready;
-    batch->payload->recv_initial_metadata.recv_initial_metadata_ready =
-        &calld->recv_initial_metadata_ready;
-  }
-
-  if (batch->recv_trailing_metadata) {
-    /* substitute our callback for the higher callback */
-    calld->recv_trailing_metadata =
-        batch->payload->recv_trailing_metadata.recv_trailing_metadata;
-    calld->original_recv_trailing_metadata_ready =
-        batch->payload->recv_trailing_metadata.recv_trailing_metadata_ready;
-    batch->payload->recv_trailing_metadata.recv_trailing_metadata_ready =
-        &calld->recv_trailing_metadata_ready;
-  }
-
-  grpc_error_handle error = GRPC_ERROR_NONE;
-  bool batch_will_be_handled_asynchronously = false;
-  if (batch->send_initial_metadata) {
-    // Decide which HTTP VERB to use. We use GET if the request is marked
-    // cacheable, and the operation contains both initial metadata and send
-    // message, and the payload is below the size threshold, and all the data
-    // for this request is immediately available.
-    grpc_mdelem method = GRPC_MDELEM_METHOD_POST;
-    if (batch->send_message &&
-        (batch->payload->send_initial_metadata.send_initial_metadata_flags &
-         GRPC_INITIAL_METADATA_CACHEABLE_REQUEST) &&
-        batch->payload->send_message.send_message->length() <
-            channeld->max_payload_size_for_get) {
-      calld->send_message_bytes_read = 0;
-      calld->send_message_cache.Init(
-          std::move(batch->payload->send_message.send_message));
-      calld->send_message_caching_stream.Init(calld->send_message_cache.get());
-      batch->payload->send_message.send_message.reset(
-          calld->send_message_caching_stream.get());
-      calld->original_send_message_on_complete = batch->on_complete;
-      batch->on_complete = &calld->send_message_on_complete;
-      calld->send_message_batch = batch;
-      error = read_all_available_send_message_data(calld);
-      if (error != GRPC_ERROR_NONE) goto done;
-      // If all the data has been read, then we can use GET.
-      if (calld->send_message_bytes_read ==
-          calld->send_message_caching_stream->length()) {
-        method = GRPC_MDELEM_METHOD_GET;
-        error = update_path_for_get(elem, batch);
-        if (error != GRPC_ERROR_NONE) goto done;
-        batch->send_message = false;
-        calld->send_message_caching_stream->Orphan();
-      } else {
-        // Not all data is available.  The batch will be sent down
-        // asynchronously in on_send_message_next_done().
-        batch_will_be_handled_asynchronously = true;
-        // Fall back to POST.
-        gpr_log(GPR_DEBUG,
-                "Request is marked Cacheable but not all data is available.  "
-                "Falling back to POST");
-      }
-    } else if (batch->payload->send_initial_metadata
-                   .send_initial_metadata_flags &
-               GRPC_INITIAL_METADATA_IDEMPOTENT_REQUEST) {
-      method = GRPC_MDELEM_METHOD_PUT;
-    }
-
-    remove_if_present(
-        batch->payload->send_initial_metadata.send_initial_metadata,
-        GRPC_BATCH_METHOD);
-    remove_if_present(
-        batch->payload->send_initial_metadata.send_initial_metadata,
-        GRPC_BATCH_SCHEME);
-    remove_if_present(
-        batch->payload->send_initial_metadata.send_initial_metadata,
-        GRPC_BATCH_CONTENT_TYPE);
-
-    /* Send : prefixed headers, which have to be before any application
-       layer headers. */
-    error = grpc_metadata_batch_add_head(
-        batch->payload->send_initial_metadata.send_initial_metadata,
-        &calld->method, method, GRPC_BATCH_METHOD);
-    if (error != GRPC_ERROR_NONE) goto done;
-    error = grpc_metadata_batch_add_head(
-        batch->payload->send_initial_metadata.send_initial_metadata,
-        &calld->scheme, channeld->static_scheme, GRPC_BATCH_SCHEME);
-    if (error != GRPC_ERROR_NONE) goto done;
-    batch->payload->send_initial_metadata.send_initial_metadata->Set(
-        grpc_core::TeMetadata(), grpc_core::TeMetadata::kTrailers);
-    error = grpc_metadata_batch_add_tail(
-        batch->payload->send_initial_metadata.send_initial_metadata,
-        &calld->content_type, GRPC_MDELEM_CONTENT_TYPE_APPLICATION_SLASH_GRPC,
-        GRPC_BATCH_CONTENT_TYPE);
-    if (error != GRPC_ERROR_NONE) goto done;
-    batch->payload->send_initial_metadata.send_initial_metadata->Set(
-        grpc_core::UserAgentMetadata(), channeld->user_agent.Ref());
-  }
-
-done:
-  if (error != GRPC_ERROR_NONE) {
-    grpc_transport_stream_op_batch_finish_with_failure(batch, error,
-                                                       calld->call_combiner);
-  } else if (!batch_will_be_handled_asynchronously) {
-    grpc_call_next_op(elem, batch);
-  }
-}
-
-/* Constructor for call_data */
-static grpc_error_handle http_client_init_call_elem(
-    grpc_call_element* elem, const grpc_call_element_args* args) {
-  new (elem->call_data) call_data(elem, *args);
-  return GRPC_ERROR_NONE;
-}
-
-/* Destructor for call_data */
-static void http_client_destroy_call_elem(
-    grpc_call_element* elem, const grpc_call_final_info* /*final_info*/,
-    grpc_closure* /*ignored*/) {
-  call_data* calld = static_cast<call_data*>(elem->call_data);
-  calld->~call_data();
-}
-
-static grpc_mdelem scheme_from_args(const grpc_channel_args* args) {
-  unsigned i;
-  size_t j;
-  grpc_mdelem valid_schemes[] = {GRPC_MDELEM_SCHEME_HTTP,
-                                 GRPC_MDELEM_SCHEME_HTTPS};
-  if (args != nullptr) {
-    for (i = 0; i < args->num_args; ++i) {
-      if (args->args[i].type == GRPC_ARG_STRING &&
-          strcmp(args->args[i].key, GRPC_ARG_HTTP2_SCHEME) == 0) {
-        for (j = 0; j < GPR_ARRAY_SIZE(valid_schemes); j++) {
-          if (0 == grpc_slice_str_cmp(GRPC_MDVALUE(valid_schemes[j]),
-                                      args->args[i].value.string)) {
-            return valid_schemes[j];
-          }
-        }
-      }
-    }
-  }
-  return GRPC_MDELEM_SCHEME_HTTP;
-}
-
-static size_t max_payload_size_from_args(const grpc_channel_args* args) {
-  if (args != nullptr) {
-    for (size_t i = 0; i < args->num_args; ++i) {
-      if (0 == strcmp(args->args[i].key, GRPC_ARG_MAX_PAYLOAD_SIZE_FOR_GET)) {
-        if (args->args[i].type != GRPC_ARG_INTEGER) {
-          gpr_log(GPR_ERROR, "%s: must be an integer",
-                  GRPC_ARG_MAX_PAYLOAD_SIZE_FOR_GET);
-        } else {
-          return static_cast<size_t>(args->args[i].value.integer);
-        }
-      }
-    }
-  }
-  return kMaxPayloadSizeForGet;
-}
-
-static grpc_core::Slice user_agent_from_args(const grpc_channel_args* args,
-                                             const char* transport_name) {
-  std::vector<std::string> user_agent_fields;
-
-  for (size_t i = 0; args && i < args->num_args; i++) {
-    if (0 == strcmp(args->args[i].key, GRPC_ARG_PRIMARY_USER_AGENT_STRING)) {
-      if (args->args[i].type != GRPC_ARG_STRING) {
-        gpr_log(GPR_ERROR, "Channel argument '%s' should be a string",
-                GRPC_ARG_PRIMARY_USER_AGENT_STRING);
-      } else {
-        user_agent_fields.push_back(args->args[i].value.string);
-      }
-    }
-  }
-
-  user_agent_fields.push_back(
-      absl::StrFormat("grpc-c/%s (%s; %s)", grpc_version_string(),
+  add(args.GetString(GRPC_ARG_PRIMARY_USER_AGENT_STRING).value_or(""));
+  add(absl::StrFormat("grpc-c/%s (%s; %s)", grpc_version_string(),
                       GPR_PLATFORM_STRING, transport_name));
+  add(args.GetString(GRPC_ARG_SECONDARY_USER_AGENT_STRING).value_or(""));
 
-  for (size_t i = 0; args && i < args->num_args; i++) {
-    if (0 == strcmp(args->args[i].key, GRPC_ARG_SECONDARY_USER_AGENT_STRING)) {
-      if (args->args[i].type != GRPC_ARG_STRING) {
-        gpr_log(GPR_ERROR, "Channel argument '%s' should be a string",
-                GRPC_ARG_SECONDARY_USER_AGENT_STRING);
-      } else {
-        user_agent_fields.push_back(args->args[i].value.string);
-      }
-    }
+  return Slice::FromCopiedString(absl::StrJoin(fields, " "));
+}
+}  // namespace
+
+ArenaPromise<ServerMetadataHandle> HttpClientFilter::MakeCallPromise(
+    CallArgs call_args, NextPromiseFactory next_promise_factory) {
+  auto& md = call_args.client_initial_metadata;
+  if (test_only_use_put_requests_) {
+    md->Set(HttpMethodMetadata(), HttpMethodMetadata::kPut);
+  } else {
+    md->Set(HttpMethodMetadata(), HttpMethodMetadata::kPost);
   }
+  md->Set(HttpSchemeMetadata(), scheme_);
+  md->Set(TeMetadata(), TeMetadata::kTrailers);
+  md->Set(ContentTypeMetadata(), ContentTypeMetadata::kApplicationGrpc);
+  md->Set(UserAgentMetadata(), user_agent_.Ref());
 
-  std::string user_agent_string = absl::StrJoin(user_agent_fields, " ");
-  return grpc_core::Slice::FromCopiedString(user_agent_string.c_str());
+  auto* read_latch = GetContext<Arena>()->New<Latch<ServerMetadata*>>();
+  auto* write_latch =
+      absl::exchange(call_args.server_initial_metadata, read_latch);
+
+  return CallPushPull(
+      Seq(next_promise_factory(std::move(call_args)),
+          [](ServerMetadataHandle md) -> ServerMetadataHandle {
+            auto r = CheckServerMetadata(md.get());
+            if (!r.ok()) return ServerMetadataHandle(r);
+            return md;
+          }),
+      []() { return absl::OkStatus(); },
+      Seq(read_latch->Wait(),
+          [write_latch](ServerMetadata** md) -> absl::Status {
+            auto r =
+                *md == nullptr ? absl::OkStatus() : CheckServerMetadata(*md);
+            write_latch->Set(*md);
+            return r;
+          }));
 }
 
-/* Constructor for channel_data */
-static grpc_error_handle http_client_init_channel_elem(
-    grpc_channel_element* elem, grpc_channel_element_args* args) {
-  channel_data* chand = static_cast<channel_data*>(elem->channel_data);
-  new (chand) channel_data();
-  GPR_ASSERT(!args->is_last);
-  GPR_ASSERT(args->optional_transport != nullptr);
-  chand->static_scheme = scheme_from_args(args->channel_args);
-  chand->max_payload_size_for_get =
-      max_payload_size_from_args(args->channel_args);
-  chand->user_agent = grpc_core::Slice(user_agent_from_args(
-      args->channel_args, args->optional_transport->vtable->name));
-  return GRPC_ERROR_NONE;
+HttpClientFilter::HttpClientFilter(HttpSchemeMetadata::ValueType scheme,
+                                   Slice user_agent,
+                                   bool test_only_use_put_requests)
+    : scheme_(scheme),
+      user_agent_(std::move(user_agent)),
+      test_only_use_put_requests_(test_only_use_put_requests) {}
+
+absl::StatusOr<HttpClientFilter> HttpClientFilter::Create(ChannelArgs args,
+                                                          ChannelFilter::Args) {
+  auto* transport = args.GetObject<grpc_transport>();
+  if (transport == nullptr) {
+    return absl::InvalidArgumentError("HttpClientFilter needs a transport");
+  }
+  return HttpClientFilter(
+      SchemeFromArgs(args), UserAgentFromArgs(args, transport->vtable->name),
+      args.GetInt(GRPC_ARG_TEST_ONLY_USE_PUT_REQUESTS).value_or(false));
 }
 
-/* Destructor for channel data */
-static void http_client_destroy_channel_elem(grpc_channel_element* elem) {
-  static_cast<channel_data*>(elem->channel_data)->~channel_data();
-}
-
-const grpc_channel_filter grpc_http_client_filter = {
-    http_client_start_transport_stream_op_batch,
-    grpc_channel_next_op,
-    sizeof(call_data),
-    http_client_init_call_elem,
-    grpc_call_stack_ignore_set_pollset_or_pollset_set,
-    http_client_destroy_call_elem,
-    sizeof(channel_data),
-    http_client_init_channel_elem,
-    http_client_destroy_channel_elem,
-    grpc_channel_next_get_info,
-    "http-client"};
+}  // namespace grpc_core

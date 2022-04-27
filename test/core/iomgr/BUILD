@@ -70,21 +70,10 @@ grpc_cc_test(
         "gtest",
     ],
     language = "C++",
+    uses_event_engine = False,
     uses_polling = False,
     deps = [
         ":endpoint_tests",
-        "//:gpr",
-        "//:grpc",
-        "//test/core/util:grpc_test_util",
-    ],
-)
-
-grpc_cc_test(
-    name = "ev_epollex_linux_test",
-    srcs = ["ev_epollex_linux_test.cc"],
-    language = "C++",
-    tags = ["no_windows"],
-    deps = [
         "//:gpr",
         "//:grpc",
         "//test/core/util:grpc_test_util",
@@ -130,6 +119,7 @@ grpc_cc_test(
     name = "load_file_test",
     srcs = ["load_file_test.cc"],
     language = "C++",
+    uses_event_engine = False,
     uses_polling = False,
     deps = [
         "//:gpr",
@@ -160,6 +150,7 @@ grpc_cc_test(
     name = "mpmcqueue_test",
     srcs = ["mpmcqueue_test.cc"],
     language = "C++",
+    uses_event_engine = False,
     uses_polling = False,
     deps = [
         "//:gpr",
@@ -173,6 +164,9 @@ grpc_cc_test(
     srcs = ["resolve_address_posix_test.cc"],
     args = [
         "--resolver=ares",
+    ],
+    external_deps = [
+        "absl/strings",
     ],
     language = "C++",
     tags = ["no_windows"],
@@ -189,6 +183,9 @@ grpc_cc_test(
     args = [
         "--resolver=native",
     ],
+    external_deps = [
+        "absl/strings",
+    ],
     language = "C++",
     tags = ["no_windows"],
     deps = [
@@ -201,28 +198,34 @@ grpc_cc_test(
 grpc_cc_test(
     name = "resolve_address_using_ares_resolver_test",
     srcs = ["resolve_address_test.cc"],
-    args = [
-        "--resolver=ares",
+    external_deps = [
+        "absl/strings",
+        "gtest",
     ],
     language = "C++",
     deps = [
         "//:gpr",
         "//:grpc",
+        "//test/core/util:fake_udp_and_tcp_server",
         "//test/core/util:grpc_test_util",
+        "//test/cpp/util:test_config",
     ],
 )
 
 grpc_cc_test(
     name = "resolve_address_using_native_resolver_test",
     srcs = ["resolve_address_test.cc"],
-    args = [
-        "--resolver=native",
+    external_deps = [
+        "absl/strings",
+        "gtest",
     ],
     language = "C++",
     deps = [
         "//:gpr",
         "//:grpc",
+        "//test/core/util:fake_udp_and_tcp_server",
         "//test/core/util:grpc_test_util",
+        "//test/cpp/util:test_config",
     ],
 )
 
@@ -293,6 +296,7 @@ grpc_cc_test(
     name = "threadpool_test",
     srcs = ["threadpool_test.cc"],
     language = "C++",
+    uses_event_engine = False,
     uses_polling = False,
     deps = [
         "//:gpr",
@@ -305,6 +309,7 @@ grpc_cc_test(
     name = "time_averaged_stats_test",
     srcs = ["time_averaged_stats_test.cc"],
     language = "C++",
+    uses_event_engine = False,
     uses_polling = False,
     deps = [
         "//:gpr",
@@ -317,6 +322,7 @@ grpc_cc_test(
     name = "timer_heap_test",
     srcs = ["timer_heap_test.cc"],
     language = "C++",
+    uses_event_engine = False,
     uses_polling = False,
     deps = [
         "//:gpr",
@@ -329,6 +335,7 @@ grpc_cc_test(
     name = "timer_list_test",
     srcs = ["timer_list_test.cc"],
     language = "C++",
+    uses_event_engine = False,
     uses_polling = False,
     deps = [
         "//:gpr",

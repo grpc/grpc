@@ -31,7 +31,10 @@ namespace testing {
 // Will crash if: f never called, or f called more than once.
 class CallChecker {
  public:
-  ~CallChecker() { GPR_ASSERT(called_); }
+  explicit CallChecker(bool optional) : optional_(optional) {}
+  ~CallChecker() {
+    if (!optional_) GPR_ASSERT(called_);
+  }
 
   void Called() {
     GPR_ASSERT(!called_);
@@ -39,11 +42,16 @@ class CallChecker {
   }
 
   static std::shared_ptr<CallChecker> Make() {
-    return std::make_shared<CallChecker>();
+    return std::make_shared<CallChecker>(false);
+  }
+
+  static std::shared_ptr<CallChecker> MakeOptional() {
+    return std::make_shared<CallChecker>(true);
   }
 
  private:
   bool called_ = false;
+  const bool optional_ = false;
 };
 
 }  // namespace testing

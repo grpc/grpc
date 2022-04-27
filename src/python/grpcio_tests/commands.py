@@ -245,8 +245,19 @@ class TestGevent(setuptools.Command):
         pass
 
     def run(self):
+        import gevent
         from gevent import monkey
         monkey.patch_all()
+
+        threadpool = gevent.hub.get_hub().threadpool
+
+        # Currently, each channel corresponds to a single native thread in the
+        # gevent threadpool. Thus, when the unit test suite spins up hundreds of
+        # channels concurrently, some will be starved out, causing the test to
+        # increase in duration. We increase the max size here so this does not
+        # happen.
+        threadpool.maxsize = 1024
+        threadpool.size = 32
 
         import grpc.experimental.gevent
 

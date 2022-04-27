@@ -47,6 +47,7 @@ grpc_cc_test(
     name = "bin_decoder_test",
     srcs = ["bin_decoder_test.cc"],
     language = "C++",
+    uses_event_engine = False,
     uses_polling = False,
     deps = [
         "//:gpr",
@@ -59,6 +60,7 @@ grpc_cc_test(
     name = "bin_encoder_test",
     srcs = ["bin_encoder_test.cc"],
     language = "C++",
+    uses_event_engine = False,
     uses_polling = False,
     deps = [
         "//:gpr",
@@ -74,6 +76,7 @@ grpc_cc_test(
         "gtest",
     ],
     language = "C++",
+    uses_event_engine = False,
     uses_polling = False,
     deps = [
         "//:gpr",
@@ -99,9 +102,23 @@ grpc_cc_test(
 )
 
 grpc_cc_test(
+    name = "graceful_shutdown_test",
+    srcs = ["graceful_shutdown_test.cc"],
+    external_deps = ["gtest"],
+    language = "C++",
+    deps = [
+        "//:gpr",
+        "//:grpc",
+        "//test/core/end2end:cq_verifier",
+        "//test/core/util:grpc_test_util",
+    ],
+)
+
+grpc_cc_test(
     name = "hpack_encoder_test",
     srcs = ["hpack_encoder_test.cc"],
     language = "C++",
+    uses_event_engine = False,
     uses_polling = False,
     deps = [
         "//:gpr",
@@ -115,6 +132,7 @@ grpc_cc_test(
     srcs = ["hpack_parser_test.cc"],
     external_deps = ["gtest"],
     language = "C++",
+    uses_event_engine = False,
     uses_polling = False,
     deps = [
         "//:gpr",
@@ -128,6 +146,7 @@ grpc_cc_test(
     srcs = ["hpack_parser_table_test.cc"],
     external_deps = ["gtest"],
     language = "C++",
+    uses_event_engine = False,
     uses_polling = False,
     deps = [
         "//:gpr",
@@ -143,6 +162,19 @@ grpc_cc_test(
     deps = [
         "//:gpr",
         "//:grpc",
+        "//test/core/util:grpc_test_util",
+    ],
+)
+
+grpc_cc_test(
+    name = "streams_not_seen_test",
+    srcs = ["streams_not_seen_test.cc"],
+    external_deps = ["gtest"],
+    language = "C++",
+    deps = [
+        "//:gpr",
+        "//:grpc",
+        "//test/core/end2end:cq_verifier",
         "//test/core/util:grpc_test_util",
     ],
 )
@@ -182,6 +214,7 @@ grpc_cc_test(
     name = "varint_test",
     srcs = ["varint_test.cc"],
     language = "C++",
+    uses_event_engine = False,
     uses_polling = False,
     deps = [
         "//:gpr",
@@ -210,31 +243,5 @@ grpc_cc_test(
         "//:gpr",
         "//:grpc",
         "//test/core/util:grpc_test_util",
-    ],
-)
-
-grpc_cc_test(
-    name = "popularity_count_test",
-    srcs = ["popularity_count_test.cc"],
-    external_deps = [
-        "gtest",
-    ],
-    deps = [
-        "//:gpr_platform",
-        "//:popularity_count",
-        "//test/core/util:grpc_suppressions",
-    ],
-)
-
-grpc_cc_test(
-    name = "hpack_encoder_index_test",
-    srcs = ["hpack_encoder_index_test.cc"],
-    external_deps = [
-        "gtest",
-    ],
-    deps = [
-        "//:gpr_platform",
-        "//:hpack_encoder_index",
-        "//test/core/util:grpc_suppressions",
     ],
 )

@@ -299,11 +299,11 @@ def get_out_dir(protos, context):
     if at_least_one_virtual:
         out_dir = get_include_directory(protos[0])
         ws_root = protos[0].owner.workspace_root
-        if ws_root and out_dir.find(ws_root) >= 0:
-            out_dir = "".join(out_dir.rsplit(ws_root, 1))
+        prefix = "/" + _make_prefix(protos[0].owner) + _VIRTUAL_IMPORTS[1:]
+
         return struct(
             path = out_dir,
-            import_path = out_dir[out_dir.find(_VIRTUAL_IMPORTS) + 1:],
+            import_path = out_dir[out_dir.find(prefix) + 1:],
         )
 
     out_dir = context.genfiles_dir.path

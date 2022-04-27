@@ -27,19 +27,18 @@
 
 static void test_format_get_request(void) {
   grpc_http_header hdr = {const_cast<char*>("x-yz"), const_cast<char*>("abc")};
-  grpc_httpcli_request req;
+  grpc_http_request req;
   grpc_slice slice;
 
+  const char* host = "example.com";
   memset(&req, 0, sizeof(req));
-  req.host = const_cast<char*>("example.com");
-  req.http.path = const_cast<char*>("/index.html");
-  req.http.hdr_count = 1;
-  req.http.hdrs = &hdr;
+  req.hdr_count = 1;
+  req.hdrs = &hdr;
 
-  slice = grpc_httpcli_format_get_request(&req);
+  slice = grpc_httpcli_format_get_request(&req, host, "/index.html");
 
   GPR_ASSERT(0 == grpc_slice_str_cmp(slice,
-                                     "GET /index.html HTTP/1.0\r\n"
+                                     "GET /index.html HTTP/1.1\r\n"
                                      "Host: example.com\r\n"
                                      "Connection: close\r\n"
                                      "User-Agent: " GRPC_HTTPCLI_USER_AGENT
@@ -52,21 +51,20 @@ static void test_format_get_request(void) {
 
 static void test_format_post_request(void) {
   grpc_http_header hdr = {const_cast<char*>("x-yz"), const_cast<char*>("abc")};
-  grpc_httpcli_request req;
+  grpc_http_request req;
   grpc_slice slice;
-  char body_bytes[] = "fake body";
-  size_t body_len = 9;
 
+  const char* host = "example.com";
   memset(&req, 0, sizeof(req));
-  req.host = const_cast<char*>("example.com");
-  req.http.path = const_cast<char*>("/index.html");
-  req.http.hdr_count = 1;
-  req.http.hdrs = &hdr;
+  req.hdr_count = 1;
+  req.hdrs = &hdr;
+  req.body = const_cast<char*>("fake body");
+  req.body_length = 9;
 
-  slice = grpc_httpcli_format_post_request(&req, body_bytes, body_len);
+  slice = grpc_httpcli_format_post_request(&req, host, "/index.html");
 
   GPR_ASSERT(0 == grpc_slice_str_cmp(slice,
-                                     "POST /index.html HTTP/1.0\r\n"
+                                     "POST /index.html HTTP/1.1\r\n"
                                      "Host: example.com\r\n"
                                      "Connection: close\r\n"
                                      "User-Agent: " GRPC_HTTPCLI_USER_AGENT
@@ -82,19 +80,18 @@ static void test_format_post_request(void) {
 
 static void test_format_post_request_no_body(void) {
   grpc_http_header hdr = {const_cast<char*>("x-yz"), const_cast<char*>("abc")};
-  grpc_httpcli_request req;
+  grpc_http_request req;
   grpc_slice slice;
 
+  const char* host = "example.com";
   memset(&req, 0, sizeof(req));
-  req.host = const_cast<char*>("example.com");
-  req.http.path = const_cast<char*>("/index.html");
-  req.http.hdr_count = 1;
-  req.http.hdrs = &hdr;
+  req.hdr_count = 1;
+  req.hdrs = &hdr;
 
-  slice = grpc_httpcli_format_post_request(&req, nullptr, 0);
+  slice = grpc_httpcli_format_post_request(&req, host, "/index.html");
 
   GPR_ASSERT(0 == grpc_slice_str_cmp(slice,
-                                     "POST /index.html HTTP/1.0\r\n"
+                                     "POST /index.html HTTP/1.1\r\n"
                                      "Host: example.com\r\n"
                                      "Connection: close\r\n"
                                      "User-Agent: " GRPC_HTTPCLI_USER_AGENT
@@ -107,26 +104,25 @@ static void test_format_post_request_no_body(void) {
 
 static void test_format_post_request_content_type_override(void) {
   grpc_http_header hdrs[2];
-  grpc_httpcli_request req;
+  grpc_http_request req;
   grpc_slice slice;
-  char body_bytes[] = "fake%20body";
-  size_t body_len = 11;
 
+  const char* host = "example.com";
   hdrs[0].key = const_cast<char*>("x-yz");
   hdrs[0].value = const_cast<char*>("abc");
   hdrs[1].key = const_cast<char*>("Content-Type");
   hdrs[1].value = const_cast<char*>("application/x-www-form-urlencoded");
   memset(&req, 0, sizeof(req));
-  req.host = const_cast<char*>("example.com");
-  req.http.path = const_cast<char*>("/index.html");
-  req.http.hdr_count = 2;
-  req.http.hdrs = hdrs;
+  req.hdr_count = 2;
+  req.hdrs = hdrs;
+  req.body = const_cast<char*>("fake%20body");
+  req.body_length = 11;
 
-  slice = grpc_httpcli_format_post_request(&req, body_bytes, body_len);
+  slice = grpc_httpcli_format_post_request(&req, host, "/index.html");
 
   GPR_ASSERT(0 == grpc_slice_str_cmp(
                       slice,
-                      "POST /index.html HTTP/1.0\r\n"
+                      "POST /index.html HTTP/1.1\r\n"
                       "Host: example.com\r\n"
                       "Connection: close\r\n"
                       "User-Agent: " GRPC_HTTPCLI_USER_AGENT "\r\n"
@@ -140,7 +136,7 @@ static void test_format_post_request_content_type_override(void) {
 }
 
 int main(int argc, char** argv) {
-  grpc::testing::TestEnvironment env(argc, argv);
+  grpc::testing::TestEnvironment env(&argc, argv);
   grpc_init();
 
   test_format_get_request();

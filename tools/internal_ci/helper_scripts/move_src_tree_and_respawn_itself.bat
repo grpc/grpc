@@ -20,10 +20,18 @@
 @rem Since batch scripts don't support the "source" unix command,
 @rem invoking this script is a bit trickier than on unix.
 @rem This script should be invoked from the CI script like this:
+@rem Note that honoring the pattern (including e.g. EnableDelayedExpansion)
+@rem is critical for correctly propagating the exitcode.
+@rem TODO(jtattermusch): find a way to simplify the invocation of the respawn script.
+@rem
+@rem setlocal EnableDelayedExpansion
 @rem IF "%cd%"=="T:\src" (
 @rem   call %~dp0\..\..\..\tools\internal_ci\helper_scripts\move_src_tree_and_respawn_itself.bat %0
-@rem   exit /b %errorlevel%
+@rem   echo respawn script has finished with exitcode !errorlevel!
+@rem   exit /b !errorlevel!
 @rem )
+@rem endlocal
+
 
 @echo off
 

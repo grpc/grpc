@@ -32,7 +32,6 @@
 #include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/surface/channel_init.h"
-#include "src/core/lib/transport/static_metadata.h"
 #include "test/core/end2end/cq_verifier.h"
 #include "test/core/end2end/end2end_tests.h"
 #include "test/core/end2end/tests/cancel_test_helpers.h"
@@ -68,11 +67,12 @@ static void drain_cq(grpc_completion_queue* cq) {
 
 static void shutdown_server(grpc_end2end_test_fixture* f) {
   if (!f->server) return;
-  grpc_server_shutdown_and_notify(f->server, f->shutdown_cq, tag(1000));
-  GPR_ASSERT(grpc_completion_queue_pluck(f->shutdown_cq, tag(1000),
-                                         grpc_timeout_seconds_to_deadline(5),
-                                         nullptr)
-                 .type == GRPC_OP_COMPLETE);
+  grpc_server_shutdown_and_notify(f->server, f->cq, tag(1000));
+  grpc_event ev;
+  do {
+    ev = grpc_completion_queue_next(f->cq, grpc_timeout_seconds_to_deadline(5),
+                                    nullptr);
+  } while (ev.type != GRPC_OP_COMPLETE || ev.tag != tag(1000));
   grpc_server_destroy(f->server);
   f->server = nullptr;
 }
@@ -90,7 +90,6 @@ static void end_test(grpc_end2end_test_fixture* f) {
   grpc_completion_queue_shutdown(f->cq);
   drain_cq(f->cq);
   grpc_completion_queue_destroy(f->cq);
-  grpc_completion_queue_destroy(f->shutdown_cq);
 }
 
 // Tests that we honor the error passed to recv_trailing_metadata_ready
@@ -268,7 +267,7 @@ class InjectStatusFilter {
  public:
   static grpc_channel_filter kFilterVtable;
 
- public:
+ private:
   class CallData {
    public:
     static grpc_error_handle Init(grpc_call_element* elem,
@@ -326,6 +325,7 @@ class InjectStatusFilter {
 
 grpc_channel_filter InjectStatusFilter::kFilterVtable = {
     CallData::StartTransportStreamOpBatch,
+    nullptr,
     grpc_channel_next_op,
     sizeof(CallData),
     CallData::Init,
@@ -338,16 +338,16 @@ grpc_channel_filter InjectStatusFilter::kFilterVtable = {
     "InjectStatusFilter",
 };
 
-bool AddFilter(grpc_channel_stack_builder* builder) {
+bool AddFilter(grpc_core::ChannelStackBuilder* builder) {
   // Skip on proxy (which explicitly disables retries).
-  const grpc_channel_args* args =
-      grpc_channel_stack_builder_get_channel_arguments(builder);
-  if (!grpc_channel_args_find_bool(args, GRPC_ARG_ENABLE_RETRIES, true)) {
+  if (!builder->channel_args()
+           .GetBool(GRPC_ARG_ENABLE_RETRIES)
+           .value_or(true)) {
     return true;
   }
   // Install filter.
-  return grpc_channel_stack_builder_prepend_filter(
-      builder, &InjectStatusFilter::kFilterVtable, nullptr, nullptr);
+  builder->PrependFilter(&InjectStatusFilter::kFilterVtable, nullptr);
+  return true;
 }
 
 }  // namespace

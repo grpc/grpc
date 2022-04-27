@@ -23,58 +23,142 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-load(
-    "//bazel:build_defs.bzl",
-    "UPB_DEFAULT_COPTS",
-)
-load(
-    "@system_python//:build_defs.bzl",
-    "EXT_SUFFIX",
-)
+# begin:github_only
+load("//bazel:py_proto_library.bzl", "py_proto_library")
+load("//bazel:py_extension.bzl", "py_extension")
+load("@rules_python//python:packaging.bzl", "py_wheel")
+# end:github_only
 
-cc_binary(
-    name = "message",
+licenses(["notice"])
+
+py_extension(
+    name = "_message",
     srcs = [
+        "convert.c",
+        "convert.h",
         "descriptor.c",
         "descriptor.h",
+        "descriptor_containers.c",
+        "descriptor_containers.h",
         "descriptor_pool.c",
         "descriptor_pool.h",
+        "extension_dict.c",
+        "extension_dict.h",
+        "map.c",
+        "map.h",
+        "message.c",
+        "message.h",
         "protobuf.c",
         "protobuf.h",
+        "python.h",
+        "repeated.c",
+        "repeated.h",
     ],
-    copts = UPB_DEFAULT_COPTS + [
-        # The Python API requires patterns that are ISO C incompatible, like
-        # casts between function pointers and object pointers.
-        "-Wno-pedantic",
-    ],
-    # We use a linker script to hide all symbols except the entry point for
-    # the module.
-    linkopts = select({
-        "@platforms//os:linux": ["-Wl,--version-script,$(location :version_script.lds)"],
-        "@platforms//os:macos": ["-Wl,-exported_symbol", "-Wl,_PyInit__message"],
-    }),
-    linkshared = True,
-    linkstatic = True,
     deps = [
-        ":version_script.lds",
+        "//:descriptor_upb_proto_reflection",
         "//:reflection",
+        "//:table",
+        "//:textformat",
         "//:upb",
-        "@system_python//:python_headers",
+        "//upb/util:compare",
+        "//upb/util:def_to_proto",
+        "//upb/util:required_fields",
     ],
 )
 
-# Copy the extension into the location recognized by Python.
+py_extension(
+    name = "_api_implementation",
+    srcs = ["api_implementation.c"],
+)
+
+# begin:github_only
+
+py_test(
+    name = "minimal_test",
+    srcs = [
+        "minimal_test.py",
+    ],
+    imports = ["."],
+    legacy_create_init = False,
+    deps = [
+        "//python:message_ext",
+        "@com_google_protobuf//:python_common_test_protos",
+        "@com_google_protobuf//:python_specific_test_protos",
+        "@com_google_protobuf//:python_srcs",
+    ],
+)
+
+# Copy the extensions into the location recognized by Python.
+# .abi3.so indicates use of the limited API, and cross-version ABI compatibility.
+EXT_SUFFIX = ".abi3.so"
+
 genrule(
-    name = "message_ext",
-    srcs = [":message"],
+    name = "copy_message",
+    srcs = [":_message"],
     outs = ["google/protobuf/pyext/_message" + EXT_SUFFIX],
     cmd = "cp $< $@",
 )
 
-py_test(
-    name = "minimal_test",
-    srcs = ["minimal_test.py"],
-    data = [":message_ext"],
-    imports = ["."],
-    legacy_create_init = False,
+genrule(
+    name = "copy_api_implementation",
+    srcs = [":_api_implementation"],
+    outs = ["google/protobuf/internal/_api_implementation" + EXT_SUFFIX],
+    cmd = "cp $< $@",
+    visibility = ["//python:__subpackages__"],
 )
+
+filegroup(
+    name = "extension_files",
+    srcs = [
+        "google/protobuf/pyext/_message" + EXT_SUFFIX,
+        "google/protobuf/internal/_api_implementation" + EXT_SUFFIX,
+    ],
+)
+
+py_library(
+    name = "message_ext",
+    data = [":extension_files"],
+    imports = ["."],
+    visibility = ["//python:__subpackages__"],
+)
+
+py_proto_library(
+    name = "well_known_proto_pb2",
+    deps = [
+        "@com_google_protobuf//:any_proto",
+        "@com_google_protobuf//:api_proto",
+        "@com_google_protobuf//:compiler_plugin_proto",
+        "@com_google_protobuf//:descriptor_proto",
+        "@com_google_protobuf//:duration_proto",
+        "@com_google_protobuf//:empty_proto",
+        "@com_google_protobuf//:field_mask_proto",
+        "@com_google_protobuf//:source_context_proto",
+        "@com_google_protobuf//:struct_proto",
+        "@com_google_protobuf//:timestamp_proto",
+        "@com_google_protobuf//:type_proto",
+        "@com_google_protobuf//:wrappers_proto",
+    ],
+)
+
+py_wheel(
+    name = "binary_wheel",
+    abi = "abi3",
+    distribution = "protobuf",
+    # TODO(https://github.com/protocolbuffers/upb/issues/502): we need to make
+    # this a select() that is calculated from the platform we are actually
+    # building on.
+    platform = "manylinux2014_x86_64",
+    python_tag = "cp36",
+    strip_path_prefixes = ["python/"],
+    version = "4.20.0",
+    deps = [
+        ":extension_files",
+        ":well_known_proto_pb2",
+        # TODO(https://github.com/protocolbuffers/upb/issues/503): currently
+        # this includes the unit tests.  We should filter these out so we are
+        # only distributing true source files.
+        "@com_google_protobuf//:python_srcs",
+    ],
+)
+
+# end:github_only

@@ -21,6 +21,7 @@ from absl.testing import absltest
 import grpc
 
 from framework import xds_k8s_testcase
+from framework.helpers import skips
 
 flags.adopt_module_key_flags(xds_k8s_testcase)
 
@@ -44,6 +45,14 @@ class AuthzTest(xds_k8s_testcase.SecurityXdsKubernetesTestCase):
         'UNARY_CALL': 'EMPTY_CALL',
         'EMPTY_CALL': 'UNARY_CALL',
     }
+
+    @staticmethod
+    def isSupported(config: skips.TestConfig) -> bool:
+        if config.client_lang in ['cpp', 'python']:
+            return config.version_ge('v1.44.x')
+        elif config.client_lang in ['java', 'go']:
+            return config.version_ge('v1.42.x')
+        return False
 
     def setUp(self):
         super().setUp()

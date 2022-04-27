@@ -95,7 +95,8 @@ TEST_F(GrpclbTest, ParseInitialResponse) {
       grpc_core::GrpcLbResponseParse(encoded_slice, arena.ptr(), &resp));
   grpc_slice_unref(encoded_slice);
   EXPECT_EQ(resp.type, resp.INITIAL);
-  EXPECT_EQ(resp.client_stats_report_interval, 123456);
+  EXPECT_EQ(resp.client_stats_report_interval,
+            grpc_core::Duration::Milliseconds(123456));
   EXPECT_EQ(resp.serverlist.size(), 0);
 }
 
@@ -138,7 +139,7 @@ TEST_F(GrpclbTest, ParseResponseServerList) {
 }  // namespace grpc
 
 int main(int argc, char** argv) {
-  grpc::testing::TestEnvironment env(argc, argv);
+  grpc::testing::TestEnvironment env(&argc, argv);
   ::testing::InitGoogleTest(&argc, argv);
   int ret = RUN_ALL_TESTS();
   return ret;

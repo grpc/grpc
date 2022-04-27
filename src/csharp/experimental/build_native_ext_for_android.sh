@@ -50,4 +50,7 @@ ${ANDROID_SDK_CMAKE} ../.. \
   -DANDROID_NDK="${ANDROID_NDK_PATH}" \
   -DgRPC_XDS_USER_AGENT_IS_CSHARP=ON
 
-make -j4 grpc_csharp_ext
+# Use externally provided env to determine build parallelism, otherwise use default.
+GRPC_CSHARP_BUILD_EXT_COMPILER_JOBS=${GRPC_CSHARP_BUILD_EXT_COMPILER_JOBS:-2}
+
+make grpc_csharp_ext "-j${GRPC_CSHARP_BUILD_EXT_COMPILER_JOBS}"

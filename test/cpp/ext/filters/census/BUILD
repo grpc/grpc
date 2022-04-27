@@ -30,12 +30,14 @@ grpc_cc_test(
         "opencensus-with-tag-map",
     ],
     language = "C++",
+    linkstatic = True,
     tags = ["no_windows"],  # TODO(jtattermusch): fix test on windows
     deps = [
         "//:grpc++",
         "//:grpc_opencensus_plugin",
         "//src/proto/grpc/testing:echo_proto",
         "//test/core/util:grpc_test_util",
+        "//test/cpp/end2end:test_service_impl",
         "//test/cpp/util:test_config",
         "//test/cpp/util:test_util",
     ],

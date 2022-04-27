@@ -51,6 +51,7 @@ SliceBufferByteStream::~SliceBufferByteStream() {}
 void SliceBufferByteStream::Orphan() {
   grpc_slice_buffer_destroy_internal(&backing_buffer_);
   GRPC_ERROR_UNREF(shutdown_error_);
+  shutdown_error_ = GRPC_ERROR_NONE;
   // Note: We do not actually delete the object here, since
   // SliceBufferByteStream is usually allocated as part of a larger
   // object and has an OrphanablePtr of itself passed down through the
@@ -107,6 +108,7 @@ ByteStreamCache::CachingByteStream::~CachingByteStream() {}
 
 void ByteStreamCache::CachingByteStream::Orphan() {
   GRPC_ERROR_UNREF(shutdown_error_);
+  shutdown_error_ = GRPC_ERROR_NONE;
   // Note: We do not actually delete the object here, since
   // CachingByteStream is usually allocated as part of a larger
   // object and has an OrphanablePtr of itself passed down through the

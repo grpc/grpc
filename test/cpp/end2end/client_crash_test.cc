@@ -136,7 +136,7 @@ int main(int argc, char** argv) {
     g_root = ".";
   }
 
-  grpc::testing::TestEnvironment env(argc, argv);
+  grpc::testing::TestEnvironment env(&argc, argv);
   ::testing::InitGoogleTest(&argc, argv);
   // Order seems to matter on these tests: run three times to eliminate that
   for (int i = 0; i < 3; i++) {

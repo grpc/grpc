@@ -23,7 +23,6 @@ grpc_cc_test(
     srcs = ["alts_grpc_record_protocol_test.cc"],
     language = "C++",
     deps = [
-        "//:alts_frame_protector",
         "//:gpr",
         "//:grpc",
         "//:grpc_base",
@@ -37,7 +36,6 @@ grpc_cc_test(
     srcs = ["alts_iovec_record_protocol_test.cc"],
     language = "C++",
     deps = [
-        "//:alts_frame_protector",
         "//:gpr",
         "//:grpc",
         "//test/core/tsi/alts/crypt:alts_crypt_test_util",
@@ -50,7 +48,6 @@ grpc_cc_test(
     srcs = ["alts_zero_copy_grpc_protector_test.cc"],
     language = "C++",
     deps = [
-        "//:alts_frame_protector",
         "//:gpr",
         "//:grpc",
         "//:grpc_base",

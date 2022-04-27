@@ -290,7 +290,6 @@ grpc_error_handle grpc_chttp2_data_parser_parse(void* /*parser*/,
     grpc_slice_buffer_add(&s->unprocessed_incoming_frames_buffer, slice);
     grpc_core::ExecCtx::Run(DEBUG_LOCATION, s->on_next, GRPC_ERROR_NONE);
     s->on_next = nullptr;
-    s->unprocessed_incoming_frames_decompressed = false;
   } else {
     grpc_slice_ref_internal(slice);
     grpc_slice_buffer_add(&s->frame_storage, slice);

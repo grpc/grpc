@@ -25,6 +25,7 @@
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 
+#include "src/core/lib/security/security_connector/ssl_utils.h"
 #include "src/core/tsi/ssl_transport_security.h"
 #include "test/core/util/test_config.h"
 
@@ -57,7 +58,7 @@ static void test_convert_grpc_to_tsi_cert_pairs() {
 }
 
 int main(int argc, char** argv) {
-  grpc::testing::TestEnvironment env(argc, argv);
+  grpc::testing::TestEnvironment env(&argc, argv);
   grpc_init();
 
   test_convert_grpc_to_tsi_cert_pairs();

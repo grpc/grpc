@@ -252,7 +252,7 @@ LoadReporter::GenerateLoadBalancingFeedback() {
     feedback_records_.pop_front();
   }
   if (feedback_records_.size() < 2) {
-    return ::grpc::lb::v1::LoadBalancingFeedback::default_instance();
+    return grpc::lb::v1::LoadBalancingFeedback::default_instance();
   }
   // Find the longest range with valid ends.
   auto oldest = feedback_records_.begin();
@@ -267,7 +267,7 @@ LoadReporter::GenerateLoadBalancingFeedback() {
   if (std::distance(oldest, newest) < 1 ||
       oldest->end_time == newest->end_time ||
       newest->cpu_limit == oldest->cpu_limit) {
-    return ::grpc::lb::v1::LoadBalancingFeedback::default_instance();
+    return grpc::lb::v1::LoadBalancingFeedback::default_instance();
   }
   uint64_t rpcs = 0;
   uint64_t errors = 0;
@@ -282,7 +282,7 @@ LoadReporter::GenerateLoadBalancingFeedback() {
   std::chrono::duration<double> duration_seconds =
       newest->end_time - oldest->end_time;
   lock.Release();
-  ::grpc::lb::v1::LoadBalancingFeedback feedback;
+  grpc::lb::v1::LoadBalancingFeedback feedback;
   feedback.set_server_utilization(static_cast<float>(cpu_usage / cpu_limit));
   feedback.set_calls_per_second(
       static_cast<float>(rpcs / duration_seconds.count()));
@@ -291,14 +291,14 @@ LoadReporter::GenerateLoadBalancingFeedback() {
   return feedback;
 }
 
-::google::protobuf::RepeatedPtrField<::grpc::lb::v1::Load>
+::google::protobuf::RepeatedPtrField<grpc::lb::v1::Load>
 LoadReporter::GenerateLoads(const std::string& hostname,
                             const std::string& lb_id) {
   grpc_core::MutexLock lock(&store_mu_);
   auto assigned_stores = load_data_store_.GetAssignedStores(hostname, lb_id);
   GPR_ASSERT(assigned_stores != nullptr);
   GPR_ASSERT(!assigned_stores->empty());
-  ::google::protobuf::RepeatedPtrField<::grpc::lb::v1::Load> loads;
+  ::google::protobuf::RepeatedPtrField<grpc::lb::v1::Load> loads;
   for (PerBalancerStore* per_balancer_store : *assigned_stores) {
     GPR_ASSERT(!per_balancer_store->IsSuspended());
     if (!per_balancer_store->load_record_map().empty()) {
@@ -354,7 +354,7 @@ LoadReporter::GenerateLoads(const std::string& hostname,
 }
 
 void LoadReporter::AttachOrphanLoadId(
-    ::grpc::lb::v1::Load* load, const PerBalancerStore& per_balancer_store) {
+    grpc::lb::v1::Load* load, const PerBalancerStore& per_balancer_store) {
   if (per_balancer_store.lb_id() == kInvalidLbId) {
     load->set_load_key_unknown(true);
   } else {

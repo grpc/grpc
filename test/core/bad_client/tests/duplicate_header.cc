@@ -121,7 +121,7 @@ static void verifier(grpc_server* server, grpc_completion_queue* cq,
 }
 
 int main(int argc, char** argv) {
-  grpc::testing::TestEnvironment env(argc, argv);
+  grpc::testing::TestEnvironment env(&argc, argv);
   grpc_init();
 
   /* Verify that sending multiple headers doesn't segfault */

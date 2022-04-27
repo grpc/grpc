@@ -106,7 +106,6 @@ static grpc_end2end_test_fixture chttp2_create_fixture_secure_fullstack(
   ffd->tls_version = tls_version;
   f.fixture_data = ffd;
   f.cq = grpc_completion_queue_create_for_next(nullptr);
-  f.shutdown_cq = grpc_completion_queue_create_for_pluck(nullptr);
   return f;
 }
 
@@ -129,8 +128,7 @@ static void chttp2_init_client_secure_fullstack(
     grpc_channel_credentials* creds) {
   fullstack_secure_fixture_data* ffd =
       static_cast<fullstack_secure_fixture_data*>(f->fixture_data);
-  f->client = grpc_secure_channel_create(creds, ffd->localaddr.c_str(),
-                                         client_args, nullptr);
+  f->client = grpc_channel_create(ffd->localaddr.c_str(), creds, client_args);
   GPR_ASSERT(f->client != nullptr);
   grpc_channel_credentials_release(creds);
 }
@@ -145,8 +143,8 @@ static void chttp2_init_server_secure_fullstack(
   }
   f->server = grpc_server_create(server_args, nullptr);
   grpc_server_register_completion_queue(f->server, f->cq, nullptr);
-  GPR_ASSERT(grpc_server_add_secure_http2_port(
-      f->server, ffd->localaddr.c_str(), server_creds));
+  GPR_ASSERT(grpc_server_add_http2_port(f->server, ffd->localaddr.c_str(),
+                                        server_creds));
   grpc_server_credentials_release(server_creds);
   grpc_server_start(f->server);
 }
@@ -176,8 +174,8 @@ static void chttp2_init_client_simple_ssl_with_oauth2_secure_fullstack(
     creds->set_min_tls_version(ffd->tls_version);
     creds->set_max_tls_version(ffd->tls_version);
   }
-  grpc_call_credentials* oauth2_creds = grpc_md_only_test_credentials_create(
-      "authorization", oauth2_md, true /* is_async */);
+  grpc_call_credentials* oauth2_creds =
+      grpc_md_only_test_credentials_create("authorization", oauth2_md);
   grpc_channel_credentials* ssl_oauth2_creds =
       grpc_composite_channel_credentials_create(ssl_creds, oauth2_creds,
                                                 nullptr);
@@ -283,7 +281,7 @@ static grpc_end2end_test_config configs[] = {
 
 int main(int argc, char** argv) {
   size_t i;
-  grpc::testing::TestEnvironment env(argc, argv);
+  grpc::testing::TestEnvironment env(&argc, argv);
   grpc_end2end_tests_pre_init();
   grpc_init();
 

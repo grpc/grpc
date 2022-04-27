@@ -225,11 +225,13 @@ static grpc_error_handle prepare_socket(SOCKET sock,
 
 failure:
   GPR_ASSERT(error != GRPC_ERROR_NONE);
+  auto addr_uri = grpc_sockaddr_to_uri(addr);
   grpc_error_set_int(
-      grpc_error_set_str(GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(
-                             "Failed to prepare server socket", &error, 1),
-                         GRPC_ERROR_STR_TARGET_ADDRESS,
-                         grpc_sockaddr_to_uri(addr)),
+      grpc_error_set_str(
+          GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(
+              "Failed to prepare server socket", &error, 1),
+          GRPC_ERROR_STR_TARGET_ADDRESS,
+          addr_uri.ok() ? *addr_uri : addr_uri.status().ToString()),
       GRPC_ERROR_INT_FD, (intptr_t)sock);
   GRPC_ERROR_UNREF(error);
   if (sock != INVALID_SOCKET) closesocket(sock);
@@ -347,7 +349,13 @@ static void on_accept(void* arg, grpc_error_handle error) {
       peer_name.len = (size_t)peer_name_len;
       std::string peer_name_string;
       if (!err) {
-        peer_name_string = grpc_sockaddr_to_uri(&peer_name);
+        auto addr_uri = grpc_sockaddr_to_uri(&peer_name);
+        if (addr_uri.ok()) {
+          peer_name_string = addr_uri.value();
+        } else {
+          gpr_log(GPR_ERROR, "invalid peer name: %s",
+                  addr_uri.status().ToString().c_str());
+        }
       } else {
         char* utf8_message = gpr_format_message(WSAGetLastError());
         gpr_log(GPR_ERROR, "getpeername error: %s", utf8_message);

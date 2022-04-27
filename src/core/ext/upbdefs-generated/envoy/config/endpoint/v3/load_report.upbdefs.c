@@ -10,14 +10,14 @@
 #include "envoy/config/endpoint/v3/load_report.upbdefs.h"
 #include "envoy/config/endpoint/v3/load_report.upb.h"
 
-extern upb_def_init envoy_config_core_v3_address_proto_upbdefinit;
-extern upb_def_init envoy_config_core_v3_base_proto_upbdefinit;
-extern upb_def_init google_protobuf_duration_proto_upbdefinit;
-extern upb_def_init google_protobuf_struct_proto_upbdefinit;
-extern upb_def_init udpa_annotations_status_proto_upbdefinit;
-extern upb_def_init udpa_annotations_versioning_proto_upbdefinit;
-extern upb_def_init validate_validate_proto_upbdefinit;
-static const char descriptor[2351] = {'\n', '*', 'e', 'n', 'v', 'o', 'y', '/', 'c', 'o', 'n', 'f', 'i', 'g', '/', 'e', 'n', 'd', 'p', 'o', 'i', 'n', 't', '/', 'v', 
+extern _upb_DefPool_Init envoy_config_core_v3_address_proto_upbdefinit;
+extern _upb_DefPool_Init envoy_config_core_v3_base_proto_upbdefinit;
+extern _upb_DefPool_Init google_protobuf_duration_proto_upbdefinit;
+extern _upb_DefPool_Init google_protobuf_struct_proto_upbdefinit;
+extern _upb_DefPool_Init udpa_annotations_status_proto_upbdefinit;
+extern _upb_DefPool_Init udpa_annotations_versioning_proto_upbdefinit;
+extern _upb_DefPool_Init validate_validate_proto_upbdefinit;
+static const char descriptor[2428] = {'\n', '*', 'e', 'n', 'v', 'o', 'y', '/', 'c', 'o', 'n', 'f', 'i', 'g', '/', 'e', 'n', 'd', 'p', 'o', 'i', 'n', 't', '/', 'v', 
 '3', '/', 'l', 'o', 'a', 'd', '_', 'r', 'e', 'p', 'o', 'r', 't', '.', 'p', 'r', 'o', 't', 'o', '\022', '\030', 'e', 'n', 'v', 'o', 
 'y', '.', 'c', 'o', 'n', 'f', 'i', 'g', '.', 'e', 'n', 'd', 'p', 'o', 'i', 'n', 't', '.', 'v', '3', '\032', '\"', 'e', 'n', 'v', 
 'o', 'y', '/', 'c', 'o', 'n', 'f', 'i', 'g', '/', 'c', 'o', 'r', 'e', '/', 'v', '3', '/', 'a', 'd', 'd', 'r', 'e', 's', 's', 
@@ -108,13 +108,16 @@ static const char descriptor[2351] = {'\n', '*', 'e', 'n', 'v', 'o', 'y', '/', '
 'n', 't', '.', 'C', 'l', 'u', 's', 't', 'e', 'r', 'S', 't', 'a', 't', 's', '.', 'D', 'r', 'o', 'p', 'p', 'e', 'd', 'R', 'e', 
 'q', 'u', 'e', 's', 't', 's', ':', ')', '\232', '\305', '\210', '\036', '$', '\n', '\"', 'e', 'n', 'v', 'o', 'y', '.', 'a', 'p', 'i', '.', 
 'v', '2', '.', 'e', 'n', 'd', 'p', 'o', 'i', 'n', 't', '.', 'C', 'l', 'u', 's', 't', 'e', 'r', 'S', 't', 'a', 't', 's', 'B', 
-'C', '\n', '&', 'i', 'o', '.', 'e', 'n', 'v', 'o', 'y', 'p', 'r', 'o', 'x', 'y', '.', 'e', 'n', 'v', 'o', 'y', '.', 'c', 'o', 
-'n', 'f', 'i', 'g', '.', 'e', 'n', 'd', 'p', 'o', 'i', 'n', 't', '.', 'v', '3', 'B', '\017', 'L', 'o', 'a', 'd', 'R', 'e', 'p', 
-'o', 'r', 't', 'P', 'r', 'o', 't', 'o', 'P', '\001', '\272', '\200', '\310', '\321', '\006', '\002', '\020', '\002', 'b', '\006', 'p', 'r', 'o', 't', 'o', 
-'3', 
+'\217', '\001', '\n', '&', 'i', 'o', '.', 'e', 'n', 'v', 'o', 'y', 'p', 'r', 'o', 'x', 'y', '.', 'e', 'n', 'v', 'o', 'y', '.', 'c', 
+'o', 'n', 'f', 'i', 'g', '.', 'e', 'n', 'd', 'p', 'o', 'i', 'n', 't', '.', 'v', '3', 'B', '\017', 'L', 'o', 'a', 'd', 'R', 'e', 
+'p', 'o', 'r', 't', 'P', 'r', 'o', 't', 'o', 'P', '\001', 'Z', 'J', 'g', 'i', 't', 'h', 'u', 'b', '.', 'c', 'o', 'm', '/', 'e', 
+'n', 'v', 'o', 'y', 'p', 'r', 'o', 'x', 'y', '/', 'g', 'o', '-', 'c', 'o', 'n', 't', 'r', 'o', 'l', '-', 'p', 'l', 'a', 'n', 
+'e', '/', 'e', 'n', 'v', 'o', 'y', '/', 'c', 'o', 'n', 'f', 'i', 'g', '/', 'e', 'n', 'd', 'p', 'o', 'i', 'n', 't', '/', 'v', 
+'3', ';', 'e', 'n', 'd', 'p', 'o', 'i', 'n', 't', 'v', '3', '\272', '\200', '\310', '\321', '\006', '\002', '\020', '\002', 'b', '\006', 'p', 'r', 'o', 
+'t', 'o', '3', 
 };
 
-static upb_def_init *deps[8] = {
+static _upb_DefPool_Init *deps[8] = {
   &envoy_config_core_v3_address_proto_upbdefinit,
   &envoy_config_core_v3_base_proto_upbdefinit,
   &google_protobuf_duration_proto_upbdefinit,
@@ -125,9 +128,9 @@ static upb_def_init *deps[8] = {
   NULL
 };
 
-upb_def_init envoy_config_endpoint_v3_load_report_proto_upbdefinit = {
+_upb_DefPool_Init envoy_config_endpoint_v3_load_report_proto_upbdefinit = {
   deps,
   &envoy_config_endpoint_v3_load_report_proto_upb_file_layout,
   "envoy/config/endpoint/v3/load_report.proto",
-  UPB_STRVIEW_INIT(descriptor, 2351)
+  UPB_STRINGVIEW_INIT(descriptor, 2428)
 };

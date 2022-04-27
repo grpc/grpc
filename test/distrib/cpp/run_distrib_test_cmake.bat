@@ -29,6 +29,8 @@ powershell -Command "Add-Type -Assembly 'System.IO.Compression.FileSystem'; [Sys
 @rem set absolute path to OpenSSL with forward slashes
 set OPENSSL_DIR=%cd:\=/%/OpenSSL-Win32
 
+@rem TODO(jtattermusch): add support for GRPC_CPP_DISTRIBTEST_BUILD_COMPILER_JOBS env variable
+
 @rem Install absl
 mkdir third_party\abseil-cpp\cmake\build
 pushd third_party\abseil-cpp\cmake\build
@@ -66,7 +68,11 @@ popd
 
 @rem Just before installing gRPC, wipe out contents of all the submodules to simulate
 @rem a standalone build from an archive
-git submodule deinit --all --force
+@rem NOTE(lidiz) We used to use "git submodule deinit", but it leaves an empty
+@rem folder for deinit-ed submodules, blocking the CMake download. For users
+@rem downloaded gRPC code as an archive, they won't have submodule residual
+@rem folders, like the following command trying to imitate.
+git submodule foreach bash -c "cd $toplevel; rm -rf $name"
 
 @rem Install gRPC
 mkdir cmake\build

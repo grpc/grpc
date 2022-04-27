@@ -42,6 +42,8 @@ class DebugLocation {
 #else
 class DebugLocation {
  public:
+  DebugLocation() {}
+  DebugLocation(const char* /* file */, int /* line */) {}
   const char* file() const { return nullptr; }
   int line() const { return -1; }
 };

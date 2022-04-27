@@ -31,12 +31,12 @@
 
 #include "src/core/ext/filters/client_channel/client_channel.h"
 #include "src/core/ext/filters/client_channel/lb_policy_registry.h"
-#include "src/core/ext/filters/client_channel/server_address.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/status_util.h"
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gprpp/memory.h"
 #include "src/core/lib/json/json_util.h"
+#include "src/core/lib/resolver/server_address.h"
 #include "src/core/lib/uri/uri_parser.h"
 
 // As per the retry design, we do not allow more than 5 retry attempts.
@@ -45,18 +45,15 @@
 namespace grpc_core {
 namespace internal {
 
-namespace {
-size_t g_client_channel_service_config_parser_index;
-}
-
 size_t ClientChannelServiceConfigParser::ParserIndex() {
-  return g_client_channel_service_config_parser_index;
+  return CoreConfiguration::Get().service_config_parser().GetParserIndex(
+      parser_name());
 }
 
-void ClientChannelServiceConfigParser::Register() {
-  g_client_channel_service_config_parser_index =
-      ServiceConfigParser::RegisterParser(
-          absl::make_unique<ClientChannelServiceConfigParser>());
+void ClientChannelServiceConfigParser::Register(
+    CoreConfiguration::Builder* builder) {
+  builder->service_config_parser()->RegisterParser(
+      absl::make_unique<ClientChannelServiceConfigParser>());
 }
 
 namespace {
@@ -173,7 +170,7 @@ ClientChannelServiceConfigParser::ParsePerMethodParams(
     }
   }
   // Parse timeout.
-  grpc_millis timeout = 0;
+  Duration timeout;
   ParseJsonObjectFieldAsDuration(json.object_value(), "timeout", &timeout,
                                  &error_list, false);
   // Return result.

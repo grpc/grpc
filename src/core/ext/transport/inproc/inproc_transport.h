@@ -29,7 +29,4 @@ grpc_channel* grpc_inproc_channel_create(grpc_server* server,
 
 extern grpc_core::TraceFlag grpc_inproc_trace;
 
-void grpc_inproc_transport_init(void);
-void grpc_inproc_transport_shutdown(void);
-
 #endif /* GRPC_CORE_EXT_TRANSPORT_INPROC_INPROC_TRANSPORT_H */

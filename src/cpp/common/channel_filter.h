@@ -51,10 +51,8 @@ class MetadataBatch {
 
   grpc_metadata_batch* batch() const { return batch_; }
 
-  /// Adds metadata and returns the newly allocated storage.
-  /// The caller takes ownership of the result, which must exist for the
-  /// lifetime of the gRPC call.
-  grpc_linked_mdelem* AddMetadata(const string& key, const string& value);
+  /// Adds metadata.
+  void AddMetadata(const string& key, const string& value);
 
  private:
   grpc_metadata_batch* batch_;  // Not owned.
@@ -330,6 +328,7 @@ void RegisterChannelFilter(
   using FilterType = internal::ChannelFilter<ChannelDataType, CallDataType>;
   static const grpc_channel_filter filter = {
       FilterType::StartTransportStreamOpBatch,
+      nullptr,
       FilterType::StartTransportOp,
       FilterType::call_data_size,
       FilterType::InitCallElement,

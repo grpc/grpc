@@ -54,7 +54,7 @@ namespace Grpc.Core
         /// Populates call credentials configurator with this instance's configuration.
         /// End users never need to invoke this method as it is part of internal implementation.
         /// </summary>
-        public abstract void InternalPopulateConfiguration(CallCredentialsConfiguratorBase configurator, object state);
+        public abstract void InternalPopulateConfiguration(CallCredentialsConfiguratorBase configurator, object? state);
 
         private class CompositeCallCredentials : CallCredentials
         {
@@ -66,7 +66,7 @@ namespace Grpc.Core
                 this.credentials = new List<CallCredentials>(credentials).AsReadOnly();
             }
 
-            public override void InternalPopulateConfiguration(CallCredentialsConfiguratorBase configurator, object state)
+            public override void InternalPopulateConfiguration(CallCredentialsConfiguratorBase configurator, object? state)
             {
                 configurator.SetCompositeCredentials(state, credentials);
             }
@@ -81,7 +81,7 @@ namespace Grpc.Core
                 this.interceptor = GrpcPreconditions.CheckNotNull(interceptor);
             }
 
-            public override void InternalPopulateConfiguration(CallCredentialsConfiguratorBase configurator, object state)
+            public override void InternalPopulateConfiguration(CallCredentialsConfiguratorBase configurator, object? state)
             {
                 configurator.SetAsyncAuthInterceptorCredentials(state, interceptor);
             }
