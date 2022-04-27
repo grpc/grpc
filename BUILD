@@ -4336,23 +4336,11 @@ grpc_cc_library(
         "src/core/tsi/ssl/session_cache/ssl_session.h",
         "src/core/tsi/ssl/session_cache/ssl_session_cache.h",
     ],
-    external_deps = [
-        "absl/strings",
-        "libssl",
-        "libcrypto",
-    ],
     language = "c++",
     visibility = ["@grpc:public"],
     deps = [
         "gpr_base",
         "grpc_base",
-        "grpc_credentials_util",
-        "grpc_security_base",
-        "grpc_transport_chttp2_alpn",
-        "ref_counted_ptr",
-        "tsi_base",
-        "tsi_ssl_types",
-        "useful",
     ],
 )
 
