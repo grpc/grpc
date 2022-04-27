@@ -21,6 +21,10 @@ cd "$(dirname "$0")/../../.."
 
 SYSTEM=$(uname | cut -f 1 -d_)
 
+gem uninstall bundler
+gem install bundler -v 2.3.11
+bundle --version
+
 #if [ "$SYSTEM" == "Darwin" ] ; then
 #  # Workaround for crash during bundle install
 #  # See suggestion in https://github.com/bundler/bundler/issues/3692
