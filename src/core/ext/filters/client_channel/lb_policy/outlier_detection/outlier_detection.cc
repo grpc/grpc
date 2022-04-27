@@ -90,13 +90,18 @@ class OutlierDetectionLb : public LoadBalancingPolicy {
     SubchannelWrapper(RefCountedPtr<SubchannelState> subchannel_state,
                       RefCountedPtr<SubchannelInterface> subchannel)
         : DelegatingSubchannel(std::move(subchannel)),
-          subchannel_state_(std::move(subchannel_state)),
-          ejected_(false) {
+          subchannel_state_(std::move(subchannel_state)) {
       if (subchannel_state_ != nullptr) {
-        subchannel_state_->subchannels.emplace_back(Ref());
+        subchannel_state_->subchannels_.insert(this);
         if (subchannel_state_->ejection_time.has_value()) {
           ejected_ = true;
         }
+      }
+    }
+
+    ~SubchannelWrapper() override {
+      if (subchannel_state_ != nullptr) {
+        subchannel_state_->subchannels_.erase(this);
       }
     }
 
@@ -159,11 +164,11 @@ class OutlierDetectionLb : public LoadBalancingPolicy {
       std::unique_ptr<SubchannelInterface::ConnectivityStateWatcherInterface>
           watcher_;
       grpc_connectivity_state last_seen_state_;
-      bool ejected_;
+      bool ejected_ = false;
     };
 
     RefCountedPtr<SubchannelState> subchannel_state_;
-    bool ejected_;
+    bool ejected_ = false;
     std::map<SubchannelInterface::ConnectivityStateWatcherInterface*,
              WatcherWrapper*>
         watchers_;
@@ -189,7 +194,7 @@ class OutlierDetectionLb : public LoadBalancingPolicy {
     Bucket bucket;
     absl::optional<Timestamp> ejection_time;
     uint32_t mutiplier;
-    absl::InlinedVector<RefCountedPtr<SubchannelWrapper>, 1> subchannels;
+    std::set<SubchannelWrapper*> subchannels_;
   };
 
   // A simple wrapper for ref-counting a picker from the child policy.
@@ -254,9 +259,9 @@ class OutlierDetectionLb : public LoadBalancingPolicy {
     bool timer_pending_ = true;
   };
 
-  static std::string MakeKeyForAddress(const ServerAddress& address);
-
   ~OutlierDetectionLb() override;
+
+  static std::string MakeKeyForAddress(const ServerAddress& address);
 
   void ShutdownLocked() override;
 
@@ -341,7 +346,6 @@ class OutlierDetectionLb::Picker::SubchannelCallTracker
 
   ~SubchannelCallTracker() override {
     subchannel_state_.reset(DEBUG_LOCATION, "SubchannelCallTracker");
-    GPR_DEBUG_ASSERT(!started_);
   }
 
   void Start() override {
@@ -350,9 +354,6 @@ class OutlierDetectionLb::Picker::SubchannelCallTracker
     if (original_subchannel_call_tracker_ != nullptr) {
       original_subchannel_call_tracker_->Start();
     }
-#ifndef NDEBUG
-    started_ = true;
-#endif
   }
 
   void Finish(FinishArgs args) override {
@@ -369,18 +370,12 @@ class OutlierDetectionLb::Picker::SubchannelCallTracker
         subchannel_state_->bucket.current_bucket->failures.fetch_add(1);
       }
     }
-#ifndef NDEBUG
-    started_ = false;
-#endif
   }
 
  private:
   std::unique_ptr<LoadBalancingPolicy::SubchannelCallTrackerInterface>
       original_subchannel_call_tracker_;
   RefCountedPtr<SubchannelState> subchannel_state_;
-#ifndef NDEBUG
-  bool started_ = false;
-#endif
 };
 
 //
@@ -409,12 +404,12 @@ LoadBalancingPolicy::PickResult OutlierDetectionLb::Picker::Pick(
     // Unwrap subchannel to pass back up the stack.
     auto* subchannel_wrapper =
         static_cast<SubchannelWrapper*>(complete_pick->subchannel.get());
-    complete_pick->subchannel = subchannel_wrapper->wrapped_subchannel();
     // Inject subchannel call tracker to record call completion.
     complete_pick->subchannel_call_tracker =
         absl::make_unique<SubchannelCallTracker>(
             std::move(complete_pick->subchannel_call_tracker),
             subchannel_wrapper->subchannel_state());
+    complete_pick->subchannel = subchannel_wrapper->wrapped_subchannel();
   }
   return result;
 }
@@ -422,12 +417,6 @@ LoadBalancingPolicy::PickResult OutlierDetectionLb::Picker::Pick(
 //
 // OutlierDetectionLb
 //
-
-std::string OutlierDetectionLb::MakeKeyForAddress(
-    const ServerAddress& address) {
-  // Strip off attributes to construct the key.
-  return ServerAddress(address.address(), nullptr).ToString();
-}
 
 OutlierDetectionLb::OutlierDetectionLb(Args args)
     : LoadBalancingPolicy(std::move(args)) {
@@ -442,6 +431,14 @@ OutlierDetectionLb::~OutlierDetectionLb() {
             "[outlier_detection_lb %p] destroying outlier_detection LB policy",
             this);
   }
+}
+
+std::string OutlierDetectionLb::MakeKeyForAddress(
+    const ServerAddress& address) {
+  // Strip off attributes to construct the key.
+  return ServerAddress(address.address(),
+                       grpc_channel_args_copy(address.args()))
+      .ToString();
 }
 
 void OutlierDetectionLb::ShutdownLocked() {
@@ -575,7 +572,7 @@ RefCountedPtr<SubchannelInterface> OutlierDetectionLb::Helper::CreateSubchannel(
       outlier_detection_policy_->channel_control_helper()->CreateSubchannel(
           std::move(address), args));
   if (subchannel_state != nullptr) {
-    subchannel_state->subchannels.push_back(subchannel);
+    subchannel_state->subchannels_.insert(subchannel.get());
   }
   return subchannel;
 }
