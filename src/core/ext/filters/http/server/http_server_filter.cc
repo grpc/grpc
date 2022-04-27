@@ -39,7 +39,7 @@ namespace grpc_core {
 
 const grpc_channel_filter HttpServerFilter::kFilter =
     MakePromiseBasedFilter<HttpServerFilter, FilterEndpoint::kServer,
-                           kFilterExaminesServerInitialMetadata>("http-client");
+                           kFilterExaminesServerInitialMetadata>("http-server");
 
 namespace {
 void FilterOutgoingMetadata(ServerMetadata* md) {

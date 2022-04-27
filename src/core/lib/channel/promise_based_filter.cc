@@ -839,7 +839,9 @@ void ClientCallData::OnWakeup() {
 struct ServerCallData::SendInitialMetadata {
   enum State {
     kInitial,
-    kQueued,
+    kGotLatch,
+    kQueuedWaitingForLatch,
+    kQueuedAndGotLatch,
     kForwarded,
   };
   State state = kInitial;
@@ -1020,6 +1022,22 @@ ArenaPromise<ServerMetadataHandle> ServerCallData::MakeNextPromise(
     GPR_ASSERT(send_initial_metadata_->pull == nullptr);
     GPR_ASSERT(call_args.server_initial_metadata != nullptr);
     send_initial_metadata_->pull = call_args.server_initial_metadata;
+    switch (send_initial_metadata_->state) {
+      case SendInitialMetadata::kInitial:
+        send_initial_metadata_->state = SendInitialMetadata::kGotLatch;
+        break;
+      case SendInitialMetadata::kGotLatch:
+      case SendInitialMetadata::kQueuedAndGotLatch:
+      case SendInitialMetadata::kForwarded:
+        abort();  // not reachable
+        break;
+      case SendInitialMetadata::kQueuedWaitingForLatch:
+        send_initial_metadata_->state = SendInitialMetadata::kQueuedAndGotLatch;
+        server_initial_metadata_latch()->Set(
+            send_initial_metadata_->batch->payload->send_initial_metadata
+                .send_initial_metadata);
+        break;
+    }
   } else {
     GPR_ASSERT(call_args.server_initial_metadata == nullptr);
   }
