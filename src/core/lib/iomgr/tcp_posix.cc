@@ -426,6 +426,10 @@ struct grpc_tcp {
                                       on errors anymore */
   TcpZerocopySendCtx tcp_zerocopy_send_ctx;
   TcpZerocopySendRecord* current_zerocopy_send = nullptr;
+
+  int min_progress_size; /* A hint from upper layers specifying the minimum
+                            number of bytes that need to be read to make
+                            meaningful progress */
 };
 
 struct backup_poller {
@@ -859,7 +863,7 @@ static bool tcp_do_read(grpc_tcp* tcp, grpc_error_handle* error)
 
 static void maybe_make_read_slices(grpc_tcp* tcp)
     ABSL_EXCLUSIVE_LOCKS_REQUIRED(tcp->read_mu) {
-  if (tcp->incoming_buffer->length == 0 &&
+  if (tcp->incoming_buffer->length < tcp->min_progress_size &&
       tcp->incoming_buffer->count < MAX_READ_IOVEC) {
     if (GRPC_TRACE_FLAG_ENABLED(grpc_tcp_trace)) {
       gpr_log(GPR_INFO,
@@ -868,15 +872,20 @@ static void maybe_make_read_slices(grpc_tcp* tcp)
               tcp, tcp->min_read_chunk_size, tcp->max_read_chunk_size,
               tcp->target_length, tcp->incoming_buffer->length);
     }
-    int target_length = static_cast<int>(tcp->target_length);
+    int target_length =
+        std::max(static_cast<int>(tcp->target_length), tcp->min_progress_size);
     int extra_wanted =
         target_length - static_cast<int>(tcp->incoming_buffer->length);
+    int min_read_chunk_size =
+        std::max(tcp->min_read_chunk_size, tcp->min_progress_size);
+    int max_read_chunk_size =
+        std::max(tcp->max_read_chunk_size, tcp->min_progress_size);
     grpc_slice_buffer_add_indexed(
         tcp->incoming_buffer,
         tcp->memory_owner.MakeSlice(grpc_core::MemoryRequest(
-            tcp->min_read_chunk_size,
-            grpc_core::Clamp(extra_wanted, tcp->min_read_chunk_size,
-                             tcp->max_read_chunk_size))));
+            min_read_chunk_size,
+            grpc_core::Clamp(extra_wanted, min_read_chunk_size,
+                             max_read_chunk_size))));
     maybe_post_reclaimer(tcp);
   }
 }
@@ -912,12 +921,13 @@ static void tcp_handle_read(void* arg /* grpc_tcp */, grpc_error_handle error) {
 }
 
 static void tcp_read(grpc_endpoint* ep, grpc_slice_buffer* incoming_buffer,
-                     grpc_closure* cb, bool urgent) {
+                     grpc_closure* cb, bool urgent, int min_progress_size) {
   grpc_tcp* tcp = reinterpret_cast<grpc_tcp*>(ep);
   GPR_ASSERT(tcp->read_cb == nullptr);
   tcp->read_cb = cb;
   tcp->read_mu.Lock();
   tcp->incoming_buffer = incoming_buffer;
+  tcp->min_progress_size = min_progress_size;
   grpc_slice_buffer_reset_and_unref_internal(incoming_buffer);
   grpc_slice_buffer_swap(incoming_buffer, &tcp->last_read_buffer);
   tcp->read_mu.Unlock();
