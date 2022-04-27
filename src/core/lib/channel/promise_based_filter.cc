@@ -842,11 +842,12 @@ struct ServerCallData::SendInitialMetadata {
     kGotLatch,
     kQueuedWaitingForLatch,
     kQueuedAndGotLatch,
+    kQueuedAndSetLatch,
     kForwarded,
   };
   State state = kInitial;
   CapturedBatch batch;
-  Latch<ServerMetadata*>* pull = nullptr;
+  Latch<ServerMetadata*>* server_initial_metadata_publisher = nullptr;
 };
 
 class ServerCallData::PollContext {
@@ -888,6 +889,8 @@ class ServerCallData::PollContext {
     }
   }
 
+  void Repoll() { repoll_ = true; }
+
  private:
   ManualConstructor<ScopedActivity> scoped_activity_;
   ServerCallData* const self_;
@@ -914,7 +917,10 @@ ServerCallData::~ServerCallData() {
 }
 
 // Activity implementation.
-void ServerCallData::ForceImmediateRepoll() { abort(); }  // Not implemented.
+void ServerCallData::ForceImmediateRepoll() {
+  GPR_ASSERT(poll_ctx_ != nullptr);
+  poll_ctx_->Repoll();
+}
 
 // Handle one grpc_transport_stream_op_batch
 void ServerCallData::StartBatch(grpc_transport_stream_op_batch* b) {
@@ -957,12 +963,21 @@ void ServerCallData::StartBatch(grpc_transport_stream_op_batch* b) {
 
   // send_initial_metadata
   if (send_initial_metadata_ != nullptr && batch->send_initial_metadata) {
-    GPR_ASSERT(send_initial_metadata_->state == SendInitialMetadata::kInitial);
+    switch (send_initial_metadata_->state) {
+      case SendInitialMetadata::kInitial:
+        send_initial_metadata_->state =
+            SendInitialMetadata::kQueuedWaitingForLatch;
+        break;
+      case SendInitialMetadata::kGotLatch:
+        send_initial_metadata_->state = SendInitialMetadata::kQueuedAndGotLatch;
+        break;
+      case SendInitialMetadata::kQueuedAndGotLatch:
+      case SendInitialMetadata::kQueuedWaitingForLatch:
+      case SendInitialMetadata::kQueuedAndSetLatch:
+      case SendInitialMetadata::kForwarded:
+        abort();  // not reachable
+    }
     send_initial_metadata_->batch = batch;
-    send_initial_metadata_->state = SendInitialMetadata::kQueued;
-    server_initial_metadata_latch()->Set(
-        send_initial_metadata_->batch->payload->send_initial_metadata
-            .send_initial_metadata);
     wake = true;
   }
 
@@ -1019,23 +1034,23 @@ ArenaPromise<ServerMetadataHandle> ServerCallData::MakeNextPromise(
              recv_initial_metadata_);
   forward_recv_initial_metadata_callback_ = true;
   if (send_initial_metadata_ != nullptr) {
-    GPR_ASSERT(send_initial_metadata_->pull == nullptr);
+    GPR_ASSERT(send_initial_metadata_->server_initial_metadata_publisher ==
+               nullptr);
     GPR_ASSERT(call_args.server_initial_metadata != nullptr);
-    send_initial_metadata_->pull = call_args.server_initial_metadata;
+    send_initial_metadata_->server_initial_metadata_publisher =
+        call_args.server_initial_metadata;
     switch (send_initial_metadata_->state) {
       case SendInitialMetadata::kInitial:
         send_initial_metadata_->state = SendInitialMetadata::kGotLatch;
         break;
       case SendInitialMetadata::kGotLatch:
       case SendInitialMetadata::kQueuedAndGotLatch:
+      case SendInitialMetadata::kQueuedAndSetLatch:
       case SendInitialMetadata::kForwarded:
         abort();  // not reachable
         break;
       case SendInitialMetadata::kQueuedWaitingForLatch:
         send_initial_metadata_->state = SendInitialMetadata::kQueuedAndGotLatch;
-        server_initial_metadata_latch()->Set(
-            send_initial_metadata_->batch->payload->send_initial_metadata
-                .send_initial_metadata);
         break;
     }
   } else {
@@ -1107,13 +1122,21 @@ void ServerCallData::RecvInitialMetadataReady(grpc_error_handle error) {
 // Wakeup and poll the promise if appropriate.
 void ServerCallData::WakeInsideCombiner(Flusher* flusher) {
   PollContext poll_ctx(this, flusher);
+  if (send_initial_metadata_ != nullptr &&
+      send_initial_metadata_->state ==
+          SendInitialMetadata::kQueuedAndGotLatch) {
+    send_initial_metadata_->state = SendInitialMetadata::kQueuedAndSetLatch;
+    send_initial_metadata_->server_initial_metadata_publisher->Set(
+        send_initial_metadata_->batch->payload->send_initial_metadata
+            .send_initial_metadata);
+  }
   if (recv_initial_state_ == RecvInitialState::kComplete) {
     Poll<ServerMetadataHandle> poll;
     poll = promise_();
     if (send_initial_metadata_ != nullptr &&
-        send_initial_metadata_->state == SendInitialMetadata::kQueued &&
-        send_initial_metadata_->pull != nullptr) {
-      Poll<ServerMetadata**> p = send_initial_metadata_->pull->Wait()();
+        send_initial_metadata_->state ==
+            SendInitialMetadata::kQueuedAndSetLatch) {
+      Poll<ServerMetadata**> p = server_initial_metadata_latch()->Wait()();
       if (ServerMetadata*** ppp = absl::get_if<ServerMetadata**>(&p)) {
         ServerMetadata* md = **ppp;
         if (send_initial_metadata_->batch->payload->send_initial_metadata
