@@ -237,6 +237,9 @@ void ExternalCertificateVerifier::DestructInCoreExternalVerifier(
   delete self;
 }
 
+NoOpCertificateVerifier::NoOpCertificateVerifier()
+    : CertificateVerifier(grpc_tls_certificate_verifier_no_op_create()) {}
+
 HostNameCertificateVerifier::HostNameCertificateVerifier()
     : CertificateVerifier(grpc_tls_certificate_verifier_host_name_create()) {}
 
