@@ -24,6 +24,7 @@ SYSTEM=$(uname | cut -f 1 -d_)
 gem uninstall bundler
 gem install bundler -v 2.3.11
 bundle --version
+bundle clean
 
 #if [ "$SYSTEM" == "Darwin" ] ; then
 #  # Workaround for crash during bundle install
