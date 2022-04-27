@@ -789,8 +789,8 @@ class OutlierDetectionLbFactory : public LoadBalancingPolicyFactory {
             GRPC_ERROR_CREATE_FROM_VECTOR("field:childPolicy", &child_errors));
       }
     }
-    return MakeRefCounted<OutlierDetectionLbConfig>(
-        std::move(outlier_detection_config), std::move(child_policy));
+    return MakeRefCounted<OutlierDetectionLbConfig>(outlier_detection_config,
+                                                    std::move(child_policy));
   }
 };
 
