@@ -364,10 +364,8 @@ class OutlierDetectionLb::Picker::SubchannelCallTracker
     // calculations.
     if (subchannel_state_ != nullptr) {
       if (args.status.ok()) {
-        gpr_log(GPR_INFO, "donna report success");
         subchannel_state_->bucket.current_bucket->successes.fetch_add(1);
       } else {
-        gpr_log(GPR_INFO, "donna report failure");
         subchannel_state_->bucket.current_bucket->failures.fetch_add(1);
       }
     }
@@ -478,14 +476,14 @@ void OutlierDetectionLb::UpdateLocked(UpdateArgs args) {
   // Update config.
   config_ = std::move(args.config);
   // Update outlier detection timer.
-  detection_timer_ = MakeOrphanable<DetectionTimer>(Ref());
+  // detection_timer_ = MakeOrphanable<DetectionTimer>(Ref());
   // Create policy if needed.
   if (child_policy_ == nullptr) {
     child_policy_ = CreateChildPolicyLocked(args.args);
   }
   if (args.addresses.ok()) {
     std::set<std::string> current_addresses;
-    for (ServerAddress address : *args.addresses) {
+    for (const ServerAddress& address : *args.addresses) {
       std::string address_key = MakeKeyForAddress(address);
       if (subchannel_state_map_[address_key] == nullptr) {
         subchannel_state_map_[address_key] = MakeRefCounted<SubchannelState>();
@@ -573,13 +571,12 @@ RefCountedPtr<SubchannelInterface> OutlierDetectionLb::Helper::CreateSubchannel(
     subchannel_state = it->second->Ref();
   }
   auto subchannel = MakeRefCounted<SubchannelWrapper>(
-      std::move(subchannel_state),
+      subchannel_state,
       outlier_detection_policy_->channel_control_helper()->CreateSubchannel(
           std::move(address), args));
   if (subchannel_state != nullptr) {
     subchannel_state->subchannels.push_back(subchannel);
   }
-  // TODO@donnadionne: do we need to eject here if channel state says so?
   return subchannel;
 }
 
@@ -645,7 +642,6 @@ void OutlierDetectionLb::DetectionTimer::Orphan() {
 
 void OutlierDetectionLb::DetectionTimer::OnTimer(void* arg,
                                                  grpc_error_handle error) {
-  gpr_log(GPR_INFO, "donna in OnTimer");
   auto* self = static_cast<DetectionTimer*>(arg);
   (void)GRPC_ERROR_REF(error);  // ref owned by lambda
   self->parent_->work_serializer()->Run(
@@ -654,7 +650,6 @@ void OutlierDetectionLb::DetectionTimer::OnTimer(void* arg,
 
 void OutlierDetectionLb::DetectionTimer::OnTimerLocked(
     grpc_error_handle error) {
-  gpr_log(GPR_INFO, "donna in OnTimerLocked");
   if (error == GRPC_ERROR_NONE && timer_pending_) {
     for (auto& entry : parent_->subchannel_state_map_) {
       // 1. Record the timestamp for use when ejecting addresses in this

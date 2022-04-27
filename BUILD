@@ -3307,6 +3307,9 @@ grpc_cc_library(
     hdrs = [
         "src/core/ext/filters/client_channel/lb_policy/outlier_detection/outlier_detection.h",
     ],
+    external_deps = [
+        "absl/types:optional",
+    ],
     language = "c++",
 )
 

@@ -461,8 +461,7 @@ grpc_error_handle CdsResourceParse(
           success_rate_ejection.stdev_factor =
               google_protobuf_UInt32Value_value(stdev_factor);
         }
-        outlier_detection_update.success_rate_ejection =
-            std::move(success_rate_ejection);
+        outlier_detection_update.success_rate_ejection = success_rate_ejection;
       }
     }
     const google_protobuf_UInt32Value* enforcing_failure_percentage =
@@ -498,10 +497,10 @@ grpc_error_handle CdsResourceParse(
               google_protobuf_UInt32Value_value(threshold);
         }
         outlier_detection_update.failure_percentage_ejection =
-            std::move(failure_percentage_ejection);
+            failure_percentage_ejection;
       }
     }
-    cds_update->outlier_detection = std::move(outlier_detection_update);
+    cds_update->outlier_detection = outlier_detection_update;
   }
   return GRPC_ERROR_CREATE_FROM_VECTOR("errors parsing CDS resource", &errors);
 }
