@@ -844,6 +844,7 @@ struct ServerCallData::SendInitialMetadata {
     kQueuedAndGotLatch,
     kQueuedAndSetLatch,
     kForwarded,
+    kCancelled,
   };
   State state = kInitial;
   CapturedBatch batch;
@@ -890,6 +891,7 @@ class ServerCallData::PollContext {
   }
 
   void Repoll() { repoll_ = true; }
+  void ClearRepoll() { repoll_ = false; }
 
  private:
   ManualConstructor<ScopedActivity> scoped_activity_;
@@ -1130,7 +1132,8 @@ void ServerCallData::WakeInsideCombiner(Flusher* flusher) {
         send_initial_metadata_->batch->payload->send_initial_metadata
             .send_initial_metadata);
   }
-  if (recv_initial_state_ == RecvInitialState::kComplete) {
+  poll_ctx.ClearRepoll();
+  if (promise_.has_value()) {
     Poll<ServerMetadataHandle> poll;
     poll = promise_();
     if (send_initial_metadata_ != nullptr &&
@@ -1149,6 +1152,7 @@ void ServerCallData::WakeInsideCombiner(Flusher* flusher) {
       }
     }
     if (auto* r = absl::get_if<ServerMetadataHandle>(&poll)) {
+      promise_ = ArenaPromise<ServerMetadataHandle>();
       auto* md = UnwrapMetadata(std::move(*r));
       bool destroy_md = true;
       switch (send_trailing_state_) {
