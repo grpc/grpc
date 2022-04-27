@@ -393,9 +393,10 @@ void RoundRobin::RoundRobinSubchannelData::ProcessConnectivityChangeLocked(
     grpc_connectivity_state new_state) {
   RoundRobin* p = static_cast<RoundRobin*>(subchannel_list()->policy());
   GPR_ASSERT(subchannel() != nullptr);
-  // If the new state is TRANSIENT_FAILURE, re-resolve.
+  // If the new state is TRANSIENT_FAILURE or IDLE, re-resolve.
   // Also attempt to reconnect.
-  if (new_state == GRPC_CHANNEL_TRANSIENT_FAILURE) {
+  if (new_state == GRPC_CHANNEL_TRANSIENT_FAILURE ||
+      new_state == GRPC_CHANNEL_IDLE) {
     if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_round_robin_trace)) {
       gpr_log(GPR_INFO,
               "[RR %p] Subchannel %p has gone into TRANSIENT_FAILURE. "
