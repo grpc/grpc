@@ -842,8 +842,9 @@ struct ServerCallData::SendInitialMetadata {
     kQueued,
     kForwarded,
   };
-  State state;
+  State state = kInitial;
   CapturedBatch batch;
+  Latch<ServerMetadata*>* pull = nullptr;
 };
 
 class ServerCallData::PollContext {
@@ -919,6 +920,7 @@ void ServerCallData::StartBatch(grpc_transport_stream_op_batch* b) {
   ScopedContext context(this);
   CapturedBatch batch(b);
   Flusher flusher(this);
+  bool wake = false;
 
   // If this is a cancel stream, cancel anything we have pending and
   // propagate the cancellation.
@@ -927,7 +929,8 @@ void ServerCallData::StartBatch(grpc_transport_stream_op_batch* b) {
                !batch->send_trailing_metadata && !batch->send_message &&
                !batch->recv_initial_metadata && !batch->recv_message &&
                !batch->recv_trailing_metadata);
-    Cancel(batch->payload->cancel_stream.cancel_error, &flusher);
+    Cancel(GRPC_ERROR_REF(batch->payload->cancel_stream.cancel_error),
+           &flusher);
     batch.ResumeWith(&flusher);
     return;
   }
@@ -955,6 +958,10 @@ void ServerCallData::StartBatch(grpc_transport_stream_op_batch* b) {
     GPR_ASSERT(send_initial_metadata_->state == SendInitialMetadata::kInitial);
     send_initial_metadata_->batch = batch;
     send_initial_metadata_->state = SendInitialMetadata::kQueued;
+    server_initial_metadata_latch()->Set(
+        send_initial_metadata_->batch->payload->send_initial_metadata
+            .send_initial_metadata);
+    wake = true;
   }
 
   // send_trailing_metadata
@@ -963,7 +970,7 @@ void ServerCallData::StartBatch(grpc_transport_stream_op_batch* b) {
       case SendTrailingState::kInitial:
         send_trailing_metadata_batch_ = batch;
         send_trailing_state_ = SendTrailingState::kQueued;
-        WakeInsideCombiner(&flusher);
+        wake = true;
         break;
       case SendTrailingState::kQueued:
       case SendTrailingState::kForwarded:
@@ -973,9 +980,9 @@ void ServerCallData::StartBatch(grpc_transport_stream_op_batch* b) {
         batch.CancelWith(GRPC_ERROR_REF(cancelled_error_), &flusher);
         break;
     }
-    return;
   }
 
+  if (wake) WakeInsideCombiner(&flusher);
   if (batch.is_captured()) batch.ResumeWith(&flusher);
 }
 
@@ -1009,6 +1016,13 @@ ArenaPromise<ServerMetadataHandle> ServerCallData::MakeNextPromise(
   GPR_ASSERT(UnwrapMetadata(std::move(call_args.client_initial_metadata)) ==
              recv_initial_metadata_);
   forward_recv_initial_metadata_callback_ = true;
+  if (send_initial_metadata_ != nullptr) {
+    GPR_ASSERT(send_initial_metadata_->pull == nullptr);
+    GPR_ASSERT(call_args.server_initial_metadata != nullptr);
+    send_initial_metadata_->pull = call_args.server_initial_metadata;
+  } else {
+    GPR_ASSERT(call_args.server_initial_metadata == nullptr);
+  }
   return ArenaPromise<ServerMetadataHandle>(
       [this]() { return PollTrailingMetadata(); });
 }
@@ -1077,9 +1091,21 @@ void ServerCallData::WakeInsideCombiner(Flusher* flusher) {
   PollContext poll_ctx(this, flusher);
   if (recv_initial_state_ == RecvInitialState::kComplete) {
     Poll<ServerMetadataHandle> poll;
-    {
-      ScopedActivity activity(this);
-      poll = promise_();
+    poll = promise_();
+    if (send_initial_metadata_ != nullptr &&
+        send_initial_metadata_->state == SendInitialMetadata::kQueued &&
+        send_initial_metadata_->pull != nullptr) {
+      Poll<ServerMetadata**> p = send_initial_metadata_->pull->Wait()();
+      if (ServerMetadata*** ppp = absl::get_if<ServerMetadata**>(&p)) {
+        ServerMetadata* md = **ppp;
+        if (send_initial_metadata_->batch->payload->send_initial_metadata
+                .send_initial_metadata != md) {
+          *send_initial_metadata_->batch->payload->send_initial_metadata
+               .send_initial_metadata = std::move(*md);
+        }
+        send_initial_metadata_->state = SendInitialMetadata::kForwarded;
+        send_initial_metadata_->batch.ResumeWith(flusher);
+      }
     }
     if (auto* r = absl::get_if<ServerMetadataHandle>(&poll)) {
       auto* md = UnwrapMetadata(std::move(*r));
