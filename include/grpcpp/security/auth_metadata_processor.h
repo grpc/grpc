@@ -43,7 +43,7 @@ class AuthMetadataProcessor {
   /// a different thread from the one processing the call.
   virtual bool IsBlocking() const { return true; }
 
-  /// Processes a Call associated with a Connection.
+  /// Processes a Call associated with a connection.
   /// auth_metadata: the authentication metadata associated with the particular
   ///   call
   /// context: contains the connection-level info, e.g. the peer identity. This

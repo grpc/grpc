@@ -3,7 +3,7 @@ Server-side API for Authenticating Clients
 
 NOTE: This document describes how server-side authentication works in C-core based gRPC implementations only. In gRPC Java and Go, server side authentication is handled differently.
 
-NOTE2: `CallCredentials` class is only valid if the security level it requires is less than or equal to the security level of connection used to transfer it. See the [gRFC](https://github.com/grpc/proposal/blob/master/L62-core-call-credential-security-level.md) for more information.
+NOTE2: `CallCredentials` class is only valid if the security level it requires is less than or equal to the security level of the connection used to transfer it. See the [gRFC](https://github.com/grpc/proposal/blob/master/L62-core-call-credential-security-level.md) for more information.
 ## AuthContext
 
 To perform server-side authentication, gRPC exposes the *authentication context* for each call. The context exposes important authentication-related information about the RPC such as the type of security/authentication type being used and the peer identity.
@@ -12,8 +12,8 @@ The authentication context is structured as a multi-map of key-value pairs - the
 
 The contents of the *auth properties* are populated by an *auth interceptor*. The interceptor also chooses which property key will act as the peer identity (e.g. for client certificate authentication this property will be `"x509_common_name"` or `"x509_subject_alternative_name"`).
 
-Note that AuthContext is not modifiable, unless AuthMetadataProcessor is used([reference](https://github.com/grpc/grpc/blob/master/include/grpcpp/impl/codegen/security/auth_context.h#L89)). 
-When AuthContext is modified through AuthMetadataProcessor, we are able to see the modifications in all the subsequent calls. This is because AuthContext is a connection-level object which could be shared by multiple calls.
+Note that AuthContext is generally not modifiable, except when used via an AuthMetadataProcessor([reference](https://github.com/grpc/grpc/blob/master/include/grpcpp/impl/codegen/security/auth_context.h)). 
+However, because the AuthContext is a connection-level object, when it is modified via an AuthMetadataProcessor, the modifications will be visible on all subsequent calls on the same connection.
 
 WARNING: AuthContext is the only reliable source of truth when it comes to authenticating RPCs. Using any other call/context properties for authentication purposes is wrong and inherently unsafe.
 
