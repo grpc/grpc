@@ -100,6 +100,7 @@ BaseCallData::CapturedBatch::~CapturedBatch() {
 
 BaseCallData::CapturedBatch::CapturedBatch(const CapturedBatch& rhs)
     : batch_(rhs.batch_) {
+  if (batch_ == nullptr) return;
   uintptr_t& refcnt = *RefCountField(batch_);
   if (refcnt == 0) return;  // refcnt==0 ==> cancelled
   ++refcnt;
@@ -973,6 +974,9 @@ void ServerCallData::StartBatch(grpc_transport_stream_op_batch* b) {
       case SendInitialMetadata::kGotLatch:
         send_initial_metadata_->state = SendInitialMetadata::kQueuedAndGotLatch;
         break;
+      case SendInitialMetadata::kCancelled:
+        batch.CancelWith(GRPC_ERROR_REF(cancelled_error_), &flusher);
+        break;
       case SendInitialMetadata::kQueuedAndGotLatch:
       case SendInitialMetadata::kQueuedWaitingForLatch:
       case SendInitialMetadata::kQueuedAndSetLatch:
@@ -984,7 +988,7 @@ void ServerCallData::StartBatch(grpc_transport_stream_op_batch* b) {
   }
 
   // send_trailing_metadata
-  if (batch->send_trailing_metadata) {
+  if (batch.is_captured() && batch->send_trailing_metadata) {
     switch (send_trailing_state_) {
       case SendTrailingState::kInitial:
         send_trailing_metadata_batch_ = batch;
@@ -1017,6 +1021,22 @@ void ServerCallData::Cancel(grpc_error_handle error, Flusher* flusher) {
     send_trailing_metadata_batch_.CancelWith(GRPC_ERROR_REF(error), flusher);
   } else {
     send_trailing_state_ = SendTrailingState::kCancelled;
+  }
+  if (send_initial_metadata_ != nullptr) {
+    switch (send_initial_metadata_->state) {
+      case SendInitialMetadata::kInitial:
+      case SendInitialMetadata::kGotLatch:
+      case SendInitialMetadata::kForwarded:
+      case SendInitialMetadata::kCancelled:
+        break;
+      case SendInitialMetadata::kQueuedWaitingForLatch:
+      case SendInitialMetadata::kQueuedAndGotLatch:
+      case SendInitialMetadata::kQueuedAndSetLatch:
+        send_initial_metadata_->batch.CancelWith(GRPC_ERROR_REF(error),
+                                                 flusher);
+        break;
+    }
+    send_initial_metadata_->state = SendInitialMetadata::kCancelled;
   }
   if (auto* closure =
           absl::exchange(original_recv_initial_metadata_ready_, nullptr)) {
@@ -1053,6 +1073,8 @@ ArenaPromise<ServerMetadataHandle> ServerCallData::MakeNextPromise(
         break;
       case SendInitialMetadata::kQueuedWaitingForLatch:
         send_initial_metadata_->state = SendInitialMetadata::kQueuedAndGotLatch;
+        break;
+      case SendInitialMetadata::kCancelled:
         break;
     }
   } else {
