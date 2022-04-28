@@ -194,6 +194,11 @@ grpc_tls_certificate_verifier* grpc_tls_certificate_verifier_external_create(
   return new grpc_core::ExternalCertificateVerifier(external_verifier);
 }
 
+grpc_tls_certificate_verifier* grpc_tls_certificate_verifier_no_op_create() {
+  grpc_core::ExecCtx exec_ctx;
+  return new grpc_core::NoOpCertificateVerifier();
+}
+
 grpc_tls_certificate_verifier*
 grpc_tls_certificate_verifier_host_name_create() {
   grpc_core::ExecCtx exec_ctx;

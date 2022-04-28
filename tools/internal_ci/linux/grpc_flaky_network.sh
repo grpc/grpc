@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Copyright 2017 gRPC authors.
+# Copyright 2019 gRPC authors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -15,11 +15,15 @@
 
 set -ex
 
-# Enter the gRPC repo root
+# avoid slow finalization after the script has exited.
+source $(dirname $0)/../../../tools/internal_ci/helper_scripts/move_src_tree_and_respawn_itself_rc
+
+# change to grpc repo root
 cd $(dirname $0)/../../..
 
 source tools/internal_ci/helper_scripts/prepare_build_linux_rc
 
-export DOCKERFILE_DIR=tools/dockerfile/test/cxx_debian11_x64
-export DOCKER_RUN_SCRIPT=tools/internal_ci/linux/grpc_memory_diff_in_docker.sh
-exec tools/run_tests/dockerize/build_and_run_docker.sh
+export DOCKERFILE_DIR=tools/dockerfile/test/bazel
+# NET_ADMIN capability allows tests to manipulate network interfaces
+export EXTRA_DOCKER_ARGS="--cap-add NET_ADMIN"
+exec tools/run_tests/dockerize/build_and_run_docker.sh tools/internal_ci/linux/grpc_flaky_network_in_docker.sh

@@ -1,4 +1,5 @@
-# Copyright 2021 gRPC authors.
+#!/bin/bash
+# Copyright 2021 The gRPC authors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -12,19 +13,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# Config file for the internal CI (in protobuf text format)
+set -ex
 
-# Location of the continuous shell script in repository.
-build_file: "grpc/tools/internal_ci/linux/grpc_binder_transport_apk.sh"
-timeout_mins: 60
-action {
-  define_artifacts {
-    regex: "**/*sponge_log.*"
-    regex: "github/grpc/reports/**"
-  }
-}
+apt-get install -y lsof
 
-env_vars {
-  key: "BAZEL_SCRIPT"
-  value: "tools/internal_ci/linux/grpc_binder_transport_apk_build_in_docker.sh"
-}
+./examples/cpp/features/run_tests.sh

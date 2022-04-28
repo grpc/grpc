@@ -514,6 +514,9 @@ void grpc_transport_destroy_stream(grpc_transport* transport,
 void grpc_transport_stream_op_batch_finish_with_failure(
     grpc_transport_stream_op_batch* batch, grpc_error_handle error,
     grpc_core::CallCombiner* call_combiner);
+void grpc_transport_stream_op_batch_queue_finish_with_failure(
+    grpc_transport_stream_op_batch* batch, grpc_error_handle error,
+    grpc_core::CallCombinerClosureList* closures);
 
 std::string grpc_transport_stream_op_batch_string(
     grpc_transport_stream_op_batch* op);

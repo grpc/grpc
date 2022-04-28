@@ -1,5 +1,5 @@
-#!/usr/bin/env bash
-# Copyright 2017 gRPC authors.
+#!/bin/bash
+# Copyright 2021 The gRPC Authors
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -15,11 +15,15 @@
 
 set -ex
 
-# Enter the gRPC repo root
-cd $(dirname $0)/../../..
+# change to grpc repo root
+cd "$(dirname "$0")/../../.."
 
-source tools/internal_ci/helper_scripts/prepare_build_linux_rc
-
+# use the docker image used as the default for C++ by run_tests.py
+# To use the correct docker image for your experiments,
+# note that every invocation of run_tests.py with "--use_docker"
+# prints the docker image used as a debug message at the end of the run.
+# This is expecially important when --compiler/--arch params are
+# use, since they usually influence with docker image will be used
+# by run_tests.py
 export DOCKERFILE_DIR=tools/dockerfile/test/cxx_debian11_x64
-export DOCKER_RUN_SCRIPT=tools/internal_ci/linux/grpc_memory_diff_in_docker.sh
-exec tools/run_tests/dockerize/build_and_run_docker.sh
+tools/docker_runners/run_in_docker.sh tools/run_tests/run_tests.py -l c -c dbg

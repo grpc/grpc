@@ -60,7 +60,7 @@ class ReadAheadHandshaker : public Handshaker {
                    grpc_closure* on_handshake_done,
                    HandshakerArgs* args) override {
     grpc_endpoint_read(args->endpoint, args->read_buffer, on_handshake_done,
-                       /*urgent=*/false);
+                       /*urgent=*/false, /*min_progress_size=*/1);
   }
 };
 
