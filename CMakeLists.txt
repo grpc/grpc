@@ -377,6 +377,16 @@ if (NOT EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/third_party/opencensus-proto/src)
     opencensus-proto-0.3.0/src
   )
 endif()
+# Setup external proto library at third_party/protoc-gen-validate if it doesn't exist
+if (NOT EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/third_party/protoc-gen-validate)
+  # Download the archive via HTTP, validate the checksum, and extract to third_party/protoc-gen-validate.
+  download_archive(
+    ${CMAKE_CURRENT_SOURCE_DIR}/third_party/protoc-gen-validate
+    https://github.com/envoyproxy/protoc-gen-validate/archive/4694024279bdac52b77e22dc87808bd0fd732b69.tar.gz
+    1e490b98005664d149b379a9529a6aa05932b8a11b76b4cd86f3d22d76346f47
+    protoc-gen-validate-4694024279bdac52b77e22dc87808bd0fd732b69
+  )
+endif()
 # Setup external proto library at third_party/xds with 2 download URLs
 if (NOT EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/third_party/xds)
   # Download the archive via HTTP, validate the checksum, and extract to third_party/xds.
