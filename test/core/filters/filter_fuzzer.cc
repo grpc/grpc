@@ -19,6 +19,7 @@
 #include "src/core/ext/filters/channel_idle/channel_idle_filter.h"
 #include "src/core/ext/filters/http/client/http_client_filter.h"
 #include "src/core/ext/filters/http/client_authority_filter.h"
+#include "src/core/lib/channel/channel_stack_builder_impl.h"
 #include "src/core/lib/gpr/env.h"
 #include "src/core/lib/iomgr/executor.h"
 #include "src/core/lib/iomgr/timer_manager.h"
@@ -163,24 +164,6 @@ struct GlobalObjects {
   }
 };
 
-struct Filter {
-  absl::string_view name;
-  absl::StatusOr<std::unique_ptr<ChannelFilter>> (*create)(
-      ChannelArgs channel_args, ChannelFilter::Args filter_args);
-
-  template <typename T>
-  static Filter* Make(absl::string_view name) {
-    return new Filter{
-        name,
-        [](ChannelArgs channel_args, ChannelFilter::Args filter_args)
-            -> absl::StatusOr<std::unique_ptr<ChannelFilter>> {
-          auto r = T::Create(channel_args, filter_args);
-          if (!r.ok()) return r.status();
-          return std::unique_ptr<ChannelFilter>(new T(std::move(*r)));
-        }};
-  }
-};
-
 RefCountedPtr<AuthorizationEngine> LoadAuthorizationEngine(
     const filter_fuzzer::AuthorizationEngine& engine) {
   switch (engine.engine_case()) {
@@ -257,26 +240,20 @@ ChannelArgs LoadChannelArgs(const FuzzerChannelArgs& fuzz_args,
 
 #define MAKE_FILTER(name) Filter::Make<name>(#name)
 
-const Filter* const kFilters[] = {
-    MAKE_FILTER(ClientAuthorityFilter), MAKE_FILTER(HttpClientFilter),
-    MAKE_FILTER(ClientAuthFilter), MAKE_FILTER(GrpcServerAuthzFilter),
+const grpc_channel_filter* const kFilters[] = {
+    &ClientAuthorityFilter::kFilter, &HttpClientFilter::kFilter,
+    &ClientAuthFilter::kFilter,      &GrpcServerAuthzFilter::kFilterVtable,
+    &MaxAgeFilter::kFilter,          &ClientIdleFilter::kFilter,
     // We exclude this one internally, so we can't have it here - will need to
     // pick it up through some future registration mechanism.
     // MAKE_FILTER(ServerLoadReportingFilter),
-    // The following need channel stacks, and that's not figured out yet
-    // MAKE_FILTER(MaxAgeFilter),
-    // MAKE_FILTER(ClientIdleFilter),
 };
 
-absl::StatusOr<std::unique_ptr<ChannelFilter>> CreateFilter(
-    absl::string_view name, ChannelArgs channel_args,
-    ChannelFilter::Args filter_args) {
+const grpc_channel_filter* FindFilter(absl::string_view name) {
   for (size_t i = 0; i < GPR_ARRAY_SIZE(kFilters); ++i) {
-    if (name == kFilters[i]->name) {
-      return kFilters[i]->create(std::move(channel_args), filter_args);
-    }
+    if (name == kFilters[i]->name) return kFilters[i];
   }
-  return absl::NotFoundError(absl::StrCat("Filter ", name, " not found"));
+  return nullptr;
 }
 
 class MainLoop {
@@ -542,6 +519,13 @@ class MainLoop {
 }  // namespace grpc_core
 
 DEFINE_PROTO_FUZZER(const filter_fuzzer::Msg& msg) {
+  const grpc_channel_filter* filter = grpc_core::FindFilter(msg.filter());
+  if (filter == nullptr) return;
+  if (msg.channel_stack_type() < 0 ||
+      msg.channel_stack_type() >= GRPC_NUM_CHANNEL_STACK_TYPES) {
+    return;
+  }
+
   grpc_test_only_set_slice_hash_seed(0);
   char* grpc_trace_fuzzer = gpr_getenv("GRPC_TRACE_FUZZER");
   if (squelch && grpc_trace_fuzzer == nullptr) gpr_set_log_function(dont_log);
@@ -558,9 +542,14 @@ DEFINE_PROTO_FUZZER(const filter_fuzzer::Msg& msg) {
 
   grpc_core::GlobalObjects globals;
   auto channel_args = grpc_core::LoadChannelArgs(msg.channel_args(), &globals);
-  auto filter = grpc_core::CreateFilter(msg.filter(), channel_args,
-                                        grpc_core::ChannelFilter::Args());
-  if (filter.ok()) {
+
+  grpc_core::ChannelStackBuilderImpl builder(
+      msg.stack_name().c_str(),
+      static_cast<grpc_channel_stack_type>(msg.channel_stack_type()));
+  builder.SetChannelArgs(channel_args);
+  builder.PrependFilter(filter, PostInitFunc post_init)
+
+      if (filter.ok()) {
     grpc_core::MainLoop main_loop(std::move(*filter), channel_args);
     for (const auto& action : msg.actions()) {
       grpc_timer_manager_tick();
