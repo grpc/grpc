@@ -241,6 +241,9 @@ grpc_cc_binary(
     external_deps = [
         "absl/flags:flag",
     ],
+    tags = [
+        "no_windows",  # TODO(#29499) support windows
+    ],
     deps = [
         "//:grpc++",
         "//:grpc++_reflection",
@@ -261,6 +264,9 @@ grpc_cc_binary(
     ],
     external_deps = [
         "absl/flags:flag",
+    ],
+    tags = [
+        "no_windows",  # TODO(#29499) support windows
     ],
     deps = [
         "//:grpc++",
