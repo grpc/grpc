@@ -90,8 +90,8 @@ class MyTestServiceImpl : public TestServiceImpl {
       ++request_count_;
     }
     AddClient(context->peer());
-    if (request->has_param() && request->param().has_send_back_report()) {
-      const auto& load_report = request->param().send_back_report();
+    if (request->has_param() && request->param().has_backend_metrics()) {
+      const auto& load_report = request->param().backend_metrics();
       // TODO(roth): Once we provide a more standard server-side API for
       // populating this data, use that API here.
       context->AddTrailingMetadata("x-endpoint-load-metrics-bin",
@@ -321,8 +321,8 @@ class ClientLbEnd2endTest : public ::testing::Test {
     if (load_report != nullptr) {
       request_ptr = &request;
       auto params = request.mutable_param();
-      auto send_back_report = params->mutable_send_back_report();
-      *send_back_report = *load_report;
+      auto backend_metrics = params->mutable_backend_metrics();
+      *backend_metrics = *load_report;
     }
     const bool success =
         SendRpc(stub, &response, 2000, &status, wait_for_ready, request_ptr);

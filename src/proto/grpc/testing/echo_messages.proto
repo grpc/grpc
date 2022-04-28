@@ -53,7 +53,7 @@ message RequestParams {
   int32 backend_channel_idx = 16; // which backend to send request to
   bool echo_metadata_initially = 17;
   bool server_notify_client_when_started = 18;
-  xds.data.orca.v3.OrcaLoadReport send_back_report = 19;
+  xds.data.orca.v3.OrcaLoadReport backend_metrics = 19;
 }
 
 message EchoRequest {
