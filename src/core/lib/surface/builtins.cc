@@ -36,12 +36,12 @@ void RegisterBuiltins(CoreConfiguration::Builder* builder) {
   builder->channel_init()->RegisterStage(
       GRPC_CLIENT_LAME_CHANNEL, GRPC_CHANNEL_INIT_BUILTIN_PRIORITY,
       [](ChannelStackBuilder* builder) {
-        builder->AppendFilter(&grpc_lame_filter, nullptr);
+        builder->AppendFilter(&grpc_lame_filter);
         return true;
       });
   builder->channel_init()->RegisterStage(
       GRPC_SERVER_CHANNEL, INT_MAX, [](ChannelStackBuilder* builder) {
-        builder->PrependFilter(&Server::kServerTopFilter, nullptr);
+        builder->PrependFilter(&Server::kServerTopFilter);
         return true;
       });
 }
