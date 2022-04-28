@@ -389,7 +389,7 @@ void RoundRobin::RoundRobinSubchannelList::
 //
 
 void RoundRobin::RoundRobinSubchannelData::ProcessConnectivityChangeLocked(
-    absl::optional<grpc_connectivity_state> old_state,
+    absl::optional<grpc_connectivity_state> /*old_state*/,
     grpc_connectivity_state new_state) {
   RoundRobin* p = static_cast<RoundRobin*>(subchannel_list()->policy());
   GPR_ASSERT(subchannel() != nullptr);
