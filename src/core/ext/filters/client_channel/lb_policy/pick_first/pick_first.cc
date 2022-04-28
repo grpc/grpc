@@ -290,8 +290,6 @@ void PickFirst::PickFirstSubchannelData::ProcessConnectivityChangeLocked(
                 p->subchannel_list_.get());
       }
       p->selected_ = nullptr;
-      CancelConnectivityWatchLocked(
-          "selected subchannel failed; switching to pending update");
       p->subchannel_list_ = std::move(p->latest_pending_subchannel_list_);
       // Set our state to that of the pending subchannel list.
       if (p->subchannel_list_->in_transient_failure()) {

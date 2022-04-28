@@ -95,17 +95,7 @@ class SubchannelData {
   }
 
   // Resets the connection backoff.
-  // TODO(roth): This method should go away when we move the backoff
-  // code out of the subchannel and into the LB policies.
   void ResetBackoffLocked();
-
-  // Starts watching the connectivity state of the subchannel.
-  // ProcessConnectivityChangeLocked() will be called whenever the
-  // connectivity state changes.
-  void StartConnectivityWatchLocked();
-
-  // Cancels watching the connectivity state of the subchannel.
-  void CancelConnectivityWatchLocked(const char* reason);
 
   // Cancels any pending connectivity watch and unrefs the subchannel.
   void ShutdownLocked();
@@ -118,14 +108,17 @@ class SubchannelData {
 
   virtual ~SubchannelData();
 
-  // After StartConnectivityWatchLocked() is called, this method will be
-  // invoked whenever the subchannel's connectivity state changes.
-  // To stop watching, use CancelConnectivityWatchLocked().
+  // This method will be invoked once soon after instantiation to report
+  // the current connectivity state, and it will then be invoked again
+  // whenever the connectivity state changes.
   virtual void ProcessConnectivityChangeLocked(
       absl::optional<grpc_connectivity_state> old_state,
       grpc_connectivity_state new_state) = 0;
 
  private:
+  // For accessing StartConnectivityWatchLocked().
+  friend class SubchannelList<SubchannelListType, SubchannelDataType>;
+
   // Watcher for subchannel connectivity state.
   class Watcher
       : public SubchannelInterface::ConnectivityStateWatcherInterface {
@@ -150,6 +143,14 @@ class SubchannelData {
     SubchannelData<SubchannelListType, SubchannelDataType>* subchannel_data_;
     RefCountedPtr<SubchannelListType> subchannel_list_;
   };
+
+  // Starts watching the connectivity state of the subchannel.
+  // ProcessConnectivityChangeLocked() will be called whenever the
+  // connectivity state changes.
+  void StartConnectivityWatchLocked();
+
+  // Cancels watching the connectivity state of the subchannel.
+  void CancelConnectivityWatchLocked(const char* reason);
 
   // Unrefs the subchannel.
   void UnrefSubchannelLocked(const char* reason);
@@ -190,8 +191,6 @@ class SubchannelList : public InternallyRefCounted<SubchannelListType> {
   TraceFlag* tracer() const { return tracer_; }
 
   // Resets connection backoff of all subchannels.
-  // TODO(roth): We will probably need to rethink this as part of moving
-  // the backoff code out of subchannels and into LB policies.
   void ResetBackoffLocked();
 
   void Orphan() override {
@@ -326,15 +325,15 @@ void SubchannelData<SubchannelListType,
 template <typename SubchannelListType, typename SubchannelDataType>
 void SubchannelData<SubchannelListType, SubchannelDataType>::
     CancelConnectivityWatchLocked(const char* reason) {
-  if (GRPC_TRACE_FLAG_ENABLED(*subchannel_list_->tracer())) {
-    gpr_log(GPR_INFO,
-            "[%s %p] subchannel list %p index %" PRIuPTR " of %" PRIuPTR
-            " (subchannel %p): canceling connectivity watch (%s)",
-            subchannel_list_->tracer()->name(), subchannel_list_->policy(),
-            subchannel_list_, Index(), subchannel_list_->num_subchannels(),
-            subchannel_.get(), reason);
-  }
   if (pending_watcher_ != nullptr) {
+    if (GRPC_TRACE_FLAG_ENABLED(*subchannel_list_->tracer())) {
+      gpr_log(GPR_INFO,
+              "[%s %p] subchannel list %p index %" PRIuPTR " of %" PRIuPTR
+              " (subchannel %p): canceling connectivity watch (%s)",
+              subchannel_list_->tracer()->name(), subchannel_list_->policy(),
+              subchannel_list_, Index(), subchannel_list_->num_subchannels(),
+              subchannel_.get(), reason);
+    }
     subchannel_->CancelConnectivityStateWatch(pending_watcher_);
     pending_watcher_ = nullptr;
   }
@@ -342,7 +341,7 @@ void SubchannelData<SubchannelListType, SubchannelDataType>::
 
 template <typename SubchannelListType, typename SubchannelDataType>
 void SubchannelData<SubchannelListType, SubchannelDataType>::ShutdownLocked() {
-  if (pending_watcher_ != nullptr) CancelConnectivityWatchLocked("shutdown");
+  CancelConnectivityWatchLocked("shutdown");
   UnrefSubchannelLocked("shutdown");
 }
 
