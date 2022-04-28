@@ -47,14 +47,12 @@ ChannelStackBuilder& ChannelStackBuilder::SetChannelArgs(ChannelArgs args) {
   return *this;
 }
 
-void ChannelStackBuilder::PrependFilter(const grpc_channel_filter* filter,
-                                        PostInitFunc post_init) {
-  stack_.insert(stack_.begin(), {filter, std::move(post_init)});
+void ChannelStackBuilder::PrependFilter(const grpc_channel_filter* filter) {
+  stack_.insert(stack_.begin(), filter);
 }
 
-void ChannelStackBuilder::AppendFilter(const grpc_channel_filter* filter,
-                                       PostInitFunc post_init) {
-  stack_.push_back({filter, std::move(post_init)});
+void ChannelStackBuilder::AppendFilter(const grpc_channel_filter* filter) {
+  stack_.push_back(filter);
 }
 
 }  // namespace grpc_core
