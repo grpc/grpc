@@ -337,11 +337,14 @@ void PickFirst::PickFirstSubchannelData::ProcessConnectivityChangeLocked(
     return;
   }
   // If this is the initial connectivity state notification for this
-  // subchannel and it's the last one we're waiting for, then start trying
-  // to connect to the first subchannel.
-  if (!old_state.has_value() &&
-      subchannel_list()->AllSubchannelsSeenInitialState()) {
-    subchannel_list()->subchannel(0)->subchannel()->RequestConnection();
+  // subchannel, check to see if it's the last one we were waiting for,
+  // in which case we start trying to connect to the first subchannel.
+  // Otherwise, do nothing, since we'll continue to wait until all of
+  // the subchannels report their state.
+  if (!old_state.has_value()) {
+    if (subchannel_list()->AllSubchannelsSeenInitialState()) {
+      subchannel_list()->subchannel(0)->subchannel()->RequestConnection();
+    }
     return;
   }
   // Otherwise, process connectivity state.
