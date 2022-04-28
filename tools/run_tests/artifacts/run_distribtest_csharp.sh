@@ -1,5 +1,5 @@
 #!/bin/bash
-# Copyright 2015 gRPC authors.
+# Copyright 2012 The gRPC Authors
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -15,15 +15,5 @@
 
 set -ex
 
-cd "$(dirname "$0")"
-
-unzip -o "$EXTERNAL_GIT_ROOT/input_artifacts/csharp_nugets_windows_dotnetcli.zip" -d TestNugetFeed
-
-./update_version.sh auto
-
-# Retry "nuget restore" to work around https://github.com/grpc/grpc/issues/16312
-nuget restore || nuget restore || nuget restore
-
-msbuild DistribTest.sln
-
-mono DistribTest/bin/Debug/DistribTest.exe
+# Nothing to do here. C# has been removed from this repository. This script is a placeholder
+# to prevent C# tests from becoming red (until they get eventually disabled).

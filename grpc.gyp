@@ -1039,16 +1039,6 @@
       ],
     },
     {
-      'target_name': 'grpc_csharp_ext',
-      'type': 'static_library',
-      'dependencies': [
-        'grpc',
-      ],
-      'sources': [
-        'src/csharp/ext/grpc_csharp_ext.c',
-      ],
-    },
-    {
       'target_name': 'grpc_test_util',
       'type': 'static_library',
       'dependencies': [

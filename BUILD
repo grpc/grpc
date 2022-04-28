@@ -724,18 +724,6 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
-    name = "grpc_csharp_ext",
-    srcs = [
-        "src/csharp/ext/grpc_csharp_ext.c",
-    ],
-    language = "csharp",
-    deps = [
-        "gpr",
-        "grpc",
-    ],
-)
-
-grpc_cc_library(
     name = "census",
     srcs = [
         "src/core/ext/filters/census/grpc_context.cc",
