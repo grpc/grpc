@@ -25,10 +25,11 @@
 #include <string.h>
 
 #include <address_sorting/address_sorting.h>
-#include <grpc/event_engine/event_engine.h>
 
 #include "absl/container/inlined_vector.h"
 #include "absl/strings/str_cat.h"
+
+#include <grpc/event_engine/event_engine.h>
 
 #include "src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_balancer_addresses.h"
 #include "src/core/ext/filters/client_channel/lb_policy_registry.h"
