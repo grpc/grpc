@@ -33,7 +33,7 @@ Pod::Spec.new do |s|
         --grpc_out=. \
         -I #{repo_root} \
         -I #{well_known_types_dir} \
-        #{proto_dir}/echo.proto #{proto_dir}/echo_messages.proto #{proto_dir}/simple_messages.proto
+        #{proto_dir}/echo.proto #{proto_dir}/echo_messages.proto #{proto_dir}/simple_messages.proto #{proto_dir}/xds/v3/orca_load_report.proto
   CMD
 
   s.pod_target_xcconfig = {
