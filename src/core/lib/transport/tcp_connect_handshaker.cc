@@ -197,7 +197,7 @@ void TCPConnectHandshaker::CleanupArgsForFailureLocked() {
 
 void TCPConnectHandshaker::FinishLocked(grpc_error_handle error) {
   if (interested_parties_ != nullptr) {
-      grpc_polling_entity_del_from_pollset_set(&pollent_, interested_parties_);
+    grpc_polling_entity_del_from_pollset_set(&pollent_, interested_parties_);
   }
   ExecCtx::Run(DEBUG_LOCATION, on_handshake_done_, error);
   on_handshake_done_ = nullptr;
