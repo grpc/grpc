@@ -1765,9 +1765,9 @@ grpc_cc_library(
         "src/core/lib/iomgr/socket_utils.h",
     ],
     deps = [
+        "event_engine_base_hdrs",
         "gpr_base",
         "iomgr_port",
-        "event_engine_base_hdrs",
     ],
 )
 

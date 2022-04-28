@@ -16,10 +16,10 @@
 
 #include <grpc/support/port_platform.h>
 
-#include <grpc/event_engine/event_engine.h>
-
 #include "absl/functional/bind_front.h"
 #include "absl/strings/str_cat.h"
+
+#include <grpc/event_engine/event_engine.h>
 
 #include "src/core/ext/filters/client_channel/resolver/dns/dns_resolver_selection.h"
 #include "src/core/ext/filters/client_channel/resolver/polling_resolver.h"
@@ -44,8 +44,8 @@ namespace grpc_core {
 
 namespace {
 
-using ::grpc_event_engine::experimental::EventEngine;
 using ::grpc_event_engine::experimental::CreateGRPCResolvedAddress;
+using ::grpc_event_engine::experimental::EventEngine;
 
 TraceFlag grpc_trace_dns_resolver(false, "dns_resolver");
 
