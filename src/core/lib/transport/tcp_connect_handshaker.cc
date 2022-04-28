@@ -66,7 +66,12 @@ class TCPConnectHandshaker : public Handshaker {
 TCPConnectHandshaker::TCPConnectHandshaker(grpc_pollset_set* pollset_set)
     : interested_parties_(grpc_pollset_set_create()),
       pollent_(grpc_polling_entity_create_from_pollset_set(pollset_set)) {
-  grpc_polling_entity_add_to_pollset_set(&pollent_, interested_parties_);
+  // Intersted parties might be null for platforms like Apple.
+  // Explicitly check before adding/deleting from pollset_set to handle this
+  // use case.
+  if (interested_parties_ != nullptr) {
+    grpc_polling_entity_add_to_pollset_set(&pollent_, interested_parties_);
+  }
   GRPC_CLOSURE_INIT(&connected_, Connected, this, grpc_schedule_on_exec_ctx);
 }
 
@@ -191,7 +196,9 @@ void TCPConnectHandshaker::CleanupArgsForFailureLocked() {
 }
 
 void TCPConnectHandshaker::FinishLocked(grpc_error_handle error) {
-  grpc_polling_entity_del_from_pollset_set(&pollent_, interested_parties_);
+  if (interested_parties_ != nullptr) {
+      grpc_polling_entity_del_from_pollset_set(&pollent_, interested_parties_);
+  }
   ExecCtx::Run(DEBUG_LOCATION, on_handshake_done_, error);
   on_handshake_done_ = nullptr;
 }
