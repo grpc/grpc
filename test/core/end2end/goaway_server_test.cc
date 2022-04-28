@@ -22,6 +22,7 @@
 
 #include "absl/strings/str_cat.h"
 
+#include <grpc/event_engine/event_engine.h>
 #include <grpc/grpc.h>
 #include <grpc/grpc_security.h>
 #include <grpc/support/alloc.h>
@@ -59,6 +60,8 @@ static void set_resolve_port(int port) {
 
 namespace {
 
+using ::grpc_event_engine::experimental::EventEngine;
+
 grpc_core::DNSResolver* g_default_dns_resolver;
 
 class TestDNSResolver : public grpc_core::DNSResolver {
@@ -66,8 +69,7 @@ class TestDNSResolver : public grpc_core::DNSResolver {
   class TestDNSRequest : public grpc_core::DNSResolver::Request {
    public:
     explicit TestDNSRequest(
-        std::function<void(absl::StatusOr<std::vector<grpc_resolved_address>>)>
-            on_done)
+        EventEngine::DNSResolver::LookupHostnameCallback on_done)
         : on_done_(std::move(on_done)) {}
 
     void Start() override {
@@ -77,14 +79,14 @@ class TestDNSResolver : public grpc_core::DNSResolver {
         new grpc_core::DNSCallbackExecCtxScheduler(
             std::move(on_done_), absl::UnknownError("Forced Failure"));
       } else {
-        std::vector<grpc_resolved_address> addrs;
-        grpc_resolved_address addr;
-        grpc_sockaddr_in* sa = reinterpret_cast<grpc_sockaddr_in*>(&addr);
-        sa->sin_family = GRPC_AF_INET;
-        sa->sin_addr.s_addr = 0x100007f;
-        sa->sin_port = grpc_htons(static_cast<uint16_t>(g_resolve_port));
-        addr.len = static_cast<socklen_t>(sizeof(*sa));
-        addrs.push_back(addr);
+        std::vector<EventEngine::ResolvedAddress> addrs;
+        grpc_sockaddr_in sa;
+        sa.sin_family = GRPC_AF_INET;
+        sa.sin_addr.s_addr = 0x100007f;
+        sa.sin_port = grpc_htons(static_cast<uint16_t>(g_resolve_port));
+        addrs.push_back(
+            EventEngine::ResolvedAddress(reinterpret_cast<const sockaddr*>(&sa),
+                                         static_cast<socklen_t>(sizeof(sa))));
         gpr_mu_unlock(&g_mu);
         new grpc_core::DNSCallbackExecCtxScheduler(std::move(on_done_),
                                                    std::move(addrs));
@@ -94,15 +96,13 @@ class TestDNSResolver : public grpc_core::DNSResolver {
     void Orphan() override { Unref(); }
 
    private:
-    std::function<void(absl::StatusOr<std::vector<grpc_resolved_address>>)>
-        on_done_;
+    EventEngine::DNSResolver::LookupHostnameCallback on_done_;
   };
 
   grpc_core::OrphanablePtr<grpc_core::DNSResolver::Request> ResolveName(
       absl::string_view name, absl::string_view default_port,
       grpc_pollset_set* interested_parties,
-      std::function<void(absl::StatusOr<std::vector<grpc_resolved_address>>)>
-          on_done) override {
+      EventEngine::DNSResolver::LookupHostnameCallback on_done) override {
     if (name != "test") {
       return g_default_dns_resolver->ResolveName(
           name, default_port, interested_parties, std::move(on_done));
@@ -110,7 +110,7 @@ class TestDNSResolver : public grpc_core::DNSResolver {
     return grpc_core::MakeOrphanable<TestDNSRequest>(std::move(on_done));
   }
 
-  absl::StatusOr<std::vector<grpc_resolved_address>> ResolveNameBlocking(
+  absl::StatusOr<std::vector<EventEngine::ResolvedAddress>> ResolveNameBlocking(
       absl::string_view name, absl::string_view default_port) override {
     return g_default_dns_resolver->ResolveNameBlocking(name, default_port);
   }

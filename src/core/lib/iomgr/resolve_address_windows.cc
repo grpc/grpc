@@ -27,6 +27,7 @@
 
 #include "absl/strings/str_format.h"
 
+#include <grpc/event_engine/event_engine.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/log_windows.h>
@@ -48,12 +49,12 @@
 namespace grpc_core {
 namespace {
 
+using ::grpc_event_engine::experimental::EventEngine;
+
 class NativeDNSRequest : public DNSResolver::Request {
  public:
-  NativeDNSRequest(
-      absl::string_view name, absl::string_view default_port,
-      std::function<void(absl::StatusOr<std::vector<grpc_resolved_address>>)>
-          on_done)
+  NativeDNSRequest(absl::string_view name, absl::string_view default_port,
+                   EventEngine::DNSResolver::LookupHostnameCallback on_done)
       : name_(name), default_port_(default_port), on_done_(std::move(on_done)) {
     GRPC_CLOSURE_INIT(&request_closure_, DoRequestThread, this, nullptr);
   }
@@ -82,8 +83,7 @@ class NativeDNSRequest : public DNSResolver::Request {
 
   const std::string name_;
   const std::string default_port_;
-  const std::function<void(absl::StatusOr<std::vector<grpc_resolved_address>>)>
-      on_done_;
+  const EventEngine::DNSResolver::LookupHostnameCallback on_done_;
   grpc_closure request_closure_;
 };
 
@@ -97,13 +97,12 @@ NativeDNSResolver* NativeDNSResolver::GetOrCreate() {
 OrphanablePtr<DNSResolver::Request> NativeDNSResolver::ResolveName(
     absl::string_view name, absl::string_view default_port,
     grpc_pollset_set* /* interested_parties */,
-    std::function<void(absl::StatusOr<std::vector<grpc_resolved_address>>)>
-        on_done) {
+    EventEngine::DNSResolver::LookupHostnameCallback on_done) {
   return MakeOrphanable<NativeDNSRequest>(name, default_port,
                                           std::move(on_done));
 }
 
-absl::StatusOr<std::vector<grpc_resolved_address>>
+absl::StatusOr<std::vector<EventEngine::ResolvedAddress>>
 NativeDNSResolver::ResolveNameBlocking(absl::string_view name,
                                        absl::string_view default_port) {
   ExecCtx exec_ctx;
@@ -112,7 +111,7 @@ NativeDNSResolver::ResolveNameBlocking(absl::string_view name,
   int s;
   size_t i;
   grpc_error_handle error = GRPC_ERROR_NONE;
-  std::vector<grpc_resolved_address> addresses;
+  std::vector<EventEngine::ResolvedAddress> addresses;
 
   // parse name, splitting it into host and port parts
   std::string host;
@@ -148,10 +147,8 @@ NativeDNSResolver::ResolveNameBlocking(absl::string_view name,
 
   // Success path: set addrs non-NULL, fill it in
   for (resp = result; resp != NULL; resp = resp->ai_next) {
-    grpc_resolved_address addr;
-    memcpy(&addr.addr, resp->ai_addr, resp->ai_addrlen);
-    addr.len = resp->ai_addrlen;
-    addresses.push_back(addr);
+    addresses.push_back(EventEngine::ResolvedAddress(
+        reinterpret_cast<const sockaddr*>(resp->ai_addr), resp->ai_addrlen));
   }
 
 done:

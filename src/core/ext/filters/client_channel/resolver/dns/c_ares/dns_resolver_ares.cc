@@ -25,6 +25,7 @@
 #include <string.h>
 
 #include <address_sorting/address_sorting.h>
+#include <grpc/event_engine/event_engine.h>
 
 #include "absl/container/inlined_vector.h"
 #include "absl/strings/str_cat.h"
@@ -37,6 +38,7 @@
 #include "src/core/lib/backoff/backoff.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/gpr/string.h"
+#include "src/core/lib/iomgr/event_engine/resolved_address_internal.h"
 #include "src/core/lib/iomgr/gethostname.h"
 #include "src/core/lib/iomgr/resolve_address.h"
 #include "src/core/lib/iomgr/timer.h"
@@ -54,6 +56,9 @@
 namespace grpc_core {
 
 namespace {
+
+using ::grpc_event_engine::experimental::CreateResolvedAddress;
+using ::grpc_event_engine::experimental::EventEngine;
 
 class AresClientChannelDNSResolver : public PollingResolver {
  public:
@@ -324,11 +329,10 @@ class AresDNSResolver : public DNSResolver {
  public:
   class AresRequest : public DNSResolver::Request {
    public:
-    AresRequest(
-        absl::string_view name, absl::string_view default_port,
-        grpc_pollset_set* interested_parties,
-        std::function<void(absl::StatusOr<std::vector<grpc_resolved_address>>)>
-            on_resolve_address_done)
+    AresRequest(absl::string_view name, absl::string_view default_port,
+                grpc_pollset_set* interested_parties,
+                EventEngine::DNSResolver::LookupHostnameCallback
+                    on_resolve_address_done)
         : name_(std::string(name)),
           default_port_(std::string(default_port)),
           interested_parties_(interested_parties),
@@ -370,7 +374,7 @@ class AresDNSResolver : public DNSResolver {
    private:
     static void OnDnsLookupDone(void* arg, grpc_error_handle error) {
       AresRequest* r = static_cast<AresRequest*>(arg);
-      std::vector<grpc_resolved_address> resolved_addresses;
+      std::vector<EventEngine::ResolvedAddress> resolved_addresses;
       {
         MutexLock lock(&r->mu_);
         GRPC_CARES_TRACE_LOG("AresRequest:%p OnDnsLookupDone error:%s", r,
@@ -378,7 +382,8 @@ class AresDNSResolver : public DNSResolver {
         if (r->addresses_ != nullptr) {
           resolved_addresses.reserve(r->addresses_->size());
           for (const auto& server_address : *r->addresses_) {
-            resolved_addresses.push_back(server_address.address());
+            resolved_addresses.push_back(
+                CreateResolvedAddress(server_address.address()));
           }
         }
       }
@@ -402,8 +407,7 @@ class AresDNSResolver : public DNSResolver {
     // parties interested in our I/O
     grpc_pollset_set* const interested_parties_;
     // user-provided completion callback
-    const std::function<void(
-        absl::StatusOr<std::vector<grpc_resolved_address>>)>
+    const EventEngine::DNSResolver::LookupHostnameCallback
         on_resolve_address_done_;
     // currently resolving addresses
     std::unique_ptr<ServerAddressList> addresses_ ABSL_GUARDED_BY(mu_);
@@ -424,13 +428,12 @@ class AresDNSResolver : public DNSResolver {
   OrphanablePtr<DNSResolver::Request> ResolveName(
       absl::string_view name, absl::string_view default_port,
       grpc_pollset_set* interested_parties,
-      std::function<void(absl::StatusOr<std::vector<grpc_resolved_address>>)>
-          on_done) override {
+      EventEngine::DNSResolver::LookupHostnameCallback on_done) override {
     return MakeOrphanable<AresRequest>(name, default_port, interested_parties,
                                        std::move(on_done));
   }
 
-  absl::StatusOr<std::vector<grpc_resolved_address>> ResolveNameBlocking(
+  absl::StatusOr<std::vector<EventEngine::ResolvedAddress>> ResolveNameBlocking(
       absl::string_view name, absl::string_view default_port) override {
     // TODO(apolcyn): change this to wrap the async version of the c-ares
     // API with a promise, and remove the reference to the previous resolver.

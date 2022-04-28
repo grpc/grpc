@@ -24,6 +24,7 @@
 
 #include "absl/strings/str_format.h"
 
+#include <grpc/event_engine/event_engine.h>
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
@@ -41,6 +42,8 @@
 #include "src/core/lib/iomgr/resolve_address.h"
 #include "test/core/util/cmdline.h"
 #include "test/core/util/test_config.h"
+
+using ::grpc_event_engine::experimental::EventEngine;
 
 static gpr_timespec test_deadline(void) {
   return grpc_timeout_seconds_to_deadline(100);
@@ -119,8 +122,9 @@ static void poll_pollset_until_request_done(args_struct* args) {
 
 namespace {
 
-void MustSucceed(args_struct* args,
-                 absl::StatusOr<std::vector<grpc_resolved_address>> result) {
+void MustSucceed(
+    args_struct* args,
+    absl::StatusOr<std::vector<EventEngine::ResolvedAddress>> result) {
   GPR_ASSERT(result.ok());
   GPR_ASSERT(!result->empty());
   grpc_core::MutexLockForGprMu lock(args->mu);
@@ -136,8 +140,9 @@ static void resolve_address_must_succeed(const char* target) {
   args_init(&args);
   poll_pollset_until_request_done(&args);
   auto r = grpc_core::GetDNSResolver()->ResolveName(
-      target, "1" /* port number */, args.pollset_set,
-      [&args](absl::StatusOr<std::vector<grpc_resolved_address>> result) {
+      target, /*default_port=*/"1", args.pollset_set,
+      [&args](
+          absl::StatusOr<std::vector<EventEngine::ResolvedAddress>> result) {
         MustSucceed(&args, std::move(result));
       });
   r->Start();

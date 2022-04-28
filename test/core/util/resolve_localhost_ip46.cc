@@ -18,6 +18,7 @@
 
 #include "test/core/util/resolve_localhost_ip46.h"
 
+#include <grpc/event_engine/event_engine.h>
 #include <grpc/support/log.h>
 
 #include "src/core/lib/iomgr/port.h"
@@ -27,17 +28,19 @@
 namespace grpc_core {
 namespace {
 
+using ::grpc_event_engine::experimental::EventEngine;
+
 bool localhost_to_ipv4 = false;
 bool localhost_to_ipv6 = false;
 gpr_once g_resolve_localhost_ipv46 = GPR_ONCE_INIT;
 
 void InitResolveLocalhost() {
-  absl::StatusOr<std::vector<grpc_resolved_address>> addresses_or =
+  absl::StatusOr<std::vector<EventEngine::ResolvedAddress>> addresses_or =
       GetDNSResolver()->ResolveNameBlocking("localhost", "https");
   GPR_ASSERT(addresses_or.ok());
   for (const auto& addr : *addresses_or) {
     const grpc_sockaddr* sock_addr =
-        reinterpret_cast<const grpc_sockaddr*>(&addr);
+        reinterpret_cast<const grpc_sockaddr*>(addr.address());
     if (sock_addr->sa_family == GRPC_AF_INET) {
       localhost_to_ipv4 = true;
     } else if (sock_addr->sa_family == GRPC_AF_INET6) {

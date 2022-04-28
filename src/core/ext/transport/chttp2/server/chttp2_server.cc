@@ -48,6 +48,7 @@
 #include "src/core/lib/gprpp/ref_counted.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/iomgr/endpoint.h"
+#include "src/core/lib/iomgr/event_engine/resolved_address_internal.h"
 #include "src/core/lib/iomgr/resolve_address.h"
 #include "src/core/lib/iomgr/tcp_server.h"
 #include "src/core/lib/iomgr/unix_sockets_posix.h"
@@ -72,6 +73,9 @@
 
 namespace grpc_core {
 namespace {
+
+using ::grpc_event_engine::experimental::CreateGRPCResolvedAddress;
+using ::grpc_event_engine::experimental::EventEngine;
 
 const char kUnixUriPrefix[] = "unix:";
 const char kUnixAbstractUriPrefix[] = "unix-abstract:";
@@ -919,7 +923,19 @@ grpc_error_handle Chttp2ServerAddPort(Server* server, const char* addr,
       resolved_or =
           grpc_resolve_unix_abstract_domain_address(parsed_addr_unprefixed);
     } else {
-      resolved_or = GetDNSResolver()->ResolveNameBlocking(parsed_addr, "https");
+      absl::StatusOr<std::vector<EventEngine::ResolvedAddress>> tmp_resolved =
+          GetDNSResolver()->ResolveNameBlocking(parsed_addr, "https");
+      if (!tmp_resolved.ok()) {
+        resolved_or = tmp_resolved.status();
+      } else {
+        // convert to grpc_resolved_address here
+        std::vector<grpc_resolved_address> resolved_addrs;
+        resolved_addrs.reserve(tmp_resolved->size());
+        for (auto& addr : *tmp_resolved) {
+          resolved_addrs.push_back(CreateGRPCResolvedAddress(addr));
+        }
+        resolved_or = std::move(resolved_addrs);
+      }
     }
     if (!resolved_or.ok()) {
       return absl_status_to_grpc_error(resolved_or.status());

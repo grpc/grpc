@@ -21,6 +21,8 @@
 
 #include <functional>
 
+#include <grpc/event_engine/event_engine.h>
+
 #include "src/core/lib/iomgr/port.h"
 #include "src/core/lib/iomgr/resolve_address.h"
 
@@ -35,11 +37,13 @@ class NativeDNSResolver : public DNSResolver {
   OrphanablePtr<DNSResolver::Request> ResolveName(
       absl::string_view name, absl::string_view default_port,
       grpc_pollset_set* interested_parties,
-      std::function<void(absl::StatusOr<std::vector<grpc_resolved_address>>)>
-          on_done) override;
+      grpc_event_engine::experimental::EventEngine::DNSResolver::
+          LookupHostnameCallback on_done) override;
 
-  absl::StatusOr<std::vector<grpc_resolved_address>> ResolveNameBlocking(
-      absl::string_view name, absl::string_view default_port) override;
+  absl::StatusOr<std::vector<
+      grpc_event_engine::experimental::EventEngine::ResolvedAddress>>
+  ResolveNameBlocking(absl::string_view name,
+                      absl::string_view default_port) override;
 };
 
 }  // namespace grpc_core

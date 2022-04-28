@@ -30,6 +30,7 @@
 #include "absl/strings/str_split.h"
 #include "absl/strings/string_view.h"
 
+#include <grpc/event_engine/event_engine.h>
 #include <grpc/grpc.h>
 #include <grpc/grpc_security.h>
 #include <grpc/support/alloc.h>
@@ -40,6 +41,7 @@
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gprpp/host_port.h"
 #include "src/core/lib/iomgr/error.h"
+#include "src/core/lib/iomgr/event_engine/resolved_address_internal.h"
 #include "src/core/lib/iomgr/resolve_address.h"
 #include "src/core/lib/iomgr/socket_utils_posix.h"
 #include "src/core/lib/slice/slice_string_helpers.h"
@@ -47,6 +49,9 @@
 #include "test/core/end2end/cq_verifier.h"
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
+
+using ::grpc_event_engine::experimental::EventEngine;
+using ::grpc_event_engine::experimental::ResolvedAddressToURI;
 
 /* This test exercises IPv4, IPv6, and dualstack sockets in various ways. */
 
@@ -61,7 +66,7 @@ static void drain_cq(grpc_completion_queue* cq) {
 }
 
 static void log_resolved_addrs(const char* label, const char* hostname) {
-  absl::StatusOr<std::vector<grpc_resolved_address>> addresses_or =
+  absl::StatusOr<std::vector<EventEngine::ResolvedAddress>> addresses_or =
       grpc_core::GetDNSResolver()->ResolveNameBlocking(hostname, "80");
   if (!addresses_or.ok()) {
     GRPC_LOG_IF_ERROR(hostname,
@@ -69,7 +74,7 @@ static void log_resolved_addrs(const char* label, const char* hostname) {
     return;
   }
   for (const auto& addr : *addresses_or) {
-    gpr_log(GPR_INFO, "%s: %s", label, grpc_sockaddr_to_uri(&addr)->c_str());
+    gpr_log(GPR_INFO, "%s: %s", label, ResolvedAddressToURI(addr)->c_str());
   }
 }
 
@@ -292,7 +297,7 @@ int external_dns_works(const char* host) {
     // "dualstack_socket_test" due to loopback4.unittest.grpc.io resolving to
     // [64:ff9b::7f00:1]. (Working as expected for DNS64, but it prevents the
     // dualstack_socket_test from functioning correctly). See b/201064791.
-    if (grpc_sockaddr_to_uri(&addr).value() == "ipv6:[64:ff9b::7f00:1]:80") {
+    if (ResolvedAddressToURI(addr).value() == "ipv6:[64:ff9b::7f00:1]:80") {
       gpr_log(
           GPR_INFO,
           "Detected DNS64 server response. Tests that depend on "

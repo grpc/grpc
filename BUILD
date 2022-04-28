@@ -1767,6 +1767,7 @@ grpc_cc_library(
     deps = [
         "gpr_base",
         "iomgr_port",
+        "event_engine_base_hdrs",
     ],
 )
 

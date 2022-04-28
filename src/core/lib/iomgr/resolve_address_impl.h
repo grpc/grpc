@@ -21,6 +21,8 @@
 
 #include <stddef.h>
 
+#include <grpc/event_engine/event_engine.h>
+
 #include "src/core/lib/iomgr/port.h"
 #include "src/core/lib/iomgr/resolve_address.h"
 
@@ -32,9 +34,11 @@ namespace grpc_core {
 class DNSCallbackExecCtxScheduler {
  public:
   DNSCallbackExecCtxScheduler(
-      std::function<void(absl::StatusOr<std::vector<grpc_resolved_address>>)>
-          on_done,
-      absl::StatusOr<std::vector<grpc_resolved_address>> param)
+      grpc_event_engine::experimental::EventEngine::DNSResolver::
+          LookupHostnameCallback on_done,
+      absl::StatusOr<std::vector<
+          grpc_event_engine::experimental::EventEngine::ResolvedAddress>>
+          param)
       : on_done_(std::move(on_done)), param_(std::move(param)) {
     GRPC_CLOSURE_INIT(&closure_, RunCallback, this, grpc_schedule_on_exec_ctx);
     ExecCtx::Run(DEBUG_LOCATION, &closure_, GRPC_ERROR_NONE);
@@ -48,9 +52,11 @@ class DNSCallbackExecCtxScheduler {
     delete self;
   }
 
-  const std::function<void(absl::StatusOr<std::vector<grpc_resolved_address>>)>
-      on_done_;
-  absl::StatusOr<std::vector<grpc_resolved_address>> param_;
+  const grpc_event_engine::experimental::EventEngine::DNSResolver::
+      LookupHostnameCallback on_done_;
+  absl::StatusOr<std::vector<
+      grpc_event_engine::experimental::EventEngine::ResolvedAddress>>
+      param_;
   grpc_closure closure_;
 };
 

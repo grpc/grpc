@@ -19,6 +19,7 @@
 #include <cstring>
 #include <functional>
 
+#include <grpc/event_engine/event_engine.h>
 #include <grpc/grpc.h>
 #include <grpc/impl/codegen/gpr_types.h>
 #include <grpc/support/log.h>
@@ -60,6 +61,8 @@ static struct iomgr_args {
 
 namespace {
 
+using ::grpc_event_engine::experimental::EventEngine;
+
 grpc_core::DNSResolver* g_default_dns_resolver;
 
 class TestDNSResolver : public grpc_core::DNSResolver {
@@ -69,8 +72,7 @@ class TestDNSResolver : public grpc_core::DNSResolver {
   grpc_core::OrphanablePtr<grpc_core::DNSResolver::Request> ResolveName(
       absl::string_view name, absl::string_view default_port,
       grpc_pollset_set* interested_parties,
-      std::function<void(absl::StatusOr<std::vector<grpc_resolved_address>>)>
-          on_done) override {
+      EventEngine::DNSResolver::LookupHostnameCallback on_done) override {
     auto result = g_default_dns_resolver->ResolveName(
         name, default_port, interested_parties, std::move(on_done));
     ++g_resolution_count;
@@ -96,7 +98,7 @@ class TestDNSResolver : public grpc_core::DNSResolver {
     return result;
   }
 
-  absl::StatusOr<std::vector<grpc_resolved_address>> ResolveNameBlocking(
+  absl::StatusOr<std::vector<EventEngine::ResolvedAddress>> ResolveNameBlocking(
       absl::string_view name, absl::string_view default_port) override {
     return g_default_dns_resolver->ResolveNameBlocking(name, default_port);
   }

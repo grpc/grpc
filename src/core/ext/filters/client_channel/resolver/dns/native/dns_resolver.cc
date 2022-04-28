@@ -16,6 +16,8 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <grpc/event_engine/event_engine.h>
+
 #include "absl/functional/bind_front.h"
 #include "absl/strings/str_cat.h"
 
@@ -26,6 +28,7 @@
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/gpr/string.h"
+#include "src/core/lib/iomgr/event_engine/resolved_address_internal.h"
 #include "src/core/lib/iomgr/resolve_address.h"
 #include "src/core/lib/iomgr/timer.h"
 #include "src/core/lib/iomgr/work_serializer.h"
@@ -41,6 +44,9 @@ namespace grpc_core {
 
 namespace {
 
+using ::grpc_event_engine::experimental::EventEngine;
+using ::grpc_event_engine::experimental::CreateGRPCResolvedAddress;
+
 TraceFlag grpc_trace_dns_resolver(false, "dns_resolver");
 
 class NativeClientChannelDNSResolver : public PollingResolver {
@@ -53,7 +59,7 @@ class NativeClientChannelDNSResolver : public PollingResolver {
 
  private:
   void OnResolved(
-      absl::StatusOr<std::vector<grpc_resolved_address>> addresses_or);
+      absl::StatusOr<std::vector<EventEngine::ResolvedAddress>> addresses_or);
 };
 
 NativeClientChannelDNSResolver::NativeClientChannelDNSResolver(
@@ -97,7 +103,7 @@ OrphanablePtr<Orphanable> NativeClientChannelDNSResolver::StartRequest() {
 }
 
 void NativeClientChannelDNSResolver::OnResolved(
-    absl::StatusOr<std::vector<grpc_resolved_address>> addresses_or) {
+    absl::StatusOr<std::vector<EventEngine::ResolvedAddress>> addresses_or) {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_trace_dns_resolver)) {
     gpr_log(GPR_DEBUG, "[dns_resolver=%p] request complete, status=\"%s\"",
             this, addresses_or.status().ToString().c_str());
@@ -107,7 +113,7 @@ void NativeClientChannelDNSResolver::OnResolved(
   if (addresses_or.ok()) {
     ServerAddressList addresses;
     for (auto& addr : *addresses_or) {
-      addresses.emplace_back(addr, nullptr /* args */);
+      addresses.emplace_back(CreateGRPCResolvedAddress(addr), /*args=*/nullptr);
     }
     result.addresses = std::move(addresses);
   } else {

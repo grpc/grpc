@@ -27,6 +27,7 @@
 #include "absl/functional/bind_front.h"
 #include "absl/strings/match.h"
 
+#include <grpc/event_engine/event_engine.h>
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
@@ -47,6 +48,8 @@
 #include "test/cpp/util/test_config.h"
 
 namespace {
+
+using ::grpc_event_engine::experimental::EventEngine;
 
 grpc_core::Timestamp NSecDeadline(int seconds) {
   return grpc_core::Timestamp::FromTimespecRoundUp(
@@ -111,19 +114,21 @@ class ResolveAddressTest : public ::testing::Test {
     }
   }
 
-  void MustSucceed(absl::StatusOr<std::vector<grpc_resolved_address>> result) {
+  void MustSucceed(
+      absl::StatusOr<std::vector<EventEngine::ResolvedAddress>> result) {
     EXPECT_EQ(result.status(), absl::OkStatus());
     EXPECT_FALSE(result->empty());
     Finish();
   }
 
-  void MustFail(absl::StatusOr<std::vector<grpc_resolved_address>> result) {
+  void MustFail(
+      absl::StatusOr<std::vector<EventEngine::ResolvedAddress>> result) {
     EXPECT_NE(result.status(), absl::OkStatus());
     Finish();
   }
 
   void MustFailExpectCancelledErrorMessage(
-      absl::StatusOr<std::vector<grpc_resolved_address>> result) {
+      absl::StatusOr<std::vector<EventEngine::ResolvedAddress>> result) {
     EXPECT_NE(result.status(), absl::OkStatus());
     EXPECT_THAT(result.status().ToString(),
                 testing::HasSubstr("DNS query cancelled"));
@@ -131,26 +136,24 @@ class ResolveAddressTest : public ::testing::Test {
   }
 
   void DontCare(
-      absl::StatusOr<std::vector<grpc_resolved_address>> /* result */) {
+      absl::StatusOr<std::vector<EventEngine::ResolvedAddress>> /* result */) {
     Finish();
   }
 
   // This test assumes the environment has an ipv6 loopback
   void MustSucceedWithIPv6First(
-      absl::StatusOr<std::vector<grpc_resolved_address>> result) {
+      absl::StatusOr<std::vector<EventEngine::ResolvedAddress>> result) {
     EXPECT_EQ(result.status(), absl::OkStatus());
     EXPECT_TRUE(!result->empty() &&
-                reinterpret_cast<const struct sockaddr*>((*result)[0].addr)
-                        ->sa_family == AF_INET6);
+                result->at(0).address()->sa_family == AF_INET6);
     Finish();
   }
 
   void MustSucceedWithIPv4First(
-      absl::StatusOr<std::vector<grpc_resolved_address>> result) {
+      absl::StatusOr<std::vector<EventEngine::ResolvedAddress>> result) {
     EXPECT_EQ(result.status(), absl::OkStatus());
     EXPECT_TRUE(!result->empty() &&
-                reinterpret_cast<const struct sockaddr*>((*result)[0].addr)
-                        ->sa_family == AF_INET);
+                result->at(0).address()->sa_family == AF_INET);
     Finish();
   }
 

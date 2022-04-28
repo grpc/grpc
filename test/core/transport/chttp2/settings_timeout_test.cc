@@ -26,6 +26,7 @@
 #include "absl/memory/memory.h"
 #include "absl/strings/str_cat.h"
 
+#include <grpc/event_engine/event_engine.h>
 #include <grpc/grpc.h>
 #include <grpc/grpc_security.h>
 #include <grpc/support/alloc.h>
@@ -33,6 +34,7 @@
 
 #include "src/core/lib/iomgr/endpoint.h"
 #include "src/core/lib/iomgr/error.h"
+#include "src/core/lib/iomgr/event_engine/resolved_address_internal.h"
 #include "src/core/lib/iomgr/pollset.h"
 #include "src/core/lib/iomgr/pollset_set.h"
 #include "src/core/lib/iomgr/resolve_address.h"
@@ -45,6 +47,9 @@
 namespace grpc_core {
 namespace test {
 namespace {
+
+using ::grpc_event_engine::experimental::CreateGRPCResolvedAddress;
+using ::grpc_event_engine::experimental::EventEngine;
 
 // A gRPC server, running in its own thread.
 class ServerThread {
@@ -113,7 +118,7 @@ class Client {
 
   void Connect() {
     ExecCtx exec_ctx;
-    absl::StatusOr<std::vector<grpc_resolved_address>> addresses_or =
+    absl::StatusOr<std::vector<EventEngine::ResolvedAddress>> addresses_or =
         GetDNSResolver()->ResolveNameBlocking(server_address_, "80");
     ASSERT_EQ(absl::OkStatus(), addresses_or.status())
         << addresses_or.status().ToString();
@@ -127,8 +132,10 @@ class Client {
                                         .channel_args_preconditioning()
                                         .PreconditionChannelArgs(nullptr)
                                         .ToC();
+    grpc_resolved_address c_addr =
+        CreateGRPCResolvedAddress(addresses_or->at(0));
     grpc_tcp_client_connect(state.closure(), &endpoint_, pollset_set, args,
-                            addresses_or->data(),
+                            &c_addr,
                             ExecCtx::Get()->Now() + Duration::Seconds(1));
     grpc_channel_args_destroy(args);
     ASSERT_TRUE(PollUntilDone(&state, Timestamp::InfFuture()));

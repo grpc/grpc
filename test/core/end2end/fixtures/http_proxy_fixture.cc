@@ -22,6 +22,7 @@
 
 #include "absl/strings/str_cat.h"
 
+#include <grpc/event_engine/event_engine.h>
 #include <grpc/grpc.h>
 #include <grpc/slice_buffer.h>
 #include <grpc/support/alloc.h>
@@ -40,6 +41,7 @@
 #include "src/core/lib/iomgr/combiner.h"
 #include "src/core/lib/iomgr/endpoint.h"
 #include "src/core/lib/iomgr/error.h"
+#include "src/core/lib/iomgr/event_engine/resolved_address_internal.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/pollset.h"
 #include "src/core/lib/iomgr/pollset_set.h"
@@ -53,6 +55,8 @@
 #include "src/core/lib/slice/slice_internal.h"
 #include "test/core/util/port.h"
 
+using ::grpc_event_engine::experimental::CreateGRPCResolvedAddress;
+using ::grpc_event_engine::experimental::EventEngine;
 struct grpc_end2end_http_proxy {
   grpc_end2end_http_proxy()
       : server(nullptr), channel_args(nullptr), mu(nullptr), combiner(nullptr) {
@@ -520,7 +524,7 @@ static void on_read_request_done_locked(void* arg, grpc_error_handle error) {
     }
   }
   // Resolve address.
-  absl::StatusOr<std::vector<grpc_resolved_address>> addresses_or =
+  absl::StatusOr<std::vector<EventEngine::ResolvedAddress>> addresses_or =
       grpc_core::GetDNSResolver()->ResolveNameBlocking(conn->http_request.path,
                                                        "80");
   if (!addresses_or.ok()) {
@@ -539,9 +543,9 @@ static void on_read_request_done_locked(void* arg, grpc_error_handle error) {
                                       .channel_args_preconditioning()
                                       .PreconditionChannelArgs(nullptr)
                                       .ToC();
+  grpc_resolved_address c_addr = CreateGRPCResolvedAddress((*addresses_or)[0]);
   grpc_tcp_client_connect(&conn->on_server_connect_done, &conn->server_endpoint,
-                          conn->pollset_set, args, &(*addresses_or)[0],
-                          deadline);
+                          conn->pollset_set, args, &c_addr, deadline);
   grpc_channel_args_destroy(args);
 }
 

@@ -215,7 +215,9 @@ class HttpRequest : public InternallyRefCounted<HttpRequest> {
   void NextAddress(grpc_error_handle error) ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
 
   void OnResolved(
-      absl::StatusOr<std::vector<grpc_resolved_address>> addresses_or);
+      absl::StatusOr<std::vector<
+          grpc_event_engine::experimental::EventEngine::ResolvedAddress>>
+          addresses_or);
 
   const URI uri_;
   const grpc_slice request_text_;

@@ -28,6 +28,7 @@
 #include "absl/strings/str_format.h"
 #include "absl/strings/string_view.h"
 
+#include <grpc/event_engine/event_engine.h>
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
@@ -40,6 +41,7 @@
 #include "src/core/lib/http/format_request.h"
 #include "src/core/lib/http/parser.h"
 #include "src/core/lib/iomgr/endpoint.h"
+#include "src/core/lib/iomgr/event_engine/resolved_address_internal.h"
 #include "src/core/lib/iomgr/iomgr_internal.h"
 #include "src/core/lib/iomgr/resolve_address.h"
 #include "src/core/lib/iomgr/tcp_client.h"
@@ -50,6 +52,9 @@
 namespace grpc_core {
 
 namespace {
+
+using ::grpc_event_engine::experimental::EventEngine;
+using ::grpc_event_engine::experimental::ResolvedAddressToURI;
 
 grpc_httpcli_get_override g_get_override;
 grpc_httpcli_post_override g_post_override;
@@ -395,17 +400,17 @@ void HttpRequest::NextAddress(grpc_error_handle error) {
         "Failed HTTP requests to all targets", &overall_error_, 1));
     return;
   }
-  const grpc_resolved_address* addr = &addresses_[next_address_++];
   GRPC_CLOSURE_INIT(&connected_, OnConnected, this, grpc_schedule_on_exec_ctx);
   connecting_ = true;
   own_endpoint_ = false;
   Ref().release();  // ref held by pending connect
+  const grpc_resolved_address* addr = &addresses_[next_address_++];
   grpc_tcp_client_connect(&connected_, &ep_, pollset_set_, channel_args_, addr,
                           deadline_);
 }
 
 void HttpRequest::OnResolved(
-    absl::StatusOr<std::vector<grpc_resolved_address>> addresses_or) {
+    absl::StatusOr<std::vector<EventEngine::ResolvedAddress>> addresses_or) {
   RefCountedPtr<HttpRequest> unreffer(this);
   MutexLock lock(&mu_);
   dns_request_.reset();
@@ -418,7 +423,10 @@ void HttpRequest::OnResolved(
         "cancelled during DNS resolution"));
     return;
   }
-  addresses_ = std::move(*addresses_or);
+  addresses_.reserve(addresses_or->size());
+  for (auto& addr : *addresses_or) {
+    addresses_.push_back(CreateGRPCResolvedAddress(addr));
+  }
   next_address_ = 0;
   NextAddress(GRPC_ERROR_NONE);
 }

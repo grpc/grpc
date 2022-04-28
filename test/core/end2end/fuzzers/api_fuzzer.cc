@@ -18,6 +18,7 @@
 
 #include <string.h>
 
+#include <grpc/event_engine/event_engine.h>
 #include <grpc/grpc.h>
 #include <grpc/grpc_security.h>
 #include <grpc/support/alloc.h>
@@ -42,6 +43,8 @@
 #include "test/core/end2end/data/ssl_test_data.h"
 #include "test/core/end2end/fuzzers/api_fuzzer.pb.h"
 #include "test/core/util/passthru_endpoint.h"
+
+using ::grpc_event_engine::experimental::EventEngine;
 
 static constexpr uint64_t kMaxAdvanceTimeMicros =
     31536000000000;  // 1 year (24 * 365 * 3600 * 1000000)
@@ -116,10 +119,8 @@ class FuzzerDNSResolver : public grpc_core::DNSResolver {
  public:
   class FuzzerDNSRequest : public grpc_core::DNSResolver::Request {
    public:
-    FuzzerDNSRequest(
-        absl::string_view name,
-        std::function<void(absl::StatusOr<std::vector<grpc_resolved_address>>)>
-            on_done)
+    FuzzerDNSRequest(absl::string_view name,
+                     EventEngine::DNSResolver::LookupHostnameCallback on_done)
         : name_(std::string(name)), on_done_(std::move(on_done)) {}
 
     void Start() override {
@@ -137,11 +138,8 @@ class FuzzerDNSResolver : public grpc_core::DNSResolver {
     static void FinishResolve(void* arg, grpc_error_handle error) {
       FuzzerDNSRequest* self = static_cast<FuzzerDNSRequest*>(arg);
       if (error == GRPC_ERROR_NONE && self->name_ == "server") {
-        std::vector<grpc_resolved_address> addrs;
-        grpc_resolved_address addr;
-        addr.len = 0;
-        addrs.push_back(addr);
-        self->on_done_(std::move(addrs));
+        self->on_done_(std::vector<EventEngine::ResolvedAddress>(
+            {EventEngine::ResolvedAddress(nullptr, 0)}));
       } else {
         self->on_done_(absl::UnknownError("Resolution failed"));
       }
@@ -149,9 +147,7 @@ class FuzzerDNSResolver : public grpc_core::DNSResolver {
     }
 
     const std::string name_;
-    const std::function<void(
-        absl::StatusOr<std::vector<grpc_resolved_address>>)>
-        on_done_;
+    const EventEngine::DNSResolver::LookupHostnameCallback on_done_;
     grpc_timer timer_;
   };
 
@@ -164,13 +160,12 @@ class FuzzerDNSResolver : public grpc_core::DNSResolver {
   grpc_core::OrphanablePtr<grpc_core::DNSResolver::Request> ResolveName(
       absl::string_view name, absl::string_view /* default_port */,
       grpc_pollset_set* /* interested_parties */,
-      std::function<void(absl::StatusOr<std::vector<grpc_resolved_address>>)>
-          on_done) override {
+      EventEngine::DNSResolver::LookupHostnameCallback on_done) override {
     return grpc_core::MakeOrphanable<FuzzerDNSRequest>(name,
                                                        std::move(on_done));
   }
 
-  absl::StatusOr<std::vector<grpc_resolved_address>> ResolveNameBlocking(
+  absl::StatusOr<std::vector<EventEngine::ResolvedAddress>> ResolveNameBlocking(
       absl::string_view /* name */,
       absl::string_view /* default_port */) override {
     GPR_ASSERT(0);
