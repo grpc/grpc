@@ -54,7 +54,7 @@ grpc_proto_library(
     srcs = ["echo_messages.proto"],
     deps = [
         "//src/proto/grpc/testing/xds/v3:orca_load_report_proto",
-    ]
+    ],
 )
 
 grpc_proto_library(
