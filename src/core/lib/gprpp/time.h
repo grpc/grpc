@@ -21,7 +21,7 @@
 
 #include <cstdint>
 #include <limits>
-#include <ostream>
+#include <iosfwd>
 #include <string>
 
 #include <grpc/support/time.h>
