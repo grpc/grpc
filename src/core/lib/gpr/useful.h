@@ -21,6 +21,8 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <stdint.h>
+
 #include <cstddef>
 
 /** useful utilities that don't belong anywhere else */

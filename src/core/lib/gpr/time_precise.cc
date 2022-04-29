@@ -18,18 +18,12 @@
 
 #include <grpc/support/port_platform.h>
 
-#if GPR_LINUX
-#include <fcntl.h>
-#include <unistd.h>
-#endif
+#include "src/core/lib/gpr/time_precise.h"
 
-#include <algorithm>
+#include <stdint.h>
 
 #include <grpc/impl/codegen/gpr_types.h>
-#include <grpc/support/log.h>
 #include <grpc/support/time.h>
-
-#include "src/core/lib/gpr/time_precise.h"
 
 #ifndef GPR_CYCLE_COUNTER_CUSTOM
 #if GPR_CYCLE_COUNTER_RDTSC_32 || GPR_CYCLE_COUNTER_RDTSC_64

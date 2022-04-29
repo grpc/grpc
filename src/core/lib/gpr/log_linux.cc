@@ -26,13 +26,20 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <bits/types/struct_tm.h>
+#include <stdlib.h>
+#include <syscall.h>
+
+#include "absl/types/optional.h"
+
+#include <grpc/impl/codegen/gpr_types.h>
+
 #ifdef GPR_LINUX_LOG
 
 #include <inttypes.h>
 #include <stdarg.h>
 #include <stdio.h>
 #include <string.h>
-#include <sys/syscall.h>
 #include <time.h>
 #include <unistd.h>
 
@@ -40,7 +47,6 @@
 
 #include "absl/strings/str_format.h"
 
-#include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/time.h>
 

@@ -21,7 +21,9 @@
 #include <grpc/support/port_platform.h>
 
 #include <assert.h>
+#include <stdint.h>
 
+#include <grpc/impl/codegen/gpr_types.h>
 #include <grpc/support/atm.h>
 #include <grpc/support/log.h>
 #include <grpc/support/sync.h>
