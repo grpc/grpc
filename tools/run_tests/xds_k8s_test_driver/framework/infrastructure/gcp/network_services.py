@@ -174,10 +174,10 @@ class GrpcRoute:
         )
 
 
-class _NetworkServicesBase(
-        gcp.api.GcpStandardCloudApiResource,
-        metaclass=abc.ABCMeta):
+class _NetworkServicesBase(gcp.api.GcpStandardCloudApiResource,
+                           metaclass=abc.ABCMeta):
     """Base class for NetworkServices APIs."""
+
     # TODO(https://github.com/grpc/grpc/issues/29532) remove pylint disable
     # pylint: disable=abstract-method
 

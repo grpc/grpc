@@ -88,10 +88,10 @@ class AuthorizationPolicy:
                    rules=response.get('rules', []))
 
 
-class _NetworkSecurityBase(
-        gcp.api.GcpStandardCloudApiResource,
-        metaclass=abc.ABCMeta):
+class _NetworkSecurityBase(gcp.api.GcpStandardCloudApiResource,
+                           metaclass=abc.ABCMeta):
     """Base class for NetworkSecurity APIs."""
+
     # TODO(https://github.com/grpc/grpc/issues/29532) remove pylint disable
     # pylint: disable=abstract-method
 

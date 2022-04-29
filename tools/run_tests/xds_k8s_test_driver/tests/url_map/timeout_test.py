@@ -117,7 +117,7 @@ class TestTimeoutInApplication(_BaseXdsTimeOutTestCase):
     def rpc_distribution_validate(self, test_client: XdsTestClient):
         self.configure_and_send(
             test_client,
-            rpc_types=[RpcTypeUnaryCall],
+            rpc_types=(RpcTypeUnaryCall,),
             # UnaryCall only with sleep-2; timeout=1s; calls timeout.
             metadata=((RpcTypeUnaryCall, 'rpc-behavior', 'sleep-2'),),
             app_timeout=1,
@@ -137,7 +137,7 @@ class TestTimeoutNotExceeded(_BaseXdsTimeOutTestCase):
         self.configure_and_send(
             test_client,
             # UnaryCall only with no sleep; calls succeed.
-            rpc_types=[RpcTypeUnaryCall],
+            rpc_types=(RpcTypeUnaryCall,),
             num_rpcs=_NUM_RPCS)
         self.assertRpcStatusCode(test_client,
                                  expected=(ExpectedResult(

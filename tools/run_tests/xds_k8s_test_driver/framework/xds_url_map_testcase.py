@@ -430,11 +430,8 @@ class XdsUrlMapTestCase(absltest.TestCase, metaclass=_MetaXdsUrlMapTestCase):
         )
 
     def assertRpcStatusCode(  # pylint: disable=too-many-locals
-            self,
-            test_client: XdsTestClient,
-            *,
-            expected: Iterable[ExpectedResult],
-            length: int,
+            self, test_client: XdsTestClient, *,
+            expected: Iterable[ExpectedResult], length: int,
             tolerance: float) -> None:
         """Assert the distribution of RPC statuses over a period of time."""
         # Sending with pre-set QPS for a period of time

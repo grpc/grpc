@@ -91,7 +91,7 @@ class TestRetryUpTo3AttemptsAndFail(xds_url_map_testcase.XdsUrlMapTestCase):
 
     def rpc_distribution_validate(self, test_client: XdsTestClient):
         self.configure_and_send(test_client,
-                                rpc_types=[RpcTypeUnaryCall],
+                                rpc_types=(RpcTypeUnaryCall,),
                                 metadata=[
                                     (RpcTypeUnaryCall,
                                      _RPC_BEHAVIOR_HEADER_NAME,
@@ -136,7 +136,7 @@ class TestRetryUpTo4AttemptsAndSucceed(xds_url_map_testcase.XdsUrlMapTestCase):
 
     def rpc_distribution_validate(self, test_client: XdsTestClient):
         self.configure_and_send(test_client,
-                                rpc_types=[RpcTypeUnaryCall],
+                                rpc_types=(RpcTypeUnaryCall,),
                                 metadata=[
                                     (RpcTypeUnaryCall,
                                      _RPC_BEHAVIOR_HEADER_NAME,
