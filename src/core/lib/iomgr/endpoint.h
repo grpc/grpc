@@ -79,7 +79,7 @@ int grpc_endpoint_get_fd(grpc_endpoint* ep);
    it is a valid slice buffer.
    \a arg is platform specific. It is currently only used by TCP on linux
    platforms as an argument that would be forwarded to the timestamps callback.
-   \a max_frame_size. A hint to the endpoint implementation to contruct
+   \a max_frame_size. A hint to the endpoint implementation to construct
    frames which do not exceed the specified size.
    */
 void grpc_endpoint_write(grpc_endpoint* ep, grpc_slice_buffer* slices,
