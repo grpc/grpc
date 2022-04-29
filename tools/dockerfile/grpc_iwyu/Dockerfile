@@ -21,8 +21,8 @@ RUN apt-get update && apt-get install -y python3 jq git cmake python zlib1g-dev 
 RUN git clone https://github.com/include-what-you-use/include-what-you-use.git /iwyu
 RUN cd /iwyu && git checkout fbd921d6640bf1b18fe5a8a895636215367eb6b9
 RUN mkdir /iwyu_build && cd /iwyu_build \
-&& cmake -G "Unix Makefiles" /iwyu \
-&& make
+    && cmake -G "Unix Makefiles" /iwyu \
+    && make
 
 ADD iwyu.sh /
 
