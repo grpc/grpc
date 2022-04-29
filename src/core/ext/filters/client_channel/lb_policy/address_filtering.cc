@@ -87,13 +87,14 @@ absl::StatusOr<HierarchicalAddressMap> MakeHierarchicalAddressMap(
     ServerAddressList& target_list = result[*it];
     std::unique_ptr<HierarchicalPathAttribute> new_attribute;
     ++it;
+    ResolverAttributeMap lb_policy_attributes = address.lb_policy_attributes();
     if (it != path.end()) {
       std::vector<std::string> remaining_path(it, path.end());
-      new_attribute = absl::make_unique<HierarchicalPathAttribute>(
-          std::move(remaining_path));
+      lb_policy_attributes.Set(absl::make_unique<HierarchicalPathAttribute>(
+          std::move(remaining_path)));
+    } else {
+      lb_policy_attributes.Remove(HierarchicalPathAttribute::Type());
     }
-    ResolverAttributeMap lb_policy_attributes = address.lb_policy_attributes();
-    lb_policy_attributes.Set(std::move(new_attribute));
     target_list.emplace_back(
         address.address(), grpc_channel_args_copy(address.args()),
         address.subchannel_attributes(), std::move(lb_policy_attributes));

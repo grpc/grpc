@@ -66,7 +66,7 @@ void TryConnectAndDestroy() {
   grpc_resolved_address address;
   ASSERT_TRUE(grpc_parse_uri(*lb_uri, &address));
   grpc_core::ServerAddressList addresses;
-  addresses.emplace_back(address.addr, address.len, nullptr);
+  addresses.emplace_back(address, nullptr);
   grpc_core::Resolver::Result lb_address_result;
   grpc_error_handle error = GRPC_ERROR_NONE;
   lb_address_result.service_config = grpc_core::ServiceConfigImpl::Create(

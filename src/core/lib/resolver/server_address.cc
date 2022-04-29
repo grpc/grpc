@@ -145,6 +145,7 @@ ServerAddress::ServerAddress(ServerAddress&& other) noexcept
 
 ServerAddress& ServerAddress::operator=(ServerAddress&& other) noexcept {
   address_ = other.address_;
+  grpc_channel_args_destroy(args_);
   args_ = absl::exchange(other.args_, nullptr);
   subchannel_attributes_ = std::move(other.subchannel_attributes_);
   lb_policy_attributes_ = std::move(other.lb_policy_attributes_);

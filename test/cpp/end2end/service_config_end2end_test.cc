@@ -183,8 +183,7 @@ class ServiceConfigEnd2endTest : public ::testing::Test {
       GPR_ASSERT(lb_uri.ok());
       grpc_resolved_address address;
       GPR_ASSERT(grpc_parse_uri(*lb_uri, &address));
-      result.addresses->emplace_back(address.addr, address.len,
-                                     nullptr /* args */);
+      result.addresses->emplace_back(address, /*args=*/nullptr);
     }
     return result;
   }

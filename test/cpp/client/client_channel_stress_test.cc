@@ -233,7 +233,7 @@ class ClientChannelStressTest {
           const_cast<char*>(addr.balancer_name.c_str()));
       grpc_channel_args* args =
           grpc_channel_args_copy_and_add(nullptr, &arg, 1);
-      addresses.emplace_back(address.addr, address.len, args);
+      addresses.emplace_back(address, args);
     }
     return addresses;
   }

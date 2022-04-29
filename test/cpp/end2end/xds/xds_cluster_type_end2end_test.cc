@@ -61,7 +61,7 @@ class ClusterTypeTest : public XdsEnd2endTest {
       GPR_ASSERT(lb_uri.ok());
       grpc_resolved_address address;
       GPR_ASSERT(grpc_parse_uri(*lb_uri, &address));
-      addresses.emplace_back(address.addr, address.len, nullptr);
+      addresses.emplace_back(address, nullptr);
     }
     return addresses;
   }
