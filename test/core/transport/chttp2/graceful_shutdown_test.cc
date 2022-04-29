@@ -114,7 +114,8 @@ class GracefulShutdownTest : public ::testing::Test {
     // Start reading on the client
     grpc_slice_buffer_init(&read_buffer_);
     GRPC_CLOSURE_INIT(&on_read_done_, OnReadDone, this, nullptr);
-    grpc_endpoint_read(fds_.client, &read_buffer_, &on_read_done_, false);
+    grpc_endpoint_read(fds_.client, &read_buffer_, &on_read_done_, false,
+                       /*min_progress_size=*/1);
   }
 
   // Shuts down and destroys the client and server.
@@ -151,7 +152,7 @@ class GracefulShutdownTest : public ::testing::Test {
       }
       grpc_slice_buffer_reset_and_unref(&self->read_buffer_);
       grpc_endpoint_read(self->fds_.client, &self->read_buffer_,
-                         &self->on_read_done_, false);
+                         &self->on_read_done_, false, /*min_progress_size=*/1);
     } else {
       grpc_slice_buffer_destroy(&self->read_buffer_);
       self->read_end_notification_.Notify();

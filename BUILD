@@ -2845,6 +2845,7 @@ grpc_cc_library(
         "absl/hash",
         "absl/memory",
         "absl/strings",
+        "absl/strings:str_format",
         "upb_lib",
     ],
     language = "c++",
