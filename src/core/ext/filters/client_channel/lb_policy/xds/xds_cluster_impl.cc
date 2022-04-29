@@ -587,7 +587,8 @@ RefCountedPtr<SubchannelInterface> XdsClusterImplLb::Helper::CreateSubchannel(
   if (xds_cluster_impl_policy_->config_->lrs_load_reporting_server()
           .has_value()) {
     RefCountedPtr<XdsLocalityName> locality_name;
-    auto* attribute = address.GetAttribute(kXdsLocalityNameAttributeKey);
+    auto* attribute =
+        address.lb_policy_attributes().Get(XdsLocalityAttribute::Type());
     if (attribute != nullptr) {
       const auto* locality_attr =
           static_cast<const XdsLocalityAttribute*>(attribute);

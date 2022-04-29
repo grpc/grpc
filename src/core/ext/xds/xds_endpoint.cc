@@ -170,11 +170,11 @@ grpc_error_handle ServerAddressParseAndAppend(
       grpc_string_to_sockaddr(&addr, address_str.c_str(), port);
   if (error != GRPC_ERROR_NONE) return error;
   // Append the address to the list.
-  std::map<const char*, std::unique_ptr<ServerAddress::AttributeInterface>>
-      attributes;
-  attributes[ServerAddressWeightAttribute::kServerAddressWeightAttributeKey] =
-      absl::make_unique<ServerAddressWeightAttribute>(weight);
-  list->emplace_back(addr, nullptr, std::move(attributes));
+  ResolverAttributeMap lb_policy_attributes;
+  lb_policy_attributes.Set(
+      absl::make_unique<ServerAddressWeightAttribute>(weight));
+  list->emplace_back(addr, nullptr, ResolverAttributeMap(),
+                     std::move(lb_policy_attributes));
   return GRPC_ERROR_NONE;
 }
 

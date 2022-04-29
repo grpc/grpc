@@ -325,9 +325,10 @@ RingHash::Ring::Ring(RingHash* parent,
   address_weights.reserve(num_subchannels);
   for (size_t i = 0; i < num_subchannels; ++i) {
     RingHashSubchannelData* sd = subchannel_list_->subchannel(i);
-    const ServerAddressWeightAttribute* weight_attribute = static_cast<
-        const ServerAddressWeightAttribute*>(sd->address().GetAttribute(
-        ServerAddressWeightAttribute::kServerAddressWeightAttributeKey));
+    const ServerAddressWeightAttribute* weight_attribute =
+        static_cast<const ServerAddressWeightAttribute*>(
+            sd->address().lb_policy_attributes().Get(
+                ServerAddressWeightAttribute::Type()));
     AddressWeight address_weight;
     address_weight.address =
         grpc_sockaddr_to_string(&sd->address().address(), false).value();
@@ -760,8 +761,9 @@ void RingHash::UpdateLocked(UpdateArgs args) {
     addresses.reserve(args.addresses->size());
     for (ServerAddress& address : *args.addresses) {
       const ServerAddressWeightAttribute* weight_attribute =
-          static_cast<const ServerAddressWeightAttribute*>(address.GetAttribute(
-              ServerAddressWeightAttribute::kServerAddressWeightAttributeKey));
+          static_cast<const ServerAddressWeightAttribute*>(
+              address.lb_policy_attributes().Get(
+                  ServerAddressWeightAttribute::Type()));
       if (weight_attribute == nullptr || weight_attribute->weight() > 0) {
         addresses.emplace_back(std::move(address));
       }

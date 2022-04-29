@@ -47,7 +47,7 @@ int BalancerAddressesArgCmp(void* p, void* q) {
   if (address_list1->size() > address_list2->size()) return 1;
   if (address_list1->size() < address_list2->size()) return -1;
   for (size_t i = 0; i < address_list1->size(); ++i) {
-    int retval = (*address_list1)[i].Cmp((*address_list2)[i]);
+    int retval = (*address_list1)[i].Compare((*address_list2)[i]);
     if (retval != 0) return retval;
   }
   return 0;

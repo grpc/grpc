@@ -62,8 +62,11 @@ class Resolver : public InternallyRefCounted<Resolver> {
     /// address list but a valid service config may set to this to something
     /// like "no DNS entries found for <name>".
     std::string resolution_note;
-    // TODO(roth): Before making this a public API, figure out a way to
-    // avoid exposing channel args this way.
+    /// Global attributes returned by the resolver, to be used by LB policies.
+    ResolverAttributeMap attributes;
+
+    // TODO(roth): Before making this a public API, remove this in favor
+    // of attributes.
     const grpc_channel_args* args = nullptr;
 
     // TODO(roth): Remove everything below once grpc_channel_args is

@@ -652,33 +652,37 @@ static void on_hostbyname_done_locked(void* arg, int status, int /*timeouts*/,
           nullptr, args_to_add.data(), args_to_add.size());
       switch (hostent->h_addrtype) {
         case AF_INET6: {
-          size_t addr_len = sizeof(struct sockaddr_in6);
-          struct sockaddr_in6 addr;
-          memset(&addr, 0, addr_len);
-          memcpy(&addr.sin6_addr, hostent->h_addr_list[i],
+          grpc_resolved_address address;
+          memset(&address, 0, sizeof(address));
+          address.len = sizeof(struct sockaddr_in6);
+          struct sockaddr_in6* addr =
+              reinterpret_cast<struct sockaddr_in6*>(&address.addr);
+          memcpy(&addr->sin6_addr, hostent->h_addr_list[i],
                  sizeof(struct in6_addr));
-          addr.sin6_family = static_cast<unsigned char>(hostent->h_addrtype);
-          addr.sin6_port = hr->port;
-          addresses.emplace_back(&addr, addr_len, args);
+          addr->sin6_family = static_cast<unsigned char>(hostent->h_addrtype);
+          addr->sin6_port = hr->port;
+          addresses.emplace_back(address, args);
           char output[INET6_ADDRSTRLEN];
-          ares_inet_ntop(AF_INET6, &addr.sin6_addr, output, INET6_ADDRSTRLEN);
+          ares_inet_ntop(AF_INET6, &addr->sin6_addr, output, INET6_ADDRSTRLEN);
           GRPC_CARES_TRACE_LOG(
               "request:%p c-ares resolver gets a AF_INET6 result: \n"
               "  addr: %s\n  port: %d\n  sin6_scope_id: %d\n",
-              r, output, ntohs(hr->port), addr.sin6_scope_id);
+              r, output, ntohs(hr->port), addr->sin6_scope_id);
           break;
         }
         case AF_INET: {
-          size_t addr_len = sizeof(struct sockaddr_in);
-          struct sockaddr_in addr;
-          memset(&addr, 0, addr_len);
-          memcpy(&addr.sin_addr, hostent->h_addr_list[i],
+          grpc_resolved_address address;
+          memset(&address, 0, sizeof(address));
+          address.len = sizeof(struct sockaddr_in6);
+          struct sockaddr_in* addr =
+              reinterpret_cast<struct sockaddr_in*>(&address.addr);
+          memcpy(&addr->sin_addr, hostent->h_addr_list[i],
                  sizeof(struct in_addr));
-          addr.sin_family = static_cast<unsigned char>(hostent->h_addrtype);
-          addr.sin_port = hr->port;
-          addresses.emplace_back(&addr, addr_len, args);
+          addr->sin_family = static_cast<unsigned char>(hostent->h_addrtype);
+          addr->sin_port = hr->port;
+          addresses.emplace_back(address, args);
           char output[INET_ADDRSTRLEN];
-          ares_inet_ntop(AF_INET, &addr.sin_addr, output, INET_ADDRSTRLEN);
+          ares_inet_ntop(AF_INET, &addr->sin_addr, output, INET_ADDRSTRLEN);
           GRPC_CARES_TRACE_LOG(
               "request:%p c-ares resolver gets a AF_INET result: \n"
               "  addr: %s\n  port: %d\n",
@@ -930,7 +934,7 @@ static bool inner_resolve_as_ip_literal_locked(
                                false /* log errors */)) {
     GPR_ASSERT(*addrs == nullptr);
     *addrs = absl::make_unique<ServerAddressList>();
-    (*addrs)->emplace_back(addr.addr, addr.len, nullptr /* args */);
+    (*addrs)->emplace_back(addr, nullptr /* args */);
     return true;
   }
   return false;

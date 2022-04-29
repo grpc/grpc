@@ -27,20 +27,23 @@
 
 namespace grpc_core {
 
-const char* kHierarchicalPathAttributeKey = "hierarchical_path";
-
 namespace {
 
-class HierarchicalPathAttribute : public ServerAddress::AttributeInterface {
+class HierarchicalPathAttribute
+    : public ResolverAttributeMap::AttributeInterface {
  public:
   explicit HierarchicalPathAttribute(std::vector<std::string> path)
       : path_(std::move(path)) {}
+
+  static const char* Type() { return "hierarchical_path"; }
+
+  const char* type() const override { return Type(); }
 
   std::unique_ptr<AttributeInterface> Copy() const override {
     return absl::make_unique<HierarchicalPathAttribute>(path_);
   }
 
-  int Cmp(const AttributeInterface* other) const override {
+  int Compare(const AttributeInterface* other) const override {
     const std::vector<std::string>& other_path =
         static_cast<const HierarchicalPathAttribute*>(other)->path_;
     for (size_t i = 0; i < path_.size(); ++i) {
@@ -64,7 +67,7 @@ class HierarchicalPathAttribute : public ServerAddress::AttributeInterface {
 
 }  // namespace
 
-std::unique_ptr<ServerAddress::AttributeInterface>
+std::unique_ptr<ResolverAttributeMap::AttributeInterface>
 MakeHierarchicalPathAttribute(std::vector<std::string> path) {
   return absl::make_unique<HierarchicalPathAttribute>(std::move(path));
 }
@@ -76,7 +79,8 @@ absl::StatusOr<HierarchicalAddressMap> MakeHierarchicalAddressMap(
   for (const ServerAddress& address : *addresses) {
     const HierarchicalPathAttribute* path_attribute =
         static_cast<const HierarchicalPathAttribute*>(
-            address.GetAttribute(kHierarchicalPathAttributeKey));
+            address.lb_policy_attributes().Get(
+                HierarchicalPathAttribute::Type()));
     if (path_attribute == nullptr) continue;
     const std::vector<std::string>& path = path_attribute->path();
     auto it = path.begin();
@@ -88,8 +92,11 @@ absl::StatusOr<HierarchicalAddressMap> MakeHierarchicalAddressMap(
       new_attribute = absl::make_unique<HierarchicalPathAttribute>(
           std::move(remaining_path));
     }
-    target_list.emplace_back(address.WithAttribute(
-        kHierarchicalPathAttributeKey, std::move(new_attribute)));
+    ResolverAttributeMap lb_policy_attributes = address.lb_policy_attributes();
+    lb_policy_attributes.Set(std::move(new_attribute));
+    target_list.emplace_back(
+        address.address(), grpc_channel_args_copy(address.args()),
+        address.subchannel_attributes(), std::move(lb_policy_attributes));
   }
   return result;
 }

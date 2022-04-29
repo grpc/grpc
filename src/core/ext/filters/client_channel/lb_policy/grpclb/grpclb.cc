@@ -113,8 +113,6 @@ namespace grpc_core {
 
 TraceFlag grpc_lb_glb_trace(false, "glb");
 
-const char kGrpcLbAddressAttributeKey[] = "grpclb";
-
 namespace {
 
 constexpr char kGrpclb[] = "grpclb";
@@ -250,19 +248,23 @@ class GrpcLb : public LoadBalancingPolicy {
   };
 
   class TokenAndClientStatsAttribute
-      : public ServerAddress::AttributeInterface {
+      : public ResolverAttributeMap::AttributeInterface {
    public:
     TokenAndClientStatsAttribute(std::string lb_token,
                                  RefCountedPtr<GrpcLbClientStats> client_stats)
         : lb_token_(std::move(lb_token)),
           client_stats_(std::move(client_stats)) {}
 
+    static const char* Type() { return "grpclb"; }
+
+    const char* type() const override { return Type(); }
+
     std::unique_ptr<AttributeInterface> Copy() const override {
       return absl::make_unique<TokenAndClientStatsAttribute>(lb_token_,
                                                              client_stats_);
     }
 
-    int Cmp(const AttributeInterface* other_base) const override {
+    int Compare(const AttributeInterface* other_base) const override {
       const TokenAndClientStatsAttribute* other =
           static_cast<const TokenAndClientStatsAttribute*>(other_base);
       int r = lb_token_.compare(other->lb_token_);
@@ -591,13 +593,12 @@ ServerAddressList GrpcLb::Serverlist::GetServerAddressList(
                             : addr_uri.status().ToString().c_str());
     }
     // Attach attribute to address containing LB token and stats object.
-    std::map<const char*, std::unique_ptr<ServerAddress::AttributeInterface>>
-        attributes;
-    attributes[kGrpcLbAddressAttributeKey] =
-        absl::make_unique<TokenAndClientStatsAttribute>(std::move(lb_token),
-                                                        stats);
+    ResolverAttributeMap attributes;
+    attributes.Set(absl::make_unique<TokenAndClientStatsAttribute>(
+        std::move(lb_token), stats));
     // Add address.
-    addresses.emplace_back(addr, /*args=*/nullptr, std::move(attributes));
+    addresses.emplace_back(addr, /*args=*/nullptr, ResolverAttributeMap(),
+                           std::move(attributes));
   }
   return addresses;
 }
@@ -683,7 +684,8 @@ RefCountedPtr<SubchannelInterface> GrpcLb::Helper::CreateSubchannel(
   if (parent_->shutting_down_) return nullptr;
   const TokenAndClientStatsAttribute* attribute =
       static_cast<const TokenAndClientStatsAttribute*>(
-          address.GetAttribute(kGrpcLbAddressAttributeKey));
+          address.lb_policy_attributes().Get(
+              TokenAndClientStatsAttribute::Type()));
   if (attribute == nullptr) {
     gpr_log(GPR_ERROR,
             "[grpclb %p] no TokenAndClientStatsAttribute for address %p",
@@ -1463,9 +1465,13 @@ void GrpcLb::UpdateLocked(UpdateArgs args) {
   if (fallback_backend_addresses_.ok()) {
     // Add null LB token attributes.
     for (ServerAddress& address : *fallback_backend_addresses_) {
-      address = address.WithAttribute(
-          kGrpcLbAddressAttributeKey,
+      ResolverAttributeMap lb_policy_attributes =
+          address.lb_policy_attributes();
+      lb_policy_attributes.Set(
           absl::make_unique<TokenAndClientStatsAttribute>("", nullptr));
+      address = ServerAddress(
+          address.address(), grpc_channel_args_copy(address.args()),
+          address.subchannel_attributes(), std::move(lb_policy_attributes));
     }
   }
   resolution_note_ = std::move(args.resolution_note);

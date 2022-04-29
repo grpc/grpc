@@ -25,13 +25,14 @@
 
 namespace grpc_core {
 
-// Defined in the EDS policy.
-extern const char* kXdsLocalityNameAttributeKey;
-
-class XdsLocalityAttribute : public ServerAddress::AttributeInterface {
+class XdsLocalityAttribute : public ResolverAttributeMap::AttributeInterface {
  public:
   explicit XdsLocalityAttribute(RefCountedPtr<XdsLocalityName> locality_name)
       : locality_name_(std::move(locality_name)) {}
+
+  static const char* Type() { return "xds_locality_name"; }
+
+  const char* type() const override { return Type(); }
 
   RefCountedPtr<XdsLocalityName> locality_name() const {
     return locality_name_;
@@ -41,7 +42,7 @@ class XdsLocalityAttribute : public ServerAddress::AttributeInterface {
     return absl::make_unique<XdsLocalityAttribute>(locality_name_->Ref());
   }
 
-  int Cmp(const AttributeInterface* other) const override {
+  int Compare(const AttributeInterface* other) const override {
     const auto* other_locality_attr =
         static_cast<const XdsLocalityAttribute*>(other);
     return locality_name_->Compare(*other_locality_attr->locality_name_);
@@ -57,4 +58,4 @@ class XdsLocalityAttribute : public ServerAddress::AttributeInterface {
 
 }  // namespace grpc_core
 
-#endif /* GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_LB_POLICY_XDS_XDS_H */
+#endif  // GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_LB_POLICY_XDS_XDS_H

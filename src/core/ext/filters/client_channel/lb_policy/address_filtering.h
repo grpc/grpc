@@ -84,9 +84,9 @@ namespace grpc_core {
 // The attribute key to be used for hierarchical paths in ServerAddress.
 extern const char* kHierarchicalPathAttributeKey;
 
-// Constructs an address attribute containing the hierarchical path
+// Constructs a resolver attribute containing the hierarchical path
 // to be associated with the address.
-std::unique_ptr<ServerAddress::AttributeInterface>
+std::unique_ptr<ResolverAttributeMap::AttributeInterface>
 MakeHierarchicalPathAttribute(std::vector<std::string> path);
 
 // A map from the next path element to the addresses that fall under

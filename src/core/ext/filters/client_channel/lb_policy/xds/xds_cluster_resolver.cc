@@ -56,8 +56,6 @@ namespace grpc_core {
 
 TraceFlag grpc_lb_xds_cluster_resolver_trace(false, "xds_cluster_resolver_lb");
 
-const char* kXdsLocalityNameAttributeKey = "xds_locality_name";
-
 namespace {
 
 constexpr char kXdsClusterResolver[] = "xds_cluster_resolver_experimental";
@@ -740,25 +738,26 @@ ServerAddressList XdsClusterResolverLb::CreateChildPolicyAddressesLocked() {
         std::vector<std::string> hierarchical_path = {
             priority_child_name, locality_name->AsHumanReadableString()};
         for (const auto& endpoint : locality.endpoints) {
-          const ServerAddressWeightAttribute* weight_attribute = static_cast<
-              const ServerAddressWeightAttribute*>(endpoint.GetAttribute(
-              ServerAddressWeightAttribute::kServerAddressWeightAttributeKey));
+          ResolverAttributeMap lb_policy_attributes =
+              endpoint.lb_policy_attributes();
+          const ServerAddressWeightAttribute* weight_attribute =
+              static_cast<const ServerAddressWeightAttribute*>(
+                  lb_policy_attributes.Get(
+                      ServerAddressWeightAttribute::Type()));
           uint32_t weight = locality.lb_weight;
           if (weight_attribute != nullptr) {
             weight = locality.lb_weight * weight_attribute->weight();
           }
-          addresses.emplace_back(
-              endpoint
-                  .WithAttribute(
-                      kHierarchicalPathAttributeKey,
-                      MakeHierarchicalPathAttribute(hierarchical_path))
-                  .WithAttribute(kXdsLocalityNameAttributeKey,
-                                 absl::make_unique<XdsLocalityAttribute>(
-                                     locality_name->Ref()))
-                  .WithAttribute(
-                      ServerAddressWeightAttribute::
-                          kServerAddressWeightAttributeKey,
-                      absl::make_unique<ServerAddressWeightAttribute>(weight)));
+          lb_policy_attributes.Set(
+              MakeHierarchicalPathAttribute(hierarchical_path));
+          lb_policy_attributes.Set(
+              absl::make_unique<XdsLocalityAttribute>(locality_name->Ref()));
+          lb_policy_attributes.Set(
+              absl::make_unique<ServerAddressWeightAttribute>(weight));
+          addresses.emplace_back(endpoint.address(),
+                                 grpc_channel_args_copy(endpoint.args()),
+                                 endpoint.subchannel_attributes(),
+                                 std::move(lb_policy_attributes));
         }
       }
     }

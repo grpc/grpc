@@ -337,9 +337,11 @@ class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
     /// empty list of addresses, this message might say "no DNS entries
     /// found for <name>".
     std::string resolution_note;
+    /// Global attributes returned by the resolver.
+    ResolverAttributeMap attributes;
 
-    // TODO(roth): Before making this a public API, find a better
-    // abstraction for representing channel args.
+    // TODO(roth): Before making this a public API, make this go away in
+    // favor of attributes.
     const grpc_channel_args* args = nullptr;
 
     // TODO(roth): Remove everything below once channel args is
