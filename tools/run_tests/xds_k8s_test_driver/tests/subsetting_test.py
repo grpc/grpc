@@ -13,7 +13,7 @@
 # limitations under the License.
 
 import collections
-from typing import List, Optional
+from typing import List
 
 from absl import flags
 from absl import logging
@@ -22,8 +22,6 @@ from google.protobuf import json_format
 
 from framework import xds_k8s_testcase
 from framework import xds_url_map_testcase
-from framework.infrastructure import k8s
-from framework.test_app import server_app
 
 flags.adopt_module_key_flags(xds_k8s_testcase)
 
@@ -55,7 +53,7 @@ class SubsettingTest(xds_k8s_testcase.RegularXdsKubernetesTestCase):
             self.td.create_forwarding_rule(self.server_xds_port)
 
         with self.subTest('05_start_test_servers'):
-            self.test_servers: List[_XdsTestServer] = self.startTestServers(
+            test_servers: List[_XdsTestServer] = self.startTestServers(
                 replica_count=_NUM_BACKENDS)
 
         with self.subTest('06_add_server_backends_to_backend_services'):
@@ -68,7 +66,7 @@ class SubsettingTest(xds_k8s_testcase.RegularXdsKubernetesTestCase):
                 self.client_runner.cleanup(force=True)
                 # Create a test client
                 test_client: _XdsTestClient = self.startTestClient(
-                    self.test_servers[0])
+                    test_servers[0])
                 # Validate the number of received endpoints
                 config = test_client.csds.fetch_client_status(
                     log_level=logging.INFO)

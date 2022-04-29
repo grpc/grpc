@@ -159,7 +159,7 @@ class TestRegexMatch(xds_url_map_testcase.XdsUrlMapTestCase):
             # Regex UnaryCall -> alternate_backend_service.
             'matchRules': [{
                 'regexMatch':
-                    '^\/.*\/UnaryCall$'  # Unary methods with any services.
+                    r'^\/.*\/UnaryCall$'  # Unary methods with any services.
             }],
             'service': GcpResourceManager().alternative_backend_service()
         }]
@@ -169,7 +169,7 @@ class TestRegexMatch(xds_url_map_testcase.XdsUrlMapTestCase):
         self.assertNumEndpoints(xds_config, 2)
         self.assertEqual(
             xds_config.rds['virtualHosts'][0]['routes'][0]['match']['safeRegex']
-            ['regex'], '^\/.*\/UnaryCall$')
+            ['regex'], r'^\/.*\/UnaryCall$')
 
     def rpc_distribution_validate(self, test_client: XdsTestClient):
         rpc_distribution = self.configure_and_send(test_client,

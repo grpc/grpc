@@ -91,9 +91,9 @@ class ApiListenerTest(xds_k8s_testcase.RegularXdsKubernetesTestCase):
             dumped_config = _DumpedXdsConfig(
                 json_format.MessageToDict(raw_config))
             previous_route_config_version = dumped_config.rds_version
-            logger.info(
-                'received client config from CSDS with two url maps, dump config: %s, rds version: %s',
-                dumped_config, previous_route_config_version)
+            logger.info(('received client config from CSDS with two url maps, '
+                         'dump config: %s, rds version: %s'), dumped_config,
+                        previous_route_config_version)
 
         with self.subTest('14_delete_one_url_map_target_proxy_forwarding_rule'):
             self.td.delete_forwarding_rule()
