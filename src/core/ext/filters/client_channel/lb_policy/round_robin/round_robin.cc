@@ -398,13 +398,12 @@ void RoundRobin::RoundRobinSubchannelData::ProcessConnectivityChangeLocked(
   // Note that we don't want to do this on the initial state
   // notification, because that would result in an endless loop of
   // re-resolution.
-  if (old_state.has_value() &&
-      (new_state == GRPC_CHANNEL_TRANSIENT_FAILURE ||
-       new_state == GRPC_CHANNEL_IDLE)) {
+  if (old_state.has_value() && (new_state == GRPC_CHANNEL_TRANSIENT_FAILURE ||
+                                new_state == GRPC_CHANNEL_IDLE)) {
     if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_round_robin_trace)) {
       gpr_log(GPR_INFO,
-              "[RR %p] Subchannel %p reported %s; requesting re-resolution",
-              p, subchannel(), ConnectivityStateName(new_state));
+              "[RR %p] Subchannel %p reported %s; requesting re-resolution", p,
+              subchannel(), ConnectivityStateName(new_state));
     }
     p->channel_control_helper()->RequestReresolution();
     subchannel()->RequestConnection();
