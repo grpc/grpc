@@ -642,7 +642,7 @@ void RingHash::RingHashSubchannelList::UpdateRingHashConnectivityStateLocked(
 //
 
 void RingHash::RingHashSubchannelData::ProcessConnectivityChangeLocked(
-    absl::optional<grpc_connectivity_state> /*old_state*/,
+    absl::optional<grpc_connectivity_state> old_state,
     grpc_connectivity_state new_state) {
   RingHash* p = static_cast<RingHash*>(subchannel_list()->policy());
   grpc_connectivity_state last_connectivity_state = GetConnectivityState();
@@ -657,14 +657,18 @@ void RingHash::RingHashSubchannelData::ProcessConnectivityChangeLocked(
         ConnectivityStateName(new_state));
   }
   GPR_ASSERT(subchannel() != nullptr);
-  // If the new state is TRANSIENT_FAILURE or IDLE, re-resolve.
-  if (new_state == GRPC_CHANNEL_TRANSIENT_FAILURE ||
-      new_state == GRPC_CHANNEL_IDLE) {
+  // If this is not the initial state notification and the new state is
+  // TRANSIENT_FAILURE or IDLE, re-resolve and attempt to reconnect.
+  // Note that we don't want to do this on the initial state
+  // notification, because that would result in an endless loop of
+  // re-resolution.
+  if (old_state.has_value() &&
+      (new_state == GRPC_CHANNEL_TRANSIENT_FAILURE ||
+       new_state == GRPC_CHANNEL_IDLE)) {
     if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_ring_hash_trace)) {
       gpr_log(GPR_INFO,
-              "[RH %p] Subchannel %p has gone into TRANSIENT_FAILURE. "
-              "Requesting re-resolution",
-              p, subchannel());
+              "[RH %p] Subchannel %p reported %s; requesting re-resolution",
+              p, subchannel(), ConnectivityStateName(new_state));
     }
     p->channel_control_helper()->RequestReresolution();
   }
