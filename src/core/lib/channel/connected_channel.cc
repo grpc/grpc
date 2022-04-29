@@ -24,13 +24,12 @@
 #include <stdio.h>
 #include <string.h>
 
-#include "channel_stack.h"
-
 #include <grpc/byte_buffer.h>
 #include <grpc/slice_buffer.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 
+#include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/profiling/timers.h"
 #include "src/core/lib/transport/transport.h"
