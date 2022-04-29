@@ -21,11 +21,11 @@ In addition, when handling requests, if the initial request metadata contains th
 
  - If the value matches `sleep-<int>`, the server should wait the specified number of seconds before responding.
  - If the value matches `keep-open`, the server should never respond to the request.
- - If the value matches `success-on-retry-attempt-<int>`, the server should force an OK response if the value of the `grpc-previous-rpc-attempts` metadata field is equal to the specified number.
  - If the value matches `error-code-<int>`, the server should respond with the specified status code.
+ - If the value matches `success-on-retry-attempt-<int>`, the server should not apply the `error-code` option if the value of the `grpc-previous-rpc-attempts` metadata field is equal to the specified number.
  - A value can have a prefix `hostname=<string>` followed by a space. In that case, the rest of the value should only be applied if the specified hostname matches the server's hostname.
 
-If a request has multiple `rpc-behavior` metadata values, they should be applied in the order listed.
+The `rpc-behavior` header value can have multiple options separated by commas. In that case, the value should be split by commas and the options should be applied in the order specified. If a request has multiple `rpc-behavior` metadata values, each one should be processed that way in order.
 
 ## Client
 
