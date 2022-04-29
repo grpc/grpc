@@ -389,19 +389,21 @@ void RoundRobin::RoundRobinSubchannelList::
 //
 
 void RoundRobin::RoundRobinSubchannelData::ProcessConnectivityChangeLocked(
-    absl::optional<grpc_connectivity_state> /*old_state*/,
+    absl::optional<grpc_connectivity_state> old_state,
     grpc_connectivity_state new_state) {
   RoundRobin* p = static_cast<RoundRobin*>(subchannel_list()->policy());
   GPR_ASSERT(subchannel() != nullptr);
-  // If the new state is TRANSIENT_FAILURE or IDLE, re-resolve.
-  // Also attempt to reconnect.
+  // If the new state is TRANSIENT_FAILURE or we've transitioned from
+  // READY to IDLE, re-resolve and attempt to reconnect.
+  // Note that we don't want to do this on IDLE when the subchannel is
+  // first created, because that's not a failure.
   if (new_state == GRPC_CHANNEL_TRANSIENT_FAILURE ||
-      new_state == GRPC_CHANNEL_IDLE) {
+      (old_state.has_value() && *old_state == GRPC_CHANNEL_READY &&
+       new_state == GRPC_CHANNEL_IDLE)) {
     if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_round_robin_trace)) {
       gpr_log(GPR_INFO,
-              "[RR %p] Subchannel %p has gone into TRANSIENT_FAILURE. "
-              "Requesting re-resolution",
-              p, subchannel());
+              "[RR %p] Subchannel %p reported %s; requesting re-resolution",
+              p, subchannel(), ConnectivityStateName(new_state));
     }
     p->channel_control_helper()->RequestReresolution();
     subchannel()->RequestConnection();
