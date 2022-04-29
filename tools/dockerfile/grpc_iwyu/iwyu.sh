@@ -29,7 +29,7 @@ cat compile_commands.json | jq -r '.[].file' \
   | tee iwyu_files.txt
 
 # run iwyu, filtering out changes to port_platform.h
-xargs -a iwyu_files.txt /iwyu/iwyu_tool.py -p compile_commands_for_iwyu.json -j 16 \
+xargs -a iwyu_files.txt -I FILES /iwyu/iwyu_tool.py -p compile_commands_for_iwyu.json -j 16 FILES -- -Xiwyu --no_fwd_decls \
   | grep -v -E "port_platform.h" \
   | tee iwyu.out
 
