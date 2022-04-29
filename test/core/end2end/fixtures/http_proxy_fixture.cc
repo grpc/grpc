@@ -18,6 +18,7 @@
 
 #include "test/core/end2end/fixtures/http_proxy_fixture.h"
 
+#include <limits.h>
 #include <string.h>
 
 #include "absl/strings/str_cat.h"
@@ -227,7 +228,8 @@ static void on_client_write_done_locked(void* arg, grpc_error_handle error) {
     GRPC_CLOSURE_INIT(&conn->on_client_write_done, on_client_write_done, conn,
                       grpc_schedule_on_exec_ctx);
     grpc_endpoint_write(conn->client_endpoint, &conn->client_write_buffer,
-                        &conn->on_client_write_done, nullptr);
+                        &conn->on_client_write_done, nullptr,
+                        /*max_frame_size=*/INT_MAX);
   } else {
     // No more writes.  Unref the connection.
     proxy_connection_unref(conn, "write_done");
@@ -262,7 +264,8 @@ static void on_server_write_done_locked(void* arg, grpc_error_handle error) {
     GRPC_CLOSURE_INIT(&conn->on_server_write_done, on_server_write_done, conn,
                       grpc_schedule_on_exec_ctx);
     grpc_endpoint_write(conn->server_endpoint, &conn->server_write_buffer,
-                        &conn->on_server_write_done, nullptr);
+                        &conn->on_server_write_done, nullptr,
+                        /*max_frame_size=*/INT_MAX);
   } else {
     // No more writes.  Unref the connection.
     proxy_connection_unref(conn, "server_write");
@@ -303,7 +306,8 @@ static void on_client_read_done_locked(void* arg, grpc_error_handle error) {
     GRPC_CLOSURE_INIT(&conn->on_server_write_done, on_server_write_done, conn,
                       grpc_schedule_on_exec_ctx);
     grpc_endpoint_write(conn->server_endpoint, &conn->server_write_buffer,
-                        &conn->on_server_write_done, nullptr);
+                        &conn->on_server_write_done, nullptr,
+                        /*max_frame_size=*/INT_MAX);
   }
   // Read more data.
   GRPC_CLOSURE_INIT(&conn->on_client_read_done, on_client_read_done, conn,
@@ -346,7 +350,8 @@ static void on_server_read_done_locked(void* arg, grpc_error_handle error) {
     GRPC_CLOSURE_INIT(&conn->on_client_write_done, on_client_write_done, conn,
                       grpc_schedule_on_exec_ctx);
     grpc_endpoint_write(conn->client_endpoint, &conn->client_write_buffer,
-                        &conn->on_client_write_done, nullptr);
+                        &conn->on_client_write_done, nullptr,
+                        /*max_frame_size=*/INT_MAX);
   }
   // Read more data.
   GRPC_CLOSURE_INIT(&conn->on_server_read_done, on_server_read_done, conn,
@@ -424,7 +429,8 @@ static void on_server_connect_done_locked(void* arg, grpc_error_handle error) {
   GRPC_CLOSURE_INIT(&conn->on_write_response_done, on_write_response_done, conn,
                     grpc_schedule_on_exec_ctx);
   grpc_endpoint_write(conn->client_endpoint, &conn->client_write_buffer,
-                      &conn->on_write_response_done, nullptr);
+                      &conn->on_write_response_done, nullptr,
+                      /*max_frame_size=*/INT_MAX);
 }
 
 static void on_server_connect_done(void* arg, grpc_error_handle error) {

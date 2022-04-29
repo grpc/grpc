@@ -987,7 +987,7 @@ static void write_action(void* gt, grpc_error_handle /*error*/) {
       t->ep, &t->outbuf,
       GRPC_CLOSURE_INIT(&t->write_action_end_locked, write_action_end, t,
                         grpc_schedule_on_exec_ctx),
-      cl);
+      cl, /*max_frame_size=*/INT_MAX);
 }
 
 static void write_action_end(void* tp, grpc_error_handle error) {
