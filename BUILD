@@ -1867,6 +1867,20 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "pid_controller",
+    srcs = [
+        "src/core/lib/transport/pid_controller.cc",
+    ],
+    hdrs = [
+        "src/core/lib/transport/pid_controller.h",
+    ],
+    deps = [
+        "gpr_platform",
+        "useful",
+    ],
+)
+
+grpc_cc_library(
     name = "grpc_base",
     srcs = [
         "src/core/lib/address_utils/parse_address.cc",
@@ -1985,7 +1999,6 @@ grpc_cc_library(
         "src/core/lib/transport/connectivity_state.cc",
         "src/core/lib/transport/error_utils.cc",
         "src/core/lib/transport/parsed_metadata.cc",
-        "src/core/lib/transport/pid_controller.cc",
         "src/core/lib/transport/status_conversion.cc",
         "src/core/lib/transport/timeout_encoding.cc",
         "src/core/lib/transport/transport.cc",
@@ -2102,7 +2115,6 @@ grpc_cc_library(
         "src/core/lib/transport/connectivity_state.h",
         "src/core/lib/transport/metadata_batch.h",
         "src/core/lib/transport/parsed_metadata.h",
-        "src/core/lib/transport/pid_controller.h",
         "src/core/lib/transport/status_conversion.h",
         "src/core/lib/transport/timeout_encoding.h",
         "src/core/lib/transport/transport.h",
@@ -4593,6 +4605,7 @@ grpc_cc_library(
         "hpack_encoder_table",
         "httpcli",
         "memory_quota",
+        "pid_controller",
         "resource_quota_trace",
         "slice",
         "slice_refcount",
