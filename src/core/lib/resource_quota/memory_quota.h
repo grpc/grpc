@@ -17,18 +17,29 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <stdint.h>
+
 #include <algorithm>
 #include <atomic>
 #include <cstddef>
 #include <limits>
 #include <memory>
 #include <queue>
+#include <string>
+#include <utility>
 #include <vector>
 
+#include "absl/base/thread_annotations.h"
+#include "absl/strings/string_view.h"
+#include "absl/types/optional.h"
+
 #include <grpc/event_engine/memory_allocator.h>
+#include <grpc/event_engine/memory_request.h>
 #include <grpc/slice.h>
+#include <grpc/support/log.h>
 
 #include "src/core/lib/gprpp/orphanable.h"
+#include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/promise/activity.h"
