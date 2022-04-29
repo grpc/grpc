@@ -470,7 +470,6 @@ MakePromiseBasedFilter(const char* name) {
       sizeof(F),
       // init_channel_elem
       [](grpc_channel_element* elem, grpc_channel_element_args* args) {
-        GPR_ASSERT(!args->is_last);
         auto status = F::Create(ChannelArgs::FromC(args->channel_args),
                                 ChannelFilter::Args(args->channel_stack, elem));
         if (!status.ok()) return absl_status_to_grpc_error(status.status());

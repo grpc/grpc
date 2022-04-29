@@ -268,6 +268,7 @@ class MainLoop {
   ~MainLoop() {
     ExecCtx exec_ctx;
     calls_.clear();
+    channel_stack_.reset();
   }
 
   void Run(const filter_fuzzer::Action& action, GlobalObjects* globals) {
@@ -311,6 +312,16 @@ class MainLoop {
     }
   }
 
+  static const grpc_channel_filter* EndFilter(bool is_client) {
+    static const grpc_channel_filter client_filter =
+        MakePromiseBasedFilter<Call::EndFilter, FilterEndpoint::kClient>(
+            "client-end");
+    static const grpc_channel_filter server_filter =
+        MakePromiseBasedFilter<Call::EndFilter, FilterEndpoint::kServer>(
+            "server-end");
+    return is_client ? &client_filter : &server_filter;
+  }
+
  private:
   class WakeCall final : public Wakeable {
    public:
@@ -332,6 +343,30 @@ class MainLoop {
 
   class Call final : public Activity {
    public:
+    class EndFilter : public ChannelFilter {
+     public:
+      static absl::StatusOr<EndFilter> Create(ChannelArgs,
+                                              ChannelFilter::Args) {
+        return EndFilter{};
+      }
+
+      // Construct a promise for one call.
+      ArenaPromise<ServerMetadataHandle> MakeCallPromise(
+          CallArgs call_args, NextPromiseFactory) override {
+        Call* call = static_cast<Call*>(Activity::current());
+        if (call->server_initial_metadata_) {
+          call_args.server_initial_metadata->Set(
+              call->server_initial_metadata_.get());
+        } else {
+          call->unset_incoming_server_initial_metadata_latch_ =
+              call_args.server_initial_metadata;
+        }
+        return [call]() -> Poll<ServerMetadataHandle> {
+          return call->CheckCompletion();
+        };
+      }
+    };
+
     Call(MainLoop* main_loop, uint32_t id,
          const filter_fuzzer::Metadata& client_initial_metadata)
         : main_loop_(main_loop), id_(id) {
@@ -341,22 +376,6 @@ class MainLoop {
           CallArgs{std::move(*LoadMetadata(client_initial_metadata,
                                            &client_initial_metadata_)),
                    server_initial_metadata});
-      /*
-      promise_ = main_loop_->filter_->MakeCallPromise(
-          CallArgs{},
-          [this](CallArgs call_args) -> ArenaPromise<ServerMetadataHandle> {
-            if (server_initial_metadata_) {
-              call_args.server_initial_metadata->Set(
-                  server_initial_metadata_.get());
-            } else {
-              unset_incoming_server_initial_metadata_latch_ =
-                  call_args.server_initial_metadata;
-            }
-            return [this]() -> Poll<ServerMetadataHandle> {
-              return CheckCompletion();
-            };
-          });
-      */
       Step();
     }
 
@@ -553,6 +572,11 @@ DEFINE_PROTO_FUZZER(const filter_fuzzer::Msg& msg) {
       static_cast<grpc_channel_stack_type>(msg.channel_stack_type()));
   builder.SetChannelArgs(channel_args);
   builder.AppendFilter(filter);
+  if (grpc_channel_stack_type_is_client(builder.channel_stack_type())) {
+    builder.AppendFilter(grpc_core::MainLoop::EndFilter(true));
+  } else {
+    builder.PrependFilter(grpc_core::MainLoop::EndFilter(false));
+  }
   auto stack = builder.Build();
 
   if (stack.ok()) {
