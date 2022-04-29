@@ -6,4 +6,6 @@
 /cmake/** @jtattermusch @nicolasnoble @apolcyn
 /src/core/ext/filters/client_channel/** @markdroth
 /src/core/ext/xds/** @markdroth
+/src/core/lib/resolver/** @markdroth
+/src/core/lib/service_config/** @markdroth
 /tools/dockerfile/** @jtattermusch @apolcyn @nicolasnoble
