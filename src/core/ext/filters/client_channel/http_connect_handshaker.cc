@@ -354,8 +354,8 @@ void HttpConnectHandshaker::DoHandshake(grpc_tcp_server_acceptor* /*acceptor*/,
       args->endpoint, &write_buffer_,
       GRPC_CLOSURE_INIT(&request_done_closure_,
                         &HttpConnectHandshaker::OnWriteDoneScheduler, this,
-                        grpc_schedule_on_exec_ctx, /*max_frame_size=*/INT_MAX),
-      nullptr);
+                        grpc_schedule_on_exec_ctx),
+      nullptr, /*max_frame_size=*/INT_MAX);
 }
 
 HttpConnectHandshaker::HttpConnectHandshaker() {
