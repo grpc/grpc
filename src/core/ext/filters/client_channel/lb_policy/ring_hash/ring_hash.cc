@@ -641,7 +641,7 @@ void RingHash::RingHashSubchannelList::UpdateRingHashConnectivityStateLocked(
 //
 
 void RingHash::RingHashSubchannelData::ProcessConnectivityChangeLocked(
-    absl::optional<grpc_connectivity_state> old_state,
+    absl::optional<grpc_connectivity_state> /*old_state*/,
     grpc_connectivity_state new_state) {
   RingHash* p = static_cast<RingHash*>(subchannel_list()->policy());
   grpc_connectivity_state last_connectivity_state = GetConnectivityState();
