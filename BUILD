@@ -1877,7 +1877,7 @@ grpc_cc_library(
     deps = [
         "gpr_platform",
         "useful",
-    ]
+    ],
 )
 
 grpc_cc_library(
@@ -4604,12 +4604,12 @@ grpc_cc_library(
         "hpack_encoder_table",
         "httpcli",
         "memory_quota",
+        "pid_controller",
         "resource_quota_trace",
         "slice",
         "slice_refcount",
         "uri_parser",
         "useful",
-        "pid_controller"
     ],
 )
 
