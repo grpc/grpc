@@ -238,19 +238,20 @@ template <typename SubchannelListType, typename SubchannelDataType>
 void SubchannelData<SubchannelListType, SubchannelDataType>::Watcher::
     OnConnectivityStateChange(grpc_connectivity_state new_state) {
   if (GRPC_TRACE_FLAG_ENABLED(*subchannel_list_->tracer())) {
-    gpr_log(GPR_INFO,
-            "[%s %p] subchannel list %p index %" PRIuPTR " of %" PRIuPTR
-            " (subchannel %p): connectivity changed: old_state=%s, new_state=%s, "
-            "shutting_down=%d, pending_watcher=%p",
-            subchannel_list_->tracer()->name(), subchannel_list_->policy(),
-            subchannel_list_.get(), subchannel_data_->Index(),
-            subchannel_list_->num_subchannels(),
-            subchannel_data_->subchannel_.get(),
-            (subchannel_data_->connectivity_state_.has_value()
-                 ? ConnectivityStateName(*subchannel_data_->connectivity_state_)
-                 : "N/A"),
-            ConnectivityStateName(new_state), subchannel_list_->shutting_down(),
-            subchannel_data_->pending_watcher_);
+    gpr_log(
+        GPR_INFO,
+        "[%s %p] subchannel list %p index %" PRIuPTR " of %" PRIuPTR
+        " (subchannel %p): connectivity changed: old_state=%s, new_state=%s, "
+        "shutting_down=%d, pending_watcher=%p",
+        subchannel_list_->tracer()->name(), subchannel_list_->policy(),
+        subchannel_list_.get(), subchannel_data_->Index(),
+        subchannel_list_->num_subchannels(),
+        subchannel_data_->subchannel_.get(),
+        (subchannel_data_->connectivity_state_.has_value()
+             ? ConnectivityStateName(*subchannel_data_->connectivity_state_)
+             : "N/A"),
+        ConnectivityStateName(new_state), subchannel_list_->shutting_down(),
+        subchannel_data_->pending_watcher_);
   }
   if (!subchannel_list_->shutting_down() &&
       subchannel_data_->pending_watcher_ != nullptr) {
@@ -271,8 +272,7 @@ SubchannelData<SubchannelListType, SubchannelDataType>::SubchannelData(
     SubchannelList<SubchannelListType, SubchannelDataType>* subchannel_list,
     const ServerAddress& /*address*/,
     RefCountedPtr<SubchannelInterface> subchannel)
-    : subchannel_list_(subchannel_list),
-      subchannel_(std::move(subchannel)) {}
+    : subchannel_list_(subchannel_list), subchannel_(std::move(subchannel)) {}
 
 template <typename SubchannelListType, typename SubchannelDataType>
 SubchannelData<SubchannelListType, SubchannelDataType>::~SubchannelData() {

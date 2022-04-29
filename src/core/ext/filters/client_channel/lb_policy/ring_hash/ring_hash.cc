@@ -196,8 +196,9 @@ class RingHash : public LoadBalancingPolicy {
     // UpdateRingHashConnectivityStateLocked().
     // connection_attempt_complete is true if the subchannel just
     // finished a connection attempt.
-    void UpdateRingHashConnectivityStateLocked(
-        size_t index, bool connection_attempt_complete, absl::Status status);
+    void UpdateRingHashConnectivityStateLocked(size_t index,
+                                               bool connection_attempt_complete,
+                                               absl::Status status);
 
    private:
     bool AllSubchannelsSeenInitialState() {
@@ -553,8 +554,8 @@ void RingHash::RingHashSubchannelList::UpdateRingHashConnectivityStateLocked(
   if (p->latest_pending_subchannel_list_.get() == this &&
       AllSubchannelsSeenInitialState()) {
     if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_ring_hash_trace)) {
-      gpr_log(GPR_INFO, "[RH %p] replacing subchannel list %p with %p",
-              p, p->subchannel_list_.get(), this);
+      gpr_log(GPR_INFO, "[RH %p] replacing subchannel list %p with %p", p,
+              p->subchannel_list_.get(), this);
     }
     p->subchannel_list_ = std::move(p->latest_pending_subchannel_list_);
   }
@@ -667,8 +668,7 @@ void RingHash::RingHashSubchannelData::ProcessConnectivityChangeLocked(
     }
     p->channel_control_helper()->RequestReresolution();
   }
-  const bool connection_attempt_complete =
-      new_state != GRPC_CHANNEL_CONNECTING;
+  const bool connection_attempt_complete = new_state != GRPC_CHANNEL_CONNECTING;
   // Decide what state to report for the purposes of aggregation and
   // picker behavior.
   // If the last recorded state was TRANSIENT_FAILURE, ignore the update
@@ -765,16 +765,16 @@ void RingHash::UpdateLocked(UpdateArgs args) {
     if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_ring_hash_trace) &&
         subchannel_list_ != nullptr) {
       gpr_log(GPR_INFO,
-              "[RH %p] empty address list, replacing subchannel list %p",
-              this, subchannel_list_.get());
+              "[RH %p] empty address list, replacing subchannel list %p", this,
+              subchannel_list_.get());
     }
     subchannel_list_ = std::move(latest_pending_subchannel_list_);
     // If the new list is empty, report TRANSIENT_FAILURE.
     if (subchannel_list_->num_subchannels() == 0) {
       absl::Status status =
           args.addresses.ok()
-              ? absl::UnavailableError(absl::StrCat(
-                    "empty address list: ", args.resolution_note))
+              ? absl::UnavailableError(
+                    absl::StrCat("empty address list: ", args.resolution_note))
               : args.addresses.status();
       channel_control_helper()->UpdateState(
           GRPC_CHANNEL_TRANSIENT_FAILURE, status,
@@ -782,8 +782,7 @@ void RingHash::UpdateLocked(UpdateArgs args) {
     } else {
       // Otherwise, report IDLE.
       subchannel_list_->UpdateRingHashConnectivityStateLocked(
-          /*index=*/0, /*connection_attempt_complete=*/false,
-          absl::OkStatus());
+          /*index=*/0, /*connection_attempt_complete=*/false, absl::OkStatus());
     }
   }
 }

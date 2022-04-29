@@ -561,8 +561,7 @@ class ClientChannel::SubchannelWrapper : public SubchannelInterface {
         std::unique_ptr<SubchannelInterface::ConnectivityStateWatcherInterface>
             watcher,
         RefCountedPtr<SubchannelWrapper> parent)
-        : watcher_(std::move(watcher)),
-          parent_(std::move(parent)) {}
+        : watcher_(std::move(watcher)), parent_(std::move(parent)) {}
 
     ~WatcherWrapper() override {
       auto* parent = parent_.release();  // ref owned by lambda
