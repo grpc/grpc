@@ -258,11 +258,12 @@ const grpc_channel_filter* FindFilter(absl::string_view name) {
 
 class MainLoop {
  public:
-  MainLoop(std::unique_ptr<ChannelFilter> filter, ChannelArgs channel_args)
+  MainLoop(RefCountedPtr<grpc_channel_stack> channel_stack,
+           ChannelArgs channel_args)
       : memory_allocator_(channel_args.GetObject<ResourceQuota>()
                               ->memory_quota()
                               ->CreateMemoryAllocator("test")),
-        filter_(std::move(filter)) {}
+        channel_stack_(std::move(channel_stack)) {}
 
   ~MainLoop() {
     ExecCtx exec_ctx;
@@ -336,10 +337,13 @@ class MainLoop {
         : main_loop_(main_loop), id_(id) {
       ScopedContext context(this);
       auto* server_initial_metadata = arena_->New<Latch<ServerMetadata*>>();
-      promise_ = main_loop_->filter_->MakeCallPromise(
+      promise_ = main_loop_->channel_stack_->MakeCallPromise(
           CallArgs{std::move(*LoadMetadata(client_initial_metadata,
                                            &client_initial_metadata_)),
-                   server_initial_metadata},
+                   server_initial_metadata});
+      /*
+      promise_ = main_loop_->filter_->MakeCallPromise(
+          CallArgs{},
           [this](CallArgs call_args) -> ArenaPromise<ServerMetadataHandle> {
             if (server_initial_metadata_) {
               call_args.server_initial_metadata->Set(
@@ -352,6 +356,7 @@ class MainLoop {
               return CheckCompletion();
             };
           });
+      */
       Step();
     }
 
@@ -510,7 +515,7 @@ class MainLoop {
   }
 
   MemoryAllocator memory_allocator_;
-  std::unique_ptr<ChannelFilter> filter_;
+  RefCountedPtr<grpc_channel_stack> channel_stack_;
   std::map<uint32_t, std::unique_ptr<Call>> calls_;
   std::vector<uint32_t> wakeups_;
 };
@@ -547,10 +552,11 @@ DEFINE_PROTO_FUZZER(const filter_fuzzer::Msg& msg) {
       msg.stack_name().c_str(),
       static_cast<grpc_channel_stack_type>(msg.channel_stack_type()));
   builder.SetChannelArgs(channel_args);
-  builder.PrependFilter(filter, PostInitFunc post_init)
+  builder.AppendFilter(filter);
+  auto stack = builder.Build();
 
-      if (filter.ok()) {
-    grpc_core::MainLoop main_loop(std::move(*filter), channel_args);
+  if (stack.ok()) {
+    grpc_core::MainLoop main_loop(std::move(*stack), std::move(channel_args));
     for (const auto& action : msg.actions()) {
       grpc_timer_manager_tick();
       main_loop.Run(action, &globals);
