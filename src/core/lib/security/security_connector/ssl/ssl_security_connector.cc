@@ -35,6 +35,7 @@
 #include "src/core/lib/gprpp/host_port.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/gprpp/sync.h"
+#include "src/core/lib/promise/promise.h"
 #include "src/core/lib/security/context/security_context.h"
 #include "src/core/lib/security/credentials/credentials.h"
 #include "src/core/lib/security/credentials/ssl/ssl_credentials.h"
@@ -128,7 +129,8 @@ class grpc_ssl_channel_security_connector final
         client_handshaker_factory_,
         overridden_target_name_.empty() ? target_name_.c_str()
                                         : overridden_target_name_.c_str(),
-        &tsi_hs);
+        /*network_bio_buf_size=*/0,
+        /*ssl_bio_buf_size=*/0, &tsi_hs);
     if (result != TSI_OK) {
       gpr_log(GPR_ERROR, "Handshaker creation failed with error %s.",
               tsi_result_to_string(result));
@@ -185,17 +187,11 @@ class grpc_ssl_channel_security_connector final
     return overridden_target_name_.compare(other->overridden_target_name_);
   }
 
-  bool check_call_host(absl::string_view host, grpc_auth_context* auth_context,
-                       grpc_closure* /*on_call_host_checked*/,
-                       grpc_error_handle* error) override {
-    return grpc_ssl_check_call_host(host, target_name_.c_str(),
-                                    overridden_target_name_.c_str(),
-                                    auth_context, error);
-  }
-
-  void cancel_check_call_host(grpc_closure* /*on_call_host_checked*/,
-                              grpc_error_handle error) override {
-    GRPC_ERROR_UNREF(error);
+  grpc_core::ArenaPromise<absl::Status> CheckCallHost(
+      absl::string_view host, grpc_auth_context* auth_context) override {
+    return grpc_core::Immediate(
+        SslCheckCallHost(host, target_name_.c_str(),
+                         overridden_target_name_.c_str(), auth_context));
   }
 
  private:
@@ -277,7 +273,8 @@ class grpc_ssl_server_security_connector
     try_fetch_ssl_server_credentials();
     tsi_handshaker* tsi_hs = nullptr;
     tsi_result result = tsi_ssl_server_handshaker_factory_create_handshaker(
-        server_handshaker_factory_, &tsi_hs);
+        server_handshaker_factory_, /*network_bio_buf_size=*/0,
+        /*ssl_bio_buf_size=*/0, &tsi_hs);
     if (result != TSI_OK) {
       gpr_log(GPR_ERROR, "Handshaker creation failed with error %s.",
               tsi_result_to_string(result));

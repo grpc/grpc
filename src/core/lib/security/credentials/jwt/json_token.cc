@@ -22,6 +22,10 @@
 
 #include <string.h>
 
+#include <openssl/bio.h>
+#include <openssl/evp.h>
+#include <openssl/pem.h>
+
 #include <grpc/grpc_security.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
@@ -32,12 +36,6 @@
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/security/util/json_util.h"
 #include "src/core/lib/slice/b64.h"
-
-extern "C" {
-#include <openssl/bio.h>
-#include <openssl/evp.h>
-#include <openssl/pem.h>
-}
 
 using grpc_core::Json;
 

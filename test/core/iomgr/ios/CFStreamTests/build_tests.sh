@@ -16,13 +16,14 @@
 # Don't run this script standalone. Instead, run from the repository root:
 # ./tools/run_tests/run_tests.py -l objc
 
-set -ev
+set -ex
 
 # CocoaPods requires the terminal to be using UTF-8 encoding.
 export LANG=en_US.UTF-8
 
 cd "$(dirname "$0")"
 
+# Check that required tools are available.
 hash pod 2>/dev/null || { echo >&2 "Cocoapods needs to be installed."; exit 1; }
 hash xcodebuild 2>/dev/null || {
     echo >&2 "XCode command-line tools need to be installed."
@@ -31,10 +32,9 @@ hash xcodebuild 2>/dev/null || {
 
 # clean up pod cache and existing pods
 rm -Rf Pods Podfile.lock CFStreamTests.xcworkspace
-pod cache clean --all
+time pod cache clean --all
 
-echo "TIME:  $(date)"
-pod install --verbose
+time pod install --verbose
 
 # ios-test-cfstream-tests flakes sometimes because of missing files in gRPC-Core,
 # add some log to help find out the root cause.
@@ -47,4 +47,3 @@ then
 else
     echo "Error: grpc/impl/codegen/ hasn't been imported."
 fi
-

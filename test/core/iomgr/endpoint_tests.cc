@@ -27,6 +27,7 @@
 #include <grpc/support/time.h>
 
 #include "src/core/lib/gpr/useful.h"
+#include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "test/core/util/test_config.h"
 
@@ -122,7 +123,7 @@ static void read_scheduler(void* data, grpc_error_handle /* error */) {
   struct read_and_write_test_state* state =
       static_cast<struct read_and_write_test_state*>(data);
   grpc_endpoint_read(state->read_ep, &state->incoming, &state->done_read,
-                     /*urgent=*/false);
+                     /*urgent=*/false, /*min_progress_size=*/1);
 }
 
 static void read_and_write_test_read_handler(void* data,
@@ -200,8 +201,8 @@ static void read_and_write_test(grpc_endpoint_test_config config,
   grpc_endpoint_test_fixture f =
       begin_test(config, "read_and_write_test", slice_size);
   grpc_core::ExecCtx exec_ctx;
-  grpc_millis deadline =
-      grpc_timespec_to_millis_round_up(grpc_timeout_seconds_to_deadline(20));
+  auto deadline = grpc_core::Timestamp::FromTimespecRoundUp(
+      grpc_timeout_seconds_to_deadline(20));
   gpr_log(GPR_DEBUG,
           "num_bytes=%" PRIuPTR " write_size=%" PRIuPTR " slice_size=%" PRIuPTR
           " shutdown=%d",
@@ -246,7 +247,7 @@ static void read_and_write_test(grpc_endpoint_test_config config,
   grpc_core::ExecCtx::Get()->Flush();
 
   grpc_endpoint_read(state.read_ep, &state.incoming, &state.done_read,
-                     /*urgent=*/false);
+                     /*urgent=*/false, /*min_progress_size=*/1);
   if (shutdown) {
     gpr_log(GPR_DEBUG, "shutdown read");
     grpc_endpoint_shutdown(
@@ -284,8 +285,8 @@ static void inc_on_failure(void* arg, grpc_error_handle error) {
 static void wait_for_fail_count(int* fail_count, int want_fail_count) {
   grpc_core::ExecCtx::Get()->Flush();
   gpr_mu_lock(g_mu);
-  grpc_millis deadline =
-      grpc_timespec_to_millis_round_up(grpc_timeout_seconds_to_deadline(10));
+  grpc_core::Timestamp deadline = grpc_core::Timestamp::FromTimespecRoundUp(
+      grpc_timeout_seconds_to_deadline(10));
   while (grpc_core::ExecCtx::Get()->Now() < deadline &&
          *fail_count < want_fail_count) {
     grpc_pollset_worker* worker = nullptr;
@@ -312,7 +313,7 @@ static void multiple_shutdown_test(grpc_endpoint_test_config config) {
   grpc_endpoint_read(f.client_ep, &slice_buffer,
                      GRPC_CLOSURE_CREATE(inc_on_failure, &fail_count,
                                          grpc_schedule_on_exec_ctx),
-                     /*urgent=*/false);
+                     /*urgent=*/false, /*min_progress_size=*/1);
   wait_for_fail_count(&fail_count, 0);
   grpc_endpoint_shutdown(f.client_ep,
                          GRPC_ERROR_CREATE_FROM_STATIC_STRING("Test Shutdown"));
@@ -320,7 +321,7 @@ static void multiple_shutdown_test(grpc_endpoint_test_config config) {
   grpc_endpoint_read(f.client_ep, &slice_buffer,
                      GRPC_CLOSURE_CREATE(inc_on_failure, &fail_count,
                                          grpc_schedule_on_exec_ctx),
-                     /*urgent=*/false);
+                     /*urgent=*/false, /*min_progress_size=*/1);
   wait_for_fail_count(&fail_count, 2);
   grpc_slice_buffer_add(&slice_buffer, grpc_slice_from_copied_string("a"));
   grpc_endpoint_write(f.client_ep, &slice_buffer,

@@ -19,11 +19,11 @@ extern "C" {
 
 #include "upb/port_def.inc"
 
-extern upb_def_init envoy_extensions_filters_http_router_v3_router_proto_upbdefinit;
+extern _upb_DefPool_Init envoy_extensions_filters_http_router_v3_router_proto_upbdefinit;
 
-UPB_INLINE const upb_msgdef *envoy_extensions_filters_http_router_v3_Router_getmsgdef(upb_symtab *s) {
-  _upb_symtab_loaddefinit(s, &envoy_extensions_filters_http_router_v3_router_proto_upbdefinit);
-  return upb_symtab_lookupmsg(s, "envoy.extensions.filters.http.router.v3.Router");
+UPB_INLINE const upb_MessageDef *envoy_extensions_filters_http_router_v3_Router_getmsgdef(upb_DefPool *s) {
+  _upb_DefPool_LoadDefInit(s, &envoy_extensions_filters_http_router_v3_router_proto_upbdefinit);
+  return upb_DefPool_FindMessageByName(s, "envoy.extensions.filters.http.router.v3.Router");
 }
 
 #ifdef __cplusplus

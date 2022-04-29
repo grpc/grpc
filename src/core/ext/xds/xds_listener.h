@@ -207,7 +207,7 @@ class XdsListenerResourceType
 
   bool AllResourcesRequiredInSotW() const override { return true; }
 
-  void InitUpbSymtab(upb_symtab* symtab) const override {
+  void InitUpbSymtab(upb_DefPool* symtab) const override {
     envoy_config_listener_v3_Listener_getmsgdef(symtab);
     envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager_getmsgdef(
         symtab);

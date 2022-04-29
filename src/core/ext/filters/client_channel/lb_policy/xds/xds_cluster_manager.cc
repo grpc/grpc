@@ -196,6 +196,7 @@ class XdsClusterManagerLb : public LoadBalancingPolicy {
 
   // Internal state.
   bool shutting_down_ = false;
+  bool update_in_progress_ = false;
 
   // Children.
   std::map<std::string, OrphanablePtr<ClusterChild>> children_;
@@ -254,6 +255,7 @@ void XdsClusterManagerLb::UpdateLocked(UpdateArgs args) {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_cluster_manager_lb_trace)) {
     gpr_log(GPR_INFO, "[xds_cluster_manager_lb %p] Received update", this);
   }
+  update_in_progress_ = true;
   // Update config.
   config_ = std::move(args.config);
   // Deactivate the children not in the new config.
@@ -268,19 +270,24 @@ void XdsClusterManagerLb::UpdateLocked(UpdateArgs args) {
   for (const auto& p : config_->cluster_map()) {
     const std::string& name = p.first;
     const RefCountedPtr<LoadBalancingPolicy::Config>& config = p.second;
-    auto it = children_.find(name);
-    if (it == children_.end()) {
-      it = children_
-               .emplace(name, MakeOrphanable<ClusterChild>(
-                                  Ref(DEBUG_LOCATION, "ClusterChild"), name))
-               .first;
+    auto& child = children_[name];
+    if (child == nullptr) {
+      child = MakeOrphanable<ClusterChild>(Ref(DEBUG_LOCATION, "ClusterChild"),
+                                           name);
     }
-    it->second->UpdateLocked(config, args.addresses, args.args);
+    child->UpdateLocked(config, args.addresses, args.args);
   }
+  update_in_progress_ = false;
   UpdateStateLocked();
 }
 
 void XdsClusterManagerLb::UpdateStateLocked() {
+  // If we're in the process of propagating an update from our parent to
+  // our children, ignore any updates that come from the children.  We
+  // will instead return a new picker once the update has been seen by
+  // all children.  This avoids unnecessary picker churn while an update
+  // is being propagated to our children.
+  if (update_in_progress_) return;
   // Also count the number of children in each state, to determine the
   // overall state.
   size_t num_ready = 0;
@@ -487,7 +494,8 @@ void XdsClusterManagerLb::ClusterChild::DeactivateLocked() {
   Ref(DEBUG_LOCATION, "ClusterChild+timer").release();
   grpc_timer_init(&delayed_removal_timer_,
                   ExecCtx::Get()->Now() +
-                      GRPC_XDS_CLUSTER_MANAGER_CHILD_RETENTION_INTERVAL_MS,
+                      Duration::Milliseconds(
+                          GRPC_XDS_CLUSTER_MANAGER_CHILD_RETENTION_INTERVAL_MS),
                   &on_delayed_removal_timer_);
   delayed_removal_timer_callback_pending_ = true;
 }

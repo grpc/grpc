@@ -32,11 +32,8 @@
 #include <grpc/support/time.h>
 
 #include "src/core/ext/filters/client_channel/client_channel.h"
-#include "src/core/ext/filters/client_channel/resolver.h"
 #include "src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper.h"
 #include "src/core/ext/filters/client_channel/resolver/dns/dns_resolver_selection.h"
-#include "src/core/ext/filters/client_channel/resolver_registry.h"
-#include "src/core/ext/filters/client_channel/server_address.h"
 #include "src/core/lib/address_utils/sockaddr_utils.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/gpr/string.h"
@@ -45,6 +42,9 @@
 #include "src/core/lib/iomgr/executor.h"
 #include "src/core/lib/iomgr/iomgr.h"
 #include "src/core/lib/iomgr/resolve_address.h"
+#include "src/core/lib/resolver/resolver.h"
+#include "src/core/lib/resolver/resolver_registry.h"
+#include "src/core/lib/resolver/server_address.h"
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
 #include "test/cpp/util/subprocess.h"
@@ -111,8 +111,10 @@ class MockSourceAddrFactory : public address_sorting_source_addr_factory {
     grpc_resolved_address dest_addr_as_resolved_addr;
     memcpy(&dest_addr_as_resolved_addr.addr, dest_addr, dest_addr->len);
     dest_addr_as_resolved_addr.len = dest_addr->len;
-    std::string ip_addr_str = grpc_sockaddr_to_string(
-        &dest_addr_as_resolved_addr, false /* normalize */);
+    std::string ip_addr_str =
+        grpc_sockaddr_to_string(&dest_addr_as_resolved_addr,
+                                false /* normalize */)
+            .value();
     auto it = dest_addr_to_src_addr_.find(ip_addr_str);
     if (it == dest_addr_to_src_addr_.end()) {
       gpr_log(GPR_DEBUG, "can't find |%s| in dest to src map",
@@ -179,7 +181,8 @@ void VerifyLbAddrOutputs(const grpc_core::ServerAddressList& addresses,
   EXPECT_EQ(addresses.size(), expected_addrs.size());
   for (size_t i = 0; i < addresses.size(); ++i) {
     std::string ip_addr_str =
-        grpc_sockaddr_to_string(&addresses[i].address(), false /* normalize */);
+        grpc_sockaddr_to_string(&addresses[i].address(), false /* normalize */)
+            .value();
     EXPECT_EQ(expected_addrs[i], ip_addr_str);
   }
 }
@@ -829,7 +832,7 @@ int main(int argc, char** argv) {
   } else if (strcmp("ares", resolver.get()) != 0) {
     gpr_log(GPR_INFO, "GRPC_DNS_RESOLVER != ares: %s.", resolver.get());
   }
-  grpc::testing::TestEnvironment env(argc, argv);
+  grpc::testing::TestEnvironment env(&argc, argv);
   ::testing::InitGoogleTest(&argc, argv);
   auto result = RUN_ALL_TESTS();
   // Test sequential and nested inits and shutdowns.

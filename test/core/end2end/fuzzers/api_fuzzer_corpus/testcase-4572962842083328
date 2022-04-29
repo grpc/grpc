@@ -1,0 +1,29 @@
+actions {
+  create_channel {
+    target: "unix::pehttpP~GK467440737046,,\343\236\234,,t49,Sac,,t"
+    channel_args {
+      key: "grpc.lb_policy_name"
+      str: "unix::pehttpP~GK467440737046,,\343\236\234,,t49,Sac,,t"
+    }
+    channel_actions {
+      add_n_bytes_writable: 32769
+      wait_ms: 89
+    }
+  }
+}
+actions {
+  create_call {
+    method {
+      value: "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"
+    }
+    timeout: 858993408
+  }
+}
+actions {
+  queue_batch {
+    operations {
+      send_initial_metadata {
+      }
+    }
+  }
+}

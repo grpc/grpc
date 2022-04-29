@@ -145,8 +145,6 @@ typedef enum {
   GRPC_ERROR_TIME_MAX,
 } grpc_error_times;
 
-// DEPRECATED: Use grpc_error_std_string instead
-const char* grpc_error_string(grpc_error_handle error);
 std::string grpc_error_std_string(grpc_error_handle error);
 
 // debug only toggles that allow for a sanity to check that ensures we will

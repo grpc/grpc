@@ -695,7 +695,7 @@ void GenerateBindServiceWithBinderMethod(Printer* out,
                                          const ServiceDescriptor* service) {
   out->Print(
       "/// <summary>Register service method with a service "
-      "binder with or without implementation. Useful when customizing the  "
+      "binder with or without implementation. Useful when customizing the "
       "service binding logic.\n"
       "/// Note: this method is part of an experimental API that can change or "
       "be "

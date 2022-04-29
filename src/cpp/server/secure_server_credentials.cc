@@ -93,7 +93,7 @@ void AuthMetadataProcessorAyncWrapper::InvokeProcessor(
 
 int SecureServerCredentials::AddPortToServer(const std::string& addr,
                                              grpc_server* server) {
-  return grpc_server_add_secure_http2_port(server, addr.c_str(), creds_);
+  return grpc_server_add_http2_port(server, addr.c_str(), creds_);
 }
 
 void SecureServerCredentials::SetAuthMetadataProcessor(

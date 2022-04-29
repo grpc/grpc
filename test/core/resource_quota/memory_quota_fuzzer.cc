@@ -134,7 +134,7 @@ class Fuzzer {
             WithAllocator(
                 action.allocator(), [pass, reclaimer](MemoryOwner* a) {
                   // ensure called exactly once
-                  auto call_checker = CallChecker::Make();
+                  auto call_checker = CallChecker::MakeOptional();
                   a->PostReclaimer(pass,
                                    [reclaimer, call_checker](
                                        absl::optional<ReclamationSweep> sweep) {

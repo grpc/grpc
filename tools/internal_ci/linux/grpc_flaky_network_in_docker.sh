@@ -15,17 +15,10 @@
 #
 # Run the flaky network test
 #
-# NOTE: No empty lines should appear in this file before igncr is set!
-set -ex -o igncr || set -ex
-
-mkdir -p /var/local/git
-git clone /var/local/jenkins/grpc /var/local/git/grpc
-(cd /var/local/jenkins/grpc/ && git submodule foreach 'cd /var/local/git/grpc \
-&& git submodule update --init --reference /var/local/jenkins/grpc/${name} \
-${name}')
-cd /var/local/git/grpc/test/cpp/end2end
+set -ex
 
 # iptables is used to drop traffic between client and server
-apt-get install -y iptables
+apt-get install -y iptables iproute2
 
-bazel test --test_output=all --test_timeout=1200 :flaky_network_test --test_env=GRPC_TRACE=http --test_env=GRPC_VERBOSITY=DEBUG
+python3 tools/run_tests/python_utils/bazel_report_helper.py --report_path bazel_flaky_network_test
+bazel_flaky_network_test/bazel_wrapper test --test_output=all --test_timeout=1200 //test/cpp/end2end:flaky_network_test --test_env=GRPC_TRACE=http --test_env=GRPC_VERBOSITY=DEBUG

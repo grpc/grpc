@@ -21,14 +21,12 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <map>
+
+#include <openssl/ssl.h>
+
 #include <grpc/slice.h>
 #include <grpc/support/sync.h>
-
-extern "C" {
-#include <openssl/ssl.h>
-}
-
-#include <map>
 
 #include "src/core/lib/gprpp/memory.h"
 #include "src/core/lib/gprpp/ref_counted.h"

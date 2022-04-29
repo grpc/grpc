@@ -26,9 +26,7 @@
 #include "src/core/ext/transport/chttp2/transport/hpack_constants.h"
 #include "src/core/lib/gprpp/memory.h"
 #include "src/core/lib/iomgr/error.h"
-#include "src/core/lib/transport/metadata.h"
 #include "src/core/lib/transport/metadata_batch.h"
-#include "src/core/lib/transport/static_metadata.h"
 
 namespace grpc_core {
 
@@ -65,44 +63,55 @@ class HPackTable {
   grpc_error_handle Add(Memento md) GRPC_MUST_USE_RESULT;
 
   // Current entry count in the table.
-  uint32_t num_entries() const { return num_entries_; }
+  uint32_t num_entries() const { return entries_.num_entries(); }
 
  private:
   struct StaticMementos {
-    StaticMementos() {
-      for (uint32_t i = 0; i < hpack_constants::kLastStaticEntry; i++) {
-        memento[i] = Memento(g_static_mdelem_manifested[i]);
-      }
-    }
+    StaticMementos();
     Memento memento[hpack_constants::kLastStaticEntry];
   };
-  static const StaticMementos& GetStaticMementos() {
-    static const StaticMementos static_mementos;
-    return static_mementos;
-  }
+  static const StaticMementos& GetStaticMementos() GPR_ATTRIBUTE_NOINLINE;
 
-  enum { kInlineEntries = hpack_constants::kInitialTableEntries };
-  using EntriesVec = absl::InlinedVector<Memento, kInlineEntries>;
+  class MementoRingBuffer {
+   public:
+    // Rebuild this buffer with a new max_entries_ size.
+    void Rebuild(uint32_t max_entries);
+
+    // Put a new memento.
+    // REQUIRES: num_entries < max_entries
+    void Put(Memento m);
+
+    // Pop the oldest memento.
+    // REQUIRES: num_entries > 0
+    Memento PopOne();
+
+    // Lookup the entry at index, or return nullptr if none exists.
+    const Memento* Lookup(uint32_t index) const;
+
+    uint32_t max_entries() const { return max_entries_; }
+    uint32_t num_entries() const { return num_entries_; }
+
+   private:
+    // The index of the first entry in the buffer. May be greater than
+    // max_entries_, in which case a wraparound has occurred.
+    uint32_t first_entry_ = 0;
+    // How many entries are in the table.
+    uint32_t num_entries_ = 0;
+    // Maximum number of entries we could possibly fit in the table, given
+    // defined overheads.
+    uint32_t max_entries_ = hpack_constants::kInitialTableEntries;
+
+    std::vector<Memento> entries_;
+  };
 
   const Memento* LookupDynamic(uint32_t index) const {
     // Not static - find the value in the list of valid entries
     const uint32_t tbl_index = index - (hpack_constants::kLastStaticEntry + 1);
-    if (tbl_index < num_entries_) {
-      uint32_t offset =
-          (num_entries_ - 1u - tbl_index + first_entry_) % entries_.size();
-      return &entries_[offset];
-    }
-    // Invalid entry: return error
-    return nullptr;
+    return entries_.Lookup(tbl_index);
   }
 
   void EvictOne();
-  void Rebuild(uint32_t new_cap);
 
-  // The first used entry in ents.
-  uint32_t first_entry_ = 0;
-  // How many entries are in the table.
-  uint32_t num_entries_ = 0;
   // The amount of memory used by the table, according to the hpack algorithm
   uint32_t mem_used_ = 0;
   // The max memory allowed to be used by the table, according to the hpack
@@ -110,28 +119,12 @@ class HPackTable {
   uint32_t max_bytes_ = hpack_constants::kInitialTableSize;
   // The currently agreed size of the table, according to the hpack algorithm.
   uint32_t current_table_bytes_ = hpack_constants::kInitialTableSize;
-  // Maximum number of entries we could possibly fit in the table, given defined
-  // overheads.
-  uint32_t max_entries_ = hpack_constants::kInitialTableEntries;
   // HPack table entries
-  EntriesVec entries_{hpack_constants::kInitialTableEntries};
+  MementoRingBuffer entries_;
   // Mementos for static data
   const StaticMementos& static_metadata_;
 };
 
 }  // namespace grpc_core
-
-/* Returns the static hpack table index that corresponds to /a elem. Returns 0
-  if /a elem is not statically stored or if it is not in the static hpack
-  table */
-inline uintptr_t grpc_chttp2_get_static_hpack_table_index(grpc_mdelem md) {
-  uintptr_t index =
-      reinterpret_cast<grpc_core::StaticMetadata*>(GRPC_MDELEM_DATA(md)) -
-      grpc_core::g_static_mdelem_table;
-  if (index < grpc_core::hpack_constants::kLastStaticEntry) {
-    return index + 1;  // Hpack static metadata element indices start at 1
-  }
-  return 0;
-}
 
 #endif /* GRPC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_HPACK_PARSER_TABLE_H */

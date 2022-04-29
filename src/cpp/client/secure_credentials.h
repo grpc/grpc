@@ -37,6 +37,7 @@ class SecureChannelCredentials final : public ChannelCredentials {
  public:
   explicit SecureChannelCredentials(grpc_channel_credentials* c_creds);
   ~SecureChannelCredentials() override {
+    grpc_core::ExecCtx exec_ctx;
     if (c_creds_ != nullptr) c_creds_->Unref();
   }
   grpc_channel_credentials* GetRawCreds() { return c_creds_; }
@@ -50,7 +51,7 @@ class SecureChannelCredentials final : public ChannelCredentials {
   std::shared_ptr<Channel> CreateChannelWithInterceptors(
       const std::string& target, const ChannelArguments& args,
       std::vector<std::unique_ptr<
-          ::grpc::experimental::ClientInterceptorFactoryInterface>>
+          grpc::experimental::ClientInterceptorFactoryInterface>>
           interceptor_creators) override;
   grpc_channel_credentials* const c_creds_;
 };
@@ -59,6 +60,7 @@ class SecureCallCredentials final : public CallCredentials {
  public:
   explicit SecureCallCredentials(grpc_call_credentials* c_creds);
   ~SecureCallCredentials() override {
+    grpc_core::ExecCtx exec_ctx;
     if (c_creds_ != nullptr) c_creds_->Unref();
   }
   grpc_call_credentials* GetRawCreds() { return c_creds_; }

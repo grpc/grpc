@@ -37,7 +37,7 @@ extern gpr_timespec (*gpr_now_impl)(gpr_clock_type clock_type);
 namespace grpc_core {
 namespace testing {
 namespace {
-int g_clock = 0;
+int g_clock = 123;
 
 gpr_timespec fake_gpr_now(gpr_clock_type clock_type) {
   gpr_timespec ts;
@@ -140,7 +140,7 @@ INSTANTIATE_TEST_SUITE_P(TooManyNames, BdpEstimatorRandomTest,
 }  // namespace grpc_core
 
 int main(int argc, char** argv) {
-  grpc::testing::TestEnvironment env(argc, argv);
+  grpc::testing::TestEnvironment env(&argc, argv);
   gpr_now_impl = grpc_core::testing::fake_gpr_now;
   grpc_init();
   grpc_timer_manager_set_threading(false);

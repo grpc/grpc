@@ -10,10 +10,10 @@
 #include "envoy/extensions/clusters/aggregate/v3/cluster.upbdefs.h"
 #include "envoy/extensions/clusters/aggregate/v3/cluster.upb.h"
 
-extern upb_def_init udpa_annotations_status_proto_upbdefinit;
-extern upb_def_init udpa_annotations_versioning_proto_upbdefinit;
-extern upb_def_init validate_validate_proto_upbdefinit;
-static const char descriptor[389] = {'\n', '4', 'e', 'n', 'v', 'o', 'y', '/', 'e', 'x', 't', 'e', 'n', 's', 'i', 'o', 'n', 's', '/', 'c', 'l', 'u', 's', 't', 'e', 
+extern _upb_DefPool_Init udpa_annotations_status_proto_upbdefinit;
+extern _upb_DefPool_Init udpa_annotations_versioning_proto_upbdefinit;
+extern _upb_DefPool_Init validate_validate_proto_upbdefinit;
+static const char descriptor[481] = {'\n', '4', 'e', 'n', 'v', 'o', 'y', '/', 'e', 'x', 't', 'e', 'n', 's', 'i', 'o', 'n', 's', '/', 'c', 'l', 'u', 's', 't', 'e', 
 'r', 's', '/', 'a', 'g', 'g', 'r', 'e', 'g', 'a', 't', 'e', '/', 'v', '3', '/', 'c', 'l', 'u', 's', 't', 'e', 'r', '.', 'p', 
 'r', 'o', 't', 'o', '\022', '&', 'e', 'n', 'v', 'o', 'y', '.', 'e', 'x', 't', 'e', 'n', 's', 'i', 'o', 'n', 's', '.', 'c', 'l', 
 'u', 's', 't', 'e', 'r', 's', '.', 'a', 'g', 'g', 'r', 'e', 'g', 'a', 't', 'e', '.', 'v', '3', '\032', '\035', 'u', 'd', 'p', 'a', 
@@ -25,22 +25,26 @@ static const char descriptor[389] = {'\n', '4', 'e', 'n', 'v', 'o', 'y', '/', 'e
 '\222', '\001', '\002', '\010', '\001', 'R', '\010', 'c', 'l', 'u', 's', 't', 'e', 'r', 's', ':', ';', '\232', '\305', '\210', '\036', '6', '\n', '4', 'e', 
 'n', 'v', 'o', 'y', '.', 'c', 'o', 'n', 'f', 'i', 'g', '.', 'c', 'l', 'u', 's', 't', 'e', 'r', '.', 'a', 'g', 'g', 'r', 'e', 
 'g', 'a', 't', 'e', '.', 'v', '2', 'a', 'l', 'p', 'h', 'a', '.', 'C', 'l', 'u', 's', 't', 'e', 'r', 'C', 'o', 'n', 'f', 'i', 
-'g', 'B', 'N', '\n', '4', 'i', 'o', '.', 'e', 'n', 'v', 'o', 'y', 'p', 'r', 'o', 'x', 'y', '.', 'e', 'n', 'v', 'o', 'y', '.', 
-'e', 'x', 't', 'e', 'n', 's', 'i', 'o', 'n', 's', '.', 'c', 'l', 'u', 's', 't', 'e', 'r', 's', '.', 'a', 'g', 'g', 'r', 'e', 
-'g', 'a', 't', 'e', '.', 'v', '3', 'B', '\014', 'C', 'l', 'u', 's', 't', 'e', 'r', 'P', 'r', 'o', 't', 'o', 'P', '\001', '\272', '\200', 
-'\310', '\321', '\006', '\002', '\020', '\002', 'b', '\006', 'p', 'r', 'o', 't', 'o', '3', 
+'g', 'B', '\251', '\001', '\n', '4', 'i', 'o', '.', 'e', 'n', 'v', 'o', 'y', 'p', 'r', 'o', 'x', 'y', '.', 'e', 'n', 'v', 'o', 'y', 
+'.', 'e', 'x', 't', 'e', 'n', 's', 'i', 'o', 'n', 's', '.', 'c', 'l', 'u', 's', 't', 'e', 'r', 's', '.', 'a', 'g', 'g', 'r', 
+'e', 'g', 'a', 't', 'e', '.', 'v', '3', 'B', '\014', 'C', 'l', 'u', 's', 't', 'e', 'r', 'P', 'r', 'o', 't', 'o', 'P', '\001', 'Z', 
+'Y', 'g', 'i', 't', 'h', 'u', 'b', '.', 'c', 'o', 'm', '/', 'e', 'n', 'v', 'o', 'y', 'p', 'r', 'o', 'x', 'y', '/', 'g', 'o', 
+'-', 'c', 'o', 'n', 't', 'r', 'o', 'l', '-', 'p', 'l', 'a', 'n', 'e', '/', 'e', 'n', 'v', 'o', 'y', '/', 'e', 'x', 't', 'e', 
+'n', 's', 'i', 'o', 'n', 's', '/', 'c', 'l', 'u', 's', 't', 'e', 'r', 's', '/', 'a', 'g', 'g', 'r', 'e', 'g', 'a', 't', 'e', 
+'/', 'v', '3', ';', 'a', 'g', 'g', 'r', 'e', 'g', 'a', 't', 'e', 'v', '3', '\272', '\200', '\310', '\321', '\006', '\002', '\020', '\002', 'b', '\006', 
+'p', 'r', 'o', 't', 'o', '3', 
 };
 
-static upb_def_init *deps[4] = {
+static _upb_DefPool_Init *deps[4] = {
   &udpa_annotations_status_proto_upbdefinit,
   &udpa_annotations_versioning_proto_upbdefinit,
   &validate_validate_proto_upbdefinit,
   NULL
 };
 
-upb_def_init envoy_extensions_clusters_aggregate_v3_cluster_proto_upbdefinit = {
+_upb_DefPool_Init envoy_extensions_clusters_aggregate_v3_cluster_proto_upbdefinit = {
   deps,
   &envoy_extensions_clusters_aggregate_v3_cluster_proto_upb_file_layout,
   "envoy/extensions/clusters/aggregate/v3/cluster.proto",
-  UPB_STRVIEW_INIT(descriptor, 389)
+  UPB_STRINGVIEW_INIT(descriptor, 481)
 };

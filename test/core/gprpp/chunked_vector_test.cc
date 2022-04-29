@@ -149,6 +149,14 @@ TEST(ChunkedVector, Clear) {
   EXPECT_EQ(v.begin(), v.end());
 }
 
+TEST(ChunkedVector, RemoveIf) {
+  auto arena = MakeScopedArena(kInitialArenaSize, g_memory_allocator);
+  ChunkedVector<int, kChunkSize> v(arena.get());
+  v.EmplaceBack(1);
+  v.SetEnd(std::remove_if(v.begin(), v.end(), [](int i) { return i == 1; }));
+  EXPECT_EQ(v.size(), 0);
+}
+
 }  // namespace testing
 
 }  // namespace grpc_core

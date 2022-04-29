@@ -20,39 +20,42 @@ cd "$(dirname "$0")/../../.."
 # Install openssl (to use instead of boringssl)
 apt-get update && apt-get install -y libssl-dev
 
+# Use externally provided env to determine build parallelism, otherwise use default.
+GRPC_CPP_DISTRIBTEST_BUILD_COMPILER_JOBS=${GRPC_CPP_DISTRIBTEST_BUILD_COMPILER_JOBS:-4}
+
 # Install absl
 mkdir -p "third_party/abseil-cpp/cmake/build"
 pushd "third_party/abseil-cpp/cmake/build"
 cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_POSITION_INDEPENDENT_CODE=TRUE ../..
-make -j4 install
+make "-j${GRPC_CPP_DISTRIBTEST_BUILD_COMPILER_JOBS}" install
 popd
 
 # Install c-ares
 mkdir -p "third_party/cares/cares/cmake/build"
 pushd "third_party/cares/cares/cmake/build"
 cmake -DCMAKE_BUILD_TYPE=Release ../..
-make -j4 install
+make "-j${GRPC_CPP_DISTRIBTEST_BUILD_COMPILER_JOBS}" install
 popd
 
 # Install protobuf
 mkdir -p "third_party/protobuf/cmake/build"
 pushd "third_party/protobuf/cmake/build"
 cmake -Dprotobuf_BUILD_TESTS=OFF -DCMAKE_BUILD_TYPE=Release ..
-make -j4 install
+make "-j${GRPC_CPP_DISTRIBTEST_BUILD_COMPILER_JOBS}" install
 popd
 
 # Install re2
 mkdir -p "third_party/re2/cmake/build"
 pushd "third_party/re2/cmake/build"
 cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_POSITION_INDEPENDENT_CODE=TRUE ../..
-make -j4 install
+make "-j${GRPC_CPP_DISTRIBTEST_BUILD_COMPILER_JOBS}" install
 popd
 
 # Install zlib
 mkdir -p "third_party/zlib/cmake/build"
 pushd "third_party/zlib/cmake/build"
 cmake -DCMAKE_BUILD_TYPE=Release ../..
-make -j4 install
+make "-j${GRPC_CPP_DISTRIBTEST_BUILD_COMPILER_JOBS}" install
 popd
 
 # Just before installing gRPC, wipe out contents of all the submodules to simulate
@@ -75,19 +78,19 @@ cmake \
   -DgRPC_SSL_PROVIDER=package \
   -DgRPC_ZLIB_PROVIDER=package \
   ../..
-make -j4 install
+make "-j${GRPC_CPP_DISTRIBTEST_BUILD_COMPILER_JOBS}" install
 popd
 
 # Build helloworld example using Makefile and pkg-config
 pushd examples/cpp/helloworld
 export PKG_CONFIG_PATH=/usr/local/grpc/lib/pkgconfig
 export PATH=$PATH:/usr/local/grpc/bin
-make
+make "-j${GRPC_CPP_DISTRIBTEST_BUILD_COMPILER_JOBS}"
 popd
 
 # Build route_guide example using Makefile and pkg-config
 pushd examples/cpp/route_guide
 export PKG_CONFIG_PATH=/usr/local/grpc/lib/pkgconfig
 export PATH=$PATH:/usr/local/grpc/bin
-make
+make "-j${GRPC_CPP_DISTRIBTEST_BUILD_COMPILER_JOBS}"
 popd

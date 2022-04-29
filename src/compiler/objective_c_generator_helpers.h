@@ -36,10 +36,30 @@ inline string MessageHeaderName(const FileDescriptor* file) {
   return google::protobuf::compiler::objectivec::FilePath(file) + ".pbobjc.h";
 }
 
-inline string ServiceClassName(const ServiceDescriptor* service) {
+inline bool AsciiIsUpper(char c) { return c >= 'A' && c <= 'Z'; }
+
+inline ::std::string ServiceClassName(const ServiceDescriptor* service) {
   const FileDescriptor* file = service->file();
-  string prefix = google::protobuf::compiler::objectivec::FileClassPrefix(file);
-  return prefix + service->name();
+  ::std::string prefix =
+      google::protobuf::compiler::objectivec::FileClassPrefix(file);
+  ::std::string class_name = service->name();
+  // We add the prefix in the cases where the string is missing a prefix.
+  // We define "missing a prefix" as where 'input':
+  // a) Doesn't start with the prefix or
+  // b) Isn't equivalent to the prefix or
+  // c) Has the prefix, but the letter after the prefix is lowercase
+  // This is the same semantics as the Objective-C protoc.
+  // https://github.com/protocolbuffers/protobuf/blob/c160ae52a91ca4c76936531d68cc846f8230dbb1/src/google/protobuf/compiler/objectivec/objectivec_helpers.cc#L389
+  if (class_name.rfind(prefix, 0) == 0) {
+    if (class_name.length() == prefix.length() ||
+        !AsciiIsUpper(class_name[prefix.length()])) {
+      return prefix + class_name;
+    } else {
+      return class_name;
+    }
+  } else {
+    return prefix + class_name;
+  }
 }
 
 inline ::std::string LocalImport(const ::std::string& import) {

@@ -12,11 +12,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-FROM debian:bullseye
+FROM silkeh/clang:13
 
-# Install clang-tidy 11
-RUN apt-get update && apt-get install -y clang-tidy-11 jq git
-ENV CLANG_TIDY=clang-tidy-11
+# Install prerequisites for the clang-tidy script
+RUN apt-get update && apt-get install -y python3 jq git && apt-get clean
+
+# otherwise clang-tidy will report missing <gtest/gtest.h> header
+RUN apt-get update && apt-get install -y libgtest-dev && apt-get clean
 
 ADD clang_tidy_all_the_things.sh /
 

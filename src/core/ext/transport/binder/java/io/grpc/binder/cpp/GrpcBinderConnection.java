@@ -60,9 +60,9 @@ public class GrpcBinderConnection implements ServiceConnection {
     Log.e(logTag, "Service has disconnected. mConnId = " + mConnId);
   }
 
-  public void tryConnect(String pkg, String cls) {
+  public void tryConnect(String pkg, String cls, String action_name) {
     synchronized (this) {
-      Intent intent = new Intent("grpc.io.action.BIND");
+      Intent intent = new Intent(action_name);
       ComponentName compName = new ComponentName(pkg, cls);
       intent.setComponent(compName);
       // Will return true if the system is in the process of bringing up a service that your client

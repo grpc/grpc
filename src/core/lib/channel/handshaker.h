@@ -114,7 +114,7 @@ class HandshakeManager : public RefCounted<HandshakeManager> {
   /// the necessary clean-up.  Otherwise, the callback takes ownership of
   /// the arguments.
   void DoHandshake(grpc_endpoint* endpoint,
-                   const grpc_channel_args* channel_args, grpc_millis deadline,
+                   const grpc_channel_args* channel_args, Timestamp deadline,
                    grpc_tcp_server_acceptor* acceptor,
                    grpc_iomgr_cb_func on_handshake_done, void* user_data);
 

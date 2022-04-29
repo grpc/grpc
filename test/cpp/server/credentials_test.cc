@@ -32,6 +32,7 @@
 #define CA_CERT_PATH "src/core/tsi/test_creds/ca.pem"
 #define SERVER_CERT_PATH "src/core/tsi/test_creds/server1.pem"
 #define SERVER_KEY_PATH "src/core/tsi/test_creds/server1.key"
+#define CRL_DIR_PATH "test/core/tsi/test_creds/crl_data"
 
 namespace {
 
@@ -110,6 +111,21 @@ TEST(
   GPR_ASSERT(server_credentials.get() != nullptr);
 }
 
+TEST(CredentialsTest, TlsServerCredentialsWithCrlChecking) {
+  auto certificate_provider = std::make_shared<FileWatcherCertificateProvider>(
+      SERVER_KEY_PATH, SERVER_CERT_PATH, CA_CERT_PATH, 1);
+  grpc::experimental::TlsServerCredentialsOptions options(certificate_provider);
+  options.watch_root_certs();
+  options.set_root_cert_name(kRootCertName);
+  options.watch_identity_key_cert_pairs();
+  options.set_identity_cert_name(kIdentityCertName);
+  options.set_cert_request_type(
+      GRPC_SSL_REQUEST_AND_REQUIRE_CLIENT_CERTIFICATE_AND_VERIFY);
+  options.set_crl_directory(CRL_DIR_PATH);
+  auto server_credentials = grpc::experimental::TlsServerCredentials(options);
+  GPR_ASSERT(server_credentials.get() != nullptr);
+}
+
 // ServerCredentials should always have identity credential presented.
 // Otherwise gRPC stack will fail.
 TEST(
@@ -166,7 +182,7 @@ TEST(CredentialsTest, TlsServerCredentialsWithAsyncExternalVerifier) {
 
 int main(int argc, char** argv) {
   ::testing::InitGoogleTest(&argc, argv);
-  grpc::testing::TestEnvironment env(argc, argv);
+  grpc::testing::TestEnvironment env(&argc, argv);
   int ret = RUN_ALL_TESTS();
   return ret;
 }

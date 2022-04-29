@@ -6,24 +6,23 @@ libs
 objs
 
 # Python items
-cython_debug/
-python_build/
-yapf_virtual_environment/
-python_pylint_venv/
 .coverage*
 .eggs
-htmlcov/
-dist/
+.pytype
 *.egg
-py27_gevent/
-py27_native/
-py3[0-9]_gevent/
-py3[0-9]_native/
+*.egg-info
 a.out
+cython_debug/
+dist/
+htmlcov/
+py3*/
+python_build/
+python_pylint_venv/
+src/python/grpcio_*/=*
+src/python/grpcio_*/build/
 src/python/grpcio_*/LICENSE
 src/python/grpcio_status/grpc_status/google/rpc/status.proto
-.pytype
-*.egg-info
+yapf_virtual_environment/
 
 # Node installation output
 node_modules
@@ -64,6 +63,7 @@ Gemfile.lock
 # Temporary test reports
 report.xml
 */sponge_log.xml
+*/success_log_to_rename.xml
 latency_trace.txt
 latency_trace.*.txt
 
@@ -122,6 +122,11 @@ Podfile.lock
 bazel-*
 bazel_format_virtual_environment/
 tools/bazel-*
+
+# Bazel wrapper
+bazel_wrapper
+bazel_wrapper.bat
+bazel_wrapper.bazelrc
 
 # Debug output
 gdb.txt

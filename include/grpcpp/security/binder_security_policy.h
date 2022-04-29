@@ -17,6 +17,12 @@
 
 #include <memory>
 
+#ifdef GPR_ANDROID
+
+#include <jni.h>
+
+#endif
+
 namespace grpc {
 namespace experimental {
 namespace binder {
@@ -50,6 +56,24 @@ class InternalOnlySecurityPolicy : public SecurityPolicy {
   ~InternalOnlySecurityPolicy() override;
   bool IsAuthorized(int uid) override;
 };
+
+#ifdef GPR_ANDROID
+
+// EXPERIMENTAL Only allows the connections from the APK that have the same
+// signature.
+class SameSignatureSecurityPolicy : public SecurityPolicy {
+ public:
+  // `context` is required for getting PackageManager Java class
+  SameSignatureSecurityPolicy(JavaVM* jvm, jobject context);
+  ~SameSignatureSecurityPolicy() override;
+  bool IsAuthorized(int uid) override;
+
+ private:
+  JavaVM* jvm_;
+  jobject context_;
+};
+
+#endif
 
 }  // namespace binder
 }  // namespace experimental

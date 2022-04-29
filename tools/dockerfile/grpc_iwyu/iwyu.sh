@@ -36,7 +36,7 @@ cat compile_commands.json | jq -r '.[].file' \
   | tee iwyu_files.txt
 
 # run iwyu, filtering out changes to port_platform.h
-xargs -a iwyu_files.txt ${IWYU_ROOT}/iwyu/iwyu_tool.py -p compile_commands_for_iwyu.json -j 16 \
+xargs -a iwyu_files.txt -I FILES ${IWYU_ROOT}/iwyu/iwyu_tool.py -p compile_commands_for_iwyu.json -j 16 FILES -- -Xiwyu --no_fwd_decls \
   | grep -v -E "port_platform.h" \
   | tee iwyu.out
 
@@ -46,7 +46,7 @@ cat iwyu.out | grep -Ev "^namespace " > iwyu.out.filtered
 ${IWYU_ROOT}/iwyu/fix_includes.py --nocomments < iwyu.out.filtered || true
 
 # reformat sources, since iwyu gets this wrong
-xargs -a iwyu_files.txt $CLANG_FORMAT -i
+xargs -a iwyu_files.txt ${CLANG_FORMAT:-clang-format} -i
 
 # TODO(ctiller): expand this to match the clang-tidy directories:
 #  | grep -E "(^include/|^src/core/|^src/cpp/|^test/core/|^test/cpp/)"

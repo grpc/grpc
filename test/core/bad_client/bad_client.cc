@@ -149,7 +149,7 @@ void grpc_run_client_side_validator(grpc_bad_client_arg* arg, uint32_t flags,
         GRPC_CLOSURE_INIT(&read_done_closure, set_read_done, &read_done_event,
                           grpc_schedule_on_exec_ctx);
         grpc_endpoint_read(sfd->client, &incoming, &read_done_closure,
-                           /*urgent=*/true);
+                           /*urgent=*/true, /*min_progress_size=*/1);
         grpc_core::ExecCtx::Get()->Flush();
         do {
           GPR_ASSERT(gpr_time_cmp(deadline, gpr_now(deadline.clock_type)) > 0);
@@ -214,7 +214,8 @@ void grpc_run_bad_client_test(
   grpc_server_start(a.server);
   const grpc_channel_args* channel_args = grpc_core::CoreConfiguration::Get()
                                               .channel_args_preconditioning()
-                                              .PreconditionChannelArgs(nullptr);
+                                              .PreconditionChannelArgs(nullptr)
+                                              .ToC();
   transport = grpc_create_chttp2_transport(channel_args, sfd.server, false);
   grpc_channel_args_destroy(channel_args);
   server_setup_transport(&a, transport);
@@ -282,9 +283,12 @@ grpc_bad_client_arg connection_preface_arg = {
 
 bool rst_stream_client_validator(grpc_slice_buffer* incoming, void* /*arg*/) {
   // Get last frame from incoming slice buffer.
+  constexpr int kExpectedFrameLength = 13;
+  if (incoming->length < kExpectedFrameLength) return false;
   grpc_slice_buffer last_frame_buffer;
   grpc_slice_buffer_init(&last_frame_buffer);
-  grpc_slice_buffer_trim_end(incoming, 13, &last_frame_buffer);
+  grpc_slice_buffer_trim_end(incoming, kExpectedFrameLength,
+                             &last_frame_buffer);
   GPR_ASSERT(last_frame_buffer.count == 1);
   grpc_slice last_frame = last_frame_buffer.slices[0];
 

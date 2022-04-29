@@ -1,0 +1,106 @@
+actions {
+  create_channel {
+    target: "unix:"
+    channel_actions {
+      add_n_bytes_writable: 150
+      wait_ms: 150
+    }
+  }
+}
+actions {
+  check_connectivity: true
+}
+actions {
+  create_server {
+    channel_args {
+      key: "grpc.http2.max_ping_strikes"
+    }
+  }
+}
+actions {
+  request_call {
+  }
+}
+actions {
+  advance_time: 1886680168
+}
+actions {
+  watch_connectivity: 1886680167
+}
+actions {
+  advance_time: 1886680168
+}
+actions {
+  ping {
+  }
+}
+actions {
+  advance_time: 4194238464
+}
+actions {
+  shutdown_server {
+  }
+}
+actions {
+  advance_time: 1543528704
+}
+actions {
+  advance_time: 4194238464
+}
+actions {
+  get_target {
+  }
+}
+actions {
+  advance_time: 1886680168
+}
+actions {
+  advance_time: 745829480
+}
+actions {
+  enable_tracer: "all"
+}
+actions {
+  request_call {
+  }
+}
+actions {
+  shutdown_server {
+  }
+}
+actions {
+  advance_time: 1886680168
+}
+actions {
+  advance_time: 1886680167
+}
+actions {
+  advance_time: 1886680168
+}
+actions {
+  advance_time: 1543528704
+}
+actions {
+  ping {
+  }
+}
+actions {
+  advance_time: 4194238464
+}
+actions {
+  advance_time: 4194238464
+}
+actions {
+  advance_time: 4194238464
+}
+actions {
+  advance_time: 4194238464
+}
+actions {
+}
+actions {
+  destroy_call {
+  }
+}
+actions {
+}

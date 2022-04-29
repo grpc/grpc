@@ -341,8 +341,8 @@ static bool client_ssl_test(char* server_alpn_preferred) {
   grpc_channel_args grpc_args;
   grpc_args.num_args = 1;
   grpc_args.args = &ssl_name_override;
-  grpc_channel* channel = grpc_secure_channel_create(ssl_creds, target.c_str(),
-                                                     &grpc_args, nullptr);
+  grpc_channel* channel =
+      grpc_channel_create(target.c_str(), ssl_creds, &grpc_args);
   GPR_ASSERT(channel);
 
   // Initially the channel will be idle, the
@@ -385,7 +385,7 @@ static bool client_ssl_test(char* server_alpn_preferred) {
 }
 
 int main(int argc, char* argv[]) {
-  grpc::testing::TestEnvironment env(argc, argv);
+  grpc::testing::TestEnvironment env(&argc, argv);
   // Handshake succeeeds when the server has grpc-exp as the ALPN preference.
   GPR_ASSERT(client_ssl_test(const_cast<char*>("grpc-exp")));
   // Handshake succeeeds when the server has h2 as the ALPN preference. This

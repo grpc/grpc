@@ -42,7 +42,8 @@ using ::grpc_event_engine::experimental::ResolvedAddressToURI;
 using ::grpc_event_engine::experimental::SliceBuffer;
 
 void endpoint_read(grpc_endpoint* ep, grpc_slice_buffer* slices,
-                   grpc_closure* cb, bool /* urgent */) {
+                   grpc_closure* cb, bool /* urgent */,
+                   int /* min_progress_size */) {
   auto* eeep = reinterpret_cast<grpc_event_engine_endpoint*>(ep);
   if (eeep->endpoint == nullptr) {
     grpc_core::ExecCtx::Run(DEBUG_LOCATION, cb, GRPC_ERROR_CANCELLED);
@@ -117,7 +118,7 @@ absl::string_view endpoint_get_peer(grpc_endpoint* ep) {
   }
   if (eeep->peer_address.empty()) {
     const EventEngine::ResolvedAddress& addr = eeep->endpoint->GetPeerAddress();
-    eeep->peer_address = ResolvedAddressToURI(addr);
+    eeep->peer_address = ResolvedAddressToURI(addr).value();
   }
   return eeep->peer_address;
 }
@@ -130,7 +131,7 @@ absl::string_view endpoint_get_local_address(grpc_endpoint* ep) {
   if (eeep->local_address.empty()) {
     const EventEngine::ResolvedAddress& addr =
         eeep->endpoint->GetLocalAddress();
-    eeep->local_address = ResolvedAddressToURI(addr);
+    eeep->local_address = ResolvedAddressToURI(addr).value();
   }
   return eeep->local_address;
 }

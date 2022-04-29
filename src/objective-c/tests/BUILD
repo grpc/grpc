@@ -145,6 +145,11 @@ grpc_objc_testing_library(
 )
 
 grpc_objc_testing_library(
+    name = "GRPCBasicUnitTests-lib",
+    srcs = ["UnitTests/GRPCCallOptionsTests.m"],
+)
+
+grpc_objc_testing_library(
     name = "APIv2Tests-lib",
     srcs = ["UnitTests/APIv2Tests.m"],
 )
@@ -180,6 +185,7 @@ ios_unit_test(
         ":APIv2Tests-lib",
         ":ChannelPoolTest-lib",
         ":ChannelTests-lib",
+        ":GRPCBasicUnitTests-lib",
         ":GRPCClientTests-lib",
         ":NSErrorUnitTests-lib",
         ":RxLibraryUnitTests-lib",

@@ -52,9 +52,7 @@ struct XdsClusterResource {
 
   // The LRS server to use for load reporting.
   // If not set, load reporting will be disabled.
-  // If set to the empty string, will use the same server we obtained the CDS
-  // data from.
-  absl::optional<std::string> lrs_load_reporting_server_name;
+  absl::optional<XdsBootstrap::XdsServer> lrs_load_reporting_server;
 
   // The LB policy to use (e.g., "ROUND_ROBIN" or "RING_HASH").
   std::string lb_policy;
@@ -71,8 +69,7 @@ struct XdsClusterResource {
            dns_hostname == other.dns_hostname &&
            prioritized_cluster_names == other.prioritized_cluster_names &&
            common_tls_context == other.common_tls_context &&
-           lrs_load_reporting_server_name ==
-               other.lrs_load_reporting_server_name &&
+           lrs_load_reporting_server == other.lrs_load_reporting_server &&
            lb_policy == other.lb_policy &&
            min_ring_size == other.min_ring_size &&
            max_ring_size == other.max_ring_size &&
@@ -98,7 +95,7 @@ class XdsClusterResourceType
 
   bool AllResourcesRequiredInSotW() const override { return true; }
 
-  void InitUpbSymtab(upb_symtab* symtab) const override {
+  void InitUpbSymtab(upb_DefPool* symtab) const override {
     envoy_config_cluster_v3_Cluster_getmsgdef(symtab);
     envoy_extensions_clusters_aggregate_v3_ClusterConfig_getmsgdef(symtab);
     envoy_extensions_transport_sockets_tls_v3_UpstreamTlsContext_getmsgdef(

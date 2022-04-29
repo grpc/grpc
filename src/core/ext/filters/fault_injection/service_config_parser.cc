@@ -33,8 +33,6 @@ namespace grpc_core {
 
 namespace {
 
-size_t g_fault_injection_parser_index;
-
 std::vector<FaultInjectionMethodParsedConfig::FaultInjectionPolicy>
 ParseFaultInjectionPolicy(const Json::Array& policies_json_array,
                           std::vector<grpc_error_handle>* error_list) {
@@ -122,14 +120,12 @@ ParseFaultInjectionPolicy(const Json::Array& policies_json_array,
       }
     }
     // Parse max_faults
-    if (ParseJsonObjectField(json_object, "maxFaults",
-                             &fault_injection_policy.max_faults,
-                             &sub_error_list, false)) {
-      if (fault_injection_policy.max_faults < 0) {
-        sub_error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-            "field:maxFaults error:should be zero or positive"));
-      }
-    }
+    static_assert(
+        std::is_unsigned<decltype(fault_injection_policy.max_faults)>::value,
+        "maxFaults should be unsigned");
+    ParseJsonObjectField(json_object, "maxFaults",
+                         &fault_injection_policy.max_faults, &sub_error_list,
+                         false);
     if (!sub_error_list.empty()) {
       error_list->push_back(GRPC_ERROR_CREATE_FROM_VECTOR_AND_CPP_STRING(
           absl::StrCat("failed to parse faultInjectionPolicy index ", i),
@@ -169,13 +165,15 @@ FaultInjectionServiceConfigParser::ParsePerMethodParams(
       std::move(fault_injection_policies));
 }
 
-void FaultInjectionServiceConfigParser::Register() {
-  g_fault_injection_parser_index = ServiceConfigParser::RegisterParser(
+void FaultInjectionServiceConfigParser::Register(
+    CoreConfiguration::Builder* builder) {
+  builder->service_config_parser()->RegisterParser(
       absl::make_unique<FaultInjectionServiceConfigParser>());
 }
 
 size_t FaultInjectionServiceConfigParser::ParserIndex() {
-  return g_fault_injection_parser_index;
+  return CoreConfiguration::Get().service_config_parser().GetParserIndex(
+      parser_name());
 }
 
 }  // namespace grpc_core

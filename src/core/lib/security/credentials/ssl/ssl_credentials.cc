@@ -27,6 +27,7 @@
 #include <grpc/support/string_util.h>
 
 #include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/security/security_connector/ssl_utils.h"
 #include "src/core/lib/surface/api_trace.h"
 #include "src/core/tsi/ssl_transport_security.h"
 
@@ -34,20 +35,9 @@
 // SSL Channel Credentials.
 //
 
-void grpc_tsi_ssl_pem_key_cert_pairs_destroy(tsi_ssl_pem_key_cert_pair* kp,
-                                             size_t num_key_cert_pairs) {
-  if (kp == nullptr) return;
-  for (size_t i = 0; i < num_key_cert_pairs; i++) {
-    gpr_free(const_cast<char*>(kp[i].private_key));
-    gpr_free(const_cast<char*>(kp[i].cert_chain));
-  }
-  gpr_free(kp);
-}
-
 grpc_ssl_credentials::grpc_ssl_credentials(
     const char* pem_root_certs, grpc_ssl_pem_key_cert_pair* pem_key_cert_pair,
-    const grpc_ssl_verify_peer_options* verify_options)
-    : grpc_channel_credentials(GRPC_CHANNEL_CREDENTIALS_TYPE_SSL) {
+    const grpc_ssl_verify_peer_options* verify_options) {
   build_config(pem_root_certs, pem_key_cert_pair, verify_options);
 }
 
@@ -91,6 +81,8 @@ grpc_ssl_credentials::create_security_connector(
   *new_args = grpc_channel_args_copy_and_add(args, &new_arg, 1);
   return sc;
 }
+
+const char* grpc_ssl_credentials::Type() { return "Ssl"; }
 
 void grpc_ssl_credentials::build_config(
     const char* pem_root_certs, grpc_ssl_pem_key_cert_pair* pem_key_cert_pair,
@@ -171,8 +163,7 @@ struct grpc_ssl_server_credentials_options {
 };
 
 grpc_ssl_server_credentials::grpc_ssl_server_credentials(
-    const grpc_ssl_server_credentials_options& options)
-    : grpc_server_credentials(GRPC_CHANNEL_CREDENTIALS_TYPE_SSL) {
+    const grpc_ssl_server_credentials_options& options) {
   if (options.certificate_config_fetcher != nullptr) {
     config_.client_certificate_request = options.client_certificate_request;
     certificate_config_fetcher_ = *options.certificate_config_fetcher;
@@ -194,6 +185,8 @@ grpc_ssl_server_credentials::create_security_connector(
     const grpc_channel_args* /* args */) {
   return grpc_ssl_server_security_connector_create(this->Ref());
 }
+
+const char* grpc_ssl_server_credentials::Type() { return "Ssl"; }
 
 tsi_ssl_pem_key_cert_pair* grpc_convert_grpc_to_tsi_cert_pairs(
     const grpc_ssl_pem_key_cert_pair* pem_key_cert_pairs,
