@@ -234,6 +234,7 @@ enum UnrefBehavior {
 namespace internal {
 template <typename T, UnrefBehavior UnrefBehaviorArg>
 class Delete;
+
 template <typename T>
 class Delete<T, kUnrefDelete> {
  public:

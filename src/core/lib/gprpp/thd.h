@@ -23,6 +23,8 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <stddef.h>
+
 #include <grpc/support/log.h>
 #include <grpc/support/sync.h>
 #include <grpc/support/thd_id.h>

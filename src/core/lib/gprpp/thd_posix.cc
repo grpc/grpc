@@ -20,6 +20,9 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <grpc/impl/codegen/gpr_types.h>
+#include <grpc/support/time.h>
+
 #ifdef GPR_POSIX_SYNC
 
 #include <pthread.h>
@@ -27,19 +30,18 @@
 #include <string.h>
 #include <unistd.h>
 
-#include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/sync.h>
 #include <grpc/support/thd_id.h>
 
 #include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/gprpp/fork.h"
-#include "src/core/lib/gprpp/memory.h"
 #include "src/core/lib/gprpp/thd.h"
 
 namespace grpc_core {
 namespace {
 class ThreadInternalsPosix;
+
 struct thd_arg {
   ThreadInternalsPosix* thread;
   void (*body)(void* arg); /* body of a thread */
