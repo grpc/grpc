@@ -99,12 +99,15 @@ namespace Grpc.IntegrationTesting
         [Test]
         public async Task NoUnobservedTaskExceptionForUnavailableServers()
         {
-            TaskScheduler.UnobservedTaskException += (sender, args) => {
-                Assert.Fail("UnobservedTaskException hit.");
+            var unobservedTaskExceptionCounter = new AtomicCounter();
+            TaskScheduler.UnobservedTaskException += (sender, e) => {
+                unobservedTaskExceptionCounter.Increment();
+                Console.WriteLine("Detected unobserved task exception: " + e.Exception);
             };
-            var chan = new Channel("localhost:100", ChannelCredentials.Insecure);
+            var chan = new Channel("notexist:100", ChannelCredentials.Insecure);
             var client = new TestService.TestServiceClient(chan);
             for (int i = 0; i < 3; i++)
+            {
                 try
                 {
                     var call = client.FullDuplexCall();
@@ -118,9 +121,10 @@ namespace Grpc.IntegrationTesting
                 {
                     Console.WriteLine(err.Status.StatusCode);
                 }
+                GC.Collect();
+            }
             await chan.ShutdownAsync();
-            GC.Collect();
-            GC.WaitForPendingFinalizers();
+            Assert.AreEqual(0, unobservedTaskExceptionCounter.Count);
         }
     }
 }
