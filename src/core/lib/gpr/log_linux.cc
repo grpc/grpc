@@ -26,6 +26,7 @@
 
 #include <grpc/support/port_platform.h>
 
+// IWYU pragma: no_include <bits/types/struct_tm.h>
 #include <inttypes.h>
 #include <stdarg.h>
 #include <stdio.h>
