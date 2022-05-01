@@ -18,6 +18,8 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <grpc/support/cpu.h>  // IWYU pragma: keep
+
 #ifdef GPR_CPU_IPHONE
 
 #include <sys/sysctl.h>
