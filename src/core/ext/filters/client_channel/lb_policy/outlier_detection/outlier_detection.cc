@@ -18,6 +18,7 @@
 
 #include "src/core/ext/filters/client_channel/lb_policy/outlier_detection/outlier_detection.h"
 
+#include <algorithm>
 #include <atomic>
 #include <set>
 
@@ -180,13 +181,50 @@ class OutlierDetectionLb : public LoadBalancingPolicy {
       std::atomic<uint64_t> successes;
       std::atomic<uint64_t> failures;
     };
+
+    void RotateBucket() {
+      backup_bucket_->successes = 0;
+      backup_bucket_->failures = 0;
+      current_bucket_.swap(backup_bucket_);
+      active_bucket_.store(current_bucket_.get());
+    }
+
+    absl::optional<std::pair<double, uint64_t>> GetSuccessRateAndVolume() {
+      uint64_t total_request =
+          backup_bucket_->successes + backup_bucket_->failures;
+      if (total_request == 0) {
+        return absl::nullopt;
+      }
+      double success_rate =
+          backup_bucket_->successes * 100.0 /
+          (backup_bucket_->successes + backup_bucket_->failures);
+      return {
+          {success_rate, backup_bucket_->successes + backup_bucket_->failures}};
+    }
+
+    void Eject() {
+      ejected_ = true;
+      for (auto& subchannel : subchannels_) {
+        subchannel->Eject();
+      }
+    }
+
+    void Uneject() {
+      ejected_ = false;
+      for (auto& subchannel : subchannels_) {
+        subchannel->Uneject();
+      }
+    }
+
     std::unique_ptr<Bucket> current_bucket_ = absl::make_unique<Bucket>();
     std::unique_ptr<Bucket> backup_bucket_ = absl::make_unique<Bucket>();
     // The bucket used to update call counts.
     // Points to either current_bucket or active_bucket.
     std::atomic<Bucket*> active_bucket_;
     absl::optional<Timestamp> ejection_time_;
-    uint32_t mutiplier_;
+    uint32_t multiplier_ = 0;
+    bool ejected_ = false;
+    absl::Time ejection_timestamp;
     std::set<SubchannelWrapper*> subchannels_;
   };
 
@@ -641,28 +679,124 @@ void OutlierDetectionLb::EjectionTimer::OnTimer(void* arg,
 
 void OutlierDetectionLb::EjectionTimer::OnTimerLocked(grpc_error_handle error) {
   if (error == GRPC_ERROR_NONE && timer_pending_) {
-    for (auto& p : parent_->subchannel_state_map_) {
-      auto* subchannel_state = p.second.get();
-      // 1. Record the timestamp for use when ejecting addresses in this
+    std::map<SubchannelState*, double> success_rate_ejection_candidates;
+    std::map<SubchannelState*, double> failure_percentage_ejection_candidates;
+    double success_rate_sum = 0;
+    for (auto& state : parent_->subchannel_state_map_) {
+      auto* subchannel_state = state.second.get();
+      // Record the timestamp for use when ejecting addresses in this
       // iteration.
       subchannel_state->ejection_time_ = ExecCtx::Get()->Now();
-      // 2. For each address, swap the call counter's buckets in that address's
+      // For each address, swap the call counter's buckets in that address's
       // map entry.
-      subchannel_state->backup_bucket_->successes = 0;
-      subchannel_state->backup_bucket_->failures = 0;
-      subchannel_state->current_bucket_.swap(subchannel_state->backup_bucket_);
-      subchannel_state->active_bucket_.store(
-          subchannel_state->current_bucket_.get());
-      // 3. If the success_rate_ejection configuration field is set, run the
-      // success rate algorithm.
-      // 4. If the failure_percentage_ejection configuration field is set, run
-      // the falure percentage algorithm.
-      // 5. For each address in the map:
-      //   If the address is not ejected and the multiplier is greater than 0,
-      //   decrease the multiplier by 1. If the address is ejected, and the
-      //   current time is after ejection_timestamp + min(base_ejection_time *
-      //   multiplier, max(base_ejection_time, max_ejection_time)), un-eject the
-      //   address.
+      subchannel_state->RotateBucket();
+      // Gather data to run success rate algorithm or failure percentage
+      // algorithm.
+      absl::optional<std::pair<double, uint64_t>> host_success_rate_and_volume =
+          subchannel_state->GetSuccessRateAndVolume();
+      if (!host_success_rate_and_volume) {
+        continue;
+      }
+      double success_rate = host_success_rate_and_volume.value().first;
+      uint64_t request_volume = host_success_rate_and_volume.value().second;
+      if (parent_->config_->outlier_detection_config()
+              .success_rate_ejection.has_value()) {
+        if (request_volume >= parent_->config_->outlier_detection_config()
+                                  .success_rate_ejection->request_volume) {
+          success_rate_ejection_candidates[subchannel_state] = success_rate;
+          success_rate_sum += success_rate;
+        }
+      }
+      if (parent_->config_->outlier_detection_config()
+              .failure_percentage_ejection.has_value()) {
+        if (request_volume >=
+            parent_->config_->outlier_detection_config()
+                .failure_percentage_ejection->request_volume) {
+          failure_percentage_ejection_candidates[subchannel_state] =
+              success_rate;
+        }
+      }
+    }
+    // success rate algorithm
+    if (!success_rate_ejection_candidates.empty() &&
+        success_rate_ejection_candidates.size() >=
+            parent_->config_->outlier_detection_config()
+                .success_rate_ejection->minimum_hosts) {
+      // calculate ejection threshold: (mean - stdev *
+      // (success_rate_ejection.stdev_factor / 1000))
+      double mean = success_rate_sum / success_rate_ejection_candidates.size();
+      double variance = 0;
+      std::for_each(success_rate_ejection_candidates.begin(),
+                    success_rate_ejection_candidates.end(),
+                    [&variance, mean](std::pair<SubchannelState*, double> v) {
+                      variance += std::pow(v.second - mean, 2);
+                    });
+      variance /= success_rate_ejection_candidates.size();
+      double stdev = std::sqrt(variance);
+      const double success_rate_stdev_factor =
+          parent_->config_->outlier_detection_config()
+              .success_rate_ejection->stdev_factor /
+          1000;
+      double ejection_threshold = mean - stdev * success_rate_stdev_factor;
+      for (auto& candidate : success_rate_ejection_candidates) {
+        if (candidate.second < ejection_threshold) {
+          uint32_t random_key = rand() % 100;
+          if (random_key < parent_->config_->outlier_detection_config()
+                               .success_rate_ejection->enforcement_percentage) {
+            for (auto& subchannel : candidate.first->subchannels_) {
+              subchannel->Eject();
+            }
+          }
+        }
+      }
+    }
+    // failure percentage algorithm
+    if (!failure_percentage_ejection_candidates.empty() &&
+        failure_percentage_ejection_candidates.size() >=
+            parent_->config_->outlier_detection_config()
+                .failure_percentage_ejection->minimum_hosts) {
+      for (auto& candidate : failure_percentage_ejection_candidates) {
+        if ((100.0 - candidate.second) >=
+            parent_->config_->outlier_detection_config()
+                .failure_percentage_ejection->threshold) {
+          uint32_t random_key = rand() % 100;
+          if (random_key <
+              parent_->config_->outlier_detection_config()
+                  .failure_percentage_ejection->enforcement_percentage) {
+            for (auto& subchannel : candidate.first->subchannels_) {
+              subchannel->Eject();
+            }
+          }
+        }
+      }
+    }
+    // For each address in the map:
+    //   If the address is not ejected and the multiplier is greater than 0,
+    //   decrease the multiplier by 1. If the address is ejected, and the
+    //   current time is after ejection_timestamp + min(base_ejection_time *
+    //   multiplier, max(base_ejection_time, max_ejection_time)), un-eject the
+    //   address.
+    for (auto& state : parent_->subchannel_state_map_) {
+      auto* subchannel_state = state.second.get();
+      if (!subchannel_state->ejected_) {
+        if (subchannel_state->multiplier_ > 0) {
+          --subchannel_state->multiplier_;
+        }
+      } else {
+        auto change_time =
+            subchannel_state->ejection_timestamp +
+            absl::Milliseconds(
+                std::min(parent_->config_->outlier_detection_config()
+                                 .base_ejection_time.millis() *
+                             subchannel_state->multiplier_,
+                         std::max(parent_->config_->outlier_detection_config()
+                                      .base_ejection_time.millis(),
+                                  parent_->config_->outlier_detection_config()
+                                      .max_ejection_time.millis())));
+        if (change_time > absl::Now()) {
+          subchannel_state->Uneject();
+        }
+      }
     }
     timer_pending_ = false;
   }
