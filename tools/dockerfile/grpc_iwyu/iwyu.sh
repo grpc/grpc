@@ -17,7 +17,14 @@ set -ex
 
 cd ${IWYU_ROOT}
 
-export PATH=${PATH}:/iwyu_build/bin
+export PATH=${PATH}:${IWYU_ROOT}/iwyu_build/bin
+
+rm -rf iwyu || true
+git clone https://github.com/include-what-you-use/include-what-you-use.git iwyu
+# latest commit on the clang 11 branch
+cd ${IWYU_ROOT}/iwyu && git checkout fbd921d6640bf1b18fe5a8a895636215367eb6b9
+mkdir -p ${IWYU_ROOT}/iwyu_build && cd ${IWYU_ROOT}/iwyu_build && cmake -G "Unix Makefiles" ${IWYU_ROOT}/iwyu && make
+cd ${IWYU_ROOT}
 
 cat compile_commands.json | sed "s,\"file\": \",\"file\": \"${IWYU_ROOT}/,g" > compile_commands_for_iwyu.json
 
@@ -29,15 +36,17 @@ cat compile_commands.json | jq -r '.[].file' \
   | tee iwyu_files.txt
 
 # run iwyu, filtering out changes to port_platform.h
-xargs -a iwyu_files.txt -I FILES /iwyu/iwyu_tool.py -p compile_commands_for_iwyu.json -j 16 FILES -- -Xiwyu --no_fwd_decls \
+xargs -a iwyu_files.txt -I FILES ${IWYU_ROOT}/iwyu/iwyu_tool.py -p compile_commands_for_iwyu.json -j 16 FILES -- -Xiwyu --no_fwd_decls \
   | grep -v -E "port_platform.h" \
   | tee iwyu.out
 
 # apply the suggested changes
-/iwyu/fix_includes.py --nocomments < iwyu.out || true
+${IWYU_ROOT}/iwyu/fix_includes.py --nocomments < iwyu.out || true
 
 # reformat sources, since iwyu gets this wrong
 xargs -a iwyu_files.txt ${CLANG_FORMAT:-clang-format} -i
 
 # TODO(ctiller): expand this to match the clang-tidy directories:
 #  | grep -E "(^include/|^src/core/|^src/cpp/|^test/core/|^test/cpp/)"
+
+git diff --exit-code > /dev/null
