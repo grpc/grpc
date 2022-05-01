@@ -20,31 +20,30 @@
 
 #include "src/core/lib/address_utils/parse_address.h"
 
+#include <netinet/in.h>
+#include <stddef.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
-#ifdef GRPC_HAVE_UNIX_SOCKET
-#include <sys/un.h>
-#endif
-#ifdef GRPC_POSIX_SOCKET
-#include <errno.h>
-#include <net/if.h>
-#endif
+#include <sys/socket.h>
+
+#include <string>
 
 #include "absl/strings/str_cat.h"
 #include "absl/strings/strip.h"
 
-#include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
-#include <grpc/support/string_util.h>
 
 #include "src/core/lib/address_utils/sockaddr_utils.h"
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gprpp/host_port.h"
 #include "src/core/lib/iomgr/grpc_if_nametoindex.h"
-#include "src/core/lib/iomgr/sockaddr.h"
+#include "src/core/lib/iomgr/port.h"
+#include "src/core/lib/iomgr/sockaddr_posix.h"
 #include "src/core/lib/iomgr/socket_utils.h"
 
 #ifdef GRPC_HAVE_UNIX_SOCKET
+#include <sys/un.h>
 
 bool grpc_parse_unix(const grpc_core::URI& uri,
                      grpc_resolved_address* resolved_addr) {

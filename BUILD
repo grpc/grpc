@@ -1726,6 +1726,7 @@ grpc_cc_library(
     deps = [
         "gpr_base",
         "grpc_sockaddr",
+        "iomgr_port",
         "resolved_address",
         "uri_parser",
     ],
