@@ -3812,6 +3812,7 @@ targets:
   deps:
   - absl/status:statusor
   - absl/types:variant
+  - absl/utility:utility
   - gpr
   platforms:
   - linux
@@ -4477,6 +4478,7 @@ targets:
   deps:
   - absl/status:statusor
   - absl/types:variant
+  - absl/utility:utility
   - gpr
   uses_polling: false
 - name: async_end2end_test
@@ -5782,6 +5784,7 @@ targets:
   - absl/container:flat_hash_set
   - absl/status:statusor
   - absl/types:variant
+  - absl/utility:utility
   - gpr
   uses_polling: false
 - name: generic_end2end_test
@@ -6543,6 +6546,7 @@ targets:
   deps:
   - absl/status:statusor
   - absl/types:variant
+  - absl/utility:utility
   - gpr
   uses_polling: false
 - name: message_allocator_end2end_test
@@ -6783,6 +6787,7 @@ targets:
   deps:
   - absl/status:statusor
   - absl/types:variant
+  - absl/utility:utility
   - gpr
   uses_polling: false
 - name: poll_test
@@ -7138,6 +7143,7 @@ targets:
   deps:
   - absl/status:statusor
   - absl/types:variant
+  - absl/utility:utility
   - gpr
   uses_polling: false
 - name: retry_throttle_test
