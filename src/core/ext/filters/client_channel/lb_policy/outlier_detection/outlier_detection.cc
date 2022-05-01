@@ -315,6 +315,7 @@ class OutlierDetectionLb : public LoadBalancingPolicy {
   RefCountedPtr<RefCountedPicker> picker_;
   std::map<std::string, RefCountedPtr<SubchannelState>> subchannel_state_map_;
   OrphanablePtr<EjectionTimer> ejection_timer_;
+  absl::optional<absl::Time> ejection_timer_start_timestamp;
 };
 
 //
@@ -504,7 +505,7 @@ void OutlierDetectionLb::UpdateLocked(UpdateArgs args) {
   // Update config.
   config_ = std::move(args.config);
   // Update outlier detection timer.
-  //ejection_timer_ = MakeOrphanable<EjectionTimer>(Ref());
+  // ejection_timer_ = MakeOrphanable<EjectionTimer>(Ref());
   // Create policy if needed.
   if (child_policy_ == nullptr) {
     child_policy_ = CreateChildPolicyLocked(args.args);
@@ -655,10 +656,19 @@ OutlierDetectionLb::EjectionTimer::EjectionTimer(
     : parent_(std::move(parent)) {
   GRPC_CLOSURE_INIT(&on_timer_, OnTimer, this, nullptr);
   Ref().release();
-  grpc_timer_init(&timer_,
-                  ExecCtx::Get()->Now() +
-                      parent_->config_->outlier_detection_config().interval,
-                  &on_timer_);
+  auto interval = parent_->config_->outlier_detection_config().interval;
+  if (parent_->ejection_timer_start_timestamp.has_value()) {
+    auto time_remaining = absl::ToInt64Milliseconds(
+        parent_->ejection_timer_start_timestamp.value() - absl::Now());
+    if (time_remaining > 0) {
+      interval = Duration::Milliseconds(time_remaining);
+    } else {
+      interval = Duration::Milliseconds(0);
+    }
+  } else {
+    parent_->ejection_timer_start_timestamp = absl::Now();
+  }
+  grpc_timer_init(&timer_, ExecCtx::Get()->Now() + interval, &on_timer_);
 }
 
 void OutlierDetectionLb::EjectionTimer::Orphan() {
@@ -682,6 +692,8 @@ void OutlierDetectionLb::EjectionTimer::OnTimerLocked(grpc_error_handle error) {
     std::map<SubchannelState*, double> success_rate_ejection_candidates;
     std::map<SubchannelState*, double> failure_percentage_ejection_candidates;
     double success_rate_sum = 0;
+    auto time_now = ExecCtx::Get()->Now();
+    parent_->ejection_timer_start_timestamp = absl::Now();
     for (auto& state : parent_->subchannel_state_map_) {
       auto* subchannel_state = state.second.get();
       // Record the timestamp for use when ejecting addresses in this
@@ -743,9 +755,8 @@ void OutlierDetectionLb::EjectionTimer::OnTimerLocked(grpc_error_handle error) {
           uint32_t random_key = rand() % 100;
           if (random_key < parent_->config_->outlier_detection_config()
                                .success_rate_ejection->enforcement_percentage) {
-            for (auto& subchannel : candidate.first->subchannels_) {
-              subchannel->Eject();
-            }
+            candidate.first->Eject();
+            candidate.first->ejection_time_ = time_now;
           }
         }
       }
@@ -763,9 +774,8 @@ void OutlierDetectionLb::EjectionTimer::OnTimerLocked(grpc_error_handle error) {
           if (random_key <
               parent_->config_->outlier_detection_config()
                   .failure_percentage_ejection->enforcement_percentage) {
-            for (auto& subchannel : candidate.first->subchannels_) {
-              subchannel->Eject();
-            }
+            candidate.first->Eject();
+            candidate.first->ejection_time_ = time_now;
           }
         }
       }
