@@ -26,6 +26,8 @@
 
 #include <grpc/support/port_platform.h>
 
+#ifdef GPR_LINUX_LOG
+
 // IWYU pragma: no_include <bits/types/struct_tm.h>
 #include <inttypes.h>
 #include <stdarg.h>
@@ -47,8 +49,6 @@
 
 #include "src/core/lib/gpr/tls.h"
 #include "src/core/lib/gprpp/examine_stack.h"
-
-#ifdef GPR_LINUX_LOG
 
 int gpr_should_log_stacktrace(gpr_log_severity severity);
 
