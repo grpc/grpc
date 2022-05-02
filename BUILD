@@ -1848,6 +1848,7 @@ grpc_cc_library(
         "src/core/lib/uri/uri_parser.h",
     ],
     external_deps = [
+        "absl/status",
         "absl/status:statusor",
         "absl/strings",
         "absl/strings:str_format",
