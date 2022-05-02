@@ -130,7 +130,7 @@ ServerAddress& ServerAddress::operator=(const ServerAddress& other) {
   if (&other != this) {
     address_ = other.address_;
     grpc_channel_args_destroy(args_);
-    args_ = other.args_;
+    args_ = grpc_channel_args_copy(other.args_);
     subchannel_attributes_ = other.subchannel_attributes_;
     lb_policy_attributes_ = other.lb_policy_attributes_;
   }
