@@ -31,6 +31,9 @@
 namespace grpc_core {
 class BackupPoller {
  public:
+  static void Init();
+  static void Destroy();
+
   static BackupPoller* Get();
 
   void StartPolling(grpc_pollset_set* interested_parties);

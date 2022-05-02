@@ -30,6 +30,7 @@
 #include <grpc/support/log.h>
 #include <grpc/support/time.h>
 
+#include "src/core/lib/channel/backup_poller.h"
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/channel/channel_stack_builder.h"
 #include "src/core/lib/channel/channelz_registry.h"
@@ -168,6 +169,7 @@ void grpc_init(void) {
     grpc_core::channelz::ChannelzRegistry::Init();
     grpc_core::ApplicationCallbackExecCtx::GlobalInit();
     grpc_iomgr_init();
+    grpc_core::BackupPoller::Init();
     gpr_timers_global_init();
     for (int i = 0; i < g_number_of_plugins; i++) {
       if (g_all_of_the_plugins[i].init != nullptr) {
@@ -195,6 +197,7 @@ void grpc_shutdown_internal_locked(void)
         }
       }
     }
+    grpc_core::BackupPoller::Destroy();
     grpc_iomgr_shutdown();
     gpr_timers_global_destroy();
     grpc_tracer_shutdown();

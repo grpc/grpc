@@ -61,11 +61,21 @@ class BackupPoller::Poller {
   std::thread thread_;
 };
 
+namespace {
+BackupPoller* g_poller = nullptr;
+}
+
 BackupPoller::BackupPoller() = default;
 
+BackupPoller::~BackupPoller() { delete poller_; }
+
+void BackupPoller::Init() { g_poller = new BackupPoller(); }
+
+void BackupPoller::Destroy() { delete absl::exchange(g_poller, nullptr); }
+
 BackupPoller* BackupPoller::Get() {
-  static BackupPoller* p = new BackupPoller();
-  return p;
+  GPR_ASSERT(g_poller != nullptr);
+  return g_poller;
 }
 
 void BackupPoller::StartPolling(grpc_pollset_set* interested_parties) {
