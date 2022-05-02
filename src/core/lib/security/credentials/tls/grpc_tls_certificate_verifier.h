@@ -121,6 +121,29 @@ class ExternalCertificateVerifier : public grpc_tls_certificate_verifier {
       request_map_ ABSL_GUARDED_BY(mu_);
 };
 
+// An internal verifier that won't perform any post-handshake checks.
+// Note: using this solely without any other authentication mechanisms on the
+// peer identity will leave your applications to the MITM(Man-In-The-Middle)
+// attacks. Users should avoid doing so in production environments.
+class NoOpCertificateVerifier : public grpc_tls_certificate_verifier {
+ public:
+  bool Verify(grpc_tls_custom_verification_check_request*,
+              std::function<void(absl::Status)>, absl::Status*) override {
+    return true;  // synchronous check
+  };
+  void Cancel(grpc_tls_custom_verification_check_request*) override {}
+
+  const char* type() const override { return "NoOp"; }
+
+ private:
+  int CompareImpl(
+      const grpc_tls_certificate_verifier* /* other */) const override {
+    // No differentiating factor between different NoOpCertificateVerifier
+    // objects.
+    return 0;
+  }
+};
+
 // An internal verifier that will perform hostname verification check.
 class HostNameCertificateVerifier : public grpc_tls_certificate_verifier {
  public:

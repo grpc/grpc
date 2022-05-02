@@ -253,7 +253,7 @@ class Subchannel : public DualRefCounted<Subchannel> {
   }
 
   // Attempt to connect to the backend.  Has no effect if already connected.
-  void AttemptToConnect() ABSL_LOCKS_EXCLUDED(mu_);
+  void RequestConnection() ABSL_LOCKS_EXCLUDED(mu_);
 
   // Resets the connection backoff of the subchannel.
   void ResetBackoff() ABSL_LOCKS_EXCLUDED(mu_);
@@ -344,12 +344,14 @@ class Subchannel : public DualRefCounted<Subchannel> {
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
 
   // Methods for connection.
-  void MaybeStartConnectingLocked() ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
-  static void OnRetryAlarm(void* arg, grpc_error_handle error)
+  static void OnRetryTimer(void* arg, grpc_error_handle error)
       ABSL_LOCKS_EXCLUDED(mu_);
-  void ContinueConnectingLocked() ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
+  void OnRetryTimerLocked() ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
+  void StartConnectingLocked() ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
   static void OnConnectingFinished(void* arg, grpc_error_handle error)
       ABSL_LOCKS_EXCLUDED(mu_);
+  void OnConnectingFinishedLocked(grpc_error_handle error)
+      ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
   bool PublishTransportLocked() ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
 
   // The subchannel pool this subchannel is in.
@@ -365,6 +367,8 @@ class Subchannel : public DualRefCounted<Subchannel> {
   grpc_pollset_set* pollset_set_;
   // Channelz tracking.
   RefCountedPtr<channelz::SubchannelNode> channelz_node_;
+  // Minimum connection timeout.
+  Duration min_connect_timeout_;
 
   // Connection state.
   OrphanablePtr<SubchannelConnector> connector_;
@@ -374,12 +378,18 @@ class Subchannel : public DualRefCounted<Subchannel> {
   // Protects the other members.
   Mutex mu_;
 
-  // Active connection, or null.
-  RefCountedPtr<ConnectedSubchannel> connected_subchannel_ ABSL_GUARDED_BY(mu_);
-  bool connecting_ ABSL_GUARDED_BY(mu_) = false;
-  bool disconnected_ ABSL_GUARDED_BY(mu_) = false;
+  bool shutdown_ ABSL_GUARDED_BY(mu_) = false;
+
+  // Records if RequestConnection() was called while in backoff.
+  bool connection_requested_ ABSL_GUARDED_BY(mu_) = false;
 
   // Connectivity state tracking.
+  // Note that the connectivity state implies the state of the
+  // Subchannel object:
+  // - IDLE: no retry timer pending, can start a connection attempt at any time
+  // - CONNECTING: connection attempt in progress
+  // - READY: connection attempt succeeded, connected_subchannel_ created
+  // - TRANSIENT_FAILURE: connection attempt failed, retry timer pending
   grpc_connectivity_state state_ ABSL_GUARDED_BY(mu_) = GRPC_CHANNEL_IDLE;
   absl::Status status_ ABSL_GUARDED_BY(mu_);
   // The list of watchers without a health check service name.
@@ -387,25 +397,21 @@ class Subchannel : public DualRefCounted<Subchannel> {
   // The map of watchers with health check service names.
   HealthWatcherMap health_watcher_map_ ABSL_GUARDED_BY(mu_);
 
-  // Data provider map.
-  std::map<const char* /*type*/, DataProducerInterface*> data_producer_map_
-      ABSL_GUARDED_BY(mu_);
+  // Active connection, or null.
+  RefCountedPtr<ConnectedSubchannel> connected_subchannel_ ABSL_GUARDED_BY(mu_);
 
-  // Minimum connect timeout - must be located before backoff_.
-  Duration min_connect_timeout_ ABSL_GUARDED_BY(mu_);
   // Backoff state.
   BackOff backoff_ ABSL_GUARDED_BY(mu_);
-  Timestamp next_attempt_deadline_ ABSL_GUARDED_BY(mu_);
-  bool backoff_begun_ ABSL_GUARDED_BY(mu_) = false;
+  Timestamp next_attempt_time_ ABSL_GUARDED_BY(mu_);
+  grpc_timer retry_timer_ ABSL_GUARDED_BY(mu_);
+  grpc_closure on_retry_timer_ ABSL_GUARDED_BY(mu_);
 
-  // Retry alarm.
-  grpc_timer retry_alarm_ ABSL_GUARDED_BY(mu_);
-  grpc_closure on_retry_alarm_ ABSL_GUARDED_BY(mu_);
-  bool have_retry_alarm_ ABSL_GUARDED_BY(mu_) = false;
-  // reset_backoff() was called while alarm was pending.
-  bool retry_immediately_ ABSL_GUARDED_BY(mu_) = false;
   // Keepalive time period (-1 for unset)
   int keepalive_time_ ABSL_GUARDED_BY(mu_) = -1;
+
+  // Data producer map.
+  std::map<const char* /*type*/, DataProducerInterface*> data_producer_map_
+      ABSL_GUARDED_BY(mu_);
 };
 
 }  // namespace grpc_core

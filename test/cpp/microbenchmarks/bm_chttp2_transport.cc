@@ -96,7 +96,8 @@ class PhonyEndpoint : public grpc_endpoint {
   }
 
   static void read(grpc_endpoint* ep, grpc_slice_buffer* slices,
-                   grpc_closure* cb, bool /*urgent*/) {
+                   grpc_closure* cb, bool /*urgent*/,
+                   int /*min_progress_size*/) {
     static_cast<PhonyEndpoint*>(ep)->QueueRead(slices, cb);
   }
 

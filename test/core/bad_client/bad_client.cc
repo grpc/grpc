@@ -149,7 +149,7 @@ void grpc_run_client_side_validator(grpc_bad_client_arg* arg, uint32_t flags,
         GRPC_CLOSURE_INIT(&read_done_closure, set_read_done, &read_done_event,
                           grpc_schedule_on_exec_ctx);
         grpc_endpoint_read(sfd->client, &incoming, &read_done_closure,
-                           /*urgent=*/true);
+                           /*urgent=*/true, /*min_progress_size=*/1);
         grpc_core::ExecCtx::Get()->Flush();
         do {
           GPR_ASSERT(gpr_time_cmp(deadline, gpr_now(deadline.clock_type)) > 0);

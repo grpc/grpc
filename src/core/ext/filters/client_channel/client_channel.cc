@@ -525,7 +525,7 @@ class ClientChannel::SubchannelWrapper : public SubchannelInterface {
     return subchannel_->connected_subchannel();
   }
 
-  void AttemptToConnect() override { subchannel_->AttemptToConnect(); }
+  void RequestConnection() override { subchannel_->RequestConnection(); }
 
   void ResetBackoff() override { subchannel_->ResetBackoff(); }
 
