@@ -189,6 +189,13 @@ class OutlierDetectionLb : public LoadBalancingPolicy {
       active_bucket_.store(current_bucket_.get());
     }
 
+    void ResetBucket() {
+      backup_bucket_->successes = 0;
+      backup_bucket_->failures = 0;
+      current_bucket_->successes = 0;
+      current_bucket_->failures = 0;
+    }
+
     absl::optional<std::pair<double, uint64_t>> GetSuccessRateAndVolume() {
       uint64_t total_request =
           backup_bucket_->successes + backup_bucket_->failures;
@@ -344,7 +351,7 @@ class OutlierDetectionLb : public LoadBalancingPolicy {
   RefCountedPtr<RefCountedPicker> picker_;
   std::map<std::string, RefCountedPtr<SubchannelState>> subchannel_state_map_;
   OrphanablePtr<EjectionTimer> ejection_timer_;
-  absl::optional<absl::Time> ejection_timer_start_timestamp;
+  absl::optional<absl::Time> ejection_timer_start_timestamp_;
 };
 
 //
@@ -686,16 +693,16 @@ OutlierDetectionLb::EjectionTimer::EjectionTimer(
   GRPC_CLOSURE_INIT(&on_timer_, OnTimer, this, nullptr);
   Ref().release();
   auto interval = parent_->config_->outlier_detection_config().interval;
-  if (parent_->ejection_timer_start_timestamp.has_value()) {
+  if (parent_->ejection_timer_start_timestamp_.has_value()) {
     auto time_remaining = absl::ToInt64Milliseconds(
-        parent_->ejection_timer_start_timestamp.value() - absl::Now());
+        parent_->ejection_timer_start_timestamp_.value() - absl::Now());
     if (time_remaining > 0) {
       interval = Duration::Milliseconds(time_remaining);
     } else {
       interval = Duration::Milliseconds(0);
     }
   } else {
-    parent_->ejection_timer_start_timestamp = absl::Now();
+    parent_->ejection_timer_start_timestamp_ = absl::Now();
   }
   grpc_timer_init(&timer_, ExecCtx::Get()->Now() + interval, &on_timer_);
 }
@@ -722,7 +729,7 @@ void OutlierDetectionLb::EjectionTimer::OnTimerLocked(grpc_error_handle error) {
     std::map<SubchannelState*, double> failure_percentage_ejection_candidates;
     double success_rate_sum = 0;
     auto time_now = ExecCtx::Get()->Now();
-    parent_->ejection_timer_start_timestamp = absl::Now();
+    parent_->ejection_timer_start_timestamp_ = absl::Now();
     for (auto& state : parent_->subchannel_state_map_) {
       auto* subchannel_state = state.second.get();
       // Record the timestamp for use when ejecting addresses in this
