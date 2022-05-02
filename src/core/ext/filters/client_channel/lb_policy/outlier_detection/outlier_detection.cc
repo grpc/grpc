@@ -744,6 +744,7 @@ void OutlierDetectionLb::EjectionTimer::OnTimerLocked(grpc_error_handle error) {
     std::map<SubchannelState*, double> failure_percentage_ejection_candidates;
     double success_rate_sum = 0;
     auto time_now = ExecCtx::Get()->Now();
+    auto& config = parent_->config_->outlier_detection_config();
     for (auto& state : parent_->subchannel_state_map_) {
       auto* subchannel_state = state.second.get();
       // For each address, swap the call counter's buckets in that address's
@@ -758,19 +759,15 @@ void OutlierDetectionLb::EjectionTimer::OnTimerLocked(grpc_error_handle error) {
       }
       double success_rate = host_success_rate_and_volume.value().first;
       uint64_t request_volume = host_success_rate_and_volume.value().second;
-      if (parent_->config_->outlier_detection_config()
-              .success_rate_ejection.has_value()) {
-        if (request_volume >= parent_->config_->outlier_detection_config()
-                                  .success_rate_ejection->request_volume) {
+      if (config.success_rate_ejection.has_value()) {
+        if (request_volume >= config.success_rate_ejection->request_volume) {
           success_rate_ejection_candidates[subchannel_state] = success_rate;
           success_rate_sum += success_rate;
         }
       }
-      if (parent_->config_->outlier_detection_config()
-              .failure_percentage_ejection.has_value()) {
+      if (config.failure_percentage_ejection.has_value()) {
         if (request_volume >=
-            parent_->config_->outlier_detection_config()
-                .failure_percentage_ejection->request_volume) {
+            config.failure_percentage_ejection->request_volume) {
           failure_percentage_ejection_candidates[subchannel_state] =
               success_rate;
         }
@@ -779,8 +776,7 @@ void OutlierDetectionLb::EjectionTimer::OnTimerLocked(grpc_error_handle error) {
     // success rate algorithm
     if (!success_rate_ejection_candidates.empty() &&
         success_rate_ejection_candidates.size() >=
-            parent_->config_->outlier_detection_config()
-                .success_rate_ejection->minimum_hosts) {
+            config.success_rate_ejection->minimum_hosts) {
       // calculate ejection threshold: (mean - stdev *
       // (success_rate_ejection.stdev_factor / 1000))
       double mean = success_rate_sum / success_rate_ejection_candidates.size();
@@ -793,15 +789,13 @@ void OutlierDetectionLb::EjectionTimer::OnTimerLocked(grpc_error_handle error) {
       variance /= success_rate_ejection_candidates.size();
       double stdev = std::sqrt(variance);
       const double success_rate_stdev_factor =
-          (double)parent_->config_->outlier_detection_config()
-              .success_rate_ejection->stdev_factor /
-          1000;
+          (double)config.success_rate_ejection->stdev_factor / 1000;
       double ejection_threshold = mean - stdev * success_rate_stdev_factor;
       for (auto& candidate : success_rate_ejection_candidates) {
         if (candidate.second < ejection_threshold) {
           uint32_t random_key = rand() % 100;
-          if (random_key < parent_->config_->outlier_detection_config()
-                               .success_rate_ejection->enforcement_percentage) {
+          if (random_key <
+              config.success_rate_ejection->enforcement_percentage) {
             candidate.first->Eject();
             // Record the timestamp for use when ejecting addresses in this
             // iteration.
@@ -813,16 +807,13 @@ void OutlierDetectionLb::EjectionTimer::OnTimerLocked(grpc_error_handle error) {
     // failure percentage algorithm
     if (!failure_percentage_ejection_candidates.empty() &&
         failure_percentage_ejection_candidates.size() >=
-            parent_->config_->outlier_detection_config()
-                .failure_percentage_ejection->minimum_hosts) {
+            config.failure_percentage_ejection->minimum_hosts) {
       for (auto& candidate : failure_percentage_ejection_candidates) {
         if ((100.0 - candidate.second) >=
-            parent_->config_->outlier_detection_config()
-                .failure_percentage_ejection->threshold) {
+            config.failure_percentage_ejection->threshold) {
           uint32_t random_key = rand() % 100;
           if (random_key <
-              parent_->config_->outlier_detection_config()
-                  .failure_percentage_ejection->enforcement_percentage) {
+              config.failure_percentage_ejection->enforcement_percentage) {
             candidate.first->Eject();
             // Record the timestamp for use when ejecting addresses in this
             // iteration.
@@ -844,16 +835,12 @@ void OutlierDetectionLb::EjectionTimer::OnTimerLocked(grpc_error_handle error) {
           subchannel_state->SetMultiplier(subchannel_state->Multiplier() - 1);
         }
       } else {
-        auto change_time =
-            subchannel_state->EjectionTimeStamp() +
-            absl::Milliseconds(
-                std::min(parent_->config_->outlier_detection_config()
-                                 .base_ejection_time.millis() *
-                             subchannel_state->Multiplier(),
-                         std::max(parent_->config_->outlier_detection_config()
-                                      .base_ejection_time.millis(),
-                                  parent_->config_->outlier_detection_config()
-                                      .max_ejection_time.millis())));
+        auto change_time = subchannel_state->EjectionTimeStamp() +
+                           absl::Milliseconds(std::min(
+                               config.base_ejection_time.millis() *
+                                   subchannel_state->Multiplier(),
+                               std::max(config.base_ejection_time.millis(),
+                                        config.max_ejection_time.millis())));
         if (change_time > absl::Now()) {
           subchannel_state->Uneject();
         }
