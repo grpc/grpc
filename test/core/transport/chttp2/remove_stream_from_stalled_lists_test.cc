@@ -353,7 +353,7 @@ int main(int argc, char** argv) {
   ::testing::InitGoogleTest(&argc, argv);
   grpc_core::chttp2::g_test_only_transport_target_window_estimates_mocker =
       new TransportTargetWindowEstimatesMocker();
-  grpc::testing::TestEnvironment env(argc, argv);
+  grpc::testing::TestEnvironment env(&argc, argv);
   grpc_init();
   auto result = RUN_ALL_TESTS();
   grpc_shutdown();

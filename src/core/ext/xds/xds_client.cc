@@ -38,6 +38,7 @@
 #include "src/core/ext/xds/xds_channel_args.h"
 #include "src/core/ext/xds/xds_client_stats.h"
 #include "src/core/ext/xds/xds_cluster.h"
+#include "src/core/ext/xds/xds_cluster_specifier_plugin.h"
 #include "src/core/ext/xds/xds_endpoint.h"
 #include "src/core/ext/xds/xds_http_filters.h"
 #include "src/core/ext/xds/xds_listener.h"
@@ -82,42 +83,6 @@ XdsClient* g_xds_client ABSL_GUARDED_BY(*g_mu) = nullptr;
 char* g_fallback_bootstrap_config ABSL_GUARDED_BY(*g_mu) = nullptr;
 
 }  // namespace
-
-class XdsClient::Notifier {
- public:
-  // Helper template function to invoke `OnError()` on a list of watchers \a
-  // watchers_list within \a work_serializer. Works with all 4 resource types.
-  template <class T>
-  static void ScheduleNotifyWatchersOnErrorInWorkSerializer(
-      XdsClient* xds_client, const T& watchers_list, absl::Status status,
-      const DebugLocation& location) {
-    xds_client->work_serializer_.Schedule(
-        [watchers_list, status]()
-            ABSL_EXCLUSIVE_LOCKS_REQUIRED(&xds_client->work_serializer_) {
-              for (const auto& p : watchers_list) {
-                p.first->OnError(status);
-              }
-            },
-        location);
-  }
-
-  // Helper template function to invoke `OnResourceDoesNotExist()` on a list of
-  // watchers \a watchers_list within \a work_serializer. Works with all 4
-  // resource types.
-  template <class T>
-  static void ScheduleNotifyWatchersOnResourceDoesNotExistInWorkSerializer(
-      XdsClient* xds_client, const T& watchers_list,
-      const DebugLocation& location) {
-    xds_client->work_serializer_.Schedule(
-        [watchers_list]()
-            ABSL_EXCLUSIVE_LOCKS_REQUIRED(&xds_client->work_serializer_) {
-              for (const auto& p : watchers_list) {
-                p.first->OnResourceDoesNotExist();
-              }
-            },
-        location);
-  }
-};
 
 //
 // Internal class declarations
@@ -283,9 +248,8 @@ class XdsClient::ChannelState::AdsCallState
             ads_calld_->xds_client()->authority_state_map_[name_.authority];
         ResourceState& state = authority_state.resource_map[type_][name_.key];
         state.meta.client_status = XdsApi::ResourceMetadata::DOES_NOT_EXIST;
-        Notifier::ScheduleNotifyWatchersOnErrorInWorkSerializer(
-            ads_calld_->xds_client(), state.watchers, watcher_error,
-            DEBUG_LOCATION);
+        ads_calld_->xds_client()->NotifyWatchersOnErrorLocked(state.watchers,
+                                                              watcher_error);
       }
       GRPC_ERROR_UNREF(error);
     }
@@ -602,7 +566,8 @@ void XdsClient::ChannelState::StartConnectivityWatchLocked() {
         absl::UnavailableError("xds client has a lame channel"));
     return;
   }
-  ClientChannel* client_channel = ClientChannel::GetFromChannel(channel_);
+  ClientChannel* client_channel =
+      ClientChannel::GetFromChannel(Channel::FromC(channel_));
   GPR_ASSERT(client_channel != nullptr);
   watcher_ = new StateWatcher(WeakRef(DEBUG_LOCATION, "ChannelState+watch"));
   client_channel->AddConnectivityWatcher(
@@ -614,7 +579,8 @@ void XdsClient::ChannelState::CancelConnectivityWatchLocked() {
   if (IsLameChannel(channel_)) {
     return;
   }
-  ClientChannel* client_channel = ClientChannel::GetFromChannel(channel_);
+  ClientChannel* client_channel =
+      ClientChannel::GetFromChannel(Channel::FromC(channel_));
   GPR_ASSERT(client_channel != nullptr);
   client_channel->RemoveConnectivityWatcher(watcher_);
 }
@@ -682,17 +648,11 @@ void XdsClient::ChannelState::RetryableCall<T>::Orphan() {
 
 template <typename T>
 void XdsClient::ChannelState::RetryableCall<T>::OnCallFinishedLocked() {
-  const bool seen_response = calld_->seen_response();
+  // If we saw a response on the current stream, reset backoff.
+  if (calld_->seen_response()) backoff_.Reset();
   calld_.reset();
-  if (seen_response) {
-    // If we lost connection to the xds server, reset backoff and restart the
-    // call immediately.
-    backoff_.Reset();
-    StartNewCallLocked();
-  } else {
-    // If we failed to connect to the xds server, retry later.
-    StartRetryTimerLocked();
-  }
+  // Start retry timer.
+  StartRetryTimerLocked();
 }
 
 template <typename T>
@@ -877,11 +837,10 @@ void XdsClient::ChannelState::AdsCallState::AdsResponseParser::ParseResource(
     result_.errors.emplace_back(absl::StrCat(
         "resource index ", idx, ": ", result->name,
         ": validation error: ", result->resource.status().ToString()));
-    Notifier::ScheduleNotifyWatchersOnErrorInWorkSerializer(
-        xds_client(), resource_state.watchers,
+    xds_client()->NotifyWatchersOnErrorLocked(
+        resource_state.watchers,
         absl::UnavailableError(absl::StrCat(
-            "invalid resource: ", result->resource.status().ToString())),
-        DEBUG_LOCATION);
+            "invalid resource: ", result->resource.status().ToString())));
     UpdateResourceMetadataNacked(result_.version,
                                  result->resource.status().ToString(),
                                  update_time_, &resource_state.meta);
@@ -1249,9 +1208,8 @@ bool XdsClient::ChannelState::AdsCallState::OnResponseReceivedLocked() {
             // instead.
             if (resource_state.resource == nullptr) continue;
             resource_state.resource.reset();
-            Notifier::
-                ScheduleNotifyWatchersOnResourceDoesNotExistInWorkSerializer(
-                    xds_client(), resource_state.watchers, DEBUG_LOCATION);
+            xds_client()->NotifyWatchersOnResourceDoesNotExist(
+                resource_state.watchers);
           }
         }
       }
@@ -2199,6 +2157,12 @@ void XdsClient::ResetBackoff() {
 }
 
 void XdsClient::NotifyOnErrorLocked(absl::Status status) {
+  const auto* node = bootstrap_->node();
+  if (node != nullptr) {
+    status = absl::Status(
+        status.code(), absl::StrCat(status.message(),
+                                    " (node ID:", bootstrap_->node()->id, ")"));
+  }
   std::set<RefCountedPtr<ResourceWatcherInterface>> watchers;
   for (const auto& a : authority_state_map_) {     // authority
     for (const auto& t : a.second.resource_map) {  // type
@@ -2215,6 +2179,37 @@ void XdsClient::NotifyOnErrorLocked(absl::Status status) {
       [watchers, status]() ABSL_EXCLUSIVE_LOCKS_REQUIRED(work_serializer_) {
         for (const auto& watcher : watchers) {
           watcher->OnError(status);
+        }
+      },
+      DEBUG_LOCATION);
+}
+
+void XdsClient::NotifyWatchersOnErrorLocked(
+    const std::map<ResourceWatcherInterface*,
+                   RefCountedPtr<ResourceWatcherInterface>>& watchers,
+    absl::Status status) {
+  const auto* node = bootstrap_->node();
+  if (node != nullptr) {
+    status = absl::Status(
+        status.code(), absl::StrCat(status.message(),
+                                    " (node ID:", bootstrap_->node()->id, ")"));
+  }
+  work_serializer_.Schedule(
+      [watchers, status]() ABSL_EXCLUSIVE_LOCKS_REQUIRED(&work_serializer_) {
+        for (const auto& p : watchers) {
+          p.first->OnError(status);
+        }
+      },
+      DEBUG_LOCATION);
+}
+
+void XdsClient::NotifyWatchersOnResourceDoesNotExist(
+    const std::map<ResourceWatcherInterface*,
+                   RefCountedPtr<ResourceWatcherInterface>>& watchers) {
+  work_serializer_.Schedule(
+      [watchers]() ABSL_EXCLUSIVE_LOCKS_REQUIRED(&work_serializer_) {
+        for (const auto& p : watchers) {
+          p.first->OnResourceDoesNotExist();
         }
       },
       DEBUG_LOCATION);
@@ -2333,6 +2328,7 @@ std::string XdsClient::DumpClientConfigBinary() {
 void XdsClientGlobalInit() {
   g_mu = new Mutex;
   XdsHttpFilterRegistry::Init();
+  XdsClusterSpecifierPluginRegistry::Init();
 }
 
 // TODO(roth): Find a better way to clear the fallback config that does
@@ -2343,6 +2339,7 @@ void XdsClientGlobalShutdown() ABSL_NO_THREAD_SAFETY_ANALYSIS {
   delete g_mu;
   g_mu = nullptr;
   XdsHttpFilterRegistry::Shutdown();
+  XdsClusterSpecifierPluginRegistry::Shutdown();
 }
 
 namespace {

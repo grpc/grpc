@@ -26,4 +26,10 @@
 /* Processes metadata on the server side for HTTP2 transports */
 extern const grpc_channel_filter grpc_http_server_filter;
 
+// A Temporary channel arg that allows servers to accept PUT requests. DO NOT
+// USE WITHOUT PERMISSION.
+#define GRPC_ARG_DO_NOT_USE_UNLESS_YOU_HAVE_PERMISSION_FROM_GRPC_TEAM_ALLOW_BROKEN_PUT_REQUESTS \
+  "grpc.http.do_not_use_unless_you_have_permission_from_grpc_team_allow_"                       \
+  "broken_put_requests"
+
 #endif /* GRPC_CORE_EXT_FILTERS_HTTP_SERVER_HTTP_SERVER_FILTER_H */

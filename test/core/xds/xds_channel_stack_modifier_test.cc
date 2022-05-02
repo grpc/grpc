@@ -81,7 +81,7 @@ TEST(XdsChannelStackModifierTest, XdsHttpFiltersInsertion) {
   // Create a phony ChannelStackBuilder object
   grpc_channel_args* args = grpc_channel_args_copy_and_add(nullptr, &arg, 1);
   ChannelStackBuilderImpl builder("test", GRPC_SERVER_CHANNEL);
-  builder.SetChannelArgs(args);
+  builder.SetChannelArgs(ChannelArgs::FromC(args));
   grpc_channel_args_destroy(args);
   grpc_transport_vtable fake_transport_vtable;
   memset(&fake_transport_vtable, 0, sizeof(grpc_transport_vtable));
@@ -119,7 +119,7 @@ TEST(XdsChannelStackModifierTest, XdsHttpFiltersInsertionAfterCensus) {
   // Create a phony ChannelStackBuilder object
   grpc_channel_args* args = grpc_channel_args_copy_and_add(nullptr, &arg, 1);
   ChannelStackBuilderImpl builder("test", GRPC_SERVER_CHANNEL);
-  builder.SetChannelArgs(args);
+  builder.SetChannelArgs(ChannelArgs::FromC(args));
   grpc_channel_args_destroy(args);
   grpc_transport_vtable fake_transport_vtable;
   memset(&fake_transport_vtable, 0, sizeof(grpc_transport_vtable));
@@ -145,7 +145,7 @@ TEST(XdsChannelStackModifierTest, XdsHttpFiltersInsertionAfterCensus) {
 
 int main(int argc, char** argv) {
   ::testing::InitGoogleTest(&argc, argv);
-  grpc::testing::TestEnvironment env(argc, argv);
+  grpc::testing::TestEnvironment env(&argc, argv);
   int ret = RUN_ALL_TESTS();
   return ret;
 }

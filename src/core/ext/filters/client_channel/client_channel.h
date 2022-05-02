@@ -91,7 +91,7 @@ class ClientChannel {
 
   // Returns the ClientChannel object from channel, or null if channel
   // is not a client channel.
-  static ClientChannel* GetFromChannel(grpc_channel* channel);
+  static ClientChannel* GetFromChannel(Channel* channel);
 
   grpc_connectivity_state CheckConnectivityState(bool try_to_connect);
 
@@ -432,6 +432,8 @@ class ClientChannel::LoadBalancedCall
   static void RecvInitialMetadataReady(void* arg, grpc_error_handle error);
   static void RecvMessageReady(void* arg, grpc_error_handle error);
   static void RecvTrailingMetadataReady(void* arg, grpc_error_handle error);
+
+  void RecordCallCompletion(absl::Status status);
 
   void CreateSubchannelCall();
   // Invoked when a pick is completed, on both success or failure.

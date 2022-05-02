@@ -708,7 +708,7 @@ static void test_peer_alpn_check(void) {
 }
 
 int main(int argc, char** argv) {
-  grpc::testing::TestEnvironment env(argc, argv);
+  grpc::testing::TestEnvironment env(&argc, argv);
   grpc_init();
   test_unauthenticated_ssl_peer();
   test_cn_only_ssl_peer_to_auth_context();

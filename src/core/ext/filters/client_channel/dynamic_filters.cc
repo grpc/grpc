@@ -85,7 +85,7 @@ RefCountedPtr<DynamicFilters::Call> DynamicFilters::Call::Ref(
 }
 
 void DynamicFilters::Call::Unref() {
-  GRPC_CALL_STACK_UNREF(CALL_TO_CALL_STACK(this), "");
+  GRPC_CALL_STACK_UNREF(CALL_TO_CALL_STACK(this), "dynamic-filters-unref");
 }
 
 void DynamicFilters::Call::Unref(const DebugLocation& /*location*/,

@@ -23,6 +23,8 @@
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
+#include "absl/strings/str_format.h"
+
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
@@ -512,7 +514,7 @@ TEST_F(HttpRequestTest,
 
 int main(int argc, char** argv) {
   ::testing::InitGoogleTest(&argc, argv);
-  grpc::testing::TestEnvironment env(argc, argv);
+  grpc::testing::TestEnvironment env(&argc, argv);
   // launch the test server later, so that --gtest_list_tests works
   g_argc = argc;
   g_argv = argv;

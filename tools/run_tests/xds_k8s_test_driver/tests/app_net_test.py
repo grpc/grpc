@@ -49,7 +49,8 @@ class AppNetTest(xds_k8s_testcase.AppNetXdsKubernetesTestCase):
             self.setupServerBackends()
 
         with self.subTest('6_start_test_client'):
-            test_client: _XdsTestClient = self.startTestClient(test_server)
+            test_client: _XdsTestClient = self.startTestClient(
+                test_server, config_mesh=self.td.mesh.name)
 
         with self.subTest('7_assert_xds_config_exists'):
             self.assertXdsConfigExists(test_client)

@@ -129,7 +129,7 @@ static void test_grpc_parse_ipv6_invalid(const char* uri_text) {
 }
 
 int main(int argc, char** argv) {
-  grpc::testing::TestEnvironment env(argc, argv);
+  grpc::testing::TestEnvironment env(&argc, argv);
   grpc_init();
 
   test_grpc_parse_unix("unix:/path/name", "/path/name");

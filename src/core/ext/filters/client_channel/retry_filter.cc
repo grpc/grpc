@@ -1508,6 +1508,10 @@ void RetryFilter::CallData::CallAttempt::BatchData::RecvMessageReady(
   // If this attempt has been abandoned, then we're not going to use the
   // result of this recv_message op, so do nothing.
   if (call_attempt->abandoned_) {
+    // The transport will not invoke recv_trailing_metadata_ready until the byte
+    // stream for any recv_message op is orphaned, so we do that here to ensure
+    // that any pending recv_trailing_metadata op can complete.
+    call_attempt->recv_message_.reset();
     GRPC_CALL_COMBINER_STOP(calld->call_combiner_,
                             "recv_message_ready for abandoned attempt");
     return;
@@ -1689,6 +1693,13 @@ void RetryFilter::CallData::CallAttempt::BatchData::RunClosuresForCompletedCall(
 
 void RetryFilter::CallData::CallAttempt::BatchData::RecvTrailingMetadataReady(
     void* arg, grpc_error_handle error) {
+  // Add a ref to the outer call stack. This works around a TSAN reported
+  // failure that we do not understand, but since we expect the lifetime of
+  // this code to be relatively short we think it's OK to work around for now.
+  // TSAN failure:
+  // https://source.cloud.google.com/results/invocations/5b122974-4977-4862-beb1-dc1af9fbbd1d/targets/%2F%2Ftest%2Fcore%2Fend2end:h2_census_test@max_concurrent_streams@poller%3Dpoll/log
+  RefCountedPtr<grpc_call_stack> owning_call_stack =
+      static_cast<BatchData*>(arg)->call_attempt_->calld_->owning_call_->Ref();
   RefCountedPtr<BatchData> batch_data(static_cast<BatchData*>(arg));
   CallAttempt* call_attempt = batch_data->call_attempt_.get();
   CallData* calld = call_attempt->calld_;
@@ -2163,7 +2174,8 @@ RetryFilter::CallData::~CallData() {
 
 void RetryFilter::CallData::StartTransportStreamOpBatch(
     grpc_transport_stream_op_batch* batch) {
-  if (GRPC_TRACE_FLAG_ENABLED(grpc_retry_trace)) {
+  if (GRPC_TRACE_FLAG_ENABLED(grpc_retry_trace) &&
+      !GRPC_TRACE_FLAG_ENABLED(grpc_trace_channel)) {
     gpr_log(GPR_INFO, "chand=%p calld=%p: batch started from surface: %s",
             chand_, this, grpc_transport_stream_op_batch_string(batch).c_str());
   }

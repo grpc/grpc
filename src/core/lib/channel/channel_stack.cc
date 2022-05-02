@@ -113,6 +113,8 @@ grpc_error_handle grpc_channel_stack_init(
     }
   }
 
+  stack->on_destroy.Init([]() {});
+
   size_t call_size =
       GPR_ROUND_UP_TO_ALIGNMENT_SIZE(sizeof(grpc_call_stack)) +
       GPR_ROUND_UP_TO_ALIGNMENT_SIZE(filter_count * sizeof(grpc_call_element));
@@ -169,6 +171,9 @@ void grpc_channel_stack_destroy(grpc_channel_stack* stack) {
   for (i = 0; i < count; i++) {
     channel_elems[i].filter->destroy_channel_elem(&channel_elems[i]);
   }
+
+  (*stack->on_destroy)();
+  stack->on_destroy.Destroy();
 }
 
 grpc_error_handle grpc_call_stack_init(

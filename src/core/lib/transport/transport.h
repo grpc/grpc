@@ -44,6 +44,8 @@
 #define GRPC_PROTOCOL_VERSION_MIN_MAJOR 2
 #define GRPC_PROTOCOL_VERSION_MIN_MINOR 1
 
+#define GRPC_ARG_TRANSPORT "grpc.internal.transport"
+
 namespace grpc_core {
 // TODO(ctiller): eliminate once MetadataHandle is constructable directly.
 namespace promise_filter_detail {
@@ -98,7 +100,7 @@ class MetadataHandle {
   T* handle_ = nullptr;
 };
 
-// Trailing metadata type
+// Server metadata type
 // TODO(ctiller): This should be a bespoke instance of MetadataMap<>
 using ServerMetadata = grpc_metadata_batch;
 using ServerMetadataHandle = MetadataHandle<ServerMetadata>;
@@ -512,6 +514,9 @@ void grpc_transport_destroy_stream(grpc_transport* transport,
 void grpc_transport_stream_op_batch_finish_with_failure(
     grpc_transport_stream_op_batch* batch, grpc_error_handle error,
     grpc_core::CallCombiner* call_combiner);
+void grpc_transport_stream_op_batch_queue_finish_with_failure(
+    grpc_transport_stream_op_batch* batch, grpc_error_handle error,
+    grpc_core::CallCombinerClosureList* closures);
 
 std::string grpc_transport_stream_op_batch_string(
     grpc_transport_stream_op_batch* op);

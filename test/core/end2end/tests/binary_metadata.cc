@@ -39,11 +39,13 @@ static grpc_end2end_test_fixture begin_test(grpc_end2end_test_config config,
   client_args =
       const_cast<grpc_channel_args*>(grpc_core::CoreConfiguration::Get()
                                          .channel_args_preconditioning()
-                                         .PreconditionChannelArgs(client_args));
+                                         .PreconditionChannelArgs(client_args)
+                                         .ToC());
   server_args =
       const_cast<grpc_channel_args*>(grpc_core::CoreConfiguration::Get()
                                          .channel_args_preconditioning()
-                                         .PreconditionChannelArgs(server_args));
+                                         .PreconditionChannelArgs(server_args)
+                                         .ToC());
   f = config.create_fixture(client_args, server_args);
   config.init_server(&f, server_args);
   config.init_client(&f, client_args);

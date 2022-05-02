@@ -69,8 +69,6 @@ typedef struct grpc_call_element grpc_call_element;
 typedef struct grpc_channel_stack grpc_channel_stack;
 typedef struct grpc_call_stack grpc_call_stack;
 
-#define GRPC_ARG_TRANSPORT "grpc.internal.transport"
-
 struct grpc_channel_element_args {
   grpc_channel_stack* channel_stack;
   const grpc_channel_args* channel_args;
@@ -201,6 +199,11 @@ struct grpc_channel_stack {
   /* Memory required for a call stack (computed at channel stack
      initialization) */
   size_t call_stack_size;
+  // TODO(ctiller): remove this mechanism... it's a hack to allow
+  // Channel to be separated from grpc_channel_stack's allocation. As the
+  // promise conversion continues, we'll reconsider what grpc_channel_stack
+  // should look like and this can go.
+  grpc_core::ManualConstructor<std::function<void()>> on_destroy;
 
   // Minimal infrastructure to act like a RefCounted thing without converting
   // everything.
@@ -224,6 +227,16 @@ struct grpc_call_stack {
      about the address of the call stack itself. */
   grpc_stream_refcount refcount;
   size_t count;
+
+  // Minimal infrastructure to act like a RefCounted thing without converting
+  // everything.
+  // grpc_call_stack will be eliminated once the promise conversion completes.
+  void IncrementRefCount();
+  void Unref();
+  grpc_core::RefCountedPtr<grpc_call_stack> Ref() {
+    IncrementRefCount();
+    return grpc_core::RefCountedPtr<grpc_call_stack>(this);
+  }
 };
 
 /* Get a channel element given a channel stack and its index */
@@ -304,6 +317,14 @@ inline void grpc_channel_stack::IncrementRefCount() {
 
 inline void grpc_channel_stack::Unref() {
   GRPC_CHANNEL_STACK_UNREF(this, "smart_pointer");
+}
+
+inline void grpc_call_stack::IncrementRefCount() {
+  GRPC_CALL_STACK_REF(this, "smart_pointer");
+}
+
+inline void grpc_call_stack::Unref() {
+  GRPC_CALL_STACK_UNREF(this, "smart_pointer");
 }
 
 /* Destroy a call stack */

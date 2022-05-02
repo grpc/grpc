@@ -143,9 +143,9 @@ static void on_md_processing_done_inner(grpc_call_element* elem,
                                         grpc_error_handle error) {
   call_data* calld = static_cast<call_data*>(elem->call_data);
   grpc_transport_stream_op_batch* batch = calld->recv_initial_metadata_batch;
-  /* TODO(jboeuf): Implement support for response_md. */
+  /* TODO(ZhenLian): Implement support for response_md. */
   if (response_md != nullptr && num_response_md > 0) {
-    gpr_log(GPR_INFO,
+    gpr_log(GPR_ERROR,
             "response_md in auth metadata processing not supported for now. "
             "Ignoring...");
   }

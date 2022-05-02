@@ -36,6 +36,7 @@
 #include "src/core/ext/transport/chttp2/transport/hpack_parser.h"
 #include "src/core/ext/transport/chttp2/transport/stream_map.h"
 #include "src/core/lib/channel/channelz.h"
+#include "src/core/lib/gprpp/bitset.h"
 #include "src/core/lib/gprpp/manual_constructor.h"
 #include "src/core/lib/iomgr/combiner.h"
 #include "src/core/lib/iomgr/endpoint.h"
@@ -98,6 +99,7 @@ typedef enum {
   GRPC_CHTTP2_INITIATE_WRITE_STREAM_FLOW_CONTROL,
   GRPC_CHTTP2_INITIATE_WRITE_TRANSPORT_FLOW_CONTROL,
   GRPC_CHTTP2_INITIATE_WRITE_SEND_SETTINGS,
+  GRPC_CHTTP2_INITIATE_WRITE_SETTINGS_ACK,
   GRPC_CHTTP2_INITIATE_WRITE_FLOW_CONTROL_UNSTALLED_BY_SETTING,
   GRPC_CHTTP2_INITIATE_WRITE_FLOW_CONTROL_UNSTALLED_BY_UPDATE,
   GRPC_CHTTP2_INITIATE_WRITE_APPLICATION_PING,
@@ -196,8 +198,9 @@ typedef enum {
 
 typedef enum {
   GRPC_CHTTP2_NO_GOAWAY_SEND,
-  GRPC_CHTTP2_GOAWAY_SEND_SCHEDULED,
-  GRPC_CHTTP2_GOAWAY_SENT,
+  GRPC_CHTTP2_GRACEFUL_GOAWAY,
+  GRPC_CHTTP2_FINAL_GOAWAY_SEND_SCHEDULED,
+  GRPC_CHTTP2_FINAL_GOAWAY_SENT,
 } grpc_chttp2_sent_goaway_state;
 
 typedef struct grpc_chttp2_write_cb {
@@ -524,7 +527,7 @@ struct grpc_chttp2_stream {
   grpc_closure* destroy_stream_arg;
 
   grpc_chttp2_stream_link links[STREAM_LIST_COUNT];
-  uint8_t included[STREAM_LIST_COUNT] = {};
+  grpc_core::BitSet<STREAM_LIST_COUNT> included;
 
   /** HTTP2 stream id for this stream, or zero if one has not been assigned */
   uint32_t id = 0;
