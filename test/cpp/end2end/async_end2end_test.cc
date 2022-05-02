@@ -414,7 +414,6 @@ TEST_P(AsyncEnd2endTest, SequentialRpcs) {
 }
 
 TEST_P(AsyncEnd2endTest, ReconnectChannel) {
-  // GRPC_CLIENT_CHANNEL_BACKUP_POLL_INTERVAL_MS is set to 100ms in main()
   if (GetParam().inproc) {
     return;
   }
@@ -431,8 +430,6 @@ TEST_P(AsyncEnd2endTest, ReconnectChannel) {
   SendRpc(1);
   ServerShutdown();
   BuildAndStartServer();
-  // It needs more than GRPC_CLIENT_CHANNEL_BACKUP_POLL_INTERVAL_MS time to
-  // reconnect the channel.
   gpr_sleep_until(gpr_time_add(
       gpr_now(GPR_CLOCK_REALTIME),
       gpr_time_from_millis(

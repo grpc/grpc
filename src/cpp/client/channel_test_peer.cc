@@ -27,12 +27,12 @@ namespace testing {
 
 int ChannelTestPeer::registered_calls() const {
   return grpc_core::Channel::FromC(channel_->c_channel_)
-      ->TestOnlyRegisteredCalls();
+      ->TestOnlyNumRegisteredCalls();
 }
 
 int ChannelTestPeer::registration_attempts() const {
   return grpc_core::Channel::FromC(channel_->c_channel_)
-      ->TestOnlyRegistrationAttempts();
+      ->TestOnlyNumRegistrationAttempts();
 }
 
 }  // namespace testing

@@ -159,14 +159,6 @@ some configuration as environment variables that can be set.
   - native - a DNS resolver based around getaddrinfo(), creates a new thread to
     perform name resolution
 
-* GRPC_CLIENT_CHANNEL_BACKUP_POLL_INTERVAL_MS
-  Default: 5000
-  Declares the interval between two backup polls on client channels. These polls
-  are run in the timer thread so that gRPC can process connection failures while
-  there is no active polling thread. They help reconnect disconnected client
-  channels (mostly due to idleness), so that the next RPC on this channel won't
-  fail. Set to 0 to turn off the backup polls.
-
 * GRPC_EXPERIMENTAL_DISABLE_FLOW_CONTROL
   if set, flow control will be effectively disabled. Max out all values and
   assume the remote peer does the same. Thus we can ignore any flow control
