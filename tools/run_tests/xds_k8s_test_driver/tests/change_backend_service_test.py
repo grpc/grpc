@@ -70,11 +70,12 @@ class ChangeBackendServiceTest(xds_k8s_testcase.RegularXdsKubernetesTestCase):
         with self.subTest('04_create_forwarding_rule'):
             self.td.create_forwarding_rule(self.server_xds_port)
 
+        default_test_servers: List[_XdsTestServer]
+        same_zone_test_servers: List[_XdsTestServer]
         with self.subTest('05_start_test_servers'):
-            default_test_servers: List[_XdsTestServer] = self.startTestServers()
-            same_zone_test_servers: List[
-                _XdsTestServer] = self.startTestServers(
-                    server_runner=self.alternate_server_runner)
+            default_test_servers = self.startTestServers()
+            same_zone_test_servers = self.startTestServers(
+                server_runner=self.alternate_server_runner)
 
         with self.subTest('06_add_server_backends_to_backend_services'):
             self.setupServerBackends()
@@ -84,9 +85,9 @@ class ChangeBackendServiceTest(xds_k8s_testcase.RegularXdsKubernetesTestCase):
             self.td.alternative_backend_service_add_neg_backends(
                 neg_name_alt, neg_zones_alt)
 
+        test_client: _XdsTestClient
         with self.subTest('07_start_test_client'):
-            test_client: _XdsTestClient = self.startTestClient(
-                default_test_servers[0])
+            test_client = self.startTestClient(default_test_servers[0])
 
         with self.subTest('08_test_client_xds_config_exists'):
             self.assertXdsConfigExists(test_client)

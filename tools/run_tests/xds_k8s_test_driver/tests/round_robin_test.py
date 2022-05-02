@@ -47,15 +47,16 @@ class RoundRobinTest(xds_k8s_testcase.RegularXdsKubernetesTestCase):
         with self.subTest('04_create_forwarding_rule'):
             self.td.create_forwarding_rule(self.server_xds_port)
 
+        test_servers: List[_XdsTestServer]
         with self.subTest('05_start_test_servers'):
-            test_servers: List[_XdsTestServer] = self.startTestServers(
-                replica_count=REPLICA_COUNT)
+            test_servers = self.startTestServers(replica_count=REPLICA_COUNT)
 
         with self.subTest('06_add_server_backends_to_backend_services'):
             self.setupServerBackends()
 
+        test_client: _XdsTestClient
         with self.subTest('07_start_test_client'):
-            test_client: _XdsTestClient = self.startTestClient(test_servers[0])
+            test_client = self.startTestClient(test_servers[0])
 
         with self.subTest('08_test_client_xds_config_exists'):
             self.assertXdsConfigExists(test_client)
