@@ -93,8 +93,8 @@ class OutlierDetectionLb : public LoadBalancingPolicy {
         : DelegatingSubchannel(std::move(subchannel)),
           subchannel_state_(std::move(subchannel_state)) {
       if (subchannel_state_ != nullptr) {
-        subchannel_state_->subchannels_.insert(this);
-        if (subchannel_state_->ejection_time_.has_value()) {
+        subchannel_state_->AddSubchannel(this);
+        if (subchannel_state_->EjectionTime().has_value()) {
           ejected_ = true;
         }
       }
@@ -102,7 +102,7 @@ class OutlierDetectionLb : public LoadBalancingPolicy {
 
     ~SubchannelWrapper() override {
       if (subchannel_state_ != nullptr) {
-        subchannel_state_->subchannels_.erase(this);
+        subchannel_state_->RemoveSubchannel(this);
       }
     }
 
@@ -202,6 +202,34 @@ class OutlierDetectionLb : public LoadBalancingPolicy {
           {success_rate, backup_bucket_->successes + backup_bucket_->failures}};
     }
 
+    void AddSubchannel(SubchannelWrapper* wrapper) {
+      subchannels_.insert(wrapper);
+    }
+
+    void RemoveSubchannel(SubchannelWrapper* wrapper) {
+      subchannels_.erase(wrapper);
+    }
+
+    void AddSuccessCount() { current_bucket_->successes.fetch_add(1); }
+
+    void AddFailureCount() { current_bucket_->failures.fetch_add(1); }
+
+    bool GetEjected() { return ejected_; }
+
+    uint32_t Multiplier() const { return multiplier_; }
+
+    void SetMultiplier(uint32_t multiplier) { multiplier_ = multiplier; }
+
+    absl::optional<Timestamp> EjectionTime() const { return ejection_time_; }
+
+    void SetEjectionTime(const Timestamp& time) { ejection_time_ = time; }
+
+    absl::Time EjectionTimeStamp() const { return ejection_timestamp_; }
+
+    void SetEjectionTimeStamp(const absl::Time& timestamp) {
+      ejection_timestamp_ = timestamp;
+    }
+
     void Eject() {
       ejected_ = true;
       for (auto& subchannel : subchannels_) {
@@ -216,15 +244,16 @@ class OutlierDetectionLb : public LoadBalancingPolicy {
       }
     }
 
+   private:
     std::unique_ptr<Bucket> current_bucket_ = absl::make_unique<Bucket>();
     std::unique_ptr<Bucket> backup_bucket_ = absl::make_unique<Bucket>();
     // The bucket used to update call counts.
     // Points to either current_bucket or active_bucket.
     std::atomic<Bucket*> active_bucket_;
-    absl::optional<Timestamp> ejection_time_;
-    uint32_t multiplier_ = 0;
     bool ejected_ = false;
-    absl::Time ejection_timestamp;
+    uint32_t multiplier_ = 0;
+    absl::optional<Timestamp> ejection_time_;
+    absl::Time ejection_timestamp_;
     std::set<SubchannelWrapper*> subchannels_;
   };
 
@@ -397,9 +426,9 @@ class OutlierDetectionLb::Picker::SubchannelCallTracker
     // calculations.
     if (subchannel_state_ != nullptr) {
       if (args.status.ok()) {
-        subchannel_state_->current_bucket_->successes.fetch_add(1);
+        subchannel_state_->AddSuccessCount();
       } else {
-        subchannel_state_->current_bucket_->failures.fetch_add(1);
+        subchannel_state_->AddFailureCount();
       }
     }
   }
@@ -505,7 +534,7 @@ void OutlierDetectionLb::UpdateLocked(UpdateArgs args) {
   // Update config.
   config_ = std::move(args.config);
   // Update outlier detection timer.
-  // ejection_timer_ = MakeOrphanable<EjectionTimer>(Ref());
+  ejection_timer_ = MakeOrphanable<EjectionTimer>(Ref());
   // Create policy if needed.
   if (child_policy_ == nullptr) {
     child_policy_ = CreateChildPolicyLocked(args.args);
@@ -605,7 +634,7 @@ RefCountedPtr<SubchannelInterface> OutlierDetectionLb::Helper::CreateSubchannel(
       outlier_detection_policy_->channel_control_helper()->CreateSubchannel(
           std::move(address), args));
   if (subchannel_state != nullptr) {
-    subchannel_state->subchannels_.insert(subchannel.get());
+    subchannel_state->AddSubchannel(subchannel.get());
   }
   return subchannel;
 }
@@ -698,7 +727,7 @@ void OutlierDetectionLb::EjectionTimer::OnTimerLocked(grpc_error_handle error) {
       auto* subchannel_state = state.second.get();
       // Record the timestamp for use when ejecting addresses in this
       // iteration.
-      subchannel_state->ejection_time_ = ExecCtx::Get()->Now();
+      subchannel_state->SetEjectionTime(ExecCtx::Get()->Now());
       // For each address, swap the call counter's buckets in that address's
       // map entry.
       subchannel_state->RotateBucket();
@@ -756,7 +785,7 @@ void OutlierDetectionLb::EjectionTimer::OnTimerLocked(grpc_error_handle error) {
           if (random_key < parent_->config_->outlier_detection_config()
                                .success_rate_ejection->enforcement_percentage) {
             candidate.first->Eject();
-            candidate.first->ejection_time_ = time_now;
+            candidate.first->SetEjectionTime(time_now);
           }
         }
       }
@@ -775,7 +804,7 @@ void OutlierDetectionLb::EjectionTimer::OnTimerLocked(grpc_error_handle error) {
               parent_->config_->outlier_detection_config()
                   .failure_percentage_ejection->enforcement_percentage) {
             candidate.first->Eject();
-            candidate.first->ejection_time_ = time_now;
+            candidate.first->SetEjectionTime(time_now);
           }
         }
       }
@@ -788,17 +817,17 @@ void OutlierDetectionLb::EjectionTimer::OnTimerLocked(grpc_error_handle error) {
     //   address.
     for (auto& state : parent_->subchannel_state_map_) {
       auto* subchannel_state = state.second.get();
-      if (!subchannel_state->ejected_) {
-        if (subchannel_state->multiplier_ > 0) {
-          --subchannel_state->multiplier_;
+      if (!subchannel_state->GetEjected()) {
+        if (subchannel_state->Multiplier() > 0) {
+          subchannel_state->SetMultiplier(subchannel_state->Multiplier() - 1);
         }
       } else {
         auto change_time =
-            subchannel_state->ejection_timestamp +
+            subchannel_state->EjectionTimeStamp() +
             absl::Milliseconds(
                 std::min(parent_->config_->outlier_detection_config()
                                  .base_ejection_time.millis() *
-                             subchannel_state->multiplier_,
+                             subchannel_state->Multiplier(),
                          std::max(parent_->config_->outlier_detection_config()
                                       .base_ejection_time.millis(),
                                   parent_->config_->outlier_detection_config()
