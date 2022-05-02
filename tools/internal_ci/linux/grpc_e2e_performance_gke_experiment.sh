@@ -58,6 +58,8 @@ DRIVER_POOL=drivers-ci
 WORKER_POOL_8CORE=workers-c2-8core-ci
 # c2-standard-30 is the closest machine spec to 32 core there is
 WORKER_POOL_32CORE=workers-c2-30core-ci
+# Prefix for log URLs in cnsviewer.
+LOG_URL_PREFIX="http://cnsviewer/placer/prod/home/kokoro-dedicated/build_artifacts/${KOKORO_BUILD_ARTIFACTS_SUBDIR}/github/grpc/"
 
 # Update go version.
 TEST_INFRA_GOVERSION=go1.17.1
@@ -123,9 +125,6 @@ time ../test-infra/bin/prepare_prebuilt_workers \
     -p "${PREBUILT_IMAGE_PREFIX}" \
     -t "${UNIQUE_IDENTIFIER}" \
     -r "${ROOT_DIRECTORY_OF_DOCKERFILES}"
-
-# calculate the prefix of the log URL
-LOG_URL_PREFIX="http://cnsviewer2/placer/prod/home/kokoro-dedicated/build_artifacts/${KOKORO_BUILD_ARTIFACTS_SUBDIR}/github/grpc/"
 
 # Run tests.
 time ../test-infra/bin/runner \
