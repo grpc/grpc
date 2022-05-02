@@ -322,6 +322,16 @@ class MainLoop {
     return is_client ? &client_filter : &server_filter;
   }
 
+  static const grpc_channel_filter* BottomFilter(bool is_client) {
+    static const grpc_channel_filter client_filter =
+        MakePromiseBasedFilter<Call::BottomFilter, FilterEndpoint::kClient>(
+            "client-end");
+    static const grpc_channel_filter server_filter =
+        MakePromiseBasedFilter<Call::BottomFilter, FilterEndpoint::kServer>(
+            "server-end");
+    return is_client ? &client_filter : &server_filter;
+  }
+
  private:
   class WakeCall final : public Wakeable {
    public:
@@ -343,6 +353,7 @@ class MainLoop {
 
   class Call final : public Activity {
    public:
+    // EndFilter is the last filter that will be invoked for a call
     class EndFilter : public ChannelFilter {
      public:
       static absl::StatusOr<EndFilter> Create(ChannelArgs,
@@ -364,6 +375,26 @@ class MainLoop {
         return [call]() -> Poll<ServerMetadataHandle> {
           return call->CheckCompletion();
         };
+      }
+    };
+
+    // BottomFilter is the last filter on a channel stack (for sinking ops)
+    class BottomFilter : public ChannelFilter {
+     public:
+      static absl::StatusOr<BottomFilter> Create(ChannelArgs,
+                                                 ChannelFilter::Args) {
+        return BottomFilter{};
+      }
+
+      // Construct a promise for one call.
+      ArenaPromise<ServerMetadataHandle> MakeCallPromise(
+          CallArgs call_args, NextPromiseFactory next) override {
+        return next(std::move(call_args));
+      }
+
+      bool StartTransportOp(grpc_transport_op* op) override {
+        ExecCtx::Run(DEBUG_LOCATION, op->on_consumed, GRPC_ERROR_NONE);
+        return true;
       }
     };
 
@@ -572,12 +603,18 @@ DEFINE_PROTO_FUZZER(const filter_fuzzer::Msg& msg) {
       static_cast<grpc_channel_stack_type>(msg.channel_stack_type()));
   builder.SetChannelArgs(channel_args);
   builder.AppendFilter(filter);
-  if (grpc_channel_stack_type_is_client(builder.channel_stack_type())) {
+  const bool is_client =
+      grpc_channel_stack_type_is_client(builder.channel_stack_type());
+  if (is_client) {
     builder.AppendFilter(grpc_core::MainLoop::EndFilter(true));
   } else {
     builder.PrependFilter(grpc_core::MainLoop::EndFilter(false));
   }
-  auto stack = builder.Build();
+  builder.AppendFilter(grpc_core::MainLoop::BottomFilter(is_client));
+  auto stack = [&]() {
+    grpc_core::ExecCtx exec_ctx;
+    return builder.Build();
+  }();
 
   if (stack.ok()) {
     grpc_core::MainLoop main_loop(std::move(*stack), std::move(channel_args));
