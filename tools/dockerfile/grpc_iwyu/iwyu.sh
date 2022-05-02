@@ -30,7 +30,7 @@ cat compile_commands.json | sed "s,\"file\": \",\"file\": \"${IWYU_ROOT}/,g" > c
 
 # figure out which files to include
 cat compile_commands.json | jq -r '.[].file' \
-  | grep -E "^src/core/lib/(promise|uri)/" \
+  | grep -E "^src/core/lib/(config|promise|uri)/" \
   | grep -v -E "/upb-generated/|/upbdefs-generated/" \
   | sort \
   | tee iwyu_files.txt
