@@ -239,18 +239,16 @@ class PriorityLb : public LoadBalancingPolicy {
 
   // Iterates through the list of priorities to choose one:
   // - If the child for a priority doesn't exist, creates it.
-  // - If a child's failover timer is pending, returns without selecting
-  //   a priority while we wait for the child to attempt to connect.  In
-  //   this case, if report_connecting is true, reports CONNECTING state to
-  //   the channel.
-  // - If the child is connected, it will be used as the current priority.
+  // - If a child's failover timer is pending, selects that priority
+  //   while we wait for the child to attempt to connect.
+  // - If the child is connected, selects that priority.
   // - Otherwise, continues on to the next child.
-  // Reports TRANSIENT_FAILURE to the channel if all children are not
-  // connected.
+  // Delegates to the last child if none of the children are connecting.
+  // Reports TRANSIENT_FAILURE if the priority list is empty.
   //
   // This method is idempotent; it should yield the same result every
   // time as a function of the state of the children.
-  void ChoosePriorityLocked(bool report_connecting);
+  void ChoosePriorityLocked();
 
   // Sets the specified priority as the current priority.
   // Deactivates any children at lower priorities.
@@ -365,7 +363,7 @@ void PriorityLb::UpdateLocked(UpdateArgs args) {
   }
   update_in_progress_ = false;
   // Try to get connected.
-  ChoosePriorityLocked(/*report_connecting=*/children_.empty());
+  ChoosePriorityLocked();
 }
 
 uint32_t PriorityLb::GetChildPriorityLocked(
@@ -408,7 +406,7 @@ void PriorityLb::HandleChildConnectivityStateChangeLocked(
       // properly select between CONNECTING and TRANSIENT_FAILURE as the
       // new state to report to our parent.
       current_child_from_before_update_ = nullptr;
-      ChoosePriorityLocked(/*report_connecting=*/true);
+      ChoosePriorityLocked();
     }
     return;
   }
@@ -422,8 +420,7 @@ void PriorityLb::HandleChildConnectivityStateChangeLocked(
   }
   // Unconditionally call ChoosePriorityLocked().  It should do the
   // right thing based on the state of all children.
-  ChoosePriorityLocked(
-      /*report_connecting=*/child_priority == current_priority_);
+  ChoosePriorityLocked();
 }
 
 void PriorityLb::DeleteChild(ChildPriority* child) {
@@ -434,12 +431,12 @@ void PriorityLb::DeleteChild(ChildPriority* child) {
   // new state to report to our parent.
   if (current_child_from_before_update_ == child) {
     current_child_from_before_update_ = nullptr;
-    ChoosePriorityLocked(/*report_connecting=*/true);
+    ChoosePriorityLocked();
   }
   children_.erase(child->name());
 }
 
-void PriorityLb::ChoosePriorityLocked(bool report_connecting) {
+void PriorityLb::ChoosePriorityLocked() {
   // If priority list is empty, report TF.
   if (config_->priorities().empty()) {
     current_child_from_before_update_ = nullptr;
@@ -463,7 +460,13 @@ void PriorityLb::ChoosePriorityLocked(bool report_connecting) {
     }
     auto& child = children_[child_name];
     if (child == nullptr) {
-      if (report_connecting) {
+      // If we're not still using an old child from before the last
+      // update, report CONNECTING here.
+      // This is probably not strictly necessary, since the child should
+      // immediately report CONNECTING and cause us to report that state
+      // anyway, but we do this just in case the child fails to report
+      // state before UpdateLocked() returns.
+      if (current_child_from_before_update_ != nullptr) {
         channel_control_helper()->UpdateState(
             GRPC_CHANNEL_CONNECTING, absl::Status(),
             absl::make_unique<QueuePicker>(Ref(DEBUG_LOCATION, "QueuePicker")));
@@ -495,9 +498,11 @@ void PriorityLb::ChoosePriorityLocked(bool report_connecting) {
                 this, priority, child_name.c_str());
       }
       current_priority_ = priority;
-      if (report_connecting) {
-        channel_control_helper()->UpdateState(GRPC_CHANNEL_CONNECTING,
-                                              absl::OkStatus(),
+      // If we're not still using an old child from before the last
+      // update, report CONNECTING here.
+      if (current_child_from_before_update_ != nullptr) {
+        channel_control_helper()->UpdateState(child->connectivity_state(),
+                                              child->connectivity_status(),
                                               child->GetPicker());
       }
       return;
@@ -511,8 +516,8 @@ void PriorityLb::ChoosePriorityLocked(bool report_connecting) {
               ConnectivityStateName(child->connectivity_state()));
     }
   }
-  // If we didn't find any priority to try, pick any in state
-  // CONNECTING, or delegate to the last one if none are CONNECTING.
+  // If we didn't find any priority to try, pick the first one in state
+  // CONNECTING.
   if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_priority_trace)) {
     gpr_log(GPR_INFO,
             "[priority_lb %p] no priority reachable, checking for CONNECTING "
@@ -530,8 +535,8 @@ void PriorityLb::ChoosePriorityLocked(bool report_connecting) {
     auto& child = children_[child_name];
     GPR_ASSERT(child != nullptr);
     if (child->connectivity_state() == GRPC_CHANNEL_CONNECTING) {
-      channel_control_helper()->UpdateState(GRPC_CHANNEL_CONNECTING,
-                                            absl::OkStatus(),
+      channel_control_helper()->UpdateState(child->connectivity_state(),
+                                            child->connectivity_status(),
                                             child->GetPicker());
       return;
     }
