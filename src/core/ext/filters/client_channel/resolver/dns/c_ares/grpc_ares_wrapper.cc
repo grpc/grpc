@@ -992,24 +992,25 @@ static bool inner_maybe_resolve_localhost_manually_locked(
   if (gpr_stricmp(host->c_str(), "localhost") == 0) {
     GPR_ASSERT(*addrs == nullptr);
     *addrs = absl::make_unique<grpc_core::ServerAddressList>();
+    grpc_resolved_address address;
+    memset(&address, 0, sizeof(address));
+    struct sockaddr_in6* ipv6_loopback_addr =
+        reinterpret_cast<struct sockaddr_in6*>(&address.addr);
     uint16_t numeric_port = grpc_strhtons(port->c_str());
     // Append the ipv6 loopback address.
-    struct sockaddr_in6 ipv6_loopback_addr;
-    memset(&ipv6_loopback_addr, 0, sizeof(ipv6_loopback_addr));
-    ((char*)&ipv6_loopback_addr.sin6_addr)[15] = 1;
-    ipv6_loopback_addr.sin6_family = AF_INET6;
-    ipv6_loopback_addr.sin6_port = numeric_port;
-    (*addrs)->emplace_back(&ipv6_loopback_addr, sizeof(ipv6_loopback_addr),
-                           nullptr /* args */);
+    ((char*)&ipv6_loopback_addr->sin6_addr)[15] = 1;
+    ipv6_loopback_addr->sin6_family = AF_INET6;
+    ipv6_loopback_addr->sin6_port = numeric_port;
+    (*addrs)->emplace_back(address, /*args=*/nullptr);
     // Append the ipv4 loopback address.
-    struct sockaddr_in ipv4_loopback_addr;
-    memset(&ipv4_loopback_addr, 0, sizeof(ipv4_loopback_addr));
-    ((char*)&ipv4_loopback_addr.sin_addr)[0] = 0x7f;
-    ((char*)&ipv4_loopback_addr.sin_addr)[3] = 0x01;
-    ipv4_loopback_addr.sin_family = AF_INET;
-    ipv4_loopback_addr.sin_port = numeric_port;
-    (*addrs)->emplace_back(&ipv4_loopback_addr, sizeof(ipv4_loopback_addr),
-                           nullptr /* args */);
+    memset(&address, 0, sizeof(address));
+    struct sockaddr_in* ipv4_loopback_addr =
+        reinterpret_cast<struct sockaddr_in*>(&address.addr);
+    ((char*)&ipv4_loopback_addr->sin_addr)[0] = 0x7f;
+    ((char*)&ipv4_loopback_addr->sin_addr)[3] = 0x01;
+    ipv4_loopback_addr->sin_family = AF_INET;
+    ipv4_loopback_addr->sin_port = numeric_port;
+    (*addrs)->emplace_back(address, /*args=*/nullptr);
     // Let the address sorter figure out which one should be tried first.
     grpc_cares_wrapper_address_sorting_sort(r, addrs->get());
     return true;
