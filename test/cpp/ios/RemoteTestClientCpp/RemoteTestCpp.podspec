@@ -14,7 +14,7 @@ Pod::Spec.new do |s|
   s.dependency "!ProtoCompiler-gRPCCppPlugin"
   s.dependency "Protobuf-C++"
   s.dependency "gRPC-C++"
-  s.source_files = "src/proto/grpc/testing/*.pb.{h,cc}"
+  s.source_files = "src/proto/grpc/testing/**/*.pb.{h,cc}"
   s.header_mappings_dir = "."
   s.requires_arc = false
 
