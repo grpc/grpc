@@ -18,8 +18,9 @@
 
 #include <grpc/support/port_platform.h>
 
-#include "src/core/ext/filters/client_channel/http_connect_handshaker.h"
+#include "src/core/lib/transport/http_connect_handshaker.h"
 
+#include <limits.h>
 #include <string.h>
 
 #include "absl/strings/str_cat.h"
@@ -29,17 +30,15 @@
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
 
-#include "src/core/ext/filters/client_channel/client_channel.h"
 #include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/channel/handshaker.h"
-#include "src/core/lib/channel/handshaker_registry.h"
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/http/format_request.h"
 #include "src/core/lib/http/parser.h"
-#include "src/core/lib/resolver/resolver_registry.h"
 #include "src/core/lib/slice/slice_internal.h"
+#include "src/core/lib/transport/handshaker.h"
+#include "src/core/lib/transport/handshaker_registry.h"
 #include "src/core/lib/uri/uri_parser.h"
 
 namespace grpc_core {
@@ -354,7 +353,7 @@ void HttpConnectHandshaker::DoHandshake(grpc_tcp_server_acceptor* /*acceptor*/,
       GRPC_CLOSURE_INIT(&request_done_closure_,
                         &HttpConnectHandshaker::OnWriteDoneScheduler, this,
                         grpc_schedule_on_exec_ctx),
-      nullptr);
+      nullptr, /*max_frame_size=*/INT_MAX);
 }
 
 HttpConnectHandshaker::HttpConnectHandshaker() {

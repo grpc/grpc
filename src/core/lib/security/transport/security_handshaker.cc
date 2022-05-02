@@ -31,13 +31,13 @@
 
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channelz.h"
-#include "src/core/lib/channel/handshaker.h"
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/security/context/security_context.h"
 #include "src/core/lib/security/transport/secure_endpoint.h"
 #include "src/core/lib/security/transport/tsi_error.h"
 #include "src/core/lib/slice/slice_internal.h"
+#include "src/core/lib/transport/handshaker.h"
 #include "src/core/tsi/transport_security_grpc.h"
 
 #define GRPC_INITIAL_HANDSHAKE_BUFFER_SIZE 256
@@ -393,7 +393,7 @@ grpc_error_handle SecurityHandshaker::OnHandshakeNextDoneLocked(
             &on_handshake_data_sent_to_peer_,
             &SecurityHandshaker::OnHandshakeDataSentToPeerFnScheduler, this,
             grpc_schedule_on_exec_ctx),
-        nullptr);
+        nullptr, /*max_frame_size=*/INT_MAX);
   } else if (handshaker_result == nullptr) {
     // There is nothing to send, but need to read from peer.
     grpc_endpoint_read(

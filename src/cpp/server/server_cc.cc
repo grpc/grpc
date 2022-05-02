@@ -1031,6 +1031,7 @@ bool Server::RegisterService(const std::string* addr, grpc::Service* service) {
       has_callback_methods_ = true;
       grpc::internal::RpcServiceMethod* method_value = method.get();
       grpc::CompletionQueue* cq = CallbackCQ();
+      grpc_server_register_completion_queue(server_, cq->cq(), nullptr);
       grpc_core::Server::FromC(server_)->SetRegisteredMethodAllocator(
           cq->cq(), method_registration_tag, [this, cq, method_value] {
             grpc_core::Server::RegisteredCallAllocation result;
@@ -1122,25 +1123,12 @@ void Server::Start(grpc::ServerCompletionQueue** cqs, size_t num_cqs) {
 
   // Only create default health check service when user did not provide an
   // explicit one.
-  grpc::ServerCompletionQueue* health_check_cq = nullptr;
-  grpc::DefaultHealthCheckService::HealthCheckServiceImpl*
-      default_health_check_service_impl = nullptr;
   if (health_check_service_ == nullptr && !health_check_service_disabled_ &&
       grpc::DefaultHealthCheckServiceEnabled()) {
-    auto* default_hc_service = new grpc::DefaultHealthCheckService;
-    health_check_service_.reset(default_hc_service);
-    // We create a non-polling CQ to avoid impacting application
-    // performance.  This ensures that we don't introduce thread hops
-    // for application requests that wind up on this CQ, which is polled
-    // in its own thread.
-    health_check_cq = new grpc::ServerCompletionQueue(
-        GRPC_CQ_NEXT, GRPC_CQ_NON_POLLING, nullptr);
-    grpc_server_register_completion_queue(server_, health_check_cq->cq(),
-                                          nullptr);
-    default_health_check_service_impl =
-        default_hc_service->GetHealthCheckService(
-            std::unique_ptr<grpc::ServerCompletionQueue>(health_check_cq));
-    RegisterService(nullptr, default_health_check_service_impl);
+    auto default_hc_service = absl::make_unique<DefaultHealthCheckService>();
+    auto* hc_service_impl = default_hc_service->GetHealthCheckService();
+    health_check_service_ = std::move(default_hc_service);
+    RegisterService(nullptr, hc_service_impl);
   }
 
   for (auto& acceptor : acceptors_) {
@@ -1187,9 +1175,6 @@ void Server::Start(grpc::ServerCompletionQueue** cqs, size_t num_cqs) {
         new UnimplementedAsyncRequest(this, cqs[i]);
       }
     }
-    if (health_check_cq != nullptr) {
-      new UnimplementedAsyncRequest(this, health_check_cq);
-    }
     unknown_rpc_needed = false;
   }
 
@@ -1204,10 +1189,6 @@ void Server::Start(grpc::ServerCompletionQueue** cqs, size_t num_cqs) {
 
   for (const auto& value : sync_req_mgrs_) {
     value->Start();
-  }
-
-  if (default_health_check_service_impl != nullptr) {
-    default_health_check_service_impl->StartServingThread();
   }
 
   for (auto& acceptor : acceptors_) {
