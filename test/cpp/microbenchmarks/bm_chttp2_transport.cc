@@ -96,7 +96,8 @@ class PhonyEndpoint : public grpc_endpoint {
   }
 
   static void read(grpc_endpoint* ep, grpc_slice_buffer* slices,
-                   grpc_closure* cb, bool /*urgent*/) {
+                   grpc_closure* cb, bool /*urgent*/,
+                   int /*min_progress_size*/) {
     static_cast<PhonyEndpoint*>(ep)->QueueRead(slices, cb);
   }
 
@@ -138,7 +139,8 @@ class Fixture {
     ep_ = new PhonyEndpoint;
     const grpc_channel_args* final_args = grpc_core::CoreConfiguration::Get()
                                               .channel_args_preconditioning()
-                                              .PreconditionChannelArgs(&c_args);
+                                              .PreconditionChannelArgs(&c_args)
+                                              .ToC();
     t_ = grpc_create_chttp2_transport(final_args, ep_, client);
     grpc_channel_args_destroy(final_args);
     grpc_chttp2_transport_start_reading(t_, nullptr, nullptr, nullptr);

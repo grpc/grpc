@@ -40,7 +40,7 @@ PROJECT_NAME           = "GRPC C++"
 # could be handy for archiving the generated documentation or if some version
 # control system is used.
 
-PROJECT_NUMBER         = 1.46.0-dev
+PROJECT_NUMBER         = 1.47.0-dev
 
 # Using the PROJECT_BRIEF tag one can provide an optional one line description
 # for a project that appears at the top of each page and should give viewer a
@@ -1054,6 +1054,7 @@ include/grpcpp/support/validate_service_config.h \
 include/grpcpp/xds_server_builder.h \
 src/core/ext/filters/census/grpc_context.cc \
 src/core/ext/filters/channel_idle/channel_idle_filter.cc \
+src/core/ext/filters/channel_idle/channel_idle_filter.h \
 src/core/ext/filters/channel_idle/idle_filter_state.cc \
 src/core/ext/filters/channel_idle/idle_filter_state.h \
 src/core/ext/filters/client_channel/backend_metric.cc \
@@ -1077,8 +1078,6 @@ src/core/ext/filters/client_channel/global_subchannel_pool.cc \
 src/core/ext/filters/client_channel/global_subchannel_pool.h \
 src/core/ext/filters/client_channel/health/health_check_client.cc \
 src/core/ext/filters/client_channel/health/health_check_client.h \
-src/core/ext/filters/client_channel/http_connect_handshaker.cc \
-src/core/ext/filters/client_channel/http_connect_handshaker.h \
 src/core/ext/filters/client_channel/http_proxy.cc \
 src/core/ext/filters/client_channel/http_proxy.h \
 src/core/ext/filters/client_channel/lb_policy.cc \
@@ -1097,6 +1096,8 @@ src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_client_stats.cc \
 src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_client_stats.h \
 src/core/ext/filters/client_channel/lb_policy/grpclb/load_balancer_api.cc \
 src/core/ext/filters/client_channel/lb_policy/grpclb/load_balancer_api.h \
+src/core/ext/filters/client_channel/lb_policy/oob_backend_metric.cc \
+src/core/ext/filters/client_channel/lb_policy/oob_backend_metric.h \
 src/core/ext/filters/client_channel/lb_policy/pick_first/pick_first.cc \
 src/core/ext/filters/client_channel/lb_policy/priority/priority.cc \
 src/core/ext/filters/client_channel/lb_policy/ring_hash/ring_hash.cc \
@@ -1153,6 +1154,7 @@ src/core/ext/filters/client_channel/service_config_channel_arg_filter.cc \
 src/core/ext/filters/client_channel/subchannel.cc \
 src/core/ext/filters/client_channel/subchannel.h \
 src/core/ext/filters/client_channel/subchannel_interface.h \
+src/core/ext/filters/client_channel/subchannel_interface_internal.h \
 src/core/ext/filters/client_channel/subchannel_pool_interface.cc \
 src/core/ext/filters/client_channel/subchannel_pool_interface.h \
 src/core/ext/filters/client_channel/subchannel_stream_client.cc \
@@ -1549,6 +1551,8 @@ src/core/ext/upb-generated/xds/core/v3/resource_name.upb.c \
 src/core/ext/upb-generated/xds/core/v3/resource_name.upb.h \
 src/core/ext/upb-generated/xds/data/orca/v3/orca_load_report.upb.c \
 src/core/ext/upb-generated/xds/data/orca/v3/orca_load_report.upb.h \
+src/core/ext/upb-generated/xds/service/orca/v3/orca.upb.c \
+src/core/ext/upb-generated/xds/service/orca/v3/orca.upb.h \
 src/core/ext/upb-generated/xds/type/matcher/v3/matcher.upb.c \
 src/core/ext/upb-generated/xds/type/matcher/v3/matcher.upb.h \
 src/core/ext/upb-generated/xds/type/matcher/v3/regex.upb.c \
@@ -1898,11 +1902,6 @@ src/core/lib/channel/channelz_registry.h \
 src/core/lib/channel/connected_channel.cc \
 src/core/lib/channel/connected_channel.h \
 src/core/lib/channel/context.h \
-src/core/lib/channel/handshaker.cc \
-src/core/lib/channel/handshaker.h \
-src/core/lib/channel/handshaker_factory.h \
-src/core/lib/channel/handshaker_registry.cc \
-src/core/lib/channel/handshaker_registry.h \
 src/core/lib/channel/promise_based_filter.cc \
 src/core/lib/channel/promise_based_filter.h \
 src/core/lib/channel/status_util.cc \
@@ -2406,7 +2405,14 @@ src/core/lib/transport/connectivity_state.cc \
 src/core/lib/transport/connectivity_state.h \
 src/core/lib/transport/error_utils.cc \
 src/core/lib/transport/error_utils.h \
+src/core/lib/transport/handshaker.cc \
+src/core/lib/transport/handshaker.h \
+src/core/lib/transport/handshaker_factory.h \
+src/core/lib/transport/handshaker_registry.cc \
+src/core/lib/transport/handshaker_registry.h \
 src/core/lib/transport/http2_errors.h \
+src/core/lib/transport/http_connect_handshaker.cc \
+src/core/lib/transport/http_connect_handshaker.h \
 src/core/lib/transport/metadata_batch.h \
 src/core/lib/transport/parsed_metadata.cc \
 src/core/lib/transport/parsed_metadata.h \
@@ -2414,6 +2420,8 @@ src/core/lib/transport/pid_controller.cc \
 src/core/lib/transport/pid_controller.h \
 src/core/lib/transport/status_conversion.cc \
 src/core/lib/transport/status_conversion.h \
+src/core/lib/transport/tcp_connect_handshaker.cc \
+src/core/lib/transport/tcp_connect_handshaker.h \
 src/core/lib/transport/timeout_encoding.cc \
 src/core/lib/transport/timeout_encoding.h \
 src/core/lib/transport/transport.cc \

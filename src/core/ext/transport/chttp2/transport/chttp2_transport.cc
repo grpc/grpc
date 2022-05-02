@@ -708,7 +708,7 @@ grpc_chttp2_stream::~grpc_chttp2_stream() {
   grpc_slice_buffer_destroy_internal(&frame_storage);
 
   for (int i = 0; i < STREAM_LIST_COUNT; i++) {
-    if (GPR_UNLIKELY(included[i])) {
+    if (GPR_UNLIKELY(included.is_set(i))) {
       gpr_log(GPR_ERROR, "%s stream %d still included in list %d",
               t->is_client ? "client" : "server", id, i);
       abort();
@@ -1859,15 +1859,22 @@ class GracefulGoaway : public grpc_core::RefCounted<GracefulGoaway> {
 
 }  // namespace
 
-static void send_goaway(grpc_chttp2_transport* t, grpc_error_handle error) {
+static void send_goaway(grpc_chttp2_transport* t, grpc_error_handle error,
+                        bool immediate_disconnect_hint) {
   grpc_http2_error_code http_error;
   std::string message;
   grpc_error_get_status(error, grpc_core::Timestamp::InfFuture(), nullptr,
                         &message, &http_error, nullptr);
-  if (!t->is_client && http_error == GRPC_HTTP2_NO_ERROR) {
+  if (!t->is_client && http_error == GRPC_HTTP2_NO_ERROR &&
+      !immediate_disconnect_hint) {
     // Do a graceful shutdown.
-    GracefulGoaway::Start(t);
-  } else {
+    if (t->sent_goaway_state == GRPC_CHTTP2_NO_GOAWAY_SEND) {
+      GracefulGoaway::Start(t);
+    } else {
+      // Graceful GOAWAY is already in progress.
+    }
+  } else if (t->sent_goaway_state == GRPC_CHTTP2_NO_GOAWAY_SEND ||
+             t->sent_goaway_state == GRPC_CHTTP2_GRACEFUL_GOAWAY) {
     // We want to log this irrespective of whether http tracing is enabled
     gpr_log(GPR_DEBUG, "%s: Sending goaway err=%s", t->peer_string.c_str(),
             grpc_error_std_string(error).c_str());
@@ -1875,6 +1882,8 @@ static void send_goaway(grpc_chttp2_transport* t, grpc_error_handle error) {
     grpc_chttp2_goaway_append(
         t->last_new_stream_id, static_cast<uint32_t>(http_error),
         grpc_slice_from_cpp_string(std::move(message)), &t->qbuf);
+  } else {
+    // Final GOAWAY has already been sent.
   }
   grpc_chttp2_initiate_write(t, GRPC_CHTTP2_INITIATE_WRITE_GOAWAY_SENT);
   GRPC_ERROR_UNREF(error);
@@ -1886,7 +1895,8 @@ void grpc_chttp2_add_ping_strike(grpc_chttp2_transport* t) {
     send_goaway(t,
                 grpc_error_set_int(
                     GRPC_ERROR_CREATE_FROM_STATIC_STRING("too_many_pings"),
-                    GRPC_ERROR_INT_HTTP2_ERROR, GRPC_HTTP2_ENHANCE_YOUR_CALM));
+                    GRPC_ERROR_INT_HTTP2_ERROR, GRPC_HTTP2_ENHANCE_YOUR_CALM),
+                /*immediate_disconnect_hint=*/true);
     // The transport will be closed after the write is done
     close_transport_locked(
         t, grpc_error_set_int(
@@ -1911,7 +1921,7 @@ static void perform_transport_op_locked(void* stream_op,
       static_cast<grpc_chttp2_transport*>(op->handler_private.extra_arg);
 
   if (op->goaway_error != GRPC_ERROR_NONE) {
-    send_goaway(t, op->goaway_error);
+    send_goaway(t, op->goaway_error, /*immediate_disconnect_hint=*/false);
   }
 
   if (op->set_accept_stream) {
@@ -1941,6 +1951,8 @@ static void perform_transport_op_locked(void* stream_op,
   }
 
   if (op->disconnect_with_error != GRPC_ERROR_NONE) {
+    send_goaway(t, GRPC_ERROR_REF(op->disconnect_with_error),
+                /*immediate_disconnect_hint=*/true);
     close_transport_locked(t, op->disconnect_with_error);
   }
 
@@ -2654,7 +2666,8 @@ static void continue_read_action_locked(grpc_chttp2_transport* t) {
   const bool urgent = t->goaway_error != GRPC_ERROR_NONE;
   GRPC_CLOSURE_INIT(&t->read_action_locked, read_action, t,
                     grpc_schedule_on_exec_ctx);
-  grpc_endpoint_read(t->ep, &t->read_buffer, &t->read_action_locked, urgent);
+  grpc_endpoint_read(t->ep, &t->read_buffer, &t->read_action_locked, urgent,
+                     /*min_progress_size=*/1);
   grpc_chttp2_act_on_flowctl_action(t->flow_control->MakeAction(), t, nullptr);
 }
 
@@ -3224,7 +3237,8 @@ static void benign_reclaimer_locked(void* arg, grpc_error_handle error) {
     send_goaway(t,
                 grpc_error_set_int(
                     GRPC_ERROR_CREATE_FROM_STATIC_STRING("Buffers full"),
-                    GRPC_ERROR_INT_HTTP2_ERROR, GRPC_HTTP2_ENHANCE_YOUR_CALM));
+                    GRPC_ERROR_INT_HTTP2_ERROR, GRPC_HTTP2_ENHANCE_YOUR_CALM),
+                /*immediate_disconnect_hint=*/true);
   } else if (error == GRPC_ERROR_NONE &&
              GRPC_TRACE_FLAG_ENABLED(grpc_resource_quota_trace)) {
     gpr_log(GPR_INFO,

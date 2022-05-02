@@ -642,7 +642,6 @@ class TrafficDirectorAppNetManager(TrafficDirectorManager):
                  project: str,
                  *,
                  resource_prefix: str,
-                 config_scope: str,
                  resource_suffix: Optional[str] = None,
                  network: str = 'default',
                  compute_api_version: str = 'v1'):
@@ -652,8 +651,6 @@ class TrafficDirectorAppNetManager(TrafficDirectorManager):
                          resource_suffix=resource_suffix,
                          network=network,
                          compute_api_version=compute_api_version)
-
-        self.config_scope = config_scope
 
         # API
         self.netsvc = _NetworkServicesV1Alpha1(gcp_api_manager, project)
@@ -665,10 +662,7 @@ class TrafficDirectorAppNetManager(TrafficDirectorManager):
     def create_mesh(self) -> GcpResource:
         name = self.make_resource_name(self.MESH_NAME)
         logger.info("Creating Mesh %s", name)
-        body = {
-            "type": "PROXYLESS_GRPC",
-            "scope": self.config_scope,
-        }
+        body = {}
         resource = self.netsvc.create_mesh(name, body)
         self.mesh = self.netsvc.get_mesh(name)
         logger.debug("Loaded Mesh: %s", self.mesh)

@@ -99,7 +99,7 @@ static void done_writing_settings_frame(void* /* arg */,
                                         grpc_error_handle error) {
   GPR_ASSERT(error == GRPC_ERROR_NONE);
   grpc_endpoint_read(state.tcp, &state.temp_incoming_buffer, &on_read,
-                     /*urgent=*/false);
+                     /*urgent=*/false, /*min_progress_size=*/1);
 }
 
 static void handle_write() {
@@ -138,7 +138,7 @@ static void handle_read(void* /*arg*/, grpc_error_handle error) {
     handle_write();
   } else {
     grpc_endpoint_read(state.tcp, &state.temp_incoming_buffer, &on_read,
-                       /*urgent=*/false);
+                       /*urgent=*/false, /*min_progress_size=*/1);
   }
 }
 
@@ -166,7 +166,7 @@ static void on_connect(void* arg, grpc_endpoint* tcp,
                         &on_writing_settings_frame, nullptr);
   } else {
     grpc_endpoint_read(state.tcp, &state.temp_incoming_buffer, &on_read,
-                       /*urgent=*/false);
+                       /*urgent=*/false, /*min_progress_size=*/1);
   }
 }
 

@@ -30,18 +30,24 @@ class HttpClientFilter : public ChannelFilter {
   static const grpc_channel_filter kFilter;
 
   static absl::StatusOr<HttpClientFilter> Create(
-      const grpc_channel_args* args, ChannelFilter::Args filter_args);
+      ChannelArgs args, ChannelFilter::Args filter_args);
 
   // Construct a promise for one call.
   ArenaPromise<ServerMetadataHandle> MakeCallPromise(
       CallArgs call_args, NextPromiseFactory next_promise_factory) override;
 
  private:
-  HttpClientFilter(HttpSchemeMetadata::ValueType scheme, Slice user_agent);
+  HttpClientFilter(HttpSchemeMetadata::ValueType scheme, Slice user_agent,
+                   bool test_only_use_put_requests);
 
   HttpSchemeMetadata::ValueType scheme_;
   Slice user_agent_;
+  bool test_only_use_put_requests_;
 };
+
+// A test-only channel arg to allow testing gRPC Core server behavior on PUT
+// requests.
+#define GRPC_ARG_TEST_ONLY_USE_PUT_REQUESTS "grpc.testing.use_put_requests"
 
 }  // namespace grpc_core
 

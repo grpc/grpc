@@ -25,12 +25,12 @@
 
 #include <grpc/grpc_security.h>
 
-#include "src/core/lib/channel/handshaker.h"
 #include "src/core/lib/gprpp/ref_counted.h"
 #include "src/core/lib/iomgr/endpoint.h"
 #include "src/core/lib/iomgr/pollset.h"
 #include "src/core/lib/iomgr/tcp_server.h"
 #include "src/core/lib/promise/arena_promise.h"
+#include "src/core/lib/transport/handshaker.h"
 #include "src/core/tsi/transport_security_interface.h"
 
 extern grpc_core::DebugOnlyTraceFlag grpc_trace_security_connector_refcount;
@@ -60,6 +60,10 @@ class grpc_security_connector
         url_scheme_(url_scheme) {}
   ~grpc_security_connector() override = default;
 
+  static absl::string_view ChannelArgName() {
+    return GRPC_ARG_SECURITY_CONNECTOR;
+  }
+
   // Checks the peer. Callee takes ownership of the peer object.
   // When done, sets *auth_context and invokes on_peer_checked.
   virtual void check_peer(
@@ -74,6 +78,11 @@ class grpc_security_connector
 
   /* Compares two security connectors. */
   virtual int cmp(const grpc_security_connector* other) const = 0;
+
+  static int ChannelArgsCompare(const grpc_security_connector* a,
+                                const grpc_security_connector* b) {
+    return a->cmp(b);
+  }
 
   absl::string_view url_scheme() const { return url_scheme_; }
 

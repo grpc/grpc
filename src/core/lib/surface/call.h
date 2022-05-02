@@ -28,13 +28,14 @@
 #include "src/core/lib/channel/context.h"
 #include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/surface/api_trace.h"
+#include "src/core/lib/surface/channel.h"
 #include "src/core/lib/surface/server.h"
 
 typedef void (*grpc_ioreq_completion_func)(grpc_call* call, int success,
                                            void* user_data);
 
 typedef struct grpc_call_create_args {
-  grpc_channel* channel;
+  grpc_core::RefCountedPtr<grpc_core::Channel> channel;
   grpc_core::Server* server;
 
   grpc_call* parent;

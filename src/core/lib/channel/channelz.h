@@ -176,6 +176,10 @@ class ChannelNode : public BaseNode {
   ChannelNode(std::string target, size_t channel_tracer_max_nodes,
               bool is_internal_channel);
 
+  static absl::string_view ChannelArgName() {
+    return GRPC_ARG_CHANNELZ_CHANNEL_NODE;
+  }
+
   // Returns the string description of the given connectivity state.
   static const char* GetChannelConnectivityStateChangeString(
       grpc_connectivity_state state);

@@ -157,6 +157,16 @@ grpc_endpoint* grpc_transport_get_endpoint(grpc_transport* transport) {
 void grpc_transport_stream_op_batch_finish_with_failure(
     grpc_transport_stream_op_batch* batch, grpc_error_handle error,
     grpc_core::CallCombiner* call_combiner) {
+  grpc_core::CallCombinerClosureList closures;
+  grpc_transport_stream_op_batch_queue_finish_with_failure(batch, error,
+                                                           &closures);
+  // Execute closures.
+  closures.RunClosures(call_combiner);
+}
+
+void grpc_transport_stream_op_batch_queue_finish_with_failure(
+    grpc_transport_stream_op_batch* batch, grpc_error_handle error,
+    grpc_core::CallCombinerClosureList* closures) {
   if (batch->send_message) {
     batch->payload->send_message.send_message.reset();
   }
@@ -164,27 +174,24 @@ void grpc_transport_stream_op_batch_finish_with_failure(
     GRPC_ERROR_UNREF(batch->payload->cancel_stream.cancel_error);
   }
   // Construct a list of closures to execute.
-  grpc_core::CallCombinerClosureList closures;
   if (batch->recv_initial_metadata) {
-    closures.Add(
+    closures->Add(
         batch->payload->recv_initial_metadata.recv_initial_metadata_ready,
         GRPC_ERROR_REF(error), "failing recv_initial_metadata_ready");
   }
   if (batch->recv_message) {
-    closures.Add(batch->payload->recv_message.recv_message_ready,
-                 GRPC_ERROR_REF(error), "failing recv_message_ready");
+    closures->Add(batch->payload->recv_message.recv_message_ready,
+                  GRPC_ERROR_REF(error), "failing recv_message_ready");
   }
   if (batch->recv_trailing_metadata) {
-    closures.Add(
+    closures->Add(
         batch->payload->recv_trailing_metadata.recv_trailing_metadata_ready,
         GRPC_ERROR_REF(error), "failing recv_trailing_metadata_ready");
   }
   if (batch->on_complete != nullptr) {
-    closures.Add(batch->on_complete, GRPC_ERROR_REF(error),
-                 "failing on_complete");
+    closures->Add(batch->on_complete, GRPC_ERROR_REF(error),
+                  "failing on_complete");
   }
-  // Execute closures.
-  closures.RunClosures(call_combiner);
   GRPC_ERROR_UNREF(error);
 }
 

@@ -5,7 +5,7 @@
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
   </PropertyGroup>
 
-  <Import Project="..\Grpc.Core\SourceLink.csproj.include" />
+  <Import Project="..\Grpc.Tools\SourceLink.csproj.include" />
 
   <ItemGroup>
     <ProjectReference Include="..\Grpc.Tools\Grpc.Tools.csproj" />

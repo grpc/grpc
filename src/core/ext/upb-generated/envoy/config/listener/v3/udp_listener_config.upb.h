@@ -64,11 +64,21 @@ UPB_INLINE char* envoy_config_listener_v3_UdpListenerConfig_serialize_ex(const e
                                  upb_Arena* arena, size_t* len) {
   return upb_Encode(msg, &envoy_config_listener_v3_UdpListenerConfig_msginit, options, arena, len);
 }
-UPB_INLINE bool envoy_config_listener_v3_UdpListenerConfig_has_downstream_socket_config(const envoy_config_listener_v3_UdpListenerConfig *msg) { return _upb_hasbit(msg, 1); }
+UPB_INLINE bool envoy_config_listener_v3_UdpListenerConfig_has_downstream_socket_config(const envoy_config_listener_v3_UdpListenerConfig* msg) {
+  return _upb_hasbit(msg, 1);
+}
+UPB_INLINE void envoy_config_listener_v3_UdpListenerConfig_clear_downstream_socket_config(const envoy_config_listener_v3_UdpListenerConfig* msg) {
+  *UPB_PTR_AT(msg, UPB_SIZE(4, 8), const upb_Message*) = NULL;
+}
 UPB_INLINE const struct envoy_config_core_v3_UdpSocketConfig* envoy_config_listener_v3_UdpListenerConfig_downstream_socket_config(const envoy_config_listener_v3_UdpListenerConfig* msg) {
   return *UPB_PTR_AT(msg, UPB_SIZE(4, 8), const struct envoy_config_core_v3_UdpSocketConfig*);
 }
-UPB_INLINE bool envoy_config_listener_v3_UdpListenerConfig_has_quic_options(const envoy_config_listener_v3_UdpListenerConfig *msg) { return _upb_hasbit(msg, 2); }
+UPB_INLINE bool envoy_config_listener_v3_UdpListenerConfig_has_quic_options(const envoy_config_listener_v3_UdpListenerConfig* msg) {
+  return _upb_hasbit(msg, 2);
+}
+UPB_INLINE void envoy_config_listener_v3_UdpListenerConfig_clear_quic_options(const envoy_config_listener_v3_UdpListenerConfig* msg) {
+  *UPB_PTR_AT(msg, UPB_SIZE(8, 16), const upb_Message*) = NULL;
+}
 UPB_INLINE const struct envoy_config_listener_v3_QuicProtocolOptions* envoy_config_listener_v3_UdpListenerConfig_quic_options(const envoy_config_listener_v3_UdpListenerConfig* msg) {
   return *UPB_PTR_AT(msg, UPB_SIZE(8, 16), const struct envoy_config_listener_v3_QuicProtocolOptions*);
 }
@@ -77,7 +87,7 @@ UPB_INLINE void envoy_config_listener_v3_UdpListenerConfig_set_downstream_socket
   _upb_sethas(msg, 1);
   *UPB_PTR_AT(msg, UPB_SIZE(4, 8), struct envoy_config_core_v3_UdpSocketConfig*) = value;
 }
-UPB_INLINE struct envoy_config_core_v3_UdpSocketConfig* envoy_config_listener_v3_UdpListenerConfig_mutable_downstream_socket_config(envoy_config_listener_v3_UdpListenerConfig *msg, upb_Arena *arena) {
+UPB_INLINE struct envoy_config_core_v3_UdpSocketConfig* envoy_config_listener_v3_UdpListenerConfig_mutable_downstream_socket_config(envoy_config_listener_v3_UdpListenerConfig* msg, upb_Arena* arena) {
   struct envoy_config_core_v3_UdpSocketConfig* sub = (struct envoy_config_core_v3_UdpSocketConfig*)envoy_config_listener_v3_UdpListenerConfig_downstream_socket_config(msg);
   if (sub == NULL) {
     sub = (struct envoy_config_core_v3_UdpSocketConfig*)_upb_Message_New(&envoy_config_core_v3_UdpSocketConfig_msginit, arena);
@@ -90,7 +100,7 @@ UPB_INLINE void envoy_config_listener_v3_UdpListenerConfig_set_quic_options(envo
   _upb_sethas(msg, 2);
   *UPB_PTR_AT(msg, UPB_SIZE(8, 16), struct envoy_config_listener_v3_QuicProtocolOptions*) = value;
 }
-UPB_INLINE struct envoy_config_listener_v3_QuicProtocolOptions* envoy_config_listener_v3_UdpListenerConfig_mutable_quic_options(envoy_config_listener_v3_UdpListenerConfig *msg, upb_Arena *arena) {
+UPB_INLINE struct envoy_config_listener_v3_QuicProtocolOptions* envoy_config_listener_v3_UdpListenerConfig_mutable_quic_options(envoy_config_listener_v3_UdpListenerConfig* msg, upb_Arena* arena) {
   struct envoy_config_listener_v3_QuicProtocolOptions* sub = (struct envoy_config_listener_v3_QuicProtocolOptions*)envoy_config_listener_v3_UdpListenerConfig_quic_options(msg);
   if (sub == NULL) {
     sub = (struct envoy_config_listener_v3_QuicProtocolOptions*)_upb_Message_New(&envoy_config_listener_v3_QuicProtocolOptions_msginit, arena);

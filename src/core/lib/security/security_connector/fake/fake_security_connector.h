@@ -23,9 +23,9 @@
 
 #include <grpc/grpc_security.h>
 
-#include "src/core/lib/channel/handshaker.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/security/security_connector/security_connector.h"
+#include "src/core/lib/transport/handshaker.h"
 
 /* Creates a fake connector that emulates real channel security.  */
 grpc_core::RefCountedPtr<grpc_channel_security_connector>

@@ -39,7 +39,7 @@ Gem::Specification.new do |s|
   s.add_development_dependency 'simplecov',          '~> 0.14.1'
   s.add_development_dependency 'rake',               '~> 13.0'
   s.add_development_dependency 'rake-compiler',      '<= 1.1.1'
-  s.add_development_dependency 'rake-compiler-dock', '~> 1.1'
+  s.add_development_dependency 'rake-compiler-dock', '~> 1.2'
   s.add_development_dependency 'rspec',              '~> 3.6'
   s.add_development_dependency 'rubocop',            '~> 0.49.1'
   s.add_development_dependency 'signet',             '~> 0.7'
@@ -110,6 +110,7 @@ Gem::Specification.new do |s|
   s.files += %w( include/grpc/support/workaround_list.h )
   s.files += %w( src/core/ext/filters/census/grpc_context.cc )
   s.files += %w( src/core/ext/filters/channel_idle/channel_idle_filter.cc )
+  s.files += %w( src/core/ext/filters/channel_idle/channel_idle_filter.h )
   s.files += %w( src/core/ext/filters/channel_idle/idle_filter_state.cc )
   s.files += %w( src/core/ext/filters/channel_idle/idle_filter_state.h )
   s.files += %w( src/core/ext/filters/client_channel/backend_metric.cc )
@@ -133,8 +134,6 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/ext/filters/client_channel/global_subchannel_pool.h )
   s.files += %w( src/core/ext/filters/client_channel/health/health_check_client.cc )
   s.files += %w( src/core/ext/filters/client_channel/health/health_check_client.h )
-  s.files += %w( src/core/ext/filters/client_channel/http_connect_handshaker.cc )
-  s.files += %w( src/core/ext/filters/client_channel/http_connect_handshaker.h )
   s.files += %w( src/core/ext/filters/client_channel/http_proxy.cc )
   s.files += %w( src/core/ext/filters/client_channel/http_proxy.h )
   s.files += %w( src/core/ext/filters/client_channel/lb_policy.cc )
@@ -153,6 +152,8 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_client_stats.h )
   s.files += %w( src/core/ext/filters/client_channel/lb_policy/grpclb/load_balancer_api.cc )
   s.files += %w( src/core/ext/filters/client_channel/lb_policy/grpclb/load_balancer_api.h )
+  s.files += %w( src/core/ext/filters/client_channel/lb_policy/oob_backend_metric.cc )
+  s.files += %w( src/core/ext/filters/client_channel/lb_policy/oob_backend_metric.h )
   s.files += %w( src/core/ext/filters/client_channel/lb_policy/pick_first/pick_first.cc )
   s.files += %w( src/core/ext/filters/client_channel/lb_policy/priority/priority.cc )
   s.files += %w( src/core/ext/filters/client_channel/lb_policy/ring_hash/ring_hash.cc )
@@ -209,6 +210,7 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/ext/filters/client_channel/subchannel.cc )
   s.files += %w( src/core/ext/filters/client_channel/subchannel.h )
   s.files += %w( src/core/ext/filters/client_channel/subchannel_interface.h )
+  s.files += %w( src/core/ext/filters/client_channel/subchannel_interface_internal.h )
   s.files += %w( src/core/ext/filters/client_channel/subchannel_pool_interface.cc )
   s.files += %w( src/core/ext/filters/client_channel/subchannel_pool_interface.h )
   s.files += %w( src/core/ext/filters/client_channel/subchannel_stream_client.cc )
@@ -567,6 +569,8 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/ext/upb-generated/xds/core/v3/resource_name.upb.h )
   s.files += %w( src/core/ext/upb-generated/xds/data/orca/v3/orca_load_report.upb.c )
   s.files += %w( src/core/ext/upb-generated/xds/data/orca/v3/orca_load_report.upb.h )
+  s.files += %w( src/core/ext/upb-generated/xds/service/orca/v3/orca.upb.c )
+  s.files += %w( src/core/ext/upb-generated/xds/service/orca/v3/orca.upb.h )
   s.files += %w( src/core/ext/upb-generated/xds/type/matcher/v3/matcher.upb.c )
   s.files += %w( src/core/ext/upb-generated/xds/type/matcher/v3/matcher.upb.h )
   s.files += %w( src/core/ext/upb-generated/xds/type/matcher/v3/regex.upb.c )
@@ -916,11 +920,6 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/lib/channel/connected_channel.cc )
   s.files += %w( src/core/lib/channel/connected_channel.h )
   s.files += %w( src/core/lib/channel/context.h )
-  s.files += %w( src/core/lib/channel/handshaker.cc )
-  s.files += %w( src/core/lib/channel/handshaker.h )
-  s.files += %w( src/core/lib/channel/handshaker_factory.h )
-  s.files += %w( src/core/lib/channel/handshaker_registry.cc )
-  s.files += %w( src/core/lib/channel/handshaker_registry.h )
   s.files += %w( src/core/lib/channel/promise_based_filter.cc )
   s.files += %w( src/core/lib/channel/promise_based_filter.h )
   s.files += %w( src/core/lib/channel/status_util.cc )
@@ -1424,7 +1423,14 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/lib/transport/connectivity_state.h )
   s.files += %w( src/core/lib/transport/error_utils.cc )
   s.files += %w( src/core/lib/transport/error_utils.h )
+  s.files += %w( src/core/lib/transport/handshaker.cc )
+  s.files += %w( src/core/lib/transport/handshaker.h )
+  s.files += %w( src/core/lib/transport/handshaker_factory.h )
+  s.files += %w( src/core/lib/transport/handshaker_registry.cc )
+  s.files += %w( src/core/lib/transport/handshaker_registry.h )
   s.files += %w( src/core/lib/transport/http2_errors.h )
+  s.files += %w( src/core/lib/transport/http_connect_handshaker.cc )
+  s.files += %w( src/core/lib/transport/http_connect_handshaker.h )
   s.files += %w( src/core/lib/transport/metadata_batch.h )
   s.files += %w( src/core/lib/transport/parsed_metadata.cc )
   s.files += %w( src/core/lib/transport/parsed_metadata.h )
@@ -1432,6 +1438,8 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/lib/transport/pid_controller.h )
   s.files += %w( src/core/lib/transport/status_conversion.cc )
   s.files += %w( src/core/lib/transport/status_conversion.h )
+  s.files += %w( src/core/lib/transport/tcp_connect_handshaker.cc )
+  s.files += %w( src/core/lib/transport/tcp_connect_handshaker.h )
   s.files += %w( src/core/lib/transport/timeout_encoding.cc )
   s.files += %w( src/core/lib/transport/timeout_encoding.h )
   s.files += %w( src/core/lib/transport/transport.cc )

@@ -30,8 +30,10 @@
 
 #include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/gprpp/sync.h"
+#include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/promise/activity.h"
 #include "src/core/lib/promise/poll.h"
+#include "src/core/lib/resource_quota/trace.h"
 
 namespace grpc_core {
 
@@ -73,6 +75,7 @@ enum class ReclamationPass {
   kDestructive = 3,
 };
 static constexpr size_t kNumReclamationPasses = 4;
+static constexpr size_t kMaxQuotaBufferSize = 1024 * 1024;
 
 // For each reclamation function run we construct a ReclamationSweep.
 // When this object is finally destroyed (it may be moved several times first),
@@ -295,7 +298,12 @@ class GrpcMemoryAllocatorImpl final : public EventEngineMemoryAllocatorImpl {
     // Add the released memory to our free bytes counter... if this increases
     // from  0 to non-zero, then we have more to do, otherwise, we're actually
     // done.
-    if (free_bytes_.fetch_add(n, std::memory_order_release) != 0) return;
+    size_t prev_free = free_bytes_.fetch_add(n, std::memory_order_release);
+    if (prev_free + n > kMaxQuotaBufferSize) {
+      // Try to immediately return some free'ed memory back to the total quota.
+      MaybeDonateBack();
+    }
+    if (prev_free != 0) return;
     MaybeRegisterReclaimer();
   }
 
@@ -323,6 +331,12 @@ class GrpcMemoryAllocatorImpl final : public EventEngineMemoryAllocatorImpl {
  private:
   // Primitive reservation function.
   absl::optional<size_t> TryReserve(MemoryRequest request) GRPC_MUST_USE_RESULT;
+  // This function may be invoked during a memory release operation. If the
+  // total free_bytes in this allocator/local cache exceeds
+  // kMaxQuotaBufferSize / 2, donate the excess free_bytes in this cache back
+  // to the total quota immediately. This helps prevent free bytes in any
+  // particular allocator from growing too large.
+  void MaybeDonateBack();
   // Replenish bytes from the quota, without blocking, possibly entering
   // overcommit.
   void Replenish() ABSL_LOCKS_EXCLUDED(memory_quota_mu_);

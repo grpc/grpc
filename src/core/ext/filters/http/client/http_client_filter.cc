@@ -71,59 +71,37 @@ absl::Status CheckServerMetadata(ServerMetadata* b) {
   return absl::OkStatus();
 }
 
-HttpSchemeMetadata::ValueType SchemeFromArgs(const grpc_channel_args* args) {
-  if (args != nullptr) {
-    for (size_t i = 0; i < args->num_args; ++i) {
-      if (args->args[i].type == GRPC_ARG_STRING &&
-          0 == strcmp(args->args[i].key, GRPC_ARG_HTTP2_SCHEME)) {
-        HttpSchemeMetadata::ValueType scheme = HttpSchemeMetadata::Parse(
-            args->args[i].value.string, [](absl::string_view, const Slice&) {});
-        if (scheme != HttpSchemeMetadata::kInvalid) return scheme;
-      }
-    }
-  }
-  return HttpSchemeMetadata::kHttp;
+HttpSchemeMetadata::ValueType SchemeFromArgs(const ChannelArgs& args) {
+  HttpSchemeMetadata::ValueType scheme = HttpSchemeMetadata::Parse(
+      args.GetString(GRPC_ARG_HTTP2_SCHEME).value_or(""),
+      [](absl::string_view, const Slice&) {});
+  if (scheme == HttpSchemeMetadata::kInvalid) return HttpSchemeMetadata::kHttp;
+  return scheme;
 }
 
-Slice UserAgentFromArgs(const grpc_channel_args* args,
-                        const char* transport_name) {
-  std::vector<std::string> user_agent_fields;
+Slice UserAgentFromArgs(const ChannelArgs& args, const char* transport_name) {
+  std::vector<std::string> fields;
+  auto add = [&fields](absl::string_view x) {
+    if (!x.empty()) fields.push_back(std::string(x));
+  };
 
-  for (size_t i = 0; args && i < args->num_args; i++) {
-    if (0 == strcmp(args->args[i].key, GRPC_ARG_PRIMARY_USER_AGENT_STRING)) {
-      if (args->args[i].type != GRPC_ARG_STRING) {
-        gpr_log(GPR_ERROR, "Channel argument '%s' should be a string",
-                GRPC_ARG_PRIMARY_USER_AGENT_STRING);
-      } else {
-        user_agent_fields.push_back(args->args[i].value.string);
-      }
-    }
-  }
-
-  user_agent_fields.push_back(
-      absl::StrFormat("grpc-c/%s (%s; %s)", grpc_version_string(),
+  add(args.GetString(GRPC_ARG_PRIMARY_USER_AGENT_STRING).value_or(""));
+  add(absl::StrFormat("grpc-c/%s (%s; %s)", grpc_version_string(),
                       GPR_PLATFORM_STRING, transport_name));
+  add(args.GetString(GRPC_ARG_SECONDARY_USER_AGENT_STRING).value_or(""));
 
-  for (size_t i = 0; args && i < args->num_args; i++) {
-    if (0 == strcmp(args->args[i].key, GRPC_ARG_SECONDARY_USER_AGENT_STRING)) {
-      if (args->args[i].type != GRPC_ARG_STRING) {
-        gpr_log(GPR_ERROR, "Channel argument '%s' should be a string",
-                GRPC_ARG_SECONDARY_USER_AGENT_STRING);
-      } else {
-        user_agent_fields.push_back(args->args[i].value.string);
-      }
-    }
-  }
-
-  std::string user_agent_string = absl::StrJoin(user_agent_fields, " ");
-  return Slice::FromCopiedString(user_agent_string.c_str());
+  return Slice::FromCopiedString(absl::StrJoin(fields, " "));
 }
 }  // namespace
 
 ArenaPromise<ServerMetadataHandle> HttpClientFilter::MakeCallPromise(
     CallArgs call_args, NextPromiseFactory next_promise_factory) {
   auto& md = call_args.client_initial_metadata;
-  md->Set(HttpMethodMetadata(), HttpMethodMetadata::kPost);
+  if (test_only_use_put_requests_) {
+    md->Set(HttpMethodMetadata(), HttpMethodMetadata::kPut);
+  } else {
+    md->Set(HttpMethodMetadata(), HttpMethodMetadata::kPost);
+  }
   md->Set(HttpSchemeMetadata(), scheme_);
   md->Set(TeMetadata(), TeMetadata::kTrailers);
   md->Set(ContentTypeMetadata(), ContentTypeMetadata::kApplicationGrpc);
@@ -151,16 +129,21 @@ ArenaPromise<ServerMetadataHandle> HttpClientFilter::MakeCallPromise(
 }
 
 HttpClientFilter::HttpClientFilter(HttpSchemeMetadata::ValueType scheme,
-                                   Slice user_agent)
-    : scheme_(scheme), user_agent_(std::move(user_agent)) {}
+                                   Slice user_agent,
+                                   bool test_only_use_put_requests)
+    : scheme_(scheme),
+      user_agent_(std::move(user_agent)),
+      test_only_use_put_requests_(test_only_use_put_requests) {}
 
-absl::StatusOr<HttpClientFilter> HttpClientFilter::Create(
-    const grpc_channel_args* args, ChannelFilter::Args) {
-  auto* transport =
-      grpc_channel_args_find_pointer<grpc_transport>(args, GRPC_ARG_TRANSPORT);
-  GPR_ASSERT(transport != nullptr);
-  return HttpClientFilter(SchemeFromArgs(args),
-                          UserAgentFromArgs(args, transport->vtable->name));
+absl::StatusOr<HttpClientFilter> HttpClientFilter::Create(ChannelArgs args,
+                                                          ChannelFilter::Args) {
+  auto* transport = args.GetObject<grpc_transport>();
+  if (transport == nullptr) {
+    return absl::InvalidArgumentError("HttpClientFilter needs a transport");
+  }
+  return HttpClientFilter(
+      SchemeFromArgs(args), UserAgentFromArgs(args, transport->vtable->name),
+      args.GetInt(GRPC_ARG_TEST_ONLY_USE_PUT_REQUESTS).value_or(false));
 }
 
 }  // namespace grpc_core
