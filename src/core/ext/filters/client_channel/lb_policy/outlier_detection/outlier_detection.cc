@@ -692,6 +692,13 @@ OutlierDetectionLb::EjectionTimer::EjectionTimer(
     : parent_(std::move(parent)) {
   GRPC_CLOSURE_INIT(&on_timer_, OnTimer, this, nullptr);
   Ref().release();
+  // No need to start the timer if no ejection fields set.
+  if (!parent_->config_->outlier_detection_config()
+           .success_rate_ejection.has_value() &&
+      !parent_->config_->outlier_detection_config()
+           .failure_percentage_ejection.has_value()) {
+    return;
+  }
   auto interval = parent_->config_->outlier_detection_config().interval;
   if (parent_->ejection_timer_start_timestamp_.has_value()) {
     auto time_remaining = absl::ToInt64Milliseconds(
