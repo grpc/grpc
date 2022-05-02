@@ -398,7 +398,9 @@ grpc_cc_library(
         "grpc_common",
         "grpc_security_base",
         "grpc_trace",
+        "http_connect_handshaker",
         "slice",
+        "tcp_connect_handshaker",
     ],
 )
 
@@ -447,7 +449,9 @@ grpc_cc_library(
         "grpc_secure",
         "grpc_security_base",
         "grpc_trace",
+        "http_connect_handshaker",
         "slice",
+        "tcp_connect_handshaker",
     ],
 )
 
@@ -1459,10 +1463,34 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "handshaker",
+    srcs = [
+        "src/core/lib/transport/handshaker.cc",
+    ],
+    external_deps = [
+        "absl/strings",
+        "absl/strings:str_format",
+    ],
+    language = "c++",
+    public_hdrs = [
+        "src/core/lib/transport/handshaker.h",
+    ],
+    deps = [
+        "channel_args",
+        "closure",
+        "gpr_base",
+        "grpc_base",
+        "grpc_codegen",
+        "grpc_trace",
+        "slice",
+    ],
+)
+
+grpc_cc_library(
     name = "handshaker_factory",
     language = "c++",
     public_hdrs = [
-        "src/core/lib/channel/handshaker_factory.h",
+        "src/core/lib/transport/handshaker_factory.h",
     ],
     deps = [
         "gpr_base",
@@ -1472,15 +1500,56 @@ grpc_cc_library(
 grpc_cc_library(
     name = "handshaker_registry",
     srcs = [
-        "src/core/lib/channel/handshaker_registry.cc",
+        "src/core/lib/transport/handshaker_registry.cc",
     ],
     language = "c++",
     public_hdrs = [
-        "src/core/lib/channel/handshaker_registry.h",
+        "src/core/lib/transport/handshaker_registry.h",
     ],
     deps = [
         "gpr_base",
         "handshaker_factory",
+    ],
+)
+
+grpc_cc_library(
+    name = "http_connect_handshaker",
+    srcs = [
+        "src/core/lib/transport/http_connect_handshaker.cc",
+    ],
+    external_deps = [
+        "absl/strings",
+    ],
+    language = "c++",
+    public_hdrs = [
+        "src/core/lib/transport/http_connect_handshaker.h",
+    ],
+    deps = [
+        "config",
+        "gpr_base",
+        "grpc_base",
+        "handshaker",
+        "handshaker_registry",
+        "httpcli",
+        "uri_parser",
+    ],
+)
+
+grpc_cc_library(
+    name = "tcp_connect_handshaker",
+    srcs = [
+        "src/core/lib/transport/tcp_connect_handshaker.cc",
+    ],
+    language = "c++",
+    public_hdrs = [
+        "src/core/lib/transport/tcp_connect_handshaker.h",
+    ],
+    deps = [
+        "config",
+        "gpr_platform",
+        "grpc_base",
+        "handshaker",
+        "handshaker_registry",
     ],
 )
 
@@ -1892,7 +1961,6 @@ grpc_cc_library(
         "src/core/lib/channel/channelz.cc",
         "src/core/lib/channel/channelz_registry.cc",
         "src/core/lib/channel/connected_channel.cc",
-        "src/core/lib/channel/handshaker.cc",
         "src/core/lib/channel/promise_based_filter.cc",
         "src/core/lib/channel/status_util.cc",
         "src/core/lib/compression/compression.cc",
@@ -2032,7 +2100,6 @@ grpc_cc_library(
         "src/core/lib/channel/channelz_registry.h",
         "src/core/lib/channel/connected_channel.h",
         "src/core/lib/channel/context.h",
-        "src/core/lib/channel/handshaker.h",
         "src/core/lib/channel/status_util.h",
         "src/core/lib/compression/compression_internal.h",
         "src/core/lib/resource_quota/api.h",
@@ -2187,6 +2254,7 @@ grpc_cc_library(
         "grpc_codegen",
         "grpc_sockaddr",
         "grpc_trace",
+        "handshaker_registry",
         "iomgr_port",
         "json",
         "latch",
@@ -2473,7 +2541,6 @@ grpc_cc_library(
         "src/core/ext/filters/client_channel/dynamic_filters.cc",
         "src/core/ext/filters/client_channel/global_subchannel_pool.cc",
         "src/core/ext/filters/client_channel/health/health_check_client.cc",
-        "src/core/ext/filters/client_channel/http_connect_handshaker.cc",
         "src/core/ext/filters/client_channel/http_proxy.cc",
         "src/core/ext/filters/client_channel/lb_policy.cc",
         "src/core/ext/filters/client_channel/lb_policy/child_policy_handler.cc",
@@ -2501,7 +2568,6 @@ grpc_cc_library(
         "src/core/ext/filters/client_channel/dynamic_filters.h",
         "src/core/ext/filters/client_channel/global_subchannel_pool.h",
         "src/core/ext/filters/client_channel/health/health_check_client.h",
-        "src/core/ext/filters/client_channel/http_connect_handshaker.h",
         "src/core/ext/filters/client_channel/http_proxy.h",
         "src/core/ext/filters/client_channel/lb_policy.h",
         "src/core/ext/filters/client_channel/lb_policy/child_policy_handler.h",
@@ -2545,6 +2611,7 @@ grpc_cc_library(
         "grpc_service_config_impl",
         "grpc_trace",
         "handshaker_registry",
+        "http_connect_handshaker",
         "httpcli",
         "json",
         "json_util",
@@ -3724,6 +3791,7 @@ grpc_cc_library(
         "grpc_security_base",
         "ref_counted_ptr",
         "sockaddr_utils",
+        "tcp_connect_handshaker",
         "useful",
     ],
 )
@@ -3799,6 +3867,7 @@ grpc_cc_library(
         "gpr_base",
         "grpc_base",
         "grpc_security_base",
+        "handshaker",
         "promise",
         "ref_counted_ptr",
         "tsi_fake_credentials",
@@ -3920,6 +3989,7 @@ grpc_cc_library(
         "grpc_credentials_util",
         "grpc_security_base",
         "grpc_transport_chttp2_alpn",
+        "handshaker",
         "promise",
         "ref_counted_ptr",
         "tsi_base",
@@ -4238,6 +4308,7 @@ grpc_cc_library(
         "gpr_base",
         "grpc_base",
         "grpc_trace",
+        "handshaker",
         "json",
         "memory_quota",
         "promise",
@@ -4648,8 +4719,10 @@ grpc_cc_library(
         "grpc_resolver",
         "grpc_security_base",
         "grpc_transport_chttp2",
+        "handshaker",
         "slice",
         "sockaddr_utils",
+        "tcp_connect_handshaker",
         "uri_parser",
     ],
 )
@@ -4676,6 +4749,7 @@ grpc_cc_library(
         "grpc_insecure_credentials",
         "grpc_security_base",
         "grpc_transport_chttp2",
+        "handshaker",
         "memory_quota",
         "ref_counted",
         "ref_counted_ptr",
