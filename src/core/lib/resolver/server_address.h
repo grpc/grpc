@@ -63,8 +63,8 @@ class ResolverAttributeMap {
   ResolverAttributeMap& operator=(const ResolverAttributeMap& other);
 
   // Movable.
-  ResolverAttributeMap(ResolverAttributeMap&& other);
-  ResolverAttributeMap& operator=(ResolverAttributeMap&& other);
+  ResolverAttributeMap(ResolverAttributeMap&& other) noexcept;
+  ResolverAttributeMap& operator=(ResolverAttributeMap&& other) noexcept;
 
   int Compare(const ResolverAttributeMap& other) const;
 

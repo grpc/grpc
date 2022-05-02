@@ -58,11 +58,12 @@ ResolverAttributeMap& ResolverAttributeMap::operator=(
   return *this;
 }
 
-ResolverAttributeMap::ResolverAttributeMap(ResolverAttributeMap&& other)
+ResolverAttributeMap::ResolverAttributeMap(
+    ResolverAttributeMap&& other) noexcept
     : map_(std::move(other.map_)) {}
 
 ResolverAttributeMap& ResolverAttributeMap::operator=(
-    ResolverAttributeMap&& other) {
+    ResolverAttributeMap&& other) noexcept {
   map_ = std::move(other.map_);
   return *this;
 }
