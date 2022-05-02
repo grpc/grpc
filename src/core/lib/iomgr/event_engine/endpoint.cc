@@ -42,7 +42,8 @@ using ::grpc_event_engine::experimental::ResolvedAddressToURI;
 using ::grpc_event_engine::experimental::SliceBuffer;
 
 void endpoint_read(grpc_endpoint* ep, grpc_slice_buffer* slices,
-                   grpc_closure* cb, bool /* urgent */) {
+                   grpc_closure* cb, bool /* urgent */,
+                   int /* min_progress_size */) {
   auto* eeep = reinterpret_cast<grpc_event_engine_endpoint*>(ep);
   if (eeep->endpoint == nullptr) {
     grpc_core::ExecCtx::Run(DEBUG_LOCATION, cb, GRPC_ERROR_CANCELLED);

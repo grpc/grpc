@@ -39,7 +39,7 @@ third_party/opentelemetry 60fa8754d890b5c55949a8c68dcfd7ab5c2395df
 third_party/protobuf 22d0e265de7d2b3d2e9a00d071313502e7d4cccf
 third_party/re2 8e08f47b11b413302749c0d8b17a1c94777495d5
 third_party/xds cb28da3451f158a947dfc45090fe92b07b243bc1
-third_party/zlib cacf7f1d4e3d44d871b605da3b647f07d718623f
+third_party/zlib 21767c654d31d2dccdde4330529775c6c5fd5389
 EOF
 
 diff -u "$submodules" "$want_submodules"

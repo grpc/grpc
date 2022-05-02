@@ -16,7 +16,10 @@
 
 #include "src/core/lib/config/core_configuration.h"
 
+#include <algorithm>
 #include <atomic>
+#include <utility>
+#include <vector>
 
 #include <grpc/support/log.h>
 
