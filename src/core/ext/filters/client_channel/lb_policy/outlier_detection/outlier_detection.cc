@@ -355,7 +355,6 @@ class OutlierDetectionLb : public LoadBalancingPolicy {
   RefCountedPtr<RefCountedPicker> picker_;
   std::map<std::string, RefCountedPtr<SubchannelState>> subchannel_state_map_;
   OrphanablePtr<EjectionTimer> ejection_timer_;
-  absl::optional<absl::Time> ejection_timer_start_timestamp_;
 };
 
 //
@@ -717,26 +716,6 @@ OutlierDetectionLb::EjectionTimer::EjectionTimer(
     : parent_(std::move(parent)), start_time_(start_time) {
   GRPC_CLOSURE_INIT(&on_timer_, OnTimer, this, nullptr);
   Ref().release();
-  /*
-  // No need to start the timer if no ejection fields set.
-  if (!parent_->config_->outlier_detection_config()
-           .success_rate_ejection.has_value() &&
-      !parent_->config_->outlier_detection_config()
-           .failure_percentage_ejection.has_value()) {
-    return;
-  }
-  auto interval = parent_->config_->outlier_detection_config().interval;
-  if (parent_->ejection_timer_start_timestamp_.has_value()) {
-    auto time_remaining = absl::ToInt64Milliseconds(
-        parent_->ejection_timer_start_timestamp_.value() - absl::Now());
-    if (time_remaining > 0) {
-      interval = Duration::Milliseconds(time_remaining);
-    } else {
-      interval = Duration::Milliseconds(0);
-    }
-  } else {
-    parent_->ejection_timer_start_timestamp_ = absl::Now();
-  }*/
   grpc_timer_init(
       &timer_,
       start_time_ + parent_->config_->outlier_detection_config().interval,
@@ -765,12 +744,8 @@ void OutlierDetectionLb::EjectionTimer::OnTimerLocked(grpc_error_handle error) {
     std::map<SubchannelState*, double> failure_percentage_ejection_candidates;
     double success_rate_sum = 0;
     auto time_now = ExecCtx::Get()->Now();
-    parent_->ejection_timer_start_timestamp_ = absl::Now();
     for (auto& state : parent_->subchannel_state_map_) {
       auto* subchannel_state = state.second.get();
-      // Record the timestamp for use when ejecting addresses in this
-      // iteration.
-      subchannel_state->SetEjectionTime(ExecCtx::Get()->Now());
       // For each address, swap the call counter's buckets in that address's
       // map entry.
       subchannel_state->RotateBucket();
@@ -778,7 +753,7 @@ void OutlierDetectionLb::EjectionTimer::OnTimerLocked(grpc_error_handle error) {
       // algorithm.
       absl::optional<std::pair<double, uint64_t>> host_success_rate_and_volume =
           subchannel_state->GetSuccessRateAndVolume();
-      if (!host_success_rate_and_volume) {
+      if (host_success_rate_and_volume.has_value()) {
         continue;
       }
       double success_rate = host_success_rate_and_volume.value().first;
@@ -818,7 +793,7 @@ void OutlierDetectionLb::EjectionTimer::OnTimerLocked(grpc_error_handle error) {
       variance /= success_rate_ejection_candidates.size();
       double stdev = std::sqrt(variance);
       const double success_rate_stdev_factor =
-          parent_->config_->outlier_detection_config()
+          (double)parent_->config_->outlier_detection_config()
               .success_rate_ejection->stdev_factor /
           1000;
       double ejection_threshold = mean - stdev * success_rate_stdev_factor;
@@ -828,6 +803,8 @@ void OutlierDetectionLb::EjectionTimer::OnTimerLocked(grpc_error_handle error) {
           if (random_key < parent_->config_->outlier_detection_config()
                                .success_rate_ejection->enforcement_percentage) {
             candidate.first->Eject();
+            // Record the timestamp for use when ejecting addresses in this
+            // iteration.
             candidate.first->SetEjectionTime(time_now);
           }
         }
@@ -847,6 +824,8 @@ void OutlierDetectionLb::EjectionTimer::OnTimerLocked(grpc_error_handle error) {
               parent_->config_->outlier_detection_config()
                   .failure_percentage_ejection->enforcement_percentage) {
             candidate.first->Eject();
+            // Record the timestamp for use when ejecting addresses in this
+            // iteration.
             candidate.first->SetEjectionTime(time_now);
           }
         }
@@ -881,6 +860,8 @@ void OutlierDetectionLb::EjectionTimer::OnTimerLocked(grpc_error_handle error) {
       }
     }
     timer_pending_ = false;
+    parent_->ejection_timer_ =
+        MakeOrphanable<EjectionTimer>(parent_, ExecCtx::Get()->Now());
   }
   Unref(DEBUG_LOCATION, "Timer");
   GRPC_ERROR_UNREF(error);
