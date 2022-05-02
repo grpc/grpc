@@ -38,7 +38,7 @@ typedef struct grpc_endpoint_vtable grpc_endpoint_vtable;
 
 struct grpc_endpoint_vtable {
   void (*read)(grpc_endpoint* ep, grpc_slice_buffer* slices, grpc_closure* cb,
-               bool urgent);
+               bool urgent, int min_progress_size);
   void (*write)(grpc_endpoint* ep, grpc_slice_buffer* slices, grpc_closure* cb,
                 void* arg);
   void (*add_to_pollset)(grpc_endpoint* ep, grpc_pollset* pollset);
@@ -58,7 +58,7 @@ struct grpc_endpoint_vtable {
    Valid slices may be placed into \a slices even when the callback is
    invoked with error != GRPC_ERROR_NONE. */
 void grpc_endpoint_read(grpc_endpoint* ep, grpc_slice_buffer* slices,
-                        grpc_closure* cb, bool urgent);
+                        grpc_closure* cb, bool urgent, int min_progress_size);
 
 absl::string_view grpc_endpoint_get_peer(grpc_endpoint* ep);
 

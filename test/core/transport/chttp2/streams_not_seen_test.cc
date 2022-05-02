@@ -258,7 +258,8 @@ class StreamsNotSeenTest : public ::testing::Test {
     StreamsNotSeenTest* self = static_cast<StreamsNotSeenTest*>(arg);
     self->tcp_ = tcp;
     grpc_endpoint_add_to_pollset(tcp, self->server_.pollset[0]);
-    grpc_endpoint_read(tcp, &self->read_buffer_, &self->on_read_done_, false);
+    grpc_endpoint_read(tcp, &self->read_buffer_, &self->on_read_done_, false,
+                       /*min_progress_size=*/1);
     std::thread([self]() {
       ExecCtx exec_ctx;
       // Send settings frame from server
@@ -340,7 +341,7 @@ class StreamsNotSeenTest : public ::testing::Test {
       }
       grpc_slice_buffer_reset_and_unref(&self->read_buffer_);
       grpc_endpoint_read(self->tcp_, &self->read_buffer_, &self->on_read_done_,
-                         false);
+                         false, /*min_progress_size=*/1);
     } else {
       grpc_slice_buffer_destroy(&self->read_buffer_);
       self->read_end_notification_.Notify();

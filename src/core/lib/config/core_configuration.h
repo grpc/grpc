@@ -18,13 +18,14 @@
 #include <grpc/support/port_platform.h>
 
 #include <atomic>
+#include <functional>
 
 #include "src/core/lib/channel/channel_args_preconditioning.h"
-#include "src/core/lib/channel/handshaker_registry.h"
 #include "src/core/lib/resolver/resolver_registry.h"
 #include "src/core/lib/security/credentials/channel_creds_registry.h"
 #include "src/core/lib/service_config/service_config_parser.h"
 #include "src/core/lib/surface/channel_init.h"
+#include "src/core/lib/transport/handshaker_registry.h"
 
 namespace grpc_core {
 

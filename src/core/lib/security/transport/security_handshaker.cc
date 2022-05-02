@@ -31,13 +31,13 @@
 
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channelz.h"
-#include "src/core/lib/channel/handshaker.h"
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/security/context/security_context.h"
 #include "src/core/lib/security/transport/secure_endpoint.h"
 #include "src/core/lib/security/transport/tsi_error.h"
 #include "src/core/lib/slice/slice_internal.h"
+#include "src/core/lib/transport/handshaker.h"
 #include "src/core/tsi/transport_security_grpc.h"
 
 #define GRPC_INITIAL_HANDSHAKE_BUFFER_SIZE 256
@@ -369,7 +369,7 @@ grpc_error_handle SecurityHandshaker::OnHandshakeNextDoneLocked(
             &on_handshake_data_received_from_peer_,
             &SecurityHandshaker::OnHandshakeDataReceivedFromPeerFnScheduler,
             this, grpc_schedule_on_exec_ctx),
-        /*urgent=*/true);
+        /*urgent=*/true, /*min_progress_size=*/1);
     return error;
   }
   if (result != TSI_OK) {
@@ -402,7 +402,7 @@ grpc_error_handle SecurityHandshaker::OnHandshakeNextDoneLocked(
             &on_handshake_data_received_from_peer_,
             &SecurityHandshaker::OnHandshakeDataReceivedFromPeerFnScheduler,
             this, grpc_schedule_on_exec_ctx),
-        /*urgent=*/true);
+        /*urgent=*/true, /*min_progress_size=*/1);
   } else {
     // Handshake has finished, check peer and so on.
     error = CheckPeerLocked();
@@ -508,7 +508,7 @@ void SecurityHandshaker::OnHandshakeDataSentToPeerFn(void* arg,
             &h->on_handshake_data_received_from_peer_,
             &SecurityHandshaker::OnHandshakeDataReceivedFromPeerFnScheduler,
             h.get(), grpc_schedule_on_exec_ctx),
-        /*urgent=*/true);
+        /*urgent=*/true, /*min_progress_size=*/1);
   } else {
     error = h->CheckPeerLocked();
     if (error != GRPC_ERROR_NONE) {
