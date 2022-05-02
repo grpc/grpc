@@ -18,6 +18,7 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <limits.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -315,7 +316,8 @@ class StreamsNotSeenTest : public ::testing::Test {
     absl::Notification on_write_done_notification_;
     GRPC_CLOSURE_INIT(&on_write_done_, OnWriteDone,
                       &on_write_done_notification_, nullptr);
-    grpc_endpoint_write(tcp_, buffer, &on_write_done_, nullptr);
+    grpc_endpoint_write(tcp_, buffer, &on_write_done_, nullptr,
+                        /*max_frame_size=*/INT_MAX);
     ExecCtx::Get()->Flush();
     GPR_ASSERT(on_write_done_notification_.WaitForNotificationWithTimeout(
         absl::Seconds(5)));

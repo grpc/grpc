@@ -20,6 +20,7 @@
 
 #include "src/core/lib/http/httpcli.h"
 
+#include <limits.h>
 #include <string.h>
 
 #include <string>
@@ -281,7 +282,8 @@ void HttpRequest::StartWrite() {
   grpc_slice_ref_internal(request_text_);
   grpc_slice_buffer_add(&outgoing_, request_text_);
   Ref().release();  // ref held by pending write
-  grpc_endpoint_write(ep_, &outgoing_, &done_write_, nullptr);
+  grpc_endpoint_write(ep_, &outgoing_, &done_write_, nullptr,
+                      /*max_frame_size=*/INT_MAX);
 }
 
 void HttpRequest::OnHandshakeDone(void* arg, grpc_error_handle error) {

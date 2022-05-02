@@ -20,6 +20,7 @@
 
 #include "src/core/lib/transport/http_connect_handshaker.h"
 
+#include <limits.h>
 #include <string.h>
 
 #include "absl/strings/str_cat.h"
@@ -352,7 +353,7 @@ void HttpConnectHandshaker::DoHandshake(grpc_tcp_server_acceptor* /*acceptor*/,
       GRPC_CLOSURE_INIT(&request_done_closure_,
                         &HttpConnectHandshaker::OnWriteDoneScheduler, this,
                         grpc_schedule_on_exec_ctx),
-      nullptr);
+      nullptr, /*max_frame_size=*/INT_MAX);
 }
 
 HttpConnectHandshaker::HttpConnectHandshaker() {
