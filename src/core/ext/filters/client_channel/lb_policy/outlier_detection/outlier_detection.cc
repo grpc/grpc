@@ -312,9 +312,12 @@ class OutlierDetectionLb : public LoadBalancingPolicy {
 
   class EjectionTimer : public InternallyRefCounted<EjectionTimer> {
    public:
-    explicit EjectionTimer(RefCountedPtr<OutlierDetectionLb> parent);
+    EjectionTimer(RefCountedPtr<OutlierDetectionLb> parent,
+                  Timestamp start_time);
 
     void Orphan() override;
+
+    Timestamp StartTime() const { return start_time_; }
 
    private:
     static void OnTimer(void* arg, grpc_error_handle error);
@@ -324,6 +327,7 @@ class OutlierDetectionLb : public LoadBalancingPolicy {
     grpc_timer timer_;
     grpc_closure on_timer_;
     bool timer_pending_ = true;
+    Timestamp start_time_;
   };
 
   ~OutlierDetectionLb() override;
@@ -538,10 +542,31 @@ void OutlierDetectionLb::UpdateLocked(UpdateArgs args) {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_outlier_detection_lb_trace)) {
     gpr_log(GPR_INFO, "[outlier_detection_lb %p] Received update", this);
   }
+  auto old_config = std::move(config_);
   // Update config.
   config_ = std::move(args.config);
   // Update outlier detection timer.
-  ejection_timer_ = MakeOrphanable<EjectionTimer>(Ref());
+  if (!config_->outlier_detection_config().success_rate_ejection.has_value() &&
+      !config_->outlier_detection_config()
+           .failure_percentage_ejection.has_value()) {
+    // No need for timer.  Cancel the current timer, if any.
+    ejection_timer_.reset();
+  } else if (ejection_timer_ == nullptr) {
+    // No timer running.  Start it now.
+    ejection_timer_ =
+        MakeOrphanable<EjectionTimer>(Ref(), ExecCtx::Get()->Now());
+    for (const auto& p : subchannel_state_map_) {
+      p.second->RotateBucket();  // Reset call counters.
+    }
+  } else if (old_config->outlier_detection_config().interval !=
+             config_->outlier_detection_config().interval) {
+    // Timer interval changed.  Cancel the current timer and start a new one
+    // with the same start time.
+    // Note that if the new deadline is in the past, the timer will fire
+    // immediately.
+    ejection_timer_ =
+        MakeOrphanable<EjectionTimer>(Ref(), ejection_timer_->StartTime());
+  }
   // Create policy if needed.
   if (child_policy_ == nullptr) {
     child_policy_ = CreateChildPolicyLocked(args.args);
@@ -688,10 +713,11 @@ void OutlierDetectionLb::Helper::AddTraceEvent(TraceSeverity severity,
 //
 
 OutlierDetectionLb::EjectionTimer::EjectionTimer(
-    RefCountedPtr<OutlierDetectionLb> parent)
-    : parent_(std::move(parent)) {
+    RefCountedPtr<OutlierDetectionLb> parent, Timestamp start_time)
+    : parent_(std::move(parent)), start_time_(start_time) {
   GRPC_CLOSURE_INIT(&on_timer_, OnTimer, this, nullptr);
   Ref().release();
+  /*
   // No need to start the timer if no ejection fields set.
   if (!parent_->config_->outlier_detection_config()
            .success_rate_ejection.has_value() &&
@@ -710,8 +736,11 @@ OutlierDetectionLb::EjectionTimer::EjectionTimer(
     }
   } else {
     parent_->ejection_timer_start_timestamp_ = absl::Now();
-  }
-  grpc_timer_init(&timer_, ExecCtx::Get()->Now() + interval, &on_timer_);
+  }*/
+  grpc_timer_init(
+      &timer_,
+      start_time_ + parent_->config_->outlier_detection_config().interval,
+      &on_timer_);
 }
 
 void OutlierDetectionLb::EjectionTimer::Orphan() {
