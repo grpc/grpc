@@ -16,6 +16,8 @@
 
 #include "src/core/lib/promise/sleep.h"
 
+#include "src/core/lib/iomgr/exec_ctx.h"
+
 namespace grpc_core {
 
 Sleep::Sleep(Timestamp deadline) : state_(new State(deadline)) {

@@ -21,9 +21,9 @@
 
 #include <grpc/support/port_platform.h>
 
-#include "src/core/lib/channel/handshaker.h"
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/security/security_connector/security_connector.h"
+#include "src/core/lib/transport/handshaker.h"
 
 namespace grpc_core {
 

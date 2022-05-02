@@ -1613,7 +1613,6 @@ add_library(grpc
   src/core/ext/filters/client_channel/dynamic_filters.cc
   src/core/ext/filters/client_channel/global_subchannel_pool.cc
   src/core/ext/filters/client_channel/health/health_check_client.cc
-  src/core/ext/filters/client_channel/http_connect_handshaker.cc
   src/core/ext/filters/client_channel/http_proxy.cc
   src/core/ext/filters/client_channel/lb_policy.cc
   src/core/ext/filters/client_channel/lb_policy/address_filtering.cc
@@ -2011,8 +2010,6 @@ add_library(grpc
   src/core/lib/channel/channelz.cc
   src/core/lib/channel/channelz_registry.cc
   src/core/lib/channel/connected_channel.cc
-  src/core/lib/channel/handshaker.cc
-  src/core/lib/channel/handshaker_registry.cc
   src/core/lib/channel/promise_based_filter.cc
   src/core/lib/channel/status_util.cc
   src/core/lib/compression/compression.cc
@@ -2227,9 +2224,13 @@ add_library(grpc
   src/core/lib/transport/byte_stream.cc
   src/core/lib/transport/connectivity_state.cc
   src/core/lib/transport/error_utils.cc
+  src/core/lib/transport/handshaker.cc
+  src/core/lib/transport/handshaker_registry.cc
+  src/core/lib/transport/http_connect_handshaker.cc
   src/core/lib/transport/parsed_metadata.cc
   src/core/lib/transport/pid_controller.cc
   src/core/lib/transport/status_conversion.cc
+  src/core/lib/transport/tcp_connect_handshaker.cc
   src/core/lib/transport/timeout_encoding.cc
   src/core/lib/transport/transport.cc
   src/core/lib/transport/transport_op_string.cc
@@ -2357,48 +2358,6 @@ if(gRPC_INSTALL)
   )
 endif()
 
-if(gRPC_BUILD_CSHARP_EXT)
-
-add_library(grpc_csharp_ext SHARED
-  src/csharp/ext/grpc_csharp_ext.c
-)
-
-set_target_properties(grpc_csharp_ext PROPERTIES
-  VERSION ${gRPC_CORE_VERSION}
-  SOVERSION ${gRPC_CORE_SOVERSION}
-)
-
-if(WIN32 AND MSVC)
-  set_target_properties(grpc_csharp_ext PROPERTIES COMPILE_PDB_NAME "grpc_csharp_ext"
-    COMPILE_PDB_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}"
-  )
-  if(gRPC_INSTALL)
-    install(FILES ${CMAKE_CURRENT_BINARY_DIR}/grpc_csharp_ext.pdb
-      DESTINATION ${gRPC_INSTALL_LIBDIR} OPTIONAL
-    )
-  endif()
-endif()
-
-target_include_directories(grpc_csharp_ext
-  PUBLIC $<INSTALL_INTERFACE:${gRPC_INSTALL_INCLUDEDIR}> $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
-  PRIVATE
-    ${CMAKE_CURRENT_SOURCE_DIR}
-    ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
-    ${_gRPC_RE2_INCLUDE_DIR}
-    ${_gRPC_SSL_INCLUDE_DIR}
-    ${_gRPC_UPB_GENERATED_DIR}
-    ${_gRPC_UPB_GRPC_GENERATED_DIR}
-    ${_gRPC_UPB_INCLUDE_DIR}
-    ${_gRPC_XXHASH_INCLUDE_DIR}
-    ${_gRPC_ZLIB_INCLUDE_DIR}
-)
-target_link_libraries(grpc_csharp_ext
-  ${_gRPC_ALLTARGETS_LIBRARIES}
-  grpc
-)
-
-
-endif()
 if(gRPC_BUILD_TESTS)
 
 add_library(grpc_test_util
@@ -2552,7 +2511,6 @@ add_library(grpc_unsecure
   src/core/ext/filters/client_channel/dynamic_filters.cc
   src/core/ext/filters/client_channel/global_subchannel_pool.cc
   src/core/ext/filters/client_channel/health/health_check_client.cc
-  src/core/ext/filters/client_channel/http_connect_handshaker.cc
   src/core/ext/filters/client_channel/http_proxy.cc
   src/core/ext/filters/client_channel/lb_policy.cc
   src/core/ext/filters/client_channel/lb_policy/address_filtering.cc
@@ -2659,8 +2617,6 @@ add_library(grpc_unsecure
   src/core/lib/channel/channelz.cc
   src/core/lib/channel/channelz_registry.cc
   src/core/lib/channel/connected_channel.cc
-  src/core/lib/channel/handshaker.cc
-  src/core/lib/channel/handshaker_registry.cc
   src/core/lib/channel/promise_based_filter.cc
   src/core/lib/channel/status_util.cc
   src/core/lib/compression/compression.cc
@@ -2835,9 +2791,13 @@ add_library(grpc_unsecure
   src/core/lib/transport/byte_stream.cc
   src/core/lib/transport/connectivity_state.cc
   src/core/lib/transport/error_utils.cc
+  src/core/lib/transport/handshaker.cc
+  src/core/lib/transport/handshaker_registry.cc
+  src/core/lib/transport/http_connect_handshaker.cc
   src/core/lib/transport/parsed_metadata.cc
   src/core/lib/transport/pid_controller.cc
   src/core/lib/transport/status_conversion.cc
+  src/core/lib/transport/tcp_connect_handshaker.cc
   src/core/lib/transport/timeout_encoding.cc
   src/core/lib/transport/transport.cc
   src/core/lib/transport/transport_op_string.cc
