@@ -59,6 +59,9 @@ class ChannelFilter {
     grpc_channel_element* channel_element_;
   };
 
+  // Perform post-initialization step (if any).
+  virtual void PostInit() {}
+
   // Construct a promise for one call.
   virtual ArenaPromise<ServerMetadataHandle> MakeCallPromise(
       CallArgs call_args, NextPromiseFactory next_promise_factory) = 0;
@@ -473,6 +476,10 @@ MakePromiseBasedFilter(const char* name) {
         if (!status.ok()) return absl_status_to_grpc_error(status.status());
         new (elem->channel_data) F(std::move(*status));
         return GRPC_ERROR_NONE;
+      },
+      // post_init_channel_elem
+      [](grpc_channel_stack*, grpc_channel_element* elem) {
+        static_cast<F*>(elem->channel_data)->PostInit();
       },
       // destroy_channel_elem
       [](grpc_channel_element* elem) {

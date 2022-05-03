@@ -332,6 +332,7 @@ const grpc_channel_filter grpc_server_auth_filter = {
     server_auth_destroy_call_elem,
     sizeof(channel_data),
     server_auth_init_channel_elem,
+    grpc_channel_stack_no_post_init,
     server_auth_destroy_channel_elem,
     grpc_channel_next_get_info,
     "server-auth"};

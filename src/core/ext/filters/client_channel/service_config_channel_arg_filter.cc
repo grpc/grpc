@@ -132,6 +132,7 @@ const grpc_channel_filter ServiceConfigChannelArgFilter = {
     ServiceConfigChannelArgDestroyCallElem,
     sizeof(ServiceConfigChannelArgChannelData),
     ServiceConfigChannelArgInitChannelElem,
+    grpc_channel_stack_no_post_init,
     ServiceConfigChannelArgDestroyChannelElem,
     grpc_channel_next_get_info,
     "service_config_channel_arg"};
@@ -148,7 +149,7 @@ void RegisterServiceConfigChannelArgFilter(
             !channel_args.GetString(GRPC_ARG_SERVICE_CONFIG).has_value()) {
           return true;
         }
-        builder->PrependFilter(&ServiceConfigChannelArgFilter, nullptr);
+        builder->PrependFilter(&ServiceConfigChannelArgFilter);
         return true;
       });
 }
