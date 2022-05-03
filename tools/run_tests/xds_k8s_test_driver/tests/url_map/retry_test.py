@@ -12,7 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 import logging
-import time
 from typing import Tuple
 
 from absl import flags
@@ -91,12 +90,14 @@ class TestRetryUpTo3AttemptsAndFail(xds_url_map_testcase.XdsUrlMapTestCase):
         self.assertEqual('unavailable', retry_config['retryOn'])
 
     def rpc_distribution_validate(self, test_client: XdsTestClient):
-        rpc_distribution = self.configure_and_send(
-            test_client,
-            rpc_types=[RpcTypeUnaryCall],
-            metadata=[(RpcTypeUnaryCall, _RPC_BEHAVIOR_HEADER_NAME,
-                       'error-code-14,succeed-on-retry-attempt-4')],
-            num_rpcs=_NUM_RPCS)
+        self.configure_and_send(test_client,
+                                rpc_types=(RpcTypeUnaryCall,),
+                                metadata=[
+                                    (RpcTypeUnaryCall,
+                                     _RPC_BEHAVIOR_HEADER_NAME,
+                                     'error-code-14,succeed-on-retry-attempt-4')
+                                ],
+                                num_rpcs=_NUM_RPCS)
         self.assertRpcStatusCode(test_client,
                                  expected=(ExpectedResult(
                                      rpc_type=RpcTypeUnaryCall,
@@ -134,12 +135,14 @@ class TestRetryUpTo4AttemptsAndSucceed(xds_url_map_testcase.XdsUrlMapTestCase):
         self.assertEqual('unavailable', retry_config['retryOn'])
 
     def rpc_distribution_validate(self, test_client: XdsTestClient):
-        rpc_distribution = self.configure_and_send(
-            test_client,
-            rpc_types=[RpcTypeUnaryCall],
-            metadata=[(RpcTypeUnaryCall, _RPC_BEHAVIOR_HEADER_NAME,
-                       'error-code-14,succeed-on-retry-attempt-4')],
-            num_rpcs=_NUM_RPCS)
+        self.configure_and_send(test_client,
+                                rpc_types=(RpcTypeUnaryCall,),
+                                metadata=[
+                                    (RpcTypeUnaryCall,
+                                     _RPC_BEHAVIOR_HEADER_NAME,
+                                     'error-code-14,succeed-on-retry-attempt-4')
+                                ],
+                                num_rpcs=_NUM_RPCS)
         self.assertRpcStatusCode(test_client,
                                  expected=(ExpectedResult(
                                      rpc_type=RpcTypeUnaryCall,

@@ -13,7 +13,7 @@
 # limitations under the License.
 import logging
 import re
-from typing import ClassVar, Dict, Optional
+from typing import Any, Dict, Optional
 
 from google.protobuf import json_format
 import google.protobuf.message
@@ -29,7 +29,7 @@ class GrpcClientHelper:
     channel: grpc.Channel
     DEFAULT_RPC_DEADLINE_SEC = 90
 
-    def __init__(self, channel: grpc.Channel, stub_class: ClassVar):
+    def __init__(self, channel: grpc.Channel, stub_class: Any):
         self.channel = channel
         self.stub = stub_class(channel)
         # This is purely cosmetic to make RPC logs look like method calls.

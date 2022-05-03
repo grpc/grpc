@@ -149,8 +149,9 @@ class GcpApiManager:
 
         raise NotImplementedError(f'Network Services {version} not supported')
 
+    @staticmethod
     @functools.lru_cache(None)
-    def secrets(self, version):
+    def secrets(version: str):
         if version == 'v1':
             return secretmanager_v1.SecretManagerServiceClient()
 
@@ -263,7 +264,7 @@ class OperationError(Error):
     """
     api_name: str
     name: str
-    metadata: str
+    metadata: Any
     code_name: code_pb2.Code
     error: status_pb2.Status
 
@@ -431,9 +432,10 @@ class GcpStandardCloudApiResource(GcpProjectApiResource, metaclass=abc.ABCMeta):
         return False
 
     # TODO(sergiitk): Use ResponseError and TransportError
-    def _execute(self,
-                 request: HttpRequest,
-                 timeout_sec=GcpProjectApiResource._WAIT_FOR_OPERATION_SEC):
+    def _execute(  # pylint: disable=arguments-differ
+            self,
+            request: HttpRequest,
+            timeout_sec=GcpProjectApiResource._WAIT_FOR_OPERATION_SEC):
         operation = request.execute(num_retries=self._GCP_API_RETRIES)
         self._wait(operation, timeout_sec)
 
