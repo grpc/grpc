@@ -66,7 +66,7 @@ class TCPConnectHandshaker : public Handshaker {
 TCPConnectHandshaker::TCPConnectHandshaker(grpc_pollset_set* pollset_set)
     : interested_parties_(grpc_pollset_set_create()),
       pollent_(grpc_polling_entity_create_from_pollset_set(pollset_set)) {
-  // Intersted parties might be null for platforms like Apple.
+  // Interested parties might be null for platforms like Apple.
   // Explicitly check before adding/deleting from pollset_set to handle this
   // use case.
   if (interested_parties_ != nullptr) {
