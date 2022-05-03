@@ -1447,6 +1447,7 @@
         'src/proto/grpc/testing/echo.proto',
         'src/proto/grpc/testing/echo_messages.proto',
         'src/proto/grpc/testing/simple_messages.proto',
+        'src/proto/grpc/testing/xds/v3/orca_load_report.proto',
         'test/cpp/microbenchmarks/helpers.cc',
       ],
     },
