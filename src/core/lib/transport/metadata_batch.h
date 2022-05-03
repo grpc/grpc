@@ -549,10 +549,15 @@ struct GrpcStatusContext {
 namespace metadata_detail {
 
 // Build a key/value formatted debug string.
+// Output looks like 'key1: value1, key2: value2'
+// The string is expected to be readable, but not necessarily parsable.
 class DebugStringBuilder {
  public:
+  // Add one key/value pair to the output.
   void Add(absl::string_view key, absl::string_view value);
 
+  // Finalize the output and return the string.
+  // Subsequent Add calls are UB.
   std::string TakeOutput() { return std::move(out_); }
 
  private:
