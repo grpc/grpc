@@ -1475,6 +1475,7 @@ grpc_cc_library(
     public_hdrs = [
         "src/core/lib/transport/handshaker.h",
     ],
+    visibility = ["@grpc:alt_grpc_base_legacy"],
     deps = [
         "channel_args",
         "closure",
