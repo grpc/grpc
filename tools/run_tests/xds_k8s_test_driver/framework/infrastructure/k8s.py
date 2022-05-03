@@ -98,7 +98,10 @@ class PortForwarder:
         self.subprocess: Optional[subprocess.Popen] = None
 
     def connect(self) -> None:
-        port_mapping = f"{self.local_port}:{self.remote_port}" if self.local_port else f":{self.remote_port}"
+        if self.local_port:
+            port_mapping = f"{self.local_port}:{self.remote_port}"
+        else:
+            port_mapping = f":{self.remote_port}"
         cmd = [
             "kubectl", "--context", self.context, "--namespace", self.namespace,
             "port-forward", "--address", self.local_address, self.destination,
@@ -167,7 +170,7 @@ class PortForwarder:
             self.subprocess = None
 
 
-class KubernetesNamespace:
+class KubernetesNamespace:  # pylint: disable=too-many-public-methods
     NEG_STATUS_META = 'cloud.google.com/neg-status'
     DELETE_GRACE_PERIOD_SEC: int = 5
     WAIT_SHORT_TIMEOUT_SEC: int = 60
