@@ -21,7 +21,14 @@ BANNED_FILENAMES = [
     'BUILD.gn',
 ]
 
+os.chdir(os.path.join(os.path.dirname(sys.argv[0]), '../../..'))
+
+bad = []
 for filename in BANNED_FILENAMES:
     if os.path.exists(filename):
-        print('%s should not exist' % filename)
-        sys.exit(1)
+        bad.append(filename)
+
+if bad:
+    for file in bad:
+        print("%s should not exist" % file)
+    sys.exit(1)
