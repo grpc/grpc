@@ -791,7 +791,8 @@ void OutlierDetectionLb::EjectionTimer::OnTimerLocked(grpc_error_handle error) {
       variance /= success_rate_ejection_candidates.size();
       double stdev = std::sqrt(variance);
       const double success_rate_stdev_factor =
-          (double)config.success_rate_ejection->stdev_factor / 1000;
+          static_cast<double>(config.success_rate_ejection->stdev_factor) /
+          1000;
       double ejection_threshold = mean - stdev * success_rate_stdev_factor;
       for (auto& candidate : success_rate_ejection_candidates) {
         if (candidate.second < ejection_threshold) {

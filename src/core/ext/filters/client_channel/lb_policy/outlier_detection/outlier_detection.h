@@ -14,6 +14,9 @@
 // limitations under the License.
 //
 
+#ifndef GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_LB_POLICY_OUTLIER_DETECTION_OUTLIER_DETECTION_H
+#define GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_LB_POLICY_OUTLIER_DETECTION_OUTLIER_DETECTION_H
+
 #include <grpc/support/port_platform.h>
 
 #include "absl/types/optional.h"
@@ -43,3 +46,5 @@ struct OutlierDetectionConfig {
   absl::optional<FailurePercentageEjection> failure_percentage_ejection;
 };
 }  // namespace grpc_core
+
+#endif  // GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_LB_POLICY_OUTLIER_DETECTION_OUTLIER_DETECTION_H
