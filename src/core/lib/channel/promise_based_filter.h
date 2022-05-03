@@ -93,7 +93,7 @@ namespace promise_filter_detail {
 // filter in place.
 class InvalidChannelFilter : public ChannelFilter {
  public:
-  virtual ArenaPromise<ServerMetadataHandle> MakeCallPromise(
+  ArenaPromise<ServerMetadataHandle> MakeCallPromise(
       CallArgs, NextPromiseFactory) override {
     abort();
   }
