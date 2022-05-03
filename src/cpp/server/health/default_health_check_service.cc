@@ -327,7 +327,7 @@ void DefaultHealthCheckService::HealthCheckServiceImpl::WatchReactor::OnDone() {
   service_->database_->UnregisterWatch(service_name_, this);
   {
     grpc::internal::MutexLock lock(&service_->mu_);
-    if (--service_->num_watches_ == 0) {
+    if (--service_->num_watches_ == 0 && service_->shutdown_) {
       service_->shutdown_condition_.Signal();
     }
   }
