@@ -96,12 +96,13 @@ class PhonyEndpoint : public grpc_endpoint {
   }
 
   static void read(grpc_endpoint* ep, grpc_slice_buffer* slices,
-                   grpc_closure* cb, bool /*urgent*/) {
+                   grpc_closure* cb, bool /*urgent*/,
+                   int /*min_progress_size*/) {
     static_cast<PhonyEndpoint*>(ep)->QueueRead(slices, cb);
   }
 
   static void write(grpc_endpoint* /*ep*/, grpc_slice_buffer* /*slices*/,
-                    grpc_closure* cb, void* /*arg*/) {
+                    grpc_closure* cb, void* /*arg*/, int /*max_frame_size*/) {
     grpc_core::ExecCtx::Run(DEBUG_LOCATION, cb, GRPC_ERROR_NONE);
   }
 

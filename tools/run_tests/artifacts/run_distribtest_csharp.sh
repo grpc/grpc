@@ -1,4 +1,5 @@
-# Copyright 2021 gRPC authors.
+#!/bin/bash
+# Copyright 2012 The gRPC Authors
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -12,14 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-FROM silkeh/clang:13
+set -ex
 
-# Install prerequisites for the iwyu script
-RUN apt-get update && apt-get install -y python3 jq git cmake python zlib1g-dev libtinfo-dev && apt-get clean
-ADD iwyu.sh /
-
-# When running locally, we'll be impersonating the current user, so we need
-# to make the script runnable by everyone.
-RUN chmod a+rx /iwyu.sh
-
-CMD ["echo 'Run with tools/distrib/iwyu.sh'"]
+# Nothing to do here. C# has been removed from this repository. This script is a placeholder
+# to prevent C# tests from becoming red (until they get eventually disabled).

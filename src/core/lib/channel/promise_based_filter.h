@@ -59,6 +59,9 @@ class ChannelFilter {
     grpc_channel_element* channel_element_;
   };
 
+  // Perform post-initialization step (if any).
+  virtual void PostInit() {}
+
   // Construct a promise for one call.
   virtual ArenaPromise<ServerMetadataHandle> MakeCallPromise(
       CallArgs call_args, NextPromiseFactory next_promise_factory) = 0;
@@ -122,6 +125,59 @@ class BaseCallData : public Activity, private Wakeable {
               call_data->pollent_.load(std::memory_order_acquire)),
           promise_detail::Context<CallFinalization>(&call_data->finalization_) {
     }
+  };
+
+  class Flusher {
+   public:
+    explicit Flusher(BaseCallData* call);
+    // Calls closures, schedules batches, relinquishes call combiner.
+    ~Flusher();
+
+    void Resume(grpc_transport_stream_op_batch* batch) {
+      release_.push_back(batch);
+    }
+
+    void Cancel(grpc_transport_stream_op_batch* batch,
+                grpc_error_handle error) {
+      grpc_transport_stream_op_batch_queue_finish_with_failure(batch, error,
+                                                               &call_closures_);
+    }
+
+    void AddClosure(grpc_closure* closure, grpc_error_handle error,
+                    const char* reason) {
+      call_closures_.Add(closure, error, reason);
+    }
+
+   private:
+    absl::InlinedVector<grpc_transport_stream_op_batch*, 1> release_;
+    CallCombinerClosureList call_closures_;
+    BaseCallData* const call_;
+  };
+
+  // Smart pointer like wrapper around a batch.
+  // Creation makes a ref count of one capture.
+  // Copying increments.
+  // Must be moved from or resumed or cancelled before destruction.
+  class CapturedBatch final {
+   public:
+    CapturedBatch();
+    explicit CapturedBatch(grpc_transport_stream_op_batch* batch);
+    ~CapturedBatch();
+    CapturedBatch(const CapturedBatch&);
+    CapturedBatch& operator=(const CapturedBatch&);
+    CapturedBatch(CapturedBatch&&) noexcept;
+    CapturedBatch& operator=(CapturedBatch&&) noexcept;
+
+    grpc_transport_stream_op_batch* operator->() { return batch_; }
+    bool is_captured() const { return batch_ != nullptr; }
+
+    void ResumeWith(Flusher* releaser);
+    void CancelWith(grpc_error_handle error, Flusher* releaser);
+
+    void Swap(CapturedBatch* other) { std::swap(batch_, other->batch_); }
+
+   private:
+    grpc_transport_stream_op_batch* batch_;
   };
 
   static MetadataHandle<grpc_metadata_batch> WrapMetadata(
@@ -212,11 +268,11 @@ class ClientCallData : public BaseCallData {
   void Cancel(grpc_error_handle error);
   // Begin running the promise - which will ultimately take some initial
   // metadata and return some trailing metadata.
-  void StartPromise();
+  void StartPromise(Flusher* flusher);
   // Interject our callback into the op batch for recv trailing metadata ready.
   // Stash a pointer to the trailing metadata that will be filled in, so we can
   // manipulate it later.
-  void HookRecvTrailingMetadata(grpc_transport_stream_op_batch* batch);
+  void HookRecvTrailingMetadata(CapturedBatch batch);
   // Construct a promise that will "call" the next filter.
   // Effectively:
   //   - put the modified initial metadata into the batch to be sent down.
@@ -235,13 +291,13 @@ class ClientCallData : public BaseCallData {
   void SetStatusFromError(grpc_metadata_batch* metadata,
                           grpc_error_handle error);
   // Wakeup and poll the promise if appropriate.
-  void WakeInsideCombiner();
+  void WakeInsideCombiner(Flusher* flusher);
   void OnWakeup() override;
 
   // Contained promise
   ArenaPromise<ServerMetadataHandle> promise_;
   // Queued batch containing at least a send_initial_metadata op.
-  grpc_transport_stream_op_batch* send_initial_metadata_batch_ = nullptr;
+  CapturedBatch send_initial_metadata_batch_;
   // Pointer to where trailing metadata will be stored.
   grpc_metadata_batch* recv_trailing_metadata_ = nullptr;
   // State tracking recv initial metadata for filters that care about it.
@@ -420,6 +476,10 @@ MakePromiseBasedFilter(const char* name) {
         if (!status.ok()) return absl_status_to_grpc_error(status.status());
         new (elem->channel_data) F(std::move(*status));
         return GRPC_ERROR_NONE;
+      },
+      // post_init_channel_elem
+      [](grpc_channel_stack*, grpc_channel_element* elem) {
+        static_cast<F*>(elem->channel_data)->PostInit();
       },
       // destroy_channel_elem
       [](grpc_channel_element* elem) {

@@ -170,6 +170,8 @@ class Server : public InternallyRefCounted<Server>,
 
   void CancelAllCalls() ABSL_LOCKS_EXCLUDED(mu_global_);
 
+  void SendGoaways() ABSL_LOCKS_EXCLUDED(mu_global_, mu_call_);
+
  private:
   struct RequestedCall;
 

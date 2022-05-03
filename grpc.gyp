@@ -1039,16 +1039,6 @@
       ],
     },
     {
-      'target_name': 'grpc_csharp_ext',
-      'type': 'static_library',
-      'dependencies': [
-        'grpc',
-      ],
-      'sources': [
-        'src/csharp/ext/grpc_csharp_ext.c',
-      ],
-    },
-    {
       'target_name': 'grpc_test_util',
       'type': 'static_library',
       'dependencies': [
@@ -1455,6 +1445,7 @@
         'src/proto/grpc/testing/echo.proto',
         'src/proto/grpc/testing/echo_messages.proto',
         'src/proto/grpc/testing/simple_messages.proto',
+        'src/proto/grpc/testing/xds/v3/orca_load_report.proto',
         'test/cpp/microbenchmarks/helpers.cc',
       ],
     },

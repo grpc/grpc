@@ -164,6 +164,10 @@ struct grpc_channel_filter {
      Implementations may assume that elem->channel_data is all zeros. */
   grpc_error_handle (*init_channel_elem)(grpc_channel_element* elem,
                                          grpc_channel_element_args* args);
+  /* Post init per-channel data.
+     Called after all channel elements have been successfully created. */
+  void (*post_init_channel_elem)(grpc_channel_stack* stk,
+                                 grpc_channel_element* elem);
   /* Destroy per channel data.
      The filter does not need to do any chaining */
   void (*destroy_channel_elem)(grpc_channel_element* elem);
@@ -227,6 +231,16 @@ struct grpc_call_stack {
      about the address of the call stack itself. */
   grpc_stream_refcount refcount;
   size_t count;
+
+  // Minimal infrastructure to act like a RefCounted thing without converting
+  // everything.
+  // grpc_call_stack will be eliminated once the promise conversion completes.
+  void IncrementRefCount();
+  void Unref();
+  grpc_core::RefCountedPtr<grpc_call_stack> Ref() {
+    IncrementRefCount();
+    return grpc_core::RefCountedPtr<grpc_call_stack>(this);
+  }
 };
 
 /* Get a channel element given a channel stack and its index */
@@ -309,6 +323,14 @@ inline void grpc_channel_stack::Unref() {
   GRPC_CHANNEL_STACK_UNREF(this, "smart_pointer");
 }
 
+inline void grpc_call_stack::IncrementRefCount() {
+  GRPC_CALL_STACK_REF(this, "smart_pointer");
+}
+
+inline void grpc_call_stack::Unref() {
+  GRPC_CALL_STACK_UNREF(this, "smart_pointer");
+}
+
 /* Destroy a call stack */
 void grpc_call_stack_destroy(grpc_call_stack* stack,
                              const grpc_call_final_info* final_info,
@@ -337,6 +359,9 @@ grpc_call_stack* grpc_call_stack_from_top_element(grpc_call_element* elem);
 void grpc_call_log_op(const char* file, int line, gpr_log_severity severity,
                       grpc_call_element* elem,
                       grpc_transport_stream_op_batch* op);
+
+void grpc_channel_stack_no_post_init(grpc_channel_stack* stk,
+                                     grpc_channel_element* elem);
 
 extern grpc_core::TraceFlag grpc_trace_channel;
 
