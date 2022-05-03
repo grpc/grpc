@@ -17,16 +17,24 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <string>
+#include <utility>
+
+#include "absl/strings/string_view.h"
+
 #include <grpc/impl/codegen/grpc_types.h>
 
 #include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/gprpp/cpp_impl_of.h"
+#include "src/core/lib/gprpp/ref_counted.h"
+#include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/resource_quota/memory_quota.h"
 #include "src/core/lib/resource_quota/thread_quota.h"
 
 namespace grpc_core {
 
 class ResourceQuota;
+
 using ResourceQuotaRefPtr = RefCountedPtr<ResourceQuota>;
 
 class ResourceQuota : public RefCounted<ResourceQuota>,
