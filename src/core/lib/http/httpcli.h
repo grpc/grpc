@@ -25,6 +25,7 @@
 
 #include <grpc/support/time.h>
 
+#include "src/core/lib/channel/handshaker.h"
 #include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/http/parser.h"
 #include "src/core/lib/iomgr/endpoint.h"
@@ -34,7 +35,6 @@
 #include "src/core/lib/iomgr/resolve_address.h"
 #include "src/core/lib/resource_quota/resource_quota.h"
 #include "src/core/lib/security/credentials/credentials.h"
-#include "src/core/lib/transport/handshaker.h"
 #include "src/core/lib/uri/uri_parser.h"
 
 /* User agent this library reports */
@@ -211,8 +211,7 @@ class HttpRequest : public InternallyRefCounted<HttpRequest> {
 
   static void OnHandshakeDone(void* arg, grpc_error_handle error);
 
-  void DoHandshake(const grpc_resolved_address* addr)
-      ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
+  static void OnConnected(void* arg, grpc_error_handle error);
 
   void NextAddress(grpc_error_handle error) ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
 
@@ -228,6 +227,7 @@ class HttpRequest : public InternallyRefCounted<HttpRequest> {
   grpc_closure continue_on_read_after_schedule_on_exec_ctx_;
   grpc_closure done_write_;
   grpc_closure continue_done_write_after_schedule_on_exec_ctx_;
+  grpc_closure connected_;
   grpc_endpoint* ep_ = nullptr;
   grpc_closure* on_done_;
   ResourceQuotaRefPtr resource_quota_;
@@ -238,6 +238,7 @@ class HttpRequest : public InternallyRefCounted<HttpRequest> {
   RefCountedPtr<HandshakeManager> handshake_mgr_ ABSL_GUARDED_BY(mu_);
   bool own_endpoint_ ABSL_GUARDED_BY(mu_) = true;
   bool cancelled_ ABSL_GUARDED_BY(mu_) = false;
+  bool connecting_ ABSL_GUARDED_BY(mu_) = false;
   grpc_http_parser parser_ ABSL_GUARDED_BY(mu_);
   std::vector<grpc_resolved_address> addresses_ ABSL_GUARDED_BY(mu_);
   size_t next_address_ ABSL_GUARDED_BY(mu_) = 0;

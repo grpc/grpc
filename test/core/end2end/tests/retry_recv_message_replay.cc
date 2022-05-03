@@ -337,6 +337,7 @@ grpc_channel_filter FailFirstSendOpFilter::kFilterVtable = {
     CallData::Destroy,
     sizeof(FailFirstSendOpFilter),
     Init,
+    grpc_channel_stack_no_post_init,
     Destroy,
     grpc_channel_next_get_info,
     "FailFirstSendOpFilter",
@@ -359,8 +360,7 @@ void retry_recv_message_replay(grpc_end2end_test_config config) {
                 return true;
               }
               // Install filter.
-              builder->PrependFilter(&FailFirstSendOpFilter::kFilterVtable,
-                                     nullptr);
+              builder->PrependFilter(&FailFirstSendOpFilter::kFilterVtable);
               return true;
             });
       },
