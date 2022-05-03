@@ -1135,33 +1135,33 @@ void Server::Start(grpc::ServerCompletionQueue** cqs, size_t num_cqs) {
     acceptor->GetCredentials()->AddPortToServer(acceptor->name(), server_);
   }
 
-  // If this server uses callback methods, then create a callback generic
-  // service to handle any unimplemented methods using the default reactor
-  // creator
-  if (has_callback_methods_ && !has_callback_generic_service_) {
-    unimplemented_service_ = absl::make_unique<grpc::CallbackGenericService>();
-    RegisterCallbackGenericService(unimplemented_service_.get());
-  }
-
 #ifndef NDEBUG
   for (size_t i = 0; i < num_cqs; i++) {
     cq_list_.push_back(cqs[i]);
   }
 #endif
 
-  // If we have a generic service, all unmatched method names go there.
-  // Otherwise, we must provide at least one RPC request for an "unimplemented"
-  // RPC, which covers any RPC for a method name that isn't matched. If we
-  // have a sync service, let it be a sync unimplemented RPC, which must be
-  // registered before server start (to initialize an AllocatingRequestMatcher).
-  // If we have an AllocatingRequestMatcher, we can't also specify other
-  // unimplemented RPCs via explicit async requests, so we won't do so. If we
-  // only have async services, we can specify unimplemented RPCs on each async
-  // CQ so that some user polling thread will move them along as long as some
-  // progress is being made on any RPCs in the system.
+  // We must have exactly one generic service to handle requests for
+  // unmatched method names (i.e., to return UNIMPLEMENTED for any RPC
+  // method for which we don't have a registered implementation).  This
+  // service comes from one of the following places (first match wins):
+  // - If the application supplied a generic service via either the async
+  //   or callback APIs, we use that.
+  // - If there are callback methods, register a callback generic service.
+  // - If there are sync methods, register a sync generic service.
+  //   (This must be done before server start to initialize an
+  //   AllocatingRequestMatcher.)
+  // - Otherwise (we have only async methods), we wait until the server
+  //   is started and then start an UnimplementedAsyncRequest on each
+  //   async CQ, so that the requests will be moved along by polling
+  //   done in application threads.
   bool unknown_rpc_needed =
       !has_async_generic_service_ && !has_callback_generic_service_;
-
+  if (unknown_rpc_needed && has_callback_methods_) {
+    unimplemented_service_ = absl::make_unique<grpc::CallbackGenericService>();
+    RegisterCallbackGenericService(unimplemented_service_.get());
+    unknown_rpc_needed = false;
+  }
   if (unknown_rpc_needed && !sync_req_mgrs_.empty()) {
     sync_req_mgrs_[0]->AddUnknownSyncMethod();
     unknown_rpc_needed = false;
