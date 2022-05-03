@@ -115,15 +115,14 @@ class CSharpDistribTest(object):
                 self.name,
                 'tools/dockerfile/distribtest/csharp_%s_%s' %
                 (self.docker_suffix, self.arch),
-                'test/distrib/csharp/run_distrib_test%s.sh' %
-                self.script_suffix,
-                copy_rel_path='test/distrib')
+                'tools/run_tests/artifacts/run_distribtest_csharp.sh',
+                copy_rel_path='tools/run_tests/artifacts')
         elif self.platform == 'macos':
-            return create_jobspec(self.name, [
-                'test/distrib/csharp/run_distrib_test%s.sh' % self.script_suffix
-            ],
-                                  environ={'EXTERNAL_GIT_ROOT': '../../../..'},
-                                  use_workspace=True)
+            return create_jobspec(
+                self.name,
+                ['tools/run_tests/artifacts/run_distribtest_csharp.sh'],
+                environ={'EXTERNAL_GIT_ROOT': '../../../..'},
+                use_workspace=True)
         elif self.platform == 'windows':
             if self.arch == 'x64':
                 # Use double leading / as the first occurrence gets removed by msys bash
@@ -134,12 +133,11 @@ class CSharpDistribTest(object):
                 }
             else:
                 environ = {'DISTRIBTEST_OUTPATH': 'DistribTest\\bin\\Debug'}
-            return create_jobspec(self.name, [
-                'test\\distrib\\csharp\\run_distrib_test%s.bat' %
-                self.script_suffix
-            ],
-                                  environ=environ,
-                                  use_workspace=True)
+            return create_jobspec(
+                self.name,
+                ['bash', 'tools/run_tests/artifacts/run_distribtest_csharp.sh'],
+                environ=environ,
+                use_workspace=True)
         else:
             raise Exception("Not supported yet.")
 

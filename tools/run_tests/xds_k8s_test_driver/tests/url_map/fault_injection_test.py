@@ -20,7 +20,6 @@ from absl.testing import absltest
 import grpc
 
 from framework import xds_url_map_testcase
-from framework.rpc import grpc_testing
 from framework.test_app import client_app
 
 # Type aliases
@@ -114,7 +113,7 @@ def _wait_until_backlog_cleared(test_client: XdsTestClient,
             # Both backlog of both types of RPCs is clear, success, return.
             return
 
-    raise RuntimeError('failed to clear RPC backlog in %s seconds', timeout)
+    raise RuntimeError('failed to clear RPC backlog in %s seconds' % timeout)
 
 
 class TestZeroPercentFaultInjection(xds_url_map_testcase.XdsUrlMapTestCase):
@@ -145,9 +144,9 @@ class TestZeroPercentFaultInjection(xds_url_map_testcase.XdsUrlMapTestCase):
                          filter_config['abort']['percentage']['denominator'])
 
     def rpc_distribution_validate(self, test_client: XdsTestClient):
-        rpc_distribution = self.configure_and_send(test_client,
-                                                   rpc_types=[RpcTypeUnaryCall],
-                                                   num_rpcs=_NUM_RPCS)
+        self.configure_and_send(test_client,
+                                rpc_types=(RpcTypeUnaryCall,),
+                                num_rpcs=_NUM_RPCS)
         self.assertRpcStatusCode(test_client,
                                  expected=(ExpectedResult(
                                      rpc_type=RpcTypeUnaryCall,
@@ -236,11 +235,10 @@ class TestAlwaysDelay(xds_url_map_testcase.XdsUrlMapTestCase):
                          filter_config['delay']['percentage']['denominator'])
 
     def rpc_distribution_validate(self, test_client: XdsTestClient):
-        rpc_distribution = self.configure_and_send(
-            test_client,
-            rpc_types=[RpcTypeUnaryCall],
-            num_rpcs=_NUM_RPCS,
-            app_timeout=_DELAY_CASE_APPLICATION_TIMEOUT_SEC)
+        self.configure_and_send(test_client,
+                                rpc_types=(RpcTypeUnaryCall,),
+                                num_rpcs=_NUM_RPCS,
+                                app_timeout=_DELAY_CASE_APPLICATION_TIMEOUT_SEC)
         _wait_until_backlog_cleared(test_client)
         self.assertRpcStatusCode(
             test_client,
@@ -275,9 +273,9 @@ class TestAlwaysAbort(xds_url_map_testcase.XdsUrlMapTestCase):
                          filter_config['abort']['percentage']['denominator'])
 
     def rpc_distribution_validate(self, test_client: XdsTestClient):
-        rpc_distribution = self.configure_and_send(test_client,
-                                                   rpc_types=[RpcTypeUnaryCall],
-                                                   num_rpcs=_NUM_RPCS)
+        self.configure_and_send(test_client,
+                                rpc_types=(RpcTypeUnaryCall,),
+                                num_rpcs=_NUM_RPCS)
         self.assertRpcStatusCode(
             test_client,
             expected=(ExpectedResult(
@@ -311,11 +309,10 @@ class TestDelayHalf(xds_url_map_testcase.XdsUrlMapTestCase):
                          filter_config['delay']['percentage']['denominator'])
 
     def rpc_distribution_validate(self, test_client: XdsTestClient):
-        rpc_distribution = self.configure_and_send(
-            test_client,
-            rpc_types=[RpcTypeUnaryCall],
-            num_rpcs=_NUM_RPCS,
-            app_timeout=_DELAY_CASE_APPLICATION_TIMEOUT_SEC)
+        self.configure_and_send(test_client,
+                                rpc_types=(RpcTypeUnaryCall,),
+                                num_rpcs=_NUM_RPCS,
+                                app_timeout=_DELAY_CASE_APPLICATION_TIMEOUT_SEC)
         _wait_until_backlog_cleared(test_client)
         self.assertRpcStatusCode(
             test_client,
@@ -350,9 +347,9 @@ class TestAbortHalf(xds_url_map_testcase.XdsUrlMapTestCase):
                          filter_config['abort']['percentage']['denominator'])
 
     def rpc_distribution_validate(self, test_client: XdsTestClient):
-        rpc_distribution = self.configure_and_send(test_client,
-                                                   rpc_types=[RpcTypeUnaryCall],
-                                                   num_rpcs=_NUM_RPCS)
+        self.configure_and_send(test_client,
+                                rpc_types=(RpcTypeUnaryCall,),
+                                num_rpcs=_NUM_RPCS)
         self.assertRpcStatusCode(
             test_client,
             expected=(ExpectedResult(

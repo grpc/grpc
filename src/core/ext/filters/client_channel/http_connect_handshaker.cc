@@ -20,6 +20,7 @@
 
 #include "src/core/ext/filters/client_channel/http_connect_handshaker.h"
 
+#include <limits.h>
 #include <string.h>
 
 #include "absl/strings/str_cat.h"
@@ -164,7 +165,7 @@ void HttpConnectHandshaker::OnWriteDone(void* arg, grpc_error_handle error) {
         GRPC_CLOSURE_INIT(&handshaker->response_read_closure_,
                           &HttpConnectHandshaker::OnReadDoneScheduler,
                           handshaker, grpc_schedule_on_exec_ctx),
-        /*urgent=*/true);
+        /*urgent=*/true, /*min_progress_size=*/1);
   }
 }
 
@@ -240,7 +241,7 @@ void HttpConnectHandshaker::OnReadDone(void* arg, grpc_error_handle error) {
         GRPC_CLOSURE_INIT(&handshaker->response_read_closure_,
                           &HttpConnectHandshaker::OnReadDoneScheduler,
                           handshaker, grpc_schedule_on_exec_ctx),
-        /*urgent=*/true);
+        /*urgent=*/true, /*min_progress_size=*/1);
     return;
   }
   // Make sure we got a 2xx response.
@@ -354,7 +355,7 @@ void HttpConnectHandshaker::DoHandshake(grpc_tcp_server_acceptor* /*acceptor*/,
       GRPC_CLOSURE_INIT(&request_done_closure_,
                         &HttpConnectHandshaker::OnWriteDoneScheduler, this,
                         grpc_schedule_on_exec_ctx),
-      nullptr);
+      nullptr, /*max_frame_size=*/INT_MAX);
 }
 
 HttpConnectHandshaker::HttpConnectHandshaker() {

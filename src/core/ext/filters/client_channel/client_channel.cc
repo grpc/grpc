@@ -243,6 +243,7 @@ const grpc_channel_filter ClientChannel::kFilterVtable = {
     ClientChannel::CallData::Destroy,
     sizeof(ClientChannel),
     ClientChannel::Init,
+    grpc_channel_stack_no_post_init,
     ClientChannel::Destroy,
     ClientChannel::GetChannelInfo,
     "client-channel",
@@ -394,6 +395,7 @@ const grpc_channel_filter DynamicTerminationFilter::kFilterVtable = {
     DynamicTerminationFilter::CallData::Destroy,
     sizeof(DynamicTerminationFilter),
     DynamicTerminationFilter::Init,
+    grpc_channel_stack_no_post_init,
     DynamicTerminationFilter::Destroy,
     DynamicTerminationFilter::GetChannelInfo,
     "dynamic_filter_termination",
@@ -525,7 +527,7 @@ class ClientChannel::SubchannelWrapper : public SubchannelInterface {
     return subchannel_->connected_subchannel();
   }
 
-  void AttemptToConnect() override { subchannel_->AttemptToConnect(); }
+  void RequestConnection() override { subchannel_->RequestConnection(); }
 
   void ResetBackoff() override { subchannel_->ResetBackoff(); }
 

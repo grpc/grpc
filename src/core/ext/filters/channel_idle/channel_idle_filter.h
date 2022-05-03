@@ -89,7 +89,7 @@ class MaxAgeFilter final : public ChannelIdleFilter {
   static absl::StatusOr<MaxAgeFilter> Create(ChannelArgs args,
                                              ChannelFilter::Args filter_args);
 
-  void Start();
+  void PostInit() override;
 
  private:
   class ConnectivityWatcher : public AsyncConnectivityStateWatcherInterface {

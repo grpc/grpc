@@ -48,6 +48,7 @@ class GrpcTlsCertificateVerifierTest : public ::testing::Test {
   void TearDown() override {}
 
   grpc_tls_custom_verification_check_request request_;
+  NoOpCertificateVerifier no_op_certificate_verifier_;
   HostNameCertificateVerifier hostname_certificate_verifier_;
 };
 
@@ -118,6 +119,14 @@ TEST_F(GrpcTlsCertificateVerifierTest, AsyncExternalVerifierFails) {
                      gpr_time_add(gpr_now(GPR_CLOCK_MONOTONIC),
                                   gpr_time_from_seconds(10, GPR_TIMESPAN)));
   EXPECT_NE(callback_completed, nullptr);
+}
+
+TEST_F(GrpcTlsCertificateVerifierTest, NoOpCertificateVerifierSucceeds) {
+  absl::Status sync_status;
+  EXPECT_TRUE(no_op_certificate_verifier_.Verify(
+      &request_, [](absl::Status) {}, &sync_status));
+  EXPECT_TRUE(sync_status.ok())
+      << sync_status.code() << " " << sync_status.message();
 }
 
 TEST_F(GrpcTlsCertificateVerifierTest, HostnameVerifierNullTargetName) {

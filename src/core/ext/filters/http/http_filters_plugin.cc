@@ -50,7 +50,7 @@ void RegisterHttpFilters(CoreConfiguration::Builder* builder) {
           const bool enable = args.GetBool(control_channel_arg)
                                   .value_or(enable_in_minimal_stack ||
                                             !args.WantMinimalStack());
-          if (enable) builder->PrependFilter(filter, nullptr);
+          if (enable) builder->PrependFilter(filter);
           return true;
         });
   };
@@ -60,7 +60,7 @@ void RegisterHttpFilters(CoreConfiguration::Builder* builder) {
         channel_type, GRPC_CHANNEL_INIT_BUILTIN_PRIORITY,
         [filter](ChannelStackBuilder* builder) {
           if (is_building_http_like_transport(builder)) {
-            builder->PrependFilter(filter, nullptr);
+            builder->PrependFilter(filter);
           }
           return true;
         });

@@ -124,7 +124,7 @@ void MaxAgeFilter::Shutdown() {
   ChannelIdleFilter::Shutdown();
 }
 
-void MaxAgeFilter::Start() {
+void MaxAgeFilter::PostInit() {
   struct StartupClosure {
     RefCountedPtr<grpc_channel_stack> channel_stack;
     MaxAgeFilter* filter;
@@ -276,7 +276,7 @@ void RegisterChannelIdleFilters(CoreConfiguration::Builder* builder) {
         auto channel_args = builder->channel_args();
         if (!channel_args.WantMinimalStack() &&
             GetClientIdleTimeout(channel_args) != Duration::Infinity()) {
-          builder->PrependFilter(&grpc_client_idle_filter, nullptr);
+          builder->PrependFilter(&grpc_client_idle_filter);
         }
         return true;
       });
@@ -286,11 +286,7 @@ void RegisterChannelIdleFilters(CoreConfiguration::Builder* builder) {
         auto channel_args = builder->channel_args();
         if (!channel_args.WantMinimalStack() &&
             MaxAgeFilter::Config::FromChannelArgs(channel_args).enable()) {
-          builder->PrependFilter(
-              &grpc_max_age_filter,
-              [](grpc_channel_stack*, grpc_channel_element* elem) {
-                static_cast<MaxAgeFilter*>(elem->channel_data)->Start();
-              });
+          builder->PrependFilter(&grpc_max_age_filter);
         }
         return true;
       });

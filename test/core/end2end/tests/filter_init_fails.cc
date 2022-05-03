@@ -442,17 +442,12 @@ static grpc_error_handle init_channel_elem(
 static void destroy_channel_elem(grpc_channel_element* /*elem*/) {}
 
 static const grpc_channel_filter test_filter = {
-    grpc_call_next_op,
-    nullptr,
-    grpc_channel_next_op,
-    0,
-    init_call_elem,
-    grpc_call_stack_ignore_set_pollset_or_pollset_set,
-    destroy_call_elem,
-    0,
-    init_channel_elem,
-    destroy_channel_elem,
-    grpc_channel_next_get_info,
+    grpc_call_next_op,    nullptr,
+    grpc_channel_next_op, 0,
+    init_call_elem,       grpc_call_stack_ignore_set_pollset_or_pollset_set,
+    destroy_call_elem,    0,
+    init_channel_elem,    grpc_channel_stack_no_post_init,
+    destroy_channel_elem, grpc_channel_next_get_info,
     "filter_init_fails"};
 
 /*******************************************************************************
@@ -500,7 +495,7 @@ void filter_init_fails(grpc_end2end_test_config config) {
                 // last one.  So we add it right before the last one.
                 auto it = builder->mutable_stack()->end();
                 --it;
-                builder->mutable_stack()->insert(it, {&test_filter, nullptr});
+                builder->mutable_stack()->insert(it, &test_filter);
                 return true;
               });
         };

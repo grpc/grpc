@@ -506,6 +506,7 @@ const grpc_channel_filter Server::kServerTopFilter = {
     Server::CallData::DestroyCallElement,
     sizeof(Server::ChannelData),
     Server::ChannelData::InitChannelElement,
+    grpc_channel_stack_no_post_init,
     Server::ChannelData::DestroyChannelElement,
     grpc_channel_next_get_info,
     "server",
@@ -847,6 +848,15 @@ void Server::CancelAllCalls() {
   broadcaster.BroadcastShutdown(
       /*send_goaway=*/false,
       GRPC_ERROR_CREATE_FROM_STATIC_STRING("Cancelling all calls"));
+}
+
+void Server::SendGoaways() {
+  ChannelBroadcaster broadcaster;
+  {
+    MutexLock lock(&mu_global_);
+    broadcaster.FillChannelsLocked(GetChannelsLocked());
+  }
+  broadcaster.BroadcastShutdown(/*send_goaway=*/true, GRPC_ERROR_NONE);
 }
 
 void Server::Orphan() {

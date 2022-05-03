@@ -100,8 +100,8 @@ buildConfigs() {
         -o "loadtest_with_prebuilt_workers_${pool}.yaml"
 }
 
-buildConfigs "${WORKER_POOL_8CORE}" "${BIGQUERY_TABLE_8CORE}" -l c++ -l csharp -l dotnet -l go -l java -l php7 -l php7_protobuf_c -l python -l ruby
-buildConfigs "${WORKER_POOL_32CORE}" "${BIGQUERY_TABLE_32CORE}" -l c++ -l csharp -l dotnet -l go -l java
+buildConfigs "${WORKER_POOL_8CORE}" "${BIGQUERY_TABLE_8CORE}" -l c++ -l dotnet -l go -l java -l php7 -l php7_protobuf_c -l python -l ruby
+buildConfigs "${WORKER_POOL_32CORE}" "${BIGQUERY_TABLE_32CORE}" -l c++ -l dotnet -l go -l java
 
 # Delete prebuilt images on exit.
 deleteImages() {
@@ -115,7 +115,6 @@ trap deleteImages EXIT
 # Build and push prebuilt images for running tests.
 time ../test-infra/bin/prepare_prebuilt_workers \
     -l "cxx:${GRPC_CORE_GITREF}" \
-    -l "csharp:${GRPC_CORE_GITREF}" \
     -l "dotnet:${GRPC_DOTNET_GITREF}" \
     -l "go:${GRPC_GO_GITREF}" \
     -l "java:${GRPC_JAVA_GITREF}" \
