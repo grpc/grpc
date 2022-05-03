@@ -26,7 +26,7 @@ from framework.infrastructure import gcp
 logger = logging.getLogger(__name__)
 
 
-class ComputeV1(gcp.api.GcpProjectApiResource):
+class ComputeV1(gcp.api.GcpProjectApiResource):  # pylint: disable=too-many-public-methods
     # TODO(sergiitk): move someplace better
     _WAIT_FOR_BACKEND_SEC = 60 * 10
     _WAIT_FOR_OPERATION_SEC = 60 * 10
@@ -58,7 +58,7 @@ class ComputeV1(gcp.api.GcpProjectApiResource):
                             name: str,
                             protocol: HealthCheckProtocol,
                             *,
-                            port: Optional[int] = None) -> GcpResource:
+                            port: Optional[int] = None) -> 'GcpResource':
         if protocol is self.HealthCheckProtocol.TCP:
             health_check_field = 'tcpHealthCheck'
         elif protocol is self.HealthCheckProtocol.GRPC:
@@ -88,7 +88,7 @@ class ComputeV1(gcp.api.GcpProjectApiResource):
 
     def create_firewall_rule(self, name: str, network_url: str,
                              source_ranges: List[str],
-                             ports: List[str]) -> Optional[GcpResource]:
+                             ports: List[str]) -> Optional['GcpResource']:
         try:
             return self._insert_resource(
                 self.api.firewalls(), {
@@ -107,7 +107,7 @@ class ComputeV1(gcp.api.GcpProjectApiResource):
             # TODO(lidiz) use status_code() when we upgrade googleapiclient
             if http_error.resp.status == 409:
                 logger.debug('Firewall rule %s already existed', name)
-                return
+                return None
             else:
                 raise
 
@@ -117,10 +117,10 @@ class ComputeV1(gcp.api.GcpProjectApiResource):
     def create_backend_service_traffic_director(
             self,
             name: str,
-            health_check: GcpResource,
-            affinity_header: str = None,
+            health_check: 'GcpResource',
+            affinity_header: Optional[str] = None,
             protocol: Optional[BackendServiceProtocol] = None,
-            subset_size: Optional[int] = None) -> GcpResource:
+            subset_size: Optional[int] = None) -> 'GcpResource':
         if not isinstance(protocol, self.BackendServiceProtocol):
             raise TypeError(f'Unexpected Backend Service protocol: {protocol}')
         body = {
@@ -144,7 +144,7 @@ class ComputeV1(gcp.api.GcpProjectApiResource):
             }
         return self._insert_resource(self.api.backendServices(), body)
 
-    def get_backend_service_traffic_director(self, name: str) -> GcpResource:
+    def get_backend_service_traffic_director(self, name: str) -> 'GcpResource':
         return self._get_resource(self.api.backendServices(),
                                   backendService=name)
 
@@ -185,9 +185,9 @@ class ComputeV1(gcp.api.GcpProjectApiResource):
         name: str,
         matcher_name: str,
         src_hosts,
-        dst_default_backend_service: GcpResource,
-        dst_host_rule_match_backend_service: Optional[GcpResource] = None,
-    ) -> GcpResource:
+        dst_default_backend_service: 'GcpResource',
+        dst_host_rule_match_backend_service: Optional['GcpResource'] = None,
+    ) -> 'GcpResource':
         if dst_host_rule_match_backend_service is None:
             dst_host_rule_match_backend_service = dst_default_backend_service
         return self._insert_resource(
@@ -206,10 +206,10 @@ class ComputeV1(gcp.api.GcpProjectApiResource):
                 }],
             })
 
-    def create_url_map_with_content(self, url_map_body: Any) -> GcpResource:
+    def create_url_map_with_content(self, url_map_body: Any) -> 'GcpResource':
         return self._insert_resource(self.api.urlMaps(), url_map_body)
 
-    def patch_url_map(self, url_map: GcpResource, body, **kwargs):
+    def patch_url_map(self, url_map: 'GcpResource', body, **kwargs):
         self._patch_resource(collection=self.api.urlMaps(),
                              urlMap=url_map.name,
                              body=body,
@@ -221,9 +221,9 @@ class ComputeV1(gcp.api.GcpProjectApiResource):
     def create_target_grpc_proxy(
         self,
         name: str,
-        url_map: GcpResource,
+        url_map: 'GcpResource',
         validate_for_proxyless: bool = True,
-    ) -> GcpResource:
+    ) -> 'GcpResource':
         return self._insert_resource(
             self.api.targetGrpcProxies(), {
                 'name': name,
@@ -238,8 +238,8 @@ class ComputeV1(gcp.api.GcpProjectApiResource):
     def create_target_http_proxy(
         self,
         name: str,
-        url_map: GcpResource,
-    ) -> GcpResource:
+        url_map: 'GcpResource',
+    ) -> 'GcpResource':
         return self._insert_resource(self.api.targetHttpProxies(), {
             'name': name,
             'url_map': url_map.url,
@@ -252,10 +252,10 @@ class ComputeV1(gcp.api.GcpProjectApiResource):
     def create_forwarding_rule(self,
                                name: str,
                                src_port: int,
-                               target_proxy: GcpResource,
+                               target_proxy: 'GcpResource',
                                network_url: str,
                                *,
-                               ip_address: str = '0.0.0.0') -> GcpResource:
+                               ip_address: str = '0.0.0.0') -> 'GcpResource':
         return self._insert_resource(
             self.api.globalForwardingRules(),
             {
@@ -367,14 +367,14 @@ class ComputeV1(gcp.api.GcpProjectApiResource):
             }).execute()
 
     def _get_resource(self, collection: discovery.Resource,
-                      **kwargs) -> GcpResource:
+                      **kwargs) -> 'GcpResource':
         resp = collection.get(project=self.project, **kwargs).execute()
         logger.info('Loaded compute resource:\n%s',
                     self.resource_pretty_format(resp))
         return self.GcpResource(resp['name'], resp['selfLink'])
 
-    def _exists_resource(self, collection: discovery.Resource,
-                         filter: str) -> bool:
+    def _exists_resource(
+            self, collection: discovery.Resource, filter: str) -> bool:  # pylint: disable=redefined-builtin
         resp = collection.list(
             project=self.project, filter=filter,
             maxResults=1).execute(num_retries=self._GCP_API_RETRIES)
@@ -384,7 +384,7 @@ class ComputeV1(gcp.api.GcpProjectApiResource):
         return 'items' in resp and resp['items']
 
     def _insert_resource(self, collection: discovery.Resource,
-                         body: Dict[str, Any]) -> GcpResource:
+                         body: Dict[str, Any]) -> 'GcpResource':
         logger.info('Creating compute resource:\n%s',
                     self.resource_pretty_format(body))
         resp = self._execute(collection.insert(project=self.project, body=body))
@@ -420,11 +420,12 @@ class ComputeV1(gcp.api.GcpProjectApiResource):
     def _operation_status_done(operation):
         return 'status' in operation and operation['status'] == 'DONE'
 
-    def _execute(self,
-                 request,
-                 *,
-                 test_success_fn=None,
-                 timeout_sec=_WAIT_FOR_OPERATION_SEC):
+    def _execute(  # pylint: disable=arguments-differ
+            self,
+            request,
+            *,
+            test_success_fn=None,
+            timeout_sec=_WAIT_FOR_OPERATION_SEC):
         operation = request.execute(num_retries=self._GCP_API_RETRIES)
         logger.debug('Response %s', operation)
 
