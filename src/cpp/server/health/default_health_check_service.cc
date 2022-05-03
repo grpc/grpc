@@ -253,7 +253,7 @@ DefaultHealthCheckService::HealthCheckServiceImpl::WatchReactor::WatchReactor(
     ++service_->num_watches_;
   }
   if (!DecodeRequest(*request, &service_name_)) {
-    Finish(Status(StatusCode::INTERNAL, "could not parse request"));
+    MaybeFinish(Status(StatusCode::INTERNAL, "could not parse request"));
     return;
   }
   // Register the call for updates to the service.
@@ -282,14 +282,14 @@ void DefaultHealthCheckService::HealthCheckServiceImpl::WatchReactor::
   {
     grpc::internal::MutexLock lock(&service_->mu_);
     if (service_->shutdown_) {
-      Finish(Status::CANCELLED);
+      MaybeFinish(Status::CANCELLED);
       return;
     }
   }
   // Send response.
   bool success = EncodeResponse(status, &response_);
   if (!success) {
-    Finish(Status(StatusCode::INTERNAL, "could not encode response"));
+    MaybeFinish(Status(StatusCode::INTERNAL, "could not encode response"));
     return;
   }
   write_pending_ = true;
@@ -300,7 +300,7 @@ void DefaultHealthCheckService::HealthCheckServiceImpl::WatchReactor::
     OnWriteDone(bool ok) {
   response_.Clear();
   if (!ok) {
-    Finish(Status::CANCELLED);
+    MaybeFinish(Status::CANCELLED);
     return;
   }
   grpc::internal::MutexLock lock(&mu_);
@@ -316,7 +316,7 @@ void DefaultHealthCheckService::HealthCheckServiceImpl::WatchReactor::
 
 void DefaultHealthCheckService::HealthCheckServiceImpl::WatchReactor::
     OnCancel() {
-  Finish(Status(StatusCode::UNKNOWN, "call cancelled by client"));
+  MaybeFinish(Status(StatusCode::UNKNOWN, "call cancelled by client"));
 }
 
 void DefaultHealthCheckService::HealthCheckServiceImpl::WatchReactor::OnDone() {
@@ -333,6 +333,11 @@ void DefaultHealthCheckService::HealthCheckServiceImpl::WatchReactor::OnDone() {
   }
   // Free the initial ref from instantiation.
   Unref();
+}
+
+void DefaultHealthCheckService::HealthCheckServiceImpl::WatchReactor::
+    MaybeFinish(Status status) {
+  if (!finish_called_.exchange(true)) Finish(status);
 }
 
 }  // namespace grpc

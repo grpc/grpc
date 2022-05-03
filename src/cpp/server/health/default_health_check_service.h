@@ -59,6 +59,8 @@ class DefaultHealthCheckService final : public HealthCheckServiceInterface {
       void SendHealthLocked(ServingStatus status)
           ABSL_EXCLUSIVE_LOCKS_REQUIRED(&mu_);
 
+      void MaybeFinish(Status status);
+
       HealthCheckServiceImpl* service_;
       std::string service_name_;
       ByteBuffer response_;
@@ -66,6 +68,8 @@ class DefaultHealthCheckService final : public HealthCheckServiceInterface {
       grpc::internal::Mutex mu_;
       bool write_pending_ ABSL_GUARDED_BY(mu_) = false;
       ServingStatus pending_status_ ABSL_GUARDED_BY(mu_) = NOT_FOUND;
+
+      std::atomic<bool> finish_called_{false};
     };
 
     explicit HealthCheckServiceImpl(DefaultHealthCheckService* database);
