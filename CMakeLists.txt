@@ -5973,6 +5973,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX)
     ${_gRPC_ALLTARGETS_LIBRARIES}
     absl::statusor
     absl::variant
+    absl::utility
     gpr
   )
 
@@ -7577,6 +7578,7 @@ target_link_libraries(arena_promise_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   absl::statusor
   absl::variant
+  absl::utility
   gpr
 )
 
@@ -10695,6 +10697,7 @@ target_link_libraries(for_each_test
   absl::flat_hash_set
   absl::statusor
   absl::variant
+  absl::utility
   gpr
 )
 
@@ -12908,6 +12911,7 @@ target_link_libraries(memory_quota_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   absl::statusor
   absl::variant
+  absl::utility
   gpr
 )
 
@@ -13502,6 +13506,7 @@ target_link_libraries(pipe_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   absl::statusor
   absl::variant
+  absl::utility
   gpr
 )
 
@@ -14349,6 +14354,7 @@ target_link_libraries(resource_quota_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   absl::statusor
   absl::variant
+  absl::utility
   gpr
 )
 
