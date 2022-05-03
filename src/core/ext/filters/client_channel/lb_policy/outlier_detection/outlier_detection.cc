@@ -23,6 +23,7 @@
 #include <set>
 
 #include "absl/container/inlined_vector.h"
+#include "absl/random/random.h"
 #include "absl/strings/string_view.h"
 
 #include <grpc/grpc.h>
@@ -94,7 +95,7 @@ class OutlierDetectionLb : public LoadBalancingPolicy {
           subchannel_state_(std::move(subchannel_state)) {
       if (subchannel_state_ != nullptr) {
         subchannel_state_->AddSubchannel(this);
-        if (subchannel_state_->EjectionTime().has_value()) {
+        if (subchannel_state_->ejection_time().has_value()) {
           ejected_ = true;
         }
       }
@@ -165,7 +166,7 @@ class OutlierDetectionLb : public LoadBalancingPolicy {
       std::unique_ptr<SubchannelInterface::ConnectivityStateWatcherInterface>
           watcher_;
       grpc_connectivity_state last_seen_state_;
-      bool ejected_ = false;
+      bool ejected_;
     };
 
     RefCountedPtr<SubchannelState> subchannel_state_;
@@ -187,13 +188,6 @@ class OutlierDetectionLb : public LoadBalancingPolicy {
       backup_bucket_->failures = 0;
       current_bucket_.swap(backup_bucket_);
       active_bucket_.store(current_bucket_.get());
-    }
-
-    void ResetBucket() {
-      backup_bucket_->successes = 0;
-      backup_bucket_->failures = 0;
-      current_bucket_->successes = 0;
-      current_bucket_->failures = 0;
     }
 
     absl::optional<std::pair<double, uint64_t>> GetSuccessRateAndVolume() {
@@ -221,24 +215,13 @@ class OutlierDetectionLb : public LoadBalancingPolicy {
 
     void AddFailureCount() { current_bucket_->failures.fetch_add(1); }
 
-    bool GetEjected() { return ejected_; }
+    bool ejected() { return ejected_; }
 
-    uint32_t Multiplier() const { return multiplier_; }
+    absl::optional<Timestamp> ejection_time() const { return ejection_time_; }
 
-    void SetMultiplier(uint32_t multiplier) { multiplier_ = multiplier; }
-
-    absl::optional<Timestamp> EjectionTime() const { return ejection_time_; }
-
-    void SetEjectionTime(const Timestamp& time) { ejection_time_ = time; }
-
-    absl::Time EjectionTimeStamp() const { return ejection_timestamp_; }
-
-    void SetEjectionTimeStamp(const absl::Time& timestamp) {
-      ejection_timestamp_ = timestamp;
-    }
-
-    void Eject() {
+    void Eject(const Timestamp& time) {
       ejected_ = true;
+      ejection_time_ = time;
       for (auto& subchannel : subchannels_) {
         subchannel->Eject();
       }
@@ -251,6 +234,25 @@ class OutlierDetectionLb : public LoadBalancingPolicy {
       }
     }
 
+    void MaybeUneject(uint64_t base_ejection_time_in_millis,
+                      uint64_t max_ejection_time_in_millis) {
+      if (!ejected_) {
+        if (multiplier_ > 0) {
+          --multiplier_;
+        }
+      } else {
+        GPR_ASSERT(ejection_time_.has_value());
+        auto change_time = ejection_time_.value() +
+                           Duration::Milliseconds(std::min(
+                               base_ejection_time_in_millis * multiplier_,
+                               std::max(base_ejection_time_in_millis,
+                                        max_ejection_time_in_millis)));
+        if (change_time > ExecCtx::Get()->Now()) {
+          Uneject();
+        }
+      }
+    }
+
    private:
     std::unique_ptr<Bucket> current_bucket_ = absl::make_unique<Bucket>();
     std::unique_ptr<Bucket> backup_bucket_ = absl::make_unique<Bucket>();
@@ -260,7 +262,6 @@ class OutlierDetectionLb : public LoadBalancingPolicy {
     bool ejected_ = false;
     uint32_t multiplier_ = 0;
     absl::optional<Timestamp> ejection_time_;
-    absl::Time ejection_timestamp_;
     std::set<SubchannelWrapper*> subchannels_;
   };
 
@@ -516,6 +517,7 @@ void OutlierDetectionLb::ShutdownLocked() {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_outlier_detection_lb_trace)) {
     gpr_log(GPR_INFO, "[outlier_detection_lb %p] shutting down", this);
   }
+  ejection_timer_.reset();
   shutting_down_ = true;
   // Remove the child policy's interested_parties pollset_set from the
   // xDS policy.
@@ -757,8 +759,8 @@ void OutlierDetectionLb::EjectionTimer::OnTimerLocked(grpc_error_handle error) {
       if (host_success_rate_and_volume.has_value()) {
         continue;
       }
-      double success_rate = host_success_rate_and_volume.value().first;
-      uint64_t request_volume = host_success_rate_and_volume.value().second;
+      double success_rate = host_success_rate_and_volume->first;
+      uint64_t request_volume = host_success_rate_and_volume->second;
       if (config.success_rate_ejection.has_value()) {
         if (request_volume >= config.success_rate_ejection->request_volume) {
           success_rate_ejection_candidates[subchannel_state] = success_rate;
@@ -793,13 +795,12 @@ void OutlierDetectionLb::EjectionTimer::OnTimerLocked(grpc_error_handle error) {
       double ejection_threshold = mean - stdev * success_rate_stdev_factor;
       for (auto& candidate : success_rate_ejection_candidates) {
         if (candidate.second < ejection_threshold) {
-          uint32_t random_key = rand() % 100;
+          uint32_t random_key = absl::Uniform(absl::BitGen(), 1, 100);
           if (random_key <
               config.success_rate_ejection->enforcement_percentage) {
-            candidate.first->Eject();
-            // Record the timestamp for use when ejecting addresses in this
-            // iteration.
-            candidate.first->SetEjectionTime(time_now);
+            // Eject and record the timestamp for use when ejecting addresses in
+            // this iteration.
+            candidate.first->Eject(time_now);
           }
         }
       }
@@ -811,13 +812,12 @@ void OutlierDetectionLb::EjectionTimer::OnTimerLocked(grpc_error_handle error) {
       for (auto& candidate : failure_percentage_ejection_candidates) {
         if ((100.0 - candidate.second) >=
             config.failure_percentage_ejection->threshold) {
-          uint32_t random_key = rand() % 100;
+          uint32_t random_key = absl::Uniform(absl::BitGen(), 1, 100);
           if (random_key <
               config.failure_percentage_ejection->enforcement_percentage) {
-            candidate.first->Eject();
-            // Record the timestamp for use when ejecting addresses in this
-            // iteration.
-            candidate.first->SetEjectionTime(time_now);
+            // Eject and record the timestamp for use when ejecting addresses in
+            // this iteration.
+            candidate.first->Eject(time_now);
           }
         }
       }
@@ -830,25 +830,12 @@ void OutlierDetectionLb::EjectionTimer::OnTimerLocked(grpc_error_handle error) {
     //   address.
     for (auto& state : parent_->subchannel_state_map_) {
       auto* subchannel_state = state.second.get();
-      if (!subchannel_state->GetEjected()) {
-        if (subchannel_state->Multiplier() > 0) {
-          subchannel_state->SetMultiplier(subchannel_state->Multiplier() - 1);
-        }
-      } else {
-        auto change_time = subchannel_state->EjectionTimeStamp() +
-                           absl::Milliseconds(std::min(
-                               config.base_ejection_time.millis() *
-                                   subchannel_state->Multiplier(),
-                               std::max(config.base_ejection_time.millis(),
-                                        config.max_ejection_time.millis())));
-        if (change_time > absl::Now()) {
-          subchannel_state->Uneject();
-        }
-      }
+      subchannel_state->MaybeUneject(config.base_ejection_time.millis(),
+                                     config.max_ejection_time.millis());
     }
     timer_pending_ = false;
-    parent_->ejection_timer_ =
-        MakeOrphanable<EjectionTimer>(parent_, ExecCtx::Get()->Now());
+    parent_->ejection_timer_ = MakeOrphanable<EjectionTimer>(
+        std::move(parent_), ExecCtx::Get()->Now());
   }
   Unref(DEBUG_LOCATION, "Timer");
   GRPC_ERROR_UNREF(error);

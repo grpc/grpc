@@ -3389,6 +3389,7 @@ grpc_cc_library(
     ],
     external_deps = [
         "absl/container:inlined_vector",
+        "absl/random",
         "absl/strings",
         "absl/strings:str_format",
     ],
