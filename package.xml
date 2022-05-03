@@ -116,6 +116,8 @@
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/global_subchannel_pool.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/health/health_check_client.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/health/health_check_client.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/filters/client_channel/http_connect_handshaker.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/filters/client_channel/http_connect_handshaker.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/http_proxy.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/http_proxy.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/lb_policy.cc" role="src" />
@@ -902,6 +904,11 @@
     <file baseinstalldir="/" name="src/core/lib/channel/connected_channel.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/channel/connected_channel.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/channel/context.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/channel/handshaker.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/channel/handshaker.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/channel/handshaker_factory.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/channel/handshaker_registry.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/channel/handshaker_registry.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/channel/promise_based_filter.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/channel/promise_based_filter.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/channel/status_util.cc" role="src" />
@@ -1405,14 +1412,7 @@
     <file baseinstalldir="/" name="src/core/lib/transport/connectivity_state.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/transport/error_utils.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/transport/error_utils.h" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/transport/handshaker.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/transport/handshaker.h" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/transport/handshaker_factory.h" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/transport/handshaker_registry.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/transport/handshaker_registry.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/transport/http2_errors.h" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/transport/http_connect_handshaker.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/transport/http_connect_handshaker.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/transport/metadata_batch.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/transport/parsed_metadata.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/transport/parsed_metadata.h" role="src" />
@@ -1420,8 +1420,6 @@
     <file baseinstalldir="/" name="src/core/lib/transport/pid_controller.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/transport/status_conversion.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/transport/status_conversion.h" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/transport/tcp_connect_handshaker.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/transport/tcp_connect_handshaker.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/transport/timeout_encoding.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/transport/timeout_encoding.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/transport/transport.cc" role="src" />
