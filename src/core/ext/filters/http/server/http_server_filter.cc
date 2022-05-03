@@ -328,6 +328,7 @@ const grpc_channel_filter grpc_http_server_filter = {
     hs_destroy_call_elem,
     sizeof(channel_data),
     hs_init_channel_elem,
+    grpc_channel_stack_no_post_init,
     hs_destroy_channel_elem,
     grpc_channel_next_get_info,
     "http-server"};

@@ -340,6 +340,7 @@ const grpc_channel_filter grpc_message_size_filter = {
     message_size_destroy_call_elem,
     sizeof(channel_data),
     message_size_init_channel_elem,
+    grpc_channel_stack_no_post_init,
     message_size_destroy_channel_elem,
     grpc_channel_next_get_info,
     "message_size"};
@@ -350,7 +351,7 @@ static bool maybe_add_message_size_filter_subchannel(
   if (builder->channel_args().WantMinimalStack()) {
     return true;
   }
-  builder->PrependFilter(&grpc_message_size_filter, nullptr);
+  builder->PrependFilter(&grpc_message_size_filter);
   return true;
 }
 
@@ -367,7 +368,7 @@ static bool maybe_add_message_size_filter(
   const bool enable =
       lim.max_send_size != -1 || lim.max_recv_size != -1 ||
       channel_args.GetString(GRPC_ARG_SERVICE_CONFIG).has_value();
-  if (enable) builder->PrependFilter(&grpc_message_size_filter, nullptr);
+  if (enable) builder->PrependFilter(&grpc_message_size_filter);
   return true;
 }
 

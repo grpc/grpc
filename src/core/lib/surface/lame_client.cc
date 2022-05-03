@@ -164,6 +164,7 @@ const grpc_channel_filter grpc_lame_filter = {
     grpc_core::lame_destroy_call_elem,
     sizeof(grpc_core::ChannelData),
     grpc_core::lame_init_channel_elem,
+    grpc_channel_stack_no_post_init,
     grpc_core::lame_destroy_channel_elem,
     grpc_core::lame_get_channel_info,
     "lame-client",
