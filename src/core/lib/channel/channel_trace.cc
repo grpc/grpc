@@ -20,8 +20,6 @@
 
 #include "src/core/lib/channel/channel_trace.h"
 
-#include <stdio.h>
-
 #include <algorithm>
 #include <map>
 #include <string>
