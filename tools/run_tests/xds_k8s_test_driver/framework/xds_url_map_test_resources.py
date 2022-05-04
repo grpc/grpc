@@ -15,8 +15,7 @@
 
 import functools
 import inspect
-import time
-from typing import Any, Iterable, List, Mapping, Tuple
+from typing import Any, Iterable, Mapping, Tuple
 
 from absl import flags
 from absl import logging
@@ -65,8 +64,8 @@ class _UrlMapChangeAggregator:
             *self._get_test_case_url_map(test_case))
         self._set_test_case_url_map(*url_map_parts)
 
+    @staticmethod
     def _get_test_case_url_map(
-            self,
             test_case: 'XdsUrlMapTestCase') -> Tuple[HostRule, PathMatcher]:
         host_rule = {
             "hosts": [test_case.hostname()],
@@ -140,7 +139,7 @@ class GcpResourceManager(metaclass=_MetaSingletonAndAbslFlags):
             for key in absl_flags:
                 setattr(self, key, absl_flags[key])
         # Pick a client_namespace_suffix if not set
-        if self.resource_suffix is None:
+        if getattr(self, 'resource_suffix', None) is None:
             self.resource_suffix = ""
         else:
             raise NotImplementedError(

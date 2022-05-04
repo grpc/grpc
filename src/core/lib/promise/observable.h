@@ -28,6 +28,7 @@
 #include "absl/types/optional.h"
 #include "absl/types/variant.h"
 
+#include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/promise/activity.h"
 #include "src/core/lib/promise/detail/promise_like.h"
 #include "src/core/lib/promise/poll.h"

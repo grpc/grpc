@@ -125,6 +125,19 @@ TEST(MetadataMapTest, NonEncodableTrait) {
   EXPECT_EQ(map.DebugString(), "GrpcStreamNetworkState: not sent on wire");
 }
 
+TEST(DebugStringBuilderTest, AddOne) {
+  metadata_detail::DebugStringBuilder b;
+  b.Add("a", "b");
+  EXPECT_EQ(b.TakeOutput(), "a: b");
+}
+
+TEST(DebugStringBuilderTest, AddTwo) {
+  metadata_detail::DebugStringBuilder b;
+  b.Add("a", "b");
+  b.Add("c", "d");
+  EXPECT_EQ(b.TakeOutput(), "a: b, c: d");
+}
+
 }  // namespace testing
 }  // namespace grpc_core
 

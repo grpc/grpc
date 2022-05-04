@@ -25,6 +25,7 @@
 #include <vector>
 
 #include "absl/strings/str_cat.h"
+#include "absl/strings/str_format.h"
 #include "absl/strings/str_join.h"
 
 #include "src/core/lib/address_utils/sockaddr_utils.h"
@@ -80,6 +81,7 @@ ServerAddress::ServerAddress(ServerAddress&& other) noexcept
       attributes_(std::move(other.attributes_)) {
   other.args_ = nullptr;
 }
+
 ServerAddress& ServerAddress::operator=(ServerAddress&& other) noexcept {
   address_ = other.address_;
   grpc_channel_args_destroy(args_);
@@ -165,6 +167,10 @@ std::string ServerAddress::ToString() const {
         absl::StrCat("attributes={", absl::StrJoin(attrs, ", "), "}"));
   }
   return absl::StrJoin(parts, " ");
+}
+
+std::string ServerAddressWeightAttribute::ToString() const {
+  return absl::StrFormat("%d", weight_);
 }
 
 }  // namespace grpc_core

@@ -308,43 +308,33 @@ class Subchannel::ConnectedSubchannelStateWatcher
                                  const absl::Status& status) override {
     Subchannel* c = subchannel_.get();
     MutexLock lock(&c->mu_);
-    switch (new_state) {
-      case GRPC_CHANNEL_TRANSIENT_FAILURE:
-      case GRPC_CHANNEL_SHUTDOWN: {
-        if (!c->disconnected_ && c->connected_subchannel_ != nullptr) {
-          if (GRPC_TRACE_FLAG_ENABLED(grpc_trace_subchannel)) {
-            gpr_log(GPR_INFO,
-                    "subchannel %p %s: Connected subchannel %p has gone into "
-                    "%s. Attempting to reconnect.",
-                    c, c->key_.ToString().c_str(),
-                    c->connected_subchannel_.get(),
-                    ConnectivityStateName(new_state));
-          }
-          c->connected_subchannel_.reset();
-          if (c->channelz_node() != nullptr) {
-            c->channelz_node()->SetChildSocket(nullptr);
-          }
-          // We need to construct our own status if the underlying state was
-          // shutdown since the accompanying status will be StatusCode::OK
-          // otherwise.
-          c->SetConnectivityStateLocked(
-              GRPC_CHANNEL_TRANSIENT_FAILURE,
-              new_state == GRPC_CHANNEL_SHUTDOWN
-                  ? absl::Status(absl::StatusCode::kUnavailable,
-                                 "Subchannel has disconnected.")
-                  : status);
-          c->backoff_begun_ = false;
-          c->backoff_.Reset();
-        }
-        break;
+    // If we're either shutting down or have already seen this connection
+    // failure (i.e., c->connected_subchannel_ is null), do nothing.
+    //
+    // The transport reports TRANSIENT_FAILURE upon GOAWAY but SHUTDOWN
+    // upon connection close.  So if the server gracefully shuts down,
+    // we will see TRANSIENT_FAILURE followed by SHUTDOWN, but if not, we
+    // will see only SHUTDOWN.  Either way, we react to the first one we
+    // see, ignoring anything that happens after that.
+    if (c->connected_subchannel_ == nullptr) return;
+    if (new_state == GRPC_CHANNEL_TRANSIENT_FAILURE ||
+        new_state == GRPC_CHANNEL_SHUTDOWN) {
+      if (GRPC_TRACE_FLAG_ENABLED(grpc_trace_subchannel)) {
+        gpr_log(GPR_INFO,
+                "subchannel %p %s: Connected subchannel %p reports %s: %s", c,
+                c->key_.ToString().c_str(), c->connected_subchannel_.get(),
+                ConnectivityStateName(new_state), status.ToString().c_str());
       }
-      default: {
-        // In principle, this should never happen.  We should not get
-        // a callback for READY, because that was the state we started
-        // this watch from.  And a connected subchannel should never go
-        // from READY to CONNECTING or IDLE.
-        c->SetConnectivityStateLocked(new_state, status);
+      c->connected_subchannel_.reset();
+      if (c->channelz_node() != nullptr) {
+        c->channelz_node()->SetChildSocket(nullptr);
       }
+      // Even though we're reporting IDLE instead of TRANSIENT_FAILURE here,
+      // pass along the status from the transport, since it may have
+      // keepalive info attached to it that the channel needs.
+      // TODO(roth): Consider whether there's a cleaner way to do this.
+      c->SetConnectivityStateLocked(GRPC_CHANNEL_IDLE, status);
+      c->backoff_.Reset();
     }
   }
 
@@ -564,6 +554,25 @@ Subchannel::HealthWatcherMap::CheckConnectivityStateLocked(
 void Subchannel::HealthWatcherMap::ShutdownLocked() { map_.clear(); }
 
 //
+// Subchannel::ConnectivityStateWatcherInterface
+//
+
+void Subchannel::ConnectivityStateWatcherInterface::PushConnectivityStateChange(
+    ConnectivityStateChange state_change) {
+  MutexLock lock(&mu_);
+  connectivity_state_queue_.push_back(std::move(state_change));
+}
+
+Subchannel::ConnectivityStateWatcherInterface::ConnectivityStateChange
+Subchannel::ConnectivityStateWatcherInterface::PopConnectivityStateChange() {
+  MutexLock lock(&mu_);
+  GPR_ASSERT(!connectivity_state_queue_.empty());
+  ConnectivityStateChange state_change = connectivity_state_queue_.front();
+  connectivity_state_queue_.pop_front();
+  return state_change;
+}
+
+//
 // Subchannel
 //
 
@@ -622,21 +631,6 @@ BackOff::Options ParseArgsForBackoffValues(const grpc_channel_args* args,
 
 }  // namespace
 
-void Subchannel::ConnectivityStateWatcherInterface::PushConnectivityStateChange(
-    ConnectivityStateChange state_change) {
-  MutexLock lock(&mu_);
-  connectivity_state_queue_.push_back(std::move(state_change));
-}
-
-Subchannel::ConnectivityStateWatcherInterface::ConnectivityStateChange
-Subchannel::ConnectivityStateWatcherInterface::PopConnectivityStateChange() {
-  MutexLock lock(&mu_);
-  GPR_ASSERT(!connectivity_state_queue_.empty());
-  ConnectivityStateChange state_change = connectivity_state_queue_.front();
-  connectivity_state_queue_.pop_front();
-  return state_change;
-}
-
 Subchannel::Subchannel(SubchannelKey key,
                        OrphanablePtr<SubchannelConnector> connector,
                        const grpc_channel_args* args)
@@ -650,6 +644,7 @@ Subchannel::Subchannel(SubchannelKey key,
   GRPC_STATS_INC_CLIENT_SUBCHANNELS_CREATED();
   GRPC_CLOSURE_INIT(&on_connecting_finished_, OnConnectingFinished, this,
                     grpc_schedule_on_exec_ctx);
+  GRPC_CLOSURE_INIT(&on_retry_timer_, OnRetryTimer, this, nullptr);
   // Check proxy mapper to determine address to connect to and channel
   // args to use.
   address_for_connect_ = key_.address();
@@ -789,20 +784,20 @@ void Subchannel::CancelConnectivityStateWatch(
   }
 }
 
-void Subchannel::AttemptToConnect() {
+void Subchannel::RequestConnection() {
   MutexLock lock(&mu_);
-  MaybeStartConnectingLocked();
+  if (state_ == GRPC_CHANNEL_IDLE) {
+    StartConnectingLocked();
+  } else if (state_ == GRPC_CHANNEL_TRANSIENT_FAILURE) {
+    connection_requested_ = true;
+  }
 }
 
 void Subchannel::ResetBackoff() {
   MutexLock lock(&mu_);
   backoff_.Reset();
-  if (have_retry_alarm_) {
-    retry_immediately_ = true;
-    grpc_timer_cancel(&retry_alarm_);
-  } else {
-    backoff_begun_ = false;
-    MaybeStartConnectingLocked();
+  if (state_ == GRPC_CHANNEL_TRANSIENT_FAILURE) {
+    grpc_timer_cancel(&retry_timer_);
   }
 }
 
@@ -814,8 +809,8 @@ void Subchannel::Orphan() {
     subchannel_pool_.reset();
   }
   MutexLock lock(&mu_);
-  GPR_ASSERT(!disconnected_);
-  disconnected_ = true;
+  GPR_ASSERT(!shutdown_);
+  shutdown_ = true;
   connector_.reset();
   connected_subchannel_.reset();
   health_watcher_map_.ShutdownLocked();
@@ -885,77 +880,44 @@ void Subchannel::SetConnectivityStateLocked(grpc_connectivity_state state,
   health_watcher_map_.NotifyLocked(state, status);
 }
 
-void Subchannel::MaybeStartConnectingLocked() {
-  if (disconnected_) {
-    // Don't try to connect if we're already disconnected.
-    return;
-  }
-  if (connecting_) {
-    // Already connecting: don't restart.
-    return;
-  }
-  if (connected_subchannel_ != nullptr) {
-    // Already connected: don't restart.
-    return;
-  }
-  connecting_ = true;
-  WeakRef(DEBUG_LOCATION, "connecting")
-      .release();  // ref held by pending connect
-  if (!backoff_begun_) {
-    backoff_begun_ = true;
-    ContinueConnectingLocked();
-  } else {
-    GPR_ASSERT(!have_retry_alarm_);
-    have_retry_alarm_ = true;
-    const Duration time_til_next =
-        next_attempt_deadline_ - ExecCtx::Get()->Now();
-    if (time_til_next <= Duration::Zero()) {
-      gpr_log(GPR_INFO, "subchannel %p %s: Retry immediately", this,
-              key_.ToString().c_str());
-    } else {
-      gpr_log(GPR_INFO, "subchannel %p %s: Retry in %" PRId64 " milliseconds",
-              this, key_.ToString().c_str(), time_til_next.millis());
-    }
-    GRPC_CLOSURE_INIT(&on_retry_alarm_, OnRetryAlarm, this,
-                      grpc_schedule_on_exec_ctx);
-    grpc_timer_init(&retry_alarm_, next_attempt_deadline_, &on_retry_alarm_);
-  }
-}
-
-void Subchannel::OnRetryAlarm(void* arg, grpc_error_handle error) {
+void Subchannel::OnRetryTimer(void* arg, grpc_error_handle /*error*/) {
   WeakRefCountedPtr<Subchannel> c(static_cast<Subchannel*>(arg));
-  MutexLock lock(&c->mu_);
-  c->have_retry_alarm_ = false;
-  if (c->disconnected_) {
-    error = GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING("Disconnected",
-                                                             &error, 1);
-  } else if (c->retry_immediately_) {
-    c->retry_immediately_ = false;
-    error = GRPC_ERROR_NONE;
-  } else {
-    (void)GRPC_ERROR_REF(error);
+  {
+    MutexLock lock(&c->mu_);
+    c->OnRetryTimerLocked();
   }
-  if (error == GRPC_ERROR_NONE) {
-    gpr_log(GPR_INFO,
-            "subchannel %p %s: failed to connect to channel, retrying", c.get(),
-            c->key_.ToString().c_str());
-    c->ContinueConnectingLocked();
-    // Still connecting, keep ref around. Note that this stolen ref won't
-    // be dropped without first acquiring c->mu_.
-    c.release();
-  }
-  GRPC_ERROR_UNREF(error);
+  c.reset(DEBUG_LOCATION, "RetryTimer");
 }
 
-void Subchannel::ContinueConnectingLocked() {
+void Subchannel::OnRetryTimerLocked() {
+  if (shutdown_) return;
+  if (connection_requested_) {
+    gpr_log(GPR_INFO,
+            "subchannel %p %s: connection attempt requested while backoff "
+            "timer was pending, retrying now",
+            this, key_.ToString().c_str());
+    connection_requested_ = false;
+    StartConnectingLocked();
+  } else {
+    gpr_log(GPR_INFO, "subchannel %p %s: backoff delay elapsed, reporting IDLE",
+            this, key_.ToString().c_str());
+    SetConnectivityStateLocked(GRPC_CHANNEL_IDLE, absl::OkStatus());
+  }
+}
+
+void Subchannel::StartConnectingLocked() {
+  // Set next attempt time.
+  const Timestamp min_deadline = min_connect_timeout_ + ExecCtx::Get()->Now();
+  next_attempt_time_ = backoff_.NextAttemptTime();
+  // Report CONNECTING.
+  SetConnectivityStateLocked(GRPC_CHANNEL_CONNECTING, absl::OkStatus());
+  // Start connection attempt.
   SubchannelConnector::Args args;
   args.address = &address_for_connect_;
   args.interested_parties = pollset_set_;
-  const Timestamp min_deadline = min_connect_timeout_ + ExecCtx::Get()->Now();
-  next_attempt_deadline_ = backoff_.NextAttemptTime();
-  args.deadline = std::max(next_attempt_deadline_, min_deadline);
+  args.deadline = std::max(next_attempt_time_, min_deadline);
   args.channel_args = args_;
-  SetConnectivityStateLocked(GRPC_CHANNEL_CONNECTING, absl::Status());
+  WeakRef(DEBUG_LOCATION, "Connect").release();  // Ref held by callback.
   connector_->Connect(args, &connecting_result_, &on_connecting_finished_);
 }
 
@@ -965,19 +927,36 @@ void Subchannel::OnConnectingFinished(void* arg, grpc_error_handle error) {
       c->connecting_result_.channel_args;
   {
     MutexLock lock(&c->mu_);
-    c->connecting_ = false;
-    if (c->connecting_result_.transport != nullptr &&
-        c->PublishTransportLocked()) {
-      // Do nothing, transport was published.
-    } else if (!c->disconnected_) {
-      gpr_log(GPR_INFO, "subchannel %p %s: connect failed: %s", c.get(),
-              c->key_.ToString().c_str(), grpc_error_std_string(error).c_str());
-      c->SetConnectivityStateLocked(GRPC_CHANNEL_TRANSIENT_FAILURE,
-                                    grpc_error_to_absl_status(error));
-    }
+    c->OnConnectingFinishedLocked(GRPC_ERROR_REF(error));
   }
   grpc_channel_args_destroy(delete_channel_args);
-  c.reset(DEBUG_LOCATION, "connecting");
+  c.reset(DEBUG_LOCATION, "Connect");
+}
+
+void Subchannel::OnConnectingFinishedLocked(grpc_error_handle error) {
+  if (shutdown_) {
+    (void)GRPC_ERROR_UNREF(error);
+    return;
+  }
+  // If we didn't get a transport or we fail to publish it, report
+  // TRANSIENT_FAILURE and start the retry timer.
+  // Note that if the connection attempt took longer than the backoff
+  // time, then the timer will fire immediately, and we will quickly
+  // transition back to IDLE.
+  if (connecting_result_.transport == nullptr || !PublishTransportLocked()) {
+    const Duration time_until_next_attempt =
+        next_attempt_time_ - ExecCtx::Get()->Now();
+    gpr_log(GPR_INFO,
+            "subchannel %p %s: connect failed (%s), backing off for %" PRId64
+            " ms",
+            this, key_.ToString().c_str(), grpc_error_std_string(error).c_str(),
+            time_until_next_attempt.millis());
+    SetConnectivityStateLocked(GRPC_CHANNEL_TRANSIENT_FAILURE,
+                               grpc_error_to_absl_status(error));
+    WeakRef(DEBUG_LOCATION, "RetryTimer").release();  // Ref held by callback.
+    grpc_timer_init(&retry_timer_, next_attempt_time_, &on_retry_timer_);
+  }
+  (void)GRPC_ERROR_UNREF(error);
 }
 
 bool Subchannel::PublishTransportLocked() {
@@ -1001,7 +980,7 @@ bool Subchannel::PublishTransportLocked() {
   RefCountedPtr<channelz::SocketNode> socket =
       std::move(connecting_result_.socket_node);
   connecting_result_.Reset();
-  if (disconnected_) return false;
+  if (shutdown_) return false;
   // Publish.
   connected_subchannel_.reset(
       new ConnectedSubchannel(stk->release(), args_, channelz_node_));

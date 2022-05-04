@@ -16,6 +16,7 @@
  *
  */
 
+#include <limits.h>
 #include <string.h>
 
 #include <grpc/grpc.h>
@@ -99,7 +100,7 @@ static void done_writing_settings_frame(void* /* arg */,
                                         grpc_error_handle error) {
   GPR_ASSERT(error == GRPC_ERROR_NONE);
   grpc_endpoint_read(state.tcp, &state.temp_incoming_buffer, &on_read,
-                     /*urgent=*/false);
+                     /*urgent=*/false, /*min_progress_size=*/1);
 }
 
 static void handle_write() {
@@ -108,7 +109,8 @@ static void handle_write() {
 
   grpc_slice_buffer_reset_and_unref(&state.outgoing_buffer);
   grpc_slice_buffer_add(&state.outgoing_buffer, slice);
-  grpc_endpoint_write(state.tcp, &state.outgoing_buffer, &on_write, nullptr);
+  grpc_endpoint_write(state.tcp, &state.outgoing_buffer, &on_write, nullptr,
+                      /*max_frame_size=*/INT_MAX);
 }
 
 static void handle_read(void* /*arg*/, grpc_error_handle error) {
@@ -138,7 +140,7 @@ static void handle_read(void* /*arg*/, grpc_error_handle error) {
     handle_write();
   } else {
     grpc_endpoint_read(state.tcp, &state.temp_incoming_buffer, &on_read,
-                       /*urgent=*/false);
+                       /*urgent=*/false, /*min_progress_size=*/1);
   }
 }
 
@@ -163,10 +165,11 @@ static void on_connect(void* arg, grpc_endpoint* tcp,
         HTTP2_SETTINGS_FRAME, sizeof(HTTP2_SETTINGS_FRAME) - 1);
     grpc_slice_buffer_add(&state.outgoing_buffer, slice);
     grpc_endpoint_write(state.tcp, &state.outgoing_buffer,
-                        &on_writing_settings_frame, nullptr);
+                        &on_writing_settings_frame, nullptr,
+                        /*max_frame_size=*/INT_MAX);
   } else {
     grpc_endpoint_read(state.tcp, &state.temp_incoming_buffer, &on_read,
-                       /*urgent=*/false);
+                       /*urgent=*/false, /*min_progress_size=*/1);
   }
 }
 

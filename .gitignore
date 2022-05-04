@@ -143,6 +143,9 @@ perf.data.old
 bm_diff_new/
 bm_diff_old/
 bm_*.json
+bloat_diff_new/
+bloat_diff_old/
+bloaty-build/
 
 # cmake build files
 **/cmake/build/
@@ -170,3 +173,6 @@ iwyu_files.txt
 
 # clang toolchain with instrumented libcxx, for running msan locally. See tools/local_msan/README.md
 tools/local_msan/clang_msan/
+
+iwyu/
+iwyu_build/

@@ -83,7 +83,7 @@ static bool g_shutting_down ABSL_GUARDED_BY(g_init_mu) = false;
 static bool maybe_prepend_client_auth_filter(
     grpc_core::ChannelStackBuilder* builder) {
   if (builder->channel_args().Contains(GRPC_ARG_SECURITY_CONNECTOR)) {
-    builder->PrependFilter(&grpc_core::ClientAuthFilter::kFilter, nullptr);
+    builder->PrependFilter(&grpc_core::ClientAuthFilter::kFilter);
   }
   return true;
 }
@@ -91,7 +91,7 @@ static bool maybe_prepend_client_auth_filter(
 static bool maybe_prepend_server_auth_filter(
     grpc_core::ChannelStackBuilder* builder) {
   if (builder->channel_args().Contains(GRPC_SERVER_CREDENTIALS_ARG)) {
-    builder->PrependFilter(&grpc_server_auth_filter, nullptr);
+    builder->PrependFilter(&grpc_server_auth_filter);
   }
   return true;
 }
@@ -100,8 +100,7 @@ static bool maybe_prepend_grpc_server_authz_filter(
     grpc_core::ChannelStackBuilder* builder) {
   if (builder->channel_args().GetPointer<grpc_authorization_policy_provider>(
           GRPC_ARG_AUTHORIZATION_POLICY_PROVIDER) != nullptr) {
-    builder->PrependFilter(&grpc_core::GrpcServerAuthzFilter::kFilterVtable,
-                           nullptr);
+    builder->PrependFilter(&grpc_core::GrpcServerAuthzFilter::kFilterVtable);
   }
   return true;
 }

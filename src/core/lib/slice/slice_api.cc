@@ -21,7 +21,7 @@
 #include <grpc/slice.h>
 
 #include "src/core/lib/iomgr/exec_ctx.h"
-#include "src/core/lib/slice/slice_internal.h"
+#include "src/core/lib/slice/slice_refcount.h"
 
 /* Public API */
 grpc_slice grpc_slice_ref(grpc_slice slice) {

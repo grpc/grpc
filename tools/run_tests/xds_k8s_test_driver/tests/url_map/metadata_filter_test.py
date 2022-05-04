@@ -11,7 +11,6 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-import json
 import logging
 from typing import Tuple
 
@@ -153,9 +152,8 @@ class TestMetadataFilterMatchAny(xds_url_map_testcase.XdsUrlMapTestCase):
             "")
 
     def rpc_distribution_validate(self, test_client: XdsTestClient):
-        rpc_distribution = self.configure_and_send(test_client,
-                                                   rpc_types=[RpcTypeUnaryCall],
-                                                   num_rpcs=_NUM_RPCS)
+        rpc_distribution = self.configure_and_send(
+            test_client, rpc_types=(RpcTypeUnaryCall,), num_rpcs=_NUM_RPCS)
         self.assertEqual(
             _NUM_RPCS,
             rpc_distribution.unary_call_alternative_service_rpc_count)
@@ -203,9 +201,8 @@ class TestMetadataFilterMatchAnyAndAll(xds_url_map_testcase.XdsUrlMapTestCase):
             "")
 
     def rpc_distribution_validate(self, test_client: XdsTestClient):
-        rpc_distribution = self.configure_and_send(test_client,
-                                                   rpc_types=[RpcTypeUnaryCall],
-                                                   num_rpcs=_NUM_RPCS)
+        rpc_distribution = self.configure_and_send(
+            test_client, rpc_types=(RpcTypeUnaryCall,), num_rpcs=_NUM_RPCS)
         self.assertEqual(
             _NUM_RPCS,
             rpc_distribution.unary_call_alternative_service_rpc_count)

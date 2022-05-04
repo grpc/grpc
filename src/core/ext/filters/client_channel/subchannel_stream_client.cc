@@ -50,7 +50,8 @@ SubchannelStreamClient::SubchannelStreamClient(
       call_allocator_(
           ResourceQuotaFromChannelArgs(connected_subchannel_->args())
               ->memory_quota()
-              ->CreateMemoryAllocator(tracer)),
+              ->CreateMemoryAllocator(
+                  (tracer != nullptr) ? tracer : "SubchannelStreamClient")),
       event_handler_(std::move(event_handler)),
       retry_backoff_(
           BackOff::Options()
