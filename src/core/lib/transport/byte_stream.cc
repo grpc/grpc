@@ -20,8 +20,6 @@
 
 #include "src/core/lib/transport/byte_stream.h"
 
-#include <stdlib.h>
-
 #include <memory>
 #include <utility>
 
