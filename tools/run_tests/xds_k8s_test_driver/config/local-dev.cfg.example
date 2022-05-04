@@ -1,4 +1,4 @@
-# Copy to local-dev.cfg; replace UPPERCASE with your settings.
+# Copy to local-dev.cfg; replace ${UPPERCASED_VARS} with your settings.
 # Usage: python -m tests.baseline_test --flagfile=config/local-dev.cfg
 # Alt usage: ./run.sh tests/baseline_test.py
 
@@ -6,9 +6,9 @@
 --flagfile=config/common.cfg
 
 # Project settings
---project=YOUR_PROJECT_ID
---gcp_service_account=xds-k8s-interop-tests@YOUR_PROJECT_ID.gserviceaccount.com
---private_api_key_secret_name=projects/YOUR_PROJECT_NUMBER/secrets/xds-interop-tests-private-api-access-key
+--project=${PROJECT_ID}
+--gcp_service_account=${WORKLOAD_SA_EMAIL}
+--private_api_key_secret_name=projects/${PROJECT_NUMBER}/secrets/xds-interop-tests-private-api-access-key
 # Uncomment to ensure the allow health check firewall exists before test case runs
 # --ensure_firewall
 # Uncomment if the port opened with in firewall is different from 8080
@@ -22,7 +22,7 @@
 --resource_suffix=dev
 
 # The name of kube context to use. See `gcloud container clusters get-credentials` and `kubectl config`
---kube_context=KUBE_CONTEXT
+--kube_context=${KUBE_CONTEXT}
 
 # Test images, f.e. java v1.46.x:
 --server_image=gcr.io/grpc-testing/xds-interop/java-server:v1.46.x

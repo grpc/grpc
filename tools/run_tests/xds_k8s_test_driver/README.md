@@ -246,6 +246,13 @@ as a starting point:
 cp config/local-dev.cfg.example config/local-dev.cfg
 ```
 
+If you exported environment variables in the above sections, you can
+template them into the local config (note this recreates the config):
+
+```shell
+envsubst < config/local-dev.cfg.example > config/local-dev.cfg
+```
+
 Learn more about flagfiles in [abseil documentation](https://abseil.io/docs/python/guides/flags#a-note-about---flagfile).
 
 ### Helper scripts
