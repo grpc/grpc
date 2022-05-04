@@ -17,6 +17,10 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <utility>
+
+#include "absl/utility/utility.h"
+
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/promise/context.h"
 #include "src/core/lib/resource_quota/arena.h"

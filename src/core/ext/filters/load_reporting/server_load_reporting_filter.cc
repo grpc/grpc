@@ -264,7 +264,7 @@ struct ServerLoadReportingFilterStaticRegistrar {
       builder->channel_init()->RegisterStage(
           GRPC_SERVER_CHANNEL, INT_MAX, [](ChannelStackBuilder* cs_builder) {
             if (MaybeAddServerLoadReportingFilter(cs_builder->channel_args())) {
-              cs_builder->PrependFilter(&kFilter, nullptr);
+              cs_builder->PrependFilter(&kFilter);
             }
             return true;
           });
