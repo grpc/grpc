@@ -16,11 +16,21 @@
 
 #include "src/core/lib/channel/promise_based_filter.h"
 
-#include <cstddef>
 #include <cstdlib>
+#include <memory>
+#include <string>
+
+#include "absl/base/attributes.h"
+#include "absl/memory/memory.h"
+#include "absl/types/variant.h"
+#include "absl/utility/utility.h"
+
+#include <grpc/status.h>
 
 #include "src/core/lib/channel/channel_stack.h"
-#include "src/core/lib/gprpp/ref_counted.h"
+#include "src/core/lib/gprpp/debug_location.h"
+#include "src/core/lib/gprpp/manual_constructor.h"
+#include "src/core/lib/slice/slice.h"
 
 namespace grpc_core {
 namespace promise_filter_detail {
