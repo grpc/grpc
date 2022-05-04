@@ -20,6 +20,8 @@
 
 #include "src/core/ext/transport/chttp2/transport/context_list.h"
 
+#include <stdint.h>
+
 namespace {
 void (*write_timestamps_callback_g)(void*, grpc_core::Timestamps*,
                                     grpc_error_handle error) = nullptr;
