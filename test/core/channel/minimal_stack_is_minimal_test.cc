@@ -157,7 +157,7 @@ static int check_stack(const char* file, int line, const char* transport_name,
   // build up our "got" list
   parts.clear();
   for (const auto& entry : *builder.mutable_stack()) {
-    const char* name = entry.filter->name;
+    const char* name = entry->name;
     if (name == nullptr) continue;
     parts.push_back(name);
   }
