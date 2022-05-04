@@ -18,10 +18,32 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <arpa/nameser.h>
+#include <inttypes.h>
+#include <netdb.h>
+#include <netinet/in.h>
+#include <stdlib.h>
+#include <sys/socket.h>
+
+#include <string>
+#include <utility>
+
+#include "absl/memory/memory.h"
+#include "absl/status/status.h"
+#include "absl/status/statusor.h"
+
+#include <grpc/impl/codegen/grpc_types.h>
+#include <grpc/support/sync.h>
+
+#include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/gprpp/debug_location.h"
+#include "src/core/lib/gprpp/time.h"
+#include "src/core/lib/iomgr/exec_ctx.h"
+#include "src/core/lib/iomgr/resolved_address.h"
+
 #if GRPC_ARES == 1
 
 #include <string.h>
-#include <sys/types.h>
 
 #include <address_sorting/address_sorting.h>
 #include <ares.h>
@@ -33,7 +55,6 @@
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
-#include <grpc/support/time.h>
 
 #include "src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_ev_driver.h"
 #include "src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper.h"
@@ -42,10 +63,6 @@
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gprpp/host_port.h"
 #include "src/core/lib/iomgr/error.h"
-#include "src/core/lib/iomgr/executor.h"
-#include "src/core/lib/iomgr/iomgr_internal.h"
-#include "src/core/lib/iomgr/nameser.h"
-#include "src/core/lib/iomgr/sockaddr.h"
 #include "src/core/lib/iomgr/timer.h"
 
 using grpc_core::ServerAddress;

@@ -29,6 +29,7 @@ cd ${IWYU_ROOT}
 cat compile_commands.json | sed "s,\"file\": \",\"file\": \"${IWYU_ROOT}/,g" > compile_commands_for_iwyu.json
 
 export ENABLED_MODULES='
+  src/core/ext/filters/client_channel
   src/core/lib/avl
   src/core/lib/channel
   src/core/lib/config

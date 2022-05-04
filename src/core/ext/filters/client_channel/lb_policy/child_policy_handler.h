@@ -14,6 +14,11 @@
 // limitations under the License.
 //
 
+#include <utility>
+
+#include <grpc/impl/codegen/grpc_types.h>
+
+#include "src/core/lib/gprpp/ref_counted_ptr.h"
 #ifndef GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_LB_POLICY_CHILD_POLICY_HANDLER_H
 #define GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_LB_POLICY_CHILD_POLICY_HANDLER_H
 

@@ -14,19 +14,37 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <string.h>
+#include <sys/socket.h>
+
+#include <memory>
+#include <string>
+#include <type_traits>
+#include <utility>
+
+#include "absl/memory/memory.h"
+#include "absl/status/statusor.h"
+#include "absl/strings/str_cat.h"
+#include "absl/strings/string_view.h"
+#include "absl/strings/strip.h"
+
+#include <grpc/impl/codegen/grpc_types.h>
+#include <grpc/support/log.h>
+
+#include "src/core/lib/gprpp/orphanable.h"
+#include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/port.h"
+#include "src/core/lib/iomgr/resolved_address.h"
+#include "src/core/lib/resolver/resolver.h"
+#include "src/core/lib/resolver/resolver_factory.h"
+#include "src/core/lib/uri/uri_parser.h"
 
 #ifdef GRPC_HAVE_UNIX_SOCKET
 
 #include <sys/un.h>
 
-#include <grpc/support/alloc.h>
-#include <grpc/support/string_util.h>
-
-#include "src/core/lib/address_utils/parse_address.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/config/core_configuration.h"
-#include "src/core/lib/gpr/string.h"
 #include "src/core/lib/resolver/resolver_registry.h"
 #include "src/core/lib/resolver/server_address.h"
 

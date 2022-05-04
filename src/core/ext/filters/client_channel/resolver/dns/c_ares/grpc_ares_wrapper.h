@@ -16,6 +16,19 @@
  *
  */
 
+#include <stddef.h>
+
+#include <memory>
+
+#include "absl/base/thread_annotations.h"
+
+#include <grpc/support/log.h>
+
+#include "src/core/lib/debug/trace.h"
+#include "src/core/lib/gprpp/sync.h"
+#include "src/core/lib/iomgr/closure.h"
+#include "src/core/lib/iomgr/error.h"
+#include "src/core/lib/iomgr/pollset_set.h"
 #ifndef GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_RESOLVER_DNS_C_ARES_GRPC_ARES_WRAPPER_H
 #define GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_RESOLVER_DNS_C_ARES_GRPC_ARES_WRAPPER_H
 

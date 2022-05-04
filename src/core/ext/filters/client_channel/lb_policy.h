@@ -19,18 +19,36 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <stddef.h>
+#include <stdint.h>
+
 #include <functional>
 #include <iterator>
+#include <map>
+#include <memory>
+#include <string>
+#include <type_traits>
+#include <utility>
+#include <vector>
 
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/string_view.h"
+#include "absl/types/optional.h"
 #include "absl/types/variant.h"
 
+#include <grpc/impl/codegen/connectivity_state.h>
+#include <grpc/impl/codegen/grpc_types.h>
+
 #include "src/core/ext/filters/client_channel/subchannel_interface.h"
+#include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/debug/trace.h"
+#include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/orphanable.h"
+#include "src/core/lib/gprpp/ref_counted.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/iomgr/polling_entity.h"
+#include "src/core/lib/iomgr/pollset_set.h"
 #include "src/core/lib/iomgr/work_serializer.h"
 #include "src/core/lib/resolver/server_address.h"
 #include "src/core/lib/transport/connectivity_state.h"

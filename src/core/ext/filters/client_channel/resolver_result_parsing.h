@@ -19,7 +19,16 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <stddef.h>
+
+#include <memory>
+#include <string>
+#include <utility>
+
+#include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
+
+#include <grpc/impl/codegen/grpc_types.h>
 
 #include "src/core/ext/filters/client_channel/lb_policy.h"
 #include "src/core/ext/filters/client_channel/lb_policy_factory.h"
@@ -27,6 +36,8 @@
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/gprpp/ref_counted.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
+#include "src/core/lib/gprpp/time.h"
+#include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/exec_ctx.h"  // for grpc_core::Timestamp
 #include "src/core/lib/json/json.h"
 #include "src/core/lib/resolver/resolver.h"

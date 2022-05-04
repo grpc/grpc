@@ -16,6 +16,13 @@
  *
  */
 
+#include <stdint.h>
+
+#include "upb/upb.h"
+
+#include <grpc/slice.h>
+
+#include "src/core/lib/gprpp/time.h"
 #ifndef GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_LB_POLICY_GRPCLB_LOAD_BALANCER_API_H
 #define GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_LB_POLICY_GRPCLB_LOAD_BALANCER_API_H
 
