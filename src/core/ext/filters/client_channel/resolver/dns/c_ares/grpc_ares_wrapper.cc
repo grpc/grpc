@@ -934,7 +934,7 @@ static bool inner_resolve_as_ip_literal_locked(
                                false /* log errors */)) {
     GPR_ASSERT(*addrs == nullptr);
     *addrs = absl::make_unique<ServerAddressList>();
-    (*addrs)->emplace_back(addr, nullptr /* args */);
+    (*addrs)->emplace_back(addr, /*args=*/nullptr);
     return true;
   }
   return false;
@@ -991,19 +991,21 @@ static bool inner_maybe_resolve_localhost_manually_locked(
   }
   if (gpr_stricmp(host->c_str(), "localhost") == 0) {
     GPR_ASSERT(*addrs == nullptr);
+    uint16_t numeric_port = grpc_strhtons(port->c_str());
     *addrs = absl::make_unique<grpc_core::ServerAddressList>();
     grpc_resolved_address address;
+    // Append the ipv6 loopback address.
     memset(&address, 0, sizeof(address));
+    address.len = sizeof(struct sockaddr_in6);
     struct sockaddr_in6* ipv6_loopback_addr =
         reinterpret_cast<struct sockaddr_in6*>(&address.addr);
-    uint16_t numeric_port = grpc_strhtons(port->c_str());
-    // Append the ipv6 loopback address.
     ((char*)&ipv6_loopback_addr->sin6_addr)[15] = 1;
     ipv6_loopback_addr->sin6_family = AF_INET6;
     ipv6_loopback_addr->sin6_port = numeric_port;
     (*addrs)->emplace_back(address, /*args=*/nullptr);
     // Append the ipv4 loopback address.
     memset(&address, 0, sizeof(address));
+    address.len = sizeof(struct sockaddr_in);
     struct sockaddr_in* ipv4_loopback_addr =
         reinterpret_cast<struct sockaddr_in*>(&address.addr);
     ((char*)&ipv4_loopback_addr->sin_addr)[0] = 0x7f;
