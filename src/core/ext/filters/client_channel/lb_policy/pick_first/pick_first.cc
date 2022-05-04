@@ -81,11 +81,14 @@ class PickFirst : public LoadBalancingPolicy {
       : public SubchannelList<PickFirstSubchannelList,
                               PickFirstSubchannelData> {
    public:
-    PickFirstSubchannelList(PickFirst* policy, TraceFlag* tracer,
-                            ServerAddressList addresses,
+    PickFirstSubchannelList(PickFirst* policy, ServerAddressList addresses,
                             const grpc_channel_args& args)
-        : SubchannelList(policy, tracer, std::move(addresses),
-                         policy->channel_control_helper(), args) {
+        : SubchannelList(policy,
+                         (GRPC_TRACE_FLAG_ENABLED(grpc_lb_pick_first_trace)
+                              ? "PickFirstSubchannelList"
+                              : nullptr),
+                         std::move(addresses), policy->channel_control_helper(),
+                         args) {
       // Need to maintain a ref to the LB policy as long as we maintain
       // any references to subchannels, since the subchannels'
       // pollset_sets will include the LB policy's pollset_set.
@@ -185,8 +188,7 @@ void PickFirst::AttemptToConnectUsingLatestUpdateArgsLocked() {
     addresses = *latest_update_args_.addresses;
   }
   auto subchannel_list = MakeOrphanable<PickFirstSubchannelList>(
-      this, &grpc_lb_pick_first_trace, std::move(addresses),
-      *latest_update_args_.args);
+      this, std::move(addresses), *latest_update_args_.args);
   // Empty update or no valid subchannels.
   if (subchannel_list->num_subchannels() == 0) {
     // Unsubscribe from all current subchannels.
