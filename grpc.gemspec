@@ -1433,6 +1433,7 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/lib/transport/http2_errors.h )
   s.files += %w( src/core/lib/transport/http_connect_handshaker.cc )
   s.files += %w( src/core/lib/transport/http_connect_handshaker.h )
+  s.files += %w( src/core/lib/transport/metadata_batch.cc )
   s.files += %w( src/core/lib/transport/metadata_batch.h )
   s.files += %w( src/core/lib/transport/parsed_metadata.cc )
   s.files += %w( src/core/lib/transport/parsed_metadata.h )
