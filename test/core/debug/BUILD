@@ -20,6 +20,7 @@ licenses(["notice"])
 
 grpc_cc_test(
     name = "stats_test",
+    timeout = "long",
     srcs = ["stats_test.cc"],
     external_deps = [
         "gtest",

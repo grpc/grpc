@@ -301,6 +301,7 @@ grpc_channel_filter FailSendOpsFilter::kFilterVtable = {
     CallData::Destroy,
     sizeof(FailSendOpsFilter),
     Init,
+    grpc_channel_stack_no_post_init,
     Destroy,
     grpc_channel_next_get_info,
     "FailSendOpsFilter",
@@ -314,7 +315,7 @@ bool MaybeAddFilter(grpc_core::ChannelStackBuilder* builder) {
     return true;
   }
   // Install filter.
-  builder->PrependFilter(&FailSendOpsFilter::kFilterVtable, nullptr);
+  builder->PrependFilter(&FailSendOpsFilter::kFilterVtable);
   return true;
 }
 

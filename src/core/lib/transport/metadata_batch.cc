@@ -14,29 +14,16 @@
 
 #include <grpc/support/port_platform.h>
 
-#include "src/core/lib/channel/channel_args_preconditioning.h"
+#include "src/core/lib/transport/metadata_batch.h"
 
-#include <utility>
+#include "absl/strings/escaping.h"
+#include "absl/strings/str_join.h"
 
 namespace grpc_core {
-
-void ChannelArgsPreconditioning::Builder::RegisterStage(Stage stage) {
-  stages_.emplace_back(std::move(stage));
+namespace metadata_detail {
+void DebugStringBuilder::Add(absl::string_view key, absl::string_view value) {
+  if (!out_.empty()) out_.append(", ");
+  absl::StrAppend(&out_, absl::CEscape(key), ": ", absl::CEscape(value));
 }
-
-ChannelArgsPreconditioning ChannelArgsPreconditioning::Builder::Build() {
-  ChannelArgsPreconditioning preconditioning;
-  preconditioning.stages_ = std::move(stages_);
-  return preconditioning;
-}
-
-ChannelArgs ChannelArgsPreconditioning::PreconditionChannelArgs(
-    const grpc_channel_args* args) const {
-  ChannelArgs channel_args = ChannelArgsBuiltinPrecondition(args);
-  for (auto& stage : stages_) {
-    channel_args = stage(std::move(channel_args));
-  }
-  return channel_args;
-}
-
+}  // namespace metadata_detail
 }  // namespace grpc_core
