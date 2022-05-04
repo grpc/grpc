@@ -16,17 +16,17 @@
  *
  */
 
+#ifndef GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_LB_POLICY_GRPCLB_GRPCLB_CLIENT_STATS_H
+#define GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_LB_POLICY_GRPCLB_GRPCLB_CLIENT_STATS_H
+
+#include <grpc/support/port_platform.h>
+
 #include <stdint.h>
 
 #include <memory>
 #include <utility>
 
 #include "absl/base/thread_annotations.h"
-#ifndef GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_LB_POLICY_GRPCLB_GRPCLB_CLIENT_STATS_H
-#define GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_LB_POLICY_GRPCLB_GRPCLB_CLIENT_STATS_H
-
-#include <grpc/support/port_platform.h>
-
 #include "absl/container/inlined_vector.h"
 
 #include <grpc/support/atm.h>
