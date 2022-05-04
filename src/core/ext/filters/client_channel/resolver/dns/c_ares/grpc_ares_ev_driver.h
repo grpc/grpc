@@ -21,16 +21,16 @@
 
 #include <grpc/support/port_platform.h>
 
-#include <ares.h>
-
 #include <memory>
+
+#include <ares.h>
 
 #include "absl/base/thread_annotations.h"
 
+#include "src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper.h"
 #include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/error.h"
-#include "src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper.h"
 #include "src/core/lib/iomgr/pollset_set.h"
 
 namespace grpc_core {
