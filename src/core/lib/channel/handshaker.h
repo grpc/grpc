@@ -21,16 +21,22 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <stddef.h>
+
 #include "absl/container/inlined_vector.h"
 
 #include <grpc/impl/codegen/grpc_types.h>
+#include <grpc/slice.h>
 #include <grpc/support/string_util.h>
 
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/gprpp/ref_counted.h"
+#include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/gprpp/sync.h"
+#include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/endpoint.h"
+#include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/tcp_server.h"
 #include "src/core/lib/iomgr/timer.h"

@@ -20,17 +20,21 @@
 
 #include "src/core/lib/channel/handshaker.h"
 
-#include <string.h>
+#include <inttypes.h>
+
+#include <string>
+#include <utility>
 
 #include "absl/strings/str_format.h"
 
-#include <grpc/impl/codegen/slice.h>
+#include <grpc/slice_buffer.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
-#include <grpc/support/string_util.h>
 
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/debug/trace.h"
+#include "src/core/lib/gprpp/debug_location.h"
+#include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/timer.h"
 #include "src/core/lib/slice/slice_internal.h"
 

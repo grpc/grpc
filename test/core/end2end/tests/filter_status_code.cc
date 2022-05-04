@@ -331,6 +331,7 @@ static const grpc_channel_filter test_client_filter = {
     client_destroy_call_elem,
     0,
     init_channel_elem,
+    grpc_channel_stack_no_post_init,
     destroy_channel_elem,
     grpc_channel_next_get_info,
     "client_filter_status_code"};
@@ -345,6 +346,7 @@ static const grpc_channel_filter test_server_filter = {
     server_destroy_call_elem,
     0,
     init_channel_elem,
+    grpc_channel_stack_no_post_init,
     destroy_channel_elem,
     grpc_channel_next_get_info,
     "server_filter_status_code"};
@@ -368,7 +370,7 @@ void filter_status_code(grpc_end2end_test_config config) {
                 // So we add it right before the last one.
                 auto it = builder->mutable_stack()->end();
                 --it;
-                builder->mutable_stack()->insert(it, {filter, nullptr});
+                builder->mutable_stack()->insert(it, filter);
                 return true;
               });
         };

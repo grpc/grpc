@@ -396,8 +396,9 @@ static const grpc_channel_filter phony_filter = {
     StartTransportOp,       0,
     InitCallElem,           SetPollsetOrPollsetSet,
     DestroyCallElem,        0,
-    InitChannelElem,        DestroyChannelElem,
-    GetChannelInfo,         "phony_filter"};
+    InitChannelElem,        grpc_channel_stack_no_post_init,
+    DestroyChannelElem,     GetChannelInfo,
+    "phony_filter"};
 
 }  // namespace phony_filter
 
@@ -622,7 +623,8 @@ typedef Fixture<&grpc_core::HttpClientFilter::kFilter,
     HttpClientFilter;
 BENCHMARK_TEMPLATE(BM_IsolatedFilter, HttpClientFilter, NoOp);
 BENCHMARK_TEMPLATE(BM_IsolatedFilter, HttpClientFilter, SendEmptyMetadata);
-typedef Fixture<&grpc_http_server_filter, CHECKS_NOT_LAST> HttpServerFilter;
+typedef Fixture<&grpc_core::HttpServerFilter::kFilter, CHECKS_NOT_LAST>
+    HttpServerFilter;
 BENCHMARK_TEMPLATE(BM_IsolatedFilter, HttpServerFilter, NoOp);
 BENCHMARK_TEMPLATE(BM_IsolatedFilter, HttpServerFilter, SendEmptyMetadata);
 typedef Fixture<&grpc_message_size_filter, CHECKS_NOT_LAST> MessageSizeFilter;
@@ -709,8 +711,9 @@ static const grpc_channel_filter isolated_call_filter = {
     StartTransportOp,       sizeof(call_data),
     InitCallElem,           SetPollsetOrPollsetSet,
     DestroyCallElem,        0,
-    InitChannelElem,        DestroyChannelElem,
-    GetChannelInfo,         "isolated_call_filter"};
+    InitChannelElem,        grpc_channel_stack_no_post_init,
+    DestroyChannelElem,     GetChannelInfo,
+    "isolated_call_filter"};
 }  // namespace isolated_call_filter
 
 class IsolatedCallFixture : public TrackCounters {
@@ -728,7 +731,7 @@ class IsolatedCallFixture : public TrackCounters {
     grpc_core::ChannelStackBuilderImpl builder("phony", GRPC_CLIENT_CHANNEL);
     builder.SetTarget("phony_target");
     builder.SetChannelArgs(args);
-    builder.AppendFilter(&isolated_call_filter::isolated_call_filter, nullptr);
+    builder.AppendFilter(&isolated_call_filter::isolated_call_filter);
     {
       grpc_core::ExecCtx exec_ctx;
       channel_ =

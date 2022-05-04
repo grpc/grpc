@@ -121,10 +121,11 @@ class TestPrefixMatch(xds_url_map_testcase.XdsUrlMapTestCase):
             [0]['prefixMatch'], _TEST_METADATA_VALUE_UNARY[:2])
 
     def rpc_distribution_validate(self, test_client: XdsTestClient):
-        rpc_distribution = self.configure_and_send(test_client,
-                                                   rpc_types=[RpcTypeUnaryCall],
-                                                   metadata=_TEST_METADATA,
-                                                   num_rpcs=_NUM_RPCS)
+        rpc_distribution = self.configure_and_send(
+            test_client,
+            rpc_types=(RpcTypeUnaryCall,),
+            metadata=_TEST_METADATA,
+            num_rpcs=_NUM_RPCS)
         self.assertEqual(
             _NUM_RPCS,
             rpc_distribution.unary_call_alternative_service_rpc_count)
@@ -203,10 +204,11 @@ class TestPresentMatch(xds_url_map_testcase.XdsUrlMapTestCase):
             [0]['presentMatch'], True)
 
     def rpc_distribution_validate(self, test_client: XdsTestClient):
-        rpc_distribution = self.configure_and_send(test_client,
-                                                   rpc_types=[RpcTypeUnaryCall],
-                                                   metadata=_TEST_METADATA,
-                                                   num_rpcs=_NUM_RPCS)
+        rpc_distribution = self.configure_and_send(
+            test_client,
+            rpc_types=(RpcTypeUnaryCall,),
+            metadata=_TEST_METADATA,
+            num_rpcs=_NUM_RPCS)
         self.assertEqual(
             _NUM_RPCS,
             rpc_distribution.unary_call_alternative_service_rpc_count)

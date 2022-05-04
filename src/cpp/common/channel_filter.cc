@@ -80,7 +80,7 @@ void RegisterChannelFilter(
       }
       grpc_channel_args_destroy(args);
     }
-    builder->PrependFilter(filter, nullptr);
+    builder->PrependFilter(filter);
     return true;
   };
   grpc_core::CoreConfiguration::RegisterBuilder(
