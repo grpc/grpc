@@ -336,6 +336,33 @@ class GrpcLb : public LoadBalancingPolicy {
     PickResult Pick(PickArgs args) override;
 
    private:
+    // A subchannel call tracker that holds a ref to the
+    // GrpcLbClientStats object for the duration of a call.
+    class SubchannelCallTracker : public SubchannelCallTrackerInterface {
+     public:
+      SubchannelCallTracker(
+          RefCountedPtr<GrpcLbClientStats> client_stats,
+          std::unique_ptr<SubchannelCallTrackerInterface> original_call_tracker)
+          : client_stats_(std::move(client_stats)),
+            original_call_tracker_(std::move(original_call_tracker)) {}
+
+      void Start() override {
+        if (original_call_tracker_ != nullptr) {
+          original_call_tracker_->Start();
+        }
+      }
+
+      void Finish(FinishArgs args) override {
+        if (original_call_tracker_ != nullptr) {
+          original_call_tracker_->Finish(args);
+        }
+      }
+
+     private:
+      RefCountedPtr<GrpcLbClientStats> client_stats_;
+      std::unique_ptr<SubchannelCallTrackerInterface> original_call_tracker_;
+    };
+
     // Serverlist to be used for determining drops.
     RefCountedPtr<Serverlist> serverlist_;
 
@@ -648,7 +675,10 @@ GrpcLb::PickResult GrpcLb::Picker::Pick(PickArgs args) {
     // client_load_reporting filter.
     GrpcLbClientStats* client_stats = subchannel_wrapper->client_stats();
     if (client_stats != nullptr) {
-      client_stats->Ref().release();  // Ref passed via metadata.
+      complete_pick->subchannel_call_tracker =
+          absl::make_unique<SubchannelCallTracker>(
+              client_stats->Ref(),
+              std::move(complete_pick->subchannel_call_tracker));
       // The metadata value is a hack: we pretend the pointer points to
       // a string and rely on the client_load_reporting filter to know
       // how to interpret it.
