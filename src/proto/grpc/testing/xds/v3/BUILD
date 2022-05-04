@@ -88,6 +88,7 @@ grpc_proto_library(
         "base_proto",
         "config_source_proto",
         "endpoint_proto",
+        "outlier_detection_proto",
     ],
 )
 
@@ -177,6 +178,15 @@ grpc_proto_library(
     deps = [
         "orca_load_report_proto",
     ],
+)
+
+grpc_proto_library(
+  name = "outlier_detection_proto",
+  srcs = [
+    "outlier_detection.proto",
+  ],
+  has_services = True,
+    well_known_protos = True,
 )
 
 grpc_proto_library(
