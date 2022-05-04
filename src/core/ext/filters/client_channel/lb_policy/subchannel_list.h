@@ -206,11 +206,11 @@ class SubchannelList : public InternallyRefCounted<SubchannelListType> {
 
   virtual ~SubchannelList();
 
+  virtual void ShutdownLocked();
+
  private:
   // For accessing Ref() and Unref().
   friend class SubchannelData<SubchannelListType, SubchannelDataType>;
-
-  void ShutdownLocked();
 
   // Backpointer to owning policy.
   LoadBalancingPolicy* policy_;

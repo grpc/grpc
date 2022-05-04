@@ -208,6 +208,11 @@ class RingHash : public LoadBalancingPolicy {
       return true;
     }
 
+    void ShutdownLocked() override {
+      ring_.reset(DEBUG_LOCATION, "RingHashSubchannelList::ShutdownLocked()");
+      SubchannelList::ShutdownLocked();
+    }
+
     size_t num_idle_;
     size_t num_ready_ = 0;
     size_t num_connecting_ = 0;
@@ -707,6 +712,7 @@ RingHash::~RingHash() {
     gpr_log(GPR_INFO, "[RH %p] Destroying Ring Hash policy", this);
   }
   GPR_ASSERT(subchannel_list_ == nullptr);
+  GPR_ASSERT(latest_pending_subchannel_list_ == nullptr);
 }
 
 void RingHash::ShutdownLocked() {
