@@ -185,6 +185,10 @@ class ArenaPromise {
   // Expose the promise interface: a call operator that returns Poll<T>.
   Poll<T> operator()() { return impl_->PollOnce(); }
 
+  bool has_value() const {
+    return impl_ != arena_promise_detail::NullImpl<T>::Get();
+  }
+
  private:
   // Underlying impl object.
   arena_promise_detail::ImplInterface<T>* impl_ =

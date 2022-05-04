@@ -53,7 +53,7 @@ bool XdsChannelStackModifier::ModifyChannelStack(ChannelStackBuilder* builder) {
   // Insert the filters after the census filter if present.
   auto it = builder->mutable_stack()->begin();
   while (it != builder->mutable_stack()->end()) {
-    const char* filter_name_at_it = it->filter->name;
+    const char* filter_name_at_it = (*it)->name;
     if (strcmp("census_server", filter_name_at_it) == 0 ||
         strcmp("opencensus_server", filter_name_at_it) == 0) {
       break;
@@ -71,8 +71,7 @@ bool XdsChannelStackModifier::ModifyChannelStack(ChannelStackBuilder* builder) {
     ++it;
   }
   for (const grpc_channel_filter* filter : filters_) {
-    it = builder->mutable_stack()->insert(
-        it, ChannelStackBuilder::StackEntry{filter, nullptr});
+    it = builder->mutable_stack()->insert(it, filter);
     ++it;
   }
   return true;
