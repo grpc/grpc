@@ -18,15 +18,23 @@
 
 #include <grpc/support/port_platform.h>
 
-#include <string.h>
+#include <inttypes.h>
+#include <stdlib.h>
 
+#include <algorithm>
+#include <map>
 #include <string>
+#include <utility>
+#include <vector>
 
+#include "absl/base/attributes.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
+#include "absl/strings/string_view.h"
 
 #include <grpc/support/log.h>
 
+#include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/json/json.h"
 
 #define GRPC_JSON_MAX_DEPTH 255

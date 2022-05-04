@@ -32,6 +32,7 @@ export ENABLED_MODULES='
   src/core/lib/avl
   src/core/lib/channel
   src/core/lib/config
+  src/core/lib/json
   src/core/lib/slice
   src/core/lib/resource_quota
   src/core/lib/promise
