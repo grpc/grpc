@@ -17,7 +17,6 @@
 #include "src/core/lib/transport/metadata_batch.h"
 
 #include "absl/strings/escaping.h"
-#include "absl/strings/str_join.h"
 
 namespace grpc_core {
 namespace metadata_detail {

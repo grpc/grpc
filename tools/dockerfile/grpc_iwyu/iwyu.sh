@@ -35,6 +35,7 @@ export ENABLED_MODULES='
   src/core/lib/slice
   src/core/lib/resource_quota
   src/core/lib/promise
+  src/core/lib/transport
   src/core/lib/uri
 '
 
