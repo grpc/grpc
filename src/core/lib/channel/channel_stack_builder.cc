@@ -20,14 +20,10 @@
 
 #include "src/core/lib/channel/channel_stack_builder.h"
 
-#include <string.h>
-
-#include <grpc/support/alloc.h>
-#include <grpc/support/string_util.h>
+#include <algorithm>
+#include <utility>
 
 #include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/channel/channel_stack_builder.h"
-#include "src/core/lib/gprpp/memory.h"
 
 namespace grpc_core {
 

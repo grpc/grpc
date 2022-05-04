@@ -20,6 +20,10 @@
 
 #include "src/core/lib/transport/handshaker_registry.h"
 
+#include <stddef.h>
+
+#include <utility>
+
 namespace grpc_core {
 
 void HandshakerRegistry::Builder::RegisterHandshakerFactory(
