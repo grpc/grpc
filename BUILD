@@ -3901,6 +3901,7 @@ grpc_cc_library(
         "grpc_service_config_impl",
         "grpc_trace",
         "grpc_xds_client",
+        "handshaker_factory",
         "orphanable",
         "ref_counted_ptr",
         "time",
