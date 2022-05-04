@@ -20,12 +20,16 @@
 #include <stdbool.h>
 
 #include <functional>
+#include <string>
 #include <vector>
 
 #include "absl/status/statusor.h"
 #include "absl/strings/string_view.h"
 
+#include <grpc/support/log.h>
+
 #include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/surface/channel_stack_type.h"

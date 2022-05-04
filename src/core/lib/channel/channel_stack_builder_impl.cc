@@ -22,13 +22,19 @@
 
 #include <string.h>
 
+#include <vector>
+
+#include "absl/status/status.h"
+
+#include <grpc/impl/codegen/grpc_types.h>
 #include <grpc/support/alloc.h>
-#include <grpc/support/string_util.h>
 
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_stack.h"
-#include "src/core/lib/gprpp/memory.h"
+#include "src/core/lib/gpr/useful.h"
+#include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/transport/error_utils.h"
+#include "src/core/lib/transport/transport.h"
 
 namespace grpc_core {
 

@@ -20,10 +20,8 @@
 
 #include "src/core/lib/channel/channel_stack.h"
 
-#include <stdlib.h>
-#include <string.h>
+#include <stdint.h>
 
-#include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 
 #include "src/core/lib/gpr/alloc.h"
