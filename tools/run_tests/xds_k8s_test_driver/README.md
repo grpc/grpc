@@ -153,7 +153,7 @@ END
 gcloud auth application-default login
 
 # Configuring GKE cluster access for kubectl
-gcloud container clusters get-credentials "your_gke_cluster_name" --zone "your_gke_cluster_zone"
+gcloud container clusters get-credentials "${CLUSTER_NAME}" --zone "${ZONE}"
 
 # Save generated kube context name
 export KUBE_CONTEXT="$(kubectl config current-context)"
