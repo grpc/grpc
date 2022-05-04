@@ -140,6 +140,7 @@ const grpc_channel_filter grpc_client_load_reporting_filter = {
     clr_destroy_call_elem,
     0,  // sizeof(channel_data)
     clr_init_channel_elem,
+    grpc_channel_stack_no_post_init,
     clr_destroy_channel_elem,
     grpc_channel_next_get_info,
     "client_load_reporting"};

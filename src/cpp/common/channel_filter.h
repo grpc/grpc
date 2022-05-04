@@ -336,6 +336,7 @@ void RegisterChannelFilter(
       FilterType::DestroyCallElement,
       FilterType::channel_data_size,
       FilterType::InitChannelElement,
+      grpc_channel_stack_no_post_init,
       FilterType::DestroyChannelElement,
       FilterType::GetChannelInfo,
       name};

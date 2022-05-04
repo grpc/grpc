@@ -28,9 +28,21 @@ cd ${IWYU_ROOT}
 
 cat compile_commands.json | sed "s,\"file\": \",\"file\": \"${IWYU_ROOT}/,g" > compile_commands_for_iwyu.json
 
+export ENABLED_MODULES='
+  src/core/lib/channel
+  src/core/lib/config
+  src/core/lib/gprpp
+  src/core/lib/slice
+  src/core/lib/resource_quota
+  src/core/lib/promise
+  src/core/lib/uri
+'
+
+export INCLUSION_REGEX=`echo $ENABLED_MODULES | sed 's/ /|/g' | sed 's,\\(.*\\),^(\\1)/,g'`
+
 # figure out which files to include
 cat compile_commands.json | jq -r '.[].file' \
-  | grep -E "^src/core/lib/(gprpp|promise|uri)/" \
+  | grep -E $INCLUSION_REGEX \
   | grep -v -E "/upb-generated/|/upbdefs-generated/" \
   | sort \
   | tee iwyu_files.txt
