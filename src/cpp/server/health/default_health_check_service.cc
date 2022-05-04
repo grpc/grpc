@@ -337,7 +337,14 @@ void DefaultHealthCheckService::HealthCheckServiceImpl::WatchReactor::OnDone() {
 
 void DefaultHealthCheckService::HealthCheckServiceImpl::WatchReactor::
     MaybeFinish(Status status) {
-  if (!finish_called_.exchange(true)) Finish(status);
+  if (!finish_called_.exchange(true)) {
+    gpr_log(GPR_DEBUG,
+            "[HCS %p] Health watch call finishing with status {code=%d msg=%s} "
+            "(service_name: \"%s\", watcher: %p).",
+            service_, status.error_code(), status.error_message().c_str(),
+            service_name_.c_str(), this);
+    Finish(status);
+  }
 }
 
 }  // namespace grpc
