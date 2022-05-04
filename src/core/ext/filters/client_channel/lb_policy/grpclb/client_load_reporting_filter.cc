@@ -41,7 +41,7 @@ namespace {
 
 struct call_data {
   // Stats object to update.
-  grpc_core::GrpcLbClientStats* client_stats = nullptr;
+  grpc_core::RefCountedPtr<grpc_core::GrpcLbClientStats> client_stats;
   // State for intercepting send_initial_metadata.
   grpc_closure on_complete_for_send;
   grpc_closure* original_on_complete_for_send;
@@ -107,7 +107,7 @@ static void clr_start_transport_stream_op_batch(
     if (client_stats_md.has_value()) {
       grpc_core::GrpcLbClientStats* client_stats = *client_stats_md;
       if (client_stats != nullptr) {
-        calld->client_stats = client_stats;
+        calld->client_stats.reset(client_stats);
         // Intercept completion.
         calld->original_on_complete_for_send = batch->on_complete;
         GRPC_CLOSURE_INIT(&calld->on_complete_for_send, on_complete_for_send,

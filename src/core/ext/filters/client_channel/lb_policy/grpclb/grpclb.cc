@@ -336,8 +336,10 @@ class GrpcLb : public LoadBalancingPolicy {
     PickResult Pick(PickArgs args) override;
 
    private:
-    // A subchannel call tracker that holds a ref to the
-    // GrpcLbClientStats object for the duration of a call.
+    // A subchannel call tracker that unrefs the GrpcLbClientStats object
+    // in the case where the subchannel call is never actually started,
+    // since the client load reporting filter will not be able to do it
+    // in that case.
     class SubchannelCallTracker : public SubchannelCallTrackerInterface {
      public:
       SubchannelCallTracker(
@@ -350,6 +352,10 @@ class GrpcLb : public LoadBalancingPolicy {
         if (original_call_tracker_ != nullptr) {
           original_call_tracker_->Start();
         }
+        // If we're actually starting the subchannel call, then the
+        // client load reporting filter will take ownership of the ref
+        // passed down to it via metadata.
+        client_stats_.release();
       }
 
       void Finish(FinishArgs args) override {
