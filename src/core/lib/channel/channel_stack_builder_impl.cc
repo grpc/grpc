@@ -22,13 +22,19 @@
 
 #include <string.h>
 
+#include <vector>
+
+#include "absl/status/status.h"
+
+#include <grpc/impl/codegen/grpc_types.h>
 #include <grpc/support/alloc.h>
-#include <grpc/support/string_util.h>
 
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_stack.h"
-#include "src/core/lib/gprpp/memory.h"
+#include "src/core/lib/gpr/useful.h"
+#include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/transport/error_utils.h"
+#include "src/core/lib/transport/transport.h"
 
 namespace grpc_core {
 
@@ -36,16 +42,9 @@ absl::StatusOr<RefCountedPtr<grpc_channel_stack>>
 ChannelStackBuilderImpl::Build() {
   auto* stack = mutable_stack();
 
-  // create an array of filters
-  std::vector<const grpc_channel_filter*> filters;
-  filters.reserve(stack->size());
-  for (const auto& elem : *stack) {
-    filters.push_back(elem.filter);
-  }
-
   // calculate the size of the channel stack
   size_t channel_stack_size =
-      grpc_channel_stack_size(filters.data(), filters.size());
+      grpc_channel_stack_size(stack->data(), stack->size());
 
   // allocate memory
   auto* channel_stack =
@@ -74,7 +73,7 @@ ChannelStackBuilderImpl::Build() {
         grpc_channel_stack_destroy(stk);
         gpr_free(stk);
       },
-      channel_stack, filters.data(), filters.size(), c_args, name(),
+      channel_stack, stack->data(), stack->size(), c_args, name(),
       channel_stack);
   grpc_channel_args_destroy(c_args);
 
@@ -87,11 +86,9 @@ ChannelStackBuilderImpl::Build() {
   }
 
   // run post-initialization functions
-  for (size_t i = 0; i < filters.size(); i++) {
-    if ((*stack)[i].post_init != nullptr) {
-      (*stack)[i].post_init(channel_stack,
-                            grpc_channel_stack_element(channel_stack, i));
-    }
+  for (size_t i = 0; i < stack->size(); i++) {
+    auto* elem = grpc_channel_stack_element(channel_stack, i);
+    elem->filter->post_init_channel_elem(channel_stack, elem);
   }
 
   return RefCountedPtr<grpc_channel_stack>(channel_stack);

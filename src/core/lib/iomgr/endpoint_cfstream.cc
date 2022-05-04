@@ -255,7 +255,7 @@ static void CFStreamRead(grpc_endpoint* ep, grpc_slice_buffer* slices,
 }
 
 static void CFStreamWrite(grpc_endpoint* ep, grpc_slice_buffer* slices,
-                          grpc_closure* cb, void* arg) {
+                          grpc_closure* cb, void* arg, int /*max_frame_size*/) {
   CFStreamEndpoint* ep_impl = reinterpret_cast<CFStreamEndpoint*>(ep);
   if (grpc_tcp_trace.enabled()) {
     gpr_log(GPR_DEBUG, "CFStream endpoint:%p write (%p, %p) length:%zu",

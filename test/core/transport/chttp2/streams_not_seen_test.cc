@@ -18,6 +18,7 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <limits.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -172,6 +173,7 @@ grpc_channel_filter TrailingMetadataRecordingFilter::kFilterVtable = {
     CallData::Destroy,
     sizeof(TrailingMetadataRecordingFilter),
     Init,
+    grpc_channel_stack_no_post_init,
     Destroy,
     grpc_channel_next_get_info,
     "trailing-metadata-recording-filter",
@@ -315,7 +317,8 @@ class StreamsNotSeenTest : public ::testing::Test {
     absl::Notification on_write_done_notification_;
     GRPC_CLOSURE_INIT(&on_write_done_, OnWriteDone,
                       &on_write_done_notification_, nullptr);
-    grpc_endpoint_write(tcp_, buffer, &on_write_done_, nullptr);
+    grpc_endpoint_write(tcp_, buffer, &on_write_done_, nullptr,
+                        /*max_frame_size=*/INT_MAX);
     ExecCtx::Get()->Flush();
     GPR_ASSERT(on_write_done_notification_.WaitForNotificationWithTimeout(
         absl::Seconds(5)));
@@ -768,7 +771,7 @@ int main(int argc, char** argv) {
                 // right before the last one.
                 auto it = builder->mutable_stack()->end();
                 --it;
-                builder->mutable_stack()->insert(it, {filter, nullptr});
+                builder->mutable_stack()->insert(it, filter);
                 return true;
               });
         };

@@ -165,11 +165,14 @@ class RingHash : public LoadBalancingPolicy {
   class RingHashSubchannelList
       : public SubchannelList<RingHashSubchannelList, RingHashSubchannelData> {
    public:
-    RingHashSubchannelList(RingHash* policy, TraceFlag* tracer,
-                           ServerAddressList addresses,
+    RingHashSubchannelList(RingHash* policy, ServerAddressList addresses,
                            const grpc_channel_args& args)
-        : SubchannelList(policy, tracer, std::move(addresses),
-                         policy->channel_control_helper(), args),
+        : SubchannelList(policy,
+                         (GRPC_TRACE_FLAG_ENABLED(grpc_lb_ring_hash_trace)
+                              ? "RingHashSubchannelList"
+                              : nullptr),
+                         std::move(addresses), policy->channel_control_helper(),
+                         args),
           num_idle_(num_subchannels()),
           ring_(MakeRefCounted<Ring>(policy, Ref(DEBUG_LOCATION, "Ring"))) {
       // Need to maintain a ref to the LB policy as long as we maintain
@@ -764,7 +767,7 @@ void RingHash::UpdateLocked(UpdateArgs args) {
             this, latest_pending_subchannel_list_.get());
   }
   latest_pending_subchannel_list_ = MakeOrphanable<RingHashSubchannelList>(
-      this, &grpc_lb_ring_hash_trace, std::move(addresses), *args.args);
+      this, std::move(addresses), *args.args);
   // If we have no existing list or the new list is empty, immediately
   // promote the new list.
   // Otherwise, do nothing; the new list will be promoted when the

@@ -381,6 +381,7 @@ const grpc_channel_filter MessageDecompressFilter = {
     DecompressDestroyCallElem,
     sizeof(ChannelData),
     DecompressInitChannelElem,
+    grpc_channel_stack_no_post_init,
     DecompressDestroyChannelElem,
     grpc_channel_next_get_info,
     "message_decompress"};

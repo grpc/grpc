@@ -34,6 +34,7 @@
 #include <new>
 #include <utility>
 
+#include <grpc/event_engine/memory_allocator.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/sync.h>
 

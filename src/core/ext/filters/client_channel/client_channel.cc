@@ -43,6 +43,7 @@
 #include "src/core/ext/filters/client_channel/config_selector.h"
 #include "src/core/ext/filters/client_channel/dynamic_filters.h"
 #include "src/core/ext/filters/client_channel/global_subchannel_pool.h"
+#include "src/core/ext/filters/client_channel/http_connect_handshaker.h"
 #include "src/core/ext/filters/client_channel/lb_policy/child_policy_handler.h"
 #include "src/core/ext/filters/client_channel/lb_policy_registry.h"
 #include "src/core/ext/filters/client_channel/local_subchannel_pool.h"
@@ -242,6 +243,7 @@ const grpc_channel_filter ClientChannel::kFilterVtable = {
     ClientChannel::CallData::Destroy,
     sizeof(ClientChannel),
     ClientChannel::Init,
+    grpc_channel_stack_no_post_init,
     ClientChannel::Destroy,
     ClientChannel::GetChannelInfo,
     "client-channel",
@@ -393,6 +395,7 @@ const grpc_channel_filter DynamicTerminationFilter::kFilterVtable = {
     DynamicTerminationFilter::CallData::Destroy,
     sizeof(DynamicTerminationFilter),
     DynamicTerminationFilter::Init,
+    grpc_channel_stack_no_post_init,
     DynamicTerminationFilter::Destroy,
     DynamicTerminationFilter::GetChannelInfo,
     "dynamic_filter_termination",

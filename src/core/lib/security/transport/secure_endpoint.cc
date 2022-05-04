@@ -20,6 +20,8 @@
 
 #include "src/core/lib/security/transport/secure_endpoint.h"
 
+#include <limits.h>
+
 #include <new>
 
 #include <grpc/slice.h>
@@ -349,7 +351,8 @@ static void flush_write_staging_buffer(secure_endpoint* ep, uint8_t** cur,
 }
 
 static void endpoint_write(grpc_endpoint* secure_ep, grpc_slice_buffer* slices,
-                           grpc_closure* cb, void* arg) {
+                           grpc_closure* cb, void* arg,
+                           int /*max_frame_size*/) {
   GPR_TIMER_SCOPE("secure_endpoint.endpoint_write", 0);
 
   unsigned i;
@@ -442,7 +445,8 @@ static void endpoint_write(grpc_endpoint* secure_ep, grpc_slice_buffer* slices,
     return;
   }
 
-  grpc_endpoint_write(ep->wrapped_ep, &ep->output_buffer, cb, arg);
+  grpc_endpoint_write(ep->wrapped_ep, &ep->output_buffer, cb, arg,
+                      /*max_frame_size=*/INT_MAX);
 }
 
 static void endpoint_shutdown(grpc_endpoint* secure_ep, grpc_error_handle why) {

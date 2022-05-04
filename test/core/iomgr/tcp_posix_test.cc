@@ -24,6 +24,7 @@
 
 #include <errno.h>
 #include <fcntl.h>
+#include <limits.h>
 #include <string.h>
 #include <sys/socket.h>
 #include <sys/types.h>
@@ -467,7 +468,8 @@ static void write_test(size_t num_bytes, size_t slice_size,
   grpc_endpoint_write(ep, &outgoing, &write_done_closure,
                       grpc_event_engine_can_track_errors() && collect_timestamps
                           ? &done_timestamps
-                          : nullptr);
+                          : nullptr,
+                      /*max_frame_size=*/INT_MAX);
   drain_socket_blocking(sv[0], num_bytes, num_bytes);
   exec_ctx.Flush();
   gpr_mu_lock(g_mu);
