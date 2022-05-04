@@ -21,6 +21,7 @@
 
 #include <algorithm>
 #include <memory>
+#include <utility>
 
 #include "absl/container/inlined_vector.h"
 
@@ -89,6 +90,7 @@ class AVL {
 
  private:
   struct Node;
+
   typedef std::shared_ptr<Node> NodePtr;
   struct Node : public std::enable_shared_from_this<Node> {
     Node(K k, V v, NodePtr l, NodePtr r, long h)
@@ -309,6 +311,7 @@ class AVL<K, void> {
 
  private:
   struct Node;
+
   typedef std::shared_ptr<Node> NodePtr;
   struct Node : public std::enable_shared_from_this<Node> {
     Node(K k, NodePtr l, NodePtr r, long h)
