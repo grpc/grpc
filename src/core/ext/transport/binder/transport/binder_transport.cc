@@ -107,9 +107,8 @@ static int init_stream(grpc_transport* gt, grpc_stream* gs,
   GPR_TIMER_SCOPE("init_stream", 0);
   gpr_log(GPR_INFO, "%s = %p %p %p %p %p", __func__, gt, gs, refcount,
           server_data, arena);
+  // Note that this function is not locked and may be invoked concurrently
   grpc_binder_transport* t = reinterpret_cast<grpc_binder_transport*>(gt);
-  // TODO(mingcl): Figure out if we need to worry about concurrent invocation
-  // here
   new (gs) grpc_binder_stream(t, refcount, server_data, arena,
                               t->NewStreamTxCode(), t->is_client);
 
@@ -736,13 +735,13 @@ grpc_binder_transport::grpc_binder_transport(
       refs(1, nullptr) {
   gpr_log(GPR_INFO, __func__);
   base.vtable = get_vtable();
-  GRPC_CLOSURE_INIT(&accept_stream_closure, accept_stream_locked, this,
-                    nullptr);
   transport_stream_receiver =
       std::make_shared<grpc_binder::TransportStreamReceiverImpl>(
           is_client, /*accept_stream_callback=*/[this] {
             grpc_core::ExecCtx exec_ctx;
-            combiner->Run(&accept_stream_closure, GRPC_ERROR_NONE);
+            combiner->Run(
+                GRPC_CLOSURE_CREATE(accept_stream_locked, this, nullptr),
+                GRPC_ERROR_NONE);
           });
   // WireReader holds a ref to grpc_binder_transport.
   GRPC_BINDER_REF_TRANSPORT(this, "wire reader");

@@ -41,12 +41,14 @@ AuthorizationPolicy = gcp.network_security.AuthorizationPolicy
 _NetworkServicesV1Alpha1 = gcp.network_services.NetworkServicesV1Alpha1
 _NetworkServicesV1Beta1 = gcp.network_services.NetworkServicesV1Beta1
 EndpointPolicy = gcp.network_services.EndpointPolicy
+GrpcRoute = gcp.network_services.GrpcRoute
+Mesh = gcp.network_services.Mesh
 
 # Testing metadata consts
 TEST_AFFINITY_METADATA_KEY = 'xds_md'
 
 
-class TrafficDirectorManager:
+class TrafficDirectorManager:  # pylint: disable=too-many-public-methods
     compute: _ComputeV1
     resource_prefix: str
     resource_suffix: str
@@ -383,8 +385,8 @@ class TrafficDirectorManager:
         self.compute.wait_for_backends_healthy_status(
             self.affinity_backend_service, self.affinity_backends)
 
+    @staticmethod
     def _generate_url_map_body(
-        self,
         name: str,
         matcher_name: str,
         src_hosts,
@@ -547,9 +549,9 @@ class TrafficDirectorManager:
             lo: int = 1024,  # To avoid confusion, skip well-known ports.
             hi: int = 65535,
             attempts: int = 25) -> int:
-        for attempts in range(attempts):
+        for _ in range(attempts):
             src_port = random.randint(lo, hi)
-            if not (self.compute.exists_forwarding_rule(src_port)):
+            if not self.compute.exists_forwarding_rule(src_port):
                 return src_port
         # TODO(sergiitk): custom exception
         raise RuntimeError("Couldn't find unused forwarding rule port")
@@ -656,8 +658,9 @@ class TrafficDirectorAppNetManager(TrafficDirectorManager):
         self.netsvc = _NetworkServicesV1Alpha1(gcp_api_manager, project)
 
         # Managed resources
-        self.grpc_route: Optional[_NetworkServicesV1Alpha1.GrpcRoute] = None
-        self.mesh: Optional[_NetworkServicesV1Alpha1.Mesh] = None
+        # TODO(gnossen) PTAL at the pylint error
+        self.grpc_route: Optional[GrpcRoute] = None
+        self.mesh: Optional[Mesh] = None
 
     def create_mesh(self) -> GcpResource:
         name = self.make_resource_name(self.MESH_NAME)

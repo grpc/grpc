@@ -64,7 +64,7 @@ void endpoint_read(grpc_endpoint* ep, grpc_slice_buffer* slices,
 }
 
 void endpoint_write(grpc_endpoint* ep, grpc_slice_buffer* slices,
-                    grpc_closure* cb, void* arg) {
+                    grpc_closure* cb, void* arg, int /*max_frame_size*/) {
   // TODO(hork): adapt arg to some metrics collection mechanism.
   (void)arg;
   auto* eeep = reinterpret_cast<grpc_event_engine_endpoint*>(ep);

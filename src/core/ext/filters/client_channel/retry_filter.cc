@@ -2654,6 +2654,7 @@ const grpc_channel_filter kRetryFilterVtable = {
     RetryFilter::CallData::Destroy,
     sizeof(RetryFilter),
     RetryFilter::Init,
+    grpc_channel_stack_no_post_init,
     RetryFilter::Destroy,
     RetryFilter::GetChannelInfo,
     "retry_filter",

@@ -1575,7 +1575,7 @@ static void tcp_handle_write(void* arg /* grpc_tcp */,
 }
 
 static void tcp_write(grpc_endpoint* ep, grpc_slice_buffer* buf,
-                      grpc_closure* cb, void* arg) {
+                      grpc_closure* cb, void* arg, int /*max_frame_size*/) {
   GPR_TIMER_SCOPE("tcp_write", 0);
   grpc_tcp* tcp = reinterpret_cast<grpc_tcp*>(ep);
   grpc_error_handle error = GRPC_ERROR_NONE;

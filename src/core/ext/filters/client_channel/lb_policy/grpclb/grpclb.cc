@@ -1879,7 +1879,7 @@ void RegisterGrpcLbLoadReportingFilter(CoreConfiguration::Builder* builder) {
           // this filter at the very top of the subchannel stack, since that
           // will minimize the number of metadata elements that the filter
           // needs to iterate through to find the ClientStats object.
-          builder->PrependFilter(&grpc_client_load_reporting_filter, nullptr);
+          builder->PrependFilter(&grpc_client_load_reporting_filter);
         }
         return true;
       });
