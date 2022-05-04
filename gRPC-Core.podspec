@@ -1514,6 +1514,7 @@ Pod::Spec.new do |s|
                       'src/core/lib/transport/error_utils.cc',
                       'src/core/lib/transport/error_utils.h',
                       'src/core/lib/transport/http2_errors.h',
+                      'src/core/lib/transport/metadata_batch.cc',
                       'src/core/lib/transport/metadata_batch.h',
                       'src/core/lib/transport/parsed_metadata.cc',
                       'src/core/lib/transport/parsed_metadata.h',

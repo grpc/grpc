@@ -21,14 +21,23 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <stddef.h>
+
 #include <atomic>
+#include <cstdint>
+#include <map>
 #include <set>
 #include <string>
+#include <utility>
 
 #include "absl/container/inlined_vector.h"
+#include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
 
 #include <grpc/grpc.h>
+#include <grpc/impl/codegen/connectivity_state.h>
+#include <grpc/impl/codegen/grpc_types.h>
+#include <grpc/slice.h>
 
 #include "src/core/lib/channel/channel_trace.h"
 #include "src/core/lib/gpr/time_precise.h"

@@ -21,6 +21,16 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <stdint.h>
+
+#include <atomic>
+#include <new>
+#include <type_traits>
+#include <utility>
+
+#include "absl/container/inlined_vector.h"
+#include "absl/functional/function_ref.h"
+#include "absl/meta/type_traits.h"
 #include "absl/utility/utility.h"
 
 #include <grpc/status.h>
@@ -31,11 +41,21 @@
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/channel/context.h"
 #include "src/core/lib/gprpp/debug_location.h"
+#include "src/core/lib/gprpp/time.h"
+#include "src/core/lib/iomgr/call_combiner.h"
+#include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/error.h"
+#include "src/core/lib/iomgr/polling_entity.h"
+#include "src/core/lib/promise/activity.h"
 #include "src/core/lib/promise/arena_promise.h"
 #include "src/core/lib/promise/context.h"
+#include "src/core/lib/promise/latch.h"
+#include "src/core/lib/promise/poll.h"
 #include "src/core/lib/promise/promise.h"
+#include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/transport/error_utils.h"
+#include "src/core/lib/transport/metadata_batch.h"
+#include "src/core/lib/transport/transport.h"
 
 namespace grpc_core {
 
@@ -364,8 +384,11 @@ class ServerCallData : public BaseCallData {
     kCancelled
   };
 
+  class PollContext;
+  struct SendInitialMetadata;
+
   // Handle cancellation.
-  void Cancel(grpc_error_handle error);
+  void Cancel(grpc_error_handle error, Flusher* flusher);
   // Construct a promise that will "call" the next filter.
   // Effectively:
   //   - put the modified initial metadata into the batch being sent up.
@@ -379,13 +402,15 @@ class ServerCallData : public BaseCallData {
                                                grpc_error_handle error);
   void RecvInitialMetadataReady(grpc_error_handle error);
   // Wakeup and poll the promise if appropriate.
-  void WakeInsideCombiner(absl::FunctionRef<void(grpc_error_handle)> cancel);
+  void WakeInsideCombiner(Flusher* flusher);
   void OnWakeup() override;
 
   // Contained promise
   ArenaPromise<ServerMetadataHandle> promise_;
   // Pointer to where initial metadata will be stored.
   grpc_metadata_batch* recv_initial_metadata_ = nullptr;
+  // State for sending initial metadata.
+  SendInitialMetadata* send_initial_metadata_ = nullptr;
   // Closure to call when we're done with the trailing metadata.
   grpc_closure* original_recv_initial_metadata_ready_ = nullptr;
   // Our closure pointing to RecvInitialMetadataReadyCallback.
@@ -393,13 +418,13 @@ class ServerCallData : public BaseCallData {
   // Error received during cancellation.
   grpc_error_handle cancelled_error_ = GRPC_ERROR_NONE;
   // Trailing metadata batch
-  grpc_transport_stream_op_batch* send_trailing_metadata_batch_ = nullptr;
+  CapturedBatch send_trailing_metadata_batch_;
   // State of the send_initial_metadata op.
   RecvInitialState recv_initial_state_ = RecvInitialState::kInitial;
   // State of the recv_trailing_metadata op.
   SendTrailingState send_trailing_state_ = SendTrailingState::kInitial;
-  // Whether we're currently polling the promise.
-  bool is_polling_ = false;
+  // Current poll context (or nullptr if not polling).
+  PollContext* poll_ctx_ = nullptr;
   // Whether to forward the recv_initial_metadata op at the end of promise
   // wakeup.
   bool forward_recv_initial_metadata_callback_ = false;

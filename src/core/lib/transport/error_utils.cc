@@ -20,11 +20,13 @@
 
 #include "src/core/lib/transport/error_utils.h"
 
+#include <stdint.h>
+
+#include "absl/strings/string_view.h"
+
 #include <grpc/support/string_util.h>
 
-#include "src/core/lib/gprpp/status_helper.h"
 #include "src/core/lib/iomgr/error_internal.h"
-#include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/transport/status_conversion.h"
 
 static grpc_error_handle recursively_find_error_with_field(

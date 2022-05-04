@@ -2009,6 +2009,7 @@ grpc_cc_library(
         "src/core/lib/transport/status_conversion.cc",
         "src/core/lib/transport/timeout_encoding.cc",
         "src/core/lib/transport/transport.cc",
+        "src/core/lib/transport/metadata_batch.cc",
         "src/core/lib/transport/transport_op_string.cc",
     ] +
     # TODO(hork): delete the iomgr glue code when EventEngine is fully
@@ -2156,6 +2157,7 @@ grpc_cc_library(
         "src/core/lib/iomgr/event_engine/resolver.h",
     ],
     external_deps = [
+        "absl/base:core_headers",
         "absl/container:flat_hash_map",
         "absl/container:inlined_vector",
         "absl/functional:bind_front",
@@ -2165,6 +2167,8 @@ grpc_cc_library(
         "absl/strings:str_format",
         "absl/strings",
         "absl/types:optional",
+        "absl/types:variant",
+        "absl/utility",
         "madler_zlib",
     ],
     language = "c++",
@@ -2182,6 +2186,7 @@ grpc_cc_library(
         "chunked_vector",
         "closure",
         "config",
+        "debug_location",
         "default_event_engine_factory",
         "dual_ref_counted",
         "error",
@@ -5193,6 +5198,7 @@ grpc_cc_library(
         "src/core/lib/json/json.h",
     ],
     external_deps = [
+        "absl/base:core_headers",
         "absl/strings",
         "absl/strings:str_format",
     ],

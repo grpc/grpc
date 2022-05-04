@@ -26,6 +26,7 @@
 
 #include "absl/memory/memory.h"
 #include "absl/strings/match.h"
+#include "absl/strings/str_join.h"
 #include "absl/synchronization/notification.h"
 
 #include <grpc/grpc.h>

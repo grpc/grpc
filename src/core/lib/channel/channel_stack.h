@@ -51,17 +51,32 @@
 #include <functional>
 
 #include <grpc/grpc.h>
+#include <grpc/impl/codegen/gpr_types.h>
+#include <grpc/impl/codegen/grpc_types.h>
+#include <grpc/slice.h>
+#include <grpc/status.h>
 #include <grpc/support/log.h>
 #include <grpc/support/time.h>
 
+#include "src/core/lib/channel/context.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/gpr/time_precise.h"
+#include "src/core/lib/gprpp/manual_constructor.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
+#include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/iomgr/call_combiner.h"
+#include "src/core/lib/iomgr/closure.h"
+#include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/polling_entity.h"
+#include "src/core/lib/promise/arena_promise.h"
 #include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/transport/metadata_batch.h"
 #include "src/core/lib/transport/transport.h"
+
+struct grpc_call_element;
+struct grpc_call_stack;
+struct grpc_channel_element;
+struct grpc_channel_stack;
 
 typedef struct grpc_channel_element grpc_channel_element;
 typedef struct grpc_call_element grpc_call_element;

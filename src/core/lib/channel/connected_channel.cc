@@ -20,18 +20,17 @@
 
 #include "src/core/lib/channel/connected_channel.h"
 
-#include <stdarg.h>
-#include <stdio.h>
-#include <string.h>
-
-#include <grpc/byte_buffer.h>
-#include <grpc/slice_buffer.h>
+#include <grpc/impl/codegen/grpc_types.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 
+#include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_stack.h"
-#include "src/core/lib/gpr/string.h"
-#include "src/core/lib/profiling/timers.h"
+#include "src/core/lib/gpr/alloc.h"
+#include "src/core/lib/iomgr/call_combiner.h"
+#include "src/core/lib/iomgr/closure.h"
+#include "src/core/lib/iomgr/error.h"
+#include "src/core/lib/iomgr/polling_entity.h"
 #include "src/core/lib/transport/transport.h"
 
 #define MAX_BUFFER_LENGTH 8192

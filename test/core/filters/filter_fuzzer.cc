@@ -19,6 +19,7 @@
 #include "src/core/ext/filters/channel_idle/channel_idle_filter.h"
 #include "src/core/ext/filters/http/client/http_client_filter.h"
 #include "src/core/ext/filters/http/client_authority_filter.h"
+#include "src/core/ext/filters/http/server/http_server_filter.h"
 #include "src/core/lib/channel/channel_stack_builder_impl.h"
 #include "src/core/lib/gpr/env.h"
 #include "src/core/lib/iomgr/executor.h"
@@ -244,6 +245,7 @@ const grpc_channel_filter* const kFilters[] = {
     &ClientAuthorityFilter::kFilter, &HttpClientFilter::kFilter,
     &ClientAuthFilter::kFilter,      &GrpcServerAuthzFilter::kFilterVtable,
     &MaxAgeFilter::kFilter,          &ClientIdleFilter::kFilter,
+    &HttpServerFilter::kFilter,
     // We exclude this one internally, so we can't have it here - will need to
     // pick it up through some future registration mechanism.
     // MAKE_FILTER(ServerLoadReportingFilter),
