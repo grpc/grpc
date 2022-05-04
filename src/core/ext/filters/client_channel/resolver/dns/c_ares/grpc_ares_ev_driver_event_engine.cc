@@ -12,6 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 #include <grpc/support/port_platform.h>
+
+#include "src/core/lib/iomgr/port.h" // IWYU pragma: keep
 #if GRPC_ARES == 1 && defined(GRPC_USE_EVENT_ENGINE)
 
 #include "src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_ev_driver.h"
