@@ -17,7 +17,6 @@
 #include <grpc/support/port_platform.h>
 
 #include <stdlib.h>
-#include <string.h>
 
 #include <algorithm>
 #include <cstdint>
