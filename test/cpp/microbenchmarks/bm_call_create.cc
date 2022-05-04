@@ -623,7 +623,8 @@ typedef Fixture<&grpc_core::HttpClientFilter::kFilter,
     HttpClientFilter;
 BENCHMARK_TEMPLATE(BM_IsolatedFilter, HttpClientFilter, NoOp);
 BENCHMARK_TEMPLATE(BM_IsolatedFilter, HttpClientFilter, SendEmptyMetadata);
-typedef Fixture<&grpc_http_server_filter, CHECKS_NOT_LAST> HttpServerFilter;
+typedef Fixture<&grpc_core::HttpServerFilter::kFilter, CHECKS_NOT_LAST>
+    HttpServerFilter;
 BENCHMARK_TEMPLATE(BM_IsolatedFilter, HttpServerFilter, NoOp);
 BENCHMARK_TEMPLATE(BM_IsolatedFilter, HttpServerFilter, SendEmptyMetadata);
 typedef Fixture<&grpc_message_size_filter, CHECKS_NOT_LAST> MessageSizeFilter;

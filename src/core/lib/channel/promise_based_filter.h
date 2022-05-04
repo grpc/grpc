@@ -354,8 +354,11 @@ class ServerCallData : public BaseCallData {
     kCancelled
   };
 
+  class PollContext;
+  struct SendInitialMetadata;
+
   // Handle cancellation.
-  void Cancel(grpc_error_handle error);
+  void Cancel(grpc_error_handle error, Flusher* flusher);
   // Construct a promise that will "call" the next filter.
   // Effectively:
   //   - put the modified initial metadata into the batch being sent up.
@@ -369,13 +372,15 @@ class ServerCallData : public BaseCallData {
                                                grpc_error_handle error);
   void RecvInitialMetadataReady(grpc_error_handle error);
   // Wakeup and poll the promise if appropriate.
-  void WakeInsideCombiner(absl::FunctionRef<void(grpc_error_handle)> cancel);
+  void WakeInsideCombiner(Flusher* flusher);
   void OnWakeup() override;
 
   // Contained promise
   ArenaPromise<ServerMetadataHandle> promise_;
   // Pointer to where initial metadata will be stored.
   grpc_metadata_batch* recv_initial_metadata_ = nullptr;
+  // State for sending initial metadata.
+  SendInitialMetadata* send_initial_metadata_ = nullptr;
   // Closure to call when we're done with the trailing metadata.
   grpc_closure* original_recv_initial_metadata_ready_ = nullptr;
   // Our closure pointing to RecvInitialMetadataReadyCallback.
@@ -383,13 +388,13 @@ class ServerCallData : public BaseCallData {
   // Error received during cancellation.
   grpc_error_handle cancelled_error_ = GRPC_ERROR_NONE;
   // Trailing metadata batch
-  grpc_transport_stream_op_batch* send_trailing_metadata_batch_ = nullptr;
+  CapturedBatch send_trailing_metadata_batch_;
   // State of the send_initial_metadata op.
   RecvInitialState recv_initial_state_ = RecvInitialState::kInitial;
   // State of the recv_trailing_metadata op.
   SendTrailingState send_trailing_state_ = SendTrailingState::kInitial;
-  // Whether we're currently polling the promise.
-  bool is_polling_ = false;
+  // Current poll context (or nullptr if not polling).
+  PollContext* poll_ctx_ = nullptr;
   // Whether to forward the recv_initial_metadata op at the end of promise
   // wakeup.
   bool forward_recv_initial_metadata_callback_ = false;
