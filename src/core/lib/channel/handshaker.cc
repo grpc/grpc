@@ -21,7 +21,6 @@
 #include "src/core/lib/channel/handshaker.h"
 
 #include <inttypes.h>
-#include <string.h>
 
 #include <string>
 #include <utility>

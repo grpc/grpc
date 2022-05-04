@@ -20,7 +20,6 @@
 
 #include "src/core/lib/channel/channelz.h"
 
-#include <stdio.h>
 #include <stdlib.h>
 
 #include <algorithm>
