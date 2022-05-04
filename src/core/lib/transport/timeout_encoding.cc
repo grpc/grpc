@@ -20,8 +20,6 @@
 
 #include "src/core/lib/transport/timeout_encoding.h"
 
-#include <cstdint>
-
 #include "absl/base/attributes.h"
 
 #include <grpc/support/log.h>
