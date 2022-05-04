@@ -19,7 +19,6 @@
 #ifndef GRPC_INTERNAL_CPP_SERVER_DEFAULT_HEALTH_CHECK_SERVICE_H
 #define GRPC_INTERNAL_CPP_SERVER_DEFAULT_HEALTH_CHECK_SERVICE_H
 
-#include <atomic>
 #include <set>
 
 #include <grpc/support/log.h>
@@ -27,6 +26,7 @@
 #include <grpcpp/health_check_service_interface.h>
 #include <grpcpp/impl/codegen/server_callback_handlers.h>
 #include <grpcpp/impl/codegen/service_type.h>
+#include <grpcpp/impl/codegen/sync.h>
 #include <grpcpp/support/byte_buffer.h>
 
 #include "src/core/lib/gprpp/ref_counted.h"
@@ -59,7 +59,7 @@ class DefaultHealthCheckService final : public HealthCheckServiceInterface {
       void SendHealthLocked(ServingStatus status)
           ABSL_EXCLUSIVE_LOCKS_REQUIRED(&mu_);
 
-      void MaybeFinish(Status status);
+      void MaybeFinishLocked(Status status) ABSL_EXCLUSIVE_LOCKS_REQUIRED(&mu_);
 
       HealthCheckServiceImpl* service_;
       std::string service_name_;
@@ -68,8 +68,7 @@ class DefaultHealthCheckService final : public HealthCheckServiceInterface {
       grpc::internal::Mutex mu_;
       bool write_pending_ ABSL_GUARDED_BY(mu_) = false;
       ServingStatus pending_status_ ABSL_GUARDED_BY(mu_) = NOT_FOUND;
-
-      std::atomic<bool> finish_called_{false};
+      bool finish_called_ ABSL_GUARDED_BY(mu_) = false;
     };
 
     explicit HealthCheckServiceImpl(DefaultHealthCheckService* database);

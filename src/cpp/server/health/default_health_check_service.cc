@@ -252,23 +252,28 @@ DefaultHealthCheckService::HealthCheckServiceImpl::WatchReactor::WatchReactor(
     grpc::internal::MutexLock lock(&service_->mu_);
     ++service_->num_watches_;
   }
-  if (!DecodeRequest(*request, &service_name_)) {
-    MaybeFinish(Status(StatusCode::INTERNAL, "could not parse request"));
+  bool success = DecodeRequest(*request, &service_name_);
+  gpr_log(GPR_DEBUG, "[HCS %p] watcher %p \"%s\": watch call started", service_,
+          this, service_name_.c_str());
+  if (!success) {
+    MaybeFinishLocked(Status(StatusCode::INTERNAL, "could not parse request"));
     return;
   }
   // Register the call for updates to the service.
-  gpr_log(GPR_DEBUG,
-          "[HCS %p] Health watch started for service \"%s\" (reactor: %p)",
-          service_, service_name_.c_str(), this);
   service_->database_->RegisterWatch(service_name_, Ref());
 }
 
 void DefaultHealthCheckService::HealthCheckServiceImpl::WatchReactor::
     SendHealth(ServingStatus status) {
+  gpr_log(GPR_DEBUG,
+          "[HCS %p] watcher %p \"%s\": SendHealth() for ServingStatus %d",
+          service_, this, service_name_.c_str(), status);
   grpc::internal::MutexLock lock(&mu_);
   // If there's already a send in flight, cache the new status, and
   // we'll start a new send for it when the one in flight completes.
   if (write_pending_) {
+    gpr_log(GPR_DEBUG, "[HCS %p] watcher %p \"%s\": queuing write", service_,
+            this, service_name_.c_str());
     pending_status_ = status;
     return;
   }
@@ -278,32 +283,41 @@ void DefaultHealthCheckService::HealthCheckServiceImpl::WatchReactor::
 
 void DefaultHealthCheckService::HealthCheckServiceImpl::WatchReactor::
     SendHealthLocked(ServingStatus status) {
+  // Do nothing if Finish() has already been called.
+  if (finish_called_) return;
   // Check if we're shutting down.
   {
     grpc::internal::MutexLock lock(&service_->mu_);
     if (service_->shutdown_) {
-      MaybeFinish(Status::CANCELLED);
+      MaybeFinishLocked(
+          Status(StatusCode::CANCELLED, "not writing due to shutdown"));
       return;
     }
   }
   // Send response.
   bool success = EncodeResponse(status, &response_);
   if (!success) {
-    MaybeFinish(Status(StatusCode::INTERNAL, "could not encode response"));
+    MaybeFinishLocked(
+        Status(StatusCode::INTERNAL, "could not encode response"));
     return;
   }
+  gpr_log(GPR_DEBUG,
+          "[HCS %p] watcher %p \"%s\": starting write for ServingStatus %d",
+          service_, this, service_name_.c_str(), status);
   write_pending_ = true;
   StartWrite(&response_);
 }
 
 void DefaultHealthCheckService::HealthCheckServiceImpl::WatchReactor::
     OnWriteDone(bool ok) {
+  gpr_log(GPR_DEBUG, "[HCS %p] watcher %p \"%s\": OnWriteDone(): ok=%d",
+          service_, this, service_name_.c_str(), ok);
   response_.Clear();
+  grpc::internal::MutexLock lock(&mu_);
   if (!ok) {
-    MaybeFinish(Status::CANCELLED);
+    MaybeFinishLocked(Status(StatusCode::CANCELLED, "OnWriteDone() ok=false"));
     return;
   }
-  grpc::internal::MutexLock lock(&mu_);
   write_pending_ = false;
   // If we got a new status since we started the last send, start a
   // new send for it.
@@ -316,14 +330,13 @@ void DefaultHealthCheckService::HealthCheckServiceImpl::WatchReactor::
 
 void DefaultHealthCheckService::HealthCheckServiceImpl::WatchReactor::
     OnCancel() {
-  MaybeFinish(Status(StatusCode::UNKNOWN, "call cancelled by client"));
+  grpc::internal::MutexLock lock(&mu_);
+  MaybeFinishLocked(Status(StatusCode::UNKNOWN, "OnCancel()"));
 }
 
 void DefaultHealthCheckService::HealthCheckServiceImpl::WatchReactor::OnDone() {
-  gpr_log(GPR_DEBUG,
-          "[HCS %p] Health watch call finished (service_name: \"%s\", "
-          "watcher: %p).",
-          service_, service_name_.c_str(), this);
+  gpr_log(GPR_DEBUG, "[HCS %p] watcher %p \"%s\": OnDone()", service_, this,
+          service_name_.c_str());
   service_->database_->UnregisterWatch(service_name_, this);
   {
     grpc::internal::MutexLock lock(&service_->mu_);
@@ -336,13 +349,15 @@ void DefaultHealthCheckService::HealthCheckServiceImpl::WatchReactor::OnDone() {
 }
 
 void DefaultHealthCheckService::HealthCheckServiceImpl::WatchReactor::
-    MaybeFinish(Status status) {
-  if (!finish_called_.exchange(true)) {
-    gpr_log(GPR_DEBUG,
-            "[HCS %p] Health watch call finishing with status {code=%d msg=%s} "
-            "(service_name: \"%s\", watcher: %p).",
-            service_, status.error_code(), status.error_message().c_str(),
-            service_name_.c_str(), this);
+    MaybeFinishLocked(Status status) {
+  gpr_log(GPR_DEBUG,
+          "[HCS %p] watcher %p \"%s\": MaybeFinishLocked() with code=%d msg=%s",
+          service_, this, service_name_.c_str(), status.error_code(),
+          status.error_message().c_str());
+  if (!finish_called_) {
+    gpr_log(GPR_DEBUG, "[HCS %p] watcher %p \"%s\": actually calling Finish()",
+            service_, this, service_name_.c_str());
+    finish_called_ = true;
     Finish(status);
   }
 }
