@@ -306,7 +306,7 @@ grpc_channel_stack::MakeCallPromise(grpc_core::CallArgs call_args) {
     return ClientNext(grpc_channel_stack_element(this, 0))(
         std::move(call_args));
   } else {
-    return ServerNext(grpc_channel_stack_element(this, count - 1))(
+    return ServerNext(grpc_channel_stack_element(this, this->count - 1))(
         std::move(call_args));
   }
 }
