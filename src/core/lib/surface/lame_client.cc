@@ -47,8 +47,8 @@ const grpc_channel_filter LameClientFilter::kFilter =
 
 absl::StatusOr<LameClientFilter> LameClientFilter::Create(
     ChannelArgs args, ChannelFilter::Args filter_args) {
-  return LameClientFilter(grpc_error_to_absl_status(
-      *args.GetPointer<grpc_error_handle>(GRPC_ARG_LAME_FILTER_ERROR)));
+  return LameClientFilter(
+      *args.GetPointer<absl::Status>(GRPC_ARG_LAME_FILTER_ERROR));
 }
 
 LameClientFilter::LameClientFilter(absl::Status error)
@@ -94,21 +94,9 @@ namespace {
 
 // Channel arg vtable for a grpc_error_handle.
 void* ErrorCopy(void* p) {
-  grpc_error_handle* new_error = nullptr;
-  if (p != nullptr) {
-    grpc_error_handle* error = static_cast<grpc_error_handle*>(p);
-    new_error = new grpc_error_handle();
-    *new_error = GRPC_ERROR_REF(*error);
-  }
-  return new_error;
+  return new absl::Status(*static_cast<absl::Status*>(p));
 }
-void ErrorDestroy(void* p) {
-  if (p != nullptr) {
-    grpc_error_handle* error = static_cast<grpc_error_handle*>(p);
-    GRPC_ERROR_UNREF(*error);
-    delete error;
-  }
-}
+void ErrorDestroy(void* p) { delete static_cast<absl::Status*>(p); }
 int ErrorCompare(void* p, void* q) { return QsortCompare(p, q); }
 
 const grpc_arg_pointer_vtable kLameFilterErrorArgVtable = {
@@ -132,18 +120,14 @@ grpc_channel* grpc_lame_client_channel_create(const char* target,
       "grpc_lame_client_channel_create(target=%s, error_code=%d, "
       "error_message=%s)",
       3, (target, (int)error_code, error_message));
-  grpc_error_handle error = grpc_error_set_str(
-      grpc_error_set_int(
-          GRPC_ERROR_CREATE_FROM_STATIC_STRING("lame client channel"),
-          GRPC_ERROR_INT_GRPC_STATUS, error_code),
-      GRPC_ERROR_STR_GRPC_MESSAGE, error_message);
   grpc_core::ChannelArgs args =
       grpc_core::CoreConfiguration::Get()
           .channel_args_preconditioning()
           .PreconditionChannelArgs(nullptr)
           .Set(GRPC_ARG_LAME_FILTER_ERROR,
                grpc_core::ChannelArgs::Pointer(
-                   new grpc_error_handle(error),
+                   new absl::Status(static_cast<absl::StatusCode>(error_code),
+                                    error_message),
                    &grpc_core::kLameFilterErrorArgVtable));
   auto channel = grpc_core::Channel::Create(target, std::move(args),
                                             GRPC_CLIENT_LAME_CHANNEL, nullptr);
