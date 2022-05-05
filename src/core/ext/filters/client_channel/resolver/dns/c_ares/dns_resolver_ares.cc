@@ -356,7 +356,7 @@ class AresDNSResolver : public DNSResolver {
     ~AresRequest() override {
       GRPC_CARES_TRACE_LOG("AresRequest:%p dtor ares_request_:%p", this,
                            ares_request_.get());
-      resolver_->UnregisterRequest(TaskHandle());
+      resolver_->UnregisterRequest(GetTaskHandle());
     }
 
     bool Cancel() override {
@@ -372,7 +372,7 @@ class AresDNSResolver : public DNSResolver {
       return true;
     }
 
-    TaskHandle TaskHandle() {
+    TaskHandle GetTaskHandle() {
       return {reinterpret_cast<intptr_t>(this), aba_token_};
     }
 
@@ -447,7 +447,7 @@ class AresDNSResolver : public DNSResolver {
           on_done) override {
     auto* request = new AresRequest(name, default_port, interested_parties,
                                     std::move(on_done), this);
-    auto handle = request->TaskHandle();
+    auto handle = request->GetTaskHandle();
     MutexLock lock(&mu_);
     open_requests_.insert(handle);
     return handle;

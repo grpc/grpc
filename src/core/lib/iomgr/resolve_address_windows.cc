@@ -89,7 +89,7 @@ NativeDNSResolver* NativeDNSResolver::GetOrCreate() {
   return instance;
 }
 
-TaskHandle NativeDNSResolver::ResolveName(
+DNSResolver::TaskHandle NativeDNSResolver::ResolveName(
     absl::string_view name, absl::string_view default_port,
     grpc_pollset_set* /* interested_parties */,
     std::function<void(absl::StatusOr<std::vector<grpc_resolved_address>>)>
