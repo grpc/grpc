@@ -21,7 +21,6 @@
 #include "src/core/lib/surface/call.h"
 
 #include <limits.h>
-#include <stdio.h>
 #include <stdlib.h>
 
 #include <algorithm>

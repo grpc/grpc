@@ -21,14 +21,12 @@
 #include "src/core/lib/surface/channel.h"
 
 #include <inttypes.h>
-#include <stdlib.h>
 #include <string.h>
 
 #include <algorithm>
 #include <atomic>
 #include <functional>
 #include <memory>
-#include <type_traits>
 
 #include "absl/status/status.h"
 
@@ -51,7 +49,6 @@
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
-#include "src/core/lib/resolver/resolver_factory.h"
 #include "src/core/lib/resource_quota/memory_quota.h"
 #include "src/core/lib/resource_quota/resource_quota.h"
 #include "src/core/lib/slice/slice_refcount.h"
