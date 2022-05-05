@@ -23,7 +23,6 @@
 
 #include <stdint.h>
 
-#include <grpc/grpc.h>
 #include <grpc/impl/codegen/compression_types.h>
 #include <grpc/impl/codegen/grpc_types.h>
 

@@ -23,7 +23,6 @@
 
 #include <string>
 
-#include <grpc/grpc.h>
 #include <grpc/impl/codegen/grpc_types.h>
 
 /* Returns a string describing an event. Must be later freed with gpr_free() */

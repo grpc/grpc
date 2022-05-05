@@ -25,7 +25,6 @@
 
 #include <stdint.h>
 
-#include <grpc/grpc.h>
 #include <grpc/impl/codegen/grpc_types.h>
 
 #include "src/core/lib/debug/trace.h"
