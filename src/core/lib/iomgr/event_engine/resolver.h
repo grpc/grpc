@@ -32,15 +32,18 @@
 #include "src/core/lib/iomgr/port.h"
 #include "src/core/lib/iomgr/resolve_address.h"
 
-namespace grpc_core {
+namespace grpc_event_engine {
 namespace experimental {
 
-class EventEngineDNSResolver : public DNSResolver {
+class EventEngineDNSResolver : public grpc_core::DNSResolver {
  public:
   // Gets the singleton instance, creating it first if it doesn't exist
   static EventEngineDNSResolver* GetOrCreate();
 
-  OrphanablePtr<DNSResolver::Request> ResolveName(
+  EventEngineDNSResolver(std::unique_ptr<EventEngine::DNSResolver> ee_resolver)
+      : ee_resolver_(std::move(ee_resolver)) {}
+
+  TaskHandle ResolveName(
       absl::string_view name, absl::string_view default_port,
       grpc_pollset_set* interested_parties,
       std::function<void(absl::StatusOr<std::vector<grpc_resolved_address>>)>
@@ -48,9 +51,14 @@ class EventEngineDNSResolver : public DNSResolver {
 
   absl::StatusOr<std::vector<grpc_resolved_address>> ResolveNameBlocking(
       absl::string_view name, absl::string_view default_port) override;
+
+  bool Cancel(TaskHandle handle) override;
+
+ private:
+  std::unique_ptr<EventEngine::DNSResolver> ee_resolver_;
 };
 
 }  // namespace experimental
-}  // namespace grpc_core
+}  // namespace grpc_event_engine
 
 #endif  // GRPC_CORE_LIB_IOMGR_EVENT_ENGINE_RESOLVER_H

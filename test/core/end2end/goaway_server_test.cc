@@ -67,15 +67,18 @@ class TestDNSResolver : public grpc_core::DNSResolver {
    public:
     explicit TestDNSRequest(
         std::function<void(absl::StatusOr<std::vector<grpc_resolved_address>>)>
-            on_done)
-        : on_done_(std::move(on_done)) {}
-
-    void Start() override {
+            on_done) {
+      auto deleting_on_done =
+          [this,
+           on_done](absl::StatusOr<std::vector<grpc_resolved_address>> result) {
+            on_done(result);
+            delete this;
+          };
       gpr_mu_lock(&g_mu);
       if (g_resolve_port < 0) {
         gpr_mu_unlock(&g_mu);
         new grpc_core::DNSCallbackExecCtxScheduler(
-            std::move(on_done_), absl::UnknownError("Forced Failure"));
+            std::move(deleting_on_done), absl::UnknownError("Forced Failure"));
       } else {
         std::vector<grpc_resolved_address> addrs;
         grpc_resolved_address addr;
@@ -86,19 +89,15 @@ class TestDNSResolver : public grpc_core::DNSResolver {
         addr.len = static_cast<socklen_t>(sizeof(*sa));
         addrs.push_back(addr);
         gpr_mu_unlock(&g_mu);
-        new grpc_core::DNSCallbackExecCtxScheduler(std::move(on_done_),
+        new grpc_core::DNSCallbackExecCtxScheduler(std::move(deleting_on_done),
                                                    std::move(addrs));
       }
     }
 
-    void Orphan() override { Unref(); }
-
-   private:
-    std::function<void(absl::StatusOr<std::vector<grpc_resolved_address>>)>
-        on_done_;
+    bool Cancel() override { return false; }
   };
 
-  grpc_core::OrphanablePtr<grpc_core::DNSResolver::Request> ResolveName(
+  TaskHandle ResolveName(
       absl::string_view name, absl::string_view default_port,
       grpc_pollset_set* interested_parties,
       std::function<void(absl::StatusOr<std::vector<grpc_resolved_address>>)>
@@ -107,13 +106,16 @@ class TestDNSResolver : public grpc_core::DNSResolver {
       return g_default_dns_resolver->ResolveName(
           name, default_port, interested_parties, std::move(on_done));
     }
-    return grpc_core::MakeOrphanable<TestDNSRequest>(std::move(on_done));
+    new TestDNSRequest(std::move(on_done));
+    return NULL_HANDLE;
   }
 
   absl::StatusOr<std::vector<grpc_resolved_address>> ResolveNameBlocking(
       absl::string_view name, absl::string_view default_port) override {
     return g_default_dns_resolver->ResolveNameBlocking(name, default_port);
   }
+
+  bool Cancel(TaskHandle /*handle*/) override { return false; }
 };
 
 }  // namespace

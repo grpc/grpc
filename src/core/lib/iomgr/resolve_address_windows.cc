@@ -56,17 +56,12 @@ class NativeDNSRequest : public DNSResolver::Request {
           on_done)
       : name_(name), default_port_(default_port), on_done_(std::move(on_done)) {
     GRPC_CLOSURE_INIT(&request_closure_, DoRequestThread, this, nullptr);
-  }
-
-  // Starts the resolution
-  void Start() override {
-    Ref().release();  // ref held by callback
     Executor::Run(&request_closure_, GRPC_ERROR_NONE, ExecutorType::RESOLVER);
   }
 
   // This is a no-op for the native resolver. Note
   // that no I/O polling is required for the resolution to finish.
-  void Orphan() override { Unref(); }
+  bool Cancel() override { return false; }
 
  private:
   // Callback to be passed to grpc Executor to asynch-ify
@@ -77,7 +72,7 @@ class NativeDNSRequest : public DNSResolver::Request {
         GetDNSResolver()->ResolveNameBlocking(r->name_, r->default_port_);
     // running inline is safe since we've already been scheduled on the executor
     r->on_done_(std::move(result));
-    r->Unref();
+    delete r;
   }
 
   const std::string name_;
@@ -94,13 +89,13 @@ NativeDNSResolver* NativeDNSResolver::GetOrCreate() {
   return instance;
 }
 
-OrphanablePtr<DNSResolver::Request> NativeDNSResolver::ResolveName(
+TaskHandle NativeDNSResolver::ResolveName(
     absl::string_view name, absl::string_view default_port,
     grpc_pollset_set* /* interested_parties */,
     std::function<void(absl::StatusOr<std::vector<grpc_resolved_address>>)>
         on_done) {
-  return MakeOrphanable<NativeDNSRequest>(name, default_port,
-                                          std::move(on_done));
+  new NativeDNSRequest(name, default_port, std::move(on_done));
+  return NULL_HANDLE;
 }
 
 absl::StatusOr<std::vector<grpc_resolved_address>>
