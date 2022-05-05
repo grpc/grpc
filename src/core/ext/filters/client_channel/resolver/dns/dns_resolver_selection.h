@@ -16,6 +16,8 @@
  *
  */
 
+#include <grpc/support/port_platform.h>
+
 #include "src/core/lib/gprpp/global_config_generic.h"
 #include "src/core/lib/gprpp/memory.h"
 #ifndef GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_RESOLVER_DNS_DNS_RESOLVER_SELECTION_H
