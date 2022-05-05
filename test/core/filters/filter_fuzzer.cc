@@ -239,8 +239,6 @@ ChannelArgs LoadChannelArgs(const FuzzerChannelArgs& fuzz_args,
   return args;
 }
 
-#define MAKE_FILTER(name) Filter::Make<name>(#name)
-
 const grpc_channel_filter* const kFilters[] = {
     &ClientAuthorityFilter::kFilter, &HttpClientFilter::kFilter,
     &ClientAuthFilter::kFilter,      &GrpcServerAuthzFilter::kFilterVtable,
