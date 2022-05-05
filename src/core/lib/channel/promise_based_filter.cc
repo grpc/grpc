@@ -512,6 +512,7 @@ void ClientCallData::StartBatch(grpc_transport_stream_op_batch* b) {
                !batch->recv_trailing_metadata);
     Cancel(batch->payload->cancel_stream.cancel_error);
     if (is_last()) {
+      GRPC_ERROR_UNREF(batch->payload->cancel_stream.cancel_error);
       batch.CompleteWith(&flusher);
     } else {
       batch.ResumeWith(&flusher);
@@ -971,6 +972,7 @@ void ServerCallData::StartBatch(grpc_transport_stream_op_batch* b) {
     Cancel(GRPC_ERROR_REF(batch->payload->cancel_stream.cancel_error),
            &flusher);
     if (is_last()) {
+      GRPC_ERROR_UNREF(batch->payload->cancel_stream.cancel_error);
       batch.CompleteWith(&flusher);
     } else {
       batch.ResumeWith(&flusher);
