@@ -364,6 +364,7 @@
         'absl/container:inlined_vector',
         'absl/functional:bind_front',
         'absl/hash:hash',
+        'absl/meta:type_traits',
         'absl/status:statusor',
         'absl/types:span',
         'absl/types:variant',
