@@ -1646,6 +1646,7 @@ libs:
   - absl/functional:bind_front
   - absl/hash:hash
   - absl/status:statusor
+  - absl/types:span
   - absl/types:variant
   - absl/utility:utility
   - gpr
@@ -2417,6 +2418,7 @@ libs:
   - absl/functional:bind_front
   - absl/hash:hash
   - absl/status:statusor
+  - absl/types:span
   - absl/types:variant
   - absl/utility:utility
   - gpr
