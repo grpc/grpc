@@ -30,9 +30,11 @@ cat compile_commands.json | sed "s,\"file\": \",\"file\": \"${IWYU_ROOT}/,g" > c
 
 export ENABLED_MODULES='
   src/core/ext/filters/client_channel
+  src/core/ext/transport/chttp2
   src/core/lib/avl
   src/core/lib/channel
   src/core/lib/config
+  src/core/lib/gprpp
   src/core/lib/json
   src/core/lib/slice
   src/core/lib/resource_quota

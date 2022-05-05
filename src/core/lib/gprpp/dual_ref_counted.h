@@ -22,6 +22,7 @@
 #include <atomic>
 #include <cassert>
 #include <cinttypes>
+#include <cstdint>
 
 #include <grpc/support/atm.h>
 #include <grpc/support/log.h>
