@@ -2204,6 +2204,7 @@ grpc_cc_library(
         "latch",
         "memory_quota",
         "orphanable",
+        "poll",
         "promise",
         "ref_counted",
         "ref_counted_ptr",
