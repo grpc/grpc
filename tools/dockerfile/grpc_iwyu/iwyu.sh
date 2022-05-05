@@ -19,6 +19,9 @@ cd ${IWYU_ROOT}
 
 export PATH=${PATH}:${IWYU_ROOT}/iwyu_build/bin
 
+# number of CPUs available
+CPU_COUNT=`nproc`
+
 rm -rf iwyu || true
 git clone https://github.com/include-what-you-use/include-what-you-use.git iwyu
 # latest commit on the clang 11 branch
@@ -51,7 +54,7 @@ cat compile_commands.json | jq -r '.[].file' \
   | tee iwyu_files.txt
 
 # run iwyu, filtering out changes to port_platform.h
-xargs -a iwyu_files.txt -I FILES ${IWYU_ROOT}/iwyu/iwyu_tool.py -p compile_commands_for_iwyu.json -j 16 FILES -- -Xiwyu --no_fwd_decls \
+xargs -a iwyu_files.txt -I FILES ${IWYU_ROOT}/iwyu/iwyu_tool.py -p compile_commands_for_iwyu.json -j $CPU_COUNT FILES -- -Xiwyu --no_fwd_decls \
   | grep -v -E "port_platform.h" \
   | tee iwyu.out
 
