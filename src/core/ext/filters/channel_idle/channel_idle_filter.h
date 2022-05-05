@@ -75,6 +75,8 @@ class ChannelIdleFilter : public ChannelFilter {
 
 class ClientIdleFilter final : public ChannelIdleFilter {
  public:
+  static const grpc_channel_filter kFilter;
+
   static absl::StatusOr<ClientIdleFilter> Create(
       ChannelArgs args, ChannelFilter::Args filter_args);
 
@@ -84,6 +86,7 @@ class ClientIdleFilter final : public ChannelIdleFilter {
 
 class MaxAgeFilter final : public ChannelIdleFilter {
  public:
+  static const grpc_channel_filter kFilter;
   struct Config;
 
   static absl::StatusOr<MaxAgeFilter> Create(ChannelArgs args,

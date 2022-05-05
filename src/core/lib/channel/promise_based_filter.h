@@ -22,6 +22,7 @@
 #include <grpc/support/port_platform.h>
 
 #include <stdint.h>
+#include <stdlib.h>
 
 #include <atomic>
 #include <new>
@@ -108,6 +109,16 @@ enum class FilterEndpoint {
 static constexpr uint8_t kFilterExaminesServerInitialMetadata = 1;
 
 namespace promise_filter_detail {
+
+// Proxy channel filter for initialization failure, since we must leave a valid
+// filter in place.
+class InvalidChannelFilter : public ChannelFilter {
+ public:
+  ArenaPromise<ServerMetadataHandle> MakeCallPromise(
+      CallArgs, NextPromiseFactory) override {
+    abort();
+  }
+};
 
 // Call data shared between all implementations of promise-based filters.
 class BaseCallData : public Activity, private Wakeable {
@@ -463,13 +474,14 @@ MakePromiseBasedFilter(const char* name) {
       // make_call_promise
       [](grpc_channel_element* elem, CallArgs call_args,
          NextPromiseFactory next_promise_factory) {
-        return static_cast<F*>(elem->channel_data)
+        return static_cast<ChannelFilter*>(elem->channel_data)
             ->MakeCallPromise(std::move(call_args),
                               std::move(next_promise_factory));
       },
       // start_transport_op
       [](grpc_channel_element* elem, grpc_transport_op* op) {
-        if (!static_cast<F*>(elem->channel_data)->StartTransportOp(op)) {
+        if (!static_cast<ChannelFilter*>(elem->channel_data)
+                 ->StartTransportOp(op)) {
           grpc_channel_next_op(elem, op);
         }
       },
@@ -495,20 +507,26 @@ MakePromiseBasedFilter(const char* name) {
       sizeof(F),
       // init_channel_elem
       [](grpc_channel_element* elem, grpc_channel_element_args* args) {
-        GPR_ASSERT(!args->is_last);
         auto status = F::Create(ChannelArgs::FromC(args->channel_args),
                                 ChannelFilter::Args(args->channel_stack, elem));
-        if (!status.ok()) return absl_status_to_grpc_error(status.status());
+        if (!status.ok()) {
+          static_assert(
+              sizeof(promise_filter_detail::InvalidChannelFilter) <= sizeof(F),
+              "InvalidChannelFilter must fit in F");
+          new (elem->channel_data)
+              promise_filter_detail::InvalidChannelFilter();
+          return absl_status_to_grpc_error(status.status());
+        }
         new (elem->channel_data) F(std::move(*status));
         return GRPC_ERROR_NONE;
       },
       // post_init_channel_elem
       [](grpc_channel_stack*, grpc_channel_element* elem) {
-        static_cast<F*>(elem->channel_data)->PostInit();
+        static_cast<ChannelFilter*>(elem->channel_data)->PostInit();
       },
       // destroy_channel_elem
       [](grpc_channel_element* elem) {
-        static_cast<F*>(elem->channel_data)->~F();
+        static_cast<ChannelFilter*>(elem->channel_data)->~ChannelFilter();
       },
       // get_channel_info
       grpc_channel_next_get_info,

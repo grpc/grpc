@@ -150,13 +150,16 @@ class Activity : public Orphanable {
   // Set the current activity at construction, clean it up at destruction.
   class ScopedActivity {
    public:
-    explicit ScopedActivity(Activity* activity) {
-      GPR_ASSERT(g_current_activity_ == nullptr);
+    explicit ScopedActivity(Activity* activity)
+        : prior_activity_(g_current_activity_) {
       g_current_activity_ = activity;
     }
-    ~ScopedActivity() { g_current_activity_ = nullptr; }
+    ~ScopedActivity() { g_current_activity_ = prior_activity_; }
     ScopedActivity(const ScopedActivity&) = delete;
     ScopedActivity& operator=(const ScopedActivity&) = delete;
+
+   private:
+    Activity* const prior_activity_;
   };
 
  private:
