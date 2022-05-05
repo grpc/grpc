@@ -16,6 +16,7 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <bits/struct_stat.h>
 #include <string.h>
 
 #include "absl/status/status.h"

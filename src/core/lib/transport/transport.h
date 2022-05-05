@@ -55,7 +55,6 @@
 #include "src/core/lib/promise/latch.h"
 #include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/slice/slice.h"
-#include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/transport/byte_stream.h"
 #include "src/core/lib/transport/connectivity_state.h"
 #include "src/core/lib/transport/metadata_batch.h"

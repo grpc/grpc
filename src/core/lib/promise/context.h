@@ -24,13 +24,6 @@
 
 namespace grpc_core {
 
-// To avoid accidentally creating context types, we require an explicit
-// specialization of this template per context type. The specialization need
-// not contain any members, only exist.
-// The reason for avoiding this is that context types each use a thread local.
-template <typename T>
-struct ContextType;
-
 namespace promise_detail {
 
 template <typename T>

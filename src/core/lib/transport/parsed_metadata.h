@@ -33,9 +33,7 @@
 #include <grpc/slice.h>
 
 #include "src/core/lib/gprpp/time.h"
-#include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/slice/slice.h"
-#include "src/core/lib/surface/validate_metadata.h"
 
 namespace grpc_core {
 
