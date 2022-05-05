@@ -48,6 +48,9 @@ TEST_DIRECTORIES=(
 
 FAILED_TESTS=""
 
+# clean the caches and downloaded archives to make sure we build from scratch
+bazel clean --expunge
+
 export OVERRIDE_BAZEL_VERSION="$VERSION"
 # when running under bazel docker image, the workspace is read only.
 export OVERRIDE_BAZEL_WRAPPER_DOWNLOAD_DIR=/tmp
