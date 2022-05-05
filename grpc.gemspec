@@ -1116,6 +1116,7 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/lib/iomgr/iocp_windows.h )
   s.files += %w( src/core/lib/iomgr/iomgr.cc )
   s.files += %w( src/core/lib/iomgr/iomgr.h )
+  s.files += %w( src/core/lib/iomgr/iomgr_fwd.h )
   s.files += %w( src/core/lib/iomgr/iomgr_internal.cc )
   s.files += %w( src/core/lib/iomgr/iomgr_internal.h )
   s.files += %w( src/core/lib/iomgr/iomgr_posix.cc )
