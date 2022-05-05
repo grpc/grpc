@@ -33,6 +33,7 @@
 #include "absl/meta/type_traits.h"
 #include "absl/utility/utility.h"
 
+#include <grpc/impl/codegen/grpc_types.h>
 #include <grpc/status.h>
 #include <grpc/support/log.h>
 
@@ -45,6 +46,7 @@
 #include "src/core/lib/iomgr/call_combiner.h"
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/error.h"
+#include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/polling_entity.h"
 #include "src/core/lib/promise/activity.h"
 #include "src/core/lib/promise/arena_promise.h"
