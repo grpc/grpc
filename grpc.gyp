@@ -71,7 +71,7 @@
     ],
     'cflags_cc': [
       '-Werror',
-      '-std=c++11',
+      '-std=c++14',
     ],
     'include_dirs': [
       '.',
@@ -154,7 +154,7 @@
             '-Isrc/core/ext/upbdefs-generated',
             '-Ithird_party/xxhash',
             '-stdlib=libc++',
-            '-std=c++11',
+            '-std=c++14',
             '-Wno-error=deprecated-declarations',
           ],
         },

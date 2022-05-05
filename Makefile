@@ -309,7 +309,7 @@ else
 TMPOUT = `mktemp /tmp/test-out-XXXXXX`
 endif
 
-CHECK_NO_CXX14_COMPAT_WORKS_CMD = $(CC) -std=c++11 -Werror -Wno-c++14-compat -o $(TMPOUT) -c test/build/no-c++14-compat.cc
+CHECK_NO_CXX14_COMPAT_WORKS_CMD = $(CC) -std=c++14 -Werror -Wno-c++14-compat -o $(TMPOUT) -c test/build/no-c++14-compat.cc
 HAS_WORKING_NO_CXX14_COMPAT = $(shell $(CHECK_NO_CXX14_COMPAT_WORKS_CMD) 2> /dev/null && echo true || echo false)
 ifeq ($(HAS_WORKING_NO_CXX14_COMPAT),true)
 W_NO_CXX14_COMPAT=-Wno-c++14-compat
@@ -357,7 +357,7 @@ HOST_LD ?= $(LD)
 HOST_LDXX ?= $(LDXX)
 
 CFLAGS += -std=c99 $(W_EXTRA_SEMI)
-CXXFLAGS += -std=c++11
+CXXFLAGS += -std=c++14
 ifeq ($(SYSTEM),Darwin)
 CXXFLAGS += -stdlib=libc++
 LDFLAGS += -framework CoreFoundation
