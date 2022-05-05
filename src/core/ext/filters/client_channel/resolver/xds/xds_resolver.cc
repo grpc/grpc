@@ -52,7 +52,6 @@
 #include "src/core/ext/xds/xds_bootstrap.h"
 #include "src/core/ext/xds/xds_resource_type_impl.h"
 #include "src/core/lib/channel/channel_stack_builder.h"
-#include "src/core/lib/channel/handshaker_factory.h"
 #include "src/core/lib/channel/status_util.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/gpr/useful.h"
