@@ -66,7 +66,6 @@
 #include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/endpoint.h"
-#include "src/core/lib/iomgr/ev_posix.h"
 #include "src/core/lib/iomgr/iomgr_fwd.h"
 #include "src/core/lib/iomgr/pollset.h"
 #include "src/core/lib/iomgr/pollset_set.h"
@@ -89,10 +88,9 @@
 #include "src/core/lib/uri/uri_parser.h"
 
 #ifdef GPR_SUPPORT_CHANNELS_FROM_FD
-
+#include "src/core/lib/iomgr/ev_posix.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/tcp_posix.h"
-
 #endif  // GPR_SUPPORT_CHANNELS_FROM_FD
 
 namespace grpc_core {
