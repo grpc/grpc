@@ -100,11 +100,14 @@ class RoundRobin : public LoadBalancingPolicy {
       : public SubchannelList<RoundRobinSubchannelList,
                               RoundRobinSubchannelData> {
    public:
-    RoundRobinSubchannelList(RoundRobin* policy, TraceFlag* tracer,
-                             ServerAddressList addresses,
+    RoundRobinSubchannelList(RoundRobin* policy, ServerAddressList addresses,
                              const grpc_channel_args& args)
-        : SubchannelList(policy, tracer, std::move(addresses),
-                         policy->channel_control_helper(), args) {
+        : SubchannelList(policy,
+                         (GRPC_TRACE_FLAG_ENABLED(grpc_lb_round_robin_trace)
+                              ? "RoundRobinSubchannelList"
+                              : nullptr),
+                         std::move(addresses), policy->channel_control_helper(),
+                         args) {
       // Need to maintain a ref to the LB policy as long as we maintain
       // any references to subchannels, since the subchannels'
       // pollset_sets will include the LB policy's pollset_set.
@@ -266,7 +269,7 @@ void RoundRobin::UpdateLocked(UpdateArgs args) {
             this, latest_pending_subchannel_list_.get());
   }
   latest_pending_subchannel_list_ = MakeOrphanable<RoundRobinSubchannelList>(
-      this, &grpc_lb_round_robin_trace, std::move(addresses), *args.args);
+      this, std::move(addresses), *args.args);
   // Start watching the new list.  If appropriate, this will cause it to be
   // immediately promoted to subchannel_list_ and to generate a new picker.
   latest_pending_subchannel_list_->StartWatchingLocked(

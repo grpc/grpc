@@ -153,7 +153,7 @@ END
 gcloud auth application-default login
 
 # Configuring GKE cluster access for kubectl
-gcloud container clusters get-credentials "your_gke_cluster_name" --zone "your_gke_cluster_zone"
+gcloud container clusters get-credentials "${CLUSTER_NAME}" --zone "${ZONE}"
 
 # Save generated kube context name
 export KUBE_CONTEXT="$(kubectl config current-context)"
@@ -244,6 +244,13 @@ as a starting point:
 
 ```shell
 cp config/local-dev.cfg.example config/local-dev.cfg
+```
+
+If you exported environment variables in the above sections, you can
+template them into the local config (note this recreates the config):
+
+```shell
+envsubst < config/local-dev.cfg.example > config/local-dev.cfg
 ```
 
 Learn more about flagfiles in [abseil documentation](https://abseil.io/docs/python/guides/flags#a-note-about---flagfile).

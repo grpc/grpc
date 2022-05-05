@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 import logging
-from typing import List, Optional
+from typing import List
 
 from absl import flags
 from absl.testing import absltest
@@ -68,35 +68,34 @@ class RemoveNegTest(xds_k8s_testcase.RegularXdsKubernetesTestCase):
         with self.subTest('04_create_forwarding_rule'):
             self.td.create_forwarding_rule(self.server_xds_port)
 
+        default_test_servers: List[_XdsTestServer]
+        same_zone_test_servers: List[_XdsTestServer]
         with self.subTest('05_start_test_servers'):
-            self.default_test_servers: List[
-                _XdsTestServer] = self.startTestServers()
-            self.same_zone_test_servers: List[
-                _XdsTestServer] = self.startTestServers(
-                    server_runner=self.alternate_server_runner)
+            default_test_servers = self.startTestServers()
+            same_zone_test_servers = self.startTestServers(
+                server_runner=self.alternate_server_runner)
 
         with self.subTest('06_add_server_backends_to_backend_services'):
             self.setupServerBackends()
             self.setupServerBackends(server_runner=self.alternate_server_runner)
 
+        test_client: _XdsTestClient
         with self.subTest('07_start_test_client'):
-            self.test_client: _XdsTestClient = self.startTestClient(
-                self.default_test_servers[0])
+            test_client = self.startTestClient(default_test_servers[0])
 
         with self.subTest('08_test_client_xds_config_exists'):
-            self.assertXdsConfigExists(self.test_client)
+            self.assertXdsConfigExists(test_client)
 
         with self.subTest('09_test_server_received_rpcs_from_test_client'):
-            self.assertSuccessfulRpcs(self.test_client)
+            self.assertSuccessfulRpcs(test_client)
 
         with self.subTest('10_remove_neg'):
             self.assertRpcsEventuallyGoToGivenServers(
-                self.test_client,
-                self.default_test_servers + self.same_zone_test_servers)
+                test_client, default_test_servers + same_zone_test_servers)
             self.removeServerBackends(
                 server_runner=self.alternate_server_runner)
-            self.assertRpcsEventuallyGoToGivenServers(self.test_client,
-                                                      self.default_test_servers)
+            self.assertRpcsEventuallyGoToGivenServers(test_client,
+                                                      default_test_servers)
 
 
 if __name__ == '__main__':

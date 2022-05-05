@@ -85,18 +85,17 @@ class MyTestServiceImpl : public TestServiceImpl {
  public:
   Status Echo(ServerContext* context, const EchoRequest* request,
               EchoResponse* response) override {
-    const xds::data::orca::v3::OrcaLoadReport* load_report = nullptr;
     {
       grpc::internal::MutexLock lock(&mu_);
       ++request_count_;
-      load_report = load_report_;
     }
     AddClient(context->peer());
-    if (load_report != nullptr) {
+    if (request->has_param() && request->param().has_backend_metrics()) {
+      const auto& load_report = request->param().backend_metrics();
       // TODO(roth): Once we provide a more standard server-side API for
       // populating this data, use that API here.
       context->AddTrailingMetadata("x-endpoint-load-metrics-bin",
-                                   load_report->SerializeAsString());
+                                   load_report.SerializeAsString());
     }
     return TestServiceImpl::Echo(context, request, response);
   }
@@ -116,11 +115,6 @@ class MyTestServiceImpl : public TestServiceImpl {
     return clients_;
   }
 
-  void set_load_report(xds::data::orca::v3::OrcaLoadReport* load_report) {
-    grpc::internal::MutexLock lock(&mu_);
-    load_report_ = load_report;
-  }
-
  private:
   void AddClient(const std::string& client) {
     grpc::internal::MutexLock lock(&clients_mu_);
@@ -129,7 +123,6 @@ class MyTestServiceImpl : public TestServiceImpl {
 
   grpc::internal::Mutex mu_;
   int request_count_ = 0;
-  const xds::data::orca::v3::OrcaLoadReport* load_report_ = nullptr;
   grpc::internal::Mutex clients_mu_;
   std::set<std::string> clients_;
 };
@@ -319,11 +312,20 @@ class ClientLbEnd2endTest : public ::testing::Test {
 
   void CheckRpcSendOk(
       const std::unique_ptr<grpc::testing::EchoTestService::Stub>& stub,
-      const grpc_core::DebugLocation& location, bool wait_for_ready = false) {
+      const grpc_core::DebugLocation& location, bool wait_for_ready = false,
+      xds::data::orca::v3::OrcaLoadReport* load_report = nullptr) {
     EchoResponse response;
     Status status;
+    EchoRequest request;
+    EchoRequest* request_ptr = nullptr;
+    if (load_report != nullptr) {
+      request_ptr = &request;
+      auto params = request.mutable_param();
+      auto backend_metrics = params->mutable_backend_metrics();
+      *backend_metrics = *load_report;
+    }
     const bool success =
-        SendRpc(stub, &response, 2000, &status, wait_for_ready);
+        SendRpc(stub, &response, 2000, &status, wait_for_ready, request_ptr);
     ASSERT_TRUE(success) << "From " << location.file() << ":" << location.line()
                          << "\nError: " << status.error_message() << " "
                          << status.error_details();
@@ -2158,16 +2160,13 @@ TEST_F(ClientLbInterceptTrailingMetadataTest, BackendMetricData) {
   auto* utilization = load_report.mutable_utilization();
   (*utilization)["baz"] = 1.1;
   (*utilization)["quux"] = 0.9;
-  for (const auto& server : servers_) {
-    server->service_.set_load_report(&load_report);
-  }
   auto response_generator = BuildResolverResponseGenerator();
   auto channel =
       BuildChannel("intercept_trailing_metadata_lb", response_generator);
   auto stub = BuildStub(channel);
   response_generator.SetNextResolution(GetServersPorts());
   for (size_t i = 0; i < kNumRpcs; ++i) {
-    CheckRpcSendOk(stub, DEBUG_LOCATION);
+    CheckRpcSendOk(stub, DEBUG_LOCATION, false, &load_report);
     auto actual = backend_load_report();
     ASSERT_TRUE(actual.has_value());
     // TODO(roth): Change this to use EqualsProto() once that becomes

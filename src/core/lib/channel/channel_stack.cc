@@ -20,10 +20,8 @@
 
 #include "src/core/lib/channel/channel_stack.h"
 
-#include <stdlib.h>
-#include <string.h>
+#include <stdint.h>
 
-#include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 
 #include "src/core/lib/gpr/alloc.h"
@@ -277,3 +275,6 @@ grpc_call_stack* grpc_call_stack_from_top_element(grpc_call_element* elem) {
       reinterpret_cast<char*>(elem) -
       GPR_ROUND_UP_TO_ALIGNMENT_SIZE(sizeof(grpc_call_stack)));
 }
+
+void grpc_channel_stack_no_post_init(grpc_channel_stack*,
+                                     grpc_channel_element*) {}

@@ -18,6 +18,7 @@
 
 #include "test/core/iomgr/endpoint_tests.h"
 
+#include <limits.h>
 #include <stdbool.h>
 #include <sys/types.h>
 
@@ -123,7 +124,7 @@ static void read_scheduler(void* data, grpc_error_handle /* error */) {
   struct read_and_write_test_state* state =
       static_cast<struct read_and_write_test_state*>(data);
   grpc_endpoint_read(state->read_ep, &state->incoming, &state->done_read,
-                     /*urgent=*/false);
+                     /*urgent=*/false, /*min_progress_size=*/1);
 }
 
 static void read_and_write_test_read_handler(void* data,
@@ -152,7 +153,7 @@ static void write_scheduler(void* data, grpc_error_handle /* error */) {
   struct read_and_write_test_state* state =
       static_cast<struct read_and_write_test_state*>(data);
   grpc_endpoint_write(state->write_ep, &state->outgoing, &state->done_write,
-                      nullptr);
+                      nullptr, /*max_frame_size=*/INT_MAX);
 }
 
 static void read_and_write_test_write_handler(void* data,
@@ -247,7 +248,7 @@ static void read_and_write_test(grpc_endpoint_test_config config,
   grpc_core::ExecCtx::Get()->Flush();
 
   grpc_endpoint_read(state.read_ep, &state.incoming, &state.done_read,
-                     /*urgent=*/false);
+                     /*urgent=*/false, /*min_progress_size=*/1);
   if (shutdown) {
     gpr_log(GPR_DEBUG, "shutdown read");
     grpc_endpoint_shutdown(
@@ -313,7 +314,7 @@ static void multiple_shutdown_test(grpc_endpoint_test_config config) {
   grpc_endpoint_read(f.client_ep, &slice_buffer,
                      GRPC_CLOSURE_CREATE(inc_on_failure, &fail_count,
                                          grpc_schedule_on_exec_ctx),
-                     /*urgent=*/false);
+                     /*urgent=*/false, /*min_progress_size=*/1);
   wait_for_fail_count(&fail_count, 0);
   grpc_endpoint_shutdown(f.client_ep,
                          GRPC_ERROR_CREATE_FROM_STATIC_STRING("Test Shutdown"));
@@ -321,13 +322,13 @@ static void multiple_shutdown_test(grpc_endpoint_test_config config) {
   grpc_endpoint_read(f.client_ep, &slice_buffer,
                      GRPC_CLOSURE_CREATE(inc_on_failure, &fail_count,
                                          grpc_schedule_on_exec_ctx),
-                     /*urgent=*/false);
+                     /*urgent=*/false, /*min_progress_size=*/1);
   wait_for_fail_count(&fail_count, 2);
   grpc_slice_buffer_add(&slice_buffer, grpc_slice_from_copied_string("a"));
   grpc_endpoint_write(f.client_ep, &slice_buffer,
                       GRPC_CLOSURE_CREATE(inc_on_failure, &fail_count,
                                           grpc_schedule_on_exec_ctx),
-                      nullptr);
+                      nullptr, /*max_frame_size=*/INT_MAX);
   wait_for_fail_count(&fail_count, 3);
   grpc_endpoint_shutdown(f.client_ep,
                          GRPC_ERROR_CREATE_FROM_STATIC_STRING("Test Shutdown"));

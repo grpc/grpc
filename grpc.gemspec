@@ -19,15 +19,13 @@ Gem::Specification.new do |s|
   s.files += %w( etc/roots.pem )
   s.files += Dir.glob('src/ruby/bin/**/*')
   s.files += Dir.glob('src/ruby/ext/**/*')
-  s.files += Dir.glob('src/ruby/lib/**/*').reject do |f|
-    # Binaries are included by rake-compiler and would lead to circular dependencies here
-    File.fnmatch("**/?.?/grpc_c.so", f)
-  end
+  s.files += Dir.glob('src/ruby/lib/**/*')
   s.files += Dir.glob('src/ruby/pb/**/*').reject do |f|
     f.match(%r{^src/ruby/pb/test})
   end
   s.files += Dir.glob('include/grpc/**/*')
   s.test_files = Dir.glob('src/ruby/spec/**/*')
+  s.test_files += Dir.glob('src/ruby/pb/test/**/*')
   s.bindir = 'src/ruby/bin'
   s.require_paths = %w( src/ruby/lib src/ruby/bin src/ruby/pb )
   s.platform      = Gem::Platform::RUBY
@@ -1433,6 +1431,7 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/lib/transport/error_utils.cc )
   s.files += %w( src/core/lib/transport/error_utils.h )
   s.files += %w( src/core/lib/transport/http2_errors.h )
+  s.files += %w( src/core/lib/transport/metadata_batch.cc )
   s.files += %w( src/core/lib/transport/metadata_batch.h )
   s.files += %w( src/core/lib/transport/parsed_metadata.cc )
   s.files += %w( src/core/lib/transport/parsed_metadata.h )

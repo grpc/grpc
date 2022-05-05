@@ -125,70 +125,6 @@ class CXXLanguage:
         return 'c++'
 
 
-class CSharpLanguage:
-
-    def __init__(self):
-        self.client_cwd = 'src/csharp/Grpc.IntegrationTesting.Client/bin/Debug/net45'
-        self.server_cwd = 'src/csharp/Grpc.IntegrationTesting.Server/bin/Debug/net45'
-        self.safename = str(self)
-
-    def client_cmd(self, args):
-        return ['mono', 'Grpc.IntegrationTesting.Client.exe'] + args
-
-    def cloud_to_prod_env(self):
-        return {}
-
-    def server_cmd(self, args):
-        return ['mono', 'Grpc.IntegrationTesting.Server.exe'] + args
-
-    def global_env(self):
-        return {}
-
-    def unimplemented_test_cases(self):
-        return _SKIP_SERVER_COMPRESSION + \
-            _SKIP_DATA_FRAME_PADDING + \
-            _SKIP_GOOGLE_DEFAULT_CREDS + \
-            _SKIP_COMPUTE_ENGINE_CHANNEL_CREDS
-
-    def unimplemented_test_cases_server(self):
-        return _SKIP_COMPRESSION
-
-    def __str__(self):
-        return 'csharp'
-
-
-class CSharpCoreCLRLanguage:
-
-    def __init__(self):
-        self.client_cwd = 'src/csharp/Grpc.IntegrationTesting.Client/bin/Debug/netcoreapp3.1'
-        self.server_cwd = 'src/csharp/Grpc.IntegrationTesting.Server/bin/Debug/netcoreapp3.1'
-        self.safename = str(self)
-
-    def client_cmd(self, args):
-        return ['dotnet', 'exec', 'Grpc.IntegrationTesting.Client.dll'] + args
-
-    def cloud_to_prod_env(self):
-        return {}
-
-    def server_cmd(self, args):
-        return ['dotnet', 'exec', 'Grpc.IntegrationTesting.Server.dll'] + args
-
-    def global_env(self):
-        return {}
-
-    def unimplemented_test_cases(self):
-        return _SKIP_SERVER_COMPRESSION + \
-            _SKIP_DATA_FRAME_PADDING + \
-            _SKIP_GOOGLE_DEFAULT_CREDS + \
-            _SKIP_COMPUTE_ENGINE_CHANNEL_CREDS
-
-    def unimplemented_test_cases_server(self):
-        return _SKIP_COMPRESSION
-
-    def __str__(self):
-        return 'csharpcoreclr'
-
-
 class AspNetCoreLanguage:
 
     def __init__(self):
@@ -703,8 +639,6 @@ class PythonAsyncIOLanguage:
 
 _LANGUAGES = {
     'c++': CXXLanguage(),
-    'csharp': CSharpLanguage(),
-    'csharpcoreclr': CSharpCoreCLRLanguage(),
     'aspnetcore': AspNetCoreLanguage(),
     'dart': DartLanguage(),
     'go': GoLanguage(),
@@ -721,8 +655,8 @@ _LANGUAGES = {
 
 # languages supported as cloud_to_cloud servers
 _SERVERS = [
-    'c++', 'node', 'csharp', 'csharpcoreclr', 'aspnetcore', 'java', 'go',
-    'ruby', 'python', 'dart', 'pythonasyncio', 'php7'
+    'c++', 'node', 'aspnetcore', 'java', 'go', 'ruby', 'python', 'dart',
+    'pythonasyncio', 'php7'
 ]
 
 _TEST_CASES = [
@@ -859,8 +793,7 @@ def auth_options(language, test_case, google_default_creds_use_key_file,
 
     if test_case in ['jwt_token_creds', 'per_rpc_creds', 'oauth2_auth_token']:
         if language in [
-                'csharp', 'csharpcoreclr', 'aspnetcore', 'node', 'php7',
-                'python', 'ruby', 'nodepurejs'
+                'aspnetcore', 'node', 'php7', 'python', 'ruby', 'nodepurejs'
         ]:
             env['GOOGLE_APPLICATION_CREDENTIALS'] = service_account_key_file
         else:

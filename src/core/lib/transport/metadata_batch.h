@@ -22,24 +22,38 @@
 #include <grpc/support/port_platform.h>
 
 #include <stdbool.h>
+#include <stdlib.h>
+#include <string.h>
 
+#include <algorithm>
 #include <cstdint>
 #include <limits>
+#include <string>
+#include <type_traits>
+#include <utility>
 
-#include "absl/strings/escaping.h"
+#include "absl/container/inlined_vector.h"
+#include "absl/functional/function_ref.h"
+#include "absl/meta/type_traits.h"
 #include "absl/strings/match.h"
-#include "absl/strings/str_join.h"
+#include "absl/strings/numbers.h"
+#include "absl/strings/str_cat.h"
+#include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
 
 #include <grpc/grpc.h>
+#include <grpc/impl/codegen/compression_types.h>
 #include <grpc/slice.h>
 #include <grpc/status.h>
+#include <grpc/support/log.h>
 #include <grpc/support/time.h>
 
 #include "src/core/lib/compression/compression_internal.h"
 #include "src/core/lib/gprpp/chunked_vector.h"
 #include "src/core/lib/gprpp/table.h"
+#include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
+#include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/surface/validate_metadata.h"
 #include "src/core/lib/transport/parsed_metadata.h"
@@ -463,6 +477,7 @@ struct HttpStatusMetadata : public SimpleIntBasedMetadata<uint32_t, 0> {
 // "secret" metadata trait used to pass load balancing token between filters.
 // This should not be exposed outside of gRPC core.
 class GrpcLbClientStats;
+
 struct GrpcLbClientStatsMetadata {
   static constexpr bool kRepeatable = false;
   static absl::string_view key() { return "grpclb_client_stats"; }
@@ -552,6 +567,22 @@ struct GrpcStatusContext {
 };
 
 namespace metadata_detail {
+
+// Build a key/value formatted debug string.
+// Output looks like 'key1: value1, key2: value2'
+// The string is expected to be readable, but not necessarily parsable.
+class DebugStringBuilder {
+ public:
+  // Add one key/value pair to the output.
+  void Add(absl::string_view key, absl::string_view value);
+
+  // Finalize the output and return the string.
+  // Subsequent Add calls are UB.
+  std::string TakeOutput() { return std::move(out_); }
+
+ private:
+  std::string out_;
+};
 
 // IsEncodable: Given a trait, determine if that trait is encodable, or is just
 // a value attached to a MetadataMap.
@@ -1135,12 +1166,11 @@ class MetadataMap {
   }
 
   std::string DebugString() const {
-    std::string out;
-    Log([&out](absl::string_view key, absl::string_view value) {
-      if (!out.empty()) out.append(", ");
-      absl::StrAppend(&out, absl::CEscape(key), ": ", absl::CEscape(value));
+    metadata_detail::DebugStringBuilder builder;
+    Log([&builder](absl::string_view key, absl::string_view value) {
+      builder.Add(key, value);
     });
-    return out;
+    return builder.TakeOutput();
   }
 
   // Get the pointer to the value of some known metadata.
