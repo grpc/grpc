@@ -143,6 +143,16 @@ void BaseCallData::CapturedBatch::ResumeWith(Flusher* releaser) {
   }
 }
 
+void BaseCallData::CapturedBatch::CompleteWith(Flusher* releaser) {
+  auto* batch = absl::exchange(batch_, nullptr);
+  GPR_ASSERT(batch != nullptr);
+  uintptr_t& refcnt = *RefCountField(batch);
+  if (refcnt == 0) return;  // refcnt==0 ==> cancelled
+  if (--refcnt == 0) {
+    releaser->Complete(batch);
+  }
+}
+
 void BaseCallData::CapturedBatch::CancelWith(grpc_error_handle error,
                                              Flusher* releaser) {
   auto* batch = absl::exchange(batch_, nullptr);
@@ -496,7 +506,11 @@ void ClientCallData::StartBatch(grpc_transport_stream_op_batch* b) {
                !batch->recv_initial_metadata && !batch->recv_message &&
                !batch->recv_trailing_metadata);
     Cancel(batch->payload->cancel_stream.cancel_error);
-    batch.ResumeWith(&flusher);
+    if (is_last()) {
+      batch.CompleteWith(&flusher);
+    } else {
+      batch.ResumeWith(&flusher);
+    }
     return;
   }
 
@@ -951,7 +965,11 @@ void ServerCallData::StartBatch(grpc_transport_stream_op_batch* b) {
                !batch->recv_trailing_metadata);
     Cancel(GRPC_ERROR_REF(batch->payload->cancel_stream.cancel_error),
            &flusher);
-    batch.ResumeWith(&flusher);
+    if (is_last()) {
+      batch.CompleteWith(&flusher);
+    } else {
+      batch.ResumeWith(&flusher);
+    }
     return;
   }
 

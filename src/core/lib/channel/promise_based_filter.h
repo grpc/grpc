@@ -112,6 +112,7 @@ enum class FilterEndpoint {
 
 // Flags for MakePromiseBasedFilter.
 static constexpr uint8_t kFilterExaminesServerInitialMetadata = 1;
+static constexpr uint8_t kFilterIsLast = 2;
 
 namespace promise_filter_detail {
 
@@ -169,6 +170,11 @@ class BaseCallData : public Activity, private Wakeable {
                                                                &call_closures_);
     }
 
+    void Complete(grpc_transport_stream_op_batch* batch) {
+      call_closures_.Add(batch->on_complete, GRPC_ERROR_NONE,
+                         "Flusher::Complete");
+    }
+
     void AddClosure(grpc_closure* closure, grpc_error_handle error,
                     const char* reason) {
       call_closures_.Add(closure, error, reason);
@@ -199,6 +205,7 @@ class BaseCallData : public Activity, private Wakeable {
 
     void ResumeWith(Flusher* releaser);
     void CancelWith(grpc_error_handle error, Flusher* releaser);
+    void CompleteWith(Flusher* releaser);
 
     void Swap(CapturedBatch* other) { std::swap(batch_, other->batch_); }
 
@@ -223,6 +230,11 @@ class BaseCallData : public Activity, private Wakeable {
   grpc_call_stack* call_stack() const { return call_stack_; }
   Latch<ServerMetadata*>* server_initial_metadata_latch() const {
     return server_initial_metadata_latch_;
+  }
+
+  bool is_last() const {
+    return grpc_call_stack_element(call_stack_, call_stack_->count - 1) ==
+           elem_;
   }
 
  private:
@@ -499,7 +511,7 @@ MakePromiseBasedFilter(const char* name) {
       sizeof(F),
       // init_channel_elem
       [](grpc_channel_element* elem, grpc_channel_element_args* args) {
-        GPR_ASSERT(!args->is_last);
+        GPR_ASSERT(args->is_last == ((kFlags & kFilterIsLast) != 0));
         auto status = F::Create(ChannelArgs::FromC(args->channel_args),
                                 ChannelFilter::Args(args->channel_stack, elem));
         if (!status.ok()) return absl_status_to_grpc_error(status.status());

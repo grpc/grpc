@@ -42,8 +42,8 @@
 namespace grpc_core {
 
 const grpc_channel_filter LameClientFilter::kFilter =
-    MakePromiseBasedFilter<LameClientFilter, FilterEndpoint::kClient>(
-        "lame-client");
+    MakePromiseBasedFilter<LameClientFilter, FilterEndpoint::kClient,
+                           kFilterIsLast>("lame-client");
 
 absl::StatusOr<LameClientFilter> LameClientFilter::Create(
     ChannelArgs args, ChannelFilter::Args filter_args) {
