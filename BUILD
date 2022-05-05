@@ -1466,6 +1466,7 @@ grpc_cc_library(
     ],
     deps = [
         "gpr_base",
+        "iomgr_fwd",
     ],
 )
 
@@ -1741,6 +1742,13 @@ grpc_cc_library(
     name = "iomgr_port",
     hdrs = [
         "src/core/lib/iomgr/port.h",
+    ],
+)
+
+grpc_cc_library(
+    name = "iomgr_fwd",
+    hdrs = [
+        "src/core/lib/iomgr/iomgr_fwd.h",
     ],
 )
 
@@ -2428,6 +2436,7 @@ grpc_cc_library(
     deps = [
         "gpr_base",
         "grpc_service_config",
+        "iomgr_fwd",
         "orphanable",
         "server_address",
         "uri_parser",
@@ -4629,6 +4638,7 @@ grpc_cc_library(
         "hpack_constants",
         "hpack_encoder_table",
         "httpcli",
+        "iomgr_fwd",
         "memory_quota",
         "orphanable",
         "pid_controller",
@@ -4725,6 +4735,7 @@ grpc_cc_library(
         "grpc_trace",
         "grpc_transport_chttp2",
         "handshaker_registry",
+        "iomgr_fwd",
         "memory_quota",
         "orphanable",
         "ref_counted",
