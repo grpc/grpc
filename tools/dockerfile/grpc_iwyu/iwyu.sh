@@ -56,7 +56,7 @@ xargs -a iwyu_files.txt -I FILES ${IWYU_ROOT}/iwyu/iwyu_tool.py -p compile_comma
   | tee iwyu.out
 
 # apply the suggested changes
-${IWYU_ROOT}/iwyu/fix_includes.py --nocomments < iwyu.out || true
+${IWYU_ROOT}/iwyu/fix_includes.py --nocomments --nosafe_headers < iwyu.out || true
 
 # reformat sources, since iwyu gets this wrong
 xargs -a iwyu_files.txt ${CLANG_FORMAT:-clang-format} -i
