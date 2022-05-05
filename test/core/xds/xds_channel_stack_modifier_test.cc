@@ -20,6 +20,7 @@
 
 #include <gtest/gtest.h>
 
+#include <grpc/grpc.h>
 #include <grpcpp/opencensus.h>
 
 #include "src/core/lib/channel/channel_stack_builder_impl.h"

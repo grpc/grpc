@@ -25,7 +25,6 @@
 
 #include "src/core/ext/filters/client_channel/connector.h"
 #include "src/core/lib/channel/handshaker.h"
-#include "src/core/lib/channel/handshaker_registry.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/iomgr/closure.h"
