@@ -40,7 +40,7 @@
 #include <grpc/slice.h>
 
 #include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/channel/channel_stack.h"
+#include "src/core/lib/channel/channel_stack.h"  // IWYU pragma: keep
 #include "src/core/lib/channel/channel_stack_builder.h"
 #include "src/core/lib/channel/channelz.h"
 #include "src/core/lib/gprpp/cpp_impl_of.h"
