@@ -21,6 +21,8 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <functional>
+
 #include <grpc/impl/codegen/grpc_types.h>
 
 #include "src/core/lib/iomgr/error.h"
