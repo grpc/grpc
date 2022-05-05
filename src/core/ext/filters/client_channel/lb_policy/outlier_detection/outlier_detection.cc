@@ -193,6 +193,7 @@ class OutlierDetectionLb : public LoadBalancingPolicy {
     absl::optional<std::pair<double, uint64_t>> GetSuccessRateAndVolume() {
       uint64_t total_request =
           backup_bucket_->successes + backup_bucket_->failures;
+      gpr_log(GPR_INFO, "donna total %lu", total_request);
       if (total_request == 0) {
         return absl::nullopt;
       }
@@ -355,7 +356,7 @@ class OutlierDetectionLb : public LoadBalancingPolicy {
   absl::Status status_;
   RefCountedPtr<RefCountedPicker> picker_;
   std::map<std::string, RefCountedPtr<SubchannelState>> subchannel_state_map_;
-  OrphanablePtr<EjectionTimer> ejection_timer_;
+  OrphanablePtr<EjectionTimer> ejection_timer_ = nullptr;
 };
 
 //
@@ -654,8 +655,6 @@ OrphanablePtr<LoadBalancingPolicy> OutlierDetectionLb::CreateChildPolicyLocked(
 RefCountedPtr<SubchannelInterface> OutlierDetectionLb::Helper::CreateSubchannel(
     ServerAddress address, const grpc_channel_args& args) {
   if (outlier_detection_policy_->shutting_down_) return nullptr;
-  gpr_log(GPR_INFO, "donna address string to search %s",
-          address.ToString().c_str());
   std::string key = MakeKeyForAddress(address);
   RefCountedPtr<SubchannelState> subchannel_state;
   auto it = outlier_detection_policy_->subchannel_state_map_.find(key);
@@ -747,6 +746,7 @@ void OutlierDetectionLb::EjectionTimer::OnTimerLocked(grpc_error_handle error) {
     double success_rate_sum = 0;
     auto time_now = ExecCtx::Get()->Now();
     auto& config = parent_->config_->outlier_detection_config();
+    gpr_log(GPR_INFO, "donna OnTimerLocked");
     for (auto& state : parent_->subchannel_state_map_) {
       auto* subchannel_state = state.second.get();
       // For each address, swap the call counter's buckets in that address's
@@ -756,7 +756,7 @@ void OutlierDetectionLb::EjectionTimer::OnTimerLocked(grpc_error_handle error) {
       // algorithm.
       absl::optional<std::pair<double, uint64_t>> host_success_rate_and_volume =
           subchannel_state->GetSuccessRateAndVolume();
-      if (host_success_rate_and_volume.has_value()) {
+      if (!host_success_rate_and_volume.has_value()) {
         continue;
       }
       double success_rate = host_success_rate_and_volume->first;
@@ -779,6 +779,7 @@ void OutlierDetectionLb::EjectionTimer::OnTimerLocked(grpc_error_handle error) {
     if (!success_rate_ejection_candidates.empty() &&
         success_rate_ejection_candidates.size() >=
             config.success_rate_ejection->minimum_hosts) {
+      gpr_log(GPR_INFO, "donna success eject");
       // calculate ejection threshold: (mean - stdev *
       // (success_rate_ejection.stdev_factor / 1000))
       double mean = success_rate_sum / success_rate_ejection_candidates.size();
@@ -810,7 +811,11 @@ void OutlierDetectionLb::EjectionTimer::OnTimerLocked(grpc_error_handle error) {
     if (!failure_percentage_ejection_candidates.empty() &&
         failure_percentage_ejection_candidates.size() >=
             config.failure_percentage_ejection->minimum_hosts) {
+      gpr_log(GPR_INFO, "donna failure eject");
       for (auto& candidate : failure_percentage_ejection_candidates) {
+        gpr_log(GPR_INFO, "donna candidate %p, %f", candidate.first,
+                candidate.second);
+        // TODO @donnadionne: change me back to strictly >
         if ((100.0 - candidate.second) >=
             config.failure_percentage_ejection->threshold) {
           uint32_t random_key = absl::Uniform(absl::BitGen(), 1, 100);
@@ -818,7 +823,10 @@ void OutlierDetectionLb::EjectionTimer::OnTimerLocked(grpc_error_handle error) {
               config.failure_percentage_ejection->enforcement_percentage) {
             // Eject and record the timestamp for use when ejecting addresses in
             // this iteration.
+            gpr_log(GPR_INFO, "donna actually ejecting");
             candidate.first->Eject(time_now);
+          } else {
+            gpr_log(GPR_INFO, "donna saved by random key");
           }
         }
       }
@@ -835,8 +843,9 @@ void OutlierDetectionLb::EjectionTimer::OnTimerLocked(grpc_error_handle error) {
                                      config.max_ejection_time.millis());
     }
     timer_pending_ = false;
-    parent_->ejection_timer_ = MakeOrphanable<EjectionTimer>(
-        std::move(parent_), ExecCtx::Get()->Now());
+    // causing a crash:
+    // parent_->ejection_timer_ = MakeOrphanable<EjectionTimer>(
+    //   std::move(parent_), ExecCtx::Get()->Now());
   }
   Unref(DEBUG_LOCATION, "Timer");
   GRPC_ERROR_UNREF(error);
@@ -888,23 +897,19 @@ class OutlierDetectionLbFactory : public LoadBalancingPolicyFactory {
         error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
             "field:successRateEjection error:type must be object"));
       } else {
+        OutlierDetectionConfig::SuccessRateEjection success_config;
         const Json::Object& object = it->second.object_value();
-        ParseJsonObjectField(
-            object, "stdevFactor",
-            &outlier_detection_config.success_rate_ejection->stdev_factor,
-            &error_list);
+        ParseJsonObjectField(object, "stdevFactor",
+                             &success_config.stdev_factor, &error_list);
         ParseJsonObjectField(object, "enforcementPercentage",
-                             &outlier_detection_config.success_rate_ejection
-                                  ->enforcement_percentage,
+                             &success_config.enforcement_percentage,
                              &error_list);
-        ParseJsonObjectField(
-            object, "minimumHosts",
-            &outlier_detection_config.success_rate_ejection->minimum_hosts,
-            &error_list);
-        ParseJsonObjectField(
-            object, "requestVolume",
-            &outlier_detection_config.success_rate_ejection->request_volume,
-            &error_list);
+        ParseJsonObjectField(object, "minimumHosts",
+                             &success_config.minimum_hosts, &error_list);
+        ParseJsonObjectField(object, "requestVolume",
+                             &success_config.request_volume, &error_list);
+        outlier_detection_config.success_rate_ejection =
+            std::move(success_config);
       }
     }
     it = json.object_value().find("failurePercentageEjection");
@@ -913,24 +918,19 @@ class OutlierDetectionLbFactory : public LoadBalancingPolicyFactory {
         error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
             "field:successRateEjection error:type must be object"));
       } else {
+        OutlierDetectionConfig::FailurePercentageEjection failure_config;
         const Json::Object& object = it->second.object_value();
-        ParseJsonObjectField(
-            object, "threshold",
-            &outlier_detection_config.failure_percentage_ejection->threshold,
-            &error_list);
-        ParseJsonObjectField(
-            object, "enforcementPercentage",
-            &outlier_detection_config.failure_percentage_ejection
-                 ->enforcement_percentage,
-            &error_list);
+        ParseJsonObjectField(object, "threshold", &failure_config.threshold,
+                             &error_list);
+        ParseJsonObjectField(object, "enforcementPercentage",
+                             &failure_config.enforcement_percentage,
+                             &error_list);
         ParseJsonObjectField(object, "minimumHosts",
-                             &outlier_detection_config
-                                  .failure_percentage_ejection->minimum_hosts,
-                             &error_list);
+                             &failure_config.minimum_hosts, &error_list);
         ParseJsonObjectField(object, "requestVolume",
-                             &outlier_detection_config
-                                  .failure_percentage_ejection->request_volume,
-                             &error_list);
+                             &failure_config.request_volume, &error_list);
+        outlier_detection_config.failure_percentage_ejection =
+            std::move(failure_config);
       }
     }
     // Child policy.
@@ -951,8 +951,8 @@ class OutlierDetectionLbFactory : public LoadBalancingPolicyFactory {
             GRPC_ERROR_CREATE_FROM_VECTOR("field:childPolicy", &child_errors));
       }
     }
-    return MakeRefCounted<OutlierDetectionLbConfig>(outlier_detection_config,
-                                                    std::move(child_policy));
+    return MakeRefCounted<OutlierDetectionLbConfig>(
+        std::move(outlier_detection_config), std::move(child_policy));
   }
 };
 

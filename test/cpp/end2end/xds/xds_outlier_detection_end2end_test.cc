@@ -32,6 +32,7 @@ namespace grpc {
 namespace testing {
 namespace {
 
+using ::envoy::config::endpoint::v3::HealthStatus;
 using ::envoy::extensions::filters::http::fault::v3::HTTPFault;
 using std::chrono::system_clock;
 
@@ -40,224 +41,59 @@ using OutlierDetectionTest = XdsEnd2endTest;
 INSTANTIATE_TEST_SUITE_P(XdsTest, OutlierDetectionTest,
                          ::testing::Values(XdsTestType()), &XdsTestType::Name);
 
-TEST_P(OutlierDetectionTest, XdsRoutingWeightedCluster) {
-  CreateAndStartBackends(3);
-  const char* kNewCluster1Name = "new_cluster_1";
-  const char* kNewEdsService1Name = "new_eds_service_name_1";
-  const char* kNewCluster2Name = "new_cluster_2";
-  const char* kNewEdsService2Name = "new_eds_service_name_2";
-  const char* kNotUsedClusterName = "not_used_cluster";
-  const size_t kNumEchoRpcs = 10;  // RPCs that will go to a fixed backend.
-  const size_t kWeight75 = 75;
-  const size_t kWeight25 = 25;
+TEST_P(OutlierDetectionTest, HashingAccordingToWeightEjectFailurePercent50) {
+  CreateAndStartBackends(2);
+  const size_t kWeight1 = 1;
+  const size_t kWeight2 = 2;
+  const size_t kWeightTotal = kWeight1 + kWeight2;
+  const double kWeight33Percent = static_cast<double>(kWeight1) / kWeightTotal;
+  const double kWeight66Percent = static_cast<double>(kWeight2) / kWeightTotal;
   const double kErrorTolerance = 0.05;
-  const double kWeight75Percent = static_cast<double>(kWeight75) / 100;
-  const double kWeight25Percent = static_cast<double>(kWeight25) / 100;
-  const size_t kNumEcho1Rpcs =
-      ComputeIdealNumRpcs(kWeight75Percent, kErrorTolerance);
-  // Populate new EDS resources.
-  EdsResourceArgs args({
-      {"locality0", CreateEndpointsForBackends(0, 1)},
-  });
-  EdsResourceArgs args1({
-      {"locality0", CreateEndpointsForBackends(1, 2)},
-  });
-  EdsResourceArgs args2({
-      {"locality0", CreateEndpointsForBackends(2, 3)},
-  });
+  const uint32_t kRpcTimeoutMs = 10000;
+  const size_t kNumRpcs =
+      ComputeIdealNumRpcs(kWeight33Percent, kErrorTolerance);
+  auto cluster = default_cluster_;
+  // Increasing min ring size for random distribution.
+  cluster.mutable_ring_hash_lb_config()->mutable_minimum_ring_size()->set_value(
+      100000);
+  cluster.set_lb_policy(Cluster::RING_HASH);
+  auto* duration = cluster.mutable_outlier_detection()->mutable_interval();
+  duration->set_nanos(100000000);
+  // Any failure will cause an potential ejection with the probability of 50%.
+  cluster.mutable_outlier_detection()
+      ->mutable_failure_percentage_threshold()
+      ->set_value(0);
+  cluster.mutable_outlier_detection()
+      ->mutable_enforcing_failure_percentage()
+      ->set_value(50);
+  cluster.mutable_outlier_detection()
+      ->mutable_failure_percentage_minimum_hosts()
+      ->set_value(1);
+  cluster.mutable_outlier_detection()
+      ->mutable_failure_percentage_request_volume()
+      ->set_value(1);
+  balancer_->ads_service()->SetCdsResource(cluster);
+  EdsResourceArgs args({{"locality0",
+                         {CreateEndpoint(0, HealthStatus::UNKNOWN, 1),
+                          CreateEndpoint(1, HealthStatus::UNKNOWN, 2)}}});
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
-  balancer_->ads_service()->SetEdsResource(
-      BuildEdsResource(args1, kNewEdsService1Name));
-  balancer_->ads_service()->SetEdsResource(
-      BuildEdsResource(args2, kNewEdsService2Name));
-  // Populate new CDS resources.
-  Cluster new_cluster1 = default_cluster_;
-  new_cluster1.set_name(kNewCluster1Name);
-  new_cluster1.mutable_eds_cluster_config()->set_service_name(
-      kNewEdsService1Name);
-  balancer_->ads_service()->SetCdsResource(new_cluster1);
-  Cluster new_cluster2 = default_cluster_;
-  new_cluster2.set_name(kNewCluster2Name);
-  new_cluster2.mutable_eds_cluster_config()->set_service_name(
-      kNewEdsService2Name);
-  balancer_->ads_service()->SetCdsResource(new_cluster2);
-  // Populating Route Configurations for LDS.
-  RouteConfiguration new_route_config = default_route_config_;
-  auto* route1 = new_route_config.mutable_virtual_hosts(0)->mutable_routes(0);
-  route1->mutable_match()->set_prefix("/grpc.testing.EchoTest1Service/");
-  auto* weighted_cluster1 =
-      route1->mutable_route()->mutable_weighted_clusters()->add_clusters();
-  weighted_cluster1->set_name(kNewCluster1Name);
-  weighted_cluster1->mutable_weight()->set_value(kWeight75);
-  auto* weighted_cluster2 =
-      route1->mutable_route()->mutable_weighted_clusters()->add_clusters();
-  weighted_cluster2->set_name(kNewCluster2Name);
-  weighted_cluster2->mutable_weight()->set_value(kWeight25);
-  // Cluster with weight 0 will not be used.
-  auto* weighted_cluster3 =
-      route1->mutable_route()->mutable_weighted_clusters()->add_clusters();
-  weighted_cluster3->set_name(kNotUsedClusterName);
-  weighted_cluster3->mutable_weight()->set_value(0);
-  route1->mutable_route()
-      ->mutable_weighted_clusters()
-      ->mutable_total_weight()
-      ->set_value(kWeight75 + kWeight25);
-  auto* default_route = new_route_config.mutable_virtual_hosts(0)->add_routes();
-  default_route->mutable_match()->set_prefix("");
-  default_route->mutable_route()->set_cluster(kDefaultClusterName);
-  SetRouteConfiguration(balancer_.get(), new_route_config);
-  WaitForAllBackends(DEBUG_LOCATION, 0, 1);
-  WaitForAllBackends(DEBUG_LOCATION, 1, 3, WaitForBackendOptions(),
-                     RpcOptions().set_rpc_service(SERVICE_ECHO1));
-  CheckRpcSendOk(DEBUG_LOCATION, kNumEchoRpcs);
-  CheckRpcSendOk(DEBUG_LOCATION, kNumEcho1Rpcs,
-                 RpcOptions().set_rpc_service(SERVICE_ECHO1));
-  // Make sure RPCs all go to the correct backend.
-  EXPECT_EQ(kNumEchoRpcs, backends_[0]->backend_service()->request_count());
-  EXPECT_EQ(0, backends_[0]->backend_service1()->request_count());
-  EXPECT_EQ(0, backends_[1]->backend_service()->request_count());
-  const int weight_75_request_count =
-      backends_[1]->backend_service1()->request_count();
-  EXPECT_EQ(0, backends_[2]->backend_service()->request_count());
-  const int weight_25_request_count =
-      backends_[2]->backend_service1()->request_count();
-  gpr_log(GPR_INFO, "target_75 received %d rpcs and target_25 received %d rpcs",
-          weight_75_request_count, weight_25_request_count);
-  EXPECT_THAT(static_cast<double>(weight_75_request_count) / kNumEcho1Rpcs,
-              ::testing::DoubleNear(kWeight75Percent, kErrorTolerance));
-  EXPECT_THAT(static_cast<double>(weight_25_request_count) / kNumEcho1Rpcs,
-              ::testing::DoubleNear(kWeight25Percent, kErrorTolerance));
-}
-
-TEST_P(OutlierDetectionTest, XdsRoutingWeightedClusterUpdateWeights) {
-  CreateAndStartBackends(4);
-  const char* kNewCluster1Name = "new_cluster_1";
-  const char* kNewEdsService1Name = "new_eds_service_name_1";
-  const char* kNewCluster2Name = "new_cluster_2";
-  const char* kNewEdsService2Name = "new_eds_service_name_2";
-  const char* kNewCluster3Name = "new_cluster_3";
-  const char* kNewEdsService3Name = "new_eds_service_name_3";
-  const size_t kNumEchoRpcs = 10;
-  const size_t kWeight75 = 75;
-  const size_t kWeight25 = 25;
-  const size_t kWeight50 = 50;
-  const double kErrorTolerance = 0.05;
-  const double kWeight75Percent = static_cast<double>(kWeight75) / 100;
-  const double kWeight25Percent = static_cast<double>(kWeight25) / 100;
-  const double kWeight50Percent = static_cast<double>(kWeight50) / 100;
-  const size_t kNumEcho1Rpcs7525 =
-      ComputeIdealNumRpcs(kWeight75Percent, kErrorTolerance);
-  const size_t kNumEcho1Rpcs5050 =
-      ComputeIdealNumRpcs(kWeight50Percent, kErrorTolerance);
-  // Populate new EDS resources.
-  EdsResourceArgs args({
-      {"locality0", CreateEndpointsForBackends(0, 1)},
-  });
-  EdsResourceArgs args1({
-      {"locality0", CreateEndpointsForBackends(1, 2)},
-  });
-  EdsResourceArgs args2({
-      {"locality0", CreateEndpointsForBackends(2, 3)},
-  });
-  EdsResourceArgs args3({
-      {"locality0", CreateEndpointsForBackends(3, 4)},
-  });
-  balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
-  balancer_->ads_service()->SetEdsResource(
-      BuildEdsResource(args1, kNewEdsService1Name));
-  balancer_->ads_service()->SetEdsResource(
-      BuildEdsResource(args2, kNewEdsService2Name));
-  balancer_->ads_service()->SetEdsResource(
-      BuildEdsResource(args3, kNewEdsService3Name));
-  // Populate new CDS resources.
-  Cluster new_cluster1 = default_cluster_;
-  new_cluster1.set_name(kNewCluster1Name);
-  new_cluster1.mutable_eds_cluster_config()->set_service_name(
-      kNewEdsService1Name);
-  balancer_->ads_service()->SetCdsResource(new_cluster1);
-  Cluster new_cluster2 = default_cluster_;
-  new_cluster2.set_name(kNewCluster2Name);
-  new_cluster2.mutable_eds_cluster_config()->set_service_name(
-      kNewEdsService2Name);
-  balancer_->ads_service()->SetCdsResource(new_cluster2);
-  Cluster new_cluster3 = default_cluster_;
-  new_cluster3.set_name(kNewCluster3Name);
-  new_cluster3.mutable_eds_cluster_config()->set_service_name(
-      kNewEdsService3Name);
-  balancer_->ads_service()->SetCdsResource(new_cluster3);
-  // Populating Route Configurations.
-  RouteConfiguration new_route_config = default_route_config_;
-  auto* route1 = new_route_config.mutable_virtual_hosts(0)->mutable_routes(0);
-  route1->mutable_match()->set_prefix("/grpc.testing.EchoTest1Service/");
-  auto* weighted_cluster1 =
-      route1->mutable_route()->mutable_weighted_clusters()->add_clusters();
-  weighted_cluster1->set_name(kNewCluster1Name);
-  weighted_cluster1->mutable_weight()->set_value(kWeight75);
-  auto* weighted_cluster2 =
-      route1->mutable_route()->mutable_weighted_clusters()->add_clusters();
-  weighted_cluster2->set_name(kNewCluster2Name);
-  weighted_cluster2->mutable_weight()->set_value(kWeight25);
-  route1->mutable_route()
-      ->mutable_weighted_clusters()
-      ->mutable_total_weight()
-      ->set_value(kWeight75 + kWeight25);
-  auto* default_route = new_route_config.mutable_virtual_hosts(0)->add_routes();
-  default_route->mutable_match()->set_prefix("");
-  default_route->mutable_route()->set_cluster(kDefaultClusterName);
-  SetRouteConfiguration(balancer_.get(), new_route_config);
-  WaitForAllBackends(DEBUG_LOCATION, 0, 1);
-  WaitForAllBackends(DEBUG_LOCATION, 1, 3, WaitForBackendOptions(),
-                     RpcOptions().set_rpc_service(SERVICE_ECHO1));
-  CheckRpcSendOk(DEBUG_LOCATION, kNumEchoRpcs);
-  CheckRpcSendOk(DEBUG_LOCATION, kNumEcho1Rpcs7525,
-                 RpcOptions().set_rpc_service(SERVICE_ECHO1));
-  // Make sure RPCs all go to the correct backend.
-  EXPECT_EQ(kNumEchoRpcs, backends_[0]->backend_service()->request_count());
-  EXPECT_EQ(0, backends_[0]->backend_service1()->request_count());
-  EXPECT_EQ(0, backends_[1]->backend_service()->request_count());
-  const int weight_75_request_count =
-      backends_[1]->backend_service1()->request_count();
-  EXPECT_EQ(0, backends_[1]->backend_service2()->request_count());
-  EXPECT_EQ(0, backends_[2]->backend_service()->request_count());
-  const int weight_25_request_count =
-      backends_[2]->backend_service1()->request_count();
-  EXPECT_EQ(0, backends_[3]->backend_service()->request_count());
-  EXPECT_EQ(0, backends_[3]->backend_service1()->request_count());
-  gpr_log(GPR_INFO, "target_75 received %d rpcs and target_25 received %d rpcs",
-          weight_75_request_count, weight_25_request_count);
-  EXPECT_THAT(static_cast<double>(weight_75_request_count) / kNumEcho1Rpcs7525,
-              ::testing::DoubleNear(kWeight75Percent, kErrorTolerance));
-  EXPECT_THAT(static_cast<double>(weight_25_request_count) / kNumEcho1Rpcs7525,
-              ::testing::DoubleNear(kWeight25Percent, kErrorTolerance));
-  // Change Route Configurations: same clusters different weights.
-  weighted_cluster1->mutable_weight()->set_value(kWeight50);
-  weighted_cluster2->mutable_weight()->set_value(kWeight50);
-  // Change default route to a new cluster to help to identify when new
-  // polices are seen by the client.
-  default_route->mutable_route()->set_cluster(kNewCluster3Name);
-  SetRouteConfiguration(balancer_.get(), new_route_config);
-  ResetBackendCounters();
-  WaitForAllBackends(DEBUG_LOCATION, 3, 4);
-  CheckRpcSendOk(DEBUG_LOCATION, kNumEchoRpcs);
-  CheckRpcSendOk(DEBUG_LOCATION, kNumEcho1Rpcs5050,
-                 RpcOptions().set_rpc_service(SERVICE_ECHO1));
-  // Make sure RPCs all go to the correct backend.
-  EXPECT_EQ(0, backends_[0]->backend_service()->request_count());
-  EXPECT_EQ(0, backends_[0]->backend_service1()->request_count());
-  EXPECT_EQ(0, backends_[1]->backend_service()->request_count());
-  const int weight_50_request_count_1 =
-      backends_[1]->backend_service1()->request_count();
-  EXPECT_EQ(0, backends_[2]->backend_service()->request_count());
-  const int weight_50_request_count_2 =
-      backends_[2]->backend_service1()->request_count();
-  EXPECT_EQ(kNumEchoRpcs, backends_[3]->backend_service()->request_count());
-  EXPECT_EQ(0, backends_[3]->backend_service1()->request_count());
-  EXPECT_THAT(
-      static_cast<double>(weight_50_request_count_1) / kNumEcho1Rpcs5050,
-      ::testing::DoubleNear(kWeight50Percent, kErrorTolerance));
-  EXPECT_THAT(
-      static_cast<double>(weight_50_request_count_2) / kNumEcho1Rpcs5050,
-      ::testing::DoubleNear(kWeight50Percent, kErrorTolerance));
+  for (size_t i = 0; i < kNumRpcs; ++i) {
+    SendRpc();
+    gpr_log(GPR_INFO, "donna sent %d backend 0 got %d and backend 1 got %d", i,
+            backends_[0]->backend_service()->request_count(),
+            backends_[1]->backend_service()->request_count());
+  }
+  const int weight_33_request_count =
+      backends_[0]->backend_service()->request_count();
+  const int weight_66_request_count =
+      backends_[1]->backend_service()->request_count();
+  // Assuming outlier detection will eject 1 out of the 2 endpoints, the request
+  // count at the backends should be more like 10-90 split instead of the 33-66
+  // without outlier detection.
+  EXPECT_THAT(static_cast<double>(weight_33_request_count) / kNumRpcs,
+              ::testing::DoubleNear(0.9, kErrorTolerance));
+  EXPECT_THAT(static_cast<double>(weight_66_request_count) / kNumRpcs,
+              ::testing::DoubleNear(0.1, kErrorTolerance));
 }
 
 }  // namespace
