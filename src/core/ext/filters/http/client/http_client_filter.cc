@@ -29,6 +29,7 @@
 #include "absl/strings/str_format.h"
 #include "absl/strings/str_join.h"
 
+#include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 

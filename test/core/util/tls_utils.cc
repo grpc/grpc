@@ -17,6 +17,7 @@
 #include "test/core/util/tls_utils.h"
 
 #include <grpc/support/log.h>
+#include <grpc/support/string_util.h>
 
 #include "src/core/lib/gpr/tmpfile.h"
 #include "src/core/lib/iomgr/load_file.h"

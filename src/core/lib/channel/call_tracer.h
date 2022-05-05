@@ -24,12 +24,10 @@
 #include <stdint.h>
 
 #include "absl/status/status.h"
-#include "absl/strings/string_view.h"
 
 #include <grpc/impl/codegen/gpr_types.h>
 #include <grpc/support/atm.h>
 
-#include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/transport/byte_stream.h"
 #include "src/core/lib/transport/metadata_batch.h"
