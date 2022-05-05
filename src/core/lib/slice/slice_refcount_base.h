@@ -21,9 +21,6 @@
 
 #include <atomic>
 
-#include <grpc/slice.h>
-#include <grpc/support/log.h>
-
 // grpc_slice_refcount : A reference count for grpc_slice.
 struct grpc_slice_refcount {
  public:

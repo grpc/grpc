@@ -34,7 +34,6 @@
 
 #include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/iomgr/error.h"
-#include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/json/json.h"
 
 namespace grpc_core {

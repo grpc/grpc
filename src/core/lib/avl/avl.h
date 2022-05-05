@@ -19,7 +19,6 @@
 
 #include <stdlib.h>
 
-#include <algorithm>
 #include <memory>
 #include <utility>
 

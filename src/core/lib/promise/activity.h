@@ -17,14 +17,11 @@
 
 #include <grpc/support/port_platform.h>
 
-#include <stddef.h>
 #include <stdint.h>
 
 #include <algorithm>
 #include <atomic>
-#include <functional>
 #include <memory>
-#include <type_traits>
 #include <utility>
 
 #include "absl/base/thread_annotations.h"
