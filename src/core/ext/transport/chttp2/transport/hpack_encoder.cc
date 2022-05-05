@@ -20,8 +20,6 @@
 
 #include "src/core/ext/transport/chttp2/transport/hpack_encoder.h"
 
-#include <string.h>
-
 #include <algorithm>
 #include <cstdint>
 #include <memory>

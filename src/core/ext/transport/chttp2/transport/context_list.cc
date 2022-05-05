@@ -22,6 +22,8 @@
 
 #include <stdint.h>
 
+#include "src/core/ext/transport/chttp2/transport/internal.h"
+
 namespace {
 void (*write_timestamps_callback_g)(void*, grpc_core::Timestamps*,
                                     grpc_error_handle error) = nullptr;
