@@ -52,7 +52,6 @@
 #include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/iomgr/endpoint.h"
-#include "src/core/lib/iomgr/ev_posix.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/resolved_address.h"
 #include "src/core/lib/iomgr/tcp_client.h"
@@ -71,6 +70,7 @@
 
 #include <fcntl.h>
 
+#include "src/core/lib/iomgr/ev_posix.h"
 #include "src/core/lib/iomgr/tcp_client_posix.h"
 
 #endif  // GPR_SUPPORT_CHANNELS_FROM_FD
