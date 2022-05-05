@@ -21,6 +21,7 @@
 
 #include <grpc/support/port_platform.h>
 
+#include "absl/base/thread_annotations.h"
 #include "absl/synchronization/mutex.h"
 
 #include <grpc/support/log.h>
