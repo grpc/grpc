@@ -29,6 +29,7 @@
 
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/gprpp/manual_constructor.h"
+#include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/slice/slice.h"
 
 namespace grpc_core {
@@ -158,7 +159,11 @@ void BaseCallData::CapturedBatch::CancelWith(grpc_error_handle error,
   auto* batch = absl::exchange(batch_, nullptr);
   GPR_ASSERT(batch != nullptr);
   uintptr_t& refcnt = *RefCountField(batch);
-  if (refcnt == 0) return;  // refcnt==0 ==> cancelled
+  if (refcnt == 0) {
+    // refcnt==0 ==> cancelled
+    GRPC_ERROR_UNREF(error);
+    return;
+  }
   refcnt = 0;
   releaser->Cancel(batch, error);
 }

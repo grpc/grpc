@@ -502,10 +502,15 @@ MakePromiseBasedFilter(const char* name) {
       },
       // destroy_call_elem
       [](grpc_call_element* elem, const grpc_call_final_info* final_info,
-         grpc_closure*) {
+         grpc_closure* then_schedule_closure) {
         auto* cd = static_cast<CallData*>(elem->call_data);
         cd->Finalize(final_info);
         cd->~CallData();
+        if ((kFlags & kFilterIsLast) != 0) {
+          ExecCtx::Run(DEBUG_LOCATION, then_schedule_closure, GRPC_ERROR_NONE);
+        } else {
+          GPR_ASSERT(then_schedule_closure == nullptr);
+        }
       },
       // sizeof_channel_data
       sizeof(F),
