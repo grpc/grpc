@@ -43,11 +43,9 @@
 #include "src/core/lib/gprpp/chunked_vector.h"
 #include "src/core/lib/gprpp/table.h"
 #include "src/core/lib/gprpp/time.h"
-#include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/transport/parsed_metadata.h"
-#include "src/core/lib/transport/timeout_encoding.h"
 
 namespace grpc_core {
 
@@ -65,9 +63,7 @@ struct GrpcTimeoutMetadata {
   static absl::string_view key() { return "grpc-timeout"; }
   static MementoType ParseMemento(Slice value, MetadataParseErrorFn on_error);
   static ValueType MementoToValue(MementoType timeout);
-  static Slice Encode(ValueType x) {
-    return Timeout::FromDuration(x - ExecCtx::Get()->Now()).Encode();
-  }
+  static Slice Encode(ValueType x);
   static std::string DisplayValue(MementoType x) { return x.ToString(); }
 };
 
