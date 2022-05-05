@@ -29,6 +29,7 @@
 #include <grpc/support/log.h>
 
 #include "src/core/lib/channel/channel_stack.h"
+#include "src/core/lib/channel/promise_based_filter.h"
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/resource_quota/api.h"
 #include "src/core/lib/surface/api_trace.h"
@@ -40,49 +41,38 @@
 
 namespace grpc_core {
 
-namespace {
+const grpc_channel_filter LameClientFilter::kFilter =
+    MakePromiseBasedFilter<LameClientFilter, FilterEndpoint::kClient>(
+        "lame-client");
 
-struct ChannelData {
-  explicit ChannelData(grpc_channel_element_args* args)
-      : state_tracker("lame_channel", GRPC_CHANNEL_SHUTDOWN) {
-    grpc_error_handle* err = grpc_channel_args_find_pointer<grpc_error_handle>(
-        args->channel_args, GRPC_ARG_LAME_FILTER_ERROR);
-    if (err != nullptr) error = GRPC_ERROR_REF(*err);
-  }
-
-  ~ChannelData() { GRPC_ERROR_UNREF(error); }
-
-  grpc_error_handle error = GRPC_ERROR_NONE;
-  Mutex mu;
-  ConnectivityStateTracker state_tracker;
-};
-
-struct CallData {
-  CallCombiner* call_combiner;
-};
-
-void lame_start_transport_stream_op_batch(grpc_call_element* elem,
-                                          grpc_transport_stream_op_batch* op) {
-  CallData* calld = static_cast<CallData*>(elem->call_data);
-  ChannelData* chand = static_cast<ChannelData*>(elem->channel_data);
-  grpc_transport_stream_op_batch_finish_with_failure(
-      op, GRPC_ERROR_REF(chand->error), calld->call_combiner);
+absl::StatusOr<LameClientFilter> LameClientFilter::Create(
+    ChannelArgs args, ChannelFilter::Args filter_args) {
+  return LameClientFilter(grpc_error_to_absl_status(
+      *args.GetPointer<grpc_error_handle>(GRPC_ARG_LAME_FILTER_ERROR)));
 }
 
-void lame_get_channel_info(grpc_channel_element* /*elem*/,
-                           const grpc_channel_info* /*channel_info*/) {}
+LameClientFilter::LameClientFilter(absl::Status error)
+    : error_(std::move(error)), state_(absl::make_unique<State>()) {}
 
-void lame_start_transport_op(grpc_channel_element* elem,
-                             grpc_transport_op* op) {
-  ChannelData* chand = static_cast<ChannelData*>(elem->channel_data);
+LameClientFilter::State::State()
+    : state_tracker("lame_client", GRPC_CHANNEL_SHUTDOWN) {}
+
+ArenaPromise<ServerMetadataHandle> LameClientFilter::MakeCallPromise(
+    CallArgs, NextPromiseFactory) {
+  return Immediate(ServerMetadataHandle(error_));
+}
+
+bool LameClientFilter::GetChannelInfo(const grpc_channel_info*) { return true; }
+
+bool LameClientFilter::StartTransportOp(grpc_transport_op* op) {
   {
-    MutexLock lock(&chand->mu);
+    MutexLock lock(&state_->mu);
     if (op->start_connectivity_watch != nullptr) {
-      chand->state_tracker.AddWatcher(op->start_connectivity_watch_state,
-                                      std::move(op->start_connectivity_watch));
+      state_->state_tracker.AddWatcher(op->start_connectivity_watch_state,
+                                       std::move(op->start_connectivity_watch));
     }
     if (op->stop_connectivity_watch != nullptr) {
-      chand->state_tracker.RemoveWatcher(op->stop_connectivity_watch);
+      state_->state_tracker.RemoveWatcher(op->stop_connectivity_watch);
     }
   }
   if (op->send_ping.on_initiate != nullptr) {
@@ -97,31 +87,10 @@ void lame_start_transport_op(grpc_channel_element* elem,
   if (op->on_consumed != nullptr) {
     ExecCtx::Run(DEBUG_LOCATION, op->on_consumed, GRPC_ERROR_NONE);
   }
+  return true;
 }
 
-grpc_error_handle lame_init_call_elem(grpc_call_element* elem,
-                                      const grpc_call_element_args* args) {
-  CallData* calld = static_cast<CallData*>(elem->call_data);
-  calld->call_combiner = args->call_combiner;
-  return GRPC_ERROR_NONE;
-}
-
-void lame_destroy_call_elem(grpc_call_element* /*elem*/,
-                            const grpc_call_final_info* /*final_info*/,
-                            grpc_closure* then_schedule_closure) {
-  ExecCtx::Run(DEBUG_LOCATION, then_schedule_closure, GRPC_ERROR_NONE);
-}
-
-grpc_error_handle lame_init_channel_elem(grpc_channel_element* elem,
-                                         grpc_channel_element_args* args) {
-  new (elem->channel_data) ChannelData(args);
-  return GRPC_ERROR_NONE;
-}
-
-void lame_destroy_channel_elem(grpc_channel_element* elem) {
-  ChannelData* chand = static_cast<ChannelData*>(elem->channel_data);
-  chand->~ChannelData();
-}
+namespace {
 
 // Channel arg vtable for a grpc_error_handle.
 void* ErrorCopy(void* p) {
@@ -141,6 +110,7 @@ void ErrorDestroy(void* p) {
   }
 }
 int ErrorCompare(void* p, void* q) { return QsortCompare(p, q); }
+
 const grpc_arg_pointer_vtable kLameFilterErrorArgVtable = {
     ErrorCopy, ErrorDestroy, ErrorCompare};
 
@@ -153,24 +123,6 @@ grpc_arg MakeLameClientErrorArg(grpc_error_handle* error) {
 }
 
 }  // namespace grpc_core
-
-const grpc_channel_filter grpc_lame_filter = {
-    grpc_core::lame_start_transport_stream_op_batch,
-    nullptr,
-    grpc_core::lame_start_transport_op,
-    sizeof(grpc_core::CallData),
-    grpc_core::lame_init_call_elem,
-    grpc_call_stack_ignore_set_pollset_or_pollset_set,
-    grpc_core::lame_destroy_call_elem,
-    sizeof(grpc_core::ChannelData),
-    grpc_core::lame_init_channel_elem,
-    grpc_channel_stack_no_post_init,
-    grpc_core::lame_destroy_channel_elem,
-    grpc_core::lame_get_channel_info,
-    "lame-client",
-};
-
-#define CHANNEL_STACK_FROM_CHANNEL(c) ((grpc_channel_stack*)((c) + 1))
 
 grpc_channel* grpc_lame_client_channel_create(const char* target,
                                               grpc_status_code error_code,

@@ -93,6 +93,12 @@ class ChannelFilter {
   // structures going forward.
   virtual bool StartTransportOp(grpc_transport_op*) { return false; }
 
+  // Perform a legacy get info call
+  // Return true if the op was handled, false if it should be passed to the
+  // next filter.
+  // TODO(ctiller): design a new API for this
+  virtual bool GetChannelInfo(const grpc_channel_info*) { return false; }
+
   virtual ~ChannelFilter() = default;
 };
 
@@ -448,8 +454,6 @@ class CallData<ChannelFilter, FilterEndpoint::kServer> : public ServerCallData {
 //   static absl::StatusOr<SomeChannelFilter> Create(
 //       ChannelArgs channel_args, ChannelFilter::Args filter_args);
 // };
-// TODO(ctiller): allow implementing get_channel_info, start_transport_op in
-// some way on ChannelFilter.
 template <typename F, FilterEndpoint kEndpoint, uint8_t kFlags = 0>
 absl::enable_if_t<std::is_base_of<ChannelFilter, F>::value, grpc_channel_filter>
 MakePromiseBasedFilter(const char* name) {
@@ -511,7 +515,11 @@ MakePromiseBasedFilter(const char* name) {
         static_cast<F*>(elem->channel_data)->~F();
       },
       // get_channel_info
-      grpc_channel_next_get_info,
+      [](grpc_channel_element* elem, const grpc_channel_info* info) {
+        if (!static_cast<F*>(elem->channel_data)->GetChannelInfo(info)) {
+          grpc_channel_next_get_info(elem, info);
+        }
+      },
       // name
       name,
   };
