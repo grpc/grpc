@@ -18,8 +18,11 @@
 
 #include <string.h>
 
+#include <algorithm>
+
 #include "absl/strings/escaping.h"
 #include "absl/strings/match.h"
+#include "absl/strings/str_cat.h"
 
 namespace grpc_core {
 namespace metadata_detail {
