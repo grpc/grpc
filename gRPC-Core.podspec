@@ -187,6 +187,7 @@ Pod::Spec.new do |s|
     ss.dependency 'abseil/synchronization/synchronization', abseil_version
     ss.dependency 'abseil/time/time', abseil_version
     ss.dependency 'abseil/types/optional', abseil_version
+    ss.dependency 'abseil/types/span', abseil_version
     ss.dependency 'abseil/types/variant', abseil_version
     ss.dependency 'abseil/utility/utility', abseil_version
     ss.compiler_flags = '-DBORINGSSL_PREFIX=GRPC -Wno-unreachable-code -Wno-shorten-64-to-32'
@@ -1192,6 +1193,7 @@ Pod::Spec.new do |s|
                       'src/core/lib/iomgr/iocp_windows.h',
                       'src/core/lib/iomgr/iomgr.cc',
                       'src/core/lib/iomgr/iomgr.h',
+                      'src/core/lib/iomgr/iomgr_fwd.h',
                       'src/core/lib/iomgr/iomgr_internal.cc',
                       'src/core/lib/iomgr/iomgr_internal.h',
                       'src/core/lib/iomgr/iomgr_posix.cc',
@@ -2161,6 +2163,7 @@ Pod::Spec.new do |s|
                               'src/core/lib/iomgr/internal_errqueue.h',
                               'src/core/lib/iomgr/iocp_windows.h',
                               'src/core/lib/iomgr/iomgr.h',
+                              'src/core/lib/iomgr/iomgr_fwd.h',
                               'src/core/lib/iomgr/iomgr_internal.h',
                               'src/core/lib/iomgr/load_file.h',
                               'src/core/lib/iomgr/lockfree_event.h',
