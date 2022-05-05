@@ -22,9 +22,12 @@
 
 #include <stdint.h>
 
+#include <utility>
+
 #include <grpc/support/log.h>
 
 #include "src/core/lib/gpr/alloc.h"
+#include "src/core/lib/promise/poll.h"
 
 grpc_core::TraceFlag grpc_trace_channel(false, "channel");
 grpc_core::TraceFlag grpc_trace_channel_stack(false, "channel_stack");
@@ -278,3 +281,32 @@ grpc_call_stack* grpc_call_stack_from_top_element(grpc_call_element* elem) {
 
 void grpc_channel_stack_no_post_init(grpc_channel_stack*,
                                      grpc_channel_element*) {}
+
+namespace {
+
+grpc_core::NextPromiseFactory ClientNext(grpc_channel_element* elem) {
+  return [elem](grpc_core::CallArgs args) {
+    return elem->filter->make_call_promise(elem, std::move(args),
+                                           ClientNext(elem + 1));
+  };
+}
+
+grpc_core::NextPromiseFactory ServerNext(grpc_channel_element* elem) {
+  return [elem](grpc_core::CallArgs args) {
+    return elem->filter->make_call_promise(elem, std::move(args),
+                                           ServerNext(elem - 1));
+  };
+}
+
+}  // namespace
+
+grpc_core::ArenaPromise<grpc_core::ServerMetadataHandle>
+grpc_channel_stack::MakeCallPromise(grpc_core::CallArgs call_args) {
+  if (is_client) {
+    return ClientNext(grpc_channel_stack_element(this, 0))(
+        std::move(call_args));
+  } else {
+    return ServerNext(grpc_channel_stack_element(this, this->count - 1))(
+        std::move(call_args));
+  }
+}
