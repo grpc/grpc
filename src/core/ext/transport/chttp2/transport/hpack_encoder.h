@@ -49,7 +49,7 @@ extern grpc_core::TraceFlag grpc_http_trace;
 namespace grpc_core {
 
 class HPackCompressor {
-  class SliceIndex;  // IWYU pragma: keep
+  class SliceIndex;
 
  public:
   HPackCompressor() = default;

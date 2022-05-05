@@ -57,6 +57,7 @@ cat compile_commands.json | jq -r '.[].file' \
 echo '#!/bin/sh
 ${IWYU_ROOT}/iwyu/iwyu_tool.py -p compile_commands_for_iwyu.json $1 -- -Xiwyu --no_fwd_decls \
   | grep -v -E "port_platform.h" \
+  | grep -v -E "^(- )?namespace " \
   > iwyu/iwyu.`echo $1 | sha1sum`.out
 ' > iwyu/run_iwyu_on.sh
 chmod +x iwyu/run_iwyu_on.sh
