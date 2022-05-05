@@ -22,4 +22,4 @@
 
 typedef struct grpc_pollset_set grpc_pollset_set;
 
-#endif
+#endif  // GRPC_CORE_LIB_IOMGR_IOMGR_FWD_H
