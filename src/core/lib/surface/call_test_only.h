@@ -21,7 +21,11 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <stdint.h>
+
 #include <grpc/grpc.h>
+#include <grpc/impl/codegen/compression_types.h>
+#include <grpc/impl/codegen/grpc_types.h>
 
 /** Return the message compression algorithm from \a call.
  *

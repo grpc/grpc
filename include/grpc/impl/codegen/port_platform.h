@@ -550,11 +550,12 @@ typedef unsigned __int64 uint64_t;
 #if GPR_FORBID_UNREACHABLE_CODE
 #define GPR_UNREACHABLE_CODE(STATEMENT)
 #else
-#define GPR_UNREACHABLE_CODE(STATEMENT)             \
-  do {                                              \
-    gpr_log(GPR_ERROR, "Should never reach here."); \
-    abort();                                        \
-    STATEMENT;                                      \
+extern void gpr_unreachable_code(const char* reason, const char* file,
+                                 int line);
+#define GPR_UNREACHABLE_CODE(STATEMENT)                   \
+  do {                                                    \
+    gpr_unreachable_code(#STATEMENT, __FILE__, __LINE__); \
+    STATEMENT;                                            \
   } while (0)
 #endif /* GPR_FORBID_UNREACHABLE_CODE */
 

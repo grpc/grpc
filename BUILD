@@ -2177,10 +2177,12 @@ grpc_cc_library(
     deps = [
         "arena",
         "arena_promise",
+        "atomic_utils",
         "avl",
         "bitset",
         "channel_args",
         "channel_args_preconditioning",
+        "channel_init",
         "channel_stack_builder",
         "channel_stack_type",
         "chunked_vector",
