@@ -211,6 +211,18 @@ class XdsClient::ChannelState::AdsCallState
     }
 
     void MaybeCancelTimer() {
+      // If the timer hasn't been started yet, make sure we don't start
+      // it later.  This can happen if the last watch for an LDS or CDS
+      // resource is cancelled and then restarted, both while an ADS
+      // request for a different resource type is being sent (causing
+      // the unsubscription and then resubscription requests to be
+      // queued), and then we get a response for the LDS or CDS resource.
+      // In that case, we would call MaybeCancelTimer() when we receive the
+      // response and then MaybeStartTimer() when we finally send the new
+      // LDS or CDS request, thus causing the timer to fire when it shouldn't.
+      // For details, see https://github.com/grpc/grpc/issues/29583.
+      // TODO(roth): Find a way to write a test for this case.
+      timer_started_ = true;
       if (timer_pending_) {
         grpc_timer_cancel(&timer_);
         timer_pending_ = false;
