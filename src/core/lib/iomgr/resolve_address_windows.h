@@ -41,6 +41,7 @@ class NativeDNSResolver : public DNSResolver {
   absl::StatusOr<std::vector<grpc_resolved_address>> ResolveNameBlocking(
       absl::string_view name, absl::string_view default_port) override;
 
+  // NativeDNSResolver does not support cancellation.
   bool Cancel(TaskHandle handle) override;
 };
 

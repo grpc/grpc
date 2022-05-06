@@ -56,6 +56,7 @@ class NativeDNSRequest : public DNSResolver::Request {
     Executor::Run(&request_closure_, GRPC_ERROR_NONE, ExecutorType::RESOLVER);
   }
 
+  // NativeDNSRequest does not support cancellation.
   bool Cancel() override { return false; }
 
  private:

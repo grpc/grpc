@@ -59,8 +59,7 @@ class NativeDNSRequest : public DNSResolver::Request {
     Executor::Run(&request_closure_, GRPC_ERROR_NONE, ExecutorType::RESOLVER);
   }
 
-  // This is a no-op for the native resolver. Note
-  // that no I/O polling is required for the resolution to finish.
+  // NativeDNSRequest does not support cancellation.
   bool Cancel() override { return false; }
 
  private:
@@ -161,8 +160,6 @@ done:
   return error_result;
 }
 
-// This is a no-op for the native resolver. Note
-// that no I/O polling is required for the resolution to finish.
 bool NativeDNSResolver::Cancel(TaskHandle /*handle*/) { return false; }
 
 }  // namespace grpc_core

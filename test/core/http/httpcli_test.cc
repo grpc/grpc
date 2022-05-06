@@ -284,7 +284,7 @@ TEST_F(HttpRequestTest, CancelGetDuringDNSResolution) {
       // Poll with a deadline explicitly lower than the request timeout, so
       // that we know that the request timeout isn't just kicking in.
       PollUntil([&request_state]() { return request_state.done; },
-                AbslDeadlineSeconds(10));
+                AbslDeadlineSeconds(60));
       cancel_thread.join();
     }));
   }

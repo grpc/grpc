@@ -127,7 +127,7 @@ class FuzzerDNSResolver : public grpc_core::DNSResolver {
           GRPC_CLOSURE_CREATE(FinishResolve, this, grpc_schedule_on_exec_ctx));
     }
 
-    // cancellation not implemented
+    // FuzzerDNSRequest does not support cancellation.
     bool Cancel() override { return false; }
 
    private:
@@ -173,7 +173,7 @@ class FuzzerDNSResolver : public grpc_core::DNSResolver {
     GPR_ASSERT(0);
   }
 
-  // Cancellation not implemented
+  // FuzzerDNSResolver does not support cancellation.
   bool Cancel(TaskHandle /*handle*/) override { return false; }
 };
 
