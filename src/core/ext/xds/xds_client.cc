@@ -199,8 +199,8 @@ class XdsClient::ChannelState::AdsCallState
     }
 
     void MaybeStartTimer(RefCountedPtr<AdsCallState> ads_calld) {
-      if (timer_started_) return;
-      timer_started_ = true;
+      if (!timer_start_needed_) return;
+      timer_start_needed_ = false;
       ads_calld_ = std::move(ads_calld);
       Ref(DEBUG_LOCATION, "timer").release();
       timer_pending_ = true;
@@ -222,7 +222,7 @@ class XdsClient::ChannelState::AdsCallState
       // LDS or CDS request, thus causing the timer to fire when it shouldn't.
       // For details, see https://github.com/grpc/grpc/issues/29583.
       // TODO(roth): Find a way to write a test for this case.
-      timer_started_ = true;
+      timer_start_needed_ = false;
       if (timer_pending_) {
         grpc_timer_cancel(&timer_);
         timer_pending_ = false;
@@ -270,7 +270,7 @@ class XdsClient::ChannelState::AdsCallState
     const XdsResourceName name_;
 
     RefCountedPtr<AdsCallState> ads_calld_;
-    bool timer_started_ = false;
+    bool timer_start_needed_ = true;
     bool timer_pending_ = false;
     grpc_timer timer_;
     grpc_closure timer_callback_;
