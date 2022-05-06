@@ -484,8 +484,8 @@ class CLanguage(object):
 
         if compiler == 'default' or compiler == 'cmake':
             return ('debian11', [])
-        elif compiler == 'gcc5':
-            return ('gcc_5', [])
+        elif compiler == 'gcc6':
+            return ('gcc_6', [])
         elif compiler == 'gcc10.2':
             return ('debian11', [])
         elif compiler == 'gcc10.2_openssl102':
@@ -496,8 +496,8 @@ class CLanguage(object):
             return ('gcc_11', [])
         elif compiler == 'gcc_musl':
             return ('alpine', [])
-        elif compiler == 'clang4':
-            return ('clang_4', self._clang_cmake_configure_extra_args())
+        elif compiler == 'clang6':
+            return ('clang_6', self._clang_cmake_configure_extra_args())
         elif compiler == 'clang13':
             return ('clang_13', self._clang_cmake_configure_extra_args())
         else:
@@ -1551,12 +1551,12 @@ argp.add_argument(
     '--compiler',
     choices=[
         'default',
-        'gcc5',
+        'gcc6',
         'gcc10.2',
         'gcc10.2_openssl102',
         'gcc11',
         'gcc_musl',
-        'clang4',
+        'clang6',
         'clang13',
         'python2.7',
         'python3.5',
