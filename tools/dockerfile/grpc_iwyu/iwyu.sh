@@ -24,10 +24,18 @@ CPU_COUNT=`nproc`
 
 rm -rf iwyu || true
 git clone https://github.com/include-what-you-use/include-what-you-use.git iwyu
-# latest commit on the clang 11 branch
-cd ${IWYU_ROOT}/iwyu && git checkout fbd921d6640bf1b18fe5a8a895636215367eb6b9
-mkdir -p ${IWYU_ROOT}/iwyu_build && cd ${IWYU_ROOT}/iwyu_build && cmake -G "Unix Makefiles" ${IWYU_ROOT}/iwyu && make
+# latest commit on the clang 13 branch
+cd ${IWYU_ROOT}/iwyu
+git checkout fbd921d6640bf1b18fe5a8a895636215367eb6b9
+mkdir -p ${IWYU_ROOT}/iwyu_build
+cd ${IWYU_ROOT}/iwyu_build
+cmake -G "Unix Makefiles" -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++ -DLLVM_ROOT_DIR=/usr/lib/llvm-13 ${IWYU_ROOT}/iwyu 
+make -j $CPU_COUNT
 cd ${IWYU_ROOT}
+
+# patch python shebang for our environment (we need python3, not python)
+sed -i 's,^#!/usr/bin/env python,#!/usr/bin/env python3,g' ${IWYU_ROOT}/iwyu/iwyu_tool.py
+sed -i 's,^#!/usr/bin/env python,#!/usr/bin/env python3,g' ${IWYU_ROOT}/iwyu/fix_includes.py
 
 cat compile_commands.json | sed "s,\"file\": \",\"file\": \"${IWYU_ROOT}/,g" > compile_commands_for_iwyu.json
 
@@ -52,15 +60,23 @@ cat compile_commands.json | jq -r '.[].file' \
   | grep -E $INCLUSION_REGEX \
   | grep -v -E "/upb-generated/|/upbdefs-generated/" \
   | sort \
-  | tee iwyu_files.txt
+  > iwyu_files.txt
+
+echo '#!/bin/sh
+${IWYU_ROOT}/iwyu/iwyu_tool.py -p compile_commands_for_iwyu.json $1 -- -Xiwyu --no_fwd_decls -Xiwyu --update_comments \
+  | grep -v -E "port_platform.h" \
+  | grep -v -E "^(- )?namespace " \
+  > iwyu/iwyu.`echo $1 | sha1sum`.out
+' > iwyu/run_iwyu_on.sh
+chmod +x iwyu/run_iwyu_on.sh
 
 # run iwyu, filtering out changes to port_platform.h
-xargs -a iwyu_files.txt -I FILES ${IWYU_ROOT}/iwyu/iwyu_tool.py -p compile_commands_for_iwyu.json -j $CPU_COUNT FILES -- -Xiwyu --no_fwd_decls \
-  | grep -v -E "port_platform.h" \
-  | tee iwyu.out
+xargs -n 1 -P $CPU_COUNT -a iwyu_files.txt ${IWYU_ROOT}/iwyu/run_iwyu_on.sh
+
+cat iwyu/iwyu.*.out > iwyu.out
 
 # apply the suggested changes
-${IWYU_ROOT}/iwyu/fix_includes.py --nocomments < iwyu.out || true
+${IWYU_ROOT}/iwyu/fix_includes.py --nocomments --nosafe_headers < iwyu.out || true
 
 # reformat sources, since iwyu gets this wrong
 xargs -a iwyu_files.txt ${CLANG_FORMAT:-clang-format} -i

@@ -21,7 +21,6 @@
 #include <stdint.h>
 
 #include <type_traits>
-#include <utility>
 
 #include "src/core/lib/gpr/useful.h"
 

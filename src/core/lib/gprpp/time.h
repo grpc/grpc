@@ -19,7 +19,6 @@
 
 #include <stdint.h>
 
-#include <cstdint>
 #include <limits>
 #include <ostream>
 #include <string>
