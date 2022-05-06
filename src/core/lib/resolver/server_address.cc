@@ -188,6 +188,10 @@ std::string ServerAddress::ToString() const {
 // ServerAddressWeightAttribute
 //
 
+const char* ServerAddressWeightAttribute::Type() {
+  return "server_address_weight";
+}
+
 std::string ServerAddressWeightAttribute::ToString() const {
   return absl::StrFormat("%d", weight_);
 }

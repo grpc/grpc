@@ -154,7 +154,7 @@ class ServerAddressWeightAttribute
 
   uint32_t weight() const { return weight_; }
 
-  static const char* Type() { return "server_address_weight"; }
+  static const char* Type();
 
   const char* type() const override { return Type(); }
 
