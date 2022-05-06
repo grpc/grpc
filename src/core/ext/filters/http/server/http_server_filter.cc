@@ -22,6 +22,7 @@
 
 #include <string.h>
 
+#include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 
@@ -29,6 +30,7 @@
 #include "src/core/lib/gprpp/manual_constructor.h"
 #include "src/core/lib/profiling/timers.h"
 #include "src/core/lib/promise/call_push_pull.h"
+#include "src/core/lib/promise/promise.h"
 #include "src/core/lib/promise/seq.h"
 #include "src/core/lib/slice/b64.h"
 #include "src/core/lib/slice/percent_encoding.h"

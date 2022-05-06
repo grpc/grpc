@@ -26,7 +26,6 @@
 #include <grpc/support/time.h>
 
 #include "src/core/lib/gprpp/global_config_env.h"
-#include "src/core/lib/gprpp/global_config_generic.h"
 
 /*
  * NOTE: FORKING IS NOT GENERALLY SUPPORTED, THIS IS ONLY INTENDED TO WORK

@@ -19,6 +19,7 @@
 #include "absl/strings/str_join.h"
 
 #include "src/core/lib/channel/promise_based_filter.h"
+#include "src/core/lib/promise/promise.h"
 #include "src/core/lib/security/authorization/evaluate_args.h"
 #include "src/core/lib/transport/transport.h"
 
