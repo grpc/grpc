@@ -238,6 +238,7 @@ class HttpRequest : public InternallyRefCounted<HttpRequest> {
   RefCountedPtr<HandshakeManager> handshake_mgr_ ABSL_GUARDED_BY(mu_);
   bool own_endpoint_ ABSL_GUARDED_BY(mu_) = true;
   bool cancelled_ ABSL_GUARDED_BY(mu_) = false;
+  bool ran_ ABSL_GUARDED_BY(mu_) = false;
   bool connecting_ ABSL_GUARDED_BY(mu_) = false;
   grpc_http_parser parser_ ABSL_GUARDED_BY(mu_);
   std::vector<grpc_resolved_address> addresses_ ABSL_GUARDED_BY(mu_);
@@ -247,7 +248,8 @@ class HttpRequest : public InternallyRefCounted<HttpRequest> {
   grpc_slice_buffer incoming_ ABSL_GUARDED_BY(mu_);
   grpc_slice_buffer outgoing_ ABSL_GUARDED_BY(mu_);
   grpc_error_handle overall_error_ ABSL_GUARDED_BY(mu_) = GRPC_ERROR_NONE;
-  DNSResolver::TaskHandle dns_request_ ABSL_GUARDED_BY(mu_);
+  DNSResolver::TaskHandle dns_request_ ABSL_GUARDED_BY(mu_) =
+      DNSResolver::NULL_HANDLE;
 };
 
 }  // namespace grpc_core

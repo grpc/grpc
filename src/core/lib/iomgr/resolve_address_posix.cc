@@ -50,15 +50,31 @@ class NativeDNSRequest : public DNSResolver::Request {
   NativeDNSRequest(
       absl::string_view name, absl::string_view default_port,
       std::function<void(absl::StatusOr<std::vector<grpc_resolved_address>>)>
-          on_done)
-      : name_(name), default_port_(default_port), on_done_(std::move(on_done)) {
+          on_done,
+      NativeDNSResolver* resolver, intptr_t aba_token)
+      : name_(name),
+        default_port_(default_port),
+        on_done_(std::move(on_done)),
+        resolver_(resolver),
+        aba_token_(aba_token) {
     GRPC_CLOSURE_INIT(&request_closure_, DoRequestThread, this, nullptr);
     Executor::Run(&request_closure_, GRPC_ERROR_NONE, ExecutorType::RESOLVER);
   }
 
-  // This is a no-op for the native resolver. Note
-  // that no I/O polling is required for the resolution to finish.
-  bool Cancel() override { return false; }
+  ~NativeDNSRequest() { resolver_->UnregisterHandle(task_handle()); }
+
+  bool Cancel() override {
+    {
+      MutexLock lock(&mu_);
+      if (ran_) return false;
+    }
+    delete this;
+    return true;
+  }
+
+  DNSResolver::TaskHandle task_handle() {
+    return {reinterpret_cast<intptr_t>(this), aba_token_};
+  }
 
  private:
   // Callback to be passed to grpc Executor to asynch-ify
@@ -68,6 +84,10 @@ class NativeDNSRequest : public DNSResolver::Request {
     auto result =
         GetDNSResolver()->ResolveNameBlocking(r->name_, r->default_port_);
     // running inline is safe since we've already been scheduled on the executor
+    {
+      MutexLock lock(&r->mu_);
+      r->ran_ = true;
+    }
     r->on_done_(std::move(result));
     delete r;
   }
@@ -77,6 +97,12 @@ class NativeDNSRequest : public DNSResolver::Request {
   const std::function<void(absl::StatusOr<std::vector<grpc_resolved_address>>)>
       on_done_;
   grpc_closure request_closure_;
+  Mutex mu_;
+  bool ran_ ABSL_GUARDED_BY(mu_);
+  NativeDNSResolver* resolver_;
+  // Unique token to help distinguish this request from others that may later
+  // be created in the same memory location.
+  intptr_t aba_token_;
 };
 
 }  // namespace
@@ -92,8 +118,11 @@ DNSResolver::TaskHandle NativeDNSResolver::ResolveName(
     std::function<void(absl::StatusOr<std::vector<grpc_resolved_address>>)>
         on_done) {
   // self-deleting class
-  new NativeDNSRequest(name, default_port, std::move(on_done));
-  return NULL_HANDLE;
+  auto* req = new NativeDNSRequest(name, default_port, std::move(on_done), this,
+                                   aba_token_.fetch_add(1));
+  MutexLock lock(&mu_);
+  open_requests_.insert(req->task_handle());
+  return req->task_handle();
 }
 
 absl::StatusOr<std::vector<grpc_resolved_address>>
@@ -177,8 +206,22 @@ done:
   return error_result;
 }
 
-// Cancellation is not supported for the native resolver.
-bool NativeDNSResolver::Cancel(TaskHandle /*handle*/) { return false; }
+bool NativeDNSResolver::Cancel(TaskHandle handle) {
+  {
+    MutexLock lock(&mu_);
+    if (!open_requests_.contains(handle)) {
+      // Unknown request, possibly completed already, or an invalid handle.
+      return true;
+    }
+  }
+  auto* request = reinterpret_cast<NativeDNSRequest*>(handle.keys[0]);
+  return request->Cancel();
+}
+
+void NativeDNSResolver::UnregisterHandle(TaskHandle handle) {
+  MutexLock lock(&mu_);
+  open_requests_.erase(handle);
+}
 
 }  // namespace grpc_core
 

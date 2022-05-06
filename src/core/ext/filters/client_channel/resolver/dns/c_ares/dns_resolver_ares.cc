@@ -356,7 +356,7 @@ class AresDNSResolver : public DNSResolver {
     ~AresRequest() override {
       GRPC_CARES_TRACE_LOG("AresRequest:%p dtor ares_request_:%p", this,
                            ares_request_.get());
-      resolver_->UnregisterRequest(GetTaskHandle());
+      resolver_->UnregisterRequest(task_handle());
     }
 
     bool Cancel() override {
@@ -372,7 +372,7 @@ class AresDNSResolver : public DNSResolver {
       return true;
     }
 
-    TaskHandle GetTaskHandle() {
+    TaskHandle task_handle() {
       return {reinterpret_cast<intptr_t>(this), aba_token_};
     }
 
@@ -381,25 +381,26 @@ class AresDNSResolver : public DNSResolver {
     // called exactly once.
     static void OnDnsLookupDone(void* arg, grpc_error_handle error) {
       AresRequest* request = static_cast<AresRequest*>(arg);
+      GRPC_CARES_TRACE_LOG("AresRequest:%p OnDnsLookupDone", request);
       // This request is deleted and unregistered upon any exit.
       auto req_deleter = absl::MakeCleanup([request] { delete request; });
+      std::vector<grpc_resolved_address> resolved_addresses;
       {
         MutexLock lock(&request->mu_);
         if (request->cancelled_) {
           return;
         }
         request->ran_ = true;
+        if (request->addresses_ != nullptr) {
+          resolved_addresses.reserve(request->addresses_->size());
+          for (const auto& server_address : *request->addresses_) {
+            resolved_addresses.push_back(server_address.address());
+          }
+        }
       }
       if (error != GRPC_ERROR_NONE) {
         request->on_resolve_address_done_(grpc_error_to_absl_status(error));
         return;
-      }
-      std::vector<grpc_resolved_address> resolved_addresses;
-      if (request->addresses_ != nullptr) {
-        resolved_addresses.reserve(request->addresses_->size());
-        for (const auto& server_address : *request->addresses_) {
-          resolved_addresses.push_back(server_address.address());
-        }
       }
       request->on_resolve_address_done_(std::move(resolved_addresses));
     }
@@ -447,7 +448,7 @@ class AresDNSResolver : public DNSResolver {
           on_done) override {
     auto* request = new AresRequest(name, default_port, interested_parties,
                                     std::move(on_done), this);
-    auto handle = request->GetTaskHandle();
+    auto handle = request->task_handle();
     MutexLock lock(&mu_);
     open_requests_.insert(handle);
     return handle;
@@ -464,7 +465,7 @@ class AresDNSResolver : public DNSResolver {
     MutexLock lock(&mu_);
     if (!open_requests_.contains(handle)) {
       // Unknown request, possibly completed already, or an invalid handle.
-      return false;
+      return true;
     }
     auto* request = reinterpret_cast<AresRequest*>(handle.keys[0]);
     GRPC_CARES_TRACE_LOG("AresDNSResolver:%p cancel ares_request:%p", this,
