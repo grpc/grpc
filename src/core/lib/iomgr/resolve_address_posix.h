@@ -43,13 +43,6 @@ class NativeDNSResolver : public DNSResolver {
       absl::string_view name, absl::string_view default_port) override;
 
   bool Cancel(TaskHandle handle) override;
-
-  void UnregisterHandle(TaskHandle handle);
-
- private:
-  Mutex mu_;
-  LookupTaskHandleSet open_requests_ ABSL_GUARDED_BY(mu_);
-  std::atomic<intptr_t> aba_token_{0};
 };
 
 }  // namespace grpc_core

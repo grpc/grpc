@@ -407,7 +407,11 @@ void HttpRequest::OnResolved(
   RefCountedPtr<HttpRequest> unreffer(this);
   MutexLock lock(&mu_);
   ran_ = true;
-  if (cancelled_) return;
+  if (cancelled_) {
+    Finish(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+        "cancelled during DNS resolution"));
+    return;
+  }
   if (!addresses_or.ok()) {
     Finish(absl_status_to_grpc_error(addresses_or.status()));
     return;

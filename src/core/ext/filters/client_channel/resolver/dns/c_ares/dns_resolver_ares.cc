@@ -465,7 +465,7 @@ class AresDNSResolver : public DNSResolver {
     MutexLock lock(&mu_);
     if (!open_requests_.contains(handle)) {
       // Unknown request, possibly completed already, or an invalid handle.
-      return true;
+      return false;
     }
     auto* request = reinterpret_cast<AresRequest*>(handle.keys[0]);
     GRPC_CARES_TRACE_LOG("AresDNSResolver:%p cancel ares_request:%p", this,

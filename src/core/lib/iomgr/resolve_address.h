@@ -89,7 +89,8 @@ class DNSResolver {
 
   // This shares the same semantics with \a EventEngine::Cancel: successfully
   // cancelled lookups will not have their callbacks executed, and this
-  // method returns true.
+  // method returns true. If a TaskHandle is unknown, this method should return
+  // false.
   virtual bool Cancel(TaskHandle handle) = 0;
 };
 
