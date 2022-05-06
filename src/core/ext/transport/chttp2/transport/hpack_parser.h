@@ -33,6 +33,8 @@
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/transport/metadata_batch.h"
 
+// IWYU pragma: no_include <type_traits>
+
 namespace grpc_core {
 
 // Top level interface for parsing a sequence of header, continuation frames.

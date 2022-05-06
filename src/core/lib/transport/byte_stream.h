@@ -25,7 +25,6 @@
 #include <stdint.h>
 
 #include <grpc/slice.h>
-#include <grpc/slice_buffer.h>
 
 #include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/iomgr/closure.h"

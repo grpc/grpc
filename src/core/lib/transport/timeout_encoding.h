@@ -26,7 +26,6 @@
 #include "absl/types/optional.h"
 
 #include "src/core/lib/gprpp/time.h"
-#include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/slice/slice.h"
 
 namespace grpc_core {

@@ -26,7 +26,6 @@
 #include <utility>
 
 #include "src/core/lib/gprpp/debug_location.h"
-#include "src/core/lib/gprpp/memory.h"
 
 namespace grpc_core {
 
