@@ -49,6 +49,7 @@
 #include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/gprpp/manual_constructor.h"
 #include "src/core/lib/gprpp/ref_counted.h"
+#include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/timer.h"
 #include "src/core/lib/profiling/timers.h"
 #include "src/core/lib/resource_quota/arena.h"
@@ -68,6 +69,9 @@ grpc_core::TraceFlag grpc_call_error_trace(false, "call_error");
 grpc_core::TraceFlag grpc_compression_trace(false, "compression");
 
 namespace grpc_core {
+
+///////////////////////////////////////////////////////////////////////////////
+// Call
 
 class Call : public CppImplOf<Call, grpc_call> {
  public:
@@ -146,6 +150,128 @@ class Call : public CppImplOf<Call, grpc_call> {
   // flag indicating that cancellation is inherited
   bool cancellation_is_inherited_ = false;
 };
+
+Call::ParentCall* Call::GetOrCreateParentCall() {
+  ParentCall* p = parent_call_.load(std::memory_order_acquire);
+  if (p == nullptr) {
+    p = arena_->New<ParentCall>();
+    ParentCall* expected = nullptr;
+    if (!parent_call_.compare_exchange_strong(expected, p,
+                                              std::memory_order_release,
+                                              std::memory_order_relaxed)) {
+      p->~ParentCall();
+      p = expected;
+    }
+  }
+  return p;
+}
+
+Call::ParentCall* Call::parent_call() {
+  return parent_call_.load(std::memory_order_acquire);
+}
+
+absl::Status Call::InitParent(Call* parent, uint32_t propagation_mask) {
+  child_ = arena()->New<ChildCall>(parent);
+
+  parent->InternalRef("child");
+  GPR_ASSERT(is_client_);
+  GPR_ASSERT(!parent->is_client_);
+
+  if (propagation_mask & GRPC_PROPAGATE_DEADLINE) {
+    send_deadline_ = std::min(send_deadline_, parent->send_deadline_);
+  }
+  /* for now GRPC_PROPAGATE_TRACING_CONTEXT *MUST* be passed with
+   * GRPC_PROPAGATE_STATS_CONTEXT */
+  /* TODO(ctiller): This should change to use the appropriate census start_op
+   * call. */
+  if (propagation_mask & GRPC_PROPAGATE_CENSUS_TRACING_CONTEXT) {
+    if (0 == (propagation_mask & GRPC_PROPAGATE_CENSUS_STATS_CONTEXT)) {
+      return absl::UnknownError(
+          "Census tracing propagation requested without Census context "
+          "propagation");
+    }
+    ContextSet(GRPC_CONTEXT_TRACING, parent->ContextGet(GRPC_CONTEXT_TRACING),
+               nullptr);
+  } else if (propagation_mask & GRPC_PROPAGATE_CENSUS_STATS_CONTEXT) {
+    return absl::UnknownError(
+        "Census context propagation requested without Census tracing "
+        "propagation");
+  }
+  if (propagation_mask & GRPC_PROPAGATE_CANCELLATION) {
+    cancellation_is_inherited_ = true;
+  }
+  return absl::OkStatus();
+}
+
+void Call::PublishToParent(Call* parent) {
+  ChildCall* cc = child_;
+  ParentCall* pc = parent->GetOrCreateParentCall();
+  MutexLock lock(&pc->child_list_mu);
+  if (pc->first_child == nullptr) {
+    pc->first_child = this;
+    cc->sibling_next = cc->sibling_prev = this;
+  } else {
+    cc->sibling_next = pc->first_child;
+    cc->sibling_prev = pc->first_child->child_->sibling_prev;
+    cc->sibling_next->child_->sibling_prev =
+        cc->sibling_prev->child_->sibling_next = this;
+  }
+  if (parent->Completed()) {
+    CancelWithError(GRPC_ERROR_CANCELLED);
+  }
+}
+
+void Call::MaybeUnpublishFromParent() {
+  ChildCall* cc = child_;
+  if (cc == nullptr) return;
+
+  ParentCall* pc = cc->parent->parent_call();
+  {
+    MutexLock lock(&pc->child_list_mu);
+    if (this == pc->first_child) {
+      pc->first_child = cc->sibling_next;
+      if (this == pc->first_child) {
+        pc->first_child = nullptr;
+      }
+    }
+    cc->sibling_prev->child_->sibling_next = cc->sibling_next;
+    cc->sibling_next->child_->sibling_prev = cc->sibling_prev;
+  }
+  cc->parent->InternalUnref("child");
+}
+
+void Call::CancelWithStatus(grpc_status_code status, const char* description) {
+  // copying 'description' is needed to ensure the grpc_call_cancel_with_status
+  // guarantee that can be short-lived.
+  CancelWithError(grpc_error_set_int(
+      grpc_error_set_str(GRPC_ERROR_CREATE_FROM_COPIED_STRING(description),
+                         GRPC_ERROR_STR_GRPC_MESSAGE, description),
+      GRPC_ERROR_INT_GRPC_STATUS, status));
+}
+
+void Call::PropagateCancellationToChildren() {
+  ParentCall* pc = parent_call();
+  if (pc != nullptr) {
+    Call* child;
+    MutexLock lock(&pc->child_list_mu);
+    child = pc->first_child;
+    if (child != nullptr) {
+      do {
+        Call* next_child_call = child->child_->sibling_next;
+        if (child->cancellation_is_inherited_) {
+          child->InternalRef("propagate_cancel");
+          child->CancelWithError(GRPC_ERROR_CANCELLED);
+          child->InternalUnref("propagate_cancel");
+        }
+        child = next_child_call;
+      } while (child != pc->first_child);
+    }
+  }
+}
+
+///////////////////////////////////////////////////////////////////////////////
+// FilterStackCall
+// To be removed once promise conversion is complete
 
 class FilterStackCall final : public Call {
  public:
@@ -425,76 +551,6 @@ class FilterStackCall final : public Call {
   gpr_atm recv_state_ = 0;
 };
 
-Call::ParentCall* Call::GetOrCreateParentCall() {
-  ParentCall* p = parent_call_.load(std::memory_order_acquire);
-  if (p == nullptr) {
-    p = arena_->New<ParentCall>();
-    ParentCall* expected = nullptr;
-    if (!parent_call_.compare_exchange_strong(expected, p,
-                                              std::memory_order_release,
-                                              std::memory_order_relaxed)) {
-      p->~ParentCall();
-      p = expected;
-    }
-  }
-  return p;
-}
-
-Call::ParentCall* Call::parent_call() {
-  return parent_call_.load(std::memory_order_acquire);
-}
-
-absl::Status Call::InitParent(Call* parent, uint32_t propagation_mask) {
-  child_ = arena()->New<ChildCall>(parent);
-
-  parent->InternalRef("child");
-  GPR_ASSERT(is_client_);
-  GPR_ASSERT(!parent->is_client_);
-
-  if (propagation_mask & GRPC_PROPAGATE_DEADLINE) {
-    send_deadline_ = std::min(send_deadline_, parent->send_deadline_);
-  }
-  /* for now GRPC_PROPAGATE_TRACING_CONTEXT *MUST* be passed with
-   * GRPC_PROPAGATE_STATS_CONTEXT */
-  /* TODO(ctiller): This should change to use the appropriate census start_op
-   * call. */
-  if (propagation_mask & GRPC_PROPAGATE_CENSUS_TRACING_CONTEXT) {
-    if (0 == (propagation_mask & GRPC_PROPAGATE_CENSUS_STATS_CONTEXT)) {
-      return absl::UnknownError(
-          "Census tracing propagation requested without Census context "
-          "propagation");
-    }
-    ContextSet(GRPC_CONTEXT_TRACING, parent->ContextGet(GRPC_CONTEXT_TRACING),
-               nullptr);
-  } else if (propagation_mask & GRPC_PROPAGATE_CENSUS_STATS_CONTEXT) {
-    return absl::UnknownError(
-        "Census context propagation requested without Census tracing "
-        "propagation");
-  }
-  if (propagation_mask & GRPC_PROPAGATE_CANCELLATION) {
-    cancellation_is_inherited_ = true;
-  }
-  return absl::OkStatus();
-}
-
-void Call::PublishToParent(Call* parent) {
-  ChildCall* cc = child_;
-  ParentCall* pc = parent->GetOrCreateParentCall();
-  MutexLock lock(&pc->child_list_mu);
-  if (pc->first_child == nullptr) {
-    pc->first_child = this;
-    cc->sibling_next = cc->sibling_prev = this;
-  } else {
-    cc->sibling_next = pc->first_child;
-    cc->sibling_prev = pc->first_child->child_->sibling_prev;
-    cc->sibling_next->child_->sibling_prev =
-        cc->sibling_prev->child_->sibling_next = this;
-  }
-  if (parent->Completed()) {
-    CancelWithError(GRPC_ERROR_CANCELLED);
-  }
-}
-
 grpc_error_handle FilterStackCall::Create(grpc_call_create_args* args,
                                           grpc_call** out_call) {
   GPR_TIMER_SCOPE("grpc_call_create", 0);
@@ -649,25 +705,6 @@ void FilterStackCall::DestroyCall(void* call, grpc_error_handle /*error*/) {
                                             grpc_schedule_on_exec_ctx));
 }
 
-void Call::MaybeUnpublishFromParent() {
-  ChildCall* cc = child_;
-  if (cc == nullptr) return;
-
-  ParentCall* pc = cc->parent->parent_call();
-  {
-    MutexLock lock(&pc->child_list_mu);
-    if (this == pc->first_child) {
-      pc->first_child = cc->sibling_next;
-      if (this == pc->first_child) {
-        pc->first_child = nullptr;
-      }
-    }
-    cc->sibling_prev->child_->sibling_next = cc->sibling_next;
-    cc->sibling_next->child_->sibling_prev = cc->sibling_prev;
-  }
-  cc->parent->InternalUnref("child");
-}
-
 void FilterStackCall::ExternalUnref() {
   if (GPR_LIKELY(!ext_ref_.Unref())) return;
 
@@ -765,15 +802,6 @@ void FilterStackCall::CancelWithError(grpc_error_handle error) {
   op->cancel_stream = true;
   op->payload->cancel_stream.cancel_error = error;
   ExecuteBatch(op, &state->start_batch);
-}
-
-void Call::CancelWithStatus(grpc_status_code status, const char* description) {
-  // copying 'description' is needed to ensure the grpc_call_cancel_with_status
-  // guarantee that can be short-lived.
-  CancelWithError(grpc_error_set_int(
-      grpc_error_set_str(GRPC_ERROR_CREATE_FROM_COPIED_STRING(description),
-                         GRPC_ERROR_STR_GRPC_MESSAGE, description),
-      GRPC_ERROR_INT_GRPC_STATUS, status));
 }
 
 void FilterStackCall::SetFinalStatus(grpc_error_handle error) {
@@ -1028,26 +1056,6 @@ FilterStackCall::BatchControl* FilterStackCall::ReuseOrAllocateBatchControl(
   bctl->call_ = this;
   bctl->op_.payload = &stream_op_payload_;
   return bctl;
-}
-
-void Call::PropagateCancellationToChildren() {
-  ParentCall* pc = parent_call();
-  if (pc != nullptr) {
-    Call* child;
-    MutexLock lock(&pc->child_list_mu);
-    child = pc->first_child;
-    if (child != nullptr) {
-      do {
-        Call* next_child_call = child->child_->sibling_next;
-        if (child->cancellation_is_inherited_) {
-          child->InternalRef("propagate_cancel");
-          child->CancelWithError(GRPC_ERROR_CANCELLED);
-          child->InternalUnref("propagate_cancel");
-        }
-        child = next_child_call;
-      } while (child != pc->first_child);
-    }
-  }
 }
 
 void FilterStackCall::BatchControl::PostCompletion() {
@@ -1791,7 +1799,84 @@ void FilterStackCall::ContextSet(grpc_context_index elem, void* value,
   context_[elem].destroy = destroy;
 }
 
+///////////////////////////////////////////////////////////////////////////////
+// PromiseBasedCall
+// Will be folded into Call once the promise conversion is done
+
+class PromiseBasedCall : public Call {
+ public:
+  // TODO(ctiller): return absl::StatusOr<SomeSmartPointer<Call>>?
+  static grpc_error_handle Create(grpc_call_create_args* args,
+                                  grpc_call** out_call);
+
+  void ContextSet(grpc_context_index elem, void* value,
+                  void (*destroy)(void* value)) override;
+  void* ContextGet(grpc_context_index elem) const override;
+  bool Completed() override;
+  void CancelWithError(grpc_error_handle error) override;
+  void SetCompletionQueue(grpc_completion_queue* cq) override;
+  char* GetPeer() override;
+  grpc_call_error StartBatch(const grpc_op* ops, size_t nops, void* notify_tag,
+                             bool is_notify_tag_closure) override;
+  bool failed_before_recv_message() const override;
+  bool is_trailers_only() const override;
+  void ExternalRef() override;
+  void ExternalUnref() override;
+  void InternalRef(const char* reason) override;
+  void InternalUnref(const char* reason) override;
+
+  grpc_compression_algorithm test_only_compression_algorithm() override;
+  uint32_t test_only_message_flags() override;
+  uint32_t test_only_encodings_accepted_by_peer() override;
+  grpc_compression_algorithm compression_for_level(
+      grpc_compression_level level) override;
+
+  // This should return nullptr for the promise stack (and alternative means
+  // for that functionality be invented)
+  grpc_call_stack* call_stack() override;
+
+ private:
+  explicit PromiseBasedCall(Arena* arena, const grpc_call_create_args& args)
+      : Call(arena, args.server_transport_data == nullptr, args.send_deadline) {
+  }
+
+  /* Contexts for various subsystems (security, tracing, ...). */
+  grpc_call_context_element context_[GRPC_CONTEXT_COUNT] = {};
+};
+
+grpc_error_handle PromiseBasedCall::Create(grpc_call_create_args* args,
+                                           grpc_call** out_call) {
+  Channel* channel = args->channel.get();
+
+  Arena* arena;
+  PromiseBasedCall* call;
+  std::pair<Arena*, void*> arena_with_call =
+      Arena::CreateWithAlloc(channel->CallSizeEstimate(),
+                             sizeof(PromiseBasedCall), channel->allocator());
+  arena = arena_with_call.first;
+  call = new (arena_with_call.second) PromiseBasedCall(arena, *args);
+
+  *out_call = call->c_ptr();
+  return GRPC_ERROR_NONE;
+}
+
+void PromiseBasedCall::ContextSet(grpc_context_index elem, void* value,
+                                  void (*destroy)(void*)) {
+  if (context_[elem].destroy) {
+    context_[elem].destroy(context_[elem].value);
+  }
+  context_[elem].value = value;
+  context_[elem].destroy = destroy;
+}
+
+void* PromiseBasedCall::ContextGet(grpc_context_index elem) const {
+  return context_[elem].value;
+}
+
 }  // namespace grpc_core
+
+///////////////////////////////////////////////////////////////////////////////
+// C-based API
 
 void* grpc_call_arena_alloc(grpc_call* call, size_t size) {
   grpc_core::ExecCtx exec_ctx;
@@ -1804,7 +1889,11 @@ size_t grpc_call_get_initial_size_estimate() {
 
 grpc_error_handle grpc_call_create(grpc_call_create_args* args,
                                    grpc_call** out_call) {
-  return grpc_core::FilterStackCall::Create(args, out_call);
+  if (args->channel->is_promising()) {
+    return grpc_core::PromiseBasedCall::Create(args, out_call);
+  } else {
+    return grpc_core::FilterStackCall::Create(args, out_call);
+  }
 }
 
 void grpc_call_set_completion_queue(grpc_call* call,

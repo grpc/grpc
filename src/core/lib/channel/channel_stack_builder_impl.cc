@@ -38,6 +38,13 @@
 
 namespace grpc_core {
 
+bool ChannelStackBuilderImpl::IsPromising() const {
+  for (const auto* filter : stack()) {
+    if (filter->make_call_promise == nullptr) return false;
+  }
+  return true;
+}
+
 absl::StatusOr<RefCountedPtr<grpc_channel_stack>>
 ChannelStackBuilderImpl::Build() {
   auto* stack = mutable_stack();

@@ -116,6 +116,7 @@ class Channel : public RefCounted<Channel>,
   absl::string_view target() const { return target_; }
   MemoryAllocator* allocator() { return &allocator_; }
   bool is_client() const { return is_client_; }
+  bool is_promising() const { return is_promising_; }
   RegisteredCall* RegisterCall(const char* method, const char* host);
 
   int TestOnlyRegisteredCalls() {
@@ -129,11 +130,13 @@ class Channel : public RefCounted<Channel>,
   }
 
  private:
-  Channel(bool is_client, std::string target, ChannelArgs channel_args,
+  Channel(bool is_client, bool is_promising, std::string target,
+          ChannelArgs channel_args,
           grpc_compression_options compression_options,
           RefCountedPtr<grpc_channel_stack> channel_stack);
 
   const bool is_client_;
+  const bool is_promising_;
   const grpc_compression_options compression_options_;
   std::atomic<size_t> call_size_estimate_;
   CallRegistrationTable registration_table_;
