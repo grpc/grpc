@@ -21,7 +21,7 @@
 
 #include "src/core/ext/filters/client_channel/resolver/dns/dns_resolver_selection.h"
 
-#include "src/core/lib/gprpp/global_config_env.h"
+#include "src/core/lib/gprpp/global_config.h"
 
 GPR_GLOBAL_CONFIG_DEFINE_STRING(
     grpc_dns_resolver, "",

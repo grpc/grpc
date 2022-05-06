@@ -22,8 +22,6 @@
 #include <stddef.h>
 #include <stdint.h>
 
-#include <functional>
-#include <iterator>
 #include <map>
 #include <memory>
 #include <string>
@@ -48,11 +46,8 @@
 #include "src/core/lib/gprpp/ref_counted.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/iomgr/iomgr_fwd.h"
-#include "src/core/lib/iomgr/polling_entity.h"
-#include "src/core/lib/iomgr/pollset_set.h"
 #include "src/core/lib/iomgr/work_serializer.h"
 #include "src/core/lib/resolver/server_address.h"
-#include "src/core/lib/transport/connectivity_state.h"
 
 namespace grpc_core {
 

@@ -19,8 +19,6 @@
 
 #include <grpc/support/port_platform.h>
 
-#include <memory>
-
 #include "src/core/ext/filters/client_channel/subchannel.h"
 #include "src/core/ext/filters/client_channel/subchannel_interface.h"
 

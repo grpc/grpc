@@ -32,8 +32,6 @@
 #include <grpc/impl/codegen/connectivity_state.h>
 #include <grpc/slice.h>
 
-#include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/channel/channel_trace.h"
 #include "src/core/lib/channel/channelz.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"

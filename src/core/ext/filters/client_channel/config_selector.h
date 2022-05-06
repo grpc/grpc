@@ -21,14 +21,9 @@
 
 #include <string.h>
 
-#include <functional>
-#include <map>
 #include <utility>
 #include <vector>
 
-#include "absl/strings/string_view.h"
-
-#include <grpc/grpc.h>
 #include <grpc/impl/codegen/grpc_types.h>
 #include <grpc/slice.h>
 #include <grpc/support/log.h>
