@@ -192,6 +192,30 @@ grpc_cc_binary(
 )
 
 grpc_cc_test(
+    name = "client_fork_test",
+    size = "small",
+    srcs = ["client_fork_test.cc"],
+    external_deps = [
+        "absl/strings",
+        "gtest",
+    ],
+    tags = [
+        "no_test_ios",
+        "no_windows",
+    ],
+    deps = [
+        "//:gpr",
+        "//:grpc",
+        "//:grpc++",
+        "//src/proto/grpc/testing:echo_messages_proto",
+        "//src/proto/grpc/testing:echo_proto",
+        "//src/proto/grpc/testing/duplicate:echo_duplicate_proto",
+        "//test/core/util:grpc_test_util",
+        "//test/cpp/util:test_util",
+    ],
+)
+
+grpc_cc_test(
     name = "client_callback_end2end_test",
     srcs = ["client_callback_end2end_test.cc"],
     external_deps = [
