@@ -33,7 +33,6 @@ namespace testing {
 namespace {
 
 using ::envoy::config::endpoint::v3::HealthStatus;
-using ::envoy::extensions::filters::http::fault::v3::HTTPFault;
 using std::chrono::system_clock;
 
 using OutlierDetectionTest = XdsEnd2endTest;

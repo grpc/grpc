@@ -216,12 +216,9 @@ class OutlierDetectionLb : public LoadBalancingPolicy {
 
     void AddFailureCount() { current_bucket_->failures.fetch_add(1); }
 
-    bool ejected() { return ejected_; }
-
     absl::optional<Timestamp> ejection_time() const { return ejection_time_; }
 
     void Eject(const Timestamp& time) {
-      ejected_ = true;
       ejection_time_ = time;
       for (auto& subchannel : subchannels_) {
         subchannel->Eject();
@@ -229,7 +226,7 @@ class OutlierDetectionLb : public LoadBalancingPolicy {
     }
 
     void Uneject() {
-      ejected_ = false;
+      ejection_time_.reset();
       for (auto& subchannel : subchannels_) {
         subchannel->Uneject();
       }
@@ -237,7 +234,7 @@ class OutlierDetectionLb : public LoadBalancingPolicy {
 
     void MaybeUneject(uint64_t base_ejection_time_in_millis,
                       uint64_t max_ejection_time_in_millis) {
-      if (!ejected_) {
+      if (!ejection_time_.has_value()) {
         if (multiplier_ > 0) {
           --multiplier_;
         }
@@ -260,7 +257,6 @@ class OutlierDetectionLb : public LoadBalancingPolicy {
     // The bucket used to update call counts.
     // Points to either current_bucket or active_bucket.
     std::atomic<Bucket*> active_bucket_;
-    bool ejected_ = false;
     uint32_t multiplier_ = 0;
     absl::optional<Timestamp> ejection_time_;
     std::set<SubchannelWrapper*> subchannels_;
@@ -330,6 +326,7 @@ class OutlierDetectionLb : public LoadBalancingPolicy {
     grpc_closure on_timer_;
     bool timer_pending_ = true;
     Timestamp start_time_;
+    absl::BitGen bit_gen_;
   };
 
   ~OutlierDetectionLb() override;
@@ -356,7 +353,7 @@ class OutlierDetectionLb : public LoadBalancingPolicy {
   absl::Status status_;
   RefCountedPtr<RefCountedPicker> picker_;
   std::map<std::string, RefCountedPtr<SubchannelState>> subchannel_state_map_;
-  OrphanablePtr<EjectionTimer> ejection_timer_ = nullptr;
+  OrphanablePtr<EjectionTimer> ejection_timer_;
 };
 
 //
@@ -714,7 +711,9 @@ void OutlierDetectionLb::Helper::AddTraceEvent(TraceSeverity severity,
 
 OutlierDetectionLb::EjectionTimer::EjectionTimer(
     RefCountedPtr<OutlierDetectionLb> parent, Timestamp start_time)
-    : parent_(std::move(parent)), start_time_(start_time) {
+    : parent_(std::move(parent)),
+      start_time_(start_time),
+      bit_gen_(absl::BitGen()) {
   GRPC_CLOSURE_INIT(&on_timer_, OnTimer, this, nullptr);
   Ref().release();
   grpc_timer_init(
@@ -797,7 +796,7 @@ void OutlierDetectionLb::EjectionTimer::OnTimerLocked(grpc_error_handle error) {
       double ejection_threshold = mean - stdev * success_rate_stdev_factor;
       for (auto& candidate : success_rate_ejection_candidates) {
         if (candidate.second < ejection_threshold) {
-          uint32_t random_key = absl::Uniform(absl::BitGen(), 1, 100);
+          uint32_t random_key = absl::Uniform(bit_gen_, 1, 100);
           if (random_key <
               config.success_rate_ejection->enforcement_percentage) {
             // Eject and record the timestamp for use when ejecting addresses in
@@ -818,7 +817,7 @@ void OutlierDetectionLb::EjectionTimer::OnTimerLocked(grpc_error_handle error) {
         // TODO @donnadionne: change me back to strictly >
         if ((100.0 - candidate.second) >=
             config.failure_percentage_ejection->threshold) {
-          uint32_t random_key = absl::Uniform(absl::BitGen(), 1, 100);
+          uint32_t random_key = absl::Uniform(bit_gen_, 1, 100);
           if (random_key <
               config.failure_percentage_ejection->enforcement_percentage) {
             // Eject and record the timestamp for use when ejecting addresses in

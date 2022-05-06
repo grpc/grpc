@@ -181,11 +181,11 @@ grpc_proto_library(
 )
 
 grpc_proto_library(
-  name = "outlier_detection_proto",
-  srcs = [
-    "outlier_detection.proto",
-  ],
-  has_services = True,
+    name = "outlier_detection_proto",
+    srcs = [
+        "outlier_detection.proto",
+    ],
+    has_services = True,
     well_known_protos = True,
 )
 
