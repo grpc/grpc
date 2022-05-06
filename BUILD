@@ -3195,9 +3195,12 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
-    name = "grpc_lb_xds_common",
+    name = "grpc_lb_xds_locality_attribute",
+    srcs = [
+        "src/core/ext/filters/client_channel/lb_policy/xds/xds_locality_attribute.cc",
+    ],
     hdrs = [
-        "src/core/ext/filters/client_channel/lb_policy/xds/xds.h",
+        "src/core/ext/filters/client_channel/lb_policy/xds/xds_locality_attribute.h",
     ],
     language = "c++",
     deps = [
@@ -3226,7 +3229,7 @@ grpc_cc_library(
         "grpc_lb_address_filtering",
         "grpc_lb_policy_ring_hash",
         "grpc_lb_xds_channel_args",
-        "grpc_lb_xds_common",
+        "grpc_lb_xds_locality_attribute",
         "grpc_resolver",
         "grpc_resolver_fake",
         "grpc_xds_client",
@@ -3251,7 +3254,7 @@ grpc_cc_library(
         "grpc_base",
         "grpc_client_channel",
         "grpc_lb_xds_channel_args",
-        "grpc_lb_xds_common",
+        "grpc_lb_xds_locality_attribute",
         "grpc_xds_client",
         "orphanable",
         "ref_counted_ptr",
