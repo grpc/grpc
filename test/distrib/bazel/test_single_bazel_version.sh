@@ -59,7 +59,7 @@ bazel build -- //... "${EXCLUDED_TARGETS[@]}" || FAILED_TESTS="${FAILED_TESTS}Bu
 for TEST_DIRECTORY in "${TEST_DIRECTORIES[@]}"; do
   pushd "test/distrib/bazel/$TEST_DIRECTORY/"
 
-  bazel test --test_output=all //:all || FAILED_TESTS="${FAILED_TESTS}${TEST_DIRECTORY} Distribtest"
+  bazel test --cache_test_results=no --test_output=all //:all || FAILED_TESTS="${FAILED_TESTS}${TEST_DIRECTORY} Distribtest"
 
   popd
 done
