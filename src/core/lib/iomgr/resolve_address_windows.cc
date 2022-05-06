@@ -161,6 +161,10 @@ done:
   return error_result;
 }
 
+// This is a no-op for the native resolver. Note
+// that no I/O polling is required for the resolution to finish.
+bool Cancel(TaskHandle /*handle*/) { return false; }
+
 }  // namespace grpc_core
 
 #endif

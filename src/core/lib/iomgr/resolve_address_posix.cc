@@ -175,7 +175,7 @@ done:
   return error_result;
 }
 
-bool NativeDNSResolver::Cancel(TaskHandle handle) { return false; }
+bool NativeDNSResolver::Cancel(TaskHandle /*handle*/) { return false; }
 
 }  // namespace grpc_core
 
