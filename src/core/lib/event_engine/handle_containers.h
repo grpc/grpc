@@ -21,7 +21,6 @@
 
 #include <grpc/event_engine/event_engine.h>
 
-namespace {
 // Used for heterogenous lookup of TaskHandles in abseil containers.
 template <typename TaskHandle>
 struct TaskHandleComparator {
@@ -39,7 +38,6 @@ struct TaskHandleComparator {
     }
   };
 };
-}  // namespace
 
 using TaskHandleSet = absl::flat_hash_set<
     grpc_event_engine::experimental::EventEngine::TaskHandle,
