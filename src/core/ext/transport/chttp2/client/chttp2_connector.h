@@ -31,7 +31,6 @@
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/timer.h"
 #include "src/core/lib/transport/handshaker.h"
-#include "src/core/lib/transport/handshaker_registry.h"
 
 namespace grpc_core {
 
