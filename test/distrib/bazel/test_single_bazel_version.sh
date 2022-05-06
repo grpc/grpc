@@ -48,13 +48,13 @@ TEST_DIRECTORIES=(
 
 FAILED_TESTS=""
 
-# clean the caches and downloaded archives to make sure we build from scratch
-bazel clean --expunge
-
 export OVERRIDE_BAZEL_VERSION="$VERSION"
 # when running under bazel docker image, the workspace is read only.
 export OVERRIDE_BAZEL_WRAPPER_DOWNLOAD_DIR=/tmp
+# clean the caches and downloaded archives to make sure we build from scratch
+tools/bazel clean --expunge
 tools/bazel build -- //... "${EXCLUDED_TARGETS[@]}" || FAILED_TESTS="${FAILED_TESTS}Build "
+# tools/bazel build -- //:grpc "${EXCLUDED_TARGETS[@]}" || FAILED_TESTS="${FAILED_TESTS}Build "
 
 for TEST_DIRECTORY in "${TEST_DIRECTORIES[@]}"; do
   pushd "test/distrib/bazel/$TEST_DIRECTORY/"
