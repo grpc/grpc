@@ -53,8 +53,8 @@ export OVERRIDE_BAZEL_VERSION="$VERSION"
 export OVERRIDE_BAZEL_WRAPPER_DOWNLOAD_DIR=/tmp
 
 # validate the Bazel version
-if [[ -z $(bazel version | grep $VERSION) ]] ; then
-  echo "Incorrect Bazel version!"
+if !(bazel version | grep -q "${VERSION}"); then
+  echo "Incorrect Bazel version! Want=${VERSION} Seen=$(bazel version)"
   exit 1
 fi
 
@@ -68,8 +68,8 @@ for TEST_DIRECTORY in "${TEST_DIRECTORIES[@]}"; do
   pushd "test/distrib/bazel/$TEST_DIRECTORY/"
 
   # validate the Bazel version again, since we have a different WORKSPACE file
-  if [[ -z $(bazel version | grep $VERSION) ]] ; then
-    echo "Incorrect Bazel version!"
+  if !(bazel version | grep -q "${VERSION}"); then
+    echo "Incorrect Bazel version! Want=${VERSION} Seen=$(bazel version)"
     exit 1
   fi
   bazel test --cache_test_results=no --test_output=all //:all || FAILED_TESTS="${FAILED_TESTS}${TEST_DIRECTORY} Distribtest"
