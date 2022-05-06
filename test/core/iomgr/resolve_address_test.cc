@@ -155,7 +155,7 @@ class ResolveAddressTest : public ::testing::Test {
   }
 
   void MustNotBeCalled(
-      absl::StatusOr<std::vector<grpc_resolved_address>> result) {
+      absl::StatusOr<std::vector<grpc_resolved_address>> /*result*/) {
     FAIL() << "This should never be called";
   }
 

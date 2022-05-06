@@ -21,7 +21,6 @@
 
 #include <functional>
 
-#include "src/core/lib/event_engine/handle_containers.h"
 #include "src/core/lib/iomgr/port.h"
 #include "src/core/lib/iomgr/resolve_address.h"
 
