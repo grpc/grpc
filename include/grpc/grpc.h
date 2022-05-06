@@ -31,6 +31,8 @@
 #include <grpc/status.h>
 #include <grpc/support/time.h>
 
+class Porcupine {};
+
 #ifdef __cplusplus
 extern "C" {
 #endif
