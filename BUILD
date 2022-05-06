@@ -1521,6 +1521,8 @@ grpc_cc_library(
         "src/core/lib/transport/http_connect_handshaker.cc",
     ],
     external_deps = [
+        "absl/base:core_headers",
+        "absl/memory",
         "absl/strings",
     ],
     language = "c++",
@@ -1530,11 +1532,16 @@ grpc_cc_library(
     visibility = ["@grpc:alt_grpc_base_legacy"],
     deps = [
         "config",
+        "debug_location",
         "gpr_base",
         "grpc_base",
+        "grpc_codegen",
         "handshaker",
+        "handshaker_factory",
         "handshaker_registry",
+        "iomgr_fwd",
         "httpcli",
+        "ref_counted_ptr",
         "uri_parser",
     ],
 )
@@ -1544,16 +1551,30 @@ grpc_cc_library(
     srcs = [
         "src/core/lib/transport/tcp_connect_handshaker.cc",
     ],
+    external_deps = [
+        "absl/base:core_headers",
+        "absl/memory",
+        "absl/status:statusor",
+    ],
     language = "c++",
     public_hdrs = [
         "src/core/lib/transport/tcp_connect_handshaker.h",
     ],
     deps = [
         "config",
+        "debug_location",
         "gpr_platform",
+        "gpr_base",
         "grpc_base",
+        "grpc_codegen",
         "handshaker",
         "handshaker_registry",
+        "handshaker_factory",
+        "iomgr_fwd",
+        "ref_counted_ptr",
+        "resolved_address",
+        "uri_parser",
+        "useful",
     ],
 )
 
@@ -4758,6 +4779,7 @@ grpc_cc_library(
         "src/core/ext/transport/chttp2/client/chttp2_connector.h",
     ],
     external_deps = [
+        "absl/container:inlined_vector",
         "absl/status",
         "absl/status:statusor",
     ],
