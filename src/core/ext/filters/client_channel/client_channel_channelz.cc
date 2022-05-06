@@ -24,6 +24,8 @@
 
 #include "src/core/lib/transport/connectivity_state.h"
 
+// IWYU pragma: no_include <type_traits>
+
 namespace grpc_core {
 namespace channelz {
 
