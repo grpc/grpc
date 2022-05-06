@@ -25,7 +25,6 @@
 #include <memory>
 
 #include "absl/container/inlined_vector.h"
-#include "absl/strings/str_format.h"
 
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/gpr/useful.h"
@@ -134,9 +133,7 @@ class ServerAddressWeightAttribute : public ServerAddress::AttributeInterface {
     return QsortCompare(weight_, other_locality_attr->weight_);
   }
 
-  std::string ToString() const override {
-    return absl::StrFormat("%d", weight_);
-  }
+  std::string ToString() const override;
 
  private:
   uint32_t weight_;

@@ -75,7 +75,7 @@ bool add_client_authority_filter(ChannelStackBuilder* builder) {
           .value_or(false)) {
     return true;
   }
-  builder->PrependFilter(&ClientAuthorityFilter::kFilter, nullptr);
+  builder->PrependFilter(&ClientAuthorityFilter::kFilter);
   return true;
 }
 }  // namespace

@@ -21,6 +21,8 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <stddef.h>
+
 #include <grpc/slice.h>
 
 /* Encodes data using base64. It is the caller's responsibility to free

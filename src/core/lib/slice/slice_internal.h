@@ -21,7 +21,11 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <stdint.h>
 #include <string.h>
+
+#include <cstddef>
+#include <string>
 
 #include "absl/strings/string_view.h"
 

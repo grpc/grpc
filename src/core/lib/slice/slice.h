@@ -17,11 +17,16 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <string.h>
+
 #include <cstdint>
+#include <string>
+#include <utility>
 
 #include "absl/strings/string_view.h"
 
 #include <grpc/slice.h>
+#include <grpc/support/log.h>
 
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/slice/slice_internal.h"

@@ -52,6 +52,9 @@ grpc_proto_library(
 grpc_proto_library(
     name = "echo_messages_proto",
     srcs = ["echo_messages.proto"],
+    deps = [
+        "//src/proto/grpc/testing/xds/v3:orca_load_report_proto",
+    ],
 )
 
 grpc_proto_library(

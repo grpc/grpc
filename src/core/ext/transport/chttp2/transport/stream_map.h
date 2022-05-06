@@ -22,6 +22,7 @@
 #include <grpc/support/port_platform.h>
 
 #include <stddef.h>
+#include <stdint.h>
 
 /* Data structure to map a uint32_t to a data object (represented by a void*)
 

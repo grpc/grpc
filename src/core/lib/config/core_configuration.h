@@ -18,6 +18,7 @@
 #include <grpc/support/port_platform.h>
 
 #include <atomic>
+#include <functional>
 
 #include "src/core/lib/channel/channel_args_preconditioning.h"
 #include "src/core/lib/resolver/resolver_registry.h"

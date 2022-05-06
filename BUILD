@@ -1494,6 +1494,7 @@ grpc_cc_library(
     ],
     deps = [
         "gpr_base",
+        "iomgr_fwd",
     ],
 )
 
@@ -1592,12 +1593,18 @@ grpc_cc_library(
     hdrs = [
         "src/core/lib/resource_quota/memory_quota.h",
     ],
+    external_deps = [
+        "absl/status",
+        "absl/strings",
+        "absl/utility",
+    ],
     deps = [
         "activity",
         "dual_ref_counted",
         "event_engine_memory_allocator",
         "exec_ctx_wakeup_scheduler",
         "gpr_base",
+        "grpc_trace",
         "loop",
         "map",
         "orphanable",
@@ -1808,6 +1815,13 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "iomgr_fwd",
+    hdrs = [
+        "src/core/lib/iomgr/iomgr_fwd.h",
+    ],
+)
+
+grpc_cc_library(
     name = "grpc_sockaddr",
     srcs = [
         "src/core/lib/event_engine/sockaddr.cc",
@@ -1911,6 +1925,7 @@ grpc_cc_library(
         "src/core/lib/uri/uri_parser.h",
     ],
     external_deps = [
+        "absl/status",
         "absl/status:statusor",
         "absl/strings",
         "absl/strings:str_format",
@@ -1932,6 +1947,20 @@ grpc_cc_library(
     deps = [
         "channel_args",
         "gpr_base",
+    ],
+)
+
+grpc_cc_library(
+    name = "pid_controller",
+    srcs = [
+        "src/core/lib/transport/pid_controller.cc",
+    ],
+    hdrs = [
+        "src/core/lib/transport/pid_controller.h",
+    ],
+    deps = [
+        "gpr_platform",
+        "useful",
     ],
 )
 
@@ -2053,10 +2082,10 @@ grpc_cc_library(
         "src/core/lib/transport/connectivity_state.cc",
         "src/core/lib/transport/error_utils.cc",
         "src/core/lib/transport/parsed_metadata.cc",
-        "src/core/lib/transport/pid_controller.cc",
         "src/core/lib/transport/status_conversion.cc",
         "src/core/lib/transport/timeout_encoding.cc",
         "src/core/lib/transport/transport.cc",
+        "src/core/lib/transport/metadata_batch.cc",
         "src/core/lib/transport/transport_op_string.cc",
     ] +
     # TODO(hork): delete the iomgr glue code when EventEngine is fully
@@ -2169,7 +2198,6 @@ grpc_cc_library(
         "src/core/lib/transport/connectivity_state.h",
         "src/core/lib/transport/metadata_batch.h",
         "src/core/lib/transport/parsed_metadata.h",
-        "src/core/lib/transport/pid_controller.h",
         "src/core/lib/transport/status_conversion.h",
         "src/core/lib/transport/timeout_encoding.h",
         "src/core/lib/transport/transport.h",
@@ -2204,6 +2232,7 @@ grpc_cc_library(
         "src/core/lib/iomgr/event_engine/resolver.h",
     ],
     external_deps = [
+        "absl/base:core_headers",
         "absl/container:flat_hash_map",
         "absl/container:inlined_vector",
         "absl/functional:bind_front",
@@ -2213,6 +2242,8 @@ grpc_cc_library(
         "absl/strings:str_format",
         "absl/strings",
         "absl/types:optional",
+        "absl/types:variant",
+        "absl/utility",
         "madler_zlib",
     ],
     language = "c++",
@@ -2224,11 +2255,13 @@ grpc_cc_library(
         "avl",
         "bitset",
         "channel_args",
+        "channel_args_preconditioning",
         "channel_stack_builder",
         "channel_stack_type",
         "chunked_vector",
         "closure",
         "config",
+        "debug_location",
         "default_event_engine_factory",
         "dual_ref_counted",
         "error",
@@ -2247,6 +2280,7 @@ grpc_cc_library(
         "latch",
         "memory_quota",
         "orphanable",
+        "poll",
         "promise",
         "ref_counted",
         "ref_counted_ptr",
@@ -2257,6 +2291,7 @@ grpc_cc_library(
         "slice_refcount",
         "sockaddr_utils",
         "table",
+        "thread_quota",
         "time",
         "uri_parser",
         "useful",
@@ -2470,6 +2505,7 @@ grpc_cc_library(
     deps = [
         "gpr_base",
         "grpc_service_config",
+        "iomgr_fwd",
         "orphanable",
         "server_address",
         "uri_parser",
@@ -2912,6 +2948,7 @@ grpc_cc_library(
         "absl/hash",
         "absl/memory",
         "absl/strings",
+        "absl/strings:str_format",
         "upb_lib",
     ],
     language = "c++",
@@ -4649,23 +4686,41 @@ grpc_cc_library(
         "absl/memory",
         "absl/status",
         "absl/strings",
+        "absl/strings:cord",
         "absl/strings:str_format",
+        "absl/types:optional",
+        "absl/types:span",
+        "absl/types:variant",
+        "absl/utility",
     ],
     language = "c++",
     visibility = ["@grpc:grpclb"],
     deps = [
+        "arena",
+        "bitset",
+        "chunked_vector",
+        "debug_location",
         "gpr_base",
         "grpc_base",
+        "grpc_codegen",
         "grpc_http_filters",
+        "grpc_resolver",
         "grpc_trace",
         "grpc_transport_chttp2_alpn",
         "hpack_constants",
         "hpack_encoder_table",
         "httpcli",
+        "iomgr_fwd",
         "memory_quota",
+        "orphanable",
+        "pid_controller",
+        "ref_counted",
+        "ref_counted_ptr",
+        "resource_quota",
         "resource_quota_trace",
         "slice",
         "slice_refcount",
+        "time",
         "uri_parser",
         "useful",
     ],
@@ -4694,17 +4749,32 @@ grpc_cc_library(
     hdrs = [
         "src/core/ext/transport/chttp2/client/chttp2_connector.h",
     ],
+    external_deps = [
+        "absl/status",
+        "absl/status:statusor",
+    ],
     language = "c++",
     deps = [
+        "channel_args_preconditioning",
+        "channel_stack_type",
         "config",
+        "debug_location",
         "gpr_base",
         "grpc_base",
         "grpc_client_channel",
+        "grpc_codegen",
         "grpc_insecure_credentials",
         "grpc_resolver",
         "grpc_security_base",
+        "grpc_trace",
         "grpc_transport_chttp2",
+<<<<<<< HEAD
         "handshaker",
+=======
+        "handshaker_registry",
+        "orphanable",
+        "resolved_address",
+>>>>>>> origin
         "slice",
         "sockaddr_utils",
         "tcp_connect_handshaker",
@@ -4721,26 +4791,40 @@ grpc_cc_library(
         "src/core/ext/transport/chttp2/server/chttp2_server.h",
     ],
     external_deps = [
+        "absl/base:core_headers",
+        "absl/memory",
+        "absl/status",
+        "absl/status:statusor",
         "absl/strings",
         "absl/strings:str_format",
     ],
     language = "c++",
     deps = [
         "config",
+        "debug_location",
         "gpr_base",
         "grpc_base",
         "grpc_codegen",
         "grpc_http_filters",
         "grpc_insecure_credentials",
+        "grpc_resolver",
         "grpc_security_base",
+        "grpc_trace",
         "grpc_transport_chttp2",
         "handshaker",
+        "handshaker_registry",
+        "iomgr_fwd",
         "memory_quota",
+        "orphanable",
         "ref_counted",
         "ref_counted_ptr",
+        "resolved_address",
+        "resource_quota",
         "slice",
         "sockaddr_utils",
+        "time",
         "uri_parser",
+        "useful",
     ],
 )
 
@@ -5244,6 +5328,7 @@ grpc_cc_library(
         "src/core/lib/json/json.h",
     ],
     external_deps = [
+        "absl/base:core_headers",
         "absl/strings",
         "absl/strings:str_format",
     ],

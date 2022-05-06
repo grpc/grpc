@@ -173,11 +173,14 @@ class RingHash : public LoadBalancingPolicy {
   class RingHashSubchannelList
       : public SubchannelList<RingHashSubchannelList, RingHashSubchannelData> {
    public:
-    RingHashSubchannelList(RingHash* policy, TraceFlag* tracer,
-                           ServerAddressList addresses,
+    RingHashSubchannelList(RingHash* policy, ServerAddressList addresses,
                            const grpc_channel_args& args)
-        : SubchannelList(policy, tracer, std::move(addresses),
-                         policy->channel_control_helper(), args) {
+        : SubchannelList(policy,
+                         (GRPC_TRACE_FLAG_ENABLED(grpc_lb_ring_hash_trace)
+                              ? "RingHashSubchannelList"
+                              : nullptr),
+                         std::move(addresses), policy->channel_control_helper(),
+                         args) {
       // Need to maintain a ref to the LB policy as long as we maintain
       // any references to subchannels, since the subchannels'
       // pollset_sets will include the LB policy's pollset_set.
@@ -776,7 +779,7 @@ void RingHash::UpdateLocked(UpdateArgs args) {
     if (subchannel_list_ != nullptr) return;
   }
   subchannel_list_ = MakeOrphanable<RingHashSubchannelList>(
-      this, &grpc_lb_ring_hash_trace, std::move(addresses), *args.args);
+      this, std::move(addresses), *args.args);
   if (subchannel_list_->num_subchannels() == 0) {
     // If the new list is empty, immediately transition to TRANSIENT_FAILURE.
     absl::Status status =
