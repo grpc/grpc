@@ -197,7 +197,9 @@ Pod::Spec.new do |s|
     abseil_version = '1.20211102.0'
     ss.dependency 'abseil/base/base', abseil_version
     ss.dependency 'abseil/base/core_headers', abseil_version
+    ss.dependency 'abseil/cleanup/cleanup', abseil_version
     ss.dependency 'abseil/container/flat_hash_map', abseil_version
+    ss.dependency 'abseil/container/flat_hash_set', abseil_version
     ss.dependency 'abseil/container/inlined_vector', abseil_version
     ss.dependency 'abseil/functional/bind_front', abseil_version
     ss.dependency 'abseil/hash/hash', abseil_version
@@ -667,6 +669,7 @@ Pod::Spec.new do |s|
                       'src/core/lib/debug/trace.h',
                       'src/core/lib/event_engine/channel_args_endpoint_config.h',
                       'src/core/lib/event_engine/event_engine_factory.h',
+                      'src/core/lib/event_engine/handle_containers.h',
                       'src/core/lib/event_engine/sockaddr.h',
                       'src/core/lib/gpr/alloc.h',
                       'src/core/lib/gpr/env.h',
@@ -1481,6 +1484,7 @@ Pod::Spec.new do |s|
                               'src/core/lib/debug/trace.h',
                               'src/core/lib/event_engine/channel_args_endpoint_config.h',
                               'src/core/lib/event_engine/event_engine_factory.h',
+                              'src/core/lib/event_engine/handle_containers.h',
                               'src/core/lib/event_engine/sockaddr.h',
                               'src/core/lib/gpr/alloc.h',
                               'src/core/lib/gpr/env.h',

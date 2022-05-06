@@ -40,7 +40,8 @@ class EventEngineDNSResolver : public grpc_core::DNSResolver {
   // Gets the singleton instance, creating it first if it doesn't exist
   static EventEngineDNSResolver* GetOrCreate();
 
-  EventEngineDNSResolver(std::unique_ptr<EventEngine::DNSResolver> ee_resolver)
+  explicit EventEngineDNSResolver(
+      std::unique_ptr<EventEngine::DNSResolver> ee_resolver)
       : ee_resolver_(std::move(ee_resolver)) {}
 
   TaskHandle ResolveName(
