@@ -1478,6 +1478,7 @@ grpc_cc_library(
     deps = [
         "channel_args",
         "closure",
+        "debug_location",
         "gpr_base",
         "grpc_base",
         "grpc_codegen",
@@ -4768,13 +4769,10 @@ grpc_cc_library(
         "grpc_security_base",
         "grpc_trace",
         "grpc_transport_chttp2",
-<<<<<<< HEAD
         "handshaker",
-=======
         "handshaker_registry",
         "orphanable",
         "resolved_address",
->>>>>>> origin
         "slice",
         "sockaddr_utils",
         "tcp_connect_handshaker",
