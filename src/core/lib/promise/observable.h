@@ -24,7 +24,6 @@
 #include <type_traits>
 
 #include "absl/base/thread_annotations.h"
-#include "absl/synchronization/mutex.h"
 #include "absl/types/optional.h"
 #include "absl/types/variant.h"
 

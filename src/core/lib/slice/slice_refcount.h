@@ -18,12 +18,9 @@
 #include <grpc/support/port_platform.h>
 
 #include <stdint.h>
-#include <string.h>
 
 #include <grpc/slice.h>
-#include <grpc/support/alloc.h>
 
-#include "src/core/lib/gpr/murmur_hash.h"
 #include "src/core/lib/slice/slice_refcount_base.h"
 
 namespace grpc_core {
