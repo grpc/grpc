@@ -31,6 +31,8 @@
 #include <grpc/slice_buffer.h>
 #include <grpc/support/log.h>
 
+// IWYU pragma: no_include "src/core/lib/gprpp/orphanable.h"
+
 #include "src/core/ext/transport/chttp2/transport/chttp2_transport.h"
 #include "src/core/ext/transport/chttp2/transport/context_list.h"
 #include "src/core/ext/transport/chttp2/transport/flow_control.h"

@@ -25,9 +25,17 @@ CPU_COUNT=`nproc`
 rm -rf iwyu || true
 git clone https://github.com/include-what-you-use/include-what-you-use.git iwyu
 # latest commit on the clang 13 branch
-cd ${IWYU_ROOT}/iwyu && git checkout fbd921d6640bf1b18fe5a8a895636215367eb6b9
-mkdir -p ${IWYU_ROOT}/iwyu_build && cd ${IWYU_ROOT}/iwyu_build && cmake -G "Unix Makefiles" ${IWYU_ROOT}/iwyu && make
+cd ${IWYU_ROOT}/iwyu
+git checkout fbd921d6640bf1b18fe5a8a895636215367eb6b9
+mkdir -p ${IWYU_ROOT}/iwyu_build
+cd ${IWYU_ROOT}/iwyu_build
+cmake -G "Unix Makefiles" -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++ -DLLVM_ROOT_DIR=/usr/lib/llvm-13 ${IWYU_ROOT}/iwyu 
+make -j $CPU_COUNT
 cd ${IWYU_ROOT}
+
+# patch python shebang for our environment (we need python3, not python)
+sed -i 's,^#!/usr/bin/env python,#!/usr/bin/env python3,g' ${IWYU_ROOT}/iwyu/iwyu_tool.py
+sed -i 's,^#!/usr/bin/env python,#!/usr/bin/env python3,g' ${IWYU_ROOT}/iwyu/fix_includes.py
 
 cat compile_commands.json | sed "s,\"file\": \",\"file\": \"${IWYU_ROOT}/,g" > compile_commands_for_iwyu.json
 
@@ -55,7 +63,7 @@ cat compile_commands.json | jq -r '.[].file' \
   > iwyu_files.txt
 
 echo '#!/bin/sh
-${IWYU_ROOT}/iwyu/iwyu_tool.py -p compile_commands_for_iwyu.json $1 -- -Xiwyu --no_fwd_decls \
+${IWYU_ROOT}/iwyu/iwyu_tool.py -p compile_commands_for_iwyu.json $1 -- -Xiwyu --no_fwd_decls -Xiwyu --update_comments \
   | grep -v -E "port_platform.h" \
   | grep -v -E "^(- )?namespace " \
   > iwyu/iwyu.`echo $1 | sha1sum`.out
