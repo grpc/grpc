@@ -52,27 +52,30 @@ export OVERRIDE_BAZEL_VERSION="$VERSION"
 # when running under bazel docker image, the workspace is read only.
 export OVERRIDE_BAZEL_WRAPPER_DOWNLOAD_DIR=/tmp
 
+# pick the Bazel wrapper
+BAZEL="$(pwd)/tools/bazel"
+
 # validate the Bazel version
-if !(bazel version | grep -q "${VERSION}"); then
-  echo "Incorrect Bazel version! Want=${VERSION} Seen=$(bazel version)"
+if !($BAZEL version | grep -q "${VERSION}"); then
+  echo "Incorrect Bazel version! Want=${VERSION} Seen=$($BAZEL version)"
   exit 1
 fi
 
 # clean the caches and downloaded archives to make sure we build from scratch
-bazel clean --expunge
+$BAZEL clean --expunge
 
 # test building all targets
-bazel build -- //... "${EXCLUDED_TARGETS[@]}" || FAILED_TESTS="${FAILED_TESTS}Build "
+$BAZEL build -- //... "${EXCLUDED_TARGETS[@]}" || FAILED_TESTS="${FAILED_TESTS}Build "
 
 for TEST_DIRECTORY in "${TEST_DIRECTORIES[@]}"; do
   pushd "test/distrib/bazel/$TEST_DIRECTORY/"
 
   # validate the Bazel version again, since we have a different WORKSPACE file
-  if !(bazel version | grep -q "${VERSION}"); then
-    echo "Incorrect Bazel version! Want=${VERSION} Seen=$(bazel version)"
+  if !($BAZEL version | grep -q "${VERSION}"); then
+    echo "Incorrect Bazel version! Want=${VERSION} Seen=$($BAZEL version)"
     exit 1
   fi
-  bazel test --cache_test_results=no --test_output=all //:all || FAILED_TESTS="${FAILED_TESTS}${TEST_DIRECTORY} Distribtest"
+  $BAZEL test --cache_test_results=no --test_output=all //:all || FAILED_TESTS="${FAILED_TESTS}${TEST_DIRECTORY} Distribtest"
 
   popd
 done
