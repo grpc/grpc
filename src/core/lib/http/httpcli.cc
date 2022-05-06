@@ -20,6 +20,7 @@
 
 #include "src/core/lib/http/httpcli.h"
 
+#include <limits.h>
 #include <string.h>
 
 #include <string>
@@ -53,6 +54,7 @@ namespace {
 
 grpc_httpcli_get_override g_get_override;
 grpc_httpcli_post_override g_post_override;
+grpc_httpcli_put_override g_put_override;
 void (*g_test_only_on_handshake_done_intercept)(HttpRequest* req);
 
 }  // namespace
@@ -107,10 +109,36 @@ OrphanablePtr<HttpRequest> HttpRequest::Post(
       std::move(channel_creds));
 }
 
+OrphanablePtr<HttpRequest> HttpRequest::Put(
+    URI uri, const grpc_channel_args* channel_args,
+    grpc_polling_entity* pollent, const grpc_http_request* request,
+    Timestamp deadline, grpc_closure* on_done, grpc_http_response* response,
+    RefCountedPtr<grpc_channel_credentials> channel_creds) {
+  absl::optional<std::function<void()>> test_only_generate_response;
+  if (g_put_override != nullptr) {
+    test_only_generate_response = [request, uri, deadline, on_done,
+                                   response]() {
+      g_put_override(request, uri.authority().c_str(), uri.path().c_str(),
+                     request->body, request->body_length, deadline, on_done,
+                     response);
+    };
+  }
+  std::string name =
+      absl::StrFormat("HTTP:PUT:%s:%s", uri.authority(), uri.path());
+  const grpc_slice request_text = grpc_httpcli_format_put_request(
+      request, uri.authority().c_str(), uri.path().c_str());
+  return MakeOrphanable<HttpRequest>(
+      std::move(uri), request_text, response, deadline, channel_args, on_done,
+      pollent, name.c_str(), std::move(test_only_generate_response),
+      std::move(channel_creds));
+}
+
 void HttpRequest::SetOverride(grpc_httpcli_get_override get,
-                              grpc_httpcli_post_override post) {
+                              grpc_httpcli_post_override post,
+                              grpc_httpcli_put_override put) {
   g_get_override = get;
   g_post_override = post;
+  g_put_override = put;
 }
 
 void HttpRequest::TestOnlySetOnHandshakeDoneIntercept(
@@ -129,7 +157,8 @@ HttpRequest::HttpRequest(
       deadline_(deadline),
       channel_args_(CoreConfiguration::Get()
                         .channel_args_preconditioning()
-                        .PreconditionChannelArgs(channel_args)),
+                        .PreconditionChannelArgs(channel_args)
+                        .ToC()),
       channel_creds_(std::move(channel_creds)),
       on_done_(on_done),
       resource_quota_(ResourceQuotaFromChannelArgs(channel_args_)),
@@ -215,10 +244,12 @@ void HttpRequest::AppendError(grpc_error_handle error) {
         GRPC_ERROR_CREATE_FROM_STATIC_STRING("Failed HTTP/1 client request");
   }
   const grpc_resolved_address* addr = &addresses_[next_address_ - 1];
-  std::string addr_text = grpc_sockaddr_to_uri(addr);
+  auto addr_text = grpc_sockaddr_to_uri(addr);
   overall_error_ = grpc_error_add_child(
       overall_error_,
-      grpc_error_set_str(error, GRPC_ERROR_STR_TARGET_ADDRESS, addr_text));
+      grpc_error_set_str(
+          error, GRPC_ERROR_STR_TARGET_ADDRESS,
+          addr_text.ok() ? addr_text.value() : addr_text.status().ToString()));
 }
 
 void HttpRequest::OnReadInternal(grpc_error_handle error) {
@@ -260,7 +291,8 @@ void HttpRequest::StartWrite() {
   grpc_slice_ref_internal(request_text_);
   grpc_slice_buffer_add(&outgoing_, request_text_);
   Ref().release();  // ref held by pending write
-  grpc_endpoint_write(ep_, &outgoing_, &done_write_, nullptr);
+  grpc_endpoint_write(ep_, &outgoing_, &done_write_, nullptr,
+                      /*max_frame_size=*/INT_MAX);
 }
 
 void HttpRequest::OnHandshakeDone(void* arg, grpc_error_handle error) {

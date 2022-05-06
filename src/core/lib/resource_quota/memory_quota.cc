@@ -16,8 +16,18 @@
 
 #include "src/core/lib/resource_quota/memory_quota.h"
 
-#include <atomic>
+#include <inttypes.h>
 
+#include <algorithm>
+#include <atomic>
+#include <tuple>
+#include <type_traits>
+
+#include "absl/status/status.h"
+#include "absl/strings/str_cat.h"
+#include "absl/utility/utility.h"
+
+#include "src/core/lib/debug/trace.h"
 #include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/gprpp/mpscq.h"
 #include "src/core/lib/promise/exec_ctx_wakeup_scheduler.h"
@@ -25,7 +35,6 @@
 #include "src/core/lib/promise/map.h"
 #include "src/core/lib/promise/race.h"
 #include "src/core/lib/promise/seq.h"
-#include "src/core/lib/resource_quota/memory_quota.h"
 #include "src/core/lib/resource_quota/trace.h"
 
 namespace grpc_core {
@@ -183,7 +192,9 @@ size_t GrpcMemoryAllocatorImpl::Reserve(MemoryRequest request) {
   while (true) {
     // Attempt to reserve memory from our pool.
     auto reservation = TryReserve(request);
-    if (reservation.has_value()) return *reservation;
+    if (reservation.has_value()) {
+      return *reservation;
+    }
     // If that failed, grab more from the quota and retry.
     Replenish();
   }
@@ -237,6 +248,28 @@ absl::optional<size_t> GrpcMemoryAllocatorImpl::TryReserve(
                                           std::memory_order_acq_rel,
                                           std::memory_order_acquire)) {
       return reserve;
+    }
+  }
+}
+
+void GrpcMemoryAllocatorImpl::MaybeDonateBack() {
+  size_t free = free_bytes_.load(std::memory_order_relaxed);
+  const size_t kReduceToSize = kMaxQuotaBufferSize / 2;
+  while (true) {
+    if (free <= kReduceToSize) return;
+    size_t ret = free - kReduceToSize;
+    if (free_bytes_.compare_exchange_weak(free, kReduceToSize,
+                                          std::memory_order_acq_rel,
+                                          std::memory_order_acquire)) {
+      if (GRPC_TRACE_FLAG_ENABLED(grpc_resource_quota_trace)) {
+        gpr_log(GPR_INFO, "[%p|%s] Early return %" PRIdPTR " bytes", this,
+                name_.c_str(), ret);
+      }
+      MutexLock lock(&memory_quota_mu_);
+      GPR_ASSERT(taken_bytes_ >= ret);
+      taken_bytes_ -= ret;
+      memory_quota_->Return(ret);
+      return;
     }
   }
 }
@@ -376,8 +409,12 @@ void BasicMemoryQuota::Start() {
           std::tuple<const char*, RefCountedPtr<ReclaimerQueue::Handle>> arg) {
         auto reclaimer = std::move(std::get<1>(arg));
         if (GRPC_TRACE_FLAG_ENABLED(grpc_resource_quota_trace)) {
-          gpr_log(GPR_INFO, "RQ: %s perform %s reclamation",
-                  self->name_.c_str(), std::get<0>(arg));
+          double free = std::max(intptr_t(0), self->free_bytes_.load());
+          size_t quota_size = self->quota_size_.load();
+          gpr_log(GPR_INFO,
+                  "RQ: %s perform %s reclamation. Available free bytes: %f, "
+                  "total quota_size: %zu",
+                  self->name_.c_str(), std::get<0>(arg), free, quota_size);
         }
         // One of the reclaimer queues gave us a way to get back memory.
         // Call the reclaimer with a token that contains enough to wake us
@@ -436,7 +473,12 @@ void BasicMemoryQuota::FinishReclamation(uint64_t token, Waker waker) {
                                                    std::memory_order_relaxed,
                                                    std::memory_order_relaxed)) {
     if (GRPC_TRACE_FLAG_ENABLED(grpc_resource_quota_trace)) {
-      gpr_log(GPR_INFO, "RQ: %s reclamation complete", name_.c_str());
+      double free = std::max(intptr_t(0), free_bytes_.load());
+      size_t quota_size = quota_size_.load();
+      gpr_log(GPR_INFO,
+              "RQ: %s reclamation complete. Available free bytes: %f, "
+              "total quota_size: %zu",
+              name_.c_str(), free, quota_size);
     }
     waker.Wakeup();
   }

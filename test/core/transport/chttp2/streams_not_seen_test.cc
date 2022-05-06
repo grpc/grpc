@@ -18,6 +18,7 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <limits.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -25,7 +26,6 @@
 
 #include <gmock/gmock.h>
 
-#include "absl/synchronization/mutex.h"
 #include "absl/synchronization/notification.h"
 
 #include <grpc/grpc.h>
@@ -173,6 +173,7 @@ grpc_channel_filter TrailingMetadataRecordingFilter::kFilterVtable = {
     CallData::Destroy,
     sizeof(TrailingMetadataRecordingFilter),
     Init,
+    grpc_channel_stack_no_post_init,
     Destroy,
     grpc_channel_next_get_info,
     "trailing-metadata-recording-filter",
@@ -259,7 +260,8 @@ class StreamsNotSeenTest : public ::testing::Test {
     StreamsNotSeenTest* self = static_cast<StreamsNotSeenTest*>(arg);
     self->tcp_ = tcp;
     grpc_endpoint_add_to_pollset(tcp, self->server_.pollset[0]);
-    grpc_endpoint_read(tcp, &self->read_buffer_, &self->on_read_done_, false);
+    grpc_endpoint_read(tcp, &self->read_buffer_, &self->on_read_done_, false,
+                       /*min_progress_size=*/1);
     std::thread([self]() {
       ExecCtx exec_ctx;
       // Send settings frame from server
@@ -315,7 +317,8 @@ class StreamsNotSeenTest : public ::testing::Test {
     absl::Notification on_write_done_notification_;
     GRPC_CLOSURE_INIT(&on_write_done_, OnWriteDone,
                       &on_write_done_notification_, nullptr);
-    grpc_endpoint_write(tcp_, buffer, &on_write_done_, nullptr);
+    grpc_endpoint_write(tcp_, buffer, &on_write_done_, nullptr,
+                        /*max_frame_size=*/INT_MAX);
     ExecCtx::Get()->Flush();
     GPR_ASSERT(on_write_done_notification_.WaitForNotificationWithTimeout(
         absl::Seconds(5)));
@@ -332,7 +335,7 @@ class StreamsNotSeenTest : public ::testing::Test {
     StreamsNotSeenTest* self = static_cast<StreamsNotSeenTest*>(arg);
     if (error == GRPC_ERROR_NONE) {
       {
-        absl::MutexLock lock(&self->mu_);
+        MutexLock lock(&self->mu_);
         for (size_t i = 0; i < self->read_buffer_.count; ++i) {
           absl::StrAppend(&self->read_bytes_,
                           StringViewFromSlice(self->read_buffer_.slices[i]));
@@ -341,7 +344,7 @@ class StreamsNotSeenTest : public ::testing::Test {
       }
       grpc_slice_buffer_reset_and_unref(&self->read_buffer_);
       grpc_endpoint_read(self->tcp_, &self->read_buffer_, &self->on_read_done_,
-                         false);
+                         false, /*min_progress_size=*/1);
     } else {
       grpc_slice_buffer_destroy(&self->read_buffer_);
       self->read_end_notification_.Notify();
@@ -359,7 +362,7 @@ class StreamsNotSeenTest : public ::testing::Test {
       }
     });
     {
-      absl::MutexLock lock(&mu_);
+      MutexLock lock(&mu_);
       while (!absl::StrContains(read_bytes_, bytes)) {
         read_cv_.WaitWithTimeout(&mu_, absl::Seconds(5));
       }
@@ -384,8 +387,8 @@ class StreamsNotSeenTest : public ::testing::Test {
   grpc_channel* channel_ = nullptr;
   grpc_completion_queue* cq_ = nullptr;
   cq_verifier* cqv_ = nullptr;
-  absl::Mutex mu_;
-  absl::CondVar read_cv_;
+  Mutex mu_;
+  CondVar read_cv_;
   std::atomic<bool> shutdown_{false};
 };
 
@@ -768,7 +771,7 @@ int main(int argc, char** argv) {
                 // right before the last one.
                 auto it = builder->mutable_stack()->end();
                 --it;
-                builder->mutable_stack()->insert(it, {filter, nullptr});
+                builder->mutable_stack()->insert(it, filter);
                 return true;
               });
         };

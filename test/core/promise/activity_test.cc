@@ -38,7 +38,7 @@ class Barrier {
 
   Promise<Result> Wait() {
     return [this]() -> Poll<Result> {
-      absl::MutexLock lock(&mu_);
+      MutexLock lock(&mu_);
       if (cleared_) {
         return Result{};
       } else {
@@ -56,7 +56,7 @@ class Barrier {
   }
 
  private:
-  absl::Mutex mu_;
+  Mutex mu_;
   WaitSet wait_set_ ABSL_GUARDED_BY(mu_);
   bool cleared_ ABSL_GUARDED_BY(mu_) = false;
 };
@@ -69,7 +69,7 @@ class SingleBarrier {
 
   Promise<Result> Wait() {
     return [this]() -> Poll<Result> {
-      absl::MutexLock lock(&mu_);
+      MutexLock lock(&mu_);
       if (cleared_) {
         return Result{};
       } else {
@@ -88,7 +88,7 @@ class SingleBarrier {
   }
 
  private:
-  absl::Mutex mu_;
+  Mutex mu_;
   Waker waker_ ABSL_GUARDED_BY(mu_);
   bool cleared_ ABSL_GUARDED_BY(mu_) = false;
 };

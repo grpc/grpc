@@ -21,21 +21,37 @@
 
 #include <grpc/support/port_platform.h>
 
-#include "absl/utility/utility.h"
+#include <stdint.h>
+#include <stdlib.h>
 
-#include <grpc/status.h>
+#include <atomic>
+#include <new>
+#include <type_traits>
+#include <utility>
+
+#include "absl/container/inlined_vector.h"
+#include "absl/meta/type_traits.h"
+
 #include <grpc/support/log.h>
 
 #include "src/core/lib/channel/call_finalization.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/channel/context.h"
-#include "src/core/lib/gprpp/debug_location.h"
+#include "src/core/lib/gprpp/time.h"
+#include "src/core/lib/iomgr/call_combiner.h"
+#include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/error.h"
+#include "src/core/lib/iomgr/polling_entity.h"
+#include "src/core/lib/promise/activity.h"
 #include "src/core/lib/promise/arena_promise.h"
 #include "src/core/lib/promise/context.h"
-#include "src/core/lib/promise/promise.h"
+#include "src/core/lib/promise/latch.h"
+#include "src/core/lib/promise/poll.h"
+#include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/transport/error_utils.h"
+#include "src/core/lib/transport/metadata_batch.h"
+#include "src/core/lib/transport/transport.h"
 
 namespace grpc_core {
 
@@ -58,6 +74,9 @@ class ChannelFilter {
     grpc_channel_stack* channel_stack_;
     grpc_channel_element* channel_element_;
   };
+
+  // Perform post-initialization step (if any).
+  virtual void PostInit() {}
 
   // Construct a promise for one call.
   virtual ArenaPromise<ServerMetadataHandle> MakeCallPromise(
@@ -85,6 +104,16 @@ enum class FilterEndpoint {
 static constexpr uint8_t kFilterExaminesServerInitialMetadata = 1;
 
 namespace promise_filter_detail {
+
+// Proxy channel filter for initialization failure, since we must leave a valid
+// filter in place.
+class InvalidChannelFilter : public ChannelFilter {
+ public:
+  ArenaPromise<ServerMetadataHandle> MakeCallPromise(
+      CallArgs, NextPromiseFactory) override {
+    abort();
+  }
+};
 
 // Call data shared between all implementations of promise-based filters.
 class BaseCallData : public Activity, private Wakeable {
@@ -122,6 +151,59 @@ class BaseCallData : public Activity, private Wakeable {
               call_data->pollent_.load(std::memory_order_acquire)),
           promise_detail::Context<CallFinalization>(&call_data->finalization_) {
     }
+  };
+
+  class Flusher {
+   public:
+    explicit Flusher(BaseCallData* call);
+    // Calls closures, schedules batches, relinquishes call combiner.
+    ~Flusher();
+
+    void Resume(grpc_transport_stream_op_batch* batch) {
+      release_.push_back(batch);
+    }
+
+    void Cancel(grpc_transport_stream_op_batch* batch,
+                grpc_error_handle error) {
+      grpc_transport_stream_op_batch_queue_finish_with_failure(batch, error,
+                                                               &call_closures_);
+    }
+
+    void AddClosure(grpc_closure* closure, grpc_error_handle error,
+                    const char* reason) {
+      call_closures_.Add(closure, error, reason);
+    }
+
+   private:
+    absl::InlinedVector<grpc_transport_stream_op_batch*, 1> release_;
+    CallCombinerClosureList call_closures_;
+    BaseCallData* const call_;
+  };
+
+  // Smart pointer like wrapper around a batch.
+  // Creation makes a ref count of one capture.
+  // Copying increments.
+  // Must be moved from or resumed or cancelled before destruction.
+  class CapturedBatch final {
+   public:
+    CapturedBatch();
+    explicit CapturedBatch(grpc_transport_stream_op_batch* batch);
+    ~CapturedBatch();
+    CapturedBatch(const CapturedBatch&);
+    CapturedBatch& operator=(const CapturedBatch&);
+    CapturedBatch(CapturedBatch&&) noexcept;
+    CapturedBatch& operator=(CapturedBatch&&) noexcept;
+
+    grpc_transport_stream_op_batch* operator->() { return batch_; }
+    bool is_captured() const { return batch_ != nullptr; }
+
+    void ResumeWith(Flusher* releaser);
+    void CancelWith(grpc_error_handle error, Flusher* releaser);
+
+    void Swap(CapturedBatch* other) { std::swap(batch_, other->batch_); }
+
+   private:
+    grpc_transport_stream_op_batch* batch_;
   };
 
   static MetadataHandle<grpc_metadata_batch> WrapMetadata(
@@ -212,11 +294,11 @@ class ClientCallData : public BaseCallData {
   void Cancel(grpc_error_handle error);
   // Begin running the promise - which will ultimately take some initial
   // metadata and return some trailing metadata.
-  void StartPromise();
+  void StartPromise(Flusher* flusher);
   // Interject our callback into the op batch for recv trailing metadata ready.
   // Stash a pointer to the trailing metadata that will be filled in, so we can
   // manipulate it later.
-  void HookRecvTrailingMetadata(grpc_transport_stream_op_batch* batch);
+  void HookRecvTrailingMetadata(CapturedBatch batch);
   // Construct a promise that will "call" the next filter.
   // Effectively:
   //   - put the modified initial metadata into the batch to be sent down.
@@ -235,13 +317,13 @@ class ClientCallData : public BaseCallData {
   void SetStatusFromError(grpc_metadata_batch* metadata,
                           grpc_error_handle error);
   // Wakeup and poll the promise if appropriate.
-  void WakeInsideCombiner();
+  void WakeInsideCombiner(Flusher* flusher);
   void OnWakeup() override;
 
   // Contained promise
   ArenaPromise<ServerMetadataHandle> promise_;
   // Queued batch containing at least a send_initial_metadata op.
-  grpc_transport_stream_op_batch* send_initial_metadata_batch_ = nullptr;
+  CapturedBatch send_initial_metadata_batch_;
   // Pointer to where trailing metadata will be stored.
   grpc_metadata_batch* recv_trailing_metadata_ = nullptr;
   // State tracking recv initial metadata for filters that care about it.
@@ -298,8 +380,11 @@ class ServerCallData : public BaseCallData {
     kCancelled
   };
 
+  class PollContext;
+  struct SendInitialMetadata;
+
   // Handle cancellation.
-  void Cancel(grpc_error_handle error);
+  void Cancel(grpc_error_handle error, Flusher* flusher);
   // Construct a promise that will "call" the next filter.
   // Effectively:
   //   - put the modified initial metadata into the batch being sent up.
@@ -313,13 +398,15 @@ class ServerCallData : public BaseCallData {
                                                grpc_error_handle error);
   void RecvInitialMetadataReady(grpc_error_handle error);
   // Wakeup and poll the promise if appropriate.
-  void WakeInsideCombiner(absl::FunctionRef<void(grpc_error_handle)> cancel);
+  void WakeInsideCombiner(Flusher* flusher);
   void OnWakeup() override;
 
   // Contained promise
   ArenaPromise<ServerMetadataHandle> promise_;
   // Pointer to where initial metadata will be stored.
   grpc_metadata_batch* recv_initial_metadata_ = nullptr;
+  // State for sending initial metadata.
+  SendInitialMetadata* send_initial_metadata_ = nullptr;
   // Closure to call when we're done with the trailing metadata.
   grpc_closure* original_recv_initial_metadata_ready_ = nullptr;
   // Our closure pointing to RecvInitialMetadataReadyCallback.
@@ -327,13 +414,13 @@ class ServerCallData : public BaseCallData {
   // Error received during cancellation.
   grpc_error_handle cancelled_error_ = GRPC_ERROR_NONE;
   // Trailing metadata batch
-  grpc_transport_stream_op_batch* send_trailing_metadata_batch_ = nullptr;
+  CapturedBatch send_trailing_metadata_batch_;
   // State of the send_initial_metadata op.
   RecvInitialState recv_initial_state_ = RecvInitialState::kInitial;
   // State of the recv_trailing_metadata op.
   SendTrailingState send_trailing_state_ = SendTrailingState::kInitial;
-  // Whether we're currently polling the promise.
-  bool is_polling_ = false;
+  // Current poll context (or nullptr if not polling).
+  PollContext* poll_ctx_ = nullptr;
   // Whether to forward the recv_initial_metadata op at the end of promise
   // wakeup.
   bool forward_recv_initial_metadata_callback_ = false;
@@ -382,13 +469,14 @@ MakePromiseBasedFilter(const char* name) {
       // make_call_promise
       [](grpc_channel_element* elem, CallArgs call_args,
          NextPromiseFactory next_promise_factory) {
-        return static_cast<F*>(elem->channel_data)
+        return static_cast<ChannelFilter*>(elem->channel_data)
             ->MakeCallPromise(std::move(call_args),
                               std::move(next_promise_factory));
       },
       // start_transport_op
       [](grpc_channel_element* elem, grpc_transport_op* op) {
-        if (!static_cast<F*>(elem->channel_data)->StartTransportOp(op)) {
+        if (!static_cast<ChannelFilter*>(elem->channel_data)
+                 ->StartTransportOp(op)) {
           grpc_channel_next_op(elem, op);
         }
       },
@@ -414,16 +502,26 @@ MakePromiseBasedFilter(const char* name) {
       sizeof(F),
       // init_channel_elem
       [](grpc_channel_element* elem, grpc_channel_element_args* args) {
-        GPR_ASSERT(!args->is_last);
         auto status = F::Create(ChannelArgs::FromC(args->channel_args),
                                 ChannelFilter::Args(args->channel_stack, elem));
-        if (!status.ok()) return absl_status_to_grpc_error(status.status());
+        if (!status.ok()) {
+          static_assert(
+              sizeof(promise_filter_detail::InvalidChannelFilter) <= sizeof(F),
+              "InvalidChannelFilter must fit in F");
+          new (elem->channel_data)
+              promise_filter_detail::InvalidChannelFilter();
+          return absl_status_to_grpc_error(status.status());
+        }
         new (elem->channel_data) F(std::move(*status));
         return GRPC_ERROR_NONE;
       },
+      // post_init_channel_elem
+      [](grpc_channel_stack*, grpc_channel_element* elem) {
+        static_cast<ChannelFilter*>(elem->channel_data)->PostInit();
+      },
       // destroy_channel_elem
       [](grpc_channel_element* elem) {
-        static_cast<F*>(elem->channel_data)->~F();
+        static_cast<ChannelFilter*>(elem->channel_data)->~ChannelFilter();
       },
       // get_channel_info
       grpc_channel_next_get_info,

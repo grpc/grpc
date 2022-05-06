@@ -21,12 +21,9 @@
 
 #include <grpc/support/port_platform.h>
 
-#include <stdbool.h>
-#include <stddef.h>
+#include <stdint.h>
 
 #include <grpc/slice.h>
-
-#include "src/core/lib/gpr/string.h"
 
 /* Calls gpr_dump on a slice. */
 char* grpc_dump_slice(const grpc_slice& slice, uint32_t flags);

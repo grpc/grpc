@@ -18,6 +18,7 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <limits.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -114,7 +115,8 @@ class GracefulShutdownTest : public ::testing::Test {
     // Start reading on the client
     grpc_slice_buffer_init(&read_buffer_);
     GRPC_CLOSURE_INIT(&on_read_done_, OnReadDone, this, nullptr);
-    grpc_endpoint_read(fds_.client, &read_buffer_, &on_read_done_, false);
+    grpc_endpoint_read(fds_.client, &read_buffer_, &on_read_done_, false,
+                       /*min_progress_size=*/1);
   }
 
   // Shuts down and destroys the client and server.
@@ -142,7 +144,7 @@ class GracefulShutdownTest : public ::testing::Test {
     GracefulShutdownTest* self = static_cast<GracefulShutdownTest*>(arg);
     if (error == GRPC_ERROR_NONE) {
       {
-        absl::MutexLock lock(&self->mu_);
+        MutexLock lock(&self->mu_);
         for (size_t i = 0; i < self->read_buffer_.count; ++i) {
           absl::StrAppend(&self->read_bytes_,
                           StringViewFromSlice(self->read_buffer_.slices[i]));
@@ -151,7 +153,7 @@ class GracefulShutdownTest : public ::testing::Test {
       }
       grpc_slice_buffer_reset_and_unref(&self->read_buffer_);
       grpc_endpoint_read(self->fds_.client, &self->read_buffer_,
-                         &self->on_read_done_, false);
+                         &self->on_read_done_, false, /*min_progress_size=*/1);
     } else {
       grpc_slice_buffer_destroy(&self->read_buffer_);
       self->read_end_notification_.Notify();
@@ -162,7 +164,7 @@ class GracefulShutdownTest : public ::testing::Test {
   void WaitForReadBytes(absl::string_view bytes) {
     std::atomic<bool> done{false};
     {
-      absl::MutexLock lock(&mu_);
+      MutexLock lock(&mu_);
       while (!absl::StrContains(read_bytes_, bytes)) {
         read_cv_.WaitWithTimeout(&mu_, absl::Seconds(5));
       }
@@ -170,10 +172,11 @@ class GracefulShutdownTest : public ::testing::Test {
     done = true;
   }
 
-  void WaitForGoaway(uint32_t last_stream_id) {
+  void WaitForGoaway(uint32_t last_stream_id, uint32_t error_code = 0,
+                     grpc_slice slice = grpc_empty_slice()) {
     grpc_slice_buffer buffer;
     grpc_slice_buffer_init(&buffer);
-    grpc_chttp2_goaway_append(last_stream_id, 0, grpc_empty_slice(), &buffer);
+    grpc_chttp2_goaway_append(last_stream_id, error_code, slice, &buffer);
     std::string expected_bytes;
     for (size_t i = 0; i < buffer.count; ++i) {
       absl::StrAppend(&expected_bytes, StringViewFromSlice(buffer.slices[i]));
@@ -210,7 +213,8 @@ class GracefulShutdownTest : public ::testing::Test {
     absl::Notification on_write_done_notification_;
     GRPC_CLOSURE_INIT(&on_write_done_, OnWriteDone,
                       &on_write_done_notification_, nullptr);
-    grpc_endpoint_write(fds_.client, buffer, &on_write_done_, nullptr);
+    grpc_endpoint_write(fds_.client, buffer, &on_write_done_, nullptr,
+                        /*max_frame_size=*/INT_MAX);
     ExecCtx::Get()->Flush();
     GPR_ASSERT(on_write_done_notification_.WaitForNotificationWithTimeout(
         absl::Seconds(5)));
@@ -230,8 +234,8 @@ class GracefulShutdownTest : public ::testing::Test {
   std::unique_ptr<std::thread> client_poll_thread_;
   std::atomic<bool> shutdown_{false};
   grpc_closure on_read_done_;
-  absl::Mutex mu_;
-  absl::CondVar read_cv_;
+  Mutex mu_;
+  CondVar read_cv_;
   absl::Notification read_end_notification_;
   grpc_slice_buffer read_buffer_;
   std::string read_bytes_ ABSL_GUARDED_BY(mu_);
@@ -406,6 +410,21 @@ TEST_F(GracefulShutdownTest, UnresponsiveClient) {
             absl::Seconds(20) -
                 absl::Seconds(
                     1) /* clock skew between threads due to time caching */);
+  // The shutdown should successfully complete.
+  CQ_EXPECT_COMPLETION(cqv_, Tag(1), true);
+  cq_verify(cqv_);
+}
+
+// Test that servers send a GOAWAY with the last stream ID even when the
+// transport is disconnected without letting Graceful GOAWAY complete
+// successfully.
+TEST_F(GracefulShutdownTest, GoawayReceivedOnServerDisconnect) {
+  // Initiate shutdown on the server and immediately disconnect.
+  grpc_server_shutdown_and_notify(server_, cq_, Tag(1));
+  grpc_server_cancel_all_calls(server_);
+  // Wait for final goaway.
+  WaitForGoaway(/*last_stream_id=*/0, /*error_code=*/2,
+                grpc_slice_from_static_string("Cancelling all calls"));
   // The shutdown should successfully complete.
   CQ_EXPECT_COMPLETION(cqv_, Tag(1), true);
   cq_verify(cqv_);

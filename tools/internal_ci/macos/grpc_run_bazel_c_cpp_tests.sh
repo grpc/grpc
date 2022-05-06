@@ -28,14 +28,6 @@ tools/bazel version
 
 ./tools/run_tests/start_port_server.py
 
-# to get "bazel" link for kokoro build, we need to generate
-# invocation UUID, set a flag for bazel to use it
-# and upload "bazel_invocation_ids" file as artifact.
-# NOTE: UUID needs to be in lowercase for the result link to work
-# (on mac "uuidgen" outputs uppercase UUID)
-BAZEL_INVOCATION_ID="$(uuidgen | tr '[:upper:]' '[:lower:]')"
-echo "${BAZEL_INVOCATION_ID}" >"${KOKORO_ARTIFACTS_DIR}/bazel_invocation_ids"
-
 # for kokoro mac workers, exact image version is store in a well-known location on disk
 KOKORO_IMAGE_VERSION="$(cat /VERSION)"
 
@@ -48,25 +40,13 @@ BAZEL_REMOTE_CACHE_ARGS=(
   --remote_default_exec_properties="grpc_cache_silo_key2=${KOKORO_IMAGE_VERSION}"
 )
 
+python3 tools/run_tests/python_utils/bazel_report_helper.py --report_path bazel_c_cpp_tests
+
 # run all C/C++ tests
-tools/bazel \
+bazel_c_cpp_tests/bazel_wrapper \
   --bazelrc=tools/remote_build/mac.bazelrc \
   test \
-  --invocation_id="${BAZEL_INVOCATION_ID}" \
-  --workspace_status_command=tools/remote_build/workspace_status_kokoro.sh \
   --google_credentials="${KOKORO_GFILE_DIR}/GrpcTesting-d0eeee2db331.json" \
   "${BAZEL_REMOTE_CACHE_ARGS[@]}" \
   $BAZEL_FLAGS \
-  -- //test/... || FAILED="true"
-
-if [ "$UPLOAD_TEST_RESULTS" != "" ]
-then
-  # Sleep to let ResultStore finish writing results before querying
-  sleep 60
-  PYTHONHTTPSVERIFY=0 python3 ./tools/run_tests/python_utils/upload_rbe_results.py
-fi
-
-if [ "$FAILED" != "" ]
-then
-  exit 1
-fi
+  -- //test/...

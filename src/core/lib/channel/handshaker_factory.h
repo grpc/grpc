@@ -23,15 +23,14 @@
 
 #include <grpc/impl/codegen/grpc_types.h>
 
+#include "src/core/lib/iomgr/iomgr_fwd.h"
+
 // A handshaker factory is used to create handshakers.
 
-// TODO(ctiller): grpc_pollset_set and HandshakeManager are forward declared in
-// this file. grpc_pollset_set ought to be eliminated when EventEngine lands IO
-// support. At the same time, we ought to be able to include handshake_manager.h
-// here and eliminate the HandshakeManager dependency - we cannot right now
-// because HandshakeManager names too many iomgr types.
-
-typedef struct grpc_pollset_set grpc_pollset_set;
+// TODO(ctiller): HandshakeManager is forward declared in this file. When
+// EventEngine lands IO support we ought to be able to include
+// handshake_manager.h here and eliminate the HandshakeManager dependency - we
+// cannot right now because HandshakeManager names too many iomgr types.
 
 namespace grpc_core {
 

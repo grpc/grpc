@@ -18,6 +18,7 @@
 
 #include "test/core/bad_client/bad_client.h"
 
+#include <limits.h>
 #include <stdio.h>
 
 #include <grpc/support/alloc.h>
@@ -120,7 +121,8 @@ void grpc_run_client_side_validator(grpc_bad_client_arg* arg, uint32_t flags,
                     grpc_schedule_on_exec_ctx);
 
   /* Write data */
-  grpc_endpoint_write(sfd->client, &outgoing, &done_write_closure, nullptr);
+  grpc_endpoint_write(sfd->client, &outgoing, &done_write_closure, nullptr,
+                      /*max_frame_size=*/INT_MAX);
   grpc_core::ExecCtx::Get()->Flush();
 
   /* Await completion, unless the request is large and write may not finish
@@ -149,7 +151,7 @@ void grpc_run_client_side_validator(grpc_bad_client_arg* arg, uint32_t flags,
         GRPC_CLOSURE_INIT(&read_done_closure, set_read_done, &read_done_event,
                           grpc_schedule_on_exec_ctx);
         grpc_endpoint_read(sfd->client, &incoming, &read_done_closure,
-                           /*urgent=*/true);
+                           /*urgent=*/true, /*min_progress_size=*/1);
         grpc_core::ExecCtx::Get()->Flush();
         do {
           GPR_ASSERT(gpr_time_cmp(deadline, gpr_now(deadline.clock_type)) > 0);
@@ -214,7 +216,8 @@ void grpc_run_bad_client_test(
   grpc_server_start(a.server);
   const grpc_channel_args* channel_args = grpc_core::CoreConfiguration::Get()
                                               .channel_args_preconditioning()
-                                              .PreconditionChannelArgs(nullptr);
+                                              .PreconditionChannelArgs(nullptr)
+                                              .ToC();
   transport = grpc_create_chttp2_transport(channel_args, sfd.server, false);
   grpc_channel_args_destroy(channel_args);
   server_setup_transport(&a, transport);

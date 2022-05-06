@@ -70,17 +70,12 @@ const grpc_channel_filter ClientAuthorityFilter::kFilter =
 
 namespace {
 bool add_client_authority_filter(ChannelStackBuilder* builder) {
-  const grpc_channel_args* channel_args = builder->channel_args();
-  const grpc_arg* disable_client_authority_filter_arg = grpc_channel_args_find(
-      channel_args, GRPC_ARG_DISABLE_CLIENT_AUTHORITY_FILTER);
-  if (disable_client_authority_filter_arg != nullptr) {
-    const bool is_client_authority_filter_disabled =
-        grpc_channel_arg_get_bool(disable_client_authority_filter_arg, false);
-    if (is_client_authority_filter_disabled) {
-      return true;
-    }
+  if (builder->channel_args()
+          .GetBool(GRPC_ARG_DISABLE_CLIENT_AUTHORITY_FILTER)
+          .value_or(false)) {
+    return true;
   }
-  builder->PrependFilter(&ClientAuthorityFilter::kFilter, nullptr);
+  builder->PrependFilter(&ClientAuthorityFilter::kFilter);
   return true;
 }
 }  // namespace

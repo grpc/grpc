@@ -36,6 +36,7 @@
 #include <grpc/grpc.h>
 
 #include "src/core/ext/filters/fault_injection/fault_injection_filter.h"
+#include "src/core/ext/xds/xds_common_types.h"
 #include "src/core/ext/xds/xds_http_filters.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_stack.h"
@@ -140,9 +141,8 @@ absl::StatusOr<Json> ParseHttpFaultIntoJson(
         envoy_extensions_filters_common_fault_v3_FaultDelay_fixed_delay(
             fault_delay);
     if (delay_duration != nullptr) {
-      fault_injection_policy_json["delay"] = absl::StrFormat(
-          "%d.%09ds", google_protobuf_Duration_seconds(delay_duration),
-          google_protobuf_Duration_nanos(delay_duration));
+      fault_injection_policy_json["delay"] =
+          ParseDuration(delay_duration).ToJsonString();
     }
     // Set the headers if we enabled header delay injection control
     if (envoy_extensions_filters_common_fault_v3_FaultDelay_has_header_delay(

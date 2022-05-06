@@ -118,6 +118,7 @@ const grpc_channel_filter RbacFilter::kFilterVtable = {
     RbacFilter::CallData::Destroy,
     sizeof(RbacFilter),
     RbacFilter::Init,
+    grpc_channel_stack_no_post_init,
     RbacFilter::Destroy,
     grpc_channel_next_get_info,
     "rbac_filter",

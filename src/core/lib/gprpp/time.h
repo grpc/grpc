@@ -19,11 +19,11 @@
 
 #include <stdint.h>
 
-#include <cstdint>
 #include <limits>
 #include <ostream>
 #include <string>
 
+#include <grpc/impl/codegen/gpr_types.h>
 #include <grpc/support/time.h>
 
 #include "src/core/lib/gpr/time_precise.h"
@@ -210,6 +210,11 @@ class Duration {
   gpr_timespec as_timespec() const;
 
   std::string ToString() const;
+
+  // Returns the duration in the JSON form corresponding to a
+  // google.protobuf.Duration proto, as defined here:
+  // https://developers.google.com/protocol-buffers/docs/proto3#json
+  std::string ToJsonString() const;
 
  private:
   explicit constexpr Duration(int64_t millis) : millis_(millis) {}

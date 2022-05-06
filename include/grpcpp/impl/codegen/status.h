@@ -21,6 +21,8 @@
 
 // IWYU pragma: private, include <grpcpp/support/status.h>
 
+#include <grpc/impl/codegen/port_platform.h>
+
 #include <grpc/impl/codegen/status.h>
 #include <grpcpp/impl/codegen/config.h>
 #include <grpcpp/impl/codegen/status_code_enum.h>
@@ -30,7 +32,7 @@ namespace grpc {
 /// Did it work? If it didn't, why?
 ///
 /// See \a grpc::StatusCode for details on the available code and their meaning.
-class Status {
+class GRPC_MUST_USE_RESULT_WHEN_USE_STRICT_WARNING Status {
  public:
   /// Construct an OK instance.
   Status() : code_(StatusCode::OK) {

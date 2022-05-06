@@ -1,4 +1,5 @@
 # a set of tests that are run in parallel for sanity tests
+- script: tools/run_tests/sanity/check_absl_mutex.sh
 - script: tools/run_tests/sanity/check_bad_dependencies.sh
 - script: tools/run_tests/sanity/check_bazel_workspace.py
 - script: tools/run_tests/sanity/check_buildifier.sh
@@ -32,6 +33,8 @@
 - script: tools/distrib/clang_tidy_code.sh
   # ClangTidy needs to run exclusively because it uses files under the bazel output
   # directory and this will be removed by another bazel invocation.
+  cpu_cost: 1000
+- script: tools/distrib/iwyu.sh
   cpu_cost: 1000
 - script: tools/distrib/pylint_code.sh
 - script: tools/distrib/python/check_grpcio_tools.py

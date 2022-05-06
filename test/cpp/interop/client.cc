@@ -110,6 +110,9 @@ ABSL_FLAG(int32_t, soak_overall_timeout_seconds, 0,
           "The overall number of seconds after which a soak test should "
           "stop and fail, if the desired number of iterations have not yet "
           "completed.");
+ABSL_FLAG(int32_t, soak_min_time_ms_between_rpcs, 0,
+          "The minimum time in milliseconds between consecutive RPCs in a "
+          "soak test (rpc_soak or channel_soak), useful for limiting QPS");
 ABSL_FLAG(int32_t, iteration_interval, 10,
           "The interval in seconds between rpcs. This is used by "
           "long_connection test");
@@ -300,12 +303,14 @@ int main(int argc, char** argv) {
       absl::GetFlag(FLAGS_soak_iterations),
       absl::GetFlag(FLAGS_soak_max_failures),
       absl::GetFlag(FLAGS_soak_per_iteration_max_acceptable_latency_ms),
+      absl::GetFlag(FLAGS_soak_min_time_ms_between_rpcs),
       absl::GetFlag(FLAGS_soak_overall_timeout_seconds));
   actions["rpc_soak"] = std::bind(
       &grpc::testing::InteropClient::DoRpcSoakTest, &client,
       absl::GetFlag(FLAGS_soak_iterations),
       absl::GetFlag(FLAGS_soak_max_failures),
       absl::GetFlag(FLAGS_soak_per_iteration_max_acceptable_latency_ms),
+      absl::GetFlag(FLAGS_soak_min_time_ms_between_rpcs),
       absl::GetFlag(FLAGS_soak_overall_timeout_seconds));
   actions["long_lived_channel"] =
       std::bind(&grpc::testing::InteropClient::DoLongLivedChannelTest, &client,

@@ -378,7 +378,7 @@ struct grpc_tcp {
   /* garbage after the last read */
   grpc_slice_buffer last_read_buffer;
 
-  absl::Mutex read_mu;
+  grpc_core::Mutex read_mu;
   grpc_slice_buffer* incoming_buffer ABSL_GUARDED_BY(read_mu) = nullptr;
   int inq;          /* bytes pending on the socket from the last read. */
   bool inq_capable; /* cache whether kernel supports inq */
@@ -912,7 +912,7 @@ static void tcp_handle_read(void* arg /* grpc_tcp */, grpc_error_handle error) {
 }
 
 static void tcp_read(grpc_endpoint* ep, grpc_slice_buffer* incoming_buffer,
-                     grpc_closure* cb, bool urgent) {
+                     grpc_closure* cb, bool urgent, int /*min_progress_size*/) {
   grpc_tcp* tcp = reinterpret_cast<grpc_tcp*>(ep);
   GPR_ASSERT(tcp->read_cb == nullptr);
   tcp->read_cb = cb;
@@ -1575,7 +1575,7 @@ static void tcp_handle_write(void* arg /* grpc_tcp */,
 }
 
 static void tcp_write(grpc_endpoint* ep, grpc_slice_buffer* buf,
-                      grpc_closure* cb, void* arg) {
+                      grpc_closure* cb, void* arg, int /*max_frame_size*/) {
   GPR_TIMER_SCOPE("tcp_write", 0);
   grpc_tcp* tcp = reinterpret_cast<grpc_tcp*>(ep);
   grpc_error_handle error = GRPC_ERROR_NONE;
@@ -1767,12 +1767,14 @@ grpc_endpoint* grpc_tcp_create(grpc_fd* em_fd,
   grpc_resolved_address resolved_local_addr;
   memset(&resolved_local_addr, 0, sizeof(resolved_local_addr));
   resolved_local_addr.len = sizeof(resolved_local_addr.addr);
+  absl::StatusOr<std::string> addr_uri;
   if (getsockname(tcp->fd,
                   reinterpret_cast<sockaddr*>(resolved_local_addr.addr),
-                  &resolved_local_addr.len) < 0) {
+                  &resolved_local_addr.len) < 0 ||
+      !(addr_uri = grpc_sockaddr_to_uri(&resolved_local_addr)).ok()) {
     tcp->local_address = "";
   } else {
-    tcp->local_address = grpc_sockaddr_to_uri(&resolved_local_addr);
+    tcp->local_address = addr_uri.value();
   }
   tcp->read_cb = nullptr;
   tcp->write_cb = nullptr;

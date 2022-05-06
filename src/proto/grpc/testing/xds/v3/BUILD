@@ -17,6 +17,10 @@ load("//bazel:python_rules.bzl", "py_grpc_library", "py_proto_library")
 
 licenses(["notice"])
 
+exports_files([
+    "orca_load_report.proto",
+])
+
 grpc_package(
     name = "xds_v3",
     visibility = "public",
