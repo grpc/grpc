@@ -31,7 +31,6 @@
 #include "absl/container/inlined_vector.h"
 #include "absl/strings/str_cat.h"
 
-#include "src/core/lib/event_engine/handle_containers.h"
 #include "src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_balancer_addresses.h"
 #include "src/core/ext/filters/client_channel/lb_policy_registry.h"
 #include "src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper.h"
@@ -39,6 +38,7 @@
 #include "src/core/ext/filters/client_channel/resolver/polling_resolver.h"
 #include "src/core/lib/backoff/backoff.h"
 #include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/event_engine/handle_containers.h"
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/iomgr/gethostname.h"
 #include "src/core/lib/iomgr/resolve_address.h"

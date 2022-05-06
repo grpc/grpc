@@ -23,9 +23,9 @@
 
 #include <stddef.h>
 
-#include <grpc/event_engine/event_engine.h>
-
 #include "absl/status/statusor.h"
+
+#include <grpc/event_engine/event_engine.h>
 
 #include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/iomgr/pollset_set.h"

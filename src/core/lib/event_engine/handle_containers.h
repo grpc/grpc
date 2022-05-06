@@ -16,10 +16,10 @@
 
 #include <grpc/support/port_platform.h>
 
-#include <grpc/event_engine/event_engine.h>
-
 #include "absl/container/flat_hash_set.h"
 #include "absl/hash/hash.h"
+
+#include <grpc/event_engine/event_engine.h>
 
 namespace {
 // Used for heterogenous lookup of TaskHandles in abseil containers.
