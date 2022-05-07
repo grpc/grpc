@@ -121,6 +121,7 @@ grpc_channel* grpc_lame_client_channel_create(const char* target,
       "grpc_lame_client_channel_create(target=%s, error_code=%d, "
       "error_message=%s)",
       3, (target, (int)error_code, error_message));
+  if (error_code == GRPC_STATUS_OK) error_code = GRPC_STATUS_UNKNOWN;
   grpc_core::ChannelArgs args =
       grpc_core::CoreConfiguration::Get()
           .channel_args_preconditioning()
