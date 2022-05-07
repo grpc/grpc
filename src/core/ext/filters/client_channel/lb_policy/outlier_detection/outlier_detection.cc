@@ -845,9 +845,8 @@ void OutlierDetectionLb::EjectionTimer::OnTimerLocked(grpc_error_handle error) {
                                      config.max_ejection_time.millis());
     }
     timer_pending_ = false;
-    // causing a crash:
-    // parent_->ejection_timer_ = MakeOrphanable<EjectionTimer>(
-    //   std::move(parent_), ExecCtx::Get()->Now());
+    parent_->ejection_timer_ = MakeOrphanable<EjectionTimer>(
+       parent_, ExecCtx::Get()->Now());
   }
   Unref(DEBUG_LOCATION, "Timer");
   GRPC_ERROR_UNREF(error);
