@@ -20,8 +20,6 @@
 
 #include "src/cpp/ext/filters/census/server_filter.h"
 
-#include <stddef.h>
-
 #include <memory>
 #include <utility>
 

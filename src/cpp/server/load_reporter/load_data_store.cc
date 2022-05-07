@@ -20,6 +20,7 @@
 
 #include "src/cpp/server/load_reporter/load_data_store.h"
 
+#include <stdint.h>
 #include <stdio.h>
 
 #include <cstdlib>
