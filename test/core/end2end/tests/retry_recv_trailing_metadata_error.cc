@@ -333,6 +333,7 @@ grpc_channel_filter InjectStatusFilter::kFilterVtable = {
     CallData::Destroy,
     0,
     Init,
+    grpc_channel_stack_no_post_init,
     Destroy,
     grpc_channel_next_get_info,
     "InjectStatusFilter",
@@ -346,7 +347,7 @@ bool AddFilter(grpc_core::ChannelStackBuilder* builder) {
     return true;
   }
   // Install filter.
-  builder->PrependFilter(&InjectStatusFilter::kFilterVtable, nullptr);
+  builder->PrependFilter(&InjectStatusFilter::kFilterVtable);
   return true;
 }
 

@@ -16,8 +16,11 @@
 
 #include "src/core/lib/slice/slice_split.h"
 
+#include <stddef.h>
+#include <stdint.h>
 #include <string.h>
 
+#include <grpc/slice_buffer.h>
 #include <grpc/support/log.h>
 
 /** Finds the initial (\a begin) and final (\a end) offsets of the next

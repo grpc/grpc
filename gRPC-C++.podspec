@@ -211,6 +211,7 @@ Pod::Spec.new do |s|
     ss.dependency 'abseil/synchronization/synchronization', abseil_version
     ss.dependency 'abseil/time/time', abseil_version
     ss.dependency 'abseil/types/optional', abseil_version
+    ss.dependency 'abseil/types/span', abseil_version
     ss.dependency 'abseil/types/variant', abseil_version
     ss.dependency 'abseil/utility/utility', abseil_version
 
@@ -226,6 +227,7 @@ Pod::Spec.new do |s|
                       'src/core/ext/filters/client_channel/dynamic_filters.h',
                       'src/core/ext/filters/client_channel/global_subchannel_pool.h',
                       'src/core/ext/filters/client_channel/health/health_check_client.h',
+                      'src/core/ext/filters/client_channel/http_connect_handshaker.h',
                       'src/core/ext/filters/client_channel/http_proxy.h',
                       'src/core/ext/filters/client_channel/lb_policy.h',
                       'src/core/ext/filters/client_channel/lb_policy/address_filtering.h',
@@ -654,6 +656,9 @@ Pod::Spec.new do |s|
                       'src/core/lib/channel/channelz_registry.h',
                       'src/core/lib/channel/connected_channel.h',
                       'src/core/lib/channel/context.h',
+                      'src/core/lib/channel/handshaker.h',
+                      'src/core/lib/channel/handshaker_factory.h',
+                      'src/core/lib/channel/handshaker_registry.h',
                       'src/core/lib/channel/promise_based_filter.h',
                       'src/core/lib/channel/status_util.h',
                       'src/core/lib/compression/compression_internal.h',
@@ -742,6 +747,7 @@ Pod::Spec.new do |s|
                       'src/core/lib/iomgr/internal_errqueue.h',
                       'src/core/lib/iomgr/iocp_windows.h',
                       'src/core/lib/iomgr/iomgr.h',
+                      'src/core/lib/iomgr/iomgr_fwd.h',
                       'src/core/lib/iomgr/iomgr_internal.h',
                       'src/core/lib/iomgr/load_file.h',
                       'src/core/lib/iomgr/lockfree_event.h',
@@ -899,16 +905,11 @@ Pod::Spec.new do |s|
                       'src/core/lib/transport/byte_stream.h',
                       'src/core/lib/transport/connectivity_state.h',
                       'src/core/lib/transport/error_utils.h',
-                      'src/core/lib/transport/handshaker.h',
-                      'src/core/lib/transport/handshaker_factory.h',
-                      'src/core/lib/transport/handshaker_registry.h',
                       'src/core/lib/transport/http2_errors.h',
-                      'src/core/lib/transport/http_connect_handshaker.h',
                       'src/core/lib/transport/metadata_batch.h',
                       'src/core/lib/transport/parsed_metadata.h',
                       'src/core/lib/transport/pid_controller.h',
                       'src/core/lib/transport/status_conversion.h',
-                      'src/core/lib/transport/tcp_connect_handshaker.h',
                       'src/core/lib/transport/timeout_encoding.h',
                       'src/core/lib/transport/transport.h',
                       'src/core/lib/transport/transport_impl.h',
@@ -1060,6 +1061,7 @@ Pod::Spec.new do |s|
                               'src/core/ext/filters/client_channel/dynamic_filters.h',
                               'src/core/ext/filters/client_channel/global_subchannel_pool.h',
                               'src/core/ext/filters/client_channel/health/health_check_client.h',
+                              'src/core/ext/filters/client_channel/http_connect_handshaker.h',
                               'src/core/ext/filters/client_channel/http_proxy.h',
                               'src/core/ext/filters/client_channel/lb_policy.h',
                               'src/core/ext/filters/client_channel/lb_policy/address_filtering.h',
@@ -1470,6 +1472,9 @@ Pod::Spec.new do |s|
                               'src/core/lib/channel/channelz_registry.h',
                               'src/core/lib/channel/connected_channel.h',
                               'src/core/lib/channel/context.h',
+                              'src/core/lib/channel/handshaker.h',
+                              'src/core/lib/channel/handshaker_factory.h',
+                              'src/core/lib/channel/handshaker_registry.h',
                               'src/core/lib/channel/promise_based_filter.h',
                               'src/core/lib/channel/status_util.h',
                               'src/core/lib/compression/compression_internal.h',
@@ -1558,6 +1563,7 @@ Pod::Spec.new do |s|
                               'src/core/lib/iomgr/internal_errqueue.h',
                               'src/core/lib/iomgr/iocp_windows.h',
                               'src/core/lib/iomgr/iomgr.h',
+                              'src/core/lib/iomgr/iomgr_fwd.h',
                               'src/core/lib/iomgr/iomgr_internal.h',
                               'src/core/lib/iomgr/load_file.h',
                               'src/core/lib/iomgr/lockfree_event.h',
@@ -1715,16 +1721,11 @@ Pod::Spec.new do |s|
                               'src/core/lib/transport/byte_stream.h',
                               'src/core/lib/transport/connectivity_state.h',
                               'src/core/lib/transport/error_utils.h',
-                              'src/core/lib/transport/handshaker.h',
-                              'src/core/lib/transport/handshaker_factory.h',
-                              'src/core/lib/transport/handshaker_registry.h',
                               'src/core/lib/transport/http2_errors.h',
-                              'src/core/lib/transport/http_connect_handshaker.h',
                               'src/core/lib/transport/metadata_batch.h',
                               'src/core/lib/transport/parsed_metadata.h',
                               'src/core/lib/transport/pid_controller.h',
                               'src/core/lib/transport/status_conversion.h',
-                              'src/core/lib/transport/tcp_connect_handshaker.h',
                               'src/core/lib/transport/timeout_encoding.h',
                               'src/core/lib/transport/transport.h',
                               'src/core/lib/transport/transport_impl.h',
@@ -1844,11 +1845,9 @@ Pod::Spec.new do |s|
   end
 
   # patch include of openssl to openssl_grpc
-  # patch xxhash.h to silent the -Wdocumentation error
   s.prepare_command = <<-END_OF_COMMAND
     set -e
     find src/core -type f \\( -path '*.h' -or -path '*.cc' \\) -print0 | xargs -0 -L1 sed -E -i'.grpc_back' 's;#include <openssl/(.*)>;#if COCOAPODS==1\\\n  #include <openssl_grpc/\\1>\\\n#else\\\n  #include <openssl/\\1>\\\n#endif;g'
-    find third_party/xxhash  -type f -name xxhash.h -print0 | xargs -0 -L1 sed -E -i'.grpc_back' 's;@param([^,]*),;@param\\1 ,;g'
-    find src/core/ third_party/xxhash/ -type f -name '*.grpc_back' -print0 | xargs -0 rm
+    find src/core/ -type f -name '*.grpc_back' -print0 | xargs -0 rm
   END_OF_COMMAND
 end

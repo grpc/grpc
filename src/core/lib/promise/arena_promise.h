@@ -24,8 +24,6 @@
 
 #include "absl/meta/type_traits.h"
 
-#include <grpc/support/log.h>
-
 #include "src/core/lib/promise/context.h"
 #include "src/core/lib/promise/poll.h"
 #include "src/core/lib/resource_quota/arena.h"
@@ -184,6 +182,10 @@ class ArenaPromise {
 
   // Expose the promise interface: a call operator that returns Poll<T>.
   Poll<T> operator()() { return impl_->PollOnce(); }
+
+  bool has_value() const {
+    return impl_ != arena_promise_detail::NullImpl<T>::Get();
+  }
 
  private:
   // Underlying impl object.

@@ -21,6 +21,8 @@
 #include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
 
+#include <grpc/support/string_util.h>
+
 namespace grpc_core {
 
 namespace {

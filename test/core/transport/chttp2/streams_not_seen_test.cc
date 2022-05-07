@@ -173,6 +173,7 @@ grpc_channel_filter TrailingMetadataRecordingFilter::kFilterVtable = {
     CallData::Destroy,
     sizeof(TrailingMetadataRecordingFilter),
     Init,
+    grpc_channel_stack_no_post_init,
     Destroy,
     grpc_channel_next_get_info,
     "trailing-metadata-recording-filter",
@@ -770,7 +771,7 @@ int main(int argc, char** argv) {
                 // right before the last one.
                 auto it = builder->mutable_stack()->end();
                 --it;
-                builder->mutable_stack()->insert(it, {filter, nullptr});
+                builder->mutable_stack()->insert(it, filter);
                 return true;
               });
         };

@@ -719,7 +719,6 @@ class XdsEnd2endTest : public ::testing::TestWithParam<XdsTestType> {
     int client_cancel_after_us = 0;
     bool skip_cancelled_check = false;
     StatusCode server_expected_error = StatusCode::OK;
-    std::vector<int> server_ports_to_fail;
 
     RpcOptions() {}
 
@@ -771,11 +770,6 @@ class XdsEnd2endTest : public ::testing::TestWithParam<XdsTestType> {
 
     RpcOptions& set_server_expected_error(StatusCode code) {
       server_expected_error = code;
-      return *this;
-    }
-
-    RpcOptions& set_server_ports_to_fail(std::vector<int> ports) {
-      server_ports_to_fail = std::move(ports);
       return *this;
     }
 

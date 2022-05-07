@@ -34,8 +34,7 @@
 #include <new>
 #include <utility>
 
-#include <grpc/support/alloc.h>
-#include <grpc/support/sync.h>
+#include <grpc/event_engine/memory_allocator.h>
 
 #include "src/core/lib/gpr/alloc.h"
 #include "src/core/lib/promise/context.h"

@@ -13,6 +13,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 //
+
 #include <grpc/support/port_platform.h>
 
 #include "src/core/lib/security/credentials/external/external_account_credentials.h"
@@ -24,6 +25,8 @@
 #include "absl/strings/strip.h"
 #include "absl/time/clock.h"
 #include "absl/time/time.h"
+
+#include <grpc/support/string_util.h>
 
 #include "src/core/lib/http/httpcli_ssl_credentials.h"
 #include "src/core/lib/http/parser.h"
