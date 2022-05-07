@@ -18,6 +18,13 @@
 
 #include <grpc/support/port_platform.h>
 
+// IWYU pragma: no_include <arpa/nameser.h>
+// IWYU pragma: no_include <inttypes.h>
+// IWYU pragma: no_include <netdb.h>
+// IWYU pragma: no_include <netinet/in.h>
+// IWYU pragma: no_include <stdlib.h>
+// IWYU pragma: no_include <sys/socket.h>
+
 #if GRPC_ARES == 1
 
 #include <string.h>
