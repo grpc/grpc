@@ -16,7 +16,9 @@
  *
  */
 
+#include <grpc/support/log.h>
 #include <grpcpp/impl/codegen/client_interceptor.h>
+#include <grpcpp/support/client_interceptor.h>
 
 namespace grpc {
 

@@ -23,11 +23,14 @@
 #include <stdio.h>
 
 #include <cstdlib>
+#include <iterator>
 #include <set>
 #include <unordered_map>
-#include <vector>
+
+#include <grpc/support/log.h>
 
 #include "src/core/lib/iomgr/socket_utils.h"
+#include "src/cpp/server/load_reporter/constants.h"
 
 namespace grpc {
 namespace load_reporter {
