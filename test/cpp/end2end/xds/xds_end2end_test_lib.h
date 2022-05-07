@@ -796,7 +796,7 @@ class XdsEnd2endTest : public ::testing::TestWithParam<XdsTestType> {
       case METHOD_ECHO2:
         return stub->Echo2(context, request, response);
     }
-    GPR_UNREACHABLE_CODE(return absl::UnknownError("unreachable"));
+    GPR_UNREACHABLE_CODE(return grpc::Status::UNKNOWN);
   }
 
   // Sends the specified number of RPCs and fails if the RPC fails.
