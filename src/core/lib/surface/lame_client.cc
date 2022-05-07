@@ -31,6 +31,7 @@
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/channel/promise_based_filter.h"
 #include "src/core/lib/gpr/string.h"
+#include "src/core/lib/promise/promise.h"
 #include "src/core/lib/resource_quota/api.h"
 #include "src/core/lib/surface/api_trace.h"
 #include "src/core/lib/surface/call.h"
