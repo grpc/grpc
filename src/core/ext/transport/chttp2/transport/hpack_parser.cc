@@ -21,24 +21,42 @@
 #include "src/core/ext/transport/chttp2/transport/hpack_parser.h"
 
 #include <assert.h>
+#include <inttypes.h>
 #include <stddef.h>
-#include <string.h>
+#include <stdlib.h>
 
+#include <algorithm>
+#include <cstdint>
+#include <string>
+#include <utility>
+
+#include "absl/base/attributes.h"
+#include "absl/strings/match.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
+#include "absl/strings/string_view.h"
+#include "absl/types/optional.h"
+#include "absl/types/span.h"
+#include "absl/types/variant.h"
 
-#include <grpc/support/alloc.h>
+#include <grpc/status.h>
 #include <grpc/support/log.h>
 
-#include "src/core/ext/transport/chttp2/transport/bin_encoder.h"
+#include "src/core/ext/transport/chttp2/transport/frame_rst_stream.h"
+#include "src/core/ext/transport/chttp2/transport/hpack_constants.h"
 #include "src/core/ext/transport/chttp2/transport/internal.h"
 #include "src/core/lib/debug/stats.h"
-#include "src/core/lib/gpr/string.h"
+#include "src/core/lib/debug/trace.h"
+#include "src/core/lib/iomgr/closure.h"
+#include "src/core/lib/iomgr/combiner.h"
 #include "src/core/lib/profiling/timers.h"
-#include "src/core/lib/slice/slice_internal.h"
-#include "src/core/lib/slice/slice_string_helpers.h"
-#include "src/core/lib/surface/validate_metadata.h"
+#include "src/core/lib/slice/slice.h"
+#include "src/core/lib/slice/slice_refcount_base.h"
 #include "src/core/lib/transport/http2_errors.h"
+#include "src/core/lib/transport/parsed_metadata.h"
+#include "src/core/lib/transport/transport.h"
+
+// IWYU pragma: no_include <type_traits>
 
 #if __cplusplus > 201103L
 #define GRPC_HPACK_CONSTEXPR_FN constexpr

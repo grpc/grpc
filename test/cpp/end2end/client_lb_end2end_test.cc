@@ -13,6 +13,7 @@
 // limitations under the License.
 
 #include <algorithm>
+#include <deque>
 #include <memory>
 #include <mutex>
 #include <random>

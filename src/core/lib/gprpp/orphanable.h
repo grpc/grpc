@@ -25,11 +25,7 @@
 #include <memory>
 #include <utility>
 
-#include <grpc/support/log.h>
-#include <grpc/support/sync.h>
-
 #include "src/core/lib/gprpp/debug_location.h"
-#include "src/core/lib/gprpp/memory.h"
 #include "src/core/lib/gprpp/ref_counted.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 

@@ -48,11 +48,6 @@
 
 namespace grpc_core {
 
-// Forward declarations
-class Slice;
-class StaticSlice;
-class MutableSlice;
-
 namespace slice_detail {
 
 // Returns an empty slice.
