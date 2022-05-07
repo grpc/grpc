@@ -803,6 +803,9 @@ Status XdsEnd2endTest::SendRpc(const RpcOptions& rpc_options,
     auto* error = request.mutable_param()->mutable_expected_error();
     error->set_code(rpc_options.server_expected_error);
   }
+  for (auto port : rpc_options.server_ports_to_fail) {
+    request.mutable_param()->add_server_ports_to_fail(port);
+  }
   rpc_options.SetupRpc(&context, &request);
   Status status;
   switch (rpc_options.service) {

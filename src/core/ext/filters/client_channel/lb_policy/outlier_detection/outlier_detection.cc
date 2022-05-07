@@ -782,12 +782,14 @@ void OutlierDetectionLb::EjectionTimer::OnTimerLocked(grpc_error_handle error) {
       // calculate ejection threshold: (mean - stdev *
       // (success_rate_ejection.stdev_factor / 1000))
       double mean = success_rate_sum / success_rate_ejection_candidates.size();
+      gpr_log(GPR_INFO, "donna mean is %f", mean);
       double variance = 0;
       std::for_each(success_rate_ejection_candidates.begin(),
                     success_rate_ejection_candidates.end(),
                     [&variance, mean](std::pair<SubchannelState*, double> v) {
                       variance += std::pow(v.second - mean, 2);
                     });
+      gpr_log(GPR_INFO, "donna variance  is %f", variance);
       variance /= success_rate_ejection_candidates.size();
       double stdev = std::sqrt(variance);
       const double success_rate_stdev_factor =
@@ -795,6 +797,8 @@ void OutlierDetectionLb::EjectionTimer::OnTimerLocked(grpc_error_handle error) {
           1000;
       double ejection_threshold = mean - stdev * success_rate_stdev_factor;
       for (auto& candidate : success_rate_ejection_candidates) {
+        gpr_log(GPR_INFO, "donna candidate %p, %f and thrshodl is %f",
+                candidate.first, candidate.second, ejection_threshold);
         if (candidate.second < ejection_threshold) {
           uint32_t random_key = absl::Uniform(bit_gen_, 1, 100);
           if (random_key <
@@ -814,8 +818,7 @@ void OutlierDetectionLb::EjectionTimer::OnTimerLocked(grpc_error_handle error) {
       for (auto& candidate : failure_percentage_ejection_candidates) {
         gpr_log(GPR_INFO, "donna candidate %p, %f", candidate.first,
                 candidate.second);
-        // TODO @donnadionne: change me back to strictly >
-        if ((100.0 - candidate.second) >=
+        if ((100.0 - candidate.second) >
             config.failure_percentage_ejection->threshold) {
           uint32_t random_key = absl::Uniform(bit_gen_, 1, 100);
           if (random_key <
