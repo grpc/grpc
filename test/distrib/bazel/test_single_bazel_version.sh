@@ -56,7 +56,7 @@ export OVERRIDE_BAZEL_WRAPPER_DOWNLOAD_DIR=/tmp
 BAZEL="$(pwd)/tools/bazel"
 
 # validate the Bazel version
-if !($BAZEL version | grep -q "${VERSION}"); then
+if ! ($BAZEL version | grep -q "${VERSION}"); then
   echo "Incorrect Bazel version! Want=${VERSION} Seen=$($BAZEL version)"
   exit 1
 fi
@@ -71,7 +71,7 @@ for TEST_DIRECTORY in "${TEST_DIRECTORIES[@]}"; do
   pushd "test/distrib/bazel/$TEST_DIRECTORY/"
 
   # validate the Bazel version again, since we have a different WORKSPACE file
-  if !($BAZEL version | grep -q "${VERSION}"); then
+  if ! ($BAZEL version | grep -q "${VERSION}"); then
     echo "Incorrect Bazel version! Want=${VERSION} Seen=$($BAZEL version)"
     exit 1
   fi
