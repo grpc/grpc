@@ -46,7 +46,6 @@
 #include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/transport/parsed_metadata.h"
-#include "src/core/lib/transport/timeout_encoding.h"
 
 namespace grpc_core {
 
