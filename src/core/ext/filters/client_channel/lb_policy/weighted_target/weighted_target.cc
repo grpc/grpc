@@ -61,6 +61,8 @@
 #include "src/core/lib/resolver/server_address.h"
 #include "src/core/lib/transport/connectivity_state.h"
 
+// IWYU pragma: no_include <type_traits>
+
 namespace grpc_core {
 
 TraceFlag grpc_lb_weighted_target_trace(false, "weighted_target_lb");

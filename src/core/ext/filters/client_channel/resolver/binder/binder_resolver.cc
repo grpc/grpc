@@ -14,8 +14,11 @@
 
 #include <grpc/support/port_platform.h>
 
+#ifdef GRPC_HAVE_UNIX_SOCKET
+
 #include <string.h>
 #include <sys/socket.h>
+#include <sys/un.h>
 
 #include <memory>
 #include <string>
@@ -31,22 +34,17 @@
 #include <grpc/impl/codegen/grpc_types.h>
 #include <grpc/support/log.h>
 
+#include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/port.h"
 #include "src/core/lib/iomgr/resolved_address.h"
 #include "src/core/lib/resolver/resolver.h"
 #include "src/core/lib/resolver/resolver_factory.h"
-#include "src/core/lib/uri/uri_parser.h"
-
-#ifdef GRPC_HAVE_UNIX_SOCKET
-
-#include <sys/un.h>
-
-#include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/resolver/resolver_registry.h"
 #include "src/core/lib/resolver/server_address.h"
+#include "src/core/lib/uri/uri_parser.h"
 
 namespace grpc_core {
 namespace {
