@@ -27,6 +27,7 @@
 #include <grpc/impl/codegen/grpc_types.h>
 
 #include "src/core/lib/channel/handshaker_factory.h"
+#include "src/core/lib/iomgr/iomgr_fwd.h"
 
 namespace grpc_core {
 

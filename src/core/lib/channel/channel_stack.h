@@ -50,13 +50,11 @@
 
 #include <functional>
 
-#include <grpc/grpc.h>
 #include <grpc/impl/codegen/gpr_types.h>
 #include <grpc/impl/codegen/grpc_types.h>
 #include <grpc/slice.h>
 #include <grpc/status.h>
 #include <grpc/support/log.h>
-#include <grpc/support/time.h>
 
 #include "src/core/lib/channel/context.h"
 #include "src/core/lib/debug/trace.h"
@@ -70,7 +68,6 @@
 #include "src/core/lib/iomgr/polling_entity.h"
 #include "src/core/lib/promise/arena_promise.h"
 #include "src/core/lib/resource_quota/arena.h"
-#include "src/core/lib/transport/metadata_batch.h"
 #include "src/core/lib/transport/transport.h"
 
 struct grpc_call_element;
@@ -214,6 +211,7 @@ struct grpc_call_element {
    guarantees they live within a single malloc() allocation */
 struct grpc_channel_stack {
   grpc_stream_refcount refcount;
+  bool is_client;
   size_t count;
   /* Memory required for a call stack (computed at channel stack
      initialization) */
@@ -235,6 +233,9 @@ struct grpc_channel_stack {
     IncrementRefCount();
     return grpc_core::RefCountedPtr<grpc_channel_stack>(this);
   }
+
+  grpc_core::ArenaPromise<grpc_core::ServerMetadataHandle> MakeCallPromise(
+      grpc_core::CallArgs call_args);
 };
 
 /* A call stack tracks a set of related filters for one call, and guarantees
