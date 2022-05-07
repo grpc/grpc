@@ -53,11 +53,12 @@
 
 #include "src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb.h"
 
+// IWYU pragma: no_include <sys/socket.h>
+
 #include <inttypes.h>
 #include <limits.h>
 #include <stdlib.h>
 #include <string.h>
-#include <sys/socket.h>
 
 #include <algorithm>
 #include <map>
