@@ -16,7 +16,8 @@
  *
  */
 
-#include <ext/alloc_traits.h>
+// IWYU pragma: no_include <ext/alloc_traits.h>
+
 #include <limits.h>
 #include <stdint.h>
 #include <string.h>
