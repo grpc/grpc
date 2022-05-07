@@ -216,8 +216,11 @@ class BaseCallData : public Activity, private Wakeable {
     grpc_transport_stream_op_batch* operator->() { return batch_; }
     bool is_captured() const { return batch_ != nullptr; }
 
+    // Resume processing this batch (releases one ref, passes it down the stack)
     void ResumeWith(Flusher* releaser);
+    // Cancel this batch immediately (releases all refs)
     void CancelWith(grpc_error_handle error, Flusher* releaser);
+    // Complete this batch (pass it up) assuming refs drop to zero
     void CompleteWith(Flusher* releaser);
 
     void Swap(CapturedBatch* other) { std::swap(batch_, other->batch_); }

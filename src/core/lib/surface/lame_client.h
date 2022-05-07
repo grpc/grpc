@@ -28,6 +28,8 @@ namespace grpc_core {
 // Does NOT take ownership of error.
 grpc_arg MakeLameClientErrorArg(grpc_error_handle* error);
 
+// This filter becomes the entire channel stack for a channel that fails to be
+// created. Every call returns failure.
 class LameClientFilter : public ChannelFilter {
  public:
   static const grpc_channel_filter kFilter;
