@@ -568,8 +568,16 @@ typedef unsigned __int64 uint64_t;
 #endif
 #endif /* GPR_HAS_CPP_ATTRIBUTE */
 
-#if GPR_HAS_CPP_ATTRIBUTE(noreturn)
-#define GPR_ATTRIBUTE_NORETURN [[noreturn]]
+#ifndef GPR_HAS_ATTRIBUTE
+#ifdef __has_attribute
+#define GPR_HAS_ATTRIBUTE(a) __has_attribute(a)
+#else
+#define GPR_HAS_ATTRIBUTE(a) 0
+#endif
+#endif /* GPR_HAS_ATTRIBUTE */
+
+#if GPR_HAS_ATTRIBUTE(noreturn)
+#define GPR_ATTRIBUTE_NORETURN __attribute__((noreturn))
 #else
 #define GPR_ATTRIBUTE_NORETURN
 #endif
@@ -577,9 +585,14 @@ typedef unsigned __int64 uint64_t;
 #if GPR_FORBID_UNREACHABLE_CODE
 #define GPR_UNREACHABLE_CODE(STATEMENT)
 #else
-extern void gpr_unreachable_code GPR_ATTRIBUTE_NORETURN(const char* reason,
-                                                        const char* file,
-                                                        int line);
+#ifdef __cplusplus
+extern "C" {
+#endif
+extern void gpr_unreachable_code(const char* reason, const char* file,
+                                 int line) GPR_ATTRIBUTE_NORETURN;
+#ifdef __cplusplus
+}
+#endif
 #define GPR_UNREACHABLE_CODE(STATEMENT)                   \
   do {                                                    \
     gpr_unreachable_code(#STATEMENT, __FILE__, __LINE__); \
@@ -598,14 +611,6 @@ extern void gpr_unreachable_code GPR_ATTRIBUTE_NORETURN(const char* reason,
 #ifndef CENSUSAPI
 #define CENSUSAPI GRPCAPI
 #endif
-
-#ifndef GPR_HAS_ATTRIBUTE
-#ifdef __has_attribute
-#define GPR_HAS_ATTRIBUTE(a) __has_attribute(a)
-#else
-#define GPR_HAS_ATTRIBUTE(a) 0
-#endif
-#endif /* GPR_HAS_ATTRIBUTE */
 
 #ifndef GPR_HAS_FEATURE
 #ifdef __has_feature
