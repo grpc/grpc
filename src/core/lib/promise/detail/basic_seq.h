@@ -36,8 +36,6 @@
 
 namespace grpc_core {
 namespace promise_detail {
-template <typename F>
-class PromiseLike;
 
 // Helper for SeqState to evaluate some common types to all partial
 // specializations.
