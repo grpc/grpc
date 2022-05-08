@@ -80,3 +80,15 @@ proto_library(
     name = "route_guide_proto",
     srcs = [":route_guide.proto"],
 )
+
+cc_proto_library(
+    name = "route_guide_cc_proto",
+    deps = [":route_guide_proto"],
+)
+
+cc_grpc_library(
+    name = "route_guide_cc_grpc",
+    srcs = [":route_guide_proto"],
+    grpc_only = True,
+    deps = [":route_guide_cc_proto"],
+)
