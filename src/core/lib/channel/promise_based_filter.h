@@ -32,12 +32,14 @@
 #include "absl/container/inlined_vector.h"
 #include "absl/meta/type_traits.h"
 
+#include <grpc/impl/codegen/grpc_types.h>
 #include <grpc/support/log.h>
 
 #include "src/core/lib/channel/call_finalization.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/channel/context.h"
+#include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/iomgr/call_combiner.h"
 #include "src/core/lib/iomgr/closure.h"
@@ -100,8 +102,8 @@ class ChannelFilter {
 };
 
 // Designator for whether a filter is client side or server side.
-// Please don't use this outside calls to MakePromiseBasedFilter - it's intended
-// to be deleted once the promise conversion is complete.
+// Please don't use this outside calls to MakePromiseBasedFilter - it's
+// intended to be deleted once the promise conversion is complete.
 enum class FilterEndpoint {
   kClient,
   kServer,
@@ -113,8 +115,8 @@ static constexpr uint8_t kFilterIsLast = 2;
 
 namespace promise_filter_detail {
 
-// Proxy channel filter for initialization failure, since we must leave a valid
-// filter in place.
+// Proxy channel filter for initialization failure, since we must leave a
+// valid filter in place.
 class InvalidChannelFilter : public ChannelFilter {
  public:
   ArenaPromise<ServerMetadataHandle> MakeCallPromise(
@@ -210,8 +212,12 @@ class BaseCallData : public Activity, private Wakeable {
     grpc_transport_stream_op_batch* operator->() { return batch_; }
     bool is_captured() const { return batch_ != nullptr; }
 
+    // Resume processing this batch (releases one ref, passes it down the
+    // stack)
     void ResumeWith(Flusher* releaser);
+    // Cancel this batch immediately (releases all refs)
     void CancelWith(grpc_error_handle error, Flusher* releaser);
+    // Complete this batch (pass it up) assuming refs drop to zero
     void CompleteWith(Flusher* releaser);
 
     void Swap(CapturedBatch* other) { std::swap(batch_, other->batch_); }
@@ -291,11 +297,13 @@ class ClientCallData : public BaseCallData {
     // Start state: no op seen
     kInitial,
     // We saw the op, and since it was bundled with send initial metadata, we
-    // queued it until the send initial metadata can be sent to the next filter.
+    // queued it until the send initial metadata can be sent to the next
+    // filter.
     kQueued,
     // We've forwarded the op to the next filter.
     kForwarded,
-    // The op has completed from below, but we haven't yet forwarded it up (the
+    // The op has completed from below, but we haven't yet forwarded it up
+    // (the
     // promise gets to interject and mutate it).
     kComplete,
     // We've called the recv_metadata_ready callback from the original
@@ -314,9 +322,9 @@ class ClientCallData : public BaseCallData {
   // Begin running the promise - which will ultimately take some initial
   // metadata and return some trailing metadata.
   void StartPromise(Flusher* flusher);
-  // Interject our callback into the op batch for recv trailing metadata ready.
-  // Stash a pointer to the trailing metadata that will be filled in, so we can
-  // manipulate it later.
+  // Interject our callback into the op batch for recv trailing metadata
+  // ready. Stash a pointer to the trailing metadata that will be filled in,
+  // so we can manipulate it later.
   void HookRecvTrailingMetadata(CapturedBatch batch);
   // Construct a promise that will "call" the next filter.
   // Effectively:
