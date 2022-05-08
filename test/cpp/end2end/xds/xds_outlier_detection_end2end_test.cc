@@ -33,7 +33,6 @@ namespace testing {
 namespace {
 
 using ::envoy::config::endpoint::v3::HealthStatus;
-using std::chrono::system_clock;
 
 using OutlierDetectionTest = XdsEnd2endTest;
 
@@ -92,7 +91,7 @@ TEST_P(OutlierDetectionTest, HeaderHashingEjectionSuccessRate) {
   std::vector<std::pair<std::string, std::string>> metadata3 = {
       {"address_hash", absl::StrCat(ipv6_only_ ? "[::1]" : "127.0.0.1", ":",
                                     backends_[3]->port(), "_0")}};
-  const auto rpc_options = RpcOptions().set_metadata(std::move(metadata));
+  const auto rpc_options = RpcOptions().set_metadata(metadata);
   const auto rpc_options1 = RpcOptions().set_metadata(std::move(metadata1));
   const auto rpc_options2 = RpcOptions().set_metadata(std::move(metadata2));
   const auto rpc_options3 = RpcOptions().set_metadata(std::move(metadata3));
@@ -186,7 +185,7 @@ TEST_P(OutlierDetectionTest, HeaderHashingEjectionFailurePercent) {
   std::vector<std::pair<std::string, std::string>> metadata3 = {
       {"address_hash", absl::StrCat(ipv6_only_ ? "[::1]" : "127.0.0.1", ":",
                                     backends_[3]->port(), "_0")}};
-  const auto rpc_options = RpcOptions().set_metadata(std::move(metadata));
+  const auto rpc_options = RpcOptions().set_metadata(metadata);
   const auto rpc_options1 = RpcOptions().set_metadata(std::move(metadata1));
   const auto rpc_options2 = RpcOptions().set_metadata(std::move(metadata2));
   const auto rpc_options3 = RpcOptions().set_metadata(std::move(metadata3));
