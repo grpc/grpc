@@ -845,8 +845,8 @@ void OutlierDetectionLb::EjectionTimer::OnTimerLocked(grpc_error_handle error) {
                                      config.max_ejection_time.millis());
     }
     timer_pending_ = false;
-    parent_->ejection_timer_ = MakeOrphanable<EjectionTimer>(
-       parent_, ExecCtx::Get()->Now());
+    parent_->ejection_timer_ =
+        MakeOrphanable<EjectionTimer>(parent_, ExecCtx::Get()->Now());
   }
   Unref(DEBUG_LOCATION, "Timer");
   GRPC_ERROR_UNREF(error);
@@ -909,8 +909,7 @@ class OutlierDetectionLbFactory : public LoadBalancingPolicyFactory {
                              &success_config.minimum_hosts, &error_list);
         ParseJsonObjectField(object, "requestVolume",
                              &success_config.request_volume, &error_list);
-        outlier_detection_config.success_rate_ejection =
-            std::move(success_config);
+        outlier_detection_config.success_rate_ejection = success_config;
       }
     }
     it = json.object_value().find("failurePercentageEjection");
@@ -930,8 +929,7 @@ class OutlierDetectionLbFactory : public LoadBalancingPolicyFactory {
                              &failure_config.minimum_hosts, &error_list);
         ParseJsonObjectField(object, "requestVolume",
                              &failure_config.request_volume, &error_list);
-        outlier_detection_config.failure_percentage_ejection =
-            std::move(failure_config);
+        outlier_detection_config.failure_percentage_ejection = failure_config;
       }
     }
     // Child policy.
@@ -952,8 +950,8 @@ class OutlierDetectionLbFactory : public LoadBalancingPolicyFactory {
             GRPC_ERROR_CREATE_FROM_VECTOR("field:childPolicy", &child_errors));
       }
     }
-    return MakeRefCounted<OutlierDetectionLbConfig>(
-        std::move(outlier_detection_config), std::move(child_policy));
+    return MakeRefCounted<OutlierDetectionLbConfig>(outlier_detection_config,
+                                                    std::move(child_policy));
   }
 };
 
