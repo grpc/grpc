@@ -74,6 +74,7 @@ namespace grpc_core {
 namespace promise_filter_detail {
 class BaseCallData;
 }
+class PromiseBasedCall;
 
 // Small unowned "handle" type to ensure one accessor at a time to metadata.
 // The focus here is to get promises to use the syntax we'd like - we'll
@@ -112,6 +113,7 @@ class MetadataHandle {
 
  private:
   friend class promise_filter_detail::BaseCallData;
+  friend class PromiseBasedCall;
 
   explicit MetadataHandle(T* handle) : handle_(handle) {}
   T* Unwrap() {

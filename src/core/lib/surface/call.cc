@@ -1805,9 +1805,7 @@ void FilterStackCall::ContextSet(grpc_context_index elem, void* value,
 
 class PromiseBasedCall : public Call {
  public:
-  // TODO(ctiller): return absl::StatusOr<SomeSmartPointer<Call>>?
-  static grpc_error_handle Create(grpc_call_create_args* args,
-                                  grpc_call** out_call);
+  PromiseBasedCall(Arena* arena, const grpc_call_create_args& args);
 
   void ContextSet(grpc_context_index elem, void* value,
                   void (*destroy)(void* value)) override;
@@ -1816,8 +1814,6 @@ class PromiseBasedCall : public Call {
   void CancelWithError(grpc_error_handle error) override;
   void SetCompletionQueue(grpc_completion_queue* cq) override;
   char* GetPeer() override;
-  grpc_call_error StartBatch(const grpc_op* ops, size_t nops, void* notify_tag,
-                             bool is_notify_tag_closure) override;
   bool failed_before_recv_message() const override;
   bool is_trailers_only() const override;
   void ExternalRef() override;
@@ -1835,8 +1831,22 @@ class PromiseBasedCall : public Call {
   // for that functionality be invented)
   grpc_call_stack* call_stack() override { return nullptr; }
 
+ protected:
+  Mutex* mu() ABSL_LOCK_RETURNED(mu_) { return &mu_; }
+
+  ServerMetadataHandle CToServerMetadataHandle(grpc_metadata* metadata,
+                                               size_t count) {
+    return ServerMetadataHandle(CToMetadata(metadata, count));
+  }
+  ClientMetadataHandle CToClientMetadataHandle(grpc_metadata* metadata,
+                                               size_t count) {
+    return ClientMetadataHandle(CToMetadata(metadata, count));
+  }
+
+  void Start(ClientMetadataHandle client_initial_metadata);
+
  private:
-  explicit PromiseBasedCall(Arena* arena, const grpc_call_create_args& args);
+  grpc_metadata_batch* CToMetadata(grpc_metadata* metadata, size_t count);
 
   Mutex mu_;
   ArenaPromise<ServerMetadataHandle> promise_ ABSL_GUARDED_BY(mu_);
@@ -1845,8 +1855,9 @@ class PromiseBasedCall : public Call {
   grpc_call_context_element context_[GRPC_CONTEXT_COUNT] = {};
 };
 
-grpc_error_handle PromiseBasedCall::Create(grpc_call_create_args* args,
-                                           grpc_call** out_call) {
+template <typename T>
+grpc_error_handle MakePromiseBasedCall(grpc_call_create_args* args,
+                                       grpc_call** out_call) {
   Channel* channel = args->channel.get();
 
   Arena* arena;
@@ -1855,7 +1866,7 @@ grpc_error_handle PromiseBasedCall::Create(grpc_call_create_args* args,
       Arena::CreateWithAlloc(channel->CallSizeEstimate(),
                              sizeof(PromiseBasedCall), channel->allocator());
   arena = arena_with_call.first;
-  call = new (arena_with_call.second) PromiseBasedCall(arena, *args);
+  call = new (arena_with_call.second) T(arena, *args);
 
   *out_call = call->c_ptr();
   return GRPC_ERROR_NONE;
@@ -1878,10 +1889,53 @@ void* PromiseBasedCall::ContextGet(grpc_context_index elem) const {
   return context_[elem].value;
 }
 
-grpc_call_error PromiseBasedCall::StartBatch(const grpc_op* ops, size_t nops,
-                                             void* notify_tag,
-                                             bool is_notify_tag_closure) {
-  MutexLock lock(&mu_);
+///////////////////////////////////////////////////////////////////////////////
+// ClientPromiseBasedCall
+
+class ClientPromiseBasedCall final : public PromiseBasedCall {
+ public:
+  using PromiseBasedCall::PromiseBasedCall;
+
+  grpc_call_error StartBatch(const grpc_op* ops, size_t nops, void* notify_tag,
+                             bool is_notify_tag_closure) override;
+};
+
+grpc_call_error ClientPromiseBasedCall::StartBatch(const grpc_op* ops,
+                                                   size_t nops,
+                                                   void* notify_tag,
+                                                   bool is_notify_tag_closure) {
+  MutexLock lock(mu());
+  for (size_t op_idx = 0; op_idx < nops; op_idx++) {
+    const grpc_op& op = ops[op_idx];
+    switch (op.op) {
+      case GRPC_OP_SEND_INITIAL_METADATA: {
+        // compression not implemented
+        GPR_ASSERT(
+            !op.data.send_initial_metadata.maybe_compression_level.is_set);
+        Start(CToClientMetadataHandle(op.data.send_initial_metadata.metadata,
+                                      op.data.send_initial_metadata.count));
+      } break;
+    }
+  }
+  return GRPC_CALL_OK;
+}
+
+///////////////////////////////////////////////////////////////////////////////
+// ServerPromiseBasedCall
+
+class ServerPromiseBasedCall final : public PromiseBasedCall {
+ public:
+  using PromiseBasedCall::PromiseBasedCall;
+
+  grpc_call_error StartBatch(const grpc_op* ops, size_t nops, void* notify_tag,
+                             bool is_notify_tag_closure) override;
+};
+
+grpc_call_error ServerPromiseBasedCall::StartBatch(const grpc_op* ops,
+                                                   size_t nops,
+                                                   void* notify_tag,
+                                                   bool is_notify_tag_closure) {
+  MutexLock lock(mu());
   for (size_t op_idx = 0; op_idx < nops; op_idx++) {
     const grpc_op& op = ops[op_idx];
     switch (op.op) {}
@@ -1906,7 +1960,13 @@ size_t grpc_call_get_initial_size_estimate() {
 grpc_error_handle grpc_call_create(grpc_call_create_args* args,
                                    grpc_call** out_call) {
   if (args->channel->is_promising()) {
-    return grpc_core::PromiseBasedCall::Create(args, out_call);
+    if (args->server_transport_data != nullptr) {
+      return grpc_core::MakePromiseBasedCall<grpc_core::ServerPromiseBasedCall>(
+          args, out_call);
+    } else {
+      return grpc_core::MakePromiseBasedCall<grpc_core::ClientPromiseBasedCall>(
+          args, out_call);
+    }
   } else {
     return grpc_core::FilterStackCall::Create(args, out_call);
   }
