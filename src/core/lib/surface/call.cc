@@ -1833,12 +1833,13 @@ class PromiseBasedCall : public Call {
 
   // This should return nullptr for the promise stack (and alternative means
   // for that functionality be invented)
-  grpc_call_stack* call_stack() override;
+  grpc_call_stack* call_stack() override { return nullptr; }
 
  private:
-  explicit PromiseBasedCall(Arena* arena, const grpc_call_create_args& args)
-      : Call(arena, args.server_transport_data == nullptr, args.send_deadline) {
-  }
+  explicit PromiseBasedCall(Arena* arena, const grpc_call_create_args& args);
+
+  Mutex mu_;
+  ArenaPromise<ServerMetadataHandle> promise_ ABSL_GUARDED_BY(mu_);
 
   /* Contexts for various subsystems (security, tracing, ...). */
   grpc_call_context_element context_[GRPC_CONTEXT_COUNT] = {};
@@ -1860,6 +1861,10 @@ grpc_error_handle PromiseBasedCall::Create(grpc_call_create_args* args,
   return GRPC_ERROR_NONE;
 }
 
+PromiseBasedCall::PromiseBasedCall(Arena* arena,
+                                   const grpc_call_create_args& args)
+    : Call(arena, args.server_transport_data == nullptr, args.send_deadline) {}
+
 void PromiseBasedCall::ContextSet(grpc_context_index elem, void* value,
                                   void (*destroy)(void*)) {
   if (context_[elem].destroy) {
@@ -1871,6 +1876,17 @@ void PromiseBasedCall::ContextSet(grpc_context_index elem, void* value,
 
 void* PromiseBasedCall::ContextGet(grpc_context_index elem) const {
   return context_[elem].value;
+}
+
+grpc_call_error PromiseBasedCall::StartBatch(const grpc_op* ops, size_t nops,
+                                             void* notify_tag,
+                                             bool is_notify_tag_closure) {
+  MutexLock lock(&mu_);
+  for (size_t op_idx = 0; op_idx < nops; op_idx++) {
+    const grpc_op& op = ops[op_idx];
+    switch (op.op) {}
+  }
+  return GRPC_CALL_OK;
 }
 
 }  // namespace grpc_core
