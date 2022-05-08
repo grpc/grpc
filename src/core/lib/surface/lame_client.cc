@@ -39,7 +39,6 @@
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/gprpp/debug_location.h"
-#include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/iomgr/call_combiner.h"
@@ -50,6 +49,9 @@
 #include "src/core/lib/surface/channel_stack_type.h"
 #include "src/core/lib/transport/connectivity_state.h"
 #include "src/core/lib/transport/transport.h"
+
+// Avoid some IWYU confusion:
+// IWYU pragma: no_include "src/core/lib/gprpp/orphanable.h"
 
 #define GRPC_ARG_LAME_FILTER_ERROR "grpc.lame_filter_error"
 
