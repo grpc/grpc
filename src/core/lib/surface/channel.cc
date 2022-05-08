@@ -58,6 +58,8 @@
 #include "src/core/lib/surface/channel_stack_type.h"
 #include "src/core/lib/transport/transport.h"
 
+// IWYU pragma: no_include <type_traits>
+
 namespace grpc_core {
 
 Channel::Channel(bool is_client, std::string target, ChannelArgs channel_args,
