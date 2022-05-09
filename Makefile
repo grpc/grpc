@@ -1643,10 +1643,10 @@ LIBGRPC_SRC = \
     src/core/lib/transport/byte_stream.cc \
     src/core/lib/transport/connectivity_state.cc \
     src/core/lib/transport/error_utils.cc \
-    src/core/lib/transport/metadata_batch.cc \
     src/core/lib/transport/handshaker.cc \
     src/core/lib/transport/handshaker_registry.cc \
     src/core/lib/transport/http_connect_handshaker.cc \
+    src/core/lib/transport/metadata_batch.cc \
     src/core/lib/transport/parsed_metadata.cc \
     src/core/lib/transport/pid_controller.cc \
     src/core/lib/transport/status_conversion.cc \
@@ -2056,10 +2056,10 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/lib/transport/byte_stream.cc \
     src/core/lib/transport/connectivity_state.cc \
     src/core/lib/transport/error_utils.cc \
-    src/core/lib/transport/metadata_batch.cc \
     src/core/lib/transport/handshaker.cc \
     src/core/lib/transport/handshaker_registry.cc \
     src/core/lib/transport/http_connect_handshaker.cc \
+    src/core/lib/transport/metadata_batch.cc \
     src/core/lib/transport/parsed_metadata.cc \
     src/core/lib/transport/pid_controller.cc \
     src/core/lib/transport/status_conversion.cc \

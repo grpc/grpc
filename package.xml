@@ -1412,9 +1412,9 @@
     <file baseinstalldir="/" name="src/core/lib/transport/handshaker_registry.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/transport/handshaker_registry.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/transport/http2_errors.h" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/transport/metadata_batch.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/transport/http_connect_handshaker.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/transport/http_connect_handshaker.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/transport/metadata_batch.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/transport/metadata_batch.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/transport/parsed_metadata.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/transport/parsed_metadata.h" role="src" />
