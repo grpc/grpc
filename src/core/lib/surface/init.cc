@@ -168,6 +168,12 @@ void grpc_init(void) {
     grpc_core::ApplicationCallbackExecCtx::GlobalInit();
     grpc_iomgr_init();
     gpr_timers_global_init();
+    // ensure the library is alive for the callback
+    ++g_initializations;
+    grpc_event_engine::experimental::CreateEventEngine()->Run([]() {
+      gpr_log(GPR_DEBUG, "EventEngine initialized");
+      grpc_shutdown();
+    });
     for (int i = 0; i < g_number_of_plugins; i++) {
       if (g_all_of_the_plugins[i].init != nullptr) {
         g_all_of_the_plugins[i].init();

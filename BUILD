@@ -447,6 +447,7 @@ grpc_cc_library(
         "grpc_secure",
         "grpc_security_base",
         "grpc_trace",
+        "iomgr_timer",
         "slice",
     ],
 )
@@ -1746,6 +1747,41 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "iomgr_timer",
+    srcs = [
+        "src/core/lib/iomgr/timer.cc",
+        "src/core/lib/iomgr/timer_generic.cc",
+        "src/core/lib/iomgr/timer_heap.cc",
+        "src/core/lib/iomgr/timer_manager.cc",
+        "src/core/lib/iomgr/time_averaged_stats.cc",
+    ],
+    hdrs = [
+        "src/core/lib/iomgr/timer.h",
+        "src/core/lib/iomgr/timer_generic.h",
+        "src/core/lib/iomgr/timer_heap.h",
+        "src/core/lib/iomgr/timer_manager.h",
+        "src/core/lib/iomgr/time_averaged_stats.h",
+    ] + [
+        # TODO(hork): deduplicate
+        "src/core/lib/iomgr/iomgr.h",
+    ],
+    external_deps = [
+        "absl/strings",
+    ],
+    deps = [
+        "event_engine_base_hdrs",
+        "exec_ctx",
+        "gpr_base",
+        "gpr_platform",
+        "gpr_tls",
+        "grpc_trace",
+        "iomgr_port",
+        "time",
+        "useful",
+    ],
+)
+
+grpc_cc_library(
     name = "iomgr_fwd",
     hdrs = [
         "src/core/lib/iomgr/iomgr_fwd.h",
@@ -1820,6 +1856,25 @@ grpc_cc_library(
     deps = [
         "default_event_engine_factory_hdrs",
         "gpr_base",
+        "iomgr_port",
+        "iomgr_event_engine",
+    ],
+)
+
+grpc_cc_library(
+    name = "iomgr_event_engine",
+    srcs = ["src/core/lib/event_engine/iomgr_engine.cc"],
+    hdrs = ["src/core/lib/event_engine/iomgr_engine.h"],
+    external_deps = [
+        "absl/cleanup",
+    ],
+    deps = [
+        "event_engine_base_hdrs",
+        "exec_ctx",
+        "gpr_base",
+        "gpr_platform",
+        "iomgr_timer",
+        "match",
     ],
 )
 
@@ -1974,11 +2029,6 @@ grpc_cc_library(
         "src/core/lib/iomgr/tcp_server_utils_posix_noifaddrs.cc",
         "src/core/lib/iomgr/tcp_server_windows.cc",
         "src/core/lib/iomgr/tcp_windows.cc",
-        "src/core/lib/iomgr/time_averaged_stats.cc",
-        "src/core/lib/iomgr/timer.cc",
-        "src/core/lib/iomgr/timer_generic.cc",
-        "src/core/lib/iomgr/timer_heap.cc",
-        "src/core/lib/iomgr/timer_manager.cc",
         "src/core/lib/iomgr/unix_sockets_posix.cc",
         "src/core/lib/iomgr/unix_sockets_posix_noop.cc",
         "src/core/lib/iomgr/wakeup_fd_eventfd.cc",
@@ -2102,11 +2152,6 @@ grpc_cc_library(
         "src/core/lib/iomgr/tcp_server.h",
         "src/core/lib/iomgr/tcp_server_utils_posix.h",
         "src/core/lib/iomgr/tcp_windows.h",
-        "src/core/lib/iomgr/time_averaged_stats.h",
-        "src/core/lib/iomgr/timer.h",
-        "src/core/lib/iomgr/timer_generic.h",
-        "src/core/lib/iomgr/timer_heap.h",
-        "src/core/lib/iomgr/timer_manager.h",
         "src/core/lib/iomgr/unix_sockets_posix.h",
         "src/core/lib/iomgr/wakeup_fd_pipe.h",
         "src/core/lib/iomgr/wakeup_fd_posix.h",
@@ -2208,6 +2253,7 @@ grpc_cc_library(
         "grpc_sockaddr",
         "grpc_trace",
         "iomgr_port",
+        "iomgr_timer",
         "json",
         "latch",
         "memory_quota",
@@ -2569,6 +2615,7 @@ grpc_cc_library(
         "grpc_trace",
         "handshaker_registry",
         "httpcli",
+        "iomgr_timer",
         "json",
         "json_util",
         "orphanable",
@@ -2650,6 +2697,7 @@ grpc_cc_library(
         "gpr_base",
         "grpc_base",
         "idle_filter_state",
+        "iomgr_timer",
         "loop",
         "promise",
         "single_set_ptr",
@@ -2671,6 +2719,7 @@ grpc_cc_library(
         "config",
         "gpr_base",
         "grpc_base",
+        "iomgr_timer",
         "slice",
     ],
 )
@@ -2863,6 +2912,7 @@ grpc_cc_library(
         "grpc_security_base",
         "grpc_sockaddr",
         "grpc_transport_chttp2_client_connector",
+        "iomgr_timer",
         "orphanable",
         "protobuf_duration_upb",
         "protobuf_timestamp_upb",
@@ -2899,6 +2949,7 @@ grpc_cc_library(
         "grpc_resolver",
         "grpc_security_base",
         "grpc_service_config_impl",
+        "iomgr_timer",
         "json",
         "json_util",
         "orphanable",
@@ -3025,6 +3076,7 @@ grpc_cc_library(
         "grpc_sockaddr",
         "grpc_tls_credentials",
         "grpc_transport_chttp2_client_connector",
+        "iomgr_timer",
         "json",
         "json_util",
         "orphanable",
@@ -3231,6 +3283,7 @@ grpc_cc_library(
         "grpc_base",
         "grpc_client_channel",
         "grpc_resolver_xds_header",
+        "iomgr_timer",
         "orphanable",
         "ref_counted",
         "ref_counted_ptr",
@@ -3342,6 +3395,7 @@ grpc_cc_library(
         "grpc_base",
         "grpc_client_channel",
         "grpc_lb_address_filtering",
+        "iomgr_timer",
         "orphanable",
         "ref_counted_ptr",
     ],
@@ -3362,6 +3416,7 @@ grpc_cc_library(
         "grpc_base",
         "grpc_client_channel",
         "grpc_lb_address_filtering",
+        "iomgr_timer",
         "orphanable",
         "ref_counted_ptr",
     ],
@@ -3527,6 +3582,7 @@ grpc_cc_library(
         "gpr_base",
         "grpc_base",
         "grpc_resolver",
+        "iomgr_timer",
         "orphanable",
     ],
 )
@@ -3564,6 +3620,7 @@ grpc_cc_library(
         "grpc_resolver",
         "grpc_resolver_dns_selection",
         "grpc_trace",
+        "iomgr_timer",
         "polling_resolver",
         "server_address",
     ],
@@ -3606,6 +3663,7 @@ grpc_cc_library(
         "grpc_service_config_impl",
         "grpc_sockaddr",
         "iomgr_port",
+        "iomgr_timer",
         "json",
         "polling_resolver",
         "server_address",
@@ -4645,6 +4703,7 @@ grpc_cc_library(
         "hpack_encoder_table",
         "httpcli",
         "iomgr_fwd",
+        "iomgr_timer",
         "memory_quota",
         "orphanable",
         "pid_controller",
@@ -4742,6 +4801,7 @@ grpc_cc_library(
         "grpc_transport_chttp2",
         "handshaker_registry",
         "iomgr_fwd",
+        "iomgr_timer",
         "memory_quota",
         "orphanable",
         "ref_counted",

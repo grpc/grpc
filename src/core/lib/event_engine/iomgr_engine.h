@@ -1,0 +1,89 @@
+// Copyright 2022 The gRPC Authors
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+#ifndef GRPC_CORE_LIB_EVENT_ENGINE_IOMGR_ENGINE_H
+#define GRPC_CORE_LIB_EVENT_ENGINE_IOMGR_ENGINE_H
+#include <grpc/support/port_platform.h>
+#include "src/core/lib/iomgr/port.h"
+
+#include <grpc/event_engine/event_engine.h>
+#include <grpc/event_engine/port.h>
+
+namespace grpc_event_engine {
+namespace experimental {
+
+class IomgrEventEngine final : public EventEngine {
+ public:
+  class IomgrEndpoint : public EventEngine::Endpoint {
+   public:
+    ~IomgrEndpoint();
+    void Read(std::function<void(absl::Status)> on_read,
+              SliceBuffer* buffer) override;
+    void Write(std::function<void(absl::Status)> on_writable,
+               SliceBuffer* data) override;
+    const ResolvedAddress& GetPeerAddress() const override;
+    const ResolvedAddress& GetLocalAddress() const override;
+  };
+  class IomgrListener : public EventEngine::Listener {
+   public:
+    ~IomgrListener();
+    absl::StatusOr<int> Bind(const ResolvedAddress& addr) override;
+    absl::Status Start() override;
+  };
+  class IomgrDNSResolver : public EventEngine::DNSResolver {
+   public:
+    ~IomgrDNSResolver();
+    LookupTaskHandle LookupHostname(LookupHostnameCallback on_resolve,
+                                    absl::string_view name,
+                                    absl::string_view default_port,
+                                    absl::Time deadline) override;
+    LookupTaskHandle LookupSRV(LookupSRVCallback on_resolve,
+                               absl::string_view name,
+                               absl::Time deadline) override;
+    LookupTaskHandle LookupTXT(LookupTXTCallback on_resolve,
+                               absl::string_view name,
+                               absl::Time deadline) override;
+    bool CancelLookup(LookupTaskHandle handle) override;
+  };
+
+  IomgrEventEngine();
+  ~IomgrEventEngine();
+
+  absl::StatusOr<std::unique_ptr<Listener>> CreateListener(
+      Listener::AcceptCallback on_accept,
+      std::function<void(absl::Status)> on_shutdown,
+      const EndpointConfig& config,
+      std::unique_ptr<MemoryAllocatorFactory> memory_allocator_factory)
+      override;
+
+  ConnectionHandle Connect(OnConnectCallback on_connect,
+                           const ResolvedAddress& addr,
+                           const EndpointConfig& args,
+                           MemoryAllocator memory_allocator,
+                           absl::Time deadline) override;
+
+  virtual bool CancelConnect(ConnectionHandle handle) override;
+  bool IsWorkerThread() override;
+  std::unique_ptr<DNSResolver> GetDNSResolver(
+      const DNSResolver::ResolverOptions& options) override;
+  void Run(Closure* closure) override;
+  void Run(std::function<void()> closure) override;
+  TaskHandle RunAt(absl::Time when, Closure* closure) override;
+  TaskHandle RunAt(absl::Time when, std::function<void()> closure) override;
+  bool Cancel(TaskHandle handle) override;
+};
+
+}  // namespace experimental
+}  // namespace grpc_event_engine
+
+#endif  // GRPC_CORE_LIB_EVENT_ENGINE_IOMGR_ENGINE_H
