@@ -146,7 +146,7 @@ class EventEngine {
       // A suggestion to the endpoint implementation to read at-least the
       // specified number of bytes over the network connection before marking
       // the endpoint read operation as complete. gRPC may use this argument
-      // to minimize the number of endpoint read API calls over the life-time
+      // to minimize the number of endpoint read API calls over the lifetime
       // of a connection.
       int64_t read_hint_bytes;
     };
