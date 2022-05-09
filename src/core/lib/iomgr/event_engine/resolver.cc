@@ -31,41 +31,86 @@
 #include "src/core/lib/surface/init.h"
 #include "src/core/lib/transport/error_utils.h"
 
-namespace grpc_event_engine {
+namespace grpc_core {
 namespace experimental {
 namespace {
-void OnLookupComplete(
-    LookupHostnameCallback on_done,
-    absl::StatusOr<std::vector<EventEngine::ResolvedAddress>> addresses) {
-  ExecCtx exec_ctx;
-  if (!addresses.ok()) {
-    on_done(addresses.status());
-    return;
+using ::grpc_event_engine::experimental::CreateGRPCResolvedAddress;
+using ::grpc_event_engine::experimental::EventEngine;
+using ::grpc_event_engine::experimental::GetDefaultEventEngine;
+using ::grpc_event_engine::experimental::Promise;
+
+/// A fire-and-forget class representing an individual DNS request.
+///
+/// This provides a place to store the ownership of the DNSResolver object until
+/// the request is complete.
+class EventEngineDNSRequest : DNSRequest {
+ public:
+  EventEngineDNSRequest(std::unique_ptr<EventEngine::DNSResolver> dns_resolver,
+                        absl::string_view name, absl::string_view default_port,
+                        grpc_closure* on_done,
+                        std::vector<grpc_resolved_address>* addresses)
+      : dns_resolver_(std::move(dns_resolver)),
+        name_(std::string(name)),
+        default_port_(std::string(default_port)),
+        on_done_(std::move(on_done)) {}
+
+  void Start() override {
+    if (dns_resolver_ == nullptr) {
+      new DNSCallbackExecCtxScheduler(
+          std::move(on_done_),
+          absl::UnknownError("Failed to get DNS Resolver."));
+      return;
+    }
+    Ref().release();  // ref held by pending resolution
+    dns_resolver_->LookupHostname(
+        absl::bind_front(&EventEngineDNSRequest::OnLookupComplete, this), name_,
+        default_port_, absl::InfiniteFuture());
   }
-  // Convert addresses to iomgr form.
-  std::vector<grpc_resolved_address> result;
-  results.reserve(addresses->size());
-  for (size_t i = 0; i < addresses->size(); ++i) {
-    results.push_back(CreateGRPCResolvedAddress(addresses[i]));
+
+  // TODO(hork): implement cancellation; currently it's a no-op
+  void Orphan() override { Unref(); }
+
+ private:
+  void OnLookupComplete(
+      absl::StatusOr<std::vector<EventEngine::ResolvedAddress>> addresses) {
+    ExecCtx exec_ctx;
+    // Convert addresses to iomgr form.
+    std::vector<grpc_resolved_address> result;
+    results.reserve(addresses->size());
+    for (size_t i = 0; i < addresses->size(); ++i) {
+      results.push_back(CreateGRPCResolvedAddress(addresses[i]));
+    }
+    if (addresses.ok()) {
+      on_done_(std::move(result));
+    } else {
+      on_done_(addresses.status());
+    }
+    Unref();
   }
-  on_done(std::move(result));
-}
+
+  std::unique_ptr<EventEngine::DNSResolver> dns_resolver_;
+  const std::string name_;
+  const std::string default_port_;
+  std::function<void(absl::StatusOr<std::vector<grpc_resolved_address>>)>
+      on_done_;
+};
+
 }  // namespace
 
 DNSResolver* EventEngineDNSResolver::GetOrCreate() {
-  static EventEngineDNSResolver* instance = new EventEngineDNSResolver(
-      std::move(GetDefaultEventEngine()->GetDNSResolver()));
+  static EventEngineDNSResolver* instance = new EventEngineDNSResolver();
   return instance;
 }
 
-TaskHandle EventEngineDNSResolver::ResolveName(
+OrphanablePtr<DNSResolver::Request> EventEngineDNSResolver::ResolveName(
     absl::string_view name, absl::string_view default_port,
     grpc_pollset_set* /* interested_parties */,
     std::function<void(absl::StatusOr<std::vector<grpc_resolved_address>>)>
         on_done) {
-  return dns_resolver_->LookupHostname(
-      absl::bind_front(&EventEngineDNSRequest::OnLookupComplete, on_done), name,
-      default_port, absl::InfiniteFuture());
+  std::unique_ptr<EventEngine::DNSResolver> dns_resolver =
+      GetDefaultEventEngine()->GetDNSResolver();
+  return MakeOrphanable<EventEngineDNSRequest>(
+      std::move(dns_resolver), name, default_port, std::move(on_done));
 }
 
 absl::StatusOr<std::vector<grpc_resolved_address>>
@@ -73,19 +118,16 @@ EventEngineDNSResolver::ResolveNameBlocking(absl::string_view name,
                                             absl::string_view default_port) {
   grpc_closure on_done;
   Promise<absl::StatusOr<std::vector<grpc_resolved_address>>> evt;
-  ResolveName(
+  auto r = ResolveName(
       name, default_port,
       [&evt](void(absl::StatusOr<std::vector<grpc_resolved_address>> result) {
         evt.Set(std::move(result));
       }));
+  r->Start();
   return evt.Get();
 }
 
-bool Cancel(TaskHandle handle) override {
-  return dns_resolver_->Cancel(handle);
-}
-
 }  // namespace experimental
-}  // namespace grpc_event_engine
+}  // namespace grpc_core
 
 #endif  // GRPC_USE_EVENT_ENGINE
