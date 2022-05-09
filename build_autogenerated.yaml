@@ -1643,7 +1643,6 @@ libs:
   - src/core/tsi/transport_security.cc
   - src/core/tsi/transport_security_grpc.cc
   deps:
-  - absl/cleanup:cleanup
   - absl/container:flat_hash_map
   - absl/container:flat_hash_set
   - absl/container:inlined_vector
@@ -2419,7 +2418,6 @@ libs:
   - src/core/tsi/transport_security.cc
   - src/core/tsi/transport_security_grpc.cc
   deps:
-  - absl/cleanup:cleanup
   - absl/container:flat_hash_map
   - absl/container:flat_hash_set
   - absl/container:inlined_vector
