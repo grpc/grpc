@@ -176,7 +176,7 @@ class EventEngine {
     struct WriteArgs {
       // Represents private information that may be passed by gRPC for
       // select endpoints expected to be used only within google.
-      void* google_specific;
+      void* google_specific = nullptr;
       // A suggestion to the endpoint implementation to group data to be written
       // into frames of the specified max_frame_size. gRPC may use this
       // argument to dynamically control the max sizes of frames sent to a
