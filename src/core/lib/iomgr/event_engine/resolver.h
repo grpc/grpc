@@ -19,8 +19,6 @@
 
 #include <grpc/support/port_platform.h>
 
-#ifdef GRPC_USE_EVENT_ENGINE
-
 #include <string.h>
 #include <sys/types.h>
 
@@ -37,6 +35,7 @@
 namespace grpc_core {
 namespace experimental {
 
+#ifdef GRPC_USE_EVENT_ENGINE
 class EventEngineDNSResolver : public DNSResolver {
  public:
   // Gets the singleton instance, creating it first if it doesn't exist
@@ -51,9 +50,9 @@ class EventEngineDNSResolver : public DNSResolver {
   absl::StatusOr<std::vector<grpc_resolved_address>> ResolveNameBlocking(
       absl::string_view name, absl::string_view default_port) override;
 };
+#endif  // GRPC_USE_EVENT_ENGINE
 
 }  // namespace experimental
 }  // namespace grpc_core
 
-#endif  // GRPC_USE_EVENT_ENGINE
 #endif  // GRPC_CORE_LIB_IOMGR_EVENT_ENGINE_RESOLVER_H
