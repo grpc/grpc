@@ -70,18 +70,22 @@ bool IomgrEventEngine::Cancel(EventEngine::TaskHandle handle) {
 }
 
 EventEngine::TaskHandle IomgrEventEngine::RunAt(absl::Time when,
-                                                std::function<void()> fn) {
-  return RunAtInternal(when, std::move(fn));
+                                                std::function<void()> closure) {
+  return RunAtInternal(when, std::move(closure));
 }
 
 EventEngine::TaskHandle IomgrEventEngine::RunAt(absl::Time when,
-                                                EventEngine::Closure* cb) {
-  return RunAtInternal(when, cb);
+                                                EventEngine::Closure* closure) {
+  return RunAtInternal(when, closure);
 }
 
-void IomgrEventEngine::Run(std::function<void()> fn) { RunInternal(fn); }
+void IomgrEventEngine::Run(std::function<void()> closure) {
+  RunInternal(closure);
+}
 
-void IomgrEventEngine::Run(EventEngine::Closure* cb) { RunInternal(cb); }
+void IomgrEventEngine::Run(EventEngine::Closure* closure) {
+  RunInternal(closure);
+}
 
 EventEngine::TaskHandle IomgrEventEngine::RunAtInternal(
     absl::Time when,
