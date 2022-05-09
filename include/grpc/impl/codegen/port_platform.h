@@ -528,6 +528,19 @@ typedef unsigned __int64 uint64_t;
 #define GRPC_MUST_USE_RESULT
 #define GPR_ALIGN_STRUCT(n)
 #endif
+#ifdef USE_STRICT_WARNING
+/* When building with USE_STRICT_WARNING (which -Werror), types with this
+   attribute will be treated as annotated with warn_unused_result, enforcing
+   returned values of this type should be used.
+   This is added in grpc::Status in mind to address the issue where it always
+   has this annotation internally but OSS doesn't, sometimes causing internal
+   build failure. To prevent this, this is added while not introducing
+   a breaking change to existing user code which may not use returned values
+   of grpc::Status. */
+#define GRPC_MUST_USE_RESULT_WHEN_USE_STRICT_WARNING GRPC_MUST_USE_RESULT
+#else
+#define GRPC_MUST_USE_RESULT_WHEN_USE_STRICT_WARNING
+#endif
 #endif
 
 #ifndef GRPC_UNUSED

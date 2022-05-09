@@ -26,6 +26,7 @@
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
 
+#include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gprpp/bitset.h"
 #include "src/core/lib/gprpp/memory.h"
 #include "src/core/lib/iomgr/error.h"

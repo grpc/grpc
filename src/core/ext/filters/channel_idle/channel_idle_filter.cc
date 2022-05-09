@@ -33,6 +33,7 @@
 #include "src/core/lib/iomgr/timer.h"
 #include "src/core/lib/promise/exec_ctx_wakeup_scheduler.h"
 #include "src/core/lib/promise/loop.h"
+#include "src/core/lib/promise/promise.h"
 #include "src/core/lib/promise/sleep.h"
 #include "src/core/lib/promise/try_seq.h"
 #include "src/core/lib/transport/http2_errors.h"
@@ -124,7 +125,7 @@ void MaxAgeFilter::Shutdown() {
   ChannelIdleFilter::Shutdown();
 }
 
-void MaxAgeFilter::Start() {
+void MaxAgeFilter::PostInit() {
   struct StartupClosure {
     RefCountedPtr<grpc_channel_stack> channel_stack;
     MaxAgeFilter* filter;
@@ -259,15 +260,11 @@ void ChannelIdleFilter::CloseChannel() {
   elem->filter->start_transport_op(elem, op);
 }
 
-namespace {
-
-const grpc_channel_filter grpc_client_idle_filter =
+const grpc_channel_filter ClientIdleFilter::kFilter =
     MakePromiseBasedFilter<ClientIdleFilter, FilterEndpoint::kClient>(
         "client_idle");
-const grpc_channel_filter grpc_max_age_filter =
+const grpc_channel_filter MaxAgeFilter::kFilter =
     MakePromiseBasedFilter<MaxAgeFilter, FilterEndpoint::kServer>("max_age");
-
-}  // namespace
 
 void RegisterChannelIdleFilters(CoreConfiguration::Builder* builder) {
   builder->channel_init()->RegisterStage(
@@ -276,7 +273,7 @@ void RegisterChannelIdleFilters(CoreConfiguration::Builder* builder) {
         auto channel_args = builder->channel_args();
         if (!channel_args.WantMinimalStack() &&
             GetClientIdleTimeout(channel_args) != Duration::Infinity()) {
-          builder->PrependFilter(&grpc_client_idle_filter, nullptr);
+          builder->PrependFilter(&ClientIdleFilter::kFilter);
         }
         return true;
       });
@@ -286,11 +283,7 @@ void RegisterChannelIdleFilters(CoreConfiguration::Builder* builder) {
         auto channel_args = builder->channel_args();
         if (!channel_args.WantMinimalStack() &&
             MaxAgeFilter::Config::FromChannelArgs(channel_args).enable()) {
-          builder->PrependFilter(
-              &grpc_max_age_filter,
-              [](grpc_channel_stack*, grpc_channel_element* elem) {
-                static_cast<MaxAgeFilter*>(elem->channel_data)->Start();
-              });
+          builder->PrependFilter(&MaxAgeFilter::kFilter);
         }
         return true;
       });

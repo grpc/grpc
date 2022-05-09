@@ -21,10 +21,6 @@
 
 #include <grpc/support/port_platform.h>
 
-#include <stdint.h>
-
-#include "src/core/lib/gprpp/memory.h"
-
 #define GPR_GLOBAL_CONFIG_GET(name) gpr_global_config_get_##name()
 
 #define GPR_GLOBAL_CONFIG_SET(name, value) gpr_global_config_set_##name(value)

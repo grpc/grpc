@@ -96,6 +96,8 @@ message Action {
 
 message Msg {
     string filter = 1;
+    int32 channel_stack_type = 3;
+    string stack_name = 4;
     repeated ChannelArg channel_args = 2;
     repeated Action actions = 100;
 }

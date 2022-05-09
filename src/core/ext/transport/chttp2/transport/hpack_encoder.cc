@@ -20,27 +20,23 @@
 
 #include "src/core/ext/transport/chttp2/transport/hpack_encoder.h"
 
-#include <assert.h>
-#include <string.h>
-
+#include <algorithm>
 #include <cstdint>
+#include <memory>
 
-#include "src/core/ext/transport/chttp2/transport/hpack_constants.h"
-#include "src/core/ext/transport/chttp2/transport/hpack_encoder_table.h"
+#include "absl/utility/utility.h"
 
-/* This is here for grpc_is_binary_header
- * TODO(murgatroid99): Remove this
- */
-#include <grpc/grpc.h>
 #include <grpc/slice.h>
-#include <grpc/support/alloc.h>
+#include <grpc/slice_buffer.h>
 #include <grpc/support/log.h>
 
 #include "src/core/ext/transport/chttp2/transport/bin_encoder.h"
+#include "src/core/ext/transport/chttp2/transport/frame.h"
+#include "src/core/ext/transport/chttp2/transport/hpack_constants.h"
+#include "src/core/ext/transport/chttp2/transport/hpack_encoder_table.h"
 #include "src/core/ext/transport/chttp2/transport/varint.h"
 #include "src/core/lib/debug/stats.h"
-#include "src/core/lib/slice/slice_internal.h"
-#include "src/core/lib/slice/slice_string_helpers.h"
+#include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/surface/validate_metadata.h"
 #include "src/core/lib/transport/timeout_encoding.h"
 

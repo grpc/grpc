@@ -18,8 +18,19 @@
 
 #include "src/core/ext/filters/client_channel/dynamic_filters.h"
 
+#include <stddef.h>
+
+#include <new>
+#include <string>
+#include <utility>
+
+#include <grpc/support/alloc.h>
+#include <grpc/support/log.h>
+
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_stack.h"
+#include "src/core/lib/debug/trace.h"
+#include "src/core/lib/gpr/alloc.h"
 #include "src/core/lib/surface/lame_client.h"
 
 // Conversion between call and call stack.
