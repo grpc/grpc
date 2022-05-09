@@ -35,66 +35,24 @@ struct ClosureData {
   grpc_timer timer;
   grpc_closure closure;
   absl::variant<std::function<void()>, EventEngine::Closure*> cb;
+  IomgrEventEngine* engine;
+  EventEngine::TaskHandle handle;
 };
-
-EventEngine::TaskHandle RunAtInternal(
-    absl::Time when,
-    absl::variant<std::function<void()>, EventEngine::Closure*> cb) {
-  grpc_core::ExecCtx ctx;
-  auto* td = new ClosureData;
-  td->cb = std::move(cb);
-  GRPC_CLOSURE_INIT(
-      &td->closure,
-      [](void* arg, grpc_error_handle error) {
-        auto* td = static_cast<ClosureData*>(arg);
-        auto cleaner = absl::MakeCleanup([td] { delete td; });
-        // DO NOT SUBMIT - unregister handle / mark as run
-        if (error == GRPC_ERROR_CANCELLED) return;
-        grpc_core::Match(
-            td->cb, [](EventEngine::Closure* cb) { cb->Run(); },
-            [](std::function<void()> fn) { fn(); });
-      },
-      td, nullptr);
-  grpc_timer_init(
-      &td->timer,
-      grpc_core::Timestamp::FromTimespecRoundUp(grpc_core::ToGprTimeSpec(when)),
-      &td->closure);
-  // DO NOT SUBMIT - register task handle somewhere so cancellation can return
-  // bools.
-  return {0, 0};
-}
-
-void RunInternal(
-    absl::variant<std::function<void()>, EventEngine::Closure*> cb) {
-  auto* td = new ClosureData;
-  td->cb = std::move(cb);
-  GRPC_CLOSURE_INIT(
-      &td->closure,
-      [](void* arg, grpc_error_handle error) {
-        auto* td = static_cast<ClosureData*>(arg);
-        auto cleaner = absl::MakeCleanup([td] { delete td; });
-        grpc_core::Match(
-            td->cb, [](EventEngine::Closure* cb) { cb->Run(); },
-            [](std::function<void()> fn) { fn(); });
-      },
-      td, nullptr);
-  // TODO(hork): have the EE spawn dedicated closure thread(s)
-  grpc_core::Executor::Run(&td->closure, GRPC_ERROR_NONE);
-}
 
 }  // namespace
 
-IomgrEventEngine::IomgrEventEngine() {
-  // DO NOT SUBMIT TODO(hork): implement
-}
+IomgrEventEngine::IomgrEventEngine() {}
 
-IomgrEventEngine::~IomgrEventEngine() {
-  // DO NOT SUBMIT TODO(hork): implement
-}
+IomgrEventEngine::~IomgrEventEngine() {}
 
-bool IomgrEventEngine::Cancel(EventEngine::TaskHandle) {
-  // DO NOT SUBMIT TODO(hork): implement
-  GPR_ASSERT(false && "unimplemented");
+bool IomgrEventEngine::Cancel(EventEngine::TaskHandle handle) {
+  grpc_core::ExecCtx ctx;
+  grpc_core::MutexLock lock(&mu_);
+  if (!known_handles_.contains(handle)) return false;
+  auto* cd = reinterpret_cast<ClosureData*>(handle.keys[0]);
+  grpc_timer_cancel(&cd->timer);
+  known_handles_.erase(handle);
+  return true;
 }
 
 EventEngine::TaskHandle IomgrEventEngine::RunAt(absl::Time when,
@@ -110,6 +68,59 @@ EventEngine::TaskHandle IomgrEventEngine::RunAt(absl::Time when,
 void IomgrEventEngine::Run(std::function<void()> fn) { RunInternal(fn); }
 
 void IomgrEventEngine::Run(EventEngine::Closure* cb) { RunInternal(cb); }
+
+EventEngine::TaskHandle IomgrEventEngine::RunAtInternal(
+    absl::Time when,
+    absl::variant<std::function<void()>, EventEngine::Closure*> cb) {
+  grpc_core::ExecCtx ctx;
+  auto* cd = new ClosureData;
+  cd->cb = std::move(cb);
+  cd->engine = this;
+  GRPC_CLOSURE_INIT(
+      &cd->closure,
+      [](void* arg, grpc_error_handle error) {
+        auto* cd = static_cast<ClosureData*>(arg);
+        {
+          grpc_core::MutexLock lock(&cd->engine->mu_);
+          cd->engine->known_handles_.erase(cd->handle);
+        }
+        auto cleaner = absl::MakeCleanup([cd] { delete cd; });
+        if (error == GRPC_ERROR_CANCELLED) return;
+        grpc_core::Match(
+            cd->cb, [](EventEngine::Closure* cb) { cb->Run(); },
+            [](std::function<void()> fn) { fn(); });
+      },
+      cd, nullptr);
+  grpc_timer_init(
+      &cd->timer,
+      grpc_core::Timestamp::FromTimespecRoundUp(grpc_core::ToGprTimeSpec(when)),
+      &cd->closure);
+  EventEngine::TaskHandle handle{reinterpret_cast<intptr_t>(cd),
+                                 aba_token_.fetch_add(1)};
+  grpc_core::MutexLock lock(&mu_);
+  known_handles_.insert(handle);
+  cd->handle = handle;
+  return handle;
+}
+
+void IomgrEventEngine::RunInternal(
+    absl::variant<std::function<void()>, EventEngine::Closure*> cb) {
+  auto* cd = new ClosureData;
+  cd->cb = std::move(cb);
+  cd->engine = this;
+  GRPC_CLOSURE_INIT(
+      &cd->closure,
+      [](void* arg, grpc_error_handle error) {
+        auto* cd = static_cast<ClosureData*>(arg);
+        auto cleaner = absl::MakeCleanup([cd] { delete cd; });
+        grpc_core::Match(
+            cd->cb, [](EventEngine::Closure* cb) { cb->Run(); },
+            [](std::function<void()> fn) { fn(); });
+      },
+      cd, nullptr);
+  // TODO(hork): have the EE spawn dedicated closure thread(s)
+  grpc_core::Executor::Run(&cd->closure, GRPC_ERROR_NONE);
+}
 
 std::unique_ptr<EventEngine::DNSResolver> IomgrEventEngine::GetDNSResolver(
     EventEngine::DNSResolver::ResolverOptions const&) {

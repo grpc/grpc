@@ -440,6 +440,7 @@ grpc_cc_library(
     ],
     deps = [
         "config",
+        "default_event_engine_factory_hdrs",
         "gpr_base",
         "grpc_authorization_base",
         "grpc_base",
@@ -1749,11 +1750,11 @@ grpc_cc_library(
 grpc_cc_library(
     name = "iomgr_timer",
     srcs = [
+        "src/core/lib/iomgr/time_averaged_stats.cc",
         "src/core/lib/iomgr/timer.cc",
         "src/core/lib/iomgr/timer_generic.cc",
         "src/core/lib/iomgr/timer_heap.cc",
         "src/core/lib/iomgr/timer_manager.cc",
-        "src/core/lib/iomgr/time_averaged_stats.cc",
     ],
     hdrs = [
         "src/core/lib/iomgr/timer.h",
@@ -1856,8 +1857,8 @@ grpc_cc_library(
     deps = [
         "default_event_engine_factory_hdrs",
         "gpr_base",
-        "iomgr_port",
         "iomgr_event_engine",
+        "iomgr_port",
     ],
 )
 
@@ -1870,6 +1871,7 @@ grpc_cc_library(
     ],
     deps = [
         "event_engine_base_hdrs",
+        "event_engine_common",
         "exec_ctx",
         "gpr_base",
         "gpr_platform",
@@ -1882,6 +1884,12 @@ grpc_cc_library(
     name = "event_engine_common",
     srcs = [
         "src/core/lib/event_engine/resolved_address.cc",
+    ],
+    hdrs = [
+        "src/core/lib/event_engine/handle_containers.h",
+    ],
+    external_deps = [
+        "absl/container:flat_hash_set",
     ],
     deps = [
         "event_engine_base_hdrs",

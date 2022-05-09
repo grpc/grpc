@@ -18,6 +18,9 @@
 
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/event_engine/port.h>
+#include "src/core/lib/gprpp/sync.h"
+
+#include "src/core/lib/event_engine/handle_containers.h"
 
 namespace grpc_event_engine {
 namespace experimental {
@@ -81,6 +84,18 @@ class IomgrEventEngine final : public EventEngine {
   TaskHandle RunAt(absl::Time when, Closure* closure) override;
   TaskHandle RunAt(absl::Time when, std::function<void()> closure) override;
   bool Cancel(TaskHandle handle) override;
+
+ private:
+  EventEngine::TaskHandle RunAtInternal(
+      absl::Time when,
+      absl::variant<std::function<void()>, EventEngine::Closure*> cb);
+
+  void RunInternal(
+      absl::variant<std::function<void()>, EventEngine::Closure*> cb);
+
+  grpc_core::Mutex mu_;
+  TaskHandleSet known_handles_ ABSL_GUARDED_BY(mu_);
+  std::atomic<intptr_t> aba_token_{0};
 };
 
 }  // namespace experimental
