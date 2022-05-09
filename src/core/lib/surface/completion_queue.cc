@@ -1156,7 +1156,7 @@ static void del_plucker(grpc_completion_queue* cq, void* tag,
       return;
     }
   }
-  GPR_UNREACHABLE_CODE(return);
+  GPR_UNREACHABLE_CODE(return );
 }
 
 class ExecCtxPluck : public grpc_core::ExecCtx {
