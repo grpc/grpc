@@ -22,16 +22,15 @@
 #include "src/core/lib/slice/slice.h"
 #include "test/core/util/test_config.h"
 
-using ::grpc_core::Slice;
+using ::grpc_event_engine::experimental::Slice;
 using ::grpc_event_engine::experimental::SliceBuffer;
 
 static constexpr int kNewSliceLength = 100;
 
 Slice MakeSlice(size_t len) {
   GPR_ASSERT(len > 0);
-  unsigned char* contents = reinterpret_cast<unsigned char*>(new char[len]);
-  memset(contents, 'a', len);
-  return Slice(grpc_slice_new(contents, len, gpr_free));
+  std::string contents(len, 'a');
+  return Slice(Slice::FromExternalString(contents));
 }
 
 TEST(SliceBufferTest, AddAndRemoveTest) {

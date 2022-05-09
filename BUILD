@@ -201,6 +201,7 @@ GRPC_PUBLIC_EVENT_ENGINE_HDRS = [
     "include/grpc/event_engine/memory_allocator.h",
     "include/grpc/event_engine/memory_request.h",
     "include/grpc/event_engine/internal/memory_allocator_impl.h",
+    "include/grpc/event_engine/slice.h",
 ]
 
 GRPCXX_SRCS = [
@@ -1506,6 +1507,7 @@ grpc_cc_library(
         "include/grpc/event_engine/internal/memory_allocator_impl.h",
         "include/grpc/event_engine/memory_allocator.h",
         "include/grpc/event_engine/memory_request.h",
+        "include/grpc/event_engine/slice.h",
     ],
     language = "c++",
     deps = [

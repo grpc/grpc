@@ -24,12 +24,9 @@
 #include <vector>
 
 #include <grpc/event_engine/internal/memory_allocator_impl.h>
+#include <grpc/event_engine/slice.h>
 #include <grpc/slice.h>
 #include <grpc/slice_buffer.h>
-
-namespace grpc_core {
-class Slice;
-}
 
 namespace grpc_event_engine {
 namespace experimental {
@@ -64,11 +61,11 @@ class SliceBuffer {
 
   /// Adds a new slice into the SliceBuffer and makes an attempt to merge
   /// this slice with the last slice in the SliceBuffer.
-  void Add(grpc_core::Slice slice);
+  void Add(Slice slice);
 
   /// Adds a new slice into the SliceBuffer at the next available index.
   /// Returns the index at which the new slice is added.
-  size_t AddIndexed(grpc_core::Slice slice);
+  size_t AddIndexed(Slice slice);
 
   /// Removes the first slice in the SliceBuffer.
   void Pop() { grpc_slice_buffer_pop(slice_buffer_); }
@@ -90,14 +87,14 @@ class SliceBuffer {
   void Clear() { grpc_slice_buffer_reset_and_unref(slice_buffer_); }
 
   /// Removes the first slice in the SliceBuffer and returns it.
-  grpc_core::Slice TakeFirst();
+  Slice TakeFirst();
 
   /// Prepends the slice to the the front of the SliceBuffer.
-  void UndoTakeFirst(grpc_core::Slice slice);
+  void UndoTakeFirst(Slice slice);
 
   /// Increased the ref-count of slice at the specified index and returns the
   /// associated slice.
-  grpc_core::Slice RefSlice(size_t index);
+  Slice RefSlice(size_t index);
 
   /// The total number of bytes held by the SliceBuffer
   size_t Length() { return slice_buffer_->length; }
