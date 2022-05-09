@@ -14,13 +14,13 @@
 #ifndef GRPC_CORE_LIB_EVENT_ENGINE_IOMGR_ENGINE_H
 #define GRPC_CORE_LIB_EVENT_ENGINE_IOMGR_ENGINE_H
 #include <grpc/support/port_platform.h>
-#include "src/core/lib/iomgr/port.h"
 
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/event_engine/port.h>
-#include "src/core/lib/gprpp/sync.h"
 
 #include "src/core/lib/event_engine/handle_containers.h"
+#include "src/core/lib/gprpp/sync.h"
+#include "src/core/lib/iomgr/port.h"
 
 namespace grpc_event_engine {
 namespace experimental {
@@ -29,7 +29,7 @@ class IomgrEventEngine final : public EventEngine {
  public:
   class IomgrEndpoint : public EventEngine::Endpoint {
    public:
-    ~IomgrEndpoint();
+    ~IomgrEndpoint() override;
     void Read(std::function<void(absl::Status)> on_read,
               SliceBuffer* buffer) override;
     void Write(std::function<void(absl::Status)> on_writable,
@@ -39,13 +39,13 @@ class IomgrEventEngine final : public EventEngine {
   };
   class IomgrListener : public EventEngine::Listener {
    public:
-    ~IomgrListener();
+    ~IomgrListener() override;
     absl::StatusOr<int> Bind(const ResolvedAddress& addr) override;
     absl::Status Start() override;
   };
   class IomgrDNSResolver : public EventEngine::DNSResolver {
    public:
-    ~IomgrDNSResolver();
+    ~IomgrDNSResolver() override;
     LookupTaskHandle LookupHostname(LookupHostnameCallback on_resolve,
                                     absl::string_view name,
                                     absl::string_view default_port,
@@ -60,7 +60,7 @@ class IomgrEventEngine final : public EventEngine {
   };
 
   IomgrEventEngine();
-  ~IomgrEventEngine();
+  ~IomgrEventEngine() override;
 
   absl::StatusOr<std::unique_ptr<Listener>> CreateListener(
       Listener::AcceptCallback on_accept,
@@ -75,7 +75,7 @@ class IomgrEventEngine final : public EventEngine {
                            MemoryAllocator memory_allocator,
                            absl::Time deadline) override;
 
-  virtual bool CancelConnect(ConnectionHandle handle) override;
+  bool CancelConnect(ConnectionHandle handle) override;
   bool IsWorkerThread() override;
   std::unique_ptr<DNSResolver> GetDNSResolver(
       const DNSResolver::ResolverOptions& options) override;

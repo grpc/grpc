@@ -14,7 +14,6 @@
 #include <grpc/support/port_platform.h>
 
 #include "src/core/lib/event_engine/event_engine_factory.h"
-
 #include "src/core/lib/event_engine/iomgr_engine.h"
 
 namespace grpc_event_engine {
