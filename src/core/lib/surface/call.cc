@@ -58,7 +58,6 @@
 #include "src/core/lib/debug/stats.h"
 #include "src/core/lib/gpr/alloc.h"
 #include "src/core/lib/gpr/time_precise.h"
-#include "src/core/lib/gprpp/chunked_vector.h"
 #include "src/core/lib/gprpp/cpp_impl_of.h"
 #include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/manual_constructor.h"
