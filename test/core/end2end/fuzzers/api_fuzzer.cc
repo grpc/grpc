@@ -164,7 +164,7 @@ class FuzzerDNSResolver : public grpc_core::DNSResolver {
       std::function<void(absl::StatusOr<std::vector<grpc_resolved_address>>)>
           on_done) override {
     new FuzzerDNSRequest(name, std::move(on_done));
-    return NULL_HANDLE;
+    return kNullHandle;
   }
 
   absl::StatusOr<std::vector<grpc_resolved_address>> ResolveNameBlocking(

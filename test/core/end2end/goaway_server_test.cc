@@ -107,7 +107,7 @@ class TestDNSResolver : public grpc_core::DNSResolver {
           name, default_port, interested_parties, std::move(on_done));
     }
     new TestDNSRequest(std::move(on_done));
-    return NULL_HANDLE;
+    return kNullHandle;
   }
 
   absl::StatusOr<std::vector<grpc_resolved_address>> ResolveNameBlocking(

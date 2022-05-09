@@ -31,7 +31,7 @@ namespace {
 DNSResolver* g_dns_resolver;
 }
 
-constexpr DNSResolver::TaskHandle DNSResolver::NULL_HANDLE;
+constexpr DNSResolver::TaskHandle DNSResolver::kNullHandle;
 
 void SetDNSResolver(DNSResolver* resolver) { g_dns_resolver = resolver; }
 

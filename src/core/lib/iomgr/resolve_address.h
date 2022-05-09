@@ -43,7 +43,7 @@ class DNSResolver {
  public:
   using TaskHandle = ::grpc_event_engine::experimental::EventEngine::
       DNSResolver::LookupTaskHandle;
-  static constexpr TaskHandle NULL_HANDLE{0, 0};
+  static constexpr TaskHandle kNullHandle{0, 0};
 
   // Tracks a single asynchronous DNS resolution attempt. DNS resolution should
   // begin upon construction.

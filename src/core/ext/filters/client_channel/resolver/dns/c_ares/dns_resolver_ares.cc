@@ -26,7 +26,6 @@
 
 #include <address_sorting/address_sorting.h>
 
-#include "absl/cleanup/cleanup.h"
 #include "absl/container/flat_hash_set.h"
 #include "absl/container/inlined_vector.h"
 #include "absl/strings/str_cat.h"
@@ -337,8 +336,7 @@ class AresDNSResolver : public DNSResolver {
           default_port_(std::string(default_port)),
           interested_parties_(interested_parties),
           on_resolve_address_done_(std::move(on_resolve_address_done)),
-          cancelled_(false),
-          ran_(false),
+          completed_(false),
           resolver_(resolver),
           aba_token_(resolver->aba_token_.fetch_add(1)) {
       GRPC_CARES_TRACE_LOG("AresRequest:%p ctor", this);
@@ -364,11 +362,10 @@ class AresDNSResolver : public DNSResolver {
       GRPC_CARES_TRACE_LOG("AresRequest:%p Cancel ares_request_:%p", this,
                            ares_request_.get());
       // Cancelling the same lookup twice is a bug.
-      GPR_ASSERT(!cancelled_);
-      if (ran_) return false;
+      if (completed_) return false;
       // OnDnsLookupDone will still be run
       grpc_cancel_ares_request(ares_request_.get());
-      cancelled_ = true;
+      completed_ = true;
       return true;
     }
 
@@ -383,14 +380,14 @@ class AresDNSResolver : public DNSResolver {
       AresRequest* request = static_cast<AresRequest*>(arg);
       GRPC_CARES_TRACE_LOG("AresRequest:%p OnDnsLookupDone", request);
       // This request is deleted and unregistered upon any exit.
-      auto req_deleter = absl::MakeCleanup([request] { delete request; });
+      std::unique_ptr<AresRequest> deleter(request);
       std::vector<grpc_resolved_address> resolved_addresses;
       {
         MutexLock lock(&request->mu_);
-        if (request->cancelled_) {
+        if (request->completed_) {
           return;
         }
-        request->ran_ = true;
+        request->completed_ = true;
         if (request->addresses_ != nullptr) {
           resolved_addresses.reserve(request->addresses_->size());
           for (const auto& server_address : *request->addresses_) {
@@ -426,8 +423,7 @@ class AresDNSResolver : public DNSResolver {
     grpc_closure on_dns_lookup_done_ ABSL_GUARDED_BY(mu_);
     // underlying ares_request that the query is performed on
     std::unique_ptr<grpc_ares_request> ares_request_ ABSL_GUARDED_BY(mu_);
-    bool cancelled_ ABSL_GUARDED_BY(mu_);
-    bool ran_ ABSL_GUARDED_BY(mu_);
+    bool completed_ ABSL_GUARDED_BY(mu_);
     // Parent resolver that created this request
     AresDNSResolver* resolver_;
     // Unique token to help distinguish this request from others that may later

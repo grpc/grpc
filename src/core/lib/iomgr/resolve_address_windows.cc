@@ -94,7 +94,7 @@ DNSResolver::TaskHandle NativeDNSResolver::ResolveName(
     std::function<void(absl::StatusOr<std::vector<grpc_resolved_address>>)>
         on_done) {
   new NativeDNSRequest(name, default_port, std::move(on_done));
-  return NULL_HANDLE;
+  return kNullHandle;
 }
 
 absl::StatusOr<std::vector<grpc_resolved_address>>

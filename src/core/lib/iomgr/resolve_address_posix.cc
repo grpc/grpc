@@ -92,7 +92,7 @@ DNSResolver::TaskHandle NativeDNSResolver::ResolveName(
         on_done) {
   // self-deleting class
   new NativeDNSRequest(name, default_port, std::move(on_done));
-  return DNSResolver::NULL_HANDLE;
+  return kNullHandle;
 }
 
 absl::StatusOr<std::vector<grpc_resolved_address>>

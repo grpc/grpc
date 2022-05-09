@@ -202,7 +202,7 @@ void HttpRequest::Start() {
     return;
   }
   Ref().release();  // ref held by pending DNS resolution
-  dns_request_ = GetDNSResolver()->ResolveName(
+  dns_request_handle_ = GetDNSResolver()->ResolveName(
       uri_.authority(), uri_.scheme(), pollset_set_,
       absl::bind_front(&HttpRequest::OnResolved, this));
 }
@@ -213,7 +213,8 @@ void HttpRequest::Orphan() {
     GPR_ASSERT(!cancelled_);
     cancelled_ = true;
     // cancel potentially pending DNS resolution.
-    if (!ran_ && GetDNSResolver()->Cancel(dns_request_)) {
+    if (dns_request_handle_.has_value() &&
+        GetDNSResolver()->Cancel(dns_request_handle_.value())) {
       Finish(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
           "cancelled during DNS resolution"));
       Unref();
@@ -406,7 +407,7 @@ void HttpRequest::OnResolved(
     absl::StatusOr<std::vector<grpc_resolved_address>> addresses_or) {
   RefCountedPtr<HttpRequest> unreffer(this);
   MutexLock lock(&mu_);
-  ran_ = true;
+  dns_request_handle_.reset();
   if (cancelled_) {
     Finish(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
         "cancelled during DNS resolution"));
