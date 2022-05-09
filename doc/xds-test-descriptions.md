@@ -770,11 +770,13 @@ Load balancer configuration:
     ```
 Assert:
 
-1.  The test driver chooses one of the five backends to fail requests, and
+1.  The test driver asserts that traffic is equally distribted among the
+five backends, and all requests end with the `OK` status.
+2.  The test driver chooses one of the five backends to fail requests, and
 configures the client to send the metadata
-`hostname=<chosen backend> error-code-2`. The driver asserts that during some
-10-second interval, all traffic goes to the other four backends and all
-requests end with the `OK` status.
-2.  The test driver removes the client configuration to send metadata. The
-driver asserts that during some 10-second interval, all 5 backends receive
-traffic and all requests end with the `OK` status.
+`rpc-behavior: hostname=<chosen backend> error-code-2`. The driver asserts
+that during some 10-second interval, all traffic goes to the other four
+backends and all requests end with the `OK` status.
+3.  The test driver removes the client configuration to send metadata. The
+driver asserts that during some 10-second interval, traffic is equally
+distributed among the five backends, and all requests end with the `OK` status.
