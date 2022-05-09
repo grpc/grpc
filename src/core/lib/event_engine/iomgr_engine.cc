@@ -39,6 +39,17 @@ struct ClosureData {
   EventEngine::TaskHandle handle;
 };
 
+// Timer limits due to quirks in the iomgr implementation.
+// If deadline <= Now, the callback will be run inline, which can result in lock
+// issues. And absl::InfiniteFuture yields UB.
+absl::Time Clamp(absl::Time when) {
+  absl::Time max = absl::Now() + absl::Hours(8766);
+  absl::Time min = absl::Now() + absl::Milliseconds(3);
+  if (when > max) return max;
+  if (when < min) return min;
+  return when;
+}
+
 }  // namespace
 
 IomgrEventEngine::IomgrEventEngine() {}
@@ -72,6 +83,7 @@ void IomgrEventEngine::Run(EventEngine::Closure* cb) { RunInternal(cb); }
 EventEngine::TaskHandle IomgrEventEngine::RunAtInternal(
     absl::Time when,
     absl::variant<std::function<void()>, EventEngine::Closure*> cb) {
+  when = Clamp(when);
   grpc_core::ExecCtx ctx;
   auto* cd = new ClosureData;
   cd->cb = std::move(cb);
