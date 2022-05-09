@@ -1106,6 +1106,7 @@ grpc_cc_library(
     public_hdrs = [
         "src/core/lib/promise/promise.h",
     ],
+    visibility = ["@grpc:alt_grpc_base_legacy"],
     deps = [
         "gpr_platform",
         "poll",
