@@ -31,8 +31,9 @@ namespace grpc_core {
 
 bool KernelSupportsErrqueue() {
   static const bool errqueue_supported = []() {
-// Both-compile time and run-time linux kernel versions should be at least 4.0.0
 #ifdef GRPC_LINUX_ERRQUEUE
+    // Both-compile time and run-time linux kernel versions should be at
+    // least 4.0.0
     struct utsname buffer;
     if (uname(&buffer) != 0) {
       gpr_log(GPR_ERROR, "uname: %s", strerror(errno));
@@ -48,11 +49,11 @@ bool KernelSupportsErrqueue() {
     } else {
       gpr_log(GPR_DEBUG, "ERRQUEUE support not enabled");
     }
-#endif // GRPC_LINUX_ERRQUEUE
+#endif  // GRPC_LINUX_ERRQUEUE
     return false;
   }();
   return errqueue_supported;
 }
-} // namespace grpc_core 
+}  // namespace grpc_core
 
-#endif // GRPC_POSIX_SOCKET_TCP
+#endif  // GRPC_POSIX_SOCKET_TCP
