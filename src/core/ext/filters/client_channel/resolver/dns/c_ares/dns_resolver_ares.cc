@@ -338,10 +338,11 @@ class AresDNSResolver : public DNSResolver {
           on_resolve_address_done_(std::move(on_resolve_address_done)),
           completed_(false),
           resolver_(resolver),
-          aba_token_(resolver->aba_token_.fetch_add(1)) {
+          aba_token_(resolver->aba_token_++) {
       GRPC_CARES_TRACE_LOG("AresRequest:%p ctor", this);
       GRPC_CLOSURE_INIT(&on_dns_lookup_done_, OnDnsLookupDone, this,
                         grpc_schedule_on_exec_ctx);
+      MutexLock lock(&mu_);
       ares_request_ = std::unique_ptr<grpc_ares_request>(grpc_dns_lookup_ares(
           /*dns_server=*/"", name_.c_str(), default_port_.c_str(),
           interested_parties_, &on_dns_lookup_done_, &addresses_,
@@ -442,10 +443,10 @@ class AresDNSResolver : public DNSResolver {
       grpc_pollset_set* interested_parties,
       std::function<void(absl::StatusOr<std::vector<grpc_resolved_address>>)>
           on_done) override {
+    MutexLock lock(&mu_);
     auto* request = new AresRequest(name, default_port, interested_parties,
                                     std::move(on_done), this);
     auto handle = request->task_handle();
-    MutexLock lock(&mu_);
     open_requests_.insert(handle);
     return handle;
   }
@@ -480,7 +481,7 @@ class AresDNSResolver : public DNSResolver {
   DNSResolver* default_resolver_ = GetDNSResolver();
   Mutex mu_;
   LookupTaskHandleSet open_requests_ ABSL_GUARDED_BY(mu_);
-  std::atomic<intptr_t> aba_token_{0};
+  intptr_t aba_token_ ABSL_GUARDED_BY(mu_) = 0;
 };
 
 bool ShouldUseAres(const char* resolver_env) {
