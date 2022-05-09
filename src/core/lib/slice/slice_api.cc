@@ -44,9 +44,31 @@ void grpc_slice_unref(grpc_slice slice) {
 namespace grpc_event_engine {
 namespace experimental {
 
-uint32_t slice_detail::BaseSlice::Hash() const {
-  return grpc_slice_hash_internal(slice_);
+namespace slice_detail {
+
+uint32_t BaseSlice::Hash() const { return grpc_slice_hash_internal(slice_); }
+
+template <>
+MutableSlice CopyConstructors<MutableSlice>::FromCopiedString(std::string s) {
+  return MutableSlice(grpc_slice_from_cpp_string(std::move(s)));
 }
+
+template <>
+Slice StaticConstructors<Slice>::FromStaticBuffer(const void* s, size_t len) {
+  grpc_slice slice;
+  slice.refcount = grpc_slice_refcount::NoopRefcount();
+  slice.data.refcounted.bytes =
+      const_cast<uint8_t*>(static_cast<const uint8_t*>(s));
+  slice.data.refcounted.length = len;
+  return Slice(slice);
+}
+
+template <>
+Slice CopyConstructors<Slice>::FromCopiedString(std::string s) {
+  return Slice(grpc_slice_from_cpp_string(std::move(s)));
+}
+
+}  // namespace slice_detail
 
 MutableSlice::MutableSlice(const grpc_slice& slice)
     : slice_detail::BaseSlice(slice) {
@@ -54,12 +76,6 @@ MutableSlice::MutableSlice(const grpc_slice& slice)
 }
 
 MutableSlice::~MutableSlice() { grpc_slice_unref_internal(c_slice()); }
-
-template <>
-MutableSlice slice_detail::CopyConstructors<MutableSlice>::FromCopiedString(
-    std::string s) {
-  return MutableSlice(grpc_slice_from_cpp_string(std::move(s)));
-}
 
 Slice Slice::TakeOwned() {
   if (c_slice().refcount == nullptr) {
@@ -90,22 +106,6 @@ MutableSlice Slice::TakeMutable() {
     return MutableSlice(TakeCSlice());
   }
   return MutableSlice(grpc_slice_copy(c_slice()));
-}
-
-template <>
-Slice slice_detail::StaticConstructors<Slice>::FromStaticBuffer(const void* s,
-                                                                size_t len) {
-  grpc_slice slice;
-  slice.refcount = grpc_slice_refcount::NoopRefcount();
-  slice.data.refcounted.bytes =
-      const_cast<uint8_t*>(static_cast<const uint8_t*>(s));
-  slice.data.refcounted.length = len;
-  return Slice(slice);
-}
-
-template <>
-Slice slice_detail::CopyConstructors<Slice>::FromCopiedString(std::string s) {
-  return Slice(grpc_slice_from_cpp_string(std::move(s)));
 }
 
 Slice::~Slice() { grpc_slice_unref_internal(c_slice()); }

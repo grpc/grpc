@@ -29,8 +29,9 @@ static constexpr int kNewSliceLength = 100;
 
 Slice MakeSlice(size_t len) {
   GPR_ASSERT(len > 0);
-  std::string contents(len, 'a');
-  return Slice(Slice::FromExternalString(contents));
+  unsigned char* contents = reinterpret_cast<unsigned char*>(new char[len]);
+  memset(contents, 'a', len);
+  return Slice(grpc_slice_new(contents, len, gpr_free));
 }
 
 TEST(SliceBufferTest, AddAndRemoveTest) {
@@ -77,6 +78,5 @@ TEST(SliceBufferTest, SliceRefTest) {
 
 int main(int argc, char** argv) {
   testing::InitGoogleTest(&argc, argv);
-  auto result = RUN_ALL_TESTS();
-  return result;
+  return RUN_ALL_TESTS();
 }
