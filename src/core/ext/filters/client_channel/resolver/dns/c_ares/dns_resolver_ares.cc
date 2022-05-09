@@ -16,6 +16,7 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <stdint.h>
 #include <stdlib.h>
 
 #include <algorithm>
@@ -34,6 +35,7 @@
 #include "absl/strings/string_view.h"
 #include "absl/strings/strip.h"
 
+#include <grpc/event_engine/event_engine.h>
 #include <grpc/impl/codegen/grpc_types.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
