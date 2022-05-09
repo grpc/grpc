@@ -78,7 +78,6 @@ grpc_cc_test(
     deps = ["//test/core/event_engine/test_suite:timer"],
 )
 
-
 # -- Internal targets --
 
 grpc_cc_library(

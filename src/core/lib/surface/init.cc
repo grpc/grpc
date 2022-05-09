@@ -176,12 +176,8 @@ void grpc_init(void) {
     }
     grpc_tracer_init();
     grpc_iomgr_start();
-    // ensure the library is alive for the callback
-    ++g_initializations;
-    grpc_event_engine::experimental::GetDefaultEventEngine()->Run([]() {
-      gpr_log(GPR_DEBUG, "EventEngine initialized");
-      grpc_shutdown();
-    });
+    grpc_event_engine::experimental::GetDefaultEventEngine()->Run(
+        []() { gpr_log(GPR_DEBUG, "EventEngine initialized"); });
   }
 
   GRPC_API_TRACE("grpc_init(void)", 0, ());
