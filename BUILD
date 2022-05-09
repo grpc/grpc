@@ -1480,6 +1480,7 @@ grpc_cc_library(
     deps = [
         "channel_args",
         "closure",
+        "debug_location",
         "gpr_base",
         "grpc_base",
         "grpc_codegen",
