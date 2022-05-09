@@ -32,37 +32,32 @@
 #include <sys/utsname.h>
 
 namespace grpc_core {
-static bool errqueue_supported = false;
 
-bool kernel_supports_errqueue() { return errqueue_supported; }
-
-void grpc_errqueue_init() {
+bool KernelSupportsErrqueue() {
+  static bool errqueue_supported = []() {
 /* Both-compile time and run-time linux kernel versions should be at least 4.0.0
  */
 #ifdef GRPC_LINUX_ERRQUEUE
-  struct utsname buffer;
-  if (uname(&buffer) != 0) {
-    gpr_log(GPR_ERROR, "uname: %s", strerror(errno));
-    return;
-  }
-  char* release = buffer.release;
-  if (release == nullptr) {
-    return;
-  }
+    struct utsname buffer;
+    if (uname(&buffer) != 0) {
+      gpr_log(GPR_ERROR, "uname: %s", strerror(errno));
+      return false;
+    }
+    char* release = buffer.release;
+    if (release == nullptr) {
+      return false;
+    }
 
-  if (strtol(release, nullptr, 10) >= 4) {
-    errqueue_supported = true;
-  } else {
-    gpr_log(GPR_DEBUG, "ERRQUEUE support not enabled");
-  }
+    if (strtol(release, nullptr, 10) >= 4) {
+      return true;
+    } else {
+      gpr_log(GPR_DEBUG, "ERRQUEUE support not enabled");
+    }
 #endif /* GRPC_LINUX_ERRQUEUE */
+    return false;
+  }();
+  return errqueue_supported;
 }
-} /* namespace grpc_core */
-
-#else
-
-namespace grpc_core {
-void grpc_errqueue_init() {}
 } /* namespace grpc_core */
 
 #endif /* GRPC_POSIX_SOCKET_TCP */
