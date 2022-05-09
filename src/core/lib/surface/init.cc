@@ -32,7 +32,6 @@
 
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/channel/channel_stack_builder.h"
-#include "src/core/lib/channel/channelz_registry.h"
 #include "src/core/lib/channel/connected_channel.h"
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/debug/stats.h"
@@ -164,7 +163,6 @@ void grpc_init(void) {
     grpc_core::Fork::GlobalInit();
     grpc_fork_handlers_auto_register();
     grpc_stats_init();
-    grpc_core::channelz::ChannelzRegistry::Init();
     grpc_core::ApplicationCallbackExecCtx::GlobalInit();
     grpc_iomgr_init();
     gpr_timers_global_init();
@@ -197,7 +195,6 @@ void grpc_shutdown_internal_locked(void)
     grpc_iomgr_shutdown();
     gpr_timers_global_destroy();
     grpc_tracer_shutdown();
-    grpc_core::channelz::ChannelzRegistry::Shutdown();
     grpc_stats_shutdown();
     grpc_core::Fork::GlobalShutdown();
   }

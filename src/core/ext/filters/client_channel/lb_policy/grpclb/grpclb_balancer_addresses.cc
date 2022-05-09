@@ -18,6 +18,10 @@
 
 #include "src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_balancer_addresses.h"
 
+#include <stddef.h>
+
+#include "absl/container/inlined_vector.h"
+
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/gpr/useful.h"
 

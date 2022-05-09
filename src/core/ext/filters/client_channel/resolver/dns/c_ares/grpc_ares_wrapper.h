@@ -21,12 +21,21 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <stddef.h>
+
+#include <memory>
+
 #include <ares.h>
 
-#include "src/core/lib/iomgr/iomgr.h"
-#include "src/core/lib/iomgr/polling_entity.h"
-#include "src/core/lib/iomgr/resolve_address.h"
-#include "src/core/lib/iomgr/work_serializer.h"
+#include "absl/base/thread_annotations.h"
+
+#include <grpc/support/log.h>
+
+#include "src/core/lib/debug/trace.h"
+#include "src/core/lib/gprpp/sync.h"
+#include "src/core/lib/iomgr/closure.h"
+#include "src/core/lib/iomgr/error.h"
+#include "src/core/lib/iomgr/iomgr_fwd.h"
 #include "src/core/lib/resolver/server_address.h"
 
 #define GRPC_DNS_ARES_DEFAULT_QUERY_TIMEOUT_MS 120000

@@ -40,6 +40,7 @@ sed -i 's,^#!/usr/bin/env python,#!/usr/bin/env python3,g' ${IWYU_ROOT}/iwyu/fix
 cat compile_commands.json | sed "s,\"file\": \",\"file\": \"${IWYU_ROOT}/,g" > compile_commands_for_iwyu.json
 
 export ENABLED_MODULES='
+  src/core/ext/filters/client_channel
   src/core/ext/transport/chttp2
   src/core/lib/avl
   src/core/lib/channel
@@ -63,7 +64,7 @@ cat compile_commands.json | jq -r '.[].file' \
   > iwyu_files.txt
 
 echo '#!/bin/sh
-${IWYU_ROOT}/iwyu/iwyu_tool.py -p compile_commands_for_iwyu.json $1 -- -Xiwyu --no_fwd_decls -Xiwyu --update_comments \
+${IWYU_ROOT}/iwyu/iwyu_tool.py -p compile_commands_for_iwyu.json $1 -- -Xiwyu --no_fwd_decls \
   | grep -v -E "port_platform.h" \
   | grep -v -E "^(- )?namespace " \
   > iwyu/iwyu.`echo $1 | sha1sum`.out
