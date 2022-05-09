@@ -361,7 +361,7 @@ class End2endTest : public ::testing::TestWithParam<TestScenario> {
       for (auto i = 0; i < 20; i++) {
         creators.push_back(absl::make_unique<PhonyInterceptorFactory>());
       }
-      builder.experimental().AddInterceptorCreators(std::move(creators));
+      builder.experimental().SetInterceptorCreators(std::move(creators));
     }
     builder.AddListeningPort(server_address_.str(), server_creds);
     if (!GetParam().callback_server) {
