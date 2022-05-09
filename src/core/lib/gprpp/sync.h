@@ -28,9 +28,7 @@
 #include <grpc/support/sync.h>
 
 #ifndef GPR_ABSEIL_SYNC
-
 #include "src/core/lib/gprpp/time_util.h"
-
 #endif
 
 // The core library is not accessible in C++ codegen headers, and vice versa.

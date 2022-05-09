@@ -16,7 +16,45 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <stdlib.h>
+
+#include <algorithm>
+#include <functional>
+#include <map>
+#include <memory>
+#include <string>
+#include <type_traits>
+#include <utility>
+#include <vector>
+
+#include "absl/base/thread_annotations.h"
+#include "absl/memory/memory.h"
+#include "absl/status/status.h"
+#include "absl/status/statusor.h"
+#include "absl/strings/string_view.h"
+#include "absl/strings/strip.h"
+
+#include <grpc/impl/codegen/grpc_types.h>
+#include <grpc/support/alloc.h>
+#include <grpc/support/log.h>
+
 #include "src/core/lib/config/core_configuration.h"
+#include "src/core/lib/debug/trace.h"
+#include "src/core/lib/gprpp/debug_location.h"
+#include "src/core/lib/gprpp/global_config_generic.h"
+#include "src/core/lib/gprpp/memory.h"
+#include "src/core/lib/gprpp/orphanable.h"
+#include "src/core/lib/gprpp/ref_counted_ptr.h"
+#include "src/core/lib/gprpp/sync.h"
+#include "src/core/lib/gprpp/time.h"
+#include "src/core/lib/iomgr/closure.h"
+#include "src/core/lib/iomgr/error.h"
+#include "src/core/lib/iomgr/iomgr_fwd.h"
+#include "src/core/lib/iomgr/resolved_address.h"
+#include "src/core/lib/resolver/resolver.h"
+#include "src/core/lib/resolver/resolver_factory.h"
+#include "src/core/lib/service_config/service_config.h"
+#include "src/core/lib/uri/uri_parser.h"
 
 #if GRPC_ARES == 1
 
@@ -30,7 +68,6 @@
 #include "absl/strings/str_cat.h"
 
 #include "src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_balancer_addresses.h"
-#include "src/core/ext/filters/client_channel/lb_policy_registry.h"
 #include "src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper.h"
 #include "src/core/ext/filters/client_channel/resolver/dns/dns_resolver_selection.h"
 #include "src/core/ext/filters/client_channel/resolver/polling_resolver.h"
@@ -39,7 +76,6 @@
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/iomgr/gethostname.h"
 #include "src/core/lib/iomgr/resolve_address.h"
-#include "src/core/lib/iomgr/timer.h"
 #include "src/core/lib/json/json.h"
 #include "src/core/lib/resolver/resolver_registry.h"
 #include "src/core/lib/resolver/server_address.h"
