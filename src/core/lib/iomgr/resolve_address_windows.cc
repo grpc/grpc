@@ -59,9 +59,6 @@ class NativeDNSRequest {
     Executor::Run(&request_closure_, GRPC_ERROR_NONE, ExecutorType::RESOLVER);
   }
 
-  // NativeDNSRequest does not support cancellation.
-  bool Cancel() { return false; }
-
  private:
   // Callback to be passed to grpc Executor to asynch-ify
   // ResolveNameBlocking

@@ -127,9 +127,6 @@ class FuzzerDNSResolver : public grpc_core::DNSResolver {
           GRPC_CLOSURE_CREATE(FinishResolve, this, grpc_schedule_on_exec_ctx));
     }
 
-    // FuzzerDNSRequest does not support cancellation.
-    bool Cancel() { return false; }
-
    private:
     static void FinishResolve(void* arg, grpc_error_handle error) {
       FuzzerDNSRequest* self = static_cast<FuzzerDNSRequest*>(arg);
