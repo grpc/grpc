@@ -34,7 +34,7 @@
 namespace grpc_core {
 
 bool KernelSupportsErrqueue() {
-  static bool errqueue_supported = []() {
+  static const bool errqueue_supported = []() {
 /* Both-compile time and run-time linux kernel versions should be at least 4.0.0
  */
 #ifdef GRPC_LINUX_ERRQUEUE
