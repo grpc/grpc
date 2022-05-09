@@ -367,14 +367,14 @@ class AresDNSResolver : public DNSResolver {
         grpc_pollset_set* interested_parties,
         std::function<void(absl::StatusOr<std::vector<grpc_resolved_address>>)>
             on_resolve_address_done,
-        AresDNSResolver* resolver)
+        AresDNSResolver* resolver, intptr_t aba_token)
         : name_(std::string(name)),
           default_port_(std::string(default_port)),
           interested_parties_(interested_parties),
           on_resolve_address_done_(std::move(on_resolve_address_done)),
           completed_(false),
           resolver_(resolver),
-          aba_token_(resolver->aba_token_++) {
+          aba_token_(aba_token) {
       GRPC_CARES_TRACE_LOG("AresRequest:%p ctor", this);
       GRPC_CLOSURE_INIT(&on_dns_lookup_done_, OnDnsLookupDone, this,
                         grpc_schedule_on_exec_ctx);
@@ -481,7 +481,7 @@ class AresDNSResolver : public DNSResolver {
           on_done) override {
     MutexLock lock(&mu_);
     auto* request = new AresRequest(name, default_port, interested_parties,
-                                    std::move(on_done), this);
+                                    std::move(on_done), this, aba_token_++);
     auto handle = request->task_handle();
     open_requests_.insert(handle);
     return handle;
