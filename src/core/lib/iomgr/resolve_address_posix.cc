@@ -45,7 +45,7 @@
 namespace grpc_core {
 namespace {
 
-class NativeDNSRequest : public DNSResolver::Request {
+class NativeDNSRequest {
  public:
   NativeDNSRequest(
       absl::string_view name, absl::string_view default_port,
@@ -57,7 +57,7 @@ class NativeDNSRequest : public DNSResolver::Request {
   }
 
   // NativeDNSRequest does not support cancellation.
-  bool Cancel() override { return false; }
+  bool Cancel() { return false; }
 
  private:
   // Callback to be passed to grpc Executor to asynch-ify

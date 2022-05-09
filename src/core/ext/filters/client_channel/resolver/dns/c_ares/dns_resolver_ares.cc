@@ -324,7 +324,7 @@ class AresClientChannelDNSResolverFactory : public ResolverFactory {
 
 class AresDNSResolver : public DNSResolver {
  public:
-  class AresRequest : public DNSResolver::Request {
+  class AresRequest {
    public:
     AresRequest(
         absl::string_view name, absl::string_view default_port,
@@ -352,13 +352,13 @@ class AresDNSResolver : public DNSResolver {
                            ares_request_.get());
     }
 
-    ~AresRequest() override {
+    ~AresRequest() {
       GRPC_CARES_TRACE_LOG("AresRequest:%p dtor ares_request_:%p", this,
                            ares_request_.get());
       resolver_->UnregisterRequest(task_handle());
     }
 
-    bool Cancel() override {
+    bool Cancel() {
       MutexLock lock(&mu_);
       GRPC_CARES_TRACE_LOG("AresRequest:%p Cancel ares_request_:%p", this,
                            ares_request_.get());

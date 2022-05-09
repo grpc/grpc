@@ -114,7 +114,7 @@ namespace {
 
 class FuzzerDNSResolver : public grpc_core::DNSResolver {
  public:
-  class FuzzerDNSRequest : public grpc_core::DNSResolver::Request {
+  class FuzzerDNSRequest {
    public:
     FuzzerDNSRequest(
         absl::string_view name,
@@ -128,7 +128,7 @@ class FuzzerDNSResolver : public grpc_core::DNSResolver {
     }
 
     // FuzzerDNSRequest does not support cancellation.
-    bool Cancel() override { return false; }
+    bool Cancel() { return false; }
 
    private:
     static void FinishResolve(void* arg, grpc_error_handle error) {

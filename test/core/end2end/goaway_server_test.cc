@@ -63,7 +63,7 @@ grpc_core::DNSResolver* g_default_dns_resolver;
 
 class TestDNSResolver : public grpc_core::DNSResolver {
  public:
-  class TestDNSRequest : public grpc_core::DNSResolver::Request {
+  class TestDNSRequest {
    public:
     explicit TestDNSRequest(
         std::function<void(absl::StatusOr<std::vector<grpc_resolved_address>>)>
@@ -94,7 +94,7 @@ class TestDNSResolver : public grpc_core::DNSResolver {
       }
     }
 
-    bool Cancel() override { return false; }
+    bool Cancel() { return false; }
   };
 
   TaskHandle ResolveName(

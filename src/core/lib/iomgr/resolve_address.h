@@ -45,23 +45,6 @@ class DNSResolver {
       DNSResolver::LookupTaskHandle;
   static constexpr TaskHandle kNullHandle{0, 0};
 
-  // Tracks a single asynchronous DNS resolution attempt. DNS resolution should
-  // begin upon construction.
-  class Request {
-   public:
-    virtual ~Request() = default;
-    // Cancels an async DNS resolution.
-    //
-    // The return value's meaning is the same as EventEngine's CancelLookup:
-    // * if true, the request will be cancelled, and the callback will not be
-    //   run.
-    // * if false, cancellation is not possible; the callback is either running
-    //   or will be run.
-    //
-    // It is an error to call Cancel more than once.
-    virtual bool Cancel() = 0;
-  };
-
   virtual ~DNSResolver() {}
 
   static std::string HandleToString(TaskHandle handle);
