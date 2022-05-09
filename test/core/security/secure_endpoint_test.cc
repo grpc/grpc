@@ -189,7 +189,8 @@ static void test_leftover(grpc_endpoint_test_config config, size_t slice_size) {
 
   grpc_slice_buffer_init(&incoming);
   GRPC_CLOSURE_INIT(&done_closure, inc_call_ctr, &n, grpc_schedule_on_exec_ctx);
-  grpc_endpoint_read(f.client_ep, &incoming, &done_closure, /*urgent=*/false);
+  grpc_endpoint_read(f.client_ep, &incoming, &done_closure, /*urgent=*/false,
+                     /*min_progress_size=*/1);
 
   grpc_core::ExecCtx::Get()->Flush();
   GPR_ASSERT(n == 1);

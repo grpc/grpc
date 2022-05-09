@@ -16,6 +16,9 @@
 
 #include "src/core/ext/transport/chttp2/transport/hpack_encoder_table.h"
 
+#include <algorithm>
+#include <cstdint>
+
 #include <grpc/support/log.h>
 
 namespace grpc_core {

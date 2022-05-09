@@ -41,7 +41,7 @@ class SliceRefCount : public grpc_slice_refcount {
   static void Destroy(grpc_slice_refcount* p) {
     auto* rc = static_cast<SliceRefCount*>(p);
     rc->~SliceRefCount();
-    gpr_free(rc);
+    free(rc);
   }
 
   std::shared_ptr<internal::MemoryAllocatorImpl> allocator_;
@@ -52,7 +52,7 @@ class SliceRefCount : public grpc_slice_refcount {
 
 grpc_slice MemoryAllocator::MakeSlice(MemoryRequest request) {
   auto size = Reserve(request.Increase(sizeof(SliceRefCount)));
-  void* p = gpr_malloc(size);
+  void* p = malloc(size);
   new (p) SliceRefCount(allocator_, size);
   grpc_slice slice;
   slice.refcount = static_cast<SliceRefCount*>(p);

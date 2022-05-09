@@ -172,7 +172,8 @@ class HttpRequest : public InternallyRefCounted<HttpRequest> {
 
   void DoRead() ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_) {
     Ref().release();  // ref held by pending read
-    grpc_endpoint_read(ep_, &incoming_, &on_read_, /*urgent=*/true);
+    grpc_endpoint_read(ep_, &incoming_, &on_read_, /*urgent=*/true,
+                       /*min_progress_size=*/1);
   }
 
   static void OnRead(void* user_data, grpc_error_handle error) {

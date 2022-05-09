@@ -352,6 +352,7 @@ grpc_channel_filter FailFirstCallFilter::kFilterVtable = {
     CallData::Destroy,
     sizeof(FailFirstCallFilter),
     Init,
+    grpc_channel_stack_no_post_init,
     Destroy,
     grpc_channel_next_get_info,
     "FailFirstCallFilter",
@@ -368,14 +369,13 @@ void retry_send_op_fails(grpc_end2end_test_config config) {
             GRPC_CLIENT_SUBCHANNEL, 0,
             [](grpc_core::ChannelStackBuilder* builder) {
               // Skip on proxy (which explicitly disables retries).
-              const grpc_channel_args* args = builder->channel_args();
-              if (!grpc_channel_args_find_bool(args, GRPC_ARG_ENABLE_RETRIES,
-                                               true)) {
+              if (!builder->channel_args()
+                       .GetBool(GRPC_ARG_ENABLE_RETRIES)
+                       .value_or(true)) {
                 return true;
               }
               // Install filter.
-              builder->PrependFilter(&FailFirstCallFilter::kFilterVtable,
-                                     nullptr);
+              builder->PrependFilter(&FailFirstCallFilter::kFilterVtable);
               return true;
             });
       },

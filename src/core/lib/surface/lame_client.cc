@@ -164,6 +164,7 @@ const grpc_channel_filter grpc_lame_filter = {
     grpc_core::lame_destroy_call_elem,
     sizeof(grpc_core::ChannelData),
     grpc_core::lame_init_channel_elem,
+    grpc_channel_stack_no_post_init,
     grpc_core::lame_destroy_channel_elem,
     grpc_core::lame_get_channel_info,
     "lame-client",
@@ -184,16 +185,16 @@ grpc_channel* grpc_lame_client_channel_create(const char* target,
           GRPC_ERROR_CREATE_FROM_STATIC_STRING("lame client channel"),
           GRPC_ERROR_INT_GRPC_STATUS, error_code),
       GRPC_ERROR_STR_GRPC_MESSAGE, error_message);
-  grpc_arg error_arg = grpc_core::MakeLameClientErrorArg(&error);
-  grpc_channel_args* args0 =
-      grpc_channel_args_copy_and_add(nullptr, &error_arg, 1);
-  const grpc_channel_args* args = grpc_core::CoreConfiguration::Get()
-                                      .channel_args_preconditioning()
-                                      .PreconditionChannelArgs(args0);
-  grpc_channel_args_destroy(args0);
-  grpc_channel* channel = grpc_channel_create_internal(
-      target, args, GRPC_CLIENT_LAME_CHANNEL, nullptr, nullptr);
-  grpc_channel_args_destroy(args);
-  GRPC_ERROR_UNREF(error);
-  return channel;
+  grpc_core::ChannelArgs args =
+      grpc_core::CoreConfiguration::Get()
+          .channel_args_preconditioning()
+          .PreconditionChannelArgs(nullptr)
+          .Set(GRPC_ARG_LAME_FILTER_ERROR,
+               grpc_core::ChannelArgs::Pointer(
+                   new grpc_error_handle(error),
+                   &grpc_core::kLameFilterErrorArgVtable));
+  auto channel = grpc_core::Channel::Create(target, std::move(args),
+                                            GRPC_CLIENT_LAME_CHANNEL, nullptr);
+  GPR_ASSERT(channel.ok());
+  return channel->release()->c_ptr();
 }

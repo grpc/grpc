@@ -21,6 +21,8 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <memory>
+
 #include <openssl/ssl.h>
 
 #include <grpc/slice.h>

@@ -19,15 +19,13 @@ Gem::Specification.new do |s|
   s.files += %w( etc/roots.pem )
   s.files += Dir.glob('src/ruby/bin/**/*')
   s.files += Dir.glob('src/ruby/ext/**/*')
-  s.files += Dir.glob('src/ruby/lib/**/*').reject do |f|
-    # Binaries are included by rake-compiler and would lead to circular dependencies here
-    File.fnmatch("**/?.?/grpc_c.so", f)
-  end
+  s.files += Dir.glob('src/ruby/lib/**/*')
   s.files += Dir.glob('src/ruby/pb/**/*').reject do |f|
     f.match(%r{^src/ruby/pb/test})
   end
   s.files += Dir.glob('include/grpc/**/*')
   s.test_files = Dir.glob('src/ruby/spec/**/*')
+  s.test_files += Dir.glob('src/ruby/pb/test/**/*')
   s.bindir = 'src/ruby/bin'
   s.require_paths = %w( src/ruby/lib src/ruby/bin src/ruby/pb )
   s.platform      = Gem::Platform::RUBY
@@ -156,6 +154,8 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_client_stats.h )
   s.files += %w( src/core/ext/filters/client_channel/lb_policy/grpclb/load_balancer_api.cc )
   s.files += %w( src/core/ext/filters/client_channel/lb_policy/grpclb/load_balancer_api.h )
+  s.files += %w( src/core/ext/filters/client_channel/lb_policy/oob_backend_metric.cc )
+  s.files += %w( src/core/ext/filters/client_channel/lb_policy/oob_backend_metric.h )
   s.files += %w( src/core/ext/filters/client_channel/lb_policy/pick_first/pick_first.cc )
   s.files += %w( src/core/ext/filters/client_channel/lb_policy/priority/priority.cc )
   s.files += %w( src/core/ext/filters/client_channel/lb_policy/ring_hash/ring_hash.cc )
@@ -212,6 +212,7 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/ext/filters/client_channel/subchannel.cc )
   s.files += %w( src/core/ext/filters/client_channel/subchannel.h )
   s.files += %w( src/core/ext/filters/client_channel/subchannel_interface.h )
+  s.files += %w( src/core/ext/filters/client_channel/subchannel_interface_internal.h )
   s.files += %w( src/core/ext/filters/client_channel/subchannel_pool_interface.cc )
   s.files += %w( src/core/ext/filters/client_channel/subchannel_pool_interface.h )
   s.files += %w( src/core/ext/filters/client_channel/subchannel_stream_client.cc )
@@ -570,6 +571,8 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/ext/upb-generated/xds/core/v3/resource_name.upb.h )
   s.files += %w( src/core/ext/upb-generated/xds/data/orca/v3/orca_load_report.upb.c )
   s.files += %w( src/core/ext/upb-generated/xds/data/orca/v3/orca_load_report.upb.h )
+  s.files += %w( src/core/ext/upb-generated/xds/service/orca/v3/orca.upb.c )
+  s.files += %w( src/core/ext/upb-generated/xds/service/orca/v3/orca.upb.h )
   s.files += %w( src/core/ext/upb-generated/xds/type/matcher/v3/matcher.upb.c )
   s.files += %w( src/core/ext/upb-generated/xds/type/matcher/v3/matcher.upb.h )
   s.files += %w( src/core/ext/upb-generated/xds/type/matcher/v3/regex.upb.c )
@@ -1113,6 +1116,7 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/lib/iomgr/iocp_windows.h )
   s.files += %w( src/core/lib/iomgr/iomgr.cc )
   s.files += %w( src/core/lib/iomgr/iomgr.h )
+  s.files += %w( src/core/lib/iomgr/iomgr_fwd.h )
   s.files += %w( src/core/lib/iomgr/iomgr_internal.cc )
   s.files += %w( src/core/lib/iomgr/iomgr_internal.h )
   s.files += %w( src/core/lib/iomgr/iomgr_posix.cc )
@@ -1428,6 +1432,7 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/lib/transport/error_utils.cc )
   s.files += %w( src/core/lib/transport/error_utils.h )
   s.files += %w( src/core/lib/transport/http2_errors.h )
+  s.files += %w( src/core/lib/transport/metadata_batch.cc )
   s.files += %w( src/core/lib/transport/metadata_batch.h )
   s.files += %w( src/core/lib/transport/parsed_metadata.cc )
   s.files += %w( src/core/lib/transport/parsed_metadata.h )

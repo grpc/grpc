@@ -18,6 +18,10 @@
 #include <grpc/support/port_platform.h>
 
 #include <cstddef>
+#include <iterator>
+#include <utility>
+
+#include <grpc/support/log.h>
 
 #include "src/core/lib/gprpp/manual_constructor.h"
 #include "src/core/lib/resource_quota/arena.h"

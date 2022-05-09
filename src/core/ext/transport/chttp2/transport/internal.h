@@ -21,8 +21,16 @@
 
 #include <grpc/support/port_platform.h>
 
-#include <assert.h>
-#include <stdbool.h>
+#include <stddef.h>
+#include <stdint.h>
+
+#include <string>
+
+#include "absl/strings/string_view.h"
+
+#include <grpc/event_engine/memory_allocator.h>
+#include <grpc/impl/codegen/grpc_types.h>
+#include <grpc/slice.h>
 
 #include "src/core/ext/transport/chttp2/transport/flow_control.h"
 #include "src/core/ext/transport/chttp2/transport/frame.h"
@@ -34,15 +42,28 @@
 #include "src/core/ext/transport/chttp2/transport/frame_window_update.h"
 #include "src/core/ext/transport/chttp2/transport/hpack_encoder.h"
 #include "src/core/ext/transport/chttp2/transport/hpack_parser.h"
+#include "src/core/ext/transport/chttp2/transport/http2_settings.h"
 #include "src/core/ext/transport/chttp2/transport/stream_map.h"
 #include "src/core/lib/channel/channelz.h"
+#include "src/core/lib/debug/trace.h"
+#include "src/core/lib/gprpp/bitset.h"
+#include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/manual_constructor.h"
+#include "src/core/lib/gprpp/orphanable.h"
+#include "src/core/lib/gprpp/ref_counted.h"
+#include "src/core/lib/gprpp/ref_counted_ptr.h"
+#include "src/core/lib/gprpp/time.h"
+#include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/combiner.h"
 #include "src/core/lib/iomgr/endpoint.h"
+#include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/timer.h"
+#include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/resource_quota/memory_quota.h"
+#include "src/core/lib/transport/byte_stream.h"
 #include "src/core/lib/transport/connectivity_state.h"
 #include "src/core/lib/transport/metadata_batch.h"
+#include "src/core/lib/transport/transport.h"
 #include "src/core/lib/transport/transport_impl.h"
 
 namespace grpc_core {
@@ -526,7 +547,7 @@ struct grpc_chttp2_stream {
   grpc_closure* destroy_stream_arg;
 
   grpc_chttp2_stream_link links[STREAM_LIST_COUNT];
-  uint8_t included[STREAM_LIST_COUNT] = {};
+  grpc_core::BitSet<STREAM_LIST_COUNT> included;
 
   /** HTTP2 stream id for this stream, or zero if one has not been assigned */
   uint32_t id = 0;

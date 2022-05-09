@@ -69,6 +69,9 @@ ConnectionAttemptInjector::~ConnectionAttemptInjector() {
 }
 
 void ConnectionAttemptInjector::Start() {
+  // Fail if ConnectionAttemptInjector::Init() was not called after
+  // grpc_init() to inject the vtable.
+  GPR_ASSERT(grpc_tcp_client_impl == &kDelayedConnectVTable);
   grpc_core::MutexLock lock(g_mu);
   GPR_ASSERT(g_injector == nullptr);
   g_injector = this;

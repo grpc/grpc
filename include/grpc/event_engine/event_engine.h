@@ -285,7 +285,13 @@ class EventEngine {
    public:
     /// Task handle for DNS Resolution requests.
     struct LookupTaskHandle {
-      intptr_t key[2];
+      intptr_t keys[2];
+    };
+    /// Optional configuration for DNSResolvers.
+    struct ResolverOptions {
+      /// If empty, default DNS servers will be used.
+      /// Must be in the "IP:port" format as described in naming.md.
+      std::string dns_server;
     };
     /// DNS SRV record type.
     struct SRVRecord {
@@ -319,7 +325,7 @@ class EventEngine {
     ///
     /// If cancelled, \a on_resolve will not be executed.
     virtual LookupTaskHandle LookupHostname(LookupHostnameCallback on_resolve,
-                                            absl::string_view address,
+                                            absl::string_view name,
                                             absl::string_view default_port,
                                             absl::Time deadline) = 0;
     /// Asynchronously perform an SRV record lookup.
@@ -357,8 +363,10 @@ class EventEngine {
   // de-experimentalize this API.
   virtual bool IsWorkerThread() = 0;
 
-  /// Creates and returns an instance of a DNSResolver.
-  virtual std::unique_ptr<DNSResolver> GetDNSResolver() = 0;
+  /// Creates and returns an instance of a DNSResolver, optionally configured by
+  /// the \a options struct.
+  virtual std::unique_ptr<DNSResolver> GetDNSResolver(
+      const DNSResolver::ResolverOptions& options) = 0;
 
   /// Asynchronously executes a task as soon as possible.
   ///
