@@ -519,11 +519,6 @@ void ClientCallData::StartBatch(grpc_transport_stream_op_batch* b) {
     return;
   }
 
-  if (cancelled_error_ != GRPC_ERROR_NONE) {
-    batch.CancelWith(GRPC_ERROR_REF(cancelled_error_), &flusher);
-    return;
-  }
-
   if (recv_initial_metadata_ != nullptr && batch->recv_initial_metadata) {
     bool hook = true;
     switch (recv_initial_metadata_->state) {
@@ -592,6 +587,8 @@ void ClientCallData::StartBatch(grpc_transport_stream_op_batch* b) {
       recv_trailing_state_ = RecvTrailingState::kForwarded;
       HookRecvTrailingMetadata(batch);
     }
+  } else if (cancelled_error_ != GRPC_ERROR_NONE) {
+    batch.CancelWith(GRPC_ERROR_REF(cancelled_error_), &flusher);
   }
 
   if (batch.is_captured()) batch.ResumeWith(&flusher);
