@@ -21,6 +21,8 @@
 
 #include <stdlib.h>
 
+#include <vector>
+
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/json/json.h"
 
