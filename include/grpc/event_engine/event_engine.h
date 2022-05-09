@@ -168,7 +168,7 @@ class EventEngine {
     /// statuses to \a on_read. For example, callbacks might expect to receive
     /// CANCELLED on endpoint shutdown.
     virtual void Read(std::function<void(absl::Status)> on_read,
-                      SliceBuffer* buffer, const ReadArgs* args) = 0;
+                      SliceBuffer* buffer, const ReadArgs* args = nullptr) = 0;
     /// A struct representing optional arguments that may be provided to an
     /// Event-Engine Endpoint Write API call.
     ///
@@ -177,6 +177,11 @@ class EventEngine {
       // Represents private information that may be passed by gRPC for
       // select endpoints expected to be used only within google.
       void* google_specific;
+      // A suggestion to the endpoint implementation to group data to be written
+      // into frames of the specified max_frame_size. gRPC may use this
+      // argument to dynamically control the max sizes of frames sent to a
+      // receiver in response to high receiver memory pressure.
+      int64_t max_frame_size;
     };
     /// Writes data out on the connection.
     ///
@@ -197,7 +202,7 @@ class EventEngine {
     /// statuses to \a on_writable. For example, callbacks might expect to
     /// receive CANCELLED on endpoint shutdown.
     virtual void Write(std::function<void(absl::Status)> on_writable,
-                       SliceBuffer* data, const WriteArgs* args) = 0;
+                       SliceBuffer* data, const WriteArgs* args = nullptr) = 0;
     /// Returns an address in the format described in DNSResolver. The returned
     /// values are expected to remain valid for the life of the Endpoint.
     virtual const ResolvedAddress& GetPeerAddress() const = 0;
