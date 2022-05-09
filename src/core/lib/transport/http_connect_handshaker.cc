@@ -55,7 +55,6 @@
 #include "src/core/lib/transport/handshaker.h"
 #include "src/core/lib/transport/handshaker_factory.h"
 #include "src/core/lib/transport/handshaker_registry.h"
-#include "src/core/lib/uri/uri_parser.h"
 
 namespace grpc_core {
 

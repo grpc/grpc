@@ -20,8 +20,6 @@
 
 #include "src/core/ext/filters/client_channel/backup_poller.h"
 #include "src/core/ext/filters/client_channel/client_channel.h"
-#include "src/core/ext/filters/client_channel/client_channel_channelz.h"
-#include "src/core/ext/filters/client_channel/global_subchannel_pool.h"
 #include "src/core/ext/filters/client_channel/http_proxy.h"
 #include "src/core/ext/filters/client_channel/lb_policy_registry.h"
 #include "src/core/ext/filters/client_channel/proxy_mapper_registry.h"
