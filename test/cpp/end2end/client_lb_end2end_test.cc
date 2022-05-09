@@ -39,6 +39,7 @@
 #include <grpcpp/create_channel.h>
 #include <grpcpp/ext/orca_service.h>
 #include <grpcpp/health_check_service_interface.h>
+#include <grpcpp/impl/codegen/call_metric_recorder.h>
 #include <grpcpp/impl/codegen/sync.h>
 #include <grpcpp/server.h>
 #include <grpcpp/server_builder.h>
@@ -93,10 +94,16 @@ class MyTestServiceImpl : public TestServiceImpl {
     AddClient(context->peer());
     if (request->has_param() && request->param().has_backend_metrics()) {
       const auto& load_report = request->param().backend_metrics();
-      // TODO(roth): Once we provide a more standard server-side API for
-      // populating this data, use that API here.
-      context->AddTrailingMetadata("x-endpoint-load-metrics-bin",
-                                   load_report.SerializeAsString());
+      auto recorder = context->GetCallMetricRecorder();
+      recorder->RecordCpuUtilizationMetric(load_report.cpu_utilization());
+      recorder->RecordMemoryUtilizationMetric(load_report.mem_utilization());
+      recorder->RecordRequestsPerSecond(load_report.rps());
+      for (const auto& p : load_report.request_cost()) {
+        recorder->RecordRequestCostMetric(p.first, p.second);
+      }
+      for (const auto& p : load_report.utilization()) {
+        recorder->RecordUtilizationMetric(p.first, p.second);
+      }
     }
     return TestServiceImpl::Echo(context, request, response);
   }
