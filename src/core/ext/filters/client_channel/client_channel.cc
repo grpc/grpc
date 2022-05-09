@@ -2576,10 +2576,8 @@ class ClientChannel::LoadBalancedCall::BackendMetricAccessor
    public:
     explicit BackendMetricAllocator(Arena* arena) : arena_(arena) {}
 
-    LoadBalancingPolicy::BackendMetricAccessor::BackendMetricData*
-    AllocateBackendMetricData() override {
-      return arena_->New<
-          LoadBalancingPolicy::BackendMetricAccessor::BackendMetricData>();
+    BackendMetricData* AllocateBackendMetricData() override {
+      return arena_->New<BackendMetricData>();
     }
 
     char* AllocateString(size_t size) override {
@@ -2639,8 +2637,7 @@ ClientChannel::LoadBalancedCall::~LoadBalancedCall() {
   GRPC_ERROR_UNREF(cancel_error_);
   GRPC_ERROR_UNREF(failure_error_);
   if (backend_metric_data_ != nullptr) {
-    backend_metric_data_->LoadBalancingPolicy::BackendMetricAccessor::
-        BackendMetricData::~BackendMetricData();
+    backend_metric_data_->BackendMetricData::~BackendMetricData();
   }
   // Make sure there are no remaining pending batches.
   for (size_t i = 0; i < GPR_ARRAY_SIZE(pending_batches_); ++i) {

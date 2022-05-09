@@ -115,7 +115,7 @@ class ClientCallbackEnd2endTest
       for (auto i = 0; i < 20; i++) {
         creators.push_back(absl::make_unique<PhonyInterceptorFactory>());
       }
-      builder.experimental().SetInterceptorCreators(std::move(creators));
+      builder.experimental().AddInterceptorCreators(std::move(creators));
     }
 
     server_ = builder.BuildAndStart();

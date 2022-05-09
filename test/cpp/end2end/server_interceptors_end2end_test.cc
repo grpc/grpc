@@ -48,8 +48,6 @@ namespace {
 class LoggingInterceptor : public experimental::Interceptor {
  public:
   explicit LoggingInterceptor(experimental::ServerRpcInfo* info) {
-    info_ = info;
-
     // Check the method name and compare to the type
     const char* method = info->method();
     experimental::ServerRpcInfo::Type type = info->type();
@@ -133,9 +131,6 @@ class LoggingInterceptor : public experimental::Interceptor {
     }
     methods->Proceed();
   }
-
- private:
-  experimental::ServerRpcInfo* info_;
 };
 
 class LoggingInterceptorFactory
@@ -257,7 +252,7 @@ class ServerInterceptorsEnd2endSyncUnaryTest : public ::testing::Test {
       creators.push_back(absl::make_unique<PhonyInterceptorFactory>());
       creators.push_back(absl::make_unique<NullInterceptorFactory>());
     }
-    builder.experimental().SetInterceptorCreators(std::move(creators));
+    builder.experimental().AddInterceptorCreators(std::move(creators));
     server_ = builder.BuildAndStart();
   }
   std::string server_address_;
@@ -300,7 +295,7 @@ class ServerInterceptorsEnd2endSyncStreamingTest : public ::testing::Test {
     for (auto i = 0; i < 20; i++) {
       creators.push_back(absl::make_unique<PhonyInterceptorFactory>());
     }
-    builder.experimental().SetInterceptorCreators(std::move(creators));
+    builder.experimental().AddInterceptorCreators(std::move(creators));
     server_ = builder.BuildAndStart();
   }
   std::string server_address_;
@@ -356,7 +351,7 @@ TEST_F(ServerInterceptorsAsyncEnd2endTest, UnaryTest) {
   for (auto i = 0; i < 20; i++) {
     creators.push_back(absl::make_unique<PhonyInterceptorFactory>());
   }
-  builder.experimental().SetInterceptorCreators(std::move(creators));
+  builder.experimental().AddInterceptorCreators(std::move(creators));
   auto cq = builder.AddCompletionQueue();
   auto server = builder.BuildAndStart();
 
@@ -428,7 +423,7 @@ TEST_F(ServerInterceptorsAsyncEnd2endTest, BidiStreamingTest) {
   for (auto i = 0; i < 20; i++) {
     creators.push_back(absl::make_unique<PhonyInterceptorFactory>());
   }
-  builder.experimental().SetInterceptorCreators(std::move(creators));
+  builder.experimental().AddInterceptorCreators(std::move(creators));
   auto cq = builder.AddCompletionQueue();
   auto server = builder.BuildAndStart();
 
@@ -508,7 +503,7 @@ TEST_F(ServerInterceptorsAsyncEnd2endTest, GenericRPCTest) {
   for (auto i = 0; i < 20; i++) {
     creators.push_back(absl::make_unique<PhonyInterceptorFactory>());
   }
-  builder.experimental().SetInterceptorCreators(std::move(creators));
+  builder.experimental().AddInterceptorCreators(std::move(creators));
   auto srv_cq = builder.AddCompletionQueue();
   CompletionQueue cli_cq;
   auto server = builder.BuildAndStart();
@@ -613,7 +608,7 @@ TEST_F(ServerInterceptorsAsyncEnd2endTest, UnimplementedRpcTest) {
   for (auto i = 0; i < 20; i++) {
     creators.push_back(absl::make_unique<PhonyInterceptorFactory>());
   }
-  builder.experimental().SetInterceptorCreators(std::move(creators));
+  builder.experimental().AddInterceptorCreators(std::move(creators));
   auto cq = builder.AddCompletionQueue();
   auto server = builder.BuildAndStart();
 
@@ -666,7 +661,7 @@ TEST_F(ServerInterceptorsSyncUnimplementedEnd2endTest, UnimplementedRpcTest) {
   for (auto i = 0; i < 20; i++) {
     creators.push_back(absl::make_unique<PhonyInterceptorFactory>());
   }
-  builder.experimental().SetInterceptorCreators(std::move(creators));
+  builder.experimental().AddInterceptorCreators(std::move(creators));
   auto server = builder.BuildAndStart();
 
   ChannelArguments args;

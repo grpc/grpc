@@ -481,8 +481,7 @@ class ClientChannel::LoadBalancedCall
       ABSL_GUARDED_BY(&ClientChannel::data_plane_mu_) = nullptr;
 
   RefCountedPtr<ConnectedSubchannel> connected_subchannel_;
-  const LoadBalancingPolicy::BackendMetricAccessor::BackendMetricData*
-      backend_metric_data_ = nullptr;
+  const BackendMetricData* backend_metric_data_ = nullptr;
   std::unique_ptr<LoadBalancingPolicy::SubchannelCallTrackerInterface>
       lb_subchannel_call_tracker_;
 

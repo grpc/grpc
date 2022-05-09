@@ -49,16 +49,16 @@ std::map<absl::string_view, double> ParseMap(
 
 }  // namespace
 
-const LoadBalancingPolicy::BackendMetricAccessor::BackendMetricData*
-ParseBackendMetricData(absl::string_view serialized_load_report,
-                       BackendMetricAllocatorInterface* allocator) {
+const BackendMetricData* ParseBackendMetricData(
+    absl::string_view serialized_load_report,
+    BackendMetricAllocatorInterface* allocator) {
   upb::Arena upb_arena;
   xds_data_orca_v3_OrcaLoadReport* msg = xds_data_orca_v3_OrcaLoadReport_parse(
       serialized_load_report.data(), serialized_load_report.size(),
       upb_arena.ptr());
   if (msg == nullptr) return nullptr;
-  LoadBalancingPolicy::BackendMetricAccessor::BackendMetricData*
-      backend_metric_data = allocator->AllocateBackendMetricData();
+  BackendMetricData* backend_metric_data =
+      allocator->AllocateBackendMetricData();
   backend_metric_data->cpu_utilization =
       xds_data_orca_v3_OrcaLoadReport_cpu_utilization(msg);
   backend_metric_data->mem_utilization =

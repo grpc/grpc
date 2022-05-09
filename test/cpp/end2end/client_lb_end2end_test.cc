@@ -1940,8 +1940,7 @@ TEST_F(ClientLbPickArgsTest, Basic) {
 //
 
 xds::data::orca::v3::OrcaLoadReport BackendMetricDataToOrcaLoadReport(
-    const grpc_core::LoadBalancingPolicy::BackendMetricAccessor::
-        BackendMetricData& backend_metric_data) {
+    const grpc_core::BackendMetricData& backend_metric_data) {
   xds::data::orca::v3::OrcaLoadReport load_report;
   load_report.set_cpu_utilization(backend_metric_data.cpu_utilization);
   load_report.set_mem_utilization(backend_metric_data.mem_utilization);
@@ -2309,8 +2308,7 @@ class OobBackendMetricTest : public ClientLbEnd2endTest {
  private:
   static void BackendMetricCallback(
       grpc_core::ServerAddress address,
-      const grpc_core::LoadBalancingPolicy::BackendMetricAccessor::
-          BackendMetricData& backend_metric_data) {
+      const grpc_core::BackendMetricData& backend_metric_data) {
     auto load_report = BackendMetricDataToOrcaLoadReport(backend_metric_data);
     int port = grpc_sockaddr_get_port(&address.address());
     grpc::internal::MutexLock lock(&current_test_instance_->mu_);

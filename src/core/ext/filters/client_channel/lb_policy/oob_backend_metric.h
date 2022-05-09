@@ -44,8 +44,7 @@ class OobBackendMetricWatcher {
   virtual ~OobBackendMetricWatcher() = default;
 
   virtual void OnBackendMetricReport(
-      const LoadBalancingPolicy::BackendMetricAccessor::BackendMetricData&
-          backend_metric_data) = 0;
+      const BackendMetricData& backend_metric_data) = 0;
 };
 
 std::unique_ptr<SubchannelInterface::DataWatcherInterface>

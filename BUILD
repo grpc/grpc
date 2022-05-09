@@ -2559,6 +2559,7 @@ grpc_cc_library(
         "debug_location",
         "error",
         "gpr_base",
+        "grpc_backend_metric_data",
         "grpc_base",
         "grpc_client_authority_filter",
         "grpc_deadline_filter",
@@ -2870,6 +2871,20 @@ grpc_cc_library(
         "server_address",
         "slice",
         "sockaddr_utils",
+    ],
+)
+
+grpc_cc_library(
+    name = "grpc_backend_metric_data",
+    hdrs = [
+        "src/core/ext/filters/common/backend_metric_data.h",
+    ],
+    external_deps = [
+        "absl/strings",
+    ],
+    language = "c++",
+    deps = [
+        "gpr",
     ],
 )
 
@@ -4871,6 +4886,7 @@ grpc_cc_library(
         "grpc_service_config_impl",
         "grpc_trace",
         "grpc_transport_inproc",
+        "grpcpp_call_metric_recorder",
         "ref_counted",
         "useful",
     ],
@@ -4905,6 +4921,7 @@ grpc_cc_library(
         "grpc_trace",
         "grpc_transport_inproc",
         "grpc_unsecure",
+        "grpcpp_call_metric_recorder",
         "ref_counted",
         "useful",
     ],
@@ -4979,6 +4996,7 @@ grpc_cc_library(
         "include/grpcpp/impl/codegen/server_callback_handlers.h",
         "include/grpcpp/impl/codegen/server_callback.h",
         "include/grpcpp/impl/codegen/server_context.h",
+        "include/grpcpp/impl/codegen/call_metric_recorder.h",
         "include/grpcpp/impl/codegen/server_interceptor.h",
         "include/grpcpp/impl/codegen/server_interface.h",
         "include/grpcpp/impl/codegen/service_type.h",
@@ -5063,12 +5081,35 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
-    name = "grpcpp_orca",
+    name = "grpcpp_call_metric_recorder",
     srcs = [
-        "src/cpp/server/orca/orca_service.cc",
+        "src/cpp/server/orca/call_metric_recorder.cc",
     ],
     external_deps = [
         "upb_lib",
+        "absl/memory",
+    ],
+    language = "c++",
+    visibility = ["@grpc:public"],
+    deps = [
+        "grpc++_codegen_base",
+        "grpc_backend_metric_data",
+        "xds_orca_upb",
+    ],
+)
+
+grpc_cc_library(
+    name = "grpcpp_orca",
+    srcs = [
+        "src/cpp/server/orca/orca_interceptor.cc",
+        "src/cpp/server/orca/orca_service.cc",
+    ],
+    hdrs = [
+        "src/cpp/server/orca/orca_interceptor.h",
+    ],
+    external_deps = [
+        "upb_lib",
+        "absl/memory",
     ],
     language = "c++",
     public_hdrs = [

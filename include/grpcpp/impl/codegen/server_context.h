@@ -106,6 +106,7 @@ class Server;
 class ServerInterface;
 class ContextAllocator;
 class GenericCallbackServerContext;
+class CallMetricRecorder;
 
 namespace internal {
 class Call;
@@ -116,6 +117,11 @@ class InteropServerContextInspector;
 class ServerContextTestSpouse;
 class DefaultReactorTestPeer;
 }  // namespace testing
+
+namespace experimental {
+class OrcaServerInterceptor;
+class OrcaServerInterceptorFactory;
+}  // namespace experimental
 
 /// Base class of ServerContext.
 class ServerContextBase {
@@ -283,6 +289,8 @@ class ServerContextBase {
   /// Applications never need to call this method.
   grpc_call* c_call() { return call_.call; }
 
+  CallMetricRecorder* GetCallMetricRecorder();
+
  protected:
   /// Async only. Has to be called before the rpc starts.
   /// Returns the tag in completion queue when the rpc finishes.
@@ -388,6 +396,8 @@ class ServerContextBase {
   friend class grpc::ClientContext;
   friend class grpc::GenericServerContext;
   friend class grpc::GenericCallbackServerContext;
+  friend class grpc::experimental::OrcaServerInterceptor;
+  friend class grpc::experimental::OrcaServerInterceptorFactory;
 
   /// Prevent copying.
   ServerContextBase(const ServerContextBase&);
@@ -466,6 +476,7 @@ class ServerContextBase {
   grpc::experimental::ServerRpcInfo* rpc_info_ = nullptr;
   RpcAllocatorState* message_allocator_state_ = nullptr;
   ContextAllocator* context_allocator_ = nullptr;
+  std::unique_ptr<CallMetricRecorder> call_metric_recorder_;
 
   class Reactor : public grpc::ServerUnaryReactor {
    public:

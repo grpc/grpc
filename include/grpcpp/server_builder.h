@@ -22,6 +22,7 @@
 #include <grpc/impl/codegen/port_platform.h>
 
 #include <climits>
+#include <iterator>
 #include <map>
 #include <memory>
 #include <vector>
@@ -257,11 +258,14 @@ class ServerBuilder {
    public:
     explicit experimental_type(ServerBuilder* builder) : builder_(builder) {}
 
-    void SetInterceptorCreators(
+    void AddInterceptorCreators(
         std::vector<std::unique_ptr<
             grpc::experimental::ServerInterceptorFactoryInterface>>
             interceptor_creators) {
-      builder_->interceptor_creators_ = std::move(interceptor_creators);
+      auto& creators = builder_->interceptor_creators_;
+      auto begin = std::make_move_iterator(interceptor_creators.begin());
+      auto end = std::make_move_iterator(interceptor_creators.end());
+      creators.insert(creators.end(), begin, end);
     }
 
     enum class ExternalConnectionType {

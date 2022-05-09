@@ -565,8 +565,7 @@ class OobBackendMetricTestLoadBalancingPolicy
         : address_(std::move(address)), parent_(std::move(parent)) {}
 
     void OnBackendMetricReport(
-        const LoadBalancingPolicy::BackendMetricAccessor::BackendMetricData&
-            backend_metric_data) override {
+        const BackendMetricData& backend_metric_data) override {
       parent_->cb_(address_, backend_metric_data);
     }
 

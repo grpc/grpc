@@ -29,17 +29,16 @@ class BackendMetricAllocatorInterface {
  public:
   virtual ~BackendMetricAllocatorInterface() = default;
 
-  virtual LoadBalancingPolicy::BackendMetricAccessor::BackendMetricData*
-  AllocateBackendMetricData() = 0;
+  virtual BackendMetricData* AllocateBackendMetricData() = 0;
 
   virtual char* AllocateString(size_t size) = 0;
 };
 
 // Parses the serialized load report and populates out.
 // Returns false on error.
-const LoadBalancingPolicy::BackendMetricAccessor::BackendMetricData*
-ParseBackendMetricData(absl::string_view serialized_load_report,
-                       BackendMetricAllocatorInterface* allocator);
+const BackendMetricData* ParseBackendMetricData(
+    absl::string_view serialized_load_report,
+    BackendMetricAllocatorInterface* allocator);
 
 }  // namespace grpc_core
 
