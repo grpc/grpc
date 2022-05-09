@@ -359,14 +359,6 @@ static void timer_init(grpc_timer* timer, grpc_core::Timestamp deadline,
   gpr_mu_lock(&shard->mu);
   timer->pending = true;
   grpc_core::Timestamp now = grpc_core::ExecCtx::Get()->Now();
-  if (deadline <= now) {
-    timer->pending = false;
-    grpc_core::ExecCtx::Run(DEBUG_LOCATION, timer->closure, GRPC_ERROR_NONE);
-    gpr_mu_unlock(&shard->mu);
-    /* early out */
-    return;
-  }
-
   grpc_time_averaged_stats_add_sample(&shard->stats,
                                       (deadline - now).millis() / 1000.0);
 
