@@ -19,10 +19,22 @@
 #include "src/core/ext/filters/client_channel/lb_policy/child_policy_handler.h"
 
 #include <cstring>
+#include <memory>
+#include <string>
 
+#include "absl/status/status.h"
 #include "absl/strings/str_cat.h"
+#include "absl/strings/string_view.h"
+
+#include <grpc/impl/codegen/connectivity_state.h>
+#include <grpc/support/log.h>
 
 #include "src/core/ext/filters/client_channel/lb_policy_registry.h"
+#include "src/core/ext/filters/client_channel/subchannel_interface.h"
+#include "src/core/lib/gprpp/debug_location.h"
+#include "src/core/lib/iomgr/pollset_set.h"
+#include "src/core/lib/resolver/server_address.h"
+#include "src/core/lib/transport/connectivity_state.h"
 
 namespace grpc_core {
 
