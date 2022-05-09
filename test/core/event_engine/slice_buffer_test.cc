@@ -16,7 +16,7 @@
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
-#include "grpc/event_engine/memory_allocator.h"
+#include <grpc/event_engine/memory_allocator.h>
 #include <grpc/grpc.h>
 
 #include "src/core/lib/slice/slice.h"

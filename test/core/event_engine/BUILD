@@ -48,9 +48,9 @@ grpc_cc_test(
     srcs = ["slice_buffer_test.cc"],
     external_deps = ["gtest"],
     deps = [
-      "//:grpc",
-      "//test/core/util:grpc_test_util",
-    ]
+        "//:grpc",
+        "//test/core/util:grpc_test_util",
+    ],
 )
 
 grpc_cc_library(
