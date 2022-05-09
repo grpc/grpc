@@ -139,7 +139,7 @@ class EventEngine {
     /// callbacks with an error status.
     virtual ~Endpoint() = default;
     /// A struct representing optional arguments that may be provided to an
-    /// Event-Engine Endpoint Read API  call.
+    /// EventEngine Endpoint Read API  call.
     ///
     /// Passed as argument to an Endpoint \a Read
     struct ReadArgs {
@@ -170,7 +170,7 @@ class EventEngine {
     virtual void Read(std::function<void(absl::Status)> on_read,
                       SliceBuffer* buffer, const ReadArgs* args = nullptr) = 0;
     /// A struct representing optional arguments that may be provided to an
-    /// Event-Engine Endpoint Write API call.
+    /// EventEngine Endpoint Write API call.
     ///
     /// Passed as argument to an Endpoint \a Write
     struct WriteArgs {
