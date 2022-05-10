@@ -168,7 +168,7 @@ class EventEngine {
     /// statuses to \a on_read. For example, callbacks might expect to receive
     /// CANCELLED on endpoint shutdown.
     virtual void Read(std::function<void(absl::Status)> on_read,
-                      SliceBuffer* buffer, const ReadArgs* args = nullptr) = 0;
+                      SliceBuffer* buffer, const ReadArgs* args) = 0;
     /// A struct representing optional arguments that may be provided to an
     /// EventEngine Endpoint Write API call.
     ///
@@ -202,7 +202,7 @@ class EventEngine {
     /// statuses to \a on_writable. For example, callbacks might expect to
     /// receive CANCELLED on endpoint shutdown.
     virtual void Write(std::function<void(absl::Status)> on_writable,
-                       SliceBuffer* data, const WriteArgs* args = nullptr) = 0;
+                       SliceBuffer* data, const WriteArgs* args) = 0;
     /// Returns an address in the format described in DNSResolver. The returned
     /// values are expected to remain valid for the life of the Endpoint.
     virtual const ResolvedAddress& GetPeerAddress() const = 0;
