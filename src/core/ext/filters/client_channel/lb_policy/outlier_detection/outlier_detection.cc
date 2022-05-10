@@ -742,6 +742,7 @@ void OutlierDetectionLb::EjectionTimer::OnTimerLocked(grpc_error_handle error) {
   if (error == GRPC_ERROR_NONE && timer_pending_) {
     std::map<SubchannelState*, double> success_rate_ejection_candidates;
     std::map<SubchannelState*, double> failure_percentage_ejection_candidates;
+    size_t ejected_host_count = 0;
     double success_rate_sum = 0;
     auto time_now = ExecCtx::Get()->Now();
     auto& config = parent_->config_->outlier_detection_config();
@@ -753,6 +754,9 @@ void OutlierDetectionLb::EjectionTimer::OnTimerLocked(grpc_error_handle error) {
       subchannel_state->RotateBucket();
       // Gather data to run success rate algorithm or failure percentage
       // algorithm.
+      if (subchannel_state->ejection_time().has_value()) {
+        ++ejected_host_count;
+      }
       absl::optional<std::pair<double, uint64_t>> host_success_rate_and_volume =
           subchannel_state->GetSuccessRateAndVolume();
       if (!host_success_rate_and_volume.has_value()) {
@@ -760,6 +764,7 @@ void OutlierDetectionLb::EjectionTimer::OnTimerLocked(grpc_error_handle error) {
       }
       double success_rate = host_success_rate_and_volume->first;
       uint64_t request_volume = host_success_rate_and_volume->second;
+      gpr_log(GPR_INFO, "donna check on volume %lu", request_volume);
       if (config.success_rate_ejection.has_value()) {
         if (request_volume >= config.success_rate_ejection->request_volume) {
           success_rate_ejection_candidates[subchannel_state] = success_rate;
@@ -767,13 +772,21 @@ void OutlierDetectionLb::EjectionTimer::OnTimerLocked(grpc_error_handle error) {
         }
       }
       if (config.failure_percentage_ejection.has_value()) {
+        gpr_log(GPR_INFO, "donna failure configured min volumne to %lu",
+                config.failure_percentage_ejection->request_volume);
         if (request_volume >=
             config.failure_percentage_ejection->request_volume) {
+          gpr_log(GPR_INFO,
+                  "donna came to add the failure candidate %p for rate %lu",
+                  subchannel_state, success_rate);
           failure_percentage_ejection_candidates[subchannel_state] =
               success_rate;
         }
       }
     }
+    gpr_log(GPR_INFO, "success candidate size %d and failure candidate size %d",
+            success_rate_ejection_candidates.size(),
+            failure_percentage_ejection_candidates.size());
     // success rate algorithm
     if (!success_rate_ejection_candidates.empty() &&
         success_rate_ejection_candidates.size() >=
@@ -796,16 +809,32 @@ void OutlierDetectionLb::EjectionTimer::OnTimerLocked(grpc_error_handle error) {
           static_cast<double>(config.success_rate_ejection->stdev_factor) /
           1000;
       double ejection_threshold = mean - stdev * success_rate_stdev_factor;
+      gpr_log(GPR_INFO,
+              "donna success eject from a list of %d candidates, %d many "
+              "alrady ejected",
+              success_rate_ejection_candidates.size(), ejected_host_count);
+      bool first_success_eject = true;
       for (auto& candidate : success_rate_ejection_candidates) {
-        gpr_log(GPR_INFO, "donna candidate %p, %f and thrshodl is %f",
-                candidate.first, candidate.second, ejection_threshold);
+        gpr_log(GPR_INFO,
+                "donna candidate %p, %f and thrshodl is %f max percent is %d",
+                candidate.first, candidate.second, ejection_threshold,
+                config.max_ejection_percent);
         if (candidate.second < ejection_threshold) {
           uint32_t random_key = absl::Uniform(bit_gen_, 1, 100);
+          double current_percent = 100.0 * ejected_host_count /
+                                   parent_->subchannel_state_map_.size();
           if (random_key <
-              config.success_rate_ejection->enforcement_percentage) {
+                  config.success_rate_ejection->enforcement_percentage &&
+              (first_success_eject ||
+               (current_percent < config.max_ejection_percent))) {
             // Eject and record the timestamp for use when ejecting addresses in
             // this iteration.
+            gpr_log(GPR_INFO, "donna actually ejecting in success case");
             candidate.first->Eject(time_now);
+            first_success_eject = false;
+            ++ejected_host_count;
+          } else {
+            gpr_log(GPR_INFO, "donna saved by random key");
           }
         }
       }
@@ -814,19 +843,30 @@ void OutlierDetectionLb::EjectionTimer::OnTimerLocked(grpc_error_handle error) {
     if (!failure_percentage_ejection_candidates.empty() &&
         failure_percentage_ejection_candidates.size() >=
             config.failure_percentage_ejection->minimum_hosts) {
-      gpr_log(GPR_INFO, "donna failure eject");
+      gpr_log(GPR_INFO,
+              "donna failure eject from a list of %d candidates, %d many "
+              "alrady ejected",
+              failure_percentage_ejection_candidates.size(),
+              ejected_host_count);
+      bool first_failure_eject = true;
       for (auto& candidate : failure_percentage_ejection_candidates) {
         gpr_log(GPR_INFO, "donna candidate %p, %f", candidate.first,
                 candidate.second);
         if ((100.0 - candidate.second) >
             config.failure_percentage_ejection->threshold) {
           uint32_t random_key = absl::Uniform(bit_gen_, 1, 100);
+          double current_percent = 100.0 * ejected_host_count /
+                                   parent_->subchannel_state_map_.size();
           if (random_key <
-              config.failure_percentage_ejection->enforcement_percentage) {
+                  config.failure_percentage_ejection->enforcement_percentage &&
+              (first_failure_eject ||
+               (current_percent < config.max_ejection_percent))) {
             // Eject and record the timestamp for use when ejecting addresses in
             // this iteration.
-            gpr_log(GPR_INFO, "donna actually ejecting");
+            gpr_log(GPR_INFO, "donna actually ejecting in faliure case");
             candidate.first->Eject(time_now);
+            first_failure_eject = false;
+            ++ejected_host_count;
           } else {
             gpr_log(GPR_INFO, "donna saved by random key");
           }
