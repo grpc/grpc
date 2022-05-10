@@ -370,6 +370,17 @@ TEST_F(ResolveAddressTest, ImmediateCancel) {
   PollPollsetUntilRequestDone();
 }
 
+// Attempt to cancel a request after it has completed.
+TEST_F(ResolveAddressTest, CancelDoesNotSucceed) {
+  grpc_core::ExecCtx exec_ctx;
+  auto request_handle = grpc_core::GetDNSResolver()->ResolveName(
+      "localhost:1", "1", pollset_set(),
+      absl::bind_front(&ResolveAddressTest::MustSucceed, this));
+  grpc_core::ExecCtx::Get()->Flush();
+  PollPollsetUntilRequestDone();
+  ASSERT_FALSE(grpc_core::GetDNSResolver()->Cancel(request_handle));
+}
+
 namespace {
 
 int g_fake_non_responsive_dns_server_port;

@@ -219,6 +219,12 @@ void HttpRequest::Orphan() {
           "cancelled during DNS resolution"));
       Unref();
     } else if (connecting_) {
+      // gRPC's TCP connection establishment API doesn't currently have
+      // a mechanism for cancellation. So invoke the user callback now. The TCP
+      // connection will eventually complete (at least within its deadline), and
+      // we'll simply unref ourselves at that point.
+      // TODO(apolcyn): fix this to cancel the TCP connection attempt when
+      // an API to do so exists.
       Finish(GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(
           "HTTP request cancelled during TCP connection establishment",
           &overall_error_, 1));

@@ -500,6 +500,9 @@ class AresDNSResolver : public DNSResolver {
     MutexLock lock(&mu_);
     if (!open_requests_.contains(handle)) {
       // Unknown request, possibly completed already, or an invalid handle.
+      GRPC_CARES_TRACE_LOG(
+          "AresDNSResolver:%p attempt to cancel unknown TaskHandle:%s", this,
+          HandleToString(handle).c_str());
       return false;
     }
     auto* request = reinterpret_cast<AresRequest*>(handle.keys[0]);
