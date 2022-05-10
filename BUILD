@@ -5365,7 +5365,6 @@ grpc_cc_library(
     name = "grpcpp_orca",
     srcs = [
         "src/cpp/server/orca/orca_interceptor.cc",
-        "src/cpp/server/orca/orca_service.cc",
     ],
     hdrs = [
         "src/cpp/server/orca/orca_interceptor.h",
@@ -5376,8 +5375,33 @@ grpc_cc_library(
     ],
     language = "c++",
     public_hdrs = [
-        "include/grpcpp/ext/orca_service.h",
         "include/grpcpp/orca_load_reporter.h",
+    ],
+    visibility = ["@grpc:public"],
+    deps = [
+        "grpc++",
+        "grpc++_codegen_base",
+        "grpc_base",
+        "protobuf_duration_upb",
+        "ref_counted",
+        "time",
+        "xds_orca_service_upb",
+        "xds_orca_upb",
+    ],
+)
+
+grpc_cc_library(
+    name = "grpcpp_orca_service",
+    srcs = [
+        "src/cpp/server/orca/orca_service.cc",
+    ],
+    external_deps = [
+        "upb_lib",
+        "absl/memory",
+    ],
+    language = "c++",
+    public_hdrs = [
+        "include/grpcpp/ext/orca_service.h",
     ],
     visibility = ["@grpc:public"],
     deps = [
