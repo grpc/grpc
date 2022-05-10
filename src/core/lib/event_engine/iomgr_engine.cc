@@ -110,12 +110,14 @@ EventEngine::TaskHandle IomgrEventEngine::RunAtInternal(
             [](std::function<void()> fn) { fn(); });
       },
       cd, nullptr);
-  // kludge to deal with abseil's use of realtime clocks, and drift doing the
-  // conversion to monotonic clocks under load.
-  grpc_core::Timestamp when_internal =
-      grpc_core::ExecCtx::Get()->Now() +
-      grpc_core::Duration::Milliseconds(
-          ToInt64Milliseconds(when - absl::Now()) + 2);
+  // kludge to deal with realtime/monotonic clock conversion
+  absl::Time absl_now = absl::Now();
+  grpc_core::Duration duration = grpc_core::Duration::Milliseconds(
+      absl::ToInt64Milliseconds(when - absl_now) + 1);
+  grpc_core::ExecCtx::Get()->InvalidateNow();
+  grpc_core::Timestamp when_internal = grpc_core::ExecCtx::Get()->Now() +
+                                       duration +
+                                       grpc_core::Duration::Milliseconds(1);
   grpc_timer_init(&cd->timer, when_internal, &cd->closure);
   EventEngine::TaskHandle handle{reinterpret_cast<intptr_t>(cd),
                                  aba_token_.fetch_add(1)};
