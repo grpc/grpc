@@ -49,7 +49,6 @@
 #include "src/core/lib/channel/channelz.h"
 #include "src/core/lib/debug/stats.h"
 #include "src/core/lib/debug/trace.h"
-#include "src/core/lib/gprpp/chunked_vector.h"
 #include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/manual_constructor.h"
 #include "src/core/lib/gprpp/ref_counted.h"

@@ -20,6 +20,7 @@
 
 #include "src/core/lib/surface/completion_queue_factory.h"
 
+#include <grpc/grpc.h>
 #include <grpc/support/log.h>
 
 #include "src/core/lib/surface/completion_queue.h"
