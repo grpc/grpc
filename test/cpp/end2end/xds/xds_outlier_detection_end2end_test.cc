@@ -34,7 +34,13 @@ namespace {
 
 using ::envoy::config::endpoint::v3::HealthStatus;
 
-using OutlierDetectionTest = XdsEnd2endTest;
+class OutlierDetectionTest : public XdsEnd2endTest {
+ protected:
+  std::string CreateMetadataValueThatHashesToBackend(int index) {
+    return absl::StrCat(ipv6_only_ ? "[::1]" : "127.0.0.1", ":",
+                        backends_[index]->port(), "_0");
+  }
+};
 
 INSTANTIATE_TEST_SUITE_P(XdsTest, OutlierDetectionTest,
                          ::testing::Values(XdsTestType()), &XdsTestType::Name);
@@ -81,11 +87,9 @@ TEST_P(OutlierDetectionTest, SuccessRate100Percent) {
   // hashed to a specific backend as the header value matches the value used
   // to create the entry in the ring.
   std::vector<std::pair<std::string, std::string>> metadata = {
-      {"address_hash", absl::StrCat(ipv6_only_ ? "[::1]" : "127.0.0.1", ":",
-                                    backends_[0]->port(), "_0")}};
+      {"address_hash", CreateMetadataValueThatHashesToBackend(0)}};
   std::vector<std::pair<std::string, std::string>> metadata1 = {
-      {"address_hash", absl::StrCat(ipv6_only_ ? "[::1]" : "127.0.0.1", ":",
-                                    backends_[1]->port(), "_0")}};
+      {"address_hash", CreateMetadataValueThatHashesToBackend(1)}};
   const auto rpc_options = RpcOptions().set_metadata(metadata);
   const auto rpc_options1 = RpcOptions().set_metadata(std::move(metadata1));
   WaitForBackend(DEBUG_LOCATION, 0, WaitForBackendOptions(), rpc_options);
@@ -147,11 +151,9 @@ TEST_P(OutlierDetectionTest, FailurePercent100Percent) {
   // hashed to a specific backend as the header value matches the value used
   // to create the entry in the ring.
   std::vector<std::pair<std::string, std::string>> metadata = {
-      {"address_hash", absl::StrCat(ipv6_only_ ? "[::1]" : "127.0.0.1", ":",
-                                    backends_[0]->port(), "_0")}};
+      {"address_hash", CreateMetadataValueThatHashesToBackend(0)}};
   std::vector<std::pair<std::string, std::string>> metadata1 = {
-      {"address_hash", absl::StrCat(ipv6_only_ ? "[::1]" : "127.0.0.1", ":",
-                                    backends_[1]->port(), "_0")}};
+      {"address_hash", CreateMetadataValueThatHashesToBackend(1)}};
   const auto rpc_options = RpcOptions().set_metadata(metadata);
   const auto rpc_options1 = RpcOptions().set_metadata(std::move(metadata1));
   WaitForBackend(DEBUG_LOCATION, 0, WaitForBackendOptions(), rpc_options);

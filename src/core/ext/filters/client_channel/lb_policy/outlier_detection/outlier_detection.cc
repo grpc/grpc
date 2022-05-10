@@ -895,11 +895,11 @@ class OutlierDetectionLbFactory : public LoadBalancingPolicyFactory {
           std::max(outlier_detection_config.base_ejection_time.millis(),
                    static_cast<int64_t>(300000)));
     } else {
-      if (ParseDurationFromJson(max_ejection_time_it->second,
-                                &outlier_detection_config.max_ejection_time)) {
+      if (!ParseDurationFromJson(max_ejection_time_it->second,
+                                 &outlier_detection_config.max_ejection_time)) {
         error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-            absl::StrCat("field: maxEjectionTime error:type should be STRING"
-                         " of the form given by google.proto.Duration.")));
+            "field: maxEjectionTime error:type should be STRING"
+            " of the form given by google.proto.Duration."));
       }
     }
     ParseJsonObjectField(json.object_value(), "maxEjectionPercent",
@@ -962,6 +962,11 @@ class OutlierDetectionLbFactory : public LoadBalancingPolicyFactory {
         error_list.push_back(
             GRPC_ERROR_CREATE_FROM_VECTOR("field:childPolicy", &child_errors));
       }
+    }
+    if (!error_list.empty()) {
+      *error = GRPC_ERROR_CREATE_FROM_VECTOR(
+          "outlier_detection_experimental LB policy config", &error_list);
+      return nullptr;
     }
     return MakeRefCounted<OutlierDetectionLbConfig>(outlier_detection_config,
                                                     std::move(child_policy));
