@@ -880,31 +880,6 @@ class OutlierDetectionLbFactory : public LoadBalancingPolicyFactory {
     std::vector<grpc_error_handle> error_list;
     // Outlier detection config
     OutlierDetectionConfig outlier_detection_config;
-    ParseJsonObjectFieldAsDuration(json.object_value(), "interval",
-                                   &outlier_detection_config.interval,
-                                   &error_list);
-    ParseJsonObjectFieldAsDuration(json.object_value(), "baseEjectionTime",
-                                   &outlier_detection_config.base_ejection_time,
-                                   &error_list);
-    ParseJsonObjectFieldAsDuration(json.object_value(), "maxEjectionTime",
-                                   &outlier_detection_config.max_ejection_time,
-                                   &error_list);
-    auto max_ejection_time_it = json.object_value().find("maxEjectionTime");
-    if (max_ejection_time_it == json.object_value().end()) {
-      outlier_detection_config.max_ejection_time = Duration::Milliseconds(
-          std::max(outlier_detection_config.base_ejection_time.millis(),
-                   static_cast<int64_t>(300000)));
-    } else {
-      if (!ParseDurationFromJson(max_ejection_time_it->second,
-                                 &outlier_detection_config.max_ejection_time)) {
-        error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-            "field: maxEjectionTime error:type should be STRING"
-            " of the form given by google.proto.Duration."));
-      }
-    }
-    ParseJsonObjectField(json.object_value(), "maxEjectionPercent",
-                         &outlier_detection_config.max_ejection_percent,
-                         &error_list);
     auto it = json.object_value().find("successRateEjection");
     if (it != json.object_value().end()) {
       if (it->second.type() != Json::Type::OBJECT) {
@@ -922,7 +897,9 @@ class OutlierDetectionLbFactory : public LoadBalancingPolicyFactory {
                              &success_config.minimum_hosts, &error_list);
         ParseJsonObjectField(object, "requestVolume",
                              &success_config.request_volume, &error_list);
-        outlier_detection_config.success_rate_ejection = success_config;
+        if (error_list.empty()) {
+          outlier_detection_config.success_rate_ejection = success_config;
+        }
       }
     }
     it = json.object_value().find("failurePercentageEjection");
@@ -942,7 +919,32 @@ class OutlierDetectionLbFactory : public LoadBalancingPolicyFactory {
                              &failure_config.minimum_hosts, &error_list);
         ParseJsonObjectField(object, "requestVolume",
                              &failure_config.request_volume, &error_list);
-        outlier_detection_config.failure_percentage_ejection = failure_config;
+        if (error_list.empty()) {
+          outlier_detection_config.failure_percentage_ejection = failure_config;
+        }
+      }
+    }
+    if (outlier_detection_config.success_rate_ejection.has_value() ||
+        outlier_detection_config.failure_percentage_ejection.has_value()) {
+      ParseJsonObjectFieldAsDuration(json.object_value(), "interval",
+                                     &outlier_detection_config.interval,
+                                     &error_list);
+      ParseJsonObjectFieldAsDuration(
+          json.object_value(), "baseEjectionTime",
+          &outlier_detection_config.base_ejection_time, &error_list);
+      auto max_ejection_time_it = json.object_value().find("maxEjectionTime");
+      if (max_ejection_time_it == json.object_value().end()) {
+        outlier_detection_config.max_ejection_time = Duration::Milliseconds(
+            std::max(outlier_detection_config.base_ejection_time.millis(),
+                     static_cast<int64_t>(300000)));
+      } else {
+        if (!ParseDurationFromJson(
+                max_ejection_time_it->second,
+                &outlier_detection_config.max_ejection_time)) {
+          error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+              "field: maxEjectionTime error:type should be STRING"
+              " of the form given by google.proto.Duration."));
+        }
       }
     }
     // Child policy.
