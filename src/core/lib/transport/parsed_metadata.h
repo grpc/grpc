@@ -33,9 +33,7 @@
 #include <grpc/slice.h>
 
 #include "src/core/lib/gprpp/time.h"
-#include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/slice/slice.h"
-#include "src/core/lib/surface/validate_metadata.h"
 
 namespace grpc_core {
 
@@ -380,7 +378,7 @@ ParsedMetadata<MetadataContainer>::KeyValueVTable(absl::string_view key) {
   };
   static const auto set = [](const Buffer& value, MetadataContainer* map) {
     auto* p = static_cast<KV*>(value.pointer);
-    map->AppendUnknown(p->first.as_string_view(), p->second.Ref());
+    map->unknown_.Append(p->first.as_string_view(), p->second.Ref());
   };
   static const auto with_new_value = [](Slice* value, MetadataParseErrorFn,
                                         ParsedMetadata* result) {

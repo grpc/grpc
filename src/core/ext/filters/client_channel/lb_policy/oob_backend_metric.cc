@@ -18,22 +18,49 @@
 
 #include "src/core/ext/filters/client_channel/lb_policy/oob_backend_metric.h"
 
+#include <string.h>
+
+#include <algorithm>
+#include <set>
+#include <string>
+#include <utility>
+#include <vector>
+
+#include "absl/base/thread_annotations.h"
+#include "absl/memory/memory.h"
+#include "absl/status/status.h"
+#include "absl/strings/string_view.h"
+#include "absl/types/optional.h"
 #include "google/protobuf/duration.upb.h"
 #include "upb/upb.hpp"
-#include "xds/data/orca/v3/orca_load_report.upb.h"
 #include "xds/service/orca/v3/orca.upb.h"
 
+#include <grpc/impl/codegen/connectivity_state.h>
+#include <grpc/impl/codegen/gpr_types.h>
+#include <grpc/slice.h>
 #include <grpc/status.h>
+#include <grpc/support/alloc.h>
+#include <grpc/support/log.h>
 
 #include "src/core/ext/filters/client_channel/backend_metric.h"
+#include "src/core/ext/filters/client_channel/client_channel_channelz.h"
 #include "src/core/ext/filters/client_channel/subchannel.h"
 #include "src/core/ext/filters/client_channel/subchannel_interface_internal.h"
 #include "src/core/ext/filters/client_channel/subchannel_stream_client.h"
+#include "src/core/lib/channel/channel_trace.h"
 #include "src/core/lib/debug/trace.h"
+#include "src/core/lib/gprpp/debug_location.h"
+#include "src/core/lib/gprpp/memory.h"
+#include "src/core/lib/gprpp/orphanable.h"
+#include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/gprpp/time.h"
-#include "src/core/lib/slice/slice_internal.h"
-#include "src/core/lib/transport/error_utils.h"
+#include "src/core/lib/iomgr/closure.h"
+#include "src/core/lib/iomgr/error.h"
+#include "src/core/lib/iomgr/exec_ctx.h"
+#include "src/core/lib/iomgr/iomgr_fwd.h"
+#include "src/core/lib/iomgr/pollset_set.h"
+#include "src/core/lib/slice/slice.h"
 
 namespace grpc_core {
 

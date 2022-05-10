@@ -22,8 +22,6 @@
 #include <grpc/support/port_platform.h>
 
 #include <inttypes.h>
-#include <stdbool.h>
-#include <stdint.h>
 
 #include <grpc/impl/codegen/gpr_types.h>
 #include <grpc/support/log.h>
@@ -31,7 +29,6 @@
 
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/gprpp/time.h"
-#include "src/core/lib/iomgr/exec_ctx.h"
 
 extern grpc_core::TraceFlag grpc_bdp_estimator_trace;
 

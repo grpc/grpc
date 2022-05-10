@@ -23,36 +23,42 @@
 
 #include <algorithm>
 #include <cstring>
+#include <memory>
+#include <new>
+#include <utility>
 
-#include "absl/strings/str_format.h"
+#include "absl/status/statusor.h"
 
+#include <grpc/slice.h>
 #include <grpc/status.h>
 #include <grpc/support/alloc.h>
-#include <grpc/support/string_util.h>
+#include <grpc/support/log.h>
 
-#include "src/core/ext/filters/client_channel/client_channel.h"
 #include "src/core/ext/filters/client_channel/health/health_check_client.h"
 #include "src/core/ext/filters/client_channel/proxy_mapper_registry.h"
 #include "src/core/ext/filters/client_channel/subchannel_pool_interface.h"
-#include "src/core/lib/address_utils/parse_address.h"
+#include "src/core/ext/filters/client_channel/subchannel_stream_client.h"
 #include "src/core/lib/address_utils/sockaddr_utils.h"
 #include "src/core/lib/backoff/backoff.h"
 #include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/channel/channel_stack_builder.h"
 #include "src/core/lib/channel/channel_stack_builder_impl.h"
-#include "src/core/lib/channel/connected_channel.h"
+#include "src/core/lib/channel/channel_trace.h"
+#include "src/core/lib/channel/channelz.h"
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/debug/stats.h"
+#include "src/core/lib/debug/trace.h"
 #include "src/core/lib/gpr/alloc.h"
 #include "src/core/lib/gprpp/debug_location.h"
-#include "src/core/lib/gprpp/manual_constructor.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/gprpp/sync.h"
+#include "src/core/lib/iomgr/exec_ctx.h"
+#include "src/core/lib/iomgr/pollset_set.h"
 #include "src/core/lib/profiling/timers.h"
-#include "src/core/lib/slice/slice_internal.h"
-#include "src/core/lib/surface/channel.h"
+#include "src/core/lib/surface/channel_init.h"
+#include "src/core/lib/surface/channel_stack_type.h"
 #include "src/core/lib/transport/connectivity_state.h"
 #include "src/core/lib/transport/error_utils.h"
-#include "src/core/lib/uri/uri_parser.h"
 
 // Strong and weak refs.
 #define INTERNAL_REF_BITS 16

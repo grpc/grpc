@@ -528,6 +528,19 @@ typedef unsigned __int64 uint64_t;
 #define GRPC_MUST_USE_RESULT
 #define GPR_ALIGN_STRUCT(n)
 #endif
+#ifdef USE_STRICT_WARNING
+/* When building with USE_STRICT_WARNING (which -Werror), types with this
+   attribute will be treated as annotated with warn_unused_result, enforcing
+   returned values of this type should be used.
+   This is added in grpc::Status in mind to address the issue where it always
+   has this annotation internally but OSS doesn't, sometimes causing internal
+   build failure. To prevent this, this is added while not introducing
+   a breaking change to existing user code which may not use returned values
+   of grpc::Status. */
+#define GRPC_MUST_USE_RESULT_WHEN_USE_STRICT_WARNING GRPC_MUST_USE_RESULT
+#else
+#define GRPC_MUST_USE_RESULT_WHEN_USE_STRICT_WARNING
+#endif
 #endif
 
 #ifndef GRPC_UNUSED
@@ -547,29 +560,6 @@ typedef unsigned __int64 uint64_t;
 #endif
 #endif /* GPR_PRINT_FORMAT_CHECK */
 
-#if GPR_FORBID_UNREACHABLE_CODE
-#define GPR_UNREACHABLE_CODE(STATEMENT)
-#else
-#define GPR_UNREACHABLE_CODE(STATEMENT)             \
-  do {                                              \
-    gpr_log(GPR_ERROR, "Should never reach here."); \
-    abort();                                        \
-    STATEMENT;                                      \
-  } while (0)
-#endif /* GPR_FORBID_UNREACHABLE_CODE */
-
-#ifndef GPRAPI
-#define GPRAPI
-#endif
-
-#ifndef GRPCAPI
-#define GRPCAPI GPRAPI
-#endif
-
-#ifndef CENSUSAPI
-#define CENSUSAPI GRPCAPI
-#endif
-
 #ifndef GPR_HAS_CPP_ATTRIBUTE
 #ifdef __has_cpp_attribute
 #define GPR_HAS_CPP_ATTRIBUTE(a) __has_cpp_attribute(a)
@@ -585,6 +575,42 @@ typedef unsigned __int64 uint64_t;
 #define GPR_HAS_ATTRIBUTE(a) 0
 #endif
 #endif /* GPR_HAS_ATTRIBUTE */
+
+#if GPR_HAS_ATTRIBUTE(noreturn)
+#define GPR_ATTRIBUTE_NORETURN __attribute__((noreturn))
+#else
+#define GPR_ATTRIBUTE_NORETURN
+#endif
+
+#if GPR_FORBID_UNREACHABLE_CODE
+#define GPR_UNREACHABLE_CODE(STATEMENT)
+#else
+#ifdef __cplusplus
+extern "C" {
+#endif
+extern void gpr_unreachable_code(const char* reason, const char* file,
+                                 int line) GPR_ATTRIBUTE_NORETURN;
+#ifdef __cplusplus
+}
+#endif
+#define GPR_UNREACHABLE_CODE(STATEMENT)                   \
+  do {                                                    \
+    gpr_unreachable_code(#STATEMENT, __FILE__, __LINE__); \
+    STATEMENT;                                            \
+  } while (0)
+#endif /* GPR_FORBID_UNREACHABLE_CODE */
+
+#ifndef GPRAPI
+#define GPRAPI
+#endif
+
+#ifndef GRPCAPI
+#define GRPCAPI GPRAPI
+#endif
+
+#ifndef CENSUSAPI
+#define CENSUSAPI GRPCAPI
+#endif
 
 #ifndef GPR_HAS_FEATURE
 #ifdef __has_feature
