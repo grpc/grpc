@@ -18,13 +18,10 @@
 
 #include <grpc/support/port_platform.h>
 
-#include <grpc/event_engine/slice.h>
 #include <grpc/slice.h>
 
 #include "src/core/lib/iomgr/exec_ctx.h"
-#include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/slice/slice_refcount.h"
-#include "src/core/lib/slice/slice_refcount_base.h"
 
 /* Public API */
 grpc_slice grpc_slice_ref(grpc_slice slice) {

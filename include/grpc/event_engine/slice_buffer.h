@@ -27,8 +27,8 @@
 
 #include <grpc/event_engine/slice.h>
 #include <grpc/slice.h>
-#include <grpc/support/log.h>
 #include <grpc/slice_buffer.h>
+#include <grpc/support/log.h>
 
 namespace grpc_event_engine {
 namespace experimental {
@@ -68,7 +68,6 @@ class SliceBuffer {
   /// Adds a new slice into the SliceBuffer at the next available index.
   /// Returns the index at which the new slice is added.
   size_t AppendIndexed(Slice slice);
-
 
   /// Returns the number of slices held by the SliceBuffer.
   size_t Count() { return slice_buffer_->count; }

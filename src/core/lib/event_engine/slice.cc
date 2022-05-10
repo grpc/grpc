@@ -84,4 +84,3 @@ Slice Slice::FromRefcountAndBytes(grpc_slice_refcount* r, const uint8_t* begin,
 
 }  // namespace experimental
 }  // namespace grpc_event_engine
-

@@ -13,10 +13,11 @@
 // limitations under the License.
 #include <grpc/support/port_platform.h>
 
+#include "grpc/event_engine/slice_buffer.h"
+
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
-#include "grpc/event_engine/slice_buffer.h"
 #include <grpc/grpc.h>
 
 #include "src/core/lib/slice/slice.h"
