@@ -37,11 +37,11 @@
 #include <grpcpp/channel.h>
 #include <grpcpp/client_context.h>
 #include <grpcpp/create_channel.h>
+#include <grpcpp/ext/orca_load_reporter.h>
 #include <grpcpp/ext/orca_service.h>
 #include <grpcpp/health_check_service_interface.h>
 #include <grpcpp/impl/codegen/call_metric_recorder.h>
 #include <grpcpp/impl/codegen/sync.h>
-#include <grpcpp/ext/orca_load_reporter.h>
 #include <grpcpp/server.h>
 #include <grpcpp/server_builder.h>
 
@@ -97,8 +97,8 @@ class MyTestServiceImpl : public TestServiceImpl {
       const auto& load_report = request->param().backend_metrics();
       auto& recorder = context->GetCallMetricRecorder();
       recorder.RecordCpuUtilizationMetric(load_report.cpu_utilization())
-        .RecordMemoryUtilizationMetric(load_report.mem_utilization())
-        .RecordRequestsPerSecond(load_report.rps());
+          .RecordMemoryUtilizationMetric(load_report.mem_utilization())
+          .RecordRequestsPerSecond(load_report.rps());
       for (const auto& p : load_report.request_cost()) {
         recorder.RecordRequestCostMetric(p.first, p.second);
       }
