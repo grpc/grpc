@@ -5375,7 +5375,7 @@ grpc_cc_library(
     ],
     language = "c++",
     public_hdrs = [
-        "include/grpcpp/orca_load_reporter.h",
+        "include/grpcpp/ext/orca_load_reporter.h",
     ],
     visibility = ["@grpc:public"],
     deps = [

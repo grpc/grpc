@@ -16,8 +16,8 @@
  *
  */
 
-#ifndef GRPCPP_ORCA_LOAD_REPORTER_H
-#define GRPCPP_ORCA_LOAD_REPORTER_H
+#ifndef GRPCPP_EXT_ORCA_LOAD_REPORTER_H
+#define GRPCPP_EXT_ORCA_LOAD_REPORTER_H
 
 namespace grpc {
 class ServerBuilder;
@@ -31,4 +31,4 @@ void RegisterCallMetricLoadReporter(ServerBuilder*);
 
 }  // namespace grpc
 
-#endif  // GRPCPP_ORCA_LOAD_REPORTER_H
+#endif  // GRPCPP_EXT_ORCA_LOAD_REPORTER_H

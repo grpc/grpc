@@ -17,7 +17,7 @@
 #include "src/cpp/server/orca/orca_interceptor.h"
 
 #include <grpcpp/impl/codegen/call_metric_recorder.h>
-#include <grpcpp/orca_load_reporter.h>
+#include <grpcpp/ext/orca_load_reporter.h>
 #include <grpcpp/server_builder.h>
 
 #include "src/core/lib/transport/metadata_batch.h"
