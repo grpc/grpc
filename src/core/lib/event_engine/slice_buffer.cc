@@ -26,26 +26,26 @@ namespace grpc_event_engine {
 namespace experimental {
 
 void SliceBuffer::Append(Slice slice) {
-  grpc_slice_buffer_add(slice_buffer_, slice.TakeCSlice());
+  grpc_slice_buffer_add(&slice_buffer_, slice.TakeCSlice());
 }
 
 size_t SliceBuffer::AppendIndexed(Slice slice) {
-  return grpc_slice_buffer_add_indexed(slice_buffer_, slice.TakeCSlice());
+  return grpc_slice_buffer_add_indexed(&slice_buffer_, slice.TakeCSlice());
 }
 
 Slice SliceBuffer::TakeFirst() {
-  return Slice(grpc_slice_buffer_take_first(slice_buffer_));
+  return Slice(grpc_slice_buffer_take_first(&slice_buffer_));
 }
 
 void SliceBuffer::Prepend(Slice slice) {
-  grpc_slice_buffer_undo_take_first(slice_buffer_, slice.TakeCSlice());
+  grpc_slice_buffer_undo_take_first(&slice_buffer_, slice.TakeCSlice());
 }
 
 Slice SliceBuffer::RefSlice(size_t index) {
   if (index >= Count()) {
     return Slice(grpc_empty_slice());
   }
-  return Slice(grpc_slice_ref_internal(slice_buffer_->slices[index]));
+  return Slice(grpc_slice_ref_internal(slice_buffer_.slices[index]));
 }
 
 }  // namespace experimental

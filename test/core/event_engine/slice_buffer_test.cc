@@ -36,9 +36,7 @@ Slice MakeSlice(size_t len) {
 }
 
 TEST(SliceBufferTest, AddAndRemoveTest) {
-  grpc_slice_buffer sb_internal;
-  grpc_slice_buffer_init(&sb_internal);
-  SliceBuffer sb(&sb_internal);
+  SliceBuffer sb;
   Slice first_slice = MakeSlice(kNewSliceLength);
   Slice second_slice = MakeSlice(kNewSliceLength);
   Slice first_slice_copy = first_slice.Copy();
@@ -59,9 +57,7 @@ TEST(SliceBufferTest, AddAndRemoveTest) {
 }
 
 TEST(SliceBufferTest, SliceRefTest) {
-  grpc_slice_buffer sb_internal;
-  grpc_slice_buffer_init(&sb_internal);
-  SliceBuffer sb(&sb_internal);
+  SliceBuffer sb;
   Slice first_slice = MakeSlice(kNewSliceLength);
   Slice second_slice = MakeSlice(kNewSliceLength + 1);
   Slice first_slice_copy = first_slice.Copy();
