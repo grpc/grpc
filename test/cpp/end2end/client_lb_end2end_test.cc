@@ -95,15 +95,15 @@ class MyTestServiceImpl : public TestServiceImpl {
     AddClient(context->peer());
     if (request->has_param() && request->param().has_backend_metrics()) {
       const auto& load_report = request->param().backend_metrics();
-      auto recorder = context->GetCallMetricRecorder();
-      recorder->RecordCpuUtilizationMetric(load_report.cpu_utilization());
-      recorder->RecordMemoryUtilizationMetric(load_report.mem_utilization());
-      recorder->RecordRequestsPerSecond(load_report.rps());
+      auto& recorder = context->GetCallMetricRecorder();
+      recorder.RecordCpuUtilizationMetric(load_report.cpu_utilization())
+        .RecordMemoryUtilizationMetric(load_report.mem_utilization())
+        .RecordRequestsPerSecond(load_report.rps());
       for (const auto& p : load_report.request_cost()) {
-        recorder->RecordRequestCostMetric(p.first, p.second);
+        recorder.RecordRequestCostMetric(p.first, p.second);
       }
       for (const auto& p : load_report.utilization()) {
-        recorder->RecordUtilizationMetric(p.first, p.second);
+        recorder.RecordUtilizationMetric(p.first, p.second);
       }
     }
     return TestServiceImpl::Echo(context, request, response);
