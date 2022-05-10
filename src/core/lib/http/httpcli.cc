@@ -219,7 +219,7 @@ void HttpRequest::Orphan() {
       Finish(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
           "cancelled during DNS resolution"));
       Unref();
-    } 
+    }
     if (handshake_mgr_ != nullptr) {
       // Shutdown will cancel any ongoing tcp connect.
       handshake_mgr_->Shutdown(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
