@@ -2970,9 +2970,7 @@ void ClientChannel::LoadBalancedCall::RecvMessageReady(
     gpr_log(GPR_INFO, "chand=%p lb_call=%p: got recv_message_ready: error=%s",
             self->chand_, self, grpc_error_std_string(error).c_str());
   }
-  if (*self->recv_message_ != nullptr) {
-    self->call_attempt_tracer_->RecordReceivedMessage(**self->recv_message_);
-  }
+  self->call_attempt_tracer_->RecordReceivedMessage(*self->recv_message_);
   Closure::Run(DEBUG_LOCATION, self->original_recv_message_ready_,
                GRPC_ERROR_REF(error));
 }

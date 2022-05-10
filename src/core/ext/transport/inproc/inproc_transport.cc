@@ -190,10 +190,6 @@ struct inproc_stream {
     GRPC_ERROR_UNREF(cancel_self_error);
     GRPC_ERROR_UNREF(cancel_other_error);
 
-    if (recv_inited) {
-      grpc_slice_buffer_destroy_internal(&recv_message);
-    }
-
     t->unref();
   }
 
@@ -247,9 +243,7 @@ struct inproc_stream {
   grpc_transport_stream_op_batch* recv_message_op = nullptr;
   grpc_transport_stream_op_batch* recv_trailing_md_op = nullptr;
 
-  grpc_slice_buffer recv_message;
-  grpc_core::ManualConstructor<grpc_core::SliceBufferByteStream> recv_stream;
-  bool recv_inited = false;
+  grpc_core::SliceBuffer recv_message;
 
   bool initial_md_sent = false;
   bool trailing_md_sent = false;
@@ -501,7 +495,6 @@ void fail_helper_locked(inproc_stream* s, grpc_error_handle error) {
     s->recv_message_op = nullptr;
   }
   if (s->send_message_op) {
-    s->send_message_op->payload->send_message.send_message.reset();
     complete_if_batch_end_locked(
         s, error, s->send_message_op,
         "fail_helper scheduling send-message-on-complete");
@@ -543,41 +536,8 @@ void fail_helper_locked(inproc_stream* s, grpc_error_handle error) {
 // synchronously.  That assumption is true today but may not always be
 // true in the future.
 void message_transfer_locked(inproc_stream* sender, inproc_stream* receiver) {
-  size_t remaining =
-      sender->send_message_op->payload->send_message.send_message->length();
-  if (receiver->recv_inited) {
-    grpc_slice_buffer_destroy_internal(&receiver->recv_message);
-  }
-  grpc_slice_buffer_init(&receiver->recv_message);
-  receiver->recv_inited = true;
-  do {
-    grpc_slice message_slice;
-    grpc_closure unused;
-    GPR_ASSERT(
-        sender->send_message_op->payload->send_message.send_message->Next(
-            SIZE_MAX, &unused));
-    grpc_error_handle error =
-        sender->send_message_op->payload->send_message.send_message->Pull(
-            &message_slice);
-    if (error != GRPC_ERROR_NONE) {
-      cancel_stream_locked(sender, GRPC_ERROR_REF(error));
-      break;
-    }
-    GPR_ASSERT(error == GRPC_ERROR_NONE);
-    remaining -= GRPC_SLICE_LENGTH(message_slice);
-    grpc_slice_buffer_add(&receiver->recv_message, message_slice);
-  } while (remaining > 0);
-  sender->send_message_op->payload->send_message.send_message.reset();
-
-  receiver->recv_stream.Init(&receiver->recv_message, 0);
-  receiver->recv_message_op->payload->recv_message.recv_message->reset(
-      receiver->recv_stream.get());
-  INPROC_LOG(GPR_INFO, "message_transfer_locked %p scheduling message-ready",
-             receiver);
-  grpc_core::ExecCtx::Run(
-      DEBUG_LOCATION,
-      receiver->recv_message_op->payload->recv_message.recv_message_ready,
-      GRPC_ERROR_NONE);
+  receiver->recv_message =
+      std::move(*sender->send_message_op->payload->send_message.send_message);
   complete_if_batch_end_locked(
       sender, GRPC_ERROR_NONE, sender->send_message_op,
       "message_transfer scheduling sender on_complete");
@@ -620,7 +580,6 @@ void op_state_machine_locked(inproc_stream* s, grpc_error_handle error) {
       maybe_process_ops_locked(other, GRPC_ERROR_NONE);
     } else if (!s->t->is_client && s->trailing_md_sent) {
       // A server send will never be matched if the server already sent status
-      s->send_message_op->payload->send_message.send_message.reset();
       complete_if_batch_end_locked(
           s, GRPC_ERROR_NONE, s->send_message_op,
           "op_state_machine scheduling send-message-on-complete case 1");
@@ -761,7 +720,6 @@ void op_state_machine_locked(inproc_stream* s, grpc_error_handle error) {
     if (s->recv_message_op != nullptr) {
       // This message needs to be wrapped up because it will never be
       // satisfied
-      *s->recv_message_op->payload->recv_message.recv_message = nullptr;
       INPROC_LOG(GPR_INFO, "op_state_machine %p scheduling message-ready", s);
       grpc_core::ExecCtx::Run(
           DEBUG_LOCATION,
@@ -775,7 +733,6 @@ void op_state_machine_locked(inproc_stream* s, grpc_error_handle error) {
     if ((s->trailing_md_sent || s->t->is_client) && s->send_message_op) {
       // Nothing further will try to receive from this stream, so finish off
       // any outstanding send_message op
-      s->send_message_op->payload->send_message.send_message.reset();
       s->send_message_op->payload->send_message.stream_write_closed = true;
       complete_if_batch_end_locked(
           s, new_err, s->send_message_op,
@@ -840,7 +797,6 @@ void op_state_machine_locked(inproc_stream* s, grpc_error_handle error) {
     // No further message will come on this stream, so finish off the
     // recv_message_op
     INPROC_LOG(GPR_INFO, "op_state_machine %p scheduling message-ready", s);
-    *s->recv_message_op->payload->recv_message.recv_message = nullptr;
     grpc_core::ExecCtx::Run(
         DEBUG_LOCATION,
         s->recv_message_op->payload->recv_message.recv_message_ready,
@@ -853,7 +809,6 @@ void op_state_machine_locked(inproc_stream* s, grpc_error_handle error) {
   if (s->trailing_md_recvd && s->send_message_op && s->t->is_client) {
     // Nothing further will try to receive from this stream, so finish off
     // any outstanding send_message op
-    s->send_message_op->payload->send_message.send_message.reset();
     complete_if_batch_end_locked(
         s, new_err, s->send_message_op,
         "op_state_machine scheduling send-message-on-complete case 3");
@@ -1063,11 +1018,6 @@ void perform_stream_op(grpc_transport* gt, grpc_stream* gs,
     }
   } else {
     if (error != GRPC_ERROR_NONE) {
-      // Consume any send message that was sent here but that we are not pushing
-      // to the other side
-      if (op->send_message) {
-        op->payload->send_message.send_message.reset();
-      }
       // Schedule op's closures that we didn't push to op state machine
       if (op->recv_initial_metadata) {
         if (op->payload->recv_initial_metadata.trailing_metadata_available !=

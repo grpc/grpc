@@ -46,7 +46,6 @@
 #include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/resource_quota/memory_quota.h"
 #include "src/core/lib/slice/slice.h"
-#include "src/core/lib/transport/byte_stream.h"
 #include "src/core/lib/transport/metadata_batch.h"
 #include "src/core/lib/transport/transport.h"
 
@@ -169,7 +168,7 @@ class SubchannelStreamClient
     grpc_metadata_batch send_initial_metadata_;
 
     // send_message
-    absl::optional<SliceBufferByteStream> send_message_;
+    absl::optional<SliceBuffer> send_message_;
 
     // send_trailing_metadata
     grpc_metadata_batch send_trailing_metadata_;
@@ -179,7 +178,7 @@ class SubchannelStreamClient
     grpc_closure recv_initial_metadata_ready_;
 
     // recv_message
-    OrphanablePtr<ByteStream> recv_message_;
+    SliceBuffer recv_message_;
     grpc_closure recv_message_ready_;
     grpc_slice_buffer recv_message_buffer_;
     std::atomic<bool> seen_response_{false};

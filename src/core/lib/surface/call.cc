@@ -77,7 +77,6 @@
 #include "src/core/lib/surface/completion_queue.h"
 #include "src/core/lib/surface/server.h"
 #include "src/core/lib/surface/validate_metadata.h"
-#include "src/core/lib/transport/byte_stream.h"
 #include "src/core/lib/transport/error_utils.h"
 #include "src/core/lib/transport/metadata_batch.h"
 #include "src/core/lib/transport/transport.h"
@@ -393,9 +392,9 @@ class FilterStackCall final : public Call {
   /* Contexts for various subsystems (security, tracing, ...). */
   grpc_call_context_element context_[GRPC_CONTEXT_COUNT] = {};
 
-  ManualConstructor<SliceBufferByteStream> sending_stream_;
+  ManualConstructor<SliceBuffer> sending_stream_;
+  SliceBuffer receiving_stream_;
 
-  OrphanablePtr<ByteStream> receiving_stream_;
   bool call_failed_before_recv_message_ = false;
   grpc_byte_buffer** receiving_buffer_ = nullptr;
   grpc_slice receiving_slice_ = grpc_empty_slice();

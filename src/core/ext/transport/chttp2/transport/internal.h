@@ -60,7 +60,6 @@
 #include "src/core/lib/iomgr/timer.h"
 #include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/resource_quota/memory_quota.h"
-#include "src/core/lib/transport/byte_stream.h"
 #include "src/core/lib/transport/connectivity_state.h"
 #include "src/core/lib/transport/metadata_batch.h"
 #include "src/core/lib/transport/transport.h"
@@ -228,76 +227,6 @@ typedef struct grpc_chttp2_write_cb {
   grpc_closure* closure;
   struct grpc_chttp2_write_cb* next;
 } grpc_chttp2_write_cb;
-
-namespace grpc_core {
-
-class Chttp2IncomingByteStream : public ByteStream {
- public:
-  Chttp2IncomingByteStream(grpc_chttp2_transport* transport,
-                           grpc_chttp2_stream* stream, uint32_t frame_size,
-                           uint32_t flags);
-
-  void Orphan() override;
-
-  bool Next(size_t max_size_hint, grpc_closure* on_complete) override;
-  grpc_error_handle Pull(grpc_slice* slice) override;
-  void Shutdown(grpc_error_handle error) override;
-
-  // TODO(roth): When I converted this class to C++, I wanted to make it
-  // inherit from RefCounted or InternallyRefCounted instead of continuing
-  // to use its own custom ref-counting code.  However, that would require
-  // using multiple inheritance, which sucks in general.  And to make matters
-  // worse, it causes problems with our New<> and Delete<> wrappers.
-  // Specifically, unless RefCounted is first in the list of parent classes,
-  // it will see a different value of the address of the object than the one
-  // we actually allocated, in which case gpr_free() will be called on a
-  // different address than the one we got from gpr_malloc(), thus causing a
-  // crash.  Given the fragility of depending on that, as well as a desire to
-  // avoid multiple inheritance in general, I've decided to leave this
-  // alone for now.  We can revisit this once we're able to link against
-  // libc++, at which point we can eliminate New<> and Delete<> and
-  // switch to std::shared_ptr<>.
-  void Ref() { refs_.Ref(); }
-  void Unref() {
-    if (GPR_UNLIKELY(refs_.Unref())) {
-      delete this;
-    }
-  }
-
-  void PublishError(grpc_error_handle error);
-
-  grpc_error_handle Push(const grpc_slice& slice, grpc_slice* slice_out);
-
-  grpc_error_handle Finished(grpc_error_handle error, bool reset_on_error);
-
-  uint32_t remaining_bytes() const { return remaining_bytes_; }
-
- private:
-  static void NextLocked(void* arg, grpc_error_handle error_ignored);
-  static void OrphanLocked(void* arg, grpc_error_handle error_ignored);
-
-  grpc_chttp2_transport* transport_;  // Immutable.
-  grpc_chttp2_stream* stream_;        // Immutable.
-
-  RefCount refs_;
-
-  /* Accessed only by transport thread when stream->pending_byte_stream == false
-   * Accessed only by application thread when stream->pending_byte_stream ==
-   * true */
-  uint32_t remaining_bytes_;
-
-  /* Accessed only by transport thread when stream->pending_byte_stream == false
-   * Accessed only by application thread when stream->pending_byte_stream ==
-   * true */
-  struct {
-    grpc_closure closure;
-    size_t max_size_hint;
-    grpc_closure* on_complete;
-  } next_action_;
-  grpc_closure destroy_action_;
-};
-
-}  // namespace grpc_core
 
 typedef enum {
   GRPC_CHTTP2_KEEPALIVE_STATE_WAITING,
@@ -565,19 +494,16 @@ struct grpc_chttp2_stream {
   bool* sent_trailing_metadata_op = nullptr;
   grpc_closure* send_trailing_metadata_finished = nullptr;
 
-  grpc_core::OrphanablePtr<grpc_core::ByteStream> fetching_send_message;
-  uint32_t fetched_send_message_length = 0;
-  grpc_slice fetching_slice = grpc_empty_slice();
+  grpc_core::SliceBuffer* send_message;
   int64_t next_message_end_offset;
   int64_t flow_controlled_bytes_written = 0;
   int64_t flow_controlled_bytes_flowed = 0;
-  grpc_closure complete_fetch_locked;
-  grpc_closure* fetching_send_message_finished = nullptr;
+  grpc_closure* send_message_finished = nullptr;
 
   grpc_metadata_batch* recv_initial_metadata;
   grpc_closure* recv_initial_metadata_ready = nullptr;
   bool* trailing_metadata_available = nullptr;
-  grpc_core::OrphanablePtr<grpc_core::ByteStream>* recv_message = nullptr;
+  grpc_core::SliceBuffer* recv_message = nullptr;
   bool* call_failed_before_recv_message = nullptr;
   grpc_closure* recv_message_ready = nullptr;
   grpc_metadata_batch* recv_trailing_metadata;

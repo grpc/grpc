@@ -411,7 +411,7 @@ class DataSendContext {
     uint32_t send_bytes = static_cast<uint32_t>(
         std::min(size_t(max_outgoing()), s_->flow_controlled_buffer.length));
     is_last_frame_ = send_bytes == s_->flow_controlled_buffer.length &&
-                     s_->fetching_send_message == nullptr &&
+                     s_->send_message == nullptr &&
                      s_->send_trailing_metadata != nullptr &&
                      s_->send_trailing_metadata->empty();
     grpc_chttp2_encode_data(s_->id, &s_->flow_controlled_buffer, send_bytes,
@@ -462,7 +462,7 @@ class StreamWriteContext {
     // trailing metadata.  This results in a Trailers-Only response,
     // which is required for retries, as per:
     // https://github.com/grpc/proposal/blob/master/A6-client-retries.md#when-retries-are-valid
-    if (!t_->is_client && s_->fetching_send_message == nullptr &&
+    if (!t_->is_client && s_->send_message == nullptr &&
         s_->flow_controlled_buffer.length == 0 &&
         s_->send_trailing_metadata != nullptr &&
         is_default_initial_metadata(s_->send_initial_metadata)) {
@@ -547,7 +547,7 @@ class StreamWriteContext {
     if (!s_->sent_initial_metadata) return;
 
     if (s_->send_trailing_metadata == nullptr) return;
-    if (s_->fetching_send_message != nullptr) return;
+    if (s_->send_message != nullptr) return;
     if (s_->flow_controlled_buffer.length != 0) return;
 
     GRPC_CHTTP2_IF_TRACING(gpr_log(GPR_INFO, "sending trailing_metadata"));

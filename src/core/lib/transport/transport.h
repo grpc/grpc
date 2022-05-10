@@ -55,7 +55,7 @@
 #include "src/core/lib/promise/latch.h"
 #include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/slice/slice.h"
-#include "src/core/lib/transport/byte_stream.h"
+#include "src/core/lib/slice/slice_buffer.h"
 #include "src/core/lib/transport/connectivity_state.h"
 #include "src/core/lib/transport/metadata_batch.h"
 
@@ -332,12 +332,6 @@ struct grpc_transport_stream_op_batch_payload {
   explicit grpc_transport_stream_op_batch_payload(
       grpc_call_context_element* context)
       : context(context) {}
-  ~grpc_transport_stream_op_batch_payload() {
-    // We don't really own `send_message`, so release ownership and let the
-    // owner clean the data.
-    (void)send_message.send_message.release();
-  }
-
   struct {
     grpc_metadata_batch* send_initial_metadata = nullptr;
     /** Iff send_initial_metadata != NULL, flags associated with
@@ -366,7 +360,8 @@ struct grpc_transport_stream_op_batch_payload {
     // the op gets down to the transport) takes ownership.
     // The batch's on_complete will not be called until after the byte
     // stream is orphaned.
-    grpc_core::OrphanablePtr<grpc_core::ByteStream> send_message;
+    grpc_core::SliceBuffer* send_message;
+    uint32_t flags;
     // Set by the transport if the stream has been closed for writes. If this
     // is set and send message op is present, we set the operation to be a
     // failure without sending a cancel OP down the stack. This is so that the
@@ -408,7 +403,8 @@ struct grpc_transport_stream_op_batch_payload {
     // Will be set by the transport to point to the byte stream
     // containing a received message.
     // Will be NULL if trailing metadata is received instead of a message.
-    grpc_core::OrphanablePtr<grpc_core::ByteStream>* recv_message = nullptr;
+    grpc_core::SliceBuffer* recv_message = nullptr;
+    uint32_t* flags = nullptr;
     // Was this recv_message failed for reasons other than a clean end-of-stream
     bool* call_failed_before_recv_message = nullptr;
     /** Should be enqueued when one message is ready to be processed. */

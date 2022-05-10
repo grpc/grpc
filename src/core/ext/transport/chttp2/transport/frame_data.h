@@ -30,7 +30,6 @@
 #include "src/core/ext/transport/chttp2/transport/frame.h"
 #include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/iomgr/error.h"
-#include "src/core/lib/transport/byte_stream.h"
 #include "src/core/lib/transport/transport.h"
 
 typedef enum {
@@ -81,6 +80,6 @@ void grpc_chttp2_encode_data(uint32_t id, grpc_slice_buffer* inbuf,
 grpc_error_handle grpc_deframe_unprocessed_incoming_frames(
     grpc_chttp2_data_parser* p, grpc_chttp2_stream* s,
     grpc_slice_buffer* slices, grpc_slice* slice_out,
-    grpc_core::OrphanablePtr<grpc_core::ByteStream>* stream_out);
+    grpc_core::SliceBuffer* stream_out);
 
 #endif /* GRPC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_FRAME_DATA_H */

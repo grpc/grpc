@@ -98,12 +98,7 @@ class CallData {
                       StartSendMessageBatch, elem, grpc_schedule_on_exec_ctx);
   }
 
-  ~CallData() {
-    if (state_initialized_) {
-      grpc_slice_buffer_destroy_internal(&slices_);
-    }
-    GRPC_ERROR_UNREF(cancel_error_);
-  }
+  ~CallData() { GRPC_ERROR_UNREF(cancel_error_); }
 
   void CompressStartTransportStreamOpBatch(
       grpc_call_element* elem, grpc_transport_stream_op_batch* batch);
@@ -132,20 +127,7 @@ class CallData {
   grpc_error_handle cancel_error_ = GRPC_ERROR_NONE;
   grpc_transport_stream_op_batch* send_message_batch_ = nullptr;
   bool seen_initial_metadata_ = false;
-  /* Set to true, if the fields below are initialized. */
-  bool state_initialized_ = false;
   grpc_closure start_send_message_batch_in_call_combiner_;
-  /* The fields below are only initialized when we compress the payload.
-   * Keep them at the bottom of the struct, so they don't pollute the
-   * cache-lines. */
-  grpc_slice_buffer slices_; /**< Buffers up input slices to be compressed */
-  // Allocate space for the replacement stream
-  std::aligned_storage<sizeof(grpc_core::SliceBufferByteStream),
-                       alignof(grpc_core::SliceBufferByteStream)>::type
-      replacement_stream_;
-  grpc_closure* original_send_message_on_complete_ = nullptr;
-  grpc_closure send_message_on_complete_;
-  grpc_closure on_send_message_next_done_;
 };
 
 // Returns true if we should skip message compression for the current message.
