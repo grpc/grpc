@@ -899,11 +899,6 @@ _BUILD_EXTRA_METADATA = {
         'build': 'all',
         'baselib': True,
     },
-    # TODO(jtattermusch): do we need to set grpc_csharp_ext's LDFLAGS for wrapping memcpy in the same way as in build.yaml?
-    'grpc_csharp_ext': {
-        'language': 'c',
-        'build': 'all',
-    },
     'grpc_unsecure': {
         'language': 'c',
         'build': 'all',

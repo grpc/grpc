@@ -19,6 +19,8 @@
 #include "src/core/ext/filters/channel_idle/channel_idle_filter.h"
 #include "src/core/ext/filters/http/client/http_client_filter.h"
 #include "src/core/ext/filters/http/client_authority_filter.h"
+#include "src/core/ext/filters/http/server/http_server_filter.h"
+#include "src/core/lib/channel/channel_stack_builder_impl.h"
 #include "src/core/lib/gpr/env.h"
 #include "src/core/lib/iomgr/executor.h"
 #include "src/core/lib/iomgr/timer_manager.h"
@@ -163,24 +165,6 @@ struct GlobalObjects {
   }
 };
 
-struct Filter {
-  absl::string_view name;
-  absl::StatusOr<std::unique_ptr<ChannelFilter>> (*create)(
-      ChannelArgs channel_args, ChannelFilter::Args filter_args);
-
-  template <typename T>
-  static Filter* Make(absl::string_view name) {
-    return new Filter{
-        name,
-        [](ChannelArgs channel_args, ChannelFilter::Args filter_args)
-            -> absl::StatusOr<std::unique_ptr<ChannelFilter>> {
-          auto r = T::Create(channel_args, filter_args);
-          if (!r.ok()) return r.status();
-          return std::unique_ptr<ChannelFilter>(new T(std::move(*r)));
-        }};
-  }
-};
-
 RefCountedPtr<AuthorizationEngine> LoadAuthorizationEngine(
     const filter_fuzzer::AuthorizationEngine& engine) {
   switch (engine.engine_case()) {
@@ -255,41 +239,36 @@ ChannelArgs LoadChannelArgs(const FuzzerChannelArgs& fuzz_args,
   return args;
 }
 
-#define MAKE_FILTER(name) Filter::Make<name>(#name)
-
-const Filter* const kFilters[] = {
-    MAKE_FILTER(ClientAuthorityFilter), MAKE_FILTER(HttpClientFilter),
-    MAKE_FILTER(ClientAuthFilter), MAKE_FILTER(GrpcServerAuthzFilter),
+const grpc_channel_filter* const kFilters[] = {
+    &ClientAuthorityFilter::kFilter, &HttpClientFilter::kFilter,
+    &ClientAuthFilter::kFilter,      &GrpcServerAuthzFilter::kFilterVtable,
+    &MaxAgeFilter::kFilter,          &ClientIdleFilter::kFilter,
+    &HttpServerFilter::kFilter,
     // We exclude this one internally, so we can't have it here - will need to
     // pick it up through some future registration mechanism.
     // MAKE_FILTER(ServerLoadReportingFilter),
-    // The following need channel stacks, and that's not figured out yet
-    // MAKE_FILTER(MaxAgeFilter),
-    // MAKE_FILTER(ClientIdleFilter),
 };
 
-absl::StatusOr<std::unique_ptr<ChannelFilter>> CreateFilter(
-    absl::string_view name, ChannelArgs channel_args,
-    ChannelFilter::Args filter_args) {
+const grpc_channel_filter* FindFilter(absl::string_view name) {
   for (size_t i = 0; i < GPR_ARRAY_SIZE(kFilters); ++i) {
-    if (name == kFilters[i]->name) {
-      return kFilters[i]->create(std::move(channel_args), filter_args);
-    }
+    if (name == kFilters[i]->name) return kFilters[i];
   }
-  return absl::NotFoundError(absl::StrCat("Filter ", name, " not found"));
+  return nullptr;
 }
 
 class MainLoop {
  public:
-  MainLoop(std::unique_ptr<ChannelFilter> filter, ChannelArgs channel_args)
+  MainLoop(RefCountedPtr<grpc_channel_stack> channel_stack,
+           ChannelArgs channel_args)
       : memory_allocator_(channel_args.GetObject<ResourceQuota>()
                               ->memory_quota()
                               ->CreateMemoryAllocator("test")),
-        filter_(std::move(filter)) {}
+        channel_stack_(std::move(channel_stack)) {}
 
   ~MainLoop() {
     ExecCtx exec_ctx;
     calls_.clear();
+    channel_stack_.reset();
   }
 
   void Run(const filter_fuzzer::Action& action, GlobalObjects* globals) {
@@ -333,6 +312,26 @@ class MainLoop {
     }
   }
 
+  static const grpc_channel_filter* EndFilter(bool is_client) {
+    static const grpc_channel_filter client_filter =
+        MakePromiseBasedFilter<Call::EndFilter, FilterEndpoint::kClient>(
+            "client-end");
+    static const grpc_channel_filter server_filter =
+        MakePromiseBasedFilter<Call::EndFilter, FilterEndpoint::kServer>(
+            "server-end");
+    return is_client ? &client_filter : &server_filter;
+  }
+
+  static const grpc_channel_filter* BottomFilter(bool is_client) {
+    static const grpc_channel_filter client_filter =
+        MakePromiseBasedFilter<Call::BottomFilter, FilterEndpoint::kClient,
+                               kFilterIsLast>("client-end");
+    static const grpc_channel_filter server_filter =
+        MakePromiseBasedFilter<Call::BottomFilter, FilterEndpoint::kServer,
+                               kFilterIsLast>("server-end");
+    return is_client ? &client_filter : &server_filter;
+  }
+
  private:
   class WakeCall final : public Wakeable {
    public:
@@ -354,27 +353,62 @@ class MainLoop {
 
   class Call final : public Activity {
    public:
+    // EndFilter is the last filter that will be invoked for a call
+    class EndFilter : public ChannelFilter {
+     public:
+      static absl::StatusOr<EndFilter> Create(ChannelArgs,
+                                              ChannelFilter::Args) {
+        return EndFilter{};
+      }
+
+      // Construct a promise for one call.
+      ArenaPromise<ServerMetadataHandle> MakeCallPromise(
+          CallArgs call_args, NextPromiseFactory) override {
+        Call* call = static_cast<Call*>(Activity::current());
+        if (call->server_initial_metadata_) {
+          call_args.server_initial_metadata->Set(
+              call->server_initial_metadata_.get());
+        } else {
+          call->unset_incoming_server_initial_metadata_latch_ =
+              call_args.server_initial_metadata;
+        }
+        return [call]() -> Poll<ServerMetadataHandle> {
+          return call->CheckCompletion();
+        };
+      }
+    };
+
+    // BottomFilter is the last filter on a channel stack (for sinking ops)
+    class BottomFilter : public ChannelFilter {
+     public:
+      static absl::StatusOr<BottomFilter> Create(ChannelArgs,
+                                                 ChannelFilter::Args) {
+        return BottomFilter{};
+      }
+
+      // Construct a promise for one call.
+      ArenaPromise<ServerMetadataHandle> MakeCallPromise(
+          CallArgs call_args, NextPromiseFactory next) override {
+        return next(std::move(call_args));
+      }
+
+      bool StartTransportOp(grpc_transport_op* op) override {
+        GRPC_ERROR_UNREF(op->disconnect_with_error);
+        GRPC_ERROR_UNREF(op->goaway_error);
+        ExecCtx::Run(DEBUG_LOCATION, op->on_consumed, GRPC_ERROR_NONE);
+        return true;
+      }
+    };
+
     Call(MainLoop* main_loop, uint32_t id,
          const filter_fuzzer::Metadata& client_initial_metadata)
         : main_loop_(main_loop), id_(id) {
       ScopedContext context(this);
       auto* server_initial_metadata = arena_->New<Latch<ServerMetadata*>>();
-      promise_ = main_loop_->filter_->MakeCallPromise(
+      promise_ = main_loop_->channel_stack_->MakeCallPromise(
           CallArgs{std::move(*LoadMetadata(client_initial_metadata,
                                            &client_initial_metadata_)),
-                   server_initial_metadata},
-          [this](CallArgs call_args) -> ArenaPromise<ServerMetadataHandle> {
-            if (server_initial_metadata_) {
-              call_args.server_initial_metadata->Set(
-                  server_initial_metadata_.get());
-            } else {
-              unset_incoming_server_initial_metadata_latch_ =
-                  call_args.server_initial_metadata;
-            }
-            return [this]() -> Poll<ServerMetadataHandle> {
-              return CheckCompletion();
-            };
-          });
+                   server_initial_metadata});
       Step();
     }
 
@@ -533,7 +567,7 @@ class MainLoop {
   }
 
   MemoryAllocator memory_allocator_;
-  std::unique_ptr<ChannelFilter> filter_;
+  RefCountedPtr<grpc_channel_stack> channel_stack_;
   std::map<uint32_t, std::unique_ptr<Call>> calls_;
   std::vector<uint32_t> wakeups_;
 };
@@ -542,6 +576,13 @@ class MainLoop {
 }  // namespace grpc_core
 
 DEFINE_PROTO_FUZZER(const filter_fuzzer::Msg& msg) {
+  const grpc_channel_filter* filter = grpc_core::FindFilter(msg.filter());
+  if (filter == nullptr) return;
+  if (msg.channel_stack_type() < 0 ||
+      msg.channel_stack_type() >= GRPC_NUM_CHANNEL_STACK_TYPES) {
+    return;
+  }
+
   grpc_test_only_set_slice_hash_seed(0);
   char* grpc_trace_fuzzer = gpr_getenv("GRPC_TRACE_FUZZER");
   if (squelch && grpc_trace_fuzzer == nullptr) gpr_set_log_function(dont_log);
@@ -558,10 +599,27 @@ DEFINE_PROTO_FUZZER(const filter_fuzzer::Msg& msg) {
 
   grpc_core::GlobalObjects globals;
   auto channel_args = grpc_core::LoadChannelArgs(msg.channel_args(), &globals);
-  auto filter = grpc_core::CreateFilter(msg.filter(), channel_args,
-                                        grpc_core::ChannelFilter::Args());
-  if (filter.ok()) {
-    grpc_core::MainLoop main_loop(std::move(*filter), channel_args);
+
+  grpc_core::ChannelStackBuilderImpl builder(
+      msg.stack_name().c_str(),
+      static_cast<grpc_channel_stack_type>(msg.channel_stack_type()));
+  builder.SetChannelArgs(channel_args);
+  builder.AppendFilter(filter);
+  const bool is_client =
+      grpc_channel_stack_type_is_client(builder.channel_stack_type());
+  if (is_client) {
+    builder.AppendFilter(grpc_core::MainLoop::EndFilter(true));
+  } else {
+    builder.PrependFilter(grpc_core::MainLoop::EndFilter(false));
+  }
+  builder.AppendFilter(grpc_core::MainLoop::BottomFilter(is_client));
+  auto stack = [&]() {
+    grpc_core::ExecCtx exec_ctx;
+    return builder.Build();
+  }();
+
+  if (stack.ok()) {
+    grpc_core::MainLoop main_loop(std::move(*stack), std::move(channel_args));
     for (const auto& action : msg.actions()) {
       grpc_timer_manager_tick();
       main_loop.Run(action, &globals);

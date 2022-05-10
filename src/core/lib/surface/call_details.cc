@@ -18,13 +18,13 @@
 
 #include <grpc/support/port_platform.h>
 
-#include <string.h>
-
 #include <grpc/grpc.h>
-#include <grpc/support/alloc.h>
+#include <grpc/impl/codegen/grpc_types.h>
+#include <grpc/slice.h>
 
+#include "src/core/lib/debug/trace.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
-#include "src/core/lib/slice/slice_internal.h"
+#include "src/core/lib/slice/slice_refcount.h"
 #include "src/core/lib/surface/api_trace.h"
 
 void grpc_call_details_init(grpc_call_details* details) {

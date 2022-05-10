@@ -21,11 +21,17 @@
 
 #include <grpc/support/port_platform.h>
 
-#include "absl/strings/string_view.h"
+#include <stdint.h>
 
-#include "src/core/lib/channel/channel_stack.h"
+#include "absl/status/status.h"
+
+#include <grpc/impl/codegen/gpr_types.h>
+#include <grpc/support/atm.h>
+
+#include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/transport/byte_stream.h"
 #include "src/core/lib/transport/metadata_batch.h"
+#include "src/core/lib/transport/transport.h"
 
 namespace grpc_core {
 

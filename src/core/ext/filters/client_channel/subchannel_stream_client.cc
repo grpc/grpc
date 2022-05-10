@@ -18,13 +18,26 @@
 
 #include "src/core/ext/filters/client_channel/subchannel_stream_client.h"
 
-#include <stdint.h>
+#include <inttypes.h>
 #include <stdio.h>
+#include <string.h>
 
+#include <cstdint>
+#include <string>
+#include <utility>
+
+#include <grpc/slice_buffer.h>
 #include <grpc/status.h>
+#include <grpc/support/alloc.h>
+#include <grpc/support/log.h>
 
+#include "src/core/lib/gpr/time_precise.h"
+#include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/sync.h"
+#include "src/core/lib/gprpp/time.h"
+#include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/resource_quota/api.h"
+#include "src/core/lib/resource_quota/resource_quota.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/transport/error_utils.h"
 
@@ -50,7 +63,8 @@ SubchannelStreamClient::SubchannelStreamClient(
       call_allocator_(
           ResourceQuotaFromChannelArgs(connected_subchannel_->args())
               ->memory_quota()
-              ->CreateMemoryAllocator(tracer)),
+              ->CreateMemoryAllocator(
+                  (tracer != nullptr) ? tracer : "SubchannelStreamClient")),
       event_handler_(std::move(event_handler)),
       retry_backoff_(
           BackOff::Options()

@@ -18,6 +18,7 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <limits.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -114,7 +115,8 @@ class GracefulShutdownTest : public ::testing::Test {
     // Start reading on the client
     grpc_slice_buffer_init(&read_buffer_);
     GRPC_CLOSURE_INIT(&on_read_done_, OnReadDone, this, nullptr);
-    grpc_endpoint_read(fds_.client, &read_buffer_, &on_read_done_, false);
+    grpc_endpoint_read(fds_.client, &read_buffer_, &on_read_done_, false,
+                       /*min_progress_size=*/1);
   }
 
   // Shuts down and destroys the client and server.
@@ -151,7 +153,7 @@ class GracefulShutdownTest : public ::testing::Test {
       }
       grpc_slice_buffer_reset_and_unref(&self->read_buffer_);
       grpc_endpoint_read(self->fds_.client, &self->read_buffer_,
-                         &self->on_read_done_, false);
+                         &self->on_read_done_, false, /*min_progress_size=*/1);
     } else {
       grpc_slice_buffer_destroy(&self->read_buffer_);
       self->read_end_notification_.Notify();
@@ -211,7 +213,8 @@ class GracefulShutdownTest : public ::testing::Test {
     absl::Notification on_write_done_notification_;
     GRPC_CLOSURE_INIT(&on_write_done_, OnWriteDone,
                       &on_write_done_notification_, nullptr);
-    grpc_endpoint_write(fds_.client, buffer, &on_write_done_, nullptr);
+    grpc_endpoint_write(fds_.client, buffer, &on_write_done_, nullptr,
+                        /*max_frame_size=*/INT_MAX);
     ExecCtx::Get()->Flush();
     GPR_ASSERT(on_write_done_notification_.WaitForNotificationWithTimeout(
         absl::Seconds(5)));

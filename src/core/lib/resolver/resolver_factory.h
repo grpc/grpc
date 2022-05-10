@@ -25,10 +25,9 @@
 
 #include "src/core/lib/gprpp/memory.h"
 #include "src/core/lib/gprpp/orphanable.h"
+#include "src/core/lib/iomgr/iomgr_fwd.h"
 #include "src/core/lib/resolver/resolver.h"
 #include "src/core/lib/uri/uri_parser.h"
-
-typedef struct grpc_pollset_set grpc_pollset_set;
 
 namespace grpc_core {
 

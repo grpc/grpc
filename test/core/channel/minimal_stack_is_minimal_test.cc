@@ -39,6 +39,7 @@
 #include <grpc/support/alloc.h>
 #include <grpc/support/string_util.h>
 
+#include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/channel/channel_stack_builder_impl.h"
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/gpr/string.h"
@@ -157,7 +158,7 @@ static int check_stack(const char* file, int line, const char* transport_name,
   // build up our "got" list
   parts.clear();
   for (const auto& entry : *builder.mutable_stack()) {
-    const char* name = entry.filter->name;
+    const char* name = entry->name;
     if (name == nullptr) continue;
     parts.push_back(name);
   }

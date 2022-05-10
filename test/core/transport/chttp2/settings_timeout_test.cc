@@ -150,7 +150,7 @@ class Client {
     while (true) {
       EventState state;
       grpc_endpoint_read(endpoint_, &read_buffer, state.closure(),
-                         /*urgent=*/true);
+                         /*urgent=*/true, /*min_progress_size=*/1);
       if (!PollUntilDone(&state, deadline)) {
         retval = false;
         break;

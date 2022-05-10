@@ -172,7 +172,8 @@ class HttpRequest : public InternallyRefCounted<HttpRequest> {
 
   void DoRead() ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_) {
     Ref().release();  // ref held by pending read
-    grpc_endpoint_read(ep_, &incoming_, &on_read_, /*urgent=*/true);
+    grpc_endpoint_read(ep_, &incoming_, &on_read_, /*urgent=*/true,
+                       /*min_progress_size=*/1);
   }
 
   static void OnRead(void* user_data, grpc_error_handle error) {
@@ -246,7 +247,8 @@ class HttpRequest : public InternallyRefCounted<HttpRequest> {
   grpc_slice_buffer incoming_ ABSL_GUARDED_BY(mu_);
   grpc_slice_buffer outgoing_ ABSL_GUARDED_BY(mu_);
   grpc_error_handle overall_error_ ABSL_GUARDED_BY(mu_) = GRPC_ERROR_NONE;
-  OrphanablePtr<DNSResolver::Request> dns_request_ ABSL_GUARDED_BY(mu_);
+  absl::optional<DNSResolver::TaskHandle> dns_request_handle_
+      ABSL_GUARDED_BY(mu_) = DNSResolver::kNullHandle;
 };
 
 }  // namespace grpc_core
