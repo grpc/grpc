@@ -27,6 +27,8 @@
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_join.h"
 
+#include "src/core/lib/channel/channel_args.h"
+
 #define GRPC_ARG_HIERARCHICAL_PATH "grpc.internal.address.hierarchical_path"
 
 namespace grpc_core {
