@@ -916,6 +916,7 @@ libs:
   - src/core/lib/slice/b64.h
   - src/core/lib/slice/percent_encoding.h
   - src/core/lib/slice/slice.h
+  - src/core/lib/slice/slice_buffer.h
   - src/core/lib/slice/slice_internal.h
   - src/core/lib/slice/slice_refcount.h
   - src/core/lib/slice/slice_refcount_base.h
@@ -1581,6 +1582,7 @@ libs:
   - src/core/lib/slice/slice.cc
   - src/core/lib/slice/slice_api.cc
   - src/core/lib/slice/slice_buffer.cc
+  - src/core/lib/slice/slice_buffer_api.cc
   - src/core/lib/slice/slice_refcount.cc
   - src/core/lib/slice/slice_split.cc
   - src/core/lib/slice/slice_string_helpers.cc
@@ -2074,6 +2076,7 @@ libs:
   - src/core/lib/slice/b64.h
   - src/core/lib/slice/percent_encoding.h
   - src/core/lib/slice/slice.h
+  - src/core/lib/slice/slice_buffer.h
   - src/core/lib/slice/slice_internal.h
   - src/core/lib/slice/slice_refcount.h
   - src/core/lib/slice/slice_refcount_base.h
@@ -2385,6 +2388,7 @@ libs:
   - src/core/lib/slice/slice.cc
   - src/core/lib/slice/slice_api.cc
   - src/core/lib/slice/slice_buffer.cc
+  - src/core/lib/slice/slice_buffer_api.cc
   - src/core/lib/slice/slice_refcount.cc
   - src/core/lib/slice/slice_split.cc
   - src/core/lib/slice/slice_string_helpers.cc
@@ -3361,6 +3365,15 @@ targets:
   - test/core/iomgr/buffer_list_test.cc
   deps:
   - grpc_test_util
+- name: c_slice_buffer_test
+  build: test
+  language: c
+  headers: []
+  src:
+  - test/core/slice/c_slice_buffer_test.cc
+  deps:
+  - grpc_test_util
+  uses_polling: false
 - name: channel_stack_test
   build: test
   language: c
@@ -4217,15 +4230,6 @@ targets:
   headers: []
   src:
   - test/core/gpr/time_test.cc
-  deps:
-  - grpc_test_util
-  uses_polling: false
-- name: test_core_slice_slice_buffer_test
-  build: test
-  language: c
-  headers: []
-  src:
-  - test/core/slice/slice_buffer_test.cc
   deps:
   - grpc_test_util
   uses_polling: false
@@ -7747,6 +7751,16 @@ targets:
   - test/core/security/credentials_test.cc
   deps:
   - grpc_test_util
+- name: test_core_slice_slice_buffer_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/core/slice/slice_buffer_test.cc
+  deps:
+  - grpc_test_util
+  uses_polling: false
 - name: test_core_slice_slice_test
   gtest: true
   build: test
