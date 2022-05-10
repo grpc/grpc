@@ -956,6 +956,8 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/lib/event_engine/resolved_address.cc )
   s.files += %w( src/core/lib/event_engine/sockaddr.cc )
   s.files += %w( src/core/lib/event_engine/sockaddr.h )
+  s.files += %w( src/core/lib/event_engine/trace.cc )
+  s.files += %w( src/core/lib/event_engine/trace.h )
   s.files += %w( src/core/lib/gpr/alloc.cc )
   s.files += %w( src/core/lib/gpr/alloc.h )
   s.files += %w( src/core/lib/gpr/atm.cc )

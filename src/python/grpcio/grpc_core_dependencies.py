@@ -445,6 +445,7 @@ CORE_SOURCE_FILES = [
     'src/core/lib/event_engine/memory_allocator.cc',
     'src/core/lib/event_engine/resolved_address.cc',
     'src/core/lib/event_engine/sockaddr.cc',
+    'src/core/lib/event_engine/trace.cc',
     'src/core/lib/gpr/alloc.cc',
     'src/core/lib/gpr/atm.cc',
     'src/core/lib/gpr/cpu_iphone.cc',
