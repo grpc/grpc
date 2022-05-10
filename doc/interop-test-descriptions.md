@@ -1069,6 +1069,28 @@ included in that latency measurement (channel teardown semantics differ widely
 between languages). This latency measurement should also be the value that is
 logged and recorded in the latency histogram.
 
+
+### orca
+
+The client verifies that the custom LB policy will receive both per-query metrics report and
+Out-Of-Band metrics report for the backend.
+
+Server features:
+* [Orca][]
+
+Procedures:
+* The client registers a custom LB policy, which using ORCA APIS already installed a per-query
+  report listener, and an out-of-band report listener. The custom LB policy has a higher priority that
+  overrides the default LB policy.
+* The client sends a unary call to the server.
+
+Client asserts:
+* The call is successful.
+* And the per-query listener receives a metrics report that is identical to
+  the metrics data hardcoded at the server side.
+* And the Out-Of-Band listener receives a metrics report that is identical to the metrics data
+  hardcoded at the server side.
+
 ### Experimental Tests
 
 These tests are not yet standardized, and are not yet implemented in all
@@ -1078,6 +1100,7 @@ languages. Therefore they are not part of our interop matrix.
 
 The client performs a number of large_unary RPCs over a single long-lived
 channel with a fixed but configurable interval between each RPC.
+
 
 ### TODO Tests
 
@@ -1152,6 +1175,10 @@ Servers should accept these arguments:
 * --use_tls=BOOLEAN
 
     * Whether to use a plaintext or encrypted connection
+
+* --use_orca=BOOLEAN
+
+    * Whether to report backend metrics.
 
 Servers must support TLS with ALPN. They should use
 [server1.pem](https://github.com/grpc/grpc/blob/master/src/core/tsi/test_creds/server1.pem)
@@ -1281,3 +1308,14 @@ Discussion:
 Ideally, this would be communicated via metadata and not in the
 request/response, but we want to use this test in code paths that don't yet
 fully communicate metadata.
+
+### Orca
+[Orca]: #orca
+
+Server reports backend metrics data.
+For per-query metrics, using ORCA API we install per-query metrics reporting server interceptor.
+During the call, the server test application updates per-query metrics data for both query cost 
+and utilization metrics. The metrics data is hardcoded.
+For Out-Of-Band metrics, using ORCA API we register the `OpenRCAService` implementation 
+to the server. The server test application updates utilization metrics data. The metrics data is 
+hardcoded.
