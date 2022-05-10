@@ -1842,8 +1842,8 @@ grpc_cc_library(
     name = "event_engine_common",
     srcs = [
         "src/core/lib/event_engine/resolved_address.cc",
-        "src/core/lib/event_engine/slice_buffer.cc",
         "src/core/lib/event_engine/slice.cc",
+        "src/core/lib/event_engine/slice_buffer.cc",
     ],
     hdrs = [
         "src/core/lib/event_engine/handle_containers.h",

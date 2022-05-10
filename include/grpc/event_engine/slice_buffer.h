@@ -114,4 +114,4 @@ class SliceBuffer {
 }  // namespace experimental
 }  // namespace grpc_event_engine
 
-#endif  // GRPC_EVENT_ENGINE_SLICE_H
+#endif  // GRPC_EVENT_ENGINE_SLICE_BUFFER_H

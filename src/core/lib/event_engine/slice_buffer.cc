@@ -12,6 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <grpc/support/port_platform.h>
+
 #include <grpc/event_engine/slice_buffer.h>
 #include <grpc/slice.h>
 #include <grpc/slice_buffer.h>
