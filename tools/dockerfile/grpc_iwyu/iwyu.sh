@@ -62,6 +62,7 @@ cat compile_commands.json | jq -r '.[].file' \
   | grep -E $INCLUSION_REGEX \
   | grep -v -E "/upb-generated/|/upbdefs-generated/" \
   | sort \
+  | xargs -d '\n' ls -1df 2> /dev/null \
   > iwyu_files.txt
 
 echo '#!/bin/sh
