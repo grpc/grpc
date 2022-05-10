@@ -17,7 +17,10 @@
 
 #include <grpc/support/port_platform.h>
 
-#include <utility>
+#include <stddef.h>
+#include <stdint.h>
+
+#include <type_traits>
 
 #include "src/core/lib/gpr/useful.h"
 
@@ -33,6 +36,7 @@ namespace grpc_core {
 // exactly that number of bits. Undefined if that bit count is not available.
 template <size_t kBits>
 struct UintSelector;
+
 template <>
 struct UintSelector<8> {
   typedef uint8_t Type;

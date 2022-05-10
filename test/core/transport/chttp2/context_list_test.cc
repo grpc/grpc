@@ -26,6 +26,7 @@
 #include <grpc/grpc.h>
 
 #include "src/core/ext/transport/chttp2/transport/chttp2_transport.h"
+#include "src/core/ext/transport/chttp2/transport/internal.h"
 #include "src/core/lib/iomgr/port.h"
 #include "src/core/lib/resource_quota/api.h"
 #include "src/core/lib/transport/transport.h"

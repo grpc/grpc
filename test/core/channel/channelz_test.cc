@@ -328,15 +328,9 @@ TEST_P(ChannelzChannelTest, LastCallStartedTime) {
 class ChannelzRegistryBasedTest : public ::testing::TestWithParam<size_t> {
  protected:
   // ensure we always have a fresh registry for tests.
-  void SetUp() override {
-    ChannelzRegistry::Shutdown();
-    ChannelzRegistry::Init();
-  }
+  void SetUp() override { ChannelzRegistry::TestOnlyReset(); }
 
-  void TearDown() override {
-    ChannelzRegistry::Shutdown();
-    ChannelzRegistry::Init();
-  }
+  void TearDown() override { ChannelzRegistry::TestOnlyReset(); }
 };
 
 TEST_F(ChannelzRegistryBasedTest, BasicGetTopChannelsTest) {

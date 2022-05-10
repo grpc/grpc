@@ -259,7 +259,7 @@ static void do_pending_write_op_locked(half* m, grpc_error_handle error) {
 }
 
 static void me_write(grpc_endpoint* ep, grpc_slice_buffer* slices,
-                     grpc_closure* cb, void* /*arg*/) {
+                     grpc_closure* cb, void* /*arg*/, int /*max_frame_size*/) {
   half* m = reinterpret_cast<half*>(ep);
   gpr_mu_lock(&m->parent->mu);
   gpr_atm_no_barrier_fetch_add(&m->parent->stats->num_writes, (gpr_atm)1);

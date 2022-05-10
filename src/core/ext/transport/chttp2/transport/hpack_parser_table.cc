@@ -16,24 +16,27 @@
  *
  */
 
+// IWYU pragma: no_include <ext/alloc_traits.h>
+
 #include <grpc/support/port_platform.h>
 
 #include "src/core/ext/transport/chttp2/transport/hpack_parser_table.h"
 
-#include <cassert>
+#include <stdlib.h>
+
+#include <algorithm>
 #include <cstddef>
 #include <cstring>
+#include <utility>
 
 #include "absl/strings/str_format.h"
+#include "absl/strings/string_view.h"
 
-#include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 
 #include "src/core/ext/transport/chttp2/transport/hpack_constants.h"
 #include "src/core/lib/debug/trace.h"
-#include "src/core/lib/gpr/murmur_hash.h"
-#include "src/core/lib/slice/slice_internal.h"
-#include "src/core/lib/surface/validate_metadata.h"
+#include "src/core/lib/slice/slice.h"
 
 extern grpc_core::TraceFlag grpc_http_trace;
 

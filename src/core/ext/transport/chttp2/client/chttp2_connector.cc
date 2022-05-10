@@ -20,56 +20,66 @@
 
 #include "src/core/ext/transport/chttp2/client/chttp2_connector.h"
 
-#include <string.h>
+#include <stdint.h>
+
+#include <string>
+
+#include "absl/status/status.h"
+#include "absl/status/statusor.h"
 
 #include <grpc/grpc.h>
 #include <grpc/grpc_posix.h>
-#include <grpc/slice_buffer.h>
+#include <grpc/grpc_security.h>
+#include <grpc/impl/codegen/grpc_types.h>
+#include <grpc/status.h>
 #include <grpc/support/alloc.h>
-#include <grpc/support/string_util.h>
+#include <grpc/support/log.h>
+#include <grpc/support/sync.h>
 
 #include "src/core/ext/filters/client_channel/client_channel.h"
+#include "src/core/ext/filters/client_channel/client_channel_factory.h"
 #include "src/core/ext/filters/client_channel/connector.h"
+#include "src/core/ext/filters/client_channel/subchannel.h"
 #include "src/core/ext/transport/chttp2/transport/chttp2_transport.h"
-#include "src/core/lib/address_utils/sockaddr_utils.h"
 #include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/channel/channel_args_preconditioning.h"
+#include "src/core/lib/channel/channel_stack_builder.h"
+#include "src/core/lib/channel/channelz.h"
+#include "src/core/lib/channel/handshaker.h"
+#include "src/core/lib/channel/handshaker_registry.h"
 #include "src/core/lib/config/core_configuration.h"
-#include "src/core/lib/gprpp/memory.h"
+#include "src/core/lib/debug/trace.h"
+#include "src/core/lib/gprpp/debug_location.h"
+#include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/iomgr/endpoint.h"
+#include "src/core/lib/iomgr/exec_ctx.h"
+#include "src/core/lib/iomgr/resolved_address.h"
 #include "src/core/lib/iomgr/tcp_client.h"
 #include "src/core/lib/resolver/resolver_registry.h"
-#include "src/core/lib/resource_quota/api.h"
 #include "src/core/lib/security/credentials/credentials.h"
 #include "src/core/lib/security/credentials/insecure/insecure_credentials.h"
 #include "src/core/lib/security/security_connector/security_connector.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/surface/api_trace.h"
 #include "src/core/lib/surface/channel.h"
+#include "src/core/lib/surface/channel_stack_type.h"
 #include "src/core/lib/transport/error_utils.h"
-#include "src/core/lib/transport/handshaker.h"
-#include "src/core/lib/transport/tcp_connect_handshaker.h"
 #include "src/core/lib/transport/transport.h"
-#include "src/core/lib/uri/uri_parser.h"
 
 #ifdef GPR_SUPPORT_CHANNELS_FROM_FD
 
 #include <fcntl.h>
 
+#include "src/core/lib/iomgr/ev_posix.h"
 #include "src/core/lib/iomgr/tcp_client_posix.h"
-#include "src/core/lib/iomgr/tcp_posix.h"
 
 #endif  // GPR_SUPPORT_CHANNELS_FROM_FD
 
 namespace grpc_core {
 
-namespace {
-void NullThenSchedClosure(const DebugLocation& location, grpc_closure** closure,
-                          grpc_error_handle error) {
-  grpc_closure* c = *closure;
-  *closure = nullptr;
-  ExecCtx::Run(location, c, error);
+Chttp2Connector::Chttp2Connector() {
+  GRPC_CLOSURE_INIT(&connected_, Connected, this, grpc_schedule_on_exec_ctx);
 }
-}  // namespace
 
 Chttp2Connector::~Chttp2Connector() {
   if (endpoint_ != nullptr) {
@@ -79,51 +89,91 @@ Chttp2Connector::~Chttp2Connector() {
 
 void Chttp2Connector::Connect(const Args& args, Result* result,
                               grpc_closure* notify) {
+  grpc_endpoint** ep;
   {
     MutexLock lock(&mu_);
     GPR_ASSERT(notify_ == nullptr);
     args_ = args;
     result_ = result;
     notify_ = notify;
+    GPR_ASSERT(!connecting_);
+    connecting_ = true;
     GPR_ASSERT(endpoint_ == nullptr);
+    ep = &endpoint_;
   }
-  absl::StatusOr<std::string> address = grpc_sockaddr_to_uri(args.address);
-  if (!address.ok()) {
-    grpc_error_handle error =
-        GRPC_ERROR_CREATE_FROM_CPP_STRING(address.status().ToString());
-    NullThenSchedClosure(DEBUG_LOCATION, &notify_, error);
-    return;
-  }
-  absl::InlinedVector<grpc_arg, 2> args_to_add = {
-      grpc_channel_arg_string_create(
-          const_cast<char*>(GRPC_ARG_TCP_HANDSHAKER_RESOLVED_ADDRESS),
-          const_cast<char*>(address.value().c_str())),
-      grpc_channel_arg_integer_create(
-          const_cast<char*>(GRPC_ARG_TCP_HANDSHAKER_BIND_ENDPOINT_TO_POLLSET),
-          1),
-  };
-  grpc_channel_args* channel_args = grpc_channel_args_copy_and_add(
-      args_.channel_args, args_to_add.data(), args_to_add.size());
-  handshake_mgr_ = MakeRefCounted<HandshakeManager>();
-  CoreConfiguration::Get().handshaker_registry().AddHandshakers(
-      HANDSHAKER_CLIENT, channel_args, args_.interested_parties,
-      handshake_mgr_.get());
-  Ref().release();  // Ref held by OnHandshakeDone().
-  handshake_mgr_->DoHandshake(nullptr /* endpoint */, channel_args,
-                              args.deadline, nullptr /* acceptor */,
-                              OnHandshakeDone, this);
-  grpc_channel_args_destroy(channel_args);
+  // In some implementations, the closure can be flushed before
+  // grpc_tcp_client_connect() returns, and since the closure requires access
+  // to mu_, this can result in a deadlock (see
+  // https://github.com/grpc/grpc/issues/16427 for details).
+  // grpc_tcp_client_connect() will fill endpoint_ with proper contents, and we
+  // make sure that we still exist at that point by taking a ref.
+  Ref().release();  // Ref held by callback.
+  grpc_tcp_client_connect(&connected_, ep, args.interested_parties,
+                          args.channel_args, args.address, args.deadline);
 }
 
 void Chttp2Connector::Shutdown(grpc_error_handle error) {
   MutexLock lock(&mu_);
   shutdown_ = true;
   if (handshake_mgr_ != nullptr) {
-    // Handshaker will also shutdown the endpoint if it exists
     handshake_mgr_->Shutdown(GRPC_ERROR_REF(error));
+  }
+  // If handshaking is not yet in progress, shutdown the endpoint.
+  // Otherwise, the handshaker will do this for us.
+  if (!connecting_ && endpoint_ != nullptr) {
+    grpc_endpoint_shutdown(endpoint_, GRPC_ERROR_REF(error));
   }
   GRPC_ERROR_UNREF(error);
 }
+
+void Chttp2Connector::Connected(void* arg, grpc_error_handle error) {
+  Chttp2Connector* self = static_cast<Chttp2Connector*>(arg);
+  bool unref = false;
+  {
+    MutexLock lock(&self->mu_);
+    GPR_ASSERT(self->connecting_);
+    self->connecting_ = false;
+    if (error != GRPC_ERROR_NONE || self->shutdown_) {
+      if (error == GRPC_ERROR_NONE) {
+        error = GRPC_ERROR_CREATE_FROM_STATIC_STRING("connector shutdown");
+      } else {
+        error = GRPC_ERROR_REF(error);
+      }
+      if (self->endpoint_ != nullptr) {
+        grpc_endpoint_shutdown(self->endpoint_, GRPC_ERROR_REF(error));
+      }
+      self->result_->Reset();
+      grpc_closure* notify = self->notify_;
+      self->notify_ = nullptr;
+      ExecCtx::Run(DEBUG_LOCATION, notify, error);
+      unref = true;
+    } else {
+      GPR_ASSERT(self->endpoint_ != nullptr);
+      self->StartHandshakeLocked();
+    }
+  }
+  if (unref) self->Unref();
+}
+
+void Chttp2Connector::StartHandshakeLocked() {
+  handshake_mgr_ = MakeRefCounted<HandshakeManager>();
+  CoreConfiguration::Get().handshaker_registry().AddHandshakers(
+      HANDSHAKER_CLIENT, args_.channel_args, args_.interested_parties,
+      handshake_mgr_.get());
+  grpc_endpoint_add_to_pollset_set(endpoint_, args_.interested_parties);
+  handshake_mgr_->DoHandshake(endpoint_, args_.channel_args, args_.deadline,
+                              nullptr /* acceptor */, OnHandshakeDone, this);
+  endpoint_ = nullptr;  // Endpoint handed off to handshake manager.
+}
+
+namespace {
+void NullThenSchedClosure(const DebugLocation& location, grpc_closure** closure,
+                          grpc_error_handle error) {
+  grpc_closure* c = *closure;
+  *closure = nullptr;
+  ExecCtx::Run(location, c, error);
+}
+}  // namespace
 
 void Chttp2Connector::OnHandshakeDone(void* arg, grpc_error_handle error) {
   auto* args = static_cast<HandshakerArgs*>(arg);

@@ -102,7 +102,7 @@ class PhonyEndpoint : public grpc_endpoint {
   }
 
   static void write(grpc_endpoint* /*ep*/, grpc_slice_buffer* /*slices*/,
-                    grpc_closure* cb, void* /*arg*/) {
+                    grpc_closure* cb, void* /*arg*/, int /*max_frame_size*/) {
     grpc_core::ExecCtx::Run(DEBUG_LOCATION, cb, GRPC_ERROR_NONE);
   }
 

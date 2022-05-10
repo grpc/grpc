@@ -227,25 +227,26 @@ class XdsTestClient(framework.rpc.grpc.GrpcApp):
 
 class KubernetesClientRunner(base_runner.KubernetesBaseRunner):
 
-    def __init__(self,
-                 k8s_namespace,
-                 *,
-                 deployment_name,
-                 image_name,
-                 td_bootstrap_image,
-                 gcp_api_manager: gcp.api.GcpApiManager,
-                 gcp_project: str,
-                 gcp_service_account: str,
-                 xds_server_uri=None,
-                 network='default',
-                 service_account_name=None,
-                 stats_port=8079,
-                 deployment_template='client.deployment.yaml',
-                 service_account_template='service-account.yaml',
-                 reuse_namespace=False,
-                 namespace_template=None,
-                 debug_use_port_forwarding=False,
-                 enable_workload_identity=True):
+    def __init__(  # pylint: disable=too-many-locals
+            self,
+            k8s_namespace,
+            *,
+            deployment_name,
+            image_name,
+            td_bootstrap_image,
+            gcp_api_manager: gcp.api.GcpApiManager,
+            gcp_project: str,
+            gcp_service_account: str,
+            xds_server_uri=None,
+            network='default',
+            service_account_name=None,
+            stats_port=8079,
+            deployment_template='client.deployment.yaml',
+            service_account_template='service-account.yaml',
+            reuse_namespace=False,
+            namespace_template=None,
+            debug_use_port_forwarding=False,
+            enable_workload_identity=True):
         super().__init__(k8s_namespace, namespace_template, reuse_namespace)
 
         # Settings
@@ -282,7 +283,8 @@ class KubernetesClientRunner(base_runner.KubernetesBaseRunner):
         self.port_forwarder: Optional[k8s.PortForwarder] = None
 
     # TODO(sergiitk): make rpc UnaryCall enum or get it from proto
-    def run(self,
+    def run(  # pylint: disable=arguments-differ
+            self,
             *,
             server_target,
             rpc='UnaryCall',
@@ -360,7 +362,7 @@ class KubernetesClientRunner(base_runner.KubernetesBaseRunner):
                              server_target=server_target,
                              rpc_host=rpc_host)
 
-    def cleanup(self, *, force=False, force_namespace=False):
+    def cleanup(self, *, force=False, force_namespace=False):  # pylint: disable=arguments-differ
         if self.port_forwarder:
             self.port_forwarder.close()
             self.port_forwarder = None

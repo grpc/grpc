@@ -70,6 +70,7 @@ class KubernetesBaseRunner:
         self.namespace: Optional[k8s.V1Namespace] = None
 
     def run(self, **kwargs):
+        del kwargs
         if self.reuse_namespace:
             self.namespace = self._reuse_namespace()
         if not self.namespace:
@@ -316,7 +317,7 @@ class KubernetesBaseRunner:
                             namespace_name: str,
                             gcp_project: str,
                             gcp_ui_url: str,
-                            end_delta: timedelta = None) -> None:
+                            end_delta: Optional[timedelta] = None) -> None:
         """Output the link to test server/client logs in GCP Logs Explorer."""
         if end_delta is None:
             end_delta = timedelta(hours=1)

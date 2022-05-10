@@ -18,8 +18,10 @@
 
 #include "src/core/lib/transport/status_conversion.h"
 
+#include <grpc/grpc.h>
 #include <grpc/support/log.h>
 
+#include "src/core/lib/iomgr/exec_ctx.h"
 #include "test/core/util/test_config.h"
 
 #define GRPC_STATUS_TO_HTTP2_ERROR(a, b) \
