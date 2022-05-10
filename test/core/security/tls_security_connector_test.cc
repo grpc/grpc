@@ -120,7 +120,15 @@ class TlsTestCertificateProvider : public grpc_tls_certificate_provider {
     return distributor_;
   }
 
+  const char* type() const override { return "tls_test"; }
+
  private:
+  int CompareImpl(const grpc_tls_certificate_provider* other) const override {
+    // TODO(yashykt): Maybe do something better here.
+    return QsortCompare(static_cast<const grpc_tls_certificate_provider*>(this),
+                        other);
+  }
+
   RefCountedPtr<grpc_tls_certificate_distributor> distributor_;
 };
 
@@ -481,8 +489,13 @@ TEST_F(TlsSecurityConnectorTest,
   RefCountedPtr<grpc_channel_security_connector> connector =
       credential->create_security_connector(nullptr, kTargetName, nullptr,
                                             nullptr);
+  auto other_options = MakeRefCounted<grpc_tls_credentials_options>();
+  other_options->set_certificate_provider(provider);
+  other_options->set_watch_root_cert(true);
+  other_options->set_root_cert_name(kRootCertName);
+  other_options->set_watch_identity_pair(true);
   RefCountedPtr<TlsCredentials> other_credential =
-      MakeRefCounted<TlsCredentials>(options);
+      MakeRefCounted<TlsCredentials>(other_options);
   RefCountedPtr<grpc_channel_security_connector> other_connector =
       other_credential->create_security_connector(nullptr, kTargetName, nullptr,
                                                   nullptr);
@@ -508,7 +521,7 @@ TEST_F(TlsSecurityConnectorTest,
       credential->create_security_connector(nullptr, kTargetName, nullptr,
                                             nullptr);
   grpc_call_credentials* call_creds =
-      grpc_md_only_test_credentials_create("", "", true);
+      grpc_md_only_test_credentials_create("", "");
   RefCountedPtr<grpc_channel_security_connector> other_connector =
       credential->create_security_connector(
           RefCountedPtr<grpc_call_credentials>(call_creds), kTargetName,
@@ -1078,7 +1091,7 @@ TEST_F(TlsSecurityConnectorTest,
 }  // namespace grpc_core
 
 int main(int argc, char** argv) {
-  grpc::testing::TestEnvironment env(argc, argv);
+  grpc::testing::TestEnvironment env(&argc, argv);
   GPR_GLOBAL_CONFIG_SET(grpc_default_ssl_roots_file_path, CA_CERT_PATH);
   ::testing::InitGoogleTest(&argc, argv);
   grpc_init();

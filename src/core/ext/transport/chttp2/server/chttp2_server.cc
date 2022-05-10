@@ -24,11 +24,20 @@
 #include <limits.h>
 #include <string.h>
 
+#include <algorithm>
+#include <map>
+#include <memory>
+#include <string>
+#include <utility>
 #include <vector>
 
-#include "absl/strings/match.h"
+#include "absl/base/thread_annotations.h"
+#include "absl/memory/memory.h"
+#include "absl/status/status.h"
+#include "absl/status/statusor.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
+#include "absl/strings/string_view.h"
 #include "absl/strings/strip.h"
 
 #include <grpc/grpc.h>
@@ -36,37 +45,52 @@
 #include <grpc/impl/codegen/grpc_types.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
-#include <grpc/support/sync.h>
+#include <grpc/support/time.h>
 
-#include "src/core/ext/filters/http/server/http_server_filter.h"
 #include "src/core/ext/transport/chttp2/transport/chttp2_transport.h"
+#include "src/core/ext/transport/chttp2/transport/frame.h"
 #include "src/core/ext/transport/chttp2/transport/internal.h"
 #include "src/core/lib/address_utils/sockaddr_utils.h"
 #include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/channel/channel_stack_builder.h"
+#include "src/core/lib/channel/channelz.h"
 #include "src/core/lib/channel/handshaker.h"
+#include "src/core/lib/channel/handshaker_registry.h"
 #include "src/core/lib/config/core_configuration.h"
-#include "src/core/lib/gprpp/ref_counted.h"
+#include "src/core/lib/debug/trace.h"
+#include "src/core/lib/gpr/useful.h"
+#include "src/core/lib/gprpp/debug_location.h"
+#include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
+#include "src/core/lib/gprpp/sync.h"
+#include "src/core/lib/gprpp/time.h"
+#include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/endpoint.h"
+#include "src/core/lib/iomgr/iomgr_fwd.h"
+#include "src/core/lib/iomgr/pollset.h"
+#include "src/core/lib/iomgr/pollset_set.h"
 #include "src/core/lib/iomgr/resolve_address.h"
+#include "src/core/lib/iomgr/resolved_address.h"
 #include "src/core/lib/iomgr/tcp_server.h"
+#include "src/core/lib/iomgr/timer.h"
 #include "src/core/lib/iomgr/unix_sockets_posix.h"
 #include "src/core/lib/resource_quota/api.h"
 #include "src/core/lib/resource_quota/memory_quota.h"
-#include "src/core/lib/security/context/security_context.h"
+#include "src/core/lib/resource_quota/resource_quota.h"
 #include "src/core/lib/security/credentials/credentials.h"
+#include "src/core/lib/security/credentials/insecure/insecure_credentials.h"
+#include "src/core/lib/security/security_connector/security_connector.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/surface/api_trace.h"
 #include "src/core/lib/surface/server.h"
 #include "src/core/lib/transport/error_utils.h"
+#include "src/core/lib/transport/transport.h"
 #include "src/core/lib/uri/uri_parser.h"
 
 #ifdef GPR_SUPPORT_CHANNELS_FROM_FD
-
+#include "src/core/lib/iomgr/ev_posix.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/tcp_posix.h"
-#include "src/core/lib/surface/completion_queue.h"
-
 #endif  // GPR_SUPPORT_CHANNELS_FROM_FD
 
 namespace grpc_core {
@@ -147,7 +171,7 @@ class Chttp2ServerListener : public Server::ListenerInterface {
       RefCountedPtr<HandshakeManager> handshake_mgr_
           ABSL_GUARDED_BY(&connection_->mu_);
       // State for enforcing handshake timeout on receiving HTTP/2 settings.
-      grpc_millis const deadline_;
+      Timestamp const deadline_;
       grpc_timer timer_ ABSL_GUARDED_BY(&connection_->mu_);
       grpc_closure on_timeout_ ABSL_GUARDED_BY(&connection_->mu_);
       grpc_closure on_receive_settings_ ABSL_GUARDED_BY(&connection_->mu_);
@@ -334,10 +358,10 @@ void Chttp2ServerListener::ConfigFetcherWatcher::StopServing() {
 // Chttp2ServerListener::ActiveConnection::HandshakingState
 //
 
-grpc_millis GetConnectionDeadline(const grpc_channel_args* args) {
-  int timeout_ms =
+Timestamp GetConnectionDeadline(const grpc_channel_args* args) {
+  auto timeout_ms = Duration::Milliseconds(
       grpc_channel_args_find_integer(args, GRPC_ARG_SERVER_HANDSHAKE_TIMEOUT_MS,
-                                     {120 * GPR_MS_PER_SEC, 1, INT_MAX});
+                                     {120 * GPR_MS_PER_SEC, 1, INT_MAX}));
   return ExecCtx::Get()->Now() + timeout_ms;
 }
 
@@ -566,10 +590,10 @@ void Chttp2ServerListener::ActiveConnection::SendGoAway() {
                         this, nullptr);
       grpc_timer_init(&drain_grace_timer_,
                       ExecCtx::Get()->Now() +
-                          grpc_channel_args_find_integer(
+                          Duration::Milliseconds(grpc_channel_args_find_integer(
                               listener_->args_,
                               GRPC_ARG_SERVER_CONFIG_CHANGE_DRAIN_GRACE_TIME_MS,
-                              {10 * 60 * GPR_MS_PER_SEC, 0, INT_MAX}),
+                              {10 * 60 * GPR_MS_PER_SEC, 0, INT_MAX})),
                       &on_drain_grace_time_expiry_);
       drain_grace_timer_expiry_callback_pending_ = true;
       shutdown_ = true;
@@ -670,11 +694,15 @@ grpc_error_handle Chttp2ServerListener::Create(
     // Create channelz node.
     if (grpc_channel_args_find_bool(args, GRPC_ARG_ENABLE_CHANNELZ,
                                     GRPC_ENABLE_CHANNELZ_DEFAULT)) {
-      std::string string_address = grpc_sockaddr_to_uri(addr);
+      auto string_address = grpc_sockaddr_to_uri(addr);
+      if (!string_address.ok()) {
+        return GRPC_ERROR_CREATE_FROM_CPP_STRING(
+            string_address.status().ToString());
+      }
       listener->channelz_listen_socket_ =
           MakeRefCounted<channelz::ListenSocketNode>(
-              string_address.c_str(),
-              absl::StrFormat("chttp2 listener %s", string_address.c_str()));
+              *string_address,
+              absl::StrCat("chttp2 listener ", *string_address));
     }
     // Register with the server only upon success
     server->AddListener(OrphanablePtr<Server::ListenerInterface>(listener));
@@ -743,7 +771,8 @@ void Chttp2ServerListener::Start(
     auto watcher = absl::make_unique<ConfigFetcherWatcher>(Ref());
     config_fetcher_watcher_ = watcher.get();
     server_->config_fetcher()->StartWatch(
-        grpc_sockaddr_to_string(&resolved_address_, false), std::move(watcher));
+        grpc_sockaddr_to_string(&resolved_address_, false).value(),
+        std::move(watcher));
   } else {
     {
       MutexLock lock(&mu_);
@@ -940,9 +969,9 @@ grpc_error_handle Chttp2ServerAddPort(Server* server, const char* addr,
       }
     }
     if (error_list.size() == resolved_or->size()) {
-      std::string msg =
-          absl::StrFormat("No address added out of total %" PRIuPTR " resolved",
-                          resolved_or->size());
+      std::string msg = absl::StrFormat(
+          "No address added out of total %" PRIuPTR " resolved for '%s'",
+          resolved_or->size(), addr);
       return GRPC_ERROR_CREATE_REFERENCING_FROM_COPIED_STRING(
           msg.c_str(), error_list.data(), error_list.size());
     } else if (!error_list.empty()) {
@@ -1059,7 +1088,7 @@ void grpc_server_add_channel_from_fd(grpc_server* server, int fd,
                                      grpc_server_credentials* creds) {
   // For now, we only support insecure server credentials
   if (creds == nullptr ||
-      strcmp(creds->type(), GRPC_CREDENTIALS_TYPE_INSECURE) != 0) {
+      creds->type() != grpc_core::InsecureServerCredentials::Type()) {
     gpr_log(GPR_ERROR, "Failed to create channel due to invalid creds");
     return;
   }

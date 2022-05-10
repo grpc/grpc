@@ -21,9 +21,13 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <stddef.h>
+#include <stdint.h>
+
+#include "absl/status/status.h"
 #include "absl/status/statusor.h"
 
-#include <grpc/slice_buffer.h>
+#include <grpc/slice.h>
 
 #include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/promise/poll.h"

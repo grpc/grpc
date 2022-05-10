@@ -71,11 +71,12 @@ static void drain_cq(grpc_completion_queue* cq) {
 
 static void shutdown_server(grpc_end2end_test_fixture* f) {
   if (!f->server) return;
-  grpc_server_shutdown_and_notify(f->server, f->shutdown_cq, tag(1000));
-  GPR_ASSERT(grpc_completion_queue_pluck(f->shutdown_cq, tag(1000),
-                                         grpc_timeout_seconds_to_deadline(5),
-                                         nullptr)
-                 .type == GRPC_OP_COMPLETE);
+  grpc_server_shutdown_and_notify(f->server, f->cq, tag(1000));
+  grpc_event ev;
+  do {
+    ev = grpc_completion_queue_next(f->cq, grpc_timeout_seconds_to_deadline(5),
+                                    nullptr);
+  } while (ev.type != GRPC_OP_COMPLETE || ev.tag != tag(1000));
   grpc_server_destroy(f->server);
   f->server = nullptr;
 }
@@ -93,7 +94,6 @@ static void end_test(grpc_end2end_test_fixture* f) {
   grpc_completion_queue_shutdown(f->cq);
   drain_cq(f->cq);
   grpc_completion_queue_destroy(f->cq);
-  grpc_completion_queue_destroy(f->shutdown_cq);
 }
 
 // Tests cancellation with multiple send op batches.
@@ -240,7 +240,7 @@ class FailSendOpsFilter {
  public:
   static grpc_channel_filter kFilterVtable;
 
- public:
+ private:
   class CallData {
    public:
     static grpc_error_handle Init(grpc_call_element* elem,
@@ -301,6 +301,7 @@ grpc_channel_filter FailSendOpsFilter::kFilterVtable = {
     CallData::Destroy,
     sizeof(FailSendOpsFilter),
     Init,
+    grpc_channel_stack_no_post_init,
     Destroy,
     grpc_channel_next_get_info,
     "FailSendOpsFilter",
@@ -308,12 +309,13 @@ grpc_channel_filter FailSendOpsFilter::kFilterVtable = {
 
 bool MaybeAddFilter(grpc_core::ChannelStackBuilder* builder) {
   // Skip on proxy (which explicitly disables retries).
-  const grpc_channel_args* args = builder->channel_args();
-  if (!grpc_channel_args_find_bool(args, GRPC_ARG_ENABLE_RETRIES, true)) {
+  if (!builder->channel_args()
+           .GetBool(GRPC_ARG_ENABLE_RETRIES)
+           .value_or(true)) {
     return true;
   }
   // Install filter.
-  builder->PrependFilter(&FailSendOpsFilter::kFilterVtable, nullptr);
+  builder->PrependFilter(&FailSendOpsFilter::kFilterVtable);
   return true;
 }
 

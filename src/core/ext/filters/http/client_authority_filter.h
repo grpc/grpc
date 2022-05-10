@@ -33,13 +33,14 @@ namespace grpc_core {
 
 class ClientAuthorityFilter final : public ChannelFilter {
  public:
-  static absl::StatusOr<ClientAuthorityFilter> Create(
-      const grpc_channel_args* args, ChannelFilter::Args);
+  static const grpc_channel_filter kFilter;
+
+  static absl::StatusOr<ClientAuthorityFilter> Create(ChannelArgs args,
+                                                      ChannelFilter::Args);
 
   // Construct a promise for one call.
-  ArenaPromise<TrailingMetadata> MakeCallPromise(
-      ClientInitialMetadata initial_metadata,
-      NextPromiseFactory next_promise_factory) override;
+  ArenaPromise<ServerMetadataHandle> MakeCallPromise(
+      CallArgs call_args, NextPromiseFactory next_promise_factory) override;
 
  private:
   explicit ClientAuthorityFilter(Slice default_authority)

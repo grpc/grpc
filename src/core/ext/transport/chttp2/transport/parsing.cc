@@ -18,21 +18,42 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <stdint.h>
 #include <string.h>
 
+#include <string>
+
+#include "absl/base/attributes.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
 
-#include <grpc/support/alloc.h>
+#include <grpc/slice.h>
 #include <grpc/support/log.h>
 
+#include "src/core/ext/transport/chttp2/transport/flow_control.h"
+#include "src/core/ext/transport/chttp2/transport/frame.h"
+#include "src/core/ext/transport/chttp2/transport/frame_data.h"
+#include "src/core/ext/transport/chttp2/transport/frame_goaway.h"
+#include "src/core/ext/transport/chttp2/transport/frame_ping.h"
+#include "src/core/ext/transport/chttp2/transport/frame_rst_stream.h"
+#include "src/core/ext/transport/chttp2/transport/frame_settings.h"
+#include "src/core/ext/transport/chttp2/transport/frame_window_update.h"
+#include "src/core/ext/transport/chttp2/transport/hpack_encoder.h"
+#include "src/core/ext/transport/chttp2/transport/hpack_parser.h"
+#include "src/core/ext/transport/chttp2/transport/hpack_parser_table.h"
+#include "src/core/ext/transport/chttp2/transport/http2_settings.h"
 #include "src/core/ext/transport/chttp2/transport/internal.h"
-#include "src/core/lib/profiling/timers.h"
-#include "src/core/lib/slice/slice_internal.h"
-#include "src/core/lib/slice/slice_string_helpers.h"
+#include "src/core/ext/transport/chttp2/transport/stream_map.h"
+#include "src/core/lib/channel/channelz.h"
+#include "src/core/lib/debug/trace.h"
+#include "src/core/lib/gprpp/manual_constructor.h"
+#include "src/core/lib/gprpp/ref_counted_ptr.h"
+#include "src/core/lib/gprpp/time.h"
+#include "src/core/lib/iomgr/error.h"
+#include "src/core/lib/transport/bdp_estimator.h"
 #include "src/core/lib/transport/http2_errors.h"
-#include "src/core/lib/transport/status_conversion.h"
-#include "src/core/lib/transport/timeout_encoding.h"
+#include "src/core/lib/transport/metadata_batch.h"
+#include "src/core/lib/transport/transport.h"
 
 using grpc_core::HPackParser;
 
@@ -400,7 +421,7 @@ error_handler:
     /* t->parser = grpc_chttp2_data_parser_parse;*/
     t->parser = grpc_chttp2_data_parser_parse;
     t->parser_data = &s->data_parser;
-    t->ping_state.last_ping_sent_time = GRPC_MILLIS_INF_PAST;
+    t->ping_state.last_ping_sent_time = grpc_core::Timestamp::InfPast();
     return GRPC_ERROR_NONE;
   } else if (grpc_error_get_int(err, GRPC_ERROR_INT_STREAM_ID, &unused)) {
     /* handle stream errors by closing the stream */
@@ -440,7 +461,7 @@ static grpc_error_handle init_header_frame_parser(grpc_chttp2_transport* t,
                                  ? HPackParser::Priority::Included
                                  : HPackParser::Priority::None;
 
-  t->ping_state.last_ping_sent_time = GRPC_MILLIS_INF_PAST;
+  t->ping_state.last_ping_sent_time = grpc_core::Timestamp::InfPast();
 
   /* could be a new grpc_chttp2_stream or an existing grpc_chttp2_stream */
   s = grpc_chttp2_parsing_lookup_stream(t, t->incoming_stream_id);
@@ -479,6 +500,14 @@ static grpc_error_handle init_header_frame_parser(grpc_chttp2_transport* t,
                    t->settings[GRPC_ACKED_SETTINGS]
                               [GRPC_CHTTP2_SETTINGS_MAX_CONCURRENT_STREAMS])) {
       return GRPC_ERROR_CREATE_FROM_STATIC_STRING("Max stream count exceeded");
+    } else if (t->sent_goaway_state == GRPC_CHTTP2_FINAL_GOAWAY_SENT) {
+      GRPC_CHTTP2_IF_TRACING(gpr_log(
+          GPR_INFO,
+          "transport:%p SERVER peer:%s Final GOAWAY sent. Ignoring new "
+          "grpc_chttp2_stream request id=%d, last grpc_chttp2_stream id=%d",
+          t, t->peer_string.c_str(), t->incoming_stream_id,
+          t->last_new_stream_id));
+      return init_header_skip_frame_parser(t, priority_type);
     }
     t->last_new_stream_id = t->incoming_stream_id;
     s = t->incoming_stream =

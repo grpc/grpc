@@ -43,6 +43,8 @@ struct grpc_auth_property_array {
 
 void grpc_auth_property_reset(grpc_auth_property* property);
 
+#define GRPC_AUTH_CONTEXT_ARG "grpc.auth_context"
+
 // This type is forward declared as a C struct and we cannot define it as a
 // class. Otherwise, compiler will complain about type mismatch due to
 // -Wmismatched-tags.
@@ -71,6 +73,12 @@ struct grpc_auth_context
       }
       gpr_free(properties_.array);
     }
+  }
+
+  static absl::string_view ChannelArgName() { return GRPC_AUTH_CONTEXT_ARG; }
+  static int ChannelArgsCompare(const grpc_auth_context* a,
+                                const grpc_auth_context* b) {
+    return QsortCompare(a, b);
   }
 
   const grpc_auth_context* chained() const { return chained_.get(); }
@@ -142,7 +150,6 @@ grpc_server_security_context* grpc_server_security_context_create(
 void grpc_server_security_context_destroy(void* ctx);
 
 /* --- Channel args for auth context --- */
-#define GRPC_AUTH_CONTEXT_ARG "grpc.auth_context"
 
 grpc_arg grpc_auth_context_to_arg(grpc_auth_context* c);
 grpc_auth_context* grpc_auth_context_from_arg(const grpc_arg* arg);

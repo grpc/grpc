@@ -96,8 +96,12 @@ class EndpointPairFixture {
       grpc_transport* transport =
           grpc_create_chttp2_transport(&c_args, endpoints.client, true);
       GPR_ASSERT(transport);
-      grpc_channel* channel = grpc_channel_create_internal(
-          "target", &c_args, GRPC_CLIENT_DIRECT_CHANNEL, transport, nullptr);
+      grpc_channel* channel =
+          grpc_core::Channel::Create("target",
+                                     grpc_core::ChannelArgs::FromC(&c_args),
+                                     GRPC_CLIENT_DIRECT_CHANNEL, transport)
+              ->release()
+              ->c_ptr();
       grpc_chttp2_transport_start_reading(transport, nullptr, nullptr, nullptr);
 
       channel_ = grpc::CreateChannelInternal(
@@ -237,7 +241,7 @@ TEST(WritesPerRpcTest, UnaryPingPong) {
 
 int main(int argc, char** argv) {
   ::testing::InitGoogleTest(&argc, argv);
-  grpc::testing::TestEnvironment env(argc, argv);
+  grpc::testing::TestEnvironment env(&argc, argv);
   grpc_init();
   int ret = RUN_ALL_TESTS();
   grpc_shutdown();

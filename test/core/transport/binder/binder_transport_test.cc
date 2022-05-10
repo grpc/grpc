@@ -26,6 +26,7 @@
 
 #include "absl/memory/memory.h"
 #include "absl/strings/match.h"
+#include "absl/strings/str_join.h"
 #include "absl/synchronization/notification.h"
 
 #include <grpc/grpc.h>
@@ -750,6 +751,6 @@ TEST_F(BinderTransportTest, WireWriterRpcCallErrorPropagates) {
 
 int main(int argc, char** argv) {
   ::testing::InitGoogleTest(&argc, argv);
-  grpc::testing::TestEnvironment env(argc, argv);
+  grpc::testing::TestEnvironment env(&argc, argv);
   return RUN_ALL_TESTS();
 }

@@ -21,10 +21,14 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <string>
+
 #include "absl/status/status.h"
 
+#include <grpc/status.h>
+
+#include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/iomgr/error.h"
-#include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/transport/http2_errors.h"
 
 /// A utility function to get the status code and message to be returned
@@ -34,7 +38,8 @@
 /// be populated with the entire error string. If any of the attributes (code,
 /// msg, http_status, error_string) are unneeded, they can be passed as
 /// NULL.
-void grpc_error_get_status(grpc_error_handle error, grpc_millis deadline,
+void grpc_error_get_status(grpc_error_handle error,
+                           grpc_core::Timestamp deadline,
                            grpc_status_code* code, std::string* message,
                            grpc_http2_error_code* http_error,
                            const char** error_string);

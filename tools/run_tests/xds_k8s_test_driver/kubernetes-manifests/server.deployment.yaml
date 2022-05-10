@@ -25,6 +25,7 @@ spec:
       - name: ${deployment_name}
         image: ${image_name}
         imagePullPolicy: Always
+        restartPolicy: Never
         args:
           - "--port=${test_port}"
         ports:

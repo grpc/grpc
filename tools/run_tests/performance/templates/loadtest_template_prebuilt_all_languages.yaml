@@ -27,6 +27,19 @@ spec:
       - bash
       image: ${prebuilt_image_prefix}/csharp:${prebuilt_image_tag}
       name: main
+  - language: dotnet
+    pool: ${client_pool}
+    run:
+    - args:
+      - -c
+      # TODO(jtattermusch): why is the extra "--" in cmdline needed?
+      - |
+        timeout --kill-after="${KILL_AFTER}" "${POD_TIMEOUT}" \
+            /execute/qps_worker/QpsWorker -- --driver_port="${DRIVER_PORT}"
+      command:
+      - bash
+      image: ${prebuilt_image_prefix}/dotnet:${prebuilt_image_tag}
+      name: main
   - language: cxx
     pool: ${client_pool}
     run:
@@ -162,6 +175,18 @@ spec:
       command:
       - bash
       image: ${prebuilt_image_prefix}/csharp:${prebuilt_image_tag}
+      name: main
+  - language: dotnet
+    pool: ${server_pool}
+    run:
+    - args:
+      - -c
+      - |
+        timeout --kill-after="${KILL_AFTER}" "${POD_TIMEOUT}" \
+            /execute/qps_worker/QpsWorker -- --driver_port="${DRIVER_PORT}"
+      command:
+      - bash
+      image: ${prebuilt_image_prefix}/dotnet:${prebuilt_image_tag}
       name: main
   - language: cxx
     pool: ${server_pool}

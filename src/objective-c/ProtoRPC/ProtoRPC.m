@@ -129,12 +129,10 @@
                        responseHandler:(id<GRPCProtoResponseHandler>)handler
                            callOptions:(GRPCCallOptions *)callOptions
                          responseClass:(Class)responseClass {
-  NSAssert(requestOptions.host.length != 0 && requestOptions.path.length != 0 &&
-               requestOptions.safety <= GRPCCallSafetyCacheableRequest,
+  NSAssert(requestOptions.host.length != 0 && requestOptions.path.length != 0,
            @"Invalid callOptions.");
   NSAssert(handler != nil, @"handler cannot be empty.");
-  if (requestOptions.host.length == 0 || requestOptions.path.length == 0 ||
-      requestOptions.safety > GRPCCallSafetyCacheableRequest) {
+  if (requestOptions.host.length == 0 || requestOptions.path.length == 0) {
     return nil;
   }
   if (handler == nil) {

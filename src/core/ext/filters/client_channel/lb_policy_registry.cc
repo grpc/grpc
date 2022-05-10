@@ -22,12 +22,19 @@
 
 #include <string.h>
 
+#include <algorithm>
+#include <map>
+#include <string>
+#include <utility>
+#include <vector>
+
 #include "absl/container/inlined_vector.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
 #include "absl/strings/str_join.h"
+#include "absl/strings/string_view.h"
 
-#include "src/core/lib/gpr/string.h"
+#include <grpc/support/log.h>
 
 namespace grpc_core {
 

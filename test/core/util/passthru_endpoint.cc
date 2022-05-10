@@ -28,6 +28,7 @@
 #include <grpc/support/alloc.h>
 #include <grpc/support/string_util.h>
 
+#include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/iomgr/sockaddr.h"
 #include "src/core/lib/iomgr/timer.h"
 #include "src/core/lib/slice/slice_internal.h"
@@ -109,7 +110,8 @@ static void do_pending_read_op_locked(half* m, grpc_error_handle error) {
 }
 
 static void me_read(grpc_endpoint* ep, grpc_slice_buffer* slices,
-                    grpc_closure* cb, bool /*urgent*/) {
+                    grpc_closure* cb, bool /*urgent*/,
+                    int /*min_progress_size*/) {
   half* m = reinterpret_cast<half*>(ep);
   gpr_mu_lock(&m->parent->mu);
   if (m->parent->shutdown) {
@@ -257,7 +259,7 @@ static void do_pending_write_op_locked(half* m, grpc_error_handle error) {
 }
 
 static void me_write(grpc_endpoint* ep, grpc_slice_buffer* slices,
-                     grpc_closure* cb, void* /*arg*/) {
+                     grpc_closure* cb, void* /*arg*/, int /*max_frame_size*/) {
   half* m = reinterpret_cast<half*>(ep);
   gpr_mu_lock(&m->parent->mu);
   gpr_atm_no_barrier_fetch_add(&m->parent->stats->num_writes, (gpr_atm)1);
@@ -483,7 +485,8 @@ static void sched_next_channel_action_locked(half* m) {
     return;
   }
   grpc_timer_init(&m->parent->channel_effects->timer,
-                  m->parent->channel_effects->actions[0].wait_ms +
+                  grpc_core::Duration::Milliseconds(
+                      m->parent->channel_effects->actions[0].wait_ms) +
                       grpc_core::ExecCtx::Get()->Now(),
                   GRPC_CLOSURE_CREATE(do_next_sched_channel_action, m,
                                       grpc_schedule_on_exec_ctx));

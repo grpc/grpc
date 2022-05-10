@@ -43,6 +43,7 @@ const int kSslTsiTestRevokedKeyCertPairsNum = 1;
 const int kSslTsiTestValidKeyCertPairsNum = 1;
 const char* kSslTsiTestCrlSupportedCredentialsDir =
     "test/core/tsi/test_creds/crl_data/";
+const char* kSslTsiTestFaultyCrlsDir = "bad_path/";
 
 class CrlSslTransportSecurityTest
     : public testing::TestWithParam<tsi_tls_version> {
@@ -50,10 +51,14 @@ class CrlSslTransportSecurityTest
   // A tsi_test_fixture implementation.
   class SslTsiTestFixture {
    public:
+    // When use_faulty_crl_directory is set, the crl_directory of the
+    // client is set to a non-existant path.
     static SslTsiTestFixture* Create(bool use_revoked_server_cert,
-                                     bool use_revoked_client_cert) {
+                                     bool use_revoked_client_cert,
+                                     bool use_faulty_crl_directory) {
       return new SslTsiTestFixture(use_revoked_server_cert,
-                                   use_revoked_client_cert);
+                                   use_revoked_client_cert,
+                                   use_faulty_crl_directory);
     }
 
     void Run() {
@@ -63,9 +68,11 @@ class CrlSslTransportSecurityTest
 
    private:
     SslTsiTestFixture(bool use_revoked_server_cert,
-                      bool use_revoked_client_cert)
+                      bool use_revoked_client_cert,
+                      bool use_faulty_crl_directory)
         : use_revoked_server_cert_(use_revoked_server_cert),
-          use_revoked_client_cert_(use_revoked_client_cert) {
+          use_revoked_client_cert_(use_revoked_client_cert),
+          use_faulty_crl_directory_(use_faulty_crl_directory) {
       tsi_test_fixture_init(&base_);
       base_.test_unused_bytes = true;
       base_.vtable = &kVtable;
@@ -120,7 +127,11 @@ class CrlSslTransportSecurityTest
       } else {
         client_options.pem_key_cert_pair = valid_pem_key_cert_pairs_;
       }
-      client_options.crl_directory = kSslTsiTestCrlSupportedCredentialsDir;
+      if (use_faulty_crl_directory_) {
+        client_options.crl_directory = kSslTsiTestFaultyCrlsDir;
+      } else {
+        client_options.crl_directory = kSslTsiTestCrlSupportedCredentialsDir;
+      }
       client_options.root_store = root_store_;
       client_options.min_tls_version = GetParam();
       client_options.max_tls_version = GetParam();
@@ -148,12 +159,12 @@ class CrlSslTransportSecurityTest
                     &server_options, &server_handshaker_factory_),
                 TSI_OK);
       // Create server and client handshakers.
-      EXPECT_EQ(
-          tsi_ssl_client_handshaker_factory_create_handshaker(
-              client_handshaker_factory_, nullptr, &base_.client_handshaker),
-          TSI_OK);
+      EXPECT_EQ(tsi_ssl_client_handshaker_factory_create_handshaker(
+                    client_handshaker_factory_, nullptr, 0, 0,
+                    &base_.client_handshaker),
+                TSI_OK);
       EXPECT_EQ(tsi_ssl_server_handshaker_factory_create_handshaker(
-                    server_handshaker_factory_, &base_.server_handshaker),
+                    server_handshaker_factory_, 0, 0, &base_.server_handshaker),
                 TSI_OK);
     }
 
@@ -228,6 +239,7 @@ class CrlSslTransportSecurityTest
     tsi_test_fixture base_;
     bool use_revoked_server_cert_;
     bool use_revoked_client_cert_;
+    bool use_faulty_crl_directory_;
     char* root_cert_;
     tsi_ssl_root_certs_store* root_store_;
     tsi_ssl_pem_key_cert_pair* revoked_pem_key_cert_pairs_;
@@ -245,19 +257,29 @@ struct tsi_test_fixture_vtable
 
 TEST_P(CrlSslTransportSecurityTest, RevokedServerCert) {
   auto* fixture = SslTsiTestFixture::Create(/*use_revoked_server_cert=*/true,
-                                            /*use_revoked_client_cert=*/false);
+                                            /*use_revoked_client_cert=*/false,
+                                            /*use_faulty_crl_directory=*/false);
   fixture->Run();
 }
 
 TEST_P(CrlSslTransportSecurityTest, RevokedClientCert) {
   auto* fixture = SslTsiTestFixture::Create(/*use_revoked_server_cert=*/false,
-                                            /*use_revoked_client_cert=*/true);
+                                            /*use_revoked_client_cert=*/true,
+                                            /*use_faulty_crl_directory=*/false);
   fixture->Run();
 }
 
 TEST_P(CrlSslTransportSecurityTest, ValidCerts) {
   auto* fixture = SslTsiTestFixture::Create(/*use_revoked_server_cert=*/false,
-                                            /*use_revoked_client_cert=*/false);
+                                            /*use_revoked_client_cert=*/false,
+                                            /*use_faulty_crl_directory=*/false);
+  fixture->Run();
+}
+
+TEST_P(CrlSslTransportSecurityTest, UseFaultyCrlDirectory) {
+  auto* fixture = SslTsiTestFixture::Create(/*use_revoked_server_cert=*/false,
+                                            /*use_revoked_client_cert=*/false,
+                                            /*use_faulty_crl_directory=*/true);
   fixture->Run();
 }
 
@@ -276,7 +298,7 @@ INSTANTIATE_TEST_SUITE_P(TLSVersionsTest, CrlSslTransportSecurityTest,
 }  // namespace
 
 int main(int argc, char** argv) {
-  grpc::testing::TestEnvironment env(argc, argv);
+  grpc::testing::TestEnvironment env(&argc, argv);
   ::testing::InitGoogleTest(&argc, argv);
   return RUN_ALL_TESTS();
 }

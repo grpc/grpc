@@ -22,26 +22,52 @@
 #include <grpc/support/port_platform.h>
 
 #include <stddef.h>
+#include <stdint.h>
+#include <string.h>
+
+#include <functional>
+#include <string>
+
+#include "absl/status/status.h"
+#include "absl/strings/string_view.h"
+#include "absl/types/optional.h"
+
+#include <grpc/impl/codegen/connectivity_state.h>
+#include <grpc/slice.h>
+#include <grpc/status.h>
+#include <grpc/support/atm.h>
+#include <grpc/support/log.h>
 
 #include "src/core/lib/channel/context.h"
+#include "src/core/lib/debug/trace.h"
+#include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/orphanable.h"
+#include "src/core/lib/gprpp/ref_counted.h"
 #include "src/core/lib/iomgr/call_combiner.h"
+#include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/endpoint.h"
+#include "src/core/lib/iomgr/error.h"
+#include "src/core/lib/iomgr/iomgr_fwd.h"
 #include "src/core/lib/iomgr/polling_entity.h"
 #include "src/core/lib/iomgr/pollset.h"
-#include "src/core/lib/iomgr/pollset_set.h"
 #include "src/core/lib/promise/arena_promise.h"
+#include "src/core/lib/promise/context.h"
+#include "src/core/lib/promise/latch.h"
 #include "src/core/lib/resource_quota/arena.h"
-#include "src/core/lib/slice/slice_internal.h"
+#include "src/core/lib/slice/slice.h"
 #include "src/core/lib/transport/byte_stream.h"
 #include "src/core/lib/transport/connectivity_state.h"
 #include "src/core/lib/transport/metadata_batch.h"
+
+struct grpc_transport_stream_op_batch_payload;
 
 /* Minimum and maximum protocol accepted versions. */
 #define GRPC_PROTOCOL_VERSION_MAX_MAJOR 2
 #define GRPC_PROTOCOL_VERSION_MAX_MINOR 1
 #define GRPC_PROTOCOL_VERSION_MIN_MAJOR 2
 #define GRPC_PROTOCOL_VERSION_MIN_MINOR 1
+
+#define GRPC_ARG_TRANSPORT "grpc.internal.transport"
 
 namespace grpc_core {
 // TODO(ctiller): eliminate once MetadataHandle is constructable directly.
@@ -97,16 +123,35 @@ class MetadataHandle {
   T* handle_ = nullptr;
 };
 
-// Trailing metadata type
+// Server metadata type
 // TODO(ctiller): This should be a bespoke instance of MetadataMap<>
-using TrailingMetadata = MetadataHandle<grpc_metadata_batch>;
+using ServerMetadata = grpc_metadata_batch;
+using ServerMetadataHandle = MetadataHandle<ServerMetadata>;
+
+// Ok/not-ok check for trailing metadata, so that it can be used as result types
+// for TrySeq.
+inline bool IsStatusOk(const ServerMetadataHandle& m) {
+  return m->get(GrpcStatusMetadata()).value_or(GRPC_STATUS_UNKNOWN) ==
+         GRPC_STATUS_OK;
+}
 
 // Client initial metadata type
 // TODO(ctiller): This should be a bespoke instance of MetadataMap<>
-using ClientInitialMetadata = MetadataHandle<grpc_metadata_batch>;
+using ClientMetadata = grpc_metadata_batch;
+using ClientMetadataHandle = MetadataHandle<ClientMetadata>;
+
+// Server initial metadata type
+// TODO(ctiller): This should be a bespoke instance of MetadataMap<>
+using ServerMetadataHandle = MetadataHandle<grpc_metadata_batch>;
+
+struct CallArgs {
+  ClientMetadataHandle client_initial_metadata;
+  Latch<ServerMetadata*>* server_initial_metadata;
+};
 
 using NextPromiseFactory =
-    std::function<ArenaPromise<TrailingMetadata>(ClientInitialMetadata)>;
+    std::function<ArenaPromise<ServerMetadataHandle>(CallArgs)>;
+
 }  // namespace grpc_core
 
 /* forward declarations */
@@ -492,6 +537,9 @@ void grpc_transport_destroy_stream(grpc_transport* transport,
 void grpc_transport_stream_op_batch_finish_with_failure(
     grpc_transport_stream_op_batch* batch, grpc_error_handle error,
     grpc_core::CallCombiner* call_combiner);
+void grpc_transport_stream_op_batch_queue_finish_with_failure(
+    grpc_transport_stream_op_batch* batch, grpc_error_handle error,
+    grpc_core::CallCombinerClosureList* closures);
 
 std::string grpc_transport_stream_op_batch_string(
     grpc_transport_stream_op_batch* op);

@@ -10,7 +10,7 @@
 #include "xds/type/matcher/v3/regex.upbdefs.h"
 #include "xds/type/matcher/v3/regex.upb.h"
 
-extern upb_def_init validate_validate_proto_upbdefinit;
+extern _upb_DefPool_Init validate_validate_proto_upbdefinit;
 static const char descriptor[348] = {'\n', '\037', 'x', 'd', 's', '/', 't', 'y', 'p', 'e', '/', 'm', 'a', 't', 'c', 'h', 'e', 'r', '/', 'v', '3', '/', 'r', 'e', 'g', 
 'e', 'x', '.', 'p', 'r', 'o', 't', 'o', '\022', '\023', 'x', 'd', 's', '.', 't', 'y', 'p', 'e', '.', 'm', 'a', 't', 'c', 'h', 'e', 
 'r', '.', 'v', '3', '\032', '\027', 'v', 'a', 'l', 'i', 'd', 'a', 't', 'e', '/', 'v', 'a', 'l', 'i', 'd', 'a', 't', 'e', '.', 'p', 
@@ -27,14 +27,14 @@ static const char descriptor[348] = {'\n', '\037', 'x', 'd', 's', '/', 't', 'y',
 't', 'y', 'p', 'e', '/', 'm', 'a', 't', 'c', 'h', 'e', 'r', '/', 'v', '3', 'b', '\006', 'p', 'r', 'o', 't', 'o', '3', 
 };
 
-static upb_def_init *deps[2] = {
+static _upb_DefPool_Init *deps[2] = {
   &validate_validate_proto_upbdefinit,
   NULL
 };
 
-upb_def_init xds_type_matcher_v3_regex_proto_upbdefinit = {
+_upb_DefPool_Init xds_type_matcher_v3_regex_proto_upbdefinit = {
   deps,
   &xds_type_matcher_v3_regex_proto_upb_file_layout,
   "xds/type/matcher/v3/regex.proto",
-  UPB_STRVIEW_INIT(descriptor, 348)
+  UPB_STRINGVIEW_INIT(descriptor, 348)
 };

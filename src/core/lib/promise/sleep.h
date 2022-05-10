@@ -17,6 +17,16 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <utility>
+
+#include "absl/base/thread_annotations.h"
+#include "absl/status/status.h"
+
+#include "src/core/lib/gprpp/ref_counted.h"
+#include "src/core/lib/gprpp/sync.h"
+#include "src/core/lib/gprpp/time.h"
+#include "src/core/lib/iomgr/closure.h"
+#include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/timer.h"
 #include "src/core/lib/promise/activity.h"
 #include "src/core/lib/promise/poll.h"
@@ -26,7 +36,7 @@ namespace grpc_core {
 // Promise that sleeps until a deadline and then finishes.
 class Sleep {
  public:
-  explicit Sleep(grpc_millis deadline);
+  explicit Sleep(Timestamp deadline);
   ~Sleep();
 
   Sleep(const Sleep&) = delete;
@@ -46,9 +56,9 @@ class Sleep {
 
   enum class Stage { kInitial, kStarted, kDone };
   struct State {
-    explicit State(grpc_millis deadline) : deadline(deadline) {}
+    explicit State(Timestamp deadline) : deadline(deadline) {}
     RefCount refs{2};
-    const grpc_millis deadline;
+    const Timestamp deadline;
     grpc_timer timer;
     grpc_closure on_timer;
     Mutex mu;

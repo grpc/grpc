@@ -33,12 +33,13 @@ namespace {
 
 class XdsHttpRouterFilter : public XdsHttpFilterImpl {
  public:
-  void PopulateSymtab(upb_symtab* symtab) const override {
+  void PopulateSymtab(upb_DefPool* symtab) const override {
     envoy_extensions_filters_http_router_v3_Router_getmsgdef(symtab);
   }
 
   absl::StatusOr<FilterConfig> GenerateFilterConfig(
-      upb_strview serialized_filter_config, upb_arena* arena) const override {
+      upb_StringView serialized_filter_config,
+      upb_Arena* arena) const override {
     if (envoy_extensions_filters_http_router_v3_Router_parse(
             serialized_filter_config.data, serialized_filter_config.size,
             arena) == nullptr) {
@@ -48,8 +49,8 @@ class XdsHttpRouterFilter : public XdsHttpFilterImpl {
   }
 
   absl::StatusOr<FilterConfig> GenerateFilterConfigOverride(
-      upb_strview /*serialized_filter_config*/,
-      upb_arena* /*arena*/) const override {
+      upb_StringView /*serialized_filter_config*/,
+      upb_Arena* /*arena*/) const override {
     return absl::InvalidArgumentError(
         "router filter does not support config override");
   }
@@ -94,7 +95,7 @@ const XdsHttpFilterImpl* XdsHttpFilterRegistry::GetFilterForType(
   return it->second;
 }
 
-void XdsHttpFilterRegistry::PopulateSymtab(upb_symtab* symtab) {
+void XdsHttpFilterRegistry::PopulateSymtab(upb_DefPool* symtab) {
   for (const auto& filter : *g_filters) {
     filter->PopulateSymtab(symtab);
   }

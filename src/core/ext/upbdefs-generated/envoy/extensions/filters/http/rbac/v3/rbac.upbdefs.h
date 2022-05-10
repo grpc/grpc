@@ -19,16 +19,16 @@ extern "C" {
 
 #include "upb/port_def.inc"
 
-extern upb_def_init envoy_extensions_filters_http_rbac_v3_rbac_proto_upbdefinit;
+extern _upb_DefPool_Init envoy_extensions_filters_http_rbac_v3_rbac_proto_upbdefinit;
 
-UPB_INLINE const upb_msgdef *envoy_extensions_filters_http_rbac_v3_RBAC_getmsgdef(upb_symtab *s) {
-  _upb_symtab_loaddefinit(s, &envoy_extensions_filters_http_rbac_v3_rbac_proto_upbdefinit);
-  return upb_symtab_lookupmsg(s, "envoy.extensions.filters.http.rbac.v3.RBAC");
+UPB_INLINE const upb_MessageDef *envoy_extensions_filters_http_rbac_v3_RBAC_getmsgdef(upb_DefPool *s) {
+  _upb_DefPool_LoadDefInit(s, &envoy_extensions_filters_http_rbac_v3_rbac_proto_upbdefinit);
+  return upb_DefPool_FindMessageByName(s, "envoy.extensions.filters.http.rbac.v3.RBAC");
 }
 
-UPB_INLINE const upb_msgdef *envoy_extensions_filters_http_rbac_v3_RBACPerRoute_getmsgdef(upb_symtab *s) {
-  _upb_symtab_loaddefinit(s, &envoy_extensions_filters_http_rbac_v3_rbac_proto_upbdefinit);
-  return upb_symtab_lookupmsg(s, "envoy.extensions.filters.http.rbac.v3.RBACPerRoute");
+UPB_INLINE const upb_MessageDef *envoy_extensions_filters_http_rbac_v3_RBACPerRoute_getmsgdef(upb_DefPool *s) {
+  _upb_DefPool_LoadDefInit(s, &envoy_extensions_filters_http_rbac_v3_rbac_proto_upbdefinit);
+  return upb_DefPool_FindMessageByName(s, "envoy.extensions.filters.http.rbac.v3.RBACPerRoute");
 }
 
 #ifdef __cplusplus

@@ -20,6 +20,7 @@
 
 #include "src/core/lib/http/httpcli.h"
 
+#include <limits.h>
 #include <string.h>
 
 #include <string>
@@ -53,13 +54,15 @@ namespace {
 
 grpc_httpcli_get_override g_get_override;
 grpc_httpcli_post_override g_post_override;
+grpc_httpcli_put_override g_put_override;
+void (*g_test_only_on_handshake_done_intercept)(HttpRequest* req);
 
 }  // namespace
 
 OrphanablePtr<HttpRequest> HttpRequest::Get(
     URI uri, const grpc_channel_args* channel_args,
     grpc_polling_entity* pollent, const grpc_http_request* request,
-    grpc_millis deadline, grpc_closure* on_done, grpc_http_response* response,
+    Timestamp deadline, grpc_closure* on_done, grpc_http_response* response,
     RefCountedPtr<grpc_channel_credentials> channel_creds) {
   absl::optional<std::function<void()>> test_only_generate_response;
   if (g_get_override != nullptr) {
@@ -85,7 +88,7 @@ OrphanablePtr<HttpRequest> HttpRequest::Get(
 OrphanablePtr<HttpRequest> HttpRequest::Post(
     URI uri, const grpc_channel_args* channel_args,
     grpc_polling_entity* pollent, const grpc_http_request* request,
-    grpc_millis deadline, grpc_closure* on_done, grpc_http_response* response,
+    Timestamp deadline, grpc_closure* on_done, grpc_http_response* response,
     RefCountedPtr<grpc_channel_credentials> channel_creds) {
   absl::optional<std::function<void()>> test_only_generate_response;
   if (g_post_override != nullptr) {
@@ -106,15 +109,46 @@ OrphanablePtr<HttpRequest> HttpRequest::Post(
       std::move(channel_creds));
 }
 
+OrphanablePtr<HttpRequest> HttpRequest::Put(
+    URI uri, const grpc_channel_args* channel_args,
+    grpc_polling_entity* pollent, const grpc_http_request* request,
+    Timestamp deadline, grpc_closure* on_done, grpc_http_response* response,
+    RefCountedPtr<grpc_channel_credentials> channel_creds) {
+  absl::optional<std::function<void()>> test_only_generate_response;
+  if (g_put_override != nullptr) {
+    test_only_generate_response = [request, uri, deadline, on_done,
+                                   response]() {
+      g_put_override(request, uri.authority().c_str(), uri.path().c_str(),
+                     request->body, request->body_length, deadline, on_done,
+                     response);
+    };
+  }
+  std::string name =
+      absl::StrFormat("HTTP:PUT:%s:%s", uri.authority(), uri.path());
+  const grpc_slice request_text = grpc_httpcli_format_put_request(
+      request, uri.authority().c_str(), uri.path().c_str());
+  return MakeOrphanable<HttpRequest>(
+      std::move(uri), request_text, response, deadline, channel_args, on_done,
+      pollent, name.c_str(), std::move(test_only_generate_response),
+      std::move(channel_creds));
+}
+
 void HttpRequest::SetOverride(grpc_httpcli_get_override get,
-                              grpc_httpcli_post_override post) {
+                              grpc_httpcli_post_override post,
+                              grpc_httpcli_put_override put) {
   g_get_override = get;
   g_post_override = post;
+  g_put_override = put;
+}
+
+void HttpRequest::TestOnlySetOnHandshakeDoneIntercept(
+    void (*intercept)(HttpRequest* req)) {
+  g_test_only_on_handshake_done_intercept = intercept;
 }
 
 HttpRequest::HttpRequest(
     URI uri, const grpc_slice& request_text, grpc_http_response* response,
-    grpc_millis deadline, const grpc_channel_args* channel_args,
+    Timestamp deadline, const grpc_channel_args* channel_args,
     grpc_closure* on_done, grpc_polling_entity* pollent, const char* name,
     absl::optional<std::function<void()>> test_only_generate_response,
     RefCountedPtr<grpc_channel_credentials> channel_creds)
@@ -123,7 +157,8 @@ HttpRequest::HttpRequest(
       deadline_(deadline),
       channel_args_(CoreConfiguration::Get()
                         .channel_args_preconditioning()
-                        .PreconditionChannelArgs(channel_args)),
+                        .PreconditionChannelArgs(channel_args)
+                        .ToC()),
       channel_creds_(std::move(channel_creds)),
       on_done_(on_done),
       resource_quota_(ResourceQuotaFromChannelArgs(channel_args_)),
@@ -209,10 +244,12 @@ void HttpRequest::AppendError(grpc_error_handle error) {
         GRPC_ERROR_CREATE_FROM_STATIC_STRING("Failed HTTP/1 client request");
   }
   const grpc_resolved_address* addr = &addresses_[next_address_ - 1];
-  std::string addr_text = grpc_sockaddr_to_uri(addr);
+  auto addr_text = grpc_sockaddr_to_uri(addr);
   overall_error_ = grpc_error_add_child(
       overall_error_,
-      grpc_error_set_str(error, GRPC_ERROR_STR_TARGET_ADDRESS, addr_text));
+      grpc_error_set_str(
+          error, GRPC_ERROR_STR_TARGET_ADDRESS,
+          addr_text.ok() ? addr_text.value() : addr_text.status().ToString()));
 }
 
 void HttpRequest::OnReadInternal(grpc_error_handle error) {
@@ -254,24 +291,36 @@ void HttpRequest::StartWrite() {
   grpc_slice_ref_internal(request_text_);
   grpc_slice_buffer_add(&outgoing_, request_text_);
   Ref().release();  // ref held by pending write
-  grpc_endpoint_write(ep_, &outgoing_, &done_write_, nullptr);
+  grpc_endpoint_write(ep_, &outgoing_, &done_write_, nullptr,
+                      /*max_frame_size=*/INT_MAX);
 }
 
 void HttpRequest::OnHandshakeDone(void* arg, grpc_error_handle error) {
   auto* args = static_cast<HandshakerArgs*>(arg);
   RefCountedPtr<HttpRequest> req(static_cast<HttpRequest*>(args->user_data));
+  if (g_test_only_on_handshake_done_intercept != nullptr) {
+    // Run this testing intercept before the lock so that it has a chance to
+    // do things like calling Orphan on the request
+    g_test_only_on_handshake_done_intercept(req.get());
+  }
   MutexLock lock(&req->mu_);
   req->own_endpoint_ = true;
-  if (error != GRPC_ERROR_NONE || req->cancelled_) {
+  if (error != GRPC_ERROR_NONE) {
     gpr_log(GPR_ERROR, "Secure transport setup failed: %s",
             grpc_error_std_string(error).c_str());
     req->NextAddress(GRPC_ERROR_REF(error));
     return;
   }
+  // Handshake completed, so we own fields in args
   grpc_channel_args_destroy(args->args);
   grpc_slice_buffer_destroy_internal(args->read_buffer);
   gpr_free(args->read_buffer);
   req->ep_ = args->endpoint;
+  if (req->cancelled_) {
+    req->NextAddress(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+        "HTTP request cancelled during security handshake"));
+    return;
+  }
   req->StartWrite();
 }
 

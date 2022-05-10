@@ -20,18 +20,11 @@
 
 #include "src/core/ext/filters/client_channel/retry_throttle.h"
 
-#include <limits.h>
-#include <string.h>
-
 #include <map>
 #include <string>
+#include <utility>
 
-#include <grpc/support/alloc.h>
 #include <grpc/support/atm.h>
-#include <grpc/support/string_util.h>
-#include <grpc/support/sync.h>
-
-#include "src/core/lib/gprpp/manual_constructor.h"
 
 namespace grpc_core {
 namespace internal {
@@ -119,42 +112,28 @@ void ServerRetryThrottleData::RecordSuccess() {
 // ServerRetryThrottleMap
 //
 
-using StringToDataMap =
-    std::map<std::string, RefCountedPtr<ServerRetryThrottleData>>;
-static gpr_mu g_mu;
-static StringToDataMap* g_map;
-
-void ServerRetryThrottleMap::Init() {
-  gpr_mu_init(&g_mu);
-  g_map = new StringToDataMap();
-}
-
-void ServerRetryThrottleMap::Shutdown() {
-  gpr_mu_destroy(&g_mu);
-  delete g_map;
-  g_map = nullptr;
+ServerRetryThrottleMap* ServerRetryThrottleMap::Get() {
+  static ServerRetryThrottleMap* m = new ServerRetryThrottleMap();
+  return m;
 }
 
 RefCountedPtr<ServerRetryThrottleData> ServerRetryThrottleMap::GetDataForServer(
     const std::string& server_name, intptr_t max_milli_tokens,
     intptr_t milli_token_ratio) {
-  RefCountedPtr<ServerRetryThrottleData> result;
-  gpr_mu_lock(&g_mu);
-  auto it = g_map->find(server_name);
+  MutexLock lock(&mu_);
+  auto it = map_.find(server_name);
   ServerRetryThrottleData* throttle_data =
-      it == g_map->end() ? nullptr : it->second.get();
+      it == map_.end() ? nullptr : it->second.get();
   if (throttle_data == nullptr ||
       throttle_data->max_milli_tokens() != max_milli_tokens ||
       throttle_data->milli_token_ratio() != milli_token_ratio) {
     // Entry not found, or found with old parameters.  Create a new one.
-    it = g_map
-             ->emplace(server_name,
-                       MakeRefCounted<ServerRetryThrottleData>(
-                           max_milli_tokens, milli_token_ratio, throttle_data))
+    it = map_.emplace(server_name,
+                      MakeRefCounted<ServerRetryThrottleData>(
+                          max_milli_tokens, milli_token_ratio, throttle_data))
              .first;
     throttle_data = it->second.get();
   }
-  gpr_mu_unlock(&g_mu);
   return throttle_data->Ref();
 }
 

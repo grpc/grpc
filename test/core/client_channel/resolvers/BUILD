@@ -28,34 +28,7 @@ grpc_cc_test(
     deps = [
         "//:gpr",
         "//:grpc",
-        "//test/core/util:grpc_test_util",
-    ],
-)
-
-grpc_cc_test(
-    name = "dns_resolver_connectivity_using_ares_test",
-    srcs = ["dns_resolver_connectivity_test.cc"],
-    args = [
-        "--resolver=ares",
-    ],
-    language = "C++",
-    deps = [
-        "//:gpr",
-        "//:grpc",
-        "//test/core/util:grpc_test_util",
-    ],
-)
-
-grpc_cc_test(
-    name = "dns_resolver_connectivity_using_native_test",
-    srcs = ["dns_resolver_connectivity_test.cc"],
-    args = [
-        "--resolver=native",
-    ],
-    language = "C++",
-    deps = [
-        "//:gpr",
-        "//:grpc",
+        "//:grpc_resolver_binder",
         "//test/core/util:grpc_test_util",
     ],
 )

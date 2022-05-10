@@ -18,34 +18,50 @@
 
 #include <grpc/support/port_platform.h>
 
+// IWYU pragma: no_include <arpa/nameser.h>
+// IWYU pragma: no_include <inttypes.h>
+// IWYU pragma: no_include <netdb.h>
+// IWYU pragma: no_include <netinet/in.h>
+// IWYU pragma: no_include <stdlib.h>
+// IWYU pragma: no_include <sys/socket.h>
+
 #if GRPC_ARES == 1
 
 #include <string.h>
-#include <sys/types.h>
+#include <sys/types.h>  // IWYU pragma: keep
+
+#include <string>
+#include <utility>
 
 #include <address_sorting/address_sorting.h>
 #include <ares.h>
 
 #include "absl/container/inlined_vector.h"
+#include "absl/memory/memory.h"
+#include "absl/status/status.h"
+#include "absl/status/statusor.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
 
+#include <grpc/impl/codegen/grpc_types.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
-#include <grpc/support/time.h>
+#include <grpc/support/sync.h>
 
 #include "src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_ev_driver.h"
 #include "src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper.h"
 #include "src/core/lib/address_utils/parse_address.h"
 #include "src/core/lib/address_utils/sockaddr_utils.h"
+#include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/gpr/string.h"
+#include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/host_port.h"
+#include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/iomgr/error.h"
-#include "src/core/lib/iomgr/executor.h"
-#include "src/core/lib/iomgr/iomgr_internal.h"
-#include "src/core/lib/iomgr/nameser.h"
-#include "src/core/lib/iomgr/sockaddr.h"
+#include "src/core/lib/iomgr/exec_ctx.h"
+#include "src/core/lib/iomgr/nameser.h"  // IWYU pragma: keep
+#include "src/core/lib/iomgr/resolved_address.h"
 #include "src/core/lib/iomgr/timer.h"
 
 using grpc_core::ServerAddress;
@@ -249,20 +265,20 @@ static fd_node* pop_fd_node_locked(fd_node** head, ares_socket_t as)
   return nullptr;
 }
 
-static grpc_millis calculate_next_ares_backup_poll_alarm_ms(
+static grpc_core::Timestamp calculate_next_ares_backup_poll_alarm(
     grpc_ares_ev_driver* driver)
     ABSL_EXCLUSIVE_LOCKS_REQUIRED(&grpc_ares_request::mu) {
   // An alternative here could be to use ares_timeout to try to be more
   // accurate, but that would require using "struct timeval"'s, which just makes
   // things a bit more complicated. So just poll every second, as suggested
   // by the c-ares code comments.
-  grpc_millis ms_until_next_ares_backup_poll_alarm = 1000;
+  grpc_core::Duration until_next_ares_backup_poll_alarm =
+      grpc_core::Duration::Seconds(1);
   GRPC_CARES_TRACE_LOG(
       "request:%p ev_driver=%p. next ares process poll time in "
       "%" PRId64 " ms",
-      driver->request, driver, ms_until_next_ares_backup_poll_alarm);
-  return ms_until_next_ares_backup_poll_alarm +
-         grpc_core::ExecCtx::Get()->Now();
+      driver->request, driver, until_next_ares_backup_poll_alarm.millis());
+  return grpc_core::ExecCtx::Get()->Now() + until_next_ares_backup_poll_alarm;
 }
 
 static void on_timeout(void* arg, grpc_error_handle error) {
@@ -317,8 +333,8 @@ static void on_ares_backup_poll_alarm(void* arg, grpc_error_handle error) {
       // in a loop while draining the currently-held WorkSerializer.
       // Also see https://github.com/grpc/grpc/issues/26079.
       grpc_core::ExecCtx::Get()->InvalidateNow();
-      grpc_millis next_ares_backup_poll_alarm =
-          calculate_next_ares_backup_poll_alarm_ms(driver);
+      grpc_core::Timestamp next_ares_backup_poll_alarm =
+          calculate_next_ares_backup_poll_alarm(driver);
       grpc_ares_ev_driver_ref(driver);
       GRPC_CLOSURE_INIT(&driver->on_ares_backup_poll_alarm_locked,
                         on_ares_backup_poll_alarm, driver,
@@ -462,22 +478,23 @@ void grpc_ares_ev_driver_start_locked(grpc_ares_ev_driver* ev_driver)
     ABSL_EXCLUSIVE_LOCKS_REQUIRED(&grpc_ares_request::mu) {
   grpc_ares_notify_on_event_locked(ev_driver);
   // Initialize overall DNS resolution timeout alarm
-  grpc_millis timeout =
+  grpc_core::Duration timeout =
       ev_driver->query_timeout_ms == 0
-          ? GRPC_MILLIS_INF_FUTURE
-          : ev_driver->query_timeout_ms + grpc_core::ExecCtx::Get()->Now();
+          ? grpc_core::Duration::Infinity()
+          : grpc_core::Duration::Milliseconds(ev_driver->query_timeout_ms);
   GRPC_CARES_TRACE_LOG(
       "request:%p ev_driver=%p grpc_ares_ev_driver_start_locked. timeout in "
       "%" PRId64 " ms",
-      ev_driver->request, ev_driver, timeout);
+      ev_driver->request, ev_driver, timeout.millis());
   grpc_ares_ev_driver_ref(ev_driver);
   GRPC_CLOSURE_INIT(&ev_driver->on_timeout_locked, on_timeout, ev_driver,
                     grpc_schedule_on_exec_ctx);
-  grpc_timer_init(&ev_driver->query_timeout, timeout,
+  grpc_timer_init(&ev_driver->query_timeout,
+                  grpc_core::ExecCtx::Get()->Now() + timeout,
                   &ev_driver->on_timeout_locked);
   // Initialize the backup poll alarm
-  grpc_millis next_ares_backup_poll_alarm =
-      calculate_next_ares_backup_poll_alarm_ms(ev_driver);
+  grpc_core::Timestamp next_ares_backup_poll_alarm =
+      calculate_next_ares_backup_poll_alarm(ev_driver);
   grpc_ares_ev_driver_ref(ev_driver);
   GRPC_CLOSURE_INIT(&ev_driver->on_ares_backup_poll_alarm_locked,
                     on_ares_backup_poll_alarm, ev_driver,
@@ -525,12 +542,13 @@ static void log_address_sorting_list(const grpc_ares_request* r,
                                      const ServerAddressList& addresses,
                                      const char* input_output_str) {
   for (size_t i = 0; i < addresses.size(); i++) {
-    std::string addr_str =
-        grpc_sockaddr_to_string(&addresses[i].address(), true);
+    auto addr_str = grpc_sockaddr_to_string(&addresses[i].address(), true);
     gpr_log(GPR_INFO,
             "(c-ares resolver) request:%p c-ares address sorting: %s[%" PRIuPTR
             "]=%s",
-            r, input_output_str, i, addr_str.c_str());
+            r, input_output_str, i,
+            addr_str.ok() ? addr_str->c_str()
+                          : addr_str.status().ToString().c_str());
   }
 }
 

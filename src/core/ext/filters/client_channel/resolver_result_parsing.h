@@ -19,17 +19,23 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <stddef.h>
+
+#include <memory>
+#include <string>
+#include <utility>
+
+#include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
 
+#include <grpc/impl/codegen/grpc_types.h>
+
 #include "src/core/ext/filters/client_channel/lb_policy.h"
-#include "src/core/ext/filters/client_channel/lb_policy_factory.h"
-#include "src/core/lib/channel/status_util.h"
 #include "src/core/lib/config/core_configuration.h"
-#include "src/core/lib/gprpp/ref_counted.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
-#include "src/core/lib/iomgr/exec_ctx.h"  // for grpc_millis
+#include "src/core/lib/gprpp/time.h"
+#include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/json/json.h"
-#include "src/core/lib/resolver/resolver.h"
 #include "src/core/lib/service_config/service_config_parser.h"
 
 namespace grpc_core {
@@ -67,16 +73,16 @@ class ClientChannelGlobalParsedConfig
 class ClientChannelMethodParsedConfig
     : public ServiceConfigParser::ParsedConfig {
  public:
-  ClientChannelMethodParsedConfig(grpc_millis timeout,
+  ClientChannelMethodParsedConfig(Duration timeout,
                                   const absl::optional<bool>& wait_for_ready)
       : timeout_(timeout), wait_for_ready_(wait_for_ready) {}
 
-  grpc_millis timeout() const { return timeout_; }
+  Duration timeout() const { return timeout_; }
 
   absl::optional<bool> wait_for_ready() const { return wait_for_ready_; }
 
  private:
-  grpc_millis timeout_ = 0;
+  Duration timeout_;
   absl::optional<bool> wait_for_ready_;
 };
 

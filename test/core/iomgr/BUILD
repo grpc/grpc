@@ -70,21 +70,10 @@ grpc_cc_test(
         "gtest",
     ],
     language = "C++",
+    uses_event_engine = False,
     uses_polling = False,
     deps = [
         ":endpoint_tests",
-        "//:gpr",
-        "//:grpc",
-        "//test/core/util:grpc_test_util",
-    ],
-)
-
-grpc_cc_test(
-    name = "ev_epollex_linux_test",
-    srcs = ["ev_epollex_linux_test.cc"],
-    language = "C++",
-    tags = ["no_windows"],
-    deps = [
         "//:gpr",
         "//:grpc",
         "//test/core/util:grpc_test_util",
@@ -130,6 +119,7 @@ grpc_cc_test(
     name = "load_file_test",
     srcs = ["load_file_test.cc"],
     language = "C++",
+    uses_event_engine = False,
     uses_polling = False,
     deps = [
         "//:gpr",
@@ -160,6 +150,7 @@ grpc_cc_test(
     name = "mpmcqueue_test",
     srcs = ["mpmcqueue_test.cc"],
     language = "C++",
+    uses_event_engine = False,
     uses_polling = False,
     deps = [
         "//:gpr",
@@ -305,6 +296,7 @@ grpc_cc_test(
     name = "threadpool_test",
     srcs = ["threadpool_test.cc"],
     language = "C++",
+    uses_event_engine = False,
     uses_polling = False,
     deps = [
         "//:gpr",
@@ -317,6 +309,7 @@ grpc_cc_test(
     name = "time_averaged_stats_test",
     srcs = ["time_averaged_stats_test.cc"],
     language = "C++",
+    uses_event_engine = False,
     uses_polling = False,
     deps = [
         "//:gpr",
@@ -329,6 +322,7 @@ grpc_cc_test(
     name = "timer_heap_test",
     srcs = ["timer_heap_test.cc"],
     language = "C++",
+    uses_event_engine = False,
     uses_polling = False,
     deps = [
         "//:gpr",
@@ -341,6 +335,7 @@ grpc_cc_test(
     name = "timer_list_test",
     srcs = ["timer_list_test.cc"],
     language = "C++",
+    uses_event_engine = False,
     uses_polling = False,
     deps = [
         "//:gpr",

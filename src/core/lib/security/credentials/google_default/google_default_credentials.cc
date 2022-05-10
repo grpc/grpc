@@ -125,17 +125,14 @@ grpc_google_default_channel_credentials::create_security_connector(
   return sc;
 }
 
-grpc_channel_args* grpc_google_default_channel_credentials::update_arguments(
-    grpc_channel_args* args) {
-  grpc_channel_args* updated = args;
-  if (grpc_channel_args_find(args, GRPC_ARG_DNS_ENABLE_SRV_QUERIES) ==
-      nullptr) {
-    grpc_arg new_srv_arg = grpc_channel_arg_integer_create(
-        const_cast<char*>(GRPC_ARG_DNS_ENABLE_SRV_QUERIES), true);
-    updated = grpc_channel_args_copy_and_add(args, &new_srv_arg, 1);
-    grpc_channel_args_destroy(args);
-  }
-  return updated;
+grpc_core::ChannelArgs
+grpc_google_default_channel_credentials::update_arguments(
+    grpc_core::ChannelArgs args) {
+  return args.SetIfUnset(GRPC_ARG_DNS_ENABLE_SRV_QUERIES, true);
+}
+
+const char* grpc_google_default_channel_credentials::type() const {
+  return "GoogleDefault";
 }
 
 static void on_metadata_server_detection_http_response(
@@ -175,7 +172,7 @@ static int is_metadata_server_reachable() {
   grpc_closure destroy_closure;
   /* The http call is local. If it takes more than one sec, it is for sure not
      on compute engine. */
-  grpc_millis max_detection_delay = GPR_MS_PER_SEC;
+  const auto max_detection_delay = grpc_core::Duration::Seconds(1);
   grpc_pollset* pollset =
       static_cast<grpc_pollset*>(gpr_zalloc(grpc_pollset_size()));
   grpc_pollset_init(pollset, &g_polling_mu);
@@ -205,7 +202,7 @@ static int is_metadata_server_reachable() {
     if (!GRPC_LOG_IF_ERROR(
             "pollset_work",
             grpc_pollset_work(grpc_polling_entity_pollset(&detector.pollent),
-                              &worker, GRPC_MILLIS_INF_FUTURE))) {
+                              &worker, grpc_core::Timestamp::InfFuture()))) {
       detector.is_done = 1;
       detector.success = 0;
     }

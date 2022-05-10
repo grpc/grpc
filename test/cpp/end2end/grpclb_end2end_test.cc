@@ -424,7 +424,7 @@ class GrpclbEnd2endTest : public ::testing::Test {
     grpc_channel_credentials* channel_creds =
         grpc_fake_transport_security_credentials_create();
     grpc_call_credentials* call_creds = grpc_md_only_test_credentials_create(
-        g_kCallCredsMdKey, g_kCallCredsMdValue, false);
+        g_kCallCredsMdKey, g_kCallCredsMdValue);
     std::shared_ptr<ChannelCredentials> creds(
         new SecureChannelCredentials(grpc_composite_channel_credentials_create(
             channel_creds, call_creds, nullptr)));
@@ -2031,7 +2031,7 @@ TEST_F(SingleBalancerWithClientLoadReportingTest, Drop) {
 }  // namespace grpc
 
 int main(int argc, char** argv) {
-  grpc::testing::TestEnvironment env(argc, argv);
+  grpc::testing::TestEnvironment env(&argc, argv);
   ::testing::InitGoogleTest(&argc, argv);
   const auto result = RUN_ALL_TESTS();
   return result;

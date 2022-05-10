@@ -16,28 +16,48 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <stddef.h>
+
+#include <algorithm>
+#include <map>
+#include <memory>
 #include <set>
 #include <string>
+#include <utility>
 #include <vector>
 
+#include "absl/memory/memory.h"
 #include "absl/status/status.h"
+#include "absl/status/statusor.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
 
-#include <grpc/grpc.h>
+#include <grpc/impl/codegen/connectivity_state.h>
+#include <grpc/impl/codegen/grpc_types.h>
+#include <grpc/support/log.h>
 
 #include "src/core/ext/filters/client_channel/lb_policy.h"
 #include "src/core/ext/filters/client_channel/lb_policy/child_policy_handler.h"
 #include "src/core/ext/filters/client_channel/lb_policy_factory.h"
 #include "src/core/ext/filters/client_channel/lb_policy_registry.h"
 #include "src/core/ext/filters/client_channel/resolver/xds/xds_resolver.h"
+#include "src/core/ext/filters/client_channel/subchannel_interface.h"
 #include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/gpr/string.h"
+#include "src/core/lib/debug/trace.h"
+#include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/orphanable.h"
+#include "src/core/lib/gprpp/ref_counted.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
+#include "src/core/lib/gprpp/time.h"
+#include "src/core/lib/iomgr/closure.h"
+#include "src/core/lib/iomgr/error.h"
+#include "src/core/lib/iomgr/exec_ctx.h"
+#include "src/core/lib/iomgr/pollset_set.h"
 #include "src/core/lib/iomgr/timer.h"
 #include "src/core/lib/iomgr/work_serializer.h"
-#include "src/core/lib/transport/error_utils.h"
+#include "src/core/lib/json/json.h"
+#include "src/core/lib/resolver/server_address.h"
+#include "src/core/lib/transport/connectivity_state.h"
 
 #define GRPC_XDS_CLUSTER_MANAGER_CHILD_RETENTION_INTERVAL_MS (15 * 60 * 1000)
 
@@ -196,6 +216,7 @@ class XdsClusterManagerLb : public LoadBalancingPolicy {
 
   // Internal state.
   bool shutting_down_ = false;
+  bool update_in_progress_ = false;
 
   // Children.
   std::map<std::string, OrphanablePtr<ClusterChild>> children_;
@@ -254,6 +275,7 @@ void XdsClusterManagerLb::UpdateLocked(UpdateArgs args) {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_cluster_manager_lb_trace)) {
     gpr_log(GPR_INFO, "[xds_cluster_manager_lb %p] Received update", this);
   }
+  update_in_progress_ = true;
   // Update config.
   config_ = std::move(args.config);
   // Deactivate the children not in the new config.
@@ -268,19 +290,24 @@ void XdsClusterManagerLb::UpdateLocked(UpdateArgs args) {
   for (const auto& p : config_->cluster_map()) {
     const std::string& name = p.first;
     const RefCountedPtr<LoadBalancingPolicy::Config>& config = p.second;
-    auto it = children_.find(name);
-    if (it == children_.end()) {
-      it = children_
-               .emplace(name, MakeOrphanable<ClusterChild>(
-                                  Ref(DEBUG_LOCATION, "ClusterChild"), name))
-               .first;
+    auto& child = children_[name];
+    if (child == nullptr) {
+      child = MakeOrphanable<ClusterChild>(Ref(DEBUG_LOCATION, "ClusterChild"),
+                                           name);
     }
-    it->second->UpdateLocked(config, args.addresses, args.args);
+    child->UpdateLocked(config, args.addresses, args.args);
   }
+  update_in_progress_ = false;
   UpdateStateLocked();
 }
 
 void XdsClusterManagerLb::UpdateStateLocked() {
+  // If we're in the process of propagating an update from our parent to
+  // our children, ignore any updates that come from the children.  We
+  // will instead return a new picker once the update has been seen by
+  // all children.  This avoids unnecessary picker churn while an update
+  // is being propagated to our children.
+  if (update_in_progress_) return;
   // Also count the number of children in each state, to determine the
   // overall state.
   size_t num_ready = 0;
@@ -487,7 +514,8 @@ void XdsClusterManagerLb::ClusterChild::DeactivateLocked() {
   Ref(DEBUG_LOCATION, "ClusterChild+timer").release();
   grpc_timer_init(&delayed_removal_timer_,
                   ExecCtx::Get()->Now() +
-                      GRPC_XDS_CLUSTER_MANAGER_CHILD_RETENTION_INTERVAL_MS,
+                      Duration::Milliseconds(
+                          GRPC_XDS_CLUSTER_MANAGER_CHILD_RETENTION_INTERVAL_MS),
                   &on_delayed_removal_timer_);
   delayed_removal_timer_callback_pending_ = true;
 }

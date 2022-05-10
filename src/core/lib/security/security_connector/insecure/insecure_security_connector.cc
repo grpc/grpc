@@ -21,6 +21,7 @@
 #include "src/core/lib/security/security_connector/insecure/insecure_security_connector.h"
 
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
+#include "src/core/lib/promise/promise.h"
 #include "src/core/lib/security/transport/security_handshaker.h"
 #include "src/core/tsi/local_transport_security.h"
 
@@ -48,18 +49,9 @@ RefCountedPtr<grpc_auth_context> TestOnlyMakeInsecureAuthContext() {
   return MakeAuthContext();
 }
 
-// check_call_host and cancel_check_call_host are no-ops since we want to
-// provide an insecure channel.
-bool InsecureChannelSecurityConnector::check_call_host(
-    absl::string_view /*host*/, grpc_auth_context* /*auth_context*/,
-    grpc_closure* /*on_call_host_checked*/, grpc_error_handle* error) {
-  *error = GRPC_ERROR_NONE;
-  return true;
-}
-
-void InsecureChannelSecurityConnector::cancel_check_call_host(
-    grpc_closure* /*on_call_host_checked*/, grpc_error_handle error) {
-  GRPC_ERROR_UNREF(error);
+ArenaPromise<absl::Status> InsecureChannelSecurityConnector::CheckCallHost(
+    absl::string_view, grpc_auth_context*) {
+  return ImmediateOkStatus();
 }
 
 // add_handshakers should have been a no-op but we need to add a minimalist

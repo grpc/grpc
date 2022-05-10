@@ -33,7 +33,8 @@ typedef struct grpc_tcp_client_vtable {
   void (*connect)(grpc_closure* on_connect, grpc_endpoint** endpoint,
                   grpc_pollset_set* interested_parties,
                   const grpc_channel_args* channel_args,
-                  const grpc_resolved_address* addr, grpc_millis deadline);
+                  const grpc_resolved_address* addr,
+                  grpc_core::Timestamp deadline);
 } grpc_tcp_client_vtable;
 
 /* Asynchronously connect to an address (specified as (addr, len)), and call
@@ -45,7 +46,7 @@ void grpc_tcp_client_connect(grpc_closure* on_connect, grpc_endpoint** endpoint,
                              grpc_pollset_set* interested_parties,
                              const grpc_channel_args* channel_args,
                              const grpc_resolved_address* addr,
-                             grpc_millis deadline);
+                             grpc_core::Timestamp deadline);
 
 void grpc_tcp_client_global_init();
 

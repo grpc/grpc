@@ -45,7 +45,8 @@ namespace {
 class ChannelData {
  public:
   explicit ChannelData(const grpc_channel_element_args* args)
-      : max_recv_size_(GetMaxRecvSizeFromChannelArgs(args->channel_args)),
+      : max_recv_size_(GetMaxRecvSizeFromChannelArgs(
+            ChannelArgs::FromC(args->channel_args))),
         message_size_service_config_parser_index_(
             MessageSizeParser::ParserIndex()) {}
 
@@ -380,6 +381,7 @@ const grpc_channel_filter MessageDecompressFilter = {
     DecompressDestroyCallElem,
     sizeof(ChannelData),
     DecompressInitChannelElem,
+    grpc_channel_stack_no_post_init,
     DecompressDestroyChannelElem,
     grpc_channel_next_get_info,
     "message_decompress"};

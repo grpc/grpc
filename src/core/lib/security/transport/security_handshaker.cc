@@ -294,12 +294,14 @@ void SecurityHandshaker::OnPeerCheckedInner(grpc_error_handle error) {
     if (unused_bytes_size > 0) {
       grpc_slice slice = grpc_slice_from_copied_buffer(
           reinterpret_cast<const char*>(unused_bytes), unused_bytes_size);
-      args_->endpoint = grpc_secure_endpoint_create(
-          protector, zero_copy_protector, args_->endpoint, &slice, 1);
+      args_->endpoint =
+          grpc_secure_endpoint_create(protector, zero_copy_protector,
+                                      args_->endpoint, &slice, args_->args, 1);
       grpc_slice_unref_internal(slice);
     } else {
-      args_->endpoint = grpc_secure_endpoint_create(
-          protector, zero_copy_protector, args_->endpoint, nullptr, 0);
+      args_->endpoint =
+          grpc_secure_endpoint_create(protector, zero_copy_protector,
+                                      args_->endpoint, nullptr, args_->args, 0);
     }
   } else if (unused_bytes_size > 0) {
     // Not wrapping the endpoint, so just pass along unused bytes.
@@ -367,7 +369,7 @@ grpc_error_handle SecurityHandshaker::OnHandshakeNextDoneLocked(
             &on_handshake_data_received_from_peer_,
             &SecurityHandshaker::OnHandshakeDataReceivedFromPeerFnScheduler,
             this, grpc_schedule_on_exec_ctx),
-        /*urgent=*/true);
+        /*urgent=*/true, /*min_progress_size=*/1);
     return error;
   }
   if (result != TSI_OK) {
@@ -391,7 +393,7 @@ grpc_error_handle SecurityHandshaker::OnHandshakeNextDoneLocked(
             &on_handshake_data_sent_to_peer_,
             &SecurityHandshaker::OnHandshakeDataSentToPeerFnScheduler, this,
             grpc_schedule_on_exec_ctx),
-        nullptr);
+        nullptr, /*max_frame_size=*/INT_MAX);
   } else if (handshaker_result == nullptr) {
     // There is nothing to send, but need to read from peer.
     grpc_endpoint_read(
@@ -400,7 +402,7 @@ grpc_error_handle SecurityHandshaker::OnHandshakeNextDoneLocked(
             &on_handshake_data_received_from_peer_,
             &SecurityHandshaker::OnHandshakeDataReceivedFromPeerFnScheduler,
             this, grpc_schedule_on_exec_ctx),
-        /*urgent=*/true);
+        /*urgent=*/true, /*min_progress_size=*/1);
   } else {
     // Handshake has finished, check peer and so on.
     error = CheckPeerLocked();
@@ -506,7 +508,7 @@ void SecurityHandshaker::OnHandshakeDataSentToPeerFn(void* arg,
             &h->on_handshake_data_received_from_peer_,
             &SecurityHandshaker::OnHandshakeDataReceivedFromPeerFnScheduler,
             h.get(), grpc_schedule_on_exec_ctx),
-        /*urgent=*/true);
+        /*urgent=*/true, /*min_progress_size=*/1);
   } else {
     error = h->CheckPeerLocked();
     if (error != GRPC_ERROR_NONE) {

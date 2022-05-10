@@ -19,10 +19,16 @@
 
 #include <grpc/support/port_platform.h>
 
-#include "src/core/lib/channel/channel_stack.h"
+#include <grpc/impl/codegen/grpc_types.h>
+
 #include "src/core/lib/channel/channelz.h"
 #include "src/core/lib/gprpp/orphanable.h"
-#include "src/core/lib/iomgr/resolve_address.h"
+#include "src/core/lib/gprpp/ref_counted_ptr.h"
+#include "src/core/lib/gprpp/time.h"
+#include "src/core/lib/iomgr/closure.h"
+#include "src/core/lib/iomgr/error.h"
+#include "src/core/lib/iomgr/iomgr_fwd.h"
+#include "src/core/lib/iomgr/resolved_address.h"
 #include "src/core/lib/transport/transport.h"
 
 namespace grpc_core {
@@ -38,7 +44,7 @@ class SubchannelConnector : public InternallyRefCounted<SubchannelConnector> {
     // Set of pollsets interested in this connection.
     grpc_pollset_set* interested_parties;
     // Deadline for connection.
-    grpc_millis deadline;
+    Timestamp deadline;
     // Channel args to be passed to handshakers and transport.
     const grpc_channel_args* channel_args;
   };

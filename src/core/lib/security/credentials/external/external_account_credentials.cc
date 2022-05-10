@@ -13,6 +13,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 //
+
 #include <grpc/support/port_platform.h>
 
 #include "src/core/lib/security/credentials/external/external_account_credentials.h"
@@ -24,6 +25,8 @@
 #include "absl/strings/strip.h"
 #include "absl/time/clock.h"
 #include "absl/time/time.h"
+
+#include <grpc/support/string_util.h>
 
 #include "src/core/lib/http/httpcli_ssl_credentials.h"
 #include "src/core/lib/http/parser.h"
@@ -239,7 +242,7 @@ std::string ExternalAccountCredentials::debug_string() {
 void ExternalAccountCredentials::fetch_oauth2(
     grpc_credentials_metadata_request* metadata_req,
     grpc_polling_entity* pollent, grpc_iomgr_cb_func response_cb,
-    grpc_millis deadline) {
+    Timestamp deadline) {
   GPR_ASSERT(ctx_ == nullptr);
   ctx_ = new HTTPRequestContext(pollent, deadline);
   metadata_req_ = metadata_req;

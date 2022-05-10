@@ -61,9 +61,9 @@ class ServerConfigSelectorProvider
       std::unique_ptr<ServerConfigSelectorWatcher> watcher) = 0;
   virtual void CancelWatch() = 0;
 
+  static absl::string_view ChannelArgName();
+
   grpc_arg MakeChannelArg() const;
-  static RefCountedPtr<ServerConfigSelectorProvider> GetFromChannelArgs(
-      const grpc_channel_args& args);
 };
 
 }  // namespace grpc_core

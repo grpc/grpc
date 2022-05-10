@@ -51,8 +51,6 @@ ClientContext::ClientContext()
     : initial_metadata_received_(false),
       wait_for_ready_(false),
       wait_for_ready_explicitly_set_(false),
-      idempotent_(false),
-      cacheable_(false),
       call_(nullptr),
       call_canceled_(false),
       deadline_(gpr_inf_future(GPR_CLOCK_REALTIME)),

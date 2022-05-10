@@ -19,56 +19,56 @@ extern "C" {
 
 #include "upb/port_def.inc"
 
-extern upb_def_init xds_type_matcher_v3_matcher_proto_upbdefinit;
+extern _upb_DefPool_Init xds_type_matcher_v3_matcher_proto_upbdefinit;
 
-UPB_INLINE const upb_msgdef *xds_type_matcher_v3_Matcher_getmsgdef(upb_symtab *s) {
-  _upb_symtab_loaddefinit(s, &xds_type_matcher_v3_matcher_proto_upbdefinit);
-  return upb_symtab_lookupmsg(s, "xds.type.matcher.v3.Matcher");
+UPB_INLINE const upb_MessageDef *xds_type_matcher_v3_Matcher_getmsgdef(upb_DefPool *s) {
+  _upb_DefPool_LoadDefInit(s, &xds_type_matcher_v3_matcher_proto_upbdefinit);
+  return upb_DefPool_FindMessageByName(s, "xds.type.matcher.v3.Matcher");
 }
 
-UPB_INLINE const upb_msgdef *xds_type_matcher_v3_Matcher_OnMatch_getmsgdef(upb_symtab *s) {
-  _upb_symtab_loaddefinit(s, &xds_type_matcher_v3_matcher_proto_upbdefinit);
-  return upb_symtab_lookupmsg(s, "xds.type.matcher.v3.Matcher.OnMatch");
+UPB_INLINE const upb_MessageDef *xds_type_matcher_v3_Matcher_OnMatch_getmsgdef(upb_DefPool *s) {
+  _upb_DefPool_LoadDefInit(s, &xds_type_matcher_v3_matcher_proto_upbdefinit);
+  return upb_DefPool_FindMessageByName(s, "xds.type.matcher.v3.Matcher.OnMatch");
 }
 
-UPB_INLINE const upb_msgdef *xds_type_matcher_v3_Matcher_MatcherList_getmsgdef(upb_symtab *s) {
-  _upb_symtab_loaddefinit(s, &xds_type_matcher_v3_matcher_proto_upbdefinit);
-  return upb_symtab_lookupmsg(s, "xds.type.matcher.v3.Matcher.MatcherList");
+UPB_INLINE const upb_MessageDef *xds_type_matcher_v3_Matcher_MatcherList_getmsgdef(upb_DefPool *s) {
+  _upb_DefPool_LoadDefInit(s, &xds_type_matcher_v3_matcher_proto_upbdefinit);
+  return upb_DefPool_FindMessageByName(s, "xds.type.matcher.v3.Matcher.MatcherList");
 }
 
-UPB_INLINE const upb_msgdef *xds_type_matcher_v3_Matcher_MatcherList_Predicate_getmsgdef(upb_symtab *s) {
-  _upb_symtab_loaddefinit(s, &xds_type_matcher_v3_matcher_proto_upbdefinit);
-  return upb_symtab_lookupmsg(s, "xds.type.matcher.v3.Matcher.MatcherList.Predicate");
+UPB_INLINE const upb_MessageDef *xds_type_matcher_v3_Matcher_MatcherList_Predicate_getmsgdef(upb_DefPool *s) {
+  _upb_DefPool_LoadDefInit(s, &xds_type_matcher_v3_matcher_proto_upbdefinit);
+  return upb_DefPool_FindMessageByName(s, "xds.type.matcher.v3.Matcher.MatcherList.Predicate");
 }
 
-UPB_INLINE const upb_msgdef *xds_type_matcher_v3_Matcher_MatcherList_Predicate_SinglePredicate_getmsgdef(upb_symtab *s) {
-  _upb_symtab_loaddefinit(s, &xds_type_matcher_v3_matcher_proto_upbdefinit);
-  return upb_symtab_lookupmsg(s, "xds.type.matcher.v3.Matcher.MatcherList.Predicate.SinglePredicate");
+UPB_INLINE const upb_MessageDef *xds_type_matcher_v3_Matcher_MatcherList_Predicate_SinglePredicate_getmsgdef(upb_DefPool *s) {
+  _upb_DefPool_LoadDefInit(s, &xds_type_matcher_v3_matcher_proto_upbdefinit);
+  return upb_DefPool_FindMessageByName(s, "xds.type.matcher.v3.Matcher.MatcherList.Predicate.SinglePredicate");
 }
 
-UPB_INLINE const upb_msgdef *xds_type_matcher_v3_Matcher_MatcherList_Predicate_PredicateList_getmsgdef(upb_symtab *s) {
-  _upb_symtab_loaddefinit(s, &xds_type_matcher_v3_matcher_proto_upbdefinit);
-  return upb_symtab_lookupmsg(s, "xds.type.matcher.v3.Matcher.MatcherList.Predicate.PredicateList");
+UPB_INLINE const upb_MessageDef *xds_type_matcher_v3_Matcher_MatcherList_Predicate_PredicateList_getmsgdef(upb_DefPool *s) {
+  _upb_DefPool_LoadDefInit(s, &xds_type_matcher_v3_matcher_proto_upbdefinit);
+  return upb_DefPool_FindMessageByName(s, "xds.type.matcher.v3.Matcher.MatcherList.Predicate.PredicateList");
 }
 
-UPB_INLINE const upb_msgdef *xds_type_matcher_v3_Matcher_MatcherList_FieldMatcher_getmsgdef(upb_symtab *s) {
-  _upb_symtab_loaddefinit(s, &xds_type_matcher_v3_matcher_proto_upbdefinit);
-  return upb_symtab_lookupmsg(s, "xds.type.matcher.v3.Matcher.MatcherList.FieldMatcher");
+UPB_INLINE const upb_MessageDef *xds_type_matcher_v3_Matcher_MatcherList_FieldMatcher_getmsgdef(upb_DefPool *s) {
+  _upb_DefPool_LoadDefInit(s, &xds_type_matcher_v3_matcher_proto_upbdefinit);
+  return upb_DefPool_FindMessageByName(s, "xds.type.matcher.v3.Matcher.MatcherList.FieldMatcher");
 }
 
-UPB_INLINE const upb_msgdef *xds_type_matcher_v3_Matcher_MatcherTree_getmsgdef(upb_symtab *s) {
-  _upb_symtab_loaddefinit(s, &xds_type_matcher_v3_matcher_proto_upbdefinit);
-  return upb_symtab_lookupmsg(s, "xds.type.matcher.v3.Matcher.MatcherTree");
+UPB_INLINE const upb_MessageDef *xds_type_matcher_v3_Matcher_MatcherTree_getmsgdef(upb_DefPool *s) {
+  _upb_DefPool_LoadDefInit(s, &xds_type_matcher_v3_matcher_proto_upbdefinit);
+  return upb_DefPool_FindMessageByName(s, "xds.type.matcher.v3.Matcher.MatcherTree");
 }
 
-UPB_INLINE const upb_msgdef *xds_type_matcher_v3_Matcher_MatcherTree_MatchMap_getmsgdef(upb_symtab *s) {
-  _upb_symtab_loaddefinit(s, &xds_type_matcher_v3_matcher_proto_upbdefinit);
-  return upb_symtab_lookupmsg(s, "xds.type.matcher.v3.Matcher.MatcherTree.MatchMap");
+UPB_INLINE const upb_MessageDef *xds_type_matcher_v3_Matcher_MatcherTree_MatchMap_getmsgdef(upb_DefPool *s) {
+  _upb_DefPool_LoadDefInit(s, &xds_type_matcher_v3_matcher_proto_upbdefinit);
+  return upb_DefPool_FindMessageByName(s, "xds.type.matcher.v3.Matcher.MatcherTree.MatchMap");
 }
 
-UPB_INLINE const upb_msgdef *xds_type_matcher_v3_Matcher_MatcherTree_MatchMap_MapEntry_getmsgdef(upb_symtab *s) {
-  _upb_symtab_loaddefinit(s, &xds_type_matcher_v3_matcher_proto_upbdefinit);
-  return upb_symtab_lookupmsg(s, "xds.type.matcher.v3.Matcher.MatcherTree.MatchMap.MapEntry");
+UPB_INLINE const upb_MessageDef *xds_type_matcher_v3_Matcher_MatcherTree_MatchMap_MapEntry_getmsgdef(upb_DefPool *s) {
+  _upb_DefPool_LoadDefInit(s, &xds_type_matcher_v3_matcher_proto_upbdefinit);
+  return upb_DefPool_FindMessageByName(s, "xds.type.matcher.v3.Matcher.MatcherTree.MatchMap.MapEntry");
 }
 
 #ifdef __cplusplus

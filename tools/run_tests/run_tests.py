@@ -63,7 +63,7 @@ _FORCE_ENVIRON_FOR_WRAPPERS = {
 }
 
 _POLLING_STRATEGIES = {
-    'linux': ['epollex', 'epoll1', 'poll'],
+    'linux': ['epoll1', 'poll'],
     'mac': ['poll'],
 }
 
@@ -291,7 +291,7 @@ class CLanguage(object):
             if self.platform == 'linux':
                 # Allow all the known architectures. _check_arch_option has already checked that we're not doing
                 # something illegal when not running under docker.
-                _check_arch(self.args.arch, ['default', 'x64', 'x86'])
+                _check_arch(self.args.arch, ['default', 'x64', 'x86', 'arm64'])
             else:
                 _check_arch(self.args.arch, ['default'])
 
@@ -484,8 +484,8 @@ class CLanguage(object):
 
         if compiler == 'default' or compiler == 'cmake':
             return ('debian11', [])
-        elif compiler == 'gcc5':
-            return ('gcc_5', [])
+        elif compiler == 'gcc6':
+            return ('gcc_6', [])
         elif compiler == 'gcc10.2':
             return ('debian11', [])
         elif compiler == 'gcc10.2_openssl102':
@@ -496,8 +496,8 @@ class CLanguage(object):
             return ('gcc_11', [])
         elif compiler == 'gcc_musl':
             return ('alpine', [])
-        elif compiler == 'clang4':
-            return ('clang_4', self._clang_cmake_configure_extra_args())
+        elif compiler == 'clang6':
+            return ('clang_6', self._clang_cmake_configure_extra_args())
         elif compiler == 'clang13':
             return ('clang_13', self._clang_cmake_configure_extra_args())
         else:
@@ -774,6 +774,11 @@ class PythonLanguage(object):
                 # MacOS, so we restrict the number of interpreter versions
                 # tested.
                 return (python38_config,)
+            elif platform.machine() == 'aarch64':
+                # Currently the python_debian11_default_arm64 docker image
+                # only has python3.9 installed (and that seems sufficient
+                # for arm64 testing)
+                return (python39_config,)
             else:
                 return (
                     python36_config,
@@ -902,11 +907,11 @@ class CSharpLanguage(object):
 
         specs = []
         for test_runtime in self.test_runtimes:
-            if self.args.compiler == 'coreclr':
+            if test_runtime == 'coreclr':
                 assembly_extension = '.dll'
                 assembly_subdir = 'bin/%s/netcoreapp3.1' % msbuild_config
                 runtime_cmd = ['dotnet', 'exec']
-            else:
+            elif test_runtime == 'mono':
                 assembly_extension = '.exe'
                 assembly_subdir = 'bin/%s/net45' % msbuild_config
                 if self.platform == 'windows':
@@ -916,6 +921,8 @@ class CSharpLanguage(object):
                     runtime_cmd = ['mono', '--arch=64']
                 else:
                     runtime_cmd = ['mono']
+            else:
+                raise Exception('Illegal runtime "%s" was specified.')
 
             for assembly in six.iterkeys(tests_by_assembly):
                 assembly_file = 'src/csharp/%s/%s/%s%s' % (
@@ -1150,6 +1157,7 @@ class Sanity(object):
             if _is_use_docker_child():
                 environ['CLANG_FORMAT_SKIP_DOCKER'] = 'true'
                 environ['CLANG_TIDY_SKIP_DOCKER'] = 'true'
+                environ['IWYU_SKIP_DOCKER'] = 'true'
                 # sanity tests run tools/bazel wrapper concurrently
                 # and that can result in a download/run race in the wrapper.
                 # under docker we already have the right version of bazel
@@ -1234,12 +1242,15 @@ def _check_arch_option(arch):
         _windows_arch_option(arch)
     elif platform_string() == 'linux':
         # On linux, we need to be running under docker with the right architecture.
+        runtime_machine = platform.machine()
         runtime_arch = platform.architecture()[0]
         if arch == 'default':
             return
-        elif runtime_arch == '64bit' and arch == 'x64':
+        elif runtime_machine == 'x86_64' and runtime_arch == '64bit' and arch == 'x64':
             return
-        elif runtime_arch == '32bit' and arch == 'x86':
+        elif runtime_machine == 'x86_64' and runtime_arch == '32bit' and arch == 'x86':
+            return
+        elif runtime_machine == 'aarch64' and runtime_arch == '64bit' and arch == 'arm64':
             return
         else:
             print(
@@ -1259,6 +1270,8 @@ def _docker_arch_suffix(arch):
         return 'x64'
     elif arch == 'x86':
         return 'x86'
+    elif arch == 'arm64':
+        return 'arm64'
     else:
         print('Architecture %s not supported with current settings.' % arch)
         sys.exit(1)
@@ -1331,20 +1344,6 @@ def _calculate_num_runs_failures(list_of_results):
     return num_runs, num_failures
 
 
-def _has_epollexclusive():
-    binary = 'cmake/build/check_epollexclusive'
-    if not os.path.exists(binary):
-        return False
-    try:
-        subprocess.check_call(binary)
-        return True
-    except subprocess.CalledProcessError as e:
-        return False
-    except OSError as e:
-        # For languages other than C and Windows the binary won't exist
-        return False
-
-
 class BuildAndRunError(object):
     """Represents error type in _build_and_run."""
 
@@ -1373,12 +1372,6 @@ def _build_and_run(check_cancelled,
             report_utils.render_junit_xml_report(
                 resultset, xml_report, suite_name=args.report_suite_name)
         return []
-
-    if not args.travis and not _has_epollexclusive() and platform_string(
-    ) in _POLLING_STRATEGIES and 'epollex' in _POLLING_STRATEGIES[
-            platform_string()]:
-        print('\n\nOmitting EPOLLEXCLUSIVE tests\n\n')
-        _POLLING_STRATEGIES[platform_string()].remove('epollex')
 
     # start antagonists
     antagonists = [
@@ -1549,7 +1542,7 @@ argp.add_argument(
 )
 argp.add_argument(
     '--arch',
-    choices=['default', 'x86', 'x64'],
+    choices=['default', 'x86', 'x64', 'arm64'],
     default='default',
     help=
     'Selects architecture to target. For some platforms "default" is the only supported choice.'
@@ -1558,12 +1551,12 @@ argp.add_argument(
     '--compiler',
     choices=[
         'default',
-        'gcc5',
+        'gcc6',
         'gcc10.2',
         'gcc10.2_openssl102',
         'gcc11',
         'gcc_musl',
-        'clang4',
+        'clang6',
         'clang13',
         'python2.7',
         'python3.5',

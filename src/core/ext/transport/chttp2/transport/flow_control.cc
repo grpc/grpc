@@ -22,18 +22,22 @@
 
 #include <inttypes.h>
 #include <limits.h>
-#include <math.h>
-#include <string.h>
 
+#include <cmath>
 #include <string>
 
 #include "absl/strings/str_format.h"
 
+#include <grpc/slice.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 
+#include "src/core/ext/transport/chttp2/transport/frame.h"
 #include "src/core/ext/transport/chttp2/transport/internal.h"
 #include "src/core/lib/gpr/string.h"
+#include "src/core/lib/gpr/useful.h"
+#include "src/core/lib/iomgr/exec_ctx.h"
+#include "src/core/lib/resource_quota/memory_quota.h"
 
 grpc_core::TraceFlag grpc_flowctl_trace(false, "flowctl");
 
@@ -348,9 +352,9 @@ double TransportFlowControl::TargetLogBdp() {
 }
 
 double TransportFlowControl::SmoothLogBdp(double value) {
-  grpc_millis now = ExecCtx::Get()->Now();
+  Timestamp now = ExecCtx::Get()->Now();
   double bdp_error = value - pid_controller_.last_control_value();
-  const double dt = static_cast<double>(now - last_pid_update_) * 1e-3;
+  const double dt = (now - last_pid_update_).seconds();
   last_pid_update_ = now;
   // Limit dt to 100ms
   const double kMaxDt = 0.1;

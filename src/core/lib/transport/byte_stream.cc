@@ -20,13 +20,17 @@
 
 #include "src/core/lib/transport/byte_stream.h"
 
-#include <stdlib.h>
-#include <string.h>
+#include <memory>
+#include <type_traits>
+#include <utility>
 
+#include "absl/types/variant.h"
+
+#include <grpc/slice_buffer.h>
 #include <grpc/support/log.h>
 
-#include "src/core/lib/gprpp/memory.h"
 #include "src/core/lib/slice/slice_internal.h"
+#include "src/core/lib/slice/slice_refcount.h"
 
 namespace grpc_core {
 

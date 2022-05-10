@@ -16,9 +16,11 @@
 
 #include "src/core/lib/promise/sleep.h"
 
+#include "src/core/lib/iomgr/exec_ctx.h"
+
 namespace grpc_core {
 
-Sleep::Sleep(grpc_millis deadline) : state_(new State(deadline)) {
+Sleep::Sleep(Timestamp deadline) : state_(new State(deadline)) {
   GRPC_CLOSURE_INIT(&state_->on_timer, &OnTimer, state_, nullptr);
 }
 

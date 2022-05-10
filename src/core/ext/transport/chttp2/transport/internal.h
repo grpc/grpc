@@ -21,8 +21,17 @@
 
 #include <grpc/support/port_platform.h>
 
-#include <assert.h>
-#include <stdbool.h>
+#include <stddef.h>
+#include <stdint.h>
+
+#include <string>
+
+#include "absl/status/statusor.h"
+#include "absl/strings/string_view.h"
+
+#include <grpc/event_engine/memory_allocator.h>
+#include <grpc/impl/codegen/grpc_types.h>
+#include <grpc/slice.h>
 
 #include "src/core/ext/transport/chttp2/transport/flow_control.h"
 #include "src/core/ext/transport/chttp2/transport/frame.h"
@@ -34,15 +43,31 @@
 #include "src/core/ext/transport/chttp2/transport/frame_window_update.h"
 #include "src/core/ext/transport/chttp2/transport/hpack_encoder.h"
 #include "src/core/ext/transport/chttp2/transport/hpack_parser.h"
+#include "src/core/ext/transport/chttp2/transport/http2_settings.h"
 #include "src/core/ext/transport/chttp2/transport/stream_map.h"
 #include "src/core/lib/channel/channelz.h"
+#include "src/core/lib/debug/trace.h"
+#include "src/core/lib/gprpp/bitset.h"
+#include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/manual_constructor.h"
+#include "src/core/lib/gprpp/orphanable.h"
+#include "src/core/lib/gprpp/ref_counted.h"
+#include "src/core/lib/gprpp/ref_counted_ptr.h"
+#include "src/core/lib/gprpp/time.h"
+#include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/combiner.h"
 #include "src/core/lib/iomgr/endpoint.h"
+#include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/timer.h"
+#include "src/core/lib/promise/activity.h"
+#include "src/core/lib/promise/poll.h"
+#include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/resource_quota/memory_quota.h"
+#include "src/core/lib/slice/slice.h"
+#include "src/core/lib/transport/byte_stream.h"
 #include "src/core/lib/transport/connectivity_state.h"
 #include "src/core/lib/transport/metadata_batch.h"
+#include "src/core/lib/transport/transport.h"
 #include "src/core/lib/transport/transport_impl.h"
 
 namespace grpc_core {
@@ -98,6 +123,7 @@ typedef enum {
   GRPC_CHTTP2_INITIATE_WRITE_STREAM_FLOW_CONTROL,
   GRPC_CHTTP2_INITIATE_WRITE_TRANSPORT_FLOW_CONTROL,
   GRPC_CHTTP2_INITIATE_WRITE_SEND_SETTINGS,
+  GRPC_CHTTP2_INITIATE_WRITE_SETTINGS_ACK,
   GRPC_CHTTP2_INITIATE_WRITE_FLOW_CONTROL_UNSTALLED_BY_SETTING,
   GRPC_CHTTP2_INITIATE_WRITE_FLOW_CONTROL_UNSTALLED_BY_UPDATE,
   GRPC_CHTTP2_INITIATE_WRITE_APPLICATION_PING,
@@ -118,16 +144,16 @@ struct grpc_chttp2_ping_queue {
 struct grpc_chttp2_repeated_ping_policy {
   int max_pings_without_data;
   int max_ping_strikes;
-  grpc_millis min_recv_ping_interval_without_data;
+  grpc_core::Duration min_recv_ping_interval_without_data;
 };
 struct grpc_chttp2_repeated_ping_state {
-  grpc_millis last_ping_sent_time;
+  grpc_core::Timestamp last_ping_sent_time;
   int pings_before_data_required;
   grpc_timer delayed_ping_timer;
   bool is_delayed_ping_timer_set;
 };
 struct grpc_chttp2_server_ping_recv_state {
-  grpc_millis last_ping_recv_time;
+  grpc_core::Timestamp last_ping_recv_time;
   int ping_strikes;
 };
 /* deframer state for the overall http2 stream of bytes */
@@ -196,8 +222,9 @@ typedef enum {
 
 typedef enum {
   GRPC_CHTTP2_NO_GOAWAY_SEND,
-  GRPC_CHTTP2_GOAWAY_SEND_SCHEDULED,
-  GRPC_CHTTP2_GOAWAY_SENT,
+  GRPC_CHTTP2_GRACEFUL_GOAWAY,
+  GRPC_CHTTP2_FINAL_GOAWAY_SEND_SCHEDULED,
+  GRPC_CHTTP2_FINAL_GOAWAY_SENT,
 } grpc_chttp2_sent_goaway_state;
 
 typedef struct grpc_chttp2_write_cb {
@@ -475,9 +502,9 @@ struct grpc_chttp2_transport {
   /** watchdog to kill the transport when waiting for the keepalive ping */
   grpc_timer keepalive_watchdog_timer;
   /** time duration in between pings */
-  grpc_millis keepalive_time;
+  grpc_core::Duration keepalive_time;
   /** grace period for a ping to complete before watchdog kicks in */
-  grpc_millis keepalive_timeout;
+  grpc_core::Duration keepalive_timeout;
   /** if keepalive pings are allowed when there's no outstanding streams */
   bool keepalive_permit_without_calls = false;
   /** If start_keepalive_ping_locked has been called */
@@ -522,7 +549,7 @@ struct grpc_chttp2_stream {
   grpc_closure* destroy_stream_arg;
 
   grpc_chttp2_stream_link links[STREAM_LIST_COUNT];
-  uint8_t included[STREAM_LIST_COUNT] = {};
+  grpc_core::BitSet<STREAM_LIST_COUNT> included;
 
   /** HTTP2 stream id for this stream, or zero if one has not been assigned */
   uint32_t id = 0;
@@ -610,7 +637,7 @@ struct grpc_chttp2_stream {
       GRPC_ERROR_NONE;              /* protected by t combiner */
   bool received_last_frame = false; /* protected by t combiner */
 
-  grpc_millis deadline = GRPC_MILLIS_INF_FUTURE;
+  grpc_core::Timestamp deadline = grpc_core::Timestamp::InfFuture();
 
   /** saw some stream level error */
   grpc_error_handle forced_close_error = GRPC_ERROR_NONE;

@@ -25,6 +25,7 @@
 #include <grpc/support/log.h>
 #include <grpc/support/time.h>
 
+#include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/channel/channel_stack_builder.h"
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/surface/channel_init.h"
@@ -62,11 +63,12 @@ static void drain_cq(grpc_completion_queue* cq) {
 
 static void shutdown_server(grpc_end2end_test_fixture* f) {
   if (!f->server) return;
-  grpc_server_shutdown_and_notify(f->server, f->shutdown_cq, tag(1000));
-  GPR_ASSERT(grpc_completion_queue_pluck(f->shutdown_cq, tag(1000),
-                                         grpc_timeout_seconds_to_deadline(5),
-                                         nullptr)
-                 .type == GRPC_OP_COMPLETE);
+  grpc_server_shutdown_and_notify(f->server, f->cq, tag(1000));
+  grpc_event ev;
+  do {
+    ev = grpc_completion_queue_next(f->cq, grpc_timeout_seconds_to_deadline(5),
+                                    nullptr);
+  } while (ev.type != GRPC_OP_COMPLETE || ev.tag != tag(1000));
   grpc_server_destroy(f->server);
   f->server = nullptr;
 }
@@ -84,7 +86,6 @@ static void end_test(grpc_end2end_test_fixture* f) {
   grpc_completion_queue_shutdown(f->cq);
   drain_cq(f->cq);
   grpc_completion_queue_destroy(f->cq);
-  grpc_completion_queue_destroy(f->shutdown_cq);
 }
 
 /* Simple request via a server filter that always closes the stream.*/
@@ -243,6 +244,7 @@ static const grpc_channel_filter test_filter = {
     destroy_call_elem,
     sizeof(channel_data),
     init_channel_elem,
+    grpc_channel_stack_no_post_init,
     destroy_channel_elem,
     grpc_channel_next_get_info,
     "filter_causes_close"};
@@ -258,7 +260,7 @@ void filter_causes_close(grpc_end2end_test_config config) {
         builder->channel_init()->RegisterStage(
             GRPC_SERVER_CHANNEL, 0,
             [](grpc_core::ChannelStackBuilder* builder) {
-              builder->PrependFilter(&test_filter, nullptr);
+              builder->PrependFilter(&test_filter);
               return true;
             });
       },

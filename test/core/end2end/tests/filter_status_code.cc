@@ -82,11 +82,12 @@ static void drain_cq(grpc_completion_queue* cq) {
 
 static void shutdown_server(grpc_end2end_test_fixture* f) {
   if (!f->server) return;
-  grpc_server_shutdown_and_notify(f->server, f->shutdown_cq, tag(1000));
-  GPR_ASSERT(grpc_completion_queue_pluck(f->shutdown_cq, tag(1000),
-                                         grpc_timeout_seconds_to_deadline(5),
-                                         nullptr)
-                 .type == GRPC_OP_COMPLETE);
+  grpc_server_shutdown_and_notify(f->server, f->cq, tag(1000));
+  grpc_event ev;
+  do {
+    ev = grpc_completion_queue_next(f->cq, grpc_timeout_seconds_to_deadline(5),
+                                    nullptr);
+  } while (ev.type != GRPC_OP_COMPLETE || ev.tag != tag(1000));
   grpc_server_destroy(f->server);
   f->server = nullptr;
 }
@@ -104,7 +105,6 @@ static void end_test(grpc_end2end_test_fixture* f) {
   grpc_completion_queue_shutdown(f->cq);
   drain_cq(f->cq);
   grpc_completion_queue_destroy(f->cq);
-  grpc_completion_queue_destroy(f->shutdown_cq);
 }
 
 // Simple request via a server filter that saves the reported status code.
@@ -331,6 +331,7 @@ static const grpc_channel_filter test_client_filter = {
     client_destroy_call_elem,
     0,
     init_channel_elem,
+    grpc_channel_stack_no_post_init,
     destroy_channel_elem,
     grpc_channel_next_get_info,
     "client_filter_status_code"};
@@ -345,6 +346,7 @@ static const grpc_channel_filter test_server_filter = {
     server_destroy_call_elem,
     0,
     init_channel_elem,
+    grpc_channel_stack_no_post_init,
     destroy_channel_elem,
     grpc_channel_next_get_info,
     "server_filter_status_code"};
@@ -368,7 +370,7 @@ void filter_status_code(grpc_end2end_test_config config) {
                 // So we add it right before the last one.
                 auto it = builder->mutable_stack()->end();
                 --it;
-                builder->mutable_stack()->insert(it, {filter, nullptr});
+                builder->mutable_stack()->insert(it, filter);
                 return true;
               });
         };

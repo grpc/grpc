@@ -19,37 +19,57 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <stddef.h>
+
+#include <atomic>
 #include <map>
 #include <memory>
 #include <set>
 #include <string>
+#include <utility>
 
+#include "absl/base/thread_annotations.h"
 #include "absl/status/status.h"
 #include "absl/types/optional.h"
 
-#include <grpc/support/log.h>
+#include <grpc/impl/codegen/connectivity_state.h>
+#include <grpc/impl/codegen/grpc_types.h>
+#include <grpc/support/atm.h>
 
 #include "src/core/ext/filters/client_channel/client_channel_factory.h"
 #include "src/core/ext/filters/client_channel/config_selector.h"
 #include "src/core/ext/filters/client_channel/dynamic_filters.h"
 #include "src/core/ext/filters/client_channel/lb_policy.h"
-#include "src/core/ext/filters/client_channel/resolver_result_parsing.h"
-#include "src/core/ext/filters/client_channel/retry_throttle.h"
 #include "src/core/ext/filters/client_channel/subchannel.h"
 #include "src/core/ext/filters/client_channel/subchannel_pool_interface.h"
 #include "src/core/lib/channel/call_tracer.h"
+#include "src/core/lib/channel/channel_stack.h"
+#include "src/core/lib/channel/channel_stack_builder.h"
+#include "src/core/lib/channel/channelz.h"
 #include "src/core/lib/channel/context.h"
+#include "src/core/lib/gpr/time_precise.h"
+#include "src/core/lib/gprpp/orphanable.h"
+#include "src/core/lib/gprpp/ref_counted.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/gprpp/sync.h"
+#include "src/core/lib/gprpp/time.h"
+#include "src/core/lib/iomgr/call_combiner.h"
+#include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/error.h"
+#include "src/core/lib/iomgr/iomgr_fwd.h"
 #include "src/core/lib/iomgr/polling_entity.h"
 #include "src/core/lib/iomgr/work_serializer.h"
 #include "src/core/lib/resolver/resolver.h"
+#include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/service_config/service_config.h"
 #include "src/core/lib/service_config/service_config_call_data.h"
 #include "src/core/lib/service_config/service_config_parser.h"
+#include "src/core/lib/slice/slice.h"
 #include "src/core/lib/surface/channel.h"
+#include "src/core/lib/transport/byte_stream.h"
 #include "src/core/lib/transport/connectivity_state.h"
+#include "src/core/lib/transport/metadata_batch.h"
+#include "src/core/lib/transport/transport.h"
 
 //
 // Client channel filter
@@ -91,7 +111,7 @@ class ClientChannel {
 
   // Returns the ClientChannel object from channel, or null if channel
   // is not a client channel.
-  static ClientChannel* GetFromChannel(grpc_channel* channel);
+  static ClientChannel* GetFromChannel(Channel* channel);
 
   grpc_connectivity_state CheckConnectivityState(bool try_to_connect);
 
@@ -433,6 +453,8 @@ class ClientChannel::LoadBalancedCall
   static void RecvMessageReady(void* arg, grpc_error_handle error);
   static void RecvTrailingMetadataReady(void* arg, grpc_error_handle error);
 
+  void RecordCallCompletion(absl::Status status);
+
   void CreateSubchannelCall();
   // Invoked when a pick is completed, on both success or failure.
   static void PickDone(void* arg, grpc_error_handle error);
@@ -449,7 +471,7 @@ class ClientChannel::LoadBalancedCall
   // that uses any one of them, we should store them in the call
   // context.  This will save per-call memory overhead.
   Slice path_;  // Request path.
-  grpc_millis deadline_;
+  Timestamp deadline_;
   Arena* arena_;
   grpc_call_stack* owning_call_;
   CallCombiner* call_combiner_;

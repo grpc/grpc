@@ -28,13 +28,13 @@ extern const char* kXdsHttpRbacFilterConfigOverrideName;
 
 class XdsHttpRbacFilter : public XdsHttpFilterImpl {
  public:
-  void PopulateSymtab(upb_symtab* symtab) const override;
+  void PopulateSymtab(upb_DefPool* symtab) const override;
 
   absl::StatusOr<FilterConfig> GenerateFilterConfig(
-      upb_strview serialized_filter_config, upb_arena* arena) const override;
+      upb_StringView serialized_filter_config, upb_Arena* arena) const override;
 
   absl::StatusOr<FilterConfig> GenerateFilterConfigOverride(
-      upb_strview serialized_filter_config, upb_arena* arena) const override;
+      upb_StringView serialized_filter_config, upb_Arena* arena) const override;
 
   const grpc_channel_filter* channel_filter() const override;
 
