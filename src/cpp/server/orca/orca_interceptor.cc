@@ -30,10 +30,12 @@ void grpc::experimental::OrcaServerInterceptor::Intercept(
     if (trailers != nullptr) {
       auto context = info_->server_context();
       auto recorder = context->call_metric_recorder_.get();
-      auto serialized = recorder->CreateSerializedReport();
-      std::string key =
-          std::string(grpc_core::XEndpointLoadMetricsBinMetadata::key());
-      trailers->emplace(std::make_pair(std::move(key), std::move(serialized)));
+      if (recorder) {
+        auto serialized = recorder->CreateSerializedReport();
+        std::string key =
+            std::string(grpc_core::XEndpointLoadMetricsBinMetadata::key());
+        trailers->emplace(std::make_pair(std::move(key), std::move(serialized)));
+      }
     }
   }
   methods->Proceed();
@@ -42,10 +44,7 @@ void grpc::experimental::OrcaServerInterceptor::Intercept(
 grpc::experimental::Interceptor*
 grpc::experimental::OrcaServerInterceptorFactory::CreateServerInterceptor(
     ServerRpcInfo* info) {
-  auto context = info->server_context();
-  auto recorder = context->call_metric_recorder_.get();
-  if (recorder != nullptr) return new OrcaServerInterceptor(info);
-  return nullptr;
+  return new OrcaServerInterceptor(info);
 }
 
 void grpc::experimental::OrcaServerInterceptorFactory::Register(
