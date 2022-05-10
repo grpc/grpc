@@ -40,6 +40,7 @@
 #include <grpcpp/ext/orca_service.h>
 #include <grpcpp/health_check_service_interface.h>
 #include <grpcpp/impl/codegen/sync.h>
+#include <grpcpp/orca_load_reporter.h>
 #include <grpcpp/server.h>
 #include <grpcpp/server_builder.h>
 
@@ -374,6 +375,7 @@ class ClientLbEnd2endTest : public ::testing::Test {
       std::ostringstream server_address;
       server_address << server_host << ":" << port_;
       ServerBuilder builder;
+      RegisterCallMetricLoadReporter(&builder);
       std::shared_ptr<ServerCredentials> creds(new SecureServerCredentials(
           grpc_fake_transport_security_server_credentials_create()));
       builder.AddListeningPort(server_address.str(), std::move(creds));

@@ -17,6 +17,8 @@
 #include "src/cpp/server/orca/orca_interceptor.h"
 
 #include <grpcpp/impl/codegen/call_metric_recorder.h>
+#include <grpcpp/orca_load_reporter.h>
+#include <grpcpp/server_builder.h>
 
 void grpc::experimental::OrcaServerInterceptor::Intercept(
     InterceptorBatchMethods* methods) {
@@ -42,4 +44,14 @@ grpc::experimental::OrcaServerInterceptorFactory::CreateServerInterceptor(
   auto recorder = context->call_metric_recorder_.get();
   if (recorder != nullptr) return new OrcaServerInterceptor(info);
   return nullptr;
+}
+
+void grpc::experimental::OrcaServerInterceptorFactory::Register(
+    grpc::ServerBuilder* builder) {
+  builder->internal_interceptor_creators_.push_back(
+      absl::make_unique<OrcaServerInterceptorFactory>());
+}
+
+void grpc::RegisterCallMetricLoadReporter(grpc::ServerBuilder* builder) {
+  grpc::experimental::OrcaServerInterceptorFactory::Register(builder);
 }

@@ -292,7 +292,7 @@ class ServerContextBase {
   /// Get the \a CallMetricRecorder object for the current RPC.
   /// Use it to record metrics during your RPC to send back to the
   /// client in order to make load balancing decisions.
-  CallMetricRecorder* GetCallMetricRecorder();
+  CallMetricRecorder& GetCallMetricRecorder();
 
  protected:
   /// Async only. Has to be called before the rpc starts.

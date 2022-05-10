@@ -38,6 +38,7 @@ class OrcaServerInterceptor : public Interceptor {
 
 class OrcaServerInterceptorFactory : public ServerInterceptorFactoryInterface {
  public:
+  static void Register(ServerBuilder* builder);
   Interceptor* CreateServerInterceptor(ServerRpcInfo* info) override;
 };
 
