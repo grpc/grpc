@@ -361,9 +361,11 @@
       'type': 'static_library',
       'dependencies': [
         'absl/container:flat_hash_map',
+        'absl/container:flat_hash_set',
         'absl/container:inlined_vector',
         'absl/functional:bind_front',
         'absl/hash:hash',
+        'absl/meta:type_traits',
         'absl/status:statusor',
         'absl/types:span',
         'absl/types:variant',
@@ -1112,9 +1114,11 @@
       'type': 'static_library',
       'dependencies': [
         'absl/container:flat_hash_map',
+        'absl/container:flat_hash_set',
         'absl/container:inlined_vector',
         'absl/functional:bind_front',
         'absl/hash:hash',
+        'absl/meta:type_traits',
         'absl/status:statusor',
         'absl/types:span',
         'absl/types:variant',

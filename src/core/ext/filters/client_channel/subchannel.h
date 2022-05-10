@@ -19,22 +19,45 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <stddef.h>
+
 #include <deque>
+#include <map>
+#include <string>
+
+#include "absl/base/thread_annotations.h"
+#include "absl/status/status.h"
+#include "absl/types/optional.h"
+
+#include <grpc/impl/codegen/connectivity_state.h>
+#include <grpc/impl/codegen/grpc_types.h>
 
 #include "src/core/ext/filters/client_channel/client_channel_channelz.h"
 #include "src/core/ext/filters/client_channel/connector.h"
 #include "src/core/ext/filters/client_channel/subchannel_pool_interface.h"
 #include "src/core/lib/backoff/backoff.h"
 #include "src/core/lib/channel/channel_stack.h"
+#include "src/core/lib/channel/context.h"
 #include "src/core/lib/gpr/time_precise.h"
+#include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/dual_ref_counted.h"
+#include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/gprpp/ref_counted.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/gprpp/sync.h"
+#include "src/core/lib/gprpp/time.h"
+#include "src/core/lib/iomgr/call_combiner.h"
+#include "src/core/lib/iomgr/closure.h"
+#include "src/core/lib/iomgr/error.h"
+#include "src/core/lib/iomgr/iomgr_fwd.h"
 #include "src/core/lib/iomgr/polling_entity.h"
+#include "src/core/lib/iomgr/resolved_address.h"
 #include "src/core/lib/iomgr/timer.h"
 #include "src/core/lib/resource_quota/arena.h"
+#include "src/core/lib/slice/slice.h"
 #include "src/core/lib/transport/connectivity_state.h"
+#include "src/core/lib/transport/metadata_batch.h"
+#include "src/core/lib/transport/transport.h"
 
 namespace grpc_core {
 
@@ -335,7 +358,6 @@ class Subchannel : public DualRefCounted<Subchannel> {
   };
 
   class ConnectedSubchannelStateWatcher;
-
   class AsyncWatcherNotifierLocked;
 
   // Sets the subchannel's connectivity state to \a state.

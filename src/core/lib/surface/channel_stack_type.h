@@ -21,8 +21,6 @@
 
 #include <grpc/support/port_platform.h>
 
-#include <stdbool.h>
-
 typedef enum {
   // normal top-half client channel with load-balancing, connection management
   GRPC_CLIENT_CHANNEL,

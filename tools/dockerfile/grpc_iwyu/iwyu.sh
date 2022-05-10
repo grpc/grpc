@@ -40,6 +40,7 @@ sed -i 's,^#!/usr/bin/env python,#!/usr/bin/env python3,g' ${IWYU_ROOT}/iwyu/fix
 cat compile_commands.json | sed "s,\"file\": \",\"file\": \"${IWYU_ROOT}/,g" > compile_commands_for_iwyu.json
 
 export ENABLED_MODULES='
+  src/core/ext/filters/client_channel
   src/core/ext/transport/chttp2
   src/core/lib/avl
   src/core/lib/channel
@@ -49,6 +50,7 @@ export ENABLED_MODULES='
   src/core/lib/slice
   src/core/lib/resource_quota
   src/core/lib/promise
+  src/core/lib/surface
   src/core/lib/transport
   src/core/lib/uri
 '
@@ -63,7 +65,7 @@ cat compile_commands.json | jq -r '.[].file' \
   > iwyu_files.txt
 
 echo '#!/bin/sh
-${IWYU_ROOT}/iwyu/iwyu_tool.py -p compile_commands_for_iwyu.json $1 -- -Xiwyu --no_fwd_decls -Xiwyu --update_comments \
+${IWYU_ROOT}/iwyu/iwyu_tool.py -p compile_commands_for_iwyu.json $1 -- -Xiwyu --no_fwd_decls \
   | grep -v -E "port_platform.h" \
   | grep -v -E "^(- )?namespace " \
   > iwyu/iwyu.`echo $1 | sha1sum`.out
@@ -76,12 +78,4 @@ xargs -n 1 -P $CPU_COUNT -a iwyu_files.txt ${IWYU_ROOT}/iwyu/run_iwyu_on.sh
 cat iwyu/iwyu.*.out > iwyu.out
 
 # apply the suggested changes
-${IWYU_ROOT}/iwyu/fix_includes.py --nocomments --nosafe_headers < iwyu.out || true
-
-# reformat sources, since iwyu gets this wrong
-xargs -a iwyu_files.txt ${CLANG_FORMAT:-clang-format} -i
-
-# TODO(ctiller): expand this to match the clang-tidy directories:
-#  | grep -E "(^include/|^src/core/|^src/cpp/|^test/core/|^test/cpp/)"
-
-git diff --exit-code > /dev/null
+${IWYU_ROOT}/iwyu/fix_includes.py --nocomments --nosafe_headers < iwyu.out
