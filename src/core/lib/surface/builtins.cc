@@ -41,7 +41,7 @@ void RegisterBuiltins(CoreConfiguration::Builder* builder) {
   builder->channel_init()->RegisterStage(
       GRPC_CLIENT_LAME_CHANNEL, GRPC_CHANNEL_INIT_BUILTIN_PRIORITY,
       [](ChannelStackBuilder* builder) {
-        builder->AppendFilter(&grpc_lame_filter);
+        builder->AppendFilter(&LameClientFilter::kFilter);
         return true;
       });
   builder->channel_init()->RegisterStage(

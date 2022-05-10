@@ -78,12 +78,4 @@ xargs -n 1 -P $CPU_COUNT -a iwyu_files.txt ${IWYU_ROOT}/iwyu/run_iwyu_on.sh
 cat iwyu/iwyu.*.out > iwyu.out
 
 # apply the suggested changes
-${IWYU_ROOT}/iwyu/fix_includes.py --nocomments --nosafe_headers < iwyu.out || true
-
-# reformat sources, since iwyu gets this wrong
-xargs -a iwyu_files.txt ${CLANG_FORMAT:-clang-format} -i
-
-# TODO(ctiller): expand this to match the clang-tidy directories:
-#  | grep -E "(^include/|^src/core/|^src/cpp/|^test/core/|^test/cpp/)"
-
-git diff --exit-code > /dev/null
+${IWYU_ROOT}/iwyu/fix_includes.py --nocomments --nosafe_headers < iwyu.out
