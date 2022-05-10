@@ -19,6 +19,7 @@
 #include <grpc/support/port_platform.h>
 
 #include <grpc/slice.h>
+#include <grpc/support/log.h>
 
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/slice/slice_refcount.h"
