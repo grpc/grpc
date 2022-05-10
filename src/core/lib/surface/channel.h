@@ -21,14 +21,37 @@
 
 #include <grpc/support/port_platform.h>
 
-#include <map>
+#include <stddef.h>
+#include <stdint.h>
 
-#include "src/core/lib/channel/channel_stack.h"
+#include <atomic>
+#include <map>
+#include <string>
+#include <utility>
+
+#include "absl/base/thread_annotations.h"
+#include "absl/status/statusor.h"
+#include "absl/strings/string_view.h"
+#include "absl/types/optional.h"
+
+#include <grpc/event_engine/memory_allocator.h>
+#include <grpc/impl/codegen/compression_types.h>
+#include <grpc/impl/codegen/grpc_types.h>
+#include <grpc/slice.h>
+
+#include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/channel/channel_stack.h"  // IWYU pragma: keep
 #include "src/core/lib/channel/channel_stack_builder.h"
 #include "src/core/lib/channel/channelz.h"
 #include "src/core/lib/gprpp/cpp_impl_of.h"
-#include "src/core/lib/gprpp/manual_constructor.h"
+#include "src/core/lib/gprpp/debug_location.h"
+#include "src/core/lib/gprpp/ref_counted.h"
+#include "src/core/lib/gprpp/ref_counted_ptr.h"
+#include "src/core/lib/gprpp/sync.h"
+#include "src/core/lib/gprpp/time.h"
+#include "src/core/lib/iomgr/iomgr_fwd.h"
 #include "src/core/lib/resource_quota/memory_quota.h"
+#include "src/core/lib/slice/slice.h"
 #include "src/core/lib/surface/channel_stack_type.h"
 
 /** The same as grpc_channel_destroy, but doesn't create an ExecCtx, and so

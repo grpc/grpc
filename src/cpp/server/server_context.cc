@@ -377,11 +377,11 @@ void ServerContextBase::SetLoadReportingCosts(
   }
 }
 
-grpc::CallMetricRecorder* ServerContextBase::GetCallMetricRecorder() {
+grpc::CallMetricRecorder& ServerContextBase::GetCallMetricRecorder() {
   if (!call_metric_recorder_) {
     call_metric_recorder_ = absl::make_unique<CallMetricRecorder>();
   }
-  return call_metric_recorder_.get();
+  return *call_metric_recorder_.get();
 }
 
 }  // namespace grpc

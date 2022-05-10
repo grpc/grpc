@@ -59,6 +59,7 @@ class ExternalConnectionAcceptorImpl;
 class CallbackGenericService;
 
 namespace experimental {
+class OrcaServerInterceptorFactory;
 // EXPERIMENTAL API:
 // Interface for a grpc server to build transports with connections created out
 // of band.
@@ -352,6 +353,7 @@ class ServerBuilder {
 
  private:
   friend class grpc::testing::ServerBuilderPluginTest;
+  friend class grpc::experimental::OrcaServerInterceptorFactory;
 
   struct SyncServerSettings {
     SyncServerSettings()

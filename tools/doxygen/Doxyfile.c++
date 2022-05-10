@@ -940,6 +940,7 @@ include/grpc/support/thd_id.h \
 include/grpc/support/time.h \
 include/grpc/support/workaround_list.h \
 include/grpcpp/alarm.h \
+include/grpcpp/call_metric_recorder.h \
 include/grpcpp/channel.h \
 include/grpcpp/client_context.h \
 include/grpcpp/completion_queue.h \

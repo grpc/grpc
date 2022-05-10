@@ -19,6 +19,12 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <memory>
+#include <string>
+#include <utility>
+
+#include "absl/memory/memory.h"
+
 #include "src/core/ext/xds/xds_client_stats.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/resolver/server_address.h"

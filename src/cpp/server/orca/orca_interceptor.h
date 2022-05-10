@@ -17,13 +17,14 @@
 #ifndef GRPC_INTERNAL_CPP_ORCA_ORCA_INTERCEPTOR_H
 #define GRPC_INTERNAL_CPP_ORCA_ORCA_INTERCEPTOR_H
 
-#include <grpcpp/server_builder.h>
-#include <grpcpp/support/slice.h>
-
-#include "src/core/ext/filters/client_channel/lb_policy.h"
-#include "src/core/lib/transport/metadata_batch.h"
+#include <grpcpp/impl/codegen/interceptor.h>
+#include <grpcpp/impl/codegen/server_interceptor.h>
 
 namespace grpc {
+
+class ServerBuilder;
+class ServerRpcInfo;
+
 namespace experimental {
 
 class OrcaServerInterceptor : public Interceptor {
@@ -38,6 +39,7 @@ class OrcaServerInterceptor : public Interceptor {
 
 class OrcaServerInterceptorFactory : public ServerInterceptorFactoryInterface {
  public:
+  static void Register(ServerBuilder* builder);
   Interceptor* CreateServerInterceptor(ServerRpcInfo* info) override;
 };
 
