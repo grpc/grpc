@@ -16,8 +16,8 @@
 
 #include "src/cpp/server/orca/orca_interceptor.h"
 
-#include <grpcpp/impl/codegen/call_metric_recorder.h>
 #include <grpcpp/ext/orca_load_reporter.h>
+#include <grpcpp/impl/codegen/call_metric_recorder.h>
 #include <grpcpp/server_builder.h>
 
 #include "src/core/lib/transport/metadata_batch.h"
@@ -31,7 +31,8 @@ void grpc::experimental::OrcaServerInterceptor::Intercept(
       auto context = info_->server_context();
       auto recorder = context->call_metric_recorder_.get();
       auto serialized = recorder->CreateSerializedReport();
-      std::string key = std::string(grpc_core::XEndpointLoadMetricsBinMetadata::key());
+      std::string key =
+          std::string(grpc_core::XEndpointLoadMetricsBinMetadata::key());
       trailers->emplace(std::make_pair(std::move(key), std::move(serialized)));
     }
   }
