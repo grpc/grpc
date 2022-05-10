@@ -48,5 +48,12 @@ EventEngine* GetDefaultEventEngine() {
   return default_event_engine;
 }
 
+void InitializeEventEngine() {
+  GetDefaultEventEngine()->Run([]() {
+    GRPC_EVENT_ENGINE_TRACE("EventEngine:%p initialized",
+                            GetDefaultEventEngine());
+  });
+}
+
 }  // namespace experimental
 }  // namespace grpc_event_engine

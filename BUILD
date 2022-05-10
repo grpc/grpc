@@ -1899,9 +1899,11 @@ grpc_cc_library(
     name = "event_engine_common",
     srcs = [
         "src/core/lib/event_engine/resolved_address.cc",
+        "src/core/lib/event_engine/trace.cc",
     ],
     hdrs = [
         "src/core/lib/event_engine/handle_containers.h",
+        "src/core/lib/event_engine/trace.h",
     ],
     external_deps = [
         "absl/container:flat_hash_set",
@@ -1909,6 +1911,7 @@ grpc_cc_library(
     deps = [
         "event_engine_base_hdrs",
         "gpr_base",
+        "grpc_trace",
     ],
 )
 

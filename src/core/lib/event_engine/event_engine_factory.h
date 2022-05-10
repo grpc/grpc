@@ -18,6 +18,8 @@
 
 #include <grpc/event_engine/event_engine.h>
 
+#include "src/core/lib/event_engine/trace.h"
+
 namespace grpc_event_engine {
 namespace experimental {
 
@@ -29,6 +31,9 @@ EventEngine* GetDefaultEventEngine();
 
 /// Create an EventEngine using the default factory provided at link time.
 std::unique_ptr<EventEngine> DefaultEventEngineFactory();
+
+// TODO(hork): remove this when any other EE usage is landed
+void InitializeEventEngine();
 
 }  // namespace experimental
 }  // namespace grpc_event_engine
