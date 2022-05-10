@@ -897,7 +897,7 @@ class OutlierDetectionLbFactory : public LoadBalancingPolicyFactory {
     } else {
       if (ParseDurationFromJson(max_ejection_time_it->second,
                                 &outlier_detection_config.max_ejection_time)) {
-        error_list.push_back(GRPC_ERROR_CREATE_FROM_CPP_STRING(
+        error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
             absl::StrCat("field: maxEjectionTime error:type should be STRING"
                          " of the form given by google.proto.Duration.")));
       }
