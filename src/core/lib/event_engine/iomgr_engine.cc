@@ -44,7 +44,7 @@ struct ClosureData {
 // issues. And absl::InfiniteFuture yields UB.
 absl::Time Clamp(absl::Time when) {
   absl::Time max = absl::Now() + absl::Hours(8766);
-  absl::Time min = absl::Now() + absl::Milliseconds(3);
+  absl::Time min = absl::Now() + absl::Milliseconds(2);
   if (when > max) return max;
   if (when < min) return min;
   return when;
@@ -110,10 +110,13 @@ EventEngine::TaskHandle IomgrEventEngine::RunAtInternal(
             [](std::function<void()> fn) { fn(); });
       },
       cd, nullptr);
-  grpc_timer_init(
-      &cd->timer,
-      grpc_core::Timestamp::FromTimespecRoundUp(grpc_core::ToGprTimeSpec(when)),
-      &cd->closure);
+  // kludge to deal with abseil's use of realtime clocks, and drift doing the
+  // conversion to monotonic clocks under load.
+  grpc_core::Timestamp when_internal =
+      grpc_core::ExecCtx::Get()->Now() +
+      grpc_core::Duration::Milliseconds(
+          ToInt64Milliseconds(when - absl::Now()) + 2);
+  grpc_timer_init(&cd->timer, when_internal, &cd->closure);
   EventEngine::TaskHandle handle{reinterpret_cast<intptr_t>(cd),
                                  aba_token_.fetch_add(1)};
   grpc_core::MutexLock lock(&mu_);
