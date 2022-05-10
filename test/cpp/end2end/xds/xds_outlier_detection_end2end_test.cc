@@ -47,17 +47,18 @@ INSTANTIATE_TEST_SUITE_P(XdsTest, OutlierDetectionTest,
 // 3. We should skip
 // exactly 1 backend due to ejection and all the loads sticky to that backend
 // should go to 1 other backend.
-TEST_P(OutlierDetectionTest, HeaderHashingEjectionSuccessRate) {
-  CreateAndStartBackends(4);
+TEST_P(OutlierDetectionTest, SuccessRate100Percent) {
+  CreateAndStartBackends(2);
   auto cluster = default_cluster_;
   cluster.set_lb_policy(Cluster::RING_HASH);
   // Setup outlier failure percentage parameters.
-  // Any failure will cause an potential ejection with the probability of 50%.
+  // Any failure will cause an potential ejection with the probability of 100%
+  // (to eliminate flakiness of the test).
   auto* duration = cluster.mutable_outlier_detection()->mutable_interval();
-  duration->set_nanos(100000000);
+  duration->set_nanos(100000000 * grpc_test_slowdown_factor());
   cluster.mutable_outlier_detection()
       ->mutable_success_rate_stdev_factor()
-      ->set_value(1000);
+      ->set_value(100);
   cluster.mutable_outlier_detection()
       ->mutable_enforcing_success_rate()
       ->set_value(100);
@@ -85,20 +86,10 @@ TEST_P(OutlierDetectionTest, HeaderHashingEjectionSuccessRate) {
   std::vector<std::pair<std::string, std::string>> metadata1 = {
       {"address_hash", absl::StrCat(ipv6_only_ ? "[::1]" : "127.0.0.1", ":",
                                     backends_[1]->port(), "_0")}};
-  std::vector<std::pair<std::string, std::string>> metadata2 = {
-      {"address_hash", absl::StrCat(ipv6_only_ ? "[::1]" : "127.0.0.1", ":",
-                                    backends_[2]->port(), "_0")}};
-  std::vector<std::pair<std::string, std::string>> metadata3 = {
-      {"address_hash", absl::StrCat(ipv6_only_ ? "[::1]" : "127.0.0.1", ":",
-                                    backends_[3]->port(), "_0")}};
   const auto rpc_options = RpcOptions().set_metadata(metadata);
   const auto rpc_options1 = RpcOptions().set_metadata(std::move(metadata1));
-  const auto rpc_options2 = RpcOptions().set_metadata(std::move(metadata2));
-  const auto rpc_options3 = RpcOptions().set_metadata(std::move(metadata3));
   WaitForBackend(DEBUG_LOCATION, 0, WaitForBackendOptions(), rpc_options);
   WaitForBackend(DEBUG_LOCATION, 1, WaitForBackendOptions(), rpc_options1);
-  WaitForBackend(DEBUG_LOCATION, 2, WaitForBackendOptions(), rpc_options2);
-  WaitForBackend(DEBUG_LOCATION, 3, WaitForBackendOptions(), rpc_options3);
   // Cause an error and wait for 1 outlier detection interval to pass
   CheckRpcSendFailure(
       DEBUG_LOCATION,
@@ -111,26 +102,7 @@ TEST_P(OutlierDetectionTest, HeaderHashingEjectionSuccessRate) {
   gpr_sleep_until(grpc_timeout_milliseconds_to_deadline(100));
   ResetBackendCounters();
   CheckRpcSendOk(DEBUG_LOCATION, 100, rpc_options);
-  CheckRpcSendOk(DEBUG_LOCATION, 100, rpc_options1);
-  CheckRpcSendOk(DEBUG_LOCATION, 100, rpc_options2);
-  CheckRpcSendOk(DEBUG_LOCATION, 100, rpc_options3);
-  size_t empty_load_backend_count = 0;
-  size_t double_load_backend_count = 0;
-  size_t regular_load_backend_count = 0;
-  for (size_t i = 0; i < backends_.size(); ++i) {
-    if (backends_[i]->backend_service()->request_count() == 0) {
-      ++empty_load_backend_count;
-    } else if (backends_[i]->backend_service()->request_count() == 200) {
-      ++double_load_backend_count;
-    } else if (backends_[i]->backend_service()->request_count() == 100) {
-      ++regular_load_backend_count;
-    } else {
-      GPR_ASSERT(1);
-    }
-  }
-  EXPECT_EQ(1, empty_load_backend_count);
-  EXPECT_EQ(1, double_load_backend_count);
-  EXPECT_EQ(2, regular_load_backend_count);
+  EXPECT_EQ(100, backends_[1]->backend_service()->request_count());
 }
 
 // Tests EjectionFailurePercent:
@@ -141,14 +113,15 @@ TEST_P(OutlierDetectionTest, HeaderHashingEjectionSuccessRate) {
 // 3. We should skip
 // exactly 1 backend due to ejection and all the loads sticky to that backend
 // should go to 1 other backend.
-TEST_P(OutlierDetectionTest, HeaderHashingEjectionFailurePercent) {
-  CreateAndStartBackends(4);
+TEST_P(OutlierDetectionTest, FailurePercent100Percent) {
+  CreateAndStartBackends(2);
   auto cluster = default_cluster_;
   cluster.set_lb_policy(Cluster::RING_HASH);
   // Setup outlier failure percentage parameters.
-  // Any failure will cause an potential ejection with the probability of 50%.
+  // Any failure will cause an potential ejection with the probability of 100%
+  // (to eliminate flakiness of the test).
   auto* duration = cluster.mutable_outlier_detection()->mutable_interval();
-  duration->set_nanos(100000000);
+  duration->set_nanos(100000000 * grpc_test_slowdown_factor());
   cluster.mutable_outlier_detection()
       ->mutable_failure_percentage_threshold()
       ->set_value(0);
@@ -179,21 +152,12 @@ TEST_P(OutlierDetectionTest, HeaderHashingEjectionFailurePercent) {
   std::vector<std::pair<std::string, std::string>> metadata1 = {
       {"address_hash", absl::StrCat(ipv6_only_ ? "[::1]" : "127.0.0.1", ":",
                                     backends_[1]->port(), "_0")}};
-  std::vector<std::pair<std::string, std::string>> metadata2 = {
-      {"address_hash", absl::StrCat(ipv6_only_ ? "[::1]" : "127.0.0.1", ":",
-                                    backends_[2]->port(), "_0")}};
-  std::vector<std::pair<std::string, std::string>> metadata3 = {
-      {"address_hash", absl::StrCat(ipv6_only_ ? "[::1]" : "127.0.0.1", ":",
-                                    backends_[3]->port(), "_0")}};
   const auto rpc_options = RpcOptions().set_metadata(metadata);
   const auto rpc_options1 = RpcOptions().set_metadata(std::move(metadata1));
-  const auto rpc_options2 = RpcOptions().set_metadata(std::move(metadata2));
-  const auto rpc_options3 = RpcOptions().set_metadata(std::move(metadata3));
   WaitForBackend(DEBUG_LOCATION, 0, WaitForBackendOptions(), rpc_options);
   WaitForBackend(DEBUG_LOCATION, 1, WaitForBackendOptions(), rpc_options1);
-  WaitForBackend(DEBUG_LOCATION, 2, WaitForBackendOptions(), rpc_options2);
-  WaitForBackend(DEBUG_LOCATION, 3, WaitForBackendOptions(), rpc_options3);
-  // Cause an error and wait for 1 outlier detection interval to pass
+  // Cause an error and wait for 1 outlier detection interval to pass to cause
+  // the backend to be ejected.
   CheckRpcSendFailure(
       DEBUG_LOCATION,
       CheckRpcSendFailureOptions()
@@ -204,27 +168,13 @@ TEST_P(OutlierDetectionTest, HeaderHashingEjectionFailurePercent) {
           .set_expected_error_code(StatusCode::CANCELLED));
   gpr_sleep_until(grpc_timeout_milliseconds_to_deadline(100));
   ResetBackendCounters();
+  // All traffic going to the ejected backend should now all be going to the
+  // other backend.
   CheckRpcSendOk(DEBUG_LOCATION, 100, rpc_options);
-  CheckRpcSendOk(DEBUG_LOCATION, 100, rpc_options1);
-  CheckRpcSendOk(DEBUG_LOCATION, 100, rpc_options2);
-  CheckRpcSendOk(DEBUG_LOCATION, 100, rpc_options3);
   size_t empty_load_backend_count = 0;
   size_t double_load_backend_count = 0;
   size_t regular_load_backend_count = 0;
-  for (size_t i = 0; i < backends_.size(); ++i) {
-    if (backends_[i]->backend_service()->request_count() == 0) {
-      ++empty_load_backend_count;
-    } else if (backends_[i]->backend_service()->request_count() == 200) {
-      ++double_load_backend_count;
-    } else if (backends_[i]->backend_service()->request_count() == 100) {
-      ++regular_load_backend_count;
-    } else {
-      GPR_ASSERT(1);
-    }
-  }
-  EXPECT_EQ(1, empty_load_backend_count);
-  EXPECT_EQ(1, double_load_backend_count);
-  EXPECT_EQ(2, regular_load_backend_count);
+  EXPECT_EQ(100, backends_[1]->backend_service()->request_count());
 }
 
 }  // namespace

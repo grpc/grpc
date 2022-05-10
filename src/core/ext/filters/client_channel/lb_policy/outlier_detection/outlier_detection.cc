@@ -326,7 +326,7 @@ class OutlierDetectionLb : public LoadBalancingPolicy {
     grpc_closure on_timer_;
     bool timer_pending_ = true;
     Timestamp start_time_;
-    absl::BitGen bit_gen_;
+    absl::BitGen bit_gen_ = absl::BitGen();
   };
 
   ~OutlierDetectionLb() override;
@@ -711,9 +711,7 @@ void OutlierDetectionLb::Helper::AddTraceEvent(TraceSeverity severity,
 
 OutlierDetectionLb::EjectionTimer::EjectionTimer(
     RefCountedPtr<OutlierDetectionLb> parent, Timestamp start_time)
-    : parent_(std::move(parent)),
-      start_time_(start_time),
-      bit_gen_(absl::BitGen()) {
+    : parent_(std::move(parent)), start_time_(start_time) {
   GRPC_CLOSURE_INIT(&on_timer_, OnTimer, this, nullptr);
   Ref().release();
   grpc_timer_init(
@@ -889,6 +887,19 @@ class OutlierDetectionLbFactory : public LoadBalancingPolicyFactory {
     ParseJsonObjectFieldAsDuration(json.object_value(), "maxEjectionTime",
                                    &outlier_detection_config.max_ejection_time,
                                    &error_list);
+    auto max_ejection_time_it = json.object_value().find("maxEjectionTime");
+    if (max_ejection_time_it == json.object_value().end()) {
+      outlier_detection_config.max_ejection_time = Duration::Milliseconds(
+          std::max(outlier_detection_config.base_ejection_time.millis(),
+                   static_cast<int64_t>(300000)));
+    } else {
+      if (ParseDurationFromJson(max_ejection_time_it->second,
+                                &outlier_detection_config.max_ejection_time)) {
+        error_list.push_back(GRPC_ERROR_CREATE_FROM_CPP_STRING(
+            absl::StrCat("field: maxEjectionTime error:type should be STRING"
+                         " of the form given by google.proto.Duration.")));
+      }
+    }
     ParseJsonObjectField(json.object_value(), "maxEjectionPercent",
                          &outlier_detection_config.max_ejection_percent,
                          &error_list);
