@@ -23,7 +23,6 @@
 
 #include <utility>
 
-#include <grpc/event_engine/memory_allocator.h>
 #include <grpc/slice.h>
 #include <grpc/slice_buffer.h>
 #include <grpc/support/alloc.h>
@@ -33,9 +32,6 @@
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/slice/slice_refcount.h"
-
-using grpc_event_engine::experimental::Slice;
-using grpc_event_engine::experimental::SliceBuffer;
 
 /* grow a buffer; requires GRPC_SLICE_BUFFER_INLINE_ELEMENTS > 1 */
 #define GROW(x) (3 * (x) / 2)
@@ -439,27 +435,4 @@ void grpc_slice_buffer_undo_take_first(grpc_slice_buffer* sb,
   sb->slices[0] = slice;
   sb->count++;
   sb->length += GRPC_SLICE_LENGTH(slice);
-}
-
-void SliceBuffer::Add(Slice slice) {
-  grpc_slice_buffer_add(slice_buffer_, slice.TakeCSlice());
-}
-
-size_t SliceBuffer::AddIndexed(Slice slice) {
-  return grpc_slice_buffer_add_indexed(slice_buffer_, slice.TakeCSlice());
-}
-
-Slice SliceBuffer::TakeFirst() {
-  return Slice(grpc_slice_buffer_take_first(slice_buffer_));
-}
-
-void SliceBuffer::UndoTakeFirst(Slice slice) {
-  grpc_slice_buffer_undo_take_first(slice_buffer_, slice.TakeCSlice());
-}
-
-Slice SliceBuffer::RefSlice(size_t index) {
-  if (index >= Count()) {
-    return Slice(grpc_empty_slice());
-  }
-  return Slice(grpc_slice_ref_internal(slice_buffer_->slices[index]));
 }

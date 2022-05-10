@@ -16,7 +16,7 @@
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
-#include "grpc/event_engine/memory_allocator.h"
+#include "grpc/event_engine/slice_buffer.h"
 #include <grpc/grpc.h>
 
 #include "src/core/lib/slice/slice.h"
@@ -41,15 +41,15 @@ TEST(SliceBufferTest, AddAndRemoveTest) {
   Slice first_slice = MakeSlice(kNewSliceLength);
   Slice second_slice = MakeSlice(kNewSliceLength);
   Slice first_slice_copy = first_slice.Copy();
-  sb.Add(std::move(first_slice));
-  sb.Add(std::move(second_slice));
+  sb.Append(std::move(first_slice));
+  sb.Append(std::move(second_slice));
   ASSERT_EQ(sb.Count(), 2);
   ASSERT_EQ(sb.Length(), 2 * kNewSliceLength);
   Slice popped = sb.TakeFirst();
   ASSERT_EQ(popped, first_slice_copy);
   ASSERT_EQ(sb.Count(), 1);
   ASSERT_EQ(sb.Length(), kNewSliceLength);
-  sb.UndoTakeFirst(std::move(popped));
+  sb.Prepend(std::move(popped));
   ASSERT_EQ(sb.Count(), 2);
   ASSERT_EQ(sb.Length(), 2 * kNewSliceLength);
   sb.Clear();
@@ -65,8 +65,8 @@ TEST(SliceBufferTest, SliceRefTest) {
   Slice second_slice = MakeSlice(kNewSliceLength + 1);
   Slice first_slice_copy = first_slice.Copy();
   Slice second_slice_copy = second_slice.Copy();
-  ASSERT_EQ(sb.AddIndexed(std::move(first_slice)), 0);
-  ASSERT_EQ(sb.AddIndexed(std::move(second_slice)), 1);
+  ASSERT_EQ(sb.AppendIndexed(std::move(first_slice)), 0);
+  ASSERT_EQ(sb.AppendIndexed(std::move(second_slice)), 1);
   Slice first_reffed = sb.RefSlice(0);
   Slice second_reffed = sb.RefSlice(1);
   ASSERT_EQ(first_reffed, first_slice_copy);

@@ -171,19 +171,6 @@ struct CopyConstructors {
   }
 };
 
-template <typename Out>
-struct StaticConstructors {
-  static Out FromStaticString(const char* s) {
-    return FromStaticBuffer(s, strlen(s));
-  }
-
-  static Out FromStaticString(absl::string_view s) {
-    return FromStaticBuffer(s.data(), s.size());
-  }
-
-  static Out FromStaticBuffer(const void* s, size_t len);
-};
-
 }  // namespace slice_detail
 
 class MutableSlice : public slice_detail::BaseSlice,
@@ -222,8 +209,7 @@ class MutableSlice : public slice_detail::BaseSlice,
 };
 
 class Slice : public slice_detail::BaseSlice,
-              public slice_detail::CopyConstructors<Slice>,
-              public slice_detail::StaticConstructors<Slice> {
+              public slice_detail::CopyConstructors<Slice> {
  public:
   Slice() = default;
   ~Slice();
@@ -288,10 +274,6 @@ class Slice : public slice_detail::BaseSlice,
 
   static Slice FromRefcountAndBytes(grpc_slice_refcount* r,
                                     const uint8_t* begin, const uint8_t* end);
-
-  static Slice FromExternalString(absl::string_view str) {
-    return FromStaticString(str);
-  }
 };
 
 }  // namespace experimental
