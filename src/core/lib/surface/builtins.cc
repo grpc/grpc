@@ -16,8 +16,13 @@
 
 #include "src/core/lib/surface/builtins.h"
 
+#include <limits.h>
+
+#include "src/core/lib/channel/channel_stack_builder.h"
 #include "src/core/lib/channel/connected_channel.h"
 #include "src/core/lib/config/core_configuration.h"
+#include "src/core/lib/surface/channel_init.h"
+#include "src/core/lib/surface/channel_stack_type.h"
 #include "src/core/lib/surface/lame_client.h"
 #include "src/core/lib/surface/server.h"
 
@@ -36,7 +41,7 @@ void RegisterBuiltins(CoreConfiguration::Builder* builder) {
   builder->channel_init()->RegisterStage(
       GRPC_CLIENT_LAME_CHANNEL, GRPC_CHANNEL_INIT_BUILTIN_PRIORITY,
       [](ChannelStackBuilder* builder) {
-        builder->AppendFilter(&grpc_lame_filter);
+        builder->AppendFilter(&LameClientFilter::kFilter);
         return true;
       });
   builder->channel_init()->RegisterStage(

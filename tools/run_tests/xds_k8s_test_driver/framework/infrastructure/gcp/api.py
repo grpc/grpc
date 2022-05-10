@@ -328,7 +328,7 @@ class OperationError(Error):
 
 class GcpProjectApiResource:
     # TODO(sergiitk): move someplace better
-    _WAIT_FOR_OPERATION_SEC = 60 * 5
+    _WAIT_FOR_OPERATION_SEC = 60 * 10
     _WAIT_FIXED_SEC = 2
     _GCP_API_RETRIES = 5
 

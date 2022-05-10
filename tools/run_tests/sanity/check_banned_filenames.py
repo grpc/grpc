@@ -1,5 +1,6 @@
-#!/usr/bin/env bash
-# Copyright 2021 gRPC authors.
+#!/usr/bin/env python3
+
+# Copyright 2022 gRPC authors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -13,13 +14,21 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-set -ex
+import os
+import sys
 
-# change to grpc repo root
-cd $(dirname $0)/../../..
+BANNED_FILENAMES = [
+    'BUILD.gn',
+]
 
-source tools/internal_ci/helper_scripts/prepare_build_linux_rc
+os.chdir(os.path.join(os.path.dirname(sys.argv[0]), '../../..'))
 
-export DOCKERFILE_DIR=tools/dockerfile/test/php73_zts_debian11_x64
-export DOCKER_RUN_SCRIPT=tools/internal_ci/linux/grpc_xds_v3_php_test_in_docker.sh
-exec tools/run_tests/dockerize/build_and_run_docker.sh
+bad = []
+for filename in BANNED_FILENAMES:
+    if os.path.exists(filename):
+        bad.append(filename)
+
+if bad:
+    for file in bad:
+        print("%s should not exist" % file)
+    sys.exit(1)
