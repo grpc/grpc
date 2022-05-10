@@ -1,4 +1,4 @@
-// Copyright 2021 gRPC authors.
+// Copyright 2022 gRPC authors.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -27,6 +27,10 @@
 
 #include <grpc/slice.h>
 #include <grpc/support/log.h>
+
+// This public slice definition largely based of the internal grpc_core::Slice
+// implementation. Changes to this implementation might warrant changes to the
+// internal grpc_core::Slice type as well.
 
 namespace grpc_event_engine {
 namespace experimental {

@@ -1833,10 +1833,7 @@ grpc_cc_library(
         "src/core/lib/event_engine/slice_buffer.cc",
         "src/core/lib/event_engine/slice.cc",
     ],
-    hdrs = [
-      "include/grpc/event_engine/slice_buffer.h",
-      "include/grpc/event_engine/slice.h",
-    ],
+    language = "c++",
     deps = [
         "event_engine_base_hdrs",
         "gpr_base",
