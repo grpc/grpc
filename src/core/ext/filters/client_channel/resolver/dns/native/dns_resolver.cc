@@ -16,8 +16,24 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <limits.h>
+
+#include <memory>
+#include <string>
+#include <utility>
+#include <vector>
+
+#include "absl/container/inlined_vector.h"
 #include "absl/functional/bind_front.h"
+#include "absl/memory/memory.h"
+#include "absl/status/status.h"
+#include "absl/status/statusor.h"
 #include "absl/strings/str_cat.h"
+#include "absl/strings/string_view.h"
+#include "absl/strings/strip.h"
+
+#include <grpc/impl/codegen/grpc_types.h>
+#include <grpc/support/log.h>
 
 #include "src/core/ext/filters/client_channel/resolver/dns/dns_resolver_selection.h"
 #include "src/core/ext/filters/client_channel/resolver/polling_resolver.h"
@@ -26,11 +42,19 @@
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/gpr/string.h"
+#include "src/core/lib/gprpp/debug_location.h"
+#include "src/core/lib/gprpp/global_config_generic.h"
+#include "src/core/lib/gprpp/memory.h"
+#include "src/core/lib/gprpp/orphanable.h"
+#include "src/core/lib/gprpp/ref_counted_ptr.h"
+#include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/iomgr/resolve_address.h"
-#include "src/core/lib/iomgr/timer.h"
-#include "src/core/lib/iomgr/work_serializer.h"
+#include "src/core/lib/iomgr/resolved_address.h"
+#include "src/core/lib/resolver/resolver.h"
+#include "src/core/lib/resolver/resolver_factory.h"
 #include "src/core/lib/resolver/resolver_registry.h"
 #include "src/core/lib/resolver/server_address.h"
+#include "src/core/lib/uri/uri_parser.h"
 
 #define GRPC_DNS_INITIAL_CONNECT_BACKOFF_SECONDS 1
 #define GRPC_DNS_RECONNECT_BACKOFF_MULTIPLIER 1.6
@@ -84,16 +108,15 @@ NativeClientChannelDNSResolver::~NativeClientChannelDNSResolver() {
 
 OrphanablePtr<Orphanable> NativeClientChannelDNSResolver::StartRequest() {
   Ref(DEBUG_LOCATION, "dns_request").release();
-  auto dns_request = GetDNSResolver()->ResolveName(
+  auto dns_request_handle = GetDNSResolver()->ResolveName(
       name_to_resolve(), kDefaultSecurePort, interested_parties(),
       absl::bind_front(&NativeClientChannelDNSResolver::OnResolved, this));
   if (GRPC_TRACE_FLAG_ENABLED(grpc_trace_dns_resolver)) {
     gpr_log(GPR_DEBUG, "[dns_resolver=%p] starting request=%p", this,
-            dns_request.get());
+            DNSResolver::HandleToString(dns_request_handle).c_str());
   }
-  dns_request->Start();
-  // Explicit type conversion to work around issue with older compilers.
-  return OrphanablePtr<Orphanable>(dns_request.release());
+  // Not cancellable.
+  return nullptr;
 }
 
 void NativeClientChannelDNSResolver::OnResolved(

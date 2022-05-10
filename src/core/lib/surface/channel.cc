@@ -21,37 +21,44 @@
 #include "src/core/lib/surface/channel.h"
 
 #include <inttypes.h>
-#include <limits.h>
-#include <stdlib.h>
 #include <string.h>
 
+#include <algorithm>
 #include <atomic>
+#include <functional>
+#include <memory>
+
+#include "absl/status/status.h"
 
 #include <grpc/compression.h>
+#include <grpc/grpc.h>
+#include <grpc/impl/codegen/gpr_types.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
-#include <grpc/support/string_util.h>
 
 #include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/channel/channel_stack_builder_impl.h"
 #include "src/core/lib/channel/channel_trace.h"
 #include "src/core/lib/channel/channelz.h"
-#include "src/core/lib/channel/channelz_registry.h"
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/debug/stats.h"
-#include "src/core/lib/gpr/string.h"
+#include "src/core/lib/debug/trace.h"
+#include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/gprpp/manual_constructor.h"
-#include "src/core/lib/gprpp/memory.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
-#include "src/core/lib/iomgr/iomgr.h"
-#include "src/core/lib/resource_quota/api.h"
+#include "src/core/lib/iomgr/error.h"
+#include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/resource_quota/memory_quota.h"
-#include "src/core/lib/slice/slice_internal.h"
+#include "src/core/lib/resource_quota/resource_quota.h"
+#include "src/core/lib/slice/slice_refcount.h"
 #include "src/core/lib/surface/api_trace.h"
 #include "src/core/lib/surface/call.h"
-#include "src/core/lib/surface/channel.h"
+#include "src/core/lib/surface/channel_init.h"
 #include "src/core/lib/surface/channel_stack_type.h"
-#include "src/core/lib/transport/error_utils.h"
+#include "src/core/lib/transport/transport.h"
+
+// IWYU pragma: no_include <type_traits>
 
 namespace grpc_core {
 

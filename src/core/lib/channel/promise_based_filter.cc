@@ -28,6 +28,7 @@
 
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/gprpp/manual_constructor.h"
+#include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/slice/slice.h"
 
 namespace grpc_core {
@@ -142,12 +143,26 @@ void BaseCallData::CapturedBatch::ResumeWith(Flusher* releaser) {
   }
 }
 
+void BaseCallData::CapturedBatch::CompleteWith(Flusher* releaser) {
+  auto* batch = absl::exchange(batch_, nullptr);
+  GPR_ASSERT(batch != nullptr);
+  uintptr_t& refcnt = *RefCountField(batch);
+  if (refcnt == 0) return;  // refcnt==0 ==> cancelled
+  if (--refcnt == 0) {
+    releaser->Complete(batch);
+  }
+}
+
 void BaseCallData::CapturedBatch::CancelWith(grpc_error_handle error,
                                              Flusher* releaser) {
   auto* batch = absl::exchange(batch_, nullptr);
   GPR_ASSERT(batch != nullptr);
   uintptr_t& refcnt = *RefCountField(batch);
-  if (refcnt == 0) return;  // refcnt==0 ==> cancelled
+  if (refcnt == 0) {
+    // refcnt==0 ==> cancelled
+    GRPC_ERROR_UNREF(error);
+    return;
+  }
   refcnt = 0;
   releaser->Cancel(batch, error);
 }
@@ -495,7 +510,12 @@ void ClientCallData::StartBatch(grpc_transport_stream_op_batch* b) {
                !batch->recv_initial_metadata && !batch->recv_message &&
                !batch->recv_trailing_metadata);
     Cancel(batch->payload->cancel_stream.cancel_error);
-    batch.ResumeWith(&flusher);
+    if (is_last()) {
+      GRPC_ERROR_UNREF(batch->payload->cancel_stream.cancel_error);
+      batch.CompleteWith(&flusher);
+    } else {
+      batch.ResumeWith(&flusher);
+    }
     return;
   }
 
@@ -567,6 +587,8 @@ void ClientCallData::StartBatch(grpc_transport_stream_op_batch* b) {
       recv_trailing_state_ = RecvTrailingState::kForwarded;
       HookRecvTrailingMetadata(batch);
     }
+  } else if (cancelled_error_ != GRPC_ERROR_NONE) {
+    batch.CancelWith(GRPC_ERROR_REF(cancelled_error_), &flusher);
   }
 
   if (batch.is_captured()) batch.ResumeWith(&flusher);
@@ -950,7 +972,12 @@ void ServerCallData::StartBatch(grpc_transport_stream_op_batch* b) {
                !batch->recv_trailing_metadata);
     Cancel(GRPC_ERROR_REF(batch->payload->cancel_stream.cancel_error),
            &flusher);
-    batch.ResumeWith(&flusher);
+    if (is_last()) {
+      GRPC_ERROR_UNREF(batch->payload->cancel_stream.cancel_error);
+      batch.CompleteWith(&flusher);
+    } else {
+      batch.ResumeWith(&flusher);
+    }
     return;
   }
 
