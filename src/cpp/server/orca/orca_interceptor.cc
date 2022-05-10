@@ -20,6 +20,8 @@
 #include <grpcpp/orca_load_reporter.h>
 #include <grpcpp/server_builder.h>
 
+#include "src/core/lib/transport/metadata_batch.h"
+
 void grpc::experimental::OrcaServerInterceptor::Intercept(
     InterceptorBatchMethods* methods) {
   if (methods->QueryInterceptionHookPoint(
