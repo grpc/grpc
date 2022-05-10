@@ -289,6 +289,9 @@ class ServerContextBase {
   /// Applications never need to call this method.
   grpc_call* c_call() { return call_.call; }
 
+  /// Get the \a CallMetricRecorder object for the current RPC.
+  /// Use it to record metrics during your RPC to send back to the
+  /// client in order to make load balancing decisions.
   CallMetricRecorder* GetCallMetricRecorder();
 
  protected:

@@ -80,6 +80,7 @@ Pod::Spec.new do |s|
     ss.header_mappings_dir = 'include/grpcpp'
 
     ss.source_files = 'include/grpcpp/alarm.h',
+                      'include/grpcpp/call_metric_recorder.h',
                       'include/grpcpp/channel.h',
                       'include/grpcpp/client_context.h',
                       'include/grpcpp/completion_queue.h',

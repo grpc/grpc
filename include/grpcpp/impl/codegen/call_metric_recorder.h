@@ -19,7 +19,7 @@
 #ifndef GRPCPP_IMPL_CODEGEN_CALL_METRIC_RECORDER_H
 #define GRPCPP_IMPL_CODEGEN_CALL_METRIC_RECORDER_H
 
-// IWYU pragma: private
+// IWYU pragma: private, include <grpcpp/call_metric_recorder.h>
 
 #include <memory>
 #include <string>
@@ -38,15 +38,35 @@ namespace experimental {
 class OrcaServerInterceptor;
 }
 
+/// Records call metrics for the purpose of load balancing.
+/// During an RPC, call \a ServerContext::GetCallMetricRecorder() method
+/// to retrive the recorder for the current call.
 class CallMetricRecorder {
  public:
   CallMetricRecorder();
   ~CallMetricRecorder();
+
+  /// Records a call metric measurement for CPU utilization.
+  /// Multiple calls to this method will override the stored value.
   CallMetricRecorder& RecordCpuUtilizationMetric(double value);
+
+  /// Records a call metric measurement for memory utilization.
+  /// Multiple calls to this method will override the stored value.
   CallMetricRecorder& RecordMemoryUtilizationMetric(double value);
+
+  /// Records a call metric measurement for requests per second.
+  /// Multiple calls to this method will override the stored value.
   CallMetricRecorder& RecordRequestsPerSecond(uint32_t value);
+
+  /// Records a call metric measurement for utilization.
+  /// Multiple calls to this method with the same name will
+  /// override the corresponding stored value.
   CallMetricRecorder& RecordUtilizationMetric(const absl::string_view& name,
                                               double value);
+
+  /// Records a call metric measurement for request cost.
+  /// Multiple calls to this method with the same name will
+  /// override the corresponding stored value.
   CallMetricRecorder& RecordRequestCostMetric(const absl::string_view& name,
                                               double value);
   bool disabled() const { return disabled_; }
