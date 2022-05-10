@@ -2028,6 +2028,8 @@ add_library(grpc
   src/core/lib/event_engine/event_engine.cc
   src/core/lib/event_engine/memory_allocator.cc
   src/core/lib/event_engine/resolved_address.cc
+  src/core/lib/event_engine/slice.cc
+  src/core/lib/event_engine/slice_buffer.cc
   src/core/lib/event_engine/sockaddr.cc
   src/core/lib/gprpp/time.cc
   src/core/lib/http/format_request.cc
@@ -2333,6 +2335,7 @@ foreach(_hdr
   include/grpc/event_engine/memory_request.h
   include/grpc/event_engine/port.h
   include/grpc/event_engine/slice.h
+  include/grpc/event_engine/slice_buffer.h
   include/grpc/fork.h
   include/grpc/grpc.h
   include/grpc/grpc_posix.h
@@ -2637,6 +2640,8 @@ add_library(grpc_unsecure
   src/core/lib/event_engine/event_engine.cc
   src/core/lib/event_engine/memory_allocator.cc
   src/core/lib/event_engine/resolved_address.cc
+  src/core/lib/event_engine/slice.cc
+  src/core/lib/event_engine/slice_buffer.cc
   src/core/lib/event_engine/sockaddr.cc
   src/core/lib/gprpp/time.cc
   src/core/lib/http/format_request.cc
@@ -2877,6 +2882,7 @@ foreach(_hdr
   include/grpc/event_engine/memory_request.h
   include/grpc/event_engine/port.h
   include/grpc/event_engine/slice.h
+  include/grpc/event_engine/slice_buffer.h
   include/grpc/fork.h
   include/grpc/grpc.h
   include/grpc/grpc_posix.h
