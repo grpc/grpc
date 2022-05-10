@@ -44,6 +44,8 @@
 #include "absl/types/variant.h"
 #include "re2/re2.h"
 
+#include "src/core/lib/resolver/server_address.h"
+
 #define XXH_INLINE_ALL
 #include "xxhash.h"
 
