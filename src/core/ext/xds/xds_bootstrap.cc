@@ -46,6 +46,10 @@ namespace grpc_core {
 
 namespace {
 
+constexpr absl::string_view kServerFeatureXdsV3 = "xds_v3";
+constexpr absl::string_view kServerFeatureIgnoreResourceDeletion =
+    "ignore_resource_deletion";
+
 // TODO(donnadionne): check to see if federation is enabled, this will be
 // removed once federation is fully integrated and enabled by default.
 bool XdsFederationEnabled() {
@@ -129,7 +133,9 @@ XdsBootstrap::XdsServer XdsBootstrap::XdsServer::Parse(
   if (server_features_array != nullptr) {
     for (const Json& feature_json : *server_features_array) {
       if (feature_json.type() == Json::Type::STRING &&
-          feature_json.string_value() == "xds_v3") {
+          (feature_json.string_value() == kServerFeatureXdsV3 ||
+           feature_json.string_value() ==
+               kServerFeatureIgnoreResourceDeletion)) {
         server.server_features.insert(feature_json.string_value());
       }
     }
@@ -159,7 +165,13 @@ Json::Object XdsBootstrap::XdsServer::ToJson() const {
 }
 
 bool XdsBootstrap::XdsServer::ShouldUseV3() const {
-  return server_features.find("xds_v3") != server_features.end();
+  return server_features.find(std::string(kServerFeatureXdsV3)) !=
+         server_features.end();
+}
+
+bool XdsBootstrap::XdsServer::IgnoreResourceDeletion() const {
+  return server_features.find(std::string(
+             kServerFeatureIgnoreResourceDeletion)) != server_features.end();
 }
 
 //

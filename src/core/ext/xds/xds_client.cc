@@ -829,7 +829,8 @@ void XdsClient::ChannelState::AdsCallState::AdsResponseParser::ParseResource(
   }
   ResourceState& resource_state = it->second;
   // If needed, record that we've seen this resource.
-  if (result_.type->AllResourcesRequiredInSotW()) {
+  if (result_.type->AllResourcesRequiredInSotW() &&
+      !ads_call_state_->chand()->server_.IgnoreResourceDeletion()) {
     result_.resources_seen[resource_name->authority].insert(resource_name->key);
   }
   // Update resource state based on whether the resource is valid.
@@ -1182,7 +1183,8 @@ bool XdsClient::ChannelState::AdsCallState::OnResponseReceivedLocked() {
                                        GRPC_STATUS_UNAVAILABLE);
     }
     // Delete resources not seen in update if needed.
-    if (result.type->AllResourcesRequiredInSotW()) {
+    if (result.type->AllResourcesRequiredInSotW() &&
+        !chand()->server_.IgnoreResourceDeletion()) {
       for (auto& a : xds_client()->authority_state_map_) {
         const std::string& authority = a.first;
         AuthorityState& authority_state = a.second;
