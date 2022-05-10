@@ -108,16 +108,15 @@ NativeClientChannelDNSResolver::~NativeClientChannelDNSResolver() {
 
 OrphanablePtr<Orphanable> NativeClientChannelDNSResolver::StartRequest() {
   Ref(DEBUG_LOCATION, "dns_request").release();
-  auto dns_request = GetDNSResolver()->ResolveName(
+  auto dns_request_handle = GetDNSResolver()->ResolveName(
       name_to_resolve(), kDefaultSecurePort, interested_parties(),
       absl::bind_front(&NativeClientChannelDNSResolver::OnResolved, this));
   if (GRPC_TRACE_FLAG_ENABLED(grpc_trace_dns_resolver)) {
     gpr_log(GPR_DEBUG, "[dns_resolver=%p] starting request=%p", this,
-            dns_request.get());
+            DNSResolver::HandleToString(dns_request_handle).c_str());
   }
-  dns_request->Start();
-  // Explicit type conversion to work around issue with older compilers.
-  return OrphanablePtr<Orphanable>(dns_request.release());
+  // Not cancellable.
+  return nullptr;
 }
 
 void NativeClientChannelDNSResolver::OnResolved(

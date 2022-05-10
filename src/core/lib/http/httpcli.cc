@@ -179,10 +179,6 @@ HttpRequest::HttpRequest(
                     grpc_schedule_on_exec_ctx);
   GPR_ASSERT(pollent);
   grpc_polling_entity_add_to_pollset_set(pollent, pollset_set_);
-  // Create the DNS resolver. We'll start resolving when Start is called.
-  dns_request_ = GetDNSResolver()->ResolveName(
-      uri_.authority(), uri_.scheme(), pollset_set_,
-      absl::bind_front(&HttpRequest::OnResolved, this));
 }
 
 HttpRequest::~HttpRequest() {
@@ -206,7 +202,9 @@ void HttpRequest::Start() {
     return;
   }
   Ref().release();  // ref held by pending DNS resolution
-  dns_request_->Start();
+  dns_request_handle_ = GetDNSResolver()->ResolveName(
+      uri_.authority(), uri_.scheme(), pollset_set_,
+      absl::bind_front(&HttpRequest::OnResolved, this));
 }
 
 void HttpRequest::Orphan() {
@@ -214,14 +212,13 @@ void HttpRequest::Orphan() {
     MutexLock lock(&mu_);
     GPR_ASSERT(!cancelled_);
     cancelled_ = true;
-    dns_request_.reset();  // cancel potentially pending DNS resolution
-    if (connecting_) {
-      // gRPC's TCP connection establishment API doesn't currently have
-      // a mechanism for cancellation. So invoke the user callback now. The TCP
-      // connection will eventually complete (at least within its deadline), and
-      // we'll simply unref ourselves at that point.
-      // TODO(apolcyn): fix this to cancel the TCP connection attempt when
-      // an API to do so exists.
+    // cancel potentially pending DNS resolution.
+    if (dns_request_handle_.has_value() &&
+        GetDNSResolver()->Cancel(dns_request_handle_.value())) {
+      Finish(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+          "cancelled during DNS resolution"));
+      Unref();
+    } else if (connecting_) {
       Finish(GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(
           "HTTP request cancelled during TCP connection establishment",
           &overall_error_, 1));
@@ -410,14 +407,14 @@ void HttpRequest::OnResolved(
     absl::StatusOr<std::vector<grpc_resolved_address>> addresses_or) {
   RefCountedPtr<HttpRequest> unreffer(this);
   MutexLock lock(&mu_);
-  dns_request_.reset();
-  if (!addresses_or.ok()) {
-    Finish(absl_status_to_grpc_error(addresses_or.status()));
-    return;
-  }
+  dns_request_handle_.reset();
   if (cancelled_) {
     Finish(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
         "cancelled during DNS resolution"));
+    return;
+  }
+  if (!addresses_or.ok()) {
+    Finish(absl_status_to_grpc_error(addresses_or.status()));
     return;
   }
   addresses_ = std::move(*addresses_or);
