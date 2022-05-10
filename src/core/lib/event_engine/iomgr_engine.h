@@ -30,10 +30,10 @@ class IomgrEventEngine final : public EventEngine {
   class IomgrEndpoint : public EventEngine::Endpoint {
    public:
     ~IomgrEndpoint() override;
-    void Read(std::function<void(absl::Status)> on_read,
-              SliceBuffer* buffer) override;
-    void Write(std::function<void(absl::Status)> on_writable,
-               SliceBuffer* data) override;
+    void Read(std::function<void(absl::Status)> on_read, SliceBuffer* buffer,
+              const ReadArgs* args) override;
+    void Write(std::function<void(absl::Status)> on_writable, SliceBuffer* data,
+               const WriteArgs* args) override;
     const ResolvedAddress& GetPeerAddress() const override;
     const ResolvedAddress& GetLocalAddress() const override;
   };
