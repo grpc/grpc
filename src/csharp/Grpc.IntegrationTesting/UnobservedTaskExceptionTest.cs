@@ -96,5 +96,41 @@ namespace Grpc.IntegrationTesting
 
             Assert.AreEqual(0, unobservedTaskExceptionCounter.Count);
         }
+        [Test]
+        public async Task NoUnobservedTaskExceptionForUnavailableServers()
+        {
+            // Verify that https://github.com/grpc/grpc/issues/24421 has been fixed.
+
+            var unobservedTaskExceptionCounter = new AtomicCounter();
+            TaskScheduler.UnobservedTaskException += (sender, e) => {
+                unobservedTaskExceptionCounter.Increment();
+                Console.WriteLine("Detected unobserved task exception: " + e.Exception);
+            };
+            var channelToNonexistentBackend = new Channel("nonexistentbackend:100", ChannelCredentials.Insecure);
+            var client = new TestService.TestServiceClient(channelToNonexistentBackend);
+            for (int i = 0; i < 5; i++)
+            {
+                Console.WriteLine($"Starting iteration {i}");
+                try
+                {
+                    var call = client.FullDuplexCall();
+                    using (call)
+                    {
+                        var req = call.RequestStream;
+                        // try to write a request (which will throw RpcException) and intentionally
+                        // skip calling call.ReponseStream.MoveNext()
+                        await call.RequestStream.WriteAsync(new StreamingOutputCallRequest());
+                    }
+                }
+                catch (RpcException)
+                {
+                    // eat exception, we expect a call to non-existent backend to fail.
+                }
+                // Make it more likely to trigger the "Unobserved task exception" warning
+                GC.Collect();
+            }
+            await channelToNonexistentBackend.ShutdownAsync();
+            Assert.AreEqual(0, unobservedTaskExceptionCounter.Count);
+        }
     }
 }
