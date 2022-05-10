@@ -18,7 +18,12 @@
 
 #include "src/core/ext/filters/client_channel/backend_metric.h"
 
+#include <string.h>
+
+#include <map>
+
 #include "absl/strings/string_view.h"
+#include "upb/upb.h"
 #include "upb/upb.hpp"
 #include "xds/data/orca/v3/orca_load_report.upb.h"
 

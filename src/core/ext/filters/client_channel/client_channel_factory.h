@@ -19,9 +19,13 @@
 
 #include <grpc/support/port_platform.h>
 
+#include "absl/strings/string_view.h"
+
 #include <grpc/impl/codegen/grpc_types.h>
 
 #include "src/core/ext/filters/client_channel/subchannel.h"
+#include "src/core/lib/gprpp/ref_counted_ptr.h"
+#include "src/core/lib/iomgr/resolved_address.h"
 
 namespace grpc_core {
 

@@ -40,6 +40,7 @@ sed -i 's,^#!/usr/bin/env python,#!/usr/bin/env python3,g' ${IWYU_ROOT}/iwyu/fix
 cat compile_commands.json | sed "s,\"file\": \",\"file\": \"${IWYU_ROOT}/,g" > compile_commands_for_iwyu.json
 
 export ENABLED_MODULES='
+  src/core/ext/filters/client_channel
   src/core/ext/transport/chttp2
   src/core/lib/avl
   src/core/lib/channel
@@ -49,6 +50,7 @@ export ENABLED_MODULES='
   src/core/lib/slice
   src/core/lib/resource_quota
   src/core/lib/promise
+  src/core/lib/surface
   src/core/lib/transport
   src/core/lib/uri
   src/cpp
@@ -83,12 +85,3 @@ ${IWYU_ROOT}/iwyu/fix_includes.py \
   --nosafe_headers                \
   --ignore_re='^include/.*'       \
   < iwyu.out                      \
-  || true
-
-# reformat sources, since iwyu gets this wrong
-xargs -a iwyu_files.txt ${CLANG_FORMAT:-clang-format} -i
-
-# TODO(ctiller): expand this to match the clang-tidy directories:
-#  | grep -E "(^include/|^src/core/|^src/cpp/|^test/core/|^test/cpp/)"
-
-git diff --exit-code > /dev/null

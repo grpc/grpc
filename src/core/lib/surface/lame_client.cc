@@ -20,21 +20,38 @@
 
 #include "src/core/lib/surface/lame_client.h"
 
-#include <string.h>
+#include <memory>
+#include <new>
+#include <utility>
 
-#include <atomic>
+#include "absl/status/statusor.h"
 
 #include <grpc/grpc.h>
-#include <grpc/support/alloc.h>
+#include <grpc/impl/codegen/connectivity_state.h>
+#include <grpc/status.h>
 #include <grpc/support/log.h>
 
+#include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/channel/channel_args_preconditioning.h"
 #include "src/core/lib/channel/channel_stack.h"
-#include "src/core/lib/gpr/string.h"
-#include "src/core/lib/resource_quota/api.h"
+#include "src/core/lib/channel/channel_stack_builder.h"
+#include "src/core/lib/config/core_configuration.h"
+#include "src/core/lib/debug/trace.h"
+#include "src/core/lib/gpr/useful.h"
+#include "src/core/lib/gprpp/debug_location.h"
+#include "src/core/lib/gprpp/ref_counted_ptr.h"
+#include "src/core/lib/gprpp/sync.h"
+#include "src/core/lib/iomgr/call_combiner.h"
+#include "src/core/lib/iomgr/closure.h"
+#include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/surface/api_trace.h"
-#include "src/core/lib/surface/call.h"
 #include "src/core/lib/surface/channel.h"
+#include "src/core/lib/surface/channel_stack_type.h"
 #include "src/core/lib/transport/connectivity_state.h"
+#include "src/core/lib/transport/transport.h"
+
+// Avoid some IWYU confusion:
+// IWYU pragma: no_include "src/core/lib/gprpp/orphanable.h"
 
 #define GRPC_ARG_LAME_FILTER_ERROR "grpc.lame_filter_error"
 

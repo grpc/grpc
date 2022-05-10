@@ -20,18 +20,11 @@
 
 #include "src/core/ext/filters/client_channel/retry_throttle.h"
 
-#include <limits.h>
-#include <string.h>
-
 #include <map>
 #include <string>
+#include <utility>
 
-#include <grpc/support/alloc.h>
 #include <grpc/support/atm.h>
-#include <grpc/support/string_util.h>
-#include <grpc/support/sync.h>
-
-#include "src/core/lib/gprpp/manual_constructor.h"
 
 namespace grpc_core {
 namespace internal {

@@ -21,7 +21,10 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <grpc/impl/codegen/grpc_types.h>
+
 #include "src/core/lib/channel/channel_stack.h"
+#include "src/core/lib/iomgr/error.h"
 
 namespace grpc_core {
 // Does NOT take ownership of error.
