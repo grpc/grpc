@@ -44,12 +44,14 @@ Resolver::Result::Result(const Result& other)
     : addresses(other.addresses),
       service_config(other.service_config),
       resolution_note(other.resolution_note),
+      attributes(other.attributes),
       args(grpc_channel_args_copy(other.args)) {}
 
 Resolver::Result::Result(Result&& other) noexcept
     : addresses(std::move(other.addresses)),
       service_config(std::move(other.service_config)),
       resolution_note(std::move(other.resolution_note)),
+      attributes(std::move(other.attributes)),
       // TODO(roth): Use std::move() once channel args is converted to C++.
       args(other.args) {
   other.args = nullptr;
@@ -60,6 +62,7 @@ Resolver::Result& Resolver::Result::operator=(const Result& other) {
   addresses = other.addresses;
   service_config = other.service_config;
   resolution_note = other.resolution_note;
+  attributes = other.attributes;
   grpc_channel_args_destroy(args);
   args = grpc_channel_args_copy(other.args);
   return *this;
@@ -69,6 +72,7 @@ Resolver::Result& Resolver::Result::operator=(Result&& other) noexcept {
   addresses = std::move(other.addresses);
   service_config = std::move(other.service_config);
   resolution_note = std::move(other.resolution_note);
+  attributes = std::move(other.attributes);
   // TODO(roth): Use std::move() once channel args is converted to C++.
   grpc_channel_args_destroy(args);
   args = other.args;

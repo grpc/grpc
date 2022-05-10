@@ -955,8 +955,8 @@ void XdsResolver::OnError(absl::Status status) {
           this, status.ToString().c_str());
   if (xds_client_ == nullptr) return;
   Result result;
-  grpc_arg new_arg = xds_client_->MakeChannelArg();
-  result.args = grpc_channel_args_copy_and_add(args_, &new_arg, 1);
+  result.attributes.Set(xds_client_->MakeResolverAttribute());
+  result.args = grpc_channel_args_copy(args_);
   result.service_config = absl::UnavailableError(
       absl::StrCat("error obtaining xDS resources: ", status.ToString()));
   result_handler_->ReportResult(std::move(result));
@@ -1046,8 +1046,8 @@ void XdsResolver::GenerateResult() {
                 ? std::string((*result.service_config)->json_string()).c_str()
                 : result.service_config.status().ToString().c_str());
   }
+  result.attributes.Set(xds_client_->MakeResolverAttribute());
   grpc_arg new_args[] = {
-      xds_client_->MakeChannelArg(),
       config_selector->MakeChannelArg(),
   };
   result.args =

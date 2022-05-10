@@ -143,6 +143,7 @@ class XdsClusterManagerLb : public LoadBalancingPolicy {
 
     void UpdateLocked(RefCountedPtr<LoadBalancingPolicy::Config> config,
                       const absl::StatusOr<ServerAddressList>& addresses,
+                      const ResolverAttributeMap& attributes,
                       const grpc_channel_args* args);
     void ExitIdleLocked();
     void ResetBackoffLocked();
@@ -295,7 +296,7 @@ void XdsClusterManagerLb::UpdateLocked(UpdateArgs args) {
       child = MakeOrphanable<ClusterChild>(Ref(DEBUG_LOCATION, "ClusterChild"),
                                            name);
     }
-    child->UpdateLocked(config, args.addresses, args.args);
+    child->UpdateLocked(config, args.addresses, args.attributes, args.args);
   }
   update_in_progress_ = false;
   UpdateStateLocked();
@@ -469,7 +470,7 @@ XdsClusterManagerLb::ClusterChild::CreateChildPolicyLocked(
 void XdsClusterManagerLb::ClusterChild::UpdateLocked(
     RefCountedPtr<LoadBalancingPolicy::Config> config,
     const absl::StatusOr<ServerAddressList>& addresses,
-    const grpc_channel_args* args) {
+    const ResolverAttributeMap& attributes, const grpc_channel_args* args) {
   if (xds_cluster_manager_policy_->shutting_down_) return;
   // Update child weight.
   // Reactivate if needed.
@@ -485,6 +486,7 @@ void XdsClusterManagerLb::ClusterChild::UpdateLocked(
   UpdateArgs update_args;
   update_args.config = std::move(config);
   update_args.addresses = addresses;
+  update_args.attributes = attributes;
   update_args.args = grpc_channel_args_copy(args);
   // Update the policy.
   if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_cluster_manager_lb_trace)) {

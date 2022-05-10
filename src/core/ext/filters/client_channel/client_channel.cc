@@ -1395,6 +1395,7 @@ void ClientChannel::CreateOrUpdateLbPolicyLocked(
   update_args.addresses = std::move(result.addresses);
   update_args.config = std::move(lb_policy_config);
   update_args.resolution_note = std::move(result.resolution_note);
+  update_args.attributes = std::move(result.attributes);
   // Add health check service name to channel args.
   absl::InlinedVector<grpc_arg, 1> args_to_add;
   if (health_check_service_name.has_value()) {

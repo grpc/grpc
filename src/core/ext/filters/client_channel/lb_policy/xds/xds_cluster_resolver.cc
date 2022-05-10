@@ -125,7 +125,7 @@ class XdsClusterResolverLbConfig : public LoadBalancingPolicy::Config {
 // Xds Cluster Resolver LB policy.
 class XdsClusterResolverLb : public LoadBalancingPolicy {
  public:
-  XdsClusterResolverLb(RefCountedPtr<XdsClient> xds_client, Args args);
+  explicit XdsClusterResolverLb(Args args);
 
   const char* name() const override { return kXdsClusterResolver; }
 
@@ -349,6 +349,7 @@ class XdsClusterResolverLb : public LoadBalancingPolicy {
   // Current channel args and config from the resolver.
   const grpc_channel_args* args_ = nullptr;
   RefCountedPtr<XdsClusterResolverLbConfig> config_;
+  ResolverAttributeMap attributes_;
 
   // Internal state.
   bool shutting_down_ = false;
@@ -528,12 +529,10 @@ std::string XdsClusterResolverLb::DiscoveryMechanismEntry::GetChildPolicyName(
 // XdsClusterResolverLb public methods
 //
 
-XdsClusterResolverLb::XdsClusterResolverLb(RefCountedPtr<XdsClient> xds_client,
-                                           Args args)
-    : LoadBalancingPolicy(std::move(args)), xds_client_(std::move(xds_client)) {
+XdsClusterResolverLb::XdsClusterResolverLb(Args args)
+    : LoadBalancingPolicy(std::move(args)) {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_xds_cluster_resolver_trace)) {
-    gpr_log(GPR_INFO, "[xds_cluster_resolver_lb %p] created -- xds_client=%p",
-            this, xds_client_.get());
+    gpr_log(GPR_INFO, "[xds_cluster_resolver_lb %p] created", this);
   }
 }
 
@@ -571,10 +570,28 @@ void XdsClusterResolverLb::UpdateLocked(UpdateArgs args) {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_xds_cluster_resolver_trace)) {
     gpr_log(GPR_INFO, "[xds_cluster_resolver_lb %p] Received update", this);
   }
+  if (xds_client_ == nullptr) {
+    xds_client_ = XdsClient::GetFromResolverAttributes(args.attributes);
+    if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_xds_cluster_resolver_trace)) {
+      gpr_log(GPR_INFO, "[xds_cluster_resolver_lb %p] using XdsClient %p", this,
+              xds_client_.get());
+    }
+    if (xds_client_ == nullptr) {
+      // If no XdsClient found, report TRANSIENT_FAILURE.
+      absl::Status status = absl::UnavailableError(
+          "XdsClient not present in resolver attributes");
+      channel_control_helper()->UpdateState(
+          GRPC_CHANNEL_TRANSIENT_FAILURE, status,
+          absl::make_unique<TransientFailurePicker>(status));
+      return;
+    }
+  }
   const bool is_initial_update = args_ == nullptr;
   // Update config.
   auto old_config = std::move(config_);
   config_ = std::move(args.config);
+  // Update attributes.
+  attributes_ = std::move(args.attributes);
   // Update args.
   grpc_channel_args_destroy(args_);
   args_ = args.args;
@@ -931,6 +948,7 @@ void XdsClusterResolverLb::UpdateChildPolicyLocked() {
   update_args.config = CreateChildPolicyConfigLocked();
   if (update_args.config == nullptr) return;
   update_args.addresses = CreateChildPolicyAddressesLocked();
+  update_args.attributes = attributes_;
   update_args.args = CreateChildPolicyArgsLocked(args_);
   if (child_policy_ == nullptr) {
     child_policy_ = CreateChildPolicyLocked(update_args.args);
@@ -989,16 +1007,7 @@ class XdsClusterResolverLbFactory : public LoadBalancingPolicyFactory {
  public:
   OrphanablePtr<LoadBalancingPolicy> CreateLoadBalancingPolicy(
       LoadBalancingPolicy::Args args) const override {
-    RefCountedPtr<XdsClient> xds_client =
-        XdsClient::GetFromChannelArgs(*args.args);
-    if (xds_client == nullptr) {
-      gpr_log(GPR_ERROR,
-              "XdsClient not present in channel args -- cannot instantiate "
-              "xds_cluster_resolver LB policy");
-      return nullptr;
-    }
-    return MakeOrphanable<XdsClusterResolverChildHandler>(std::move(xds_client),
-                                                          std::move(args));
+    return MakeOrphanable<XdsClusterResolverChildHandler>(std::move(args));
   }
 
   const char* name() const override { return kXdsClusterResolver; }
@@ -1188,11 +1197,9 @@ class XdsClusterResolverLbFactory : public LoadBalancingPolicyFactory {
 
   class XdsClusterResolverChildHandler : public ChildPolicyHandler {
    public:
-    XdsClusterResolverChildHandler(RefCountedPtr<XdsClient> xds_client,
-                                   Args args)
+    explicit XdsClusterResolverChildHandler(Args args)
         : ChildPolicyHandler(std::move(args),
-                             &grpc_lb_xds_cluster_resolver_trace),
-          xds_client_(std::move(xds_client)) {}
+                             &grpc_lb_xds_cluster_resolver_trace) {}
 
     bool ConfigChangeRequiresNewPolicyInstance(
         LoadBalancingPolicy::Config* old_config,
@@ -1209,11 +1216,8 @@ class XdsClusterResolverLbFactory : public LoadBalancingPolicyFactory {
 
     OrphanablePtr<LoadBalancingPolicy> CreateLoadBalancingPolicy(
         const char* /*name*/, LoadBalancingPolicy::Args args) const override {
-      return MakeOrphanable<XdsClusterResolverLb>(xds_client_, std::move(args));
+      return MakeOrphanable<XdsClusterResolverLb>(std::move(args));
     }
-
-   private:
-    RefCountedPtr<XdsClient> xds_client_;
   };
 };
 

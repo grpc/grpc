@@ -2456,43 +2456,54 @@ void SetXdsFallbackBootstrapConfig(const char* config) {
 }  // namespace internal
 
 //
-// embedding XdsClient in channel args
+// embedding XdsClient in resolver attributes
 //
-
-#define GRPC_ARG_XDS_CLIENT "grpc.internal.xds_client"
 
 namespace {
 
-void* XdsClientArgCopy(void* p) {
-  XdsClient* xds_client = static_cast<XdsClient*>(p);
-  xds_client->Ref(DEBUG_LOCATION, "channel arg").release();
-  return p;
-}
+class XdsClientResolverAttribute
+    : public ResolverAttributeMap::AttributeInterface {
+ public:
+  explicit XdsClientResolverAttribute(RefCountedPtr<XdsClient> xds_client)
+      : xds_client_(std::move(xds_client)) {}
 
-void XdsClientArgDestroy(void* p) {
-  XdsClient* xds_client = static_cast<XdsClient*>(p);
-  xds_client->Unref(DEBUG_LOCATION, "channel arg");
-}
+  static const char* Type() { return "xds_client"; }
 
-int XdsClientArgCmp(void* p, void* q) { return QsortCompare(p, q); }
+  const char* type() const override { return Type(); }
 
-const grpc_arg_pointer_vtable kXdsClientArgVtable = {
-    XdsClientArgCopy, XdsClientArgDestroy, XdsClientArgCmp};
+  std::unique_ptr<AttributeInterface> Copy() const override {
+    return absl::make_unique<XdsClientResolverAttribute>(xds_client_);
+  }
+
+  int Compare(const AttributeInterface* other) const override {
+    auto* other_attribute =
+        static_cast<const XdsClientResolverAttribute*>(other);
+    return QsortCompare(xds_client_.get(), other_attribute->xds_client_.get());
+  }
+
+  std::string ToString() const override {
+    return absl::StrFormat("{xds_client=%p}", xds_client_.get());
+  }
+
+  XdsClient* xds_client() const { return xds_client_.get(); }
+
+ private:
+  RefCountedPtr<XdsClient> xds_client_;
+};
 
 }  // namespace
 
-grpc_arg XdsClient::MakeChannelArg() const {
-  return grpc_channel_arg_pointer_create(const_cast<char*>(GRPC_ARG_XDS_CLIENT),
-                                         const_cast<XdsClient*>(this),
-                                         &kXdsClientArgVtable);
+std::unique_ptr<ResolverAttributeMap::AttributeInterface>
+XdsClient::MakeResolverAttribute() {
+  return absl::make_unique<XdsClientResolverAttribute>(Ref());
 }
 
-RefCountedPtr<XdsClient> XdsClient::GetFromChannelArgs(
-    const grpc_channel_args& args) {
-  XdsClient* xds_client =
-      grpc_channel_args_find_pointer<XdsClient>(&args, GRPC_ARG_XDS_CLIENT);
-  if (xds_client == nullptr) return nullptr;
-  return xds_client->Ref(DEBUG_LOCATION, "GetFromChannelArgs");
+RefCountedPtr<XdsClient> XdsClient::GetFromResolverAttributes(
+    const ResolverAttributeMap& attributes) {
+  auto* attribute = static_cast<const XdsClientResolverAttribute*>(
+      attributes.Get(XdsClientResolverAttribute::Type()));
+  if (attribute == nullptr) return nullptr;
+  return attribute->xds_client()->Ref(DEBUG_LOCATION, "GetFromChannelArgs");
 }
 
 }  // namespace grpc_core

@@ -145,10 +145,11 @@ class XdsClient : public DualRefCounted<XdsClient> {
   // implementation.
   std::string DumpClientConfigBinary();
 
-  // Helpers for encoding the XdsClient object in channel args.
-  grpc_arg MakeChannelArg() const;
-  static RefCountedPtr<XdsClient> GetFromChannelArgs(
-      const grpc_channel_args& args);
+  // Helpers for encoding the XdsClient object in resolver attributes.
+  std::unique_ptr<ResolverAttributeMap::AttributeInterface>
+  MakeResolverAttribute();
+  static RefCountedPtr<XdsClient> GetFromResolverAttributes(
+      const ResolverAttributeMap& attributes);
 
  private:
   struct XdsResourceKey {

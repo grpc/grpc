@@ -708,6 +708,7 @@ class RlsLb : public LoadBalancingPolicy {
   // Accessed only from within WorkSerializer.
   absl::StatusOr<ServerAddressList> addresses_;
   const grpc_channel_args* channel_args_ = nullptr;
+  ResolverAttributeMap attributes_;
   RefCountedPtr<RlsLbConfig> config_;
   RefCountedPtr<ChildPolicyWrapper> default_child_policy_;
   std::map<std::string /*target*/, ChildPolicyWrapper*> child_policy_map_;
@@ -843,6 +844,7 @@ void RlsLb::ChildPolicyWrapper::MaybeFinishUpdate() {
   UpdateArgs update_args;
   update_args.config = std::move(pending_config_);
   update_args.addresses = lb_policy_->addresses_;
+  update_args.attributes = lb_policy_->attributes_;
   update_args.args = grpc_channel_args_copy(lb_policy_->channel_args_);
   child_policy_->UpdateLocked(std::move(update_args));
 }
@@ -1929,15 +1931,18 @@ void RlsLb::UpdateLocked(UpdateArgs args) {
   } else {
     old_addresses = addresses_;
   }
-  // Swap out channel args.
-  grpc_channel_args_destroy(channel_args_);
-  channel_args_ = grpc_channel_args_copy(args.args);
   // Determine whether we need to update all child policies.
   bool update_child_policies =
       old_config == nullptr ||
       old_config->child_policy_config() != config_->child_policy_config() ||
       old_addresses != addresses_ ||
+      attributes_.Compare(args.attributes) != 0 ||
       grpc_channel_args_compare(args.args, channel_args_) != 0;
+  // Swap out attributes.
+  attributes_ = std::move(args.attributes);
+  // Swap out channel args.
+  grpc_channel_args_destroy(channel_args_);
+  channel_args_ = grpc_channel_args_copy(args.args);
   // If default target changes, swap out child policy.
   bool created_default_child = false;
   if (old_config == nullptr ||

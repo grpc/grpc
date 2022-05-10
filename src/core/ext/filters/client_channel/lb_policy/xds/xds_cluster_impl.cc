@@ -183,7 +183,7 @@ class XdsClusterImplLbConfig : public LoadBalancingPolicy::Config {
 // xDS Cluster Impl LB policy.
 class XdsClusterImplLb : public LoadBalancingPolicy {
  public:
-  XdsClusterImplLb(RefCountedPtr<XdsClient> xds_client, Args args);
+  explicit XdsClusterImplLb(Args args);
 
   const char* name() const override { return kXdsClusterImpl; }
 
@@ -266,6 +266,7 @@ class XdsClusterImplLb : public LoadBalancingPolicy {
   OrphanablePtr<LoadBalancingPolicy> CreateChildPolicyLocked(
       const grpc_channel_args* args);
   void UpdateChildPolicyLocked(absl::StatusOr<ServerAddressList> addresses,
+                               ResolverAttributeMap attributes,
                                const grpc_channel_args* args);
 
   void MaybeUpdatePickerLocked();
@@ -432,12 +433,10 @@ LoadBalancingPolicy::PickResult XdsClusterImplLb::Picker::Pick(
 // XdsClusterImplLb
 //
 
-XdsClusterImplLb::XdsClusterImplLb(RefCountedPtr<XdsClient> xds_client,
-                                   Args args)
-    : LoadBalancingPolicy(std::move(args)), xds_client_(std::move(xds_client)) {
+XdsClusterImplLb::XdsClusterImplLb(Args args)
+    : LoadBalancingPolicy(std::move(args)) {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_cluster_impl_lb_trace)) {
-    gpr_log(GPR_INFO, "[xds_cluster_impl_lb %p] created -- using xds client %p",
-            this, xds_client_.get());
+    gpr_log(GPR_INFO, "[xds_cluster_impl_lb %p] created", this);
   }
 }
 
@@ -482,6 +481,22 @@ void XdsClusterImplLb::UpdateLocked(UpdateArgs args) {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_cluster_impl_lb_trace)) {
     gpr_log(GPR_INFO, "[xds_cluster_impl_lb %p] Received update", this);
   }
+  if (xds_client_ == nullptr) {
+    xds_client_ = XdsClient::GetFromResolverAttributes(args.attributes);
+    if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_cluster_impl_lb_trace)) {
+      gpr_log(GPR_INFO, "[xds_cluster_impl_lb %p] using XdsClient %p", this,
+              xds_client_.get());
+    }
+    if (xds_client_ == nullptr) {
+      // If no XdsClient found, report TRANSIENT_FAILURE.
+      absl::Status status = absl::UnavailableError(
+          "XdsClient not present in resolver attributes");
+      channel_control_helper()->UpdateState(
+          GRPC_CHANNEL_TRANSIENT_FAILURE, status,
+          absl::make_unique<TransientFailurePicker>(status));
+      return;
+    }
+  }
   // Update config.
   const bool is_initial_update = config_ == nullptr;
   auto old_config = std::move(config_);
@@ -519,7 +534,8 @@ void XdsClusterImplLb::UpdateLocked(UpdateArgs args) {
     MaybeUpdatePickerLocked();
   }
   // Update child policy.
-  UpdateChildPolicyLocked(std::move(args.addresses), args.args);
+  UpdateChildPolicyLocked(std::move(args.addresses), std::move(args.attributes),
+                          args.args);
 }
 
 void XdsClusterImplLb::MaybeUpdatePickerLocked() {
@@ -579,7 +595,7 @@ OrphanablePtr<LoadBalancingPolicy> XdsClusterImplLb::CreateChildPolicyLocked(
 
 void XdsClusterImplLb::UpdateChildPolicyLocked(
     absl::StatusOr<ServerAddressList> addresses,
-    const grpc_channel_args* args) {
+    ResolverAttributeMap attributes, const grpc_channel_args* args) {
   // Create policy if needed.
   if (child_policy_ == nullptr) {
     child_policy_ = CreateChildPolicyLocked(args);
@@ -588,6 +604,7 @@ void XdsClusterImplLb::UpdateChildPolicyLocked(
   UpdateArgs update_args;
   update_args.addresses = std::move(addresses);
   update_args.config = config_->child_policy();
+  update_args.attributes = std::move(attributes);
   grpc_arg cluster_arg = grpc_channel_arg_string_create(
       const_cast<char*>(GRPC_ARG_XDS_CLUSTER_NAME),
       const_cast<char*>(config_->cluster_name().c_str()));
@@ -693,16 +710,7 @@ class XdsClusterImplLbFactory : public LoadBalancingPolicyFactory {
  public:
   OrphanablePtr<LoadBalancingPolicy> CreateLoadBalancingPolicy(
       LoadBalancingPolicy::Args args) const override {
-    RefCountedPtr<XdsClient> xds_client =
-        XdsClient::GetFromChannelArgs(*args.args);
-    if (xds_client == nullptr) {
-      gpr_log(GPR_ERROR,
-              "XdsClient not present in channel args -- cannot instantiate "
-              "xds_cluster_impl LB policy");
-      return nullptr;
-    }
-    return MakeOrphanable<XdsClusterImplLb>(std::move(xds_client),
-                                            std::move(args));
+    return MakeOrphanable<XdsClusterImplLb>(std::move(args));
   }
 
   const char* name() const override { return kXdsClusterImpl; }

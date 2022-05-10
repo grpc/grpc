@@ -60,12 +60,14 @@ LoadBalancingPolicy::UpdateArgs::UpdateArgs(const UpdateArgs& other)
     : addresses(other.addresses),
       config(other.config),
       resolution_note(other.resolution_note),
+      attributes(other.attributes),
       args(grpc_channel_args_copy(other.args)) {}
 
 LoadBalancingPolicy::UpdateArgs::UpdateArgs(UpdateArgs&& other) noexcept
     : addresses(std::move(other.addresses)),
       config(std::move(other.config)),
       resolution_note(std::move(other.resolution_note)),
+      attributes(std::move(other.attributes)),
       // TODO(roth): Use std::move() once channel args is converted to C++.
       args(other.args) {
   other.args = nullptr;
@@ -77,6 +79,7 @@ LoadBalancingPolicy::UpdateArgs& LoadBalancingPolicy::UpdateArgs::operator=(
   addresses = other.addresses;
   config = other.config;
   resolution_note = other.resolution_note;
+  attributes = other.attributes;
   grpc_channel_args_destroy(args);
   args = grpc_channel_args_copy(other.args);
   return *this;
@@ -87,6 +90,7 @@ LoadBalancingPolicy::UpdateArgs& LoadBalancingPolicy::UpdateArgs::operator=(
   addresses = std::move(other.addresses);
   config = std::move(other.config);
   resolution_note = std::move(other.resolution_note);
+  attributes = std::move(other.attributes);
   // TODO(roth): Use std::move() once channel args is converted to C++.
   grpc_channel_args_destroy(args);
   args = other.args;

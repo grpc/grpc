@@ -473,6 +473,7 @@ class GrpcLb : public LoadBalancingPolicy {
   RefCountedPtr<GrpcLbConfig> config_;
 
   // Current channel args from the resolver.
+  ResolverAttributeMap attributes_;
   grpc_channel_args* args_ = nullptr;
 
   // Internal state.
@@ -1513,6 +1514,7 @@ void GrpcLb::UpdateLocked(UpdateArgs args) {
     }
   }
   resolution_note_ = std::move(args.resolution_note);
+  attributes_ = std::move(args.attributes);
   // Update balancer channel.
   UpdateBalancerChannelLocked(*args.args);
   // Update the existing child policy, if any.
@@ -1767,6 +1769,7 @@ void GrpcLb::CreateOrUpdateChildPolicyLocked() {
         lb_calld_ == nullptr ? nullptr : lb_calld_->client_stats());
     is_backend_from_grpclb_load_balancer = true;
   }
+  update_args.attributes = attributes_;
   update_args.args =
       CreateChildPolicyArgsLocked(is_backend_from_grpclb_load_balancer);
   GPR_ASSERT(update_args.args != nullptr);
