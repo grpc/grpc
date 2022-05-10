@@ -324,11 +324,11 @@ class MainLoop {
 
   static const grpc_channel_filter* BottomFilter(bool is_client) {
     static const grpc_channel_filter client_filter =
-        MakePromiseBasedFilter<Call::BottomFilter, FilterEndpoint::kClient>(
-            "client-end");
+        MakePromiseBasedFilter<Call::BottomFilter, FilterEndpoint::kClient,
+                               kFilterIsLast>("client-end");
     static const grpc_channel_filter server_filter =
-        MakePromiseBasedFilter<Call::BottomFilter, FilterEndpoint::kServer>(
-            "server-end");
+        MakePromiseBasedFilter<Call::BottomFilter, FilterEndpoint::kServer,
+                               kFilterIsLast>("server-end");
     return is_client ? &client_filter : &server_filter;
   }
 
