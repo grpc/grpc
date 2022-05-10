@@ -94,15 +94,15 @@ class MyTestServiceImpl : public TestServiceImpl {
     }
     AddClient(context->peer());
     if (request->has_param() && request->param().has_backend_metrics()) {
-      const auto& load_report = request->param().backend_metrics();
+      load_report_ = request->param().backend_metrics();
       auto& recorder = context->GetCallMetricRecorder();
-      recorder.RecordCpuUtilizationMetric(load_report.cpu_utilization())
-          .RecordMemoryUtilizationMetric(load_report.mem_utilization())
-          .RecordRequestsPerSecond(load_report.rps());
-      for (const auto& p : load_report.request_cost()) {
+      recorder.RecordCpuUtilizationMetric(load_report_.cpu_utilization())
+          .RecordMemoryUtilizationMetric(load_report_.mem_utilization())
+          .RecordRequestsPerSecond(load_report_.rps());
+      for (const auto& p : load_report_.request_cost()) {
         recorder.RecordRequestCostMetric(p.first, p.second);
       }
-      for (const auto& p : load_report.utilization()) {
+      for (const auto& p : load_report_.utilization()) {
         recorder.RecordUtilizationMetric(p.first, p.second);
       }
     }
@@ -134,6 +134,8 @@ class MyTestServiceImpl : public TestServiceImpl {
   int request_count_ = 0;
   grpc::internal::Mutex clients_mu_;
   std::set<std::string> clients_;
+  // For strings storage.
+  xds::data::orca::v3::OrcaLoadReport load_report_;
 };
 
 class FakeResolverResponseGeneratorWrapper {
