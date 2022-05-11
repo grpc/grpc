@@ -1851,12 +1851,6 @@ grpc_cc_library(
     srcs = [
         "src/core/lib/event_engine/resolved_address.cc",
     ],
-    hdrs = [
-        "src/core/lib/event_engine/handle_containers.h",
-    ],
-    external_deps = [
-        "absl/container:flat_hash_set",
-    ],
     deps = [
         "event_engine_base_hdrs",
         "gpr_base",
@@ -3790,14 +3784,13 @@ grpc_cc_library(
         "src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper.h",
     ],
     external_deps = [
-        "absl/container:flat_hash_set",
-        "absl/container:inlined_vector",
         "absl/base:core_headers",
         "absl/memory",
         "absl/status",
         "absl/status:statusor",
         "absl/strings",
         "absl/strings:str_format",
+        "absl/container:inlined_vector",
         "address_sorting",
         "cares",
     ],
@@ -3806,7 +3799,6 @@ grpc_cc_library(
         "config",
         "debug_location",
         "error",
-        "event_engine_common",
         "gpr_base",
         "grpc_base",
         "grpc_client_channel",

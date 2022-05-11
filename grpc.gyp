@@ -361,7 +361,6 @@
       'type': 'static_library',
       'dependencies': [
         'absl/container:flat_hash_map',
-        'absl/container:flat_hash_set',
         'absl/container:inlined_vector',
         'absl/functional:bind_front',
         'absl/hash:hash',
@@ -1114,7 +1113,6 @@
       'type': 'static_library',
       'dependencies': [
         'absl/container:flat_hash_map',
-        'absl/container:flat_hash_set',
         'absl/container:inlined_vector',
         'absl/functional:bind_front',
         'absl/hash:hash',
