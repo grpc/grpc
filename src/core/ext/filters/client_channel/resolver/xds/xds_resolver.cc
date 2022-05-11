@@ -1049,11 +1049,8 @@ void XdsResolver::GenerateResult() {
                 : result.service_config.status().ToString().c_str());
   }
   result.attributes.Set(xds_client_->MakeResolverAttribute());
-  grpc_arg new_args[] = {
-      config_selector->MakeChannelArg(),
-  };
-  result.args =
-      grpc_channel_args_copy_and_add(args_, new_args, GPR_ARRAY_SIZE(new_args));
+  result.attributes.Set(config_selector->MakeResolverAttribute());
+  result.args = grpc_channel_args_copy(args_);
   result_handler_->ReportResult(std::move(result));
 }
 

@@ -1296,7 +1296,8 @@ void ClientChannel::OnResolverResultChangedLocked(Resolver::Result result) {
   } else {
     // Use ServiceConfig and ConfigSelector returned by resolver.
     service_config = std::move(*result.service_config);
-    config_selector = ConfigSelector::GetFromChannelArgs(*result.args);
+    config_selector =
+        ConfigSelector::GetFromResolverAttributes(result.attributes);
   }
   // Note: The only case in which service_config is null here is if the resolver
   // returned a service config error and we don't have a previous service

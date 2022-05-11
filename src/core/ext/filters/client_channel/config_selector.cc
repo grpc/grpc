@@ -18,43 +18,65 @@
 
 #include "src/core/ext/filters/client_channel/config_selector.h"
 
+#include <memory>
+
+#include "absl/strings/str_format.h"
+
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/gpr/useful.h"
+#include "src/core/lib/gprpp/ref_counted_ptr.h"
+#include "src/core/lib/resolver/server_address.h"
 
 namespace grpc_core {
 
 namespace {
 
-void* ConfigSelectorArgCopy(void* p) {
-  ConfigSelector* config_selector = static_cast<ConfigSelector*>(p);
-  config_selector->Ref().release();
-  return p;
-}
+class ConfigSelectorResolverAttribute
+    : public ResolverAttributeMap::AttributeInterface {
+ public:
+  explicit ConfigSelectorResolverAttribute(
+      RefCountedPtr<ConfigSelector> config_selector)
+      : config_selector_(std::move(config_selector)) {}
 
-void ConfigSelectorArgDestroy(void* p) {
-  ConfigSelector* config_selector = static_cast<ConfigSelector*>(p);
-  config_selector->Unref();
-}
+  static const char* Type() { return "config_selector"; }
 
-int ConfigSelectorArgCmp(void* p, void* q) { return QsortCompare(p, q); }
+  const char* type() const override { return Type(); }
 
-const grpc_arg_pointer_vtable kChannelArgVtable = {
-    ConfigSelectorArgCopy, ConfigSelectorArgDestroy, ConfigSelectorArgCmp};
+  std::unique_ptr<AttributeInterface> Copy() const override {
+    return absl::make_unique<ConfigSelectorResolverAttribute>(config_selector_);
+  }
+
+  int Compare(const AttributeInterface* other) const override {
+    auto* other_attribute =
+        static_cast<const ConfigSelectorResolverAttribute*>(other);
+    return QsortCompare(config_selector_.get(),
+                        other_attribute->config_selector_.get());
+  }
+
+  std::string ToString() const override {
+    return absl::StrFormat("{config_selector=%p}", config_selector_.get());
+  }
+
+  ConfigSelector* config_selector() const { return config_selector_.get(); }
+
+ private:
+  RefCountedPtr<ConfigSelector> config_selector_;
+};
 
 }  // namespace
 
-grpc_arg ConfigSelector::MakeChannelArg() const {
-  return grpc_channel_arg_pointer_create(
-      const_cast<char*>(GRPC_ARG_CONFIG_SELECTOR),
-      const_cast<ConfigSelector*>(this), &kChannelArgVtable);
+std::unique_ptr<ResolverAttributeMap::AttributeInterface>
+ConfigSelector::MakeResolverAttribute() {
+  return absl::make_unique<ConfigSelectorResolverAttribute>(Ref());
 }
 
-RefCountedPtr<ConfigSelector> ConfigSelector::GetFromChannelArgs(
-    const grpc_channel_args& args) {
-  ConfigSelector* config_selector =
-      grpc_channel_args_find_pointer<ConfigSelector>(&args,
-                                                     GRPC_ARG_CONFIG_SELECTOR);
-  return config_selector != nullptr ? config_selector->Ref() : nullptr;
+RefCountedPtr<ConfigSelector> ConfigSelector::GetFromResolverAttributes(
+    const ResolverAttributeMap& attributes) {
+  auto* attribute = static_cast<const ConfigSelectorResolverAttribute*>(
+      attributes.Get(ConfigSelectorResolverAttribute::Type()));
+  if (attribute == nullptr) return nullptr;
+  return attribute->config_selector()->Ref(DEBUG_LOCATION,
+                                           "GetFromChannelArgs");
 }
 
 }  // namespace grpc_core
