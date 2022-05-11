@@ -1866,9 +1866,6 @@ grpc_cc_library(
     srcs = [
         "src/core/lib/event_engine/default_event_engine_factory.cc",
     ],
-    external_deps = [
-        # TODO(hork): uv, in a subsequent PR
-    ],
     deps = [
         "default_event_engine_factory_hdrs",
         "gpr_base",
