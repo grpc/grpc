@@ -121,6 +121,8 @@ class CallData {
   bool seen_recv_message_ready_ = false;
   int max_recv_message_length_;
   grpc_compression_algorithm algorithm_ = GRPC_COMPRESS_NONE;
+  grpc_core::SliceBuffer* recv_message_ = nullptr;
+  uint32_t* recv_message_flags_ = nullptr;
   grpc_closure on_recv_message_ready_;
   grpc_closure* original_recv_message_ready_ = nullptr;
   grpc_closure on_recv_message_next_done_;
@@ -195,29 +197,19 @@ void CallData::OnRecvMessageReady(void* arg, grpc_error_handle error) {
 }
 
 void CallData::FinishRecvMessage() {
-  grpc_slice_buffer decompressed_slices;
-  grpc_slice_buffer_init(&decompressed_slices);
-  if (grpc_msg_decompress(algorithm_, &recv_slices_, &decompressed_slices) ==
-      0) {
+  SliceBuffer decompressed_slices;
+  if (grpc_msg_decompress(algorithm_, recv_message_->c_slice_buffer(),
+                          decompressed_slices.c_slice_buffer()) == 0) {
     GPR_DEBUG_ASSERT(error_ == GRPC_ERROR_NONE);
     error_ = GRPC_ERROR_CREATE_FROM_CPP_STRING(
         absl::StrCat("Unexpected error decompressing data for algorithm with "
                      "enum value ",
                      algorithm_));
-    grpc_slice_buffer_destroy_internal(&decompressed_slices);
   } else {
-    uint32_t recv_flags =
-        ((*recv_message_)->flags() & (~GRPC_WRITE_INTERNAL_COMPRESS)) |
+    *recv_message_flags_ =
+        (*recv_message_flags_ & (~GRPC_WRITE_INTERNAL_COMPRESS)) |
         GRPC_WRITE_INTERNAL_TEST_ONLY_WAS_COMPRESSED;
-    // Swap out the original receive byte stream with our new one and send the
-    // batch down.
-    // Initializing recv_replacement_stream_ with decompressed_slices removes
-    // all the slices from decompressed_slices leaving it empty.
-    new (&recv_replacement_stream_)
-        SliceBufferByteStream(&decompressed_slices, recv_flags);
-    recv_message_->reset(
-        reinterpret_cast<SliceBufferByteStream*>(&recv_replacement_stream_));
-    recv_message_ = nullptr;
+    recv_message_->Swap(&decompressed_slices);
   }
   ContinueRecvMessageReadyCallback(GRPC_ERROR_REF(error_));
 }
