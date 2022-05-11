@@ -21,13 +21,11 @@
 
 #include <grpc/support/port_platform.h>
 
-#include <stddef.h>
 #include <stdint.h>
 
 #include "absl/strings/string_view.h"
 
 #include "src/core/lib/iomgr/error.h"
-#include "src/core/lib/iomgr/resolve_address.h"
 #include "src/core/lib/iomgr/resolved_address.h"
 #include "src/core/lib/uri/uri_parser.h"
 
