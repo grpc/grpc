@@ -26,7 +26,7 @@ namespace experimental {
 /// Currently the only valid engine is 'default' or ''.
 /// When more engines are added, this should be updated accordingly.
 absl::Status InitializeTestingEventEngineFactory(absl::string_view engine) {
-  if (engine == "default" || engine == "") {
+  if (engine == "default" || engine.empty()) {
     // No-op, the default will be used
     return absl::OkStatus();
   }

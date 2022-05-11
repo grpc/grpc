@@ -20,8 +20,6 @@
 
 #include <grpc/event_engine/event_engine.h>
 
-#include "src/core/lib/event_engine/trace.h"
-
 namespace grpc_event_engine {
 namespace experimental {
 

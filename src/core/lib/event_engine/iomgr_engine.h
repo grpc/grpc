@@ -15,12 +15,26 @@
 #define GRPC_CORE_LIB_EVENT_ENGINE_IOMGR_ENGINE_H
 #include <grpc/support/port_platform.h>
 
+#include <stdint.h>
+
+#include <atomic>
+#include <functional>
+#include <memory>
+
+#include "absl/base/thread_annotations.h"
+#include "absl/status/status.h"
+#include "absl/status/statusor.h"
+#include "absl/strings/string_view.h"
+#include "absl/time/time.h"
+#include "absl/types/variant.h"
+
+#include <grpc/event_engine/endpoint_config.h>
 #include <grpc/event_engine/event_engine.h>
-#include <grpc/event_engine/port.h>
+#include <grpc/event_engine/memory_allocator.h>
+#include <grpc/event_engine/slice_buffer.h>
 
 #include "src/core/lib/event_engine/handle_containers.h"
 #include "src/core/lib/gprpp/sync.h"
-#include "src/core/lib/iomgr/port.h"
 
 namespace grpc_event_engine {
 namespace experimental {
