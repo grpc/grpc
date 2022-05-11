@@ -1953,6 +1953,7 @@ grpc_cc_library(
         "event_engine_base_hdrs",
         "event_engine_trace",
         "gpr_base",
+        "grpc_trace",
     ],
 )
 
