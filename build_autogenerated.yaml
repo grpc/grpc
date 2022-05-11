@@ -4229,15 +4229,6 @@ targets:
   deps:
   - grpc_test_util
   uses_polling: false
-- name: test_core_slice_slice_buffer_test
-  build: test
-  language: c
-  headers: []
-  src:
-  - test/core/slice/slice_buffer_test.cc
-  deps:
-  - grpc_test_util
-  uses_polling: false
 - name: thd_test
   build: test
   language: c
