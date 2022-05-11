@@ -464,6 +464,17 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "gpr_public_hdrs",
+    hdrs = GPR_PUBLIC_HDRS,
+)
+
+grpc_cc_library(
+    name = "grpc_public_hdrs",
+    hdrs = GRPC_PUBLIC_HDRS,
+    deps = ["gpr_public_hdrs"],
+)
+
+grpc_cc_library(
     name = "grpc++_public_hdrs",
     hdrs = GRPCXX_PUBLIC_HDRS,
     external_deps = [
@@ -471,7 +482,7 @@ grpc_cc_library(
         "protobuf_headers",
     ],
     visibility = ["@grpc:public"],
-    deps = ["grpc"],
+    deps = ["grpc_public_hdrs"],
 )
 
 grpc_cc_library(
