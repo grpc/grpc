@@ -469,6 +469,8 @@ if test "$PHP_GRPC" != "no"; then
     src/core/lib/event_engine/iomgr_engine.cc \
     src/core/lib/event_engine/memory_allocator.cc \
     src/core/lib/event_engine/resolved_address.cc \
+    src/core/lib/event_engine/slice.cc \
+    src/core/lib/event_engine/slice_buffer.cc \
     src/core/lib/event_engine/sockaddr.cc \
     src/core/lib/event_engine/trace.cc \
     src/core/lib/gpr/alloc.cc \

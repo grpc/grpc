@@ -13,9 +13,10 @@
 // limitations under the License.
 #include <grpc/support/port_platform.h>
 
+#include <functional>
+#include <memory>
+
 #include <grpc/event_engine/event_engine.h>
-#include <grpc/event_engine/port.h>
-#include <grpc/support/log.h>
 
 #include "src/core/lib/event_engine/event_engine_factory.h"
 #include "src/core/lib/gprpp/sync.h"
