@@ -302,6 +302,8 @@ libs:
   - include/grpc/event_engine/memory_allocator.h
   - include/grpc/event_engine/memory_request.h
   - include/grpc/event_engine/port.h
+  - include/grpc/event_engine/slice.h
+  - include/grpc/event_engine/slice_buffer.h
   - include/grpc/fork.h
   - include/grpc/grpc.h
   - include/grpc/grpc_posix.h
@@ -1403,6 +1405,8 @@ libs:
   - src/core/lib/event_engine/event_engine.cc
   - src/core/lib/event_engine/memory_allocator.cc
   - src/core/lib/event_engine/resolved_address.cc
+  - src/core/lib/event_engine/slice.cc
+  - src/core/lib/event_engine/slice_buffer.cc
   - src/core/lib/event_engine/sockaddr.cc
   - src/core/lib/gprpp/time.cc
   - src/core/lib/http/format_request.cc
@@ -1778,6 +1782,8 @@ libs:
   - include/grpc/event_engine/memory_allocator.h
   - include/grpc/event_engine/memory_request.h
   - include/grpc/event_engine/port.h
+  - include/grpc/event_engine/slice.h
+  - include/grpc/event_engine/slice_buffer.h
   - include/grpc/fork.h
   - include/grpc/grpc.h
   - include/grpc/grpc_posix.h
@@ -2241,6 +2247,8 @@ libs:
   - src/core/lib/event_engine/event_engine.cc
   - src/core/lib/event_engine/memory_allocator.cc
   - src/core/lib/event_engine/resolved_address.cc
+  - src/core/lib/event_engine/slice.cc
+  - src/core/lib/event_engine/slice_buffer.cc
   - src/core/lib/event_engine/sockaddr.cc
   - src/core/lib/gprpp/time.cc
   - src/core/lib/http/format_request.cc
@@ -4045,15 +4053,6 @@ targets:
   - test/core/surface/server_test.cc
   deps:
   - grpc_test_util
-- name: slice_buffer_test
-  build: test
-  language: c
-  headers: []
-  src:
-  - test/core/slice/slice_buffer_test.cc
-  deps:
-  - grpc_test_util
-  uses_polling: false
 - name: slice_split_test
   build: test
   language: c
@@ -4214,6 +4213,15 @@ targets:
   headers: []
   src:
   - test/core/gpr/time_test.cc
+  deps:
+  - grpc_test_util
+  uses_polling: false
+- name: test_core_slice_slice_buffer_test
+  build: test
+  language: c
+  headers: []
+  src:
+  - test/core/slice/slice_buffer_test.cc
   deps:
   - grpc_test_util
   uses_polling: false
@@ -7706,6 +7714,15 @@ targets:
   - absl/types:optional
   - absl/utility:utility
   uses_polling: false
+- name: test_core_event_engine_slice_buffer_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/core/event_engine/slice_buffer_test.cc
+  deps:
+  - grpc_test_util
 - name: test_core_gprpp_time_test
   gtest: true
   build: test
