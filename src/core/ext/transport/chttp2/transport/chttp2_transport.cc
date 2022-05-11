@@ -1566,21 +1566,19 @@ static void perform_stream_op_locked(void* stream_op,
     GRPC_STATS_INC_HTTP2_OP_RECV_MESSAGE();
     size_t before = 0;
     GPR_ASSERT(s->recv_message_ready == nullptr);
-    GPR_ASSERT(!s->pending_byte_stream);
     s->recv_message_ready = op_payload->recv_message.recv_message_ready;
     s->recv_message = op_payload->recv_message.recv_message;
     s->call_failed_before_recv_message =
         op_payload->recv_message.call_failed_before_recv_message;
     if (s->id != 0) {
       if (!s->read_closed) {
-        before = s->frame_storage.length +
-                 s->unprocessed_incoming_frames_buffer.length;
+        before = s->frame_storage.length;
       }
     }
     grpc_chttp2_maybe_complete_recv_message(t, s);
     if (s->id != 0) {
       if (!s->read_closed && s->frame_storage.length == 0) {
-        size_t after = s->unprocessed_incoming_frames_buffer_cached_length;
+        size_t after = s->frame_storage.length;
         s->flow_control->IncomingByteStreamUpdate(GRPC_HEADER_SIZE_IN_BYTES,
                                                   before - after);
         grpc_chttp2_act_on_flowctl_action(s->flow_control->MakeAction(), t, s);
@@ -1983,43 +1981,27 @@ void grpc_chttp2_maybe_complete_recv_message(grpc_chttp2_transport* /*t*/,
                                              grpc_chttp2_stream* s) {
   grpc_error_handle error = GRPC_ERROR_NONE;
   if (s->recv_message_ready != nullptr) {
-    *s->recv_message = nullptr;
     if (s->final_metadata_requested && s->seen_error) {
       grpc_slice_buffer_reset_and_unref_internal(&s->frame_storage);
-      if (!s->pending_byte_stream) {
-        grpc_slice_buffer_reset_and_unref_internal(
-            &s->unprocessed_incoming_frames_buffer);
-      }
     }
     if (!s->pending_byte_stream) {
-      while (s->unprocessed_incoming_frames_buffer.length > 0 ||
-             s->frame_storage.length > 0) {
-        if (s->unprocessed_incoming_frames_buffer.length == 0) {
-          grpc_slice_buffer_swap(&s->unprocessed_incoming_frames_buffer,
-                                 &s->frame_storage);
-        }
+      while (s->frame_storage.length > 0) {
         error = grpc_deframe_unprocessed_incoming_frames(
-            &s->data_parser, s, &s->unprocessed_incoming_frames_buffer, nullptr,
-            s->recv_message);
+            &s->data_parser, s, &s->frame_storage, nullptr, s->recv_message);
         if (error != GRPC_ERROR_NONE) {
           s->seen_error = true;
           grpc_slice_buffer_reset_and_unref_internal(&s->frame_storage);
-          grpc_slice_buffer_reset_and_unref_internal(
-              &s->unprocessed_incoming_frames_buffer);
           break;
-        } else if (*s->recv_message != nullptr) {
+        } else {
           break;
         }
       }
     }
     // save the length of the buffer before handing control back to application
     // threads. Needed to support correct flow control bookkeeping
-    s->unprocessed_incoming_frames_buffer_cached_length =
-        s->unprocessed_incoming_frames_buffer.length;
     if (error == GRPC_ERROR_NONE && *s->recv_message != nullptr) {
       null_then_sched_closure(&s->recv_message_ready);
     } else if (s->published_metadata[1] != GRPC_METADATA_NOT_PUBLISHED) {
-      *s->recv_message = nullptr;
       if (s->call_failed_before_recv_message != nullptr) {
         *s->call_failed_before_recv_message =
             (s->published_metadata[1] != GRPC_METADATA_PUBLISHED_AT_CLOSE);
@@ -2223,8 +2205,7 @@ void grpc_chttp2_fail_pending_writes(grpc_chttp2_transport* t,
                                     GRPC_ERROR_REF(error),
                                     "send_trailing_metadata_finished");
 
-  s->fetching_send_message.reset();
-  grpc_chttp2_complete_closure_step(t, s, &s->fetching_send_message_finished,
+  grpc_chttp2_complete_closure_step(t, s, &s->send_message_finished,
                                     GRPC_ERROR_REF(error),
                                     "fetching_send_message_finished");
   flush_write_list(t, s, &s->on_write_finished_cbs, GRPC_ERROR_REF(error));

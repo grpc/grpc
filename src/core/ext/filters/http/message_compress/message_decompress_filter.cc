@@ -124,14 +124,6 @@ class CallData {
   grpc_closure on_recv_message_ready_;
   grpc_closure* original_recv_message_ready_ = nullptr;
   grpc_closure on_recv_message_next_done_;
-  OrphanablePtr<ByteStream>* recv_message_ = nullptr;
-  // recv_slices_ holds the slices read from the original recv_message stream.
-  // It is initialized during construction and reset when a new stream is
-  // created using it.
-  grpc_slice_buffer recv_slices_;
-  std::aligned_storage<sizeof(SliceBufferByteStream),
-                       alignof(SliceBufferByteStream)>::type
-      recv_replacement_stream_;
   // Fields for handling recv_trailing_metadata_ready callback
   bool seen_recv_trailing_metadata_ready_ = false;
   grpc_closure on_recv_trailing_metadata_ready_;
@@ -200,46 +192,6 @@ void CallData::OnRecvMessageReady(void* arg, grpc_error_handle error) {
     }
   }
   calld->ContinueRecvMessageReadyCallback(GRPC_ERROR_REF(error));
-}
-
-void CallData::ContinueReadingRecvMessage() {
-  while ((*recv_message_)
-             ->Next((*recv_message_)->length() - recv_slices_.length,
-                    &on_recv_message_next_done_)) {
-    grpc_error_handle error = PullSliceFromRecvMessage();
-    if (error != GRPC_ERROR_NONE) {
-      return ContinueRecvMessageReadyCallback(error);
-    }
-    // We have read the entire message.
-    if (recv_slices_.length == (*recv_message_)->length()) {
-      return FinishRecvMessage();
-    }
-  }
-}
-
-grpc_error_handle CallData::PullSliceFromRecvMessage() {
-  grpc_slice incoming_slice;
-  grpc_error_handle error = (*recv_message_)->Pull(&incoming_slice);
-  if (error == GRPC_ERROR_NONE) {
-    grpc_slice_buffer_add(&recv_slices_, incoming_slice);
-  }
-  return error;
-}
-
-void CallData::OnRecvMessageNextDone(void* arg, grpc_error_handle error) {
-  CallData* calld = static_cast<CallData*>(arg);
-  if (error != GRPC_ERROR_NONE) {
-    return calld->ContinueRecvMessageReadyCallback(GRPC_ERROR_REF(error));
-  }
-  error = calld->PullSliceFromRecvMessage();
-  if (error != GRPC_ERROR_NONE) {
-    return calld->ContinueRecvMessageReadyCallback(error);
-  }
-  if (calld->recv_slices_.length == (*calld->recv_message_)->length()) {
-    calld->FinishRecvMessage();
-  } else {
-    calld->ContinueReadingRecvMessage();
-  }
 }
 
 void CallData::FinishRecvMessage() {
