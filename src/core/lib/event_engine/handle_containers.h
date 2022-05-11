@@ -26,9 +26,6 @@
 
 #include <grpc/event_engine/event_engine.h>
 
-struct TaskHandleComparator::Eq;
-struct TaskHandleComparator::Hash;
-
 // Used for heterogenous lookup of TaskHandles in abseil containers.
 template <typename TaskHandle>
 struct TaskHandleComparator {

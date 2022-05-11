@@ -1868,6 +1868,7 @@ grpc_cc_library(
     srcs = [
         "src/core/lib/event_engine/default_event_engine_factory.cc",
     ],
+    external_deps = ["absl/memory"],
     deps = [
         "default_event_engine_factory_hdrs",
         "event_engine_base_hdrs",
@@ -1883,15 +1884,23 @@ grpc_cc_library(
     hdrs = ["src/core/lib/event_engine/iomgr_engine.h"],
     external_deps = [
         "absl/cleanup",
+        "absl/container:flat_hash_set",
+        "absl/time",
+        "absl/strings",
     ],
     deps = [
+        "closure",
+        "error",
         "event_engine_base_hdrs",
         "event_engine_common",
+        "event_engine_trace",
         "exec_ctx",
         "gpr_base",
         "gpr_platform",
+        "grpc_trace",
         "iomgr_timer",
         "match",
+        "time",
     ],
 )
 
@@ -1901,23 +1910,35 @@ grpc_cc_library(
         "src/core/lib/event_engine/resolved_address.cc",
         "src/core/lib/event_engine/slice.cc",
         "src/core/lib/event_engine/slice_buffer.cc",
-        "src/core/lib/event_engine/trace.cc",
     ],
     hdrs = [
         "src/core/lib/event_engine/handle_containers.h",
-        "src/core/lib/event_engine/trace.h",
     ],
     external_deps = [
         "absl/container:flat_hash_set",
     ],
     deps = [
         "event_engine_base_hdrs",
+        "event_engine_trace",
         "gpr_base",
         "gpr_platform",
-        "grpc_trace",
         "ref_counted",
         "slice",
         "slice_refcount",
+    ],
+)
+
+grpc_cc_library(
+    name = "event_engine_trace",
+    srcs = [
+        "src/core/lib/event_engine/trace.cc",
+    ],
+    hdrs = [
+        "src/core/lib/event_engine/trace.h",
+    ],
+    deps = [
+        "gpr_platform",
+        "grpc_trace",
     ],
 )
 
@@ -1930,6 +1951,7 @@ grpc_cc_library(
         "default_event_engine_factory",
         "default_event_engine_factory_hdrs",
         "event_engine_base_hdrs",
+        "event_engine_trace",
         "gpr_base",
     ],
 )
