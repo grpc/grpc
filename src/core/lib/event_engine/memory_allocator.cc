@@ -13,14 +13,17 @@
 // limitations under the License.
 
 #include <grpc/support/port_platform.h>
-#include <grpc/event_engine/memory_allocator.h>
-#include <grpc/event_engine/memory_request.h>
-#include <grpc/slice.h>
+
 #include <stdint.h>
 #include <stdlib.h>
+
 #include <memory>
 #include <new>
 #include <utility>
+
+#include <grpc/event_engine/memory_allocator.h>
+#include <grpc/event_engine/memory_request.h>
+#include <grpc/slice.h>
 
 #include "src/core/lib/slice/slice_refcount_base.h"
 

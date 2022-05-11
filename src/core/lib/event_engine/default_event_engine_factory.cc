@@ -12,8 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 #include <grpc/support/port_platform.h>
-#include <grpc/event_engine/event_engine.h>
+
 #include <memory>
+
+#include <grpc/event_engine/event_engine.h>
 
 #include "src/core/lib/event_engine/event_engine_factory.h"
 
