@@ -3321,6 +3321,7 @@ grpc_cc_library(
         "orphanable",
         "ref_counted",
         "ref_counted_ptr",
+        "resolver_attributes",
         "server_address",
     ],
 )
