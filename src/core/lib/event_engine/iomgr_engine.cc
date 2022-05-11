@@ -21,11 +21,11 @@
 #include <grpc/event_engine/port.h>
 #include <grpc/support/log.h>
 
+#include "src/core/lib/event_engine/trace.h"
 #include "src/core/lib/gprpp/match.h"
 #include "src/core/lib/gprpp/time_util.h"
 #include "src/core/lib/iomgr/executor.h"
 #include "src/core/lib/iomgr/timer.h"
-#include "src/core/lib/event_engine/trace.h"
 
 namespace grpc_event_engine {
 namespace experimental {

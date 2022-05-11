@@ -25,7 +25,6 @@
 
 #include "absl/base/thread_annotations.h"
 
-#include <grpc/event_engine/event_engine.h>
 #include <grpc/fork.h>
 #include <grpc/grpc.h>
 #include <grpc/grpc_security.h>
