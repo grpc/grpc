@@ -1237,6 +1237,8 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/lib/promise/try_seq.h )
   s.files += %w( src/core/lib/resolver/resolver.cc )
   s.files += %w( src/core/lib/resolver/resolver.h )
+  s.files += %w( src/core/lib/resolver/resolver_attributes.cc )
+  s.files += %w( src/core/lib/resolver/resolver_attributes.h )
   s.files += %w( src/core/lib/resolver/resolver_factory.h )
   s.files += %w( src/core/lib/resolver/resolver_registry.cc )
   s.files += %w( src/core/lib/resolver/resolver_registry.h )

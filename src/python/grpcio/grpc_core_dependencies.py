@@ -586,6 +586,7 @@ CORE_SOURCE_FILES = [
     'src/core/lib/promise/activity.cc',
     'src/core/lib/promise/sleep.cc',
     'src/core/lib/resolver/resolver.cc',
+    'src/core/lib/resolver/resolver_attributes.cc',
     'src/core/lib/resolver/resolver_registry.cc',
     'src/core/lib/resolver/server_address.cc',
     'src/core/lib/resource_quota/api.cc',

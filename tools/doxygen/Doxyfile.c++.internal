@@ -2219,6 +2219,8 @@ src/core/lib/promise/sleep.h \
 src/core/lib/promise/try_seq.h \
 src/core/lib/resolver/resolver.cc \
 src/core/lib/resolver/resolver.h \
+src/core/lib/resolver/resolver_attributes.cc \
+src/core/lib/resolver/resolver_attributes.h \
 src/core/lib/resolver/resolver_factory.h \
 src/core/lib/resolver/resolver_registry.cc \
 src/core/lib/resolver/resolver_registry.h \

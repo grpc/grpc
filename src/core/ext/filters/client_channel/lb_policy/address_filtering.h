@@ -26,6 +26,7 @@
 
 #include "absl/status/statusor.h"
 
+#include "src/core/lib/resolver/resolver_attributes.h"
 #include "src/core/lib/resolver/server_address.h"
 
 // The resolver returns a flat list of addresses.  When a hierarchy of

@@ -2396,6 +2396,25 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "resolver_attributes",
+    srcs = [
+        "src/core/lib/resolver/resolver_attributes.cc",
+    ],
+    hdrs = [
+        "src/core/lib/resolver/resolver_attributes.h",
+    ],
+    external_deps = [
+        "absl/strings",
+    ],
+    language = "c++",
+    visibility = ["@grpc:client_channel"],
+    deps = [
+        "gpr_platform",
+        "useful",
+    ],
+)
+
+grpc_cc_library(
     name = "server_address",
     srcs = [
         "src/core/lib/resolver/server_address.cc",
@@ -2413,6 +2432,7 @@ grpc_cc_library(
         "channel_args",
         "gpr_platform",
         "resolved_address",
+        "resolver_attributes",
         "sockaddr_utils",
     ],
 )
@@ -2590,6 +2610,7 @@ grpc_cc_library(
         "protobuf_duration_upb",
         "ref_counted",
         "ref_counted_ptr",
+        "resolver_attributes",
         "resource_quota",
         "server_address",
         "service_config_parser",
@@ -2902,6 +2923,7 @@ grpc_cc_library(
         "ref_counted",
         "ref_counted_ptr",
         "resolved_address",
+        "resolver_attributes",
         "server_address",
         "slice",
         "slice_refcount",
@@ -3083,6 +3105,7 @@ grpc_cc_library(
         "protobuf_timestamp_upb",
         "protobuf_wrappers_upb",
         "ref_counted_ptr",
+        "resolver_attributes",
         "rls_config_upb",
         "rls_config_upbdefs",
         "slice",
@@ -3227,6 +3250,7 @@ grpc_cc_library(
         "grpc_base",
         "grpc_client_channel",
         "grpc_xds_client",
+        "resolver_attributes",
     ],
 )
 
@@ -3262,6 +3286,7 @@ grpc_cc_library(
         "json",
         "orphanable",
         "ref_counted_ptr",
+        "resolver_attributes",
         "server_address",
         "uri_parser",
     ],
@@ -3347,6 +3372,7 @@ grpc_cc_library(
         "gpr_base",
         "grpc_base",
         "grpc_client_channel",
+        "resolver_attributes",
     ],
 )
 

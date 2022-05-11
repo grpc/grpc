@@ -843,6 +843,7 @@ libs:
   - src/core/lib/promise/sleep.h
   - src/core/lib/promise/try_seq.h
   - src/core/lib/resolver/resolver.h
+  - src/core/lib/resolver/resolver_attributes.h
   - src/core/lib/resolver/resolver_factory.h
   - src/core/lib/resolver/resolver_registry.h
   - src/core/lib/resolver/server_address.h
@@ -1502,6 +1503,7 @@ libs:
   - src/core/lib/promise/activity.cc
   - src/core/lib/promise/sleep.cc
   - src/core/lib/resolver/resolver.cc
+  - src/core/lib/resolver/resolver_attributes.cc
   - src/core/lib/resolver/resolver_registry.cc
   - src/core/lib/resolver/server_address.cc
   - src/core/lib/resource_quota/api.cc
@@ -2027,6 +2029,7 @@ libs:
   - src/core/lib/promise/sleep.h
   - src/core/lib/promise/try_seq.h
   - src/core/lib/resolver/resolver.h
+  - src/core/lib/resolver/resolver_attributes.h
   - src/core/lib/resolver/resolver_factory.h
   - src/core/lib/resolver/resolver_registry.h
   - src/core/lib/resolver/server_address.h
@@ -2338,6 +2341,7 @@ libs:
   - src/core/lib/promise/activity.cc
   - src/core/lib/promise/sleep.cc
   - src/core/lib/resolver/resolver.cc
+  - src/core/lib/resolver/resolver_attributes.cc
   - src/core/lib/resolver/resolver_registry.cc
   - src/core/lib/resolver/server_address.cc
   - src/core/lib/resource_quota/api.cc
@@ -7118,6 +7122,15 @@ targets:
   deps:
   - grpc_test_util
   - grpc++_test_config
+- name: resolver_attributes_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/core/client_channel/resolvers/resolver_attributes_test.cc
+  deps:
+  - grpc_test_util
 - name: resource_quota_test
   gtest: true
   build: test
