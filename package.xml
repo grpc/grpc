@@ -39,6 +39,8 @@
     <file baseinstalldir="/" name="include/grpc/event_engine/memory_allocator.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/event_engine/memory_request.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/event_engine/port.h" role="src" />
+    <file baseinstalldir="/" name="include/grpc/event_engine/slice.h" role="src" />
+    <file baseinstalldir="/" name="include/grpc/event_engine/slice_buffer.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/fork.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/grpc.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/grpc_posix.h" role="src" />
@@ -933,6 +935,8 @@
     <file baseinstalldir="/" name="src/core/lib/event_engine/event_engine_factory.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/event_engine/memory_allocator.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/event_engine/resolved_address.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/event_engine/slice.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/event_engine/slice_buffer.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/event_engine/sockaddr.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/event_engine/sockaddr.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gpr/alloc.cc" role="src" />
