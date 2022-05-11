@@ -22,12 +22,17 @@
 
 #include <string.h>
 
+#include <algorithm>
+
 #include "absl/strings/str_format.h"
 
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 
 #include "src/core/ext/transport/chttp2/transport/internal.h"
+#include "src/core/ext/transport/chttp2/transport/stream_map.h"
+#include "src/core/lib/gprpp/time.h"
+#include "src/core/lib/iomgr/exec_ctx.h"
 
 static bool g_disable_ping_ack = false;
 

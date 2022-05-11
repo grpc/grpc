@@ -21,10 +21,14 @@
 
 #include <grpc/support/port_platform.h>
 
-#include <grpc/slice_buffer.h>
+#include <stddef.h>
+#include <stdint.h>
+
+#include <grpc/slice.h>
 
 #include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/iomgr/closure.h"
+#include "src/core/lib/iomgr/error.h"
 
 /** Internal bit flag for grpc_begin_message's \a flags signaling the use of
  * compression for the message. (Does not apply for stream compression.) */

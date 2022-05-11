@@ -19,6 +19,8 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <stddef.h>
+
 #include "absl/strings/string_view.h"
 
 #include "src/core/ext/filters/client_channel/lb_policy.h"
