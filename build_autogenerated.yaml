@@ -302,6 +302,8 @@ libs:
   - include/grpc/event_engine/memory_allocator.h
   - include/grpc/event_engine/memory_request.h
   - include/grpc/event_engine/port.h
+  - include/grpc/event_engine/slice.h
+  - include/grpc/event_engine/slice_buffer.h
   - include/grpc/fork.h
   - include/grpc/grpc.h
   - include/grpc/grpc_posix.h
@@ -335,6 +337,7 @@ libs:
   - src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_balancer_addresses.h
   - src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_client_stats.h
   - src/core/ext/filters/client_channel/lb_policy/grpclb/load_balancer_api.h
+  - src/core/ext/filters/client_channel/lb_policy/oob_backend_metric.h
   - src/core/ext/filters/client_channel/lb_policy/ring_hash/ring_hash.h
   - src/core/ext/filters/client_channel/lb_policy/subchannel_list.h
   - src/core/ext/filters/client_channel/lb_policy/xds/xds.h
@@ -356,6 +359,7 @@ libs:
   - src/core/ext/filters/client_channel/retry_throttle.h
   - src/core/ext/filters/client_channel/subchannel.h
   - src/core/ext/filters/client_channel/subchannel_interface.h
+  - src/core/ext/filters/client_channel/subchannel_interface_internal.h
   - src/core/ext/filters/client_channel/subchannel_pool_interface.h
   - src/core/ext/filters/client_channel/subchannel_stream_client.h
   - src/core/ext/filters/deadline/deadline_filter.h
@@ -534,6 +538,7 @@ libs:
   - src/core/ext/upb-generated/xds/core/v3/resource_locator.upb.h
   - src/core/ext/upb-generated/xds/core/v3/resource_name.upb.h
   - src/core/ext/upb-generated/xds/data/orca/v3/orca_load_report.upb.h
+  - src/core/ext/upb-generated/xds/service/orca/v3/orca.upb.h
   - src/core/ext/upb-generated/xds/type/matcher/v3/matcher.upb.h
   - src/core/ext/upb-generated/xds/type/matcher/v3/regex.upb.h
   - src/core/ext/upb-generated/xds/type/matcher/v3/string.upb.h
@@ -776,6 +781,7 @@ libs:
   - src/core/lib/iomgr/internal_errqueue.h
   - src/core/lib/iomgr/iocp_windows.h
   - src/core/lib/iomgr/iomgr.h
+  - src/core/lib/iomgr/iomgr_fwd.h
   - src/core/lib/iomgr/iomgr_internal.h
   - src/core/lib/iomgr/load_file.h
   - src/core/lib/iomgr/lockfree_event.h
@@ -995,6 +1001,7 @@ libs:
   - src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_balancer_addresses.cc
   - src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_client_stats.cc
   - src/core/ext/filters/client_channel/lb_policy/grpclb/load_balancer_api.cc
+  - src/core/ext/filters/client_channel/lb_policy/oob_backend_metric.cc
   - src/core/ext/filters/client_channel/lb_policy/pick_first/pick_first.cc
   - src/core/ext/filters/client_channel/lb_policy/priority/priority.cc
   - src/core/ext/filters/client_channel/lb_policy/ring_hash/ring_hash.cc
@@ -1210,6 +1217,7 @@ libs:
   - src/core/ext/upb-generated/xds/core/v3/resource_locator.upb.c
   - src/core/ext/upb-generated/xds/core/v3/resource_name.upb.c
   - src/core/ext/upb-generated/xds/data/orca/v3/orca_load_report.upb.c
+  - src/core/ext/upb-generated/xds/service/orca/v3/orca.upb.c
   - src/core/ext/upb-generated/xds/type/matcher/v3/matcher.upb.c
   - src/core/ext/upb-generated/xds/type/matcher/v3/regex.upb.c
   - src/core/ext/upb-generated/xds/type/matcher/v3/string.upb.c
@@ -1397,6 +1405,8 @@ libs:
   - src/core/lib/event_engine/event_engine.cc
   - src/core/lib/event_engine/memory_allocator.cc
   - src/core/lib/event_engine/resolved_address.cc
+  - src/core/lib/event_engine/slice.cc
+  - src/core/lib/event_engine/slice_buffer.cc
   - src/core/lib/event_engine/sockaddr.cc
   - src/core/lib/gprpp/time.cc
   - src/core/lib/http/format_request.cc
@@ -1597,6 +1607,7 @@ libs:
   - src/core/lib/transport/byte_stream.cc
   - src/core/lib/transport/connectivity_state.cc
   - src/core/lib/transport/error_utils.cc
+  - src/core/lib/transport/metadata_batch.cc
   - src/core/lib/transport/parsed_metadata.cc
   - src/core/lib/transport/pid_controller.cc
   - src/core/lib/transport/status_conversion.cc
@@ -1639,7 +1650,9 @@ libs:
   - absl/container:inlined_vector
   - absl/functional:bind_front
   - absl/hash:hash
+  - absl/meta:type_traits
   - absl/status:statusor
+  - absl/types:span
   - absl/types:variant
   - absl/utility:utility
   - gpr
@@ -1647,15 +1660,6 @@ libs:
   - address_sorting
   baselib: true
   generate_plugin_registry: true
-- name: grpc_csharp_ext
-  build: all
-  language: c
-  public_headers: []
-  headers: []
-  src:
-  - src/csharp/ext/grpc_csharp_ext.c
-  deps:
-  - grpc
 - name: grpc_test_util
   build: private
   language: c
@@ -1778,6 +1782,8 @@ libs:
   - include/grpc/event_engine/memory_allocator.h
   - include/grpc/event_engine/memory_request.h
   - include/grpc/event_engine/port.h
+  - include/grpc/event_engine/slice.h
+  - include/grpc/event_engine/slice_buffer.h
   - include/grpc/fork.h
   - include/grpc/grpc.h
   - include/grpc/grpc_posix.h
@@ -1811,6 +1817,7 @@ libs:
   - src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_balancer_addresses.h
   - src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_client_stats.h
   - src/core/ext/filters/client_channel/lb_policy/grpclb/load_balancer_api.h
+  - src/core/ext/filters/client_channel/lb_policy/oob_backend_metric.h
   - src/core/ext/filters/client_channel/lb_policy/ring_hash/ring_hash.h
   - src/core/ext/filters/client_channel/lb_policy/subchannel_list.h
   - src/core/ext/filters/client_channel/lb_policy_factory.h
@@ -1829,6 +1836,7 @@ libs:
   - src/core/ext/filters/client_channel/retry_throttle.h
   - src/core/ext/filters/client_channel/subchannel.h
   - src/core/ext/filters/client_channel/subchannel_interface.h
+  - src/core/ext/filters/client_channel/subchannel_interface_internal.h
   - src/core/ext/filters/client_channel/subchannel_pool_interface.h
   - src/core/ext/filters/client_channel/subchannel_stream_client.h
   - src/core/ext/filters/deadline/deadline_filter.h
@@ -1881,6 +1889,7 @@ libs:
   - src/core/ext/upb-generated/src/proto/grpc/lookup/v1/rls.upb.h
   - src/core/ext/upb-generated/validate/validate.upb.h
   - src/core/ext/upb-generated/xds/data/orca/v3/orca_load_report.upb.h
+  - src/core/ext/upb-generated/xds/service/orca/v3/orca.upb.h
   - src/core/lib/address_utils/parse_address.h
   - src/core/lib/address_utils/sockaddr_utils.h
   - src/core/lib/avl/avl.h
@@ -1960,6 +1969,7 @@ libs:
   - src/core/lib/iomgr/internal_errqueue.h
   - src/core/lib/iomgr/iocp_windows.h
   - src/core/lib/iomgr/iomgr.h
+  - src/core/lib/iomgr/iomgr_fwd.h
   - src/core/lib/iomgr/iomgr_internal.h
   - src/core/lib/iomgr/load_file.h
   - src/core/lib/iomgr/lockfree_event.h
@@ -2124,6 +2134,7 @@ libs:
   - src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_balancer_addresses.cc
   - src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_client_stats.cc
   - src/core/ext/filters/client_channel/lb_policy/grpclb/load_balancer_api.cc
+  - src/core/ext/filters/client_channel/lb_policy/oob_backend_metric.cc
   - src/core/ext/filters/client_channel/lb_policy/pick_first/pick_first.cc
   - src/core/ext/filters/client_channel/lb_policy/priority/priority.cc
   - src/core/ext/filters/client_channel/lb_policy/ring_hash/ring_hash.cc
@@ -2207,6 +2218,7 @@ libs:
   - src/core/ext/upb-generated/src/proto/grpc/lookup/v1/rls.upb.c
   - src/core/ext/upb-generated/validate/validate.upb.c
   - src/core/ext/upb-generated/xds/data/orca/v3/orca_load_report.upb.c
+  - src/core/ext/upb-generated/xds/service/orca/v3/orca.upb.c
   - src/core/lib/address_utils/parse_address.cc
   - src/core/lib/address_utils/sockaddr_utils.cc
   - src/core/lib/backoff/backoff.cc
@@ -2235,6 +2247,8 @@ libs:
   - src/core/lib/event_engine/event_engine.cc
   - src/core/lib/event_engine/memory_allocator.cc
   - src/core/lib/event_engine/resolved_address.cc
+  - src/core/lib/event_engine/slice.cc
+  - src/core/lib/event_engine/slice_buffer.cc
   - src/core/lib/event_engine/sockaddr.cc
   - src/core/lib/gprpp/time.cc
   - src/core/lib/http/format_request.cc
@@ -2395,6 +2409,7 @@ libs:
   - src/core/lib/transport/byte_stream.cc
   - src/core/lib/transport/connectivity_state.cc
   - src/core/lib/transport/error_utils.cc
+  - src/core/lib/transport/metadata_batch.cc
   - src/core/lib/transport/parsed_metadata.cc
   - src/core/lib/transport/pid_controller.cc
   - src/core/lib/transport/status_conversion.cc
@@ -2413,7 +2428,9 @@ libs:
   - absl/container:inlined_vector
   - absl/functional:bind_front
   - absl/hash:hash
+  - absl/meta:type_traits
   - absl/status:statusor
+  - absl/types:span
   - absl/types:variant
   - absl/utility:utility
   - gpr
@@ -2432,6 +2449,7 @@ libs:
   - src/proto/grpc/testing/echo.proto
   - src/proto/grpc/testing/echo_messages.proto
   - src/proto/grpc/testing/simple_messages.proto
+  - src/proto/grpc/testing/xds/v3/orca_load_report.proto
   - test/cpp/microbenchmarks/helpers.cc
   deps:
   - benchmark
@@ -3811,6 +3829,7 @@ targets:
   deps:
   - absl/status:statusor
   - absl/types:variant
+  - absl/utility:utility
   - gpr
   platforms:
   - linux
@@ -4034,15 +4053,6 @@ targets:
   - test/core/surface/server_test.cc
   deps:
   - grpc_test_util
-- name: slice_buffer_test
-  build: test
-  language: c
-  headers: []
-  src:
-  - test/core/slice/slice_buffer_test.cc
-  deps:
-  - grpc_test_util
-  uses_polling: false
 - name: slice_split_test
   build: test
   language: c
@@ -4203,6 +4213,15 @@ targets:
   headers: []
   src:
   - test/core/gpr/time_test.cc
+  deps:
+  - grpc_test_util
+  uses_polling: false
+- name: test_core_slice_slice_buffer_test
+  build: test
+  language: c
+  headers: []
+  src:
+  - test/core/slice/slice_buffer_test.cc
   deps:
   - grpc_test_util
   uses_polling: false
@@ -4476,6 +4495,7 @@ targets:
   deps:
   - absl/status:statusor
   - absl/types:variant
+  - absl/utility:utility
   - gpr
   uses_polling: false
 - name: async_end2end_test
@@ -4489,6 +4509,7 @@ targets:
   - src/proto/grpc/testing/echo.proto
   - src/proto/grpc/testing/echo_messages.proto
   - src/proto/grpc/testing/simple_messages.proto
+  - src/proto/grpc/testing/xds/v3/orca_load_report.proto
   - test/cpp/end2end/async_end2end_test.cc
   deps:
   - grpc++_test_util
@@ -4616,6 +4637,7 @@ targets:
   - src/proto/grpc/testing/echo.proto
   - src/proto/grpc/testing/echo_messages.proto
   - src/proto/grpc/testing/simple_messages.proto
+  - src/proto/grpc/testing/xds/v3/orca_load_report.proto
   - test/core/transport/binder/end2end/binder_server_test.cc
   - test/core/transport/binder/end2end/fake_binder.cc
   - test/cpp/end2end/test_service_impl.cc
@@ -4847,6 +4869,7 @@ targets:
   - src/proto/grpc/testing/echo.proto
   - src/proto/grpc/testing/echo_messages.proto
   - src/proto/grpc/testing/simple_messages.proto
+  - src/proto/grpc/testing/xds/v3/orca_load_report.proto
   - test/cpp/end2end/cfstream_test.cc
   - test/cpp/end2end/test_service_impl.cc
   deps:
@@ -4935,6 +4958,7 @@ targets:
   - src/proto/grpc/testing/echo.proto
   - src/proto/grpc/testing/echo_messages.proto
   - src/proto/grpc/testing/simple_messages.proto
+  - src/proto/grpc/testing/xds/v3/orca_load_report.proto
   - test/cpp/end2end/channelz_service_test.cc
   - test/cpp/end2end/test_service_impl.cc
   deps:
@@ -5039,6 +5063,7 @@ targets:
   - src/proto/grpc/testing/echo.proto
   - src/proto/grpc/testing/echo_messages.proto
   - src/proto/grpc/testing/simple_messages.proto
+  - src/proto/grpc/testing/xds/v3/orca_load_report.proto
   - test/cpp/util/cli_call.cc
   - test/cpp/util/cli_call_test.cc
   - test/cpp/util/cli_credentials.cc
@@ -5070,6 +5095,7 @@ targets:
   - src/proto/grpc/testing/echo.proto
   - src/proto/grpc/testing/echo_messages.proto
   - src/proto/grpc/testing/simple_messages.proto
+  - src/proto/grpc/testing/xds/v3/orca_load_report.proto
   - test/cpp/end2end/client_callback_end2end_test.cc
   - test/cpp/end2end/interceptors_util.cc
   - test/cpp/end2end/test_service_impl.cc
@@ -5088,6 +5114,7 @@ targets:
   - src/proto/grpc/testing/echo.proto
   - src/proto/grpc/testing/echo_messages.proto
   - src/proto/grpc/testing/simple_messages.proto
+  - src/proto/grpc/testing/xds/v3/orca_load_report.proto
   - test/cpp/client/client_channel_stress_test.cc
   - test/cpp/end2end/test_service_impl.cc
   deps:
@@ -5117,6 +5144,7 @@ targets:
   - src/proto/grpc/testing/echo.proto
   - src/proto/grpc/testing/echo_messages.proto
   - src/proto/grpc/testing/simple_messages.proto
+  - src/proto/grpc/testing/xds/v3/orca_load_report.proto
   - test/cpp/end2end/client_interceptors_end2end_test.cc
   - test/cpp/end2end/interceptors_util.cc
   - test/cpp/end2end/test_service_impl.cc
@@ -5137,6 +5165,7 @@ targets:
   - src/proto/grpc/testing/echo_messages.proto
   - src/proto/grpc/testing/simple_messages.proto
   - src/proto/grpc/testing/xds/v3/orca_load_report.proto
+  - src/cpp/server/orca/orca_service.cc
   - test/core/util/test_lb_policies.cc
   - test/cpp/end2end/client_lb_end2end_test.cc
   - test/cpp/end2end/connection_delay_injector.cc
@@ -5201,6 +5230,7 @@ targets:
   - src/proto/grpc/testing/echo.proto
   - src/proto/grpc/testing/echo_messages.proto
   - src/proto/grpc/testing/simple_messages.proto
+  - src/proto/grpc/testing/xds/v3/orca_load_report.proto
   - test/cpp/end2end/context_allocator_end2end_test.cc
   - test/cpp/end2end/test_service_impl.cc
   deps:
@@ -5271,6 +5301,7 @@ targets:
   - src/proto/grpc/testing/echo.proto
   - src/proto/grpc/testing/echo_messages.proto
   - src/proto/grpc/testing/simple_messages.proto
+  - src/proto/grpc/testing/xds/v3/orca_load_report.proto
   - test/cpp/end2end/delegating_channel_test.cc
   - test/cpp/end2end/test_service_impl.cc
   deps:
@@ -5318,6 +5349,7 @@ targets:
   - src/proto/grpc/testing/echo.proto
   - src/proto/grpc/testing/echo_messages.proto
   - src/proto/grpc/testing/simple_messages.proto
+  - src/proto/grpc/testing/xds/v3/orca_load_report.proto
   - test/core/transport/binder/end2end/end2end_binder_transport_test.cc
   - test/core/transport/binder/end2end/fake_binder.cc
   - test/core/transport/binder/end2end/testing_channel_create.cc
@@ -5337,6 +5369,7 @@ targets:
   - src/proto/grpc/testing/echo.proto
   - src/proto/grpc/testing/echo_messages.proto
   - src/proto/grpc/testing/simple_messages.proto
+  - src/proto/grpc/testing/xds/v3/orca_load_report.proto
   - test/cpp/end2end/end2end_test.cc
   - test/cpp/end2end/interceptors_util.cc
   - test/cpp/end2end/test_service_impl.cc
@@ -5455,6 +5488,7 @@ targets:
   src:
   - src/proto/grpc/status/status.proto
   - src/proto/grpc/testing/echo_messages.proto
+  - src/proto/grpc/testing/xds/v3/orca_load_report.proto
   - test/cpp/util/error_details_test.cc
   deps:
   - grpc++_error_details
@@ -5512,6 +5546,7 @@ targets:
   - src/proto/grpc/testing/echo.proto
   - src/proto/grpc/testing/echo_messages.proto
   - src/proto/grpc/testing/simple_messages.proto
+  - src/proto/grpc/testing/xds/v3/orca_load_report.proto
   - test/cpp/end2end/exception_test.cc
   deps:
   - grpc++_test_util
@@ -5676,6 +5711,7 @@ targets:
   - src/proto/grpc/testing/echo.proto
   - src/proto/grpc/testing/echo_messages.proto
   - src/proto/grpc/testing/simple_messages.proto
+  - src/proto/grpc/testing/xds/v3/orca_load_report.proto
   - test/cpp/end2end/filter_end2end_test.cc
   deps:
   - grpc++_test_util
@@ -5690,6 +5726,7 @@ targets:
   - src/proto/grpc/testing/echo.proto
   - src/proto/grpc/testing/echo_messages.proto
   - src/proto/grpc/testing/simple_messages.proto
+  - src/proto/grpc/testing/xds/v3/orca_load_report.proto
   - test/cpp/end2end/flaky_network_test.cc
   - test/cpp/end2end/test_service_impl.cc
   deps:
@@ -5780,6 +5817,7 @@ targets:
   - absl/container:flat_hash_set
   - absl/status:statusor
   - absl/types:variant
+  - absl/utility:utility
   - gpr
   uses_polling: false
 - name: generic_end2end_test
@@ -5792,6 +5830,7 @@ targets:
   - src/proto/grpc/testing/echo.proto
   - src/proto/grpc/testing/echo_messages.proto
   - src/proto/grpc/testing/simple_messages.proto
+  - src/proto/grpc/testing/xds/v3/orca_load_report.proto
   - test/cpp/end2end/generic_end2end_test.cc
   deps:
   - grpc++_test_util
@@ -5886,6 +5925,7 @@ targets:
   - src/proto/grpc/testing/echo.proto
   - src/proto/grpc/testing/echo_messages.proto
   - src/proto/grpc/testing/simple_messages.proto
+  - src/proto/grpc/testing/xds/v3/orca_load_report.proto
   - src/core/lib/security/authorization/grpc_authorization_policy_provider.cc
   - src/core/lib/security/authorization/rbac_translator.cc
   - src/cpp/server/authorization_policy_provider.cc
@@ -6035,6 +6075,7 @@ targets:
   - src/proto/grpc/testing/echo.proto
   - src/proto/grpc/testing/echo_messages.proto
   - src/proto/grpc/testing/simple_messages.proto
+  - src/proto/grpc/testing/xds/v3/orca_load_report.proto
   - test/cpp/util/cli_call.cc
   - test/cpp/util/cli_credentials.cc
   - test/cpp/util/grpc_tool.cc
@@ -6073,6 +6114,7 @@ targets:
   - src/proto/grpc/testing/echo.proto
   - src/proto/grpc/testing/echo_messages.proto
   - src/proto/grpc/testing/simple_messages.proto
+  - src/proto/grpc/testing/xds/v3/orca_load_report.proto
   - test/cpp/end2end/grpclb_end2end_test.cc
   - test/cpp/end2end/test_service_impl.cc
   deps:
@@ -6130,6 +6172,7 @@ targets:
   - src/proto/grpc/testing/echo.proto
   - src/proto/grpc/testing/echo_messages.proto
   - src/proto/grpc/testing/simple_messages.proto
+  - src/proto/grpc/testing/xds/v3/orca_load_report.proto
   - test/cpp/end2end/health_service_end2end_test.cc
   - test/cpp/end2end/test_health_check_service_impl.cc
   - test/cpp/end2end/test_service_impl.cc
@@ -6223,6 +6266,7 @@ targets:
   - src/proto/grpc/testing/echo.proto
   - src/proto/grpc/testing/echo_messages.proto
   - src/proto/grpc/testing/simple_messages.proto
+  - src/proto/grpc/testing/xds/v3/orca_load_report.proto
   - test/cpp/end2end/hybrid_end2end_test.cc
   - test/cpp/end2end/test_service_impl.cc
   deps:
@@ -6541,6 +6585,7 @@ targets:
   deps:
   - absl/status:statusor
   - absl/types:variant
+  - absl/utility:utility
   - gpr
   uses_polling: false
 - name: message_allocator_end2end_test
@@ -6553,6 +6598,7 @@ targets:
   - src/proto/grpc/testing/echo.proto
   - src/proto/grpc/testing/echo_messages.proto
   - src/proto/grpc/testing/simple_messages.proto
+  - src/proto/grpc/testing/xds/v3/orca_load_report.proto
   - test/cpp/end2end/message_allocator_end2end_test.cc
   - test/cpp/end2end/test_service_impl.cc
   deps:
@@ -6584,6 +6630,7 @@ targets:
   - src/proto/grpc/testing/echo.proto
   - src/proto/grpc/testing/echo_messages.proto
   - src/proto/grpc/testing/simple_messages.proto
+  - src/proto/grpc/testing/xds/v3/orca_load_report.proto
   - test/cpp/test/mock_stream_test.cc
   deps:
   - grpc++_test
@@ -6598,6 +6645,7 @@ targets:
   - src/proto/grpc/testing/echo.proto
   - src/proto/grpc/testing/echo_messages.proto
   - src/proto/grpc/testing/simple_messages.proto
+  - src/proto/grpc/testing/xds/v3/orca_load_report.proto
   - test/cpp/end2end/mock_test.cc
   deps:
   - grpc++_test
@@ -6611,6 +6659,7 @@ targets:
   - src/proto/grpc/testing/echo.proto
   - src/proto/grpc/testing/echo_messages.proto
   - src/proto/grpc/testing/simple_messages.proto
+  - src/proto/grpc/testing/xds/v3/orca_load_report.proto
   - test/cpp/end2end/nonblocking_test.cc
   deps:
   - grpc++_test_util
@@ -6651,36 +6700,10 @@ targets:
   gtest: true
   build: test
   language: c++
-  headers:
-  - src/core/ext/upb-generated/google/api/annotations.upb.h
-  - src/core/ext/upb-generated/google/api/http.upb.h
-  - src/core/ext/upb-generated/google/protobuf/any.upb.h
-  - src/core/ext/upb-generated/google/protobuf/descriptor.upb.h
-  - src/core/ext/upb-generated/google/protobuf/duration.upb.h
-  - src/core/ext/upb-generated/google/protobuf/empty.upb.h
-  - src/core/ext/upb-generated/google/protobuf/struct.upb.h
-  - src/core/ext/upb-generated/google/protobuf/timestamp.upb.h
-  - src/core/ext/upb-generated/google/protobuf/wrappers.upb.h
-  - src/core/ext/upb-generated/google/rpc/status.upb.h
-  - src/core/ext/upb-generated/validate/validate.upb.h
-  - src/core/ext/upb-generated/xds/data/orca/v3/orca_load_report.upb.h
-  - src/core/ext/upb-generated/xds/service/orca/v3/orca.upb.h
+  headers: []
   src:
   - src/proto/grpc/testing/xds/v3/orca_load_report.proto
   - src/proto/grpc/testing/xds/v3/orca_service.proto
-  - src/core/ext/upb-generated/google/api/annotations.upb.c
-  - src/core/ext/upb-generated/google/api/http.upb.c
-  - src/core/ext/upb-generated/google/protobuf/any.upb.c
-  - src/core/ext/upb-generated/google/protobuf/descriptor.upb.c
-  - src/core/ext/upb-generated/google/protobuf/duration.upb.c
-  - src/core/ext/upb-generated/google/protobuf/empty.upb.c
-  - src/core/ext/upb-generated/google/protobuf/struct.upb.c
-  - src/core/ext/upb-generated/google/protobuf/timestamp.upb.c
-  - src/core/ext/upb-generated/google/protobuf/wrappers.upb.c
-  - src/core/ext/upb-generated/google/rpc/status.upb.c
-  - src/core/ext/upb-generated/validate/validate.upb.c
-  - src/core/ext/upb-generated/xds/data/orca/v3/orca_load_report.upb.c
-  - src/core/ext/upb-generated/xds/service/orca/v3/orca.upb.c
   - src/cpp/server/orca/orca_service.cc
   - test/cpp/end2end/orca_service_end2end_test.cc
   deps:
@@ -6807,6 +6830,7 @@ targets:
   deps:
   - absl/status:statusor
   - absl/types:variant
+  - absl/utility:utility
   - gpr
   uses_polling: false
 - name: poll_test
@@ -6830,6 +6854,7 @@ targets:
   - src/proto/grpc/testing/echo.proto
   - src/proto/grpc/testing/echo_messages.proto
   - src/proto/grpc/testing/simple_messages.proto
+  - src/proto/grpc/testing/xds/v3/orca_load_report.proto
   - test/cpp/end2end/port_sharing_end2end_test.cc
   - test/cpp/end2end/test_service_impl.cc
   deps:
@@ -6896,6 +6921,7 @@ targets:
   - src/proto/grpc/testing/echo.proto
   - src/proto/grpc/testing/echo_messages.proto
   - src/proto/grpc/testing/simple_messages.proto
+  - src/proto/grpc/testing/xds/v3/orca_load_report.proto
   - test/cpp/end2end/proto_server_reflection_test.cc
   - test/cpp/end2end/test_service_impl.cc
   - test/cpp/util/proto_reflection_descriptor_database.cc
@@ -7017,6 +7043,7 @@ targets:
   - src/proto/grpc/testing/echo.proto
   - src/proto/grpc/testing/echo_messages.proto
   - src/proto/grpc/testing/simple_messages.proto
+  - src/proto/grpc/testing/xds/v3/orca_load_report.proto
   - test/cpp/end2end/raw_end2end_test.cc
   - test/cpp/end2end/test_service_impl.cc
   deps:
@@ -7162,6 +7189,7 @@ targets:
   deps:
   - absl/status:statusor
   - absl/types:variant
+  - absl/utility:utility
   - gpr
   uses_polling: false
 - name: retry_throttle_test
@@ -7189,6 +7217,7 @@ targets:
   - src/proto/grpc/testing/echo.proto
   - src/proto/grpc/testing/echo_messages.proto
   - src/proto/grpc/testing/simple_messages.proto
+  - src/proto/grpc/testing/xds/v3/orca_load_report.proto
   - test/core/util/test_lb_policies.cc
   - test/cpp/end2end/rls_end2end_test.cc
   - test/cpp/end2end/rls_server.cc
@@ -7242,6 +7271,7 @@ targets:
   - src/proto/grpc/testing/echo.proto
   - src/proto/grpc/testing/echo_messages.proto
   - src/proto/grpc/testing/simple_messages.proto
+  - src/proto/grpc/testing/xds/v3/orca_load_report.proto
   - test/cpp/end2end/server_builder_plugin_test.cc
   - test/cpp/end2end/test_service_impl.cc
   deps:
@@ -7255,6 +7285,7 @@ targets:
   - src/proto/grpc/testing/echo.proto
   - src/proto/grpc/testing/echo_messages.proto
   - src/proto/grpc/testing/simple_messages.proto
+  - src/proto/grpc/testing/xds/v3/orca_load_report.proto
   - test/cpp/server/server_builder_test.cc
   deps:
   - grpc++_unsecure
@@ -7272,6 +7303,7 @@ targets:
   - src/proto/grpc/testing/echo.proto
   - src/proto/grpc/testing/echo_messages.proto
   - src/proto/grpc/testing/simple_messages.proto
+  - src/proto/grpc/testing/xds/v3/orca_load_report.proto
   - test/cpp/server/server_builder_with_socket_mutator_test.cc
   deps:
   - grpc++_unsecure
@@ -7318,6 +7350,7 @@ targets:
   - src/proto/grpc/testing/echo.proto
   - src/proto/grpc/testing/echo_messages.proto
   - src/proto/grpc/testing/simple_messages.proto
+  - src/proto/grpc/testing/xds/v3/orca_load_report.proto
   - test/cpp/end2end/server_early_return_test.cc
   deps:
   - grpc++_test_util
@@ -7332,6 +7365,7 @@ targets:
   - src/proto/grpc/testing/echo.proto
   - src/proto/grpc/testing/echo_messages.proto
   - src/proto/grpc/testing/simple_messages.proto
+  - src/proto/grpc/testing/xds/v3/orca_load_report.proto
   - test/cpp/end2end/interceptors_util.cc
   - test/cpp/end2end/server_interceptors_end2end_test.cc
   - test/cpp/end2end/test_service_impl.cc
@@ -7359,6 +7393,7 @@ targets:
   - src/proto/grpc/testing/echo.proto
   - src/proto/grpc/testing/echo_messages.proto
   - src/proto/grpc/testing/simple_messages.proto
+  - src/proto/grpc/testing/xds/v3/orca_load_report.proto
   - test/cpp/server/server_request_call_test.cc
   deps:
   - grpc++_unsecure
@@ -7378,6 +7413,7 @@ targets:
   - src/proto/grpc/testing/echo.proto
   - src/proto/grpc/testing/echo_messages.proto
   - src/proto/grpc/testing/simple_messages.proto
+  - src/proto/grpc/testing/xds/v3/orca_load_report.proto
   - test/cpp/end2end/service_config_end2end_test.cc
   - test/cpp/end2end/test_service_impl.cc
   deps:
@@ -7411,6 +7447,7 @@ targets:
   - src/proto/grpc/testing/echo.proto
   - src/proto/grpc/testing/echo_messages.proto
   - src/proto/grpc/testing/simple_messages.proto
+  - src/proto/grpc/testing/xds/v3/orca_load_report.proto
   - test/cpp/end2end/shutdown_test.cc
   deps:
   - grpc++_test_util
@@ -7633,6 +7670,7 @@ targets:
   - src/proto/grpc/testing/echo.proto
   - src/proto/grpc/testing/echo_messages.proto
   - src/proto/grpc/testing/simple_messages.proto
+  - src/proto/grpc/testing/xds/v3/orca_load_report.proto
   - test/cpp/end2end/streaming_throughput_test.cc
   deps:
   - grpc++_test_util
@@ -7676,6 +7714,15 @@ targets:
   - absl/types:optional
   - absl/utility:utility
   uses_polling: false
+- name: test_core_event_engine_slice_buffer_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/core/event_engine/slice_buffer_test.cc
+  deps:
+  - grpc_test_util
 - name: test_core_gprpp_time_test
   gtest: true
   build: test
@@ -7803,6 +7850,7 @@ targets:
   - src/proto/grpc/testing/echo.proto
   - src/proto/grpc/testing/echo_messages.proto
   - src/proto/grpc/testing/simple_messages.proto
+  - src/proto/grpc/testing/xds/v3/orca_load_report.proto
   - test/cpp/end2end/thread_stress_test.cc
   deps:
   - grpc++_test_util
@@ -7876,6 +7924,7 @@ targets:
   - src/proto/grpc/testing/echo.proto
   - src/proto/grpc/testing/echo_messages.proto
   - src/proto/grpc/testing/simple_messages.proto
+  - src/proto/grpc/testing/xds/v3/orca_load_report.proto
   - test/cpp/end2end/tls_key_export_test.cc
   deps:
   - grpc++_test_util
@@ -8329,6 +8378,7 @@ targets:
   - src/proto/grpc/testing/echo.proto
   - src/proto/grpc/testing/echo_messages.proto
   - src/proto/grpc/testing/simple_messages.proto
+  - src/proto/grpc/testing/xds/v3/orca_load_report.proto
   - test/core/event_engine/test_init.cc
   - test/core/util/build.cc
   - test/core/util/cmdline.cc
@@ -8412,6 +8462,7 @@ targets:
   - src/proto/grpc/testing/xds/v3/load_report.proto
   - src/proto/grpc/testing/xds/v3/lrs.proto
   - src/proto/grpc/testing/xds/v3/metadata.proto
+  - src/proto/grpc/testing/xds/v3/orca_load_report.proto
   - src/proto/grpc/testing/xds/v3/path.proto
   - src/proto/grpc/testing/xds/v3/percent.proto
   - src/proto/grpc/testing/xds/v3/protocol.proto
@@ -8468,6 +8519,7 @@ targets:
   - src/proto/grpc/testing/xds/v3/load_report.proto
   - src/proto/grpc/testing/xds/v3/lrs.proto
   - src/proto/grpc/testing/xds/v3/metadata.proto
+  - src/proto/grpc/testing/xds/v3/orca_load_report.proto
   - src/proto/grpc/testing/xds/v3/path.proto
   - src/proto/grpc/testing/xds/v3/percent.proto
   - src/proto/grpc/testing/xds/v3/protocol.proto
@@ -8522,6 +8574,7 @@ targets:
   - src/proto/grpc/testing/xds/v3/load_report.proto
   - src/proto/grpc/testing/xds/v3/lrs.proto
   - src/proto/grpc/testing/xds/v3/metadata.proto
+  - src/proto/grpc/testing/xds/v3/orca_load_report.proto
   - src/proto/grpc/testing/xds/v3/path.proto
   - src/proto/grpc/testing/xds/v3/percent.proto
   - src/proto/grpc/testing/xds/v3/protocol.proto
@@ -8552,6 +8605,7 @@ targets:
   - src/proto/grpc/testing/echo.proto
   - src/proto/grpc/testing/echo_messages.proto
   - src/proto/grpc/testing/simple_messages.proto
+  - src/proto/grpc/testing/xds/v3/orca_load_report.proto
   - test/cpp/end2end/test_service_impl.cc
   - test/cpp/end2end/xds/xds_credentials_end2end_test.cc
   deps:
@@ -8601,6 +8655,7 @@ targets:
   - src/proto/grpc/testing/xds/v3/load_report.proto
   - src/proto/grpc/testing/xds/v3/lrs.proto
   - src/proto/grpc/testing/xds/v3/metadata.proto
+  - src/proto/grpc/testing/xds/v3/orca_load_report.proto
   - src/proto/grpc/testing/xds/v3/path.proto
   - src/proto/grpc/testing/xds/v3/percent.proto
   - src/proto/grpc/testing/xds/v3/protocol.proto
@@ -8662,6 +8717,7 @@ targets:
   - src/proto/grpc/testing/xds/v3/load_report.proto
   - src/proto/grpc/testing/xds/v3/lrs.proto
   - src/proto/grpc/testing/xds/v3/metadata.proto
+  - src/proto/grpc/testing/xds/v3/orca_load_report.proto
   - src/proto/grpc/testing/xds/v3/path.proto
   - src/proto/grpc/testing/xds/v3/percent.proto
   - src/proto/grpc/testing/xds/v3/protocol.proto
@@ -8719,6 +8775,7 @@ targets:
   - src/proto/grpc/testing/xds/v3/load_report.proto
   - src/proto/grpc/testing/xds/v3/lrs.proto
   - src/proto/grpc/testing/xds/v3/metadata.proto
+  - src/proto/grpc/testing/xds/v3/orca_load_report.proto
   - src/proto/grpc/testing/xds/v3/path.proto
   - src/proto/grpc/testing/xds/v3/percent.proto
   - src/proto/grpc/testing/xds/v3/protocol.proto
@@ -8824,6 +8881,7 @@ targets:
   - src/proto/grpc/testing/xds/v3/load_report.proto
   - src/proto/grpc/testing/xds/v3/lrs.proto
   - src/proto/grpc/testing/xds/v3/metadata.proto
+  - src/proto/grpc/testing/xds/v3/orca_load_report.proto
   - src/proto/grpc/testing/xds/v3/path.proto
   - src/proto/grpc/testing/xds/v3/percent.proto
   - src/proto/grpc/testing/xds/v3/protocol.proto
@@ -8881,6 +8939,7 @@ targets:
   - src/proto/grpc/testing/xds/v3/load_report.proto
   - src/proto/grpc/testing/xds/v3/lrs.proto
   - src/proto/grpc/testing/xds/v3/metadata.proto
+  - src/proto/grpc/testing/xds/v3/orca_load_report.proto
   - src/proto/grpc/testing/xds/v3/path.proto
   - src/proto/grpc/testing/xds/v3/percent.proto
   - src/proto/grpc/testing/xds/v3/protocol.proto
@@ -8939,6 +8998,7 @@ targets:
   - src/proto/grpc/testing/xds/v3/load_report.proto
   - src/proto/grpc/testing/xds/v3/lrs.proto
   - src/proto/grpc/testing/xds/v3/metadata.proto
+  - src/proto/grpc/testing/xds/v3/orca_load_report.proto
   - src/proto/grpc/testing/xds/v3/path.proto
   - src/proto/grpc/testing/xds/v3/percent.proto
   - src/proto/grpc/testing/xds/v3/protocol.proto

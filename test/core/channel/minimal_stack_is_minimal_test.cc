@@ -39,6 +39,7 @@
 #include <grpc/support/alloc.h>
 #include <grpc/support/string_util.h>
 
+#include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/channel/channel_stack_builder_impl.h"
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/gpr/string.h"
@@ -130,7 +131,8 @@ static int check_stack(const char* file, int line, const char* transport_name,
   memset(&fake_transport_vtable, 0, sizeof(grpc_transport_vtable));
   fake_transport_vtable.name = transport_name;
   grpc_transport fake_transport = {&fake_transport_vtable};
-  grpc_channel_args* channel_args = grpc_channel_args_copy(init_args);
+  grpc_core::ChannelArgs channel_args =
+      grpc_core::ChannelArgs::FromC(init_args);
   builder.SetTarget("foo.test.google.fr").SetChannelArgs(channel_args);
   if (transport_name != nullptr) {
     builder.SetTransport(&fake_transport);
@@ -156,7 +158,7 @@ static int check_stack(const char* file, int line, const char* transport_name,
   // build up our "got" list
   parts.clear();
   for (const auto& entry : *builder.mutable_stack()) {
-    const char* name = entry.filter->name;
+    const char* name = entry->name;
     if (name == nullptr) continue;
     parts.push_back(name);
   }
@@ -165,25 +167,7 @@ static int check_stack(const char* file, int line, const char* transport_name,
   // figure out result, log if there's an error
   int result = 0;
   if (got != expect) {
-    parts.clear();
-    for (size_t i = 0; i < channel_args->num_args; i++) {
-      std::string value;
-      switch (channel_args->args[i].type) {
-        case GRPC_ARG_INTEGER: {
-          value = absl::StrCat(channel_args->args[i].value.integer);
-          break;
-        }
-        case GRPC_ARG_STRING:
-          value = channel_args->args[i].value.string;
-          break;
-        case GRPC_ARG_POINTER: {
-          value = absl::StrFormat("%p", channel_args->args[i].value.pointer.p);
-          break;
-        }
-      }
-      parts.push_back(absl::StrCat(channel_args->args[i].key, "=", value));
-    }
-    std::string args_str = absl::StrCat("{", absl::StrJoin(parts, ", "), "}");
+    std::string args_str = channel_args.ToString();
 
     gpr_log(file, line, GPR_LOG_SEVERITY_ERROR,
             "**************************************************");
@@ -196,11 +180,6 @@ static int check_stack(const char* file, int line, const char* transport_name,
     gpr_log(file, line, GPR_LOG_SEVERITY_ERROR, "EXPECTED: %s", expect.c_str());
     gpr_log(file, line, GPR_LOG_SEVERITY_ERROR, "GOT:      %s", got.c_str());
     result = 1;
-  }
-
-  {
-    grpc_core::ExecCtx exec_ctx;
-    grpc_channel_args_destroy(channel_args);
   }
 
   return result;

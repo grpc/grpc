@@ -20,12 +20,15 @@
 
 #include "src/core/lib/slice/percent_encoding.h"
 
+#include <stdlib.h>
+
 #include <cstdint>
+#include <type_traits>
+#include <utility>
 
 #include <grpc/support/log.h>
 
 #include "src/core/lib/gprpp/bitset.h"
-#include "src/core/lib/slice/slice_internal.h"
 
 #if __cplusplus > 201103l
 #define GRPC_PCTENCODE_CONSTEXPR_FN constexpr

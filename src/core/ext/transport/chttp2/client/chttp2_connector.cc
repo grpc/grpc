@@ -20,41 +20,58 @@
 
 #include "src/core/ext/transport/chttp2/client/chttp2_connector.h"
 
-#include <string.h>
+#include <stdint.h>
+
+#include <string>
+
+#include "absl/status/status.h"
+#include "absl/status/statusor.h"
 
 #include <grpc/grpc.h>
 #include <grpc/grpc_posix.h>
-#include <grpc/slice_buffer.h>
+#include <grpc/grpc_security.h>
+#include <grpc/impl/codegen/grpc_types.h>
+#include <grpc/status.h>
 #include <grpc/support/alloc.h>
-#include <grpc/support/string_util.h>
+#include <grpc/support/log.h>
+#include <grpc/support/sync.h>
 
 #include "src/core/ext/filters/client_channel/client_channel.h"
+#include "src/core/ext/filters/client_channel/client_channel_factory.h"
 #include "src/core/ext/filters/client_channel/connector.h"
+#include "src/core/ext/filters/client_channel/subchannel.h"
 #include "src/core/ext/transport/chttp2/transport/chttp2_transport.h"
-#include "src/core/lib/address_utils/sockaddr_utils.h"
 #include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/channel/channel_args_preconditioning.h"
+#include "src/core/lib/channel/channel_stack_builder.h"
+#include "src/core/lib/channel/channelz.h"
 #include "src/core/lib/channel/handshaker.h"
+#include "src/core/lib/channel/handshaker_registry.h"
 #include "src/core/lib/config/core_configuration.h"
-#include "src/core/lib/gprpp/memory.h"
+#include "src/core/lib/debug/trace.h"
+#include "src/core/lib/gprpp/debug_location.h"
+#include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/iomgr/endpoint.h"
+#include "src/core/lib/iomgr/exec_ctx.h"
+#include "src/core/lib/iomgr/resolved_address.h"
 #include "src/core/lib/iomgr/tcp_client.h"
 #include "src/core/lib/resolver/resolver_registry.h"
-#include "src/core/lib/resource_quota/api.h"
 #include "src/core/lib/security/credentials/credentials.h"
 #include "src/core/lib/security/credentials/insecure/insecure_credentials.h"
 #include "src/core/lib/security/security_connector/security_connector.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/surface/api_trace.h"
 #include "src/core/lib/surface/channel.h"
+#include "src/core/lib/surface/channel_stack_type.h"
+#include "src/core/lib/transport/error_utils.h"
 #include "src/core/lib/transport/transport.h"
-#include "src/core/lib/uri/uri_parser.h"
 
 #ifdef GPR_SUPPORT_CHANNELS_FROM_FD
 
 #include <fcntl.h>
 
+#include "src/core/lib/iomgr/ev_posix.h"
 #include "src/core/lib/iomgr/tcp_client_posix.h"
-#include "src/core/lib/iomgr/tcp_posix.h"
 
 #endif  // GPR_SUPPORT_CHANNELS_FROM_FD
 
@@ -306,7 +323,8 @@ class Chttp2SecureClientChannelFactory : public ClientChannelFactory {
     if (channel_credentials == nullptr) {
       gpr_log(GPR_ERROR,
               "Can't create subchannel: channel credentials missing for secure "
-              "channel.");
+              "channel. Got args: %s",
+              grpc_channel_args_string(args).c_str());
       return nullptr;
     }
     // Make sure security connector does not already exist in args.
@@ -344,29 +362,19 @@ class Chttp2SecureClientChannelFactory : public ClientChannelFactory {
   }
 };
 
-grpc_channel* CreateChannel(const char* target, const grpc_channel_args* args,
-                            grpc_error_handle* error) {
+absl::StatusOr<RefCountedPtr<Channel>> CreateChannel(const char* target,
+                                                     ChannelArgs args) {
   if (target == nullptr) {
     gpr_log(GPR_ERROR, "cannot create channel with NULL target name");
-    if (error != nullptr) {
-      *error = GRPC_ERROR_CREATE_FROM_STATIC_STRING("channel target is NULL");
-    }
-    return nullptr;
+    return absl::InvalidArgumentError("channel target is NULL");
   }
   // Add channel arg containing the server URI.
   std::string canonical_target =
       CoreConfiguration::Get().resolver_registry().AddDefaultPrefixIfNeeded(
           target);
-  grpc_arg arg = grpc_channel_arg_string_create(
-      const_cast<char*>(GRPC_ARG_SERVER_URI),
-      const_cast<char*>(canonical_target.c_str()));
-  const char* to_remove[] = {GRPC_ARG_SERVER_URI};
-  grpc_channel_args* new_args =
-      grpc_channel_args_copy_and_add_and_remove(args, to_remove, 1, &arg, 1);
-  grpc_channel* channel = grpc_channel_create_internal(
-      target, new_args, GRPC_CLIENT_CHANNEL, nullptr, error);
-  grpc_channel_args_destroy(new_args);
-  return channel;
+  return Channel::Create(target,
+                         args.Set(GRPC_ARG_SERVER_URI, canonical_target),
+                         GRPC_CLIENT_CHANNEL, nullptr);
 }
 
 }  // namespace
@@ -389,33 +397,30 @@ void FactoryInit() {
 //                   - perform handshakes
 grpc_channel* grpc_channel_create(const char* target,
                                   grpc_channel_credentials* creds,
-                                  const grpc_channel_args* args) {
+                                  const grpc_channel_args* c_args) {
   grpc_core::ExecCtx exec_ctx;
   GRPC_API_TRACE("grpc_secure_channel_create(target=%s, creds=%p, args=%p)", 3,
-                 (target, (void*)creds, (void*)args));
-  args = grpc_core::CoreConfiguration::Get()
-             .channel_args_preconditioning()
-             .PreconditionChannelArgs(args);
+                 (target, (void*)creds, (void*)c_args));
   grpc_channel* channel = nullptr;
   grpc_error_handle error = GRPC_ERROR_NONE;
   if (creds != nullptr) {
     // Add channel args containing the client channel factory and channel
     // credentials.
     gpr_once_init(&g_factory_once, FactoryInit);
-    grpc_arg channel_factory_arg =
-        grpc_core::ClientChannelFactory::CreateChannelArg(g_factory);
-    grpc_arg args_to_add[] = {channel_factory_arg,
-                              grpc_channel_credentials_to_arg(creds)};
-    const char* arg_to_remove = channel_factory_arg.key;
-    grpc_channel_args* new_args = grpc_channel_args_copy_and_add_and_remove(
-        args, &arg_to_remove, 1, args_to_add, GPR_ARRAY_SIZE(args_to_add));
-    new_args = creds->update_arguments(new_args);
+    grpc_core::ChannelArgs args =
+        creds->update_arguments(grpc_core::CoreConfiguration::Get()
+                                    .channel_args_preconditioning()
+                                    .PreconditionChannelArgs(c_args)
+                                    .SetObject(creds->Ref())
+                                    .SetObject(g_factory));
     // Create channel.
-    channel = grpc_core::CreateChannel(target, new_args, &error);
-    // Clean up.
-    grpc_channel_args_destroy(new_args);
+    auto r = grpc_core::CreateChannel(target, args);
+    if (r.ok()) {
+      channel = r->release()->c_ptr();
+    } else {
+      error = absl_status_to_grpc_error(r.status());
+    }
   }
-  grpc_channel_args_destroy(args);
   if (channel == nullptr) {
     intptr_t integer;
     grpc_status_code status = GRPC_STATUS_INTERNAL;
@@ -444,14 +449,13 @@ grpc_channel* grpc_channel_create_from_fd(const char* target, int fd,
         target, GRPC_STATUS_INTERNAL,
         "Failed to create client channel due to invalid creds");
   }
-  grpc_arg default_authority_arg = grpc_channel_arg_string_create(
-      const_cast<char*>(GRPC_ARG_DEFAULT_AUTHORITY),
-      const_cast<char*>("test.authority"));
-  args = grpc_channel_args_copy_and_add(args, &default_authority_arg, 1);
-  const grpc_channel_args* final_args = grpc_core::CoreConfiguration::Get()
-                                            .channel_args_preconditioning()
-                                            .PreconditionChannelArgs(args);
-  grpc_channel_args_destroy(args);
+  const grpc_channel_args* final_args =
+      grpc_core::CoreConfiguration::Get()
+          .channel_args_preconditioning()
+          .PreconditionChannelArgs(args)
+          .SetIfUnset(GRPC_ARG_DEFAULT_AUTHORITY, "test.authority")
+          .SetObject(creds->Ref())
+          .ToC();
 
   int flags = fcntl(fd, F_GETFL, 0);
   GPR_ASSERT(fcntl(fd, F_SETFL, flags | O_NONBLOCK) == 0);
@@ -460,26 +464,20 @@ grpc_channel* grpc_channel_create_from_fd(const char* target, int fd,
   grpc_transport* transport =
       grpc_create_chttp2_transport(final_args, client, true);
   GPR_ASSERT(transport);
-  grpc_error_handle error = GRPC_ERROR_NONE;
-  grpc_channel* channel = grpc_channel_create_internal(
-      target, final_args, GRPC_CLIENT_DIRECT_CHANNEL, transport, &error);
+  auto channel = grpc_core::Channel::Create(
+      target, grpc_core::ChannelArgs::FromC(final_args),
+      GRPC_CLIENT_DIRECT_CHANNEL, transport);
   grpc_channel_args_destroy(final_args);
-  if (channel != nullptr) {
+  if (channel.ok()) {
     grpc_chttp2_transport_start_reading(transport, nullptr, nullptr, nullptr);
     grpc_core::ExecCtx::Get()->Flush();
+    return channel->release()->c_ptr();
   } else {
-    intptr_t integer;
-    grpc_status_code status = GRPC_STATUS_INTERNAL;
-    if (grpc_error_get_int(error, GRPC_ERROR_INT_GRPC_STATUS, &integer)) {
-      status = static_cast<grpc_status_code>(integer);
-    }
-    GRPC_ERROR_UNREF(error);
     grpc_transport_destroy(transport);
-    channel = grpc_lame_client_channel_create(
-        target, status, "Failed to create client channel");
+    return grpc_lame_client_channel_create(
+        target, static_cast<grpc_status_code>(channel.status().code()),
+        "Failed to create client channel");
   }
-
-  return channel;
 }
 
 #else  // !GPR_SUPPORT_CHANNELS_FROM_FD

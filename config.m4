@@ -64,6 +64,7 @@ if test "$PHP_GRPC" != "no"; then
     src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_balancer_addresses.cc \
     src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_client_stats.cc \
     src/core/ext/filters/client_channel/lb_policy/grpclb/load_balancer_api.cc \
+    src/core/ext/filters/client_channel/lb_policy/oob_backend_metric.cc \
     src/core/ext/filters/client_channel/lb_policy/pick_first/pick_first.cc \
     src/core/ext/filters/client_channel/lb_policy/priority/priority.cc \
     src/core/ext/filters/client_channel/lb_policy/ring_hash/ring_hash.cc \
@@ -279,6 +280,7 @@ if test "$PHP_GRPC" != "no"; then
     src/core/ext/upb-generated/xds/core/v3/resource_locator.upb.c \
     src/core/ext/upb-generated/xds/core/v3/resource_name.upb.c \
     src/core/ext/upb-generated/xds/data/orca/v3/orca_load_report.upb.c \
+    src/core/ext/upb-generated/xds/service/orca/v3/orca.upb.c \
     src/core/ext/upb-generated/xds/type/matcher/v3/matcher.upb.c \
     src/core/ext/upb-generated/xds/type/matcher/v3/regex.upb.c \
     src/core/ext/upb-generated/xds/type/matcher/v3/string.upb.c \
@@ -466,6 +468,8 @@ if test "$PHP_GRPC" != "no"; then
     src/core/lib/event_engine/event_engine.cc \
     src/core/lib/event_engine/memory_allocator.cc \
     src/core/lib/event_engine/resolved_address.cc \
+    src/core/lib/event_engine/slice.cc \
+    src/core/lib/event_engine/slice_buffer.cc \
     src/core/lib/event_engine/sockaddr.cc \
     src/core/lib/gpr/alloc.cc \
     src/core/lib/gpr/atm.cc \
@@ -710,6 +714,7 @@ if test "$PHP_GRPC" != "no"; then
     src/core/lib/transport/byte_stream.cc \
     src/core/lib/transport/connectivity_state.cc \
     src/core/lib/transport/error_utils.cc \
+    src/core/lib/transport/metadata_batch.cc \
     src/core/lib/transport/parsed_metadata.cc \
     src/core/lib/transport/pid_controller.cc \
     src/core/lib/transport/status_conversion.cc \
@@ -1245,6 +1250,7 @@ if test "$PHP_GRPC" != "no"; then
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upb-generated/xds/annotations/v3)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upb-generated/xds/core/v3)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upb-generated/xds/data/orca/v3)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upb-generated/xds/service/orca/v3)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upb-generated/xds/type/matcher/v3)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upb-generated/xds/type/v3)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upbdefs-generated/envoy/admin/v3)

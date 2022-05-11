@@ -113,6 +113,8 @@ Pod::Spec.new do |s|
                       'include/grpc/event_engine/memory_allocator.h',
                       'include/grpc/event_engine/memory_request.h',
                       'include/grpc/event_engine/port.h',
+                      'include/grpc/event_engine/slice.h',
+                      'include/grpc/event_engine/slice_buffer.h',
                       'include/grpc/fork.h',
                       'include/grpc/grpc.h',
                       'include/grpc/grpc_posix.h',
@@ -178,6 +180,7 @@ Pod::Spec.new do |s|
     ss.dependency 'abseil/functional/bind_front', abseil_version
     ss.dependency 'abseil/hash/hash', abseil_version
     ss.dependency 'abseil/memory/memory', abseil_version
+    ss.dependency 'abseil/meta/type_traits', abseil_version
     ss.dependency 'abseil/random/random', abseil_version
     ss.dependency 'abseil/status/status', abseil_version
     ss.dependency 'abseil/status/statusor', abseil_version
@@ -187,6 +190,7 @@ Pod::Spec.new do |s|
     ss.dependency 'abseil/synchronization/synchronization', abseil_version
     ss.dependency 'abseil/time/time', abseil_version
     ss.dependency 'abseil/types/optional', abseil_version
+    ss.dependency 'abseil/types/span', abseil_version
     ss.dependency 'abseil/types/variant', abseil_version
     ss.dependency 'abseil/utility/utility', abseil_version
     ss.compiler_flags = '-DBORINGSSL_PREFIX=GRPC -Wno-unreachable-code -Wno-shorten-64-to-32'
@@ -237,6 +241,8 @@ Pod::Spec.new do |s|
                       'src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_client_stats.h',
                       'src/core/ext/filters/client_channel/lb_policy/grpclb/load_balancer_api.cc',
                       'src/core/ext/filters/client_channel/lb_policy/grpclb/load_balancer_api.h',
+                      'src/core/ext/filters/client_channel/lb_policy/oob_backend_metric.cc',
+                      'src/core/ext/filters/client_channel/lb_policy/oob_backend_metric.h',
                       'src/core/ext/filters/client_channel/lb_policy/pick_first/pick_first.cc',
                       'src/core/ext/filters/client_channel/lb_policy/priority/priority.cc',
                       'src/core/ext/filters/client_channel/lb_policy/ring_hash/ring_hash.cc',
@@ -293,6 +299,7 @@ Pod::Spec.new do |s|
                       'src/core/ext/filters/client_channel/subchannel.cc',
                       'src/core/ext/filters/client_channel/subchannel.h',
                       'src/core/ext/filters/client_channel/subchannel_interface.h',
+                      'src/core/ext/filters/client_channel/subchannel_interface_internal.h',
                       'src/core/ext/filters/client_channel/subchannel_pool_interface.cc',
                       'src/core/ext/filters/client_channel/subchannel_pool_interface.h',
                       'src/core/ext/filters/client_channel/subchannel_stream_client.cc',
@@ -651,6 +658,8 @@ Pod::Spec.new do |s|
                       'src/core/ext/upb-generated/xds/core/v3/resource_name.upb.h',
                       'src/core/ext/upb-generated/xds/data/orca/v3/orca_load_report.upb.c',
                       'src/core/ext/upb-generated/xds/data/orca/v3/orca_load_report.upb.h',
+                      'src/core/ext/upb-generated/xds/service/orca/v3/orca.upb.c',
+                      'src/core/ext/upb-generated/xds/service/orca/v3/orca.upb.h',
                       'src/core/ext/upb-generated/xds/type/matcher/v3/matcher.upb.c',
                       'src/core/ext/upb-generated/xds/type/matcher/v3/matcher.upb.h',
                       'src/core/ext/upb-generated/xds/type/matcher/v3/regex.upb.c',
@@ -1029,6 +1038,8 @@ Pod::Spec.new do |s|
                       'src/core/lib/event_engine/event_engine_factory.h',
                       'src/core/lib/event_engine/memory_allocator.cc',
                       'src/core/lib/event_engine/resolved_address.cc',
+                      'src/core/lib/event_engine/slice.cc',
+                      'src/core/lib/event_engine/slice_buffer.cc',
                       'src/core/lib/event_engine/sockaddr.cc',
                       'src/core/lib/event_engine/sockaddr.h',
                       'src/core/lib/gpr/alloc.cc',
@@ -1194,6 +1205,7 @@ Pod::Spec.new do |s|
                       'src/core/lib/iomgr/iocp_windows.h',
                       'src/core/lib/iomgr/iomgr.cc',
                       'src/core/lib/iomgr/iomgr.h',
+                      'src/core/lib/iomgr/iomgr_fwd.h',
                       'src/core/lib/iomgr/iomgr_internal.cc',
                       'src/core/lib/iomgr/iomgr_internal.h',
                       'src/core/lib/iomgr/iomgr_posix.cc',
@@ -1509,6 +1521,7 @@ Pod::Spec.new do |s|
                       'src/core/lib/transport/error_utils.cc',
                       'src/core/lib/transport/error_utils.h',
                       'src/core/lib/transport/http2_errors.h',
+                      'src/core/lib/transport/metadata_batch.cc',
                       'src/core/lib/transport/metadata_batch.h',
                       'src/core/lib/transport/parsed_metadata.cc',
                       'src/core/lib/transport/parsed_metadata.h',
@@ -1686,6 +1699,7 @@ Pod::Spec.new do |s|
                               'src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_balancer_addresses.h',
                               'src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_client_stats.h',
                               'src/core/ext/filters/client_channel/lb_policy/grpclb/load_balancer_api.h',
+                              'src/core/ext/filters/client_channel/lb_policy/oob_backend_metric.h',
                               'src/core/ext/filters/client_channel/lb_policy/ring_hash/ring_hash.h',
                               'src/core/ext/filters/client_channel/lb_policy/subchannel_list.h',
                               'src/core/ext/filters/client_channel/lb_policy/xds/xds.h',
@@ -1707,6 +1721,7 @@ Pod::Spec.new do |s|
                               'src/core/ext/filters/client_channel/retry_throttle.h',
                               'src/core/ext/filters/client_channel/subchannel.h',
                               'src/core/ext/filters/client_channel/subchannel_interface.h',
+                              'src/core/ext/filters/client_channel/subchannel_interface_internal.h',
                               'src/core/ext/filters/client_channel/subchannel_pool_interface.h',
                               'src/core/ext/filters/client_channel/subchannel_stream_client.h',
                               'src/core/ext/filters/deadline/deadline_filter.h',
@@ -1885,6 +1900,7 @@ Pod::Spec.new do |s|
                               'src/core/ext/upb-generated/xds/core/v3/resource_locator.upb.h',
                               'src/core/ext/upb-generated/xds/core/v3/resource_name.upb.h',
                               'src/core/ext/upb-generated/xds/data/orca/v3/orca_load_report.upb.h',
+                              'src/core/ext/upb-generated/xds/service/orca/v3/orca.upb.h',
                               'src/core/ext/upb-generated/xds/type/matcher/v3/matcher.upb.h',
                               'src/core/ext/upb-generated/xds/type/matcher/v3/regex.upb.h',
                               'src/core/ext/upb-generated/xds/type/matcher/v3/string.upb.h',
@@ -2154,6 +2170,7 @@ Pod::Spec.new do |s|
                               'src/core/lib/iomgr/internal_errqueue.h',
                               'src/core/lib/iomgr/iocp_windows.h',
                               'src/core/lib/iomgr/iomgr.h',
+                              'src/core/lib/iomgr/iomgr_fwd.h',
                               'src/core/lib/iomgr/iomgr_internal.h',
                               'src/core/lib/iomgr/load_file.h',
                               'src/core/lib/iomgr/lockfree_event.h',
@@ -2596,11 +2613,9 @@ Pod::Spec.new do |s|
   end
 
   # patch include of openssl to openssl_grpc
-  # patch xxhash.h to silent the -Wdocumentation error
   s.prepare_command = <<-END_OF_COMMAND
     set -e
     find src/core -type f \\( -path '*.h' -or -path '*.cc' \\) -print0 | xargs -0 -L1 sed -E -i'.grpc_back' 's;#include <openssl/(.*)>;#if COCOAPODS==1\\\n  #include <openssl_grpc/\\1>\\\n#else\\\n  #include <openssl/\\1>\\\n#endif;g'
-    find third_party/xxhash  -type f -name xxhash.h -print0 | xargs -0 -L1 sed -E -i'.grpc_back' 's;@param([^,]*),;@param\\1 ,;g'
-    find src/core/ third_party/xxhash/ -type f -name '*.grpc_back' -print0 | xargs -0 rm
+    find src/core/ -type f -name '*.grpc_back' -print0 | xargs -0 rm
   END_OF_COMMAND
 end

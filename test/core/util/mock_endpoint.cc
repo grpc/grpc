@@ -39,7 +39,8 @@ typedef struct mock_endpoint {
 } mock_endpoint;
 
 static void me_read(grpc_endpoint* ep, grpc_slice_buffer* slices,
-                    grpc_closure* cb, bool /*urgent*/) {
+                    grpc_closure* cb, bool /*urgent*/,
+                    int /*min_progress_size*/) {
   mock_endpoint* m = reinterpret_cast<mock_endpoint*>(ep);
   gpr_mu_lock(&m->mu);
   if (m->read_buffer.count > 0) {
@@ -53,7 +54,7 @@ static void me_read(grpc_endpoint* ep, grpc_slice_buffer* slices,
 }
 
 static void me_write(grpc_endpoint* ep, grpc_slice_buffer* slices,
-                     grpc_closure* cb, void* /*arg*/) {
+                     grpc_closure* cb, void* /*arg*/, int /*max_frame_size*/) {
   mock_endpoint* m = reinterpret_cast<mock_endpoint*>(ep);
   for (size_t i = 0; i < slices->count; i++) {
     m->on_write(slices->slices[i]);

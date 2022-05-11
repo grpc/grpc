@@ -27,7 +27,6 @@ find . \( \( -name "*.cc" \) -or \( -name "*.h" \) \) \
         -a \( \( -wholename "./src/*" \) \
             -or \( -wholename "./include/*" \) \
             -or \( -wholename "./test/*" \) \
-            -or \( -wholename "./examples/*" \) \) \
         -a -not -wholename "./include/grpcpp/impl/codegen/sync.h" \
         -a -not -wholename "./src/core/lib/gprpp/sync.h" \
         -a -not -wholename "./src/core/lib/gpr/sync_abseil.cc" \

@@ -198,7 +198,8 @@ def _on_rpc_done(rpc_id: int, future: grpc.Future, method: str,
                  print_response: bool) -> None:
     exception = future.exception()
     hostname = ""
-    _global_rpc_statuses[method][future.code().value[0]] += 1
+    with _global_lock:
+        _global_rpc_statuses[method][future.code().value[0]] += 1
     if exception is not None:
         with _global_lock:
             _global_rpcs_failed[method] += 1
@@ -294,18 +295,17 @@ def _run_single_channel(config: _ChannelConfiguration) -> None:
                     continue
                 else:
                     duration_per_query = 1.0 / float(config.qps)
-            request_id = None
-            with _global_lock:
-                request_id = _global_rpc_id
-                _global_rpc_id += 1
-                _global_rpcs_started[config.method] += 1
-            start = time.time()
-            end = start + duration_per_query
-            with config.condition:
+                request_id = None
+                with _global_lock:
+                    request_id = _global_rpc_id
+                    _global_rpc_id += 1
+                    _global_rpcs_started[config.method] += 1
+                start = time.time()
+                end = start + duration_per_query
                 _start_rpc(config.method, config.metadata, request_id, stub,
                            float(config.rpc_timeout_sec), futures)
-            with config.condition:
-                _remove_completed_rpcs(futures, config.print_response)
+                print_response = config.print_response
+            _remove_completed_rpcs(futures, config.print_response)
             logger.debug(f"Currently {len(futures)} in-flight RPCs")
             now = time.time()
             while now < end:

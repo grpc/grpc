@@ -20,8 +20,10 @@
 
 #include "src/core/ext/filters/client_channel/lb_policy.h"
 
-#include "src/core/ext/filters/client_channel/lb_policy_registry.h"
-#include "src/core/lib/iomgr/combiner.h"
+#include "src/core/lib/iomgr/closure.h"
+#include "src/core/lib/iomgr/error.h"
+#include "src/core/lib/iomgr/exec_ctx.h"
+#include "src/core/lib/iomgr/pollset_set.h"
 
 namespace grpc_core {
 

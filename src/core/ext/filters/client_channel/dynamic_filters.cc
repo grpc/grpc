@@ -18,8 +18,19 @@
 
 #include "src/core/ext/filters/client_channel/dynamic_filters.h"
 
+#include <stddef.h>
+
+#include <new>
+#include <string>
+#include <utility>
+
+#include <grpc/support/alloc.h>
+#include <grpc/support/log.h>
+
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_stack.h"
+#include "src/core/lib/debug/trace.h"
+#include "src/core/lib/gpr/alloc.h"
 #include "src/core/lib/surface/lame_client.h"
 
 // Conversion between call and call stack.
@@ -85,7 +96,7 @@ RefCountedPtr<DynamicFilters::Call> DynamicFilters::Call::Ref(
 }
 
 void DynamicFilters::Call::Unref() {
-  GRPC_CALL_STACK_UNREF(CALL_TO_CALL_STACK(this), "");
+  GRPC_CALL_STACK_UNREF(CALL_TO_CALL_STACK(this), "dynamic-filters-unref");
 }
 
 void DynamicFilters::Call::Unref(const DebugLocation& /*location*/,
@@ -166,7 +177,7 @@ RefCountedPtr<DynamicFilters> DynamicFilters::Create(
     grpc_channel_args* new_args =
         grpc_channel_args_copy_and_add(args, &error_arg, 1);
     GRPC_ERROR_UNREF(error);
-    p = CreateChannelStack(new_args, {&grpc_lame_filter});
+    p = CreateChannelStack(new_args, {&LameClientFilter::kFilter});
     GPR_ASSERT(p.second == GRPC_ERROR_NONE);
     grpc_channel_args_destroy(new_args);
   }

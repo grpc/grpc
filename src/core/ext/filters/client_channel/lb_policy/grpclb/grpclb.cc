@@ -53,25 +53,46 @@
 
 #include "src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb.h"
 
+// IWYU pragma: no_include <sys/socket.h>
+
 #include <inttypes.h>
 #include <limits.h>
+#include <stdlib.h>
 #include <string.h>
 
+#include <algorithm>
+#include <map>
+#include <memory>
+#include <string>
+#include <utility>
+#include <vector>
+
 #include "absl/container/inlined_vector.h"
+#include "absl/memory/memory.h"
+#include "absl/status/status.h"
+#include "absl/status/statusor.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
 #include "absl/strings/str_join.h"
+#include "absl/strings/string_view.h"
 #include "absl/strings/strip.h"
+#include "absl/types/optional.h"
+#include "absl/types/variant.h"
 #include "upb/upb.hpp"
 
+#include <grpc/byte_buffer.h>
 #include <grpc/byte_buffer_reader.h>
 #include <grpc/grpc.h>
-#include <grpc/grpc_security.h>
+#include <grpc/impl/codegen/connectivity_state.h>
+#include <grpc/impl/codegen/grpc_types.h>
+#include <grpc/impl/codegen/propagation_bits.h>
+#include <grpc/slice.h>
+#include <grpc/status.h>
 #include <grpc/support/alloc.h>
-#include <grpc/support/string_util.h>
-#include <grpc/support/time.h>
+#include <grpc/support/log.h>
 
 #include "src/core/ext/filters/client_channel/client_channel.h"
+#include "src/core/ext/filters/client_channel/lb_policy.h"
 #include "src/core/ext/filters/client_channel/lb_policy/child_policy_handler.h"
 #include "src/core/ext/filters/client_channel/lb_policy/grpclb/client_load_reporting_filter.h"
 #include "src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_balancer_addresses.h"
@@ -80,27 +101,44 @@
 #include "src/core/ext/filters/client_channel/lb_policy_factory.h"
 #include "src/core/ext/filters/client_channel/lb_policy_registry.h"
 #include "src/core/ext/filters/client_channel/resolver/fake/fake_resolver.h"
-#include "src/core/lib/address_utils/parse_address.h"
+#include "src/core/ext/filters/client_channel/subchannel_interface.h"
 #include "src/core/lib/address_utils/sockaddr_utils.h"
 #include "src/core/lib/backoff/backoff.h"
 #include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/channel/channel_stack_builder.h"
+#include "src/core/lib/channel/channelz.h"
 #include "src/core/lib/config/core_configuration.h"
+#include "src/core/lib/debug/trace.h"
 #include "src/core/lib/gpr/string.h"
-#include "src/core/lib/gprpp/manual_constructor.h"
-#include "src/core/lib/gprpp/memory.h"
+#include "src/core/lib/gpr/useful.h"
+#include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/orphanable.h"
+#include "src/core/lib/gprpp/ref_counted.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
+#include "src/core/lib/gprpp/time.h"
+#include "src/core/lib/iomgr/closure.h"
+#include "src/core/lib/iomgr/error.h"
+#include "src/core/lib/iomgr/exec_ctx.h"
+#include "src/core/lib/iomgr/pollset_set.h"
+#include "src/core/lib/iomgr/resolved_address.h"
 #include "src/core/lib/iomgr/sockaddr.h"
 #include "src/core/lib/iomgr/socket_utils.h"
 #include "src/core/lib/iomgr/timer.h"
+#include "src/core/lib/iomgr/work_serializer.h"
+#include "src/core/lib/json/json.h"
+#include "src/core/lib/resolver/resolver.h"
 #include "src/core/lib/resolver/server_address.h"
 #include "src/core/lib/security/credentials/credentials.h"
-#include "src/core/lib/slice/slice_internal.h"
+#include "src/core/lib/slice/slice.h"
+#include "src/core/lib/slice/slice_refcount.h"
 #include "src/core/lib/slice/slice_string_helpers.h"
 #include "src/core/lib/surface/call.h"
 #include "src/core/lib/surface/channel.h"
+#include "src/core/lib/surface/channel_init.h"
+#include "src/core/lib/surface/channel_stack_type.h"
+#include "src/core/lib/transport/connectivity_state.h"
+#include "src/core/lib/transport/metadata_batch.h"
+#include "src/core/lib/uri/uri_parser.h"
 
 #define GRPC_GRPCLB_INITIAL_CONNECT_BACKOFF_SECONDS 1
 #define GRPC_GRPCLB_RECONNECT_BACKOFF_MULTIPLIER 1.6
@@ -1239,6 +1277,7 @@ void GrpcLb::BalancerCallState::OnBalancerStatusReceivedLocked(
     // If the fallback-at-startup checks are pending, go into fallback mode
     // immediately.  This short-circuits the timeout for the fallback-at-startup
     // case.
+    grpclb_policy()->lb_calld_.reset();
     if (grpclb_policy()->fallback_at_startup_checks_pending_) {
       GPR_ASSERT(!seen_serverlist_);
       gpr_log(GPR_INFO,
@@ -1254,7 +1293,6 @@ void GrpcLb::BalancerCallState::OnBalancerStatusReceivedLocked(
       // This handles the fallback-after-startup case.
       grpclb_policy()->MaybeEnterFallbackModeAfterStartup();
     }
-    grpclb_policy()->lb_calld_.reset();
     GPR_ASSERT(!grpclb_policy()->shutting_down_);
     grpclb_policy()->channel_control_helper()->RequestReresolution();
     if (seen_initial_response_) {
@@ -1484,7 +1522,8 @@ void GrpcLb::UpdateLocked(UpdateArgs args) {
     // Start watching the channel's connectivity state.  If the channel
     // goes into state TRANSIENT_FAILURE before the timer fires, we go into
     // fallback mode even if the fallback timeout has not elapsed.
-    ClientChannel* client_channel = ClientChannel::GetFromChannel(lb_channel_);
+    ClientChannel* client_channel =
+        ClientChannel::GetFromChannel(Channel::FromC(lb_channel_));
     GPR_ASSERT(client_channel != nullptr);
     // Ref held by callback.
     watcher_ = new StateWatcher(Ref(DEBUG_LOCATION, "StateWatcher"));
@@ -1545,7 +1584,8 @@ void GrpcLb::UpdateBalancerChannelLocked(const grpc_channel_args& args) {
 }
 
 void GrpcLb::CancelBalancerChannelConnectivityWatchLocked() {
-  ClientChannel* client_channel = ClientChannel::GetFromChannel(lb_channel_);
+  ClientChannel* client_channel =
+      ClientChannel::GetFromChannel(Channel::FromC(lb_channel_));
   GPR_ASSERT(client_channel != nullptr);
   client_channel->RemoveConnectivityWatcher(watcher_);
 }
@@ -1870,17 +1910,14 @@ void RegisterGrpcLbLoadReportingFilter(CoreConfiguration::Builder* builder) {
   builder->channel_init()->RegisterStage(
       GRPC_CLIENT_SUBCHANNEL, GRPC_CHANNEL_INIT_BUILTIN_PRIORITY,
       [](ChannelStackBuilder* builder) {
-        const grpc_channel_args* args = builder->channel_args();
-        const grpc_arg* channel_arg =
-            grpc_channel_args_find(args, GRPC_ARG_LB_POLICY_NAME);
-        if (channel_arg != nullptr && channel_arg->type == GRPC_ARG_STRING &&
-            strcmp(channel_arg->value.string, "grpclb") == 0) {
+        if (builder->channel_args().GetString(GRPC_ARG_LB_POLICY_NAME) ==
+            "grpclb") {
           // TODO(roth): When we get around to re-attempting
           // https://github.com/grpc/grpc/pull/16214, we should try to keep
           // this filter at the very top of the subchannel stack, since that
           // will minimize the number of metadata elements that the filter
           // needs to iterate through to find the ClientStats object.
-          builder->PrependFilter(&grpc_client_load_reporting_filter, nullptr);
+          builder->PrependFilter(&grpc_client_load_reporting_filter);
         }
         return true;
       });

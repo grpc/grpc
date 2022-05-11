@@ -77,7 +77,6 @@ class XdsKubernetesTestCase(absltest.TestCase, metaclass=abc.ABCMeta):
     server_runner: KubernetesServerRunner
     server_xds_port: int
     td: TrafficDirectorManager
-    config_scope: str
 
     @staticmethod
     def isSupported(config: skips.TestConfig) -> bool:
@@ -86,6 +85,7 @@ class XdsKubernetesTestCase(absltest.TestCase, metaclass=abc.ABCMeta):
         Returns:
           A bool indicates if the given config is supported.
         """
+        del config
         return True
 
     @classmethod
@@ -149,12 +149,6 @@ class XdsKubernetesTestCase(absltest.TestCase, metaclass=abc.ABCMeta):
             )
         logger.info('Test run resource prefix: %s, suffix: %s',
                     self.resource_prefix, self.resource_suffix)
-
-        if xds_flags.CONFIG_SCOPE.value is not None:
-            self.config_scope = xds_flags.CONFIG_SCOPE.value + "-" + framework.helpers.rand.random_resource_suffix(
-            )
-        else:
-            self.config_scope = None
 
         # TD Manager
         self.td = self.initTrafficDirectorManager()
@@ -282,14 +276,13 @@ class XdsKubernetesTestCase(absltest.TestCase, metaclass=abc.ABCMeta):
         """Assert all RPCs for a method are completing with a certain status."""
         # Sending with pre-set QPS for a period of time
         before_stats = test_client.get_load_balancer_accumulated_stats()
-        logging.info(
-            'Received LoadBalancerAccumulatedStatsResponse from test client %s: before:\n%s',
-            test_client.ip, before_stats)
+        response_type = 'LoadBalancerAccumulatedStatsResponse'
+        logging.info('Received %s from test client %s: before:\n%s',
+                     response_type, test_client.ip, before_stats)
         time.sleep(duration.total_seconds())
         after_stats = test_client.get_load_balancer_accumulated_stats()
-        logging.info(
-            'Received LoadBalancerAccumulatedStatsResponse from test client %s: after:\n%s',
-            test_client.ip, after_stats)
+        logging.info('Received %s from test client %s: after:\n%s',
+                     response_type, test_client.ip, after_stats)
 
         diff_stats = self.diffAccumulatedStatsPerMethod(before_stats,
                                                         after_stats)
@@ -321,7 +314,7 @@ class XdsKubernetesTestCase(absltest.TestCase, metaclass=abc.ABCMeta):
                                               servers: List[XdsTestServer],
                                               num_rpcs: int):
         server_names = [server.pod_name for server in servers]
-        logger.info(f'Verifying RPCs go to {server_names}')
+        logger.info('Verifying RPCs go to %s', server_names)
         lb_stats = self.getClientRpcStats(test_client, num_rpcs)
         failed = int(lb_stats.num_failures)
         self.assertLessEqual(
@@ -390,11 +383,13 @@ class XdsKubernetesTestCase(absltest.TestCase, metaclass=abc.ABCMeta):
                     else:
                         self.assertSuccessfulRpcs(test_client)
                         logger.info(
-                            '[SUCCESS] Confirmed successful RPC with the updated routing config, version=%s',
+                            ('[SUCCESS] Confirmed successful RPC with the '
+                             'updated routing config, version=%s'),
                             route_config_version)
         except retryers.RetryError as retry_error:
             logger.info(
-                'Retry exhausted. TD routing config propagation failed after timeout %ds. Last seen client config dump: %s',
+                ('Retry exhausted. TD routing config propagation failed after '
+                 'timeout %ds. Last seen client config dump: %s'),
                 timeout_second, dumped_config)
             raise retry_error
 
@@ -439,7 +434,8 @@ class RegularXdsKubernetesTestCase(XdsKubernetesTestCase):
         """
         super().setUpClass()
         if cls.server_maintenance_port is None:
-            cls.server_maintenance_port = KubernetesServerRunner.DEFAULT_MAINTENANCE_PORT
+            cls.server_maintenance_port = \
+                KubernetesServerRunner.DEFAULT_MAINTENANCE_PORT
 
     def initTrafficDirectorManager(self) -> TrafficDirectorManager:
         return TrafficDirectorManager(
@@ -477,7 +473,6 @@ class RegularXdsKubernetesTestCase(XdsKubernetesTestCase):
             gcp_service_account=self.gcp_service_account,
             xds_server_uri=self.xds_server_uri,
             network=self.network,
-            config_scope=self.config_scope,
             debug_use_port_forwarding=self.debug_use_port_forwarding,
             enable_workload_identity=self.enable_workload_identity,
             stats_port=self.client_port,
@@ -517,7 +512,6 @@ class AppNetXdsKubernetesTestCase(RegularXdsKubernetesTestCase):
             resource_prefix=self.resource_prefix,
             resource_suffix=self.resource_suffix,
             network=self.network,
-            config_scope=self.config_scope,
             compute_api_version=self.compute_api_version)
 
 
@@ -541,7 +535,8 @@ class SecurityXdsKubernetesTestCase(XdsKubernetesTestCase):
             # Health Checks and Channelz tests available.
             # When not provided, use explicit numeric port value, so
             # Backend Health Checks are created on a fixed port.
-            cls.server_maintenance_port = KubernetesServerRunner.DEFAULT_SECURE_MODE_MAINTENANCE_PORT
+            cls.server_maintenance_port = \
+                KubernetesServerRunner.DEFAULT_SECURE_MODE_MAINTENANCE_PORT
 
     def initTrafficDirectorManager(self) -> TrafficDirectorSecureManager:
         return TrafficDirectorSecureManager(
@@ -579,7 +574,6 @@ class SecurityXdsKubernetesTestCase(XdsKubernetesTestCase):
             gcp_service_account=self.gcp_service_account,
             xds_server_uri=self.xds_server_uri,
             network=self.network,
-            config_scope=self.config_scope,
             deployment_template='client-secure.deployment.yaml',
             stats_port=self.client_port,
             reuse_namespace=self.server_namespace == self.client_namespace,

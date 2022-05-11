@@ -21,49 +21,39 @@
 #include "src/core/lib/surface/init.h"
 
 #include <limits.h>
-#include <memory.h>
-#include <string.h>
+#include <stdint.h>
+
+#include "absl/base/thread_annotations.h"
 
 #include <grpc/fork.h>
 #include <grpc/grpc.h>
-#include <grpc/support/alloc.h>
+#include <grpc/grpc_security.h>
+#include <grpc/impl/codegen/grpc_types.h>
 #include <grpc/support/log.h>
+#include <grpc/support/sync.h>
 #include <grpc/support/time.h>
 
-#include "src/core/lib/channel/channel_stack.h"
+#include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_stack_builder.h"
-#include "src/core/lib/channel/channelz_registry.h"
-#include "src/core/lib/channel/connected_channel.h"
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/debug/stats.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/gprpp/fork.h"
 #include "src/core/lib/gprpp/sync.h"
-#include "src/core/lib/iomgr/call_combiner.h"
-#include "src/core/lib/iomgr/combiner.h"
+#include "src/core/lib/gprpp/thd.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/executor.h"
 #include "src/core/lib/iomgr/iomgr.h"
 #include "src/core/lib/iomgr/timer_manager.h"
 #include "src/core/lib/profiling/timers.h"
 #include "src/core/lib/security/authorization/grpc_server_authz_filter.h"
-#include "src/core/lib/security/context/security_context.h"
 #include "src/core/lib/security/credentials/credentials.h"
-#include "src/core/lib/security/credentials/plugin/plugin_credentials.h"
 #include "src/core/lib/security/security_connector/security_connector.h"
 #include "src/core/lib/security/transport/auth_filters.h"
-#include "src/core/lib/security/transport/secure_endpoint.h"
-#include "src/core/lib/security/transport/security_handshaker.h"
-#include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/surface/api_trace.h"
-#include "src/core/lib/surface/builtins.h"
-#include "src/core/lib/surface/call.h"
+#include "src/core/lib/surface/channel_init.h"
+#include "src/core/lib/surface/channel_stack_type.h"
 #include "src/core/lib/surface/completion_queue.h"
-#include "src/core/lib/surface/lame_client.h"
-#include "src/core/lib/surface/server.h"
-#include "src/core/lib/transport/bdp_estimator.h"
-#include "src/core/lib/transport/connectivity_state.h"
-#include "src/core/lib/transport/transport_impl.h"
 
 /* (generated) built in registry of plugins */
 extern void grpc_register_built_in_plugins(void);
@@ -82,41 +72,25 @@ static bool g_shutting_down ABSL_GUARDED_BY(g_init_mu) = false;
 
 static bool maybe_prepend_client_auth_filter(
     grpc_core::ChannelStackBuilder* builder) {
-  const grpc_channel_args* args = builder->channel_args();
-  if (args) {
-    for (size_t i = 0; i < args->num_args; i++) {
-      if (0 == strcmp(GRPC_ARG_SECURITY_CONNECTOR, args->args[i].key)) {
-        builder->PrependFilter(&grpc_core::ClientAuthFilter::kFilter, nullptr);
-        break;
-      }
-    }
+  if (builder->channel_args().Contains(GRPC_ARG_SECURITY_CONNECTOR)) {
+    builder->PrependFilter(&grpc_core::ClientAuthFilter::kFilter);
   }
   return true;
 }
 
 static bool maybe_prepend_server_auth_filter(
     grpc_core::ChannelStackBuilder* builder) {
-  const grpc_channel_args* args = builder->channel_args();
-  if (args) {
-    for (size_t i = 0; i < args->num_args; i++) {
-      if (0 == strcmp(GRPC_SERVER_CREDENTIALS_ARG, args->args[i].key)) {
-        builder->PrependFilter(&grpc_server_auth_filter, nullptr);
-        break;
-      }
-    }
+  if (builder->channel_args().Contains(GRPC_SERVER_CREDENTIALS_ARG)) {
+    builder->PrependFilter(&grpc_server_auth_filter);
   }
   return true;
 }
 
 static bool maybe_prepend_grpc_server_authz_filter(
     grpc_core::ChannelStackBuilder* builder) {
-  const grpc_channel_args* args = builder->channel_args();
-  const auto* provider =
-      grpc_channel_args_find_pointer<grpc_authorization_policy_provider>(
-          args, GRPC_ARG_AUTHORIZATION_POLICY_PROVIDER);
-  if (provider != nullptr) {
-    builder->PrependFilter(&grpc_core::GrpcServerAuthzFilter::kFilterVtable,
-                           nullptr);
+  if (builder->channel_args().GetPointer<grpc_authorization_policy_provider>(
+          GRPC_ARG_AUTHORIZATION_POLICY_PROVIDER) != nullptr) {
+    builder->PrependFilter(&grpc_core::GrpcServerAuthzFilter::kFilterVtable);
   }
   return true;
 }
@@ -180,7 +154,6 @@ void grpc_init(void) {
     grpc_core::Fork::GlobalInit();
     grpc_fork_handlers_auto_register();
     grpc_stats_init();
-    grpc_core::channelz::ChannelzRegistry::Init();
     grpc_core::ApplicationCallbackExecCtx::GlobalInit();
     grpc_iomgr_init();
     gpr_timers_global_init();
@@ -213,7 +186,6 @@ void grpc_shutdown_internal_locked(void)
     grpc_iomgr_shutdown();
     gpr_timers_global_destroy();
     grpc_tracer_shutdown();
-    grpc_core::channelz::ChannelzRegistry::Shutdown();
     grpc_stats_shutdown();
     grpc_core::Fork::GlobalShutdown();
   }

@@ -92,6 +92,9 @@ class _NetworkSecurityBase(gcp.api.GcpStandardCloudApiResource,
                            metaclass=abc.ABCMeta):
     """Base class for NetworkSecurity APIs."""
 
+    # TODO(https://github.com/grpc/grpc/issues/29532) remove pylint disable
+    # pylint: disable=abstract-method
+
     def __init__(self, api_manager: gcp.api.GcpApiManager, project: str):
         super().__init__(api_manager.networksecurity(self.api_version), project)
         # Shortcut to projects/*/locations/ endpoints
@@ -101,7 +104,7 @@ class _NetworkSecurityBase(gcp.api.GcpStandardCloudApiResource,
     def api_name(self) -> str:
         return 'networksecurity'
 
-    def _execute(self, *args, **kwargs):  # pylint: disable=signature-differs
+    def _execute(self, *args, **kwargs):  # pylint: disable=signature-differs,arguments-differ
         # Workaround TD bug: throttled operations are reported as internal.
         # Ref b/175345578
         retryer = tenacity.Retrying(

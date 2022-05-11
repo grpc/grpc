@@ -21,6 +21,8 @@
 #include "absl/strings/str_join.h"
 #include "absl/strings/str_replace.h"
 
+#include <grpc/support/string_util.h>
+
 #include "src/core/lib/gpr/env.h"
 #include "src/core/lib/http/httpcli_ssl_credentials.h"
 

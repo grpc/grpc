@@ -347,6 +347,7 @@ const grpc_channel_filter grpc_client_deadline_filter = {
     deadline_destroy_call_elem,
     0,  // sizeof(channel_data)
     deadline_init_channel_elem,
+    grpc_channel_stack_no_post_init,
     deadline_destroy_channel_elem,
     grpc_channel_next_get_info,
     "deadline",
@@ -362,6 +363,7 @@ const grpc_channel_filter grpc_server_deadline_filter = {
     deadline_destroy_call_elem,
     0,  // sizeof(channel_data)
     deadline_init_channel_elem,
+    grpc_channel_stack_no_post_init,
     deadline_destroy_channel_elem,
     grpc_channel_next_get_info,
     "deadline",
@@ -380,8 +382,10 @@ void RegisterDeadlineFilter(CoreConfiguration::Builder* builder) {
     builder->channel_init()->RegisterStage(
         type, GRPC_CHANNEL_INIT_BUILTIN_PRIORITY,
         [filter](ChannelStackBuilder* builder) {
-          if (grpc_deadline_checking_enabled(builder->channel_args())) {
-            builder->PrependFilter(filter, nullptr);
+          auto args = builder->channel_args();
+          if (args.GetBool(GRPC_ARG_ENABLE_DEADLINE_CHECKS)
+                  .value_or(!args.WantMinimalStack())) {
+            builder->PrependFilter(filter);
           }
           return true;
         });

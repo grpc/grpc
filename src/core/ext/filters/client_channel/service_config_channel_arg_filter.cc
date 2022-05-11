@@ -19,12 +19,29 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <new>
+#include <string>
+#include <utility>
+
+#include "absl/types/optional.h"
+
+#include <grpc/impl/codegen/grpc_types.h>
+#include <grpc/support/log.h>
+
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/channel/channel_stack_builder.h"
+#include "src/core/lib/channel/context.h"
 #include "src/core/lib/config/core_configuration.h"
+#include "src/core/lib/gprpp/ref_counted_ptr.h"
+#include "src/core/lib/iomgr/closure.h"
+#include "src/core/lib/iomgr/error.h"
+#include "src/core/lib/service_config/service_config.h"
 #include "src/core/lib/service_config/service_config_call_data.h"
 #include "src/core/lib/service_config/service_config_impl.h"
+#include "src/core/lib/service_config/service_config_parser.h"
+#include "src/core/lib/surface/channel_init.h"
+#include "src/core/lib/surface/channel_stack_type.h"
 
 namespace grpc_core {
 
@@ -132,6 +149,7 @@ const grpc_channel_filter ServiceConfigChannelArgFilter = {
     ServiceConfigChannelArgDestroyCallElem,
     sizeof(ServiceConfigChannelArgChannelData),
     ServiceConfigChannelArgInitChannelElem,
+    grpc_channel_stack_no_post_init,
     ServiceConfigChannelArgDestroyChannelElem,
     grpc_channel_next_get_info,
     "service_config_channel_arg"};
@@ -143,13 +161,12 @@ void RegisterServiceConfigChannelArgFilter(
   builder->channel_init()->RegisterStage(
       GRPC_CLIENT_DIRECT_CHANNEL, GRPC_CHANNEL_INIT_BUILTIN_PRIORITY,
       [](ChannelStackBuilder* builder) {
-        const grpc_channel_args* channel_args = builder->channel_args();
-        if (grpc_channel_args_want_minimal_stack(channel_args) ||
-            grpc_channel_args_find_string(channel_args,
-                                          GRPC_ARG_SERVICE_CONFIG) == nullptr) {
+        auto channel_args = builder->channel_args();
+        if (channel_args.WantMinimalStack() ||
+            !channel_args.GetString(GRPC_ARG_SERVICE_CONFIG).has_value()) {
           return true;
         }
-        builder->PrependFilter(&ServiceConfigChannelArgFilter, nullptr);
+        builder->PrependFilter(&ServiceConfigChannelArgFilter);
         return true;
       });
 }
