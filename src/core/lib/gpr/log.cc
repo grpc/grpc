@@ -17,10 +17,12 @@
  */
 
 #include <grpc/support/port_platform.h>
+
+#include <stdlib.h>
 #include <string.h>
+
 #include <grpc/support/atm.h>
 #include <grpc/support/log.h>
-#include <stdlib.h>
 
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gprpp/global_config_env.h"
