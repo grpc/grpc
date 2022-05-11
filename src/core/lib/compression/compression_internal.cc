@@ -78,6 +78,7 @@ class CommaSeparatedLists {
       }
       lists_[list] = absl::string_view(start, text_buffer - start);
     }
+    if (text_buffer - text_buffer_ != kTextBufferSize) abort();
   }
 
   absl::string_view operator[](size_t list) const { return lists_[list]; }
@@ -85,7 +86,7 @@ class CommaSeparatedLists {
  private:
   static constexpr size_t kNumLists = 1 << GRPC_COMPRESS_ALGORITHMS_COUNT;
   // Experimentally determined (tweak things until it runs).
-  static constexpr size_t kTextBufferSize = 1024;
+  static constexpr size_t kTextBufferSize = 86;
   absl::string_view lists_[kNumLists];
   char text_buffer_[kTextBufferSize];
 };
