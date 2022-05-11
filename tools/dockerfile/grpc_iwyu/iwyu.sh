@@ -45,6 +45,7 @@ export ENABLED_MODULES='
   src/core/lib/avl
   src/core/lib/channel
   src/core/lib/config
+  src/core/lib/event_engine
   src/core/lib/gprpp
   src/core/lib/json
   src/core/lib/slice

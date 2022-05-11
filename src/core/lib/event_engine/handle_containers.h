@@ -16,10 +16,17 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <stddef.h>
+
+#include <cstdint>
+#include <utility>
+
 #include "absl/container/flat_hash_set.h"
 #include "absl/hash/hash.h"
 
 #include <grpc/event_engine/event_engine.h>
+
+namespace grpc_core {
 
 // Used for heterogenous lookup of TaskHandles in abseil containers.
 template <typename TaskHandle>
@@ -52,5 +59,7 @@ using LookupTaskHandleSet = absl::flat_hash_set<
                              DNSResolver::LookupTaskHandle>::Hash,
     TaskHandleComparator<grpc_event_engine::experimental::EventEngine::
                              DNSResolver::LookupTaskHandle>::Eq>;
+
+}  // namespace grpc_core
 
 #endif  // GRPC_CORE_LIB_EVENT_ENGINE_HANDLE_CONTAINERS_H

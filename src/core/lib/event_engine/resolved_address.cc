@@ -12,12 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 #include <grpc/support/port_platform.h>
-
 #include <grpc/event_engine/event_engine.h>
-#include <grpc/event_engine/port.h>
 #include <grpc/support/log.h>
-
-#include "src/core/lib/gprpp/sync.h"
+#include <string.h>
+#include <sys/socket.h>
 
 namespace grpc_event_engine {
 namespace experimental {

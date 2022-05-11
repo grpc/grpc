@@ -15,10 +15,10 @@
 #define GRPC_CORE_LIB_EVENT_ENGINE_CHANNEL_ARGS_ENDPOINT_CONFIG_H
 
 #include <grpc/support/port_platform.h>
-
 #include <grpc/event_engine/endpoint_config.h>
+#include <grpc/impl/codegen/grpc_types.h>
 
-#include "src/core/lib/channel/channel_args.h"
+#include "absl/strings/string_view.h"
 
 namespace grpc_event_engine {
 namespace experimental {
