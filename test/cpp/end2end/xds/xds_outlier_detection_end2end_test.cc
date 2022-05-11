@@ -66,7 +66,7 @@ TEST_P(OutlierDetectionTest, SuccessRate100Percent) {
   auto* base_time =
       cluster.mutable_outlier_detection()->mutable_base_ejection_time();
   interval->set_nanos(100000000 * grpc_test_slowdown_factor());
-  base_time->set_nanos(1000000000 * grpc_test_slowdown_factor());
+  base_time->set_seconds(1 * grpc_test_slowdown_factor());
   cluster.mutable_outlier_detection()
       ->mutable_success_rate_stdev_factor()
       ->set_value(100);
@@ -247,7 +247,7 @@ TEST_P(OutlierDetectionTest, SuccessRateHigherStdevFactor) {
   auto* base_time =
       cluster.mutable_outlier_detection()->mutable_base_ejection_time();
   interval->set_nanos(100000000 * grpc_test_slowdown_factor());
-  base_time->set_nanos(1000000000 * grpc_test_slowdown_factor());
+  base_time->set_seconds(1 * grpc_test_slowdown_factor());
   // We know a stdev factor of 100 will ensure the ejection occurs, so setting
   // it to something higher to test that ejection will not occur.
   cluster.mutable_outlier_detection()
@@ -451,7 +451,7 @@ TEST_P(OutlierDetectionTest, FailurePercent100Percent) {
   interval->set_nanos(100000000 * grpc_test_slowdown_factor());
   auto* base_time =
       cluster.mutable_outlier_detection()->mutable_base_ejection_time();
-  base_time->set_nanos(1000000000 * grpc_test_slowdown_factor());
+  base_time->set_seconds(1 * grpc_test_slowdown_factor());
   cluster.mutable_outlier_detection()
       ->mutable_failure_percentage_threshold()
       ->set_value(0);
@@ -631,7 +631,7 @@ TEST_P(OutlierDetectionTest, FailurePercentHigherThreshold) {
   interval->set_nanos(100000000 * grpc_test_slowdown_factor());
   auto* base_time =
       cluster.mutable_outlier_detection()->mutable_base_ejection_time();
-  base_time->set_nanos(1000000000 * grpc_test_slowdown_factor());
+  base_time->set_seconds(1 * grpc_test_slowdown_factor());
   // Let's set to 50
   cluster.mutable_outlier_detection()
       ->mutable_failure_percentage_threshold()
@@ -830,7 +830,7 @@ TEST_P(OutlierDetectionTest, SuccessRateAndFailurePercentage) {
   auto* base_time =
       cluster.mutable_outlier_detection()->mutable_base_ejection_time();
   interval->set_nanos(100000000 * grpc_test_slowdown_factor());
-  base_time->set_nanos(1000000000 * grpc_test_slowdown_factor());
+  base_time->set_seconds(1 * grpc_test_slowdown_factor());
   cluster.mutable_outlier_detection()
       ->mutable_success_rate_stdev_factor()
       ->set_value(100);
