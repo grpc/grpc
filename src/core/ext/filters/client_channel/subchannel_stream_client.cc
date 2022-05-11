@@ -474,7 +474,7 @@ void SubchannelStreamClient::CallState::OnByteStreamNext(
     self->DoneReadingRecvMessage(error);
     return;
   }
-  if (self->recv_message_buffer_.length == self->recv_message_->length()) {
+  if (self->recv_message_buffer_.length == self->recv_message_.Length()) {
     self->DoneReadingRecvMessage(GRPC_ERROR_NONE);
   } else {
     self->ContinueReadingRecvMessage();
@@ -485,10 +485,6 @@ void SubchannelStreamClient::CallState::RecvMessageReady(
     void* arg, grpc_error_handle /*error*/) {
   auto* self = static_cast<SubchannelStreamClient::CallState*>(arg);
   GRPC_CALL_COMBINER_STOP(&self->call_combiner_, "recv_message_ready");
-  if (self->recv_message_ == nullptr) {
-    self->call_->Unref(DEBUG_LOCATION, "recv_message_ready");
-    return;
-  }
   grpc_slice_buffer_init(&self->recv_message_buffer_);
   GRPC_CLOSURE_INIT(&self->recv_message_ready_, OnByteStreamNext, self,
                     grpc_schedule_on_exec_ctx);

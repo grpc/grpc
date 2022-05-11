@@ -138,11 +138,6 @@ class SubchannelStreamClient
     static void StartCancel(void* arg, grpc_error_handle error);
     static void OnCancelComplete(void* arg, grpc_error_handle error);
 
-    static void OnByteStreamNext(void* arg, grpc_error_handle error);
-    void ContinueReadingRecvMessage();
-    grpc_error_handle PullSliceFromRecvMessage();
-    void DoneReadingRecvMessage(grpc_error_handle error);
-
     static void AfterCallStackDestruction(void* arg, grpc_error_handle error);
 
     RefCountedPtr<SubchannelStreamClient> subchannel_stream_client_;
@@ -180,7 +175,6 @@ class SubchannelStreamClient
     // recv_message
     SliceBuffer recv_message_;
     grpc_closure recv_message_ready_;
-    grpc_slice_buffer recv_message_buffer_;
     std::atomic<bool> seen_response_{false};
 
     // True if the cancel_stream batch has been started.
