@@ -33,6 +33,16 @@ bool ParseDurationFromJson(const Json& field, Duration* duration) {
   if (field.type() != Json::Type::STRING) return false;
   size_t len = field.string_value().size();
   if (field.string_value()[len - 1] != 's') return false;
+  if (field.string_value() == Duration::Infinity().ToJsonString()) {
+    gpr_log(GPR_INFO, "donna foudn inifty in ParseDurationFromJson");
+    *duration = Duration::Infinity();
+    return true;
+  } else {
+    gpr_log(GPR_INFO, "donna did not find %s and %s and %s",
+            field.string_value().c_str(),
+            Duration::Infinity().ToString().c_str(),
+            Duration::Infinity().ToJsonString().c_str());
+  }
   UniquePtr<char> buf(gpr_strdup(field.string_value().c_str()));
   *(buf.get() + len - 1) = '\0';  // Remove trailing 's'.
   char* decimal_point = strchr(buf.get(), '.');

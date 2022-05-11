@@ -285,13 +285,13 @@ class OutlierDetectionLb : public LoadBalancingPolicy {
   class Picker : public SubchannelPicker {
    public:
     Picker(OutlierDetectionLb* outlier_detection_lb,
-           RefCountedPtr<RefCountedPicker> picker);
+           RefCountedPtr<RefCountedPicker> picker, bool counting_enabled);
 
     PickResult Pick(PickArgs args) override;
 
    private:
     class SubchannelCallTracker;
-    OutlierDetectionLb* outlier_detection_lb_;
+    bool counting_enabled_;
     RefCountedPtr<RefCountedPicker> picker_;
   };
 
@@ -335,7 +335,7 @@ class OutlierDetectionLb : public LoadBalancingPolicy {
     grpc_closure on_timer_;
     bool timer_pending_ = true;
     Timestamp start_time_;
-    absl::BitGen bit_gen_ = absl::BitGen();
+    absl::BitGen bit_gen_;
   };
 
   ~OutlierDetectionLb() override;
@@ -462,8 +462,9 @@ class OutlierDetectionLb::Picker::SubchannelCallTracker
 //
 
 OutlierDetectionLb::Picker::Picker(OutlierDetectionLb* outlier_detection_lb,
-                                   RefCountedPtr<RefCountedPicker> picker)
-    : outlier_detection_lb_(outlier_detection_lb), picker_(std::move(picker)) {
+                                   RefCountedPtr<RefCountedPicker> picker,
+                                   bool counting_enabled)
+    : picker_(std::move(picker)), counting_enabled_(counting_enabled) {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_outlier_detection_lb_trace)) {
     gpr_log(GPR_INFO, "[outlier_detection_lb %p] constructed new picker %p",
             outlier_detection_lb, this);
@@ -485,10 +486,7 @@ LoadBalancingPolicy::PickResult OutlierDetectionLb::Picker::Pick(
         static_cast<SubchannelWrapper*>(complete_pick->subchannel.get());
     // Inject subchannel call tracker to record call completion as long as
     // not both success_rate_ejection and failure_percentage_ejection are unset.
-    if (!outlier_detection_lb_->config_->outlier_detection_config()
-             .success_rate_ejection.has_value() ||
-        !outlier_detection_lb_->config_->outlier_detection_config()
-             .failure_percentage_ejection.has_value()) {
+    if (counting_enabled_) {
       complete_pick->subchannel_call_tracker =
           absl::make_unique<SubchannelCallTracker>(
               std::move(complete_pick->subchannel_call_tracker),
@@ -562,9 +560,10 @@ void OutlierDetectionLb::UpdateLocked(UpdateArgs args) {
   // Update config.
   config_ = std::move(args.config);
   // Update outlier detection timer.
-  if (!config_->outlier_detection_config().success_rate_ejection.has_value() &&
-      !config_->outlier_detection_config()
-           .failure_percentage_ejection.has_value()) {
+  if (config_->outlier_detection_config().interval == Duration::Infinity() ||
+      (!config_->outlier_detection_config().success_rate_ejection.has_value() &&
+       !config_->outlier_detection_config()
+            .failure_percentage_ejection.has_value())) {
     // No need for timer.  Cancel the current timer, if any.
     ejection_timer_.reset();
   } else if (ejection_timer_ == nullptr) {
@@ -626,7 +625,12 @@ void OutlierDetectionLb::UpdateLocked(UpdateArgs args) {
 
 void OutlierDetectionLb::MaybeUpdatePickerLocked() {
   if (picker_ != nullptr) {
-    auto outlier_detection_picker = absl::make_unique<Picker>(this, picker_);
+    bool counting_enabled = (!config_->outlier_detection_config()
+                                  .success_rate_ejection.has_value() ||
+                             !config_->outlier_detection_config()
+                                  .failure_percentage_ejection.has_value());
+    auto outlier_detection_picker =
+        absl::make_unique<Picker>(this, picker_, counting_enabled);
     if (GRPC_TRACE_FLAG_ENABLED(grpc_outlier_detection_lb_trace)) {
       gpr_log(GPR_INFO,
               "[outlier_detection_lb %p] updating connectivity: state=%s "
@@ -828,7 +832,6 @@ void OutlierDetectionLb::EjectionTimer::OnTimerLocked(grpc_error_handle error) {
               "donna success eject from a list of %d candidates, %d many "
               "alrady ejected",
               success_rate_ejection_candidates.size(), ejected_host_count);
-      bool first_success_eject = true;
       for (auto& candidate : success_rate_ejection_candidates) {
         gpr_log(GPR_INFO,
                 "donna candidate %p, %f and thrshodl is %f max percent is %d",
@@ -840,13 +843,12 @@ void OutlierDetectionLb::EjectionTimer::OnTimerLocked(grpc_error_handle error) {
                                    parent_->subchannel_state_map_.size();
           if (random_key <
                   config.success_rate_ejection->enforcement_percentage &&
-              (first_success_eject ||
+              (ejected_host_count == 0 ||
                (current_percent < config.max_ejection_percent))) {
             // Eject and record the timestamp for use when ejecting addresses in
             // this iteration.
             gpr_log(GPR_INFO, "donna actually ejecting in success case");
             candidate.first->Eject(time_now);
-            first_success_eject = false;
             ++ejected_host_count;
           } else {
             gpr_log(GPR_INFO, "donna saved by random key");
@@ -863,7 +865,6 @@ void OutlierDetectionLb::EjectionTimer::OnTimerLocked(grpc_error_handle error) {
               "alrady ejected",
               failure_percentage_ejection_candidates.size(),
               ejected_host_count);
-      bool first_failure_eject = true;
       for (auto& candidate : failure_percentage_ejection_candidates) {
         gpr_log(GPR_INFO, "donna candidate %p, %f", candidate.first,
                 candidate.second);
@@ -874,13 +875,12 @@ void OutlierDetectionLb::EjectionTimer::OnTimerLocked(grpc_error_handle error) {
                                    parent_->subchannel_state_map_.size();
           if (random_key <
                   config.failure_percentage_ejection->enforcement_percentage &&
-              (first_failure_eject ||
+              (ejected_host_count == 0 ||
                (current_percent < config.max_ejection_percent))) {
             // Eject and record the timestamp for use when ejecting addresses in
             // this iteration.
             gpr_log(GPR_INFO, "donna actually ejecting in faliure case");
             candidate.first->Eject(time_now);
-            first_failure_eject = false;
             ++ejected_host_count;
           } else {
             gpr_log(GPR_INFO, "donna saved by random key");
@@ -952,9 +952,7 @@ class OutlierDetectionLbFactory : public LoadBalancingPolicyFactory {
                              &success_config.minimum_hosts, &error_list);
         ParseJsonObjectField(object, "requestVolume",
                              &success_config.request_volume, &error_list);
-        if (error_list.empty()) {
-          outlier_detection_config.success_rate_ejection = success_config;
-        }
+        outlier_detection_config.success_rate_ejection = success_config;
       }
     }
     it = json.object_value().find("failurePercentageEjection");
@@ -974,19 +972,19 @@ class OutlierDetectionLbFactory : public LoadBalancingPolicyFactory {
                              &failure_config.minimum_hosts, &error_list);
         ParseJsonObjectField(object, "requestVolume",
                              &failure_config.request_volume, &error_list);
-        if (error_list.empty()) {
-          outlier_detection_config.failure_percentage_ejection = failure_config;
-        }
+        outlier_detection_config.failure_percentage_ejection = failure_config;
       }
     }
-    if (outlier_detection_config.success_rate_ejection.has_value() ||
-        outlier_detection_config.failure_percentage_ejection.has_value()) {
-      ParseJsonObjectFieldAsDuration(json.object_value(), "interval",
-                                     &outlier_detection_config.interval,
-                                     &error_list);
+    ParseJsonObjectFieldAsDuration(json.object_value(), "interval",
+                                   &outlier_detection_config.interval,
+                                   &error_list);
+    if (outlier_detection_config.interval != Duration::Infinity()) {
+      gpr_log(GPR_INFO, "donna receveid non infinity, not disabled case");
       ParseJsonObjectFieldAsDuration(
           json.object_value(), "baseEjectionTime",
           &outlier_detection_config.base_ejection_time, &error_list);
+      gpr_log(GPR_INFO, "donna debug base duration %s",
+              outlier_detection_config.base_ejection_time.ToString().c_str());
       auto max_ejection_time_it = json.object_value().find("maxEjectionTime");
       if (max_ejection_time_it == json.object_value().end()) {
         outlier_detection_config.max_ejection_time = Duration::Milliseconds(
