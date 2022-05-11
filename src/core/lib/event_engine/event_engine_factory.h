@@ -16,6 +16,8 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <memory>
+
 #include <grpc/event_engine/event_engine.h>
 
 namespace grpc_event_engine {
