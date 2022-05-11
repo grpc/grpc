@@ -132,8 +132,8 @@ time ../test-infra/bin/prepare_prebuilt_workers \
 time ../test-infra/bin/runner \
     -i "loadtest_with_prebuilt_workers_${WORKER_POOL_8CORE}.yaml" \
     -i "loadtest_with_prebuilt_workers_${WORKER_POOL_32CORE}.yaml" \
+    -log-url-prefix "${LOG_URL_PREFIX}" \
     -polling-interval 5s \
     -delete-successful-tests \
-    -log-url-prefix "${LOG_URL_PREFIX}" \
     -c "${WORKER_POOL_8CORE}:2" -c "${WORKER_POOL_32CORE}:2" \
     -o "runner/sponge_log.xml"
