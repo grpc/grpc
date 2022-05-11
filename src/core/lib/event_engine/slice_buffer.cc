@@ -42,9 +42,6 @@ void SliceBuffer::Prepend(Slice slice) {
 }
 
 Slice SliceBuffer::RefSlice(size_t index) {
-  if (index >= Count()) {
-    return Slice(grpc_empty_slice());
-  }
   return Slice(grpc_slice_ref_internal(slice_buffer_.slices[index]));
 }
 
