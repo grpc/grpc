@@ -1334,85 +1334,6 @@ static void maybe_become_writable_due_to_send_msg(grpc_chttp2_transport* t,
   }
 }
 
-static void add_fetched_slice_locked(grpc_chttp2_transport* t,
-                                     grpc_chttp2_stream* s) {
-  s->fetched_send_message_length +=
-      static_cast<uint32_t> GRPC_SLICE_LENGTH(s->fetching_slice);
-  grpc_slice_buffer_add(&s->flow_controlled_buffer, s->fetching_slice);
-  maybe_become_writable_due_to_send_msg(t, s);
-}
-
-static void continue_fetching_send_locked(grpc_chttp2_transport* t,
-                                          grpc_chttp2_stream* s) {
-  for (;;) {
-    if (s->fetching_send_message == nullptr) {
-      // Stream was cancelled before message fetch completed
-      abort(); /* TODO(ctiller): what cleanup here? */
-    }
-    if (s->fetched_send_message_length == s->fetching_send_message->length()) {
-      int64_t notify_offset = s->next_message_end_offset;
-      if (notify_offset <= s->flow_controlled_bytes_written) {
-        grpc_chttp2_complete_closure_step(
-            t, s, &s->fetching_send_message_finished, GRPC_ERROR_NONE,
-            "fetching_send_message_finished");
-      } else {
-        grpc_chttp2_write_cb* cb = t->write_cb_pool;
-        if (cb == nullptr) {
-          cb = static_cast<grpc_chttp2_write_cb*>(gpr_malloc(sizeof(*cb)));
-        } else {
-          t->write_cb_pool = cb->next;
-        }
-        cb->call_at_byte = notify_offset;
-        cb->closure = s->fetching_send_message_finished;
-        s->fetching_send_message_finished = nullptr;
-        grpc_chttp2_write_cb** list =
-            s->fetching_send_message->flags() & GRPC_WRITE_THROUGH
-                ? &s->on_write_finished_cbs
-                : &s->on_flow_controlled_cbs;
-        cb->next = *list;
-        *list = cb;
-      }
-      s->fetching_send_message.reset();
-      return; /* early out */
-    } else if (s->fetching_send_message->Next(
-                   UINT32_MAX, GRPC_CLOSURE_INIT(&s->complete_fetch_locked,
-                                                 ::complete_fetch, s,
-                                                 grpc_schedule_on_exec_ctx))) {
-      grpc_error_handle error =
-          s->fetching_send_message->Pull(&s->fetching_slice);
-      if (error != GRPC_ERROR_NONE) {
-        s->fetching_send_message.reset();
-        grpc_chttp2_cancel_stream(t, s, error);
-      } else {
-        add_fetched_slice_locked(t, s);
-      }
-    }
-  }
-}
-
-static void complete_fetch(void* gs, grpc_error_handle error) {
-  grpc_chttp2_stream* s = static_cast<grpc_chttp2_stream*>(gs);
-  s->t->combiner->Run(GRPC_CLOSURE_INIT(&s->complete_fetch_locked,
-                                        ::complete_fetch_locked, s, nullptr),
-                      GRPC_ERROR_REF(error));
-}
-
-static void complete_fetch_locked(void* gs, grpc_error_handle error) {
-  grpc_chttp2_stream* s = static_cast<grpc_chttp2_stream*>(gs);
-  grpc_chttp2_transport* t = s->t;
-  if (error == GRPC_ERROR_NONE) {
-    error = s->fetching_send_message->Pull(&s->fetching_slice);
-    if (error == GRPC_ERROR_NONE) {
-      add_fetched_slice_locked(t, s);
-      continue_fetching_send_locked(t, s);
-    }
-  }
-  if (error != GRPC_ERROR_NONE) {
-    s->fetching_send_message.reset();
-    grpc_chttp2_cancel_stream(t, s, error);
-  }
-}
-
 static void log_metadata(const grpc_metadata_batch* md_batch, uint32_t id,
                          bool is_client, bool is_initial) {
   const std::string prefix = absl::StrCat(
@@ -1534,30 +1455,26 @@ static void perform_stream_op_locked(void* stream_op,
     GRPC_STATS_INC_HTTP2_SEND_MESSAGE_SIZE(
         op->payload->send_message.send_message->length());
     on_complete->next_data.scratch |= CLOSURE_BARRIER_MAY_COVER_WRITE;
-    s->fetching_send_message_finished = add_closure_barrier(op->on_complete);
+    s->send_message_finished = add_closure_barrier(op->on_complete);
+    const uint32_t flags = op_payload->send_message.flags;
     if (s->write_closed) {
       op->payload->send_message.stream_write_closed = true;
       // We should NOT return an error here, so as to avoid a cancel OP being
       // started. The surface layer will notice that the stream has been closed
       // for writes and fail the send message op.
-      op->payload->send_message.send_message.reset();
-      grpc_chttp2_complete_closure_step(
-          t, s, &s->fetching_send_message_finished, GRPC_ERROR_NONE,
-          "fetching_send_message_finished");
+      grpc_chttp2_complete_closure_step(t, s, &s->send_message_finished,
+                                        GRPC_ERROR_NONE,
+                                        "fetching_send_message_finished");
     } else {
-      GPR_ASSERT(s->fetching_send_message == nullptr);
       uint8_t* frame_hdr = grpc_slice_buffer_tiny_add(
           &s->flow_controlled_buffer, GRPC_HEADER_SIZE_IN_BYTES);
-      uint32_t flags = op_payload->send_message.send_message->flags();
       frame_hdr[0] = (flags & GRPC_WRITE_INTERNAL_COMPRESS) != 0;
-      size_t len = op_payload->send_message.send_message->length();
+      size_t len = op_payload->send_message.send_message->Length();
       frame_hdr[1] = static_cast<uint8_t>(len >> 24);
       frame_hdr[2] = static_cast<uint8_t>(len >> 16);
       frame_hdr[3] = static_cast<uint8_t>(len >> 8);
       frame_hdr[4] = static_cast<uint8_t>(len);
-      s->fetching_send_message =
-          std::move(op_payload->send_message.send_message);
-      s->fetched_send_message_length = 0;
+
       s->next_message_end_offset =
           s->flow_controlled_bytes_written +
           static_cast<int64_t>(s->flow_controlled_buffer.length) +
@@ -1568,8 +1485,32 @@ static void perform_stream_op_locked(void* stream_op,
       } else {
         s->write_buffering = false;
       }
-      continue_fetching_send_locked(t, s);
-      maybe_become_writable_due_to_send_msg(t, s);
+
+      grpc_slice_buffer_move_into(
+          op_payload->send_message.send_message->c_slice_buffer(),
+          &s->flow_controlled_buffer);
+
+      int64_t notify_offset = s->next_message_end_offset;
+      if (notify_offset <= s->flow_controlled_bytes_written) {
+        grpc_chttp2_complete_closure_step(t, s, &s->send_message_finished,
+                                          GRPC_ERROR_NONE,
+                                          "fetching_send_message_finished");
+      } else {
+        grpc_chttp2_write_cb* cb = t->write_cb_pool;
+        if (cb == nullptr) {
+          cb = static_cast<grpc_chttp2_write_cb*>(gpr_malloc(sizeof(*cb)));
+        } else {
+          t->write_cb_pool = cb->next;
+        }
+        cb->call_at_byte = notify_offset;
+        cb->closure = s->send_message_finished;
+        s->send_message_finished = nullptr;
+        grpc_chttp2_write_cb** list = flags & GRPC_WRITE_THROUGH
+                                          ? &s->on_write_finished_cbs
+                                          : &s->on_flow_controlled_cbs;
+        cb->next = *list;
+        *list = cb;
+      }
     }
   }
 
@@ -3053,166 +2994,6 @@ static void reset_byte_stream(void* arg, grpc_error_handle error) {
     s->byte_stream_error = GRPC_ERROR_REF(error);
   }
 }
-
-namespace grpc_core {
-
-Chttp2IncomingByteStream::Chttp2IncomingByteStream(
-    grpc_chttp2_transport* transport, grpc_chttp2_stream* stream,
-    uint32_t frame_size, uint32_t flags)
-    : ByteStream(frame_size, flags),
-      transport_(transport),
-      stream_(stream),
-      refs_(2),
-      remaining_bytes_(frame_size) {
-  GRPC_ERROR_UNREF(stream->byte_stream_error);
-  stream->byte_stream_error = GRPC_ERROR_NONE;
-}
-
-void Chttp2IncomingByteStream::OrphanLocked(
-    void* arg, grpc_error_handle /*error_ignored*/) {
-  Chttp2IncomingByteStream* bs = static_cast<Chttp2IncomingByteStream*>(arg);
-  grpc_chttp2_stream* s = bs->stream_;
-  grpc_chttp2_transport* t = s->t;
-  bs->Unref();
-  s->pending_byte_stream = false;
-  grpc_chttp2_maybe_complete_recv_message(t, s);
-  grpc_chttp2_maybe_complete_recv_trailing_metadata(t, s);
-}
-
-void Chttp2IncomingByteStream::Orphan() {
-  GPR_TIMER_SCOPE("incoming_byte_stream_destroy", 0);
-  transport_->combiner->Run(
-      GRPC_CLOSURE_INIT(&destroy_action_,
-                        &Chttp2IncomingByteStream::OrphanLocked, this, nullptr),
-      GRPC_ERROR_NONE);
-}
-
-void Chttp2IncomingByteStream::NextLocked(void* arg,
-                                          grpc_error_handle /*error_ignored*/) {
-  Chttp2IncomingByteStream* bs = static_cast<Chttp2IncomingByteStream*>(arg);
-  grpc_chttp2_transport* t = bs->transport_;
-  grpc_chttp2_stream* s = bs->stream_;
-  size_t cur_length = s->frame_storage.length;
-  if (!s->read_closed) {
-    s->flow_control->IncomingByteStreamUpdate(bs->next_action_.max_size_hint,
-                                              cur_length);
-    grpc_chttp2_act_on_flowctl_action(s->flow_control->MakeAction(), t, s);
-  }
-  GPR_ASSERT(s->unprocessed_incoming_frames_buffer.length == 0);
-  if (s->frame_storage.length > 0) {
-    grpc_slice_buffer_swap(&s->frame_storage,
-                           &s->unprocessed_incoming_frames_buffer);
-    ExecCtx::Run(DEBUG_LOCATION, bs->next_action_.on_complete, GRPC_ERROR_NONE);
-  } else if (s->byte_stream_error != GRPC_ERROR_NONE) {
-    ExecCtx::Run(DEBUG_LOCATION, bs->next_action_.on_complete,
-                 GRPC_ERROR_REF(s->byte_stream_error));
-    if (s->data_parser.parsing_frame != nullptr) {
-      s->data_parser.parsing_frame->Unref();
-      s->data_parser.parsing_frame = nullptr;
-    }
-  } else if (s->read_closed) {
-    if (bs->remaining_bytes_ != 0) {
-      s->byte_stream_error = GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(
-          "Truncated message", &s->read_closed_error, 1);
-      ExecCtx::Run(DEBUG_LOCATION, bs->next_action_.on_complete,
-                   GRPC_ERROR_REF(s->byte_stream_error));
-      if (s->data_parser.parsing_frame != nullptr) {
-        s->data_parser.parsing_frame->Unref();
-        s->data_parser.parsing_frame = nullptr;
-      }
-    } else {
-      // Should never reach here.
-      GPR_ASSERT(false);
-    }
-  } else {
-    s->on_next = bs->next_action_.on_complete;
-  }
-  bs->Unref();
-}
-
-bool Chttp2IncomingByteStream::Next(size_t max_size_hint,
-                                    grpc_closure* on_complete) {
-  GPR_TIMER_SCOPE("incoming_byte_stream_next", 0);
-  if (stream_->unprocessed_incoming_frames_buffer.length > 0) {
-    return true;
-  } else {
-    Ref();
-    next_action_.max_size_hint = max_size_hint;
-    next_action_.on_complete = on_complete;
-    transport_->combiner->Run(
-        GRPC_CLOSURE_INIT(&next_action_.closure,
-                          &Chttp2IncomingByteStream::NextLocked, this, nullptr),
-        GRPC_ERROR_NONE);
-    return false;
-  }
-}
-
-grpc_error_handle Chttp2IncomingByteStream::Pull(grpc_slice* slice) {
-  GPR_TIMER_SCOPE("incoming_byte_stream_pull", 0);
-  grpc_error_handle error;
-  if (stream_->unprocessed_incoming_frames_buffer.length > 0) {
-    error = grpc_deframe_unprocessed_incoming_frames(
-        &stream_->data_parser, stream_,
-        &stream_->unprocessed_incoming_frames_buffer, slice, nullptr);
-    if (error != GRPC_ERROR_NONE) {
-      return error;
-    }
-  } else {
-    error = GRPC_ERROR_CREATE_FROM_STATIC_STRING("Truncated message");
-    stream_->t->combiner->Run(&stream_->reset_byte_stream,
-                              GRPC_ERROR_REF(error));
-    return error;
-  }
-  return GRPC_ERROR_NONE;
-}
-
-void Chttp2IncomingByteStream::PublishError(grpc_error_handle error) {
-  GPR_ASSERT(error != GRPC_ERROR_NONE);
-  ExecCtx::Run(DEBUG_LOCATION, stream_->on_next, GRPC_ERROR_REF(error));
-  stream_->on_next = nullptr;
-  GRPC_ERROR_UNREF(stream_->byte_stream_error);
-  stream_->byte_stream_error = GRPC_ERROR_REF(error);
-  grpc_chttp2_cancel_stream(transport_, stream_, GRPC_ERROR_REF(error));
-}
-
-grpc_error_handle Chttp2IncomingByteStream::Push(const grpc_slice& slice,
-                                                 grpc_slice* slice_out) {
-  if (remaining_bytes_ < GRPC_SLICE_LENGTH(slice)) {
-    grpc_error_handle error =
-        GRPC_ERROR_CREATE_FROM_STATIC_STRING("Too many bytes in stream");
-    transport_->combiner->Run(&stream_->reset_byte_stream,
-                              GRPC_ERROR_REF(error));
-    grpc_slice_unref_internal(slice);
-    return error;
-  } else {
-    remaining_bytes_ -= static_cast<uint32_t> GRPC_SLICE_LENGTH(slice);
-    if (slice_out != nullptr) {
-      *slice_out = slice;
-    }
-    return GRPC_ERROR_NONE;
-  }
-}
-
-grpc_error_handle Chttp2IncomingByteStream::Finished(grpc_error_handle error,
-                                                     bool reset_on_error) {
-  if (error == GRPC_ERROR_NONE) {
-    if (remaining_bytes_ != 0) {
-      error = GRPC_ERROR_CREATE_FROM_STATIC_STRING("Truncated message");
-    }
-  }
-  if (error != GRPC_ERROR_NONE && reset_on_error) {
-    transport_->combiner->Run(&stream_->reset_byte_stream,
-                              GRPC_ERROR_REF(error));
-  }
-  Unref();
-  return error;
-}
-
-void Chttp2IncomingByteStream::Shutdown(grpc_error_handle error) {
-  GRPC_ERROR_UNREF(Finished(error, true /* reset_on_error */));
-}
-
-}  // namespace grpc_core
 
 //
 // RESOURCE QUOTAS

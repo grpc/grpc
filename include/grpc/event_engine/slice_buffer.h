@@ -99,7 +99,7 @@ class SliceBuffer {
   size_t Length() { return slice_buffer_.length; }
 
   /// Return a pointer to the back raw grpc_slice_buffer
-  grpc_slice_buffer* RawSliceBuffer() { return &slice_buffer_; }
+  grpc_slice_buffer* c_slice_buffer() { return &slice_buffer_; }
 
  private:
   /// The backing raw slice buffer.
