@@ -1648,6 +1648,7 @@ grpc_cc_library(
         "src/core/lib/slice/slice_string_helpers.cc",
     ],
     hdrs = [
+        "include/grpc/slice.h",
         "src/core/lib/slice/slice.h",
         "src/core/lib/slice/slice_internal.h",
         "src/core/lib/slice/slice_string_helpers.h",
@@ -1655,6 +1656,22 @@ grpc_cc_library(
     deps = [
         "gpr_base",
         "ref_counted",
+        "slice_refcount",
+    ],
+)
+
+grpc_cc_library(
+    name = "slice_buffer",
+    srcs = [
+        "src/core/lib/slice/slice_buffer.cc",
+    ],
+    hdrs = [
+        "include/grpc/slice_buffer.h",
+        "src/core/lib/slice/slice_buffer.h",
+    ],
+    deps = [
+        "gpr_base",
+        "slice",
         "slice_refcount",
     ],
 )
@@ -2012,7 +2029,7 @@ grpc_cc_library(
         "src/core/lib/slice/b64.cc",
         "src/core/lib/slice/percent_encoding.cc",
         "src/core/lib/slice/slice_api.cc",
-        "src/core/lib/slice/slice_buffer.cc",
+        "src/core/lib/slice/slice_buffer_api.cc",
         "src/core/lib/slice/slice_split.cc",
         "src/core/lib/surface/api_trace.cc",
         "src/core/lib/surface/builtins.cc",
@@ -2246,6 +2263,7 @@ grpc_cc_library(
         "resource_quota",
         "resource_quota_trace",
         "slice",
+        "slice_buffer",
         "slice_refcount",
         "sockaddr_utils",
         "table",

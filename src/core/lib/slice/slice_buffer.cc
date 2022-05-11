@@ -18,9 +18,11 @@
 
 #include <grpc/support/port_platform.h>
 
-#include <stdint.h>
+#include "src/core/lib/slice/slice_buffer.h"
+
 #include <string.h>
 
+#include <cstdint>
 #include <utility>
 
 #include <grpc/slice.h>
@@ -28,9 +30,32 @@
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 
-#include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/slice/slice_refcount.h"
+
+namespace grpc_core {
+
+void SliceBuffer::Append(Slice slice) {
+  grpc_slice_buffer_add(&slice_buffer_, slice.TakeCSlice());
+}
+
+size_t SliceBuffer::AppendIndexed(Slice slice) {
+  return grpc_slice_buffer_add_indexed(&slice_buffer_, slice.TakeCSlice());
+}
+
+Slice SliceBuffer::TakeFirst() {
+  return Slice(grpc_slice_buffer_take_first(&slice_buffer_));
+}
+
+void SliceBuffer::Prepend(Slice slice) {
+  grpc_slice_buffer_undo_take_first(&slice_buffer_, slice.TakeCSlice());
+}
+
+Slice SliceBuffer::RefSlice(size_t index) {
+  return Slice(grpc_slice_ref_internal(slice_buffer_.slices[index]));
+}
+
+}  // namespace grpc_core
 
 /* grow a buffer; requires GRPC_SLICE_BUFFER_INLINE_ELEMENTS > 1 */
 #define GROW(x) (3 * (x) / 2)
@@ -92,15 +117,6 @@ void grpc_slice_buffer_destroy_internal(grpc_slice_buffer* sb) {
     // to prevent a double free attempt if grpc_slice_buffer_destroy_internal
     // is invoked two times on the same slice buffer.
     sb->base_slices = sb->slices = sb->inlined;
-  }
-}
-
-void grpc_slice_buffer_destroy(grpc_slice_buffer* sb) {
-  if (grpc_core::ExecCtx::Get() == nullptr) {
-    grpc_core::ExecCtx exec_ctx;
-    grpc_slice_buffer_destroy_internal(sb);
-  } else {
-    grpc_slice_buffer_destroy_internal(sb);
   }
 }
 
@@ -217,15 +233,6 @@ void grpc_slice_buffer_reset_and_unref_internal(grpc_slice_buffer* sb) {
   sb->count = 0;
   sb->length = 0;
   sb->slices = sb->base_slices;
-}
-
-void grpc_slice_buffer_reset_and_unref(grpc_slice_buffer* sb) {
-  if (grpc_core::ExecCtx::Get() == nullptr) {
-    grpc_core::ExecCtx exec_ctx;
-    grpc_slice_buffer_reset_and_unref_internal(sb);
-  } else {
-    grpc_slice_buffer_reset_and_unref_internal(sb);
-  }
 }
 
 void grpc_slice_buffer_swap(grpc_slice_buffer* a, grpc_slice_buffer* b) {
