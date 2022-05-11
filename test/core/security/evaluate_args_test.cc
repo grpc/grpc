@@ -81,7 +81,7 @@ TEST_F(EvaluateArgsTest, TestLocalAddressAndPort) {
   EvaluateArgs args = util_.MakeEvaluateArgs();
   grpc_resolved_address local_address = args.GetLocalAddress();
   EXPECT_EQ(grpc_sockaddr_to_uri(&local_address).value(),
-            "ipv6:[2001:db8:85a3::8a2e:370:7334]:456");
+            "ipv6:%5B2001:db8:85a3::8a2e:370:7334%5D:456");
   EXPECT_EQ(args.GetLocalAddressString(),
             "2001:0db8:85a3:0000:0000:8a2e:0370:7334");
   EXPECT_EQ(args.GetLocalPort(), 456);

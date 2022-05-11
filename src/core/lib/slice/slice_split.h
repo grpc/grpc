@@ -21,11 +21,7 @@
 
 #include <grpc/support/port_platform.h>
 
-#include <stdbool.h>
-#include <stddef.h>
-
 #include <grpc/slice.h>
-#include <grpc/slice_buffer.h>
 
 /** Split \a str by the separator \a sep. Results are stored in \a dst, which
  * should be a properly initialized instance. */

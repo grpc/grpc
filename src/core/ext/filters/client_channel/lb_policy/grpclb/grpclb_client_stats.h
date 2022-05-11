@@ -21,6 +21,12 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <stdint.h>
+
+#include <memory>
+#include <utility>
+
+#include "absl/base/thread_annotations.h"
 #include "absl/container/inlined_vector.h"
 
 #include <grpc/support/atm.h>

@@ -40,20 +40,13 @@ namespace grpc_core {
 namespace channelz {
 namespace {
 
-// singleton instance of the registry.
-ChannelzRegistry* g_channelz_registry = nullptr;
-
 const int kPaginationLimit = 100;
 
 }  // anonymous namespace
 
-void ChannelzRegistry::Init() { g_channelz_registry = new ChannelzRegistry(); }
-
-void ChannelzRegistry::Shutdown() { delete g_channelz_registry; }
-
 ChannelzRegistry* ChannelzRegistry::Default() {
-  GPR_DEBUG_ASSERT(g_channelz_registry != nullptr);
-  return g_channelz_registry;
+  static ChannelzRegistry* singleton = new ChannelzRegistry();
+  return singleton;
 }
 
 void ChannelzRegistry::InternalRegister(BaseNode* node) {

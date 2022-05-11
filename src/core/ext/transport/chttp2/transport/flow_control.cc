@@ -22,18 +22,22 @@
 
 #include <inttypes.h>
 #include <limits.h>
-#include <math.h>
-#include <string.h>
 
+#include <cmath>
 #include <string>
 
 #include "absl/strings/str_format.h"
 
+#include <grpc/slice.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 
+#include "src/core/ext/transport/chttp2/transport/frame.h"
 #include "src/core/ext/transport/chttp2/transport/internal.h"
 #include "src/core/lib/gpr/string.h"
+#include "src/core/lib/gpr/useful.h"
+#include "src/core/lib/iomgr/exec_ctx.h"
+#include "src/core/lib/resource_quota/memory_quota.h"
 
 grpc_core::TraceFlag grpc_flowctl_trace(false, "flowctl");
 
