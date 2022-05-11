@@ -1834,6 +1834,7 @@ grpc_cc_library(
     ],
     deps = [
         "default_event_engine_factory_hdrs",
+        "event_engine_base_hdrs",
         "gpr_base",
     ],
 )
