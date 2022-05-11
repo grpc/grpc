@@ -19,8 +19,6 @@
 
 #include "src/core/lib/iomgr/resolve_address.h"
 
-#include "absl/strings/str_cat.h"
-
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/support/alloc.h>
 
@@ -31,14 +29,8 @@ namespace {
 DNSResolver* g_dns_resolver;
 }
 
-constexpr DNSResolver::TaskHandle DNSResolver::kNullHandle;
-
 void SetDNSResolver(DNSResolver* resolver) { g_dns_resolver = resolver; }
 
 DNSResolver* GetDNSResolver() { return g_dns_resolver; }
-
-std::string DNSResolver::HandleToString(TaskHandle handle) {
-  return absl::StrCat("{", handle.keys[0], ",", handle.keys[1], "}");
-}
 
 }  // namespace grpc_core
