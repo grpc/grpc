@@ -17,15 +17,13 @@
  */
 
 #include <grpc/support/port_platform.h>
-
 #include <string.h>
-
 #include <grpc/support/atm.h>
 #include <grpc/support/log.h>
+#include <stdlib.h>
 
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gprpp/global_config_env.h"
-#include "src/core/lib/gprpp/global_config_generic.h"
 #include "src/core/lib/gprpp/memory.h"
 
 #ifndef GPR_DEFAULT_LOG_VERBOSITY_STRING
