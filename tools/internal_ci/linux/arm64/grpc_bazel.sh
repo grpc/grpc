@@ -22,6 +22,7 @@ source $(dirname $0)/../../../../tools/internal_ci/helper_scripts/move_src_tree_
 cd $(dirname $0)/../../../..
 
 source tools/internal_ci/helper_scripts/prepare_build_linux_rc
-
 export DOCKERFILE_DIR=tools/dockerfile/test/bazel_arm64
+# propagate the UPLOAD_TEST_RESULTS env variable to the docker container
+export EXTRA_DOCKER_ARGS="-e=UPLOAD_TEST_RESULTS"
 exec tools/run_tests/dockerize/build_and_run_docker.sh "${BAZEL_SCRIPT}"

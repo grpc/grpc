@@ -1,4 +1,4 @@
-// Copyright 2021 gRPC authors.
+// Copyright 2022 gRPC authors.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef GRPC_CORE_LIB_SLICE_SLICE_H
-#define GRPC_CORE_LIB_SLICE_SLICE_H
+#ifndef GRPC_EVENT_ENGINE_SLICE_H
+#define GRPC_EVENT_ENGINE_SLICE_H
 
 #include <grpc/support/port_platform.h>
 
@@ -28,30 +28,16 @@
 #include <grpc/slice.h>
 #include <grpc/support/log.h>
 
-#include "src/core/lib/gpr/string.h"
-#include "src/core/lib/slice/slice_internal.h"
-#include "src/core/lib/slice/slice_refcount.h"
-#include "src/core/lib/slice/slice_refcount_base.h"
+// This public slice definition largely based of the internal grpc_core::Slice
+// implementation. Changes to this implementation might warrant changes to the
+// internal grpc_core::Slice type as well.
 
-// Herein lies grpc_core::Slice and its team of thin wrappers around grpc_slice.
-// They aim to keep you safe by providing strong guarantees around lifetime and
-// mutability.
-//
-// The team:
-//   Slice        - provides a wrapper around an unknown type of slice.
-//                  Immutable (since we don't know who else might be referencing
-//                  it), and potentially ref counted.
-//   StaticSlice  - provides a wrapper around a static slice. Not refcounted,
-//                  fast to copy.
-//   MutableSlice - provides a guarantee of unique ownership, meaning the
-//                  underlying data can be mutated safely.
+namespace grpc_event_engine {
+namespace experimental {
 
-// This slice implementation is an extension of the event engine Slice
-// implementation defined in <grpc/event_engine/slice.h>. Changes to this
-// implementation might warrant changes to the public event engine Slice
-// type as well.
-
-namespace grpc_core {
+// Forward declarations
+class Slice;
+class MutableSlice;
 
 namespace slice_detail {
 
@@ -110,7 +96,7 @@ class BaseSlice {
     return grpc_slice_is_equivalent(slice_, other.slice_);
   }
 
-  uint32_t Hash() const { return grpc_slice_hash_internal(slice_); }
+  uint32_t Hash() const;
 
  protected:
   BaseSlice() : slice_(EmptySlice()) {}
@@ -176,9 +162,8 @@ struct CopyConstructors {
   static Out FromCopiedString(absl::string_view s) {
     return FromCopiedBuffer(s.data(), s.size());
   }
-  static Out FromCopiedString(std::string s) {
-    return Out(grpc_slice_from_cpp_string(std::move(s)));
-  }
+  static Out FromCopiedString(std::string s);
+
   static Out FromCopiedBuffer(const char* p, size_t len) {
     return Out(grpc_slice_from_copied_buffer(p, len));
   }
@@ -188,68 +173,16 @@ struct CopyConstructors {
     return FromCopiedBuffer(reinterpret_cast<const char*>(buffer.data()),
                             buffer.size());
   }
-
-  static Out FromInt64(int64_t i) {
-    char buffer[GPR_LTOA_MIN_BUFSIZE];
-    gpr_ltoa(i, buffer);
-    return FromCopiedString(buffer);
-  }
-};
-
-template <typename Out>
-struct StaticConstructors {
-  static Out FromStaticString(const char* s) {
-    return FromStaticBuffer(s, strlen(s));
-  }
-
-  static Out FromStaticString(absl::string_view s) {
-    return FromStaticBuffer(s.data(), s.size());
-  }
-
-  static Out FromStaticBuffer(const void* s, size_t len) {
-    grpc_slice slice;
-    slice.refcount = grpc_slice_refcount::NoopRefcount();
-    slice.data.refcounted.bytes =
-        const_cast<uint8_t*>(static_cast<const uint8_t*>(s));
-    slice.data.refcounted.length = len;
-    return Out(slice);
-  }
 };
 
 }  // namespace slice_detail
-
-class StaticSlice : public slice_detail::BaseSlice,
-                    public slice_detail::StaticConstructors<StaticSlice> {
- public:
-  StaticSlice() = default;
-  explicit StaticSlice(const grpc_slice& slice)
-      : slice_detail::BaseSlice(slice) {
-    GPR_DEBUG_ASSERT(slice.refcount == grpc_slice_refcount::NoopRefcount());
-  }
-
-  StaticSlice(const StaticSlice& other)
-      : slice_detail::BaseSlice(other.c_slice()) {}
-  StaticSlice& operator=(const StaticSlice& other) {
-    SetCSlice(other.c_slice());
-    return *this;
-  }
-  StaticSlice(StaticSlice&& other) noexcept
-      : slice_detail::BaseSlice(other.TakeCSlice()) {}
-  StaticSlice& operator=(StaticSlice&& other) noexcept {
-    Swap(&other);
-    return *this;
-  }
-};
 
 class MutableSlice : public slice_detail::BaseSlice,
                      public slice_detail::CopyConstructors<MutableSlice> {
  public:
   MutableSlice() = default;
-  explicit MutableSlice(const grpc_slice& slice)
-      : slice_detail::BaseSlice(slice) {
-    GPR_DEBUG_ASSERT(slice.refcount == nullptr || slice.refcount->IsUnique());
-  }
-  ~MutableSlice() { grpc_slice_unref_internal(c_slice()); }
+  explicit MutableSlice(const grpc_slice& slice);
+  ~MutableSlice();
 
   MutableSlice(const MutableSlice&) = delete;
   MutableSlice& operator=(const MutableSlice&) = delete;
@@ -280,11 +213,10 @@ class MutableSlice : public slice_detail::BaseSlice,
 };
 
 class Slice : public slice_detail::BaseSlice,
-              public slice_detail::CopyConstructors<Slice>,
-              public slice_detail::StaticConstructors<Slice> {
+              public slice_detail::CopyConstructors<Slice> {
  public:
   Slice() = default;
-  ~Slice() { grpc_slice_unref_internal(c_slice()); }
+  ~Slice();
   explicit Slice(const grpc_slice& slice) : slice_detail::BaseSlice(slice) {}
   explicit Slice(slice_detail::BaseSlice&& other)
       : slice_detail::BaseSlice(other.TakeCSlice()) {}
@@ -307,27 +239,11 @@ class Slice : public slice_detail::BaseSlice,
   // TakeOwned returns an owned slice regardless of current ownership, and
   // leaves the current slice in a valid but externally unpredictable state - in
   // doing so it can avoid adding a ref to the underlying slice.
-  Slice TakeOwned() {
-    if (c_slice().refcount == nullptr) {
-      return Slice(c_slice());
-    }
-    if (c_slice().refcount == grpc_slice_refcount::NoopRefcount()) {
-      return Slice(grpc_slice_copy(c_slice()));
-    }
-    return Slice(TakeCSlice());
-  }
+  Slice TakeOwned();
 
   // AsOwned returns an owned slice but does not mutate the current slice,
   // meaning that it may add a reference to the underlying slice.
-  Slice AsOwned() const {
-    if (c_slice().refcount == nullptr) {
-      return Slice(c_slice());
-    }
-    if (c_slice().refcount == grpc_slice_refcount::NoopRefcount()) {
-      return Slice(grpc_slice_copy(c_slice()));
-    }
-    return Slice(grpc_slice_ref_internal(c_slice()));
-  }
+  Slice AsOwned() const;
 
   // TakeMutable returns a MutableSlice, and leaves the current slice in an
   // indeterminate but valid state.
@@ -337,16 +253,7 @@ class Slice : public slice_detail::BaseSlice,
   // If the current slice is refcounted and there are more than one references
   // to that slice, then the slice is copied in order to achieve a mutable
   // version.
-  MutableSlice TakeMutable() {
-    if (c_slice().refcount == nullptr) {
-      return MutableSlice(c_slice());
-    }
-    if (c_slice().refcount != grpc_slice_refcount::NoopRefcount() &&
-        c_slice().refcount->IsUnique()) {
-      return MutableSlice(TakeCSlice());
-    }
-    return MutableSlice(grpc_slice_copy(c_slice()));
-  }
+  MutableSlice TakeMutable();
 
   // Return a sub slice of this one. Leaves this slice in an indeterminate but
   // valid state.
@@ -365,25 +272,15 @@ class Slice : public slice_detail::BaseSlice,
     return Slice(grpc_slice_split_tail(c_slice_ptr(), split));
   }
 
-  Slice Ref() const { return Slice(grpc_slice_ref_internal(c_slice())); }
+  Slice Ref() const;
 
   Slice Copy() const { return Slice(grpc_slice_copy(c_slice())); }
 
   static Slice FromRefcountAndBytes(grpc_slice_refcount* r,
-                                    const uint8_t* begin, const uint8_t* end) {
-    grpc_slice out;
-    out.refcount = r;
-    if (r != grpc_slice_refcount::NoopRefcount()) r->Ref();
-    out.data.refcounted.bytes = const_cast<uint8_t*>(begin);
-    out.data.refcounted.length = end - begin;
-    return Slice(out);
-  }
-
-  static Slice FromExternalString(absl::string_view str) {
-    return FromStaticString(str);
-  }
+                                    const uint8_t* begin, const uint8_t* end);
 };
 
-}  // namespace grpc_core
+}  // namespace experimental
+}  // namespace grpc_event_engine
 
-#endif  // GRPC_CORE_LIB_SLICE_SLICE_H
+#endif  // GRPC_EVENT_ENGINE_SLICE_H
