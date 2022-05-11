@@ -25,6 +25,7 @@
 #include "src/core/lib/gprpp/time_util.h"
 #include "src/core/lib/iomgr/executor.h"
 #include "src/core/lib/iomgr/timer.h"
+#include "src/core/lib/event_engine/trace.h"
 
 namespace grpc_event_engine {
 namespace experimental {
@@ -50,12 +51,24 @@ absl::Time Clamp(absl::Time when) {
   return when;
 }
 
+std::string HandleToString(EventEngine::TaskHandle handle) {
+  return absl::StrCat("{", handle.keys[0], ",", handle.keys[1], "}");
+}
+
 }  // namespace
 
 IomgrEventEngine::IomgrEventEngine() {}
 
 IomgrEventEngine::~IomgrEventEngine() {
   grpc_core::MutexLock lock(&mu_);
+  if (GRPC_TRACE_FLAG_ENABLED(grpc_event_engine_trace)) {
+    for (auto handle : known_handles_) {
+      gpr_log(GPR_ERROR,
+              "(event_engine) IomgrEventEngine:%p uncleared TaskHandle at "
+              "shutdown:%s",
+              this, HandleToString(handle).c_str());
+    }
+  }
   GPR_ASSERT(GPR_LIKELY(known_handles_.empty()));
 }
 
@@ -99,6 +112,8 @@ EventEngine::TaskHandle IomgrEventEngine::RunAtInternal(
       &cd->closure,
       [](void* arg, grpc_error_handle error) {
         auto* cd = static_cast<ClosureData*>(arg);
+        GRPC_EVENT_ENGINE_TRACE("IomgrEventEngine:%p executing callback:%s",
+                                cd->engine, HandleToString(cd->handle).c_str());
         {
           grpc_core::MutexLock lock(&cd->engine->mu_);
           cd->engine->known_handles_.erase(cd->handle);
@@ -118,12 +133,14 @@ EventEngine::TaskHandle IomgrEventEngine::RunAtInternal(
   grpc_core::Timestamp when_internal = grpc_core::ExecCtx::Get()->Now() +
                                        duration +
                                        grpc_core::Duration::Milliseconds(1);
-  grpc_timer_init(&cd->timer, when_internal, &cd->closure);
   EventEngine::TaskHandle handle{reinterpret_cast<intptr_t>(cd),
                                  aba_token_.fetch_add(1)};
   grpc_core::MutexLock lock(&mu_);
   known_handles_.insert(handle);
   cd->handle = handle;
+  GRPC_EVENT_ENGINE_TRACE("IomgrEventEngine:%p scheduling callback:%s", this,
+                          HandleToString(handle).c_str());
+  grpc_timer_init(&cd->timer, when_internal, &cd->closure);
   return handle;
 }
 
