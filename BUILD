@@ -4641,6 +4641,7 @@ grpc_cc_library(
     ],
     external_deps = [
         "absl/strings",
+        "absl/memory",
         "libssl",
         "libcrypto",
     ],
