@@ -194,7 +194,7 @@ struct GrpcAcceptEncodingMetadata {
   }
   static ValueType MementoToValue(MementoType x) { return x; }
   static Slice Encode(ValueType x) { return x.ToSlice(); }
-  static std::string DisplayValue(MementoType x) { return x.ToString(); }
+  static absl::string_view DisplayValue(MementoType x) { return x.ToString(); }
 };
 
 struct SimpleSliceBasedMetadata {
