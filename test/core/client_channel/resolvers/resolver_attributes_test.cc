@@ -163,7 +163,9 @@ TEST(ResolverAttributeMapTest, MoveConstruction) {
   map1.Set(absl::make_unique<IntegerAttribute>(3));
   map1.Set(absl::make_unique<StringAttribute>("foo"));
   ResolverAttributeMap map2(std::move(map1));
+  // NOLINTNEXTLINE(bugprone-use-after-move)
   EXPECT_EQ(nullptr, IntegerAttribute::GetFromMap(map1));
+  // NOLINTNEXTLINE(bugprone-use-after-move)
   EXPECT_EQ(nullptr, StringAttribute::GetFromMap(map1));
   ASSERT_NE(nullptr, IntegerAttribute::GetFromMap(map2));
   EXPECT_EQ(3, IntegerAttribute::GetFromMap(map2)->value());
@@ -176,7 +178,9 @@ TEST(ResolverAttributeMapTest, MoveAssignment) {
   map1.Set(absl::make_unique<IntegerAttribute>(3));
   map1.Set(absl::make_unique<StringAttribute>("foo"));
   ResolverAttributeMap map2 = std::move(map1);
+  // NOLINTNEXTLINE(bugprone-use-after-move)
   EXPECT_EQ(nullptr, IntegerAttribute::GetFromMap(map1));
+  // NOLINTNEXTLINE(bugprone-use-after-move)
   EXPECT_EQ(nullptr, StringAttribute::GetFromMap(map1));
   ASSERT_NE(nullptr, IntegerAttribute::GetFromMap(map2));
   EXPECT_EQ(3, IntegerAttribute::GetFromMap(map2)->value());
