@@ -1,0 +1,5 @@
+-std=c++14
+-I.
+-Iinclude
+-DDEBUG
+-D_DEBUG
