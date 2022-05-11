@@ -21,7 +21,6 @@
 #include "src/core/lib/address_utils/parse_address.h"
 
 #include <netinet/in.h>
-#include <stddef.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
