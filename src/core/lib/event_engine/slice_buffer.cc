@@ -14,12 +14,13 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <stddef.h>
+
+#include <grpc/event_engine/slice.h>
 #include <grpc/event_engine/slice_buffer.h>
 #include <grpc/slice.h>
 #include <grpc/slice_buffer.h>
 
-#include "src/core/lib/slice/slice.h"
-#include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/slice/slice_refcount.h"
 
 namespace grpc_event_engine {
