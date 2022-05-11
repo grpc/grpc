@@ -48,7 +48,7 @@
 namespace grpc_core {
 namespace {
 
-class NativeDNSRequest {
+class NativeDNSRequest : public DNSResolver::Request {
  public:
   NativeDNSRequest(
       absl::string_view name, absl::string_view default_port,
@@ -56,8 +56,17 @@ class NativeDNSRequest {
           on_done)
       : name_(name), default_port_(default_port), on_done_(std::move(on_done)) {
     GRPC_CLOSURE_INIT(&request_closure_, DoRequestThread, this, nullptr);
+  }
+
+  // Starts the resolution
+  void Start() override {
+    Ref().release();  // ref held by callback
     Executor::Run(&request_closure_, GRPC_ERROR_NONE, ExecutorType::RESOLVER);
   }
+
+  // This is a no-op for the native resolver. Note
+  // that no I/O polling is required for the resolution to finish.
+  void Orphan() override { Unref(); }
 
  private:
   // Callback to be passed to grpc Executor to asynch-ify
@@ -68,7 +77,7 @@ class NativeDNSRequest {
         GetDNSResolver()->ResolveNameBlocking(r->name_, r->default_port_);
     // running inline is safe since we've already been scheduled on the executor
     r->on_done_(std::move(result));
-    delete r;
+    r->Unref();
   }
 
   const std::string name_;
@@ -85,13 +94,13 @@ NativeDNSResolver* NativeDNSResolver::GetOrCreate() {
   return instance;
 }
 
-DNSResolver::TaskHandle NativeDNSResolver::ResolveName(
+OrphanablePtr<DNSResolver::Request> NativeDNSResolver::ResolveName(
     absl::string_view name, absl::string_view default_port,
     grpc_pollset_set* /* interested_parties */,
     std::function<void(absl::StatusOr<std::vector<grpc_resolved_address>>)>
         on_done) {
-  new NativeDNSRequest(name, default_port, std::move(on_done));
-  return kNullHandle;
+  return MakeOrphanable<NativeDNSRequest>(name, default_port,
+                                          std::move(on_done));
 }
 
 absl::StatusOr<std::vector<grpc_resolved_address>>
@@ -156,8 +165,6 @@ done:
   GRPC_ERROR_UNREF(error);
   return error_result;
 }
-
-bool NativeDNSResolver::Cancel(TaskHandle /*handle*/) { return false; }
 
 }  // namespace grpc_core
 

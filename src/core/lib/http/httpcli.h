@@ -247,8 +247,7 @@ class HttpRequest : public InternallyRefCounted<HttpRequest> {
   grpc_slice_buffer incoming_ ABSL_GUARDED_BY(mu_);
   grpc_slice_buffer outgoing_ ABSL_GUARDED_BY(mu_);
   grpc_error_handle overall_error_ ABSL_GUARDED_BY(mu_) = GRPC_ERROR_NONE;
-  absl::optional<DNSResolver::TaskHandle> dns_request_handle_
-      ABSL_GUARDED_BY(mu_) = DNSResolver::kNullHandle;
+  OrphanablePtr<DNSResolver::Request> dns_request_ ABSL_GUARDED_BY(mu_);
 };
 
 }  // namespace grpc_core
