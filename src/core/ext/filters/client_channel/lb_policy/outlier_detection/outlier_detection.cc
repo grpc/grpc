@@ -291,6 +291,7 @@ class OutlierDetectionLb : public LoadBalancingPolicy {
 
    private:
     class SubchannelCallTracker;
+    OutlierDetectionLb* outlier_detection_lb_;
     RefCountedPtr<RefCountedPicker> picker_;
   };
 
@@ -462,7 +463,7 @@ class OutlierDetectionLb::Picker::SubchannelCallTracker
 
 OutlierDetectionLb::Picker::Picker(OutlierDetectionLb* outlier_detection_lb,
                                    RefCountedPtr<RefCountedPicker> picker)
-    : picker_(std::move(picker)) {
+    : outlier_detection_lb_(outlier_detection_lb), picker_(std::move(picker)) {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_outlier_detection_lb_trace)) {
     gpr_log(GPR_INFO, "[outlier_detection_lb %p] constructed new picker %p",
             outlier_detection_lb, this);
@@ -482,11 +483,19 @@ LoadBalancingPolicy::PickResult OutlierDetectionLb::Picker::Pick(
     // Unwrap subchannel to pass back up the stack.
     auto* subchannel_wrapper =
         static_cast<SubchannelWrapper*>(complete_pick->subchannel.get());
-    // Inject subchannel call tracker to record call completion.
-    complete_pick->subchannel_call_tracker =
-        absl::make_unique<SubchannelCallTracker>(
-            std::move(complete_pick->subchannel_call_tracker),
-            subchannel_wrapper->subchannel_state());
+    // Inject subchannel call tracker to record call completion as long as
+    // not both success_rate_ejection and failure_percentage_ejection are unset.
+    if (!outlier_detection_lb_->config_->outlier_detection_config()
+             .success_rate_ejection.has_value() ||
+        !outlier_detection_lb_->config_->outlier_detection_config()
+             .failure_percentage_ejection.has_value()) {
+      complete_pick->subchannel_call_tracker =
+          absl::make_unique<SubchannelCallTracker>(
+              std::move(complete_pick->subchannel_call_tracker),
+              subchannel_wrapper->subchannel_state());
+    } else {
+      gpr_log(GPR_INFO, "donna did not inject tracker");
+    }
     complete_pick->subchannel = subchannel_wrapper->wrapped_subchannel();
   }
   return result;
