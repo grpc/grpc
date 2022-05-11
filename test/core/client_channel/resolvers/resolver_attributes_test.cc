@@ -12,18 +12,18 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <gtest/gtest.h>
-
-#include "test/core/util/test_config.h"
+#include "src/core/lib/resolver/resolver_attributes.h"
 
 #include <memory>
 #include <string>
+
+#include <gtest/gtest.h>
 
 #include "absl/memory/memory.h"
 #include "absl/strings/str_cat.h"
 
 #include "src/core/lib/gpr/useful.h"
-#include "src/core/lib/resolver/resolver_attributes.h"
+#include "test/core/util/test_config.h"
 
 namespace grpc_core {
 
