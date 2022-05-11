@@ -222,6 +222,7 @@ class OutlierDetectionLb : public LoadBalancingPolicy {
 
     void Eject(const Timestamp& time) {
       ejection_time_ = time;
+      ++multiplier_;
       for (auto& subchannel : subchannels_) {
         subchannel->Eject();
       }
@@ -247,7 +248,12 @@ class OutlierDetectionLb : public LoadBalancingPolicy {
                                base_ejection_time_in_millis * multiplier_,
                                std::max(base_ejection_time_in_millis,
                                         max_ejection_time_in_millis)));
-        if (change_time > ExecCtx::Get()->Now()) {
+        gpr_log(GPR_INFO,
+                "donna debug ejection time %s, change time %s, and now %s",
+                ejection_time_->ToString().c_str(),
+                change_time.ToString().c_str(),
+                ExecCtx::Get()->Now().ToString().c_str());
+        if (change_time < ExecCtx::Get()->Now()) {
           Uneject();
         }
       }

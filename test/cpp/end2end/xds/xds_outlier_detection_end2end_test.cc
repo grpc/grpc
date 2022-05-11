@@ -53,6 +53,8 @@ INSTANTIATE_TEST_SUITE_P(XdsTest, OutlierDetectionTest,
 // 3. We should skip
 // exactly 1 backend due to ejection and all the loads sticky to that backend
 // should go to 1 other backend.
+// 4. Let the ejection period pass and verify we can go back to both backends
+// after the uneject.
 TEST_P(OutlierDetectionTest, SuccessRate100Percent) {
   CreateAndStartBackends(2);
   auto cluster = default_cluster_;
@@ -60,8 +62,11 @@ TEST_P(OutlierDetectionTest, SuccessRate100Percent) {
   // Setup outlier failure percentage parameters.
   // Any failure will cause an potential ejection with the probability of 100%
   // (to eliminate flakiness of the test).
-  auto* duration = cluster.mutable_outlier_detection()->mutable_interval();
-  duration->set_nanos(100000000 * grpc_test_slowdown_factor());
+  auto* interval = cluster.mutable_outlier_detection()->mutable_interval();
+  auto* base_time =
+      cluster.mutable_outlier_detection()->mutable_base_ejection_time();
+  interval->set_nanos(100000000 * grpc_test_slowdown_factor());
+  base_time->set_nanos(1000000000 * grpc_test_slowdown_factor());
   cluster.mutable_outlier_detection()
       ->mutable_success_rate_stdev_factor()
       ->set_value(100);
@@ -105,7 +110,21 @@ TEST_P(OutlierDetectionTest, SuccessRate100Percent) {
           .set_expected_error_code(StatusCode::CANCELLED));
   gpr_sleep_until(grpc_timeout_milliseconds_to_deadline(100));
   ResetBackendCounters();
+  // 1 backend is ejected, rpc destinated to it are now hashed to the other
+  // backend.
   CheckRpcSendOk(DEBUG_LOCATION, 100, rpc_options);
+  EXPECT_EQ(100, backends_[1]->backend_service()->request_count());
+  // Let base ejection period pass and see that we are no longer ejecting, rpcs
+  // going to there expectedly hashed backends.
+  gpr_sleep_until(grpc_timeout_milliseconds_to_deadline(
+      2000 * grpc_test_slowdown_factor()));
+  ResetBackendCounters();
+  CheckRpcSendOk(DEBUG_LOCATION, 100, rpc_options);
+  CheckRpcSendOk(DEBUG_LOCATION, 100, rpc_options1);
+  gpr_log(GPR_INFO, "back end 0 gets %d 1 gets %d",
+          backends_[0]->backend_service()->request_count(),
+          backends_[1]->backend_service()->request_count());
+  EXPECT_EQ(100, backends_[0]->backend_service()->request_count());
   EXPECT_EQ(100, backends_[1]->backend_service()->request_count());
 }
 
@@ -349,6 +368,8 @@ TEST_P(OutlierDetectionTest, SuccessRate100PercentVolumeTooLow) {
 // 3. We should skip
 // exactly 1 backend due to ejection and all the loads sticky to that backend
 // should go to 1 other backend.
+// 4. Let the ejection period pass and verify that traffic will again go both
+// backends as we have unejected the backend.
 TEST_P(OutlierDetectionTest, FailurePercent100Percent) {
   CreateAndStartBackends(2);
   auto cluster = default_cluster_;
@@ -356,8 +377,11 @@ TEST_P(OutlierDetectionTest, FailurePercent100Percent) {
   // Setup outlier failure percentage parameters.
   // Any failure will cause an potential ejection with the probability of 100%
   // (to eliminate flakiness of the test).
-  auto* duration = cluster.mutable_outlier_detection()->mutable_interval();
-  duration->set_nanos(100000000 * grpc_test_slowdown_factor());
+  auto* interval = cluster.mutable_outlier_detection()->mutable_interval();
+  interval->set_nanos(100000000 * grpc_test_slowdown_factor());
+  auto* base_time =
+      cluster.mutable_outlier_detection()->mutable_base_ejection_time();
+  base_time->set_nanos(1000000000 * grpc_test_slowdown_factor());
   cluster.mutable_outlier_detection()
       ->mutable_failure_percentage_threshold()
       ->set_value(0);
@@ -402,9 +426,21 @@ TEST_P(OutlierDetectionTest, FailurePercent100Percent) {
           .set_expected_error_code(StatusCode::CANCELLED));
   gpr_sleep_until(grpc_timeout_milliseconds_to_deadline(100));
   ResetBackendCounters();
-  // All traffic going to the ejected backend should now all be going to the
-  // other backend.
+  // 1 backend is ejected all traffic going to the ejected backend should now
+  // all be going to the other backend.
   CheckRpcSendOk(DEBUG_LOCATION, 100, rpc_options);
+  EXPECT_EQ(100, backends_[1]->backend_service()->request_count());
+  // Let ejection period pass and see that we are no longer ejecting, rpcs going
+  // to there expectedly hashed backends.
+  gpr_sleep_until(grpc_timeout_milliseconds_to_deadline(
+      2000 * grpc_test_slowdown_factor()));
+  ResetBackendCounters();
+  CheckRpcSendOk(DEBUG_LOCATION, 100, rpc_options);
+  CheckRpcSendOk(DEBUG_LOCATION, 100, rpc_options1);
+  gpr_log(GPR_INFO, "back end 0 gets %d 1 gets %d",
+          backends_[0]->backend_service()->request_count(),
+          backends_[1]->backend_service()->request_count());
+  EXPECT_EQ(100, backends_[0]->backend_service()->request_count());
   EXPECT_EQ(100, backends_[1]->backend_service()->request_count());
 }
 
