@@ -30,7 +30,7 @@ static constexpr int kNewSliceLength = 100;
 
 Slice MakeSlice(size_t len) {
   GPR_ASSERT(len > 0);
-  unsigned char* contents = reinterpret_cast<unsigned char*>(new char[len]);
+  unsigned char* contents = static_cast<unsigned char*>(gpr_malloc(len));
   memset(contents, 'a', len);
   return Slice(grpc_slice_new(contents, len, gpr_free));
 }
