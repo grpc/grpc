@@ -45,7 +45,7 @@ class OutlierDetectionTest : public XdsEnd2endTest {
 INSTANTIATE_TEST_SUITE_P(XdsTest, OutlierDetectionTest,
                          ::testing::Values(XdsTestType()), &XdsTestType::Name);
 
-// Tests EjectionSuccessRate:
+// Tests SuccessRateEjectionAndUnejection:
 // 1. Use ring hash policy that hashes using a
 // header value to ensure rpcs go to all backends.
 // 2. Cause a single error on 1
@@ -55,7 +55,7 @@ INSTANTIATE_TEST_SUITE_P(XdsTest, OutlierDetectionTest,
 // should go to 1 other backend.
 // 4. Let the ejection period pass and verify we can go back to both backends
 // after the uneject.
-TEST_P(OutlierDetectionTest, SuccessRate100Percent) {
+TEST_P(OutlierDetectionTest, SuccessRateEjectionAndUnejection) {
   CreateAndStartBackends(2);
   auto cluster = default_cluster_;
   cluster.set_lb_policy(Cluster::RING_HASH);
@@ -117,9 +117,8 @@ TEST_P(OutlierDetectionTest, SuccessRate100Percent) {
   CheckRpcSendOk(DEBUG_LOCATION, 100, rpc_options);
   EXPECT_EQ(100, backends_[1]->backend_service()->request_count());
   // Let base ejection period pass and see that we are no longer ejecting, rpcs
-  // going to there expectedly hashed backends.
-  gpr_sleep_until(grpc_timeout_milliseconds_to_deadline(
-      2000 * grpc_test_slowdown_factor()));
+  // going to their expectedly hashed backends.
+  gpr_sleep_until(grpc_timeout_milliseconds_to_deadline(2000));
   ResetBackendCounters();
   CheckRpcSendOk(DEBUG_LOCATION, 100, rpc_options);
   CheckRpcSendOk(DEBUG_LOCATION, 100, rpc_options1);
@@ -132,8 +131,7 @@ TEST_P(OutlierDetectionTest, SuccessRate100Percent) {
 
 // We don't eject more than max_ejection_percent (default 10%) of the backends
 // beyond the first one.
-// TODO(donnadionne): implement stats
-TEST_P(OutlierDetectionTest, SuccessRate100PercentMaxPercent10) {
+TEST_P(OutlierDetectionTest, SuccessRateMaxPercent) {
   CreateAndStartBackends(4);
   auto cluster = default_cluster_;
   cluster.set_lb_policy(Cluster::RING_HASH);
@@ -236,7 +234,7 @@ TEST_P(OutlierDetectionTest, SuccessRate100PercentMaxPercent10) {
 
 // Success rate stdev_factor is honored, a higher value would ensure ejection
 // does not occur.
-TEST_P(OutlierDetectionTest, SuccessRateHigherStdevFactor) {
+TEST_P(OutlierDetectionTest, SuccessRateStdevFactor) {
   CreateAndStartBackends(2);
   auto cluster = default_cluster_;
   cluster.set_lb_policy(Cluster::RING_HASH);
@@ -304,7 +302,7 @@ TEST_P(OutlierDetectionTest, SuccessRateHigherStdevFactor) {
 
 // Success rate does not eject if there are less than minimum_hosts backends
 // Set success_rate_minimum_hosts to 3 when we only have 2 backends
-TEST_P(OutlierDetectionTest, SuccessRate100PercentTooFewHosts) {
+TEST_P(OutlierDetectionTest, SuccessRateMinimumHosts) {
   CreateAndStartBackends(2);
   auto cluster = default_cluster_;
   cluster.set_lb_policy(Cluster::RING_HASH);
@@ -368,7 +366,7 @@ TEST_P(OutlierDetectionTest, SuccessRate100PercentTooFewHosts) {
 // Success rate does not eject if there are less than request_volume requests
 // Set success_rate_request_volume to 4 when we only send 3 RPC in the
 // interval.
-TEST_P(OutlierDetectionTest, SuccessRate100PercentVolumeTooLow) {
+TEST_P(OutlierDetectionTest, SuccessRateRequestVolume) {
   CreateAndStartBackends(2);
   auto cluster = default_cluster_;
   cluster.set_lb_policy(Cluster::RING_HASH);
@@ -430,7 +428,7 @@ TEST_P(OutlierDetectionTest, SuccessRate100PercentVolumeTooLow) {
   EXPECT_EQ(100, backends_[1]->backend_service()->request_count());
 }
 
-// Tests EjectionFailurePercent:
+// Tests FailurePercentEjectionAndUnejection:
 // 1. Use ring hash policy that hashes using a
 // header value to ensure rpcs go to all backends.
 // 2. Cause a single error on 1
@@ -440,7 +438,7 @@ TEST_P(OutlierDetectionTest, SuccessRate100PercentVolumeTooLow) {
 // should go to 1 other backend.
 // 4. Let the ejection period pass and verify that traffic will again go both
 // backends as we have unejected the backend.
-TEST_P(OutlierDetectionTest, FailurePercent100Percent) {
+TEST_P(OutlierDetectionTest, FailurePercentEjectionAndUnejection) {
   CreateAndStartBackends(2);
   auto cluster = default_cluster_;
   cluster.set_lb_policy(Cluster::RING_HASH);
@@ -503,9 +501,8 @@ TEST_P(OutlierDetectionTest, FailurePercent100Percent) {
   CheckRpcSendOk(DEBUG_LOCATION, 100, rpc_options);
   EXPECT_EQ(100, backends_[1]->backend_service()->request_count());
   // Let ejection period pass and see that we are no longer ejecting, rpcs going
-  // to there expectedly hashed backends.
-  gpr_sleep_until(grpc_timeout_milliseconds_to_deadline(
-      2000 * grpc_test_slowdown_factor()));
+  // to their expectedly hashed backends.
+  gpr_sleep_until(grpc_timeout_milliseconds_to_deadline(2000));
   ResetBackendCounters();
   CheckRpcSendOk(DEBUG_LOCATION, 100, rpc_options);
   CheckRpcSendOk(DEBUG_LOCATION, 100, rpc_options1);
@@ -518,8 +515,7 @@ TEST_P(OutlierDetectionTest, FailurePercent100Percent) {
 
 // We don't eject more than max_ejection_percent (default 10%) of the backends
 // beyond the first one.
-// TODO(donnadionne): implement stats
-TEST_P(OutlierDetectionTest, FailurePercent100PercentMaxPercent10) {
+TEST_P(OutlierDetectionTest, FailurePercentageMaxPercentage) {
   CreateAndStartBackends(4);
   auto cluster = default_cluster_;
   cluster.set_lb_policy(Cluster::RING_HASH);
@@ -620,7 +616,7 @@ TEST_P(OutlierDetectionTest, FailurePercent100PercentMaxPercent10) {
 
 // Failure percentage threshold is honored, a higher value would ensure ejection
 // does not occur
-TEST_P(OutlierDetectionTest, FailurePercentHigherThreshold) {
+TEST_P(OutlierDetectionTest, FailurePercentageThreshold) {
   CreateAndStartBackends(2);
   auto cluster = default_cluster_;
   cluster.set_lb_policy(Cluster::RING_HASH);
@@ -688,7 +684,7 @@ TEST_P(OutlierDetectionTest, FailurePercentHigherThreshold) {
 
 // Failure percentage does not eject if there are less than minimum_hosts
 // backends Set success_rate_minimum_hosts to 3 when we only have 2 backends
-TEST_P(OutlierDetectionTest, FailurePercent100PercentTooFewHosts) {
+TEST_P(OutlierDetectionTest, FailurePercentageMinimumHosts) {
   CreateAndStartBackends(2);
   auto cluster = default_cluster_;
   cluster.set_lb_policy(Cluster::RING_HASH);
@@ -703,7 +699,7 @@ TEST_P(OutlierDetectionTest, FailurePercent100PercentTooFewHosts) {
   cluster.mutable_outlier_detection()
       ->mutable_enforcing_failure_percentage()
       ->set_value(100);
-  // Set success_rate_minimum_hosts to 3 when we only have 2 backends
+  // Set failure_percentage_minimum_hosts to 3 when we only have 2 backends
   cluster.mutable_outlier_detection()
       ->mutable_failure_percentage_minimum_hosts()
       ->set_value(3);
@@ -754,7 +750,7 @@ TEST_P(OutlierDetectionTest, FailurePercent100PercentTooFewHosts) {
 // requests
 // Set success_rate_request_volume to 4 when we only send 3 RPC in the
 // interval.
-TEST_P(OutlierDetectionTest, FailurePercent100PercentVolumeTooLow) {
+TEST_P(OutlierDetectionTest, FailurePercentageRequestVolume) {
   CreateAndStartBackends(2);
   auto cluster = default_cluster_;
   cluster.set_lb_policy(Cluster::RING_HASH);
@@ -817,8 +813,7 @@ TEST_P(OutlierDetectionTest, FailurePercent100PercentVolumeTooLow) {
   EXPECT_EQ(100, backends_[1]->backend_service()->request_count());
 }
 
-// Tests SuccessRate and FailurePercentage both configured:
-// no counting and therefore no ejection.
+// Tests SuccessRate and FailurePercentage both configured
 TEST_P(OutlierDetectionTest, SuccessRateAndFailurePercentage) {
   CreateAndStartBackends(2);
   auto cluster = default_cluster_;
@@ -855,6 +850,65 @@ TEST_P(OutlierDetectionTest, SuccessRateAndFailurePercentage) {
   cluster.mutable_outlier_detection()
       ->mutable_failure_percentage_request_volume()
       ->set_value(1);
+  balancer_->ads_service()->SetCdsResource(cluster);
+  auto new_route_config = default_route_config_;
+  auto* route = new_route_config.mutable_virtual_hosts(0)->mutable_routes(0);
+  auto* hash_policy = route->mutable_route()->add_hash_policy();
+  hash_policy->mutable_header()->set_header_name("address_hash");
+  SetListenerAndRouteConfiguration(balancer_.get(), default_listener_,
+                                   new_route_config);
+  EdsResourceArgs args({{"locality0", CreateEndpointsForBackends()}});
+  balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
+  // Note each type of RPC will contains a header value that will always be
+  // hashed to a specific backend as the header value matches the value used
+  // to create the entry in the ring.
+  std::vector<std::pair<std::string, std::string>> metadata = {
+      {"address_hash", CreateMetadataValueThatHashesToBackend(0)}};
+  std::vector<std::pair<std::string, std::string>> metadata1 = {
+      {"address_hash", CreateMetadataValueThatHashesToBackend(1)}};
+  const auto rpc_options = RpcOptions().set_metadata(metadata);
+  const auto rpc_options1 = RpcOptions().set_metadata(std::move(metadata1));
+  WaitForBackend(DEBUG_LOCATION, 0, WaitForBackendOptions(), rpc_options);
+  WaitForBackend(DEBUG_LOCATION, 1, WaitForBackendOptions(), rpc_options1);
+  // Cause an error and wait for 1 outlier detection interval to pass
+  CheckRpcSendFailure(
+      DEBUG_LOCATION,
+      CheckRpcSendFailureOptions()
+          .set_rpc_options(
+              RpcOptions()
+                  .set_metadata(std::move(metadata))
+                  .set_server_expected_error(StatusCode::CANCELLED))
+          .set_expected_error_code(StatusCode::CANCELLED));
+  gpr_sleep_until(grpc_timeout_milliseconds_to_deadline(100));
+  ResetBackendCounters();
+  // 1 backend experenced failure, but since there is no counting there is no
+  // ejection.  Both backends are still getting the RPCs intended for them.
+  CheckRpcSendOk(DEBUG_LOCATION, 100, rpc_options);
+  CheckRpcSendOk(DEBUG_LOCATION, 100, rpc_options1);
+  gpr_log(GPR_INFO, "donna backend 0 %d and backend 1 %d",
+          backends_[0]->backend_service()->request_count(),
+          backends_[1]->backend_service()->request_count());
+  // EXPECT_EQ(100, backends_[0]->backend_service()->request_count());
+  // EXPECT_EQ(100, backends_[1]->backend_service()->request_count());
+}
+
+// Tests SuccessRate and FailurePercentage both unconfigured;
+// This is the case where according to the RFC we need to instruct the picker
+// not to do counting or even start the timer. The result of not counting is
+// that there will be no ejection taking place since we can't do any
+// calculations.
+TEST_P(OutlierDetectionTest, SuccessRateAndFailurePercentageBothDisabled) {
+  CreateAndStartBackends(2);
+  auto cluster = default_cluster_;
+  cluster.set_lb_policy(Cluster::RING_HASH);
+  // Setup outlier failure percentage parameters.
+  // Any failure will cause an potential ejection with the probability of 100%
+  // (to eliminate flakiness of the test).
+  auto* interval = cluster.mutable_outlier_detection()->mutable_interval();
+  auto* base_time =
+      cluster.mutable_outlier_detection()->mutable_base_ejection_time();
+  interval->set_nanos(100000000 * grpc_test_slowdown_factor());
+  base_time->set_seconds(1 * grpc_test_slowdown_factor());
   balancer_->ads_service()->SetCdsResource(cluster);
   auto new_route_config = default_route_config_;
   auto* route = new_route_config.mutable_virtual_hosts(0)->mutable_routes(0);

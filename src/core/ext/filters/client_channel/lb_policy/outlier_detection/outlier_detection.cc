@@ -466,8 +466,11 @@ OutlierDetectionLb::Picker::Picker(OutlierDetectionLb* outlier_detection_lb,
                                    bool counting_enabled)
     : picker_(std::move(picker)), counting_enabled_(counting_enabled) {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_outlier_detection_lb_trace)) {
-    gpr_log(GPR_INFO, "[outlier_detection_lb %p] constructed new picker %p",
-            outlier_detection_lb, this);
+    gpr_log(GPR_INFO,
+            "[outlier_detection_lb %p] constructed new picker %p and counting "
+            "is %s",
+            outlier_detection_lb, this,
+            (counting_enabled ? "enabled" : "disabled"));
   }
 }
 
@@ -625,10 +628,10 @@ void OutlierDetectionLb::UpdateLocked(UpdateArgs args) {
 
 void OutlierDetectionLb::MaybeUpdatePickerLocked() {
   if (picker_ != nullptr) {
-    bool counting_enabled = (!config_->outlier_detection_config()
-                                  .success_rate_ejection.has_value() ||
-                             !config_->outlier_detection_config()
-                                  .failure_percentage_ejection.has_value());
+    bool counting_enabled = (config_->outlier_detection_config()
+                                 .success_rate_ejection.has_value() ||
+                             config_->outlier_detection_config()
+                                 .failure_percentage_ejection.has_value());
     auto outlier_detection_picker =
         absl::make_unique<Picker>(this, picker_, counting_enabled);
     if (GRPC_TRACE_FLAG_ENABLED(grpc_outlier_detection_lb_trace)) {
@@ -983,24 +986,15 @@ class OutlierDetectionLbFactory : public LoadBalancingPolicyFactory {
       ParseJsonObjectFieldAsDuration(
           json.object_value(), "baseEjectionTime",
           &outlier_detection_config.base_ejection_time, &error_list);
-      gpr_log(GPR_INFO, "donna debug base duration %s",
-              outlier_detection_config.base_ejection_time.ToString().c_str());
-      auto max_ejection_time_it = json.object_value().find("maxEjectionTime");
-      if (max_ejection_time_it == json.object_value().end()) {
-        outlier_detection_config.max_ejection_time = Duration::Milliseconds(
-            std::max(outlier_detection_config.base_ejection_time.millis(),
-                     static_cast<int64_t>(300000)));
-      } else {
-        if (!ParseDurationFromJson(
-                max_ejection_time_it->second,
-                &outlier_detection_config.max_ejection_time)) {
-          error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-              "field: maxEjectionTime error:type should be STRING"
-              " of the form given by google.proto.Duration."));
-        }
+      if (!ParseJsonObjectFieldAsDuration(
+              json.object_value(), "maxEjectionTime",
+              &outlier_detection_config.max_ejection_time, &error_list,
+              /*required=*/false)) {
+        outlier_detection_config.max_ejection_time =
+            std::max(outlier_detection_config.base_ejection_time,
+                     Duration::Seconds(300));
       }
     }
-    // Child policy.
     RefCountedPtr<LoadBalancingPolicy::Config> child_policy;
     it = json.object_value().find("childPolicy");
     if (it == json.object_value().end()) {
