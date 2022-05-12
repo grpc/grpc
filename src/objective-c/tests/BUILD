@@ -24,12 +24,21 @@ load("@build_bazel_rules_apple//apple:resources.bzl", "apple_resource_bundle")
 load("@build_bazel_rules_apple//apple:ios.bzl", "ios_application", "ios_unit_test")
 load("@build_bazel_rules_apple//apple:macos.bzl", "macos_unit_test")
 load("@build_bazel_rules_apple//apple:tvos.bzl", "tvos_application", "tvos_unit_test")
+load("@build_bazel_rules_apple//apple/testing/default_runner:ios_test_runner.bzl", "ios_test_runner")
 
 licenses(["notice"])
 
 package(default_visibility = ["//visibility:public"])
 
 exports_files(["LICENSE"])
+
+ios_test_runner(
+    name = "ios_test_runner_with_env",
+    test_environment = {
+        "HOST_PORT_LOCAL": "${HOST_PORT_LOCAL}",
+        "HOST_PORT_LOCALSSL": "${HOST_PORT_LOCALSSL}",
+    }
+)
 
 proto_library_objc_wrapper(
     name = "messages_proto",
@@ -200,6 +209,7 @@ ios_unit_test(
         ":NSErrorUnitTests-lib",
         ":RxLibraryUnitTests-lib",
     ],
+    runner = ":ios_test_runner_with_env",
 )
 
 ios_unit_test(

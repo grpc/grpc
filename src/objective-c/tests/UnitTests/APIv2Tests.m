@@ -30,8 +30,8 @@
 // in turn derived from environment variable of the same name.
 #define NSStringize_helper(x) #x
 #define NSStringize(x) @NSStringize_helper(x)
-static NSString *const kHostAddress = NSStringize(HOST_PORT_LOCAL);
-static NSString *const kRemoteSSLHost = NSStringize(HOST_PORT_REMOTE);
+static NSString *kHostAddress = NSStringize(HOST_PORT_LOCAL);
+static NSString *kRemoteSSLHost = NSStringize(HOST_PORT_REMOTE);
 
 // Package and service name of test server
 static NSString *const kPackage = @"grpc.testing";
@@ -136,6 +136,12 @@ static const NSTimeInterval kInvertedTimeout = 2;
 @end
 
 @implementation CallAPIv2Tests
+
++ (void)setUp {
+  NSDictionary* environment = [[NSProcessInfo processInfo] environment];
+  kHostAddress = environment[@"HOST_PORT_LOCAL"]?: kHostAddress;
+  kRemoteSSLHost = environment[@"HOST_PORT_REMOTE"]?: kRemoteSSLHost;
+}
 
 - (void)setUp {
   // This method isn't implemented by the remote server.

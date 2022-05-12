@@ -41,10 +41,10 @@
 // in turn derived from environment variable of the same name.
 #define NSStringize_helper(x) #x
 #define NSStringize(x) @NSStringize_helper(x)
-static NSString *const kHostAddress = NSStringize(HOST_PORT_LOCAL);
+static NSString *kHostAddress = NSStringize(HOST_PORT_LOCAL);
 static NSString *const kPackage = @"grpc.testing";
 static NSString *const kService = @"TestService";
-static NSString *const kRemoteSSLHost = NSStringize(HOST_PORT_REMOTE);
+static NSString *kRemoteSSLHost = NSStringize(HOST_PORT_REMOTE);
 
 static GRPCProtoMethod *kInexistentMethod;
 static GRPCProtoMethod *kEmptyCallMethod;
@@ -104,6 +104,9 @@ static GRPCProtoMethod *kFullDuplexCallMethod;
 @implementation GRPCClientTests
 
 + (void)setUp {
+  NSDictionary* environment = [[NSProcessInfo processInfo] environment];
+  kHostAddress = environment[@"HOST_PORT_LOCAL"]?: kHostAddress;
+  kRemoteSSLHost = environment[@"HOST_PORT_REMOTE"]?: kRemoteSSLHost;
   NSLog(@"GRPCClientTests Started");
 }
 
