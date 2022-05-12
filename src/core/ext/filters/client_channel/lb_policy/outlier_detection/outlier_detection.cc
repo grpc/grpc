@@ -201,7 +201,6 @@ class OutlierDetectionLb : public LoadBalancingPolicy {
     absl::optional<std::pair<double, uint64_t>> GetSuccessRateAndVolume() {
       uint64_t total_request =
           backup_bucket_->successes + backup_bucket_->failures;
-      gpr_log(GPR_INFO, "donna total %lu", total_request);
       if (total_request == 0) {
         return absl::nullopt;
       }
@@ -300,8 +299,8 @@ class OutlierDetectionLb : public LoadBalancingPolicy {
 
    private:
     class SubchannelCallTracker;
-    bool counting_enabled_;
     RefCountedPtr<RefCountedPicker> picker_;
+    bool counting_enabled_;
   };
 
   class Helper : public ChannelControlHelper {
@@ -798,7 +797,6 @@ void OutlierDetectionLb::EjectionTimer::OnTimerLocked(grpc_error_handle error) {
       }
       double success_rate = host_success_rate_and_volume->first;
       uint64_t request_volume = host_success_rate_and_volume->second;
-      gpr_log(GPR_INFO, "donna check on volume %lu", request_volume);
       if (config.success_rate_ejection.has_value()) {
         if (request_volume >= config.success_rate_ejection->request_volume) {
           success_rate_ejection_candidates[subchannel_state] = success_rate;
@@ -806,19 +804,20 @@ void OutlierDetectionLb::EjectionTimer::OnTimerLocked(grpc_error_handle error) {
         }
       }
       if (config.failure_percentage_ejection.has_value()) {
-        gpr_log(GPR_INFO, "donna failure configured min volumne to %lu",
+        gpr_log(GPR_INFO, "donna failure configured min volumne to %d",
                 config.failure_percentage_ejection->request_volume);
         if (request_volume >=
             config.failure_percentage_ejection->request_volume) {
           gpr_log(GPR_INFO,
-                  "donna came to add the failure candidate %p for rate %lu",
+                  "donna came to add the failure candidate %p for rate %f",
                   subchannel_state, success_rate);
           failure_percentage_ejection_candidates[subchannel_state] =
               success_rate;
         }
       }
     }
-    gpr_log(GPR_INFO, "success candidate size %d and failure candidate size %d",
+    gpr_log(GPR_INFO,
+            "success candidate size %lu and failure candidate size %lu",
             success_rate_ejection_candidates.size(),
             failure_percentage_ejection_candidates.size());
     // success rate algorithm
@@ -844,7 +843,7 @@ void OutlierDetectionLb::EjectionTimer::OnTimerLocked(grpc_error_handle error) {
           1000;
       double ejection_threshold = mean - stdev * success_rate_stdev_factor;
       gpr_log(GPR_INFO,
-              "donna success eject from a list of %d candidates, %d many "
+              "donna success eject from a list of %lu candidates, %lu many "
               "alrady ejected",
               success_rate_ejection_candidates.size(), ejected_host_count);
       for (auto& candidate : success_rate_ejection_candidates) {
@@ -876,7 +875,7 @@ void OutlierDetectionLb::EjectionTimer::OnTimerLocked(grpc_error_handle error) {
         failure_percentage_ejection_candidates.size() >=
             config.failure_percentage_ejection->minimum_hosts) {
       gpr_log(GPR_INFO,
-              "donna failure eject from a list of %d candidates, %d many "
+              "donna failure eject from a list of %lu candidates, %lu many "
               "alrady ejected",
               failure_percentage_ejection_candidates.size(),
               ejected_host_count);
