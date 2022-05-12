@@ -777,6 +777,22 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "examine_stack",
+    srcs = [
+        "src/core/lib/gprpp/examine_stack.cc",
+    ],
+    hdrs = [
+        "src/core/lib/gprpp/examine_stack.h",
+    ],
+    external_deps = [
+        "absl/types:optional",
+    ],
+    deps = [
+        "gpr_platform",
+    ],
+)
+
+grpc_cc_library(
     name = "gpr_base",
     srcs = [
         "src/core/lib/gpr/alloc.cc",
@@ -810,7 +826,6 @@ grpc_cc_library(
         "src/core/lib/gpr/tmpfile_posix.cc",
         "src/core/lib/gpr/tmpfile_windows.cc",
         "src/core/lib/gpr/wrap_memcpy.cc",
-        "src/core/lib/gprpp/examine_stack.cc",
         "src/core/lib/gprpp/fork.cc",
         "src/core/lib/gprpp/global_config_env.cc",
         "src/core/lib/gprpp/host_port.cc",
@@ -833,7 +848,6 @@ grpc_cc_library(
         "src/core/lib/gpr/string_windows.h",
         "src/core/lib/gpr/time_precise.h",
         "src/core/lib/gpr/tmpfile.h",
-        "src/core/lib/gprpp/examine_stack.h",
         "src/core/lib/gprpp/fork.h",
         "src/core/lib/gprpp/global_config.h",
         "src/core/lib/gprpp/global_config_custom.h",
@@ -870,6 +884,7 @@ grpc_cc_library(
     deps = [
         "construct_destruct",
         "debug_location",
+        "examine_stack",
         "google_rpc_status_upb",
         "gpr_codegen",
         "gpr_tls",
