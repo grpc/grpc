@@ -21,6 +21,9 @@
 
 #include <grpc/event_engine/event_engine.h>
 
+namespace grpc_event_engine {
+namespace experimental {
+
 // Used for heterogenous lookup of TaskHandles in abseil containers.
 template <typename TaskHandle>
 struct TaskHandleComparator {
@@ -52,5 +55,8 @@ using LookupTaskHandleSet = absl::flat_hash_set<
                              DNSResolver::LookupTaskHandle>::Hash,
     TaskHandleComparator<grpc_event_engine::experimental::EventEngine::
                              DNSResolver::LookupTaskHandle>::Eq>;
+
+}  // namespace experimental
+}  // namespace grpc_event_engine
 
 #endif  // GRPC_CORE_LIB_EVENT_ENGINE_HANDLE_CONTAINERS_H

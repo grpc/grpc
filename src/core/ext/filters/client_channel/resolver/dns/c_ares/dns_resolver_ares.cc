@@ -52,6 +52,7 @@
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/iomgr_fwd.h"
+#include "src/core/lib/iomgr/pollset_set.h"
 #include "src/core/lib/iomgr/resolved_address.h"
 #include "src/core/lib/resolver/resolver.h"
 #include "src/core/lib/resolver/resolver_factory.h"
@@ -530,7 +531,8 @@ class AresDNSResolver : public DNSResolver {
   // the previous default DNS resolver, used to delegate blocking DNS calls to
   DNSResolver* default_resolver_ = GetDNSResolver();
   Mutex mu_;
-  LookupTaskHandleSet open_requests_ ABSL_GUARDED_BY(mu_);
+  grpc_event_engine::experimental::LookupTaskHandleSet open_requests_
+      ABSL_GUARDED_BY(mu_);
   intptr_t aba_token_ ABSL_GUARDED_BY(mu_) = 0;
 };
 
