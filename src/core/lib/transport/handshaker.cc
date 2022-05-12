@@ -18,7 +18,7 @@
 
 #include <grpc/support/port_platform.h>
 
-#include "src/core/lib/channel/handshaker.h"
+#include "src/core/lib/transport/handshaker.h"
 
 #include <inttypes.h>
 
@@ -184,6 +184,7 @@ void HandshakeManager::DoHandshake(grpc_endpoint* endpoint,
     // Construct handshaker args.  These will be passed through all
     // handshakers and eventually be freed by the on_handshake_done callback.
     args_.endpoint = endpoint;
+    args_.deadline = deadline;
     args_.args = grpc_channel_args_copy(channel_args);
     args_.user_data = user_data;
     args_.read_buffer =

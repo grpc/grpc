@@ -18,7 +18,7 @@
 
 #include <grpc/support/port_platform.h>
 
-#include "src/core/lib/channel/handshaker_registry.h"
+#include "src/core/lib/transport/handshaker_registry.h"
 
 #include <stddef.h>
 
