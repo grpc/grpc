@@ -61,9 +61,6 @@ if ! ($BAZEL version | grep -q "${VERSION}"); then
   exit 1
 fi
 
-# clean the caches and downloaded archives to make sure we build from scratch
-$BAZEL clean --expunge
-
 # test building all targets
 $BAZEL build -- //... "${EXCLUDED_TARGETS[@]}" || FAILED_TESTS="${FAILED_TESTS}Build "
 
@@ -75,6 +72,7 @@ for TEST_DIRECTORY in "${TEST_DIRECTORIES[@]}"; do
     echo "Incorrect Bazel version! Want=${VERSION} Seen=$($BAZEL version)"
     exit 1
   fi
+  $BAZEL clean --expunge
   $BAZEL test --cache_test_results=no --test_output=all //:all || FAILED_TESTS="${FAILED_TESTS}${TEST_DIRECTORY} Distribtest"
 
   popd
