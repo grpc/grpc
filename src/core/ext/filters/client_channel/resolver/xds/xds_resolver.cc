@@ -788,9 +788,11 @@ void XdsResolver::StartLocked() {
             grpc_error_std_string(error).c_str());
     std::string error_message;
     grpc_error_get_str(error, GRPC_ERROR_STR_DESCRIPTION, &error_message);
-    Result result;
-    result.service_config = absl::UnavailableError(
+    absl::Status status = absl::UnavailableError(
         absl::StrCat("Failed to create XdsClient: ", error_message));
+    Result result;
+    result.addresses = status;
+    result.service_config = status;
     result.args = grpc_channel_args_copy(args_);
     result_handler_->ReportResult(std::move(result));
     GRPC_ERROR_UNREF(error);
@@ -802,10 +804,12 @@ void XdsResolver::StartLocked() {
     const auto* authority_config =
         xds_client_->bootstrap().LookupAuthority(uri_.authority());
     if (authority_config == nullptr) {
-      Result result;
-      result.service_config = absl::UnavailableError(
+      absl::Status status = absl::UnavailableError(
           absl::StrCat("Invalid target URI -- authority not found for %s.",
                        uri_.authority().c_str()));
+      Result result;
+      result.addresses = status;
+      result.service_config = status;
       result.args = grpc_channel_args_copy(args_);
       result_handler_->ReportResult(std::move(result));
       return;
@@ -954,11 +958,13 @@ void XdsResolver::OnError(absl::Status status) {
   gpr_log(GPR_ERROR, "[xds_resolver %p] received error from XdsClient: %s",
           this, status.ToString().c_str());
   if (xds_client_ == nullptr) return;
+  status = absl::UnavailableError(
+      absl::StrCat("error obtaining xDS resources: ", status.ToString()));
   Result result;
+  result.addresses = status;
+  result.service_config = status;
   grpc_arg new_arg = xds_client_->MakeChannelArg();
   result.args = grpc_channel_args_copy_and_add(args_, &new_arg, 1);
-  result.service_config = absl::UnavailableError(
-      absl::StrCat("error obtaining xDS resources: ", status.ToString()));
   result_handler_->ReportResult(std::move(result));
 }
 
@@ -972,6 +978,7 @@ void XdsResolver::OnResourceDoesNotExist() {
   }
   current_virtual_host_.routes.clear();
   Result result;
+  result.addresses.emplace();
   grpc_error_handle error = GRPC_ERROR_NONE;
   result.service_config = ServiceConfigImpl::Create(args_, "{}", &error);
   GPR_ASSERT(*result.service_config != nullptr);
@@ -1039,6 +1046,7 @@ void XdsResolver::GenerateResult() {
     return;
   }
   Result result;
+  result.addresses.emplace();
   result.service_config = CreateServiceConfig();
   if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_resolver_trace)) {
     gpr_log(GPR_INFO, "[xds_resolver %p] generated service config: %s", this,

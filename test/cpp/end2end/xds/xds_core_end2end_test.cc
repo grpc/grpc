@@ -553,6 +553,36 @@ TEST_P(TimeoutTest, EdsSecondResourceNotPresentInRequest) {
   EXPECT_TRUE(error_seen);
 }
 
+TEST_P(TimeoutTest, ServerDoesNotResendAfterAdsStreamRestart) {
+  CreateAndStartBackends(1);
+  EdsResourceArgs args({{"locality0", CreateEndpointsForBackends(0, 1)}});
+  balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
+  WaitForAllBackends(DEBUG_LOCATION);
+  // Stop balancer.
+  balancer_->Shutdown();
+  // Tell balancer to require minimum version 1 for all resource types
+  // and to not reply to the requests.
+  balancer_->ads_service()->SetResourceMinVersion(kLdsTypeUrl, 1);
+  balancer_->ads_service()->IgnoreResourceType(kLdsTypeUrl);
+  balancer_->ads_service()->SetResourceMinVersion(kRdsTypeUrl, 1);
+  balancer_->ads_service()->IgnoreResourceType(kRdsTypeUrl);
+  balancer_->ads_service()->SetResourceMinVersion(kCdsTypeUrl, 1);
+  balancer_->ads_service()->IgnoreResourceType(kCdsTypeUrl);
+  balancer_->ads_service()->SetResourceMinVersion(kEdsTypeUrl, 1);
+  balancer_->ads_service()->IgnoreResourceType(kEdsTypeUrl);
+  // Restart balancer.
+  balancer_->Start();
+  // Send RPCs for long enough to cover the ADS stream restart delay,
+  // the stream restart, and then the resulting timeout period, just to
+  // be sure that the channel continues to use the resources from before
+  // the restart.
+  absl::Time deadline =
+      absl::Now() + (absl::Seconds(5) * grpc_test_slowdown_factor());
+  do {
+    CheckRpcSendOk(DEBUG_LOCATION);
+  } while (absl::Now() < deadline);
+}
+
 //
 // BootstrapSourceTest - tests different bootstrap sources
 //
