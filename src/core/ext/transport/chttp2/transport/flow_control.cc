@@ -269,17 +269,10 @@ uint32_t StreamFlowControl::MaybeSendUpdate() {
   FlowControlTrace trace("s updt sent", tfc_, this);
   // If a recently sent settings frame caused the stream's flow control window
   // to go in the negative (or < GRPC_HEADER_SIZE_IN_BYTES), update the delta if
-  // one of the following conditions is satisfied -
-  // 1) There is a pending byte_stream and higher layers have expressed interest
-  // in reading additional data through the invokation of `Next()` where the
-  // bytes are to be available asynchronously. 2) There is a pending
-  // recv_message op.
-  // In these cases, we want to make sure that bytes are still flowing.
+  // there is a pending recv_message op.
+  // In this case, we want to make sure that bytes are still flowing.
   if (local_window_delta_ < GRPC_HEADER_SIZE_IN_BYTES) {
-    if (s_->on_next != nullptr) {
-      GPR_DEBUG_ASSERT(s_->pending_byte_stream);
-      IncomingByteStreamUpdate(GRPC_HEADER_SIZE_IN_BYTES, 0);
-    } else if (s_->recv_message != nullptr) {
+    if (s_->recv_message != nullptr) {
       IncomingByteStreamUpdate(GRPC_HEADER_SIZE_IN_BYTES,
                                s_->frame_storage.length);
     }
