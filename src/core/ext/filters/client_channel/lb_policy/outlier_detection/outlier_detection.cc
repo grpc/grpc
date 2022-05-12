@@ -185,6 +185,12 @@ class OutlierDetectionLb : public LoadBalancingPolicy {
       std::atomic<uint64_t> failures;
     };
 
+    SubchannelState() {
+      current_bucket_ = absl::make_unique<Bucket>();
+      backup_bucket_ = absl::make_unique<Bucket>();
+      active_bucket_.store(current_bucket_.get());
+    }
+
     void RotateBucket() {
       backup_bucket_->successes = 0;
       backup_bucket_->failures = 0;
@@ -214,9 +220,11 @@ class OutlierDetectionLb : public LoadBalancingPolicy {
       subchannels_.erase(wrapper);
     }
 
-    void AddSuccessCount() { current_bucket_->successes.fetch_add(1); }
+    void AddSuccessCount() { active_bucket_.load()->successes.fetch_add(1); }
+    // void AddSuccessCount() { current_bucket_->successes.fetch_add(1); }
 
-    void AddFailureCount() { current_bucket_->failures.fetch_add(1); }
+    void AddFailureCount() { active_bucket_.load()->failures.fetch_add(1); }
+    // void AddFailureCount() { current_bucket_->failures.fetch_add(1); }
 
     absl::optional<Timestamp> ejection_time() const { return ejection_time_; }
 
@@ -261,8 +269,8 @@ class OutlierDetectionLb : public LoadBalancingPolicy {
     }
 
    private:
-    std::unique_ptr<Bucket> current_bucket_ = absl::make_unique<Bucket>();
-    std::unique_ptr<Bucket> backup_bucket_ = absl::make_unique<Bucket>();
+    std::unique_ptr<Bucket> current_bucket_;
+    std::unique_ptr<Bucket> backup_bucket_;
     // The bucket used to update call counts.
     // Points to either current_bucket or active_bucket.
     std::atomic<Bucket*> active_bucket_;
