@@ -84,7 +84,7 @@ GRPC_PYTHON_INCLUDE = os.path.join(GRPC_PYTHON_ROOT, 'grpc_root', 'include')
 BAZEL_DEPS = os.path.join(GRPC_ROOT, 'tools', 'distrib', 'python',
                           'bazel_deps.sh')
 BAZEL_DEPS_PROTOC_LIB_QUERY = '//:protoc_lib'
-BAZEL_DEPS_COMMON_PROTOS_QUERY = '//:well_known_protos'
+BAZEL_DEPS_COMMON_PROTOS_QUERY = '//:well_known_type_protos'
 
 
 def protobuf_submodule_commit_hash():
