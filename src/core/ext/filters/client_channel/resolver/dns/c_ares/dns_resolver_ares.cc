@@ -404,7 +404,6 @@ class AresDNSResolver : public DNSResolver {
       MutexLock lock(&mu_);
       GRPC_CARES_TRACE_LOG("AresRequest:%p Cancel ares_request_:%p", this,
                            ares_request_.get());
-      // Cancelling the same lookup twice is a bug.
       if (completed_) return false;
       // OnDnsLookupDone will still be run
       grpc_cancel_ares_request(ares_request_.get());
@@ -428,9 +427,7 @@ class AresDNSResolver : public DNSResolver {
       std::vector<grpc_resolved_address> resolved_addresses;
       {
         MutexLock lock(&request->mu_);
-        if (request->completed_) {
-          return;
-        }
+        if (request->completed_) return;
         request->completed_ = true;
         if (request->addresses_ != nullptr) {
           resolved_addresses.reserve(request->addresses_->size());
@@ -457,8 +454,8 @@ class AresDNSResolver : public DNSResolver {
     const std::string default_port_;
     // parties interested in our I/O
     grpc_pollset_set* const interested_parties_;
-    // locally owned pollset_set, required to support cancellation before ares
-    // has finished its business.
+    // locally owned pollset_set, required to support cancellation of requests
+    // while ares still needs a valid pollset_set.
     grpc_pollset_set* pollset_set_;
     // user-provided completion callback
     const std::function<void(

@@ -3904,9 +3904,9 @@ grpc_cc_library(
         "src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper.h",
     ],
     external_deps = [
+        "absl/base:core_headers",
         "absl/container:flat_hash_set",
         "absl/container:inlined_vector",
-        "absl/base:core_headers",
         "absl/memory",
         "absl/status",
         "absl/status:statusor",

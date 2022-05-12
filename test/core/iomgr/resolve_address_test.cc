@@ -488,10 +488,8 @@ TEST_F(ResolveAddressTest, DeleteInterestedPartiesAfterCancellation) {
     // let cancellation work finish to ensure the callback is not called
     grpc_core::ExecCtx ctx;
     Finish();
-    grpc_core::ExecCtx::Get()->Flush();
   }
   PollPollsetUntilRequestDone();
-  absl::SleepFor(absl::Seconds(1));
 }
 
 int main(int argc, char** argv) {
