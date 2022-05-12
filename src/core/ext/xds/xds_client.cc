@@ -264,7 +264,8 @@ class XdsClient::ChannelState::AdsCallState
                   ads_calld_->chand()->server_.server_uri.c_str(),
                   std::string(type_->type_url()).c_str(),
                   XdsClient::ConstructFullXdsResourceName(
-                      name_.authority, type_->type_url(), name_.key).c_str());
+                      name_.authority, type_->type_url(), name_.key)
+                      .c_str());
         }
         auto& authority_state =
             ads_calld_->xds_client()->authority_state_map_[name_.authority];
