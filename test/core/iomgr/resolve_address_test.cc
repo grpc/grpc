@@ -436,13 +436,9 @@ class PSS {
   }
 
   ~PSS() {
-    grpc_closure do_nothing_cb;
-    GRPC_CLOSURE_INIT(&do_nothing_cb, DoNothing, nullptr,
-                      grpc_schedule_on_exec_ctx);
-    gpr_mu_lock(mu_);
-    grpc_pollset_shutdown(ps_, &do_nothing_cb);
-    gpr_mu_unlock(mu_);
     grpc_pollset_set_del_pollset(pss_, ps_);
+    grpc_pollset_destroy(ps_);
+    gpr_free(ps_);
     grpc_pollset_set_destroy(pss_);
     gpr_log(GPR_DEBUG, "PSS:%p deleted", this);
   }
@@ -450,8 +446,6 @@ class PSS {
   grpc_pollset_set* pollset_set() { return pss_; }
 
  private:
-  static void DoNothing(void* /*arg*/, grpc_error_handle /*error*/) {}
-
   PSS() {
     ps_ = static_cast<grpc_pollset*>(gpr_zalloc(grpc_pollset_size()));
     grpc_pollset_init(ps_, &mu_);

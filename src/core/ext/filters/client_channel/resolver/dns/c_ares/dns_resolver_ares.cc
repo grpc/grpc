@@ -381,9 +381,11 @@ class AresDNSResolver : public DNSResolver {
       GRPC_CLOSURE_INIT(&on_dns_lookup_done_, OnDnsLookupDone, this,
                         grpc_schedule_on_exec_ctx);
       MutexLock lock(&mu_);
+      pollset_set_ = grpc_pollset_set_create();
+      grpc_pollset_set_add_pollset_set(interested_parties, pollset_set_);
       ares_request_ = std::unique_ptr<grpc_ares_request>(grpc_dns_lookup_ares(
-          /*dns_server=*/"", name_.c_str(), default_port_.c_str(),
-          interested_parties_, &on_dns_lookup_done_, &addresses_,
+          /*dns_server=*/"", name_.c_str(), default_port_.c_str(), pollset_set_,
+          &on_dns_lookup_done_, &addresses_,
           /*balancer_addresses=*/nullptr, /*service_config_json=*/nullptr,
           GRPC_DNS_ARES_DEFAULT_QUERY_TIMEOUT_MS));
       GRPC_CARES_TRACE_LOG("AresRequest:%p Start ares_request_:%p", this,
@@ -394,6 +396,7 @@ class AresDNSResolver : public DNSResolver {
       GRPC_CARES_TRACE_LOG("AresRequest:%p dtor ares_request_:%p", this,
                            ares_request_.get());
       resolver_->UnregisterRequest(task_handle());
+      grpc_pollset_set_destroy(pollset_set_);
     }
 
     bool Cancel() {
@@ -405,6 +408,7 @@ class AresDNSResolver : public DNSResolver {
       // OnDnsLookupDone will still be run
       grpc_cancel_ares_request(ares_request_.get());
       completed_ = true;
+      grpc_pollset_set_del_pollset_set(interested_parties_, pollset_set_);
       return true;
     }
 
@@ -434,6 +438,8 @@ class AresDNSResolver : public DNSResolver {
           }
         }
       }
+      grpc_pollset_set_del_pollset_set(request->interested_parties_,
+                                       request->pollset_set_);
       if (error != GRPC_ERROR_NONE) {
         request->on_resolve_address_done_(grpc_error_to_absl_status(error));
         return;
@@ -450,6 +456,9 @@ class AresDNSResolver : public DNSResolver {
     const std::string default_port_;
     // parties interested in our I/O
     grpc_pollset_set* const interested_parties_;
+    // locally owned pollset_set, required to support cancellation before ares
+    // has finished its business.
+    grpc_pollset_set* pollset_set_;
     // user-provided completion callback
     const std::function<void(
         absl::StatusOr<std::vector<grpc_resolved_address>>)>
