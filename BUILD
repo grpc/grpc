@@ -299,7 +299,6 @@ GRPCXX_PUBLIC_HDRS = [
     "include/grpc++/support/sync_stream.h",
     "include/grpc++/support/time.h",
     "include/grpcpp/alarm.h",
-    "include/grpcpp/call_metric_recorder.h",
     "include/grpcpp/channel.h",
     "include/grpcpp/client_context.h",
     "include/grpcpp/completion_queue.h",
@@ -2939,7 +2938,7 @@ grpc_cc_library(
 grpc_cc_library(
     name = "grpc_backend_metric_data",
     hdrs = [
-        "src/core/ext/filters/common/backend_metric_data.h",
+        "src/core/ext/filters/client_channel/lb_policy/backend_metric_data.h",
     ],
     external_deps = [
         "absl/strings",
@@ -5259,7 +5258,6 @@ grpc_cc_library(
         "include/grpcpp/impl/codegen/server_callback_handlers.h",
         "include/grpcpp/impl/codegen/server_callback.h",
         "include/grpcpp/impl/codegen/server_context.h",
-        "include/grpcpp/impl/codegen/call_metric_recorder.h",
         "include/grpcpp/impl/codegen/server_interceptor.h",
         "include/grpcpp/impl/codegen/server_interface.h",
         "include/grpcpp/impl/codegen/service_type.h",
@@ -5348,6 +5346,9 @@ grpc_cc_library(
     srcs = [
         "src/cpp/server/orca/call_metric_recorder.cc",
     ],
+    public_hdrs = [
+          "include/grpcpp/ext/call_metric_recorder.h",
+    ],
     external_deps = [
         "upb_lib",
         "absl/memory",
@@ -5362,7 +5363,7 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
-    name = "grpcpp_orca",
+    name = "grpcpp_orca_interceptor",
     srcs = [
         "src/cpp/server/orca/orca_interceptor.cc",
     ],
@@ -5382,6 +5383,7 @@ grpc_cc_library(
         "grpc++",
         "grpc++_codegen_base",
         "grpc_base",
+        "grpcpp_call_metric_recorder",
         "protobuf_duration_upb",
         "ref_counted",
         "time",

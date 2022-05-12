@@ -40,7 +40,7 @@
 #include <grpcpp/ext/orca_load_reporter.h>
 #include <grpcpp/ext/orca_service.h>
 #include <grpcpp/health_check_service_interface.h>
-#include <grpcpp/impl/codegen/call_metric_recorder.h>
+#include <grpcpp/ext/call_metric_recorder.h>
 #include <grpcpp/impl/codegen/sync.h>
 #include <grpcpp/server.h>
 #include <grpcpp/server_builder.h>
@@ -95,10 +95,9 @@ class MyTestServiceImpl : public TestServiceImpl {
     AddClient(context->peer());
     if (request->has_param() && request->param().has_backend_metrics()) {
       load_report_ = request->param().backend_metrics();
-      auto& recorder = context->GetCallMetricRecorder();
+      auto& recorder = context->ExperimentalGetCallMetricRecorder();
       recorder.RecordCpuUtilizationMetric(load_report_.cpu_utilization())
-          .RecordMemoryUtilizationMetric(load_report_.mem_utilization())
-          .RecordRequestsPerSecond(load_report_.rps());
+          .RecordMemoryUtilizationMetric(load_report_.mem_utilization());
       for (const auto& p : load_report_.request_cost()) {
         recorder.RecordRequestCostMetric(p.first, p.second);
       }
@@ -384,7 +383,7 @@ class ClientLbEnd2endTest : public ::testing::Test {
       std::ostringstream server_address;
       server_address << server_host << ":" << port_;
       ServerBuilder builder;
-      RegisterCallMetricLoadReporter(&builder);
+      experimental::RegisterCallMetricLoadReporter(&builder);
       std::shared_ptr<ServerCredentials> creds(new SecureServerCredentials(
           grpc_fake_transport_security_server_credentials_create()));
       builder.AddListeningPort(server_address.str(), std::move(creds));
@@ -1955,7 +1954,6 @@ xds::data::orca::v3::OrcaLoadReport BackendMetricDataToOrcaLoadReport(
   xds::data::orca::v3::OrcaLoadReport load_report;
   load_report.set_cpu_utilization(backend_metric_data.cpu_utilization);
   load_report.set_mem_utilization(backend_metric_data.mem_utilization);
-  load_report.set_rps(backend_metric_data.requests_per_second);
   for (const auto& p : backend_metric_data.request_cost) {
     std::string name(p.first);
     (*load_report.mutable_request_cost())[name] = p.second;

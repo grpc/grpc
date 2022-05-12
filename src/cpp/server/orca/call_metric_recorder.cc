@@ -18,42 +18,46 @@
 #include "upb/upb.hpp"
 #include "xds/data/orca/v3/orca_load_report.upb.h"
 
-#include <grpcpp/impl/codegen/call_metric_recorder.h>
+#include <grpcpp/ext/call_metric_recorder.h>
 
-#include "src/core/ext/filters/common/backend_metric_data.h"
+#include "src/core/ext/filters/client_channel/lb_policy/backend_metric_data.h"
 
-grpc::CallMetricRecorder::CallMetricRecorder()
+grpc::experimental::CallMetricRecorder::CallMetricRecorder()
     : backend_metric_data_(absl::make_unique<grpc_core::BackendMetricData>()) {}
 
-grpc::CallMetricRecorder::~CallMetricRecorder() {}
+grpc::experimental::CallMetricRecorder::~CallMetricRecorder() {}
 
-grpc::CallMetricRecorder& grpc::CallMetricRecorder::RecordCpuUtilizationMetric(
+grpc::experimental::CallMetricRecorder& grpc::experimental::CallMetricRecorder::RecordCpuUtilizationMetric(
     double value) {
   if (!disabled_) backend_metric_data_->cpu_utilization = value;
   return *this;
 }
-grpc::CallMetricRecorder&
-grpc::CallMetricRecorder::RecordMemoryUtilizationMetric(double value) {
+
+grpc::experimental::CallMetricRecorder&
+grpc::experimental::CallMetricRecorder::RecordMemoryUtilizationMetric(double value) {
   if (!disabled_) backend_metric_data_->mem_utilization = value;
   return *this;
 }
-grpc::CallMetricRecorder& grpc::CallMetricRecorder::RecordRequestsPerSecond(
-    uint32_t value) {
-  if (!disabled_) backend_metric_data_->requests_per_second = value;
-  return *this;
-}
-grpc::CallMetricRecorder& grpc::CallMetricRecorder::RecordUtilizationMetric(
-    const absl::string_view& name, double value) {
-  if (!disabled_) backend_metric_data_->utilization[name] = value;
-  return *this;
-}
-grpc::CallMetricRecorder& grpc::CallMetricRecorder::RecordRequestCostMetric(
-    const absl::string_view& name, double value) {
-  if (!disabled_) backend_metric_data_->request_cost[name] = value;
+
+grpc::experimental::CallMetricRecorder& grpc::experimental::CallMetricRecorder::RecordUtilizationMetric(
+    grpc::string_ref name, double value) {
+  if (!disabled_) {
+    absl::string_view name_sv(name.data(), name.length());
+    backend_metric_data_->utilization[name_sv] = value;
+  }
   return *this;
 }
 
-std::string grpc::CallMetricRecorder::CreateSerializedReport() {
+grpc::experimental::CallMetricRecorder& grpc::experimental::CallMetricRecorder::RecordRequestCostMetric(
+    grpc::string_ref name, double value) {
+  if (!disabled_) {
+    absl::string_view name_sv(name.data(), name.length());
+    backend_metric_data_->request_cost[name_sv] = value;
+  }
+  return *this;
+}
+
+std::string grpc::experimental::CallMetricRecorder::CreateSerializedReport() {
   upb::Arena arena;
   disabled_ = true;
   xds_data_orca_v3_OrcaLoadReport* response =
@@ -66,8 +70,6 @@ std::string grpc::CallMetricRecorder::CreateSerializedReport() {
     xds_data_orca_v3_OrcaLoadReport_set_mem_utilization(
         response, backend_metric_data_->mem_utilization);
   }
-  xds_data_orca_v3_OrcaLoadReport_set_rps(
-      response, backend_metric_data_->requests_per_second);
   for (const auto& p : backend_metric_data_->request_cost) {
     xds_data_orca_v3_OrcaLoadReport_request_cost_set(
         response,

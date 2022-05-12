@@ -29,7 +29,7 @@ namespace experimental {
 
 class OrcaServerInterceptor : public Interceptor {
  public:
-  explicit OrcaServerInterceptor(ServerRpcInfo* info) { info_ = info; }
+  explicit OrcaServerInterceptor(ServerRpcInfo* info) : info_(info) { }
 
   void Intercept(InterceptorBatchMethods* methods) override;
 

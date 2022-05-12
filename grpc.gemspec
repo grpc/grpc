@@ -217,7 +217,7 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/ext/filters/client_channel/subchannel_pool_interface.h )
   s.files += %w( src/core/ext/filters/client_channel/subchannel_stream_client.cc )
   s.files += %w( src/core/ext/filters/client_channel/subchannel_stream_client.h )
-  s.files += %w( src/core/ext/filters/common/backend_metric_data.h )
+  s.files += %w( src/core/ext/filters/client_channel/lb_policy/backend_metric_data.h )
   s.files += %w( src/core/ext/filters/deadline/deadline_filter.cc )
   s.files += %w( src/core/ext/filters/deadline/deadline_filter.h )
   s.files += %w( src/core/ext/filters/fault_injection/fault_injection_filter.cc )

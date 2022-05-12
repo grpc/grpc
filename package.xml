@@ -199,7 +199,7 @@
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/subchannel_pool_interface.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/subchannel_stream_client.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/subchannel_stream_client.h" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/filters/common/backend_metric_data.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/filters/client_channel/lb_policy/backend_metric_data.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/deadline/deadline_filter.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/deadline/deadline_filter.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/fault_injection/fault_injection_filter.cc" role="src" />

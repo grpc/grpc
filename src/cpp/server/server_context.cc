@@ -26,7 +26,7 @@
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpcpp/impl/call.h>
-#include <grpcpp/impl/codegen/call_metric_recorder.h>
+#include <grpcpp/ext/call_metric_recorder.h>
 #include <grpcpp/impl/codegen/completion_queue.h>
 #include <grpcpp/impl/codegen/server_context.h>
 #include <grpcpp/impl/grpc_library.h>
@@ -377,9 +377,9 @@ void ServerContextBase::SetLoadReportingCosts(
   }
 }
 
-grpc::CallMetricRecorder& ServerContextBase::GetCallMetricRecorder() {
+grpc::experimental::CallMetricRecorder& ServerContextBase::ExperimentalGetCallMetricRecorder() {
   if (!call_metric_recorder_) {
-    call_metric_recorder_ = absl::make_unique<CallMetricRecorder>();
+    call_metric_recorder_ = absl::make_unique<experimental::CallMetricRecorder>();
   }
   return *call_metric_recorder_;
 }

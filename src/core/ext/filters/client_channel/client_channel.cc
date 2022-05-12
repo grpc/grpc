@@ -2574,7 +2574,7 @@ class ClientChannel::LoadBalancedCall::BackendMetricAccessor
     if (lb_call_->backend_metric_data_ == nullptr &&
         lb_call_->recv_trailing_metadata_ != nullptr) {
       if (const auto* md = lb_call_->recv_trailing_metadata_->get_pointer(
-              XEndpointLoadMetricsBinMetadata())) {
+              EndpointLoadMetricsBinMetadata())) {
         BackendMetricAllocator allocator(lb_call_->arena_);
         lb_call_->backend_metric_data_ =
             ParseBackendMetricData(md->as_string_view(), &allocator);

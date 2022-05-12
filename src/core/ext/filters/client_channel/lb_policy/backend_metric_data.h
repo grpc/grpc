@@ -34,9 +34,6 @@ struct BackendMetricData {
   /// Memory utilization expressed as a fraction of available memory
   /// resources.
   double mem_utilization;
-  /// Total requests per second being served by the backend.  This
-  /// should include all services that a backend is responsible for.
-  uint64_t requests_per_second;
   /// Application-specific requests cost metrics.  Metric names are
   /// determined by the application.  Each value is an absolute cost
   /// (e.g. 3487 bytes of storage) associated with the request.

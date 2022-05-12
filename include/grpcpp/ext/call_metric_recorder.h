@@ -16,8 +16,8 @@
  *
  */
 
-#ifndef GRPCPP_IMPL_CODEGEN_CALL_METRIC_RECORDER_H
-#define GRPCPP_IMPL_CODEGEN_CALL_METRIC_RECORDER_H
+#ifndef GRPCPP_EXT_CALL_METRIC_RECORDER_H
+#define GRPCPP_EXT_CALL_METRIC_RECORDER_H
 
 // IWYU pragma: private, include <grpcpp/call_metric_recorder.h>
 
@@ -36,10 +36,9 @@ namespace grpc {
 
 namespace experimental {
 class OrcaServerInterceptor;
-}
 
 /// Records call metrics for the purpose of load balancing.
-/// During an RPC, call \a ServerContext::GetCallMetricRecorder() method
+/// During an RPC, call \a ServerContext::ExperimentalGetCallMetricRecorder() method
 /// to retrive the recorder for the current call.
 class CallMetricRecorder {
  public:
@@ -54,20 +53,16 @@ class CallMetricRecorder {
   /// Multiple calls to this method will override the stored value.
   CallMetricRecorder& RecordMemoryUtilizationMetric(double value);
 
-  /// Records a call metric measurement for requests per second.
-  /// Multiple calls to this method will override the stored value.
-  CallMetricRecorder& RecordRequestsPerSecond(uint32_t value);
-
   /// Records a call metric measurement for utilization.
   /// Multiple calls to this method with the same name will
   /// override the corresponding stored value.
-  CallMetricRecorder& RecordUtilizationMetric(const absl::string_view& name,
+  CallMetricRecorder& RecordUtilizationMetric(grpc::string_ref name,
                                               double value);
 
   /// Records a call metric measurement for request cost.
   /// Multiple calls to this method with the same name will
   /// override the corresponding stored value.
-  CallMetricRecorder& RecordRequestCostMetric(const absl::string_view& name,
+  CallMetricRecorder& RecordRequestCostMetric(grpc::string_ref name,
                                               double value);
   bool disabled() const { return disabled_; }
 
@@ -78,6 +73,7 @@ class CallMetricRecorder {
   friend class experimental::OrcaServerInterceptor;
 };
 
+}
 }  // namespace grpc
 
-#endif  // GRPCPP_IMPL_CODEGEN_CALL_METRIC_RECORDER_H
+#endif  // GRPCPP_EXT_CALL_METRIC_RECORDER_H

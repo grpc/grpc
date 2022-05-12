@@ -22,12 +22,16 @@
 namespace grpc {
 class ServerBuilder;
 
+namespace experimental {
+
 // Registers the per-rpc orca load reporter into the \a ServerBuilder.
 // Once this is done, the server will automatically send the load metrics
 // after each RPC as they were reported. In order to report load metrics,
-// call the \a ServerContext::GetCallMetricRecorder() method to retrieve
+// call the \a ServerContext::ExperimentalGetCallMetricRecorder() method to retrieve
 // the recorder for the current call.
 void RegisterCallMetricLoadReporter(ServerBuilder*);
+
+}
 
 }  // namespace grpc
 
