@@ -411,10 +411,10 @@ struct grpc_transport_stream_op_batch_payload {
   } recv_initial_metadata;
 
   struct {
-    // Will be set by the transport to point to the byte stream
-    // containing a received message.
-    // Will be NULL if trailing metadata is received instead of a message.
-    grpc_core::SliceBuffer* recv_message = nullptr;
+    // Will be set by the transport to point to the byte stream containing a
+    // received message. Will be nullopt if trailing metadata is received
+    // instead of a message.
+    absl::optional<grpc_core::SliceBuffer>* recv_message = nullptr;
     uint32_t* flags = nullptr;
     // Was this recv_message failed for reasons other than a clean end-of-stream
     bool* call_failed_before_recv_message = nullptr;

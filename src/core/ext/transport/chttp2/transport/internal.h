@@ -503,7 +503,7 @@ struct grpc_chttp2_stream {
   grpc_metadata_batch* recv_initial_metadata;
   grpc_closure* recv_initial_metadata_ready = nullptr;
   bool* trailing_metadata_available = nullptr;
-  grpc_core::SliceBuffer* recv_message = nullptr;
+  absl::optional<grpc_core::SliceBuffer>* recv_message = nullptr;
   bool* call_failed_before_recv_message = nullptr;
   grpc_closure* recv_message_ready = nullptr;
   grpc_metadata_batch* recv_trailing_metadata;
@@ -543,8 +543,6 @@ struct grpc_chttp2_stream {
   grpc_slice_buffer frame_storage; /* protected by t combiner */
 
   grpc_closure reset_byte_stream;
-  grpc_error_handle byte_stream_error =
-      GRPC_ERROR_NONE;              /* protected by t combiner */
   bool received_last_frame = false; /* protected by t combiner */
 
   grpc_core::Timestamp deadline = grpc_core::Timestamp::InfFuture();

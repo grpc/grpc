@@ -183,7 +183,7 @@ struct call_data {
   // The error caused by a message that is too large, or GRPC_ERROR_NONE
   grpc_error_handle error = GRPC_ERROR_NONE;
   // Used by recv_message_ready.
-  grpc_core::SliceBuffer* recv_message = nullptr;
+  absl::optional<grpc_core::SliceBuffer>* recv_message = nullptr;
   // Original recv_message_ready callback, invoked after our own.
   grpc_closure* next_recv_message_ready = nullptr;
   // Original recv_trailing_metadata callback, invoked after our own.
@@ -199,13 +199,13 @@ struct call_data {
 static void recv_message_ready(void* user_data, grpc_error_handle error) {
   grpc_call_element* elem = static_cast<grpc_call_element*>(user_data);
   call_data* calld = static_cast<call_data*>(elem->call_data);
-  if (calld->limits.max_recv_size >= 0 &&
-      calld->recv_message->Length() >
+  if (calld->recv_message->has_value() && calld->limits.max_recv_size >= 0 &&
+      (*calld->recv_message)->Length() >
           static_cast<size_t>(calld->limits.max_recv_size)) {
     grpc_error_handle new_error = grpc_error_set_int(
         GRPC_ERROR_CREATE_FROM_CPP_STRING(absl::StrFormat(
             "Received message larger than max (%u vs. %d)",
-            calld->recv_message->Length(), calld->limits.max_recv_size)),
+            (*calld->recv_message)->Length(), calld->limits.max_recv_size)),
         GRPC_ERROR_INT_GRPC_STATUS, GRPC_STATUS_RESOURCE_EXHAUSTED);
     error = grpc_error_add_child(GRPC_ERROR_REF(error), new_error);
     GRPC_ERROR_UNREF(calld->error);
