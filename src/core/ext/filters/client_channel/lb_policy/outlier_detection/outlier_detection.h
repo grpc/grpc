@@ -19,6 +19,8 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <stdint.h>  // for uint32_t
+
 #include "absl/types/optional.h"
 
 #include "src/core/lib/gprpp/time.h"

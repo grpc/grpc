@@ -3221,6 +3221,7 @@ grpc_cc_library(
         "grpc_client_channel",
         "grpc_codegen",
         "grpc_matchers",
+        "grpc_outlier_detection_header",
         "grpc_security_base",
         "grpc_tls_credentials",
         "grpc_trace",
@@ -3229,6 +3230,7 @@ grpc_cc_library(
         "orphanable",
         "ref_counted_ptr",
         "server_address",
+        "time",
     ],
 )
 
@@ -3287,6 +3289,7 @@ grpc_cc_library(
         "orphanable",
         "ref_counted_ptr",
         "server_address",
+        "time",
         "uri_parser",
     ],
 )
@@ -3499,19 +3502,30 @@ grpc_cc_library(
     ],
     external_deps = [
         "absl/container:inlined_vector",
+        "absl/memory",
         "absl/random",
+        "absl/status",
+        "absl/status:statusor",
         "absl/strings",
         "absl/strings:str_format",
+        "absl/types:variant",
     ],
     language = "c++",
     deps = [
+        "debug_location",
         "gpr_base",
         "grpc_base",
         "grpc_client_channel",
+        "grpc_codegen",
         "grpc_outlier_detection_header",
+        "grpc_trace",
+        "iomgr_fwd",
+        "json",
         "json_util",
         "orphanable",
+        "ref_counted",
         "ref_counted_ptr",
+        "server_address",
     ],
 )
 
