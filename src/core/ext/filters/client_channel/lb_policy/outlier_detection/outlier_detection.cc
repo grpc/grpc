@@ -229,6 +229,7 @@ class OutlierDetectionLb : public LoadBalancingPolicy {
     }
 
     void Uneject() {
+      gpr_log(GPR_INFO, "donna when did i uneject");
       ejection_time_.reset();
       for (auto& subchannel : subchannels_) {
         subchannel->Uneject();
@@ -777,7 +778,10 @@ void OutlierDetectionLb::EjectionTimer::OnTimerLocked(grpc_error_handle error) {
       // Gather data to run success rate algorithm or failure percentage
       // algorithm.
       if (subchannel_state->ejection_time().has_value()) {
+        gpr_log(GPR_INFO, "donna tracking previos ejection");
         ++ejected_host_count;
+      } else {
+        gpr_log(GPR_INFO, "donna nothing from previous ejection");
       }
       absl::optional<std::pair<double, uint64_t>> host_success_rate_and_volume =
           subchannel_state->GetSuccessRateAndVolume();
@@ -876,7 +880,10 @@ void OutlierDetectionLb::EjectionTimer::OnTimerLocked(grpc_error_handle error) {
           uint32_t random_key = absl::Uniform(bit_gen_, 1, 100);
           double current_percent = 100.0 * ejected_host_count /
                                    parent_->subchannel_state_map_.size();
-          if (random_key <
+          // Extra check to make sure success rate algorithm didn't already
+          // eject this backend.
+          if (!candidate.first->ejection_time().has_value() &&
+              random_key <
                   config.failure_percentage_ejection->enforcement_percentage &&
               (ejected_host_count == 0 ||
                (current_percent < config.max_ejection_percent))) {
@@ -994,6 +1001,9 @@ class OutlierDetectionLbFactory : public LoadBalancingPolicyFactory {
             std::max(outlier_detection_config.base_ejection_time,
                      Duration::Seconds(300));
       }
+      ParseJsonObjectField(json.object_value(), "maxEjectionPercent",
+                           &outlier_detection_config.max_ejection_percent,
+                           &error_list);
     }
     RefCountedPtr<LoadBalancingPolicy::Config> child_policy;
     it = json.object_value().find("childPolicy");

@@ -814,21 +814,25 @@ TEST_P(OutlierDetectionTest, FailurePercentageRequestVolume) {
 }
 
 // Tests SuccessRate and FailurePercentage both configured
+// Configure max_ejection_percent to 50% which means max 2/4 backends can be
+// ejected.
+// Configure success rate to eject 1 and failure percentage to eject 2.
+// Verify that maximum 2 backends are ejected, not 3!
 TEST_P(OutlierDetectionTest, SuccessRateAndFailurePercentage) {
-  CreateAndStartBackends(2);
+  CreateAndStartBackends(4);
   auto cluster = default_cluster_;
   cluster.set_lb_policy(Cluster::RING_HASH);
   // Setup outlier failure percentage parameters.
   // Any failure will cause an potential ejection with the probability of 100%
   // (to eliminate flakiness of the test).
   auto* interval = cluster.mutable_outlier_detection()->mutable_interval();
-  auto* base_time =
-      cluster.mutable_outlier_detection()->mutable_base_ejection_time();
   interval->set_nanos(100000000 * grpc_test_slowdown_factor());
-  base_time->set_seconds(1 * grpc_test_slowdown_factor());
+  cluster.mutable_outlier_detection()
+      ->mutable_max_ejection_percent()
+      ->set_value(50);
   cluster.mutable_outlier_detection()
       ->mutable_success_rate_stdev_factor()
-      ->set_value(100);
+      ->set_value(500);
   cluster.mutable_outlier_detection()
       ->mutable_enforcing_success_rate()
       ->set_value(100);
@@ -866,30 +870,76 @@ TEST_P(OutlierDetectionTest, SuccessRateAndFailurePercentage) {
       {"address_hash", CreateMetadataValueThatHashesToBackend(0)}};
   std::vector<std::pair<std::string, std::string>> metadata1 = {
       {"address_hash", CreateMetadataValueThatHashesToBackend(1)}};
+  std::vector<std::pair<std::string, std::string>> metadata2 = {
+      {"address_hash", CreateMetadataValueThatHashesToBackend(2)}};
+  std::vector<std::pair<std::string, std::string>> metadata3 = {
+      {"address_hash", CreateMetadataValueThatHashesToBackend(3)}};
   const auto rpc_options = RpcOptions().set_metadata(metadata);
-  const auto rpc_options1 = RpcOptions().set_metadata(std::move(metadata1));
+  const auto rpc_options1 = RpcOptions().set_metadata(metadata1);
+  const auto rpc_options2 = RpcOptions().set_metadata(metadata2);
+  const auto rpc_options3 = RpcOptions().set_metadata(metadata3);
   WaitForBackend(DEBUG_LOCATION, 0, WaitForBackendOptions(), rpc_options);
   WaitForBackend(DEBUG_LOCATION, 1, WaitForBackendOptions(), rpc_options1);
-  // Cause an error and wait for 1 outlier detection interval to pass
+  WaitForBackend(DEBUG_LOCATION, 2, WaitForBackendOptions(), rpc_options2);
+  WaitForBackend(DEBUG_LOCATION, 3, WaitForBackendOptions(), rpc_options3);
+  // Cause 2 errors on 1 backend and 1 error on 2 backends and wait for 1
+  // outlier detection interval to pass. The 2 errors will make exactly 1
+  // outlier from the success rate algorithm; all errors will make 3 outliers
+  // from the failure pecentage algorithm because the threahold is set to 0.
   CheckRpcSendFailure(
       DEBUG_LOCATION,
       CheckRpcSendFailureOptions()
           .set_rpc_options(
-              RpcOptions()
-                  .set_metadata(std::move(metadata))
-                  .set_server_expected_error(StatusCode::CANCELLED))
+              RpcOptions().set_metadata(metadata).set_server_expected_error(
+                  StatusCode::CANCELLED))
+          .set_expected_error_code(StatusCode::CANCELLED));
+  CheckRpcSendFailure(
+      DEBUG_LOCATION,
+      CheckRpcSendFailureOptions()
+          .set_rpc_options(
+              RpcOptions().set_metadata(metadata).set_server_expected_error(
+                  StatusCode::CANCELLED))
+          .set_expected_error_code(StatusCode::CANCELLED));
+  CheckRpcSendFailure(
+      DEBUG_LOCATION,
+      CheckRpcSendFailureOptions()
+          .set_rpc_options(
+              RpcOptions().set_metadata(metadata1).set_server_expected_error(
+                  StatusCode::CANCELLED))
+          .set_expected_error_code(StatusCode::CANCELLED));
+  CheckRpcSendFailure(
+      DEBUG_LOCATION,
+      CheckRpcSendFailureOptions()
+          .set_rpc_options(
+              RpcOptions().set_metadata(metadata2).set_server_expected_error(
+                  StatusCode::CANCELLED))
           .set_expected_error_code(StatusCode::CANCELLED));
   gpr_sleep_until(grpc_timeout_milliseconds_to_deadline(100));
   ResetBackendCounters();
-  // 1 backend experenced failure, but since there is no counting there is no
-  // ejection.  Both backends are still getting the RPCs intended for them.
   CheckRpcSendOk(DEBUG_LOCATION, 100, rpc_options);
   CheckRpcSendOk(DEBUG_LOCATION, 100, rpc_options1);
-  gpr_log(GPR_INFO, "donna backend 0 %d and backend 1 %d",
+  CheckRpcSendOk(DEBUG_LOCATION, 100, rpc_options2);
+  CheckRpcSendOk(DEBUG_LOCATION, 100, rpc_options3);
+  size_t empty_load_backend_count = 0;
+  size_t double_load_backend_count = 0;
+  for (size_t i = 0; i < backends_.size(); ++i) {
+    if (backends_[i]->backend_service()->request_count() == 0) {
+      ++empty_load_backend_count;
+    } else if (backends_[i]->backend_service()->request_count() >= 100) {
+      // The extra load could go to 2 remaining backends or just 1 of them.
+      ++double_load_backend_count;
+    } else if (backends_[i]->backend_service()->request_count() > 300) {
+      GPR_ASSERT(1);
+    }
+  }
+  gpr_log(GPR_INFO,
+          "donna backend 0 %d and backend 1 %di backend 2 %d and backend 3 %d",
           backends_[0]->backend_service()->request_count(),
-          backends_[1]->backend_service()->request_count());
-  // EXPECT_EQ(100, backends_[0]->backend_service()->request_count());
-  // EXPECT_EQ(100, backends_[1]->backend_service()->request_count());
+          backends_[1]->backend_service()->request_count(),
+          backends_[2]->backend_service()->request_count(),
+          backends_[3]->backend_service()->request_count());
+  EXPECT_EQ(2, empty_load_backend_count);
+  EXPECT_EQ(2, double_load_backend_count);
 }
 
 // Tests SuccessRate and FailurePercentage both unconfigured;
