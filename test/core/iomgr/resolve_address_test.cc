@@ -428,6 +428,78 @@ TEST_F(ResolveAddressTest, CancelWithNonResponsiveDNSServer) {
   PollPollsetUntilRequestDone();
 }
 
+// RAII class for pollset and pollset_set creation
+class PSS {
+ public:
+  static std::unique_ptr<PSS> Create() {
+    return absl::WrapUnique<PSS>(new PSS());
+  }
+
+  ~PSS() {
+    grpc_closure do_nothing_cb;
+    GRPC_CLOSURE_INIT(&do_nothing_cb, DoNothing, nullptr,
+                      grpc_schedule_on_exec_ctx);
+    gpr_mu_lock(mu_);
+    grpc_pollset_shutdown(ps_, &do_nothing_cb);
+    gpr_mu_unlock(mu_);
+    grpc_pollset_set_del_pollset(pss_, ps_);
+    grpc_pollset_set_destroy(pss_);
+    gpr_log(GPR_DEBUG, "PSS:%p deleted", this);
+  }
+
+  grpc_pollset_set* pollset_set() { return pss_; }
+
+ private:
+  static void DoNothing(void* /*arg*/, grpc_error_handle /*error*/) {}
+
+  PSS() {
+    ps_ = static_cast<grpc_pollset*>(gpr_zalloc(grpc_pollset_size()));
+    grpc_pollset_init(ps_, &mu_);
+    pss_ = grpc_pollset_set_create();
+    grpc_pollset_set_add_pollset(pss_, ps_);
+    gpr_log(GPR_DEBUG, "PSS:%p created", this);
+  }
+
+  gpr_mu* mu_;
+  grpc_pollset* ps_;
+  grpc_pollset_set* pss_;
+};
+
+TEST_F(ResolveAddressTest, DeleteInterestedPartiesAfterCancellation) {
+  // Regression test for race around interested_party deletion after
+  // cancellation.
+  if (std::string(g_resolver_type) != "ares") {
+    GTEST_SKIP() << "the native resolver doesn't support cancellation, so we "
+                    "can only test this with c-ares";
+  }
+  // Inject an unresponsive DNS server into the resolver's DNS server config
+  grpc_core::testing::FakeUdpAndTcpServer fake_dns_server(
+      grpc_core::testing::FakeUdpAndTcpServer::AcceptMode::
+          kWaitForClientToSendFirstBytes,
+      grpc_core::testing::FakeUdpAndTcpServer::CloseSocketUponCloseFromPeer);
+  g_fake_non_responsive_dns_server_port = fake_dns_server.port();
+  grpc_ares_test_only_inject_config = InjectNonResponsiveDNSServer;
+  {
+    grpc_core::ExecCtx exec_ctx;
+    // Create a pollset_set, destroyed immediately after cancellation
+    std::unique_ptr<PSS> pss = PSS::Create();
+    // Run the test
+    auto request_handle = grpc_core::GetDNSResolver()->ResolveName(
+        "foo.bar.com:1", "1", pss->pollset_set(),
+        absl::bind_front(&ResolveAddressTest::MustNotBeCalled, this));
+    grpc_core::ExecCtx::Get()->Flush();  // initiate DNS requests
+    ASSERT_TRUE(grpc_core::GetDNSResolver()->Cancel(request_handle));
+  }
+  {
+    // let cancellation work finish to ensure the callback is not called
+    grpc_core::ExecCtx ctx;
+    Finish();
+    grpc_core::ExecCtx::Get()->Flush();
+  }
+  PollPollsetUntilRequestDone();
+  absl::SleepFor(absl::Seconds(1));
+}
+
 int main(int argc, char** argv) {
   // Configure the DNS resolver (c-ares vs. native) based on the
   // name of the binary. TODO(apolcyn): is there a way to pass command
