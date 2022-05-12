@@ -201,6 +201,8 @@ GRPC_PUBLIC_EVENT_ENGINE_HDRS = [
     "include/grpc/event_engine/memory_allocator.h",
     "include/grpc/event_engine/memory_request.h",
     "include/grpc/event_engine/internal/memory_allocator_impl.h",
+    "include/grpc/event_engine/slice.h",
+    "include/grpc/event_engine/slice_buffer.h",
 ]
 
 GRPCXX_SRCS = [
@@ -775,6 +777,22 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "examine_stack",
+    srcs = [
+        "src/core/lib/gprpp/examine_stack.cc",
+    ],
+    hdrs = [
+        "src/core/lib/gprpp/examine_stack.h",
+    ],
+    external_deps = [
+        "absl/types:optional",
+    ],
+    deps = [
+        "gpr_platform",
+    ],
+)
+
+grpc_cc_library(
     name = "gpr_base",
     srcs = [
         "src/core/lib/gpr/alloc.cc",
@@ -808,7 +826,6 @@ grpc_cc_library(
         "src/core/lib/gpr/tmpfile_posix.cc",
         "src/core/lib/gpr/tmpfile_windows.cc",
         "src/core/lib/gpr/wrap_memcpy.cc",
-        "src/core/lib/gprpp/examine_stack.cc",
         "src/core/lib/gprpp/fork.cc",
         "src/core/lib/gprpp/global_config_env.cc",
         "src/core/lib/gprpp/host_port.cc",
@@ -831,7 +848,6 @@ grpc_cc_library(
         "src/core/lib/gpr/string_windows.h",
         "src/core/lib/gpr/time_precise.h",
         "src/core/lib/gpr/tmpfile.h",
-        "src/core/lib/gprpp/examine_stack.h",
         "src/core/lib/gprpp/fork.h",
         "src/core/lib/gprpp/global_config.h",
         "src/core/lib/gprpp/global_config_custom.h",
@@ -868,6 +884,7 @@ grpc_cc_library(
     deps = [
         "construct_destruct",
         "debug_location",
+        "examine_stack",
         "google_rpc_status_upb",
         "gpr_codegen",
         "gpr_tls",
@@ -1646,6 +1663,7 @@ grpc_cc_library(
         "src/core/lib/slice/slice_string_helpers.cc",
     ],
     hdrs = [
+        "include/grpc/slice.h",
         "src/core/lib/slice/slice.h",
         "src/core/lib/slice/slice_internal.h",
         "src/core/lib/slice/slice_string_helpers.h",
@@ -1653,6 +1671,22 @@ grpc_cc_library(
     deps = [
         "gpr_base",
         "ref_counted",
+        "slice_refcount",
+    ],
+)
+
+grpc_cc_library(
+    name = "slice_buffer",
+    srcs = [
+        "src/core/lib/slice/slice_buffer.cc",
+    ],
+    hdrs = [
+        "include/grpc/slice_buffer.h",
+        "src/core/lib/slice/slice_buffer.h",
+    ],
+    deps = [
+        "gpr_base",
+        "slice",
         "slice_refcount",
     ],
 )
@@ -1832,6 +1866,7 @@ grpc_cc_library(
     ],
     deps = [
         "default_event_engine_factory_hdrs",
+        "event_engine_base_hdrs",
         "gpr_base",
     ],
 )
@@ -1840,6 +1875,8 @@ grpc_cc_library(
     name = "event_engine_common",
     srcs = [
         "src/core/lib/event_engine/resolved_address.cc",
+        "src/core/lib/event_engine/slice.cc",
+        "src/core/lib/event_engine/slice_buffer.cc",
     ],
     hdrs = [
         "src/core/lib/event_engine/handle_containers.h",
@@ -1850,6 +1887,10 @@ grpc_cc_library(
     deps = [
         "event_engine_base_hdrs",
         "gpr_base",
+        "gpr_platform",
+        "ref_counted",
+        "slice",
+        "slice_refcount",
     ],
 )
 
@@ -2009,7 +2050,7 @@ grpc_cc_library(
         "src/core/lib/slice/b64.cc",
         "src/core/lib/slice/percent_encoding.cc",
         "src/core/lib/slice/slice_api.cc",
-        "src/core/lib/slice/slice_buffer.cc",
+        "src/core/lib/slice/slice_buffer_api.cc",
         "src/core/lib/slice/slice_split.cc",
         "src/core/lib/surface/api_trace.cc",
         "src/core/lib/surface/builtins.cc",
@@ -2243,6 +2284,7 @@ grpc_cc_library(
         "resource_quota",
         "resource_quota_trace",
         "slice",
+        "slice_buffer",
         "slice_refcount",
         "sockaddr_utils",
         "table",
@@ -4628,22 +4670,42 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "tsi_ssl_session_cache",
+    srcs = [
+        "src/core/tsi/ssl/session_cache/ssl_session_boringssl.cc",
+        "src/core/tsi/ssl/session_cache/ssl_session_cache.cc",
+        "src/core/tsi/ssl/session_cache/ssl_session_openssl.cc",
+    ],
+    hdrs = [
+        "src/core/tsi/ssl/session_cache/ssl_session.h",
+        "src/core/tsi/ssl/session_cache/ssl_session_cache.h",
+    ],
+    external_deps = [
+        "absl/strings",
+        "absl/memory",
+        "libssl",
+        "libcrypto",
+    ],
+    language = "c++",
+    visibility = ["@grpc:public"],
+    deps = [
+        "gpr_base",
+        "grpc_base",
+    ],
+)
+
+grpc_cc_library(
     name = "tsi_ssl_credentials",
     srcs = [
         "src/core/lib/security/security_connector/ssl_utils.cc",
         "src/core/lib/security/security_connector/ssl_utils_config.cc",
         "src/core/tsi/ssl/key_logging/ssl_key_logging.cc",
-        "src/core/tsi/ssl/session_cache/ssl_session_boringssl.cc",
-        "src/core/tsi/ssl/session_cache/ssl_session_cache.cc",
-        "src/core/tsi/ssl/session_cache/ssl_session_openssl.cc",
         "src/core/tsi/ssl_transport_security.cc",
     ],
     hdrs = [
         "src/core/lib/security/security_connector/ssl_utils.h",
         "src/core/lib/security/security_connector/ssl_utils_config.h",
         "src/core/tsi/ssl/key_logging/ssl_key_logging.h",
-        "src/core/tsi/ssl/session_cache/ssl_session.h",
-        "src/core/tsi/ssl/session_cache/ssl_session_cache.h",
         "src/core/tsi/ssl_transport_security.h",
     ],
     external_deps = [
@@ -4662,6 +4724,7 @@ grpc_cc_library(
         "grpc_transport_chttp2_alpn",
         "ref_counted_ptr",
         "tsi_base",
+        "tsi_ssl_session_cache",
         "tsi_ssl_types",
         "useful",
     ],

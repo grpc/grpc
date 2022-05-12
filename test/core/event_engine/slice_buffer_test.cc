@@ -14,8 +14,6 @@
 
 #include <grpc/support/port_platform.h>
 
-#include "src/core/lib/slice/slice_buffer.h"
-
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
@@ -25,8 +23,8 @@
 #include "src/core/lib/slice/slice.h"
 #include "test/core/util/test_config.h"
 
-using ::grpc_core::Slice;
-using ::grpc_core::SliceBuffer;
+using ::grpc_event_engine::experimental::Slice;
+using ::grpc_event_engine::experimental::SliceBuffer;
 
 static constexpr int kNewSliceLength = 100;
 

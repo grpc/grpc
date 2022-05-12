@@ -492,7 +492,6 @@ def targets():
         RubyArtifact('linux', 'x86-linux', presubmit=True),
         RubyArtifact('linux', 'x86_64-darwin', presubmit=True),
         RubyArtifact('linux', 'arm64-darwin', presubmit=True),
-        RubyArtifact('macos', 'darwin', presubmit=True),
         PHPArtifact('linux', 'x64', presubmit=True),
         PHPArtifact('macos', 'x64', presubmit=True),
     ])

@@ -15,12 +15,14 @@
 
 #include "src/core/lib/event_engine/channel_args_endpoint_config.h"
 
+#include <string>
+
+#include "absl/types/variant.h"
+
 #include <grpc/event_engine/endpoint_config.h>
 #include <grpc/impl/codegen/grpc_types.h>
-#include <grpc/impl/codegen/log.h>
 
 #include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/gpr/useful.h"
 
 namespace grpc_event_engine {
 namespace experimental {
