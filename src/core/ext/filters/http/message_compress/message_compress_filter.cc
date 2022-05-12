@@ -111,9 +111,9 @@ class CallData {
                                   grpc_metadata_batch* initial_metadata);
 
   // Methods for processing a send_message batch
+  static void FailSendMessageBatchInCallCombiner(void* calld_arg,
+                                                 grpc_error_handle error);
   static void ForwardSendMessageBatch(void* elem_arg, grpc_error_handle unused);
-
-  static void SendMessageOnComplete(void* calld_arg, grpc_error_handle error);
 
   grpc_core::CallCombiner* call_combiner_;
   grpc_compression_algorithm compression_algorithm_ = GRPC_COMPRESS_NONE;
@@ -163,7 +163,7 @@ void CallData::FinishSendMessage(grpc_call_element* elem) {
   GPR_DEBUG_ASSERT(compression_algorithm_ != GRPC_COMPRESS_NONE);
   // Compress the data if appropriate.
   grpc_core::SliceBuffer tmp;
-  uint32_t send_flags = send_message_batch_->payload->send_message.flags;
+  uint32_t& send_flags = send_message_batch_->payload->send_message.flags;
   grpc_core::SliceBuffer* payload =
       send_message_batch_->payload->send_message.send_message;
   bool did_compress = grpc_msg_compress(
@@ -199,6 +199,24 @@ void CallData::FinishSendMessage(grpc_call_element* elem) {
   grpc_call_next_op(elem, absl::exchange(send_message_batch_, nullptr));
 }
 
+void CallData::FailSendMessageBatchInCallCombiner(void* calld_arg,
+                                                  grpc_error_handle error) {
+  CallData* calld = static_cast<CallData*>(calld_arg);
+  if (calld->send_message_batch_ != nullptr) {
+    grpc_transport_stream_op_batch_finish_with_failure(
+        calld->send_message_batch_, GRPC_ERROR_REF(error),
+        calld->call_combiner_);
+    calld->send_message_batch_ = nullptr;
+  }
+}
+
+void CallData::ForwardSendMessageBatch(void* elem_arg,
+                                       grpc_error_handle /*unused*/) {
+  grpc_call_element* elem = static_cast<grpc_call_element*>(elem_arg);
+  CallData* calld = static_cast<CallData*>(elem->call_data);
+  calld->FinishSendMessage(elem);
+}
+
 void CallData::CompressStartTransportStreamOpBatch(
     grpc_call_element* elem, grpc_transport_stream_op_batch* batch) {
   GPR_TIMER_SCOPE("compress_start_transport_stream_op_batch", 0);
@@ -213,9 +231,6 @@ void CallData::CompressStartTransportStreamOpBatch(
             GRPC_CLOSURE_CREATE(FailSendMessageBatchInCallCombiner, this,
                                 grpc_schedule_on_exec_ctx),
             GRPC_ERROR_REF(cancel_error_), "failing send_message op");
-      } else {
-        send_message_batch_->payload->send_message.send_message->Shutdown(
-            GRPC_ERROR_REF(cancel_error_));
       }
     }
   } else if (cancel_error_ != GRPC_ERROR_NONE) {
