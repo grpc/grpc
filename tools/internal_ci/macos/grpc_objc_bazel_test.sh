@@ -75,10 +75,12 @@ INTEROP_SERVER_BINARY=bazel-bin/test/cpp/interop/interop_server
 trap 'echo "KILLING interop_server binaries running on the background"; kill -9 $(jobs -p)' EXIT
 # === END SECTION: run interop_server on the background ====
 
-# TODO(jtattermusch): set GRPC_VERBOSITY=debug when running tests on a simulator (how to do that?)
-
 python3 tools/run_tests/python_utils/bazel_report_helper.py --report_path objc_bazel_tests
 
+# NOTE: When using bazel to run the tests, test env variables like GRPC_VERBOSITY or GRPC_TRACE
+# seem to be correctly applied to the test environment even when running tests on a simulator.
+# The below configuration runs all the tests with --test_env=GRPC_VERBOSITY=debug, which makes
+# the test logs much more useful.
 objc_bazel_tests/bazel_wrapper \
   --bazelrc=tools/remote_build/include/test_locally_with_resultstore_results.bazelrc \
   test \
