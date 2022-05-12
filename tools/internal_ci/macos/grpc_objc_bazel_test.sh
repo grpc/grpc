@@ -47,7 +47,8 @@ EXAMPLE_TARGETS=(
 TEST_TARGETS=(
   # TODO(jtattermusch): ideally we'd say "//src/objective-c/tests/..." but not all the targets currently build
   # TODO(jtattermusch): make //src/objective-c/tests:TvTests build reliably
-  # TODO(jtattermusch): make //src/objective-c/tests:MacTests build reliably
+  //src/objective-c/tests:InteropTests
+  //src/objective-c/tests:MacTests
   //src/objective-c/tests:UnitTests
 )
 
