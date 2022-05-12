@@ -122,9 +122,6 @@ TEST_P(OutlierDetectionTest, SuccessRateEjectionAndUnejection) {
   ResetBackendCounters();
   CheckRpcSendOk(DEBUG_LOCATION, 100, rpc_options);
   CheckRpcSendOk(DEBUG_LOCATION, 100, rpc_options1);
-  gpr_log(GPR_INFO, "back end 0 gets %d 1 gets %d",
-          backends_[0]->backend_service()->request_count(),
-          backends_[1]->backend_service()->request_count());
   EXPECT_EQ(100, backends_[0]->backend_service()->request_count());
   EXPECT_EQ(100, backends_[1]->backend_service()->request_count());
 }
@@ -222,11 +219,6 @@ TEST_P(OutlierDetectionTest, SuccessRateMaxPercent) {
       GPR_ASSERT(1);
     }
   }
-  gpr_log(GPR_INFO, "donna backend 1 %d 2 %d 3 %d and 4 %d",
-          backends_[0]->backend_service()->request_count(),
-          backends_[1]->backend_service()->request_count(),
-          backends_[2]->backend_service()->request_count(),
-          backends_[3]->backend_service()->request_count());
   EXPECT_EQ(1, empty_load_backend_count);
   EXPECT_EQ(1, double_load_backend_count);
   EXPECT_EQ(2, regular_load_backend_count);
@@ -574,9 +566,6 @@ TEST_P(OutlierDetectionTest, FailurePercentEjectionAndUnejection) {
   ResetBackendCounters();
   CheckRpcSendOk(DEBUG_LOCATION, 100, rpc_options);
   CheckRpcSendOk(DEBUG_LOCATION, 100, rpc_options1);
-  gpr_log(GPR_INFO, "back end 0 gets %d 1 gets %d",
-          backends_[0]->backend_service()->request_count(),
-          backends_[1]->backend_service()->request_count());
   EXPECT_EQ(100, backends_[0]->backend_service()->request_count());
   EXPECT_EQ(100, backends_[1]->backend_service()->request_count());
 }
@@ -672,11 +661,6 @@ TEST_P(OutlierDetectionTest, FailurePercentageMaxPercentage) {
       GPR_ASSERT(1);
     }
   }
-  gpr_log(GPR_INFO, "donna backend 1 %d 2 %d 3 %d and 4 %d",
-          backends_[0]->backend_service()->request_count(),
-          backends_[1]->backend_service()->request_count(),
-          backends_[2]->backend_service()->request_count(),
-          backends_[3]->backend_service()->request_count());
   EXPECT_EQ(1, empty_load_backend_count);
   EXPECT_EQ(1, double_load_backend_count);
   EXPECT_EQ(2, regular_load_backend_count);
@@ -1069,12 +1053,6 @@ TEST_P(OutlierDetectionTest, SuccessRateAndFailurePercentage) {
       GPR_ASSERT(1);
     }
   }
-  gpr_log(GPR_INFO,
-          "donna backend 0 %d and backend 1 %di backend 2 %d and backend 3 %d",
-          backends_[0]->backend_service()->request_count(),
-          backends_[1]->backend_service()->request_count(),
-          backends_[2]->backend_service()->request_count(),
-          backends_[3]->backend_service()->request_count());
   EXPECT_EQ(2, empty_load_backend_count);
   EXPECT_EQ(2, double_load_backend_count);
 }
