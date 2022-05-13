@@ -68,7 +68,6 @@
 #include "src/core/lib/service_config/service_config.h"
 #include "src/core/lib/service_config/service_config_call_data.h"
 #include "src/core/lib/slice/slice_refcount.h"
-#include "src/core/lib/transport/byte_stream.h"
 #include "src/core/lib/transport/error_utils.h"
 #include "src/core/lib/transport/metadata_batch.h"
 #include "src/core/lib/transport/transport.h"
@@ -457,9 +456,6 @@ class RetryFilter::CallData {
     grpc_transport_stream_op_batch_payload batch_payload_;
     // For send_initial_metadata.
     grpc_metadata_batch send_initial_metadata_{calld_->arena_};
-    // For send_message.
-    // TODO(roth): Restructure this to eliminate use of ManualConstructor.
-    ManualConstructor<ByteStreamCache::CachingByteStream> send_message_;
     // For send_trailing_metadata.
     grpc_metadata_batch send_trailing_metadata_{calld_->arena_};
     // For intercepting recv_initial_metadata.
@@ -468,7 +464,7 @@ class RetryFilter::CallData {
     bool trailing_metadata_available_ = false;
     // For intercepting recv_message.
     grpc_closure recv_message_ready_;
-    OrphanablePtr<ByteStream> recv_message_;
+    absl::optional<SliceBuffer> recv_message_;
     // For intercepting recv_trailing_metadata.
     grpc_metadata_batch recv_trailing_metadata_{calld_->arena_};
     grpc_transport_stream_stats collect_stats_;
@@ -629,11 +625,7 @@ class RetryFilter::CallData {
   // Note: We inline the cache for the first 3 send_message ops and use
   // dynamic allocation after that.  This number was essentially picked
   // at random; it could be changed in the future to tune performance.
-  // TODO(roth): As part of implementing hedging, we may need some
-  // synchronization here, since ByteStreamCache does not provide any
-  // synchronization, so it's not safe to have multiple
-  // CachingByteStreams read from the same ByteStreamCache concurrently.
-  absl::InlinedVector<ByteStreamCache*, 3> send_messages_;
+  absl::InlinedVector<SliceBuffer*, 3> send_messages_;
   // send_trailing_metadata
   bool seen_send_trailing_metadata_ = false;
   grpc_metadata_batch send_trailing_metadata_{arena_};
@@ -1556,7 +1548,7 @@ void RetryFilter::CallData::CallAttempt::BatchData::RecvMessageReady(
     // the recv_trailing_metadata_ready callback, then defer propagating this
     // callback back to the surface.  We can evaluate whether to retry when
     // recv_trailing_metadata comes back.
-    if (GPR_UNLIKELY((call_attempt->recv_message_ == nullptr ||
+    if (GPR_UNLIKELY((!call_attempt->recv_message_.has_value() ||
                       error != GRPC_ERROR_NONE) &&
                      !call_attempt->completed_recv_trailing_metadata_)) {
       if (GRPC_TRACE_FLAG_ENABLED(grpc_retry_trace)) {
@@ -2030,13 +2022,11 @@ void RetryFilter::CallData::CallAttempt::BatchData::
         calld->chand_, calld, call_attempt_.get(),
         call_attempt_->started_send_message_count_);
   }
-  ByteStreamCache* cache =
+  SliceBuffer* cache =
       calld->send_messages_[call_attempt_->started_send_message_count_];
   ++call_attempt_->started_send_message_count_;
-  call_attempt_->send_message_.Init(cache);
   batch_.send_message = true;
-  batch_.payload->send_message.send_message.reset(
-      call_attempt_->send_message_.get());
+  batch_.payload->send_message.send_message = cache;
 }
 
 void RetryFilter::CallData::CallAttempt::BatchData::
@@ -2373,8 +2363,8 @@ void RetryFilter::CallData::MaybeCacheSendOpsForBatch(PendingBatch* pending) {
   }
   // Set up cache for send_message ops.
   if (batch->send_message) {
-    ByteStreamCache* cache = arena_->New<ByteStreamCache>(
-        std::move(batch->payload->send_message.send_message));
+    SliceBuffer* cache = arena_->New<SliceBuffer>(
+        std::move(*batch->payload->send_message.send_message));
     send_messages_.push_back(cache);
   }
   // Save metadata batch for send_trailing_metadata ops.
@@ -2401,8 +2391,7 @@ void RetryFilter::CallData::FreeCachedSendMessage(size_t idx) {
               "chand=%p calld=%p: destroying send_messages[%" PRIuPTR "]",
               chand_, this, idx);
     }
-    send_messages_[idx]->Destroy();
-    send_messages_[idx] = nullptr;
+    absl::exchange(send_messages_[idx], nullptr)->~SliceBuffer();
   }
 }
 
@@ -2466,7 +2455,7 @@ RetryFilter::CallData::PendingBatch* RetryFilter::CallData::PendingBatchesAdd(
   if (batch->send_message) {
     pending_send_message_ = true;
     bytes_buffered_for_retry_ +=
-        batch->payload->send_message.send_message->length();
+        batch->payload->send_message.send_message->Length();
   }
   if (batch->send_trailing_metadata) {
     pending_send_trailing_metadata_ = true;

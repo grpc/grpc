@@ -518,7 +518,7 @@ class ClientChannel::LoadBalancedCall
   grpc_closure* original_recv_initial_metadata_ready_ = nullptr;
 
   // For intercepting recv_message_ready.
-  SliceBuffer* recv_message_ = nullptr;
+  absl::optional<SliceBuffer>* recv_message_ = nullptr;
   grpc_closure recv_message_ready_;
   grpc_closure* original_recv_message_ready_ = nullptr;
 
