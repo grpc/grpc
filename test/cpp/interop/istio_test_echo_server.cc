@@ -1,20 +1,18 @@
-/*
- *
- * Copyright 2022 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+// Copyright 2022 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
 
 #include <algorithm>
 #include <atomic>
@@ -31,6 +29,7 @@
 
 #include "absl/algorithm/container.h"
 #include "absl/flags/flag.h"
+#include "absl/strings/str_join.h"
 #include "absl/strings/str_split.h"
 
 #include <grpcpp/ext/admin_services.h>
@@ -115,20 +114,20 @@ class EchoTestServiceImpl : public EchoTestService::Service {
 
   Status Echo(ServerContext* context, const EchoRequest* request,
               EchoResponse* response) override {
-    std::stringstream ss;
+    std::string s = "";
 
     const std::multimap<grpc::string_ref, grpc::string_ref> metadata =
         context->client_metadata();
-    for (auto iter = metadata.begin(); iter != metadata.end(); ++iter) {
+    for (const auto& kv : metadata) {
       // Skip all binary headers.
-      size_t isbin = iter->first.find("-bin");
-      if ((isbin != std::string::npos) && (isbin + 4 == iter->first.size())) {
+      size_t isbin = kv.first.find("-bin");
+      if ((isbin != std::string::npos) && (isbin + 4 == kv.first.size())) {
         continue;
       }
-      if (iter->first == ":authority") {
-        ss << host_key << "=" << iter->second << "\n";
+      if (kv.first == ":authority") {
+        absl::StrAppend(&s, host_key, "=", kv.second.data(), "\n");
       } else {
-        ss << iter->first << "=" << iter->second << "\n";
+        absl::StrAppend(&s, kv.first.data() , "=" , kv.second.data() , "\n");
       }
     }
 
@@ -140,15 +139,15 @@ class EchoTestServiceImpl : public EchoTestService::Service {
     //  need to add/remove fields later, if required by tests. Only keep the
     //  fields needed for now.
     //
-    //    ss << service_version_field << "=" << this->version_ << "\n";
-    //    ss << service_port_field << "=" << this->port_ << "\n";
-    //    ss << cluster_field << "=" << this->cluster_ << "\n";
-    //    ss << istio_version_field << "=" << this->istio_version_ << "\n";
-    ss << ip_field << "=" << ip << "\n";
-    ss << status_code_field << "=" << 200 << "\n";
-    ss << hostname_field << "=" << this->hostname_ << "\n";
-    ss << "Echo=" << request->message() << "\n";
-    response->set_message(ss.str());
+    //    absl::StrAppend(&s,service_version_field , "=" , this->version_ , "\n");
+    //    absl::StrAppend(&s,service_port_field , "=" , this->port_ , "\n");
+    //    absl::StrAppend(&s,cluster_field , "=" , this->cluster_ , "\n");
+    //    absl::StrAppend(&s,istio_version_field , "=" , this->istio_version_ , "\n");
+    absl::StrAppend(&s, ip_field , "=" , ip , "\n");
+    absl::StrAppend(&s, status_code_field , "=" , std::to_string(200) , "\n");
+    absl::StrAppend(&s, hostname_field , "=" , this->hostname_ , "\n");
+    absl::StrAppend(&s, "Echo=" , request->message() ,"\n");
+    response->set_message(s);
     return Status::OK;
   }
 
@@ -221,7 +220,7 @@ class EchoTestServiceImpl : public EchoTestService::Service {
     }
     thread_.join();
 
-    for (auto r : responses_) {
+    for (const auto& r : responses_) {
       response->add_output(r);
     }
     return Status::OK;
@@ -236,16 +235,15 @@ class EchoTestServiceImpl : public EchoTestService::Service {
       EchoCall* call = static_cast<EchoCall*>(got_tag);
       GPR_ASSERT(ok);
 
-      std::stringstream ss;
+      std::string s;
       if (call->status.ok()) {
-        ss << "[" << call->r_id << "] grpcecho.Echo(" << call->request.message()
-           << ")" << std::endl;
+        absl::StrAppend(&s, "[" , call->r_id , "] grpcecho.Echo(" , call->request.message() , ")\n");
         std::stringstream resp_ss(call->reply.message());
         std::string line;
         while (std::getline(resp_ss, line, '\n')) {
-          ss << "[" << call->r_id << " body] " << line << std::endl;
+          absl::StrAppend(&s, "[" , call->r_id , " body]\n");
         }
-        responses_->at(call->r_id) = ss.str();
+        responses_->at(call->r_id) = s;
       } else
         gpr_log(GPR_DEBUG, "RPC failed %d: %s", call->status.error_code(),
                 call->status.error_message().c_str());
@@ -320,17 +318,15 @@ int main(int argc, char** argv) {
   // Keep the command itself.
   new_argv_strs.push_back(argv[0]);
 
-  for (std::map<std::string, std::vector<std::string>>::const_iterator it =
-           argv_dict.begin();
-       it != argv_dict.end(); ++it) {
+  for (const auto& kv: argv_dict) {
     std::string values;
-    for (const auto& s : it->second) {
+    for (const auto& s : kv.second) {
       if (!values.empty()) values += ",";
       values += s;
     }
 
     // replace '-' to '_', excluding the leading "--".
-    std::string f = it->first;
+    std::string f = kv.first;
     std::replace(f.begin() + 2, f.end(), '-', '_');
 
     std::string k_vs = f + "=" + values;
@@ -349,7 +345,7 @@ int main(int argc, char** argv) {
 
   // Turn gRPC ports from a string vector to an int vector.
   std::vector<int> grpc_ports;
-  for (std::string p : absl::GetFlag(FLAGS_grpc)) {
+  for (const auto& p : absl::GetFlag(FLAGS_grpc)) {
     int grpc_port = std::stoi(p);
     grpc_ports.push_back(grpc_port);
   }
