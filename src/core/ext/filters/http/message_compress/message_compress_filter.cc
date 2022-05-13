@@ -160,7 +160,6 @@ void CallData::ProcessSendInitialMetadata(
 }
 
 void CallData::FinishSendMessage(grpc_call_element* elem) {
-  GPR_DEBUG_ASSERT(compression_algorithm_ != GRPC_COMPRESS_NONE);
   // Compress the data if appropriate.
   grpc_core::SliceBuffer tmp;
   uint32_t& send_flags = send_message_batch_->payload->send_message.flags;
