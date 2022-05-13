@@ -10,15 +10,25 @@ jobs:
         id: current-time
         with:
           format: YYYYWW
+      - name: Get current time
+        uses: srfrnk/current-time@master
+        id: current-time-with-day
+        with:
+          format: YYYYWWd
       - name: Cache bazel
         uses: actions/cache@v3
         env:
           cache-name: bazel-cache
         with:
           path: ~/.cache/bazel
-          # formattedTime here is like 202132 - the year concatenated with the week
-          # as this changes every week, we cycle to a new cache once per week.
-          key: ${{ runner.os }}-${{ steps.current-time.outputs.formattedTime }}
+          # formattedTime here is like 2021323 - the year concatenated with the week then
+          # the day of that week.
+          # As this changes every day, we cycle to a new cache once per day, with lookup 
+          # across the week (and then the year).
+          key: ${{ runner.os }}-${{ steps.current-time-with-day.outputs.formattedTime }}
+          restore-keys: |
+            ${{ runner.os }}-${{ steps.current-time.outputs.formattedTime }}
+            ${{ runner.os }}-
       # Cancel current runs if they're still running
       # (saves processing on fast pushes)
       - name: Cancel Previous Runs
