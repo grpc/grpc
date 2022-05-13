@@ -239,7 +239,11 @@ TEST_P(OutlierDetectionTest, SuccessRateStdevFactor) {
   interval->set_nanos(100000000 * grpc_test_slowdown_factor());
   base_time->set_seconds(1 * grpc_test_slowdown_factor());
   // We know a stdev factor of 100 will ensure the ejection occurs, so setting
-  // it to something higher to test that ejection will not occur.
+  // it to something higher like 1000 to test that ejection will not occur.
+  // Note this parameter is the only difference between this test and
+  // SuccessRateEjectionAndUnejection (ejection portion, value set to 100) and
+  // this one value changes means the difference between not ejecting in this
+  // test and ejecting in the other test.
   cluster.mutable_outlier_detection()
       ->mutable_success_rate_stdev_factor()
       ->set_value(1000);
@@ -299,9 +303,6 @@ TEST_P(OutlierDetectionTest, SuccessRateEnforcementPercentage) {
   CreateAndStartBackends(2);
   auto cluster = default_cluster_;
   cluster.set_lb_policy(Cluster::RING_HASH);
-  // Setup outlier failure percentage parameters.
-  // Any failure will cause an potential ejection with the probability of 100%
-  // (to eliminate flakiness of the test).
   auto* interval = cluster.mutable_outlier_detection()->mutable_interval();
   auto* base_time =
       cluster.mutable_outlier_detection()->mutable_base_ejection_time();
@@ -311,6 +312,10 @@ TEST_P(OutlierDetectionTest, SuccessRateEnforcementPercentage) {
       ->mutable_success_rate_stdev_factor()
       ->set_value(100);
   // Setting enforcing_success_rate to 0 to ensure we will never eject.
+  // Note this parameter is the only difference between this test and
+  // SuccessRateEjectionAndUnejection (ejection portion, value set to 100) and
+  // this one value changes means the difference between guaranteed not ejecting
+  // in this test and guaranteed ejecting in the other test.
   cluster.mutable_outlier_detection()
       ->mutable_enforcing_success_rate()
       ->set_value(0);
@@ -378,6 +383,10 @@ TEST_P(OutlierDetectionTest, SuccessRateMinimumHosts) {
       ->mutable_enforcing_success_rate()
       ->set_value(100);
   // Set success_rate_minimum_hosts to 3 when we only have 2 backends
+  // Note this parameter is the only difference between this test and
+  // SuccessRateEjectionAndUnejection (ejection portion, value set to 1) and
+  // this one value changes means the difference between not ejecting in this
+  // test and ejecting in the other test.
   cluster.mutable_outlier_detection()
       ->mutable_success_rate_minimum_hosts()
       ->set_value(3);
@@ -444,8 +453,12 @@ TEST_P(OutlierDetectionTest, SuccessRateRequestVolume) {
   cluster.mutable_outlier_detection()
       ->mutable_success_rate_minimum_hosts()
       ->set_value(1);
-  // Set success_rate_request_volume to 2 when we only send 3 RPC in the
+  // Set success_rate_request_volume to 4 when we only send 3 RPC in the
   // interval.
+  // Note this parameter is the only difference between this test and
+  // SuccessRateEjectionAndUnejection (ejection portion, value set to 1) and
+  // this one value changes means the difference between not ejecting in this
+  // test and ejecting in the other test.
   cluster.mutable_outlier_detection()
       ->mutable_success_rate_request_volume()
       ->set_value(4);
@@ -488,7 +501,7 @@ TEST_P(OutlierDetectionTest, SuccessRateRequestVolume) {
   EXPECT_EQ(100, backends_[1]->backend_service()->request_count());
 }
 
-// Tests FailurePercentEjectionAndUnejection:
+// Tests FailurePercentageEjectionAndUnejection:
 // 1. Use ring hash policy that hashes using a
 // header value to ensure rpcs go to all backends.
 // 2. Cause a single error on 1
@@ -498,7 +511,7 @@ TEST_P(OutlierDetectionTest, SuccessRateRequestVolume) {
 // should go to 1 other backend.
 // 4. Let the ejection period pass and verify that traffic will again go both
 // backends as we have unejected the backend.
-TEST_P(OutlierDetectionTest, FailurePercentEjectionAndUnejection) {
+TEST_P(OutlierDetectionTest, FailurePercentageEjectionAndUnejection) {
   CreateAndStartBackends(2);
   auto cluster = default_cluster_;
   cluster.set_lb_policy(Cluster::RING_HASH);
@@ -672,15 +685,16 @@ TEST_P(OutlierDetectionTest, FailurePercentageThreshold) {
   CreateAndStartBackends(2);
   auto cluster = default_cluster_;
   cluster.set_lb_policy(Cluster::RING_HASH);
-  // Setup outlier failure percentage parameters.
-  // Any failure will cause an potential ejection with the probability of 100%
-  // (to eliminate flakiness of the test).
   auto* interval = cluster.mutable_outlier_detection()->mutable_interval();
   interval->set_nanos(100000000 * grpc_test_slowdown_factor());
   auto* base_time =
       cluster.mutable_outlier_detection()->mutable_base_ejection_time();
   base_time->set_seconds(1 * grpc_test_slowdown_factor());
-  // Let's set to 50
+  // Setup outlier failure percentage parameter to 50
+  // Note this parameter is the only difference between this test and
+  // FailurePercentageEjectionAndUnejection (ejection portion, value set to 0)
+  // and this one value changes means the difference between not ejecting in
+  // this test and ejecting in the other test.
   cluster.mutable_outlier_detection()
       ->mutable_failure_percentage_threshold()
       ->set_value(50);
@@ -753,6 +767,10 @@ TEST_P(OutlierDetectionTest, FailurePercentageEnforcementPercentage) {
       ->mutable_failure_percentage_threshold()
       ->set_value(0);
   // Setting enforcing_success_rate to 0 to ensure we will never eject.
+  // Note this parameter is the only difference between this test and
+  // FailurePercentageEjectionAndUnejection (ejection portion, value set to 100)
+  // and this one value changes means the difference between guaranteed not
+  // ejecting in this test and guaranteed ejecting in the other test.
   cluster.mutable_outlier_detection()
       ->mutable_enforcing_failure_percentage()
       ->set_value(0);
@@ -821,6 +839,10 @@ TEST_P(OutlierDetectionTest, FailurePercentageMinimumHosts) {
       ->mutable_enforcing_failure_percentage()
       ->set_value(100);
   // Set failure_percentage_minimum_hosts to 3 when we only have 2 backends
+  // Note this parameter is the only difference between this test and
+  // FailurePercentageEjectionAndUnejection (ejection portion, value set to 1)
+  // and this one value changes means the difference between not ejecting in
+  // this test and ejecting in the other test.
   cluster.mutable_outlier_detection()
       ->mutable_failure_percentage_minimum_hosts()
       ->set_value(3);
@@ -891,6 +913,10 @@ TEST_P(OutlierDetectionTest, FailurePercentageRequestVolume) {
       ->set_value(1);
   // Set failure_percentage_request_volume to 4 when we only send 3 RPC in the
   // interval.
+  // // Note this parameter is the only difference between this test and
+  // FailurePercentageEjectionAndUnejection (ejection portion, value set to 1)
+  // and this one value changes means the difference between not ejecting in
+  // this test and ejecting in the other test.
   cluster.mutable_outlier_detection()
       ->mutable_failure_percentage_request_volume()
       ->set_value(4);
@@ -951,6 +977,8 @@ TEST_P(OutlierDetectionTest, SuccessRateAndFailurePercentage) {
   cluster.mutable_outlier_detection()
       ->mutable_max_ejection_percent()
       ->set_value(50);
+  // This stdev of 500 will ensure the number of ok RPC and error RPC we send
+  // will make 1 outlier out of the 4 backends.
   cluster.mutable_outlier_detection()
       ->mutable_success_rate_stdev_factor()
       ->set_value(500);
@@ -1004,9 +1032,13 @@ TEST_P(OutlierDetectionTest, SuccessRateAndFailurePercentage) {
   WaitForBackend(DEBUG_LOCATION, 2, WaitForBackendOptions(), rpc_options2);
   WaitForBackend(DEBUG_LOCATION, 3, WaitForBackendOptions(), rpc_options3);
   // Cause 2 errors on 1 backend and 1 error on 2 backends and wait for 1
-  // outlier detection interval to pass. The 2 errors will make exactly 1
-  // outlier from the success rate algorithm; all errors will make 3 outliers
-  // from the failure pecentage algorithm because the threahold is set to 0.
+  // outlier detection interval to pass. The 2 errors to the 1 backend will make
+  // exactly 1 outlier from the success rate algorithm; all 4 errors will make 3
+  // outliers from the failure pecentage algorithm because the threahold is set
+  // to 0. I have verified through debug logs we eject 1 backend because of
+  // success rate, 1 backend because of failure percentage; but as we attempt to
+  // eject another backend because of failure percentage we will stop as we have
+  // reached our 50% limit.
   CheckRpcSendFailure(
       DEBUG_LOCATION,
       CheckRpcSendFailureOptions()
