@@ -71,7 +71,7 @@ void CensusServerCallData::OnDoneRecvMessageCb(void* user_data,
   GPR_ASSERT(calld != nullptr);
   GPR_ASSERT(channeld != nullptr);
   // Stream messages are no longer valid after receiving trailing metadata.
-  if ((*calld->recv_message_) != nullptr) {
+  if (calld->recv_message_->has_value()) {
     ++calld->recv_message_count_;
   }
   grpc_core::Closure::Run(DEBUG_LOCATION, calld->initial_on_done_recv_message_,

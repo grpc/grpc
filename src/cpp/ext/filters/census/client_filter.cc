@@ -114,12 +114,12 @@ void OpenCensusCallTracer::OpenCensusCallAttemptTracer::
 }
 
 void OpenCensusCallTracer::OpenCensusCallAttemptTracer::RecordSendMessage(
-    const grpc_core::ByteStream& /*send_message*/) {
+    const grpc_core::SliceBuffer& /*send_message*/) {
   ++sent_message_count_;
 }
 
 void OpenCensusCallTracer::OpenCensusCallAttemptTracer::RecordReceivedMessage(
-    const grpc_core::ByteStream& /*recv_message*/) {
+    const grpc_core::SliceBuffer& /*recv_message*/) {
   ++recv_message_count_;
 }
 

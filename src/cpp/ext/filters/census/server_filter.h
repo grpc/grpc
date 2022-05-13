@@ -87,7 +87,7 @@ class CensusServerCallData : public CallData {
   grpc_closure on_done_recv_message_;
   absl::Time start_time_;
   absl::Duration elapsed_time_;
-  grpc_core::OrphanablePtr<grpc_core::ByteStream>* recv_message_;
+  absl::optional<grpc_core::SliceBuffer>* recv_message_;
   uint64_t recv_message_count_;
   uint64_t sent_message_count_;
   // Buffer needed for grpc_slice to reference it when adding metatdata to

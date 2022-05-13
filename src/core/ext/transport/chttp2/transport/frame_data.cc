@@ -199,7 +199,6 @@ grpc_error_handle grpc_deframe_unprocessed_incoming_frames(
         }
         return GRPC_ERROR_NONE;
       case GRPC_CHTTP2_DATA_FRAME: {
-        GPR_ASSERT(slice_out != nullptr);
         if (cur == end) {
           grpc_slice_buffer_remove_first(slices);
           continue;
