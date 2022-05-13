@@ -19,6 +19,8 @@
 
 #include <string.h>
 
+#include <string>
+
 #include <grpc/slice.h>
 #include <grpc/slice_buffer.h>
 

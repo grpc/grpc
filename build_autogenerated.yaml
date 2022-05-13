@@ -935,7 +935,6 @@ libs:
   - src/core/lib/surface/server.h
   - src/core/lib/surface/validate_metadata.h
   - src/core/lib/transport/bdp_estimator.h
-  - src/core/lib/transport/byte_stream.h
   - src/core/lib/transport/connectivity_state.h
   - src/core/lib/transport/error_utils.h
   - src/core/lib/transport/handshaker.h
@@ -1609,7 +1608,6 @@ libs:
   - src/core/lib/surface/validate_metadata.cc
   - src/core/lib/surface/version.cc
   - src/core/lib/transport/bdp_estimator.cc
-  - src/core/lib/transport/byte_stream.cc
   - src/core/lib/transport/connectivity_state.cc
   - src/core/lib/transport/error_utils.cc
   - src/core/lib/transport/handshaker.cc
@@ -2102,7 +2100,6 @@ libs:
   - src/core/lib/surface/server.h
   - src/core/lib/surface/validate_metadata.h
   - src/core/lib/transport/bdp_estimator.h
-  - src/core/lib/transport/byte_stream.h
   - src/core/lib/transport/connectivity_state.h
   - src/core/lib/transport/error_utils.h
   - src/core/lib/transport/handshaker.h
@@ -2422,7 +2419,6 @@ libs:
   - src/core/lib/surface/validate_metadata.cc
   - src/core/lib/surface/version.cc
   - src/core/lib/transport/bdp_estimator.cc
-  - src/core/lib/transport/byte_stream.cc
   - src/core/lib/transport/connectivity_state.cc
   - src/core/lib/transport/error_utils.cc
   - src/core/lib/transport/handshaker.cc
@@ -4779,16 +4775,6 @@ targets:
   - test/cpp/util/byte_buffer_test.cc
   deps:
   - grpc++_test_util
-  uses_polling: false
-- name: byte_stream_test
-  gtest: true
-  build: test
-  language: c++
-  headers: []
-  src:
-  - test/core/transport/byte_stream_test.cc
-  deps:
-  - grpc_test_util
   uses_polling: false
 - name: call_finalization_test
   gtest: true
