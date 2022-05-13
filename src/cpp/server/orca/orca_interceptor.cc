@@ -17,7 +17,6 @@
 #include "src/cpp/server/orca/orca_interceptor.h"
 
 #include <grpcpp/ext/call_metric_recorder.h>
-#include <grpcpp/ext/orca_load_reporter.h>
 #include <grpcpp/server_builder.h>
 
 #include "src/core/lib/transport/metadata_batch.h"
@@ -54,7 +53,7 @@ void grpc::experimental::OrcaServerInterceptorFactory::Register(
       absl::make_unique<OrcaServerInterceptorFactory>());
 }
 
-void grpc::experimental::RegisterCallMetricLoadReporter(
+void grpc::experimental::EnableCallMetricRecording(
     grpc::ServerBuilder* builder) {
   grpc::experimental::OrcaServerInterceptorFactory::Register(builder);
 }

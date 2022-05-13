@@ -5375,9 +5375,6 @@ grpc_cc_library(
         "absl/memory",
     ],
     language = "c++",
-    public_hdrs = [
-        "include/grpcpp/ext/orca_load_reporter.h",
-    ],
     visibility = ["@grpc:public"],
     deps = [
         "grpc++",

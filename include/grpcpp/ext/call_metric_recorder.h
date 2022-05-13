@@ -33,9 +33,17 @@ struct BackendMetricData;
 }
 
 namespace grpc {
+class ServerBuilder;
 
 namespace experimental {
 class OrcaServerInterceptor;
+
+// Registers the per-rpc orca load reporter into the \a ServerBuilder.
+// Once this is done, the server will automatically send the load metrics
+// after each RPC as they were reported. In order to report load metrics,
+// call the \a ServerContext::ExperimentalGetCallMetricRecorder() method to
+// retrieve the recorder for the current call.
+void EnableCallMetricRecording(ServerBuilder*);
 
 /// Records call metrics for the purpose of load balancing.
 /// During an RPC, call \a ServerContext::ExperimentalGetCallMetricRecorder()

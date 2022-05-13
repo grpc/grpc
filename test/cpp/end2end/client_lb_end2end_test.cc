@@ -38,7 +38,6 @@
 #include <grpcpp/client_context.h>
 #include <grpcpp/create_channel.h>
 #include <grpcpp/ext/call_metric_recorder.h>
-#include <grpcpp/ext/orca_load_reporter.h>
 #include <grpcpp/ext/orca_service.h>
 #include <grpcpp/health_check_service_interface.h>
 #include <grpcpp/impl/codegen/sync.h>
@@ -383,7 +382,7 @@ class ClientLbEnd2endTest : public ::testing::Test {
       std::ostringstream server_address;
       server_address << server_host << ":" << port_;
       ServerBuilder builder;
-      experimental::RegisterCallMetricLoadReporter(&builder);
+      experimental::EnableCallMetricRecording(&builder);
       std::shared_ptr<ServerCredentials> creds(new SecureServerCredentials(
           grpc_fake_transport_security_server_credentials_create()));
       builder.AddListeningPort(server_address.str(), std::move(creds));
@@ -2162,7 +2161,6 @@ TEST_F(ClientLbInterceptTrailingMetadataTest, BackendMetricData) {
   xds::data::orca::v3::OrcaLoadReport load_report;
   load_report.set_cpu_utilization(0.5);
   load_report.set_mem_utilization(0.75);
-  load_report.set_rps(25);
   auto* request_cost = load_report.mutable_request_cost();
   (*request_cost)["foo"] = 0.8;
   (*request_cost)["bar"] = 1.4;
@@ -2182,7 +2180,6 @@ TEST_F(ClientLbInterceptTrailingMetadataTest, BackendMetricData) {
     // available in OSS.
     EXPECT_EQ(actual->cpu_utilization(), load_report.cpu_utilization());
     EXPECT_EQ(actual->mem_utilization(), load_report.mem_utilization());
-    EXPECT_EQ(actual->rps(), load_report.rps());
     EXPECT_EQ(actual->request_cost().size(), load_report.request_cost().size());
     for (const auto& p : actual->request_cost()) {
       auto it = load_report.request_cost().find(p.first);

@@ -46,4 +46,4 @@ class OrcaServerInterceptorFactory : public ServerInterceptorFactoryInterface {
 }  // namespace experimental
 }  // namespace grpc
 
-#endif
+#endif // GRPC_INTERNAL_CPP_ORCA_ORCA_INTERCEPTOR_H
