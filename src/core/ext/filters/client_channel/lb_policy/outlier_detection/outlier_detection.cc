@@ -85,6 +85,12 @@ class OutlierDetectionLbConfig : public LoadBalancingPolicy::Config {
 
   const char* name() const override { return kOutlierDetection; }
 
+  bool CountingEnabled() const {
+    return (outlier_detection_config_.interval != Duration::Infinity() ||
+            outlier_detection_config_.success_rate_ejection.has_value() ||
+            outlier_detection_config_.failure_percentage_ejection.has_value());
+  }
+
   const OutlierDetectionConfig& outlier_detection_config() const {
     return outlier_detection_config_;
   }
@@ -585,10 +591,7 @@ void OutlierDetectionLb::UpdateLocked(UpdateArgs args) {
   // Update config.
   config_ = std::move(args.config);
   // Update outlier detection timer.
-  if (config_->outlier_detection_config().interval == Duration::Infinity() ||
-      (!config_->outlier_detection_config().success_rate_ejection.has_value() &&
-       !config_->outlier_detection_config()
-            .failure_percentage_ejection.has_value())) {
+  if (!config_->CountingEnabled()) {
     // No need for timer.  Cancel the current timer, if any.
     ejection_timer_.reset();
   } else if (ejection_timer_ == nullptr) {
@@ -650,12 +653,8 @@ void OutlierDetectionLb::UpdateLocked(UpdateArgs args) {
 
 void OutlierDetectionLb::MaybeUpdatePickerLocked() {
   if (picker_ != nullptr) {
-    bool counting_enabled = (config_->outlier_detection_config()
-                                 .success_rate_ejection.has_value() ||
-                             config_->outlier_detection_config()
-                                 .failure_percentage_ejection.has_value());
     auto outlier_detection_picker =
-        absl::make_unique<Picker>(this, picker_, counting_enabled);
+        absl::make_unique<Picker>(this, picker_, config_->CountingEnabled());
     if (GRPC_TRACE_FLAG_ENABLED(grpc_outlier_detection_lb_trace)) {
       gpr_log(GPR_INFO,
               "[outlier_detection_lb %p] updating connectivity: state=%s "
