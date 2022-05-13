@@ -1037,13 +1037,6 @@ class ObjCLanguage(object):
                 shortname='ios-test-core-tests',
                 cpu_cost=1e6,
                 environ=_FORCE_ENVIRON_FOR_WRAPPERS))
-        # TODO(jtattermusch): Remove this task since the tests are already being run as part of the grpc_objc_bazel_test job.
-        out.append(
-            self.config.job_spec(['src/objective-c/tests/run_one_test.sh'],
-                                 timeout_seconds=60 * 60,
-                                 shortname='ios-test-unittests',
-                                 cpu_cost=1e6,
-                                 environ={'SCHEME': 'UnitTests'}))
         # TODO(jtattermusch): Make sure the //src/objective-c/tests:InteropTests bazel test passes reliably and remove the test from there.
         out.append(
             self.config.job_spec(['src/objective-c/tests/run_one_test.sh'],
@@ -1082,16 +1075,6 @@ class ObjCLanguage(object):
                                  shortname='ios-cpp-test-cronet',
                                  cpu_cost=1e6,
                                  environ=_FORCE_ENVIRON_FOR_WRAPPERS))
-        # TODO(jtattermusch): Remove this task since the tests are already being run as part of the grpc_objc_bazel_test job.
-        out.append(
-            self.config.job_spec(['src/objective-c/tests/run_one_test.sh'],
-                                 timeout_seconds=60 * 60,
-                                 shortname='mac-test-basictests',
-                                 cpu_cost=1e6,
-                                 environ={
-                                     'SCHEME': 'MacTests',
-                                     'PLATFORM': 'macos'
-                                 }))
         # TODO(jtattermusch): Make sure the //src/objective-c/tests:TvTests bazel test passes and remove the test from here.
         out.append(
             self.config.job_spec(['src/objective-c/tests/run_one_test.sh'],
