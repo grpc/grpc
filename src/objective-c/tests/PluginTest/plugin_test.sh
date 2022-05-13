@@ -18,11 +18,9 @@
 
 set -ev
 
-cd $(dirname $0)
-
-ROOT_DIR=../../../..
-PROTOC=$ROOT_DIR/bazel-bin/external/com_google_protobuf/protoc
-PLUGIN=$ROOT_DIR/bazel-bin/src/compiler/grpc_objective_c_plugin
+# protoc and grpc_objective_c_plugin binaries are supplied as "data" in bazel
+PROTOC=./external/com_google_protobuf/protoc
+PLUGIN=./src/compiler/grpc_objective_c_plugin
 
 PROTO_OUT=./proto_out
 rm -rf ${PROTO_OUT}
@@ -32,8 +30,8 @@ $PROTOC \
     --plugin=protoc-gen-grpc=$PLUGIN \
     --objc_out=${PROTO_OUT} \
     --grpc_out=${PROTO_OUT} \
-    -I . \
-    *.proto
+    -I src/objective-c/tests/PluginTest \
+    src/objective-c/tests/PluginTest/*.proto
 
 # Verify the output proto filename
 [ -e ${PROTO_OUT}/TestDashFilename.pbrpc.h ] || {
