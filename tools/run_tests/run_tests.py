@@ -981,18 +981,6 @@ class ObjCLanguage(object):
 
     def test_specs(self):
         out = []
-        # TODO(jtattermusch): Remove this task since the sample is already being built as part of the grpc_objc_bazel_test job.
-        out.append(
-            self.config.job_spec(
-                ['src/objective-c/tests/build_one_example_bazel.sh'],
-                timeout_seconds=10 * 60,
-                shortname='ios-buildtest-example-sample',
-                cpu_cost=1e6,
-                environ={
-                    'SCHEME': 'Sample',
-                    'EXAMPLE_PATH': 'src/objective-c/examples/Sample',
-                    'FRAMEWORKS': 'NO'
-                }))
         # Currently not supporting compiling as frameworks in Bazel
         # TODO(jtattermusch): verify the above claim is still accurate.
         out.append(
@@ -1016,18 +1004,6 @@ class ObjCLanguage(object):
                 environ={
                     'SCHEME': 'SwiftSample',
                     'EXAMPLE_PATH': 'src/objective-c/examples/SwiftSample'
-                }))
-        # TODO(jtattermusch): Remove this task since the sample is already being built as part of the grpc_objc_bazel_test job.
-        out.append(
-            self.config.job_spec(
-                ['src/objective-c/tests/build_one_example_bazel.sh'],
-                timeout_seconds=20 * 60,
-                shortname='ios-buildtest-example-tvOS-sample',
-                cpu_cost=1e6,
-                environ={
-                    'SCHEME': 'tvOS-sample',
-                    'EXAMPLE_PATH': 'src/objective-c/examples/tvOS-sample',
-                    'FRAMEWORKS': 'NO'
                 }))
         # Disabled due to #20258
         # TODO (mxyan): Reenable this test when #20258 is resolved.
