@@ -75,7 +75,7 @@ jobs:
         run: |
           cd ${{ github.workspace }}
           git remote add upstream https://github.com/grpc/grpc
-          git fetch upstream master
+          git fetch --no-tags --prune --progress --no-recurse-submodules --depth=1 upstream master
       # Run the things!
       - name: clang-tidy fixes
         run: ${{ github.workspace }}/tools/distrib/clang_tidy_code.sh --fix --only-changed || true
