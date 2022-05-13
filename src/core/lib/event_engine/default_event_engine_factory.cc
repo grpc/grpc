@@ -15,18 +15,16 @@
 
 #include <memory>
 
-#include "absl/memory/memory.h"
-
 #include <grpc/event_engine/event_engine.h>
 
 #include "src/core/lib/event_engine/event_engine_factory.h"
-#include "src/core/lib/event_engine/iomgr_engine.h"
 
 namespace grpc_event_engine {
 namespace experimental {
 
 std::unique_ptr<EventEngine> DefaultEventEngineFactory() {
-  return absl::make_unique<IomgrEventEngine>();
+  // TODO(hork): call LibuvEventEngineFactory
+  return nullptr;
 }
 
 }  // namespace experimental
