@@ -30,7 +30,6 @@
 #include <grpc/support/log.h>
 
 #include "src/core/ext/transport/chttp2/alpn/alpn.h"
-#include "src/core/lib/channel/handshaker.h"
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gprpp/host_port.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
@@ -42,6 +41,7 @@
 #include "src/core/lib/security/security_connector/load_system_roots.h"
 #include "src/core/lib/security/security_connector/ssl_utils.h"
 #include "src/core/lib/security/transport/security_handshaker.h"
+#include "src/core/lib/transport/handshaker.h"
 #include "src/core/tsi/ssl_transport_security.h"
 #include "src/core/tsi/transport_security.h"
 
