@@ -829,9 +829,19 @@ void XdsClient::ChannelState::AdsCallState::AdsResponseParser::ParseResource(
   }
   ResourceState& resource_state = it->second;
   // If needed, record that we've seen this resource.
-  if (result_.type->AllResourcesRequiredInSotW() &&
-      !ads_call_state_->chand()->server_.IgnoreResourceDeletion()) {
+  if (result_.type->AllResourcesRequiredInSotW()) {
     result_.resources_seen[resource_name->authority].insert(resource_name->key);
+  }
+  // If we previously ignored the resource's deletion, log that we're
+  // now re-adding it.
+  if (resource_state.ignored_deletion) {
+    gpr_log(GPR_INFO,
+            "[xds_client %p] xds server %s: server returned new version of "
+            "resource for which we previously ignored a deletion: type %s "
+            "name %s",
+            xds_client(), ads_call_state_->chand()->server_.server_uri.c_str(),
+            std::string(type_url).c_str(), result->name.c_str());
+    resource_state.ignored_deletion = false;
   }
   // Update resource state based on whether the resource is valid.
   if (!result->resource.ok()) {
@@ -1183,8 +1193,7 @@ bool XdsClient::ChannelState::AdsCallState::OnResponseReceivedLocked() {
                                        GRPC_STATUS_UNAVAILABLE);
     }
     // Delete resources not seen in update if needed.
-    if (result.type->AllResourcesRequiredInSotW() &&
-        !chand()->server_.IgnoreResourceDeletion()) {
+    if (result.type->AllResourcesRequiredInSotW()) {
       for (auto& a : xds_client()->authority_state_map_) {
         const std::string& authority = a.first;
         AuthorityState& authority_state = a.second;
@@ -1209,9 +1218,23 @@ bool XdsClient::ChannelState::AdsCallState::OnResponseReceivedLocked() {
             // does not exist.  For that case, we rely on the request timeout
             // instead.
             if (resource_state.resource == nullptr) continue;
-            resource_state.resource.reset();
-            xds_client()->NotifyWatchersOnResourceDoesNotExist(
-                resource_state.watchers);
+            if (chand()->server_.IgnoreResourceDeletion()) {
+              if (!resource_state.ignored_deletion) {
+                gpr_log(GPR_ERROR,
+                        "[xds_client %p] xds server %s: ignoring deletion "
+                        "for resource type %s name %s",
+                        xds_client(), chand()->server_.server_uri.c_str(),
+                        result.type_url.c_str(),
+                        XdsClient::ConstructFullXdsResourceName(
+                            authority, result.type_url.c_str(),
+                            resource_key).c_str());
+                resource_state.ignored_deletion = true;
+              }
+            } else {
+              resource_state.resource.reset();
+              xds_client()->NotifyWatchersOnResourceDoesNotExist(
+                  resource_state.watchers);
+            }
           }
         }
       }
@@ -1949,6 +1972,13 @@ void XdsClient::CancelResourceWatch(const XdsResourceType* type,
   resource_state.watchers.erase(watcher);
   // Clean up empty map entries, if any.
   if (resource_state.watchers.empty()) {
+    if (resource_state.ignored_deletion) {
+      gpr_log(GPR_INFO,
+              "[xds_client %p] unsubscribing from a resource for which we "
+              "previously ignored a deletion: type %s name %s",
+              this, std::string(type->type_url()).c_str(),
+              std::string(name).c_str());
+    }
     authority_state.channel_state->UnsubscribeLocked(type, *resource_name,
                                                      delay_unsubscription);
     type_map.erase(resource_it);
