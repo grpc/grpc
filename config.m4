@@ -19,7 +19,7 @@ if test "$PHP_GRPC" != "no"; then
   LIBS="-lpthread $LIBS"
 
   CFLAGS="-std=c11 -g -O2"
-  CXXFLAGS="-std=c++11 -fno-exceptions -fno-rtti -g -O2"
+  CXXFLAGS="-std=c++14 -fno-exceptions -fno-rtti -g -O2"
   GRPC_SHARED_LIBADD="-lpthread $GRPC_SHARED_LIBADD"
   PHP_REQUIRE_CXX()
   PHP_ADD_LIBRARY(pthread)
@@ -463,11 +463,13 @@ if test "$PHP_GRPC" != "no"; then
     src/core/lib/event_engine/channel_args_endpoint_config.cc \
     src/core/lib/event_engine/default_event_engine_factory.cc \
     src/core/lib/event_engine/event_engine.cc \
+    src/core/lib/event_engine/iomgr_engine.cc \
     src/core/lib/event_engine/memory_allocator.cc \
     src/core/lib/event_engine/resolved_address.cc \
     src/core/lib/event_engine/slice.cc \
     src/core/lib/event_engine/slice_buffer.cc \
     src/core/lib/event_engine/sockaddr.cc \
+    src/core/lib/event_engine/trace.cc \
     src/core/lib/gpr/alloc.cc \
     src/core/lib/gpr/atm.cc \
     src/core/lib/gpr/cpu_iphone.cc \

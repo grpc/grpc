@@ -76,16 +76,6 @@ mv doc/ref/core/html "${PAGES_PATH}/core"
 mv doc/ref/objc/html "${PAGES_PATH}/objc"
 mv doc/ref/php/html "${PAGES_PATH}/php"
 
-# Generates C# documents
-rm -rf "${PAGES_PATH}/csharp"
-echo "Generating C# documents in Docker..."
-docker run --rm -it \
-    -v "$(pwd)":/work \
-    -w /work/src/csharp/docfx \
-    --user "$(id -u):$(id -g)" \
-    tsgkadot/docker-docfx:latest docfx
-mv src/csharp/docfx/html "${PAGES_PATH}/csharp"
-
 # Generates Python documents
 rm -rf "${PAGES_PATH}/python"
 echo "Generating Python documents in Docker..."

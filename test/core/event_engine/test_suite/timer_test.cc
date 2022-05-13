@@ -80,7 +80,7 @@ TEST_F(EventEngineTimerTest, TimersRespectScheduleOrdering) {
   grpc_core::MutexLock lock(&mu_);
   {
     auto engine = this->NewEventEngine();
-    engine->RunAt(absl::Now() + absl::Seconds(1), [&]() {
+    engine->RunAt(absl::Now() + absl::Milliseconds(100), [&]() {
       grpc_core::MutexLock lock(&mu_);
       ordered.push_back(2);
       ++count;
@@ -92,9 +92,9 @@ TEST_F(EventEngineTimerTest, TimersRespectScheduleOrdering) {
       ++count;
       cv_.Signal();
     });
-    // Ensure both callbacks have run. Simpler than a mutex.
+    // Ensure both callbacks have run.
     while (count != 2) {
-      cv_.WaitWithTimeout(&mu_, absl::Microseconds(100));
+      cv_.WaitWithTimeout(&mu_, absl::Milliseconds(8));
     }
   }
   // The engine is deleted, and all closures should have been flushed beforehand
