@@ -71,7 +71,6 @@ ABSL_FLAG(std::vector<std::string>, xds_grpc_server,
           "Ports that should rely on XDS configuration to serve");
 ABSL_FLAG(std::string, metrics, "", "Metrics port");
 ABSL_FLAG(std::string, uds, "", "HTTP server on unix domain socket");
-ABSL_FLAG(std::string, version, "", "Version string");
 ABSL_FLAG(std::string, cluster, "", "Cluster where this server is deployed");
 ABSL_FLAG(std::string, crt, "", "gRPC TLS server-side certificate");
 ABSL_FLAG(std::string, key, "", "gRPC TLS server-side key");
