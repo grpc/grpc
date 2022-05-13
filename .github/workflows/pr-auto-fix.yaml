@@ -68,10 +68,14 @@ jobs:
           pip install pyyaml mako virtualenv
           sudo apt-get install python-dev
       - name: Check out repository code
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
         with:
           submodules: True
-          fetch-depth: 0
+      - name: Get the upstream code
+        run:
+          cd ${{ github.workspace }}
+          git remote add upstream https://github.com/grpc/grpc
+          git fetch upstream master
       # Run the things!
       - name: clang-tidy fixes
         run: ${{ github.workspace }}/tools/distrib/clang_tidy_code.sh --fix --only-changed || true
