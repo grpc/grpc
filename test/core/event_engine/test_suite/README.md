@@ -19,7 +19,7 @@ And the main function will be similar to:
 
 ```
 #include "path/to/my_custom_event_engine.h"
-#include "src/core/event_engine/test_suite/event_engine_test.h"
+#include "test/core/event_engine/test_suite/event_engine_test.h"
 
 int main(int argc, char** argv) {
   testing::InitGoogleTest(&argc, argv);

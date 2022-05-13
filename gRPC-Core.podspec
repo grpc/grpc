@@ -175,7 +175,9 @@ Pod::Spec.new do |s|
     ss.dependency 'Libuv-gRPC', '0.0.10'
     ss.dependency 'abseil/base/base', abseil_version
     ss.dependency 'abseil/base/core_headers', abseil_version
+    ss.dependency 'abseil/cleanup/cleanup', abseil_version
     ss.dependency 'abseil/container/flat_hash_map', abseil_version
+    ss.dependency 'abseil/container/flat_hash_set', abseil_version
     ss.dependency 'abseil/container/inlined_vector', abseil_version
     ss.dependency 'abseil/functional/bind_front', abseil_version
     ss.dependency 'abseil/hash/hash', abseil_version
@@ -1029,12 +1031,17 @@ Pod::Spec.new do |s|
                       'src/core/lib/event_engine/default_event_engine_factory.cc',
                       'src/core/lib/event_engine/event_engine.cc',
                       'src/core/lib/event_engine/event_engine_factory.h',
+                      'src/core/lib/event_engine/handle_containers.h',
+                      'src/core/lib/event_engine/iomgr_engine.cc',
+                      'src/core/lib/event_engine/iomgr_engine.h',
                       'src/core/lib/event_engine/memory_allocator.cc',
                       'src/core/lib/event_engine/resolved_address.cc',
                       'src/core/lib/event_engine/slice.cc',
                       'src/core/lib/event_engine/slice_buffer.cc',
                       'src/core/lib/event_engine/sockaddr.cc',
                       'src/core/lib/event_engine/sockaddr.h',
+                      'src/core/lib/event_engine/trace.cc',
+                      'src/core/lib/event_engine/trace.h',
                       'src/core/lib/gpr/alloc.cc',
                       'src/core/lib/gpr/alloc.h',
                       'src/core/lib/gpr/atm.cc',
@@ -2092,7 +2099,10 @@ Pod::Spec.new do |s|
                               'src/core/lib/debug/trace.h',
                               'src/core/lib/event_engine/channel_args_endpoint_config.h',
                               'src/core/lib/event_engine/event_engine_factory.h',
+                              'src/core/lib/event_engine/handle_containers.h',
+                              'src/core/lib/event_engine/iomgr_engine.h',
                               'src/core/lib/event_engine/sockaddr.h',
+                              'src/core/lib/event_engine/trace.h',
                               'src/core/lib/gpr/alloc.h',
                               'src/core/lib/gpr/env.h',
                               'src/core/lib/gpr/murmur_hash.h',
