@@ -132,6 +132,8 @@ class SubchannelStreamClient
     void CallEndedLocked(bool retry)
         ABSL_EXCLUSIVE_LOCKS_REQUIRED(&subchannel_stream_client_->mu_);
 
+    void RecvMessageReady();
+
     static void OnComplete(void* arg, grpc_error_handle error);
     static void RecvInitialMetadataReady(void* arg, grpc_error_handle error);
     static void RecvMessageReady(void* arg, grpc_error_handle error);
@@ -174,7 +176,7 @@ class SubchannelStreamClient
     grpc_closure recv_initial_metadata_ready_;
 
     // recv_message
-    SliceBuffer recv_message_;
+    absl::optional<SliceBuffer> recv_message_;
     grpc_closure recv_message_ready_;
     std::atomic<bool> seen_response_{false};
 

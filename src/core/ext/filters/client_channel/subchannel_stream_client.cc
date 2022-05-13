@@ -252,14 +252,10 @@ void SubchannelStreamClient::CallState::StartCallLocked() {
   payload_.send_initial_metadata.peer_string = nullptr;
   batch_.send_initial_metadata = true;
   // Add send_message op.
-  grpc_slice request_slice =
-      subchannel_stream_client_->event_handler_->EncodeSendMessageLocked();
-  grpc_slice_buffer slice_buffer;
-  grpc_slice_buffer_init(&slice_buffer);
-  grpc_slice_buffer_add(&slice_buffer, request_slice);
-  send_message_.emplace(&slice_buffer, 0);
-  grpc_slice_buffer_destroy_internal(&slice_buffer);
-  payload_.send_message.send_message.reset(&*send_message_);
+  send_message_.emplace();
+  send_message_->Append(grpc_core::Slice(
+      subchannel_stream_client_->event_handler_->EncodeSendMessageLocked()));
+  payload_.send_message.send_message = &*send_message_;
   batch_.send_message = true;
   // Add send_trailing_metadata op.
   payload_.send_trailing_metadata.send_trailing_metadata =
@@ -374,39 +370,28 @@ void SubchannelStreamClient::CallState::RecvInitialMetadataReady(
   self->call_->Unref(DEBUG_LOCATION, "recv_initial_metadata_ready");
 }
 
-void SubchannelStreamClient::CallState::DoneReadingRecvMessage(
-    grpc_error_handle error) {
-  recv_message_.reset();
-  if (error != GRPC_ERROR_NONE) {
-    GRPC_ERROR_UNREF(error);
-    Cancel();
-    grpc_slice_buffer_destroy_internal(&recv_message_buffer_);
-    call_->Unref(DEBUG_LOCATION, "recv_message_ready");
-    return;
-  }
+void SubchannelStreamClient::CallState::RecvMessageReady() {
   // Concatenate the slices to form a single string.
-  std::unique_ptr<uint8_t> recv_message_deleter;
-  uint8_t* recv_message;
-  if (recv_message_buffer_.count == 1) {
-    recv_message = GRPC_SLICE_START_PTR(recv_message_buffer_.slices[0]);
+  std::vector<uint8_t> recv_message_buffer;
+  const uint8_t* recv_message;
+  if (recv_message_->Count() == 1) {
+    recv_message = GRPC_SLICE_START_PTR(recv_message_->c_slice_at(0));
   } else {
-    recv_message =
-        static_cast<uint8_t*>(gpr_malloc(recv_message_buffer_.length));
-    recv_message_deleter.reset(recv_message);
-    size_t offset = 0;
-    for (size_t i = 0; i < recv_message_buffer_.count; ++i) {
-      memcpy(recv_message + offset,
-             GRPC_SLICE_START_PTR(recv_message_buffer_.slices[i]),
-             GRPC_SLICE_LENGTH(recv_message_buffer_.slices[i]));
-      offset += GRPC_SLICE_LENGTH(recv_message_buffer_.slices[i]);
+    recv_message_buffer.reserve(recv_message_->Length());
+    for (size_t i = 0; i < recv_message_->Count(); ++i) {
+      const grpc_slice& slice = recv_message_->c_slice_at(0);
+      recv_message_buffer.insert(recv_message_buffer.end(),
+                                 GRPC_SLICE_START_PTR(slice),
+                                 GRPC_SLICE_END_PTR(slice));
     }
+    recv_message = recv_message_buffer.data();
   }
   // Report payload.
   {
     MutexLock lock(&subchannel_stream_client_->mu_);
     if (subchannel_stream_client_->event_handler_ != nullptr) {
       absl::string_view serialized_message(
-          reinterpret_cast<char*>(recv_message), recv_message_buffer_.length);
+          reinterpret_cast<const char*>(recv_message), recv_message_->Length());
       absl::Status status =
           subchannel_stream_client_->event_handler_->RecvMessageReadyLocked(
               subchannel_stream_client_.get(), serialized_message);
@@ -424,7 +409,7 @@ void SubchannelStreamClient::CallState::DoneReadingRecvMessage(
     }
   }
   seen_response_.store(true, std::memory_order_release);
-  grpc_slice_buffer_destroy_internal(&recv_message_buffer_);
+  recv_message_.reset();
   // Start another recv_message batch.
   // This re-uses the ref we're holding.
   // Note: Can't just reuse batch_ here, since we don't know that all
@@ -438,58 +423,11 @@ void SubchannelStreamClient::CallState::DoneReadingRecvMessage(
   StartBatch(&recv_message_batch_);
 }
 
-grpc_error_handle
-SubchannelStreamClient::CallState::PullSliceFromRecvMessage() {
-  grpc_slice slice;
-  grpc_error_handle error = recv_message_->Pull(&slice);
-  if (error == GRPC_ERROR_NONE) {
-    grpc_slice_buffer_add(&recv_message_buffer_, slice);
-  }
-  return error;
-}
-
-void SubchannelStreamClient::CallState::ContinueReadingRecvMessage() {
-  while (recv_message_->Next(SIZE_MAX, &recv_message_ready_)) {
-    grpc_error_handle error = PullSliceFromRecvMessage();
-    if (error != GRPC_ERROR_NONE) {
-      DoneReadingRecvMessage(error);
-      return;
-    }
-    if (recv_message_buffer_.length == recv_message_->length()) {
-      DoneReadingRecvMessage(GRPC_ERROR_NONE);
-      break;
-    }
-  }
-}
-
-void SubchannelStreamClient::CallState::OnByteStreamNext(
-    void* arg, grpc_error_handle error) {
-  auto* self = static_cast<SubchannelStreamClient::CallState*>(arg);
-  if (error != GRPC_ERROR_NONE) {
-    self->DoneReadingRecvMessage(GRPC_ERROR_REF(error));
-    return;
-  }
-  error = self->PullSliceFromRecvMessage();
-  if (error != GRPC_ERROR_NONE) {
-    self->DoneReadingRecvMessage(error);
-    return;
-  }
-  if (self->recv_message_buffer_.length == self->recv_message_.Length()) {
-    self->DoneReadingRecvMessage(GRPC_ERROR_NONE);
-  } else {
-    self->ContinueReadingRecvMessage();
-  }
-}
-
 void SubchannelStreamClient::CallState::RecvMessageReady(
     void* arg, grpc_error_handle /*error*/) {
   auto* self = static_cast<SubchannelStreamClient::CallState*>(arg);
   GRPC_CALL_COMBINER_STOP(&self->call_combiner_, "recv_message_ready");
-  grpc_slice_buffer_init(&self->recv_message_buffer_);
-  GRPC_CLOSURE_INIT(&self->recv_message_ready_, OnByteStreamNext, self,
-                    grpc_schedule_on_exec_ctx);
-  self->ContinueReadingRecvMessage();
-  // Ref will continue to be held until we finish draining the byte stream.
+  self->RecvMessageReady();
 }
 
 void SubchannelStreamClient::CallState::RecvTrailingMetadataReady(

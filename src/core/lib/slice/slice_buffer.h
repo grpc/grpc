@@ -101,6 +101,10 @@ class SliceBuffer {
   /// Return a pointer to the back raw grpc_slice_buffer
   grpc_slice_buffer* c_slice_buffer() { return &slice_buffer_; }
 
+  const grpc_slice& c_slice_at(size_t index) {
+    return slice_buffer_.slices[index];
+  }
+
  private:
   /// The backing raw slice buffer.
   grpc_slice_buffer slice_buffer_;
