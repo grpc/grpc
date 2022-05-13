@@ -256,12 +256,9 @@ static void recv_message_locked(void* arg, grpc_error_handle /*error*/) {
           return absl_status_to_grpc_error(args->message.status());
         }
       }
-      grpc_slice_buffer buf;
-      grpc_slice_buffer_init(&buf);
-      grpc_slice_buffer_add(&buf, grpc_slice_from_cpp_string(*args->message));
-
-      gbs->sbs.Init(&buf, 0);
-      gbs->recv_message->reset(gbs->sbs.get());
+      grpc_core::SliceBuffer buf;
+      buf.Append(grpc_core::Slice(grpc_slice_from_cpp_string(*args->message)));
+      *gbs->recv_message = std::move(buf);
       return GRPC_ERROR_NONE;
     }();
 

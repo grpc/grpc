@@ -80,7 +80,6 @@ struct grpc_binder_stream {
   grpc_binder_transport* t;
   grpc_stream_refcount* refcount;
   grpc_core::Arena* arena;
-  grpc_core::ManualConstructor<grpc_core::SliceBuffer> sbs;
   int tx_code;
   const bool is_client;
   bool is_closed;
