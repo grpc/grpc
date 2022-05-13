@@ -1518,6 +1518,7 @@ grpc_cc_library(
         "grpc_base",
         "grpc_codegen",
         "grpc_trace",
+        "iomgr_timer",
         "slice",
     ],
 )
