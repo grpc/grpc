@@ -383,7 +383,7 @@ class AresDNSResolver : public DNSResolver {
                         grpc_schedule_on_exec_ctx);
       MutexLock lock(&mu_);
       pollset_set_ = grpc_pollset_set_create();
-      grpc_pollset_set_add_pollset_set(interested_parties, pollset_set_);
+      grpc_pollset_set_add_pollset_set(pollset_set_, interested_parties);
       ares_request_ = std::unique_ptr<grpc_ares_request>(grpc_dns_lookup_ares(
           /*dns_server=*/"", name_.c_str(), default_port_.c_str(), pollset_set_,
           &on_dns_lookup_done_, &addresses_,
@@ -408,7 +408,7 @@ class AresDNSResolver : public DNSResolver {
       // OnDnsLookupDone will still be run
       grpc_cancel_ares_request(ares_request_.get());
       completed_ = true;
-      grpc_pollset_set_del_pollset_set(interested_parties_, pollset_set_);
+      grpc_pollset_set_del_pollset_set(pollset_set_, interested_parties_);
       return true;
     }
 
