@@ -27,19 +27,22 @@ grpc::experimental::CallMetricRecorder::CallMetricRecorder()
 
 grpc::experimental::CallMetricRecorder::~CallMetricRecorder() {}
 
-grpc::experimental::CallMetricRecorder& grpc::experimental::CallMetricRecorder::RecordCpuUtilizationMetric(
+grpc::experimental::CallMetricRecorder&
+grpc::experimental::CallMetricRecorder::RecordCpuUtilizationMetric(
     double value) {
   if (!disabled_) backend_metric_data_->cpu_utilization = value;
   return *this;
 }
 
 grpc::experimental::CallMetricRecorder&
-grpc::experimental::CallMetricRecorder::RecordMemoryUtilizationMetric(double value) {
+grpc::experimental::CallMetricRecorder::RecordMemoryUtilizationMetric(
+    double value) {
   if (!disabled_) backend_metric_data_->mem_utilization = value;
   return *this;
 }
 
-grpc::experimental::CallMetricRecorder& grpc::experimental::CallMetricRecorder::RecordUtilizationMetric(
+grpc::experimental::CallMetricRecorder&
+grpc::experimental::CallMetricRecorder::RecordUtilizationMetric(
     grpc::string_ref name, double value) {
   if (!disabled_) {
     absl::string_view name_sv(name.data(), name.length());
@@ -48,7 +51,8 @@ grpc::experimental::CallMetricRecorder& grpc::experimental::CallMetricRecorder::
   return *this;
 }
 
-grpc::experimental::CallMetricRecorder& grpc::experimental::CallMetricRecorder::RecordRequestCostMetric(
+grpc::experimental::CallMetricRecorder&
+grpc::experimental::CallMetricRecorder::RecordRequestCostMetric(
     grpc::string_ref name, double value) {
   if (!disabled_) {
     absl::string_view name_sv(name.data(), name.length());

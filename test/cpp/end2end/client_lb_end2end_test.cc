@@ -37,10 +37,10 @@
 #include <grpcpp/channel.h>
 #include <grpcpp/client_context.h>
 #include <grpcpp/create_channel.h>
+#include <grpcpp/ext/call_metric_recorder.h>
 #include <grpcpp/ext/orca_load_reporter.h>
 #include <grpcpp/ext/orca_service.h>
 #include <grpcpp/health_check_service_interface.h>
-#include <grpcpp/ext/call_metric_recorder.h>
 #include <grpcpp/impl/codegen/sync.h>
 #include <grpcpp/server.h>
 #include <grpcpp/server_builder.h>

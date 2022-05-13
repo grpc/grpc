@@ -38,8 +38,8 @@ namespace experimental {
 class OrcaServerInterceptor;
 
 /// Records call metrics for the purpose of load balancing.
-/// During an RPC, call \a ServerContext::ExperimentalGetCallMetricRecorder() method
-/// to retrive the recorder for the current call.
+/// During an RPC, call \a ServerContext::ExperimentalGetCallMetricRecorder()
+/// method to retrive the recorder for the current call.
 class CallMetricRecorder {
  public:
   CallMetricRecorder();
@@ -73,7 +73,7 @@ class CallMetricRecorder {
   friend class experimental::OrcaServerInterceptor;
 };
 
-}
+}  // namespace experimental
 }  // namespace grpc
 
 #endif  // GRPCPP_EXT_CALL_METRIC_RECORDER_H

@@ -906,6 +906,7 @@ src/core/ext/filters/client_channel/lb_policy.cc \
 src/core/ext/filters/client_channel/lb_policy.h \
 src/core/ext/filters/client_channel/lb_policy/address_filtering.cc \
 src/core/ext/filters/client_channel/lb_policy/address_filtering.h \
+src/core/ext/filters/client_channel/lb_policy/backend_metric_data.h \
 src/core/ext/filters/client_channel/lb_policy/child_policy_handler.cc \
 src/core/ext/filters/client_channel/lb_policy/child_policy_handler.h \
 src/core/ext/filters/client_channel/lb_policy/grpclb/client_load_reporting_filter.cc \
@@ -985,7 +986,6 @@ src/core/ext/filters/client_channel/subchannel_pool_interface.cc \
 src/core/ext/filters/client_channel/subchannel_pool_interface.h \
 src/core/ext/filters/client_channel/subchannel_stream_client.cc \
 src/core/ext/filters/client_channel/subchannel_stream_client.h \
-src/core/ext/filters/client_channel/lb_policy/backend_metric_data.h \
 src/core/ext/filters/deadline/deadline_filter.cc \
 src/core/ext/filters/deadline/deadline_filter.h \
 src/core/ext/filters/fault_injection/fault_injection_filter.cc \
