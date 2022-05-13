@@ -14,16 +14,26 @@
 
 from pathlib import Path
 from distutils import log
+from typing import Any, Dict, Optional, NamedTuple
 
 import pkg_resources
 import setuptools
 
+try:
+    import tomllib
+except ModuleNotFoundError:
+    import tomli as tomllib
+
 
 CONFIG_FILE_NAME = "pyproject.toml"
 SECTION_NAME = "grpcio_tools"
-PROTO_DIR_NAME = "protos"
-PROTO_FILE_NAME = "route_guide.proto"
-DEST_DIR_NAME = "my_module"
+
+
+# Could be switched to a dataclass once python 3.6 support is dropped.
+class Configuration(NamedTuple):
+    proto_dir: Path
+    proto_file: Path
+    dest_dir: Path
 
 
 def generate_files(_: setuptools.Distribution) -> None:
@@ -37,6 +47,10 @@ def generate_files(_: setuptools.Distribution) -> None:
     if not config_file.is_file():
         log.warn("No config. Doing nothing")
         return
+    config = _read_config(config_file)
+    if config is None:
+        log.warn(f"No {SECTION_NAME} in {CONFIG_FILE_NAME}. Doing nothing")
+        return
 
     proto_include = pkg_resources.resource_filename("grpc_tools", "_proto")
 
@@ -45,14 +59,60 @@ def generate_files(_: setuptools.Distribution) -> None:
     result = protoc.main(
         [
             f"-I={proto_include}",
-            f"-I={PROTO_DIR_NAME}",
-            f"--python_out={DEST_DIR_NAME}",
-            f"--grpc_python_out={DEST_DIR_NAME}",
-            f"{PROTO_DIR_NAME}/{PROTO_FILE_NAME}",
+            f"-I={config.proto_dir}",
+            f"--python_out={config.dest_dir}",
+            f"--grpc_python_out={config.dest_dir}",
+            f"{config.proto_dir}/{config.proto_file}",
         ]
     )
 
     if result == 0:
         log.warn("GRPC file generated")
     else:
-        log.warn("GRPC file generation failed")
+        log.warn("!!! GRPC file generation failed !!!")
+
+
+def _read_config(config_file: Path) -> Optional[Configuration]:
+    """
+    Retrieve the auto-generate configuration values.
+
+    :param config_file: File containing the configuration values.
+
+    :return: Configuration settings as it appeared in the configuration file.
+        `None` if the expected section did not exist.
+    :raises ValueError: The configuration file is not correctly formatted.
+    :raises OSError: There was a problem reading the configuration file.
+    """
+    with open(config_file, "rb") as f:
+        project_config = tomllib.load(f)
+
+    try:
+        section_config = project_config["tool"][SECTION_NAME]
+    except KeyError:
+        return None
+
+    return _parse_config(section_config)
+
+
+def _parse_config(config_data: Dict[str, Any]) -> Configuration:
+    """
+    Parse the configuration data into a structured form.
+
+    :param config_data: Configuration that was read from the file.
+    :return:
+    """
+    try:
+        proto_dir = config_data["proto_dir"]
+        proto_file = config_data["proto_file"]
+        dest_dir = config_data["dest_dir"]
+    except KeyError as ex:
+        raise ValueError("Missing setting in configuration section") from ex
+
+    if not isinstance(proto_dir, str):
+        raise ValueError("'proto_dir' setting must be a string")
+    if not isinstance(proto_file, str):
+        raise ValueError("'proto_file' setting must be a string")
+    if not isinstance(dest_dir, str):
+        raise ValueError("'dest_dir' setting must be a string")
+
+    return Configuration(Path(proto_dir), Path(proto_file), Path(dest_dir))

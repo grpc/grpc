@@ -293,6 +293,7 @@ setuptools.setup(name='grpcio-tools',
                      'protobuf>=3.12.0, < 4.0dev',
                      'grpcio>={version}'.format(version=grpc_version.VERSION),
                      'setuptools',
+                     'tomli>=1.2,<3;python_version<"3.11"'
                  ],
                  package_data=package_data(),
                  entry_points={
