@@ -115,7 +115,6 @@ class EchoTestServiceImpl : public EchoTestService::Service {
   Status Echo(ServerContext* context, const EchoRequest* request,
               EchoResponse* response) override {
     std::string s = "";
-
     const std::multimap<grpc::string_ref, grpc::string_ref> metadata =
         context->client_metadata();
     for (const auto& kv : metadata) {
@@ -127,10 +126,9 @@ class EchoTestServiceImpl : public EchoTestService::Service {
       if (kv.first == ":authority") {
         absl::StrAppend(&s, host_key, "=", kv.second.data(), "\n");
       } else {
-        absl::StrAppend(&s, kv.first.data() , "=" , kv.second.data() , "\n");
+        absl::StrAppend(&s, kv.first.data(), "=", kv.second.data(), "\n");
       }
     }
-
     std::string peer = context->peer();
     size_t colon = peer.find_first_of(":");
     std::string ip = peer.substr(0, colon);
@@ -139,14 +137,14 @@ class EchoTestServiceImpl : public EchoTestService::Service {
     //  need to add/remove fields later, if required by tests. Only keep the
     //  fields needed for now.
     //
-    //    absl::StrAppend(&s,service_version_field , "=" , this->version_ , "\n");
-    //    absl::StrAppend(&s,service_port_field , "=" , this->port_ , "\n");
-    //    absl::StrAppend(&s,cluster_field , "=" , this->cluster_ , "\n");
-    //    absl::StrAppend(&s,istio_version_field , "=" , this->istio_version_ , "\n");
-    absl::StrAppend(&s, ip_field , "=" , ip , "\n");
-    absl::StrAppend(&s, status_code_field , "=" , std::to_string(200) , "\n");
-    absl::StrAppend(&s, hostname_field , "=" , this->hostname_ , "\n");
-    absl::StrAppend(&s, "Echo=" , request->message() ,"\n");
+    //  absl::StrAppend(&s,service_version_field,"=",this->version_,"\n");
+    //  absl::StrAppend(&s,service_port_field,"=",this->port_,"\n");
+    //  absl::StrAppend(&s,cluster_field,"=",this->cluster_,"\n");
+    //  absl::StrAppend(&s,istio_version_field,"=",this->istio_version_,"\n");
+    absl::StrAppend(&s, ip_field, "=", ip, "\n");
+    absl::StrAppend(&s, status_code_field, "=", std::to_string(200), "\n");
+    absl::StrAppend(&s, hostname_field, "=", this->hostname_, "\n");
+    absl::StrAppend(&s, "Echo=", request->message(), "\n");
     response->set_message(s);
     return Status::OK;
   }
@@ -157,15 +155,11 @@ class EchoTestServiceImpl : public EchoTestService::Service {
     std::string rawUrl = request->url();
     size_t colon = rawUrl.find_first_of(":");
     std::string urlScheme = rawUrl.substr(0, colon);
-    if (urlScheme.compare("xds") == 0) {
-      // TODO: use xds security
-    }
-
+    // TODO: use xds security if urlScheme is "xds"
     std::string address = rawUrl;
     if (urlScheme.compare("grpc") == 0) {
       address = rawUrl.substr(strlen("grpc://"), std::string::npos);
     }
-
     std::shared_ptr<Channel> channel =
         grpc::CreateChannel(address, grpc::InsecureChannelCredentials());
     std::unique_ptr<EchoTestService::Stub> stub_ =
@@ -176,9 +170,7 @@ class EchoTestServiceImpl : public EchoTestService::Service {
     std::vector<std::string> responses_(count);
     std::thread thread_ = std::thread(&EchoTestServiceImpl::AsyncCompleteRpc,
                                       this, &cq_, count, &responses_);
-
     // TODO: limit the max concurrency (as a const 20???)
-
     std::chrono::duration<double> elapsed;
     std::chrono::duration<double> duration_per_query =
         std::chrono::nanoseconds::zero();
@@ -188,7 +180,6 @@ class EchoTestServiceImpl : public EchoTestService::Service {
     }
     std::chrono::time_point<std::chrono::system_clock> start =
         std::chrono::system_clock::now();
-
     for (int i = 0; i < count;) {
       elapsed = std::chrono::system_clock::now() - start;
       if (elapsed > duration_per_query) {
@@ -205,10 +196,8 @@ class EchoTestServiceImpl : public EchoTestService::Service {
           }
         }
         call->context.AddMetadata("x-request-id", std::to_string(i));
-
         EchoRequest echo_request;
         echo_request.set_message(request->message());
-
         call->r_id = i;
         call->request = echo_request;
         call->response_reader =
@@ -219,7 +208,6 @@ class EchoTestServiceImpl : public EchoTestService::Service {
       }
     }
     thread_.join();
-
     for (const auto& r : responses_) {
       response->add_output(r);
     }
@@ -234,14 +222,14 @@ class EchoTestServiceImpl : public EchoTestService::Service {
       ++i;
       EchoCall* call = static_cast<EchoCall*>(got_tag);
       GPR_ASSERT(ok);
-
       std::string s;
       if (call->status.ok()) {
-        absl::StrAppend(&s, "[" , call->r_id , "] grpcecho.Echo(" , call->request.message() , ")\n");
+        absl::StrAppend(&s, "[", call->r_id, "] grpcecho.Echo(",
+                        call->request.message(), ")\n");
         std::stringstream resp_ss(call->reply.message());
         std::string line;
         while (std::getline(resp_ss, line, '\n')) {
-          absl::StrAppend(&s, "[" , call->r_id , " body]\n");
+          absl::StrAppend(&s, "[", call->r_id, " body]\n");
         }
         responses_->at(call->r_id) = s;
       } else
@@ -274,11 +262,9 @@ void RunServer(std::vector<int> ports) {
   if (gethostname(base_hostname, 256) != 0) {
     sprintf(base_hostname, "%s-%d", "generated", rand() % 1000);
   }
-
   EchoTestServiceImpl echo_test_service(base_hostname);
   ServerBuilder builder;
   builder.RegisterService(&echo_test_service);
-
   for (int port : ports) {
     std::ostringstream server_address;
     server_address << "0.0.0.0:" << port;
@@ -317,39 +303,31 @@ int main(int argc, char** argv) {
   std::vector<char*> new_argv_strs;
   // Keep the command itself.
   new_argv_strs.push_back(argv[0]);
-
-  for (const auto& kv: argv_dict) {
+  for (const auto& kv : argv_dict) {
     std::string values;
     for (const auto& s : kv.second) {
       if (!values.empty()) values += ",";
       values += s;
     }
-
     // replace '-' to '_', excluding the leading "--".
     std::string f = kv.first;
     std::replace(f.begin() + 2, f.end(), '-', '_');
-
     std::string k_vs = f + "=" + values;
     char* writable = new char[k_vs.size() + 1];
     std::copy(k_vs.begin(), k_vs.end(), writable);
     writable[k_vs.size()] = '\0';
-
     new_argv_strs.push_back(writable);
   }
-
   int new_argc = new_argv_strs.size();
   char** new_argv = new_argv_strs.data();
-
   grpc::testing::TestEnvironment env(&new_argc, new_argv);
   grpc::testing::InitTest(&new_argc, &new_argv, true);
-
   // Turn gRPC ports from a string vector to an int vector.
   std::vector<int> grpc_ports;
   for (const auto& p : absl::GetFlag(FLAGS_grpc)) {
     int grpc_port = std::stoi(p);
     grpc_ports.push_back(grpc_port);
   }
-
   RunServer(grpc_ports);
   return 0;
 }
