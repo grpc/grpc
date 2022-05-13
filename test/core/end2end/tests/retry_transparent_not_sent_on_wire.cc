@@ -345,6 +345,7 @@ grpc_channel_filter FailFirstTenCallsFilter::kFilterVtable = {
     CallData::Destroy,
     sizeof(FailFirstTenCallsFilter),
     Init,
+    grpc_channel_stack_no_post_init,
     Destroy,
     grpc_channel_next_get_info,
     "FailFirstTenCallsFilter",
@@ -367,8 +368,7 @@ void retry_transparent_not_sent_on_wire(grpc_end2end_test_config config) {
                 return true;
               }
               // Install filter.
-              builder->PrependFilter(&FailFirstTenCallsFilter::kFilterVtable,
-                                     nullptr);
+              builder->PrependFilter(&FailFirstTenCallsFilter::kFilterVtable);
               return true;
             });
       },

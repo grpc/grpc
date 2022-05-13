@@ -451,6 +451,7 @@ const grpc_channel_filter grpc_message_compress_filter = {
     CompressDestroyCallElem,
     sizeof(ChannelData),
     CompressInitChannelElem,
+    grpc_channel_stack_no_post_init,
     CompressDestroyChannelElem,
     grpc_channel_next_get_info,
     "message_compress"};

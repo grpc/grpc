@@ -20,7 +20,9 @@
 
 #include "src/core/ext/filters/client_channel/proxy_mapper_registry.h"
 
+#include <algorithm>
 #include <memory>
+#include <utility>
 #include <vector>
 
 namespace grpc_core {

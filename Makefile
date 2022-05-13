@@ -309,7 +309,7 @@ else
 TMPOUT = `mktemp /tmp/test-out-XXXXXX`
 endif
 
-CHECK_NO_CXX14_COMPAT_WORKS_CMD = $(CC) -std=c++11 -Werror -Wno-c++14-compat -o $(TMPOUT) -c test/build/no-c++14-compat.cc
+CHECK_NO_CXX14_COMPAT_WORKS_CMD = $(CC) -std=c++14 -Werror -Wno-c++14-compat -o $(TMPOUT) -c test/build/no-c++14-compat.cc
 HAS_WORKING_NO_CXX14_COMPAT = $(shell $(CHECK_NO_CXX14_COMPAT_WORKS_CMD) 2> /dev/null && echo true || echo false)
 ifeq ($(HAS_WORKING_NO_CXX14_COMPAT),true)
 W_NO_CXX14_COMPAT=-Wno-c++14-compat
@@ -357,7 +357,7 @@ HOST_LD ?= $(LD)
 HOST_LDXX ?= $(LDXX)
 
 CFLAGS += -std=c99 $(W_EXTRA_SEMI)
-CXXFLAGS += -std=c++11
+CXXFLAGS += -std=c++14
 ifeq ($(SYSTEM),Darwin)
 CXXFLAGS += -stdlib=libc++
 LDFLAGS += -framework CoreFoundation
@@ -699,7 +699,7 @@ run_dep_checks:
 
 static: static_c static_cxx
 
-static_c: cache.mk  $(LIBDIR)/$(CONFIG)/libaddress_sorting.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgrpc_csharp_ext.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libupb.a
+static_c: cache.mk  $(LIBDIR)/$(CONFIG)/libaddress_sorting.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libupb.a
 
 static_cxx: cache.mk 
 
@@ -707,7 +707,7 @@ static_csharp: static_c
 
 shared: shared_c shared_cxx
 
-shared_c: cache.mk $(LIBDIR)/$(CONFIG)/$(SHARED_PREFIX)address_sorting$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/$(SHARED_PREFIX)gpr$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/$(SHARED_PREFIX)grpc$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/$(SHARED_PREFIX)grpc_csharp_ext$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/$(SHARED_PREFIX)grpc_unsecure$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/$(SHARED_PREFIX)upb$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE)
+shared_c: cache.mk $(LIBDIR)/$(CONFIG)/$(SHARED_PREFIX)address_sorting$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/$(SHARED_PREFIX)gpr$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/$(SHARED_PREFIX)grpc$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/$(SHARED_PREFIX)grpc_unsecure$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/$(SHARED_PREFIX)upb$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE)
 shared_cxx: cache.mk
 
 shared_csharp: shared_c 
@@ -737,8 +737,6 @@ ifeq ($(CONFIG),opt)
 	$(Q) $(STRIP) $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[STRIP]   Stripping libgrpc.a"
 	$(Q) $(STRIP) $(LIBDIR)/$(CONFIG)/libgrpc.a
-	$(E) "[STRIP]   Stripping libgrpc_csharp_ext.a"
-	$(Q) $(STRIP) $(LIBDIR)/$(CONFIG)/libgrpc_csharp_ext.a
 	$(E) "[STRIP]   Stripping libgrpc_unsecure.a"
 	$(Q) $(STRIP) $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a
 	$(E) "[STRIP]   Stripping libupb.a"
@@ -757,8 +755,6 @@ ifeq ($(CONFIG),opt)
 	$(Q) $(STRIP) $(LIBDIR)/$(CONFIG)/$(SHARED_PREFIX)gpr$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE)
 	$(E) "[STRIP]   Stripping $(SHARED_PREFIX)grpc$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE)"
 	$(Q) $(STRIP) $(LIBDIR)/$(CONFIG)/$(SHARED_PREFIX)grpc$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE)
-	$(E) "[STRIP]   Stripping $(SHARED_PREFIX)grpc_csharp_ext$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE)"
-	$(Q) $(STRIP) $(LIBDIR)/$(CONFIG)/$(SHARED_PREFIX)grpc_csharp_ext$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE)
 	$(E) "[STRIP]   Stripping $(SHARED_PREFIX)grpc_unsecure$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE)"
 	$(Q) $(STRIP) $(LIBDIR)/$(CONFIG)/$(SHARED_PREFIX)grpc_unsecure$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE)
 	$(E) "[STRIP]   Stripping $(SHARED_PREFIX)upb$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE)"
@@ -1036,7 +1032,6 @@ LIBGRPC_SRC = \
     src/core/ext/filters/client_channel/dynamic_filters.cc \
     src/core/ext/filters/client_channel/global_subchannel_pool.cc \
     src/core/ext/filters/client_channel/health/health_check_client.cc \
-    src/core/ext/filters/client_channel/http_connect_handshaker.cc \
     src/core/ext/filters/client_channel/http_proxy.cc \
     src/core/ext/filters/client_channel/lb_policy.cc \
     src/core/ext/filters/client_channel/lb_policy/address_filtering.cc \
@@ -1434,8 +1429,6 @@ LIBGRPC_SRC = \
     src/core/lib/channel/channelz.cc \
     src/core/lib/channel/channelz_registry.cc \
     src/core/lib/channel/connected_channel.cc \
-    src/core/lib/channel/handshaker.cc \
-    src/core/lib/channel/handshaker_registry.cc \
     src/core/lib/channel/promise_based_filter.cc \
     src/core/lib/channel/status_util.cc \
     src/core/lib/compression/compression.cc \
@@ -1450,6 +1443,8 @@ LIBGRPC_SRC = \
     src/core/lib/event_engine/event_engine.cc \
     src/core/lib/event_engine/memory_allocator.cc \
     src/core/lib/event_engine/resolved_address.cc \
+    src/core/lib/event_engine/slice.cc \
+    src/core/lib/event_engine/slice_buffer.cc \
     src/core/lib/event_engine/sockaddr.cc \
     src/core/lib/gprpp/time.cc \
     src/core/lib/http/format_request.cc \
@@ -1623,6 +1618,7 @@ LIBGRPC_SRC = \
     src/core/lib/slice/slice.cc \
     src/core/lib/slice/slice_api.cc \
     src/core/lib/slice/slice_buffer.cc \
+    src/core/lib/slice/slice_buffer_api.cc \
     src/core/lib/slice/slice_refcount.cc \
     src/core/lib/slice/slice_split.cc \
     src/core/lib/slice/slice_string_helpers.cc \
@@ -1650,9 +1646,14 @@ LIBGRPC_SRC = \
     src/core/lib/transport/byte_stream.cc \
     src/core/lib/transport/connectivity_state.cc \
     src/core/lib/transport/error_utils.cc \
+    src/core/lib/transport/handshaker.cc \
+    src/core/lib/transport/handshaker_registry.cc \
+    src/core/lib/transport/http_connect_handshaker.cc \
+    src/core/lib/transport/metadata_batch.cc \
     src/core/lib/transport/parsed_metadata.cc \
     src/core/lib/transport/pid_controller.cc \
     src/core/lib/transport/status_conversion.cc \
+    src/core/lib/transport/tcp_connect_handshaker.cc \
     src/core/lib/transport/timeout_encoding.cc \
     src/core/lib/transport/transport.cc \
     src/core/lib/transport/transport_op_string.cc \
@@ -1699,6 +1700,8 @@ PUBLIC_HEADERS_C += \
     include/grpc/event_engine/memory_allocator.h \
     include/grpc/event_engine/memory_request.h \
     include/grpc/event_engine/port.h \
+    include/grpc/event_engine/slice.h \
+    include/grpc/event_engine/slice_buffer.h \
     include/grpc/fork.h \
     include/grpc/grpc.h \
     include/grpc/grpc_posix.h \
@@ -1762,50 +1765,6 @@ endif
 # end of build recipe for library "grpc"
 
 
-# start of build recipe for library "grpc_csharp_ext" (generated by makelib(lib) template function)
-LIBGRPC_CSHARP_EXT_SRC = \
-    src/csharp/ext/grpc_csharp_ext.c \
-
-PUBLIC_HEADERS_C += \
-
-LIBGRPC_CSHARP_EXT_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBGRPC_CSHARP_EXT_SRC))))
-
-
-$(LIBDIR)/$(CONFIG)/libgrpc_csharp_ext.a: $(ZLIB_DEP) $(CARES_DEP) $(ADDRESS_SORTING_DEP) $(RE2_DEP) $(UPB_DEP) $(GRPC_ABSEIL_DEP)  $(LIBGRPC_CSHARP_EXT_OBJS) 
-	$(E) "[AR]      Creating $@"
-	$(Q) mkdir -p `dirname $@`
-	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libgrpc_csharp_ext.a
-	$(Q) $(AR) $(ARFLAGS) $(LIBDIR)/$(CONFIG)/libgrpc_csharp_ext.a $(LIBGRPC_CSHARP_EXT_OBJS) 
-ifeq ($(SYSTEM),Darwin)
-	$(Q) ranlib -no_warning_for_no_symbols $(LIBDIR)/$(CONFIG)/libgrpc_csharp_ext.a
-endif
-
-
-
-ifeq ($(SYSTEM),MINGW32)
-$(LIBDIR)/$(CONFIG)/grpc_csharp_ext$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE): $(LIBGRPC_CSHARP_EXT_OBJS)  $(ZLIB_DEP) $(CARES_DEP) $(ADDRESS_SORTING_DEP) $(RE2_DEP) $(UPB_DEP) $(GRPC_ABSEIL_DEP) $(LIBDIR)/$(CONFIG)/libgrpc.a
-	$(E) "[LD]      Linking $@"
-	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -shared -Wl,--output-def=$(LIBDIR)/$(CONFIG)/grpc_csharp_ext$(SHARED_VERSION_CORE).def -Wl,--out-implib=$(LIBDIR)/$(CONFIG)/libgrpc_csharp_ext$(SHARED_VERSION_CORE)-dll.a -o $(LIBDIR)/$(CONFIG)/grpc_csharp_ext$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBGRPC_CSHARP_EXT_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc.a $(ZLIB_MERGE_LIBS) $(CARES_MERGE_LIBS) $(ADDRESS_SORTING_MERGE_LIBS) $(RE2_MERGE_LIBS) $(UPB_MERGE_LIBS) $(GRPC_ABSEIL_MERGE_LIBS) $(LDLIBS)
-else
-$(LIBDIR)/$(CONFIG)/libgrpc_csharp_ext$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE): $(LIBGRPC_CSHARP_EXT_OBJS)  $(ZLIB_DEP) $(CARES_DEP) $(ADDRESS_SORTING_DEP) $(RE2_DEP) $(UPB_DEP) $(GRPC_ABSEIL_DEP) $(LIBDIR)/$(CONFIG)/libgrpc.a
-	$(E) "[LD]      Linking $@"
-	$(Q) mkdir -p `dirname $@`
-ifeq ($(SYSTEM),Darwin)
-	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -install_name $(SHARED_PREFIX)grpc_csharp_ext$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) -dynamiclib -o $(LIBDIR)/$(CONFIG)/libgrpc_csharp_ext$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBGRPC_CSHARP_EXT_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc.a $(ZLIB_MERGE_LIBS) $(CARES_MERGE_LIBS) $(ADDRESS_SORTING_MERGE_LIBS) $(RE2_MERGE_LIBS) $(UPB_MERGE_LIBS) $(GRPC_ABSEIL_MERGE_LIBS) $(LDLIBS)
-else
-	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -shared -Wl,-soname,libgrpc_csharp_ext.so.24 -o $(LIBDIR)/$(CONFIG)/libgrpc_csharp_ext$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBGRPC_CSHARP_EXT_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc.a $(ZLIB_MERGE_LIBS) $(CARES_MERGE_LIBS) $(ADDRESS_SORTING_MERGE_LIBS) $(RE2_MERGE_LIBS) $(UPB_MERGE_LIBS) $(GRPC_ABSEIL_MERGE_LIBS) $(LDLIBS)
-	$(Q) ln -sf $(SHARED_PREFIX)grpc_csharp_ext$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/libgrpc_csharp_ext$(SHARED_VERSION_CORE).so.24
-	$(Q) ln -sf $(SHARED_PREFIX)grpc_csharp_ext$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/libgrpc_csharp_ext$(SHARED_VERSION_CORE).so
-endif
-endif
-
-ifneq ($(NO_DEPS),true)
--include $(LIBGRPC_CSHARP_EXT_OBJS:.o=.dep)
-endif
-# end of build recipe for library "grpc_csharp_ext"
-
-
 # start of build recipe for library "grpc_unsecure" (generated by makelib(lib) template function)
 LIBGRPC_UNSECURE_SRC = \
     src/core/ext/filters/census/grpc_context.cc \
@@ -1822,7 +1781,6 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/ext/filters/client_channel/dynamic_filters.cc \
     src/core/ext/filters/client_channel/global_subchannel_pool.cc \
     src/core/ext/filters/client_channel/health/health_check_client.cc \
-    src/core/ext/filters/client_channel/http_connect_handshaker.cc \
     src/core/ext/filters/client_channel/http_proxy.cc \
     src/core/ext/filters/client_channel/lb_policy.cc \
     src/core/ext/filters/client_channel/lb_policy/address_filtering.cc \
@@ -1929,8 +1887,6 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/lib/channel/channelz.cc \
     src/core/lib/channel/channelz_registry.cc \
     src/core/lib/channel/connected_channel.cc \
-    src/core/lib/channel/handshaker.cc \
-    src/core/lib/channel/handshaker_registry.cc \
     src/core/lib/channel/promise_based_filter.cc \
     src/core/lib/channel/status_util.cc \
     src/core/lib/compression/compression.cc \
@@ -1945,6 +1901,8 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/lib/event_engine/event_engine.cc \
     src/core/lib/event_engine/memory_allocator.cc \
     src/core/lib/event_engine/resolved_address.cc \
+    src/core/lib/event_engine/slice.cc \
+    src/core/lib/event_engine/slice_buffer.cc \
     src/core/lib/event_engine/sockaddr.cc \
     src/core/lib/gprpp/time.cc \
     src/core/lib/http/format_request.cc \
@@ -2078,6 +2036,7 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/lib/slice/slice.cc \
     src/core/lib/slice/slice_api.cc \
     src/core/lib/slice/slice_buffer.cc \
+    src/core/lib/slice/slice_buffer_api.cc \
     src/core/lib/slice/slice_refcount.cc \
     src/core/lib/slice/slice_split.cc \
     src/core/lib/slice/slice_string_helpers.cc \
@@ -2105,9 +2064,14 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/lib/transport/byte_stream.cc \
     src/core/lib/transport/connectivity_state.cc \
     src/core/lib/transport/error_utils.cc \
+    src/core/lib/transport/handshaker.cc \
+    src/core/lib/transport/handshaker_registry.cc \
+    src/core/lib/transport/http_connect_handshaker.cc \
+    src/core/lib/transport/metadata_batch.cc \
     src/core/lib/transport/parsed_metadata.cc \
     src/core/lib/transport/pid_controller.cc \
     src/core/lib/transport/status_conversion.cc \
+    src/core/lib/transport/tcp_connect_handshaker.cc \
     src/core/lib/transport/timeout_encoding.cc \
     src/core/lib/transport/transport.cc \
     src/core/lib/transport/transport_op_string.cc \
@@ -2130,6 +2094,8 @@ PUBLIC_HEADERS_C += \
     include/grpc/event_engine/memory_allocator.h \
     include/grpc/event_engine/memory_request.h \
     include/grpc/event_engine/port.h \
+    include/grpc/event_engine/slice.h \
+    include/grpc/event_engine/slice_buffer.h \
     include/grpc/fork.h \
     include/grpc/grpc.h \
     include/grpc/grpc_posix.h \

@@ -208,8 +208,8 @@ class TestHeaderBasedAffinityMultipleHeaders(
                 break
         self.assertTrue(
             different_peer_picked,
-            "the same endpoint was picked for all the headers, expect a different endpoint to be picked"
-        )
+            ("the same endpoint was picked for all the headers, expect a "
+             "different endpoint to be picked"))
         self.assertLen(
             test_client.find_subchannels_with_state(
                 _ChannelzChannelState.READY),

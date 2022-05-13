@@ -43,6 +43,7 @@
 #include "src/core/lib/iomgr/resolve_address.h"
 #include "src/core/lib/iomgr/sockaddr.h"
 #include "src/core/lib/iomgr/socket_utils.h"
+#include "src/core/lib/promise/promise.h"
 #include "src/core/lib/promise/seq.h"
 #include "src/core/lib/security/context/security_context.h"
 #include "src/core/lib/slice/slice_internal.h"
@@ -264,7 +265,7 @@ struct ServerLoadReportingFilterStaticRegistrar {
       builder->channel_init()->RegisterStage(
           GRPC_SERVER_CHANNEL, INT_MAX, [](ChannelStackBuilder* cs_builder) {
             if (MaybeAddServerLoadReportingFilter(cs_builder->channel_args())) {
-              cs_builder->PrependFilter(&kFilter, nullptr);
+              cs_builder->PrependFilter(&kFilter);
             }
             return true;
           });

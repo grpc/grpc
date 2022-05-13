@@ -19,11 +19,11 @@
 
 #include <stdint.h>
 
-#include <cstdint>
 #include <limits>
 #include <ostream>
 #include <string>
 
+#include <grpc/impl/codegen/gpr_types.h>
 #include <grpc/support/time.h>
 
 #include "src/core/lib/gpr/time_precise.h"

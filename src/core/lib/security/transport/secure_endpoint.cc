@@ -20,6 +20,8 @@
 
 #include "src/core/lib/security/transport/secure_endpoint.h"
 
+#include <limits.h>
+
 #include <new>
 
 #include <grpc/slice.h>
@@ -318,7 +320,8 @@ static void on_read(void* user_data, grpc_error_handle error) {
 }
 
 static void endpoint_read(grpc_endpoint* secure_ep, grpc_slice_buffer* slices,
-                          grpc_closure* cb, bool urgent) {
+                          grpc_closure* cb, bool urgent,
+                          int /*min_progress_size*/) {
   secure_endpoint* ep = reinterpret_cast<secure_endpoint*>(secure_ep);
   ep->read_cb = cb;
   ep->read_buffer = slices;
@@ -332,7 +335,8 @@ static void endpoint_read(grpc_endpoint* secure_ep, grpc_slice_buffer* slices,
     return;
   }
 
-  grpc_endpoint_read(ep->wrapped_ep, &ep->source_buffer, &ep->on_read, urgent);
+  grpc_endpoint_read(ep->wrapped_ep, &ep->source_buffer, &ep->on_read, urgent,
+                     /*min_progress_size=*/1);
 }
 
 static void flush_write_staging_buffer(secure_endpoint* ep, uint8_t** cur,
@@ -347,7 +351,8 @@ static void flush_write_staging_buffer(secure_endpoint* ep, uint8_t** cur,
 }
 
 static void endpoint_write(grpc_endpoint* secure_ep, grpc_slice_buffer* slices,
-                           grpc_closure* cb, void* arg) {
+                           grpc_closure* cb, void* arg,
+                           int /*max_frame_size*/) {
   GPR_TIMER_SCOPE("secure_endpoint.endpoint_write", 0);
 
   unsigned i;
@@ -440,7 +445,8 @@ static void endpoint_write(grpc_endpoint* secure_ep, grpc_slice_buffer* slices,
     return;
   }
 
-  grpc_endpoint_write(ep->wrapped_ep, &ep->output_buffer, cb, arg);
+  grpc_endpoint_write(ep->wrapped_ep, &ep->output_buffer, cb, arg,
+                      /*max_frame_size=*/INT_MAX);
 }
 
 static void endpoint_shutdown(grpc_endpoint* secure_ep, grpc_error_handle why) {

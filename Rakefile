@@ -34,11 +34,11 @@ Rake::ExtensionTask.new('grpc_c', spec) do |ext|
     'universal-darwin'
   ]
   ext.cross_compiling do |spec|
-    spec.files = %w( etc/roots.pem grpc_c.32.ruby grpc_c.64.ruby )
-    spec.files += Dir.glob('src/ruby/bin/**/*')
-    spec.files += Dir.glob('src/ruby/ext/**/*')
-    spec.files += Dir.glob('src/ruby/lib/**/*')
-    spec.files += Dir.glob('src/ruby/pb/**/*')
+    spec.files = spec.files.select {
+      |file| file.start_with?(
+        "src/ruby/bin/", "src/ruby/ext/", "src/ruby/lib/", "src/ruby/pb/")
+    }
+    spec.files += %w( etc/roots.pem grpc_c.32.ruby grpc_c.64.ruby )
   end
 end
 
@@ -101,7 +101,7 @@ task 'dlls', [:plat] do |t, args|
 
   env = 'CPPFLAGS="-D_WIN32_WINNT=0x600 -DNTDDI_VERSION=0x06000000 -DUNICODE -D_UNICODE -Wno-unused-variable -Wno-unused-result -DCARES_STATICLIB -Wno-error=conversion -Wno-sign-compare -Wno-parentheses -Wno-format -DWIN32_LEAN_AND_MEAN" '
   env += 'CFLAGS="-Wno-incompatible-pointer-types" '
-  env += 'CXXFLAGS="-std=c++11 -fno-exceptions" '
+  env += 'CXXFLAGS="-std=c++14 -fno-exceptions" '
   env += 'LDFLAGS=-static '
   env += 'SYSTEM=MINGW32 '
   env += 'EMBED_ZLIB=true '

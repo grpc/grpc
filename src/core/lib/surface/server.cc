@@ -18,41 +18,47 @@
 
 #include "src/core/lib/surface/server.h"
 
-#include <limits.h>
+#include <inttypes.h>
 #include <stdlib.h>
 #include <string.h>
 
 #include <algorithm>
 #include <atomic>
-#include <iterator>
 #include <list>
+#include <new>
 #include <queue>
 #include <utility>
 #include <vector>
 
 #include "absl/memory/memory.h"
+#include "absl/status/status.h"
 #include "absl/types/optional.h"
 
-#include <grpc/support/alloc.h>
+#include <grpc/byte_buffer.h>
+#include <grpc/impl/codegen/connectivity_state.h>
+#include <grpc/status.h>
 #include <grpc/support/log.h>
-#include <grpc/support/string_util.h>
+#include <grpc/support/time.h>
 
 #include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/channel/channel_args_preconditioning.h"
+#include "src/core/lib/channel/channel_trace.h"
 #include "src/core/lib/channel/channelz.h"
-#include "src/core/lib/channel/connected_channel.h"
+#include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/debug/stats.h"
-#include "src/core/lib/gpr/spinlock.h"
-#include "src/core/lib/gpr/string.h"
+#include "src/core/lib/gpr/useful.h"
+#include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/mpscq.h"
-#include "src/core/lib/iomgr/executor.h"
-#include "src/core/lib/iomgr/iomgr.h"
-#include "src/core/lib/resource_quota/api.h"
+#include "src/core/lib/iomgr/exec_ctx.h"
+#include "src/core/lib/iomgr/pollset_set.h"
 #include "src/core/lib/slice/slice_internal.h"
+#include "src/core/lib/slice/slice_refcount.h"
 #include "src/core/lib/surface/api_trace.h"
 #include "src/core/lib/surface/call.h"
 #include "src/core/lib/surface/channel.h"
+#include "src/core/lib/surface/channel_stack_type.h"
 #include "src/core/lib/surface/completion_queue.h"
-#include "src/core/lib/surface/init.h"
+#include "src/core/lib/transport/connectivity_state.h"
 #include "src/core/lib/transport/error_utils.h"
 
 namespace grpc_core {
@@ -506,6 +512,7 @@ const grpc_channel_filter Server::kServerTopFilter = {
     Server::CallData::DestroyCallElement,
     sizeof(Server::ChannelData),
     Server::ChannelData::InitChannelElement,
+    grpc_channel_stack_no_post_init,
     Server::ChannelData::DestroyChannelElement,
     grpc_channel_next_get_info,
     "server",
@@ -847,6 +854,15 @@ void Server::CancelAllCalls() {
   broadcaster.BroadcastShutdown(
       /*send_goaway=*/false,
       GRPC_ERROR_CREATE_FROM_STATIC_STRING("Cancelling all calls"));
+}
+
+void Server::SendGoaways() {
+  ChannelBroadcaster broadcaster;
+  {
+    MutexLock lock(&mu_global_);
+    broadcaster.FillChannelsLocked(GetChannelsLocked());
+  }
+  broadcaster.BroadcastShutdown(/*send_goaway=*/true, GRPC_ERROR_NONE);
 }
 
 void Server::Orphan() {

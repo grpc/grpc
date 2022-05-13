@@ -16,27 +16,54 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <inttypes.h>
 #include <stdlib.h>
-#include <string.h>
 
+#include <algorithm>
+#include <atomic>
+#include <cmath>
+#include <map>
+#include <memory>
+#include <string>
+#include <utility>
+#include <vector>
+
+#include "absl/base/attributes.h"
+#include "absl/container/inlined_vector.h"
+#include "absl/memory/memory.h"
+#include "absl/status/status.h"
+#include "absl/status/statusor.h"
 #include "absl/strings/numbers.h"
 #include "absl/strings/str_cat.h"
+#include "absl/strings/string_view.h"
+#include "absl/types/optional.h"
+
 #define XXH_INLINE_ALL
 #include "xxhash.h"
 
-#include <grpc/support/alloc.h>
+#include <grpc/impl/codegen/connectivity_state.h>
+#include <grpc/impl/codegen/grpc_types.h>
+#include <grpc/support/log.h>
 
+#include "src/core/ext/filters/client_channel/lb_policy.h"
 #include "src/core/ext/filters/client_channel/lb_policy/subchannel_list.h"
+#include "src/core/ext/filters/client_channel/lb_policy_factory.h"
 #include "src/core/ext/filters/client_channel/lb_policy_registry.h"
-#include "src/core/ext/filters/client_channel/subchannel.h"
+#include "src/core/ext/filters/client_channel/subchannel_interface.h"
 #include "src/core/lib/address_utils/sockaddr_utils.h"
-#include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/gpr/string.h"
+#include "src/core/lib/gprpp/debug_location.h"
+#include "src/core/lib/gprpp/orphanable.h"
+#include "src/core/lib/gprpp/ref_counted.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
-#include "src/core/lib/gprpp/sync.h"
+#include "src/core/lib/iomgr/closure.h"
+#include "src/core/lib/iomgr/error.h"
+#include "src/core/lib/iomgr/exec_ctx.h"
+#include "src/core/lib/iomgr/work_serializer.h"
+#include "src/core/lib/json/json.h"
+#include "src/core/lib/resolver/server_address.h"
 #include "src/core/lib/transport/connectivity_state.h"
-#include "src/core/lib/transport/error_utils.h"
 
 namespace grpc_core {
 
@@ -173,11 +200,14 @@ class RingHash : public LoadBalancingPolicy {
   class RingHashSubchannelList
       : public SubchannelList<RingHashSubchannelList, RingHashSubchannelData> {
    public:
-    RingHashSubchannelList(RingHash* policy, TraceFlag* tracer,
-                           ServerAddressList addresses,
+    RingHashSubchannelList(RingHash* policy, ServerAddressList addresses,
                            const grpc_channel_args& args)
-        : SubchannelList(policy, tracer, std::move(addresses),
-                         policy->channel_control_helper(), args) {
+        : SubchannelList(policy,
+                         (GRPC_TRACE_FLAG_ENABLED(grpc_lb_ring_hash_trace)
+                              ? "RingHashSubchannelList"
+                              : nullptr),
+                         std::move(addresses), policy->channel_control_helper(),
+                         args) {
       // Need to maintain a ref to the LB policy as long as we maintain
       // any references to subchannels, since the subchannels'
       // pollset_sets will include the LB policy's pollset_set.
@@ -273,7 +303,7 @@ class RingHash : public LoadBalancingPolicy {
             [self]() {
               if (!self->ring_hash_lb_->shutdown_) {
                 for (auto& subchannel : self->subchannels_) {
-                  subchannel->AttemptToConnect();
+                  subchannel->RequestConnection();
                 }
               }
               delete self;
@@ -648,7 +678,7 @@ void RingHash::RingHashSubchannelList::UpdateRingHashConnectivityStateLocked(
               num_subchannels());
     }
     internally_triggered_connection_index_ = next_index;
-    subchannel(next_index)->subchannel()->AttemptToConnect();
+    subchannel(next_index)->subchannel()->RequestConnection();
   }
 }
 
@@ -676,24 +706,11 @@ void RingHash::RingHashSubchannelData::UpdateConnectivityStateLocked(
   }
   // Decide what state to report for the purposes of aggregation and
   // picker behavior.
-  // If we haven't seen a failure since the last time we were in state
-  // READY, then we report the state change as-is.  However, once we do see
-  // a failure, we report TRANSIENT_FAILURE and do not report any subsequent
-  // state changes until we go back into state READY.
-  if (last_connectivity_state_ == GRPC_CHANNEL_TRANSIENT_FAILURE) {
-    // If not transitioning to READY, ignore the update, since we want
-    // to continue to consider ourselves in TRANSIENT_FAILURE.
-    if (connectivity_state != GRPC_CHANNEL_READY) return;
-  } else if (connectivity_state == GRPC_CHANNEL_TRANSIENT_FAILURE) {
-    // If we go from READY to TF, treat it as IDLE.
-    // This transition can be caused by a "normal" connection failure, such
-    // as the server closing the connection due to a max-age setting.  In
-    // this case, we want to have RPCs that hash to this subchannel wait for
-    // the reconnection attempt rather than assuming that the subchannel is
-    // bad and moving on to a subsequent subchannel in the ring.
-    if (last_connectivity_state_ == GRPC_CHANNEL_READY) {
-      connectivity_state = GRPC_CHANNEL_IDLE;
-    }
+  // If the last recorded state was TRANSIENT_FAILURE, ignore the update
+  // unless the new state is READY.
+  if (last_connectivity_state_ == GRPC_CHANNEL_TRANSIENT_FAILURE &&
+      connectivity_state != GRPC_CHANNEL_READY) {
+    return;
   }
   // Update state counters used for aggregation.
   subchannel_list()->UpdateStateCountersLocked(last_connectivity_state_,
@@ -789,7 +806,7 @@ void RingHash::UpdateLocked(UpdateArgs args) {
     if (subchannel_list_ != nullptr) return;
   }
   subchannel_list_ = MakeOrphanable<RingHashSubchannelList>(
-      this, &grpc_lb_ring_hash_trace, std::move(addresses), *args.args);
+      this, std::move(addresses), *args.args);
   if (subchannel_list_->num_subchannels() == 0) {
     // If the new list is empty, immediately transition to TRANSIENT_FAILURE.
     absl::Status status =

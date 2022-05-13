@@ -17,7 +17,10 @@
 
 #include <grpc/support/port_platform.h>
 
-#include "src/core/lib/channel/channel_args.h"
+#include <stddef.h>
+
+#include <grpc/impl/codegen/grpc_types.h>
+
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/resource_quota/resource_quota.h"
 
