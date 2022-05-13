@@ -541,8 +541,8 @@ void CdsLb::OnError(const std::string& name, absl::Status status) {
   if (child_policy_ == nullptr) {
     channel_control_helper()->UpdateState(
         GRPC_CHANNEL_TRANSIENT_FAILURE, status,
-        absl::make_unique<TransientFailurePicker>(
-            absl::UnavailableError(status.ToString())));
+        absl::make_unique<TransientFailurePicker>(absl::UnavailableError(
+            absl::StrCat(name, ": ", status.ToString()))));
   }
 }
 
