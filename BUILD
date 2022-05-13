@@ -5346,14 +5346,14 @@ grpc_cc_library(
     srcs = [
         "src/cpp/server/orca/call_metric_recorder.cc",
     ],
-    public_hdrs = [
-          "include/grpcpp/ext/call_metric_recorder.h",
-    ],
     external_deps = [
         "upb_lib",
         "absl/memory",
     ],
     language = "c++",
+    public_hdrs = [
+        "include/grpcpp/ext/call_metric_recorder.h",
+    ],
     visibility = ["@grpc:public"],
     deps = [
         "grpc++_codegen_base",

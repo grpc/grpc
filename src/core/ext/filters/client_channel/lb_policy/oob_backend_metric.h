@@ -21,8 +21,8 @@
 
 #include <memory>
 
-#include "src/core/ext/filters/client_channel/subchannel_interface.h"
 #include "src/core/ext/filters/client_channel/lb_policy/backend_metric_data.h"
+#include "src/core/ext/filters/client_channel/subchannel_interface.h"
 #include "src/core/lib/gprpp/time.h"
 
 namespace grpc_core {
