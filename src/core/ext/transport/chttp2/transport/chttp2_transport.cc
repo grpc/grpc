@@ -1319,15 +1319,6 @@ static bool contains_non_ok_status(grpc_metadata_batch* batch) {
          GRPC_STATUS_OK;
 }
 
-static void maybe_become_writable_due_to_send_msg(grpc_chttp2_transport* t,
-                                                  grpc_chttp2_stream* s) {
-  if (s->id != 0 && (!s->write_buffering ||
-                     s->flow_controlled_buffer.length > t->write_buffer_size)) {
-    grpc_chttp2_mark_stream_writable(t, s);
-    grpc_chttp2_initiate_write(t, GRPC_CHTTP2_INITIATE_WRITE_SEND_MESSAGE);
-  }
-}
-
 static void log_metadata(const grpc_metadata_batch* md_batch, uint32_t id,
                          bool is_client, bool is_initial) {
   const std::string prefix = absl::StrCat(
@@ -1503,6 +1494,13 @@ static void perform_stream_op_locked(void* stream_op,
                                           : &s->on_flow_controlled_cbs;
         cb->next = *list;
         *list = cb;
+      }
+
+      if (s->id != 0 &&
+          (!s->write_buffering ||
+           s->flow_controlled_buffer.length > t->write_buffer_size)) {
+        grpc_chttp2_mark_stream_writable(t, s);
+        grpc_chttp2_initiate_write(t, GRPC_CHTTP2_INITIATE_WRITE_SEND_MESSAGE);
       }
     }
   }
