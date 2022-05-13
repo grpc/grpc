@@ -87,7 +87,7 @@ task 'dlls', [:plat] do |t, args|
   plat_list = args[:plat]
 
   build_configs = []
-  w64_ucrt = { cross: 'mingw-w64-ucrt-x86_64', out: 'grpc_c.64-ucrt.ruby', platform: 'x64-mingw-ucrt' }
+  w64_ucrt = { cross: 'x86_64-w64-mingw32', out: 'grpc_c.64-ucrt.ruby', platform: 'x64-mingw-ucrt' }
   w64 = { cross: 'x86_64-w64-mingw32', out: 'grpc_c.64.ruby', platform: 'x64-mingw32' }
   w32 = { cross: 'i686-w64-mingw32', out: 'grpc_c.32.ruby', platform: 'x86-mingw32' }
   [w64_ucrt, w64, w32].each do |config|
