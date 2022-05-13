@@ -22,7 +22,6 @@
 
 #include <string.h>
 
-#include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
 
 #include "src/core/lib/gpr/string.h"

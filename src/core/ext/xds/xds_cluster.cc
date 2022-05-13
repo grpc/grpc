@@ -38,6 +38,7 @@
 #include <grpc/support/alloc.h>
 
 #include "src/core/ext/xds/xds_common_types.h"
+#include "src/core/ext/xds/xds_route_config.h"
 #include "src/core/lib/gpr/env.h"
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gprpp/host_port.h"
@@ -405,7 +406,8 @@ grpc_error_handle CdsResourceParse(
   // lead to the creation of outlier detection in discovery mechanism.  Values
   // for outlier detection will be based on fields received and
   // default values.
-  if (envoy_config_cluster_v3_Cluster_has_outlier_detection(cluster)) {
+  if (XdsOutlierDetectionEnabled() &&
+      envoy_config_cluster_v3_Cluster_has_outlier_detection(cluster)) {
     OutlierDetectionConfig outlier_detection_update;
     const envoy_config_cluster_v3_OutlierDetection* outlier_detection =
         envoy_config_cluster_v3_Cluster_outlier_detection(cluster);

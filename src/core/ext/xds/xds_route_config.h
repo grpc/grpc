@@ -41,6 +41,8 @@ namespace grpc_core {
 
 bool XdsRbacEnabled();
 
+bool XdsOutlierDetectionEnabled();
+
 struct XdsRouteConfigResource {
   using TypedPerFilterConfig =
       std::map<std::string, XdsHttpFilterImpl::FilterConfig>;
