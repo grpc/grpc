@@ -329,9 +329,9 @@ std::string XdsEnd2endTest::BootstrapBuilder::MakeXdsServersText(
     server_features.push_back("\"ignore_resource_deletion\"");
   }
   return absl::StrReplaceAll(
-      kXdsServerTemplate, {{"<SERVER_URI>", server_uri},
-                           {"<SERVER_FEATURES>",
-                            absl::StrJoin(server_features, ", ")}});
+      kXdsServerTemplate,
+      {{"<SERVER_URI>", server_uri},
+       {"<SERVER_FEATURES>", absl::StrJoin(server_features, ", ")}});
 }
 
 std::string XdsEnd2endTest::BootstrapBuilder::MakeNodeText() {
