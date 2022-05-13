@@ -1,3 +1,5 @@
+load("//bazel:grpc_build_system.bzl", "grpc_package", "grpc_proto_library")
+
 exports_files([
     "gtest.BUILD",
     "zlib.BUILD",
@@ -15,3 +17,8 @@ exports_files([
     "rules_python.patch",
     "protoc-gen-validate.patch",
 ])
+
+grpc_proto_library(
+    name = "xds_proto",
+    srcs = ["@envoy_api//:all_protos"],
+)

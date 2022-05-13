@@ -32,17 +32,26 @@ _GRPC_PROTO_MOCK_HEADER_FMT = "{}_mock.grpc.pb.h"
 _PROTO_HEADER_FMT = "{}.pb.h"
 _PROTO_SRC_FMT = "{}.pb.cc"
 
-def _strip_package_from_path(label_package, file):
+def _strip_package_from_path(label_packages, file):
     prefix_len = 0
     if not file.is_source and file.path.startswith(file.root.path):
         prefix_len = len(file.root.path) + 1
 
+    print('strip file', file)
+    print('strip file.path', file.path)
+    print('strip file.root', file.root)
+    print('strip file.root.path', file.root.path)
+    print('strip prefix_len', prefix_len)
+
     path = file.path
-    if len(label_package) == 0:
+    if len(label_packages) == 0:
         return path
-    if not path.startswith(label_package + "/", prefix_len):
-        fail("'{}' does not lie within '{}'.".format(path, label_package))
-    return path[prefix_len + len(label_package + "/"):]
+    for label_package in label_packages:
+        if label_package == ".":
+            return path
+        if path.startswith(label_package + "/", prefix_len):
+            return path[prefix_len + len(label_package + "/"):]
+    fail("'{}' does not lie within '{}'.".format(path, label_packages))
 
 def _get_srcs_file_path(file):
     if not file.is_source and file.path.startswith(file.root.path):
@@ -71,19 +80,38 @@ def generate_cc_impl(ctx):
     proto_root = get_proto_root(
         ctx.label.workspace_root,
     )
+    for src in ctx.attr.srcs:
+        print('src', src)
+        # print('src', src.label.package)
+        print('sss', src[ProtoInfo].proto_source_root)
+        print('transitive_proto_path', src[ProtoInfo].transitive_proto_path)
+        # print('transitive_sources', src[ProtoInfo].transitive_sources)
+        # print('transitive_descriptor_sets', src[ProtoInfo].transitive_descriptor_sets)
 
-    label_package = _join_directories([ctx.label.workspace_root, ctx.label.package])
+        f = src[ProtoInfo].check_deps_sources.to_list()[0]
+        print('fff', f)
+        print('fff.dir', f.dirname)
+        print('fff.owner', f.owner)
+        print('fff.short_path', f.short_path)
+        print('fff.path', f.path)
+        print('fff', dir(f))
+
+    # label_package = _join_directories([ctx.label.workspace_root, ctx.label.package])
+    # label_package = src[ProtoInfo].proto_source_root
+    label_packages = src[ProtoInfo].transitive_proto_path.to_list()
+    print('label_packages', label_packages)
+    fail('I saied so')
     if ctx.executable.plugin:
         outs += [
             proto_path_to_generated_filename(
-                _strip_package_from_path(label_package, proto),
+                _strip_package_from_path(label_packages, proto),
                 _GRPC_PROTO_HEADER_FMT,
             )
             for proto in protos
         ]
         outs += [
             proto_path_to_generated_filename(
-                _strip_package_from_path(label_package, proto),
+                _strip_package_from_path(label_packages, proto),
                 _GRPC_PROTO_SRC_FMT,
             )
             for proto in protos
@@ -91,7 +119,7 @@ def generate_cc_impl(ctx):
         if ctx.attr.generate_mocks:
             outs += [
                 proto_path_to_generated_filename(
-                    _strip_package_from_path(label_package, proto),
+                    _strip_package_from_path(label_packages, proto),
                     _GRPC_PROTO_MOCK_HEADER_FMT,
                 )
                 for proto in protos
@@ -99,14 +127,14 @@ def generate_cc_impl(ctx):
     else:
         outs += [
             proto_path_to_generated_filename(
-                _strip_package_from_path(label_package, proto),
+                _strip_package_from_path(label_packages, proto),
                 _PROTO_HEADER_FMT,
             )
             for proto in protos
         ]
         outs += [
             proto_path_to_generated_filename(
-                _strip_package_from_path(label_package, proto),
+                _strip_package_from_path(label_packages, proto),
                 _PROTO_SRC_FMT,
             )
             for proto in protos

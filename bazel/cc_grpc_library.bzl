@@ -70,25 +70,35 @@ def cc_grpc_library(
     proto_targets = []
 
     if not grpc_only:
-        proto_target = "_" + name + "_only"
         cc_proto_target = name if proto_only else "_" + name + "_cc_proto"
 
-        proto_deps = ["_" + dep + "_only" for dep in deps if dep.find(":") == -1]
-        proto_deps += [dep.split(":")[0] + ":" + "_" + dep.split(":")[1] + "_only" for dep in deps if dep.find(":") != -1]
-        if well_known_protos:
-            proto_deps += well_known_proto_libs()
-        proto_library(
-            name = proto_target,
-            srcs = srcs,
-            deps = proto_deps,
-            **kwargs
-        )
+        if srcs[0].endswith(".proto"):
+          proto_target = "_" + name + "_only"
 
-        native.cc_proto_library(
+          proto_deps = ["_" + dep + "_only" for dep in deps if dep.find(":") == -1]
+          proto_deps += [dep.split(":")[0] + ":" + "_" + dep.split(":")[1] + "_only" for dep in deps if dep.find(":") != -1]
+          if well_known_protos:
+              proto_deps += well_known_proto_libs()
+          proto_library(
+              name = proto_target,
+              srcs = srcs,
+              deps = proto_deps,
+              **kwargs
+          )
+          native.cc_proto_library(
             name = cc_proto_target,
             deps = [":" + proto_target],
             **kwargs
-        )
+          )
+        else:
+          # The src could be a proto_library
+          native.cc_proto_library(
+            name = cc_proto_target,
+            deps = srcs,
+            **kwargs
+          )
+          proto_target = srcs[0]
+
         extra_deps.append(":" + cc_proto_target)
         proto_targets.append(proto_target)
     else:
