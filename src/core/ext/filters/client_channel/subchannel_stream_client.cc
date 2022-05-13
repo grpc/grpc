@@ -20,15 +20,14 @@
 
 #include <inttypes.h>
 #include <stdio.h>
-#include <string.h>
 
+#include <algorithm>
 #include <cstdint>
 #include <string>
 #include <utility>
+#include <vector>
 
-#include <grpc/slice_buffer.h>
 #include <grpc/status.h>
-#include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 
 #include "src/core/lib/gpr/time_precise.h"
@@ -38,7 +37,6 @@
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/resource_quota/api.h"
 #include "src/core/lib/resource_quota/resource_quota.h"
-#include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/transport/error_utils.h"
 
 #define SUBCHANNEL_STREAM_INITIAL_CONNECT_BACKOFF_SECONDS 1
@@ -253,7 +251,7 @@ void SubchannelStreamClient::CallState::StartCallLocked() {
   batch_.send_initial_metadata = true;
   // Add send_message op.
   send_message_.emplace();
-  send_message_->Append(grpc_core::Slice(
+  send_message_->Append(Slice(
       subchannel_stream_client_->event_handler_->EncodeSendMessageLocked()));
   payload_.send_message.send_message = &*send_message_;
   batch_.send_message = true;
