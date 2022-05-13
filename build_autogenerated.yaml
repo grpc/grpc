@@ -726,10 +726,7 @@ libs:
   - src/core/lib/debug/trace.h
   - src/core/lib/event_engine/channel_args_endpoint_config.h
   - src/core/lib/event_engine/event_engine_factory.h
-  - src/core/lib/event_engine/handle_containers.h
-  - src/core/lib/event_engine/iomgr_engine.h
   - src/core/lib/event_engine/sockaddr.h
-  - src/core/lib/event_engine/trace.h
   - src/core/lib/gprpp/atomic_utils.h
   - src/core/lib/gprpp/bitset.h
   - src/core/lib/gprpp/capture.h
@@ -1405,13 +1402,11 @@ libs:
   - src/core/lib/event_engine/channel_args_endpoint_config.cc
   - src/core/lib/event_engine/default_event_engine_factory.cc
   - src/core/lib/event_engine/event_engine.cc
-  - src/core/lib/event_engine/iomgr_engine.cc
   - src/core/lib/event_engine/memory_allocator.cc
   - src/core/lib/event_engine/resolved_address.cc
   - src/core/lib/event_engine/slice.cc
   - src/core/lib/event_engine/slice_buffer.cc
   - src/core/lib/event_engine/sockaddr.cc
-  - src/core/lib/event_engine/trace.cc
   - src/core/lib/gprpp/time.cc
   - src/core/lib/http/format_request.cc
   - src/core/lib/http/httpcli.cc
@@ -1655,9 +1650,7 @@ libs:
   - src/core/tsi/transport_security.cc
   - src/core/tsi/transport_security_grpc.cc
   deps:
-  - absl/cleanup:cleanup
   - absl/container:flat_hash_map
-  - absl/container:flat_hash_set
   - absl/container:inlined_vector
   - absl/functional:bind_front
   - absl/hash:hash
@@ -1926,10 +1919,7 @@ libs:
   - src/core/lib/debug/trace.h
   - src/core/lib/event_engine/channel_args_endpoint_config.h
   - src/core/lib/event_engine/event_engine_factory.h
-  - src/core/lib/event_engine/handle_containers.h
-  - src/core/lib/event_engine/iomgr_engine.h
   - src/core/lib/event_engine/sockaddr.h
-  - src/core/lib/event_engine/trace.h
   - src/core/lib/gprpp/atomic_utils.h
   - src/core/lib/gprpp/bitset.h
   - src/core/lib/gprpp/capture.h
@@ -2258,13 +2248,11 @@ libs:
   - src/core/lib/event_engine/channel_args_endpoint_config.cc
   - src/core/lib/event_engine/default_event_engine_factory.cc
   - src/core/lib/event_engine/event_engine.cc
-  - src/core/lib/event_engine/iomgr_engine.cc
   - src/core/lib/event_engine/memory_allocator.cc
   - src/core/lib/event_engine/resolved_address.cc
   - src/core/lib/event_engine/slice.cc
   - src/core/lib/event_engine/slice_buffer.cc
   - src/core/lib/event_engine/sockaddr.cc
-  - src/core/lib/event_engine/trace.cc
   - src/core/lib/gprpp/time.cc
   - src/core/lib/http/format_request.cc
   - src/core/lib/http/httpcli.cc
@@ -2444,9 +2432,7 @@ libs:
   - src/core/tsi/transport_security.cc
   - src/core/tsi/transport_security_grpc.cc
   deps:
-  - absl/cleanup:cleanup
   - absl/container:flat_hash_map
-  - absl/container:flat_hash_set
   - absl/container:inlined_vector
   - absl/functional:bind_front
   - absl/hash:hash
@@ -4860,6 +4846,7 @@ targets:
   - src/core/lib/security/authorization/cel_authorization_engine.cc
   - test/core/security/cel_authorization_engine_test.cc
   deps:
+  - absl/container:flat_hash_set
   - grpc_test_util
 - name: certificate_provider_registry_test
   gtest: true
@@ -6385,19 +6372,6 @@ targets:
   deps:
   - grpc++_test_config
   - grpc++_test_util
-- name: iomgr_event_engine_test
-  gtest: true
-  build: test
-  language: c++
-  headers:
-  - test/core/event_engine/test_suite/event_engine_test.h
-  src:
-  - test/core/event_engine/test_suite/event_engine_test.cc
-  - test/core/event_engine/test_suite/iomgr_event_engine_test.cc
-  - test/core/event_engine/test_suite/timer_test.cc
-  deps:
-  - grpc_test_util
-  uses_polling: false
 - name: join_test
   gtest: true
   build: test
