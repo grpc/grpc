@@ -407,7 +407,7 @@ static void perform_stream_op_locked(void* stream_op,
   if (gbs->is_closed) {
     if (op->send_message) {
       // Reset the send_message payload to prevent memory leaks.
-      op->payload->send_message.send_message.reset();
+      op->payload->send_message.send_message->Clear();
     }
     if (op->recv_initial_metadata) {
       grpc_core::ExecCtx::Run(
@@ -448,27 +448,7 @@ static void perform_stream_op_locked(void* stream_op,
   }
   if (op->send_message) {
     gpr_log(GPR_INFO, "send_message");
-    size_t remaining = op->payload->send_message.send_message->length();
-    std::string message_data;
-    while (remaining > 0) {
-      grpc_slice message_slice;
-      // TODO(waynetu): Temporarily assume that the message is ready.
-      GPR_ASSERT(
-          op->payload->send_message.send_message->Next(SIZE_MAX, nullptr));
-      grpc_error_handle error =
-          op->payload->send_message.send_message->Pull(&message_slice);
-      // TODO(waynetu): Cancel the stream if error is not GRPC_ERROR_NONE.
-      GPR_ASSERT(error == GRPC_ERROR_NONE);
-      uint8_t* p = GRPC_SLICE_START_PTR(message_slice);
-      size_t len = GRPC_SLICE_LENGTH(message_slice);
-      remaining -= len;
-      message_data += std::string(reinterpret_cast<char*>(p), len);
-      grpc_slice_unref_internal(message_slice);
-    }
-    tx.SetData(message_data);
-    // TODO(b/192369787): Are we supposed to reset here to avoid
-    // use-after-free issue in call.cc?
-    op->payload->send_message.send_message.reset();
+    tx.SetData(op->payload->send_message.send_message->JoinIntoString());
   }
 
   if (op->send_trailing_metadata) {

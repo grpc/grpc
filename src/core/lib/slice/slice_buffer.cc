@@ -55,6 +55,16 @@ Slice SliceBuffer::RefSlice(size_t index) {
   return Slice(grpc_slice_ref_internal(slice_buffer_.slices[index]));
 }
 
+std::string SliceBuffer::JoinIntoString() const {
+  std::string result;
+  for (size_t i = 0; i < slice_buffer_.count; i++) {
+    result.append(reinterpret_cast<const char*>(
+                      GRPC_SLICE_START_PTR(slice_buffer_.slices[i])),
+                  GRPC_SLICE_LENGTH(slice_buffer_.slices[i]));
+  }
+  return result;
+}
+
 }  // namespace grpc_core
 
 /* grow a buffer; requires GRPC_SLICE_BUFFER_INLINE_ELEMENTS > 1 */
