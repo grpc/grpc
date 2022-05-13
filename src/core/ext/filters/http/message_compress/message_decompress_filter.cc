@@ -112,7 +112,7 @@ class CallData {
   bool seen_recv_message_ready_ = false;
   int max_recv_message_length_;
   grpc_compression_algorithm algorithm_ = GRPC_COMPRESS_NONE;
-  absl::optional<grpc_core::SliceBuffer>* recv_message_ = nullptr;
+  absl::optional<SliceBuffer>* recv_message_ = nullptr;
   uint32_t* recv_message_flags_ = nullptr;
   grpc_closure on_recv_message_ready_;
   grpc_closure* original_recv_message_ready_ = nullptr;
