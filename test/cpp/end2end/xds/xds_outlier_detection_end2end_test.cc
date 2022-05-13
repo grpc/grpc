@@ -44,6 +44,8 @@ class OutlierDetectionTest : public XdsEnd2endTest {
 
 INSTANTIATE_TEST_SUITE_P(XdsTest, OutlierDetectionTest,
                          ::testing::Values(XdsTestType()), &XdsTestType::Name);
+// TODO(donnadionne): add non-xds test a new
+// test/cpp/end2end/outlier_detection_end2end_test.cc
 
 // Tests SuccessRateEjectionAndUnejection:
 // 1. Use ring hash policy that hashes using a
@@ -1172,21 +1174,24 @@ TEST_P(OutlierDetectionTest, SuccessRateAndFailurePercentageBothDisabled) {
 
 // GRPC_EXPERIMENTAL_ENABLE_OUTLIER_DETECTION not configured so feature
 // disabled.
-TEST_P(OutlierDetectionTest, SuccessRateEjectionDisabled) {
-  CreateAndStartBackends(2);
+TEST_P(OutlierDetectionTest,
+       SuccessRateAndFailurePercentageEjectionPolicyDisabled) {
+  CreateAndStartBackends(4);
   auto cluster = default_cluster_;
   cluster.set_lb_policy(Cluster::RING_HASH);
   // Setup outlier failure percentage parameters.
   // Any failure will cause an potential ejection with the probability of 100%
   // (to eliminate flakiness of the test).
   auto* interval = cluster.mutable_outlier_detection()->mutable_interval();
-  auto* base_time =
-      cluster.mutable_outlier_detection()->mutable_base_ejection_time();
   interval->set_nanos(100000000 * grpc_test_slowdown_factor());
-  base_time->set_seconds(1 * grpc_test_slowdown_factor());
+  cluster.mutable_outlier_detection()
+      ->mutable_max_ejection_percent()
+      ->set_value(50);
+  // This stdev of 500 will ensure the number of ok RPC and error RPC we send
+  // will make 1 outlier out of the 4 backends.
   cluster.mutable_outlier_detection()
       ->mutable_success_rate_stdev_factor()
-      ->set_value(100);
+      ->set_value(500);
   cluster.mutable_outlier_detection()
       ->mutable_enforcing_success_rate()
       ->set_value(100);
@@ -1196,58 +1201,6 @@ TEST_P(OutlierDetectionTest, SuccessRateEjectionDisabled) {
   cluster.mutable_outlier_detection()
       ->mutable_success_rate_request_volume()
       ->set_value(1);
-  balancer_->ads_service()->SetCdsResource(cluster);
-  auto new_route_config = default_route_config_;
-  auto* route = new_route_config.mutable_virtual_hosts(0)->mutable_routes(0);
-  auto* hash_policy = route->mutable_route()->add_hash_policy();
-  hash_policy->mutable_header()->set_header_name("address_hash");
-  SetListenerAndRouteConfiguration(balancer_.get(), default_listener_,
-                                   new_route_config);
-  EdsResourceArgs args({{"locality0", CreateEndpointsForBackends()}});
-  balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
-  // Note each type of RPC will contains a header value that will always be
-  // hashed to a specific backend as the header value matches the value used
-  // to create the entry in the ring.
-  std::vector<std::pair<std::string, std::string>> metadata = {
-      {"address_hash", CreateMetadataValueThatHashesToBackend(0)}};
-  std::vector<std::pair<std::string, std::string>> metadata1 = {
-      {"address_hash", CreateMetadataValueThatHashesToBackend(1)}};
-  const auto rpc_options = RpcOptions().set_metadata(metadata);
-  const auto rpc_options1 = RpcOptions().set_metadata(std::move(metadata1));
-  WaitForBackend(DEBUG_LOCATION, 0, WaitForBackendOptions(), rpc_options);
-  WaitForBackend(DEBUG_LOCATION, 1, WaitForBackendOptions(), rpc_options1);
-  // Cause an error and wait for 1 outlier detection interval to pass
-  CheckRpcSendFailure(
-      DEBUG_LOCATION,
-      CheckRpcSendFailureOptions()
-          .set_rpc_options(
-              RpcOptions()
-                  .set_metadata(std::move(metadata))
-                  .set_server_expected_error(StatusCode::CANCELLED))
-          .set_expected_error_code(StatusCode::CANCELLED));
-  gpr_sleep_until(grpc_timeout_milliseconds_to_deadline(100));
-  ResetBackendCounters();
-  // 1 backend would have been ejected but the feature is disabled.
-  CheckRpcSendOk(DEBUG_LOCATION, 100, rpc_options);
-  CheckRpcSendOk(DEBUG_LOCATION, 100, rpc_options1);
-  EXPECT_EQ(100, backends_[0]->backend_service()->request_count());
-  EXPECT_EQ(100, backends_[1]->backend_service()->request_count());
-}
-
-// GRPC_EXPERIMENTAL_ENABLE_OUTLIER_DETECTION not configured so feature
-// disabled.
-TEST_P(OutlierDetectionTest, FailurePercentageEjectionDisabled) {
-  CreateAndStartBackends(2);
-  auto cluster = default_cluster_;
-  cluster.set_lb_policy(Cluster::RING_HASH);
-  // Setup outlier failure percentage parameters.
-  // Any failure will cause an potential ejection with the probability of 100%
-  // (to eliminate flakiness of the test).
-  auto* interval = cluster.mutable_outlier_detection()->mutable_interval();
-  interval->set_nanos(100000000 * grpc_test_slowdown_factor());
-  auto* base_time =
-      cluster.mutable_outlier_detection()->mutable_base_ejection_time();
-  base_time->set_seconds(1 * grpc_test_slowdown_factor());
   cluster.mutable_outlier_detection()
       ->mutable_failure_percentage_threshold()
       ->set_value(0);
@@ -1276,27 +1229,60 @@ TEST_P(OutlierDetectionTest, FailurePercentageEjectionDisabled) {
       {"address_hash", CreateMetadataValueThatHashesToBackend(0)}};
   std::vector<std::pair<std::string, std::string>> metadata1 = {
       {"address_hash", CreateMetadataValueThatHashesToBackend(1)}};
+  std::vector<std::pair<std::string, std::string>> metadata2 = {
+      {"address_hash", CreateMetadataValueThatHashesToBackend(2)}};
+  std::vector<std::pair<std::string, std::string>> metadata3 = {
+      {"address_hash", CreateMetadataValueThatHashesToBackend(3)}};
   const auto rpc_options = RpcOptions().set_metadata(metadata);
-  const auto rpc_options1 = RpcOptions().set_metadata(std::move(metadata1));
+  const auto rpc_options1 = RpcOptions().set_metadata(metadata1);
+  const auto rpc_options2 = RpcOptions().set_metadata(metadata2);
+  const auto rpc_options3 = RpcOptions().set_metadata(metadata3);
   WaitForBackend(DEBUG_LOCATION, 0, WaitForBackendOptions(), rpc_options);
   WaitForBackend(DEBUG_LOCATION, 1, WaitForBackendOptions(), rpc_options1);
-  // Cause an error and wait for 1 outlier detection interval to pass to cause
-  // the backend to be ejected.
+  WaitForBackend(DEBUG_LOCATION, 2, WaitForBackendOptions(), rpc_options2);
+  WaitForBackend(DEBUG_LOCATION, 3, WaitForBackendOptions(), rpc_options3);
+  // Cause 2 errors on 1 backend and 1 error on 2 backends and wait for 1
+  // outlier detection interval to pass. The errors should have caused 2
+  // ejctionss but since the policy is disabled we are not ejecting any and
+  // traffic flow as usual and RPCs reach destinated backends.
   CheckRpcSendFailure(
       DEBUG_LOCATION,
       CheckRpcSendFailureOptions()
           .set_rpc_options(
-              RpcOptions()
-                  .set_metadata(std::move(metadata))
-                  .set_server_expected_error(StatusCode::CANCELLED))
+              RpcOptions().set_metadata(metadata).set_server_expected_error(
+                  StatusCode::CANCELLED))
+          .set_expected_error_code(StatusCode::CANCELLED));
+  CheckRpcSendFailure(
+      DEBUG_LOCATION,
+      CheckRpcSendFailureOptions()
+          .set_rpc_options(
+              RpcOptions().set_metadata(metadata).set_server_expected_error(
+                  StatusCode::CANCELLED))
+          .set_expected_error_code(StatusCode::CANCELLED));
+  CheckRpcSendFailure(
+      DEBUG_LOCATION,
+      CheckRpcSendFailureOptions()
+          .set_rpc_options(
+              RpcOptions().set_metadata(metadata1).set_server_expected_error(
+                  StatusCode::CANCELLED))
+          .set_expected_error_code(StatusCode::CANCELLED));
+  CheckRpcSendFailure(
+      DEBUG_LOCATION,
+      CheckRpcSendFailureOptions()
+          .set_rpc_options(
+              RpcOptions().set_metadata(metadata2).set_server_expected_error(
+                  StatusCode::CANCELLED))
           .set_expected_error_code(StatusCode::CANCELLED));
   gpr_sleep_until(grpc_timeout_milliseconds_to_deadline(100));
   ResetBackendCounters();
-  // 1 backend would have been ejected but the feature is disabled.
   CheckRpcSendOk(DEBUG_LOCATION, 100, rpc_options);
   CheckRpcSendOk(DEBUG_LOCATION, 100, rpc_options1);
+  CheckRpcSendOk(DEBUG_LOCATION, 100, rpc_options2);
+  CheckRpcSendOk(DEBUG_LOCATION, 100, rpc_options3);
   EXPECT_EQ(100, backends_[0]->backend_service()->request_count());
   EXPECT_EQ(100, backends_[1]->backend_service()->request_count());
+  EXPECT_EQ(100, backends_[2]->backend_service()->request_count());
+  EXPECT_EQ(100, backends_[3]->backend_service()->request_count());
 }
 
 }  // namespace

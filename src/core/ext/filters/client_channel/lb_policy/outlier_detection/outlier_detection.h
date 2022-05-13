@@ -27,6 +27,8 @@
 
 namespace grpc_core {
 
+bool XdsOutlierDetectionEnabled();
+
 struct OutlierDetectionConfig {
   Duration interval = Duration::Infinity();
   Duration base_ejection_time = Duration::Milliseconds(30000);

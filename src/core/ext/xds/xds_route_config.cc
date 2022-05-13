@@ -69,15 +69,6 @@ bool XdsRlsEnabled() {
   return parse_succeeded && parsed_value;
 }
 
-// TODO(donnadionne): Remove once outlier detection is no longer experimental
-bool XdsOutlierDetectionEnabled() {
-  char* value = gpr_getenv("GRPC_EXPERIMENTAL_ENABLE_OUTLIER_DETECTION");
-  bool parsed_value;
-  bool parse_succeeded = gpr_parse_bool_value(value, &parsed_value);
-  gpr_free(value);
-  return parse_succeeded && parsed_value;
-}
-
 //
 // XdsRouteConfigResource::RetryPolicy
 //
