@@ -86,13 +86,10 @@ class OutlierDetectionLbConfig : public LoadBalancingPolicy::Config {
   const char* name() const override { return kOutlierDetection; }
 
   bool CountingEnabled() const {
-    return (outlier_detection_config_.success_rate_ejection.has_value() ||
-            outlier_detection_config_.failure_percentage_ejection.has_value());
-  }
-
-  bool PolicyEnabled() const {
-    return (outlier_detection_config_.interval != Duration::Infinity() &&
-            CountingEnabled());
+    return (
+        outlier_detection_config_.interval != Duration::Infinity() &&
+        (outlier_detection_config_.success_rate_ejection.has_value() ||
+         outlier_detection_config_.failure_percentage_ejection.has_value()));
   }
 
   const OutlierDetectionConfig& outlier_detection_config() const {
@@ -587,7 +584,7 @@ void OutlierDetectionLb::UpdateLocked(UpdateArgs args) {
   // Update config.
   config_ = std::move(args.config);
   // Update outlier detection timer.
-  if (!config_->PolicyEnabled()) {
+  if (!config_->CountingEnabled()) {
     // No need for timer.  Cancel the current timer, if any.
     ejection_timer_.reset();
   } else if (ejection_timer_ == nullptr) {
