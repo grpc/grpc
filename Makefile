@@ -356,7 +356,7 @@ HOST_CXX ?= $(CXX)
 HOST_LD ?= $(LD)
 HOST_LDXX ?= $(LDXX)
 
-CFLAGS += -std=c99 $(W_EXTRA_SEMI)
+CFLAGS += -std=c11 $(W_EXTRA_SEMI)
 CXXFLAGS += -std=c++14
 ifeq ($(SYSTEM),Darwin)
 CXXFLAGS += -stdlib=libc++
