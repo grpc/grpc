@@ -1043,21 +1043,6 @@ class ObjCLanguage(object):
         #             'FRAMEWORKS': 'NO'
         #         }))
 
-        # TODO(jtattermusch): Remove this task since the test already runs as part of the grpc_objc_bazel_test job.
-        out.append(
-            self.config.job_spec(['src/objective-c/tests/run_plugin_tests.sh'],
-                                 timeout_seconds=60 * 60,
-                                 shortname='ios-test-plugintest',
-                                 cpu_cost=1e6,
-                                 environ=_FORCE_ENVIRON_FOR_WRAPPERS))
-        # TODO(jtattermusch): Remove this task since the test already runs as part of the grpc_objc_bazel_test job.
-        out.append(
-            self.config.job_spec(
-                ['src/objective-c/tests/run_plugin_option_tests.sh'],
-                timeout_seconds=60 * 60,
-                shortname='ios-test-plugin-option-test',
-                cpu_cost=1e6,
-                environ=_FORCE_ENVIRON_FOR_WRAPPERS))
         # TODO(jtattermusch): move the test out of the test/core/iomgr/CFStreamTests directory?
         # How does one add the cfstream dependency in bazel?
         out.append(
