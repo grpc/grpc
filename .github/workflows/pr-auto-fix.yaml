@@ -72,7 +72,7 @@ jobs:
         with:
           submodules: True
       - name: Get the upstream code
-        run:
+        run: |
           cd ${{ github.workspace }}
           git remote add upstream https://github.com/grpc/grpc
           git fetch upstream master
