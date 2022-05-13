@@ -19,7 +19,7 @@ if test "$PHP_GRPC" != "no"; then
   LIBS="-lpthread $LIBS"
 
   CFLAGS="-std=c11 -g -O2"
-  CXXFLAGS="-std=c++11 -fno-exceptions -fno-rtti -g -O2"
+  CXXFLAGS="-std=c++14 -fno-exceptions -fno-rtti -g -O2"
   GRPC_SHARED_LIBADD="-lpthread $GRPC_SHARED_LIBADD"
   PHP_REQUIRE_CXX()
   PHP_ADD_LIBRARY(pthread)
