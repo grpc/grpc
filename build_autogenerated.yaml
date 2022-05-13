@@ -327,7 +327,6 @@ libs:
   - src/core/ext/filters/client_channel/dynamic_filters.h
   - src/core/ext/filters/client_channel/global_subchannel_pool.h
   - src/core/ext/filters/client_channel/health/health_check_client.h
-  - src/core/ext/filters/client_channel/http_connect_handshaker.h
   - src/core/ext/filters/client_channel/http_proxy.h
   - src/core/ext/filters/client_channel/lb_policy.h
   - src/core/ext/filters/client_channel/lb_policy/address_filtering.h
@@ -717,9 +716,6 @@ libs:
   - src/core/lib/channel/channelz_registry.h
   - src/core/lib/channel/connected_channel.h
   - src/core/lib/channel/context.h
-  - src/core/lib/channel/handshaker.h
-  - src/core/lib/channel/handshaker_factory.h
-  - src/core/lib/channel/handshaker_registry.h
   - src/core/lib/channel/promise_based_filter.h
   - src/core/lib/channel/status_util.h
   - src/core/lib/compression/compression_internal.h
@@ -918,6 +914,7 @@ libs:
   - src/core/lib/slice/b64.h
   - src/core/lib/slice/percent_encoding.h
   - src/core/lib/slice/slice.h
+  - src/core/lib/slice/slice_buffer.h
   - src/core/lib/slice/slice_internal.h
   - src/core/lib/slice/slice_refcount.h
   - src/core/lib/slice/slice_refcount_base.h
@@ -941,11 +938,16 @@ libs:
   - src/core/lib/transport/byte_stream.h
   - src/core/lib/transport/connectivity_state.h
   - src/core/lib/transport/error_utils.h
+  - src/core/lib/transport/handshaker.h
+  - src/core/lib/transport/handshaker_factory.h
+  - src/core/lib/transport/handshaker_registry.h
   - src/core/lib/transport/http2_errors.h
+  - src/core/lib/transport/http_connect_handshaker.h
   - src/core/lib/transport/metadata_batch.h
   - src/core/lib/transport/parsed_metadata.h
   - src/core/lib/transport/pid_controller.h
   - src/core/lib/transport/status_conversion.h
+  - src/core/lib/transport/tcp_connect_handshaker.h
   - src/core/lib/transport/timeout_encoding.h
   - src/core/lib/transport/transport.h
   - src/core/lib/transport/transport_impl.h
@@ -994,7 +996,6 @@ libs:
   - src/core/ext/filters/client_channel/dynamic_filters.cc
   - src/core/ext/filters/client_channel/global_subchannel_pool.cc
   - src/core/ext/filters/client_channel/health/health_check_client.cc
-  - src/core/ext/filters/client_channel/http_connect_handshaker.cc
   - src/core/ext/filters/client_channel/http_proxy.cc
   - src/core/ext/filters/client_channel/lb_policy.cc
   - src/core/ext/filters/client_channel/lb_policy/address_filtering.cc
@@ -1392,8 +1393,6 @@ libs:
   - src/core/lib/channel/channelz.cc
   - src/core/lib/channel/channelz_registry.cc
   - src/core/lib/channel/connected_channel.cc
-  - src/core/lib/channel/handshaker.cc
-  - src/core/lib/channel/handshaker_registry.cc
   - src/core/lib/channel/promise_based_filter.cc
   - src/core/lib/channel/status_util.cc
   - src/core/lib/compression/compression.cc
@@ -1585,6 +1584,7 @@ libs:
   - src/core/lib/slice/slice.cc
   - src/core/lib/slice/slice_api.cc
   - src/core/lib/slice/slice_buffer.cc
+  - src/core/lib/slice/slice_buffer_api.cc
   - src/core/lib/slice/slice_refcount.cc
   - src/core/lib/slice/slice_split.cc
   - src/core/lib/slice/slice_string_helpers.cc
@@ -1612,10 +1612,14 @@ libs:
   - src/core/lib/transport/byte_stream.cc
   - src/core/lib/transport/connectivity_state.cc
   - src/core/lib/transport/error_utils.cc
+  - src/core/lib/transport/handshaker.cc
+  - src/core/lib/transport/handshaker_registry.cc
+  - src/core/lib/transport/http_connect_handshaker.cc
   - src/core/lib/transport/metadata_batch.cc
   - src/core/lib/transport/parsed_metadata.cc
   - src/core/lib/transport/pid_controller.cc
   - src/core/lib/transport/status_conversion.cc
+  - src/core/lib/transport/tcp_connect_handshaker.cc
   - src/core/lib/transport/timeout_encoding.cc
   - src/core/lib/transport/transport.cc
   - src/core/lib/transport/transport_op_string.cc
@@ -1814,7 +1818,6 @@ libs:
   - src/core/ext/filters/client_channel/dynamic_filters.h
   - src/core/ext/filters/client_channel/global_subchannel_pool.h
   - src/core/ext/filters/client_channel/health/health_check_client.h
-  - src/core/ext/filters/client_channel/http_connect_handshaker.h
   - src/core/ext/filters/client_channel/http_proxy.h
   - src/core/ext/filters/client_channel/lb_policy.h
   - src/core/ext/filters/client_channel/lb_policy/address_filtering.h
@@ -1913,9 +1916,6 @@ libs:
   - src/core/lib/channel/channelz_registry.h
   - src/core/lib/channel/connected_channel.h
   - src/core/lib/channel/context.h
-  - src/core/lib/channel/handshaker.h
-  - src/core/lib/channel/handshaker_factory.h
-  - src/core/lib/channel/handshaker_registry.h
   - src/core/lib/channel/promise_based_filter.h
   - src/core/lib/channel/status_util.h
   - src/core/lib/compression/compression_internal.h
@@ -2081,6 +2081,7 @@ libs:
   - src/core/lib/slice/b64.h
   - src/core/lib/slice/percent_encoding.h
   - src/core/lib/slice/slice.h
+  - src/core/lib/slice/slice_buffer.h
   - src/core/lib/slice/slice_internal.h
   - src/core/lib/slice/slice_refcount.h
   - src/core/lib/slice/slice_refcount_base.h
@@ -2104,11 +2105,16 @@ libs:
   - src/core/lib/transport/byte_stream.h
   - src/core/lib/transport/connectivity_state.h
   - src/core/lib/transport/error_utils.h
+  - src/core/lib/transport/handshaker.h
+  - src/core/lib/transport/handshaker_factory.h
+  - src/core/lib/transport/handshaker_registry.h
   - src/core/lib/transport/http2_errors.h
+  - src/core/lib/transport/http_connect_handshaker.h
   - src/core/lib/transport/metadata_batch.h
   - src/core/lib/transport/parsed_metadata.h
   - src/core/lib/transport/pid_controller.h
   - src/core/lib/transport/status_conversion.h
+  - src/core/lib/transport/tcp_connect_handshaker.h
   - src/core/lib/transport/timeout_encoding.h
   - src/core/lib/transport/transport.h
   - src/core/lib/transport/transport_impl.h
@@ -2134,7 +2140,6 @@ libs:
   - src/core/ext/filters/client_channel/dynamic_filters.cc
   - src/core/ext/filters/client_channel/global_subchannel_pool.cc
   - src/core/ext/filters/client_channel/health/health_check_client.cc
-  - src/core/ext/filters/client_channel/http_connect_handshaker.cc
   - src/core/ext/filters/client_channel/http_proxy.cc
   - src/core/ext/filters/client_channel/lb_policy.cc
   - src/core/ext/filters/client_channel/lb_policy/address_filtering.cc
@@ -2241,8 +2246,6 @@ libs:
   - src/core/lib/channel/channelz.cc
   - src/core/lib/channel/channelz_registry.cc
   - src/core/lib/channel/connected_channel.cc
-  - src/core/lib/channel/handshaker.cc
-  - src/core/lib/channel/handshaker_registry.cc
   - src/core/lib/channel/promise_based_filter.cc
   - src/core/lib/channel/status_util.cc
   - src/core/lib/compression/compression.cc
@@ -2394,6 +2397,7 @@ libs:
   - src/core/lib/slice/slice.cc
   - src/core/lib/slice/slice_api.cc
   - src/core/lib/slice/slice_buffer.cc
+  - src/core/lib/slice/slice_buffer_api.cc
   - src/core/lib/slice/slice_refcount.cc
   - src/core/lib/slice/slice_split.cc
   - src/core/lib/slice/slice_string_helpers.cc
@@ -2421,10 +2425,14 @@ libs:
   - src/core/lib/transport/byte_stream.cc
   - src/core/lib/transport/connectivity_state.cc
   - src/core/lib/transport/error_utils.cc
+  - src/core/lib/transport/handshaker.cc
+  - src/core/lib/transport/handshaker_registry.cc
+  - src/core/lib/transport/http_connect_handshaker.cc
   - src/core/lib/transport/metadata_batch.cc
   - src/core/lib/transport/parsed_metadata.cc
   - src/core/lib/transport/pid_controller.cc
   - src/core/lib/transport/status_conversion.cc
+  - src/core/lib/transport/tcp_connect_handshaker.cc
   - src/core/lib/transport/timeout_encoding.cc
   - src/core/lib/transport/transport.cc
   - src/core/lib/transport/transport_op_string.cc
@@ -3371,6 +3379,15 @@ targets:
   - test/core/iomgr/buffer_list_test.cc
   deps:
   - grpc_test_util
+- name: c_slice_buffer_test
+  build: test
+  language: c
+  headers: []
+  src:
+  - test/core/slice/c_slice_buffer_test.cc
+  deps:
+  - grpc_test_util
+  uses_polling: false
 - name: channel_stack_test
   build: test
   language: c
@@ -4227,15 +4244,6 @@ targets:
   headers: []
   src:
   - test/core/gpr/time_test.cc
-  deps:
-  - grpc_test_util
-  uses_polling: false
-- name: test_core_slice_slice_buffer_test
-  build: test
-  language: c
-  headers: []
-  src:
-  - test/core/slice/slice_buffer_test.cc
   deps:
   - grpc_test_util
   uses_polling: false
@@ -7770,6 +7778,16 @@ targets:
   - test/core/security/credentials_test.cc
   deps:
   - grpc_test_util
+- name: test_core_slice_slice_buffer_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/core/slice/slice_buffer_test.cc
+  deps:
+  - grpc_test_util
+  uses_polling: false
 - name: test_core_slice_slice_test
   gtest: true
   build: test

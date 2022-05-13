@@ -237,10 +237,7 @@ void grpc_event_engine_shutdown(void) {
 
 bool grpc_event_engine_can_track_errors(void) {
   /* Only track errors if platform supports errqueue. */
-  if (grpc_core::kernel_supports_errqueue()) {
-    return g_event_engine->can_track_err;
-  }
-  return false;
+  return grpc_core::KernelSupportsErrqueue() && g_event_engine->can_track_err;
 }
 
 bool grpc_event_engine_run_in_background(void) {
