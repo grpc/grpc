@@ -6206,19 +6206,6 @@ targets:
   deps:
   - grpc_test_util
   uses_polling: false
-- name: http2_client
-  build: test
-  run: false
-  language: c++
-  headers: []
-  src:
-  - src/proto/grpc/testing/empty.proto
-  - src/proto/grpc/testing/messages.proto
-  - src/proto/grpc/testing/test.proto
-  - test/cpp/interop/http2_client.cc
-  deps:
-  - grpc++_test_config
-  - grpc++_test_util
 - name: http_proxy_mapper_test
   gtest: true
   build: test

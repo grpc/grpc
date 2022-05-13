@@ -1028,13 +1028,6 @@ _BUILD_EXTRA_METADATA = {
         '_TYPE': 'target',
         '_RENAME': 'xds_interop_server'
     },
-    'test/cpp/interop:http2_client': {
-        'language': 'c++',
-        'build': 'test',
-        'run': False,
-        '_TYPE': 'target',
-        '_RENAME': 'http2_client'
-    },
     'test/cpp/qps:qps_json_driver': {
         'language': 'c++',
         'build': 'test',
