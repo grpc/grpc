@@ -11,7 +11,7 @@ jobs:
         with:
           format: YYYYWW
       - name: Cache bazel
-        uses: actions/cache@v2
+        uses: actions/cache@v3
         env:
           cache-name: bazel-cache
         with:
