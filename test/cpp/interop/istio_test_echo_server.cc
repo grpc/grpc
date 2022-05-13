@@ -129,10 +129,10 @@ class EchoTestServiceImpl : public EchoTestService::Service {
       }
     }
     std::string peer = context->peer();
-    size_t colon = peer.find_first_of(":");
+    size_t colon = peer.find_first_of(':');
     std::string ip = peer.substr(0, colon);
 
-    // TODO: This is not a complete list, but also not all fields are used. May
+    // This is not a complete list, but also not all fields are used. May
     //  need to add/remove fields later, if required by tests. Only keep the
     //  fields needed for now.
     //
@@ -152,11 +152,11 @@ class EchoTestServiceImpl : public EchoTestService::Service {
                      const ForwardEchoRequest* request,
                      ForwardEchoResponse* response) override {
     std::string rawUrl = request->url();
-    size_t colon = rawUrl.find_first_of(":");
+    size_t colon = rawUrl.find_first_of(':');
     std::string urlScheme = rawUrl.substr(0, colon);
-    // TODO: use xds security if urlScheme is "xds"
+    // May need to use xds security if urlScheme is "xds"
     std::string address = rawUrl;
-    if (urlScheme.compare("grpc") == 0) {
+    if (urlScheme == "grpc") {
       address = rawUrl.substr(strlen("grpc://"), std::string::npos);
     }
     std::shared_ptr<Channel> channel =
@@ -169,7 +169,6 @@ class EchoTestServiceImpl : public EchoTestService::Service {
     std::vector<std::string> responses_(count);
     std::thread thread_ = std::thread(&EchoTestServiceImpl::AsyncCompleteRpc,
                                       this, &cq_, count, &responses_);
-    // TODO: limit the max concurrency (as a const 20???)
     std::chrono::duration<double> elapsed;
     std::chrono::duration<double> duration_per_query =
         std::chrono::nanoseconds::zero();
@@ -202,7 +201,8 @@ class EchoTestServiceImpl : public EchoTestService::Service {
         call->response_reader =
             stub_->PrepareAsyncEcho(&call->context, echo_request, &cq_);
         call->response_reader->StartCall();
-        call->response_reader->Finish(&call->reply, &call->status, (void*)call);
+        call->response_reader->Finish(&call->reply, &call->status,
+                                      static_cast<void*>(call));
         ++i;
       }
     }
@@ -231,9 +231,10 @@ class EchoTestServiceImpl : public EchoTestService::Service {
           absl::StrAppend(&s, "[", call->r_id, " body]\n");
         }
         responses_->at(call->r_id) = s;
-      } else
+      } else {
         gpr_log(GPR_DEBUG, "RPC failed %d: %s", call->status.error_code(),
                 call->status.error_message().c_str());
+      }
       delete call;
     }
   }
@@ -248,7 +249,7 @@ class EchoTestServiceImpl : public EchoTestService::Service {
     std::unique_ptr<ClientAsyncResponseReader<EchoResponse>> response_reader;
   };
   std::string hostname_;
-  // TODO: the following fields are not set yet. But we may need them later.
+  // The following fields are not set yet. But we may need them later.
   //  int port_;
   //  std::string version_;
   //  std::string cluster_;
@@ -291,7 +292,7 @@ int main(int argc, char** argv) {
   std::map<std::string, std::vector<std::string>> argv_dict;
   for (int i = 0; i < argc; i++) {
     std::string arg(argv[i]);
-    size_t equal = arg.find_first_of("=");
+    size_t equal = arg.find_first_of('=');
     if (equal != std::string::npos) {
       std::string f = arg.substr(0, equal);
       std::string v = arg.substr(equal + 1, std::string::npos);
@@ -311,7 +312,7 @@ int main(int argc, char** argv) {
     // replace '-' to '_', excluding the leading "--".
     std::string f = kv.first;
     std::replace(f.begin() + 2, f.end(), '-', '_');
-    std::string k_vs = f + "=" + values;
+    std::string k_vs = absl::StrCat(f, "=", values);
     char* writable = new char[k_vs.size() + 1];
     std::copy(k_vs.begin(), k_vs.end(), writable);
     writable[k_vs.size()] = '\0';
