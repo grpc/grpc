@@ -301,8 +301,6 @@ class FilterStackCall final : public Call {
 
     void PostCompletion();
     void FinishStep();
-    void ContinueReceivingSlices();
-    void ReceivingSliceReady(grpc_error_handle error);
     void ProcessDataAfterMetadata();
     void ReceivingStreamReady(grpc_error_handle error);
     void ValidateFilteredMetadata();
@@ -393,12 +391,12 @@ class FilterStackCall final : public Call {
   grpc_call_context_element context_[GRPC_CONTEXT_COUNT] = {};
 
   ManualConstructor<SliceBuffer> sending_stream_;
-  SliceBuffer receiving_stream_;
+  absl::optional<SliceBuffer> receiving_stream_;
+  uint32_t receiving_stream_flags_;
 
   bool call_failed_before_recv_message_ = false;
   grpc_byte_buffer** receiving_buffer_ = nullptr;
   grpc_slice receiving_slice_ = grpc_empty_slice();
-  grpc_closure receiving_slice_ready_;
   grpc_closure receiving_stream_ready_;
   grpc_closure receiving_initial_metadata_ready_;
   grpc_closure receiving_trailing_metadata_ready_;
@@ -1127,95 +1125,24 @@ void FilterStackCall::BatchControl::FinishStep() {
   }
 }
 
-void FilterStackCall::BatchControl::ContinueReceivingSlices() {
-  grpc_error_handle error;
-  FilterStackCall* call = call_;
-  for (;;) {
-    size_t remaining = call->receiving_stream_->length() -
-                       (*call->receiving_buffer_)->data.raw.slice_buffer.length;
-    if (remaining == 0) {
-      call->receiving_message_ = false;
-      call->receiving_stream_.reset();
-      FinishStep();
-      return;
-    }
-    if (call->receiving_stream_->Next(remaining,
-                                      &call->receiving_slice_ready_)) {
-      error = call->receiving_stream_->Pull(&call->receiving_slice_);
-      if (error == GRPC_ERROR_NONE) {
-        grpc_slice_buffer_add(
-            &(*call->receiving_buffer_)->data.raw.slice_buffer,
-            call->receiving_slice_);
-      } else {
-        call->receiving_stream_.reset();
-        grpc_byte_buffer_destroy(*call->receiving_buffer_);
-        *call->receiving_buffer_ = nullptr;
-        call->receiving_message_ = false;
-        FinishStep();
-        GRPC_ERROR_UNREF(error);
-        return;
-      }
-    } else {
-      return;
-    }
-  }
-}
-
-void FilterStackCall::BatchControl::ReceivingSliceReady(
-    grpc_error_handle error) {
-  FilterStackCall* call = call_;
-  bool release_error = false;
-
-  if (error == GRPC_ERROR_NONE) {
-    grpc_slice slice;
-    error = call->receiving_stream_->Pull(&slice);
-    if (error == GRPC_ERROR_NONE) {
-      grpc_slice_buffer_add(&(*call->receiving_buffer_)->data.raw.slice_buffer,
-                            slice);
-      ContinueReceivingSlices();
-    } else {
-      /* Error returned by ByteStream::Pull() needs to be released manually */
-      release_error = true;
-    }
-  }
-
-  if (error != GRPC_ERROR_NONE) {
-    if (GRPC_TRACE_FLAG_ENABLED(grpc_trace_operation_failures)) {
-      GRPC_LOG_IF_ERROR("receiving_slice_ready", GRPC_ERROR_REF(error));
-    }
-    call->receiving_stream_.reset();
-    grpc_byte_buffer_destroy(*call->receiving_buffer_);
-    *call->receiving_buffer_ = nullptr;
-    call->receiving_message_ = false;
-    FinishStep();
-    if (release_error) {
-      GRPC_ERROR_UNREF(error);
-    }
-  }
-}
-
 void FilterStackCall::BatchControl::ProcessDataAfterMetadata() {
   FilterStackCall* call = call_;
-  if (call->receiving_stream_ == nullptr) {
+  if (!call->receiving_stream_.has_value()) {
     *call->receiving_buffer_ = nullptr;
     call->receiving_message_ = false;
     FinishStep();
   } else {
-    call->test_only_last_message_flags_ = call->receiving_stream_->flags();
-    if ((call->receiving_stream_->flags() & GRPC_WRITE_INTERNAL_COMPRESS) &&
+    call->test_only_last_message_flags_ = call->receiving_stream_flags_;
+    if ((call->receiving_stream_flags_ & GRPC_WRITE_INTERNAL_COMPRESS) &&
         (call->incoming_compression_algorithm_ != GRPC_COMPRESS_NONE)) {
       *call->receiving_buffer_ = grpc_raw_compressed_byte_buffer_create(
           nullptr, 0, call->incoming_compression_algorithm_);
     } else {
       *call->receiving_buffer_ = grpc_raw_byte_buffer_create(nullptr, 0);
     }
-    GRPC_CLOSURE_INIT(
-        &call->receiving_slice_ready_,
-        [](void* bctl, grpc_error_handle error) {
-          static_cast<BatchControl*>(bctl)->ReceivingSliceReady(error);
-        },
-        this, grpc_schedule_on_exec_ctx);
-    ContinueReceivingSlices();
+    call->receiving_message_ = false;
+    call->receiving_stream_.reset();
+    FinishStep();
   }
 }
 
@@ -1232,7 +1159,7 @@ void FilterStackCall::BatchControl::ReceivingStreamReady(
   /* If recv_state is kRecvNone, we will save the batch_control
    * object with rel_cas, and will not use it after the cas. Its corresponding
    * acq_load is in receiving_initial_metadata_ready() */
-  if (error != GRPC_ERROR_NONE || call->receiving_stream_ == nullptr ||
+  if (error != GRPC_ERROR_NONE || !call->receiving_stream_.has_value() ||
       !gpr_atm_rel_cas(&call->recv_state_, kRecvNone,
                        reinterpret_cast<gpr_atm>(this))) {
     ProcessDataAfterMetadata();
@@ -1512,10 +1439,12 @@ grpc_call_error FilterStackCall::StartBatch(const grpc_op* ops, size_t nops,
         }
         stream_op->send_message = true;
         sending_message_ = true;
-        sending_stream_.Init(
-            &op->data.send_message.send_message->data.raw.slice_buffer, flags);
-        stream_op_payload->send_message.send_message.reset(
-            sending_stream_.get());
+        sending_stream_.Init();
+        grpc_slice_buffer_move_into(
+            &op->data.send_message.send_message->data.raw.slice_buffer,
+            sending_stream_->c_slice_buffer());
+        stream_op_payload->send_message.flags = flags;
+        stream_op_payload->send_message.send_message = sending_stream_.get();
         has_send_ops = true;
         break;
       }
@@ -1778,10 +1707,6 @@ done_with_error:
   }
   if (stream_op->send_message) {
     sending_message_ = false;
-    // No need to invoke call->sending_stream->Orphan() explicitly.
-    // stream_op_payload->send_message.send_message.reset() calls Deletor
-    // of call->sending_stream which in-turn invokes the Orphan() method.
-    stream_op_payload->send_message.send_message.reset();
   }
   if (stream_op->send_trailing_metadata) {
     sent_final_op_ = false;
