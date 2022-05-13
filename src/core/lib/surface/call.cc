@@ -1139,6 +1139,9 @@ void FilterStackCall::BatchControl::ProcessDataAfterMetadata() {
     } else {
       *call->receiving_buffer_ = grpc_raw_byte_buffer_create(nullptr, 0);
     }
+    grpc_slice_buffer_move_into(
+        call->receiving_stream_->c_slice_buffer(),
+        &(*call->receiving_buffer_)->data.raw.slice_buffer);
     call->receiving_message_ = false;
     call->receiving_stream_.reset();
     FinishStep();
