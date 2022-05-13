@@ -406,7 +406,7 @@ TEST_P(CdsDeletionTest, ClusterDeletionIgnored) {
   CheckRpcSendOk(DEBUG_LOCATION);
   // Now recreate the CDS resource pointing to a new EDS resource that
   // specified backend 1, and make sure the client uses it.
-  constexpr char* kNewEdsResourceName = "new_eds_resource_name";
+  const char* kNewEdsResourceName = "new_eds_resource_name";
   auto cluster = default_cluster_;
   cluster.mutable_eds_cluster_config()->set_service_name(kNewEdsResourceName);
   balancer_->ads_service()->SetCdsResource(cluster);

@@ -46,8 +46,8 @@ namespace grpc_core {
 
 namespace {
 
-constexpr absl::string_view kServerFeatureXdsV3 = "xds_v3";
-constexpr absl::string_view kServerFeatureIgnoreResourceDeletion =
+const absl::string_view kServerFeatureXdsV3 = "xds_v3";
+const absl::string_view kServerFeatureIgnoreResourceDeletion =
     "ignore_resource_deletion";
 
 // TODO(donnadionne): check to see if federation is enabled, this will be
