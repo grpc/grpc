@@ -16,8 +16,8 @@
  *
  */
 
-#ifndef GRPC_CORE_LIB_CHANNEL_HANDSHAKER_H
-#define GRPC_CORE_LIB_CHANNEL_HANDSHAKER_H
+#ifndef GRPC_CORE_LIB_TRANSPORT_HANDSHAKER_H
+#define GRPC_CORE_LIB_TRANSPORT_HANDSHAKER_H
 
 #include <grpc/support/port_platform.h>
 
@@ -27,9 +27,7 @@
 
 #include <grpc/impl/codegen/grpc_types.h>
 #include <grpc/slice.h>
-#include <grpc/support/string_util.h>
 
-#include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/gprpp/ref_counted.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/gprpp/sync.h"
@@ -37,7 +35,6 @@
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/endpoint.h"
 #include "src/core/lib/iomgr/error.h"
-#include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/tcp_server.h"
 #include "src/core/lib/iomgr/timer.h"
 
@@ -74,6 +71,10 @@ struct HandshakerArgs {
   // User data passed through the handshake manager.  Not used by
   // individual handshakers.
   void* user_data = nullptr;
+  // Deadline associated with the handshake.
+  // TODO(anramach): Move this out of handshake args after event engine
+  // is the default.
+  Timestamp deadline;
 };
 
 ///
@@ -164,4 +165,4 @@ typedef grpc_core::Handshaker grpc_handshaker;
 void grpc_handshake_manager_add(grpc_handshake_manager* mgr,
                                 grpc_handshaker* handshaker);
 
-#endif /* GRPC_CORE_LIB_CHANNEL_HANDSHAKER_H */
+#endif /* GRPC_CORE_LIB_TRANSPORT_HANDSHAKER_H */

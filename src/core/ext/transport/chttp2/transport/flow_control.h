@@ -28,8 +28,6 @@
 
 #include "src/core/ext/transport/chttp2/transport/http2_settings.h"
 #include "src/core/lib/debug/trace.h"
-#include "src/core/lib/gpr/useful.h"
-#include "src/core/lib/gprpp/manual_constructor.h"
 #include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/transport/bdp_estimator.h"

@@ -31,6 +31,8 @@
 #include <grpc/slice_buffer.h>
 #include <grpc/support/log.h>
 
+// IWYU pragma: no_include "src/core/lib/gprpp/orphanable.h"
+
 #include "src/core/ext/transport/chttp2/transport/chttp2_transport.h"
 #include "src/core/ext/transport/chttp2/transport/context_list.h"
 #include "src/core/ext/transport/chttp2/transport/flow_control.h"
@@ -47,7 +49,6 @@
 #include "src/core/lib/channel/channelz.h"
 #include "src/core/lib/debug/stats.h"
 #include "src/core/lib/debug/trace.h"
-#include "src/core/lib/gprpp/chunked_vector.h"
 #include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/manual_constructor.h"
 #include "src/core/lib/gprpp/ref_counted.h"

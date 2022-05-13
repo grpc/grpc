@@ -21,6 +21,7 @@
 #include "src/core/ext/filters/client_channel/client_channel_factory.h"
 
 #include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/gpr/useful.h"
 
 // Channel arg key for client channel factory.
 #define GRPC_ARG_CLIENT_CHANNEL_FACTORY "grpc.client_channel_factory"

@@ -44,9 +44,7 @@ namespace testing {
 class ChannelzRegistryTest : public ::testing::Test {
  protected:
   // ensure we always have a fresh registry for tests.
-  void SetUp() override { ChannelzRegistry::Init(); }
-
-  void TearDown() override { ChannelzRegistry::Shutdown(); }
+  void SetUp() override { ChannelzRegistry::TestOnlyReset(); }
 };
 
 static RefCountedPtr<BaseNode> CreateTestNode() {

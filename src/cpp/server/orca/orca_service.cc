@@ -22,6 +22,7 @@
 #include <grpcpp/ext/orca_service.h>
 #include <grpcpp/impl/codegen/server_callback_handlers.h>
 
+#include "src/core/lib/gprpp/ref_counted.h"
 #include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/iomgr/timer.h"
 

@@ -56,6 +56,8 @@
 #include "src/core/lib/transport/parsed_metadata.h"
 #include "src/core/lib/transport/transport.h"
 
+// IWYU pragma: no_include <type_traits>
+
 #if __cplusplus > 201103L
 #define GRPC_HPACK_CONSTEXPR_FN constexpr
 #define GRPC_HPACK_CONSTEXPR_VALUE constexpr

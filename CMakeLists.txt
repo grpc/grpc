@@ -222,12 +222,12 @@ if (NOT DEFINED CMAKE_C_STANDARD)
   set(CMAKE_C_STANDARD 99)
 endif()
 
-# Add c++11 flags
+# Add c++14 flags
 if (NOT DEFINED CMAKE_CXX_STANDARD)
-  set(CMAKE_CXX_STANDARD 11)
+  set(CMAKE_CXX_STANDARD 14)
 else()
-  if (CMAKE_CXX_STANDARD LESS 11)
-    message(FATAL_ERROR "CMAKE_CXX_STANDARD is less than 11, please specify at least SET(CMAKE_CXX_STANDARD 11)")
+  if (CMAKE_CXX_STANDARD LESS 14)
+    message(FATAL_ERROR "CMAKE_CXX_STANDARD is less than 14, please specify at least SET(CMAKE_CXX_STANDARD 14)")
   endif()
 endif()
 if (NOT DEFINED CMAKE_CXX_STANDARD_REQUIRED)
@@ -771,6 +771,7 @@ if(gRPC_BUILD_TESTS)
   add_dependencies(buildtests_c bin_decoder_test)
   add_dependencies(buildtests_c bin_encoder_test)
   add_dependencies(buildtests_c buffer_list_test)
+  add_dependencies(buildtests_c c_slice_buffer_test)
   add_dependencies(buildtests_c channel_stack_test)
   add_dependencies(buildtests_c check_gcp_environment_linux_test)
   add_dependencies(buildtests_c check_gcp_environment_windows_test)
@@ -864,7 +865,6 @@ if(gRPC_BUILD_TESTS)
     add_dependencies(buildtests_c server_ssl_test)
   endif()
   add_dependencies(buildtests_c server_test)
-  add_dependencies(buildtests_c slice_buffer_test)
   add_dependencies(buildtests_c slice_split_test)
   add_dependencies(buildtests_c slice_string_helpers_test)
   add_dependencies(buildtests_c sockaddr_resolver_test)
@@ -1137,8 +1137,10 @@ if(gRPC_BUILD_TESTS)
   add_dependencies(buildtests_cxx streams_not_seen_test)
   add_dependencies(buildtests_cxx string_ref_test)
   add_dependencies(buildtests_cxx table_test)
+  add_dependencies(buildtests_cxx test_core_event_engine_slice_buffer_test)
   add_dependencies(buildtests_cxx test_core_gprpp_time_test)
   add_dependencies(buildtests_cxx test_core_security_credentials_test)
+  add_dependencies(buildtests_cxx test_core_slice_slice_buffer_test)
   add_dependencies(buildtests_cxx test_core_slice_slice_test)
   add_dependencies(buildtests_cxx test_cpp_client_credentials_test)
   add_dependencies(buildtests_cxx test_cpp_server_credentials_test)
@@ -1613,7 +1615,6 @@ add_library(grpc
   src/core/ext/filters/client_channel/dynamic_filters.cc
   src/core/ext/filters/client_channel/global_subchannel_pool.cc
   src/core/ext/filters/client_channel/health/health_check_client.cc
-  src/core/ext/filters/client_channel/http_connect_handshaker.cc
   src/core/ext/filters/client_channel/http_proxy.cc
   src/core/ext/filters/client_channel/lb_policy.cc
   src/core/ext/filters/client_channel/lb_policy/address_filtering.cc
@@ -2011,8 +2012,6 @@ add_library(grpc
   src/core/lib/channel/channelz.cc
   src/core/lib/channel/channelz_registry.cc
   src/core/lib/channel/connected_channel.cc
-  src/core/lib/channel/handshaker.cc
-  src/core/lib/channel/handshaker_registry.cc
   src/core/lib/channel/promise_based_filter.cc
   src/core/lib/channel/status_util.cc
   src/core/lib/compression/compression.cc
@@ -2027,6 +2026,8 @@ add_library(grpc
   src/core/lib/event_engine/event_engine.cc
   src/core/lib/event_engine/memory_allocator.cc
   src/core/lib/event_engine/resolved_address.cc
+  src/core/lib/event_engine/slice.cc
+  src/core/lib/event_engine/slice_buffer.cc
   src/core/lib/event_engine/sockaddr.cc
   src/core/lib/gprpp/time.cc
   src/core/lib/http/format_request.cc
@@ -2200,6 +2201,7 @@ add_library(grpc
   src/core/lib/slice/slice.cc
   src/core/lib/slice/slice_api.cc
   src/core/lib/slice/slice_buffer.cc
+  src/core/lib/slice/slice_buffer_api.cc
   src/core/lib/slice/slice_refcount.cc
   src/core/lib/slice/slice_split.cc
   src/core/lib/slice/slice_string_helpers.cc
@@ -2227,10 +2229,14 @@ add_library(grpc
   src/core/lib/transport/byte_stream.cc
   src/core/lib/transport/connectivity_state.cc
   src/core/lib/transport/error_utils.cc
+  src/core/lib/transport/handshaker.cc
+  src/core/lib/transport/handshaker_registry.cc
+  src/core/lib/transport/http_connect_handshaker.cc
   src/core/lib/transport/metadata_batch.cc
   src/core/lib/transport/parsed_metadata.cc
   src/core/lib/transport/pid_controller.cc
   src/core/lib/transport/status_conversion.cc
+  src/core/lib/transport/tcp_connect_handshaker.cc
   src/core/lib/transport/timeout_encoding.cc
   src/core/lib/transport/transport.cc
   src/core/lib/transport/transport_op_string.cc
@@ -2308,6 +2314,7 @@ target_link_libraries(grpc
   absl::inlined_vector
   absl::bind_front
   absl::hash
+  absl::type_traits
   absl::statusor
   absl::span
   absl::variant
@@ -2331,6 +2338,8 @@ foreach(_hdr
   include/grpc/event_engine/memory_allocator.h
   include/grpc/event_engine/memory_request.h
   include/grpc/event_engine/port.h
+  include/grpc/event_engine/slice.h
+  include/grpc/event_engine/slice_buffer.h
   include/grpc/fork.h
   include/grpc/grpc.h
   include/grpc/grpc_posix.h
@@ -2512,7 +2521,6 @@ add_library(grpc_unsecure
   src/core/ext/filters/client_channel/dynamic_filters.cc
   src/core/ext/filters/client_channel/global_subchannel_pool.cc
   src/core/ext/filters/client_channel/health/health_check_client.cc
-  src/core/ext/filters/client_channel/http_connect_handshaker.cc
   src/core/ext/filters/client_channel/http_proxy.cc
   src/core/ext/filters/client_channel/lb_policy.cc
   src/core/ext/filters/client_channel/lb_policy/address_filtering.cc
@@ -2619,8 +2627,6 @@ add_library(grpc_unsecure
   src/core/lib/channel/channelz.cc
   src/core/lib/channel/channelz_registry.cc
   src/core/lib/channel/connected_channel.cc
-  src/core/lib/channel/handshaker.cc
-  src/core/lib/channel/handshaker_registry.cc
   src/core/lib/channel/promise_based_filter.cc
   src/core/lib/channel/status_util.cc
   src/core/lib/compression/compression.cc
@@ -2635,6 +2641,8 @@ add_library(grpc_unsecure
   src/core/lib/event_engine/event_engine.cc
   src/core/lib/event_engine/memory_allocator.cc
   src/core/lib/event_engine/resolved_address.cc
+  src/core/lib/event_engine/slice.cc
+  src/core/lib/event_engine/slice_buffer.cc
   src/core/lib/event_engine/sockaddr.cc
   src/core/lib/gprpp/time.cc
   src/core/lib/http/format_request.cc
@@ -2768,6 +2776,7 @@ add_library(grpc_unsecure
   src/core/lib/slice/slice.cc
   src/core/lib/slice/slice_api.cc
   src/core/lib/slice/slice_buffer.cc
+  src/core/lib/slice/slice_buffer_api.cc
   src/core/lib/slice/slice_refcount.cc
   src/core/lib/slice/slice_split.cc
   src/core/lib/slice/slice_string_helpers.cc
@@ -2795,10 +2804,14 @@ add_library(grpc_unsecure
   src/core/lib/transport/byte_stream.cc
   src/core/lib/transport/connectivity_state.cc
   src/core/lib/transport/error_utils.cc
+  src/core/lib/transport/handshaker.cc
+  src/core/lib/transport/handshaker_registry.cc
+  src/core/lib/transport/http_connect_handshaker.cc
   src/core/lib/transport/metadata_batch.cc
   src/core/lib/transport/parsed_metadata.cc
   src/core/lib/transport/pid_controller.cc
   src/core/lib/transport/status_conversion.cc
+  src/core/lib/transport/tcp_connect_handshaker.cc
   src/core/lib/transport/timeout_encoding.cc
   src/core/lib/transport/transport.cc
   src/core/lib/transport/transport_op_string.cc
@@ -2852,6 +2865,7 @@ target_link_libraries(grpc_unsecure
   absl::inlined_vector
   absl::bind_front
   absl::hash
+  absl::type_traits
   absl::statusor
   absl::span
   absl::variant
@@ -2874,6 +2888,8 @@ foreach(_hdr
   include/grpc/event_engine/memory_allocator.h
   include/grpc/event_engine/memory_request.h
   include/grpc/event_engine/port.h
+  include/grpc/event_engine/slice.h
+  include/grpc/event_engine/slice_buffer.h
   include/grpc/fork.h
   include/grpc/grpc.h
   include/grpc/grpc_posix.h
@@ -4791,6 +4807,33 @@ target_link_libraries(buffer_list_test
 endif()
 if(gRPC_BUILD_TESTS)
 
+add_executable(c_slice_buffer_test
+  test/core/slice/c_slice_buffer_test.cc
+)
+
+target_include_directories(c_slice_buffer_test
+  PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
+    ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_RE2_INCLUDE_DIR}
+    ${_gRPC_SSL_INCLUDE_DIR}
+    ${_gRPC_UPB_GENERATED_DIR}
+    ${_gRPC_UPB_GRPC_GENERATED_DIR}
+    ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
+    ${_gRPC_ZLIB_INCLUDE_DIR}
+)
+
+target_link_libraries(c_slice_buffer_test
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  grpc_test_util
+)
+
+
+endif()
+if(gRPC_BUILD_TESTS)
+
 add_executable(channel_stack_test
   test/core/channel/channel_stack_test.cc
 )
@@ -6563,33 +6606,6 @@ target_include_directories(server_test
 )
 
 target_link_libraries(server_test
-  ${_gRPC_ALLTARGETS_LIBRARIES}
-  grpc_test_util
-)
-
-
-endif()
-if(gRPC_BUILD_TESTS)
-
-add_executable(slice_buffer_test
-  test/core/slice/slice_buffer_test.cc
-)
-
-target_include_directories(slice_buffer_test
-  PRIVATE
-    ${CMAKE_CURRENT_SOURCE_DIR}
-    ${CMAKE_CURRENT_SOURCE_DIR}/include
-    ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
-    ${_gRPC_RE2_INCLUDE_DIR}
-    ${_gRPC_SSL_INCLUDE_DIR}
-    ${_gRPC_UPB_GENERATED_DIR}
-    ${_gRPC_UPB_GRPC_GENERATED_DIR}
-    ${_gRPC_UPB_INCLUDE_DIR}
-    ${_gRPC_XXHASH_INCLUDE_DIR}
-    ${_gRPC_ZLIB_INCLUDE_DIR}
-)
-
-target_link_libraries(slice_buffer_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
 )
@@ -15827,6 +15843,41 @@ target_link_libraries(table_test
 endif()
 if(gRPC_BUILD_TESTS)
 
+add_executable(test_core_event_engine_slice_buffer_test
+  test/core/event_engine/slice_buffer_test.cc
+  third_party/googletest/googletest/src/gtest-all.cc
+  third_party/googletest/googlemock/src/gmock-all.cc
+)
+
+target_include_directories(test_core_event_engine_slice_buffer_test
+  PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
+    ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_RE2_INCLUDE_DIR}
+    ${_gRPC_SSL_INCLUDE_DIR}
+    ${_gRPC_UPB_GENERATED_DIR}
+    ${_gRPC_UPB_GRPC_GENERATED_DIR}
+    ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
+    ${_gRPC_ZLIB_INCLUDE_DIR}
+    third_party/googletest/googletest/include
+    third_party/googletest/googletest
+    third_party/googletest/googlemock/include
+    third_party/googletest/googlemock
+    ${_gRPC_PROTO_GENS_DIR}
+)
+
+target_link_libraries(test_core_event_engine_slice_buffer_test
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  grpc_test_util
+)
+
+
+endif()
+if(gRPC_BUILD_TESTS)
+
 add_executable(test_core_gprpp_time_test
   src/core/lib/gprpp/time.cc
   test/core/gprpp/time_test.cc
@@ -15889,6 +15940,41 @@ target_include_directories(test_core_security_credentials_test
 )
 
 target_link_libraries(test_core_security_credentials_test
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  grpc_test_util
+)
+
+
+endif()
+if(gRPC_BUILD_TESTS)
+
+add_executable(test_core_slice_slice_buffer_test
+  test/core/slice/slice_buffer_test.cc
+  third_party/googletest/googletest/src/gtest-all.cc
+  third_party/googletest/googlemock/src/gmock-all.cc
+)
+
+target_include_directories(test_core_slice_slice_buffer_test
+  PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
+    ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_RE2_INCLUDE_DIR}
+    ${_gRPC_SSL_INCLUDE_DIR}
+    ${_gRPC_UPB_GENERATED_DIR}
+    ${_gRPC_UPB_GRPC_GENERATED_DIR}
+    ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
+    ${_gRPC_ZLIB_INCLUDE_DIR}
+    third_party/googletest/googletest/include
+    third_party/googletest/googletest
+    third_party/googletest/googlemock/include
+    third_party/googletest/googlemock
+    ${_gRPC_PROTO_GENS_DIR}
+)
+
+target_link_libraries(test_core_slice_slice_buffer_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
@@ -19145,7 +19231,7 @@ generate_pkgconfig(
   "gRPC"
   "high performance general RPC framework"
   "${gRPC_CORE_VERSION}"
-  "gpr openssl absl_base absl_bind_front absl_cord absl_core_headers absl_flat_hash_map absl_hash absl_inlined_vector absl_memory absl_optional absl_random_random absl_span absl_status absl_statusor absl_str_format absl_strings absl_synchronization absl_time absl_utility absl_variant"
+  "gpr openssl absl_base absl_bind_front absl_cord absl_core_headers absl_flat_hash_map absl_hash absl_inlined_vector absl_memory absl_optional absl_random_random absl_span absl_status absl_statusor absl_str_format absl_strings absl_synchronization absl_time absl_type_traits absl_utility absl_variant"
   "-lgrpc -laddress_sorting -lre2 -lupb -lcares -lz"
   ""
   "grpc.pc")
@@ -19155,7 +19241,7 @@ generate_pkgconfig(
   "gRPC unsecure"
   "high performance general RPC framework without SSL"
   "${gRPC_CORE_VERSION}"
-  "gpr absl_base absl_bind_front absl_cord absl_core_headers absl_flat_hash_map absl_hash absl_inlined_vector absl_memory absl_optional absl_random_random absl_span absl_status absl_statusor absl_str_format absl_strings absl_synchronization absl_time absl_utility absl_variant"
+  "gpr absl_base absl_bind_front absl_cord absl_core_headers absl_flat_hash_map absl_hash absl_inlined_vector absl_memory absl_optional absl_random_random absl_span absl_status absl_statusor absl_str_format absl_strings absl_synchronization absl_time absl_type_traits absl_utility absl_variant"
   "-lgrpc_unsecure"
   ""
   "grpc_unsecure.pc")
@@ -19165,7 +19251,7 @@ generate_pkgconfig(
   "gRPC++"
   "C++ wrapper for gRPC"
   "${gRPC_CPP_VERSION}"
-  "grpc absl_base absl_bind_front absl_cord absl_core_headers absl_flat_hash_map absl_hash absl_inlined_vector absl_memory absl_optional absl_random_random absl_span absl_status absl_statusor absl_str_format absl_strings absl_synchronization absl_time absl_utility absl_variant"
+  "grpc absl_base absl_bind_front absl_cord absl_core_headers absl_flat_hash_map absl_hash absl_inlined_vector absl_memory absl_optional absl_random_random absl_span absl_status absl_statusor absl_str_format absl_strings absl_synchronization absl_time absl_type_traits absl_utility absl_variant"
   "-lgrpc++"
   ""
   "grpc++.pc")
@@ -19175,7 +19261,7 @@ generate_pkgconfig(
   "gRPC++ unsecure"
   "C++ wrapper for gRPC without SSL"
   "${gRPC_CPP_VERSION}"
-  "grpc_unsecure absl_base absl_bind_front absl_cord absl_core_headers absl_flat_hash_map absl_hash absl_inlined_vector absl_memory absl_optional absl_random_random absl_span absl_status absl_statusor absl_str_format absl_strings absl_synchronization absl_time absl_utility absl_variant"
+  "grpc_unsecure absl_base absl_bind_front absl_cord absl_core_headers absl_flat_hash_map absl_hash absl_inlined_vector absl_memory absl_optional absl_random_random absl_span absl_status absl_statusor absl_str_format absl_strings absl_synchronization absl_time absl_type_traits absl_utility absl_variant"
   "-lgrpc++_unsecure"
   ""
   "grpc++_unsecure.pc")

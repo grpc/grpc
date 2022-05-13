@@ -39,6 +39,7 @@
 #include <grpc/support/alloc.h>
 #include <grpc/support/string_util.h>
 
+#include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/channel/channel_stack_builder_impl.h"
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/gpr/string.h"
