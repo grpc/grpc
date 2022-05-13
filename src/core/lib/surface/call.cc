@@ -25,7 +25,6 @@
 
 #include <algorithm>
 #include <atomic>
-#include <memory>
 #include <new>
 #include <string>
 #include <utility>
@@ -61,7 +60,6 @@
 #include "src/core/lib/gprpp/cpp_impl_of.h"
 #include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/manual_constructor.h"
-#include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/gprpp/ref_counted.h"
 #include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/iomgr/call_combiner.h"
@@ -69,6 +67,7 @@
 #include "src/core/lib/iomgr/polling_entity.h"
 #include "src/core/lib/profiling/timers.h"
 #include "src/core/lib/resource_quota/arena.h"
+#include "src/core/lib/slice/slice_buffer.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/slice/slice_refcount.h"
 #include "src/core/lib/surface/api_trace.h"

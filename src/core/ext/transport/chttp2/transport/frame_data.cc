@@ -20,6 +20,7 @@
 
 #include "src/core/ext/transport/chttp2/transport/frame_data.h"
 
+#include <stdlib.h>
 #include <string.h>
 
 #include "absl/base/attributes.h"
@@ -31,10 +32,9 @@
 #include "src/core/ext/transport/chttp2/transport/internal.h"
 #include "src/core/lib/channel/channelz.h"
 #include "src/core/lib/gpr/string.h"
-#include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/memory.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
-#include "src/core/lib/iomgr/exec_ctx.h"
+#include "src/core/lib/slice/slice.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/slice/slice_refcount.h"
 #include "src/core/lib/slice/slice_string_helpers.h"

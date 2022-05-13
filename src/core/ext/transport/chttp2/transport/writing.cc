@@ -22,7 +22,6 @@
 #include <stddef.h>
 
 #include <algorithm>
-#include <memory>
 #include <string>
 
 #include "absl/types/optional.h"

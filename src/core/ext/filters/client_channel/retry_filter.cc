@@ -33,6 +33,7 @@
 #include "absl/strings/string_view.h"
 #include "absl/strings/strip.h"
 #include "absl/types/optional.h"
+#include "absl/utility/utility.h"
 
 #include <grpc/impl/codegen/grpc_types.h>
 #include <grpc/slice.h>
@@ -53,7 +54,6 @@
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/gprpp/debug_location.h"
-#include "src/core/lib/gprpp/manual_constructor.h"
 #include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/gprpp/ref_counted.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
@@ -67,6 +67,7 @@
 #include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/service_config/service_config.h"
 #include "src/core/lib/service_config/service_config_call_data.h"
+#include "src/core/lib/slice/slice_buffer.h"
 #include "src/core/lib/slice/slice_refcount.h"
 #include "src/core/lib/transport/error_utils.h"
 #include "src/core/lib/transport/metadata_batch.h"

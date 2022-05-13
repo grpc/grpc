@@ -27,6 +27,7 @@
 #include <string>
 
 #include "absl/strings/string_view.h"
+#include "absl/types/optional.h"
 
 #include <grpc/event_engine/memory_allocator.h>
 #include <grpc/impl/codegen/grpc_types.h>
@@ -49,7 +50,6 @@
 #include "src/core/lib/gprpp/bitset.h"
 #include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/manual_constructor.h"
-#include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/gprpp/ref_counted.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/gprpp/time.h"
@@ -60,6 +60,7 @@
 #include "src/core/lib/iomgr/timer.h"
 #include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/resource_quota/memory_quota.h"
+#include "src/core/lib/slice/slice_buffer.h"
 #include "src/core/lib/transport/connectivity_state.h"
 #include "src/core/lib/transport/metadata_batch.h"
 #include "src/core/lib/transport/transport.h"

@@ -32,6 +32,7 @@
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/iomgr/error.h"
+#include "src/core/lib/slice/slice_buffer.h"
 #include "src/core/lib/transport/connectivity_state.h"
 #include "src/core/lib/transport/metadata_batch.h"
 #include "src/core/lib/transport/transport.h"

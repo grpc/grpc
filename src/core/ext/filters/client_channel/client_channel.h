@@ -65,6 +65,7 @@
 #include "src/core/lib/service_config/service_config_call_data.h"
 #include "src/core/lib/service_config/service_config_parser.h"
 #include "src/core/lib/slice/slice.h"
+#include "src/core/lib/slice/slice_buffer.h"
 #include "src/core/lib/surface/channel.h"
 #include "src/core/lib/transport/connectivity_state.h"
 #include "src/core/lib/transport/metadata_batch.h"

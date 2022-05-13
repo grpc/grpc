@@ -28,8 +28,8 @@
 #include <grpc/slice.h>
 
 #include "src/core/ext/transport/chttp2/transport/frame.h"
-#include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/iomgr/error.h"
+#include "src/core/lib/slice/slice_buffer.h"
 #include "src/core/lib/transport/transport.h"
 
 typedef enum {
