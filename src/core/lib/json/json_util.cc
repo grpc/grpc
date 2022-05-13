@@ -20,13 +20,13 @@
 
 #include "src/core/lib/json/json_util.h"
 
-#include <string.h>  // for strchr, strlen, size_t
+#include <string.h>
 
-#include <grpc/support/log.h>          // for gpr_log, GPR_INFO
-#include <grpc/support/string_util.h>  // for gpr_strdup
+#include <grpc/support/log.h>
+#include <grpc/support/string_util.h>
 
-#include "src/core/lib/gpr/string.h"    // for gpr_parse_nonnegative_int
-#include "src/core/lib/gprpp/memory.h"  // for UniquePtr
+#include "src/core/lib/gpr/string.h"
+#include "src/core/lib/gprpp/memory.h"
 
 namespace grpc_core {
 
