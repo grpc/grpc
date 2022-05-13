@@ -13,21 +13,6 @@
 // limitations under the License.
 #include <grpc/support/port_platform.h>
 
-#include <memory>
+#include "src/core/lib/debug/trace.h"
 
-#include "absl/memory/memory.h"
-
-#include <grpc/event_engine/event_engine.h>
-
-#include "src/core/lib/event_engine/event_engine_factory.h"
-#include "src/core/lib/event_engine/iomgr_engine.h"
-
-namespace grpc_event_engine {
-namespace experimental {
-
-std::unique_ptr<EventEngine> DefaultEventEngineFactory() {
-  return absl::make_unique<IomgrEventEngine>();
-}
-
-}  // namespace experimental
-}  // namespace grpc_event_engine
+grpc_core::TraceFlag grpc_event_engine_trace(false, "event_engine");
