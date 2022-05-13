@@ -1216,14 +1216,6 @@ argp.add_argument(
     action='store_const',
     const=True,
     help='Enable HTTP/2 client edge case testing. (Bad client, good server)')
-argp.add_argument(
-    '--http2_server_interop',
-    default=False,
-    action='store_const',
-    const=True,
-    help=
-    'Enable HTTP/2 server edge case testing. (Includes positive and negative tests'
-)
 argp.add_argument('--transport_security',
                   choices=_TRANSPORT_SECURITY_OPTIONS,
                   default='tls',
@@ -1298,15 +1290,7 @@ if args.transport_security == 'alts':
     alts_languages = set(_LANGUAGES[l] for l in _LANGUAGES_FOR_ALTS_TEST_CASES)
     languages = languages.intersection(alts_languages)
 
-languages_http2_clients_for_http2_server_interop = set()
-if args.http2_server_interop:
-    languages_http2_clients_for_http2_server_interop = set(
-        _LANGUAGES[l]
-        for l in _LANGUAGES_WITH_HTTP2_CLIENTS_FOR_HTTP2_SERVER_TEST_CASES
-        if 'all' in args.language or l in args.language)
-
 http2Interop = Http2Client() if args.http2_interop else None
-http2InteropServer = Http2Server() if args.http2_server_interop else None
 
 docker_images = {}
 if args.use_docker:
@@ -1314,13 +1298,10 @@ if args.use_docker:
     languages_to_build = set(_LANGUAGES[k]
                              for k in set([str(l) for l in languages] +
                                           [s for s in servers]))
-    languages_to_build = languages_to_build | languages_http2_clients_for_http2_server_interop
+    languages_to_build = languages_to_build
 
     if args.http2_interop:
         languages_to_build.add(http2Interop)
-
-    if args.http2_server_interop:
-        languages_to_build.add(http2InteropServer)
 
     build_jobs = []
     for l in languages_to_build:
@@ -1375,20 +1356,6 @@ try:
             server_jobs[lang] = job
             server_addresses[lang] = ('localhost',
                                       job.mapped_port(_DEFAULT_SERVER_PORT))
-        else:
-            # don't run the server, set server port to a placeholder value
-            server_addresses[lang] = ('localhost', '${SERVER_PORT}')
-
-    http2_server_job = None
-    if args.http2_server_interop:
-        # launch a HTTP2 server emulator that creates edge cases
-        lang = str(http2InteropServer)
-        spec = server_jobspec(http2InteropServer,
-                              docker_images.get(lang),
-                              manual_cmd_log=server_manual_cmd_log)
-        if not args.manual_run:
-            http2_server_job = dockerjob.DockerJob(spec)
-            server_jobs[lang] = http2_server_job
         else:
             # don't run the server, set server port to a placeholder value
             server_addresses[lang] = ('localhost', '${SERVER_PORT}')
@@ -1523,55 +1490,6 @@ try:
                     manual_cmd_log=client_manual_cmd_log)
                 jobs.append(test_job)
 
-    if args.http2_server_interop:
-        if not args.manual_run:
-            http2_server_job.wait_for_healthy(timeout_seconds=600)
-        for language in languages_http2_clients_for_http2_server_interop:
-            for test_case in set(_HTTP2_SERVER_TEST_CASES) - set(
-                    _HTTP2_SERVER_TEST_CASES_THAT_USE_GRPC_CLIENTS):
-                offset = sorted(_HTTP2_SERVER_TEST_CASES).index(test_case)
-                server_port = _DEFAULT_SERVER_PORT + offset
-                if not args.manual_run:
-                    server_port = http2_server_job.mapped_port(server_port)
-                test_job = cloud_to_cloud_jobspec(
-                    language,
-                    test_case,
-                    str(http2InteropServer),
-                    'localhost',
-                    server_port,
-                    docker_image=docker_images.get(str(language)),
-                    manual_cmd_log=client_manual_cmd_log)
-                jobs.append(test_job)
-        for language in languages:
-            # HTTP2_SERVER_TEST_CASES_THAT_USE_GRPC_CLIENTS is a subset of
-            # HTTP_SERVER_TEST_CASES, in which clients use their gRPC interop clients rather
-            # than specialized http2 clients, reusing existing test implementations.
-            # For example, in the "data_frame_padding" test, use language's gRPC
-            # interop clients and make them think that they're running "large_unary"
-            # test case. This avoids implementing a new test case in each language.
-            for test_case in _HTTP2_SERVER_TEST_CASES_THAT_USE_GRPC_CLIENTS:
-                if test_case not in language.unimplemented_test_cases():
-                    offset = sorted(_HTTP2_SERVER_TEST_CASES).index(test_case)
-                    server_port = _DEFAULT_SERVER_PORT + offset
-                    if not args.manual_run:
-                        server_port = http2_server_job.mapped_port(server_port)
-                    if args.transport_security != 'insecure':
-                        print(
-                            ('Creating grpc client to http2 server test case '
-                             'with insecure connection, even though '
-                             'args.transport_security is not insecure. Http2 '
-                             'test server only supports insecure connections.'))
-                    test_job = cloud_to_cloud_jobspec(
-                        language,
-                        test_case,
-                        str(http2InteropServer),
-                        'localhost',
-                        server_port,
-                        docker_image=docker_images.get(str(language)),
-                        transport_security='insecure',
-                        manual_cmd_log=client_manual_cmd_log)
-                    jobs.append(test_job)
-
     if not jobs:
         print('No jobs to run.')
         for image in six.itervalues(docker_images):
@@ -1603,9 +1521,6 @@ try:
     for name, job in list(resultset.items()):
         if "http2" in name:
             job[0].http2results = aggregate_http2_results(job[0].message)
-
-    http2_server_test_cases = (_HTTP2_SERVER_TEST_CASES
-                               if args.http2_server_interop else [])
 
     if num_failures:
         sys.exit(1)
