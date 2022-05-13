@@ -3097,8 +3097,9 @@ grpc_cc_library(
         "src/core/ext/filters/client_channel/lb_policy/grpclb/load_balancer_api.h",
     ],
     external_deps = [
-        "absl/memory",
         "absl/container:inlined_vector",
+        "absl/functional:bind_front",
+        "absl/memory",
         "absl/status",
         "absl/status:statusor",
         "absl/strings",
@@ -3113,6 +3114,7 @@ grpc_cc_library(
         "channel_stack_type",
         "config",
         "debug_location",
+        "default_event_engine_factory_hdrs",
         "error",
         "gpr_base",
         "gpr_codegen",
