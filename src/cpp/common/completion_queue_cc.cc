@@ -120,13 +120,29 @@ CallbackAlternativeCQ g_callback_alternative_cq;
 
 }  // namespace
 
+CompletionQueue::CompletionQueue()
+    : CompletionQueue(grpc_completion_queue_attributes{
+          GRPC_CQ_CURRENT_VERSION, GRPC_CQ_NEXT, GRPC_CQ_DEFAULT_POLLING,
+          nullptr}) {}
+
 // 'CompletionQueue' constructor can safely call GrpcLibraryCodegen(false) here
 // i.e not have GrpcLibraryCodegen call grpc_init(). This is because, to create
 // a 'grpc_completion_queue' instance (which is being passed as the input to
 // this constructor), one must have already called grpc_init().
 CompletionQueue::CompletionQueue(grpc_completion_queue* take)
     : GrpcLibraryCodegen(false), cq_(take) {
+  g_gli_initializer.summon();
   InitialAvalanching();
+}
+
+CompletionQueue::CompletionQueue(
+    const grpc_completion_queue_attributes& attributes) {
+  g_gli_initializer.summon();
+  cq_ = grpc::g_core_codegen_interface->grpc_completion_queue_create(
+      grpc::g_core_codegen_interface->grpc_completion_queue_factory_lookup(
+          &attributes),
+      &attributes, nullptr);
+  InitialAvalanching();  // reserve this for the future shutdown
 }
 
 void CompletionQueue::Shutdown() {

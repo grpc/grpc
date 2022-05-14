@@ -22,6 +22,7 @@
 namespace grpc {
 
 static grpc::internal::GrpcLibraryInitializer g_gli_initializer;
+
 ChannelCredentials::ChannelCredentials() { g_gli_initializer.summon(); }
 
 ChannelCredentials::~ChannelCredentials() {}

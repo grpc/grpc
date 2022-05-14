@@ -44,6 +44,7 @@
 namespace grpc {
 
 static grpc::internal::GrpcLibraryInitializer g_gli_initializer;
+
 SecureChannelCredentials::SecureChannelCredentials(
     grpc_channel_credentials* c_creds)
     : c_creds_(c_creds) {
