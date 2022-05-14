@@ -1299,7 +1299,9 @@ int main(int argc, char** argv) {
   // Workaround Apple CFStream bug
   gpr_setenv("grpc_cfstream", "0");
 #endif
+  gpr_setenv("GRPC_EXPERIMENTAL_ENABLE_OUTLIER_DETECTION", "true");
   grpc_init();
+  gpr_unsetenv("GRPC_EXPERIMENTAL_ENABLE_OUTLIER_DETECTION");
   const auto result = RUN_ALL_TESTS();
   grpc_shutdown();
   return result;

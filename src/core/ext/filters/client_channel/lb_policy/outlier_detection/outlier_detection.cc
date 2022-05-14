@@ -1028,9 +1028,11 @@ class OutlierDetectionLbFactory : public LoadBalancingPolicyFactory {
 //
 
 void grpc_lb_policy_outlier_detection_init() {
-  grpc_core::LoadBalancingPolicyRegistry::Builder::
-      RegisterLoadBalancingPolicyFactory(
-          absl::make_unique<grpc_core::OutlierDetectionLbFactory>());
+  if (grpc_core::XdsOutlierDetectionEnabled()) {
+    grpc_core::LoadBalancingPolicyRegistry::Builder::
+        RegisterLoadBalancingPolicyFactory(
+            absl::make_unique<grpc_core::OutlierDetectionLbFactory>());
+  }
 }
 
 void grpc_lb_policy_outlier_detection_shutdown() {}

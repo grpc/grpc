@@ -3281,6 +3281,7 @@ grpc_cc_library(
         "grpc_lb_policy_ring_hash",
         "grpc_lb_xds_channel_args",
         "grpc_lb_xds_common",
+        "grpc_outlier_detection_header",
         "grpc_resolver",
         "grpc_resolver_fake",
         "grpc_trace",
