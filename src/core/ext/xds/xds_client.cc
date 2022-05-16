@@ -1938,11 +1938,9 @@ void XdsClient::CancelResourceWatch(const XdsResourceType* type,
                                     bool delay_unsubscription) {
   auto resource_name = ParseXdsResourceName(name, type);
   MutexLock lock(&mu_);
-  if (!resource_name.ok()) {
-    invalid_watchers_.erase(watcher);
-    return;
-  }
-  if (shutting_down_) return;
+  // We cannot be sure whether the watcher is in invalid_watchers_ or in
+  // authority_state_map_, so we check both, just to be safe.
+  invalid_watchers_.erase(watcher);
   // Find authority.
   auto authority_it = authority_state_map_.find(resource_name->authority);
   if (authority_it == authority_state_map_.end()) return;

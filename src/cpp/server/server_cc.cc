@@ -848,6 +848,7 @@ class Server::SyncRequestThreadManager : public grpc::ThreadManager {
 };
 
 static grpc::internal::GrpcLibraryInitializer g_gli_initializer;
+
 Server::Server(
     grpc::ChannelArguments* args,
     std::shared_ptr<std::vector<std::unique_ptr<grpc::ServerCompletionQueue>>>
