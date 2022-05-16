@@ -1439,6 +1439,8 @@ static void perform_stream_op_locked(void* stream_op,
         op->payload->send_message.send_message->Length());
     on_complete->next_data.scratch |= CLOSURE_BARRIER_MAY_COVER_WRITE;
     s->send_message_finished = add_closure_barrier(op->on_complete);
+    gpr_log(GPR_DEBUG, "SEND_MESSAGE: %s",
+            op_payload->send_message.send_message->JoinIntoString().c_str());
     const uint32_t flags = op_payload->send_message.flags;
     if (s->write_closed) {
       op->payload->send_message.stream_write_closed = true;

@@ -190,13 +190,7 @@ grpc_error_handle grpc_deframe_unprocessed_incoming_frames(
           // Return so that calling code can pass up the frame
           return GRPC_ERROR_NONE;
         }
-        if (cur != end) {
-          grpc_slice_buffer_sub_first(slices, static_cast<size_t>(cur - beg),
-                                      static_cast<size_t>(end - beg));
-        } else {
-          grpc_slice_buffer_remove_first(slices);
-        }
-        return GRPC_ERROR_NONE;
+        ABSL_FALLTHROUGH_INTENDED;
       case GRPC_CHTTP2_DATA_FRAME: {
         if (cur == end) {
           grpc_slice_buffer_remove_first(slices);
