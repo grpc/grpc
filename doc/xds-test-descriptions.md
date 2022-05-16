@@ -745,3 +745,38 @@ the forwarding rule port `80` and the URL map host rule `myservice`.
 1. No traffic goes to backends when configuring the target URI
 `xds:///myservice`, the forwarding rule port `80` and the host rule 
 `myservice::80`.
+
+### outlier_detection
+This test verifies that the client applies the outlier detection configuration
+and temporarily drops traffic to a server that fails requests.
+
+Client parameters:
+
+1.  --num_channels=1
+2.  --qps=100
+
+Load balancer configuration:
+
+1.  One MIG with five backends, with a `backendService` configuration with the
+    following `outlierDetection` entry
+    ```json
+    {
+      "interval": {
+        "seconds": 2,
+        "nanos": 0
+      },
+      "successRateRequestVolume": 20
+    }
+    ```
+Assert:
+
+1.  The test driver asserts that traffic is equally distribted among the
+five backends, and all requests end with the `OK` status.
+2.  The test driver chooses one of the five backends to fail requests, and
+configures the client to send the metadata
+`rpc-behavior: hostname=<chosen backend> error-code-2`. The driver asserts
+that during some 10-second interval, all traffic goes to the other four
+backends and all requests end with the `OK` status.
+3.  The test driver removes the client configuration to send metadata. The
+driver asserts that during some 10-second interval, traffic is equally
+distributed among the five backends, and all requests end with the `OK` status.

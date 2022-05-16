@@ -13,11 +13,14 @@
 // limitations under the License.
 #include <grpc/support/port_platform.h>
 
-#include <grpc/event_engine/event_engine.h>
-#include <grpc/event_engine/port.h>
-#include <grpc/support/log.h>
+#include <functional>
+#include <memory>
 
+#include <grpc/event_engine/event_engine.h>
+
+#include "src/core/lib/debug/trace.h"
 #include "src/core/lib/event_engine/event_engine_factory.h"
+#include "src/core/lib/event_engine/trace.h"
 #include "src/core/lib/gprpp/sync.h"
 
 namespace grpc_event_engine {
@@ -46,6 +49,13 @@ std::unique_ptr<EventEngine> CreateEventEngine() {
 EventEngine* GetDefaultEventEngine() {
   static EventEngine* default_event_engine = CreateEventEngine().release();
   return default_event_engine;
+}
+
+void InitializeEventEngine() {
+  GetDefaultEventEngine()->Run([]() {
+    GRPC_EVENT_ENGINE_TRACE("EventEngine:%p initialized",
+                            GetDefaultEventEngine());
+  });
 }
 
 }  // namespace experimental

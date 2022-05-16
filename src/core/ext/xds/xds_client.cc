@@ -199,8 +199,8 @@ class XdsClient::ChannelState::AdsCallState
     }
 
     void MaybeStartTimer(RefCountedPtr<AdsCallState> ads_calld) {
-      if (timer_started_) return;
-      timer_started_ = true;
+      if (!timer_start_needed_) return;
+      timer_start_needed_ = false;
       ads_calld_ = std::move(ads_calld);
       Ref(DEBUG_LOCATION, "timer").release();
       timer_pending_ = true;
@@ -211,6 +211,18 @@ class XdsClient::ChannelState::AdsCallState
     }
 
     void MaybeCancelTimer() {
+      // If the timer hasn't been started yet, make sure we don't start
+      // it later.  This can happen if the last watch for an LDS or CDS
+      // resource is cancelled and then restarted, both while an ADS
+      // request for a different resource type is being sent (causing
+      // the unsubscription and then resubscription requests to be
+      // queued), and then we get a response for the LDS or CDS resource.
+      // In that case, we would call MaybeCancelTimer() when we receive the
+      // response and then MaybeStartTimer() when we finally send the new
+      // LDS or CDS request, thus causing the timer to fire when it shouldn't.
+      // For details, see https://github.com/grpc/grpc/issues/29583.
+      // TODO(roth): Find a way to write a test for this case.
+      timer_start_needed_ = false;
       if (timer_pending_) {
         grpc_timer_cancel(&timer_);
         timer_pending_ = false;
@@ -258,7 +270,7 @@ class XdsClient::ChannelState::AdsCallState
     const XdsResourceName name_;
 
     RefCountedPtr<AdsCallState> ads_calld_;
-    bool timer_started_ = false;
+    bool timer_start_needed_ = true;
     bool timer_pending_ = false;
     grpc_timer timer_;
     grpc_closure timer_callback_;
@@ -1926,11 +1938,9 @@ void XdsClient::CancelResourceWatch(const XdsResourceType* type,
                                     bool delay_unsubscription) {
   auto resource_name = ParseXdsResourceName(name, type);
   MutexLock lock(&mu_);
-  if (!resource_name.ok()) {
-    invalid_watchers_.erase(watcher);
-    return;
-  }
-  if (shutting_down_) return;
+  // We cannot be sure whether the watcher is in invalid_watchers_ or in
+  // authority_state_map_, so we check both, just to be safe.
+  invalid_watchers_.erase(watcher);
   // Find authority.
   auto authority_it = authority_state_map_.find(resource_name->authority);
   if (authority_it == authority_state_map_.end()) return;
