@@ -1558,6 +1558,7 @@ static void perform_stream_op_locked(void* stream_op,
     GPR_ASSERT(s->recv_message_ready == nullptr);
     s->recv_message_ready = op_payload->recv_message.recv_message_ready;
     s->recv_message = op_payload->recv_message.recv_message;
+    s->recv_message->emplace();
     s->call_failed_before_recv_message =
         op_payload->recv_message.call_failed_before_recv_message;
     if (s->id != 0) {
