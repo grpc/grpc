@@ -95,6 +95,7 @@ class MyTestServiceImpl : public TestServiceImpl {
     if (request->has_param() && request->param().has_backend_metrics()) {
       load_report_ = request->param().backend_metrics();
       auto recorder = context->ExperimentalGetCallMetricRecorder();
+      EXPECT_NE(recorder, nullptr);
       recorder->RecordCpuUtilizationMetric(load_report_.cpu_utilization())
           .RecordMemoryUtilizationMetric(load_report_.mem_utilization());
       for (const auto& p : load_report_.request_cost()) {
