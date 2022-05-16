@@ -510,8 +510,8 @@ TEST_P(LdsDeletionTest, ListenerDeletionIgnored) {
   CheckRpcSendOk(DEBUG_LOCATION);
   // Now recreate the LDS resource pointing to a different CDS and EDS
   // resource, pointing to backend 1, and make sure the client uses it.
-  constexpr char* kNewClusterName = "new_cluster_name";
-  constexpr char* kNewEdsResourceName = "new_eds_resource_name";
+  const char* kNewClusterName = "new_cluster_name";
+  const char* kNewEdsResourceName = "new_eds_resource_name";
   auto cluster = default_cluster_;
   cluster.set_name(kNewClusterName);
   cluster.mutable_eds_cluster_config()->set_service_name(kNewEdsResourceName);
