@@ -11,23 +11,20 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+#ifndef GRPC_CORE_LIB_EVENT_ENGINE_TRACE_H
+#define GRPC_CORE_LIB_EVENT_ENGINE_TRACE_H
+
 #include <grpc/support/port_platform.h>
 
-#include <memory>
+#include <grpc/support/log.h>
 
-#include "absl/memory/memory.h"
+#include "src/core/lib/debug/trace.h"
 
-#include <grpc/event_engine/event_engine.h>
+extern grpc_core::TraceFlag grpc_event_engine_trace;
 
-#include "src/core/lib/event_engine/event_engine_factory.h"
-#include "src/core/lib/event_engine/iomgr_engine.h"
+#define GRPC_EVENT_ENGINE_TRACE(format, ...)                   \
+  if (GRPC_TRACE_FLAG_ENABLED(grpc_event_engine_trace)) {      \
+    gpr_log(GPR_DEBUG, "(event_engine) " format, __VA_ARGS__); \
+  }
 
-namespace grpc_event_engine {
-namespace experimental {
-
-std::unique_ptr<EventEngine> DefaultEventEngineFactory() {
-  return absl::make_unique<IomgrEventEngine>();
-}
-
-}  // namespace experimental
-}  // namespace grpc_event_engine
+#endif  // GRPC_CORE_LIB_EVENT_ENGINE_TRACE_H
