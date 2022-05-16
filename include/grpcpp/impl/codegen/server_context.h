@@ -290,8 +290,10 @@ class ServerContextBase {
 
   /// Get the \a CallMetricRecorder object for the current RPC.
   /// Use it to record metrics during your RPC to send back to the
-  /// client in order to make load balancing decisions.
-  experimental::CallMetricRecorder& ExperimentalGetCallMetricRecorder();
+  /// client in order to make load balancing decisions. This will
+  /// return nullptr if the feature hasn't been enabled using
+  /// \a EnableCallMetricRecording.
+  experimental::CallMetricRecorder* ExperimentalGetCallMetricRecorder();
 
  protected:
   /// Async only. Has to be called before the rpc starts.
@@ -477,7 +479,7 @@ class ServerContextBase {
   grpc::experimental::ServerRpcInfo* rpc_info_ = nullptr;
   RpcAllocatorState* message_allocator_state_ = nullptr;
   ContextAllocator* context_allocator_ = nullptr;
-  experimental::CallMetricRecorder* call_metric_recorder_;
+  experimental::CallMetricRecorder* call_metric_recorder_ = nullptr;
 
   class Reactor : public grpc::ServerUnaryReactor {
    public:

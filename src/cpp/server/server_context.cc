@@ -380,13 +380,13 @@ void ServerContextBase::SetLoadReportingCosts(
   }
 }
 
-grpc::experimental::CallMetricRecorder&
+grpc::experimental::CallMetricRecorder*
 ServerContextBase::ExperimentalGetCallMetricRecorder() {
-  if (!call_metric_recorder_) {
+  if (call_metric_recorder_ == nullptr)  {
     grpc_core::Arena* arena = grpc_call_get_arena(call_.call);
     call_metric_recorder_ = arena->New<experimental::CallMetricRecorder>(arena);
   }
-  return *call_metric_recorder_;
+  return call_metric_recorder_;
 }
 
 }  // namespace grpc
