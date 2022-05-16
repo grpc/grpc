@@ -32,8 +32,6 @@ namespace grpc {
 namespace testing {
 namespace {
 
-using ::envoy::config::endpoint::v3::HealthStatus;
-
 class OutlierDetectionTest : public XdsEnd2endTest {
  protected:
   std::string CreateMetadataValueThatHashesToBackend(int index) {
