@@ -15,25 +15,4 @@
 
 set -ex
 
-# avoid slow finalization after the script has exited.
-source $(dirname $0)/../../../tools/internal_ci/helper_scripts/move_src_tree_and_respawn_itself_rc
-
-# change to grpc repo root
-cd $(dirname $0)/../../..
-
-source tools/internal_ci/helper_scripts/prepare_build_linux_rc
-
-# prerequisites for ruby artifact build on linux
-source tools/internal_ci/helper_scripts/prepare_build_linux_ruby_artifact_rc
-
-# configure ccache
-source tools/internal_ci/helper_scripts/prepare_ccache_rc
-
-tools/run_tests/task_runner.py -f artifact linux ${TASK_RUNNER_EXTRA_FILTERS} -j 6 --inner_jobs 6 || FAILED="true"
-
-tools/internal_ci/helper_scripts/store_artifacts_from_moved_src_tree.sh
-
-if [ "$FAILED" != "" ]
-then
-  exit 1
-fi
+echo "This does nothing. The grpc_build_artifacts job has been been split into per-language grpc_distribtests_* jobs."

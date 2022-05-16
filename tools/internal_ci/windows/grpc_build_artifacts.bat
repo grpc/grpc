@@ -12,30 +12,4 @@
 @rem See the License for the specific language governing permissions and
 @rem limitations under the License.
 
-@rem Avoid slow finalization after the script has exited.
-@rem See the script's prologue for info on the correct invocation pattern.
-setlocal EnableDelayedExpansion
-IF "%cd%"=="T:\src" (
-  call %~dp0\..\..\..\tools\internal_ci\helper_scripts\move_src_tree_and_respawn_itself.bat %0
-  echo respawn script has finished with exitcode !errorlevel!
-  exit /b !errorlevel!
-)
-endlocal
-
-@rem enter repo root
-cd /d %~dp0\..\..\..
-
-set PREPARE_BUILD_INSTALL_DEPS_PYTHON=true
-call tools/internal_ci/helper_scripts/prepare_build_windows.bat || exit /b 1
-
-call tools/internal_ci/helper_scripts/prepare_ccache.bat || exit /b 1
-
-python tools/run_tests/task_runner.py -f artifact windows %TASK_RUNNER_EXTRA_FILTERS% -j 4 --inner_jobs 4
-set RUNTESTS_EXITCODE=%errorlevel%
-
-@rem show ccache stats
-ccache --show-stats
-
-bash tools/internal_ci/helper_scripts/store_artifacts_from_moved_src_tree.sh
-
-exit /b %RUNTESTS_EXITCODE%
+echo "This does nothing. The grpc_build_artifacts job has been been split into per-language grpc_distribtests_* jobs."
