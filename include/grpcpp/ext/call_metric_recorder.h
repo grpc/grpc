@@ -29,6 +29,7 @@
 #include <grpcpp/impl/codegen/slice.h>
 
 namespace grpc_core {
+class Arena;
 struct BackendMetricData;
 }
 
@@ -50,7 +51,7 @@ void EnableCallMetricRecording(ServerBuilder*);
 /// method to retrive the recorder for the current call.
 class CallMetricRecorder {
  public:
-  CallMetricRecorder();
+  CallMetricRecorder(grpc_core::Arena* arena);
   ~CallMetricRecorder();
 
   /// Records a call metric measurement for CPU utilization.
@@ -63,20 +64,28 @@ class CallMetricRecorder {
 
   /// Records a call metric measurement for utilization.
   /// Multiple calls to this method with the same name will
-  /// override the corresponding stored value.
+  /// override the corresponding stored value. The lifetime of the
+  /// name string needs to be longer than the lifetime of the RPC
+  /// itself, since it's going to be sent as trailers after the RPC
+  /// finishes. It is assumed the strings are common names that
+  /// are global constants.
   CallMetricRecorder& RecordUtilizationMetric(grpc::string_ref name,
                                               double value);
 
   /// Records a call metric measurement for request cost.
   /// Multiple calls to this method with the same name will
-  /// override the corresponding stored value.
+  /// override the corresponding stored value. The lifetime of the
+  /// name string needs to be longer than the lifetime of the RPC
+  /// itself, since it's going to be sent as trailers after the RPC
+  /// finishes. It is assumed the strings are common names that
+  /// are global constants.
   CallMetricRecorder& RecordRequestCostMetric(grpc::string_ref name,
                                               double value);
   bool disabled() const { return disabled_; }
 
  private:
   std::string CreateSerializedReport();
-  std::unique_ptr<grpc_core::BackendMetricData> backend_metric_data_;
+  grpc_core::BackendMetricData* backend_metric_data_;
   bool disabled_ = false;
   friend class experimental::OrcaServerInterceptor;
 };

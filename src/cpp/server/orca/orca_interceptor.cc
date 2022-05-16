@@ -28,8 +28,8 @@ void grpc::experimental::OrcaServerInterceptor::Intercept(
     auto trailers = methods->GetSendTrailingMetadata();
     if (trailers != nullptr) {
       auto context = info_->server_context();
-      auto recorder = context->call_metric_recorder_.get();
-      if (recorder) {
+      auto recorder = context->call_metric_recorder_;
+      if (recorder != nullptr) {
         auto serialized = recorder->CreateSerializedReport();
         std::string key =
             std::string(grpc_core::EndpointLoadMetricsBinMetadata::key());

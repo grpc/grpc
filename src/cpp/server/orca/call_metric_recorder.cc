@@ -21,11 +21,15 @@
 #include <grpcpp/ext/call_metric_recorder.h>
 
 #include "src/core/ext/filters/client_channel/lb_policy/backend_metric_data.h"
+#include "src/core/lib/resource_quota/arena.h"
 
-grpc::experimental::CallMetricRecorder::CallMetricRecorder()
-    : backend_metric_data_(absl::make_unique<grpc_core::BackendMetricData>()) {}
+grpc::experimental::CallMetricRecorder::CallMetricRecorder(grpc_core::Arena* arena) {
+  backend_metric_data_ = arena->New<grpc_core::BackendMetricData>();
+}
 
-grpc::experimental::CallMetricRecorder::~CallMetricRecorder() {}
+grpc::experimental::CallMetricRecorder::~CallMetricRecorder() {
+  backend_metric_data_->~BackendMetricData();
+}
 
 grpc::experimental::CallMetricRecorder&
 grpc::experimental::CallMetricRecorder::RecordCpuUtilizationMetric(

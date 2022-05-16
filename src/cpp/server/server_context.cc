@@ -264,6 +264,9 @@ ServerContextBase::~ServerContextBase() {
   if (default_reactor_used_.load(std::memory_order_relaxed)) {
     reinterpret_cast<Reactor*>(&default_reactor_)->~Reactor();
   }
+  if (call_metric_recorder_) {
+    call_metric_recorder_->~CallMetricRecorder();
+  }
 }
 
 ServerContextBase::CallWrapper::~CallWrapper() {
@@ -380,8 +383,8 @@ void ServerContextBase::SetLoadReportingCosts(
 grpc::experimental::CallMetricRecorder&
 ServerContextBase::ExperimentalGetCallMetricRecorder() {
   if (!call_metric_recorder_) {
-    call_metric_recorder_ =
-        absl::make_unique<experimental::CallMetricRecorder>();
+    grpc_core::Arena* arena = grpc_call_get_arena(call_.call);
+    call_metric_recorder_ = arena->New<experimental::CallMetricRecorder>(arena);
   }
   return *call_metric_recorder_;
 }

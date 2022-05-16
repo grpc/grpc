@@ -5356,6 +5356,7 @@ grpc_cc_library(
     ],
     visibility = ["@grpc:public"],
     deps = [
+        "arena",
         "grpc++_codegen_base",
         "grpc_backend_metric_data",
         "xds_orca_upb",

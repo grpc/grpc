@@ -477,7 +477,7 @@ class ServerContextBase {
   grpc::experimental::ServerRpcInfo* rpc_info_ = nullptr;
   RpcAllocatorState* message_allocator_state_ = nullptr;
   ContextAllocator* context_allocator_ = nullptr;
-  std::unique_ptr<experimental::CallMetricRecorder> call_metric_recorder_;
+  experimental::CallMetricRecorder* call_metric_recorder_;
 
   class Reactor : public grpc::ServerUnaryReactor {
    public:
