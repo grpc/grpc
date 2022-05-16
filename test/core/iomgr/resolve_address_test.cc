@@ -429,29 +429,29 @@ TEST_F(ResolveAddressTest, CancelWithNonResponsiveDNSServer) {
 }
 
 // RAII class for pollset and pollset_set creation
-class PSS {
+class PollsetSetWrapper {
  public:
-  static std::unique_ptr<PSS> Create() {
-    return absl::WrapUnique<PSS>(new PSS());
+  static std::unique_ptr<PollsetSetWrapper> Create() {
+    return absl::WrapUnique<PollsetSetWrapper>(new PollsetSetWrapper());
   }
 
-  ~PSS() {
+  ~PollsetSetWrapper() {
     grpc_pollset_set_del_pollset(pss_, ps_);
     grpc_pollset_destroy(ps_);
     gpr_free(ps_);
     grpc_pollset_set_destroy(pss_);
-    gpr_log(GPR_DEBUG, "PSS:%p deleted", this);
+    gpr_log(GPR_DEBUG, "PollsetSetWrapper:%p deleted", this);
   }
 
   grpc_pollset_set* pollset_set() { return pss_; }
 
  private:
-  PSS() {
+  PollsetSetWrapper() {
     ps_ = static_cast<grpc_pollset*>(gpr_zalloc(grpc_pollset_size()));
     grpc_pollset_init(ps_, &mu_);
     pss_ = grpc_pollset_set_create();
     grpc_pollset_set_add_pollset(pss_, ps_);
-    gpr_log(GPR_DEBUG, "PSS:%p created", this);
+    gpr_log(GPR_DEBUG, "PollsetSetWrapper:%p created", this);
   }
 
   gpr_mu* mu_;
@@ -462,7 +462,7 @@ class PSS {
 TEST_F(ResolveAddressTest, DeleteInterestedPartiesAfterCancellation) {
   // Regression test for race around interested_party deletion after
   // cancellation.
-  if (std::string(g_resolver_type) != "ares") {
+  if (absl::string_view(g_resolver_type) != "ares") {
     GTEST_SKIP() << "the native resolver doesn't support cancellation, so we "
                     "can only test this with c-ares";
   }
@@ -476,7 +476,7 @@ TEST_F(ResolveAddressTest, DeleteInterestedPartiesAfterCancellation) {
   {
     grpc_core::ExecCtx exec_ctx;
     // Create a pollset_set, destroyed immediately after cancellation
-    std::unique_ptr<PSS> pss = PSS::Create();
+    std::unique_ptr<PollsetSetWrapper> pss = PollsetSetWrapper::Create();
     // Run the test
     auto request_handle = grpc_core::GetDNSResolver()->ResolveName(
         "foo.bar.com:1", "1", pss->pollset_set(),

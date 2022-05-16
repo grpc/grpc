@@ -374,6 +374,7 @@ class AresDNSResolver : public DNSResolver {
         : name_(std::string(name)),
           default_port_(std::string(default_port)),
           interested_parties_(interested_parties),
+          pollset_set_(grpc_pollset_set_create()),
           on_resolve_address_done_(std::move(on_resolve_address_done)),
           completed_(false),
           resolver_(resolver),
@@ -382,7 +383,6 @@ class AresDNSResolver : public DNSResolver {
       GRPC_CLOSURE_INIT(&on_dns_lookup_done_, OnDnsLookupDone, this,
                         grpc_schedule_on_exec_ctx);
       MutexLock lock(&mu_);
-      pollset_set_ = grpc_pollset_set_create();
       grpc_pollset_set_add_pollset_set(pollset_set_, interested_parties);
       ares_request_ = std::unique_ptr<grpc_ares_request>(grpc_dns_lookup_ares(
           /*dns_server=*/"", name_.c_str(), default_port_.c_str(), pollset_set_,
@@ -436,8 +436,8 @@ class AresDNSResolver : public DNSResolver {
           }
         }
       }
-      grpc_pollset_set_del_pollset_set(request->interested_parties_,
-                                       request->pollset_set_);
+      grpc_pollset_set_del_pollset_set(request->pollset_set_,
+                                       request->interested_parties_);
       if (error != GRPC_ERROR_NONE) {
         request->on_resolve_address_done_(grpc_error_to_absl_status(error));
         return;
