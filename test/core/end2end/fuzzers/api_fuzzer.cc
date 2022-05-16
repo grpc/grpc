@@ -114,24 +114,18 @@ namespace {
 
 class FuzzerDNSResolver : public grpc_core::DNSResolver {
  public:
-  class FuzzerDNSRequest : public grpc_core::DNSResolver::Request {
+  class FuzzerDNSRequest {
    public:
     FuzzerDNSRequest(
         absl::string_view name,
         std::function<void(absl::StatusOr<std::vector<grpc_resolved_address>>)>
             on_done)
-        : name_(std::string(name)), on_done_(std::move(on_done)) {}
-
-    void Start() override {
-      Ref().release();  // ref held by timer callback
+        : name_(std::string(name)), on_done_(std::move(on_done)) {
       grpc_timer_init(
           &timer_,
           grpc_core::Duration::Seconds(1) + grpc_core::ExecCtx::Get()->Now(),
           GRPC_CLOSURE_CREATE(FinishResolve, this, grpc_schedule_on_exec_ctx));
     }
-
-    // cancellation not implemented
-    void Orphan() override { Unref(); }
 
    private:
     static void FinishResolve(void* arg, grpc_error_handle error) {
@@ -145,7 +139,7 @@ class FuzzerDNSResolver : public grpc_core::DNSResolver {
       } else {
         self->on_done_(absl::UnknownError("Resolution failed"));
       }
-      self->Unref();
+      delete self;
     }
 
     const std::string name_;
@@ -161,13 +155,13 @@ class FuzzerDNSResolver : public grpc_core::DNSResolver {
     return instance;
   }
 
-  grpc_core::OrphanablePtr<grpc_core::DNSResolver::Request> ResolveName(
+  TaskHandle ResolveName(
       absl::string_view name, absl::string_view /* default_port */,
       grpc_pollset_set* /* interested_parties */,
       std::function<void(absl::StatusOr<std::vector<grpc_resolved_address>>)>
           on_done) override {
-    return grpc_core::MakeOrphanable<FuzzerDNSRequest>(name,
-                                                       std::move(on_done));
+    new FuzzerDNSRequest(name, std::move(on_done));
+    return kNullHandle;
   }
 
   absl::StatusOr<std::vector<grpc_resolved_address>> ResolveNameBlocking(
@@ -175,6 +169,9 @@ class FuzzerDNSResolver : public grpc_core::DNSResolver {
       absl::string_view /* default_port */) override {
     GPR_ASSERT(0);
   }
+
+  // FuzzerDNSResolver does not support cancellation.
+  bool Cancel(TaskHandle /*handle*/) override { return false; }
 };
 
 }  // namespace
