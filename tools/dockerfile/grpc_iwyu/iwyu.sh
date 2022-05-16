@@ -45,6 +45,7 @@ export ENABLED_MODULES='
   src/core/lib/avl
   src/core/lib/channel
   src/core/lib/config
+  src/core/lib/event_engine
   src/core/lib/gprpp
   src/core/lib/json
   src/core/lib/slice
@@ -62,8 +63,12 @@ cat compile_commands.json | jq -r '.[].file' \
   | grep -E $INCLUSION_REGEX \
   | grep -v -E "/upb-generated/|/upbdefs-generated/" \
   | sort \
+  > iwyu_files0.txt
+
+cat iwyu_files0.txt \
   | xargs -d '\n' ls -1df 2> /dev/null \
-  > iwyu_files.txt
+  > iwyu_files.txt \
+  || true
 
 echo '#!/bin/sh
 ${IWYU_ROOT}/iwyu/iwyu_tool.py -p compile_commands_for_iwyu.json $1 -- -Xiwyu --no_fwd_decls \

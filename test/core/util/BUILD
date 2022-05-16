@@ -171,7 +171,8 @@ grpc_cc_library(
     ],
     language = "C++",
     deps = [
-        "//:grpc_common",
+        "//:examine_stack",
+        "//:gpr_platform",
     ],
 )
 

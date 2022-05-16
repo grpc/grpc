@@ -101,6 +101,7 @@ grpc_objc_testing_library(
     hdrs = ["InteropTests/InteropTests.h"],
     deps = [
         ":InteropTestsBlockCallbacks-lib",
+        ":TestBase-lib",
     ],
 )
 
@@ -175,6 +176,15 @@ grpc_objc_testing_library(
         "MacTests/*.m",
     ]),
     hdrs = ["MacTests/StressTests.h"],
+    deps = [
+        ":TestBase-lib",
+    ],
+)
+
+grpc_objc_testing_library(
+    name = "TestBase-lib",
+    srcs = ["TestBase.m"],
+    hdrs = ["TestBase.h"],
 )
 
 ios_unit_test(

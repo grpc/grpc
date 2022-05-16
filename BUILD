@@ -201,6 +201,8 @@ GRPC_PUBLIC_EVENT_ENGINE_HDRS = [
     "include/grpc/event_engine/memory_allocator.h",
     "include/grpc/event_engine/memory_request.h",
     "include/grpc/event_engine/internal/memory_allocator_impl.h",
+    "include/grpc/event_engine/slice.h",
+    "include/grpc/event_engine/slice_buffer.h",
 ]
 
 GRPCXX_SRCS = [
@@ -397,6 +399,7 @@ grpc_cc_library(
         "channel_init",
         "channel_stack_type",
         "config",
+        "default_event_engine_factory_hdrs",
         "gpr_base",
         "grpc_authorization_base",
         "grpc_base",
@@ -404,7 +407,10 @@ grpc_cc_library(
         "grpc_common",
         "grpc_security_base",
         "grpc_trace",
+        "http_connect_handshaker",
+        "iomgr_timer",
         "slice",
+        "tcp_connect_handshaker",
     ],
 )
 
@@ -451,6 +457,7 @@ grpc_cc_library(
         "channel_init",
         "channel_stack_type",
         "config",
+        "default_event_engine_factory_hdrs",
         "gpr_base",
         "grpc_authorization_base",
         "grpc_base",
@@ -459,7 +466,10 @@ grpc_cc_library(
         "grpc_secure",
         "grpc_security_base",
         "grpc_trace",
+        "http_connect_handshaker",
+        "iomgr_timer",
         "slice",
+        "tcp_connect_handshaker",
     ],
 )
 
@@ -775,6 +785,22 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "examine_stack",
+    srcs = [
+        "src/core/lib/gprpp/examine_stack.cc",
+    ],
+    hdrs = [
+        "src/core/lib/gprpp/examine_stack.h",
+    ],
+    external_deps = [
+        "absl/types:optional",
+    ],
+    deps = [
+        "gpr_platform",
+    ],
+)
+
+grpc_cc_library(
     name = "gpr_base",
     srcs = [
         "src/core/lib/gpr/alloc.cc",
@@ -808,7 +834,6 @@ grpc_cc_library(
         "src/core/lib/gpr/tmpfile_posix.cc",
         "src/core/lib/gpr/tmpfile_windows.cc",
         "src/core/lib/gpr/wrap_memcpy.cc",
-        "src/core/lib/gprpp/examine_stack.cc",
         "src/core/lib/gprpp/fork.cc",
         "src/core/lib/gprpp/global_config_env.cc",
         "src/core/lib/gprpp/host_port.cc",
@@ -831,7 +856,6 @@ grpc_cc_library(
         "src/core/lib/gpr/string_windows.h",
         "src/core/lib/gpr/time_precise.h",
         "src/core/lib/gpr/tmpfile.h",
-        "src/core/lib/gprpp/examine_stack.h",
         "src/core/lib/gprpp/fork.h",
         "src/core/lib/gprpp/global_config.h",
         "src/core/lib/gprpp/global_config_custom.h",
@@ -868,6 +892,7 @@ grpc_cc_library(
     deps = [
         "construct_destruct",
         "debug_location",
+        "examine_stack",
         "google_rpc_status_upb",
         "gpr_codegen",
         "gpr_tls",
@@ -1472,10 +1497,37 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "handshaker",
+    srcs = [
+        "src/core/lib/transport/handshaker.cc",
+    ],
+    external_deps = [
+        "absl/strings",
+        "absl/strings:str_format",
+    ],
+    language = "c++",
+    public_hdrs = [
+        "src/core/lib/transport/handshaker.h",
+    ],
+    visibility = ["@grpc:alt_grpc_base_legacy"],
+    deps = [
+        "channel_args",
+        "closure",
+        "debug_location",
+        "gpr_base",
+        "grpc_base",
+        "grpc_codegen",
+        "grpc_trace",
+        "iomgr_timer",
+        "slice",
+    ],
+)
+
+grpc_cc_library(
     name = "handshaker_factory",
     language = "c++",
     public_hdrs = [
-        "src/core/lib/channel/handshaker_factory.h",
+        "src/core/lib/transport/handshaker_factory.h",
     ],
     deps = [
         "gpr_base",
@@ -1486,15 +1538,78 @@ grpc_cc_library(
 grpc_cc_library(
     name = "handshaker_registry",
     srcs = [
-        "src/core/lib/channel/handshaker_registry.cc",
+        "src/core/lib/transport/handshaker_registry.cc",
     ],
     language = "c++",
     public_hdrs = [
-        "src/core/lib/channel/handshaker_registry.h",
+        "src/core/lib/transport/handshaker_registry.h",
     ],
     deps = [
         "gpr_base",
         "handshaker_factory",
+    ],
+)
+
+grpc_cc_library(
+    name = "http_connect_handshaker",
+    srcs = [
+        "src/core/lib/transport/http_connect_handshaker.cc",
+    ],
+    external_deps = [
+        "absl/base:core_headers",
+        "absl/memory",
+        "absl/strings",
+    ],
+    language = "c++",
+    public_hdrs = [
+        "src/core/lib/transport/http_connect_handshaker.h",
+    ],
+    visibility = ["@grpc:alt_grpc_base_legacy"],
+    deps = [
+        "config",
+        "debug_location",
+        "gpr_base",
+        "grpc_base",
+        "grpc_codegen",
+        "handshaker",
+        "handshaker_factory",
+        "handshaker_registry",
+        "httpcli",
+        "iomgr_fwd",
+        "ref_counted_ptr",
+        "uri_parser",
+    ],
+)
+
+grpc_cc_library(
+    name = "tcp_connect_handshaker",
+    srcs = [
+        "src/core/lib/transport/tcp_connect_handshaker.cc",
+    ],
+    external_deps = [
+        "absl/base:core_headers",
+        "absl/memory",
+        "absl/status:statusor",
+    ],
+    language = "c++",
+    public_hdrs = [
+        "src/core/lib/transport/tcp_connect_handshaker.h",
+    ],
+    deps = [
+        "config",
+        "debug_location",
+        "gpr_base",
+        "gpr_platform",
+        "grpc_base",
+        "grpc_codegen",
+        "handshaker",
+        "handshaker_factory",
+        "handshaker_registry",
+        "iomgr_fwd",
+        "ref_counted_ptr",
+        "resolved_address",
+        "uri_parser",
+        "useful",
     ],
 )
 
@@ -1646,6 +1761,7 @@ grpc_cc_library(
         "src/core/lib/slice/slice_string_helpers.cc",
     ],
     hdrs = [
+        "include/grpc/slice.h",
         "src/core/lib/slice/slice.h",
         "src/core/lib/slice/slice_internal.h",
         "src/core/lib/slice/slice_string_helpers.h",
@@ -1653,6 +1769,22 @@ grpc_cc_library(
     deps = [
         "gpr_base",
         "ref_counted",
+        "slice_refcount",
+    ],
+)
+
+grpc_cc_library(
+    name = "slice_buffer",
+    srcs = [
+        "src/core/lib/slice/slice_buffer.cc",
+    ],
+    hdrs = [
+        "include/grpc/slice_buffer.h",
+        "src/core/lib/slice/slice_buffer.h",
+    ],
+    deps = [
+        "gpr_base",
+        "slice",
         "slice_refcount",
     ],
 )
@@ -1759,6 +1891,41 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "iomgr_timer",
+    srcs = [
+        "src/core/lib/iomgr/time_averaged_stats.cc",
+        "src/core/lib/iomgr/timer.cc",
+        "src/core/lib/iomgr/timer_generic.cc",
+        "src/core/lib/iomgr/timer_heap.cc",
+        "src/core/lib/iomgr/timer_manager.cc",
+    ],
+    hdrs = [
+        "src/core/lib/iomgr/timer.h",
+        "src/core/lib/iomgr/timer_generic.h",
+        "src/core/lib/iomgr/timer_heap.h",
+        "src/core/lib/iomgr/timer_manager.h",
+        "src/core/lib/iomgr/time_averaged_stats.h",
+    ] + [
+        # TODO(hork): deduplicate
+        "src/core/lib/iomgr/iomgr.h",
+    ],
+    external_deps = [
+        "absl/strings",
+    ],
+    deps = [
+        "event_engine_base_hdrs",
+        "exec_ctx",
+        "gpr_base",
+        "gpr_platform",
+        "gpr_tls",
+        "grpc_trace",
+        "iomgr_port",
+        "time",
+        "useful",
+    ],
+)
+
+grpc_cc_library(
     name = "iomgr_fwd",
     hdrs = [
         "src/core/lib/iomgr/iomgr_fwd.h",
@@ -1827,12 +1994,39 @@ grpc_cc_library(
     srcs = [
         "src/core/lib/event_engine/default_event_engine_factory.cc",
     ],
-    external_deps = [
-        # TODO(hork): uv, in a subsequent PR
-    ],
+    external_deps = ["absl/memory"],
     deps = [
         "default_event_engine_factory_hdrs",
+        "event_engine_base_hdrs",
         "gpr_base",
+        "iomgr_event_engine",
+        "iomgr_port",
+    ],
+)
+
+grpc_cc_library(
+    name = "iomgr_event_engine",
+    srcs = ["src/core/lib/event_engine/iomgr_engine.cc"],
+    hdrs = ["src/core/lib/event_engine/iomgr_engine.h"],
+    external_deps = [
+        "absl/cleanup",
+        "absl/container:flat_hash_set",
+        "absl/time",
+        "absl/strings",
+    ],
+    deps = [
+        "closure",
+        "error",
+        "event_engine_base_hdrs",
+        "event_engine_common",
+        "event_engine_trace",
+        "exec_ctx",
+        "gpr_base",
+        "gpr_platform",
+        "grpc_trace",
+        "iomgr_timer",
+        "match",
+        "time",
     ],
 )
 
@@ -1840,10 +2034,37 @@ grpc_cc_library(
     name = "event_engine_common",
     srcs = [
         "src/core/lib/event_engine/resolved_address.cc",
+        "src/core/lib/event_engine/slice.cc",
+        "src/core/lib/event_engine/slice_buffer.cc",
+    ],
+    hdrs = [
+        "src/core/lib/event_engine/handle_containers.h",
+    ],
+    external_deps = [
+        "absl/container:flat_hash_set",
     ],
     deps = [
         "event_engine_base_hdrs",
+        "event_engine_trace",
         "gpr_base",
+        "gpr_platform",
+        "ref_counted",
+        "slice",
+        "slice_refcount",
+    ],
+)
+
+grpc_cc_library(
+    name = "event_engine_trace",
+    srcs = [
+        "src/core/lib/event_engine/trace.cc",
+    ],
+    hdrs = [
+        "src/core/lib/event_engine/trace.h",
+    ],
+    deps = [
+        "gpr_platform",
+        "grpc_trace",
     ],
 )
 
@@ -1856,7 +2077,9 @@ grpc_cc_library(
         "default_event_engine_factory",
         "default_event_engine_factory_hdrs",
         "event_engine_base_hdrs",
+        "event_engine_trace",
         "gpr_base",
+        "grpc_trace",
     ],
 )
 
@@ -1919,7 +2142,6 @@ grpc_cc_library(
         "src/core/lib/channel/channelz.cc",
         "src/core/lib/channel/channelz_registry.cc",
         "src/core/lib/channel/connected_channel.cc",
-        "src/core/lib/channel/handshaker.cc",
         "src/core/lib/channel/promise_based_filter.cc",
         "src/core/lib/channel/status_util.cc",
         "src/core/lib/compression/compression.cc",
@@ -1987,11 +2209,6 @@ grpc_cc_library(
         "src/core/lib/iomgr/tcp_server_utils_posix_noifaddrs.cc",
         "src/core/lib/iomgr/tcp_server_windows.cc",
         "src/core/lib/iomgr/tcp_windows.cc",
-        "src/core/lib/iomgr/time_averaged_stats.cc",
-        "src/core/lib/iomgr/timer.cc",
-        "src/core/lib/iomgr/timer_generic.cc",
-        "src/core/lib/iomgr/timer_heap.cc",
-        "src/core/lib/iomgr/timer_manager.cc",
         "src/core/lib/iomgr/unix_sockets_posix.cc",
         "src/core/lib/iomgr/unix_sockets_posix_noop.cc",
         "src/core/lib/iomgr/wakeup_fd_eventfd.cc",
@@ -2003,7 +2220,7 @@ grpc_cc_library(
         "src/core/lib/slice/b64.cc",
         "src/core/lib/slice/percent_encoding.cc",
         "src/core/lib/slice/slice_api.cc",
-        "src/core/lib/slice/slice_buffer.cc",
+        "src/core/lib/slice/slice_buffer_api.cc",
         "src/core/lib/slice/slice_split.cc",
         "src/core/lib/surface/api_trace.cc",
         "src/core/lib/surface/builtins.cc",
@@ -2060,7 +2277,6 @@ grpc_cc_library(
         "src/core/lib/channel/channelz_registry.h",
         "src/core/lib/channel/connected_channel.h",
         "src/core/lib/channel/context.h",
-        "src/core/lib/channel/handshaker.h",
         "src/core/lib/channel/status_util.h",
         "src/core/lib/compression/compression_internal.h",
         "src/core/lib/resource_quota/api.h",
@@ -2115,11 +2331,6 @@ grpc_cc_library(
         "src/core/lib/iomgr/tcp_server.h",
         "src/core/lib/iomgr/tcp_server_utils_posix.h",
         "src/core/lib/iomgr/tcp_windows.h",
-        "src/core/lib/iomgr/time_averaged_stats.h",
-        "src/core/lib/iomgr/timer.h",
-        "src/core/lib/iomgr/timer_generic.h",
-        "src/core/lib/iomgr/timer_heap.h",
-        "src/core/lib/iomgr/timer_manager.h",
         "src/core/lib/iomgr/unix_sockets_posix.h",
         "src/core/lib/iomgr/wakeup_fd_pipe.h",
         "src/core/lib/iomgr/wakeup_fd_posix.h",
@@ -2224,7 +2435,9 @@ grpc_cc_library(
         "grpc_codegen",
         "grpc_sockaddr",
         "grpc_trace",
+        "handshaker_registry",
         "iomgr_port",
+        "iomgr_timer",
         "json",
         "latch",
         "memory_quota",
@@ -2237,6 +2450,7 @@ grpc_cc_library(
         "resource_quota",
         "resource_quota_trace",
         "slice",
+        "slice_buffer",
         "slice_refcount",
         "sockaddr_utils",
         "table",
@@ -2513,7 +2727,6 @@ grpc_cc_library(
         "src/core/ext/filters/client_channel/dynamic_filters.cc",
         "src/core/ext/filters/client_channel/global_subchannel_pool.cc",
         "src/core/ext/filters/client_channel/health/health_check_client.cc",
-        "src/core/ext/filters/client_channel/http_connect_handshaker.cc",
         "src/core/ext/filters/client_channel/http_proxy.cc",
         "src/core/ext/filters/client_channel/lb_policy.cc",
         "src/core/ext/filters/client_channel/lb_policy/child_policy_handler.cc",
@@ -2541,7 +2754,6 @@ grpc_cc_library(
         "src/core/ext/filters/client_channel/dynamic_filters.h",
         "src/core/ext/filters/client_channel/global_subchannel_pool.h",
         "src/core/ext/filters/client_channel/health/health_check_client.h",
-        "src/core/ext/filters/client_channel/http_connect_handshaker.h",
         "src/core/ext/filters/client_channel/http_proxy.h",
         "src/core/ext/filters/client_channel/lb_policy.h",
         "src/core/ext/filters/client_channel/lb_policy/child_policy_handler.h",
@@ -2598,8 +2810,10 @@ grpc_cc_library(
         "grpc_trace",
         "handshaker_factory",
         "handshaker_registry",
+        "http_connect_handshaker",
         "httpcli",
         "iomgr_fwd",
+        "iomgr_timer",
         "json",
         "json_util",
         "orphanable",
@@ -2684,6 +2898,7 @@ grpc_cc_library(
         "gpr_base",
         "grpc_base",
         "idle_filter_state",
+        "iomgr_timer",
         "loop",
         "promise",
         "single_set_ptr",
@@ -2705,6 +2920,7 @@ grpc_cc_library(
         "config",
         "gpr_base",
         "grpc_base",
+        "iomgr_timer",
         "slice",
     ],
 )
@@ -2911,6 +3127,7 @@ grpc_cc_library(
         "grpc_sockaddr",
         "grpc_trace",
         "grpc_transport_chttp2_client_connector",
+        "iomgr_timer",
         "json",
         "orphanable",
         "protobuf_duration_upb",
@@ -2960,6 +3177,7 @@ grpc_cc_library(
         "grpc_security_base",
         "grpc_service_config_impl",
         "grpc_trace",
+        "iomgr_timer",
         "json",
         "json_util",
         "orphanable",
@@ -3090,6 +3308,7 @@ grpc_cc_library(
         "grpc_sockaddr",
         "grpc_tls_credentials",
         "grpc_transport_chttp2_client_connector",
+        "iomgr_timer",
         "json",
         "json_util",
         "orphanable",
@@ -3333,6 +3552,7 @@ grpc_cc_library(
         "grpc_codegen",
         "grpc_resolver_xds_header",
         "grpc_trace",
+        "iomgr_timer",
         "json",
         "orphanable",
         "ref_counted",
@@ -3491,6 +3711,7 @@ grpc_cc_library(
         "grpc_codegen",
         "grpc_lb_address_filtering",
         "grpc_trace",
+        "iomgr_timer",
         "json",
         "orphanable",
         "ref_counted",
@@ -3521,6 +3742,7 @@ grpc_cc_library(
         "grpc_codegen",
         "grpc_lb_address_filtering",
         "grpc_trace",
+        "iomgr_timer",
         "json",
         "orphanable",
         "ref_counted",
@@ -3693,6 +3915,7 @@ grpc_cc_library(
         "gpr_base",
         "grpc_base",
         "grpc_resolver",
+        "iomgr_timer",
         "orphanable",
         "ref_counted_ptr",
         "uri_parser",
@@ -3738,6 +3961,7 @@ grpc_cc_library(
         "grpc_resolver",
         "grpc_resolver_dns_selection",
         "grpc_trace",
+        "iomgr_timer",
         "orphanable",
         "polling_resolver",
         "ref_counted_ptr",
@@ -3793,6 +4017,7 @@ grpc_cc_library(
         "grpc_trace",
         "iomgr_fwd",
         "iomgr_port",
+        "iomgr_timer",
         "json",
         "orphanable",
         "polling_resolver",
@@ -4005,6 +4230,7 @@ grpc_cc_library(
         "grpc_security_base",
         "ref_counted_ptr",
         "sockaddr_utils",
+        "tcp_connect_handshaker",
         "useful",
     ],
 )
@@ -4081,6 +4307,7 @@ grpc_cc_library(
         "gpr_base",
         "grpc_base",
         "grpc_security_base",
+        "handshaker",
         "promise",
         "ref_counted_ptr",
         "tsi_fake_credentials",
@@ -4202,6 +4429,7 @@ grpc_cc_library(
         "grpc_credentials_util",
         "grpc_security_base",
         "grpc_transport_chttp2_alpn",
+        "handshaker",
         "promise",
         "ref_counted_ptr",
         "tsi_base",
@@ -4520,6 +4748,7 @@ grpc_cc_library(
         "gpr_base",
         "grpc_base",
         "grpc_trace",
+        "handshaker",
         "json",
         "memory_quota",
         "promise",
@@ -4621,22 +4850,42 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "tsi_ssl_session_cache",
+    srcs = [
+        "src/core/tsi/ssl/session_cache/ssl_session_boringssl.cc",
+        "src/core/tsi/ssl/session_cache/ssl_session_cache.cc",
+        "src/core/tsi/ssl/session_cache/ssl_session_openssl.cc",
+    ],
+    hdrs = [
+        "src/core/tsi/ssl/session_cache/ssl_session.h",
+        "src/core/tsi/ssl/session_cache/ssl_session_cache.h",
+    ],
+    external_deps = [
+        "absl/strings",
+        "absl/memory",
+        "libssl",
+        "libcrypto",
+    ],
+    language = "c++",
+    visibility = ["@grpc:public"],
+    deps = [
+        "gpr_base",
+        "grpc_base",
+    ],
+)
+
+grpc_cc_library(
     name = "tsi_ssl_credentials",
     srcs = [
         "src/core/lib/security/security_connector/ssl_utils.cc",
         "src/core/lib/security/security_connector/ssl_utils_config.cc",
         "src/core/tsi/ssl/key_logging/ssl_key_logging.cc",
-        "src/core/tsi/ssl/session_cache/ssl_session_boringssl.cc",
-        "src/core/tsi/ssl/session_cache/ssl_session_cache.cc",
-        "src/core/tsi/ssl/session_cache/ssl_session_openssl.cc",
         "src/core/tsi/ssl_transport_security.cc",
     ],
     hdrs = [
         "src/core/lib/security/security_connector/ssl_utils.h",
         "src/core/lib/security/security_connector/ssl_utils_config.h",
         "src/core/tsi/ssl/key_logging/ssl_key_logging.h",
-        "src/core/tsi/ssl/session_cache/ssl_session.h",
-        "src/core/tsi/ssl/session_cache/ssl_session_cache.h",
         "src/core/tsi/ssl_transport_security.h",
     ],
     external_deps = [
@@ -4655,6 +4904,7 @@ grpc_cc_library(
         "grpc_transport_chttp2_alpn",
         "ref_counted_ptr",
         "tsi_base",
+        "tsi_ssl_session_cache",
         "tsi_ssl_types",
         "useful",
     ],
@@ -4900,6 +5150,7 @@ grpc_cc_library(
         "hpack_encoder_table",
         "httpcli",
         "iomgr_fwd",
+        "iomgr_timer",
         "memory_quota",
         "orphanable",
         "pid_controller",
@@ -4939,6 +5190,7 @@ grpc_cc_library(
         "src/core/ext/transport/chttp2/client/chttp2_connector.h",
     ],
     external_deps = [
+        "absl/container:inlined_vector",
         "absl/status",
         "absl/status:statusor",
     ],
@@ -4957,11 +5209,13 @@ grpc_cc_library(
         "grpc_security_base",
         "grpc_trace",
         "grpc_transport_chttp2",
+        "handshaker",
         "handshaker_registry",
         "orphanable",
         "resolved_address",
         "slice",
         "sockaddr_utils",
+        "tcp_connect_handshaker",
         "uri_parser",
     ],
 )
@@ -4995,8 +5249,10 @@ grpc_cc_library(
         "grpc_security_base",
         "grpc_trace",
         "grpc_transport_chttp2",
+        "handshaker",
         "handshaker_registry",
         "iomgr_fwd",
+        "iomgr_timer",
         "memory_quota",
         "orphanable",
         "ref_counted",
@@ -5126,6 +5382,7 @@ grpc_cc_library(
         "grpc_service_config_impl",
         "grpc_trace",
         "grpc_transport_inproc",
+        "iomgr_timer",
         "ref_counted",
         "useful",
     ],
@@ -5160,6 +5417,7 @@ grpc_cc_library(
         "grpc_trace",
         "grpc_transport_inproc",
         "grpc_unsecure",
+        "iomgr_timer",
         "ref_counted",
         "useful",
     ],
@@ -5334,6 +5592,7 @@ grpc_cc_library(
         "grpc++",
         "grpc++_codegen_base",
         "grpc_base",
+        "iomgr_timer",
         "protobuf_duration_upb",
         "ref_counted",
         "time",

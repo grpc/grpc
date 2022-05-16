@@ -18,7 +18,7 @@
 
 #include <grpc/support/port_platform.h>
 
-#include "src/core/ext/filters/client_channel/http_connect_handshaker.h"
+#include "src/core/lib/transport/http_connect_handshaker.h"
 
 #include <limits.h>
 #include <string.h>
@@ -38,9 +38,6 @@
 #include <grpc/support/log.h>
 
 #include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/channel/handshaker.h"
-#include "src/core/lib/channel/handshaker_factory.h"
-#include "src/core/lib/channel/handshaker_registry.h"
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gprpp/debug_location.h"
@@ -55,6 +52,9 @@
 #include "src/core/lib/iomgr/iomgr_fwd.h"
 #include "src/core/lib/iomgr/tcp_server.h"
 #include "src/core/lib/slice/slice_internal.h"
+#include "src/core/lib/transport/handshaker.h"
+#include "src/core/lib/transport/handshaker_factory.h"
+#include "src/core/lib/transport/handshaker_registry.h"
 
 namespace grpc_core {
 
