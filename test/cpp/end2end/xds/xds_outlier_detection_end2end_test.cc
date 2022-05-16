@@ -1299,6 +1299,10 @@ int main(int argc, char** argv) {
   // Workaround Apple CFStream bug
   gpr_setenv("grpc_cfstream", "0");
 #endif
+  // TODO(roth): This is a hack to ensure that the outlier_detection LB policy
+  // is always registered at gRPC init time. When the LB policy registry is
+  // moved to the new CoreConfiguration system, change this to use
+  // CoreConfiguration::BuildSpecialConfiguration() instead.
   gpr_setenv("GRPC_EXPERIMENTAL_ENABLE_OUTLIER_DETECTION", "true");
   grpc_init();
   gpr_unsetenv("GRPC_EXPERIMENTAL_ENABLE_OUTLIER_DETECTION");
