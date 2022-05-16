@@ -97,6 +97,7 @@ def _update_visibility(visibility):
         "grpc++_test": PRIVATE,
         "http": PRIVATE,
         "httpcli": PRIVATE,
+        "iomgr_timer": PRIVATE,
         "public": PUBLIC,
         "ref_counted_ptr": PRIVATE,
         "trace": PRIVATE,
