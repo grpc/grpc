@@ -21,8 +21,6 @@
 
 // IWYU pragma: private, include <grpcpp/impl/grpc_library.h>
 
-#include <assert.h>
-
 #include <grpcpp/impl/codegen/core_codegen_interface.h>
 
 namespace grpc {
@@ -44,22 +42,18 @@ class GrpcLibraryCodegen {
   explicit GrpcLibraryCodegen(bool call_grpc_init = true)
       : grpc_init_called_(false) {
     if (call_grpc_init) {
-      // Use assert instead of GPR_CODEGEN_ASSERT which requires gRPC++ to be
-      // initialized.
-      assert(g_glip &&
-             "gRPC library not initialized. See "
-             "grpc::internal::GrpcLibraryInitializer.");
+      GPR_CODEGEN_ASSERT(g_glip &&
+                         "gRPC library not initialized. See "
+                         "grpc::internal::GrpcLibraryInitializer.");
       g_glip->init();
       grpc_init_called_ = true;
     }
   }
   virtual ~GrpcLibraryCodegen() {
     if (grpc_init_called_) {
-      // Use assert instead of GPR_CODEGEN_ASSERT which requires gRPC++ to be
-      // initialized.
-      assert(g_glip &&
-             "gRPC library not initialized. See "
-             "grpc::internal::GrpcLibraryInitializer.");
+      GPR_CODEGEN_ASSERT(g_glip &&
+                         "gRPC library not initialized. See "
+                         "grpc::internal::GrpcLibraryInitializer.");
       g_glip->shutdown();
     }
   }

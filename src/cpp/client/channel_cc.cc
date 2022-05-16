@@ -45,7 +45,6 @@
 namespace grpc {
 
 static grpc::internal::GrpcLibraryInitializer g_gli_initializer;
-
 Channel::Channel(
     const std::string& host, grpc_channel* channel,
     std::vector<
