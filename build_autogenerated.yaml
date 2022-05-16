@@ -8146,6 +8146,19 @@ targets:
   - absl/status:statusor
   - absl/types:variant
   uses_polling: false
+- name: unique_type_name_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - src/core/lib/gpr/useful.h
+  - src/core/lib/gprpp/unique_type_name.h
+  src:
+  - test/core/gprpp/unique_type_name_test.cc
+  deps:
+  - absl/strings:str_format
+  - absl/strings:strings
+  uses_polling: false
 - name: unknown_frame_bad_client_test
   gtest: true
   build: test
