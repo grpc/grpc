@@ -16,19 +16,20 @@
  *
  */
 
-#include <grpcpp/impl/grpc_library.h>
-#include <grpcpp/security/credentials.h>
+#include <grpc/support/port_platform.h>
 
-namespace grpc {
+#include <grpc/slice.h>
+#include <grpc/slice_buffer.h>
 
-static grpc::internal::GrpcLibraryInitializer g_gli_initializer;
+#include "src/core/lib/iomgr/exec_ctx.h"
+#include "src/core/lib/slice/slice_internal.h"
 
-ChannelCredentials::ChannelCredentials() { g_gli_initializer.summon(); }
+void grpc_slice_buffer_destroy(grpc_slice_buffer* sb) {
+  grpc_core::ExecCtx exec_ctx;
+  grpc_slice_buffer_destroy_internal(sb);
+}
 
-ChannelCredentials::~ChannelCredentials() {}
-
-CallCredentials::CallCredentials() { g_gli_initializer.summon(); }
-
-CallCredentials::~CallCredentials() {}
-
-}  // namespace grpc
+void grpc_slice_buffer_reset_and_unref(grpc_slice_buffer* sb) {
+  grpc_core::ExecCtx exec_ctx;
+  grpc_slice_buffer_reset_and_unref_internal(sb);
+}
