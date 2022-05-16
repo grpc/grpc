@@ -29,6 +29,7 @@
 
 #include "absl/algorithm/container.h"
 #include "absl/flags/flag.h"
+#include "absl/strings/str_format.h"
 #include "absl/strings/str_join.h"
 #include "absl/strings/str_split.h"
 
@@ -41,6 +42,7 @@
 
 #include "src/core/lib/channel/status_util.h"
 #include "src/core/lib/gpr/env.h"
+#include "src/core/lib/iomgr/gethostname.h"
 #include "src/proto/grpc/testing/istio_echo.grpc.pb.h"
 #include "src/proto/grpc/testing/istio_echo.pb.h"
 #include "test/core/util/test_config.h"
@@ -258,11 +260,14 @@ class EchoTestServiceImpl : public EchoTestService::Service {
 
 /*std::vector<std::unique_ptr<grpc::Server>>*/
 void RunServer(std::vector<int> ports) {
-  char base_hostname[256];
-  if (gethostname(base_hostname, 256) != 0) {
-    sprintf(base_hostname, "%s-%d", "generated", rand() % 1000);
+  std::string hostname;
+  char* hostname_p = grpc_gethostname();
+  if (hostname_p == nullptr) {
+    hostname = absl::StrFormat("generated-%d", rand() % 1000);
+  } else {
+    hostname.assign(hostname_p);
   }
-  EchoTestServiceImpl echo_test_service(base_hostname);
+  EchoTestServiceImpl echo_test_service(hostname);
   ServerBuilder builder;
   builder.RegisterService(&echo_test_service);
   for (int port : ports) {
