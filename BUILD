@@ -1912,6 +1912,7 @@ grpc_cc_library(
     external_deps = [
         "absl/strings",
     ],
+    visibility = ["@grpc:iomgr_timer"],
     deps = [
         "event_engine_base_hdrs",
         "exec_ctx",
