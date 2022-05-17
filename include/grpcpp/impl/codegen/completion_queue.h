@@ -105,7 +105,10 @@ class CompletionQueue : private grpc::GrpcLibraryCodegen {
  public:
   /// Default constructor. Implicitly creates a \a grpc_completion_queue
   /// instance.
-  CompletionQueue();
+  CompletionQueue()
+      : CompletionQueue(grpc_completion_queue_attributes{
+            GRPC_CQ_CURRENT_VERSION, GRPC_CQ_NEXT, GRPC_CQ_DEFAULT_POLLING,
+            nullptr}) {}
 
   /// Wrap \a take, taking ownership of the instance.
   ///
@@ -247,7 +250,13 @@ class CompletionQueue : private grpc::GrpcLibraryCodegen {
 
  protected:
   /// Private constructor of CompletionQueue only visible to friend classes
-  explicit CompletionQueue(const grpc_completion_queue_attributes& attributes);
+  explicit CompletionQueue(const grpc_completion_queue_attributes& attributes) {
+    cq_ = grpc::g_core_codegen_interface->grpc_completion_queue_create(
+        grpc::g_core_codegen_interface->grpc_completion_queue_factory_lookup(
+            &attributes),
+        &attributes, nullptr);
+    InitialAvalanching();  // reserve this for the future shutdown
+  }
 
  private:
   // Friends for access to server registration lists that enable checking and
