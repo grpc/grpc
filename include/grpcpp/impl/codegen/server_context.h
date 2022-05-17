@@ -293,7 +293,7 @@ class ServerContextBase {
   /// client in order to make load balancing decisions. This will
   /// return nullptr if the feature hasn't been enabled using
   /// \a EnableCallMetricRecording.
-  experimental::CallMetricRecorder* ExperimentalGetCallMetricRecorder();
+  experimental::CallMetricRecorder* ExperimentalGetCallMetricRecorder() { return call_metric_recorder_; }
 
  protected:
   /// Async only. Has to be called before the rpc starts.
@@ -441,6 +441,8 @@ class ServerContextBase {
       marked_cancelled_.store(true, std::memory_order_release);
     }
   }
+
+  void CreateCallMetricRecorder();
 
   struct CallWrapper {
     ~CallWrapper();

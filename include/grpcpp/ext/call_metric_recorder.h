@@ -27,6 +27,7 @@
 #include "absl/strings/string_view.h"
 
 #include <grpcpp/impl/codegen/slice.h>
+#include <grpcpp/impl/codegen/sync.h>
 
 namespace grpc_core {
 class Arena;
@@ -69,7 +70,7 @@ class CallMetricRecorder {
   /// itself, since it's going to be sent as trailers after the RPC
   /// finishes. It is assumed the strings are common names that
   /// are global constants.
-  CallMetricRecorder& RecordUtilizationMetric(grpc::string_ref name,
+  CallMetricRecorder& RecordUtilizationMetric(string_ref name,
                                               double value);
 
   /// Records a call metric measurement for request cost.
@@ -79,14 +80,13 @@ class CallMetricRecorder {
   /// itself, since it's going to be sent as trailers after the RPC
   /// finishes. It is assumed the strings are common names that
   /// are global constants.
-  CallMetricRecorder& RecordRequestCostMetric(grpc::string_ref name,
+  CallMetricRecorder& RecordRequestCostMetric(string_ref name,
                                               double value);
-  bool disabled() const { return disabled_; }
 
  private:
+  internal::Mutex mu_;
   std::string CreateSerializedReport();
-  grpc_core::BackendMetricData* backend_metric_data_;
-  bool disabled_ = false;
+  grpc_core::BackendMetricData* backend_metric_data_ ABSL_GUARDED_BY(&mu_);
   friend class experimental::OrcaServerInterceptor;
 };
 

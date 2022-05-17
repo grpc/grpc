@@ -34,40 +34,40 @@ grpc::experimental::CallMetricRecorder::~CallMetricRecorder() {
 grpc::experimental::CallMetricRecorder&
 grpc::experimental::CallMetricRecorder::RecordCpuUtilizationMetric(
     double value) {
-  if (!disabled_) backend_metric_data_->cpu_utilization = value;
+      internal::MutexLock lock(&mu_);
+  backend_metric_data_->cpu_utilization = value;
   return *this;
 }
 
 grpc::experimental::CallMetricRecorder&
 grpc::experimental::CallMetricRecorder::RecordMemoryUtilizationMetric(
     double value) {
-  if (!disabled_) backend_metric_data_->mem_utilization = value;
+      internal::MutexLock lock(&mu_);
+  backend_metric_data_->mem_utilization = value;
   return *this;
 }
 
 grpc::experimental::CallMetricRecorder&
 grpc::experimental::CallMetricRecorder::RecordUtilizationMetric(
     grpc::string_ref name, double value) {
-  if (!disabled_) {
+      internal::MutexLock lock(&mu_);
     absl::string_view name_sv(name.data(), name.length());
     backend_metric_data_->utilization[name_sv] = value;
-  }
   return *this;
 }
 
 grpc::experimental::CallMetricRecorder&
 grpc::experimental::CallMetricRecorder::RecordRequestCostMetric(
     grpc::string_ref name, double value) {
-  if (!disabled_) {
+      internal::MutexLock lock(&mu_);
     absl::string_view name_sv(name.data(), name.length());
     backend_metric_data_->request_cost[name_sv] = value;
-  }
   return *this;
 }
 
 std::string grpc::experimental::CallMetricRecorder::CreateSerializedReport() {
   upb::Arena arena;
-  disabled_ = true;
+      internal::MutexLock lock(&mu_);
   xds_data_orca_v3_OrcaLoadReport* response =
       xds_data_orca_v3_OrcaLoadReport_new(arena.ptr());
   if (backend_metric_data_->cpu_utilization != -1) {

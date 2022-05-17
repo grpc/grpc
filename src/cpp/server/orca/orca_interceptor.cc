@@ -24,11 +24,17 @@
 void grpc::experimental::OrcaServerInterceptor::Intercept(
     InterceptorBatchMethods* methods) {
   if (methods->QueryInterceptionHookPoint(
+    InterceptionHookPoints::POST_RECV_MESSAGE
+  )) {
+    auto context = info_->server_context();
+    context->CreateCallMetricRecorder();
+  }else
+  if (methods->QueryInterceptionHookPoint(
           InterceptionHookPoints::PRE_SEND_STATUS)) {
     auto trailers = methods->GetSendTrailingMetadata();
     if (trailers != nullptr) {
       auto context = info_->server_context();
-      auto recorder = context->call_metric_recorder_;
+      auto * recorder = context->call_metric_recorder_;
       if (recorder != nullptr) {
         auto serialized = recorder->CreateSerializedReport();
         std::string key =
