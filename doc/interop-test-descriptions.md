@@ -1072,7 +1072,7 @@ logged and recorded in the latency histogram.
 
 ### orca
 
-The client verifies that a custom LB policy, which is integrated with ORCA API, will receive both per-query and
+The client verifies that a custom LB policy, which is integrated with ORCA APIs, will receive both per-query and
 Out-Of-Band metrics report from the backend. 
 
 The client will register the custom LB policy named `test_backend_metrics_load_balancer`, 
@@ -1080,14 +1080,17 @@ which using ORCA APIs already installed a per-query
 report listener, and an Out-Of-Band report listener (configure load report interval to be 1s).
 The interop-testing client will run with a service config to select the load balancing config (using argument `--service_config_json`)
 so that it effectively uses this newly registered custom LB policy.
-The installed listeners in the custom LB policy contain atomic references that will be used to verify 
-that expected reports are received. The references in the load report listener can be injected to the call
-through, e.g. CallOptions. The references always contain the latest report received.
+A load report references can be passed from the call
+through, e.g. CallOptions, to the LB policy to receive metrics reports. 
+This way, we can verify that expected reports are received.
+The references always contain the latest report received.
 
 To perform the test, three new fields are added to the test unary call request data structure:
 1. A boolean type `orca_per_rpc` that tells the server to update per-query metrics.
 2. A boolean type `orca_oob` that tells the server to update OOB metrics.
 3. A test load report that tells the server what metrics data to update.
+
+Server will behave accordingly upon receiving the requests to cover metrics update and report features.
 
 Server features:
 * [Orca][]
@@ -1095,12 +1098,13 @@ Server features:
 ### Per-query metrics reporting
 
 Procedures:
-* The client sends a unary request to the server. The call request sets `orca_per_rpc` to true  and includes a test load report.
+* The client sends a unary request to the server. The call request sets `orca_per_rpc` to true and includes a test load report.
+The call carries a reference to receive the latest load report, e.g. using CallOptions.
+The reference is passed to the custom LB policy as part of the `OrcaPerRequestReportListener` API. 
 
 Client asserts:
 * The call is successful.
-* The per-query listener receives a metrics report that is identical to
-  the metrics data sent in the request. 
+* The per-query listener receives a metrics report that is identical to the metrics data sent in the request. 
 
 ### Out-of-Band metrics reporting
 
@@ -1343,6 +1347,6 @@ Specifically:
 `CallMetricRecorder` to record both utilization and 
 request cost metrics for the current RPC, the metrics data is coped from the received test load 
 report from the request.
-2. If the `orca_oob` bit is set in the request, the server test driver would call
+2. And if the `orca_oob` bit is set in the request, the server test driver would call
 `MetricRecorder` to first clear all the previous metrics data, and then record the utilization 
 metrics, the metrics data is coped from the received test load report from the request.
