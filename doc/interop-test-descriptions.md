@@ -1072,21 +1072,21 @@ logged and recorded in the latency histogram.
 
 ### orca
 
-The client verifies that a custom LB policy, which is integrated with ORCA APIs, will receive both per-query and
-out-of-band metric reports from the backend. 
+The client verifies that a custom LB policy, which is integrated with ORCA APIs, will receive both 
+per-query and out-of-band metric reports from the backend. 
 
-The client will register the custom LB policy named `test_backend_metrics_load_balancer`, 
-which using ORCA APIs already installed a per-query
-report listener, and an out-of-band report listener (configure load report interval to be 1s).
-The interop-testing client will run with a service config to select the load balancing config (using argument `--service_config_json`)
-so that it effectively uses this newly registered custom LB policy.
-A per-query load report reference can be passed from the call
-to the LB policy through, e.g. CallOptions, to obtain the received metric report. 
-An OOB load report reference can be injected to the LB policy at construction time.
-The reference always contain the latest OOB report.
-This way, together with server behavior we can verify the expected metric reports are received.
+The client will register the custom LB policy named `test_backend_metrics_load_balancer`, which
+using ORCA APIs already installed a per-query report listener, and an out-of-band report 
+listener (configure load report interval to be 1s). The interop-testing client will run with a
+service config to select the load balancing config (using argument `--service_config_json`), so that 
+it effectively uses this newly registered custom LB policy. A per-query load report reference can be 
+passed from the call to the LB policy through, e.g. CallOptions, to received metric report. 
+An OOB load report reference can be injected to the LB policy at instantiation time. The reference
+always contain the latest OOB report. This way, together with server behaviors we can verify the 
+expected metric reports are received.
 
-To perform the test, three new fields are added to the test unary call request data structure to communicate with the server:
+To perform the test, three new fields are added to the test unary call request data structure to 
+communicate with the server:
 1. A boolean type `orca_per_rpc` that tells the server to update per-query metrics.
 2. A boolean type `orca_oob` that tells the server to update OOB metrics.
 3. A test load report that tells the server what metrics data to update.
@@ -1097,8 +1097,8 @@ Server features:
 ### Per-query metrics reporting
 
 Procedures:
-* The client sends a unary request to the server. The call request sets `orca_per_rpc` to true and includes a test load report.
-The call carries a reference to receive the latest load report, e.g. using CallOptions.
+* The client sends a unary request to the server. The call request sets `orca_per_rpc` to true and 
+includes a test load report. The call carries a reference to receive the load report, e.g. using CallOptions.
 The reference is passed to the custom LB policy as part of the `OrcaPerRequestReportListener` API. 
 
 Client asserts:
