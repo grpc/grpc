@@ -56,7 +56,14 @@ grpc_google_iam_credentials::grpc_google_iam_credentials(
           "GoogleIAMCredentials{Token:%s,AuthoritySelector:%s}",
           token != nullptr ? "present" : "absent", authority_selector)) {}
 
-const char* grpc_google_iam_credentials::Type() { return "Iam"; }
+namespace {
+constexpr char kTypeName[] = "Iam";
+}  // namespace
+
+grpc_core::UniqueTypeName grpc_google_iam_credentials::Type() {
+  static grpc_core::UniqueTypeName::Factory<kTypeName> factory;
+  return factory.Create();
+}
 
 grpc_call_credentials* grpc_google_iam_credentials_create(
     const char* token, const char* authority_selector, void* reserved) {

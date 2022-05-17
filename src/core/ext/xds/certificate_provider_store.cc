@@ -28,8 +28,14 @@ namespace grpc_core {
 // CertificateProviderStore::CertificateProviderWrapper
 //
 
-const char* CertificateProviderStore::CertificateProviderWrapper::type() const {
-  return "Wrapper";
+namespace {
+constexpr char kWrapperTypeName[] = "Wrapper";
+}  // namespace
+
+UniqueTypeName CertificateProviderStore::CertificateProviderWrapper::type()
+    const {
+  static UniqueTypeName::Factory<kWrapperTypeName> factory;
+  return factory.Create();
 }
 
 // If a certificate provider is created, the CertificateProviderStore

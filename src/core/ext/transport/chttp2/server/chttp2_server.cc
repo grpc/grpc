@@ -1012,7 +1012,7 @@ grpc_channel_args* ModifyArgsForConnection(grpc_channel_args* args,
   if (security_connector == nullptr) {
     *error = GRPC_ERROR_CREATE_FROM_CPP_STRING(
         absl::StrCat("Unable to create secure server with credentials of type ",
-                     server_credentials->type()));
+                     server_credentials->type().name()));
     return args;
   }
   grpc_arg arg_to_add =
@@ -1061,7 +1061,7 @@ int grpc_server_add_http2_port(grpc_server* server, const char* addr,
     if (sc == nullptr) {
       err = GRPC_ERROR_CREATE_FROM_CPP_STRING(absl::StrCat(
           "Unable to create secure server with credentials of type ",
-          creds->type()));
+          creds->type().name()));
       goto done;
     }
     grpc_arg args_to_add[2];

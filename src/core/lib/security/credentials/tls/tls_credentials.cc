@@ -33,6 +33,8 @@
 
 namespace {
 
+constexpr char kTypeName[] = "Tls";
+
 bool CredentialOptionSanityCheck(grpc_tls_credentials_options* options,
                                  bool is_client) {
   if (options == nullptr) {
@@ -106,6 +108,11 @@ TlsCredentials::create_security_connector(
   return sc;
 }
 
+grpc_core::UniqueTypeName TlsCredentials::type() const {
+  static grpc_core::UniqueTypeName::Factory<kTypeName> factory;
+  return factory.Create();
+}
+
 int TlsCredentials::cmp_impl(const grpc_channel_credentials* other) const {
   const TlsCredentials* o = static_cast<const TlsCredentials*>(other);
   if (*options_ == *o->options_) return 0;
@@ -124,6 +131,11 @@ TlsServerCredentials::create_security_connector(
     const grpc_channel_args* /* args */) {
   return grpc_core::TlsServerSecurityConnector::
       CreateTlsServerSecurityConnector(this->Ref(), options_);
+}
+
+grpc_core::UniqueTypeName TlsServerCredentials::type() const {
+  static grpc_core::UniqueTypeName::Factory<kTypeName> factory;
+  return factory.Create();
 }
 
 /** -- Wrapper APIs declared in grpc_security.h -- **/

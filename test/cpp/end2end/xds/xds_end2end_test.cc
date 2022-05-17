@@ -133,6 +133,8 @@ constexpr char kClientKeyPath[] = "src/core/tsi/test_creds/client.key";
 constexpr char kBadClientCertPath[] = "src/core/tsi/test_creds/badclient.pem";
 constexpr char kBadClientKeyPath[] = "src/core/tsi/test_creds/badclient.key";
 
+constexpr char kFakeTypeName[] = "fake";
+
 // Based on StaticDataCertificateProvider, but provides alternate certificates
 // if the certificate name is not empty.
 class FakeCertificateProvider final : public grpc_tls_certificate_provider {
@@ -200,7 +202,10 @@ class FakeCertificateProvider final : public grpc_tls_certificate_provider {
     return distributor_;
   }
 
-  const char* type() const override { return "fake"; }
+  grpc_core::UniqueTypeName type() const override {
+    static grpc_core::UniqueTypeName::Factory<kFakeTypeName> factory;
+    return factory.Create();
+  }
 
  private:
   int CompareImpl(const grpc_tls_certificate_provider* other) const override {

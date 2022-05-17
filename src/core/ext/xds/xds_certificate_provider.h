@@ -39,7 +39,7 @@ class XdsCertificateProvider : public grpc_tls_certificate_provider {
     return distributor_;
   }
 
-  const char* type() const override;
+  UniqueTypeName type() const override;
 
   bool ProvidesRootCerts(const std::string& cert_name);
   void UpdateRootCertNameAndDistributor(

@@ -4767,6 +4767,7 @@ grpc_cc_library(
         "resource_quota_trace",
         "try_seq",
         "tsi_base",
+        "unique_type_name",
     ],
 )
 

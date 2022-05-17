@@ -151,6 +151,10 @@ httpcli_ssl_channel_security_connector_create(
   return c;
 }
 
+namespace {
+constexpr char kHttpSslTypeName[] = "HttpRequestSSL";
+}  // namespace
+
 class HttpRequestSSLCredentials : public grpc_channel_credentials {
  public:
   RefCountedPtr<grpc_channel_security_connector> create_security_connector(
@@ -178,7 +182,10 @@ class HttpRequestSSLCredentials : public grpc_channel_credentials {
     return Ref();
   }
 
-  const char* type() const override { return "HttpRequestSSL"; }
+  UniqueTypeName type() const override {
+    static UniqueTypeName::Factory<kHttpSslTypeName> factory;
+    return factory.Create();
+  }
 
  private:
   int cmp_impl(const grpc_channel_credentials* /* other */) const override {

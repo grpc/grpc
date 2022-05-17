@@ -31,6 +31,8 @@ namespace grpc_core {
 
 namespace {
 
+constexpr char kTypeName[] = "Xds";
+
 bool XdsVerifySubjectAlternativeNames(
     const char* const* subject_alternative_names,
     size_t subject_alternative_names_size,
@@ -105,7 +107,10 @@ int XdsCertificateVerifier::CompareImpl(
   return cluster_name_.compare(o->cluster_name_);
 }
 
-const char* XdsCertificateVerifier::type() const { return "Xds"; }
+UniqueTypeName XdsCertificateVerifier::type() const {
+  static UniqueTypeName::Factory<kTypeName> factory;
+  return factory.Create();
+}
 
 bool TestOnlyXdsVerifySubjectAlternativeNames(
     const char* const* subject_alternative_names,
@@ -182,7 +187,10 @@ XdsCredentials::create_security_connector(
       std::move(call_creds), target_name, temp_args.args, new_args);
 }
 
-const char* XdsCredentials::Type() { return "Xds"; }
+UniqueTypeName XdsCredentials::Type() {
+  static UniqueTypeName::Factory<kTypeName> factory;
+  return factory.Create();
+}
 
 //
 // XdsServerCredentials
@@ -220,7 +228,10 @@ XdsServerCredentials::create_security_connector(const grpc_channel_args* args) {
   return fallback_credentials_->create_security_connector(args);
 }
 
-const char* XdsServerCredentials::Type() { return "Xds"; }
+UniqueTypeName XdsServerCredentials::Type() {
+  static UniqueTypeName::Factory<kTypeName> factory;
+  return factory.Create();
+}
 
 }  // namespace grpc_core
 

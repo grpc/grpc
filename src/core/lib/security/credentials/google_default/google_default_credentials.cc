@@ -131,8 +131,14 @@ grpc_google_default_channel_credentials::update_arguments(
   return args.SetIfUnset(GRPC_ARG_DNS_ENABLE_SRV_QUERIES, true);
 }
 
-const char* grpc_google_default_channel_credentials::type() const {
-  return "GoogleDefault";
+namespace {
+constexpr char kTypeName[] = "GoogleDefault";
+}  // namespace
+
+grpc_core::UniqueTypeName grpc_google_default_channel_credentials::type()
+    const {
+  static grpc_core::UniqueTypeName::Factory<kTypeName> factory;
+  return factory.Create();
 }
 
 static void on_metadata_server_detection_http_response(

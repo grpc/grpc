@@ -24,6 +24,10 @@
 
 namespace grpc_core {
 
+namespace {
+constexpr char kTypeName[] = "Insecure";
+}  // namespace
+
 RefCountedPtr<grpc_channel_security_connector>
 InsecureCredentials::create_security_connector(
     RefCountedPtr<grpc_call_credentials> request_metadata_creds,
@@ -33,7 +37,10 @@ InsecureCredentials::create_security_connector(
       Ref(), std::move(request_metadata_creds));
 }
 
-const char* InsecureCredentials::Type() { return "Insecure"; }
+UniqueTypeName InsecureCredentials::Type() {
+  static UniqueTypeName::Factory<kTypeName> factory;
+  return factory.Create();
+}
 
 int InsecureCredentials::cmp_impl(
     const grpc_channel_credentials* /* other */) const {
@@ -47,7 +54,10 @@ InsecureServerCredentials::create_security_connector(
   return MakeRefCounted<InsecureServerSecurityConnector>(Ref());
 }
 
-const char* InsecureServerCredentials::Type() { return "Insecure"; }
+UniqueTypeName InsecureServerCredentials::Type() {
+  static UniqueTypeName::Factory<kTypeName> factory;
+  return factory.Create();
+}
 
 }  // namespace grpc_core
 

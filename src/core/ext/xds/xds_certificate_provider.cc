@@ -263,7 +263,14 @@ XdsCertificateProvider::~XdsCertificateProvider() {
   distributor_->SetWatchStatusCallback(nullptr);
 }
 
-const char* XdsCertificateProvider::type() const { return "Xds"; }
+namespace {
+constexpr char kTypeName[] = "Xds";
+}  // namespace
+
+UniqueTypeName XdsCertificateProvider::type() const {
+  static UniqueTypeName::Factory<kTypeName> factory;
+  return factory.Create();
+}
 
 bool XdsCertificateProvider::ProvidesRootCerts(const std::string& cert_name) {
   MutexLock lock(&mu_);

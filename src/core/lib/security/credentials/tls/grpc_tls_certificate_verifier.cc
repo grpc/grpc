@@ -60,6 +60,15 @@ bool ExternalCertificateVerifier::Verify(
   return is_done;
 }
 
+namespace {
+constexpr char kExternalTypeName[] = "External";
+}  // namespace
+
+UniqueTypeName ExternalCertificateVerifier::type() const {
+  static UniqueTypeName::Factory<kExternalTypeName> factory;
+  return factory.Create();
+}
+
 void ExternalCertificateVerifier::OnVerifyDone(
     grpc_tls_custom_verification_check_request* request, void* callback_arg,
     grpc_status_code status, const char* error_details) {
@@ -82,6 +91,19 @@ void ExternalCertificateVerifier::OnVerifyDone(
     }
     callback(return_status);
   }
+}
+
+//
+// NoOpCertificateVerifier
+//
+
+namespace {
+constexpr char kNoOpTypeName[] = "NoOp";
+}  // namespace
+
+UniqueTypeName NoOpCertificateVerifier::type() const {
+  static UniqueTypeName::Factory<kNoOpTypeName> factory;
+  return factory.Create();
 }
 
 //
@@ -150,6 +172,15 @@ bool HostNameCertificateVerifier::Verify(
   *sync_status = absl::Status(absl::StatusCode::kUnauthenticated,
                               "Hostname Verification Check failed.");
   return true;  // synchronous check
+}
+
+namespace {
+constexpr char kHostnameTypeName[] = "Hostname";
+}  // namespace
+
+UniqueTypeName HostNameCertificateVerifier::type() const {
+  static UniqueTypeName::Factory<kHostnameTypeName> factory;
+  return factory.Create();
 }
 
 }  // namespace grpc_core

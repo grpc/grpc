@@ -86,6 +86,15 @@ StaticDataCertificateProvider::~StaticDataCertificateProvider() {
 }
 
 namespace {
+constexpr char kStaticDataTypeName[] = "StaticData";
+}  // namespace
+
+UniqueTypeName StaticDataCertificateProvider::type() const {
+  static UniqueTypeName::Factory<kStaticDataTypeName> factory;
+  return factory.Create();
+}
+
+namespace {
 
 gpr_timespec TimeoutSecondsToDeadline(int64_t seconds) {
   return gpr_time_add(gpr_now(GPR_CLOCK_MONOTONIC),
@@ -175,6 +184,15 @@ FileWatcherCertificateProvider::~FileWatcherCertificateProvider() {
   distributor_->SetWatchStatusCallback(nullptr);
   gpr_event_set(&shutdown_event_, reinterpret_cast<void*>(1));
   refresh_thread_.Join();
+}
+
+namespace {
+constexpr char kFileWatcherTypeName[] = "FileWatcher";
+}  // namespace
+
+UniqueTypeName FileWatcherCertificateProvider::type() const {
+  static UniqueTypeName::Factory<kFileWatcherTypeName> factory;
+  return factory.Create();
 }
 
 void FileWatcherCertificateProvider::ForceUpdate() {
