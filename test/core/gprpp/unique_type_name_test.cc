@@ -21,7 +21,7 @@
 
 namespace grpc_core {
 
-// Teach gtest to print names usefully. 
+// Teach gtest to print names usefully.
 std::ostream& operator<<(std::ostream& os, const UniqueTypeName& name) {
   return os << absl::StrFormat("%s (%p)", name.name(), name.name().data());
 }
@@ -101,8 +101,9 @@ TEST(UniqueTypeNameTest, CanUseAsMapKey) {
   std::map<UniqueTypeName, int> m;
   m[foo.type()] = 1;
   m[bar.type()] = 2;
-  EXPECT_THAT(m, ::testing::UnorderedElementsAre(
-      ::testing::Pair(foo.type(), 1), ::testing::Pair(bar.type(), 2)));
+  EXPECT_THAT(m,
+              ::testing::UnorderedElementsAre(::testing::Pair(foo.type(), 1),
+                                              ::testing::Pair(bar.type(), 2)));
 }
 
 }  // namespace

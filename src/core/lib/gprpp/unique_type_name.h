@@ -17,7 +17,6 @@
 #ifndef GRPC_CORE_LIB_GPRPP_UNIQUE_TYPE_NAME_H
 #define GRPC_CORE_LIB_GPRPP_UNIQUE_TYPE_NAME_H
 
-#include <memory>
 #include <string>
 
 #include "absl/strings/string_view.h"
@@ -59,7 +58,7 @@ class UniqueTypeName {
  public:
   // Factory class.  There should be a single static instance of this
   // for each unique type name.
-  template<const char* TypeName>
+  template <const char* TypeName>
   class Factory {
    public:
     static UniqueTypeName Create() {
