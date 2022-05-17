@@ -1972,8 +1972,10 @@ void grpc_chttp2_maybe_complete_recv_message(grpc_chttp2_transport* /*t*/,
       grpc_slice_buffer_reset_and_unref_internal(&s->frame_storage);
     }
     while (s->frame_storage.length > 0) {
-      error = grpc_deframe_unprocessed_incoming_frames(
+      auto r = grpc_deframe_unprocessed_incoming_frames(
           &s->data_parser, s, &s->frame_storage, &**s->recv_message);
+      if (absl::holds_alternative<grpc_core::Pending>(r)) return;
+      error = absl::get<grpc_error_handle>(r);
       if (error != GRPC_ERROR_NONE) {
         s->seen_error = true;
         grpc_slice_buffer_reset_and_unref_internal(&s->frame_storage);

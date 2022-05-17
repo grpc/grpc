@@ -87,7 +87,7 @@ void grpc_chttp2_encode_data(uint32_t id, grpc_slice_buffer* inbuf,
   stats->data_bytes += write_bytes;
 }
 
-grpc_error_handle grpc_deframe_unprocessed_incoming_frames(
+grpc_core::Poll<grpc_error_handle> grpc_deframe_unprocessed_incoming_frames(
     grpc_chttp2_data_parser* p, grpc_chttp2_stream* s,
     grpc_slice_buffer* slices, grpc_core::SliceBuffer* stream_out) {
   grpc_error_handle error = GRPC_ERROR_NONE;
@@ -212,7 +212,7 @@ grpc_error_handle grpc_deframe_unprocessed_incoming_frames(
                              static_cast<size_t>(end - beg))));
           p->frame_size_remaining -= remaining;
           grpc_slice_buffer_remove_first(slices);
-          return GRPC_ERROR_NONE;
+          return grpc_core::Pending{};
         } else {
           GPR_ASSERT(remaining > p->frame_size_remaining);
           s->stats.incoming.data_bytes += p->frame_size_remaining;
