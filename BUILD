@@ -3733,6 +3733,7 @@ grpc_cc_library(
         "grpc_outlier_detection_header",
         "grpc_trace",
         "iomgr_fwd",
+        "iomgr_timer",
         "json",
         "json_util",
         "orphanable",
