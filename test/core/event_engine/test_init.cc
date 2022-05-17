@@ -23,12 +23,11 @@ namespace grpc_event_engine {
 namespace experimental {
 
 /// Sets the default EventEngine factory, used for testing.
-/// Valid engines are:
-/// * 'default' or 'libuv': the LibuvEventEngine
+/// Currently the only valid engine is 'default' or ''.
+/// When more engines are added, this should be updated accordingly.
 absl::Status InitializeTestingEventEngineFactory(absl::string_view engine) {
-  if (engine == "default" || engine == "libuv") {
-    // TODO(hork): SetDefaultEventEngineFactory(LibuvEventEngineFactory)
-    gpr_log(GPR_DEBUG, "Libuv EventEngine initialized.");
+  if (engine == "default" || engine.empty()) {
+    // No-op, the default will be used
     return absl::OkStatus();
   }
   return absl::InvalidArgumentError(
