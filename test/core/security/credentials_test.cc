@@ -45,6 +45,7 @@
 #include "src/core/lib/gpr/tmpfile.h"
 #include "src/core/lib/gprpp/host_port.h"
 #include "src/core/lib/gprpp/time.h"
+#include "src/core/lib/gprpp/unique_type_name.h"
 #include "src/core/lib/http/httpcli.h"
 #include "src/core/lib/http/httpcli_ssl_credentials.h"
 #include "src/core/lib/iomgr/error.h"
@@ -432,8 +433,6 @@ TEST(CredentialsTest, TestOauth2TokenFetcherCredsParsingMissingTokenLifetime) {
   grpc_http_response_destroy(&response);
 }
 
-namespace {
-
 class RequestMetadataState : public RefCounted<RequestMetadataState> {
  public:
   static RefCountedPtr<RequestMetadataState> NewInstance(
@@ -548,8 +547,6 @@ class RequestMetadataState : public RefCounted<RequestMetadataState> {
   ActivityPtr activity_;
 };
 
-}  // namespace
-
 TEST(CredentialsTest, TestGoogleIamCreds) {
   ExecCtx exec_ctx;
   auto state = RequestMetadataState::NewInstance(
@@ -574,7 +571,7 @@ TEST(CredentialsTest, TestAccessTokenCreds) {
                                                  "authorization: Bearer blah");
   grpc_call_credentials* creds =
       grpc_access_token_credentials_create("blah", nullptr);
-  GPR_ASSERT(strcmp(creds->type(), grpc_access_token_credentials::Type()) == 0);
+  GPR_ASSERT(creds->type() == grpc_access_token_credentials::Type());
   /* Check security level. */
   GPR_ASSERT(creds->min_security_level() == GRPC_PRIVACY_AND_INTEGRITY);
   state->RunRequestMetadataTest(creds, kTestUrlScheme, kTestAuthority,
@@ -582,20 +579,26 @@ TEST(CredentialsTest, TestAccessTokenCreds) {
   creds->Unref();
 }
 
-namespace {
+constexpr char kCheckChannelOauth2TypeName[] = "check_channel_oauth2";
+
 class check_channel_oauth2 final : public grpc_channel_credentials {
  public:
   RefCountedPtr<grpc_channel_security_connector> create_security_connector(
       RefCountedPtr<grpc_call_credentials> call_creds, const char* /*target*/,
       const grpc_channel_args* /*args*/,
       grpc_channel_args** /*new_args*/) override {
-    GPR_ASSERT(strcmp(type(), "check_channel_oauth2") == 0);
+    GPR_ASSERT(type() == Type());
     GPR_ASSERT(call_creds != nullptr);
     GPR_ASSERT(call_creds->type() == grpc_access_token_credentials::Type());
     return nullptr;
   }
 
-  const char* type() const override { return "check_channel_oauth2"; }
+  static grpc_core::UniqueTypeName Type() {
+    static UniqueTypeName::Factory<kCheckChannelOauth2TypeName> factory;
+    return factory.Create();
+  }
+
+  UniqueTypeName type() const override { return Type(); }
 
  private:
   int cmp_impl(const grpc_channel_credentials* other) const override {
@@ -604,7 +607,6 @@ class check_channel_oauth2 final : public grpc_channel_credentials {
                         other);
   }
 };
-}  // namespace
 
 TEST(CredentialsTest, TestChannelOauth2CompositeCreds) {
   ExecCtx exec_ctx;
@@ -663,14 +665,16 @@ TEST(CredentialsTest, TestOauth2GoogleIamCompositeCreds) {
   composite_creds->Unref();
 }
 
-namespace {
+constexpr char kCheckChannelOauth2GoogleIamTypeName[] =
+    "check_channel_oauth2_google_iam";
+
 class check_channel_oauth2_google_iam final : public grpc_channel_credentials {
  public:
   RefCountedPtr<grpc_channel_security_connector> create_security_connector(
       RefCountedPtr<grpc_call_credentials> call_creds, const char* /*target*/,
       const grpc_channel_args* /*args*/,
       grpc_channel_args** /*new_args*/) override {
-    GPR_ASSERT(strcmp(type(), "check_channel_oauth2_google_iam") == 0);
+    GPR_ASSERT(type() == Type());
     GPR_ASSERT(call_creds != nullptr);
     GPR_ASSERT(call_creds->type() == grpc_composite_call_credentials::Type());
     const grpc_composite_call_credentials::CallCredentialsList& creds_list =
@@ -681,9 +685,13 @@ class check_channel_oauth2_google_iam final : public grpc_channel_credentials {
     return nullptr;
   }
 
-  const char* type() const override {
-    return "check_channel_oauth2_google_iam";
+  static grpc_core::UniqueTypeName Type() {
+    static UniqueTypeName::Factory<kCheckChannelOauth2GoogleIamTypeName>
+        factory;
+    return factory.Create();
   }
+
+  grpc_core::UniqueTypeName type() const override { return Type(); }
 
  private:
   int cmp_impl(const grpc_channel_credentials* other) const override {
@@ -692,7 +700,6 @@ class check_channel_oauth2_google_iam final : public grpc_channel_credentials {
                         other);
   }
 };
-}  // namespace
 
 TEST(CredentialsTest, TestChannelOauth2GoogleIamCompositeCreds) {
   ExecCtx exec_ctx;
@@ -1803,6 +1810,8 @@ TEST(CredentialsTest, TestGoogleDefaultCredsCallCredsSpecified) {
   HttpRequest::SetOverride(nullptr, nullptr, nullptr);
 }
 
+constexpr char kFakeCallCredsTypeName[] = "fake";
+
 struct fake_call_creds : public grpc_call_credentials {
  public:
   ArenaPromise<absl::StatusOr<ClientMetadataHandle>> GetRequestMetadata(
@@ -1813,7 +1822,10 @@ struct fake_call_creds : public grpc_call_credentials {
     return Immediate(std::move(initial_metadata));
   }
 
-  const char* type() const override { return "fake"; }
+  grpc_core::UniqueTypeName type() const override {
+    static UniqueTypeName::Factory<kFakeCallCredsTypeName> factory;
+    return factory.Create();
+  }
 
  private:
   int cmp_impl(const grpc_call_credentials* other) const override {
