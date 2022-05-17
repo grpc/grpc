@@ -24,7 +24,7 @@
 void grpc::experimental::OrcaServerInterceptor::Intercept(
     InterceptorBatchMethods* methods) {
   if (methods->QueryInterceptionHookPoint(
-          InterceptionHookPoints::POST_RECV_MESSAGE)) {
+          InterceptionHookPoints::POST_RECV_INITIAL_METADATA)) {
     auto context = info_->server_context();
     context->CreateCallMetricRecorder();
   } else if (methods->QueryInterceptionHookPoint(
