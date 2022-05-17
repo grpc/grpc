@@ -55,6 +55,7 @@
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/gprpp/time.h"
+#include "src/core/lib/gprpp/unique_type_name.h"
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
@@ -68,7 +69,7 @@ namespace {
 
 TraceFlag grpc_orca_client_trace(false, "orca_client");
 
-constexpr char kProducerType[] = "orca";
+constexpr char kProducerTypeName[] = "orca";
 
 class OrcaWatcher;
 
@@ -81,7 +82,12 @@ class OrcaProducer : public Subchannel::DataProducerInterface {
 
   void Orphan() override;
 
-  const char* type() override { return kProducerType; }
+  static UniqueTypeName Type() {
+    static UniqueTypeName::Factory<kProducerTypeName> factory;
+    return factory.Create();
+  }
+
+  UniqueTypeName type() const override { return Type(); }
 
   // Adds and removes watchers.
   void AddWatcher(OrcaWatcher* watcher);
@@ -388,8 +394,8 @@ OrcaWatcher::~OrcaWatcher() {
 void OrcaWatcher::SetSubchannel(Subchannel* subchannel) {
   // Check if our producer is already registered with the subchannel.
   // If not, create a new one, which will register itself with the subchannel.
-  auto* p =
-      static_cast<OrcaProducer*>(subchannel->GetDataProducer(kProducerType));
+  auto* p = static_cast<OrcaProducer*>(
+      subchannel->GetDataProducer(OrcaProducer::Type()));
   if (p != nullptr) producer_ = p->RefIfNonZero();
   if (producer_ == nullptr) {
     producer_ = MakeRefCounted<OrcaProducer>(subchannel->Ref());

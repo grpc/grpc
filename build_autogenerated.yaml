@@ -744,6 +744,7 @@ libs:
   - src/core/lib/gprpp/single_set_ptr.h
   - src/core/lib/gprpp/table.h
   - src/core/lib/gprpp/time.h
+  - src/core/lib/gprpp/unique_type_name.h
   - src/core/lib/http/format_request.h
   - src/core/lib/http/httpcli.h
   - src/core/lib/http/httpcli_ssl_credentials.h
@@ -1944,6 +1945,7 @@ libs:
   - src/core/lib/gprpp/single_set_ptr.h
   - src/core/lib/gprpp/table.h
   - src/core/lib/gprpp/time.h
+  - src/core/lib/gprpp/unique_type_name.h
   - src/core/lib/http/format_request.h
   - src/core/lib/http/httpcli.h
   - src/core/lib/http/parser.h

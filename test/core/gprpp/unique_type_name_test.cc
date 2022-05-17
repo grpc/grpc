@@ -14,6 +14,7 @@
 
 #include "src/core/lib/gprpp/unique_type_name.h"
 
+#include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
 #include "absl/strings/str_format.h"
@@ -92,6 +93,16 @@ TEST(UniqueTypeNameTest, MultipleInstancesOfSameStringAreNotEqual) {
   Foo2 foo2;
   EXPECT_NE(foo1.type(), foo2.type());
   EXPECT_NE(0, foo1.type().Compare(foo2.type()));
+}
+
+TEST(UniqueTypeNameTest, CanUseAsMapKey) {
+  Foo foo;
+  Bar bar;
+  std::map<UniqueTypeName, int> m;
+  m[foo.type()] = 1;
+  m[bar.type()] = 2;
+  EXPECT_THAT(m, ::testing::UnorderedElementsAre(
+      ::testing::Pair(foo.type(), 1), ::testing::Pair(bar.type(), 2)));
 }
 
 }  // namespace

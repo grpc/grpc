@@ -81,6 +81,9 @@ class UniqueTypeName {
   bool operator!=(const UniqueTypeName& other) const {
     return name_.data() != other.name_.data();
   }
+  bool operator<(const UniqueTypeName& other) const {
+    return name_.data() < other.name_.data();
+  }
 
   int Compare(const UniqueTypeName& other) const {
     return QsortCompare(name_.data(), other.name_.data());

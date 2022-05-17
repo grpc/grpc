@@ -2837,6 +2837,7 @@ grpc_cc_library(
         "slice_refcount",
         "sockaddr_utils",
         "time",
+        "unique_type_name",
         "uri_parser",
         "useful",
         "xds_orca_service_upb",
