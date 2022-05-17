@@ -23,9 +23,9 @@
 namespace grpc {
 
 class ServerBuilder;
-class ServerRpcInfo;
 
 namespace experimental {
+class ServerRpcInfo;
 
 class OrcaServerInterceptor : public Interceptor {
  public:
