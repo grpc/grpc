@@ -34,45 +34,36 @@ class Interface {
   virtual UniqueTypeName type() const = 0;
 };
 
+constexpr char kFooName[] = "Foo";
+
 class Foo : public Interface {
  public:
   UniqueTypeName type() const override {
-    static UniqueTypeName::Factory<kName> factory;
+    static UniqueTypeName::Factory<kFooName> factory;
     return factory.Create();
   }
-
- private:
-  static constexpr char kName[] = "Foo";
 };
 
-constexpr char Foo::kName[];
+constexpr char kBarName[] = "Bar";
 
 class Bar : public Interface {
  public:
   UniqueTypeName type() const override {
-    static UniqueTypeName::Factory<kName> factory;
+    static UniqueTypeName::Factory<kBarName> factory;
     return factory.Create();
   }
-
- private:
-  static constexpr char kName[] = "Bar";
 };
 
-constexpr char Bar::kName[];
+constexpr char kFoo2Name[] = "Foo";
 
 // Uses the same string as Foo.
 class Foo2 : public Interface {
  public:
   UniqueTypeName type() const override {
-    static UniqueTypeName::Factory<kName> factory;
+    static UniqueTypeName::Factory<kFoo2Name> factory;
     return factory.Create();
   }
-
- private:
-  static constexpr char kName[] = "Foo";
 };
-
-constexpr char Foo2::kName[];
 
 TEST(UniqueTypeNameTest, MultipleInstancesShareName) {
   Foo foo1;
