@@ -15,10 +15,10 @@ def grpc_deps
   pod 'Libuv-gRPC',       :podspec => "#{GRPC_LOCAL_SRC}/src/objective-c", :inhibit_warnings => true
 
   pod 'gRPC/InternalTesting',           :path => GRPC_LOCAL_SRC
-  pod 'gRPC-Core',                      :path => GRPC_LOCAL_SRC, :inhibit_warnings => true
+  pod 'gRPC-Core',                      :path => GRPC_LOCAL_SRC
   pod 'gRPC-RxLibrary',                 :path => GRPC_LOCAL_SRC
-  pod 'gRPC-ProtoRPC',                  :path => GRPC_LOCAL_SRC, :inhibit_warnings => true
-  pod 'RemoteTest', :path => "RemoteTestClient", :inhibit_warnings => true
+  pod 'gRPC-ProtoRPC',                  :path => GRPC_LOCAL_SRC
+  pod 'RemoteTest', :path => "RemoteTestClient"
 end
 
 target 'TvTests' do
@@ -78,7 +78,6 @@ post_install do |installer|
         # function" warning
         config.build_settings['GCC_WARN_ABOUT_RETURN_TYPE'] = 'NO'
         # Abseil isn't free from the following warning
-        config.build_settings['GCC_WARN_64_TO_32_BIT_CONVERSION'] = 'NO'
         config.build_settings['GCC_PREPROCESSOR_DEFINITIONS'] = '$(inherited) COCOAPODS=1 GRPC_CRONET_WITH_PACKET_COALESCING=1 GRPC_CFSTREAM=1'
       end
     end
