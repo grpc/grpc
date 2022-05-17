@@ -23,6 +23,7 @@
 #include <gmock/gmock.h>
 
 #include "src/core/ext/xds/certificate_provider_registry.h"
+#include "src/core/lib/gprpp/unique_type_name.h"
 #include "test/core/util/test_config.h"
 
 namespace grpc_core {
@@ -36,6 +37,8 @@ class CertificateProviderStoreTest : public ::testing::Test {
   ~CertificateProviderStoreTest() override { grpc_shutdown_blocking(); }
 };
 
+constexpr char kFakeTypeName[] = "fake";
+
 class FakeCertificateProvider : public grpc_tls_certificate_provider {
  public:
   RefCountedPtr<grpc_tls_certificate_distributor> distributor() const override {
@@ -44,7 +47,10 @@ class FakeCertificateProvider : public grpc_tls_certificate_provider {
     return nullptr;
   }
 
-  const char* type() const override { return "fake"; }
+  UniqueTypeName type() const override {
+    static UniqueTypeName::Factory<kFakeTypeName> factory;
+    return factory.Create();
+  }
 
  private:
   int CompareImpl(const grpc_tls_certificate_provider* other) const override {
