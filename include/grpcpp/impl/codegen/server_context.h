@@ -293,7 +293,9 @@ class ServerContextBase {
   /// client in order to make load balancing decisions. This will
   /// return nullptr if the feature hasn't been enabled using
   /// \a EnableCallMetricRecording.
-  experimental::CallMetricRecorder* ExperimentalGetCallMetricRecorder() { return call_metric_recorder_; }
+  experimental::CallMetricRecorder* ExperimentalGetCallMetricRecorder() {
+    return call_metric_recorder_;
+  }
 
  protected:
   /// Async only. Has to be called before the rpc starts.
