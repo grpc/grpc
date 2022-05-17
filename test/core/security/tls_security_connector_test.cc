@@ -29,6 +29,7 @@
 #include <grpc/support/string_util.h>
 
 #include "src/core/lib/iomgr/load_file.h"
+#include "src/core/lib/gprpp/unique_type_name.h"
 #include "src/core/lib/security/credentials/tls/grpc_tls_certificate_provider.h"
 #include "src/core/lib/security/credentials/tls/tls_credentials.h"
 #include "src/core/tsi/transport_security.h"
@@ -110,6 +111,8 @@ class TlsSecurityConnectorTest : public ::testing::Test {
   HostNameCertificateVerifier hostname_certificate_verifier_;
 };
 
+constexpr char kTlsTestTypeName[] = "tls_test";
+
 class TlsTestCertificateProvider : public grpc_tls_certificate_provider {
  public:
   explicit TlsTestCertificateProvider(
@@ -120,7 +123,10 @@ class TlsTestCertificateProvider : public grpc_tls_certificate_provider {
     return distributor_;
   }
 
-  const char* type() const override { return "tls_test"; }
+  UniqueTypeName type() const override {
+    static UniqueTypeName::Factory<kTlsTestTypeName> factory;
+    return factory.Create();
+  }
 
  private:
   int CompareImpl(const grpc_tls_certificate_provider* other) const override {
