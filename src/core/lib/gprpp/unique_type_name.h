@@ -61,10 +61,7 @@ class UniqueTypeName {
   template <const char* TypeName>
   class Factory {
    public:
-    static UniqueTypeName Create() {
-      static auto* kName = new std::string(TypeName);
-      return UniqueTypeName(*kName);
-    }
+    static UniqueTypeName Create() { return UniqueTypeName(TypeName); }
   };
 
   // Copyable.
