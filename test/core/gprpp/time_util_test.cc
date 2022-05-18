@@ -127,6 +127,55 @@ TEST(TimeUtilTest, ToAbslTimeWithInfinites) {
             grpc_core::ToAbslTime(gpr_time_0(GPR_CLOCK_REALTIME)));
 }
 
+TEST(TimeUtilTest, CoreDurationToAbslDurationWithRegularValues) {
+  std::vector<int> times = {-10, -1, 0, 1, 10};
+  for (int t : times) {
+    EXPECT_EQ(absl::Milliseconds(t),
+              grpc_core::ToAbslDuration(grpc_core::Duration::Milliseconds(t)));
+    EXPECT_EQ(absl::Seconds(t),
+              grpc_core::ToAbslDuration(grpc_core::Duration::Seconds(t)));
+    EXPECT_EQ(absl::Minutes(t),
+              grpc_core::ToAbslDuration(grpc_core::Duration::Minutes(t)));
+    EXPECT_EQ(absl::Hours(t),
+              grpc_core::ToAbslDuration(grpc_core::Duration::Hours(t)));
+  }
+}
+
+TEST(TimeUtilTest, CoreDurationToAbslDurationSubMillisecond) {
+  // Only millisecond granularity is supported by grpc_core::Duration
+  EXPECT_EQ(
+      absl::Milliseconds(0),
+      grpc_core::ToAbslDuration(grpc_core::Duration::NanosecondsRoundDown(10)));
+  EXPECT_EQ(
+      absl::Milliseconds(1),
+      grpc_core::ToAbslDuration(grpc_core::Duration::NanosecondsRoundUp(10)));
+  EXPECT_EQ(absl::Milliseconds(2),
+            grpc_core::ToAbslDuration(
+                grpc_core::Duration::NanosecondsRoundUp(1000001)));
+  EXPECT_EQ(absl::Milliseconds(2),
+            grpc_core::ToAbslDuration(
+                grpc_core::Duration::MicrosecondsRoundUp(1001)));
+}
+
+TEST(TimeUtilTest, CoreDurationToAbslDurationWithInfinites) {
+  EXPECT_EQ(absl::InfiniteDuration(),
+            grpc_core::ToAbslDuration(grpc_core::Duration::Infinity()));
+  EXPECT_EQ(-absl::InfiniteDuration(),
+            grpc_core::ToAbslDuration(grpc_core::Duration::NegativeInfinity()));
+}
+
+TEST(TimeUtilTest, CoreTimestampToAbslTimeWithRegularValues) {
+  // TODO(hork): Unix epoch is not supported. Another conversion is necessary,
+  // but going through timespec is potentially flaky.
+}
+
+TEST(TimeUtilTest, CoreTimestampToAbslTimeWithInfinites) {
+  EXPECT_EQ(absl::InfiniteFuture(),
+            grpc_core::ToAbslTime(grpc_core::Timestamp::InfFuture()));
+  EXPECT_EQ(absl::InfinitePast(),
+            grpc_core::ToAbslTime(grpc_core::Timestamp::InfPast()));
+}
+
 int main(int argc, char** argv) {
   ::testing::InitGoogleTest(&argc, argv);
   int ret = RUN_ALL_TESTS();

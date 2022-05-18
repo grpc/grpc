@@ -22,12 +22,13 @@
 #include "absl/base/thread_annotations.h"
 #include "absl/status/status.h"
 
+#include <grpc/event_engine/event_engine.h>
+
 #include "src/core/lib/gprpp/ref_counted.h"
 #include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/error.h"
-#include "src/core/lib/iomgr/timer.h"
 #include "src/core/lib/promise/activity.h"
 #include "src/core/lib/promise/poll.h"
 
@@ -52,14 +53,14 @@ class Sleep {
   Poll<absl::Status> operator()();
 
  private:
-  static void OnTimer(void* arg, grpc_error_handle error);
+  void OnTimer();
 
   enum class Stage { kInitial, kStarted, kDone };
   struct State {
     explicit State(Timestamp deadline) : deadline(deadline) {}
     RefCount refs{2};
     const Timestamp deadline;
-    grpc_timer timer;
+    grpc_event_engine::experimental::EventEngine::TaskHandle timer_handle;
     grpc_closure on_timer;
     Mutex mu;
     Stage stage ABSL_GUARDED_BY(mu) = Stage::kInitial;

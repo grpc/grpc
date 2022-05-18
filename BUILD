@@ -843,7 +843,6 @@ grpc_cc_library(
         "src/core/lib/gprpp/status_helper.cc",
         "src/core/lib/gprpp/thd_posix.cc",
         "src/core/lib/gprpp/thd_windows.cc",
-        "src/core/lib/gprpp/time_util.cc",
         "src/core/lib/profiling/basic_timers.cc",
         "src/core/lib/profiling/stap_timers.cc",
     ],
@@ -869,7 +868,6 @@ grpc_cc_library(
         "src/core/lib/gprpp/status_helper.h",
         "src/core/lib/gprpp/sync.h",
         "src/core/lib/gprpp/thd.h",
-        "src/core/lib/gprpp/time_util.h",
         "src/core/lib/profiling/timers.h",
     ],
     external_deps = [
@@ -1127,9 +1125,11 @@ grpc_cc_library(
     ],
     deps = [
         "activity",
+        "default_event_engine_factory_hdrs",
         "gpr_platform",
         "grpc_base",
         "poll",
+        "time_util",
     ],
 )
 
@@ -1833,6 +1833,21 @@ grpc_cc_library(
     deps = [
         "gpr",
         "gpr_codegen",
+    ],
+)
+
+grpc_cc_library(
+    name = "time_util",
+    srcs = [
+        "src/core/lib/gprpp/time_util.cc",
+    ],
+    hdrs = [
+        "src/core/lib/gprpp/time_util.h",
+    ],
+    deps = [
+        "exec_ctx",
+        "gpr",
+        "time",
     ],
 )
 

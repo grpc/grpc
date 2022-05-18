@@ -23,6 +23,8 @@
 
 #include <grpc/impl/codegen/gpr_types.h>
 
+#include "src/core/lib/gprpp/time.h"
+
 namespace grpc_core {
 
 // Converts absl::Duration to gpr_timespec(GPR_TIMESPAN)
@@ -36,6 +38,12 @@ absl::Duration ToAbslDuration(gpr_timespec ts);
 
 // Converts gpr_timespec(GPR_CLOCK_[MONOTONIC|REALTIME|PRECISE]) to absl::Time
 absl::Time ToAbslTime(gpr_timespec ts);
+
+// Converts grpc_core::Timestamp to absl::Time
+absl::Time ToAbslTime(Timestamp timestamp);
+
+// Converts grpc_core::Duration to absl::Duration
+absl::Duration ToAbslDuration(Duration duration);
 
 }  // namespace grpc_core
 

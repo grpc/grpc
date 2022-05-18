@@ -23,6 +23,7 @@
 
 #include <grpc/grpc.h>
 
+#include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/promise/race.h"
 #include "src/core/lib/promise/seq.h"
 #include "test/core/promise/test_wakeup_schedulers.h"

@@ -14,15 +14,20 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <grpc/event_engine/event_engine.h>
+
 #include "src/core/lib/promise/sleep.h"
 
+#include "src/core/lib/event_engine/event_engine_factory.h"
+#include "src/core/lib/gprpp/time_util.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 
 namespace grpc_core {
 
-Sleep::Sleep(Timestamp deadline) : state_(new State(deadline)) {
-  GRPC_CLOSURE_INIT(&state_->on_timer, &OnTimer, state_, nullptr);
-}
+using ::grpc_event_engine::experimental::EventEngine;
+using ::grpc_event_engine::experimental::GetDefaultEventEngine;
+
+Sleep::Sleep(Timestamp deadline) : state_(new State(deadline)) {}
 
 Sleep::~Sleep() {
   if (state_ == nullptr) return;
@@ -33,7 +38,7 @@ Sleep::~Sleep() {
         state_->Unref();
         break;
       case Stage::kStarted:
-        grpc_timer_cancel(&state_->timer);
+        GetDefaultEventEngine()->Cancel(state_->timer_handle);
         break;
       case Stage::kDone:
         break;
@@ -42,16 +47,15 @@ Sleep::~Sleep() {
   state_->Unref();
 }
 
-void Sleep::OnTimer(void* arg, grpc_error_handle) {
-  auto* state = static_cast<State*>(arg);
+void Sleep::OnTimer() {
   Waker waker;
   {
-    MutexLock lock(&state->mu);
-    state->stage = Stage::kDone;
-    waker = std::move(state->waker);
+    MutexLock lock(&state_->mu);
+    state_->stage = Stage::kDone;
+    waker = std::move(state_->waker);
   }
   waker.Wakeup();
-  state->Unref();
+  state_->Unref();
 }
 
 Poll<absl::Status> Sleep::operator()() {
@@ -62,7 +66,8 @@ Poll<absl::Status> Sleep::operator()() {
         return absl::OkStatus();
       }
       state_->stage = Stage::kStarted;
-      grpc_timer_init(&state_->timer, state_->deadline, &state_->on_timer);
+      state_->timer_handle = GetDefaultEventEngine()->RunAt(
+          ToAbslTime(state_->deadline), [this] { OnTimer(); });
       break;
     case Stage::kStarted:
       break;
