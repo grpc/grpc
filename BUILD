@@ -5208,6 +5208,7 @@ grpc_cc_library(
         "memory_quota",
         "orphanable",
         "pid_controller",
+        "poll",
         "ref_counted",
         "ref_counted_ptr",
         "resource_quota",
