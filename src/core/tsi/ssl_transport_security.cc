@@ -21,7 +21,6 @@
 #include "src/core/tsi/ssl_transport_security.h"
 
 #include <limits.h>
-#include <pthread.h>
 #include <string.h>
 
 /* TODO(jboeuf): refactor inet_ntop into a portability header. */
