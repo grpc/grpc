@@ -358,7 +358,6 @@ def grpc_cc_test(name, srcs = [], deps = [], external_deps = [], args = [], data
         exclude_pollers: list of poller names to exclude for this set of tests.
         uses_event_engine: set to False if the test is not sensitive to
             EventEngine implementation differences
-        visibility: The visibility of the target.
     """
     if language.upper() == "C":
         copts = copts + if_not_windows(["-std=c99"])
@@ -425,6 +424,7 @@ def grpc_cc_binary(name, srcs = [], deps = [], external_deps = [], args = [], da
       linkopts: linkopts to supply to the cc_binary.
       tags: Tags to apply to the target.
       features: features to be supplied to the cc_binary.
+      visibility: The visibility of the target.
     """
     visibility = _update_visibility(visibility)
     copts = []
