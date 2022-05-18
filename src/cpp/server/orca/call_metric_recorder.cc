@@ -23,33 +23,36 @@
 #include "src/core/ext/filters/client_channel/lb_policy/backend_metric_data.h"
 #include "src/core/lib/resource_quota/arena.h"
 
-grpc::experimental::CallMetricRecorder::CallMetricRecorder(
+namespace grpc {
+namespace experimental {
+
+CallMetricRecorder::CallMetricRecorder(
     grpc_core::Arena* arena) {
   backend_metric_data_ = arena->New<grpc_core::BackendMetricData>();
 }
 
-grpc::experimental::CallMetricRecorder::~CallMetricRecorder() {
+CallMetricRecorder::~CallMetricRecorder() {
   backend_metric_data_->~BackendMetricData();
 }
 
-grpc::experimental::CallMetricRecorder&
-grpc::experimental::CallMetricRecorder::RecordCpuUtilizationMetric(
+CallMetricRecorder&
+CallMetricRecorder::RecordCpuUtilizationMetric(
     double value) {
   internal::MutexLock lock(&mu_);
   backend_metric_data_->cpu_utilization = value;
   return *this;
 }
 
-grpc::experimental::CallMetricRecorder&
-grpc::experimental::CallMetricRecorder::RecordMemoryUtilizationMetric(
+CallMetricRecorder&
+CallMetricRecorder::RecordMemoryUtilizationMetric(
     double value) {
   internal::MutexLock lock(&mu_);
   backend_metric_data_->mem_utilization = value;
   return *this;
 }
 
-grpc::experimental::CallMetricRecorder&
-grpc::experimental::CallMetricRecorder::RecordUtilizationMetric(
+CallMetricRecorder&
+CallMetricRecorder::RecordUtilizationMetric(
     grpc::string_ref name, double value) {
   internal::MutexLock lock(&mu_);
   absl::string_view name_sv(name.data(), name.length());
@@ -57,8 +60,8 @@ grpc::experimental::CallMetricRecorder::RecordUtilizationMetric(
   return *this;
 }
 
-grpc::experimental::CallMetricRecorder&
-grpc::experimental::CallMetricRecorder::RecordRequestCostMetric(
+CallMetricRecorder&
+CallMetricRecorder::RecordRequestCostMetric(
     grpc::string_ref name, double value) {
   internal::MutexLock lock(&mu_);
   absl::string_view name_sv(name.data(), name.length());
@@ -66,7 +69,7 @@ grpc::experimental::CallMetricRecorder::RecordRequestCostMetric(
   return *this;
 }
 
-absl::optional<std::string> grpc::experimental::CallMetricRecorder::CreateSerializedReport() {
+absl::optional<std::string> CallMetricRecorder::CreateSerializedReport() {
   upb::Arena arena;
   internal::MutexLock lock(&mu_);
   bool has_data = backend_metric_data_->cpu_utilization != 0 ||
@@ -103,3 +106,6 @@ absl::optional<std::string> grpc::experimental::CallMetricRecorder::CreateSerial
                                                         &buf_length);
   return std::string(buf, buf_length);
 }
+
+}  // namespace experimental
+}  // namespace grpc

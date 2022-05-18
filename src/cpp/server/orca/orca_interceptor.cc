@@ -21,7 +21,10 @@
 
 #include "src/core/lib/transport/metadata_batch.h"
 
-void grpc::experimental::OrcaServerInterceptor::Intercept(
+namespace grpc {
+namespace experimental {
+
+void OrcaServerInterceptor::Intercept(
     InterceptorBatchMethods* methods) {
   if (methods->QueryInterceptionHookPoint(
           InterceptionHookPoints::POST_RECV_INITIAL_METADATA)) {
@@ -45,19 +48,22 @@ void grpc::experimental::OrcaServerInterceptor::Intercept(
   methods->Proceed();
 }
 
-grpc::experimental::Interceptor*
-grpc::experimental::OrcaServerInterceptorFactory::CreateServerInterceptor(
+Interceptor*
+OrcaServerInterceptorFactory::CreateServerInterceptor(
     ServerRpcInfo* info) {
   return new OrcaServerInterceptor(info);
 }
 
-void grpc::experimental::OrcaServerInterceptorFactory::Register(
+void OrcaServerInterceptorFactory::Register(
     grpc::ServerBuilder* builder) {
   builder->internal_interceptor_creators_.push_back(
       absl::make_unique<OrcaServerInterceptorFactory>());
 }
 
-void grpc::experimental::EnableCallMetricRecording(
+void EnableCallMetricRecording(
     grpc::ServerBuilder* builder) {
-  grpc::experimental::OrcaServerInterceptorFactory::Register(builder);
+  OrcaServerInterceptorFactory::Register(builder);
 }
+
+}  // namespace experimental
+}  // namespace grpc
