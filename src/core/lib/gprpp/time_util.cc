@@ -21,6 +21,8 @@
 #include <stdint.h>
 #include <time.h>
 
+#include "absl/time/clock.h"
+
 #include <grpc/support/log.h>
 #include <grpc/support/time.h>
 
@@ -89,8 +91,9 @@ absl::Time ToAbslTime(Timestamp timestamp) {
 
 absl::Duration ToAbslDuration(Duration duration) {
   if (duration == Duration::Infinity()) return absl::InfiniteDuration();
-  if (duration == Duration::NegativeInfinity())
+  if (duration == Duration::NegativeInfinity()) {
     return -absl::InfiniteDuration();
+  }
   return absl::Milliseconds(duration.millis());
 }
 
