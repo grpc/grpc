@@ -161,40 +161,43 @@ void CallData::ProcessSendInitialMetadata(
 
 void CallData::FinishSendMessage(grpc_call_element* elem) {
   // Compress the data if appropriate.
-  grpc_core::SliceBuffer tmp;
-  uint32_t& send_flags = send_message_batch_->payload->send_message.flags;
-  grpc_core::SliceBuffer* payload =
-      send_message_batch_->payload->send_message.send_message;
-  bool did_compress = grpc_msg_compress(
-      compression_algorithm_, payload->c_slice_buffer(), tmp.c_slice_buffer());
-  if (did_compress) {
-    if (GRPC_TRACE_FLAG_ENABLED(grpc_compression_trace)) {
-      const char* algo_name;
-      const size_t before_size = payload->Length();
-      const size_t after_size = tmp.Length();
-      const float savings_ratio = 1.0f - static_cast<float>(after_size) /
-                                             static_cast<float>(before_size);
-      GPR_ASSERT(
-          grpc_compression_algorithm_name(compression_algorithm_, &algo_name));
-      gpr_log(GPR_INFO,
-              "Compressed[%s] %" PRIuPTR " bytes vs. %" PRIuPTR
-              " bytes (%.2f%% savings)",
-              algo_name, before_size, after_size, 100 * savings_ratio);
-    }
-    tmp.Swap(payload);
-    send_flags |= GRPC_WRITE_INTERNAL_COMPRESS;
-  } else {
-    if (GRPC_TRACE_FLAG_ENABLED(grpc_compression_trace)) {
-      const char* algo_name;
-      GPR_ASSERT(
-          grpc_compression_algorithm_name(compression_algorithm_, &algo_name));
-      gpr_log(GPR_INFO,
-              "Algorithm '%s' enabled but decided not to compress. Input size: "
-              "%" PRIuPTR,
-              algo_name, payload->Length());
+  if (!SkipMessageCompression()) {
+    grpc_core::SliceBuffer tmp;
+    uint32_t& send_flags = send_message_batch_->payload->send_message.flags;
+    grpc_core::SliceBuffer* payload =
+        send_message_batch_->payload->send_message.send_message;
+    bool did_compress =
+        grpc_msg_compress(compression_algorithm_, payload->c_slice_buffer(),
+                          tmp.c_slice_buffer());
+    if (did_compress) {
+      if (GRPC_TRACE_FLAG_ENABLED(grpc_compression_trace)) {
+        const char* algo_name;
+        const size_t before_size = payload->Length();
+        const size_t after_size = tmp.Length();
+        const float savings_ratio = 1.0f - static_cast<float>(after_size) /
+                                               static_cast<float>(before_size);
+        GPR_ASSERT(grpc_compression_algorithm_name(compression_algorithm_,
+                                                   &algo_name));
+        gpr_log(GPR_INFO,
+                "Compressed[%s] %" PRIuPTR " bytes vs. %" PRIuPTR
+                " bytes (%.2f%% savings)",
+                algo_name, before_size, after_size, 100 * savings_ratio);
+      }
+      tmp.Swap(payload);
+      send_flags |= GRPC_WRITE_INTERNAL_COMPRESS;
+    } else {
+      if (GRPC_TRACE_FLAG_ENABLED(grpc_compression_trace)) {
+        const char* algo_name;
+        GPR_ASSERT(grpc_compression_algorithm_name(compression_algorithm_,
+                                                   &algo_name));
+        gpr_log(
+            GPR_INFO,
+            "Algorithm '%s' enabled but decided not to compress. Input size: "
+            "%" PRIuPTR,
+            algo_name, payload->Length());
+      }
     }
   }
-  tmp.Clear();
   grpc_call_next_op(elem, absl::exchange(send_message_batch_, nullptr));
 }
 
