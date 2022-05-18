@@ -981,6 +981,7 @@ class ObjCLanguage(object):
 
     def test_specs(self):
         out = []
+        # TODO(jtattermusch): Remove this task since the sample is already being built as part of the grpc_objc_bazel_test job.
         out.append(
             self.config.job_spec(
                 ['src/objective-c/tests/build_one_example_bazel.sh'],
@@ -993,6 +994,7 @@ class ObjCLanguage(object):
                     'FRAMEWORKS': 'NO'
                 }))
         # Currently not supporting compiling as frameworks in Bazel
+        # TODO(jtattermusch): verify the above claim is still accurate.
         out.append(
             self.config.job_spec(
                 ['src/objective-c/tests/build_one_example.sh'],
@@ -1004,6 +1006,7 @@ class ObjCLanguage(object):
                     'EXAMPLE_PATH': 'src/objective-c/examples/Sample',
                     'FRAMEWORKS': 'YES'
                 }))
+        # TODO(jtattermusch): Create bazel target for the sample and remove the test task from here.
         out.append(
             self.config.job_spec(
                 ['src/objective-c/tests/build_one_example.sh'],
@@ -1014,10 +1017,11 @@ class ObjCLanguage(object):
                     'SCHEME': 'SwiftSample',
                     'EXAMPLE_PATH': 'src/objective-c/examples/SwiftSample'
                 }))
+        # TODO(jtattermusch): Remove this task since the sample is already being built as part of the grpc_objc_bazel_test job.
         out.append(
             self.config.job_spec(
                 ['src/objective-c/tests/build_one_example_bazel.sh'],
-                timeout_seconds=10 * 60,
+                timeout_seconds=20 * 60,
                 shortname='ios-buildtest-example-tvOS-sample',
                 cpu_cost=1e6,
                 environ={
@@ -1038,12 +1042,17 @@ class ObjCLanguage(object):
         #             'EXAMPLE_PATH': 'src/objective-c/examples/watchOS-sample',
         #             'FRAMEWORKS': 'NO'
         #         }))
+
+        # TODO(jtattermusch): Create bazel target for the test and remove the test from here
         out.append(
             self.config.job_spec(['src/objective-c/tests/run_plugin_tests.sh'],
                                  timeout_seconds=60 * 60,
                                  shortname='ios-test-plugintest',
                                  cpu_cost=1e6,
                                  environ=_FORCE_ENVIRON_FOR_WRAPPERS))
+        # Note that this test basically tests whether the codegen plugin works correctly by running protoc and checking the contents of the generated *.pbrpc.* files.
+        # it doesn't really build any ObjC code.
+        # TODO(jtattermusch): turn this test into a bazel test or come up with a better place where to put this test.
         out.append(
             self.config.job_spec(
                 ['src/objective-c/tests/run_plugin_option_tests.sh'],
@@ -1051,6 +1060,8 @@ class ObjCLanguage(object):
                 shortname='ios-test-plugin-option-test',
                 cpu_cost=1e6,
                 environ=_FORCE_ENVIRON_FOR_WRAPPERS))
+        # TODO(jtattermusch): move the test out of the test/core/iomgr/CFStreamTests directory?
+        # How does one add the cfstream dependency in bazel?
         out.append(
             self.config.job_spec(
                 ['test/core/iomgr/ios/CFStreamTests/build_and_run_tests.sh'],
@@ -1058,6 +1069,8 @@ class ObjCLanguage(object):
                 shortname='ios-test-cfstream-tests',
                 cpu_cost=1e6,
                 environ=_FORCE_ENVIRON_FOR_WRAPPERS))
+        # TODO(jtattermusch): Create bazel target for the test and remove the test from here
+        # TODO(jtattermusch): Clarify what do these tests do?
         out.append(
             self.config.job_spec(
                 ['src/objective-c/tests/CoreTests/build_and_run_tests.sh'],
@@ -1065,43 +1078,52 @@ class ObjCLanguage(object):
                 shortname='ios-test-core-tests',
                 cpu_cost=1e6,
                 environ=_FORCE_ENVIRON_FOR_WRAPPERS))
-        # TODO: replace with run_one_test_bazel.sh when Bazel-Xcode is stable
+        # TODO(jtattermusch): Remove this task since the tests are already being run as part of the grpc_objc_bazel_test job.
         out.append(
             self.config.job_spec(['src/objective-c/tests/run_one_test.sh'],
                                  timeout_seconds=60 * 60,
                                  shortname='ios-test-unittests',
                                  cpu_cost=1e6,
                                  environ={'SCHEME': 'UnitTests'}))
+        # TODO(jtattermusch): Make sure the //src/objective-c/tests:InteropTests bazel test passes reliably and remove the test from there.
         out.append(
             self.config.job_spec(['src/objective-c/tests/run_one_test.sh'],
                                  timeout_seconds=60 * 60,
                                  shortname='ios-test-interoptests',
                                  cpu_cost=1e6,
                                  environ={'SCHEME': 'InteropTests'}))
+        # TODO(jtattermusch): Create bazel target for the test and remove the test from here
+        # (how does one add the cronet dependency in bazel?)
         out.append(
             self.config.job_spec(['src/objective-c/tests/run_one_test.sh'],
                                  timeout_seconds=60 * 60,
                                  shortname='ios-test-cronettests',
                                  cpu_cost=1e6,
                                  environ={'SCHEME': 'CronetTests'}))
+        # TODO(jtattermusch): Create bazel target for the test and remove the test from here.
         out.append(
             self.config.job_spec(['src/objective-c/tests/run_one_test.sh'],
                                  timeout_seconds=30 * 60,
                                  shortname='ios-perf-test',
                                  cpu_cost=1e6,
                                  environ={'SCHEME': 'PerfTests'}))
+        # TODO(jtattermusch): Clarify what's the difference between PerfTests and PerfTestsPosix
+        # TODO(jtattermusch): Create bazel target for the test and remove the test from here.
         out.append(
             self.config.job_spec(['src/objective-c/tests/run_one_test.sh'],
                                  timeout_seconds=30 * 60,
                                  shortname='ios-perf-test-posix',
                                  cpu_cost=1e6,
                                  environ={'SCHEME': 'PerfTestsPosix'}))
+        # TODO(jtattermusch): Create bazel target for the test (how does one add the cronet dependency in bazel?)
+        # TODO(jtattermusch): move the test out of the test/cpp/ios directory?
         out.append(
             self.config.job_spec(['test/cpp/ios/build_and_run_tests.sh'],
                                  timeout_seconds=60 * 60,
                                  shortname='ios-cpp-test-cronet',
                                  cpu_cost=1e6,
                                  environ=_FORCE_ENVIRON_FOR_WRAPPERS))
+        # TODO(jtattermusch): Remove this task since the tests are already being run as part of the grpc_objc_bazel_test job.
         out.append(
             self.config.job_spec(['src/objective-c/tests/run_one_test.sh'],
                                  timeout_seconds=60 * 60,
@@ -1111,6 +1133,7 @@ class ObjCLanguage(object):
                                      'SCHEME': 'MacTests',
                                      'PLATFORM': 'macos'
                                  }))
+        # TODO(jtattermusch): Make sure the //src/objective-c/tests:TvTests bazel test passes and remove the test from here.
         out.append(
             self.config.job_spec(['src/objective-c/tests/run_one_test.sh'],
                                  timeout_seconds=30 * 60,
