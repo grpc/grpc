@@ -16,9 +16,13 @@
  *
  */
 
+#include <string>
+
 #include <grpc/grpc.h>
+#include <grpcpp/support/config.h>
 #include <grpcpp/support/validate_service_config.h>
 
+#include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/service_config/service_config_impl.h"
 
 namespace grpc {
