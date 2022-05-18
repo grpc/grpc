@@ -20,7 +20,6 @@
 
 #include "src/core/ext/filters/client_channel/backup_poller.h"
 #include "src/core/ext/filters/client_channel/client_channel.h"
-#include "src/core/ext/filters/client_channel/http_connect_handshaker.h"
 #include "src/core/ext/filters/client_channel/http_proxy.h"
 #include "src/core/ext/filters/client_channel/lb_policy_registry.h"
 #include "src/core/ext/filters/client_channel/proxy_mapper_registry.h"
@@ -46,7 +45,6 @@ void grpc_client_channel_shutdown(void) {
 namespace grpc_core {
 
 void BuildClientChannelConfiguration(CoreConfiguration::Builder* builder) {
-  RegisterHttpConnectHandshaker(builder);
   internal::ClientChannelServiceConfigParser::Register(builder);
   internal::RetryServiceConfigParser::Register(builder);
   builder->channel_init()->RegisterStage(
