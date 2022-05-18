@@ -14,9 +14,9 @@
 
 #include <grpc/support/port_platform.h>
 
-#include <grpc/event_engine/event_engine.h>
-
 #include "src/core/lib/promise/sleep.h"
+
+#include <grpc/event_engine/event_engine.h>
 
 #include "src/core/lib/event_engine/event_engine_factory.h"
 #include "src/core/lib/gprpp/time_util.h"
