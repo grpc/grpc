@@ -17,12 +17,11 @@
  */
 #include <memory>
 
+#include <grpc/grpc.h>
 #include <grpc/grpc_security.h>
-#include <grpc/impl/codegen/grpc_types.h>
 #include <grpcpp/security/auth_context.h>
 
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
-#include "src/core/lib/security/context/security_context.h"
 #include "src/cpp/common/secure_auth_context.h"
 
 namespace grpc {
