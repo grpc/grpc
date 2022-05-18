@@ -47,15 +47,15 @@ Sleep::~Sleep() {
   state_->Unref();
 }
 
-void Sleep::OnTimer() {
-  Waker waker;
+void Sleep::State::OnTimer() {
+  Waker tmp_waker;
   {
-    MutexLock lock(&state_->mu);
-    state_->stage = Stage::kDone;
-    waker = std::move(state_->waker);
+    MutexLock lock(&mu);
+    stage = Stage::kDone;
+    tmp_waker = std::move(waker);
   }
-  waker.Wakeup();
-  state_->Unref();
+  tmp_waker.Wakeup();
+  Unref();
 }
 
 Poll<absl::Status> Sleep::operator()() {
@@ -67,7 +67,7 @@ Poll<absl::Status> Sleep::operator()() {
       }
       state_->stage = Stage::kStarted;
       state_->timer_handle = GetDefaultEventEngine()->RunAt(
-          ToAbslTime(state_->deadline), [this] { OnTimer(); });
+          ToAbslTime(state_->deadline), [this] { state_->OnTimer(); });
       break;
     case Stage::kStarted:
       break;

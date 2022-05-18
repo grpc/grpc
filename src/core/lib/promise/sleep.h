@@ -53,8 +53,6 @@ class Sleep {
   Poll<absl::Status> operator()();
 
  private:
-  void OnTimer();
-
   enum class Stage { kInitial, kStarted, kDone };
   struct State {
     explicit State(Timestamp deadline) : deadline(deadline) {}
@@ -68,6 +66,7 @@ class Sleep {
     void Unref() {
       if (refs.Unref()) delete this;
     }
+    void OnTimer();
   };
   State* state_;
 };
