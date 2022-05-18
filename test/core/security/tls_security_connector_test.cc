@@ -111,8 +111,6 @@ class TlsSecurityConnectorTest : public ::testing::Test {
   HostNameCertificateVerifier hostname_certificate_verifier_;
 };
 
-constexpr char kTlsTestTypeName[] = "tls_test";
-
 class TlsTestCertificateProvider : public grpc_tls_certificate_provider {
  public:
   explicit TlsTestCertificateProvider(
@@ -124,8 +122,8 @@ class TlsTestCertificateProvider : public grpc_tls_certificate_provider {
   }
 
   UniqueTypeName type() const override {
-    static UniqueTypeName::Factory<kTlsTestTypeName> factory;
-    return factory.Create();
+    static auto* kFactory = new UniqueTypeName::Factory("tls_test");
+    return kFactory->Create();
   }
 
  private:

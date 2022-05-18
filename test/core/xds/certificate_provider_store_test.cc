@@ -28,13 +28,6 @@
 
 namespace grpc_core {
 namespace testing {
-
-// TODO(roth): Once we drop support for MSVC 2017, this can move into
-// the anonymous namespace.
-// Until then, the current approach is required due to the following bug:
-// https://developercommunity.visualstudio.com/t/vc-cannot-use-a-const-char-as-non-type-template-ar/155480.
-constexpr char kFakeTypeName[] = "fake";
-
 namespace {
 
 class CertificateProviderStoreTest : public ::testing::Test {
@@ -53,8 +46,8 @@ class FakeCertificateProvider : public grpc_tls_certificate_provider {
   }
 
   UniqueTypeName type() const override {
-    static UniqueTypeName::Factory<kFakeTypeName> factory;
-    return factory.Create();
+    static auto* kFactory = new UniqueTypeName::Factory("fake");
+    return kFactory->Create();
   }
 
  private:

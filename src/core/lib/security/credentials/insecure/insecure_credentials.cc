@@ -24,14 +24,6 @@
 
 namespace grpc_core {
 
-// TODO(roth): Once we drop support for MSVC 2017, change this from
-// namespace "insecure_credentials" to the anonymous namespace.
-// Until then, the current approach is required due to the following bug:
-// https://developercommunity.visualstudio.com/t/vc-cannot-use-a-const-char-as-non-type-template-ar/155480.
-namespace insecure_credentials {
-constexpr char kInsecureTypeName[] = "Insecure";
-}  // namespace insecure_credentials
-
 RefCountedPtr<grpc_channel_security_connector>
 InsecureCredentials::create_security_connector(
     RefCountedPtr<grpc_call_credentials> request_metadata_creds,
@@ -42,9 +34,8 @@ InsecureCredentials::create_security_connector(
 }
 
 UniqueTypeName InsecureCredentials::Type() {
-  static UniqueTypeName::Factory<insecure_credentials::kInsecureTypeName>
-      factory;
-  return factory.Create();
+  static auto* kFactory = new UniqueTypeName::Factory("Insecure");
+  return kFactory->Create();
 }
 
 int InsecureCredentials::cmp_impl(
@@ -60,9 +51,8 @@ InsecureServerCredentials::create_security_connector(
 }
 
 UniqueTypeName InsecureServerCredentials::Type() {
-  static UniqueTypeName::Factory<insecure_credentials::kInsecureTypeName>
-      factory;
-  return factory.Create();
+  static auto* kFactory = new UniqueTypeName::Factory("Insecure");
+  return kFactory->Create();
 }
 
 }  // namespace grpc_core

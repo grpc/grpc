@@ -31,14 +31,6 @@
 #include "src/core/lib/surface/api_trace.h"
 #include "src/core/tsi/ssl_transport_security.h"
 
-// TODO(roth): Once we drop support for MSVC 2017, change this from
-// namespace "grpc_ssl_creds" to the anonymous namespace.
-// Until then, the current approach is required due to the following bug:
-// https://developercommunity.visualstudio.com/t/vc-cannot-use-a-const-char-as-non-type-template-ar/155480.
-namespace grpc_ssl_creds {
-constexpr char kTypeName[] = "Ssl";
-}  // namespace grpc_ssl_creds
-
 //
 // SSL Channel Credentials.
 //
@@ -91,8 +83,8 @@ grpc_ssl_credentials::create_security_connector(
 }
 
 grpc_core::UniqueTypeName grpc_ssl_credentials::Type() {
-  static grpc_core::UniqueTypeName::Factory<grpc_ssl_creds::kTypeName> factory;
-  return factory.Create();
+  static auto* kFactory = new grpc_core::UniqueTypeName::Factory("Ssl");
+  return kFactory->Create();
 }
 
 void grpc_ssl_credentials::build_config(
@@ -198,8 +190,8 @@ grpc_ssl_server_credentials::create_security_connector(
 }
 
 grpc_core::UniqueTypeName grpc_ssl_server_credentials::Type() {
-  static grpc_core::UniqueTypeName::Factory<grpc_ssl_creds::kTypeName> factory;
-  return factory.Create();
+  static auto* kFactory = new grpc_core::UniqueTypeName::Factory("Ssl");
+  return kFactory->Create();
 }
 
 tsi_ssl_pem_key_cert_pair* grpc_convert_grpc_to_tsi_cert_pairs(

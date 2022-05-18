@@ -133,14 +133,6 @@ constexpr char kClientKeyPath[] = "src/core/tsi/test_creds/client.key";
 constexpr char kBadClientCertPath[] = "src/core/tsi/test_creds/badclient.pem";
 constexpr char kBadClientKeyPath[] = "src/core/tsi/test_creds/badclient.key";
 
-}  // namespace
-// TODO(roth): Once we drop support for MSVC 2017, this can move into
-// the anonymous namespace.
-// Until then, the current approach is required due to the following bug:
-// https://developercommunity.visualstudio.com/t/vc-cannot-use-a-const-char-as-non-type-template-ar/155480.
-constexpr char kFakeTypeName[] = "fake";
-namespace {
-
 // Based on StaticDataCertificateProvider, but provides alternate certificates
 // if the certificate name is not empty.
 class FakeCertificateProvider final : public grpc_tls_certificate_provider {
@@ -209,8 +201,8 @@ class FakeCertificateProvider final : public grpc_tls_certificate_provider {
   }
 
   grpc_core::UniqueTypeName type() const override {
-    static grpc_core::UniqueTypeName::Factory<kFakeTypeName> factory;
-    return factory.Create();
+    static auto* kFactory = new grpc_core::UniqueTypeName::Factory("fake");
+    return kFactory->Create();
   }
 
  private:

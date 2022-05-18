@@ -54,16 +54,6 @@
 
 using grpc_core::Json;
 
-// TODO(roth): Once we drop support for MSVC 2017, change this from
-// namespace "grpc_oauth2_credentials" to the anonymous namespace.
-// Until then, the current approach is required due to the following bug:
-// https://developercommunity.visualstudio.com/t/vc-cannot-use-a-const-char-as-non-type-template-ar/155480.
-namespace grpc_oauth2_credentials {
-constexpr char kOauth2TypeName[] = "Oauth2";
-constexpr char kGoogleRefreshTokenTypeName[] = "GoogleRefreshToken";
-constexpr char kAccessTokenTypeName[] = "AccessToken";
-}  // namespace grpc_oauth2_credentials
-
 //
 // Auth Refresh Token.
 //
@@ -358,10 +348,8 @@ std::string grpc_oauth2_token_fetcher_credentials::debug_string() {
 }
 
 grpc_core::UniqueTypeName grpc_oauth2_token_fetcher_credentials::type() const {
-  static grpc_core::UniqueTypeName::Factory<
-      grpc_oauth2_credentials::kOauth2TypeName>
-      factory;
-  return factory.Create();
+  static auto* kFactory = new grpc_core::UniqueTypeName::Factory("Oauth2");
+  return kFactory->Create();
 }
 
 //
@@ -490,10 +478,9 @@ std::string grpc_google_refresh_token_credentials::debug_string() {
 }
 
 grpc_core::UniqueTypeName grpc_google_refresh_token_credentials::type() const {
-  static grpc_core::UniqueTypeName::Factory<
-      grpc_oauth2_credentials::kGoogleRefreshTokenTypeName>
-      factory;
-  return factory.Create();
+  static auto* kFactory =
+      new grpc_core::UniqueTypeName::Factory("GoogleRefreshToken");
+  return kFactory->Create();
 }
 
 static std::string create_loggable_refresh_token(
@@ -730,10 +717,8 @@ grpc_access_token_credentials::GetRequestMetadata(
 }
 
 grpc_core::UniqueTypeName grpc_access_token_credentials::Type() {
-  static grpc_core::UniqueTypeName::Factory<
-      grpc_oauth2_credentials::kAccessTokenTypeName>
-      factory;
-  return factory.Create();
+  static auto* kFactory = new grpc_core::UniqueTypeName::Factory("AccessToken");
+  return kFactory->Create();
 }
 
 grpc_access_token_credentials::grpc_access_token_credentials(

@@ -43,12 +43,10 @@ class Interface {
 class FooImplementation : public Interface {
  public:
   UniqueTypeName type() const override {
-    static UniqueTypeName::Factory<kTypeName> factory;
-    return factory.Create();
+    static UniqueTypeName::Factory* kFactory =
+        new UniqueTypeName::Factory("Foo");
+    return kFactory->Create();
   }
-
- private:
-  static constexpr char kTypeName[] = "Foo";
 };
 */
 
@@ -57,11 +55,16 @@ namespace grpc_core {
 class UniqueTypeName {
  public:
   // Factory class.  There should be a single static instance of this
-  // for each unique type name.
-  template <const char* TypeName>
+  // for each unique type name.  However, this static instance must be
+  // dynamically allocated, since it is not trivially destructible.
   class Factory {
    public:
-    static UniqueTypeName Create() { return UniqueTypeName(TypeName); }
+    explicit Factory(absl::string_view name) : name_(name) {}
+
+    UniqueTypeName Create() { return UniqueTypeName(name_); }
+
+   private:
+    std::string name_;
   };
 
   // Copyable.

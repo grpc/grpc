@@ -579,14 +579,6 @@ TEST(CredentialsTest, TestAccessTokenCreds) {
   creds->Unref();
 }
 
-}  // namespace
-// TODO(roth): Once we drop support for MSVC 2017, move this back into
-// the anonymous namespace.
-// Until then, the current approach is required due to the following bug:
-// https://developercommunity.visualstudio.com/t/vc-cannot-use-a-const-char-as-non-type-template-ar/155480.
-constexpr char kCheckChannelOauth2TypeName[] = "check_channel_oauth2";
-namespace {
-
 class check_channel_oauth2 final : public grpc_channel_credentials {
  public:
   RefCountedPtr<grpc_channel_security_connector> create_security_connector(
@@ -600,8 +592,8 @@ class check_channel_oauth2 final : public grpc_channel_credentials {
   }
 
   static UniqueTypeName Type() {
-    static UniqueTypeName::Factory<kCheckChannelOauth2TypeName> factory;
-    return factory.Create();
+    static auto* kFactory = new UniqueTypeName::Factory("check_channel_oauth2");
+    return kFactory->Create();
   }
 
   UniqueTypeName type() const override { return Type(); }
@@ -671,15 +663,6 @@ TEST(CredentialsTest, TestOauth2GoogleIamCompositeCreds) {
   composite_creds->Unref();
 }
 
-}  // namespace
-// TODO(roth): Once we drop support for MSVC 2017, move this back into
-// the anonymous namespace.
-// Until then, the current approach is required due to the following bug:
-// https://developercommunity.visualstudio.com/t/vc-cannot-use-a-const-char-as-non-type-template-ar/155480.
-constexpr char kCheckChannelOauth2GoogleIamTypeName[] =
-    "check_channel_oauth2_google_iam";
-namespace {
-
 class check_channel_oauth2_google_iam final : public grpc_channel_credentials {
  public:
   RefCountedPtr<grpc_channel_security_connector> create_security_connector(
@@ -698,9 +681,9 @@ class check_channel_oauth2_google_iam final : public grpc_channel_credentials {
   }
 
   static UniqueTypeName Type() {
-    static UniqueTypeName::Factory<kCheckChannelOauth2GoogleIamTypeName>
-        factory;
-    return factory.Create();
+    static auto* kFactory =
+        new UniqueTypeName::Factory("check_channel_oauth2_google_iam");
+    return kFactory->Create();
   }
 
   UniqueTypeName type() const override { return Type(); }
@@ -1822,14 +1805,6 @@ TEST(CredentialsTest, TestGoogleDefaultCredsCallCredsSpecified) {
   HttpRequest::SetOverride(nullptr, nullptr, nullptr);
 }
 
-}  // namespace
-// TODO(roth): Once we drop support for MSVC 2017, move this back into
-// the anonymous namespace.
-// Until then, the current approach is required due to the following bug:
-// https://developercommunity.visualstudio.com/t/vc-cannot-use-a-const-char-as-non-type-template-ar/155480.
-constexpr char kFakeCallCredsTypeName[] = "fake";
-namespace {
-
 struct fake_call_creds : public grpc_call_credentials {
  public:
   ArenaPromise<absl::StatusOr<ClientMetadataHandle>> GetRequestMetadata(
@@ -1841,8 +1816,8 @@ struct fake_call_creds : public grpc_call_credentials {
   }
 
   UniqueTypeName type() const override {
-    static UniqueTypeName::Factory<kFakeCallCredsTypeName> factory;
-    return factory.Create();
+    static auto* kFactory = new UniqueTypeName::Factory("fake");
+    return kFactory->Create();
   }
 
  private:

@@ -85,17 +85,9 @@ StaticDataCertificateProvider::~StaticDataCertificateProvider() {
   distributor_->SetWatchStatusCallback(nullptr);
 }
 
-// TODO(roth): Once we drop support for MSVC 2017, change this from
-// namespace "cert_provider" to the anonymous namespace.
-// Until then, the current approach is required due to the following bug:
-// https://developercommunity.visualstudio.com/t/vc-cannot-use-a-const-char-as-non-type-template-ar/155480.
-namespace cert_provider {
-constexpr char kStaticDataTypeName[] = "StaticData";
-}  // namespace cert_provider
-
 UniqueTypeName StaticDataCertificateProvider::type() const {
-  static UniqueTypeName::Factory<cert_provider::kStaticDataTypeName> factory;
-  return factory.Create();
+  static auto* kFactory = new UniqueTypeName::Factory("StaticData");
+  return kFactory->Create();
 }
 
 namespace {
@@ -190,17 +182,9 @@ FileWatcherCertificateProvider::~FileWatcherCertificateProvider() {
   refresh_thread_.Join();
 }
 
-// TODO(roth): Once we drop support for MSVC 2017, change this from
-// namespace "cert_provider" to the anonymous namespace.
-// Until then, the current approach is required due to the following bug:
-// https://developercommunity.visualstudio.com/t/vc-cannot-use-a-const-char-as-non-type-template-ar/155480.
-namespace cert_provider {
-constexpr char kFileWatcherTypeName[] = "FileWatcher";
-}  // namespace cert_provider
-
 UniqueTypeName FileWatcherCertificateProvider::type() const {
-  static UniqueTypeName::Factory<cert_provider::kFileWatcherTypeName> factory;
-  return factory.Create();
+  static auto* kFactory = new UniqueTypeName::Factory("FileWatcher");
+  return kFactory->Create();
 }
 
 void FileWatcherCertificateProvider::ForceUpdate() {

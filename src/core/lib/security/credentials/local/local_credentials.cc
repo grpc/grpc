@@ -27,14 +27,6 @@
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/security/security_connector/local/local_security_connector.h"
 
-// TODO(roth): Once we drop support for MSVC 2017, change this from
-// namespace "grpc_local_creds" to the anonymous namespace.
-// Until then, the current approach is required due to the following bug:
-// https://developercommunity.visualstudio.com/t/vc-cannot-use-a-const-char-as-non-type-template-ar/155480.
-namespace grpc_local_creds {
-constexpr char kTypeName[] = "Local";
-}  // namespace grpc_local_creds
-
 grpc_core::RefCountedPtr<grpc_channel_security_connector>
 grpc_local_credentials::create_security_connector(
     grpc_core::RefCountedPtr<grpc_call_credentials> request_metadata_creds,
@@ -44,10 +36,10 @@ grpc_local_credentials::create_security_connector(
       this->Ref(), std::move(request_metadata_creds), args, target_name);
 }
 
+
 grpc_core::UniqueTypeName grpc_local_credentials::type() const {
-  static grpc_core::UniqueTypeName::Factory<grpc_local_creds::kTypeName>
-      factory;
-  return factory.Create();
+  static auto* kFactory = new grpc_core::UniqueTypeName::Factory("Local");
+  return kFactory->Create();
 }
 
 grpc_core::RefCountedPtr<grpc_server_security_connector>
@@ -57,9 +49,8 @@ grpc_local_server_credentials::create_security_connector(
 }
 
 grpc_core::UniqueTypeName grpc_local_server_credentials::type() const {
-  static grpc_core::UniqueTypeName::Factory<grpc_local_creds::kTypeName>
-      factory;
-  return factory.Create();
+  static auto* kFactory = new grpc_core::UniqueTypeName::Factory("Local");
+  return kFactory->Create();
 }
 
 grpc_local_credentials::grpc_local_credentials(

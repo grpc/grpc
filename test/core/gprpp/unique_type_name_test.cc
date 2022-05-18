@@ -34,34 +34,28 @@ class Interface {
   virtual UniqueTypeName type() const = 0;
 };
 
-constexpr char kFooName[] = "Foo";
-
 class Foo : public Interface {
  public:
   UniqueTypeName type() const override {
-    static UniqueTypeName::Factory<kFooName> factory;
-    return factory.Create();
+    static auto* kFactory = new UniqueTypeName::Factory("Foo");
+    return kFactory->Create();
   }
 };
-
-constexpr char kBarName[] = "Bar";
 
 class Bar : public Interface {
  public:
   UniqueTypeName type() const override {
-    static UniqueTypeName::Factory<kBarName> factory;
-    return factory.Create();
+    static auto* kFactory = new UniqueTypeName::Factory("Bar");
+    return kFactory->Create();
   }
 };
-
-constexpr char kFoo2Name[] = "Foo";
 
 // Uses the same string as Foo.
 class Foo2 : public Interface {
  public:
   UniqueTypeName type() const override {
-    static UniqueTypeName::Factory<kFoo2Name> factory;
-    return factory.Create();
+    static auto* kFactory = new UniqueTypeName::Factory("Foo");
+    return kFactory->Create();
   }
 };
 

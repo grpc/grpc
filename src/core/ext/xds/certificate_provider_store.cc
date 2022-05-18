@@ -28,20 +28,10 @@ namespace grpc_core {
 // CertificateProviderStore::CertificateProviderWrapper
 //
 
-// TODO(roth): Once we drop support for MSVC 2017, change this from
-// namespace "xds_certificate_provider_store" to the anonymous namespace.
-// Until then, the current approach is required due to the following bug:
-// https://developercommunity.visualstudio.com/t/vc-cannot-use-a-const-char-as-non-type-template-ar/155480.
-namespace xds_certificate_provider_store {
-constexpr char kWrapperTypeName[] = "Wrapper";
-}  // namespace xds_certificate_provider_store
-
 UniqueTypeName CertificateProviderStore::CertificateProviderWrapper::type()
     const {
-  static UniqueTypeName::Factory<
-      xds_certificate_provider_store::kWrapperTypeName>
-      factory;
-  return factory.Create();
+  static auto* kFactory = new UniqueTypeName::Factory("Wrapper");
+  return kFactory->Create();
 }
 
 // If a certificate provider is created, the CertificateProviderStore

@@ -131,20 +131,11 @@ grpc_google_default_channel_credentials::update_arguments(
   return args.SetIfUnset(GRPC_ARG_DNS_ENABLE_SRV_QUERIES, true);
 }
 
-// TODO(roth): Once we drop support for MSVC 2017, change this from
-// namespace "grpc_google_default_credentials" to the anonymous namespace.
-// Until then, the current approach is required due to the following bug:
-// https://developercommunity.visualstudio.com/t/vc-cannot-use-a-const-char-as-non-type-template-ar/155480.
-namespace grpc_google_default_credentials {
-constexpr char kTypeName[] = "GoogleDefault";
-}  // namespace grpc_google_default_credentials
-
 grpc_core::UniqueTypeName grpc_google_default_channel_credentials::type()
     const {
-  static grpc_core::UniqueTypeName::Factory<
-      grpc_google_default_credentials::kTypeName>
-      factory;
-  return factory.Create();
+  static auto* kFactory =
+      new grpc_core::UniqueTypeName::Factory("GoogleDefault");
+  return kFactory->Create();
 }
 
 static void on_metadata_server_detection_http_response(
