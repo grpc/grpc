@@ -25,6 +25,8 @@
 
 #include <grpcpp/channel.h>
 
+struct grpc_channel;
+
 namespace grpc {
 
 std::shared_ptr<Channel> CreateChannelInternal(
