@@ -14,6 +14,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+load("//bazel:grpc_build_system.bzl", "grpc_sh_test")
 load(
     "//src/objective-c:grpc_objc_internal_library.bzl",
     "grpc_objc_testing_library",
@@ -240,4 +241,26 @@ tvos_unit_test(
         ":NSErrorUnitTests-lib",
         ":RxLibraryUnitTests-lib",
     ],
+)
+
+grpc_sh_test(
+    name = "objc_codegen_plugin_test",
+    srcs = ["PluginTest/plugin_test.sh"],
+    data = [
+        "@com_google_protobuf//:protoc",
+        "//src/compiler:grpc_objective_c_plugin",
+    ] + glob(["PluginTest/*.proto"]),
+    uses_polling = False,
+)
+
+grpc_sh_test(
+    name = "objc_codegen_plugin_option_test",
+    srcs = ["PluginTest/plugin_option_test.sh"],
+    data = [
+        "@com_google_protobuf//:protoc",
+        "//src/compiler:grpc_objective_c_plugin",
+        # NOTE: the :well_known_protos has been recently renamed to :well_known_type_protos on protobuf's main branch
+        "@com_google_protobuf//:well_known_protos",
+    ] + glob(["RemoteTestClient/*.proto"]),
+    uses_polling = False,
 )
