@@ -1912,6 +1912,7 @@ grpc_cc_library(
     external_deps = [
         "absl/strings",
     ],
+    visibility = ["@grpc:iomgr_timer"],
     deps = [
         "event_engine_base_hdrs",
         "exec_ctx",
@@ -2544,6 +2545,7 @@ grpc_cc_library(
         "grpc_deadline_filter",
         "grpc_client_authority_filter",
         "grpc_lb_policy_grpclb",
+        "grpc_lb_policy_outlier_detection",
         "grpc_lb_policy_pick_first",
         "grpc_lb_policy_priority",
         "grpc_lb_policy_ring_hash",
@@ -3304,6 +3306,7 @@ grpc_cc_library(
         "grpc_fault_injection_filter",
         "grpc_lb_xds_channel_args",
         "grpc_matchers",
+        "grpc_outlier_detection_header",
         "grpc_rbac_filter",
         "grpc_secure",
         "grpc_security_base",
@@ -3431,6 +3434,7 @@ grpc_cc_library(
         "grpc_client_channel",
         "grpc_codegen",
         "grpc_matchers",
+        "grpc_outlier_detection_header",
         "grpc_security_base",
         "grpc_tls_credentials",
         "grpc_trace",
@@ -3439,6 +3443,7 @@ grpc_cc_library(
         "orphanable",
         "ref_counted_ptr",
         "server_address",
+        "time",
     ],
 )
 
@@ -3489,6 +3494,7 @@ grpc_cc_library(
         "grpc_lb_policy_ring_hash",
         "grpc_lb_xds_channel_args",
         "grpc_lb_xds_common",
+        "grpc_outlier_detection_header",
         "grpc_resolver",
         "grpc_resolver_fake",
         "grpc_trace",
@@ -3497,6 +3503,7 @@ grpc_cc_library(
         "orphanable",
         "ref_counted_ptr",
         "server_address",
+        "time",
         "uri_parser",
     ],
 )
@@ -3689,6 +3696,52 @@ grpc_cc_library(
         "ref_counted_ptr",
         "server_address",
         "sockaddr_utils",
+    ],
+)
+
+grpc_cc_library(
+    name = "grpc_outlier_detection_header",
+    hdrs = [
+        "src/core/ext/filters/client_channel/lb_policy/outlier_detection/outlier_detection.h",
+    ],
+    external_deps = [
+        "absl/types:optional",
+    ],
+    language = "c++",
+)
+
+grpc_cc_library(
+    name = "grpc_lb_policy_outlier_detection",
+    srcs = [
+        "src/core/ext/filters/client_channel/lb_policy/outlier_detection/outlier_detection.cc",
+    ],
+    external_deps = [
+        "absl/container:inlined_vector",
+        "absl/memory",
+        "absl/random",
+        "absl/status",
+        "absl/status:statusor",
+        "absl/strings",
+        "absl/strings:str_format",
+        "absl/types:variant",
+    ],
+    language = "c++",
+    deps = [
+        "debug_location",
+        "gpr_base",
+        "grpc_base",
+        "grpc_client_channel",
+        "grpc_codegen",
+        "grpc_outlier_detection_header",
+        "grpc_trace",
+        "iomgr_fwd",
+        "iomgr_timer",
+        "json",
+        "json_util",
+        "orphanable",
+        "ref_counted",
+        "ref_counted_ptr",
+        "server_address",
     ],
 )
 
@@ -3992,12 +4045,13 @@ grpc_cc_library(
     ],
     external_deps = [
         "absl/base:core_headers",
+        "absl/container:flat_hash_set",
+        "absl/container:inlined_vector",
         "absl/memory",
         "absl/status",
         "absl/status:statusor",
         "absl/strings",
         "absl/strings:str_format",
-        "absl/container:inlined_vector",
         "address_sorting",
         "cares",
     ],
@@ -4006,6 +4060,7 @@ grpc_cc_library(
         "config",
         "debug_location",
         "error",
+        "event_engine_common",
         "gpr_base",
         "grpc_base",
         "grpc_client_channel",

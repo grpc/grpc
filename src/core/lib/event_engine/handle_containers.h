@@ -29,7 +29,7 @@
 namespace grpc_event_engine {
 namespace experimental {
 
-// Used for heterogenous lookup of TaskHandles in abseil containers.
+// Used for heterogeneous lookup of TaskHandles in abseil containers.
 template <typename TaskHandle>
 struct TaskHandleComparator {
   struct Hash {

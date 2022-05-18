@@ -1,7 +1,7 @@
 ---
-name: Request a cleanup
-about: Suggest a cleanup in our repository
-labels: kind/internal cleanup, priority/P2
+name: Request a gRPC Core feature
+about: Suggest an idea for this project
+labels: kind/enhancement, priority/P2, lang/core
 assignees: drfloob
 
 ---
@@ -17,3 +17,14 @@ For questions that specifically need to be answered by gRPC team members, please
 Issues specific to *grpc-java*, *grpc-go*, *grpc-node*, *grpc-dart*, *grpc-web* should be created in the repository they belong to (e.g. https://github.com/grpc/grpc-LANGUAGE/issues/new)
 -->
 
+### Is your feature request related to a problem? Please describe.
+A clear and concise description of what the problem is. Ex. I'm always frustrated when [...]
+
+### Describe the solution you'd like
+A clear and concise description of what you want to happen.
+
+### Describe alternatives you've considered
+A clear and concise description of any alternative solutions or features you've considered.
+
+### Additional context
+Add any other context about the feature request here.

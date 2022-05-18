@@ -29,6 +29,7 @@ from distutils import extension as _extension
 from distutils import util
 import os
 import os.path
+import pathlib
 import platform
 import re
 import shlex
@@ -155,6 +156,11 @@ BUILD_WITH_SYSTEM_CARES = _env_bool_value('GRPC_PYTHON_BUILD_SYSTEM_CARES',
 # have the header files installed (in /usr/include/re2) and during
 # runtime, the shared library must be installed
 BUILD_WITH_SYSTEM_RE2 = _env_bool_value('GRPC_PYTHON_BUILD_SYSTEM_RE2', 'False')
+
+# Export this variable to use the system installation of abseil. You need to
+# have the header files installed (in /usr/include/absl) and during
+# runtime, the shared library must be installed
+BUILD_WITH_SYSTEM_ABSL = os.environ.get('GRPC_PYTHON_BUILD_SYSTEM_ABSL', False)
 
 # Export this variable to force building the python extension with a statically linked libstdc++.
 # At least on linux, this is normally not needed as we can build manylinux-compatible wheels on linux just fine
@@ -298,6 +304,11 @@ if BUILD_WITH_SYSTEM_RE2:
     CORE_C_FILES = filter(lambda x: 'third_party/re2' not in x, CORE_C_FILES)
     RE2_INCLUDE = (os.path.join('/usr', 'include', 're2'),)
 
+if BUILD_WITH_SYSTEM_ABSL:
+    CORE_C_FILES = filter(lambda x: 'third_party/abseil-cpp' not in x,
+                          CORE_C_FILES)
+    ABSL_INCLUDE = (os.path.join('/usr', 'include'),)
+
 EXTENSION_INCLUDE_DIRECTORIES = ((PYTHON_STEM,) + CORE_INCLUDE + ABSL_INCLUDE +
                                  ADDRESS_SORTING_INCLUDE + CARES_INCLUDE +
                                  RE2_INCLUDE + SSL_INCLUDE + UPB_INCLUDE +
@@ -328,6 +339,9 @@ if BUILD_WITH_SYSTEM_CARES:
     EXTENSION_LIBRARIES += ('cares',)
 if BUILD_WITH_SYSTEM_RE2:
     EXTENSION_LIBRARIES += ('re2',)
+if BUILD_WITH_SYSTEM_ABSL:
+    EXTENSION_LIBRARIES += tuple(
+        lib.stem[3:] for lib in pathlib.Path('/usr').glob('lib*/libabsl_*.so'))
 
 DEFINE_MACROS = (('_WIN32_WINNT', 0x600),)
 asm_files = []
