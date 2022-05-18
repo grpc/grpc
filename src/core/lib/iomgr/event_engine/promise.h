@@ -28,21 +28,37 @@ namespace experimental {
 template <typename T>
 class Promise {
  public:
+  // The getter will wait until the setter has been called, and will return the
+  // value passed during Set.
   T& Get() {
     grpc_core::MutexLock lock(&mu_);
-    cv_.Wait(&mu_);
+    if (!set_) {
+      cv_.Wait(&mu_);
+    }
     return val_;
   }
+  // This setter can only be called exactly once without a Reset.
+  // Will automatically unblock getters.
   void Set(T&& val) {
     grpc_core::MutexLock lock(&mu_);
+    GPR_ASSERT(!set_);
     val_ = std::move(val);
-    cv_.Signal();
+    set_ = true;
+    cv_.SignalAll();
+  }
+
+  // Can only be called after a set operation.
+  void Reset() {
+    grpc_core::MutexLock lock(&mu_);
+    GPR_ASSERT(set_);
+    set_ = false;
   }
 
  private:
   grpc_core::Mutex mu_;
   grpc_core::CondVar cv_;
   T val_;
+  bool set_ = false;
 };
 
 }  // namespace experimental

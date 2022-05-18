@@ -24,6 +24,10 @@ extern std::function<
     std::unique_ptr<grpc_event_engine::experimental::EventEngine>()>*
     g_ee_factory;
 
+extern std::function<
+    std::unique_ptr<grpc_event_engine::experimental::EventEngine>()>*
+    g_oracle_ee_factory;
+
 // Manages the lifetime of the global EventEngine factory.
 class EventEngineTestEnvironment : public testing::Environment {
  public:
@@ -31,15 +35,32 @@ class EventEngineTestEnvironment : public testing::Environment {
       std::function<
           std::unique_ptr<grpc_event_engine::experimental::EventEngine>()>
           factory)
-      : factory_(factory) {}
+      : factory_(factory), oracle_factory_(nullptr) {}
 
-  void SetUp() override { g_ee_factory = &factory_; }
+  EventEngineTestEnvironment(
+      std::function<
+          std::unique_ptr<grpc_event_engine::experimental::EventEngine>()>
+          factory,
+      std::function<
+          std::unique_ptr<grpc_event_engine::experimental::EventEngine>()>
+          oracle_factory)
+      : factory_(factory), oracle_factory_(oracle_factory) {}
 
-  void TearDown() override { g_ee_factory = nullptr; }
+  void SetUp() override {
+    g_ee_factory = &factory_;
+    g_oracle_ee_factory = &oracle_factory_;
+  }
+
+  void TearDown() override {
+    g_ee_factory = nullptr;
+    g_oracle_ee_factory = nullptr;
+  }
 
  private:
   std::function<std::unique_ptr<grpc_event_engine::experimental::EventEngine>()>
       factory_;
+  std::function<std::unique_ptr<grpc_event_engine::experimental::EventEngine>()>
+      oracle_factory_;
 };
 
 class EventEngineTest : public testing::Test {
@@ -49,12 +70,29 @@ class EventEngineTest : public testing::Test {
     GPR_ASSERT(g_ee_factory != nullptr);
     return (*g_ee_factory)();
   }
+
+  std::unique_ptr<grpc_event_engine::experimental::EventEngine>
+  NewOracleEventEngine() {
+    GPR_ASSERT(g_oracle_ee_factory != nullptr);
+    return (*g_oracle_ee_factory)();
+  }
 };
 
-// Set a custom factory for the EventEngine test suite.
+// Set a custom factory for the EventEngine test suite. No oracle EventEngine
+// is specified here.
 void SetEventEngineFactory(
     std::function<
         std::unique_ptr<grpc_event_engine::experimental::EventEngine>()>
         factory);
+
+// Set a custom factory for the EventEngine test suite. An oracle EventEngine
+// is additionally specified here.
+void SetEventEngineFactory(
+    std::function<
+        std::unique_ptr<grpc_event_engine::experimental::EventEngine>()>
+        ee_factory,
+    std::function<
+        std::unique_ptr<grpc_event_engine::experimental::EventEngine>()>
+        oracle_ee_factory);
 
 #endif  // GRPC_TEST_CORE_EVENT_ENGINE_TEST_SUITE_EVENT_ENGINE_TEST_H
