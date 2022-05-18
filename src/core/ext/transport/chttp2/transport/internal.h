@@ -24,6 +24,7 @@
 #include <stddef.h>
 #include <stdint.h>
 
+#include <cstdint>
 #include <string>
 
 #include "absl/strings/string_view.h"
@@ -505,6 +506,7 @@ struct grpc_chttp2_stream {
   grpc_closure* recv_initial_metadata_ready = nullptr;
   bool* trailing_metadata_available = nullptr;
   absl::optional<grpc_core::SliceBuffer>* recv_message = nullptr;
+  uint32_t* recv_message_flags = nullptr;
   bool* call_failed_before_recv_message = nullptr;
   grpc_closure* recv_message_ready = nullptr;
   grpc_metadata_batch* recv_trailing_metadata;

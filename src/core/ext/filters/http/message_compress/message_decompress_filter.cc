@@ -249,6 +249,7 @@ void CallData::DecompressStartTransportStreamOpBatch(
   // Handle recv_message
   if (batch->recv_message) {
     recv_message_ = batch->payload->recv_message.recv_message;
+    recv_message_flags_ = batch->payload->recv_message.flags;
     original_recv_message_ready_ =
         batch->payload->recv_message.recv_message_ready;
     batch->payload->recv_message.recv_message_ready = &on_recv_message_ready_;

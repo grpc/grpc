@@ -89,7 +89,8 @@ void grpc_chttp2_encode_data(uint32_t id, grpc_slice_buffer* inbuf,
 
 grpc_core::Poll<grpc_error_handle> grpc_deframe_unprocessed_incoming_frames(
     grpc_chttp2_data_parser* p, grpc_chttp2_stream* s,
-    grpc_slice_buffer* slices, grpc_core::SliceBuffer* stream_out) {
+    grpc_slice_buffer* slices, grpc_core::SliceBuffer* stream_out,
+    uint32_t* message_flags) {
   grpc_error_handle error = GRPC_ERROR_NONE;
   grpc_chttp2_transport* t = s->t;
 
@@ -177,9 +178,9 @@ grpc_core::Poll<grpc_error_handle> grpc_deframe_unprocessed_incoming_frames(
         }
         p->state = GRPC_CHTTP2_DATA_FRAME;
         ++cur;
-        p->message_flags = 0;
+        *message_flags = 0;
         if (p->is_frame_compressed) {
-          p->message_flags |= GRPC_WRITE_INTERNAL_COMPRESS;
+          *message_flags |= GRPC_WRITE_INTERNAL_COMPRESS;
         }
         stream_out->Clear();
         if (p->frame_size_remaining == 0) {

@@ -1586,6 +1586,7 @@ grpc_call_error FilterStackCall::StartBatch(const grpc_op* ops, size_t nops,
         receiving_stream_.emplace();
         receiving_buffer_ = op->data.recv_message.recv_message;
         stream_op_payload->recv_message.recv_message = &receiving_stream_;
+        stream_op_payload->recv_message.flags = &receiving_stream_flags_;
         stream_op_payload->recv_message.call_failed_before_recv_message =
             &call_failed_before_recv_message_;
         GRPC_CLOSURE_INIT(

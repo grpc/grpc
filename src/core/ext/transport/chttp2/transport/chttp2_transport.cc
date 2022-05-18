@@ -1561,6 +1561,7 @@ static void perform_stream_op_locked(void* stream_op,
     s->recv_message_ready = op_payload->recv_message.recv_message_ready;
     s->recv_message = op_payload->recv_message.recv_message;
     s->recv_message->emplace();
+    s->recv_message_flags = op_payload->recv_message.flags;
     s->call_failed_before_recv_message =
         op_payload->recv_message.call_failed_before_recv_message;
     if (s->id != 0) {
@@ -1977,7 +1978,8 @@ void grpc_chttp2_maybe_complete_recv_message(grpc_chttp2_transport* /*t*/,
       while (true) {
         GPR_ASSERT(s->frame_storage.length > 0);
         auto r = grpc_deframe_unprocessed_incoming_frames(
-            &s->data_parser, s, &s->frame_storage, &**s->recv_message);
+            &s->data_parser, s, &s->frame_storage, &**s->recv_message,
+            s->recv_message_flags);
         if (absl::holds_alternative<grpc_core::Pending>(r)) return;
         error = absl::get<grpc_error_handle>(r);
         if (error != GRPC_ERROR_NONE) {

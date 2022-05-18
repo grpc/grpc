@@ -48,7 +48,6 @@ struct grpc_chttp2_data_parser {
   uint8_t frame_type = 0;
   bool is_frame_compressed = false;
   uint32_t frame_size_remaining = 0;
-  uint32_t message_flags = 0xabababab;
 };
 
 /* start processing a new data frame */
@@ -71,6 +70,7 @@ void grpc_chttp2_encode_data(uint32_t id, grpc_slice_buffer* inbuf,
 
 grpc_core::Poll<grpc_error_handle> grpc_deframe_unprocessed_incoming_frames(
     grpc_chttp2_data_parser* p, grpc_chttp2_stream* s,
-    grpc_slice_buffer* slices, grpc_core::SliceBuffer* stream_out);
+    grpc_slice_buffer* slices, grpc_core::SliceBuffer* stream_out,
+    uint32_t* message_flags);
 
 #endif /* GRPC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_FRAME_DATA_H */
