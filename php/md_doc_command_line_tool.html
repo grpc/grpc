@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC PHP
-   &#160;<span id="projectnumber">1.45.0</span>
+   &#160;<span id="projectnumber">1.46.2</span>
    </div>
   </td>
  </tr>
@@ -66,11 +66,11 @@ $(function() {
 <div class="title">gRPC command line tool </div>  </div>
 </div><!--header-->
 <div class="contents">
-<div class="textblock"><h1><a class="anchor" id="autotoc_md42"></a>
+<div class="textblock"><h1><a class="anchor" id="autotoc_md45"></a>
 Overview</h1>
 <p>This document describes the command line tool that comes with gRPC repository. It is desirable to have command line tools written in other languages roughly follow the same syntax and flags.</p>
 <p>At this point, the tool needs to be built from source, and it should be moved out to grpc-tools repository as a stand alone application once it is mature enough.</p>
-<h1><a class="anchor" id="autotoc_md43"></a>
+<h1><a class="anchor" id="autotoc_md46"></a>
 Core functionality</h1>
 <p>The command line tool can do the following things:</p>
 <ul>
@@ -90,7 +90,7 @@ Core functionality</h1>
 <li>Fine-grained auth control (such as, use this oauth token to talk to the server).</li>
 <li>Send streaming rpc.</li>
 </ul>
-<h1><a class="anchor" id="autotoc_md44"></a>
+<h1><a class="anchor" id="autotoc_md47"></a>
 Code location</h1>
 <p>To use the tool, you need to get the grpc repository and make sure your system has the prerequisites for building grpc from source, given in the ../BUILDING.md "installation
 instructions".</p>
@@ -102,13 +102,13 @@ instructions".</p>
 <div class="line">$ cmake -DgRPC_BUILD_TESTS=ON ../..</div>
 <div class="line">$ make grpc_cli</div>
 </div><!-- fragment --><p>The main file can be found at <a href="https://github.com/grpc/grpc/blob/master/test/cpp/util/grpc_cli.cc">https://github.com/grpc/grpc/blob/master/test/cpp/util/grpc_cli.cc</a></p>
-<h1><a class="anchor" id="autotoc_md45"></a>
+<h1><a class="anchor" id="autotoc_md48"></a>
 Prerequisites</h1>
 <p>Most <code>grpc_cli</code> commands need the server to support server reflection. See guides for <a href="https://github.com/grpc/grpc-java/blob/master/documentation/server-reflection-tutorial.md#enable-server-reflection">Java</a> , <a href="https://github.com/grpc/grpc/blob/master/doc/server_reflection_tutorial.md">C++</a> and <a href="https://github.com/grpc/grpc-go/blob/master/Documentation/server-reflection-tutorial.md">Go</a></p>
 <p>Local proto files can be used as an alternative. See instructions <a href="#Call-a-remote-method">below</a>.</p>
-<h1><a class="anchor" id="autotoc_md46"></a>
+<h1><a class="anchor" id="autotoc_md49"></a>
 Usage</h1>
-<h2><a class="anchor" id="autotoc_md47"></a>
+<h2><a class="anchor" id="autotoc_md50"></a>
 List services</h2>
 <p><code>grpc_cli ls</code> command lists services and methods exposed at a given port</p>
 <ul>
@@ -127,7 +127,7 @@ List services</h2>
 <p class="startli">```</p>
 </li>
 </ul>
-<h2><a class="anchor" id="autotoc_md48"></a>
+<h2><a class="anchor" id="autotoc_md51"></a>
 List methods</h2>
 <ul>
 <li><p class="startli">List one method with details</p>
@@ -138,7 +138,7 @@ List methods</h2>
 <p class="startli">```proto rpc SayHello(helloworld.HelloRequest) returns (helloworld.HelloReply) {} ```</p>
 </li>
 </ul>
-<h2><a class="anchor" id="autotoc_md49"></a>
+<h2><a class="anchor" id="autotoc_md52"></a>
 Inspect message types</h2>
 <p>We can use <code>grpc_cli type</code> command to inspect request/response types given the full name of the type (in the format of &lt;package&gt;.&lt;type&gt;).</p>
 <ul>
@@ -149,7 +149,7 @@ Inspect message types</h2>
 <p class="startli">```proto message HelloRequest { optional string name = 1; } ```</p>
 </li>
 </ul>
-<h2><a class="anchor" id="autotoc_md50"></a>
+<h2><a class="anchor" id="autotoc_md53"></a>
 Call a remote method</h2>
 <p>We can send RPCs to a server and get responses using <code>grpc_cli call</code> command.</p>
 <ul>
@@ -174,7 +174,7 @@ Call a remote method</h2>
 </div><!-- PageDoc -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Sat Mar 19 2022 01:40:59 for GRPC PHP by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Wed May 18 2022 17:42:36 for GRPC PHP by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.17
 </small></address>

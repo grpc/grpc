@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC Core
-   &#160;<span id="projectnumber">23.0.0</span>
+   &#160;<span id="projectnumber">24.0.0</span>
    </div>
   </td>
  </tr>
@@ -66,10 +66,10 @@ $(function() {
 <div class="title">Binary Logging </div>  </div>
 </div><!--header-->
 <div class="contents">
-<div class="textblock"><h1><a class="anchor" id="autotoc_md30"></a>
+<div class="textblock"><h1><a class="anchor" id="autotoc_md33"></a>
 Format</h1>
 <p>The log format is described in <a href="/src/proto/grpc/binary_log/v1alpha/log.proto">this proto file</a>. It is intended that multiple parts of the call will be logged in separate files, and then correlated by analysis tools using the rpc_id.</p>
-<h1><a class="anchor" id="autotoc_md31"></a>
+<h1><a class="anchor" id="autotoc_md34"></a>
 API</h1>
 <p>The binary logger will be a separate library from gRPC, in each language that we support. The user will need to explicitly call into the library to generate logs. The library will provide the ability to log sending or receiving, as relevant, the following on both the client and the server:</p>
 <ul>
@@ -114,14 +114,14 @@ API</h1>
 <div class="line">LogResponseMessage(ServerContext context, uint32_t length, T message);</div>
 </div><!-- fragment --><p>In all of those cases, the <code>rpc_id</code> is provided by the context, and each combination of method and context argument type implies a single direction, as noted in the comments.</p>
 <p>For the message log functions, the <code>length</code> argument indicates the length of the complete message, and the <code>message</code> argument may be only part of the complete message, stripped of sensitive material and/or shortened for efficiency.</p>
-<h1><a class="anchor" id="autotoc_md32"></a>
+<h1><a class="anchor" id="autotoc_md35"></a>
 Language differences</h1>
 <p>In other languages, more or less data will need to be passed explicitly as separate arguments. In some languages, for example, the metadata will be separate from the context-like object and will need to be passed as a separate argument. </p>
 </div></div><!-- contents -->
 </div><!-- PageDoc -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Sat Mar 19 2022 01:40:08 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Wed May 18 2022 17:42:13 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.17
 </small></address>

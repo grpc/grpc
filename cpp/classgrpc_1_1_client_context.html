@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.45.0</span>
+   &#160;<span id="projectnumber">1.46.2</span>
    </div>
   </td>
  </tr>
@@ -106,12 +106,6 @@ Public Member Functions</h2></td></tr>
 <tr class="memitem:ad4e16866fee3f6ee5a10efb5be6f4da6"><td class="memTemplItemLeft" align="right" valign="top">void&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_client_context.html#ad4e16866fee3f6ee5a10efb5be6f4da6">set_deadline</a> (const T &amp;<a class="el" href="classgrpc_1_1_client_context.html#a85710b2b34a48b0f83d509c33d0a44b5">deadline</a>)</td></tr>
 <tr class="memdesc:ad4e16866fee3f6ee5a10efb5be6f4da6"><td class="mdescLeft">&#160;</td><td class="mdescRight">Set the deadline for the client call.  <a href="classgrpc_1_1_client_context.html#ad4e16866fee3f6ee5a10efb5be6f4da6">More...</a><br /></td></tr>
 <tr class="separator:ad4e16866fee3f6ee5a10efb5be6f4da6"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:afac227b0dca4705b50b0b393226d8c48"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_client_context.html#afac227b0dca4705b50b0b393226d8c48">set_idempotent</a> (bool idempotent)</td></tr>
-<tr class="memdesc:afac227b0dca4705b50b0b393226d8c48"><td class="mdescLeft">&#160;</td><td class="mdescRight">EXPERIMENTAL: Indicate that this request is idempotent.  <a href="classgrpc_1_1_client_context.html#afac227b0dca4705b50b0b393226d8c48">More...</a><br /></td></tr>
-<tr class="separator:afac227b0dca4705b50b0b393226d8c48"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a09c0b94c1542706eb5a518dab8425ebc"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_client_context.html#a09c0b94c1542706eb5a518dab8425ebc">set_cacheable</a> (bool cacheable)</td></tr>
-<tr class="memdesc:a09c0b94c1542706eb5a518dab8425ebc"><td class="mdescLeft">&#160;</td><td class="mdescRight">EXPERIMENTAL: Set this request to be cacheable.  <a href="classgrpc_1_1_client_context.html#a09c0b94c1542706eb5a518dab8425ebc">More...</a><br /></td></tr>
-<tr class="separator:a09c0b94c1542706eb5a518dab8425ebc"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:aa342af7349c88727e8bd4c765a000ae5"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_client_context.html#aa342af7349c88727e8bd4c765a000ae5">set_wait_for_ready</a> (bool wait_for_ready)</td></tr>
 <tr class="memdesc:aa342af7349c88727e8bd4c765a000ae5"><td class="mdescLeft">&#160;</td><td class="mdescRight">Trigger wait-for-ready or not on this request.  <a href="classgrpc_1_1_client_context.html#aa342af7349c88727e8bd4c765a000ae5">More...</a><br /></td></tr>
 <tr class="separator:aa342af7349c88727e8bd4c765a000ae5"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -737,35 +731,6 @@ Custom-Metadata -&gt; Binary-Header / ASCII-Header
 
 </div>
 </div>
-<a id="a09c0b94c1542706eb5a518dab8425ebc"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a09c0b94c1542706eb5a518dab8425ebc">&#9670;&nbsp;</a></span>set_cacheable()</h2>
-
-<div class="memitem">
-<div class="memproto">
-<table class="mlabels">
-  <tr>
-  <td class="mlabels-left">
-      <table class="memname">
-        <tr>
-          <td class="memname">void grpc::ClientContext::set_cacheable </td>
-          <td>(</td>
-          <td class="paramtype">bool&#160;</td>
-          <td class="paramname"><em>cacheable</em></td><td>)</td>
-          <td></td>
-        </tr>
-      </table>
-  </td>
-  <td class="mlabels-right">
-<span class="mlabels"><span class="mlabel">inline</span></span>  </td>
-  </tr>
-</table>
-</div><div class="memdoc">
-
-<p>EXPERIMENTAL: Set this request to be cacheable. </p>
-<p>If set, grpc is free to use the HTTP GET verb for sending the request, with the possibility of receiving a cached response. </p>
-
-</div>
-</div>
 <a id="a48672c1e42084d2cd6975746b84658dd"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#a48672c1e42084d2cd6975746b84658dd">&#9670;&nbsp;</a></span>set_census_context()</h2>
 
@@ -906,36 +871,6 @@ template&lt;typename T &gt; </div>
 </div><div class="memdoc">
 
 <p>DEPRECATED: Use <a class="el" href="classgrpc_1_1_client_context.html#aa342af7349c88727e8bd4c765a000ae5" title="Trigger wait-for-ready or not on this request.">set_wait_for_ready()</a> instead. </p>
-
-</div>
-</div>
-<a id="afac227b0dca4705b50b0b393226d8c48"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#afac227b0dca4705b50b0b393226d8c48">&#9670;&nbsp;</a></span>set_idempotent()</h2>
-
-<div class="memitem">
-<div class="memproto">
-<table class="mlabels">
-  <tr>
-  <td class="mlabels-left">
-      <table class="memname">
-        <tr>
-          <td class="memname">void grpc::ClientContext::set_idempotent </td>
-          <td>(</td>
-          <td class="paramtype">bool&#160;</td>
-          <td class="paramname"><em>idempotent</em></td><td>)</td>
-          <td></td>
-        </tr>
-      </table>
-  </td>
-  <td class="mlabels-right">
-<span class="mlabels"><span class="mlabel">inline</span></span>  </td>
-  </tr>
-</table>
-</div><div class="memdoc">
-
-<p>EXPERIMENTAL: Indicate that this request is idempotent. </p>
-<p>By default, RPCs are assumed to <em>not</em> be idempotent.</p>
-<p>If true, the gRPC library assumes that it's safe to initiate this RPC multiple times. </p>
 
 </div>
 </div>
@@ -1522,7 +1457,7 @@ template&lt;class Request &gt; </div>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Sat Mar 19 2022 01:40:11 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Wed May 18 2022 17:42:14 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.17
 </small></address>

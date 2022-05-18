@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.45.0</span>
+   &#160;<span id="projectnumber">1.46.2</span>
    </div>
   </td>
  </tr>
@@ -188,9 +188,6 @@ $(function() {
 : <a class="el" href="classgrpc_1_1_proto_buffer_reader.html#a9fa8b889f80d4bf56f6915ad9245ac3b">grpc::ProtoBufferReader</a>
 , <a class="el" href="classgrpc_1_1_proto_buffer_writer.html#a656f1f4835a8f4e2944cb6ce92454c8b">grpc::ProtoBufferWriter</a>
 </li>
-<li>set_cacheable()
-: <a class="el" href="classgrpc_1_1_client_context.html#a09c0b94c1542706eb5a518dab8425ebc">grpc::ClientContext</a>
-</li>
 <li>set_census_context()
 : <a class="el" href="classgrpc_1_1_client_context.html#a48672c1e42084d2cd6975746b84658dd">grpc::ClientContext</a>
 </li>
@@ -243,9 +240,6 @@ $(function() {
 </li>
 <li>set_health_check_service()
 : <a class="el" href="classgrpc_1_1_server.html#adf01b3e4829b2871502d78c1d6d63522">grpc::Server</a>
-</li>
-<li>set_idempotent()
-: <a class="el" href="classgrpc_1_1_client_context.html#afac227b0dca4705b50b0b393226d8c48">grpc::ClientContext</a>
 </li>
 <li>set_identity_cert_name()
 : <a class="el" href="classgrpc_1_1experimental_1_1_tls_credentials_options.html#aa2da2ef8f121fe50c0bae27b9907eb46">grpc::experimental::TlsCredentialsOptions</a>
@@ -449,7 +443,7 @@ $(function() {
 : <a class="el" href="classgrpc_1_1_channel_arguments.html#ae9399219c13808b45f3acad088fb0981">grpc::ChannelArguments</a>
 </li>
 <li>SetServingStatus()
-: <a class="el" href="classgrpc_1_1_health_check_service_interface.html#a2db64a471c343d96f4e8e191efce8c08">grpc::HealthCheckServiceInterface</a>
+: <a class="el" href="classgrpc_1_1_health_check_service_interface.html#a1e7a4131b8ccdd1cea34fb2ffc540fdd">grpc::HealthCheckServiceInterface</a>
 </li>
 <li>SetSocketMutator()
 : <a class="el" href="classgrpc_1_1_channel_arguments.html#a520690f499be85159a20200ddb986a96">grpc::ChannelArguments</a>
@@ -506,7 +500,7 @@ $(function() {
 : <a class="el" href="classgrpc_1_1_proto_buffer_reader.html#a0874823748781629e0b2bde470d78bf3">grpc::ProtoBufferReader</a>
 </li>
 <li>Slice()
-: <a class="el" href="classgrpc_1_1_slice.html#aa015b3afa75bc3238c5e68147e4e3020">grpc::Slice</a>
+: <a class="el" href="classgrpc_1_1_slice.html#a8c5179cf7a39f66d65887bf298dc548f">grpc::Slice</a>
 </li>
 <li>slice_buffer()
 : <a class="el" href="classgrpc_1_1_proto_buffer_writer.html#a2735ca72a039d465dd538c6f3fa06e20">grpc::ProtoBufferWriter</a>
@@ -564,7 +558,7 @@ $(function() {
 <li>StartWrite()
 : <a class="el" href="classgrpc_1_1_client_bidi_reactor.html#a3c14129661af38610185a006bbb7eca9">grpc::ClientBidiReactor&lt; Request, Response &gt;</a>
 , <a class="el" href="classgrpc_1_1_client_write_reactor.html#a34e5ff58a81fe1d3edf4bb85b7d32dd7">grpc::ClientWriteReactor&lt; Request &gt;</a>
-, <a class="el" href="classgrpc_1_1_server_bidi_reactor.html#aceedcb52f4d8ffc1224af41262e0aeee">grpc::ServerBidiReactor&lt; Request, Response &gt;</a>
+, <a class="el" href="classgrpc_1_1_server_bidi_reactor.html#a7b457aceeb312472835007c289c711e8">grpc::ServerBidiReactor&lt; Request, Response &gt;</a>
 , <a class="el" href="classgrpc_1_1_server_write_reactor.html#a5b6e9e57ea86029528a96bc34a87b4ec">grpc::ServerWriteReactor&lt; Response &gt;</a>
 </li>
 <li>StartWriteAndFinish()
@@ -601,10 +595,10 @@ $(function() {
 : <a class="el" href="classgrpc_1_1internal_1_1_streamed_unary_handler.html#ac5f5471eaa5fba65c99c66568d9b4063">grpc::internal::StreamedUnaryHandler&lt; RequestType, ResponseType &gt;</a>
 </li>
 <li>string_ref()
-: <a class="el" href="classgrpc_1_1string__ref.html#a3b6c90d10321a5636a134be68f2f6f18">grpc::string_ref</a>
+: <a class="el" href="classgrpc_1_1string__ref.html#af77d94ce992f8355a411a231b995664d">grpc::string_ref</a>
 </li>
 <li>StubOptions()
-: <a class="el" href="classgrpc_1_1_stub_options.html#aefbc4ac4c7a050a6317c1beb5f3bacfd">grpc::StubOptions</a>
+: <a class="el" href="classgrpc_1_1_stub_options.html#a7af8c4b4f608a7cf6c7b12b9ed8817d7">grpc::StubOptions</a>
 </li>
 <li>sub()
 : <a class="el" href="classgrpc_1_1_slice.html#a48b3aee091958392cdfe5a8cff7f850a">grpc::Slice</a>
@@ -628,7 +622,7 @@ $(function() {
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Sat Mar 19 2022 01:40:11 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Wed May 18 2022 17:42:14 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.17
 </small></address>
