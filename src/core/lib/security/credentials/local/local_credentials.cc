@@ -36,7 +36,6 @@ grpc_local_credentials::create_security_connector(
       this->Ref(), std::move(request_metadata_creds), args, target_name);
 }
 
-
 grpc_core::UniqueTypeName grpc_local_credentials::type() const {
   static auto* kFactory = new grpc_core::UniqueTypeName::Factory("Local");
   return kFactory->Create();
