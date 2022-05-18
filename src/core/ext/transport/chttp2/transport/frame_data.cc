@@ -213,7 +213,6 @@ grpc_core::Poll<grpc_error_handle> grpc_deframe_unprocessed_incoming_frames(
                              static_cast<size_t>(end - beg))));
           p->frame_size_remaining -= remaining;
           grpc_slice_buffer_remove_first(slices);
-          return grpc_core::Pending{};
         } else {
           GPR_ASSERT(remaining > p->frame_size_remaining);
           s->stats.incoming.data_bytes += p->frame_size_remaining;
@@ -229,7 +228,7 @@ grpc_core::Poll<grpc_error_handle> grpc_deframe_unprocessed_incoming_frames(
       }
     }
   }
-  return GRPC_ERROR_NONE;
+  return grpc_core::Pending{};
 }
 
 grpc_error_handle grpc_chttp2_data_parser_parse(void* /*parser*/,

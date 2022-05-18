@@ -1970,11 +1970,6 @@ void grpc_chttp2_maybe_complete_recv_initial_metadata(grpc_chttp2_transport* t,
 void grpc_chttp2_maybe_complete_recv_message(grpc_chttp2_transport* t,
                                              grpc_chttp2_stream* s) {
   grpc_error_handle error = GRPC_ERROR_NONE;
-  gpr_log(GPR_DEBUG,
-          "*** %s recv_message_ready=%p final_metadata_requested=%d "
-          "seen_error=%d frame_storage=%" PRIdPTR,
-          t->is_client ? "client" : "server", s->recv_message_ready,
-          s->final_metadata_requested, s->seen_error, s->frame_storage.length);
   if (s->recv_message_ready != nullptr) {
     if (s->final_metadata_requested && s->seen_error) {
       grpc_slice_buffer_reset_and_unref_internal(&s->frame_storage);
@@ -2019,11 +2014,6 @@ void grpc_chttp2_maybe_complete_recv_message(grpc_chttp2_transport* t,
 void grpc_chttp2_maybe_complete_recv_trailing_metadata(grpc_chttp2_transport* t,
                                                        grpc_chttp2_stream* s) {
   grpc_chttp2_maybe_complete_recv_message(t, s);
-  gpr_log(GPR_DEBUG,
-          "*** %s recv_trailing_metadata_finished=%p read_closed=%d "
-          "write_closed=%d",
-          t->is_client ? "client" : "server",
-          s->recv_trailing_metadata_finished, s->read_closed, s->write_closed);
   if (s->recv_trailing_metadata_finished != nullptr && s->read_closed &&
       s->write_closed) {
     if (s->seen_error || !t->is_client) {
