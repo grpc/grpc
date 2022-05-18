@@ -1967,28 +1967,38 @@ void grpc_chttp2_maybe_complete_recv_initial_metadata(grpc_chttp2_transport* t,
   }
 }
 
-void grpc_chttp2_maybe_complete_recv_message(grpc_chttp2_transport* /*t*/,
+void grpc_chttp2_maybe_complete_recv_message(grpc_chttp2_transport* t,
                                              grpc_chttp2_stream* s) {
   grpc_error_handle error = GRPC_ERROR_NONE;
+  gpr_log(GPR_DEBUG,
+          "*** %s recv_message_ready=%p final_metadata_requested=%d "
+          "seen_error=%d frame_storage=%" PRIdPTR,
+          t->is_client ? "client" : "server", s->recv_message_ready,
+          s->final_metadata_requested, s->seen_error, s->frame_storage.length);
   if (s->recv_message_ready != nullptr) {
     if (s->final_metadata_requested && s->seen_error) {
       grpc_slice_buffer_reset_and_unref_internal(&s->frame_storage);
     } else {
-      if (s->frame_storage.length == 0) return;
-      while (true) {
-        GPR_ASSERT(s->frame_storage.length > 0);
-        auto r = grpc_deframe_unprocessed_incoming_frames(
-            &s->data_parser, s, &s->frame_storage, &**s->recv_message,
-            s->recv_message_flags);
-        if (absl::holds_alternative<grpc_core::Pending>(r)) return;
-        error = absl::get<grpc_error_handle>(r);
-        if (error != GRPC_ERROR_NONE) {
-          s->seen_error = true;
-          grpc_slice_buffer_reset_and_unref_internal(&s->frame_storage);
-          break;
-        } else {
-          break;
+      if (s->frame_storage.length != 0) {
+        while (true) {
+          GPR_ASSERT(s->frame_storage.length > 0);
+          auto r = grpc_deframe_unprocessed_incoming_frames(
+              &s->data_parser, s, &s->frame_storage, &**s->recv_message,
+              s->recv_message_flags);
+          if (absl::holds_alternative<grpc_core::Pending>(r)) return;
+          error = absl::get<grpc_error_handle>(r);
+          if (error != GRPC_ERROR_NONE) {
+            s->seen_error = true;
+            grpc_slice_buffer_reset_and_unref_internal(&s->frame_storage);
+            break;
+          } else {
+            break;
+          }
         }
+      } else if (s->final_metadata_requested && s->read_closed) {
+        s->recv_message->reset();
+      } else {
+        return;
       }
     }
     // save the length of the buffer before handing control back to application
