@@ -384,5 +384,6 @@ grpc_cc_test(
     uses_polling = False,
     deps = [
         "//:unique_type_name",
+        "//test/core/util:grpc_suppressions",
     ],
 )
