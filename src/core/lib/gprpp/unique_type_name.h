@@ -17,7 +17,7 @@
 #ifndef GRPC_CORE_LIB_GPRPP_UNIQUE_TYPE_NAME_H
 #define GRPC_CORE_LIB_GPRPP_UNIQUE_TYPE_NAME_H
 
-#include <string>
+#include <grpc/support/port_platform.h>
 
 #include "absl/strings/string_view.h"
 

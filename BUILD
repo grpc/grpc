@@ -941,10 +941,10 @@ grpc_cc_library(
 
 grpc_cc_library(
     name = "unique_type_name",
+    hdrs = ["src/core/lib/gprpp/unique_type_name.h"],
     external_deps = [
         "absl/strings",
     ],
-    hdrs = ["src/core/lib/gprpp/unique_type_name.h"],
     language = "c++",
     deps = ["useful"],
 )

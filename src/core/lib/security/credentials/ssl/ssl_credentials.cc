@@ -91,8 +91,7 @@ grpc_ssl_credentials::create_security_connector(
 }
 
 grpc_core::UniqueTypeName grpc_ssl_credentials::Type() {
-  static grpc_core::UniqueTypeName::Factory<grpc_ssl_creds::kTypeName>
-      factory;
+  static grpc_core::UniqueTypeName::Factory<grpc_ssl_creds::kTypeName> factory;
   return factory.Create();
 }
 
@@ -199,8 +198,7 @@ grpc_ssl_server_credentials::create_security_connector(
 }
 
 grpc_core::UniqueTypeName grpc_ssl_server_credentials::Type() {
-  static grpc_core::UniqueTypeName::Factory<grpc_ssl_creds::kTypeName>
-      factory;
+  static grpc_core::UniqueTypeName::Factory<grpc_ssl_creds::kTypeName> factory;
   return factory.Create();
 }
 

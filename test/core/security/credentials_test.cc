@@ -599,7 +599,7 @@ class check_channel_oauth2 final : public grpc_channel_credentials {
     return nullptr;
   }
 
-  static grpc_core::UniqueTypeName Type() {
+  static UniqueTypeName Type() {
     static UniqueTypeName::Factory<kCheckChannelOauth2TypeName> factory;
     return factory.Create();
   }
@@ -697,13 +697,13 @@ class check_channel_oauth2_google_iam final : public grpc_channel_credentials {
     return nullptr;
   }
 
-  static grpc_core::UniqueTypeName Type() {
+  static UniqueTypeName Type() {
     static UniqueTypeName::Factory<kCheckChannelOauth2GoogleIamTypeName>
         factory;
     return factory.Create();
   }
 
-  grpc_core::UniqueTypeName type() const override { return Type(); }
+  UniqueTypeName type() const override { return Type(); }
 
  private:
   int cmp_impl(const grpc_channel_credentials* other) const override {
@@ -1840,7 +1840,7 @@ struct fake_call_creds : public grpc_call_credentials {
     return Immediate(std::move(initial_metadata));
   }
 
-  grpc_core::UniqueTypeName type() const override {
+  UniqueTypeName type() const override {
     static UniqueTypeName::Factory<kFakeCallCredsTypeName> factory;
     return factory.Create();
   }
