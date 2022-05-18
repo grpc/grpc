@@ -1095,9 +1095,9 @@ void FilterStackCall::BatchControl::PostCompletion() {
     error = GRPC_ERROR_NONE;
   }
   if (error != GRPC_ERROR_NONE && op_.recv_message &&
-      *call->receiving_buffer_ != nullptr) {
-    grpc_byte_buffer_destroy(*call->receiving_buffer_);
-    *call->receiving_buffer_ = nullptr;
+      call->receiving_buffer_ != nullptr) {
+    grpc_byte_buffer_destroy(call->receiving_buffer_);
+    call->receiving_buffer_ = nullptr;
   }
   batch_error_.set(GRPC_ERROR_NONE);
 
@@ -1133,7 +1133,7 @@ void FilterStackCall::BatchControl::ContinueReceivingSlices() {
   FilterStackCall* call = call_;
   for (;;) {
     size_t remaining = call->receiving_stream_->length() -
-                       (*call->receiving_buffer_)->data.raw.slice_buffer.length;
+                       (call->receiving_buffer_)->data.raw.slice_buffer.length;
     if (remaining == 0) {
       call->receiving_message_ = false;
       call->receiving_stream_.reset();
@@ -1145,12 +1145,12 @@ void FilterStackCall::BatchControl::ContinueReceivingSlices() {
       error = call->receiving_stream_->Pull(&call->receiving_slice_);
       if (error == GRPC_ERROR_NONE) {
         grpc_slice_buffer_add(
-            &(*call->receiving_buffer_)->data.raw.slice_buffer,
+            &(call->receiving_buffer_)->data.raw.slice_buffer,
             call->receiving_slice_);
       } else {
         call->receiving_stream_.reset();
-        grpc_byte_buffer_destroy(*call->receiving_buffer_);
-        *call->receiving_buffer_ = nullptr;
+        grpc_byte_buffer_destroy(call->receiving_buffer_);
+        call->receiving_buffer_ = nullptr;
         call->receiving_message_ = false;
         FinishStep();
         GRPC_ERROR_UNREF(error);
@@ -1171,7 +1171,7 @@ void FilterStackCall::BatchControl::ReceivingSliceReady(
     grpc_slice slice;
     error = call->receiving_stream_->Pull(&slice);
     if (error == GRPC_ERROR_NONE) {
-      grpc_slice_buffer_add(&(*call->receiving_buffer_)->data.raw.slice_buffer,
+      grpc_slice_buffer_add(&(call->receiving_buffer_)->data.raw.slice_buffer,
                             slice);
       ContinueReceivingSlices();
     } else {
@@ -1185,8 +1185,8 @@ void FilterStackCall::BatchControl::ReceivingSliceReady(
       GRPC_LOG_IF_ERROR("receiving_slice_ready", GRPC_ERROR_REF(error));
     }
     call->receiving_stream_.reset();
-    grpc_byte_buffer_destroy(*call->receiving_buffer_);
-    *call->receiving_buffer_ = nullptr;
+    grpc_byte_buffer_destroy(call->receiving_buffer_);
+    call->receiving_buffer_ = nullptr;
     call->receiving_message_ = false;
     FinishStep();
     if (release_error) {
@@ -1198,17 +1198,17 @@ void FilterStackCall::BatchControl::ReceivingSliceReady(
 void FilterStackCall::BatchControl::ProcessDataAfterMetadata() {
   FilterStackCall* call = call_;
   if (call->receiving_stream_ == nullptr) {
-    *call->receiving_buffer_ = nullptr;
+    call->receiving_buffer_ = nullptr;
     call->receiving_message_ = false;
     FinishStep();
   } else {
     call->test_only_last_message_flags_ = call->receiving_stream_->flags();
     if ((call->receiving_stream_->flags() & GRPC_WRITE_INTERNAL_COMPRESS) &&
         (call->incoming_compression_algorithm_ != GRPC_COMPRESS_NONE)) {
-      *call->receiving_buffer_ = grpc_raw_compressed_byte_buffer_create(
+      call->receiving_buffer_ = grpc_raw_compressed_byte_buffer_create(
           nullptr, 0, call->incoming_compression_algorithm_);
     } else {
-      *call->receiving_buffer_ = grpc_raw_byte_buffer_create(nullptr, 0);
+      call->receiving_buffer_ = grpc_raw_byte_buffer_create(nullptr, 0);
     }
     GRPC_CLOSURE_INIT(
         &call->receiving_slice_ready_,
