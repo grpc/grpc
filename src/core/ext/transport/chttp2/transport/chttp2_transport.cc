@@ -1990,7 +1990,7 @@ void grpc_chttp2_maybe_complete_recv_message(grpc_chttp2_transport* t,
             break;
           }
         }
-      } else if (s->final_metadata_requested && s->read_closed) {
+      } else if (s->read_closed) {
         s->recv_message->reset();
       } else {
         return;
