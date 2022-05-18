@@ -171,7 +171,7 @@ class XdsResolver : public Resolver {
       Ref().release();  // ref held by lambda
       resolver_->work_serializer_->Run(
           [this, status]() {
-            resolver_->OnError(status);
+            resolver_->OnError(resolver_->lds_resource_name_, status);
             Unref();
           },
           DEBUG_LOCATION);
@@ -210,7 +210,7 @@ class XdsResolver : public Resolver {
       Ref().release();  // ref held by lambda
       resolver_->work_serializer_->Run(
           [this, status]() {
-            resolver_->OnError(status);
+            resolver_->OnError(resolver_->route_config_name_, status);
             Unref();
           },
           DEBUG_LOCATION);
@@ -349,7 +349,7 @@ class XdsResolver : public Resolver {
 
   void OnListenerUpdate(XdsListenerResource listener);
   void OnRouteConfigUpdate(XdsRouteConfigResource rds_update);
-  void OnError(absl::Status status);
+  void OnError(absl::string_view context, absl::Status status);
   void OnResourceDoesNotExist();
 
   absl::StatusOr<RefCountedPtr<ServiceConfig>> CreateServiceConfig();
@@ -804,7 +804,7 @@ void XdsResolver::StartLocked() {
     if (authority_config == nullptr) {
       Result result;
       result.service_config = absl::UnavailableError(
-          absl::StrCat("Invalid target URI -- authority not found for %s.",
+          absl::StrCat("Invalid target URI -- authority not found for ",
                        uri_.authority().c_str()));
       result.args = grpc_channel_args_copy(args_);
       result_handler_->ReportResult(std::move(result));
@@ -937,9 +937,11 @@ void XdsResolver::OnRouteConfigUpdate(XdsRouteConfigResource rds_update) {
       VirtualHostListIterator(&rds_update.virtual_hosts),
       data_plane_authority_);
   if (!vhost_index.has_value()) {
-    OnError(absl::UnavailableError(
-        absl::StrCat("could not find VirtualHost for ", data_plane_authority_,
-                     " in RouteConfiguration")));
+    OnError(
+        route_config_name_.empty() ? lds_resource_name_ : route_config_name_,
+        absl::UnavailableError(absl::StrCat("could not find VirtualHost for ",
+                                            data_plane_authority_,
+                                            " in RouteConfiguration")));
     return;
   }
   // Save the virtual host in the resolver.
@@ -950,15 +952,15 @@ void XdsResolver::OnRouteConfigUpdate(XdsRouteConfigResource rds_update) {
   GenerateResult();
 }
 
-void XdsResolver::OnError(absl::Status status) {
-  gpr_log(GPR_ERROR, "[xds_resolver %p] received error from XdsClient: %s",
-          this, status.ToString().c_str());
+void XdsResolver::OnError(absl::string_view context, absl::Status status) {
+  gpr_log(GPR_ERROR, "[xds_resolver %p] received error from XdsClient: %s: %s",
+          this, std::string(context).c_str(), status.ToString().c_str());
   if (xds_client_ == nullptr) return;
   Result result;
   grpc_arg new_arg = xds_client_->MakeChannelArg();
   result.args = grpc_channel_args_copy_and_add(args_, &new_arg, 1);
-  result.service_config = absl::UnavailableError(
-      absl::StrCat("error obtaining xDS resources: ", status.ToString()));
+  result.service_config =
+      absl::UnavailableError(absl::StrCat(context, ": ", status.ToString()));
   result_handler_->ReportResult(std::move(result));
 }
 
@@ -1034,7 +1036,8 @@ void XdsResolver::GenerateResult() {
   grpc_error_handle error = GRPC_ERROR_NONE;
   auto config_selector = MakeRefCounted<XdsConfigSelector>(Ref(), &error);
   if (error != GRPC_ERROR_NONE) {
-    OnError(absl::UnavailableError(grpc_error_std_string(error)));
+    OnError("could not create ConfigSelector",
+            absl::UnavailableError(grpc_error_std_string(error)));
     GRPC_ERROR_UNREF(error);
     return;
   }
