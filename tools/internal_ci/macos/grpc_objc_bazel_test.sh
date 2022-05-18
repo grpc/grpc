@@ -50,6 +50,9 @@ TEST_TARGETS=(
   # TODO(jtattermusch): make sure the //src/objective-c/tests:InteropTests test passes reliably under bazel
   //src/objective-c/tests:MacTests
   //src/objective-c/tests:UnitTests
+  # codegen plugin tests
+  //src/objective-c/tests:objc_codegen_plugin_test
+  //src/objective-c/tests:objc_codegen_plugin_option_test
 )
 
 # === BEGIN SECTION: run interop_server on the background ====

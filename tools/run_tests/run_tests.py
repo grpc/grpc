@@ -1043,16 +1043,14 @@ class ObjCLanguage(object):
         #             'FRAMEWORKS': 'NO'
         #         }))
 
-        # TODO(jtattermusch): Create bazel target for the test and remove the test from here
+        # TODO(jtattermusch): Remove this task since the test already runs as part of the grpc_objc_bazel_test job.
         out.append(
             self.config.job_spec(['src/objective-c/tests/run_plugin_tests.sh'],
                                  timeout_seconds=60 * 60,
                                  shortname='ios-test-plugintest',
                                  cpu_cost=1e6,
                                  environ=_FORCE_ENVIRON_FOR_WRAPPERS))
-        # Note that this test basically tests whether the codegen plugin works correctly by running protoc and checking the contents of the generated *.pbrpc.* files.
-        # it doesn't really build any ObjC code.
-        # TODO(jtattermusch): turn this test into a bazel test or come up with a better place where to put this test.
+        # TODO(jtattermusch): Remove this task since the test already runs as part of the grpc_objc_bazel_test job.
         out.append(
             self.config.job_spec(
                 ['src/objective-c/tests/run_plugin_option_tests.sh'],
