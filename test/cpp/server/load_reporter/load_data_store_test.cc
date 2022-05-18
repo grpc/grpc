@@ -27,7 +27,6 @@
 
 #include <grpc/grpc.h>
 
-#include "src/cpp/server/load_reporter/constants.h"
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
 

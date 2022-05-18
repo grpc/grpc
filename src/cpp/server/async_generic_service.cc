@@ -16,7 +16,6 @@
  *
  */
 
-#include <grpcpp/completion_queue.h>
 #include <grpcpp/generic/async_generic_service.h>
 #include <grpcpp/server.h>
 

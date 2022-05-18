@@ -22,16 +22,7 @@
 
 #include <inttypes.h>
 
-#include <google/protobuf/duration.pb.h>
-#include <google/protobuf/repeated_ptr_field.h>
-
 #include "absl/memory/memory.h"
-
-#include <grpc/impl/codegen/gpr_types.h>
-#include <grpc/support/time.h>
-#include <grpcpp/support/status.h>
-
-#include "src/cpp/server/load_reporter/constants.h"
 
 namespace grpc {
 namespace load_reporter {
