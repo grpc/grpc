@@ -36,16 +36,6 @@
 
 // IWYU pragma: private, include <grpcpp/client_context.h>
 
-
-
-
-
-
-
-
-
-
-
 #include <map>
 #include <memory>
 #include <string>

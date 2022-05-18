@@ -21,18 +21,6 @@
 
 // IWYU pragma: private, include <grpc/byte_buffer_reader.h>
 
-
-
-
-
-
-
-
-
-
-
-
-
 #ifdef __cplusplus
 extern "C" {
 #endif

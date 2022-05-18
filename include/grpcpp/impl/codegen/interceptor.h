@@ -21,16 +21,6 @@
 
 // IWYU pragma: private, include <grpcpp/support/interceptor.h>
 
-
-
-
-
-
-
-
-
-
-
 #include <memory>
 
 #include <grpc/impl/codegen/grpc_types.h>

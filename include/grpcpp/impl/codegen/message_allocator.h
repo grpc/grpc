@@ -21,16 +21,6 @@
 
 // IWYU pragma: private, include <grpcpp/support/message_allocator.h>
 
-
-
-
-
-
-
-
-
-
-
 namespace grpc {
 
 // NOTE: This is an API for advanced users who need custom allocators.
