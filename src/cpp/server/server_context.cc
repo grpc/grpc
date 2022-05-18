@@ -55,6 +55,7 @@
 
 #include "src/core/lib/gprpp/ref_counted.h"
 #include "src/core/lib/gprpp/sync.h"
+#include "src/core/lib/surface/call.h"
 
 namespace grpc {
 
