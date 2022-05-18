@@ -54,26 +54,28 @@ export ENABLED_MODULES='
   src/core/lib/surface
   src/core/lib/transport
   src/core/lib/uri
+  src/cpp
 '
 
 export INCLUSION_REGEX=`echo $ENABLED_MODULES | sed 's/ /|/g' | sed 's,\\(.*\\),^(\\1)/,g'`
 
 # figure out which files to include
-cat compile_commands.json | jq -r '.[].file' \
-  | grep -E $INCLUSION_REGEX \
+cat compile_commands.json | jq -r '.[].file'         \
+  | grep -E $INCLUSION_REGEX                         \
   | grep -v -E "/upb-generated/|/upbdefs-generated/" \
-  | sort \
+  | sort                                             \
   > iwyu_files0.txt
 
-cat iwyu_files0.txt \
+cat iwyu_files0.txt                    \
   | xargs -d '\n' ls -1df 2> /dev/null \
-  > iwyu_files.txt \
+  > iwyu_files.txt                     \
   || true
 
 echo '#!/bin/sh
-${IWYU_ROOT}/iwyu/iwyu_tool.py -p compile_commands_for_iwyu.json $1 -- -Xiwyu --no_fwd_decls \
-  | grep -v -E "port_platform.h" \
-  | grep -v -E "^(- )?namespace " \
+${IWYU_ROOT}/iwyu/iwyu_tool.py -p compile_commands_for_iwyu.json $1 \
+    -- -Xiwyu --no_fwd_decls -Xiwyu --update_comments               \
+  | grep -v -E "port_platform.h"                                    \
+  | grep -v -E "^(- )?namespace "                                   \
   > iwyu/iwyu.`echo $1 | sha1sum`.out
 ' > iwyu/run_iwyu_on.sh
 chmod +x iwyu/run_iwyu_on.sh
@@ -84,4 +86,8 @@ xargs -n 1 -P $CPU_COUNT -a iwyu_files.txt ${IWYU_ROOT}/iwyu/run_iwyu_on.sh
 cat iwyu/iwyu.*.out > iwyu.out
 
 # apply the suggested changes
-${IWYU_ROOT}/iwyu/fix_includes.py --nocomments --nosafe_headers < iwyu.out
+${IWYU_ROOT}/iwyu/fix_includes.py \
+  --nocomments                    \
+  --nosafe_headers                \
+  --ignore_re='^include/.*'       \
+  < iwyu.out                      \

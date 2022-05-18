@@ -20,8 +20,11 @@
 
 #include "src/cpp/server/channelz/channelz_service.h"
 
-#include <grpc/grpc.h>
+#include <google/protobuf/util/json_util.h>
+
 #include <grpc/support/alloc.h>
+#include <grpcpp/impl/codegen/config_protobuf.h>
+#include <grpcpp/support/status_code_enum.h>
 
 namespace grpc {
 

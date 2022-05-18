@@ -18,7 +18,16 @@
 
 #include "src/cpp/util/core_stats.h"
 
+#include <string.h>
+
+#include <string>
+
+#include <google/protobuf/repeated_ptr_field.h>
+
+#include <grpc/support/atm.h>
 #include <grpc/support/log.h>
+
+#include "src/core/lib/debug/stats_data.h"
 
 using grpc::core::Bucket;
 using grpc::core::Histogram;
