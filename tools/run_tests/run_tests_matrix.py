@@ -190,11 +190,22 @@ def _create_test_jobs(extra_args=[], inner_jobs=_DEFAULT_INNER_JOBS):
                                 ['--report_multi_target'],
                                 inner_jobs=inner_jobs)
 
-    # supported on all platforms.
+    # Linux and Windows core tests
     test_jobs += _generate_jobs(
         languages=['c'],
         configs=['dbg', 'opt'],
-        platforms=['linux', 'macos', 'windows'],
+        platforms=['linux', 'windows'],
+        labels=['basictests', 'corelang'],
+        extra_args=
+        extra_args,  # don't use multi_target report because C has too many test cases
+        inner_jobs=inner_jobs,
+        timeout_seconds=_CPP_RUNTESTS_TIMEOUT)
+
+    # MacOS core tests, debug-only due to CI resource constraints
+    test_jobs += _generate_jobs(
+        languages=['c'],
+        configs=['dbg'],
+        platforms=['macos'],
         labels=['basictests', 'corelang'],
         extra_args=
         extra_args,  # don't use multi_target report because C has too many test cases
@@ -242,11 +253,22 @@ def _create_test_jobs(extra_args=[], inner_jobs=_DEFAULT_INNER_JOBS):
                                 ['--report_multi_target'],
                                 inner_jobs=inner_jobs)
 
-    # supported on linux and mac.
+    # C++ Linux tests
     test_jobs += _generate_jobs(
         languages=['c++'],
         configs=['dbg', 'opt'],
-        platforms=['linux', 'macos'],
+        platforms=['linux'],
+        labels=['basictests', 'corelang'],
+        extra_args=
+        extra_args,  # don't use multi_target report because C++ has too many test cases
+        inner_jobs=inner_jobs,
+        timeout_seconds=_CPP_RUNTESTS_TIMEOUT)
+
+    # MacOS C++ tests, debug-only due to CI resource constraints
+    test_jobs += _generate_jobs(
+        languages=['c++'],
+        configs=['dbg'],
+        platforms=['macos'],
         labels=['basictests', 'corelang'],
         extra_args=
         extra_args,  # don't use multi_target report because C++ has too many test cases
