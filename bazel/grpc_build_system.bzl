@@ -358,6 +358,7 @@ def grpc_cc_test(name, srcs = [], deps = [], external_deps = [], args = [], data
         exclude_pollers: list of poller names to exclude for this set of tests.
         uses_event_engine: set to False if the test is not sensitive to
             EventEngine implementation differences
+        visibility: The visibility of the target.
     """
     if language.upper() == "C":
         copts = copts + if_not_windows(["-std=c99"])
