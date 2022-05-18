@@ -5679,6 +5679,7 @@ grpc_cc_library(
     external_deps = [
         "upb_lib",
         "absl/memory",
+        "absl/types:optional",
     ],
     language = "c++",
     visibility = ["@grpc:public"],

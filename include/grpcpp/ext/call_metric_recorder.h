@@ -25,6 +25,7 @@
 #include <string>
 
 #include "absl/strings/string_view.h"
+#include "absl/types/optional.h"
 
 #include <grpcpp/impl/codegen/slice.h>
 #include <grpcpp/impl/codegen/sync.h>
@@ -83,7 +84,7 @@ class CallMetricRecorder {
 
  private:
   internal::Mutex mu_;
-  std::string CreateSerializedReport();
+  absl::optional<std::string> CreateSerializedReport();
   grpc_core::BackendMetricData* backend_metric_data_ ABSL_GUARDED_BY(&mu_);
   friend class experimental::OrcaServerInterceptor;
 };

@@ -34,11 +34,11 @@ void grpc::experimental::OrcaServerInterceptor::Intercept(
       auto context = info_->server_context();
       auto* recorder = context->call_metric_recorder_;
       auto serialized = recorder->CreateSerializedReport();
-      if (!serialized.empty()) {
+      if (serialized.has_value() && !serialized->empty()) {
         std::string key =
             std::string(grpc_core::EndpointLoadMetricsBinMetadata::key());
         trailers->emplace(
-            std::make_pair(std::move(key), std::move(serialized)));
+            std::make_pair(std::move(key), std::move(serialized.value())));
       }
     }
   }

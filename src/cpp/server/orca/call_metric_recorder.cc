@@ -66,9 +66,16 @@ grpc::experimental::CallMetricRecorder::RecordRequestCostMetric(
   return *this;
 }
 
-std::string grpc::experimental::CallMetricRecorder::CreateSerializedReport() {
+absl::optional<std::string> grpc::experimental::CallMetricRecorder::CreateSerializedReport() {
   upb::Arena arena;
   internal::MutexLock lock(&mu_);
+  bool has_data = backend_metric_data_->cpu_utilization != 0 ||
+              backend_metric_data_->mem_utilization != 0 ||
+              !backend_metric_data_->utilization.empty() ||
+              !backend_metric_data_->request_cost.empty();
+  if (!has_data) {
+    return absl::nullopt;
+  }
   xds_data_orca_v3_OrcaLoadReport* response =
       xds_data_orca_v3_OrcaLoadReport_new(arena.ptr());
   if (backend_metric_data_->cpu_utilization != -1) {
