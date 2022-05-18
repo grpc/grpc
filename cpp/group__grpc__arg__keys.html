@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.45.0</span>
+   &#160;<span id="projectnumber">1.46.2</span>
    </div>
   </td>
  </tr>
@@ -152,7 +152,7 @@ Macros</h2></td></tr>
 <tr class="memdesc:ga7797da9f3f5a1381484b2cabca1920fc"><td class="mdescLeft">&#160;</td><td class="mdescRight">Channel arg to override the http2 :scheme header.  <a href="group__grpc__arg__keys.html#ga7797da9f3f5a1381484b2cabca1920fc">More...</a><br /></td></tr>
 <tr class="separator:ga7797da9f3f5a1381484b2cabca1920fc"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ga401cc6c0e567cbbb8b689b091f92dc7e"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__grpc__arg__keys.html#ga401cc6c0e567cbbb8b689b091f92dc7e">GRPC_ARG_HTTP2_MAX_PINGS_WITHOUT_DATA</a>&#160;&#160;&#160;&quot;grpc.http2.max_pings_without_data&quot;</td></tr>
-<tr class="memdesc:ga401cc6c0e567cbbb8b689b091f92dc7e"><td class="mdescLeft">&#160;</td><td class="mdescRight">How many pings can we send before needing to send a data/header frame? (0 indicates that an infinite number of pings can be sent without sending a data frame or header frame)  <a href="group__grpc__arg__keys.html#ga401cc6c0e567cbbb8b689b091f92dc7e">More...</a><br /></td></tr>
+<tr class="memdesc:ga401cc6c0e567cbbb8b689b091f92dc7e"><td class="mdescLeft">&#160;</td><td class="mdescRight">How many pings can the client send before needing to send a data/header frame? (0 indicates that an infinite number of pings can be sent without sending a data frame or header frame)  <a href="group__grpc__arg__keys.html#ga401cc6c0e567cbbb8b689b091f92dc7e">More...</a><br /></td></tr>
 <tr class="separator:ga401cc6c0e567cbbb8b689b091f92dc7e"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:gaf50a9992745183e14e8c660d954c1d82"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__grpc__arg__keys.html#gaf50a9992745183e14e8c660d954c1d82">GRPC_ARG_HTTP2_MAX_PING_STRIKES</a>&#160;&#160;&#160;&quot;grpc.http2.max_ping_strikes&quot;</td></tr>
 <tr class="memdesc:gaf50a9992745183e14e8c660d954c1d82"><td class="mdescLeft">&#160;</td><td class="mdescRight">How many misbehaving pings the server can bear before sending goaway and closing the transport? (0 indicates that the server can bear an infinite number of misbehaving pings)  <a href="group__grpc__arg__keys.html#gaf50a9992745183e14e8c660d954c1d82">More...</a><br /></td></tr>
@@ -170,7 +170,7 @@ Macros</h2></td></tr>
 <tr class="memdesc:ga78975b982fd17ff190fddf2f90050ee3"><td class="mdescLeft">&#160;</td><td class="mdescRight">After waiting for a duration of this time, if the keepalive ping sender does not receive the ping ack, it will close the transport.  <a href="group__grpc__arg__keys.html#ga78975b982fd17ff190fddf2f90050ee3">More...</a><br /></td></tr>
 <tr class="separator:ga78975b982fd17ff190fddf2f90050ee3"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:gaf900669f52f137677c4dbb9a7a902c92"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__grpc__arg__keys.html#gaf900669f52f137677c4dbb9a7a902c92">GRPC_ARG_KEEPALIVE_PERMIT_WITHOUT_CALLS</a>&#160;&#160;&#160;&quot;grpc.keepalive_permit_without_calls&quot;</td></tr>
-<tr class="memdesc:gaf900669f52f137677c4dbb9a7a902c92"><td class="mdescLeft">&#160;</td><td class="mdescRight">Is it permissible to send keepalive pings without any outstanding streams.  <a href="group__grpc__arg__keys.html#gaf900669f52f137677c4dbb9a7a902c92">More...</a><br /></td></tr>
+<tr class="memdesc:gaf900669f52f137677c4dbb9a7a902c92"><td class="mdescLeft">&#160;</td><td class="mdescRight">Is it permissible to send keepalive pings from the client without any outstanding streams.  <a href="group__grpc__arg__keys.html#gaf900669f52f137677c4dbb9a7a902c92">More...</a><br /></td></tr>
 <tr class="separator:gaf900669f52f137677c4dbb9a7a902c92"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:gadd42f97666fbfc66b7dac253ac3b73ae"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__grpc__arg__keys.html#gadd42f97666fbfc66b7dac253ac3b73ae">GRPC_ARG_DEFAULT_AUTHORITY</a>&#160;&#160;&#160;&quot;grpc.default_authority&quot;</td></tr>
 <tr class="memdesc:gadd42f97666fbfc66b7dac253ac3b73ae"><td class="mdescLeft">&#160;</td><td class="mdescRight">Default authority to pass if none specified on call construction.  <a href="group__grpc__arg__keys.html#gadd42f97666fbfc66b7dac253ac3b73ae">More...</a><br /></td></tr>
@@ -812,7 +812,7 @@ Macros</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p>How many pings can we send before needing to send a data/header frame? (0 indicates that an infinite number of pings can be sent without sending a data frame or header frame) </p>
+<p>How many pings can the client send before needing to send a data/header frame? (0 indicates that an infinite number of pings can be sent without sending a data frame or header frame) </p>
 
 </div>
 </div>
@@ -961,7 +961,7 @@ Macros</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p>Is it permissible to send keepalive pings without any outstanding streams. </p>
+<p>Is it permissible to send keepalive pings from the client without any outstanding streams. </p>
 <p>Int valued, 0(false)/1(true). </p>
 
 </div>
@@ -1720,7 +1720,7 @@ Macros</h2></td></tr>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Sat Mar 19 2022 01:40:11 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Wed May 18 2022 17:42:14 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.17
 </small></address>

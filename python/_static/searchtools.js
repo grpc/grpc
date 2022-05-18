@@ -172,10 +172,6 @@ var Search = {
       }
       // stem the word
       var word = stemmer.stemWord(tmp[i].toLowerCase());
-      // prevent stemmer from cutting word smaller than two chars
-      if(word.length < 3 && tmp[i].length >= 3) {
-        word = tmp[i];
-      }
       var toAppend;
       // select the correct list
       if (word[0] == '-') {
@@ -276,7 +272,7 @@ var Search = {
           setTimeout(function() {
             displayNextItem();
           }, 5);
-        } else if (DOCUMENTATION_OPTIONS.HAS_SOURCE) {
+        } else if (DOCUMENTATION_OPTIONS.SHOW_SEARCH_SUMMARY) {
           $.ajax({url: requestUrl,
                   dataType: "text",
                   complete: function(jqxhr, textstatus) {
@@ -293,7 +289,7 @@ var Search = {
                     }, 5);
                   }});
         } else {
-          // no source available, just display title
+          // just display title
           Search.output.append(listItem);
           setTimeout(function() {
             displayNextItem();

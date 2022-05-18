@@ -1170,7 +1170,7 @@
       "output": {
         ".html": {
           "relative_path": "api/Grpc.Core.VersionInfo.html",
-          "hash": "vKB0s/nQwO6hQgwv+oTfcw=="
+          "hash": "b/Se9uts0nSFTQaQsKCrXQ=="
         }
       },
       "is_incremental": false,
@@ -1242,7 +1242,7 @@
       "output": {
         ".html": {
           "relative_path": "api/Grpc.Health.V1.Health.html",
-          "hash": "qP/4WGhvvF2BAMt31HLdSw=="
+          "hash": "QzQrNiJmxCC8BgzYCFGK4Q=="
         }
       },
       "is_incremental": false,
