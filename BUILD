@@ -3100,7 +3100,6 @@ grpc_cc_library(
     ],
     external_deps = [
         "absl/container:inlined_vector",
-        "absl/functional:bind_front",
         "absl/memory",
         "absl/status",
         "absl/status:statusor",

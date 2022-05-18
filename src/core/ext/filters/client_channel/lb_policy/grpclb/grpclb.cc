@@ -70,7 +70,6 @@
 #include <vector>
 
 #include "absl/container/inlined_vector.h"
-#include "absl/functional/bind_front.h"
 #include "absl/memory/memory.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
@@ -963,15 +962,12 @@ void GrpcLb::BalancerCallState::StartQuery() {
 void GrpcLb::BalancerCallState::ScheduleNextClientLoadReportLocked() {
   client_load_report_handle_ = GetDefaultEventEngine()->RunAt(
       absl::Now() + absl::Milliseconds(client_stats_report_interval_.millis()),
-      absl::bind_front(&GrpcLb::BalancerCallState::MaybeSendClientLoadReport,
-                       this));
+      [this] { MaybeSendClientLoadReport(); });
 }
 
 void GrpcLb::BalancerCallState::MaybeSendClientLoadReport() {
   grpclb_policy()->work_serializer()->Run(
-      absl::bind_front(
-          &GrpcLb::BalancerCallState::MaybeSendClientLoadReportLocked, this),
-      DEBUG_LOCATION);
+      [this] { MaybeSendClientLoadReportLocked(); }, DEBUG_LOCATION);
 }
 
 void GrpcLb::BalancerCallState::MaybeSendClientLoadReportLocked() {
