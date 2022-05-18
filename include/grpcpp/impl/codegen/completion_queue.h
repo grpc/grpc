@@ -34,16 +34,6 @@
 
 // IWYU pragma: private, include <grpcpp/completion_queue.h>
 
-
-
-
-
-
-
-
-
-
-
 #include <list>
 
 #include <grpc/impl/codegen/atm.h>

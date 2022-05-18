@@ -21,16 +21,6 @@
 
 // IWYU pragma: private, include <grpcpp/support/proto_buffer_writer.h>
 
-
-
-
-
-
-
-
-
-
-
 #include <type_traits>
 
 #include <grpc/impl/codegen/grpc_types.h>

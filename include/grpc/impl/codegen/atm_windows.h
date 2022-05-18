@@ -21,18 +21,6 @@
 
 // IWYU pragma: private, include <grpc/support/atm.h>
 
-
-
-
-
-
-
-
-
-
-
-
-
 /** Win32 variant of atm_platform.h */
 #include <grpc/impl/codegen/port_platform.h>
 
