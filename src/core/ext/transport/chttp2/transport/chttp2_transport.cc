@@ -37,6 +37,7 @@
 #include "absl/strings/str_format.h"
 #include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
+#include "absl/types/variant.h"
 
 #include <grpc/impl/codegen/connectivity_state.h>
 #include <grpc/slice_buffer.h>
@@ -74,6 +75,7 @@
 #include "src/core/lib/iomgr/pollset.h"
 #include "src/core/lib/iomgr/timer.h"
 #include "src/core/lib/profiling/timers.h"
+#include "src/core/lib/promise/poll.h"
 #include "src/core/lib/resource_quota/api.h"
 #include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/resource_quota/memory_quota.h"
