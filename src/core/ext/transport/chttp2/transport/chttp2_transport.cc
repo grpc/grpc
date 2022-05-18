@@ -1569,7 +1569,7 @@ static void perform_stream_op_locked(void* stream_op,
         before = s->frame_storage.length;
       }
     }
-    grpc_chttp2_maybe_complete_recv_message(t, s);
+    grpc_chttp2_maybe_complete_recv_trailing_metadata(t, s);
     if (s->id != 0) {
       if (!s->read_closed && s->frame_storage.length == 0) {
         size_t after = s->frame_storage.length;
