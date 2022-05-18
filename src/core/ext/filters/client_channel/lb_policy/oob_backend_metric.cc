@@ -65,11 +65,17 @@
 
 namespace grpc_core {
 
+// TODO(roth): Once we drop support for MSVC 2017, change this from
+// namespace "orca_oob_backend_metric" to the anonymous namespace.
+// Until then, the current approach is required due to the following bug:
+// https://developercommunity.visualstudio.com/t/vc-cannot-use-a-const-char-as-non-type-template-ar/155480.
+namespace orca_oob_backend_metric {
+constexpr char kOrcaProducerTypeName[] = "orca";
+}  // namespace orca_oob_backend_metric
+
 namespace {
 
 TraceFlag grpc_orca_client_trace(false, "orca_client");
-
-constexpr char kProducerTypeName[] = "orca";
 
 class OrcaWatcher;
 
@@ -83,7 +89,9 @@ class OrcaProducer : public Subchannel::DataProducerInterface {
   void Orphan() override;
 
   static UniqueTypeName Type() {
-    static UniqueTypeName::Factory<kProducerTypeName> factory;
+    static UniqueTypeName::Factory<
+        orca_oob_backend_metric::kOrcaProducerTypeName>
+        factory;
     return factory.Create();
   }
 

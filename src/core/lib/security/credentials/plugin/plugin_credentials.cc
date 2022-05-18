@@ -60,12 +60,17 @@ std::string grpc_plugin_credentials::debug_string() {
   return debug_str;
 }
 
-namespace {
+// TODO(roth): Once we drop support for MSVC 2017, change this from
+// namespace "grpc_plugin_creds" to the anonymous namespace.
+// Until then, the current approach is required due to the following bug:
+// https://developercommunity.visualstudio.com/t/vc-cannot-use-a-const-char-as-non-type-template-ar/155480.
+namespace grpc_plugin_creds {
 constexpr char kTypeName[] = "Plugin";
-}  // namespace
+}  // namespace grpc_plugin_creds
 
 grpc_core::UniqueTypeName grpc_plugin_credentials::type() const {
-  static grpc_core::UniqueTypeName::Factory<kTypeName> factory;
+  static grpc_core::UniqueTypeName::Factory<grpc_plugin_creds::kTypeName>
+      factory;
   return factory.Create();
 }
 

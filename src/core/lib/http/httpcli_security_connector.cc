@@ -41,6 +41,14 @@
 
 namespace grpc_core {
 
+// TODO(roth): Once we drop support for MSVC 2017, change this from
+// namespace "httpcli_ssl" to the anonymous namespace.  Until then, the
+// current approach is required due to the following bug:
+// https://developercommunity.visualstudio.com/t/vc-cannot-use-a-const-char-as-non-type-template-ar/155480.
+namespace httpcli_ssl {
+constexpr char kHttpSslTypeName[] = "HttpRequestSSL";
+}  // namespace httpcli_ssl
+
 namespace {
 
 class grpc_httpcli_ssl_channel_security_connector final
@@ -151,10 +159,6 @@ httpcli_ssl_channel_security_connector_create(
   return c;
 }
 
-namespace {
-constexpr char kHttpSslTypeName[] = "HttpRequestSSL";
-}  // namespace
-
 class HttpRequestSSLCredentials : public grpc_channel_credentials {
  public:
   RefCountedPtr<grpc_channel_security_connector> create_security_connector(
@@ -183,7 +187,7 @@ class HttpRequestSSLCredentials : public grpc_channel_credentials {
   }
 
   UniqueTypeName type() const override {
-    static UniqueTypeName::Factory<kHttpSslTypeName> factory;
+    static UniqueTypeName::Factory<httpcli_ssl::kHttpSslTypeName> factory;
     return factory.Create();
   }
 

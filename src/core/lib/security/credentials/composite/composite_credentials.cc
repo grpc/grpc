@@ -41,12 +41,18 @@
 // grpc_composite_channel_credentials
 //
 
-namespace {
+// TODO(roth): Once we drop support for MSVC 2017, change this from
+// namespace "grpc_composite_credentials" to the anonymous namespace.
+// Until then, the current approach is required due to the following bug:
+// https://developercommunity.visualstudio.com/t/vc-cannot-use-a-const-char-as-non-type-template-ar/155480.
+namespace grpc_composite_credentials {
 constexpr char kTypeName[] = "Composite";
-}  // namespace
+}  // namespace grpc_composite_credentials
 
 grpc_core::UniqueTypeName grpc_composite_channel_credentials::type() const {
-  static grpc_core::UniqueTypeName::Factory<kTypeName> factory;
+  static grpc_core::UniqueTypeName::Factory<
+      grpc_composite_credentials::kTypeName>
+      factory;
   return factory.Create();
 }
 
@@ -66,7 +72,9 @@ grpc_composite_call_credentials::GetRequestMetadata(
 }
 
 grpc_core::UniqueTypeName grpc_composite_call_credentials::Type() {
-  static grpc_core::UniqueTypeName::Factory<kTypeName> factory;
+  static grpc_core::UniqueTypeName::Factory<
+      grpc_composite_credentials::kTypeName>
+      factory;
   return factory.Create();
 }
 

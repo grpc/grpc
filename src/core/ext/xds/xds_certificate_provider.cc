@@ -263,12 +263,18 @@ XdsCertificateProvider::~XdsCertificateProvider() {
   distributor_->SetWatchStatusCallback(nullptr);
 }
 
-namespace {
-constexpr char kTypeName[] = "Xds";
-}  // namespace
+// TODO(roth): Once we drop support for MSVC 2017, change this from
+// namespace "xds_certificate_provider" to the anonymous namespace.
+// Until then, the current approach is required due to the following bug:
+// https://developercommunity.visualstudio.com/t/vc-cannot-use-a-const-char-as-non-type-template-ar/155480.
+namespace xds_certificate_provider {
+constexpr char kXdsCertificateProviderTypeName[] = "Xds";
+}  // namespace xds_certificate_provider
 
 UniqueTypeName XdsCertificateProvider::type() const {
-  static UniqueTypeName::Factory<kTypeName> factory;
+  static UniqueTypeName::Factory<
+      xds_certificate_provider::kXdsCertificateProviderTypeName>
+      factory;
   return factory.Create();
 }
 

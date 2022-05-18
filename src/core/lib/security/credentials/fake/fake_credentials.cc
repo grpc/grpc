@@ -34,8 +34,16 @@
 
 /* -- Fake transport security credentials. -- */
 
-namespace {
+// TODO(roth): Once we drop support for MSVC 2017, change this from
+// namespace "grpc_fake_credentials" to the anonymous namespace.
+// Until then, the current approach is required due to the following bug:
+// https://developercommunity.visualstudio.com/t/vc-cannot-use-a-const-char-as-non-type-template-ar/155480.
+namespace grpc_fake_credentials {
 constexpr char kFakeTypeName[] = "Fake";
+constexpr char kMdTestTypeName[] = "MdOnlyTest";
+}  // namespace grpc_fake_credentials
+
+namespace {
 
 class grpc_fake_channel_credentials final : public grpc_channel_credentials {
  public:
@@ -49,7 +57,9 @@ class grpc_fake_channel_credentials final : public grpc_channel_credentials {
   }
 
   grpc_core::UniqueTypeName type() const override {
-    static grpc_core::UniqueTypeName::Factory<kFakeTypeName> factory;
+    static grpc_core::UniqueTypeName::Factory<
+        grpc_fake_credentials::kFakeTypeName>
+        factory;
     return factory.Create();
   }
 
@@ -69,7 +79,9 @@ class grpc_fake_server_credentials final : public grpc_server_credentials {
   }
 
   grpc_core::UniqueTypeName type() const override {
-    static grpc_core::UniqueTypeName::Factory<kFakeTypeName> factory;
+    static grpc_core::UniqueTypeName::Factory<
+        grpc_fake_credentials::kFakeTypeName>
+        factory;
     return factory.Create();
   }
 };
@@ -109,12 +121,10 @@ grpc_md_only_test_credentials::GetRequestMetadata(
   return grpc_core::Immediate(std::move(initial_metadata));
 }
 
-namespace {
-constexpr char kMdTestTypeName[] = "MdOnlyTest";
-}  // namespace
-
 grpc_core::UniqueTypeName grpc_md_only_test_credentials::Type() {
-  static grpc_core::UniqueTypeName::Factory<kMdTestTypeName> factory;
+  static grpc_core::UniqueTypeName::Factory<
+      grpc_fake_credentials::kMdTestTypeName>
+      factory;
   return factory.Create();
 }
 

@@ -29,9 +29,15 @@
 
 namespace grpc_core {
 
-namespace {
-
+// TODO(roth): Once we drop support for MSVC 2017, change this from
+// namespace "xds_credentials" to the anonymous namespace.
+// Until then, the current approach is required due to the following bug:
+// https://developercommunity.visualstudio.com/t/vc-cannot-use-a-const-char-as-non-type-template-ar/155480.
+namespace xds_credentials {
 constexpr char kTypeName[] = "Xds";
+}  // namespace xds_credentials
+
+namespace {
 
 bool XdsVerifySubjectAlternativeNames(
     const char* const* subject_alternative_names,
@@ -108,7 +114,7 @@ int XdsCertificateVerifier::CompareImpl(
 }
 
 UniqueTypeName XdsCertificateVerifier::type() const {
-  static UniqueTypeName::Factory<kTypeName> factory;
+  static UniqueTypeName::Factory<xds_credentials::kTypeName> factory;
   return factory.Create();
 }
 
@@ -188,7 +194,7 @@ XdsCredentials::create_security_connector(
 }
 
 UniqueTypeName XdsCredentials::Type() {
-  static UniqueTypeName::Factory<kTypeName> factory;
+  static UniqueTypeName::Factory<xds_credentials::kTypeName> factory;
   return factory.Create();
 }
 
@@ -229,7 +235,7 @@ XdsServerCredentials::create_security_connector(const grpc_channel_args* args) {
 }
 
 UniqueTypeName XdsServerCredentials::Type() {
-  static UniqueTypeName::Factory<kTypeName> factory;
+  static UniqueTypeName::Factory<xds_credentials::kTypeName> factory;
   return factory.Create();
 }
 

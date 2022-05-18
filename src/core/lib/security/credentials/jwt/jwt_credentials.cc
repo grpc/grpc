@@ -118,12 +118,17 @@ grpc_service_account_jwt_access_credentials::
   gpr_mu_init(&cache_mu_);
 }
 
-namespace {
+// TODO(roth): Once we drop support for MSVC 2017, change this from
+// namespace "grpc_jwt_credentials" to the anonymous namespace.
+// Until then, the current approach is required due to the following bug:
+// https://developercommunity.visualstudio.com/t/vc-cannot-use-a-const-char-as-non-type-template-ar/155480.
+namespace grpc_jwt_credentials {
 constexpr char kTypeName[] = "Jwt";
-}  // namespace
+}  // namespace grpc_jwt_credentials
 
 grpc_core::UniqueTypeName grpc_service_account_jwt_access_credentials::Type() {
-  static grpc_core::UniqueTypeName::Factory<kTypeName> factory;
+  static grpc_core::UniqueTypeName::Factory<grpc_jwt_credentials::kTypeName>
+      factory;
   return factory.Create();
 }
 

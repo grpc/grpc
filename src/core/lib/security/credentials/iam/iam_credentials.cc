@@ -56,12 +56,17 @@ grpc_google_iam_credentials::grpc_google_iam_credentials(
           "GoogleIAMCredentials{Token:%s,AuthoritySelector:%s}",
           token != nullptr ? "present" : "absent", authority_selector)) {}
 
-namespace {
+// TODO(roth): Once we drop support for MSVC 2017, change this from
+// namespace "grpc_iam_credentials" to the anonymous namespace.
+// Until then, the current approach is required due to the following bug:
+// https://developercommunity.visualstudio.com/t/vc-cannot-use-a-const-char-as-non-type-template-ar/155480.
+namespace grpc_iam_credentials {
 constexpr char kTypeName[] = "Iam";
-}  // namespace
+}  // namespace grpc_iam_credentials
 
 grpc_core::UniqueTypeName grpc_google_iam_credentials::Type() {
-  static grpc_core::UniqueTypeName::Factory<kTypeName> factory;
+  static grpc_core::UniqueTypeName::Factory<grpc_iam_credentials::kTypeName>
+      factory;
   return factory.Create();
 }
 

@@ -31,9 +31,15 @@
 #include "src/core/lib/security/credentials/tls/grpc_tls_certificate_verifier.h"
 #include "src/core/lib/security/security_connector/tls/tls_security_connector.h"
 
-namespace {
-
+// TODO(roth): Once we drop support for MSVC 2017, change this from
+// namespace "grpc_tls_credentials" to the anonymous namespace.
+// Until then, the current approach is required due to the following bug:
+// https://developercommunity.visualstudio.com/t/vc-cannot-use-a-const-char-as-non-type-template-ar/155480.
+namespace grpc_tls_credentials {
 constexpr char kTypeName[] = "Tls";
+}  // namespace grpc_tls_credentials
+
+namespace {
 
 bool CredentialOptionSanityCheck(grpc_tls_credentials_options* options,
                                  bool is_client) {
@@ -109,7 +115,8 @@ TlsCredentials::create_security_connector(
 }
 
 grpc_core::UniqueTypeName TlsCredentials::type() const {
-  static grpc_core::UniqueTypeName::Factory<kTypeName> factory;
+  static grpc_core::UniqueTypeName::Factory<grpc_tls_credentials::kTypeName>
+      factory;
   return factory.Create();
 }
 
@@ -134,7 +141,8 @@ TlsServerCredentials::create_security_connector(
 }
 
 grpc_core::UniqueTypeName TlsServerCredentials::type() const {
-  static grpc_core::UniqueTypeName::Factory<kTypeName> factory;
+  static grpc_core::UniqueTypeName::Factory<grpc_tls_credentials::kTypeName>
+      factory;
   return factory.Create();
 }
 

@@ -31,9 +31,13 @@
 #include "src/core/lib/surface/api_trace.h"
 #include "src/core/tsi/ssl_transport_security.h"
 
-namespace {
+// TODO(roth): Once we drop support for MSVC 2017, change this from
+// namespace "grpc_ssl_creds" to the anonymous namespace.
+// Until then, the current approach is required due to the following bug:
+// https://developercommunity.visualstudio.com/t/vc-cannot-use-a-const-char-as-non-type-template-ar/155480.
+namespace grpc_ssl_creds {
 constexpr char kTypeName[] = "Ssl";
-}  // namespace
+}  // namespace grpc_ssl_creds
 
 //
 // SSL Channel Credentials.
@@ -87,7 +91,8 @@ grpc_ssl_credentials::create_security_connector(
 }
 
 grpc_core::UniqueTypeName grpc_ssl_credentials::Type() {
-  static grpc_core::UniqueTypeName::Factory<kTypeName> factory;
+  static grpc_core::UniqueTypeName::Factory<grpc_ssl_creds::kTypeName>
+      factory;
   return factory.Create();
 }
 
@@ -194,7 +199,8 @@ grpc_ssl_server_credentials::create_security_connector(
 }
 
 grpc_core::UniqueTypeName grpc_ssl_server_credentials::Type() {
-  static grpc_core::UniqueTypeName::Factory<kTypeName> factory;
+  static grpc_core::UniqueTypeName::Factory<grpc_ssl_creds::kTypeName>
+      factory;
   return factory.Create();
 }
 

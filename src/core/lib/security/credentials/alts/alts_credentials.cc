@@ -32,9 +32,13 @@
 
 #define GRPC_ALTS_HANDSHAKER_SERVICE_URL "metadata.google.internal.:8080"
 
-namespace {
-constexpr char kAltsTypeName[] = "Alts";
-}  // namespace
+// TODO(roth): Once we drop support for MSVC 2017, change this from
+// namespace "grpc_alts_creds" to the anonymous namespace.
+// Until then, the current approach is required due to the following bug:
+// https://developercommunity.visualstudio.com/t/vc-cannot-use-a-const-char-as-non-type-template-ar/155480.
+namespace grpc_alts_creds {
+constexpr char kAltsCredentialsTypeName[] = "Alts";
+}  // namespace grpc_alts_creds
 
 grpc_alts_credentials::grpc_alts_credentials(
     const grpc_alts_credentials_options* options,
@@ -61,7 +65,9 @@ grpc_alts_credentials::create_security_connector(
 }
 
 grpc_core::UniqueTypeName grpc_alts_credentials::type() const {
-  static grpc_core::UniqueTypeName::Factory<kAltsTypeName> factory;
+  static grpc_core::UniqueTypeName::Factory<
+      grpc_alts_creds::kAltsCredentialsTypeName>
+      factory;
   return factory.Create();
 }
 
@@ -87,7 +93,9 @@ grpc_alts_server_credentials::~grpc_alts_server_credentials() {
 }
 
 grpc_core::UniqueTypeName grpc_alts_server_credentials::type() const {
-  static grpc_core::UniqueTypeName::Factory<kAltsTypeName> factory;
+  static grpc_core::UniqueTypeName::Factory<
+      grpc_alts_creds::kAltsCredentialsTypeName>
+      factory;
   return factory.Create();
 }
 

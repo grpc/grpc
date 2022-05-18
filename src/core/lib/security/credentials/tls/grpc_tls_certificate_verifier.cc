@@ -60,12 +60,16 @@ bool ExternalCertificateVerifier::Verify(
   return is_done;
 }
 
-namespace {
+// TODO(roth): Once we drop support for MSVC 2017, change this from
+// namespace "cert_verifier" to the anonymous namespace.
+// Until then, the current approach is required due to the following bug:
+// https://developercommunity.visualstudio.com/t/vc-cannot-use-a-const-char-as-non-type-template-ar/155480.
+namespace cert_verifier {
 constexpr char kExternalTypeName[] = "External";
-}  // namespace
+}  // namespace cert_verifier
 
 UniqueTypeName ExternalCertificateVerifier::type() const {
-  static UniqueTypeName::Factory<kExternalTypeName> factory;
+  static UniqueTypeName::Factory<cert_verifier::kExternalTypeName> factory;
   return factory.Create();
 }
 
@@ -97,12 +101,16 @@ void ExternalCertificateVerifier::OnVerifyDone(
 // NoOpCertificateVerifier
 //
 
-namespace {
+// TODO(roth): Once we drop support for MSVC 2017, change this from
+// namespace "cert_verifier" to the anonymous namespace.
+// Until then, the current approach is required due to the following bug:
+// https://developercommunity.visualstudio.com/t/vc-cannot-use-a-const-char-as-non-type-template-ar/155480.
+namespace cert_verifier {
 constexpr char kNoOpTypeName[] = "NoOp";
-}  // namespace
+}  // namespace cert_verifier
 
 UniqueTypeName NoOpCertificateVerifier::type() const {
-  static UniqueTypeName::Factory<kNoOpTypeName> factory;
+  static UniqueTypeName::Factory<cert_verifier::kNoOpTypeName> factory;
   return factory.Create();
 }
 
@@ -174,12 +182,16 @@ bool HostNameCertificateVerifier::Verify(
   return true;  // synchronous check
 }
 
-namespace {
+// TODO(roth): Once we drop support for MSVC 2017, change this from
+// namespace "cert_verifier" to the anonymous namespace.
+// Until then, the current approach is required due to the following bug:
+// https://developercommunity.visualstudio.com/t/vc-cannot-use-a-const-char-as-non-type-template-ar/155480.
+namespace cert_verifier {
 constexpr char kHostnameTypeName[] = "Hostname";
-}  // namespace
+}  // namespace cert_verifier
 
 UniqueTypeName HostNameCertificateVerifier::type() const {
-  static UniqueTypeName::Factory<kHostnameTypeName> factory;
+  static UniqueTypeName::Factory<cert_verifier::kHostnameTypeName> factory;
   return factory.Create();
 }
 
