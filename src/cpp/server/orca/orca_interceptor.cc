@@ -24,8 +24,7 @@
 namespace grpc {
 namespace experimental {
 
-void OrcaServerInterceptor::Intercept(
-    InterceptorBatchMethods* methods) {
+void OrcaServerInterceptor::Intercept(InterceptorBatchMethods* methods) {
   if (methods->QueryInterceptionHookPoint(
           InterceptionHookPoints::POST_RECV_INITIAL_METADATA)) {
     auto context = info_->server_context();
@@ -48,20 +47,17 @@ void OrcaServerInterceptor::Intercept(
   methods->Proceed();
 }
 
-Interceptor*
-OrcaServerInterceptorFactory::CreateServerInterceptor(
+Interceptor* OrcaServerInterceptorFactory::CreateServerInterceptor(
     ServerRpcInfo* info) {
   return new OrcaServerInterceptor(info);
 }
 
-void OrcaServerInterceptorFactory::Register(
-    grpc::ServerBuilder* builder) {
+void OrcaServerInterceptorFactory::Register(grpc::ServerBuilder* builder) {
   builder->internal_interceptor_creators_.push_back(
       absl::make_unique<OrcaServerInterceptorFactory>());
 }
 
-void EnableCallMetricRecording(
-    grpc::ServerBuilder* builder) {
+void EnableCallMetricRecording(grpc::ServerBuilder* builder) {
   OrcaServerInterceptorFactory::Register(builder);
 }
 

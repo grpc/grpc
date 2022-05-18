@@ -83,8 +83,9 @@ class CallMetricRecorder {
   CallMetricRecorder& RecordRequestCostMetric(string_ref name, double value);
 
  private:
-  internal::Mutex mu_;
   absl::optional<std::string> CreateSerializedReport();
+
+  internal::Mutex mu_;
   grpc_core::BackendMetricData* backend_metric_data_ ABSL_GUARDED_BY(&mu_);
   friend class experimental::OrcaServerInterceptor;
 };

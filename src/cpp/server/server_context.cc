@@ -266,7 +266,7 @@ ServerContextBase::~ServerContextBase() {
   if (default_reactor_used_.load(std::memory_order_relaxed)) {
     reinterpret_cast<Reactor*>(&default_reactor_)->~Reactor();
   }
-  if (call_metric_recorder_) {
+  if (call_metric_recorder_ != nullptr) {
     call_metric_recorder_->~CallMetricRecorder();
   }
 }

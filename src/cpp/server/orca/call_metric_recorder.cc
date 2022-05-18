@@ -26,33 +26,28 @@
 namespace grpc {
 namespace experimental {
 
-CallMetricRecorder::CallMetricRecorder(
-    grpc_core::Arena* arena) {
-  backend_metric_data_ = arena->New<grpc_core::BackendMetricData>();
-}
+CallMetricRecorder::CallMetricRecorder(grpc_core::Arena* arena)
+    : backend_metric_data_(arena->New<grpc_core::BackendMetricData>()) {}
 
 CallMetricRecorder::~CallMetricRecorder() {
   backend_metric_data_->~BackendMetricData();
 }
 
-CallMetricRecorder&
-CallMetricRecorder::RecordCpuUtilizationMetric(
+CallMetricRecorder& CallMetricRecorder::RecordCpuUtilizationMetric(
     double value) {
   internal::MutexLock lock(&mu_);
   backend_metric_data_->cpu_utilization = value;
   return *this;
 }
 
-CallMetricRecorder&
-CallMetricRecorder::RecordMemoryUtilizationMetric(
+CallMetricRecorder& CallMetricRecorder::RecordMemoryUtilizationMetric(
     double value) {
   internal::MutexLock lock(&mu_);
   backend_metric_data_->mem_utilization = value;
   return *this;
 }
 
-CallMetricRecorder&
-CallMetricRecorder::RecordUtilizationMetric(
+CallMetricRecorder& CallMetricRecorder::RecordUtilizationMetric(
     grpc::string_ref name, double value) {
   internal::MutexLock lock(&mu_);
   absl::string_view name_sv(name.data(), name.length());
@@ -60,8 +55,7 @@ CallMetricRecorder::RecordUtilizationMetric(
   return *this;
 }
 
-CallMetricRecorder&
-CallMetricRecorder::RecordRequestCostMetric(
+CallMetricRecorder& CallMetricRecorder::RecordRequestCostMetric(
     grpc::string_ref name, double value) {
   internal::MutexLock lock(&mu_);
   absl::string_view name_sv(name.data(), name.length());
@@ -72,10 +66,10 @@ CallMetricRecorder::RecordRequestCostMetric(
 absl::optional<std::string> CallMetricRecorder::CreateSerializedReport() {
   upb::Arena arena;
   internal::MutexLock lock(&mu_);
-  bool has_data = backend_metric_data_->cpu_utilization != 0 ||
-              backend_metric_data_->mem_utilization != 0 ||
-              !backend_metric_data_->utilization.empty() ||
-              !backend_metric_data_->request_cost.empty();
+  bool has_data = backend_metric_data_->cpu_utilization != -1 ||
+                  backend_metric_data_->mem_utilization != -1 ||
+                  !backend_metric_data_->utilization.empty() ||
+                  !backend_metric_data_->request_cost.empty();
   if (!has_data) {
     return absl::nullopt;
   }

@@ -30,10 +30,10 @@ namespace grpc_core {
 // Represents backend metrics reported by the backend to the client.
 struct BackendMetricData {
   /// CPU utilization expressed as a fraction of available CPU resources.
-  double cpu_utilization;
+  double cpu_utilization = -1;
   /// Memory utilization expressed as a fraction of available memory
   /// resources.
-  double mem_utilization;
+  double mem_utilization = -1;
   /// Application-specific requests cost metrics.  Metric names are
   /// determined by the application.  Each value is an absolute cost
   /// (e.g. 3487 bytes of storage) associated with the request.
