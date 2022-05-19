@@ -2477,9 +2477,12 @@ class XdsClientResolverAttribute
   explicit XdsClientResolverAttribute(RefCountedPtr<XdsClient> xds_client)
       : xds_client_(std::move(xds_client)) {}
 
-  static const char* Type() { return "xds_client"; }
+  static UniqueTypeName Type() {
+    static auto* kFactory = new UniqueTypeName::Factory("xds_client");
+    return kFactory->Create();
+  }
 
-  const char* type() const override { return Type(); }
+  UniqueTypeName type() const override { return Type(); }
 
   std::unique_ptr<AttributeInterface> Copy() const override {
     return absl::make_unique<XdsClientResolverAttribute>(xds_client_);
