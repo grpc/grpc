@@ -14,12 +14,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import collections
 from doctest import SKIP
 import os
 import re
-import sys
-import collections
 import subprocess
+import sys
 
 # find our home
 ROOT = os.path.abspath(os.path.join(os.path.dirname(sys.argv[0]), '../..'))
