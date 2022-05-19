@@ -57,8 +57,7 @@ void Sleep::State::OnTimer() {
   Unref();
 }
 
-// TODO(hork): refactor gpr_base to allow a separate time_util target. The
-// dependency cycles are a mess.
+// TODO(hork): refactor gpr_base to allow a separate time_util target.
 namespace {
 absl::Time ToAbslTime(Timestamp timestamp) {
   if (timestamp == Timestamp::InfFuture()) return absl::InfiniteFuture();
