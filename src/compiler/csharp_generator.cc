@@ -801,7 +801,7 @@ std::string GetServices(const FileDescriptor* file, bool generate_client,
       out.PrintRaw(leading_comments.c_str());
     }
 
-    out.Print("#pragma warning disable 0414, 1591\n");
+    out.Print("#pragma warning disable 0414, 1591, 8981\n");
 
     out.Print("#region Designer generated code\n");
     out.Print("\n");

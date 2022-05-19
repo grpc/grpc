@@ -16,16 +16,24 @@
  *
  */
 
+#include <algorithm>
+#include <memory>
+#include <string>
+#include <vector>
+
+#include "absl/memory/memory.h"
 #include "upb/upb.hpp"
 
-#include <grpc/grpc_security.h>
+#include <grpc/grpc_security_constants.h>
 #include <grpc/support/log.h>
 #include <grpcpp/security/alts_context.h>
 #include <grpcpp/security/alts_util.h>
+#include <grpcpp/security/auth_context.h>
+#include <grpcpp/support/config.h>
+#include <grpcpp/support/status.h>
+#include <grpcpp/support/string_ref.h>
 
-#include "src/core/lib/gprpp/memory.h"
 #include "src/core/tsi/alts/handshaker/alts_tsi_handshaker.h"
-#include "src/cpp/common/secure_auth_context.h"
 #include "src/proto/grpc/gcp/altscontext.upb.h"
 
 namespace grpc {

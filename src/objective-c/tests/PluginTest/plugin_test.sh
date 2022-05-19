@@ -1,5 +1,5 @@
 #!/bin/bash
-# Copyright 2015 gRPC authors.
+# Copyright 2022 The gRPC Authors
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -13,36 +13,28 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# Don't run this script standalone. Instead, run from the repository root:
-# ./tools/run_tests/run_tests.py -l objc
+# Run this script via bazel test
+# It expects that protoc and grpc_objective_c_plugin have already been built.
 
 set -ev
 
-cd $(dirname $0)
+# protoc and grpc_objective_c_plugin binaries are supplied as "data" in bazel
+PROTOC=./external/com_google_protobuf/protoc
+PLUGIN=./src/compiler/grpc_objective_c_plugin
 
-# Run the tests server.
-
-ROOT_DIR=../../..
-BAZEL=$ROOT_DIR/tools/bazel
-PROTOC=$ROOT_DIR/bazel-bin/external/com_google_protobuf/protoc
-PLUGIN=$ROOT_DIR/bazel-bin/src/compiler/grpc_objective_c_plugin
-
-[ -f $PROTOC ] && [ -f $PLUGIN ] || {
-    BAZEL build @com_google_protobuf//:protoc //src/compiler:grpc_objective_c_plugin
-}
-
-rm -rf PluginTest/*pb*
+PROTO_OUT=./proto_out
+rm -rf ${PROTO_OUT}
+mkdir -p ${PROTO_OUT}
 
 $PROTOC \
     --plugin=protoc-gen-grpc=$PLUGIN \
-    --objc_out=PluginTest \
-    --grpc_out=PluginTest \
-    -I PluginTest \
-    -I ../../../third_party/protobuf/src \
-    PluginTest/*.proto
+    --objc_out=${PROTO_OUT} \
+    --grpc_out=${PROTO_OUT} \
+    -I src/objective-c/tests/PluginTest \
+    src/objective-c/tests/PluginTest/*.proto
 
 # Verify the output proto filename
-[ -e ./PluginTest/TestDashFilename.pbrpc.h ] || {
+[ -e ${PROTO_OUT}/TestDashFilename.pbrpc.h ] || {
     echo >&2 "protoc outputs wrong filename."
     exit 1
 }
@@ -51,13 +43,13 @@ $PROTOC \
 # Also, the way they are written, they need one extra command to run in order to
 # clear $? after they run (see end of this script)
 # Verify names of the imported protos in generated code don't contain dashes.
-[ "`cat PluginTest/TestDashFilename.pbrpc.h |
+[ "`cat ${PROTO_OUT}/TestDashFilename.pbrpc.h |
     egrep '#import ".*\.pb(objc|rpc)\.h"$' |
     egrep '-'`" ] && {
     echo >&2 "protoc generated import with wrong filename."
     exit 1
 }
-[ "`cat PluginTest/TestDashFilename.pbrpc.m |
+[ "`cat ${PROTO_OUT}/TestDashFilename.pbrpc.m |
     egrep '#import ".*\.pb(objc|rpc)\.h"$' |
     egrep '-'`" ] && {
     echo >&2 "protoc generated import with wrong filename."

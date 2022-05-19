@@ -802,7 +802,7 @@ void XdsClient::ChannelState::AdsCallState::AdsResponseParser::ParseResource(
   }
   // Check the resource name.
   auto resource_name =
-      XdsClient::ParseXdsResourceName(result->name, result_.type);
+      xds_client()->ParseXdsResourceName(result->name, result_.type);
   if (!resource_name.ok()) {
     result_.errors.emplace_back(absl::StrCat(
         "resource index ", idx, ": Cannot parse xDS resource name \"",
@@ -1802,6 +1802,7 @@ XdsClient::XdsClient(std::unique_ptr<XdsBootstrap> bootstrap,
       bootstrap_(std::move(bootstrap)),
       args_(ModifyChannelArgs(args)),
       request_timeout_(GetRequestTimeout(args)),
+      xds_federation_enabled_(XdsFederationEnabled()),
       interested_parties_(grpc_pollset_set_create()),
       certificate_provider_store_(MakeOrphanable<CertificateProviderStore>(
           bootstrap_->certificate_providers())),
@@ -1942,6 +1943,7 @@ void XdsClient::CancelResourceWatch(const XdsResourceType* type,
   // authority_state_map_, so we check both, just to be safe.
   invalid_watchers_.erase(watcher);
   // Find authority.
+  if (!resource_name.ok()) return;
   auto authority_it = authority_state_map_.find(resource_name->authority);
   if (authority_it == authority_state_map_.end()) return;
   AuthorityState& authority_state = authority_it->second;
@@ -1994,7 +1996,7 @@ absl::StatusOr<XdsClient::XdsResourceName> XdsClient::ParseXdsResourceName(
     absl::string_view name, const XdsResourceType* type) {
   // Old-style names use the empty string for authority.
   // authority is prefixed with "old:" to indicate that it's an old-style name.
-  if (!absl::StartsWith(name, "xdstp:")) {
+  if (!xds_federation_enabled_ || !absl::StartsWith(name, "xdstp:")) {
     return XdsResourceName{"old:", {std::string(name), {}}};
   }
   // New style name.  Parse URI.

@@ -16,9 +16,14 @@
  *
  */
 
+#include <chrono>
+#include <cstdint>
+
+#include <grpc/impl/codegen/gpr_types.h>
 #include <grpc/support/time.h>
-#include <grpcpp/support/config.h>
 #include <grpcpp/support/time.h>
+
+// IWYU pragma: no_include <ratio>
 
 using std::chrono::duration_cast;
 using std::chrono::high_resolution_clock;
