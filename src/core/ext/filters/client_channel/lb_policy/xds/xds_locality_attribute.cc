@@ -20,6 +20,9 @@
 
 namespace grpc_core {
 
-const char* XdsLocalityAttribute::Type() { return "xds_locality_name"; }
+UniqueTypeName XdsLocalityAttribute::Type() {
+  static auto* kFactory = new UniqueTypeName::Factory("xds_locality_name");
+  return kFactory->Create();
+}
 
 }  // namespace grpc_core

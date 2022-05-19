@@ -101,9 +101,9 @@ class ServerAddressWeightAttribute
 
   uint32_t weight() const { return weight_; }
 
-  static const char* Type();
+  static UniqueTypeName Type();
 
-  const char* type() const override { return Type(); }
+  UniqueTypeName type() const override { return Type(); }
 
   std::unique_ptr<AttributeInterface> Copy() const override {
     return absl::make_unique<ServerAddressWeightAttribute>(weight_);

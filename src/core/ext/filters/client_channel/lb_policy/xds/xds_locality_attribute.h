@@ -36,9 +36,9 @@ class XdsLocalityAttribute : public ResolverAttributeMap::AttributeInterface {
   explicit XdsLocalityAttribute(RefCountedPtr<XdsLocalityName> locality_name)
       : locality_name_(std::move(locality_name)) {}
 
-  static const char* Type();
+  static UniqueTypeName Type();
 
-  const char* type() const override { return Type(); }
+  UniqueTypeName type() const override { return Type(); }
 
   RefCountedPtr<XdsLocalityName> locality_name() const {
     return locality_name_;

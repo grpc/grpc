@@ -28,6 +28,7 @@
 #include "absl/strings/str_join.h"
 
 #include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/gprpp/unique_type_name.h"
 
 #define GRPC_ARG_HIERARCHICAL_PATH "grpc.internal.address.hierarchical_path"
 
@@ -41,9 +42,12 @@ class HierarchicalPathAttribute
   explicit HierarchicalPathAttribute(std::vector<std::string> path)
       : path_(std::move(path)) {}
 
-  static const char* Type() { return "hierarchical_path"; }
+  static UniqueTypeName Type() {
+    static auto* kFactory = new UniqueTypeName::Factory("hierarchical_path");
+    return kFactory->Create();
+  }
 
-  const char* type() const override { return Type(); }
+  UniqueTypeName type() const override { return Type(); }
 
   std::unique_ptr<AttributeInterface> Copy() const override {
     return absl::make_unique<HierarchicalPathAttribute>(path_);

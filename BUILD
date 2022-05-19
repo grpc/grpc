@@ -2652,6 +2652,7 @@ grpc_cc_library(
     visibility = ["@grpc:client_channel"],
     deps = [
         "gpr_platform",
+        "unique_type_name",
         "useful",
     ],
 )
@@ -3629,6 +3630,7 @@ grpc_cc_library(
         "grpc_base",
         "grpc_client_channel",
         "resolver_attributes",
+        "unique_type_name",
     ],
 )
 

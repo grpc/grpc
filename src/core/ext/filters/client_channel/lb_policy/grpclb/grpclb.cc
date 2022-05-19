@@ -294,9 +294,12 @@ class GrpcLb : public LoadBalancingPolicy {
         : lb_token_(std::move(lb_token)),
           client_stats_(std::move(client_stats)) {}
 
-    static const char* Type() { return "grpclb"; }
+    static UniqueTypeName Type() {
+      static auto* kFactory = new UniqueTypeName::Factory("grpclb");
+      return kFactory->Create();
+    }
 
-    const char* type() const override { return Type(); }
+    UniqueTypeName type() const override { return Type(); }
 
     std::unique_ptr<AttributeInterface> Copy() const override {
       return absl::make_unique<TokenAndClientStatsAttribute>(lb_token_,

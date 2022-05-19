@@ -111,8 +111,9 @@ std::string ServerAddress::ToString() const {
 // ServerAddressWeightAttribute
 //
 
-const char* ServerAddressWeightAttribute::Type() {
-  return "server_address_weight";
+UniqueTypeName ServerAddressWeightAttribute::Type() {
+  static auto* kFactory = new UniqueTypeName::Factory("server_address_weight");
+  return kFactory->Create();
 }
 
 std::string ServerAddressWeightAttribute::ToString() const {

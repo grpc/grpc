@@ -2201,9 +2201,13 @@ class ClientLbAddressTest : public ClientLbEnd2endTest {
    public:
     explicit Attribute(const std::string& str) : str_(str) {}
 
-    static const char* Type() { return "attribute_key"; }
+    static grpc_core::UniqueTypeName Type() {
+      static auto* kFactory =
+          new grpc_core::UniqueTypeName::Factory("attribute_key");
+      return kFactory->Create();
+    }
 
-    const char* type() const override { return Type(); }
+    grpc_core::UniqueTypeName type() const override { return Type(); }
 
     std::unique_ptr<AttributeInterface> Copy() const override {
       return absl::make_unique<Attribute>(str_);
@@ -2267,7 +2271,7 @@ TEST_F(ClientLbAddressTest, Basic) {
   for (const int port : GetServersPorts()) {
     expected.emplace_back(absl::StrCat(
         ipv6_only_ ? "[::1]:" : "127.0.0.1:", port,
-        " args={} lb_policy_attributes={", Attribute::Type(), "=foo}"));
+        " args={} lb_policy_attributes={", Attribute::Type().name(), "=foo}"));
   }
   EXPECT_EQ(addresses_seen(), expected);
 }

@@ -83,8 +83,8 @@ int ResolverAttributeMap::Compare(const ResolverAttributeMap& other) const {
 }
 
 const ResolverAttributeMap::AttributeInterface* ResolverAttributeMap::Get(
-    const char* key) const {
-  auto it = map_.find(key);
+    UniqueTypeName type) const {
+  auto it = map_.find(type);
   if (it == map_.end()) return nullptr;
   return it->second.get();
 }
@@ -93,12 +93,12 @@ void ResolverAttributeMap::Set(std::unique_ptr<AttributeInterface> attribute) {
   map_[attribute->type()] = std::move(attribute);
 }
 
-void ResolverAttributeMap::Remove(const char* key) { map_.erase(key); }
+void ResolverAttributeMap::Remove(UniqueTypeName type) { map_.erase(type); }
 
 std::string ResolverAttributeMap::ToString() const {
   std::vector<std::string> attrs;
   for (const auto& p : map_) {
-    attrs.emplace_back(absl::StrCat(p.first, "=", p.second->ToString()));
+    attrs.emplace_back(absl::StrCat(p.first.name(), "=", p.second->ToString()));
   }
   return absl::StrCat("{", absl::StrJoin(attrs, ", "), "}");
 }

@@ -30,8 +30,11 @@ namespace grpc_core {
 class IntegerAttribute : public ResolverAttributeMap::AttributeInterface {
  public:
   explicit IntegerAttribute(int value) : value_(value) {}
-  static const char* Type() { return "integer_attribute"; }
-  const char* type() const override { return Type(); }
+  static UniqueTypeName Type() {
+    static auto* kFactory = new UniqueTypeName::Factory("integer_attribute");
+    return kFactory->Create();
+  }
+  UniqueTypeName type() const override { return Type(); }
   std::unique_ptr<AttributeInterface> Copy() const override {
     return absl::make_unique<IntegerAttribute>(value_);
   }
@@ -54,8 +57,11 @@ class IntegerAttribute : public ResolverAttributeMap::AttributeInterface {
 class StringAttribute : public ResolverAttributeMap::AttributeInterface {
  public:
   explicit StringAttribute(std::string value) : value_(std::move(value)) {}
-  static const char* Type() { return "string_attribute"; }
-  const char* type() const override { return Type(); }
+  static UniqueTypeName Type() {
+    static auto* kFactory = new UniqueTypeName::Factory("string_attribute");
+    return kFactory->Create();
+  }
+  UniqueTypeName type() const override { return Type(); }
   std::unique_ptr<AttributeInterface> Copy() const override {
     return absl::make_unique<StringAttribute>(value_);
   }

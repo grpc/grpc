@@ -23,6 +23,8 @@
 #include <memory>
 #include <vector>
 
+#include "src/core/lib/gprpp/unique_type_name.h"
+
 namespace grpc_core {
 
 class ResolverAttributeMap {
@@ -34,8 +36,7 @@ class ResolverAttributeMap {
 
     // The type name for this attribute.
     // There can be only one attribute of a given type in a given AttributeMap.
-    // Attributes are keyed by the address of the string, not the value.
-    virtual const char* type() const = 0;
+    virtual UniqueTypeName type() const = 0;
 
     // Creates a copy of the attribute.
     virtual std::unique_ptr<AttributeInterface> Copy() const = 0;
@@ -62,21 +63,21 @@ class ResolverAttributeMap {
 
   int Compare(const ResolverAttributeMap& other) const;
 
-  // Returns the attribute for the specified key, or null if not present.
-  const AttributeInterface* Get(const char* key) const;
+  // Returns the attribute of the specified type, or null if not present.
+  const AttributeInterface* Get(UniqueTypeName type) const;
 
   // Adds attribute to the map.
   void Set(std::unique_ptr<AttributeInterface> attribute);
 
   // Removes the attribute from the map.
-  void Remove(const char* key);
+  void Remove(UniqueTypeName type);
 
   std::string ToString() const;
 
   bool empty() const { return map_.empty(); }
 
  private:
-  std::map<const char*, std::unique_ptr<AttributeInterface>> map_;
+  std::map<UniqueTypeName, std::unique_ptr<AttributeInterface>> map_;
 };
 
 }  // namespace grpc_core
