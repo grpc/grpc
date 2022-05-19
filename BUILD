@@ -932,11 +932,12 @@ grpc_cc_library(
 grpc_cc_library(
     name = "chunked_vector",
     hdrs = ["src/core/lib/gprpp/chunked_vector.h"],
-    external_deps = ["absl/utility"],
+    tags = ["grpc-autodeps"],
     deps = [
         "arena",
-        # TODO(ctiller): weaken this to just arena when that splits into its own target
         "gpr_base",
+        "gpr_platform",
+        "gpr_public_hdrs",
     ],
 )
 
@@ -945,6 +946,7 @@ grpc_cc_library(
     external_deps = ["absl/utility"],
     language = "c++",
     public_hdrs = ["src/core/lib/gprpp/capture.h"],
+    tags = ["grpc-autodeps"],
     deps = ["gpr_platform"],
 )
 
@@ -952,12 +954,15 @@ grpc_cc_library(
     name = "construct_destruct",
     language = "c++",
     public_hdrs = ["src/core/lib/gprpp/construct_destruct.h"],
+    tags = ["grpc-autodeps"],
+    deps = ["gpr_platform"],
 )
 
 grpc_cc_library(
     name = "cpp_impl_of",
     hdrs = ["src/core/lib/gprpp/cpp_impl_of.h"],
     language = "c++",
+    tags = ["grpc-autodeps"],
 )
 
 grpc_cc_library(
