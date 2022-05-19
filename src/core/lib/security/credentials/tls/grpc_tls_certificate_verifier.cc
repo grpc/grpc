@@ -60,6 +60,11 @@ bool ExternalCertificateVerifier::Verify(
   return is_done;
 }
 
+UniqueTypeName ExternalCertificateVerifier::type() const {
+  static auto* kFactory = new UniqueTypeName::Factory("External");
+  return kFactory->Create();
+}
+
 void ExternalCertificateVerifier::OnVerifyDone(
     grpc_tls_custom_verification_check_request* request, void* callback_arg,
     grpc_status_code status, const char* error_details) {
@@ -82,6 +87,15 @@ void ExternalCertificateVerifier::OnVerifyDone(
     }
     callback(return_status);
   }
+}
+
+//
+// NoOpCertificateVerifier
+//
+
+UniqueTypeName NoOpCertificateVerifier::type() const {
+  static auto* kFactory = new UniqueTypeName::Factory("NoOp");
+  return kFactory->Create();
 }
 
 //
@@ -142,13 +156,19 @@ bool HostNameCertificateVerifier::Verify(
     const char* common_name = request->peer_info.common_name;
     // We are using the target name sent from the client as a matcher to match
     // against identity name on the peer cert.
-    if (VerifySubjectAlternativeName(common_name, std::string(target_host))) {
+    if (common_name != nullptr &&
+        VerifySubjectAlternativeName(common_name, std::string(target_host))) {
       return true;  // synchronous check
     }
   }
   *sync_status = absl::Status(absl::StatusCode::kUnauthenticated,
                               "Hostname Verification Check failed.");
   return true;  // synchronous check
+}
+
+UniqueTypeName HostNameCertificateVerifier::type() const {
+  static auto* kFactory = new UniqueTypeName::Factory("Hostname");
+  return kFactory->Create();
 }
 
 }  // namespace grpc_core

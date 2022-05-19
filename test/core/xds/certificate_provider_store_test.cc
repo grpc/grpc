@@ -23,6 +23,7 @@
 #include <gmock/gmock.h>
 
 #include "src/core/ext/xds/certificate_provider_registry.h"
+#include "src/core/lib/gprpp/unique_type_name.h"
 #include "test/core/util/test_config.h"
 
 namespace grpc_core {
@@ -44,7 +45,10 @@ class FakeCertificateProvider : public grpc_tls_certificate_provider {
     return nullptr;
   }
 
-  const char* type() const override { return "fake"; }
+  UniqueTypeName type() const override {
+    static auto* kFactory = new UniqueTypeName::Factory("fake");
+    return kFactory->Create();
+  }
 
  private:
   int CompareImpl(const grpc_tls_certificate_provider* other) const override {

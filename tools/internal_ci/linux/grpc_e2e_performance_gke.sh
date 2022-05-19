@@ -60,6 +60,8 @@ DRIVER_POOL=drivers-ci
 WORKER_POOL_8CORE=workers-c2-8core-ci
 # c2-standard-30 is the closest machine spec to 32 core there is
 WORKER_POOL_32CORE=workers-c2-30core-ci
+# Prefix for log URLs in cnsviewer.
+LOG_URL_PREFIX="http://cnsviewer/placer/prod/home/kokoro-dedicated/build_artifacts/${KOKORO_BUILD_ARTIFACTS_SUBDIR}/github/grpc/"
 
 # Update go version.
 TEST_INFRA_GOVERSION=go1.17.1
@@ -86,6 +88,7 @@ buildConfigs() {
         -s client_pool="${pool}" -s server_pool="${pool}" \
         -s big_query_table="${table}" -s timeout_seconds=900 \
         -s prebuilt_image_prefix="${PREBUILT_IMAGE_PREFIX}" \
+        -s prebuilt_image_tag="${UNIQUE_IDENTIFIER}" \
         -a ci_buildNumber="${KOKORO_BUILD_NUMBER}" \
         -a ci_buildUrl="${CLOUD_LOGGING_URL}" \
         -a ci_jobName="${KOKORO_JOB_NAME}" \
@@ -93,7 +96,6 @@ buildConfigs() {
         -a ci_gitCommit_go="${GRPC_GO_GITREF}" \
         -a ci_gitCommit_java="${GRPC_JAVA_GITREF}" \
         -a ci_gitActualCommit="${KOKORO_GIT_COMMIT}" \
-        -s prebuilt_image_tag="${UNIQUE_IDENTIFIER}" \
         --prefix="${LOAD_TEST_PREFIX}" -u "${UNIQUE_IDENTIFIER}" -u "${pool}" \
         -a pool="${pool}" --category=scalable \
         --allow_client_language=c++ --allow_server_language=c++ \
@@ -129,6 +131,7 @@ time ../test-infra/bin/prepare_prebuilt_workers \
 time ../test-infra/bin/runner \
     -i "loadtest_with_prebuilt_workers_${WORKER_POOL_8CORE}.yaml" \
     -i "loadtest_with_prebuilt_workers_${WORKER_POOL_32CORE}.yaml" \
+    -log-url-prefix "${LOG_URL_PREFIX}" \
     -polling-interval 5s \
     -delete-successful-tests \
     -c "${WORKER_POOL_8CORE}:2" -c "${WORKER_POOL_32CORE}:2" \
