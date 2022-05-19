@@ -21,8 +21,6 @@
 #include <stdint.h>
 #include <time.h>
 
-#include "absl/time/clock.h"
-
 #include <grpc/support/log.h>
 #include <grpc/support/time.h>
 
