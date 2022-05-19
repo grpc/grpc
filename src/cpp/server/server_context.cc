@@ -16,44 +16,25 @@
  *
  */
 
-#include <assert.h>
-
+#include <algorithm>
 #include <atomic>
-#include <cstdlib>
-#include <functional>
-#include <map>
-#include <new>
-#include <string>
 #include <utility>
-#include <vector>
 
 #include <grpc/compression.h>
 #include <grpc/grpc.h>
-#include <grpc/impl/codegen/compression_types.h>
-#include <grpc/impl/codegen/gpr_types.h>
-#include <grpc/impl/codegen/grpc_types.h>
 #include <grpc/load_reporting.h>
-#include <grpc/status.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
-#include <grpc/support/time.h>
-#include <grpcpp/completion_queue.h>
 #include <grpcpp/impl/call.h>
-#include <grpcpp/impl/codegen/call_op_set.h>
-#include <grpcpp/impl/codegen/call_op_set_interface.h>
-#include <grpcpp/impl/codegen/callback_common.h>
-#include <grpcpp/impl/codegen/completion_queue_tag.h>
-#include <grpcpp/impl/codegen/interceptor_common.h>
-#include <grpcpp/impl/codegen/metadata_map.h>
+#include <grpcpp/impl/codegen/completion_queue.h>
+#include <grpcpp/impl/codegen/server_context.h>
 #include <grpcpp/impl/grpc_library.h>
-#include <grpcpp/server_context.h>
-#include <grpcpp/support/config.h>
-#include <grpcpp/support/interceptor.h>
 #include <grpcpp/support/server_callback.h>
-#include <grpcpp/support/server_interceptor.h>
+#include <grpcpp/support/time.h>
 
 #include "src/core/lib/gprpp/ref_counted.h"
 #include "src/core/lib/gprpp/sync.h"
+#include "src/core/lib/surface/call.h"
 
 namespace grpc {
 

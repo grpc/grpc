@@ -18,6 +18,9 @@
 
 #include "src/cpp/server/dynamic_thread_pool.h"
 
+#include <grpc/support/log.h>
+#include <grpcpp/impl/codegen/sync.h>
+
 #include "src/core/lib/gprpp/thd.h"
 
 namespace grpc {

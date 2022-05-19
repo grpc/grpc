@@ -21,10 +21,7 @@
 
 #include <grpc/support/port_platform.h>
 
-#include "src/core/lib/channel/channel_stack.h"
-#include "src/core/lib/channel/channel_stack_builder.h"
-#include "src/core/lib/iomgr/error.h"
-#include "src/cpp/common/channel_filter.h"
+#include "src/cpp/ext/filters/census/context.h"
 
 namespace grpc {
 

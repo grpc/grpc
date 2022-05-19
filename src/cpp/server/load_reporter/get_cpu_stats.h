@@ -21,8 +21,6 @@
 
 #include <grpc/impl/codegen/port_platform.h>
 
-#include <stdint.h>
-
 #include <utility>
 
 namespace grpc {
