@@ -2506,10 +2506,11 @@ grpc_cc_library(
         "src/core/lib/surface/channel_init.h",
     ],
     language = "c++",
+    tags = ["grpc-autodeps"],
     deps = [
         "channel_stack_builder",
         "channel_stack_type",
-        "gpr_base",
+        "gpr_platform",
     ],
 )
 
