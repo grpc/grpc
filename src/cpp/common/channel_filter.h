@@ -19,16 +19,30 @@
 #ifndef GRPCXX_CHANNEL_FILTER_H
 #define GRPCXX_CHANNEL_FILTER_H
 
+#include <stddef.h>
+#include <stdint.h>
+
 #include <functional>
-#include <vector>
+#include <new>
+#include <string>
+#include <utility>
 
 #include <grpc/grpc.h>
-#include <grpc/support/alloc.h>
-#include <grpcpp/impl/codegen/config.h>
+#include <grpc/impl/codegen/grpc_types.h>
+#include <grpc/support/atm.h>
+#include <grpcpp/support/config.h>
 
 #include "src/core/lib/channel/channel_stack.h"
-#include "src/core/lib/surface/channel_init.h"
+#include "src/core/lib/channel/channel_stack_builder.h"
+#include "src/core/lib/channel/context.h"
+#include "src/core/lib/gprpp/orphanable.h"
+#include "src/core/lib/iomgr/closure.h"
+#include "src/core/lib/iomgr/error.h"
+#include "src/core/lib/iomgr/polling_entity.h"
+#include "src/core/lib/surface/channel_stack_type.h"
+#include "src/core/lib/transport/byte_stream.h"
 #include "src/core/lib/transport/metadata_batch.h"
+#include "src/core/lib/transport/transport.h"
 
 /// An interface to define filters.
 ///

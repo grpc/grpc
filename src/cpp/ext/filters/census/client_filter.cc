@@ -20,18 +20,41 @@
 
 #include "src/cpp/ext/filters/census/client_filter.h"
 
+#include <stddef.h>
+#include <stdint.h>
+
+#include <algorithm>
 #include <string>
 #include <utility>
 #include <vector>
 
+#include "absl/status/status.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
+#include "absl/time/clock.h"
+#include "absl/time/time.h"
+#include "absl/types/optional.h"
 #include "opencensus/stats/stats.h"
-#include "opencensus/tags/context_util.h"
 #include "opencensus/tags/tag_key.h"
 #include "opencensus/tags/tag_map.h"
+#include "opencensus/trace/span.h"
+#include "opencensus/trace/span_context.h"
+#include "opencensus/trace/status_code.h"
 
-#include "src/core/lib/surface/call.h"
+#include <grpc/impl/codegen/gpr_types.h>
+#include <grpc/slice.h>
+#include <grpc/support/log.h>
+#include <grpcpp/support/config.h>
+
+#include "src/core/lib/channel/context.h"
+#include "src/core/lib/gprpp/sync.h"
+#include "src/core/lib/resource_quota/arena.h"
+#include "src/core/lib/slice/slice.h"
+#include "src/core/lib/slice/slice_refcount.h"
+#include "src/core/lib/transport/byte_stream.h"
+#include "src/core/lib/transport/metadata_batch.h"
+#include "src/core/lib/transport/transport.h"
+#include "src/cpp/ext/filters/census/context.h"
 #include "src/cpp/ext/filters/census/grpc_plugin.h"
 #include "src/cpp/ext/filters/census/measures.h"
 

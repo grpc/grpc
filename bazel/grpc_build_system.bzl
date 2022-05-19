@@ -77,7 +77,7 @@ def _update_visibility(visibility):
     if visibility == None:
         return None
 
-    # Visibility rules prefixed with '@grpc_' are used to flag different visibility rule
+    # Visibility rules prefixed with '@grpc:' are used to flag different visibility rule
     # classes upstream.
     PUBLIC = ["//visibility:public"]
     PRIVATE = ["//:__subpackages__"]
@@ -89,6 +89,7 @@ def _update_visibility(visibility):
         "alts_frame_protector": PRIVATE,
         "channelz": PRIVATE,
         "client_channel": PRIVATE,
+        "cli": PRIVATE,
         "debug_location": PRIVATE,
         "endpoint_tests": PRIVATE,
         "grpclb": PRIVATE,
@@ -407,7 +408,7 @@ def grpc_cc_test(name, srcs = [], deps = [], external_deps = [], args = [], data
             **test_args
         )
 
-def grpc_cc_binary(name, srcs = [], deps = [], external_deps = [], args = [], data = [], language = "C++", testonly = False, linkshared = False, linkopts = [], tags = [], features = []):
+def grpc_cc_binary(name, srcs = [], deps = [], external_deps = [], args = [], data = [], language = "C++", testonly = False, linkshared = False, linkopts = [], tags = [], features = [], visibility = None):
     """Generates a cc_binary for use in the gRPC repo.
 
     Args:
@@ -423,7 +424,9 @@ def grpc_cc_binary(name, srcs = [], deps = [], external_deps = [], args = [], da
       linkopts: linkopts to supply to the cc_binary.
       tags: Tags to apply to the target.
       features: features to be supplied to the cc_binary.
+      visibility: The visibility of the target.
     """
+    visibility = _update_visibility(visibility)
     copts = []
     if language.upper() == "C":
         copts = ["-std=c99"]
