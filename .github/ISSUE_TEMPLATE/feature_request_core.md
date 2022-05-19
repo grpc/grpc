@@ -1,8 +1,7 @@
 ---
 name: Request a gRPC Core feature
 about: Suggest an idea for this project
-labels: kind/enhancement, priority/P2, lang/core
-assignees: drfloob
+labels: kind/enhancement, priority/P2, lang/core, untriaged
 
 ---
 
