@@ -800,9 +800,8 @@ grpc_cc_library(
     name = "useful",
     hdrs = ["src/core/lib/gpr/useful.h"],
     language = "c++",
-    deps = [
-        "gpr_platform",
-    ],
+    tags = ["grpc-autodeps"],
+    deps = ["gpr_platform"],
 )
 
 grpc_cc_library(
