@@ -20,18 +20,21 @@ import re
 import sys
 import collections
 import subprocess
+import tempfile
 
 # find our home
 ROOT = os.path.abspath(os.path.join(os.path.dirname(sys.argv[0]), '../..'))
 os.chdir(ROOT)
 
 Vendor = collections.namedtuple('Vendor', ['name', 'score'])
-vendors = {}
+vendors = collections.defaultdict(list)
 consumes = {}
 no_update = set()
 buildozer_commands = []
 needs_codegen_base_src = set()
 
+# TODO(ctiller): ideally we wouldn't hardcode a bunch of paths here.
+# We can likely parse out BUILD files from dependencies to generate this index.
 EXTERNAL_DEPS = {
     'absl/base/attributes.h':
         'absl/base:core_headers',
@@ -239,7 +242,7 @@ def grpc_cc_library(name,
     if 'nofixdeps' in tags:
         score += 1000
     for hdr in hdrs + public_hdrs:
-        vendors.setdefault(hdr, []).append(Vendor(name, score))
+        vendors[hdr].append(Vendor(name, score))
     inc = set()
     for src in hdrs + public_hdrs + srcs:
         for line in open(src):
@@ -396,15 +399,13 @@ for library in sorted(consumes.keys()):
 
 if buildozer_commands:
     ok_statuses = (0, 3)
-    open('/tmp/grpc-buildozer-commands',
-         'w').write('\n'.join(buildozer_commands))
-    c = ['tools/distrib/buildozer.sh', '-f', '/tmp/grpc-buildozer-commands']
+    temp = tempfile.NamedTemporaryFile()
+    open(temp.name, 'w').write('\n'.join(buildozer_commands))
+    c = ['tools/distrib/buildozer.sh', '-f', temp.name]
     r = subprocess.call(c)
     if r not in ok_statuses:
         print('{} failed with status {}'.format(c, r))
         sys.exit(1)
-
-#  print(library, deps, external_deps)
 
 if error:
     sys.exit(1)
