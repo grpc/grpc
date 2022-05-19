@@ -26,8 +26,6 @@
 #include <grpc/support/log.h>
 #include <grpc/support/time.h>
 
-#include "src/core/lib/iomgr/exec_ctx.h"
-
 namespace grpc_core {
 
 gpr_timespec ToGprTimeSpec(absl::Duration duration) {
@@ -80,21 +78,6 @@ absl::Time ToAbslTime(gpr_timespec ts) {
     return absl::UnixEpoch() + absl::Seconds(rts.tv_sec) +
            absl::Nanoseconds(rts.tv_nsec);
   }
-}
-
-absl::Time ToAbslTime(Timestamp timestamp) {
-  if (timestamp == Timestamp::InfFuture()) return absl::InfiniteFuture();
-  if (timestamp == Timestamp::InfPast()) return absl::InfinitePast();
-  return absl::Now() +
-         absl::Milliseconds((timestamp - ExecCtx::Get()->Now()).millis());
-}
-
-absl::Duration ToAbslDuration(Duration duration) {
-  if (duration == Duration::Infinity()) return absl::InfiniteDuration();
-  if (duration == Duration::NegativeInfinity()) {
-    return -absl::InfiniteDuration();
-  }
-  return absl::Milliseconds(duration.millis());
 }
 
 }  // namespace grpc_core

@@ -19,7 +19,6 @@
 #include <grpc/event_engine/event_engine.h>
 
 #include "src/core/lib/event_engine/event_engine_factory.h"
-#include "src/core/lib/gprpp/time_util.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 
 namespace grpc_core {
@@ -57,6 +56,17 @@ void Sleep::State::OnTimer() {
   tmp_waker.Wakeup();
   Unref();
 }
+
+// TODO(hork): refactor gpr_base to allow a separate time_util target. The
+// dependency cycles are a mess.
+namespace {
+absl::Time ToAbslTime(Timestamp timestamp) {
+  if (timestamp == Timestamp::InfFuture()) return absl::InfiniteFuture();
+  if (timestamp == Timestamp::InfPast()) return absl::InfinitePast();
+  return absl::Now() +
+         absl::Milliseconds((timestamp - ExecCtx::Get()->Now()).millis());
+}
+}  // namespace
 
 Poll<absl::Status> Sleep::operator()() {
   MutexLock lock(&state_->mu);
