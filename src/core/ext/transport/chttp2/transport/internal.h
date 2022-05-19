@@ -496,7 +496,6 @@ struct grpc_chttp2_stream {
   bool* sent_trailing_metadata_op = nullptr;
   grpc_closure* send_trailing_metadata_finished = nullptr;
 
-  grpc_core::SliceBuffer* send_message;
   int64_t next_message_end_offset;
   int64_t flow_controlled_bytes_written = 0;
   int64_t flow_controlled_bytes_flowed = 0;
