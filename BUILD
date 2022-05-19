@@ -3176,6 +3176,7 @@ grpc_cc_library(
         "slice_refcount",
         "sockaddr_utils",
         "time",
+        "unique_type_name",
         "uri_parser",
         "useful",
     ],
@@ -3496,6 +3497,9 @@ grpc_cc_library(
     ],
     hdrs = [
         "src/core/ext/filters/client_channel/lb_policy/xds/xds_locality_attribute.h",
+    ],
+    external_deps = [
+        "absl/strings",
     ],
     language = "c++",
     deps = [

@@ -26,6 +26,7 @@
 #include "absl/memory/memory.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_join.h"
+#include "absl/strings/string_view.h"
 
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/gprpp/unique_type_name.h"

@@ -18,6 +18,8 @@
 
 #include "src/core/ext/filters/client_channel/lb_policy/xds/xds_locality_attribute.h"
 
+#include "absl/strings/string_view.h"
+
 namespace grpc_core {
 
 UniqueTypeName XdsLocalityAttribute::Type() {
