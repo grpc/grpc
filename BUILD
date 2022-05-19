@@ -812,12 +812,9 @@ grpc_cc_library(
     hdrs = [
         "src/core/lib/gprpp/examine_stack.h",
     ],
-    external_deps = [
-        "absl/types:optional",
-    ],
-    deps = [
-        "gpr_platform",
-    ],
+    external_deps = ["absl/types:optional"],
+    tags = ["grpc-autodeps"],
+    deps = ["gpr_platform"],
 )
 
 grpc_cc_library(
@@ -925,7 +922,11 @@ grpc_cc_library(
 grpc_cc_library(
     name = "gpr_tls",
     hdrs = ["src/core/lib/gpr/tls.h"],
-    deps = ["gpr_platform"],
+    tags = ["grpc-autodeps"],
+    deps = [
+        "gpr_platform",
+        "gpr_public_hdrs",
+    ],
 )
 
 grpc_cc_library(
