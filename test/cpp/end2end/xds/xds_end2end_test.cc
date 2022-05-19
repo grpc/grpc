@@ -1239,6 +1239,42 @@ TEST_P(XdsFederationTest, FederationServer) {
   WaitForAllBackends();
 }
 
+using XdsFederationDisabledTest = XdsEnd2endTest;
+
+TEST_P(XdsFederationDisabledTest, FederationDisabledWithNewStyleNames) {
+  const char* kNewRouteConfigName =
+      "xdstp://xds.example.com/envoy.config.route.v3.RouteConfiguration/"
+      "new_route_config_name";
+  const char* kNewClusterName =
+      "xdstp://xds.example.com/envoy.config.cluster.v3.Cluster/"
+      "cluster_name";
+  const char* kNewEdsResourceName =
+      "xdstp://xds.example.com/envoy.config.endpoint.v3.ClusterLoadAssignment/"
+      "edsservice_name";
+  InitClient();
+  CreateAndStartBackends(1);
+  EdsResourceArgs args({{"locality0", CreateEndpointsForBackends()}});
+  balancer_->ads_service()->SetEdsResource(
+      BuildEdsResource(args, kNewEdsResourceName));
+  // New cluster
+  Cluster new_cluster = default_cluster_;
+  new_cluster.set_name(kNewClusterName);
+  new_cluster.mutable_eds_cluster_config()->set_service_name(
+      kNewEdsResourceName);
+  balancer_->ads_service()->SetCdsResource(new_cluster);
+  // New RouteConfig
+  RouteConfiguration new_route_config = default_route_config_;
+  new_route_config.set_name(kNewRouteConfigName);
+  new_route_config.mutable_virtual_hosts(0)
+      ->mutable_routes(0)
+      ->mutable_route()
+      ->set_cluster(kNewClusterName);
+  SetListenerAndRouteConfiguration(balancer_.get(), default_listener_,
+                                   new_route_config);
+  // Channel should work.
+  CheckRpcSendOk();
+}
+
 using XdsFederationLoadReportingTest = XdsFederationTest;
 
 // Channel is created with URI "xds://xds.example.com/server.example.com".
@@ -12480,6 +12516,11 @@ INSTANTIATE_TEST_SUITE_P(
         XdsTestType()
             .set_bootstrap_source(XdsTestType::kBootstrapFromEnvVar)
             .set_enable_rds_testing()),
+    &XdsTestType::Name);
+
+INSTANTIATE_TEST_SUITE_P(
+    XdsTest, XdsFederationDisabledTest,
+    ::testing::Values(XdsTestType().set_enable_rds_testing()),
     &XdsTestType::Name);
 
 INSTANTIATE_TEST_SUITE_P(
