@@ -381,19 +381,26 @@ void GoogleCloud2ProdResolver::StartXdsResolver() {
       override_server != nullptr && strlen(override_server.get()) > 0
           ? override_server.get()
           : "directpath-pa.googleapis.com";
+  Json xds_server = Json::Array{
+      Json::Object{
+          {"server_uri", server_uri},
+          {"channel_creds",
+           Json::Array{
+               Json::Object{
+                   {"type", "google_default"},
+               },
+           }},
+          {"server_features", Json::Array{"xds_v3"}},
+      },
+  };
   Json bootstrap = Json::Object{
-      {"xds_servers",
-       Json::Array{
-           Json::Object{
-               {"server_uri", server_uri},
-               {"channel_creds",
-                Json::Array{
-                    Json::Object{
-                        {"type", "google_default"},
-                    },
-                }},
-               {"server_features", Json::Array{"xds_v3"}},
-           },
+      {"xds_servers", xds_server},
+      {"authorities",
+       Json::Object{
+           {"traffic-director-c2p.xds.googleapis.com",
+            Json::Object{
+                {"xds_servers", std::move(xds_server)},
+            }},
        }},
       {"node", std::move(node)},
   };
