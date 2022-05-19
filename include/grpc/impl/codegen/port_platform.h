@@ -207,6 +207,7 @@
 #define GPR_CPU_POSIX 1
 #define GPR_PLATFORM_STRING "asylo"
 #define GPR_GCC_SYNC 1
+#define GPR_POSIX_STAT 1
 #define GPR_POSIX_SYNC 1
 #define GPR_POSIX_STRING 1
 #define GPR_POSIX_LOG 1
