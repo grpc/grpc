@@ -626,7 +626,11 @@ class RetryFilter::CallData {
   // Note: We inline the cache for the first 3 send_message ops and use
   // dynamic allocation after that.  This number was essentially picked
   // at random; it could be changed in the future to tune performance.
-  absl::InlinedVector<SliceBuffer*, 3> send_messages_;
+  struct CachedSendMessage {
+    SliceBuffer* slices;
+    uint32_t flags;
+  };
+  absl::InlinedVector<CachedSendMessage, 3> send_messages_;
   // send_trailing_metadata
   bool seen_send_trailing_metadata_ = false;
   grpc_metadata_batch send_trailing_metadata_{arena_};
@@ -2023,11 +2027,12 @@ void RetryFilter::CallData::CallAttempt::BatchData::
         calld->chand_, calld, call_attempt_.get(),
         call_attempt_->started_send_message_count_);
   }
-  SliceBuffer* cache =
+  CachedSendMessage cache =
       calld->send_messages_[call_attempt_->started_send_message_count_];
   ++call_attempt_->started_send_message_count_;
   batch_.send_message = true;
-  batch_.payload->send_message.send_message = cache;
+  batch_.payload->send_message.send_message = cache.slices;
+  batch_.payload->send_message.flags = cache.flags;
 }
 
 void RetryFilter::CallData::CallAttempt::BatchData::
@@ -2364,9 +2369,9 @@ void RetryFilter::CallData::MaybeCacheSendOpsForBatch(PendingBatch* pending) {
   }
   // Set up cache for send_message ops.
   if (batch->send_message) {
-    SliceBuffer* cache = arena_->New<SliceBuffer>(
-        std::move(*batch->payload->send_message.send_message));
-    send_messages_.push_back(cache);
+    SliceBuffer* cache = arena_->New<SliceBuffer>(std::move(
+        *absl::exchange(batch->payload->send_message.send_message, nullptr)));
+    send_messages_.push_back({cache, batch->payload->send_message.flags});
   }
   // Save metadata batch for send_trailing_metadata ops.
   if (batch->send_trailing_metadata) {
@@ -2386,13 +2391,13 @@ void RetryFilter::CallData::FreeCachedSendInitialMetadata() {
 }
 
 void RetryFilter::CallData::FreeCachedSendMessage(size_t idx) {
-  if (send_messages_[idx] != nullptr) {
+  if (send_messages_[idx].slices != nullptr) {
     if (GRPC_TRACE_FLAG_ENABLED(grpc_retry_trace)) {
       gpr_log(GPR_INFO,
               "chand=%p calld=%p: destroying send_messages[%" PRIuPTR "]",
               chand_, this, idx);
     }
-    absl::exchange(send_messages_[idx], nullptr)->~SliceBuffer();
+    Destruct(absl::exchange(send_messages_[idx].slices, nullptr));
   }
 }
 

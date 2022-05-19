@@ -55,7 +55,7 @@ class SliceBuffer {
   SliceBuffer(SliceBuffer&& other) noexcept
       : slice_buffer_(other.slice_buffer_) {
     grpc_slice_buffer_init(&slice_buffer_);
-    grpc_slice_buffer_move_into(&slice_buffer_, &other.slice_buffer_);
+    grpc_slice_buffer_swap(&slice_buffer_, &other.slice_buffer_);
   }
   /// Upon destruction, the underlying raw slice buffer is cleaned out and all
   /// slices are unreffed.
