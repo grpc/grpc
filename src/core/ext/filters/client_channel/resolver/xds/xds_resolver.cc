@@ -44,7 +44,7 @@
 #include "absl/types/variant.h"
 #include "re2/re2.h"
 
-#include "src/core/lib/resolver/server_address.h"
+#include "src/core/lib/resolver/resolver_attributes.h"
 
 #define XXH_INLINE_ALL
 #include "xxhash.h"
@@ -68,7 +68,6 @@
 #include "src/core/lib/channel/status_util.h"
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/debug/trace.h"
-#include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/dual_ref_counted.h"
 #include "src/core/lib/gprpp/orphanable.h"

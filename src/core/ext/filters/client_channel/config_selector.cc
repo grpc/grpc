@@ -19,13 +19,16 @@
 #include "src/core/ext/filters/client_channel/config_selector.h"
 
 #include <memory>
+#include <string>
 
+#include "absl/memory/memory.h"
 #include "absl/strings/str_format.h"
+#include "absl/strings/string_view.h"
 
-#include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/gpr/useful.h"
+#include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
-#include "src/core/lib/resolver/server_address.h"
+#include "src/core/lib/gprpp/unique_type_name.h"
 
 namespace grpc_core {
 

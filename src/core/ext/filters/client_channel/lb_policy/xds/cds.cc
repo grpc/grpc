@@ -61,6 +61,7 @@
 #include "src/core/lib/iomgr/work_serializer.h"
 #include "src/core/lib/json/json.h"
 #include "src/core/lib/matchers/matchers.h"
+#include "src/core/lib/resolver/resolver_attributes.h"
 #include "src/core/lib/resolver/server_address.h"
 #include "src/core/lib/security/credentials/credentials.h"
 #include "src/core/lib/security/credentials/tls/grpc_tls_certificate_distributor.h"

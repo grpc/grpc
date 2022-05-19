@@ -21,6 +21,7 @@
 
 #include <string.h>
 
+#include <memory>
 #include <utility>
 #include <vector>
 
@@ -32,7 +33,7 @@
 #include "src/core/lib/gprpp/ref_counted.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/iomgr/error.h"
-#include "src/core/lib/resolver/server_address.h"
+#include "src/core/lib/resolver/resolver_attributes.h"
 #include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/service_config/service_config.h"
 #include "src/core/lib/service_config/service_config_call_data.h"
