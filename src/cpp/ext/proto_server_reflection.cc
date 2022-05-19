@@ -21,11 +21,10 @@
 #include <unordered_set>
 #include <vector>
 
-#include <google/protobuf/descriptor.h>
-
 #include <grpcpp/grpcpp.h>
 #include <grpcpp/support/interceptor.h>
-#include <grpcpp/support/status_code_enum.h>
+
+// IWYU pragma: no_include <google/protobuf/descriptor.h>
 
 using grpc::Status;
 using grpc::StatusCode;
