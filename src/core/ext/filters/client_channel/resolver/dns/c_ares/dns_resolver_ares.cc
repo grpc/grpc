@@ -52,6 +52,7 @@
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/iomgr_fwd.h"
+#include "src/core/lib/iomgr/pollset_set.h"
 #include "src/core/lib/iomgr/resolved_address.h"
 #include "src/core/lib/resolver/resolver.h"
 #include "src/core/lib/resolver/resolver_factory.h"
@@ -373,6 +374,7 @@ class AresDNSResolver : public DNSResolver {
         : name_(std::string(name)),
           default_port_(std::string(default_port)),
           interested_parties_(interested_parties),
+          pollset_set_(grpc_pollset_set_create()),
           on_resolve_address_done_(std::move(on_resolve_address_done)),
           completed_(false),
           resolver_(resolver),
@@ -381,9 +383,10 @@ class AresDNSResolver : public DNSResolver {
       GRPC_CLOSURE_INIT(&on_dns_lookup_done_, OnDnsLookupDone, this,
                         grpc_schedule_on_exec_ctx);
       MutexLock lock(&mu_);
+      grpc_pollset_set_add_pollset_set(pollset_set_, interested_parties);
       ares_request_ = std::unique_ptr<grpc_ares_request>(grpc_dns_lookup_ares(
-          /*dns_server=*/"", name_.c_str(), default_port_.c_str(),
-          interested_parties_, &on_dns_lookup_done_, &addresses_,
+          /*dns_server=*/"", name_.c_str(), default_port_.c_str(), pollset_set_,
+          &on_dns_lookup_done_, &addresses_,
           /*balancer_addresses=*/nullptr, /*service_config_json=*/nullptr,
           GRPC_DNS_ARES_DEFAULT_QUERY_TIMEOUT_MS));
       GRPC_CARES_TRACE_LOG("AresRequest:%p Start ares_request_:%p", this,
@@ -394,17 +397,18 @@ class AresDNSResolver : public DNSResolver {
       GRPC_CARES_TRACE_LOG("AresRequest:%p dtor ares_request_:%p", this,
                            ares_request_.get());
       resolver_->UnregisterRequest(task_handle());
+      grpc_pollset_set_destroy(pollset_set_);
     }
 
     bool Cancel() {
       MutexLock lock(&mu_);
       GRPC_CARES_TRACE_LOG("AresRequest:%p Cancel ares_request_:%p", this,
                            ares_request_.get());
-      // Cancelling the same lookup twice is a bug.
       if (completed_) return false;
       // OnDnsLookupDone will still be run
       grpc_cancel_ares_request(ares_request_.get());
       completed_ = true;
+      grpc_pollset_set_del_pollset_set(pollset_set_, interested_parties_);
       return true;
     }
 
@@ -423,9 +427,7 @@ class AresDNSResolver : public DNSResolver {
       std::vector<grpc_resolved_address> resolved_addresses;
       {
         MutexLock lock(&request->mu_);
-        if (request->completed_) {
-          return;
-        }
+        if (request->completed_) return;
         request->completed_ = true;
         if (request->addresses_ != nullptr) {
           resolved_addresses.reserve(request->addresses_->size());
@@ -434,6 +436,8 @@ class AresDNSResolver : public DNSResolver {
           }
         }
       }
+      grpc_pollset_set_del_pollset_set(request->pollset_set_,
+                                       request->interested_parties_);
       if (error != GRPC_ERROR_NONE) {
         request->on_resolve_address_done_(grpc_error_to_absl_status(error));
         return;
@@ -450,6 +454,9 @@ class AresDNSResolver : public DNSResolver {
     const std::string default_port_;
     // parties interested in our I/O
     grpc_pollset_set* const interested_parties_;
+    // locally owned pollset_set, required to support cancellation of requests
+    // while ares still needs a valid pollset_set.
+    grpc_pollset_set* pollset_set_;
     // user-provided completion callback
     const std::function<void(
         absl::StatusOr<std::vector<grpc_resolved_address>>)>
@@ -500,6 +507,9 @@ class AresDNSResolver : public DNSResolver {
     MutexLock lock(&mu_);
     if (!open_requests_.contains(handle)) {
       // Unknown request, possibly completed already, or an invalid handle.
+      GRPC_CARES_TRACE_LOG(
+          "AresDNSResolver:%p attempt to cancel unknown TaskHandle:%s", this,
+          HandleToString(handle).c_str());
       return false;
     }
     auto* request = reinterpret_cast<AresRequest*>(handle.keys[0]);
@@ -518,7 +528,8 @@ class AresDNSResolver : public DNSResolver {
   // the previous default DNS resolver, used to delegate blocking DNS calls to
   DNSResolver* default_resolver_ = GetDNSResolver();
   Mutex mu_;
-  LookupTaskHandleSet open_requests_ ABSL_GUARDED_BY(mu_);
+  grpc_event_engine::experimental::LookupTaskHandleSet open_requests_
+      ABSL_GUARDED_BY(mu_);
   intptr_t aba_token_ ABSL_GUARDED_BY(mu_) = 0;
 };
 

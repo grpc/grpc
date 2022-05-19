@@ -30,7 +30,6 @@
 
 #include "src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb.h"
 #include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/channel/handshaker.h"
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gprpp/host_port.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
@@ -39,6 +38,7 @@
 #include "src/core/lib/security/credentials/credentials.h"
 #include "src/core/lib/security/credentials/fake/fake_credentials.h"
 #include "src/core/lib/security/transport/security_handshaker.h"
+#include "src/core/lib/transport/handshaker.h"
 #include "src/core/tsi/fake_transport_security.h"
 
 namespace {

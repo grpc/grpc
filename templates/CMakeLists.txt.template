@@ -268,12 +268,12 @@
     set(CMAKE_C_STANDARD 99)
   endif()
 
-  # Add c++11 flags
+  # Add c++14 flags
   if (NOT DEFINED CMAKE_CXX_STANDARD)
-    set(CMAKE_CXX_STANDARD 11)
+    set(CMAKE_CXX_STANDARD 14)
   else()
-    if (CMAKE_CXX_STANDARD LESS 11)
-      message(FATAL_ERROR "CMAKE_CXX_STANDARD is less than 11, please specify at least SET(CMAKE_CXX_STANDARD 11)")
+    if (CMAKE_CXX_STANDARD LESS 14)
+      message(FATAL_ERROR "CMAKE_CXX_STANDARD is less than 14, please specify at least SET(CMAKE_CXX_STANDARD 14)")
     endif()
   endif()
   if (NOT DEFINED CMAKE_CXX_STANDARD_REQUIRED)

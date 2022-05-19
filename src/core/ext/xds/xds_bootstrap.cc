@@ -44,12 +44,6 @@
 
 namespace grpc_core {
 
-namespace {
-
-const absl::string_view kServerFeatureXdsV3 = "xds_v3";
-const absl::string_view kServerFeatureIgnoreResourceDeletion =
-    "ignore_resource_deletion";
-
 // TODO(donnadionne): check to see if federation is enabled, this will be
 // removed once federation is fully integrated and enabled by default.
 bool XdsFederationEnabled() {
@@ -59,6 +53,12 @@ bool XdsFederationEnabled() {
   gpr_free(value);
   return parse_succeeded && parsed_value;
 }
+
+namespace {
+
+const absl::string_view kServerFeatureXdsV3 = "xds_v3";
+const absl::string_view kServerFeatureIgnoreResourceDeletion =
+    "ignore_resource_deletion";
 
 grpc_error_handle ParseChannelCreds(const Json::Object& json, size_t idx,
                                     XdsBootstrap::XdsServer* server) {

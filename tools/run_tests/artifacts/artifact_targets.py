@@ -378,7 +378,7 @@ class ProtocArtifact:
                     environ=environ)
             else:
                 environ[
-                    'CXXFLAGS'] += ' -std=c++11 -stdlib=libc++ %s' % _MACOS_COMPAT_FLAG
+                    'CXXFLAGS'] += ' -std=c++14 -stdlib=libc++ %s' % _MACOS_COMPAT_FLAG
                 return create_jobspec(
                     self.name,
                     ['tools/run_tests/artifacts/build_artifact_protoc.sh'],
@@ -492,7 +492,6 @@ def targets():
         RubyArtifact('linux', 'x86-linux', presubmit=True),
         RubyArtifact('linux', 'x86_64-darwin', presubmit=True),
         RubyArtifact('linux', 'arm64-darwin', presubmit=True),
-        RubyArtifact('macos', 'darwin', presubmit=True),
         PHPArtifact('linux', 'x64', presubmit=True),
         PHPArtifact('macos', 'x64', presubmit=True),
     ])

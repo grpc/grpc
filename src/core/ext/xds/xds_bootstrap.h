@@ -37,6 +37,8 @@
 
 namespace grpc_core {
 
+bool XdsFederationEnabled();
+
 class XdsClient;
 
 class XdsBootstrap {

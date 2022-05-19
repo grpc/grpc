@@ -11,13 +11,15 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+
 #include <grpc/support/port_platform.h>
 
+#include <string.h>
+
 #include <grpc/event_engine/event_engine.h>
-#include <grpc/event_engine/port.h>
 #include <grpc/support/log.h>
 
-#include "src/core/lib/gprpp/sync.h"
+// IWYU pragma: no_include <sys/socket.h>
 
 namespace grpc_event_engine {
 namespace experimental {

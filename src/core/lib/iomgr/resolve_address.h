@@ -58,6 +58,8 @@ class DNSResolver {
   // implementations must not invoke \a on_done inline from the call site that
   // starts the request. The DNSCallbackExecCtxScheduler utility may help
   // address this.
+  //
+  // \a interested_parties may be deleted after a request is cancelled.
   virtual TaskHandle ResolveName(
       absl::string_view name, absl::string_view default_port,
       grpc_pollset_set* interested_parties,
