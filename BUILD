@@ -1146,6 +1146,9 @@ grpc_cc_library(
     hdrs = [
         "src/core/lib/promise/sleep.h",
     ],
+    external_deps = [
+        "absl/time",
+    ],
     deps = [
         "activity",
         "default_event_engine_factory_hdrs",
