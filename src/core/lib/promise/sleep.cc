@@ -16,6 +16,9 @@
 
 #include "src/core/lib/promise/sleep.h"
 
+#include "absl/time/clock.h"
+#include "absl/time/time.h"
+
 #include <grpc/event_engine/event_engine.h>
 
 #include "src/core/lib/event_engine/event_engine_factory.h"
