@@ -27,86 +27,9 @@
 #include "absl/strings/str_join.h"
 
 #include "src/core/lib/address_utils/sockaddr_utils.h"
+#include "src/core/lib/resolver/resolver_attributes.h"
 
 namespace grpc_core {
-
-//
-// ResolverAttributeMap
-//
-
-ResolverAttributeMap::ResolverAttributeMap(
-    std::vector<std::unique_ptr<AttributeInterface>> attributes) {
-  for (auto& attribute : attributes) {
-    map_.emplace(attribute->type(), std::move(attribute));
-  }
-}
-
-ResolverAttributeMap::ResolverAttributeMap(const ResolverAttributeMap& other) {
-  for (const auto& p : other.map_) {
-    map_.emplace(p.second->type(), p.second->Copy());
-  }
-}
-
-ResolverAttributeMap& ResolverAttributeMap::operator=(
-    const ResolverAttributeMap& other) {
-  if (&other != this) {
-    map_.clear();
-    for (const auto& p : other.map_) {
-      map_.emplace(p.second->type(), p.second->Copy());
-    }
-  }
-  return *this;
-}
-
-ResolverAttributeMap::ResolverAttributeMap(
-    ResolverAttributeMap&& other) noexcept
-    : map_(std::move(other.map_)) {}
-
-ResolverAttributeMap& ResolverAttributeMap::operator=(
-    ResolverAttributeMap&& other) noexcept {
-  map_ = std::move(other.map_);
-  return *this;
-}
-
-int ResolverAttributeMap::Compare(const ResolverAttributeMap& other) const {
-  auto it = other.map_.begin();
-  for (const auto& p : map_) {
-    // other has fewer elements than this
-    if (it == other.map_.end()) return -1;
-    // compare keys
-    int retval = strcmp(p.first, it->first);
-    if (retval != 0) return retval;
-    // compare values
-    retval = p.second->Compare(it->second.get());
-    if (retval != 0) return retval;
-    ++it;
-  }
-  // this has fewer elements than other
-  if (it != other.map_.end()) return 1;
-  // equal
-  return 0;
-}
-
-const ResolverAttributeMap::AttributeInterface* ResolverAttributeMap::Get(
-    const char* key) const {
-  auto it = map_.find(key);
-  if (it == map_.end()) return nullptr;
-  return it->second.get();
-}
-
-void ResolverAttributeMap::Set(std::unique_ptr<AttributeInterface> attribute) {
-  map_[attribute->type()] = std::move(attribute);
-}
-
-void ResolverAttributeMap::Remove(const char* key) { map_.erase(key); }
-
-std::string ResolverAttributeMap::ToString() const {
-  std::vector<std::string> attrs;
-  for (const auto& p : map_) {
-    attrs.emplace_back(absl::StrCat(p.first, "=", p.second->ToString()));
-  }
-  return absl::StrCat("{", absl::StrJoin(attrs, ", "), "}");
-}
 
 //
 // ServerAddress
@@ -188,8 +111,9 @@ std::string ServerAddress::ToString() const {
 // ServerAddressWeightAttribute
 //
 
-const char* ServerAddressWeightAttribute::Type() {
-  return "server_address_weight";
+UniqueTypeName ServerAddressWeightAttribute::Type() {
+  static auto* kFactory = new UniqueTypeName::Factory("server_address_weight");
+  return kFactory->Create();
 }
 
 std::string ServerAddressWeightAttribute::ToString() const {

@@ -26,6 +26,7 @@
 
 #include "absl/status/statusor.h"
 
+#include "src/core/lib/resolver/resolver_attributes.h"
 #include "src/core/lib/resolver/server_address.h"
 
 // The resolver returns a flat list of addresses.  When a hierarchy of
@@ -81,9 +82,6 @@
 //   - 10.0.0.4:80 path=[]
 
 namespace grpc_core {
-
-// The attribute key to be used for hierarchical paths in ServerAddress.
-extern const char* kHierarchicalPathAttributeKey;
 
 // Constructs a resolver attribute containing the hierarchical path
 // to be associated with the address.

@@ -116,6 +116,7 @@
 #include "src/core/lib/gprpp/ref_counted.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/gprpp/time.h"
+#include "src/core/lib/gprpp/unique_type_name.h"
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
@@ -127,6 +128,7 @@
 #include "src/core/lib/iomgr/work_serializer.h"
 #include "src/core/lib/json/json.h"
 #include "src/core/lib/resolver/resolver.h"
+#include "src/core/lib/resolver/resolver_attributes.h"
 #include "src/core/lib/resolver/server_address.h"
 #include "src/core/lib/security/credentials/credentials.h"
 #include "src/core/lib/slice/slice.h"
@@ -293,9 +295,12 @@ class GrpcLb : public LoadBalancingPolicy {
         : lb_token_(std::move(lb_token)),
           client_stats_(std::move(client_stats)) {}
 
-    static const char* Type() { return "grpclb"; }
+    static UniqueTypeName Type() {
+      static auto* kFactory = new UniqueTypeName::Factory("grpclb");
+      return kFactory->Create();
+    }
 
-    const char* type() const override { return Type(); }
+    UniqueTypeName type() const override { return Type(); }
 
     std::unique_ptr<AttributeInterface> Copy() const override {
       return absl::make_unique<TokenAndClientStatsAttribute>(lb_token_,

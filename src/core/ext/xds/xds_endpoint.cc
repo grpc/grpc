@@ -36,6 +36,7 @@
 #include "src/core/ext/xds/upb_utils.h"
 #include "src/core/lib/address_utils/parse_address.h"
 #include "src/core/lib/address_utils/sockaddr_utils.h"
+#include "src/core/lib/resolver/resolver_attributes.h"
 
 namespace grpc_core {
 

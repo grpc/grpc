@@ -28,62 +28,9 @@
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/iomgr/resolved_address.h"
+#include "src/core/lib/resolver/resolver_attributes.h"
 
 namespace grpc_core {
-
-class ResolverAttributeMap {
- public:
-  // Base class for resolver-supplied attributes.
-  class AttributeInterface {
-   public:
-    virtual ~AttributeInterface() = default;
-
-    // The type name for this attribute.
-    // There can be only one attribute of a given type in a given AttributeMap.
-    // Attributes are keyed by the address of the string, not the value.
-    virtual const char* type() const = 0;
-
-    // Creates a copy of the attribute.
-    virtual std::unique_ptr<AttributeInterface> Copy() const = 0;
-
-    // Compares this attribute with another.
-    virtual int Compare(const AttributeInterface* other) const = 0;
-
-    // Returns a human-readable representation of the attribute.
-    virtual std::string ToString() const = 0;
-  };
-
-  ResolverAttributeMap() = default;
-
-  explicit ResolverAttributeMap(
-      std::vector<std::unique_ptr<AttributeInterface>> attributes);
-
-  // Copyable.
-  ResolverAttributeMap(const ResolverAttributeMap& other);
-  ResolverAttributeMap& operator=(const ResolverAttributeMap& other);
-
-  // Movable.
-  ResolverAttributeMap(ResolverAttributeMap&& other) noexcept;
-  ResolverAttributeMap& operator=(ResolverAttributeMap&& other) noexcept;
-
-  int Compare(const ResolverAttributeMap& other) const;
-
-  // Returns the attribute for the specified key, or null if not present.
-  const AttributeInterface* Get(const char* key) const;
-
-  // Adds attribute to the map.
-  void Set(std::unique_ptr<AttributeInterface> attribute);
-
-  // Removes the attribute from the map.
-  void Remove(const char* key);
-
-  std::string ToString() const;
-
-  bool empty() const { return map_.empty(); }
-
- private:
-  std::map<const char*, std::unique_ptr<AttributeInterface>> map_;
-};
 
 //
 // ServerAddress
@@ -154,9 +101,9 @@ class ServerAddressWeightAttribute
 
   uint32_t weight() const { return weight_; }
 
-  static const char* Type();
+  static UniqueTypeName Type();
 
-  const char* type() const override { return Type(); }
+  UniqueTypeName type() const override { return Type(); }
 
   std::unique_ptr<AttributeInterface> Copy() const override {
     return absl::make_unique<ServerAddressWeightAttribute>(weight_);

@@ -177,7 +177,7 @@ RefCountedPtr<DynamicFilters> DynamicFilters::Create(
     grpc_channel_args* new_args =
         grpc_channel_args_copy_and_add(args, &error_arg, 1);
     GRPC_ERROR_UNREF(error);
-    p = CreateChannelStack(new_args, {&grpc_lame_filter});
+    p = CreateChannelStack(new_args, {&LameClientFilter::kFilter});
     GPR_ASSERT(p.second == GRPC_ERROR_NONE);
     grpc_channel_args_destroy(new_args);
   }
