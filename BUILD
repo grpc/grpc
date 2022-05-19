@@ -2817,6 +2817,7 @@ grpc_cc_library(
         "channel_stack_type",
         "chunked_vector",
         "config",
+        "construct_destruct",
         "debug_location",
         "dual_ref_counted",
         "error",
