@@ -37,7 +37,9 @@ Sleep::~Sleep() {
         state_->Unref();
         break;
       case Stage::kStarted:
-        GetDefaultEventEngine()->Cancel(state_->timer_handle);
+        if (GetDefaultEventEngine()->Cancel(state_->timer_handle)) {
+          state_->Unref();
+        }
         break;
       case Stage::kDone:
         break;
