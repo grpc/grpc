@@ -467,6 +467,7 @@ class RetryFilter::CallData {
     // For intercepting recv_message.
     grpc_closure recv_message_ready_;
     absl::optional<SliceBuffer> recv_message_;
+    uint32_t recv_message_flags_;
     // For intercepting recv_trailing_metadata.
     grpc_metadata_batch recv_trailing_metadata_{calld_->arena_};
     grpc_transport_stream_stats collect_stats_;
@@ -1510,6 +1511,8 @@ void RetryFilter::CallData::CallAttempt::BatchData::
   // Return payload.
   *pending->batch->payload->recv_message.recv_message =
       std::move(call_attempt_->recv_message_);
+  *pending->batch->payload->recv_message.flags =
+      call_attempt_->recv_message_flags_;
   // Update bookkeeping.
   // Note: Need to do this before invoking the callback, since invoking
   // the callback will result in yielding the call combiner.
@@ -2070,6 +2073,7 @@ void RetryFilter::CallData::CallAttempt::BatchData::
   ++call_attempt_->started_recv_message_count_;
   batch_.recv_message = true;
   batch_.payload->recv_message.recv_message = &call_attempt_->recv_message_;
+  batch_.payload->recv_message.flags = &call_attempt_->recv_message_flags_;
   batch_.payload->recv_message.call_failed_before_recv_message = nullptr;
   GRPC_CLOSURE_INIT(&call_attempt_->recv_message_ready_, RecvMessageReady, this,
                     grpc_schedule_on_exec_ctx);

@@ -53,8 +53,9 @@ class SliceBuffer {
   /// slices are unreffed.
   ~SliceBuffer() { grpc_slice_buffer_destroy(&slice_buffer_); }
 
+  SliceBuffer& operator=(const SliceBuffer&) = delete;
   SliceBuffer& operator=(SliceBuffer&& other) noexcept {
-    grpc_slice_buffer_move_into(&slice_buffer_, &other.slice_buffer_);
+    grpc_slice_buffer_swap(&slice_buffer_, &other.slice_buffer_);
     return *this;
   }
 
