@@ -950,9 +950,14 @@ ssize_t tcp_send(int fd, const struct msghdr* msg, int additional_flags = 0) {
   ssize_t sent_length;
   do {
     /* TODO(klempner): Cork if this is a partial write */
+    errno = 0;
     GRPC_STATS_INC_SYSCALL_WRITE();
     sent_length = sendmsg(fd, msg, SENDMSG_FLAGS | additional_flags);
   } while (sent_length < 0 && errno == EINTR);
+  auto backup = errno;
+  gpr_log(GPR_DEBUG, "sendmsg: %" PRIdPTR " %d %s", sent_length, errno,
+          strerror(errno));
+  errno = backup;
   return sent_length;
 }
 

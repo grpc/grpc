@@ -543,9 +543,7 @@ struct grpc_chttp2_stream {
   grpc_metadata_batch initial_metadata_buffer;
   grpc_metadata_batch trailing_metadata_buffer;
 
-  grpc_slice_buffer frame_storage; /* protected by t combiner */
-
-  grpc_closure reset_byte_stream;
+  grpc_slice_buffer frame_storage;  /* protected by t combiner */
   bool received_last_frame = false; /* protected by t combiner */
 
   grpc_core::Timestamp deadline = grpc_core::Timestamp::InfFuture();

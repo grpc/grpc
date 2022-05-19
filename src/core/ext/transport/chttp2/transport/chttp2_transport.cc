@@ -200,8 +200,6 @@ static void finish_keepalive_ping_locked(void* arg, grpc_error_handle error);
 static void keepalive_watchdog_fired(void* arg, grpc_error_handle error);
 static void keepalive_watchdog_fired_locked(void* arg, grpc_error_handle error);
 
-static void reset_byte_stream(void* arg, grpc_error_handle error);
-
 namespace grpc_core {
 
 namespace {
@@ -719,7 +717,6 @@ grpc_chttp2_stream::grpc_chttp2_stream(grpc_chttp2_transport* t,
 
   grpc_slice_buffer_init(&frame_storage);
   grpc_slice_buffer_init(&flow_controlled_buffer);
-  GRPC_CLOSURE_INIT(&reset_byte_stream, ::reset_byte_stream, this, nullptr);
 }
 
 grpc_chttp2_stream::~grpc_chttp2_stream() {
@@ -2935,20 +2932,6 @@ static void set_pollset_set(grpc_transport* gt, grpc_stream* /*gs*/,
                             grpc_pollset_set* pollset_set) {
   grpc_chttp2_transport* t = reinterpret_cast<grpc_chttp2_transport*>(gt);
   grpc_endpoint_add_to_pollset_set(t->ep, pollset_set);
-}
-
-//
-// BYTE STREAM
-//
-
-static void reset_byte_stream(void* arg, grpc_error_handle error) {
-  grpc_chttp2_stream* s = static_cast<grpc_chttp2_stream*>(arg);
-  if (error == GRPC_ERROR_NONE) {
-    grpc_chttp2_maybe_complete_recv_message(s->t, s);
-    grpc_chttp2_maybe_complete_recv_trailing_metadata(s->t, s);
-  } else {
-    grpc_chttp2_cancel_stream(s->t, s, GRPC_ERROR_REF(error));
-  }
 }
 
 //
