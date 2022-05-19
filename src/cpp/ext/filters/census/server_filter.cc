@@ -20,7 +20,6 @@
 
 #include "src/cpp/ext/filters/census/server_filter.h"
 
-#include <memory>
 #include <utility>
 
 #include "absl/strings/str_cat.h"
