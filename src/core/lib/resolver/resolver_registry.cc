@@ -14,15 +14,16 @@
 // limitations under the License.
 //
 
+#include <grpc/support/port_platform.h>
+
 #include "src/core/lib/resolver/resolver_registry.h"
 
-#include <grpc/support/port_platform.h>
-#include <grpc/support/log.h>
-
-#include "absl/strings/str_cat.h"
-#include "absl/strings/str_format.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
+#include "absl/strings/str_cat.h"
+#include "absl/strings/str_format.h"
+
+#include <grpc/support/log.h>
 
 namespace grpc_core {
 

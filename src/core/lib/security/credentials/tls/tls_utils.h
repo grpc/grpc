@@ -20,11 +20,13 @@
 #define GRPC_CORE_LIB_SECURITY_CREDENTIALS_TLS_TLS_UTILS_H
 
 #include <grpc/support/port_platform.h>
-#include <grpc/grpc_security.h>
+
 #include <string>
 #include <vector>
 
 #include "absl/strings/string_view.h"
+
+#include <grpc/grpc_security.h>
 
 namespace grpc_core {
 

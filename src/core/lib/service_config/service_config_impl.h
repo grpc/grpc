@@ -18,14 +18,20 @@
 #define GRPC_CORE_LIB_SERVICE_CONFIG_SERVICE_CONFIG_IMPL_H
 
 #include <grpc/support/port_platform.h>
+
+#include <stddef.h>
+
+#include <memory>
+#include <string>
+#include <unordered_map>
+#include <vector>
+
+#include "absl/container/inlined_vector.h"
+#include "absl/strings/string_view.h"
+
 #include <grpc/impl/codegen/grpc_types.h>
 #include <grpc/slice.h>
 #include <grpc/support/log.h>
-#include <stddef.h>
-#include <unordered_map>
-#include <vector>
-#include <memory>
-#include <string>
 
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/iomgr/error.h"
@@ -33,8 +39,6 @@
 #include "src/core/lib/service_config/service_config.h"
 #include "src/core/lib/service_config/service_config_parser.h"
 #include "src/core/lib/slice/slice_internal.h"
-#include "absl/container/inlined_vector.h"
-#include "absl/strings/string_view.h"
 
 // The main purpose of the code here is to parse the service config in
 // JSON form, which will look like this:

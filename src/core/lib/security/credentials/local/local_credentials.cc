@@ -16,11 +16,13 @@
  *
  */
 
+#include <grpc/support/port_platform.h>
+
 #include "src/core/lib/security/credentials/local/local_credentials.h"
 
-#include <grpc/support/port_platform.h>
-#include <grpc/grpc.h>
 #include <utility>
+
+#include <grpc/grpc.h>
 
 #include "src/core/lib/security/security_connector/local/local_security_connector.h"
 

@@ -20,6 +20,7 @@
 #define GRPC_CORE_LIB_COMPRESSION_MESSAGE_COMPRESS_H
 
 #include <grpc/support/port_platform.h>
+
 #include <grpc/impl/codegen/compression_types.h>
 #include <grpc/slice.h>
 

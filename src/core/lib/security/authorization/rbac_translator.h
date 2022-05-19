@@ -18,8 +18,9 @@
 #include <grpc/support/port_platform.h>
 
 #include "absl/status/statusor.h"
-#include "src/core/lib/security/authorization/rbac_policy.h"
 #include "absl/strings/string_view.h"
+
+#include "src/core/lib/security/authorization/rbac_policy.h"
 
 namespace grpc_core {
 

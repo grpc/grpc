@@ -20,18 +20,22 @@
 #define GRPC_CORE_LIB_RESOLVER_SERVER_ADDRESS_H
 
 #include <grpc/support/port_platform.h>
-#include <grpc/impl/codegen/grpc_types.h>
+
 #include <stddef.h>
 #include <stdint.h>
+
 #include <map>
 #include <memory>
 #include <string>
 
 #include "absl/container/inlined_vector.h"
+#include "absl/memory/memory.h"
+
+#include <grpc/impl/codegen/grpc_types.h>
+
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/iomgr/resolved_address.h"
-#include "absl/memory/memory.h"
 
 namespace grpc_core {
 

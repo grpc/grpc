@@ -13,27 +13,29 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 //
+#include <grpc/support/port_platform.h>
+
 #include "src/core/lib/security/credentials/external/aws_request_signer.h"
 
-#include <grpc/support/port_platform.h>
-#include <openssl/hmac.h>
-#include <openssl/sha.h>
-#include <openssl/base.h>
-#include <openssl/digest.h>
 #include <algorithm>
 #include <utility>
 #include <vector>
 
+#include <openssl/base.h>
+#include <openssl/digest.h>
+#include <openssl/hmac.h>
+#include <openssl/sha.h>
+
+#include "absl/status/statusor.h"
 #include "absl/strings/ascii.h"
 #include "absl/strings/escaping.h"
+#include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
 #include "absl/strings/str_join.h"
 #include "absl/strings/str_split.h"
+#include "absl/strings/string_view.h"
 #include "absl/time/clock.h"
 #include "absl/time/time.h"
-#include "absl/status/statusor.h"
-#include "absl/strings/str_cat.h"
-#include "absl/strings/string_view.h"
 
 namespace grpc_core {
 

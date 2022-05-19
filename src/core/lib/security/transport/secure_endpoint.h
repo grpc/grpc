@@ -20,12 +20,14 @@
 #define GRPC_CORE_LIB_SECURITY_TRANSPORT_SECURE_ENDPOINT_H
 
 #include <grpc/support/port_platform.h>
-#include <grpc/slice.h>
-#include <grpc/impl/codegen/grpc_types.h>
+
 #include <stddef.h>
 
-#include "src/core/lib/iomgr/endpoint.h"
+#include <grpc/impl/codegen/grpc_types.h>
+#include <grpc/slice.h>
+
 #include "src/core/lib/debug/trace.h"
+#include "src/core/lib/iomgr/endpoint.h"
 
 extern grpc_core::TraceFlag grpc_trace_secure_endpoint;
 
