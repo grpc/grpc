@@ -38,9 +38,12 @@ class ConfigSelectorResolverAttribute
       RefCountedPtr<ConfigSelector> config_selector)
       : config_selector_(std::move(config_selector)) {}
 
-  static const char* Type() { return "config_selector"; }
+  static UniqueTypeName Type() {
+    static auto* kFactory = new UniqueTypeName::Factory("config_selector");
+    return kFactory->Create();
+  }
 
-  const char* type() const override { return Type(); }
+  UniqueTypeName type() const override { return Type(); }
 
   std::unique_ptr<AttributeInterface> Copy() const override {
     return absl::make_unique<ConfigSelectorResolverAttribute>(config_selector_);
