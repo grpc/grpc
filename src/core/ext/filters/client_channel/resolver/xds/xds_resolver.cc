@@ -793,7 +793,7 @@ void XdsResolver::StartLocked() {
         absl::StrCat("Failed to create XdsClient: ", error_message));
     Result result;
     result.addresses = status;
-    result.service_config = status;
+    result.service_config = std::move(status);
     result.args = grpc_channel_args_copy(args_);
     result_handler_->ReportResult(std::move(result));
     GRPC_ERROR_UNREF(error);
@@ -810,7 +810,7 @@ void XdsResolver::StartLocked() {
                        uri_.authority().c_str()));
       Result result;
       result.addresses = status;
-      result.service_config = status;
+      result.service_config = std::move(status);
       result.args = grpc_channel_args_copy(args_);
       result_handler_->ReportResult(std::move(result));
       return;
@@ -965,7 +965,7 @@ void XdsResolver::OnError(absl::string_view context, absl::Status status) {
       absl::UnavailableError(absl::StrCat(context, ": ", status.ToString()));
   Result result;
   result.addresses = status;
-  result.service_config = status;
+  result.service_config = std::move(status);
   grpc_arg new_arg = xds_client_->MakeChannelArg();
   result.args = grpc_channel_args_copy_and_add(args_, &new_arg, 1);
   result_handler_->ReportResult(std::move(result));
