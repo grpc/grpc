@@ -17,6 +17,7 @@
 #include <memory>
 #include <string>
 
+#include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
 #include "absl/memory/memory.h"
@@ -202,8 +203,11 @@ TEST(ResolverAttributeMapTest, ToString) {
   EXPECT_EQ("{integer_attribute={value=3}}", map.ToString());
   // Add string attribute.
   map.Set(absl::make_unique<StringAttribute>("foo"));
-  EXPECT_EQ("{integer_attribute={value=3}, string_attribute={value=foo}}",
-            map.ToString());
+  // Entries may be in either order depending on where the strings happen
+  // to be allocated.
+  EXPECT_THAT(map.ToString(), ::testing::AnyOf(
+      "{integer_attribute={value=3}, string_attribute={value=foo}}",
+      "{string_attribute={value=foo}, integer_attribute={value=3}}"));
 }
 
 TEST(ResolverAttributeMapTest, Compare) {
