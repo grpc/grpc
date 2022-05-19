@@ -20,18 +20,23 @@
 #define GRPC_CORE_LIB_SECURITY_SECURITY_CONNECTOR_SECURITY_CONNECTOR_H
 
 #include <grpc/support/port_platform.h>
-
-#include <stdbool.h>
-
 #include <grpc/grpc_security.h>
+#include <grpc/grpc.h>
+#include <grpc/impl/codegen/grpc_types.h>
+#include <memory>
 
 #include "src/core/lib/gprpp/ref_counted.h"
 #include "src/core/lib/iomgr/endpoint.h"
-#include "src/core/lib/iomgr/pollset.h"
-#include "src/core/lib/iomgr/tcp_server.h"
 #include "src/core/lib/promise/arena_promise.h"
 #include "src/core/lib/transport/handshaker.h"
 #include "src/core/tsi/transport_security_interface.h"
+#include "absl/status/status.h"
+#include "absl/strings/string_view.h"
+#include "src/core/lib/debug/trace.h"
+#include "src/core/lib/gprpp/ref_counted_ptr.h"
+#include "src/core/lib/iomgr/closure.h"
+#include "src/core/lib/iomgr/error.h"
+#include "src/core/lib/iomgr/iomgr_fwd.h"
 
 extern grpc_core::DebugOnlyTraceFlag grpc_trace_security_connector_refcount;
 

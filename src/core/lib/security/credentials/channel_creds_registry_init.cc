@@ -17,11 +17,17 @@
 //
 
 #include <grpc/support/port_platform.h>
+#include <grpc/grpc.h>
+#include <grpc/grpc_security.h>
+#include <memory>
 
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/json/json.h"
-#include "src/core/lib/security/credentials/credentials.h"
 #include "src/core/lib/security/credentials/fake/fake_credentials.h"
+#include "absl/memory/memory.h"
+#include "absl/strings/string_view.h"
+#include "src/core/lib/gprpp/ref_counted_ptr.h"
+#include "src/core/lib/security/credentials/channel_creds_registry.h"
 
 namespace grpc_core {
 

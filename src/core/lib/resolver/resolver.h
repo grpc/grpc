@@ -18,15 +18,15 @@
 #define GRPC_CORE_LIB_RESOLVER_RESOLVER_H
 
 #include <grpc/support/port_platform.h>
+#include <grpc/impl/codegen/grpc_types.h>
+#include <string>
 
 #include "absl/status/statusor.h"
-
-#include <grpc/impl/codegen/grpc_types.h>
-
 #include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/resolver/server_address.h"
 #include "src/core/lib/service_config/service_config.h"
+#include "src/core/lib/debug/trace.h"
 
 extern grpc_core::DebugOnlyTraceFlag grpc_trace_resolver_refcount;
 

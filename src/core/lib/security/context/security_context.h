@@ -21,11 +21,23 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <stddef.h>
+
+#include <utility>
+
+#include "absl/strings/string_view.h"
+
+#include <grpc/grpc_security.h>
+#include <grpc/impl/codegen/grpc_types.h>
+#include <grpc/support/alloc.h>
+
+#include "src/core/lib/debug/trace.h"
+#include "src/core/lib/gpr/useful.h"
+#include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/ref_counted.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
-#include "src/core/lib/iomgr/pollset.h"
 #include "src/core/lib/resource_quota/arena.h"
-#include "src/core/lib/security/credentials/credentials.h"
+#include "src/core/lib/security/credentials/credentials.h"  // IWYU pragma: keep
 
 extern grpc_core::DebugOnlyTraceFlag grpc_trace_auth_context_refcount;
 

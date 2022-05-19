@@ -42,27 +42,23 @@ cat compile_commands.json | sed "s,\"file\": \",\"file\": \"${IWYU_ROOT}/,g" > c
 export ENABLED_MODULES='
   src/core/ext/filters/client_channel
   src/core/ext/transport/chttp2
-  src/core/lib/avl
-  src/core/lib/channel
-  src/core/lib/config
-  src/core/lib/event_engine
-  src/core/lib/gprpp
-  src/core/lib/json
-  src/core/lib/slice
-  src/core/lib/resource_quota
-  src/core/lib/promise
-  src/core/lib/surface
-  src/core/lib/transport
-  src/core/lib/uri
+  src/core/lib
   src/cpp
 '
 
+export DISABLED_MODULES='
+  src/core/lib/gpr
+  src/core/lib/iomgr
+'
+
 export INCLUSION_REGEX=`echo $ENABLED_MODULES | sed 's/ /|/g' | sed 's,\\(.*\\),^(\\1)/,g'`
+export EXCLUSION_REGEX=`echo $DISABLED_MODULES | sed 's/ /|/g' | sed 's,\\(.*\\),^(\\1)/,g'`
 
 # figure out which files to include
 cat compile_commands.json | jq -r '.[].file'         \
   | grep -E $INCLUSION_REGEX                         \
   | grep -v -E "/upb-generated/|/upbdefs-generated/" \
+  | grep -v -E $EXCLUSION_REGEX                      \
   | sort                                             \
   > iwyu_files0.txt
 

@@ -17,16 +17,18 @@
  */
 
 #include <grpc/support/port_platform.h>
-
-#include <stdlib.h>
 #include <string.h>
-
 #include <grpc/compression.h>
+#include <grpc/impl/codegen/compression_types.h>
+#include <grpc/slice.h>
+#include <stdint.h>
 
 #include "src/core/lib/compression/compression_internal.h"
 #include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/surface/api_trace.h"
+#include "absl/types/optional.h"
+#include "src/core/lib/debug/trace.h"
 
 int grpc_compression_algorithm_is_message(grpc_compression_algorithm) {
   return 1;

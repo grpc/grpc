@@ -20,16 +20,25 @@
 #define GRPC_CORE_LIB_SECURITY_CREDENTIALS_JWT_JWT_CREDENTIALS_H
 
 #include <grpc/support/port_platform.h>
-
+#include <grpc/support/time.h>
+#include <grpc/grpc_security.h>
+#include <grpc/impl/codegen/gpr_types.h>
+#include <grpc/support/sync.h>
+#include <stdint.h>
 #include <string>
 
 #include "absl/strings/str_format.h"
 #include "absl/time/time.h"
-
-#include <grpc/support/time.h>
-
 #include "src/core/lib/security/credentials/credentials.h"
 #include "src/core/lib/security/credentials/jwt/json_token.h"
+#include "absl/status/statusor.h"
+#include "absl/strings/string_view.h"
+#include "absl/types/optional.h"
+#include "src/core/lib/gpr/useful.h"
+#include "src/core/lib/gprpp/ref_counted_ptr.h"
+#include "src/core/lib/promise/arena_promise.h"
+#include "src/core/lib/slice/slice.h"
+#include "src/core/lib/transport/transport.h"
 
 class grpc_service_account_jwt_access_credentials
     : public grpc_call_credentials {

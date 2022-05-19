@@ -20,10 +20,8 @@
 #define GRPC_CORE_LIB_SECURITY_CREDENTIALS_JWT_JSON_TOKEN_H
 
 #include <grpc/support/port_platform.h>
-
-#include <openssl/rsa.h>
-
-#include <grpc/slice.h>
+#include <grpc/impl/codegen/gpr_types.h>
+#include <openssl/base.h>
 
 #include "src/core/lib/json/json.h"
 

@@ -16,9 +16,12 @@
  *
  */
 
-#include <grpc/support/port_platform.h>
-
 #include "src/core/lib/resolver/resolver.h"
+
+#include <grpc/support/port_platform.h>
+#include <utility>
+
+#include "src/core/lib/channel/channel_args.h"
 
 grpc_core::DebugOnlyTraceFlag grpc_trace_resolver_refcount(false,
                                                            "resolver_refcount");

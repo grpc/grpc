@@ -16,30 +16,26 @@
  *
  */
 
-#include <grpc/support/port_platform.h>
-
 #include "src/core/lib/security/security_connector/load_system_roots_linux.h"
 
-#include <grpc/slice_buffer.h>
+#include <grpc/support/port_platform.h>
+#include <stdio.h>
+
+#include "src/core/lib/gprpp/memory.h"
+#include "src/core/lib/iomgr/error.h"
 
 #if defined(GPR_LINUX) || defined(GPR_ANDROID)
 
 #include <dirent.h>
 #include <fcntl.h>
-#include <stdbool.h>
 #include <string.h>
 #include <sys/param.h>
 #include <sys/stat.h>
-#include <sys/types.h>
 #include <unistd.h>
-
-#include "absl/container/inlined_vector.h"
-
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
-#include <grpc/support/string_util.h>
 
-#include "src/core/lib/gpr/string.h"
+#include "absl/container/inlined_vector.h"
 #include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/gprpp/global_config.h"
 #include "src/core/lib/iomgr/load_file.h"

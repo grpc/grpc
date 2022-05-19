@@ -20,13 +20,12 @@
 #define GRPC_CORE_LIB_SECURITY_TRANSPORT_SECURE_ENDPOINT_H
 
 #include <grpc/support/port_platform.h>
-
 #include <grpc/slice.h>
+#include <grpc/impl/codegen/grpc_types.h>
+#include <stddef.h>
 
 #include "src/core/lib/iomgr/endpoint.h"
-
-struct tsi_frame_protector;
-struct tsi_zero_copy_grpc_protector;
+#include "src/core/lib/debug/trace.h"
 
 extern grpc_core::TraceFlag grpc_trace_secure_endpoint;
 

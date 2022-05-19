@@ -20,8 +20,9 @@
 #define GRPC_CORE_LIB_HTTP_PARSER_H
 
 #include <grpc/support/port_platform.h>
-
 #include <grpc/slice.h>
+#include <stddef.h>
+#include <stdint.h>
 
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/iomgr/error.h"

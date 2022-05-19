@@ -16,15 +16,15 @@
 #define GRPC_CORE_LIB_SECURITY_AUTHORIZATION_EVALUATE_ARGS_H
 
 #include <grpc/support/port_platform.h>
-
-#include <map>
+#include <grpc/grpc_security.h>
+#include <string>
+#include <vector>
 
 #include "absl/types/optional.h"
-
 #include "src/core/lib/iomgr/endpoint.h"
-#include "src/core/lib/iomgr/resolve_address.h"
-#include "src/core/lib/security/context/security_context.h"
 #include "src/core/lib/transport/metadata_batch.h"
+#include "absl/strings/string_view.h"
+#include "src/core/lib/iomgr/resolved_address.h"
 
 namespace grpc_core {
 

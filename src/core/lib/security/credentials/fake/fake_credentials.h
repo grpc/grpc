@@ -20,10 +20,18 @@
 #define GRPC_CORE_LIB_SECURITY_CREDENTIALS_FAKE_FAKE_CREDENTIALS_H
 
 #include <grpc/support/port_platform.h>
-
-#include <string.h>
+#include <grpc/grpc.h>
+#include <grpc/grpc_security.h>
+#include <grpc/grpc_security_constants.h>
+#include <grpc/impl/codegen/grpc_types.h>
+#include <string>
 
 #include "src/core/lib/security/credentials/credentials.h"
+#include "absl/status/statusor.h"
+#include "src/core/lib/gpr/useful.h"
+#include "src/core/lib/promise/arena_promise.h"
+#include "src/core/lib/slice/slice.h"
+#include "src/core/lib/transport/transport.h"
 
 #define GRPC_ARG_FAKE_SECURITY_EXPECTED_TARGETS \
   "grpc.fake_security.expected_targets"

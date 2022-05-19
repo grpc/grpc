@@ -16,28 +16,27 @@
  *
  */
 
-#include <grpc/support/port_platform.h>
-
 #include "src/core/lib/security/credentials/plugin/plugin_credentials.h"
 
+#include <grpc/support/port_platform.h>
 #include <string.h>
-
-#include <atomic>
-
-#include "absl/strings/str_cat.h"
-
-#include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
-#include <grpc/support/sync.h>
+#include <grpc/slice.h>
+#include <atomic>
+#include <type_traits>
 
-#include "src/core/lib/gprpp/memory.h"
+#include "absl/strings/str_cat.h"
 #include "src/core/lib/promise/promise.h"
-#include "src/core/lib/security/credentials/plugin/plugin_credentials.h"
 #include "src/core/lib/slice/slice_internal.h"
-#include "src/core/lib/slice/slice_string_helpers.h"
 #include "src/core/lib/surface/api_trace.h"
 #include "src/core/lib/surface/validate_metadata.h"
+#include "absl/status/status.h"
+#include "absl/strings/string_view.h"
+#include "src/core/lib/iomgr/error.h"
+#include "src/core/lib/iomgr/exec_ctx.h"
+#include "src/core/lib/slice/slice.h"
+#include "src/core/lib/transport/metadata_batch.h"
 
 grpc_core::TraceFlag grpc_plugin_credentials_trace(false, "plugin_credentials");
 

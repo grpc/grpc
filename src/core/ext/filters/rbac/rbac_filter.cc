@@ -20,6 +20,7 @@
 
 #include "src/core/ext/filters/rbac/rbac_service_config_parser.h"
 #include "src/core/lib/security/authorization/grpc_authorization_engine.h"
+#include "src/core/lib/security/context/security_context.h"
 #include "src/core/lib/service_config/service_config_call_data.h"
 #include "src/core/lib/transport/metadata_batch.h"
 

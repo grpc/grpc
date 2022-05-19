@@ -16,23 +16,18 @@
  *
  */
 
-#include <grpc/support/port_platform.h>
-
 #include "src/core/lib/debug/stats.h"
 
+#include <grpc/support/port_platform.h>
 #include <inttypes.h>
 #include <string.h>
-
+#include <grpc/support/alloc.h>
+#include <grpc/support/cpu.h>
 #include <vector>
+#include <algorithm>
 
 #include "absl/strings/str_format.h"
 #include "absl/strings/str_join.h"
-
-#include <grpc/support/alloc.h>
-#include <grpc/support/string_util.h>
-
-#include "src/core/lib/gpr/string.h"
-#include "src/core/lib/gpr/useful.h"
 
 grpc_stats_data* grpc_stats_per_cpu_storage = nullptr;
 static size_t g_num_cores;

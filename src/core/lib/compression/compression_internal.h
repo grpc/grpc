@@ -20,16 +20,14 @@
 #define GRPC_CORE_LIB_COMPRESSION_COMPRESSION_INTERNAL_H
 
 #include <grpc/support/port_platform.h>
-
+#include <grpc/impl/codegen/grpc_types.h>
+#include <grpc/impl/codegen/compression_types.h>
+#include <stdint.h>
 #include <initializer_list>
+#include <string>
 
 #include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
-
-#include <grpc/compression.h>
-#include <grpc/impl/codegen/grpc_types.h>
-#include <grpc/slice.h>
-
 #include "src/core/lib/gprpp/bitset.h"
 #include "src/core/lib/slice/slice.h"
 

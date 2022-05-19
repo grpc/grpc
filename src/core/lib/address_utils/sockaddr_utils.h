@@ -20,11 +20,10 @@
 #define GRPC_CORE_LIB_ADDRESS_UTILS_SOCKADDR_UTILS_H
 
 #include <grpc/support/port_platform.h>
-
+#include <stdint.h>
 #include <string>
 
 #include "absl/status/statusor.h"
-
 #include "src/core/lib/iomgr/resolved_address.h"
 
 /* Returns true if addr is an IPv4-mapped IPv6 address within the

@@ -16,10 +16,15 @@
 #define GRPC_CORE_LIB_SECURITY_AUTHORIZATION_GRPC_AUTHORIZATION_ENGINE_H
 
 #include <grpc/support/port_platform.h>
+#include <stddef.h>
+#include <memory>
+#include <string>
+#include <vector>
 
 #include "src/core/lib/security/authorization/authorization_engine.h"
 #include "src/core/lib/security/authorization/matchers.h"
 #include "src/core/lib/security/authorization/rbac_policy.h"
+#include "src/core/lib/security/authorization/evaluate_args.h"
 
 namespace grpc_core {
 

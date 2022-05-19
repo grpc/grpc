@@ -18,8 +18,9 @@
 #define GRPC_CORE_LIB_HTTP_HTTPCLI_SSL_CREDENTIALS_H
 
 #include <grpc/support/port_platform.h>
+#include <grpc/grpc.h>
 
-#include "src/core/lib/security/credentials/credentials.h"
+#include "src/core/lib/gprpp/ref_counted_ptr.h"
 
 namespace grpc_core {
 

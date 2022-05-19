@@ -16,9 +16,11 @@
 //
 //
 
-#include <grpc/support/port_platform.h>
-
 #include "src/core/lib/security/credentials/tls/tls_utils.h"
+
+#include <grpc/support/port_platform.h>
+#include <grpc/support/log.h>
+#include <algorithm>
 
 #include "absl/strings/ascii.h"
 #include "absl/strings/match.h"

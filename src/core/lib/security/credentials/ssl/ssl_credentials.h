@@ -19,9 +19,19 @@
 #define GRPC_CORE_LIB_SECURITY_CREDENTIALS_SSL_SSL_CREDENTIALS_H
 
 #include <grpc/support/port_platform.h>
+#include <grpc/grpc.h>
+#include <grpc/grpc_security.h>
+#include <grpc/grpc_security_constants.h>
+#include <grpc/impl/codegen/grpc_types.h>
+#include <grpc/support/log.h>
+#include <stddef.h>
 
 #include "src/core/lib/security/credentials/credentials.h"
 #include "src/core/lib/security/security_connector/ssl/ssl_security_connector.h"
+#include "src/core/lib/gpr/useful.h"
+#include "src/core/lib/gprpp/ref_counted_ptr.h"
+#include "src/core/lib/security/security_connector/security_connector.h"
+#include "src/core/tsi/ssl_transport_security.h"
 
 class grpc_ssl_credentials : public grpc_channel_credentials {
  public:

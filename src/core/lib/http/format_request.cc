@@ -16,24 +16,21 @@
  *
  */
 
-#include <grpc/support/port_platform.h>
-
 #include "src/core/lib/http/format_request.h"
 
-#include <stdarg.h>
+#include <grpc/support/port_platform.h>
 #include <stdio.h>
 #include <string.h>
-
+#include <grpc/slice.h>
 #include <vector>
+#include <algorithm>
+#include <string>
 
 #include "absl/strings/str_format.h"
 #include "absl/strings/str_join.h"
-
-#include <grpc/slice.h>
-#include <grpc/support/alloc.h>
-#include <grpc/support/string_util.h>
-
-#include "src/core/lib/gpr/string.h"
+#include "absl/strings/str_cat.h"
+#include "absl/strings/string_view.h"
+#include "src/core/lib/http/httpcli.h"
 
 static void fill_common_header(const grpc_http_request* request,
                                const char* host, const char* path,

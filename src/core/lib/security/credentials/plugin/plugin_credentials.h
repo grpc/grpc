@@ -20,9 +20,28 @@
 #define GRPC_CORE_LIB_SECURITY_CREDENTIALS_PLUGIN_PLUGIN_CREDENTIALS_H
 
 #include <grpc/support/port_platform.h>
+#include <grpc/grpc_security.h>
+#include <grpc/grpc_security_constants.h>
+#include <grpc/impl/codegen/grpc_types.h>
+#include <grpc/status.h>
+#include <stddef.h>
+#include <atomic>
+#include <string>
+#include <utility>
 
 #include "src/core/lib/security/credentials/call_creds_util.h"
 #include "src/core/lib/security/credentials/credentials.h"
+#include "absl/container/inlined_vector.h"
+#include "absl/status/statusor.h"
+#include "src/core/lib/debug/trace.h"
+#include "src/core/lib/gpr/useful.h"
+#include "src/core/lib/gprpp/ref_counted.h"
+#include "src/core/lib/gprpp/ref_counted_ptr.h"
+#include "src/core/lib/promise/activity.h"
+#include "src/core/lib/promise/arena_promise.h"
+#include "src/core/lib/promise/poll.h"
+#include "src/core/lib/slice/slice_refcount.h"
+#include "src/core/lib/transport/transport.h"
 
 extern grpc_core::TraceFlag grpc_plugin_credentials_trace;
 
