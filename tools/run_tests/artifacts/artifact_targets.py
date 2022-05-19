@@ -432,6 +432,8 @@ def targets():
                           presubmit=True),
         CSharpExtArtifact('linux', 'android', arch_abi='x86', presubmit=True),
         CSharpExtArtifact('macos', 'ios', presubmit=True),
+        PythonArtifact('manylinux2014', 'aarch64', 'cp36-cp36m',
+                       presubmit=True),
         PythonArtifact('manylinux2014', 'x64', 'cp36-cp36m', presubmit=True),
         PythonArtifact('manylinux2014', 'x64', 'cp37-cp37m'),
         PythonArtifact('manylinux2014', 'x64', 'cp38-cp38'),
