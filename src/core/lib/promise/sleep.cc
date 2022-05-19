@@ -26,7 +26,6 @@
 
 namespace grpc_core {
 
-using ::grpc_event_engine::experimental::EventEngine;
 using ::grpc_event_engine::experimental::GetDefaultEventEngine;
 
 Sleep::Sleep(Timestamp deadline) : state_(new State(deadline)) {}
