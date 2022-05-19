@@ -27,7 +27,8 @@
 
 #include "src/core/ext/xds/xds_client_stats.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
-#include "src/core/lib/resolver/server_address.h"
+#include "src/core/lib/gprpp/unique_type_name.h"
+#include "src/core/lib/resolver/resolver_attributes.h"
 
 namespace grpc_core {
 
@@ -36,9 +37,9 @@ class XdsLocalityAttribute : public ResolverAttributeMap::AttributeInterface {
   explicit XdsLocalityAttribute(RefCountedPtr<XdsLocalityName> locality_name)
       : locality_name_(std::move(locality_name)) {}
 
-  static const char* Type();
+  static UniqueTypeName Type();
 
-  const char* type() const override { return Type(); }
+  UniqueTypeName type() const override { return Type(); }
 
   RefCountedPtr<XdsLocalityName> locality_name() const {
     return locality_name_;

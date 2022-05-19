@@ -25,12 +25,12 @@
 
 #include <grpc/grpc_security.h>
 
-#include "src/core/lib/channel/handshaker.h"
 #include "src/core/lib/gprpp/ref_counted.h"
 #include "src/core/lib/iomgr/endpoint.h"
 #include "src/core/lib/iomgr/pollset.h"
 #include "src/core/lib/iomgr/tcp_server.h"
 #include "src/core/lib/promise/arena_promise.h"
+#include "src/core/lib/transport/handshaker.h"
 #include "src/core/tsi/transport_security_interface.h"
 
 extern grpc_core::DebugOnlyTraceFlag grpc_trace_security_connector_refcount;

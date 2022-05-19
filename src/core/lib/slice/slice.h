@@ -46,6 +46,11 @@
 //   MutableSlice - provides a guarantee of unique ownership, meaning the
 //                  underlying data can be mutated safely.
 
+// This slice implementation is an extension of the event engine Slice
+// implementation defined in <grpc/event_engine/slice.h>. Changes to this
+// implementation might warrant changes to the public event engine Slice
+// type as well.
+
 namespace grpc_core {
 
 namespace slice_detail {

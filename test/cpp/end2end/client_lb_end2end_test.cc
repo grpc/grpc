@@ -55,6 +55,7 @@
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/iomgr/tcp_client.h"
+#include "src/core/lib/resolver/resolver_attributes.h"
 #include "src/core/lib/resolver/server_address.h"
 #include "src/core/lib/security/credentials/fake/fake_credentials.h"
 #include "src/core/lib/service_config/service_config.h"
@@ -2200,9 +2201,13 @@ class ClientLbAddressTest : public ClientLbEnd2endTest {
    public:
     explicit Attribute(const std::string& str) : str_(str) {}
 
-    static const char* Type() { return "attribute_key"; }
+    static grpc_core::UniqueTypeName Type() {
+      static auto* kFactory =
+          new grpc_core::UniqueTypeName::Factory("attribute_key");
+      return kFactory->Create();
+    }
 
-    const char* type() const override { return Type(); }
+    grpc_core::UniqueTypeName type() const override { return Type(); }
 
     std::unique_ptr<AttributeInterface> Copy() const override {
       return absl::make_unique<Attribute>(str_);
@@ -2266,7 +2271,7 @@ TEST_F(ClientLbAddressTest, Basic) {
   for (const int port : GetServersPorts()) {
     expected.emplace_back(absl::StrCat(
         ipv6_only_ ? "[::1]:" : "127.0.0.1:", port,
-        " args={} lb_policy_attributes={", Attribute::Type(), "=foo}"));
+        " args={} lb_policy_attributes={", Attribute::Type().name(), "=foo}"));
   }
   EXPECT_EQ(addresses_seen(), expected);
 }

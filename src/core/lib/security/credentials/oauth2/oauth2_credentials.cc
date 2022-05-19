@@ -347,8 +347,9 @@ std::string grpc_oauth2_token_fetcher_credentials::debug_string() {
   return "OAuth2TokenFetcherCredentials";
 }
 
-const char* grpc_oauth2_token_fetcher_credentials::type() const {
-  return "Oauth2";
+grpc_core::UniqueTypeName grpc_oauth2_token_fetcher_credentials::type() const {
+  static auto* kFactory = new grpc_core::UniqueTypeName::Factory("Oauth2");
+  return kFactory->Create();
 }
 
 //
@@ -476,8 +477,10 @@ std::string grpc_google_refresh_token_credentials::debug_string() {
                          grpc_oauth2_token_fetcher_credentials::debug_string());
 }
 
-const char* grpc_google_refresh_token_credentials::type() const {
-  return "GoogleRefreshToken";
+grpc_core::UniqueTypeName grpc_google_refresh_token_credentials::type() const {
+  static auto* kFactory =
+      new grpc_core::UniqueTypeName::Factory("GoogleRefreshToken");
+  return kFactory->Create();
 }
 
 static std::string create_loggable_refresh_token(
@@ -713,7 +716,10 @@ grpc_access_token_credentials::GetRequestMetadata(
   return grpc_core::Immediate(std::move(initial_metadata));
 }
 
-const char* grpc_access_token_credentials::Type() { return "AccessToken"; }
+grpc_core::UniqueTypeName grpc_access_token_credentials::Type() {
+  static auto* kFactory = new grpc_core::UniqueTypeName::Factory("AccessToken");
+  return kFactory->Create();
+}
 
 grpc_access_token_credentials::grpc_access_token_credentials(
     const char* access_token)

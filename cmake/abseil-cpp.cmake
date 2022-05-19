@@ -12,7 +12,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-if(gRPC_ABSL_PROVIDER STREQUAL "module")
+if(TARGET absl::strings)
+  # If absl is included already, skip including it.
+  # (https://github.com/grpc/grpc/issues/29608)
+elseif(gRPC_ABSL_PROVIDER STREQUAL "module")
   if(NOT ABSL_ROOT_DIR)
     set(ABSL_ROOT_DIR ${CMAKE_CURRENT_SOURCE_DIR}/third_party/abseil-cpp)
   endif()

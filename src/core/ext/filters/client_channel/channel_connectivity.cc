@@ -47,7 +47,7 @@ namespace {
 bool IsLameChannel(Channel* channel) {
   grpc_channel_element* elem =
       grpc_channel_stack_last_element(channel->channel_stack());
-  return elem->filter == &grpc_lame_filter;
+  return elem->filter == &LameClientFilter::kFilter;
 }
 
 }  // namespace

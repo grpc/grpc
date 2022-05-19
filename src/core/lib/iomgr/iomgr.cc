@@ -64,7 +64,6 @@ void grpc_iomgr_init() {
   g_root_object.name = const_cast<char*>("root");
   grpc_iomgr_platform_init();
   grpc_timer_list_init();
-  grpc_core::grpc_errqueue_init();
   g_grpc_abort_on_leaks = GPR_GLOBAL_CONFIG_GET(grpc_abort_on_leaks);
 }
 

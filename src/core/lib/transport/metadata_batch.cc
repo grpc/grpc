@@ -276,6 +276,7 @@ std::string GrpcStreamNetworkState::DisplayValue(ValueType x) {
     case kNotSeenByServer:
       return "not seen by server";
   }
+  GPR_UNREACHABLE_CODE(return "unknown value");
 }
 
 std::string PeerString::DisplayValue(ValueType x) { return std::string(x); }

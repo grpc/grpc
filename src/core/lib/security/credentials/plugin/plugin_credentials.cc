@@ -60,7 +60,10 @@ std::string grpc_plugin_credentials::debug_string() {
   return debug_str;
 }
 
-const char* grpc_plugin_credentials::type() const { return "Plugin"; }
+grpc_core::UniqueTypeName grpc_plugin_credentials::type() const {
+  static auto* kFactory = new grpc_core::UniqueTypeName::Factory("Plugin");
+  return kFactory->Create();
+}
 
 absl::StatusOr<grpc_core::ClientMetadataHandle>
 grpc_plugin_credentials::PendingRequest::ProcessPluginResult(
