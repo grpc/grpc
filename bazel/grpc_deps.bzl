@@ -166,6 +166,11 @@ def grpc_deps():
     )
 
     native.bind(
+        name = "opencensus-stats-recording",
+        actual = "@io_opencensus_cpp//opencensus/stats:recording",
+    )
+
+    native.bind(
         name = "opencensus-stats-test",
         actual = "@io_opencensus_cpp//opencensus/stats:test_utils",
     )

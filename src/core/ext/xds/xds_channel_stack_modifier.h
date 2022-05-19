@@ -21,11 +21,15 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <utility>
 #include <vector>
 
-#include "src/core/lib/channel/channel_stack.h"
+#include <grpc/impl/codegen/grpc_types.h>
+
+#include "src/core/lib/channel/channel_fwd.h"
 #include "src/core/lib/channel/channel_stack_builder.h"
 #include "src/core/lib/gprpp/ref_counted.h"
+#include "src/core/lib/gprpp/ref_counted_ptr.h"
 
 namespace grpc_core {
 
