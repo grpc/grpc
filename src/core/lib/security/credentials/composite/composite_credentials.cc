@@ -16,23 +16,26 @@
  *
  */
 
+#include <grpc/support/port_platform.h>
+
 #include "src/core/lib/security/credentials/composite/composite_credentials.h"
 
-#include <grpc/support/port_platform.h>
-#include <grpc/support/log.h>
+#include <algorithm>
 #include <cstring>
 #include <vector>
-#include <algorithm>
 
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_join.h"
+
+#include <grpc/support/log.h>
+
+#include "src/core/lib/debug/trace.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
+#include "src/core/lib/promise/detail/basic_seq.h"
+#include "src/core/lib/promise/poll.h"
 #include "src/core/lib/promise/try_seq.h"
 #include "src/core/lib/surface/api_trace.h"
 #include "src/core/lib/transport/transport.h"
-#include "src/core/lib/debug/trace.h"
-#include "src/core/lib/promise/detail/basic_seq.h"
-#include "src/core/lib/promise/poll.h"
 
 //
 // grpc_composite_channel_credentials

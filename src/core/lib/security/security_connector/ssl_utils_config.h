@@ -16,6 +16,8 @@
  *
  */
 
+#include <grpc/support/port_platform.h>
+
 #include "src/core/lib/gprpp/memory.h"
 #ifndef GRPC_CORE_LIB_SECURITY_SECURITY_CONNECTOR_SSL_UTILS_CONFIG_H
 #define GRPC_CORE_LIB_SECURITY_SECURITY_CONNECTOR_SSL_UTILS_CONFIG_H

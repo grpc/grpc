@@ -16,9 +16,10 @@
  *
  */
 
+#include <grpc/support/port_platform.h>
+
 #include "src/core/lib/security/security_connector/load_system_roots_linux.h"
 
-#include <grpc/support/port_platform.h>
 #include <stdio.h>
 
 #include "src/core/lib/gprpp/memory.h"
@@ -32,10 +33,12 @@
 #include <sys/param.h>
 #include <sys/stat.h>
 #include <unistd.h>
+
+#include "absl/container/inlined_vector.h"
+
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 
-#include "absl/container/inlined_vector.h"
 #include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/gprpp/global_config.h"
 #include "src/core/lib/iomgr/load_file.h"

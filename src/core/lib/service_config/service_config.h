@@ -18,12 +18,15 @@
 #define GRPC_CORE_LIB_SERVICE_CONFIG_SERVICE_CONFIG_H
 
 #include <grpc/support/port_platform.h>
-#include <grpc/slice.h>
+
 #include <stddef.h>
+
+#include "absl/strings/string_view.h"
+
+#include <grpc/slice.h>
 
 #include "src/core/lib/gprpp/ref_counted.h"
 #include "src/core/lib/service_config/service_config_parser.h"
-#include "absl/strings/string_view.h"
 
 // The main purpose of the code here is to parse the service config in
 // JSON form, which will look like this:

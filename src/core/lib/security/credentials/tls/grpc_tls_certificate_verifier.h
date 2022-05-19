@@ -18,16 +18,19 @@
 #define GRPC_CORE_LIB_SECURITY_CREDENTIALS_TLS_GRPC_TLS_CERTIFICATE_VERIFIER_H
 
 #include <grpc/support/port_platform.h>
-#include <grpc/grpc_security.h>
-#include <grpc/status.h>
-#include <grpc/support/log.h>
+
 #include <functional>
 #include <map>
 
+#include "absl/base/thread_annotations.h"
 #include "absl/status/status.h"
+
+#include <grpc/grpc_security.h>
+#include <grpc/status.h>
+#include <grpc/support/log.h>
+
 #include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/gprpp/ref_counted.h"
-#include "absl/base/thread_annotations.h"
 #include "src/core/lib/gprpp/sync.h"
 
 // An abstraction of the verifier that all verifier subclasses should extend.

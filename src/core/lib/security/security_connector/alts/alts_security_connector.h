@@ -16,6 +16,8 @@
  *
  */
 
+#include <grpc/support/port_platform.h>
+
 #include <grpc/grpc.h>
 #include <grpc/grpc_security.h>
 

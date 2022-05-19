@@ -16,17 +16,19 @@
  *
  */
 
+#include <grpc/support/port_platform.h>
+
 #include "src/core/lib/security/credentials/alts/alts_credentials.h"
 
-#include <grpc/support/port_platform.h>
+#include <utility>
+
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/string_util.h>
-#include <utility>
 
 #include "src/core/lib/security/credentials/alts/check_gcp_environment.h"
-#include "src/core/lib/security/security_connector/alts/alts_security_connector.h"
 #include "src/core/lib/security/credentials/alts/grpc_alts_credentials_options.h"
+#include "src/core/lib/security/security_connector/alts/alts_security_connector.h"
 
 #define GRPC_ALTS_HANDSHAKER_SERVICE_URL "metadata.google.internal.:8080"
 
