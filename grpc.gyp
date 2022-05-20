@@ -67,7 +67,7 @@
     ],
     'cflags_c': [
       '-Werror',
-      '-std=c99',
+      '-std=c11',
     ],
     'cflags_cc': [
       '-Werror',

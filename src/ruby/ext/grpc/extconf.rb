@@ -102,7 +102,7 @@ $LDFLAGS << ' -Wl,-wrap,memcpy' if linux
 $LDFLAGS << ' -static-libgcc -static-libstdc++' if linux
 $LDFLAGS << ' -static' if windows
 
-$CFLAGS << ' -std=c99 '
+$CFLAGS << ' -std=c11 '
 $CFLAGS << ' -Wall '
 $CFLAGS << ' -Wextra '
 $CFLAGS << ' -pedantic '

@@ -220,9 +220,9 @@ if(WIN32)
   set(_gRPC_PLATFORM_WINDOWS ON)
 endif()
 
- # Use C99 standard
+ # Use C11 standard
 if (NOT DEFINED CMAKE_C_STANDARD)
-  set(CMAKE_C_STANDARD 99)
+  set(CMAKE_C_STANDARD 11)
 endif()
 
 # Add c++14 flags
