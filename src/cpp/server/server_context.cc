@@ -17,6 +17,16 @@
  */
 
 #include <assert.h>
+
+#include <atomic>
+#include <cstdlib>
+#include <functional>
+#include <map>
+#include <new>
+#include <string>
+#include <utility>
+#include <vector>
+
 #include <grpc/compression.h>
 #include <grpc/grpc.h>
 #include <grpc/impl/codegen/compression_types.h>
@@ -42,19 +52,11 @@
 #include <grpcpp/support/interceptor.h>
 #include <grpcpp/support/server_callback.h>
 #include <grpcpp/support/server_interceptor.h>
-#include <atomic>
-#include <cstdlib>
-#include <functional>
-#include <map>
-#include <new>
-#include <string>
-#include <utility>
-#include <vector>
 
 #include "src/core/lib/gprpp/ref_counted.h"
 #include "src/core/lib/gprpp/sync.h"
-#include "src/core/lib/surface/call.h"
 #include "src/core/lib/resource_quota/arena.h"
+#include "src/core/lib/surface/call.h"
 
 namespace grpc {
 
