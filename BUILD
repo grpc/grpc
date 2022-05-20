@@ -3678,6 +3678,7 @@ grpc_cc_library(
         "ref_counted_ptr",
         "server_address",
         "sockaddr_utils",
+        "unique_type_name",
     ],
 )
 
@@ -4231,6 +4232,7 @@ grpc_cc_library(
         "orphanable",
         "ref_counted_ptr",
         "time",
+        "unique_type_name",
         "uri_parser",
         "useful",
     ],
