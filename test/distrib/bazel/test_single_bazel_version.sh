@@ -70,20 +70,19 @@ function check_bazel_version() {
 # validate the Bazel version
 check_bazel_version
 
-# clean the caches and downloaded archives to make sure we build from scratch
-$BAZEL clean --expunge
+# stop the Bazel local server to clear caches
+$BAZEL shutdown
 
 # test building all targets
-$BAZEL build -- //... "${EXCLUDED_TARGETS[@]}" || FAILED_TESTS="${FAILED_TESTS}Build "
+$BAZEL build --repository_cache="" -- //... "${EXCLUDED_TARGETS[@]}" || FAILED_TESTS="${FAILED_TESTS}Build "
 
 for TEST_DIRECTORY in "${TEST_DIRECTORIES[@]}"; do
   pushd "test/distrib/bazel/$TEST_DIRECTORY/"
-
-  # clean the caches and downloaded archives to make sure we build from scratch
-  $BAZEL clean --expunge
+  # stop the Bazel local server to clear caches
+  $BAZEL shutdown
   # validate the Bazel version again, since we have a different WORKSPACE file
   check_bazel_version
-  $BAZEL test --cache_test_results=no --test_output=all //:all || FAILED_TESTS="${FAILED_TESTS}${TEST_DIRECTORY} Distribtest"
+  $BAZEL test --repository_cache="" --cache_test_results=no --test_output=all //:all || FAILED_TESTS="${FAILED_TESTS}${TEST_DIRECTORY} Distribtest"
 
   popd
 done
