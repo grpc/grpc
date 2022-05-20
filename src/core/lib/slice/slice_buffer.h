@@ -104,15 +104,6 @@ class SliceBuffer {
   /// Concatenate all slices and return the resulting string.
   std::string JoinIntoString() const;
 
-  // Return a copy of the slice buffer
-  SliceBuffer Copy() const {
-    SliceBuffer copy;
-    grpc_slice_buffer_addn(copy.c_slice_buffer(),
-                           const_cast<grpc_slice*>(slice_buffer_.slices),
-                           slice_buffer_.count);
-    return copy;
-  }
-
   /// Return a pointer to the back raw grpc_slice_buffer
   grpc_slice_buffer* c_slice_buffer() { return &slice_buffer_; }
 

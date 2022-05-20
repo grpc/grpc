@@ -1079,6 +1079,7 @@ void FilterStackCall::BatchControl::PostCompletion() {
                      "Attempt to send message after stream was closed."));
     }
     call->sending_message_ = false;
+    call->sending_stream_.Destroy();
   }
   if (op_.send_trailing_metadata) {
     call->send_trailing_metadata_.Clear();

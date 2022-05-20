@@ -1468,10 +1468,14 @@ static void perform_stream_op_locked(void* stream_op,
         s->write_buffering = false;
       }
 
-      grpc_slice_buffer_addn(
-          &s->flow_controlled_buffer,
-          op->payload->send_message.send_message->c_slice_buffer()->slices,
-          op->payload->send_message.send_message->Count());
+      grpc_slice* const slices =
+          op_payload->send_message.send_message->c_slice_buffer()->slices;
+      grpc_slice* const end =
+          slices + op_payload->send_message.send_message->Count();
+      for (grpc_slice* slice = slices; slice != end; slice++) {
+        grpc_slice_buffer_add(&s->flow_controlled_buffer,
+                              grpc_slice_ref(*slice));
+      }
 
       int64_t notify_offset = s->next_message_end_offset;
       if (notify_offset <= s->flow_controlled_bytes_written) {

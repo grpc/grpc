@@ -5894,6 +5894,7 @@ grpc_cc_library(
         "grpc++_base",
         "grpc_base",
         "slice",
+        "slice_buffer",
         "slice_refcount",
     ],
 )
