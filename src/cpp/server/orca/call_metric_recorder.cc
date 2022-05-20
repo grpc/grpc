@@ -15,10 +15,7 @@
 //
 
 #include <stddef.h>
-#include <grpcpp/ext/call_metric_recorder.h>
-#include <grpcpp/impl/codegen/sync.h>
-#include <grpcpp/support/config.h>
-#include <grpcpp/support/string_ref.h>
+
 #include <map>
 #include <string>
 #include <utility>
@@ -28,6 +25,12 @@
 #include "upb/upb.h"
 #include "upb/upb.hpp"
 #include "xds/data/orca/v3/orca_load_report.upb.h"
+
+#include <grpcpp/ext/call_metric_recorder.h>
+#include <grpcpp/impl/codegen/sync.h>
+#include <grpcpp/support/config.h>
+#include <grpcpp/support/string_ref.h>
+
 #include "src/core/ext/filters/client_channel/lb_policy/backend_metric_data.h"
 #include "src/core/lib/resource_quota/arena.h"
 
