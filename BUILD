@@ -941,14 +941,6 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
-    name = "capture",
-    external_deps = ["absl/utility"],
-    language = "c++",
-    public_hdrs = ["src/core/lib/gprpp/capture.h"],
-    deps = ["gpr_platform"],
-)
-
-grpc_cc_library(
     name = "construct_destruct",
     language = "c++",
     public_hdrs = ["src/core/lib/gprpp/construct_destruct.h"],
@@ -2916,7 +2908,6 @@ grpc_cc_library(
         "src/core/ext/filters/channel_idle/channel_idle_filter.h",
     ],
     deps = [
-        "capture",
         "config",
         "exec_ctx_wakeup_scheduler",
         "gpr_base",
@@ -3001,7 +2992,6 @@ grpc_cc_library(
     external_deps = ["absl/strings"],
     language = "c++",
     deps = [
-        "capture",
         "gpr_base",
         "grpc_base",
         "grpc_service_config",
@@ -4663,7 +4653,6 @@ grpc_cc_library(
     ],
     language = "c++",
     deps = [
-        "capture",
         "gpr_base",
         "grpc_base",
         "grpc_codegen",
@@ -4828,7 +4817,6 @@ grpc_cc_library(
     deps = [
         "arena",
         "arena_promise",
-        "capture",
         "config",
         "gpr_base",
         "grpc_base",
