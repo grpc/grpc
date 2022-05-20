@@ -353,6 +353,8 @@
 #define GPR_ARCH_32 1
 #endif /* _LP64 */
 #elif defined(__NetBSD__)
+// NetBSD is a community-supported platform.
+// Please contact Thomas Klausner <wiz@NetBSD.org> for support.
 #define GPR_PLATFORM_STRING "netbsd"
 #ifndef _BSD_SOURCE
 #define _BSD_SOURCE
