@@ -4219,6 +4219,7 @@ grpc_cc_library(
         "iomgr_fwd",
         "orphanable",
         "ref_counted_ptr",
+        "server_address",
         "time",
         "uri_parser",
         "useful",
