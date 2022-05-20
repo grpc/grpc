@@ -68,7 +68,7 @@ class SliceBuffer {
   size_t AppendIndexed(Slice slice);
 
   /// Returns the number of slices held by the SliceBuffer.
-  size_t Count() { return slice_buffer_.count; }
+  size_t Count() const { return slice_buffer_.count; }
 
   /// Removes/deletes the last n bytes in the SliceBuffer.
   void RemoveLastNBytes(size_t n) {
@@ -94,7 +94,7 @@ class SliceBuffer {
   Slice RefSlice(size_t index);
 
   /// The total number of bytes held by the SliceBuffer
-  size_t Length() { return slice_buffer_.length; }
+  size_t Length() const { return slice_buffer_.length; }
 
   /// Swap with another slice buffer
   void Swap(SliceBuffer* other) {
@@ -104,8 +104,20 @@ class SliceBuffer {
   /// Concatenate all slices and return the resulting string.
   std::string JoinIntoString() const;
 
+  // Return a copy of the slice buffer
+  SliceBuffer Copy() const {
+    SliceBuffer copy;
+    grpc_slice_buffer_addn(copy.c_slice_buffer(),
+                           const_cast<grpc_slice*>(slice_buffer_.slices),
+                           slice_buffer_.count);
+    return copy;
+  }
+
   /// Return a pointer to the back raw grpc_slice_buffer
   grpc_slice_buffer* c_slice_buffer() { return &slice_buffer_; }
+
+  /// Return a pointer to the back raw grpc_slice_buffer
+  const grpc_slice_buffer* c_slice_buffer() const { return &slice_buffer_; }
 
   const grpc_slice& c_slice_at(size_t index) {
     return slice_buffer_.slices[index];
