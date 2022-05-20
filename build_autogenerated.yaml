@@ -327,7 +327,6 @@ libs:
   - src/core/ext/filters/client_channel/dynamic_filters.h
   - src/core/ext/filters/client_channel/global_subchannel_pool.h
   - src/core/ext/filters/client_channel/health/health_check_client.h
-  - src/core/ext/filters/client_channel/http_connect_handshaker.h
   - src/core/ext/filters/client_channel/http_proxy.h
   - src/core/ext/filters/client_channel/lb_policy.h
   - src/core/ext/filters/client_channel/lb_policy/address_filtering.h
@@ -338,6 +337,7 @@ libs:
   - src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_client_stats.h
   - src/core/ext/filters/client_channel/lb_policy/grpclb/load_balancer_api.h
   - src/core/ext/filters/client_channel/lb_policy/oob_backend_metric.h
+  - src/core/ext/filters/client_channel/lb_policy/outlier_detection/outlier_detection.h
   - src/core/ext/filters/client_channel/lb_policy/ring_hash/ring_hash.h
   - src/core/ext/filters/client_channel/lb_policy/subchannel_list.h
   - src/core/ext/filters/client_channel/lb_policy/xds/xds.h
@@ -717,9 +717,6 @@ libs:
   - src/core/lib/channel/channelz_registry.h
   - src/core/lib/channel/connected_channel.h
   - src/core/lib/channel/context.h
-  - src/core/lib/channel/handshaker.h
-  - src/core/lib/channel/handshaker_factory.h
-  - src/core/lib/channel/handshaker_registry.h
   - src/core/lib/channel/promise_based_filter.h
   - src/core/lib/channel/status_util.h
   - src/core/lib/compression/compression_internal.h
@@ -730,6 +727,9 @@ libs:
   - src/core/lib/debug/trace.h
   - src/core/lib/event_engine/channel_args_endpoint_config.h
   - src/core/lib/event_engine/event_engine_factory.h
+  - src/core/lib/event_engine/handle_containers.h
+  - src/core/lib/event_engine/iomgr_engine.h
+  - src/core/lib/event_engine/trace.h
   - src/core/lib/gprpp/atomic_utils.h
   - src/core/lib/gprpp/bitset.h
   - src/core/lib/gprpp/capture.h
@@ -908,6 +908,7 @@ libs:
   - src/core/lib/slice/b64.h
   - src/core/lib/slice/percent_encoding.h
   - src/core/lib/slice/slice.h
+  - src/core/lib/slice/slice_buffer.h
   - src/core/lib/slice/slice_internal.h
   - src/core/lib/slice/slice_refcount.h
   - src/core/lib/slice/slice_refcount_base.h
@@ -931,11 +932,16 @@ libs:
   - src/core/lib/transport/byte_stream.h
   - src/core/lib/transport/connectivity_state.h
   - src/core/lib/transport/error_utils.h
+  - src/core/lib/transport/handshaker.h
+  - src/core/lib/transport/handshaker_factory.h
+  - src/core/lib/transport/handshaker_registry.h
   - src/core/lib/transport/http2_errors.h
+  - src/core/lib/transport/http_connect_handshaker.h
   - src/core/lib/transport/metadata_batch.h
   - src/core/lib/transport/parsed_metadata.h
   - src/core/lib/transport/pid_controller.h
   - src/core/lib/transport/status_conversion.h
+  - src/core/lib/transport/tcp_connect_handshaker.h
   - src/core/lib/transport/timeout_encoding.h
   - src/core/lib/transport/transport.h
   - src/core/lib/transport/transport_impl.h
@@ -984,7 +990,6 @@ libs:
   - src/core/ext/filters/client_channel/dynamic_filters.cc
   - src/core/ext/filters/client_channel/global_subchannel_pool.cc
   - src/core/ext/filters/client_channel/health/health_check_client.cc
-  - src/core/ext/filters/client_channel/http_connect_handshaker.cc
   - src/core/ext/filters/client_channel/http_proxy.cc
   - src/core/ext/filters/client_channel/lb_policy.cc
   - src/core/ext/filters/client_channel/lb_policy/address_filtering.cc
@@ -995,6 +1000,7 @@ libs:
   - src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_client_stats.cc
   - src/core/ext/filters/client_channel/lb_policy/grpclb/load_balancer_api.cc
   - src/core/ext/filters/client_channel/lb_policy/oob_backend_metric.cc
+  - src/core/ext/filters/client_channel/lb_policy/outlier_detection/outlier_detection.cc
   - src/core/ext/filters/client_channel/lb_policy/pick_first/pick_first.cc
   - src/core/ext/filters/client_channel/lb_policy/priority/priority.cc
   - src/core/ext/filters/client_channel/lb_policy/ring_hash/ring_hash.cc
@@ -1380,8 +1386,6 @@ libs:
   - src/core/lib/channel/channelz.cc
   - src/core/lib/channel/channelz_registry.cc
   - src/core/lib/channel/connected_channel.cc
-  - src/core/lib/channel/handshaker.cc
-  - src/core/lib/channel/handshaker_registry.cc
   - src/core/lib/channel/promise_based_filter.cc
   - src/core/lib/channel/status_util.cc
   - src/core/lib/compression/compression.cc
@@ -1394,10 +1398,12 @@ libs:
   - src/core/lib/event_engine/channel_args_endpoint_config.cc
   - src/core/lib/event_engine/default_event_engine_factory.cc
   - src/core/lib/event_engine/event_engine.cc
+  - src/core/lib/event_engine/iomgr_engine.cc
   - src/core/lib/event_engine/memory_allocator.cc
   - src/core/lib/event_engine/resolved_address.cc
   - src/core/lib/event_engine/slice.cc
   - src/core/lib/event_engine/slice_buffer.cc
+  - src/core/lib/event_engine/trace.cc
   - src/core/lib/gprpp/time.cc
   - src/core/lib/http/format_request.cc
   - src/core/lib/http/httpcli.cc
@@ -1561,6 +1567,7 @@ libs:
   - src/core/lib/slice/slice.cc
   - src/core/lib/slice/slice_api.cc
   - src/core/lib/slice/slice_buffer.cc
+  - src/core/lib/slice/slice_buffer_api.cc
   - src/core/lib/slice/slice_refcount.cc
   - src/core/lib/slice/slice_split.cc
   - src/core/lib/slice/slice_string_helpers.cc
@@ -1588,10 +1595,14 @@ libs:
   - src/core/lib/transport/byte_stream.cc
   - src/core/lib/transport/connectivity_state.cc
   - src/core/lib/transport/error_utils.cc
+  - src/core/lib/transport/handshaker.cc
+  - src/core/lib/transport/handshaker_registry.cc
+  - src/core/lib/transport/http_connect_handshaker.cc
   - src/core/lib/transport/metadata_batch.cc
   - src/core/lib/transport/parsed_metadata.cc
   - src/core/lib/transport/pid_controller.cc
   - src/core/lib/transport/status_conversion.cc
+  - src/core/lib/transport/tcp_connect_handshaker.cc
   - src/core/lib/transport/timeout_encoding.cc
   - src/core/lib/transport/transport.cc
   - src/core/lib/transport/transport_op_string.cc
@@ -1627,7 +1638,9 @@ libs:
   - src/core/tsi/transport_security.cc
   - src/core/tsi/transport_security_grpc.cc
   deps:
+  - absl/cleanup:cleanup
   - absl/container:flat_hash_map
+  - absl/container:flat_hash_set
   - absl/container:inlined_vector
   - absl/functional:bind_front
   - absl/hash:hash
@@ -1788,7 +1801,6 @@ libs:
   - src/core/ext/filters/client_channel/dynamic_filters.h
   - src/core/ext/filters/client_channel/global_subchannel_pool.h
   - src/core/ext/filters/client_channel/health/health_check_client.h
-  - src/core/ext/filters/client_channel/http_connect_handshaker.h
   - src/core/ext/filters/client_channel/http_proxy.h
   - src/core/ext/filters/client_channel/lb_policy.h
   - src/core/ext/filters/client_channel/lb_policy/address_filtering.h
@@ -1799,6 +1811,7 @@ libs:
   - src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_client_stats.h
   - src/core/ext/filters/client_channel/lb_policy/grpclb/load_balancer_api.h
   - src/core/ext/filters/client_channel/lb_policy/oob_backend_metric.h
+  - src/core/ext/filters/client_channel/lb_policy/outlier_detection/outlier_detection.h
   - src/core/ext/filters/client_channel/lb_policy/ring_hash/ring_hash.h
   - src/core/ext/filters/client_channel/lb_policy/subchannel_list.h
   - src/core/ext/filters/client_channel/lb_policy_factory.h
@@ -1887,9 +1900,6 @@ libs:
   - src/core/lib/channel/channelz_registry.h
   - src/core/lib/channel/connected_channel.h
   - src/core/lib/channel/context.h
-  - src/core/lib/channel/handshaker.h
-  - src/core/lib/channel/handshaker_factory.h
-  - src/core/lib/channel/handshaker_registry.h
   - src/core/lib/channel/promise_based_filter.h
   - src/core/lib/channel/status_util.h
   - src/core/lib/compression/compression_internal.h
@@ -1900,6 +1910,9 @@ libs:
   - src/core/lib/debug/trace.h
   - src/core/lib/event_engine/channel_args_endpoint_config.h
   - src/core/lib/event_engine/event_engine_factory.h
+  - src/core/lib/event_engine/handle_containers.h
+  - src/core/lib/event_engine/iomgr_engine.h
+  - src/core/lib/event_engine/trace.h
   - src/core/lib/gprpp/atomic_utils.h
   - src/core/lib/gprpp/bitset.h
   - src/core/lib/gprpp/capture.h
@@ -2045,6 +2058,7 @@ libs:
   - src/core/lib/slice/b64.h
   - src/core/lib/slice/percent_encoding.h
   - src/core/lib/slice/slice.h
+  - src/core/lib/slice/slice_buffer.h
   - src/core/lib/slice/slice_internal.h
   - src/core/lib/slice/slice_refcount.h
   - src/core/lib/slice/slice_refcount_base.h
@@ -2068,11 +2082,16 @@ libs:
   - src/core/lib/transport/byte_stream.h
   - src/core/lib/transport/connectivity_state.h
   - src/core/lib/transport/error_utils.h
+  - src/core/lib/transport/handshaker.h
+  - src/core/lib/transport/handshaker_factory.h
+  - src/core/lib/transport/handshaker_registry.h
   - src/core/lib/transport/http2_errors.h
+  - src/core/lib/transport/http_connect_handshaker.h
   - src/core/lib/transport/metadata_batch.h
   - src/core/lib/transport/parsed_metadata.h
   - src/core/lib/transport/pid_controller.h
   - src/core/lib/transport/status_conversion.h
+  - src/core/lib/transport/tcp_connect_handshaker.h
   - src/core/lib/transport/timeout_encoding.h
   - src/core/lib/transport/transport.h
   - src/core/lib/transport/transport_impl.h
@@ -2098,7 +2117,6 @@ libs:
   - src/core/ext/filters/client_channel/dynamic_filters.cc
   - src/core/ext/filters/client_channel/global_subchannel_pool.cc
   - src/core/ext/filters/client_channel/health/health_check_client.cc
-  - src/core/ext/filters/client_channel/http_connect_handshaker.cc
   - src/core/ext/filters/client_channel/http_proxy.cc
   - src/core/ext/filters/client_channel/lb_policy.cc
   - src/core/ext/filters/client_channel/lb_policy/address_filtering.cc
@@ -2109,6 +2127,7 @@ libs:
   - src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_client_stats.cc
   - src/core/ext/filters/client_channel/lb_policy/grpclb/load_balancer_api.cc
   - src/core/ext/filters/client_channel/lb_policy/oob_backend_metric.cc
+  - src/core/ext/filters/client_channel/lb_policy/outlier_detection/outlier_detection.cc
   - src/core/ext/filters/client_channel/lb_policy/pick_first/pick_first.cc
   - src/core/ext/filters/client_channel/lb_policy/priority/priority.cc
   - src/core/ext/filters/client_channel/lb_policy/ring_hash/ring_hash.cc
@@ -2203,8 +2222,6 @@ libs:
   - src/core/lib/channel/channelz.cc
   - src/core/lib/channel/channelz_registry.cc
   - src/core/lib/channel/connected_channel.cc
-  - src/core/lib/channel/handshaker.cc
-  - src/core/lib/channel/handshaker_registry.cc
   - src/core/lib/channel/promise_based_filter.cc
   - src/core/lib/channel/status_util.cc
   - src/core/lib/compression/compression.cc
@@ -2217,10 +2234,12 @@ libs:
   - src/core/lib/event_engine/channel_args_endpoint_config.cc
   - src/core/lib/event_engine/default_event_engine_factory.cc
   - src/core/lib/event_engine/event_engine.cc
+  - src/core/lib/event_engine/iomgr_engine.cc
   - src/core/lib/event_engine/memory_allocator.cc
   - src/core/lib/event_engine/resolved_address.cc
   - src/core/lib/event_engine/slice.cc
   - src/core/lib/event_engine/slice_buffer.cc
+  - src/core/lib/event_engine/trace.cc
   - src/core/lib/gprpp/time.cc
   - src/core/lib/http/format_request.cc
   - src/core/lib/http/httpcli.cc
@@ -2344,6 +2363,7 @@ libs:
   - src/core/lib/slice/slice.cc
   - src/core/lib/slice/slice_api.cc
   - src/core/lib/slice/slice_buffer.cc
+  - src/core/lib/slice/slice_buffer_api.cc
   - src/core/lib/slice/slice_refcount.cc
   - src/core/lib/slice/slice_split.cc
   - src/core/lib/slice/slice_string_helpers.cc
@@ -2371,10 +2391,14 @@ libs:
   - src/core/lib/transport/byte_stream.cc
   - src/core/lib/transport/connectivity_state.cc
   - src/core/lib/transport/error_utils.cc
+  - src/core/lib/transport/handshaker.cc
+  - src/core/lib/transport/handshaker_registry.cc
+  - src/core/lib/transport/http_connect_handshaker.cc
   - src/core/lib/transport/metadata_batch.cc
   - src/core/lib/transport/parsed_metadata.cc
   - src/core/lib/transport/pid_controller.cc
   - src/core/lib/transport/status_conversion.cc
+  - src/core/lib/transport/tcp_connect_handshaker.cc
   - src/core/lib/transport/timeout_encoding.cc
   - src/core/lib/transport/transport.cc
   - src/core/lib/transport/transport_op_string.cc
@@ -2386,7 +2410,9 @@ libs:
   - src/core/tsi/transport_security.cc
   - src/core/tsi/transport_security_grpc.cc
   deps:
+  - absl/cleanup:cleanup
   - absl/container:flat_hash_map
+  - absl/container:flat_hash_set
   - absl/container:inlined_vector
   - absl/functional:bind_front
   - absl/hash:hash
@@ -2500,6 +2526,37 @@ libs:
   - include/grpc++/support/stub_options.h
   - include/grpc++/support/sync_stream.h
   - include/grpc++/support/time.h
+  - include/grpc/byte_buffer.h
+  - include/grpc/byte_buffer_reader.h
+  - include/grpc/compression.h
+  - include/grpc/fork.h
+  - include/grpc/grpc.h
+  - include/grpc/grpc_posix.h
+  - include/grpc/grpc_security.h
+  - include/grpc/grpc_security_constants.h
+  - include/grpc/load_reporting.h
+  - include/grpc/slice.h
+  - include/grpc/slice_buffer.h
+  - include/grpc/status.h
+  - include/grpc/support/alloc.h
+  - include/grpc/support/atm.h
+  - include/grpc/support/atm_gcc_atomic.h
+  - include/grpc/support/atm_gcc_sync.h
+  - include/grpc/support/atm_windows.h
+  - include/grpc/support/cpu.h
+  - include/grpc/support/log.h
+  - include/grpc/support/log_windows.h
+  - include/grpc/support/port_platform.h
+  - include/grpc/support/string_util.h
+  - include/grpc/support/sync.h
+  - include/grpc/support/sync_abseil.h
+  - include/grpc/support/sync_custom.h
+  - include/grpc/support/sync_generic.h
+  - include/grpc/support/sync_posix.h
+  - include/grpc/support/sync_windows.h
+  - include/grpc/support/thd_id.h
+  - include/grpc/support/time.h
+  - include/grpc/support/workaround_list.h
   - include/grpcpp/alarm.h
   - include/grpcpp/channel.h
   - include/grpcpp/client_context.h
@@ -2887,6 +2944,37 @@ libs:
   - include/grpc++/support/stub_options.h
   - include/grpc++/support/sync_stream.h
   - include/grpc++/support/time.h
+  - include/grpc/byte_buffer.h
+  - include/grpc/byte_buffer_reader.h
+  - include/grpc/compression.h
+  - include/grpc/fork.h
+  - include/grpc/grpc.h
+  - include/grpc/grpc_posix.h
+  - include/grpc/grpc_security.h
+  - include/grpc/grpc_security_constants.h
+  - include/grpc/load_reporting.h
+  - include/grpc/slice.h
+  - include/grpc/slice_buffer.h
+  - include/grpc/status.h
+  - include/grpc/support/alloc.h
+  - include/grpc/support/atm.h
+  - include/grpc/support/atm_gcc_atomic.h
+  - include/grpc/support/atm_gcc_sync.h
+  - include/grpc/support/atm_windows.h
+  - include/grpc/support/cpu.h
+  - include/grpc/support/log.h
+  - include/grpc/support/log_windows.h
+  - include/grpc/support/port_platform.h
+  - include/grpc/support/string_util.h
+  - include/grpc/support/sync.h
+  - include/grpc/support/sync_abseil.h
+  - include/grpc/support/sync_custom.h
+  - include/grpc/support/sync_generic.h
+  - include/grpc/support/sync_posix.h
+  - include/grpc/support/sync_windows.h
+  - include/grpc/support/thd_id.h
+  - include/grpc/support/time.h
+  - include/grpc/support/workaround_list.h
   - include/grpcpp/alarm.h
   - include/grpcpp/channel.h
   - include/grpcpp/client_context.h
@@ -3319,6 +3407,15 @@ targets:
   - test/core/iomgr/buffer_list_test.cc
   deps:
   - grpc_test_util
+- name: c_slice_buffer_test
+  build: test
+  language: c
+  headers: []
+  src:
+  - test/core/slice/c_slice_buffer_test.cc
+  deps:
+  - grpc_test_util
+  uses_polling: false
 - name: channel_stack_test
   build: test
   language: c
@@ -4178,15 +4275,6 @@ targets:
   deps:
   - grpc_test_util
   uses_polling: false
-- name: test_core_slice_slice_buffer_test
-  build: test
-  language: c
-  headers: []
-  src:
-  - test/core/slice/slice_buffer_test.cc
-  deps:
-  - grpc_test_util
-  uses_polling: false
 - name: thd_test
   build: test
   language: c
@@ -4800,7 +4888,6 @@ targets:
   - src/core/lib/security/authorization/cel_authorization_engine.cc
   - test/core/security/cel_authorization_engine_test.cc
   deps:
-  - absl/container:flat_hash_set
   - grpc_test_util
 - name: certificate_provider_registry_test
   gtest: true
@@ -6326,6 +6413,19 @@ targets:
   deps:
   - grpc++_test_config
   - grpc++_test_util
+- name: iomgr_event_engine_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - test/core/event_engine/test_suite/event_engine_test.h
+  src:
+  - test/core/event_engine/test_suite/event_engine_test.cc
+  - test/core/event_engine/test_suite/iomgr_event_engine_test.cc
+  - test/core/event_engine/test_suite/timer_test.cc
+  deps:
+  - grpc_test_util
+  uses_polling: false
 - name: join_test
   gtest: true
   build: test
@@ -7706,6 +7806,16 @@ targets:
   - test/core/security/credentials_test.cc
   deps:
   - grpc_test_util
+- name: test_core_slice_slice_buffer_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/core/slice/slice_buffer_test.cc
+  deps:
+  - grpc_test_util
+  uses_polling: false
 - name: test_core_slice_slice_test
   gtest: true
   build: test
@@ -8425,6 +8535,7 @@ targets:
   - src/proto/grpc/testing/xds/v3/lrs.proto
   - src/proto/grpc/testing/xds/v3/metadata.proto
   - src/proto/grpc/testing/xds/v3/orca_load_report.proto
+  - src/proto/grpc/testing/xds/v3/outlier_detection.proto
   - src/proto/grpc/testing/xds/v3/path.proto
   - src/proto/grpc/testing/xds/v3/percent.proto
   - src/proto/grpc/testing/xds/v3/protocol.proto
@@ -8482,6 +8593,7 @@ targets:
   - src/proto/grpc/testing/xds/v3/lrs.proto
   - src/proto/grpc/testing/xds/v3/metadata.proto
   - src/proto/grpc/testing/xds/v3/orca_load_report.proto
+  - src/proto/grpc/testing/xds/v3/outlier_detection.proto
   - src/proto/grpc/testing/xds/v3/path.proto
   - src/proto/grpc/testing/xds/v3/percent.proto
   - src/proto/grpc/testing/xds/v3/protocol.proto
@@ -8537,6 +8649,7 @@ targets:
   - src/proto/grpc/testing/xds/v3/lrs.proto
   - src/proto/grpc/testing/xds/v3/metadata.proto
   - src/proto/grpc/testing/xds/v3/orca_load_report.proto
+  - src/proto/grpc/testing/xds/v3/outlier_detection.proto
   - src/proto/grpc/testing/xds/v3/path.proto
   - src/proto/grpc/testing/xds/v3/percent.proto
   - src/proto/grpc/testing/xds/v3/protocol.proto
@@ -8618,6 +8731,7 @@ targets:
   - src/proto/grpc/testing/xds/v3/lrs.proto
   - src/proto/grpc/testing/xds/v3/metadata.proto
   - src/proto/grpc/testing/xds/v3/orca_load_report.proto
+  - src/proto/grpc/testing/xds/v3/outlier_detection.proto
   - src/proto/grpc/testing/xds/v3/path.proto
   - src/proto/grpc/testing/xds/v3/percent.proto
   - src/proto/grpc/testing/xds/v3/protocol.proto
@@ -8680,6 +8794,7 @@ targets:
   - src/proto/grpc/testing/xds/v3/lrs.proto
   - src/proto/grpc/testing/xds/v3/metadata.proto
   - src/proto/grpc/testing/xds/v3/orca_load_report.proto
+  - src/proto/grpc/testing/xds/v3/outlier_detection.proto
   - src/proto/grpc/testing/xds/v3/path.proto
   - src/proto/grpc/testing/xds/v3/percent.proto
   - src/proto/grpc/testing/xds/v3/protocol.proto
@@ -8738,6 +8853,7 @@ targets:
   - src/proto/grpc/testing/xds/v3/lrs.proto
   - src/proto/grpc/testing/xds/v3/metadata.proto
   - src/proto/grpc/testing/xds/v3/orca_load_report.proto
+  - src/proto/grpc/testing/xds/v3/outlier_detection.proto
   - src/proto/grpc/testing/xds/v3/path.proto
   - src/proto/grpc/testing/xds/v3/percent.proto
   - src/proto/grpc/testing/xds/v3/protocol.proto
@@ -8807,6 +8923,64 @@ targets:
   - grpcpp_channelz
   - grpc_test_util
   - grpc++_test_config
+- name: xds_outlier_detection_end2end_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - test/cpp/end2end/counted_service.h
+  - test/cpp/end2end/test_service_impl.h
+  - test/cpp/end2end/xds/no_op_http_filter.h
+  - test/cpp/end2end/xds/xds_end2end_test_lib.h
+  - test/cpp/end2end/xds/xds_server.h
+  - test/cpp/util/tls_test_utils.h
+  src:
+  - src/proto/grpc/testing/duplicate/echo_duplicate.proto
+  - src/proto/grpc/testing/echo.proto
+  - src/proto/grpc/testing/echo_messages.proto
+  - src/proto/grpc/testing/simple_messages.proto
+  - src/proto/grpc/testing/xds/ads_for_test.proto
+  - src/proto/grpc/testing/xds/eds_for_test.proto
+  - src/proto/grpc/testing/xds/lrs_for_test.proto
+  - src/proto/grpc/testing/xds/v3/address.proto
+  - src/proto/grpc/testing/xds/v3/ads.proto
+  - src/proto/grpc/testing/xds/v3/base.proto
+  - src/proto/grpc/testing/xds/v3/cluster.proto
+  - src/proto/grpc/testing/xds/v3/config_source.proto
+  - src/proto/grpc/testing/xds/v3/discovery.proto
+  - src/proto/grpc/testing/xds/v3/endpoint.proto
+  - src/proto/grpc/testing/xds/v3/expr.proto
+  - src/proto/grpc/testing/xds/v3/extension.proto
+  - src/proto/grpc/testing/xds/v3/fault.proto
+  - src/proto/grpc/testing/xds/v3/fault_common.proto
+  - src/proto/grpc/testing/xds/v3/http_connection_manager.proto
+  - src/proto/grpc/testing/xds/v3/http_filter_rbac.proto
+  - src/proto/grpc/testing/xds/v3/listener.proto
+  - src/proto/grpc/testing/xds/v3/load_report.proto
+  - src/proto/grpc/testing/xds/v3/lrs.proto
+  - src/proto/grpc/testing/xds/v3/metadata.proto
+  - src/proto/grpc/testing/xds/v3/orca_load_report.proto
+  - src/proto/grpc/testing/xds/v3/outlier_detection.proto
+  - src/proto/grpc/testing/xds/v3/path.proto
+  - src/proto/grpc/testing/xds/v3/percent.proto
+  - src/proto/grpc/testing/xds/v3/protocol.proto
+  - src/proto/grpc/testing/xds/v3/range.proto
+  - src/proto/grpc/testing/xds/v3/rbac.proto
+  - src/proto/grpc/testing/xds/v3/regex.proto
+  - src/proto/grpc/testing/xds/v3/route.proto
+  - src/proto/grpc/testing/xds/v3/router.proto
+  - src/proto/grpc/testing/xds/v3/string.proto
+  - test/cpp/end2end/test_service_impl.cc
+  - test/cpp/end2end/xds/xds_end2end_test_lib.cc
+  - test/cpp/end2end/xds/xds_outlier_detection_end2end_test.cc
+  - test/cpp/end2end/xds/xds_server.cc
+  - test/cpp/util/tls_test_utils.cc
+  deps:
+  - grpc++_test_util
+  platforms:
+  - linux
+  - posix
+  - mac
 - name: xds_ring_hash_end2end_test
   gtest: true
   build: test
@@ -8844,6 +9018,7 @@ targets:
   - src/proto/grpc/testing/xds/v3/lrs.proto
   - src/proto/grpc/testing/xds/v3/metadata.proto
   - src/proto/grpc/testing/xds/v3/orca_load_report.proto
+  - src/proto/grpc/testing/xds/v3/outlier_detection.proto
   - src/proto/grpc/testing/xds/v3/path.proto
   - src/proto/grpc/testing/xds/v3/percent.proto
   - src/proto/grpc/testing/xds/v3/protocol.proto
@@ -8902,6 +9077,7 @@ targets:
   - src/proto/grpc/testing/xds/v3/lrs.proto
   - src/proto/grpc/testing/xds/v3/metadata.proto
   - src/proto/grpc/testing/xds/v3/orca_load_report.proto
+  - src/proto/grpc/testing/xds/v3/outlier_detection.proto
   - src/proto/grpc/testing/xds/v3/path.proto
   - src/proto/grpc/testing/xds/v3/percent.proto
   - src/proto/grpc/testing/xds/v3/protocol.proto
@@ -8961,6 +9137,7 @@ targets:
   - src/proto/grpc/testing/xds/v3/lrs.proto
   - src/proto/grpc/testing/xds/v3/metadata.proto
   - src/proto/grpc/testing/xds/v3/orca_load_report.proto
+  - src/proto/grpc/testing/xds/v3/outlier_detection.proto
   - src/proto/grpc/testing/xds/v3/path.proto
   - src/proto/grpc/testing/xds/v3/percent.proto
   - src/proto/grpc/testing/xds/v3/protocol.proto

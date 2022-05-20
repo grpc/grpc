@@ -16,8 +16,8 @@
  *
  */
 
-#ifndef GRPC_CORE_LIB_CHANNEL_HANDSHAKER_FACTORY_H
-#define GRPC_CORE_LIB_CHANNEL_HANDSHAKER_FACTORY_H
+#ifndef GRPC_CORE_LIB_TRANSPORT_HANDSHAKER_FACTORY_H
+#define GRPC_CORE_LIB_TRANSPORT_HANDSHAKER_FACTORY_H
 
 #include <grpc/support/port_platform.h>
 
@@ -46,4 +46,4 @@ class HandshakerFactory {
 
 }  // namespace grpc_core
 
-#endif /* GRPC_CORE_LIB_CHANNEL_HANDSHAKER_FACTORY_H */
+#endif /* GRPC_CORE_LIB_TRANSPORT_HANDSHAKER_FACTORY_H */
