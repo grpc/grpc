@@ -28,7 +28,7 @@
 #include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
 
-#include <grpcpp/call_metric_recorder.h>
+#include <grpcpp/ext/call_metric_recorder.h>
 #include <grpcpp/server_builder.h>
 #include <grpcpp/server_context.h>
 #include <grpcpp/support/config.h>

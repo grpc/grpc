@@ -55,6 +55,7 @@
 
 #include "src/core/lib/gprpp/ref_counted.h"
 #include "src/core/lib/gprpp/sync.h"
+#include "src/core/lib/surface/call.h"
 
 namespace grpc {
 
@@ -401,7 +402,7 @@ void ServerContextBase::SetLoadReportingCosts(
 
 void ServerContextBase::CreateCallMetricRecorder() {
   GPR_ASSERT(call_metric_recorder_ == nullptr);
-  grpc_core::Arena* arena = grpc_call_get_peer(call_.call);
+  grpc_core::Arena* arena = grpc_call_get_arena(call_.call);
   call_metric_recorder_ = arena->New<experimental::CallMetricRecorder>(arena);
 }
 

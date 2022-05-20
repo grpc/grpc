@@ -5705,6 +5705,8 @@ grpc_cc_library(
     external_deps = [
         "upb_lib",
         "absl/memory",
+        "absl/strings",
+        "absl/types:optional",
     ],
     language = "c++",
     public_hdrs = [
@@ -5714,6 +5716,8 @@ grpc_cc_library(
     deps = [
         "arena",
         "grpc++_codegen_base",
+        "grpc++_internal_hdrs_only",
+        "grpc++_public_hdrs",
         "grpc_backend_metric_data",
         "xds_orca_upb",
     ],
@@ -5730,6 +5734,7 @@ grpc_cc_library(
     external_deps = [
         "upb_lib",
         "absl/memory",
+        "absl/strings",
         "absl/types:optional",
     ],
     language = "c++",
