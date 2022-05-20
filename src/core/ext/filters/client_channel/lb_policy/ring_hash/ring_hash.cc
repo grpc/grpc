@@ -45,6 +45,7 @@
 #include <grpc/impl/codegen/grpc_types.h>
 #include <grpc/support/log.h>
 
+#include "src/core/ext/filters/client_channel/client_channel.h"
 #include "src/core/ext/filters/client_channel/lb_policy.h"
 #include "src/core/ext/filters/client_channel/lb_policy/subchannel_list.h"
 #include "src/core/ext/filters/client_channel/lb_policy_factory.h"
@@ -67,8 +68,13 @@
 
 namespace grpc_core {
 
-const char* kRequestRingHashAttribute = "request_ring_hash";
 TraceFlag grpc_lb_ring_hash_trace(false, "ring_hash_lb");
+
+UniqueTypeName RequestHashAttributeName() {
+  static auto* kFactory = new UniqueTypeName::Factory("request_ring_hash");
+  return kFactory->Create();
+}
+
 
 // Helper Parser method
 void ParseRingHashLbConfig(const Json& json, size_t* min_ring_size,
@@ -443,8 +449,9 @@ RingHash::Ring::Ring(RingHash* parent,
 //
 
 RingHash::PickResult RingHash::Picker::Pick(PickArgs args) {
-  auto hash =
-      args.call_state->ExperimentalGetCallAttribute(kRequestRingHashAttribute);
+  auto* call_state = static_cast<ClientChannel::LoadBalancedCall::LbCallState*>(
+      args.call_state);
+  auto hash = call_state->GetCallAttribute(RequestHashAttributeName());
   uint64_t h;
   if (!absl::SimpleAtoi(hash, &h)) {
     return PickResult::Fail(

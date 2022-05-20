@@ -106,13 +106,6 @@ class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
     /// It is more efficient to use this than to allocate memory directly
     /// for allocations that need to be made on a per-call basis.
     virtual void* Alloc(size_t size) = 0;
-
-    /// EXPERIMENTAL API.
-    /// Returns the value of the call attribute \a key.
-    /// Keys are static strings, so an attribute can be accessed by an LB
-    /// policy implementation only if it knows about the internal key.
-    /// Returns a null string_view if key not found.
-    virtual absl::string_view ExperimentalGetCallAttribute(const char* key) = 0;
   };
 
   /// Interface for accessing metadata.

@@ -2591,6 +2591,7 @@ grpc_cc_library(
         "json",
         "service_config_parser",
         "slice",
+        "unique_type_name",
     ],
 )
 

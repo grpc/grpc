@@ -92,7 +92,10 @@ namespace grpc_core {
 
 TraceFlag grpc_xds_resolver_trace(false, "xds_resolver");
 
-const char* kXdsClusterAttribute = "xds_cluster_name";
+UniqueTypeName XdsClusterAttributeTypeName() {
+  static auto* kFactory = new UniqueTypeName::Factory("xds_cluster_name");
+  return kFactory->Create();
+}
 
 namespace {
 
@@ -762,13 +765,13 @@ ConfigSelector::CallConfig XdsResolver::XdsConfigSelector::GetCallConfig(
         method_config->GetMethodParsedConfigVector(grpc_empty_slice());
     call_config.service_config = std::move(method_config);
   }
-  call_config.call_attributes[kXdsClusterAttribute] = it->first;
+  call_config.call_attributes[XdsClusterAttributeTypeName()] = it->first;
   std::string hash_string = absl::StrCat(hash.value());
   char* hash_value =
       static_cast<char*>(args.arena->Alloc(hash_string.size() + 1));
   memcpy(hash_value, hash_string.c_str(), hash_string.size());
   hash_value[hash_string.size()] = '\0';
-  call_config.call_attributes[kRequestRingHashAttribute] = hash_value;
+  call_config.call_attributes[RequestHashAttributeName()] = hash_value;
   call_config.call_dispatch_controller =
       args.arena->New<XdsCallDispatchController>(it->second->Ref());
   return call_config;
