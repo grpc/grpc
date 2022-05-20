@@ -38,6 +38,8 @@
 #include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
 
+#include "src/core/lib/gprpp/unique_type_name.h"
+
 #define XXH_INLINE_ALL
 #include "xxhash.h"
 
@@ -74,7 +76,6 @@ UniqueTypeName RequestHashAttributeName() {
   static auto* kFactory = new UniqueTypeName::Factory("request_ring_hash");
   return kFactory->Create();
 }
-
 
 // Helper Parser method
 void ParseRingHashLbConfig(const Json& json, size_t* min_ring_size,
