@@ -28,6 +28,7 @@
 #include <grpc/support/log.h>
 #include <grpc/support/time.h>
 #include <grpcpp/completion_queue.h>
+#include <grpcpp/ext/call_metric_recorder.h>
 #include <grpcpp/impl/call.h>
 #include <grpcpp/impl/codegen/call_op_set.h>
 #include <grpcpp/impl/codegen/call_op_set_interface.h>
@@ -41,7 +42,6 @@
 #include <grpcpp/support/interceptor.h>
 #include <grpcpp/support/server_callback.h>
 #include <grpcpp/support/server_interceptor.h>
-#include <grpcpp/call_metric_recorder.h>
 #include <atomic>
 #include <cstdlib>
 #include <functional>

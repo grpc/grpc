@@ -19,8 +19,6 @@
 #ifndef GRPCPP_EXT_CALL_METRIC_RECORDER_H
 #define GRPCPP_EXT_CALL_METRIC_RECORDER_H
 
-// IWYU pragma: private, include <grpcpp/call_metric_recorder.h>
-
 #include <memory>
 #include <string>
 
