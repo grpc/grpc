@@ -2154,6 +2154,22 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "bdp_estimator",
+    srcs = [
+        "src/core/lib/transport/bdp_estimator.cc",
+    ],
+    hdrs = ["src/core/lib/transport/bdp_estimator.h"],
+    deps = [
+        "exec_ctx",
+        "gpr_base",
+        "gpr_codegen",
+        "gpr_platform",
+        "grpc_trace",
+        "time",
+    ],
+)
+
+grpc_cc_library(
     name = "grpc_base",
     srcs = [
         "src/core/lib/address_utils/parse_address.cc",
@@ -5160,13 +5176,39 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "chttp2_flow_control",
+    srcs = [
+        "src/core/ext/transport/chttp2/transport/flow_control.cc",
+    ],
+    hdrs = [
+        "src/core/ext/transport/chttp2/transport/flow_control.h",
+    ],
+    external_deps = [
+        "absl/status",
+        "absl/strings:str_format",
+        "absl/strings",
+    ],
+    deps = [
+        "bdp_estimator",
+        "error",
+        "exec_ctx",
+        "gpr_base",
+        "gpr_platform",
+        "grpc_trace",
+        "memory_quota",
+        "pid_controller",
+        "time",
+        "useful",
+    ],
+)
+
+grpc_cc_library(
     name = "grpc_transport_chttp2",
     srcs = [
         "src/core/ext/transport/chttp2/transport/bin_decoder.cc",
         "src/core/ext/transport/chttp2/transport/bin_encoder.cc",
         "src/core/ext/transport/chttp2/transport/chttp2_transport.cc",
         "src/core/ext/transport/chttp2/transport/context_list.cc",
-        "src/core/ext/transport/chttp2/transport/flow_control.cc",
         "src/core/ext/transport/chttp2/transport/frame_data.cc",
         "src/core/ext/transport/chttp2/transport/frame_goaway.cc",
         "src/core/ext/transport/chttp2/transport/frame_ping.cc",
@@ -5189,7 +5231,6 @@ grpc_cc_library(
         "src/core/ext/transport/chttp2/transport/bin_encoder.h",
         "src/core/ext/transport/chttp2/transport/chttp2_transport.h",
         "src/core/ext/transport/chttp2/transport/context_list.h",
-        "src/core/ext/transport/chttp2/transport/flow_control.h",
         "src/core/ext/transport/chttp2/transport/frame.h",
         "src/core/ext/transport/chttp2/transport/frame_data.h",
         "src/core/ext/transport/chttp2/transport/frame_goaway.h",

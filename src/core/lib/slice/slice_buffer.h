@@ -130,4 +130,7 @@ class SliceBuffer {
 
 }  // namespace grpc_core
 
+void grpc_slice_buffer_copy_first_into_buffer(grpc_slice_buffer* src, size_t n,
+                                              void* dst);
+
 #endif  // GRPC_CORE_LIB_SLICE_SLICE_BUFFER_H

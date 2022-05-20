@@ -24,16 +24,15 @@
 #include <limits.h>
 
 #include <cmath>
+#include <ostream>
 #include <string>
 
 #include "absl/strings/str_format.h"
+#include "absl/strings/str_join.h"
 
 #include <grpc/slice.h>
-#include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 
-#include "src/core/ext/transport/chttp2/transport/frame.h"
-#include "src/core/ext/transport/chttp2/transport/internal.h"
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
@@ -91,6 +90,7 @@ void FlowControlTrace::Init(const char* reason, TransportFlowControl* tfc,
 }
 
 void FlowControlTrace::Finish() {
+  /*
   uint32_t acked_local_window =
       tfc_->transport()->settings[GRPC_SENT_SETTINGS]
                                  [GRPC_CHTTP2_SETTINGS_INITIAL_WINDOW_SIZE];
@@ -129,22 +129,29 @@ void FlowControlTrace::Finish() {
   gpr_free(srw_str);
   gpr_free(slw_str);
   gpr_free(saw_str);
+*/
+  abort();
 }
 
 const char* FlowControlAction::UrgencyString(Urgency u) {
   switch (u) {
     case Urgency::NO_ACTION_NEEDED:
-      return "no action";
+      return "no-action";
     case Urgency::UPDATE_IMMEDIATELY:
-      return "update immediately";
+      return "now";
     case Urgency::QUEUE_UPDATE:
-      return "queue update";
+      return "queue";
     default:
       GPR_UNREACHABLE_CODE(return "unknown");
   }
   GPR_UNREACHABLE_CODE(return "unknown");
 }
 
+std::ostream& operator<<(std::ostream& out, FlowControlAction::Urgency u) {
+  return out << FlowControlAction::UrgencyString(u);
+}
+
+/*
 void FlowControlAction::Trace(grpc_chttp2_transport* t) const {
   char* iw_str = fmt_uint32_diff_str(
       t->settings[GRPC_SENT_SETTINGS][GRPC_CHTTP2_SETTINGS_INITIAL_WINDOW_SIZE],
@@ -160,31 +167,41 @@ void FlowControlAction::Trace(grpc_chttp2_transport* t) const {
   gpr_free(iw_str);
   gpr_free(mf_str);
 }
+*/
 
-TransportFlowControlDisabled::TransportFlowControlDisabled(
-    grpc_chttp2_transport* t) {
-  remote_window_ = kMaxWindow;
-  target_initial_window_size_ = kMaxWindow;
-  announced_window_ = kMaxWindow;
-  t->settings[GRPC_PEER_SETTINGS][GRPC_CHTTP2_SETTINGS_MAX_FRAME_SIZE] =
-      kFrameSize;
-  t->settings[GRPC_SENT_SETTINGS][GRPC_CHTTP2_SETTINGS_MAX_FRAME_SIZE] =
-      kFrameSize;
-  t->settings[GRPC_ACKED_SETTINGS][GRPC_CHTTP2_SETTINGS_MAX_FRAME_SIZE] =
-      kFrameSize;
-  t->settings[GRPC_PEER_SETTINGS][GRPC_CHTTP2_SETTINGS_INITIAL_WINDOW_SIZE] =
-      kMaxWindow;
-  t->settings[GRPC_SENT_SETTINGS][GRPC_CHTTP2_SETTINGS_INITIAL_WINDOW_SIZE] =
-      kMaxWindow;
-  t->settings[GRPC_ACKED_SETTINGS][GRPC_CHTTP2_SETTINGS_INITIAL_WINDOW_SIZE] =
-      kMaxWindow;
+std::string FlowControlAction::DebugString() const {
+  std::vector<std::string> segments;
+  if (send_transport_update_ != Urgency::NO_ACTION_NEEDED) {
+    segments.push_back(
+        absl::StrCat("t:", UrgencyString(send_transport_update_)));
+  }
+  if (send_stream_update_ != Urgency::NO_ACTION_NEEDED) {
+    segments.push_back(absl::StrCat("s:", UrgencyString(send_stream_update_)));
+  }
+  if (send_initial_window_update_ != Urgency::NO_ACTION_NEEDED) {
+    segments.push_back(
+        absl::StrCat("iw=", initial_window_size_, ":",
+                     UrgencyString(send_initial_window_update_)));
+  }
+  if (send_max_frame_size_update_ != Urgency::NO_ACTION_NEEDED) {
+    segments.push_back(
+        absl::StrCat("mf=", max_frame_size_, ":",
+                     UrgencyString(send_max_frame_size_update_)));
+  }
+  if (segments.empty()) return "no action";
+  return absl::StrJoin(segments, ",");
 }
 
-TransportFlowControl::TransportFlowControl(const grpc_chttp2_transport* t,
-                                           bool enable_bdp_probe)
-    : t_(t),
+std::ostream& operator<<(std::ostream& out, const FlowControlAction& action) {
+  return out << action.DebugString();
+}
+
+TransportFlowControl::TransportFlowControl(const char* name,
+                                           bool enable_bdp_probe,
+                                           MemoryOwner* memory_owner)
+    : memory_owner_(memory_owner),
       enable_bdp_probe_(enable_bdp_probe),
-      bdp_estimator_(t->peer_string.c_str()),
+      bdp_estimator_(name),
       pid_controller_(PidController::Args()
                           .set_gain_p(4)
                           .set_gain_i(8)
@@ -210,73 +227,50 @@ uint32_t TransportFlowControl::MaybeSendUpdate(bool writing_anyway) {
   return 0;
 }
 
-grpc_error_handle TransportFlowControl::ValidateRecvData(
+absl::Status TransportFlowControl::ValidateRecvData(
     int64_t incoming_frame_size) {
   if (incoming_frame_size > announced_window_) {
-    return GRPC_ERROR_CREATE_FROM_CPP_STRING(absl::StrFormat(
+    return absl::InternalError(absl::StrFormat(
         "frame of size %" PRId64 " overflows local window of %" PRId64,
         incoming_frame_size, announced_window_));
   }
-  return GRPC_ERROR_NONE;
+  return absl::OkStatus();
 }
 
-StreamFlowControl::StreamFlowControl(TransportFlowControl* tfc,
-                                     const grpc_chttp2_stream* s)
-    : tfc_(tfc), s_(s) {}
+void TransportFlowControl::CommitRecvData(int64_t incoming_frame_size) {
+  announced_window_ -= incoming_frame_size;
+}
 
-grpc_error_handle StreamFlowControl::RecvData(int64_t incoming_frame_size) {
+StreamFlowControl::StreamFlowControl(TransportFlowControl* tfc) : tfc_(tfc) {}
+
+absl::Status StreamFlowControl::RecvData(int64_t incoming_frame_size) {
   FlowControlTrace trace("  data recv", tfc_, this);
 
-  grpc_error_handle error = GRPC_ERROR_NONE;
-  error = tfc_->ValidateRecvData(incoming_frame_size);
-  if (error != GRPC_ERROR_NONE) return error;
+  absl::Status error = tfc_->ValidateRecvData(incoming_frame_size);
+  if (!error.ok()) return error;
 
-  uint32_t sent_init_window =
-      tfc_->transport()->settings[GRPC_SENT_SETTINGS]
-                                 [GRPC_CHTTP2_SETTINGS_INITIAL_WINDOW_SIZE];
-  uint32_t acked_init_window =
-      tfc_->transport()->settings[GRPC_ACKED_SETTINGS]
-                                 [GRPC_CHTTP2_SETTINGS_INITIAL_WINDOW_SIZE];
-
-  int64_t acked_stream_window = announced_window_delta_ + acked_init_window;
-  int64_t sent_stream_window = announced_window_delta_ + sent_init_window;
+  int64_t acked_stream_window =
+      announced_window_delta_ + tfc_->acked_init_window();
   if (incoming_frame_size > acked_stream_window) {
-    if (incoming_frame_size <= sent_stream_window) {
-      gpr_log(GPR_ERROR,
-              "Incoming frame of size %" PRId64
-              " exceeds local window size of %" PRId64
-              ".\n"
-              "The (un-acked, future) window size would be %" PRId64
-              " which is not exceeded.\n"
-              "This would usually cause a disconnection, but allowing it due to"
-              "broken HTTP2 implementations in the wild.\n"
-              "See (for example) https://github.com/netty/netty/issues/6520.",
-              incoming_frame_size, acked_stream_window, sent_stream_window);
-    } else {
-      return GRPC_ERROR_CREATE_FROM_CPP_STRING(absl::StrFormat(
-          "frame of size %" PRId64 " overflows local window of %" PRId64,
-          incoming_frame_size, acked_stream_window));
-    }
+    return absl::InternalError(absl::StrFormat(
+        "frame of size %" PRId64 " overflows local window of %" PRId64,
+        incoming_frame_size, acked_stream_window));
   }
 
   UpdateAnnouncedWindowDelta(tfc_, -incoming_frame_size);
   local_window_delta_ -= incoming_frame_size;
+  min_progress_size_ -=
+      std::min(static_cast<int64_t>(min_progress_size_), incoming_frame_size);
   tfc_->CommitRecvData(incoming_frame_size);
-  return GRPC_ERROR_NONE;
+  return absl::OkStatus();
 }
 
 uint32_t StreamFlowControl::MaybeSendUpdate() {
   FlowControlTrace trace("s updt sent", tfc_, this);
   // If a recently sent settings frame caused the stream's flow control window
-  // to go in the negative (or < GRPC_HEADER_SIZE_IN_BYTES), update the delta if
-  // there is a pending recv_message op.
+  // to go in the negative (or < min_progress_size_), update the delta.
   // In this case, we want to make sure that bytes are still flowing.
-  if (local_window_delta_ < GRPC_HEADER_SIZE_IN_BYTES) {
-    if (s_->recv_message != nullptr) {
-      IncomingByteStreamUpdate(GRPC_HEADER_SIZE_IN_BYTES,
-                               s_->frame_storage.length);
-    }
-  }
+  UpdateProgress(min_progress_size_);
   if (local_window_delta_ > announced_window_delta_) {
     uint32_t announce = static_cast<uint32_t>(
         Clamp(local_window_delta_ - announced_window_delta_, int64_t(0),
@@ -287,32 +281,22 @@ uint32_t StreamFlowControl::MaybeSendUpdate() {
   return 0;
 }
 
-void StreamFlowControl::IncomingByteStreamUpdate(size_t max_size_hint,
-                                                 size_t have_already) {
+void StreamFlowControl::UpdateProgress(uint32_t min_progress_size) {
   FlowControlTrace trace("app st recv", tfc_, this);
   uint32_t max_recv_bytes;
 
+  min_progress_size_ = min_progress_size;
+
   /* clamp max recv hint to an allowable size */
-  if (max_size_hint >= kMaxWindowDelta) {
+  if (min_progress_size >= kMaxWindowDelta) {
     max_recv_bytes = kMaxWindowDelta;
   } else {
-    max_recv_bytes = static_cast<uint32_t>(max_size_hint);
-  }
-
-  /* account for bytes already received but unknown to higher layers */
-  if (max_recv_bytes >= have_already) {
-    max_recv_bytes -= static_cast<uint32_t>(have_already);
-  } else {
-    max_recv_bytes = 0;
+    max_recv_bytes = static_cast<uint32_t>(min_progress_size);
   }
 
   /* add some small lookahead to keep pipelines flowing */
-  GPR_DEBUG_ASSERT(
-      max_recv_bytes <=
-      kMaxWindowUpdateSize -
-          tfc_->transport()
-              ->settings[GRPC_SENT_SETTINGS]
-                        [GRPC_CHTTP2_SETTINGS_INITIAL_WINDOW_SIZE]);
+  GPR_DEBUG_ASSERT(max_recv_bytes <=
+                   kMaxWindowUpdateSize - tfc_->sent_init_window());
   if (local_window_delta_ < max_recv_bytes) {
     uint32_t add_max_recv_bytes =
         static_cast<uint32_t>(max_recv_bytes - local_window_delta_);
@@ -338,10 +322,9 @@ static double AdjustForMemoryPressure(double memory_pressure, double target) {
 }
 
 double TransportFlowControl::TargetLogBdp() {
-  return AdjustForMemoryPressure(t_->memory_owner.is_valid()
-                                     ? t_->memory_owner.InstantaneousPressure()
-                                     : 0.0,
-                                 1 + log2(bdp_estimator_.EstimateBdp()));
+  return AdjustForMemoryPressure(
+      memory_owner_->is_valid() ? memory_owner_->InstantaneousPressure() : 0.0,
+      1 + log2(bdp_estimator_.EstimateBdp()));
 }
 
 double TransportFlowControl::SmoothLogBdp(double value) {
@@ -354,15 +337,17 @@ double TransportFlowControl::SmoothLogBdp(double value) {
   return pid_controller_.Update(bdp_error, dt > kMaxDt ? kMaxDt : dt);
 }
 
-FlowControlAction::Urgency TransportFlowControl::DeltaUrgency(
-    int64_t value, grpc_chttp2_setting_id setting_id) {
-  int64_t delta = value - static_cast<int64_t>(
-                              t_->settings[GRPC_LOCAL_SETTINGS][setting_id]);
+void TransportFlowControl::UpdateSetting(
+    int64_t* desired_value, int64_t new_desired_value,
+    FlowControlAction* action,
+    FlowControlAction& (FlowControlAction::*set)(FlowControlAction::Urgency,
+                                                 uint32_t)) {
+  int64_t delta = new_desired_value - *desired_value;
   // TODO(ncteisen): tune this
-  if (delta != 0 && (delta <= -value / 5 || delta >= value / 5)) {
-    return FlowControlAction::Urgency::QUEUE_UPDATE;
-  } else {
-    return FlowControlAction::Urgency::NO_ACTION_NEEDED;
+  if (delta != 0 &&
+      (delta <= -*desired_value / 5 || delta >= *desired_value / 5)) {
+    *desired_value = new_desired_value;
+    (action->*set)(FlowControlAction::Urgency::QUEUE_UPDATE, *desired_value);
   }
 }
 
@@ -382,45 +367,45 @@ FlowControlAction TransportFlowControl::PeriodicUpdate() {
     }
     // Though initial window 'could' drop to 0, we keep the floor at
     // kMinInitialWindowSize
-    target_initial_window_size_ = static_cast<int32_t>(Clamp(
-        target, double(kMinInitialWindowSize), double(kMaxInitialWindowSize)));
-    action.set_send_initial_window_update(
-        DeltaUrgency(target_initial_window_size_,
-                     GRPC_CHTTP2_SETTINGS_INITIAL_WINDOW_SIZE),
-        static_cast<uint32_t>(target_initial_window_size_));
+    UpdateSetting(
+        &target_initial_window_size_,
+        static_cast<int32_t>(Clamp(target, double(kMinInitialWindowSize),
+                                   double(kMaxInitialWindowSize))),
+        &action, &FlowControlAction::set_send_initial_window_update);
 
     // get bandwidth estimate and update max_frame accordingly.
     double bw_dbl = bdp_estimator_.EstimateBandwidth();
     // we target the max of BDP or bandwidth in microseconds.
-    int32_t frame_size = static_cast<int32_t>(Clamp(
-        std::max(
-            static_cast<int32_t>(Clamp(bw_dbl, 0.0, double(INT_MAX))) / 1000,
-            static_cast<int32_t>(target_initial_window_size_)),
-        16384, 16777215));
-    action.set_send_max_frame_size_update(
-        DeltaUrgency(static_cast<int64_t>(frame_size),
-                     GRPC_CHTTP2_SETTINGS_MAX_FRAME_SIZE),
-        frame_size);
+    UpdateSetting(
+        &target_frame_size_,
+        static_cast<int32_t>(Clamp(
+            std::max(static_cast<int32_t>(Clamp(bw_dbl, 0.0, double(INT_MAX))) /
+                         1000,
+                     static_cast<int32_t>(target_initial_window_size_)),
+            16384, 16777215)),
+        &action, &FlowControlAction::set_send_max_frame_size_update);
   }
   return UpdateAction(action);
 }
 
 FlowControlAction StreamFlowControl::UpdateAction(FlowControlAction action) {
-  // TODO(ncteisen): tune this
-  if (!s_->read_closed) {
-    uint32_t sent_init_window =
-        tfc_->transport()->settings[GRPC_SENT_SETTINGS]
-                                   [GRPC_CHTTP2_SETTINGS_INITIAL_WINDOW_SIZE];
-    if (local_window_delta_ > announced_window_delta_ &&
-        announced_window_delta_ + sent_init_window <= sent_init_window / 2) {
-      action.set_send_stream_update(
-          FlowControlAction::Urgency::UPDATE_IMMEDIATELY);
-    } else if (local_window_delta_ > announced_window_delta_) {
-      action.set_send_stream_update(FlowControlAction::Urgency::QUEUE_UPDATE);
-    }
+  const uint32_t sent_init_window = tfc_->sent_init_window();
+  if (local_window_delta_ > announced_window_delta_ &&
+      announced_window_delta_ + sent_init_window <= sent_init_window / 2) {
+    action.set_send_stream_update(
+        FlowControlAction::Urgency::UPDATE_IMMEDIATELY);
+  } else if (local_window_delta_ > announced_window_delta_) {
+    action.set_send_stream_update(FlowControlAction::Urgency::QUEUE_UPDATE);
   }
 
   return action;
+}
+
+void StreamFlowControl::UpdateAnnouncedWindowDelta(TransportFlowControl* tfc,
+                                                   int64_t change) {
+  tfc->PreUpdateAnnouncedWindowOverIncomingWindow(announced_window_delta_);
+  announced_window_delta_ += change;
+  tfc->PostUpdateAnnouncedWindowOverIncomingWindow(announced_window_delta_);
 }
 
 }  // namespace chttp2

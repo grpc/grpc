@@ -550,11 +550,6 @@ struct grpc_chttp2_stream {
   grpc_error_handle forced_close_error = GRPC_ERROR_NONE;
   /** how many header frames have we received? */
   uint8_t header_frames_received = 0;
-  /** parsing state for data frames */
-  /* Accessed only by transport thread when stream->pending_byte_stream == false
-   * Accessed only by application thread when stream->pending_byte_stream ==
-   * true */
-  grpc_chttp2_data_parser data_parser;
   /** number of bytes received - reset at end of parse thread execution */
   int64_t received_bytes = 0;
 

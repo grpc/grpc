@@ -1988,8 +1988,7 @@ void grpc_chttp2_maybe_complete_recv_message(grpc_chttp2_transport* t,
         while (true) {
           GPR_ASSERT(s->frame_storage.length > 0);
           auto r = grpc_deframe_unprocessed_incoming_frames(
-              &s->data_parser, s, &s->frame_storage, &**s->recv_message,
-              s->recv_message_flags);
+              s, nullptr, &**s->recv_message, s->recv_message_flags);
           if (absl::holds_alternative<grpc_core::Pending>(r)) return;
           error = absl::get<grpc_error_handle>(r);
           if (error != GRPC_ERROR_NONE) {

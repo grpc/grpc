@@ -33,27 +33,10 @@
 #include "src/core/lib/slice/slice_buffer.h"
 #include "src/core/lib/transport/transport.h"
 
-typedef enum {
-  GRPC_CHTTP2_DATA_FH_0,
-  GRPC_CHTTP2_DATA_FH_1,
-  GRPC_CHTTP2_DATA_FH_2,
-  GRPC_CHTTP2_DATA_FH_3,
-  GRPC_CHTTP2_DATA_FH_4,
-  GRPC_CHTTP2_DATA_FRAME,
-  GRPC_CHTTP2_DATA_ERROR
-} grpc_chttp2_stream_state;
-
-struct grpc_chttp2_data_parser {
-  grpc_chttp2_stream_state state = GRPC_CHTTP2_DATA_FH_0;
-  uint8_t frame_type = 0;
-  bool is_frame_compressed = false;
-  uint32_t frame_size_remaining = 0;
-};
-
 /* start processing a new data frame */
-grpc_error_handle grpc_chttp2_data_parser_begin_frame(
-    grpc_chttp2_data_parser* parser, uint8_t flags, uint32_t stream_id,
-    grpc_chttp2_stream* s);
+grpc_error_handle grpc_chttp2_data_parser_begin_frame(uint8_t flags,
+                                                      uint32_t stream_id,
+                                                      grpc_chttp2_stream* s);
 
 /* handle a slice of a data frame - is_last indicates the last slice of a
    frame */
@@ -69,8 +52,7 @@ void grpc_chttp2_encode_data(uint32_t id, grpc_slice_buffer* inbuf,
                              grpc_slice_buffer* outbuf);
 
 grpc_core::Poll<grpc_error_handle> grpc_deframe_unprocessed_incoming_frames(
-    grpc_chttp2_data_parser* p, grpc_chttp2_stream* s,
-    grpc_slice_buffer* slices, grpc_core::SliceBuffer* stream_out,
-    uint32_t* message_flags);
+    grpc_chttp2_stream* s, uint32_t* min_progress_size,
+    grpc_core::SliceBuffer* stream_out, uint32_t* message_flags);
 
 #endif /* GRPC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_FRAME_DATA_H */

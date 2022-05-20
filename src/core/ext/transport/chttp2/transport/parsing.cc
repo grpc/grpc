@@ -411,8 +411,8 @@ static grpc_error_handle init_data_frame_parser(grpc_chttp2_transport* t) {
     return init_non_header_skip_frame_parser(t);
   }
   if (err == GRPC_ERROR_NONE) {
-    err = grpc_chttp2_data_parser_begin_frame(
-        &s->data_parser, t->incoming_frame_flags, s->id, s);
+    err =
+        grpc_chttp2_data_parser_begin_frame(t->incoming_frame_flags, s->id, s);
   }
 error_handler:
   intptr_t unused;
@@ -420,7 +420,7 @@ error_handler:
     t->incoming_stream = s;
     /* t->parser = grpc_chttp2_data_parser_parse;*/
     t->parser = grpc_chttp2_data_parser_parse;
-    t->parser_data = &s->data_parser;
+    t->parser_data = nullptr;
     t->ping_state.last_ping_sent_time = grpc_core::Timestamp::InfPast();
     return GRPC_ERROR_NONE;
   } else if (grpc_error_get_int(err, GRPC_ERROR_INT_STREAM_ID, &unused)) {

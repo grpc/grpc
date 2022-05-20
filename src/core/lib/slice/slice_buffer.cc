@@ -380,6 +380,24 @@ void grpc_slice_buffer_move_first_into_buffer(grpc_slice_buffer* src, size_t n,
   }
 }
 
+void grpc_slice_buffer_copy_first_into_buffer(grpc_slice_buffer* src, size_t n,
+                                              void* dst) {
+  uint8_t* dstp = static_cast<uint8_t*>(dst);
+  GPR_ASSERT(src->length >= n);
+
+  for (size_t i = 0; i < src->count; i++) {
+    grpc_slice slice = src->slices[i];
+    size_t slice_len = GRPC_SLICE_LENGTH(slice);
+    if (slice_len >= n) {
+      memcpy(dstp, GRPC_SLICE_START_PTR(slice), n);
+      return;
+    }
+    memcpy(dstp, GRPC_SLICE_START_PTR(slice), slice_len);
+    dstp += slice_len;
+    n -= slice_len;
+  }
+}
+
 void grpc_slice_buffer_trim_end(grpc_slice_buffer* sb, size_t n,
                                 grpc_slice_buffer* garbage) {
   GPR_ASSERT(n <= sb->length);
