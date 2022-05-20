@@ -22,7 +22,6 @@
 #include "absl/strings/str_cat.h"
 
 #include "src/core/lib/address_utils/sockaddr_utils.h"
-#include "src/core/lib/event_engine/sockaddr.h"
 #include "test/core/util/port.h"
 
 #ifdef GPR_WINDOWS
