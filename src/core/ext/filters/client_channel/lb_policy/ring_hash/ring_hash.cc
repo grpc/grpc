@@ -73,8 +73,8 @@ namespace grpc_core {
 TraceFlag grpc_lb_ring_hash_trace(false, "ring_hash_lb");
 
 UniqueTypeName RequestHashAttributeName() {
-  static auto* kFactory = new UniqueTypeName::Factory("request_ring_hash");
-  return kFactory->Create();
+  static UniqueTypeName::Factory kFactory("request_hash");
+  return kFactory.Create();
 }
 
 // Helper Parser method

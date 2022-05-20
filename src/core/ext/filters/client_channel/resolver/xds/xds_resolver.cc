@@ -95,8 +95,8 @@ namespace grpc_core {
 TraceFlag grpc_xds_resolver_trace(false, "xds_resolver");
 
 UniqueTypeName XdsClusterAttributeTypeName() {
-  static auto* kFactory = new UniqueTypeName::Factory("xds_cluster_name");
-  return kFactory->Create();
+  static UniqueTypeName::Factory kFactory("xds_cluster_name");
+  return kFactory.Create();
 }
 
 namespace {
