@@ -38,6 +38,7 @@
 #include <grpc/support/log.h>
 #include <grpc/support/time.h>
 #include <grpcpp/completion_queue.h>
+#include <grpcpp/ext/call_metric_recorder.h>
 #include <grpcpp/impl/call.h>
 #include <grpcpp/impl/codegen/call_op_set.h>
 #include <grpcpp/impl/codegen/call_op_set_interface.h>
@@ -54,6 +55,8 @@
 
 #include "src/core/lib/gprpp/ref_counted.h"
 #include "src/core/lib/gprpp/sync.h"
+#include "src/core/lib/resource_quota/arena.h"
+#include "src/core/lib/surface/call.h"
 
 namespace grpc {
 
@@ -282,6 +285,9 @@ ServerContextBase::~ServerContextBase() {
   if (default_reactor_used_.load(std::memory_order_relaxed)) {
     reinterpret_cast<Reactor*>(&default_reactor_)->~Reactor();
   }
+  if (call_metric_recorder_ != nullptr) {
+    call_metric_recorder_->~CallMetricRecorder();
+  }
 }
 
 ServerContextBase::CallWrapper::~CallWrapper() {
@@ -393,6 +399,12 @@ void ServerContextBase::SetLoadReportingCosts(
   for (const auto& cost_datum : cost_data) {
     AddTrailingMetadata(GRPC_LB_COST_MD_KEY, cost_datum);
   }
+}
+
+void ServerContextBase::CreateCallMetricRecorder() {
+  GPR_ASSERT(call_metric_recorder_ == nullptr);
+  grpc_core::Arena* arena = grpc_call_get_arena(call_.call);
+  call_metric_recorder_ = arena->New<experimental::CallMetricRecorder>(arena);
 }
 
 }  // namespace grpc

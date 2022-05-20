@@ -142,6 +142,7 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/ext/filters/client_channel/lb_policy.h )
   s.files += %w( src/core/ext/filters/client_channel/lb_policy/address_filtering.cc )
   s.files += %w( src/core/ext/filters/client_channel/lb_policy/address_filtering.h )
+  s.files += %w( src/core/ext/filters/client_channel/lb_policy/backend_metric_data.h )
   s.files += %w( src/core/ext/filters/client_channel/lb_policy/child_policy_handler.cc )
   s.files += %w( src/core/ext/filters/client_channel/lb_policy/child_policy_handler.h )
   s.files += %w( src/core/ext/filters/client_channel/lb_policy/grpclb/client_load_reporting_filter.cc )
