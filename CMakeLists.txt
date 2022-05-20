@@ -3183,24 +3183,6 @@ foreach(_hdr
   include/grpc/slice.h
   include/grpc/slice_buffer.h
   include/grpc/status.h
-  include/grpc/support/alloc.h
-  include/grpc/support/atm.h
-  include/grpc/support/atm_gcc_atomic.h
-  include/grpc/support/atm_gcc_sync.h
-  include/grpc/support/atm_windows.h
-  include/grpc/support/cpu.h
-  include/grpc/support/log.h
-  include/grpc/support/log_windows.h
-  include/grpc/support/port_platform.h
-  include/grpc/support/string_util.h
-  include/grpc/support/sync.h
-  include/grpc/support/sync_abseil.h
-  include/grpc/support/sync_custom.h
-  include/grpc/support/sync_generic.h
-  include/grpc/support/sync_posix.h
-  include/grpc/support/sync_windows.h
-  include/grpc/support/thd_id.h
-  include/grpc/support/time.h
   include/grpc/support/workaround_list.h
   include/grpcpp/alarm.h
   include/grpcpp/channel.h
@@ -3871,24 +3853,6 @@ foreach(_hdr
   include/grpc/slice.h
   include/grpc/slice_buffer.h
   include/grpc/status.h
-  include/grpc/support/alloc.h
-  include/grpc/support/atm.h
-  include/grpc/support/atm_gcc_atomic.h
-  include/grpc/support/atm_gcc_sync.h
-  include/grpc/support/atm_windows.h
-  include/grpc/support/cpu.h
-  include/grpc/support/log.h
-  include/grpc/support/log_windows.h
-  include/grpc/support/port_platform.h
-  include/grpc/support/string_util.h
-  include/grpc/support/sync.h
-  include/grpc/support/sync_abseil.h
-  include/grpc/support/sync_custom.h
-  include/grpc/support/sync_generic.h
-  include/grpc/support/sync_posix.h
-  include/grpc/support/sync_windows.h
-  include/grpc/support/thd_id.h
-  include/grpc/support/time.h
   include/grpc/support/workaround_list.h
   include/grpcpp/alarm.h
   include/grpcpp/channel.h
@@ -6074,6 +6038,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX)
 
   target_link_libraries(memory_quota_stress_test
     ${_gRPC_ALLTARGETS_LIBRARIES}
+    absl::type_traits
     absl::statusor
     absl::variant
     absl::utility
@@ -6700,7 +6665,6 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(slice_string_helpers_test
-  src/core/lib/debug/trace.cc
   src/core/lib/slice/slice.cc
   src/core/lib/slice/slice_refcount.cc
   src/core/lib/slice/slice_string_helpers.cc
@@ -7310,7 +7274,52 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(activity_test
-  src/core/lib/debug/trace.cc
+  src/core/ext/upb-generated/google/protobuf/any.upb.c
+  src/core/ext/upb-generated/google/rpc/status.upb.c
+  src/core/lib/gpr/alloc.cc
+  src/core/lib/gpr/atm.cc
+  src/core/lib/gpr/cpu_iphone.cc
+  src/core/lib/gpr/cpu_linux.cc
+  src/core/lib/gpr/cpu_posix.cc
+  src/core/lib/gpr/cpu_windows.cc
+  src/core/lib/gpr/env_linux.cc
+  src/core/lib/gpr/env_posix.cc
+  src/core/lib/gpr/env_windows.cc
+  src/core/lib/gpr/log.cc
+  src/core/lib/gpr/log_android.cc
+  src/core/lib/gpr/log_linux.cc
+  src/core/lib/gpr/log_posix.cc
+  src/core/lib/gpr/log_windows.cc
+  src/core/lib/gpr/murmur_hash.cc
+  src/core/lib/gpr/string.cc
+  src/core/lib/gpr/string_posix.cc
+  src/core/lib/gpr/string_util_windows.cc
+  src/core/lib/gpr/string_windows.cc
+  src/core/lib/gpr/sync.cc
+  src/core/lib/gpr/sync_abseil.cc
+  src/core/lib/gpr/sync_posix.cc
+  src/core/lib/gpr/sync_windows.cc
+  src/core/lib/gpr/time.cc
+  src/core/lib/gpr/time_posix.cc
+  src/core/lib/gpr/time_precise.cc
+  src/core/lib/gpr/time_windows.cc
+  src/core/lib/gpr/tmpfile_msys.cc
+  src/core/lib/gpr/tmpfile_posix.cc
+  src/core/lib/gpr/tmpfile_windows.cc
+  src/core/lib/gpr/wrap_memcpy.cc
+  src/core/lib/gprpp/examine_stack.cc
+  src/core/lib/gprpp/fork.cc
+  src/core/lib/gprpp/global_config_env.cc
+  src/core/lib/gprpp/host_port.cc
+  src/core/lib/gprpp/mpscq.cc
+  src/core/lib/gprpp/stat_posix.cc
+  src/core/lib/gprpp/stat_windows.cc
+  src/core/lib/gprpp/status_helper.cc
+  src/core/lib/gprpp/thd_posix.cc
+  src/core/lib/gprpp/thd_windows.cc
+  src/core/lib/gprpp/time_util.cc
+  src/core/lib/profiling/basic_timers.cc
+  src/core/lib/profiling/stap_timers.cc
   src/core/lib/promise/activity.cc
   test/core/promise/activity_test.cc
   third_party/googletest/googletest/src/gtest-all.cc
@@ -7339,10 +7348,24 @@ target_include_directories(activity_test
 target_link_libraries(activity_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
+  absl::base
+  absl::core_headers
   absl::flat_hash_set
+  absl::hash
+  absl::memory
+  absl::type_traits
+  absl::random_random
+  absl::status
   absl::statusor
+  absl::cord
+  absl::str_format
+  absl::strings
+  absl::synchronization
+  absl::time
+  absl::optional
   absl::variant
-  gpr
+  absl::utility
+  upb
 )
 
 
@@ -7652,6 +7675,7 @@ target_include_directories(arena_promise_test
 target_link_libraries(arena_promise_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
+  absl::type_traits
   absl::statusor
   absl::variant
   absl::utility
@@ -8392,6 +8416,7 @@ target_include_directories(call_push_pull_test
 target_link_libraries(call_push_pull_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
+  absl::type_traits
   absl::status
   absl::statusor
   absl::variant
@@ -9025,6 +9050,7 @@ target_include_directories(chunked_vector_test
 target_link_libraries(chunked_vector_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
+  absl::type_traits
   absl::statusor
   absl::variant
   absl::utility
@@ -10446,8 +10472,10 @@ target_include_directories(exec_ctx_wakeup_scheduler_test
 target_link_libraries(exec_ctx_wakeup_scheduler_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
+  absl::type_traits
   absl::statusor
   absl::variant
+  absl::utility
   gpr
 )
 
@@ -10770,6 +10798,8 @@ target_link_libraries(for_each_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   absl::flat_hash_set
+  absl::hash
+  absl::type_traits
   absl::statusor
   absl::variant
   absl::utility
@@ -12327,6 +12357,7 @@ target_include_directories(if_test
 target_link_libraries(if_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
+  absl::type_traits
   absl::statusor
   absl::variant
 )
@@ -12608,7 +12639,9 @@ target_include_directories(join_test
 target_link_libraries(join_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
+  absl::type_traits
   absl::variant
+  absl::utility
 )
 
 
@@ -12688,7 +12721,52 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(latch_test
-  src/core/lib/debug/trace.cc
+  src/core/ext/upb-generated/google/protobuf/any.upb.c
+  src/core/ext/upb-generated/google/rpc/status.upb.c
+  src/core/lib/gpr/alloc.cc
+  src/core/lib/gpr/atm.cc
+  src/core/lib/gpr/cpu_iphone.cc
+  src/core/lib/gpr/cpu_linux.cc
+  src/core/lib/gpr/cpu_posix.cc
+  src/core/lib/gpr/cpu_windows.cc
+  src/core/lib/gpr/env_linux.cc
+  src/core/lib/gpr/env_posix.cc
+  src/core/lib/gpr/env_windows.cc
+  src/core/lib/gpr/log.cc
+  src/core/lib/gpr/log_android.cc
+  src/core/lib/gpr/log_linux.cc
+  src/core/lib/gpr/log_posix.cc
+  src/core/lib/gpr/log_windows.cc
+  src/core/lib/gpr/murmur_hash.cc
+  src/core/lib/gpr/string.cc
+  src/core/lib/gpr/string_posix.cc
+  src/core/lib/gpr/string_util_windows.cc
+  src/core/lib/gpr/string_windows.cc
+  src/core/lib/gpr/sync.cc
+  src/core/lib/gpr/sync_abseil.cc
+  src/core/lib/gpr/sync_posix.cc
+  src/core/lib/gpr/sync_windows.cc
+  src/core/lib/gpr/time.cc
+  src/core/lib/gpr/time_posix.cc
+  src/core/lib/gpr/time_precise.cc
+  src/core/lib/gpr/time_windows.cc
+  src/core/lib/gpr/tmpfile_msys.cc
+  src/core/lib/gpr/tmpfile_posix.cc
+  src/core/lib/gpr/tmpfile_windows.cc
+  src/core/lib/gpr/wrap_memcpy.cc
+  src/core/lib/gprpp/examine_stack.cc
+  src/core/lib/gprpp/fork.cc
+  src/core/lib/gprpp/global_config_env.cc
+  src/core/lib/gprpp/host_port.cc
+  src/core/lib/gprpp/mpscq.cc
+  src/core/lib/gprpp/stat_posix.cc
+  src/core/lib/gprpp/stat_windows.cc
+  src/core/lib/gprpp/status_helper.cc
+  src/core/lib/gprpp/thd_posix.cc
+  src/core/lib/gprpp/thd_windows.cc
+  src/core/lib/gprpp/time_util.cc
+  src/core/lib/profiling/basic_timers.cc
+  src/core/lib/profiling/stap_timers.cc
   src/core/lib/promise/activity.cc
   test/core/promise/latch_test.cc
   third_party/googletest/googletest/src/gtest-all.cc
@@ -12717,9 +12795,22 @@ target_include_directories(latch_test
 target_link_libraries(latch_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
+  absl::base
+  absl::core_headers
+  absl::memory
+  absl::type_traits
+  absl::random_random
+  absl::status
   absl::statusor
+  absl::cord
+  absl::str_format
+  absl::strings
+  absl::synchronization
+  absl::time
+  absl::optional
   absl::variant
-  gpr
+  absl::utility
+  upb
 )
 
 
@@ -12901,8 +12992,11 @@ target_include_directories(loop_test
 target_link_libraries(loop_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
+  absl::type_traits
+  absl::status
   absl::statusor
   absl::variant
+  absl::utility
 )
 
 
@@ -13021,6 +13115,7 @@ target_include_directories(memory_quota_test
 target_link_libraries(memory_quota_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
+  absl::type_traits
   absl::statusor
   absl::variant
   absl::utility
@@ -13312,7 +13407,52 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(observable_test
-  src/core/lib/debug/trace.cc
+  src/core/ext/upb-generated/google/protobuf/any.upb.c
+  src/core/ext/upb-generated/google/rpc/status.upb.c
+  src/core/lib/gpr/alloc.cc
+  src/core/lib/gpr/atm.cc
+  src/core/lib/gpr/cpu_iphone.cc
+  src/core/lib/gpr/cpu_linux.cc
+  src/core/lib/gpr/cpu_posix.cc
+  src/core/lib/gpr/cpu_windows.cc
+  src/core/lib/gpr/env_linux.cc
+  src/core/lib/gpr/env_posix.cc
+  src/core/lib/gpr/env_windows.cc
+  src/core/lib/gpr/log.cc
+  src/core/lib/gpr/log_android.cc
+  src/core/lib/gpr/log_linux.cc
+  src/core/lib/gpr/log_posix.cc
+  src/core/lib/gpr/log_windows.cc
+  src/core/lib/gpr/murmur_hash.cc
+  src/core/lib/gpr/string.cc
+  src/core/lib/gpr/string_posix.cc
+  src/core/lib/gpr/string_util_windows.cc
+  src/core/lib/gpr/string_windows.cc
+  src/core/lib/gpr/sync.cc
+  src/core/lib/gpr/sync_abseil.cc
+  src/core/lib/gpr/sync_posix.cc
+  src/core/lib/gpr/sync_windows.cc
+  src/core/lib/gpr/time.cc
+  src/core/lib/gpr/time_posix.cc
+  src/core/lib/gpr/time_precise.cc
+  src/core/lib/gpr/time_windows.cc
+  src/core/lib/gpr/tmpfile_msys.cc
+  src/core/lib/gpr/tmpfile_posix.cc
+  src/core/lib/gpr/tmpfile_windows.cc
+  src/core/lib/gpr/wrap_memcpy.cc
+  src/core/lib/gprpp/examine_stack.cc
+  src/core/lib/gprpp/fork.cc
+  src/core/lib/gprpp/global_config_env.cc
+  src/core/lib/gprpp/host_port.cc
+  src/core/lib/gprpp/mpscq.cc
+  src/core/lib/gprpp/stat_posix.cc
+  src/core/lib/gprpp/stat_windows.cc
+  src/core/lib/gprpp/status_helper.cc
+  src/core/lib/gprpp/thd_posix.cc
+  src/core/lib/gprpp/thd_windows.cc
+  src/core/lib/gprpp/time_util.cc
+  src/core/lib/profiling/basic_timers.cc
+  src/core/lib/profiling/stap_timers.cc
   src/core/lib/promise/activity.cc
   test/core/promise/observable_test.cc
   third_party/googletest/googletest/src/gtest-all.cc
@@ -13341,10 +13481,24 @@ target_include_directories(observable_test
 target_link_libraries(observable_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
+  absl::base
+  absl::core_headers
   absl::flat_hash_set
+  absl::hash
+  absl::memory
+  absl::type_traits
+  absl::random_random
+  absl::status
   absl::statusor
+  absl::cord
+  absl::str_format
+  absl::strings
+  absl::synchronization
+  absl::time
+  absl::optional
   absl::variant
-  gpr
+  absl::utility
+  upb
 )
 
 
@@ -13616,6 +13770,7 @@ target_include_directories(pipe_test
 target_link_libraries(pipe_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
+  absl::type_traits
   absl::statusor
   absl::variant
   absl::utility
@@ -13742,6 +13897,7 @@ target_link_libraries(promise_factory_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   absl::bind_front
+  absl::type_traits
   absl::status
   absl::optional
   absl::variant
@@ -13780,6 +13936,7 @@ target_include_directories(promise_map_test
 target_link_libraries(promise_map_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
+  absl::type_traits
   absl::status
   absl::optional
   absl::variant
@@ -13817,6 +13974,7 @@ target_include_directories(promise_test
 target_link_libraries(promise_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
+  absl::type_traits
   absl::status
   absl::optional
   absl::variant
@@ -14464,6 +14622,7 @@ target_include_directories(resource_quota_test
 target_link_libraries(resource_quota_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
+  absl::type_traits
   absl::statusor
   absl::variant
   absl::utility
@@ -14670,7 +14829,9 @@ target_include_directories(seq_test
 target_link_libraries(seq_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
+  absl::type_traits
   absl::variant
+  absl::utility
 )
 
 
@@ -15929,6 +16090,7 @@ target_include_directories(table_test
 target_link_libraries(table_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
+  absl::type_traits
   absl::optional
   absl::utility
 )
@@ -16079,10 +16241,6 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(test_core_slice_slice_test
-  src/core/lib/debug/trace.cc
-  src/core/lib/slice/slice.cc
-  src/core/lib/slice/slice_refcount.cc
-  src/core/lib/slice/slice_string_helpers.cc
   test/core/slice/slice_test.cc
   test/core/util/build.cc
   third_party/googletest/googletest/src/gtest-all.cc
@@ -16111,7 +16269,7 @@ target_include_directories(test_core_slice_slice_test
 target_link_libraries(test_core_slice_slice_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
-  gpr
+  grpc
 )
 
 
@@ -16299,7 +16457,52 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(thread_quota_test
-  src/core/lib/debug/trace.cc
+  src/core/ext/upb-generated/google/protobuf/any.upb.c
+  src/core/ext/upb-generated/google/rpc/status.upb.c
+  src/core/lib/gpr/alloc.cc
+  src/core/lib/gpr/atm.cc
+  src/core/lib/gpr/cpu_iphone.cc
+  src/core/lib/gpr/cpu_linux.cc
+  src/core/lib/gpr/cpu_posix.cc
+  src/core/lib/gpr/cpu_windows.cc
+  src/core/lib/gpr/env_linux.cc
+  src/core/lib/gpr/env_posix.cc
+  src/core/lib/gpr/env_windows.cc
+  src/core/lib/gpr/log.cc
+  src/core/lib/gpr/log_android.cc
+  src/core/lib/gpr/log_linux.cc
+  src/core/lib/gpr/log_posix.cc
+  src/core/lib/gpr/log_windows.cc
+  src/core/lib/gpr/murmur_hash.cc
+  src/core/lib/gpr/string.cc
+  src/core/lib/gpr/string_posix.cc
+  src/core/lib/gpr/string_util_windows.cc
+  src/core/lib/gpr/string_windows.cc
+  src/core/lib/gpr/sync.cc
+  src/core/lib/gpr/sync_abseil.cc
+  src/core/lib/gpr/sync_posix.cc
+  src/core/lib/gpr/sync_windows.cc
+  src/core/lib/gpr/time.cc
+  src/core/lib/gpr/time_posix.cc
+  src/core/lib/gpr/time_precise.cc
+  src/core/lib/gpr/time_windows.cc
+  src/core/lib/gpr/tmpfile_msys.cc
+  src/core/lib/gpr/tmpfile_posix.cc
+  src/core/lib/gpr/tmpfile_windows.cc
+  src/core/lib/gpr/wrap_memcpy.cc
+  src/core/lib/gprpp/examine_stack.cc
+  src/core/lib/gprpp/fork.cc
+  src/core/lib/gprpp/global_config_env.cc
+  src/core/lib/gprpp/host_port.cc
+  src/core/lib/gprpp/mpscq.cc
+  src/core/lib/gprpp/stat_posix.cc
+  src/core/lib/gprpp/stat_windows.cc
+  src/core/lib/gprpp/status_helper.cc
+  src/core/lib/gprpp/thd_posix.cc
+  src/core/lib/gprpp/thd_windows.cc
+  src/core/lib/gprpp/time_util.cc
+  src/core/lib/profiling/basic_timers.cc
+  src/core/lib/profiling/stap_timers.cc
   src/core/lib/resource_quota/thread_quota.cc
   test/core/resource_quota/thread_quota_test.cc
   third_party/googletest/googletest/src/gtest-all.cc
@@ -16328,7 +16531,18 @@ target_include_directories(thread_quota_test
 target_link_libraries(thread_quota_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
-  gpr
+  absl::base
+  absl::core_headers
+  absl::memory
+  absl::random_random
+  absl::status
+  absl::cord
+  absl::str_format
+  absl::strings
+  absl::synchronization
+  absl::time
+  absl::optional
+  upb
 )
 
 
@@ -16849,9 +17063,11 @@ target_include_directories(try_join_test
 target_link_libraries(try_join_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
+  absl::type_traits
   absl::status
   absl::statusor
   absl::variant
+  absl::utility
 )
 
 
@@ -16921,9 +17137,11 @@ target_include_directories(try_seq_test
 target_link_libraries(try_seq_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
+  absl::type_traits
   absl::status
   absl::statusor
   absl::variant
+  absl::utility
 )
 
 
