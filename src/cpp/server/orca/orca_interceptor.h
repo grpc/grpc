@@ -17,8 +17,8 @@
 #ifndef GRPC_INTERNAL_CPP_ORCA_ORCA_INTERCEPTOR_H
 #define GRPC_INTERNAL_CPP_ORCA_ORCA_INTERCEPTOR_H
 
-#include <grpcpp/impl/codegen/interceptor.h>
-#include <grpcpp/impl/codegen/server_interceptor.h>
+#include <grpcpp/support/interceptor.h>
+#include <grpcpp/support/server_interceptor.h>
 
 namespace grpc {
 
