@@ -5471,6 +5471,7 @@ grpc_cc_library(
     public_hdrs = GRPCXX_PUBLIC_HDRS,
     visibility = ["@grpc:alt_grpc++_base_legacy"],
     deps = [
+        "arena",
         "channel_init",
         "config",
         "gpr_base",
@@ -5514,6 +5515,7 @@ grpc_cc_library(
     tags = ["avoid_dep"],
     visibility = ["@grpc:alt_grpc++_base_unsecure_legacy"],
     deps = [
+        "arena",
         "channel_init",
         "config",
         "gpr_base",
