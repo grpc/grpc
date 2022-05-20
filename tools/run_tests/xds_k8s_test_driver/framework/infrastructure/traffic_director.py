@@ -196,7 +196,7 @@ class TrafficDirectorManager:  # pylint: disable=too-many-public-methods
             protocol: Optional[BackendServiceProtocol] = _BackendGRPC,
             subset_size: Optional[int] = None,
             affinity_header: Optional[str] = None,
-            locality_lb_policies: Optional[dict] = None):
+            locality_lb_policies: Optional[List[dict]] = None):
         if protocol is None:
             protocol = _BackendGRPC
 

@@ -121,7 +121,7 @@ class ComputeV1(gcp.api.GcpProjectApiResource):  # pylint: disable=too-many-publ
             affinity_header: Optional[str] = None,
             protocol: Optional[BackendServiceProtocol] = None,
             subset_size: Optional[int] = None,
-            locality_lb_policies: Optional[dict] = None) -> 'GcpResource':
+            locality_lb_policies: Optional[List[dict]] = None) -> 'GcpResource':
         if not isinstance(protocol, self.BackendServiceProtocol):
             raise TypeError(f'Unexpected Backend Service protocol: {protocol}')
         body = {
