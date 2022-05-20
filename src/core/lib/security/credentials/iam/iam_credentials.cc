@@ -57,8 +57,8 @@ grpc_google_iam_credentials::grpc_google_iam_credentials(
           token != nullptr ? "present" : "absent", authority_selector)) {}
 
 grpc_core::UniqueTypeName grpc_google_iam_credentials::Type() {
-  static auto* kFactory = new grpc_core::UniqueTypeName::Factory("Iam");
-  return kFactory->Create();
+  static grpc_core::UniqueTypeName::Factory kFactory("Iam");
+  return kFactory.Create();
 }
 
 grpc_call_credentials* grpc_google_iam_credentials_create(

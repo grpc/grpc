@@ -46,8 +46,8 @@ class FakeCertificateProvider : public grpc_tls_certificate_provider {
   }
 
   UniqueTypeName type() const override {
-    static auto* kFactory = new UniqueTypeName::Factory("fake");
-    return kFactory->Create();
+    static UniqueTypeName::Factory kFactory("fake");
+    return kFactory.Create();
   }
 
  private:

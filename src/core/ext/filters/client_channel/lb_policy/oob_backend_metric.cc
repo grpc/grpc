@@ -81,8 +81,8 @@ class OrcaProducer : public Subchannel::DataProducerInterface {
   void Orphan() override;
 
   static UniqueTypeName Type() {
-    static auto* kFactory = new UniqueTypeName::Factory("orca");
-    return kFactory->Create();
+    static UniqueTypeName::Factory kFactory("orca");
+    return kFactory.Create();
   }
 
   UniqueTypeName type() const override { return Type(); }

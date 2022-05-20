@@ -48,8 +48,8 @@ class grpc_fake_channel_credentials final : public grpc_channel_credentials {
   }
 
   grpc_core::UniqueTypeName type() const override {
-    static auto* kFactory = new grpc_core::UniqueTypeName::Factory("Fake");
-    return kFactory->Create();
+    static grpc_core::UniqueTypeName::Factory kFactory("Fake");
+    return kFactory.Create();
   }
 
  private:
@@ -68,8 +68,8 @@ class grpc_fake_server_credentials final : public grpc_server_credentials {
   }
 
   grpc_core::UniqueTypeName type() const override {
-    static auto* kFactory = new grpc_core::UniqueTypeName::Factory("Fake");
-    return kFactory->Create();
+    static grpc_core::UniqueTypeName::Factory kFactory("Fake");
+    return kFactory.Create();
   }
 };
 }  // namespace
@@ -109,8 +109,8 @@ grpc_md_only_test_credentials::GetRequestMetadata(
 }
 
 grpc_core::UniqueTypeName grpc_md_only_test_credentials::Type() {
-  static auto* kFactory = new grpc_core::UniqueTypeName::Factory("MdOnlyTest");
-  return kFactory->Create();
+  static grpc_core::UniqueTypeName::Factory kFactory("MdOnlyTest");
+  return kFactory.Create();
 }
 
 grpc_call_credentials* grpc_md_only_test_credentials_create(

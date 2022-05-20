@@ -57,8 +57,8 @@ grpc_alts_credentials::create_security_connector(
 }
 
 grpc_core::UniqueTypeName grpc_alts_credentials::type() const {
-  static auto* kFactory = new grpc_core::UniqueTypeName::Factory("Alts");
-  return kFactory->Create();
+  static grpc_core::UniqueTypeName::Factory kFactory("Alts");
+  return kFactory.Create();
 }
 
 grpc_alts_server_credentials::grpc_alts_server_credentials(
@@ -83,8 +83,8 @@ grpc_alts_server_credentials::~grpc_alts_server_credentials() {
 }
 
 grpc_core::UniqueTypeName grpc_alts_server_credentials::type() const {
-  static auto* kFactory = new grpc_core::UniqueTypeName::Factory("Alts");
-  return kFactory->Create();
+  static grpc_core::UniqueTypeName::Factory kFactory("Alts");
+  return kFactory.Create();
 }
 
 grpc_channel_credentials* grpc_alts_credentials_create_customized(

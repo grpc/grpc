@@ -119,8 +119,8 @@ grpc_service_account_jwt_access_credentials::
 }
 
 grpc_core::UniqueTypeName grpc_service_account_jwt_access_credentials::Type() {
-  static auto* kFactory = new grpc_core::UniqueTypeName::Factory("Jwt");
-  return kFactory->Create();
+  static grpc_core::UniqueTypeName::Factory kFactory("Jwt");
+  return kFactory.Create();
 }
 
 grpc_core::RefCountedPtr<grpc_call_credentials>

@@ -122,8 +122,8 @@ class TlsTestCertificateProvider : public grpc_tls_certificate_provider {
   }
 
   UniqueTypeName type() const override {
-    static auto* kFactory = new UniqueTypeName::Factory("tls_test");
-    return kFactory->Create();
+    static UniqueTypeName::Factory kFactory("tls_test");
+    return kFactory.Create();
   }
 
  private:

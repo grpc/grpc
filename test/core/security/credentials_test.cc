@@ -592,8 +592,8 @@ class check_channel_oauth2 final : public grpc_channel_credentials {
   }
 
   static UniqueTypeName Type() {
-    static auto* kFactory = new UniqueTypeName::Factory("check_channel_oauth2");
-    return kFactory->Create();
+    static UniqueTypeName::Factory kFactory("check_channel_oauth2");
+    return kFactory.Create();
   }
 
   UniqueTypeName type() const override { return Type(); }
@@ -681,9 +681,8 @@ class check_channel_oauth2_google_iam final : public grpc_channel_credentials {
   }
 
   static UniqueTypeName Type() {
-    static auto* kFactory =
-        new UniqueTypeName::Factory("check_channel_oauth2_google_iam");
-    return kFactory->Create();
+    static UniqueTypeName::Factory kFactory("check_channel_oauth2_google_iam");
+    return kFactory.Create();
   }
 
   UniqueTypeName type() const override { return Type(); }
@@ -1816,8 +1815,8 @@ struct fake_call_creds : public grpc_call_credentials {
   }
 
   UniqueTypeName type() const override {
-    static auto* kFactory = new UniqueTypeName::Factory("fake");
-    return kFactory->Create();
+    static UniqueTypeName::Factory kFactory("fake");
+    return kFactory.Create();
   }
 
  private:

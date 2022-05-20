@@ -37,16 +37,16 @@ class Interface {
 class Foo : public Interface {
  public:
   UniqueTypeName type() const override {
-    static auto* kFactory = new UniqueTypeName::Factory("Foo");
-    return kFactory->Create();
+    static UniqueTypeName::Factory kFactory("Foo");
+    return kFactory.Create();
   }
 };
 
 class Bar : public Interface {
  public:
   UniqueTypeName type() const override {
-    static auto* kFactory = new UniqueTypeName::Factory("Bar");
-    return kFactory->Create();
+    static UniqueTypeName::Factory kFactory("Bar");
+    return kFactory.Create();
   }
 };
 
@@ -54,8 +54,8 @@ class Bar : public Interface {
 class Foo2 : public Interface {
  public:
   UniqueTypeName type() const override {
-    static auto* kFactory = new UniqueTypeName::Factory("Foo");
-    return kFactory->Create();
+    static UniqueTypeName::Factory kFactory("Foo");
+    return kFactory.Create();
   }
 };
 

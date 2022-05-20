@@ -179,8 +179,8 @@ class HttpRequestSSLCredentials : public grpc_channel_credentials {
   }
 
   UniqueTypeName type() const override {
-    static auto* kFactory = new UniqueTypeName::Factory("HttpRequestSSL");
-    return kFactory->Create();
+    static UniqueTypeName::Factory kFactory("HttpRequestSSL");
+    return kFactory.Create();
   }
 
  private:

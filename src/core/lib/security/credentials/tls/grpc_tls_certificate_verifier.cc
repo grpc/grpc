@@ -61,8 +61,8 @@ bool ExternalCertificateVerifier::Verify(
 }
 
 UniqueTypeName ExternalCertificateVerifier::type() const {
-  static auto* kFactory = new UniqueTypeName::Factory("External");
-  return kFactory->Create();
+  static UniqueTypeName::Factory kFactory("External");
+  return kFactory.Create();
 }
 
 void ExternalCertificateVerifier::OnVerifyDone(
@@ -94,8 +94,8 @@ void ExternalCertificateVerifier::OnVerifyDone(
 //
 
 UniqueTypeName NoOpCertificateVerifier::type() const {
-  static auto* kFactory = new UniqueTypeName::Factory("NoOp");
-  return kFactory->Create();
+  static UniqueTypeName::Factory kFactory("NoOp");
+  return kFactory.Create();
 }
 
 //
@@ -167,8 +167,8 @@ bool HostNameCertificateVerifier::Verify(
 }
 
 UniqueTypeName HostNameCertificateVerifier::type() const {
-  static auto* kFactory = new UniqueTypeName::Factory("Hostname");
-  return kFactory->Create();
+  static UniqueTypeName::Factory kFactory("Hostname");
+  return kFactory.Create();
 }
 
 }  // namespace grpc_core

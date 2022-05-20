@@ -83,8 +83,8 @@ grpc_ssl_credentials::create_security_connector(
 }
 
 grpc_core::UniqueTypeName grpc_ssl_credentials::Type() {
-  static auto* kFactory = new grpc_core::UniqueTypeName::Factory("Ssl");
-  return kFactory->Create();
+  static grpc_core::UniqueTypeName::Factory kFactory("Ssl");
+  return kFactory.Create();
 }
 
 void grpc_ssl_credentials::build_config(
@@ -190,8 +190,8 @@ grpc_ssl_server_credentials::create_security_connector(
 }
 
 grpc_core::UniqueTypeName grpc_ssl_server_credentials::Type() {
-  static auto* kFactory = new grpc_core::UniqueTypeName::Factory("Ssl");
-  return kFactory->Create();
+  static grpc_core::UniqueTypeName::Factory kFactory("Ssl");
+  return kFactory.Create();
 }
 
 tsi_ssl_pem_key_cert_pair* grpc_convert_grpc_to_tsi_cert_pairs(
