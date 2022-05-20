@@ -1091,9 +1091,10 @@ communicate with the server:
 2. A `TestLoadReport` type `orca_oob_report` that tells the server to update OOB metrics.
 
 Server features:
-* [Orca][]
+* [UnaryCall][]
+* [Backend metrics report][]
 
-### Per-query metrics reporting
+#### Per-query metrics reporting
 Procedures:
 * The client sends a unary request to the server. The call request sets `orca_per_rpc_report` to a 
 test load report. The call carries a reference to receive the load report, e.g. using CallOptions.
@@ -1104,7 +1105,7 @@ Client asserts:
 * The per-query load report reference contains a metrics report that is identical to the metrics
 data sent from the request. 
 
-### Out-of-Band metrics reporting
+#### Out-of-Band metrics reporting
 Procedures:
 * Client sends a unary call to the server. The call request sets `orca_oob_report` to a test load report.
 * Client asserts that, after 1 second, the latest OOB load report received is equal to the test load report.
@@ -1326,8 +1327,8 @@ Ideally, this would be communicated via metadata and not in the
 request/response, but we want to use this test in code paths that don't yet
 fully communicate metadata.
 
-### Orca
-[Orca]: #orca
+### Backend metrics report
+[Backend metrics report]: #backend-metrics-report
 
 Server reports backend metrics data in both per-query and out-of-band cases, with metrics data
 indicated from the unary call request.
