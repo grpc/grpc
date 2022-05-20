@@ -34,6 +34,11 @@ flags.adopt_module_key_flags(xds_url_map_testcase)
 
 _NUM_RPCS = 150
 
+_TEST_METADATA_KEY = 'xds_md'
+_TEST_METADATA_VALUE_UNARY = 'test-key'
+_TEST_METADATA = (
+        (RpcTypeEmptyCall, _TEST_METADATA_KEY, _TEST_METADATA_VALUE_UNARY),
+)
 
 class TestFullPathMatchEmptyCall(xds_url_map_testcase.XdsUrlMapTestCase):
 
@@ -60,6 +65,46 @@ class TestFullPathMatchEmptyCall(xds_url_map_testcase.XdsUrlMapTestCase):
     def rpc_distribution_validate(self, test_client: XdsTestClient):
         rpc_distribution = self.configure_and_send(test_client,
                                                    rpc_types=[RpcTypeEmptyCall],
+                                                   num_rpcs=_NUM_RPCS)
+        self.assertEqual(
+            _NUM_RPCS,
+            rpc_distribution.empty_call_alternative_service_rpc_count)
+
+class TestFullPathMatchAndHeaderEmptyCall(xds_url_map_testcase.XdsUrlMapTestCase):
+
+    @staticmethod
+    def url_map_change(
+            host_rule: HostRule,
+            path_matcher: PathMatcher) -> Tuple[HostRule, PathMatcher]:
+        path_matcher["routeRules"] = [{
+            'priority': 0,
+            # FullPath EmptyCall -> alternate_backend_service.
+            'matchRules': [{
+                'fullPathMatch': '/grpc.testing.TestService/EmptyCall',
+                'headerMatches': [
+                    {
+                        'headerName': _TEST_METADATA_KEY,
+                        'exactMatch': _TEST_METADATA_VALUE_UNARY,
+                    }
+                ],
+            }],
+            'service': GcpResourceManager().alternative_backend_service()
+        }]
+        return host_rule, path_matcher
+
+    def xds_config_validate(self, xds_config: DumpedXdsConfig):
+        # TODO: Implement.
+        pass
+
+        # self.assertNumEndpoints(xds_config, 2)
+        # self.assertEqual(
+        #     xds_config.rds['virtualHosts'][0]['routes'][0]['match']['path'],
+        #     "/grpc.testing.TestService/EmptyCall")
+
+    def rpc_distribution_validate(self, test_client: XdsTestClient):
+        rpc_distribution = self.configure_and_send(test_client,
+                                                   rpc_types=[RpcTypeEmptyCall],
+                                                   metadata=_TEST_METADATA,
                                                    num_rpcs=_NUM_RPCS)
         self.assertEqual(
             _NUM_RPCS,
