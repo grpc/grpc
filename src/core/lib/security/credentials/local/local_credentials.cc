@@ -37,8 +37,8 @@ grpc_local_credentials::create_security_connector(
 }
 
 grpc_core::UniqueTypeName grpc_local_credentials::type() const {
-  static auto* kFactory = new grpc_core::UniqueTypeName::Factory("Local");
-  return kFactory->Create();
+  static grpc_core::UniqueTypeName::Factory kFactory("Local");
+  return kFactory.Create();
 }
 
 grpc_core::RefCountedPtr<grpc_server_security_connector>
@@ -48,8 +48,8 @@ grpc_local_server_credentials::create_security_connector(
 }
 
 grpc_core::UniqueTypeName grpc_local_server_credentials::type() const {
-  static auto* kFactory = new grpc_core::UniqueTypeName::Factory("Local");
-  return kFactory->Create();
+  static grpc_core::UniqueTypeName::Factory kFactory("Local");
+  return kFactory.Create();
 }
 
 grpc_local_credentials::grpc_local_credentials(

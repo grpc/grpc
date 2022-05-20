@@ -133,9 +133,8 @@ grpc_google_default_channel_credentials::update_arguments(
 
 grpc_core::UniqueTypeName grpc_google_default_channel_credentials::type()
     const {
-  static auto* kFactory =
-      new grpc_core::UniqueTypeName::Factory("GoogleDefault");
-  return kFactory->Create();
+  static grpc_core::UniqueTypeName::Factory kFactory("GoogleDefault");
+  return kFactory.Create();
 }
 
 static void on_metadata_server_detection_http_response(

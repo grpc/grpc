@@ -30,8 +30,8 @@ namespace grpc_core {
 
 UniqueTypeName CertificateProviderStore::CertificateProviderWrapper::type()
     const {
-  static auto* kFactory = new UniqueTypeName::Factory("Wrapper");
-  return kFactory->Create();
+  static UniqueTypeName::Factory kFactory("Wrapper");
+  return kFactory.Create();
 }
 
 // If a certificate provider is created, the CertificateProviderStore

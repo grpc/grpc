@@ -106,8 +106,8 @@ int XdsCertificateVerifier::CompareImpl(
 }
 
 UniqueTypeName XdsCertificateVerifier::type() const {
-  static auto* kFactory = new UniqueTypeName::Factory("Xds");
-  return kFactory->Create();
+  static UniqueTypeName::Factory kFactory("Xds");
+  return kFactory.Create();
 }
 
 bool TestOnlyXdsVerifySubjectAlternativeNames(
@@ -186,8 +186,8 @@ XdsCredentials::create_security_connector(
 }
 
 UniqueTypeName XdsCredentials::Type() {
-  static auto* kFactory = new UniqueTypeName::Factory("Xds");
-  return kFactory->Create();
+  static UniqueTypeName::Factory kFactory("Xds");
+  return kFactory.Create();
 }
 
 //
@@ -227,8 +227,8 @@ XdsServerCredentials::create_security_connector(const grpc_channel_args* args) {
 }
 
 UniqueTypeName XdsServerCredentials::Type() {
-  static auto* kFactory = new UniqueTypeName::Factory("Xds");
-  return kFactory->Create();
+  static UniqueTypeName::Factory kFactory("Xds");
+  return kFactory.Create();
 }
 
 }  // namespace grpc_core

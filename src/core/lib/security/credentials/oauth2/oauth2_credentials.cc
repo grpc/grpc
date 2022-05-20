@@ -348,8 +348,8 @@ std::string grpc_oauth2_token_fetcher_credentials::debug_string() {
 }
 
 grpc_core::UniqueTypeName grpc_oauth2_token_fetcher_credentials::type() const {
-  static auto* kFactory = new grpc_core::UniqueTypeName::Factory("Oauth2");
-  return kFactory->Create();
+  static grpc_core::UniqueTypeName::Factory kFactory("Oauth2");
+  return kFactory.Create();
 }
 
 //
@@ -478,9 +478,8 @@ std::string grpc_google_refresh_token_credentials::debug_string() {
 }
 
 grpc_core::UniqueTypeName grpc_google_refresh_token_credentials::type() const {
-  static auto* kFactory =
-      new grpc_core::UniqueTypeName::Factory("GoogleRefreshToken");
-  return kFactory->Create();
+  static grpc_core::UniqueTypeName::Factory kFactory("GoogleRefreshToken");
+  return kFactory.Create();
 }
 
 static std::string create_loggable_refresh_token(
@@ -717,8 +716,8 @@ grpc_access_token_credentials::GetRequestMetadata(
 }
 
 grpc_core::UniqueTypeName grpc_access_token_credentials::Type() {
-  static auto* kFactory = new grpc_core::UniqueTypeName::Factory("AccessToken");
-  return kFactory->Create();
+  static grpc_core::UniqueTypeName::Factory kFactory("AccessToken");
+  return kFactory.Create();
 }
 
 grpc_access_token_credentials::grpc_access_token_credentials(

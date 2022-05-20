@@ -86,8 +86,8 @@ StaticDataCertificateProvider::~StaticDataCertificateProvider() {
 }
 
 UniqueTypeName StaticDataCertificateProvider::type() const {
-  static auto* kFactory = new UniqueTypeName::Factory("StaticData");
-  return kFactory->Create();
+  static UniqueTypeName::Factory kFactory("StaticData");
+  return kFactory.Create();
 }
 
 namespace {
@@ -183,8 +183,8 @@ FileWatcherCertificateProvider::~FileWatcherCertificateProvider() {
 }
 
 UniqueTypeName FileWatcherCertificateProvider::type() const {
-  static auto* kFactory = new UniqueTypeName::Factory("FileWatcher");
-  return kFactory->Create();
+  static UniqueTypeName::Factory kFactory("FileWatcher");
+  return kFactory.Create();
 }
 
 void FileWatcherCertificateProvider::ForceUpdate() {

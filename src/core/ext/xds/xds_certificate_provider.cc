@@ -264,8 +264,8 @@ XdsCertificateProvider::~XdsCertificateProvider() {
 }
 
 UniqueTypeName XdsCertificateProvider::type() const {
-  static auto* kFactory = new UniqueTypeName::Factory("Xds");
-  return kFactory->Create();
+  static UniqueTypeName::Factory kFactory("Xds");
+  return kFactory.Create();
 }
 
 bool XdsCertificateProvider::ProvidesRootCerts(const std::string& cert_name) {

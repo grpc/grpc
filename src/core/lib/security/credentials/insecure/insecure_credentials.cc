@@ -34,8 +34,8 @@ InsecureCredentials::create_security_connector(
 }
 
 UniqueTypeName InsecureCredentials::Type() {
-  static auto* kFactory = new UniqueTypeName::Factory("Insecure");
-  return kFactory->Create();
+  static UniqueTypeName::Factory kFactory("Insecure");
+  return kFactory.Create();
 }
 
 int InsecureCredentials::cmp_impl(

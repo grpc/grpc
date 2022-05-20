@@ -107,8 +107,8 @@ TlsCredentials::create_security_connector(
 }
 
 grpc_core::UniqueTypeName TlsCredentials::type() const {
-  static auto* kFactory = new grpc_core::UniqueTypeName::Factory("Tls");
-  return kFactory->Create();
+  static grpc_core::UniqueTypeName::Factory kFactory("Tls");
+  return kFactory.Create();
 }
 
 int TlsCredentials::cmp_impl(const grpc_channel_credentials* other) const {
@@ -132,8 +132,8 @@ TlsServerCredentials::create_security_connector(
 }
 
 grpc_core::UniqueTypeName TlsServerCredentials::type() const {
-  static auto* kFactory = new grpc_core::UniqueTypeName::Factory("Tls");
-  return kFactory->Create();
+  static grpc_core::UniqueTypeName::Factory kFactory("Tls");
+  return kFactory.Create();
 }
 
 /** -- Wrapper APIs declared in grpc_security.h -- **/

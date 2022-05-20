@@ -61,8 +61,8 @@ std::string grpc_plugin_credentials::debug_string() {
 }
 
 grpc_core::UniqueTypeName grpc_plugin_credentials::type() const {
-  static auto* kFactory = new grpc_core::UniqueTypeName::Factory("Plugin");
-  return kFactory->Create();
+  static grpc_core::UniqueTypeName::Factory kFactory("Plugin");
+  return kFactory.Create();
 }
 
 absl::StatusOr<grpc_core::ClientMetadataHandle>

@@ -42,8 +42,8 @@
 //
 
 grpc_core::UniqueTypeName grpc_composite_channel_credentials::type() const {
-  static auto* kFactory = new grpc_core::UniqueTypeName::Factory("Composite");
-  return kFactory->Create();
+  static grpc_core::UniqueTypeName::Factory kFactory("Composite");
+  return kFactory.Create();
 }
 
 /* -- Composite call credentials. -- */
@@ -62,8 +62,8 @@ grpc_composite_call_credentials::GetRequestMetadata(
 }
 
 grpc_core::UniqueTypeName grpc_composite_call_credentials::Type() {
-  static auto* kFactory = new grpc_core::UniqueTypeName::Factory("Composite");
-  return kFactory->Create();
+  static grpc_core::UniqueTypeName::Factory kFactory("Composite");
+  return kFactory.Create();
 }
 
 std::string grpc_composite_call_credentials::debug_string() {
