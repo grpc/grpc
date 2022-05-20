@@ -215,6 +215,7 @@ OpenCensusCallTracer::~OpenCensusCallTracer() {
        {RpcClientTransparentRetriesPerCall(), transparent_retries_},
        {RpcClientRetryDelayPerCall(), ToDoubleMilliseconds(retry_delay_)}},
       tags);
+  context_.EndSpan();
 }
 
 void OpenCensusCallTracer::GenerateContext() {
