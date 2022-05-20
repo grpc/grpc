@@ -48,6 +48,8 @@ using ::envoy::extensions::load_balancing_policies::wrr_locality::v3::
     WrrLocality;
 using ::xds::type::v3::TypedStruct;
 
+// Uses XdsLbPolicyRegistry to convert
+// envoy::config::cluster::v3::LoadBalancingPolicy to gRPC's JSON form.
 absl::StatusOr<Json::Array> ToJson(LoadBalancingPolicyProto policy) {
   std::string serialized_policy = policy.SerializeAsString();
   upb::Arena arena;

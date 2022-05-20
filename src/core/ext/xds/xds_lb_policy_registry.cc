@@ -50,9 +50,10 @@ class LbPolicy {
   virtual absl::StatusOr<Json::Object> ToJson(absl::string_view configuration,
                                               int recursion_depth) = 0;
   // The lb policy config type that this object expects,
-  // 'envoy.extensions.load_balancing_policies.ring_hash.v3.RingHash' or
-  // 'envoy.extensions.load_balancing_policies.round_robin.v3.RoundRobin' for
-  // example.
+  // 'type.googleapis.com/envoy.extensions.load_balancing_policies.ring_hash.v3.RingHash'
+  // or
+  // 'type.googleapis.com/envoy.extensions.load_balancing_policies.round_robin.v3.RoundRobin'
+  // for example.
   virtual const char* type() = 0;
 };
 
@@ -231,7 +232,7 @@ absl::StatusOr<Json> ParseStructToJson(const google_protobuf_Struct* resource) {
                        absl::StrCat("Failed to parse value for key:", key),
                        DEBUG_LOCATION, {parsed_value.status()}));
     } else {
-      fields.emplace(key, *std::move(parsed_value));
+      fields.emplace(std::string(key), *std::move(parsed_value));
     }
   }
   if (!errors.empty()) {
