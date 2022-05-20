@@ -91,7 +91,7 @@ class SliceBuffer {
 
   /// Increased the ref-count of slice at the specified index and returns the
   /// associated slice.
-  Slice RefSlice(size_t index);
+  Slice RefSlice(size_t index) const;
 
   /// The total number of bytes held by the SliceBuffer
   size_t Length() const { return slice_buffer_.length; }
@@ -103,6 +103,15 @@ class SliceBuffer {
 
   /// Concatenate all slices and return the resulting string.
   std::string JoinIntoString() const;
+
+  // Return a copy of the slice buffer
+  SliceBuffer Copy() const {
+    SliceBuffer copy;
+    for (size_t i = 0; i < Count(); i++) {
+      copy.Append(RefSlice(i));
+    }
+    return copy;
+  }
 
   /// Return a pointer to the back raw grpc_slice_buffer
   grpc_slice_buffer* c_slice_buffer() { return &slice_buffer_; }

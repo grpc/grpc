@@ -51,7 +51,7 @@ void SliceBuffer::Prepend(Slice slice) {
   grpc_slice_buffer_undo_take_first(&slice_buffer_, slice.TakeCSlice());
 }
 
-Slice SliceBuffer::RefSlice(size_t index) {
+Slice SliceBuffer::RefSlice(size_t index) const {
   return Slice(grpc_slice_ref_internal(slice_buffer_.slices[index]));
 }
 

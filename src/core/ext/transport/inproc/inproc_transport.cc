@@ -243,7 +243,8 @@ struct inproc_stream {
   grpc_transport_stream_op_batch* recv_message_op = nullptr;
   grpc_transport_stream_op_batch* recv_trailing_md_op = nullptr;
 
-  grpc_core::SliceBuffer recv_message;
+  absl::optional<grpc_core::SliceBuffer> recv_message;
+  uint32_t recv_message_flags;
 
   bool initial_md_sent = false;
   bool trailing_md_sent = false;
@@ -527,17 +528,11 @@ void fail_helper_locked(inproc_stream* s, grpc_error_handle error) {
   GRPC_ERROR_UNREF(error);
 }
 
-// TODO(vjpai): It should not be necessary to drain the incoming byte
-// stream and create a new one; instead, we should simply pass the byte
-// stream from the sender directly to the receiver as-is.
-//
-// Note that fixing this will also avoid the assumption in this code
-// that the incoming byte stream's next() call will always return
-// synchronously.  That assumption is true today but may not always be
-// true in the future.
 void message_transfer_locked(inproc_stream* sender, inproc_stream* receiver) {
   receiver->recv_message =
-      std::move(*sender->send_message_op->payload->send_message.send_message);
+      sender->send_message_op->payload->send_message.send_message->Copy();
+  receiver->recv_message_flags =
+      sender->send_message_op->payload->send_message.flags;
   complete_if_batch_end_locked(
       sender, GRPC_ERROR_NONE, sender->send_message_op,
       "message_transfer scheduling sender on_complete");
@@ -1047,6 +1042,8 @@ void perform_stream_op(grpc_transport* gt, grpc_stream* gs,
             nullptr) {
           *op->payload->recv_message.call_failed_before_recv_message = true;
         }
+        op->payload->recv_message.recv_message = &s->recv_message;
+        op->payload->recv_message.flags = &s->recv_message_flags;
         grpc_core::ExecCtx::Run(DEBUG_LOCATION,
                                 op->payload->recv_message.recv_message_ready,
                                 GRPC_ERROR_REF(error));
