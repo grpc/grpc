@@ -274,18 +274,6 @@ TEST_P(LogicalDNSClusterTest, SocketAddressMissingPort) {
               ::testing::HasSubstr("SocketAddress port_value field not set"));
 }
 
-// Test that CDS client should send a NACK if cluster type is Logical DNS but
-// the feature is not yet supported.
-TEST_P(LogicalDNSClusterTest, Disabled) {
-  auto cluster = default_cluster_;
-  cluster.set_type(Cluster::LOGICAL_DNS);
-  balancer_->ads_service()->SetCdsResource(cluster);
-  const auto response_state = WaitForCdsNack(DEBUG_LOCATION);
-  ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
-  EXPECT_THAT(response_state->error_message,
-              ::testing::HasSubstr("DiscoveryType is not valid."));
-}
-
 //
 // aggregate cluster tests
 //
@@ -831,24 +819,6 @@ TEST_P(AggregateClusterTest, RecursionMaxDepth) {
   EXPECT_THAT(
       status.error_message(),
       ::testing::HasSubstr("aggregate cluster graph exceeds max depth"));
-}
-
-// Test that CDS client should send a NACK if cluster type is AGGREGATE but
-// the feature is not yet supported.
-TEST_P(AggregateClusterTest, Disabled) {
-  auto cluster = default_cluster_;
-  CustomClusterType* custom_cluster = cluster.mutable_cluster_type();
-  custom_cluster->set_name("envoy.clusters.aggregate");
-  ClusterConfig cluster_config;
-  cluster_config.add_clusters("cluster1");
-  cluster_config.add_clusters("cluster2");
-  custom_cluster->mutable_typed_config()->PackFrom(cluster_config);
-  cluster.set_type(Cluster::LOGICAL_DNS);
-  balancer_->ads_service()->SetCdsResource(cluster);
-  const auto response_state = WaitForCdsNack(DEBUG_LOCATION);
-  ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
-  EXPECT_THAT(response_state->error_message,
-              ::testing::HasSubstr("DiscoveryType is not valid."));
 }
 
 }  // namespace
