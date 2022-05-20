@@ -29,6 +29,7 @@
 #include "src/core/ext/filters/fault_injection/service_config_parser.h"
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/channel/status_util.h"
+#include "src/core/lib/gprpp/capture.h"
 #include "src/core/lib/promise/sleep.h"
 #include "src/core/lib/promise/try_seq.h"
 #include "src/core/lib/service_config/service_config_call_data.h"
@@ -135,7 +136,9 @@ ArenaPromise<ServerMetadataHandle> FaultInjectionFilter::MakeCallPromise(
   auto delay = decision.DelayUntil();
   return TrySeq(
       Sleep(delay),
-      [decision = std::move(decision)]() { return decision.MaybeAbort(); },
+      Capture(
+          [](InjectionDecision* decision) { return decision->MaybeAbort(); },
+          std::move(decision)),
       next_promise_factory(std::move(call_args)));
 }
 
