@@ -806,6 +806,7 @@ void Subchannel::ResetBackoff() {
   if (state_ == GRPC_CHANNEL_TRANSIENT_FAILURE &&
       GetDefaultEventEngine()->Cancel(retry_timer_handle_)) {
     OnRetryTimerLocked();
+    WeakUnref(DEBUG_LOCATION, "ResetBackoff");
   }
 }
 
@@ -889,12 +890,11 @@ void Subchannel::SetConnectivityStateLocked(grpc_connectivity_state state,
 }
 
 void Subchannel::OnRetryTimer() {
-  WeakRefCountedPtr<Subchannel> c(this);
   {
     MutexLock lock(&mu_);
     OnRetryTimerLocked();
   }
-  c.reset(DEBUG_LOCATION, "RetryTimer");
+  WeakUnref(DEBUG_LOCATION, "RetryTimer");
 }
 
 void Subchannel::OnRetryTimerLocked() {
