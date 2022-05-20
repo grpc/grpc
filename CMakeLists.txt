@@ -943,6 +943,7 @@ if(gRPC_BUILD_TESTS)
   add_dependencies(buildtests_cxx call_finalization_test)
   add_dependencies(buildtests_cxx call_push_pull_test)
   add_dependencies(buildtests_cxx cancel_ares_query_test)
+  add_dependencies(buildtests_cxx capture_test)
   add_dependencies(buildtests_cxx cel_authorization_engine_test)
   add_dependencies(buildtests_cxx certificate_provider_registry_test)
   add_dependencies(buildtests_cxx certificate_provider_store_test)
@@ -8438,6 +8439,41 @@ target_link_libraries(cancel_ares_query_test
 endif()
 if(gRPC_BUILD_TESTS)
 
+add_executable(capture_test
+  test/core/gprpp/capture_test.cc
+  third_party/googletest/googletest/src/gtest-all.cc
+  third_party/googletest/googlemock/src/gmock-all.cc
+)
+
+target_include_directories(capture_test
+  PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
+    ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_RE2_INCLUDE_DIR}
+    ${_gRPC_SSL_INCLUDE_DIR}
+    ${_gRPC_UPB_GENERATED_DIR}
+    ${_gRPC_UPB_GRPC_GENERATED_DIR}
+    ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
+    ${_gRPC_ZLIB_INCLUDE_DIR}
+    third_party/googletest/googletest/include
+    third_party/googletest/googletest
+    third_party/googletest/googlemock/include
+    third_party/googletest/googlemock
+    ${_gRPC_PROTO_GENS_DIR}
+)
+
+target_link_libraries(capture_test
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  absl::utility
+)
+
+
+endif()
+if(gRPC_BUILD_TESTS)
+
 add_executable(cel_authorization_engine_test
   src/core/lib/security/authorization/cel_authorization_engine.cc
   test/core/security/cel_authorization_engine_test.cc
@@ -13709,6 +13745,7 @@ target_link_libraries(promise_factory_test
   absl::status
   absl::optional
   absl::variant
+  absl::utility
 )
 
 

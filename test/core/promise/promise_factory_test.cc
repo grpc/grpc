@@ -18,6 +18,7 @@
 
 #include "absl/functional/bind_front.h"
 
+#include "src/core/lib/gprpp/capture.h"
 #include "src/core/lib/promise/promise.h"
 
 namespace grpc_core {
@@ -49,6 +50,12 @@ TEST(AdaptorTest, FactoryFromPromise) {
 TEST(AdaptorTest, FactoryFromBindFrontPromise) {
   EXPECT_EQ(MakeFactory<void>(
                 absl::bind_front([](int i) { return Poll<int>(i); }, 42))
+                .Once()(),
+            Poll<int>(42));
+}
+
+TEST(AdaptorTest, FactoryFromCapturePromise) {
+  EXPECT_EQ(MakeFactory<void>(Capture([](int* i) { return Poll<int>(*i); }, 42))
                 .Once()(),
             Poll<int>(42));
 }

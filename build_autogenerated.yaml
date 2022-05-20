@@ -732,6 +732,7 @@ libs:
   - src/core/lib/event_engine/trace.h
   - src/core/lib/gprpp/atomic_utils.h
   - src/core/lib/gprpp/bitset.h
+  - src/core/lib/gprpp/capture.h
   - src/core/lib/gprpp/chunked_vector.h
   - src/core/lib/gprpp/cpp_impl_of.h
   - src/core/lib/gprpp/dual_ref_counted.h
@@ -1914,6 +1915,7 @@ libs:
   - src/core/lib/event_engine/trace.h
   - src/core/lib/gprpp/atomic_utils.h
   - src/core/lib/gprpp/bitset.h
+  - src/core/lib/gprpp/capture.h
   - src/core/lib/gprpp/chunked_vector.h
   - src/core/lib/gprpp/cpp_impl_of.h
   - src/core/lib/gprpp/dual_ref_counted.h
@@ -4859,6 +4861,17 @@ targets:
   deps:
   - grpc++_test_config
   - grpc++_test_util
+- name: capture_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - src/core/lib/gprpp/capture.h
+  src:
+  - test/core/gprpp/capture_test.cc
+  deps:
+  - absl/utility:utility
+  uses_polling: false
 - name: cel_authorization_engine_test
   gtest: true
   build: test
@@ -6913,6 +6926,7 @@ targets:
   build: test
   language: c++
   headers:
+  - src/core/lib/gprpp/capture.h
   - src/core/lib/promise/detail/promise_factory.h
   - src/core/lib/promise/detail/promise_like.h
   - src/core/lib/promise/poll.h
@@ -6924,6 +6938,7 @@ targets:
   - absl/status:status
   - absl/types:optional
   - absl/types:variant
+  - absl/utility:utility
   uses_polling: false
 - name: promise_map_test
   gtest: true

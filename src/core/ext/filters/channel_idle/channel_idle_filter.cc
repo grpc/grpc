@@ -29,6 +29,7 @@
 #include "src/core/lib/channel/channel_stack_builder.h"
 #include "src/core/lib/channel/promise_based_filter.h"
 #include "src/core/lib/config/core_configuration.h"
+#include "src/core/lib/gprpp/capture.h"
 #include "src/core/lib/iomgr/timer.h"
 #include "src/core/lib/promise/exec_ctx_wakeup_scheduler.h"
 #include "src/core/lib/promise/loop.h"
@@ -197,9 +198,9 @@ ArenaPromise<ServerMetadataHandle> ChannelIdleFilter::MakeCallPromise(
   using Decrementer = std::unique_ptr<ChannelIdleFilter, CallCountDecreaser>;
   IncreaseCallCount();
   return ArenaPromise<ServerMetadataHandle>(
-      [decrementer = Decrementer(this),
-       next = next_promise_factory(std::move(call_args))]() mutable
-      -> Poll<ServerMetadataHandle> { return next(); });
+      Capture([](Decrementer*, ArenaPromise<ServerMetadataHandle>* next)
+                  -> Poll<ServerMetadataHandle> { return (*next)(); },
+              Decrementer(this), next_promise_factory(std::move(call_args))));
 }
 
 bool ChannelIdleFilter::StartTransportOp(grpc_transport_op* op) {
