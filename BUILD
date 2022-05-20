@@ -2819,6 +2819,7 @@ grpc_cc_library(
         "chunked_vector",
         "config",
         "debug_location",
+        "default_event_engine_factory_hdrs",
         "dual_ref_counted",
         "error",
         "gpr_base",

@@ -366,8 +366,7 @@ class Subchannel : public DualRefCounted<Subchannel> {
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
 
   // Methods for connection.
-  static void OnRetryTimer(void* arg, grpc_error_handle error)
-      ABSL_LOCKS_EXCLUDED(mu_);
+  void OnRetryTimer() ABSL_LOCKS_EXCLUDED(mu_);
   void OnRetryTimerLocked() ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
   void StartConnectingLocked() ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
   static void OnConnectingFinished(void* arg, grpc_error_handle error)
@@ -425,8 +424,8 @@ class Subchannel : public DualRefCounted<Subchannel> {
   // Backoff state.
   BackOff backoff_ ABSL_GUARDED_BY(mu_);
   Timestamp next_attempt_time_ ABSL_GUARDED_BY(mu_);
-  grpc_timer retry_timer_ ABSL_GUARDED_BY(mu_);
-  grpc_closure on_retry_timer_ ABSL_GUARDED_BY(mu_);
+  grpc_event_engine::experimental::EventEngine::TaskHandle retry_timer_handle_
+      ABSL_GUARDED_BY(mu_);
 
   // Keepalive time period (-1 for unset)
   int keepalive_time_ ABSL_GUARDED_BY(mu_) = -1;

@@ -48,6 +48,7 @@
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/debug/stats.h"
 #include "src/core/lib/debug/trace.h"
+#include "src/core/lib/event_engine/event_engine_factory.h"
 #include "src/core/lib/gpr/alloc.h"
 #include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
@@ -80,6 +81,7 @@
                     GPR_ROUND_UP_TO_ALIGNMENT_SIZE(sizeof(SubchannelCall)))
 
 namespace grpc_core {
+using ::grpc_event_engine::experimental::GetDefaultEventEngine;
 
 TraceFlag grpc_trace_subchannel(false, "subchannel");
 DebugOnlyTraceFlag grpc_trace_subchannel_refcount(false, "subchannel_refcount");
@@ -650,7 +652,6 @@ Subchannel::Subchannel(SubchannelKey key,
   GRPC_STATS_INC_CLIENT_SUBCHANNELS_CREATED();
   GRPC_CLOSURE_INIT(&on_connecting_finished_, OnConnectingFinished, this,
                     grpc_schedule_on_exec_ctx);
-  GRPC_CLOSURE_INIT(&on_retry_timer_, OnRetryTimer, this, nullptr);
   // Check proxy mapper to determine address to connect to and channel
   // args to use.
   address_for_connect_ = key_.address();
@@ -802,8 +803,9 @@ void Subchannel::RequestConnection() {
 void Subchannel::ResetBackoff() {
   MutexLock lock(&mu_);
   backoff_.Reset();
-  if (state_ == GRPC_CHANNEL_TRANSIENT_FAILURE) {
-    grpc_timer_cancel(&retry_timer_);
+  if (state_ == GRPC_CHANNEL_TRANSIENT_FAILURE &&
+      GetDefaultEventEngine()->Cancel(retry_timer_handle_)) {
+    OnRetryTimerLocked();
   }
 }
 
@@ -886,11 +888,11 @@ void Subchannel::SetConnectivityStateLocked(grpc_connectivity_state state,
   health_watcher_map_.NotifyLocked(state, status);
 }
 
-void Subchannel::OnRetryTimer(void* arg, grpc_error_handle /*error*/) {
-  WeakRefCountedPtr<Subchannel> c(static_cast<Subchannel*>(arg));
+void Subchannel::OnRetryTimer() {
+  WeakRefCountedPtr<Subchannel> c(this);
   {
-    MutexLock lock(&c->mu_);
-    c->OnRetryTimerLocked();
+    MutexLock lock(&mu_);
+    OnRetryTimerLocked();
   }
   c.reset(DEBUG_LOCATION, "RetryTimer");
 }
@@ -952,6 +954,8 @@ void Subchannel::OnConnectingFinishedLocked(grpc_error_handle error) {
   if (connecting_result_.transport == nullptr || !PublishTransportLocked()) {
     const Duration time_until_next_attempt =
         next_attempt_time_ - ExecCtx::Get()->Now();
+    auto ee_deadline =
+        absl::Now() + absl::Milliseconds(time_until_next_attempt.millis());
     gpr_log(GPR_INFO,
             "subchannel %p %s: connect failed (%s), backing off for %" PRId64
             " ms",
@@ -960,7 +964,8 @@ void Subchannel::OnConnectingFinishedLocked(grpc_error_handle error) {
     SetConnectivityStateLocked(GRPC_CHANNEL_TRANSIENT_FAILURE,
                                grpc_error_to_absl_status(error));
     WeakRef(DEBUG_LOCATION, "RetryTimer").release();  // Ref held by callback.
-    grpc_timer_init(&retry_timer_, next_attempt_time_, &on_retry_timer_);
+    retry_timer_handle_ =
+        GetDefaultEventEngine()->RunAt(ee_deadline, [this] { OnRetryTimer(); });
   }
   (void)GRPC_ERROR_UNREF(error);
 }
