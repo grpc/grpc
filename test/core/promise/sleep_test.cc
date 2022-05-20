@@ -75,6 +75,23 @@ TEST(Sleep, Cancel) {
   EXPECT_LT(ExecCtx::Get()->Now(), done_time);
 }
 
+TEST(Sleep, MoveSemantics) {
+  // ASAN should help determine if there are any memory leaks here
+  ExecCtx exec_ctx;
+  absl::Notification done;
+  Timestamp done_time = ExecCtx::Get()->Now() + Duration::Milliseconds(111);
+  Sleep donor(done_time);
+  Sleep sleeper = std::move(donor);
+  auto activity = MakeActivity(std::move(sleeper), InlineWakeupScheduler(),
+                               [&done](absl::Status r) {
+                                 EXPECT_EQ(r, absl::OkStatus());
+                                 done.Notify();
+                               });
+  done.WaitForNotification();
+  exec_ctx.InvalidateNow();
+  EXPECT_GE(ExecCtx::Get()->Now(), done_time);
+}
+
 }  // namespace
 }  // namespace grpc_core
 

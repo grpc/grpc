@@ -28,37 +28,33 @@ namespace grpc_core {
 
 using ::grpc_event_engine::experimental::GetDefaultEventEngine;
 
-Sleep::Sleep(Timestamp deadline) : state_(new State(deadline)) {}
+Sleep::Sleep(Timestamp deadline) : deadline_(deadline) {}
 
 Sleep::~Sleep() {
-  if (state_ == nullptr) return;
-  {
-    MutexLock lock(&state_->mu);
-    switch (state_->stage) {
-      case Stage::kInitial:
-        state_->Unref();
-        break;
-      case Stage::kStarted:
-        if (GetDefaultEventEngine()->Cancel(state_->timer_handle)) {
-          state_->Unref();
-        }
-        break;
-      case Stage::kDone:
-        break;
-    }
+  if (deadline_ == Timestamp::InfPast()) return;
+  ReleasableMutexLock lock(&mu_);
+  switch (stage_) {
+    case Stage::kInitial:
+      break;
+    case Stage::kStarted:
+      if (GetDefaultEventEngine()->Cancel(timer_handle_)) {
+        lock.Release();
+        OnTimer();
+      }
+      break;
+    case Stage::kDone:
+      break;
   }
-  state_->Unref();
 }
 
-void Sleep::State::OnTimer() {
+void Sleep::OnTimer() {
   Waker tmp_waker;
   {
-    MutexLock lock(&mu);
-    stage = Stage::kDone;
-    tmp_waker = std::move(waker);
+    MutexLock lock(&mu_);
+    stage_ = Stage::kDone;
+    tmp_waker = std::move(waker_);
   }
   tmp_waker.Wakeup();
-  Unref();
 }
 
 // TODO(hork): refactor gpr_base to allow a separate time_util target.
@@ -72,22 +68,22 @@ absl::Time ToAbslTime(Timestamp timestamp) {
 }  // namespace
 
 Poll<absl::Status> Sleep::operator()() {
-  MutexLock lock(&state_->mu);
-  switch (state_->stage) {
+  MutexLock lock(&mu_);
+  switch (stage_) {
     case Stage::kInitial:
-      if (state_->deadline <= ExecCtx::Get()->Now()) {
+      if (deadline_ <= ExecCtx::Get()->Now()) {
         return absl::OkStatus();
       }
-      state_->stage = Stage::kStarted;
-      state_->timer_handle = GetDefaultEventEngine()->RunAt(
-          ToAbslTime(state_->deadline), [this] { state_->OnTimer(); });
+      stage_ = Stage::kStarted;
+      timer_handle_ = GetDefaultEventEngine()->RunAt(ToAbslTime(deadline_),
+                                                     [this] { OnTimer(); });
       break;
     case Stage::kStarted:
       break;
     case Stage::kDone:
       return absl::OkStatus();
   }
-  state_->waker = Activity::current()->MakeNonOwningWaker();
+  waker_ = Activity::current()->MakeNonOwningWaker();
   return Pending{};
 }
 
