@@ -31,7 +31,6 @@
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/channel/promise_based_filter.h"
 #include "src/core/lib/gpr/string.h"
-#include "src/core/lib/gprpp/capture.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/profiling/timers.h"
 #include "src/core/lib/promise/promise.h"
@@ -151,13 +150,12 @@ ArenaPromise<absl::StatusOr<CallArgs>> ClientAuthFilter::GetCallCredsMetadata(
   auto client_initial_metadata = std::move(call_args.client_initial_metadata);
   return TrySeq(
       creds->GetRequestMetadata(std::move(client_initial_metadata), &args_),
-      Capture(
-          [](CallArgs* rest_of_args, ClientMetadataHandle new_metadata) {
-            rest_of_args->client_initial_metadata = std::move(new_metadata);
-            return Immediate<absl::StatusOr<CallArgs>>(
-                absl::StatusOr<CallArgs>(std::move(*rest_of_args)));
-          },
-          std::move(call_args)));
+      [call_args =
+           std::move(call_args)](ClientMetadataHandle new_metadata) mutable {
+        call_args.client_initial_metadata = std::move(new_metadata);
+        return Immediate<absl::StatusOr<CallArgs>>(
+            absl::StatusOr<CallArgs>(std::move(call_args)));
+      });
 }
 
 ArenaPromise<ServerMetadataHandle> ClientAuthFilter::MakeCallPromise(
