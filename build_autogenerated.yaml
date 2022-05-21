@@ -6736,6 +6736,26 @@ targets:
   - absl/types:variant
   - gpr
   uses_polling: false
+- name: oracle_event_engine_posix_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - test/core/event_engine/test_suite/event_engine_test.h
+  - test/core/event_engine/test_suite/event_engine_test_utils.h
+  - test/core/event_engine/test_suite/oracle_event_engine_posix.h
+  src:
+  - test/core/event_engine/test_suite/client_test.cc
+  - test/core/event_engine/test_suite/event_engine_test.cc
+  - test/core/event_engine/test_suite/event_engine_test_utils.cc
+  - test/core/event_engine/test_suite/oracle_event_engine_posix.cc
+  - test/core/event_engine/test_suite/oracle_event_engine_posix_test.cc
+  deps:
+  - grpc_test_util
+  platforms:
+  - linux
+  - posix
+  uses_polling: false
 - name: orca_service_end2end_test
   gtest: true
   build: test
@@ -6899,26 +6919,6 @@ targets:
   - test/cpp/end2end/test_service_impl.cc
   deps:
   - grpc++_test_util
-- name: posix_oracle_event_engine_test
-  gtest: true
-  build: test
-  language: c++
-  headers:
-  - test/core/event_engine/test_suite/event_engine_test.h
-  - test/core/event_engine/test_suite/event_engine_test_utils.h
-  - test/core/event_engine/test_suite/posix_oracle_event_engine.h
-  src:
-  - test/core/event_engine/test_suite/client_test.cc
-  - test/core/event_engine/test_suite/event_engine_test.cc
-  - test/core/event_engine/test_suite/event_engine_test_utils.cc
-  - test/core/event_engine/test_suite/posix_oracle_event_engine.cc
-  - test/core/event_engine/test_suite/posix_oracle_event_engine_test.cc
-  deps:
-  - grpc_test_util
-  platforms:
-  - linux
-  - posix
-  uses_polling: false
 - name: promise_factory_test
   gtest: true
   build: test
