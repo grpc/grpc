@@ -34,12 +34,12 @@
 
 class EventEngineClientTest : public EventEngineTest {};
 
+namespace {
+
 using ::grpc_event_engine::experimental::ConnectionManager;
 using ResolvedAddress =
     ::grpc_event_engine::experimental::EventEngine::ResolvedAddress;
 using Endpoint = ::grpc_event_engine::experimental::EventEngine::Endpoint;
-
-namespace {
 
 constexpr int kMinMessageSize = 1024;
 constexpr int kMaxMessageSize = 4096;

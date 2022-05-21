@@ -27,7 +27,7 @@
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/event_engine/memory_allocator.h>
 
-#include "src/core/lib/iomgr/event_engine/promise.h"
+#include "src/core/lib/event_engine/promise.h"
 #include "src/core/lib/resource_quota/memory_quota.h"
 
 using EventEngineFactory = std::function<
