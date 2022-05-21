@@ -1,5 +1,5 @@
 #!/bin/bash
-# Copyright 2015 gRPC authors.
+# Copyright 2022 The gRPC Authors
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -13,51 +13,49 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# Don't run this script standalone. Instead, run from the repository root:
-# ./tools/run_tests/run_tests.py -l objc
+# Run this script via bazel test
+# It expects that protoc and grpc_objective_c_plugin have already been built.
 
 set -ev
 
-cd $(dirname $0)
-
-# Run the tests server.
-
-ROOT_DIR=../../..
-BAZEL=$ROOT_DIR/tools/bazel
-PROTOC=$ROOT_DIR/bazel-bin/external/com_google_protobuf/protoc
-PLUGIN=$ROOT_DIR/bazel-bin/src/compiler/grpc_objective_c_plugin
+# protoc and grpc_objective_c_plugin binaries are supplied as "data" in bazel
+PROTOC=./external/com_google_protobuf/protoc
+PLUGIN=./src/compiler/grpc_objective_c_plugin
+WELL_KNOWN_PROTOS_PATH=external/com_google_protobuf/src
 RUNTIME_IMPORT_PREFIX=prefix/dir/
 
-[ -f $PROTOC ] && [ -f $PLUGIN ] || {
-    BAZEL build @com_google_protobuf//:protoc //src/compiler:grpc_objective_c_plugin
-}
-
-rm -rf RemoteTestClient/*pb*
+PROTO_OUT=./proto_out
+rm -rf ${PROTO_OUT}
+mkdir -p ${PROTO_OUT}
 
 $PROTOC \
     --plugin=protoc-gen-grpc=$PLUGIN \
-    --objc_out=RemoteTestClient \
-    --grpc_out=grpc_local_import_prefix=$RUNTIME_IMPORT_PREFIX,runtime_import_prefix=$RUNTIME_IMPORT_PREFIX:RemoteTestClient \
-    -I $ROOT_DIR \
-    -I ../../../third_party/protobuf/src \
-    $ROOT_DIR/src/objective-c/examples/RemoteTestClient/*.proto
+    --objc_out=${PROTO_OUT} \
+    --grpc_out=grpc_local_import_prefix=$RUNTIME_IMPORT_PREFIX,runtime_import_prefix=$RUNTIME_IMPORT_PREFIX:${PROTO_OUT} \
+    -I . \
+    -I ${WELL_KNOWN_PROTOS_PATH} \
+    src/objective-c/tests/RemoteTestClient/*.proto
+
+# TODO(jtattermusch): rewrite the tests to make them more readable.
+# Also, the way they are written, they need one extra command to run in order to
+# clear $? after they run (see end of this script)
 
 # Verify the "runtime_import_prefix" option
 # Verify the output proto filename
-[ -e ./RemoteTestClient/src/objective-c/examples/RemoteTestClient/Test.pbrpc.m ] || {
+[ -e ${PROTO_OUT}/src/objective-c/tests/RemoteTestClient/Test.pbrpc.m ] || {
     echo >&2 "protoc outputs wrong filename."
     exit 1
 }
 
 # Verify paths of protobuf WKTs in generated code contain runtime import prefix.
-[ "`cat RemoteTestClient/src/objective-c/examples/RemoteTestClient/Test.pbrpc.m |
+[ "`cat ${PROTO_OUT}/src/objective-c/tests/RemoteTestClient/Test.pbrpc.m |
     egrep '#import "'"${RUNTIME_IMPORT_PREFIX}"'GPBEmpty\.pbobjc\.h'`" ] || {
     echo >&2 "protoc generated import with wrong filename."
     exit 1
 }
 
 # Verify paths of non WKTs protos in generated code don't contain runtime import prefix.
-[ "`cat RemoteTestClient/src/objective-c/examples/RemoteTestClient/Test.pbrpc.m |
+[ "`cat ${PROTO_OUT}/src/objective-c/tests/RemoteTestClient/Test.pbrpc.m |
     egrep '.*\Messages.pbobjc.h"$' | 
     egrep '#import "'"${RUNTIME_IMPORT_PREFIX}"`" ] && {
     echo >&2 "protoc generated import with wrong filename."
@@ -66,13 +64,13 @@ $PROTOC \
 
 # Verify the "grpc_local_import_directory" option
 # Verify system files are imported in a "local" way in header files.
-[ "`cat RemoteTestClient/src/objective-c/examples/RemoteTestClient/Test.pbrpc.h |
+[ "`cat ${PROTO_OUT}/src/objective-c/tests/RemoteTestClient/Test.pbrpc.h |
     egrep '#import "'"${RUNTIME_IMPORT_PREFIX}"'/ProtoRPC/.*\.h'`"] || {
     echo >&2 "grpc system files should be imported with full paths."    
 }
 
 # Verify system files are imported in a "local" way in source files.
-[ "`cat RemoteTestClient/src/objective-c/examples/RemoteTestClient/Test.pbrpc.m |
+[ "`cat ${PROTO_OUT}/src/objective-c/tests/RemoteTestClient/Test.pbrpc.m |
     egrep '#import "'"${RUNTIME_IMPORT_PREFIX}"'/ProtoRPC/.*\.h'`"] || {
     echo >&2 "grpc system files should be imported with full paths."    
 }

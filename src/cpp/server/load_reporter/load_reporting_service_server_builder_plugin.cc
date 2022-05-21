@@ -20,7 +20,10 @@
 
 #include "src/cpp/server/load_reporter/load_reporting_service_server_builder_plugin.h"
 
+#include <utility>
+
 #include <grpcpp/impl/server_initializer.h>
+#include <grpcpp/server_builder.h>
 
 namespace grpc {
 namespace load_reporter {

@@ -286,7 +286,7 @@ class XdsClient : public DualRefCounted<XdsClient> {
   const XdsResourceType* GetResourceTypeLocked(absl::string_view resource_type)
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
 
-  static absl::StatusOr<XdsResourceName> ParseXdsResourceName(
+  absl::StatusOr<XdsResourceName> ParseXdsResourceName(
       absl::string_view name, const XdsResourceType* type);
   static std::string ConstructFullXdsResourceName(
       absl::string_view authority, absl::string_view resource_type,
@@ -302,6 +302,7 @@ class XdsClient : public DualRefCounted<XdsClient> {
   std::unique_ptr<XdsBootstrap> bootstrap_;
   grpc_channel_args* args_;
   const Duration request_timeout_;
+  const bool xds_federation_enabled_;
   grpc_pollset_set* interested_parties_;
   OrphanablePtr<CertificateProviderStore> certificate_provider_store_;
   XdsApi api_;

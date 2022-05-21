@@ -37,6 +37,7 @@
 #include <grpcpp/channel.h>
 #include <grpcpp/client_context.h>
 #include <grpcpp/create_channel.h>
+#include <grpcpp/ext/call_metric_recorder.h>
 #include <grpcpp/ext/orca_service.h>
 #include <grpcpp/health_check_service_interface.h>
 #include <grpcpp/impl/codegen/sync.h>
@@ -92,11 +93,17 @@ class MyTestServiceImpl : public TestServiceImpl {
     }
     AddClient(context->peer());
     if (request->has_param() && request->param().has_backend_metrics()) {
-      const auto& load_report = request->param().backend_metrics();
-      // TODO(roth): Once we provide a more standard server-side API for
-      // populating this data, use that API here.
-      context->AddTrailingMetadata("x-endpoint-load-metrics-bin",
-                                   load_report.SerializeAsString());
+      load_report_ = request->param().backend_metrics();
+      auto* recorder = context->ExperimentalGetCallMetricRecorder();
+      EXPECT_NE(recorder, nullptr);
+      recorder->RecordCpuUtilizationMetric(load_report_.cpu_utilization())
+          .RecordMemoryUtilizationMetric(load_report_.mem_utilization());
+      for (const auto& p : load_report_.request_cost()) {
+        recorder->RecordRequestCostMetric(p.first, p.second);
+      }
+      for (const auto& p : load_report_.utilization()) {
+        recorder->RecordUtilizationMetric(p.first, p.second);
+      }
     }
     return TestServiceImpl::Echo(context, request, response);
   }
@@ -126,6 +133,8 @@ class MyTestServiceImpl : public TestServiceImpl {
   int request_count_ = 0;
   grpc::internal::Mutex clients_mu_;
   std::set<std::string> clients_;
+  // For strings storage.
+  xds::data::orca::v3::OrcaLoadReport load_report_;
 };
 
 class FakeResolverResponseGeneratorWrapper {
@@ -374,6 +383,7 @@ class ClientLbEnd2endTest : public ::testing::Test {
       std::ostringstream server_address;
       server_address << server_host << ":" << port_;
       ServerBuilder builder;
+      experimental::EnableCallMetricRecording(&builder);
       std::shared_ptr<ServerCredentials> creds(new SecureServerCredentials(
           grpc_fake_transport_security_server_credentials_create()));
       builder.AddListeningPort(server_address.str(), std::move(creds));
@@ -1940,12 +1950,10 @@ TEST_F(ClientLbPickArgsTest, Basic) {
 //
 
 xds::data::orca::v3::OrcaLoadReport BackendMetricDataToOrcaLoadReport(
-    const grpc_core::LoadBalancingPolicy::BackendMetricAccessor::
-        BackendMetricData& backend_metric_data) {
+    const grpc_core::BackendMetricData& backend_metric_data) {
   xds::data::orca::v3::OrcaLoadReport load_report;
   load_report.set_cpu_utilization(backend_metric_data.cpu_utilization);
   load_report.set_mem_utilization(backend_metric_data.mem_utilization);
-  load_report.set_rps(backend_metric_data.requests_per_second);
   for (const auto& p : backend_metric_data.request_cost) {
     std::string name(p.first);
     (*load_report.mutable_request_cost())[name] = p.second;
@@ -2154,7 +2162,6 @@ TEST_F(ClientLbInterceptTrailingMetadataTest, BackendMetricData) {
   xds::data::orca::v3::OrcaLoadReport load_report;
   load_report.set_cpu_utilization(0.5);
   load_report.set_mem_utilization(0.75);
-  load_report.set_rps(25);
   auto* request_cost = load_report.mutable_request_cost();
   (*request_cost)["foo"] = 0.8;
   (*request_cost)["bar"] = 1.4;
@@ -2174,7 +2181,6 @@ TEST_F(ClientLbInterceptTrailingMetadataTest, BackendMetricData) {
     // available in OSS.
     EXPECT_EQ(actual->cpu_utilization(), load_report.cpu_utilization());
     EXPECT_EQ(actual->mem_utilization(), load_report.mem_utilization());
-    EXPECT_EQ(actual->rps(), load_report.rps());
     EXPECT_EQ(actual->request_cost().size(), load_report.request_cost().size());
     for (const auto& p : actual->request_cost()) {
       auto it = load_report.request_cost().find(p.first);
@@ -2309,8 +2315,7 @@ class OobBackendMetricTest : public ClientLbEnd2endTest {
  private:
   static void BackendMetricCallback(
       grpc_core::ServerAddress address,
-      const grpc_core::LoadBalancingPolicy::BackendMetricAccessor::
-          BackendMetricData& backend_metric_data) {
+      const grpc_core::BackendMetricData& backend_metric_data) {
     auto load_report = BackendMetricDataToOrcaLoadReport(backend_metric_data);
     int port = grpc_sockaddr_get_port(&address.address());
     grpc::internal::MutexLock lock(&current_test_instance_->mu_);

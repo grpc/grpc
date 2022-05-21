@@ -30,6 +30,21 @@ changes to this codebase at the moment.
 
 `kubectl` can be installed via `gcloud components install kubectl`, or system package manager: https://kubernetes.io/docs/tasks/tools/#kubectl
 
+##### Getting Started
+
+1. If you haven't, [initialize](https://cloud.google.com/sdk/docs/install-sdk) gcloud SDK
+2. Activate gcloud [configuration](https://cloud.google.com/sdk/docs/configurations) with your project 
+3. Enable gcloud services:
+   ```shell
+   gcloud services enable \
+     compute.googleapis.com \
+     container.googleapis.com \
+     networksecurity.googleapis.com \
+     networkservices.googleapis.com \
+     secretmanager.googleapis.com \
+     trafficdirector.googleapis.com
+   ```
+
 #### Configure GKE cluster
 This is an example outlining minimal requirements to run `tests.baseline_test`.  
 For more details, and for the setup for security tests, see
@@ -69,7 +84,6 @@ gcloud container clusters create "${CLUSTER_NAME}" \
  --zone="${ZONE}" \
  --enable-ip-alias \
  --workload-pool="${PROJECT_ID}.svc.id.goog" \
- --enable-mesh-certificates \
  --workload-metadata=GKE_METADATA \
  --tags=allow-health-checks
 ```

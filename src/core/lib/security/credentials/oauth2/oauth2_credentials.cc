@@ -38,7 +38,6 @@
 #include <grpc/support/string_util.h>
 
 #include "src/core/lib/gpr/string.h"
-#include "src/core/lib/gprpp/capture.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/http/httpcli_ssl_credentials.h"
 #include "src/core/lib/iomgr/error.h"
