@@ -83,7 +83,7 @@ void RbacFilter::CallData::RecvInitialMetadataReady(void* user_data,
     } else {
       RbacFilter* chand = static_cast<RbacFilter*>(elem->channel_data);
       auto* authorization_engine =
-          method_params->authorization_engine(chand->index_);
+          method_params->authorization_engine((int)chand->index_);
       if (authorization_engine
               ->Evaluate(EvaluateArgs(calld->recv_initial_metadata_,
                                       &chand->per_channel_evaluate_args_))

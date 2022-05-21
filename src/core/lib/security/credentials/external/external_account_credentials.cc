@@ -484,7 +484,7 @@ void ExternalAccountCredentials::OnImpersenateServiceAccountInternal(
         "Invalid expire time of service account impersonation response."));
     return;
   }
-  int expire_in = (t - absl::Now()) / absl::Seconds(1);
+  int expire_in = (int)((t - absl::Now()) / absl::Seconds(1));
   std::string body = absl::StrFormat(
       "{\"access_token\":\"%s\",\"expires_in\":%d,\"token_type\":\"Bearer\"}",
       access_token, expire_in);

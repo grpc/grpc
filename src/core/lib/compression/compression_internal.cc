@@ -117,7 +117,7 @@ CompressionAlgorithmSet CompressionAlgorithmSet::FromUint32(uint32_t value) {
   CompressionAlgorithmSet set;
   for (size_t i = 0; i < GRPC_COMPRESS_ALGORITHMS_COUNT; i++) {
     if (value & (1u << i)) {
-      set.set_.set(i);
+      set.set_.set((int)i);
     }
   }
   return set;
@@ -152,7 +152,7 @@ bool CompressionAlgorithmSet::IsSet(
     grpc_compression_algorithm algorithm) const {
   size_t i = static_cast<size_t>(algorithm);
   if (i < GRPC_COMPRESS_ALGORITHMS_COUNT) {
-    return set_.is_set(i);
+    return set_.is_set((int)i);
   } else {
     return false;
   }
@@ -161,14 +161,14 @@ bool CompressionAlgorithmSet::IsSet(
 void CompressionAlgorithmSet::Set(grpc_compression_algorithm algorithm) {
   size_t i = static_cast<size_t>(algorithm);
   if (i < GRPC_COMPRESS_ALGORITHMS_COUNT) {
-    set_.set(i);
+    set_.set((int)i);
   }
 }
 
 std::string CompressionAlgorithmSet::ToString() const {
   absl::InlinedVector<const char*, GRPC_COMPRESS_ALGORITHMS_COUNT> segments;
   for (size_t i = 0; i < GRPC_COMPRESS_ALGORITHMS_COUNT; i++) {
-    if (set_.is_set(i)) {
+    if (set_.is_set((int)i)) {
       segments.push_back(CompressionAlgorithmAsString(
           static_cast<grpc_compression_algorithm>(i)));
     }

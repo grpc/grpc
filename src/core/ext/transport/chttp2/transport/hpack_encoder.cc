@@ -211,7 +211,7 @@ class BinaryStringValue {
   explicit BinaryStringValue(Slice value, bool use_true_binary_metadata)
       : wire_value_(
             GetWireValue(std::move(value), use_true_binary_metadata, true)),
-        len_val_(wire_value_.length) {}
+        len_val_((uint32_t)wire_value_.length) {}
 
   size_t prefix_length() const {
     return len_val_.length() +
@@ -235,7 +235,7 @@ class BinaryStringValue {
 class NonBinaryStringValue {
  public:
   explicit NonBinaryStringValue(Slice value)
-      : value_(std::move(value)), len_val_(value_.length()) {}
+      : value_(std::move(value)), len_val_((uint32_t)value_.length()) {}
 
   size_t prefix_length() const { return len_val_.length(); }
 
@@ -251,7 +251,7 @@ class NonBinaryStringValue {
 class StringKey {
  public:
   explicit StringKey(Slice key)
-      : key_(std::move(key)), len_key_(key_.length()) {}
+      : key_(std::move(key)), len_key_((uint32_t)key_.length()) {}
 
   size_t prefix_length() const { return 1 + len_key_.length(); }
 
@@ -338,7 +338,7 @@ void HPackCompressor::SliceIndex::EmitTo(absl::string_view key,
   using It = std::vector<ValueIndex>::iterator;
   It prev = values_.end();
   uint32_t transport_length =
-      key.length() + value.length() + hpack_constants::kEntryOverhead;
+  (uint32_t)(key.length() + value.length() + hpack_constants::kEntryOverhead);
   if (transport_length > HPackEncoderTable::MaxEntrySize()) {
     framer->EmitLitHdrWithNonBinaryStringKeyNotIdx(Slice::FromStaticString(key),
                                                    value.Ref());
@@ -564,7 +564,7 @@ void HPackCompressor::Framer::Encode(UserAgentMetadata, const Slice& slice) {
   }
   EncodeAlwaysIndexed(
       &compressor_->user_agent_index_, "user-agent", slice.Ref(),
-      10 /* user-agent */ + slice.size() + hpack_constants::kEntryOverhead);
+      (uint32_t)(10 /* user-agent */ + slice.size() + hpack_constants::kEntryOverhead));
 }
 
 void HPackCompressor::Framer::Encode(GrpcStatusMetadata,
@@ -581,7 +581,7 @@ void HPackCompressor::Framer::Encode(GrpcStatusMetadata,
   Slice key = Slice::FromStaticString(GrpcStatusMetadata::key());
   Slice value = Slice::FromInt64(code);
   const uint32_t transport_length =
-      key.length() + value.length() + hpack_constants::kEntryOverhead;
+  (uint32_t)(key.length() + value.length() + hpack_constants::kEntryOverhead);
   if (index != nullptr) {
     *index = compressor_->table_.AllocateIndex(transport_length);
     EmitLitHdrWithNonBinaryStringKeyIncIdx(std::move(key), std::move(value));
@@ -603,7 +603,7 @@ void HPackCompressor::Framer::Encode(GrpcEncodingMetadata,
   auto key = Slice::FromStaticString(GrpcEncodingMetadata::key());
   auto encoded_value = GrpcEncodingMetadata::Encode(value);
   uint32_t transport_length =
-      key.length() + encoded_value.length() + hpack_constants::kEntryOverhead;
+  (uint32_t)(key.length() + encoded_value.length() + hpack_constants::kEntryOverhead);
   if (index != nullptr) {
     *index = compressor_->table_.AllocateIndex(transport_length);
     EmitLitHdrWithNonBinaryStringKeyIncIdx(std::move(key),
@@ -627,7 +627,7 @@ void HPackCompressor::Framer::Encode(GrpcAcceptEncodingMetadata,
   auto key = Slice::FromStaticString(GrpcAcceptEncodingMetadata::key());
   auto encoded_value = GrpcAcceptEncodingMetadata::Encode(value);
   uint32_t transport_length =
-      key.length() + encoded_value.length() + hpack_constants::kEntryOverhead;
+  (uint32_t)(key.length() + encoded_value.length() + hpack_constants::kEntryOverhead);
   compressor_->grpc_accept_encoding_index_ =
       compressor_->table_.AllocateIndex(transport_length);
   compressor_->grpc_accept_encoding_ = value;
