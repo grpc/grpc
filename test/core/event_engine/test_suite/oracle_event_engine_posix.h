@@ -29,7 +29,7 @@
 #include <grpc/support/log.h>
 
 #include "src/core/lib/gprpp/thd.h"
-#include "src/core/lib/iomgr/event_engine/promise.h"
+#include "src/core/lib/event_engine/promise.h"
 #include "src/core/lib/resource_quota/memory_quota.h"
 #include "test/core/event_engine/test_suite/event_engine_test_utils.h"
 
