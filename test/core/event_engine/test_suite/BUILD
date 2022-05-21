@@ -101,7 +101,6 @@ grpc_cc_test(
     external_deps = ["gtest"],
     language = "C++",
     tags = [
-        "no_mac",
         "no_test_ios",
         "no_windows",
     ],
