@@ -31,12 +31,6 @@ extern std::function<
 // Manages the lifetime of the global EventEngine factory.
 class EventEngineTestEnvironment : public testing::Environment {
  public:
-  explicit EventEngineTestEnvironment(
-      std::function<
-          std::unique_ptr<grpc_event_engine::experimental::EventEngine>()>
-          factory)
-      : factory_(factory), oracle_factory_(nullptr) {}
-
   EventEngineTestEnvironment(
       std::function<
           std::unique_ptr<grpc_event_engine::experimental::EventEngine>()>
@@ -78,16 +72,9 @@ class EventEngineTest : public testing::Test {
   }
 };
 
-// Set a custom factory for the EventEngine test suite. No oracle EventEngine
-// is specified here.
-void SetEventEngineFactory(
-    std::function<
-        std::unique_ptr<grpc_event_engine::experimental::EventEngine>()>
-        factory);
-
-// Set a custom factory for the EventEngine test suite. An oracle EventEngine
-// is additionally specified here.
-void SetEventEngineFactory(
+// Set a custom factory for the EventEngine test suite. An optional oracle
+// EventEngine can additionally be specified here.
+void SetEventEngineFactories(
     std::function<
         std::unique_ptr<grpc_event_engine::experimental::EventEngine>()>
         ee_factory,

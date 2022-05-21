@@ -16,9 +16,9 @@
 #define GRPC_TEST_CORE_EVENT_ENGINE_TEST_SUITE_EVENT_ENGINE_TEST_UTILS_H_
 
 #include <functional>
+#include <map>
 #include <memory>
 #include <string>
-#include <map>
 #include <utility>
 
 #include "absl/status/status.h"
@@ -33,14 +33,21 @@
 using EventEngineFactory = std::function<
     std::unique_ptr<grpc_event_engine::experimental::EventEngine>()>;
 
-using OnConnectCompleteCallback = std::function<void(absl::Status)>;
-
 namespace grpc_event_engine {
 namespace experimental {
 
 void AppendStringToSliceBuffer(SliceBuffer* buf, std::string data);
 
 std::string ExtractSliceBufferIntoString(SliceBuffer* buf);
+
+// A helper method to exchange data between two endpoints. It is assumed that
+// both endpoints are connected. The data (specified as a string) is written by
+// the sender_endpoint and read by the receiver_endpoint. It returns OK
+// status only if data written == data read. It also blocks the calling thread
+// until said Write and Read operations are complete.
+absl::Status ExchangeVerifyData(std::string data,
+                                EventEngine::Endpoint* sender_endpoint,
+                                EventEngine::Endpoint* receiver_endpoint);
 
 // A helper class to create clients/listeners and connections between them.
 // The clients and listeners can be created by the oracle event engine
@@ -54,62 +61,28 @@ class ConnectionManager {
       : memory_quota_(std::make_unique<grpc_core::MemoryQuota>("foo")),
         test_event_engine_(std::move(test_event_engine)),
         oracle_event_engine_(std::move(oracle_event_engine)) {}
-  ~ConnectionManager();
+  ~ConnectionManager() = default;
 
-  // If successful, return OK status. It creates and starts a listener bound to
-  // the specified address. The type of the listener is determined by the 2nd
-  // argument.
-  absl::Status StartListener(std::string addr, bool listener_type_oracle);
+  // It creates and starts a listener bound to all the specified list of
+  //  addresses.  If successful, return OK status. The type of the listener is
+  //  determined by the 2nd argument.
+  absl::Status BindAndStartListener(std::vector<std::string> addrs,
+                                    bool listener_type_oracle = true);
 
-  // If connection is successful, returns a positive number which is a unique
-  // connection id. The OnConnectCompleteCallback is invoked after the result
-  // of the connection is known. If un-successfull it returns a non-OK
-  // status containing the error encountered.
-  absl::StatusOr<int> CreateConnection(std::string target_addr,
-                                       absl::Time deadline,
-                                       OnConnectCompleteCallback cb,
-                                       bool client_type_oracle);
-
-  // If client_endpoint is true, returns the client endpoint of the
-  // corresponding connection_id. Otherwise, it returns the server endpoint.
-  // A test may use these endpoints as it pleases but it does not get ownership
-  // of the endpoint returned. The endpoint remains alive until explicitly
-  // deleted using the CloseConnection method.
-  EventEngine::Endpoint* GetEndpoint(int connection_id, bool client_endpoint);
-
-  // A helper method to transfer data from client to server over the connection.
-  // It returns an OK status after verifiying the server is able to fully
-  // read the data that was written by the client.
-  absl::Status TransferFromClient(int connection_id, std::string write_data) {
-    return ExchangeData(connection_id, true, write_data);
-  }
-
-  // A helper method to transfer data from server to client over the connection.
-  // It returns an OK status after verifiying the client is able to fully
-  // read the data that was written by the server.
-  absl::Status TransferFromServer(int connection_id, std::string write_data) {
-    return ExchangeData(connection_id, false, write_data);
-  }
-
-  // Shuts down and deletes both endpoints of the specified connection.
-  // Its safe to invoke this only when there is no ongoing ExchangeData
-  // operations on the connection.
-  void CloseConnection(int connection_id);
+  // If connection is successful, returns a tuple containing:
+  //    1. a pointer to the client side endpoint of the connection.
+  //    2. a pointer to the server side endpoint of the connection.
+  // If un-successfull it returns a non-OK  status containing the error
+  // encountered.
+  absl::StatusOr<std::tuple<std::unique_ptr<EventEngine::Endpoint>,
+                            std::unique_ptr<EventEngine::Endpoint>>>
+  CreateConnection(std::string target_addr, absl::Time deadline,
+                   bool client_type_oracle);
 
  private:
-  // A helper method to exchange data over the connection. If send_from_client
-  // is true, data is transfered from the client endpoint to the server endpoint
-  // of the specific connection. Otherwise it is vise versa. The method returns
-  // absl::OkStatus only after verifying that the data written at one end of the
-  // connection equals data read by the other end of the connection.
-  // It is safe to invoke this method from two separate threads for
-  // for bi-directional data transfer.
-  absl::Status ExchangeData(int connection_id, bool send_from_client,
-                            std::string write_data);
-
   class Connection {
    public:
-    Connection(int connection_id) : connection_id_(connection_id) {}
+    Connection() = default;
     ~Connection() = default;
 
     void SetClientEndpoint(
@@ -120,36 +93,27 @@ class ConnectionManager {
         std::unique_ptr<EventEngine::Endpoint>&& server_endpoint) {
       server_endpoint_promise_.Set(std::move(server_endpoint));
     }
-    void WaitForClientEndpoint() {
-      client_endpoint_ = std::move(client_endpoint_promise_.Get());
+    std::unique_ptr<EventEngine::Endpoint> GetClientEndpoint() {
+      auto client_endpoint = std::move(client_endpoint_promise_.Get());
       client_endpoint_promise_.Reset();
+      return client_endpoint;
     }
-    void WaitForServerEndpoint() {
-      server_endpoint_ = std::move(server_endpoint_promise_.Get());
+    std::unique_ptr<EventEngine::Endpoint> GetServerEndpoint() {
+      auto server_endpoint = std::move(server_endpoint_promise_.Get());
       server_endpoint_promise_.Reset();
+      return server_endpoint;
     }
-    EventEngine::Endpoint* GetClientEndpoint() {
-      return client_endpoint_.get();
-    }
-    EventEngine::Endpoint* GetServerEndpoint() {
-      return server_endpoint_.get();
-    }
-    int GetConnectionId() { return connection_id_; }
 
    private:
     Promise<std::unique_ptr<EventEngine::Endpoint>> client_endpoint_promise_;
     Promise<std::unique_ptr<EventEngine::Endpoint>> server_endpoint_promise_;
-    std::unique_ptr<EventEngine::Endpoint> client_endpoint_;
-    std::unique_ptr<EventEngine::Endpoint> server_endpoint_;
-    int connection_id_;
   };
 
   grpc_core::Mutex mu_;
   std::unique_ptr<grpc_core::MemoryQuota> memory_quota_;
   int num_processed_connections_ = 0;
-  Connection* last_in_progress_connection_ = nullptr;
-  std::map<std::string, std::unique_ptr<EventEngine::Listener>> listeners_;
-  std::map<int, Connection*> connections_;
+  Connection last_in_progress_connection_;
+  std::map<std::string, std::shared_ptr<EventEngine::Listener>> listeners_;
   std::unique_ptr<EventEngine> test_event_engine_;
   std::unique_ptr<EventEngine> oracle_event_engine_;
 };

@@ -23,14 +23,7 @@ std::function<std::unique_ptr<grpc_event_engine::experimental::EventEngine>()>*
 std::function<std::unique_ptr<grpc_event_engine::experimental::EventEngine>()>*
     g_oracle_ee_factory = nullptr;
 
-void SetEventEngineFactory(
-    std::function<
-        std::unique_ptr<grpc_event_engine::experimental::EventEngine>()>
-        factory) {
-  testing::AddGlobalTestEnvironment(new EventEngineTestEnvironment(factory));
-}
-
-void SetEventEngineFactory(
+void SetEventEngineFactories(
     std::function<
         std::unique_ptr<grpc_event_engine::experimental::EventEngine>()>
         factory,

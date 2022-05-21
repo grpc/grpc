@@ -34,13 +34,14 @@
 #include <grpc/support/log.h>
 
 #include "src/core/lib/address_utils/parse_address.h"
+#include "src/core/lib/event_engine/channel_args_endpoint_config.h"
 #include "src/core/lib/resource_quota/memory_quota.h"
 #include "src/core/lib/uri/uri_parser.h"
 
 using ResolvedAddress =
-    grpc_event_engine::experimental::EventEngine::ResolvedAddress;
-using Endpoint = grpc_event_engine::experimental::EventEngine::Endpoint;
-using Listener = grpc_event_engine::experimental::EventEngine::Listener;
+    ::grpc_event_engine::experimental::EventEngine::ResolvedAddress;
+using Endpoint = ::grpc_event_engine::experimental::EventEngine::Endpoint;
+using Listener = ::grpc_event_engine::experimental::EventEngine::Listener;
 
 namespace grpc_event_engine {
 namespace experimental {
@@ -77,144 +78,16 @@ std::string ExtractSliceBufferIntoString(SliceBuffer* buf) {
   return tmp;
 }
 
-class TestEndpointConfig : public EndpointConfig {
- public:
-  EndpointConfig::Setting Get(absl::string_view /*key*/) const override {
-    return nullptr;
-  }
-};
-
-absl::Status ConnectionManager::StartListener(std::string addr,
-                                              bool listener_type_oracle) {
-  grpc_core::MutexLock lock(&mu_);
-  if (listeners_.find(addr) != listeners_.end()) {
-    // There is already a listener at this address. Return false.
-    return absl::AlreadyExistsError(
-        "Listener already existis for specified address");
-  }
-  Listener::AcceptCallback accept_cb =
-      [this](std::unique_ptr<Endpoint> ep,
-             MemoryAllocator /*memory_allocator*/) {
-        GPR_ASSERT(last_in_progress_connection_ != nullptr);
-        last_in_progress_connection_->SetServerEndpoint(std::move(ep));
-      };
-
-  std::unique_ptr<Listener> listener;
-  EventEngine* event_engine = listener_type_oracle ? oracle_event_engine_.get()
-                                                   : test_event_engine_.get();
-
-  auto status = event_engine->CreateListener(
-      std::move(accept_cb),
-      [](absl::Status status) { GPR_ASSERT(status.ok()); },
-      TestEndpointConfig{}, std::make_unique<grpc_core::MemoryQuota>("foo"));
-  if (!status.ok()) {
-    return status.status();
-  }
-  listener = std::move(*status);
-  // Bind the newly created listener to the specified address.
-  auto bind_status = listener->Bind(URIToResolvedAddress(addr));
-  if (bind_status.ok()) {
-    // If the bind was successfull, start the listener immediately.
-    GPR_ASSERT(listener->Start().ok());
-    listeners_.insert(std::make_pair(addr, std::move(listener)));
-  }  // else the newly created listener will automatically get deleted.
-
-  return bind_status.ok() ? absl::OkStatus() : bind_status.status();
-}
-
-ConnectionManager::~ConnectionManager() {
-  for (auto it = connections_.begin(); it != connections_.end(); it++) {
-    // Close both endpoints of active connection.
-    delete it->second;
-  }
-  connections_.clear();
-  // Automatically trigger shutdown of all listeners because the listener object
-  // should get deleted.
-  listeners_.clear();
-}
-
-absl::StatusOr<int> ConnectionManager::CreateConnection(
-    std::string target_addr, absl::Time deadline, OnConnectCompleteCallback cb,
-    bool client_type_oracle) {
-  // Only allow one CreateConnection call to proceed at a time.
-  grpc_core::MutexLock lock(&mu_);
-  GPR_ASSERT(last_in_progress_connection_ == nullptr);
-  last_in_progress_connection_ = new Connection(num_processed_connections_++);
-  std::string conn_name = absl::StrCat(
-      "connection-",
-      std::to_string(last_in_progress_connection_->GetConnectionId()));
-  EventEngine* event_engine = client_type_oracle ? oracle_event_engine_.get()
-                                                 : test_event_engine_.get();
-  event_engine->Connect(
-      [this, cb](absl::StatusOr<std::unique_ptr<Endpoint>> status) {
-        if (cb != nullptr) {
-          cb(status.status());
-        }
-        if (!status.ok()) {
-          last_in_progress_connection_->SetClientEndpoint(nullptr);
-        } else {
-          last_in_progress_connection_->SetClientEndpoint(std::move(*status));
-        }
-      },
-      URIToResolvedAddress(target_addr), TestEndpointConfig{},
-      memory_quota_->CreateMemoryAllocator(conn_name), deadline);
-
-  last_in_progress_connection_->WaitForClientEndpoint();
-  if (last_in_progress_connection_->GetClientEndpoint() &&
-      listeners_.find(target_addr) != listeners_.end()) {
-    // There is a listener for the specified address. Wait until it
-    // creates a ServerEndpoint after accepting the connection.
-    last_in_progress_connection_->WaitForServerEndpoint();
-    GPR_ASSERT(last_in_progress_connection_->GetClientEndpoint() != nullptr);
-    GPR_ASSERT(last_in_progress_connection_->GetServerEndpoint() != nullptr);
-    connections_.insert(
-        std::make_pair(last_in_progress_connection_->GetConnectionId(),
-                       last_in_progress_connection_));
-    // Set last_in_progress_connection_ to nullptr
-    return absl::exchange(last_in_progress_connection_, nullptr)
-        ->GetConnectionId();
-  }
-  GPR_ASSERT(last_in_progress_connection_->GetClientEndpoint() == nullptr);
-  delete last_in_progress_connection_;
-  last_in_progress_connection_ = nullptr;
-  return absl::CancelledError("Failed to create connection.");
-}
-
-Endpoint* ConnectionManager::GetEndpoint(int connection_id,
-                                         bool client_endpoint) {
-  grpc_core::MutexLock lock(&mu_);
-  auto it = connections_.find(connection_id);
-  if (it == connections_.end()) {
-    return nullptr;
-  }
-  return client_endpoint ? it->second->GetClientEndpoint()
-                         : it->second->GetServerEndpoint();
-}
-
-absl::Status ConnectionManager::ExchangeData(int connection_id,
-                                             bool send_from_client,
-                                             std::string write_data) {
-  Endpoint* send_endpoint = nullptr;
-  Endpoint* receive_endpoint = nullptr;
-  {
-    grpc_core::MutexLock lock(&mu_);
-    auto it = connections_.find(connection_id);
-    if (it == connections_.end() || write_data.empty()) {
-      return absl::InvalidArgumentError("One or more arguments are invalid!");
-    }
-    send_endpoint = send_from_client ? it->second->GetClientEndpoint()
-                                     : it->second->GetServerEndpoint();
-    receive_endpoint = send_from_client ? it->second->GetServerEndpoint()
-                                        : it->second->GetClientEndpoint();
-  }
+absl::Status ExchangeVerifyData(std::string data, Endpoint* send_endpoint,
+                                Endpoint* receive_endpoint) {
   GPR_ASSERT(receive_endpoint != nullptr && send_endpoint != nullptr);
-  int num_bytes_written = write_data.size();
+  int num_bytes_written = data.size();
   Promise<bool> read_promise;
   Promise<bool> write_promise;
   SliceBuffer read_slice_buf;
   SliceBuffer write_slice_buf;
 
-  AppendStringToSliceBuffer(&write_slice_buf, write_data);
+  AppendStringToSliceBuffer(&write_slice_buf, data);
   EventEngine::Endpoint::ReadArgs args = {num_bytes_written};
   std::function<void(absl::Status)> read_cb;
   read_cb = [receive_endpoint, &read_slice_buf, &read_cb, &read_promise,
@@ -241,21 +114,93 @@ absl::Status ConnectionManager::ExchangeData(int connection_id,
   // Wait for async read to complete.
   GPR_ASSERT(read_promise.Get() == true);
   // Check if data written == data read
-  if (write_data != ExtractSliceBufferIntoString(&read_slice_buf)) {
+  if (data != ExtractSliceBufferIntoString(&read_slice_buf)) {
     return absl::CancelledError("Data read != Data written");
   }
   return absl::OkStatus();
 }
 
-// Shuts down both endpoints of the connection.
-void ConnectionManager::CloseConnection(int connection_id) {
+absl::Status ConnectionManager::BindAndStartListener(
+    std::vector<std::string> addrs, bool listener_type_oracle) {
   grpc_core::MutexLock lock(&mu_);
-  auto it = connections_.find(connection_id);
-  if (it == connections_.end()) {
-    return;
+  if (addrs.empty()) {
+    return absl::InvalidArgumentError(
+        "Atleast one bind address must be specified");
   }
-  delete it->second;
-  connections_.erase(it);
+  for (auto& addr : addrs) {
+    if (listeners_.find(addr) != listeners_.end()) {
+      // There is already a listener at this address. Return error.
+      return absl::AlreadyExistsError(
+          absl::StrCat("Listener already existis for address: ", addr));
+    }
+  }
+  Listener::AcceptCallback accept_cb =
+      [this](std::unique_ptr<Endpoint> ep,
+             MemoryAllocator /*memory_allocator*/) {
+        last_in_progress_connection_.SetServerEndpoint(std::move(ep));
+      };
+
+  EventEngine* event_engine = listener_type_oracle ? oracle_event_engine_.get()
+                                                   : test_event_engine_.get();
+
+  auto status = event_engine->CreateListener(
+      std::move(accept_cb),
+      [](absl::Status status) { GPR_ASSERT(status.ok()); },
+      ChannelArgsEndpointConfig(nullptr),
+      std::make_unique<grpc_core::MemoryQuota>("foo"));
+  if (!status.ok()) {
+    return status.status();
+  }
+
+  std::shared_ptr<Listener> listener((*status).release());
+  for (auto& addr : addrs) {
+    auto bind_status = listener->Bind(URIToResolvedAddress(addr));
+    if (!bind_status.ok()) {
+      return bind_status.status();
+    }
+  }
+  GPR_ASSERT(listener->Start().ok());
+  // Insert same listener pointer for all bind addresses after the listener
+  // has started successfully.
+  for (auto& addr : addrs) {
+    listeners_.insert(std::make_pair(addr, listener));
+  }
+  return absl::OkStatus();
+}
+
+absl::StatusOr<std::tuple<std::unique_ptr<Endpoint>, std::unique_ptr<Endpoint>>>
+ConnectionManager::CreateConnection(std::string target_addr,
+                                    absl::Time deadline,
+                                    bool client_type_oracle) {
+  // Only allow one CreateConnection call to proceed at a time.
+  grpc_core::MutexLock lock(&mu_);
+  std::string conn_name =
+      absl::StrCat("connection-", std::to_string(num_processed_connections_++));
+  EventEngine* event_engine = client_type_oracle ? oracle_event_engine_.get()
+                                                 : test_event_engine_.get();
+  event_engine->Connect(
+      [this](absl::StatusOr<std::unique_ptr<Endpoint>> status) {
+        if (!status.ok()) {
+          last_in_progress_connection_.SetClientEndpoint(nullptr);
+        } else {
+          last_in_progress_connection_.SetClientEndpoint(std::move(*status));
+        }
+      },
+      URIToResolvedAddress(target_addr), ChannelArgsEndpointConfig(nullptr),
+      memory_quota_->CreateMemoryAllocator(conn_name), deadline);
+
+  auto client_endpoint = last_in_progress_connection_.GetClientEndpoint();
+  if (client_endpoint != nullptr &&
+      listeners_.find(target_addr) != listeners_.end()) {
+    // There is a listener for the specified address. Wait until it
+    // creates a ServerEndpoint after accepting the connection.
+    auto server_endpoint = last_in_progress_connection_.GetServerEndpoint();
+    GPR_ASSERT(server_endpoint != nullptr);
+    // Set last_in_progress_connection_ to nullptr
+    return std::make_tuple(std::move(client_endpoint),
+                           std::move(server_endpoint));
+  }
+  return absl::CancelledError("Failed to create connection.");
 }
 
 }  // namespace experimental

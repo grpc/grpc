@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "test/core/event_engine/test_suite/posix_oracle_event_engine.h"
+#include "test/core/event_engine/test_suite/oracle_event_engine_posix.h"
 
 #include <poll.h>
 #include <sys/poll.h>
@@ -41,7 +41,7 @@ namespace experimental {
 
 namespace {
 
-static const char* kStopMessage = "STOP";
+const char* kStopMessage = "STOP";
 
 grpc_resolved_address CreateGRPCResolvedAddress(
     const EventEngine::ResolvedAddress& ra) {
@@ -106,6 +106,10 @@ absl::Status BlockUntilWritable(int fd) {
 // specified data is not yet available.
 std::string TryReadBytes(int sockfd, int& saved_errno, int num_expected_bytes) {
   int ret = 0;
+  static constexpr int kDefaultNumExpectedBytes = 1024;
+  if (num_expected_bytes <= 0) {
+    num_expected_bytes = kDefaultNumExpectedBytes;
+  }
   std::string read_data = std::string(num_expected_bytes, '\0');
   char* buffer = const_cast<char*>(read_data.c_str());
   int pending_bytes = num_expected_bytes;
@@ -134,7 +138,7 @@ std::string ReadBytes(int sockfd, int& saved_errno, int num_expected_bytes) {
                               num_expected_bytes - read_data.length());
     if (saved_errno == EAGAIN && read_data.length() < num_expected_bytes) {
       GPR_ASSERT(BlockUntilReadable(sockfd).ok());
-    } else if (saved_errno != 0) {
+    } else if (saved_errno != 0 && num_expected_bytes > 0) {
       read_data.clear();
       break;
     }
@@ -225,10 +229,12 @@ PosixOracleEndpoint::~PosixOracleEndpoint() {
 
 void PosixOracleEndpoint::Read(std::function<void(absl::Status)> on_read,
                                SliceBuffer* buffer, const ReadArgs* args) {
-  GPR_ASSERT(args != nullptr);
   GPR_ASSERT(buffer != nullptr);
+  int read_hint_bytes =
+      args != nullptr ? std::max(1, static_cast<int>(args->read_hint_bytes))
+                      : 0;
   read_ops_channel_.Set(
-      ReadOperation(args->read_hint_bytes, buffer, std::move(on_read)));
+      ReadOperation(read_hint_bytes, buffer, std::move(on_read)));
 }
 
 void PosixOracleEndpoint::Write(std::function<void(absl::Status)> on_writable,

@@ -34,7 +34,8 @@ TEST_F(EventEngineSmokeTest, SetDefaultEventEngineFactoryLinks) {
       factory;
   EXPECT_CALL(factory, Call()).Times(1);
   auto stdfn_fact = factory.AsStdFunction();
-  grpc_event_engine::experimental::SetDefaultEventEngineFactory(&stdfn_fact);
+  grpc_event_engine::experimental::SetDefaultEventEngineFactories(&stdfn_fact,
+                                                                  nullptr);
   EXPECT_EQ(nullptr, grpc_event_engine::experimental::CreateEventEngine());
 }
 

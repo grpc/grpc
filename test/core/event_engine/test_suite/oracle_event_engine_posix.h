@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef GRPC_TEST_CORE_EVENT_ENGINE_TEST_SUITE_POSIX_ORACLE_EVENT_ENGINE_H_
-#define GRPC_TEST_CORE_EVENT_ENGINE_TEST_SUITE_POSIX_ORACLE_EVENT_ENGINE_H_
+#ifndef GRPC_TEST_CORE_EVENT_ENGINE_TEST_SUITE_ORACLE_EVENT_ENGINE_POSIX_H_
+#define GRPC_TEST_CORE_EVENT_ENGINE_TEST_SUITE_ORACLE_EVENT_ENGINE_POSIX_H_
 
 #include <functional>
 #include <memory>
@@ -65,7 +65,7 @@ class PosixOracleEndpoint : public EventEngine::Endpoint {
         : num_bytes_to_read_(num_bytes_to_read),
           buffer_(buffer),
           on_complete_(std::move(on_complete)) {}
-    bool IsValid() { return num_bytes_to_read_ > 0 && buffer_ != nullptr; }
+    bool IsValid() { return num_bytes_to_read_ >= 0 && buffer_ != nullptr; }
     int GetNumBytesToRead() const { return num_bytes_to_read_; }
     void operator()(std::string read_data, absl::Status status) {
       if (on_complete_ != nullptr) {
@@ -189,4 +189,4 @@ class PosixOracleEventEngine final : public EventEngine {
 }  // namespace experimental
 }  // namespace grpc_event_engine
 
-#endif  // GRPC_TEST_CORE_EVENT_ENGINE_TEST_SUITE_POSIX_ORACLE_EVENT_ENGINE_H_
+#endif  // GRPC_TEST_CORE_EVENT_ENGINE_TEST_SUITE_ORACLE_EVENT_ENGINE_POSIX_H_
