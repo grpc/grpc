@@ -19,8 +19,8 @@ licenses(["notice"])
 grpc_package(name = "test/core/event_engine/test_suite")
 
 COMMON_HEADERS = [
-  "event_engine_test.h",
-  "event_engine_test_utils.h"
+    "event_engine_test.h",
+    "event_engine_test_utils.h",
 ]
 
 grpc_cc_library(
@@ -117,8 +117,8 @@ grpc_cc_library(
     name = "conformance_test_base_lib",
     testonly = True,
     srcs = [
-      "event_engine_test.cc",
-      "event_engine_test_utils.cc"
+        "event_engine_test.cc",
+        "event_engine_test_utils.cc",
     ],
     hdrs = COMMON_HEADERS,
     external_deps = ["gtest"],
