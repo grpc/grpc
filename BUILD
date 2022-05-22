@@ -2277,7 +2277,6 @@ grpc_cc_library(
         "src/core/lib/surface/server.cc",
         "src/core/lib/surface/validate_metadata.cc",
         "src/core/lib/surface/version.cc",
-        "src/core/lib/transport/bdp_estimator.cc",
         "src/core/lib/transport/connectivity_state.cc",
         "src/core/lib/transport/error_utils.cc",
         "src/core/lib/transport/parsed_metadata.cc",
@@ -2387,7 +2386,6 @@ grpc_cc_library(
         "src/core/lib/surface/lame_client.h",
         "src/core/lib/surface/server.h",
         "src/core/lib/surface/validate_metadata.h",
-        "src/core/lib/transport/bdp_estimator.h",
         "src/core/lib/transport/connectivity_state.h",
         "src/core/lib/transport/metadata_batch.h",
         "src/core/lib/transport/parsed_metadata.h",
@@ -5263,6 +5261,7 @@ grpc_cc_library(
     visibility = ["@grpc:grpclb"],
     deps = [
         "arena",
+        "bdp_estimator",
         "bitset",
         "chttp2_flow_control",
         "chunked_vector",
