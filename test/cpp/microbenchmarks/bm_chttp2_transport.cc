@@ -447,8 +447,8 @@ static void BM_TransportStreamSend(benchmark::State& state) {
         send_stream.Clear();
         send_stream.Append(grpc_core::Slice(grpc_slice_ref(send_slice)));
         // force outgoing window to be yuge
-        s->chttp2_stream()->flow_control->TestOnlyForceHugeWindow();
-        f.chttp2_transport()->flow_control->TestOnlyForceHugeWindow();
+        s->chttp2_stream()->flow_control.TestOnlyForceHugeWindow();
+        f.chttp2_transport()->flow_control.TestOnlyForceHugeWindow();
         reset_op();
         op.on_complete = c.get();
         op.send_message = true;
@@ -575,8 +575,8 @@ static void BM_TransportStreamRecv(benchmark::State& state) {
       MakeTestClosure([&](grpc_error_handle /*error*/) {
         if (!state.KeepRunning()) return;
         // force outgoing window to be yuge
-        s->chttp2_stream()->flow_control->TestOnlyForceHugeWindow();
-        f.chttp2_transport()->flow_control->TestOnlyForceHugeWindow();
+        s->chttp2_stream()->flow_control.TestOnlyForceHugeWindow();
+        f.chttp2_transport()->flow_control.TestOnlyForceHugeWindow();
         received = 0;
         reset_op();
         op.on_complete = do_nothing.get();

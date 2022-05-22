@@ -23,14 +23,16 @@
 #include <inttypes.h>
 #include <limits.h>
 
+#include <algorithm>
 #include <cmath>
 #include <ostream>
 #include <string>
+#include <vector>
 
+#include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
 #include "absl/strings/str_join.h"
 
-#include <grpc/slice.h>
 #include <grpc/support/log.h>
 
 #include "src/core/lib/gpr/string.h"
