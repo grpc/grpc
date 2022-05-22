@@ -25,11 +25,8 @@
 
 #include <stddef.h>
 
-#include <new>
 #include <type_traits>
 #include <utility>
-
-#include <grpc/support/log.h>
 
 #include "src/core/lib/gprpp/construct_destruct.h"
 
