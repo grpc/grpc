@@ -133,35 +133,6 @@ class FlowControlAction {
 std::ostream& operator<<(std::ostream& out, FlowControlAction::Urgency urgency);
 std::ostream& operator<<(std::ostream& out, const FlowControlAction& action);
 
-class FlowControlTrace {
- public:
-  FlowControlTrace(const char* reason, TransportFlowControl* tfc,
-                   StreamFlowControl* sfc) {
-    if (enabled_) Init(reason, tfc, sfc);
-  }
-
-  ~FlowControlTrace() {
-    if (enabled_) Finish();
-  }
-
- private:
-  void Init(const char* reason, TransportFlowControl* tfc,
-            StreamFlowControl* sfc);
-  void Finish();
-
-  const bool enabled_ = GRPC_TRACE_FLAG_ENABLED(grpc_flowctl_trace);
-
-  TransportFlowControl* tfc_;
-  StreamFlowControl* sfc_;
-  const char* reason_;
-  int64_t remote_window_;
-  int64_t target_window_;
-  int64_t announced_window_;
-  int64_t remote_window_delta_;
-  int64_t local_window_delta_;
-  int64_t announced_window_delta_;
-};
-
 // Implementation of flow control that abides to HTTP/2 spec and attempts
 // to be as performant as possible.
 class TransportFlowControl final {
@@ -169,8 +140,6 @@ class TransportFlowControl final {
   explicit TransportFlowControl(const char* name, bool enable_bdp_probe,
                                 MemoryOwner* memory_owner);
   ~TransportFlowControl() {}
-
-  bool flow_control_enabled() const { return true; }
 
   bool bdp_probe() const { return enable_bdp_probe_; }
 
@@ -194,28 +163,12 @@ class TransportFlowControl final {
   absl::Status ValidateRecvData(int64_t incoming_frame_size);
   void CommitRecvData(int64_t incoming_frame_size);
 
-  absl::Status RecvData(int64_t incoming_frame_size) {
-    FlowControlTrace trace("  data recv", this, nullptr);
-    absl::Status error = ValidateRecvData(incoming_frame_size);
-    if (error.ok()) return error;
-    CommitRecvData(incoming_frame_size);
-    return absl::OkStatus();
-  }
+  absl::Status RecvData(int64_t incoming_frame_size);
 
   // we have received a WINDOW_UPDATE frame for a transport
-  void RecvUpdate(uint32_t size) {
-    FlowControlTrace trace("t updt recv", this, nullptr);
-    remote_window_ += size;
-  }
+  void RecvUpdate(uint32_t size);
 
-  // See comment above announced_stream_total_over_incoming_window_ for the
-  // logic behind this decision.
-  int64_t target_window() const {
-    return static_cast<uint32_t>(
-        std::min(static_cast<int64_t>((1u << 31) - 1),
-                 announced_stream_total_over_incoming_window_ +
-                     target_initial_window_size_));
-  }
+  int64_t target_window() const;
 
   int64_t target_frame_size() const { return target_frame_size_; }
 
@@ -256,13 +209,7 @@ class TransportFlowControl final {
                             FlowControlAction& (FlowControlAction::*set)(
                                 FlowControlAction::Urgency, uint32_t));
 
-  FlowControlAction UpdateAction(FlowControlAction action) {
-    if (announced_window_ < target_window() / 2) {
-      action.set_send_transport_update(
-          FlowControlAction::Urgency::UPDATE_IMMEDIATELY);
-    }
-    return action;
-  }
+  FlowControlAction UpdateAction(FlowControlAction action);
 
   MemoryOwner* const memory_owner_;
 
@@ -308,11 +255,7 @@ class StreamFlowControl final {
 
   // we have sent data on the wire, we must track this in our bookkeeping for
   // the remote peer's flow control.
-  void SentData(int64_t outgoing_frame_size) {
-    FlowControlTrace tracer("  data sent", tfc_, this);
-    tfc_->StreamSentData(outgoing_frame_size);
-    remote_window_delta_ -= outgoing_frame_size;
-  }
+  void SentData(int64_t outgoing_frame_size);
 
   // we have received data from the wire
   absl::Status RecvData(int64_t incoming_frame_size);
@@ -322,10 +265,7 @@ class StreamFlowControl final {
   uint32_t MaybeSendUpdate();
 
   // we have received a WINDOW_UPDATE frame for a stream
-  void RecvUpdate(uint32_t size) {
-    FlowControlTrace trace("s updt recv", tfc_, this);
-    remote_window_delta_ += size;
-  }
+  void RecvUpdate(uint32_t size) { remote_window_delta_ += size; }
 
   // the application is asking for a certain amount of bytes
   void UpdateProgress(uint32_t min_progress_size);

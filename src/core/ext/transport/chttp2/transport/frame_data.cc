@@ -40,14 +40,12 @@
 #include "src/core/lib/slice/slice_string_helpers.h"
 #include "src/core/lib/transport/transport.h"
 
-grpc_error_handle grpc_chttp2_data_parser_begin_frame(uint8_t flags,
-                                                      uint32_t stream_id,
-                                                      grpc_chttp2_stream* s) {
+absl::Status grpc_chttp2_data_parser_begin_frame(uint8_t flags,
+                                                 uint32_t stream_id,
+                                                 grpc_chttp2_stream* s) {
   if (flags & ~GRPC_CHTTP2_DATA_FLAG_END_STREAM) {
-    return grpc_error_set_int(GRPC_ERROR_CREATE_FROM_CPP_STRING(absl::StrFormat(
-                                  "unsupported data flags: 0x%02x", flags)),
-                              GRPC_ERROR_INT_STREAM_ID,
-                              static_cast<intptr_t>(stream_id));
+    return absl::InternalError(absl::StrFormat(
+        "unsupported data flags: 0x%02x stream: %d", flags, stream_id));
   }
 
   if (flags & GRPC_CHTTP2_DATA_FLAG_END_STREAM) {
@@ -57,7 +55,7 @@ grpc_error_handle grpc_chttp2_data_parser_begin_frame(uint8_t flags,
     s->received_last_frame = false;
   }
 
-  return GRPC_ERROR_NONE;
+  return absl::OkStatus();
 }
 
 void grpc_chttp2_encode_data(uint32_t id, grpc_slice_buffer* inbuf,

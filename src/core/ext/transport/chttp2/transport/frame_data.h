@@ -34,9 +34,9 @@
 #include "src/core/lib/transport/transport.h"
 
 /* start processing a new data frame */
-grpc_error_handle grpc_chttp2_data_parser_begin_frame(uint8_t flags,
-                                                      uint32_t stream_id,
-                                                      grpc_chttp2_stream* s);
+absl::Status grpc_chttp2_data_parser_begin_frame(uint8_t flags,
+                                                 uint32_t stream_id,
+                                                 grpc_chttp2_stream* s);
 
 /* handle a slice of a data frame - is_last indicates the last slice of a
    frame */

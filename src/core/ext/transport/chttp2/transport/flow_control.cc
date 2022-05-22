@@ -74,65 +74,6 @@ char* fmt_uint32_diff_str(uint32_t old_val, uint32_t new_val) {
 }
 }  // namespace
 
-void FlowControlTrace::Init(const char* reason, TransportFlowControl* tfc,
-                            StreamFlowControl* sfc) {
-  tfc_ = tfc;
-  sfc_ = sfc;
-  reason_ = reason;
-  remote_window_ = tfc->remote_window();
-  target_window_ = tfc->target_window();
-  announced_window_ = tfc->announced_window();
-  if (sfc != nullptr) {
-    remote_window_delta_ = sfc->remote_window_delta();
-    local_window_delta_ = sfc->local_window_delta();
-    announced_window_delta_ = sfc->announced_window_delta();
-  }
-}
-
-void FlowControlTrace::Finish() {
-  /*
-  uint32_t acked_local_window =
-      tfc_->transport()->settings[GRPC_SENT_SETTINGS]
-                                 [GRPC_CHTTP2_SETTINGS_INITIAL_WINDOW_SIZE];
-  uint32_t remote_window =
-      tfc_->transport()->settings[GRPC_PEER_SETTINGS]
-                                 [GRPC_CHTTP2_SETTINGS_INITIAL_WINDOW_SIZE];
-  char* trw_str = fmt_int64_diff_str(remote_window_, tfc_->remote_window());
-  char* tlw_str = fmt_int64_diff_str(target_window_, tfc_->target_window());
-  char* taw_str =
-      fmt_int64_diff_str(announced_window_, tfc_->announced_window());
-  char* srw_str;
-  char* slw_str;
-  char* saw_str;
-  if (sfc_ != nullptr) {
-    srw_str = fmt_int64_diff_str(remote_window_delta_ + remote_window,
-                                 sfc_->remote_window_delta() + remote_window);
-    slw_str =
-        fmt_int64_diff_str(local_window_delta_ + acked_local_window,
-                           sfc_->local_window_delta() + acked_local_window);
-    saw_str =
-        fmt_int64_diff_str(announced_window_delta_ + acked_local_window,
-                           sfc_->announced_window_delta() + acked_local_window);
-  } else {
-    srw_str = gpr_leftpad("", ' ', kTracePadding);
-    slw_str = gpr_leftpad("", ' ', kTracePadding);
-    saw_str = gpr_leftpad("", ' ', kTracePadding);
-  }
-  gpr_log(GPR_DEBUG,
-          "%p[%u][%s] | %s | trw:%s, tlw:%s, taw:%s, srw:%s, slw:%s, saw:%s",
-          tfc_, sfc_ != nullptr ? sfc_->stream()->id : 0,
-          tfc_->transport()->is_client ? "cli" : "svr", reason_, trw_str,
-          tlw_str, taw_str, srw_str, slw_str, saw_str);
-  gpr_free(trw_str);
-  gpr_free(tlw_str);
-  gpr_free(taw_str);
-  gpr_free(srw_str);
-  gpr_free(slw_str);
-  gpr_free(saw_str);
-*/
-  abort();
-}
-
 const char* FlowControlAction::UrgencyString(Urgency u) {
   switch (u) {
     case Urgency::NO_ACTION_NEEDED:
@@ -150,24 +91,6 @@ const char* FlowControlAction::UrgencyString(Urgency u) {
 std::ostream& operator<<(std::ostream& out, FlowControlAction::Urgency u) {
   return out << FlowControlAction::UrgencyString(u);
 }
-
-/*
-void FlowControlAction::Trace(grpc_chttp2_transport* t) const {
-  char* iw_str = fmt_uint32_diff_str(
-      t->settings[GRPC_SENT_SETTINGS][GRPC_CHTTP2_SETTINGS_INITIAL_WINDOW_SIZE],
-      initial_window_size_);
-  char* mf_str = fmt_uint32_diff_str(
-      t->settings[GRPC_SENT_SETTINGS][GRPC_CHTTP2_SETTINGS_MAX_FRAME_SIZE],
-      max_frame_size_);
-  gpr_log(GPR_DEBUG, "t[%s],  s[%s], iw:%s:%s mf:%s:%s",
-          UrgencyString(send_transport_update_),
-          UrgencyString(send_stream_update_),
-          UrgencyString(send_initial_window_update_), iw_str,
-          UrgencyString(send_max_frame_size_update_), mf_str);
-  gpr_free(iw_str);
-  gpr_free(mf_str);
-}
-*/
 
 std::string FlowControlAction::DebugString() const {
   std::vector<std::string> segments;
@@ -213,7 +136,6 @@ TransportFlowControl::TransportFlowControl(const char* name,
       last_pid_update_(ExecCtx::Get()->Now()) {}
 
 uint32_t TransportFlowControl::MaybeSendUpdate(bool writing_anyway) {
-  FlowControlTrace trace("t updt sent", this, nullptr);
   const uint32_t target_announced_window =
       static_cast<uint32_t>(target_window());
   if ((writing_anyway || announced_window_ <= target_announced_window / 2) &&
@@ -244,8 +166,6 @@ void TransportFlowControl::CommitRecvData(int64_t incoming_frame_size) {
 StreamFlowControl::StreamFlowControl(TransportFlowControl* tfc) : tfc_(tfc) {}
 
 absl::Status StreamFlowControl::RecvData(int64_t incoming_frame_size) {
-  FlowControlTrace trace("  data recv", tfc_, this);
-
   absl::Status error = tfc_->ValidateRecvData(incoming_frame_size);
   if (!error.ok()) return error;
 
@@ -266,7 +186,6 @@ absl::Status StreamFlowControl::RecvData(int64_t incoming_frame_size) {
 }
 
 uint32_t StreamFlowControl::MaybeSendUpdate() {
-  FlowControlTrace trace("s updt sent", tfc_, this);
   // If a recently sent settings frame caused the stream's flow control window
   // to go in the negative (or < min_progress_size_), update the delta.
   // In this case, we want to make sure that bytes are still flowing.
@@ -282,7 +201,6 @@ uint32_t StreamFlowControl::MaybeSendUpdate() {
 }
 
 void StreamFlowControl::UpdateProgress(uint32_t min_progress_size) {
-  FlowControlTrace trace("app st recv", tfc_, this);
   uint32_t max_recv_bytes;
 
   min_progress_size_ = min_progress_size;
@@ -302,6 +220,32 @@ void StreamFlowControl::UpdateProgress(uint32_t min_progress_size) {
         static_cast<uint32_t>(max_recv_bytes - local_window_delta_);
     local_window_delta_ += add_max_recv_bytes;
   }
+}
+
+absl::Status TransportFlowControl::RecvData(int64_t incoming_frame_size) {
+  absl::Status error = ValidateRecvData(incoming_frame_size);
+  if (error.ok()) return error;
+  CommitRecvData(incoming_frame_size);
+  return absl::OkStatus();
+}
+
+void TransportFlowControl::RecvUpdate(uint32_t size) { remote_window_ += size; }
+
+int64_t TransportFlowControl::target_window() const {
+  // See comment above announced_stream_total_over_incoming_window_ for the
+  // logic behind this decision.
+  return static_cast<uint32_t>(
+      std::min(static_cast<int64_t>((1u << 31) - 1),
+               announced_stream_total_over_incoming_window_ +
+                   target_initial_window_size_));
+}
+
+FlowControlAction TransportFlowControl::UpdateAction(FlowControlAction action) {
+  if (announced_window_ < target_window() / 2) {
+    action.set_send_transport_update(
+        FlowControlAction::Urgency::UPDATE_IMMEDIATELY);
+  }
+  return action;
 }
 
 // Take in a target and modifies it based on the memory pressure of the system
@@ -406,6 +350,11 @@ void StreamFlowControl::UpdateAnnouncedWindowDelta(TransportFlowControl* tfc,
   tfc->PreUpdateAnnouncedWindowOverIncomingWindow(announced_window_delta_);
   announced_window_delta_ += change;
   tfc->PostUpdateAnnouncedWindowOverIncomingWindow(announced_window_delta_);
+}
+
+void StreamFlowControl::SentData(int64_t outgoing_frame_size) {
+  tfc_->StreamSentData(outgoing_frame_size);
+  remote_window_delta_ -= outgoing_frame_size;
 }
 
 }  // namespace chttp2

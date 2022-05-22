@@ -357,11 +357,7 @@ struct grpc_chttp2_transport {
   /** parser for goaway frames */
   grpc_chttp2_goaway_parser goaway_parser;
 
-  grpc_core::PolymorphicManualConstructor<
-      grpc_core::chttp2::TransportFlowControlBase,
-      grpc_core::chttp2::TransportFlowControl,
-      grpc_core::chttp2::TransportFlowControlDisabled>
-      flow_control;
+  grpc_core::chttp2::TransportFlowControl flow_control;
   /** initial window change. This is tracked as we parse settings frames from
    * the remote peer. If there is a positive delta, then we will make all
    * streams readable since they may have become unstalled */
@@ -556,11 +552,7 @@ struct grpc_chttp2_stream {
   bool sent_initial_metadata = false;
   bool sent_trailing_metadata = false;
 
-  grpc_core::PolymorphicManualConstructor<
-      grpc_core::chttp2::StreamFlowControlBase,
-      grpc_core::chttp2::StreamFlowControl,
-      grpc_core::chttp2::StreamFlowControlDisabled>
-      flow_control;
+  grpc_core::chttp2::StreamFlowControl flow_control;
 
   grpc_slice_buffer flow_controlled_buffer;
 

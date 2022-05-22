@@ -5264,6 +5264,7 @@ grpc_cc_library(
     deps = [
         "arena",
         "bitset",
+        "chttp2_flow_control",
         "chunked_vector",
         "debug_location",
         "gpr_base",
