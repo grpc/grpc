@@ -744,6 +744,7 @@ libs:
   - src/core/lib/gprpp/single_set_ptr.h
   - src/core/lib/gprpp/table.h
   - src/core/lib/gprpp/time.h
+  - src/core/lib/gprpp/unique_type_name.h
   - src/core/lib/http/format_request.h
   - src/core/lib/http/httpcli.h
   - src/core/lib/http/httpcli_ssl_credentials.h
@@ -1927,6 +1928,7 @@ libs:
   - src/core/lib/gprpp/single_set_ptr.h
   - src/core/lib/gprpp/table.h
   - src/core/lib/gprpp/time.h
+  - src/core/lib/gprpp/unique_type_name.h
   - src/core/lib/http/format_request.h
   - src/core/lib/http/httpcli.h
   - src/core/lib/http/parser.h
@@ -8492,6 +8494,19 @@ targets:
   - absl/status:statusor
   - absl/types:variant
   - absl/utility:utility
+  uses_polling: false
+- name: unique_type_name_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - src/core/lib/gpr/useful.h
+  - src/core/lib/gprpp/unique_type_name.h
+  src:
+  - test/core/gprpp/unique_type_name_test.cc
+  deps:
+  - absl/strings:str_format
+  - absl/strings:strings
   uses_polling: false
 - name: unknown_frame_bad_client_test
   gtest: true

@@ -34,9 +34,9 @@ class InsecureCredentials final : public grpc_channel_credentials {
       const char* /* target_name */, const grpc_channel_args* /* args */,
       grpc_channel_args** /* new_args */) override;
 
-  static const char* Type();
+  static UniqueTypeName Type();
 
-  const char* type() const override { return Type(); }
+  UniqueTypeName type() const override { return Type(); }
 
  private:
   int cmp_impl(const grpc_channel_credentials* other) const override;
@@ -47,9 +47,9 @@ class InsecureServerCredentials final : public grpc_server_credentials {
   RefCountedPtr<grpc_server_security_connector> create_security_connector(
       const grpc_channel_args* /* args */) override;
 
-  static const char* Type();
+  static UniqueTypeName Type();
 
-  const char* type() const override { return Type(); }
+  UniqueTypeName type() const override { return Type(); }
 };
 
 }  // namespace grpc_core

@@ -118,8 +118,9 @@ grpc_service_account_jwt_access_credentials::
   gpr_mu_init(&cache_mu_);
 }
 
-const char* grpc_service_account_jwt_access_credentials::Type() {
-  return "Jwt";
+grpc_core::UniqueTypeName grpc_service_account_jwt_access_credentials::Type() {
+  static grpc_core::UniqueTypeName::Factory kFactory("Jwt");
+  return kFactory.Create();
 }
 
 grpc_core::RefCountedPtr<grpc_call_credentials>
