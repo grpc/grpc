@@ -3249,9 +3249,11 @@ grpc_cc_library(
         "include/grpc/impl/codegen/status.h",
         "include/grpc/impl/codegen/slice.h",
     ],
+    tags = ["grpc-autodeps"],
     visibility = ["@grpc:public"],
     deps = [
         "gpr_codegen",
+        "gpr_platform",
     ],
 )
 
