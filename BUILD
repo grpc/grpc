@@ -3207,12 +3207,17 @@ grpc_cc_library(
     ],
     external_deps = ["absl/strings:str_format"],
     language = "c++",
+    tags = ["grpc-autodeps"],
     deps = [
-        "gpr_base",
+        "channel_args",
+        "config",
+        "gpr_platform",
+        "grpc_authorization_base",
         "grpc_base",
         "grpc_rbac_engine",
         "grpc_service_config",
         "json_util",
+        "service_config_parser",
     ],
 )
 
