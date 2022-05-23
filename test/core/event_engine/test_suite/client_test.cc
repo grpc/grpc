@@ -38,7 +38,7 @@ namespace {
 
 using ::grpc_event_engine::experimental::ConnectionManager;
 using ResolvedAddress =
-    ::grpc_event_engine::experimental::EventEngine::ResolvedAddress;
+    grpc_event_engine::experimental::EventEngine::ResolvedAddress;
 using Endpoint = ::grpc_event_engine::experimental::EventEngine::Endpoint;
 
 constexpr int kMinMessageSize = 1024;
@@ -126,6 +126,7 @@ TEST_F(EventEngineClientTest, MultipleIPv6ConnectionsToOneOracleListenerTest) {
   std::vector<std::string> target_addrs;
   std::vector<std::tuple<std::unique_ptr<Endpoint>, std::unique_ptr<Endpoint>>>
       connections;
+  target_addrs.reserve(kNumListenerAddresses);
   for (int i = 0; i < kNumListenerAddresses; i++) {
     target_addrs.push_back(
         absl::StrCat("ipv6:[::1]:", std::to_string(kStartPortNumber + i)));
