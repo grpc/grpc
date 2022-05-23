@@ -4645,6 +4645,7 @@ grpc_cc_library(
         "httpcli",
         "httpcli_ssl_credentials",
         "ref_counted_ptr",
+        "uri_parser",
     ],
 )
 
