@@ -5504,6 +5504,7 @@
     "benchmark": false,
     "ci_platforms": [
       "linux",
+      "mac",
       "posix"
     ],
     "cpu_cost": 1.0,
@@ -5515,6 +5516,7 @@
     "name": "oracle_event_engine_posix_test",
     "platforms": [
       "linux",
+      "mac",
       "posix"
     ],
     "uses_polling": false

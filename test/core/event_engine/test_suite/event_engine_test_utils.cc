@@ -39,7 +39,7 @@
 #include "src/core/lib/uri/uri_parser.h"
 
 using ResolvedAddress =
-    ::grpc_event_engine::experimental::EventEngine::ResolvedAddress;
+    grpc_event_engine::experimental::EventEngine::ResolvedAddress;
 using Endpoint = ::grpc_event_engine::experimental::EventEngine::Endpoint;
 using Listener = ::grpc_event_engine::experimental::EventEngine::Listener;
 
