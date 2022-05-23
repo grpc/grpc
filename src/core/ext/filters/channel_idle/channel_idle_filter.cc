@@ -40,6 +40,7 @@
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
+#include "src/core/lib/iomgr/timer.h"
 #include "src/core/lib/promise/exec_ctx_wakeup_scheduler.h"
 #include "src/core/lib/promise/loop.h"
 #include "src/core/lib/promise/poll.h"
@@ -210,9 +211,9 @@ ArenaPromise<ServerMetadataHandle> ChannelIdleFilter::MakeCallPromise(
   using Decrementer = std::unique_ptr<ChannelIdleFilter, CallCountDecreaser>;
   IncreaseCallCount();
   return ArenaPromise<ServerMetadataHandle>(
-      Capture([](Decrementer*, ArenaPromise<ServerMetadataHandle>* next)
-                  -> Poll<ServerMetadataHandle> { return (*next)(); },
-              Decrementer(this), next_promise_factory(std::move(call_args))));
+      [decrementer = Decrementer(this),
+       next = next_promise_factory(std::move(call_args))]() mutable
+      -> Poll<ServerMetadataHandle> { return next(); });
 }
 
 bool ChannelIdleFilter::StartTransportOp(grpc_transport_op* op) {

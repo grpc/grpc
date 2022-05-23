@@ -155,9 +155,7 @@ ArenaPromise<ServerMetadataHandle> FaultInjectionFilter::MakeCallPromise(
   auto delay = decision.DelayUntil();
   return TrySeq(
       Sleep(delay),
-      Capture(
-          [](InjectionDecision* decision) { return decision->MaybeAbort(); },
-          std::move(decision)),
+      [decision = std::move(decision)]() { return decision.MaybeAbort(); },
       next_promise_factory(std::move(call_args)));
 }
 

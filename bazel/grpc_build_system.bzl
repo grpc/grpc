@@ -155,7 +155,7 @@ def grpc_cc_library(
     visibility = _update_visibility(visibility)
     copts = []
     if language.upper() == "C":
-        copts = copts + if_not_windows(["-std=c99"])
+        copts = copts + if_not_windows(["-std=c11"])
     linkopts = if_not_windows(["-pthread"]) + if_windows(["-defaultlib:ws2_32.lib"])
     if select_deps:
         for select_deps_entry in select_deps:
@@ -360,7 +360,7 @@ def grpc_cc_test(name, srcs = [], deps = [], external_deps = [], args = [], data
             EventEngine implementation differences
     """
     if language.upper() == "C":
-        copts = copts + if_not_windows(["-std=c99"])
+        copts = copts + if_not_windows(["-std=c11"])
 
     core_deps = deps + _get_external_deps(external_deps)
 
@@ -429,7 +429,7 @@ def grpc_cc_binary(name, srcs = [], deps = [], external_deps = [], args = [], da
     visibility = _update_visibility(visibility)
     copts = []
     if language.upper() == "C":
-        copts = ["-std=c99"]
+        copts = ["-std=c11"]
     native.cc_binary(
         name = name,
         srcs = srcs,
