@@ -88,6 +88,9 @@ grpc_cc_library(
     testonly = True,
     srcs = ["oracle_event_engine_posix.cc"],
     hdrs = ["oracle_event_engine_posix.h"],
+    tags = [
+        "no_windows",
+    ],
     deps = [
         ":conformance_test_base_lib",
         "//:grpc",
