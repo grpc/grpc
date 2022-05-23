@@ -2736,16 +2736,15 @@ grpc_cc_library(
         "src/core/lib/service_config/service_config.h",
         "src/core/lib/service_config/service_config_call_data.h",
     ],
-    external_deps = [
-        "absl/strings",
-    ],
+    external_deps = ["absl/strings"],
     language = "c++",
+    tags = ["grpc-autodeps"],
     deps = [
-        "error",
-        "gpr_base",
-        "json",
+        "gpr_platform",
+        "ref_counted",
+        "ref_counted_ptr",
         "service_config_parser",
-        "slice",
+        "slice_refcount",
     ],
 )
 
@@ -2758,18 +2757,25 @@ grpc_cc_library(
         "src/core/lib/service_config/service_config_impl.h",
     ],
     external_deps = [
+        "absl/container:inlined_vector",
+        "absl/memory",
         "absl/strings",
     ],
     language = "c++",
+    tags = ["grpc-autodeps"],
     visibility = ["@grpc:client_channel"],
     deps = [
         "config",
         "error",
         "gpr_base",
+        "gpr_platform",
+        "grpc_codegen",
         "grpc_service_config",
         "json",
+        "ref_counted_ptr",
         "service_config_parser",
         "slice",
+        "slice_refcount",
     ],
 )
 
@@ -2781,6 +2787,7 @@ grpc_cc_library(
     hdrs = [
         "src/core/lib/service_config/service_config_parser.h",
     ],
+    external_deps = ["absl/strings"],
     language = "c++",
     tags = ["grpc-autodeps"],
     deps = [
