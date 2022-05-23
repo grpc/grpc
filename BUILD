@@ -3645,6 +3645,7 @@ grpc_cc_library(
         "resolved_address",
         "slice_refcount",
         "sockaddr_utils",
+        "unique_type_name",
         "uri_parser",
     ],
 )
