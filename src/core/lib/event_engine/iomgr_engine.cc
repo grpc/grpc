@@ -70,6 +70,7 @@ std::string HandleToString(EventEngine::TaskHandle handle) {
 IomgrEventEngine::IomgrEventEngine() {}
 
 IomgrEventEngine::~IomgrEventEngine() {
+  grpc_core::ExecCtx::Get()->Flush();
   grpc_core::MutexLock lock(&mu_);
   if (GRPC_TRACE_FLAG_ENABLED(grpc_event_engine_trace)) {
     for (auto handle : known_handles_) {
