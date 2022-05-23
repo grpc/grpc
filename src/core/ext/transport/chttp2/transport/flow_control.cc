@@ -52,28 +52,8 @@ bool g_test_only_transport_flow_control_window_check;
 
 namespace {
 
-constexpr const int kTracePadding = 30;
 constexpr const int64_t kMaxWindowUpdateSize = (1u << 31) - 1;
 
-char* fmt_int64_diff_str(int64_t old_val, int64_t new_val) {
-  std::string str;
-  if (old_val != new_val) {
-    str = absl::StrFormat("%" PRId64 " -> %" PRId64 "", old_val, new_val);
-  } else {
-    str = absl::StrFormat("%" PRId64 "", old_val);
-  }
-  return gpr_leftpad(str.c_str(), ' ', kTracePadding);
-}
-
-char* fmt_uint32_diff_str(uint32_t old_val, uint32_t new_val) {
-  std::string str;
-  if (old_val != new_val) {
-    str = absl::StrFormat("%" PRIu32 " -> %" PRIu32 "", old_val, new_val);
-  } else {
-    str = absl::StrFormat("%" PRIu32 "", old_val);
-  }
-  return gpr_leftpad(str.c_str(), ' ', kTracePadding);
-}
 }  // namespace
 
 const char* FlowControlAction::UrgencyString(Urgency u) {
