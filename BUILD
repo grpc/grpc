@@ -1768,9 +1768,12 @@ grpc_cc_library(
         "src/core/lib/security/credentials/channel_creds_registry.h",
     ],
     language = "c++",
+    tags = ["grpc-autodeps"],
     deps = [
-        "gpr_base",
+        "gpr_platform",
+        "grpc_codegen",
         "json",
+        "ref_counted_ptr",
     ],
 )
 
@@ -1802,16 +1805,20 @@ grpc_cc_library(
         "src/core/lib/resource_quota/memory_quota.h",
     ],
     external_deps = [
+        "absl/base:core_headers",
         "absl/status",
         "absl/strings",
+        "absl/types:optional",
         "absl/utility",
     ],
+    tags = ["grpc-autodeps"],
     deps = [
         "activity",
-        "dual_ref_counted",
         "event_engine_memory_allocator",
         "exec_ctx_wakeup_scheduler",
         "gpr_base",
+        "gpr_platform",
+        "gpr_public_hdrs",
         "grpc_trace",
         "loop",
         "map",
@@ -1821,7 +1828,6 @@ grpc_cc_library(
         "ref_counted_ptr",
         "resource_quota_trace",
         "seq",
-        "slice_refcount",
         "useful",
     ],
 )
@@ -1834,9 +1840,13 @@ grpc_cc_library(
     hdrs = [
         "src/core/lib/resource_quota/arena.h",
     ],
+    tags = ["grpc-autodeps"],
     deps = [
         "context",
+        "event_engine_memory_allocator",
         "gpr_base",
+        "gpr_platform",
+        "gpr_public_hdrs",
         "memory_quota",
     ],
 )
@@ -1849,9 +1859,14 @@ grpc_cc_library(
     hdrs = [
         "src/core/lib/resource_quota/thread_quota.h",
     ],
+    external_deps = ["absl/base:core_headers"],
+    tags = ["grpc-autodeps"],
     deps = [
         "gpr_base",
+        "gpr_platform",
+        "gpr_public_hdrs",
         "ref_counted",
+        "ref_counted_ptr",
     ],
 )
 
@@ -1877,12 +1892,17 @@ grpc_cc_library(
     hdrs = [
         "src/core/lib/resource_quota/resource_quota.h",
     ],
+    external_deps = ["absl/strings"],
+    tags = ["grpc-autodeps"],
     deps = [
         "cpp_impl_of",
-        "gpr_base",
+        "gpr_platform",
+        "grpc_codegen",
         "memory_quota",
         "ref_counted",
+        "ref_counted_ptr",
         "thread_quota",
+        "useful",
     ],
 )
 
@@ -1898,8 +1918,11 @@ grpc_cc_library(
     public_hdrs = [
         "include/grpc/slice.h",
     ],
+    tags = ["grpc-autodeps"],
     deps = [
-        "gpr_base",
+        "gpr_platform",
+        "gpr_public_hdrs",
+        "grpc_codegen",
     ],
 )
 
@@ -1915,9 +1938,13 @@ grpc_cc_library(
         "src/core/lib/slice/slice_internal.h",
         "src/core/lib/slice/slice_string_helpers.h",
     ],
+    external_deps = ["absl/strings"],
+    tags = ["grpc-autodeps"],
     deps = [
         "gpr_base",
-        "ref_counted",
+        "gpr_platform",
+        "gpr_public_hdrs",
+        "grpc_codegen",
         "slice_refcount",
     ],
 )
@@ -1931,8 +1958,10 @@ grpc_cc_library(
         "include/grpc/slice_buffer.h",
         "src/core/lib/slice/slice_buffer.h",
     ],
+    tags = ["grpc-autodeps"],
     deps = [
-        "gpr_base",
+        "gpr_platform",
+        "gpr_public_hdrs",
         "slice",
         "slice_refcount",
     ],
