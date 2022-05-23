@@ -21,7 +21,7 @@
 
 #include <memory>
 
-#include "src/core/ext/filters/client_channel/lb_policy.h"
+#include "src/core/ext/filters/client_channel/lb_policy/backend_metric_data.h"
 #include "src/core/ext/filters/client_channel/subchannel_interface.h"
 #include "src/core/lib/gprpp/time.h"
 
@@ -45,8 +45,7 @@ class OobBackendMetricWatcher {
   virtual ~OobBackendMetricWatcher() = default;
 
   virtual void OnBackendMetricReport(
-      const LoadBalancingPolicy::BackendMetricAccessor::BackendMetricData&
-          backend_metric_data) = 0;
+      const BackendMetricData& backend_metric_data) = 0;
 };
 
 std::unique_ptr<SubchannelInterface::DataWatcherInterface>

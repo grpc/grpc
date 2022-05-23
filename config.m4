@@ -80,11 +80,9 @@ if test "$PHP_GRPC" != "no"; then
     src/core/ext/filters/client_channel/proxy_mapper_registry.cc \
     src/core/ext/filters/client_channel/resolver/binder/binder_resolver.cc \
     src/core/ext/filters/client_channel/resolver/dns/c_ares/dns_resolver_ares.cc \
-    src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_ev_driver_event_engine.cc \
     src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_ev_driver_posix.cc \
     src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_ev_driver_windows.cc \
     src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper.cc \
-    src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper_event_engine.cc \
     src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper_posix.cc \
     src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper_windows.cc \
     src/core/ext/filters/client_channel/resolver/dns/dns_resolver_selection.cc \
@@ -469,7 +467,6 @@ if test "$PHP_GRPC" != "no"; then
     src/core/lib/event_engine/resolved_address.cc \
     src/core/lib/event_engine/slice.cc \
     src/core/lib/event_engine/slice_buffer.cc \
-    src/core/lib/event_engine/sockaddr.cc \
     src/core/lib/event_engine/trace.cc \
     src/core/lib/gpr/alloc.cc \
     src/core/lib/gpr/atm.cc \
@@ -525,7 +522,6 @@ if test "$PHP_GRPC" != "no"; then
     src/core/lib/iomgr/dualstack_socket_posix.cc \
     src/core/lib/iomgr/endpoint.cc \
     src/core/lib/iomgr/endpoint_cfstream.cc \
-    src/core/lib/iomgr/endpoint_pair_event_engine.cc \
     src/core/lib/iomgr/endpoint_pair_posix.cc \
     src/core/lib/iomgr/endpoint_pair_windows.cc \
     src/core/lib/iomgr/error.cc \
@@ -535,14 +531,6 @@ if test "$PHP_GRPC" != "no"; then
     src/core/lib/iomgr/ev_poll_posix.cc \
     src/core/lib/iomgr/ev_posix.cc \
     src/core/lib/iomgr/ev_windows.cc \
-    src/core/lib/iomgr/event_engine/closure.cc \
-    src/core/lib/iomgr/event_engine/endpoint.cc \
-    src/core/lib/iomgr/event_engine/iomgr.cc \
-    src/core/lib/iomgr/event_engine/pollset.cc \
-    src/core/lib/iomgr/event_engine/resolved_address_internal.cc \
-    src/core/lib/iomgr/event_engine/resolver.cc \
-    src/core/lib/iomgr/event_engine/tcp.cc \
-    src/core/lib/iomgr/event_engine/timer.cc \
     src/core/lib/iomgr/exec_ctx.cc \
     src/core/lib/iomgr/executor.cc \
     src/core/lib/iomgr/executor/mpmcqueue.cc \
@@ -1313,7 +1301,6 @@ if test "$PHP_GRPC" != "no"; then
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/gprpp)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/http)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/iomgr)
-  PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/iomgr/event_engine)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/iomgr/executor)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/json)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/matchers)

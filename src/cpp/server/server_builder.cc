@@ -23,6 +23,7 @@
 #include <string.h>
 
 #include <algorithm>
+#include <iterator>
 #include <memory>
 #include <string>
 #include <utility>
@@ -358,11 +359,18 @@ std::unique_ptr<grpc::Server> ServerBuilder::BuildAndStart() {
     gpr_log(GPR_INFO, "Callback server.");
   }
 
+  // Merge the application and internal interceptors together.
+  // Internal interceptors go first.
+  auto creators = std::move(internal_interceptor_creators_);
+  creators.insert(creators.end(),
+                  std::make_move_iterator(interceptor_creators_.begin()),
+                  std::make_move_iterator(interceptor_creators_.end()));
+
   std::unique_ptr<grpc::Server> server(new grpc::Server(
       &args, sync_server_cqs, sync_server_settings_.min_pollers,
       sync_server_settings_.max_pollers, sync_server_settings_.cq_timeout_msec,
       std::move(acceptors_), server_config_fetcher_, resource_quota_,
-      std::move(interceptor_creators_)));
+      std::move(creators)));
 
   ServerInitializer* initializer = server->initializer();
 
