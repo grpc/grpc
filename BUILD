@@ -476,6 +476,7 @@ grpc_cc_library(
 grpc_cc_library(
     name = "gpr_public_hdrs",
     hdrs = GPR_PUBLIC_HDRS,
+    tags = ["avoid_dep"],
 )
 
 grpc_cc_library(
@@ -923,10 +924,7 @@ grpc_cc_library(
     name = "gpr_tls",
     hdrs = ["src/core/lib/gpr/tls.h"],
     tags = ["grpc-autodeps"],
-    deps = [
-        "gpr_platform",
-        "gpr_public_hdrs",
-    ],
+    deps = ["gpr_platform"],
 )
 
 grpc_cc_library(
@@ -937,7 +935,6 @@ grpc_cc_library(
         "arena",
         "gpr_base",
         "gpr_platform",
-        "gpr_public_hdrs",
     ],
 )
 
@@ -1002,7 +999,6 @@ grpc_cc_library(
         "gpr_base",
         "gpr_codegen",
         "gpr_platform",
-        "gpr_public_hdrs",
         "grpc_codegen",
     ],
 )
@@ -1445,7 +1441,6 @@ grpc_cc_library(
         "context",
         "gpr_base",
         "gpr_platform",
-        "gpr_public_hdrs",
         "gpr_tls",
         "orphanable",
         "poll",
@@ -1510,8 +1505,8 @@ grpc_cc_library(
     ],
     tags = ["grpc-autodeps"],
     deps = [
+        "gpr_base",
         "gpr_platform",
-        "gpr_public_hdrs",
         "intra_activity_waiter",
         "poll",
     ],
@@ -1550,8 +1545,8 @@ grpc_cc_library(
     deps = [
         "arena",
         "context",
+        "gpr_base",
         "gpr_platform",
-        "gpr_public_hdrs",
         "intra_activity_waiter",
         "poll",
     ],
@@ -1581,8 +1576,8 @@ grpc_cc_library(
     deps = [
         "atomic_utils",
         "debug_location",
+        "gpr_base",
         "gpr_platform",
-        "gpr_public_hdrs",
         "ref_counted_ptr",
     ],
 )
@@ -1594,8 +1589,8 @@ grpc_cc_library(
     tags = ["grpc-autodeps"],
     deps = [
         "debug_location",
+        "gpr_base",
         "gpr_platform",
-        "gpr_public_hdrs",
         "orphanable",
         "ref_counted_ptr",
     ],
@@ -1636,7 +1631,6 @@ grpc_cc_library(
         "exec_ctx",
         "gpr_base",
         "gpr_platform",
-        "gpr_public_hdrs",
         "grpc_base",
         "grpc_codegen",
         "grpc_trace",
@@ -1707,7 +1701,6 @@ grpc_cc_library(
         "exec_ctx",
         "gpr_base",
         "gpr_platform",
-        "gpr_public_hdrs",
         "grpc_base",
         "grpc_codegen",
         "handshaker",
@@ -1746,7 +1739,6 @@ grpc_cc_library(
         "exec_ctx",
         "gpr_base",
         "gpr_platform",
-        "gpr_public_hdrs",
         "grpc_base",
         "grpc_codegen",
         "handshaker",
@@ -1818,7 +1810,6 @@ grpc_cc_library(
         "exec_ctx_wakeup_scheduler",
         "gpr_base",
         "gpr_platform",
-        "gpr_public_hdrs",
         "grpc_trace",
         "loop",
         "map",
@@ -1846,7 +1837,6 @@ grpc_cc_library(
         "event_engine_memory_allocator",
         "gpr_base",
         "gpr_platform",
-        "gpr_public_hdrs",
         "memory_quota",
     ],
 )
@@ -1864,7 +1854,6 @@ grpc_cc_library(
     deps = [
         "gpr_base",
         "gpr_platform",
-        "gpr_public_hdrs",
         "ref_counted",
         "ref_counted_ptr",
     ],
@@ -1920,8 +1909,8 @@ grpc_cc_library(
     ],
     tags = ["grpc-autodeps"],
     deps = [
+        "gpr_base",
         "gpr_platform",
-        "gpr_public_hdrs",
         "grpc_codegen",
     ],
 )
@@ -1943,7 +1932,6 @@ grpc_cc_library(
     deps = [
         "gpr_base",
         "gpr_platform",
-        "gpr_public_hdrs",
         "grpc_codegen",
         "slice_refcount",
     ],
@@ -1960,8 +1948,8 @@ grpc_cc_library(
     ],
     tags = ["grpc-autodeps"],
     deps = [
+        "gpr_base",
         "gpr_platform",
-        "gpr_public_hdrs",
         "slice",
         "slice_refcount",
     ],
@@ -1997,7 +1985,6 @@ grpc_cc_library(
         "error",
         "gpr_base",
         "gpr_platform",
-        "gpr_public_hdrs",
     ],
 )
 
@@ -2015,7 +2002,6 @@ grpc_cc_library(
         "gpr_base",
         "gpr_codegen",
         "gpr_platform",
-        "gpr_public_hdrs",
         "useful",
     ],
 )
@@ -2042,7 +2028,6 @@ grpc_cc_library(
         "gpr_base",
         "gpr_codegen",
         "gpr_platform",
-        "gpr_public_hdrs",
         "gpr_tls",
         "grpc_codegen",
         "grpc_trace",
@@ -2070,7 +2055,6 @@ grpc_cc_library(
     deps = [
         "gpr_base",
         "gpr_platform",
-        "gpr_public_hdrs",
         "grpc_sockaddr",
         "resolved_address",
         "uri_parser",
@@ -2145,8 +2129,8 @@ grpc_cc_library(
     ],
     tags = ["grpc-autodeps"],
     deps = [
+        "gpr_base",
         "gpr_platform",
-        "gpr_public_hdrs",
         "iomgr_port",
     ],
 )
@@ -2296,8 +2280,8 @@ grpc_cc_library(
     tags = ["grpc-autodeps"],
     visibility = ["@grpc:alt_grpc_base_legacy"],
     deps = [
+        "gpr_base",
         "gpr_platform",
-        "gpr_public_hdrs",
     ],
 )
 
@@ -2309,9 +2293,11 @@ grpc_cc_library(
     hdrs = [
         "src/core/lib/channel/channel_args_preconditioning.h",
     ],
+    tags = ["grpc-autodeps"],
     deps = [
         "channel_args",
-        "gpr_base",
+        "gpr_platform",
+        "grpc_codegen",
     ],
 )
 
@@ -2323,6 +2309,7 @@ grpc_cc_library(
     hdrs = [
         "src/core/lib/transport/pid_controller.h",
     ],
+    tags = ["grpc-autodeps"],
     deps = [
         "gpr_platform",
         "useful",
@@ -2643,9 +2630,8 @@ grpc_cc_library(
         "src/core/lib/surface/channel_stack_type.h",
     ],
     language = "c++",
-    deps = [
-        "gpr_base",
-    ],
+    tags = ["grpc-autodeps"],
+    deps = ["gpr_platform"],
 )
 
 grpc_cc_library(
@@ -2671,8 +2657,10 @@ grpc_cc_library(
         "src/core/lib/gprpp/single_set_ptr.h",
     ],
     language = "c++",
+    tags = ["grpc-autodeps"],
     deps = [
         "gpr_base",
+        "gpr_platform",
     ],
 )
 
