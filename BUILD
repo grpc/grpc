@@ -1619,24 +1619,34 @@ grpc_cc_library(
         "src/core/lib/transport/handshaker.cc",
     ],
     external_deps = [
-        "absl/strings",
+        "absl/container:inlined_vector",
         "absl/strings:str_format",
     ],
     language = "c++",
     public_hdrs = [
         "src/core/lib/transport/handshaker.h",
     ],
+    tags = ["grpc-autodeps"],
     visibility = ["@grpc:alt_grpc_base_legacy"],
     deps = [
         "channel_args",
         "closure",
         "debug_location",
+        "error",
+        "exec_ctx",
         "gpr_base",
+        "gpr_platform",
+        "gpr_public_hdrs",
         "grpc_base",
         "grpc_codegen",
         "grpc_trace",
         "iomgr_timer",
+        "ref_counted",
+        "ref_counted_ptr",
         "slice",
+        "slice_buffer",
+        "slice_refcount",
+        "time",
     ],
 )
 
@@ -1646,8 +1656,10 @@ grpc_cc_library(
     public_hdrs = [
         "src/core/lib/transport/handshaker_factory.h",
     ],
+    tags = ["grpc-autodeps"],
     deps = [
-        "gpr_base",
+        "gpr_platform",
+        "grpc_codegen",
         "iomgr_fwd",
     ],
 )
@@ -1661,9 +1673,12 @@ grpc_cc_library(
     public_hdrs = [
         "src/core/lib/transport/handshaker_registry.h",
     ],
+    tags = ["grpc-autodeps"],
     deps = [
-        "gpr_base",
+        "gpr_platform",
+        "grpc_codegen",
         "handshaker_factory",
+        "iomgr_fwd",
     ],
 )
 
