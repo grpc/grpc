@@ -4300,6 +4300,9 @@ grpc_cc_library(
     hdrs = [
         "src/core/ext/filters/client_channel/resolver/xds/xds_resolver.h",
     ],
+    external_deps = [
+        "absl/strings",
+    ],
     language = "c++",
 )
 
