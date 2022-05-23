@@ -33,6 +33,7 @@
 #include "src/proto/grpc/testing/xds/v3/ring_hash.grpc.pb.h"
 #include "src/proto/grpc/testing/xds/v3/round_robin.grpc.pb.h"
 #include "src/proto/grpc/testing/xds/v3/typed_struct.grpc.pb.h"
+#include "src/proto/grpc/testing/xds/v3/udpa_typed_struct.grpc.pb.h"
 #include "src/proto/grpc/testing/xds/v3/wrr_locality.grpc.pb.h"
 #include "test/core/util/test_config.h"
 
@@ -279,6 +280,22 @@ TEST(XdsLbPolicyRegistryTest, CustomLbPolicy) {
                                       &error));
 }
 
+TEST(XdsLbPolicyRegistryTest, CustomLbPolicyUdpaTyped) {
+  ::udpa::type::v1::TypedStruct typed_struct;
+  typed_struct.set_type_url("myorg/foo/bar/test.CustomLb");
+  LoadBalancingPolicyProto policy;
+  auto* lb_policy = policy.add_policies();
+  lb_policy->mutable_typed_extension_config()->mutable_typed_config()->PackFrom(
+      typed_struct);
+  auto result = ToJson(policy);
+  EXPECT_TRUE(result.ok());
+  EXPECT_EQ(result->size(), 1);
+  grpc_error_handle error = GRPC_ERROR_NONE;
+  EXPECT_EQ((*result)[0], Json::Parse("{"
+                                      "\"test.CustomLb\": null}",
+                                      &error));
+}
+
 TEST(XdsLbPolicyRegistryTest, CustomLbPolicyInvalidUrl) {
   TypedStruct typed_struct;
   typed_struct.set_type_url("test.CustomLb");
@@ -292,6 +309,20 @@ TEST(XdsLbPolicyRegistryTest, CustomLbPolicyInvalidUrl) {
               ::testing::ContainsRegex(
                   "Error parsing LoadBalancingPolicy.*CustomLbPolicy: Invalid "
                   "type_url test.CustomLb"));
+}
+
+TEST(XdsLbPolicyRegistryTest, UnsupportedCustomTypeError) {
+  TypedStruct typed_struct;
+  typed_struct.set_type_url("myorg/foo/bar/test.UnknownLb");
+  LoadBalancingPolicyProto policy;
+  auto* lb_policy = policy.add_policies();
+  lb_policy->mutable_typed_extension_config()->mutable_typed_config()->PackFrom(
+      typed_struct);
+  auto result = ToJson(policy);
+  EXPECT_EQ(result.status().code(), absl::StatusCode::kInvalidArgument);
+  EXPECT_THAT(
+      StatusToString(result.status()),
+      ::testing::ContainsRegex("No supported LoadBalancingPolicy found"));
 }
 
 TEST(XdsLbPolicyRegistryTest, CustomLbPolicyInvalidValue) {
@@ -482,6 +513,50 @@ TEST(XdsLbPolicyRegistryTest, CustomLbPolicyListError) {
           "balancing policy myorg/test.CustomLb.*Failed to parse "
           "Struct.*Failed to parse value for key:key.*Error parsing "
           "ListValue.*Invalid value type"));
+}
+
+TEST(XdsLbPolicyRegistryTest, UnsupportedBuiltInTypeSkipped) {
+  // Add two policies to list, an unsupported type and then a known RoundRobin
+  // type. Expect that the unsupported type is skipped and RoundRobin is
+  // selected.
+  LoadBalancingPolicyProto policy;
+  auto* lb_policy = policy.add_policies();
+  lb_policy->mutable_typed_extension_config()->mutable_typed_config()->PackFrom(
+      LoadBalancingPolicyProto());
+  lb_policy = policy.add_policies();
+  lb_policy->mutable_typed_extension_config()->mutable_typed_config()->PackFrom(
+      RoundRobin());
+  auto result = ToJson(policy);
+  EXPECT_TRUE(result.ok());
+  EXPECT_EQ(result->size(), 1);
+  grpc_error_handle error = GRPC_ERROR_NONE;
+  EXPECT_EQ((*result)[0], Json::Parse("{"
+                                      "\"round_robin\": {}"
+                                      "}",
+                                      &error));
+}
+
+TEST(XdsLbPolicyRegistryTest, UnsupportedCustomTypeSkipped) {
+  // Add two policies to list, an unsupported custom type and then a known
+  // RoundRobin type. Expect that the unsupported type is skipped and RoundRobin
+  // is selected.
+  TypedStruct typed_struct;
+  typed_struct.set_type_url("myorg/foo/bar/test.UnknownLb");
+  LoadBalancingPolicyProto policy;
+  auto* lb_policy = policy.add_policies();
+  lb_policy->mutable_typed_extension_config()->mutable_typed_config()->PackFrom(
+      typed_struct);
+  lb_policy = policy.add_policies();
+  lb_policy->mutable_typed_extension_config()->mutable_typed_config()->PackFrom(
+      RoundRobin());
+  auto result = ToJson(policy);
+  EXPECT_TRUE(result.ok());
+  EXPECT_EQ(result->size(), 1);
+  grpc_error_handle error = GRPC_ERROR_NONE;
+  EXPECT_EQ((*result)[0], Json::Parse("{"
+                                      "\"round_robin\": {}"
+                                      "}",
+                                      &error));
 }
 
 // Build a recurse load balancing policy that goes beyond the max allowable

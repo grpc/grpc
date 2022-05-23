@@ -411,6 +411,14 @@ grpc_proto_library(
     well_known_protos = True,
 )
 
+grpc_proto_library(
+    name = "udpa_typed_struct_proto",
+    srcs = [
+        "udpa_typed_struct.proto",
+    ],
+    well_known_protos = True,
+)
+
 py_proto_library(
     name = "csds_py_pb2",
     deps = [":_csds_proto_only"],

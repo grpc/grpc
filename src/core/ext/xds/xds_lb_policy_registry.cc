@@ -106,8 +106,9 @@ class RingHashLbPolicy {
                        kMaxRingSize)}}}};
   }
 
-  static const char* type() {
-    return "type.googleapis.com/"
+  static bool MatchesType(absl::string_view type) {
+    return type ==
+           "type.googleapis.com/"
            "envoy.extensions.load_balancing_policies.ring_hash.v3.RingHash";
   }
 };
@@ -119,8 +120,9 @@ class RoundRobinLbPolicy {
     return Json::Object{{"round_robin", Json::Object()}};
   }
 
-  static const char* type() {
-    return "type.googleapis.com/"
+  static bool MatchesType(absl::string_view type) {
+    return type ==
+           "type.googleapis.com/"
            "envoy.extensions.load_balancing_policies.round_robin.v3.RoundRobin";
   }
 };
@@ -155,8 +157,9 @@ class WrrLocalityLbPolicy {
          Json::Object{{"child_policy", *std::move(child_policy)}}}};
   }
 
-  static const char* type() {
-    return "type.googleapis.com/"
+  static bool MatchesType(absl::string_view type) {
+    return type ==
+           "type.googleapis.com/"
            "envoy.extensions.load_balancing_policies.wrr_locality.v3."
            "WrrLocality";
   }
@@ -279,8 +282,9 @@ class CustomLbPolicy {
     return Json::Object{{std::string(name), *(std::move(parsed_value))}};
   }
 
-  static const char* type() {
-    return "type.googleapis.com/xds.type.v3.TypedStruct";
+  static bool MatchesType(absl::string_view type) {
+    return type == "type.googleapis.com/xds.type.v3.TypedStruct" ||
+           type == "type.googleapis.com/udpa.type.v1.TypedStruct";
   }
 };
 
@@ -323,13 +327,13 @@ absl::StatusOr<Json::Array> ToJsonInternal(
     absl::string_view type_url =
         UpbStringToAbsl(google_protobuf_Any_type_url(typed_config));
     upb_StringView value = google_protobuf_Any_value(typed_config);
-    if (type_url == RingHashLbPolicy::type()) {
+    if (RingHashLbPolicy::MatchesType(type_url)) {
       policy = RingHashLbPolicy::ToJson(value, arena);
-    } else if (type_url == RoundRobinLbPolicy::type()) {
+    } else if (RoundRobinLbPolicy::MatchesType(type_url)) {
       policy = RoundRobinLbPolicy::ToJson(value, arena);
-    } else if (type_url == WrrLocalityLbPolicy::type()) {
+    } else if (WrrLocalityLbPolicy::MatchesType(type_url)) {
       policy = WrrLocalityLbPolicy::ToJson(value, arena, recursion_depth);
-    } else if (type_url == CustomLbPolicy::type()) {
+    } else if (CustomLbPolicy::MatchesType(type_url)) {
       policy = CustomLbPolicy::ToJson(value, arena);
     } else {
       // Unsupported type. Skipping entry.
