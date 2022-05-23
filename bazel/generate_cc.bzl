@@ -33,16 +33,7 @@ _PROTO_HEADER_FMT = "{}.pb.h"
 _PROTO_SRC_FMT = "{}.pb.cc"
 
 def _strip_package_from_path(label_package, file):
-    prefix_len = 0
-    if not file.is_source and file.path.startswith(file.root.path):
-        prefix_len = len(file.root.path) + 1
-
-    path = file.path
-    if len(label_package) == 0:
-        return path
-    if not path.startswith(label_package + "/", prefix_len):
-        fail("'{}' does not lie within '{}'.".format(path, label_package))
-    return path[prefix_len + len(label_package + "/"):]
+    return file.path
 
 def _get_srcs_file_path(file):
     if not file.is_source and file.path.startswith(file.root.path):
