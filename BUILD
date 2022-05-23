@@ -5270,7 +5270,6 @@ grpc_cc_library(
     deps = [
         "bdp_estimator",
         "exec_ctx",
-        "gpr_base",
         "gpr_platform",
         "gpr_public_hdrs",
         "grpc_trace",
