@@ -407,4 +407,9 @@ void ServerContextBase::CreateCallMetricRecorder() {
   call_metric_recorder_ = arena->New<experimental::CallMetricRecorder>(arena);
 }
 
+grpc::string_ref ServerContextBase::ExperimentalGetAuthority() const {
+  absl::string_view authority = grpc_call_server_authority(call_.call);
+  return grpc::string_ref(authority.data(), authority.size());
+}
+
 }  // namespace grpc
