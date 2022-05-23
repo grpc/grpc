@@ -3016,9 +3016,13 @@ grpc_cc_library(
     hdrs = [
         "src/core/ext/filters/server_config_selector/server_config_selector.h",
     ],
+    external_deps = ["absl/status:statusor"],
     language = "c++",
+    tags = ["grpc-autodeps"],
     deps = [
-        "gpr_base",
+        "channel_args",
+        "dual_ref_counted",
+        "gpr_platform",
         "grpc_base",
         "grpc_service_config",
     ],
@@ -3033,9 +3037,11 @@ grpc_cc_library(
         "src/core/ext/filters/server_config_selector/server_config_selector_filter.h",
     ],
     language = "c++",
+    tags = ["grpc-autodeps"],
     deps = [
         "arena",
-        "gpr_base",
+        "error",
+        "gpr_platform",
         "grpc_base",
         "grpc_server_config_selector",
         "grpc_service_config",
@@ -3052,9 +3058,8 @@ grpc_cc_library(
         "src/core/ext/filters/channel_idle/idle_filter_state.h",
     ],
     language = "c++",
-    deps = [
-        "gpr_platform",
-    ],
+    tags = ["grpc-autodeps"],
+    deps = ["gpr_platform"],
 )
 
 grpc_cc_library(
@@ -3065,10 +3070,13 @@ grpc_cc_library(
     hdrs = [
         "src/core/ext/filters/channel_idle/channel_idle_filter.h",
     ],
+    tags = ["grpc-autodeps"],
     deps = [
+        "channel_args",
+        "channel_stack_builder",
         "config",
         "exec_ctx_wakeup_scheduler",
-        "gpr_base",
+        "gpr_platform",
         "grpc_base",
         "idle_filter_state",
         "iomgr_timer",
@@ -3089,9 +3097,12 @@ grpc_cc_library(
         "src/core/ext/filters/deadline/deadline_filter.h",
     ],
     language = "c++",
+    tags = ["grpc-autodeps"],
     deps = [
+        "channel_stack_builder",
         "config",
         "gpr_base",
+        "gpr_platform",
         "grpc_base",
         "iomgr_timer",
         "slice",
@@ -3106,12 +3117,18 @@ grpc_cc_library(
     hdrs = [
         "src/core/ext/filters/http/client_authority_filter.h",
     ],
+    external_deps = ["absl/status:statusor"],
     language = "c++",
+    tags = ["grpc-autodeps"],
     deps = [
+        "channel_args",
+        "channel_stack_builder",
         "channel_stack_type",
         "config",
         "gpr_base",
+        "gpr_platform",
         "grpc_base",
+        "grpc_codegen",
         "slice",
     ],
 )
@@ -3126,14 +3143,19 @@ grpc_cc_library(
     ],
     external_deps = ["absl/strings:str_format"],
     language = "c++",
+    tags = ["grpc-autodeps"],
     deps = [
+        "channel_args",
+        "channel_stack_builder",
         "config",
         "gpr_base",
+        "gpr_platform",
         "grpc_base",
         "grpc_codegen",
         "grpc_service_config",
         "ref_counted",
         "ref_counted_ptr",
+        "service_config_parser",
     ],
 )
 
