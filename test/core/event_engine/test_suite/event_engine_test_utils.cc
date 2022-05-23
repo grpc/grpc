@@ -93,7 +93,7 @@ absl::Status ExchangeVerifyData(std::string data, Endpoint* send_endpoint,
   read_cb = [receive_endpoint, &read_slice_buf, &read_cb, &read_promise,
              &args](absl::Status status) {
     GPR_ASSERT(status.ok());
-    if (read_slice_buf.Length() == args.read_hint_bytes) {
+    if (read_slice_buf.Length() == static_cast<size_t>(args.read_hint_bytes)) {
       read_promise.Set(true);
       return;
     }
