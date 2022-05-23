@@ -40,6 +40,7 @@
 #include "src/core/ext/filters/client_channel/config_selector.h"
 #include "src/core/ext/filters/client_channel/dynamic_filters.h"
 #include "src/core/ext/filters/client_channel/lb_policy.h"
+#include "src/core/ext/filters/client_channel/lb_policy/backend_metric_data.h"
 #include "src/core/ext/filters/client_channel/subchannel.h"
 #include "src/core/ext/filters/client_channel/subchannel_pool_interface.h"
 #include "src/core/lib/channel/call_tracer.h"
@@ -501,8 +502,7 @@ class ClientChannel::LoadBalancedCall
       ABSL_GUARDED_BY(&ClientChannel::data_plane_mu_) = nullptr;
 
   RefCountedPtr<ConnectedSubchannel> connected_subchannel_;
-  const LoadBalancingPolicy::BackendMetricAccessor::BackendMetricData*
-      backend_metric_data_ = nullptr;
+  const BackendMetricData* backend_metric_data_ = nullptr;
   std::unique_ptr<LoadBalancingPolicy::SubchannelCallTrackerInterface>
       lb_subchannel_call_tracker_;
 
