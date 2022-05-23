@@ -17,6 +17,8 @@ SOME_FILE_PATTERN = "*_test.proto"
 SOME_MATCHED_PROTO_FILE = "foo_test.proto"
 SOME_OTHER_MATCHED_PROTO_FILE = "bar_test.proto"
 SOME_DEST_DIR = "test_dest_dir"
+SOME_ADDITIONAL_ARGS = "--test-arg foo"
+SOME_ADDITIONAL_ARGS_PIECES = ["--test-arg", "foo"]
 SOME_ERROR_CODE = 1
 SOME_SUCCESS_CODE = 0
 
@@ -59,18 +61,24 @@ class AutoGenerateTest(unittest.TestCase):
 
     def test_generate_files__file_exists_value_wrong_type__exception(self):
         data = [
-            (SOME_NON_STRING, SOME_STRING, SOME_STRING),
-            (SOME_STRING, SOME_NON_STRING, SOME_STRING),
-            (SOME_STRING, SOME_STRING, SOME_NON_STRING),
+            (SOME_NON_STRING, SOME_STRING, SOME_STRING, SOME_STRING),
+            (SOME_STRING, SOME_NON_STRING, SOME_STRING, SOME_STRING),
+            (SOME_STRING, SOME_STRING, SOME_NON_STRING, SOME_STRING),
+            (SOME_STRING, SOME_STRING, SOME_STRING, SOME_NON_STRING),
         ]
-        for proto_dir, proto_file_pattern, dest_dir in data:
+        for proto_dir, proto_file_pattern, dest_dir, additional_args in data:
             with self.subTest(
                 proto_dir=proto_dir,
                 proto_file_pattern=proto_file_pattern,
                 dest_dir=dest_dir,
+                additional_args=additional_args,
             ):
                 _write_config_file(
-                    self._temp_dir, proto_dir, proto_file_pattern, dest_dir
+                    self._temp_dir,
+                    proto_dir,
+                    proto_file_pattern,
+                    dest_dir,
+                    additional_args,
                 )
 
                 with self.assertRaises(ValueError):
@@ -120,6 +128,36 @@ class AutoGenerateTest(unittest.TestCase):
             ]
         )
 
+    def test_generate_files__additional_args__args_passed_split(self):
+        _write_config_file(
+            self._temp_dir,
+            SOME_PROTO_DIR,
+            SOME_FILE_PATTERN,
+            SOME_DEST_DIR,
+            SOME_ADDITIONAL_ARGS,
+        )
+        proto_dir = _make_proto_dir(self._temp_dir.dir)
+        proto_dir.joinpath(SOME_MATCHED_PROTO_FILE).touch()
+
+        with mock.patch(
+            "grpc_tools.protoc.main", return_value=SOME_SUCCESS_CODE
+        ) as mock_main:
+            with mock.patch(
+                "pkg_resources.resource_filename", return_value=SOME_STRING
+            ):
+                auto_generate.generate_files(mock.Mock())
+
+        mock_main.assert_called_once_with(
+            [
+                f"-I={SOME_STRING}",
+                f"-I={SOME_PROTO_DIR}",
+                f"--python_out={SOME_DEST_DIR}",
+                f"--grpc_python_out={SOME_DEST_DIR}",
+                *SOME_ADDITIONAL_ARGS_PIECES,
+                f"{SOME_PROTO_DIR}/{SOME_MATCHED_PROTO_FILE}",
+            ]
+        )
+
     def test_generate_files__multiple_files__multiple_calls(self):
         _write_config_file(
             self._temp_dir, SOME_PROTO_DIR, SOME_FILE_PATTERN, SOME_DEST_DIR
@@ -163,21 +201,30 @@ class TemporaryWorkingDirectory:
 
 
 def _write_config_file(
-    config_location: TemporaryWorkingDirectory, proto_dir, proto_file_pattern, dest_dir
+    config_location: TemporaryWorkingDirectory,
+    proto_dir,
+    proto_file_pattern,
+    dest_dir,
+    additional_args=None,
 ) -> None:
     def _quote_if_str(value):
         return f"'{value}'" if isinstance(value, str) else value
 
-    config_location.dir.joinpath(auto_generate.CONFIG_FILE_NAME).write_text(
-        dedent(
-            f"""\
+    text = dedent(
+        f"""\
     [tool.grpcio_tools]
     proto_dir={_quote_if_str(proto_dir)}
     proto_file_pattern={_quote_if_str(proto_file_pattern)}
     dest_dir={_quote_if_str(dest_dir)}
     """
-        )
     )
+    if additional_args is not None:
+        text += dedent(
+            f"""\
+            additional_args={_quote_if_str(additional_args)}
+            """
+        )
+    config_location.dir.joinpath(auto_generate.CONFIG_FILE_NAME).write_text(text)
 
 
 def _make_proto_dir(base_dir: Path) -> Path:

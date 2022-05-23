@@ -12,8 +12,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from pathlib import Path
 from distutils import log
+from pathlib import Path
+import shlex
 from typing import Any, Dict, Optional, NamedTuple
 
 import pkg_resources
@@ -34,6 +35,7 @@ class Configuration(NamedTuple):
     proto_dir: Path
     proto_file_pattern: str
     dest_dir: Path
+    additional_args: Optional[str]
 
 
 def generate_files(_: setuptools.Distribution) -> None:
@@ -58,15 +60,17 @@ def generate_files(_: setuptools.Distribution) -> None:
 
     generation_executed = False
     for proto_file in config.proto_dir.glob(config.proto_file_pattern):
-        result = protoc.main(
-            [
-                f"-I={proto_include}",
-                f"-I={config.proto_dir}",
-                f"--python_out={config.dest_dir}",
-                f"--grpc_python_out={config.dest_dir}",
-                str(proto_file),
-            ]
-        )
+        args = [
+            f"-I={proto_include}",
+            f"-I={config.proto_dir}",
+            f"--python_out={config.dest_dir}",
+            f"--grpc_python_out={config.dest_dir}",
+        ]
+        if config.additional_args is not None:
+            args.extend(shlex.split(config.additional_args))
+        args.append(str(proto_file))
+
+        result = protoc.main(args)
         generation_executed = True
 
         if result != 0:
@@ -111,6 +115,7 @@ def _parse_config(config_data: Dict[str, Any]) -> Configuration:
         dest_dir = config_data["dest_dir"]
     except KeyError as ex:
         raise ValueError("Missing setting in configuration section") from ex
+    additional_args = config_data.get("additional_args")
 
     if not isinstance(proto_dir, str):
         raise ValueError("'proto_dir' setting must be a string")
@@ -118,8 +123,12 @@ def _parse_config(config_data: Dict[str, Any]) -> Configuration:
         raise ValueError("'proto_file_pattern' setting must be a string")
     if not isinstance(dest_dir, str):
         raise ValueError("'dest_dir' setting must be a string")
+    if additional_args is not None and not isinstance(additional_args, str):
+        raise ValueError("'additional_args' setting must be a string when provided")
 
-    return Configuration(Path(proto_dir), proto_file_pattern, Path(dest_dir))
+    return Configuration(
+        Path(proto_dir), proto_file_pattern, Path(dest_dir), additional_args
+    )
 
 
 class GenerationException(Exception):
