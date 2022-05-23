@@ -23,8 +23,6 @@
 
 #include "opencensus/stats/stats.h"
 
-#include "src/cpp/ext/filters/census/grpc_plugin.h"
-
 namespace grpc {
 
 ::opencensus::stats::MeasureInt64 RpcClientSentMessagesPerRpc();

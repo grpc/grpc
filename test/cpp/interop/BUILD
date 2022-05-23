@@ -276,6 +276,24 @@ grpc_cc_binary(
 )
 
 grpc_cc_binary(
+    name = "istio_test_echo_server",
+    srcs = [
+        "istio_test_echo_server.cc",
+    ],
+    external_deps = [
+        "absl/flags:flag",
+    ],
+    deps = [
+        "//:grpc++",
+        "//:grpc++_reflection",
+        "//:grpcpp_admin",
+        "//src/proto/grpc/testing:istio_echo_proto",
+        "//test/core/util:grpc_test_util",
+        "//test/cpp/util:test_config",
+    ],
+)
+
+grpc_cc_binary(
     name = "http2_client",
     srcs = [
         "http2_client.cc",
