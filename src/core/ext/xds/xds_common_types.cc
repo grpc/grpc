@@ -23,6 +23,7 @@
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
 #include "absl/strings/str_join.h"
+#include "absl/strings/strip.h"
 #include "envoy/extensions/transport_sockets/tls/v3/common.upb.h"
 #include "envoy/extensions/transport_sockets/tls/v3/tls.upb.h"
 #include "envoy/type/matcher/v3/regex.upb.h"

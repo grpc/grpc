@@ -27,6 +27,7 @@
 #include "absl/strings/str_format.h"
 
 #include <grpc/grpc.h>
+#include <grpc/grpc_security.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
@@ -34,6 +35,7 @@
 #include <grpc/support/time.h>
 
 #include "src/core/lib/http/httpcli.h"
+#include "src/core/lib/security/credentials/credentials.h"
 #include "test/core/util/port_server_client.h"
 
 typedef struct freereq {
