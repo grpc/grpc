@@ -39,7 +39,7 @@ py_proto_library(
 
 py_test(
     name = "protoc_test",
-    srcs = ["protoc_test.py"],
+    srcs = ["protoc_test.py", "auto_generate_test.py"],
     data = [
         "complicated.proto",
         "flawed.proto",
