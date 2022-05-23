@@ -3546,11 +3546,14 @@ grpc_cc_library(
         "src/core/ext/xds/xds_channel_stack_modifier.h",
     ],
     language = "c++",
+    tags = ["grpc-autodeps"],
     deps = [
         "channel_init",
+        "channel_stack_builder",
         "config",
-        "gpr_base",
+        "gpr_platform",
         "grpc_base",
+        "ref_counted",
     ],
 )
 
@@ -3559,13 +3562,14 @@ grpc_cc_library(
     srcs = [
         "src/core/ext/xds/xds_server_config_fetcher.cc",
     ],
-    external_deps = [
-        "absl/strings",
-    ],
+    external_deps = ["absl/strings"],
     language = "c++",
+    tags = ["grpc-autodeps"],
     deps = [
+        "channel_args",
         "config",
         "gpr_base",
+        "gpr_platform",
         "grpc_base",
         "grpc_server_config_selector",
         "grpc_server_config_selector_filter",
@@ -3573,7 +3577,7 @@ grpc_cc_library(
         "grpc_sockaddr",
         "grpc_xds_channel_stack_modifier",
         "grpc_xds_client",
-        "slice_refcount",
+        "slice",
         "sockaddr_utils",
         "uri_parser",
     ],
@@ -3585,11 +3589,11 @@ grpc_cc_library(
         "src/core/lib/security/credentials/channel_creds_registry_init.cc",
     ],
     language = "c++",
+    tags = ["grpc-autodeps"],
     deps = [
         "config",
-        "gpr_base",
+        "gpr_platform",
         "grpc_fake_credentials",
-        "grpc_secure",
         "grpc_security_base",
         "json",
     ],
@@ -3603,17 +3607,17 @@ grpc_cc_library(
     hdrs = [
         "src/core/ext/xds/google_mesh_ca_certificate_provider_factory.h",
     ],
-    external_deps = [
-        "absl/strings",
-    ],
+    external_deps = ["absl/strings"],
     language = "c++",
+    tags = ["grpc-autodeps"],
     deps = [
         "error",
         "gpr_base",
+        "gpr_platform",
         "grpc_base",
         "grpc_xds_client",
         "json_util",
-        "slice",
+        "ref_counted",
     ],
 )
 
@@ -3656,6 +3660,7 @@ grpc_cc_library(
         "src/core/ext/filters/client_channel/lb_policy/xds/xds_channel_args.h",
     ],
     language = "c++",
+    tags = ["grpc-autodeps"],
 )
 
 grpc_cc_library(
@@ -3663,12 +3668,14 @@ grpc_cc_library(
     hdrs = [
         "src/core/ext/filters/client_channel/lb_policy/xds/xds.h",
     ],
+    external_deps = ["absl/memory"],
     language = "c++",
+    tags = ["grpc-autodeps"],
     deps = [
-        "gpr_base",
-        "grpc_base",
-        "grpc_client_channel",
+        "gpr_platform",
         "grpc_xds_client",
+        "ref_counted_ptr",
+        "server_address",
     ],
 )
 
@@ -3686,10 +3693,14 @@ grpc_cc_library(
         "absl/types:optional",
     ],
     language = "c++",
+    tags = ["grpc-autodeps"],
     deps = [
+        "channel_args",
         "config",
         "debug_location",
+        "error",
         "gpr_base",
+        "gpr_platform",
         "grpc_base",
         "grpc_client_channel",
         "grpc_codegen",
@@ -3707,7 +3718,6 @@ grpc_cc_library(
         "ref_counted_ptr",
         "server_address",
         "time",
-        "uri_parser",
     ],
 )
 
@@ -3726,9 +3736,13 @@ grpc_cc_library(
         "absl/types:variant",
     ],
     language = "c++",
+    tags = ["grpc-autodeps"],
     deps = [
+        "channel_args",
         "debug_location",
+        "error",
         "gpr_base",
+        "gpr_platform",
         "grpc_base",
         "grpc_client_channel",
         "grpc_codegen",
@@ -3751,14 +3765,20 @@ grpc_cc_library(
     ],
     external_deps = [
         "absl/memory",
+        "absl/status",
         "absl/status:statusor",
         "absl/strings",
-        "absl/status",
     ],
     language = "c++",
+    tags = ["grpc-autodeps"],
     deps = [
+        "channel_args",
+        "closure",
         "debug_location",
+        "error",
+        "exec_ctx",
         "gpr_base",
+        "gpr_platform",
         "grpc_base",
         "grpc_client_channel",
         "grpc_codegen",
@@ -3783,15 +3803,16 @@ grpc_cc_library(
         "src/core/ext/filters/client_channel/lb_policy/address_filtering.h",
     ],
     external_deps = [
-        "absl/strings",
         "absl/container:inlined_vector",
         "absl/memory",
+        "absl/status:statusor",
+        "absl/strings",
     ],
     language = "c++",
+    tags = ["grpc-autodeps"],
     deps = [
-        "gpr_base",
-        "grpc_base",
-        "grpc_client_channel",
+        "gpr_platform",
+        "server_address",
     ],
 )
 
@@ -3800,11 +3821,20 @@ grpc_cc_library(
     hdrs = [
         "src/core/ext/filters/client_channel/lb_policy/subchannel_list.h",
     ],
+    external_deps = ["absl/container:inlined_vector"],
     language = "c++",
+    tags = ["grpc-autodeps"],
     deps = [
+        "debug_location",
         "gpr_base",
+        "gpr_platform",
         "grpc_base",
         "grpc_client_channel",
+        "grpc_codegen",
+        "iomgr_fwd",
+        "orphanable",
+        "ref_counted_ptr",
+        "server_address",
     ],
 )
 
@@ -3821,9 +3851,13 @@ grpc_cc_library(
         "absl/strings",
     ],
     language = "c++",
+    tags = ["grpc-autodeps"],
     deps = [
+        "channel_args",
         "debug_location",
+        "error",
         "gpr_base",
+        "gpr_platform",
         "grpc_base",
         "grpc_client_channel",
         "grpc_codegen",
@@ -3833,7 +3867,6 @@ grpc_cc_library(
         "orphanable",
         "ref_counted_ptr",
         "server_address",
-        "sockaddr_utils",
     ],
 )
 
@@ -3856,9 +3889,14 @@ grpc_cc_library(
         "xxhash",
     ],
     language = "c++",
+    tags = ["grpc-autodeps"],
     deps = [
+        "closure",
         "debug_location",
+        "error",
+        "exec_ctx",
         "gpr_base",
+        "gpr_platform",
         "grpc_base",
         "grpc_client_channel",
         "grpc_codegen",
@@ -3886,9 +3924,12 @@ grpc_cc_library(
         "absl/strings",
     ],
     language = "c++",
+    tags = ["grpc-autodeps"],
     deps = [
         "debug_location",
+        "error",
         "gpr_base",
+        "gpr_platform",
         "grpc_base",
         "grpc_client_channel",
         "grpc_codegen",
@@ -3898,7 +3939,6 @@ grpc_cc_library(
         "orphanable",
         "ref_counted_ptr",
         "server_address",
-        "sockaddr_utils",
     ],
 )
 
@@ -3907,10 +3947,13 @@ grpc_cc_library(
     hdrs = [
         "src/core/ext/filters/client_channel/lb_policy/outlier_detection/outlier_detection.h",
     ],
-    external_deps = [
-        "absl/types:optional",
-    ],
+    external_deps = ["absl/types:optional"],
     language = "c++",
+    tags = ["grpc-autodeps"],
+    deps = [
+        "gpr_platform",
+        "time",
+    ],
 )
 
 grpc_cc_library(
