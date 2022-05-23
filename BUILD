@@ -957,6 +957,16 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "unique_type_name",
+    hdrs = ["src/core/lib/gprpp/unique_type_name.h"],
+    external_deps = [
+        "absl/strings",
+    ],
+    language = "c++",
+    deps = ["useful"],
+)
+
+grpc_cc_library(
     name = "gpr_codegen",
     language = "c++",
     public_hdrs = [
@@ -2937,6 +2947,7 @@ grpc_cc_library(
         "slice_refcount",
         "sockaddr_utils",
         "time",
+        "unique_type_name",
         "uri_parser",
         "useful",
         "xds_orca_service_upb",
@@ -3562,6 +3573,7 @@ grpc_cc_library(
         "ref_counted_ptr",
         "server_address",
         "time",
+        "unique_type_name",
     ],
 )
 
@@ -4938,6 +4950,7 @@ grpc_cc_library(
         "resource_quota_trace",
         "try_seq",
         "tsi_base",
+        "unique_type_name",
     ],
 )
 
@@ -5426,6 +5439,7 @@ grpc_cc_library(
         "slice",
         "sockaddr_utils",
         "tcp_connect_handshaker",
+        "unique_type_name",
         "uri_parser",
     ],
 )
@@ -5472,6 +5486,7 @@ grpc_cc_library(
         "slice",
         "sockaddr_utils",
         "time",
+        "unique_type_name",
         "uri_parser",
         "useful",
     ],

@@ -82,7 +82,10 @@ grpc_ssl_credentials::create_security_connector(
   return sc;
 }
 
-const char* grpc_ssl_credentials::Type() { return "Ssl"; }
+grpc_core::UniqueTypeName grpc_ssl_credentials::Type() {
+  static grpc_core::UniqueTypeName::Factory kFactory("Ssl");
+  return kFactory.Create();
+}
 
 void grpc_ssl_credentials::build_config(
     const char* pem_root_certs, grpc_ssl_pem_key_cert_pair* pem_key_cert_pair,
@@ -186,7 +189,10 @@ grpc_ssl_server_credentials::create_security_connector(
   return grpc_ssl_server_security_connector_create(this->Ref());
 }
 
-const char* grpc_ssl_server_credentials::Type() { return "Ssl"; }
+grpc_core::UniqueTypeName grpc_ssl_server_credentials::Type() {
+  static grpc_core::UniqueTypeName::Factory kFactory("Ssl");
+  return kFactory.Create();
+}
 
 tsi_ssl_pem_key_cert_pair* grpc_convert_grpc_to_tsi_cert_pairs(
     const grpc_ssl_pem_key_cert_pair* pem_key_cert_pairs,
