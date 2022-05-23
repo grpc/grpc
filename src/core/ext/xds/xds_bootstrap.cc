@@ -44,8 +44,6 @@
 
 namespace grpc_core {
 
-namespace {
-
 // TODO(donnadionne): check to see if federation is enabled, this will be
 // removed once federation is fully integrated and enabled by default.
 bool XdsFederationEnabled() {
@@ -55,6 +53,8 @@ bool XdsFederationEnabled() {
   gpr_free(value);
   return parse_succeeded && parsed_value;
 }
+
+namespace {
 
 grpc_error_handle ParseChannelCreds(const Json::Object& json, size_t idx,
                                     XdsBootstrap::XdsServer* server) {

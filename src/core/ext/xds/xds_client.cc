@@ -198,9 +198,20 @@ class XdsClient::ChannelState::AdsCallState
       Unref(DEBUG_LOCATION, "Orphan");
     }
 
-    void MaybeStartTimer(RefCountedPtr<AdsCallState> ads_calld) {
+    void MaybeStartTimer(RefCountedPtr<AdsCallState> ads_calld)
+        ABSL_EXCLUSIVE_LOCKS_REQUIRED(&XdsClient::mu_) {
       if (!timer_start_needed_) return;
       timer_start_needed_ = false;
+      // Check if we already have a cached version of this resource
+      // (i.e., if this is the initial request for the resource after an
+      // ADS stream restart).  If so, we don't start the timer, because
+      // (a) we already have the resource and (b) the server may
+      // optimize by not resending the resource that we already have.
+      auto& authority_state =
+          ads_calld->xds_client()->authority_state_map_[name_.authority];
+      ResourceState& state = authority_state.resource_map[type_][name_.key];
+      if (state.resource != nullptr) return;
+      // Start timer.
       ads_calld_ = std::move(ads_calld);
       Ref(DEBUG_LOCATION, "timer").release();
       timer_pending_ = true;
@@ -245,23 +256,23 @@ class XdsClient::ChannelState::AdsCallState
         ABSL_EXCLUSIVE_LOCKS_REQUIRED(&XdsClient::mu_) {
       if (error == GRPC_ERROR_NONE && timer_pending_) {
         timer_pending_ = false;
-        absl::Status watcher_error = absl::UnavailableError(absl::StrFormat(
-            "timeout obtaining resource {type=%s name=%s} from xds server",
-            type_->type_url(),
-            XdsClient::ConstructFullXdsResourceName(
-                name_.authority, type_->type_url(), name_.key)));
         if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_client_trace)) {
-          gpr_log(GPR_INFO, "[xds_client %p] xds server %s: %s",
+          gpr_log(GPR_INFO,
+                  "[xds_client %p] xds server %s: timeout obtaining resource "
+                  "{type=%s name=%s} from xds server",
                   ads_calld_->xds_client(),
                   ads_calld_->chand()->server_.server_uri.c_str(),
-                  watcher_error.ToString().c_str());
+                  std::string(type_->type_url()).c_str(),
+                  XdsClient::ConstructFullXdsResourceName(
+                      name_.authority, type_->type_url(), name_.key)
+                      .c_str());
         }
         auto& authority_state =
             ads_calld_->xds_client()->authority_state_map_[name_.authority];
         ResourceState& state = authority_state.resource_map[type_][name_.key];
         state.meta.client_status = XdsApi::ResourceMetadata::DOES_NOT_EXIST;
-        ads_calld_->xds_client()->NotifyWatchersOnErrorLocked(state.watchers,
-                                                              watcher_error);
+        ads_calld_->xds_client()->NotifyWatchersOnResourceDoesNotExist(
+            state.watchers);
       }
       GRPC_ERROR_UNREF(error);
     }
@@ -306,7 +317,8 @@ class XdsClient::ChannelState::AdsCallState
 
   // Constructs a list of resource names of a given type for an ADS
   // request.  Also starts the timer for each resource if needed.
-  std::vector<std::string> ResourceNamesForRequest(const XdsResourceType* type);
+  std::vector<std::string> ResourceNamesForRequest(const XdsResourceType* type)
+      ABSL_EXCLUSIVE_LOCKS_REQUIRED(&XdsClient::mu_);
 
   // The owning RetryableCall<>.
   RefCountedPtr<RetryableCall<AdsCallState>> parent_;
@@ -802,7 +814,7 @@ void XdsClient::ChannelState::AdsCallState::AdsResponseParser::ParseResource(
   }
   // Check the resource name.
   auto resource_name =
-      XdsClient::ParseXdsResourceName(result->name, result_.type);
+      xds_client()->ParseXdsResourceName(result->name, result_.type);
   if (!resource_name.ok()) {
     result_.errors.emplace_back(absl::StrCat(
         "resource index ", idx, ": Cannot parse xDS resource name \"",
@@ -1802,6 +1814,7 @@ XdsClient::XdsClient(std::unique_ptr<XdsBootstrap> bootstrap,
       bootstrap_(std::move(bootstrap)),
       args_(ModifyChannelArgs(args)),
       request_timeout_(GetRequestTimeout(args)),
+      xds_federation_enabled_(XdsFederationEnabled()),
       interested_parties_(grpc_pollset_set_create()),
       certificate_provider_store_(MakeOrphanable<CertificateProviderStore>(
           bootstrap_->certificate_providers())),
@@ -1942,6 +1955,7 @@ void XdsClient::CancelResourceWatch(const XdsResourceType* type,
   // authority_state_map_, so we check both, just to be safe.
   invalid_watchers_.erase(watcher);
   // Find authority.
+  if (!resource_name.ok()) return;
   auto authority_it = authority_state_map_.find(resource_name->authority);
   if (authority_it == authority_state_map_.end()) return;
   AuthorityState& authority_state = authority_it->second;
@@ -1994,7 +2008,7 @@ absl::StatusOr<XdsClient::XdsResourceName> XdsClient::ParseXdsResourceName(
     absl::string_view name, const XdsResourceType* type) {
   // Old-style names use the empty string for authority.
   // authority is prefixed with "old:" to indicate that it's an old-style name.
-  if (!absl::StartsWith(name, "xdstp:")) {
+  if (!xds_federation_enabled_ || !absl::StartsWith(name, "xdstp:")) {
     return XdsResourceName{"old:", {std::string(name), {}}};
   }
   // New style name.  Parse URI.
