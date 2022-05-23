@@ -3591,11 +3591,11 @@ grpc_cc_library(
         "src/core/lib/security/credentials/channel_creds_registry_init.cc",
     ],
     language = "c++",
-    tags = ["grpc-autodeps"],
     deps = [
         "config",
         "gpr_platform",
         "grpc_fake_credentials",
+        "grpc_google_default_credentials",
         "grpc_security_base",
         "json",
     ],
