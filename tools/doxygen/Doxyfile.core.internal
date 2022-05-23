@@ -906,6 +906,7 @@ src/core/ext/filters/client_channel/lb_policy.cc \
 src/core/ext/filters/client_channel/lb_policy.h \
 src/core/ext/filters/client_channel/lb_policy/address_filtering.cc \
 src/core/ext/filters/client_channel/lb_policy/address_filtering.h \
+src/core/ext/filters/client_channel/lb_policy/backend_metric_data.h \
 src/core/ext/filters/client_channel/lb_policy/child_policy_handler.cc \
 src/core/ext/filters/client_channel/lb_policy/child_policy_handler.h \
 src/core/ext/filters/client_channel/lb_policy/grpclb/client_load_reporting_filter.cc \
@@ -1772,7 +1773,6 @@ src/core/lib/gpr/wrap_memcpy.cc \
 src/core/lib/gprpp/README.md \
 src/core/lib/gprpp/atomic_utils.h \
 src/core/lib/gprpp/bitset.h \
-src/core/lib/gprpp/capture.h \
 src/core/lib/gprpp/chunked_vector.h \
 src/core/lib/gprpp/construct_destruct.h \
 src/core/lib/gprpp/cpp_impl_of.h \
@@ -1813,6 +1813,7 @@ src/core/lib/gprpp/time.cc \
 src/core/lib/gprpp/time.h \
 src/core/lib/gprpp/time_util.cc \
 src/core/lib/gprpp/time_util.h \
+src/core/lib/gprpp/unique_type_name.h \
 src/core/lib/http/format_request.cc \
 src/core/lib/http/format_request.h \
 src/core/lib/http/httpcli.cc \

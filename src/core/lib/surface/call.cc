@@ -1257,7 +1257,8 @@ void FilterStackCall::HandleCompressionAlgorithmNotAccepted(
   gpr_log(GPR_ERROR,
           "Compression algorithm ('%s') not present in the "
           "accepted encodings (%s)",
-          algo_name, encodings_accepted_by_peer_.ToString().c_str());
+          algo_name,
+          std::string(encodings_accepted_by_peer_.ToString()).c_str());
 }
 
 void FilterStackCall::BatchControl::ValidateFilteredMetadata() {
