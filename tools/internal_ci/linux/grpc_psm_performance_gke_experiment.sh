@@ -82,6 +82,11 @@ PSM_PROXIED_TEST=proxied
 PSM_PROXYLESS_TEST=proxyless
 PSM_IMAGE_PREFIX=gcr.io/grpc-testing/e2etest/runtime
 PSM_IMAGE_TAG=${TEST_INFRA_VERSION}
+PSM_QUEUE_NAME_KEY=queue
+PSM_8CORE_PROXYLESS_QUEUE_NAME="${WORKER_POOL_8CORE}-${PSM_PROXYLESS_TEST}"
+PSM_8CORE_PROXIED_QUEUE_NAME="${WORKER_POOL_8CORE}-${PSM_PROXIED_TEST}"
+PSM_32CORE_PROXYLESS_QUEUE_NAME="${WORKER_POOL_32CORE}-${PSM_PROXYLESS_TEST}"
+PSM_32CORE_PROXIED_QUEUE_NAME="${WORKER_POOL_32CORE}-${PSM_PROXIED_TEST}"
 
 # Build test configurations.
 buildConfigs() {
@@ -112,10 +117,10 @@ buildConfigs() {
         -o "psm_${uniquifier}_loadtest_with_prebuilt_workers_${pool}.yaml"
 }
 
-buildConfigs "${WORKER_POOL_8CORE}" "${BIGQUERY_TABLE_8CORE}" "${PSM_PROXIED_TEST}"  --client_channels=8 --server_threads=16 --offered_loads 5000 6000 -l c++ -l java -l python
-buildConfigs "${WORKER_POOL_8CORE}" "${BIGQUERY_TABLE_8CORE}" "${PSM_PROXYLESS_TEST}" --client_channels=8 --server_threads=16 --offered_loads 5000 6000 -l c++ -l java -l python
-buildConfigs "${WORKER_POOL_32CORE}" "${BIGQUERY_TABLE_32CORE}" "${PSM_PROXIED_TEST}" --client_channels=32 --server_threads=64 --offered_loads 5000 6000 -l c++ -l java -l python
-buildConfigs "${WORKER_POOL_32CORE}" "${BIGQUERY_TABLE_32CORE}" "${PSM_PROXYLESS_TEST}" --client_channels=32 --server_threads=64 --offered_loads 5000 6000 -l c++ -l java -l python
+buildConfigs "${WORKER_POOL_8CORE}" "${BIGQUERY_TABLE_8CORE}" "${PSM_PROXIED_TEST}"  -a "${PSM_QUEUE_NAME_KEY}"="${PSM_8CORE_PROXIED_QUEUE_NAME}" --client_channels=8 --server_threads=16 --offered_loads 5000 6000 -l c++ -l java
+buildConfigs "${WORKER_POOL_8CORE}" "${BIGQUERY_TABLE_8CORE}" "${PSM_PROXYLESS_TEST}" -a "${PSM_QUEUE_NAME_KEY}"="${PSM_8CORE_PROXYLESS_QUEUE_NAME}" --client_channels=8 --server_threads=16 --offered_loads 5000 6000 -l c++ -l java
+buildConfigs "${WORKER_POOL_32CORE}" "${BIGQUERY_TABLE_32CORE}" "${PSM_PROXIED_TEST}" -a "${PSM_QUEUE_NAME_KEY}"="${PSM_32CORE_PROXIED_QUEUE_NAME}" --client_channels=32 --server_threads=64 --offered_loads 5000 6000 -l c++ -l java
+buildConfigs "${WORKER_POOL_32CORE}" "${BIGQUERY_TABLE_32CORE}" "${PSM_PROXYLESS_TEST}" -a "${PSM_QUEUE_NAME_KEY}"="${PSM_32CORE_PROXYLESS_QUEUE_NAME}" --client_channels=32 --server_threads=64 --offered_loads 5000 6000 -l c++ -l java
 
 # Delete prebuilt images on exit.
 deleteImages() {
@@ -130,7 +135,6 @@ trap deleteImages EXIT
 time ../test-infra/bin/prepare_prebuilt_workers \
     -l "cxx:${GRPC_CORE_GITREF}" \
     -l "java:${GRPC_JAVA_GITREF}" \
-    -l "python:${GRPC_CORE_GITREF}" \
     -p "${PREBUILT_IMAGE_PREFIX}" \
     -t "${UNIQUE_IDENTIFIER}" \
     -r "${ROOT_DIRECTORY_OF_DOCKERFILES}"
@@ -144,5 +148,9 @@ time ../test-infra/bin/runner \
     -log-url-prefix "${LOG_URL_PREFIX}" \
     -polling-interval 5s \
     -delete-successful-tests \
-    -c "${WORKER_POOL_8CORE}:2" -c "${WORKER_POOL_32CORE}:2" \
+    -annotation-key ${PSM_QUEUE_NAME_KEY} \
+    -c "${PSM_8CORE_PROXIED_QUEUE_NAME}:1" \
+    -c "${PSM_8CORE_PROXYLESS_QUEUE_NAME}:1" \
+    -c "${PSM_32CORE_PROXIED_QUEUE_NAME}:1" \
+    -c "${PSM_32CORE_PROXYLESS_QUEUE_NAME}:1" \
     -o "runner/sponge_log.xml"
