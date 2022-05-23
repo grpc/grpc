@@ -5889,6 +5889,7 @@ targets:
   - src/core/lib/transport/pid_controller.cc
   - test/core/transport/chttp2/flow_control_test.cc
   deps:
+  - absl/meta:type_traits
   - absl/status:statusor
   - absl/types:variant
   - absl/utility:utility
