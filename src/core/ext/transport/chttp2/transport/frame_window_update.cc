@@ -29,7 +29,6 @@
 
 #include "src/core/ext/transport/chttp2/transport/flow_control.h"
 #include "src/core/ext/transport/chttp2/transport/internal.h"
-#include "src/core/lib/gprpp/manual_constructor.h"
 
 grpc_slice grpc_chttp2_window_update_create(
     uint32_t id, uint32_t window_delta, grpc_transport_one_way_stats* stats) {
