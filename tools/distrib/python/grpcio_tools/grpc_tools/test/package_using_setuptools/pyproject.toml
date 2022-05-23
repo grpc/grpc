@@ -1,5 +1,5 @@
 
 [tool.grpcio_tools]
 proto_dir="protos"
-proto_file="route_guide-aaa.proto"
+proto_file_pattern="route_guide-aaa.proto"
 dest_dir="my_module"

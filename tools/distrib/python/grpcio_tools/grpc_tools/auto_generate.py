@@ -32,7 +32,7 @@ SECTION_NAME = "grpcio_tools"
 # Could be switched to a dataclass once python 3.6 support is dropped.
 class Configuration(NamedTuple):
     proto_dir: Path
-    proto_file: Path
+    proto_file_pattern: str
     dest_dir: Path
 
 
@@ -45,31 +45,35 @@ def generate_files(_: setuptools.Distribution) -> None:
     log.warn("Generating GRPC Python files")
     config_file = Path(CONFIG_FILE_NAME)
     if not config_file.is_file():
-        log.warn("No config. Doing nothing")
+        log.info("No config. Doing nothing")
         return
     config = _read_config(config_file)
     if config is None:
-        log.warn(f"No {SECTION_NAME} in {CONFIG_FILE_NAME}. Doing nothing")
+        log.info(f"No {SECTION_NAME} in {CONFIG_FILE_NAME}. Doing nothing")
         return
 
     proto_include = pkg_resources.resource_filename("grpc_tools", "_proto")
 
     from grpc_tools import protoc
 
-    result = protoc.main(
-        [
-            f"-I={proto_include}",
-            f"-I={config.proto_dir}",
-            f"--python_out={config.dest_dir}",
-            f"--grpc_python_out={config.dest_dir}",
-            f"{config.proto_dir}/{config.proto_file}",
-        ]
-    )
+    generation_executed = False
+    for proto_file in config.proto_dir.glob(config.proto_file_pattern):
+        result = protoc.main(
+            [
+                f"-I={proto_include}",
+                f"-I={config.proto_dir}",
+                f"--python_out={config.dest_dir}",
+                f"--grpc_python_out={config.dest_dir}",
+                str(proto_file),
+            ]
+        )
+        generation_executed = True
 
-    if result == 0:
-        log.warn("GRPC file generated")
-    else:
-        log.warn("!!! GRPC file generation failed !!!")
+        if result != 0:
+            raise GenerationException(f"Failed to generate content for {proto_file}")
+
+    if not generation_executed:
+        raise GenerationException("No matching proto files")
 
 
 def _read_config(config_file: Path) -> Optional[Configuration]:
@@ -103,16 +107,20 @@ def _parse_config(config_data: Dict[str, Any]) -> Configuration:
     """
     try:
         proto_dir = config_data["proto_dir"]
-        proto_file = config_data["proto_file"]
+        proto_file_pattern = config_data["proto_file_pattern"]
         dest_dir = config_data["dest_dir"]
     except KeyError as ex:
         raise ValueError("Missing setting in configuration section") from ex
 
     if not isinstance(proto_dir, str):
         raise ValueError("'proto_dir' setting must be a string")
-    if not isinstance(proto_file, str):
-        raise ValueError("'proto_file' setting must be a string")
+    if not isinstance(proto_file_pattern, str):
+        raise ValueError("'proto_file_pattern' setting must be a string")
     if not isinstance(dest_dir, str):
         raise ValueError("'dest_dir' setting must be a string")
 
-    return Configuration(Path(proto_dir), Path(proto_file), Path(dest_dir))
+    return Configuration(Path(proto_dir), proto_file_pattern, Path(dest_dir))
+
+
+class GenerationException(Exception):
+    """An error occurred while generating content."""
