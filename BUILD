@@ -2674,15 +2674,17 @@ grpc_cc_library(
     ],
     external_deps = [
         "absl/status:statusor",
+        "absl/strings",
     ],
     language = "c++",
+    tags = ["grpc-autodeps"],
     visibility = ["@grpc:alt_grpc_base_legacy"],
     deps = [
         "channel_args",
         "channel_stack_type",
-        "closure",
-        "error",
         "gpr_base",
+        "gpr_platform",
+        "ref_counted_ptr",
     ],
 )
 
@@ -2777,13 +2779,13 @@ grpc_cc_library(
     hdrs = [
         "src/core/lib/service_config/service_config_parser.h",
     ],
-    external_deps = [
-        "absl/strings",
-    ],
     language = "c++",
+    tags = ["grpc-autodeps"],
     deps = [
         "error",
         "gpr_base",
+        "gpr_platform",
+        "grpc_codegen",
         "json",
     ],
 )
@@ -2797,16 +2799,19 @@ grpc_cc_library(
         "src/core/lib/resolver/server_address.h",
     ],
     external_deps = [
+        "absl/container:inlined_vector",
         "absl/strings",
         "absl/strings:str_format",
     ],
     language = "c++",
+    tags = ["grpc-autodeps"],
     visibility = ["@grpc:client_channel"],
     deps = [
         "channel_args",
         "gpr_platform",
         "resolved_address",
         "sockaddr_utils",
+        "useful",
     ],
 )
 
@@ -2847,17 +2852,20 @@ grpc_cc_library(
         "src/core/lib/channel/channel_args.h",
     ],
     external_deps = [
+        "absl/meta:type_traits",
         "absl/strings",
         "absl/strings:str_format",
-        "absl/types:variant",
         "absl/types:optional",
+        "absl/types:variant",
     ],
     language = "c++",
+    tags = ["grpc-autodeps"],
     deps = [
         "avl",
         "channel_stack_type",
         "dual_ref_counted",
         "gpr_base",
+        "gpr_platform",
         "grpc_codegen",
         "match",
         "ref_counted",
@@ -2871,8 +2879,10 @@ grpc_cc_library(
     name = "resolved_address",
     hdrs = ["src/core/lib/iomgr/resolved_address.h"],
     language = "c++",
+    tags = ["grpc-autodeps"],
     deps = [
         "gpr_platform",
+        "iomgr_port",
     ],
 )
 
