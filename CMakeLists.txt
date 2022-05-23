@@ -298,7 +298,7 @@ if (gRPC_XDS_USER_AGENT_IS_CSHARP)
   add_definitions("-DGRPC_XDS_USER_AGENT_NAME_SUFFIX=\"csharp\"" "-DGRPC_XDS_USER_AGENT_VERSION_SUFFIX=\"2.47.0-dev\"")
 endif()
 
-if(UNIX)
+if(UNIX AND NOT HAIKU)
   # -pthread does more than -lpthread
   set(THREADS_PREFER_PTHREAD_FLAG ON)
   find_package(Threads)
