@@ -433,7 +433,8 @@
 #define GRPC_ROOT_PEM_PATH "/config/ssl/cert.pem"
 #elif defined(__HAIKU__)
 #define GPR_PLATFORM_STRING "haiku"
-// Haiku is a community-supported platform. Please contact Jerome Duval <jerome.duval@gmail.com> for support.
+// Haiku is a community-supported platform.
+// Please contact Jerome Duval <jerome.duval@gmail.com> for support.
 #ifndef _BSD_SOURCE
 #define _BSD_SOURCE
 #endif
