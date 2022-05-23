@@ -1991,9 +1991,13 @@ grpc_cc_library(
     hdrs = [
         "src/core/lib/iomgr/closure.h",
     ],
+    tags = ["grpc-autodeps"],
     deps = [
+        "debug_location",
         "error",
-        "gpr",
+        "gpr_base",
+        "gpr_platform",
+        "gpr_public_hdrs",
     ],
 )
 
@@ -2005,12 +2009,14 @@ grpc_cc_library(
     hdrs = [
         "src/core/lib/gprpp/time.h",
     ],
-    external_deps = [
-        "absl/strings:str_format",
-    ],
+    external_deps = ["absl/strings:str_format"],
+    tags = ["grpc-autodeps"],
     deps = [
-        "gpr",
+        "gpr_base",
         "gpr_codegen",
+        "gpr_platform",
+        "gpr_public_hdrs",
+        "useful",
     ],
 )
 
@@ -2028,11 +2034,18 @@ grpc_cc_library(
         "src/core/lib/iomgr/executor.h",
         "src/core/lib/iomgr/iomgr_internal.h",
     ],
+    tags = ["grpc-autodeps"],
     deps = [
         "closure",
+        "debug_location",
         "error",
         "gpr_base",
+        "gpr_codegen",
+        "gpr_platform",
+        "gpr_public_hdrs",
         "gpr_tls",
+        "grpc_codegen",
+        "grpc_trace",
         "time",
         "useful",
     ],
@@ -2052,9 +2065,12 @@ grpc_cc_library(
         "absl/strings",
         "absl/strings:str_format",
     ],
+    tags = ["grpc-autodeps"],
     visibility = ["@grpc:alt_grpc_base_legacy"],
     deps = [
         "gpr_base",
+        "gpr_platform",
+        "gpr_public_hdrs",
         "grpc_sockaddr",
         "resolved_address",
         "uri_parser",
@@ -2066,6 +2082,8 @@ grpc_cc_library(
     hdrs = [
         "src/core/lib/iomgr/port.h",
     ],
+    tags = ["grpc-autodeps"],
+    deps = ["gpr_platform"],
 )
 
 grpc_cc_library(
@@ -2109,6 +2127,8 @@ grpc_cc_library(
     hdrs = [
         "src/core/lib/iomgr/iomgr_fwd.h",
     ],
+    tags = ["grpc-autodeps"],
+    deps = ["gpr_platform"],
 )
 
 grpc_cc_library(
@@ -2123,8 +2143,10 @@ grpc_cc_library(
         "src/core/lib/iomgr/sockaddr_windows.h",
         "src/core/lib/iomgr/socket_utils.h",
     ],
+    tags = ["grpc-autodeps"],
     deps = [
-        "gpr_base",
+        "gpr_platform",
+        "gpr_public_hdrs",
         "iomgr_port",
     ],
 )
@@ -2134,12 +2156,9 @@ grpc_cc_library(
     hdrs = [
         "src/core/lib/avl/avl.h",
     ],
-    external_deps = [
-        "absl/container:inlined_vector",
-    ],
-    deps = [
-        "gpr_platform",
-    ],
+    external_deps = ["absl/container:inlined_vector"],
+    tags = ["grpc-autodeps"],
+    deps = ["gpr_platform"],
 )
 
 grpc_cc_library(
@@ -2274,9 +2293,11 @@ grpc_cc_library(
         "absl/strings",
         "absl/strings:str_format",
     ],
+    tags = ["grpc-autodeps"],
     visibility = ["@grpc:alt_grpc_base_legacy"],
     deps = [
-        "gpr_base",
+        "gpr_platform",
+        "gpr_public_hdrs",
     ],
 )
 
