@@ -46,14 +46,11 @@
 #include "upb/text_encode.h"
 #include "upb/upb.h"
 
-#include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 
 #include "src/core/ext/xds/xds_common_types.h"
 #include "src/core/ext/xds/xds_resource_type.h"
 #include "src/core/lib/debug/trace.h"
-#include "src/core/lib/gpr/env.h"
-#include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gprpp/host_port.h"
 #include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/iomgr/error.h"

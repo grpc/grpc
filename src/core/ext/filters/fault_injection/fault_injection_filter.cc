@@ -44,7 +44,6 @@
 #include "src/core/lib/channel/status_util.h"
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/debug/trace.h"
-#include "src/core/lib/gprpp/capture.h"
 #include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/promise/context.h"

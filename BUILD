@@ -3050,7 +3050,6 @@ grpc_cc_library(
         "absl/types:optional",
     ],
     deps = [
-        "capture",
         "channel_init",
         "channel_stack_type",
         "config",
@@ -3170,7 +3169,6 @@ grpc_cc_library(
     ],
     language = "c++",
     deps = [
-        "capture",
         "config",
         "context",
         "gpr_base",
