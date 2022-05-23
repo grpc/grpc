@@ -6131,13 +6131,10 @@ grpc_cc_library(
     hdrs = [
         "src/cpp/util/core_stats.h",
     ],
-    external_deps = [
-        "protobuf_headers",
-    ],
     language = "c++",
+    tags = ["grpc-autodeps"],
     deps = [
-        "gpr",
-        "grpc++",
+        "gpr_base",
         "grpc_base",
         "//src/proto/grpc/core:stats_proto",
     ],
@@ -6214,10 +6211,11 @@ grpc_cc_library(
         "absl/strings",
         "absl/strings:str_format",
     ],
+    tags = ["grpc-autodeps"],
     deps = [
         "error",
-        "exec_ctx",
         "gpr_base",
+        "gpr_platform",
     ],
 )
 
@@ -6225,12 +6223,14 @@ grpc_cc_library(
     name = "json_util",
     srcs = ["src/core/lib/json/json_util.cc"],
     hdrs = ["src/core/lib/json/json_util.h"],
-    external_deps = [
-        "absl/strings",
-    ],
+    external_deps = ["absl/strings"],
+    tags = ["grpc-autodeps"],
     deps = [
+        "error",
         "gpr_base",
+        "gpr_platform",
         "json",
+        "time",
     ],
 )
 
