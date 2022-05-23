@@ -3265,15 +3265,15 @@ grpc_cc_library(
     hdrs = [
         "src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_balancer_addresses.h",
     ],
-    external_deps = [
-        "absl/container:inlined_vector",
-    ],
+    external_deps = ["absl/container:inlined_vector"],
     language = "c++",
+    tags = ["grpc-autodeps"],
     visibility = ["@grpc:grpclb"],
     deps = [
-        "gpr_base",
-        "grpc_base",
-        "grpc_client_channel",
+        "channel_args",
+        "gpr_platform",
+        "grpc_codegen",
+        "server_address",
         "useful",
     ],
 )
@@ -3346,13 +3346,10 @@ grpc_cc_library(
     hdrs = [
         "src/core/ext/filters/client_channel/lb_policy/backend_metric_data.h",
     ],
-    external_deps = [
-        "absl/strings",
-    ],
+    external_deps = ["absl/strings"],
     language = "c++",
-    deps = [
-        "gpr",
-    ],
+    tags = ["grpc-autodeps"],
+    deps = ["gpr_platform"],
 )
 
 grpc_cc_library(
