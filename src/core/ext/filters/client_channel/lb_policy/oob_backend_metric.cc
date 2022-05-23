@@ -107,9 +107,7 @@ class OrcaProducer : public Subchannel::DataProducerInterface {
   void OnConnectivityStateChange(grpc_connectivity_state state);
 
   // Called to notify watchers of a new backend metric report.
-  void NotifyWatchers(
-      const LoadBalancingPolicy::BackendMetricAccessor::BackendMetricData&
-          backend_metric_data);
+  void NotifyWatchers(const BackendMetricData& backend_metric_data);
 
   RefCountedPtr<Subchannel> subchannel_;
   RefCountedPtr<ConnectedSubchannel> connected_subchannel_;
@@ -251,8 +249,7 @@ class OrcaProducer::OrcaStreamEventHandler
     explicit BackendMetricAllocator(WeakRefCountedPtr<OrcaProducer> producer)
         : producer_(std::move(producer)) {}
 
-    LoadBalancingPolicy::BackendMetricAccessor::BackendMetricData*
-    AllocateBackendMetricData() override {
+    BackendMetricData* AllocateBackendMetricData() override {
       return &backend_metric_data_;
     }
 
@@ -278,8 +275,7 @@ class OrcaProducer::OrcaStreamEventHandler
     }
 
     WeakRefCountedPtr<OrcaProducer> producer_;
-    LoadBalancingPolicy::BackendMetricAccessor::BackendMetricData
-        backend_metric_data_;
+    BackendMetricData backend_metric_data_;
     std::vector<UniquePtr<char>> string_storage_;
     grpc_closure closure_;
   };
@@ -358,8 +354,7 @@ void OrcaProducer::MaybeStartStreamLocked() {
 }
 
 void OrcaProducer::NotifyWatchers(
-    const LoadBalancingPolicy::BackendMetricAccessor::BackendMetricData&
-        backend_metric_data) {
+    const BackendMetricData& backend_metric_data) {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_orca_client_trace)) {
     gpr_log(GPR_INFO, "OrcaProducer %p: reporting backend metrics to watchers",
             this);

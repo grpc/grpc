@@ -553,6 +553,36 @@ TEST_P(TimeoutTest, EdsSecondResourceNotPresentInRequest) {
   EXPECT_TRUE(error_seen);
 }
 
+TEST_P(TimeoutTest, ServerDoesNotResendAfterAdsStreamRestart) {
+  CreateAndStartBackends(1);
+  EdsResourceArgs args({{"locality0", CreateEndpointsForBackends(0, 1)}});
+  balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
+  WaitForAllBackends(DEBUG_LOCATION);
+  // Stop balancer.
+  balancer_->Shutdown();
+  // Tell balancer to require minimum version 1 for all resource types
+  // and to not reply to the requests.
+  balancer_->ads_service()->SetResourceMinVersion(kLdsTypeUrl, 1);
+  balancer_->ads_service()->IgnoreResourceType(kLdsTypeUrl);
+  balancer_->ads_service()->SetResourceMinVersion(kRdsTypeUrl, 1);
+  balancer_->ads_service()->IgnoreResourceType(kRdsTypeUrl);
+  balancer_->ads_service()->SetResourceMinVersion(kCdsTypeUrl, 1);
+  balancer_->ads_service()->IgnoreResourceType(kCdsTypeUrl);
+  balancer_->ads_service()->SetResourceMinVersion(kEdsTypeUrl, 1);
+  balancer_->ads_service()->IgnoreResourceType(kEdsTypeUrl);
+  // Restart balancer.
+  balancer_->Start();
+  // Send RPCs for long enough to cover the ADS stream restart delay,
+  // the stream restart, and then the resulting timeout period, just to
+  // be sure that the channel continues to use the resources from before
+  // the restart.
+  absl::Time deadline =
+      absl::Now() + (absl::Seconds(5) * grpc_test_slowdown_factor());
+  do {
+    CheckRpcSendOk(DEBUG_LOCATION);
+  } while (absl::Now() < deadline);
+}
+
 //
 // BootstrapSourceTest - tests different bootstrap sources
 //
@@ -1055,6 +1085,52 @@ TEST_P(XdsFederationTest, FederationServer) {
     authority_balancer_->ads_service()->SetLdsResource(server_listener);
   }
   WaitForAllBackends(DEBUG_LOCATION);
+}
+
+//
+// XdsFederationDisabledTest
+//
+
+using XdsFederationDisabledTest = XdsEnd2endTest;
+
+// Runs with RDS so that we know all resource types work properly.
+INSTANTIATE_TEST_SUITE_P(
+    XdsTest, XdsFederationDisabledTest,
+    ::testing::Values(XdsTestType().set_enable_rds_testing()),
+    &XdsTestType::Name);
+
+TEST_P(XdsFederationDisabledTest, FederationDisabledWithNewStyleNames) {
+  const char* kNewRouteConfigName =
+      "xdstp://xds.example.com/envoy.config.route.v3.RouteConfiguration/"
+      "new_route_config_name";
+  const char* kNewClusterName =
+      "xdstp://xds.example.com/envoy.config.cluster.v3.Cluster/"
+      "cluster_name";
+  const char* kNewEdsResourceName =
+      "xdstp://xds.example.com/envoy.config.endpoint.v3.ClusterLoadAssignment/"
+      "edsservice_name";
+  InitClient();
+  CreateAndStartBackends(1);
+  EdsResourceArgs args({{"locality0", CreateEndpointsForBackends()}});
+  balancer_->ads_service()->SetEdsResource(
+      BuildEdsResource(args, kNewEdsResourceName));
+  // New cluster
+  Cluster new_cluster = default_cluster_;
+  new_cluster.set_name(kNewClusterName);
+  new_cluster.mutable_eds_cluster_config()->set_service_name(
+      kNewEdsResourceName);
+  balancer_->ads_service()->SetCdsResource(new_cluster);
+  // New RouteConfig
+  RouteConfiguration new_route_config = default_route_config_;
+  new_route_config.set_name(kNewRouteConfigName);
+  new_route_config.mutable_virtual_hosts(0)
+      ->mutable_routes(0)
+      ->mutable_route()
+      ->set_cluster(kNewClusterName);
+  SetListenerAndRouteConfiguration(balancer_.get(), default_listener_,
+                                   new_route_config);
+  // Channel should work.
+  CheckRpcSendOk(DEBUG_LOCATION);
 }
 
 //

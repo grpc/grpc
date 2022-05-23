@@ -57,7 +57,9 @@ CG_ROOTS_GRPC = (
     (r'atm', 'grpc/support/atm.h'),
 )
 
-CG_ROOTS_GRPCPP = []
+CG_ROOTS_GRPCPP = [
+    (r'status_code_enum', 'grpcpp/support/status.h'),
+]
 
 
 def fix_tree(tree, cg_roots):
@@ -72,6 +74,7 @@ def fix_tree(tree, cg_roots):
             root_map[filename].append(root)
     # For each thing in '/impl/codegen' figure out what exports it
     for filename, paths in cg_reverse_map.items():
+        print("****", filename)
         # Exclude non-headers
         if not filename.endswith('.h'):
             continue
@@ -79,6 +82,7 @@ def fix_tree(tree, cg_roots):
         # Check for our 'special' headers: if we see one of these, we just
         # hardcode where they go to because there's some complicated rules.
         for root, target in cg_roots:
+            print(root, target)
             if filename.startswith(root):
                 pragma = 'private, include <%s>' % target
                 if len(paths) == 1:
