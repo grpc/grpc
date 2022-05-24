@@ -395,8 +395,8 @@ tsi_result ssl_protector_protect_util(
    - still_pending_size is the size of data left in network_io.
    */
 tsi_result ssl_protector_protect_flush_util(
-    const size_t buffer_size, size_t& buffer_offset, unsigned char* buffer,
-    SSL* ssl, BIO* network_io, unsigned char* protected_output_frames,
+    size_t& buffer_offset, unsigned char* buffer, SSL* ssl, BIO* network_io,
+    unsigned char* protected_output_frames,
     size_t* protected_output_frames_size, size_t* still_pending_size);
 
 /* Util that extracts the plaintext from a TLS frame.

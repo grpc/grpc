@@ -1104,8 +1104,8 @@ tsi_result ssl_protector_protect_util(
 }
 
 tsi_result ssl_protector_protect_flush_util(
-    const size_t buffer_size, size_t& buffer_offset, unsigned char* buffer,
-    SSL* ssl, BIO* network_io, unsigned char* protected_output_frames,
+    size_t& buffer_offset, unsigned char* buffer, SSL* ssl, BIO* network_io,
+    unsigned char* protected_output_frames,
     size_t* protected_output_frames_size, size_t* still_pending_size) {
   tsi_result result = TSI_OK;
   int read_from_ssl = 0;
@@ -1200,8 +1200,8 @@ static tsi_result ssl_protector_protect_flush(
   tsi_ssl_frame_protector* impl =
       reinterpret_cast<tsi_ssl_frame_protector*>(self);
   return ssl_protector_protect_flush_util(
-      impl->buffer_size, impl->buffer_offset, impl->buffer, impl->ssl,
-      impl->network_io, protected_output_frames, protected_output_frames_size,
+      impl->buffer_offset, impl->buffer, impl->ssl, impl->network_io,
+      protected_output_frames, protected_output_frames_size,
       still_pending_size);
 }
 
