@@ -186,6 +186,8 @@ INTERNAL_DEPS = {
         'protobuf_timestamp_upb',
     'google/protobuf/wrappers.upb.h':
         'protobuf_wrappers_upb',
+    'grpc/status.h':
+        'grpc_public_hdrs',
     'src/proto/grpc/channelz/channelz.grpc.pb.h':
         '//src/proto/grpc/channelz:channelz_proto',
     'src/proto/grpc/core/stats.pb.h':
@@ -237,7 +239,10 @@ def grpc_cc_library(name,
     if select_deps or 'nofixdeps' in tags or 'grpc-autodeps' not in tags:
         no_update.add(name)
     score = len(public_hdrs + hdrs)
-    if 'avoid_dep' in tags:
+    # avoid_dep is the internal way of saying prefer something else
+    # we add grpc_avoid_dep to allow internal grpc-only stuff to avoid each
+    # other, whilst not biasing dependent projects
+    if 'avoid_dep' in tags or 'grpc_avoid_dep' in tags:
         score += 1000000
     if 'nofixdeps' in tags:
         score += 1000
@@ -318,16 +323,12 @@ for library in sorted(consumes.keys()):
         if hdr in vendors:
             vendor = choose_vendor(library, vendors[hdr])
             if vendor:
-                if library == 'grpc++_xds_client':
-                    print('choose %s for %s' % (vendor, hdr))
                 deps.add(vendor)
             continue
 
         if 'include/' + hdr in vendors:
             vendor = choose_vendor(library, vendors['include/' + hdr])
             if vendor:
-                if library == 'grpc++_xds_client':
-                    print('choose %s for %s' % (vendor, hdr))
                 deps.add(vendor)
             continue
 

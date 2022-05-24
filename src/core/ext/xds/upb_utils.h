@@ -22,9 +22,8 @@
 #include <string>
 
 #include "absl/strings/string_view.h"
-#include "upb/text_encode.h"
+#include "upb/def.h"
 #include "upb/upb.h"
-#include "upb/upb.hpp"
 
 #include "src/core/ext/xds/certificate_provider_store.h"
 #include "src/core/ext/xds/xds_bootstrap.h"
