@@ -49,6 +49,7 @@
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/slice/slice_string_helpers.h"
 #include "src/core/lib/surface/api_trace.h"
+#include "src/core/lib/uri/uri_parser.h"
 
 using grpc_core::Json;
 
@@ -83,6 +84,21 @@ struct metadata_server_detector {
   int success;
   grpc_http_response response;
 };
+
+namespace {
+
+bool IsXdsNonCfeCluster(const char* xds_cluster) {
+  if (xds_cluster == nullptr) return false;
+  if (absl::StartsWith(xds_cluster, "google_cfe_")) return false;
+  if (!absl::StartsWith(xds_cluster, "xdstp:")) return true;
+  auto uri = grpc_core::URI::Parse(xds_cluster);
+  if (!uri.ok()) return true;  // Shouldn't happen, but assume ALTS.
+  return !absl::StartsWith(uri->path(),
+                           "/envoy.config.cluster.v3.Cluster/google_cfe_");
+}
+
+}  // namespace
+
 grpc_core::RefCountedPtr<grpc_channel_security_connector>
 grpc_google_default_channel_credentials::create_security_connector(
     grpc_core::RefCountedPtr<grpc_call_credentials> call_creds,
@@ -94,8 +110,7 @@ grpc_google_default_channel_credentials::create_security_connector(
       args, GRPC_ARG_ADDRESS_IS_BACKEND_FROM_GRPCLB_LOAD_BALANCER, false);
   const char* xds_cluster =
       grpc_channel_args_find_string(args, GRPC_ARG_XDS_CLUSTER_NAME);
-  const bool is_xds_non_cfe_cluster =
-      xds_cluster != nullptr && !absl::StartsWith(xds_cluster, "google_cfe_");
+  const bool is_xds_non_cfe_cluster = IsXdsNonCfeCluster(xds_cluster);
   const bool use_alts = is_grpclb_load_balancer ||
                         is_backend_from_grpclb_load_balancer ||
                         is_xds_non_cfe_cluster;

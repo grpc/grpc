@@ -25,7 +25,6 @@
 #include <grpc/support/log.h>
 
 #include "src/core/lib/gprpp/sync.h"
-#include "src/core/lib/iomgr/exec_ctx.h"
 #include "test/core/event_engine/test_suite/event_engine_test.h"
 
 using ::testing::ElementsAre;
@@ -42,7 +41,6 @@ class EventEngineTimerTest : public EventEngineTest {
 };
 
 TEST_F(EventEngineTimerTest, ImmediateCallbackIsExecutedQuickly) {
-  grpc_core::ExecCtx exec_ctx;
   auto engine = this->NewEventEngine();
   grpc_core::MutexLock lock(&mu_);
   engine->RunAt(absl::Now(), [this]() {
@@ -55,14 +53,12 @@ TEST_F(EventEngineTimerTest, ImmediateCallbackIsExecutedQuickly) {
 }
 
 TEST_F(EventEngineTimerTest, SupportsCancellation) {
-  grpc_core::ExecCtx exec_ctx;
   auto engine = this->NewEventEngine();
   auto handle = engine->RunAt(absl::InfiniteFuture(), []() {});
   ASSERT_TRUE(engine->Cancel(handle));
 }
 
 TEST_F(EventEngineTimerTest, CancelledCallbackIsNotExecuted) {
-  grpc_core::ExecCtx exec_ctx;
   {
     auto engine = this->NewEventEngine();
     auto handle = engine->RunAt(absl::InfiniteFuture(), [this]() {
@@ -77,7 +73,6 @@ TEST_F(EventEngineTimerTest, CancelledCallbackIsNotExecuted) {
 }
 
 TEST_F(EventEngineTimerTest, TimersRespectScheduleOrdering) {
-  grpc_core::ExecCtx exec_ctx;
   // Note: this is a brittle test if the first call to `RunAt` takes longer than
   // the second callback's wait time.
   std::vector<uint8_t> ordered;
@@ -107,7 +102,6 @@ TEST_F(EventEngineTimerTest, TimersRespectScheduleOrdering) {
 }
 
 TEST_F(EventEngineTimerTest, CancellingExecutedCallbackIsNoopAndReturnsFalse) {
-  grpc_core::ExecCtx exec_ctx;
   auto engine = this->NewEventEngine();
   grpc_core::MutexLock lock(&mu_);
   auto handle = engine->RunAt(absl::Now(), [this]() {
@@ -129,7 +123,6 @@ void EventEngineTimerTest::ScheduleCheckCB(absl::Time when,
   // millis, absl::Time reports in nanos. This generic test will be hard-coded
   // to the lowest common denominator until EventEngines can compare relative
   // times with supported resolution.
-  grpc_core::ExecCtx exec_ctx;
   int64_t now_millis = absl::ToUnixMillis(absl::Now());
   int64_t when_millis = absl::ToUnixMillis(when);
   EXPECT_LE(when_millis, now_millis);
@@ -142,7 +135,6 @@ void EventEngineTimerTest::ScheduleCheckCB(absl::Time when,
 }
 
 TEST_F(EventEngineTimerTest, StressTestTimersNotCalledBeforeScheduled) {
-  grpc_core::ExecCtx exec_ctx;
   auto engine = this->NewEventEngine();
   constexpr int thread_count = 100;
   constexpr int call_count_per_thread = 100;
@@ -154,7 +146,6 @@ TEST_F(EventEngineTimerTest, StressTestTimersNotCalledBeforeScheduled) {
   threads.reserve(thread_count);
   for (int thread_n = 0; thread_n < thread_count; ++thread_n) {
     threads.emplace_back([&]() {
-      grpc_core::ExecCtx exec_ctx;
       std::random_device rd;
       std::mt19937 gen(rd());
       std::uniform_real_distribution<> dis(timeout_min_seconds,

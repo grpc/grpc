@@ -70,7 +70,6 @@ std::string HandleToString(EventEngine::TaskHandle handle) {
 IomgrEventEngine::IomgrEventEngine() {}
 
 IomgrEventEngine::~IomgrEventEngine() {
-  grpc_core::ExecCtx::Get()->Flush();
   grpc_core::MutexLock lock(&mu_);
   if (GRPC_TRACE_FLAG_ENABLED(grpc_event_engine_trace)) {
     for (auto handle : known_handles_) {
@@ -84,6 +83,7 @@ IomgrEventEngine::~IomgrEventEngine() {
 }
 
 bool IomgrEventEngine::Cancel(EventEngine::TaskHandle handle) {
+  grpc_core::ExecCtx ctx;
   grpc_core::MutexLock lock(&mu_);
   if (!known_handles_.contains(handle)) return false;
   auto* cd = reinterpret_cast<ClosureData*>(handle.keys[0]);
@@ -114,6 +114,7 @@ EventEngine::TaskHandle IomgrEventEngine::RunAtInternal(
     absl::Time when,
     absl::variant<std::function<void()>, EventEngine::Closure*> cb) {
   when = Clamp(when);
+  grpc_core::ExecCtx ctx;
   auto* cd = new ClosureData;
   cd->cb = std::move(cb);
   cd->engine = this;
