@@ -27,6 +27,8 @@
 #include <utility>
 #include <vector>
 
+#include "absl/strings/string_view.h"
+
 #include <grpc/compression.h>
 #include <grpc/grpc.h>
 #include <grpc/impl/codegen/compression_types.h>
@@ -52,6 +54,7 @@
 #include <grpcpp/support/interceptor.h>
 #include <grpcpp/support/server_callback.h>
 #include <grpcpp/support/server_interceptor.h>
+#include <grpcpp/support/string_ref.h>
 
 #include "src/core/lib/gprpp/ref_counted.h"
 #include "src/core/lib/gprpp/sync.h"
