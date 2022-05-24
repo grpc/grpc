@@ -36,6 +36,7 @@ Therefore, gRPC supports several major build systems, which should satisfy most 
 | Android                        |               |                        | Best Effort          |
 | Asylo                          |               |                        | Best Effort          |
 | FreeBSD                        |               |                        | Community Supported  |
+| NetBSD                         |               |                        | Community Supported  |
 | OpenBSD                        |               |                        | Community Supported  |
 | AIX                            |               |                        | Community Supported  |
 | Solaris                        |               |                        | Community Supported  |

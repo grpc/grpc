@@ -90,7 +90,7 @@ class CertificateProviderStore
           static_cast<const grpc_tls_certificate_provider*>(this), other);
     }
 
-    const char* type() const override;
+    UniqueTypeName type() const override;
 
     absl::string_view key() const { return key_; }
 
