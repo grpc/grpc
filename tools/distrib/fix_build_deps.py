@@ -311,11 +311,6 @@ def score_list_size(proposed, existing):
     return len(proposed)
 
 
-def score_list_size(proposed, existing):
-    """Score a proposed change primarily by number of dependencies"""
-    return len(proposed)
-
-
 def score_best(proposed, existing):
     """Score a proposed change primarily by dependency score"""
     return 0
