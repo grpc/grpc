@@ -804,11 +804,12 @@ void Subchannel::RequestConnection() {
 }
 
 void Subchannel::ResetBackoff() {
-  MutexLock lock(&mu_);
+  ReleasableMutexLock lock(&mu_);
   backoff_.Reset();
   if (state_ == GRPC_CHANNEL_TRANSIENT_FAILURE &&
       GetDefaultEventEngine()->Cancel(retry_timer_handle_)) {
     OnRetryTimerLocked();
+    lock.Release();
     WeakUnref(DEBUG_LOCATION, "ResetBackoff");
   }
 }
