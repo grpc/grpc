@@ -16,13 +16,12 @@
  *
  */
 
-#include <grpc/support/port_platform.h>
-
-#include <grpc/impl/codegen/grpc_types.h>
 #ifndef GRPC_CORE_EXT_TRANSPORT_CRONET_CLIENT_SECURE_CRONET_CHANNEL_CREATE_H
 #define GRPC_CORE_EXT_TRANSPORT_CRONET_CLIENT_SECURE_CRONET_CHANNEL_CREATE_H
 
 #include <grpc/support/port_platform.h>
+
+#include <grpc/impl/codegen/grpc_types.h>
 
 #ifdef __cplusplus
 extern "C" {
