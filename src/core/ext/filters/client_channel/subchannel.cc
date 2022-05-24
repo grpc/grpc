@@ -25,6 +25,7 @@
 #include <cstring>
 #include <memory>
 #include <new>
+#include <type_traits>
 #include <utility>
 
 #include "absl/status/statusor.h"
@@ -838,7 +839,7 @@ void Subchannel::RemoveDataProducer(DataProducerInterface* data_producer) {
 }
 
 Subchannel::DataProducerInterface* Subchannel::GetDataProducer(
-    const char* type) {
+    UniqueTypeName type) {
   MutexLock lock(&mu_);
   auto it = data_producer_map_.find(type);
   if (it == data_producer_map_.end()) return nullptr;

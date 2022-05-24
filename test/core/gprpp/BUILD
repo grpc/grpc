@@ -358,3 +358,19 @@ grpc_cc_test(
         "//test/core/util:grpc_suppressions",
     ],
 )
+
+grpc_cc_test(
+    name = "unique_type_name_test",
+    srcs = ["unique_type_name_test.cc"],
+    external_deps = [
+        "gtest",
+        "absl/strings:str_format",
+    ],
+    language = "c++",
+    uses_event_engine = False,
+    uses_polling = False,
+    deps = [
+        "//:unique_type_name",
+        "//test/core/util:grpc_suppressions",
+    ],
+)
