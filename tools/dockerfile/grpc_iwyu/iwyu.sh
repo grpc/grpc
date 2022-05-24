@@ -40,8 +40,7 @@ sed -i 's,^#!/usr/bin/env python,#!/usr/bin/env python3,g' ${IWYU_ROOT}/iwyu/fix
 cat compile_commands.json | sed "s,\"file\": \",\"file\": \"${IWYU_ROOT}/,g" > compile_commands_for_iwyu.json
 
 export ENABLED_MODULES='
-  src/core/ext/filters/client_channel
-  src/core/ext/transport/chttp2
+  src/core/ext
   src/core/lib/avl
   src/core/lib/channel
   src/core/lib/config
@@ -58,12 +57,18 @@ export ENABLED_MODULES='
   src/cpp
 '
 
+export DISABLED_MODULES='
+  src/core/ext/transport/binder
+'
+
 export INCLUSION_REGEX=`echo $ENABLED_MODULES | sed 's/ /|/g' | sed 's,\\(.*\\),^(\\1)/,g'`
+export EXCLUSION_REGEX=`echo $DISABLED_MODULES | sed 's/ /|/g' | sed 's,\\(.*\\),^(\\1)/,g'`
 
 # figure out which files to include
 cat compile_commands.json | jq -r '.[].file'         \
   | grep -E $INCLUSION_REGEX                         \
   | grep -v -E "/upb-generated/|/upbdefs-generated/" \
+  | grep -v -E $EXCLUSION_REGEX                      \
   | sort                                             \
   > iwyu_files0.txt
 

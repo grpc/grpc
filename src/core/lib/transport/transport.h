@@ -58,6 +58,7 @@
 #include "src/core/lib/slice/slice_buffer.h"
 #include "src/core/lib/transport/connectivity_state.h"
 #include "src/core/lib/transport/metadata_batch.h"
+#include "src/core/lib/transport/transport_fwd.h"
 
 struct grpc_transport_stream_op_batch_payload;
 
@@ -166,8 +167,6 @@ using NextPromiseFactory =
 }  // namespace grpc_core
 
 /* forward declarations */
-
-typedef struct grpc_transport grpc_transport;
 
 /* grpc_stream doesn't actually exist. It's used as a typesafe
    opaque pointer for whatever data the transport wants to track

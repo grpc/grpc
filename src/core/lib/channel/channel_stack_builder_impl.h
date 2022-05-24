@@ -19,6 +19,7 @@
 
 #include "absl/status/statusor.h"
 
+#include "src/core/lib/channel/channel_fwd.h"
 #include "src/core/lib/channel/channel_stack_builder.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 

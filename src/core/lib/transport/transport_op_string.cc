@@ -29,6 +29,7 @@
 
 #include <grpc/support/log.h>
 
+#include "src/core/lib/channel/channel_fwd.h"
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/iomgr/error.h"

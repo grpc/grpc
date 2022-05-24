@@ -20,24 +20,36 @@
 
 #include "src/core/ext/filters/http/message_compress/message_decompress_filter.h"
 
-#include <assert.h>
+#include <stdint.h>
 #include <string.h>
+
+#include <memory>
+#include <new>
+#include <type_traits>
 
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
+#include "absl/types/optional.h"
 
-#include <grpc/compression.h>
+#include <grpc/impl/codegen/compression_types.h>
+#include <grpc/slice.h>
 #include <grpc/slice_buffer.h>
-#include <grpc/support/alloc.h>
+#include <grpc/status.h>
 #include <grpc/support/log.h>
 
 #include "src/core/ext/filters/message_size/message_size_filter.h"
 #include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/compression/compression_internal.h"
 #include "src/core/lib/compression/message_compress.h"
-#include "src/core/lib/gpr/string.h"
+#include "src/core/lib/gprpp/debug_location.h"
+#include "src/core/lib/gprpp/orphanable.h"
+#include "src/core/lib/iomgr/call_combiner.h"
+#include "src/core/lib/iomgr/closure.h"
+#include "src/core/lib/iomgr/error.h"
+#include "src/core/lib/profiling/timers.h"
 #include "src/core/lib/slice/slice_internal.h"
-#include "src/core/lib/slice/slice_string_helpers.h"
+#include "src/core/lib/transport/byte_stream.h"
+#include "src/core/lib/transport/metadata_batch.h"
+#include "src/core/lib/transport/transport.h"
 
 namespace grpc_core {
 namespace {

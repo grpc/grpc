@@ -34,6 +34,7 @@
 #include <grpc/impl/codegen/grpc_types.h>
 #include <grpcpp/support/config.h>
 
+#include "src/core/lib/channel/channel_fwd.h"
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/error.h"
