@@ -18,7 +18,6 @@
 
 #include "src/core/lib/service_config/service_config_parser.h"
 
-#include <ext/alloc_traits.h>
 #include <stdlib.h>
 
 #include <string>
@@ -26,6 +25,8 @@
 #include "absl/strings/str_cat.h"
 
 #include <grpc/support/log.h>
+
+// IWYU pragma: no_include <ext/alloc_traits.h>
 
 namespace grpc_core {
 

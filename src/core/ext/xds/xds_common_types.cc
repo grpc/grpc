@@ -18,7 +18,14 @@
 
 #include "src/core/ext/xds/xds_common_types.h"
 
+#include <stddef.h>
+
+#include <algorithm>
+#include <map>
+#include <utility>
+
 #include "absl/container/inlined_vector.h"
+#include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
@@ -30,7 +37,10 @@
 #include "envoy/type/matcher/v3/string.upb.h"
 #include "google/protobuf/any.upb.h"
 #include "google/protobuf/wrappers.upb.h"
+#include "upb/upb.h"
 #include "xds/type/v3/typed_struct.upb.h"
+
+#include "src/core/ext/xds/certificate_provider_store.h"
 
 namespace grpc_core {
 

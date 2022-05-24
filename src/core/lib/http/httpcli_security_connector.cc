@@ -34,6 +34,7 @@
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
+#include "src/core/lib/gprpp/unique_type_name.h"
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/endpoint.h"
 #include "src/core/lib/iomgr/error.h"
@@ -189,7 +190,10 @@ class HttpRequestSSLCredentials : public grpc_channel_credentials {
     return Ref();
   }
 
-  const char* type() const override { return "HttpRequestSSL"; }
+  UniqueTypeName type() const override {
+    static UniqueTypeName::Factory kFactory("HttpRequestSSL");
+    return kFactory.Create();
+  }
 
  private:
   int cmp_impl(const grpc_channel_credentials* /* other */) const override {

@@ -52,7 +52,6 @@
 #include "src/core/ext/transport/chttp2/transport/internal.h"
 #include "src/core/lib/address_utils/sockaddr_utils.h"
 #include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/channel/channel_stack_builder.h"
 #include "src/core/lib/channel/channelz.h"
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/debug/trace.h"
@@ -62,6 +61,7 @@
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/gprpp/time.h"
+#include "src/core/lib/gprpp/unique_type_name.h"
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/endpoint.h"
 #include "src/core/lib/iomgr/iomgr_fwd.h"
@@ -85,6 +85,7 @@
 #include "src/core/lib/transport/handshaker.h"
 #include "src/core/lib/transport/handshaker_registry.h"
 #include "src/core/lib/transport/transport.h"
+#include "src/core/lib/transport/transport_fwd.h"
 #include "src/core/lib/uri/uri_parser.h"
 
 #ifdef GPR_SUPPORT_CHANNELS_FROM_FD
@@ -1012,7 +1013,7 @@ grpc_channel_args* ModifyArgsForConnection(grpc_channel_args* args,
   if (security_connector == nullptr) {
     *error = GRPC_ERROR_CREATE_FROM_CPP_STRING(
         absl::StrCat("Unable to create secure server with credentials of type ",
-                     server_credentials->type()));
+                     server_credentials->type().name()));
     return args;
   }
   grpc_arg arg_to_add =
@@ -1061,7 +1062,7 @@ int grpc_server_add_http2_port(grpc_server* server, const char* addr,
     if (sc == nullptr) {
       err = GRPC_ERROR_CREATE_FROM_CPP_STRING(absl::StrCat(
           "Unable to create secure server with credentials of type ",
-          creds->type()));
+          creds->type().name()));
       goto done;
     }
     grpc_arg args_to_add[2];

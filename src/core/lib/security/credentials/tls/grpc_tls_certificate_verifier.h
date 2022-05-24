@@ -32,6 +32,7 @@
 #include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/gprpp/ref_counted.h"
 #include "src/core/lib/gprpp/sync.h"
+#include "src/core/lib/gprpp/unique_type_name.h"
 
 // An abstraction of the verifier that all verifier subclasses should extend.
 struct grpc_tls_certificate_verifier
@@ -56,7 +57,7 @@ struct grpc_tls_certificate_verifier
   // verifiers as effectively the same.
   int Compare(const grpc_tls_certificate_verifier* other) const {
     GPR_ASSERT(other != nullptr);
-    int r = grpc_core::QsortCompare(type(), other->type());
+    int r = type().Compare(other->type());
     if (r != 0) return r;
     return CompareImpl(other);
   }
@@ -65,7 +66,7 @@ struct grpc_tls_certificate_verifier
   // implementation for down-casting purposes. Every verifier implementation
   // should use a unique string instance, which should be returned by all
   // instances of that verifier implementation.
-  virtual const char* type() const = 0;
+  virtual grpc_core::UniqueTypeName type() const = 0;
 
  private:
   // Implementation for `Compare` method intended to be overridden by
@@ -98,7 +99,7 @@ class ExternalCertificateVerifier : public grpc_tls_certificate_verifier {
     external_verifier_->cancel(external_verifier_->user_data, request);
   }
 
-  const char* type() const override { return "External"; }
+  UniqueTypeName type() const override;
 
  private:
   int CompareImpl(const grpc_tls_certificate_verifier* other) const override {
@@ -132,7 +133,7 @@ class NoOpCertificateVerifier : public grpc_tls_certificate_verifier {
   };
   void Cancel(grpc_tls_custom_verification_check_request*) override {}
 
-  const char* type() const override { return "NoOp"; }
+  UniqueTypeName type() const override;
 
  private:
   int CompareImpl(
@@ -151,7 +152,7 @@ class HostNameCertificateVerifier : public grpc_tls_certificate_verifier {
               absl::Status* sync_status) override;
   void Cancel(grpc_tls_custom_verification_check_request*) override {}
 
-  const char* type() const override { return "Hostname"; }
+  UniqueTypeName type() const override;
 
  private:
   int CompareImpl(

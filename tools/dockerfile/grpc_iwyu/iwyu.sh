@@ -40,8 +40,7 @@ sed -i 's,^#!/usr/bin/env python,#!/usr/bin/env python3,g' ${IWYU_ROOT}/iwyu/fix
 cat compile_commands.json | sed "s,\"file\": \",\"file\": \"${IWYU_ROOT}/,g" > compile_commands_for_iwyu.json
 
 export ENABLED_MODULES='
-  src/core/ext/filters/client_channel
-  src/core/ext/transport/chttp2
+  src/core/ext
   src/core/lib
   src/cpp
 '
@@ -49,6 +48,7 @@ export ENABLED_MODULES='
 export DISABLED_MODULES='
   src/core/lib/gpr
   src/core/lib/iomgr
+  src/core/ext/transport/binder
 '
 
 export INCLUSION_REGEX=`echo $ENABLED_MODULES | sed 's/ /|/g' | sed 's,\\(.*\\),^(\\1)/,g'`

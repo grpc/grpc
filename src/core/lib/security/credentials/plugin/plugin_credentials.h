@@ -39,6 +39,7 @@
 #include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/gprpp/ref_counted.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
+#include "src/core/lib/gprpp/unique_type_name.h"
 #include "src/core/lib/promise/activity.h"
 #include "src/core/lib/promise/arena_promise.h"
 #include "src/core/lib/promise/poll.h"
@@ -64,7 +65,7 @@ struct grpc_plugin_credentials final : public grpc_call_credentials {
 
   std::string debug_string() override;
 
-  const char* type() const override;
+  grpc_core::UniqueTypeName type() const override;
 
  private:
   class PendingRequest : public grpc_core::RefCounted<PendingRequest> {

@@ -20,22 +20,23 @@
 
 #include "src/core/ext/filters/http/client_authority_filter.h"
 
-#include <assert.h>
 #include <limits.h>
-#include <string.h>
 
-#include <grpc/support/alloc.h>
-#include <grpc/support/log.h>
-#include <grpc/support/string_util.h>
+#include <functional>
 
-#include "src/core/ext/filters/http/client_authority_filter.h"
+#include "absl/status/status.h"
+#include "absl/strings/string_view.h"
+#include "absl/types/optional.h"
+
+#include <grpc/impl/codegen/grpc_types.h>
+
+#include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/channel/channel_stack_builder.h"
 #include "src/core/lib/config/core_configuration.h"
-#include "src/core/lib/gpr/string.h"
-#include "src/core/lib/slice/slice_internal.h"
-#include "src/core/lib/slice/slice_string_helpers.h"
-#include "src/core/lib/surface/call.h"
+#include "src/core/lib/promise/poll.h"
+#include "src/core/lib/surface/channel_init.h"
 #include "src/core/lib/surface/channel_stack_type.h"
+#include "src/core/lib/transport/metadata_batch.h"
 
 namespace grpc_core {
 

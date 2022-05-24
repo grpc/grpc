@@ -26,6 +26,7 @@
 
 #include <grpc/support/log.h>
 
+#include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/channel/promise_based_filter.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/promise/poll.h"

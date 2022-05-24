@@ -28,6 +28,7 @@
 
 #include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
+#include "src/core/lib/gprpp/unique_type_name.h"
 #include "src/core/lib/security/credentials/credentials.h"
 #include "src/core/lib/security/security_connector/security_connector.h"
 
@@ -43,7 +44,7 @@ class grpc_local_credentials final : public grpc_channel_credentials {
       const char* target_name, const grpc_channel_args* args,
       grpc_channel_args** new_args) override;
 
-  const char* type() const override;
+  grpc_core::UniqueTypeName type() const override;
 
   grpc_local_connect_type connect_type() const { return connect_type_; }
 
@@ -66,7 +67,7 @@ class grpc_local_server_credentials final : public grpc_server_credentials {
   grpc_core::RefCountedPtr<grpc_server_security_connector>
   create_security_connector(const grpc_channel_args* /* args */) override;
 
-  const char* type() const override;
+  grpc_core::UniqueTypeName type() const override;
 
   grpc_local_connect_type connect_type() const { return connect_type_; }
 

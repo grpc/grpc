@@ -26,6 +26,7 @@
 
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/gpr/useful.h"
+#include "src/core/lib/gprpp/unique_type_name.h"
 #include "src/core/lib/security/security_connector/security_connector.h"
 #ifndef GRPC_CORE_LIB_SECURITY_CREDENTIALS_GOOGLE_DEFAULT_GOOGLE_DEFAULT_CREDENTIALS_H
 #define GRPC_CORE_LIB_SECURITY_CREDENTIALS_GOOGLE_DEFAULT_GOOGLE_DEFAULT_CREDENTIALS_H
@@ -69,7 +70,7 @@ class grpc_google_default_channel_credentials
 
   grpc_core::ChannelArgs update_arguments(grpc_core::ChannelArgs args) override;
 
-  const char* type() const override;
+  grpc_core::UniqueTypeName type() const override;
 
   const grpc_channel_credentials* alts_creds() const {
     return alts_creds_.get();

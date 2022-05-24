@@ -17,19 +17,23 @@
  */
 
 #include <grpc/support/port_platform.h>
+
 #include <string.h>
-#include <grpc/grpc_security.h>
-#include <grpc/grpc_security_constants.h>
-#include <grpc/support/alloc.h>
-#include <grpc/support/string_util.h>
+
 #include <functional>
-#include <type_traits>
 #include <utility>
 
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
+
+#include <grpc/grpc_security.h>
+#include <grpc/grpc_security_constants.h>
+#include <grpc/support/alloc.h>
+#include <grpc/support/string_util.h>
+
 #include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/channel/channel_stack_builder.h"
+#include "src/core/lib/channel/channel_fwd.h"
+#include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/channel/context.h"
 #include "src/core/lib/channel/promise_based_filter.h"
 #include "src/core/lib/gprpp/debug_location.h"

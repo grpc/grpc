@@ -37,6 +37,7 @@
 #include "src/core/lib/gprpp/ref_counted.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/gprpp/time.h"
+#include "src/core/lib/gprpp/unique_type_name.h"
 #include "src/core/lib/http/httpcli.h"
 #include "src/core/lib/http/parser.h"
 #include "src/core/lib/iomgr/closure.h"
@@ -121,7 +122,7 @@ class grpc_oauth2_token_fetcher_credentials : public grpc_call_credentials {
                         grpc_error_handle error);
   std::string debug_string() override;
 
-  const char* type() const override;
+  grpc_core::UniqueTypeName type() const override;
 
  protected:
   virtual void fetch_oauth2(grpc_credentials_metadata_request* req,
@@ -157,7 +158,7 @@ class grpc_google_refresh_token_credentials final
 
   std::string debug_string() override;
 
-  const char* type() const override;
+  grpc_core::UniqueTypeName type() const override;
 
  protected:
   void fetch_oauth2(grpc_credentials_metadata_request* req,
@@ -181,9 +182,9 @@ class grpc_access_token_credentials final : public grpc_call_credentials {
 
   std::string debug_string() override;
 
-  static const char* Type();
+  static grpc_core::UniqueTypeName Type();
 
-  const char* type() const override { return Type(); }
+  grpc_core::UniqueTypeName type() const override { return Type(); }
 
  private:
   int cmp_impl(const grpc_call_credentials* other) const override {

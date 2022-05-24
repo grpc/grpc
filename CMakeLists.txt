@@ -26,8 +26,8 @@ cmake_minimum_required(VERSION 3.5.1)
 
 set(PACKAGE_NAME          "grpc")
 set(PACKAGE_VERSION       "1.47.0-dev")
-set(gRPC_CORE_VERSION     "24.0.0")
-set(gRPC_CORE_SOVERSION   "24")
+set(gRPC_CORE_VERSION     "25.0.0")
+set(gRPC_CORE_SOVERSION   "25")
 set(gRPC_CPP_VERSION      "1.47.0-dev")
 set(gRPC_CPP_SOVERSION    "1.47")
 set(gRPC_CSHARP_VERSION   "2.47.0-dev")
@@ -298,7 +298,7 @@ if (gRPC_XDS_USER_AGENT_IS_CSHARP)
   add_definitions("-DGRPC_XDS_USER_AGENT_NAME_SUFFIX=\"csharp\"" "-DGRPC_XDS_USER_AGENT_VERSION_SUFFIX=\"2.47.0-dev\"")
 endif()
 
-if(UNIX)
+if(UNIX AND NOT HAIKU)
   # -pthread does more than -lpthread
   set(THREADS_PREFER_PTHREAD_FLAG ON)
   find_package(Threads)
@@ -1172,6 +1172,7 @@ if(gRPC_BUILD_TESTS)
   add_dependencies(buildtests_cxx try_join_test)
   add_dependencies(buildtests_cxx try_seq_metadata_test)
   add_dependencies(buildtests_cxx try_seq_test)
+  add_dependencies(buildtests_cxx unique_type_name_test)
   add_dependencies(buildtests_cxx unknown_frame_bad_client_test)
   add_dependencies(buildtests_cxx uri_parser_test)
   add_dependencies(buildtests_cxx useful_test)
@@ -2351,6 +2352,24 @@ foreach(_hdr
   include/grpc/slice.h
   include/grpc/slice_buffer.h
   include/grpc/status.h
+  include/grpc/support/alloc.h
+  include/grpc/support/atm.h
+  include/grpc/support/atm_gcc_atomic.h
+  include/grpc/support/atm_gcc_sync.h
+  include/grpc/support/atm_windows.h
+  include/grpc/support/cpu.h
+  include/grpc/support/log.h
+  include/grpc/support/log_windows.h
+  include/grpc/support/port_platform.h
+  include/grpc/support/string_util.h
+  include/grpc/support/sync.h
+  include/grpc/support/sync_abseil.h
+  include/grpc/support/sync_custom.h
+  include/grpc/support/sync_generic.h
+  include/grpc/support/sync_posix.h
+  include/grpc/support/sync_windows.h
+  include/grpc/support/thd_id.h
+  include/grpc/support/time.h
   include/grpc/support/workaround_list.h
 )
   string(REPLACE "include/" "" _path ${_hdr})
@@ -2894,6 +2913,24 @@ foreach(_hdr
   include/grpc/slice.h
   include/grpc/slice_buffer.h
   include/grpc/status.h
+  include/grpc/support/alloc.h
+  include/grpc/support/atm.h
+  include/grpc/support/atm_gcc_atomic.h
+  include/grpc/support/atm_gcc_sync.h
+  include/grpc/support/atm_windows.h
+  include/grpc/support/cpu.h
+  include/grpc/support/log.h
+  include/grpc/support/log_windows.h
+  include/grpc/support/port_platform.h
+  include/grpc/support/string_util.h
+  include/grpc/support/sync.h
+  include/grpc/support/sync_abseil.h
+  include/grpc/support/sync_custom.h
+  include/grpc/support/sync_generic.h
+  include/grpc/support/sync_posix.h
+  include/grpc/support/sync_windows.h
+  include/grpc/support/thd_id.h
+  include/grpc/support/time.h
   include/grpc/support/workaround_list.h
 )
   string(REPLACE "include/" "" _path ${_hdr})
@@ -3171,19 +3208,6 @@ foreach(_hdr
   include/grpc++/support/stub_options.h
   include/grpc++/support/sync_stream.h
   include/grpc++/support/time.h
-  include/grpc/byte_buffer.h
-  include/grpc/byte_buffer_reader.h
-  include/grpc/compression.h
-  include/grpc/fork.h
-  include/grpc/grpc.h
-  include/grpc/grpc_posix.h
-  include/grpc/grpc_security.h
-  include/grpc/grpc_security_constants.h
-  include/grpc/load_reporting.h
-  include/grpc/slice.h
-  include/grpc/slice_buffer.h
-  include/grpc/status.h
-  include/grpc/support/workaround_list.h
   include/grpcpp/alarm.h
   include/grpcpp/channel.h
   include/grpcpp/client_context.h
@@ -3843,19 +3867,6 @@ foreach(_hdr
   include/grpc++/support/stub_options.h
   include/grpc++/support/sync_stream.h
   include/grpc++/support/time.h
-  include/grpc/byte_buffer.h
-  include/grpc/byte_buffer_reader.h
-  include/grpc/compression.h
-  include/grpc/fork.h
-  include/grpc/grpc.h
-  include/grpc/grpc_posix.h
-  include/grpc/grpc_security.h
-  include/grpc/grpc_security_constants.h
-  include/grpc/load_reporting.h
-  include/grpc/slice.h
-  include/grpc/slice_buffer.h
-  include/grpc/status.h
-  include/grpc/support/workaround_list.h
   include/grpcpp/alarm.h
   include/grpcpp/channel.h
   include/grpcpp/client_context.h
@@ -16106,7 +16117,53 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(test_core_gprpp_time_test
+  src/core/ext/upb-generated/google/protobuf/any.upb.c
+  src/core/ext/upb-generated/google/rpc/status.upb.c
+  src/core/lib/gpr/alloc.cc
+  src/core/lib/gpr/atm.cc
+  src/core/lib/gpr/cpu_iphone.cc
+  src/core/lib/gpr/cpu_linux.cc
+  src/core/lib/gpr/cpu_posix.cc
+  src/core/lib/gpr/cpu_windows.cc
+  src/core/lib/gpr/env_linux.cc
+  src/core/lib/gpr/env_posix.cc
+  src/core/lib/gpr/env_windows.cc
+  src/core/lib/gpr/log.cc
+  src/core/lib/gpr/log_android.cc
+  src/core/lib/gpr/log_linux.cc
+  src/core/lib/gpr/log_posix.cc
+  src/core/lib/gpr/log_windows.cc
+  src/core/lib/gpr/murmur_hash.cc
+  src/core/lib/gpr/string.cc
+  src/core/lib/gpr/string_posix.cc
+  src/core/lib/gpr/string_util_windows.cc
+  src/core/lib/gpr/string_windows.cc
+  src/core/lib/gpr/sync.cc
+  src/core/lib/gpr/sync_abseil.cc
+  src/core/lib/gpr/sync_posix.cc
+  src/core/lib/gpr/sync_windows.cc
+  src/core/lib/gpr/time.cc
+  src/core/lib/gpr/time_posix.cc
+  src/core/lib/gpr/time_precise.cc
+  src/core/lib/gpr/time_windows.cc
+  src/core/lib/gpr/tmpfile_msys.cc
+  src/core/lib/gpr/tmpfile_posix.cc
+  src/core/lib/gpr/tmpfile_windows.cc
+  src/core/lib/gpr/wrap_memcpy.cc
+  src/core/lib/gprpp/examine_stack.cc
+  src/core/lib/gprpp/fork.cc
+  src/core/lib/gprpp/global_config_env.cc
+  src/core/lib/gprpp/host_port.cc
+  src/core/lib/gprpp/mpscq.cc
+  src/core/lib/gprpp/stat_posix.cc
+  src/core/lib/gprpp/stat_windows.cc
+  src/core/lib/gprpp/status_helper.cc
+  src/core/lib/gprpp/thd_posix.cc
+  src/core/lib/gprpp/thd_windows.cc
   src/core/lib/gprpp/time.cc
+  src/core/lib/gprpp/time_util.cc
+  src/core/lib/profiling/basic_timers.cc
+  src/core/lib/profiling/stap_timers.cc
   test/core/gprpp/time_test.cc
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
@@ -16134,7 +16191,18 @@ target_include_directories(test_core_gprpp_time_test
 target_link_libraries(test_core_gprpp_time_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
-  gpr
+  absl::base
+  absl::core_headers
+  absl::memory
+  absl::random_random
+  absl::status
+  absl::cord
+  absl::str_format
+  absl::strings
+  absl::synchronization
+  absl::time
+  absl::optional
+  upb
 )
 
 
@@ -17114,6 +17182,42 @@ target_link_libraries(try_seq_test
   absl::statusor
   absl::variant
   absl::utility
+)
+
+
+endif()
+if(gRPC_BUILD_TESTS)
+
+add_executable(unique_type_name_test
+  test/core/gprpp/unique_type_name_test.cc
+  third_party/googletest/googletest/src/gtest-all.cc
+  third_party/googletest/googlemock/src/gmock-all.cc
+)
+
+target_include_directories(unique_type_name_test
+  PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
+    ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_RE2_INCLUDE_DIR}
+    ${_gRPC_SSL_INCLUDE_DIR}
+    ${_gRPC_UPB_GENERATED_DIR}
+    ${_gRPC_UPB_GRPC_GENERATED_DIR}
+    ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
+    ${_gRPC_ZLIB_INCLUDE_DIR}
+    third_party/googletest/googletest/include
+    third_party/googletest/googletest
+    third_party/googletest/googlemock/include
+    third_party/googletest/googlemock
+    ${_gRPC_PROTO_GENS_DIR}
+)
+
+target_link_libraries(unique_type_name_test
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  absl::str_format
+  absl::strings
 )
 
 

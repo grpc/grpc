@@ -24,7 +24,6 @@
 #include <stdint.h>
 
 #include <initializer_list>
-#include <string>
 
 #include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
@@ -75,7 +74,7 @@ class CompressionAlgorithmSet {
   void Set(grpc_compression_algorithm algorithm);
 
   // Return a comma separated string of the algorithms in this set.
-  std::string ToString() const;
+  absl::string_view ToString() const;
   Slice ToSlice() const;
 
   // Return a bitmask of the algorithms in this set.
