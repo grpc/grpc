@@ -1135,7 +1135,7 @@ Procedures:
     ```
 The call carries a reference to receive the load report, e.g. using CallOptions.
 The reference will be passed to the custom LB policy as part of the `OrcaOobReportListener` API.
-* Client asserts that, after 1 second, the latest OOB load report received is equal to the test load report.
+* Client asserts that, after 1.5 second, the latest OOB load report received is equal to the test load report.
 * Client sends another unary call to the server. The call request sets `orca_oob_report` to a 
 different test load report. 
     ```
@@ -1150,7 +1150,7 @@ different test load report.
     }
     ```
 The call still carries a reference to receive the load report.
-* Client asserts that, after 1 second, the latest OOB load report received is equal to the new test load report.
+* Client asserts that, after 1.5 second, the latest OOB load report received is equal to the new test load report.
 
 ### Experimental Tests
 
