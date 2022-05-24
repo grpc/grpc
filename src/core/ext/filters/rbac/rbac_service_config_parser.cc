@@ -18,10 +18,21 @@
 
 #include "src/core/ext/filters/rbac/rbac_service_config_parser.h"
 
+#include <stdint.h>
+
+#include <map>
+#include <string>
+
+#include "absl/memory/memory.h"
+#include "absl/status/status.h"
+#include "absl/status/statusor.h"
 #include "absl/strings/str_format.h"
+
+#include <grpc/support/log.h>
 
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/json/json_util.h"
+#include "src/core/lib/matchers/matchers.h"
 #include "src/core/lib/transport/error_utils.h"
 
 namespace grpc_core {

@@ -20,7 +20,13 @@
 
 #include "src/core/ext/xds/certificate_provider_registry.h"
 
+#include <string.h>
+
+#include <utility>
+
 #include "absl/container/inlined_vector.h"
+
+#include <grpc/support/log.h>
 
 namespace grpc_core {
 

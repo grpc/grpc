@@ -19,10 +19,22 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <stddef.h>
+
+#include <algorithm>
+#include <memory>
+#include <utility>
 #include <vector>
 
+#include "absl/strings/string_view.h"
+
+#include <grpc/impl/codegen/grpc_types.h>
+
 #include "src/core/lib/config/core_configuration.h"
+#include "src/core/lib/iomgr/error.h"
+#include "src/core/lib/json/json.h"
 #include "src/core/lib/security/authorization/grpc_authorization_engine.h"
+#include "src/core/lib/security/authorization/rbac_policy.h"
 #include "src/core/lib/service_config/service_config_parser.h"
 
 namespace grpc_core {

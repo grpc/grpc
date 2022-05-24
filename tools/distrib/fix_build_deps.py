@@ -191,6 +191,8 @@ INTERNAL_DEPS = {
         'protobuf_timestamp_upb',
     'google/protobuf/wrappers.upb.h':
         'protobuf_wrappers_upb',
+    'grpc/status.h':
+        'grpc_public_hdrs',
     'src/proto/grpc/channelz/channelz.grpc.pb.h':
         '//src/proto/grpc/channelz:channelz_proto',
     'src/proto/grpc/core/stats.pb.h':
@@ -244,7 +246,10 @@ def grpc_cc_library(name,
     if select_deps or 'nofixdeps' in tags or 'grpc-autodeps' not in tags:
         no_update.add(name)
     scores[name] = len(public_hdrs + hdrs)
-    if 'avoid_dep' in tags:
+    # avoid_dep is the internal way of saying prefer something else
+    # we add grpc_avoid_dep to allow internal grpc-only stuff to avoid each
+    # other, whilst not biasing dependent projects
+    if 'avoid_dep' in tags or 'grpc_avoid_dep' in tags:
         avoidness[name] += 10
     if 'nofixdeps' in tags:
         avoidness[name] += 1

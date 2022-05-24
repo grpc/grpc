@@ -1,6 +1,4 @@
-//
-//
-// Copyright 2021 gRPC authors.
+// Copyright 2022 gRPC authors.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -13,21 +11,10 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-//
-//
 
-#ifndef GRPC_CORE_EXT_FILTERS_SERVER_CONFIG_SELECTOR_SERVER_CONFIG_SELECTOR_FILTER_H
-#define GRPC_CORE_EXT_FILTERS_SERVER_CONFIG_SELECTOR_SERVER_CONFIG_SELECTOR_FILTER_H
+#ifndef GRPC_CORE_LIB_TRANSPORT_TRANSPORT_FWD_H
+#define GRPC_CORE_LIB_TRANSPORT_TRANSPORT_FWD_H
 
-#include <grpc/support/port_platform.h>
+typedef struct grpc_transport grpc_transport;
 
-#include "src/core/lib/channel/channel_fwd.h"
-#include "src/core/lib/channel/channel_stack.h"
-
-namespace grpc_core {
-
-extern const grpc_channel_filter kServerConfigSelectorFilter;
-
-}  // namespace grpc_core
-
-#endif  // GRPC_CORE_EXT_FILTERS_SERVER_CONFIG_SELECTOR_SERVER_CONFIG_SELECTOR_FILTER_H
+#endif  // GRPC_CORE_LIB_TRANSPORT_TRANSPORT_FWD_H
