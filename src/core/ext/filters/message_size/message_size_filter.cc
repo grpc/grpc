@@ -45,7 +45,6 @@
 #include "src/core/lib/service_config/service_config_call_data.h"
 #include "src/core/lib/surface/channel_init.h"
 #include "src/core/lib/surface/channel_stack_type.h"
-#include "src/core/lib/transport/byte_stream.h"
 #include "src/core/lib/transport/transport.h"
 
 static void recv_message_ready(void* user_data, grpc_error_handle error);
