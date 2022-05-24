@@ -98,7 +98,10 @@ TEST(StatusUtilTest, ToAndFromProto) {
   StatusSetStr(&s, StatusStrProperty::kOsError, "value");
   upb::Arena arena;
   google_rpc_Status* msg = internal::StatusToProto(s, arena.ptr());
-  absl::Status s2 = internal::StatusFromProto(msg);
+  size_t len;
+  const char* buf = google_rpc_Status_serialize(msg, arena.ptr(), &len);
+  google_rpc_Status* msg2 = google_rpc_Status_parse(buf, len, arena.ptr());
+  absl::Status s2 = internal::StatusFromProto(msg2);
   EXPECT_EQ(s, s2);
 }
 
@@ -108,7 +111,10 @@ TEST(StatusUtilTest, ToAndFromProtoWithNonUTF8Characters) {
   StatusSetStr(&s, StatusStrProperty::kOsError, "!\xFF\xCC\xAA!");
   upb::Arena arena;
   google_rpc_Status* msg = internal::StatusToProto(s, arena.ptr());
-  absl::Status s2 = internal::StatusFromProto(msg);
+  size_t len;
+  const char* buf = google_rpc_Status_serialize(msg, arena.ptr(), &len);
+  google_rpc_Status* msg2 = google_rpc_Status_parse(buf, len, arena.ptr());
+  absl::Status s2 = internal::StatusFromProto(msg2);
   EXPECT_EQ(s, s2);
 }
 
