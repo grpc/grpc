@@ -379,9 +379,7 @@ grpc_cc_library(
         "src/core/lib/channel/channel_fwd.h",
     ],
     language = "c++",
-    deps = [
-        "gpr_platform",
-    ],
+    tags = ["grpc-autodeps"],
 )
 
 grpc_cc_library(
@@ -390,15 +388,14 @@ grpc_cc_library(
         "src/core/lib/transport/transport_fwd.h",
     ],
     language = "c++",
-    deps = [
-        "gpr_platform",
-    ],
+    tags = ["grpc-autodeps"],
 )
 
 grpc_cc_library(
     name = "atomic_utils",
     language = "c++",
     public_hdrs = ["src/core/lib/gprpp/atomic_utils.h"],
+    tags = ["grpc-autodeps"],
     deps = ["gpr_platform"],
 )
 
