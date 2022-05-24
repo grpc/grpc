@@ -1175,14 +1175,12 @@ grpc_cc_library(
     tags = ["grpc-autodeps"],
     deps = [
         "activity",
-        "closure",
         "default_event_engine_factory_hdrs",
         "event_engine_base_hdrs",
         "exec_ctx",
         "gpr_base",
         "gpr_platform",
         "poll",
-        "ref_counted",
         "time",
     ],
 )
