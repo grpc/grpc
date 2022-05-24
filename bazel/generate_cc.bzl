@@ -100,7 +100,6 @@ def generate_cc_impl(ctx):
     # label_package = src[ProtoInfo].proto_source_root
     label_packages = src[ProtoInfo].transitive_proto_path.to_list()
     print('label_packages', label_packages)
-    fail('I saied so')
     if ctx.executable.plugin:
         outs += [
             proto_path_to_generated_filename(
@@ -141,6 +140,8 @@ def generate_cc_impl(ctx):
         ]
     out_files = [ctx.actions.declare_file(out) for out in outs]
     dir_out = str(ctx.genfiles_dir.path + proto_root)
+    print('out_files', out_files)
+    fail('I saied so')
 
     arguments = []
     if ctx.executable.plugin:
