@@ -2419,8 +2419,11 @@ void grpc_chttp2_act_on_flowctl_action(
     const grpc_core::chttp2::FlowControlAction& action,
     grpc_chttp2_transport* t, grpc_chttp2_stream* s) {
   WithUrgency(t, action.send_stream_update(),
-              GRPC_CHTTP2_INITIATE_WRITE_STREAM_FLOW_CONTROL,
-              [t, s]() { grpc_chttp2_mark_stream_writable(t, s); });
+              GRPC_CHTTP2_INITIATE_WRITE_STREAM_FLOW_CONTROL, [t, s]() {
+                if (s->id != 0) {
+                  grpc_chttp2_mark_stream_writable(t, s);
+                }
+              });
   WithUrgency(t, action.send_transport_update(),
               GRPC_CHTTP2_INITIATE_WRITE_TRANSPORT_FLOW_CONTROL, []() {});
   WithUrgency(t, action.send_initial_window_update(),
