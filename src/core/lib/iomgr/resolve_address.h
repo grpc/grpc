@@ -60,7 +60,7 @@ class DNSResolver {
   // address this.
   //
   // \a interested_parties may be deleted after a request is cancelled.
-  virtual TaskHandle ResolveName(
+  virtual TaskHandle LookupHostname(
       absl::string_view name, absl::string_view default_port,
       grpc_pollset_set* interested_parties,
       std::function<void(absl::StatusOr<std::vector<grpc_resolved_address>>)>
@@ -69,8 +69,8 @@ class DNSResolver {
   // Resolve name in a blocking fashion. Use \a default_port if a port isn't
   // designated in \a name, otherwise use the port in \a name.
   virtual absl::StatusOr<std::vector<grpc_resolved_address>>
-  ResolveNameBlocking(absl::string_view name,
-                      absl::string_view default_port) = 0;
+  LookupHostnameBlocking(absl::string_view name,
+                         absl::string_view default_port) = 0;
 
   // This shares the same semantics with \a EventEngine::Cancel: successfully
   // cancelled lookups will not have their callbacks executed, and this

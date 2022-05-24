@@ -203,7 +203,7 @@ void HttpRequest::Start() {
     return;
   }
   Ref().release();  // ref held by pending DNS resolution
-  dns_request_handle_ = GetDNSResolver()->ResolveName(
+  dns_request_handle_ = GetDNSResolver()->LookupHostname(
       uri_.authority(), uri_.scheme(), pollset_set_,
       absl::bind_front(&HttpRequest::OnResolved, this));
 }

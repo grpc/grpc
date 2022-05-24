@@ -63,22 +63,22 @@ grpc_core::DNSResolver* g_default_dns_resolver;
 
 class TestDNSResolver : public grpc_core::DNSResolver {
  public:
-  TaskHandle ResolveName(
+  TaskHandle LookupHostname(
       absl::string_view name, absl::string_view default_port,
       grpc_pollset_set* interested_parties,
       std::function<void(absl::StatusOr<std::vector<grpc_resolved_address>>)>
           on_done) override {
     if (name != "test") {
-      return g_default_dns_resolver->ResolveName(
+      return g_default_dns_resolver->LookupHostname(
           name, default_port, interested_parties, std::move(on_done));
     }
     MakeDNSRequest(std::move(on_done));
     return kNullHandle;
   }
 
-  absl::StatusOr<std::vector<grpc_resolved_address>> ResolveNameBlocking(
+  absl::StatusOr<std::vector<grpc_resolved_address>> LookupHostnameBlocking(
       absl::string_view name, absl::string_view default_port) override {
-    return g_default_dns_resolver->ResolveNameBlocking(name, default_port);
+    return g_default_dns_resolver->LookupHostnameBlocking(name, default_port);
   }
 
   bool Cancel(TaskHandle /*handle*/) override { return false; }

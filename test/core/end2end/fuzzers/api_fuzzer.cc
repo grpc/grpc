@@ -155,7 +155,7 @@ class FuzzerDNSResolver : public grpc_core::DNSResolver {
     return instance;
   }
 
-  TaskHandle ResolveName(
+  TaskHandle LookupHostname(
       absl::string_view name, absl::string_view /* default_port */,
       grpc_pollset_set* /* interested_parties */,
       std::function<void(absl::StatusOr<std::vector<grpc_resolved_address>>)>
@@ -164,7 +164,7 @@ class FuzzerDNSResolver : public grpc_core::DNSResolver {
     return kNullHandle;
   }
 
-  absl::StatusOr<std::vector<grpc_resolved_address>> ResolveNameBlocking(
+  absl::StatusOr<std::vector<grpc_resolved_address>> LookupHostnameBlocking(
       absl::string_view /* name */,
       absl::string_view /* default_port */) override {
     GPR_ASSERT(0);

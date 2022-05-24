@@ -108,7 +108,7 @@ NativeClientChannelDNSResolver::~NativeClientChannelDNSResolver() {
 
 OrphanablePtr<Orphanable> NativeClientChannelDNSResolver::StartRequest() {
   Ref(DEBUG_LOCATION, "dns_request").release();
-  auto dns_request_handle = GetDNSResolver()->ResolveName(
+  auto dns_request_handle = GetDNSResolver()->LookupHostname(
       name_to_resolve(), kDefaultSecurePort, interested_parties(),
       absl::bind_front(&NativeClientChannelDNSResolver::OnResolved, this));
   if (GRPC_TRACE_FLAG_ENABLED(grpc_trace_dns_resolver)) {

@@ -58,11 +58,11 @@ class NativeDNSRequest {
 
  private:
   // Callback to be passed to grpc Executor to asynch-ify
-  // ResolveNameBlocking
+  // LookupHostnameBlocking
   static void DoRequestThread(void* rp, grpc_error_handle /*error*/) {
     NativeDNSRequest* r = static_cast<NativeDNSRequest*>(rp);
     auto result =
-        GetDNSResolver()->ResolveNameBlocking(r->name_, r->default_port_);
+        GetDNSResolver()->LookupHostnameBlocking(r->name_, r->default_port_);
     // running inline is safe since we've already been scheduled on the executor
     r->on_done_(std::move(result));
     delete r;
@@ -82,7 +82,7 @@ NativeDNSResolver* NativeDNSResolver::GetOrCreate() {
   return instance;
 }
 
-DNSResolver::TaskHandle NativeDNSResolver::ResolveName(
+DNSResolver::TaskHandle NativeDNSResolver::LookupHostname(
     absl::string_view name, absl::string_view default_port,
     grpc_pollset_set* /* interested_parties */,
     std::function<void(absl::StatusOr<std::vector<grpc_resolved_address>>)>
@@ -93,8 +93,8 @@ DNSResolver::TaskHandle NativeDNSResolver::ResolveName(
 }
 
 absl::StatusOr<std::vector<grpc_resolved_address>>
-NativeDNSResolver::ResolveNameBlocking(absl::string_view name,
-                                       absl::string_view default_port) {
+NativeDNSResolver::LookupHostnameBlocking(absl::string_view name,
+                                          absl::string_view default_port) {
   ExecCtx exec_ctx;
   struct addrinfo hints;
   struct addrinfo *result = nullptr, *resp;

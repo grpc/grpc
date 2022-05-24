@@ -943,7 +943,8 @@ grpc_error_handle Chttp2ServerAddPort(Server* server, const char* addr,
       resolved_or =
           grpc_resolve_unix_abstract_domain_address(parsed_addr_unprefixed);
     } else {
-      resolved_or = GetDNSResolver()->ResolveNameBlocking(parsed_addr, "https");
+      resolved_or =
+          GetDNSResolver()->LookupHostnameBlocking(parsed_addr, "https");
     }
     if (!resolved_or.ok()) {
       return absl_status_to_grpc_error(resolved_or.status());

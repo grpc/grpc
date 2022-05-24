@@ -46,7 +46,7 @@ static grpc_ares_request* (*g_default_dns_lookup_ares)(
     std::unique_ptr<grpc_core::ServerAddressList>* balancer_addresses,
     char** service_config_json, int query_timeout_ms);
 
-// Counter incremented by TestDNSResolver::ResolveName indicating the
+// Counter incremented by TestDNSResolver::LookupHostname indicating the
 // number of times a system-level resolution has happened.
 static int g_resolution_count;
 
@@ -66,12 +66,12 @@ class TestDNSResolver : public grpc_core::DNSResolver {
  public:
   // Wrapper around default resolve_address in order to count the number of
   // times we incur in a system-level name resolution.
-  TaskHandle ResolveName(
+  TaskHandle LookupHostname(
       absl::string_view name, absl::string_view default_port,
       grpc_pollset_set* interested_parties,
       std::function<void(absl::StatusOr<std::vector<grpc_resolved_address>>)>
           on_done) override {
-    auto result = g_default_dns_resolver->ResolveName(
+    auto result = g_default_dns_resolver->LookupHostname(
         name, default_port, interested_parties, std::move(on_done));
     ++g_resolution_count;
     static grpc_core::Timestamp last_resolution_time =
@@ -96,9 +96,9 @@ class TestDNSResolver : public grpc_core::DNSResolver {
     return result;
   }
 
-  absl::StatusOr<std::vector<grpc_resolved_address>> ResolveNameBlocking(
+  absl::StatusOr<std::vector<grpc_resolved_address>> LookupHostnameBlocking(
       absl::string_view name, absl::string_view default_port) override {
-    return g_default_dns_resolver->ResolveNameBlocking(name, default_port);
+    return g_default_dns_resolver->LookupHostnameBlocking(name, default_port);
   }
 
   // Not cancellable
