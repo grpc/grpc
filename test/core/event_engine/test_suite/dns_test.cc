@@ -12,10 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "src/core/lib/iomgr/exec_ctx.h"
 #include "test/core/event_engine/test_suite/event_engine_test.h"
 
 class EventEngineDNSTest : public EventEngineTest {};
 
 // TODO(hork): establish meaningful tests
-TEST_F(EventEngineDNSTest, TODO) { grpc_core::ExecCtx exec_ctx; }
+TEST_F(EventEngineDNSTest, TODO) {}
