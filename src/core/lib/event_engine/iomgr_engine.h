@@ -39,8 +39,6 @@
 namespace grpc_event_engine {
 namespace experimental {
 
-// An iomgr-based EventEngine implementation.
-// All methods require an ExecCtx to already exist on the thread's stack.
 class IomgrEventEngine final : public EventEngine {
  public:
   class IomgrEndpoint : public EventEngine::Endpoint {
