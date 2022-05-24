@@ -2540,6 +2540,24 @@ libs:
   - include/grpc/slice.h
   - include/grpc/slice_buffer.h
   - include/grpc/status.h
+  - include/grpc/support/alloc.h
+  - include/grpc/support/atm.h
+  - include/grpc/support/atm_gcc_atomic.h
+  - include/grpc/support/atm_gcc_sync.h
+  - include/grpc/support/atm_windows.h
+  - include/grpc/support/cpu.h
+  - include/grpc/support/log.h
+  - include/grpc/support/log_windows.h
+  - include/grpc/support/port_platform.h
+  - include/grpc/support/string_util.h
+  - include/grpc/support/sync.h
+  - include/grpc/support/sync_abseil.h
+  - include/grpc/support/sync_custom.h
+  - include/grpc/support/sync_generic.h
+  - include/grpc/support/sync_posix.h
+  - include/grpc/support/sync_windows.h
+  - include/grpc/support/thd_id.h
+  - include/grpc/support/time.h
   - include/grpc/support/workaround_list.h
   - include/grpcpp/alarm.h
   - include/grpcpp/channel.h
@@ -2942,6 +2960,24 @@ libs:
   - include/grpc/slice.h
   - include/grpc/slice_buffer.h
   - include/grpc/status.h
+  - include/grpc/support/alloc.h
+  - include/grpc/support/atm.h
+  - include/grpc/support/atm_gcc_atomic.h
+  - include/grpc/support/atm_gcc_sync.h
+  - include/grpc/support/atm_windows.h
+  - include/grpc/support/cpu.h
+  - include/grpc/support/log.h
+  - include/grpc/support/log_windows.h
+  - include/grpc/support/port_platform.h
+  - include/grpc/support/string_util.h
+  - include/grpc/support/sync.h
+  - include/grpc/support/sync_abseil.h
+  - include/grpc/support/sync_custom.h
+  - include/grpc/support/sync_generic.h
+  - include/grpc/support/sync_posix.h
+  - include/grpc/support/sync_windows.h
+  - include/grpc/support/thd_id.h
+  - include/grpc/support/time.h
   - include/grpc/support/workaround_list.h
   - include/grpcpp/alarm.h
   - include/grpcpp/channel.h
@@ -3807,7 +3843,6 @@ targets:
   headers:
   - src/core/lib/debug/trace.h
   - src/core/lib/gprpp/atomic_utils.h
-  - src/core/lib/gprpp/dual_ref_counted.h
   - src/core/lib/gprpp/orphanable.h
   - src/core/lib/gprpp/ref_counted.h
   - src/core/lib/gprpp/ref_counted_ptr.h
@@ -4096,9 +4131,6 @@ targets:
   build: test
   language: c
   headers:
-  - src/core/lib/gprpp/atomic_utils.h
-  - src/core/lib/gprpp/ref_counted.h
-  - src/core/lib/gprpp/ref_counted_ptr.h
   - src/core/lib/slice/slice.h
   - src/core/lib/slice/slice_internal.h
   - src/core/lib/slice/slice_refcount.h
@@ -4543,7 +4575,6 @@ targets:
   - src/core/lib/debug/trace.h
   - src/core/lib/gprpp/atomic_utils.h
   - src/core/lib/gprpp/cpp_impl_of.h
-  - src/core/lib/gprpp/dual_ref_counted.h
   - src/core/lib/gprpp/orphanable.h
   - src/core/lib/gprpp/ref_counted.h
   - src/core/lib/gprpp/ref_counted_ptr.h
@@ -5084,7 +5115,6 @@ targets:
   - src/core/lib/gprpp/atomic_utils.h
   - src/core/lib/gprpp/chunked_vector.h
   - src/core/lib/gprpp/cpp_impl_of.h
-  - src/core/lib/gprpp/dual_ref_counted.h
   - src/core/lib/gprpp/orphanable.h
   - src/core/lib/gprpp/ref_counted.h
   - src/core/lib/gprpp/ref_counted_ptr.h
@@ -5856,7 +5886,6 @@ targets:
   - src/core/lib/gprpp/atomic_utils.h
   - src/core/lib/gprpp/bitset.h
   - src/core/lib/gprpp/cpp_impl_of.h
-  - src/core/lib/gprpp/dual_ref_counted.h
   - src/core/lib/gprpp/orphanable.h
   - src/core/lib/gprpp/ref_counted.h
   - src/core/lib/gprpp/ref_counted_ptr.h
@@ -6745,7 +6774,6 @@ targets:
   headers:
   - src/core/lib/debug/trace.h
   - src/core/lib/gprpp/atomic_utils.h
-  - src/core/lib/gprpp/dual_ref_counted.h
   - src/core/lib/gprpp/orphanable.h
   - src/core/lib/gprpp/ref_counted.h
   - src/core/lib/gprpp/ref_counted_ptr.h
@@ -7068,7 +7096,6 @@ targets:
   - src/core/lib/gprpp/atomic_utils.h
   - src/core/lib/gprpp/bitset.h
   - src/core/lib/gprpp/cpp_impl_of.h
-  - src/core/lib/gprpp/dual_ref_counted.h
   - src/core/lib/gprpp/orphanable.h
   - src/core/lib/gprpp/ref_counted.h
   - src/core/lib/gprpp/ref_counted_ptr.h
@@ -7437,7 +7464,6 @@ targets:
   - src/core/lib/debug/trace.h
   - src/core/lib/gprpp/atomic_utils.h
   - src/core/lib/gprpp/cpp_impl_of.h
-  - src/core/lib/gprpp/dual_ref_counted.h
   - src/core/lib/gprpp/orphanable.h
   - src/core/lib/gprpp/ref_counted.h
   - src/core/lib/gprpp/ref_counted_ptr.h
@@ -8035,12 +8061,99 @@ targets:
   build: test
   language: c++
   headers:
+  - src/core/ext/upb-generated/google/protobuf/any.upb.h
+  - src/core/ext/upb-generated/google/rpc/status.upb.h
+  - src/core/lib/gpr/alloc.h
+  - src/core/lib/gpr/env.h
+  - src/core/lib/gpr/murmur_hash.h
+  - src/core/lib/gpr/spinlock.h
+  - src/core/lib/gpr/string.h
+  - src/core/lib/gpr/string_windows.h
+  - src/core/lib/gpr/time_precise.h
+  - src/core/lib/gpr/tls.h
+  - src/core/lib/gpr/tmpfile.h
+  - src/core/lib/gpr/useful.h
+  - src/core/lib/gprpp/construct_destruct.h
+  - src/core/lib/gprpp/debug_location.h
+  - src/core/lib/gprpp/examine_stack.h
+  - src/core/lib/gprpp/fork.h
+  - src/core/lib/gprpp/global_config.h
+  - src/core/lib/gprpp/global_config_custom.h
+  - src/core/lib/gprpp/global_config_env.h
+  - src/core/lib/gprpp/global_config_generic.h
+  - src/core/lib/gprpp/host_port.h
+  - src/core/lib/gprpp/manual_constructor.h
+  - src/core/lib/gprpp/memory.h
+  - src/core/lib/gprpp/mpscq.h
+  - src/core/lib/gprpp/stat.h
+  - src/core/lib/gprpp/status_helper.h
+  - src/core/lib/gprpp/sync.h
+  - src/core/lib/gprpp/thd.h
   - src/core/lib/gprpp/time.h
+  - src/core/lib/gprpp/time_util.h
+  - src/core/lib/profiling/timers.h
   src:
+  - src/core/ext/upb-generated/google/protobuf/any.upb.c
+  - src/core/ext/upb-generated/google/rpc/status.upb.c
+  - src/core/lib/gpr/alloc.cc
+  - src/core/lib/gpr/atm.cc
+  - src/core/lib/gpr/cpu_iphone.cc
+  - src/core/lib/gpr/cpu_linux.cc
+  - src/core/lib/gpr/cpu_posix.cc
+  - src/core/lib/gpr/cpu_windows.cc
+  - src/core/lib/gpr/env_linux.cc
+  - src/core/lib/gpr/env_posix.cc
+  - src/core/lib/gpr/env_windows.cc
+  - src/core/lib/gpr/log.cc
+  - src/core/lib/gpr/log_android.cc
+  - src/core/lib/gpr/log_linux.cc
+  - src/core/lib/gpr/log_posix.cc
+  - src/core/lib/gpr/log_windows.cc
+  - src/core/lib/gpr/murmur_hash.cc
+  - src/core/lib/gpr/string.cc
+  - src/core/lib/gpr/string_posix.cc
+  - src/core/lib/gpr/string_util_windows.cc
+  - src/core/lib/gpr/string_windows.cc
+  - src/core/lib/gpr/sync.cc
+  - src/core/lib/gpr/sync_abseil.cc
+  - src/core/lib/gpr/sync_posix.cc
+  - src/core/lib/gpr/sync_windows.cc
+  - src/core/lib/gpr/time.cc
+  - src/core/lib/gpr/time_posix.cc
+  - src/core/lib/gpr/time_precise.cc
+  - src/core/lib/gpr/time_windows.cc
+  - src/core/lib/gpr/tmpfile_msys.cc
+  - src/core/lib/gpr/tmpfile_posix.cc
+  - src/core/lib/gpr/tmpfile_windows.cc
+  - src/core/lib/gpr/wrap_memcpy.cc
+  - src/core/lib/gprpp/examine_stack.cc
+  - src/core/lib/gprpp/fork.cc
+  - src/core/lib/gprpp/global_config_env.cc
+  - src/core/lib/gprpp/host_port.cc
+  - src/core/lib/gprpp/mpscq.cc
+  - src/core/lib/gprpp/stat_posix.cc
+  - src/core/lib/gprpp/stat_windows.cc
+  - src/core/lib/gprpp/status_helper.cc
+  - src/core/lib/gprpp/thd_posix.cc
+  - src/core/lib/gprpp/thd_windows.cc
   - src/core/lib/gprpp/time.cc
+  - src/core/lib/gprpp/time_util.cc
+  - src/core/lib/profiling/basic_timers.cc
+  - src/core/lib/profiling/stap_timers.cc
   - test/core/gprpp/time_test.cc
   deps:
-  - gpr
+  - absl/base:base
+  - absl/base:core_headers
+  - absl/memory:memory
+  - absl/random:random
+  - absl/status:status
+  - absl/strings:cord
+  - absl/strings:str_format
+  - absl/strings:strings
+  - absl/synchronization:synchronization
+  - absl/time:time
+  - absl/types:optional
+  - upb
   uses_polling: false
 - name: test_core_security_credentials_test
   gtest: true
