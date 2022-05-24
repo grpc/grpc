@@ -24,10 +24,8 @@
 
 #include <grpc/event_engine/event_engine.h>
 
-#include "src/core/lib/gprpp/ref_counted.h"
 #include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/gprpp/time.h"
-#include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/promise/activity.h"
 #include "src/core/lib/promise/poll.h"
 
@@ -42,10 +40,9 @@ class Sleep {
   Sleep(const Sleep&) = delete;
   Sleep& operator=(const Sleep&) = delete;
   Sleep(Sleep&& other) noexcept
-      : deadline_(std::move(other.deadline_)),
-        timer_handle_(std::move(other.timer_handle_)) {
+      : deadline_(other.deadline_), timer_handle_(other.timer_handle_) {
     MutexLock lock2(&other.mu_);
-    stage_ = std::move(other.stage_);
+    stage_ = other.stage_;
     waker_ = std::move(other.waker_);
     other.deadline_ = Timestamp::InfPast();
   };
@@ -54,8 +51,8 @@ class Sleep {
     MutexLock lock1(&mu_);
     MutexLock lock2(&other.mu_);
     deadline_ = other.deadline_;
-    timer_handle_ = std::move(other.timer_handle_);
-    stage_ = std::move(other.stage_);
+    timer_handle_ = other.timer_handle_;
+    stage_ = other.stage_;
     waker_ = std::move(other.waker_);
     other.deadline_ = Timestamp::InfPast();
     return *this;
