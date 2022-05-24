@@ -41,7 +41,7 @@ struct grpc_plugin_credentials final : public grpc_call_credentials {
 
   std::string debug_string() override;
 
-  const char* type() const override;
+  grpc_core::UniqueTypeName type() const override;
 
  private:
   class PendingRequest : public grpc_core::RefCounted<PendingRequest> {

@@ -990,20 +990,7 @@ Procedure:
 Client asserts:
 * Call completed with status DEADLINE_EXCEEDED.
 
-### concurrent_large_unary
-
-Status: TODO
-
-Client performs 1000 large_unary tests in parallel on the same channel.
-
-### Flow control. Pushback at client for large messages (TODO: fix name)
-
-Status: TODO
-
-This test verifies that a client sending faster than a server can drain sees
-pushback (i.e., attempts to send succeed only after appropriate delays).
-
-#### rpc_soak
+### rpc_soak
 
 The client performs many large_unary RPCs in sequence over the same channel.
 The client records the latency and status of each RPC in some data structure.
@@ -1055,7 +1042,7 @@ The following is optional but encouraged to improve debuggability:
   to log interesting latency percentiles at the end of the test (e.g. median,
   90th, and max latency percentiles).
 
-#### channel_soak
+### channel_soak
 
 Similar to rpc_soak, but this time each RPC is performed on a new channel. The
 channel is created just before each RPC and is destroyed just after.
@@ -1078,6 +1065,19 @@ languages. Therefore they are not part of our interop matrix.
 
 The client performs a number of large_unary RPCs over a single long-lived
 channel with a fixed but configurable interval between each RPC.
+
+#### concurrent_large_unary
+
+Status: TODO
+
+Client performs 1000 large_unary tests in parallel on the same channel.
+
+#### Flow control. Pushback at client for large messages (TODO: fix name)
+
+Status: TODO
+
+This test verifies that a client sending faster than a server can drain sees
+pushback (i.e., attempts to send succeed only after appropriate delays).
 
 ### TODO Tests
 

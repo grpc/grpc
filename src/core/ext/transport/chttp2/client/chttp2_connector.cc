@@ -51,6 +51,7 @@
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/orphanable.h"
+#include "src/core/lib/gprpp/unique_type_name.h"
 #include "src/core/lib/iomgr/endpoint.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/resolved_address.h"
@@ -411,7 +412,7 @@ grpc_channel* grpc_channel_create_from_fd(const char* target, int fd,
       (target, fd, creds, args));
   // For now, we only support insecure channel credentials.
   if (creds == nullptr ||
-      creds->type() != grpc_core::InsecureServerCredentials::Type()) {
+      creds->type() != grpc_core::InsecureCredentials::Type()) {
     return grpc_lame_client_channel_create(
         target, GRPC_STATUS_INTERNAL,
         "Failed to create client channel due to invalid creds");

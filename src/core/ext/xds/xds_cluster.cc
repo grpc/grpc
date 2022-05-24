@@ -206,19 +206,6 @@ grpc_error_handle CdsLogicalDnsParse(
   return GRPC_ERROR_NONE;
 }
 
-// TODO(donnadionne): Check to see if cluster types aggregate_cluster and
-// logical_dns are enabled, this will be
-// removed once the cluster types are fully integration-tested and enabled by
-// default.
-bool XdsAggregateAndLogicalDnsClusterEnabled() {
-  char* value = gpr_getenv(
-      "GRPC_XDS_EXPERIMENTAL_ENABLE_AGGREGATE_AND_LOGICAL_DNS_CLUSTER");
-  bool parsed_value;
-  bool parse_succeeded = gpr_parse_bool_value(value, &parsed_value);
-  gpr_free(value);
-  return parse_succeeded && parsed_value;
-}
-
 grpc_error_handle CdsResourceParse(
     const XdsEncodingContext& context,
     const envoy_config_cluster_v3_Cluster* cluster, bool /*is_v2*/,
@@ -250,9 +237,6 @@ grpc_error_handle CdsResourceParse(
     if (service_name.size != 0) {
       cds_update->eds_service_name = UpbStringToStdString(service_name);
     }
-  } else if (!XdsAggregateAndLogicalDnsClusterEnabled()) {
-    errors.push_back(
-        GRPC_ERROR_CREATE_FROM_STATIC_STRING("DiscoveryType is not valid."));
   } else if (envoy_config_cluster_v3_Cluster_type(cluster) ==
              envoy_config_cluster_v3_Cluster_LOGICAL_DNS) {
     cds_update->cluster_type = XdsClusterResource::ClusterType::LOGICAL_DNS;
