@@ -134,13 +134,14 @@ std::string ReadBytes(int sockfd, int& saved_errno, int num_expected_bytes) {
     saved_errno = 0;
     read_data += TryReadBytes(sockfd, saved_errno,
                               num_expected_bytes - read_data.length());
-    if (saved_errno == EAGAIN && read_data.length() < num_expected_bytes) {
+    if (saved_errno == EAGAIN &&
+        read_data.length() < static_cast<size_t>(num_expected_bytes)) {
       GPR_ASSERT(BlockUntilReadable(sockfd).ok());
     } else if (saved_errno != 0 && num_expected_bytes > 0) {
       read_data.clear();
       break;
     }
-  } while (read_data.length() < num_expected_bytes);
+  } while (read_data.length() < static_cast<size_t>(num_expected_bytes));
   return read_data;
 }
 
@@ -173,7 +174,7 @@ int WriteBytes(int sockfd, int& saved_errno, std::string write_bytes) {
   do {
     saved_errno = 0;
     ret = TryWriteBytes(sockfd, saved_errno, write_bytes);
-    if (saved_errno == EAGAIN && ret < write_bytes.length()) {
+    if (saved_errno == EAGAIN && ret < static_cast<int>(write_bytes.length())) {
       GPR_ASSERT(ret >= 0);
       GPR_ASSERT(BlockUntilWritable(sockfd).ok());
     } else if (saved_errno != 0) {
@@ -317,7 +318,7 @@ PosixOracleListener::~PosixOracleListener() {
     serve_.Join();
     return;
   }
-  for (int i = 0; i < listener_fds_.size(); i++) {
+  for (int i = 0; i < static_cast<int>(listener_fds_.size()); i++) {
     shutdown(listener_fds_[i], SHUT_RDWR);
   }
   // Send a STOP message over the pipe.

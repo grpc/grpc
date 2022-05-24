@@ -181,7 +181,7 @@ class PosixOracleEventEngine final : public EventEngine {
                    std::function<void()> /*closure*/) override {
     GPR_ASSERT(false && "unimplemented");
   }
-  bool Cancel(TaskHandle handle) override {
+  bool Cancel(TaskHandle /*handle*/) override {
     GPR_ASSERT(false && "unimplemented");
   }
 };
