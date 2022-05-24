@@ -804,13 +804,12 @@ void Subchannel::RequestConnection() {
 }
 
 void Subchannel::ResetBackoff() {
-  ReleasableMutexLock lock(&mu_);
+  auto self = WeakRef(DEBUG_LOCATION, "ResetBackoff");
+  MutexLock lock(&mu_);
   backoff_.Reset();
   if (state_ == GRPC_CHANNEL_TRANSIENT_FAILURE &&
       GetDefaultEventEngine()->Cancel(retry_timer_handle_)) {
     OnRetryTimerLocked();
-    lock.Release();
-    WeakUnref(DEBUG_LOCATION, "ResetBackoff");
   }
 }
 
@@ -893,12 +892,10 @@ void Subchannel::SetConnectivityStateLocked(grpc_connectivity_state state,
   health_watcher_map_.NotifyLocked(state, status);
 }
 
+// Caller must call WeakUnref after OnRetryTimer returns
 void Subchannel::OnRetryTimer() {
-  {
-    MutexLock lock(&mu_);
-    OnRetryTimerLocked();
-  }
-  WeakUnref(DEBUG_LOCATION, "RetryTimer");
+  MutexLock lock(&mu_);
+  OnRetryTimerLocked();
 }
 
 void Subchannel::OnRetryTimerLocked() {
@@ -967,9 +964,10 @@ void Subchannel::OnConnectingFinishedLocked(grpc_error_handle error) {
             time_until_next_attempt.millis());
     SetConnectivityStateLocked(GRPC_CHANNEL_TRANSIENT_FAILURE,
                                grpc_error_to_absl_status(error));
-    WeakRef(DEBUG_LOCATION, "RetryTimer").release();  // Ref held by callback.
-    retry_timer_handle_ =
-        GetDefaultEventEngine()->RunAt(ee_deadline, [this] { OnRetryTimer(); });
+    retry_timer_handle_ = GetDefaultEventEngine()->RunAt(
+        ee_deadline, [self = WeakRef(DEBUG_LOCATION, "RetryTimer")] {
+          self->OnRetryTimer();
+        });
   }
   (void)GRPC_ERROR_UNREF(error);
 }
