@@ -12,13 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <grpc/support/port_platform.h>
-
 #include "src/core/ext/filters/server_config_selector/server_config_selector_filter.h"
 
+#include <grpc/support/port_platform.h>
+#include <grpc/support/log.h>
 #include <functional>
 #include <memory>
-#include <type_traits>
 #include <utility>
 
 #include "absl/base/thread_annotations.h"
@@ -26,9 +25,6 @@
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/types/optional.h"
-
-#include <grpc/support/log.h>
-
 #include "src/core/ext/filters/server_config_selector/server_config_selector.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/context.h"

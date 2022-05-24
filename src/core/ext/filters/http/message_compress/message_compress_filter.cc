@@ -16,40 +16,31 @@
  *
  */
 
-#include <grpc/support/port_platform.h>
-
 #include "src/core/ext/filters/http/message_compress/message_compress_filter.h"
 
+#include <grpc/support/port_platform.h>
 #include <inttypes.h>
 #include <stdlib.h>
-
-#include <memory>
-#include <new>
-#include <type_traits>
-
-#include "absl/meta/type_traits.h"
-#include "absl/types/optional.h"
-
 #include <grpc/compression.h>
 #include <grpc/impl/codegen/compression_types.h>
 #include <grpc/impl/codegen/grpc_types.h>
-#include <grpc/slice.h>
-#include <grpc/slice_buffer.h>
 #include <grpc/support/log.h>
+#include <new>
 
+#include "absl/meta/type_traits.h"
+#include "absl/types/optional.h"
 #include "src/core/lib/compression/compression_internal.h"
 #include "src/core/lib/compression/message_compress.h"
 #include "src/core/lib/debug/trace.h"
-#include "src/core/lib/gprpp/debug_location.h"
-#include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/iomgr/call_combiner.h"
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/profiling/timers.h"
-#include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/surface/call.h"
 #include "src/core/lib/transport/metadata_batch.h"
 #include "src/core/lib/transport/transport.h"
+#include "absl/utility/utility.h"
+#include "src/core/lib/slice/slice_buffer.h"
 
 namespace {
 

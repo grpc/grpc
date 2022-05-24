@@ -2369,9 +2369,9 @@ grpc_cc_library(
     tags = ["grpc-autodeps"],
     deps = [
         "exec_ctx",
+        "gpr_base",
         "gpr_codegen",
         "gpr_platform",
-        "gpr_public_hdrs",
         "grpc_trace",
         "time",
     ],
@@ -3307,8 +3307,8 @@ grpc_cc_library(
         "grpc_public_hdrs",
         "grpc_service_config",
         "json",
-        "orphanable",
         "service_config_parser",
+        "slice_buffer",
     ],
 )
 
@@ -3435,6 +3435,7 @@ grpc_cc_library(
         "promise",
         "seq",
         "slice",
+        "slice_buffer",
         "transport_fwd",
     ],
 )
@@ -5677,8 +5678,8 @@ grpc_cc_library(
     deps = [
         "bdp_estimator",
         "exec_ctx",
+        "gpr_base",
         "gpr_platform",
-        "gpr_public_hdrs",
         "grpc_trace",
         "memory_quota",
         "pid_controller",
@@ -5917,6 +5918,7 @@ grpc_cc_library(
         "orphanable",
         "ref_counted_ptr",
         "slice",
+        "slice_buffer",
         "time",
         "transport_fwd",
         "useful",
