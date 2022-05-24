@@ -156,6 +156,8 @@ absl::Status ConnectionManager::BindAndStartListener(
   for (auto& addr : addrs) {
     auto bind_status = listener->Bind(URIToResolvedAddress(addr));
     if (!bind_status.ok()) {
+      gpr_log(GPR_ERROR, "Binding listener failed: %s",
+              bind_status.status().ToString().c_str());
       return bind_status.status();
     }
   }
@@ -181,6 +183,8 @@ ConnectionManager::CreateConnection(std::string target_addr,
   event_engine->Connect(
       [this](absl::StatusOr<std::unique_ptr<Endpoint>> status) {
         if (!status.ok()) {
+          gpr_log(GPR_ERROR, "Connect failed: %s",
+                  status.status().ToString().c_str());
           last_in_progress_connection_.SetClientEndpoint(nullptr);
         } else {
           last_in_progress_connection_.SetClientEndpoint(std::move(*status));

@@ -46,8 +46,8 @@ std::string ExtractSliceBufferIntoString(SliceBuffer* buf);
 // status only if data written == data read. It also blocks the calling thread
 // until said Write and Read operations are complete.
 absl::Status ExchangeVerifyData(std::string data,
-                                EventEngine::Endpoint* sender_endpoint,
-                                EventEngine::Endpoint* receiver_endpoint);
+                                EventEngine::Endpoint* send_endpoint,
+                                EventEngine::Endpoint* receive_endpoint);
 
 // A helper class to create clients/listeners and connections between them.
 // The clients and listeners can be created by the oracle event engine

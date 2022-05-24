@@ -59,13 +59,11 @@ grpc_resolved_address CreateGRPCResolvedAddress(
 absl::Status PollFds(struct pollfd* pfds, int nfds, absl::Duration timeout) {
   int rv;
   while (true) {
-    struct timespec timeout_ts = {};
     if (timeout != absl::InfiniteDuration()) {
-      timeout_ts = absl::ToTimespec(timeout);
-      rv = ppoll(pfds, nfds, &timeout_ts, /* sigmask = */ nullptr);
+      rv = poll(pfds, nfds,
+                static_cast<int>(absl::ToInt64Milliseconds(timeout)));
     } else {
-      rv = ppoll(pfds, nfds, /* timeout_ts = */ nullptr,
-                 /* sigmask = */ nullptr);
+      rv = poll(pfds, nfds, /* timeout = */ -1);
     }
     const int saved_errno = errno;
     errno = saved_errno;
@@ -357,8 +355,7 @@ void PosixOracleListener::HandleIncomingConnections() {
         continue;
       }
       // pfds[i].fd has a readable event.
-      int client_sock_fd =
-          accept4(pfds[i].fd, nullptr, nullptr, SOCK_NONBLOCK | SOCK_CLOEXEC);
+      int client_sock_fd = accept(pfds[i].fd, nullptr, nullptr);
       if (client_sock_fd < 0) {
         gpr_log(GPR_ERROR,
                 "Error accepting new connection: %s. Ignoring connection "
@@ -392,10 +389,15 @@ absl::StatusOr<int> PosixOracleListener::Bind(
     return absl::UnknownError(
         absl::StrCat("Error creating socket: ", std::strerror(errno)));
   }
-  if (setsockopt(new_socket, SOL_SOCKET, SO_REUSEADDR | SO_REUSEPORT, &opt,
-                 sizeof(opt))) {
+  // MacOS biulds fail if SO_REUSEADDR and SO_REUSEPORT are set in the same
+  // setsockopt syscall. So they are set separately one after the other.
+  if (setsockopt(new_socket, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt))) {
     return absl::UnknownError(
-        absl::StrCat("Error setsockopt: ", std::strerror(errno)));
+        absl::StrCat("Error setsockopt(SO_REUSEADDR): ", std::strerror(errno)));
+  }
+  if (setsockopt(new_socket, SOL_SOCKET, SO_REUSEPORT, &opt, sizeof(opt))) {
+    return absl::UnknownError(
+        absl::StrCat("Error setsockopt(SO_REUSEPORT): ", std::strerror(errno)));
   }
 
   // Forcefully bind the new socket.
@@ -428,7 +430,7 @@ EventEngine::ConnectionHandle PosixOracleEventEngine::Connect(
                              "addresses are currently supported."));
     return {};
   }
-  if ((client_sock_fd = socket(AF_INET6, SOCK_STREAM | SOCK_NONBLOCK, 0)) < 0) {
+  if ((client_sock_fd = socket(AF_INET6, SOCK_STREAM, 0)) < 0) {
     on_connect(absl::CancelledError(absl::StrCat(
         "Connect failed: socket creation error: ", std::strerror(errno))));
     return {};
