@@ -37,26 +37,6 @@ namespace grpc_core {
 
 namespace {
 
-TraceFlag grpc_xds_lb_registry(false, "xds_lb_registry");
-
-// An individual lb policy that knows how to convert xDS configurations of its
-// type to gRPC's JSON form.
-class LbPolicy {
- public:
-  // Converts the proto serialized form of the configuration \a configuration to
-  // a Json::Object, or returns an error if conversion fails. If this lb policy
-  // can hold other lb policies, \a recursion_depth indicates the current depth
-  // of the tree.
-  virtual absl::StatusOr<Json::Object> ToJson(absl::string_view configuration,
-                                              int recursion_depth) = 0;
-  // The lb policy config type that this object expects,
-  // 'type.googleapis.com/envoy.extensions.load_balancing_policies.ring_hash.v3.RingHash'
-  // or
-  // 'type.googleapis.com/envoy.extensions.load_balancing_policies.round_robin.v3.RoundRobin'
-  // for example.
-  virtual const char* type() = 0;
-};
-
 // Converts an xDS cluster load balancing policy message to gRPC's JSON format.
 // An error is returned if none of the lb policies in the list are supported, or
 // if a supported lb policy configuration conversion fails. \a recursion_depth
