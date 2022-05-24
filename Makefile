@@ -1702,6 +1702,24 @@ PUBLIC_HEADERS_C += \
     include/grpc/slice.h \
     include/grpc/slice_buffer.h \
     include/grpc/status.h \
+    include/grpc/support/alloc.h \
+    include/grpc/support/atm.h \
+    include/grpc/support/atm_gcc_atomic.h \
+    include/grpc/support/atm_gcc_sync.h \
+    include/grpc/support/atm_windows.h \
+    include/grpc/support/cpu.h \
+    include/grpc/support/log.h \
+    include/grpc/support/log_windows.h \
+    include/grpc/support/port_platform.h \
+    include/grpc/support/string_util.h \
+    include/grpc/support/sync.h \
+    include/grpc/support/sync_abseil.h \
+    include/grpc/support/sync_custom.h \
+    include/grpc/support/sync_generic.h \
+    include/grpc/support/sync_posix.h \
+    include/grpc/support/sync_windows.h \
+    include/grpc/support/thd_id.h \
+    include/grpc/support/time.h \
     include/grpc/support/workaround_list.h \
 
 LIBGRPC_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBGRPC_SRC))))
@@ -2087,6 +2105,24 @@ PUBLIC_HEADERS_C += \
     include/grpc/slice.h \
     include/grpc/slice_buffer.h \
     include/grpc/status.h \
+    include/grpc/support/alloc.h \
+    include/grpc/support/atm.h \
+    include/grpc/support/atm_gcc_atomic.h \
+    include/grpc/support/atm_gcc_sync.h \
+    include/grpc/support/atm_windows.h \
+    include/grpc/support/cpu.h \
+    include/grpc/support/log.h \
+    include/grpc/support/log_windows.h \
+    include/grpc/support/port_platform.h \
+    include/grpc/support/string_util.h \
+    include/grpc/support/sync.h \
+    include/grpc/support/sync_abseil.h \
+    include/grpc/support/sync_custom.h \
+    include/grpc/support/sync_generic.h \
+    include/grpc/support/sync_posix.h \
+    include/grpc/support/sync_windows.h \
+    include/grpc/support/thd_id.h \
+    include/grpc/support/time.h \
     include/grpc/support/workaround_list.h \
 
 LIBGRPC_UNSECURE_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBGRPC_UNSECURE_SRC))))
