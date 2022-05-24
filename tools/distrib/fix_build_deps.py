@@ -17,7 +17,6 @@
 import argparse
 import collections
 from doctest import SKIP
-from gc import collect
 import os
 import re
 import subprocess
