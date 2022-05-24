@@ -1207,13 +1207,13 @@ void ssl_frame_protector_util_function_test_helper(
     const size_t plaintext_size, const size_t expected_encrypted_bytes_size,
     SSL* ssl, BIO* bio, std::vector<uint8_t>& buffer, size_t& buffer_offset,
     SSL* peer_ssl, BIO* peer_bio, std::vector<uint8_t>& peer_buffer,
-    size_t& peer_buffer_offset),
-{
+    size_t& peer_buffer_offset) {
+  const size_t kMaxPlaintextBytesPerTlsRecord = 16384;
   std::vector<uint8_t> unprotected_bytes(plaintext_size, 'a');
-  std::size_t unprotected_bytes_size = unprotected_bytes.size();
+  size_t unprotected_bytes_size = unprotected_bytes.size();
 
   std::vector<uint8_t> protected_output_frames(expected_encrypted_bytes_size);
-  std::size_t protected_output_frames_size = protected_output_frames.size();
+  size_t protected_output_frames_size = protected_output_frames.size();
 
   GPR_ASSERT(ssl_protector_protect_util(
                  unprotected_bytes.data(), buffer.size(), buffer_offset,
@@ -1233,7 +1233,7 @@ void ssl_frame_protector_util_function_test_helper(
     GPR_ASSERT(protected_output_frames_size == 0);
     protected_output_frames_size = protected_output_frames.size();
 
-    std::size_t still_pending_size = 0;
+    size_t still_pending_size = 0;
     GPR_ASSERT(ssl_protector_protect_flush_util(
                    buffer_offset, buffer.data(), ssl, bio,
                    protected_output_frames.data(),
@@ -1254,7 +1254,7 @@ void ssl_frame_protector_util_function_test_helper(
              expected_encrypted_bytes_size - 5);
 
   std::vector<uint8_t> unprotected_output_bytes(plaintext_size);
-  std::size_t unprotected_output_bytes_size = unprotected_output_bytes.size();
+  size_t unprotected_output_bytes_size = unprotected_output_bytes.size();
 
   // This frame should be decrypted by peer correctly.
   GPR_ASSERT(ssl_protector_unprotect_util(
@@ -1264,15 +1264,16 @@ void ssl_frame_protector_util_function_test_helper(
                  &unprotected_output_bytes_size) == tsi_result::TSI_OK);
   GPR_ASSERT(unprotected_output_bytes_size == unprotected_bytes_size);
   unprotected_output_bytes.resize(unprotected_output_bytes_size);
-  unprotected_bytes.resize(unprotected_bytes_size);
-  // GPR_ASSERT(unprotected_output_bytes, ContainerEq(unprotected_bytes));
+  for (size_t i = 0; i < unprotected_output_bytes; ++i) {
+    GPR_ASSERT(unprotected_output_bytes[i] == 'a');
+  }
 }
 
 void ssl_tsi_test_frame_protector_util_functions() {
-  const size_t kTls13RecordOverhead = 16384;
+  const size_t kMaxPlaintextBytesPerTlsRecord = 16384;
   const size_t kTls13RecordOverhead = 22;
 
-  for (std::size_t plaintext_size : {1, 1000, 16384, 17000}) {
+  for (size_t plaintext_size : {1, 1000, 16384, 17000}) {
     SSL* client_ssl = nullptr;
     SSL* server_ssl = nullptr;
     GPR_ASSERT(DoHandshake(&client_ssl, &server_ssl).ok());
@@ -1297,7 +1298,7 @@ void ssl_tsi_test_frame_protector_util_functions() {
     std::vector<uint8_t> server_buffer(kTls13RecordOverhead);
     size_t server_buffer_offset = 0;
 
-    std::size_t expected_size = plaintext_size + kTls13RecordOverhead;
+    size_t expected_size = plaintext_size + kTls13RecordOverhead;
     if (plaintext_size > kMaxPlaintextBytesPerTlsRecord) {
       expected_size = kMaxPlaintextBytesPerTlsRecord + kTls13RecordOverhead;
     }
