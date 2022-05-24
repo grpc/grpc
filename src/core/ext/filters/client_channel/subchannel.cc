@@ -804,6 +804,8 @@ void Subchannel::RequestConnection() {
 }
 
 void Subchannel::ResetBackoff() {
+  // Hold a ref to ensure cancellation and subsequent deletion of the closure
+  // does not eliminate the last ref and destroy the Subchannel.
   auto self = WeakRef(DEBUG_LOCATION, "ResetBackoff");
   MutexLock lock(&mu_);
   backoff_.Reset();
@@ -892,7 +894,6 @@ void Subchannel::SetConnectivityStateLocked(grpc_connectivity_state state,
   health_watcher_map_.NotifyLocked(state, status);
 }
 
-// Caller must call WeakUnref after OnRetryTimer returns
 void Subchannel::OnRetryTimer() {
   MutexLock lock(&mu_);
   OnRetryTimerLocked();
