@@ -297,6 +297,7 @@ def score_edit_distance(proposed, existing):
 def total_score(proposal):
     return sum(scores[dep] for dep in proposal)
 
+
 def total_avoidness(proposal):
     return sum(avoidness[dep] for dep in proposal)
 
@@ -310,6 +311,7 @@ def score_list_size(proposed, existing):
     """Score a proposed change primarily by number of dependencies"""
     return len(proposed)
 
+
 def score_best(proposed, existing):
     """Score a proposed change primarily by dependency score"""
     return 0
@@ -321,10 +323,16 @@ SCORERS = {
     'best': score_best,
 }
 
-
 parser = argparse.ArgumentParser(description='Fix build dependencies')
-parser.add_argument('targets', nargs='*', default=[], help='targets to fix (empty => all)')
-parser.add_argument('--score', type=str, default='edit_distance', help='scoring function to use: one of ' + ', '.join(SCORERS.keys()))
+parser.add_argument('targets',
+                    nargs='*',
+                    default=[],
+                    help='targets to fix (empty => all)')
+parser.add_argument('--score',
+                    type=str,
+                    default='edit_distance',
+                    help='scoring function to use: one of ' +
+                    ', '.join(SCORERS.keys()))
 args = parser.parse_args()
 
 exec(
@@ -344,15 +352,18 @@ exec(
         'filegroup': lambda name, **kwargs: None,
     }, {})
 
+
 # Keeps track of all possible sets of dependencies that could satify the
 # problem. (models the list monad in Haskell!)
 class Choices:
+
     def __init__(self):
         self.choices = set()
         self.choices.add(frozenset())
 
     def add_one_of(self, choices):
-        if not choices: return
+        if not choices:
+            return
         new_choices = set()
         for append_choice in choices:
             for choice in self.choices:
@@ -375,6 +386,7 @@ class Choices:
             if best is None or final_scorer(choice) < final_scorer(best):
                 best = choice
         return best
+
 
 error = False
 for library in sorted(consumes.keys()):
@@ -460,8 +472,11 @@ for library in sorted(consumes.keys()):
 
     deps.remove(library)
 
-    deps = sorted(deps.best(lambda x: SCORERS[args.score](x, original_deps[library])))
-    external_deps = sorted(external_deps.best(lambda x: SCORERS[args.score](x, original_external_deps[library])))
+    deps = sorted(
+        deps.best(lambda x: SCORERS[args.score](x, original_deps[library])))
+    external_deps = sorted(
+        external_deps.best(lambda x: SCORERS[args.score]
+                           (x, original_external_deps[library])))
     target = ':' + library
     buildozer_set_list('external_deps', external_deps, target, via='deps')
     buildozer_set_list('deps', deps, target)
