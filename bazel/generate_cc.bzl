@@ -98,8 +98,15 @@ def generate_cc_impl(ctx):
 
     # label_package = _join_directories([ctx.label.workspace_root, ctx.label.package])
     # label_package = src[ProtoInfo].proto_source_root
-    label_packages = src[ProtoInfo].transitive_proto_path.to_list()
+    # label_packages = src[ProtoInfo].transitive_proto_path.to_list() + [_join_directories([ctx.label.workspace_root, ctx.label.package])]
+    label_packages = [_join_directories([ctx.label.workspace_root, ctx.label.package])] + src[ProtoInfo].transitive_proto_path.to_list()
+    print('ctx.label.workspace_root', ctx.label.workspace_root)
+    print('ctx.label.package', ctx.label.package)
     print('label_packages', label_packages)
+    relative_proto_paths = [
+        _strip_package_from_path(label_packages, proto)
+        for proto in protos
+    ]
     if ctx.executable.plugin:
         outs += [
             proto_path_to_generated_filename(
@@ -108,6 +115,12 @@ def generate_cc_impl(ctx):
             )
             for proto in protos
         ]
+        print('_strip_package_from_path', _strip_package_from_path(label_packages, protos[0]))
+        print('proto_path_to_generated_filename', proto_path_to_generated_filename(
+            _strip_package_from_path(label_packages, protos[0]),
+            _GRPC_PROTO_HEADER_FMT,
+        ))
+
         outs += [
             proto_path_to_generated_filename(
                 _strip_package_from_path(label_packages, proto),
@@ -141,7 +154,7 @@ def generate_cc_impl(ctx):
     out_files = [ctx.actions.declare_file(out) for out in outs]
     dir_out = str(ctx.genfiles_dir.path + proto_root)
     print('out_files', out_files)
-    fail('I saied so')
+    # fail('I saied so')
 
     arguments = []
     if ctx.executable.plugin:

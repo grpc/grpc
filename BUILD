@@ -21,6 +21,7 @@ load(
     "grpc_upb_proto_library",
     "grpc_upb_proto_reflection_library",
     "python_config_settings",
+    "grpc_proto_library",
 )
 load("@bazel_skylib//lib:selects.bzl", "selects")
 
@@ -5070,7 +5071,8 @@ grpc_cc_library(
         "grpc",
         "grpc++_codegen_base",
         "grpc++_internals",
-        "@envoy_api//envoy/service/status/v3:pkg_cc_grpc",
+        ":xds_proto",
+        # "@envoy_api//envoy/service/status/v3:pkg_cc_grpc",
     ],
     alwayslink = 1,
 )
@@ -5474,4 +5476,9 @@ filegroup(
         "etc/roots.pem",
     ],
     visibility = ["//visibility:public"],
+)
+
+grpc_proto_library(
+    name = "xds_proto",
+    srcs = ["@envoy_api//:all_protos"],
 )
