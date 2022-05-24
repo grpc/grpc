@@ -354,25 +354,12 @@ std::string StatusToString(const absl::Status& status) {
 
 namespace internal {
 
-// This is the key for the message but it's only used for serialization.
-constexpr char kMessageKey[] = "grpc.message";
-
 google_rpc_Status* StatusToProto(const absl::Status& status, upb_Arena* arena) {
   google_rpc_Status* msg = google_rpc_Status_new(arena);
   google_rpc_Status_set_code(msg, int32_t(status.code()));
-  // The message field of Status proto is required to have a valid UTF-8 string
-  // because its type is string. But absl::Status doesn't have that requirement,
-  // which could result in having an encoding error sometimes.
-  // Therefore, a message is going to be stored as one of payloads to workaround
-  // this limitation.
-  if (!status.message().empty()) {
-    google_protobuf_Any* msg_any = google_rpc_Status_add_details(msg, arena);
-    google_protobuf_Any_set_type_url(msg_any,
-                                     upb_StringView_FromString(kMessageKey));
-    google_protobuf_Any_set_value(
-        msg_any, upb_StringView_FromDataAndSize(status.message().data(),
-                                                status.message().size()));
-  }
+  google_rpc_Status_set_message(
+      msg, upb_StringView_FromDataAndSize(status.message().data(),
+                                          status.message().size()));
   status.ForEachPayload([&](absl::string_view type_url,
                             const absl::Cord& payload) {
     google_protobuf_Any* any = google_rpc_Status_add_details(msg, arena);
@@ -402,21 +389,13 @@ google_rpc_Status* StatusToProto(const absl::Status& status, upb_Arena* arena) {
 
 absl::Status StatusFromProto(google_rpc_Status* msg) {
   int32_t code = google_rpc_Status_code(msg);
-  size_t detail_start = 0;
+  upb_StringView message = google_rpc_Status_message(msg);
+  absl::Status status(static_cast<absl::StatusCode>(code),
+                      absl::string_view(message.data, message.size));
   size_t detail_len;
   const google_protobuf_Any* const* details =
       google_rpc_Status_details(msg, &detail_len);
-  absl::string_view message;
-  if (detail_len > 0) {
-    upb_StringView type_url = google_protobuf_Any_type_url(details[0]);
-    if (absl::string_view(type_url.data, type_url.size) == kMessageKey) {
-      upb_StringView value = google_protobuf_Any_value(details[0]);
-      message = absl::string_view(value.data, value.size);
-      detail_start += 1;
-    }
-  }
-  absl::Status status(static_cast<absl::StatusCode>(code), message);
-  for (size_t i = detail_start; i < detail_len; i++) {
+  for (size_t i = 0; i < detail_len; i++) {
     upb_StringView type_url = google_protobuf_Any_type_url(details[i]);
     upb_StringView value = google_protobuf_Any_value(details[i]);
     status.SetPayload(absl::string_view(type_url.data, type_url.size),
