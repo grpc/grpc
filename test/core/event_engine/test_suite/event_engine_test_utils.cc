@@ -39,14 +39,12 @@
 #include "src/core/lib/uri/uri_parser.h"
 
 using ResolvedAddress =
-    grpc_event_engine::experimental::EventEngine::ResolvedAddress;
+    ::grpc_event_engine::experimental::EventEngine::ResolvedAddress;
 using Endpoint = ::grpc_event_engine::experimental::EventEngine::Endpoint;
 using Listener = ::grpc_event_engine::experimental::EventEngine::Listener;
 
 namespace grpc_event_engine {
 namespace experimental {
-
-namespace {
 
 ResolvedAddress URIToResolvedAddress(std::string address_str) {
   grpc_resolved_address addr;
@@ -60,8 +58,6 @@ ResolvedAddress URIToResolvedAddress(std::string address_str) {
   return grpc_event_engine::experimental::EventEngine::ResolvedAddress(
       reinterpret_cast<const sockaddr*>(addr.addr), addr.len);
 }
-
-}  // namespace
 
 void AppendStringToSliceBuffer(SliceBuffer* buf, std::string data) {
   buf->Append(Slice::FromCopiedString(data));
@@ -78,8 +74,8 @@ std::string ExtractSliceBufferIntoString(SliceBuffer* buf) {
   return tmp;
 }
 
-absl::Status ExchangeVerifyData(std::string data, Endpoint* send_endpoint,
-                                Endpoint* receive_endpoint) {
+absl::Status SendValidatePayload(std::string data, Endpoint* send_endpoint,
+                                 Endpoint* receive_endpoint) {
   GPR_ASSERT(receive_endpoint != nullptr && send_endpoint != nullptr);
   int num_bytes_written = data.size();
   Promise<bool> read_promise;
