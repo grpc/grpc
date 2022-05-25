@@ -24,6 +24,12 @@
 
 #include "src/core/lib/gpr/useful.h"
 
+#if __cplusplus > 201103l
+#define GRPC_BITSET_CONSTEXPR_MUTATOR constexpr
+#else
+#define GRPC_BITSET_CONSTEXPR_MUTATOR
+#endif
+
 namespace grpc_core {
 
 // Given a bit count as an integer, vend as member type `Type` a type with
@@ -84,10 +90,12 @@ class BitSet {
   constexpr BitSet() : units_{} {}
 
   // Set bit i to true
-  constexpr void set(int i) { units_[unit_for(i)] |= mask_for(i); }
+  GRPC_BITSET_CONSTEXPR_MUTATOR void set(int i) {
+    units_[unit_for(i)] |= mask_for(i);
+  }
 
   // Set bit i to is_set
-  constexpr void set(int i, bool is_set) {
+  GRPC_BITSET_CONSTEXPR_MUTATOR void set(int i, bool is_set) {
     if (is_set) {
       set(i);
     } else {
@@ -96,7 +104,9 @@ class BitSet {
   }
 
   // Set bit i to false
-  constexpr void clear(int i) { units_[unit_for(i)] &= ~mask_for(i); }
+  GRPC_BITSET_CONSTEXPR_MUTATOR void clear(int i) {
+    units_[unit_for(i)] &= ~mask_for(i);
+  }
 
   // Return true if bit i is set
   constexpr bool is_set(int i) const {
