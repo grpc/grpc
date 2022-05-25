@@ -806,7 +806,8 @@ void Subchannel::RequestConnection() {
 
 void Subchannel::ResetBackoff() {
   // Hold a ref to ensure cancellation and subsequent deletion of the closure
-  // does not eliminate the last ref and destroy the Subchannel.
+  // does not eliminate the last ref and destroy the Subchannel before the
+  // method returns.
   auto self = WeakRef(DEBUG_LOCATION, "ResetBackoff");
   MutexLock lock(&mu_);
   backoff_.Reset();
