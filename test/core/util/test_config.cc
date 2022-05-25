@@ -48,7 +48,7 @@ int64_t g_fixture_slowdown_factor = 1;
 int64_t g_poller_slowdown_factor = 1;
 
 #if GPR_APPLE
-static const int64_t kPlatformSlowdownFactor = 2;
+static const int64_t kPlatformSlowdownFactor = 3;
 #else
 static const int64_t kPlatformSlowdownFactor = 1;
 #endif
