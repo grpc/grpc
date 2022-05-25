@@ -16,16 +16,13 @@
  *
  */
 
+#include <grpc/support/port_platform.h>
+
 #include "src/core/ext/transport/inproc/inproc_transport.h"
 
-#include <grpc/support/port_platform.h>
 #include <stdint.h>
-#include <grpc/grpc.h>
-#include <grpc/impl/codegen/connectivity_state.h>
-#include <grpc/status.h>
-#include <grpc/support/alloc.h>
-#include <grpc/support/log.h>
-#include <grpc/support/sync.h>
+#include <string.h>
+
 #include <algorithm>
 #include <memory>
 #include <new>
@@ -37,12 +34,23 @@
 #include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
+
+#include <grpc/grpc.h>
+#include <grpc/impl/codegen/connectivity_state.h>
+#include <grpc/slice.h>
+#include <grpc/slice_buffer.h>
+#include <grpc/status.h>
+#include <grpc/support/alloc.h>
+#include <grpc/support/log.h>
+#include <grpc/support/sync.h>
+
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_args_preconditioning.h"
 #include "src/core/lib/channel/channelz.h"
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/gprpp/debug_location.h"
+#include "src/core/lib/gprpp/manual_constructor.h"
 #include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/gprpp/time.h"
@@ -54,6 +62,7 @@
 #include "src/core/lib/iomgr/pollset.h"
 #include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/slice/slice.h"
+#include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/surface/api_trace.h"
 #include "src/core/lib/surface/channel.h"
 #include "src/core/lib/surface/channel_stack_type.h"
@@ -63,7 +72,6 @@
 #include "src/core/lib/transport/transport.h"
 #include "src/core/lib/transport/transport_fwd.h"
 #include "src/core/lib/transport/transport_impl.h"
-#include "src/core/lib/slice/slice_buffer.h"
 
 #define INPROC_LOG(...)                               \
   do {                                                \
@@ -82,6 +90,10 @@ void log_metadata(const grpc_metadata_batch* md_batch, bool is_client,
 void fill_in_metadata(inproc_stream* s, const grpc_metadata_batch* metadata,
                       uint32_t flags, grpc_metadata_batch* out_md,
                       uint32_t* outflags, bool* markfilled);
+
+void ResetSendMessage(grpc_transport_stream_op_batch* msg) {
+  absl::exchange(msg->payload->send_message.send_message, nullptr)->Clear();
+}
 
 struct shared_mu {
   shared_mu() {
@@ -269,9 +281,6 @@ struct inproc_stream {
   grpc_transport_stream_op_batch* recv_initial_md_op = nullptr;
   grpc_transport_stream_op_batch* recv_message_op = nullptr;
   grpc_transport_stream_op_batch* recv_trailing_md_op = nullptr;
-
-  absl::optional<grpc_core::SliceBuffer> recv_message;
-  uint32_t recv_message_flags;
 
   bool initial_md_sent = false;
   bool trailing_md_sent = false;
@@ -523,6 +532,7 @@ void fail_helper_locked(inproc_stream* s, grpc_error_handle error) {
     s->recv_message_op = nullptr;
   }
   if (s->send_message_op) {
+    ResetSendMessage(s->send_message_op);
     complete_if_batch_end_locked(
         s, error, s->send_message_op,
         "fail_helper scheduling send-message-on-complete");
@@ -555,11 +565,26 @@ void fail_helper_locked(inproc_stream* s, grpc_error_handle error) {
   GRPC_ERROR_UNREF(error);
 }
 
+// TODO(vjpai): It should not be necessary to drain the incoming byte
+// stream and create a new one; instead, we should simply pass the byte
+// stream from the sender directly to the receiver as-is.
+//
+// Note that fixing this will also avoid the assumption in this code
+// that the incoming byte stream's next() call will always return
+// synchronously.  That assumption is true today but may not always be
+// true in the future.
 void message_transfer_locked(inproc_stream* sender, inproc_stream* receiver) {
-  receiver->recv_message =
-      sender->send_message_op->payload->send_message.send_message->Copy();
-  receiver->recv_message_flags =
+  *receiver->recv_message_op->payload->recv_message.recv_message =
+      std::move(*sender->send_message_op->payload->send_message.send_message);
+  *receiver->recv_message_op->payload->recv_message.flags =
       sender->send_message_op->payload->send_message.flags;
+
+  INPROC_LOG(GPR_INFO, "message_transfer_locked %p scheduling message-ready",
+             receiver);
+  grpc_core::ExecCtx::Run(
+      DEBUG_LOCATION,
+      receiver->recv_message_op->payload->recv_message.recv_message_ready,
+      GRPC_ERROR_NONE);
   complete_if_batch_end_locked(
       sender, GRPC_ERROR_NONE, sender->send_message_op,
       "message_transfer scheduling sender on_complete");
@@ -602,6 +627,7 @@ void op_state_machine_locked(inproc_stream* s, grpc_error_handle error) {
       maybe_process_ops_locked(other, GRPC_ERROR_NONE);
     } else if (!s->t->is_client && s->trailing_md_sent) {
       // A server send will never be matched if the server already sent status
+      ResetSendMessage(s->send_message_op);
       complete_if_batch_end_locked(
           s, GRPC_ERROR_NONE, s->send_message_op,
           "op_state_machine scheduling send-message-on-complete case 1");
@@ -742,6 +768,7 @@ void op_state_machine_locked(inproc_stream* s, grpc_error_handle error) {
     if (s->recv_message_op != nullptr) {
       // This message needs to be wrapped up because it will never be
       // satisfied
+      s->recv_message_op->payload->recv_message.recv_message->reset();
       INPROC_LOG(GPR_INFO, "op_state_machine %p scheduling message-ready", s);
       grpc_core::ExecCtx::Run(
           DEBUG_LOCATION,
@@ -755,6 +782,7 @@ void op_state_machine_locked(inproc_stream* s, grpc_error_handle error) {
     if ((s->trailing_md_sent || s->t->is_client) && s->send_message_op) {
       // Nothing further will try to receive from this stream, so finish off
       // any outstanding send_message op
+      ResetSendMessage(s->send_message_op);
       s->send_message_op->payload->send_message.stream_write_closed = true;
       complete_if_batch_end_locked(
           s, new_err, s->send_message_op,
@@ -819,6 +847,7 @@ void op_state_machine_locked(inproc_stream* s, grpc_error_handle error) {
     // No further message will come on this stream, so finish off the
     // recv_message_op
     INPROC_LOG(GPR_INFO, "op_state_machine %p scheduling message-ready", s);
+    s->recv_message_op->payload->recv_message.recv_message->reset();
     grpc_core::ExecCtx::Run(
         DEBUG_LOCATION,
         s->recv_message_op->payload->recv_message.recv_message_ready,
@@ -831,6 +860,7 @@ void op_state_machine_locked(inproc_stream* s, grpc_error_handle error) {
   if (s->trailing_md_recvd && s->send_message_op && s->t->is_client) {
     // Nothing further will try to receive from this stream, so finish off
     // any outstanding send_message op
+    ResetSendMessage(s->send_message_op);
     complete_if_batch_end_locked(
         s, new_err, s->send_message_op,
         "op_state_machine scheduling send-message-on-complete case 3");
@@ -1040,6 +1070,11 @@ void perform_stream_op(grpc_transport* gt, grpc_stream* gs,
     }
   } else {
     if (error != GRPC_ERROR_NONE) {
+      // Consume any send message that was sent here but that we are not pushing
+      // to the other side
+      if (op->send_message) {
+        ResetSendMessage(op);
+      }
       // Schedule op's closures that we didn't push to op state machine
       if (op->recv_initial_metadata) {
         if (op->payload->recv_initial_metadata.trailing_metadata_available !=
@@ -1069,8 +1104,6 @@ void perform_stream_op(grpc_transport* gt, grpc_stream* gs,
             nullptr) {
           *op->payload->recv_message.call_failed_before_recv_message = true;
         }
-        op->payload->recv_message.recv_message = &s->recv_message;
-        op->payload->recv_message.flags = &s->recv_message_flags;
         grpc_core::ExecCtx::Run(DEBUG_LOCATION,
                                 op->payload->recv_message.recv_message_ready,
                                 GRPC_ERROR_REF(error));
