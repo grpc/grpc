@@ -908,12 +908,7 @@ grpc_cc_library(
     deps = [
         "construct_destruct",
         "gpr_codegen",
-        "gpr_env",
-        "gpr_fork",
         "gpr_log",
-        "gpr_memory",
-        "gpr_spinlock",
-        "gpr_status_helper",
         "gpr_string",
         "gpr_string_util",
         "gpr_sync",
