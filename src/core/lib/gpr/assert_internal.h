@@ -15,9 +15,7 @@
 #define GRPC_CORE_LIB_GPR_ASSERT_INTERNAL_H
 
 #include <grpc/support/port_platform.h>
-
 #include <stdio.h>
-#include <stdlib.h>
 
 /** abort() the process if x is zero, with rudimentary logging to prevent
    circular dependencies with gpr_log.

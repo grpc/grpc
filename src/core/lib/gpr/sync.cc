@@ -19,12 +19,12 @@
 /* Generic implementation of synchronization primitives. */
 
 #include <grpc/support/port_platform.h>
-
 #include <assert.h>
-
 #include <grpc/support/atm.h>
 #include <grpc/support/log.h>
 #include <grpc/support/sync.h>
+#include <grpc/impl/codegen/gpr_types.h>
+#include <stdint.h>
 
 /* Number of mutexes to allocate for events, to avoid lock contention.
    Should be a prime. */

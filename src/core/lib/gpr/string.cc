@@ -16,10 +16,9 @@
  *
  */
 
-#include <grpc/support/port_platform.h>
-
 #include "src/core/lib/gpr/string.h"
 
+#include <grpc/support/port_platform.h>
 #include <ctype.h>
 #include <limits.h>
 #include <stddef.h>
@@ -27,12 +26,11 @@
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
-
-#include "absl/strings/str_cat.h"
-
 #include <grpc/support/alloc.h>
 #include <grpc/support/string_util.h>
+#include <algorithm>
 
+#include "absl/strings/str_cat.h"
 #include "src/core/lib/gpr/useful.h"
 
 char* gpr_strdup(const char* src) {

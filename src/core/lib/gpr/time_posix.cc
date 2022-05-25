@@ -17,19 +17,16 @@
  */
 
 #include <grpc/support/port_platform.h>
+#include <grpc/impl/codegen/gpr_types.h>
+#include <stdint.h>
 
 #include "src/core/lib/gpr/time_precise.h"
 #include "src/core/lib/gpr/assert_internal.h"
 
 #ifdef GPR_POSIX_TIME
 
-#include <stdlib.h>
 #include <time.h>
 #include <unistd.h>
-#ifdef __linux__
-#include <sys/syscall.h>
-#endif
-#include <grpc/support/atm.h>
 #include <grpc/support/time.h>
 
 static struct timespec timespec_from_gpr(gpr_timespec gts) {

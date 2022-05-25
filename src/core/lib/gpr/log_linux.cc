@@ -25,6 +25,12 @@
 #endif
 
 #include <grpc/support/port_platform.h>
+#include <bits/types/struct_tm.h>
+#include <grpc/impl/codegen/gpr_types.h>
+#include <stdlib.h>
+#include <syscall.h>
+
+#include "absl/types/optional.h"
 
 #ifdef GPR_LINUX_LOG
 
@@ -32,18 +38,13 @@
 #include <stdarg.h>
 #include <stdio.h>
 #include <string.h>
-#include <sys/syscall.h>
 #include <time.h>
 #include <unistd.h>
-
+#include <grpc/support/log.h>
+#include <grpc/support/time.h>
 #include <string>
 
 #include "absl/strings/str_format.h"
-
-#include <grpc/support/alloc.h>
-#include <grpc/support/log.h>
-#include <grpc/support/time.h>
-
 #include "src/core/lib/gpr/tls.h"
 #include "src/core/lib/gprpp/examine_stack.h"
 
