@@ -1263,10 +1263,10 @@ grpc_cc_library(
     language = "c++",
     visibility = ["@grpc:alt_gpr_base_legacy"],
     deps = [
-        "gpr_platform",
         "gpr_codegen",
-        "time",
         "gpr_log",
+        "gpr_platform",
+        "time",
     ],
 )
 
@@ -2812,7 +2812,7 @@ grpc_cc_library(
     tags = ["grpc-autodeps"],
     deps = [
         "bitset",
-        "gpr_base",
+        "gpr_log",
         "gpr_platform",
         "slice",
     ],
