@@ -23,6 +23,7 @@
 
 #include <grpc/support/alloc.h>
 
+#include "src/core/lib/gpr/assert_internal.h"
 #include "src/core/lib/profiling/timers.h"
 
 void* gpr_malloc(size_t size) {
@@ -63,7 +64,8 @@ void* gpr_realloc(void* p, size_t size) {
 }
 
 void* gpr_malloc_aligned(size_t size, size_t alignment) {
-  if (((alignment - 1) & alignment) != 0) abort();  // Must be power of 2.
+  GPR_ASSERT_INTERNAL(((alignment - 1) & alignment) ==
+                      0);  // Must be power of 2.
   size_t extra = alignment - 1 + sizeof(void*);
   void* p = gpr_malloc(size + extra);
   void** ret = reinterpret_cast<void**>(

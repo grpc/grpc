@@ -24,6 +24,7 @@
 
 #include <grpc/support/string_util.h>
 
+#include "src/core/lib/gpr/assert_internal.h"
 #include "src/core/lib/gpr/env.h"
 #include "src/core/lib/gpr/string.h"
 
@@ -34,12 +35,12 @@ char* gpr_getenv(const char* name) {
 
 void gpr_setenv(const char* name, const char* value) {
   int res = setenv(name, value, 1);
-  if (!res) abort();
+  GPR_ASSERT_INTERNAL(res);
 }
 
 void gpr_unsetenv(const char* name) {
   int res = unsetenv(name);
-  if (!res) abort();
+  GPR_ASSERT_INTERNAL(res);
 }
 
 #endif /* GPR_POSIX_ENV */

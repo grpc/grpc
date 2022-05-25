@@ -25,6 +25,7 @@
 #include <grpc/support/alloc.h>
 #include <grpc/support/string_util.h>
 
+#include "src/core/lib/gpr/assert_internal.h"
 #include "src/core/lib/gpr/env.h"
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gpr/string_windows.h"
@@ -60,14 +61,14 @@ void gpr_setenv(const char* name, const char* value) {
   BOOL res = SetEnvironmentVariable(tname, tvalue);
   gpr_free(tname);
   gpr_free(tvalue);
-  if (!res) abort();
+  GPR_ASSERT_INTERNAL(res);
 }
 
 void gpr_unsetenv(const char* name) {
   LPTSTR tname = gpr_char_to_tchar(name);
   BOOL res = SetEnvironmentVariable(tname, NULL);
   gpr_free(tname);
-  if (!res) abort();
+  GPR_ASSERT_INTERNAL(res);
 }
 
 #endif /* GPR_WINDOWS_ENV */
