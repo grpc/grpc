@@ -78,14 +78,14 @@ std::string GetNextSendMessage() {
 
 }  // namespace
 
-// Create a connection using the test event engine to a non-existent listener
+// Create a connection using the test EventEngine to a non-existent listener
 // and verify that the connection fails.
 TEST_F(EventEngineClientTest, ConnectToNonExistentListenerTest) {
   grpc_core::ExecCtx ctx;
   auto test_ee = this->NewEventEngine();
   Promise<std::unique_ptr<EventEngine::Endpoint>> client_endpoint_promise;
   auto memory_quota = std::make_unique<grpc_core::MemoryQuota>("bar");
-  // Create a test event engine client endpoint and connect to a non existent
+  // Create a test EventEngine client endpoint and connect to a non existent
   // oracle listener.
   test_ee->Connect(
       [&client_endpoint_promise](
@@ -100,8 +100,8 @@ TEST_F(EventEngineClientTest, ConnectToNonExistentListenerTest) {
   EXPECT_EQ(client_endpoint, nullptr);
 }
 
-// Create a connection using the test event engine to a listener created
-// by the oracle event engine and exchange bi-di data over the connection.
+// Create a connection using the test EventEngine to a listener created
+// by the oracle EventEngine and exchange bi-di data over the connection.
 // For each data transfer, verify that data written at one end of the stream
 // equals data read at the other end of the stream.
 TEST_F(EventEngineClientTest, ConnectExchangeBidiDataTransferTest) {
@@ -204,7 +204,7 @@ TEST_F(EventEngineClientTest, MultipleIPv6ConnectionsToOneOracleListenerTest) {
   EXPECT_TRUE(listener->Start().ok());
   absl::SleepFor(absl::Milliseconds(500));
   for (int i = 0; i < kNumConnections; i++) {
-    // Create a test event engine client endpoint and connect to a one of the
+    // Create a test EventEngine client endpoint and connect to a one of the
     // addresses bound to the oracle listener. Verify that the connection
     // succeeds.
     test_ee->Connect(
