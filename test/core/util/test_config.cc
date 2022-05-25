@@ -72,9 +72,9 @@ int64_t grpc_test_sanitizer_slowdown_factor() {
   } else if (BuiltUnderAsan()) {
     sanitizer_multiplier = 3;
   } else if (BuiltUnderMsan()) {
-    sanitizer_multiplier = 15;
+    sanitizer_multiplier = 8;
   } else if (BuiltUnderUbsan()) {
-    sanitizer_multiplier = 15;
+    sanitizer_multiplier = 10;
   }
   return sanitizer_multiplier;
 }
