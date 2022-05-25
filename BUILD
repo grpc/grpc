@@ -2378,6 +2378,23 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "percent_encoding",
+    srcs = [
+        "src/core/lib/slice/percent_encoding.cc",
+    ],
+    hdrs = [
+        "src/core/lib/slice/percent_encoding.h",
+    ],
+    tags = ["grpc-autodeps"],
+    deps = [
+        "bitset",
+        "gpr_base",
+        "gpr_platform",
+        "slice",
+    ],
+)
+
+grpc_cc_library(
     name = "grpc_base",
     srcs = [
         "src/core/lib/address_utils/parse_address.cc",
@@ -2462,7 +2479,6 @@ grpc_cc_library(
         "src/core/lib/iomgr/work_serializer.cc",
         "src/core/lib/resource_quota/api.cc",
         "src/core/lib/slice/b64.cc",
-        "src/core/lib/slice/percent_encoding.cc",
         "src/core/lib/slice/slice_api.cc",
         "src/core/lib/slice/slice_buffer_api.cc",
         "src/core/lib/slice/slice_split.cc",
@@ -2565,7 +2581,6 @@ grpc_cc_library(
         "src/core/lib/iomgr/wakeup_fd_posix.h",
         "src/core/lib/iomgr/work_serializer.h",
         "src/core/lib/slice/b64.h",
-        "src/core/lib/slice/percent_encoding.h",
         "src/core/lib/slice/slice_split.h",
         "src/core/lib/surface/api_trace.h",
         "src/core/lib/surface/builtins.h",
@@ -2660,6 +2675,7 @@ grpc_cc_library(
         "latch",
         "memory_quota",
         "orphanable",
+        "percent_encoding",
         "poll",
         "promise",
         "ref_counted",
@@ -3431,6 +3447,7 @@ grpc_cc_library(
         "grpc_trace",
         "latch",
         "orphanable",
+        "percent_encoding",
         "poll",
         "promise",
         "seq",
