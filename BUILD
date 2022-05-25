@@ -915,7 +915,6 @@ grpc_cc_library(
         "gpr_alloc",
         "gpr_atm",
         "gpr_codegen",
-        "gpr_cpu",
         "gpr_env",
         "gpr_fork",
         "gpr_log",
