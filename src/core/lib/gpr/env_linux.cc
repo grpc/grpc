@@ -64,12 +64,12 @@ char* gpr_getenv(const char* name) {
 
 void gpr_setenv(const char* name, const char* value) {
   int res = setenv(name, value, 1);
-  GPR_ASSERT_INTERNAL(res);
+  GPR_ASSERT_INTERNAL(res == 0);
 }
 
 void gpr_unsetenv(const char* name) {
   int res = unsetenv(name);
-  GPR_ASSERT_INTERNAL(res);
+  GPR_ASSERT_INTERNAL(res == 0);
 }
 
 #endif /* GPR_LINUX_ENV */
