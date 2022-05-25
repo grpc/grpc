@@ -882,8 +882,6 @@ grpc_cc_library(
         "src/core/lib/gprpp/host_port.cc",
         "src/core/lib/gprpp/stat_posix.cc",
         "src/core/lib/gprpp/stat_windows.cc",
-        "src/core/lib/gprpp/thd_posix.cc",
-        "src/core/lib/gprpp/thd_windows.cc",
     ],
     hdrs = [
         "src/core/lib/gpr/tmpfile.h",
@@ -924,9 +922,7 @@ grpc_cc_library(
         "gpr_string",
         "gpr_string_util",
         "gpr_sync",
-        "gpr_thd",
         "gpr_timers",
-        "gpr_tls",
         "grpc_codegen",
         "useful",
     ],
@@ -1255,6 +1251,8 @@ grpc_cc_library(
 grpc_cc_library(
     name = "gpr_thd",
     srcs = [
+        "src/core/lib/gprpp/thd_posix.cc",
+        "src/core/lib/gprpp/thd_windows.cc",
     ],
     hdrs = [
         "src/core/lib/gprpp/thd.h",
@@ -1263,6 +1261,13 @@ grpc_cc_library(
     public_hdrs = ["include/grpc/support/thd_id.h"],
     visibility = ["@grpc:alt_gpr_base_legacy"],
     deps = [
+        "gpr_codegen",
+        "gpr_fork",
+        "gpr_log",
+        "gpr_platform",
+        "gpr_sync",
+        "time",
+        "useful",
     ],
 )
 
