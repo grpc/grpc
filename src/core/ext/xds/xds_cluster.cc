@@ -18,7 +18,14 @@
 
 #include "src/core/ext/xds/xds_cluster.h"
 
+#include <stddef.h>
+
+#include <type_traits>
+#include <utility>
+
 #include "absl/container/inlined_vector.h"
+#include "absl/memory/memory.h"
+#include "absl/status/status.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
 #include "absl/strings/str_join.h"
@@ -32,16 +39,21 @@
 #include "envoy/config/endpoint/v3/endpoint.upb.h"
 #include "envoy/config/endpoint/v3/endpoint_components.upb.h"
 #include "envoy/extensions/clusters/aggregate/v3/cluster.upb.h"
+#include "envoy/extensions/transport_sockets/tls/v3/tls.upb.h"
 #include "google/protobuf/any.upb.h"
+#include "google/protobuf/duration.upb.h"
 #include "google/protobuf/wrappers.upb.h"
+#include "upb/text_encode.h"
+#include "upb/upb.h"
 
-#include <grpc/support/alloc.h>
+#include <grpc/support/log.h>
 
 #include "src/core/ext/xds/xds_common_types.h"
-#include "src/core/ext/xds/xds_route_config.h"
-#include "src/core/lib/gpr/env.h"
-#include "src/core/lib/gpr/string.h"
+#include "src/core/ext/xds/xds_resource_type.h"
+#include "src/core/lib/debug/trace.h"
 #include "src/core/lib/gprpp/host_port.h"
+#include "src/core/lib/gprpp/time.h"
+#include "src/core/lib/iomgr/error.h"
 
 namespace grpc_core {
 

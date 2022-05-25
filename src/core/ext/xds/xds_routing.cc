@@ -20,7 +20,23 @@
 
 #include "src/core/ext/xds/xds_routing.h"
 
+#include <stdint.h>
+#include <stdlib.h>
+
+#include <algorithm>
 #include <cctype>
+#include <utility>
+
+#include "absl/status/status.h"
+#include "absl/status/statusor.h"
+#include "absl/strings/match.h"
+#include "absl/strings/str_cat.h"
+
+#include <grpc/support/log.h>
+
+#include "src/core/ext/xds/xds_http_filters.h"
+#include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/matchers/matchers.h"
 
 namespace grpc_core {
 

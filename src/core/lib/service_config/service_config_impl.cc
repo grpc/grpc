@@ -18,16 +18,23 @@
 
 #include "src/core/lib/service_config/service_config_impl.h"
 
-#include <string>
+#include <string.h>
 
+#include <map>
+#include <string>
+#include <utility>
+
+#include "absl/memory/memory.h"
 #include "absl/strings/str_cat.h"
 
 #include <grpc/support/log.h>
 
 #include "src/core/lib/config/core_configuration.h"
+#include "src/core/lib/gprpp/memory.h"
 #include "src/core/lib/json/json.h"
 #include "src/core/lib/service_config/service_config_parser.h"
 #include "src/core/lib/slice/slice_internal.h"
+#include "src/core/lib/slice/slice_refcount.h"
 
 namespace grpc_core {
 
