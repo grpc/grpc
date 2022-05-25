@@ -178,7 +178,10 @@ class HttpRequestSSLCredentials : public grpc_channel_credentials {
     return Ref();
   }
 
-  const char* type() const override { return "HttpRequestSSL"; }
+  UniqueTypeName type() const override {
+    static UniqueTypeName::Factory kFactory("HttpRequestSSL");
+    return kFactory.Create();
+  }
 
  private:
   int cmp_impl(const grpc_channel_credentials* /* other */) const override {

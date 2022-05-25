@@ -21,6 +21,7 @@
 
 #include "absl/status/statusor.h"
 #include "absl/strings/string_view.h"
+#include "upb/def.h"
 
 #include "src/core/ext/xds/upb_utils.h"
 

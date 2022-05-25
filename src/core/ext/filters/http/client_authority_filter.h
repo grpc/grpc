@@ -21,13 +21,16 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <utility>
+
 #include "absl/status/statusor.h"
 
-#include <grpc/impl/codegen/compression_types.h>
-
 #include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/channel/channel_fwd.h"
 #include "src/core/lib/channel/promise_based_filter.h"
+#include "src/core/lib/promise/arena_promise.h"
 #include "src/core/lib/slice/slice.h"
+#include "src/core/lib/transport/transport.h"
 
 namespace grpc_core {
 

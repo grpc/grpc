@@ -15,42 +15,6 @@ metadata:
 spec:
   clients:
   - build:
-      command:
-      - bash
-      - /build_scripts/build_qps_worker.sh
-    clone:
-      gitRef: master
-      repo: https://github.com/grpc/grpc.git
-    language: csharp
-    pool: ${client_pool}
-    run:
-    - args:
-      - -c
-      - |
-        timeout --kill-after="${KILL_AFTER}" "${POD_TIMEOUT}" dotnet exec \
-            qps_worker/Grpc.IntegrationTesting.QpsWorker.dll \
-            --driver_port="${DRIVER_PORT}"
-      command:
-      - bash
-      env:
-      - name: GRPC_XDS_BOOTSTRAP
-        value: /bootstrap/bootstrap.json
-      name: main
-    - args:
-      - -default-config-path
-      - containers/runtime/xds-server/config/default_config.json
-      - -path-to-bootstrap
-      - containers/runtime/xds-server/bootstrap.json
-      command:
-      - main
-      image: ${psm_image_prefix}/xds-server:${psm_image_tag}
-      livenessProbe:
-        initialDelaySeconds: 30
-        periodSeconds: 5
-        tcpSocket:
-          port: 10000
-      name: xds-server
-  - build:
       args:
       - build
       - --config
@@ -352,66 +316,12 @@ spec:
         tcpSocket:
           port: 10000
       name: xds-server
-  - build:
-      command:
-      - bash
-      - /build_scripts/build_qps_worker.sh
-    clone:
-      gitRef: master
-      repo: https://github.com/grpc/grpc
-    language: ruby
-    pool: ${client_pool}
-    run:
-    - args:
-      - -c
-      - |
-        timeout --kill-after="${KILL_AFTER}" "${POD_TIMEOUT}" ruby \
-            src/ruby/qps/worker.rb --driver_port="${DRIVER_PORT}"
-      command:
-      - bash
-      env:
-      - name: GRPC_XDS_BOOTSTRAP
-        value: /bootstrap/bootstrap.json
-      name: main
-    - args:
-      - -default-config-path
-      - containers/runtime/xds-server/config/default_config.json
-      - -path-to-bootstrap
-      - containers/runtime/xds-server/bootstrap.json
-      command:
-      - main
-      image: ${psm_image_prefix}/xds-server:${psm_image_tag}
-      livenessProbe:
-        initialDelaySeconds: 30
-        periodSeconds: 5
-        tcpSocket:
-          port: 10000
-      name: xds-server
   driver:
     language: cxx
     run: []
   results:
     bigQueryTable: ${big_query_table}
   servers:
-  - build:
-      command:
-      - bash
-      - /build_scripts/build_qps_worker.sh
-    clone:
-      gitRef: master
-      repo: https://github.com/grpc/grpc.git
-    language: csharp
-    pool: ${server_pool}
-    run:
-    - args:
-      - -c
-      - |
-        timeout --kill-after="${KILL_AFTER}" "${POD_TIMEOUT}" dotnet exec \
-            qps_worker/Grpc.IntegrationTesting.QpsWorker.dll \
-            --driver_port="${DRIVER_PORT}"
-      command:
-      - bash
-      name: main
   - build:
       args:
       - build
@@ -540,24 +450,6 @@ spec:
         timeout --kill-after="${KILL_AFTER}" "${POD_TIMEOUT}" \
             bazel-bin/src/python/grpcio_tests/tests_aio/benchmark/worker \
             --driver_port="${DRIVER_PORT}"
-      command:
-      - bash
-      name: main
-  - build:
-      command:
-      - bash
-      - /build_scripts/build_qps_worker.sh
-    clone:
-      gitRef: master
-      repo: https://github.com/grpc/grpc
-    language: ruby
-    pool: ${server_pool}
-    run:
-    - args:
-      - -c
-      - |
-        timeout --kill-after="${KILL_AFTER}" "${POD_TIMEOUT}" ruby \
-            src/ruby/qps/worker.rb --driver_port="${DRIVER_PORT}"
       command:
       - bash
       name: main

@@ -16,11 +16,19 @@
  *
  */
 
-#include <grpc/grpc_security.h>
-#include <grpcpp/security/alts_context.h>
+#include <stddef.h>
 
-#include "src/core/tsi/alts/handshaker/alts_tsi_handshaker.h"
+#include <map>
+#include <string>
+
+#include "upb/upb.h"
+
+#include <grpc/grpc_security_constants.h>
+#include <grpcpp/security/alts_context.h>
+#include <grpcpp/support/config.h>
+
 #include "src/proto/grpc/gcp/altscontext.upb.h"
+#include "src/proto/grpc/gcp/transport_security_common.upb.h"
 
 namespace grpc {
 namespace experimental {
