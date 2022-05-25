@@ -21,6 +21,7 @@
 #include "absl/flags/flag.h"
 
 #include <grpc/support/log.h>
+#include <grpc/support/sync.h>
 #include <grpcpp/create_channel.h>
 #include <grpcpp/security/credentials.h>
 

@@ -1165,7 +1165,7 @@ all_extra_metadata.update(
 # expanded without intermediate dependencies.
 # Example:
 # '//:grpc' : { ...,
-#               '_TRANSITIVE_DEPS': ['//:gpr_base', ...],
+#               '_TRANSITIVE_DEPS': ['//:grpc_base', ...],
 #               '_COLLAPSED_DEPS': ['gpr', ...],
 #               '_COLLAPSED_SRCS': [...],
 #               '_COLLAPSED_PUBLIC_HEADERS': [...],

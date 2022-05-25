@@ -35,7 +35,6 @@ grpc_cc_library(
         "absl/types:variant",
     ],
     deps = [
-        "//:gpr_base",
         "//:grpc++_binder",
     ],
 )

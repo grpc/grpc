@@ -45,7 +45,6 @@ grpc_cc_test(
     deps = [
         ":alts_handshaker_service_api_test_lib",
         "//:gpr",
-        "//:gpr_base",
         "//:grpc",
         "//test/core/util:grpc_test_util",
     ],
