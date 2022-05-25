@@ -16,19 +16,23 @@
 //
 //
 
+#include <grpc/support/port_platform.h>
+
 #include "src/core/ext/filters/http/message_compress/message_decompress_filter.h"
 
-#include <grpc/support/port_platform.h>
 #include <stdint.h>
 #include <string.h>
-#include <grpc/impl/codegen/compression_types.h>
-#include <grpc/status.h>
-#include <grpc/support/log.h>
+
 #include <new>
 
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
 #include "absl/types/optional.h"
+
+#include <grpc/impl/codegen/compression_types.h>
+#include <grpc/status.h>
+#include <grpc/support/log.h>
+
 #include "src/core/ext/filters/message_size/message_size_filter.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/compression/message_compress.h"
@@ -37,9 +41,9 @@
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/profiling/timers.h"
+#include "src/core/lib/slice/slice_buffer.h"
 #include "src/core/lib/transport/metadata_batch.h"
 #include "src/core/lib/transport/transport.h"
-#include "src/core/lib/slice/slice_buffer.h"
 
 namespace grpc_core {
 namespace {
