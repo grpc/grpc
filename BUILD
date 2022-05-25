@@ -369,7 +369,6 @@ grpc_cc_library(
     tags = ["avoid_dep"],
     visibility = ["@grpc:public"],
     deps = [
-        "gpr_base",
     ],
 )
 
@@ -484,7 +483,6 @@ grpc_cc_library(
         "config",
         "default_event_engine_factory_hdrs",
         "global_config",
-        "gpr_base",
         "gpr_fork",
         "gpr_platform",
         "gpr_sync",
@@ -692,7 +690,6 @@ grpc_cc_library(
         "config",
         "debug_location",
         "gpr",
-        "gpr_base",
         "gpr_platform",
         "grpc",
         "grpc++_base",
@@ -808,7 +805,6 @@ grpc_cc_library(
     deps = [
         "alts_upb",
         "alts_util",
-        "gpr_base",
         "grpc++",
         "grpc_base",
         "tsi_alts_credentials",
@@ -826,7 +822,6 @@ grpc_cc_library(
     ],
     visibility = ["@grpc:public"],
     deps = [
-        "gpr_base",
         "grpc_base",
         "grpc_codegen",
         "grpc_trace",
@@ -865,16 +860,6 @@ grpc_cc_library(
     external_deps = ["absl/types:optional"],
     tags = ["grpc-autodeps"],
     deps = ["gpr_platform"],
-)
-
-grpc_cc_library(
-    name = "gpr_base",
-    srcs = [],
-    hdrs = [],
-    language = "c++",
-    public_hdrs = GPR_PUBLIC_HDRS,
-    visibility = ["@grpc:alt_gpr_base_legacy"],
-    deps = [],
 )
 
 grpc_cc_library(
@@ -1311,7 +1296,6 @@ grpc_cc_library(
     tags = ["grpc-autodeps"],
     deps = [
         "arena",
-        "gpr_base",
         "gpr_platform",
     ],
 )
@@ -1451,7 +1435,6 @@ grpc_cc_library(
         "channel_args_preconditioning",
         "channel_creds_registry",
         "channel_init",
-        "gpr_base",
         "grpc_resolver",
         "handshaker_registry",
         "service_config_parser",
@@ -1597,7 +1580,6 @@ grpc_cc_library(
         "closure",
         "error",
         "exec_ctx",
-        "gpr_base",
         "gpr_platform",
         "iomgr_timer",
         "poll",
@@ -1940,7 +1922,6 @@ grpc_cc_library(
     ],
     tags = ["grpc-autodeps"],
     deps = [
-        "gpr_base",
         "gpr_platform",
         "intra_activity_waiter",
         "poll",
@@ -1961,7 +1942,6 @@ grpc_cc_library(
     tags = ["grpc-autodeps"],
     deps = [
         "activity",
-        "gpr_base",
         "gpr_platform",
         "gpr_sync",
         "poll",
@@ -1981,7 +1961,6 @@ grpc_cc_library(
     deps = [
         "arena",
         "context",
-        "gpr_base",
         "gpr_platform",
         "intra_activity_waiter",
         "poll",
@@ -2025,7 +2004,6 @@ grpc_cc_library(
     tags = ["grpc-autodeps"],
     deps = [
         "debug_location",
-        "gpr_base",
         "gpr_platform",
         "orphanable",
         "ref_counted_ptr",
@@ -2065,7 +2043,6 @@ grpc_cc_library(
         "debug_location",
         "error",
         "exec_ctx",
-        "gpr_base",
         "gpr_platform",
         "gpr_sync",
         "grpc_base",
@@ -2250,7 +2227,6 @@ grpc_cc_library(
         "activity",
         "event_engine_memory_allocator",
         "exec_ctx_wakeup_scheduler",
-        "gpr_base",
         "gpr_mpscq",
         "gpr_platform",
         "gpr_sync",
@@ -2280,7 +2256,6 @@ grpc_cc_library(
         "context",
         "event_engine_memory_allocator",
         "gpr_alloc",
-        "gpr_base",
         "gpr_platform",
         "memory_quota",
     ],
@@ -2297,7 +2272,6 @@ grpc_cc_library(
     external_deps = ["absl/base:core_headers"],
     tags = ["grpc-autodeps"],
     deps = [
-        "gpr_base",
         "gpr_platform",
         "gpr_sync",
         "ref_counted",
@@ -2398,7 +2372,6 @@ grpc_cc_library(
     ],
     tags = ["grpc-autodeps"],
     deps = [
-        "gpr_base",
         "gpr_platform",
         "slice",
         "slice_refcount",
@@ -2607,7 +2580,6 @@ grpc_cc_library(
     ],
     tags = ["grpc-autodeps"],
     deps = [
-        "gpr_base",
         "gpr_log",
         "gpr_platform",
         "iomgr_port",
@@ -2633,7 +2605,6 @@ grpc_cc_library(
         "absl/time",
     ],
     deps = [
-        "gpr_base",
     ],
 )
 
@@ -2644,7 +2615,6 @@ grpc_cc_library(
     ],
     deps = [
         "event_engine_base_hdrs",
-        "gpr_base",
     ],
 )
 
@@ -2657,7 +2627,6 @@ grpc_cc_library(
     deps = [
         "default_event_engine_factory_hdrs",
         "event_engine_base_hdrs",
-        "gpr_base",
         "iomgr_event_engine",
         "iomgr_port",
     ],
@@ -2680,7 +2649,6 @@ grpc_cc_library(
         "event_engine_common",
         "event_engine_trace",
         "exec_ctx",
-        "gpr_base",
         "gpr_platform",
         "gpr_sync",
         "grpc_trace",
@@ -2706,7 +2674,6 @@ grpc_cc_library(
     deps = [
         "event_engine_base_hdrs",
         "event_engine_trace",
-        "gpr_base",
         "gpr_platform",
         "ref_counted",
         "slice",
@@ -2738,7 +2705,6 @@ grpc_cc_library(
         "default_event_engine_factory_hdrs",
         "event_engine_base_hdrs",
         "event_engine_trace",
-        "gpr_base",
         "gpr_sync",
         "grpc_trace",
     ],
@@ -3073,7 +3039,6 @@ grpc_cc_library(
         "exec_ctx",
         "global_config",
         "gpr_alloc",
-        "gpr_base",
         "gpr_codegen",
         "gpr_fork",
         "gpr_host_port",
@@ -3155,7 +3120,6 @@ grpc_cc_library(
     language = "c++",
     tags = ["grpc-autodeps"],
     deps = [
-        "gpr_base",
         "gpr_platform",
     ],
 )
@@ -3179,7 +3143,6 @@ grpc_cc_library(
         "channel_args",
         "channel_fwd",
         "channel_stack_type",
-        "gpr_base",
         "gpr_platform",
         "ref_counted_ptr",
         "transport_fwd",
@@ -3263,7 +3226,6 @@ grpc_cc_library(
     deps = [
         "config",
         "error",
-        "gpr_base",
         "gpr_memory",
         "gpr_platform",
         "grpc_codegen",
@@ -3289,7 +3251,6 @@ grpc_cc_library(
     tags = ["grpc-autodeps"],
     deps = [
         "error",
-        "gpr_base",
         "gpr_platform",
         "grpc_codegen",
         "json",
@@ -3342,7 +3303,6 @@ grpc_cc_library(
     tags = ["grpc-autodeps"],
     visibility = ["@grpc:client_channel"],
     deps = [
-        "gpr_base",
         "gpr_platform",
         "gpr_sync",
         "grpc_codegen",
@@ -3376,7 +3336,6 @@ grpc_cc_library(
         "avl",
         "channel_stack_type",
         "dual_ref_counted",
-        "gpr_base",
         "gpr_platform",
         "grpc_codegen",
         "match",
@@ -3637,7 +3596,6 @@ grpc_cc_library(
         "error",
         "exec_ctx",
         "exec_ctx_wakeup_scheduler",
-        "gpr_base",
         "gpr_platform",
         "grpc_base",
         "grpc_codegen",
@@ -3678,7 +3636,6 @@ grpc_cc_library(
         "debug_location",
         "error",
         "exec_ctx",
-        "gpr_base",
         "gpr_platform",
         "grpc_base",
         "grpc_codegen",
@@ -3780,7 +3737,6 @@ grpc_cc_library(
     deps = [
         "config",
         "context",
-        "gpr_base",
         "grpc_base",
         "grpc_service_config",
         "grpc_trace",
@@ -3818,7 +3774,6 @@ grpc_cc_library(
         "config",
         "debug_location",
         "error",
-        "gpr_base",
         "gpr_platform",
         "grpc_authorization_base",
         "grpc_base",
@@ -4339,7 +4294,6 @@ grpc_cc_library(
     language = "c++",
     deps = [
         "debug_location",
-        "gpr_base",
         "grpc_base",
         "grpc_client_channel",
         "grpc_codegen",
@@ -4482,7 +4436,6 @@ grpc_cc_library(
         "debug_location",
         "error",
         "exec_ctx",
-        "gpr_base",
         "gpr_platform",
         "grpc_base",
         "grpc_client_channel",
@@ -4531,7 +4484,6 @@ grpc_cc_library(
     tags = ["grpc-autodeps"],
     deps = [
         "debug_location",
-        "gpr_base",
         "gpr_platform",
         "grpc_base",
         "grpc_client_channel",
@@ -4561,7 +4513,6 @@ grpc_cc_library(
         "channel_args",
         "debug_location",
         "error",
-        "gpr_base",
         "gpr_platform",
         "grpc_base",
         "grpc_client_channel",
@@ -4633,7 +4584,6 @@ grpc_cc_library(
     deps = [
         "debug_location",
         "error",
-        "gpr_base",
         "gpr_platform",
         "grpc_base",
         "grpc_client_channel",
@@ -4721,7 +4671,6 @@ grpc_cc_library(
         "debug_location",
         "error",
         "exec_ctx",
-        "gpr_base",
         "gpr_platform",
         "grpc_base",
         "grpc_client_channel",
@@ -4832,7 +4781,6 @@ grpc_cc_library(
     language = "c++",
     tags = ["grpc-autodeps"],
     deps = [
-        "gpr_base",
         "gpr_platform",
         "grpc++",
         "grpc_sockaddr",
@@ -4867,7 +4815,6 @@ grpc_cc_library(
         "include/grpcpp/ext/server_load_reporting.h",
     ],
     deps = [
-        "gpr_base",
         "gpr_platform",
         "grpc",
         "grpc++",
@@ -4912,7 +4859,6 @@ grpc_cc_library(
     ],
     language = "c++",
     deps = [
-        "gpr_base",
         "grpc++",
     ],
 )
@@ -4957,7 +4903,6 @@ grpc_cc_library(
     language = "c++",
     deps = [
         "debug_location",
-        "gpr_base",
         "grpc_base",
         "grpc_resolver",
         "iomgr_timer",
@@ -5001,7 +4946,6 @@ grpc_cc_library(
         "config",
         "debug_location",
         "global_config",
-        "gpr_base",
         "gpr_memory",
         "gpr_string",
         "grpc_base",
@@ -5097,7 +5041,6 @@ grpc_cc_library(
     language = "c++",
     deps = [
         "config",
-        "gpr_base",
         "grpc_base",
         "grpc_client_channel",
         "grpc_codegen",
@@ -5124,7 +5067,6 @@ grpc_cc_library(
     language = "c++",
     deps = [
         "config",
-        "gpr_base",
         "grpc_base",
         "grpc_client_channel",
         "grpc_codegen",
@@ -5156,7 +5098,6 @@ grpc_cc_library(
     deps = [
         "config",
         "debug_location",
-        "gpr_base",
         "grpc_base",
         "grpc_client_channel",
         "grpc_resolver",
@@ -5203,7 +5144,6 @@ grpc_cc_library(
         "config",
         "debug_location",
         "dual_ref_counted",
-        "gpr_base",
         "grpc_base",
         "grpc_client_channel",
         "grpc_codegen",
@@ -5433,7 +5373,6 @@ grpc_cc_library(
     ],
     language = "c++",
     deps = [
-        "gpr_base",
         "grpc_base",
         "grpc_client_channel",
         "grpc_security_base",
@@ -5465,7 +5404,6 @@ grpc_cc_library(
     visibility = ["@grpc:public"],
     deps = [
         "alts_util",
-        "gpr_base",
         "grpc_base",
         "grpc_security_base",
         "promise",
@@ -5575,7 +5513,6 @@ grpc_cc_library(
     ],
     language = "c++",
     deps = [
-        "gpr_base",
         "gpr_host_port",
         "gpr_stat",
         "gpr_sync",
@@ -5602,7 +5539,6 @@ grpc_cc_library(
     ],
     language = "c++",
     deps = [
-        "gpr_base",
         "grpc_base",
         "grpc_security_base",
         "promise",
@@ -5758,7 +5694,6 @@ grpc_cc_library(
     visibility = ["@grpc:public"],
     deps = [
         "config",
-        "gpr_base",
         "grpc_alts_credentials",
         "grpc_authorization_base",
         "grpc_base",
@@ -5843,7 +5778,6 @@ grpc_cc_library(
         "arena",
         "arena_promise",
         "config",
-        "gpr_base",
         "gpr_memory",
         "gpr_string",
         "gpr_timers",
@@ -5885,7 +5819,6 @@ grpc_cc_library(
     visibility = ["@grpc:public"],
     deps = [
         "global_config",
-        "gpr_base",
         "gpr_string",
         "grpc_base",
         "grpc_security_base",
@@ -5979,7 +5912,6 @@ grpc_cc_library(
     language = "c++",
     visibility = ["@grpc:public"],
     deps = [
-        "gpr_base",
         "gpr_sync",
         "grpc_base",
     ],
@@ -6061,7 +5993,6 @@ grpc_cc_library(
     ],
     language = "c++",
     deps = [
-        "gpr_base",
         "grpc_base",
     ],
 )
@@ -6085,7 +6016,6 @@ grpc_cc_library(
     ],
     language = "c++",
     deps = [
-        "gpr_base",
         "grpc_authorization_base",
         "grpc_base",
         "grpc_matchers",
@@ -6111,7 +6041,6 @@ grpc_cc_library(
     language = "c++",
     public_hdrs = GRPC_PUBLIC_HDRS,
     deps = [
-        "gpr_base",
         "gpr_sync",
         "grpc_base",
         "grpc_matchers",
@@ -6135,7 +6064,6 @@ grpc_cc_library(
     ],
     language = "c++",
     deps = [
-        "gpr_base",
         "grpc++",
         "grpc++_codegen_base",
         "grpc_authorization_provider",
@@ -6158,7 +6086,6 @@ grpc_cc_library(
     language = "c++",
     deps = [
         "envoy_config_rbac_upb",
-        "gpr_base",
         "grpc_base",
         "grpc_mock_cel",
         "grpc_rbac_engine",
@@ -6329,7 +6256,6 @@ grpc_cc_library(
         "channel_stack_type",
         "config",
         "debug_location",
-        "gpr_base",
         "grpc_base",
         "grpc_client_channel",
         "grpc_codegen",
@@ -6950,7 +6876,6 @@ grpc_cc_library(
     ],
     visibility = ["@grpc:grpc++_test"],
     deps = [
-        "gpr_base",
         "grpc++",
         "grpc_base",
     ],
@@ -6967,7 +6892,6 @@ grpc_cc_library(
     language = "c++",
     tags = ["grpc-autodeps"],
     deps = [
-        "gpr_base",
         "grpc_base",
         "//src/proto/grpc/core:stats_proto",
     ],
@@ -7048,7 +6972,6 @@ grpc_cc_library(
     tags = ["grpc-autodeps"],
     deps = [
         "error",
-        "gpr_base",
         "gpr_platform",
     ],
 )
