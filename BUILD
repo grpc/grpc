@@ -870,26 +870,16 @@ grpc_cc_library(
 grpc_cc_library(
     name = "gpr_base",
     srcs = [
-        "src/core/lib/gpr/sync.cc",
-        "src/core/lib/gpr/sync_abseil.cc",
-        "src/core/lib/gpr/sync_posix.cc",
-        "src/core/lib/gpr/sync_windows.cc",
-        "src/core/lib/gpr/time.cc",
-        "src/core/lib/gpr/tmpfile_msys.cc",
-        "src/core/lib/gpr/tmpfile_posix.cc",
-        "src/core/lib/gpr/tmpfile_windows.cc",
         "src/core/lib/gpr/wrap_memcpy.cc",
         "src/core/lib/gprpp/host_port.cc",
         "src/core/lib/gprpp/stat_posix.cc",
         "src/core/lib/gprpp/stat_windows.cc",
     ],
     hdrs = [
-        "src/core/lib/gpr/tmpfile.h",
         "src/core/lib/gprpp/host_port.h",
         "src/core/lib/gprpp/stat.h",
     ],
     external_deps = [
-        "absl/base",
         "absl/status",
         "absl/strings",
         "absl/strings:str_format",
@@ -904,6 +894,28 @@ grpc_cc_library(
         "gpr_platform",
         "gpr_string",
         "gpr_timers",
+    ],
+)
+
+grpc_cc_library(
+    name = "gpr_tmpfile",
+    srcs = [
+        "src/core/lib/gpr/tmpfile_msys.cc",
+        "src/core/lib/gpr/tmpfile_posix.cc",
+        "src/core/lib/gpr/tmpfile_windows.cc",
+    ],
+    hdrs = [
+        "src/core/lib/gpr/tmpfile.h",
+    ],
+    external_deps = [
+    ],
+    language = "c++",
+    public_hdrs = GPR_PUBLIC_HDRS,
+    visibility = ["@grpc:alt_gpr_base_legacy"],
+    deps = [
+        "gpr_codegen",
+        "gpr_platform",
+        "gpr_string",
     ],
 )
 
@@ -1199,15 +1211,28 @@ grpc_cc_library(
 
 grpc_cc_library(
     name = "gpr_sync",
+    srcs = [
+        "src/core/lib/gpr/sync.cc",
+        "src/core/lib/gpr/sync_abseil.cc",
+        "src/core/lib/gpr/sync_posix.cc",
+        "src/core/lib/gpr/sync_windows.cc",
+    ],
     hdrs = ["src/core/lib/gprpp/sync.h"],
     external_deps = [
+        "absl/base",
         "absl/synchronization",
+        "absl/time",
     ],
     language = "c++",
     public_hdrs = ["include/grpc/support/sync.h"],
     visibility = ["@grpc:alt_gpr_base_legacy"],
     deps = [
+        "gpr_alloc",
+        "gpr_atm",
+        "gpr_log",
         "gpr_platform",
+        "gpr_timers",
+        "time",
     ],
 )
 
@@ -2398,6 +2423,7 @@ grpc_cc_library(
 grpc_cc_library(
     name = "time",
     srcs = [
+        "src/core/lib/gpr/time.cc",
         "src/core/lib/gpr/time_posix.cc",
         "src/core/lib/gpr/time_precise.cc",
         "src/core/lib/gpr/time_windows.cc",
