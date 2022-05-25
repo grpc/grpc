@@ -869,22 +869,25 @@ grpc_cc_library(
 
 grpc_cc_library(
     name = "gpr_base",
+    srcs = [],
+    hdrs = [],
+    language = "c++",
+    public_hdrs = GPR_PUBLIC_HDRS,
+    visibility = ["@grpc:alt_gpr_base_legacy"],
+    deps = [],
+)
+
+grpc_cc_library(
+    name = "gpr_host_port",
     srcs = [
-        "src/core/lib/gpr/wrap_memcpy.cc",
         "src/core/lib/gprpp/host_port.cc",
-        "src/core/lib/gprpp/stat_posix.cc",
-        "src/core/lib/gprpp/stat_windows.cc",
     ],
     hdrs = [
         "src/core/lib/gprpp/host_port.h",
-        "src/core/lib/gprpp/stat.h",
     ],
     external_deps = [
-        "absl/status",
         "absl/strings",
         "absl/strings:str_format",
-        "absl/synchronization",
-        "absl/time:time",
     ],
     language = "c++",
     public_hdrs = GPR_PUBLIC_HDRS,
@@ -892,8 +895,28 @@ grpc_cc_library(
     deps = [
         "gpr_log",
         "gpr_platform",
-        "gpr_string",
-        "gpr_timers",
+    ],
+)
+
+grpc_cc_library(
+    name = "gpr_stat",
+    srcs = [
+        "src/core/lib/gprpp/stat_posix.cc",
+        "src/core/lib/gprpp/stat_windows.cc",
+    ],
+    hdrs = [
+        "src/core/lib/gprpp/stat.h",
+    ],
+    external_deps = [
+        "absl/status",
+        "absl/strings",
+    ],
+    language = "c++",
+    public_hdrs = GPR_PUBLIC_HDRS,
+    visibility = ["@grpc:alt_gpr_base_legacy"],
+    deps = [
+        "gpr_log",
+        "gpr_platform",
     ],
 )
 
@@ -1345,6 +1368,9 @@ grpc_cc_library(
 # anything else from gpr can still be portable!
 grpc_cc_library(
     name = "gpr_platform",
+    srcs = [
+        "src/core/lib/gpr/wrap_memcpy.cc",
+    ],
     language = "c++",
     public_hdrs = [
         "include/grpc/impl/codegen/port_platform.h",
@@ -2503,7 +2529,7 @@ grpc_cc_library(
     tags = ["grpc-autodeps"],
     visibility = ["@grpc:alt_grpc_base_legacy"],
     deps = [
-        "gpr_base",
+        "gpr_host_port",
         "gpr_platform",
         "gpr_string",
         "grpc_sockaddr",
@@ -2582,6 +2608,7 @@ grpc_cc_library(
     tags = ["grpc-autodeps"],
     deps = [
         "gpr_base",
+        "gpr_log",
         "gpr_platform",
         "iomgr_port",
     ],
@@ -2734,7 +2761,7 @@ grpc_cc_library(
     tags = ["grpc-autodeps"],
     visibility = ["@grpc:alt_grpc_base_legacy"],
     deps = [
-        "gpr_base",
+        "gpr_log",
         "gpr_platform",
     ],
 )
@@ -3049,6 +3076,7 @@ grpc_cc_library(
         "gpr_base",
         "gpr_codegen",
         "gpr_fork",
+        "gpr_host_port",
         "gpr_manual_constructor",
         "gpr_memory",
         "gpr_mpscq",
@@ -3457,9 +3485,9 @@ grpc_cc_library(
         "error",
         "global_config",
         "gpr_alloc",
-        "gpr_base",
         "gpr_codegen",
         "gpr_env",
+        "gpr_host_port",
         "gpr_manual_constructor",
         "gpr_memory",
         "gpr_platform",
@@ -4132,9 +4160,9 @@ grpc_cc_library(
         "envoy_type_upb",
         "error",
         "google_rpc_status_upb",
-        "gpr_base",  #host_port
         "gpr_codegen",
         "gpr_env",
+        "gpr_host_port",
         "gpr_memory",
         "gpr_platform",
         "gpr_status_helper",
@@ -4230,7 +4258,7 @@ grpc_cc_library(
         "config",
         "error",
         "exec_ctx",
-        "gpr_base",  #host_port
+        "gpr_host_port",
         "gpr_platform",
         "gpr_sync",
         "grpc_base",
@@ -5026,7 +5054,7 @@ grpc_cc_library(
         "error",
         "event_engine_common",
         "global_config",
-        "gpr_base",  #host_port
+        "gpr_host_port",
         "gpr_memory",
         "gpr_platform",
         "gpr_string",
@@ -5288,7 +5316,7 @@ grpc_cc_library(
     ],
     language = "c++",
     deps = [
-        "gpr_base",
+        "gpr_host_port",
         "grpc_base",
         "grpc_credentials_util",
         "grpc_trace",
@@ -5342,7 +5370,7 @@ grpc_cc_library(
     ],
     language = "c++",
     deps = [
-        "gpr_base",
+        "gpr_host_port",
         "gpr_string",
         "grpc_base",
         "grpc_security_base",
@@ -5464,7 +5492,7 @@ grpc_cc_library(
     language = "c++",
     deps = [
         "gpr_alloc",
-        "gpr_base",  #host_port
+        "gpr_host_port",
         "gpr_log",
         "gpr_platform",
         "gpr_string",
@@ -5500,8 +5528,8 @@ grpc_cc_library(
     deps = [
         "alts_util",
         "gpr_alloc",
-        "gpr_base",
         "gpr_env",
+        "gpr_host_port",
         "gpr_log",
         "gpr_platform",
         "gpr_string",
@@ -5548,6 +5576,8 @@ grpc_cc_library(
     language = "c++",
     deps = [
         "gpr_base",
+        "gpr_host_port",
+        "gpr_stat",
         "gpr_sync",
         "grpc_base",
         "grpc_credentials_util",
@@ -5979,7 +6009,7 @@ grpc_cc_library(
     visibility = ["@grpc:public"],
     deps = [
         "gpr_alloc",
-        "gpr_base",  # for host_port
+        "gpr_host_port",
         "gpr_log",
         "gpr_platform",
         "gpr_string",
@@ -6161,6 +6191,7 @@ grpc_cc_library(
     language = "c++",
     deps = [
         "gpr",
+        "gpr_log",
         "hpack_constants",
     ],
 )
@@ -6273,7 +6304,8 @@ grpc_cc_library(
     ],
     language = "c++",
     deps = [
-        "gpr_base",
+        "gpr_log",
+        "gpr_platform",
         "useful",
     ],
 )
