@@ -4695,7 +4695,7 @@ grpc_cc_library(
         "debug_location",
         "error",
         "exec_ctx",
-        "gpr_base",
+        "gpr_string",
         "gpr_platform",
         "grpc_base",
         "grpc_client_channel",
