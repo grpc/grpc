@@ -14,6 +14,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import argparse
 import collections
 from doctest import SKIP
 import os
@@ -26,12 +27,15 @@ import tempfile
 ROOT = os.path.abspath(os.path.join(os.path.dirname(sys.argv[0]), '../..'))
 os.chdir(ROOT)
 
-Vendor = collections.namedtuple('Vendor', ['name', 'score'])
 vendors = collections.defaultdict(list)
+scores = collections.defaultdict(int)
+avoidness = collections.defaultdict(int)
 consumes = {}
 no_update = set()
 buildozer_commands = []
 needs_codegen_base_src = set()
+original_deps = {}
+original_external_deps = {}
 
 # TODO(ctiller): ideally we wouldn't hardcode a bunch of paths here.
 # We can likely parse out BUILD files from dependencies to generate this index.
@@ -235,20 +239,24 @@ def grpc_cc_library(name,
                     srcs=[],
                     select_deps=None,
                     tags=[],
+                    deps=[],
+                    external_deps=[],
                     **kwargs):
     if select_deps or 'nofixdeps' in tags or 'grpc-autodeps' not in tags:
         no_update.add(name)
-    score = len(public_hdrs + hdrs)
+    scores[name] = len(public_hdrs + hdrs)
     # avoid_dep is the internal way of saying prefer something else
     # we add grpc_avoid_dep to allow internal grpc-only stuff to avoid each
     # other, whilst not biasing dependent projects
     if 'avoid_dep' in tags or 'grpc_avoid_dep' in tags:
-        score += 1000000
+        avoidness[name] += 10
     if 'nofixdeps' in tags:
-        score += 1000
+        avoidness[name] += 1
     for hdr in hdrs + public_hdrs:
-        vendors[hdr].append(Vendor(name, score))
+        vendors[hdr].append(name)
     inc = set()
+    original_deps[name] = frozenset(deps)
+    original_external_deps[name] = frozenset(external_deps)
     for src in hdrs + public_hdrs + srcs:
         for line in open(src):
             m = re.search(r'#include <(.*)>', line)
@@ -260,16 +268,6 @@ def grpc_cc_library(name,
             if 'grpc::g_glip' in line or 'grpc:g_core_codegen_interface' in line:
                 needs_codegen_base_src.add(name)
     consumes[name] = list(inc)
-
-
-def choose_vendor(library, vendors):
-    best = None
-    for vendor in vendors:
-        if vendor.name == library:
-            return None
-        if best is None or vendor.score < best.score:
-            best = vendor
-    return best.name
 
 
 def buildozer(cmd, target):
@@ -288,6 +286,54 @@ def buildozer_set_list(name, values, target, via=""):
         buildozer('rename %s %s' % (via, name), target)
 
 
+def score_edit_distance(proposed, existing):
+    """Score a proposed change primarily by edit distance"""
+    sum = 0
+    for p in proposed:
+        if p not in existing:
+            sum += 1
+    for e in existing:
+        if e not in proposed:
+            sum += 1
+    return sum
+
+
+def total_score(proposal):
+    return sum(scores[dep] for dep in proposal)
+
+
+def total_avoidness(proposal):
+    return sum(avoidness[dep] for dep in proposal)
+
+
+def score_list_size(proposed, existing):
+    """Score a proposed change primarily by number of dependencies"""
+    return len(proposed)
+
+
+def score_best(proposed, existing):
+    """Score a proposed change primarily by dependency score"""
+    return 0
+
+
+SCORERS = {
+    'edit_distance': score_edit_distance,
+    'list_size': score_list_size,
+    'best': score_best,
+}
+
+parser = argparse.ArgumentParser(description='Fix build dependencies')
+parser.add_argument('targets',
+                    nargs='*',
+                    default=[],
+                    help='targets to fix (empty => all)')
+parser.add_argument('--score',
+                    type=str,
+                    default='edit_distance',
+                    help='scoring function to use: one of ' +
+                    ', '.join(SCORERS.keys()))
+args = parser.parse_args()
+
 exec(
     open('BUILD', 'r').read(), {
         'load': lambda filename, *args: None,
@@ -305,13 +351,51 @@ exec(
         'filegroup': lambda name, **kwargs: None,
     }, {})
 
+
+# Keeps track of all possible sets of dependencies that could satify the
+# problem. (models the list monad in Haskell!)
+class Choices:
+
+    def __init__(self):
+        self.choices = set()
+        self.choices.add(frozenset())
+
+    def add_one_of(self, choices):
+        if not choices:
+            return
+        new_choices = set()
+        for append_choice in choices:
+            for choice in self.choices:
+                new_choices.add(choice.union([append_choice]))
+        self.choices = new_choices
+
+    def add(self, choice):
+        self.add_one_of([choice])
+
+    def remove(self, remove):
+        new_choices = set()
+        for choice in self.choices:
+            new_choices.add(choice.difference([remove]))
+        self.choices = new_choices
+
+    def best(self, scorer):
+        best = None
+        final_scorer = lambda x: (total_avoidness(x), scorer(x), total_score(x))
+        for choice in self.choices:
+            if best is None or final_scorer(choice) < final_scorer(best):
+                best = choice
+        return best
+
+
 error = False
 for library in sorted(consumes.keys()):
     if library in no_update:
         continue
+    if args.targets and library not in args.targets:
+        continue
     hdrs = sorted(consumes[library])
-    deps = set()
-    external_deps = set()
+    deps = Choices()
+    external_deps = Choices()
     for hdr in hdrs:
         if hdr == 'src/core/lib/profiling/stap_probes.h':
             continue
@@ -321,15 +405,11 @@ for library in sorted(consumes.keys()):
             continue
 
         if hdr in vendors:
-            vendor = choose_vendor(library, vendors[hdr])
-            if vendor:
-                deps.add(vendor)
+            deps.add_one_of(vendors[hdr])
             continue
 
         if 'include/' + hdr in vendors:
-            vendor = choose_vendor(library, vendors['include/' + hdr])
-            if vendor:
-                deps.add(vendor)
+            deps.add_one_of(vendors['include/' + hdr])
             continue
 
         if '.' not in hdr:
@@ -389,11 +469,13 @@ for library in sorted(consumes.keys()):
     if library in needs_codegen_base_src:
         deps.add('grpc++_codegen_base_src')
 
-    if library in deps:
-        deps.remove(library)
+    deps.remove(library)
 
-    deps = sorted(deps)
-    external_deps = sorted(external_deps)
+    deps = sorted(
+        deps.best(lambda x: SCORERS[args.score](x, original_deps[library])))
+    external_deps = sorted(
+        external_deps.best(lambda x: SCORERS[args.score]
+                           (x, original_external_deps[library])))
     target = ':' + library
     buildozer_set_list('external_deps', external_deps, target, via='deps')
     buildozer_set_list('deps', deps, target)
