@@ -18,29 +18,29 @@
 
 #include "src/core/ext/xds/xds_bootstrap.h"
 
-#include <errno.h>
 #include <stdlib.h>
 
+#include <algorithm>
+#include <utility>
 #include <vector>
 
+#include "absl/memory/memory.h"
+#include "absl/strings/match.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
 #include "absl/strings/str_join.h"
 #include "absl/strings/string_view.h"
 
-#include <grpc/grpc_security.h>
+#include <grpc/support/alloc.h>
 
+#include "src/core/ext/xds/certificate_provider_factory.h"
 #include "src/core/ext/xds/certificate_provider_registry.h"
-#include "src/core/ext/xds/xds_api.h"
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/gpr/env.h"
 #include "src/core/lib/gpr/string.h"
-#include "src/core/lib/iomgr/load_file.h"
+#include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/json/json_util.h"
 #include "src/core/lib/security/credentials/channel_creds_registry.h"
-#include "src/core/lib/security/credentials/credentials.h"
-#include "src/core/lib/security/credentials/fake/fake_credentials.h"
-#include "src/core/lib/slice/slice_internal.h"
 
 namespace grpc_core {
 

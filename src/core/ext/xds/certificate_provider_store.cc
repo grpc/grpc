@@ -20,6 +20,8 @@
 
 #include "src/core/ext/xds/certificate_provider_store.h"
 
+#include <grpc/support/log.h>
+
 #include "src/core/ext/xds/certificate_provider_registry.h"
 
 namespace grpc_core {
