@@ -829,8 +829,13 @@ void Server::ShutdownAndNotify(grpc_completion_queue* cq, void* tag) {
   if (await_requests != nullptr) {
     await_requests->WaitForNotification();
   }
-  // Shutdown listeners.
+  StopListening();
+  broadcaster.BroadcastShutdown(/*send_goaway=*/true, GRPC_ERROR_NONE);
+}
+
+void Server::StopListening() {
   for (auto& listener : listeners_) {
+    if (listener.listener == nullptr) continue;
     channelz::ListenSocketNode* channelz_listen_socket_node =
         listener.listener->channelz_listen_socket_node();
     if (channelz_node_ != nullptr && channelz_listen_socket_node != nullptr) {
@@ -842,7 +847,6 @@ void Server::ShutdownAndNotify(grpc_completion_queue* cq, void* tag) {
     listener.listener->SetOnDestroyDone(&listener.destroy_done);
     listener.listener.reset();
   }
-  broadcaster.BroadcastShutdown(/*send_goaway=*/true, GRPC_ERROR_NONE);
 }
 
 void Server::CancelAllCalls() {

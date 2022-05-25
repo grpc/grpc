@@ -524,8 +524,11 @@ TEST_P(AggregateClusterTest, FallBackWithConnectivityChurn) {
   // Increase timeout to account for subchannel connection delays.
   WaitForBackend(DEBUG_LOCATION, 0, WaitForBackendOptions(),
                  RpcOptions().set_timeout_ms(2000));
-  // Bring down the P0 backend.
-  ShutdownBackend(0);
+  // Send GOAWAY from the P0 backend.
+  // We don't actually shut it down here to avoid flakiness caused by
+  // failing an RPC after the client has already sent it but before the
+  // server finished processing it.
+  backends_[0]->StopListeningAndSendGoaways();
   // Allow the connection attempt to the P1 backend to resume.
   connection_attempt_injector.CompletePriority1Connection();
   // Wait for P1 backend to start getting traffic.
