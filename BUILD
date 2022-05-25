@@ -1246,6 +1246,7 @@ grpc_cc_library(
         "src/core/lib/gprpp/thd.h",
     ],
     language = "c++",
+    public_hdrs = ["include/grpc/support/thd_id.h"],
     visibility = ["@grpc:alt_gpr_base_legacy"],
     deps = [
     ],
@@ -5894,7 +5895,14 @@ grpc_cc_library(
     language = "c++",
     visibility = ["@grpc:public"],
     deps = [
-        "gpr_base",
+        "gpr_alloc",
+        "gpr_base",  # for host_port
+        "gpr_log",
+        "gpr_platform",
+        "gpr_string",
+        "gpr_string_util",
+        "gpr_sync",
+        "gpr_thd",
         "grpc_base",
         "grpc_credentials_util",
         "grpc_security_base",
