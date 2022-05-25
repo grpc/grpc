@@ -4908,7 +4908,8 @@ grpc_cc_library(
     ],
     language = "c++",
     deps = [
-        "gpr_base",
+        "global_config",
+        "gpr_platform",
         "grpc_base",
     ],
 )
