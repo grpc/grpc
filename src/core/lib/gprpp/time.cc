@@ -25,7 +25,8 @@
 #include "absl/strings/str_format.h"
 
 #include <grpc/impl/codegen/gpr_types.h>
-#include <grpc/support/log.h>
+
+#include "src/core/lib/gpr/assert_internal.h"
 
 namespace grpc_core {
 
@@ -53,10 +54,10 @@ GPR_ATTRIBUTE_NOINLINE std::pair<int64_t, gpr_cycle_counter> InitTime() {
   }
 
   // Time does not seem to be increasing from zero...
-  GPR_ASSERT(process_epoch_seconds != 0);
+  GPR_ASSERT_INTERNAL(process_epoch_seconds != 0);
   int64_t expected = 0;
   gpr_cycle_counter process_epoch_cycles = (cycles_start + cycles_end) / 2;
-  GPR_ASSERT(process_epoch_cycles != 0);
+  GPR_ASSERT_INTERNAL(process_epoch_cycles != 0);
   if (!g_process_epoch_seconds.compare_exchange_strong(
           expected, process_epoch_seconds, std::memory_order_relaxed,
           std::memory_order_relaxed)) {
@@ -103,7 +104,7 @@ gpr_timespec MillisecondsAsTimespec(int64_t millis, gpr_clock_type clock_type) {
 }
 
 int64_t TimespanToMillisRoundUp(gpr_timespec ts) {
-  GPR_ASSERT(ts.clock_type == GPR_TIMESPAN);
+  GPR_ASSERT_INTERNAL(ts.clock_type == GPR_TIMESPAN);
   double x = GPR_MS_PER_SEC * static_cast<double>(ts.tv_sec) +
              static_cast<double>(ts.tv_nsec) / GPR_NS_PER_MS +
              static_cast<double>(GPR_NS_PER_SEC - 1) /
@@ -118,7 +119,7 @@ int64_t TimespanToMillisRoundUp(gpr_timespec ts) {
 }
 
 int64_t TimespanToMillisRoundDown(gpr_timespec ts) {
-  GPR_ASSERT(ts.clock_type == GPR_TIMESPAN);
+  GPR_ASSERT_INTERNAL(ts.clock_type == GPR_TIMESPAN);
   double x = GPR_MS_PER_SEC * static_cast<double>(ts.tv_sec) +
              static_cast<double>(ts.tv_nsec) / GPR_NS_PER_MS;
   if (x <= static_cast<double>(std::numeric_limits<int64_t>::min())) {

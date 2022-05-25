@@ -1329,6 +1329,20 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "gpr_assert_internal",
+    hdrs = [
+        "src/core/lib/gpr/assert_internal.h",
+    ],
+    external_deps = [
+        "absl/strings:str_format",
+    ],
+    language = "c++",
+    deps = [
+        "gpr_platform",
+    ],
+)
+
+grpc_cc_library(
     name = "gpr_log",
     srcs = [
         "src/core/lib/gpr/log.cc",
@@ -1345,12 +1359,15 @@ grpc_cc_library(
         "include/grpc/support/log.h",
     ],
     deps = [
+        "examine_stack",
         "global_config",
         "gpr_alloc",
         "gpr_atm",
         "gpr_codegen",
         "gpr_platform",
         "gpr_string",
+        "gpr_tls",
+        "time",
     ],
 )
 
@@ -1895,9 +1912,9 @@ grpc_cc_library(
         "activity",
         "gpr_base",
         "gpr_platform",
+        "gpr_sync",
         "poll",
         "promise_like",
-        "gpr_sync",
         "wait_set",
     ],
 )
@@ -2178,6 +2195,7 @@ grpc_cc_library(
         "event_engine_memory_allocator",
         "exec_ctx_wakeup_scheduler",
         "gpr_base",
+        "gpr_mpscq",
         "gpr_platform",
         "gpr_sync",
         "grpc_trace",
@@ -2205,6 +2223,7 @@ grpc_cc_library(
     deps = [
         "context",
         "event_engine_memory_allocator",
+        "gpr_alloc",
         "gpr_base",
         "gpr_platform",
         "memory_quota",
@@ -2300,13 +2319,13 @@ grpc_cc_library(
     external_deps = ["absl/strings"],
     tags = ["grpc-autodeps"],
     deps = [
-        "grpc_codegen",
         "gpr_alloc",
         "gpr_log",
         "gpr_memory",
         "gpr_murmur_hash",
         "gpr_platform",
         "gpr_string",
+        "grpc_codegen",
         "ref_counted",
         "slice_refcount",
     ],
@@ -2358,16 +2377,16 @@ grpc_cc_library(
     hdrs = [
         "src/core/lib/iomgr/closure.h",
     ],
-    tags = ["grpc-autodeps"],
     external_deps = [
         "absl/status",
     ],
+    tags = ["grpc-autodeps"],
     deps = [
         "debug_location",
         "error",
-        "gpr_platform",
         "gpr_manual_constructor",
         "gpr_mpscq",
+        "gpr_platform",
     ],
 )
 
@@ -2386,14 +2405,14 @@ grpc_cc_library(
     external_deps = [
         "absl/strings:str_format",
     ],
-    tags = ["grpc-autodeps"],
     public_hdrs = [
         "include/grpc/support/time.h",
     ],
+    tags = ["grpc-autodeps"],
     deps = [
+        "gpr_assert_internal",
         "gpr_atm",
         "gpr_codegen",
-        "gpr_log",
         "gpr_platform",
         "useful",
     ],
@@ -3252,8 +3271,8 @@ grpc_cc_library(
     deps = [
         "gpr_base",
         "gpr_platform",
-        "grpc_codegen",
         "gpr_sync",
+        "grpc_codegen",
         "grpc_service_config",
         "iomgr_fwd",
         "orphanable",
@@ -3393,8 +3412,8 @@ grpc_cc_library(
         "error",
         "gpr_base",
         "gpr_codegen",
-        "grpc_backend_metric_data",
         "gpr_sync",
+        "grpc_backend_metric_data",
         "grpc_base",
         "grpc_client_authority_filter",
         "grpc_codegen",
