@@ -20,7 +20,7 @@
 #define GRPC_CORE_LIB_GPR_USEFUL_H
 
 #include <grpc/support/port_platform.h>
-#include <stdint.h>
+
 #include <cstddef>
 
 /** useful utilities that don't belong anywhere else */

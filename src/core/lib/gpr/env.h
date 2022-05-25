@@ -21,6 +21,8 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <stdio.h>
+
 /* Env utility functions */
 
 /* Gets the environment variable value with the specified name.

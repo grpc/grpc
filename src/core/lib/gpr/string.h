@@ -20,10 +20,13 @@
 #define GRPC_CORE_LIB_GPR_STRING_H
 
 #include <grpc/support/port_platform.h>
+
+#include <stdbool.h>
 #include <stddef.h>
-#include <grpc/impl/codegen/gpr_types.h>
-#include <stdint.h>
+
 #include <string>
+
+#include <grpc/impl/codegen/gpr_types.h>
 
 /* String utility functions */
 

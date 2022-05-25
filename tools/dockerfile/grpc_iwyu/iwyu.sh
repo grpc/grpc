@@ -29,7 +29,7 @@ cd ${IWYU_ROOT}/iwyu
 git checkout fbd921d6640bf1b18fe5a8a895636215367eb6b9
 mkdir -p ${IWYU_ROOT}/iwyu_build
 cd ${IWYU_ROOT}/iwyu_build
-cmake -G "Unix Makefiles" -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++ -DLLVM_ROOT_DIR=/usr/lib/llvm-13 ${IWYU_ROOT}/iwyu
+cmake -G "Unix Makefiles" -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++ -DLLVM_ROOT_DIR=/usr/lib/llvm-13 ${IWYU_ROOT}/iwyu 
 make -j $CPU_COUNT
 cd ${IWYU_ROOT}
 
@@ -45,7 +45,6 @@ export ENABLED_MODULES='
   src/core/lib/channel
   src/core/lib/config
   src/core/lib/event_engine
-  src/core/lib/gpr
   src/core/lib/gprpp
   src/core/lib/json
   src/core/lib/slice

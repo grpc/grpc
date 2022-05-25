@@ -17,9 +17,11 @@
  */
 
 #include <grpc/support/port_platform.h>
+
 #include <stdlib.h>
+#include <string.h>
+
 #include <grpc/support/alloc.h>
-#include <stdint.h>
 
 #include "src/core/lib/gpr/assert_internal.h"
 #include "src/core/lib/profiling/timers.h"
