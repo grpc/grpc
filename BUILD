@@ -6901,8 +6901,10 @@ grpc_cc_library(
     tags = ["grpc-autodeps"],
     deps = [
         "error",
-        "gpr_base",
+        "gpr_memory",
         "gpr_platform",
+        "gpr_string",
+        "gpr_string_util",
         "json",
         "time",
     ],
