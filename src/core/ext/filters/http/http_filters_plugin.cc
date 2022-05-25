@@ -20,13 +20,21 @@
 
 #include <string.h>
 
+#include "absl/types/optional.h"
+
+#include <grpc/impl/codegen/grpc_types.h>
+
 #include "src/core/ext/filters/http/client/http_client_filter.h"
 #include "src/core/ext/filters/http/message_compress/message_compress_filter.h"
 #include "src/core/ext/filters/http/message_compress/message_decompress_filter.h"
 #include "src/core/ext/filters/http/server/http_server_filter.h"
+#include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/channel/channel_fwd.h"
 #include "src/core/lib/channel/channel_stack_builder.h"
 #include "src/core/lib/config/core_configuration.h"
-#include "src/core/lib/surface/call.h"
+#include "src/core/lib/surface/channel_init.h"
+#include "src/core/lib/surface/channel_stack_type.h"
+#include "src/core/lib/transport/transport_fwd.h"
 #include "src/core/lib/transport/transport_impl.h"
 
 static bool is_building_http_like_transport(

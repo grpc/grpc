@@ -33,7 +33,10 @@ InsecureCredentials::create_security_connector(
       Ref(), std::move(request_metadata_creds));
 }
 
-const char* InsecureCredentials::Type() { return "Insecure"; }
+UniqueTypeName InsecureCredentials::Type() {
+  static UniqueTypeName::Factory kFactory("Insecure");
+  return kFactory.Create();
+}
 
 int InsecureCredentials::cmp_impl(
     const grpc_channel_credentials* /* other */) const {
@@ -47,7 +50,10 @@ InsecureServerCredentials::create_security_connector(
   return MakeRefCounted<InsecureServerSecurityConnector>(Ref());
 }
 
-const char* InsecureServerCredentials::Type() { return "Insecure"; }
+UniqueTypeName InsecureServerCredentials::Type() {
+  static auto* kFactory = new UniqueTypeName::Factory("Insecure");
+  return kFactory->Create();
+}
 
 }  // namespace grpc_core
 

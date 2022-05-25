@@ -1,4 +1,4 @@
-// Copyright 2021 The gRPC Authors
+// Copyright 2022 gRPC authors.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -11,22 +11,16 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-#include <grpc/support/port_platform.h>
 
-#ifdef GRPC_USE_EVENT_ENGINE
-#include <stdlib.h>
+#ifndef GRPC_CORE_LIB_CHANNEL_CHANNEL_FWD_H
+#define GRPC_CORE_LIB_CHANNEL_CHANNEL_FWD_H
 
-#include <grpc/support/log.h>
+typedef struct grpc_channel_stack grpc_channel_stack;
+typedef struct grpc_channel_filter grpc_channel_filter;
 
-#include "src/core/lib/iomgr/endpoint_pair.h"
-#include "src/core/lib/iomgr/port.h"
+typedef struct grpc_channel_element grpc_channel_element;
+typedef struct grpc_call_element grpc_call_element;
 
-grpc_endpoint_pair grpc_iomgr_create_endpoint_pair(
-    const char* /* name */, grpc_channel_args* /* args */) {
-  // TODO(hork): determine what's needed here in the long run
-  GPR_ASSERT(
-      false &&
-      "grpc_iomgr_create_endpoint_pair is not suppoted with event_engine");
-}
+typedef struct grpc_call_stack grpc_call_stack;
 
-#endif  // GRPC_USE_EVENT_ENGINE
+#endif  // GRPC_CORE_LIB_CHANNEL_CHANNEL_FWD_H
