@@ -40,7 +40,7 @@ PROJECT_NAME           = "GRPC Core"
 # could be handy for archiving the generated documentation or if some version
 # control system is used.
 
-PROJECT_NUMBER         = 24.0.0
+PROJECT_NUMBER         = 25.0.0
 
 # Using the PROJECT_BRIEF tag one can provide an optional one line description
 # for a project that appears at the top of each page and should give viewer a
@@ -1682,6 +1682,7 @@ src/core/lib/channel/channel_args.cc \
 src/core/lib/channel/channel_args.h \
 src/core/lib/channel/channel_args_preconditioning.cc \
 src/core/lib/channel/channel_args_preconditioning.h \
+src/core/lib/channel/channel_fwd.h \
 src/core/lib/channel/channel_stack.cc \
 src/core/lib/channel/channel_stack.h \
 src/core/lib/channel/channel_stack_builder.cc \
@@ -2221,6 +2222,7 @@ src/core/lib/transport/timeout_encoding.cc \
 src/core/lib/transport/timeout_encoding.h \
 src/core/lib/transport/transport.cc \
 src/core/lib/transport/transport.h \
+src/core/lib/transport/transport_fwd.h \
 src/core/lib/transport/transport_impl.h \
 src/core/lib/transport/transport_op_string.cc \
 src/core/lib/uri/uri_parser.cc \
