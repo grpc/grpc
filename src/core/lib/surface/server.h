@@ -195,6 +195,8 @@ class Server : public InternallyRefCounted<Server>,
   void ShutdownAndNotify(grpc_completion_queue* cq, void* tag)
       ABSL_LOCKS_EXCLUDED(mu_global_, mu_call_);
 
+  void StopListening();
+
   void CancelAllCalls() ABSL_LOCKS_EXCLUDED(mu_global_);
 
   void SendGoaways() ABSL_LOCKS_EXCLUDED(mu_global_, mu_call_);
