@@ -367,8 +367,10 @@ google_rpc_Status* StatusToProto(const absl::Status& status, upb_Arena* arena) {
                          PercentEncodingType::Compatible);
   char* message_percent = reinterpret_cast<char*>(
       upb_Arena_Malloc(arena, message_percent_slice.length()));
-  memcpy(message_percent, message_percent_slice.data(),
-         message_percent_slice.length());
+  if (message_percent_slice.length() > 0) {
+    memcpy(message_percent, message_percent_slice.data(),
+           message_percent_slice.length());
+  }
   google_rpc_Status_set_message(
       msg, upb_StringView_FromDataAndSize(message_percent,
                                           message_percent_slice.length()));
