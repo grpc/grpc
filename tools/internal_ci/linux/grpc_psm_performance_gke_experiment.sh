@@ -36,7 +36,6 @@ if [[ "${KOKORO_BUILD_INITIATOR%%-*}" == kokoro ]]; then
     LOAD_TEST_PREFIX=kokoro-test
 fi
 BIGQUERY_TABLE_8CORE=e2e_benchmarks.experimental_results
-BIGQUERY_TABLE_32CORE=e2e_benchmarks.experimental_results_32core
 # END differentiate experimental configuration from master configuration.
 CLOUD_LOGGING_URL="https://source.cloud.google.com/results/invocations/${KOKORO_BUILD_ID}"
 PREBUILT_IMAGE_PREFIX="gcr.io/grpc-testing/e2etest/prebuilt/${LOAD_TEST_PREFIX}"
@@ -78,25 +77,18 @@ TEST_INFRA_VERSION=$(git describe --tags "$(git rev-list --tags --max-count=1)")
 popd
 
 # PSM tests related ENV
-PSM_PROXIED_TEST=proxied
-PSM_PROXYLESS_TEST=proxyless
 PSM_IMAGE_PREFIX=gcr.io/grpc-testing/e2etest/runtime
 PSM_IMAGE_TAG=${TEST_INFRA_VERSION}
-PSM_QUEUE_NAME_KEY=queue
-PSM_8CORE_PROXYLESS_QUEUE_NAME="${WORKER_POOL_8CORE}-${PSM_PROXYLESS_TEST}"
-PSM_8CORE_PROXIED_QUEUE_NAME="${WORKER_POOL_8CORE}-${PSM_PROXIED_TEST}"
-PSM_32CORE_PROXYLESS_QUEUE_NAME="${WORKER_POOL_32CORE}-${PSM_PROXYLESS_TEST}"
-PSM_32CORE_PROXIED_QUEUE_NAME="${WORKER_POOL_32CORE}-${PSM_PROXIED_TEST}"
 
 # Build test configurations.
 buildConfigs() {
     local -r pool="$1"
     local -r table="$2"
-    local -r uniquifier="$3"
+    local -r type="$3"
 
     shift 3
     tools/run_tests/performance/loadtest_config.py "$@" \
-        -t ./tools/run_tests/performance/templates/loadtest_template_psm_"${uniquifier}"_prebuilt_all_languages.yaml \
+        -t ./tools/run_tests/performance/templates/loadtest_template_psm_"${type}"_prebuilt_all_languages.yaml \
         -s driver_pool="${DRIVER_POOL}" -s driver_image= \
         -s client_pool="${pool}" -s server_pool="${pool}" \
         -s big_query_table="${table}" -s timeout_seconds=900 \
@@ -110,17 +102,15 @@ buildConfigs() {
         -a ci_gitCommit="${GRPC_GITREF}" \
         -a ci_gitCommit_java="${GRPC_JAVA_GITREF}" \
         -a ci_gitActualCommit="${KOKORO_GIT_COMMIT}" \
-        --prefix="${LOAD_TEST_PREFIX}" -u "${UNIQUE_IDENTIFIER}" -u "${pool}" -u "${uniquifier}"\
+        --prefix="${LOAD_TEST_PREFIX}" -u "${UNIQUE_IDENTIFIER}" -u "${pool}" -u "${type}"\
         -a pool="${pool}" \
         --category=psm \
         --allow_client_language=c++ --allow_server_language=c++ \
-        -o "psm_${uniquifier}_loadtest_with_prebuilt_workers_${pool}.yaml"
+        -o "psm_${type}_loadtest_with_prebuilt_workers_${pool}.yaml"
 }
 
-buildConfigs "${WORKER_POOL_8CORE}" "${BIGQUERY_TABLE_8CORE}" "${PSM_PROXIED_TEST}"  -a "${PSM_QUEUE_NAME_KEY}"="${PSM_8CORE_PROXIED_QUEUE_NAME}" --client_channels=8 --server_threads=16 --offered_loads 5000 6000 -l c++ -l java
-buildConfigs "${WORKER_POOL_8CORE}" "${BIGQUERY_TABLE_8CORE}" "${PSM_PROXYLESS_TEST}" -a "${PSM_QUEUE_NAME_KEY}"="${PSM_8CORE_PROXYLESS_QUEUE_NAME}" --client_channels=8 --server_threads=16 --offered_loads 5000 6000 -l c++ -l java
-buildConfigs "${WORKER_POOL_32CORE}" "${BIGQUERY_TABLE_32CORE}" "${PSM_PROXIED_TEST}" -a "${PSM_QUEUE_NAME_KEY}"="${PSM_32CORE_PROXIED_QUEUE_NAME}" --client_channels=32 --server_threads=64 --offered_loads 5000 6000 -l c++ -l java
-buildConfigs "${WORKER_POOL_32CORE}" "${BIGQUERY_TABLE_32CORE}" "${PSM_PROXYLESS_TEST}" -a "${PSM_QUEUE_NAME_KEY}"="${PSM_32CORE_PROXYLESS_QUEUE_NAME}" --client_channels=32 --server_threads=64 --offered_loads 5000 6000 -l c++ -l java
+buildConfigs "${WORKER_POOL_8CORE}" "${BIGQUERY_TABLE_8CORE}" proxied -a "queue"="${WORKER_POOL_8CORE}-proxied"  -l c++ -l java --client_channels=8 --server_threads=16 --offered_loads 5000 6000
+buildConfigs "${WORKER_POOL_8CORE}" "${BIGQUERY_TABLE_8CORE}" proxyless -a "queue"="${WORKER_POOL_8CORE}-proxyless" -l c++ -l java --client_channels=8 --server_threads=16 --offered_loads 5000 6000 
 
 # Delete prebuilt images on exit.
 deleteImages() {
@@ -148,9 +138,7 @@ time ../test-infra/bin/runner \
     -log-url-prefix "${LOG_URL_PREFIX}" \
     -polling-interval 5s \
     -delete-successful-tests \
-    -annotation-key ${PSM_QUEUE_NAME_KEY} \
-    -c "${PSM_8CORE_PROXIED_QUEUE_NAME}:1" \
-    -c "${PSM_8CORE_PROXYLESS_QUEUE_NAME}:1" \
-    -c "${PSM_32CORE_PROXIED_QUEUE_NAME}:1" \
-    -c "${PSM_32CORE_PROXYLESS_QUEUE_NAME}:1" \
+    -annotation-key "queue" \
+    -c "${WORKER_POOL_8CORE}-proxied:1" \
+    -c "${WORKER_POOL_8CORE}-proxyless:1" \
     -o "runner/sponge_log.xml"
