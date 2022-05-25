@@ -67,6 +67,10 @@ _SKIP_ADVANCED = [
 
 _SKIP_SPECIAL_STATUS_MESSAGE = ['special_status_message']
 
+_SKIP_ORCA = [
+  'orca_per_rpc', 'orca_oob'
+]
+
 _GOOGLE_DEFAULT_CREDS_TEST_CASE = 'google_default_credentials'
 
 _SKIP_GOOGLE_DEFAULT_CREDS = [
@@ -116,7 +120,8 @@ class CXXLanguage:
     def unimplemented_test_cases(self):
         return _SKIP_DATA_FRAME_PADDING + \
             _SKIP_SPECIAL_STATUS_MESSAGE + \
-            _SKIP_COMPUTE_ENGINE_CHANNEL_CREDS
+            _SKIP_COMPUTE_ENGINE_CHANNEL_CREDS + \
+            _SKIP_ORCA
 
     def unimplemented_test_cases_server(self):
         return []
@@ -146,7 +151,8 @@ class AspNetCoreLanguage:
 
     def unimplemented_test_cases(self):
         return _SKIP_GOOGLE_DEFAULT_CREDS + \
-            _SKIP_COMPUTE_ENGINE_CHANNEL_CREDS
+            _SKIP_COMPUTE_ENGINE_CHANNEL_CREDS + \
+            _SKIP_ORCA
 
     def unimplemented_test_cases_server(self):
         return []
@@ -179,7 +185,8 @@ class DartLanguage:
         return _SKIP_COMPRESSION + \
             _SKIP_SPECIAL_STATUS_MESSAGE + \
             _SKIP_GOOGLE_DEFAULT_CREDS + \
-            _SKIP_COMPUTE_ENGINE_CHANNEL_CREDS
+            _SKIP_COMPUTE_ENGINE_CHANNEL_CREDS + \
+            _SKIP_ORCA
 
     def unimplemented_test_cases_server(self):
         return _SKIP_COMPRESSION + _SKIP_SPECIAL_STATUS_MESSAGE
@@ -272,7 +279,8 @@ class GoLanguage:
         return {'GO111MODULE': 'on'}
 
     def unimplemented_test_cases(self):
-        return _SKIP_COMPRESSION
+        return _SKIP_COMPRESSION + \
+               _SKIP_ORCA
 
     def unimplemented_test_cases_server(self):
         return _SKIP_COMPRESSION
@@ -379,7 +387,8 @@ class NodeLanguage:
         return _SKIP_COMPRESSION + \
             _SKIP_DATA_FRAME_PADDING + \
             _SKIP_GOOGLE_DEFAULT_CREDS + \
-            _SKIP_COMPUTE_ENGINE_CHANNEL_CREDS
+            _SKIP_COMPUTE_ENGINE_CHANNEL_CREDS + \
+            _SKIP_ORCA
 
     def unimplemented_test_cases_server(self):
         return _SKIP_COMPRESSION
@@ -412,7 +421,8 @@ class NodePureJSLanguage:
         return _SKIP_COMPRESSION + \
             _SKIP_DATA_FRAME_PADDING + \
             _SKIP_GOOGLE_DEFAULT_CREDS + \
-            _SKIP_COMPUTE_ENGINE_CHANNEL_CREDS
+            _SKIP_COMPUTE_ENGINE_CHANNEL_CREDS + \
+            _SKIP_ORCA
 
     def unimplemented_test_cases_server(self):
         return []
@@ -444,7 +454,8 @@ class PHP7Language:
         return _SKIP_SERVER_COMPRESSION + \
             _SKIP_DATA_FRAME_PADDING + \
             _SKIP_GOOGLE_DEFAULT_CREDS + \
-            _SKIP_COMPUTE_ENGINE_CHANNEL_CREDS
+            _SKIP_COMPUTE_ENGINE_CHANNEL_CREDS + \
+            _SKIP_ORCA
 
     def unimplemented_test_cases_server(self):
         return _SKIP_COMPRESSION
@@ -484,7 +495,8 @@ class ObjcLanguage:
             _SKIP_DATA_FRAME_PADDING + \
             _SKIP_SPECIAL_STATUS_MESSAGE + \
             _SKIP_GOOGLE_DEFAULT_CREDS + \
-            _SKIP_COMPUTE_ENGINE_CHANNEL_CREDS
+            _SKIP_COMPUTE_ENGINE_CHANNEL_CREDS + \
+            _SKIP_ORCA
 
     def unimplemented_test_cases_server(self):
         return _SKIP_COMPRESSION
@@ -523,7 +535,8 @@ class RubyLanguage:
             _SKIP_DATA_FRAME_PADDING + \
             _SKIP_SPECIAL_STATUS_MESSAGE + \
             _SKIP_GOOGLE_DEFAULT_CREDS + \
-            _SKIP_COMPUTE_ENGINE_CHANNEL_CREDS
+            _SKIP_COMPUTE_ENGINE_CHANNEL_CREDS + \
+            _SKIP_ORCA
 
     def unimplemented_test_cases_server(self):
         return _SKIP_COMPRESSION
@@ -574,7 +587,8 @@ class PythonLanguage:
         return _SKIP_COMPRESSION + \
             _SKIP_DATA_FRAME_PADDING + \
             _SKIP_GOOGLE_DEFAULT_CREDS + \
-            _SKIP_COMPUTE_ENGINE_CHANNEL_CREDS
+            _SKIP_COMPUTE_ENGINE_CHANNEL_CREDS + \
+            _SKIP_ORCA
 
     def unimplemented_test_cases_server(self):
         return _SKIP_COMPRESSION
@@ -624,7 +638,8 @@ class PythonAsyncIOLanguage:
         return _SKIP_COMPRESSION + \
             _SKIP_DATA_FRAME_PADDING + \
             _AUTH_TEST_CASES + \
-            ['timeout_on_sleeping_server']
+            ['timeout_on_sleeping_server'] + \
+            _SKIP_ORCA
 
     def unimplemented_test_cases_server(self):
         # TODO(https://github.com/grpc/grpc/issues/21749)
@@ -666,7 +681,8 @@ _TEST_CASES = [
     'custom_metadata', 'status_code_and_message', 'unimplemented_method',
     'client_compressed_unary', 'server_compressed_unary',
     'client_compressed_streaming', 'server_compressed_streaming',
-    'unimplemented_service', 'special_status_message'
+    'unimplemented_service', 'special_status_message',
+    'orca_per_rpc', 'orca_oob'
 ]
 
 _AUTH_TEST_CASES = [
