@@ -86,10 +86,12 @@ TEST_F(EventEngineClientTest, ConnectToNonExistentListenerTest) {
   Promise<std::unique_ptr<EventEngine::Endpoint>> client_endpoint_promise;
   auto memory_quota = std::make_unique<grpc_core::MemoryQuota>("bar");
   // Create a test EventEngine client endpoint and connect to a non existent
-  // oracle listener.
+  // listener.
   test_ee->Connect(
       [&client_endpoint_promise](
           absl::StatusOr<std::unique_ptr<Endpoint>> status) {
+        // Connect should fail.
+        EXPECT_FALSE(status.ok());
         client_endpoint_promise.Set(nullptr);
       },
       URIToResolvedAddress("ipv6:[::1]:7000"),
