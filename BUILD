@@ -891,7 +891,6 @@ grpc_cc_library(
         "src/core/lib/gprpp/mpscq.cc",
         "src/core/lib/gprpp/stat_posix.cc",
         "src/core/lib/gprpp/stat_windows.cc",
-        "src/core/lib/gprpp/status_helper.cc",
         "src/core/lib/gprpp/thd_posix.cc",
         "src/core/lib/gprpp/thd_windows.cc",
         "src/core/lib/gprpp/time_util.cc",
@@ -917,7 +916,6 @@ grpc_cc_library(
         "src/core/lib/gprpp/memory.h",
         "src/core/lib/gprpp/mpscq.h",
         "src/core/lib/gprpp/stat.h",
-        "src/core/lib/gprpp/status_helper.h",
         "src/core/lib/gprpp/sync.h",
         "src/core/lib/gprpp/thd.h",
         "src/core/lib/gprpp/time_util.h",
@@ -944,11 +942,9 @@ grpc_cc_library(
         "construct_destruct",
         "debug_location",
         "examine_stack",
-        "google_rpc_status_upb",
         "gpr_codegen",
         "gpr_tls",
         "grpc_codegen",
-        "protobuf_any_upb",
         "useful",
     ],
 )
@@ -984,6 +980,34 @@ grpc_cc_library(
     hdrs = ["src/core/lib/gprpp/cpp_impl_of.h"],
     language = "c++",
     tags = ["grpc-autodeps"],
+)
+
+grpc_cc_library(
+    name = "status_helper",
+    srcs = [
+        "src/core/lib/gprpp/status_helper.cc",
+    ],
+    hdrs = [
+        "src/core/lib/gprpp/status_helper.h",
+    ],
+    external_deps = [
+        "absl/status",
+        "absl/strings",
+        "absl/strings:cord",
+        "absl/strings:str_format",
+        "absl/time:time",
+        "absl/types:optional",
+        "upb_lib",
+    ],
+    language = "c++",
+    tags = ["grpc-autodeps"],
+    deps = [
+        "google_rpc_status_upb",
+        "gpr",
+        "gpr_platform",
+        "percent_encoding",
+        "protobuf_any_upb",
+    ],
 )
 
 grpc_cc_library(
@@ -2014,6 +2038,7 @@ grpc_cc_library(
         "grpc_trace",
         "slice",
         "slice_refcount",
+        "status_helper",
         "useful",
     ],
 )
@@ -3742,6 +3767,7 @@ grpc_cc_library(
         "slice",
         "slice_refcount",
         "sockaddr_utils",
+        "status_helper",
         "time",
         "tsi_ssl_credentials",
         "uri_parser",
