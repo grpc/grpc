@@ -590,8 +590,12 @@ grpc_cc_library(
     public_hdrs = GRPCXX_PUBLIC_HDRS,
     deps = [
         "error",
-        "gpr_base",
+        "gpr_alloc",
         "gpr_codegen",
+        "gpr_env",
+        "gpr_log",
+        "gpr_platform",
+        "gpr_string_util",
         "grpc",
         "grpc++_base",
         "grpc++_codegen_base",
@@ -607,6 +611,7 @@ grpc_cc_library(
         "ref_counted_ptr",
         "slice",
         "slice_refcount",
+        "time",
     ],
 )
 
