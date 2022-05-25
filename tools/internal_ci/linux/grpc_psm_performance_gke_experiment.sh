@@ -84,11 +84,11 @@ PSM_IMAGE_TAG=${TEST_INFRA_VERSION}
 buildConfigs() {
     local -r pool="$1"
     local -r table="$2"
-    local -r type="$3"
+    local -r proxy_type="$3"
 
     shift 3
     tools/run_tests/performance/loadtest_config.py "$@" \
-        -t ./tools/run_tests/performance/templates/loadtest_template_psm_"${type}"_prebuilt_all_languages.yaml \
+        -t ./tools/run_tests/performance/templates/loadtest_template_psm_"${proxy_type}"_prebuilt_all_languages.yaml \
         -s driver_pool="${DRIVER_POOL}" -s driver_image= \
         -s client_pool="${pool}" -s server_pool="${pool}" \
         -s big_query_table="${table}" -s timeout_seconds=900 \
@@ -102,15 +102,15 @@ buildConfigs() {
         -a ci_gitCommit="${GRPC_GITREF}" \
         -a ci_gitCommit_java="${GRPC_JAVA_GITREF}" \
         -a ci_gitActualCommit="${KOKORO_GIT_COMMIT}" \
-        --prefix="${LOAD_TEST_PREFIX}" -u "${UNIQUE_IDENTIFIER}" -u "${pool}" -u "${type}"\
+        --prefix="${LOAD_TEST_PREFIX}" -u "${UNIQUE_IDENTIFIER}" -u "${pool}" -u "${proxy_type}"\
         -a pool="${pool}" \
         --category=psm \
         --allow_client_language=c++ --allow_server_language=c++ \
-        -o "psm_${type}_loadtest_with_prebuilt_workers_${pool}.yaml"
+        -o "psm_${proxy_type}_loadtest_with_prebuilt_workers_${pool}.yaml"
 }
 
-buildConfigs "${WORKER_POOL_8CORE}" "${BIGQUERY_TABLE_8CORE}" proxied -a "queue"="${WORKER_POOL_8CORE}-proxied"  -l c++ -l java --client_channels=8 --server_threads=16 --offered_loads 5000 6000
-buildConfigs "${WORKER_POOL_8CORE}" "${BIGQUERY_TABLE_8CORE}" proxyless -a "queue"="${WORKER_POOL_8CORE}-proxyless" -l c++ -l java --client_channels=8 --server_threads=16 --offered_loads 5000 6000 
+buildConfigs "${WORKER_POOL_8CORE}" "${BIGQUERY_TABLE_8CORE}" proxied -a queue="${WORKER_POOL_8CORE}-proxied"  -l c++ -l java --client_channels=8 --server_threads=16 --offered_loads 5000 6000
+buildConfigs "${WORKER_POOL_8CORE}" "${BIGQUERY_TABLE_8CORE}" proxyless -a queue="${WORKER_POOL_8CORE}-proxyless" -l c++ -l java --client_channels=8 --server_threads=16 --offered_loads 5000 6000 
 
 # Delete prebuilt images on exit.
 deleteImages() {
@@ -131,14 +131,12 @@ time ../test-infra/bin/prepare_prebuilt_workers \
 
 # Run tests.
 time ../test-infra/bin/runner \
-    -i "psm_${PSM_PROXIED_TEST}_loadtest_with_prebuilt_workers_${WORKER_POOL_8CORE}.yaml" \
-    -i "psm_${PSM_PROXYLESS_TEST}_loadtest_with_prebuilt_workers_${WORKER_POOL_8CORE}.yaml" \
-    -i "psm_${PSM_PROXIED_TEST}_loadtest_with_prebuilt_workers_${WORKER_POOL_32CORE}.yaml" \
-    -i "psm_${PSM_PROXYLESS_TEST}_loadtest_with_prebuilt_workers_${WORKER_POOL_32CORE}.yaml" \
+    -i "psm_proxied_loadtest_with_prebuilt_workers_${WORKER_POOL_8CORE}.yaml" \
+    -i "psm_proxyless_loadtest_with_prebuilt_workers_${WORKER_POOL_8CORE}.yaml" \
     -log-url-prefix "${LOG_URL_PREFIX}" \
+    -annotation-key queue \
     -polling-interval 5s \
     -delete-successful-tests \
-    -annotation-key "queue" \
     -c "${WORKER_POOL_8CORE}-proxied:1" \
     -c "${WORKER_POOL_8CORE}-proxyless:1" \
     -o "runner/sponge_log.xml"
