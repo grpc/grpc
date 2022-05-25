@@ -5919,8 +5919,10 @@ grpc_cc_library(
         "absl/status:statusor",
         "absl/strings",
         "absl/types:optional",
+        "absl/utility",
     ],
     language = "c++",
+    tags = ["grpc-autodeps"],
     deps = [
         "arena",
         "channel_args_preconditioning",
@@ -5930,6 +5932,7 @@ grpc_cc_library(
         "gpr_base",
         "grpc_base",
         "grpc_codegen",
+        "grpc_public_hdrs",
         "grpc_trace",
         "iomgr_fwd",
         "orphanable",
