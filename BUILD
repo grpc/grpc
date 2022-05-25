@@ -907,11 +907,6 @@ grpc_cc_library(
     visibility = ["@grpc:alt_gpr_base_legacy"],
     deps = [
         "construct_destruct",
-        "debug_location",
-        "examine_stack",
-        "global_config",
-        "gpr_alloc",
-        "gpr_atm",
         "gpr_codegen",
         "gpr_env",
         "gpr_fork",
