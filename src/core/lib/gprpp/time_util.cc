@@ -21,7 +21,6 @@
 #include <stdint.h>
 #include <time.h>
 
-#include <grpc/support/log.h>
 #include <grpc/support/time.h>
 
 namespace grpc_core {

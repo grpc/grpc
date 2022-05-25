@@ -54,6 +54,7 @@
 #include "src/core/lib/surface/channel_init.h"
 #include "src/core/lib/surface/channel_stack_type.h"
 #include "src/core/lib/surface/completion_queue.h"
+#include "src/core/lib/gprpp/global_config.h"
 
 /* (generated) built in registry of plugins */
 extern void grpc_register_built_in_plugins(void);
@@ -164,6 +165,9 @@ void grpc_init(void) {
     }
     grpc_tracer_init();
     grpc_iomgr_start();
+    grpc_core::SetGlobalConfigEnvErrorFunction([](const char* error_message) {
+      gpr_log(GPR_ERROR, "%s", error_message);
+    });
   }
 
   GRPC_API_TRACE("grpc_init(void)", 0, ());

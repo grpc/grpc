@@ -29,7 +29,6 @@
 
 #include "absl/strings/str_format.h"
 
-#include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
 
 #include "src/core/lib/gpr/env.h"
@@ -39,12 +38,7 @@ namespace grpc_core {
 
 namespace {
 
-void DefaultGlobalConfigEnvErrorFunction(const char* error_message) {
-  gpr_log(GPR_ERROR, "%s", error_message);
-}
-
-GlobalConfigEnvErrorFunctionType g_global_config_env_error_func =
-    DefaultGlobalConfigEnvErrorFunction;
+GlobalConfigEnvErrorFunctionType g_global_config_env_error_func = nullptr;
 
 void LogParsingError(const char* name, const char* value) {
   std::string error_message = absl::StrFormat(

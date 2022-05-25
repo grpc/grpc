@@ -420,6 +420,7 @@ grpc_cc_library(
         "config",
         "default_event_engine_factory_hdrs",
         "gpr_base",
+        "gpr_sync",
         "grpc_authorization_base",
         "grpc_base",
         "grpc_codegen",
@@ -854,74 +855,25 @@ grpc_cc_library(
 grpc_cc_library(
     name = "gpr_base",
     srcs = [
-        "src/core/lib/gpr/alloc.cc",
-        "src/core/lib/gpr/atm.cc",
-        "src/core/lib/gpr/cpu_iphone.cc",
-        "src/core/lib/gpr/cpu_linux.cc",
-        "src/core/lib/gpr/cpu_posix.cc",
-        "src/core/lib/gpr/cpu_windows.cc",
-        "src/core/lib/gpr/env_linux.cc",
-        "src/core/lib/gpr/env_posix.cc",
-        "src/core/lib/gpr/env_windows.cc",
-        "src/core/lib/gpr/log.cc",
-        "src/core/lib/gpr/log_android.cc",
-        "src/core/lib/gpr/log_linux.cc",
-        "src/core/lib/gpr/log_posix.cc",
-        "src/core/lib/gpr/log_windows.cc",
-        "src/core/lib/gpr/murmur_hash.cc",
-        "src/core/lib/gpr/string.cc",
-        "src/core/lib/gpr/string_posix.cc",
-        "src/core/lib/gpr/string_util_windows.cc",
-        "src/core/lib/gpr/string_windows.cc",
         "src/core/lib/gpr/sync.cc",
         "src/core/lib/gpr/sync_abseil.cc",
         "src/core/lib/gpr/sync_posix.cc",
         "src/core/lib/gpr/sync_windows.cc",
         "src/core/lib/gpr/time.cc",
-        "src/core/lib/gpr/time_posix.cc",
-        "src/core/lib/gpr/time_precise.cc",
-        "src/core/lib/gpr/time_windows.cc",
         "src/core/lib/gpr/tmpfile_msys.cc",
         "src/core/lib/gpr/tmpfile_posix.cc",
         "src/core/lib/gpr/tmpfile_windows.cc",
         "src/core/lib/gpr/wrap_memcpy.cc",
-        "src/core/lib/gprpp/fork.cc",
-        "src/core/lib/gprpp/global_config_env.cc",
         "src/core/lib/gprpp/host_port.cc",
-        "src/core/lib/gprpp/mpscq.cc",
         "src/core/lib/gprpp/stat_posix.cc",
         "src/core/lib/gprpp/stat_windows.cc",
-        "src/core/lib/gprpp/status_helper.cc",
         "src/core/lib/gprpp/thd_posix.cc",
         "src/core/lib/gprpp/thd_windows.cc",
-        "src/core/lib/gprpp/time_util.cc",
-        "src/core/lib/profiling/basic_timers.cc",
-        "src/core/lib/profiling/stap_timers.cc",
     ],
     hdrs = [
-        "src/core/lib/gpr/alloc.h",
-        "src/core/lib/gpr/env.h",
-        "src/core/lib/gpr/murmur_hash.h",
-        "src/core/lib/gpr/spinlock.h",
-        "src/core/lib/gpr/string.h",
-        "src/core/lib/gpr/string_windows.h",
-        "src/core/lib/gpr/time_precise.h",
         "src/core/lib/gpr/tmpfile.h",
-        "src/core/lib/gprpp/fork.h",
-        "src/core/lib/gprpp/global_config.h",
-        "src/core/lib/gprpp/global_config_custom.h",
-        "src/core/lib/gprpp/global_config_env.h",
-        "src/core/lib/gprpp/global_config_generic.h",
         "src/core/lib/gprpp/host_port.h",
-        "src/core/lib/gprpp/manual_constructor.h",
-        "src/core/lib/gprpp/memory.h",
-        "src/core/lib/gprpp/mpscq.h",
         "src/core/lib/gprpp/stat.h",
-        "src/core/lib/gprpp/status_helper.h",
-        "src/core/lib/gprpp/sync.h",
-        "src/core/lib/gprpp/thd.h",
-        "src/core/lib/gprpp/time_util.h",
-        "src/core/lib/profiling/timers.h",
     ],
     external_deps = [
         "absl/base",
@@ -944,12 +896,358 @@ grpc_cc_library(
         "construct_destruct",
         "debug_location",
         "examine_stack",
-        "google_rpc_status_upb",
+        "global_config",
+        "gpr_alloc",
+        "gpr_atm",
         "gpr_codegen",
+        "gpr_cpu",
+        "gpr_env",
+        "gpr_fork",
+        "gpr_log",
+        "gpr_memory",
+        "gpr_spinlock",
+        "gpr_status_helper",
+        "gpr_string",
+        "gpr_string_util",
+        "gpr_sync",
+        "gpr_thd",
+        "gpr_timers",
         "gpr_tls",
         "grpc_codegen",
-        "protobuf_any_upb",
         "useful",
+    ],
+)
+
+grpc_cc_library(
+    name = "global_config",
+    srcs = [
+        "src/core/lib/gprpp/global_config_env.cc",
+    ],
+    hdrs = [
+        "src/core/lib/gprpp/global_config.h",
+        "src/core/lib/gprpp/global_config_custom.h",
+        "src/core/lib/gprpp/global_config_env.h",
+        "src/core/lib/gprpp/global_config_generic.h",
+    ],
+    external_deps = [
+        "absl/strings",
+        "absl/strings:str_format",
+    ],
+    language = "c++",
+    visibility = ["@grpc:alt_gpr_base_legacy"],
+    deps = [
+        "gpr_env",
+        "gpr_memory",
+        "gpr_platform",
+        "gpr_string",
+        "gpr_string_util",
+    ],
+)
+
+grpc_cc_library(
+    name = "gpr_alloc",
+    srcs = [
+        "src/core/lib/gpr/alloc.cc",
+    ],
+    hdrs = [
+        "src/core/lib/gpr/alloc.h",
+    ],
+    language = "c++",
+    public_hdrs = [
+        "include/grpc/support/alloc.h",
+    ],
+    visibility = ["@grpc:alt_gpr_base_legacy"],
+    deps = [
+        "gpr_platform",
+        "gpr_timers",
+    ],
+)
+
+grpc_cc_library(
+    name = "gpr_atm",
+    srcs = [
+        "src/core/lib/gpr/atm.cc",
+    ],
+    hdrs = [
+    ],
+    language = "c++",
+    public_hdrs = [
+        "include/grpc/support/atm.h",
+    ],
+    visibility = ["@grpc:alt_gpr_base_legacy"],
+    deps = [
+        "gpr_codegen",
+        "gpr_platform",
+        "useful",
+    ],
+)
+
+grpc_cc_library(
+    name = "gpr_cpu",
+    srcs = [
+        "src/core/lib/gpr/cpu_iphone.cc",
+        "src/core/lib/gpr/cpu_linux.cc",
+        "src/core/lib/gpr/cpu_posix.cc",
+        "src/core/lib/gpr/cpu_windows.cc",
+    ],
+    hdrs = [
+    ],
+    language = "c++",
+    public_hdrs = [
+        "include/grpc/support/cpu.h",
+    ],
+    visibility = ["@grpc:alt_gpr_base_legacy"],
+    deps = [
+        "gpr_alloc",
+        "gpr_log",
+        "gpr_platform",
+        "gpr_sync",
+    ],
+)
+
+grpc_cc_library(
+    name = "gpr_env",
+    srcs = [
+        "src/core/lib/gpr/env_linux.cc",
+        "src/core/lib/gpr/env_posix.cc",
+        "src/core/lib/gpr/env_windows.cc",
+    ],
+    hdrs = [
+        "src/core/lib/gpr/env.h",
+    ],
+    language = "c++",
+    public_hdrs = [
+    ],
+    visibility = ["@grpc:alt_gpr_base_legacy"],
+    deps = [
+        "gpr_platform",
+        "gpr_string",
+        "gpr_string_util",
+        "useful",
+    ],
+)
+
+grpc_cc_library(
+    name = "gpr_fork",
+    srcs = [
+        "src/core/lib/gprpp/fork.cc",
+    ],
+    hdrs = [
+        "src/core/lib/gprpp/fork.h",
+    ],
+    language = "c++",
+    public_hdrs = [
+    ],
+    visibility = ["@grpc:alt_gpr_base_legacy"],
+    deps = [
+        "global_config",
+        "gpr_atm",
+        "gpr_codegen",
+        "gpr_platform",
+        "gpr_sync",
+        "time",
+    ],
+)
+
+grpc_cc_library(
+    name = "gpr_manual_constructor",
+    srcs = [
+    ],
+    hdrs = [
+        "src/core/lib/gprpp/manual_constructor.h",
+    ],
+    language = "c++",
+    public_hdrs = [
+    ],
+    visibility = ["@grpc:alt_gpr_base_legacy"],
+    deps = [
+        "construct_destruct",
+    ],
+)
+
+grpc_cc_library(
+    name = "gpr_memory",
+    hdrs = [
+        "src/core/lib/gprpp/memory.h",
+    ],
+    language = "c++",
+    visibility = ["@grpc:alt_gpr_base_legacy"],
+    deps = [
+        "gpr_alloc",
+        "gpr_platform",
+    ],
+)
+
+grpc_cc_library(
+    name = "gpr_mpscq",
+    srcs = [
+        "src/core/lib/gprpp/mpscq.cc",
+    ],
+    hdrs = [
+        "src/core/lib/gprpp/mpscq.h",
+    ],
+    external_deps = [
+    ],
+    language = "c++",
+    public_hdrs = [
+    ],
+    visibility = ["@grpc:alt_gpr_base_legacy"],
+    deps = [
+        "gpr_log",
+        "gpr_platform",
+        "gpr_sync",
+    ],
+)
+
+grpc_cc_library(
+    name = "gpr_murmur_hash",
+    srcs = [
+        "src/core/lib/gpr/murmur_hash.cc",
+    ],
+    hdrs = [
+        "src/core/lib/gpr/murmur_hash.h",
+    ],
+    external_deps = [
+        "absl/base:core_headers",
+    ],
+    language = "c++",
+    public_hdrs = [
+    ],
+    visibility = ["@grpc:alt_gpr_base_legacy"],
+    deps = [
+        "gpr_platform",
+    ],
+)
+
+grpc_cc_library(
+    name = "gpr_spinlock",
+    srcs = [
+    ],
+    hdrs = [
+        "src/core/lib/gpr/spinlock.h",
+    ],
+    external_deps = [
+    ],
+    language = "c++",
+    public_hdrs = [
+    ],
+    visibility = ["@grpc:alt_gpr_base_legacy"],
+    deps = [
+    ],
+)
+
+grpc_cc_library(
+    name = "gpr_status_helper",
+    srcs = [
+        "src/core/lib/gprpp/status_helper.cc",
+    ],
+    hdrs = [
+        "src/core/lib/gprpp/status_helper.h",
+    ],
+    external_deps = [
+        "absl/status",
+        "absl/strings",
+        "absl/strings:cord",
+        "absl/time",
+        "upb_lib",
+    ],
+    language = "c++",
+    public_hdrs = [
+    ],
+    visibility = ["@grpc:alt_gpr_base_legacy"],
+    deps = [
+        "debug_location",
+        "google_rpc_status_upb",
+        "gpr_log",
+        "gpr_platform",
+        "protobuf_any_upb",
+    ],
+)
+
+grpc_cc_library(
+    name = "gpr_string",
+    srcs = [
+        "src/core/lib/gpr/string.cc",
+        "src/core/lib/gpr/string_posix.cc",
+        "src/core/lib/gpr/string_windows.cc",
+    ],
+    hdrs = [
+        "src/core/lib/gpr/string.h",
+        "src/core/lib/gpr/string_windows.h",
+    ],
+    external_deps = [
+        "absl/strings",
+    ],
+    language = "c++",
+    public_hdrs = [
+    ],
+    visibility = ["@grpc:alt_gpr_base_legacy"],
+    deps = [
+        "gpr_alloc",
+        "gpr_codegen",
+        "gpr_platform",
+        "gpr_string_util",
+        "useful",
+    ],
+)
+
+grpc_cc_library(
+    name = "gpr_string_util",
+    srcs = [
+        "src/core/lib/gpr/string_util_windows.cc",
+    ],
+    external_deps = [
+    ],
+    language = "c++",
+    public_hdrs = [
+        "include/grpc/support/string_util.h",
+    ],
+    visibility = ["@grpc:alt_gpr_base_legacy"],
+    deps = [
+        "gpr_platform",
+    ],
+)
+
+grpc_cc_library(
+    name = "gpr_sync",
+    hdrs = ["src/core/lib/gprpp/sync.h"],
+    external_deps = [
+        "absl/synchronization",
+    ],
+    language = "c++",
+    public_hdrs = ["include/grpc/support/sync.h"],
+    visibility = ["@grpc:alt_gpr_base_legacy"],
+    deps = [
+        "gpr_platform",
+    ],
+)
+
+grpc_cc_library(
+    name = "gpr_timers",
+    srcs = [
+        "src/core/lib/profiling/basic_timers.cc",
+        "src/core/lib/profiling/stap_timers.cc",
+    ],
+    hdrs = [
+        "src/core/lib/profiling/timers.h",
+    ],
+    language = "c++",
+    visibility = ["@grpc:alt_gpr_base_legacy"],
+    deps = [
+        "gpr_platform",
+    ],
+)
+
+grpc_cc_library(
+    name = "gpr_thd",
+    srcs = [
+    ],
+    hdrs = [
+        "src/core/lib/gprpp/thd.h",
+    ],
+    language = "c++",
+    visibility = ["@grpc:alt_gpr_base_legacy"],
+    deps = [
     ],
 )
 
@@ -1031,16 +1329,41 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "gpr_log",
+    srcs = [
+        "src/core/lib/gpr/log.cc",
+        "src/core/lib/gpr/log_android.cc",
+        "src/core/lib/gpr/log_linux.cc",
+        "src/core/lib/gpr/log_posix.cc",
+        "src/core/lib/gpr/log_windows.cc",
+    ],
+    external_deps = [
+        "absl/strings:str_format",
+    ],
+    language = "c++",
+    public_hdrs = [
+        "include/grpc/support/log.h",
+    ],
+    deps = [
+        "global_config",
+        "gpr_alloc",
+        "gpr_atm",
+        "gpr_codegen",
+        "gpr_platform",
+        "gpr_string",
+    ],
+)
+
+grpc_cc_library(
     name = "grpc_trace",
     srcs = ["src/core/lib/debug/trace.cc"],
     hdrs = ["src/core/lib/debug/trace.h"],
     language = "c++",
-    public_hdrs = GRPC_PUBLIC_HDRS,
+    public_hdrs = GRPC_PUBLIC_HDRS + GPR_PUBLIC_HDRS,
     tags = ["grpc-autodeps"],
     visibility = ["@grpc:trace"],
     deps = [
-        "gpr_base",
-        "gpr_codegen",
+        "global_config",
         "gpr_platform",
         "grpc_codegen",
         "grpc_public_hdrs",
@@ -1574,6 +1897,7 @@ grpc_cc_library(
         "gpr_platform",
         "poll",
         "promise_like",
+        "gpr_sync",
         "wait_set",
     ],
 )
@@ -1620,8 +1944,8 @@ grpc_cc_library(
     deps = [
         "atomic_utils",
         "debug_location",
-        "gpr_base",
         "gpr_platform",
+        "grpc_trace",
         "ref_counted_ptr",
     ],
 )
@@ -1675,6 +1999,7 @@ grpc_cc_library(
         "exec_ctx",
         "gpr_base",
         "gpr_platform",
+        "gpr_sync",
         "grpc_base",
         "grpc_codegen",
         "grpc_trace",
@@ -1854,6 +2179,7 @@ grpc_cc_library(
         "exec_ctx_wakeup_scheduler",
         "gpr_base",
         "gpr_platform",
+        "gpr_sync",
         "grpc_trace",
         "loop",
         "map",
@@ -1898,6 +2224,7 @@ grpc_cc_library(
     deps = [
         "gpr_base",
         "gpr_platform",
+        "gpr_sync",
         "ref_counted",
         "ref_counted_ptr",
     ],
@@ -1953,7 +2280,6 @@ grpc_cc_library(
     ],
     tags = ["grpc-autodeps"],
     deps = [
-        "gpr_base",
         "gpr_platform",
         "grpc_codegen",
     ],
@@ -1974,9 +2300,14 @@ grpc_cc_library(
     external_deps = ["absl/strings"],
     tags = ["grpc-autodeps"],
     deps = [
-        "gpr_base",
-        "gpr_platform",
         "grpc_codegen",
+        "gpr_alloc",
+        "gpr_log",
+        "gpr_memory",
+        "gpr_murmur_hash",
+        "gpr_platform",
+        "gpr_string",
+        "ref_counted",
         "slice_refcount",
     ],
 )
@@ -2008,8 +2339,12 @@ grpc_cc_library(
         "src/core/lib/iomgr/error.h",
         "src/core/lib/iomgr/error_internal.h",
     ],
+    external_deps = [
+        "absl/status",
+    ],
     deps = [
-        "gpr",
+        "gpr_spinlock",
+        "gpr_status_helper",
         "grpc_codegen",
         "grpc_trace",
         "slice",
@@ -2024,27 +2359,41 @@ grpc_cc_library(
         "src/core/lib/iomgr/closure.h",
     ],
     tags = ["grpc-autodeps"],
+    external_deps = [
+        "absl/status",
+    ],
     deps = [
         "debug_location",
         "error",
-        "gpr_base",
         "gpr_platform",
+        "gpr_manual_constructor",
+        "gpr_mpscq",
     ],
 )
 
 grpc_cc_library(
     name = "time",
     srcs = [
+        "src/core/lib/gpr/time_posix.cc",
+        "src/core/lib/gpr/time_precise.cc",
+        "src/core/lib/gpr/time_windows.cc",
         "src/core/lib/gprpp/time.cc",
     ],
     hdrs = [
+        "src/core/lib/gpr/time_precise.h",
         "src/core/lib/gprpp/time.h",
     ],
-    external_deps = ["absl/strings:str_format"],
+    external_deps = [
+        "absl/strings:str_format",
+    ],
     tags = ["grpc-autodeps"],
+    public_hdrs = [
+        "include/grpc/support/time.h",
+    ],
     deps = [
-        "gpr_base",
+        "gpr_atm",
         "gpr_codegen",
+        "gpr_log",
         "gpr_platform",
         "useful",
     ],
@@ -2069,9 +2418,16 @@ grpc_cc_library(
         "closure",
         "debug_location",
         "error",
-        "gpr_base",
-        "gpr_codegen",
+        "gpr_alloc",
+        "gpr_cpu",
+        "gpr_fork",
+        "gpr_log",
+        "gpr_memory",
+        "gpr_mpscq",
         "gpr_platform",
+        "gpr_sync",
+        "gpr_thd",
+        "gpr_timers",
         "gpr_tls",
         "grpc_codegen",
         "grpc_trace",
@@ -2247,6 +2603,7 @@ grpc_cc_library(
         "exec_ctx",
         "gpr_base",
         "gpr_platform",
+        "gpr_sync",
         "grpc_trace",
         "iomgr_timer",
         "match",
@@ -2303,6 +2660,7 @@ grpc_cc_library(
         "event_engine_base_hdrs",
         "event_engine_trace",
         "gpr_base",
+        "gpr_sync",
         "grpc_trace",
     ],
 )
@@ -2636,6 +2994,7 @@ grpc_cc_library(
         "exec_ctx",
         "gpr_base",
         "gpr_codegen",
+        "gpr_sync",
         "gpr_tls",
         "grpc_codegen",
         "grpc_sockaddr",
@@ -2894,6 +3253,7 @@ grpc_cc_library(
         "gpr_base",
         "gpr_platform",
         "grpc_codegen",
+        "gpr_sync",
         "grpc_service_config",
         "iomgr_fwd",
         "orphanable",
@@ -3034,6 +3394,7 @@ grpc_cc_library(
         "gpr_base",
         "gpr_codegen",
         "grpc_backend_metric_data",
+        "gpr_sync",
         "grpc_base",
         "grpc_client_authority_filter",
         "grpc_codegen",
@@ -3971,6 +4332,7 @@ grpc_cc_library(
         "error",
         "gpr_base",
         "gpr_platform",
+        "gpr_sync",
         "grpc_base",
         "grpc_client_channel",
         "grpc_codegen",
@@ -4572,6 +4934,7 @@ grpc_cc_library(
         "error",
         "event_engine_common",
         "gpr_base",
+        "gpr_sync",
         "grpc_base",
         "grpc_client_channel",
         "grpc_codegen",
@@ -4993,6 +5356,7 @@ grpc_cc_library(
     language = "c++",
     deps = [
         "gpr_base",
+        "gpr_sync",
         "grpc_base",
         "grpc_credentials_util",
         "grpc_security_base",
@@ -5065,6 +5429,7 @@ grpc_cc_library(
     language = "c++",
     deps = [
         "gpr_base",
+        "gpr_sync",
         "grpc_base",
         "grpc_credentials_util",
         "grpc_security_base",
@@ -5411,6 +5776,7 @@ grpc_cc_library(
         "config",
         "error",
         "gpr_base",
+        "gpr_sync",
         "grpc_base",
         "tsi_base",
         "useful",
@@ -5438,6 +5804,7 @@ grpc_cc_library(
     visibility = ["@grpc:public"],
     deps = [
         "gpr_base",
+        "gpr_sync",
         "grpc_base",
     ],
 )
@@ -5562,6 +5929,7 @@ grpc_cc_library(
     public_hdrs = GRPC_PUBLIC_HDRS,
     deps = [
         "gpr_base",
+        "gpr_sync",
         "grpc_base",
         "grpc_matchers",
         "grpc_rbac_engine",

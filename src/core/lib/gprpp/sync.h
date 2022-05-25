@@ -27,10 +27,6 @@
 #include <grpc/support/log.h>
 #include <grpc/support/sync.h>
 
-#ifndef GPR_ABSEIL_SYNC
-#include "src/core/lib/gprpp/time_util.h"
-#endif
-
 // The core library is not accessible in C++ codegen headers, and vice versa.
 // Thus, we need to have duplicate headers with similar functionality.
 // Make sure any change to this file is also reflected in
@@ -123,6 +119,36 @@ class ABSL_SCOPED_LOCKABLE ReleasableMutexLock {
   bool released_ = false;
 };
 
+// DO NOT SUBMIT - temporarily copied to remove time_util dependency
+namespace {
+gpr_timespec ToGprTimeSpec(absl::Duration duration) {
+  if (duration == absl::InfiniteDuration()) {
+    return gpr_inf_future(GPR_TIMESPAN);
+  } else if (duration == -absl::InfiniteDuration()) {
+    return gpr_inf_past(GPR_TIMESPAN);
+  } else {
+    int64_t s = absl::IDivDuration(duration, absl::Seconds(1), &duration);
+    int64_t n = absl::IDivDuration(duration, absl::Nanoseconds(1), &duration);
+    return gpr_time_add(gpr_time_from_seconds(s, GPR_TIMESPAN),
+                        gpr_time_from_nanos(n, GPR_TIMESPAN));
+  }
+}
+
+gpr_timespec ToGprTimeSpec(absl::Time time) {
+  if (time == absl::InfiniteFuture()) {
+    return gpr_inf_future(GPR_CLOCK_REALTIME);
+  } else if (time == absl::InfinitePast()) {
+    return gpr_inf_past(GPR_CLOCK_REALTIME);
+  } else {
+    timespec ts = absl::ToTimespec(time);
+    gpr_timespec out;
+    out.tv_sec = static_cast<decltype(out.tv_sec)>(ts.tv_sec);
+    out.tv_nsec = static_cast<decltype(out.tv_nsec)>(ts.tv_nsec);
+    out.clock_type = GPR_CLOCK_REALTIME;
+    return out;
+  }
+}
+}  // namespace
 class CondVar {
  public:
   CondVar() { gpr_cv_init(&cv_); }

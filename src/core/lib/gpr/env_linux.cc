@@ -30,7 +30,6 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
 
 #include "src/core/lib/gpr/env.h"
@@ -64,12 +63,12 @@ char* gpr_getenv(const char* name) {
 
 void gpr_setenv(const char* name, const char* value) {
   int res = setenv(name, value, 1);
-  GPR_ASSERT(res == 0);
+  if (!res) abort();
 }
 
 void gpr_unsetenv(const char* name) {
   int res = unsetenv(name);
-  GPR_ASSERT(res == 0);
+  if (!res) abort();
 }
 
 #endif /* GPR_LINUX_ENV */

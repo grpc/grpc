@@ -23,7 +23,6 @@
 #include <windows.h>
 
 #include <grpc/support/alloc.h>
-#include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
 
 #include "src/core/lib/gpr/env.h"
@@ -61,14 +60,14 @@ void gpr_setenv(const char* name, const char* value) {
   BOOL res = SetEnvironmentVariable(tname, tvalue);
   gpr_free(tname);
   gpr_free(tvalue);
-  GPR_ASSERT(res);
+  if (!res) abort();
 }
 
 void gpr_unsetenv(const char* name) {
   LPTSTR tname = gpr_char_to_tchar(name);
   BOOL res = SetEnvironmentVariable(tname, NULL);
   gpr_free(tname);
-  GPR_ASSERT(res);
+  if (!res) abort();
 }
 
 #endif /* GPR_WINDOWS_ENV */
