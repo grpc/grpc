@@ -5245,7 +5245,10 @@ grpc_cc_library(
         "@grpc:public",
     ],
     deps = [
-        "gpr_base",
+        "gpr_alloc",
+        "gpr_log",
+        "gpr_memory",
+        "gpr_platform",
         "grpc_base",
         "tsi_base",
         "useful",
