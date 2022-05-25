@@ -369,6 +369,8 @@ grpc_cc_library(
     tags = ["avoid_dep"],
     visibility = ["@grpc:public"],
     deps = [
+        "gpr_codegen",
+        "gpr_time_util",
     ],
 )
 
@@ -1244,6 +1246,27 @@ grpc_cc_library(
         "gpr_platform",
         "gpr_timers",
         "time",
+    ],
+)
+
+grpc_cc_library(
+    name = "gpr_time_util",
+    srcs = [
+        "src/core/lib/gprpp/time_util.cc",
+    ],
+    hdrs = [
+        "src/core/lib/gprpp/time_util.h",
+    ],
+    external_deps = [
+        "absl/time",
+    ],
+    language = "c++",
+    visibility = ["@grpc:alt_gpr_base_legacy"],
+    deps = [
+        "gpr_platform",
+        "gpr_codegen",
+        "time",
+        "gpr_log",
     ],
 )
 
