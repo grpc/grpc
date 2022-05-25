@@ -38,15 +38,14 @@
 #include "src/core/lib/resource_quota/memory_quota.h"
 #include "src/core/lib/uri/uri_parser.h"
 
-using ResolvedAddress =
-    ::grpc_event_engine::experimental::EventEngine::ResolvedAddress;
+using ::grpc_event_engine::experimental::EventEngine;
 using Endpoint = ::grpc_event_engine::experimental::EventEngine::Endpoint;
 using Listener = ::grpc_event_engine::experimental::EventEngine::Listener;
 
 namespace grpc_event_engine {
 namespace experimental {
 
-ResolvedAddress URIToResolvedAddress(std::string address_str) {
+EventEngine::ResolvedAddress URIToResolvedAddress(std::string address_str) {
   grpc_resolved_address addr;
   absl::StatusOr<grpc_core::URI> uri = grpc_core::URI::Parse(address_str);
   if (!uri.ok()) {
@@ -55,7 +54,7 @@ ResolvedAddress URIToResolvedAddress(std::string address_str) {
     GPR_ASSERT(uri.ok());
   }
   GPR_ASSERT(grpc_parse_uri(*uri, &addr));
-  return grpc_event_engine::experimental::EventEngine::ResolvedAddress(
+  return EventEngine::ResolvedAddress(
       reinterpret_cast<const sockaddr*>(addr.addr), addr.len);
 }
 
