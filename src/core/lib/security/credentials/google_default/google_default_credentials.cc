@@ -31,6 +31,7 @@
 #include "absl/strings/string_view.h"
 #include "absl/strings/strip.h"
 
+#include <grpc/grpc_security.h>  // IWYU pragma: keep
 #include <grpc/grpc_security_constants.h>
 #include <grpc/slice.h>
 #include <grpc/support/alloc.h>

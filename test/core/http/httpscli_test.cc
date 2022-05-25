@@ -36,6 +36,7 @@
 #include "src/core/lib/http/httpcli.h"
 #include "src/core/lib/http/httpcli_ssl_credentials.h"
 #include "src/core/lib/iomgr/iomgr.h"
+#include "src/core/lib/security/credentials/credentials.h"
 #include "test/core/http/httpcli_test_util.h"
 #include "test/core/util/fake_udp_and_tcp_server.h"
 #include "test/core/util/port.h"
