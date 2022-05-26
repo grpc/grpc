@@ -394,7 +394,8 @@ static void endpoint_write(grpc_endpoint* secure_ep, grpc_slice_buffer* slices,
       grpc_slice_buffer_reset_and_unref_internal(
           &ep->tmp_frame_size_clip_buffer);
       result = TSI_OK;
-      while (slices->length > max_frame_size && result == TSI_OK) {
+      while (slices->length > static_cast<size_t>(max_frame_size) &&
+             result == TSI_OK) {
         grpc_slice_buffer_move_first(slices,
                                      static_cast<size_t>(max_frame_size),
                                      &ep->tmp_frame_size_clip_buffer);
