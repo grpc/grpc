@@ -807,10 +807,10 @@ TEST_F(ClientLbEnd2endTest,
   grpc_core::CondVar cv1;
   injector.InterceptNextAttempt(&cv1);
   gpr_log(GPR_INFO, "=== TRIGGERING INITIAL CONNECTION ATTEMPT");
-  EXPECT_EQ(GRPC_CHANNEL_IDLE, channel->GetState(/*attempt_to_connect=*/true));
+  EXPECT_EQ(GRPC_CHANNEL_IDLE, channel->GetState(/*try_to_connect=*/true));
   injector.WaitForAttemptToStart(&cv1);
   EXPECT_EQ(GRPC_CHANNEL_CONNECTING,
-            channel->GetState(/*attempt_to_connect=*/false));
+            channel->GetState(/*try_to_connect=*/false));
   // Reset backoff.
   gpr_log(GPR_INFO, "=== RESETTING BACKOFF");
   experimental::ChannelResetConnectionBackoff(channel.get());
