@@ -48,4 +48,7 @@ $INTEROP --port=$TLS_PORT --max_send_message_size=8388608 --use_tls &
 
 trap 'kill -9 `jobs -p` ; echo "EXIT TIME:  $(date)"' EXIT
 
-../../../tools/bazel run $SCHEME
+time \
+    HOST_PORT_LOCALSSL=localhost:$TLS_PORT \
+    HOST_PORT_LOCAL=localhost:$PLAIN_PORT \
+    ../../../tools/bazel run $SCHEME
