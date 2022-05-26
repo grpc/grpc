@@ -166,7 +166,7 @@ class SubchannelStreamClient
     grpc_metadata_batch send_initial_metadata_;
 
     // send_message
-    absl::optional<SliceBuffer> send_message_;
+    SliceBuffer send_message_;
 
     // send_trailing_metadata
     grpc_metadata_batch send_trailing_metadata_;

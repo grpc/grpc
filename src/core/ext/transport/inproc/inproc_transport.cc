@@ -87,8 +87,8 @@ void fill_in_metadata(inproc_stream* s, const grpc_metadata_batch* metadata,
                       uint32_t flags, grpc_metadata_batch* out_md,
                       uint32_t* outflags, bool* markfilled);
 
-void ResetSendMessage(grpc_transport_stream_op_batch* msg) {
-  absl::exchange(msg->payload->send_message.send_message, nullptr)->Clear();
+void ResetSendMessage(grpc_transport_stream_op_batch* batch) {
+  absl::exchange(batch->payload->send_message.send_message, nullptr)->Clear();
 }
 
 struct shared_mu {
@@ -797,8 +797,7 @@ void op_state_machine_locked(inproc_stream* s, grpc_error_handle error) {
 
       // We should schedule the recv_trailing_md_op completion if
       // 1. this stream is the client-side
-      // 2. this stream is the server-side AND has already sent its trailing
-      // md
+      // 2. this stream is the server-side AND has already sent its trailing md
       //    (If the server hasn't already sent its trailing md, it doesn't
       //    have
       //     a final status, so don't mark this op complete)
@@ -1211,8 +1210,7 @@ void set_pollset(grpc_transport* /*gt*/, grpc_stream* /*gs*/,
 }
 
 void set_pollset_set(grpc_transport* /*gt*/, grpc_stream* /*gs*/,
-                     grpc_pollset_set*
-                     /*pollset_set*/) {
+                     grpc_pollset_set* /*pollset_set*/) {
   // Nothing to do here
 }
 

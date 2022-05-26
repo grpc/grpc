@@ -250,10 +250,10 @@ void SubchannelStreamClient::CallState::StartCallLocked() {
   payload_.send_initial_metadata.peer_string = nullptr;
   batch_.send_initial_metadata = true;
   // Add send_message op.
-  send_message_.emplace();
-  send_message_->Append(Slice(
+  send_message_.Clear();
+  send_message_.Append(Slice(
       subchannel_stream_client_->event_handler_->EncodeSendMessageLocked()));
-  payload_.send_message.send_message = &*send_message_;
+  payload_.send_message.send_message = &send_message_;
   batch_.send_message = true;
   // Add send_trailing_metadata op.
   payload_.send_trailing_metadata.send_trailing_metadata =

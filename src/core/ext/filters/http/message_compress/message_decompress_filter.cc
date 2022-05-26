@@ -198,7 +198,8 @@ void CallData::OnRecvMessageReady(void* arg, grpc_error_handle error) {
             GRPC_WRITE_INTERNAL_TEST_ONLY_WAS_COMPRESSED;
         (*calld->recv_message_)->Swap(&decompressed_slices);
       }
-      calld->ContinueRecvMessageReadyCallback(GRPC_ERROR_REF(calld->error_));
+      return calld->ContinueRecvMessageReadyCallback(
+          GRPC_ERROR_REF(calld->error_));
     }
   }
   calld->ContinueRecvMessageReadyCallback(GRPC_ERROR_REF(error));
