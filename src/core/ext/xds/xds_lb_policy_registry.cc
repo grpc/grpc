@@ -65,18 +65,18 @@ class RingHashLbPolicyConfigFactory
     const auto* min_ring_size =
         envoy_extensions_load_balancing_policies_ring_hash_v3_RingHash_minimum_ring_size(
             resource);
-    if (min_ring_size != nullptr) {
-      json.emplace("minRingSize",
-                   google_protobuf_UInt64Value_value(min_ring_size));
+    if(min_ring_size != nullptr) {
+      json.emplace("minRingSize", google_protobuf_UInt64Value_value(min_ring_size));
     }
     const auto* max_ring_size =
         envoy_extensions_load_balancing_policies_ring_hash_v3_RingHash_maximum_ring_size(
             resource);
-    if (max_ring_size != nullptr) {
-      json.emplace("maxRingSize",
-                   google_protobuf_UInt64Value_value(max_ring_size));
+    if(max_ring_size != nullptr) {
+      json.emplace("maxRingSize", google_protobuf_UInt64Value_value(max_ring_size));
     }
-    return Json::Object{{"ring_hash_experimental", std::move(json)}};
+    return Json::Object{
+        {"ring_hash_experimental",
+         std::move(json)}};
   }
 
   static absl::string_view type() {
@@ -136,12 +136,10 @@ class WrrLocalityLbPolicyConfigFactory
   }
 };
 
-absl::StatusOr<Json> ParseStructToJson(const XdsEncodingContext& context,
-                                       const google_protobuf_Struct* resource) {
+absl::StatusOr<Json> ParseStructToJson(const XdsEncodingContext& context, const google_protobuf_Struct* resource) {
   upb::Status status;
   const auto* msg_def = google_protobuf_Struct_getmsgdef(context.symtab);
-  size_t json_size = upb_JsonEncode(resource, msg_def, context.symtab, 0,
-                                    nullptr, 0, status.ptr());
+  size_t json_size = upb_JsonEncode(resource, msg_def, context.symtab, 0, nullptr, 0, status.ptr());
   if (json_size == static_cast<size_t>(-1)) {
     return absl::InvalidArgumentError(
         absl::StrCat("Error parsing google::Protobuf::Struct: ",
@@ -152,12 +150,9 @@ absl::StatusOr<Json> ParseStructToJson(const XdsEncodingContext& context,
                  reinterpret_cast<char*>(buf), json_size + 1, status.ptr());
   grpc_error_handle error = GRPC_ERROR_NONE;
   auto json = Json::Parse(reinterpret_cast<char*>(buf), &error);
-  if (error != GRPC_ERROR_NONE) {
+  if(error != GRPC_ERROR_NONE) {
     // This should not happen
-    auto ret_status = absl::InternalError(
-        absl::StrCat("Error parsing JSON form of google::Protobuf::Struct "
-                     "produced by upb library",
-                     grpc_error_std_string(error)));
+    auto ret_status = absl::InternalError(absl::StrCat("Error parsing JSON form of google::Protobuf::Struct produced by upb library", grpc_error_std_string(error)));
     GRPC_ERROR_UNREF(error);
     return ret_status;
   }
@@ -219,20 +214,21 @@ absl::StatusOr<Json::Array> XdsLbPolicyRegistry::ConvertXdsLbPolicyConfig(
           context, value, recursion_depth);
     } else if (typed_struct != nullptr) {
       // Custom lb policy config
-      absl::string_view custom_type_url =
-          UpbStringToAbsl(xds_type_v3_TypedStruct_type_url(typed_struct));
-      size_t pos = custom_type_url.rfind('/');
+      // Check whether the custom lb policy type is registered in our LoadBalancingPolicyRegistry.
+      size_t pos = type_url.rfind('/');
       if (pos == absl::string_view::npos) {
         return absl::InvalidArgumentError(
             absl::StrCat("Error parsing LoadBalancingPolicy: Custom Policy: "
                          "Invalid type_url ",
-                         custom_type_url));
+                         type_url));
       }
       std::string name = std::string(type_url.substr(pos + 1));
       if (!LoadBalancingPolicyRegistry::LoadBalancingPolicyExists(name.c_str(),
                                                                   nullptr)) {
+        // Skip unsupported custom lb policy.
         continue;
       }
+      // Convert typed struct to json.
       auto value = xds_type_v3_TypedStruct_value(typed_struct);
       if (value == nullptr) {
         policy = Json::Object{{std::string(name), Json() /* null */}};
