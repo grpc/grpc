@@ -1939,18 +1939,25 @@ void grpc_chttp2_maybe_complete_recv_message(grpc_chttp2_transport* t,
           auto r = grpc_deframe_unprocessed_incoming_frames(
               s, &min_progress_size, &**s->recv_message, s->recv_message_flags);
           if (absl::holds_alternative<grpc_core::Pending>(r)) {
-            s->flow_control.UpdateProgress(min_progress_size);
-            grpc_chttp2_act_on_flowctl_action(s->flow_control.MakeAction(), t,
-                                              s);
-            return;
-          }
-          error = absl::get<grpc_error_handle>(r);
-          if (error != GRPC_ERROR_NONE) {
-            s->seen_error = true;
-            grpc_slice_buffer_reset_and_unref_internal(&s->frame_storage);
-            break;
+            if (s->read_closed) {
+              grpc_slice_buffer_reset_and_unref_internal(&s->frame_storage);
+              s->recv_message->reset();
+              break;
+            } else {
+              s->flow_control.UpdateProgress(min_progress_size);
+              grpc_chttp2_act_on_flowctl_action(s->flow_control.MakeAction(), t,
+                                                s);
+              return;
+            }
           } else {
-            break;
+            error = absl::get<grpc_error_handle>(r);
+            if (error != GRPC_ERROR_NONE) {
+              s->seen_error = true;
+              grpc_slice_buffer_reset_and_unref_internal(&s->frame_storage);
+              break;
+            } else {
+              break;
+            }
           }
         }
       } else if (s->read_closed) {
