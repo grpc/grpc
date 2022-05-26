@@ -388,7 +388,7 @@ class FilterStackCall final : public Call {
   /* Contexts for various subsystems (security, tracing, ...). */
   grpc_call_context_element context_[GRPC_CONTEXT_COUNT] = {};
 
-  ManualConstructor<SliceBuffer> sending_stream_;
+  SliceBuffer send_buffer_;
   absl::optional<SliceBuffer> receiving_stream_;
   uint32_t receiving_stream_flags_;
 
@@ -1078,7 +1078,7 @@ void FilterStackCall::BatchControl::PostCompletion() {
                      "Attempt to send message after stream was closed."));
     }
     call->sending_message_ = false;
-    call->sending_stream_.Destroy();
+    call->send_buffer_.Clear();
   }
   if (op_.send_trailing_metadata) {
     call->send_trailing_metadata_.Clear();
@@ -1442,12 +1442,12 @@ grpc_call_error FilterStackCall::StartBatch(const grpc_op* ops, size_t nops,
         }
         stream_op->send_message = true;
         sending_message_ = true;
-        sending_stream_.Init();
+        send_buffer_.Clear();
         grpc_slice_buffer_move_into(
             &op->data.send_message.send_message->data.raw.slice_buffer,
-            sending_stream_->c_slice_buffer());
+            send_buffer_.c_slice_buffer());
         stream_op_payload->send_message.flags = flags;
-        stream_op_payload->send_message.send_message = sending_stream_.get();
+        stream_op_payload->send_message.send_message = &send_buffer_;
         has_send_ops = true;
         break;
       }
