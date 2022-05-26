@@ -46,10 +46,7 @@ changes to this codebase at the moment.
    ```
 
 #### Configure GKE cluster
-This is an example outlining minimal requirements to run `tests.baseline_test`.  
-For more details, and for the setup for security tests, see
-["Setting up Traffic Director service security with proxyless gRPC"](https://cloud.google.com/traffic-director/docs/security-proxyless-setup)
- user guide.
+This is an example outlining minimal requirements to run the [baseline tests](xds-baseline-tests).
  
 Update gloud sdk:
 ```shell
@@ -231,6 +228,9 @@ envsubst < config/local-dev.cfg.example > config/local-dev.cfg
 Learn more about flagfiles in [abseil documentation](https://abseil.io/docs/python/guides/flags#a-note-about---flagfile).
 
 ## Test suites
+
+See the full list of available test suites in the [`tests/`](https://github.com/grpc/grpc/tree/master/tools/run_tests/xds_k8s_test_driver/tests) folder. 
+
 ### xDS Baseline Tests
 
 Test suite meant to confirm that basic xDS features work as expected. Executing
@@ -251,10 +251,13 @@ python -m tests.baseline_test --flagfile="config/local-dev.cfg"
 ```
 
 ### xDS Security Tests
-Test suite meant to verify mTLS/TLS features.
+Test suite meant to verify mTLS/TLS features. Note that this requires
+additional environment configuration. For more details, and for the 
+setup for the security tests, see
+["Setting up Traffic Director service security with proxyless gRPC"](https://cloud.google.com/traffic-director/docs/security-proxyless-setup) user guide.
 
 ```shell
-# Run the baseline test with local-dev.cfg settings
+# Run the security test with local-dev.cfg settings
 python -m tests.security_test --flagfile="config/local-dev.cfg"
 
 # Same as above, but using the helper script
