@@ -1930,6 +1930,7 @@ void grpc_chttp2_maybe_complete_recv_message(grpc_chttp2_transport* t,
   if (s->recv_message_ready != nullptr) {
     if (s->final_metadata_requested && s->seen_error) {
       grpc_slice_buffer_reset_and_unref_internal(&s->frame_storage);
+      s->recv_message->reset();
     } else {
       if (s->frame_storage.length != 0) {
         while (true) {
