@@ -558,6 +558,10 @@ static grpc_error_handle init_header_frame_parser(grpc_chttp2_transport* t,
       gpr_log(GPR_ERROR, "too many header frames received");
       return init_header_skip_frame_parser(t, priority_type);
   }
+  if (frame_type == HPackParser::LogInfo::kTrailers && !t->header_eof) {
+    return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+        "Trailing metadata frame received without an end-o-stream");
+  }
   t->hpack_parser.BeginFrame(
       incoming_metadata_buffer,
       t->settings[GRPC_ACKED_SETTINGS]
