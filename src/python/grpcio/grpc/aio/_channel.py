@@ -370,6 +370,11 @@ class Channel(_base_channel.Channel):
     async def close(self, grace: Optional[float] = None):
         await self._close(grace)
 
+    def __del__(self):
+        if hasattr(self, '_channel'):
+            if not self._channel.closed():
+                self._channel.close()
+
     def get_state(self,
                   try_to_connect: bool = False) -> grpc.ChannelConnectivity:
         result = self._channel.check_connectivity_state(try_to_connect)
