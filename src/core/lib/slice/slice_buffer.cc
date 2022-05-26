@@ -57,6 +57,7 @@ Slice SliceBuffer::RefSlice(size_t index) const {
 
 std::string SliceBuffer::JoinIntoString() const {
   std::string result;
+  result.reserve(slice_buffer_.length);
   for (size_t i = 0; i < slice_buffer_.count; i++) {
     result.append(reinterpret_cast<const char*>(
                       GRPC_SLICE_START_PTR(slice_buffer_.slices[i])),
