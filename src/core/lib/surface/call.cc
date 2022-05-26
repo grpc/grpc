@@ -388,8 +388,8 @@ class FilterStackCall final : public Call {
   /* Contexts for various subsystems (security, tracing, ...). */
   grpc_call_context_element context_[GRPC_CONTEXT_COUNT] = {};
 
-  SliceBuffer send_buffer_;
-  absl::optional<SliceBuffer> receiving_stream_;
+  SliceBuffer send_slice_buffer_;
+  absl::optional<SliceBuffer> receiving_slice_buffer_;
   uint32_t receiving_stream_flags_;
 
   bool call_failed_before_recv_message_ = false;
@@ -641,7 +641,7 @@ void FilterStackCall::DestroyCall(void* call, grpc_error_handle /*error*/) {
   auto* c = static_cast<FilterStackCall*>(call);
   c->recv_initial_metadata_.Clear();
   c->recv_trailing_metadata_.Clear();
-  c->receiving_stream_.reset();
+  c->receiving_slice_buffer_.reset();
   ParentCall* pc = c->parent_call();
   if (pc != nullptr) {
     pc->~ParentCall();
@@ -1078,7 +1078,7 @@ void FilterStackCall::BatchControl::PostCompletion() {
                      "Attempt to send message after stream was closed."));
     }
     call->sending_message_ = false;
-    call->send_buffer_.Clear();
+    call->send_slice_buffer_.Clear();
   }
   if (op_.send_trailing_metadata) {
     call->send_trailing_metadata_.Clear();
@@ -1126,7 +1126,7 @@ void FilterStackCall::BatchControl::FinishStep() {
 
 void FilterStackCall::BatchControl::ProcessDataAfterMetadata() {
   FilterStackCall* call = call_;
-  if (!call->receiving_stream_.has_value()) {
+  if (!call->receiving_slice_buffer_.has_value()) {
     *call->receiving_buffer_ = nullptr;
     call->receiving_message_ = false;
     FinishStep();
@@ -1140,10 +1140,10 @@ void FilterStackCall::BatchControl::ProcessDataAfterMetadata() {
       *call->receiving_buffer_ = grpc_raw_byte_buffer_create(nullptr, 0);
     }
     grpc_slice_buffer_move_into(
-        call->receiving_stream_->c_slice_buffer(),
+        call->receiving_slice_buffer_->c_slice_buffer(),
         &(*call->receiving_buffer_)->data.raw.slice_buffer);
     call->receiving_message_ = false;
-    call->receiving_stream_.reset();
+    call->receiving_slice_buffer_.reset();
     FinishStep();
   }
 }
@@ -1152,7 +1152,7 @@ void FilterStackCall::BatchControl::ReceivingStreamReady(
     grpc_error_handle error) {
   FilterStackCall* call = call_;
   if (error != GRPC_ERROR_NONE) {
-    call->receiving_stream_.reset();
+    call->receiving_slice_buffer_.reset();
     if (batch_error_.ok()) {
       batch_error_.set(error);
     }
@@ -1161,7 +1161,7 @@ void FilterStackCall::BatchControl::ReceivingStreamReady(
   /* If recv_state is kRecvNone, we will save the batch_control
    * object with rel_cas, and will not use it after the cas. Its corresponding
    * acq_load is in receiving_initial_metadata_ready() */
-  if (error != GRPC_ERROR_NONE || !call->receiving_stream_.has_value() ||
+  if (error != GRPC_ERROR_NONE || !call->receiving_slice_buffer_.has_value() ||
       !gpr_atm_rel_cas(&call->recv_state_, kRecvNone,
                        reinterpret_cast<gpr_atm>(this))) {
     ProcessDataAfterMetadata();
@@ -1442,12 +1442,12 @@ grpc_call_error FilterStackCall::StartBatch(const grpc_op* ops, size_t nops,
         }
         stream_op->send_message = true;
         sending_message_ = true;
-        send_buffer_.Clear();
+        send_slice_buffer_.Clear();
         grpc_slice_buffer_move_into(
             &op->data.send_message.send_message->data.raw.slice_buffer,
-            send_buffer_.c_slice_buffer());
+            send_slice_buffer_.c_slice_buffer());
         stream_op_payload->send_message.flags = flags;
-        stream_op_payload->send_message.send_message = &send_buffer_;
+        stream_op_payload->send_message.send_message = &send_slice_buffer_;
         has_send_ops = true;
         break;
       }
@@ -1584,9 +1584,9 @@ grpc_call_error FilterStackCall::StartBatch(const grpc_op* ops, size_t nops,
         }
         receiving_message_ = true;
         stream_op->recv_message = true;
-        receiving_stream_.emplace();
+        receiving_slice_buffer_.reset();
         receiving_buffer_ = op->data.recv_message.recv_message;
-        stream_op_payload->recv_message.recv_message = &receiving_stream_;
+        stream_op_payload->recv_message.recv_message = &receiving_slice_buffer_;
         stream_op_payload->recv_message.flags = &receiving_stream_flags_;
         stream_op_payload->recv_message.call_failed_before_recv_message =
             &call_failed_before_recv_message_;
