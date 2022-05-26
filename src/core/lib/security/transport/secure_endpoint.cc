@@ -86,7 +86,6 @@ struct secure_endpoint {
     }
     has_posted_reclaimer.store(false, std::memory_order_relaxed);
     min_progress_size = 1;
-    grpc_slice_buffer_init(&tmp_frame_size_clip_buffer);
     gpr_ref_init(&ref, 1);
   }
 
@@ -99,7 +98,6 @@ struct secure_endpoint {
     grpc_slice_unref_internal(read_staging_buffer);
     grpc_slice_unref_internal(write_staging_buffer);
     grpc_slice_buffer_destroy_internal(&output_buffer);
-    grpc_slice_buffer_destroy_internal(&tmp_frame_size_clip_buffer);
     gpr_mu_destroy(&protector_mu);
   }
 
@@ -126,7 +124,6 @@ struct secure_endpoint {
   grpc_core::MemoryAllocator::Reservation self_reservation;
   std::atomic<bool> has_posted_reclaimer;
   int min_progress_size;
-  grpc_slice_buffer tmp_frame_size_clip_buffer;
 
   gpr_refcount ref;
 };
@@ -391,22 +388,8 @@ static void endpoint_write(grpc_endpoint* secure_ep, grpc_slice_buffer* slices,
 
     if (ep->zero_copy_protector != nullptr) {
       // Use zero-copy grpc protector to protect.
-      grpc_slice_buffer_reset_and_unref_internal(
-          &ep->tmp_frame_size_clip_buffer);
-      result = TSI_OK;
-      while (slices->length > static_cast<size_t>(max_frame_size) &&
-             result == TSI_OK) {
-        grpc_slice_buffer_move_first(slices,
-                                     static_cast<size_t>(max_frame_size),
-                                     &ep->tmp_frame_size_clip_buffer);
-        result = tsi_zero_copy_grpc_protector_protect(
-            ep->zero_copy_protector, &ep->tmp_frame_size_clip_buffer,
-            &ep->output_buffer);
-      }
-      if (result == TSI_OK && slices->length > 0) {
-        result = tsi_zero_copy_grpc_protector_protect(
-            ep->zero_copy_protector, slices, &ep->output_buffer);
-      }
+      result = tsi_zero_copy_grpc_protector_protect(
+        ep->zero_copy_protector, slices, &ep->output_buffer);
     } else {
       // Use frame protector to protect.
       for (i = 0; i < slices->count; i++) {
