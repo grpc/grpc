@@ -221,8 +221,7 @@ static tsi_result alts_zero_copy_grpc_protector_unprotect(
 static tsi_result alts_zero_copy_grpc_protector_unprotect_get_frame_size(
     tsi_zero_copy_grpc_protector* self, grpc_slice_buffer* protected_slices,
     grpc_slice_buffer* unprotected_slices, int* last_incomplete_frame_size) {
-  if (self == nullptr || unprotected_slices == nullptr ||
-      protected_slices == nullptr || last_incomplete_frame_size == nullptr) {
+  if (last_incomplete_frame_size == nullptr) {
     return TSI_INVALID_ARGUMENT;
   }
   alts_zero_copy_grpc_protector* protector =
