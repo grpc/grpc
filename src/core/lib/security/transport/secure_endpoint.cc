@@ -388,8 +388,8 @@ static void endpoint_write(grpc_endpoint* secure_ep, grpc_slice_buffer* slices,
 
     if (ep->zero_copy_protector != nullptr) {
       // Use zero-copy grpc protector to protect.
-      result = tsi_zero_copy_grpc_protector_protect(
-        ep->zero_copy_protector, slices, &ep->output_buffer);
+      result = tsi_zero_copy_grpc_protector_protect(ep->zero_copy_protector,
+                                                    slices, &ep->output_buffer);
     } else {
       // Use frame protector to protect.
       for (i = 0; i < slices->count; i++) {
