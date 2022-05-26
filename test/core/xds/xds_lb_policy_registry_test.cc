@@ -22,6 +22,7 @@
 #include <gtest/gtest.h>
 
 #include "absl/strings/str_format.h"
+#include "upb/def.hpp"
 #include "upb/upb.h"
 #include "upb/upb.hpp"
 
@@ -51,19 +52,25 @@ using ::xds::type::v3::TypedStruct;
 
 // Uses XdsLbPolicyRegistry to convert
 // envoy::config::cluster::v3::LoadBalancingPolicy to gRPC's JSON form.
-absl::StatusOr<Json::Array> ToJson(LoadBalancingPolicyProto policy) {
+absl::StatusOr<Json::Array> ConvertXdsPolicy(LoadBalancingPolicyProto policy) {
   std::string serialized_policy = policy.SerializeAsString();
   upb::Arena arena;
+  upb::SymbolTable symtab;
+  XdsEncodingContext context = {nullptr,     XdsBootstrap::XdsServer(),
+                                nullptr,     symtab.ptr(),
+                                arena.ptr(), true,
+                                nullptr};
   auto* upb_policy = envoy_config_cluster_v3_LoadBalancingPolicy_parse(
       serialized_policy.data(), serialized_policy.size(), arena.ptr());
-  return XdsLbPolicyRegistry::ToJson(upb_policy, arena.ptr());
+  return XdsLbPolicyRegistry::ConvertXdsLbPolicyConfig(context, upb_policy, 0);
 }
 
 TEST(XdsLbPolicyRegistryTest, EmptyLoadBalancingPolicy) {
-  auto result = ToJson(LoadBalancingPolicyProto());
+  auto result = ConvertXdsPolicy(LoadBalancingPolicyProto());
   EXPECT_EQ(result.status().code(), absl::StatusCode::kInvalidArgument);
-  EXPECT_THAT(StatusToString(result.status()),
-              ::testing::HasSubstr("No supported LoadBalancingPolicy found"));
+  EXPECT_THAT(
+      StatusToString(result.status()),
+      ::testing::HasSubstr("No supported load balancing policy config found"));
 }
 
 TEST(XdsLbPolicyRegistryTest, UnsupportedBuiltinType) {
@@ -71,16 +78,17 @@ TEST(XdsLbPolicyRegistryTest, UnsupportedBuiltinType) {
   auto* lb_policy = policy.add_policies();
   lb_policy->mutable_typed_extension_config()->mutable_typed_config()->PackFrom(
       LoadBalancingPolicyProto());
-  auto result = ToJson(policy);
+  auto result = ConvertXdsPolicy(policy);
   EXPECT_EQ(result.status().code(), absl::StatusCode::kInvalidArgument);
-  EXPECT_THAT(StatusToString(result.status()),
-              ::testing::HasSubstr("No supported LoadBalancingPolicy found"));
+  EXPECT_THAT(
+      StatusToString(result.status()),
+      ::testing::HasSubstr("No supported load balancing policy config found"));
 }
 
 TEST(XdsLbPolicyRegistryTest, MissingTypedExtensionConfig) {
   LoadBalancingPolicyProto policy;
   policy.add_policies();
-  auto result = ToJson(policy);
+  auto result = ConvertXdsPolicy(policy);
   EXPECT_EQ(result.status().code(), absl::StatusCode::kInvalidArgument);
   EXPECT_THAT(StatusToString(result.status()),
               ::testing::HasSubstr("Error parsing LoadBalancingPolicy::Policy "
@@ -91,7 +99,7 @@ TEST(XdsLbPolicyRegistryTest, MissingTypedConfig) {
   LoadBalancingPolicyProto policy;
   auto* lb_policy = policy.add_policies();
   lb_policy->mutable_typed_extension_config();
-  auto result = ToJson(policy);
+  auto result = ConvertXdsPolicy(policy);
   EXPECT_EQ(result.status().code(), absl::StatusCode::kInvalidArgument);
   EXPECT_THAT(
       StatusToString(result.status()),
@@ -106,7 +114,7 @@ TEST(XdsLbPolicyRegistryTest, RingHashInvalidHash) {
   auto* lb_policy = policy.add_policies();
   lb_policy->mutable_typed_extension_config()->mutable_typed_config()->PackFrom(
       ring_hash);
-  auto result = ToJson(policy);
+  auto result = ConvertXdsPolicy(policy);
   EXPECT_EQ(result.status().code(), absl::StatusCode::kInvalidArgument);
   EXPECT_THAT(
       StatusToString(result.status()),
@@ -121,14 +129,12 @@ TEST(XdsLbPolicyRegistryTest, RingHashRingSizeDefaults) {
   auto* lb_policy = policy.add_policies();
   lb_policy->mutable_typed_extension_config()->mutable_typed_config()->PackFrom(
       ring_hash);
-  auto result = ToJson(policy);
+  auto result = ConvertXdsPolicy(policy);
   EXPECT_TRUE(result.ok());
   EXPECT_EQ(result->size(), 1);
   grpc_error_handle error = GRPC_ERROR_NONE;
   EXPECT_EQ((*result)[0], Json::Parse("{"
                                       "\"ring_hash_experimental\": {"
-                                      "	\"minRingSize\": 1024,"
-                                      "	\"maxRingSize\": 8388608"
                                       "}}",
                                       &error));
 }
@@ -142,35 +148,14 @@ TEST(XdsLbPolicyRegistryTest, RingHashRingSizeCustom) {
   auto* lb_policy = policy.add_policies();
   lb_policy->mutable_typed_extension_config()->mutable_typed_config()->PackFrom(
       ring_hash);
-  auto result = ToJson(policy);
+  auto result = ConvertXdsPolicy(policy);
   EXPECT_TRUE(result.ok());
   EXPECT_EQ(result->size(), 1);
   grpc_error_handle error = GRPC_ERROR_NONE;
   EXPECT_EQ((*result)[0], Json::Parse("{"
                                       "\"ring_hash_experimental\": {"
-                                      "	\"minRingSize\": 1234,"
-                                      "	\"maxRingSize\": 4567"
-                                      "}}",
-                                      &error));
-}
-
-TEST(XdsLbPolicyRegistryTest, RingHashRingSizeLimits) {
-  RingHash ring_hash;
-  ring_hash.set_hash_function(RingHash::XX_HASH);
-  ring_hash.mutable_minimum_ring_size()->set_value(1024 * 1024 * 1024);
-  ring_hash.mutable_maximum_ring_size()->set_value(1024 * 1024 * 1024);
-  LoadBalancingPolicyProto policy;
-  auto* lb_policy = policy.add_policies();
-  lb_policy->mutable_typed_extension_config()->mutable_typed_config()->PackFrom(
-      ring_hash);
-  auto result = ToJson(policy);
-  EXPECT_TRUE(result.ok());
-  EXPECT_EQ(result->size(), 1);
-  grpc_error_handle error = GRPC_ERROR_NONE;
-  EXPECT_EQ((*result)[0], Json::Parse("{"
-                                      "\"ring_hash_experimental\": {"
-                                      "	\"minRingSize\": 8388608,"
-                                      "	\"maxRingSize\": 8388608"
+                                      "  \"minRingSize\": 1234,"
+                                      "  \"maxRingSize\": 4567"
                                       "}}",
                                       &error));
 }
@@ -180,7 +165,7 @@ TEST(XdsLbPolicyRegistryTest, RoundRobin) {
   auto* lb_policy = policy.add_policies();
   lb_policy->mutable_typed_extension_config()->mutable_typed_config()->PackFrom(
       RoundRobin());
-  auto result = ToJson(policy);
+  auto result = ConvertXdsPolicy(policy);
   EXPECT_TRUE(result.ok());
   EXPECT_EQ(result->size(), 1);
   grpc_error_handle error = GRPC_ERROR_NONE;
@@ -201,15 +186,15 @@ TEST(XdsLbPolicyRegistryTest, WrrLocality) {
   auto* lb_policy = policy.add_policies();
   lb_policy->mutable_typed_extension_config()->mutable_typed_config()->PackFrom(
       wrr_locality);
-  auto result = ToJson(policy);
+  auto result = ConvertXdsPolicy(policy);
   EXPECT_TRUE(result.ok());
   EXPECT_EQ(result->size(), 1);
   grpc_error_handle error = GRPC_ERROR_NONE;
   EXPECT_EQ((*result)[0], Json::Parse("{"
                                       "\"xds_wrr_locality_experimental\": {"
-                                      "	\"child_policy\": [{"
-                                      "		\"round_robin\": {}"
-                                      "	}]"
+                                      "  \"child_policy\": [{"
+                                      "    \"round_robin\": {}"
+                                      "  }]"
                                       "}}",
                                       &error));
 }
@@ -219,7 +204,7 @@ TEST(XdsLbPolicyRegistryTest, WrrLocalityMissingEndpointPickingPolicy) {
   auto* lb_policy = policy.add_policies();
   lb_policy->mutable_typed_extension_config()->mutable_typed_config()->PackFrom(
       WrrLocality());
-  auto result = ToJson(policy);
+  auto result = ConvertXdsPolicy(policy);
   EXPECT_EQ(result.status().code(), absl::StatusCode::kInvalidArgument);
   EXPECT_THAT(StatusToString(result.status()),
               ::testing::ContainsRegex(
@@ -238,7 +223,7 @@ TEST(XdsLbPolicyRegistryTest, WrrLocalityChildPolicyError) {
   auto* lb_policy = policy.add_policies();
   lb_policy->mutable_typed_extension_config()->mutable_typed_config()->PackFrom(
       wrr_locality);
-  auto result = ToJson(policy);
+  auto result = ConvertXdsPolicy(policy);
   EXPECT_EQ(result.status().code(), absl::StatusCode::kInvalidArgument);
   EXPECT_THAT(StatusToString(result.status()),
               ::testing::ContainsRegex(
@@ -246,6 +231,38 @@ TEST(XdsLbPolicyRegistryTest, WrrLocalityChildPolicyError) {
                   "WrrLocality load balancing policy.*Error parsing "
                   "LoadBalancingPolicy.*Invalid hash function provided for "
                   "RingHash loadbalancing policy. Only XX_HASH is supported."));
+}
+
+TEST(XdsLbPolicyRegistryTest, WrrLocalityUnsupportedTypeSkipped) {
+  // Create WrrLocality policy and add two policies to its list, an unsupported
+  // type and then a known RoundRobin type. Expect that the unsupported type is
+  // skipped and RoundRobin is selected.
+  WrrLocality wrr_locality;
+  wrr_locality.mutable_endpoint_picking_policy()
+      ->add_policies()
+      ->mutable_typed_extension_config()
+      ->mutable_typed_config()
+      ->PackFrom(LoadBalancingPolicyProto());
+  wrr_locality.mutable_endpoint_picking_policy()
+      ->add_policies()
+      ->mutable_typed_extension_config()
+      ->mutable_typed_config()
+      ->PackFrom(RoundRobin());
+  LoadBalancingPolicyProto policy;
+  auto* lb_policy = policy.add_policies();
+  lb_policy->mutable_typed_extension_config()->mutable_typed_config()->PackFrom(
+      wrr_locality);
+  auto result = ConvertXdsPolicy(policy);
+  EXPECT_TRUE(result.ok());
+  EXPECT_EQ(result->size(), 1);
+  grpc_error_handle error = GRPC_ERROR_NONE;
+  EXPECT_EQ((*result)[0], Json::Parse("{"
+                                      "\"xds_wrr_locality_experimental\": {"
+                                      "  \"child_policy\": [{"
+                                      "    \"round_robin\": {}"
+                                      "  }]"
+                                      "}}",
+                                      &error));
 }
 
 class CustomLbPolicyFactory : public LoadBalancingPolicyFactory {
@@ -271,7 +288,7 @@ TEST(XdsLbPolicyRegistryTest, CustomLbPolicy) {
   auto* lb_policy = policy.add_policies();
   lb_policy->mutable_typed_extension_config()->mutable_typed_config()->PackFrom(
       typed_struct);
-  auto result = ToJson(policy);
+  auto result = ConvertXdsPolicy(policy);
   EXPECT_TRUE(result.ok());
   EXPECT_EQ(result->size(), 1);
   grpc_error_handle error = GRPC_ERROR_NONE;
@@ -287,7 +304,7 @@ TEST(XdsLbPolicyRegistryTest, CustomLbPolicyUdpaTyped) {
   auto* lb_policy = policy.add_policies();
   lb_policy->mutable_typed_extension_config()->mutable_typed_config()->PackFrom(
       typed_struct);
-  auto result = ToJson(policy);
+  auto result = ConvertXdsPolicy(policy);
   EXPECT_TRUE(result.ok());
   EXPECT_EQ(result->size(), 1);
   grpc_error_handle error = GRPC_ERROR_NONE;
@@ -303,12 +320,11 @@ TEST(XdsLbPolicyRegistryTest, CustomLbPolicyInvalidUrl) {
   auto* lb_policy = policy.add_policies();
   lb_policy->mutable_typed_extension_config()->mutable_typed_config()->PackFrom(
       typed_struct);
-  auto result = ToJson(policy);
+  auto result = ConvertXdsPolicy(policy);
   EXPECT_EQ(result.status().code(), absl::StatusCode::kInvalidArgument);
   EXPECT_THAT(StatusToString(result.status()),
-              ::testing::ContainsRegex(
-                  "Error parsing LoadBalancingPolicy.*CustomLbPolicy: Invalid "
-                  "type_url test.CustomLb"));
+              ::testing::HasSubstr("Error parsing LoadBalancingPolicy: Custom "
+                                   "Policy: Invalid type_url test.CustomLb"));
 }
 
 TEST(XdsLbPolicyRegistryTest, UnsupportedCustomTypeError) {
@@ -318,11 +334,11 @@ TEST(XdsLbPolicyRegistryTest, UnsupportedCustomTypeError) {
   auto* lb_policy = policy.add_policies();
   lb_policy->mutable_typed_extension_config()->mutable_typed_config()->PackFrom(
       typed_struct);
-  auto result = ToJson(policy);
+  auto result = ConvertXdsPolicy(policy);
   EXPECT_EQ(result.status().code(), absl::StatusCode::kInvalidArgument);
-  EXPECT_THAT(
-      StatusToString(result.status()),
-      ::testing::ContainsRegex("No supported LoadBalancingPolicy found"));
+  EXPECT_THAT(StatusToString(result.status()),
+              ::testing::ContainsRegex(
+                  "No supported load balancing policy config found"));
 }
 
 TEST(XdsLbPolicyRegistryTest, CustomLbPolicyInvalidValue) {
@@ -334,14 +350,13 @@ TEST(XdsLbPolicyRegistryTest, CustomLbPolicyInvalidValue) {
   auto* lb_policy = policy.add_policies();
   lb_policy->mutable_typed_extension_config()->mutable_typed_config()->PackFrom(
       typed_struct);
-  auto result = ToJson(policy);
+  auto result = ConvertXdsPolicy(policy);
   EXPECT_EQ(result.status().code(), absl::StatusCode::kInvalidArgument);
-  EXPECT_THAT(
-      StatusToString(result.status()),
-      ::testing::ContainsRegex(
-          "Error parsing LoadBalancingPolicy.*Error parsing Custom load "
-          "balancing policy myorg/test.CustomLb.*Failed to parse "
-          "Struct.*Failed to parse value for key:key.*Invalid value type"));
+  EXPECT_THAT(StatusToString(result.status()),
+              ::testing::ContainsRegex(
+                  "Error parsing LoadBalancingPolicy: Custom Policy: "
+                  "myorg/test.CustomLb.*Error parsing "
+                  "google::Protobuf::Struct: No value set in Value proto"));
 }
 
 TEST(XdsLbPolicyRegistryTest, CustomLbPolicyNullValue) {
@@ -355,14 +370,14 @@ TEST(XdsLbPolicyRegistryTest, CustomLbPolicyNullValue) {
   auto* lb_policy = policy.add_policies();
   lb_policy->mutable_typed_extension_config()->mutable_typed_config()->PackFrom(
       typed_struct);
-  auto result = ToJson(policy);
+  auto result = ConvertXdsPolicy(policy);
   EXPECT_TRUE(result.ok());
   EXPECT_EQ(result->size(), 1);
   grpc_error_handle error = GRPC_ERROR_NONE;
   EXPECT_EQ((*result)[0], Json::Parse("{"
-                                      "	\"test.CustomLb\":{"
-                                      "		\"key\": null"
-                                      "	}"
+                                      "  \"test.CustomLb\":{"
+                                      "    \"key\": null"
+                                      "  }"
                                       "}",
                                       &error));
 }
@@ -378,18 +393,17 @@ TEST(XdsLbPolicyRegistryTest, CustomLbPolicyNumberValue) {
   auto* lb_policy = policy.add_policies();
   lb_policy->mutable_typed_extension_config()->mutable_typed_config()->PackFrom(
       typed_struct);
-  auto result = ToJson(policy);
+  auto result = ConvertXdsPolicy(policy);
   EXPECT_TRUE(result.ok());
   EXPECT_EQ(result->size(), 1);
   grpc_error_handle error = GRPC_ERROR_NONE;
-  EXPECT_EQ((*result)[0],
-            Json::Parse(absl::StrFormat("{"
-                                        "	\"test.CustomLb\":{"
-                                        "		\"key\": %s"
-                                        "	}"
-                                        "}",
-                                        std::to_string(double(123))),
-                        &error));
+  EXPECT_EQ((*result)[0], Json::Parse(absl::StrFormat("{"
+                                                      "  \"test.CustomLb\":{"
+                                                      "    \"key\": %s"
+                                                      "  }"
+                                                      "}",
+                                                      std::to_string(123)),
+                                      &error));
 }
 
 TEST(XdsLbPolicyRegistryTest, CustomLbPolicyStringValue) {
@@ -403,14 +417,14 @@ TEST(XdsLbPolicyRegistryTest, CustomLbPolicyStringValue) {
   auto* lb_policy = policy.add_policies();
   lb_policy->mutable_typed_extension_config()->mutable_typed_config()->PackFrom(
       typed_struct);
-  auto result = ToJson(policy);
+  auto result = ConvertXdsPolicy(policy);
   EXPECT_TRUE(result.ok());
   EXPECT_EQ(result->size(), 1);
   grpc_error_handle error = GRPC_ERROR_NONE;
   EXPECT_EQ((*result)[0], Json::Parse("{"
-                                      "	\"test.CustomLb\":{"
-                                      "		\"key\": \"value\""
-                                      "	}"
+                                      "  \"test.CustomLb\":{"
+                                      "    \"key\": \"value\""
+                                      "  }"
                                       "}",
                                       &error));
 }
@@ -426,14 +440,14 @@ TEST(XdsLbPolicyRegistryTest, CustomLbPolicyBoolValue) {
   auto* lb_policy = policy.add_policies();
   lb_policy->mutable_typed_extension_config()->mutable_typed_config()->PackFrom(
       typed_struct);
-  auto result = ToJson(policy);
+  auto result = ConvertXdsPolicy(policy);
   EXPECT_TRUE(result.ok());
   EXPECT_EQ(result->size(), 1);
   grpc_error_handle error = GRPC_ERROR_NONE;
   EXPECT_EQ((*result)[0], Json::Parse("{"
-                                      "	\"test.CustomLb\":{"
-                                      "		\"key\": true"
-                                      "	}"
+                                      "  \"test.CustomLb\":{"
+                                      "    \"key\": true"
+                                      "  }"
                                       "}",
                                       &error));
 }
@@ -453,17 +467,17 @@ TEST(XdsLbPolicyRegistryTest, CustomLbPolicyStructValue) {
   auto* lb_policy = policy.add_policies();
   lb_policy->mutable_typed_extension_config()->mutable_typed_config()->PackFrom(
       typed_struct);
-  auto result = ToJson(policy);
+  auto result = ConvertXdsPolicy(policy);
   EXPECT_TRUE(result.ok());
   EXPECT_EQ(result->size(), 1);
   grpc_error_handle error = GRPC_ERROR_NONE;
   EXPECT_EQ((*result)[0], Json::Parse("{"
-                                      "	\"test.CustomLb\":{"
-                                      "		\"key\": {"
-                                      "			\"inner_key\": true,"
-                                      "			\"inner_key_2\": true"
-                                      "		}"
-                                      "	}"
+                                      "  \"test.CustomLb\":{"
+                                      "    \"key\": {"
+                                      "      \"inner_key\": true,"
+                                      "      \"inner_key_2\": true"
+                                      "    }"
+                                      "  }"
                                       "}",
                                       &error));
 }
@@ -481,14 +495,14 @@ TEST(XdsLbPolicyRegistryTest, CustomLbPolicyListValue) {
   auto* lb_policy = policy.add_policies();
   lb_policy->mutable_typed_extension_config()->mutable_typed_config()->PackFrom(
       typed_struct);
-  auto result = ToJson(policy);
+  auto result = ConvertXdsPolicy(policy);
   EXPECT_TRUE(result.ok());
   EXPECT_EQ(result->size(), 1);
   grpc_error_handle error = GRPC_ERROR_NONE;
   EXPECT_EQ((*result)[0], Json::Parse("{"
-                                      "	\"test.CustomLb\":{"
-                                      "		\"key\": [false, null]"
-                                      "	}"
+                                      "  \"test.CustomLb\":{"
+                                      "    \"key\": [false, null]"
+                                      "  }"
                                       "}",
                                       &error));
 }
@@ -504,15 +518,13 @@ TEST(XdsLbPolicyRegistryTest, CustomLbPolicyListError) {
   auto* lb_policy = policy.add_policies();
   lb_policy->mutable_typed_extension_config()->mutable_typed_config()->PackFrom(
       typed_struct);
-  auto result = ToJson(policy);
+  auto result = ConvertXdsPolicy(policy);
   EXPECT_EQ(result.status().code(), absl::StatusCode::kInvalidArgument);
-  EXPECT_THAT(
-      StatusToString(result.status()),
-      ::testing::ContainsRegex(
-          "Error parsing LoadBalancingPolicy.*Error parsing Custom load "
-          "balancing policy myorg/test.CustomLb.*Failed to parse "
-          "Struct.*Failed to parse value for key:key.*Error parsing "
-          "ListValue.*Invalid value type"));
+  EXPECT_THAT(StatusToString(result.status()),
+              ::testing::ContainsRegex(
+                  "Error parsing LoadBalancingPolicy: Custom Policy: "
+                  "myorg/test.CustomLb.*Error parsing "
+                  "google::Protobuf::Struct: No value set in Value proto"));
 }
 
 TEST(XdsLbPolicyRegistryTest, UnsupportedBuiltInTypeSkipped) {
@@ -526,7 +538,7 @@ TEST(XdsLbPolicyRegistryTest, UnsupportedBuiltInTypeSkipped) {
   lb_policy = policy.add_policies();
   lb_policy->mutable_typed_extension_config()->mutable_typed_config()->PackFrom(
       RoundRobin());
-  auto result = ToJson(policy);
+  auto result = ConvertXdsPolicy(policy);
   EXPECT_TRUE(result.ok());
   EXPECT_EQ(result->size(), 1);
   grpc_error_handle error = GRPC_ERROR_NONE;
@@ -549,7 +561,7 @@ TEST(XdsLbPolicyRegistryTest, UnsupportedCustomTypeSkipped) {
   lb_policy = policy.add_policies();
   lb_policy->mutable_typed_extension_config()->mutable_typed_config()->PackFrom(
       RoundRobin());
-  auto result = ToJson(policy);
+  auto result = ConvertXdsPolicy(policy);
   EXPECT_TRUE(result.ok());
   EXPECT_EQ(result->size(), 1);
   grpc_error_handle error = GRPC_ERROR_NONE;
@@ -563,7 +575,7 @@ TEST(XdsLbPolicyRegistryTest, UnsupportedCustomTypeSkipped) {
 // depth of 16.
 LoadBalancingPolicyProto BuildRecursiveLoadBalancingPolicy(int depth) {
   LoadBalancingPolicyProto policy;
-  if (depth > 16) {
+  if (depth >= 16) {
     policy.add_policies()
         ->mutable_typed_extension_config()
         ->mutable_typed_config()
@@ -581,7 +593,7 @@ LoadBalancingPolicyProto BuildRecursiveLoadBalancingPolicy(int depth) {
 }
 
 TEST(XdsLbPolicyRegistryTest, MaxRecursion) {
-  auto result = ToJson(BuildRecursiveLoadBalancingPolicy(1));
+  auto result = ConvertXdsPolicy(BuildRecursiveLoadBalancingPolicy(0));
   EXPECT_EQ(result.status().code(), absl::StatusCode::kInvalidArgument);
   EXPECT_THAT(StatusToString(result.status()),
               ::testing::ContainsRegex("LoadBalancingPolicy configuration has "

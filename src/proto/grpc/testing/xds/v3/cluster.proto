@@ -225,6 +225,10 @@ message Cluster {
   // will be set up with plaintext.
   core.v3.TransportSocket transport_socket = 24;
 
+  // If this field is set and is supported by the client, it will supersede the value of
+  // :ref:`lb_policy<envoy_v3_api_field_config.cluster.v3.Cluster.lb_policy>`.
+  LoadBalancingPolicy load_balancing_policy = 41;
+
   // [#not-implemented-hide:]
   // If present, tells the client where to send load reports via LRS. If not present, the
   // client will fall back to a client-side default, which may be either (a) don't send any

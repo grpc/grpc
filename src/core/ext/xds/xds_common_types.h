@@ -26,6 +26,7 @@
 #include "envoy/extensions/transport_sockets/tls/v3/tls.upb.h"
 #include "google/protobuf/any.upb.h"
 #include "google/protobuf/duration.upb.h"
+#include "xds/type/v3/typed_struct.upb.h"
 
 #include "src/core/ext/xds/upb_utils.h"
 #include "src/core/lib/matchers/matchers.h"
@@ -86,9 +87,11 @@ struct CommonTlsContext {
       CommonTlsContext* common_tls_context);
 };
 
-grpc_error_handle ExtractExtensionTypeName(const XdsEncodingContext& context,
-                                           const google_protobuf_Any* any,
-                                           absl::string_view* extension_type);
+// TODO(yashykt): Convert this to return absl::StatusOr<Result> instead.
+grpc_error_handle ExtractExtensionTypeName(
+    const XdsEncodingContext& context, const google_protobuf_Any* any,
+    absl::string_view* extension_type,
+    xds_type_v3_TypedStruct** parsed_typed_struct = nullptr);
 
 }  // namespace grpc_core
 

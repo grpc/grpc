@@ -3323,6 +3323,7 @@ grpc_cc_library(
         "protobuf_any_upb",
         "protobuf_duration_upb",
         "protobuf_struct_upb",
+        "protobuf_struct_upbdefs",
         "protobuf_timestamp_upb",
         "protobuf_wrappers_upb",
         "ref_counted_ptr",
