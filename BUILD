@@ -1006,6 +1006,7 @@ grpc_cc_library(
         "gpr_platform",
         "percent_encoding",
         "protobuf_any_upb",
+        "slice",
     ],
 )
 

@@ -305,7 +305,6 @@
         'absl/synchronization:synchronization',
         'absl/time:time',
         'absl/types:optional',
-        'upb',
       ],
       'sources': [
         'src/core/lib/gpr/alloc.cc',
@@ -370,6 +369,7 @@
         'absl/utility:utility',
         'gpr',
         'address_sorting',
+        'upb',
       ],
       'sources': [
         'src/core/ext/filters/census/grpc_context.cc',
@@ -1120,6 +1120,7 @@
         'absl/utility:utility',
         'gpr',
         'address_sorting',
+        'upb',
       ],
       'sources': [
         'src/core/ext/filters/census/grpc_context.cc',

@@ -281,7 +281,6 @@ libs:
   - absl/synchronization:synchronization
   - absl/time:time
   - absl/types:optional
-  - upb
 - name: grpc
   build: all
   language: c
@@ -1669,6 +1668,7 @@ libs:
   - gpr
   - libssl
   - address_sorting
+  - upb
   baselib: true
   generate_plugin_registry: true
 - name: grpc_test_util
@@ -2463,6 +2463,7 @@ libs:
   - absl/utility:utility
   - gpr
   - address_sorting
+  - upb
   baselib: true
   generate_plugin_registry: true
 - name: benchmark_helpers
@@ -3881,6 +3882,7 @@ targets:
   - absl/types:variant
   - absl/utility:utility
   - gpr
+  - upb
   platforms:
   - linux
   - posix
@@ -4446,7 +4448,6 @@ targets:
   - absl/types:optional
   - absl/types:variant
   - absl/utility:utility
-  - upb
   uses_polling: false
 - name: address_sorting_test
   gtest: true
@@ -4624,6 +4625,7 @@ targets:
   - absl/types:variant
   - absl/utility:utility
   - gpr
+  - upb
   uses_polling: false
 - name: async_end2end_test
   gtest: true
@@ -5171,6 +5173,7 @@ targets:
   - absl/types:variant
   - absl/utility:utility
   - gpr
+  - upb
   uses_polling: false
 - name: cli_call_test
   gtest: true
@@ -5737,6 +5740,7 @@ targets:
   - absl/types:variant
   - absl/utility:utility
   - gpr
+  - upb
   uses_polling: false
 - name: fake_binder_test
   gtest: true
@@ -5969,6 +5973,7 @@ targets:
   - absl/types:variant
   - absl/utility:utility
   - gpr
+  - upb
   uses_polling: false
 - name: generic_end2end_test
   gtest: true
@@ -6683,7 +6688,6 @@ targets:
   - absl/types:optional
   - absl/types:variant
   - absl/utility:utility
-  - upb
   uses_polling: false
 - name: lb_get_cpu_stats_test
   gtest: true
@@ -6845,6 +6849,7 @@ targets:
   - absl/types:variant
   - absl/utility:utility
   - gpr
+  - upb
   uses_polling: false
 - name: message_allocator_end2end_test
   gtest: true
@@ -7034,7 +7039,6 @@ targets:
   - absl/types:optional
   - absl/types:variant
   - absl/utility:utility
-  - upb
   uses_polling: false
 - name: orca_service_end2end_test
   gtest: true
@@ -7180,6 +7184,7 @@ targets:
   - absl/types:variant
   - absl/utility:utility
   - gpr
+  - upb
   uses_polling: false
 - name: poll_test
   gtest: true
@@ -7549,6 +7554,7 @@ targets:
   - absl/types:variant
   - absl/utility:utility
   - gpr
+  - upb
   uses_polling: false
 - name: retry_throttle_test
   gtest: true
@@ -7914,7 +7920,6 @@ targets:
   - absl/synchronization:synchronization
   - absl/time:time
   - absl/types:optional
-  - upb
   uses_polling: false
 - name: sleep_test
   gtest: true
@@ -8169,7 +8174,6 @@ targets:
   - absl/synchronization:synchronization
   - absl/time:time
   - absl/types:optional
-  - upb
   uses_polling: false
 - name: test_core_security_credentials_test
   gtest: true
@@ -8350,7 +8354,6 @@ targets:
   - absl/synchronization:synchronization
   - absl/time:time
   - absl/types:optional
-  - upb
   uses_polling: false
 - name: thread_stress_test
   gtest: true

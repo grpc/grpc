@@ -1537,7 +1537,6 @@ target_link_libraries(gpr
   absl::synchronization
   absl::time
   absl::optional
-  upb
 )
 if(_gRPC_PLATFORM_ANDROID)
   target_link_libraries(gpr
@@ -2323,6 +2322,7 @@ target_link_libraries(grpc
   gpr
   ${_gRPC_SSL_LIBRARIES}
   address_sorting
+  upb
 )
 if(_gRPC_PLATFORM_IOS OR _gRPC_PLATFORM_MAC)
   target_link_libraries(grpc "-framework CoreFoundation")
@@ -2885,6 +2885,7 @@ target_link_libraries(grpc_unsecure
   absl::utility
   gpr
   address_sorting
+  upb
 )
 if(_gRPC_PLATFORM_IOS OR _gRPC_PLATFORM_MAC)
   target_link_libraries(grpc_unsecure "-framework CoreFoundation")
@@ -6060,6 +6061,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX)
     absl::variant
     absl::utility
     gpr
+    upb
   )
 
 
@@ -7379,7 +7381,6 @@ target_link_libraries(activity_test
   absl::optional
   absl::variant
   absl::utility
-  upb
 )
 
 
@@ -7698,6 +7699,7 @@ target_link_libraries(arena_promise_test
   absl::variant
   absl::utility
   gpr
+  upb
 )
 
 
@@ -9043,6 +9045,7 @@ target_link_libraries(chunked_vector_test
   absl::variant
   absl::utility
   gpr
+  upb
 )
 
 
@@ -10471,6 +10474,7 @@ target_link_libraries(exec_ctx_wakeup_scheduler_test
   absl::variant
   absl::utility
   gpr
+  upb
 )
 
 
@@ -10803,6 +10807,7 @@ target_link_libraries(for_each_test
   absl::variant
   absl::utility
   gpr
+  upb
 )
 
 
@@ -12806,7 +12811,6 @@ target_link_libraries(latch_test
   absl::optional
   absl::variant
   absl::utility
-  upb
 )
 
 
@@ -13120,6 +13124,7 @@ target_link_libraries(memory_quota_test
   absl::variant
   absl::utility
   gpr
+  upb
 )
 
 
@@ -13495,7 +13500,6 @@ target_link_libraries(observable_test
   absl::optional
   absl::variant
   absl::utility
-  upb
 )
 
 
@@ -13776,6 +13780,7 @@ target_link_libraries(pipe_test
   absl::variant
   absl::utility
   gpr
+  upb
 )
 
 
@@ -14631,6 +14636,7 @@ target_link_libraries(resource_quota_test
   absl::variant
   absl::utility
   gpr
+  upb
 )
 
 
@@ -15607,7 +15613,6 @@ target_link_libraries(single_set_ptr_test
   absl::synchronization
   absl::time
   absl::optional
-  upb
 )
 
 
@@ -16218,7 +16223,6 @@ target_link_libraries(test_core_gprpp_time_test
   absl::synchronization
   absl::time
   absl::optional
-  upb
 )
 
 
@@ -16594,7 +16598,6 @@ target_link_libraries(thread_quota_test
   absl::synchronization
   absl::time
   absl::optional
-  upb
 )
 
 
