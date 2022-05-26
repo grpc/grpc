@@ -553,6 +553,36 @@ TEST_P(TimeoutTest, EdsSecondResourceNotPresentInRequest) {
   EXPECT_TRUE(error_seen);
 }
 
+TEST_P(TimeoutTest, ServerDoesNotResendAfterAdsStreamRestart) {
+  CreateAndStartBackends(1);
+  EdsResourceArgs args({{"locality0", CreateEndpointsForBackends(0, 1)}});
+  balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
+  WaitForAllBackends(DEBUG_LOCATION);
+  // Stop balancer.
+  balancer_->Shutdown();
+  // Tell balancer to require minimum version 1 for all resource types
+  // and to not reply to the requests.
+  balancer_->ads_service()->SetResourceMinVersion(kLdsTypeUrl, 1);
+  balancer_->ads_service()->IgnoreResourceType(kLdsTypeUrl);
+  balancer_->ads_service()->SetResourceMinVersion(kRdsTypeUrl, 1);
+  balancer_->ads_service()->IgnoreResourceType(kRdsTypeUrl);
+  balancer_->ads_service()->SetResourceMinVersion(kCdsTypeUrl, 1);
+  balancer_->ads_service()->IgnoreResourceType(kCdsTypeUrl);
+  balancer_->ads_service()->SetResourceMinVersion(kEdsTypeUrl, 1);
+  balancer_->ads_service()->IgnoreResourceType(kEdsTypeUrl);
+  // Restart balancer.
+  balancer_->Start();
+  // Send RPCs for long enough to cover the ADS stream restart delay,
+  // the stream restart, and then the resulting timeout period, just to
+  // be sure that the channel continues to use the resources from before
+  // the restart.
+  absl::Time deadline =
+      absl::Now() + (absl::Seconds(5) * grpc_test_slowdown_factor());
+  do {
+    CheckRpcSendOk(DEBUG_LOCATION);
+  } while (absl::Now() < deadline);
+}
+
 //
 // BootstrapSourceTest - tests different bootstrap sources
 //
@@ -713,16 +743,13 @@ TEST_P(XdsFederationTest, FederationTargetAuthorityDefaultResourceTemplate) {
                                    new_route_config);
   // Ensure update has reached and send 10 RPCs to the current stub.
   WaitForAllBackends(DEBUG_LOCATION, 0, 1);
-  // Create second channel to new target uri and send 1 RPC .
+  // Create second channel to new target uri and send 1 RPC.
   auto channel2 =
       CreateChannel(/*failover_timeout_ms=*/0, kNewServerName, kAuthority);
-  channel2->GetState(/*try_to_connect=*/true);
-  ASSERT_TRUE(
-      channel2->WaitForConnected(grpc_timeout_milliseconds_to_deadline(100)));
   auto stub2 = grpc::testing::EchoTestService::NewStub(channel2);
   ClientContext context;
   EchoRequest request;
-  request.set_message(kRequestMessage);
+  RpcOptions().SetupRpc(&context, &request);
   EchoResponse response;
   grpc::Status status = stub2->Echo(&context, request, &response);
   EXPECT_TRUE(status.ok()) << "code=" << status.error_code()
@@ -787,16 +814,13 @@ TEST_P(XdsFederationTest, FederationTargetAuthorityWithResourceTemplate) {
                                    new_route_config);
   // Ensure update has reached and send 10 RPCs to the current stub.
   WaitForAllBackends(DEBUG_LOCATION, 0, 1);
-  // Create second channel to new target uri and send 1 RPC .
+  // Create second channel to new target uri and send 1 RPC.
   auto channel2 =
       CreateChannel(/*failover_timeout_ms=*/0, kNewServerName, kAuthority);
-  channel2->GetState(/*try_to_connect=*/true);
-  ASSERT_TRUE(
-      channel2->WaitForConnected(grpc_timeout_milliseconds_to_deadline(100)));
   auto stub2 = grpc::testing::EchoTestService::NewStub(channel2);
   ClientContext context;
   EchoRequest request;
-  request.set_message(kRequestMessage);
+  RpcOptions().SetupRpc(&context, &request);
   EchoResponse response;
   grpc::Status status = stub2->Echo(&context, request, &response);
   EXPECT_TRUE(status.ok()) << "code=" << status.error_code()
@@ -824,7 +848,7 @@ TEST_P(XdsFederationTest, TargetUriAuthorityUnknown) {
   auto stub2 = grpc::testing::EchoTestService::NewStub(channel2);
   ClientContext context;
   EchoRequest request;
-  request.set_message(kRequestMessage);
+  RpcOptions().SetupRpc(&context, &request);
   EchoResponse response;
   grpc::Status status = stub2->Echo(&context, request, &response);
   EXPECT_EQ(status.error_code(), StatusCode::UNAVAILABLE);
@@ -865,7 +889,7 @@ TEST_P(XdsFederationTest, RdsResourceNameAuthorityUnknown) {
   auto stub2 = grpc::testing::EchoTestService::NewStub(channel2);
   ClientContext context;
   EchoRequest request;
-  request.set_message(kRequestMessage);
+  RpcOptions().SetupRpc(&context, &request);
   EchoResponse response;
   grpc::Status status = stub2->Echo(&context, request, &response);
   EXPECT_EQ(status.error_code(), StatusCode::UNAVAILABLE);
@@ -916,7 +940,7 @@ TEST_P(XdsFederationTest, CdsResourceNameAuthorityUnknown) {
   auto stub2 = grpc::testing::EchoTestService::NewStub(channel2);
   ClientContext context;
   EchoRequest request;
-  request.set_message(kRequestMessage);
+  RpcOptions().SetupRpc(&context, &request);
   EchoResponse response;
   grpc::Status status = stub2->Echo(&context, request, &response);
   EXPECT_EQ(status.error_code(), StatusCode::UNAVAILABLE);
@@ -976,7 +1000,7 @@ TEST_P(XdsFederationTest, EdsResourceNameAuthorityUnknown) {
   auto stub2 = grpc::testing::EchoTestService::NewStub(channel2);
   ClientContext context;
   EchoRequest request;
-  request.set_message(kRequestMessage);
+  RpcOptions().SetupRpc(&context, &request);
   EchoResponse response;
   grpc::Status status = stub2->Echo(&context, request, &response);
   EXPECT_EQ(status.error_code(), StatusCode::UNAVAILABLE);
@@ -1058,6 +1082,52 @@ TEST_P(XdsFederationTest, FederationServer) {
 }
 
 //
+// XdsFederationDisabledTest
+//
+
+using XdsFederationDisabledTest = XdsEnd2endTest;
+
+// Runs with RDS so that we know all resource types work properly.
+INSTANTIATE_TEST_SUITE_P(
+    XdsTest, XdsFederationDisabledTest,
+    ::testing::Values(XdsTestType().set_enable_rds_testing()),
+    &XdsTestType::Name);
+
+TEST_P(XdsFederationDisabledTest, FederationDisabledWithNewStyleNames) {
+  const char* kNewRouteConfigName =
+      "xdstp://xds.example.com/envoy.config.route.v3.RouteConfiguration/"
+      "new_route_config_name";
+  const char* kNewClusterName =
+      "xdstp://xds.example.com/envoy.config.cluster.v3.Cluster/"
+      "cluster_name";
+  const char* kNewEdsResourceName =
+      "xdstp://xds.example.com/envoy.config.endpoint.v3.ClusterLoadAssignment/"
+      "edsservice_name";
+  InitClient();
+  CreateAndStartBackends(1);
+  EdsResourceArgs args({{"locality0", CreateEndpointsForBackends()}});
+  balancer_->ads_service()->SetEdsResource(
+      BuildEdsResource(args, kNewEdsResourceName));
+  // New cluster
+  Cluster new_cluster = default_cluster_;
+  new_cluster.set_name(kNewClusterName);
+  new_cluster.mutable_eds_cluster_config()->set_service_name(
+      kNewEdsResourceName);
+  balancer_->ads_service()->SetCdsResource(new_cluster);
+  // New RouteConfig
+  RouteConfiguration new_route_config = default_route_config_;
+  new_route_config.set_name(kNewRouteConfigName);
+  new_route_config.mutable_virtual_hosts(0)
+      ->mutable_routes(0)
+      ->mutable_route()
+      ->set_cluster(kNewClusterName);
+  SetListenerAndRouteConfiguration(balancer_.get(), default_listener_,
+                                   new_route_config);
+  // Channel should work.
+  CheckRpcSendOk(DEBUG_LOCATION);
+}
+
+//
 // XdsFederationLoadReportingTest - xDS federation and load reporting
 //
 
@@ -1135,19 +1205,17 @@ TEST_P(XdsFederationLoadReportingTest, FederationMultipleLoadReportingTest) {
   listener.set_name(kNewListenerName);
   SetListenerAndRouteConfiguration(authority_balancer_.get(), listener,
                                    new_route_config);
-  // Ensure update has reached and send 10 RPCs to the current stub.
+  // Send kNumRpcsToDefaultBalancer RPCs to the current stub.
   CheckRpcSendOk(DEBUG_LOCATION, kNumRpcsToDefaultBalancer);
-  // Create second channel to new target uri and send 1 RPC .
+  // Create second channel to new target uri.
   auto channel2 =
       CreateChannel(/*failover_timeout_ms=*/0, kNewServerName, kAuthority);
-  channel2->GetState(/*try_to_connect=*/true);
-  ASSERT_TRUE(
-      channel2->WaitForConnected(grpc_timeout_milliseconds_to_deadline(100)));
   auto stub2 = grpc::testing::EchoTestService::NewStub(channel2);
+  // Send kNumRpcsToAuthorityBalancer on the second channel.
   for (size_t i = 0; i < kNumRpcsToAuthorityBalancer; ++i) {
     ClientContext context;
     EchoRequest request;
-    request.set_message(kRequestMessage);
+    RpcOptions().SetupRpc(&context, &request);
     EchoResponse response;
     grpc::Status status = stub2->Echo(&context, request, &response);
     EXPECT_TRUE(status.ok()) << "code=" << status.error_code()

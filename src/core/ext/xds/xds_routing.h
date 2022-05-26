@@ -21,15 +21,20 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <stddef.h>
+
+#include <map>
+#include <string>
 #include <vector>
 
 #include "absl/strings/string_view.h"
+#include "absl/types/optional.h"
 
-#include <grpc/support/log.h>
+#include <grpc/impl/codegen/grpc_types.h>
 
 #include "src/core/ext/xds/xds_listener.h"
 #include "src/core/ext/xds/xds_route_config.h"
-#include "src/core/lib/matchers/matchers.h"
+#include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/transport/metadata_batch.h"
 
 namespace grpc_core {

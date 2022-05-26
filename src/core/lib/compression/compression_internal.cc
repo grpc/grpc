@@ -52,6 +52,48 @@ const char* CompressionAlgorithmAsString(grpc_compression_algorithm algorithm) {
   }
 }
 
+namespace {
+class CommaSeparatedLists {
+ public:
+  CommaSeparatedLists() : lists_{}, text_buffer_{} {
+    char* text_buffer = text_buffer_;
+    auto add_char = [&text_buffer, this](char c) {
+      if (text_buffer - text_buffer_ == kTextBufferSize) abort();
+      *text_buffer++ = c;
+    };
+    for (size_t list = 0; list < kNumLists; ++list) {
+      char* start = text_buffer;
+      for (size_t algorithm = 0; algorithm < GRPC_COMPRESS_ALGORITHMS_COUNT;
+           ++algorithm) {
+        if ((list & (1 << algorithm)) == 0) continue;
+        if (start != text_buffer) {
+          add_char(',');
+          add_char(' ');
+        }
+        const char* name = CompressionAlgorithmAsString(
+            static_cast<grpc_compression_algorithm>(algorithm));
+        for (const char* p = name; *p != '\0'; ++p) {
+          add_char(*p);
+        }
+      }
+      lists_[list] = absl::string_view(start, text_buffer - start);
+    }
+    if (text_buffer - text_buffer_ != kTextBufferSize) abort();
+  }
+
+  absl::string_view operator[](size_t list) const { return lists_[list]; }
+
+ private:
+  static constexpr size_t kNumLists = 1 << GRPC_COMPRESS_ALGORITHMS_COUNT;
+  // Experimentally determined (tweak things until it runs).
+  static constexpr size_t kTextBufferSize = 86;
+  absl::string_view lists_[kNumLists];
+  char text_buffer_[kTextBufferSize];
+};
+
+const CommaSeparatedLists kCommaSeparatedLists;
+}  // namespace
+
 absl::optional<grpc_compression_algorithm> ParseCompressionAlgorithm(
     absl::string_view algorithm) {
   if (algorithm == "identity") {
@@ -165,19 +207,12 @@ void CompressionAlgorithmSet::Set(grpc_compression_algorithm algorithm) {
   }
 }
 
-std::string CompressionAlgorithmSet::ToString() const {
-  absl::InlinedVector<const char*, GRPC_COMPRESS_ALGORITHMS_COUNT> segments;
-  for (size_t i = 0; i < GRPC_COMPRESS_ALGORITHMS_COUNT; i++) {
-    if (set_.is_set(i)) {
-      segments.push_back(CompressionAlgorithmAsString(
-          static_cast<grpc_compression_algorithm>(i)));
-    }
-  }
-  return absl::StrJoin(segments, ", ");
+absl::string_view CompressionAlgorithmSet::ToString() const {
+  return kCommaSeparatedLists[ToLegacyBitmask()];
 }
 
 Slice CompressionAlgorithmSet::ToSlice() const {
-  return Slice::FromCopiedString(ToString());
+  return Slice::FromStaticString(ToString());
 }
 
 CompressionAlgorithmSet CompressionAlgorithmSet::FromString(

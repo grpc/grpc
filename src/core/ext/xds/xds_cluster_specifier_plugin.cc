@@ -18,14 +18,23 @@
 
 #include "src/core/ext/xds/xds_cluster_specifier_plugin.h"
 
-#include "absl/strings/str_format.h"
-#include "envoy/extensions/filters/http/router/v3/router.upb.h"
-#include "envoy/extensions/filters/http/router/v3/router.upbdefs.h"
-#include "google/protobuf/duration.upb.h"
+#include <stddef.h>
+
+#include <algorithm>
+#include <map>
+#include <utility>
+
+#include "absl/memory/memory.h"
+#include "absl/status/status.h"
+#include "absl/strings/str_cat.h"
 #include "upb/json_encode.h"
+#include "upb/upb.hpp"
+
+#include <grpc/support/log.h>
 
 #include "src/core/ext/filters/client_channel/lb_policy_registry.h"
-#include "src/core/ext/xds/upb_utils.h"
+#include "src/core/lib/iomgr/error.h"
+#include "src/core/lib/json/json.h"
 #include "src/proto/grpc/lookup/v1/rls_config.upb.h"
 #include "src/proto/grpc/lookup/v1/rls_config.upbdefs.h"
 

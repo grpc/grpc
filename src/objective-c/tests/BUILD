@@ -14,6 +14,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+load("//bazel:grpc_build_system.bzl", "grpc_sh_test")
 load(
     "//src/objective-c:grpc_objc_internal_library.bzl",
     "grpc_objc_testing_library",
@@ -59,7 +60,12 @@ apple_resource_bundle(
 # TestConfigs is added to each grpc_objc_testing_library's deps
 grpc_objc_testing_library(
     name = "TestConfigs",
-    hdrs = ["version.h"],
+    srcs = glob([
+        "Common/**/*.m",
+    ]),
+    hdrs = glob([
+        "Common/**/*.h",
+    ]) + ["version.h"],
     data = [":TestCertificates"],
     defines = [
         "DEBUG=1",
@@ -101,7 +107,6 @@ grpc_objc_testing_library(
     hdrs = ["InteropTests/InteropTests.h"],
     deps = [
         ":InteropTestsBlockCallbacks-lib",
-        ":TestBase-lib",
     ],
 )
 
@@ -176,15 +181,6 @@ grpc_objc_testing_library(
         "MacTests/*.m",
     ]),
     hdrs = ["MacTests/StressTests.h"],
-    deps = [
-        ":TestBase-lib",
-    ],
-)
-
-grpc_objc_testing_library(
-    name = "TestBase-lib",
-    srcs = ["TestBase.m"],
-    hdrs = ["TestBase.h"],
 )
 
 ios_unit_test(
@@ -240,4 +236,26 @@ tvos_unit_test(
         ":NSErrorUnitTests-lib",
         ":RxLibraryUnitTests-lib",
     ],
+)
+
+grpc_sh_test(
+    name = "objc_codegen_plugin_test",
+    srcs = ["PluginTest/plugin_test.sh"],
+    data = [
+        "@com_google_protobuf//:protoc",
+        "//src/compiler:grpc_objective_c_plugin",
+    ] + glob(["PluginTest/*.proto"]),
+    uses_polling = False,
+)
+
+grpc_sh_test(
+    name = "objc_codegen_plugin_option_test",
+    srcs = ["PluginTest/plugin_option_test.sh"],
+    data = [
+        "@com_google_protobuf//:protoc",
+        "//src/compiler:grpc_objective_c_plugin",
+        # NOTE: the :well_known_protos has been recently renamed to :well_known_type_protos on protobuf's main branch
+        "@com_google_protobuf//:well_known_protos",
+    ] + glob(["RemoteTestClient/*.proto"]),
+    uses_polling = False,
 )
