@@ -28,7 +28,7 @@ BAZEL=../../../tools/bazel
 INTEROP=../../../bazel-out/darwin-fastbuild/bin/test/cpp/interop/interop_server
 
 [ -f $INTEROP ] || {
-    BAZEL build //test/cpp/interop:interop_server
+    $BAZEL build //test/cpp/interop:interop_server
 }
 
 [ -z "$(ps aux |egrep 'port_server\.py.*-p\s32766')" ] && {
@@ -44,7 +44,7 @@ $INTEROP --port=$TLS_PORT --max_send_message_size=8388608 --use_tls &
 
 trap 'kill -9 `jobs -p` ; echo "EXIT TIME:  $(date)"' EXIT
 
-time BAZEL run \
+time $BAZEL run \
     --test_env HOST_PORT_LOCALSSL=localhost:$TLS_PORT \
     --test_env HOST_PORT_LOCAL=localhost:$PLAIN_PORT \
     $SCHEME
