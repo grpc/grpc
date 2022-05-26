@@ -1956,6 +1956,9 @@ void grpc_chttp2_maybe_complete_recv_message(grpc_chttp2_transport* t,
               grpc_slice_buffer_reset_and_unref_internal(&s->frame_storage);
               break;
             } else {
+              if (t->channelz_socket != nullptr) {
+                t->channelz_socket->RecordMessageReceived();
+              }
               break;
             }
           }
