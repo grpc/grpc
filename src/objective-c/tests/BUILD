@@ -207,10 +207,6 @@ ios_unit_test(
         ":InteropTestsLocalSSL-lib",
         ":InteropTestsRemote-lib",
     ],
-    env = {
-        "HOST_PORT_LOCAL": "${HOST_PORT_LOCAL}",
-        "HOST_PORT_LOCALSSL": "${HOST_PORT_LOCALSSL}",
-    },
 )
 
 macos_unit_test(
