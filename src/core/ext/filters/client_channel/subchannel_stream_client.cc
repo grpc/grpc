@@ -369,6 +369,10 @@ void SubchannelStreamClient::CallState::RecvInitialMetadataReady(
 }
 
 void SubchannelStreamClient::CallState::RecvMessageReady() {
+  if (!recv_message_.has_value()) {
+    call_->Unref(DEBUG_LOCATION, "recv_message_ready");
+    return;
+  }
   // Concatenate the slices to form a single string.
   std::vector<uint8_t> recv_message_buffer;
   const uint8_t* recv_message;
@@ -377,7 +381,7 @@ void SubchannelStreamClient::CallState::RecvMessageReady() {
   } else {
     recv_message_buffer.reserve(recv_message_->Length());
     for (size_t i = 0; i < recv_message_->Count(); ++i) {
-      const grpc_slice& slice = recv_message_->c_slice_at(0);
+      const grpc_slice& slice = recv_message_->c_slice_at(i);
       recv_message_buffer.insert(recv_message_buffer.end(),
                                  GRPC_SLICE_START_PTR(slice),
                                  GRPC_SLICE_END_PTR(slice));
