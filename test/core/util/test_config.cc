@@ -47,12 +47,6 @@
 int64_t g_fixture_slowdown_factor = 1;
 int64_t g_poller_slowdown_factor = 1;
 
-#if GPR_APPLE
-static const int64_t kPlatformSlowdownFactor = 3;
-#else
-static const int64_t kPlatformSlowdownFactor = 1;
-#endif
-
 #if GPR_GETPID_IN_UNISTD_H
 #include <unistd.h>
 static unsigned seed(void) { return static_cast<unsigned>(getpid()); }
@@ -81,7 +75,7 @@ int64_t grpc_test_sanitizer_slowdown_factor() {
 
 int64_t grpc_test_slowdown_factor() {
   return grpc_test_sanitizer_slowdown_factor() * g_fixture_slowdown_factor *
-         g_poller_slowdown_factor * kPlatformSlowdownFactor;
+         g_poller_slowdown_factor;
 }
 
 gpr_timespec grpc_timeout_seconds_to_deadline(int64_t time_s) {
