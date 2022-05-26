@@ -68,8 +68,9 @@ tsi_result tsi_zero_copy_grpc_protector_unprotect_get_frame_size(
       last_incomplete_frame_size == nullptr) {
     return TSI_INVALID_ARGUMENT;
   }
-  if (self->vtable->unprotect_get_frame_size == nullptr)
+  if (self->vtable->unprotect_get_frame_size == nullptr) {
     return TSI_UNIMPLEMENTED;
+  }
   return self->vtable->unprotect_get_frame_size(
       self, protected_slices, unprotected_slices, last_incomplete_frame_size);
 }
