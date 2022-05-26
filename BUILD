@@ -5935,7 +5935,6 @@ grpc_cc_library(
         "grpc_public_hdrs",
         "grpc_trace",
         "iomgr_fwd",
-        "orphanable",
         "ref_counted_ptr",
         "slice",
         "slice_buffer",
