@@ -67,9 +67,7 @@ _SKIP_ADVANCED = [
 
 _SKIP_SPECIAL_STATUS_MESSAGE = ['special_status_message']
 
-_SKIP_ORCA = [
-  'orca_per_rpc', 'orca_oob'
-]
+_SKIP_ORCA = ['orca_per_rpc', 'orca_oob']
 
 _GOOGLE_DEFAULT_CREDS_TEST_CASE = 'google_default_credentials'
 
@@ -681,8 +679,8 @@ _TEST_CASES = [
     'custom_metadata', 'status_code_and_message', 'unimplemented_method',
     'client_compressed_unary', 'server_compressed_unary',
     'client_compressed_streaming', 'server_compressed_streaming',
-    'unimplemented_service', 'special_status_message',
-    'orca_per_rpc', 'orca_oob'
+    'unimplemented_service', 'special_status_message', 'orca_per_rpc',
+    'orca_oob'
 ]
 
 _AUTH_TEST_CASES = [
