@@ -297,6 +297,10 @@ class ServerContextBase {
     return call_metric_recorder_;
   }
 
+  /// EXPERIMENTAL API
+  /// Returns the call's authority.
+  grpc::string_ref ExperimentalGetAuthority() const;
+
  protected:
   /// Async only. Has to be called before the rpc starts.
   /// Returns the tag in completion queue when the rpc finishes.
