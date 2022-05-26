@@ -46,7 +46,7 @@ class RingHashLbPolicyConfigFactory
  public:
   absl::StatusOr<Json::Object> ConvertXdsLbPolicyConfig(
       const XdsEncodingContext& context, upb_StringView configuration,
-      int recursion_depth) {
+      int recursion_depth) override {
     const auto* resource =
         envoy_extensions_load_balancing_policies_ring_hash_v3_RingHash_parse(
             configuration.data, configuration.size, context.arena);
@@ -65,18 +65,18 @@ class RingHashLbPolicyConfigFactory
     const auto* min_ring_size =
         envoy_extensions_load_balancing_policies_ring_hash_v3_RingHash_minimum_ring_size(
             resource);
-    if(min_ring_size != nullptr) {
-      json.emplace("minRingSize", google_protobuf_UInt64Value_value(min_ring_size));
+    if (min_ring_size != nullptr) {
+      json.emplace("minRingSize",
+                   google_protobuf_UInt64Value_value(min_ring_size));
     }
     const auto* max_ring_size =
         envoy_extensions_load_balancing_policies_ring_hash_v3_RingHash_maximum_ring_size(
             resource);
-    if(max_ring_size != nullptr) {
-      json.emplace("maxRingSize", google_protobuf_UInt64Value_value(max_ring_size));
+    if (max_ring_size != nullptr) {
+      json.emplace("maxRingSize",
+                   google_protobuf_UInt64Value_value(max_ring_size));
     }
-    return Json::Object{
-        {"ring_hash_experimental",
-         std::move(json)}};
+    return Json::Object{{"ring_hash_experimental", std::move(json)}};
   }
 
   static absl::string_view type() {
@@ -89,7 +89,7 @@ class RoundRobinLbPolicyConfigFactory
  public:
   absl::StatusOr<Json::Object> ConvertXdsLbPolicyConfig(
       const XdsEncodingContext& /* context */,
-      upb_StringView /* configuration */, int recursion_depth) {
+      upb_StringView /* configuration */, int recursion_depth) override {
     return Json::Object{{"round_robin", Json::Object()}};
   }
 
@@ -103,7 +103,7 @@ class WrrLocalityLbPolicyConfigFactory
  public:
   absl::StatusOr<Json::Object> ConvertXdsLbPolicyConfig(
       const XdsEncodingContext& context, upb_StringView configuration,
-      int recursion_depth) {
+      int recursion_depth) override {
     const auto* resource =
         envoy_extensions_load_balancing_policies_wrr_locality_v3_WrrLocality_parse(
             configuration.data, configuration.size, context.arena);
@@ -136,10 +136,12 @@ class WrrLocalityLbPolicyConfigFactory
   }
 };
 
-absl::StatusOr<Json> ParseStructToJson(const XdsEncodingContext& context, const google_protobuf_Struct* resource) {
+absl::StatusOr<Json> ParseStructToJson(const XdsEncodingContext& context,
+                                       const google_protobuf_Struct* resource) {
   upb::Status status;
   const auto* msg_def = google_protobuf_Struct_getmsgdef(context.symtab);
-  size_t json_size = upb_JsonEncode(resource, msg_def, context.symtab, 0, nullptr, 0, status.ptr());
+  size_t json_size = upb_JsonEncode(resource, msg_def, context.symtab, 0,
+                                    nullptr, 0, status.ptr());
   if (json_size == static_cast<size_t>(-1)) {
     return absl::InvalidArgumentError(
         absl::StrCat("Error parsing google::Protobuf::Struct: ",
@@ -150,9 +152,12 @@ absl::StatusOr<Json> ParseStructToJson(const XdsEncodingContext& context, const 
                  reinterpret_cast<char*>(buf), json_size + 1, status.ptr());
   grpc_error_handle error = GRPC_ERROR_NONE;
   auto json = Json::Parse(reinterpret_cast<char*>(buf), &error);
-  if(error != GRPC_ERROR_NONE) {
+  if (error != GRPC_ERROR_NONE) {
     // This should not happen
-    auto ret_status = absl::InternalError(absl::StrCat("Error parsing JSON form of google::Protobuf::Struct produced by upb library", grpc_error_std_string(error)));
+    auto ret_status = absl::InternalError(
+        absl::StrCat("Error parsing JSON form of google::Protobuf::Struct "
+                     "produced by upb library",
+                     grpc_error_std_string(error)));
     GRPC_ERROR_UNREF(error);
     return ret_status;
   }
@@ -214,7 +219,8 @@ absl::StatusOr<Json::Array> XdsLbPolicyRegistry::ConvertXdsLbPolicyConfig(
           context, value, recursion_depth);
     } else if (typed_struct != nullptr) {
       // Custom lb policy config
-      // Check whether the custom lb policy type is registered in our LoadBalancingPolicyRegistry.
+      // Check whether the custom lb policy type is registered in our
+      // LoadBalancingPolicyRegistry.
       size_t pos = type_url.rfind('/');
       if (pos == absl::string_view::npos) {
         return absl::InvalidArgumentError(
