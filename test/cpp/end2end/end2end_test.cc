@@ -20,7 +20,6 @@
 #include <thread>
 
 #include "absl/memory/memory.h"
-#include "absl/strings/ascii.h"
 #include "absl/strings/match.h"
 #include "absl/strings/str_format.h"
 
@@ -276,47 +275,35 @@ class TestServiceImplDupPkg
 
 class TestScenario {
  public:
-  TestScenario(bool use_interceptors, bool use_proxy, bool inproc,
-               const std::string& credentials_type, bool callback_server)
-      : use_interceptors_(use_interceptors),
-        use_proxy_(use_proxy),
-        inproc_(inproc),
-        credentials_type_(credentials_type),
-        callback_server_(callback_server) {}
-
-  bool use_interceptors() const { return use_interceptors_; }
-  bool use_proxy() const { return use_proxy_; }
-  bool inproc() const { return inproc_; }
-  const std::string& credentials_type() const { return credentials_type_; }
-  bool callback_server() const { return callback_server_; }
-
-  std::string AsString() const;
-
-  static std::string Name(const ::testing::TestParamInfo<TestScenario>& info) {
-    return info.param.AsString();
-  }
-
- private:
-  bool use_interceptors_;
-  bool use_proxy_;
-  bool inproc_;
-  const std::string credentials_type_;
-  bool callback_server_;
+  TestScenario(bool interceptors, bool proxy, bool inproc_stub,
+               const std::string& creds_type, bool use_callback_server)
+      : use_interceptors(interceptors),
+        use_proxy(proxy),
+        inproc(inproc_stub),
+        credentials_type(creds_type),
+        callback_server(use_callback_server) {}
+  void Log() const;
+  bool use_interceptors;
+  bool use_proxy;
+  bool inproc;
+  const std::string credentials_type;
+  bool callback_server;
 };
 
-std::string TestScenario::AsString() const {
-  std::string retval = use_interceptors_ ? "Interceptor" : "";
-  if (use_proxy_) retval += "Proxy";
-  if (inproc_) retval += "Inproc";
-  if (callback_server_) retval += "CallbackServer";
-  if (credentials_type_ == kInsecureCredentialsType) {
-    retval += "Insecure";
-  } else {
-    std::string creds_type = absl::AsciiStrToLower(credentials_type_);
-    if (!creds_type.empty()) creds_type[0] = absl::ascii_toupper(creds_type[0]);
-    retval += creds_type;
-  }
-  return retval;
+std::ostream& operator<<(std::ostream& out, const TestScenario& scenario) {
+  return out << "TestScenario{use_interceptors="
+             << (scenario.use_interceptors ? "true" : "false")
+             << ", use_proxy=" << (scenario.use_proxy ? "true" : "false")
+             << ", inproc=" << (scenario.inproc ? "true" : "false")
+             << ", server_type="
+             << (scenario.callback_server ? "callback" : "sync")
+             << ", credentials='" << scenario.credentials_type << "'}";
+}
+
+void TestScenario::Log() const {
+  std::ostringstream out;
+  out << *this;
+  gpr_log(GPR_DEBUG, "%s", out.str().c_str());
 }
 
 class End2endTest : public ::testing::TestWithParam<TestScenario> {
@@ -327,7 +314,9 @@ class End2endTest : public ::testing::TestWithParam<TestScenario> {
       : is_server_started_(false),
         kMaxMessageSize_(8192),
         special_service_("special"),
-        first_picked_port_(0) {}
+        first_picked_port_(0) {
+    GetParam().Log();
+  }
 
   void TearDown() override {
     if (is_server_started_) {
@@ -359,11 +348,11 @@ class End2endTest : public ::testing::TestWithParam<TestScenario> {
     ServerBuilder builder;
     ConfigureServerBuilder(&builder);
     auto server_creds = GetCredentialsProvider()->GetServerCredentials(
-        GetParam().credentials_type());
-    if (GetParam().credentials_type() != kInsecureCredentialsType) {
+        GetParam().credentials_type);
+    if (GetParam().credentials_type != kInsecureCredentialsType) {
       server_creds->SetAuthMetadataProcessor(processor);
     }
-    if (GetParam().use_interceptors()) {
+    if (GetParam().use_interceptors) {
       std::vector<
           std::unique_ptr<experimental::ServerInterceptorFactoryInterface>>
           creators;
@@ -375,7 +364,7 @@ class End2endTest : public ::testing::TestWithParam<TestScenario> {
       builder.experimental().SetInterceptorCreators(std::move(creators));
     }
     builder.AddListeningPort(server_address_.str(), server_creds);
-    if (!GetParam().callback_server()) {
+    if (!GetParam().callback_server) {
       builder.RegisterService(&service_);
     } else {
       builder.RegisterService(&callback_service_);
@@ -406,14 +395,14 @@ class End2endTest : public ::testing::TestWithParam<TestScenario> {
     EXPECT_TRUE(is_server_started_);
     ChannelArguments args;
     auto channel_creds = GetCredentialsProvider()->GetChannelCredentials(
-        GetParam().credentials_type(), &args);
+        GetParam().credentials_type, &args);
     if (!user_agent_prefix_.empty()) {
       args.SetUserAgentPrefix(user_agent_prefix_);
     }
     args.SetString(GRPC_ARG_SECONDARY_USER_AGENT_STRING, "end2end_test");
 
-    if (!GetParam().inproc()) {
-      if (!GetParam().use_interceptors()) {
+    if (!GetParam().inproc) {
+      if (!GetParam().use_interceptors) {
         channel_ = grpc::CreateCustomChannel(server_address_.str(),
                                              channel_creds, args);
       } else {
@@ -423,7 +412,7 @@ class End2endTest : public ::testing::TestWithParam<TestScenario> {
                                          : std::move(interceptor_creators));
       }
     } else {
-      if (!GetParam().use_interceptors()) {
+      if (!GetParam().use_interceptors) {
         channel_ = server_->InProcessChannel(args);
       } else {
         channel_ = server_->experimental().InProcessChannelWithInterceptors(
@@ -439,7 +428,7 @@ class End2endTest : public ::testing::TestWithParam<TestScenario> {
           std::unique_ptr<experimental::ClientInterceptorFactoryInterface>>
           interceptor_creators = {}) {
     ResetChannel(std::move(interceptor_creators));
-    if (GetParam().use_proxy()) {
+    if (GetParam().use_proxy) {
       proxy_service_ = absl::make_unique<Proxy>(channel_);
       int port = grpc_pick_unused_port_or_die();
       std::ostringstream proxyaddr;
@@ -575,7 +564,7 @@ class End2endServerTryCancelTest : public End2endTest {
     EXPECT_FALSE(s.ok());
     EXPECT_EQ(grpc::StatusCode::CANCELLED, s.error_code());
     // Make sure that the server interceptors were notified
-    if (GetParam().use_interceptors()) {
+    if (GetParam().use_interceptors) {
       EXPECT_EQ(20, PhonyInterceptor::GetNumTimesCancel());
     }
   }
@@ -656,7 +645,7 @@ class End2endServerTryCancelTest : public End2endTest {
 
     EXPECT_FALSE(s.ok());
     // Make sure that the server interceptors were notified
-    if (GetParam().use_interceptors()) {
+    if (GetParam().use_interceptors) {
       EXPECT_EQ(20, PhonyInterceptor::GetNumTimesCancel());
     }
   }
@@ -744,7 +733,7 @@ class End2endServerTryCancelTest : public End2endTest {
     EXPECT_FALSE(s.ok());
     EXPECT_EQ(grpc::StatusCode::CANCELLED, s.error_code());
     // Make sure that the server interceptors were notified
-    if (GetParam().use_interceptors()) {
+    if (GetParam().use_interceptors) {
       EXPECT_EQ(20, PhonyInterceptor::GetNumTimesCancel());
     }
   }
@@ -814,7 +803,7 @@ TEST_P(End2endServerTryCancelTest, BidiStreamServerCancelAfter) {
 
 TEST_P(End2endTest, SimpleRpcWithCustomUserAgentPrefix) {
   // User-Agent is an HTTP header for HTTP transports only
-  if (GetParam().inproc()) {
+  if (GetParam().inproc) {
     return;
   }
   user_agent_prefix_ = "custom_prefix";
@@ -883,28 +872,8 @@ TEST_P(End2endTest, EmptyBinaryMetadata) {
   EXPECT_TRUE(s.ok());
 }
 
-TEST_P(End2endTest, AuthoritySeenOnServerSide) {
-  ResetStub();
-  EchoRequest request;
-  request.mutable_param()->set_echo_host_from_authority_header(true);
-  EchoResponse response;
-  request.set_message("Live long and prosper.");
-  ClientContext context;
-  Status s = stub_->Echo(&context, request, &response);
-  EXPECT_EQ(response.message(), request.message());
-  if (GetParam().credentials_type() == kTlsCredentialsType) {
-    // SSL creds overrides the authority.
-    EXPECT_EQ("foo.test.google.fr", response.param().host());
-  } else if (GetParam().inproc()) {
-    EXPECT_EQ("inproc", response.param().host());
-  } else {
-    EXPECT_EQ(server_address_.str(), response.param().host());
-  }
-  EXPECT_TRUE(s.ok());
-}
-
 TEST_P(End2endTest, ReconnectChannel) {
-  if (GetParam().inproc()) {
+  if (GetParam().inproc) {
     return;
   }
   int poller_slowdown_factor = 1;
@@ -1191,7 +1160,7 @@ TEST_P(End2endTest, CancelRpcBeforeStart) {
   Status s = stub_->Echo(&context, request, &response);
   EXPECT_EQ("", response.message());
   EXPECT_EQ(grpc::StatusCode::CANCELLED, s.error_code());
-  if (GetParam().use_interceptors()) {
+  if (GetParam().use_interceptors) {
     EXPECT_EQ(20, PhonyInterceptor::GetNumTimesCancel());
   }
 }
@@ -1209,7 +1178,7 @@ TEST_P(End2endTest, CancelRpcAfterStart) {
     s = stub_->Echo(&context, request, &response);
     EXPECT_EQ(StatusCode::CANCELLED, s.error_code());
   });
-  if (!GetParam().callback_server()) {
+  if (!GetParam().callback_server) {
     service_.ClientWaitUntilRpcStarted();
   } else {
     callback_service_.ClientWaitUntilRpcStarted();
@@ -1217,7 +1186,7 @@ TEST_P(End2endTest, CancelRpcAfterStart) {
 
   context.TryCancel();
 
-  if (!GetParam().callback_server()) {
+  if (!GetParam().callback_server) {
     service_.SignalServerToContinue();
   } else {
     callback_service_.SignalServerToContinue();
@@ -1226,7 +1195,7 @@ TEST_P(End2endTest, CancelRpcAfterStart) {
   echo_thread.join();
   EXPECT_EQ("", response.message());
   EXPECT_EQ(grpc::StatusCode::CANCELLED, s.error_code());
-  if (GetParam().use_interceptors()) {
+  if (GetParam().use_interceptors) {
     EXPECT_EQ(20, PhonyInterceptor::GetNumTimesCancel());
   }
 }
@@ -1249,7 +1218,7 @@ TEST_P(End2endTest, ClientCancelsRequestStream) {
   EXPECT_EQ(grpc::StatusCode::CANCELLED, s.error_code());
 
   EXPECT_EQ(response.message(), "");
-  if (GetParam().use_interceptors()) {
+  if (GetParam().use_interceptors) {
     EXPECT_EQ(20, PhonyInterceptor::GetNumTimesCancel());
   }
 }
@@ -1284,7 +1253,7 @@ TEST_P(End2endTest, ClientCancelsResponseStream) {
   // The final status could be either of CANCELLED or OK depending on
   // who won the race.
   EXPECT_GE(grpc::StatusCode::CANCELLED, s.error_code());
-  if (GetParam().use_interceptors()) {
+  if (GetParam().use_interceptors) {
     EXPECT_EQ(20, PhonyInterceptor::GetNumTimesCancel());
   }
 }
@@ -1323,7 +1292,7 @@ TEST_P(End2endTest, ClientCancelsBidi) {
 
   Status s = stream->Finish();
   EXPECT_EQ(grpc::StatusCode::CANCELLED, s.error_code());
-  if (GetParam().use_interceptors()) {
+  if (GetParam().use_interceptors) {
     EXPECT_EQ(20, PhonyInterceptor::GetNumTimesCancel());
   }
 }
@@ -1365,7 +1334,7 @@ TEST_P(End2endTest, SimultaneousReadWritesDone) {
 }
 
 TEST_P(End2endTest, ChannelState) {
-  if (GetParam().inproc()) {
+  if (GetParam().inproc) {
     return;
   }
 
@@ -1392,8 +1361,8 @@ TEST_P(End2endTest, ChannelState) {
 
 // Takes 10s.
 TEST_P(End2endTest, ChannelStateTimeout) {
-  if ((GetParam().credentials_type() != kInsecureCredentialsType) ||
-      GetParam().inproc()) {
+  if ((GetParam().credentials_type != kInsecureCredentialsType) ||
+      GetParam().inproc) {
     return;
   }
   int port = grpc_pick_unused_port_or_die();
@@ -1414,8 +1383,8 @@ TEST_P(End2endTest, ChannelStateTimeout) {
 }
 
 TEST_P(End2endTest, ChannelStateOnLameChannel) {
-  if ((GetParam().credentials_type() != kInsecureCredentialsType) ||
-      GetParam().inproc()) {
+  if ((GetParam().credentials_type != kInsecureCredentialsType) ||
+      GetParam().inproc) {
     return;
   }
   // Channel using invalid target URI.  This creates a lame channel.
@@ -1661,7 +1630,7 @@ TEST_P(ProxyEnd2endTest, ClientCancelsRpc) {
 
   ClientContext context;
   std::thread cancel_thread;
-  if (!GetParam().callback_server()) {
+  if (!GetParam().callback_server) {
     cancel_thread = std::thread(
         [&context, this](int delay) { CancelRpc(&context, delay, &service_); },
         kCancelDelayUs);
@@ -1718,7 +1687,7 @@ TEST_P(ProxyEnd2endTest, HugeResponse) {
 
 TEST_P(ProxyEnd2endTest, Peer) {
   // Peer is not meaningful for inproc
-  if (GetParam().inproc()) {
+  if (GetParam().inproc) {
     return;
   }
   ResetStub();
@@ -1739,8 +1708,8 @@ TEST_P(ProxyEnd2endTest, Peer) {
 class SecureEnd2endTest : public End2endTest {
  protected:
   SecureEnd2endTest() {
-    GPR_ASSERT(!GetParam().use_proxy());
-    GPR_ASSERT(GetParam().credentials_type() != kInsecureCredentialsType);
+    GPR_ASSERT(!GetParam().use_proxy);
+    GPR_ASSERT(GetParam().credentials_type != kInsecureCredentialsType);
   }
 };
 
@@ -1788,7 +1757,7 @@ TEST_P(SecureEnd2endTest, BlockingAuthMetadataPluginAndProcessorSuccess) {
   request.mutable_param()->set_expected_client_identity(
       TestAuthMetadataProcessor::kGoodGuy);
   request.mutable_param()->set_expected_transport_security_type(
-      GetParam().credentials_type());
+      GetParam().credentials_type);
 
   Status s = stub_->Echo(&context, request, &response);
   EXPECT_EQ(request.message(), response.message());
@@ -1867,7 +1836,7 @@ class CredentialsInterceptorFactory
 };
 
 TEST_P(SecureEnd2endTest, CallCredentialsInterception) {
-  if (!GetParam().use_interceptors()) {
+  if (!GetParam().use_interceptors) {
     return;
   }
   std::vector<std::unique_ptr<experimental::ClientInterceptorFactoryInterface>>
@@ -1896,7 +1865,7 @@ TEST_P(SecureEnd2endTest, CallCredentialsInterception) {
 }
 
 TEST_P(SecureEnd2endTest, CallCredentialsInterceptionWithSetCredentials) {
-  if (!GetParam().use_interceptors()) {
+  if (!GetParam().use_interceptors) {
     return;
   }
   std::vector<std::unique_ptr<experimental::ClientInterceptorFactoryInterface>>
@@ -2094,7 +2063,7 @@ TEST_P(SecureEnd2endTest, NonBlockingAuthMetadataPluginAndProcessorSuccess) {
   request.mutable_param()->set_expected_client_identity(
       TestAuthMetadataProcessor::kGoodGuy);
   request.mutable_param()->set_expected_transport_security_type(
-      GetParam().credentials_type());
+      GetParam().credentials_type);
 
   Status s = stub_->Echo(&context, request, &response);
   EXPECT_EQ(request.message(), response.message());
@@ -2187,10 +2156,10 @@ TEST_P(SecureEnd2endTest, ClientAuthContext) {
   EchoRequest request;
   EchoResponse response;
   request.set_message("Hello");
-  request.mutable_param()->set_check_auth_context(
-      GetParam().credentials_type() == kTlsCredentialsType);
+  request.mutable_param()->set_check_auth_context(GetParam().credentials_type ==
+                                                  kTlsCredentialsType);
   request.mutable_param()->set_expected_transport_security_type(
-      GetParam().credentials_type());
+      GetParam().credentials_type);
   ClientContext context;
   Status s = stub_->Echo(&context, request, &response);
   EXPECT_EQ(response.message(), request.message());
@@ -2200,8 +2169,8 @@ TEST_P(SecureEnd2endTest, ClientAuthContext) {
   std::vector<grpc::string_ref> tst =
       auth_ctx->FindPropertyValues("transport_security_type");
   ASSERT_EQ(1u, tst.size());
-  EXPECT_EQ(GetParam().credentials_type(), ToString(tst[0]));
-  if (GetParam().credentials_type() == kTlsCredentialsType) {
+  EXPECT_EQ(GetParam().credentials_type, ToString(tst[0]));
+  if (GetParam().credentials_type == kTlsCredentialsType) {
     EXPECT_EQ("x509_subject_alternative_name",
               auth_ctx->GetPeerIdentityPropertyName());
     EXPECT_EQ(4u, auth_ctx->GetPeerIdentity().size());
@@ -2299,28 +2268,23 @@ std::vector<TestScenario> CreateTestScenarios(bool use_proxy,
 
 INSTANTIATE_TEST_SUITE_P(
     End2end, End2endTest,
-    ::testing::ValuesIn(CreateTestScenarios(false, true, true, true, true)),
-    &TestScenario::Name);
+    ::testing::ValuesIn(CreateTestScenarios(false, true, true, true, true)));
 
 INSTANTIATE_TEST_SUITE_P(
     End2endServerTryCancel, End2endServerTryCancelTest,
-    ::testing::ValuesIn(CreateTestScenarios(false, true, true, true, true)),
-    &TestScenario::Name);
+    ::testing::ValuesIn(CreateTestScenarios(false, true, true, true, true)));
 
 INSTANTIATE_TEST_SUITE_P(
     ProxyEnd2end, ProxyEnd2endTest,
-    ::testing::ValuesIn(CreateTestScenarios(true, true, true, true, true)),
-    &TestScenario::Name);
+    ::testing::ValuesIn(CreateTestScenarios(true, true, true, true, true)));
 
 INSTANTIATE_TEST_SUITE_P(
     SecureEnd2end, SecureEnd2endTest,
-    ::testing::ValuesIn(CreateTestScenarios(false, false, true, false, true)),
-    &TestScenario::Name);
+    ::testing::ValuesIn(CreateTestScenarios(false, false, true, false, true)));
 
 INSTANTIATE_TEST_SUITE_P(
     ResourceQuotaEnd2end, ResourceQuotaEnd2endTest,
-    ::testing::ValuesIn(CreateTestScenarios(false, true, true, true, true)),
-    &TestScenario::Name);
+    ::testing::ValuesIn(CreateTestScenarios(false, true, true, true, true)));
 
 }  // namespace
 }  // namespace testing

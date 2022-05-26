@@ -1374,9 +1374,7 @@ void Server::CallData::RecvInitialMetadataReady(void* arg,
   CallData* calld = static_cast<CallData*>(elem->call_data);
   if (error == GRPC_ERROR_NONE) {
     calld->path_ = calld->recv_initial_metadata_->Take(HttpPathMetadata());
-    auto* host =
-        calld->recv_initial_metadata_->get_pointer(HttpAuthorityMetadata());
-    if (host != nullptr) calld->host_.emplace(host->Ref());
+    calld->host_ = calld->recv_initial_metadata_->Take(HttpAuthorityMetadata());
   } else {
     (void)GRPC_ERROR_REF(error);
   }
