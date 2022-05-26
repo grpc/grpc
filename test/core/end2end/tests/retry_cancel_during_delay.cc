@@ -246,16 +246,19 @@ static void test_retry_cancel_during_delay(grpc_end2end_test_config config,
   CQ_EXPECT_COMPLETION(cqv, tag(1), true);
   cq_verify(cqv);
 
+  gpr_timespec finish_time = gpr_now(GPR_CLOCK_MONOTONIC);
+
+  gpr_log(GPR_INFO, "status=%d expected=%d", status, mode.expect_status);
+  gpr_log(GPR_INFO, "message=\"%s\"",
+          std::string(grpc_core::StringViewFromSlice(details)).c_str());
+  GPR_ASSERT(status == mode.expect_status);
+  GPR_ASSERT(was_cancelled == 0);
+
   // Make sure we didn't wait the full deadline before failing.
   gpr_log(
       GPR_INFO, "Expect completion before: %s",
       absl::FormatTime(grpc_core::ToAbslTime(expect_finish_before)).c_str());
-  GPR_ASSERT(gpr_time_cmp(gpr_now(GPR_CLOCK_MONOTONIC), expect_finish_before) <
-             0);
-
-  gpr_log(GPR_INFO, "status=%d expected=%d", status, mode.expect_status);
-  GPR_ASSERT(status == mode.expect_status);
-  GPR_ASSERT(was_cancelled == 0);
+  GPR_ASSERT(gpr_time_cmp(finish_time, expect_finish_before) < 0);
 
   grpc_slice_unref(details);
   grpc_metadata_array_destroy(&initial_metadata_recv);
