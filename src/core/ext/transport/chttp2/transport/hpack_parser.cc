@@ -1388,6 +1388,11 @@ grpc_error_handle grpc_chttp2_header_parser_parse(void* hpack_parser,
               GRPC_CLOSURE_CREATE(force_client_rst_stream, s, nullptr),
               GRPC_ERROR_NONE);
         }
+        if (s->header_frames_received == 2 &&
+            s->trailing_metadata_buffer.get(grpc_core::GrpcStatusMetadata())
+                    .value_or(GRPC_STATUS_OK) != GRPC_STATUS_OK) {
+          s->seen_error = true;
+        }
         grpc_chttp2_mark_stream_closed(t, s, true, false, GRPC_ERROR_NONE);
       }
     }

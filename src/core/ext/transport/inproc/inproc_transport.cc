@@ -20,7 +20,6 @@
 
 #include "src/core/ext/transport/inproc/inproc_transport.h"
 
-#include < grpc / grpc.h>
 #include <stdint.h>
 
 #include <algorithm>
@@ -36,6 +35,7 @@
 #include "absl/types/optional.h"
 #include "absl/utility/utility.h"
 
+#include <grpc/grpc.h>
 #include <grpc/impl/codegen/connectivity_state.h>
 #include <grpc/status.h>
 #include <grpc/support/alloc.h>
