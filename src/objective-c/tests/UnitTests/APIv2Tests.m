@@ -24,14 +24,8 @@
 #include <grpc/grpc.h>
 #include <grpc/support/port_platform.h>
 
+#import "../Common/TestUtils.h"
 #import "../version.h"
-
-// The server address is derived from preprocessor macro, which is
-// in turn derived from environment variable of the same name.
-#define NSStringize_helper(x) #x
-#define NSStringize(x) @NSStringize_helper(x)
-static NSString *const kHostAddress = NSStringize(HOST_PORT_LOCAL);
-static NSString *const kRemoteSSLHost = NSStringize(HOST_PORT_REMOTE);
 
 // Package and service name of test server
 static NSString *const kPackage = @"grpc.testing";
@@ -164,7 +158,7 @@ static const NSTimeInterval kInvertedTimeout = 2;
   request.fillOauthScope = YES;
 
   GRPCRequestOptions *callRequest =
-      [[GRPCRequestOptions alloc] initWithHost:(NSString *)kRemoteSSLHost
+      [[GRPCRequestOptions alloc] initWithHost:GRPCGetRemoteInteropTestServerAddress()
                                           path:kUnaryCallMethod.HTTPPath
                                         safety:GRPCCallSafetyDefault];
   __block NSDictionary *init_md;
@@ -210,9 +204,10 @@ static const NSTimeInterval kInvertedTimeout = 2;
   __weak XCTestExpectation *recvInitialMd =
       [self expectationWithDescription:@"Did not receive initial md."];
 
-  GRPCRequestOptions *request = [[GRPCRequestOptions alloc] initWithHost:kHostAddress
-                                                                    path:kEmptyCallMethod.HTTPPath
-                                                                  safety:GRPCCallSafetyDefault];
+  GRPCRequestOptions *request =
+      [[GRPCRequestOptions alloc] initWithHost:GRPCGetLocalInteropTestServerAddressPlainText()
+                                          path:kEmptyCallMethod.HTTPPath
+                                        safety:GRPCCallSafetyDefault];
   NSDictionary *headers =
       [NSDictionary dictionaryWithObjectsAndKeys:@"", @"x-grpc-test-echo-useragent", nil];
   GRPCMutableCallOptions *options = [[GRPCMutableCallOptions alloc] init];
@@ -286,7 +281,7 @@ static const NSTimeInterval kInvertedTimeout = 2;
   __weak XCTestExpectation *completion = [self expectationWithDescription:@"RPC completed."];
 
   GRPCRequestOptions *requestOptions =
-      [[GRPCRequestOptions alloc] initWithHost:kHostAddress
+      [[GRPCRequestOptions alloc] initWithHost:GRPCGetLocalInteropTestServerAddressPlainText()
                                           path:kEmptyCallMethod.HTTPPath
                                         safety:GRPCCallSafetyDefault];
   GRPCMutableCallOptions *options = [[GRPCMutableCallOptions alloc] init];
@@ -313,7 +308,7 @@ static const NSTimeInterval kInvertedTimeout = 2;
   __weak XCTestExpectation *completion = [self expectationWithDescription:@"RPC completed."];
 
   GRPCRequestOptions *requestOptions =
-      [[GRPCRequestOptions alloc] initWithHost:kHostAddress
+      [[GRPCRequestOptions alloc] initWithHost:GRPCGetLocalInteropTestServerAddressPlainText()
                                           path:kUnaryCallMethod.HTTPPath
                                         safety:GRPCCallSafetyDefault];
   GRPCMutableCallOptions *options = [[GRPCMutableCallOptions alloc] init];
@@ -352,7 +347,7 @@ static const NSTimeInterval kInvertedTimeout = 2;
   options.timeout = 0.001;
   options.transportType = GRPCTransportTypeInsecure;
   GRPCRequestOptions *requestOptions =
-      [[GRPCRequestOptions alloc] initWithHost:kHostAddress
+      [[GRPCRequestOptions alloc] initWithHost:GRPCGetLocalInteropTestServerAddressPlainText()
                                           path:kFullDuplexCallMethod.HTTPPath
                                         safety:GRPCCallSafetyDefault];
 
@@ -435,7 +430,7 @@ static const NSTimeInterval kInvertedTimeout = 2;
   request.responseSize = kSimpleDataLength;
   request.payload.body = [NSMutableData dataWithLength:kSimpleDataLength];
   GRPCRequestOptions *requestOptions =
-      [[GRPCRequestOptions alloc] initWithHost:kHostAddress
+      [[GRPCRequestOptions alloc] initWithHost:GRPCGetLocalInteropTestServerAddressPlainText()
                                           path:kUnaryCallMethod.HTTPPath
                                         safety:GRPCCallSafetyDefault];
 
@@ -477,7 +472,7 @@ static const NSTimeInterval kInvertedTimeout = 2;
   request.payload.body = [NSMutableData dataWithLength:kSimpleDataLength];
 
   GRPCRequestOptions *callRequest =
-      [[GRPCRequestOptions alloc] initWithHost:(NSString *)kHostAddress
+      [[GRPCRequestOptions alloc] initWithHost:GRPCGetLocalInteropTestServerAddressPlainText()
                                           path:kUnaryCallMethod.HTTPPath
                                         safety:GRPCCallSafetyDefault];
   GRPCMutableCallOptions *options = [[GRPCMutableCallOptions alloc] init];
@@ -519,7 +514,7 @@ static const NSTimeInterval kInvertedTimeout = 2;
   request.payload.body = [NSMutableData dataWithLength:kSimpleDataLength];
 
   GRPCRequestOptions *callRequest =
-      [[GRPCRequestOptions alloc] initWithHost:(NSString *)kHostAddress
+      [[GRPCRequestOptions alloc] initWithHost:GRPCGetLocalInteropTestServerAddressPlainText()
                                           path:kUnaryCallMethod.HTTPPath
                                         safety:GRPCCallSafetyDefault];
   GRPCMutableCallOptions *options = [[GRPCMutableCallOptions alloc] init];
@@ -580,7 +575,7 @@ static const NSTimeInterval kInvertedTimeout = 2;
   request.payload.body = [NSMutableData dataWithLength:kSimpleDataLength];
 
   GRPCRequestOptions *callRequest =
-      [[GRPCRequestOptions alloc] initWithHost:(NSString *)kHostAddress
+      [[GRPCRequestOptions alloc] initWithHost:GRPCGetLocalInteropTestServerAddressPlainText()
                                           path:kFullDuplexCallMethod.HTTPPath
                                         safety:GRPCCallSafetyDefault];
   GRPCMutableCallOptions *options = [[GRPCMutableCallOptions alloc] init];
@@ -623,7 +618,7 @@ static const NSTimeInterval kInvertedTimeout = 2;
   request.payload.body = [NSMutableData dataWithLength:kSimpleDataLength];
 
   GRPCRequestOptions *callRequest =
-      [[GRPCRequestOptions alloc] initWithHost:(NSString *)kHostAddress
+      [[GRPCRequestOptions alloc] initWithHost:GRPCGetLocalInteropTestServerAddressPlainText()
                                           path:kUnaryCallMethod.HTTPPath
                                         safety:GRPCCallSafetyDefault];
   GRPCMutableCallOptions *options = [[GRPCMutableCallOptions alloc] init];
@@ -664,7 +659,7 @@ static const NSTimeInterval kInvertedTimeout = 2;
   request.payload.body = [NSMutableData dataWithLength:kSimpleDataLength];
 
   GRPCRequestOptions *callRequest =
-      [[GRPCRequestOptions alloc] initWithHost:(NSString *)kHostAddress
+      [[GRPCRequestOptions alloc] initWithHost:GRPCGetLocalInteropTestServerAddressPlainText()
                                           path:kUnaryCallMethod.HTTPPath
                                         safety:GRPCCallSafetyDefault];
   GRPCMutableCallOptions *options = [[GRPCMutableCallOptions alloc] init];
@@ -696,7 +691,7 @@ static const NSTimeInterval kInvertedTimeout = 2;
   __weak XCTestExpectation *completion = [self expectationWithDescription:@"RPC completed."];
 
   GRPCRequestOptions *requestOptions =
-      [[GRPCRequestOptions alloc] initWithHost:kHostAddress
+      [[GRPCRequestOptions alloc] initWithHost:GRPCGetLocalInteropTestServerAddressPlainText()
                                           path:kUnaryCallMethod.HTTPPath
                                         safety:GRPCCallSafetyDefault];
   GRPCMutableCallOptions *options = [[GRPCMutableCallOptions alloc] init];
