@@ -45,11 +45,11 @@ class RingHashLbPolicyConfigFactory
     : public XdsLbPolicyRegistry::ConfigFactory {
  public:
   absl::StatusOr<Json::Object> ConvertXdsLbPolicyConfig(
-      const XdsEncodingContext& context, upb_StringView configuration,
-      int recursion_depth) {
+      const XdsEncodingContext& context, absl::string_view configuration,
+      int recursion_depth) override {
     const auto* resource =
         envoy_extensions_load_balancing_policies_ring_hash_v3_RingHash_parse(
-            configuration.data, configuration.size, context.arena);
+            configuration.data(), configuration.size(), context.arena);
     if (resource == nullptr) {
       return absl::InvalidArgumentError(
           "Can't decode RingHash loadbalancing policy");
@@ -65,21 +65,23 @@ class RingHashLbPolicyConfigFactory
     const auto* min_ring_size =
         envoy_extensions_load_balancing_policies_ring_hash_v3_RingHash_minimum_ring_size(
             resource);
-    if(min_ring_size != nullptr) {
-      json.emplace("minRingSize", google_protobuf_UInt64Value_value(min_ring_size));
+    if (min_ring_size != nullptr) {
+      json.emplace("minRingSize",
+                   google_protobuf_UInt64Value_value(min_ring_size));
     }
     const auto* max_ring_size =
         envoy_extensions_load_balancing_policies_ring_hash_v3_RingHash_maximum_ring_size(
             resource);
-    if(max_ring_size != nullptr) {
-      json.emplace("maxRingSize", google_protobuf_UInt64Value_value(max_ring_size));
+    if (max_ring_size != nullptr) {
+      json.emplace("maxRingSize",
+                   google_protobuf_UInt64Value_value(max_ring_size));
     }
-    return Json::Object{
-        {"ring_hash_experimental",
-         std::move(json)}};
+    return Json::Object{{"ring_hash_experimental", std::move(json)}};
   }
 
-  static absl::string_view type() {
+  absl::string_view type() override { return Type(); }
+
+  static absl::string_view Type() {
     return "envoy.extensions.load_balancing_policies.ring_hash.v3.RingHash";
   }
 };
@@ -89,11 +91,13 @@ class RoundRobinLbPolicyConfigFactory
  public:
   absl::StatusOr<Json::Object> ConvertXdsLbPolicyConfig(
       const XdsEncodingContext& /* context */,
-      upb_StringView /* configuration */, int recursion_depth) {
+      absl::string_view /* configuration */, int recursion_depth) override {
     return Json::Object{{"round_robin", Json::Object()}};
   }
 
-  static absl::string_view type() {
+  absl::string_view type() override { return Type(); }
+
+  static absl::string_view Type() {
     return "envoy.extensions.load_balancing_policies.round_robin.v3.RoundRobin";
   }
 };
@@ -102,11 +106,11 @@ class WrrLocalityLbPolicyConfigFactory
     : public XdsLbPolicyRegistry::ConfigFactory {
  public:
   absl::StatusOr<Json::Object> ConvertXdsLbPolicyConfig(
-      const XdsEncodingContext& context, upb_StringView configuration,
-      int recursion_depth) {
+      const XdsEncodingContext& context, absl::string_view configuration,
+      int recursion_depth) override {
     const auto* resource =
         envoy_extensions_load_balancing_policies_wrr_locality_v3_WrrLocality_parse(
-            configuration.data, configuration.size, context.arena);
+            configuration.data(), configuration.size(), context.arena);
     if (resource == nullptr) {
       return absl::InvalidArgumentError(
           "Can't decode WrrLocality loadbalancing policy");
@@ -121,25 +125,29 @@ class WrrLocalityLbPolicyConfigFactory
     auto child_policy = XdsLbPolicyRegistry::ConvertXdsLbPolicyConfig(
         context, endpoint_picking_policy, recursion_depth + 1);
     if (!child_policy.ok()) {
-      return StatusCreate(absl::StatusCode::kInvalidArgument,
-                          "Error parsing WrrLocality load balancing policy",
-                          DEBUG_LOCATION, {child_policy.status()});
+      return absl::InvalidArgumentError(
+          absl::StrCat("Error parsing WrrLocality load balancing policy: ",
+                       child_policy.status().message()));
     }
     return Json::Object{
         {"xds_wrr_locality_experimental",
          Json::Object{{"child_policy", *std::move(child_policy)}}}};
   }
 
-  static absl::string_view type() {
+  absl::string_view type() override { return Type(); }
+
+  static absl::string_view Type() {
     return "envoy.extensions.load_balancing_policies.wrr_locality.v3."
            "WrrLocality";
   }
 };
 
-absl::StatusOr<Json> ParseStructToJson(const XdsEncodingContext& context, const google_protobuf_Struct* resource) {
+absl::StatusOr<Json> ParseStructToJson(const XdsEncodingContext& context,
+                                       const google_protobuf_Struct* resource) {
   upb::Status status;
   const auto* msg_def = google_protobuf_Struct_getmsgdef(context.symtab);
-  size_t json_size = upb_JsonEncode(resource, msg_def, context.symtab, 0, nullptr, 0, status.ptr());
+  size_t json_size = upb_JsonEncode(resource, msg_def, context.symtab, 0,
+                                    nullptr, 0, status.ptr());
   if (json_size == static_cast<size_t>(-1)) {
     return absl::InvalidArgumentError(
         absl::StrCat("Error parsing google::Protobuf::Struct: ",
@@ -150,9 +158,12 @@ absl::StatusOr<Json> ParseStructToJson(const XdsEncodingContext& context, const 
                  reinterpret_cast<char*>(buf), json_size + 1, status.ptr());
   grpc_error_handle error = GRPC_ERROR_NONE;
   auto json = Json::Parse(reinterpret_cast<char*>(buf), &error);
-  if(error != GRPC_ERROR_NONE) {
+  if (error != GRPC_ERROR_NONE) {
     // This should not happen
-    auto ret_status = absl::InternalError(absl::StrCat("Error parsing JSON form of google::Protobuf::Struct produced by upb library", grpc_error_std_string(error)));
+    auto ret_status = absl::InternalError(
+        absl::StrCat("Error parsing JSON form of google::Protobuf::Struct "
+                     "produced by upb library: ",
+                     grpc_error_std_string(error)));
     GRPC_ERROR_UNREF(error);
     return ret_status;
   }
@@ -198,75 +209,73 @@ absl::StatusOr<Json::Array> XdsLbPolicyRegistry::ConvertXdsLbPolicyConfig(
           "Error parsing LoadBalancingPolicy::Policy - Missing "
           "TypedExtensionConfig::typed_config field");
     }
-    absl::string_view type_url;
-    xds_type_v3_TypedStruct* typed_struct = nullptr;
-    auto error = ExtractExtensionTypeName(context, typed_config, &type_url,
-                                          &typed_struct);
-    if (error != GRPC_ERROR_NONE) {
-      policy = grpc_error_to_absl_status(error);
-      GRPC_ERROR_UNREF(error);
-      break;
+    auto type = ExtractExtensionTypeName(context, typed_config);
+    if (!type.ok()) {
+      return absl::InvalidArgumentError(absl::StrCat(
+          "Error parsing "
+          "LoadBalancingPolicy::Policy::TypedExtensionConfig::typed_config: ",
+          type.status().message()));
     }
-    upb_StringView value = google_protobuf_Any_value(typed_config);
-    auto config_factory_it = Get()->policy_config_factories_.find(type_url);
+    absl::string_view value =
+        UpbStringToAbsl(google_protobuf_Any_value(typed_config));
+    auto config_factory_it = Get()->policy_config_factories_.find(type->type);
     if (config_factory_it != Get()->policy_config_factories_.end()) {
       policy = config_factory_it->second->ConvertXdsLbPolicyConfig(
           context, value, recursion_depth);
-    } else if (typed_struct != nullptr) {
-      // Custom lb policy config
-      // Check whether the custom lb policy type is registered in our LoadBalancingPolicyRegistry.
-      size_t pos = type_url.rfind('/');
-      if (pos == absl::string_view::npos) {
+      if (!policy.ok()) {
         return absl::InvalidArgumentError(
-            absl::StrCat("Error parsing LoadBalancingPolicy: Custom Policy: "
-                         "Invalid type_url ",
-                         type_url));
+            absl::StrCat("Error parsing "
+                         "LoadBalancingPolicy::Policy::TypedExtensionConfig::"
+                         "typed_config to JSON: ",
+                         policy.status().message()));
       }
-      std::string name = std::string(type_url.substr(pos + 1));
-      if (!LoadBalancingPolicyRegistry::LoadBalancingPolicyExists(name.c_str(),
-                                                                  nullptr)) {
+    } else if (type->typed_struct != nullptr) {
+      // Custom lb policy config
+      std::string custom_type = std::string(type->type);
+      if (!LoadBalancingPolicyRegistry::LoadBalancingPolicyExists(
+              custom_type.c_str(), nullptr)) {
         // Skip unsupported custom lb policy.
         continue;
       }
       // Convert typed struct to json.
-      auto value = xds_type_v3_TypedStruct_value(typed_struct);
+      auto value = xds_type_v3_TypedStruct_value(type->typed_struct);
       if (value == nullptr) {
-        policy = Json::Object{{std::string(name), Json() /* null */}};
+        policy = Json::Object{{std::move(custom_type), Json() /* null */}};
       } else {
         auto parsed_value = ParseStructToJson(context, value);
         if (!parsed_value.ok()) {
-          return StatusCreate(
-              absl::StatusCode::kInvalidArgument,
-              absl::StrCat("Error parsing LoadBalancingPolicy: Custom Policy: ",
-                           type_url),
-              DEBUG_LOCATION, {parsed_value.status()});
+          return absl::InvalidArgumentError(absl::StrCat(
+              "Error parsing LoadBalancingPolicy: Custom Policy: ", custom_type,
+              ": ", parsed_value.status().message()));
         }
-        policy = Json::Object{{std::string(name), *(std::move(parsed_value))}};
+        policy =
+            Json::Object{{std::move(custom_type), *(std::move(parsed_value))}};
       }
     } else {
       // Unsupported type. Skipping entry.
+      continue;
     }
-    if (policy.ok()) {
-      return Json::Array{std::move(policy.value())};
-    }
+    return Json::Array{std::move(policy.value())};
   }
-  return StatusCreate(absl::StatusCode::kInvalidArgument,
-                      "Error parsing LoadBalancingPolicy", DEBUG_LOCATION,
-                      {policy.status()});
+  return absl::InvalidArgumentError(
+      "No supported load balancing policy config found.");
+}
+
+XdsLbPolicyRegistry::XdsLbPolicyRegistry() {
+  policy_config_factories_.emplace(
+      RingHashLbPolicyConfigFactory::Type(),
+      absl::make_unique<RingHashLbPolicyConfigFactory>());
+  policy_config_factories_.emplace(
+      RoundRobinLbPolicyConfigFactory::Type(),
+      absl::make_unique<RoundRobinLbPolicyConfigFactory>());
+  policy_config_factories_.emplace(
+      WrrLocalityLbPolicyConfigFactory::Type(),
+      absl::make_unique<WrrLocalityLbPolicyConfigFactory>());
 }
 
 XdsLbPolicyRegistry* XdsLbPolicyRegistry::Get() {
   // This is thread-safe since C++11
   static XdsLbPolicyRegistry* instance = new XdsLbPolicyRegistry();
-  instance->policy_config_factories_.emplace(
-      RingHashLbPolicyConfigFactory::type(),
-      absl::make_unique<RingHashLbPolicyConfigFactory>());
-  instance->policy_config_factories_.emplace(
-      RoundRobinLbPolicyConfigFactory::type(),
-      absl::make_unique<RoundRobinLbPolicyConfigFactory>());
-  instance->policy_config_factories_.emplace(
-      WrrLocalityLbPolicyConfigFactory::type(),
-      absl::make_unique<WrrLocalityLbPolicyConfigFactory>());
   return instance;
 }
 

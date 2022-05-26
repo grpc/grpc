@@ -36,8 +36,10 @@ class XdsLbPolicyRegistry {
    public:
     virtual ~ConfigFactory() {}
     virtual absl::StatusOr<Json::Object> ConvertXdsLbPolicyConfig(
-        const XdsEncodingContext& context, upb_StringView configuration,
+        const XdsEncodingContext& context, absl::string_view configuration,
         int recursion_depth) = 0;
+
+    virtual absl::string_view type() = 0;
   };
 
   // Converts an xDS cluster load balancing policy message to gRPC's JSON
@@ -48,9 +50,11 @@ class XdsLbPolicyRegistry {
   static absl::StatusOr<Json::Array> ConvertXdsLbPolicyConfig(
       const XdsEncodingContext& context,
       const envoy_config_cluster_v3_LoadBalancingPolicy* lb_policy,
-      int recursion_depth);
+      int recursion_depth = 0);
 
  private:
+  XdsLbPolicyRegistry();
+
   static XdsLbPolicyRegistry* Get();
 
   // A map of config factories that goes from the type of the lb policy config

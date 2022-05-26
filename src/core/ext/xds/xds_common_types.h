@@ -87,11 +87,13 @@ struct CommonTlsContext {
       CommonTlsContext* common_tls_context);
 };
 
-// TODO(yashykt): Convert this to return absl::StatusOr<Result> instead.
-grpc_error_handle ExtractExtensionTypeName(
-    const XdsEncodingContext& context, const google_protobuf_Any* any,
-    absl::string_view* extension_type,
-    xds_type_v3_TypedStruct** parsed_typed_struct = nullptr);
+struct ExtractExtensionTypeNameResult {
+  absl::string_view type;
+  xds_type_v3_TypedStruct* typed_struct = nullptr;
+};
+
+absl::StatusOr<ExtractExtensionTypeNameResult> ExtractExtensionTypeName(
+    const XdsEncodingContext& context, const google_protobuf_Any* any);
 
 }  // namespace grpc_core
 

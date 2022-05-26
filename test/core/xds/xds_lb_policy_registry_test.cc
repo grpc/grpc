@@ -19,6 +19,7 @@
 #include "src/core/ext/xds/xds_lb_policy_registry.h"
 
 #include <gmock/gmock.h>
+#include <google/protobuf/text_format.h>
 #include <gtest/gtest.h>
 
 #include "absl/strings/str_format.h"
@@ -62,14 +63,14 @@ absl::StatusOr<Json::Array> ConvertXdsPolicy(LoadBalancingPolicyProto policy) {
                                 nullptr};
   auto* upb_policy = envoy_config_cluster_v3_LoadBalancingPolicy_parse(
       serialized_policy.data(), serialized_policy.size(), arena.ptr());
-  return XdsLbPolicyRegistry::ConvertXdsLbPolicyConfig(context, upb_policy, 0);
+  return XdsLbPolicyRegistry::ConvertXdsLbPolicyConfig(context, upb_policy);
 }
 
 TEST(XdsLbPolicyRegistryTest, EmptyLoadBalancingPolicy) {
   auto result = ConvertXdsPolicy(LoadBalancingPolicyProto());
   EXPECT_EQ(result.status().code(), absl::StatusCode::kInvalidArgument);
   EXPECT_THAT(
-      StatusToString(result.status()),
+      result.status().message(),
       ::testing::HasSubstr("No supported load balancing policy config found"));
 }
 
@@ -81,7 +82,7 @@ TEST(XdsLbPolicyRegistryTest, UnsupportedBuiltinType) {
   auto result = ConvertXdsPolicy(policy);
   EXPECT_EQ(result.status().code(), absl::StatusCode::kInvalidArgument);
   EXPECT_THAT(
-      StatusToString(result.status()),
+      result.status().message(),
       ::testing::HasSubstr("No supported load balancing policy config found"));
 }
 
@@ -90,7 +91,7 @@ TEST(XdsLbPolicyRegistryTest, MissingTypedExtensionConfig) {
   policy.add_policies();
   auto result = ConvertXdsPolicy(policy);
   EXPECT_EQ(result.status().code(), absl::StatusCode::kInvalidArgument);
-  EXPECT_THAT(StatusToString(result.status()),
+  EXPECT_THAT(result.status().message(),
               ::testing::HasSubstr("Error parsing LoadBalancingPolicy::Policy "
                                    "- Missing typed_extension_config field"));
 }
@@ -102,7 +103,7 @@ TEST(XdsLbPolicyRegistryTest, MissingTypedConfig) {
   auto result = ConvertXdsPolicy(policy);
   EXPECT_EQ(result.status().code(), absl::StatusCode::kInvalidArgument);
   EXPECT_THAT(
-      StatusToString(result.status()),
+      result.status().message(),
       ::testing::HasSubstr("Error parsing LoadBalancingPolicy::Policy - "
                            "Missing TypedExtensionConfig::typed_config field"));
 }
@@ -117,7 +118,7 @@ TEST(XdsLbPolicyRegistryTest, RingHashInvalidHash) {
   auto result = ConvertXdsPolicy(policy);
   EXPECT_EQ(result.status().code(), absl::StatusCode::kInvalidArgument);
   EXPECT_THAT(
-      StatusToString(result.status()),
+      result.status().message(),
       ::testing::HasSubstr("Invalid hash function provided for RingHash "
                            "loadbalancing policy. Only XX_HASH is supported"));
 }
@@ -206,7 +207,7 @@ TEST(XdsLbPolicyRegistryTest, WrrLocalityMissingEndpointPickingPolicy) {
       WrrLocality());
   auto result = ConvertXdsPolicy(policy);
   EXPECT_EQ(result.status().code(), absl::StatusCode::kInvalidArgument);
-  EXPECT_THAT(StatusToString(result.status()),
+  EXPECT_THAT(result.status().message(),
               ::testing::ContainsRegex(
                   "Error parsing LoadBalancingPolicy.*WrrLocality: "
                   "endpoint_picking_policy not found"));
@@ -225,7 +226,7 @@ TEST(XdsLbPolicyRegistryTest, WrrLocalityChildPolicyError) {
       wrr_locality);
   auto result = ConvertXdsPolicy(policy);
   EXPECT_EQ(result.status().code(), absl::StatusCode::kInvalidArgument);
-  EXPECT_THAT(StatusToString(result.status()),
+  EXPECT_THAT(result.status().message(),
               ::testing::ContainsRegex(
                   "Error parsing LoadBalancingPolicy.*Error parsing "
                   "WrrLocality load balancing policy.*Error parsing "
@@ -283,7 +284,7 @@ class CustomLbPolicyFactory : public LoadBalancingPolicyFactory {
 
 TEST(XdsLbPolicyRegistryTest, CustomLbPolicy) {
   TypedStruct typed_struct;
-  typed_struct.set_type_url("myorg/foo/bar/test.CustomLb");
+  typed_struct.set_type_url("type.googleapis.com/test.CustomLb");
   LoadBalancingPolicyProto policy;
   auto* lb_policy = policy.add_policies();
   lb_policy->mutable_typed_extension_config()->mutable_typed_config()->PackFrom(
@@ -299,7 +300,7 @@ TEST(XdsLbPolicyRegistryTest, CustomLbPolicy) {
 
 TEST(XdsLbPolicyRegistryTest, CustomLbPolicyUdpaTyped) {
   ::udpa::type::v1::TypedStruct typed_struct;
-  typed_struct.set_type_url("myorg/foo/bar/test.CustomLb");
+  typed_struct.set_type_url("type.googleapis.com/test.CustomLb");
   LoadBalancingPolicyProto policy;
   auto* lb_policy = policy.add_policies();
   lb_policy->mutable_typed_extension_config()->mutable_typed_config()->PackFrom(
@@ -313,20 +314,6 @@ TEST(XdsLbPolicyRegistryTest, CustomLbPolicyUdpaTyped) {
                                       &error));
 }
 
-TEST(XdsLbPolicyRegistryTest, CustomLbPolicyInvalidUrl) {
-  TypedStruct typed_struct;
-  typed_struct.set_type_url("test.CustomLb");
-  LoadBalancingPolicyProto policy;
-  auto* lb_policy = policy.add_policies();
-  lb_policy->mutable_typed_extension_config()->mutable_typed_config()->PackFrom(
-      typed_struct);
-  auto result = ConvertXdsPolicy(policy);
-  EXPECT_EQ(result.status().code(), absl::StatusCode::kInvalidArgument);
-  EXPECT_THAT(StatusToString(result.status()),
-              ::testing::HasSubstr("Error parsing LoadBalancingPolicy: Custom "
-                                   "Policy: Invalid type_url test.CustomLb"));
-}
-
 TEST(XdsLbPolicyRegistryTest, UnsupportedCustomTypeError) {
   TypedStruct typed_struct;
   typed_struct.set_type_url("myorg/foo/bar/test.UnknownLb");
@@ -336,36 +323,52 @@ TEST(XdsLbPolicyRegistryTest, UnsupportedCustomTypeError) {
       typed_struct);
   auto result = ConvertXdsPolicy(policy);
   EXPECT_EQ(result.status().code(), absl::StatusCode::kInvalidArgument);
-  EXPECT_THAT(StatusToString(result.status()),
+  EXPECT_THAT(result.status().message(),
               ::testing::ContainsRegex(
                   "No supported load balancing policy config found"));
 }
 
-TEST(XdsLbPolicyRegistryTest, CustomLbPolicyInvalidValue) {
-  TypedStruct typed_struct;
-  typed_struct.set_type_url("myorg/test.CustomLb");
-  auto* fields = typed_struct.mutable_value()->mutable_fields();
-  (*fields)["key"];
-  LoadBalancingPolicyProto policy;
-  auto* lb_policy = policy.add_policies();
-  lb_policy->mutable_typed_extension_config()->mutable_typed_config()->PackFrom(
-      typed_struct);
-  auto result = ConvertXdsPolicy(policy);
-  EXPECT_EQ(result.status().code(), absl::StatusCode::kInvalidArgument);
-  EXPECT_THAT(StatusToString(result.status()),
-              ::testing::ContainsRegex(
-                  "Error parsing LoadBalancingPolicy: Custom Policy: "
-                  "myorg/test.CustomLb.*Error parsing "
-                  "google::Protobuf::Struct: No value set in Value proto"));
-}
-
 TEST(XdsLbPolicyRegistryTest, CustomLbPolicyNullValue) {
   TypedStruct typed_struct;
-  typed_struct.set_type_url("myorg/foo/bar/test.CustomLb");
-  auto* fields = typed_struct.mutable_value()->mutable_fields();
-  google::protobuf::Value value;
-  value.set_null_value(google::protobuf::NullValue::NULL_VALUE);
-  (*fields)["key"] = value;
+  ASSERT_TRUE(google::protobuf::TextFormat::ParseFromString(
+      R"pb(
+        type_url: "type.googleapis.com/test.CustomLb"
+        value {
+          fields {
+            key: "key"
+            value { null_value: NULL_VALUE }
+          }
+          fields {
+            key: "number"
+            value { number_value: 123 }
+          }
+          fields {
+            key: "string"
+            value { string_value: "value" }
+          }
+          fields {
+            key: "struct"
+            value {
+              struct_value {
+                fields {
+                  key: "key"
+                  value { null_value: NULL_VALUE }
+                }
+              }
+            }
+          }
+          fields {
+            key: "list"
+            value {
+              list_value {
+                values { null_value: NULL_VALUE }
+                values { number_value: 234 }
+              }
+            }
+          }
+        }
+      )pb",
+      &typed_struct));
   LoadBalancingPolicyProto policy;
   auto* lb_policy = policy.add_policies();
   lb_policy->mutable_typed_extension_config()->mutable_typed_config()->PackFrom(
@@ -374,142 +377,24 @@ TEST(XdsLbPolicyRegistryTest, CustomLbPolicyNullValue) {
   EXPECT_TRUE(result.ok());
   EXPECT_EQ(result->size(), 1);
   grpc_error_handle error = GRPC_ERROR_NONE;
-  EXPECT_EQ((*result)[0], Json::Parse("{"
-                                      "  \"test.CustomLb\":{"
-                                      "    \"key\": null"
-                                      "  }"
-                                      "}",
-                                      &error));
-}
-
-TEST(XdsLbPolicyRegistryTest, CustomLbPolicyNumberValue) {
-  TypedStruct typed_struct;
-  typed_struct.set_type_url("myorg/foo/bar/test.CustomLb");
-  auto* fields = typed_struct.mutable_value()->mutable_fields();
-  google::protobuf::Value value;
-  value.set_number_value(123);
-  (*fields)["key"] = value;
-  LoadBalancingPolicyProto policy;
-  auto* lb_policy = policy.add_policies();
-  lb_policy->mutable_typed_extension_config()->mutable_typed_config()->PackFrom(
-      typed_struct);
-  auto result = ConvertXdsPolicy(policy);
-  EXPECT_TRUE(result.ok());
-  EXPECT_EQ(result->size(), 1);
-  grpc_error_handle error = GRPC_ERROR_NONE;
-  EXPECT_EQ((*result)[0], Json::Parse(absl::StrFormat("{"
-                                                      "  \"test.CustomLb\":{"
-                                                      "    \"key\": %s"
-                                                      "  }"
-                                                      "}",
-                                                      std::to_string(123)),
-                                      &error));
-}
-
-TEST(XdsLbPolicyRegistryTest, CustomLbPolicyStringValue) {
-  TypedStruct typed_struct;
-  typed_struct.set_type_url("myorg/foo/bar/test.CustomLb");
-  auto* fields = typed_struct.mutable_value()->mutable_fields();
-  google::protobuf::Value value;
-  value.set_string_value("value");
-  (*fields)["key"] = value;
-  LoadBalancingPolicyProto policy;
-  auto* lb_policy = policy.add_policies();
-  lb_policy->mutable_typed_extension_config()->mutable_typed_config()->PackFrom(
-      typed_struct);
-  auto result = ConvertXdsPolicy(policy);
-  EXPECT_TRUE(result.ok());
-  EXPECT_EQ(result->size(), 1);
-  grpc_error_handle error = GRPC_ERROR_NONE;
-  EXPECT_EQ((*result)[0], Json::Parse("{"
-                                      "  \"test.CustomLb\":{"
-                                      "    \"key\": \"value\""
-                                      "  }"
-                                      "}",
-                                      &error));
-}
-
-TEST(XdsLbPolicyRegistryTest, CustomLbPolicyBoolValue) {
-  TypedStruct typed_struct;
-  typed_struct.set_type_url("myorg/foo/bar/test.CustomLb");
-  auto* fields = typed_struct.mutable_value()->mutable_fields();
-  google::protobuf::Value value;
-  value.set_bool_value(true);
-  (*fields)["key"] = value;
-  LoadBalancingPolicyProto policy;
-  auto* lb_policy = policy.add_policies();
-  lb_policy->mutable_typed_extension_config()->mutable_typed_config()->PackFrom(
-      typed_struct);
-  auto result = ConvertXdsPolicy(policy);
-  EXPECT_TRUE(result.ok());
-  EXPECT_EQ(result->size(), 1);
-  grpc_error_handle error = GRPC_ERROR_NONE;
-  EXPECT_EQ((*result)[0], Json::Parse("{"
-                                      "  \"test.CustomLb\":{"
-                                      "    \"key\": true"
-                                      "  }"
-                                      "}",
-                                      &error));
-}
-
-TEST(XdsLbPolicyRegistryTest, CustomLbPolicyStructValue) {
-  TypedStruct typed_struct;
-  typed_struct.set_type_url("myorg/foo/bar/test.CustomLb");
-  auto* fields = typed_struct.mutable_value()->mutable_fields();
-  google::protobuf::Value value;
-  google::protobuf::Value inner_value;
-  inner_value.set_bool_value(true);
-  auto* inner_struct = value.mutable_struct_value()->mutable_fields();
-  (*inner_struct)["inner_key"] = inner_value;
-  (*inner_struct)["inner_key_2"] = inner_value;
-  (*fields)["key"] = value;
-  LoadBalancingPolicyProto policy;
-  auto* lb_policy = policy.add_policies();
-  lb_policy->mutable_typed_extension_config()->mutable_typed_config()->PackFrom(
-      typed_struct);
-  auto result = ConvertXdsPolicy(policy);
-  EXPECT_TRUE(result.ok());
-  EXPECT_EQ(result->size(), 1);
-  grpc_error_handle error = GRPC_ERROR_NONE;
-  EXPECT_EQ((*result)[0], Json::Parse("{"
-                                      "  \"test.CustomLb\":{"
-                                      "    \"key\": {"
-                                      "      \"inner_key\": true,"
-                                      "      \"inner_key_2\": true"
-                                      "    }"
-                                      "  }"
-                                      "}",
-                                      &error));
-}
-
-TEST(XdsLbPolicyRegistryTest, CustomLbPolicyListValue) {
-  TypedStruct typed_struct;
-  typed_struct.set_type_url("myorg/foo/bar/test.CustomLb");
-  auto* fields = typed_struct.mutable_value()->mutable_fields();
-  google::protobuf::Value value;
-  value.mutable_list_value()->add_values()->set_bool_value(false);
-  value.mutable_list_value()->add_values()->set_null_value(
-      google::protobuf::NullValue::NULL_VALUE);
-  (*fields)["key"] = value;
-  LoadBalancingPolicyProto policy;
-  auto* lb_policy = policy.add_policies();
-  lb_policy->mutable_typed_extension_config()->mutable_typed_config()->PackFrom(
-      typed_struct);
-  auto result = ConvertXdsPolicy(policy);
-  EXPECT_TRUE(result.ok());
-  EXPECT_EQ(result->size(), 1);
-  grpc_error_handle error = GRPC_ERROR_NONE;
-  EXPECT_EQ((*result)[0], Json::Parse("{"
-                                      "  \"test.CustomLb\":{"
-                                      "    \"key\": [false, null]"
-                                      "  }"
-                                      "}",
-                                      &error));
+  EXPECT_EQ((*result)[0], Json::Parse(
+                              R"json({
+                                "test.CustomLb":{
+                                  "key": null,
+                                  "number": 123,
+                                  "string": "value",
+                                  "struct": {
+                                    "key": null
+                                  },
+                                  "list": [null, 234]
+                                }
+                              })json",
+                              &error));
 }
 
 TEST(XdsLbPolicyRegistryTest, CustomLbPolicyListError) {
   TypedStruct typed_struct;
-  typed_struct.set_type_url("myorg/test.CustomLb");
+  typed_struct.set_type_url("type.googleapis.com/test.CustomLb");
   auto* fields = typed_struct.mutable_value()->mutable_fields();
   google::protobuf::Value value;
   value.mutable_list_value()->add_values();
@@ -520,11 +405,12 @@ TEST(XdsLbPolicyRegistryTest, CustomLbPolicyListError) {
       typed_struct);
   auto result = ConvertXdsPolicy(policy);
   EXPECT_EQ(result.status().code(), absl::StatusCode::kInvalidArgument);
-  EXPECT_THAT(StatusToString(result.status()),
-              ::testing::ContainsRegex(
+  EXPECT_THAT(result.status().message(),
+              ::testing::HasSubstr(
                   "Error parsing LoadBalancingPolicy: Custom Policy: "
-                  "myorg/test.CustomLb.*Error parsing "
-                  "google::Protobuf::Struct: No value set in Value proto"));
+                  "test.CustomLb: Error parsing google::Protobuf::Struct: No "
+                  "value set in Value proto"))
+      << result.status().message();
 }
 
 TEST(XdsLbPolicyRegistryTest, UnsupportedBuiltInTypeSkipped) {
@@ -595,7 +481,7 @@ LoadBalancingPolicyProto BuildRecursiveLoadBalancingPolicy(int depth) {
 TEST(XdsLbPolicyRegistryTest, MaxRecursion) {
   auto result = ConvertXdsPolicy(BuildRecursiveLoadBalancingPolicy(0));
   EXPECT_EQ(result.status().code(), absl::StatusCode::kInvalidArgument);
-  EXPECT_THAT(StatusToString(result.status()),
+  EXPECT_THAT(result.status().message(),
               ::testing::ContainsRegex("LoadBalancingPolicy configuration has "
                                        "a recursion depth of more than 16"));
 }
