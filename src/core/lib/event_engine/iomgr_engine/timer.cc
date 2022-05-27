@@ -16,17 +16,19 @@
  *
  */
 
+#include <grpc/support/port_platform.h>
+
 #include "src/core/lib/event_engine/iomgr_engine/timer.h"
 
-#include <grpc/support/port_platform.h>
-#include <grpc/support/cpu.h>
-#include <grpc/impl/codegen/gpr_types.h>
-#include <grpc/support/time.h>
+#include <algorithm>
 #include <atomic>
 #include <limits>
-#include <algorithm>
 #include <type_traits>
 #include <utility>
+
+#include <grpc/impl/codegen/gpr_types.h>
+#include <grpc/support/cpu.h>
+#include <grpc/support/time.h>
 
 #include "src/core/lib/event_engine/iomgr_engine/timer_heap.h"
 #include "src/core/lib/gpr/useful.h"

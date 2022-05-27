@@ -16,8 +16,8 @@
  *
  */
 
-#ifndef GRPC_CORE_LIB_IOMGR_TIMER_HEAP_H
-#define GRPC_CORE_LIB_IOMGR_TIMER_HEAP_H
+#ifndef GRPC_CORE_LIB_EVENT_ENGINE_IOMGR_ENGINE_TIMER_HEAP_H
+#define GRPC_CORE_LIB_EVENT_ENGINE_IOMGR_ENGINE_TIMER_HEAP_H
 
 #include <grpc/support/port_platform.h>
 
@@ -51,4 +51,4 @@ class TimerHeap {
 }  // namespace iomgr_engine
 }  // namespace grpc_event_engine
 
-#endif /* GRPC_CORE_LIB_IOMGR_TIMER_HEAP_H */
+#endif /* GRPC_CORE_LIB_EVENT_ENGINE_IOMGR_ENGINE_TIMER_HEAP_H */
