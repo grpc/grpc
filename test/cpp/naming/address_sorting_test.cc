@@ -370,10 +370,14 @@ TEST_F(AddressSortingTest,
       {"[::1]:443", AF_INET6},
   });
   grpc_cares_wrapper_address_sorting_sort(nullptr, &lb_addrs);
-  VerifyLbAddrOutputs(lb_addrs, {
-                                    "[::1]:443",
-                                    v4_compat_dest,
-                                });
+  ASSERT_EQ(lb_addrs.size(), 2);
+  EXPECT_EQ(lb_addrs[0], "[::1]:443");
+  // We've observed some inet_ntop implementations have special representations
+  // of IPv4-compatible IPv6 addresses, and others represent them as normal
+  // IPv6 addresses. For the purposes of this test, we don't care which
+  // representation is used.
+  EXPECT_THAT({"[::0.0.0.2]:443", "[::2]:443"},
+              ::testing::Contains(lb_addrs[1]));
 }
 
 TEST_F(AddressSortingTest,
@@ -731,13 +735,16 @@ TEST_F(AddressSortingTest, TestStableSortV4CompatAndSiteLocalAddresses) {
       {v4_compat_dest, AF_INET6},
   });
   grpc_cares_wrapper_address_sorting_sort(nullptr, &lb_addrs);
-  VerifyLbAddrOutputs(lb_addrs,
-                      {
-                          // The sort should be stable since
-                          // v4-compatible has same precedence as site-local.
-                          "[fec0::2000]:443",
-                          v4_compat_dest,
-                      });
+  ASSERT_EQ(lb_addrs.size(), 2);
+  // The sort should be stable since
+  // v4-compatible has same precedence as site-local.
+  EXPECT_EQ(lb_addrs[0], "[fec0::2000]:443");
+  // We've observed some inet_ntop implementations have special representations
+  // of IPv4-compatible IPv6 addresses, and others represent them as normal
+  // IPv6 addresses. For the purposes of this test, we don't care which
+  // representation is used.
+  EXPECT_THAT({"[::0.0.0.2]:443", "[::2]:443"},
+              ::testing::Contains(lb_addrs[1]));
 }
 
 /* TestPrefersIpv6Loopback tests the actual "address probing" code
