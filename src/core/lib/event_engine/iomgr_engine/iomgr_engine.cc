@@ -13,7 +13,7 @@
 // limitations under the License.
 #include <grpc/support/port_platform.h>
 
-#include "src/core/lib/event_engine/iomgr_engine.h"
+#include "src/core/lib/event_engine/iomgr_engine/iomgr_engine.h"
 
 #include <string>
 #include <type_traits>

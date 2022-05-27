@@ -2230,8 +2230,8 @@ grpc_cc_library(
 
 grpc_cc_library(
     name = "iomgr_event_engine",
-    srcs = ["src/core/lib/event_engine/iomgr_engine.cc"],
-    hdrs = ["src/core/lib/event_engine/iomgr_engine.h"],
+    srcs = ["src/core/lib/event_engine/iomgr_engine/iomgr_engine.cc"],
+    hdrs = ["src/core/lib/event_engine/iomgr_engine/iomgr_engine.h"],
     external_deps = [
         "absl/cleanup",
         "absl/container:flat_hash_set",
