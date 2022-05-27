@@ -351,7 +351,7 @@ TEST_P(LdsTest, RejectsHttpFiltersNotSupportedOnClients) {
   *http_connection_manager.add_http_filters() =
       http_connection_manager.http_filters(0);
   auto* filter = http_connection_manager.mutable_http_filters(0);
-  filter->set_name("custom/grpc.testing.server_only_http_filter");
+  filter->set_name("grpc.testing.server_only_http_filter");
   filter->mutable_typed_config()->set_type_url(
       "custom/grpc.testing.server_only_http_filter");
   listener.mutable_api_listener()->mutable_api_listener()->PackFrom(
