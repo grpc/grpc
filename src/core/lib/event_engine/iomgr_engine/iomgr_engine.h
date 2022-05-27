@@ -34,6 +34,7 @@
 #include <grpc/event_engine/slice_buffer.h>
 
 #include "src/core/lib/event_engine/handle_containers.h"
+#include "src/core/lib/event_engine/iomgr_engine/thread_pool.h"
 #include "src/core/lib/event_engine/iomgr_engine/timer_manager.h"
 #include "src/core/lib/gprpp/sync.h"
 
@@ -103,14 +104,14 @@ class IomgrEventEngine final : public EventEngine {
   bool Cancel(TaskHandle handle) override;
 
  private:
+  struct ClosureData;
+
   EventEngine::TaskHandle RunAtInternal(
       absl::Time when,
       absl::variant<std::function<void()>, EventEngine::Closure*> cb);
 
-  void RunInternal(
-      absl::variant<std::function<void()>, EventEngine::Closure*> cb);
-
   iomgr_engine::TimerManager timer_manager_;
+  iomgr_engine::ThreadPool thread_pool_{1};
 
   grpc_core::Mutex mu_;
   TaskHandleSet known_handles_ ABSL_GUARDED_BY(mu_);

@@ -2265,6 +2265,16 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "iomgr_ee_thread_pool",
+    srcs = ["src/core/lib/event_engine/iomgr_engine/thread_pool.cc"],
+    hdrs = [
+        "src/core/lib/event_engine/iomgr_engine/thread_pool.h",
+    ],
+    tags = ["grpc-autodeps"],
+    deps = ["gpr_base"],
+)
+
+grpc_cc_library(
     name = "iomgr_ee_timer_manager",
     srcs = ["src/core/lib/event_engine/iomgr_engine/timer_manager.cc"],
     hdrs = [
@@ -2302,6 +2312,7 @@ grpc_cc_library(
         "gpr_base",
         "gpr_platform",
         "grpc_trace",
+        "iomgr_ee_thread_pool",
         "iomgr_ee_timer_manager",
         "match",
         "time",

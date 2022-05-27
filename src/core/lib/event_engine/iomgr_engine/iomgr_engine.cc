@@ -37,24 +37,6 @@ namespace experimental {
 
 namespace {
 
-EventEngine::Closure* MakeClosureFromFunction(std::function<void()> f) {
-  class Fn final : public EventEngine::Closure {
-   public:
-    explicit Fn(std::function<void()> f) : f_(std::move(f)) {}
-    void Run() override { f_(); }
-
-   private:
-    std::function<void()> f_;
-  };
-  return new Fn(std::move(f));
-}
-
-struct ClosureData {
-  iomgr_engine::Timer timer;
-  IomgrEventEngine* engine;
-  EventEngine::TaskHandle handle;
-};
-
 // Timer limits due to quirks in the iomgr implementation.
 // If deadline <= Now, the callback will be run inline, which can result in lock
 // issues. And absl::InfiniteFuture yields UB.
@@ -71,6 +53,26 @@ std::string HandleToString(EventEngine::TaskHandle handle) {
 }
 
 }  // namespace
+
+struct IomgrEventEngine::ClosureData final : public EventEngine::Closure {
+  absl::variant<std::function<void()>, EventEngine::Closure*> cb;
+  iomgr_engine::Timer timer;
+  IomgrEventEngine* engine;
+  EventEngine::TaskHandle handle;
+
+  void Run() override {
+    GRPC_EVENT_ENGINE_TRACE("IomgrEventEngine:%p executing callback:%s", engine,
+                            HandleToString(handle).c_str());
+    {
+      grpc_core::MutexLock lock(&engine->mu_);
+      engine->known_handles_.erase(handle);
+    }
+    grpc_core::Match(
+        cb, [](EventEngine::Closure* cb) { cb->Run(); },
+        [](std::function<void()> fn) { fn(); });
+    delete this;
+  }
+};
 
 IomgrEventEngine::IomgrEventEngine() {}
 
@@ -98,7 +100,7 @@ bool IomgrEventEngine::Cancel(EventEngine::TaskHandle handle) {
 
 EventEngine::TaskHandle IomgrEventEngine::RunAt(absl::Time when,
                                                 std::function<void()> closure) {
-  return RunAtInternal(when, MakeClosureFromFunction(closure));
+  return RunAtInternal(when, std::move(closure));
 }
 
 EventEngine::TaskHandle IomgrEventEngine::RunAt(absl::Time when,
@@ -107,44 +109,26 @@ EventEngine::TaskHandle IomgrEventEngine::RunAt(absl::Time when,
 }
 
 void IomgrEventEngine::Run(std::function<void()> closure) {
-  RunInternal(closure);
+  thread_pool_.Add(closure);
 }
 
 void IomgrEventEngine::Run(EventEngine::Closure* closure) {
-  RunInternal(closure);
+  thread_pool_.Add([closure]() { closure->Run(); });
 }
 
 EventEngine::TaskHandle IomgrEventEngine::RunAtInternal(
-    absl::Time when, EventEngine::Closure* cb) {
+    absl::Time when,
+    absl::variant<std::function<void()>, EventEngine::Closure*> cb) {
   when = Clamp(when);
   auto* cd = new ClosureData;
   cd->cb = std::move(cb);
   cd->engine = this;
-  GRPC_CLOSURE_INIT(
-      &cd->closure,
-      [](void* arg, grpc_error_handle error) {
-        auto* cd = static_cast<ClosureData*>(arg);
-        GRPC_EVENT_ENGINE_TRACE("IomgrEventEngine:%p executing callback:%s",
-                                cd->engine, HandleToString(cd->handle).c_str());
-        {
-          grpc_core::MutexLock lock(&cd->engine->mu_);
-          cd->engine->known_handles_.erase(cd->handle);
-        }
-        auto cleaner = absl::MakeCleanup([cd] { delete cd; });
-        if (error == GRPC_ERROR_CANCELLED) return;
-        grpc_core::Match(
-            cd->cb, [](EventEngine::Closure* cb) { cb->Run(); },
-            [](std::function<void()> fn) { fn(); });
-      },
-      cd, nullptr);
   // kludge to deal with realtime/monotonic clock conversion
   absl::Time absl_now = absl::Now();
   grpc_core::Duration duration = grpc_core::Duration::Milliseconds(
       absl::ToInt64Milliseconds(when - absl_now) + 1);
-  grpc_core::ExecCtx::Get()->InvalidateNow();
-  grpc_core::Timestamp when_internal = grpc_core::ExecCtx::Get()->Now() +
-                                       duration +
-                                       grpc_core::Duration::Milliseconds(1);
+  grpc_core::Timestamp when_internal =
+      timer_manager_.Now() + duration + grpc_core::Duration::Milliseconds(1);
   EventEngine::TaskHandle handle{reinterpret_cast<intptr_t>(cd),
                                  aba_token_.fetch_add(1)};
   grpc_core::MutexLock lock(&mu_);
@@ -152,27 +136,8 @@ EventEngine::TaskHandle IomgrEventEngine::RunAtInternal(
   cd->handle = handle;
   GRPC_EVENT_ENGINE_TRACE("IomgrEventEngine:%p scheduling callback:%s", this,
                           HandleToString(handle).c_str());
-  TimerInit(&cd->timer, when_internal, &cd->closure);
+  timer_manager_.TimerInit(&cd->timer, when_internal, cd);
   return handle;
-}
-
-void IomgrEventEngine::RunInternal(
-    absl::variant<std::function<void()>, EventEngine::Closure*> cb) {
-  auto* cd = new ClosureData;
-  cd->cb = std::move(cb);
-  cd->engine = this;
-  GRPC_CLOSURE_INIT(
-      &cd->closure,
-      [](void* arg, grpc_error_handle /*error*/) {
-        auto* cd = static_cast<ClosureData*>(arg);
-        auto cleaner = absl::MakeCleanup([cd] { delete cd; });
-        grpc_core::Match(
-            cd->cb, [](EventEngine::Closure* cb) { cb->Run(); },
-            [](std::function<void()> fn) { fn(); });
-      },
-      cd, nullptr);
-  // TODO(hork): have the EE spawn dedicated closure thread(s)
-  grpc_core::Executor::Run(&cd->closure, GRPC_ERROR_NONE);
 }
 
 std::unique_ptr<EventEngine::DNSResolver> IomgrEventEngine::GetDNSResolver(
