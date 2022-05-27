@@ -1164,7 +1164,7 @@ TEST_P(XdsEnabledServerTest, UnsupportedHttpFilter) {
       ServerHcmAccessor().Unpack(listener);
   http_connection_manager.clear_http_filters();
   auto* http_filter = http_connection_manager.add_http_filters();
-  http_filter->set_name("custom/grpc.testing.unsupported_http_filter");
+  http_filter->set_name("grpc.testing.unsupported_http_filter");
   http_filter->mutable_typed_config()->set_type_url(
       "custom/grpc.testing.unsupported_http_filter");
   http_filter = http_connection_manager.add_http_filters();
