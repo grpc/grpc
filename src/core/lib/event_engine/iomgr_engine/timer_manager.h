@@ -16,19 +16,23 @@
  *
  */
 
-#ifndef GRPC_CORE_LIB_IOMGR_TIMER_MANAGER_H
-#define GRPC_CORE_LIB_IOMGR_TIMER_MANAGER_H
+#ifndef GRPC_CORE_LIB_EVENT_ENGINE_IOMGR_ENGINE_TIMER_MANAGER_H
+#define GRPC_CORE_LIB_EVENT_ENGINE_IOMGR_ENGINE_TIMER_MANAGER_H
 
 #include <grpc/support/port_platform.h>
+
 #include <stddef.h>
 #include <stdint.h>
-#include <grpc/event_engine/event_engine.h>
-#include <grpc/support/log.h>
+
+#include <algorithm>
 #include <utility>
 #include <vector>
-#include <algorithm>
 
 #include "absl/base/thread_annotations.h"
+
+#include <grpc/event_engine/event_engine.h>
+#include <grpc/support/log.h>
+
 #include "src/core/lib/event_engine/iomgr_engine/timer.h"
 #include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/gprpp/thd.h"
@@ -98,4 +102,4 @@ class TimerManager final : public TimerList {
 }  // namespace iomgr_engine
 }  // namespace grpc_event_engine
 
-#endif /* GRPC_CORE_LIB_IOMGR_TIMER_MANAGER_H */
+#endif /* GRPC_CORE_LIB_EVENT_ENGINE_IOMGR_ENGINE_TIMER_MANAGER_H */
