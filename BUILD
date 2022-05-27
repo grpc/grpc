@@ -4059,6 +4059,7 @@ grpc_cc_library(
         "grpc_base",
         "grpc_client_channel",
         "grpc_codegen",
+        "grpc_trace",
         "iomgr_fwd",
         "orphanable",
         "ref_counted_ptr",
