@@ -357,14 +357,8 @@ TEST_F(AddressSortingTest,
        TestUsesDestinationWithHigherPrecedenceWithV4CompatAndLocalhostAddress) {
   bool ipv4_supported = true;
   bool ipv6_supported = true;
-// Handle unique observed behavior of inet_ntop(v4-compatible-address) on OS X.
-#if GPR_APPLE == 1
-  const char* v4_compat_dest = "[::0.0.0.2]:443";
-  const char* v4_compat_src = "[::0.0.0.2]:0";
-#else
   const char* v4_compat_dest = "[::2]:443";
   const char* v4_compat_src = "[::2]:0";
-#endif
   OverrideAddressSortingSourceAddrFactory(
       ipv4_supported, ipv6_supported,
       {
@@ -724,14 +718,8 @@ TEST_F(AddressSortingTest, TestStableSortNoSrcAddrsExistWithIpv4) {
 TEST_F(AddressSortingTest, TestStableSortV4CompatAndSiteLocalAddresses) {
   bool ipv4_supported = true;
   bool ipv6_supported = true;
-// Handle unique observed behavior of inet_ntop(v4-compatible-address) on OS X.
-#if GPR_APPLE == 1
-  const char* v4_compat_dest = "[::0.0.0.2]:443";
-  const char* v4_compat_src = "[::0.0.0.3]:0";
-#else
   const char* v4_compat_dest = "[::2]:443";
   const char* v4_compat_src = "[::3]:0";
-#endif
   OverrideAddressSortingSourceAddrFactory(
       ipv4_supported, ipv6_supported,
       {
