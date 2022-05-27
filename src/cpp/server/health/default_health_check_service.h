@@ -32,6 +32,7 @@
 #include <grpcpp/grpcpp.h>
 #include <grpcpp/health_check_service_interface.h>
 #include <grpcpp/impl/codegen/async_generic_service.h>  // IWYU pragma: keep
+#include <grpcpp/impl/codegen/async_unary_call.h>       // IWYU pragma: keep
 #include <grpcpp/impl/service_type.h>
 #include <grpcpp/support/byte_buffer.h>
 #include <grpcpp/support/config.h>
