@@ -20,12 +20,6 @@ from typing import Any, Dict, Optional, NamedTuple
 import pkg_resources
 import setuptools
 
-try:
-    import tomllib
-except ModuleNotFoundError:
-    import tomli as tomllib
-
-
 CONFIG_FILE_NAME = "pyproject.toml"
 SECTION_NAME = "grpcio_tools"
 
@@ -91,8 +85,29 @@ def _read_config(config_file: Path) -> Optional[Configuration]:
     :raises ValueError: The configuration file is not correctly formatted.
     :raises OSError: There was a problem reading the configuration file.
     """
-    with open(config_file, "rb") as f:
-        project_config = tomllib.load(f)
+    # This implementation is complicated because tomli is listed as an option dependency. So the
+    # code needs to be able to:
+    #  * not cause any errors when the user did not configure auto-generation.
+    #  * handle tomllib from the standard library
+    #  * handle tomllib from the tomli
+    #  * Cause an error when auto-generation is configured, but no tomllib is available.
+    contents = config_file.read_text(encoding="utf-8")
+    if "[tool.grpcio_tools]" not in contents:
+        # user did not configure auto-generation
+        return None
+
+    try:
+        import tomllib
+    except ModuleNotFoundError:
+        try:
+            import tomli as tomllib
+        except ModuleNotFoundError:
+            raise RuntimeError(
+              "setuptools auto-generation support requires Python 3.11 or tomli to be installed. "
+              "Did you forget to use grpcio-tools[toml]?"
+            )
+
+    project_config = tomllib.loads(contents)
 
     try:
         section_config = project_config["tool"][SECTION_NAME]

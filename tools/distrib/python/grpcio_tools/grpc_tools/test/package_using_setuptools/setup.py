@@ -24,5 +24,5 @@ setuptools.setup(
     author_email='grpc-io@googlegroups.com',
     packages=["my_module"],
     python_requires=">=3.6",
-    setup_requires=["grpcio_tools"],
+    setup_requires=["grpcio_tools[toml]"],
 )
