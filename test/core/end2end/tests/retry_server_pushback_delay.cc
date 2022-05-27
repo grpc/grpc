@@ -283,6 +283,8 @@ static void test_retry_server_pushback_delay(grpc_end2end_test_config config) {
   CQ_EXPECT_COMPLETION(cqv, tag(1), true);
   cq_verify(cqv);
 
+  gpr_log(GPR_INFO, "status=%d message=\"%s\"", status,
+          std::string(grpc_core::StringViewFromSlice(details)).c_str());
   GPR_ASSERT(status == GRPC_STATUS_OK);
   GPR_ASSERT(0 == grpc_slice_str_cmp(details, "message2"));
   GPR_ASSERT(0 == grpc_slice_str_cmp(call_details.method, "/service/method"));
