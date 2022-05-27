@@ -49,7 +49,7 @@ static void* tag(intptr_t t) { return reinterpret_cast<void*>(t); }
 static void drain_cq(grpc_completion_queue* cq) {
   grpc_event ev;
   do {
-    ev = grpc_completion_queue_next(cq, grpc_timeout_seconds_to_deadline(5),
+    ev = grpc_completion_queue_next(cq, grpc_timeout_seconds_to_deadline(30),
                                     nullptr);
   } while (ev.type != GRPC_QUEUE_SHUTDOWN);
 }
