@@ -17,14 +17,11 @@
 
 #include <grpc/support/port_platform.h>
 
-<<<<<<< HEAD
 #include <stddef.h>
 #include <stdint.h>
 
 #include <type_traits>
-=======
 #include <utility>
->>>>>>> parent of e963544eef ([iwyu] gprpp (#29534))
 
 #include "src/core/lib/gpr/useful.h"
 
