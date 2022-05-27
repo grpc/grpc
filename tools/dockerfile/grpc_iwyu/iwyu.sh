@@ -51,21 +51,16 @@ export DISABLED_MODULES='
   src/core/ext/transport/binder
 '
 
-export DISABLED_FILES='
-  src/core/lib/security/credentials/tls/grpc_tls_credentials_options.h
-'
-
 export INCLUSION_REGEX=`echo $ENABLED_MODULES | sed 's/ /|/g' | sed 's,\\(.*\\),^(\\1)/,g'`
 export EXCLUSION_REGEX=`echo $DISABLED_MODULES | sed 's/ /|/g' | sed 's,\\(.*\\),^(\\1)/,g'`
-export EXCLUDE_FILES_REGEX=`echo $DISABLED_FILES | sed 's/ /|/g' | sed 's,\\(.*\\),^(\\1),g'`
 
 # figure out which files to include
-cat compile_commands.json | jq -r '.[].file'         \
-  | grep -E $INCLUSION_REGEX                         \
-  | grep -v -E "/upb-generated/|/upbdefs-generated/" \
-  | grep -v -E $EXCLUSION_REGEX                      \
-  | grep -v -E $EXCLUDE_FILES_REGEX                  \
-  | sort                                             \
+cat compile_commands.json | jq -r '.[].file'                                     \
+  | grep -E $INCLUSION_REGEX                                                     \
+  | grep -v -E "/upb-generated/|/upbdefs-generated/"                             \
+  | grep -v -E $EXCLUSION_REGEX                                                  \
+  | grep -v src/core/lib/security/credentials/tls/grpc_tls_credentials_options.h \
+  | sort                                                                         \
   > iwyu_files0.txt
 
 cat iwyu_files0.txt                    \
