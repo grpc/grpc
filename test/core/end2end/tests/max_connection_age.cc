@@ -32,7 +32,7 @@
 #define MAX_CONNECTION_IDLE_MS 9999
 
 #define MAX_CONNECTION_AGE_JITTER_MULTIPLIER 1.1
-#define CALL_DEADLINE_S 10
+#define CALL_DEADLINE_S 30
 /* The amount of time we wait for the connection to time out, but after it the
    connection should not use up its grace period. It should be a number between
    MAX_CONNECTION_AGE_MS and MAX_CONNECTION_AGE_MS +
@@ -49,7 +49,7 @@ static void* tag(intptr_t t) { return reinterpret_cast<void*>(t); }
 static void drain_cq(grpc_completion_queue* cq) {
   grpc_event ev;
   do {
-    ev = grpc_completion_queue_next(cq, grpc_timeout_seconds_to_deadline(30),
+    ev = grpc_completion_queue_next(cq, grpc_timeout_seconds_to_deadline(5),
                                     nullptr);
   } while (ev.type != GRPC_QUEUE_SHUTDOWN);
 }
