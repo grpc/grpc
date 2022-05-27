@@ -600,7 +600,10 @@ TEST_P(BootstrapSourceTest, Vanilla) {
   CreateAndStartBackends(1);
   EdsResourceArgs args({{"locality0", CreateEndpointsForBackends()}});
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
-  WaitForAllBackends(DEBUG_LOCATION);
+  // Increase timeout, since kBootstrapFromFile takes more time on busy
+  // test machines.  (We've seen at least one occurrence where it's
+  // taken over 10 seconds.)
+  CheckRpcSendOk(DEBUG_LOCATION, 1, RpcOptions().set_timeout_ms(15000));
 }
 
 //
