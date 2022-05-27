@@ -2015,9 +2015,6 @@ tsi_result tsi_create_ssl_client_handshaker_factory_with_options(
 
   if (factory == nullptr) return TSI_INVALID_ARGUMENT;
   *factory = nullptr;
-  if (options->pem_root_certs == nullptr && options->root_store == nullptr) {
-    return TSI_INVALID_ARGUMENT;
-  }
 
 #if OPENSSL_VERSION_NUMBER >= 0x10100000
   ssl_context = SSL_CTX_new(TLS_method());
@@ -2066,27 +2063,6 @@ tsi_result tsi_create_ssl_client_handshaker_factory_with_options(
   }
 
   do {
-    result = populate_ssl_context(ssl_context, options->pem_key_cert_pair,
-                                  options->cipher_suites);
-    if (result != TSI_OK) break;
-
-#if OPENSSL_VERSION_NUMBER >= 0x10100000
-    // X509_STORE_up_ref is only available since OpenSSL 1.1.
-    if (options->root_store != nullptr) {
-      X509_STORE_up_ref(options->root_store->store);
-      SSL_CTX_set_cert_store(ssl_context, options->root_store->store);
-    }
-#endif
-    if (OPENSSL_VERSION_NUMBER < 0x10100000 || options->root_store == nullptr) {
-      result = ssl_ctx_load_verification_certs(
-          ssl_context, options->pem_root_certs, strlen(options->pem_root_certs),
-          nullptr);
-      if (result != TSI_OK) {
-        gpr_log(GPR_ERROR, "Cannot load server root certificates.");
-        break;
-      }
-    }
-
     if (options->num_alpn_protocols != 0) {
       result = build_alpn_protocol_name_list(
           options->alpn_protocols, options->num_alpn_protocols,
@@ -2109,16 +2085,45 @@ tsi_result tsi_create_ssl_client_handshaker_factory_with_options(
       SSL_CTX_set_next_proto_select_cb(
           ssl_context, client_handshaker_factory_npn_callback, impl);
     }
+
+    if (options->skip_server_certificate_verification) {
+      SSL_CTX_set_verify(ssl_context, SSL_VERIFY_PEER, NullVerifyCallback);
+      *factory = impl;
+      return TSI_OK;
+    }
+
+    if (options->pem_root_certs == nullptr && options->root_store == nullptr) {
+      result = TSI_INVALID_ARGUMENT;
+      break;
+    }
+
+    result = populate_ssl_context(ssl_context, options->pem_key_cert_pair,
+                                  options->cipher_suites);
+    if (result != TSI_OK) break;
+
+#if OPENSSL_VERSION_NUMBER >= 0x10100000
+    // X509_STORE_up_ref is only available since OpenSSL 1.1.
+    if (options->root_store != nullptr) {
+      X509_STORE_up_ref(options->root_store->store);
+      SSL_CTX_set_cert_store(ssl_context, options->root_store->store);
+    }
+#endif
+    if (OPENSSL_VERSION_NUMBER < 0x10100000 || options->root_store == nullptr) {
+      result = ssl_ctx_load_verification_certs(
+          ssl_context, options->pem_root_certs, strlen(options->pem_root_certs),
+          nullptr);
+      if (result != TSI_OK) {
+        gpr_log(GPR_ERROR, "Cannot load server root certificates.");
+        break;
+      }
+    }
   } while (false);
   if (result != TSI_OK) {
     tsi_ssl_handshaker_factory_unref(&impl->base);
     return result;
   }
-  if (options->skip_server_certificate_verification) {
-    SSL_CTX_set_verify(ssl_context, SSL_VERIFY_PEER, NullVerifyCallback);
-  } else {
-    SSL_CTX_set_verify(ssl_context, SSL_VERIFY_PEER, nullptr);
-  }
+
+  SSL_CTX_set_verify(ssl_context, SSL_VERIFY_PEER, nullptr);
 
 #if OPENSSL_VERSION_NUMBER >= 0x10100000
   if (options->crl_directory != nullptr &&
