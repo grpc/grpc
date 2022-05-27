@@ -31,11 +31,6 @@
 #include "src/core/lib/event_engine/trace.h"
 #include "src/core/lib/gprpp/match.h"
 #include "src/core/lib/gprpp/time.h"
-#include "src/core/lib/iomgr/closure.h"
-#include "src/core/lib/iomgr/error.h"
-#include "src/core/lib/iomgr/exec_ctx.h"
-#include "src/core/lib/iomgr/executor.h"
-#include "src/core/lib/iomgr/timer.h"
 
 namespace grpc_event_engine {
 namespace experimental {
@@ -43,9 +38,7 @@ namespace experimental {
 namespace {
 
 struct ClosureData {
-  grpc_timer timer;
-  grpc_closure closure;
-  absl::variant<std::function<void()>, EventEngine::Closure*> cb;
+  iomgr_engine::Timer timer;
   IomgrEventEngine* engine;
   EventEngine::TaskHandle handle;
 };
@@ -70,7 +63,6 @@ std::string HandleToString(EventEngine::TaskHandle handle) {
 IomgrEventEngine::IomgrEventEngine() {}
 
 IomgrEventEngine::~IomgrEventEngine() {
-  grpc_core::ExecCtx::Get()->Flush();
   grpc_core::MutexLock lock(&mu_);
   if (GRPC_TRACE_FLAG_ENABLED(grpc_event_engine_trace)) {
     for (auto handle : known_handles_) {
@@ -87,9 +79,9 @@ bool IomgrEventEngine::Cancel(EventEngine::TaskHandle handle) {
   grpc_core::MutexLock lock(&mu_);
   if (!known_handles_.contains(handle)) return false;
   auto* cd = reinterpret_cast<ClosureData*>(handle.keys[0]);
-  grpc_timer_cancel(&cd->timer);
+  bool r = timer_manager_.TimerCancel(&cd->timer);
   known_handles_.erase(handle);
-  return true;
+  return r;
 }
 
 EventEngine::TaskHandle IomgrEventEngine::RunAt(absl::Time when,
@@ -111,8 +103,7 @@ void IomgrEventEngine::Run(EventEngine::Closure* closure) {
 }
 
 EventEngine::TaskHandle IomgrEventEngine::RunAtInternal(
-    absl::Time when,
-    absl::variant<std::function<void()>, EventEngine::Closure*> cb) {
+    absl::Time when, EventEngine::Closure* cb) {
   when = Clamp(when);
   auto* cd = new ClosureData;
   cd->cb = std::move(cb);
@@ -149,7 +140,7 @@ EventEngine::TaskHandle IomgrEventEngine::RunAtInternal(
   cd->handle = handle;
   GRPC_EVENT_ENGINE_TRACE("IomgrEventEngine:%p scheduling callback:%s", this,
                           HandleToString(handle).c_str());
-  grpc_timer_init(&cd->timer, when_internal, &cd->closure);
+  TimerInit(&cd->timer, when_internal, &cd->closure);
   return handle;
 }
 

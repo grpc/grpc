@@ -27,6 +27,7 @@
 #include "absl/strings/string_view.h"
 #include "absl/time/time.h"
 #include "absl/types/variant.h"
+#include "timer_manager.h"
 
 #include <grpc/event_engine/endpoint_config.h>
 #include <grpc/event_engine/event_engine.h>
@@ -108,6 +109,8 @@ class IomgrEventEngine final : public EventEngine {
 
   void RunInternal(
       absl::variant<std::function<void()>, EventEngine::Closure*> cb);
+
+  iomgr_engine::TimerManager timer_manager_;
 
   grpc_core::Mutex mu_;
   TaskHandleSet known_handles_ ABSL_GUARDED_BY(mu_);
