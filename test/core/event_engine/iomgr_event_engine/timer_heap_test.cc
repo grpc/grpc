@@ -16,7 +16,7 @@
  *
  */
 
-#include "src/core/lib/iomgr/timer_heap.h"
+#include "src/core/lib/event_engine/iomgr_engine/timer_heap.h"
 
 #include <stdlib.h>
 #include <string.h>
