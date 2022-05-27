@@ -62,6 +62,7 @@
 #include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/gprpp/bitset.h"
 #include "src/core/lib/gprpp/debug_location.h"
+#include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/gprpp/ref_counted.h"
 #include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/http/parser.h"
