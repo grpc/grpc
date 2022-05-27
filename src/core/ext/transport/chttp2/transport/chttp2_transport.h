@@ -29,7 +29,7 @@
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/endpoint.h"
-#include "src/core/lib/transport/transport.h"
+#include "src/core/lib/transport/transport_fwd.h"
 
 extern grpc_core::TraceFlag grpc_http_trace;
 extern grpc_core::TraceFlag grpc_keepalive_trace;

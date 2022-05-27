@@ -26,12 +26,12 @@
 #include "absl/status/statusor.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
-#include "google/protobuf/any.upb.h"
 #include "upb/def.h"
+#include "upb/upb.h"
 
-#include <grpc/grpc.h>
+#include <grpc/impl/codegen/grpc_types.h>
 
-#include "src/core/lib/channel/channel_stack.h"
+#include "src/core/lib/channel/channel_fwd.h"
 #include "src/core/lib/json/json.h"
 
 namespace grpc_core {

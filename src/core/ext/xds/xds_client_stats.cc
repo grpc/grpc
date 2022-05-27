@@ -20,12 +20,11 @@
 
 #include "src/core/ext/xds/xds_client_stats.h"
 
-#include <string.h>
-
-#include <grpc/support/atm.h>
-#include <grpc/support/string_util.h>
+#include <grpc/support/log.h>
 
 #include "src/core/ext/xds/xds_client.h"
+#include "src/core/lib/debug/trace.h"
+#include "src/core/lib/gprpp/debug_location.h"
 
 namespace grpc_core {
 
