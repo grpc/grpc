@@ -252,7 +252,7 @@ static void on_read(void* user_data, grpc_error_handle error) {
 
     if (ep->zero_copy_protector != nullptr) {
       // Use zero-copy grpc protector to unprotect.
-      int last_incomplete_frame_size = 1;
+      int min_progress_size = 1;
       // Get the size of the last frame which is not yet fully decrypted.
       // This estimated frame size is stored in ep->min_progress_size which is
       // passed to the TCP layer to indicate the minimum number of
@@ -260,11 +260,11 @@ static void on_read(void* user_data, grpc_error_handle error) {
       // avoid reading of small slices from the network.
       // TODO(vigneshbabu): Set min_progress_size in the regular (non-zero-copy)
       // frame protector code path as well.
-      result = tsi_zero_copy_grpc_protector_unprotect_get_frame_size(
+      result = tsi_zero_copy_grpc_protector_unprotect_and_get_min_progress_size(
           ep->zero_copy_protector, &ep->source_buffer, ep->read_buffer,
-          &last_incomplete_frame_size);
-      last_incomplete_frame_size = std::max(1, last_incomplete_frame_size);
-      ep->min_progress_size = result != TSI_OK ? 1 : last_incomplete_frame_size;
+          &min_progress_size);
+      min_progress_size = std::max(1, min_progress_size);
+      ep->min_progress_size = result != TSI_OK ? 1 : min_progress_size;
     } else {
       // Use frame protector to unprotect.
       /* TODO(yangg) check error, maybe bail out early */

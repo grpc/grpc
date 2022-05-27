@@ -465,10 +465,11 @@ static tsi_result fake_zero_copy_grpc_protector_unprotect(
   return TSI_OK;
 }
 
-static tsi_result fake_zero_copy_grpc_protector_unprotect_get_frame_size(
+static tsi_result
+fake_zero_copy_grpc_protector_unprotect_and_get_min_progress_size(
     tsi_zero_copy_grpc_protector* self, grpc_slice_buffer* protected_slices,
-    grpc_slice_buffer* unprotected_slices, int* last_incomplete_frame_size) {
-  if (last_incomplete_frame_size == nullptr) {
+    grpc_slice_buffer* unprotected_slices, int* min_progress_size) {
+  if (min_progress_size == nullptr) {
     return TSI_INVALID_ARGUMENT;
   }
   tsi_fake_zero_copy_grpc_protector* impl =
@@ -476,7 +477,7 @@ static tsi_result fake_zero_copy_grpc_protector_unprotect_get_frame_size(
   tsi_result result = fake_zero_copy_grpc_protector_unprotect(
       self, protected_slices, unprotected_slices);
   if (result == TSI_OK) {
-    *last_incomplete_frame_size = impl->parsed_frame_size;
+    *min_progress_size = impl->parsed_frame_size;
   }
   return result;
 }
@@ -504,7 +505,7 @@ static const tsi_zero_copy_grpc_protector_vtable
     zero_copy_grpc_protector_vtable = {
         fake_zero_copy_grpc_protector_protect,
         fake_zero_copy_grpc_protector_unprotect,
-        fake_zero_copy_grpc_protector_unprotect_get_frame_size,
+        fake_zero_copy_grpc_protector_unprotect_and_get_min_progress_size,
         fake_zero_copy_grpc_protector_destroy,
         fake_zero_copy_grpc_protector_max_frame_size,
 };
