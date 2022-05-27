@@ -611,7 +611,8 @@ grpc_error_handle ParseTypedPerFilterConfig(
           absl::StrCat("no filter config specified for filter name ", key));
     }
     bool is_optional = false;
-    if (filter_type == "envoy.config.route.v3.FilterConfig") {
+    if (filter_type ==
+        "type.googleapis.com/envoy.config.route.v3.FilterConfig") {
       upb_StringView any_value = google_protobuf_Any_value(any);
       const auto* filter_config = envoy_config_route_v3_FilterConfig_parse(
           any_value.data, any_value.size, context.arena);
