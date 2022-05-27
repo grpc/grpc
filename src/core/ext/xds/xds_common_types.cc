@@ -392,7 +392,7 @@ absl::StatusOr<ExtractExtensionTypeNameResult> ExtractExtensionTypeName(
         UpbStringToAbsl(xds_type_v3_TypedStruct_type_url(result.typed_struct));
   }
   size_t pos = result.type.rfind('/');
-  if (pos == absl::string_view::npos || pos == result.type().size() - 1) {
+  if (pos == absl::string_view::npos || pos == result.type.size() - 1) {
     return absl::InvalidArgumentError(
         absl::StrCat("Invalid type_url ", result.type));
   }
