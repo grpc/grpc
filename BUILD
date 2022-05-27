@@ -1098,10 +1098,7 @@ grpc_cc_library(
 
 grpc_cc_library(
     name = "table",
-    external_deps = [
-        "absl/meta:type_traits",
-        "absl/utility",
-    ],
+    external_deps = ["absl/utility"],
     language = "c++",
     public_hdrs = ["src/core/lib/gprpp/table.h"],
     tags = ["grpc-autodeps"],

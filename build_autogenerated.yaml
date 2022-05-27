@@ -8021,7 +8021,6 @@ targets:
   src:
   - test/core/gprpp/table_test.cc
   deps:
-  - absl/meta:type_traits
   - absl/types:optional
   - absl/utility:utility
   uses_polling: false

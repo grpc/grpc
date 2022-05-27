@@ -16072,7 +16072,6 @@ target_include_directories(table_test
 target_link_libraries(table_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
-  absl::type_traits
   absl::optional
   absl::utility
 )
