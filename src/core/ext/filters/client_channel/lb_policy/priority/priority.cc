@@ -14,8 +14,6 @@
 // limitations under the License.
 //
 
-// IWYU pragma: no_include <ext/alloc_traits.h>
-
 #include <grpc/support/port_platform.h>
 
 #include <inttypes.h>

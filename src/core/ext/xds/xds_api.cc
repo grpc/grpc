@@ -57,7 +57,6 @@
 #include "src/core/lib/json/json.h"
 
 // IWYU pragma: no_include "upb/msg_internal.h"
-// IWYU pragma: no_include <ext/alloc_traits.h>
 
 namespace grpc_core {
 

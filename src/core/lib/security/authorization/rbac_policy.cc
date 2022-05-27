@@ -16,8 +16,6 @@
 
 #include "src/core/lib/security/authorization/rbac_policy.h"
 
-#include <ext/alloc_traits.h>
-
 #include <algorithm>
 #include <type_traits>
 #include <utility>

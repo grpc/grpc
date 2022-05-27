@@ -127,6 +127,8 @@ EXTERNAL_DEPS = {
         'opencensus-trace-propagation',
     'opencensus/tags/context_util.h':
         'opencensus-tags-context_util',
+    'openssl/base.h':
+        'libssl',
     'openssl/bio.h':
         'libssl',
     'openssl/bn.h':
@@ -135,6 +137,8 @@ EXTERNAL_DEPS = {
         'libcrypto',
     'openssl/crypto.h':
         'libcrypto',
+    'openssl/digest.h':
+        'libssl',
     'openssl/engine.h':
         'libcrypto',
     'openssl/err.h':

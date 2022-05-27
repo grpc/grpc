@@ -68,10 +68,12 @@ cat iwyu_files0.txt                    \
   || true
 
 echo '#!/bin/sh
-${IWYU_ROOT}/iwyu/iwyu_tool.py -p compile_commands_for_iwyu.json $1 \
-    -- -Xiwyu --no_fwd_decls -Xiwyu --update_comments               \
-  | grep -v -E "port_platform.h"                                    \
-  | grep -v -E "^(- )?namespace "                                   \
+${IWYU_ROOT}/iwyu/iwyu_tool.py -p compile_commands_for_iwyu.json $1       \
+    -- -Xiwyu --no_fwd_decls                                              \
+       -Xiwyu --update_comments                                           \
+       -Xiwyu --mapping_file=${IWYU_ROOT}/tools/distrib/iwyu_mappings.imp \
+  | grep -v -E "port_platform.h"                                          \
+  | grep -v -E "^(- )?namespace "                                         \
   > iwyu/iwyu.`echo $1 | sha1sum`.out
 ' > iwyu/run_iwyu_on.sh
 chmod +x iwyu/run_iwyu_on.sh

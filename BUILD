@@ -5370,6 +5370,7 @@ grpc_cc_library(
         "absl/strings:str_format",
         "absl/time",
         "libcrypto",
+        "libssl",
     ],
     language = "c++",
     tags = ["grpc-autodeps"],
