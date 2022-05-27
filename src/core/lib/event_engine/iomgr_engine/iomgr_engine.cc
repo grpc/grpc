@@ -37,6 +37,18 @@ namespace experimental {
 
 namespace {
 
+EventEngine::Closure* MakeClosureFromFunction(std::function<void()> f) {
+  class Fn final : public EventEngine::Closure {
+   public:
+    explicit Fn(std::function<void()> f) : f_(std::move(f)) {}
+    void Run() override { f_(); }
+
+   private:
+    std::function<void()> f_;
+  };
+  return new Fn(std::move(f));
+}
+
 struct ClosureData {
   iomgr_engine::Timer timer;
   IomgrEventEngine* engine;
@@ -86,7 +98,7 @@ bool IomgrEventEngine::Cancel(EventEngine::TaskHandle handle) {
 
 EventEngine::TaskHandle IomgrEventEngine::RunAt(absl::Time when,
                                                 std::function<void()> closure) {
-  return RunAtInternal(when, std::move(closure));
+  return RunAtInternal(when, MakeClosureFromFunction(closure));
 }
 
 EventEngine::TaskHandle IomgrEventEngine::RunAt(absl::Time when,

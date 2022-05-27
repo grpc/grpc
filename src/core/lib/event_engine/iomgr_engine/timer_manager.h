@@ -21,11 +21,18 @@
 
 #include <grpc/support/port_platform.h>
 
-#include <stdbool.h>
+#include <stddef.h>
+#include <stdint.h>
 
-#include "timer.h"
+#include <utility>
+#include <vector>
 
+#include "absl/base/thread_annotations.h"
+
+#include "src/core/lib/event_engine/iomgr_engine/timer.h"
+#include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/gprpp/thd.h"
+#include "src/core/lib/gprpp/time.h"
 
 namespace grpc_event_engine {
 namespace iomgr_engine {
@@ -42,9 +49,13 @@ class TimerManager final : public TimerList {
  private:
   class ThreadCollector {
    public:
-    explicit ThreadCollector(std::vector<grpc_core::Thread> threads)
-        : threads_(std::move(threads)) {}
+    ThreadCollector() = default;
     ~ThreadCollector();
+
+    void Collect(std::vector<grpc_core::Thread> threads) {
+      GPR_ASSERT(threads_.empty());
+      threads_ = std::move(threads);
+    }
 
    private:
     std::vector<grpc_core::Thread> threads_;
@@ -58,7 +69,7 @@ class TimerManager final : public TimerList {
   void StartThread() ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
   static void RunThread(void* arg);
   void MainLoop();
-  void RunSomeTimers();
+  void RunSomeTimers(std::vector<experimental::EventEngine::Closure*> timers);
   bool WaitUntil(grpc_core::Timestamp next);
 
   grpc_core::Mutex mu_;

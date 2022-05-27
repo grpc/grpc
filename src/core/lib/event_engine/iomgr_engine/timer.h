@@ -21,10 +21,15 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <stddef.h>
+
+#include <atomic>
 #include <cstdint>
+#include <vector>
+
+#include "absl/base/thread_annotations.h"
 
 #include <grpc/event_engine/event_engine.h>
-#include <grpc/support/time.h>
 
 #include "src/core/lib/event_engine/iomgr_engine/time_averaged_stats.h"
 #include "src/core/lib/event_engine/iomgr_engine/timer_heap.h"
@@ -47,12 +52,6 @@ struct Timer {
 #endif
 
   grpc_event_engine::experimental::EventEngine::TaskHandle task_handle;
-};
-
-enum class TimerCheckResult {
-  kFired,
-  kNotChecked,
-  kCheckedAndEmpty,
 };
 
 class TimerList {
@@ -104,14 +103,17 @@ class TimerList {
 
   /* iomgr internal api for dealing with timers */
 
-  /* Check for timers to be run, and run them.
-     Return true if timer callbacks were executed.
+  /* Check for timers to be run, and return them.
+     Return nullopt if timers could not be checked due to contention with
+     another thread checking.
+     Return a vector of closures that *must* be run otherwise.
      If next is non-null, TRY to update *next with the next running timer
      IF that timer occurs before *next current value.
      *next is never guaranteed to be updated on any given execution; however,
      with high probability at least one thread in the system will see an update
      at any time slice. */
-  TimerCheckResult TimerCheck(grpc_core::Timestamp* next);
+  absl::optional<std::vector<experimental::EventEngine::Closure*>> TimerCheck(
+      grpc_core::Timestamp* next);
 
   virtual void Kick() = 0;
 
@@ -130,10 +132,11 @@ class TimerList {
 
     grpc_core::Timestamp ComputeMinDeadline();
     bool RefillHeap(grpc_core::Timestamp now);
-    Timer* PopOne(grpc_core::Timestamp now);
+    Timer* PopOne(grpc_core::Timestamp now) ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu);
     void PopTimers(grpc_core::Timestamp now,
                    grpc_core::Timestamp* new_min_deadline,
-                   std::vector<experimental::EventEngine::Closure*>* out);
+                   std::vector<experimental::EventEngine::Closure*>* out)
+        ABSL_LOCKS_EXCLUDED(mu);
 
     grpc_core::Mutex mu;
     TimeAveragedStats stats;
@@ -150,23 +153,25 @@ class TimerList {
     Timer list;
   };
 
-  void SwapAdjacentShardsInQueue(uint32_t first_shard_queue_index);
-  void NoteDeadlineChange(Shard* shard);
+  void SwapAdjacentShardsInQueue(uint32_t first_shard_queue_index)
+      ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
+  void NoteDeadlineChange(Shard* shard) ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
   std::vector<experimental::EventEngine::Closure*> FindExpiredTimers(
       grpc_core::Timestamp now, grpc_core::Timestamp* next);
 
+  const size_t num_shards_;
   grpc_core::Mutex mu_;
   /* The deadline of the next timer due across all timer shards */
-  std::atomic<uint64_t> min_timer_ ABSL_GUARDED_BY(mu_);
+  std::atomic<uint64_t> min_timer_;
   /* Allow only one run_some_expired_timers at once */
   grpc_core::Mutex checker_mu_;
   /* Array of timer shards. Whenever a timer (Timer *) is added, its address
    * is hashed to select the timer shard to add the timer to */
-  std::vector<Shard> shards_;
+  const std::unique_ptr<Shard[]> shards_;
   /* Maintains a sorted list of timer shards (sorted by their min_deadline, i.e
    * the deadline of the next timer in each shard).
    * Access to this is protected by g_shared_mutables.mu */
-  std::vector<Shard*> shard_queue_ ABSL_GUARDED_BY(mu_);
+  const std::unique_ptr<Shard*[]> shard_queue_ ABSL_GUARDED_BY(mu_);
 };
 
 }  // namespace iomgr_engine

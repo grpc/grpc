@@ -22,14 +22,12 @@
 
 #include <inttypes.h>
 
-#include "timer.h"
-
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 
 #include "src/core/lib/debug/trace.h"
+#include "src/core/lib/event_engine/iomgr_engine/timer.h"
 #include "src/core/lib/gprpp/thd.h"
-#include "src/core/lib/iomgr/timer.h"
 
 namespace grpc_event_engine {
 namespace iomgr_engine {
@@ -48,7 +46,8 @@ void TimerManager::StartThread() {
   thread->thread.Start();
 }
 
-void TimerManager::RunSomeTimers() {
+void TimerManager::RunSomeTimers(
+    std::vector<experimental::EventEngine::Closure*> timers) {
   // if there's something to execute...
   ThreadCollector collector;
   {
@@ -67,6 +66,9 @@ void TimerManager::RunSomeTimers() {
         cv_.Signal();
       }
     }
+  }
+  for (auto* timer : timers) {
+    timer->Run();
   }
   {
     grpc_core::MutexLock lock(&mu_);
@@ -142,57 +144,37 @@ bool TimerManager::WaitUntil(grpc_core::Timestamp next) {
 void TimerManager::MainLoop() {
   for (;;) {
     grpc_core::Timestamp next = grpc_core::Timestamp::InfFuture();
+    absl::optional<std::vector<experimental::EventEngine::Closure*>>
+        check_result = TimerCheck(&next);
+    if (check_result.has_value()) {
+      if (!check_result->empty()) {
+        RunSomeTimers(std::move(*check_result));
+        continue;
+      }
+    } else {
+      /* This case only happens under contention, meaning more than one timer
+         manager thread checked timers concurrently.
 
-    // check timer state, updates next to the next time to run a check
-    switch (TimerCheck(&next)) {
-      case TimerCheckResult::kFired:
-        RunSomeTimers();
-        break;
-      case TimerCheckResult::kNotChecked:
-        /* This case only happens under contention, meaning more than one timer
-           manager thread checked timers concurrently.
+         If that happens, we're guaranteed that some other thread has just
+         checked timers, and this will avalanche into some other thread seeing
+         empty timers and doing a timed sleep.
 
-           If that happens, we're guaranteed that some other thread has just
-           checked timers, and this will avalanche into some other thread seeing
-           empty timers and doing a timed sleep.
-
-           Consequently, we can just sleep forever here and be happy at some
-           saved wakeup cycles. */
-        next = grpc_core::Timestamp::InfFuture();
-        ABSL_FALLTHROUGH_INTENDED;
-      case TimerCheckResult::kCheckedAndEmpty:
-        if (!WaitUntil(next)) {
-          return;
-        }
-        break;
+         Consequently, we can just sleep forever here and be happy at some
+         saved wakeup cycles. */
+      next = grpc_core::Timestamp::InfFuture();
     }
+    if (!WaitUntil(next)) return;
   }
 }
 
-static void timer_thread_cleanup(completed_thread* ct) {
-  gpr_mu_lock(&g_mu);
-  // terminate the thread: drop the waiter count, thread count, and let whomever
-  // stopped the threading stuff know that we're done
-  --g_waiter_count;
-  --g_thread_count;
-  if (0 == g_thread_count) {
-    gpr_cv_signal(&g_cv_shutdown);
+void TimerManager::RunThread(void* arg) {
+  std::unique_ptr<RunThreadArgs> thread(static_cast<RunThreadArgs*>(arg));
+  thread->self->MainLoop();
+  {
+    grpc_core::MutexLock lock(&thread->self->mu_);
+    thread->self->completed_threads_.push_back(std::move(thread->thread));
   }
-  ct->next = g_completed_threads;
-  g_completed_threads = ct;
-  gpr_mu_unlock(&g_mu);
-  if (GRPC_TRACE_FLAG_ENABLED(grpc_timer_check_trace)) {
-    gpr_log(GPR_INFO, "End timer thread");
-  }
-}
-
-static void timer_thread(void* completed_thread_ptr) {
-  // this threads exec_ctx: we try to run things through to completion here
-  // since it's easy to spin up new threads
-  grpc_core::ExecCtx exec_ctx(GRPC_EXEC_CTX_FLAG_IS_INTERNAL_THREAD);
-  timer_main_loop();
-
-  timer_thread_cleanup(static_cast<completed_thread*>(completed_thread_ptr));
+  thread->self->cv_.Signal();
 }
 
 TimerManager::TimerManager() {
@@ -209,7 +191,7 @@ TimerManager::~TimerManager() {
   while (true) {
     ThreadCollector collector;
     grpc_core::MutexLock lock(&mu_);
-    collector.Collect(std::move(threads));
+    collector.Collect(std::move(completed_threads_));
     if (thread_count_ == 0) break;
     cv_.Wait(&mu_);
   }
@@ -223,8 +205,6 @@ void TimerManager::Kick() {
   kicked_ = true;
   cv_.Signal();
 }
-
-uint64_t grpc_timer_manager_get_wakeups_testonly(void) { return g_wakeups; }
 
 }  // namespace iomgr_engine
 }  // namespace grpc_event_engine

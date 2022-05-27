@@ -2229,26 +2229,80 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "iomgr_ee_time_averaged_stats",
+    srcs = ["src/core/lib/event_engine/iomgr_engine/time_averaged_stats.cc"],
+    hdrs = [
+        "src/core/lib/event_engine/iomgr_engine/time_averaged_stats.h",
+    ],
+    tags = ["grpc-autodeps"],
+    deps = ["gpr_base"],
+)
+
+grpc_cc_library(
+    name = "iomgr_ee_timer",
+    srcs = [
+        "src/core/lib/event_engine/iomgr_engine/timer.cc",
+        "src/core/lib/event_engine/iomgr_engine/timer_heap.cc",
+    ],
+    hdrs = [
+        "src/core/lib/event_engine/iomgr_engine/timer.h",
+        "src/core/lib/event_engine/iomgr_engine/timer_heap.h",
+    ],
+    external_deps = [
+        "absl/base:core_headers",
+        "absl/strings",
+    ],
+    tags = ["grpc-autodeps"],
+    deps = [
+        "event_engine_base_hdrs",
+        "gpr_base",
+        "gpr_tls",
+        "grpc_trace",
+        "iomgr_ee_time_averaged_stats",
+        "time",
+        "useful",
+    ],
+)
+
+grpc_cc_library(
+    name = "iomgr_ee_timer_manager",
+    srcs = ["src/core/lib/event_engine/iomgr_engine/timer_manager.cc"],
+    hdrs = [
+        "src/core/lib/event_engine/iomgr_engine/timer_manager.h",
+    ],
+    external_deps = ["absl/base:core_headers"],
+    tags = ["grpc-autodeps"],
+    deps = [
+        "gpr_base",
+        "grpc_trace",
+        "iomgr_ee_timer",
+        "time",
+    ],
+)
+
+grpc_cc_library(
     name = "iomgr_event_engine",
     srcs = ["src/core/lib/event_engine/iomgr_engine/iomgr_engine.cc"],
     hdrs = ["src/core/lib/event_engine/iomgr_engine/iomgr_engine.h"],
     external_deps = [
+        "absl/base:core_headers",
         "absl/cleanup",
         "absl/container:flat_hash_set",
-        "absl/time",
+        "absl/status",
+        "absl/status:statusor",
         "absl/strings",
+        "absl/time",
+        "absl/types:variant",
     ],
+    tags = ["grpc-autodeps"],
     deps = [
-        "closure",
-        "error",
         "event_engine_base_hdrs",
         "event_engine_common",
         "event_engine_trace",
-        "exec_ctx",
         "gpr_base",
         "gpr_platform",
         "grpc_trace",
-        "iomgr_timer",
+        "iomgr_ee_timer_manager",
         "match",
         "time",
     ],

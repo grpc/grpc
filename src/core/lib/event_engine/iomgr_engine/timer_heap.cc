@@ -16,16 +16,13 @@
  *
  */
 
-#include <grpc/support/port_platform.h>
-
 #include "src/core/lib/event_engine/iomgr_engine/timer_heap.h"
 
-#include <string.h>
-
-#include <grpc/support/alloc.h>
+#include <grpc/support/port_platform.h>
+#include <stdint.h>
+#include <algorithm>
 
 #include "src/core/lib/event_engine/iomgr_engine/timer.h"
-#include "src/core/lib/gpr/useful.h"
 
 namespace grpc_event_engine {
 namespace iomgr_engine {

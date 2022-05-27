@@ -18,9 +18,7 @@
 
 #include <grpc/support/port_platform.h>
 
-#include "time_averaged_stats.h"
-
-#include "src/core/lib/iomgr/time_averaged_stats.h"
+#include "src/core/lib/event_engine/iomgr_engine/time_averaged_stats.h"
 
 namespace grpc_event_engine {
 namespace iomgr_engine {

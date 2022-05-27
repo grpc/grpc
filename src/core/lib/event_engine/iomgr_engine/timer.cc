@@ -46,16 +46,12 @@ namespace iomgr_engine {
 grpc_core::Timestamp TimerList::Now() {
   return grpc_core::Timestamp::FromTimespecRoundDown(
       gpr_now(GPR_CLOCK_MONOTONIC));
+}
 
-  static const size_t kInvalidHeapIndex = std::numeric_limits<size_t>::max();
-  static const double kAddDeadlineScale = 0.33;
-  static const double kMinQueueWindowDuration = 0.01;
-  static const double kMaxQueueWindowDuration = 1.0;
-}  // namespace
-
-static TimerCheckResult run_some_expired_timers(grpc_core::Timestamp now,
-                                                grpc_core::Timestamp* next,
-                                                grpc_error_handle error);
+static const size_t kInvalidHeapIndex = std::numeric_limits<size_t>::max();
+static const double kAddDeadlineScale = 0.33;
+static const double kMinQueueWindowDuration = 0.01;
+static const double kMaxQueueWindowDuration = 1.0;
 
 grpc_core::Timestamp TimerList::Shard::ComputeMinDeadline() {
   return heap.is_empty()
@@ -66,14 +62,16 @@ grpc_core::Timestamp TimerList::Shard::ComputeMinDeadline() {
 
 TimerList::Shard::Shard() : stats(1.0 / kAddDeadlineScale, 0.1, 0.5) {}
 
-TimerList::TimerList() : min_timer_(Now()) {
-  uint32_t i;
-
-  shards_.resize(grpc_core::Clamp(2 * gpr_cpu_num_cores(), 1u, 32u));
-  shard_queue_.resize(shards_.size());
-
-  for (auto& shard : shards_) {
-    shard.queue_deadline_cap = min_timer_;
+TimerList::TimerList()
+    : num_shards_(grpc_core::Clamp(2 * gpr_cpu_num_cores(), 1u, 32u)),
+      min_timer_(Now().milliseconds_after_process_epoch()),
+      shards_(new Shard[num_shards_]),
+      shard_queue_(new Shard*[num_shards_]) {
+  for (size_t i = 0; i < num_shards_; i++) {
+    Shard& shard = shards_[i];
+    shard.queue_deadline_cap =
+        grpc_core::Timestamp::FromMillisecondsAfterProcessEpoch(
+            min_timer_.load(std::memory_order_relaxed));
     shard.shard_queue_index = i;
     shard.list.next = shard.list.prev = &shard.list;
     shard.min_deadline = shard.ComputeMinDeadline();
@@ -113,7 +111,7 @@ void TimerList::NoteDeadlineChange(Shard* shard) {
              shard_queue_[shard->shard_queue_index - 1]->min_deadline) {
     SwapAdjacentShardsInQueue(shard->shard_queue_index - 1);
   }
-  while (shard->shard_queue_index < shards_.size() - 1 &&
+  while (shard->shard_queue_index < num_shards_ - 1 &&
          shard->min_deadline >
              shard_queue_[shard->shard_queue_index + 1]->min_deadline) {
     SwapAdjacentShardsInQueue(shard->shard_queue_index);
@@ -123,7 +121,7 @@ void TimerList::NoteDeadlineChange(Shard* shard) {
 void TimerList::TimerInit(Timer* timer, grpc_core::Timestamp deadline,
                           experimental::EventEngine::Closure* closure) {
   bool is_first_timer = false;
-  Shard* shard = &shards_[grpc_core::HashPointer(timer, shards_.size())];
+  Shard* shard = &shards_[grpc_core::HashPointer(timer, num_shards_)];
   timer->closure = closure;
   timer->deadline = deadline.milliseconds_after_process_epoch();
 
@@ -134,7 +132,7 @@ void TimerList::TimerInit(Timer* timer, grpc_core::Timestamp deadline,
   {
     grpc_core::MutexLock lock(&shard->mu);
     timer->pending = true;
-    grpc_core::Timestamp now = grpc_core::ExecCtx::Get()->Now();
+    grpc_core::Timestamp now = Now();
     if (deadline <= now) {
       deadline = now;
     }
@@ -167,16 +165,8 @@ void TimerList::TimerInit(Timer* timer, grpc_core::Timestamp deadline,
       shard->min_deadline = deadline;
       NoteDeadlineChange(shard);
       if (shard->shard_queue_index == 0 && deadline < old_min_deadline) {
-#if GPR_ARCH_64
         min_timer_.store(deadline.milliseconds_after_process_epoch(),
                          std::memory_order_relaxed);
-#else
-        // On 32-bit systems, gpr_atm_no_barrier_store does not work on 64-bit
-        // types (like grpc_core::Timestamp). So all reads and writes to
-        // g_shared_mutables.min_timer varialbe under g_shared_mutables.mu
-        g_shared_mutables.min_timer =
-            deadline.milliseconds_after_process_epoch();
-#endif
         Kick();
       }
     }
@@ -184,12 +174,8 @@ void TimerList::TimerInit(Timer* timer, grpc_core::Timestamp deadline,
 }
 
 bool TimerList::TimerCancel(Timer* timer) {
-  Shard* shard = &shards_[grpc_core::HashPointer(timer, shards_.size())];
+  Shard* shard = &shards_[grpc_core::HashPointer(timer, num_shards_)];
   grpc_core::MutexLock lock(&shard->mu);
-  if (GRPC_TRACE_FLAG_ENABLED(grpc_timer_trace)) {
-    gpr_log(GPR_INFO, "TIMER %p: CANCEL pending=%s", timer,
-            timer->pending ? "true" : "false");
-  }
 
   if (timer->pending) {
     timer->pending = false;
@@ -227,11 +213,7 @@ bool TimerList::Shard::RefillHeap(grpc_core::Timestamp now) {
         grpc_core::Timestamp::FromMillisecondsAfterProcessEpoch(
             timer->deadline);
 
-    if (timer_deadline < shard->queue_deadline_cap) {
-      if (GRPC_TRACE_FLAG_ENABLED(grpc_timer_check_trace)) {
-        gpr_log(GPR_INFO, "  .. add timer with deadline %" PRId64 " to heap",
-                timer_deadline.milliseconds_after_process_epoch());
-      }
+    if (timer_deadline < queue_deadline_cap) {
       ListRemove(timer);
       heap.Add(timer);
     }
@@ -260,45 +242,21 @@ Timer* TimerList::Shard::PopOne(grpc_core::Timestamp now) {
   }
 }
 
-/* REQUIRES: shard->mu unlocked */
-std::vector<experimental::EventEngine::Closure*> TimerList::Shard::PopTimers(
-    grpc_core::Timestamp now, grpc_core::Timestamp* new_min_deadline) {
-  size_t n = 0;
-  Timer* timer;
-  gpr_mu_lock(&shard->mu);
-  while ((timer = pop_one(shard, now))) {
-    REMOVE_FROM_HASH_TABLE(timer);
-    grpc_core::ExecCtx::Run(DEBUG_LOCATION, timer->closure,
-                            GRPC_ERROR_REF(error));
-    n++;
+void TimerList::Shard::PopTimers(
+    grpc_core::Timestamp now, grpc_core::Timestamp* new_min_deadline,
+    std::vector<experimental::EventEngine::Closure*>* out) {
+  grpc_core::MutexLock lock(&mu);
+  while (Timer* timer = PopOne(now)) {
+    out->push_back(timer->closure);
   }
-  *new_min_deadline = compute_min_deadline(shard);
-  gpr_mu_unlock(&shard->mu);
-  if (GRPC_TRACE_FLAG_ENABLED(grpc_timer_check_trace)) {
-    gpr_log(GPR_INFO, "  .. shard[%d] popped %" PRIdPTR,
-            static_cast<int>(shard - g_shards), n);
-  }
-  return n;
+  *new_min_deadline = ComputeMinDeadline();
 }
 
 std::vector<experimental::EventEngine::Closure*> TimerList::FindExpiredTimers(
     grpc_core::Timestamp now, grpc_core::Timestamp* next) {
-#if GPR_ARCH_64
-  // TODO(sreek): Using c-style cast here. static_cast<> gives an error (on
-  // mac platforms complaining that gpr_atm* is (long *) while
-  // (&g_shared_mutables.min_timer) is a (long long *). The cast should be
-  // safe since we know that both are pointer types and 64-bit wide
   grpc_core::Timestamp min_timer =
       grpc_core::Timestamp::FromMillisecondsAfterProcessEpoch(
-          gpr_atm_no_barrier_load((gpr_atm*)(&g_shared_mutables.min_timer)));
-#else
-  // On 32-bit systems, gpr_atm_no_barrier_load does not work on 64-bit types
-  // (like grpc_core::Timestamp). So all reads and writes to
-  // g_shared_mutables.min_timer are done under g_shared_mutables.mu
-  gpr_mu_lock(&g_shared_mutables.mu);
-  grpc_core::Timestamp min_timer = g_shared_mutables.min_timer;
-  gpr_mu_unlock(&g_shared_mutables.mu);
-#endif
+          min_timer_.load(std::memory_order_relaxed));
 
   std::vector<experimental::EventEngine::Closure*> done;
   if (now < min_timer) {
@@ -331,25 +289,15 @@ std::vector<experimental::EventEngine::Closure*> TimerList::FindExpiredTimers(
     *next = std::min(*next, shard_queue_[0]->min_deadline);
   }
 
-#if GPR_ARCH_64
-  // TODO(sreek): Using c-style cast here. static_cast<> gives an error (on
-  // mac platforms complaining that gpr_atm* is (long *) while
-  // (&g_shared_mutables.min_timer) is a (long long *). The cast should be
-  // safe since we know that both are pointer types and 64-bit wide
-  gpr_atm_no_barrier_store(
-      (gpr_atm*)(&g_shared_mutables.min_timer),
-      g_shard_queue[0]->min_deadline.milliseconds_after_process_epoch());
-#else
-  // On 32-bit systems, gpr_atm_no_barrier_store does not work on 64-bit
-  // types (like grpc_core::Timestamp). So all reads and writes to
-  // g_shared_mutables.min_timer are done under g_shared_mutables.mu
-  g_shared_mutables.min_timer = g_shard_queue[0]->min_deadline;
-#endif
+  min_timer_.store(
+      shard_queue_[0]->min_deadline.milliseconds_after_process_epoch(),
+      std::memory_order_relaxed);
 
-  return result;
+  return done;
 }
 
-TimerCheckResult TimerList::TimerCheck(grpc_core::Timestamp* next) {
+absl::optional<std::vector<experimental::EventEngine::Closure*>>
+TimerList::TimerCheck(grpc_core::Timestamp* next) {
   // prelude
   grpc_core::Timestamp now = Now();
 
@@ -363,18 +311,15 @@ TimerCheckResult TimerList::TimerCheck(grpc_core::Timestamp* next) {
     if (next != nullptr) {
       *next = std::min(*next, min_timer);
     }
-    return false;
+    return std::vector<experimental::EventEngine::Closure*>();
   }
 
-  if (!checker_mu_.TryLock()) return TimerCheckResult::kNotChecked;
+  if (!checker_mu_.TryLock()) return absl::nullopt;
   std::vector<experimental::EventEngine::Closure*> run =
       FindExpiredTimers(now, next);
   checker_mu_.Unlock();
-  for (auto c : run) {
-    c->Run();
-  }
-  return run.empty() ? TimerCheckResult::kCheckedAndEmpty
-                     : TimerCheckResult::kFired;
+
+  return std::move(run);
 }
 
 }  // namespace iomgr_engine

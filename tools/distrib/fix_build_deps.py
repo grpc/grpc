@@ -55,6 +55,8 @@ EXTERNAL_DEPS = {
         'absl/container:flat_hash_set',
     'absl/container/inlined_vector.h':
         'absl/container:inlined_vector',
+    'absl/cleanup/cleanup.h':
+        'absl/cleanup',
     'absl/functional/bind_front.h':
         'absl/functional:bind_front',
     'absl/functional/function_ref.h':
