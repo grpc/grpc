@@ -80,6 +80,7 @@ class _BaseMultiCallable:
     _request_serializer: SerializingFunction
     _response_deserializer: DeserializingFunction
     _interceptors: Optional[Sequence[ClientInterceptor]]
+    _references: List[Any]
     _loop: asyncio.AbstractEventLoop
 
     # pylint: disable=too-many-arguments
@@ -90,6 +91,7 @@ class _BaseMultiCallable:
         request_serializer: SerializingFunction,
         response_deserializer: DeserializingFunction,
         interceptors: Optional[Sequence[ClientInterceptor]],
+        references: List[Any],
         loop: asyncio.AbstractEventLoop,
     ) -> None:
         self._loop = loop
@@ -98,6 +100,7 @@ class _BaseMultiCallable:
         self._request_serializer = request_serializer
         self._response_deserializer = response_deserializer
         self._interceptors = interceptors
+        self._references = references
 
     @staticmethod
     def _init_metadata(
@@ -403,6 +406,7 @@ class Channel(_base_channel.Channel):
                                        request_serializer,
                                        response_deserializer,
                                        self._unary_unary_interceptors,
+                                       [self],
                                        self._loop)
 
     def unary_stream(
@@ -415,6 +419,7 @@ class Channel(_base_channel.Channel):
                                         request_serializer,
                                         response_deserializer,
                                         self._unary_stream_interceptors,
+                                        [self],
                                         self._loop)
 
     def stream_unary(
@@ -427,6 +432,7 @@ class Channel(_base_channel.Channel):
                                         request_serializer,
                                         response_deserializer,
                                         self._stream_unary_interceptors,
+                                        [self],
                                         self._loop)
 
     def stream_stream(
@@ -439,6 +445,7 @@ class Channel(_base_channel.Channel):
                                          request_serializer,
                                          response_deserializer,
                                          self._stream_stream_interceptors,
+                                         [self],
                                          self._loop)
 
 

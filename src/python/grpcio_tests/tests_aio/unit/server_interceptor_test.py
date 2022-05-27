@@ -123,14 +123,14 @@ class _CacheInterceptor(aio.ServerInterceptor):
 
 async def _create_server_stub_pair(
     *interceptors: aio.ServerInterceptor
-) -> Tuple[aio.Server, aio.Channel, test_pb2_grpc.TestServiceStub]:
+) -> Tuple[aio.Server, test_pb2_grpc.TestServiceStub]:
     """Creates a server-stub pair with given interceptors.
 
     Returning the server object to protect it from being garbage collected.
     """
     server_target, server = await start_test_server(interceptors=interceptors)
     channel = aio.insecure_channel(server_target)
-    return server, channel, test_pb2_grpc.TestServiceStub(channel)
+    return server, test_pb2_grpc.TestServiceStub(channel)
 
 
 class TestServerInterceptor(AioTestBase):
@@ -231,7 +231,7 @@ class TestServerInterceptor(AioTestBase):
         })
 
         # Constructs a server with the cache interceptor
-        server, channel, stub = await _create_server_stub_pair(interceptor)
+        server, stub = await _create_server_stub_pair(interceptor)
 
         # Tests if the cache store is used
         response = await stub.UnaryCall(
@@ -250,7 +250,7 @@ class TestServerInterceptor(AioTestBase):
 
     async def test_interceptor_unary_stream(self):
         record = []
-        server, channel, stub = await _create_server_stub_pair(
+        server, stub = await _create_server_stub_pair(
             _LoggingInterceptor('log_unary_stream', record))
 
         # Prepares the request
@@ -273,7 +273,7 @@ class TestServerInterceptor(AioTestBase):
 
     async def test_interceptor_stream_unary(self):
         record = []
-        server, channel, stub = await _create_server_stub_pair(
+        server, stub = await _create_server_stub_pair(
             _LoggingInterceptor('log_stream_unary', record))
 
         # Invokes the actual RPC
@@ -302,7 +302,7 @@ class TestServerInterceptor(AioTestBase):
 
     async def test_interceptor_stream_stream(self):
         record = []
-        server, channel, stub = await _create_server_stub_pair(
+        server, stub = await _create_server_stub_pair(
             _LoggingInterceptor('log_stream_stream', record))
 
         # Prepares the request
