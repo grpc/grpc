@@ -30,7 +30,6 @@
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
 #include "absl/strings/str_join.h"
-#include "absl/strings/strip.h"
 #include "envoy/extensions/transport_sockets/tls/v3/common.upb.h"
 #include "envoy/extensions/transport_sockets/tls/v3/tls.upb.h"
 #include "envoy/type/matcher/v3/regex.upb.h"
@@ -392,7 +391,12 @@ absl::StatusOr<ExtractExtensionTypeNameResult> ExtractExtensionTypeName(
     result.type =
         UpbStringToAbsl(xds_type_v3_TypedStruct_type_url(result.typed_struct));
   }
-  result.type = absl::StripPrefix(result.type, "type.googleapis.com/");
+  size_t pos = result.type.rfind('/');
+  if (pos == absl::string_view::npos) {
+    return absl::InvalidArgumentError(
+        absl::StrCat("Invalid type_url ", result.type));
+  }
+  result.type = result.type.substr(pos + 1);
   return result;
 }
 

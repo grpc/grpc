@@ -70,7 +70,7 @@ TEST(XdsLbPolicyRegistryTest, EmptyLoadBalancingPolicy) {
   auto result = ConvertXdsPolicy(LoadBalancingPolicyProto());
   EXPECT_EQ(result.status().code(), absl::StatusCode::kInvalidArgument);
   EXPECT_THAT(
-      result.status().message(),
+      std::string(result.status().message()),
       ::testing::HasSubstr("No supported load balancing policy config found"));
 }
 
@@ -82,7 +82,7 @@ TEST(XdsLbPolicyRegistryTest, UnsupportedBuiltinType) {
   auto result = ConvertXdsPolicy(policy);
   EXPECT_EQ(result.status().code(), absl::StatusCode::kInvalidArgument);
   EXPECT_THAT(
-      result.status().message(),
+      std::string(result.status().message()),
       ::testing::HasSubstr("No supported load balancing policy config found"));
 }
 
@@ -91,7 +91,7 @@ TEST(XdsLbPolicyRegistryTest, MissingTypedExtensionConfig) {
   policy.add_policies();
   auto result = ConvertXdsPolicy(policy);
   EXPECT_EQ(result.status().code(), absl::StatusCode::kInvalidArgument);
-  EXPECT_THAT(result.status().message(),
+  EXPECT_THAT(std::string(result.status().message()),
               ::testing::HasSubstr("Error parsing LoadBalancingPolicy::Policy "
                                    "- Missing typed_extension_config field"));
 }
@@ -103,7 +103,7 @@ TEST(XdsLbPolicyRegistryTest, MissingTypedConfig) {
   auto result = ConvertXdsPolicy(policy);
   EXPECT_EQ(result.status().code(), absl::StatusCode::kInvalidArgument);
   EXPECT_THAT(
-      result.status().message(),
+      std::string(result.status().message()),
       ::testing::HasSubstr("Error parsing LoadBalancingPolicy::Policy - "
                            "Missing TypedExtensionConfig::typed_config field"));
 }
@@ -118,7 +118,7 @@ TEST(XdsLbPolicyRegistryTest, RingHashInvalidHash) {
   auto result = ConvertXdsPolicy(policy);
   EXPECT_EQ(result.status().code(), absl::StatusCode::kInvalidArgument);
   EXPECT_THAT(
-      result.status().message(),
+      std::string(result.status().message()),
       ::testing::HasSubstr("Invalid hash function provided for RingHash "
                            "loadbalancing policy. Only XX_HASH is supported"));
 }
@@ -207,7 +207,7 @@ TEST(XdsLbPolicyRegistryTest, WrrLocalityMissingEndpointPickingPolicy) {
       WrrLocality());
   auto result = ConvertXdsPolicy(policy);
   EXPECT_EQ(result.status().code(), absl::StatusCode::kInvalidArgument);
-  EXPECT_THAT(result.status().message(),
+  EXPECT_THAT(std::string(result.status().message()),
               ::testing::ContainsRegex(
                   "Error parsing LoadBalancingPolicy.*WrrLocality: "
                   "endpoint_picking_policy not found"));
@@ -226,7 +226,7 @@ TEST(XdsLbPolicyRegistryTest, WrrLocalityChildPolicyError) {
       wrr_locality);
   auto result = ConvertXdsPolicy(policy);
   EXPECT_EQ(result.status().code(), absl::StatusCode::kInvalidArgument);
-  EXPECT_THAT(result.status().message(),
+  EXPECT_THAT(std::string(result.status().message()),
               ::testing::ContainsRegex(
                   "Error parsing LoadBalancingPolicy.*Error parsing "
                   "WrrLocality load balancing policy.*Error parsing "
@@ -323,12 +323,12 @@ TEST(XdsLbPolicyRegistryTest, UnsupportedCustomTypeError) {
       typed_struct);
   auto result = ConvertXdsPolicy(policy);
   EXPECT_EQ(result.status().code(), absl::StatusCode::kInvalidArgument);
-  EXPECT_THAT(result.status().message(),
-              ::testing::ContainsRegex(
-                  "No supported load balancing policy config found"));
+  EXPECT_THAT(
+      std::string(result.status().message()),
+      ::testing::HasSubstr("No supported load balancing policy config found"));
 }
 
-TEST(XdsLbPolicyRegistryTest, CustomLbPolicyNullValue) {
+TEST(XdsLbPolicyRegistryTest, CustomLbPolicyJsonConversion) {
   TypedStruct typed_struct;
   ASSERT_TRUE(google::protobuf::TextFormat::ParseFromString(
       R"pb(
@@ -405,12 +405,11 @@ TEST(XdsLbPolicyRegistryTest, CustomLbPolicyListError) {
       typed_struct);
   auto result = ConvertXdsPolicy(policy);
   EXPECT_EQ(result.status().code(), absl::StatusCode::kInvalidArgument);
-  EXPECT_THAT(result.status().message(),
+  EXPECT_THAT(std::string(result.status().message()),
               ::testing::HasSubstr(
                   "Error parsing LoadBalancingPolicy: Custom Policy: "
                   "test.CustomLb: Error parsing google::Protobuf::Struct: No "
-                  "value set in Value proto"))
-      << result.status().message();
+                  "value set in Value proto"));
 }
 
 TEST(XdsLbPolicyRegistryTest, UnsupportedBuiltInTypeSkipped) {
@@ -481,7 +480,7 @@ LoadBalancingPolicyProto BuildRecursiveLoadBalancingPolicy(int depth) {
 TEST(XdsLbPolicyRegistryTest, MaxRecursion) {
   auto result = ConvertXdsPolicy(BuildRecursiveLoadBalancingPolicy(0));
   EXPECT_EQ(result.status().code(), absl::StatusCode::kInvalidArgument);
-  EXPECT_THAT(result.status().message(),
+  EXPECT_THAT(std::string(result.status().message()),
               ::testing::ContainsRegex("LoadBalancingPolicy configuration has "
                                        "a recursion depth of more than 16"));
 }

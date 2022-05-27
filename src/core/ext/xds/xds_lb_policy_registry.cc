@@ -18,10 +18,17 @@
 
 #include "src/core/ext/xds/xds_lb_policy_registry.h"
 
+#include <stddef.h>
+
+#include <string>
+#include <type_traits>
+#include <utility>
 #include <vector>
 
+#include "absl/memory/memory.h"
+#include "absl/status/status.h"
+#include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
-#include "absl/types/optional.h"
 #include "envoy/config/core/v3/extension.upb.h"
 #include "envoy/extensions/load_balancing_policies/ring_hash/v3/ring_hash.upb.h"
 #include "envoy/extensions/load_balancing_policies/wrr_locality/v3/wrr_locality.upb.h"
@@ -30,13 +37,14 @@
 #include "google/protobuf/struct.upbdefs.h"
 #include "google/protobuf/wrappers.upb.h"
 #include "upb/json_encode.h"
+#include "upb/upb.h"
 #include "upb/upb.hpp"
 #include "xds/type/v3/typed_struct.upb.h"
 
 #include "src/core/ext/filters/client_channel/lb_policy_registry.h"
 #include "src/core/ext/xds/upb_utils.h"
 #include "src/core/ext/xds/xds_common_types.h"
-#include "src/core/lib/transport/error_utils.h"
+#include "src/core/lib/iomgr/error.h"
 
 namespace grpc_core {
 
@@ -191,9 +199,8 @@ absl::StatusOr<Json::Array> XdsLbPolicyRegistry::ConvertXdsLbPolicyConfig(
   size_t size = 0;
   const auto* policies =
       envoy_config_cluster_v3_LoadBalancingPolicy_policies(lb_policy, &size);
-  absl::StatusOr<Json::Object> policy = absl::InvalidArgumentError(
-      "No supported load balancing policy config found.");
   for (size_t i = 0; i < size; ++i) {
+    absl::StatusOr<Json::Object> policy;
     const auto* typed_extension_config =
         envoy_config_cluster_v3_LoadBalancingPolicy_Policy_typed_extension_config(
             policies[i]);

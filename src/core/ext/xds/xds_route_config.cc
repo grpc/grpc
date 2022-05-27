@@ -604,16 +604,14 @@ grpc_error_handle ParseTypedPerFilterConfig(
     }
     const google_protobuf_Any* any = value_func(filter_entry);
     GPR_ASSERT(any != nullptr);
-    auto filter_type = ExtractExtensionTypeName(context, any);
-    if (!filter_type.ok()) {
-      return absl_status_to_grpc_error(filter_type.status());
-    }
-    if (filter_type->type.empty()) {
+    absl::string_view filter_type =
+        UpbStringToAbsl(google_protobuf_Any_type_url(any));
+    if (filter_type.empty()) {
       return GRPC_ERROR_CREATE_FROM_CPP_STRING(
           absl::StrCat("no filter config specified for filter name ", key));
     }
     bool is_optional = false;
-    if (filter_type->type == "envoy.config.route.v3.FilterConfig") {
+    if (filter_type == "envoy.config.route.v3.FilterConfig") {
       upb_StringView any_value = google_protobuf_Any_value(any);
       const auto* filter_config = envoy_config_route_v3_FilterConfig_parse(
           any_value.data, any_value.size, context.arena);
@@ -630,19 +628,23 @@ grpc_error_handle ParseTypedPerFilterConfig(
             absl::StrCat("no filter config specified for filter name ", key));
       }
     }
+    auto type = ExtractExtensionTypeName(context, any);
+    if (!type.ok()) {
+      return absl_status_to_grpc_error(type.status());
+    }
     const XdsHttpFilterImpl* filter_impl =
-        XdsHttpFilterRegistry::GetFilterForType(filter_type->type);
+        XdsHttpFilterRegistry::GetFilterForType(type->type);
     if (filter_impl == nullptr) {
       if (is_optional) continue;
-      return GRPC_ERROR_CREATE_FROM_CPP_STRING(absl::StrCat(
-          "no filter registered for config type ", filter_type->type));
+      return GRPC_ERROR_CREATE_FROM_CPP_STRING(
+          absl::StrCat("no filter registered for config type ", type->type));
     }
     absl::StatusOr<XdsHttpFilterImpl::FilterConfig> filter_config =
         filter_impl->GenerateFilterConfigOverride(
             google_protobuf_Any_value(any), context.arena);
     if (!filter_config.ok()) {
       return GRPC_ERROR_CREATE_FROM_CPP_STRING(absl::StrCat(
-          "filter config for type ", filter_type->type,
+          "filter config for type ", type->type,
           " failed to parse: ", StatusToString(filter_config.status())));
     }
     (*typed_per_filter_config)[std::string(key)] = std::move(*filter_config);
