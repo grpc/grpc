@@ -38,6 +38,9 @@ class TimeAveragedStats {
      value. */
   double UpdateAverage();
 
+  double aggregate_weighted_avg() const { return aggregate_weighted_avg_; }
+  double aggregate_total_weight() const { return aggregate_total_weight_; }
+
  private:
   /* The initial average value.  This is the reported average until the first
      grpc_time_averaged_stats_update_average call.  If a positive regress_weight
