@@ -16,18 +16,14 @@
  *
  */
 
-#include <grpc/support/port_platform.h>
-
 #include "src/core/lib/event_engine/iomgr_engine/timer_manager.h"
 
-#include <inttypes.h>
+#include <grpc/support/port_platform.h>
+#include <memory>
 
-#include <grpc/support/alloc.h>
-#include <grpc/support/log.h>
-
-#include "src/core/lib/debug/trace.h"
-#include "src/core/lib/event_engine/iomgr_engine/timer.h"
 #include "src/core/lib/gprpp/thd.h"
+#include "absl/time/time.h"
+#include "absl/types/optional.h"
 
 namespace grpc_event_engine {
 namespace iomgr_engine {

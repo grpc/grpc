@@ -20,8 +20,8 @@
 #define GRPC_INTERNAL_CPP_DYNAMIC_THREAD_POOL_H
 
 #include <functional>
-#include <list>
 #include <queue>
+#include <vector>
 
 #include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/gprpp/thd.h"

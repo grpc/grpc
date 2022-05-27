@@ -20,15 +20,15 @@
 #define GRPC_CORE_LIB_IOMGR_TIMER_MANAGER_H
 
 #include <grpc/support/port_platform.h>
-
 #include <stddef.h>
 #include <stdint.h>
-
+#include <grpc/event_engine/event_engine.h>
+#include <grpc/support/log.h>
 #include <utility>
 #include <vector>
+#include <algorithm>
 
 #include "absl/base/thread_annotations.h"
-
 #include "src/core/lib/event_engine/iomgr_engine/timer.h"
 #include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/gprpp/thd.h"

@@ -20,21 +20,19 @@
 #define GRPC_CORE_LIB_IOMGR_TIMER_H
 
 #include <grpc/support/port_platform.h>
-
 #include <stddef.h>
-
+#include <grpc/event_engine/event_engine.h>
 #include <atomic>
 #include <cstdint>
 #include <vector>
+#include <memory>
 
 #include "absl/base/thread_annotations.h"
-
-#include <grpc/event_engine/event_engine.h>
-
 #include "src/core/lib/event_engine/iomgr_engine/time_averaged_stats.h"
 #include "src/core/lib/event_engine/iomgr_engine/timer_heap.h"
 #include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/gprpp/time.h"
+#include "absl/types/optional.h"
 
 namespace grpc_event_engine {
 namespace iomgr_engine {
