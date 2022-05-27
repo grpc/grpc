@@ -21,14 +21,13 @@
 #include "src/core/lib/gprpp/global_config_env.h"
 
 #include <ctype.h>
-#include <stdlib.h>
+#include <string.h>
 
-#include <memory>
 #include <string>
-#include <type_traits>
 
 #include "absl/strings/str_format.h"
 
+#include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
 

@@ -20,8 +20,6 @@
 
 #include "src/core/lib/gprpp/host_port.h"
 
-#include <stddef.h>
-
 #include "absl/strings/str_format.h"
 #include "absl/strings/string_view.h"
 

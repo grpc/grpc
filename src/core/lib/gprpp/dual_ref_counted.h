@@ -20,6 +20,8 @@
 #include <grpc/support/port_platform.h>
 
 #include <atomic>
+#include <cassert>
+#include <cinttypes>
 #include <cstdint>
 
 #include <grpc/support/log.h>

@@ -17,14 +17,8 @@
 
 #include <grpc/support/port_platform.h>
 
-#include <stddef.h>
-
-#include <initializer_list>
-#include <new>
-#include <type_traits>
 #include <utility>
 
-#include "absl/meta/type_traits.h"
 #include "absl/utility/utility.h"
 
 #include "src/core/lib/gprpp/bitset.h"
@@ -37,7 +31,6 @@ namespace table_detail {
 // A tuple-like type that contains manually constructed elements.
 template <typename... Ts>
 struct Elements;
-
 template <typename T, typename... Ts>
 struct Elements<T, Ts...> : Elements<Ts...> {
   union U {
@@ -78,7 +71,6 @@ struct GetElem<I, T, Ts...> {
 // Sets a member constant N to the number of times Needle is in Haystack.
 template <typename Needle, typename... Haystack>
 struct CountIncludedStruct;
-
 template <typename Needle, typename Straw, typename... RestOfHaystack>
 struct CountIncludedStruct<Needle, Straw, RestOfHaystack...> {
   static constexpr size_t N =
@@ -100,7 +92,6 @@ constexpr size_t CountIncluded() {
 // Ignored should be void always, and is used for enable_if_t.
 template <typename Ignored, typename Needle, typename... Haystack>
 struct IndexOfStruct;
-
 template <typename Needle, typename Straw, typename... RestOfHaystack>
 struct IndexOfStruct<absl::enable_if_t<std::is_same<Needle, Straw>::value>,
                      Needle, Straw, RestOfHaystack...> {
@@ -132,7 +123,6 @@ IndexOf() {
 // Implemented as a simple type recursion.
 template <size_t I, typename... Ts>
 struct TypeIndexStruct;
-
 template <typename T, typename... Ts>
 struct TypeIndexStruct<0, T, Ts...> {
   using Type = T;
