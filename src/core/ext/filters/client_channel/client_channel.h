@@ -390,6 +390,8 @@ class ClientChannel::LoadBalancedCall
 
     void* Alloc(size_t size) override { return lb_call_->arena_->Alloc(size); }
 
+    // Internal API to allow first-party LB policies to access per-call
+    // attributes set by the ConfigSelector.
     absl::string_view GetCallAttribute(UniqueTypeName type);
 
    private:
