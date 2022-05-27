@@ -16,8 +16,10 @@
  *
  */
 
-#ifndef GRPC_INTERNAL_CPP_DYNAMIC_THREAD_POOL_H
-#define GRPC_INTERNAL_CPP_DYNAMIC_THREAD_POOL_H
+#ifndef GRPC_CORE_LIB_EVENT_ENGINE_IOMGR_ENGINE_THREAD_POOL_H
+#define GRPC_CORE_LIB_EVENT_ENGINE_IOMGR_ENGINE_THREAD_POOL_H
+
+#include <grpc/support/port_platform.h>
 
 #include <functional>
 #include <queue>
@@ -64,4 +66,4 @@ class ThreadPool final {
 }  // namespace iomgr_engine
 }  // namespace grpc_event_engine
 
-#endif  // GRPC_INTERNAL_CPP_DYNAMIC_THREAD_POOL_H
+#endif  // GRPC_CORE_LIB_EVENT_ENGINE_IOMGR_ENGINE_THREAD_POOL_H
