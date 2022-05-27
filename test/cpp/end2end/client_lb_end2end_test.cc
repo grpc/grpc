@@ -269,9 +269,11 @@ class ClientLbEnd2endTest : public ::testing::Test {
     }
   }
 
-  std::vector<int> GetServersPorts(size_t start_index = 0) {
+  std::vector<int> GetServersPorts(size_t start_index = 0,
+                                   size_t stop_index = 0) {
+    if (stop_index == 0) stop_index = servers_.size();
     std::vector<int> ports;
-    for (size_t i = start_index; i < servers_.size(); ++i) {
+    for (size_t i = start_index; i < stop_index; ++i) {
       ports.push_back(servers_[i]->port_);
     }
     return ports;
@@ -323,7 +325,8 @@ class ClientLbEnd2endTest : public ::testing::Test {
   void CheckRpcSendOk(
       const std::unique_ptr<grpc::testing::EchoTestService::Stub>& stub,
       const grpc_core::DebugLocation& location, bool wait_for_ready = false,
-      xds::data::orca::v3::OrcaLoadReport* load_report = nullptr) {
+      xds::data::orca::v3::OrcaLoadReport* load_report = nullptr,
+      int timeout_ms = 2000) {
     EchoResponse response;
     Status status;
     EchoRequest request;
@@ -334,8 +337,8 @@ class ClientLbEnd2endTest : public ::testing::Test {
       auto backend_metrics = params->mutable_backend_metrics();
       *backend_metrics = *load_report;
     }
-    const bool success =
-        SendRpc(stub, &response, 2000, &status, wait_for_ready, request_ptr);
+    const bool success = SendRpc(stub, &response, timeout_ms, &status,
+                                 wait_for_ready, request_ptr);
     ASSERT_TRUE(success) << "From " << location.file() << ":" << location.line()
                          << "\nError: " << status.error_message() << " "
                          << status.error_details();
@@ -422,9 +425,9 @@ class ClientLbEnd2endTest : public ::testing::Test {
   void WaitForServers(
       const std::unique_ptr<grpc::testing::EchoTestService::Stub>& stub,
       size_t start_index, size_t stop_index,
-      const grpc_core::DebugLocation& location, bool ignore_failure = false) {
-    auto deadline =
-        absl::Now() + (absl::Seconds(30) * grpc_test_slowdown_factor());
+      const grpc_core::DebugLocation& location, bool ignore_failure = false,
+      absl::Duration timeout = absl::Seconds(30)) {
+    auto deadline = absl::Now() + (timeout * grpc_test_slowdown_factor());
     gpr_log(GPR_INFO,
             "========= WAITING FOR BACKENDS [%" PRIuPTR ", %" PRIuPTR
             ") ==========",
@@ -1386,33 +1389,34 @@ TEST_F(RoundRobinTest, Updates) {
 }
 
 TEST_F(RoundRobinTest, UpdateInError) {
-  const int kNumServers = 3;
-  StartServers(kNumServers);
+  StartServers(2);
   auto response_generator = BuildResolverResponseGenerator();
   auto channel = BuildChannel("round_robin", response_generator);
   auto stub = BuildStub(channel);
-  std::vector<int> ports;
   // Start with a single server.
-  ports.emplace_back(servers_[0]->port_);
-  response_generator.SetNextResolution(ports);
-  WaitForServer(stub, 0, DEBUG_LOCATION);
-  // Send RPCs. They should all go to servers_[0]
-  for (size_t i = 0; i < 10; ++i) SendRpc(stub);
+  response_generator.SetNextResolution(GetServersPorts(0, 1));
+  // Send RPCs. They should all go to server 0.
+  for (size_t i = 0; i < 10; ++i) {
+    CheckRpcSendOk(stub, DEBUG_LOCATION, /*wait_for_ready=*/false,
+                   /*load_report=*/nullptr, /*timeout_ms=*/4000);
+  }
   EXPECT_EQ(10, servers_[0]->service_.request_count());
   EXPECT_EQ(0, servers_[1]->service_.request_count());
-  EXPECT_EQ(0, servers_[2]->service_.request_count());
   servers_[0]->service_.ResetCounters();
-  // Shutdown one of the servers to be sent in the update.
-  servers_[1]->Shutdown();
-  ports.emplace_back(servers_[1]->port_);
-  ports.emplace_back(servers_[2]->port_);
+  // Send an update adding an unreachable server and server 2.
+  std::vector<int> ports = {servers_[0]->port_, grpc_pick_unused_port_or_die(),
+                            servers_[1]->port_};
   response_generator.SetNextResolution(ports);
-  WaitForServer(stub, 0, DEBUG_LOCATION);
-  WaitForServer(stub, 2, DEBUG_LOCATION);
-  // Send three RPCs, one per server.
-  for (size_t i = 0; i < kNumServers; ++i) SendRpc(stub);
-  // The server in shutdown shouldn't receive any.
-  EXPECT_EQ(0, servers_[1]->service_.request_count());
+  WaitForServers(stub, 0, 2, DEBUG_LOCATION, /*ignore_failure=*/false,
+                 /*timeout=*/absl::Seconds(60));
+  // Send a bunch more RPCs.  They should all succeed and should be
+  // split evenly between the two servers.
+  for (size_t i = 0; i < 10; ++i) {
+    CheckRpcSendOk(stub, DEBUG_LOCATION, /*wait_for_ready=*/false,
+                   /*load_report=*/nullptr, /*timeout_ms=*/4000);
+  }
+  EXPECT_EQ(5, servers_[0]->service_.request_count());
+  EXPECT_EQ(5, servers_[1]->service_.request_count());
 }
 
 TEST_F(RoundRobinTest, ManyUpdates) {
