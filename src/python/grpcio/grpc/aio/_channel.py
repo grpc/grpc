@@ -405,8 +405,7 @@ class Channel(_base_channel.Channel):
         return UnaryUnaryMultiCallable(self._channel, _common.encode(method),
                                        request_serializer,
                                        response_deserializer,
-                                       self._unary_unary_interceptors,
-                                       [self],
+                                       self._unary_unary_interceptors, [self],
                                        self._loop)
 
     def unary_stream(
@@ -418,8 +417,7 @@ class Channel(_base_channel.Channel):
         return UnaryStreamMultiCallable(self._channel, _common.encode(method),
                                         request_serializer,
                                         response_deserializer,
-                                        self._unary_stream_interceptors,
-                                        [self],
+                                        self._unary_stream_interceptors, [self],
                                         self._loop)
 
     def stream_unary(
@@ -431,8 +429,7 @@ class Channel(_base_channel.Channel):
         return StreamUnaryMultiCallable(self._channel, _common.encode(method),
                                         request_serializer,
                                         response_deserializer,
-                                        self._stream_unary_interceptors,
-                                        [self],
+                                        self._stream_unary_interceptors, [self],
                                         self._loop)
 
     def stream_stream(
@@ -445,8 +442,7 @@ class Channel(_base_channel.Channel):
                                          request_serializer,
                                          response_deserializer,
                                          self._stream_stream_interceptors,
-                                         [self],
-                                         self._loop)
+                                         [self], self._loop)
 
 
 def insecure_channel(
