@@ -378,7 +378,7 @@ class TimeoutTest : public XdsEnd2endTest {
  protected:
   void SetUp() override {
     InitClient(BootstrapBuilder(), /*lb_expected_authority=*/"",
-               /*xds_resource_does_not_exist_timeout_ms=*/500);
+               /*xds_resource_does_not_exist_timeout_ms=*/2000);
   }
 };
 
@@ -394,12 +394,16 @@ INSTANTIATE_TEST_SUITE_P(
 
 TEST_P(TimeoutTest, LdsServerIgnoresRequest) {
   balancer_->ads_service()->IgnoreResourceType(kLdsTypeUrl);
-  CheckRpcSendFailure(DEBUG_LOCATION);
+  CheckRpcSendFailure(DEBUG_LOCATION,
+                      CheckRpcSendFailureOptions().set_rpc_options(
+                          RpcOptions().set_timeout_ms(4000)));
 }
 
 TEST_P(TimeoutTest, LdsResourceNotPresentInRequest) {
   balancer_->ads_service()->UnsetResource(kLdsTypeUrl, kServerName);
-  CheckRpcSendFailure(DEBUG_LOCATION);
+  CheckRpcSendFailure(DEBUG_LOCATION,
+                      CheckRpcSendFailureOptions().set_rpc_options(
+                          RpcOptions().set_timeout_ms(4000)));
 }
 
 TEST_P(TimeoutTest, LdsSecondResourceNotPresentInRequest) {
@@ -410,7 +414,7 @@ TEST_P(TimeoutTest, LdsSecondResourceNotPresentInRequest) {
   CreateAndStartBackends(1);
   EdsResourceArgs args({{"locality0", CreateEndpointsForBackends()}});
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
-  WaitForAllBackends(DEBUG_LOCATION);
+  CheckRpcSendOk(DEBUG_LOCATION, 1, RpcOptions().set_timeout_ms(4000));
   // Create second channel for a new server name.
   // This should fail because there is no LDS resource for this server name.
   auto channel2 =
@@ -420,7 +424,7 @@ TEST_P(TimeoutTest, LdsSecondResourceNotPresentInRequest) {
   EchoRequest request;
   EchoResponse response;
   RpcOptions rpc_options;
-  rpc_options.SetupRpc(&context, &request);
+  rpc_options.set_timeout_ms(4000).SetupRpc(&context, &request);
   auto status =
       SendRpcMethod(stub2.get(), rpc_options, &context, request, &response);
   EXPECT_EQ(StatusCode::UNAVAILABLE, status.error_code());
@@ -428,13 +432,17 @@ TEST_P(TimeoutTest, LdsSecondResourceNotPresentInRequest) {
 
 TEST_P(TimeoutTest, RdsServerIgnoresRequest) {
   balancer_->ads_service()->IgnoreResourceType(kRdsTypeUrl);
-  CheckRpcSendFailure(DEBUG_LOCATION);
+  CheckRpcSendFailure(DEBUG_LOCATION,
+                      CheckRpcSendFailureOptions().set_rpc_options(
+                          RpcOptions().set_timeout_ms(4000)));
 }
 
 TEST_P(TimeoutTest, RdsResourceNotPresentInRequest) {
   balancer_->ads_service()->UnsetResource(kRdsTypeUrl,
                                           kDefaultRouteConfigurationName);
-  CheckRpcSendFailure(DEBUG_LOCATION);
+  CheckRpcSendFailure(DEBUG_LOCATION,
+                      CheckRpcSendFailureOptions().set_rpc_options(
+                          RpcOptions().set_timeout_ms(4000)));
 }
 
 TEST_P(TimeoutTest, RdsSecondResourceNotPresentInRequest) {
@@ -445,6 +453,7 @@ TEST_P(TimeoutTest, RdsSecondResourceNotPresentInRequest) {
   CreateAndStartBackends(1);
   EdsResourceArgs args({{"locality0", CreateEndpointsForBackends()}});
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
+  CheckRpcSendOk(DEBUG_LOCATION, 1, RpcOptions().set_timeout_ms(4000));
   // Add listener for 2nd channel, but no RDS resource.
   const char* kNewServerName = "new-server.example.com";
   Listener listener = default_listener_;
@@ -456,7 +465,6 @@ TEST_P(TimeoutTest, RdsSecondResourceNotPresentInRequest) {
   rds->mutable_config_source()->mutable_self();
   ClientHcmAccessor().Pack(http_connection_manager, &listener);
   balancer_->ads_service()->SetLdsResource(listener);
-  WaitForAllBackends(DEBUG_LOCATION);
   // Create second channel for a new server name.
   // This should fail because the LDS resource points to a non-existent RDS
   // resource.
@@ -466,7 +474,7 @@ TEST_P(TimeoutTest, RdsSecondResourceNotPresentInRequest) {
   EchoRequest request;
   EchoResponse response;
   RpcOptions rpc_options;
-  rpc_options.SetupRpc(&context, &request);
+  rpc_options.set_timeout_ms(4000).SetupRpc(&context, &request);
   auto status =
       SendRpcMethod(stub2.get(), rpc_options, &context, request, &response);
   EXPECT_EQ(StatusCode::UNAVAILABLE, status.error_code());
@@ -474,19 +482,23 @@ TEST_P(TimeoutTest, RdsSecondResourceNotPresentInRequest) {
 
 TEST_P(TimeoutTest, CdsServerIgnoresRequest) {
   balancer_->ads_service()->IgnoreResourceType(kCdsTypeUrl);
-  CheckRpcSendFailure(DEBUG_LOCATION);
+  CheckRpcSendFailure(DEBUG_LOCATION,
+                      CheckRpcSendFailureOptions().set_rpc_options(
+                          RpcOptions().set_timeout_ms(4000)));
 }
 
 TEST_P(TimeoutTest, CdsResourceNotPresentInRequest) {
   balancer_->ads_service()->UnsetResource(kCdsTypeUrl, kDefaultClusterName);
-  CheckRpcSendFailure(DEBUG_LOCATION);
+  CheckRpcSendFailure(DEBUG_LOCATION,
+                      CheckRpcSendFailureOptions().set_rpc_options(
+                          RpcOptions().set_timeout_ms(4000)));
 }
 
 TEST_P(TimeoutTest, CdsSecondResourceNotPresentInRequest) {
   CreateAndStartBackends(1);
   EdsResourceArgs args({{"locality0", CreateEndpointsForBackends()}});
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
-  WaitForAllBackends(DEBUG_LOCATION);
+  CheckRpcSendOk(DEBUG_LOCATION, 1, RpcOptions().set_timeout_ms(4000));
   // Change route config to point to non-existing cluster.
   const char* kNewClusterName = "new_cluster_name";
   RouteConfiguration route_config = default_route_config_;
@@ -497,7 +509,7 @@ TEST_P(TimeoutTest, CdsSecondResourceNotPresentInRequest) {
   balancer_->ads_service()->SetRdsResource(route_config);
   // New cluster times out.
   // May need to wait a bit for the change to propagate to the client.
-  gpr_timespec deadline = grpc_timeout_seconds_to_deadline(10);
+  gpr_timespec deadline = grpc_timeout_seconds_to_deadline(30);
   bool error_seen = false;
   do {
     auto status = SendRpc();
@@ -511,20 +523,24 @@ TEST_P(TimeoutTest, CdsSecondResourceNotPresentInRequest) {
 
 TEST_P(TimeoutTest, EdsServerIgnoresRequest) {
   balancer_->ads_service()->IgnoreResourceType(kEdsTypeUrl);
-  CheckRpcSendFailure(DEBUG_LOCATION);
+  CheckRpcSendFailure(DEBUG_LOCATION,
+                      CheckRpcSendFailureOptions().set_rpc_options(
+                          RpcOptions().set_timeout_ms(4000)));
 }
 
 TEST_P(TimeoutTest, EdsResourceNotPresentInRequest) {
   // No need to remove EDS resource, since the test suite does not add it
   // by default.
-  CheckRpcSendFailure(DEBUG_LOCATION);
+  CheckRpcSendFailure(DEBUG_LOCATION,
+                      CheckRpcSendFailureOptions().set_rpc_options(
+                          RpcOptions().set_timeout_ms(4000)));
 }
 
 TEST_P(TimeoutTest, EdsSecondResourceNotPresentInRequest) {
   CreateAndStartBackends(1);
   EdsResourceArgs args({{"locality0", CreateEndpointsForBackends()}});
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
-  WaitForAllBackends(DEBUG_LOCATION);
+  CheckRpcSendOk(DEBUG_LOCATION, 1, RpcOptions().set_timeout_ms(4000));
   // New cluster that points to a non-existant EDS resource.
   const char* kNewClusterName = "new_cluster_name";
   Cluster cluster = default_cluster_;
@@ -541,7 +557,7 @@ TEST_P(TimeoutTest, EdsSecondResourceNotPresentInRequest) {
   balancer_->ads_service()->SetRdsResource(route_config);
   // New EDS resource times out.
   // May need to wait a bit for the RDS change to propagate to the client.
-  gpr_timespec deadline = grpc_timeout_seconds_to_deadline(10);
+  gpr_timespec deadline = grpc_timeout_seconds_to_deadline(30);
   bool error_seen = false;
   do {
     auto status = SendRpc(RpcOptions().set_rpc_method(METHOD_ECHO1));
@@ -557,7 +573,7 @@ TEST_P(TimeoutTest, ServerDoesNotResendAfterAdsStreamRestart) {
   CreateAndStartBackends(1);
   EdsResourceArgs args({{"locality0", CreateEndpointsForBackends(0, 1)}});
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
-  WaitForAllBackends(DEBUG_LOCATION);
+  CheckRpcSendOk(DEBUG_LOCATION, 1, RpcOptions().set_timeout_ms(4000));
   // Stop balancer.
   balancer_->Shutdown();
   // Tell balancer to require minimum version 1 for all resource types
@@ -577,7 +593,7 @@ TEST_P(TimeoutTest, ServerDoesNotResendAfterAdsStreamRestart) {
   // be sure that the channel continues to use the resources from before
   // the restart.
   absl::Time deadline =
-      absl::Now() + (absl::Seconds(5) * grpc_test_slowdown_factor());
+      absl::Now() + (absl::Seconds(30) * grpc_test_slowdown_factor());
   do {
     CheckRpcSendOk(DEBUG_LOCATION);
   } while (absl::Now() < deadline);
