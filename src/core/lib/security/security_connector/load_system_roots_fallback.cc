@@ -20,6 +20,8 @@
 
 #if !defined(GPR_LINUX) && !defined(GPR_ANDROID)
 
+#include <grpc/slice.h>
+
 namespace grpc_core {
 
 grpc_slice LoadSystemRootCerts() { return grpc_empty_slice(); }

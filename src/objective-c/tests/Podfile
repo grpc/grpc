@@ -19,6 +19,7 @@ def grpc_deps
   pod 'gRPC-RxLibrary',                 :path => GRPC_LOCAL_SRC
   pod 'gRPC-ProtoRPC',                  :path => GRPC_LOCAL_SRC, :inhibit_warnings => true
   pod 'RemoteTest', :path => "RemoteTestClient", :inhibit_warnings => true
+  pod 'Common', :path => "Common"
 end
 
 target 'TvTests' do
