@@ -55,7 +55,7 @@ class RingHashLbPolicyConfigFactory
  public:
   absl::StatusOr<Json::Object> ConvertXdsLbPolicyConfig(
       const XdsEncodingContext& context, absl::string_view configuration,
-      int recursion_depth) override {
+      int /* recursion_depth */) override {
     const auto* resource =
         envoy_extensions_load_balancing_policies_ring_hash_v3_RingHash_parse(
             configuration.data(), configuration.size(), context.arena);
@@ -100,7 +100,8 @@ class RoundRobinLbPolicyConfigFactory
  public:
   absl::StatusOr<Json::Object> ConvertXdsLbPolicyConfig(
       const XdsEncodingContext& /* context */,
-      absl::string_view /* configuration */, int recursion_depth) override {
+      absl::string_view /* configuration */,
+      int /* recursion_depth */) override {
     return Json::Object{{"round_robin", Json::Object()}};
   }
 
