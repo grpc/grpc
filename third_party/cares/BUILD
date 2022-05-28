@@ -6,5 +6,6 @@ exports_files([
     "config_freebsd/ares_config.h",
     "config_linux/ares_config.h",
     "config_openbsd/ares_config.h",
+    "config_haiku/ares_config.h",
     "config_windows/ares_config.h",
 ])

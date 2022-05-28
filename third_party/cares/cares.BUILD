@@ -21,6 +21,11 @@ config_setting(
 )
 
 config_setting(
+    name = "haiku",
+    values = {"cpu": "haiku"},
+)
+
+config_setting(
     name = "windows",
     values = {"cpu": "x64_windows"},
 )
@@ -111,6 +116,7 @@ copy_file(
         ":darwin_x86_64": "@com_github_grpc_grpc//third_party/cares:config_darwin/ares_config.h",
         ":darwin_arm64": "@com_github_grpc_grpc//third_party/cares:config_darwin/ares_config.h",
         ":darwin_arm64e": "@com_github_grpc_grpc//third_party/cares:config_darwin/ares_config.h",
+        ":haiku": "@com_github_grpc_grpc//third_party/cares:config_haiku/ares_config.h",
         ":windows": "@com_github_grpc_grpc//third_party/cares:config_windows/ares_config.h",
         ":android": "@com_github_grpc_grpc//third_party/cares:config_android/ares_config.h",
         "//conditions:default": "@com_github_grpc_grpc//third_party/cares:config_linux/ares_config.h",
@@ -224,6 +230,7 @@ cc_library(
     includes = ["include", "."],
     linkopts = select({
         ":windows": ["-defaultlib:ws2_32.lib"],
+        ":haiku": ["-lnetwork"],
         "//conditions:default": [],
     }),
     linkstatic = 1,
