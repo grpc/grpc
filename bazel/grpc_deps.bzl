@@ -289,6 +289,8 @@ def grpc_deps():
                 "https://storage.googleapis.com/grpc-bazel-mirror/github.com/c-ares/c-ares/archive/6654436a307a5a686b008c1d4c93b0085da6e6d8.tar.gz",
                 "https://github.com/c-ares/c-ares/archive/6654436a307a5a686b008c1d4c93b0085da6e6d8.tar.gz",
             ],
+            patches = ["@com_github_grpc_grpc//third_party:cares/cares_haiku.patch"],
+            patch_args = ["-p1"],
         )
 
     if "com_google_absl" not in native.existing_rules():

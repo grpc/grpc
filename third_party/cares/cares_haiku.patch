@@ -1,0 +1,42 @@
+From d1720368d0e8d2bd1a2ac0fcc6558eeb4ee15563 Mon Sep 17 00:00:00 2001
+From: "Estevan Castilho (Tevo)" <estevan.cps@gmail.com>
+Date: Sat, 7 May 2022 22:36:33 +0000
+Subject: [PATCH] Haiku: backport Jerome Duval's changes
+
+---
+ ares.h         | 2 +-
+ ares_private.h | 5 +++++
+ 2 files changed, 6 insertions(+), 1 deletion(-)
+
+diff --git a/ares.h b/ares.h
+index 06f60b3..07d2b63 100644
+--- a/ares.h
++++ b/ares.h
+@@ -39,7 +39,7 @@
+ #if defined(_AIX) || defined(__NOVELL_LIBC__) || defined(__NetBSD__) || \
+     defined(__minix) || defined(__SYMBIAN32__) || defined(__INTEGRITY) || \
+     defined(ANDROID) || defined(__ANDROID__) || defined(__OpenBSD__) || \
+-    defined(__QNXNTO__)
++    defined(__QNXNTO__) || defined(__HAIKU__)
+ #include <sys/select.h>
+ #endif
+ #if (defined(NETWARE) && !defined(__NOVELL_LIBC__))
+diff --git a/ares_private.h b/ares_private.h
+index 1990f69..367926e 100644
+--- a/ares_private.h
++++ b/ares_private.h
+@@ -79,6 +79,11 @@
+ 
+ #define PATH_HOSTS             "InetDBase:Hosts"
+ 
++#elif defined(__HAIKU__)
++
++#define PATH_RESOLV_CONF "/system/settings/network/resolv.conf"
++#define PATH_HOSTS              "/system/settings/network/hosts"
++
+ #else
+ 
+ #define PATH_RESOLV_CONF        "/etc/resolv.conf"
+-- 
+2.30.2
+

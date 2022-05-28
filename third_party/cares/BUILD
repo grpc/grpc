@@ -1,6 +1,7 @@
 exports_files([
     "ares_build.h",
     "cares.BUILD",
+    "cares_haiku.patch",
     "config_android/ares_config.h",
     "config_darwin/ares_config.h",
     "config_freebsd/ares_config.h",
