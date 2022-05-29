@@ -3144,7 +3144,6 @@ grpc_cc_library(
         "grpc_base",
         "grpc_server_config_selector",
         "grpc_service_config",
-        "poll",
         "promise",
         "ref_counted_ptr",
     ],
@@ -3269,7 +3268,6 @@ grpc_cc_library(
         "gpr_platform",
         "grpc_base",
         "grpc_codegen",
-        "poll",
         "slice",
     ],
 )
