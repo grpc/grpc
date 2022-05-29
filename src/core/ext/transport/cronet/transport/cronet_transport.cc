@@ -26,7 +26,6 @@
 
 #include <new>
 #include <string>
-#include <type_traits>
 #include <utility>
 
 #include "absl/strings/match.h"
@@ -61,6 +60,8 @@
 #include "src/core/lib/transport/metadata_batch.h"
 #include "src/core/lib/transport/transport.h"
 #include "src/core/lib/transport/transport_impl.h"
+
+// IWYU pragma: no_include <type_traits>
 
 #define GRPC_HEADER_SIZE_IN_BYTES 5
 #define GRPC_FLUSH_READ_SIZE 4096
