@@ -22,9 +22,7 @@
 
 #include <errno.h>
 #include <inttypes.h>
-#include <netinet/in.h>
 #include <string.h>
-#include <sys/socket.h>
 
 #include <string>
 #include <utility>
@@ -44,6 +42,9 @@
 #ifdef GRPC_HAVE_UNIX_SOCKET
 #include <sys/un.h>
 #endif
+
+// IWYU pragma: no_include <netinet/in.h>
+// IWYU pragma: no_include <sys/socket.h>
 
 #ifdef GRPC_HAVE_UNIX_SOCKET
 static absl::StatusOr<std::string> grpc_sockaddr_to_uri_unix_if_possible(
