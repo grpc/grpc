@@ -95,8 +95,8 @@ inline const Vtable<T>* inlined_callable_impl() {
 template <typename T, typename Callable>
 inline const Vtable<T>* shared_callable_impl(Callable&& callable) {
   static Callable instance = std::forward<Callable>(callable);
-  static const Vtable<T> vtable = {
-      [](void** arg) -> Poll<T> { return instance(); }, [](void**) {}};
+  static const Vtable<T> vtable = {[](void**) -> Poll<T> { return instance(); },
+                                   [](void**) {}};
   return &vtable;
 }
 
