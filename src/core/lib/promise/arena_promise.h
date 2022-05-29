@@ -35,11 +35,11 @@ namespace arena_promise_detail {
 template <typename T>
 struct Vtable {
   // Poll the promise, once.
-  Poll<T> (*poll_once)(void* arg);
+  Poll<T> (*poll_once)(void** arg);
   // Destroy the underlying callable object if there is one.
   // Since we don't delete (the arena owns the memory) but we may need to call a
   // destructor, we expose this for when the ArenaPromise object is destroyed.
-  void (*destroy)(void* arg);
+  void (*destroy)(void** arg);
 };
 
 template <typename T>
@@ -54,11 +54,11 @@ struct VtableAndArg {
 // crash if it is.
 template <typename T>
 inline const Vtable<T>* null_impl() {
-  static const Vtable<T> vtable = {[](void*) -> Poll<T> {
+  static const Vtable<T> vtable = {[](void**) -> Poll<T> {
                                      abort();
                                      GPR_UNREACHABLE_CODE(return Pending{});
                                    },
-                                   [](void*) {}};
+                                   [](void**) {}};
   return &vtable;
 }
 
@@ -66,10 +66,22 @@ inline const Vtable<T>* null_impl() {
 template <typename T, typename Callable>
 inline const Vtable<T>* allocated_callable_impl() {
   static const Vtable<T> vtable = {
-      [](void* arg) -> Poll<T> {
-        return poll_cast<T>((*static_cast<Callable*>(arg))());
+      [](void** arg) -> Poll<T> {
+        return poll_cast<T>((*static_cast<Callable*>(*arg))());
       },
-      [](void* arg) { static_cast<Callable*>(arg)->~Callable(); }};
+      [](void** arg) { static_cast<Callable*>(*arg)->~Callable(); }};
+  return &vtable;
+}
+
+// Implementation of ImplInterface for a small callable object (one that fits
+// within the void* arg)
+template <typename T, typename Callable>
+inline const Vtable<T>* inlined_callable_impl() {
+  static const Vtable<T> vtable = {
+      [](void** arg) -> Poll<T> {
+        return poll_cast<T>((*reinterpret_cast<Callable*>(arg))());
+      },
+      [](void** arg) { reinterpret_cast<Callable*>(arg)->~Callable(); }};
   return &vtable;
 }
 
@@ -81,9 +93,10 @@ inline const Vtable<T>* allocated_callable_impl() {
 // (this comes up often when the promise only accesses context data from the
 // containing activity).
 template <typename T, typename Callable>
-inline const Vtable<T>* shared_callable_impl() {
+inline const Vtable<T>* shared_callable_impl(Callable&& callable) {
+  static Callable instance = std::forward<Callable>(callable);
   static const Vtable<T> vtable = {
-      [](void* arg) -> Poll<T> { return Callable()(); }, [](void*) {}};
+      [](void** arg) -> Poll<T> { return instance(); }, [](void**) {}};
   return &vtable;
 }
 
@@ -94,9 +107,11 @@ struct ChooseImplForCallable;
 
 template <typename T, typename Callable>
 struct ChooseImplForCallable<
-    T, Callable, absl::enable_if_t<!std::is_empty<Callable>::value>> {
-  static VtableAndArg<T> Make(Callable&& callable) {
-    return {allocated_callable_impl<T, Callable>(),
+    T, Callable,
+    absl::enable_if_t<!std::is_empty<Callable>::value &&
+                      (sizeof(Callable) > sizeof(void*))>> {
+  static void Make(Callable&& callable, VtableAndArg<T>* out) {
+    *out = {allocated_callable_impl<T, Callable>(),
             GetContext<Arena>()->template New<Callable>(
                 std::forward<Callable>(callable))};
   }
@@ -104,17 +119,29 @@ struct ChooseImplForCallable<
 
 template <typename T, typename Callable>
 struct ChooseImplForCallable<
+    T, Callable,
+    absl::enable_if_t<!std::is_empty<Callable>::value &&
+                      (sizeof(Callable) <= sizeof(void*))>> {
+  static void Make(Callable&& callable, VtableAndArg<T>* out) {
+    out->vtable = inlined_callable_impl<T, Callable>();
+    new (&out->arg) Callable(std::forward<Callable>(callable));
+  }
+};
+
+template <typename T, typename Callable>
+struct ChooseImplForCallable<
     T, Callable, absl::enable_if_t<std::is_empty<Callable>::value>> {
-  static VtableAndArg<T> Make(Callable&& callable) {
-    return {shared_callable_impl<T, Callable>(), nullptr};
+  static void Make(Callable&& callable, VtableAndArg<T>* out) {
+    out->vtable =
+        shared_callable_impl<T, Callable>(std::forward<Callable>(callable));
   }
 };
 
 // Wrap ChooseImplForCallable with a friend approachable syntax.
 template <typename T, typename Callable>
-VtableAndArg<T> MakeImplForCallable(Callable&& callable) {
-  return ChooseImplForCallable<T, Callable>::Make(
-      std::forward<Callable>(callable));
+void MakeImplForCallable(Callable&& callable, VtableAndArg<T>* out) {
+  ChooseImplForCallable<T, Callable>::Make(std::forward<Callable>(callable),
+                                           out);
 }
 
 }  // namespace arena_promise_detail
@@ -131,9 +158,10 @@ class ArenaPromise {
             typename Ignored =
                 absl::enable_if_t<!std::is_same<Callable, ArenaPromise>::value>>
   // NOLINTNEXTLINE(google-explicit-constructor)
-  ArenaPromise(Callable&& callable)
-      : vtable_and_arg_(arena_promise_detail::MakeImplForCallable<T>(
-            std::forward<Callable>(callable))) {}
+  ArenaPromise(Callable&& callable) {
+    arena_promise_detail::MakeImplForCallable<T>(
+        std::forward<Callable>(callable), &vtable_and_arg_);
+  }
 
   // ArenaPromise is not copyable.
   ArenaPromise(const ArenaPromise&) = delete;
@@ -144,18 +172,18 @@ class ArenaPromise {
     other.vtable_and_arg_.vtable = arena_promise_detail::null_impl<T>();
   }
   ArenaPromise& operator=(ArenaPromise&& other) noexcept {
-    vtable_and_arg_.vtable->destroy(vtable_and_arg_.arg);
+    vtable_and_arg_.vtable->destroy(&vtable_and_arg_.arg);
     vtable_and_arg_ = other.vtable_and_arg_;
     other.vtable_and_arg_.vtable = arena_promise_detail::null_impl<T>();
     return *this;
   }
 
   // Destruction => call Destroy on the underlying impl object.
-  ~ArenaPromise() { vtable_and_arg_.vtable->destroy(vtable_and_arg_.arg); }
+  ~ArenaPromise() { vtable_and_arg_.vtable->destroy(&vtable_and_arg_.arg); }
 
   // Expose the promise interface: a call operator that returns Poll<T>.
   Poll<T> operator()() {
-    return vtable_and_arg_.vtable->poll_once(vtable_and_arg_.arg);
+    return vtable_and_arg_.vtable->poll_once(&vtable_and_arg_.arg);
   }
 
   bool has_value() const {
