@@ -20,11 +20,9 @@
 
 #include "src/core/lib/address_utils/parse_address.h"
 
-#include <netinet/in.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <sys/socket.h>
 #ifdef GRPC_HAVE_UNIX_SOCKET
 #include <sys/un.h>
 #endif
@@ -42,6 +40,9 @@
 #include "src/core/lib/iomgr/port.h"
 #include "src/core/lib/iomgr/sockaddr.h"
 #include "src/core/lib/iomgr/socket_utils.h"
+
+// IWYU pragma: no_include <netinet/in.h>
+// IWYU pragma: no_include <sys/socket.h>
 
 #ifdef GRPC_HAVE_UNIX_SOCKET
 
