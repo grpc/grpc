@@ -92,8 +92,6 @@
 #include "src/core/lib/transport/metadata_batch.h"
 #include "src/core/lib/uri/uri_parser.h"
 
-// IWYU pragma: no_include <netinet/in.h>
-
 namespace grpc_core {
 namespace {
 

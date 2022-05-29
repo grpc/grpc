@@ -43,9 +43,6 @@
 #include <sys/un.h>
 #endif
 
-// IWYU pragma: no_include <netinet/in.h>
-// IWYU pragma: no_include <sys/socket.h>
-
 #ifdef GRPC_HAVE_UNIX_SOCKET
 static absl::StatusOr<std::string> grpc_sockaddr_to_uri_unix_if_possible(
     const grpc_resolved_address* resolved_addr) {

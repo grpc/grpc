@@ -41,9 +41,6 @@
 #include "src/core/lib/iomgr/sockaddr.h"
 #include "src/core/lib/iomgr/socket_utils.h"
 
-// IWYU pragma: no_include <netinet/in.h>
-// IWYU pragma: no_include <sys/socket.h>
-
 #ifdef GRPC_HAVE_UNIX_SOCKET
 
 bool grpc_parse_unix(const grpc_core::URI& uri,
