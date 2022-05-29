@@ -21,7 +21,7 @@
 #include <utility>
 #include <vector>
 
-#include <openssl/base.h>
+#include <openssl/crypto.h>
 #include <openssl/digest.h>
 #include <openssl/hmac.h>
 #include <openssl/sha.h>

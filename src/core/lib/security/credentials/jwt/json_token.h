@@ -21,7 +21,7 @@
 
 #include <grpc/support/port_platform.h>
 
-#include <openssl/base.h>
+#include <openssl/crypto.h>
 
 #include <grpc/impl/codegen/gpr_types.h>
 

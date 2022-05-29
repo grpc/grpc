@@ -23,8 +23,8 @@
 
 #include <utility>
 
-#include <openssl/base.h>
 #include <openssl/bio.h>
+#include <openssl/crypto.h>
 #include <openssl/evp.h>
 #include <openssl/pem.h>
 #include <openssl/x509.h>
