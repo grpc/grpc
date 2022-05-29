@@ -21,7 +21,6 @@
 #include "src/core/lib/resolver/server_address.h"
 
 #include <string.h>
-#include <sys/socket.h>
 
 #include <algorithm>
 #include <memory>
@@ -36,6 +35,8 @@
 #include "absl/strings/str_join.h"
 
 #include "src/core/lib/address_utils/sockaddr_utils.h"
+
+// IWYU pragma: no_include <sys/socket.h>
 
 namespace grpc_core {
 
