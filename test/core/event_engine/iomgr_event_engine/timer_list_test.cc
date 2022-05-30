@@ -21,134 +21,166 @@
 #include <cstdint>
 #include <limits>
 
+#include <gmock/gmock.h>
+#include <gtest/gtest.h>
+
 #include <grpc/grpc.h>
 
 #include "src/core/lib/event_engine/iomgr_engine/timer.h"
 #include "src/core/lib/gprpp/time.h"
 
-#define MAX_CB 30
+using testing::Mock;
+using testing::Return;
+using testing::StrictMock;
 
-static int cb_called[MAX_CB][2];
+namespace grpc_event_engine {
+namespace iomgr_engine {
+
+namespace {
 static const int64_t kHoursIn25Days = 25 * 24;
 static const grpc_core::Duration k25Days =
     grpc_core::Duration::Hours(kHoursIn25Days);
 
-static void cb(void* arg, grpc_error_handle error) {
-  cb_called[reinterpret_cast<intptr_t>(arg)][error == GRPC_ERROR_NONE]++;
+class MockClosure : public experimental::EventEngine::Closure {
+ public:
+  MOCK_METHOD(void, Run, ());
+};
+
+class MockHost : public TimerListHost {
+ public:
+  MOCK_METHOD(grpc_core::Timestamp, Now, ());
+  MOCK_METHOD(void, Kick, ());
+};
+
+enum class CheckResult { kTimersFired, kCheckedAndEmpty, kNotChecked };
+
+CheckResult FinishCheck(
+    absl::optional<std::vector<experimental::EventEngine::Closure*>> result) {
+  if (!result.has_value()) return CheckResult::kNotChecked;
+  if (result->empty()) return CheckResult::kCheckedAndEmpty;
+  for (auto closure : *result) {
+    closure->Run();
+  }
+  return CheckResult::kTimersFired;
 }
 
-static void add_test(void) {
-  int i;
-  grpc_timer timers[20];
-  grpc_core::ExecCtx exec_ctx;
+}  // namespace
 
-  gpr_log(GPR_INFO, "add_test");
+TEST(TimerListTest, Add) {
+  Timer timers[20];
+  StrictMock<MockClosure> closures[20];
 
-  grpc_timer_list_init();
-  grpc_core::testing::grpc_tracer_enable_flag(&grpc_timer_trace);
-  grpc_core::testing::grpc_tracer_enable_flag(&grpc_timer_check_trace);
-  memset(cb_called, 0, sizeof(cb_called));
+  const auto kStart =
+      grpc_core::Timestamp::FromMillisecondsAfterProcessEpoch(100);
 
-  grpc_core::Timestamp start = grpc_core::ExecCtx::Get()->Now();
+  StrictMock<MockHost> host;
+  EXPECT_CALL(host, Now()).WillOnce(Return(kStart));
+  TimerList timer_list(&host);
 
   /* 10 ms timers.  will expire in the current epoch */
-  for (i = 0; i < 10; i++) {
-    grpc_timer_init(
-        &timers[i], start + grpc_core::Duration::Milliseconds(10),
-        GRPC_CLOSURE_CREATE(cb, (void*)(intptr_t)i, grpc_schedule_on_exec_ctx));
+  for (int i = 0; i < 10; i++) {
+    EXPECT_CALL(host, Now()).WillOnce(Return(kStart));
+    timer_list.TimerInit(&timers[i],
+                         kStart + grpc_core::Duration::Milliseconds(10),
+                         &closures[i]);
   }
 
   /* 1010 ms timers.  will expire in the next epoch */
-  for (i = 10; i < 20; i++) {
-    grpc_timer_init(
-        &timers[i], start + grpc_core::Duration::Milliseconds(1010),
-        GRPC_CLOSURE_CREATE(cb, (void*)(intptr_t)i, grpc_schedule_on_exec_ctx));
+  for (int i = 10; i < 20; i++) {
+    EXPECT_CALL(host, Now()).WillOnce(Return(kStart));
+    timer_list.TimerInit(&timers[i],
+                         kStart + grpc_core::Duration::Milliseconds(1010),
+                         &closures[i]);
   }
 
   /* collect timers.  Only the first batch should be ready. */
-  grpc_core::ExecCtx::Get()->TestOnlySetNow(
-      start + grpc_core::Duration::Milliseconds(500));
-  GPR_ASSERT(grpc_timer_check(nullptr) == GRPC_TIMERS_FIRED);
-  grpc_core::ExecCtx::Get()->Flush();
-  for (i = 0; i < 20; i++) {
-    GPR_ASSERT(cb_called[i][1] == (i < 10));
-    GPR_ASSERT(cb_called[i][0] == 0);
+  EXPECT_CALL(host, Now())
+      .WillOnce(Return(kStart + grpc_core::Duration::Milliseconds(500)));
+  for (int i = 0; i < 10; i++) {
+    EXPECT_CALL(closures[i], Run());
+  }
+  EXPECT_EQ(FinishCheck(timer_list.TimerCheck(nullptr)),
+            CheckResult::kTimersFired);
+  for (int i = 0; i < 10; i++) {
+    Mock::VerifyAndClearExpectations(&closures[i]);
   }
 
-  grpc_core::ExecCtx::Get()->TestOnlySetNow(
-      start + grpc_core::Duration::Milliseconds(600));
-  GPR_ASSERT(grpc_timer_check(nullptr) == GRPC_TIMERS_CHECKED_AND_EMPTY);
-  grpc_core::ExecCtx::Get()->Flush();
-  for (i = 0; i < 30; i++) {
-    GPR_ASSERT(cb_called[i][1] == (i < 10));
-    GPR_ASSERT(cb_called[i][0] == 0);
-  }
+  EXPECT_CALL(host, Now())
+      .WillOnce(Return(kStart + grpc_core::Duration::Milliseconds(600)));
+  EXPECT_EQ(FinishCheck(timer_list.TimerCheck(nullptr)),
+            CheckResult::kCheckedAndEmpty);
 
   /* collect the rest of the timers */
-  grpc_core::ExecCtx::Get()->TestOnlySetNow(
-      start + grpc_core::Duration::Milliseconds(1500));
-  GPR_ASSERT(grpc_timer_check(nullptr) == GRPC_TIMERS_FIRED);
-  grpc_core::ExecCtx::Get()->Flush();
-  for (i = 0; i < 30; i++) {
-    GPR_ASSERT(cb_called[i][1] == (i < 20));
-    GPR_ASSERT(cb_called[i][0] == 0);
+  EXPECT_CALL(host, Now())
+      .WillOnce(Return(kStart + grpc_core::Duration::Milliseconds(1500)));
+  for (int i = 10; i < 20; i++) {
+    EXPECT_CALL(closures[i], Run());
+  }
+  EXPECT_EQ(FinishCheck(timer_list.TimerCheck(nullptr)),
+            CheckResult::kTimersFired);
+  for (int i = 10; i < 20; i++) {
+    Mock::VerifyAndClearExpectations(&closures[i]);
   }
 
-  grpc_core::ExecCtx::Get()->TestOnlySetNow(
-      start + grpc_core::Duration::Milliseconds(1600));
-  GPR_ASSERT(grpc_timer_check(nullptr) == GRPC_TIMERS_CHECKED_AND_EMPTY);
-  for (i = 0; i < 30; i++) {
-    GPR_ASSERT(cb_called[i][1] == (i < 20));
-    GPR_ASSERT(cb_called[i][0] == 0);
-  }
-
-  grpc_timer_list_shutdown();
+  EXPECT_CALL(host, Now())
+      .WillOnce(Return(kStart + grpc_core::Duration::Milliseconds(1600)));
+  EXPECT_EQ(FinishCheck(timer_list.TimerCheck(nullptr)),
+            CheckResult::kCheckedAndEmpty);
 }
 
 /* Cleaning up a list with pending timers. */
-void destruction_test(void) {
-  grpc_timer timers[5];
-  grpc_core::ExecCtx exec_ctx;
+TEST(TimerListTest, Destruction) {
+  Timer timers[5];
+  StrictMock<MockClosure> closures[5];
 
-  gpr_log(GPR_INFO, "destruction_test");
+  StrictMock<MockHost> host;
+  EXPECT_CALL(host, Now())
+      .WillOnce(
+          Return(grpc_core::Timestamp::FromMillisecondsAfterProcessEpoch(0)));
+  TimerList timer_list(&host);
 
-  grpc_core::ExecCtx::Get()->TestOnlySetNow(
-      grpc_core::Timestamp::FromMillisecondsAfterProcessEpoch(0));
-  grpc_timer_list_init();
-  grpc_core::testing::grpc_tracer_enable_flag(&grpc_timer_trace);
-  grpc_core::testing::grpc_tracer_enable_flag(&grpc_timer_check_trace);
-  memset(cb_called, 0, sizeof(cb_called));
-
-  grpc_timer_init(
+  EXPECT_CALL(host, Now())
+      .WillOnce(
+          Return(grpc_core::Timestamp::FromMillisecondsAfterProcessEpoch(0)));
+  timer_list.TimerInit(
       &timers[0], grpc_core::Timestamp::FromMillisecondsAfterProcessEpoch(100),
-      GRPC_CLOSURE_CREATE(cb, (void*)(intptr_t)0, grpc_schedule_on_exec_ctx));
-  grpc_timer_init(
+      &closures[0]);
+  EXPECT_CALL(host, Now())
+      .WillOnce(
+          Return(grpc_core::Timestamp::FromMillisecondsAfterProcessEpoch(0)));
+  timer_list.TimerInit(
       &timers[1], grpc_core::Timestamp::FromMillisecondsAfterProcessEpoch(3),
-      GRPC_CLOSURE_CREATE(cb, (void*)(intptr_t)1, grpc_schedule_on_exec_ctx));
-  grpc_timer_init(
+      &closures[1]);
+  EXPECT_CALL(host, Now())
+      .WillOnce(
+          Return(grpc_core::Timestamp::FromMillisecondsAfterProcessEpoch(0)));
+  timer_list.TimerInit(
       &timers[2], grpc_core::Timestamp::FromMillisecondsAfterProcessEpoch(100),
-      GRPC_CLOSURE_CREATE(cb, (void*)(intptr_t)2, grpc_schedule_on_exec_ctx));
-  grpc_timer_init(
+      &closures[2]);
+  EXPECT_CALL(host, Now())
+      .WillOnce(
+          Return(grpc_core::Timestamp::FromMillisecondsAfterProcessEpoch(0)));
+  timer_list.TimerInit(
       &timers[3], grpc_core::Timestamp::FromMillisecondsAfterProcessEpoch(3),
-      GRPC_CLOSURE_CREATE(cb, (void*)(intptr_t)3, grpc_schedule_on_exec_ctx));
-  grpc_timer_init(
+      &closures[3]);
+  EXPECT_CALL(host, Now())
+      .WillOnce(
+          Return(grpc_core::Timestamp::FromMillisecondsAfterProcessEpoch(0)));
+  timer_list.TimerInit(
       &timers[4], grpc_core::Timestamp::FromMillisecondsAfterProcessEpoch(1),
-      GRPC_CLOSURE_CREATE(cb, (void*)(intptr_t)4, grpc_schedule_on_exec_ctx));
-  grpc_core::ExecCtx::Get()->TestOnlySetNow(
-      grpc_core::Timestamp::FromMillisecondsAfterProcessEpoch(2));
-  GPR_ASSERT(grpc_timer_check(nullptr) == GRPC_TIMERS_FIRED);
-  grpc_core::ExecCtx::Get()->Flush();
-  GPR_ASSERT(1 == cb_called[4][1]);
-  grpc_timer_cancel(&timers[0]);
-  grpc_timer_cancel(&timers[3]);
-  grpc_core::ExecCtx::Get()->Flush();
-  GPR_ASSERT(1 == cb_called[0][0]);
-  GPR_ASSERT(1 == cb_called[3][0]);
-
-  grpc_timer_list_shutdown();
-  grpc_core::ExecCtx::Get()->Flush();
-  GPR_ASSERT(1 == cb_called[1][0]);
-  GPR_ASSERT(1 == cb_called[2][0]);
+      &closures[4]);
+  EXPECT_CALL(host, Now())
+      .WillOnce(
+          Return(grpc_core::Timestamp::FromMillisecondsAfterProcessEpoch(2)));
+  EXPECT_CALL(closures[4], Run());
+  EXPECT_EQ(FinishCheck(timer_list.TimerCheck(nullptr)),
+            CheckResult::kTimersFired);
+  Mock::VerifyAndClearExpectations(&closures[4]);
+  EXPECT_FALSE(timer_list.TimerCancel(&timers[4]));
+  EXPECT_TRUE(timer_list.TimerCancel(&timers[0]));
+  EXPECT_TRUE(timer_list.TimerCancel(&timers[3]));
+  EXPECT_TRUE(timer_list.TimerCancel(&timers[1]));
+  EXPECT_TRUE(timer_list.TimerCancel(&timers[2]));
 }
 
 /* Cleans up a list with pending timers that simulate long-running-services.
@@ -163,96 +195,53 @@ void destruction_test(void) {
         step 1) to `now+4`
     4) Shuts down the timer list
    https://github.com/grpc/grpc/issues/15904 */
-void long_running_service_cleanup_test(void) {
-  grpc_timer timers[4];
-  grpc_core::ExecCtx exec_ctx;
+TEST(TimerListTest, LongRunningServiceCleanup) {
+  Timer timers[4];
+  StrictMock<MockClosure> closures[4];
 
-  gpr_log(GPR_INFO, "long_running_service_cleanup_test");
+  const auto kStart =
+      grpc_core::Timestamp::FromMillisecondsAfterProcessEpoch(k25Days.millis());
 
-  grpc_core::Timestamp now = grpc_core::ExecCtx::Get()->Now();
-  GPR_ASSERT(now.milliseconds_after_process_epoch() >= k25Days.millis());
-  grpc_timer_list_init();
-  grpc_core::testing::grpc_tracer_enable_flag(&grpc_timer_trace);
-  grpc_core::testing::grpc_tracer_enable_flag(&grpc_timer_check_trace);
-  memset(cb_called, 0, sizeof(cb_called));
+  StrictMock<MockHost> host;
+  EXPECT_CALL(host, Now()).WillOnce(Return(kStart));
+  TimerList timer_list(&host);
 
-  grpc_timer_init(
-      &timers[0], now + k25Days,
-      GRPC_CLOSURE_CREATE(cb, (void*)(intptr_t)0, grpc_schedule_on_exec_ctx));
-  grpc_timer_init(
-      &timers[1], now + grpc_core::Duration::Milliseconds(3),
-      GRPC_CLOSURE_CREATE(cb, (void*)(intptr_t)1, grpc_schedule_on_exec_ctx));
-  grpc_timer_init(
-      &timers[2],
-      grpc_core::Timestamp::FromMillisecondsAfterProcessEpoch(
-          std::numeric_limits<int64_t>::max() - 1),
-      GRPC_CLOSURE_CREATE(cb, (void*)(intptr_t)2, grpc_schedule_on_exec_ctx));
+  EXPECT_CALL(host, Now()).WillOnce(Return(kStart));
+  timer_list.TimerInit(&timers[0], kStart + k25Days, &closures[0]);
+  EXPECT_CALL(host, Now()).WillOnce(Return(kStart));
+  timer_list.TimerInit(
+      &timers[1], kStart + grpc_core::Duration::Milliseconds(3), &closures[1]);
+  EXPECT_CALL(host, Now()).WillOnce(Return(kStart));
+  timer_list.TimerInit(&timers[2],
+                       grpc_core::Timestamp::FromMillisecondsAfterProcessEpoch(
+                           std::numeric_limits<int64_t>::max() - 1),
+                       &closures[2]);
 
   gpr_timespec deadline_spec =
-      (now + k25Days).as_timespec(gpr_clock_type::GPR_CLOCK_MONOTONIC);
+      (kStart + k25Days).as_timespec(gpr_clock_type::GPR_CLOCK_MONOTONIC);
 
   /* grpc_timespec_to_millis_round_up is how users usually compute a millisecond
     input value into grpc_timer_init, so we mimic that behavior here */
-  grpc_timer_init(
-      &timers[3], grpc_core::Timestamp::FromTimespecRoundUp(deadline_spec),
-      GRPC_CLOSURE_CREATE(cb, (void*)(intptr_t)3, grpc_schedule_on_exec_ctx));
+  EXPECT_CALL(host, Now()).WillOnce(Return(kStart));
+  timer_list.TimerInit(&timers[3],
+                       grpc_core::Timestamp::FromTimespecRoundUp(deadline_spec),
+                       &closures[3]);
 
-  grpc_core::ExecCtx::Get()->TestOnlySetNow(
-      now + grpc_core::Duration::Milliseconds(4));
-  GPR_ASSERT(grpc_timer_check(nullptr) == GRPC_TIMERS_FIRED);
-  grpc_core::ExecCtx::Get()->Flush();
-  GPR_ASSERT(0 == cb_called[0][0]);  // Timer 0 not called
-  GPR_ASSERT(0 == cb_called[0][1]);
-  GPR_ASSERT(0 == cb_called[1][0]);
-  GPR_ASSERT(1 == cb_called[1][1]);  // Timer 1 fired
-  GPR_ASSERT(0 == cb_called[2][0]);  // Timer 2 not called
-  GPR_ASSERT(0 == cb_called[2][1]);
-  GPR_ASSERT(0 == cb_called[3][0]);  // Timer 3 not called
-  GPR_ASSERT(0 == cb_called[3][1]);
-
-  grpc_timer_list_shutdown();
-  grpc_core::ExecCtx::Get()->Flush();
-  /* Timers 0, 2, and 3 were fired with an error during cleanup */
-  GPR_ASSERT(1 == cb_called[0][0]);
-  GPR_ASSERT(0 == cb_called[1][0]);
-  GPR_ASSERT(1 == cb_called[2][0]);
-  GPR_ASSERT(1 == cb_called[3][0]);
+  EXPECT_CALL(host, Now())
+      .WillOnce(Return(kStart + grpc_core::Duration::Milliseconds(4)));
+  EXPECT_CALL(closures[1], Run());
+  EXPECT_EQ(FinishCheck(timer_list.TimerCheck(nullptr)),
+            CheckResult::kTimersFired);
+  EXPECT_TRUE(timer_list.TimerCancel(&timers[0]));
+  EXPECT_FALSE(timer_list.TimerCancel(&timers[1]));
+  EXPECT_TRUE(timer_list.TimerCancel(&timers[2]));
+  EXPECT_TRUE(timer_list.TimerCancel(&timers[3]));
 }
 
+}  // namespace iomgr_engine
+}  // namespace grpc_event_engine
+
 int main(int argc, char** argv) {
-  gpr_time_init();
-
-  /* Tests with default g_start_time */
-  {
-    grpc::testing::TestEnvironment env(&argc, argv);
-    grpc_core::ExecCtx exec_ctx;
-    grpc_set_default_iomgr_platform();
-    grpc_iomgr_platform_init();
-    gpr_set_log_verbosity(GPR_LOG_SEVERITY_DEBUG);
-    add_test();
-    destruction_test();
-    grpc_iomgr_platform_shutdown();
-  }
-
-  /* Begin long running service tests */
-  {
-    grpc::testing::TestEnvironment env(&argc, argv);
-    /* Set g_start_time back 25 days. */
-    /* We set g_start_time here in case there are any initialization
-        dependencies that use g_start_time. */
-    grpc_core::TestOnlySetProcessEpoch(gpr_time_sub(
-        gpr_now(gpr_clock_type::GPR_CLOCK_MONOTONIC),
-        gpr_time_add(gpr_time_from_hours(kHoursIn25Days, GPR_TIMESPAN),
-                     gpr_time_from_seconds(10, GPR_TIMESPAN))));
-    grpc_core::ExecCtx exec_ctx;
-    grpc_set_default_iomgr_platform();
-    grpc_iomgr_platform_init();
-    gpr_set_log_verbosity(GPR_LOG_SEVERITY_DEBUG);
-    long_running_service_cleanup_test();
-    add_test();
-    destruction_test();
-    grpc_iomgr_platform_shutdown();
-  }
-
-  return 0;
+  ::testing::InitGoogleTest(&argc, argv);
+  return RUN_ALL_TESTS();
 }
