@@ -22,7 +22,7 @@
 #include <vector>
 
 #include <openssl/crypto.h>
-#include <openssl/digest.h>
+#include <openssl/evp.h>
 #include <openssl/hmac.h>
 #include <openssl/sha.h>
 
