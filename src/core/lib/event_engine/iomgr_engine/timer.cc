@@ -26,9 +26,7 @@
 #include <type_traits>
 #include <utility>
 
-#include <grpc/impl/codegen/gpr_types.h>
 #include <grpc/support/cpu.h>
-#include <grpc/support/time.h>
 
 #include "src/core/lib/event_engine/iomgr_engine/timer_heap.h"
 #include "src/core/lib/gpr/useful.h"

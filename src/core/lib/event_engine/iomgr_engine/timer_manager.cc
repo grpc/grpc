@@ -25,6 +25,9 @@
 #include "absl/time/time.h"
 #include "absl/types/optional.h"
 
+#include <grpc/impl/codegen/gpr_types.h>
+#include <grpc/support/time.h>
+
 #include "src/core/lib/gprpp/thd.h"
 
 namespace grpc_event_engine {
