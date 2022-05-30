@@ -37,7 +37,7 @@ namespace iomgr_engine {
 namespace {
 int64_t RandomDeadline(void) { return rand(); }
 
-static std::vector<Timer> CreateTestElements(size_t num_elements) {
+std::vector<Timer> CreateTestElements(size_t num_elements) {
   std::vector<Timer> elems(num_elements);
   for (size_t i = 0; i < num_elements; i++) {
     elems[i].deadline = RandomDeadline();

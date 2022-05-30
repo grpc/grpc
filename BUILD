@@ -2256,7 +2256,6 @@ grpc_cc_library(
     deps = [
         "event_engine_base_hdrs",
         "gpr_base",
-        "gpr_codegen",
         "iomgr_ee_time_averaged_stats",
         "time",
         "useful",
@@ -2288,6 +2287,7 @@ grpc_cc_library(
     deps = [
         "event_engine_base_hdrs",
         "gpr_base",
+        "gpr_codegen",
         "iomgr_ee_timer",
         "time",
     ],
