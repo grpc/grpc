@@ -173,6 +173,7 @@ void TimerManager::RunThread(void* arg) {
   thread->self->MainLoop();
   {
     grpc_core::MutexLock lock(&thread->self->mu_);
+    thread->self->thread_count_--;
     thread->self->completed_threads_.push_back(std::move(thread->thread));
   }
   thread->self->cv_.Signal();
