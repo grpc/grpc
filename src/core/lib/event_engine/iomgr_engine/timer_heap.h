@@ -40,6 +40,8 @@ class TimerHeap {
 
   bool is_empty();
 
+  const std::vector<Timer*>& TestOnlyGetTimers() const { return timers_; }
+
  private:
   void AdjustUpwards(size_t i, Timer* t);
   void AdjustDownwards(size_t i, Timer* t);
