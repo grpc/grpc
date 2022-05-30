@@ -37,9 +37,8 @@ namespace grpc_event_engine {
 namespace iomgr_engine {
 
 namespace {
-static const int64_t kHoursIn25Days = 25 * 24;
-static const grpc_core::Duration k25Days =
-    grpc_core::Duration::Hours(kHoursIn25Days);
+const int64_t kHoursIn25Days = 25 * 24;
+const grpc_core::Duration k25Days = grpc_core::Duration::Hours(kHoursIn25Days);
 
 class MockClosure : public experimental::EventEngine::Closure {
  public:
