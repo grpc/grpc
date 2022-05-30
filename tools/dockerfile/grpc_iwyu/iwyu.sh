@@ -84,6 +84,9 @@ xargs -n 1 -P $CPU_COUNT -a iwyu_files.txt ${IWYU_ROOT}/iwyu/run_iwyu_on.sh
 
 cat iwyu/iwyu.*.out > iwyu.out
 
+# TEMP DEBUG
+cat iwyu.out
+
 # apply the suggested changes
 ${IWYU_ROOT}/iwyu/fix_includes.py \
   --nocomments                    \
