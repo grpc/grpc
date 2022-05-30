@@ -22,20 +22,11 @@
 #include <limits>
 
 #include <grpc/grpc.h>
-#include <grpc/support/log.h>
 
-#include "src/core/lib/debug/trace.h"
+#include "src/core/lib/event_engine/iomgr_engine/timer.h"
 #include "src/core/lib/gprpp/time.h"
-#include "src/core/lib/iomgr/iomgr_internal.h"
-#include "src/core/lib/iomgr/port.h"
-#include "src/core/lib/iomgr/timer.h"
-#include "test/core/util/test_config.h"
-#include "test/core/util/tracer_util.h"
 
 #define MAX_CB 30
-
-extern grpc_core::TraceFlag grpc_timer_trace;
-extern grpc_core::TraceFlag grpc_timer_check_trace;
 
 static int cb_called[MAX_CB][2];
 static const int64_t kHoursIn25Days = 25 * 24;
