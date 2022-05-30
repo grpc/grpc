@@ -175,9 +175,14 @@ void TimerManager::RunThread(void* arg) {
   thread->self->cv_.Signal();
 }
 
-TimerManager::TimerManager() {
+TimerManager::TimerManager() : TimerList(this) {
   grpc_core::MutexLock lock(&mu_);
   StartThread();
+}
+
+grpc_core::Timestamp TimerManager::Now() {
+  return grpc_core::Timestamp::FromTimespecRoundDown(
+      gpr_now(GPR_CLOCK_MONOTONIC));
 }
 
 TimerManager::~TimerManager() {

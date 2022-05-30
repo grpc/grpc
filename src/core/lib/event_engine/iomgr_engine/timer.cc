@@ -37,11 +37,6 @@
 namespace grpc_event_engine {
 namespace iomgr_engine {
 
-grpc_core::Timestamp TimerList::Now() {
-  return grpc_core::Timestamp::FromTimespecRoundDown(
-      gpr_now(GPR_CLOCK_MONOTONIC));
-}
-
 static const size_t kInvalidHeapIndex = std::numeric_limits<size_t>::max();
 static const double kAddDeadlineScale = 0.33;
 static const double kMinQueueWindowDuration = 0.01;
@@ -56,9 +51,10 @@ grpc_core::Timestamp TimerList::Shard::ComputeMinDeadline() {
 
 TimerList::Shard::Shard() : stats(1.0 / kAddDeadlineScale, 0.1, 0.5) {}
 
-TimerList::TimerList()
-    : num_shards_(grpc_core::Clamp(2 * gpr_cpu_num_cores(), 1u, 32u)),
-      min_timer_(Now().milliseconds_after_process_epoch()),
+TimerList::TimerList(TimerListHost* host)
+    : host_(host),
+      num_shards_(grpc_core::Clamp(2 * gpr_cpu_num_cores(), 1u, 32u)),
+      min_timer_(host_->Now().milliseconds_after_process_epoch()),
       shards_(new Shard[num_shards_]),
       shard_queue_(new Shard*[num_shards_]) {
   for (size_t i = 0; i < num_shards_; i++) {
@@ -126,7 +122,7 @@ void TimerList::TimerInit(Timer* timer, grpc_core::Timestamp deadline,
   {
     grpc_core::MutexLock lock(&shard->mu);
     timer->pending = true;
-    grpc_core::Timestamp now = Now();
+    grpc_core::Timestamp now = host_->Now();
     if (deadline <= now) {
       deadline = now;
     }
@@ -161,7 +157,7 @@ void TimerList::TimerInit(Timer* timer, grpc_core::Timestamp deadline,
       if (shard->shard_queue_index == 0 && deadline < old_min_deadline) {
         min_timer_.store(deadline.milliseconds_after_process_epoch(),
                          std::memory_order_relaxed);
-        Kick();
+        host_->Kick();
       }
     }
   }
@@ -293,7 +289,7 @@ std::vector<experimental::EventEngine::Closure*> TimerList::FindExpiredTimers(
 absl::optional<std::vector<experimental::EventEngine::Closure*>>
 TimerList::TimerCheck(grpc_core::Timestamp* next) {
   // prelude
-  grpc_core::Timestamp now = Now();
+  grpc_core::Timestamp now = host_->Now();
 
   /* fetch from a thread-local first: this avoids contention on a globally
      mutable cacheline in the common case */

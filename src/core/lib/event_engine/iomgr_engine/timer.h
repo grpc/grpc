@@ -56,14 +56,18 @@ struct Timer {
   grpc_event_engine::experimental::EventEngine::TaskHandle task_handle;
 };
 
+class TimerListHost {
+ public:
+  virtual grpc_core::Timestamp Now() = 0;
+  virtual void Kick() = 0;
+};
+
 class TimerList {
  public:
-  TimerList();
+  explicit TimerList(TimerListHost* host);
 
   TimerList(const TimerList&) = delete;
   TimerList& operator=(const TimerList&) = delete;
-
-  grpc_core::Timestamp Now();
 
   /* Initialize *timer. When expired or canceled, closure will be called with
    error set to indicate if it expired (GRPC_ERROR_NONE) or was canceled
@@ -117,8 +121,6 @@ class TimerList {
   absl::optional<std::vector<experimental::EventEngine::Closure*>> TimerCheck(
       grpc_core::Timestamp* next);
 
-  virtual void Kick() = 0;
-
  private:
   /* A "timer shard". Contains a 'heap' and a 'list' of timers. All timers with
    * deadlines earlier than 'queue_deadline_cap' are maintained in the heap and
@@ -161,6 +163,7 @@ class TimerList {
   std::vector<experimental::EventEngine::Closure*> FindExpiredTimers(
       grpc_core::Timestamp now, grpc_core::Timestamp* next);
 
+  TimerListHost* const host_;
   const size_t num_shards_;
   grpc_core::Mutex mu_;
   /* The deadline of the next timer due across all timer shards */

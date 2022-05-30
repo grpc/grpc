@@ -43,12 +43,13 @@ namespace iomgr_engine {
 
 /* Timer Manager tries to keep only one thread waiting for the next timeout at
    all times, and thus effectively preventing the thundering herd problem. */
-class TimerManager final : public TimerList {
+class TimerManager final : public TimerListHost, public TimerList {
  public:
   TimerManager();
   ~TimerManager();
 
   void Kick() override;
+  grpc_core::Timestamp Now() override;
 
  private:
   class ThreadCollector {
