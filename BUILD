@@ -2807,6 +2807,7 @@ grpc_cc_library(
         "ref_counted_ptr",
         "service_config_parser",
         "slice_refcount",
+        "unique_type_name",
     ],
 )
 
@@ -4153,6 +4154,7 @@ grpc_cc_library(
         "ref_counted_ptr",
         "server_address",
         "sockaddr_utils",
+        "unique_type_name",
     ],
 )
 
@@ -4704,6 +4706,9 @@ grpc_cc_library(
     hdrs = [
         "src/core/ext/filters/client_channel/resolver/xds/xds_resolver.h",
     ],
+    external_deps = [
+        "absl/strings",
+    ],
     language = "c++",
 )
 
@@ -4749,6 +4754,7 @@ grpc_cc_library(
         "ref_counted_ptr",
         "server_address",
         "time",
+        "unique_type_name",
         "uri_parser",
         "useful",
     ],
