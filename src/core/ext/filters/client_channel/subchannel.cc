@@ -25,6 +25,7 @@
 #include <cstring>
 #include <memory>
 #include <new>
+#include <type_traits>
 #include <utility>
 
 #include "absl/status/statusor.h"
@@ -41,6 +42,7 @@
 #include "src/core/lib/address_utils/sockaddr_utils.h"
 #include "src/core/lib/backoff/backoff.h"
 #include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/channel/channel_stack_builder.h"
 #include "src/core/lib/channel/channel_stack_builder_impl.h"
 #include "src/core/lib/channel/channel_trace.h"
@@ -787,6 +789,8 @@ void Subchannel::ResetBackoff() {
   backoff_.Reset();
   if (state_ == GRPC_CHANNEL_TRANSIENT_FAILURE) {
     grpc_timer_cancel(&retry_timer_);
+  } else if (state_ == GRPC_CHANNEL_CONNECTING) {
+    next_attempt_time_ = ExecCtx::Get()->Now();
   }
 }
 
@@ -821,7 +825,7 @@ void Subchannel::RemoveDataProducer(DataProducerInterface* data_producer) {
 }
 
 Subchannel::DataProducerInterface* Subchannel::GetDataProducer(
-    const char* type) {
+    UniqueTypeName type) {
   MutexLock lock(&mu_);
   auto it = data_producer_map_.find(type);
   if (it == data_producer_map_.end()) return nullptr;

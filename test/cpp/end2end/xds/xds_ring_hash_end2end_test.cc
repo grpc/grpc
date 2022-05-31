@@ -87,8 +87,6 @@ INSTANTIATE_TEST_SUITE_P(
     &XdsTestType::Name);
 
 TEST_P(RingHashTest, AggregateClusterFallBackFromRingHashAtStartup) {
-  ScopedExperimentalEnvVar env_var(
-      "GRPC_XDS_EXPERIMENTAL_ENABLE_AGGREGATE_AND_LOGICAL_DNS_CLUSTER");
   CreateAndStartBackends(2);
   const char* kNewCluster1Name = "new_cluster_1";
   const char* kNewEdsService1Name = "new_eds_service_name_1";
@@ -150,8 +148,6 @@ TEST_P(RingHashTest, AggregateClusterFallBackFromRingHashAtStartup) {
 
 TEST_P(RingHashTest,
        AggregateClusterFallBackFromRingHashToLogicalDnsAtStartup) {
-  ScopedExperimentalEnvVar env_var(
-      "GRPC_XDS_EXPERIMENTAL_ENABLE_AGGREGATE_AND_LOGICAL_DNS_CLUSTER");
   CreateAndStartBackends(1);
   const char* kEdsClusterName = "eds_cluster";
   const char* kLogicalDNSClusterName = "logical_dns_cluster";

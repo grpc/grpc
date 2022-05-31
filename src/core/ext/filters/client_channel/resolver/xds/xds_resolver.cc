@@ -24,6 +24,7 @@
 #include <map>
 #include <memory>
 #include <string>
+#include <type_traits>
 #include <utility>
 #include <vector>
 
@@ -44,6 +45,8 @@
 #include "absl/types/variant.h"
 #include "re2/re2.h"
 
+#include "src/core/lib/gprpp/unique_type_name.h"
+
 #define XXH_INLINE_ALL
 #include "xxhash.h"
 
@@ -62,7 +65,7 @@
 #include "src/core/ext/xds/xds_route_config.h"
 #include "src/core/ext/xds/xds_routing.h"
 #include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/channel/channel_stack_builder.h"
+#include "src/core/lib/channel/channel_fwd.h"
 #include "src/core/lib/channel/status_util.h"
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/debug/trace.h"
@@ -79,6 +82,7 @@
 #include "src/core/lib/resolver/resolver.h"
 #include "src/core/lib/resolver/resolver_factory.h"
 #include "src/core/lib/resolver/resolver_registry.h"
+#include "src/core/lib/resolver/server_address.h"
 #include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/service_config/service_config.h"
 #include "src/core/lib/service_config/service_config_call_data.h"
@@ -92,7 +96,10 @@ namespace grpc_core {
 
 TraceFlag grpc_xds_resolver_trace(false, "xds_resolver");
 
-const char* kXdsClusterAttribute = "xds_cluster_name";
+UniqueTypeName XdsClusterAttributeTypeName() {
+  static UniqueTypeName::Factory kFactory("xds_cluster_name");
+  return kFactory.Create();
+}
 
 namespace {
 
@@ -171,7 +178,7 @@ class XdsResolver : public Resolver {
       Ref().release();  // ref held by lambda
       resolver_->work_serializer_->Run(
           [this, status]() {
-            resolver_->OnError(status);
+            resolver_->OnError(resolver_->lds_resource_name_, status);
             Unref();
           },
           DEBUG_LOCATION);
@@ -210,7 +217,7 @@ class XdsResolver : public Resolver {
       Ref().release();  // ref held by lambda
       resolver_->work_serializer_->Run(
           [this, status]() {
-            resolver_->OnError(status);
+            resolver_->OnError(resolver_->route_config_name_, status);
             Unref();
           },
           DEBUG_LOCATION);
@@ -349,7 +356,7 @@ class XdsResolver : public Resolver {
 
   void OnListenerUpdate(XdsListenerResource listener);
   void OnRouteConfigUpdate(XdsRouteConfigResource rds_update);
-  void OnError(absl::Status status);
+  void OnError(absl::string_view context, absl::Status status);
   void OnResourceDoesNotExist();
 
   absl::StatusOr<RefCountedPtr<ServiceConfig>> CreateServiceConfig();
@@ -762,13 +769,13 @@ ConfigSelector::CallConfig XdsResolver::XdsConfigSelector::GetCallConfig(
         method_config->GetMethodParsedConfigVector(grpc_empty_slice());
     call_config.service_config = std::move(method_config);
   }
-  call_config.call_attributes[kXdsClusterAttribute] = it->first;
+  call_config.call_attributes[XdsClusterAttributeTypeName()] = it->first;
   std::string hash_string = absl::StrCat(hash.value());
   char* hash_value =
       static_cast<char*>(args.arena->Alloc(hash_string.size() + 1));
   memcpy(hash_value, hash_string.c_str(), hash_string.size());
   hash_value[hash_string.size()] = '\0';
-  call_config.call_attributes[kRequestRingHashAttribute] = hash_value;
+  call_config.call_attributes[RequestHashAttributeName()] = hash_value;
   call_config.call_dispatch_controller =
       args.arena->New<XdsCallDispatchController>(it->second->Ref());
   return call_config;
@@ -788,9 +795,11 @@ void XdsResolver::StartLocked() {
             grpc_error_std_string(error).c_str());
     std::string error_message;
     grpc_error_get_str(error, GRPC_ERROR_STR_DESCRIPTION, &error_message);
-    Result result;
-    result.service_config = absl::UnavailableError(
+    absl::Status status = absl::UnavailableError(
         absl::StrCat("Failed to create XdsClient: ", error_message));
+    Result result;
+    result.addresses = status;
+    result.service_config = std::move(status);
     result.args = grpc_channel_args_copy(args_);
     result_handler_->ReportResult(std::move(result));
     GRPC_ERROR_UNREF(error);
@@ -802,10 +811,12 @@ void XdsResolver::StartLocked() {
     const auto* authority_config =
         xds_client_->bootstrap().LookupAuthority(uri_.authority());
     if (authority_config == nullptr) {
-      Result result;
-      result.service_config = absl::UnavailableError(
-          absl::StrCat("Invalid target URI -- authority not found for %s.",
+      absl::Status status = absl::UnavailableError(
+          absl::StrCat("Invalid target URI -- authority not found for ",
                        uri_.authority().c_str()));
+      Result result;
+      result.addresses = status;
+      result.service_config = std::move(status);
       result.args = grpc_channel_args_copy(args_);
       result_handler_->ReportResult(std::move(result));
       return;
@@ -937,9 +948,11 @@ void XdsResolver::OnRouteConfigUpdate(XdsRouteConfigResource rds_update) {
       VirtualHostListIterator(&rds_update.virtual_hosts),
       data_plane_authority_);
   if (!vhost_index.has_value()) {
-    OnError(absl::UnavailableError(
-        absl::StrCat("could not find VirtualHost for ", data_plane_authority_,
-                     " in RouteConfiguration")));
+    OnError(
+        route_config_name_.empty() ? lds_resource_name_ : route_config_name_,
+        absl::UnavailableError(absl::StrCat("could not find VirtualHost for ",
+                                            data_plane_authority_,
+                                            " in RouteConfiguration")));
     return;
   }
   // Save the virtual host in the resolver.
@@ -950,15 +963,17 @@ void XdsResolver::OnRouteConfigUpdate(XdsRouteConfigResource rds_update) {
   GenerateResult();
 }
 
-void XdsResolver::OnError(absl::Status status) {
-  gpr_log(GPR_ERROR, "[xds_resolver %p] received error from XdsClient: %s",
-          this, status.ToString().c_str());
+void XdsResolver::OnError(absl::string_view context, absl::Status status) {
+  gpr_log(GPR_ERROR, "[xds_resolver %p] received error from XdsClient: %s: %s",
+          this, std::string(context).c_str(), status.ToString().c_str());
   if (xds_client_ == nullptr) return;
+  status =
+      absl::UnavailableError(absl::StrCat(context, ": ", status.ToString()));
   Result result;
+  result.addresses = status;
+  result.service_config = std::move(status);
   grpc_arg new_arg = xds_client_->MakeChannelArg();
   result.args = grpc_channel_args_copy_and_add(args_, &new_arg, 1);
-  result.service_config = absl::UnavailableError(
-      absl::StrCat("error obtaining xDS resources: ", status.ToString()));
   result_handler_->ReportResult(std::move(result));
 }
 
@@ -972,6 +987,7 @@ void XdsResolver::OnResourceDoesNotExist() {
   }
   current_virtual_host_.routes.clear();
   Result result;
+  result.addresses.emplace();
   grpc_error_handle error = GRPC_ERROR_NONE;
   result.service_config = ServiceConfigImpl::Create(args_, "{}", &error);
   GPR_ASSERT(*result.service_config != nullptr);
@@ -1034,11 +1050,13 @@ void XdsResolver::GenerateResult() {
   grpc_error_handle error = GRPC_ERROR_NONE;
   auto config_selector = MakeRefCounted<XdsConfigSelector>(Ref(), &error);
   if (error != GRPC_ERROR_NONE) {
-    OnError(absl::UnavailableError(grpc_error_std_string(error)));
+    OnError("could not create ConfigSelector",
+            absl::UnavailableError(grpc_error_std_string(error)));
     GRPC_ERROR_UNREF(error);
     return;
   }
   Result result;
+  result.addresses.emplace();
   result.service_config = CreateServiceConfig();
   if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_resolver_trace)) {
     gpr_log(GPR_INFO, "[xds_resolver %p] generated service config: %s", this,

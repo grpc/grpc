@@ -39,7 +39,6 @@
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
 
-#include "src/core/ext/filters/client_channel/http_connect_handshaker.h"
 #include "src/core/ext/filters/client_channel/proxy_mapper_registry.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/gpr/env.h"
@@ -48,6 +47,7 @@
 #include "src/core/lib/gprpp/memory.h"
 #include "src/core/lib/iomgr/resolve_address.h"
 #include "src/core/lib/slice/b64.h"
+#include "src/core/lib/transport/http_connect_handshaker.h"
 #include "src/core/lib/uri/uri_parser.h"
 
 namespace grpc_core {

@@ -2526,25 +2526,16 @@ class ClientChannel::LoadBalancedCall::Metadata
 // ClientChannel::LoadBalancedCall::LbCallState
 //
 
-class ClientChannel::LoadBalancedCall::LbCallState
-    : public LoadBalancingPolicy::CallState {
- public:
-  explicit LbCallState(LoadBalancedCall* lb_call) : lb_call_(lb_call) {}
-
-  void* Alloc(size_t size) override { return lb_call_->arena_->Alloc(size); }
-
-  absl::string_view ExperimentalGetCallAttribute(const char* key) override {
-    auto* service_config_call_data = static_cast<ServiceConfigCallData*>(
-        lb_call_->call_context_[GRPC_CONTEXT_SERVICE_CONFIG_CALL_DATA].value);
-    auto& call_attributes = service_config_call_data->call_attributes();
-    auto it = call_attributes.find(key);
-    if (it == call_attributes.end()) return absl::string_view();
-    return it->second;
-  }
-
- private:
-  LoadBalancedCall* lb_call_;
-};
+absl::string_view
+ClientChannel::LoadBalancedCall::LbCallState::GetCallAttribute(
+    UniqueTypeName type) {
+  auto* service_config_call_data = static_cast<ServiceConfigCallData*>(
+      lb_call_->call_context_[GRPC_CONTEXT_SERVICE_CONFIG_CALL_DATA].value);
+  auto& call_attributes = service_config_call_data->call_attributes();
+  auto it = call_attributes.find(type);
+  if (it == call_attributes.end()) return absl::string_view();
+  return it->second;
+}
 
 //
 // ClientChannel::LoadBalancedCall::BackendMetricAccessor
@@ -2560,7 +2551,7 @@ class ClientChannel::LoadBalancedCall::BackendMetricAccessor
     if (lb_call_->backend_metric_data_ == nullptr &&
         lb_call_->recv_trailing_metadata_ != nullptr) {
       if (const auto* md = lb_call_->recv_trailing_metadata_->get_pointer(
-              XEndpointLoadMetricsBinMetadata())) {
+              EndpointLoadMetricsBinMetadata())) {
         BackendMetricAllocator allocator(lb_call_->arena_);
         lb_call_->backend_metric_data_ =
             ParseBackendMetricData(md->as_string_view(), &allocator);
@@ -2574,10 +2565,8 @@ class ClientChannel::LoadBalancedCall::BackendMetricAccessor
    public:
     explicit BackendMetricAllocator(Arena* arena) : arena_(arena) {}
 
-    LoadBalancingPolicy::BackendMetricAccessor::BackendMetricData*
-    AllocateBackendMetricData() override {
-      return arena_->New<
-          LoadBalancingPolicy::BackendMetricAccessor::BackendMetricData>();
+    BackendMetricData* AllocateBackendMetricData() override {
+      return arena_->New<BackendMetricData>();
     }
 
     char* AllocateString(size_t size) override {
@@ -2637,8 +2626,7 @@ ClientChannel::LoadBalancedCall::~LoadBalancedCall() {
   GRPC_ERROR_UNREF(cancel_error_);
   GRPC_ERROR_UNREF(failure_error_);
   if (backend_metric_data_ != nullptr) {
-    backend_metric_data_->LoadBalancingPolicy::BackendMetricAccessor::
-        BackendMetricData::~BackendMetricData();
+    backend_metric_data_->BackendMetricData::~BackendMetricData();
   }
   // Make sure there are no remaining pending batches.
   for (size_t i = 0; i < GPR_ARRAY_SIZE(pending_batches_); ++i) {

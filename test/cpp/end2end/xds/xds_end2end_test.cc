@@ -200,7 +200,10 @@ class FakeCertificateProvider final : public grpc_tls_certificate_provider {
     return distributor_;
   }
 
-  const char* type() const override { return "fake"; }
+  grpc_core::UniqueTypeName type() const override {
+    static grpc_core::UniqueTypeName::Factory kFactory("fake");
+    return kFactory.Create();
+  }
 
  private:
   int CompareImpl(const grpc_tls_certificate_provider* other) const override {

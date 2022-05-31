@@ -17,7 +17,7 @@
  */
 #include <memory>
 
-#include <grpc/grpc.h>
+#include <grpc/impl/codegen/grpc_types.h>
 #include <grpcpp/security/auth_context.h>
 
 namespace grpc {

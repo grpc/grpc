@@ -91,6 +91,7 @@ grpc_cc_test(
     uses_polling = False,
     deps = [
         "//:gpr",
+        "//:grpc",
         "//:slice",
         "//test/core/util:build",
         "//test/core/util:grpc_suppressions",
@@ -126,6 +127,18 @@ grpc_cc_test(
 grpc_cc_test(
     name = "slice_buffer_test",
     srcs = ["slice_buffer_test.cc"],
+    external_deps = ["gtest"],
+    uses_event_engine = False,
+    uses_polling = False,
+    deps = [
+        "//:grpc",
+        "//test/core/util:grpc_test_util",
+    ],
+)
+
+grpc_cc_test(
+    name = "c_slice_buffer_test",
+    srcs = ["c_slice_buffer_test.cc"],
     language = "C++",
     uses_event_engine = False,
     uses_polling = False,

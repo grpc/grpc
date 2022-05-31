@@ -32,7 +32,7 @@
 #define MAX_CONNECTION_IDLE_MS 9999
 
 #define MAX_CONNECTION_AGE_JITTER_MULTIPLIER 1.1
-#define CALL_DEADLINE_S 10
+#define CALL_DEADLINE_S 30
 /* The amount of time we wait for the connection to time out, but after it the
    connection should not use up its grace period. It should be a number between
    MAX_CONNECTION_AGE_MS and MAX_CONNECTION_AGE_MS +
