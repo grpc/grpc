@@ -19,8 +19,6 @@
 
 #include <list>
 
-#include <gtest/gtest.h>
-
 #include "src/core/lib/resource_quota/resource_quota.h"
 #include "src/core/lib/security/authorization/evaluate_args.h"
 #include "src/core/lib/security/context/security_context.h"
