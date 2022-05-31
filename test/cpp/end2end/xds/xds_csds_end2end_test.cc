@@ -528,7 +528,8 @@ TEST_P(ClientStatusDiscoveryServiceTest, XdsConfigDumpEndpointError) {
   EdsResourceArgs args({{"locality0", CreateEndpointsForBackends(0, 1)}});
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
   // Ensure the xDS resolver has working configs.
-  CheckRpcSendOk(DEBUG_LOCATION, 1, RpcOptions().set_timeout_ms(kTimeoutMillisecond));
+  CheckRpcSendOk(DEBUG_LOCATION, 1,
+                 RpcOptions().set_timeout_ms(kTimeoutMillisecond));
   // Bad endpoint config will be rejected.
   ClusterLoadAssignment cluster_load_assignment;
   cluster_load_assignment.set_cluster_name(kDefaultEdsServiceName);
@@ -538,7 +539,8 @@ TEST_P(ClientStatusDiscoveryServiceTest, XdsConfigDumpEndpointError) {
   endpoint->mutable_address()->mutable_socket_address()->set_port_value(1 << 1);
   balancer_->ads_service()->SetEdsResource(cluster_load_assignment);
   // The old xDS configs should still be effective.
-  CheckRpcSendOk(DEBUG_LOCATION, 1, RpcOptions().set_timeout_ms(kTimeoutMillisecond));
+  CheckRpcSendOk(DEBUG_LOCATION, 1,
+                 RpcOptions().set_timeout_ms(kTimeoutMillisecond));
   for (int i = 0; i < kFetchConfigRetries; ++i) {
     auto csds_response = FetchCsdsResponse();
     // Check if error state is propagated
