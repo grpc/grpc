@@ -131,6 +131,10 @@ static const NSTimeInterval kInvertedTimeout = 2;
 
 @implementation CallAPIv2Tests
 
++ (void)setUp {
+  GRPCPrintInteropTestServerDebugInfo();
+}
+
 - (void)setUp {
   // This method isn't implemented by the remote server.
   kInexistentMethod = [[GRPCProtoMethod alloc] initWithPackage:kPackage
