@@ -31,7 +31,8 @@ void* (*get_copied_context_fn_g)(void*) = nullptr;
 }  // namespace
 
 namespace grpc_core {
-void ContextList::Append(ContextList** head, grpc_chttp2_stream* s) {
+void ContextList::Append(ContextList** head, grpc_chttp2_stream* s,
+                         int64_t outbuf_relative_start_pos, int64_t num_bytes) {
   if (get_copied_context_fn_g == nullptr ||
       write_timestamps_callback_g == nullptr) {
     return;
@@ -39,6 +40,8 @@ void ContextList::Append(ContextList** head, grpc_chttp2_stream* s) {
   /* Create a new element in the list and add it at the front */
   ContextList* elem = new ContextList();
   elem->trace_context_ = get_copied_context_fn_g(s->context);
+  elem->outbuf_relative_start_pos_ = outbuf_relative_start_pos;
+  elem->num_bytes_ = num_bytes;
   elem->byte_offset_ = s->byte_counter;
   elem->next_ = *head;
   *head = elem;

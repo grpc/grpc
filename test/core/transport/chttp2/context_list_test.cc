@@ -91,7 +91,8 @@ TEST_F(ContextListTest, ExecuteFlushesList) {
     s[i]->context = &verifier_called[i];
     s[i]->byte_counter = kByteOffset;
     gpr_atm_rel_store(&verifier_called[i], static_cast<gpr_atm>(0));
-    ContextList::Append(&list, s[i]);
+    ContextList::Append(&list, s[i], static_cast<int64_t>(i * kByteOffset),
+                        static_cast<int64_t>(kByteOffset));
   }
   Timestamps ts;
   ContextList::Execute(list, &ts, GRPC_ERROR_NONE);
@@ -147,7 +148,8 @@ TEST_F(ContextListTest, NonEmptyListEmptyTimestamp) {
     s[i]->context = &verifier_called[i];
     s[i]->byte_counter = kByteOffset;
     gpr_atm_rel_store(&verifier_called[i], static_cast<gpr_atm>(0));
-    ContextList::Append(&list, s[i]);
+    ContextList::Append(&list, s[i], static_cast<int64_t>(i * kByteOffset),
+                        static_cast<int64_t>(kByteOffset));
   }
   ContextList::Execute(list, nullptr, GRPC_ERROR_NONE);
   for (auto i = 0; i < kNumElems; i++) {

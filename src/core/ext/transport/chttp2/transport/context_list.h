@@ -33,7 +33,8 @@ class ContextList {
  public:
   /* Creates a new element with \a context as the value and appends it to the
    * list. */
-  static void Append(ContextList** head, grpc_chttp2_stream* s);
+  static void Append(ContextList** head, grpc_chttp2_stream* s,
+                     int64_t outbuf_relative_start_pos, int64_t num_bytes);
 
   /* Executes a function \a fn with each context in the list and \a ts. It also
    * frees up the entire list after this operation. It is intended as a callback
@@ -43,6 +44,8 @@ class ContextList {
  private:
   void* trace_context_ = nullptr;
   ContextList* next_ = nullptr;
+  int64_t outbuf_relative_start_pos_ = 0;
+  int64_t num_bytes_ = 0;
   size_t byte_offset_ = 0;
 };
 
