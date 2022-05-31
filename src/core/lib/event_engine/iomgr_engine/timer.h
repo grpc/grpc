@@ -58,8 +58,14 @@ struct Timer {
 
 class TimerListHost {
  public:
+  // Return the current timestamp.
+  // Abstracted so that tests can be run deterministically.
   virtual grpc_core::Timestamp Now() = 0;
+  // Wake up a thread to check for timers.
   virtual void Kick() = 0;
+
+ protected:
+  ~TimerListHost() = default;
 };
 
 class TimerList {
