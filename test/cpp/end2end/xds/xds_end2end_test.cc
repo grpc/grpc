@@ -1082,19 +1082,21 @@ TEST_P(XdsEnabledServerTest, BadLdsUpdateNoApiListenerNorAddress) {
       ::testing::HasSubstr("Listener has neither address nor ApiListener"));
 }
 
-TEST_P(XdsEnabledServerTest, BadLdsUpdateBothApiListenerAndAddress) {
-  Listener listener = default_server_listener_;
-  listener.mutable_api_listener();
-  SetServerListenerNameAndRouteConfiguration(balancer_.get(), listener,
-                                             backends_[0]->port(),
-                                             default_server_route_config_);
-  backends_[0]->Start();
-  const auto response_state = WaitForLdsNack(DEBUG_LOCATION);
-  ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
-  EXPECT_THAT(
-      response_state->error_message,
-      ::testing::HasSubstr("Listener has both address and ApiListener"));
-}
+// TODO(roth): Re-enable the following test once
+// github.com/istio/istio/issues/38914 is resolved.
+// TEST_P(XdsEnabledServerTest, BadLdsUpdateBothApiListenerAndAddress) {
+//   Listener listener = default_server_listener_;
+//   listener.mutable_api_listener();
+//   SetServerListenerNameAndRouteConfiguration(balancer_.get(), listener,
+//                                              backends_[0]->port(),
+//                                              default_server_route_config_);
+//   backends_[0]->Start();
+//   const auto response_state = WaitForLdsNack(DEBUG_LOCATION);
+//   ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
+//   EXPECT_THAT(
+//       response_state->error_message,
+//       ::testing::HasSubstr("Listener has both address and ApiListener"));
+// }
 
 TEST_P(XdsEnabledServerTest, NacksNonZeroXffNumTrusterHops) {
   Listener listener = default_server_listener_;
