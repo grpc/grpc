@@ -21,8 +21,8 @@
 #include "src/core/lib/event_engine/iomgr_engine/timer_manager.h"
 
 #include <memory>
-#include <inttypes.h>
 
+#include "absl/memory/memory.h"
 #include "absl/time/time.h"
 #include "absl/types/optional.h"
 

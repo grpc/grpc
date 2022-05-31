@@ -36,15 +36,13 @@ static LARGE_INTEGER g_start_time = []() {
   QueryPerformanceCounter(&x);
   return x;
 }();
-static double g_time_scale =
-[]() {
+static double g_time_scale = []() {
   LARGE_INTEGER frequency;
   QueryPerformanceFrequency(&frequency);
   return 1.0 / (double)frequency.QuadPart;
 }();
 
-void gpr_time_init(void) {
-}
+void gpr_time_init(void) {}
 
 static gpr_timespec now_impl(gpr_clock_type clock) {
   gpr_timespec now_tv;
