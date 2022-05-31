@@ -30,6 +30,7 @@ grpc_cc_test(
     uses_polling = False,
     deps = [
         "//:iomgr_ee_time_averaged_stats",
+        "//test/core/util:grpc_suppressions",
     ],
 )
 
@@ -43,6 +44,7 @@ grpc_cc_test(
     deps = [
         "//:bitset",
         "//:iomgr_ee_timer",
+        "//test/core/util:grpc_suppressions",
     ],
 )
 
@@ -55,5 +57,6 @@ grpc_cc_test(
     uses_polling = False,
     deps = [
         "//:iomgr_ee_timer",
+        "//test/core/util:grpc_suppressions",
     ],
 )

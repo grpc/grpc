@@ -95,6 +95,7 @@ bool IomgrEventEngine::Cancel(EventEngine::TaskHandle handle) {
   auto* cd = reinterpret_cast<ClosureData*>(handle.keys[0]);
   bool r = timer_manager_.TimerCancel(&cd->timer);
   known_handles_.erase(handle);
+  if (r) delete cd;
   return r;
 }
 
