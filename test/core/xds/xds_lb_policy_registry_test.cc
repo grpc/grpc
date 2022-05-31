@@ -19,7 +19,6 @@
 #include "src/core/ext/xds/xds_lb_policy_registry.h"
 
 #include <gmock/gmock.h>
-#include <google/protobuf/text_format.h>
 #include <gtest/gtest.h>
 
 #include "absl/strings/str_format.h"
@@ -38,6 +37,7 @@
 #include "src/proto/grpc/testing/xds/v3/udpa_typed_struct.grpc.pb.h"
 #include "src/proto/grpc/testing/xds/v3/wrr_locality.grpc.pb.h"
 #include "test/core/util/test_config.h"
+#include "test/cpp/util/config_grpc_cli.h"
 
 namespace grpc_core {
 namespace testing {
@@ -362,7 +362,7 @@ TEST(XdsLbPolicyRegistryTest, CustomTypeInvalidUrlEmptyType) {
 
 TEST(XdsLbPolicyRegistryTest, CustomLbPolicyJsonConversion) {
   TypedStruct typed_struct;
-  ASSERT_TRUE(google::protobuf::TextFormat::ParseFromString(
+  ASSERT_TRUE(::grpc::protobuf::TextFormat::ParseFromString(
       R"pb(
         type_url: "type.googleapis.com/test.CustomLb"
         value {
