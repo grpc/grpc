@@ -25,6 +25,7 @@
 #include <stdint.h>
 
 #include <algorithm>
+#include <memory>
 #include <utility>
 #include <vector>
 
@@ -43,13 +44,17 @@ namespace iomgr_engine {
 
 /* Timer Manager tries to keep only one thread waiting for the next timeout at
    all times, and thus effectively preventing the thundering herd problem. */
-class TimerManager final : public TimerListHost, public TimerList {
+class TimerManager final : public TimerListHost {
  public:
   TimerManager();
   ~TimerManager();
 
   void Kick() override;
   grpc_core::Timestamp Now() override;
+
+  void TimerInit(Timer* timer, grpc_core::Timestamp deadline,
+                 experimental::EventEngine::Closure* closure);
+  bool TimerCancel(Timer* timer);
 
  private:
   class ThreadCollector {
@@ -98,6 +103,8 @@ class TimerManager final : public TimerListHost, public TimerList {
   uint64_t timed_waiter_generation_ ABSL_GUARDED_BY(mu_) = 0;
   // number of timer wakeups
   uint64_t wakeups_ ABSL_GUARDED_BY(mu_) = 0;
+  // actual timer implementation
+  std::unique_ptr<TimerList> timer_list_;
 };
 
 }  // namespace iomgr_engine

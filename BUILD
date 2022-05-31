@@ -2280,6 +2280,7 @@ grpc_cc_library(
     ],
     external_deps = [
         "absl/base:core_headers",
+        "absl/memory",
         "absl/time",
         "absl/types:optional",
     ],

@@ -22,6 +22,7 @@
 
 #include <memory>
 
+#include "absl/memory/memory.h"
 #include "absl/time/time.h"
 #include "absl/types/optional.h"
 
@@ -146,7 +147,7 @@ void TimerManager::MainLoop() {
   for (;;) {
     grpc_core::Timestamp next = grpc_core::Timestamp::InfFuture();
     absl::optional<std::vector<experimental::EventEngine::Closure*>>
-        check_result = TimerCheck(&next);
+        check_result = timer_list_->TimerCheck(&next);
     if (check_result.has_value()) {
       if (!check_result->empty()) {
         RunSomeTimers(std::move(*check_result));
@@ -179,7 +180,8 @@ void TimerManager::RunThread(void* arg) {
   thread->self->cv_.Signal();
 }
 
-TimerManager::TimerManager() : TimerList(this) {
+TimerManager::TimerManager() {
+  timer_list_ = absl::make_unique<TimerList>(this);
   grpc_core::MutexLock lock(&mu_);
   StartThread();
 }
@@ -187,6 +189,15 @@ TimerManager::TimerManager() : TimerList(this) {
 grpc_core::Timestamp TimerManager::Now() {
   return grpc_core::Timestamp::FromTimespecRoundDown(
       gpr_now(GPR_CLOCK_MONOTONIC));
+}
+
+void TimerManager::TimerInit(Timer* timer, grpc_core::Timestamp deadline,
+                             experimental::EventEngine::Closure* closure) {
+  timer_list_->TimerInit(timer, deadline, closure);
+}
+
+bool TimerManager::TimerCancel(Timer* timer) {
+  return timer_list_->TimerCancel(timer);
 }
 
 TimerManager::~TimerManager() {
