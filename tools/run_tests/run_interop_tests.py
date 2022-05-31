@@ -281,7 +281,8 @@ class GoLanguage:
                _ORCA_TEST_CASES
 
     def unimplemented_test_cases_server(self):
-        return _SKIP_COMPRESSION
+        return _SKIP_COMPRESSION + \
+               _ORCA_TEST_CASES
 
     def __str__(self):
         return 'go'
@@ -389,7 +390,8 @@ class NodeLanguage:
                _ORCA_TEST_CASES
 
     def unimplemented_test_cases_server(self):
-        return _SKIP_COMPRESSION
+        return _SKIP_COMPRESSION + \
+               _ORCA_TEST_CASES
 
     def __str__(self):
         return 'node'
@@ -423,7 +425,7 @@ class NodePureJSLanguage:
                _ORCA_TEST_CASES
 
     def unimplemented_test_cases_server(self):
-        return []
+        return _ORCA_TEST_CASES
 
     def __str__(self):
         return 'nodepurejs'
@@ -456,7 +458,8 @@ class PHP7Language:
                _ORCA_TEST_CASES
 
     def unimplemented_test_cases_server(self):
-        return _SKIP_COMPRESSION
+        return _SKIP_COMPRESSION + \
+               _ORCA_TEST_CASES
 
     def __str__(self):
         return 'php7'
@@ -497,7 +500,8 @@ class ObjcLanguage:
                _ORCA_TEST_CASES
 
     def unimplemented_test_cases_server(self):
-        return _SKIP_COMPRESSION
+        return _SKIP_COMPRESSION + \
+               _ORCA_TEST_CASES
 
     def __str__(self):
         return 'objc'
@@ -537,7 +541,8 @@ class RubyLanguage:
                _ORCA_TEST_CASES
 
     def unimplemented_test_cases_server(self):
-        return _SKIP_COMPRESSION
+        return _SKIP_COMPRESSION + \
+               _ORCA_TEST_CASES
 
     def __str__(self):
         return 'ruby'
@@ -589,7 +594,8 @@ class PythonLanguage:
                _ORCA_TEST_CASES
 
     def unimplemented_test_cases_server(self):
-        return _SKIP_COMPRESSION
+        return _SKIP_COMPRESSION + \
+               _ORCA_TEST_CASES
 
     def __str__(self):
         return 'python'
@@ -879,10 +885,6 @@ def cloud_to_prod_jobspec(language,
             % (str(language), transport_security))
         sys.exit(1)
     cmdargs = cmdargs + transport_security_options
-    if test_case in _ORCA_TEST_CASES:
-        cmdargs = cmdargs + [
-            '--service_config_json=\'{"loadBalancingConfig":[{"test_backend_metrics_load_balancer":{}}]}\''
-        ]
     environ = dict(language.cloud_to_prod_env(), **language.global_env())
     if auth:
         auth_cmdargs, auth_env = auth_options(
@@ -979,7 +981,7 @@ def cloud_to_cloud_jobspec(language,
     else:
         cmd_options = common_options + interop_only_options
         if test_case in _ORCA_TEST_CASES:
-            cmd_options = common_options + [
+            cmd_options = cmd_options + [
                 '--service_config_json=\'{"loadBalancingConfig":[{"test_backend_metrics_load_balancer":{}}]}\''
             ]
         cmdline = bash_cmdline(language.client_cmd(cmd_options))
@@ -1423,7 +1425,7 @@ try:
             for language in languages:
                 for test_case in _TEST_CASES:
                     if not test_case in language.unimplemented_test_cases():
-                        if not test_case in _SKIP_ADVANCED + _SKIP_COMPRESSION + _SKIP_SPECIAL_STATUS_MESSAGE:
+                        if not test_case in _SKIP_ADVANCED + _SKIP_COMPRESSION + _SKIP_SPECIAL_STATUS_MESSAGE + _ORCA_TEST_CASES:
                             for transport_security in args.custom_credentials_type:
                                 # google_default_credentials not yet supported by all languages
                                 if transport_security == 'google_default_credentials' and str(
