@@ -334,11 +334,14 @@ INSTANTIATE_TEST_SUITE_P(
 
 TEST_P(ClientStatusDiscoveryServiceTest, XdsConfigDumpVanilla) {
   CreateAndStartBackends(1);
+  // 10s, long timeout that should not be reached
+  const int kTimeoutMillisecond = 10000;
   const size_t kNumRpcs = 5;
   EdsResourceArgs args({{"locality0", CreateEndpointsForBackends(0, 1)}});
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
   // Send several RPCs to ensure the xDS setup works
-  CheckRpcSendOk(DEBUG_LOCATION, kNumRpcs);
+  CheckRpcSendOk(DEBUG_LOCATION, kNumRpcs,
+                 RpcOptions().set_timeout_ms(kTimeoutMillisecond));
   // Fetches the client config
   auto csds_response = FetchCsdsResponse();
   gpr_log(GPR_INFO, "xDS config dump: %s", csds_response.DebugString().c_str());
@@ -401,18 +404,22 @@ TEST_P(ClientStatusDiscoveryServiceTest, XdsConfigDumpEmpty) {
 
 TEST_P(ClientStatusDiscoveryServiceTest, XdsConfigDumpListenerError) {
   CreateAndStartBackends(1);
+  // 10s, long timeout that should not be reached
+  int kTimeoutMillisecond = 10000;
   int kFetchConfigRetries = 3;
   int kFetchIntervalMilliseconds = 200;
   EdsResourceArgs args({{"locality0", CreateEndpointsForBackends(0, 1)}});
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
   // Ensure the xDS resolver has working configs.
-  CheckRpcSendOk(DEBUG_LOCATION);
+  CheckRpcSendOk(DEBUG_LOCATION, 1,
+                 RpcOptions().set_timeout_ms(kTimeoutMillisecond));
   // Bad Listener should be rejected.
   Listener listener;
   listener.set_name(kServerName);
   balancer_->ads_service()->SetLdsResource(listener);
   // The old xDS configs should still be effective.
-  CheckRpcSendOk(DEBUG_LOCATION);
+  CheckRpcSendOk(DEBUG_LOCATION, 1,
+                 RpcOptions().set_timeout_ms(kTimeoutMillisecond));
   ::testing::Matcher<google::protobuf::Any> api_listener_matcher;
   if (GetParam().enable_rds_testing()) {
     api_listener_matcher = IsRdsEnabledHCM();
@@ -442,19 +449,23 @@ TEST_P(ClientStatusDiscoveryServiceTest, XdsConfigDumpListenerError) {
 
 TEST_P(ClientStatusDiscoveryServiceTest, XdsConfigDumpRouteError) {
   CreateAndStartBackends(1);
+  // 10s, long timeout that should not be reached
+  int kTimeoutMillisecond = 10000;
   int kFetchConfigRetries = 3;
   int kFetchIntervalMilliseconds = 200;
   EdsResourceArgs args({{"locality0", CreateEndpointsForBackends(0, 1)}});
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
   // Ensure the xDS resolver has working configs.
-  CheckRpcSendOk(DEBUG_LOCATION);
+  CheckRpcSendOk(DEBUG_LOCATION, 1,
+                 RpcOptions().set_timeout_ms(kTimeoutMillisecond));
   // Bad route config will be rejected.
   RouteConfiguration route_config;
   route_config.set_name(kDefaultRouteConfigurationName);
   route_config.add_virtual_hosts();
   SetRouteConfiguration(balancer_.get(), route_config);
   // The old xDS configs should still be effective.
-  CheckRpcSendOk(DEBUG_LOCATION);
+  CheckRpcSendOk(DEBUG_LOCATION, 1,
+                 RpcOptions().set_timeout_ms(kTimeoutMillisecond));
   for (int i = 0; i < kFetchConfigRetries; ++i) {
     auto csds_response = FetchCsdsResponse();
     bool ok = false;
@@ -489,18 +500,22 @@ TEST_P(ClientStatusDiscoveryServiceTest, XdsConfigDumpRouteError) {
 
 TEST_P(ClientStatusDiscoveryServiceTest, XdsConfigDumpClusterError) {
   CreateAndStartBackends(1);
+  // 10s, long timeout that should not be reached
+  int kTimeoutMillisecond = 10000;
   int kFetchConfigRetries = 3;
   int kFetchIntervalMilliseconds = 200;
   EdsResourceArgs args({{"locality0", CreateEndpointsForBackends(0, 1)}});
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
   // Ensure the xDS resolver has working configs.
-  CheckRpcSendOk(DEBUG_LOCATION);
+  CheckRpcSendOk(DEBUG_LOCATION, 1,
+                 RpcOptions().set_timeout_ms(kTimeoutMillisecond));
   // Listener without any route, will be rejected.
   Cluster cluster;
   cluster.set_name(kDefaultClusterName);
   balancer_->ads_service()->SetCdsResource(cluster);
   // The old xDS configs should still be effective.
-  CheckRpcSendOk(DEBUG_LOCATION);
+  CheckRpcSendOk(DEBUG_LOCATION, 1,
+                 RpcOptions().set_timeout_ms(kTimeoutMillisecond));
   for (int i = 0; i < kFetchConfigRetries; ++i) {
     auto csds_response = FetchCsdsResponse();
     // Check if error state is propagated
