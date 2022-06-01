@@ -1446,6 +1446,7 @@ LIBGRPC_SRC = \
     src/core/lib/event_engine/slice.cc \
     src/core/lib/event_engine/slice_buffer.cc \
     src/core/lib/event_engine/trace.cc \
+    src/core/lib/event_engine/trace_context_list.cc \
     src/core/lib/gprpp/time.cc \
     src/core/lib/http/format_request.cc \
     src/core/lib/http/httpcli.cc \
@@ -1693,6 +1694,7 @@ PUBLIC_HEADERS_C += \
     include/grpc/event_engine/port.h \
     include/grpc/event_engine/slice.h \
     include/grpc/event_engine/slice_buffer.h \
+    include/grpc/event_engine/trace_context_list.h \
     include/grpc/fork.h \
     include/grpc/grpc.h \
     include/grpc/grpc_posix.h \
@@ -1913,6 +1915,7 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/lib/event_engine/slice.cc \
     src/core/lib/event_engine/slice_buffer.cc \
     src/core/lib/event_engine/trace.cc \
+    src/core/lib/event_engine/trace_context_list.cc \
     src/core/lib/gprpp/time.cc \
     src/core/lib/http/format_request.cc \
     src/core/lib/http/httpcli.cc \
@@ -2096,6 +2099,7 @@ PUBLIC_HEADERS_C += \
     include/grpc/event_engine/port.h \
     include/grpc/event_engine/slice.h \
     include/grpc/event_engine/slice_buffer.h \
+    include/grpc/event_engine/trace_context_list.h \
     include/grpc/fork.h \
     include/grpc/grpc.h \
     include/grpc/grpc_posix.h \

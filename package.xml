@@ -41,6 +41,7 @@
     <file baseinstalldir="/" name="include/grpc/event_engine/port.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/event_engine/slice.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/event_engine/slice_buffer.h" role="src" />
+    <file baseinstalldir="/" name="include/grpc/event_engine/trace_context_list.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/fork.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/grpc.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/grpc_posix.h" role="src" />
@@ -937,6 +938,7 @@
     <file baseinstalldir="/" name="src/core/lib/event_engine/slice_buffer.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/event_engine/trace.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/event_engine/trace.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/event_engine/trace_context_list.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gpr/alloc.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gpr/alloc.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gpr/atm.cc" role="src" />

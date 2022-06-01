@@ -820,6 +820,7 @@ include/grpc/event_engine/memory_request.h \
 include/grpc/event_engine/port.h \
 include/grpc/event_engine/slice.h \
 include/grpc/event_engine/slice_buffer.h \
+include/grpc/event_engine/trace_context_list.h \
 include/grpc/fork.h \
 include/grpc/grpc.h \
 include/grpc/grpc_posix.h \
@@ -1729,6 +1730,7 @@ src/core/lib/event_engine/slice.cc \
 src/core/lib/event_engine/slice_buffer.cc \
 src/core/lib/event_engine/trace.cc \
 src/core/lib/event_engine/trace.h \
+src/core/lib/event_engine/trace_context_list.cc \
 src/core/lib/gpr/README.md \
 src/core/lib/gpr/alloc.cc \
 src/core/lib/gpr/alloc.h \

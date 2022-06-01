@@ -443,6 +443,7 @@ CORE_SOURCE_FILES = [
     'src/core/lib/event_engine/slice.cc',
     'src/core/lib/event_engine/slice_buffer.cc',
     'src/core/lib/event_engine/trace.cc',
+    'src/core/lib/event_engine/trace_context_list.cc',
     'src/core/lib/gpr/alloc.cc',
     'src/core/lib/gpr/atm.cc',
     'src/core/lib/gpr/cpu_iphone.cc',
