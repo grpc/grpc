@@ -90,5 +90,6 @@ void grpc_set_default_iomgr_platform() {}
 int main(int argc, char** argv) {
   ::testing::InitGoogleTest(&argc, argv);
   gpr_log_verbosity_init();
+  gpr_time_init();
   return RUN_ALL_TESTS();
 }
