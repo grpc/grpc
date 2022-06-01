@@ -24,15 +24,12 @@
 #include <stddef.h>
 #include <stdint.h>
 
-#include <algorithm>
 #include <memory>
-#include <utility>
 #include <vector>
 
 #include "absl/base/thread_annotations.h"
 
 #include <grpc/event_engine/event_engine.h>
-#include <grpc/support/log.h>
 
 #include "src/core/lib/event_engine/iomgr_engine/timer.h"
 #include "src/core/lib/gprpp/sync.h"
