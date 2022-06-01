@@ -250,7 +250,6 @@ void SubchannelStreamClient::CallState::StartCallLocked() {
   payload_.send_initial_metadata.peer_string = nullptr;
   batch_.send_initial_metadata = true;
   // Add send_message op.
-  send_message_.Clear();
   send_message_.Append(Slice(
       subchannel_stream_client_->event_handler_->EncodeSendMessageLocked()));
   payload_.send_message.send_message = &send_message_;
@@ -373,30 +372,13 @@ void SubchannelStreamClient::CallState::RecvMessageReady() {
     call_->Unref(DEBUG_LOCATION, "recv_message_ready");
     return;
   }
-  // Concatenate the slices to form a single string.
-  std::vector<uint8_t> recv_message_buffer;
-  const uint8_t* recv_message;
-  if (recv_message_->Count() == 1) {
-    recv_message = GRPC_SLICE_START_PTR(recv_message_->c_slice_at(0));
-  } else {
-    recv_message_buffer.reserve(recv_message_->Length());
-    for (size_t i = 0; i < recv_message_->Count(); ++i) {
-      const grpc_slice& slice = recv_message_->c_slice_at(i);
-      recv_message_buffer.insert(recv_message_buffer.end(),
-                                 GRPC_SLICE_START_PTR(slice),
-                                 GRPC_SLICE_END_PTR(slice));
-    }
-    recv_message = recv_message_buffer.data();
-  }
   // Report payload.
   {
     MutexLock lock(&subchannel_stream_client_->mu_);
     if (subchannel_stream_client_->event_handler_ != nullptr) {
-      absl::string_view serialized_message(
-          reinterpret_cast<const char*>(recv_message), recv_message_->Length());
       absl::Status status =
           subchannel_stream_client_->event_handler_->RecvMessageReadyLocked(
-              subchannel_stream_client_.get(), serialized_message);
+              subchannel_stream_client_.get(), recv_message_->JoinIntoString());
       if (!status.ok()) {
         if (GPR_UNLIKELY(subchannel_stream_client_->tracer_ != nullptr)) {
           gpr_log(GPR_INFO,
