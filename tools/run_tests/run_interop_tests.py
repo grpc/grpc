@@ -153,7 +153,7 @@ class AspNetCoreLanguage:
                _ORCA_TEST_CASES
 
     def unimplemented_test_cases_server(self):
-        return []
+        return _ORCA_TEST_CASES
 
     def __str__(self):
         return 'aspnetcore'
