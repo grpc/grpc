@@ -158,9 +158,9 @@ class TransportStreamOpBatch {
                              : nullptr;
   }
 
-  void set_send_message(grpc_core::SliceBuffer send_message) {
+  void set_send_message(grpc_core::SliceBuffer* send_message) {
     op_->send_message = true;
-    *op_->payload->send_message.send_message = std::move(send_message);
+    op_->payload->send_message.send_message = send_message;
   }
 
   absl::optional<grpc_core::SliceBuffer>* recv_message() const {
