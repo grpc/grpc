@@ -5873,6 +5873,7 @@ grpc_cc_library(
     tags = ["grpc-autodeps"],
     deps = [
         "envoy_config_rbac_upb",
+        "google_type_expr_upb",
         "gpr_base",
         "grpc_authorization_base",
         "grpc_mock_cel",
