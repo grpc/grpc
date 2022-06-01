@@ -49,3 +49,14 @@ NSString *GRPCGetRemoteInteropTestServerAddress() {
   });
   return address;
 }
+
+void GRPCPrintInteropTestServerDebugInfo() {
+  NSLog(@"local interop env: %@  macro: %@",
+        [NSProcessInfo processInfo].environment[@"HOST_PORT_LOCAL"], NSStringize(HOST_PORT_LOCAL));
+  NSLog(@"local interop ssl env: %@  macro: %@",
+        [NSProcessInfo processInfo].environment[@"HOST_PORT_LOCALSSL"],
+        NSStringize(HOST_PORT_LOCALSSL));
+  NSLog(@"remote interop env: %@  macro: %@",
+        [NSProcessInfo processInfo].environment[@"HOST_PORT_REMOTE"],
+        NSStringize(HOST_PORT_REMOTE));
+}
