@@ -26,6 +26,7 @@ GRPCIO_TESTS_UNIT = [
     "_channel_close_test.py",
     "_channel_connectivity_test.py",
     "_channel_ready_future_test.py",
+    "_compression_test.py",
     "_contextvars_propagation_test.py",
     "_credentials_test.py",
     "_dns_resolver_test.py",
