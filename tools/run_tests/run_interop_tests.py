@@ -122,7 +122,7 @@ class CXXLanguage:
                _ORCA_TEST_CASES
 
     def unimplemented_test_cases_server(self):
-        return []
+        return _ORCA_TEST_CASES
 
     def __str__(self):
         return 'c++'
@@ -187,7 +187,7 @@ class DartLanguage:
                _ORCA_TEST_CASES
 
     def unimplemented_test_cases_server(self):
-        return _SKIP_COMPRESSION + _SKIP_SPECIAL_STATUS_MESSAGE
+        return _SKIP_COMPRESSION + _SKIP_SPECIAL_STATUS_MESSAGE + _ORCA_TEST_CASES
 
     def __str__(self):
         return 'dart'
