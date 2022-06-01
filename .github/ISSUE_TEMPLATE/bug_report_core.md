@@ -2,7 +2,6 @@
 name: Report a gRPC Core bug
 about: Create a report to help us improve
 labels: kind/bug, priority/P2, lang/core, untriaged
-assignees: nicolasnoble
 
 ---
 

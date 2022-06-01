@@ -186,6 +186,7 @@ grpc_cc_test(
         "//src/proto/grpc/testing:echo.proto",
         "//src/proto/grpc/testing:echo_messages.proto",
         "//src/proto/grpc/testing:simple_messages.proto",
+        "//src/proto/grpc/testing/xds/v3:orca_load_report.proto",
     ],
     external_deps = [
         "absl/flags:flag",
@@ -204,6 +205,7 @@ grpc_cc_test(
         "//src/proto/grpc/testing:echo_messages_proto",
         "//src/proto/grpc/testing:echo_proto",
         "//src/proto/grpc/testing:simple_messages_proto",
+        "//src/proto/grpc/testing/xds/v3:orca_load_report_proto",
         "//test/core/util:grpc_test_util",
         "//test/cpp/util:test_config",
     ],
@@ -310,6 +312,9 @@ grpc_cc_binary(
     ],
     external_deps = [
         "absl/flags:flag",
+    ],
+    visibility = [
+        "@grpc:cli",
     ],
     deps = [
         ":grpc++_proto_reflection_desc_db",

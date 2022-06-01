@@ -20,48 +20,65 @@
 
 #include "src/core/lib/surface/call.h"
 
-#include <assert.h>
 #include <limits.h>
-#include <stdio.h>
 #include <stdlib.h>
-#include <string.h>
 
+#include <algorithm>
 #include <atomic>
+#include <memory>
+#include <new>
 #include <string>
+#include <utility>
 
+#include "absl/base/thread_annotations.h"
+#include "absl/meta/type_traits.h"
+#include "absl/status/status.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
+#include "absl/strings/string_view.h"
 
+#include <grpc/byte_buffer.h>
 #include <grpc/compression.h>
 #include <grpc/grpc.h>
+#include <grpc/impl/codegen/gpr_types.h>
+#include <grpc/impl/codegen/propagation_bits.h>
 #include <grpc/slice.h>
+#include <grpc/slice_buffer.h>
+#include <grpc/status.h>
 #include <grpc/support/alloc.h>
+#include <grpc/support/atm.h>
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
 
 #include "src/core/lib/channel/channel_stack.h"
+#include "src/core/lib/channel/channelz.h"
 #include "src/core/lib/channel/context.h"
 #include "src/core/lib/compression/compression_internal.h"
 #include "src/core/lib/debug/stats.h"
 #include "src/core/lib/gpr/alloc.h"
-#include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gpr/time_precise.h"
-#include "src/core/lib/gpr/useful.h"
+#include "src/core/lib/gprpp/cpp_impl_of.h"
+#include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/manual_constructor.h"
+#include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/gprpp/ref_counted.h"
-#include "src/core/lib/iomgr/timer.h"
+#include "src/core/lib/gprpp/sync.h"
+#include "src/core/lib/iomgr/call_combiner.h"
+#include "src/core/lib/iomgr/exec_ctx.h"
+#include "src/core/lib/iomgr/polling_entity.h"
 #include "src/core/lib/profiling/timers.h"
 #include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/slice/slice_internal.h"
-#include "src/core/lib/slice/slice_split.h"
-#include "src/core/lib/slice/slice_string_helpers.h"
+#include "src/core/lib/slice/slice_refcount.h"
 #include "src/core/lib/surface/api_trace.h"
 #include "src/core/lib/surface/call_test_only.h"
 #include "src/core/lib/surface/channel.h"
 #include "src/core/lib/surface/completion_queue.h"
 #include "src/core/lib/surface/server.h"
 #include "src/core/lib/surface/validate_metadata.h"
+#include "src/core/lib/transport/byte_stream.h"
 #include "src/core/lib/transport/error_utils.h"
+#include "src/core/lib/transport/metadata_batch.h"
 #include "src/core/lib/transport/transport.h"
 
 grpc_core::TraceFlag grpc_call_error_trace(false, "call_error");
@@ -87,6 +104,7 @@ class Call : public CppImplOf<Call, grpc_call> {
                                      bool is_notify_tag_closure) = 0;
   virtual bool failed_before_recv_message() const = 0;
   virtual bool is_trailers_only() const = 0;
+  virtual absl::string_view GetServerAuthority() const = 0;
   virtual void ExternalRef() = 0;
   virtual void ExternalUnref() = 0;
   virtual void InternalRef(const char* reason) = 0;
@@ -217,6 +235,13 @@ class FilterStackCall final : public Call {
     return call_failed_before_recv_message_;
   }
 
+  absl::string_view GetServerAuthority() const override {
+    const Slice* authority_metadata =
+        recv_initial_metadata_.get_pointer(HttpAuthorityMetadata());
+    if (authority_metadata == nullptr) return "";
+    return authority_metadata->as_string_view();
+  }
+
   grpc_compression_algorithm test_only_compression_algorithm() override {
     return incoming_compression_algorithm_;
   }
@@ -297,7 +322,7 @@ class FilterStackCall final : public Call {
   FilterStackCall(Arena* arena, const grpc_call_create_args& args)
       : Call(arena, args.server_transport_data == nullptr, args.send_deadline),
         cq_(args.cq),
-        channel_(args.channel),
+        channel_(args.channel->Ref()),
         stream_op_payload_(context_) {}
 
   static void ReleaseCall(void* call, grpc_error_handle);
@@ -328,7 +353,7 @@ class FilterStackCall final : public Call {
   CallCombiner call_combiner_;
   grpc_completion_queue* cq_;
   grpc_polling_entity pollent_;
-  grpc_channel* channel_;
+  RefCountedPtr<Channel> channel_;
   gpr_cycle_counter start_time_ = gpr_get_cycle_counter();
 
   /** has grpc_call_unref been called */
@@ -499,7 +524,7 @@ grpc_error_handle FilterStackCall::Create(grpc_call_create_args* args,
                                           grpc_call** out_call) {
   GPR_TIMER_SCOPE("grpc_call_create", 0);
 
-  GRPC_CHANNEL_INTERNAL_REF(args->channel, "call");
+  Channel* channel = args->channel.get();
 
   auto add_init_error = [](grpc_error_handle* composite,
                            grpc_error_handle new_err) {
@@ -513,16 +538,15 @@ grpc_error_handle FilterStackCall::Create(grpc_call_create_args* args,
   Arena* arena;
   FilterStackCall* call;
   grpc_error_handle error = GRPC_ERROR_NONE;
-  grpc_channel_stack* channel_stack =
-      grpc_channel_get_channel_stack(args->channel);
-  size_t initial_size = grpc_channel_get_call_size_estimate(args->channel);
+  grpc_channel_stack* channel_stack = channel->channel_stack();
+  size_t initial_size = channel->CallSizeEstimate();
   GRPC_STATS_INC_CALL_INITIAL_SIZE(initial_size);
   size_t call_alloc_size =
       GPR_ROUND_UP_TO_ALIGNMENT_SIZE(sizeof(FilterStackCall)) +
       channel_stack->call_stack_size;
 
   std::pair<Arena*, void*> arena_with_call = Arena::CreateWithAlloc(
-      initial_size, call_alloc_size, &*args->channel->allocator);
+      initial_size, call_alloc_size, channel->allocator());
   arena = arena_with_call.first;
   call = new (arena_with_call.second) FilterStackCall(arena, *args);
   GPR_DEBUG_ASSERT(FromC(call->c_ptr()) == call);
@@ -586,8 +610,7 @@ grpc_error_handle FilterStackCall::Create(grpc_call_create_args* args,
   }
 
   if (call->is_client()) {
-    channelz::ChannelNode* channelz_channel =
-        grpc_channel_get_channelz_node(call->channel_);
+    channelz::ChannelNode* channelz_channel = channel->channelz_node();
     if (channelz_channel != nullptr) {
       channelz_channel->RecordCallStarted();
     }
@@ -619,11 +642,10 @@ void FilterStackCall::SetCompletionQueue(grpc_completion_queue* cq) {
 
 void FilterStackCall::ReleaseCall(void* call, grpc_error_handle /*error*/) {
   auto* c = static_cast<FilterStackCall*>(call);
-  grpc_channel* channel = c->channel_;
+  RefCountedPtr<Channel> channel = std::move(c->channel_);
   Arena* arena = c->arena();
   c->~FilterStackCall();
-  grpc_channel_update_call_size_estimate(channel, arena->Destroy());
-  GRPC_CHANNEL_INTERNAL_UNREF(channel, "call");
+  channel->UpdateCallSizeEstimate(arena->Destroy());
 }
 
 void FilterStackCall::DestroyCall(void* call, grpc_error_handle /*error*/) {
@@ -702,7 +724,7 @@ void FilterStackCall::ExternalUnref() {
 char* FilterStackCall::GetPeer() {
   char* peer_string = reinterpret_cast<char*>(gpr_atm_acq_load(&peer_string_));
   if (peer_string != nullptr) return gpr_strdup(peer_string);
-  peer_string = grpc_channel_get_target(channel_);
+  peer_string = grpc_channel_get_target(channel_->c_ptr());
   if (peer_string != nullptr) return peer_string;
   return gpr_strdup("unknown");
 }
@@ -793,8 +815,7 @@ void FilterStackCall::SetFinalStatus(grpc_error_handle error) {
         grpc_slice_from_cpp_string(std::move(status_details));
     status_error_.set(error);
     GRPC_ERROR_UNREF(error);
-    channelz::ChannelNode* channelz_channel =
-        grpc_channel_get_channelz_node(channel_);
+    channelz::ChannelNode* channelz_channel = channel_->channelz_node();
     if (channelz_channel != nullptr) {
       if (*final_op_.client.status != GRPC_STATUS_OK) {
         channelz_channel->RecordCallFailed();
@@ -836,6 +857,9 @@ bool FilterStackCall::PrepareApplicationMetadata(size_t count,
     } else if (GRPC_SLICE_LENGTH(md->value) >= UINT32_MAX) {
       // HTTP2 hpack encoding has a maximum limit.
       return false;
+    } else if (grpc_slice_str_cmp(md->key, "content-length") == 0) {
+      // Filter "content-length metadata"
+      continue;
     }
     batch->Append(StringViewFromSlice(md->key),
                   Slice(grpc_slice_ref_internal(md->value)),
@@ -1240,14 +1264,15 @@ void FilterStackCall::HandleCompressionAlgorithmNotAccepted(
   gpr_log(GPR_ERROR,
           "Compression algorithm ('%s') not present in the "
           "accepted encodings (%s)",
-          algo_name, encodings_accepted_by_peer_.ToString().c_str());
+          algo_name,
+          std::string(encodings_accepted_by_peer_.ToString()).c_str());
 }
 
 void FilterStackCall::BatchControl::ValidateFilteredMetadata() {
   FilterStackCall* call = call_;
 
   const grpc_compression_options compression_options =
-      grpc_channel_compression_options(call->channel_);
+      call->channel_->compression_options();
   const grpc_compression_algorithm compression_algorithm =
       call->incoming_compression_algorithm_;
   if (GPR_UNLIKELY(!CompressionAlgorithmSet::FromUint32(
@@ -1429,7 +1454,7 @@ grpc_call_error FilterStackCall::StartBatch(const grpc_op* ops, size_t nops,
           level_set = true;
         } else {
           const grpc_compression_options copts =
-              grpc_channel_compression_options(channel_);
+              channel_->compression_options();
           if (copts.default_level.is_set) {
             level_set = true;
             effective_compression_level = copts.default_level.level;
@@ -1923,6 +1948,10 @@ bool grpc_call_is_trailers_only(const grpc_call* call) {
 
 int grpc_call_failed_before_recv_message(const grpc_call* c) {
   return grpc_core::Call::FromC(c)->failed_before_recv_message();
+}
+
+absl::string_view grpc_call_server_authority(const grpc_call* call) {
+  return grpc_core::Call::FromC(call)->GetServerAuthority();
 }
 
 const char* grpc_call_error_to_string(grpc_call_error error) {

@@ -21,6 +21,7 @@
 #include <grpc/support/log.h>
 
 #include "src/core/ext/filters/client_channel/lb_policy.h"
+#include "src/core/ext/filters/client_channel/lb_policy/oob_backend_metric.h"
 #include "src/core/ext/filters/client_channel/lb_policy_registry.h"
 #include "src/core/lib/address_utils/parse_address.h"
 #include "src/core/lib/channel/channel_args.h"
@@ -522,6 +523,124 @@ class FixedAddressFactory : public LoadBalancingPolicyFactory {
   }
 };
 
+//
+// OobBackendMetricTestLoadBalancingPolicy
+//
+
+constexpr char kOobBackendMetricTestLbPolicyName[] =
+    "oob_backend_metric_test_lb";
+
+class OobBackendMetricTestConfig : public LoadBalancingPolicy::Config {
+ public:
+  const char* name() const override {
+    return kOobBackendMetricTestLbPolicyName;
+  }
+};
+
+class OobBackendMetricTestLoadBalancingPolicy
+    : public ForwardingLoadBalancingPolicy {
+ public:
+  OobBackendMetricTestLoadBalancingPolicy(Args args,
+                                          OobBackendMetricCallback cb)
+      : ForwardingLoadBalancingPolicy(
+            absl::make_unique<Helper>(
+                RefCountedPtr<OobBackendMetricTestLoadBalancingPolicy>(this)),
+            std::move(args),
+            /*delegate_policy_name=*/"pick_first",
+            /*initial_refcount=*/2),
+        cb_(std::move(cb)) {}
+
+  ~OobBackendMetricTestLoadBalancingPolicy() override = default;
+
+  const char* name() const override {
+    return kOobBackendMetricTestLbPolicyName;
+  }
+
+ private:
+  class BackendMetricWatcher : public OobBackendMetricWatcher {
+   public:
+    BackendMetricWatcher(
+        ServerAddress address,
+        RefCountedPtr<OobBackendMetricTestLoadBalancingPolicy> parent)
+        : address_(std::move(address)), parent_(std::move(parent)) {}
+
+    void OnBackendMetricReport(
+        const BackendMetricData& backend_metric_data) override {
+      parent_->cb_(address_, backend_metric_data);
+    }
+
+   private:
+    ServerAddress address_;
+    RefCountedPtr<OobBackendMetricTestLoadBalancingPolicy> parent_;
+  };
+
+  class Helper : public ChannelControlHelper {
+   public:
+    explicit Helper(
+        RefCountedPtr<OobBackendMetricTestLoadBalancingPolicy> parent)
+        : parent_(std::move(parent)) {}
+
+    RefCountedPtr<SubchannelInterface> CreateSubchannel(
+        ServerAddress address, const grpc_channel_args& args) override {
+      auto subchannel =
+          parent_->channel_control_helper()->CreateSubchannel(address, args);
+      subchannel->AddDataWatcher(MakeOobBackendMetricWatcher(
+          Duration::Seconds(1), absl::make_unique<BackendMetricWatcher>(
+                                    std::move(address), parent_)));
+      return subchannel;
+    }
+
+    void UpdateState(grpc_connectivity_state state, const absl::Status& status,
+                     std::unique_ptr<SubchannelPicker> picker) override {
+      parent_->channel_control_helper()->UpdateState(state, status,
+                                                     std::move(picker));
+    }
+
+    void RequestReresolution() override {
+      parent_->channel_control_helper()->RequestReresolution();
+    }
+
+    absl::string_view GetAuthority() override {
+      return parent_->channel_control_helper()->GetAuthority();
+    }
+
+    void AddTraceEvent(TraceSeverity severity,
+                       absl::string_view message) override {
+      parent_->channel_control_helper()->AddTraceEvent(severity, message);
+    }
+
+   private:
+    RefCountedPtr<OobBackendMetricTestLoadBalancingPolicy> parent_;
+  };
+
+ private:
+  OobBackendMetricCallback cb_;
+};
+
+class OobBackendMetricTestFactory : public LoadBalancingPolicyFactory {
+ public:
+  explicit OobBackendMetricTestFactory(OobBackendMetricCallback cb)
+      : cb_(std::move(cb)) {}
+
+  OrphanablePtr<LoadBalancingPolicy> CreateLoadBalancingPolicy(
+      LoadBalancingPolicy::Args args) const override {
+    return MakeOrphanable<OobBackendMetricTestLoadBalancingPolicy>(
+        std::move(args), cb_);
+  }
+
+  const char* name() const override {
+    return kOobBackendMetricTestLbPolicyName;
+  }
+
+  RefCountedPtr<LoadBalancingPolicy::Config> ParseLoadBalancingConfig(
+      const Json& /*json*/, grpc_error_handle* /*error*/) const override {
+    return MakeRefCounted<OobBackendMetricTestConfig>();
+  }
+
+ private:
+  OobBackendMetricCallback cb_;
+};
+
 }  // namespace
 
 void RegisterTestPickArgsLoadBalancingPolicy(TestPickArgsCallback cb,
@@ -545,6 +664,12 @@ void RegisterAddressTestLoadBalancingPolicy(AddressTestCallback cb) {
 void RegisterFixedAddressLoadBalancingPolicy() {
   LoadBalancingPolicyRegistry::Builder::RegisterLoadBalancingPolicyFactory(
       absl::make_unique<FixedAddressFactory>());
+}
+
+void RegisterOobBackendMetricTestLoadBalancingPolicy(
+    OobBackendMetricCallback cb) {
+  LoadBalancingPolicyRegistry::Builder::RegisterLoadBalancingPolicyFactory(
+      absl::make_unique<OobBackendMetricTestFactory>(std::move(cb)));
 }
 
 }  // namespace grpc_core

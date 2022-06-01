@@ -20,6 +20,9 @@
 #include <cstdint>
 #include <limits>
 #include <string>
+#include <utility>
+
+#include "absl/strings/str_format.h"
 
 #include <grpc/impl/codegen/gpr_types.h>
 #include <grpc/support/log.h>
@@ -180,6 +183,11 @@ std::string Duration::ToString() const {
     return "-∞";
   }
   return std::to_string(millis_) + "ms";
+}
+
+std::string Duration::ToJsonString() const {
+  gpr_timespec ts = as_timespec();
+  return absl::StrFormat("%d.%09ds", ts.tv_sec, ts.tv_nsec);
 }
 
 void TestOnlySetProcessEpoch(gpr_timespec epoch) {

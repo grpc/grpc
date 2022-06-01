@@ -22,54 +22,79 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <inttypes.h>
 #include <stdlib.h>
+#include <string.h>
 
 #include <algorithm>
 #include <deque>
-#include <functional>
 #include <list>
 #include <map>
+#include <memory>
 #include <random>
+#include <set>
 #include <string>
 #include <unordered_map>
 #include <utility>
+#include <vector>
 
+#include "absl/base/thread_annotations.h"
 #include "absl/container/inlined_vector.h"
 #include "absl/hash/hash.h"
 #include "absl/memory/memory.h"
+#include "absl/status/status.h"
+#include "absl/status/statusor.h"
 #include "absl/strings/str_cat.h"
+#include "absl/strings/str_format.h"
 #include "absl/strings/str_join.h"
 #include "absl/strings/string_view.h"
 #include "absl/strings/strip.h"
+#include "absl/types/optional.h"
+#include "upb/upb.h"
 #include "upb/upb.hpp"
 
+#include <grpc/byte_buffer.h>
+#include <grpc/byte_buffer_reader.h>
 #include <grpc/grpc.h>
-#include <grpc/grpc_security.h>
-#include <grpc/impl/codegen/byte_buffer_reader.h>
+#include <grpc/impl/codegen/connectivity_state.h>
 #include <grpc/impl/codegen/grpc_types.h>
-#include <grpc/support/time.h>
+#include <grpc/impl/codegen/propagation_bits.h>
+#include <grpc/slice.h>
+#include <grpc/status.h>
+#include <grpc/support/log.h>
 
 #include "src/core/ext/filters/client_channel/client_channel.h"
 #include "src/core/ext/filters/client_channel/lb_policy.h"
 #include "src/core/ext/filters/client_channel/lb_policy/child_policy_handler.h"
 #include "src/core/ext/filters/client_channel/lb_policy_factory.h"
 #include "src/core/ext/filters/client_channel/lb_policy_registry.h"
+#include "src/core/ext/filters/client_channel/subchannel_interface.h"
 #include "src/core/lib/backoff/backoff.h"
+#include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/channel/channelz.h"
 #include "src/core/lib/config/core_configuration.h"
-#include "src/core/lib/gpr/env.h"
-#include "src/core/lib/gpr/string.h"
+#include "src/core/lib/debug/trace.h"
+#include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/dual_ref_counted.h"
 #include "src/core/lib/gprpp/orphanable.h"
-#include "src/core/lib/gprpp/ref_counted.h"
+#include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/gprpp/sync.h"
+#include "src/core/lib/gprpp/time.h"
+#include "src/core/lib/iomgr/closure.h"
+#include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
+#include "src/core/lib/iomgr/pollset_set.h"
 #include "src/core/lib/iomgr/timer.h"
+#include "src/core/lib/iomgr/work_serializer.h"
 #include "src/core/lib/json/json.h"
 #include "src/core/lib/json/json_util.h"
 #include "src/core/lib/resolver/resolver_registry.h"
+#include "src/core/lib/resolver/server_address.h"
 #include "src/core/lib/security/credentials/credentials.h"
 #include "src/core/lib/security/credentials/fake/fake_credentials.h"
 #include "src/core/lib/service_config/service_config_impl.h"
+#include "src/core/lib/slice/slice_internal.h"
+#include "src/core/lib/slice/slice_refcount.h"
 #include "src/core/lib/surface/call.h"
 #include "src/core/lib/surface/channel.h"
 #include "src/core/lib/transport/connectivity_state.h"
@@ -269,7 +294,6 @@ class RlsLb : public LoadBalancingPolicy {
     //
     // Both methods grab the data they need from the parent object.
     void StartUpdate() ABSL_EXCLUSIVE_LOCKS_REQUIRED(&RlsLb::mu_);
-    // Does not take ownership of channel_args.
     void MaybeFinishUpdate() ABSL_LOCKS_EXCLUDED(&RlsLb::mu_);
 
     void ExitIdleLocked() {
@@ -668,6 +692,7 @@ class RlsLb : public LoadBalancingPolicy {
   // Mutex to guard LB policy state that is accessed by the picker.
   Mutex mu_;
   bool is_shutdown_ ABSL_GUARDED_BY(mu_) = false;
+  bool update_in_progress_ = false;
   Cache cache_ ABSL_GUARDED_BY(mu_);
   // Maps an RLS request key to an RlsRequest object that represents a pending
   // RLS request.
@@ -1568,7 +1593,8 @@ RlsLb::RlsChannel::RlsChannel(RefCountedPtr<RlsLb> lb_policy)
       parent_channelz_node_ = parent_channelz_node->Ref();
     }
     // Start connectivity watch.
-    ClientChannel* client_channel = ClientChannel::GetFromChannel(channel_);
+    ClientChannel* client_channel =
+        ClientChannel::GetFromChannel(Channel::FromC(channel_));
     GPR_ASSERT(client_channel != nullptr);
     watcher_ = new StateWatcher(Ref(DEBUG_LOCATION, "StateWatcher"));
     client_channel->AddConnectivityWatcher(
@@ -1593,7 +1619,8 @@ void RlsLb::RlsChannel::Orphan() {
     }
     // Stop connectivity watch.
     if (watcher_ != nullptr) {
-      ClientChannel* client_channel = ClientChannel::GetFromChannel(channel_);
+      ClientChannel* client_channel =
+          ClientChannel::GetFromChannel(Channel::FromC(channel_));
       GPR_ASSERT(client_channel != nullptr);
       client_channel->RemoveConnectivityWatcher(watcher_);
       watcher_ = nullptr;
@@ -1882,6 +1909,7 @@ void RlsLb::UpdateLocked(UpdateArgs args) {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_rls_trace)) {
     gpr_log(GPR_INFO, "[rlslb %p] policy updated", this);
   }
+  update_in_progress_ = true;
   // Swap out config.
   RefCountedPtr<RlsLbConfig> old_config = std::move(config_);
   config_ = std::move(args.config);
@@ -1984,6 +2012,7 @@ void RlsLb::UpdateLocked(UpdateArgs args) {
     }
     default_child_policy_->MaybeFinishUpdate();
   }
+  update_in_progress_ = false;
   // In principle, we need to update the picker here only if the config
   // fields used by the picker have changed.  However, it seems fragile
   // to check individual fields, since the picker logic could change in
@@ -2051,6 +2080,12 @@ void RlsLb::UpdatePickerCallback(void* arg, grpc_error_handle /*error*/) {
 }
 
 void RlsLb::UpdatePickerLocked() {
+  // If we're in the process of propagating an update from our parent to
+  // our children, ignore any updates that come from the children.  We
+  // will instead return a new picker once the update has been seen by
+  // all children.  This avoids unnecessary picker churn while an update
+  // is being propagated to our children.
+  if (update_in_progress_) return;
   if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_rls_trace)) {
     gpr_log(GPR_INFO, "[rlslb %p] updating picker", this);
   }

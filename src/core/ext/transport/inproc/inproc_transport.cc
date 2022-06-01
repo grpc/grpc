@@ -20,22 +20,58 @@
 
 #include "src/core/ext/transport/inproc/inproc_transport.h"
 
+#include <stdint.h>
 #include <string.h>
 
+#include <algorithm>
+#include <memory>
+#include <new>
+#include <string>
+#include <utility>
+
+#include "absl/status/status.h"
+#include "absl/status/statusor.h"
+#include "absl/strings/str_cat.h"
+#include "absl/strings/string_view.h"
+#include "absl/types/optional.h"
+
+#include <grpc/grpc.h>
+#include <grpc/impl/codegen/connectivity_state.h>
+#include <grpc/slice.h>
+#include <grpc/slice_buffer.h>
+#include <grpc/status.h>
 #include <grpc/support/alloc.h>
-#include <grpc/support/string_util.h>
+#include <grpc/support/log.h>
 #include <grpc/support/sync.h>
-#include <grpc/support/time.h>
 
 #include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/channel/channel_args_preconditioning.h"
+#include "src/core/lib/channel/channelz.h"
+#include "src/core/lib/config/core_configuration.h"
+#include "src/core/lib/gpr/useful.h"
+#include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/manual_constructor.h"
-#include "src/core/lib/resource_quota/api.h"
+#include "src/core/lib/gprpp/orphanable.h"
+#include "src/core/lib/gprpp/ref_counted_ptr.h"
+#include "src/core/lib/gprpp/time.h"
+#include "src/core/lib/iomgr/closure.h"
+#include "src/core/lib/iomgr/endpoint.h"
+#include "src/core/lib/iomgr/error.h"
+#include "src/core/lib/iomgr/exec_ctx.h"
+#include "src/core/lib/iomgr/iomgr_fwd.h"
+#include "src/core/lib/iomgr/pollset.h"
+#include "src/core/lib/resource_quota/arena.h"
+#include "src/core/lib/slice/slice.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/surface/api_trace.h"
 #include "src/core/lib/surface/channel.h"
+#include "src/core/lib/surface/channel_stack_type.h"
 #include "src/core/lib/surface/server.h"
+#include "src/core/lib/transport/byte_stream.h"
 #include "src/core/lib/transport/connectivity_state.h"
-#include "src/core/lib/transport/error_utils.h"
+#include "src/core/lib/transport/metadata_batch.h"
+#include "src/core/lib/transport/transport.h"
+#include "src/core/lib/transport/transport_fwd.h"
 #include "src/core/lib/transport/transport_impl.h"
 
 #define INPROC_LOG(...)                               \
@@ -1264,7 +1300,8 @@ grpc_channel* grpc_inproc_channel_create(grpc_server* server,
   args = grpc_channel_args_copy_and_add(args, &default_authority_arg, 1);
   const grpc_channel_args* client_args = grpc_core::CoreConfiguration::Get()
                                              .channel_args_preconditioning()
-                                             .PreconditionChannelArgs(args);
+                                             .PreconditionChannelArgs(args)
+                                             .ToC();
   grpc_channel_args_destroy(args);
   grpc_transport* server_transport;
   grpc_transport* client_transport;
@@ -1276,10 +1313,10 @@ grpc_channel* grpc_inproc_channel_create(grpc_server* server,
       server_transport, nullptr, server_args, nullptr);
   grpc_channel* channel = nullptr;
   if (error == GRPC_ERROR_NONE) {
-    channel = grpc_channel_create_internal("inproc", client_args,
-                                           GRPC_CLIENT_DIRECT_CHANNEL,
-                                           client_transport, &error);
-    if (error != GRPC_ERROR_NONE) {
+    auto new_channel = grpc_core::Channel::Create(
+        "inproc", grpc_core::ChannelArgs::FromC(client_args),
+        GRPC_CLIENT_DIRECT_CHANNEL, client_transport);
+    if (!new_channel.ok()) {
       GPR_ASSERT(!channel);
       gpr_log(GPR_ERROR, "Failed to create client channel: %s",
               grpc_error_std_string(error).c_str());
@@ -1294,6 +1331,8 @@ grpc_channel* grpc_inproc_channel_create(grpc_server* server,
       grpc_transport_destroy(server_transport);
       channel = grpc_lame_client_channel_create(
           nullptr, status, "Failed to create client channel");
+    } else {
+      channel = new_channel->release()->c_ptr();
     }
   } else {
     GPR_ASSERT(!channel);

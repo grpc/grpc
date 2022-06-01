@@ -48,7 +48,7 @@ class grpc_httpcli_ssl_channel_security_connector final
  public:
   explicit grpc_httpcli_ssl_channel_security_connector(char* secure_peer_name)
       : grpc_channel_security_connector(
-            /*url_scheme=*/nullptr,
+            /*url_scheme=*/{},
             /*channel_creds=*/nullptr,
             /*request_metadata_creds=*/nullptr),
         secure_peer_name_(secure_peer_name) {}
@@ -178,11 +178,10 @@ class HttpRequestSSLCredentials : public grpc_channel_credentials {
     return Ref();
   }
 
-  grpc_channel_args* update_arguments(grpc_channel_args* args) override {
-    return args;
+  UniqueTypeName type() const override {
+    static UniqueTypeName::Factory kFactory("HttpRequestSSL");
+    return kFactory.Create();
   }
-
-  const char* type() const override { return "HttpRequestSSL"; }
 
  private:
   int cmp_impl(const grpc_channel_credentials* /* other */) const override {

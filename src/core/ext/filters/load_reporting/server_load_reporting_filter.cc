@@ -20,43 +20,63 @@
 
 #include "src/core/ext/filters/load_reporting/server_load_reporting_filter.h"
 
-#include <string.h>
+#include <limits.h>
+#include <netinet/in.h>
+#include <stdint.h>
 
+#include <functional>
 #include <string>
+#include <utility>
 
+#include "absl/container/inlined_vector.h"
+#include "absl/meta/type_traits.h"
+#include "absl/status/status.h"
 #include "absl/strings/ascii.h"
+#include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
+#include "absl/strings/string_view.h"
+#include "absl/types/optional.h"
+#include "opencensus/tags/tag_key.h"
 
 #include <grpc/grpc_security.h>
-#include <grpc/slice.h>
-#include <grpc/support/alloc.h>
+#include <grpc/impl/codegen/grpc_types.h>
+#include <grpc/status.h>
 #include <grpc/support/log.h>
+#include <grpc/support/time.h>
 
-#include "src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb.h"
 #include "src/core/ext/filters/load_reporting/registered_opencensus_objects.h"
-#include "src/core/ext/filters/load_reporting/server_load_reporting_filter.h"
 #include "src/core/lib/address_utils/parse_address.h"
+#include "src/core/lib/channel/call_finalization.h"
 #include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/channel/channel_fwd.h"
+#include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/channel/channel_stack_builder.h"
-#include "src/core/lib/channel/context.h"
 #include "src/core/lib/config/core_configuration.h"
-#include "src/core/lib/iomgr/resolve_address.h"
+#include "src/core/lib/iomgr/resolved_address.h"
 #include "src/core/lib/iomgr/sockaddr.h"
 #include "src/core/lib/iomgr/socket_utils.h"
+#include "src/core/lib/promise/context.h"
+#include "src/core/lib/promise/poll.h"
+#include "src/core/lib/promise/promise.h"
 #include "src/core/lib/promise/seq.h"
 #include "src/core/lib/security/context/security_context.h"
-#include "src/core/lib/slice/slice_internal.h"
-#include "src/core/lib/surface/call.h"
+#include "src/core/lib/slice/slice.h"
+#include "src/core/lib/surface/channel_init.h"
+#include "src/core/lib/surface/channel_stack_type.h"
+#include "src/core/lib/transport/metadata_batch.h"
 #include "src/core/lib/uri/uri_parser.h"
+#include "src/cpp/server/load_reporter/constants.h"
 
-namespace grpc {
+// IWYU pragma: no_include "opencensus/stats/recording.h"
+
+namespace grpc_core {
 
 constexpr char kEncodedIpv4AddressLengthString[] = "08";
 constexpr char kEncodedIpv6AddressLengthString[] = "32";
 constexpr char kEmptyAddressLengthString[] = "00";
 
 absl::StatusOr<ServerLoadReportingFilter> ServerLoadReportingFilter::Create(
-    grpc_core::ChannelArgs channel_args, grpc_core::ChannelFilter::Args) {
+    ChannelArgs channel_args, ChannelFilter::Args) {
   // Find and record the peer_identity.
   ServerLoadReportingFilter filter;
   const auto* auth_context = channel_args.GetObject<grpc_auth_context>();
@@ -76,17 +96,16 @@ absl::StatusOr<ServerLoadReportingFilter> ServerLoadReportingFilter::Create(
 
 namespace {
 std::string GetCensusSafeClientIpString(
-    const grpc_core::ClientMetadataHandle& initial_metadata) {
+    const ClientMetadataHandle& initial_metadata) {
   // Find the client URI string.
-  auto client_uri_str = initial_metadata->get(grpc_core::PeerString());
+  auto client_uri_str = initial_metadata->get(PeerString());
   if (!client_uri_str.has_value()) {
     gpr_log(GPR_ERROR,
             "Unable to extract client URI string (peer string) from gRPC "
             "metadata.");
     return "";
   }
-  absl::StatusOr<grpc_core::URI> client_uri =
-      grpc_core::URI::Parse(*client_uri_str);
+  absl::StatusOr<URI> client_uri = URI::Parse(*client_uri_str);
   if (!client_uri.ok()) {
     gpr_log(GPR_ERROR,
             "Unable to parse the client URI string (peer string) to a client "
@@ -123,8 +142,7 @@ std::string GetCensusSafeClientIpString(
 }
 
 std::string MakeClientIpAndLrToken(
-    absl::string_view lr_token,
-    const grpc_core::ClientMetadataHandle& initial_metadata) {
+    absl::string_view lr_token, const ClientMetadataHandle& initial_metadata) {
   std::string client_ip = GetCensusSafeClientIpString(initial_metadata);
   absl::string_view prefix;
   switch (client_ip.length()) {
@@ -160,27 +178,22 @@ const char* GetStatusTagForStatus(grpc_status_code status) {
 }
 }  // namespace
 
-grpc_core::ArenaPromise<grpc_core::ServerMetadataHandle>
-ServerLoadReportingFilter::MakeCallPromise(
-    grpc_core::CallArgs call_args,
-    grpc_core::NextPromiseFactory next_promise_factory) {
+ArenaPromise<ServerMetadataHandle> ServerLoadReportingFilter::MakeCallPromise(
+    CallArgs call_args, NextPromiseFactory next_promise_factory) {
   // Gather up basic facts about the request
-  grpc_core::Slice service_method;
-  if (const grpc_core::Slice* path =
-          call_args.client_initial_metadata->get_pointer(
-              grpc_core::HttpPathMetadata())) {
+  Slice service_method;
+  if (const Slice* path =
+          call_args.client_initial_metadata->get_pointer(HttpPathMetadata())) {
     service_method = path->Ref();
   }
   std::string target_host;
-  if (const grpc_core::Slice* authority =
-          call_args.client_initial_metadata->get_pointer(
-              grpc_core::HttpAuthorityMetadata())) {
+  if (const Slice* authority = call_args.client_initial_metadata->get_pointer(
+          HttpAuthorityMetadata())) {
     target_host = absl::AsciiStrToLower(authority->as_string_view());
   }
   std::string client_ip_and_lr_token;
-  auto lb_token =
-      call_args.client_initial_metadata->Take(grpc_core::LbTokenMetadata())
-          .value_or(grpc_core::Slice());
+  auto lb_token = call_args.client_initial_metadata->Take(LbTokenMetadata())
+                      .value_or(Slice());
   client_ip_and_lr_token = MakeClientIpAndLrToken(
       lb_token.as_string_view(), call_args.client_initial_metadata);
   // Record the beginning of the request
@@ -194,68 +207,62 @@ ServerLoadReportingFilter::MakeCallPromise(
         {peer_identity_.data(), peer_identity_.length()}}});
   // Returned promise runs the rest of the request, then reports costs and
   // records measurements
-  return grpc_core::ArenaPromise<grpc_core::ServerMetadataHandle>(
-      grpc_core::Seq(
-          // Call down the stack
-          next_promise_factory(std::move(call_args)),
-          // And then record the call result
-          [this, client_ip_and_lr_token,
-           target_host](grpc_core::ServerMetadataHandle trailing_metadata) {
-            const auto& costs =
-                trailing_metadata->Take(grpc_core::LbCostBinMetadata());
-            for (const auto& cost : costs) {
-              opencensus::stats::Record(
-                  {{::grpc::load_reporter::MeasureOtherCallMetric(),
-                    cost.cost}},
-                  {{::grpc::load_reporter::TagKeyToken(),
-                    {client_ip_and_lr_token.data(),
-                     client_ip_and_lr_token.length()}},
-                   {::grpc::load_reporter::TagKeyHost(),
-                    {target_host.data(), target_host.length()}},
-                   {::grpc::load_reporter::TagKeyUserId(),
-                    {peer_identity_.data(), peer_identity_.length()}},
-                   {::grpc::load_reporter::TagKeyMetricName(),
-                    {cost.name.data(), cost.name.length()}}});
-            }
-            grpc_core::GetContext<grpc_core::CallFinalization>()->Add(
-                [this, client_ip_and_lr_token,
-                 target_host](const grpc_call_final_info* final_info) {
-                  if (final_info == nullptr) return;
-                  // After the last bytes have been placed on the wire we record
-                  // final measurements
-                  opencensus::stats::Record(
-                      {{::grpc::load_reporter::MeasureEndCount(), 1},
-                       {::grpc::load_reporter::MeasureEndBytesSent(),
-                        final_info->stats.transport_stream_stats.outgoing
-                            .data_bytes},
-                       {::grpc::load_reporter::MeasureEndBytesReceived(),
-                        final_info->stats.transport_stream_stats.incoming
-                            .data_bytes},
-                       {::grpc::load_reporter::MeasureEndLatencyMs(),
-                        gpr_time_to_millis(final_info->stats.latency)}},
-                      {{::grpc::load_reporter::TagKeyToken(),
-                        {client_ip_and_lr_token.data(),
-                         client_ip_and_lr_token.length()}},
-                       {::grpc::load_reporter::TagKeyHost(),
-                        {target_host.data(), target_host.length()}},
-                       {::grpc::load_reporter::TagKeyUserId(),
-                        {peer_identity_.data(), peer_identity_.length()}},
-                       {::grpc::load_reporter::TagKeyStatus(),
-                        GetStatusTagForStatus(final_info->final_status)}});
-                });
-            return grpc_core::Immediate(std::move(trailing_metadata));
-          }));
+  return ArenaPromise<ServerMetadataHandle>(Seq(
+      // Call down the stack
+      next_promise_factory(std::move(call_args)),
+      // And then record the call result
+      [this, client_ip_and_lr_token,
+       target_host](ServerMetadataHandle trailing_metadata) {
+        const auto& costs = trailing_metadata->Take(LbCostBinMetadata());
+        for (const auto& cost : costs) {
+          opencensus::stats::Record(
+              {{::grpc::load_reporter::MeasureOtherCallMetric(), cost.cost}},
+              {{::grpc::load_reporter::TagKeyToken(),
+                {client_ip_and_lr_token.data(),
+                 client_ip_and_lr_token.length()}},
+               {::grpc::load_reporter::TagKeyHost(),
+                {target_host.data(), target_host.length()}},
+               {::grpc::load_reporter::TagKeyUserId(),
+                {peer_identity_.data(), peer_identity_.length()}},
+               {::grpc::load_reporter::TagKeyMetricName(),
+                {cost.name.data(), cost.name.length()}}});
+        }
+        GetContext<CallFinalization>()->Add([this, client_ip_and_lr_token,
+                                             target_host](
+                                                const grpc_call_final_info*
+                                                    final_info) {
+          if (final_info == nullptr) return;
+          // After the last bytes have been placed on the wire we record
+          // final measurements
+          opencensus::stats::Record(
+              {{::grpc::load_reporter::MeasureEndCount(), 1},
+               {::grpc::load_reporter::MeasureEndBytesSent(),
+                final_info->stats.transport_stream_stats.outgoing.data_bytes},
+               {::grpc::load_reporter::MeasureEndBytesReceived(),
+                final_info->stats.transport_stream_stats.incoming.data_bytes},
+               {::grpc::load_reporter::MeasureEndLatencyMs(),
+                gpr_time_to_millis(final_info->stats.latency)}},
+              {{::grpc::load_reporter::TagKeyToken(),
+                {client_ip_and_lr_token.data(),
+                 client_ip_and_lr_token.length()}},
+               {::grpc::load_reporter::TagKeyHost(),
+                {target_host.data(), target_host.length()}},
+               {::grpc::load_reporter::TagKeyUserId(),
+                {peer_identity_.data(), peer_identity_.length()}},
+               {::grpc::load_reporter::TagKeyStatus(),
+                GetStatusTagForStatus(final_info->final_status)}});
+        });
+        return Immediate(std::move(trailing_metadata));
+      }));
 }
 
 namespace {
-bool MaybeAddServerLoadReportingFilter(const grpc_channel_args& args) {
-  return grpc_channel_arg_get_bool(
-      grpc_channel_args_find(&args, GRPC_ARG_ENABLE_LOAD_REPORTING), false);
+bool MaybeAddServerLoadReportingFilter(const ChannelArgs& args) {
+  return args.GetBool(GRPC_ARG_ENABLE_LOAD_REPORTING).value_or(false);
 }
 
 const grpc_channel_filter kFilter =
-    grpc_core::MakePromiseBasedFilter<ServerLoadReportingFilter,
-                                      grpc_core::FilterEndpoint::kServer>(
+    MakePromiseBasedFilter<ServerLoadReportingFilter, FilterEndpoint::kServer>(
         "server_load_reporting");
 }  // namespace
 
@@ -265,27 +272,24 @@ const grpc_channel_filter kFilter =
 // time if we build with the filter target.
 struct ServerLoadReportingFilterStaticRegistrar {
   ServerLoadReportingFilterStaticRegistrar() {
-    grpc_core::CoreConfiguration::RegisterBuilder(
-        [](grpc_core::CoreConfiguration::Builder* builder) {
-          // Access measures to ensure they are initialized. Otherwise, we can't
-          // create any valid view before the first RPC.
-          grpc::load_reporter::MeasureStartCount();
-          grpc::load_reporter::MeasureEndCount();
-          grpc::load_reporter::MeasureEndBytesSent();
-          grpc::load_reporter::MeasureEndBytesReceived();
-          grpc::load_reporter::MeasureEndLatencyMs();
-          grpc::load_reporter::MeasureOtherCallMetric();
-          builder->channel_init()->RegisterStage(
-              GRPC_SERVER_CHANNEL, INT_MAX,
-              [](grpc_core::ChannelStackBuilder* cs_builder) {
-                if (MaybeAddServerLoadReportingFilter(
-                        *cs_builder->channel_args())) {
-                  cs_builder->PrependFilter(&kFilter, nullptr);
-                }
-                return true;
-              });
-        });
+    CoreConfiguration::RegisterBuilder([](CoreConfiguration::Builder* builder) {
+      // Access measures to ensure they are initialized. Otherwise, we can't
+      // create any valid view before the first RPC.
+      grpc::load_reporter::MeasureStartCount();
+      grpc::load_reporter::MeasureEndCount();
+      grpc::load_reporter::MeasureEndBytesSent();
+      grpc::load_reporter::MeasureEndBytesReceived();
+      grpc::load_reporter::MeasureEndLatencyMs();
+      grpc::load_reporter::MeasureOtherCallMetric();
+      builder->channel_init()->RegisterStage(
+          GRPC_SERVER_CHANNEL, INT_MAX, [](ChannelStackBuilder* cs_builder) {
+            if (MaybeAddServerLoadReportingFilter(cs_builder->channel_args())) {
+              cs_builder->PrependFilter(&kFilter);
+            }
+            return true;
+          });
+    });
   }
 } server_load_reporting_filter_static_registrar;
 
-}  // namespace grpc
+}  // namespace grpc_core

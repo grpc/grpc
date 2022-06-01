@@ -23,7 +23,7 @@
 
 #include <grpc/impl/codegen/grpc_types.h>
 
-#include "src/core/lib/iomgr/resolve_address.h"
+#include "src/core/lib/iomgr/resolved_address.h"
 
 namespace grpc_core {
 

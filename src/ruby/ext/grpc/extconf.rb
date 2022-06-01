@@ -60,7 +60,7 @@ end
 
 ENV['CPPFLAGS'] = '-DGPR_BACKWARDS_COMPATIBILITY_MODE'
 ENV['CPPFLAGS'] += ' -DGRPC_XDS_USER_AGENT_NAME_SUFFIX="\"RUBY\"" '
-ENV['CPPFLAGS'] += ' -DGRPC_XDS_USER_AGENT_VERSION_SUFFIX="\"1.46.0.dev\"" '
+ENV['CPPFLAGS'] += ' -DGRPC_XDS_USER_AGENT_VERSION_SUFFIX="\"1.48.0.dev\"" '
 
 output_dir = File.expand_path(RbConfig::CONFIG['topdir'])
 grpc_lib_dir = File.join(output_dir, 'libs', grpc_config)
@@ -102,7 +102,7 @@ $LDFLAGS << ' -Wl,-wrap,memcpy' if linux
 $LDFLAGS << ' -static-libgcc -static-libstdc++' if linux
 $LDFLAGS << ' -static' if windows
 
-$CFLAGS << ' -std=c99 '
+$CFLAGS << ' -std=c11 '
 $CFLAGS << ' -Wall '
 $CFLAGS << ' -Wextra '
 $CFLAGS << ' -pedantic '

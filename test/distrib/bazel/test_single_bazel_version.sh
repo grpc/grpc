@@ -41,6 +41,11 @@ EXCLUDED_TARGETS=(
   "-//examples/android/binder/..."
 )
 
+TEST_DIRECTORIES=(
+  "cpp"
+  "python"
+)
+
 FAILED_TESTS=""
 
 export OVERRIDE_BAZEL_VERSION="$VERSION"
@@ -48,9 +53,13 @@ export OVERRIDE_BAZEL_VERSION="$VERSION"
 export OVERRIDE_BAZEL_WRAPPER_DOWNLOAD_DIR=/tmp
 bazel build -- //... "${EXCLUDED_TARGETS[@]}" || FAILED_TESTS="${FAILED_TESTS}Build "
 
-cd test/distrib/bazel/cpp/
+for TEST_DIRECTORY in "${TEST_DIRECTORIES[@]}"; do
+  pushd "test/distrib/bazel/$TEST_DIRECTORY/"
 
-bazel test //:all || FAILED_TESTS="${FAILED_TESTS}C++ Distribtest"
+  bazel test --test_output=all //:all || FAILED_TESTS="${FAILED_TESTS}${TEST_DIRECTORY} Distribtest"
+
+  popd
+done
 
 if [ "$FAILED_TESTS" != "" ]
 then

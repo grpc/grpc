@@ -23,6 +23,8 @@
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
+#include "absl/strings/str_format.h"
+
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
@@ -31,6 +33,7 @@
 
 #include "src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper.h"
 #include "src/core/lib/gprpp/time.h"
+#include "src/core/lib/gprpp/time_util.h"
 #include "src/core/lib/iomgr/iomgr.h"
 #include "test/core/http/httpcli_test_util.h"
 #include "test/core/util/fake_udp_and_tcp_server.h"

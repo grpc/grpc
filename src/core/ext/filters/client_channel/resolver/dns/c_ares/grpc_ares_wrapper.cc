@@ -18,34 +18,50 @@
 
 #include <grpc/support/port_platform.h>
 
+// IWYU pragma: no_include <arpa/nameser.h>
+// IWYU pragma: no_include <inttypes.h>
+// IWYU pragma: no_include <netdb.h>
+// IWYU pragma: no_include <netinet/in.h>
+// IWYU pragma: no_include <stdlib.h>
+// IWYU pragma: no_include <sys/socket.h>
+
 #if GRPC_ARES == 1
 
 #include <string.h>
-#include <sys/types.h>
+#include <sys/types.h>  // IWYU pragma: keep
+
+#include <string>
+#include <utility>
 
 #include <address_sorting/address_sorting.h>
 #include <ares.h>
 
 #include "absl/container/inlined_vector.h"
+#include "absl/memory/memory.h"
+#include "absl/status/status.h"
+#include "absl/status/statusor.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
 
+#include <grpc/impl/codegen/grpc_types.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
-#include <grpc/support/time.h>
+#include <grpc/support/sync.h>
 
 #include "src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_ev_driver.h"
 #include "src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper.h"
 #include "src/core/lib/address_utils/parse_address.h"
 #include "src/core/lib/address_utils/sockaddr_utils.h"
+#include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/gpr/string.h"
+#include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/host_port.h"
+#include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/iomgr/error.h"
-#include "src/core/lib/iomgr/executor.h"
-#include "src/core/lib/iomgr/iomgr_internal.h"
-#include "src/core/lib/iomgr/nameser.h"
-#include "src/core/lib/iomgr/sockaddr.h"
+#include "src/core/lib/iomgr/exec_ctx.h"
+#include "src/core/lib/iomgr/nameser.h"  // IWYU pragma: keep
+#include "src/core/lib/iomgr/resolved_address.h"
 #include "src/core/lib/iomgr/timer.h"
 
 using grpc_core::ServerAddress;
@@ -526,12 +542,13 @@ static void log_address_sorting_list(const grpc_ares_request* r,
                                      const ServerAddressList& addresses,
                                      const char* input_output_str) {
   for (size_t i = 0; i < addresses.size(); i++) {
-    std::string addr_str =
-        grpc_sockaddr_to_string(&addresses[i].address(), true);
+    auto addr_str = grpc_sockaddr_to_string(&addresses[i].address(), true);
     gpr_log(GPR_INFO,
             "(c-ares resolver) request:%p c-ares address sorting: %s[%" PRIuPTR
             "]=%s",
-            r, input_output_str, i, addr_str.c_str());
+            r, input_output_str, i,
+            addr_str.ok() ? addr_str->c_str()
+                          : addr_str.status().ToString().c_str());
   }
 }
 

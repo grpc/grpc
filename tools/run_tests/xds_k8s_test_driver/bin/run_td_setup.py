@@ -67,7 +67,7 @@ flags.mark_flag_as_required("resource_suffix")
 KubernetesServerRunner = server_app.KubernetesServerRunner
 
 
-def main(argv):
+def main(argv):  # pylint: disable=too-many-locals,too-many-branches,too-many-statements
     if len(argv) > 1:
         raise app.UsageError('Too many command-line arguments.')
 

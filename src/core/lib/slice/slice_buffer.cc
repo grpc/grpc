@@ -18,15 +18,44 @@
 
 #include <grpc/support/port_platform.h>
 
+#include "src/core/lib/slice/slice_buffer.h"
+
 #include <string.h>
 
+#include <cstdint>
+#include <utility>
+
+#include <grpc/slice.h>
 #include <grpc/slice_buffer.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 
-#include "src/core/lib/gpr/useful.h"
-#include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/slice/slice_internal.h"
+#include "src/core/lib/slice/slice_refcount.h"
+
+namespace grpc_core {
+
+void SliceBuffer::Append(Slice slice) {
+  grpc_slice_buffer_add(&slice_buffer_, slice.TakeCSlice());
+}
+
+size_t SliceBuffer::AppendIndexed(Slice slice) {
+  return grpc_slice_buffer_add_indexed(&slice_buffer_, slice.TakeCSlice());
+}
+
+Slice SliceBuffer::TakeFirst() {
+  return Slice(grpc_slice_buffer_take_first(&slice_buffer_));
+}
+
+void SliceBuffer::Prepend(Slice slice) {
+  grpc_slice_buffer_undo_take_first(&slice_buffer_, slice.TakeCSlice());
+}
+
+Slice SliceBuffer::RefSlice(size_t index) {
+  return Slice(grpc_slice_ref_internal(slice_buffer_.slices[index]));
+}
+
+}  // namespace grpc_core
 
 /* grow a buffer; requires GRPC_SLICE_BUFFER_INLINE_ELEMENTS > 1 */
 #define GROW(x) (3 * (x) / 2)
@@ -91,15 +120,6 @@ void grpc_slice_buffer_destroy_internal(grpc_slice_buffer* sb) {
   }
 }
 
-void grpc_slice_buffer_destroy(grpc_slice_buffer* sb) {
-  if (grpc_core::ExecCtx::Get() == nullptr) {
-    grpc_core::ExecCtx exec_ctx;
-    grpc_slice_buffer_destroy_internal(sb);
-  } else {
-    grpc_slice_buffer_destroy_internal(sb);
-  }
-}
-
 uint8_t* grpc_slice_buffer_tiny_add(grpc_slice_buffer* sb, size_t n) {
   grpc_slice* back;
   uint8_t* out;
@@ -138,13 +158,29 @@ size_t grpc_slice_buffer_add_indexed(grpc_slice_buffer* sb, grpc_slice s) {
 
 void grpc_slice_buffer_add(grpc_slice_buffer* sb, grpc_slice s) {
   size_t n = sb->count;
-  /* if both the last slice in the slice buffer and the slice being added
+  grpc_slice* back = nullptr;
+  if (n != 0) {
+    back = &sb->slices[n - 1];
+  }
+  if (s.refcount != nullptr && back != nullptr &&
+      s.refcount == back->refcount &&
+      GRPC_SLICE_START_PTR(s) == GRPC_SLICE_END_PTR(*back)) {
+    // Merge the two slices into one because they are contiguous and share the
+    // same refcount object.
+    back->data.refcounted.length += GRPC_SLICE_LENGTH(s);
+    sb->length += GRPC_SLICE_LENGTH(s);
+    // Unref the merged slice.
+    grpc_slice_unref_internal(s);
+    // early out
+    return;
+  }
+
+  if (!s.refcount && n) {
+    /* if both the last slice in the slice buffer and the slice being added
      are inlined (that is, that they carry their data inside the slice data
      structure), and the back slice is not full, then concatenate directly
      into the back slice, preventing many small slices being passed into
      writes */
-  if (!s.refcount && n) {
-    grpc_slice* back = &sb->slices[n - 1];
     if (!back->refcount &&
         back->data.inlined.length < GRPC_SLICE_INLINED_SIZE) {
       if (s.data.inlined.length + back->data.inlined.length <=
@@ -197,15 +233,6 @@ void grpc_slice_buffer_reset_and_unref_internal(grpc_slice_buffer* sb) {
   sb->count = 0;
   sb->length = 0;
   sb->slices = sb->base_slices;
-}
-
-void grpc_slice_buffer_reset_and_unref(grpc_slice_buffer* sb) {
-  if (grpc_core::ExecCtx::Get() == nullptr) {
-    grpc_core::ExecCtx exec_ctx;
-    grpc_slice_buffer_reset_and_unref_internal(sb);
-  } else {
-    grpc_slice_buffer_reset_and_unref_internal(sb);
-  }
 }
 
 void grpc_slice_buffer_swap(grpc_slice_buffer* a, grpc_slice_buffer* b) {

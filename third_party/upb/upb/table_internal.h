@@ -374,6 +374,8 @@ void upb_inttable_iter_setdone(upb_inttable_iter* i);
 bool upb_inttable_iter_isequal(const upb_inttable_iter* i1,
                                const upb_inttable_iter* i2);
 
+uint32_t _upb_Hash(const void* p, size_t n, uint64_t seed);
+
 #ifdef __cplusplus
 } /* extern "C" */
 #endif

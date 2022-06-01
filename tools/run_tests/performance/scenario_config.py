@@ -24,6 +24,7 @@ SMOKETEST = 'smoketest'
 SCALABLE = 'scalable'
 INPROC = 'inproc'
 SWEEP = 'sweep'
+PSM = 'psm'
 DEFAULT_CATEGORIES = (SCALABLE, SMOKETEST)
 
 SECURE_SECARGS = {
@@ -254,6 +255,19 @@ class CXXLanguage(Language):
         return 0
 
     def scenarios(self):
+        yield _ping_pong_scenario('cpp_protobuf_async_unary_5000rpcs_1KB_psm',
+                                  rpc_type='UNARY',
+                                  client_type='ASYNC_CLIENT',
+                                  server_type='ASYNC_SERVER',
+                                  req_size=1024,
+                                  resp_size=1024,
+                                  outstanding=5000,
+                                  channels=1,
+                                  num_clients=1,
+                                  secure=False,
+                                  async_server_threads=1,
+                                  categories=[PSM])
+
         # TODO(ctiller): add 70% load latency test
         yield _ping_pong_scenario(
             'cpp_protobuf_async_unary_1channel_100rpcs_1MB',
@@ -602,6 +616,7 @@ class CXXLanguage(Language):
 
 
 class CSharpLanguage(Language):
+    """The legacy Grpc.Core implementation from grpc/grpc."""
 
     def worker_cmdline(self):
         return ['tools/run_tests/performance/run_worker_csharp.sh']
@@ -726,6 +741,134 @@ class CSharpLanguage(Language):
         return 'csharp'
 
 
+class DotnetLanguage(Language):
+    """The pure C# implementation from grpc/grpc-dotnet."""
+
+    def worker_cmdline(self):
+        # grpc-dotnet worker is only supported by the new GKE based OSS benchmark
+        # framework, and the worker_cmdline() is only used by run_performance_tests.py
+        return ['grpc_dotnet_not_supported_by_legacy_performance_runner.sh']
+
+    def worker_port_offset(self):
+        return 1100
+
+    def scenarios(self):
+        yield _ping_pong_scenario('dotnet_generic_async_streaming_ping_pong',
+                                  rpc_type='STREAMING',
+                                  client_type='ASYNC_CLIENT',
+                                  server_type='ASYNC_GENERIC_SERVER',
+                                  use_generic_payload=True,
+                                  categories=[SMOKETEST, SCALABLE])
+
+        yield _ping_pong_scenario(
+            'dotnet_generic_async_streaming_ping_pong_insecure_1MB',
+            rpc_type='STREAMING',
+            client_type='ASYNC_CLIENT',
+            server_type='ASYNC_GENERIC_SERVER',
+            req_size=1024 * 1024,
+            resp_size=1024 * 1024,
+            use_generic_payload=True,
+            secure=False,
+            categories=[SMOKETEST, SCALABLE])
+
+        yield _ping_pong_scenario(
+            'dotnet_generic_async_streaming_qps_unconstrained_insecure',
+            rpc_type='STREAMING',
+            client_type='ASYNC_CLIENT',
+            server_type='ASYNC_GENERIC_SERVER',
+            unconstrained_client='async',
+            use_generic_payload=True,
+            secure=False,
+            categories=[SMOKETEST, SCALABLE])
+
+        yield _ping_pong_scenario('dotnet_protobuf_async_streaming_ping_pong',
+                                  rpc_type='STREAMING',
+                                  client_type='ASYNC_CLIENT',
+                                  server_type='ASYNC_SERVER')
+
+        yield _ping_pong_scenario('dotnet_protobuf_async_unary_ping_pong',
+                                  rpc_type='UNARY',
+                                  client_type='ASYNC_CLIENT',
+                                  server_type='ASYNC_SERVER',
+                                  categories=[SMOKETEST, SCALABLE])
+
+        yield _ping_pong_scenario(
+            'dotnet_protobuf_sync_to_async_unary_ping_pong',
+            rpc_type='UNARY',
+            client_type='SYNC_CLIENT',
+            server_type='ASYNC_SERVER')
+
+        yield _ping_pong_scenario(
+            'dotnet_protobuf_async_unary_qps_unconstrained',
+            rpc_type='UNARY',
+            client_type='ASYNC_CLIENT',
+            server_type='ASYNC_SERVER',
+            unconstrained_client='async',
+            categories=[SMOKETEST, SCALABLE])
+
+        yield _ping_pong_scenario(
+            'dotnet_protobuf_async_streaming_qps_unconstrained',
+            rpc_type='STREAMING',
+            client_type='ASYNC_CLIENT',
+            server_type='ASYNC_SERVER',
+            unconstrained_client='async',
+            categories=[SCALABLE])
+
+        yield _ping_pong_scenario('dotnet_to_cpp_protobuf_sync_unary_ping_pong',
+                                  rpc_type='UNARY',
+                                  client_type='SYNC_CLIENT',
+                                  server_type='SYNC_SERVER',
+                                  server_language='c++',
+                                  async_server_threads=1,
+                                  categories=[SMOKETEST, SCALABLE])
+
+        yield _ping_pong_scenario(
+            'dotnet_to_cpp_protobuf_async_streaming_ping_pong',
+            rpc_type='STREAMING',
+            client_type='ASYNC_CLIENT',
+            server_type='ASYNC_SERVER',
+            server_language='c++',
+            async_server_threads=1)
+
+        yield _ping_pong_scenario(
+            'dotnet_to_cpp_protobuf_async_unary_qps_unconstrained',
+            rpc_type='UNARY',
+            client_type='ASYNC_CLIENT',
+            server_type='ASYNC_SERVER',
+            unconstrained_client='async',
+            server_language='c++',
+            categories=[SCALABLE])
+
+        yield _ping_pong_scenario(
+            'dotnet_to_cpp_protobuf_sync_to_async_unary_qps_unconstrained',
+            rpc_type='UNARY',
+            client_type='SYNC_CLIENT',
+            server_type='ASYNC_SERVER',
+            unconstrained_client='sync',
+            server_language='c++',
+            categories=[SCALABLE])
+
+        yield _ping_pong_scenario(
+            'cpp_to_dotnet_protobuf_async_unary_qps_unconstrained',
+            rpc_type='UNARY',
+            client_type='ASYNC_CLIENT',
+            server_type='ASYNC_SERVER',
+            unconstrained_client='async',
+            client_language='c++',
+            categories=[SCALABLE])
+
+        yield _ping_pong_scenario('dotnet_protobuf_async_unary_ping_pong_1MB',
+                                  rpc_type='UNARY',
+                                  client_type='ASYNC_CLIENT',
+                                  server_type='ASYNC_SERVER',
+                                  req_size=1024 * 1024,
+                                  resp_size=1024 * 1024,
+                                  categories=[SMOKETEST, SCALABLE])
+
+    def __str__(self):
+        return 'dotnet'
+
+
 class PythonLanguage(Language):
 
     def worker_cmdline(self):
@@ -735,6 +878,20 @@ class PythonLanguage(Language):
         return 500
 
     def scenarios(self):
+        yield _ping_pong_scenario(
+            'python_protobuf_async_unary_5000rpcs_1KB_psm',
+            rpc_type='UNARY',
+            client_type='ASYNC_CLIENT',
+            server_type='ASYNC_SERVER',
+            req_size=1024,
+            resp_size=1024,
+            outstanding=5000,
+            channels=1,
+            num_clients=1,
+            secure=False,
+            async_server_threads=1,
+            categories=[PSM])
+
         yield _ping_pong_scenario('python_generic_sync_streaming_ping_pong',
                                   rpc_type='STREAMING',
                                   client_type='SYNC_CLIENT',
@@ -809,6 +966,20 @@ class PythonAsyncIOLanguage(Language):
         return 1200
 
     def scenarios(self):
+        yield _ping_pong_scenario(
+            'python_asyncio_protobuf_async_unary_5000rpcs_1KB_psm',
+            rpc_type='UNARY',
+            client_type='ASYNC_CLIENT',
+            server_type='ASYNC_SERVER',
+            req_size=1024,
+            resp_size=1024,
+            outstanding=5000,
+            channels=1,
+            num_clients=1,
+            secure=False,
+            async_server_threads=1,
+            categories=[PSM])
+
         for outstanding in [64, 128, 256, 512]:
             for channels in [1, 4]:
                 yield _ping_pong_scenario(
@@ -1030,6 +1201,22 @@ class Php7Language(Language):
         if self.php7_protobuf_c:
             php7_extension_mode = 'php7_protobuf_c_extension'
 
+        yield _ping_pong_scenario(
+            '%s_to_cpp_protobuf_async_unary_5000rpcs_1KB_psm' %
+            php7_extension_mode,
+            rpc_type='UNARY',
+            client_type='ASYNC_CLIENT',
+            server_type='ASYNC_SERVER',
+            server_language='c++',
+            req_size=1024,
+            resp_size=1024,
+            outstanding=5000,
+            channels=1,
+            num_clients=1,
+            secure=False,
+            async_server_threads=1,
+            categories=[PSM])
+
         yield _ping_pong_scenario('%s_to_cpp_protobuf_sync_unary_ping_pong' %
                                   php7_extension_mode,
                                   rpc_type='UNARY',
@@ -1085,6 +1272,20 @@ class JavaLanguage(Language):
         return 400
 
     def scenarios(self):
+        yield _ping_pong_scenario('java_protobuf_async_unary_5000rpcs_1KB_psm',
+                                  rpc_type='UNARY',
+                                  client_type='ASYNC_CLIENT',
+                                  server_type='ASYNC_SERVER',
+                                  req_size=1024,
+                                  resp_size=1024,
+                                  outstanding=5000,
+                                  channels=1,
+                                  num_clients=1,
+                                  secure=False,
+                                  async_server_threads=1,
+                                  warmup_seconds=JAVA_WARMUP_SECONDS,
+                                  categories=[PSM])
+
         for secure in [True, False]:
             secstr = 'secure' if secure else 'insecure'
             smoketest_categories = ([SMOKETEST] if secure else []) + [SCALABLE]
@@ -1185,6 +1386,19 @@ class GoLanguage(Language):
         return 600
 
     def scenarios(self):
+        yield _ping_pong_scenario('go_protobuf_async_unary_5000rpcs_1KB_psm',
+                                  rpc_type='UNARY',
+                                  client_type='ASYNC_CLIENT',
+                                  server_type='ASYNC_SERVER',
+                                  req_size=1024,
+                                  resp_size=1024,
+                                  outstanding=5000,
+                                  channels=1,
+                                  num_clients=1,
+                                  secure=False,
+                                  async_server_threads=1,
+                                  categories=[PSM])
+
         for secure in [True, False]:
             secstr = 'secure' if secure else 'insecure'
             smoketest_categories = ([SMOKETEST] if secure else []) + [SCALABLE]
@@ -1277,6 +1491,23 @@ class NodeLanguage(Language):
 
     def scenarios(self):
         node_implementation = 'node_purejs' if self.node_purejs else 'node'
+
+        yield _ping_pong_scenario(
+            '%s_to_node_protobuf_async_unary_5000rpcs_1KB_psm' %
+            (node_implementation),
+            rpc_type='UNARY',
+            client_type='ASYNC_CLIENT',
+            server_type='ASYNC_SERVER',
+            server_language='node',
+            req_size=1024,
+            resp_size=1024,
+            outstanding=5000,
+            channels=1,
+            num_clients=1,
+            secure=False,
+            async_server_threads=1,
+            categories=[PSM])
+
         for secure in [True, False]:
             secstr = 'secure' if secure else 'insecure'
             smoketest_categories = ([SMOKETEST] if secure else []) + [SCALABLE]
@@ -1359,6 +1590,7 @@ class NodeLanguage(Language):
 LANGUAGES = {
     'c++': CXXLanguage(),
     'csharp': CSharpLanguage(),
+    'dotnet': DotnetLanguage(),
     'ruby': RubyLanguage(),
     'php7': Php7Language(),
     'php7_protobuf_c': Php7Language(php7_protobuf_c=True),

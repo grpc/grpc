@@ -20,8 +20,15 @@
 
 #include <grpc/support/port_platform.h>
 
-#include "src/core/lib/channel/channel_stack.h"
+#include "absl/status/statusor.h"
+
+#include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/channel/channel_fwd.h"
 #include "src/core/lib/channel/promise_based_filter.h"
+#include "src/core/lib/promise/arena_promise.h"
+#include "src/core/lib/slice/slice.h"
+#include "src/core/lib/transport/metadata_batch.h"
+#include "src/core/lib/transport/transport.h"
 
 namespace grpc_core {
 
@@ -37,11 +44,17 @@ class HttpClientFilter : public ChannelFilter {
       CallArgs call_args, NextPromiseFactory next_promise_factory) override;
 
  private:
-  HttpClientFilter(HttpSchemeMetadata::ValueType scheme, Slice user_agent);
+  HttpClientFilter(HttpSchemeMetadata::ValueType scheme, Slice user_agent,
+                   bool test_only_use_put_requests);
 
   HttpSchemeMetadata::ValueType scheme_;
   Slice user_agent_;
+  bool test_only_use_put_requests_;
 };
+
+// A test-only channel arg to allow testing gRPC Core server behavior on PUT
+// requests.
+#define GRPC_ARG_TEST_ONLY_USE_PUT_REQUESTS "grpc.testing.use_put_requests"
 
 }  // namespace grpc_core
 

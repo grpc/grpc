@@ -19,19 +19,27 @@
 
 #include <grpc/support/port_platform.h>
 
+#include "absl/strings/string_view.h"
+
 #include <grpc/impl/codegen/grpc_types.h>
 
 #include "src/core/ext/filters/client_channel/subchannel.h"
+#include "src/core/lib/gprpp/ref_counted_ptr.h"
+#include "src/core/lib/iomgr/resolved_address.h"
 
 namespace grpc_core {
 
 class ClientChannelFactory {
  public:
+  struct RawPointerChannelArgTag {};
+
   virtual ~ClientChannelFactory() = default;
 
   // Creates a subchannel with the specified args.
   virtual RefCountedPtr<Subchannel> CreateSubchannel(
       const grpc_resolved_address& address, const grpc_channel_args* args) = 0;
+
+  static absl::string_view ChannelArgName();
 
   // Returns a channel arg containing the specified factory.
   static grpc_arg CreateChannelArg(ClientChannelFactory* factory);

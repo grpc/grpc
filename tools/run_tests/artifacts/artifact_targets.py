@@ -22,6 +22,8 @@ import sys
 sys.path.insert(0, os.path.abspath('..'))
 import python_utils.jobset as jobset
 
+_LATEST_MANYLINUX = "manylinux2014"
+
 
 def create_docker_jobspec(name,
                           dockerfile_dir,
@@ -107,6 +109,8 @@ class PythonArtifact:
         if presubmit:
             self.labels.append('presubmit')
         self.py_version = py_version
+        if platform == _LATEST_MANYLINUX:
+            self.labels.append('latest-manylinux')
         if 'manylinux' in platform:
             self.labels.append('linux')
         if 'linux_extra' in platform:
@@ -182,10 +186,7 @@ class PythonArtifact:
                 environ=environ,
                 timeout_seconds=60 * 60 * 2)
         elif self.platform == 'windows':
-            if 'Python27' in self.py_version:
-                environ['EXT_COMPILER'] = 'mingw32'
-            else:
-                environ['EXT_COMPILER'] = 'msvc'
+            environ['EXT_COMPILER'] = 'msvc'
             # For some reason, the batch script %random% always runs with the same
             # seed.  We create a random temp-dir here
             dir = ''.join(
@@ -377,7 +378,7 @@ class ProtocArtifact:
                     environ=environ)
             else:
                 environ[
-                    'CXXFLAGS'] += ' -std=c++11 -stdlib=libc++ %s' % _MACOS_COMPAT_FLAG
+                    'CXXFLAGS'] += ' -std=c++14 -stdlib=libc++ %s' % _MACOS_COMPAT_FLAG
                 return create_jobspec(
                     self.name,
                     ['tools/run_tests/artifacts/build_artifact_protoc.sh'],
@@ -432,23 +433,15 @@ def targets():
         CSharpExtArtifact('linux', 'android', arch_abi='x86', presubmit=True),
         CSharpExtArtifact('macos', 'ios', presubmit=True),
         PythonArtifact('manylinux2014', 'x64', 'cp36-cp36m', presubmit=True),
-        PythonArtifact('manylinux2014', 'x64', 'cp37-cp37m'),
+        PythonArtifact('manylinux2014', 'x64', 'cp37-cp37m', presubmit=True),
         PythonArtifact('manylinux2014', 'x64', 'cp38-cp38'),
         PythonArtifact('manylinux2014', 'x64', 'cp39-cp39'),
         PythonArtifact('manylinux2014', 'x64', 'cp310-cp310', presubmit=True),
         PythonArtifact('manylinux2014', 'x86', 'cp36-cp36m', presubmit=True),
-        PythonArtifact('manylinux2014', 'x86', 'cp37-cp37m'),
+        PythonArtifact('manylinux2014', 'x86', 'cp37-cp37m', presubmit=True),
         PythonArtifact('manylinux2014', 'x86', 'cp38-cp38'),
         PythonArtifact('manylinux2014', 'x86', 'cp39-cp39'),
         PythonArtifact('manylinux2014', 'x86', 'cp310-cp310', presubmit=True),
-        PythonArtifact('manylinux2010', 'x64', 'cp36-cp36m'),
-        PythonArtifact('manylinux2010', 'x64', 'cp37-cp37m', presubmit=True),
-        PythonArtifact('manylinux2010', 'x64', 'cp38-cp38'),
-        PythonArtifact('manylinux2010', 'x64', 'cp39-cp39'),
-        PythonArtifact('manylinux2010', 'x86', 'cp36-cp36m'),
-        PythonArtifact('manylinux2010', 'x86', 'cp37-cp37m', presubmit=True),
-        PythonArtifact('manylinux2010', 'x86', 'cp38-cp38'),
-        PythonArtifact('manylinux2010', 'x86', 'cp39-cp39'),
         PythonArtifact('manylinux2014', 'aarch64', 'cp36-cp36m',
                        presubmit=True),
         PythonArtifact('manylinux2014', 'aarch64', 'cp37-cp37m'),
@@ -491,7 +484,6 @@ def targets():
         RubyArtifact('linux', 'x86-linux', presubmit=True),
         RubyArtifact('linux', 'x86_64-darwin', presubmit=True),
         RubyArtifact('linux', 'arm64-darwin', presubmit=True),
-        RubyArtifact('macos', 'darwin', presubmit=True),
         PHPArtifact('linux', 'x64', presubmit=True),
         PHPArtifact('macos', 'x64', presubmit=True),
     ])

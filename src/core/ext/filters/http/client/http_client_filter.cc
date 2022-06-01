@@ -19,24 +19,36 @@
 
 #include "src/core/ext/filters/http/client/http_client_filter.h"
 
-#include <stdint.h>
-#include <string.h>
-
+#include <algorithm>
+#include <functional>
 #include <string>
+#include <utility>
 #include <vector>
 
+#include "absl/status/status.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
 #include "absl/strings/str_join.h"
+#include "absl/strings/string_view.h"
+#include "absl/types/optional.h"
+#include "absl/utility/utility.h"
 
-#include <grpc/support/alloc.h>
-#include <grpc/support/log.h>
+#include <grpc/grpc.h>
+#include <grpc/impl/codegen/grpc_types.h>
+#include <grpc/status.h>
 
 #include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/promise/call_push_pull.h"
+#include "src/core/lib/promise/context.h"
+#include "src/core/lib/promise/detail/basic_seq.h"
+#include "src/core/lib/promise/latch.h"
+#include "src/core/lib/promise/poll.h"
 #include "src/core/lib/promise/seq.h"
+#include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/slice/percent_encoding.h"
 #include "src/core/lib/transport/status_conversion.h"
+#include "src/core/lib/transport/transport_fwd.h"
 #include "src/core/lib/transport/transport_impl.h"
 
 namespace grpc_core {
@@ -97,7 +109,11 @@ Slice UserAgentFromArgs(const ChannelArgs& args, const char* transport_name) {
 ArenaPromise<ServerMetadataHandle> HttpClientFilter::MakeCallPromise(
     CallArgs call_args, NextPromiseFactory next_promise_factory) {
   auto& md = call_args.client_initial_metadata;
-  md->Set(HttpMethodMetadata(), HttpMethodMetadata::kPost);
+  if (test_only_use_put_requests_) {
+    md->Set(HttpMethodMetadata(), HttpMethodMetadata::kPut);
+  } else {
+    md->Set(HttpMethodMetadata(), HttpMethodMetadata::kPost);
+  }
   md->Set(HttpSchemeMetadata(), scheme_);
   md->Set(TeMetadata(), TeMetadata::kTrailers);
   md->Set(ContentTypeMetadata(), ContentTypeMetadata::kApplicationGrpc);
@@ -125,15 +141,21 @@ ArenaPromise<ServerMetadataHandle> HttpClientFilter::MakeCallPromise(
 }
 
 HttpClientFilter::HttpClientFilter(HttpSchemeMetadata::ValueType scheme,
-                                   Slice user_agent)
-    : scheme_(scheme), user_agent_(std::move(user_agent)) {}
+                                   Slice user_agent,
+                                   bool test_only_use_put_requests)
+    : scheme_(scheme),
+      user_agent_(std::move(user_agent)),
+      test_only_use_put_requests_(test_only_use_put_requests) {}
 
 absl::StatusOr<HttpClientFilter> HttpClientFilter::Create(ChannelArgs args,
                                                           ChannelFilter::Args) {
   auto* transport = args.GetObject<grpc_transport>();
-  GPR_ASSERT(transport != nullptr);
-  return HttpClientFilter(SchemeFromArgs(args),
-                          UserAgentFromArgs(args, transport->vtable->name));
+  if (transport == nullptr) {
+    return absl::InvalidArgumentError("HttpClientFilter needs a transport");
+  }
+  return HttpClientFilter(
+      SchemeFromArgs(args), UserAgentFromArgs(args, transport->vtable->name),
+      args.GetInt(GRPC_ARG_TEST_ONLY_USE_PUT_REQUESTS).value_or(false));
 }
 
 }  // namespace grpc_core

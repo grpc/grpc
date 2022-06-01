@@ -21,6 +21,8 @@
 #include "absl/strings/str_format.h"
 #include "absl/strings/str_split.h"
 
+#include <grpc/support/string_util.h>
+
 #include "src/core/lib/http/httpcli_ssl_credentials.h"
 #include "src/core/lib/transport/error_utils.h"
 

@@ -20,6 +20,10 @@
 
 #include "src/core/lib/slice/slice_string_helpers.h"
 
+#include <stddef.h>
+
+#include <utility>
+
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gprpp/memory.h"
 #include "src/core/lib/slice/slice_internal.h"

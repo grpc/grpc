@@ -20,6 +20,8 @@
 
 #include "src/core/lib/security/transport/secure_endpoint.h"
 
+#include <limits.h>
+
 #include <new>
 
 #include <grpc/slice.h>
@@ -72,10 +74,15 @@ struct secure_endpoint {
             ->CreateMemoryOwner(absl::StrCat(grpc_endpoint_get_peer(transport),
                                              ":secure_endpoint"));
     self_reservation = memory_owner.MakeReservation(sizeof(*this));
-    read_staging_buffer =
-        memory_owner.MakeSlice(grpc_core::MemoryRequest(STAGING_BUFFER_SIZE));
-    write_staging_buffer =
-        memory_owner.MakeSlice(grpc_core::MemoryRequest(STAGING_BUFFER_SIZE));
+    if (zero_copy_protector) {
+      read_staging_buffer = grpc_empty_slice();
+      write_staging_buffer = grpc_empty_slice();
+    } else {
+      read_staging_buffer =
+          memory_owner.MakeSlice(grpc_core::MemoryRequest(STAGING_BUFFER_SIZE));
+      write_staging_buffer =
+          memory_owner.MakeSlice(grpc_core::MemoryRequest(STAGING_BUFFER_SIZE));
+    }
     has_posted_reclaimer.store(false, std::memory_order_relaxed);
     gpr_ref_init(&ref, 1);
   }
@@ -97,8 +104,8 @@ struct secure_endpoint {
   struct tsi_frame_protector* protector;
   struct tsi_zero_copy_grpc_protector* zero_copy_protector;
   gpr_mu protector_mu;
-  absl::Mutex read_mu;
-  absl::Mutex write_mu;
+  grpc_core::Mutex read_mu;
+  grpc_core::Mutex write_mu;
   /* saved upper level callbacks and user_data. */
   grpc_closure* read_cb = nullptr;
   grpc_closure* write_cb = nullptr;
@@ -229,7 +236,7 @@ static void on_read(void* user_data, grpc_error_handle error) {
   secure_endpoint* ep = static_cast<secure_endpoint*>(user_data);
 
   {
-    absl::MutexLock l(&ep->read_mu);
+    grpc_core::MutexLock l(&ep->read_mu);
     uint8_t* cur = GRPC_SLICE_START_PTR(ep->read_staging_buffer);
     uint8_t* end = GRPC_SLICE_END_PTR(ep->read_staging_buffer);
 
@@ -313,7 +320,8 @@ static void on_read(void* user_data, grpc_error_handle error) {
 }
 
 static void endpoint_read(grpc_endpoint* secure_ep, grpc_slice_buffer* slices,
-                          grpc_closure* cb, bool urgent) {
+                          grpc_closure* cb, bool urgent,
+                          int /*min_progress_size*/) {
   secure_endpoint* ep = reinterpret_cast<secure_endpoint*>(secure_ep);
   ep->read_cb = cb;
   ep->read_buffer = slices;
@@ -327,7 +335,8 @@ static void endpoint_read(grpc_endpoint* secure_ep, grpc_slice_buffer* slices,
     return;
   }
 
-  grpc_endpoint_read(ep->wrapped_ep, &ep->source_buffer, &ep->on_read, urgent);
+  grpc_endpoint_read(ep->wrapped_ep, &ep->source_buffer, &ep->on_read, urgent,
+                     /*min_progress_size=*/1);
 }
 
 static void flush_write_staging_buffer(secure_endpoint* ep, uint8_t** cur,
@@ -342,7 +351,8 @@ static void flush_write_staging_buffer(secure_endpoint* ep, uint8_t** cur,
 }
 
 static void endpoint_write(grpc_endpoint* secure_ep, grpc_slice_buffer* slices,
-                           grpc_closure* cb, void* arg) {
+                           grpc_closure* cb, void* arg,
+                           int /*max_frame_size*/) {
   GPR_TIMER_SCOPE("secure_endpoint.endpoint_write", 0);
 
   unsigned i;
@@ -350,7 +360,7 @@ static void endpoint_write(grpc_endpoint* secure_ep, grpc_slice_buffer* slices,
   secure_endpoint* ep = reinterpret_cast<secure_endpoint*>(secure_ep);
 
   {
-    absl::MutexLock l(&ep->write_mu);
+    grpc_core::MutexLock l(&ep->write_mu);
     uint8_t* cur = GRPC_SLICE_START_PTR(ep->write_staging_buffer);
     uint8_t* end = GRPC_SLICE_END_PTR(ep->write_staging_buffer);
 
@@ -435,7 +445,8 @@ static void endpoint_write(grpc_endpoint* secure_ep, grpc_slice_buffer* slices,
     return;
   }
 
-  grpc_endpoint_write(ep->wrapped_ep, &ep->output_buffer, cb, arg);
+  grpc_endpoint_write(ep->wrapped_ep, &ep->output_buffer, cb, arg,
+                      /*max_frame_size=*/INT_MAX);
 }
 
 static void endpoint_shutdown(grpc_endpoint* secure_ep, grpc_error_handle why) {

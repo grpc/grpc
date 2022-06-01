@@ -16,27 +16,52 @@
 
 #include <grpc/support/port_platform.h>
 
-#include <inttypes.h>
-#include <limits.h>
-#include <string.h>
+#include <stdlib.h>
+
+#include <algorithm>
+#include <cstdint>
+#include <map>
+#include <memory>
+#include <string>
+#include <utility>
+#include <vector>
 
 #include "absl/container/inlined_vector.h"
+#include "absl/memory/memory.h"
+#include "absl/status/status.h"
+#include "absl/status/statusor.h"
 #include "absl/strings/str_cat.h"
+#include "absl/strings/string_view.h"
 
-#include <grpc/grpc.h>
+#include <grpc/impl/codegen/connectivity_state.h>
+#include <grpc/impl/codegen/grpc_types.h>
+#include <grpc/support/log.h>
 
 #include "src/core/ext/filters/client_channel/lb_policy.h"
 #include "src/core/ext/filters/client_channel/lb_policy/address_filtering.h"
 #include "src/core/ext/filters/client_channel/lb_policy/child_policy_handler.h"
 #include "src/core/ext/filters/client_channel/lb_policy_factory.h"
 #include "src/core/ext/filters/client_channel/lb_policy_registry.h"
+#include "src/core/ext/filters/client_channel/subchannel_interface.h"
 #include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/debug/trace.h"
 #include "src/core/lib/gpr/string.h"
+#include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/orphanable.h"
+#include "src/core/lib/gprpp/ref_counted.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
+#include "src/core/lib/gprpp/time.h"
+#include "src/core/lib/iomgr/closure.h"
+#include "src/core/lib/iomgr/error.h"
+#include "src/core/lib/iomgr/exec_ctx.h"
+#include "src/core/lib/iomgr/pollset_set.h"
 #include "src/core/lib/iomgr/timer.h"
 #include "src/core/lib/iomgr/work_serializer.h"
-#include "src/core/lib/transport/error_utils.h"
+#include "src/core/lib/json/json.h"
+#include "src/core/lib/resolver/server_address.h"
+#include "src/core/lib/transport/connectivity_state.h"
+
+// IWYU pragma: no_include <type_traits>
 
 namespace grpc_core {
 
@@ -210,6 +235,7 @@ class WeightedTargetLb : public LoadBalancingPolicy {
 
   // Internal state.
   bool shutting_down_ = false;
+  bool update_in_progress_ = false;
 
   // Children.
   std::map<std::string, OrphanablePtr<WeightedChild>> targets_;
@@ -281,6 +307,7 @@ void WeightedTargetLb::UpdateLocked(UpdateArgs args) {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_weighted_target_trace)) {
     gpr_log(GPR_INFO, "[weighted_target_lb %p] Received update", this);
   }
+  update_in_progress_ = true;
   // Update config.
   config_ = std::move(args.config);
   // Deactivate the targets not in the new config.
@@ -291,38 +318,37 @@ void WeightedTargetLb::UpdateLocked(UpdateArgs args) {
       child->DeactivateLocked();
     }
   }
-  // Create any children that don't already exist.
-  // Note that we add all children before updating any of them, because
-  // an update may trigger a child to immediately update its
-  // connectivity state (e.g., reporting TRANSIENT_FAILURE immediately when
-  // receiving an empty address list), and we don't want to return an
-  // overall state with incomplete data.
-  for (const auto& p : config_->target_map()) {
-    const std::string& name = p.first;
-    auto it = targets_.find(name);
-    if (it == targets_.end()) {
-      targets_.emplace(name, MakeOrphanable<WeightedChild>(
-                                 Ref(DEBUG_LOCATION, "WeightedChild"), name));
-    }
-  }
   // Update all children.
   absl::StatusOr<HierarchicalAddressMap> address_map =
       MakeHierarchicalAddressMap(args.addresses);
   for (const auto& p : config_->target_map()) {
     const std::string& name = p.first;
     const WeightedTargetLbConfig::ChildConfig& config = p.second;
+    auto& target = targets_[name];
+    // Create child if it does not already exist.
+    if (target == nullptr) {
+      target = MakeOrphanable<WeightedChild>(
+          Ref(DEBUG_LOCATION, "WeightedChild"), name);
+    }
     absl::StatusOr<ServerAddressList> addresses;
     if (address_map.ok()) {
       addresses = std::move((*address_map)[name]);
     } else {
       addresses = address_map.status();
     }
-    targets_[name]->UpdateLocked(config, std::move(addresses), args.args);
+    target->UpdateLocked(config, std::move(addresses), args.args);
   }
+  update_in_progress_ = false;
   UpdateStateLocked();
 }
 
 void WeightedTargetLb::UpdateStateLocked() {
+  // If we're in the process of propagating an update from our parent to
+  // our children, ignore any updates that come from the children.  We
+  // will instead return a new picker once the update has been seen by
+  // all children.  This avoids unnecessary picker churn while an update
+  // is being propagated to our children.
+  if (update_in_progress_) return;
   if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_weighted_target_trace)) {
     gpr_log(GPR_INFO,
             "[weighted_target_lb %p] scanning children to determine "
@@ -356,6 +382,7 @@ void WeightedTargetLb::UpdateStateLocked() {
     }
     switch (child->connectivity_state()) {
       case GRPC_CHANNEL_READY: {
+        GPR_ASSERT(child->weight() > 0);
         end += child->weight();
         picker_list.push_back(std::make_pair(end, child->picker_wrapper()));
         break;

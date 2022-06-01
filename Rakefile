@@ -28,17 +28,17 @@ Rake::ExtensionTask.new('grpc_c', spec) do |ext|
   ext.lib_dir = File.join('src', 'ruby', 'lib', 'grpc')
   ext.cross_compile = true
   ext.cross_platform = [
-    'x86-mingw32', 'x64-mingw32',
+    'x86-mingw32', 'x64-mingw32', 'x64-mingw-ucrt',
     'x86_64-linux', 'x86-linux',
     'x86_64-darwin', 'arm64-darwin',
     'universal-darwin'
   ]
   ext.cross_compiling do |spec|
-    spec.files = %w( etc/roots.pem grpc_c.32.ruby grpc_c.64.ruby )
-    spec.files += Dir.glob('src/ruby/bin/**/*')
-    spec.files += Dir.glob('src/ruby/ext/**/*')
-    spec.files += Dir.glob('src/ruby/lib/**/*')
-    spec.files += Dir.glob('src/ruby/pb/**/*')
+    spec.files = spec.files.select {
+      |file| file.start_with?(
+        "src/ruby/bin/", "src/ruby/ext/", "src/ruby/lib/", "src/ruby/pb/")
+    }
+    spec.files += %w( etc/roots.pem grpc_c.32.ruby grpc_c.64.ruby grpc_c.64-ucrt.ruby )
   end
 end
 
@@ -87,9 +87,10 @@ task 'dlls', [:plat] do |t, args|
   plat_list = args[:plat]
 
   build_configs = []
+  w64_ucrt = { cross: 'x86_64-w64-mingw32', out: 'grpc_c.64-ucrt.ruby', platform: 'x64-mingw-ucrt' }
   w64 = { cross: 'x86_64-w64-mingw32', out: 'grpc_c.64.ruby', platform: 'x64-mingw32' }
   w32 = { cross: 'i686-w64-mingw32', out: 'grpc_c.32.ruby', platform: 'x86-mingw32' }
-  [w64, w32].each do |config|
+  [w64_ucrt, w64, w32].each do |config|
     if plat_list.include?(config[:platform])
       # build the DLL (as grpc_c.*.ruby)
       build_configs.append(config)
@@ -101,7 +102,7 @@ task 'dlls', [:plat] do |t, args|
 
   env = 'CPPFLAGS="-D_WIN32_WINNT=0x600 -DNTDDI_VERSION=0x06000000 -DUNICODE -D_UNICODE -Wno-unused-variable -Wno-unused-result -DCARES_STATICLIB -Wno-error=conversion -Wno-sign-compare -Wno-parentheses -Wno-format -DWIN32_LEAN_AND_MEAN" '
   env += 'CFLAGS="-Wno-incompatible-pointer-types" '
-  env += 'CXXFLAGS="-std=c++11 -fno-exceptions" '
+  env += 'CXXFLAGS="-std=c++14 -fno-exceptions" '
   env += 'LDFLAGS=-static '
   env += 'SYSTEM=MINGW32 '
   env += 'EMBED_ZLIB=true '
@@ -141,7 +142,7 @@ task 'gem:native', [:plat] do |t, args|
   verbose = ENV['V'] || '0'
 
   grpc_config = ENV['GRPC_CONFIG'] || 'opt'
-  ruby_cc_versions = ['3.0.0', '2.7.0', '2.6.0', '2.5.0'].join(':')
+  ruby_cc_versions = ['3.1.0', '3.0.0', '2.7.0', '2.6.0', '2.5.0'].join(':')
   selected_plat = "#{args[:plat]}"
 
   if RUBY_PLATFORM =~ /darwin/
@@ -151,6 +152,7 @@ task 'gem:native', [:plat] do |t, args|
 
     FileUtils.touch 'grpc_c.32.ruby'
     FileUtils.touch 'grpc_c.64.ruby'
+    FileUtils.touch 'grpc_c.64-ucrt.ruby'
     unless '2.5' == /(\d+\.\d+)/.match(RUBY_VERSION).to_s
       fail "rake gem:native (the rake task to build the binary packages) is being " \
         "invoked on macos with ruby #{RUBY_VERSION}. The ruby macos artifact " \
@@ -168,7 +170,7 @@ task 'gem:native', [:plat] do |t, args|
     prepare_ccache_cmd += "export PATH=\"$PATH:/usr/local/bin\" && "
     prepare_ccache_cmd += "source tools/internal_ci/helper_scripts/prepare_ccache_symlinks_rc "
 
-    supported_windows_platforms = ['x86-mingw32', 'x64-mingw32']
+    supported_windows_platforms = ['x86-mingw32', 'x64-mingw32', 'x64-mingw-ucrt']
     supported_unix_platforms = ['x86_64-linux', 'x86-linux', 'x86_64-darwin', 'arm64-darwin']
     supported_platforms = supported_windows_platforms + supported_unix_platforms
 
@@ -210,6 +212,7 @@ task 'gem:native', [:plat] do |t, args|
     # them to take up space in the gems that don't target windows.
     File.truncate('grpc_c.32.ruby', 0)
     File.truncate('grpc_c.64.ruby', 0)
+    File.truncate('grpc_c.64-ucrt.ruby', 0)
 
     unix_platforms.each do |plat|
       run_rake_compiler(plat, <<~EOT)

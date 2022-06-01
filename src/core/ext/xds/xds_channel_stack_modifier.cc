@@ -20,8 +20,17 @@
 
 #include "src/core/ext/xds/xds_channel_stack_modifier.h"
 
+#include <limits.h>
+#include <string.h>
+
+#include <algorithm>
+
+#include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/config/core_configuration.h"
+#include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/surface/channel_init.h"
+#include "src/core/lib/surface/channel_stack_type.h"
 
 namespace grpc_core {
 namespace {
@@ -53,7 +62,7 @@ bool XdsChannelStackModifier::ModifyChannelStack(ChannelStackBuilder* builder) {
   // Insert the filters after the census filter if present.
   auto it = builder->mutable_stack()->begin();
   while (it != builder->mutable_stack()->end()) {
-    const char* filter_name_at_it = it->filter->name;
+    const char* filter_name_at_it = (*it)->name;
     if (strcmp("census_server", filter_name_at_it) == 0 ||
         strcmp("opencensus_server", filter_name_at_it) == 0) {
       break;
@@ -71,8 +80,7 @@ bool XdsChannelStackModifier::ModifyChannelStack(ChannelStackBuilder* builder) {
     ++it;
   }
   for (const grpc_channel_filter* filter : filters_) {
-    it = builder->mutable_stack()->insert(
-        it, ChannelStackBuilder::StackEntry{filter, nullptr});
+    it = builder->mutable_stack()->insert(it, filter);
     ++it;
   }
   return true;
@@ -96,9 +104,10 @@ XdsChannelStackModifier::GetFromChannelArgs(const grpc_channel_args& args) {
 void RegisterXdsChannelStackModifier(CoreConfiguration::Builder* builder) {
   builder->channel_init()->RegisterStage(
       GRPC_SERVER_CHANNEL, INT_MAX, [](ChannelStackBuilder* builder) {
+        const grpc_channel_args* channel_args = builder->channel_args().ToC();
         RefCountedPtr<XdsChannelStackModifier> channel_stack_modifier =
-            XdsChannelStackModifier::GetFromChannelArgs(
-                *builder->channel_args());
+            XdsChannelStackModifier::GetFromChannelArgs(*channel_args);
+        grpc_channel_args_destroy(channel_args);
         if (channel_stack_modifier != nullptr) {
           return channel_stack_modifier->ModifyChannelStack(builder);
         }

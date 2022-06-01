@@ -21,7 +21,11 @@
 
 #include <grpc/support/port_platform.h>
 
-#include "src/core/lib/iomgr/exec_ctx.h"
+#include <stdint.h>
+
+#include "absl/types/optional.h"
+
+#include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/slice/slice.h"
 
 namespace grpc_core {

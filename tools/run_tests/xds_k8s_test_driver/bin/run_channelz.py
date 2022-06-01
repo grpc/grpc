@@ -178,7 +178,6 @@ def main(argv):
 
     # Resource names.
     resource_prefix: str = xds_flags.RESOURCE_PREFIX.value
-    resource_suffix: str = xds_flags.RESOURCE_SUFFIX.value
 
     # Server
     server_name = xds_flags.SERVER_NAME.value

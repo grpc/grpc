@@ -97,11 +97,12 @@ else
   docker build -t "$BASE_IMAGE" --force-rm=true "tools/dockerfile/interoptest/$BASE_NAME" || exit $?
 fi
 
+# If TTY is available, the running container can be conveniently terminated with Ctrl+C.
 if [[ -t 0 ]]; then
-  DOCKER_TTY_ARGS="-it"
+  DOCKER_TTY_ARGS=("-it")
 else
   # The input device on kokoro is not a TTY, so -it does not work.
-  DOCKER_TTY_ARGS=
+  DOCKER_TTY_ARGS=()
 fi
 
 CONTAINER_NAME="build_${BASE_NAME}_$(uuidgen)"
@@ -114,7 +115,7 @@ CONTAINER_NAME="build_${BASE_NAME}_$(uuidgen)"
 (docker run \
   --cap-add SYS_PTRACE \
   --env-file "tools/run_tests/dockerize/docker_propagate_env.list" \
-  $DOCKER_TTY_ARGS \
+  "${DOCKER_TTY_ARGS[@]}" \
   $MOUNT_ARGS \
   $BUILD_INTEROP_DOCKER_EXTRA_ARGS \
   --name="$CONTAINER_NAME" \

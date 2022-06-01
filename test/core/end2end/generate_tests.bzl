@@ -216,6 +216,7 @@ END2END_TESTS = {
     "filter_causes_close": _test_options(),
     "filter_init_fails": _test_options(),
     "filter_context": _test_options(),
+    "filtered_metadata": _test_options(),
     "graceful_server_shutdown": _test_options(exclude_inproc = True),
     "grpc_authz": _test_options(secure = True),
     "hpack_size": _test_options(

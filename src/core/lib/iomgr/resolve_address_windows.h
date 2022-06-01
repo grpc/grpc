@@ -32,14 +32,17 @@ class NativeDNSResolver : public DNSResolver {
   // Gets the singleton instance, creating it first if it doesn't exist
   static NativeDNSResolver* GetOrCreate();
 
-  OrphanablePtr<DNSResolver::Request> ResolveName(
+  TaskHandle ResolveName(
       absl::string_view name, absl::string_view default_port,
-      grpc_pollset_set* interested_parties,
+      grpc_pollset_set* /* interested_parties */,
       std::function<void(absl::StatusOr<std::vector<grpc_resolved_address>>)>
           on_done) override;
 
   absl::StatusOr<std::vector<grpc_resolved_address>> ResolveNameBlocking(
       absl::string_view name, absl::string_view default_port) override;
+
+  // NativeDNSResolver does not support cancellation.
+  bool Cancel(TaskHandle handle) override;
 };
 
 }  // namespace grpc_core
