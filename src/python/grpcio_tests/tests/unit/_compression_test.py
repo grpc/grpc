@@ -206,8 +206,7 @@ def _get_compression_ratios(client_function, first_channel_kwargs,
     second_bytes_sent, second_bytes_received = _get_byte_counts(
         second_channel_kwargs, second_multicallable_kwargs, client_function,
         second_server_kwargs, second_server_handler, message)
-    return ((second_bytes_sent - first_bytes_sent) /
-            float(first_bytes_sent),
+    return ((second_bytes_sent - first_bytes_sent) / float(first_bytes_sent),
             (second_bytes_received - first_bytes_received) /
             float(first_bytes_received))
 
@@ -294,26 +293,28 @@ class CompressionTest(unittest.TestCase):
         server_handler = _GenericHandler(
             functools.partial(set_call_compression, grpc.Compression.Gzip)
         ) if server_call_compression else _GenericHandler(None)
-        _get_compression_ratios(
-            client_function, {}, {}, {}, _GenericHandler(None), channel_kwargs,
-            multicallable_kwargs, server_kwargs, server_handler, _REQUEST)
-
+        _get_compression_ratios(client_function, {}, {}, {},
+                                _GenericHandler(None), channel_kwargs,
+                                multicallable_kwargs, server_kwargs,
+                                server_handler, _REQUEST)
 
     def testDisableNextCompressionStreaming(self):
         server_kwargs = {
             'compression': grpc.Compression.Deflate,
         }
-        _get_compression_ratios(
-            _stream_stream_client, {}, {}, {}, _GenericHandler(None), {}, {},
-            server_kwargs, _GenericHandler(disable_next_compression), _REQUEST)
+        _get_compression_ratios(_stream_stream_client, {}, {}, {},
+                                _GenericHandler(None), {}, {}, server_kwargs,
+                                _GenericHandler(disable_next_compression),
+                                _REQUEST)
 
     def testDisableNextCompressionStreamingResets(self):
         server_kwargs = {
             'compression': grpc.Compression.Deflate,
         }
-        _get_compression_ratios(
-            _stream_stream_client, {}, {}, {}, _GenericHandler(None), {}, {},
-            server_kwargs, _GenericHandler(disable_first_compression), _REQUEST)
+        _get_compression_ratios(_stream_stream_client, {}, {}, {},
+                                _GenericHandler(None), {}, {}, server_kwargs,
+                                _GenericHandler(disable_first_compression),
+                                _REQUEST)
 
 
 def _get_compression_str(name, value):
