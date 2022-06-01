@@ -203,6 +203,7 @@ GRPC_PUBLIC_EVENT_ENGINE_HDRS = [
     "include/grpc/event_engine/internal/memory_allocator_impl.h",
     "include/grpc/event_engine/slice.h",
     "include/grpc/event_engine/slice_buffer.h",
+    "include/grpc/event_engine/trace_context_list.h",
 ]
 
 GRPCXX_SRCS = [
@@ -2260,6 +2261,7 @@ grpc_cc_library(
         "src/core/lib/event_engine/resolved_address.cc",
         "src/core/lib/event_engine/slice.cc",
         "src/core/lib/event_engine/slice_buffer.cc",
+        "src/core/lib/event_engine/trace_context_list.cc",
     ],
     hdrs = [
         "src/core/lib/event_engine/handle_containers.h",

@@ -24,6 +24,8 @@
 
 #include "src/core/ext/transport/chttp2/transport/internal.h"
 
+using ::grpc_event_engine::experimental::TraceContextList;
+
 namespace {
 void (*write_timestamps_callback_g)(void*, grpc_core::Timestamps*,
                                     grpc_error_handle error) = nullptr;
@@ -44,7 +46,7 @@ void ContextList::Append(ContextList** head, grpc_chttp2_stream* s,
   elem->traced_bytes_relative_start_pos_ = traced_bytes_relative_start_pos;
   elem->num_traced_bytes_ = num_traced_bytes;
   elem->byte_offset_ = s->byte_counter;
-  elem->next_ = *head;
+  elem->next_ = static_cast<TraceContextList*>(*head);
   *head = elem;
 }
 
@@ -59,20 +61,7 @@ void ContextList::Execute(void* arg, Timestamps* ts, grpc_error_handle error) {
       write_timestamps_callback_g(head->trace_context_, ts, error);
     }
     to_be_freed = head;
-    head = head->next_;
-    delete to_be_freed;
-  }
-}
-
-void ContextList::IterateAndFree(
-    void* arg, std::function<void(void*, int64_t, int64_t)> cb) {
-  ContextList* head = static_cast<ContextList*>(arg);
-  ContextList* to_be_freed;
-  while (head != nullptr) {
-    cb(head->trace_context_, head->traced_bytes_relative_start_pos_,
-       head->num_traced_bytes_);
-    to_be_freed = head;
-    head = head->next_;
+    head = static_cast<ContextList*>(head->next_);
     delete to_be_freed;
   }
 }

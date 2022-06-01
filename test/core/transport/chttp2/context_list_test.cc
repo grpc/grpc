@@ -193,11 +193,13 @@ TEST_F(ContextListTest, IterateAndFreeTest) {
                         static_cast<int64_t>(kByteOffset));
   }
   int i = kNumElems - 1;
-  ContextList::IterateAndFree(
-      list, [&i](void* trace_context, int64_t traced_bytes_relative_start_pos,
-                 int64_t num_traced_bytes) {
+  grpc_event_engine::experimental::TraceContextList::IterateAndFree(
+      list,
+      [&i](void* trace_context, size_t byte_offset,
+           int64_t traced_bytes_relative_start_pos, int64_t num_traced_bytes) {
         int* verifier_context = static_cast<int*>(trace_context);
         EXPECT_EQ(*verifier_context, i);
+        EXPECT_EQ(byte_offset, kByteOffset);
         EXPECT_EQ(traced_bytes_relative_start_pos,
                   static_cast<int64_t>(i * kByteOffset));
         EXPECT_EQ(num_traced_bytes, static_cast<int64_t>(kByteOffset));

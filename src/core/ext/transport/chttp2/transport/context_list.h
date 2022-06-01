@@ -23,13 +23,15 @@
 
 #include <stddef.h>
 
+#include <grpc/event_engine/trace_context_list.h>
+
 #include "src/core/ext/transport/chttp2/transport/frame.h"
 #include "src/core/lib/iomgr/buffer_list.h"
 #include "src/core/lib/iomgr/error.h"
 
 namespace grpc_core {
 /** A list of RPC Contexts */
-class ContextList {
+class ContextList : public grpc_event_engine::experimental::TraceContextList {
  public:
   /* Creates a new element with \a context as the value and appends it to the
    * list. */
@@ -41,20 +43,6 @@ class ContextList {
    * frees up the entire list after this operation. It is intended as a callback
    * and hence does not take a ref on \a error */
   static void Execute(void* arg, Timestamps* ts, grpc_error_handle error);
-
-  /* Executes a function \a cb with each context in the list. The arguments
-   * provided to cb include the trace_context_, traced_bytes_relative_start_pos_
-   * and num_traced_bytes_ for each context in the context list. It also
-   * frees up the entire list after this operation. */
-  static void IterateAndFree(void* arg,
-                             std::function<void(void*, int64_t, int64_t)> cb);
-
- private:
-  void* trace_context_ = nullptr;
-  ContextList* next_ = nullptr;
-  int64_t traced_bytes_relative_start_pos_ = 0;
-  int64_t num_traced_bytes_ = 0;
-  size_t byte_offset_ = 0;
 };
 
 void grpc_http2_set_write_timestamps_callback(
