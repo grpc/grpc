@@ -39,6 +39,7 @@
 #include <algorithm>
 #include <unordered_map>
 
+#include <grpc/grpc.h>
 #include <grpc/slice.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
@@ -357,10 +358,19 @@ using grpc_core::TcpZerocopySendCtx;
 using grpc_core::TcpZerocopySendRecord;
 
 namespace {
+// Keep grpc initialized whilst there are TCP connections.
+// This should not get ported to EventEngine!
+class KeepGrpcInitializedForTCP {
+ public:
+  KeepGrpcInitializedForTCP() { grpc_init(); }
+  ~KeepGrpcInitializedForTCP() { grpc_shutdown(); }
+};
+
 struct grpc_tcp {
   grpc_tcp(int max_sends, size_t send_bytes_threshold)
       : tcp_zerocopy_send_ctx(max_sends, send_bytes_threshold) {}
   grpc_endpoint base;
+  GPR_NO_UNIQUE_ADDRESS KeepGrpcInitializedForTCP grpc_init_keep_alive;
   grpc_fd* em_fd;
   int fd;
   /* Used by the endpoint read function to distinguish the very first read call
