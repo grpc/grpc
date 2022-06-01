@@ -75,8 +75,12 @@ Poll<absl::Status> Sleep::operator()() {
         return absl::OkStatus();
       }
       stage_ = Stage::kStarted;
-      timer_handle_ = GetDefaultEventEngine()->RunAt(ToAbslTime(deadline_),
-                                                     [this] { OnTimer(); });
+      timer_handle_ =
+          GetDefaultEventEngine()->RunAt(ToAbslTime(deadline_), [this] {
+            ApplicationCallbackExecCtx callback_exec_ctx;
+            ExecCtx exec_ctx;
+            OnTimer();
+          });
       break;
     case Stage::kStarted:
       break;
