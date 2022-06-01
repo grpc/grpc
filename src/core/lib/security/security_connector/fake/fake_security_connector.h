@@ -16,16 +16,13 @@
  *
  */
 
+#ifndef GRPC_CORE_LIB_SECURITY_SECURITY_CONNECTOR_FAKE_FAKE_SECURITY_CONNECTOR_H
+#define GRPC_CORE_LIB_SECURITY_SECURITY_CONNECTOR_FAKE_FAKE_SECURITY_CONNECTOR_H
 #include <grpc/support/port_platform.h>
 
 #include <grpc/grpc.h>
-#include <grpc/impl/codegen/grpc_types.h>
-#ifndef GRPC_CORE_LIB_SECURITY_SECURITY_CONNECTOR_FAKE_FAKE_SECURITY_CONNECTOR_H
-#define GRPC_CORE_LIB_SECURITY_SECURITY_CONNECTOR_FAKE_FAKE_SECURITY_CONNECTOR_H
-
-#include <grpc/support/port_platform.h>
-
 #include <grpc/grpc_security.h>
+#include <grpc/impl/codegen/grpc_types.h>
 
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/security/security_connector/security_connector.h"

@@ -16,10 +16,14 @@
  *
  */
 
+#ifndef GRPC_CORE_LIB_SECURITY_CREDENTIALS_COMPOSITE_COMPOSITE_CREDENTIALS_H
+#define GRPC_CORE_LIB_SECURITY_CREDENTIALS_COMPOSITE_COMPOSITE_CREDENTIALS_H
 #include <grpc/support/port_platform.h>
 
+#include <string>
 #include <utility>
 
+#include "absl/container/inlined_vector.h"
 #include "absl/status/statusor.h"
 
 #include <grpc/grpc.h>
@@ -29,21 +33,12 @@
 
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/gpr/useful.h"
+#include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/gprpp/unique_type_name.h"
 #include "src/core/lib/promise/arena_promise.h"
+#include "src/core/lib/security/credentials/credentials.h"
 #include "src/core/lib/security/security_connector/security_connector.h"
 #include "src/core/lib/transport/transport.h"
-#ifndef GRPC_CORE_LIB_SECURITY_CREDENTIALS_COMPOSITE_COMPOSITE_CREDENTIALS_H
-#define GRPC_CORE_LIB_SECURITY_CREDENTIALS_COMPOSITE_COMPOSITE_CREDENTIALS_H
-
-#include <grpc/support/port_platform.h>
-
-#include <string>
-
-#include "absl/container/inlined_vector.h"
-
-#include "src/core/lib/gprpp/ref_counted_ptr.h"
-#include "src/core/lib/security/credentials/credentials.h"
 
 /* -- Composite channel credentials. -- */
 

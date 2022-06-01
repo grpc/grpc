@@ -21,8 +21,8 @@
 #include "src/core/lib/compression/message_compress.h"
 
 #include <string.h>
-#include <zconf.h>
 
+#include <zconf.h>
 #include <zlib.h>
 
 #include <grpc/slice_buffer.h>
