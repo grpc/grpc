@@ -41,6 +41,7 @@ class StressTest {
     std::vector<std::thread> threads;
 
     // And another few threads constantly resizing quotas.
+    threads.reserve(2 + allocators_.size());
     for (int i = 0; i < 2; i++) threads.push_back(Run(Resizer));
 
     // For each (allocator, pass), start a thread continuously allocating from
