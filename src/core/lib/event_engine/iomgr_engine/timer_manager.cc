@@ -34,9 +34,25 @@
 namespace grpc_event_engine {
 namespace iomgr_engine {
 
-TimerManager::ThreadCollector::~ThreadCollector() {
+namespace {
+class ThreadCollector {
+ public:
+  ThreadCollector() = default;
+  ~ThreadCollector();
+
+  void Collect(std::vector<grpc_core::Thread> threads) {
+    GPR_ASSERT(threads_.empty());
+    threads_ = std::move(threads);
+  }
+
+ private:
+  std::vector<grpc_core::Thread> threads_;
+};
+
+ThreadCollector::~ThreadCollector() {
   for (auto& t : threads_) t.Join();
 }
+}  // namespace
 
 void TimerManager::StartThread() {
   ++waiter_count_;
@@ -60,6 +76,7 @@ void TimerManager::RunSomeTimers(
       // The number of timer threads is always increasing until all the threads
       // are stopped. In rare cases, if a large number of timers fire
       // simultaneously, we may end up using a large number of threads.
+      // TODO(ctiller): We could avoid this by exiting threads in WaitUntil().
       StartThread();
     } else {
       // if there's no thread waiting with a timeout, kick an existing untimed
@@ -90,9 +107,12 @@ bool TimerManager::WaitUntil(grpc_core::Timestamp next) {
     return false;
   }
 
-  // If g_kicked is true at this point, it means there was a kick from the timer
+  // TODO(ctiller): if there are too many waiting threads, this would be a good
+  // place to exit the current thread.
+
+  // If kicked_ is true at this point, it means there was a kick from the timer
   // system that the timer-manager threads here missed. We cannot trust 'next'
-  // here any longer (since there might be an earlier deadline). So if g_kicked
+  // here any longer (since there might be an earlier deadline). So if kicked_
   // is true at this point, we should quickly exit this and get the next
   // deadline from the timer system
 
@@ -100,15 +120,15 @@ bool TimerManager::WaitUntil(grpc_core::Timestamp next) {
     // if there's no timed waiter, we should become one: that waiter waits
     // only until the next timer should expire. All other timers wait forever
     //
-    // 'g_timed_waiter_generation' is a global generation counter. The idea here
+    // 'timed_waiter_generation_' is a global generation counter. The idea here
     // is that the thread becoming a timed-waiter increments and stores this
     // global counter locally in 'my_timed_waiter_generation' before going to
     // sleep. After waking up, if my_timed_waiter_generation ==
-    // g_timed_waiter_generation, it can be sure that it was the timed_waiter
+    // timed_waiter_generation_, it can be sure that it was the timed_waiter
     // thread (and that no other thread took over while this was asleep)
     //
     // Initialize my_timed_waiter_generation to some value that is NOT equal to
-    // g_timed_waiter_generation
+    // timed_waiter_generation_
     uint64_t my_timed_waiter_generation = timed_waiter_generation_ - 1;
 
     /* If there's no timed waiter, we should become one: that waiter waits only
@@ -121,7 +141,7 @@ bool TimerManager::WaitUntil(grpc_core::Timestamp next) {
         my_timed_waiter_generation = ++timed_waiter_generation_;
         has_timed_waiter_ = true;
         timed_waiter_deadline_ = next;
-      } else {  // g_timed_waiter == true && next >= g_timed_waiter_deadline
+      } else {  // timed_waiter_ == true && next >= timed_waiter_deadline_
         next = grpc_core::Timestamp::InfFuture();
       }
     }

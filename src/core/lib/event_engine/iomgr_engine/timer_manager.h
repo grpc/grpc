@@ -42,8 +42,10 @@
 namespace grpc_event_engine {
 namespace iomgr_engine {
 
-/* Timer Manager tries to keep only one thread waiting for the next timeout at
-   all times, and thus effectively preventing the thundering herd problem. */
+// Timer Manager tries to keep only one thread waiting for the next timeout at
+// all times, and thus effectively preventing the thundering herd problem.
+// TODO(ctiller): consider unifying this thread pool and the one in
+// thread_pool.{h,cc}.
 class TimerManager final : public TimerListHost {
  public:
   TimerManager();
@@ -57,20 +59,6 @@ class TimerManager final : public TimerListHost {
   bool TimerCancel(Timer* timer);
 
  private:
-  class ThreadCollector {
-   public:
-    ThreadCollector() = default;
-    ~ThreadCollector();
-
-    void Collect(std::vector<grpc_core::Thread> threads) {
-      GPR_ASSERT(threads_.empty());
-      threads_ = std::move(threads);
-    }
-
-   private:
-    std::vector<grpc_core::Thread> threads_;
-  };
-
   struct RunThreadArgs {
     TimerManager* self;
     grpc_core::Thread thread;
@@ -97,7 +85,7 @@ class TimerManager final : public TimerListHost {
   // are we shutting down?
   bool kicked_ ABSL_GUARDED_BY(mu_) = false;
   // the deadline of the current timed waiter thread (only relevant if
-  // g_has_timed_waiter is true)
+  // has_timed_waiter_ is true)
   grpc_core::Timestamp timed_waiter_deadline_ ABSL_GUARDED_BY(mu_);
   // generation counter to track which thread is waiting for the next timer
   uint64_t timed_waiter_generation_ ABSL_GUARDED_BY(mu_) = 0;

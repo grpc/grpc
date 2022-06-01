@@ -111,7 +111,7 @@ class IomgrEventEngine final : public EventEngine {
       absl::variant<std::function<void()>, EventEngine::Closure*> cb);
 
   iomgr_engine::TimerManager timer_manager_;
-  iomgr_engine::ThreadPool thread_pool_{1};
+  iomgr_engine::ThreadPool thread_pool_{2};
 
   grpc_core::Mutex mu_;
   TaskHandleSet known_handles_ ABSL_GUARDED_BY(mu_);

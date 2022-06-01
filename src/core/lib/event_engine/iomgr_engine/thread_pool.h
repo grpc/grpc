@@ -49,6 +49,10 @@ class ThreadPool final {
     grpc_core::Thread thd_;
     void ThreadFunc();
   };
+
+  void ThreadFunc();
+  static void ReapThreads(std::vector<Thread*>* tlist);
+
   grpc_core::Mutex mu_;
   grpc_core::CondVar cv_;
   grpc_core::CondVar shutdown_cv_;
@@ -58,9 +62,6 @@ class ThreadPool final {
   int nthreads_;
   int threads_waiting_;
   std::vector<Thread*> dead_threads_;
-
-  void ThreadFunc();
-  static void ReapThreads(std::vector<Thread*>* tlist);
 };
 
 }  // namespace iomgr_engine
