@@ -32,7 +32,8 @@ void* (*get_copied_context_fn_g)(void*) = nullptr;
 
 namespace grpc_core {
 void ContextList::Append(ContextList** head, grpc_chttp2_stream* s,
-                         int64_t outbuf_relative_start_pos, int64_t num_bytes) {
+                         int64_t traced_bytes_relative_start_pos,
+                         int64_t num_traced_bytes) {
   if (get_copied_context_fn_g == nullptr ||
       write_timestamps_callback_g == nullptr) {
     return;
@@ -40,8 +41,8 @@ void ContextList::Append(ContextList** head, grpc_chttp2_stream* s,
   /* Create a new element in the list and add it at the front */
   ContextList* elem = new ContextList();
   elem->trace_context_ = get_copied_context_fn_g(s->context);
-  elem->outbuf_relative_start_pos_ = outbuf_relative_start_pos;
-  elem->num_bytes_ = num_bytes;
+  elem->traced_bytes_relative_start_pos_ = traced_bytes_relative_start_pos;
+  elem->num_traced_bytes_ = num_traced_bytes;
   elem->byte_offset_ = s->byte_counter;
   elem->next_ = *head;
   *head = elem;
@@ -57,6 +58,19 @@ void ContextList::Execute(void* arg, Timestamps* ts, grpc_error_handle error) {
       }
       write_timestamps_callback_g(head->trace_context_, ts, error);
     }
+    to_be_freed = head;
+    head = head->next_;
+    delete to_be_freed;
+  }
+}
+
+void ContextList::IterateAndFree(
+    void* arg, std::function<void(void*, int64_t, int64_t)> cb) {
+  ContextList* head = static_cast<ContextList*>(arg);
+  ContextList* to_be_freed;
+  while (head != nullptr) {
+    cb(head->trace_context_, head->traced_bytes_relative_start_pos_,
+       head->num_traced_bytes_);
     to_be_freed = head;
     head = head->next_;
     delete to_be_freed;

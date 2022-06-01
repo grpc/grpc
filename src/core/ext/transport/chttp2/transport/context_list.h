@@ -34,18 +34,26 @@ class ContextList {
   /* Creates a new element with \a context as the value and appends it to the
    * list. */
   static void Append(ContextList** head, grpc_chttp2_stream* s,
-                     int64_t outbuf_relative_start_pos, int64_t num_bytes);
+                     int64_t traced_bytes_relative_start_pos,
+                     int64_t num_traced_bytes);
 
   /* Executes a function \a fn with each context in the list and \a ts. It also
    * frees up the entire list after this operation. It is intended as a callback
    * and hence does not take a ref on \a error */
   static void Execute(void* arg, Timestamps* ts, grpc_error_handle error);
 
+  /* Executes a function \a cb with each context in the list. The arguments
+   * provided to cb include the trace_context_, traced_bytes_relative_start_pos_
+   * and num_traced_bytes_ for each context in the context list. It also
+   * frees up the entire list after this operation. */
+  static void IterateAndFree(void* arg,
+                             std::function<void(void*, int64_t, int64_t)> cb);
+
  private:
   void* trace_context_ = nullptr;
   ContextList* next_ = nullptr;
-  int64_t outbuf_relative_start_pos_ = 0;
-  int64_t num_bytes_ = 0;
+  int64_t traced_bytes_relative_start_pos_ = 0;
+  int64_t num_traced_bytes_ = 0;
   size_t byte_offset_ = 0;
 };
 
