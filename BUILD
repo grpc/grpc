@@ -2808,6 +2808,7 @@ grpc_cc_library(
         "ref_counted_ptr",
         "service_config_parser",
         "slice_refcount",
+        "unique_type_name",
     ],
 )
 
@@ -3504,12 +3505,13 @@ grpc_cc_library(
         "src/core/ext/filters/client_channel/lb_policy/grpclb/load_balancer_api.h",
     ],
     external_deps = [
-        "absl/memory",
         "absl/container:inlined_vector",
+        "absl/memory",
         "absl/status",
         "absl/status:statusor",
         "absl/strings",
         "absl/strings:str_format",
+        "absl/time",
         "absl/types:optional",
         "absl/types:variant",
         "upb_lib",
@@ -3520,6 +3522,7 @@ grpc_cc_library(
         "channel_stack_type",
         "config",
         "debug_location",
+        "default_event_engine_factory_hdrs",
         "error",
         "gpr_base",
         "gpr_codegen",
@@ -4166,6 +4169,7 @@ grpc_cc_library(
         "ref_counted_ptr",
         "server_address",
         "sockaddr_utils",
+        "unique_type_name",
     ],
 )
 
@@ -4717,6 +4721,9 @@ grpc_cc_library(
     hdrs = [
         "src/core/ext/filters/client_channel/resolver/xds/xds_resolver.h",
     ],
+    external_deps = [
+        "absl/strings",
+    ],
     language = "c++",
 )
 
@@ -4762,6 +4769,7 @@ grpc_cc_library(
         "ref_counted_ptr",
         "server_address",
         "time",
+        "unique_type_name",
         "uri_parser",
         "useful",
     ],

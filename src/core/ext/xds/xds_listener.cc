@@ -994,10 +994,12 @@ grpc_error_handle LdsResourceParse(
       envoy_config_listener_v3_Listener_api_listener(listener);
   const envoy_config_core_v3_Address* address =
       envoy_config_listener_v3_Listener_address(listener);
-  if (api_listener != nullptr && address != nullptr) {
-    return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-        "Listener has both address and ApiListener");
-  }
+  // TODO(roth): Re-enable the following check once
+  // github.com/istio/istio/issues/38914 is resolved.
+  // if (api_listener != nullptr && address != nullptr) {
+  //   return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+  //       "Listener has both address and ApiListener");
+  // }
   if (api_listener == nullptr && address == nullptr) {
     return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
         "Listener has neither address nor ApiListener");
