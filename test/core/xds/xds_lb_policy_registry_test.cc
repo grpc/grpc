@@ -362,7 +362,7 @@ TEST(XdsLbPolicyRegistryTest, CustomTypeInvalidUrlEmptyType) {
 
 TEST(XdsLbPolicyRegistryTest, CustomLbPolicyJsonConversion) {
   TypedStruct typed_struct;
-  ASSERT_TRUE(::grpc::protobuf::TextFormat::ParseFromString(
+  ASSERT_TRUE(grpc::protobuf::TextFormat::ParseFromString(
       R"pb(
         type_url: "type.googleapis.com/test.CustomLb"
         value {
