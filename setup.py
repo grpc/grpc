@@ -425,6 +425,8 @@ if "linux" in sys.platform or "darwin" in sys.platform:
 # Python 3.9: Mac OS Big Sur sysconfig.get_config_var('MACOSX_DEPLOYMENT_TARGET') returns int (11)
 if 'darwin' in sys.platform:
     os.environ['ARCHFLAGS'] = '-arch {}'.format(platform.machine())
+    sys.stderr.write("AAAAAAAAAAAAAAAAAAAA ARCHFLAGS: '{}'\n".format(os.environ['ARCHFLAGS']))
+    sys.stderr.flush()
     mac_target = sysconfig.get_config_var('MACOSX_DEPLOYMENT_TARGET')
     if mac_target:
         mac_target = pkg_resources.parse_version(str(mac_target))
