@@ -336,7 +336,8 @@ class KubernetesBaseRunner:
         })
 
         link = f'https://{gcp_ui_url}/logs/query;{req}?project={gcp_project}'
-        logger.info("GCP Logs Explorer link to %s:\n%s", deployment_name, link)
+        # A whitespace at the end to indicate the end of the url.
+        logger.info("GCP Logs Explorer link to %s:\n%s ", deployment_name, link)
 
     @staticmethod
     def _make_namespace_name(resource_prefix: str, resource_suffix: str,
