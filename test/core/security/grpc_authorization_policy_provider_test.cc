@@ -21,6 +21,7 @@
 
 #include <grpc/grpc_security.h>
 
+#include "src/core/lib/gpr/env.h"
 #include "src/core/lib/security/authorization/grpc_authorization_engine.h"
 #include "test/core/util/test_config.h"
 #include "test/core/util/tls_utils.h"
@@ -212,6 +213,12 @@ TEST(AuthorizationPolicyProviderTest, FileWatcherRecoversFromFailure) {
 int main(int argc, char** argv) {
   grpc::testing::TestEnvironment env(&argc, argv);
   ::testing::InitGoogleTest(&argc, argv);
+  // TODO(ashithasantosh): Remove below logs. Logs are enabled for debugging
+  // purpose.
+#if GPR_APPLE
+  gpr_setenv("GRPC_VERBOSITY", "DEBUG");
+  gpr_setenv("GRPC_TRACE", "grpc_authz_api");
+#endif
   grpc_init();
   int ret = RUN_ALL_TESTS();
   grpc_shutdown();

@@ -22,6 +22,7 @@
 #include <grpcpp/server.h>
 #include <grpcpp/server_builder.h>
 
+#include "src/core/lib/gpr/env.h"
 #include "src/core/lib/iomgr/load_file.h"
 #include "src/core/lib/security/credentials/fake/fake_credentials.h"
 #include "src/cpp/client/secure_credentials.h"
@@ -812,6 +813,12 @@ TEST_F(GrpcAuthzEnd2EndTest, FileWatcherRecoversFromFailure) {
 int main(int argc, char** argv) {
   ::testing::InitGoogleTest(&argc, argv);
   grpc::testing::TestEnvironment env(&argc, argv);
+  // TODO(ashithasantosh): Remove below logs. Logs are enabled for debugging
+  // purpose.
+#if GPR_APPLE
+  gpr_setenv("GRPC_VERBOSITY", "DEBUG");
+  gpr_setenv("GRPC_TRACE", "grpc_authz_api");
+#endif
   const auto result = RUN_ALL_TESTS();
   return result;
 }
