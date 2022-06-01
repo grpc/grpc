@@ -110,7 +110,7 @@ struct ElemStruct {
   bool inserted = false;
 };
 
-static ElemStruct* SearchElems(std::vector<ElemStruct>& elems, bool inserted) {
+ElemStruct* SearchElems(std::vector<ElemStruct>& elems, bool inserted) {
   std::vector<size_t> search_order;
   for (size_t i = 0; i < elems.size(); i++) {
     search_order.push_back(i);
