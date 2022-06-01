@@ -91,8 +91,7 @@ TEST_F(ContextListTest, ExecuteFlushesList) {
     s[i]->context = &verifier_called[i];
     s[i]->byte_counter = kByteOffset;
     gpr_atm_rel_store(&verifier_called[i], static_cast<gpr_atm>(0));
-    ContextList::Append(&list, s[i], static_cast<int64_t>(i * kByteOffset),
-                        static_cast<int64_t>(kByteOffset));
+    ContextList::Append(&list, s[i], i * kByteOffset, kByteOffset);
   }
   Timestamps ts;
   ContextList::Execute(list, &ts, GRPC_ERROR_NONE);
@@ -148,8 +147,7 @@ TEST_F(ContextListTest, NonEmptyListEmptyTimestamp) {
     s[i]->context = &verifier_called[i];
     s[i]->byte_counter = kByteOffset;
     gpr_atm_rel_store(&verifier_called[i], static_cast<gpr_atm>(0));
-    ContextList::Append(&list, s[i], static_cast<int64_t>(i * kByteOffset),
-                        static_cast<int64_t>(kByteOffset));
+    ContextList::Append(&list, s[i], i * kByteOffset, kByteOffset);
   }
   ContextList::Execute(list, nullptr, GRPC_ERROR_NONE);
   for (auto i = 0; i < kNumElems; i++) {
@@ -189,8 +187,7 @@ TEST_F(ContextListTest, IterateAndFreeTest) {
     s[i]->context = &verifier_context[i];
     s[i]->byte_counter = kByteOffset;
     verifier_context[i] = i;
-    ContextList::Append(&list, s[i], static_cast<int64_t>(i * kByteOffset),
-                        static_cast<int64_t>(kByteOffset));
+    ContextList::Append(&list, s[i], i * kByteOffset, kByteOffset);
   }
   int i = kNumElems - 1;
   grpc_event_engine::experimental::TraceContextList::IterateAndFree(
