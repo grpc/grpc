@@ -140,8 +140,8 @@ class TimerList {
   struct Shard {
     Shard();
 
-    grpc_core::Timestamp ComputeMinDeadline();
-    bool RefillHeap(grpc_core::Timestamp now);
+    grpc_core::Timestamp ComputeMinDeadline() ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu);
+    bool RefillHeap(grpc_core::Timestamp now) ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu);
     Timer* PopOne(grpc_core::Timestamp now) ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu);
     void PopTimers(grpc_core::Timestamp now,
                    grpc_core::Timestamp* new_min_deadline,
@@ -149,18 +149,18 @@ class TimerList {
         ABSL_LOCKS_EXCLUDED(mu);
 
     grpc_core::Mutex mu;
-    TimeAveragedStats stats;
+    TimeAveragedStats stats ABSL_GUARDED_BY(mu);
     /* All and only timers with deadlines < this will be in the heap. */
-    grpc_core::Timestamp queue_deadline_cap;
+    grpc_core::Timestamp queue_deadline_cap ABSL_GUARDED_BY(mu);
     /* The deadline of the next timer due in this shard. */
-    grpc_core::Timestamp min_deadline;
+    grpc_core::Timestamp min_deadline;  // Guarded by TimerList::mu_
     /* Index of this timer_shard in the g_shard_queue. */
-    uint32_t shard_queue_index;
+    uint32_t shard_queue_index;  // Guarded by TimerList::mu_
     /* This holds all timers with deadlines < queue_deadline_cap. Timers in this
        list have the top bit of their deadline set to 0. */
-    TimerHeap heap;
+    TimerHeap heap ABSL_GUARDED_BY(mu);
     /* This holds timers whose deadline is >= queue_deadline_cap. */
-    Timer list;
+    Timer list ABSL_GUARDED_BY(mu);
   };
 
   void SwapAdjacentShardsInQueue(uint32_t first_shard_queue_index)
