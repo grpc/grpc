@@ -414,6 +414,10 @@
     <file baseinstalldir="/" name="src/core/ext/upb-generated/envoy/extensions/filters/http/router/v3/router.upb.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upb-generated/envoy/extensions/filters/network/http_connection_manager/v3/http_connection_manager.upb.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upb-generated/envoy/extensions/filters/network/http_connection_manager/v3/http_connection_manager.upb.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/upb-generated/envoy/extensions/load_balancing_policies/ring_hash/v3/ring_hash.upb.c" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/upb-generated/envoy/extensions/load_balancing_policies/ring_hash/v3/ring_hash.upb.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/upb-generated/envoy/extensions/load_balancing_policies/wrr_locality/v3/wrr_locality.upb.c" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/upb-generated/envoy/extensions/load_balancing_policies/wrr_locality/v3/wrr_locality.upb.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upb-generated/envoy/extensions/transport_sockets/tls/v3/cert.upb.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upb-generated/envoy/extensions/transport_sockets/tls/v3/cert.upb.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upb-generated/envoy/extensions/transport_sockets/tls/v3/common.upb.c" role="src" />
@@ -867,6 +871,8 @@
     <file baseinstalldir="/" name="src/core/ext/xds/xds_http_filters.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/xds/xds_http_rbac_filter.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/xds/xds_http_rbac_filter.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/xds/xds_lb_policy_registry.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/xds/xds_lb_policy_registry.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/xds/xds_listener.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/xds/xds_listener.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/xds/xds_resource_type.cc" role="src" />

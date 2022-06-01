@@ -3623,6 +3623,7 @@ grpc_cc_library(
         "src/core/ext/xds/xds_http_fault_filter.cc",
         "src/core/ext/xds/xds_http_filters.cc",
         "src/core/ext/xds/xds_http_rbac_filter.cc",
+        "src/core/ext/xds/xds_lb_policy_registry.cc",
         "src/core/ext/xds/xds_listener.cc",
         "src/core/ext/xds/xds_resource_type.cc",
         "src/core/ext/xds/xds_route_config.cc",
@@ -3648,6 +3649,7 @@ grpc_cc_library(
         "src/core/ext/xds/xds_http_fault_filter.h",
         "src/core/ext/xds/xds_http_filters.h",
         "src/core/ext/xds/xds_http_rbac_filter.h",
+        "src/core/ext/xds/xds_lb_policy_registry.h",
         "src/core/ext/xds/xds_listener.h",
         "src/core/ext/xds/xds_resource_type.h",
         "src/core/ext/xds/xds_resource_type_impl.h",
@@ -3699,6 +3701,8 @@ grpc_cc_library(
         "envoy_extensions_filters_http_router_upbdefs",
         "envoy_extensions_filters_network_http_connection_manager_upb",
         "envoy_extensions_filters_network_http_connection_manager_upbdefs",
+        "envoy_extensions_load_balancing_policies_ring_hash_upb",
+        "envoy_extensions_load_balancing_policies_wrr_locality_upb",
         "envoy_extensions_transport_sockets_tls_upb",
         "envoy_extensions_transport_sockets_tls_upbdefs",
         "envoy_service_discovery_upb",
@@ -3736,6 +3740,7 @@ grpc_cc_library(
         "protobuf_any_upb",
         "protobuf_duration_upb",
         "protobuf_struct_upb",
+        "protobuf_struct_upbdefs",
         "protobuf_timestamp_upb",
         "protobuf_wrappers_upb",
         "ref_counted_ptr",
@@ -6622,6 +6627,16 @@ grpc_upb_proto_library(
 grpc_upb_proto_reflection_library(
     name = "envoy_extensions_filters_http_router_upbdefs",
     deps = ["@envoy_api//envoy/extensions/filters/http/router/v3:pkg"],
+)
+
+grpc_upb_proto_library(
+    name = "envoy_extensions_load_balancing_policies_ring_hash_upb",
+    deps = ["@envoy_api//envoy/extensions/load_balancing_policies/ring_hash/v3:pkg"],
+)
+
+grpc_upb_proto_library(
+    name = "envoy_extensions_load_balancing_policies_wrr_locality_upb",
+    deps = ["@envoy_api//envoy/extensions/load_balancing_policies/wrr_locality/v3:pkg"],
 )
 
 grpc_upb_proto_library(

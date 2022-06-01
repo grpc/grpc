@@ -142,7 +142,7 @@ TEST_P(LdsTest, NacksNonTerminalHttpFilterAtEndOfList) {
   auto* filter = http_connection_manager.mutable_http_filters(0);
   filter->set_name("unknown");
   filter->mutable_typed_config()->set_type_url(
-      "grpc.testing.client_only_http_filter");
+      "custom/grpc.testing.client_only_http_filter");
   listener.mutable_api_listener()->mutable_api_listener()->PackFrom(
       http_connection_manager);
   SetListenerAndRouteConfiguration(balancer_.get(), listener,
@@ -166,7 +166,7 @@ TEST_P(LdsTest, NacksTerminalFilterBeforeEndOfList) {
   auto* filter = http_connection_manager.add_http_filters();
   filter->set_name("grpc.testing.terminal_http_filter");
   filter->mutable_typed_config()->set_type_url(
-      "grpc.testing.terminal_http_filter");
+      "custom/grpc.testing.terminal_http_filter");
   listener.mutable_api_listener()->mutable_api_listener()->PackFrom(
       http_connection_manager);
   SetListenerAndRouteConfiguration(balancer_.get(), listener,
@@ -353,7 +353,7 @@ TEST_P(LdsTest, RejectsHttpFiltersNotSupportedOnClients) {
   auto* filter = http_connection_manager.mutable_http_filters(0);
   filter->set_name("grpc.testing.server_only_http_filter");
   filter->mutable_typed_config()->set_type_url(
-      "grpc.testing.server_only_http_filter");
+      "custom/grpc.testing.server_only_http_filter");
   listener.mutable_api_listener()->mutable_api_listener()->PackFrom(
       http_connection_manager);
   SetListenerAndRouteConfiguration(balancer_.get(), listener,
@@ -378,7 +378,7 @@ TEST_P(LdsTest, IgnoresOptionalHttpFiltersNotSupportedOnClients) {
   auto* filter = http_connection_manager.mutable_http_filters(0);
   filter->set_name("grpc.testing.server_only_http_filter");
   filter->mutable_typed_config()->set_type_url(
-      "grpc.testing.server_only_http_filter");
+      "custom/grpc.testing.server_only_http_filter");
   filter->set_is_optional(true);
   listener.mutable_api_listener()->mutable_api_listener()->PackFrom(
       http_connection_manager);

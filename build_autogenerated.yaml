@@ -487,6 +487,8 @@ libs:
   - src/core/ext/upb-generated/envoy/extensions/filters/http/rbac/v3/rbac.upb.h
   - src/core/ext/upb-generated/envoy/extensions/filters/http/router/v3/router.upb.h
   - src/core/ext/upb-generated/envoy/extensions/filters/network/http_connection_manager/v3/http_connection_manager.upb.h
+  - src/core/ext/upb-generated/envoy/extensions/load_balancing_policies/ring_hash/v3/ring_hash.upb.h
+  - src/core/ext/upb-generated/envoy/extensions/load_balancing_policies/wrr_locality/v3/wrr_locality.upb.h
   - src/core/ext/upb-generated/envoy/extensions/transport_sockets/tls/v3/cert.upb.h
   - src/core/ext/upb-generated/envoy/extensions/transport_sockets/tls/v3/common.upb.h
   - src/core/ext/upb-generated/envoy/extensions/transport_sockets/tls/v3/secret.upb.h
@@ -715,6 +717,7 @@ libs:
   - src/core/ext/xds/xds_http_fault_filter.h
   - src/core/ext/xds/xds_http_filters.h
   - src/core/ext/xds/xds_http_rbac_filter.h
+  - src/core/ext/xds/xds_lb_policy_registry.h
   - src/core/ext/xds/xds_listener.h
   - src/core/ext/xds/xds_resource_type.h
   - src/core/ext/xds/xds_resource_type_impl.h
@@ -1165,6 +1168,8 @@ libs:
   - src/core/ext/upb-generated/envoy/extensions/filters/http/rbac/v3/rbac.upb.c
   - src/core/ext/upb-generated/envoy/extensions/filters/http/router/v3/router.upb.c
   - src/core/ext/upb-generated/envoy/extensions/filters/network/http_connection_manager/v3/http_connection_manager.upb.c
+  - src/core/ext/upb-generated/envoy/extensions/load_balancing_policies/ring_hash/v3/ring_hash.upb.c
+  - src/core/ext/upb-generated/envoy/extensions/load_balancing_policies/wrr_locality/v3/wrr_locality.upb.c
   - src/core/ext/upb-generated/envoy/extensions/transport_sockets/tls/v3/cert.upb.c
   - src/core/ext/upb-generated/envoy/extensions/transport_sockets/tls/v3/common.upb.c
   - src/core/ext/upb-generated/envoy/extensions/transport_sockets/tls/v3/secret.upb.c
@@ -1390,6 +1395,7 @@ libs:
   - src/core/ext/xds/xds_http_fault_filter.cc
   - src/core/ext/xds/xds_http_filters.cc
   - src/core/ext/xds/xds_http_rbac_filter.cc
+  - src/core/ext/xds/xds_lb_policy_registry.cc
   - src/core/ext/xds/xds_listener.cc
   - src/core/ext/xds/xds_resource_type.cc
   - src/core/ext/xds/xds_route_config.cc
@@ -9350,6 +9356,43 @@ targets:
   - grpcpp_channelz
   - grpc_test_util
   - grpc++_test_config
+- name: xds_lb_policy_registry_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - test/cpp/util/cli_call.h
+  - test/cpp/util/cli_credentials.h
+  - test/cpp/util/config_grpc_cli.h
+  - test/cpp/util/proto_file_parser.h
+  - test/cpp/util/proto_reflection_descriptor_database.h
+  - test/cpp/util/service_describer.h
+  src:
+  - src/proto/grpc/reflection/v1alpha/reflection.proto
+  - src/proto/grpc/testing/xds/v3/address.proto
+  - src/proto/grpc/testing/xds/v3/base.proto
+  - src/proto/grpc/testing/xds/v3/cluster.proto
+  - src/proto/grpc/testing/xds/v3/config_source.proto
+  - src/proto/grpc/testing/xds/v3/endpoint.proto
+  - src/proto/grpc/testing/xds/v3/extension.proto
+  - src/proto/grpc/testing/xds/v3/outlier_detection.proto
+  - src/proto/grpc/testing/xds/v3/percent.proto
+  - src/proto/grpc/testing/xds/v3/ring_hash.proto
+  - src/proto/grpc/testing/xds/v3/round_robin.proto
+  - src/proto/grpc/testing/xds/v3/typed_struct.proto
+  - src/proto/grpc/testing/xds/v3/udpa_typed_struct.proto
+  - src/proto/grpc/testing/xds/v3/wrr_locality.proto
+  - test/core/xds/xds_lb_policy_registry_test.cc
+  - test/cpp/util/cli_call.cc
+  - test/cpp/util/cli_credentials.cc
+  - test/cpp/util/proto_file_parser.cc
+  - test/cpp/util/proto_reflection_descriptor_database.cc
+  - test/cpp/util/service_describer.cc
+  deps:
+  - absl/flags:flag
+  - grpc++
+  - grpc_test_util
+  uses_polling: false
 - name: xds_outlier_detection_end2end_test
   gtest: true
   build: test
