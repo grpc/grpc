@@ -40,9 +40,6 @@ class StressTest {
   void Run(int seconds) {
     std::vector<std::thread> threads;
 
-    // A few threads constantly rebinding allocators to different quotas.
-    threads.reserve(2 + 2 + 3 * allocators_.size());
-    for (int i = 0; i < 2; i++) threads.push_back(Run(Rebinder));
     // And another few threads constantly resizing quotas.
     for (int i = 0; i < 2; i++) threads.push_back(Run(Resizer));
 
@@ -165,13 +162,6 @@ class StressTest {
   };
   // Type alias since we always pass around these shared pointers.
   using StatePtr = std::shared_ptr<State>;
-
-  // Choose one allocator, one quota, rebind the allocator to the quota.
-  static void Rebinder(StatePtr st) {
-    auto* allocator = st->RandomAllocator();
-    auto* quota = st->RandomQuota();
-    allocator->Rebind(quota);
-  }
 
   // Choose one allocator, resize it to a randomly chosen size.
   static void Resizer(StatePtr st) {
