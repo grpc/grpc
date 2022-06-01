@@ -188,7 +188,7 @@ TEST(TimerListTest, Destruction) {
         `main` using TestOnlyGlobalInit())
     2) Creates 4 timers - one with a deadline 25 days in the future, one just
         3 milliseconds in future, one way out in the future, and one using the
-        grpc_timespec_to_millis_round_up function to compute a deadline of 25
+        Timestamp::FromTimespecRoundUp function to compute a deadline of 25
         days in the future
     3) Simulates 4 milliseconds of elapsed time by changing `now` (cached at
         step 1) to `now+4`
@@ -219,7 +219,7 @@ TEST(TimerListTest, LongRunningServiceCleanup) {
   gpr_timespec deadline_spec =
       (kStart + k25Days).as_timespec(gpr_clock_type::GPR_CLOCK_MONOTONIC);
 
-  /* grpc_timespec_to_millis_round_up is how users usually compute a millisecond
+  /* Timestamp::FromTimespecRoundUp is how users usually compute a millisecond
     input value into grpc_timer_init, so we mimic that behavior here */
   EXPECT_CALL(host, Now()).WillOnce(Return(kStart));
   timer_list.TimerInit(&timers[3],

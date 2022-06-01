@@ -181,8 +181,7 @@ bool TimerList::TimerCancel(Timer* timer) {
 /* Rebalances the timer shard by computing a new 'queue_deadline_cap' and moving
    all relevant timers in shard->list (i.e timers with deadlines earlier than
    'queue_deadline_cap') into into shard->heap.
-   Returns 'true' if shard->heap has at least ONE element
-   REQUIRES: shard->mu locked */
+   Returns 'true' if shard->heap has at least ONE element */
 bool TimerList::Shard::RefillHeap(grpc_core::Timestamp now) {
   /* Compute the new queue window width and bound by the limits: */
   double computed_deadline_delta = stats.UpdateAverage() * kAddDeadlineScale;
@@ -210,8 +209,7 @@ bool TimerList::Shard::RefillHeap(grpc_core::Timestamp now) {
 }
 
 /* This pops the next non-cancelled timer with deadline <= now from the
-   queue, or returns NULL if there isn't one.
-   REQUIRES: shard->mu locked */
+   queue, or returns NULL if there isn't one. */
 Timer* TimerList::Shard::PopOne(grpc_core::Timestamp now) {
   Timer* timer;
   for (;;) {

@@ -56,6 +56,8 @@ struct Timer {
   grpc_event_engine::experimental::EventEngine::TaskHandle task_handle;
 };
 
+// Dependency injection: allow tests and/or TimerManager to inject
+// their own implementations of Now, Kick.
 class TimerListHost {
  public:
   // Return the current timestamp.
@@ -174,14 +176,14 @@ class TimerList {
   grpc_core::Mutex mu_;
   /* The deadline of the next timer due across all timer shards */
   std::atomic<uint64_t> min_timer_;
-  /* Allow only one run_some_expired_timers at once */
+  /* Allow only one FindExpiredTimers at once (used as a TryLock, protects no
+   * fields but ensures limits on concurrency) */
   grpc_core::Mutex checker_mu_;
   /* Array of timer shards. Whenever a timer (Timer *) is added, its address
    * is hashed to select the timer shard to add the timer to */
   const std::unique_ptr<Shard[]> shards_;
   /* Maintains a sorted list of timer shards (sorted by their min_deadline, i.e
-   * the deadline of the next timer in each shard).
-   * Access to this is protected by g_shared_mutables.mu */
+   * the deadline of the next timer in each shard). */
   const std::unique_ptr<Shard*[]> shard_queue_ ABSL_GUARDED_BY(mu_);
 };
 

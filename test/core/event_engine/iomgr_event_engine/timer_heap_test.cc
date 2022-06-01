@@ -44,9 +44,8 @@ std::vector<Timer> CreateTestElements(size_t num_elements) {
   }
   return elems;
 }
-}  // namespace
 
-static void CheckValid(TimerHeap* pq) {
+void CheckValid(TimerHeap* pq) {
   const std::vector<Timer*>& timers = pq->TestOnlyGetTimers();
   for (size_t i = 0; i < timers.size(); ++i) {
     size_t left_child = 1u + 2u * i;
@@ -60,11 +59,7 @@ static void CheckValid(TimerHeap* pq) {
   }
 }
 
-/*******************************************************************************
- * test1
- */
-
-TEST(TimerHeapTest, Test1) {
+TEST(TimerHeapTest, Basics) {
   TimerHeap pq;
   const size_t num_test_elements = 200;
   const size_t num_test_operations = 10000;
@@ -110,10 +105,6 @@ TEST(TimerHeapTest, Test1) {
   }
 }
 
-/*******************************************************************************
- * test2
- */
-
 struct ElemStruct {
   Timer elem;
   bool inserted = false;
@@ -138,7 +129,8 @@ static ElemStruct* SearchElems(std::vector<ElemStruct>& elems, bool inserted) {
   return out;
 }
 
-TEST(TimerHeapTest, Test2) {
+// TODO(ctiller): this should be an actual fuzzer
+TEST(TimerHeapTest, RandomMutations) {
   TimerHeap pq;
 
   static const size_t elems_size = 1000;
@@ -200,6 +192,7 @@ TEST(TimerHeapTest, Test2) {
   }
 }
 
+}  // namespace
 }  // namespace iomgr_engine
 }  // namespace grpc_event_engine
 
