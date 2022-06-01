@@ -49,4 +49,4 @@ class PeriodicUpdate {
 
 }  // namespace grpc_core
 
-#endif
+#endif  // GRPC_CORE_LIB_RESOURCE_QUOTA_PERIODIC_UPDATE_H
