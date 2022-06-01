@@ -27,6 +27,8 @@
 #include <utility>
 #include <vector>
 
+#include "absl/strings/string_view.h"
+
 #include <grpc/compression.h>
 #include <grpc/grpc.h>
 #include <grpc/impl/codegen/compression_types.h>
@@ -52,6 +54,7 @@
 #include <grpcpp/support/interceptor.h>
 #include <grpcpp/support/server_callback.h>
 #include <grpcpp/support/server_interceptor.h>
+#include <grpcpp/support/string_ref.h>
 
 #include "src/core/lib/gprpp/ref_counted.h"
 #include "src/core/lib/gprpp/sync.h"
@@ -405,6 +408,11 @@ void ServerContextBase::CreateCallMetricRecorder() {
   GPR_ASSERT(call_metric_recorder_ == nullptr);
   grpc_core::Arena* arena = grpc_call_get_arena(call_.call);
   call_metric_recorder_ = arena->New<experimental::CallMetricRecorder>(arena);
+}
+
+grpc::string_ref ServerContextBase::ExperimentalGetAuthority() const {
+  absl::string_view authority = grpc_call_server_authority(call_.call);
+  return grpc::string_ref(authority.data(), authority.size());
 }
 
 }  // namespace grpc

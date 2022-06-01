@@ -30,6 +30,7 @@
 
 #include "absl/base/thread_annotations.h"
 #include "absl/status/status.h"
+#include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
 
 #include <grpc/impl/codegen/connectivity_state.h>
@@ -54,6 +55,7 @@
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/gprpp/time.h"
+#include "src/core/lib/gprpp/unique_type_name.h"
 #include "src/core/lib/iomgr/call_combiner.h"
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/error.h"
@@ -382,6 +384,20 @@ class ClientChannel {
 class ClientChannel::LoadBalancedCall
     : public InternallyRefCounted<LoadBalancedCall, kUnrefCallDtor> {
  public:
+  class LbCallState : public LoadBalancingPolicy::CallState {
+   public:
+    explicit LbCallState(LoadBalancedCall* lb_call) : lb_call_(lb_call) {}
+
+    void* Alloc(size_t size) override { return lb_call_->arena_->Alloc(size); }
+
+    // Internal API to allow first-party LB policies to access per-call
+    // attributes set by the ConfigSelector.
+    absl::string_view GetCallAttribute(UniqueTypeName type);
+
+   private:
+    LoadBalancedCall* lb_call_;
+  };
+
   // If on_call_destruction_complete is non-null, then it will be
   // invoked once the LoadBalancedCall is completely destroyed.
   // If it is null, then the caller is responsible for checking whether
@@ -417,7 +433,6 @@ class ClientChannel::LoadBalancedCall
  private:
   class LbQueuedCallCanceller;
   class Metadata;
-  class LbCallState;
   class BackendMetricAccessor;
 
   // Returns the index into pending_batches_ to be used for batch.

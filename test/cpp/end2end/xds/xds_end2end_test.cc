@@ -1082,7 +1082,9 @@ TEST_P(XdsEnabledServerTest, BadLdsUpdateNoApiListenerNorAddress) {
       ::testing::HasSubstr("Listener has neither address nor ApiListener"));
 }
 
-TEST_P(XdsEnabledServerTest, BadLdsUpdateBothApiListenerAndAddress) {
+// TODO(roth): Re-enable the following test once
+// github.com/istio/istio/issues/38914 is resolved.
+TEST_P(XdsEnabledServerTest, DISABLED_BadLdsUpdateBothApiListenerAndAddress) {
   Listener listener = default_server_listener_;
   listener.mutable_api_listener();
   SetServerListenerNameAndRouteConfiguration(balancer_.get(), listener,
