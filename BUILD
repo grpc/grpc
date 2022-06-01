@@ -1868,6 +1868,22 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "periodic_update",
+    srcs = [
+        "src/core/lib/resource_quota/periodic_update.cc",
+    ],
+    hdrs = [
+        "src/core/lib/resource_quota/periodic_update.h",
+    ],
+    tags = ["grpc-autodeps"],
+    deps = [
+        "exec_ctx",
+        "gpr_platform",
+        "time",
+    ],
+)
+
+grpc_cc_library(
     name = "arena",
     srcs = [
         "src/core/lib/resource_quota/arena.cc",
