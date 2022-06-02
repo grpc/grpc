@@ -80,6 +80,10 @@ struct tsi_zero_copy_grpc_protector_vtable {
   tsi_result (*unprotect)(tsi_zero_copy_grpc_protector* self,
                           grpc_slice_buffer* protected_slices,
                           grpc_slice_buffer* unprotected_slices);
+  // TODO(vigneshbabu): Delete the unprotect method and renamve this new
+  // method to unprotect after the rollout is complete. This new method allows
+  // us to incrementally migrate callers rather than migrating all callers
+  // at once.
   tsi_result (*unprotect_and_get_min_progress_size)(
       tsi_zero_copy_grpc_protector* self, grpc_slice_buffer* protected_slices,
       grpc_slice_buffer* unprotected_slices, int* min_progress_size);
