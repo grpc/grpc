@@ -427,6 +427,7 @@ if 'darwin' in sys.platform:
     os.environ['ARCHFLAGS'] = '-arch {}'.format(platform.machine())
     sys.stderr.write("AAAAAAAAAAAAAAAAAAAA ARCHFLAGS: '{}'\n".format(os.environ['ARCHFLAGS']))
     sys.stderr.flush()
+    sys.exit(1)
     mac_target = sysconfig.get_config_var('MACOSX_DEPLOYMENT_TARGET')
     if mac_target:
         mac_target = pkg_resources.parse_version(str(mac_target))
