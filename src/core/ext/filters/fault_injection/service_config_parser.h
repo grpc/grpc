@@ -72,8 +72,8 @@ class FaultInjectionMethodParsedConfig
   // keep track of their relative positions. The FaultInjectionFilter uses this
   // method to access the parsed fault injection policy in service config,
   // whether it came from xDS resolver or directly from service config
-  const FaultInjectionPolicy* fault_injection_policy(int index) const {
-    if (static_cast<size_t>(index) >= fault_injection_policies_.size()) {
+  const FaultInjectionPolicy* fault_injection_policy(size_t index) const {
+    if (index >= fault_injection_policies_.size()) {
       return nullptr;
     }
     return &fault_injection_policies_[index];
