@@ -62,7 +62,7 @@ static void wait_for_policy_reload(void) {
 static void drain_cq(grpc_completion_queue* cq) {
   grpc_event ev;
   do {
-    ev = grpc_completion_queue_next(cq, five_seconds_from_now(), nullptr);
+    ev = grpc_completion_queue_next(cq, fifteen_seconds_from_now(), nullptr);
   } while (ev.type != GRPC_QUEUE_SHUTDOWN);
 }
 
