@@ -21,11 +21,8 @@
 #include <inttypes.h>
 #include <stdio.h>
 
-#include <algorithm>
-#include <cstdint>
 #include <string>
 #include <utility>
-#include <vector>
 
 #include <grpc/status.h>
 #include <grpc/support/log.h>
