@@ -177,7 +177,7 @@ class RingHash : public LoadBalancingPolicy {
       return connectivity_state_.load(std::memory_order_relaxed);
     }
 
-    absl::Status connectivity_status() const {
+    absl::Status GetConnectivityStatus() const {
       MutexLock lock(&mu_);
       return connectivity_status_;
     }
@@ -563,7 +563,7 @@ RingHash::PickResult RingHash::Picker::Pick(PickArgs args) {
   }
   return PickResult::Fail(absl::UnavailableError(absl::StrCat(
       "ring hash cannot find a connected subchannel; first failure: ",
-      ring[first_index].subchannel->connectivity_status().ToString())));
+      ring[first_index].subchannel->GetConnectivityStatus().ToString())));
 }
 
 //
