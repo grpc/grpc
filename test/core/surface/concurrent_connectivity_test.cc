@@ -31,6 +31,7 @@
 
 #include "src/core/lib/address_utils/sockaddr_utils.h"
 #include "src/core/lib/gprpp/thd.h"
+#include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/iomgr.h"
 #include "src/core/lib/iomgr/resolve_address.h"
@@ -137,7 +138,8 @@ void bad_server_thread(void* vargs) {
   grpc_tcp_server* s;
   const grpc_channel_args* channel_args = grpc_core::CoreConfiguration::Get()
                                               .channel_args_preconditioning()
-                                              .PreconditionChannelArgs(nullptr);
+                                              .PreconditionChannelArgs(nullptr)
+                                              .ToC();
   grpc_error_handle error = grpc_tcp_server_create(nullptr, channel_args, &s);
   grpc_channel_args_destroy(channel_args);
   GPR_ASSERT(error == GRPC_ERROR_NONE);
@@ -153,7 +155,8 @@ void bad_server_thread(void* vargs) {
 
   gpr_mu_lock(args->mu);
   while (!args->stop.load(std::memory_order_acquire)) {
-    grpc_millis deadline = grpc_core::ExecCtx::Get()->Now() + 100;
+    grpc_core::Timestamp deadline = grpc_core::ExecCtx::Get()->Now() +
+                                    grpc_core::Duration::Milliseconds(100);
 
     grpc_pollset_worker* worker = nullptr;
     if (!GRPC_LOG_IF_ERROR(
@@ -314,7 +317,7 @@ int run_concurrent_watches_with_short_timeouts_test() {
 }
 
 int main(int argc, char** argv) {
-  grpc::testing::TestEnvironment env(argc, argv);
+  grpc::testing::TestEnvironment env(&argc, argv);
 
   run_concurrent_connectivity_test();
   run_concurrent_watches_with_short_timeouts_test();

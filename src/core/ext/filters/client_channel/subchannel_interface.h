@@ -1,31 +1,33 @@
-/*
- *
- * Copyright 2019 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+// Copyright 2019 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
 
 #ifndef GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_SUBCHANNEL_INTERFACE_H
 #define GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_SUBCHANNEL_INTERFACE_H
 
 #include <grpc/support/port_platform.h>
 
+#include <memory>
+#include <utility>
+
 #include <grpc/impl/codegen/connectivity_state.h>
 #include <grpc/impl/codegen/grpc_types.h>
 
 #include "src/core/lib/gprpp/ref_counted.h"
-#include "src/core/lib/iomgr/pollset_set.h"
+#include "src/core/lib/gprpp/ref_counted_ptr.h"
+#include "src/core/lib/iomgr/iomgr_fwd.h"
 
 namespace grpc_core {
 
@@ -45,6 +47,13 @@ class SubchannelInterface : public RefCounted<SubchannelInterface> {
     // TODO(roth): Remove this as soon as we move to EventManager-based
     // polling.
     virtual grpc_pollset_set* interested_parties() = 0;
+  };
+
+  // Opaque interface for watching data of a particular type for this
+  // subchannel.
+  class DataWatcherInterface {
+   public:
+    virtual ~DataWatcherInterface() = default;
   };
 
   explicit SubchannelInterface(const char* trace = nullptr)
@@ -79,13 +88,17 @@ class SubchannelInterface : public RefCounted<SubchannelInterface> {
   // If the subchannel is currently in backoff delay due to a previously
   // failed attempt, the new connection attempt will not start until the
   // backoff delay has elapsed.
-  virtual void AttemptToConnect() = 0;
+  virtual void RequestConnection() = 0;
 
-  // Resets the subchannel's connection backoff state.  If AttemptToConnect()
+  // Resets the subchannel's connection backoff state.  If RequestConnection()
   // has been called since the subchannel entered TRANSIENT_FAILURE state,
   // starts a new connection attempt immediately; otherwise, a new connection
-  // attempt will be started as soon as AttemptToConnect() is called.
+  // attempt will be started as soon as RequestConnection() is called.
   virtual void ResetBackoff() = 0;
+
+  // Registers a new data watcher.
+  virtual void AddDataWatcher(
+      std::unique_ptr<DataWatcherInterface> watcher) = 0;
 
   // TODO(roth): Need a better non-grpc-specific abstraction here.
   virtual const grpc_channel_args* channel_args() = 0;
@@ -115,10 +128,15 @@ class DelegatingSubchannel : public SubchannelInterface {
       ConnectivityStateWatcherInterface* watcher) override {
     return wrapped_subchannel_->CancelConnectivityStateWatch(watcher);
   }
-  void AttemptToConnect() override { wrapped_subchannel_->AttemptToConnect(); }
+  void RequestConnection() override {
+    wrapped_subchannel_->RequestConnection();
+  }
   void ResetBackoff() override { wrapped_subchannel_->ResetBackoff(); }
   const grpc_channel_args* channel_args() override {
     return wrapped_subchannel_->channel_args();
+  }
+  void AddDataWatcher(std::unique_ptr<DataWatcherInterface> watcher) override {
+    wrapped_subchannel_->AddDataWatcher(std::move(watcher));
   }
 
  private:
@@ -127,4 +145,4 @@ class DelegatingSubchannel : public SubchannelInterface {
 
 }  // namespace grpc_core
 
-#endif /* GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_SUBCHANNEL_INTERFACE_H */
+#endif  // GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_SUBCHANNEL_INTERFACE_H

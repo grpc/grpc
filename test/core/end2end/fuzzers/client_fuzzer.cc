@@ -52,28 +52,25 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
     grpc_completion_queue* cq = grpc_completion_queue_create_for_next(nullptr);
     const grpc_channel_args* args = grpc_core::CoreConfiguration::Get()
                                         .channel_args_preconditioning()
-                                        .PreconditionChannelArgs(nullptr);
+                                        .PreconditionChannelArgs(nullptr)
+                                        .ToC();
     grpc_transport* transport =
         grpc_create_chttp2_transport(args, mock_endpoint, true);
     grpc_channel_args_destroy(args);
     grpc_resource_quota_unref(resource_quota);
     grpc_chttp2_transport_start_reading(transport, nullptr, nullptr, nullptr);
-    grpc_arg authority_arg = grpc_channel_arg_string_create(
-        const_cast<char*>(GRPC_ARG_DEFAULT_AUTHORITY),
-        const_cast<char*>("test-authority"));
-    args = grpc_channel_args_copy_and_add(nullptr, &authority_arg, 1);
-    const grpc_channel_args* channel_args = grpc_core::CoreConfiguration::Get()
-                                                .channel_args_preconditioning()
-                                                .PreconditionChannelArgs(args);
-    grpc_channel* channel = grpc_channel_create_internal(
-        "test-target", channel_args, GRPC_CLIENT_DIRECT_CHANNEL, transport,
-        nullptr);
-    grpc_channel_args_destroy(args);
-    grpc_channel_args_destroy(channel_args);
+    auto channel_args =
+        grpc_core::CoreConfiguration::Get()
+            .channel_args_preconditioning()
+            .PreconditionChannelArgs(nullptr)
+            .SetIfUnset(GRPC_ARG_DEFAULT_AUTHORITY, "test-authority");
+    auto channel = grpc_core::Channel::Create(
+        "test-target", channel_args, GRPC_CLIENT_DIRECT_CHANNEL, transport);
     grpc_slice host = grpc_slice_from_static_string("localhost");
-    grpc_call* call = grpc_channel_create_call(
-        channel, nullptr, 0, cq, grpc_slice_from_static_string("/foo"), &host,
-        gpr_inf_future(GPR_CLOCK_REALTIME), nullptr);
+    grpc_call* call =
+        grpc_channel_create_call(channel->get()->c_ptr(), nullptr, 0, cq,
+                                 grpc_slice_from_static_string("/foo"), &host,
+                                 gpr_inf_future(GPR_CLOCK_REALTIME), nullptr);
 
     grpc_metadata_array initial_metadata_recv;
     grpc_metadata_array_init(&initial_metadata_recv);
@@ -157,7 +154,6 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
     grpc_metadata_array_destroy(&initial_metadata_recv);
     grpc_metadata_array_destroy(&trailing_metadata_recv);
     grpc_slice_unref(details);
-    grpc_channel_destroy(channel);
     if (response_payload_recv != nullptr) {
       grpc_byte_buffer_destroy(response_payload_recv);
     }

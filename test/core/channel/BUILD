@@ -21,7 +21,9 @@ licenses(["notice"])
 grpc_cc_test(
     name = "channel_args_test",
     srcs = ["channel_args_test.cc"],
+    external_deps = ["gtest"],
     language = "C++",
+    uses_event_engine = False,
     uses_polling = False,
     deps = [
         "//:gpr",
@@ -34,6 +36,7 @@ grpc_cc_test(
     name = "channel_stack_test",
     srcs = ["channel_stack_test.cc"],
     language = "C++",
+    uses_event_engine = False,
     uses_polling = False,
     deps = [
         "//:gpr",
@@ -60,6 +63,7 @@ grpc_cc_test(
     name = "minimal_stack_is_minimal_test",
     srcs = ["minimal_stack_is_minimal_test.cc"],
     language = "C++",
+    uses_event_engine = False,
     uses_polling = False,
     deps = [
         "//:gpr",
@@ -107,6 +111,7 @@ grpc_cc_test(
         "gtest",
     ],
     language = "C++",
+    uses_event_engine = False,
     uses_polling = False,
     deps = [
         "//:gpr",
@@ -123,9 +128,25 @@ grpc_cc_test(
         "gtest",
     ],
     language = "C++",
+    uses_event_engine = False,
     uses_polling = False,
     deps = [
         "//:grpc",
+        "//test/core/util:grpc_test_util",
+    ],
+)
+
+grpc_cc_test(
+    name = "call_finalization_test",
+    srcs = ["call_finalization_test.cc"],
+    external_deps = [
+        "gtest",
+    ],
+    language = "C++",
+    deps = [
+        "//:gpr",
+        "//:grpc",
+        "//test/core/promise:test_context",
         "//test/core/util:grpc_test_util",
     ],
 )

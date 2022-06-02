@@ -16,16 +16,54 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <string.h>
+
+#include <cstdint>
+#include <map>
+#include <memory>
 #include <random>
+#include <string>
+#include <utility>
+
+#include "absl/memory/memory.h"
+#include "absl/status/status.h"
+#include "absl/status/statusor.h"
+#include "absl/strings/str_cat.h"
+#include "absl/strings/str_format.h"
+#include "absl/strings/string_view.h"
+#include "absl/strings/strip.h"
+#include "absl/types/optional.h"
+
+#include <grpc/grpc.h>
+#include <grpc/grpc_security.h>
+#include <grpc/impl/codegen/grpc_types.h>
+#include <grpc/support/log.h>
 
 #include "src/core/ext/xds/xds_client.h"
+#include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/gpr/env.h"
-#include "src/core/lib/gpr/string.h"
+#include "src/core/lib/gprpp/debug_location.h"
+#include "src/core/lib/gprpp/memory.h"
+#include "src/core/lib/gprpp/orphanable.h"
+#include "src/core/lib/gprpp/ref_counted_ptr.h"
+#include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/http/httpcli.h"
+#include "src/core/lib/http/parser.h"
+#include "src/core/lib/iomgr/closure.h"
+#include "src/core/lib/iomgr/error.h"
+#include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/polling_entity.h"
+#include "src/core/lib/iomgr/work_serializer.h"
+#include "src/core/lib/json/json.h"
+#include "src/core/lib/resolver/resolver.h"
+#include "src/core/lib/resolver/resolver_factory.h"
 #include "src/core/lib/resolver/resolver_registry.h"
 #include "src/core/lib/resource_quota/api.h"
+#include "src/core/lib/resource_quota/resource_quota.h"
 #include "src/core/lib/security/credentials/alts/check_gcp_environment.h"
+#include "src/core/lib/security/credentials/credentials.h"
+#include "src/core/lib/uri/uri_parser.h"
 
 namespace grpc_core {
 
@@ -131,12 +169,12 @@ GoogleCloud2ProdResolver::MetadataQuery::MetadataQuery(
       const_cast<char*>(GRPC_ARG_RESOURCE_QUOTA),
       resolver_->resource_quota_.get(), grpc_resource_quota_arg_vtable());
   grpc_channel_args args = {1, &resource_quota_arg};
-  http_request_ =
-      HttpRequest::Get(std::move(*uri), &args, pollent, &request,
-                       ExecCtx::Get()->Now() + 10000,  // 10s timeout
-                       &on_done_, &response_,
-                       RefCountedPtr<grpc_channel_credentials>(
-                           grpc_insecure_credentials_create()));
+  http_request_ = HttpRequest::Get(
+      std::move(*uri), &args, pollent, &request,
+      ExecCtx::Get()->Now() + Duration::Seconds(10),  // 10s timeout
+      &on_done_, &response_,
+      RefCountedPtr<grpc_channel_credentials>(
+          grpc_insecure_credentials_create()));
   http_request_->Start();
 }
 
@@ -250,9 +288,10 @@ GoogleCloud2ProdResolver::GoogleCloud2ProdResolver(ResolverArgs args)
       UniquePtr<char>(gpr_getenv("GRPC_XDS_BOOTSTRAP")) != nullptr ||
       UniquePtr<char>(gpr_getenv("GRPC_XDS_BOOTSTRAP_CONFIG")) != nullptr) {
     using_dns_ = true;
-    child_resolver_ = ResolverRegistry::CreateResolver(
-        absl::StrCat("dns:", name_to_resolve).c_str(), args.args,
-        args.pollset_set, work_serializer_, std::move(args.result_handler));
+    child_resolver_ =
+        CoreConfiguration::Get().resolver_registry().CreateResolver(
+            absl::StrCat("dns:", name_to_resolve).c_str(), args.args,
+            args.pollset_set, work_serializer_, std::move(args.result_handler));
     GPR_ASSERT(child_resolver_ != nullptr);
     return;
   }
@@ -266,7 +305,7 @@ GoogleCloud2ProdResolver::GoogleCloud2ProdResolver(ResolverArgs args)
     metadata_server_name_ = std::string(test_only_metadata_server_override);
   }
   // Create xds resolver.
-  child_resolver_ = ResolverRegistry::CreateResolver(
+  child_resolver_ = CoreConfiguration::Get().resolver_registry().CreateResolver(
       absl::StrCat("xds:", name_to_resolve).c_str(), args.args,
       args.pollset_set, work_serializer_, std::move(args.result_handler));
   GPR_ASSERT(child_resolver_ != nullptr);
@@ -341,19 +380,26 @@ void GoogleCloud2ProdResolver::StartXdsResolver() {
       override_server != nullptr && strlen(override_server.get()) > 0
           ? override_server.get()
           : "directpath-pa.googleapis.com";
+  Json xds_server = Json::Array{
+      Json::Object{
+          {"server_uri", server_uri},
+          {"channel_creds",
+           Json::Array{
+               Json::Object{
+                   {"type", "google_default"},
+               },
+           }},
+          {"server_features", Json::Array{"xds_v3"}},
+      },
+  };
   Json bootstrap = Json::Object{
-      {"xds_servers",
-       Json::Array{
-           Json::Object{
-               {"server_uri", server_uri},
-               {"channel_creds",
-                Json::Array{
-                    Json::Object{
-                        {"type", "google_default"},
-                    },
-                }},
-               {"server_features", Json::Array{"xds_v3"}},
-           },
+      {"xds_servers", xds_server},
+      {"authorities",
+       Json::Object{
+           {"traffic-director-c2p.xds.googleapis.com",
+            Json::Object{
+                {"xds_servers", std::move(xds_server)},
+            }},
        }},
       {"node", std::move(node)},
   };
@@ -369,6 +415,12 @@ void GoogleCloud2ProdResolver::StartXdsResolver() {
 
 class GoogleCloud2ProdResolverFactory : public ResolverFactory {
  public:
+  // TODO(roth): Remove experimental suffix once this code is proven stable,
+  // and update the scheme in google_c2p_resolver_test.cc when doing so.
+  absl::string_view scheme() const override {
+    return "google-c2p-experimental";
+  }
+
   bool IsValidUri(const URI& uri) const override {
     if (GPR_UNLIKELY(!uri.authority().empty())) {
       gpr_log(GPR_ERROR, "google-c2p URI scheme does not support authorities");
@@ -381,19 +433,13 @@ class GoogleCloud2ProdResolverFactory : public ResolverFactory {
     if (!IsValidUri(args.uri)) return nullptr;
     return MakeOrphanable<GoogleCloud2ProdResolver>(std::move(args));
   }
-
-  // TODO(roth): Remove experimental suffix once this code is proven stable,
-  // and update the scheme in google_c2p_resolver_test.cc when doing so.
-  const char* scheme() const override { return "google-c2p-experimental"; }
 };
 
 }  // namespace
 
-void GoogleCloud2ProdResolverInit() {
-  ResolverRegistry::Builder::RegisterResolverFactory(
+void RegisterCloud2ProdResolver(CoreConfiguration::Builder* builder) {
+  builder->resolver_registry()->RegisterResolverFactory(
       absl::make_unique<GoogleCloud2ProdResolverFactory>());
 }
-
-void GoogleCloud2ProdResolverShutdown() {}
 
 }  // namespace grpc_core

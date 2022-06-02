@@ -10,11 +10,11 @@
 #include "envoy/config/core/v3/address.upbdefs.h"
 #include "envoy/config/core/v3/address.upb.h"
 
-extern upb_def_init envoy_config_core_v3_socket_option_proto_upbdefinit;
-extern upb_def_init google_protobuf_wrappers_proto_upbdefinit;
-extern upb_def_init udpa_annotations_status_proto_upbdefinit;
-extern upb_def_init udpa_annotations_versioning_proto_upbdefinit;
-extern upb_def_init validate_validate_proto_upbdefinit;
+extern _upb_DefPool_Init envoy_config_core_v3_socket_option_proto_upbdefinit;
+extern _upb_DefPool_Init google_protobuf_wrappers_proto_upbdefinit;
+extern _upb_DefPool_Init udpa_annotations_status_proto_upbdefinit;
+extern _upb_DefPool_Init udpa_annotations_versioning_proto_upbdefinit;
+extern _upb_DefPool_Init validate_validate_proto_upbdefinit;
 static const char descriptor[1947] = {'\n', '\"', 'e', 'n', 'v', 'o', 'y', '/', 'c', 'o', 'n', 'f', 'i', 'g', '/', 'c', 'o', 'r', 'e', '/', 'v', '3', '/', 'a', 'd', 
 'd', 'r', 'e', 's', 's', '.', 'p', 'r', 'o', 't', 'o', '\022', '\024', 'e', 'n', 'v', 'o', 'y', '.', 'c', 'o', 'n', 'f', 'i', 'g', 
 '.', 'c', 'o', 'r', 'e', '.', 'v', '3', '\032', '(', 'e', 'n', 'v', 'o', 'y', '/', 'c', 'o', 'n', 'f', 'i', 'g', '/', 'c', 'o', 
@@ -95,7 +95,7 @@ static const char descriptor[1947] = {'\n', '\"', 'e', 'n', 'v', 'o', 'y', '/', 
 'c', 'o', 'r', 'e', 'v', '3', '\272', '\200', '\310', '\321', '\006', '\002', '\020', '\002', 'b', '\006', 'p', 'r', 'o', 't', 'o', '3', 
 };
 
-static upb_def_init *deps[6] = {
+static _upb_DefPool_Init *deps[6] = {
   &envoy_config_core_v3_socket_option_proto_upbdefinit,
   &google_protobuf_wrappers_proto_upbdefinit,
   &udpa_annotations_status_proto_upbdefinit,
@@ -104,9 +104,9 @@ static upb_def_init *deps[6] = {
   NULL
 };
 
-upb_def_init envoy_config_core_v3_address_proto_upbdefinit = {
+_upb_DefPool_Init envoy_config_core_v3_address_proto_upbdefinit = {
   deps,
   &envoy_config_core_v3_address_proto_upb_file_layout,
   "envoy/config/core/v3/address.proto",
-  UPB_STRVIEW_INIT(descriptor, 1947)
+  UPB_STRINGVIEW_INIT(descriptor, 1947)
 };

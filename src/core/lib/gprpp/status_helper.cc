@@ -20,19 +20,28 @@
 
 #include "src/core/lib/gprpp/status_helper.h"
 
+#include <string.h>
+
+#include <algorithm>
+#include <new>
+#include <utility>
+
 #include "absl/strings/cord.h"
 #include "absl/strings/escaping.h"
 #include "absl/strings/match.h"
-#include "absl/strings/str_format.h"
+#include "absl/strings/numbers.h"
+#include "absl/strings/str_cat.h"
 #include "absl/strings/str_join.h"
 #include "absl/time/clock.h"
 #include "google/protobuf/any.upb.h"
 #include "google/rpc/status.upb.h"
+#include "upb/upb.h"
 #include "upb/upb.hpp"
 
 #include <grpc/support/log.h>
 
-#include "src/core/lib/gprpp/time_util.h"
+#include "src/core/lib/slice/percent_encoding.h"
+#include "src/core/lib/slice/slice.h"
 
 namespace grpc_core {
 
@@ -218,9 +227,23 @@ absl::optional<std::string> StatusGetStr(const absl::Status& status,
 
 void StatusSetTime(absl::Status* status, StatusTimeProperty key,
                    absl::Time time) {
+#if !defined(__clang__) && defined(_MSC_VER) && _MSC_VER < 1910
+  // Abseil has a workaround for MSVC 2015 which prevents absl::Time
+  // from being is_trivially_copyable but it's still safe to be
+  // memcopied.
+#elif defined(__GNUG__) && __GNUC__ < 5
+  // GCC versions < 5 do not support std::is_trivially_copyable
+#else
+  static_assert(std::is_trivially_copyable<absl::Time>::value,
+                "absl::Time needs to be able to be memcopied");
+#endif
+  // This is required not to get uninitialized padding of absl::Time.
+  alignas(absl::Time) char buf[sizeof(time)] = {
+      0,
+  };
+  new (buf) absl::Time(time);
   status->SetPayload(GetStatusTimePropertyUrl(key),
-                     absl::Cord(absl::string_view(
-                         reinterpret_cast<const char*>(&time), sizeof(time))));
+                     absl::Cord(absl::string_view(buf, sizeof(time))));
 }
 
 absl::optional<absl::Time> StatusGetTime(const absl::Status& status,
@@ -334,32 +357,46 @@ std::string StatusToString(const absl::Status& status) {
 
 namespace internal {
 
-google_rpc_Status* StatusToProto(const absl::Status& status, upb_arena* arena) {
+google_rpc_Status* StatusToProto(const absl::Status& status, upb_Arena* arena) {
   google_rpc_Status* msg = google_rpc_Status_new(arena);
   google_rpc_Status_set_code(msg, int32_t(status.code()));
+  // Protobuf string field requires to be utf-8 encoding but C++ string doesn't
+  // this requirement so it can be a non utf-8 string. So it should be converted
+  // to a percent-encoded string to keep it as a utf-8 string.
+  Slice message_percent_slice =
+      PercentEncodeSlice(Slice::FromExternalString(status.message()),
+                         PercentEncodingType::Compatible);
+  char* message_percent = reinterpret_cast<char*>(
+      upb_Arena_Malloc(arena, message_percent_slice.length()));
+  if (message_percent_slice.length() > 0) {
+    memcpy(message_percent, message_percent_slice.data(),
+           message_percent_slice.length());
+  }
   google_rpc_Status_set_message(
-      msg, upb_strview_make(status.message().data(), status.message().size()));
+      msg, upb_StringView_FromDataAndSize(message_percent,
+                                          message_percent_slice.length()));
   status.ForEachPayload([&](absl::string_view type_url,
                             const absl::Cord& payload) {
     google_protobuf_Any* any = google_rpc_Status_add_details(msg, arena);
     char* type_url_buf =
-        reinterpret_cast<char*>(upb_arena_malloc(arena, type_url.size()));
+        reinterpret_cast<char*>(upb_Arena_Malloc(arena, type_url.size()));
     memcpy(type_url_buf, type_url.data(), type_url.size());
     google_protobuf_Any_set_type_url(
-        any, upb_strview_make(type_url_buf, type_url.size()));
+        any, upb_StringView_FromDataAndSize(type_url_buf, type_url.size()));
     absl::optional<absl::string_view> v_view = payload.TryFlat();
     if (v_view.has_value()) {
       google_protobuf_Any_set_value(
-          any, upb_strview_make(v_view->data(), v_view->size()));
+          any, upb_StringView_FromDataAndSize(v_view->data(), v_view->size()));
     } else {
       char* buf =
-          reinterpret_cast<char*>(upb_arena_malloc(arena, payload.size()));
+          reinterpret_cast<char*>(upb_Arena_Malloc(arena, payload.size()));
       char* cur = buf;
       for (absl::string_view chunk : payload.Chunks()) {
         memcpy(cur, chunk.data(), chunk.size());
         cur += chunk.size();
       }
-      google_protobuf_Any_set_value(any, upb_strview_make(buf, payload.size()));
+      google_protobuf_Any_set_value(
+          any, upb_StringView_FromDataAndSize(buf, payload.size()));
     }
   });
   return msg;
@@ -367,15 +404,21 @@ google_rpc_Status* StatusToProto(const absl::Status& status, upb_arena* arena) {
 
 absl::Status StatusFromProto(google_rpc_Status* msg) {
   int32_t code = google_rpc_Status_code(msg);
-  upb_strview message = google_rpc_Status_message(msg);
-  absl::Status status(static_cast<absl::StatusCode>(code),
-                      absl::string_view(message.data, message.size));
+  upb_StringView message_percent_upb = google_rpc_Status_message(msg);
+  Slice message_percent_slice = Slice::FromExternalString(
+      absl::string_view(message_percent_upb.data, message_percent_upb.size));
+  Slice message_slice =
+      PermissivePercentDecodeSlice(std::move(message_percent_slice));
+  absl::Status status(
+      static_cast<absl::StatusCode>(code),
+      absl::string_view(reinterpret_cast<const char*>(message_slice.data()),
+                        message_slice.size()));
   size_t detail_len;
   const google_protobuf_Any* const* details =
       google_rpc_Status_details(msg, &detail_len);
   for (size_t i = 0; i < detail_len; i++) {
-    upb_strview type_url = google_protobuf_Any_type_url(details[i]);
-    upb_strview value = google_protobuf_Any_value(details[i]);
+    upb_StringView type_url = google_protobuf_Any_type_url(details[i]);
+    upb_StringView value = google_protobuf_Any_value(details[i]);
     status.SetPayload(absl::string_view(type_url.data, type_url.size),
                       absl::Cord(absl::string_view(value.data, value.size)));
   }

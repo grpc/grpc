@@ -20,17 +20,12 @@ import sys
 import time
 import unittest
 
+from envoy.service.status.v3 import csds_pb2
+from envoy.service.status.v3 import csds_pb2_grpc
 from google.protobuf import json_format
 import grpc
 import grpc_csds
 from six.moves import queue
-
-try:
-    from envoy.service.status.v3 import csds_pb2
-    from envoy.service.status.v3 import csds_pb2_grpc
-except ImportError:
-    from src.proto.grpc.testing.xds.v3 import csds_pb2
-    from src.proto.grpc.testing.xds.v3 import csds_pb2_grpc
 
 _DUMMY_XDS_ADDRESS = 'xds:///foo.bar'
 _DUMMY_BOOTSTRAP_FILE = """

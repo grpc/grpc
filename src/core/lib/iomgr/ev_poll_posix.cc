@@ -221,7 +221,7 @@ static void pollset_set_add_fd(grpc_pollset_set* pollset_set, grpc_fd* fd);
    - longer than a millisecond polls are rounded up to the next nearest
      millisecond to avoid spinning
    - infinite timeouts are converted to -1 */
-static int poll_deadline_to_millis_timeout(grpc_millis deadline);
+static int poll_deadline_to_millis_timeout(grpc_core::Timestamp deadline);
 
 /* Allow kick to wakeup the currently polling worker */
 #define GRPC_POLLSET_CAN_KICK_SELF 1
@@ -913,7 +913,7 @@ static void work_combine_error(grpc_error_handle* composite,
 
 static grpc_error_handle pollset_work(grpc_pollset* pollset,
                                       grpc_pollset_worker** worker_hdl,
-                                      grpc_millis deadline) {
+                                      grpc_core::Timestamp deadline) {
   GPR_TIMER_SCOPE("pollset_work", 0);
   grpc_pollset_worker worker;
   if (worker_hdl) *worker_hdl = &worker;
@@ -1106,7 +1106,7 @@ static grpc_error_handle pollset_work(grpc_pollset* pollset,
       if (queued_work || worker.kicked_specifically) {
         /* If there's queued work on the list, then set the deadline to be
            immediate so we get back out of the polling loop quickly */
-        deadline = 0;
+        deadline = grpc_core::Timestamp();
       }
       keep_polling = 1;
     }
@@ -1151,10 +1151,10 @@ static void pollset_shutdown(grpc_pollset* pollset, grpc_closure* closure) {
   }
 }
 
-static int poll_deadline_to_millis_timeout(grpc_millis deadline) {
-  if (deadline == GRPC_MILLIS_INF_FUTURE) return -1;
-  if (deadline == 0) return 0;
-  grpc_millis n = deadline - grpc_core::ExecCtx::Get()->Now();
+static int poll_deadline_to_millis_timeout(grpc_core::Timestamp deadline) {
+  if (deadline == grpc_core::Timestamp::InfFuture()) return -1;
+  if (deadline.is_process_epoch()) return 0;
+  int64_t n = (deadline - grpc_core::ExecCtx::Get()->Now()).millis();
   if (n < 0) return 0;
   if (n > INT_MAX) return -1;
   return static_cast<int>(n);

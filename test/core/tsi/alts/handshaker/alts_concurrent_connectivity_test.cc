@@ -57,7 +57,6 @@
 #include "test/core/end2end/cq_verifier.h"
 #include "test/core/tsi/alts/fake_handshaker/fake_handshaker_server.h"
 #include "test/core/util/fake_udp_and_tcp_server.h"
-#include "test/core/util/memory_counters.h"
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
 
@@ -454,7 +453,7 @@ TEST(AltsConcurrentConnectivityTest,
 
 int main(int argc, char** argv) {
   ::testing::InitGoogleTest(&argc, argv);
-  grpc::testing::TestEnvironment env(argc, argv);
+  grpc::testing::TestEnvironment env(&argc, argv);
   grpc_init();
   auto result = RUN_ALL_TESTS();
   grpc_shutdown();

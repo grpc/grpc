@@ -59,7 +59,7 @@ class DNSResolverTest(unittest.TestCase):
             self.assertEqual(
                 channel.unary_unary(_METHOD)(
                     _REQUEST,
-                    timeout=test_constants.SHORT_TIMEOUT,
+                    timeout=10,
                 ), _RESPONSE)
 
 

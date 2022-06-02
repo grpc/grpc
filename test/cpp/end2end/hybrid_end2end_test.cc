@@ -217,7 +217,7 @@ void HandleGenericCall(AsyncGenericService* service,
 }
 
 class TestServiceImplDupPkg
-    : public ::grpc::testing::duplicate::EchoTestService::Service {
+    : public grpc::testing::duplicate::EchoTestService::Service {
  public:
   Status Echo(ServerContext* /*context*/, const EchoRequest* request,
               EchoResponse* response) override {
@@ -245,7 +245,7 @@ class HybridEnd2endTest : public ::testing::TestWithParam<bool> {
                   : false;
   }
 
-  bool SetUpServer(::grpc::Service* service1, ::grpc::Service* service2,
+  bool SetUpServer(grpc::Service* service1, grpc::Service* service2,
                    AsyncGenericService* generic_service,
                    CallbackGenericService* callback_generic_service,
                    int max_message_size = 0) {
@@ -970,7 +970,7 @@ INSTANTIATE_TEST_SUITE_P(HybridEnd2endTest, HybridEnd2endTest,
 }  // namespace grpc
 
 int main(int argc, char** argv) {
-  grpc::testing::TestEnvironment env(argc, argv);
+  grpc::testing::TestEnvironment env(&argc, argv);
   ::testing::InitGoogleTest(&argc, argv);
   return RUN_ALL_TESTS();
 }

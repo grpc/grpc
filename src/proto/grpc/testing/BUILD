@@ -42,6 +42,7 @@ grpc_proto_library(
     name = "control_proto",
     srcs = ["control.proto"],
     has_services = False,
+    well_known_protos = True,
     deps = [
         "payloads_proto",
         "stats_proto",
@@ -51,6 +52,9 @@ grpc_proto_library(
 grpc_proto_library(
     name = "echo_messages_proto",
     srcs = ["echo_messages.proto"],
+    deps = [
+        "//src/proto/grpc/testing/xds/v3:orca_load_report_proto",
+    ],
 )
 
 grpc_proto_library(
@@ -277,10 +281,17 @@ proto_library(
     deps = [
         ":payloads_descriptor",
         ":stats_descriptor",
+        "@com_google_protobuf//:timestamp_proto",
     ],
 )
 
 py_proto_library(
     name = "control_py_pb2",
     deps = [":control_descriptor"],
+)
+
+grpc_proto_library(
+    name = "istio_echo_proto",
+    srcs = ["istio_echo.proto"],
+    well_known_protos = True,
 )

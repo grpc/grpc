@@ -17,11 +17,16 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <string.h>
+
 #include <cstdint>
+#include <string>
+#include <utility>
 
 #include "absl/strings/string_view.h"
 
 #include <grpc/slice.h>
+#include <grpc/support/log.h>
 
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/slice/slice_internal.h"
@@ -41,12 +46,12 @@
 //   MutableSlice - provides a guarantee of unique ownership, meaning the
 //                  underlying data can be mutated safely.
 
-namespace grpc_core {
+// This slice implementation is an extension of the event engine Slice
+// implementation defined in <grpc/event_engine/slice.h>. Changes to this
+// implementation might warrant changes to the public event engine Slice
+// type as well.
 
-// Forward declarations
-class Slice;
-class StaticSlice;
-class MutableSlice;
+namespace grpc_core {
 
 namespace slice_detail {
 

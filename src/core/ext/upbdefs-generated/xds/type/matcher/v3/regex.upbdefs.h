@@ -19,16 +19,16 @@ extern "C" {
 
 #include "upb/port_def.inc"
 
-extern upb_def_init xds_type_matcher_v3_regex_proto_upbdefinit;
+extern _upb_DefPool_Init xds_type_matcher_v3_regex_proto_upbdefinit;
 
-UPB_INLINE const upb_msgdef *xds_type_matcher_v3_RegexMatcher_getmsgdef(upb_symtab *s) {
-  _upb_symtab_loaddefinit(s, &xds_type_matcher_v3_regex_proto_upbdefinit);
-  return upb_symtab_lookupmsg(s, "xds.type.matcher.v3.RegexMatcher");
+UPB_INLINE const upb_MessageDef *xds_type_matcher_v3_RegexMatcher_getmsgdef(upb_DefPool *s) {
+  _upb_DefPool_LoadDefInit(s, &xds_type_matcher_v3_regex_proto_upbdefinit);
+  return upb_DefPool_FindMessageByName(s, "xds.type.matcher.v3.RegexMatcher");
 }
 
-UPB_INLINE const upb_msgdef *xds_type_matcher_v3_RegexMatcher_GoogleRE2_getmsgdef(upb_symtab *s) {
-  _upb_symtab_loaddefinit(s, &xds_type_matcher_v3_regex_proto_upbdefinit);
-  return upb_symtab_lookupmsg(s, "xds.type.matcher.v3.RegexMatcher.GoogleRE2");
+UPB_INLINE const upb_MessageDef *xds_type_matcher_v3_RegexMatcher_GoogleRE2_getmsgdef(upb_DefPool *s) {
+  _upb_DefPool_LoadDefInit(s, &xds_type_matcher_v3_regex_proto_upbdefinit);
+  return upb_DefPool_FindMessageByName(s, "xds.type.matcher.v3.RegexMatcher.GoogleRE2");
 }
 
 #ifdef __cplusplus

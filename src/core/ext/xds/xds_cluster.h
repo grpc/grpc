@@ -19,15 +19,24 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <stdint.h>
+
+#include <algorithm>
+#include <memory>
 #include <string>
 #include <vector>
 
+#include "absl/status/statusor.h"
+#include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
 #include "envoy/config/cluster/v3/cluster.upbdefs.h"
 #include "envoy/extensions/clusters/aggregate/v3/cluster.upbdefs.h"
 #include "envoy/extensions/transport_sockets/tls/v3/tls.upbdefs.h"
+#include "upb/def.h"
 
-#include "src/core/ext/xds/xds_client.h"
+#include "src/core/ext/filters/client_channel/lb_policy/outlier_detection/outlier_detection.h"
+#include "src/core/ext/xds/upb_utils.h"
+#include "src/core/ext/xds/xds_bootstrap.h"
 #include "src/core/ext/xds/xds_common_types.h"
 #include "src/core/ext/xds/xds_resource_type_impl.h"
 
@@ -63,6 +72,8 @@ struct XdsClusterResource {
   // cluster.
   uint32_t max_concurrent_requests = 1024;
 
+  absl::optional<OutlierDetectionConfig> outlier_detection;
+
   bool operator==(const XdsClusterResource& other) const {
     return cluster_type == other.cluster_type &&
            eds_service_name == other.eds_service_name &&
@@ -95,7 +106,7 @@ class XdsClusterResourceType
 
   bool AllResourcesRequiredInSotW() const override { return true; }
 
-  void InitUpbSymtab(upb_symtab* symtab) const override {
+  void InitUpbSymtab(upb_DefPool* symtab) const override {
     envoy_config_cluster_v3_Cluster_getmsgdef(symtab);
     envoy_extensions_clusters_aggregate_v3_ClusterConfig_getmsgdef(symtab);
     envoy_extensions_transport_sockets_tls_v3_UpstreamTlsContext_getmsgdef(

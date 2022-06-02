@@ -18,7 +18,20 @@
 
 #include "src/core/ext/xds/xds_http_rbac_filter.h"
 
+#include <stddef.h>
+
+#include <algorithm>
+#include <cstdint>
+#include <map>
+#include <string>
+#include <type_traits>
+#include <utility>
+#include <vector>
+
+#include "absl/status/status.h"
+#include "absl/strings/match.h"
 #include "absl/strings/str_format.h"
+#include "absl/strings/string_view.h"
 #include "envoy/config/core/v3/address.upb.h"
 #include "envoy/config/rbac/v3/rbac.upb.h"
 #include "envoy/config/route/v3/route_components.upb.h"
@@ -35,6 +48,9 @@
 #include "src/core/ext/filters/rbac/rbac_service_config_parser.h"
 #include "src/core/ext/xds/upb_utils.h"
 #include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/gprpp/debug_location.h"
+#include "src/core/lib/gprpp/status_helper.h"
+#include "src/core/lib/json/json.h"
 
 namespace grpc_core {
 
@@ -453,7 +469,7 @@ absl::StatusOr<Json> ParseHttpRbacToJson(
     inner_rbac_json.emplace("action", envoy_config_rbac_v3_RBAC_action(rules));
     if (envoy_config_rbac_v3_RBAC_has_policies(rules)) {
       Json::Object policies_object;
-      size_t iter = UPB_MAP_BEGIN;
+      size_t iter = kUpb_Map_Begin;
       while (true) {
         auto* entry = envoy_config_rbac_v3_RBAC_policies_next(rules, &iter);
         if (entry == nullptr) {
@@ -490,13 +506,13 @@ absl::StatusOr<Json> ParseHttpRbacToJson(
 
 }  // namespace
 
-void XdsHttpRbacFilter::PopulateSymtab(upb_symtab* symtab) const {
+void XdsHttpRbacFilter::PopulateSymtab(upb_DefPool* symtab) const {
   envoy_extensions_filters_http_rbac_v3_RBAC_getmsgdef(symtab);
 }
 
 absl::StatusOr<XdsHttpFilterImpl::FilterConfig>
-XdsHttpRbacFilter::GenerateFilterConfig(upb_strview serialized_filter_config,
-                                        upb_arena* arena) const {
+XdsHttpRbacFilter::GenerateFilterConfig(upb_StringView serialized_filter_config,
+                                        upb_Arena* arena) const {
   absl::StatusOr<Json> rbac_json;
   auto* rbac = envoy_extensions_filters_http_rbac_v3_RBAC_parse(
       serialized_filter_config.data, serialized_filter_config.size, arena);
@@ -513,7 +529,7 @@ XdsHttpRbacFilter::GenerateFilterConfig(upb_strview serialized_filter_config,
 
 absl::StatusOr<XdsHttpFilterImpl::FilterConfig>
 XdsHttpRbacFilter::GenerateFilterConfigOverride(
-    upb_strview serialized_filter_config, upb_arena* arena) const {
+    upb_StringView serialized_filter_config, upb_Arena* arena) const {
   auto* rbac_per_route =
       envoy_extensions_filters_http_rbac_v3_RBACPerRoute_parse(
           serialized_filter_config.data, serialized_filter_config.size, arena);

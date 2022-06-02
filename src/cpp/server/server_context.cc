@@ -16,24 +16,49 @@
  *
  */
 
-#include <algorithm>
+#include <assert.h>
+
 #include <atomic>
+#include <cstdlib>
+#include <functional>
+#include <map>
+#include <new>
+#include <string>
 #include <utility>
+#include <vector>
+
+#include "absl/strings/string_view.h"
 
 #include <grpc/compression.h>
 #include <grpc/grpc.h>
+#include <grpc/impl/codegen/compression_types.h>
+#include <grpc/impl/codegen/gpr_types.h>
+#include <grpc/impl/codegen/grpc_types.h>
 #include <grpc/load_reporting.h>
+#include <grpc/status.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
+#include <grpc/support/time.h>
+#include <grpcpp/completion_queue.h>
+#include <grpcpp/ext/call_metric_recorder.h>
 #include <grpcpp/impl/call.h>
-#include <grpcpp/impl/codegen/completion_queue.h>
-#include <grpcpp/impl/codegen/server_context.h>
+#include <grpcpp/impl/codegen/call_op_set.h>
+#include <grpcpp/impl/codegen/call_op_set_interface.h>
+#include <grpcpp/impl/codegen/callback_common.h>
+#include <grpcpp/impl/codegen/completion_queue_tag.h>
+#include <grpcpp/impl/codegen/interceptor_common.h>
+#include <grpcpp/impl/codegen/metadata_map.h>
 #include <grpcpp/impl/grpc_library.h>
+#include <grpcpp/server_context.h>
+#include <grpcpp/support/config.h>
+#include <grpcpp/support/interceptor.h>
 #include <grpcpp/support/server_callback.h>
-#include <grpcpp/support/time.h>
+#include <grpcpp/support/server_interceptor.h>
+#include <grpcpp/support/string_ref.h>
 
 #include "src/core/lib/gprpp/ref_counted.h"
 #include "src/core/lib/gprpp/sync.h"
+#include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/surface/call.h"
 
 namespace grpc {
@@ -48,7 +73,7 @@ class ServerContextBase::CompletionOp final
   // initial refs: one in the server context, one in the cq
   // must ref the call before calling constructor and after deleting this
   CompletionOp(internal::Call* call,
-               ::grpc::internal::ServerCallbackCall* callback_controller)
+               grpc::internal::ServerCallbackCall* callback_controller)
       : call_(*call),
         callback_controller_(callback_controller),
         has_tag_(false),
@@ -141,7 +166,7 @@ class ServerContextBase::CompletionOp final
   }
 
   internal::Call call_;
-  ::grpc::internal::ServerCallbackCall* const callback_controller_;
+  grpc::internal::ServerCallbackCall* const callback_controller_;
   bool has_tag_;
   void* tag_;
   void* core_cq_tag_;
@@ -263,6 +288,9 @@ ServerContextBase::~ServerContextBase() {
   if (default_reactor_used_.load(std::memory_order_relaxed)) {
     reinterpret_cast<Reactor*>(&default_reactor_)->~Reactor();
   }
+  if (call_metric_recorder_ != nullptr) {
+    call_metric_recorder_->~CallMetricRecorder();
+  }
 }
 
 ServerContextBase::CallWrapper::~CallWrapper() {
@@ -275,7 +303,7 @@ ServerContextBase::CallWrapper::~CallWrapper() {
 
 void ServerContextBase::BeginCompletionOp(
     internal::Call* call, std::function<void(bool)> callback,
-    ::grpc::internal::ServerCallbackCall* callback_controller) {
+    grpc::internal::ServerCallbackCall* callback_controller) {
   GPR_ASSERT(!completion_op_);
   if (rpc_info_) {
     rpc_info_->Ref();
@@ -374,6 +402,17 @@ void ServerContextBase::SetLoadReportingCosts(
   for (const auto& cost_datum : cost_data) {
     AddTrailingMetadata(GRPC_LB_COST_MD_KEY, cost_datum);
   }
+}
+
+void ServerContextBase::CreateCallMetricRecorder() {
+  GPR_ASSERT(call_metric_recorder_ == nullptr);
+  grpc_core::Arena* arena = grpc_call_get_arena(call_.call);
+  call_metric_recorder_ = arena->New<experimental::CallMetricRecorder>(arena);
+}
+
+grpc::string_ref ServerContextBase::ExperimentalGetAuthority() const {
+  absl::string_view authority = grpc_call_server_authority(call_.call);
+  return grpc::string_ref(authority.data(), authority.size());
 }
 
 }  // namespace grpc

@@ -18,7 +18,14 @@
 
 #include "src/core/ext/xds/xds_common_types.h"
 
+#include <stddef.h>
+
+#include <algorithm>
+#include <map>
+#include <utility>
+
 #include "absl/container/inlined_vector.h"
+#include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
@@ -29,7 +36,10 @@
 #include "envoy/type/matcher/v3/string.upb.h"
 #include "google/protobuf/any.upb.h"
 #include "google/protobuf/wrappers.upb.h"
+#include "upb/upb.h"
 #include "xds/type/v3/typed_struct.upb.h"
+
+#include "src/core/ext/xds/certificate_provider_store.h"
 
 namespace grpc_core {
 
@@ -365,24 +375,29 @@ grpc_error_handle CommonTlsContext::Parse(
                                        &errors);
 }
 
-grpc_error_handle ExtractHttpFilterTypeName(const XdsEncodingContext& context,
-                                            const google_protobuf_Any* any,
-                                            absl::string_view* filter_type) {
-  *filter_type = UpbStringToAbsl(google_protobuf_Any_type_url(any));
-  if (*filter_type == "type.googleapis.com/xds.type.v3.TypedStruct" ||
-      *filter_type == "type.googleapis.com/udpa.type.v1.TypedStruct") {
-    upb_strview any_value = google_protobuf_Any_value(any);
-    const auto* typed_struct = xds_type_v3_TypedStruct_parse(
+absl::StatusOr<ExtractExtensionTypeNameResult> ExtractExtensionTypeName(
+    const XdsEncodingContext& context, const google_protobuf_Any* any) {
+  ExtractExtensionTypeNameResult result;
+  result.type = UpbStringToAbsl(google_protobuf_Any_type_url(any));
+  if (result.type == "type.googleapis.com/xds.type.v3.TypedStruct" ||
+      result.type == "type.googleapis.com/udpa.type.v1.TypedStruct") {
+    upb_StringView any_value = google_protobuf_Any_value(any);
+    result.typed_struct = xds_type_v3_TypedStruct_parse(
         any_value.data, any_value.size, context.arena);
-    if (typed_struct == nullptr) {
-      return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-          "could not parse TypedStruct from filter config");
+    if (result.typed_struct == nullptr) {
+      return absl::InvalidArgumentError(
+          "could not parse TypedStruct from extension");
     }
-    *filter_type =
-        UpbStringToAbsl(xds_type_v3_TypedStruct_type_url(typed_struct));
+    result.type =
+        UpbStringToAbsl(xds_type_v3_TypedStruct_type_url(result.typed_struct));
   }
-  *filter_type = absl::StripPrefix(*filter_type, "type.googleapis.com/");
-  return GRPC_ERROR_NONE;
+  size_t pos = result.type.rfind('/');
+  if (pos == absl::string_view::npos || pos == result.type.size() - 1) {
+    return absl::InvalidArgumentError(
+        absl::StrCat("Invalid type_url ", result.type));
+  }
+  result.type = result.type.substr(pos + 1);
+  return result;
 }
 
 }  // namespace grpc_core

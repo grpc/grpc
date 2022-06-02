@@ -18,9 +18,6 @@
 # Need to increase open files limit for c tests
 ulimit -n 32768
 
-# This is required by the android_ndk_repository repo rule.
-export ANDROID_NDK_HOME=$ANDROID_HOME/ndk-bundle
-
 # 1. Move docker's storage location to scratch disk so we don't run out of space.
 # 2. Use container registry mirror for pulling docker images (should make downloads faster)
 #    See https://cloud.google.com/container-registry/docs/using-dockerhub-mirroring

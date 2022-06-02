@@ -20,11 +20,20 @@
 
 #include "src/core/ext/xds/file_watcher_certificate_provider_factory.h"
 
+#include <algorithm>
+#include <memory>
+#include <vector>
+
+#include "absl/memory/memory.h"
 #include "absl/strings/str_format.h"
 #include "absl/strings/str_join.h"
 
+#include <grpc/support/log.h>
+#include <grpc/support/time.h>
+
 #include "src/core/ext/xds/certificate_provider_registry.h"
 #include "src/core/lib/json/json_util.h"
+#include "src/core/lib/security/credentials/tls/grpc_tls_certificate_provider.h"
 
 namespace grpc_core {
 
@@ -58,7 +67,7 @@ std::string FileWatcherCertificateProviderFactory::Config::ToString() const {
         absl::StrFormat("ca_certificate_file=\"%s\", ", root_cert_file_));
   }
   parts.push_back(
-      absl::StrFormat("refresh_interval=%ldms}", refresh_interval_ms_));
+      absl::StrFormat("refresh_interval=%ldms}", refresh_interval_.millis()));
   return absl::StrJoin(parts, "");
 }
 
@@ -91,8 +100,8 @@ FileWatcherCertificateProviderFactory::Config::Parse(const Json& config_json,
   }
   if (!ParseJsonObjectFieldAsDuration(
           config_json.object_value(), "refresh_interval",
-          &config->refresh_interval_ms_, &error_list, false)) {
-    config->refresh_interval_ms_ = 10 * 60 * 1000;  // 10 minutes default
+          &config->refresh_interval_, &error_list, false)) {
+    config->refresh_interval_ = Duration::Minutes(10);  // 10 minutes default
   }
   if (!error_list.empty()) {
     *error = GRPC_ERROR_CREATE_FROM_VECTOR(
@@ -131,7 +140,7 @@ FileWatcherCertificateProviderFactory::CreateCertificateProvider(
       file_watcher_config->private_key_file(),
       file_watcher_config->identity_cert_file(),
       file_watcher_config->root_cert_file(),
-      file_watcher_config->refresh_interval_ms() / GPR_MS_PER_SEC);
+      file_watcher_config->refresh_interval().millis() / GPR_MS_PER_SEC);
 }
 
 void FileWatcherCertificateProviderInit() {

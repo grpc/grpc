@@ -30,7 +30,8 @@ extern "C" {
 #endif
 
 
-extern const upb_msglayout_file envoy_config_trace_v3_trace_proto_upb_file_layout;
+
+extern const upb_MiniTable_File envoy_config_trace_v3_trace_proto_upb_file_layout;
 
 #ifdef __cplusplus
 }  /* extern "C" */

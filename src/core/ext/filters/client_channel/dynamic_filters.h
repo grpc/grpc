@@ -21,12 +21,22 @@
 
 #include <vector>
 
-#include "src/core/lib/channel/channel_stack.h"
+#include <grpc/impl/codegen/grpc_types.h>
+#include <grpc/slice.h>
+
+#include "src/core/lib/channel/channel_fwd.h"
+#include "src/core/lib/channel/context.h"
 #include "src/core/lib/gpr/time_precise.h"
+#include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/ref_counted.h"
-#include "src/core/lib/iomgr/exec_ctx.h"
+#include "src/core/lib/gprpp/ref_counted_ptr.h"
+#include "src/core/lib/gprpp/time.h"
+#include "src/core/lib/iomgr/call_combiner.h"
+#include "src/core/lib/iomgr/closure.h"
+#include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/polling_entity.h"
 #include "src/core/lib/resource_quota/arena.h"
+#include "src/core/lib/transport/transport.h"
 
 namespace grpc_core {
 
@@ -40,7 +50,7 @@ class DynamicFilters : public RefCounted<DynamicFilters> {
       grpc_polling_entity* pollent;
       grpc_slice path;
       gpr_cycle_counter start_time;
-      grpc_millis deadline;
+      Timestamp deadline;
       Arena* arena;
       grpc_call_context_element* context;
       CallCombiner* call_combiner;

@@ -21,18 +21,21 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <grpc/impl/codegen/grpc_types.h>
+#include <grpc/slice.h>
+
 #include "src/core/lib/channel/channelz.h"
 #include "src/core/lib/debug/trace.h"
+#include "src/core/lib/gprpp/ref_counted_ptr.h"
+#include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/endpoint.h"
-#include "src/core/lib/transport/transport.h"
+#include "src/core/lib/transport/transport_fwd.h"
 
 extern grpc_core::TraceFlag grpc_http_trace;
 extern grpc_core::TraceFlag grpc_keepalive_trace;
 extern grpc_core::TraceFlag grpc_trace_http2_stream_state;
 extern grpc_core::DebugOnlyTraceFlag grpc_trace_chttp2_refcount;
 extern grpc_core::DebugOnlyTraceFlag grpc_trace_chttp2_hpack_parser;
-
-extern bool g_flow_control_enabled;
 
 /// Creates a CHTTP2 Transport. This takes ownership of a \a resource_user ref
 /// from the caller; if the caller still needs the resource_user after creating

@@ -58,7 +58,7 @@ static void simple_request_body(grpc_end2end_test_config /*config*/,
   int was_cancelled = 2;
   char* peer;
 
-  gpr_timespec deadline = grpc_timeout_seconds_to_deadline(5);
+  gpr_timespec deadline = grpc_timeout_seconds_to_deadline(30);
   c = grpc_channel_create_call(f->client, nullptr, GRPC_PROPAGATE_DEFAULTS,
                                f->cq, grpc_slice_from_static_string("/foo"),
                                nullptr, deadline, nullptr);
@@ -225,7 +225,6 @@ static void test_max_connection_idle(grpc_end2end_test_config config) {
   grpc_completion_queue_shutdown(f.cq);
   drain_cq(f.cq);
   grpc_completion_queue_destroy(f.cq);
-  grpc_completion_queue_destroy(f.shutdown_cq);
   config.tear_down_data(&f);
 
   cq_verifier_destroy(cqv);

@@ -39,7 +39,7 @@ using grpc::testing::EchoResponse;
 namespace grpc {
 namespace testing {
 
-class TestServiceImpl : public ::grpc::testing::EchoTestService::Service {
+class TestServiceImpl : public grpc::testing::EchoTestService::Service {
  public:
   Status Echo(ServerContext* context, const EchoRequest* request,
               EchoResponse* response) override {
@@ -123,7 +123,7 @@ TEST_F(CliCallTest, SimpleRpc) {
 }  // namespace grpc
 
 int main(int argc, char** argv) {
-  grpc::testing::TestEnvironment env(argc, argv);
+  grpc::testing::TestEnvironment env(&argc, argv);
   ::testing::InitGoogleTest(&argc, argv);
   return RUN_ALL_TESTS();
 }

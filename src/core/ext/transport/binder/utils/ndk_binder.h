@@ -25,7 +25,7 @@
 #include <memory>
 
 // This file defines NdkBinder functions, variables, and types in
-// ::grpc_binder::ndk_util namespace. This allows us to dynamically load
+// grpc_binder::ndk_util namespace. This allows us to dynamically load
 // libbinder_ndk at runtime, and make it possible to compile the code without
 // the library present at compile time.
 

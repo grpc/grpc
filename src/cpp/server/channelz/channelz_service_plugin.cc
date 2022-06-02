@@ -18,10 +18,14 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <memory>
+#include <string>
+
 #include <grpcpp/ext/channelz_service_plugin.h>
 #include <grpcpp/impl/server_builder_plugin.h>
 #include <grpcpp/impl/server_initializer.h>
-#include <grpcpp/server.h>
+#include <grpcpp/server_builder.h>
+#include <grpcpp/support/config.h>
 
 #include "src/cpp/server/channelz/channelz_service.h"
 
@@ -29,7 +33,7 @@ namespace grpc {
 namespace channelz {
 namespace experimental {
 
-class ChannelzServicePlugin : public ::grpc::ServerBuilderPlugin {
+class ChannelzServicePlugin : public grpc::ServerBuilderPlugin {
  public:
   ChannelzServicePlugin() : channelz_service_(new grpc::ChannelzService()) {}
 
@@ -61,16 +65,16 @@ class ChannelzServicePlugin : public ::grpc::ServerBuilderPlugin {
   std::shared_ptr<grpc::ChannelzService> channelz_service_;
 };
 
-static std::unique_ptr< ::grpc::ServerBuilderPlugin>
+static std::unique_ptr<grpc::ServerBuilderPlugin>
 CreateChannelzServicePlugin() {
-  return std::unique_ptr< ::grpc::ServerBuilderPlugin>(
+  return std::unique_ptr<grpc::ServerBuilderPlugin>(
       new ChannelzServicePlugin());
 }
 
 void InitChannelzService() {
   static struct Initializer {
     Initializer() {
-      ::grpc::ServerBuilder::InternalAddPluginFactory(
+      grpc::ServerBuilder::InternalAddPluginFactory(
           &grpc::channelz::experimental::CreateChannelzServicePlugin);
     }
   } initialize;

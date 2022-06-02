@@ -729,7 +729,7 @@ class CallOpRecvInitialMetadata {
  public:
   CallOpRecvInitialMetadata() : metadata_map_(nullptr) {}
 
-  void RecvInitialMetadata(::grpc::ClientContext* context) {
+  void RecvInitialMetadata(grpc::ClientContext* context) {
     context->initial_metadata_received_ = true;
     metadata_map_ = &context->recv_initial_metadata_;
   }
@@ -778,7 +778,7 @@ class CallOpClientRecvStatus {
   CallOpClientRecvStatus()
       : recv_status_(nullptr), debug_error_string_(nullptr) {}
 
-  void ClientRecvStatus(::grpc::ClientContext* context, Status* status) {
+  void ClientRecvStatus(grpc::ClientContext* context, Status* status) {
     client_context_ = context;
     metadata_map_ = &client_context_->trailing_metadata_;
     recv_status_ = status;
@@ -845,7 +845,7 @@ class CallOpClientRecvStatus {
 
  private:
   bool hijacked_ = false;
-  ::grpc::ClientContext* client_context_;
+  grpc::ClientContext* client_context_;
   MetadataMap* metadata_map_;
   Status* recv_status_;
   const char* debug_error_string_;

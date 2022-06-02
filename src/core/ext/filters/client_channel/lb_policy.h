@@ -19,21 +19,35 @@
 
 #include <grpc/support/port_platform.h>
 
-#include <functional>
-#include <iterator>
+#include <stddef.h>
+#include <stdint.h>
+
+#include <memory>
+#include <string>
+#include <type_traits>
+#include <utility>
+#include <vector>
 
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/string_view.h"
+#include "absl/types/optional.h"
 #include "absl/types/variant.h"
 
+#include <grpc/impl/codegen/connectivity_state.h>
+#include <grpc/impl/codegen/grpc_types.h>
+
+#include "src/core/ext/filters/client_channel/lb_policy/backend_metric_data.h"
 #include "src/core/ext/filters/client_channel/subchannel_interface.h"
+#include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/debug/trace.h"
+#include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/orphanable.h"
+#include "src/core/lib/gprpp/ref_counted.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
-#include "src/core/lib/iomgr/polling_entity.h"
+#include "src/core/lib/iomgr/iomgr_fwd.h"
 #include "src/core/lib/iomgr/work_serializer.h"
 #include "src/core/lib/resolver/server_address.h"
-#include "src/core/lib/transport/connectivity_state.h"
 
 namespace grpc_core {
 
@@ -92,13 +106,6 @@ class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
     /// It is more efficient to use this than to allocate memory directly
     /// for allocations that need to be made on a per-call basis.
     virtual void* Alloc(size_t size) = 0;
-
-    /// EXPERIMENTAL API.
-    /// Returns the value of the call attribute \a key.
-    /// Keys are static strings, so an attribute can be accessed by an LB
-    /// policy implementation only if it knows about the internal key.
-    /// Returns a null string_view if key not found.
-    virtual absl::string_view ExperimentalGetCallAttribute(const char* key) = 0;
   };
 
   /// Interface for accessing metadata.
@@ -149,26 +156,6 @@ class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
   /// SubchannelCallTrackerInterface.
   class BackendMetricAccessor {
    public:
-    // Represents backend metrics reported by the backend to the client.
-    struct BackendMetricData {
-      /// CPU utilization expressed as a fraction of available CPU resources.
-      double cpu_utilization;
-      /// Memory utilization expressed as a fraction of available memory
-      /// resources.
-      double mem_utilization;
-      /// Total requests per second being served by the backend.  This
-      /// should include all services that a backend is responsible for.
-      uint64_t requests_per_second;
-      /// Application-specific requests cost metrics.  Metric names are
-      /// determined by the application.  Each value is an absolute cost
-      /// (e.g. 3487 bytes of storage) associated with the request.
-      std::map<absl::string_view, double> request_cost;
-      /// Application-specific resource utilization metrics.  Metric names
-      /// are determined by the application.  Each value is expressed as a
-      /// fraction of total resources available.
-      std::map<absl::string_view, double> utilization;
-    };
-
     virtual ~BackendMetricAccessor() = default;
 
     /// Returns the backend metric data returned by the server for the call,

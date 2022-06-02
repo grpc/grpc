@@ -114,7 +114,7 @@ class FakeContainer {
   void Set(IntptrTrait, intptr_t x) { SetIntptr(x); }
   void Set(StringTrait, std::string x) { SetString(x); }
 
-  void Set(const ::grpc_core::ParsedMetadata<FakeContainer>& metadata) {
+  void Set(const ParsedMetadata<FakeContainer>& metadata) {
     metadata.SetOnContainer(this);
   }
 
@@ -264,6 +264,6 @@ TEST(KeyValueTest, LongKey) {
 
 int main(int argc, char** argv) {
   testing::InitGoogleTest(&argc, argv);
-  grpc::testing::TestEnvironment env(argc, argv);
+  grpc::testing::TestEnvironment env(&argc, argv);
   return RUN_ALL_TESTS();
 };

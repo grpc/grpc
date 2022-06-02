@@ -49,6 +49,7 @@
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/slice/slice_string_helpers.h"
 #include "src/core/lib/surface/api_trace.h"
+#include "src/core/lib/uri/uri_parser.h"
 
 using grpc_core::Json;
 
@@ -83,6 +84,21 @@ struct metadata_server_detector {
   int success;
   grpc_http_response response;
 };
+
+namespace {
+
+bool IsXdsNonCfeCluster(const char* xds_cluster) {
+  if (xds_cluster == nullptr) return false;
+  if (absl::StartsWith(xds_cluster, "google_cfe_")) return false;
+  if (!absl::StartsWith(xds_cluster, "xdstp:")) return true;
+  auto uri = grpc_core::URI::Parse(xds_cluster);
+  if (!uri.ok()) return true;  // Shouldn't happen, but assume ALTS.
+  return !absl::StartsWith(uri->path(),
+                           "/envoy.config.cluster.v3.Cluster/google_cfe_");
+}
+
+}  // namespace
+
 grpc_core::RefCountedPtr<grpc_channel_security_connector>
 grpc_google_default_channel_credentials::create_security_connector(
     grpc_core::RefCountedPtr<grpc_call_credentials> call_creds,
@@ -94,8 +110,7 @@ grpc_google_default_channel_credentials::create_security_connector(
       args, GRPC_ARG_ADDRESS_IS_BACKEND_FROM_GRPCLB_LOAD_BALANCER, false);
   const char* xds_cluster =
       grpc_channel_args_find_string(args, GRPC_ARG_XDS_CLUSTER_NAME);
-  const bool is_xds_non_cfe_cluster =
-      xds_cluster != nullptr && !absl::StartsWith(xds_cluster, "google_cfe_");
+  const bool is_xds_non_cfe_cluster = IsXdsNonCfeCluster(xds_cluster);
   const bool use_alts = is_grpclb_load_balancer ||
                         is_backend_from_grpclb_load_balancer ||
                         is_xds_non_cfe_cluster;
@@ -125,17 +140,16 @@ grpc_google_default_channel_credentials::create_security_connector(
   return sc;
 }
 
-grpc_channel_args* grpc_google_default_channel_credentials::update_arguments(
-    grpc_channel_args* args) {
-  grpc_channel_args* updated = args;
-  if (grpc_channel_args_find(args, GRPC_ARG_DNS_ENABLE_SRV_QUERIES) ==
-      nullptr) {
-    grpc_arg new_srv_arg = grpc_channel_arg_integer_create(
-        const_cast<char*>(GRPC_ARG_DNS_ENABLE_SRV_QUERIES), true);
-    updated = grpc_channel_args_copy_and_add(args, &new_srv_arg, 1);
-    grpc_channel_args_destroy(args);
-  }
-  return updated;
+grpc_core::ChannelArgs
+grpc_google_default_channel_credentials::update_arguments(
+    grpc_core::ChannelArgs args) {
+  return args.SetIfUnset(GRPC_ARG_DNS_ENABLE_SRV_QUERIES, true);
+}
+
+grpc_core::UniqueTypeName grpc_google_default_channel_credentials::type()
+    const {
+  static grpc_core::UniqueTypeName::Factory kFactory("GoogleDefault");
+  return kFactory.Create();
 }
 
 static void on_metadata_server_detection_http_response(
@@ -175,7 +189,7 @@ static int is_metadata_server_reachable() {
   grpc_closure destroy_closure;
   /* The http call is local. If it takes more than one sec, it is for sure not
      on compute engine. */
-  grpc_millis max_detection_delay = GPR_MS_PER_SEC;
+  const auto max_detection_delay = grpc_core::Duration::Seconds(1);
   grpc_pollset* pollset =
       static_cast<grpc_pollset*>(gpr_zalloc(grpc_pollset_size()));
   grpc_pollset_init(pollset, &g_polling_mu);
@@ -205,7 +219,7 @@ static int is_metadata_server_reachable() {
     if (!GRPC_LOG_IF_ERROR(
             "pollset_work",
             grpc_pollset_work(grpc_polling_entity_pollset(&detector.pollent),
-                              &worker, GRPC_MILLIS_INF_FUTURE))) {
+                              &worker, grpc_core::Timestamp::InfFuture()))) {
       detector.is_done = 1;
       detector.success = 0;
     }

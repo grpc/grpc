@@ -25,7 +25,6 @@
 #include <memory>
 
 #include "absl/container/inlined_vector.h"
-#include "absl/strings/str_format.h"
 
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/gpr/useful.h"
@@ -96,6 +95,9 @@ class ServerAddress {
   ServerAddress WithAttribute(const char* key,
                               std::unique_ptr<AttributeInterface> value) const;
 
+  // TODO(ctiller): Prior to making this a public API we should ensure that the
+  // channel args are not part of the generated string, lest we make that debug
+  // format load-bearing via Hyrum's law.
   std::string ToString() const;
 
  private:
@@ -131,9 +133,7 @@ class ServerAddressWeightAttribute : public ServerAddress::AttributeInterface {
     return QsortCompare(weight_, other_locality_attr->weight_);
   }
 
-  std::string ToString() const override {
-    return absl::StrFormat("%d", weight_);
-  }
+  std::string ToString() const override;
 
  private:
   uint32_t weight_;

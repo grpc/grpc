@@ -23,7 +23,6 @@
 #include "absl/meta/type_traits.h"
 
 #include "src/core/lib/promise/detail/promise_like.h"
-#include "src/core/lib/promise/poll.h"
 
 // PromiseFactory is an adaptor class.
 //
@@ -88,7 +87,7 @@ class Curried {
       : f_(std::forward<F>(f)), arg_(std::forward<Arg>(arg)) {}
   Curried(const F& f, Arg&& arg) : f_(f), arg_(std::forward<Arg>(arg)) {}
   using Result = decltype(std::declval<F>()(std::declval<Arg>()));
-  Result operator()() { return f_(arg_); }
+  Result operator()() { return f_(std::move(arg_)); }
 
  private:
   GPR_NO_UNIQUE_ADDRESS F f_;

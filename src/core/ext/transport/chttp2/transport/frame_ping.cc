@@ -22,12 +22,17 @@
 
 #include <string.h>
 
+#include <algorithm>
+
 #include "absl/strings/str_format.h"
 
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 
 #include "src/core/ext/transport/chttp2/transport/internal.h"
+#include "src/core/ext/transport/chttp2/transport/stream_map.h"
+#include "src/core/lib/gprpp/time.h"
+#include "src/core/lib/iomgr/exec_ctx.h"
 
 static bool g_disable_ping_ack = false;
 
@@ -90,8 +95,8 @@ grpc_error_handle grpc_chttp2_ping_parser_parse(void* parser,
       grpc_chttp2_ack_ping(t, p->opaque_8bytes);
     } else {
       if (!t->is_client) {
-        grpc_millis now = grpc_core::ExecCtx::Get()->Now();
-        grpc_millis next_allowed_ping =
+        grpc_core::Timestamp now = grpc_core::ExecCtx::Get()->Now();
+        grpc_core::Timestamp next_allowed_ping =
             t->ping_recv_state.last_ping_recv_time +
             t->ping_policy.min_recv_ping_interval_without_data;
 
@@ -100,8 +105,8 @@ grpc_error_handle grpc_chttp2_ping_parser_parse(void* parser,
           /* According to RFC1122, the interval of TCP Keep-Alive is default to
              no less than two hours. When there is no outstanding streams, we
              restrict the number of PINGS equivalent to TCP Keep-Alive. */
-          next_allowed_ping =
-              t->ping_recv_state.last_ping_recv_time + 7200 * GPR_MS_PER_SEC;
+          next_allowed_ping = t->ping_recv_state.last_ping_recv_time +
+                              grpc_core::Duration::Hours(2);
         }
 
         if (next_allowed_ping > now) {

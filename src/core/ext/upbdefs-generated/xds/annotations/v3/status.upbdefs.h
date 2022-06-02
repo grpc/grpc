@@ -19,26 +19,26 @@ extern "C" {
 
 #include "upb/port_def.inc"
 
-extern upb_def_init xds_annotations_v3_status_proto_upbdefinit;
+extern _upb_DefPool_Init xds_annotations_v3_status_proto_upbdefinit;
 
-UPB_INLINE const upb_msgdef *xds_annotations_v3_FileStatusAnnotation_getmsgdef(upb_symtab *s) {
-  _upb_symtab_loaddefinit(s, &xds_annotations_v3_status_proto_upbdefinit);
-  return upb_symtab_lookupmsg(s, "xds.annotations.v3.FileStatusAnnotation");
+UPB_INLINE const upb_MessageDef *xds_annotations_v3_FileStatusAnnotation_getmsgdef(upb_DefPool *s) {
+  _upb_DefPool_LoadDefInit(s, &xds_annotations_v3_status_proto_upbdefinit);
+  return upb_DefPool_FindMessageByName(s, "xds.annotations.v3.FileStatusAnnotation");
 }
 
-UPB_INLINE const upb_msgdef *xds_annotations_v3_MessageStatusAnnotation_getmsgdef(upb_symtab *s) {
-  _upb_symtab_loaddefinit(s, &xds_annotations_v3_status_proto_upbdefinit);
-  return upb_symtab_lookupmsg(s, "xds.annotations.v3.MessageStatusAnnotation");
+UPB_INLINE const upb_MessageDef *xds_annotations_v3_MessageStatusAnnotation_getmsgdef(upb_DefPool *s) {
+  _upb_DefPool_LoadDefInit(s, &xds_annotations_v3_status_proto_upbdefinit);
+  return upb_DefPool_FindMessageByName(s, "xds.annotations.v3.MessageStatusAnnotation");
 }
 
-UPB_INLINE const upb_msgdef *xds_annotations_v3_FieldStatusAnnotation_getmsgdef(upb_symtab *s) {
-  _upb_symtab_loaddefinit(s, &xds_annotations_v3_status_proto_upbdefinit);
-  return upb_symtab_lookupmsg(s, "xds.annotations.v3.FieldStatusAnnotation");
+UPB_INLINE const upb_MessageDef *xds_annotations_v3_FieldStatusAnnotation_getmsgdef(upb_DefPool *s) {
+  _upb_DefPool_LoadDefInit(s, &xds_annotations_v3_status_proto_upbdefinit);
+  return upb_DefPool_FindMessageByName(s, "xds.annotations.v3.FieldStatusAnnotation");
 }
 
-UPB_INLINE const upb_msgdef *xds_annotations_v3_StatusAnnotation_getmsgdef(upb_symtab *s) {
-  _upb_symtab_loaddefinit(s, &xds_annotations_v3_status_proto_upbdefinit);
-  return upb_symtab_lookupmsg(s, "xds.annotations.v3.StatusAnnotation");
+UPB_INLINE const upb_MessageDef *xds_annotations_v3_StatusAnnotation_getmsgdef(upb_DefPool *s) {
+  _upb_DefPool_LoadDefInit(s, &xds_annotations_v3_status_proto_upbdefinit);
+  return upb_DefPool_FindMessageByName(s, "xds.annotations.v3.StatusAnnotation");
 }
 
 #ifdef __cplusplus

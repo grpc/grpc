@@ -23,6 +23,7 @@
 
 #include <grpc/grpc.h>
 
+#include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/promise/race.h"
 #include "src/core/lib/promise/seq.h"
 #include "test/core/promise/test_wakeup_schedulers.h"
@@ -33,7 +34,7 @@ namespace {
 TEST(Sleep, Zzzz) {
   ExecCtx exec_ctx;
   absl::Notification done;
-  grpc_millis done_time = ExecCtx::Get()->Now() + 1000;
+  Timestamp done_time = ExecCtx::Get()->Now() + Duration::Seconds(1);
   // Sleep for one second then set done to true.
   auto activity = MakeActivity(Sleep(done_time), InlineWakeupScheduler(),
                                [&done](absl::Status r) {
@@ -48,7 +49,7 @@ TEST(Sleep, Zzzz) {
 TEST(Sleep, AlreadyDone) {
   ExecCtx exec_ctx;
   absl::Notification done;
-  grpc_millis done_time = ExecCtx::Get()->Now() - 1000;
+  Timestamp done_time = ExecCtx::Get()->Now() - Duration::Seconds(1);
   // Sleep for no time at all then set done to true.
   auto activity = MakeActivity(Sleep(done_time), InlineWakeupScheduler(),
                                [&done](absl::Status r) {
@@ -61,7 +62,7 @@ TEST(Sleep, AlreadyDone) {
 TEST(Sleep, Cancel) {
   ExecCtx exec_ctx;
   absl::Notification done;
-  grpc_millis done_time = ExecCtx::Get()->Now() + 1000;
+  Timestamp done_time = ExecCtx::Get()->Now() + Duration::Seconds(1);
   // Sleep for one second but race it to complete immediately
   auto activity = MakeActivity(
       Race(Sleep(done_time), [] { return absl::CancelledError(); }),
@@ -72,6 +73,23 @@ TEST(Sleep, Cancel) {
   done.WaitForNotification();
   exec_ctx.InvalidateNow();
   EXPECT_LT(ExecCtx::Get()->Now(), done_time);
+}
+
+TEST(Sleep, MoveSemantics) {
+  // ASAN should help determine if there are any memory leaks here
+  ExecCtx exec_ctx;
+  absl::Notification done;
+  Timestamp done_time = ExecCtx::Get()->Now() + Duration::Milliseconds(111);
+  Sleep donor(done_time);
+  Sleep sleeper = std::move(donor);
+  auto activity = MakeActivity(std::move(sleeper), InlineWakeupScheduler(),
+                               [&done](absl::Status r) {
+                                 EXPECT_EQ(r, absl::OkStatus());
+                                 done.Notify();
+                               });
+  done.WaitForNotification();
+  exec_ctx.InvalidateNow();
+  EXPECT_GE(ExecCtx::Get()->Now(), done_time);
 }
 
 }  // namespace

@@ -19,26 +19,26 @@ extern "C" {
 
 #include "upb/port_def.inc"
 
-extern upb_def_init envoy_admin_v3_clusters_proto_upbdefinit;
+extern _upb_DefPool_Init envoy_admin_v3_clusters_proto_upbdefinit;
 
-UPB_INLINE const upb_msgdef *envoy_admin_v3_Clusters_getmsgdef(upb_symtab *s) {
-  _upb_symtab_loaddefinit(s, &envoy_admin_v3_clusters_proto_upbdefinit);
-  return upb_symtab_lookupmsg(s, "envoy.admin.v3.Clusters");
+UPB_INLINE const upb_MessageDef *envoy_admin_v3_Clusters_getmsgdef(upb_DefPool *s) {
+  _upb_DefPool_LoadDefInit(s, &envoy_admin_v3_clusters_proto_upbdefinit);
+  return upb_DefPool_FindMessageByName(s, "envoy.admin.v3.Clusters");
 }
 
-UPB_INLINE const upb_msgdef *envoy_admin_v3_ClusterStatus_getmsgdef(upb_symtab *s) {
-  _upb_symtab_loaddefinit(s, &envoy_admin_v3_clusters_proto_upbdefinit);
-  return upb_symtab_lookupmsg(s, "envoy.admin.v3.ClusterStatus");
+UPB_INLINE const upb_MessageDef *envoy_admin_v3_ClusterStatus_getmsgdef(upb_DefPool *s) {
+  _upb_DefPool_LoadDefInit(s, &envoy_admin_v3_clusters_proto_upbdefinit);
+  return upb_DefPool_FindMessageByName(s, "envoy.admin.v3.ClusterStatus");
 }
 
-UPB_INLINE const upb_msgdef *envoy_admin_v3_HostStatus_getmsgdef(upb_symtab *s) {
-  _upb_symtab_loaddefinit(s, &envoy_admin_v3_clusters_proto_upbdefinit);
-  return upb_symtab_lookupmsg(s, "envoy.admin.v3.HostStatus");
+UPB_INLINE const upb_MessageDef *envoy_admin_v3_HostStatus_getmsgdef(upb_DefPool *s) {
+  _upb_DefPool_LoadDefInit(s, &envoy_admin_v3_clusters_proto_upbdefinit);
+  return upb_DefPool_FindMessageByName(s, "envoy.admin.v3.HostStatus");
 }
 
-UPB_INLINE const upb_msgdef *envoy_admin_v3_HostHealthStatus_getmsgdef(upb_symtab *s) {
-  _upb_symtab_loaddefinit(s, &envoy_admin_v3_clusters_proto_upbdefinit);
-  return upb_symtab_lookupmsg(s, "envoy.admin.v3.HostHealthStatus");
+UPB_INLINE const upb_MessageDef *envoy_admin_v3_HostHealthStatus_getmsgdef(upb_DefPool *s) {
+  _upb_DefPool_LoadDefInit(s, &envoy_admin_v3_clusters_proto_upbdefinit);
+  return upb_DefPool_FindMessageByName(s, "envoy.admin.v3.HostHealthStatus");
 }
 
 #ifdef __cplusplus

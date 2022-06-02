@@ -17,8 +17,14 @@
 
 #include <grpc/support/port_platform.h>
 
-#include <grpc/support/log.h>
+#include <stdlib.h>
 
+#include <type_traits>
+#include <utility>
+
+#include "absl/meta/type_traits.h"
+
+#include "src/core/lib/promise/context.h"
 #include "src/core/lib/promise/poll.h"
 #include "src/core/lib/resource_quota/arena.h"
 
@@ -69,7 +75,7 @@ class CallableImpl final : public ImplInterface<T> {
  public:
   explicit CallableImpl(Callable&& callable) : callable_(std::move(callable)) {}
   // Forward polls to the callable object.
-  Poll<T> PollOnce() override { return callable_(); }
+  Poll<T> PollOnce() override { return poll_cast<T>(callable_()); }
   // Destroy destructs the callable object.
   void Destroy() override { this->~CallableImpl(); }
 
@@ -152,7 +158,8 @@ class ArenaPromise {
   template <typename Callable,
             typename Ignored =
                 absl::enable_if_t<!std::is_same<Callable, ArenaPromise>::value>>
-  explicit ArenaPromise(Callable&& callable)
+  // NOLINTNEXTLINE(google-explicit-constructor)
+  ArenaPromise(Callable&& callable)
       : impl_(arena_promise_detail::MakeImplForCallable<T>(
             std::forward<Callable>(callable))) {}
 
@@ -164,6 +171,7 @@ class ArenaPromise {
     other.impl_ = arena_promise_detail::NullImpl<T>::Get();
   }
   ArenaPromise& operator=(ArenaPromise&& other) noexcept {
+    impl_->Destroy();
     impl_ = other.impl_;
     other.impl_ = arena_promise_detail::NullImpl<T>::Get();
     return *this;
@@ -174,6 +182,10 @@ class ArenaPromise {
 
   // Expose the promise interface: a call operator that returns Poll<T>.
   Poll<T> operator()() { return impl_->PollOnce(); }
+
+  bool has_value() const {
+    return impl_ != arena_promise_detail::NullImpl<T>::Get();
+  }
 
  private:
   // Underlying impl object.

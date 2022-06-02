@@ -53,7 +53,6 @@
 #include "src/core/lib/slice/slice_string_helpers.h"
 #include "src/core/lib/surface/channel.h"
 #include "test/core/end2end/cq_verifier.h"
-#include "test/core/util/memory_counters.h"
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
 
@@ -62,36 +61,36 @@ namespace {
 class TransportCounter {
  public:
   static void CounterInitCallback() {
-    absl::MutexLock lock(&mu());
+    grpc_core::MutexLock lock(&mu());
     ++count_;
   }
 
   static void CounterDestructCallback() {
-    absl::MutexLock lock(&mu());
+    grpc_core::MutexLock lock(&mu());
     if (--count_ == 0) {
       cv().SignalAll();
     }
   }
 
   static void WaitForTransportsToBeDestroyed() {
-    absl::MutexLock lock(&mu());
+    grpc_core::MutexLock lock(&mu());
     while (count_ != 0) {
       ASSERT_FALSE(cv().WaitWithTimeout(&mu(), absl::Seconds(10)));
     }
   }
 
   static int count() {
-    absl::MutexLock lock(&mu());
+    grpc_core::MutexLock lock(&mu());
     return count_;
   }
 
-  static absl::Mutex& mu() {
-    static absl::Mutex* mu = new absl::Mutex();
+  static grpc_core::Mutex& mu() {
+    static grpc_core::Mutex* mu = new grpc_core::Mutex();
     return *mu;
   }
 
-  static absl::CondVar& cv() {
-    static absl::CondVar* cv = new absl::CondVar();
+  static grpc_core::CondVar& cv() {
+    static grpc_core::CondVar* cv = new grpc_core::CondVar();
     return *cv;
   }
 
@@ -851,7 +850,7 @@ TEST(TooManyPings, TransportsGetCleanedUpOnDisconnect) {
 
 int main(int argc, char** argv) {
   ::testing::InitGoogleTest(&argc, argv);
-  grpc::testing::TestEnvironment env(argc, argv);
+  grpc::testing::TestEnvironment env(&argc, argv);
   grpc_core::TestOnlySetGlobalHttp2TransportInitCallback(
       TransportCounter::CounterInitCallback);
   grpc_core::TestOnlySetGlobalHttp2TransportDestructCallback(

@@ -19,8 +19,16 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <stddef.h>
+
+#include "src/core/lib/channel/channel_fwd.h"
 #include "src/core/lib/channel/channel_stack.h"
+#include "src/core/lib/channel/context.h"
+#include "src/core/lib/iomgr/closure.h"
+#include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/security/authorization/evaluate_args.h"
+#include "src/core/lib/transport/metadata_batch.h"
+#include "src/core/lib/transport/transport.h"
 
 namespace grpc_core {
 
@@ -65,6 +73,8 @@ class RbacFilter {
 
   // The index of this filter instance among instances of the same filter.
   size_t index_;
+  // Assigned index for service config data from the parser.
+  const size_t service_config_parser_index_;
   // Per channel args used for authorization.
   EvaluateArgs::PerChannelArgs per_channel_evaluate_args_;
 };

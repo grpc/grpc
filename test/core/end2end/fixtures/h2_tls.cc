@@ -186,7 +186,6 @@ static grpc_end2end_test_fixture chttp2_create_fixture_simple_fullstack(
       ffd, SecurityPrimitives::VerifierType::EXTERNAL_SYNC_VERIFIER);
   f.fixture_data = ffd;
   f.cq = grpc_completion_queue_create_for_next(nullptr);
-  f.shutdown_cq = grpc_completion_queue_create_for_pluck(nullptr);
   return f;
 }
 
@@ -204,7 +203,6 @@ static grpc_end2end_test_fixture chttp2_create_fixture_async_verifier(
       ffd, SecurityPrimitives::VerifierType::EXTERNAL_ASYNC_VERIFIER);
   f.fixture_data = ffd;
   f.cq = grpc_completion_queue_create_for_next(nullptr);
-  f.shutdown_cq = grpc_completion_queue_create_for_pluck(nullptr);
   return f;
 }
 
@@ -222,7 +220,6 @@ chttp2_create_fixture_hostname_verifier_cert_watcher(const grpc_channel_args*,
                          SecurityPrimitives::VerifierType::HOSTNAME_VERIFIER);
   f.fixture_data = ffd;
   f.cq = grpc_completion_queue_create_for_next(nullptr);
-  f.shutdown_cq = grpc_completion_queue_create_for_pluck(nullptr);
   return f;
 }
 
@@ -240,7 +237,6 @@ chttp2_create_fixture_async_verifier_cert_watcher(const grpc_channel_args*,
       ffd, SecurityPrimitives::VerifierType::EXTERNAL_ASYNC_VERIFIER);
   f.fixture_data = ffd;
   f.cq = grpc_completion_queue_create_for_next(nullptr);
-  f.shutdown_cq = grpc_completion_queue_create_for_pluck(nullptr);
   return f;
 }
 
@@ -401,7 +397,7 @@ static grpc_end2end_test_config configs[] = {
 };
 
 int main(int argc, char** argv) {
-  grpc::testing::TestEnvironment env(argc, argv);
+  grpc::testing::TestEnvironment env(&argc, argv);
   grpc_end2end_tests_pre_init();
   GPR_GLOBAL_CONFIG_SET(grpc_default_ssl_roots_file_path, CA_CERT_PATH);
   grpc_init();

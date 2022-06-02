@@ -46,7 +46,7 @@ namespace testing {
 
 namespace {
 
-class ServiceImpl final : public ::grpc::testing::EchoTestService::Service {
+class ServiceImpl final : public grpc::testing::EchoTestService::Service {
  public:
   ServiceImpl() : bidi_stream_count_(0), response_stream_count_(0) {}
 
@@ -156,7 +156,7 @@ int main(int argc, char** argv) {
     g_root = ".";
   }
 
-  grpc::testing::TestEnvironment env(argc, argv);
+  grpc::testing::TestEnvironment env(&argc, argv);
   ::testing::InitGoogleTest(&argc, argv);
   return RUN_ALL_TESTS();
 }
