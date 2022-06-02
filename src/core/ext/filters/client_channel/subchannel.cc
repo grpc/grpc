@@ -814,6 +814,8 @@ void Subchannel::ResetBackoff() {
   if (state_ == GRPC_CHANNEL_TRANSIENT_FAILURE &&
       GetDefaultEventEngine()->Cancel(retry_timer_handle_)) {
     OnRetryTimerLocked();
+  } else if (state_ == GRPC_CHANNEL_CONNECTING) {
+    next_attempt_time_ = ExecCtx::Get()->Now();
   }
 }
 
@@ -969,6 +971,8 @@ void Subchannel::OnConnectingFinishedLocked(grpc_error_handle error) {
                                grpc_error_to_absl_status(error));
     retry_timer_handle_ = GetDefaultEventEngine()->RunAt(
         ee_deadline, [self = WeakRef(DEBUG_LOCATION, "RetryTimer")] {
+          ApplicationCallbackExecCtx callback_exec_ctx;
+          ExecCtx exec_ctx;
           self->OnRetryTimer();
         });
   }

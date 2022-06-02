@@ -40,7 +40,7 @@ PROJECT_NAME           = "GRPC C++"
 # could be handy for archiving the generated documentation or if some version
 # control system is used.
 
-PROJECT_NUMBER         = 1.47.0-dev
+PROJECT_NUMBER         = 1.48.0-dev
 
 # Using the PROJECT_BRIEF tag one can provide an optional one line description
 # for a project that appears at the top of each page and should give viewer a
@@ -1415,6 +1415,10 @@ src/core/ext/upb-generated/envoy/extensions/filters/http/router/v3/router.upb.c 
 src/core/ext/upb-generated/envoy/extensions/filters/http/router/v3/router.upb.h \
 src/core/ext/upb-generated/envoy/extensions/filters/network/http_connection_manager/v3/http_connection_manager.upb.c \
 src/core/ext/upb-generated/envoy/extensions/filters/network/http_connection_manager/v3/http_connection_manager.upb.h \
+src/core/ext/upb-generated/envoy/extensions/load_balancing_policies/ring_hash/v3/ring_hash.upb.c \
+src/core/ext/upb-generated/envoy/extensions/load_balancing_policies/ring_hash/v3/ring_hash.upb.h \
+src/core/ext/upb-generated/envoy/extensions/load_balancing_policies/wrr_locality/v3/wrr_locality.upb.c \
+src/core/ext/upb-generated/envoy/extensions/load_balancing_policies/wrr_locality/v3/wrr_locality.upb.h \
 src/core/ext/upb-generated/envoy/extensions/transport_sockets/tls/v3/cert.upb.c \
 src/core/ext/upb-generated/envoy/extensions/transport_sockets/tls/v3/cert.upb.h \
 src/core/ext/upb-generated/envoy/extensions/transport_sockets/tls/v3/common.upb.c \
@@ -1868,6 +1872,8 @@ src/core/ext/xds/xds_http_filters.cc \
 src/core/ext/xds/xds_http_filters.h \
 src/core/ext/xds/xds_http_rbac_filter.cc \
 src/core/ext/xds/xds_http_rbac_filter.h \
+src/core/ext/xds/xds_lb_policy_registry.cc \
+src/core/ext/xds/xds_lb_policy_registry.h \
 src/core/ext/xds/xds_listener.cc \
 src/core/ext/xds/xds_listener.h \
 src/core/ext/xds/xds_resource_type.cc \

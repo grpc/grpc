@@ -829,8 +829,13 @@ void Server::ShutdownAndNotify(grpc_completion_queue* cq, void* tag) {
   if (await_requests != nullptr) {
     await_requests->WaitForNotification();
   }
-  // Shutdown listeners.
+  StopListening();
+  broadcaster.BroadcastShutdown(/*send_goaway=*/true, GRPC_ERROR_NONE);
+}
+
+void Server::StopListening() {
   for (auto& listener : listeners_) {
+    if (listener.listener == nullptr) continue;
     channelz::ListenSocketNode* channelz_listen_socket_node =
         listener.listener->channelz_listen_socket_node();
     if (channelz_node_ != nullptr && channelz_listen_socket_node != nullptr) {
@@ -842,7 +847,6 @@ void Server::ShutdownAndNotify(grpc_completion_queue* cq, void* tag) {
     listener.listener->SetOnDestroyDone(&listener.destroy_done);
     listener.listener.reset();
   }
-  broadcaster.BroadcastShutdown(/*send_goaway=*/true, GRPC_ERROR_NONE);
 }
 
 void Server::CancelAllCalls() {
@@ -1370,7 +1374,9 @@ void Server::CallData::RecvInitialMetadataReady(void* arg,
   CallData* calld = static_cast<CallData*>(elem->call_data);
   if (error == GRPC_ERROR_NONE) {
     calld->path_ = calld->recv_initial_metadata_->Take(HttpPathMetadata());
-    calld->host_ = calld->recv_initial_metadata_->Take(HttpAuthorityMetadata());
+    auto* host =
+        calld->recv_initial_metadata_->get_pointer(HttpAuthorityMetadata());
+    if (host != nullptr) calld->host_.emplace(host->Ref());
   } else {
     (void)GRPC_ERROR_REF(error);
   }

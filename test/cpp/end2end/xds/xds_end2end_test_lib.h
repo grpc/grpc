@@ -257,6 +257,8 @@ class XdsEnd2endTest : public ::testing::TestWithParam<XdsTestType> {
       allow_put_requests_ = allow_put_requests;
     }
 
+    void StopListeningAndSendGoaways();
+
    private:
     class XdsChannelArgsServerBuilderOption;
 
