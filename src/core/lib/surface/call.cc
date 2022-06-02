@@ -1816,6 +1816,9 @@ class PromiseBasedCall : public Call {
   Completion StartCompletion(void* tag, bool is_closure, const grpc_op* ops,
                              size_t num_ops) ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
 
+  void FinishCompletion(Completion* completion)
+      ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
+
   virtual void Update() ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
 
  private:
@@ -1877,7 +1880,7 @@ void* PromiseBasedCall::ContextGet(grpc_context_index elem) const {
 
 class ClientPromiseBasedCall final : public PromiseBasedCall {
  public:
-  ClientPromiseBasedCall();
+  ClientPromiseBasedCall(Arena* arena, const grpc_call_create_args& args);
 
   absl::string_view GetServerAuthority() const override;
 
@@ -1886,20 +1889,24 @@ class ClientPromiseBasedCall final : public PromiseBasedCall {
 
  private:
   void Update() override ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu());
+  void FailCall(absl::Status status) ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu());
 
-  PipeSender<SliceBuffer>* const client_to_server_messages_
-      ABSL_PT_GUARDED_BY(mu());
-  PipeReceiver<SliceBuffer>* const server_to_client_messages_
+  PipeSender<Message>* client_to_server_messages_ ABSL_GUARDED_BY(mu());
+  PipeReceiver<Message>* const server_to_client_messages_
       ABSL_PT_GUARDED_BY(mu());
 
   grpc_metadata_array* recv_initial_metadata_ ABSL_GUARDED_BY(mu()) = nullptr;
+  grpc_byte_buffer** recv_message_ ABSL_GUARDED_BY(mu()) = nullptr;
   grpc_op::grpc_op_data::grpc_op_recv_status_on_client recv_status_on_client_
       ABSL_GUARDED_BY(mu());
-  absl::optional<PipeSender<SliceBuffer>::PushType> outstanding_send_
+  absl::optional<PipeSender<Message>::PushType> outstanding_send_
+      ABSL_GUARDED_BY(mu());
+  absl::optional<PipeReceiver<Message>::NextType> outstanding_recv_
       ABSL_GUARDED_BY(mu());
   Completion recv_initial_metadata_completion_ ABSL_GUARDED_BY(mu());
   Completion recv_status_on_client_completion_ ABSL_GUARDED_BY(mu());
   Completion send_message_completion_ ABSL_GUARDED_BY(mu());
+  Completion recv_message_completion_ ABSL_GUARDED_BY(mu());
 };
 
 grpc_call_error ClientPromiseBasedCall::StartBatch(const grpc_op* ops,
@@ -1929,48 +1936,57 @@ grpc_call_error ClientPromiseBasedCall::StartBatch(const grpc_op* ops,
         recv_status_on_client_completion_ = completion;
       } break;
       case GRPC_OP_SEND_MESSAGE: {
+        GPR_ASSERT(!outstanding_send_.has_value());
         send_message_completion_ = completion;
-        send_buffer_.emplace();
+        SliceBuffer send;
         grpc_slice_buffer_swap(
             &op.data.send_message.send_message->data.raw.slice_buffer,
-            send_buffer_->c_slice_buffer());
+            send.c_slice_buffer());
+        outstanding_send_.emplace(client_to_server_messages_->Push(
+            Message(std::move(send), op.flags)));
       } break;
+      case GRPC_OP_RECV_MESSAGE: {
+        GPR_ASSERT(!outstanding_recv_.has_value());
+        recv_message_ = op.data.recv_message.recv_message;
+        outstanding_recv_.emplace(server_to_client_messages_->Next());
+      } break;
+      case GRPC_OP_SEND_CLOSE_FROM_CLIENT: {
+        absl::exchange(client_to_server_messages_, nullptr)->~PipeSender();
+      } break;
+      case GRPC_OP_SEND_STATUS_FROM_SERVER:
+      case GRPC_OP_RECV_CLOSE_ON_SERVER:
+        abort();  // unreachable
     }
   }
   return GRPC_CALL_OK;
 }
 
 void ClientPromiseBasedCall::Update() {
-  if (send_buffer_.has_value() &&) PromiseBasedCall::Update();
-}
-
-///////////////////////////////////////////////////////////////////////////////
-// ServerPromiseBasedCall
-
-class ServerPromiseBasedCall final : public PromiseBasedCall {
- public:
-  using PromiseBasedCall::PromiseBasedCall;
-
-  absl::string_view GetServerAuthority() const override;
-
-  grpc_call_error StartBatch(const grpc_op* ops, size_t nops, void* notify_tag,
-                             bool is_notify_tag_closure) override;
-
- private:
-  PipeReceiver<SliceBuffer>* client_to_server_messages_ ABSL_GUARDED_BY(mu());
-  PipeSender<SliceBuffer>* server_to_client_messages_ ABSL_GUARDED_BY(mu());
-};
-
-grpc_call_error ServerPromiseBasedCall::StartBatch(const grpc_op* ops,
-                                                   size_t nops,
-                                                   void* notify_tag,
-                                                   bool is_notify_tag_closure) {
-  MutexLock lock(mu());
-  for (size_t op_idx = 0; op_idx < nops; op_idx++) {
-    const grpc_op& op = ops[op_idx];
-    switch (op.op) {}
+  if (outstanding_send_.has_value()) {
+    Poll<bool> r = (*outstanding_send_)();
+    if (const bool* result = absl::get_if<bool>(&r)) {
+      outstanding_send_.reset();
+      if (*result) {
+        FinishCompletion(&send_message_completion_);
+      } else {
+        FailCall(absl::Status(absl::StatusCode::kInternal,
+                              "Failed to send message to server"));
+      }
+    }
   }
-  return GRPC_CALL_OK;
+  if (outstanding_recv_.has_value()) {
+    Poll<absl::optional<Message>> r = (*outstanding_recv_)();
+    if (auto* result = absl::get_if<absl::optional<Message>>(&r)) {
+      outstanding_recv_.reset();
+      if (result->has_value()) {
+        abort();  // not implemented
+      } else {
+        *recv_message_ = nullptr;
+      }
+      FinishCompletion(&recv_message_completion_);
+    }
+  }
+  PromiseBasedCall::Update();
 }
 
 }  // namespace grpc_core
@@ -1990,16 +2006,12 @@ size_t grpc_call_get_initial_size_estimate() {
 grpc_error_handle grpc_call_create(grpc_call_create_args* args,
                                    grpc_call** out_call) {
   if (args->channel->is_promising()) {
-    if (args->server_transport_data != nullptr) {
-      return grpc_core::MakePromiseBasedCall<grpc_core::ServerPromiseBasedCall>(
-          args, out_call);
-    } else {
+    if (args->server_transport_data == nullptr) {
       return grpc_core::MakePromiseBasedCall<grpc_core::ClientPromiseBasedCall>(
           args, out_call);
     }
-  } else {
-    return grpc_core::FilterStackCall::Create(args, out_call);
   }
+  return grpc_core::FilterStackCall::Create(args, out_call);
 }
 
 void grpc_call_set_completion_queue(grpc_call* call,

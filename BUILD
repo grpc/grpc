@@ -2700,6 +2700,7 @@ grpc_cc_library(
         "memory_quota",
         "orphanable",
         "percent_encoding",
+        "pipe",
         "poll",
         "promise",
         "ref_counted",

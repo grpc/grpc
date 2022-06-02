@@ -95,6 +95,11 @@ END2END_FIXTURES = {
         dns_resolver = False,
         client_channel = False,
     ),
+    "h2_sockpair+minstack": _fixture_options(
+        fullstack = False,
+        dns_resolver = False,
+        client_channel = False,
+    ),
     "h2_sockpair+trace": _fixture_options(
         fullstack = False,
         dns_resolver = False,

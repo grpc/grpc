@@ -159,6 +159,24 @@ using ClientMetadataHandle = MetadataHandle<ClientMetadata>;
 // TODO(ctiller): This should be a bespoke instance of MetadataMap<>
 using ServerMetadataHandle = MetadataHandle<grpc_metadata_batch>;
 
+class Message {
+ public:
+  Message() = default;
+  ~Message() = default;
+  Message(SliceBuffer payload, uint32_t flags)
+      : payload_(std::move(payload)), flags_(flags) {}
+  Message(const Message&) = delete;
+  Message& operator=(const Message&) = delete;
+  Message(Message&& other) noexcept = default;
+  Message& operator=(Message&& other) noexcept = default;
+
+  uint32_t flags() const { return flags_; }
+
+ private:
+  SliceBuffer payload_;
+  uint32_t flags_ = 0;
+};
+
 struct CallArgs {
   // Initial metadata from the client to the server.
   // During promise setup this can be manipulated by filters (and then
@@ -170,9 +188,9 @@ struct CallArgs {
   // and consequently intercept the sent value and mutate/observe it.
   Latch<ServerMetadata*>* server_initial_metadata;
   // Messages travelling from the client to the server.
-  PipeReceiver<SliceBuffer>* client_to_server_messages;
+  PipeReceiver<Message>* client_to_server_messages;
   // Messages travelling from the server to the client.
-  PipeSender<SliceBuffer>* server_to_client_messages;
+  PipeSender<Message>* server_to_client_messages;
 };
 
 using NextPromiseFactory =

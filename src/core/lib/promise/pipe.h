@@ -189,6 +189,8 @@ class PipeSender {
 template <typename T>
 class PipeReceiver {
  public:
+  using NextType = pipe_detail::Next<T>;
+
   PipeReceiver(const PipeReceiver&) = delete;
   PipeReceiver& operator=(const PipeReceiver&) = delete;
 
@@ -210,7 +212,7 @@ class PipeReceiver {
   // message was received, or no value if the other end of the pipe was closed.
   // Blocks the promise until the receiver is either closed or a message is
   // available.
-  pipe_detail::Next<T> Next();
+  NextType Next();
 
  private:
   friend struct Pipe<T>;
