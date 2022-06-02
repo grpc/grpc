@@ -1200,18 +1200,17 @@ grpc_cc_library(
     external_deps = [
         "absl/base:core_headers",
         "absl/status",
+        "absl/time",
     ],
     tags = ["grpc-autodeps"],
     deps = [
         "activity",
-        "closure",
-        "error",
+        "default_event_engine_factory_hdrs",
+        "event_engine_base_hdrs",
         "exec_ctx",
         "gpr_base",
         "gpr_platform",
-        "iomgr_timer",
         "poll",
-        "ref_counted",
         "time",
     ],
 )
