@@ -426,6 +426,7 @@ if "linux" in sys.platform or "darwin" in sys.platform:
 if 'darwin' in sys.platform:
     os.environ['ARCHFLAGS'] = '-arch {}'.format(platform.machine())
     sys.stderr.write("AAAAAAAAAAAAAAAAAAAA ARCHFLAGS: '{}'\n".format(os.environ['ARCHFLAGS']))
+    sys.stderr.write("distutils.sysconfig.get_config_vars: '{}'\n".format(distutils.sysconfig.get_config_vars()))
     sys.stderr.flush()
     sys.exit(1)
     mac_target = sysconfig.get_config_var('MACOSX_DEPLOYMENT_TARGET')
