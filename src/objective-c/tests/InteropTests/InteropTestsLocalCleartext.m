@@ -20,8 +20,8 @@
 #import <GRPCClient/GRPCTransport.h>
 #import <GRPCClient/internal_testing/GRPCCall+InternalTests.h>
 
-#import "InteropTests.h"
 #import "../Common/TestUtils.h"
+#import "InteropTests.h"
 
 // The server address is derived from preprocessor macro, which is
 // in turn derived from environment variable of the same name.

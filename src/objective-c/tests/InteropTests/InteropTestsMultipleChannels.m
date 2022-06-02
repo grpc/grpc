@@ -25,9 +25,9 @@
 #import "src/objective-c/tests/RemoteTestClient/Test.pbobjc.h"
 #import "src/objective-c/tests/RemoteTestClient/Test.pbrpc.h"
 
+#import "../Common/TestUtils.h"
 #import "../ConfigureCronet.h"
 #import "InteropTestsBlockCallbacks.h"
-#import "../Common/TestUtils.h"
 
 #define NSStringize_helper(x) #x
 #define NSStringize(x) @NSStringize_helper(x)
@@ -82,19 +82,23 @@ dispatch_once_t initCronet;
 
   self.continueAfterFailure = NO;
 
-  _remoteService = [RMTTestService serviceWithHost:GRPCGetRemoteInteropTestServerAddress() callOptions:nil];
+  _remoteService = [RMTTestService serviceWithHost:GRPCGetRemoteInteropTestServerAddress()
+                                       callOptions:nil];
   configureCronet(/*enable_netlog=*/false);
 
   // Default stack with remote host
   GRPCMutableCallOptions *options = [[GRPCMutableCallOptions alloc] init];
   options.transportType = GRPCTransportTypeCronet;
   // Cronet stack with remote host
-  _remoteCronetService = [RMTTestService serviceWithHost:GRPCGetRemoteInteropTestServerAddress() callOptions:options];
+  _remoteCronetService = [RMTTestService serviceWithHost:GRPCGetRemoteInteropTestServerAddress()
+                                             callOptions:options];
 
   // Local stack with no SSL
   options = [[GRPCMutableCallOptions alloc] init];
   options.transportType = GRPCTransportTypeInsecure;
-  _localCleartextService = [RMTTestService serviceWithHost:GRPCGetLocalInteropTestServerAddressPlainText() callOptions:options];
+  _localCleartextService =
+      [RMTTestService serviceWithHost:GRPCGetLocalInteropTestServerAddressPlainText()
+                          callOptions:options];
 
   // Local stack with SSL
   NSBundle *bundle = [NSBundle bundleForClass:[self class]];
@@ -110,7 +114,8 @@ dispatch_once_t initCronet;
   options.transportType = GRPCTransportTypeChttp2BoringSSL;
   options.PEMRootCertificates = certs;
   options.hostNameOverride = @"foo.test.google.fr";
-  _localSSLService = [RMTTestService serviceWithHost:GRPCGetLocalInteropTestServerAddressSSL() callOptions:options];
+  _localSSLService = [RMTTestService serviceWithHost:GRPCGetLocalInteropTestServerAddressSSL()
+                                         callOptions:options];
 }
 
 - (void)testEmptyUnaryRPC {
