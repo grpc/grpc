@@ -96,9 +96,7 @@
 
 namespace grpc_core {
 
-using internal::ClientChannelGlobalParsedConfig;
 using internal::ClientChannelMethodParsedConfig;
-using internal::ClientChannelServiceConfigParser;
 
 TraceFlag grpc_client_channel_trace(false, "client_channel");
 TraceFlag grpc_client_channel_call_trace(false, "client_channel_call");

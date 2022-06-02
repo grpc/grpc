@@ -16,60 +16,78 @@
 
 #include "src/core/lib/promise/sleep.h"
 
+#include "absl/time/clock.h"
+#include "absl/time/time.h"
+
+#include <grpc/event_engine/event_engine.h>
+
+#include "src/core/lib/event_engine/event_engine_factory.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 
 namespace grpc_core {
 
-Sleep::Sleep(Timestamp deadline) : state_(new State(deadline)) {
-  GRPC_CLOSURE_INIT(&state_->on_timer, &OnTimer, state_, nullptr);
-}
+using ::grpc_event_engine::experimental::GetDefaultEventEngine;
+
+Sleep::Sleep(Timestamp deadline) : deadline_(deadline) {}
 
 Sleep::~Sleep() {
-  if (state_ == nullptr) return;
-  {
-    MutexLock lock(&state_->mu);
-    switch (state_->stage) {
-      case Stage::kInitial:
-        state_->Unref();
-        break;
-      case Stage::kStarted:
-        grpc_timer_cancel(&state_->timer);
-        break;
-      case Stage::kDone:
-        break;
-    }
+  if (deadline_ == Timestamp::InfPast()) return;
+  ReleasableMutexLock lock(&mu_);
+  switch (stage_) {
+    case Stage::kInitial:
+      break;
+    case Stage::kStarted:
+      if (GetDefaultEventEngine()->Cancel(timer_handle_)) {
+        lock.Release();
+        OnTimer();
+      }
+      break;
+    case Stage::kDone:
+      break;
   }
-  state_->Unref();
 }
 
-void Sleep::OnTimer(void* arg, grpc_error_handle) {
-  auto* state = static_cast<State*>(arg);
-  Waker waker;
+void Sleep::OnTimer() {
+  Waker tmp_waker;
   {
-    MutexLock lock(&state->mu);
-    state->stage = Stage::kDone;
-    waker = std::move(state->waker);
+    MutexLock lock(&mu_);
+    stage_ = Stage::kDone;
+    tmp_waker = std::move(waker_);
   }
-  waker.Wakeup();
-  state->Unref();
+  tmp_waker.Wakeup();
 }
+
+// TODO(hork): refactor gpr_base to allow a separate time_util target.
+namespace {
+absl::Time ToAbslTime(Timestamp timestamp) {
+  if (timestamp == Timestamp::InfFuture()) return absl::InfiniteFuture();
+  if (timestamp == Timestamp::InfPast()) return absl::InfinitePast();
+  return absl::Now() +
+         absl::Milliseconds((timestamp - ExecCtx::Get()->Now()).millis());
+}
+}  // namespace
 
 Poll<absl::Status> Sleep::operator()() {
-  MutexLock lock(&state_->mu);
-  switch (state_->stage) {
+  MutexLock lock(&mu_);
+  switch (stage_) {
     case Stage::kInitial:
-      if (state_->deadline <= ExecCtx::Get()->Now()) {
+      if (deadline_ <= ExecCtx::Get()->Now()) {
         return absl::OkStatus();
       }
-      state_->stage = Stage::kStarted;
-      grpc_timer_init(&state_->timer, state_->deadline, &state_->on_timer);
+      stage_ = Stage::kStarted;
+      timer_handle_ =
+          GetDefaultEventEngine()->RunAt(ToAbslTime(deadline_), [this] {
+            ApplicationCallbackExecCtx callback_exec_ctx;
+            ExecCtx exec_ctx;
+            OnTimer();
+          });
       break;
     case Stage::kStarted:
       break;
     case Stage::kDone:
       return absl::OkStatus();
   }
-  state_->waker = Activity::current()->MakeNonOwningWaker();
+  waker_ = Activity::current()->MakeNonOwningWaker();
   return Pending{};
 }
 
