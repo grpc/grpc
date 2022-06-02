@@ -927,47 +927,80 @@ TEST_F(
   // Start connection injector.
   ConnectionInjector injector;
   injector.Start();
-  // Get 3 unused ports.
-  std::vector<int> ports = {grpc_pick_unused_port_or_die(),
-                            grpc_pick_unused_port_or_die(),
-                            grpc_pick_unused_port_or_die()};
+  // Get 5 unused ports.  Each channel will have 2 unique ports followed
+  // by a common port.
+  std::vector<int> ports1 = {grpc_pick_unused_port_or_die(),
+                             grpc_pick_unused_port_or_die(),
+                             grpc_pick_unused_port_or_die()};
+  std::vector<int> ports2 = {grpc_pick_unused_port_or_die(),
+                             grpc_pick_unused_port_or_die(), ports1[2]};
   // Create channel 1.
   auto response_generator1 = BuildResolverResponseGenerator();
   auto channel1 = BuildChannel("pick_first", response_generator1);
   auto stub1 = BuildStub(channel1);
-  response_generator1.SetNextResolution(ports);
+  response_generator1.SetNextResolution(ports1);
   // Allow the connection attempts for ports 0 and 1 to fail normally.
   // Inject a hold for the connection attempt to port 2.
-  auto hold2 = injector.AddHold(ports[2]);
+  auto hold_channel1_port2 = injector.AddHold(ports1[2]);
   // Trigger connection attempt.
+  gpr_log(GPR_INFO, "=== START CONNECTING CHANNEL 1 ===");
   channel1->GetState(/*try_to_connect=*/true);
   // Wait for connection attempt to port 2.
-  hold2->Wait();
+  gpr_log(GPR_INFO, "=== WAITING FOR CHANNEL 1 PORT 2 TO START ===");
+  hold_channel1_port2->Wait();
+  gpr_log(GPR_INFO, "=== CHANNEL 1 PORT 2 STARTED ===");
   // Now create channel 2.
   auto response_generator2 = BuildResolverResponseGenerator();
   auto channel2 = BuildChannel("pick_first", response_generator2);
-  response_generator2.SetNextResolution(ports);
+  response_generator2.SetNextResolution(ports2);
   // Inject a hold for port 0.
-  auto hold0 = injector.AddHold(ports[0]);
+  auto hold_channel2_port0 = injector.AddHold(ports2[0]);
   // Trigger connection attempt.
+  gpr_log(GPR_INFO, "=== START CONNECTING CHANNEL 2 ===");
   channel2->GetState(/*try_to_connect=*/true);
   // Wait for connection attempt to port 0.
-  hold0->Wait();
+  gpr_log(GPR_INFO, "=== WAITING FOR CHANNEL 2 PORT 0 TO START ===");
+  hold_channel2_port0->Wait();
+  gpr_log(GPR_INFO, "=== CHANNEL 2 PORT 0 STARTED ===");
+  // Inject a hold for port 0, which will be retried by channel 1.
+  auto hold_channel1_port0 = injector.AddHold(ports1[0]);
   // Now allow the connection attempt to port 2 to complete.  The subchannel
   // will deliver a TRANSIENT_FAILURE notification to both channels.
-  hold2->Resume();
-  // Channel 1 will report TRANSIENT_FAILURE, because it has now
-  // attempted all subchannels, but channel 2 should continue to report
-  // CONNECTING, because it has not yet tried all subchannels.
-  EXPECT_TRUE(channel1->WaitForStateChange(
-      GRPC_CHANNEL_CONNECTING, grpc_timeout_seconds_to_deadline(5)));
+  gpr_log(GPR_INFO, "=== RESUMING CHANNEL 1 PORT 2 ===");
+  hold_channel1_port2->Resume();
+  // Wait for channel 1 to retry port 0, so that we know it's seen the
+  // connectivity state notification for port 2.
+  gpr_log(GPR_INFO, "=== WAITING FOR CHANNEL 1 PORT 0 ===");
+  hold_channel1_port0->Wait();
+  gpr_log(GPR_INFO, "=== CHANNEL 1 PORT 0 STARTED ===");
+  // Channel 1 should now report TRANSIENT_FAILURE.
+  // Channel 2 should continue to report CONNECTING.
   EXPECT_EQ(GRPC_CHANNEL_TRANSIENT_FAILURE, channel1->GetState(false));
-  EXPECT_FALSE(channel2->WaitForStateChange(
-      GRPC_CHANNEL_CONNECTING, grpc_timeout_seconds_to_deadline(5)))
-      << "state: "
-      << grpc_core::ConnectivityStateName(channel2->GetState(false));
+  EXPECT_EQ(GRPC_CHANNEL_CONNECTING, channel2->GetState(false));
+  // Inject a hold for port 2, which will eventually be tried by channel 2.
+  auto hold_channel2_port2 = injector.AddHold(ports2[2]);
+  // Allow channel 2 to resume port 0.  Port 0 will fail, as will port 1.
+  gpr_log(GPR_INFO, "=== RESUMING CHANNEL 2 PORT 0 ===");
+  hold_channel2_port0->Resume();
+  // Wait for channel 2 to try port 2.
+  gpr_log(GPR_INFO, "=== WAITING FOR CHANNEL 2 PORT 2 ===");
+  hold_channel2_port2->Wait();
+  gpr_log(GPR_INFO, "=== CHANNEL 2 PORT 2 STARTED ===");
+  // Channel 2 should still be CONNECTING here.
+  EXPECT_EQ(GRPC_CHANNEL_CONNECTING, channel2->GetState(false));
+  // Add a hold for channel 2 port 0.
+  hold_channel2_port0 = injector.AddHold(ports2[0]);
+  gpr_log(GPR_INFO, "=== RESUMING CHANNEL 2 PORT 2 ===");
+  hold_channel2_port2->Resume();
+  // Wait for channel 2 to retry port 0.
+  gpr_log(GPR_INFO, "=== WAITING FOR CHANNEL 2 PORT 0 ===");
+  hold_channel2_port0->Wait();
+  // Now channel 2 should be reporting TRANSIENT_FAILURE.
+  EXPECT_EQ(GRPC_CHANNEL_TRANSIENT_FAILURE, channel2->GetState(false));
   // Clean up.
-  hold0->Resume();
+  gpr_log(GPR_INFO, "=== RESUMING CHANNEL 1 PORT 0 AND CHANNEL 2 PORT 0 ===");
+  hold_channel1_port0->Resume();
+  hold_channel2_port0->Resume();
 }
 
 TEST_F(PickFirstTest, Updates) {
