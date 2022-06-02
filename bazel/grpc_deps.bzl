@@ -156,6 +156,11 @@ def grpc_deps():
     )
 
     native.bind(
+        name = "opencensus-trace-span_context",
+        actual = "@io_opencensus_cpp//opencensus/trace:span_context",
+    )
+
+    native.bind(
         name = "opencensus-stats",
         actual = "@io_opencensus_cpp//opencensus/stats:stats",
     )

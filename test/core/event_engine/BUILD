@@ -43,6 +43,16 @@ grpc_cc_test(
     ],
 )
 
+grpc_cc_test(
+    name = "slice_buffer_test",
+    srcs = ["slice_buffer_test.cc"],
+    external_deps = ["gtest"],
+    deps = [
+        "//:grpc",
+        "//test/core/util:grpc_test_util",
+    ],
+)
+
 grpc_cc_library(
     name = "test_init",
     srcs = ["test_init.cc"],

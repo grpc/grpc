@@ -22,45 +22,62 @@
 #include <limits.h>
 #include <string.h>
 
+#include <algorithm>
+
 #include "absl/container/inlined_vector.h"
+#include "absl/strings/match.h"
+#include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
 #include "absl/strings/str_join.h"
+#include "absl/strings/str_split.h"
 #include "absl/strings/string_view.h"
+#include "absl/strings/strip.h"
 
+#include <grpc/byte_buffer.h>
 #include <grpc/byte_buffer_reader.h>
 #include <grpc/grpc.h>
+#include <grpc/impl/codegen/connectivity_state.h>
+#include <grpc/impl/codegen/propagation_bits.h>
+#include <grpc/slice.h>
+#include <grpc/status.h>
 #include <grpc/support/alloc.h>
+#include <grpc/support/log.h>
+#include <grpc/support/string_util.h>
 #include <grpc/support/time.h>
 
 #include "src/core/ext/filters/client_channel/client_channel.h"
+#include "src/core/ext/xds/upb_utils.h"
 #include "src/core/ext/xds/xds_api.h"
 #include "src/core/ext/xds/xds_bootstrap.h"
 #include "src/core/ext/xds/xds_channel_args.h"
 #include "src/core/ext/xds/xds_client_stats.h"
-#include "src/core/ext/xds/xds_cluster.h"
 #include "src/core/ext/xds/xds_cluster_specifier_plugin.h"
-#include "src/core/ext/xds/xds_endpoint.h"
 #include "src/core/ext/xds/xds_http_filters.h"
-#include "src/core/ext/xds/xds_listener.h"
-#include "src/core/lib/address_utils/sockaddr_utils.h"
 #include "src/core/lib/backoff/backoff.h"
 #include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/channel/channel_fwd.h"
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/gpr/env.h"
-#include "src/core/lib/gpr/string.h"
+#include "src/core/lib/gpr/useful.h"
+#include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/memory.h"
 #include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/gprpp/sync.h"
-#include "src/core/lib/iomgr/sockaddr.h"
+#include "src/core/lib/iomgr/closure.h"
+#include "src/core/lib/iomgr/load_file.h"
+#include "src/core/lib/iomgr/pollset_set.h"
 #include "src/core/lib/iomgr/timer.h"
 #include "src/core/lib/security/credentials/channel_creds_registry.h"
+#include "src/core/lib/security/credentials/credentials.h"
+#include "src/core/lib/slice/slice.h"
 #include "src/core/lib/slice/slice_internal.h"
-#include "src/core/lib/slice/slice_string_helpers.h"
+#include "src/core/lib/slice/slice_refcount.h"
 #include "src/core/lib/surface/call.h"
 #include "src/core/lib/surface/channel.h"
 #include "src/core/lib/surface/lame_client.h"
+#include "src/core/lib/transport/connectivity_state.h"
 #include "src/core/lib/uri/uri_parser.h"
 
 #define GRPC_XDS_INITIAL_CONNECT_BACKOFF_SECONDS 1
@@ -198,9 +215,20 @@ class XdsClient::ChannelState::AdsCallState
       Unref(DEBUG_LOCATION, "Orphan");
     }
 
-    void MaybeStartTimer(RefCountedPtr<AdsCallState> ads_calld) {
-      if (timer_started_) return;
-      timer_started_ = true;
+    void MaybeStartTimer(RefCountedPtr<AdsCallState> ads_calld)
+        ABSL_EXCLUSIVE_LOCKS_REQUIRED(&XdsClient::mu_) {
+      if (!timer_start_needed_) return;
+      timer_start_needed_ = false;
+      // Check if we already have a cached version of this resource
+      // (i.e., if this is the initial request for the resource after an
+      // ADS stream restart).  If so, we don't start the timer, because
+      // (a) we already have the resource and (b) the server may
+      // optimize by not resending the resource that we already have.
+      auto& authority_state =
+          ads_calld->xds_client()->authority_state_map_[name_.authority];
+      ResourceState& state = authority_state.resource_map[type_][name_.key];
+      if (state.resource != nullptr) return;
+      // Start timer.
       ads_calld_ = std::move(ads_calld);
       Ref(DEBUG_LOCATION, "timer").release();
       timer_pending_ = true;
@@ -211,6 +239,18 @@ class XdsClient::ChannelState::AdsCallState
     }
 
     void MaybeCancelTimer() {
+      // If the timer hasn't been started yet, make sure we don't start
+      // it later.  This can happen if the last watch for an LDS or CDS
+      // resource is cancelled and then restarted, both while an ADS
+      // request for a different resource type is being sent (causing
+      // the unsubscription and then resubscription requests to be
+      // queued), and then we get a response for the LDS or CDS resource.
+      // In that case, we would call MaybeCancelTimer() when we receive the
+      // response and then MaybeStartTimer() when we finally send the new
+      // LDS or CDS request, thus causing the timer to fire when it shouldn't.
+      // For details, see https://github.com/grpc/grpc/issues/29583.
+      // TODO(roth): Find a way to write a test for this case.
+      timer_start_needed_ = false;
       if (timer_pending_) {
         grpc_timer_cancel(&timer_);
         timer_pending_ = false;
@@ -233,23 +273,23 @@ class XdsClient::ChannelState::AdsCallState
         ABSL_EXCLUSIVE_LOCKS_REQUIRED(&XdsClient::mu_) {
       if (error == GRPC_ERROR_NONE && timer_pending_) {
         timer_pending_ = false;
-        absl::Status watcher_error = absl::UnavailableError(absl::StrFormat(
-            "timeout obtaining resource {type=%s name=%s} from xds server",
-            type_->type_url(),
-            XdsClient::ConstructFullXdsResourceName(
-                name_.authority, type_->type_url(), name_.key)));
         if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_client_trace)) {
-          gpr_log(GPR_INFO, "[xds_client %p] xds server %s: %s",
+          gpr_log(GPR_INFO,
+                  "[xds_client %p] xds server %s: timeout obtaining resource "
+                  "{type=%s name=%s} from xds server",
                   ads_calld_->xds_client(),
                   ads_calld_->chand()->server_.server_uri.c_str(),
-                  watcher_error.ToString().c_str());
+                  std::string(type_->type_url()).c_str(),
+                  XdsClient::ConstructFullXdsResourceName(
+                      name_.authority, type_->type_url(), name_.key)
+                      .c_str());
         }
         auto& authority_state =
             ads_calld_->xds_client()->authority_state_map_[name_.authority];
         ResourceState& state = authority_state.resource_map[type_][name_.key];
         state.meta.client_status = XdsApi::ResourceMetadata::DOES_NOT_EXIST;
-        ads_calld_->xds_client()->NotifyWatchersOnErrorLocked(state.watchers,
-                                                              watcher_error);
+        ads_calld_->xds_client()->NotifyWatchersOnResourceDoesNotExist(
+            state.watchers);
       }
       GRPC_ERROR_UNREF(error);
     }
@@ -258,7 +298,7 @@ class XdsClient::ChannelState::AdsCallState
     const XdsResourceName name_;
 
     RefCountedPtr<AdsCallState> ads_calld_;
-    bool timer_started_ = false;
+    bool timer_start_needed_ = true;
     bool timer_pending_ = false;
     grpc_timer timer_;
     grpc_closure timer_callback_;
@@ -294,7 +334,8 @@ class XdsClient::ChannelState::AdsCallState
 
   // Constructs a list of resource names of a given type for an ADS
   // request.  Also starts the timer for each resource if needed.
-  std::vector<std::string> ResourceNamesForRequest(const XdsResourceType* type);
+  std::vector<std::string> ResourceNamesForRequest(const XdsResourceType* type)
+      ABSL_EXCLUSIVE_LOCKS_REQUIRED(&XdsClient::mu_);
 
   // The owning RetryableCall<>.
   RefCountedPtr<RetryableCall<AdsCallState>> parent_;
@@ -790,7 +831,7 @@ void XdsClient::ChannelState::AdsCallState::AdsResponseParser::ParseResource(
   }
   // Check the resource name.
   auto resource_name =
-      XdsClient::ParseXdsResourceName(result->name, result_.type);
+      xds_client()->ParseXdsResourceName(result->name, result_.type);
   if (!resource_name.ok()) {
     result_.errors.emplace_back(absl::StrCat(
         "resource index ", idx, ": Cannot parse xDS resource name \"",
@@ -1790,6 +1831,7 @@ XdsClient::XdsClient(std::unique_ptr<XdsBootstrap> bootstrap,
       bootstrap_(std::move(bootstrap)),
       args_(ModifyChannelArgs(args)),
       request_timeout_(GetRequestTimeout(args)),
+      xds_federation_enabled_(XdsFederationEnabled()),
       interested_parties_(grpc_pollset_set_create()),
       certificate_provider_store_(MakeOrphanable<CertificateProviderStore>(
           bootstrap_->certificate_providers())),
@@ -1926,12 +1968,11 @@ void XdsClient::CancelResourceWatch(const XdsResourceType* type,
                                     bool delay_unsubscription) {
   auto resource_name = ParseXdsResourceName(name, type);
   MutexLock lock(&mu_);
-  if (!resource_name.ok()) {
-    invalid_watchers_.erase(watcher);
-    return;
-  }
-  if (shutting_down_) return;
+  // We cannot be sure whether the watcher is in invalid_watchers_ or in
+  // authority_state_map_, so we check both, just to be safe.
+  invalid_watchers_.erase(watcher);
   // Find authority.
+  if (!resource_name.ok()) return;
   auto authority_it = authority_state_map_.find(resource_name->authority);
   if (authority_it == authority_state_map_.end()) return;
   AuthorityState& authority_state = authority_it->second;
@@ -1984,7 +2025,7 @@ absl::StatusOr<XdsClient::XdsResourceName> XdsClient::ParseXdsResourceName(
     absl::string_view name, const XdsResourceType* type) {
   // Old-style names use the empty string for authority.
   // authority is prefixed with "old:" to indicate that it's an old-style name.
-  if (!absl::StartsWith(name, "xdstp:")) {
+  if (!xds_federation_enabled_ || !absl::StartsWith(name, "xdstp:")) {
     return XdsResourceName{"old:", {std::string(name), {}}};
   }
   // New style name.  Parse URI.

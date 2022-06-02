@@ -21,8 +21,22 @@
 
 #include <grpc/support/port_platform.h>
 
-#include "src/core/lib/channel/channel_stack.h"
+#include <memory>
+
+#include "absl/base/thread_annotations.h"
+#include "absl/status/status.h"
+#include "absl/status/statusor.h"
+
+#include <grpc/impl/codegen/grpc_types.h>
+
+#include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/channel/channel_fwd.h"
 #include "src/core/lib/channel/promise_based_filter.h"
+#include "src/core/lib/gprpp/sync.h"
+#include "src/core/lib/iomgr/error.h"
+#include "src/core/lib/promise/arena_promise.h"
+#include "src/core/lib/transport/connectivity_state.h"
+#include "src/core/lib/transport/transport.h"
 
 namespace grpc_core {
 // Does NOT take ownership of error.

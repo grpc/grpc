@@ -16,24 +16,57 @@
 
 #include <grpc/support/port_platform.h>
 
-#include <string.h>
+#include <algorithm>
+#include <map>
+#include <memory>
+#include <set>
+#include <string>
+#include <utility>
+#include <vector>
 
+#include "absl/memory/memory.h"
+#include "absl/status/status.h"
+#include "absl/status/statusor.h"
 #include "absl/strings/str_cat.h"
+#include "absl/strings/string_view.h"
+#include "absl/types/optional.h"
+
+#include <grpc/grpc.h>
+#include <grpc/grpc_security.h>
+#include <grpc/impl/codegen/connectivity_state.h>
+#include <grpc/impl/codegen/grpc_types.h>
+#include <grpc/support/log.h>
 
 #include "src/core/ext/filters/client_channel/lb_policy.h"
+#include "src/core/ext/filters/client_channel/lb_policy/outlier_detection/outlier_detection.h"
 #include "src/core/ext/filters/client_channel/lb_policy_factory.h"
 #include "src/core/ext/filters/client_channel/lb_policy_registry.h"
+#include "src/core/ext/filters/client_channel/subchannel_interface.h"
+#include "src/core/ext/xds/certificate_provider_store.h"
+#include "src/core/ext/xds/xds_bootstrap.h"
 #include "src/core/ext/xds/xds_certificate_provider.h"
 #include "src/core/ext/xds/xds_client.h"
 #include "src/core/ext/xds/xds_cluster.h"
+#include "src/core/ext/xds/xds_common_types.h"
+#include "src/core/ext/xds/xds_resource_type_impl.h"
 #include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/gprpp/memory.h"
+#include "src/core/lib/debug/trace.h"
+#include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
-#include "src/core/lib/iomgr/closure.h"
-#include "src/core/lib/iomgr/exec_ctx.h"
+#include "src/core/lib/gprpp/time.h"
+#include "src/core/lib/gprpp/unique_type_name.h"
+#include "src/core/lib/iomgr/error.h"
+#include "src/core/lib/iomgr/pollset_set.h"
+#include "src/core/lib/iomgr/work_serializer.h"
+#include "src/core/lib/json/json.h"
+#include "src/core/lib/matchers/matchers.h"
+#include "src/core/lib/resolver/server_address.h"
+#include "src/core/lib/security/credentials/credentials.h"
+#include "src/core/lib/security/credentials/tls/grpc_tls_certificate_distributor.h"
+#include "src/core/lib/security/credentials/tls/grpc_tls_certificate_provider.h"
 #include "src/core/lib/security/credentials/xds/xds_credentials.h"
-#include "src/core/lib/transport/error_utils.h"
+#include "src/core/lib/transport/connectivity_state.h"
 
 namespace grpc_core {
 
@@ -194,8 +227,7 @@ void CdsLb::Helper::UpdateState(grpc_connectivity_state state,
                                 std::unique_ptr<SubchannelPicker> picker) {
   if (parent_->shutting_down_ || parent_->child_policy_ == nullptr) return;
   if (GRPC_TRACE_FLAG_ENABLED(grpc_cds_lb_trace)) {
-    gpr_log(GPR_INFO,
-            "[cdslb %p] state updated by child: %s message_state: (%s)", this,
+    gpr_log(GPR_INFO, "[cdslb %p] state updated by child: %s (%s)", this,
             ConnectivityStateName(state), status.ToString().c_str());
   }
   parent_->channel_control_helper()->UpdateState(state, status,
@@ -359,6 +391,45 @@ absl::StatusOr<bool> CdsLb::GenerateDiscoveryMechanismForCluster(
       {"clusterName", name},
       {"max_concurrent_requests", state.update->max_concurrent_requests},
   };
+  if (state.update->outlier_detection.has_value()) {
+    auto& outlier_detection_update = state.update->outlier_detection.value();
+    Json::Object outlier_detection;
+    outlier_detection["interval"] =
+        outlier_detection_update.interval.ToJsonString();
+    outlier_detection["baseEjectionTime"] =
+        outlier_detection_update.base_ejection_time.ToJsonString();
+    outlier_detection["maxEjectionTime"] =
+        outlier_detection_update.max_ejection_time.ToJsonString();
+    outlier_detection["maxEjectionPercent"] =
+        outlier_detection_update.max_ejection_percent;
+    if (outlier_detection_update.success_rate_ejection.has_value()) {
+      outlier_detection["successRateEjection"] = Json::Object{
+          {"stdevFactor",
+           outlier_detection_update.success_rate_ejection->stdev_factor},
+          {"enforcementPercentage",
+           outlier_detection_update.success_rate_ejection
+               ->enforcement_percentage},
+          {"minimumHosts",
+           outlier_detection_update.success_rate_ejection->minimum_hosts},
+          {"requestVolume",
+           outlier_detection_update.success_rate_ejection->request_volume},
+      };
+    }
+    if (outlier_detection_update.failure_percentage_ejection.has_value()) {
+      outlier_detection["failurePercentageEjection"] = Json::Object{
+          {"threshold",
+           outlier_detection_update.failure_percentage_ejection->threshold},
+          {"enforcementPercentage",
+           outlier_detection_update.failure_percentage_ejection
+               ->enforcement_percentage},
+          {"minimumHosts",
+           outlier_detection_update.failure_percentage_ejection->minimum_hosts},
+          {"requestVolume", outlier_detection_update
+                                .failure_percentage_ejection->request_volume},
+      };
+    }
+    mechanism["outlierDetection"] = std::move(outlier_detection);
+  }
   switch (state.update->cluster_type) {
     case XdsClusterResource::ClusterType::EDS:
       mechanism["type"] = "EDS";
@@ -511,8 +582,8 @@ void CdsLb::OnError(const std::string& name, absl::Status status) {
   if (child_policy_ == nullptr) {
     channel_control_helper()->UpdateState(
         GRPC_CHANNEL_TRANSIENT_FAILURE, status,
-        absl::make_unique<TransientFailurePicker>(
-            absl::UnavailableError(status.ToString())));
+        absl::make_unique<TransientFailurePicker>(absl::UnavailableError(
+            absl::StrCat(name, ": ", status.ToString()))));
   }
 }
 

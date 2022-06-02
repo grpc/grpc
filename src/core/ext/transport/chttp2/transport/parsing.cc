@@ -74,6 +74,10 @@ static grpc_error_handle parse_frame_slice(grpc_chttp2_transport* t,
                                            const grpc_slice& slice,
                                            int is_last);
 
+static char get_utf8_safe_char(char c) {
+  return static_cast<unsigned char>(c) < 128 ? c : 32;
+}
+
 grpc_error_handle grpc_chttp2_perform_read(grpc_chttp2_transport* t,
                                            const grpc_slice& slice) {
   const uint8_t* beg = GRPC_SLICE_START_PTR(slice);
@@ -113,10 +117,12 @@ grpc_error_handle grpc_chttp2_perform_read(grpc_chttp2_transport* t,
           return GRPC_ERROR_CREATE_FROM_CPP_STRING(absl::StrFormat(
               "Connect string mismatch: expected '%c' (%d) got '%c' (%d) "
               "at byte %d",
-              GRPC_CHTTP2_CLIENT_CONNECT_STRING[t->deframe_state],
+              get_utf8_safe_char(
+                  GRPC_CHTTP2_CLIENT_CONNECT_STRING[t->deframe_state]),
               static_cast<int>(static_cast<uint8_t>(
                   GRPC_CHTTP2_CLIENT_CONNECT_STRING[t->deframe_state])),
-              *cur, static_cast<int>(*cur), t->deframe_state));
+              get_utf8_safe_char(*cur), static_cast<int>(*cur),
+              t->deframe_state));
         }
         ++cur;
         // NOLINTNEXTLINE(bugprone-misplaced-widening-cast)

@@ -57,7 +57,6 @@
 #include "src/core/ext/transport/chttp2/transport/stream_map.h"
 #include "src/core/ext/transport/chttp2/transport/varint.h"
 #include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/channel/channel_stack_builder.h"
 #include "src/core/lib/debug/stats.h"
 #include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/gprpp/bitset.h"
@@ -1252,7 +1251,7 @@ static grpc_closure* add_closure_barrier(grpc_closure* closure) {
 static void null_then_sched_closure(grpc_closure** closure) {
   grpc_closure* c = *closure;
   *closure = nullptr;
-  grpc_core::ExecCtx::Run(DEBUG_LOCATION, c, GRPC_ERROR_NONE);
+  grpc_core::Closure::Run(DEBUG_LOCATION, c, GRPC_ERROR_NONE);
 }
 
 void grpc_chttp2_complete_closure_step(grpc_chttp2_transport* t,

@@ -21,13 +21,16 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <stdint.h>
+
 #include <vector>
 
-#include <grpc/slice_buffer.h>
+#include "upb/upb.h"
+
+#include <grpc/slice.h>
 
 #include "src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_client_stats.h"
-#include "src/core/lib/iomgr/exec_ctx.h"
-#include "src/proto/grpc/lb/v1/load_balancer.upb.h"
+#include "src/core/lib/gprpp/time.h"
 
 #define GRPC_GRPCLB_SERVICE_NAME_MAX_LENGTH 128
 #define GRPC_GRPCLB_SERVER_IP_ADDRESS_MAX_SIZE 16

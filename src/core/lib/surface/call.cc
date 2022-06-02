@@ -20,49 +20,65 @@
 
 #include "src/core/lib/surface/call.h"
 
-#include <assert.h>
 #include <limits.h>
-#include <stdio.h>
 #include <stdlib.h>
-#include <string.h>
 
+#include <algorithm>
 #include <atomic>
+#include <memory>
+#include <new>
 #include <string>
+#include <utility>
 
+#include "absl/base/thread_annotations.h"
+#include "absl/meta/type_traits.h"
+#include "absl/status/status.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
+#include "absl/strings/string_view.h"
 
+#include <grpc/byte_buffer.h>
 #include <grpc/compression.h>
 #include <grpc/grpc.h>
+#include <grpc/impl/codegen/gpr_types.h>
+#include <grpc/impl/codegen/propagation_bits.h>
 #include <grpc/slice.h>
+#include <grpc/slice_buffer.h>
+#include <grpc/status.h>
 #include <grpc/support/alloc.h>
+#include <grpc/support/atm.h>
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
 
 #include "src/core/lib/channel/channel_stack.h"
+#include "src/core/lib/channel/channelz.h"
 #include "src/core/lib/channel/context.h"
 #include "src/core/lib/compression/compression_internal.h"
 #include "src/core/lib/debug/stats.h"
 #include "src/core/lib/gpr/alloc.h"
-#include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gpr/time_precise.h"
-#include "src/core/lib/gpr/useful.h"
+#include "src/core/lib/gprpp/cpp_impl_of.h"
+#include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/manual_constructor.h"
+#include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/gprpp/ref_counted.h"
-#include "src/core/lib/iomgr/error.h"
-#include "src/core/lib/iomgr/timer.h"
+#include "src/core/lib/gprpp/sync.h"
+#include "src/core/lib/iomgr/call_combiner.h"
+#include "src/core/lib/iomgr/exec_ctx.h"
+#include "src/core/lib/iomgr/polling_entity.h"
 #include "src/core/lib/profiling/timers.h"
 #include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/slice/slice_internal.h"
-#include "src/core/lib/slice/slice_split.h"
-#include "src/core/lib/slice/slice_string_helpers.h"
+#include "src/core/lib/slice/slice_refcount.h"
 #include "src/core/lib/surface/api_trace.h"
 #include "src/core/lib/surface/call_test_only.h"
 #include "src/core/lib/surface/channel.h"
 #include "src/core/lib/surface/completion_queue.h"
 #include "src/core/lib/surface/server.h"
 #include "src/core/lib/surface/validate_metadata.h"
+#include "src/core/lib/transport/byte_stream.h"
 #include "src/core/lib/transport/error_utils.h"
+#include "src/core/lib/transport/metadata_batch.h"
 #include "src/core/lib/transport/transport.h"
 
 grpc_core::TraceFlag grpc_call_error_trace(false, "call_error");
@@ -91,6 +107,7 @@ class Call : public CppImplOf<Call, grpc_call> {
                                      bool is_notify_tag_closure) = 0;
   virtual bool failed_before_recv_message() const = 0;
   virtual bool is_trailers_only() const = 0;
+  virtual absl::string_view GetServerAuthority() const = 0;
   virtual void ExternalRef() = 0;
   virtual void ExternalUnref() = 0;
   virtual void InternalRef(const char* reason) = 0;
@@ -341,6 +358,13 @@ class FilterStackCall final : public Call {
 
   bool failed_before_recv_message() const override {
     return call_failed_before_recv_message_;
+  }
+
+  absl::string_view GetServerAuthority() const override {
+    const Slice* authority_metadata =
+        recv_initial_metadata_.get_pointer(HttpAuthorityMetadata());
+    if (authority_metadata == nullptr) return "";
+    return authority_metadata->as_string_view();
   }
 
   grpc_compression_algorithm test_only_compression_algorithm() override {
@@ -1247,7 +1271,8 @@ void FilterStackCall::HandleCompressionAlgorithmNotAccepted(
   gpr_log(GPR_ERROR,
           "Compression algorithm ('%s') not present in the "
           "accepted encodings (%s)",
-          algo_name, encodings_accepted_by_peer_.ToString().c_str());
+          algo_name,
+          std::string(encodings_accepted_by_peer_.ToString()).c_str());
 }
 
 void FilterStackCall::BatchControl::ValidateFilteredMetadata() {
@@ -2131,6 +2156,10 @@ bool grpc_call_is_trailers_only(const grpc_call* call) {
 
 int grpc_call_failed_before_recv_message(const grpc_call* c) {
   return grpc_core::Call::FromC(c)->failed_before_recv_message();
+}
+
+absl::string_view grpc_call_server_authority(const grpc_call* call) {
+  return grpc_core::Call::FromC(call)->GetServerAuthority();
 }
 
 const char* grpc_call_error_to_string(grpc_call_error error) {

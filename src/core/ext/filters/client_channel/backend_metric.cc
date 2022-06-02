@@ -18,7 +18,12 @@
 
 #include "src/core/ext/filters/client_channel/backend_metric.h"
 
+#include <string.h>
+
+#include <map>
+
 #include "absl/strings/string_view.h"
+#include "upb/upb.h"
 #include "upb/upb.hpp"
 #include "xds/data/orca/v3/orca_load_report.upb.h"
 
@@ -49,22 +54,20 @@ std::map<absl::string_view, double> ParseMap(
 
 }  // namespace
 
-const LoadBalancingPolicy::BackendMetricAccessor::BackendMetricData*
-ParseBackendMetricData(absl::string_view serialized_load_report,
-                       BackendMetricAllocatorInterface* allocator) {
+const BackendMetricData* ParseBackendMetricData(
+    absl::string_view serialized_load_report,
+    BackendMetricAllocatorInterface* allocator) {
   upb::Arena upb_arena;
   xds_data_orca_v3_OrcaLoadReport* msg = xds_data_orca_v3_OrcaLoadReport_parse(
       serialized_load_report.data(), serialized_load_report.size(),
       upb_arena.ptr());
   if (msg == nullptr) return nullptr;
-  LoadBalancingPolicy::BackendMetricAccessor::BackendMetricData*
-      backend_metric_data = allocator->AllocateBackendMetricData();
+  BackendMetricData* backend_metric_data =
+      allocator->AllocateBackendMetricData();
   backend_metric_data->cpu_utilization =
       xds_data_orca_v3_OrcaLoadReport_cpu_utilization(msg);
   backend_metric_data->mem_utilization =
       xds_data_orca_v3_OrcaLoadReport_mem_utilization(msg);
-  backend_metric_data->requests_per_second =
-      xds_data_orca_v3_OrcaLoadReport_rps(msg);
   backend_metric_data->request_cost =
       ParseMap<xds_data_orca_v3_OrcaLoadReport_RequestCostEntry>(
           msg, xds_data_orca_v3_OrcaLoadReport_request_cost_next,

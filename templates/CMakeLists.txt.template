@@ -263,17 +263,17 @@
     set(_gRPC_PLATFORM_WINDOWS ON)
   endif()
 
-   # Use C99 standard
+   # Use C11 standard
   if (NOT DEFINED CMAKE_C_STANDARD)
-    set(CMAKE_C_STANDARD 99)
+    set(CMAKE_C_STANDARD 11)
   endif()
 
-  # Add c++11 flags
+  # Add c++14 flags
   if (NOT DEFINED CMAKE_CXX_STANDARD)
-    set(CMAKE_CXX_STANDARD 11)
+    set(CMAKE_CXX_STANDARD 14)
   else()
-    if (CMAKE_CXX_STANDARD LESS 11)
-      message(FATAL_ERROR "CMAKE_CXX_STANDARD is less than 11, please specify at least SET(CMAKE_CXX_STANDARD 11)")
+    if (CMAKE_CXX_STANDARD LESS 14)
+      message(FATAL_ERROR "CMAKE_CXX_STANDARD is less than 14, please specify at least SET(CMAKE_CXX_STANDARD 14)")
     endif()
   endif()
   if (NOT DEFINED CMAKE_CXX_STANDARD_REQUIRED)
@@ -342,7 +342,7 @@
     add_definitions("-DGRPC_XDS_USER_AGENT_NAME_SUFFIX=\"csharp\"" "-DGRPC_XDS_USER_AGENT_VERSION_SUFFIX=\"${settings.csharp_version}\"")
   endif()
 
-  if(UNIX)
+  if(UNIX AND NOT HAIKU)
     # -pthread does more than -lpthread
     set(THREADS_PREFER_PTHREAD_FLAG ON)
     find_package(Threads)

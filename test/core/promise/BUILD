@@ -140,7 +140,6 @@ grpc_cc_test(
     uses_event_engine = False,
     uses_polling = False,
     deps = [
-        "//:capture",
         "//:promise",
         "//:promise_factory",
         "//test/core/util:grpc_suppressions",
@@ -375,6 +374,7 @@ grpc_cc_test(
     deps = [
         "test_wakeup_schedulers",
         "//:activity",
+        "//:exec_ctx",
         "//:grpc",
         "//:sleep",
         "//test/core/util:grpc_suppressions",
