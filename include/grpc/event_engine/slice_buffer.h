@@ -54,12 +54,18 @@ class SliceBuffer {
   SliceBuffer(const SliceBuffer& other) = delete;
   SliceBuffer(SliceBuffer&& other) noexcept
       : slice_buffer_(other.slice_buffer_) {
-    grpc_slice_buffer_reset_and_unref(&slice_buffer_);
+    grpc_slice_buffer_init(&slice_buffer_);
     grpc_slice_buffer_swap(&slice_buffer_, &other.slice_buffer_);
   }
   /// Upon destruction, the underlying raw slice buffer is cleaned out and all
   /// slices are unreffed.
   ~SliceBuffer() { grpc_slice_buffer_destroy(&slice_buffer_); }
+
+  SliceBuffer& operator=(const SliceBuffer&) = delete;
+  SliceBuffer& operator=(SliceBuffer&& other) noexcept {
+    grpc_slice_buffer_swap(&slice_buffer_, &other.slice_buffer_);
+    return *this;
+  }
 
   /// Appends a new slice into the SliceBuffer and makes an attempt to merge
   /// this slice with the last slice in the SliceBuffer.
@@ -99,7 +105,7 @@ class SliceBuffer {
   size_t Length() { return slice_buffer_.length; }
 
   /// Return a pointer to the back raw grpc_slice_buffer
-  grpc_slice_buffer* RawSliceBuffer() { return &slice_buffer_; }
+  grpc_slice_buffer* c_slice_buffer() { return &slice_buffer_; }
 
  private:
   /// The backing raw slice buffer.
