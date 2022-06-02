@@ -102,12 +102,14 @@ FileWatcherAuthorizationPolicyProvider::FileWatcherAuthorizationPolicyProvider(
       if (value != nullptr) {
         return;
       }
+      gpr_log(GPR_DEBUG, "Start Reloading...");
       absl::Status status = provider->ForceUpdate();
       if (GRPC_TRACE_FLAG_ENABLED(grpc_authz_trace) && !status.ok()) {
         gpr_log(GPR_ERROR,
                 "authorization policy reload status. code=%d error_details=%s",
                 status.code(), std::string(status.message()).c_str());
       }
+      gpr_log(GPR_DEBUG, "End Reloading...");
     }
   };
   refresh_thread_ = absl::make_unique<Thread>(
@@ -126,6 +128,7 @@ absl::Status FileWatcherAuthorizationPolicyProvider::ForceUpdate() {
     return absl::OkStatus();
   }
   file_contents_ = std::move(*file_contents);
+  gpr_log(GPR_DEBUG, "File updated...");
   auto rbac_policies_or = GenerateRbacPolicies(file_contents_);
   if (!rbac_policies_or.ok()) {
     return rbac_policies_or.status();
