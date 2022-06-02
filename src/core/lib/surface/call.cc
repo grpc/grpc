@@ -1306,6 +1306,22 @@ void FilterStackCall::BatchControl::FinishBatch(grpc_error_handle error) {
   FinishStep();
 }
 
+void EndOpImmediately(grpc_completion_queue* cq, void* notify_tag,
+                      bool is_notify_tag_closure) {
+  if (!is_notify_tag_closure) {
+    GPR_ASSERT(grpc_cq_begin_op(cq, notify_tag));
+    grpc_cq_end_op(
+        cq, notify_tag, GRPC_ERROR_NONE,
+        [](void*, grpc_cq_completion* completion) { gpr_free(completion); },
+        nullptr,
+        static_cast<grpc_cq_completion*>(
+            gpr_malloc(sizeof(grpc_cq_completion))));
+  } else {
+    Closure::Run(DEBUG_LOCATION, static_cast<grpc_closure*>(notify_tag),
+                 GRPC_ERROR_NONE);
+  }
+}
+
 grpc_call_error FilterStackCall::StartBatch(const grpc_op* ops, size_t nops,
                                             void* notify_tag,
                                             bool is_notify_tag_closure) {
@@ -1331,18 +1347,7 @@ grpc_call_error FilterStackCall::StartBatch(const grpc_op* ops, size_t nops,
   GRPC_CALL_LOG_BATCH(GPR_INFO, ops, nops);
 
   if (nops == 0) {
-    if (!is_notify_tag_closure) {
-      GPR_ASSERT(grpc_cq_begin_op(cq_, notify_tag));
-      grpc_cq_end_op(
-          cq_, notify_tag, GRPC_ERROR_NONE,
-          [](void*, grpc_cq_completion* completion) { gpr_free(completion); },
-          nullptr,
-          static_cast<grpc_cq_completion*>(
-              gpr_malloc(sizeof(grpc_cq_completion))));
-    } else {
-      Closure::Run(DEBUG_LOCATION, static_cast<grpc_closure*>(notify_tag),
-                   GRPC_ERROR_NONE);
-    }
+    EndOpImmediately(cq_, notify_tag, is_notify_tag_closure);
     error = GRPC_CALL_OK;
     goto done;
   }
@@ -1795,7 +1800,23 @@ class PromiseBasedCall : public Call {
 
   class Completion {
    public:
+    Completion() : index_(kNullIndex) {}
+    ~Completion() { GPR_ASSERT(index_ == kNullIndex); }
+    explicit Completion(uint8_t index) : index_(index) {}
+    Completion(const Completion& other) = delete;
+    Completion& operator=(const Completion& other) = delete;
+    Completion(Completion&& other) noexcept : index_(other.index_) {
+      other.index_ = kNullIndex;
+    }
+    Completion& operator=(Completion&& other) noexcept {
+      GPR_ASSERT(index_ == kNullIndex);
+      index_ = other.index_;
+      other.index_ = kNullIndex;
+      return *this;
+    }
+
    private:
+    static constexpr const uint8_t kNullIndex = 255;
     uint8_t index_;
   };
 
@@ -1820,6 +1841,8 @@ class PromiseBasedCall : public Call {
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
 
   virtual void Update() ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
+
+  grpc_completion_queue* cq();
 
  private:
   grpc_metadata_batch* CToMetadata(grpc_metadata* metadata, size_t count);
@@ -1875,6 +1898,12 @@ void* PromiseBasedCall::ContextGet(grpc_context_index elem) const {
   return context_[elem].value;
 }
 
+PromiseBasedCall::Completion PromiseBasedCall::StartCompletion(
+    void* tag, bool is_closure, const grpc_op* ops, size_t num_ops) {
+  Completion c(BatchSlotForOp(ops[0].op));
+  return c;
+}
+
 ///////////////////////////////////////////////////////////////////////////////
 // ClientPromiseBasedCall
 
@@ -1914,6 +1943,10 @@ grpc_call_error ClientPromiseBasedCall::StartBatch(const grpc_op* ops,
                                                    void* notify_tag,
                                                    bool is_notify_tag_closure) {
   MutexLock lock(mu());
+  if (nops == 0) {
+    EndOpImmediately(cq(), notify_tag, is_notify_tag_closure);
+    return GRPC_CALL_OK;
+  }
   Completion completion =
       StartCompletion(notify_tag, is_notify_tag_closure, ops, nops);
   for (size_t op_idx = 0; op_idx < nops; op_idx++) {
@@ -1958,6 +1991,7 @@ grpc_call_error ClientPromiseBasedCall::StartBatch(const grpc_op* ops,
         abort();  // unreachable
     }
   }
+  FinishCompletion(&completion);
   return GRPC_CALL_OK;
 }
 
