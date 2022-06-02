@@ -177,6 +177,11 @@ class RingHash : public LoadBalancingPolicy {
       return connectivity_state_.load(std::memory_order_relaxed);
     }
 
+    absl::Status connectivity_status() const {
+      MutexLock lock(&mu_);
+      return connectivity_status_;
+    }
+
    private:
     // Performs connectivity state updates that need to be done only
     // after we have started watching.
@@ -193,6 +198,9 @@ class RingHash : public LoadBalancingPolicy {
     // so we skip any interim stops in CONNECTING.
     // Uses an atomic so that it can be accessed outside of the WorkSerializer.
     std::atomic<grpc_connectivity_state> connectivity_state_{GRPC_CHANNEL_IDLE};
+
+    mutable Mutex mu_;
+    absl::Status connectivity_status_ ABSL_GUARDED_BY(&mu_);
   };
 
   // A list of subchannels.
@@ -458,7 +466,7 @@ RingHash::PickResult RingHash::Picker::Pick(PickArgs args) {
   uint64_t h;
   if (!absl::SimpleAtoi(hash, &h)) {
     return PickResult::Fail(
-        absl::InternalError("xds ring hash value is not a number"));
+        absl::InternalError("ring hash value is not a number"));
   }
   const std::vector<Ring::Entry>& ring = ring_->ring();
   // Ported from https://github.com/RJ/ketama/blob/master/libketama/ketama.c
@@ -553,8 +561,9 @@ RingHash::PickResult RingHash::Picker::Pick(PickArgs args) {
       }
     }
   }
-  return PickResult::Fail(absl::UnavailableError(
-      "xds ring hash found a subchannel that is in TRANSIENT_FAILURE state"));
+  return PickResult::Fail(absl::UnavailableError(absl::StrCat(
+      "ring hash cannot find a connected subchannel; first failure: ",
+      ring[first_index].subchannel->connectivity_status().ToString())));
 }
 
 //
@@ -719,20 +728,34 @@ void RingHash::RingHashSubchannelData::ProcessConnectivityChangeLocked(
   // picker behavior.
   // If the last recorded state was TRANSIENT_FAILURE, ignore the update
   // unless the new state is READY.
+  bool update_status = true;
+  absl::Status status = connectivity_status();
   if (last_connectivity_state == GRPC_CHANNEL_TRANSIENT_FAILURE &&
-      new_state != GRPC_CHANNEL_READY) {
+      new_state != GRPC_CHANNEL_READY &&
+      new_state != GRPC_CHANNEL_TRANSIENT_FAILURE) {
     new_state = GRPC_CHANNEL_TRANSIENT_FAILURE;
+    {
+      MutexLock lock(&mu_);
+      status = connectivity_status_;
+    }
+    update_status = false;
   }
   // Update state counters used for aggregation.
   subchannel_list()->UpdateStateCountersLocked(last_connectivity_state,
                                                new_state);
+  // Update status seen by picker if needed.
+  if (update_status) {
+    MutexLock lock(&mu_);
+    connectivity_status_ = connectivity_status();
+  }
   // Update last seen state, also used by picker.
   connectivity_state_.store(new_state, std::memory_order_relaxed);
   // Update the RH policy's connectivity state, creating new picker and new
   // ring.
   subchannel_list()->UpdateRingHashConnectivityStateLocked(
       Index(), connection_attempt_complete,
-      absl::UnavailableError("connections to backends failing"));
+      absl::UnavailableError(absl::StrCat(
+          "no reachable subchannels; last error: ", status.ToString())));
 }
 
 //
