@@ -64,6 +64,7 @@
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/polling_entity.h"
 #include "src/core/lib/profiling/timers.h"
+#include "src/core/lib/promise/pipe.h"
 #include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/slice/slice_buffer.h"
 #include "src/core/lib/slice/slice_internal.h"
@@ -1815,6 +1816,8 @@ class PromiseBasedCall : public Call {
   Completion StartCompletion(void* tag, bool is_closure, const grpc_op* ops,
                              size_t num_ops) ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
 
+  virtual void Update() ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
+
  private:
   grpc_metadata_batch* CToMetadata(grpc_metadata* metadata, size_t count);
 
@@ -1874,17 +1877,29 @@ void* PromiseBasedCall::ContextGet(grpc_context_index elem) const {
 
 class ClientPromiseBasedCall final : public PromiseBasedCall {
  public:
-  using PromiseBasedCall::PromiseBasedCall;
+  ClientPromiseBasedCall();
+
+  absl::string_view GetServerAuthority() const override;
 
   grpc_call_error StartBatch(const grpc_op* ops, size_t nops, void* notify_tag,
                              bool is_notify_tag_closure) override;
 
  private:
+  void Update() override ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu());
+
+  PipeSender<SliceBuffer>* const client_to_server_messages_
+      ABSL_PT_GUARDED_BY(mu());
+  PipeReceiver<SliceBuffer>* const server_to_client_messages_
+      ABSL_PT_GUARDED_BY(mu());
+
   grpc_metadata_array* recv_initial_metadata_ ABSL_GUARDED_BY(mu()) = nullptr;
   grpc_op::grpc_op_data::grpc_op_recv_status_on_client recv_status_on_client_
       ABSL_GUARDED_BY(mu());
+  absl::optional<PipeSender<SliceBuffer>::PushType> outstanding_send_
+      ABSL_GUARDED_BY(mu());
   Completion recv_initial_metadata_completion_ ABSL_GUARDED_BY(mu());
   Completion recv_status_on_client_completion_ ABSL_GUARDED_BY(mu());
+  Completion send_message_completion_ ABSL_GUARDED_BY(mu());
 };
 
 grpc_call_error ClientPromiseBasedCall::StartBatch(const grpc_op* ops,
@@ -1913,9 +1928,20 @@ grpc_call_error ClientPromiseBasedCall::StartBatch(const grpc_op* ops,
         recv_status_on_client_ = op.data.recv_status_on_client;
         recv_status_on_client_completion_ = completion;
       } break;
+      case GRPC_OP_SEND_MESSAGE: {
+        send_message_completion_ = completion;
+        send_buffer_.emplace();
+        grpc_slice_buffer_swap(
+            &op.data.send_message.send_message->data.raw.slice_buffer,
+            send_buffer_->c_slice_buffer());
+      } break;
     }
   }
   return GRPC_CALL_OK;
+}
+
+void ClientPromiseBasedCall::Update() {
+  if (send_buffer_.has_value() &&) PromiseBasedCall::Update();
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -1925,8 +1951,14 @@ class ServerPromiseBasedCall final : public PromiseBasedCall {
  public:
   using PromiseBasedCall::PromiseBasedCall;
 
+  absl::string_view GetServerAuthority() const override;
+
   grpc_call_error StartBatch(const grpc_op* ops, size_t nops, void* notify_tag,
                              bool is_notify_tag_closure) override;
+
+ private:
+  PipeReceiver<SliceBuffer>* client_to_server_messages_ ABSL_GUARDED_BY(mu());
+  PipeSender<SliceBuffer>* server_to_client_messages_ ABSL_GUARDED_BY(mu());
 };
 
 grpc_call_error ServerPromiseBasedCall::StartBatch(const grpc_op* ops,

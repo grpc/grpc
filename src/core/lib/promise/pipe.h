@@ -154,6 +154,8 @@ class Center {
 template <typename T>
 class PipeSender {
  public:
+  using PushType = pipe_detail::Push<T>;
+
   PipeSender(const PipeSender&) = delete;
   PipeSender& operator=(const PipeSender&) = delete;
 
@@ -175,7 +177,7 @@ class PipeSender {
   // Returns a promise that will resolve to a bool - true if the message was
   // sent, false if it could never be sent. Blocks the promise until the
   // receiver is either closed or able to receive another message.
-  pipe_detail::Push<T> Push(T value);
+  PushType Push(T value);
 
  private:
   friend struct Pipe<T>;

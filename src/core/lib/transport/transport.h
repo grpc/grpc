@@ -53,6 +53,7 @@
 #include "src/core/lib/promise/arena_promise.h"
 #include "src/core/lib/promise/context.h"
 #include "src/core/lib/promise/latch.h"
+#include "src/core/lib/promise/pipe.h"
 #include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/slice/slice_buffer.h"
@@ -159,8 +160,19 @@ using ClientMetadataHandle = MetadataHandle<ClientMetadata>;
 using ServerMetadataHandle = MetadataHandle<grpc_metadata_batch>;
 
 struct CallArgs {
+  // Initial metadata from the client to the server.
+  // During promise setup this can be manipulated by filters (and then
+  // passed on to the next filter).
   ClientMetadataHandle client_initial_metadata;
+  // Initial metadata from the server to the client.
+  // Set once when it's available.
+  // During promise setup filters can substitute their own latch for this
+  // and consequently intercept the sent value and mutate/observe it.
   Latch<ServerMetadata*>* server_initial_metadata;
+  // Messages travelling from the client to the server.
+  PipeReceiver<SliceBuffer>* client_to_server_messages;
+  // Messages travelling from the server to the client.
+  PipeSender<SliceBuffer>* server_to_client_messages;
 };
 
 using NextPromiseFactory =
