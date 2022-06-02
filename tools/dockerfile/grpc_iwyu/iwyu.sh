@@ -38,7 +38,7 @@ sed -i 's,^#!/usr/bin/env python,#!/usr/bin/env python3,g' ${IWYU_ROOT}/iwyu/iwy
 sed -i 's,^#!/usr/bin/env python,#!/usr/bin/env python3,g' ${IWYU_ROOT}/iwyu/fix_includes.py
 
 cat compile_commands.json                            \
-  | sed "s/ -DNEBUG//g"                              \
+  | sed "s/ -DNDEBUG//g"                              \
   | sed "s,\"file\": \",\"file\": \"${IWYU_ROOT}/,g" \
   > compile_commands_for_iwyu.json
 
