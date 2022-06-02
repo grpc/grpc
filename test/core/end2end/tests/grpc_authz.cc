@@ -47,10 +47,6 @@ static gpr_timespec n_seconds_from_now(int n) {
   return grpc_timeout_seconds_to_deadline(n);
 }
 
-static gpr_timespec five_seconds_from_now(void) {
-  return n_seconds_from_now(5);
-}
-
 static void wait_for_policy_reload(void) {
   // Wait for the provider's refresh thread to read the updated files.
   // TODO(jtattermusch): Refactor the tests to use a more reliable mechanism of
@@ -61,7 +57,7 @@ static void wait_for_policy_reload(void) {
 static void drain_cq(grpc_completion_queue* cq) {
   grpc_event ev;
   do {
-    ev = grpc_completion_queue_next(cq, five_seconds_from_now(), nullptr);
+    ev = grpc_completion_queue_next(cq, n_seconds_from_now(5), nullptr);
   } while (ev.type != GRPC_QUEUE_SHUTDOWN);
 }
 
@@ -109,7 +105,7 @@ static void test_allow_authorized_request(grpc_end2end_test_fixture f) {
 
   cq_verifier* cqv = cq_verifier_create(f.cq);
 
-  gpr_timespec deadline = five_seconds_from_now();
+  gpr_timespec deadline = n_seconds_from_now(15);
   c = grpc_channel_create_call(f.client, nullptr, GRPC_PROPAGATE_DEFAULTS, f.cq,
                                grpc_slice_from_static_string("/foo"), nullptr,
                                deadline, nullptr);
@@ -210,7 +206,7 @@ static void test_deny_unauthorized_request(grpc_end2end_test_fixture f) {
 
   cq_verifier* cqv = cq_verifier_create(f.cq);
 
-  gpr_timespec deadline = five_seconds_from_now();
+  gpr_timespec deadline = n_seconds_from_now(15);
   c = grpc_channel_create_call(f.client, nullptr, GRPC_PROPAGATE_DEFAULTS, f.cq,
                                grpc_slice_from_static_string("/foo"), nullptr,
                                deadline, nullptr);
@@ -668,7 +664,7 @@ static void test_file_watcher_recovers_from_failure(
   grpc_channel_args server_args = {GPR_ARRAY_SIZE(args), args};
 
   grpc_end2end_test_fixture f = begin_test(
-      config, "test_file_watcher_valid_policy_reload", nullptr, &server_args);
+      config, "test_file_watcher_recovers_from_failure", nullptr, &server_args);
   grpc_authorization_policy_provider_release(provider);
   test_allow_authorized_request(f);
   // Replace exisiting policy in file with an invalid policy.
