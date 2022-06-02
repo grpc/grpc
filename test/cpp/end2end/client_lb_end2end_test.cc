@@ -1403,7 +1403,7 @@ TEST_F(RoundRobinTest, UpdateInError) {
   EXPECT_EQ(10, servers_[0]->service_.request_count());
   EXPECT_EQ(0, servers_[1]->service_.request_count());
   servers_[0]->service_.ResetCounters();
-  // Send an update adding an unreachable server and server 2.
+  // Send an update adding an unreachable server and server 1.
   std::vector<int> ports = {servers_[0]->port_, grpc_pick_unused_port_or_die(),
                             servers_[1]->port_};
   response_generator.SetNextResolution(ports);
@@ -1411,12 +1411,20 @@ TEST_F(RoundRobinTest, UpdateInError) {
                  /*timeout=*/absl::Seconds(60));
   // Send a bunch more RPCs.  They should all succeed and should be
   // split evenly between the two servers.
+  // Note: The split may be slightly uneven because of an extra picker
+  // update that can happen if the subchannels for servers 0 and 1
+  // report READY before the subchannel for the unreachable server
+  // transitions from CONNECTING to TRANSIENT_FAILURE.
   for (size_t i = 0; i < 10; ++i) {
     CheckRpcSendOk(stub, DEBUG_LOCATION, /*wait_for_ready=*/false,
                    /*load_report=*/nullptr, /*timeout_ms=*/4000);
   }
-  EXPECT_EQ(5, servers_[0]->service_.request_count());
-  EXPECT_EQ(5, servers_[1]->service_.request_count());
+  EXPECT_THAT(servers_[0]->service_.request_count(),
+              ::testing::AllOf(::testing::Ge(4), ::testing::Le(6)));
+  EXPECT_THAT(servers_[1]->service_.request_count(),
+              ::testing::AllOf(::testing::Ge(4), ::testing::Le(6)));
+  EXPECT_EQ(10, servers_[0]->service_.request_count() +
+                    servers_[1]->service_.request_count());
 }
 
 TEST_F(RoundRobinTest, ManyUpdates) {

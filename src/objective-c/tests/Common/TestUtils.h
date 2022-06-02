@@ -41,4 +41,9 @@ FOUNDATION_EXPORT NSString *GRPCGetLocalInteropTestServerAddressSSL(void);
  */
 FOUNDATION_EXPORT NSString *GRPCGetRemoteInteropTestServerAddress(void);
 
+/**
+ * Common utility to print interop server address information to console via NSLog.
+ */
+FOUNDATION_EXPORT void GRPCPrintInteropTestServerDebugInfo(void);
+
 NS_ASSUME_NONNULL_END

@@ -104,6 +104,7 @@ class Call : public CppImplOf<Call, grpc_call> {
                                      bool is_notify_tag_closure) = 0;
   virtual bool failed_before_recv_message() const = 0;
   virtual bool is_trailers_only() const = 0;
+  virtual absl::string_view GetServerAuthority() const = 0;
   virtual void ExternalRef() = 0;
   virtual void ExternalUnref() = 0;
   virtual void InternalRef(const char* reason) = 0;
@@ -232,6 +233,13 @@ class FilterStackCall final : public Call {
 
   bool failed_before_recv_message() const override {
     return call_failed_before_recv_message_;
+  }
+
+  absl::string_view GetServerAuthority() const override {
+    const Slice* authority_metadata =
+        recv_initial_metadata_.get_pointer(HttpAuthorityMetadata());
+    if (authority_metadata == nullptr) return "";
+    return authority_metadata->as_string_view();
   }
 
   grpc_compression_algorithm test_only_compression_algorithm() override {
@@ -1940,6 +1948,10 @@ bool grpc_call_is_trailers_only(const grpc_call* call) {
 
 int grpc_call_failed_before_recv_message(const grpc_call* c) {
   return grpc_core::Call::FromC(c)->failed_before_recv_message();
+}
+
+absl::string_view grpc_call_server_authority(const grpc_call* call) {
+  return grpc_core::Call::FromC(call)->GetServerAuthority();
 }
 
 const char* grpc_call_error_to_string(grpc_call_error error) {
