@@ -130,11 +130,13 @@ absl::Status FileWatcherAuthorizationPolicyProvider::ForceUpdate() {
   if (!rbac_policies_or.ok()) {
     return rbac_policies_or.status();
   }
-  MutexLock lock(&mu_);
-  allow_engine_ = MakeRefCounted<GrpcAuthorizationEngine>(
-      std::move(rbac_policies_or->allow_policy));
-  deny_engine_ = MakeRefCounted<GrpcAuthorizationEngine>(
-      std::move(rbac_policies_or->deny_policy));
+  {
+    MutexLock lock(&mu_);
+    allow_engine_ = MakeRefCounted<GrpcAuthorizationEngine>(
+        std::move(rbac_policies_or->allow_policy));
+    deny_engine_ = MakeRefCounted<GrpcAuthorizationEngine>(
+        std::move(rbac_policies_or->deny_policy));
+  }
   if (GRPC_TRACE_FLAG_ENABLED(grpc_authz_trace)) {
     gpr_log(GPR_INFO,
             "authorization policy reload status: successfully loaded new "
