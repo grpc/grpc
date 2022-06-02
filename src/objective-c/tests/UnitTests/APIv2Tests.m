@@ -24,6 +24,7 @@
 #include <grpc/grpc.h>
 #include <grpc/support/port_platform.h>
 
+#import "../Common/GRPCBlockCallbackResponseHandler.h"
 #import "../Common/TestUtils.h"
 #import "../version.h"
 
@@ -46,81 +47,6 @@ static const NSTimeInterval kInvertedTimeout = 2;
 @interface GRPCCall2 () {
  @public
   GRPCCall *_call;
-}
-
-@end
-
-// Convenience class to use blocks as callbacks
-@interface ClientTestsBlockCallbacks : NSObject <GRPCResponseHandler>
-
-- (instancetype)initWithInitialMetadataCallback:(void (^)(NSDictionary *))initialMetadataCallback
-                                messageCallback:(void (^)(id))messageCallback
-                                  closeCallback:(void (^)(NSDictionary *, NSError *))closeCallback
-                              writeDataCallback:(void (^)(void))writeDataCallback;
-
-- (instancetype)initWithInitialMetadataCallback:(void (^)(NSDictionary *))initialMetadataCallback
-                                messageCallback:(void (^)(id))messageCallback
-                                  closeCallback:(void (^)(NSDictionary *, NSError *))closeCallback;
-
-@end
-
-@implementation ClientTestsBlockCallbacks {
-  void (^_initialMetadataCallback)(NSDictionary *);
-  void (^_messageCallback)(id);
-  void (^_closeCallback)(NSDictionary *, NSError *);
-  void (^_writeDataCallback)(void);
-  dispatch_queue_t _dispatchQueue;
-}
-
-- (instancetype)initWithInitialMetadataCallback:(void (^)(NSDictionary *))initialMetadataCallback
-                                messageCallback:(void (^)(id))messageCallback
-                                  closeCallback:(void (^)(NSDictionary *, NSError *))closeCallback
-                              writeDataCallback:(void (^)(void))writeDataCallback {
-  if ((self = [super init])) {
-    _initialMetadataCallback = initialMetadataCallback;
-    _messageCallback = messageCallback;
-    _closeCallback = closeCallback;
-    _writeDataCallback = writeDataCallback;
-    _dispatchQueue = dispatch_queue_create(nil, DISPATCH_QUEUE_SERIAL);
-  }
-  return self;
-}
-
-- (instancetype)initWithInitialMetadataCallback:(void (^)(NSDictionary *))initialMetadataCallback
-                                messageCallback:(void (^)(id))messageCallback
-                                  closeCallback:(void (^)(NSDictionary *, NSError *))closeCallback {
-  return [self initWithInitialMetadataCallback:initialMetadataCallback
-                               messageCallback:messageCallback
-                                 closeCallback:closeCallback
-                             writeDataCallback:nil];
-}
-
-- (void)didReceiveInitialMetadata:(NSDictionary *)initialMetadata {
-  if (self->_initialMetadataCallback) {
-    self->_initialMetadataCallback(initialMetadata);
-  }
-}
-
-- (void)didReceiveRawMessage:(GPBMessage *)message {
-  if (self->_messageCallback) {
-    self->_messageCallback(message);
-  }
-}
-
-- (void)didCloseWithTrailingMetadata:(NSDictionary *)trailingMetadata error:(NSError *)error {
-  if (self->_closeCallback) {
-    self->_closeCallback(trailingMetadata, error);
-  }
-}
-
-- (void)didWriteData {
-  if (self->_writeDataCallback) {
-    self->_writeDataCallback();
-  }
-}
-
-- (dispatch_queue_t)dispatchQueue {
-  return _dispatchQueue;
 }
 
 @end
@@ -154,55 +80,6 @@ static const NSTimeInterval kInvertedTimeout = 2;
                                                             method:@"FullDuplexCall"];
 }
 
-- (void)testMetadata {
-  __weak XCTestExpectation *expectation = [self expectationWithDescription:@"RPC unauthorized."];
-
-  RMTSimpleRequest *request = [RMTSimpleRequest message];
-  request.fillUsername = YES;
-  request.fillOauthScope = YES;
-
-  GRPCRequestOptions *callRequest =
-      [[GRPCRequestOptions alloc] initWithHost:GRPCGetRemoteInteropTestServerAddress()
-                                          path:kUnaryCallMethod.HTTPPath
-                                        safety:GRPCCallSafetyDefault];
-  __block NSDictionary *init_md;
-  __block NSDictionary *trailing_md;
-  GRPCMutableCallOptions *options = [[GRPCMutableCallOptions alloc] init];
-  options.oauth2AccessToken = @"bogusToken";
-  GRPCCall2 *call = [[GRPCCall2 alloc]
-      initWithRequestOptions:callRequest
-             responseHandler:[[ClientTestsBlockCallbacks alloc]
-                                 initWithInitialMetadataCallback:^(NSDictionary *initialMetadata) {
-                                   init_md = initialMetadata;
-                                 }
-                                 messageCallback:^(id message) {
-                                   XCTFail(@"Received unexpected response.");
-                                 }
-                                 closeCallback:^(NSDictionary *trailingMetadata, NSError *error) {
-                                   trailing_md = trailingMetadata;
-                                   if (error) {
-                                     XCTAssertEqual(error.code, 16,
-                                                    @"Finished with unexpected error: %@", error);
-                                     XCTAssertEqualObjects(init_md,
-                                                           error.userInfo[kGRPCHeadersKey]);
-                                     XCTAssertEqualObjects(trailing_md,
-                                                           error.userInfo[kGRPCTrailersKey]);
-                                     NSString *challengeHeader = init_md[@"www-authenticate"];
-                                     XCTAssertGreaterThan(challengeHeader.length, 0,
-                                                          @"No challenge in response headers %@",
-                                                          init_md);
-                                     [expectation fulfill];
-                                   }
-                                 }]
-                 callOptions:options];
-
-  [call start];
-  [call writeData:[request data]];
-  [call finish];
-
-  [self waitForExpectationsWithTimeout:kTestTimeout handler:nil];
-}
-
 - (void)testUserAgentPrefix {
   __weak XCTestExpectation *completion = [self expectationWithDescription:@"Empty RPC completed."];
   __weak XCTestExpectation *recvInitialMd =
@@ -221,7 +98,7 @@ static const NSTimeInterval kInvertedTimeout = 2;
   GRPCCall2 *call = [[GRPCCall2 alloc]
       initWithRequestOptions:request
              responseHandler:
-                 [[ClientTestsBlockCallbacks alloc]
+                 [[GRPCBlockCallbackResponseHandler alloc]
                      initWithInitialMetadataCallback:^(NSDictionary *initialMetadata) {
                        NSString *userAgent = initialMetadata[@"x-grpc-test-echo-useragent"];
                        // Test the regex is correct
@@ -293,7 +170,7 @@ static const NSTimeInterval kInvertedTimeout = 2;
   options.authTokenProvider = self;
   __block GRPCCall2 *call = [[GRPCCall2 alloc]
       initWithRequestOptions:requestOptions
-             responseHandler:[[ClientTestsBlockCallbacks alloc]
+             responseHandler:[[GRPCBlockCallbackResponseHandler alloc]
                                  initWithInitialMetadataCallback:nil
                                                  messageCallback:nil
                                                    closeCallback:^(NSDictionary *trailingMetadata,
@@ -325,7 +202,7 @@ static const NSTimeInterval kInvertedTimeout = 2;
 
   GRPCCall2 *call = [[GRPCCall2 alloc]
       initWithRequestOptions:requestOptions
-             responseHandler:[[ClientTestsBlockCallbacks alloc]
+             responseHandler:[[GRPCBlockCallbackResponseHandler alloc]
                                  initWithInitialMetadataCallback:nil
                                                  messageCallback:nil
                                                    closeCallback:^(NSDictionary *trailingMetadata,
@@ -358,7 +235,7 @@ static const NSTimeInterval kInvertedTimeout = 2;
   GRPCCall2 *call = [[GRPCCall2 alloc]
       initWithRequestOptions:requestOptions
              responseHandler:
-                 [[ClientTestsBlockCallbacks alloc] initWithInitialMetadataCallback:nil
+                 [[GRPCBlockCallbackResponseHandler alloc] initWithInitialMetadataCallback:nil
                      messageCallback:^(NSData *data) {
                        XCTFail(@"Failure: response received; Expect: no response received.");
                      }
@@ -396,7 +273,8 @@ static const NSTimeInterval kInvertedTimeout = 2;
   NSDate *startTime = [NSDate date];
   GRPCCall2 *call = [[GRPCCall2 alloc]
       initWithRequestOptions:requestOptions
-             responseHandler:[[ClientTestsBlockCallbacks alloc] initWithInitialMetadataCallback:nil
+             responseHandler:[[GRPCBlockCallbackResponseHandler alloc]
+                                 initWithInitialMetadataCallback:nil
                                  messageCallback:^(NSData *data) {
                                    XCTFail(@"Received message. Should not reach here.");
                                  }
@@ -443,7 +321,8 @@ static const NSTimeInterval kInvertedTimeout = 2;
   options.compressionAlgorithm = GRPCCompressGzip;
   GRPCCall2 *call = [[GRPCCall2 alloc]
       initWithRequestOptions:requestOptions
-             responseHandler:[[ClientTestsBlockCallbacks alloc] initWithInitialMetadataCallback:nil
+             responseHandler:[[GRPCBlockCallbackResponseHandler alloc]
+                                 initWithInitialMetadataCallback:nil
                                  messageCallback:^(NSData *data) {
                                    NSError *error;
                                    RMTSimpleResponse *response =
@@ -484,7 +363,7 @@ static const NSTimeInterval kInvertedTimeout = 2;
   options.flowControlEnabled = YES;
   GRPCCall2 *call =
       [[GRPCCall2 alloc] initWithRequestOptions:callRequest
-                                responseHandler:[[ClientTestsBlockCallbacks alloc]
+                                responseHandler:[[GRPCBlockCallbackResponseHandler alloc]
                                                     initWithInitialMetadataCallback:nil
                                                                     messageCallback:nil
                                                                       closeCallback:nil
@@ -527,7 +406,8 @@ static const NSTimeInterval kInvertedTimeout = 2;
   __block int unblocked = NO;
   GRPCCall2 *call = [[GRPCCall2 alloc]
       initWithRequestOptions:callRequest
-             responseHandler:[[ClientTestsBlockCallbacks alloc] initWithInitialMetadataCallback:nil
+             responseHandler:[[GRPCBlockCallbackResponseHandler alloc]
+                                 initWithInitialMetadataCallback:nil
                                  messageCallback:^(NSData *message) {
                                    if (!unblocked) {
                                      [expectBlockedMessage fulfill];
@@ -586,22 +466,23 @@ static const NSTimeInterval kInvertedTimeout = 2;
   options.transportType = GRPCTransportTypeInsecure;
   options.flowControlEnabled = YES;
   __block NSUInteger messageId = 0;
-  __block GRPCCall2 *call = [[GRPCCall2 alloc]
-      initWithRequestOptions:callRequest
-             responseHandler:[[ClientTestsBlockCallbacks alloc] initWithInitialMetadataCallback:nil
-                                 messageCallback:^(NSData *message) {
-                                   if (messageId <= 1) {
-                                     [expectPassedMessage fulfill];
-                                   } else {
-                                     [expectBlockedMessage fulfill];
-                                   }
-                                   messageId++;
-                                 }
-                                 closeCallback:nil
-                                 writeDataCallback:^{
-                                   [expectWriteTwice fulfill];
-                                 }]
-                 callOptions:options];
+  __block GRPCCall2 *call =
+      [[GRPCCall2 alloc] initWithRequestOptions:callRequest
+                                responseHandler:[[GRPCBlockCallbackResponseHandler alloc]
+                                                    initWithInitialMetadataCallback:nil
+                                                    messageCallback:^(NSData *message) {
+                                                      if (messageId <= 1) {
+                                                        [expectPassedMessage fulfill];
+                                                      } else {
+                                                        [expectBlockedMessage fulfill];
+                                                      }
+                                                      messageId++;
+                                                    }
+                                                    closeCallback:nil
+                                                    writeDataCallback:^{
+                                                      [expectWriteTwice fulfill];
+                                                    }]
+                                    callOptions:options];
 
   [call receiveNextMessages:2];
   [call start];
@@ -631,7 +512,8 @@ static const NSTimeInterval kInvertedTimeout = 2;
   __block BOOL closed = NO;
   GRPCCall2 *call = [[GRPCCall2 alloc]
       initWithRequestOptions:callRequest
-             responseHandler:[[ClientTestsBlockCallbacks alloc] initWithInitialMetadataCallback:nil
+             responseHandler:[[GRPCBlockCallbackResponseHandler alloc]
+                                 initWithInitialMetadataCallback:nil
                                  messageCallback:^(NSData *message) {
                                    [expectPassedMessage fulfill];
                                    XCTAssertFalse(closed);
@@ -672,7 +554,8 @@ static const NSTimeInterval kInvertedTimeout = 2;
   __block BOOL closed = NO;
   GRPCCall2 *call = [[GRPCCall2 alloc]
       initWithRequestOptions:callRequest
-             responseHandler:[[ClientTestsBlockCallbacks alloc] initWithInitialMetadataCallback:nil
+             responseHandler:[[GRPCBlockCallbackResponseHandler alloc]
+                                 initWithInitialMetadataCallback:nil
                                  messageCallback:^(NSData *message) {
                                    [expectPassedMessage fulfill];
                                    XCTAssertFalse(closed);
@@ -712,7 +595,8 @@ static const NSTimeInterval kInvertedTimeout = 2;
 
   GRPCCall2 *call = [[GRPCCall2 alloc]
       initWithRequestOptions:requestOptions
-             responseHandler:[[ClientTestsBlockCallbacks alloc] initWithInitialMetadataCallback:nil
+             responseHandler:[[GRPCBlockCallbackResponseHandler alloc]
+                                 initWithInitialMetadataCallback:nil
                                  messageCallback:^(NSData *data) {
                                    XCTFail(@"Received unexpected message");
                                  }
