@@ -1,7 +1,7 @@
 # gRPC Objects with static storage duration
 
-In general, it's discouraged to define gRPC objects with static storage
-duration because it can have a indeterministic crash due to certain
+In general, it's not supported to define gRPC objects with static
+storage duration because it can have a indeterministic crash due to certain
 initialization order or termination order.
 This is a well known issue as describied in
 [Static Initialization Order Fiasco](https://en.cppreference.com/w/cpp/language/siof)
@@ -27,7 +27,7 @@ int main() {
 
 ```
 
-To avoid this problem, you can solve this by defining it
+To address this problem, you can define it
 with non static storage duration as follows.
 
 ```
