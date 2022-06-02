@@ -126,6 +126,9 @@ class PickFirst : public LoadBalancingPolicy {
       in_transient_failure_ = in_transient_failure;
     }
 
+    size_t attempting_index() const { return attempting_index_; }
+    void set_attempting_index(size_t index) { attempting_index_ = index; }
+
     bool AllSubchannelsSeenInitialState() {
       for (size_t i = 0; i < num_subchannels(); ++i) {
         if (!subchannel(i)->connectivity_state().has_value()) return false;
@@ -135,6 +138,7 @@ class PickFirst : public LoadBalancingPolicy {
 
    private:
     bool in_transient_failure_ = false;
+    size_t attempting_index_ = 0;
   };
 
   class Picker : public SubchannelPicker {
@@ -372,6 +376,9 @@ void PickFirst::PickFirstSubchannelData::ProcessConnectivityChangeLocked(
     }
     return;
   }
+  // Ignore any other updates for subchannels we're not currently trying to
+  // connect to.
+  if (Index() != subchannel_list()->attempting_index()) return;
   // Otherwise, process connectivity state.
   switch (new_state) {
     case GRPC_CHANNEL_READY:
@@ -382,6 +389,7 @@ void PickFirst::PickFirstSubchannelData::ProcessConnectivityChangeLocked(
       PickFirstSubchannelData* sd = this;
       size_t next_index =
           (sd->Index() + 1) % subchannel_list()->num_subchannels();
+      subchannel_list()->set_attempting_index(next_index);
       sd = subchannel_list()->subchannel(next_index);
       // If we're tried all subchannels, set state to TRANSIENT_FAILURE.
       if (sd->Index() == 0) {

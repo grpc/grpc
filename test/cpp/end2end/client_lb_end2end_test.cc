@@ -61,6 +61,7 @@
 #include "src/core/lib/service_config/service_config.h"
 #include "src/core/lib/service_config/service_config_impl.h"
 #include "src/core/lib/surface/server.h"
+#include "src/core/lib/transport/connectivity_state.h"
 #include "src/cpp/client/secure_credentials.h"
 #include "src/cpp/server/secure_server_credentials.h"
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
@@ -838,6 +839,135 @@ TEST_F(ClientLbEnd2endTest,
       grpc_core::Duration::FromTimespec(gpr_time_sub(t1, t0));
   gpr_log(GPR_DEBUG, "Waited %" PRId64 " milliseconds", waited.millis());
   EXPECT_LT(waited.millis(), 1000 * grpc_test_slowdown_factor());
+}
+
+TEST_F(
+    PickFirstTest,
+    TriesAllSubchannelsBeforeReportingTransientFailureWithSubchannelSharing) {
+  // A connection attempt injector that allows us to control timing of
+  // connection attempts.
+  class ConnectionInjector : public ConnectionAttemptInjector {
+   private:
+    grpc_core::Mutex mu_;  // Needs to be declared up front.
+
+   public:
+    class Hold {
+     public:
+      Hold(ConnectionInjector* injector, int port)
+          : injector_(injector), port_(port) {}
+
+      int port() const { return port_; }
+
+      void set_queued_attempt(std::unique_ptr<QueuedAttempt> queued_attempt)
+          ABSL_EXCLUSIVE_LOCKS_REQUIRED(&ConnectionInjector::mu_) {
+        queued_attempt_ = std::move(queued_attempt);
+        cv_.Signal();
+      }
+
+      void Wait() {
+        grpc_core::MutexLock lock(&injector_->mu_);
+        while (queued_attempt_ == nullptr) {
+          cv_.Wait(&injector_->mu_);
+        }
+      }
+
+      void Resume() {
+        grpc_core::ExecCtx exec_ctx;
+        std::unique_ptr<QueuedAttempt> attempt;
+        {
+          grpc_core::MutexLock lock(&injector_->mu_);
+          attempt = std::move(queued_attempt_);
+        }
+        attempt->Resume();
+      }
+
+     private:
+      ConnectionInjector* injector_;
+      const int port_;
+      std::unique_ptr<QueuedAttempt> queued_attempt_
+          ABSL_GUARDED_BY(&ConnectionInjector::mu_);
+      grpc_core::CondVar cv_;
+    };
+
+    std::unique_ptr<Hold> AddHold(int port) {
+      grpc_core::MutexLock lock(&mu_);
+      auto hold = absl::make_unique<Hold>(this, port);
+      holds_.push_back(hold.get());
+      return hold;
+    }
+
+    void HandleConnection(grpc_closure* closure, grpc_endpoint** ep,
+                          grpc_pollset_set* interested_parties,
+                          const grpc_channel_args* channel_args,
+                          const grpc_resolved_address* addr,
+                          grpc_core::Timestamp deadline) override {
+      const int port = grpc_sockaddr_get_port(addr);
+      gpr_log(GPR_INFO, "==> HandleConnection(): port=%d", port);
+      {
+        grpc_core::MutexLock lock(&mu_);
+        for (auto it = holds_.begin(); it != holds_.end(); ++it) {
+          Hold* hold = *it;
+          if (port == hold->port()) {
+            gpr_log(GPR_INFO, "*** INTERCEPTING CONNECTION ATTEMPT");
+            hold->set_queued_attempt(absl::make_unique<QueuedAttempt>(
+                closure, ep, interested_parties, channel_args, addr, deadline));
+            holds_.erase(it);
+            return;
+          }
+        }
+      }
+      // Anything we're not holding should proceed normally.
+      AttemptConnection(closure, ep, interested_parties, channel_args, addr,
+                        deadline);
+    }
+
+   private:
+    std::vector<Hold*> holds_;
+  };
+  // Start connection injector.
+  ConnectionInjector injector;
+  injector.Start();
+  // Get 3 unused ports.
+  std::vector<int> ports = {grpc_pick_unused_port_or_die(),
+                            grpc_pick_unused_port_or_die(),
+                            grpc_pick_unused_port_or_die()};
+  // Create channel 1.
+  auto response_generator1 = BuildResolverResponseGenerator();
+  auto channel1 = BuildChannel("pick_first", response_generator1);
+  auto stub1 = BuildStub(channel1);
+  response_generator1.SetNextResolution(ports);
+  // Allow the connection attempts for ports 0 and 1 to fail normally.
+  // Inject a hold for the connection attempt to port 2.
+  auto hold2 = injector.AddHold(ports[2]);
+  // Trigger connection attempt.
+  channel1->GetState(/*try_to_connect=*/true);
+  // Wait for connection attempt to port 2.
+  hold2->Wait();
+  // Now create channel 2.
+  auto response_generator2 = BuildResolverResponseGenerator();
+  auto channel2 = BuildChannel("pick_first", response_generator2);
+  response_generator2.SetNextResolution(ports);
+  // Inject a hold for port 0.
+  auto hold0 = injector.AddHold(ports[0]);
+  // Trigger connection attempt.
+  channel2->GetState(/*try_to_connect=*/true);
+  // Wait for connection attempt to port 0.
+  hold0->Wait();
+  // Now allow the connection attempt to port 2 to complete.  The subchannel
+  // will deliver a TRANSIENT_FAILURE notification to both channels.
+  hold2->Resume();
+  // Channel 1 will report TRANSIENT_FAILURE, because it has now
+  // attempted all subchannels, but channel 2 should continue to report
+  // CONNECTING, because it has not yet tried all subchannels.
+  EXPECT_TRUE(channel1->WaitForStateChange(
+      GRPC_CHANNEL_CONNECTING, grpc_timeout_seconds_to_deadline(5)));
+  EXPECT_EQ(GRPC_CHANNEL_TRANSIENT_FAILURE, channel1->GetState(false));
+  EXPECT_FALSE(channel2->WaitForStateChange(
+      GRPC_CHANNEL_CONNECTING, grpc_timeout_seconds_to_deadline(5)))
+      << "state: "
+      << grpc_core::ConnectivityStateName(channel2->GetState(false));
+  // Clean up.
+  hold0->Resume();
 }
 
 TEST_F(PickFirstTest, Updates) {
