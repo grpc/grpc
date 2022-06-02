@@ -364,19 +364,19 @@ grpc_error_handle ClusterSpecifierPluginParse(
       return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
           "Could not obtrain TypedExtensionConfig for plugin config.");
     }
-    absl::string_view plugin_type;
-    grpc_error_handle error =
-        ExtractExtensionTypeName(context, any, &plugin_type);
-    if (error != GRPC_ERROR_NONE) return error;
+    auto plugin_type = ExtractExtensionTypeName(context, any);
+    if (!plugin_type.ok()) {
+      return absl_status_to_grpc_error(plugin_type.status());
+    }
     bool is_optional = envoy_config_route_v3_ClusterSpecifierPlugin_is_optional(
         cluster_specifier_plugin[i]);
     const XdsClusterSpecifierPluginImpl* cluster_specifier_plugin_impl =
-        XdsClusterSpecifierPluginRegistry::GetPluginForType(plugin_type);
+        XdsClusterSpecifierPluginRegistry::GetPluginForType(plugin_type->type);
     std::string lb_policy_config;
     if (cluster_specifier_plugin_impl == nullptr) {
       if (!is_optional) {
-        return GRPC_ERROR_CREATE_FROM_CPP_STRING(
-            absl::StrCat("Unknown ClusterSpecifierPlugin type ", plugin_type));
+        return GRPC_ERROR_CREATE_FROM_CPP_STRING(absl::StrCat(
+            "Unknown ClusterSpecifierPlugin type ", plugin_type->type));
       }
       // Optional plugin, leave lb_policy_config empty.
     } else {
@@ -629,22 +629,23 @@ grpc_error_handle ParseTypedPerFilterConfig(
             absl::StrCat("no filter config specified for filter name ", key));
       }
     }
-    grpc_error_handle error =
-        ExtractExtensionTypeName(context, any, &filter_type);
-    if (error != GRPC_ERROR_NONE) return error;
+    auto type = ExtractExtensionTypeName(context, any);
+    if (!type.ok()) {
+      return absl_status_to_grpc_error(type.status());
+    }
     const XdsHttpFilterImpl* filter_impl =
-        XdsHttpFilterRegistry::GetFilterForType(filter_type);
+        XdsHttpFilterRegistry::GetFilterForType(type->type);
     if (filter_impl == nullptr) {
       if (is_optional) continue;
       return GRPC_ERROR_CREATE_FROM_CPP_STRING(
-          absl::StrCat("no filter registered for config type ", filter_type));
+          absl::StrCat("no filter registered for config type ", type->type));
     }
     absl::StatusOr<XdsHttpFilterImpl::FilterConfig> filter_config =
         filter_impl->GenerateFilterConfigOverride(
             google_protobuf_Any_value(any), context.arena);
     if (!filter_config.ok()) {
       return GRPC_ERROR_CREATE_FROM_CPP_STRING(absl::StrCat(
-          "filter config for type ", filter_type,
+          "filter config for type ", type->type,
           " failed to parse: ", StatusToString(filter_config.status())));
     }
     (*typed_per_filter_config)[std::string(key)] = std::move(*filter_config);

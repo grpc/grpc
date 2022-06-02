@@ -806,6 +806,8 @@ void Subchannel::ResetBackoff() {
   backoff_.Reset();
   if (state_ == GRPC_CHANNEL_TRANSIENT_FAILURE) {
     grpc_timer_cancel(&retry_timer_);
+  } else if (state_ == GRPC_CHANNEL_CONNECTING) {
+    next_attempt_time_ = ExecCtx::Get()->Now();
   }
 }
 

@@ -60,6 +60,7 @@
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/sockaddr.h"
 #include "src/core/lib/json/json.h"
+#include "src/core/lib/transport/error_utils.h"
 
 namespace grpc_core {
 
@@ -350,30 +351,30 @@ grpc_error_handle HttpConnectionManagerParse(
         return GRPC_ERROR_CREATE_FROM_CPP_STRING(
             absl::StrCat("no filter config specified for filter name ", name));
       }
-      absl::string_view filter_type;
-      grpc_error_handle error =
-          ExtractExtensionTypeName(context, any, &filter_type);
-      if (error != GRPC_ERROR_NONE) return error;
+      auto filter_type = ExtractExtensionTypeName(context, any);
+      if (!filter_type.ok()) {
+        return absl_status_to_grpc_error(filter_type.status());
+      }
       const XdsHttpFilterImpl* filter_impl =
-          XdsHttpFilterRegistry::GetFilterForType(filter_type);
+          XdsHttpFilterRegistry::GetFilterForType(filter_type->type);
       if (filter_impl == nullptr) {
         if (is_optional) continue;
-        return GRPC_ERROR_CREATE_FROM_CPP_STRING(
-            absl::StrCat("no filter registered for config type ", filter_type));
+        return GRPC_ERROR_CREATE_FROM_CPP_STRING(absl::StrCat(
+            "no filter registered for config type ", filter_type->type));
       }
       if ((is_client && !filter_impl->IsSupportedOnClients()) ||
           (!is_client && !filter_impl->IsSupportedOnServers())) {
         if (is_optional) continue;
-        return GRPC_ERROR_CREATE_FROM_CPP_STRING(
-            absl::StrFormat("Filter %s is not supported on %s", filter_type,
-                            is_client ? "clients" : "servers"));
+        return GRPC_ERROR_CREATE_FROM_CPP_STRING(absl::StrFormat(
+            "Filter %s is not supported on %s", filter_type->type,
+            is_client ? "clients" : "servers"));
       }
       absl::StatusOr<XdsHttpFilterImpl::FilterConfig> filter_config =
           filter_impl->GenerateFilterConfig(google_protobuf_Any_value(any),
                                             context.arena);
       if (!filter_config.ok()) {
         return GRPC_ERROR_CREATE_FROM_CPP_STRING(absl::StrCat(
-            "filter config for type ", filter_type,
+            "filter config for type ", filter_type->type,
             " failed to parse: ", StatusToString(filter_config.status())));
       }
       http_connection_manager->http_filters.emplace_back(
@@ -994,10 +995,12 @@ grpc_error_handle LdsResourceParse(
       envoy_config_listener_v3_Listener_api_listener(listener);
   const envoy_config_core_v3_Address* address =
       envoy_config_listener_v3_Listener_address(listener);
-  if (api_listener != nullptr && address != nullptr) {
-    return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-        "Listener has both address and ApiListener");
-  }
+  // TODO(roth): Re-enable the following check once
+  // github.com/istio/istio/issues/38914 is resolved.
+  // if (api_listener != nullptr && address != nullptr) {
+  //   return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+  //       "Listener has both address and ApiListener");
+  // }
   if (api_listener == nullptr && address == nullptr) {
     return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
         "Listener has neither address nor ApiListener");

@@ -30,7 +30,6 @@
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
 #include "absl/strings/str_join.h"
-#include "absl/strings/strip.h"
 #include "envoy/extensions/transport_sockets/tls/v3/common.upb.h"
 #include "envoy/extensions/transport_sockets/tls/v3/tls.upb.h"
 #include "envoy/type/matcher/v3/regex.upb.h"
@@ -376,24 +375,29 @@ grpc_error_handle CommonTlsContext::Parse(
                                        &errors);
 }
 
-grpc_error_handle ExtractExtensionTypeName(const XdsEncodingContext& context,
-                                           const google_protobuf_Any* any,
-                                           absl::string_view* extension_type) {
-  *extension_type = UpbStringToAbsl(google_protobuf_Any_type_url(any));
-  if (*extension_type == "type.googleapis.com/xds.type.v3.TypedStruct" ||
-      *extension_type == "type.googleapis.com/udpa.type.v1.TypedStruct") {
+absl::StatusOr<ExtractExtensionTypeNameResult> ExtractExtensionTypeName(
+    const XdsEncodingContext& context, const google_protobuf_Any* any) {
+  ExtractExtensionTypeNameResult result;
+  result.type = UpbStringToAbsl(google_protobuf_Any_type_url(any));
+  if (result.type == "type.googleapis.com/xds.type.v3.TypedStruct" ||
+      result.type == "type.googleapis.com/udpa.type.v1.TypedStruct") {
     upb_StringView any_value = google_protobuf_Any_value(any);
-    const auto* typed_struct = xds_type_v3_TypedStruct_parse(
+    result.typed_struct = xds_type_v3_TypedStruct_parse(
         any_value.data, any_value.size, context.arena);
-    if (typed_struct == nullptr) {
-      return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+    if (result.typed_struct == nullptr) {
+      return absl::InvalidArgumentError(
           "could not parse TypedStruct from extension");
     }
-    *extension_type =
-        UpbStringToAbsl(xds_type_v3_TypedStruct_type_url(typed_struct));
+    result.type =
+        UpbStringToAbsl(xds_type_v3_TypedStruct_type_url(result.typed_struct));
   }
-  *extension_type = absl::StripPrefix(*extension_type, "type.googleapis.com/");
-  return GRPC_ERROR_NONE;
+  size_t pos = result.type.rfind('/');
+  if (pos == absl::string_view::npos || pos == result.type.size() - 1) {
+    return absl::InvalidArgumentError(
+        absl::StrCat("Invalid type_url ", result.type));
+  }
+  result.type = result.type.substr(pos + 1);
+  return result;
 }
 
 }  // namespace grpc_core
