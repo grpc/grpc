@@ -371,7 +371,7 @@ struct grpc_transport_stream_op_batch_payload {
     // The batch's on_complete will not be called until after the byte
     // stream is orphaned.
     grpc_core::SliceBuffer* send_message;
-    uint32_t flags;
+    uint32_t flags = 0;
     // Set by the transport if the stream has been closed for writes. If this
     // is set and send message op is present, we set the operation to be a
     // failure without sending a cancel OP down the stack. This is so that the
