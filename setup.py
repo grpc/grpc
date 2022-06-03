@@ -43,6 +43,9 @@ import _metadata
 import pkg_resources
 from setuptools.command import egg_info
 
+
+os.environ['ARCHFLAGS'] = '-arch {}'.format(platform.machine())
+
 # Redirect the manifest template from MANIFEST.in to PYTHON-MANIFEST.in.
 egg_info.manifest_maker.template = 'PYTHON-MANIFEST.in'
 
@@ -424,12 +427,12 @@ if "linux" in sys.platform or "darwin" in sys.platform:
 # We need OSX 10.10, the oldest which supports C++ thread_local.
 # Python 3.9: Mac OS Big Sur sysconfig.get_config_var('MACOSX_DEPLOYMENT_TARGET') returns int (11)
 if 'darwin' in sys.platform:
-    os.environ['ARCHFLAGS'] = '-arch {}'.format(platform.machine())
+    # os.environ['ARCHFLAGS'] = '-arch {}'.format(platform.machine())
     import distutils.sysconfig
     sys.stderr.write("AAAAAAAAAAAAAAAAAAAA ARCHFLAGS: '{}'\n".format(os.environ['ARCHFLAGS']))
     sys.stderr.write("distutils.sysconfig.get_config_vars: '{}'\n".format(distutils.sysconfig.get_config_vars()))
     sys.stderr.flush()
-    sys.exit(1)
+    # sys.exit(1)
     mac_target = sysconfig.get_config_var('MACOSX_DEPLOYMENT_TARGET')
     if mac_target:
         mac_target = pkg_resources.parse_version(str(mac_target))
