@@ -192,8 +192,8 @@ class OutlierDetectionLb : public LoadBalancingPolicy {
         }
       }
 
-      void OnConnectivityStateChange(
-          grpc_connectivity_state new_state, absl::Status status) override {
+      void OnConnectivityStateChange(grpc_connectivity_state new_state,
+                                     absl::Status status) override {
         const bool send_update = !last_seen_state_.has_value() || !ejected_;
         last_seen_state_ = new_state;
         last_seen_status_ = status;

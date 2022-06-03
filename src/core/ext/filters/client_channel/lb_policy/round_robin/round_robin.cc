@@ -435,9 +435,9 @@ void RoundRobin::RoundRobinSubchannelData::ProcessConnectivityChangeLocked(
   // If it changed, update the policy state.
   if (UpdateLogicalConnectivityStateLocked(new_state)) {
     subchannel_list()->MaybeUpdateRoundRobinConnectivityStateLocked(
-        absl::UnavailableError(absl::StrCat(
-            "connections to all backends failing; last error: ",
-            connectivity_status().ToString())));
+        absl::UnavailableError(
+            absl::StrCat("connections to all backends failing; last error: ",
+                         connectivity_status().ToString())));
   }
 }
 

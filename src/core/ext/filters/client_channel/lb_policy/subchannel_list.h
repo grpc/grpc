@@ -27,6 +27,7 @@
 #include <utility>
 
 #include "absl/container/inlined_vector.h"
+#include "absl/status/status.h"
 #include "absl/types/optional.h"
 
 #include <grpc/impl/codegen/connectivity_state.h>

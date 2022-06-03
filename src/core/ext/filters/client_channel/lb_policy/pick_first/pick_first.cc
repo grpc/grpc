@@ -327,9 +327,10 @@ void PickFirst::PickFirstSubchannelData::ProcessConnectivityChangeLocked(
         absl::Status status = absl::UnavailableError(absl::StrCat(
             "selected subchannel failed; switching to pending update; "
             "last failure: ",
-            p->subchannel_list_->subchannel(
-                p->subchannel_list_->num_subchannels())
-                ->connectivity_status().ToString()));
+            p->subchannel_list_
+                ->subchannel(p->subchannel_list_->num_subchannels())
+                ->connectivity_status()
+                .ToString()));
         p->channel_control_helper()->UpdateState(
             GRPC_CHANNEL_TRANSIENT_FAILURE, status,
             absl::make_unique<TransientFailurePicker>(status));
@@ -423,9 +424,9 @@ void PickFirst::PickFirstSubchannelData::ProcessConnectivityChangeLocked(
         // be the current list), re-resolve and report new state.
         if (subchannel_list() == p->subchannel_list_.get()) {
           p->channel_control_helper()->RequestReresolution();
-          absl::Status status = absl::UnavailableError(absl::StrCat(
-              "failed to connect to all addresses; last error: ",
-              connectivity_status().ToString()));
+          absl::Status status = absl::UnavailableError(
+              absl::StrCat("failed to connect to all addresses; last error: ",
+                           connectivity_status().ToString()));
           p->channel_control_helper()->UpdateState(
               GRPC_CHANNEL_TRANSIENT_FAILURE, status,
               absl::make_unique<TransientFailurePicker>(status));

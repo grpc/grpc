@@ -44,8 +44,8 @@ class SubchannelInterface : public RefCounted<SubchannelInterface> {
     // If the new state is TRANSIENT_FAILURE, status indicates the reason
     // for the failure.  There will be only one invocation of this method
     // on a given watcher instance at any given time.
-    virtual void OnConnectivityStateChange(
-        grpc_connectivity_state new_state, absl::Status status) = 0;
+    virtual void OnConnectivityStateChange(grpc_connectivity_state new_state,
+                                           absl::Status status) = 0;
 
     // TODO(roth): Remove this as soon as we move to EventManager-based
     // polling.
