@@ -797,6 +797,11 @@ void Subchannel::ResetBackoff() {
   if (state_ == GRPC_CHANNEL_TRANSIENT_FAILURE &&
       GetDefaultEventEngine()->Cancel(retry_timer_handle_)) {
     OnRetryTimerLocked();
+    // Give up the subchannel ref.
+    self.reset();
+    // Since callback was not executed, call grpc_shutdown here since a
+    // grpc_init was made prior to scheduling of the timer callback.
+    grpc_shutdown();
   } else if (state_ == GRPC_CHANNEL_CONNECTING) {
     next_attempt_time_ = ExecCtx::Get()->Now();
   }
@@ -952,11 +957,28 @@ void Subchannel::OnConnectingFinishedLocked(grpc_error_handle error) {
             time_until_next_attempt.millis());
     SetConnectivityStateLocked(GRPC_CHANNEL_TRANSIENT_FAILURE,
                                grpc_error_to_absl_status(error));
+    // Ensure grpc remains initialized when the timer callback runs. The
+    // subchannel could get deleted when the timer callback is run and
+    // subchannel deletion may destroye some pollset_sets which required grpc
+    // to be initialized.
+    grpc_init();
     retry_timer_handle_ = GetDefaultEventEngine()->RunAt(
-        ee_deadline, [self = WeakRef(DEBUG_LOCATION, "RetryTimer")] {
-          ApplicationCallbackExecCtx callback_exec_ctx;
-          ExecCtx exec_ctx;
-          self->OnRetryTimer();
+        ee_deadline, [self = WeakRef(DEBUG_LOCATION, "RetryTimer")] () mutable {
+          {
+            ApplicationCallbackExecCtx callback_exec_ctx;
+            ExecCtx exec_ctx;
+            self->OnRetryTimer();
+            // Subchannel deletion might require an active ExecCtx. So if
+            // self.reset() is not called here, the WeakRefCountedPtr destructor
+            // may run after the ExecCtx declared in the callback is destroyed.
+            // Since subchannel may get destroyed when the WeakRefCountedPtr
+            // destructor runs, it may not have an active ExecCtx - thus leading
+            // to crashes.
+            self.reset();
+          }
+          // This grpc_shutdown corresponds to grpc_init made when the callback
+          // is scheduled.
+          grpc_shutdown();
         });
   }
   (void)GRPC_ERROR_UNREF(error);
