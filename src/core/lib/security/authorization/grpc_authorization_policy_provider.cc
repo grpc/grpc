@@ -121,6 +121,7 @@ FileWatcherAuthorizationPolicyProvider::FileWatcherAuthorizationPolicyProvider(
 absl::Status FileWatcherAuthorizationPolicyProvider::ForceUpdate() {
   absl::StatusOr<std::string> file_contents =
       ReadPolicyFromFile(authz_policy_path_);
+  gpr_log(GPR_DEBUG, "File read...");
   if (!file_contents.ok()) {
     return file_contents.status();
   }
@@ -133,6 +134,7 @@ absl::Status FileWatcherAuthorizationPolicyProvider::ForceUpdate() {
   if (!rbac_policies_or.ok()) {
     return rbac_policies_or.status();
   }
+  gpr_log(GPR_DEBUG, "After generating rbac policies...");
   {
     MutexLock lock(&mu_);
     allow_engine_ = MakeRefCounted<GrpcAuthorizationEngine>(
