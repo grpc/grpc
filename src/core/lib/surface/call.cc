@@ -54,6 +54,7 @@
 #include "src/core/lib/channel/context.h"
 #include "src/core/lib/compression/compression_internal.h"
 #include "src/core/lib/debug/stats.h"
+#include "src/core/lib/event_engine/event_engine_factory.h"
 #include "src/core/lib/gpr/alloc.h"
 #include "src/core/lib/gpr/time_precise.h"
 #include "src/core/lib/gprpp/cpp_impl_of.h"
@@ -1763,7 +1764,7 @@ void FilterStackCall::ContextSet(grpc_context_index elem, void* value,
 // PromiseBasedCall
 // Will be folded into Call once the promise conversion is done
 
-class PromiseBasedCall : public Call, public Activity {
+class PromiseBasedCall : public Call, public Activity, public Wakeable {
  public:
   PromiseBasedCall(Arena* arena, const grpc_call_create_args& args);
 
@@ -1804,8 +1805,23 @@ class PromiseBasedCall : public Call, public Activity {
 
   // Activity methods
   void ForceImmediateRepoll() ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_) override;
-  Waker MakeOwningWaker() override;
+  Waker MakeOwningWaker() override {
+    InternalRef("wakeup");
+    return Waker(this);
+  }
   Waker MakeNonOwningWaker() override;
+
+  // Wakeable methods
+  void Wakeup() override {
+    grpc_event_engine::experimental::GetDefaultEventEngine()->Run([this] {
+      {
+        MutexLock lock(&mu_);
+        Update();
+      }
+      InternalUnref("wakeup");
+    });
+  }
+  void Drop() override { InternalUnref("wakeup"); }
 
   grpc_compression_algorithm test_only_compression_algorithm() override;
   uint32_t test_only_message_flags() override;
