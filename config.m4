@@ -208,6 +208,8 @@ if test "$PHP_GRPC" != "no"; then
     src/core/ext/upb-generated/envoy/extensions/filters/http/rbac/v3/rbac.upb.c \
     src/core/ext/upb-generated/envoy/extensions/filters/http/router/v3/router.upb.c \
     src/core/ext/upb-generated/envoy/extensions/filters/network/http_connection_manager/v3/http_connection_manager.upb.c \
+    src/core/ext/upb-generated/envoy/extensions/load_balancing_policies/ring_hash/v3/ring_hash.upb.c \
+    src/core/ext/upb-generated/envoy/extensions/load_balancing_policies/wrr_locality/v3/wrr_locality.upb.c \
     src/core/ext/upb-generated/envoy/extensions/transport_sockets/tls/v3/cert.upb.c \
     src/core/ext/upb-generated/envoy/extensions/transport_sockets/tls/v3/common.upb.c \
     src/core/ext/upb-generated/envoy/extensions/transport_sockets/tls/v3/secret.upb.c \
@@ -433,6 +435,7 @@ if test "$PHP_GRPC" != "no"; then
     src/core/ext/xds/xds_http_fault_filter.cc \
     src/core/ext/xds/xds_http_filters.cc \
     src/core/ext/xds/xds_http_rbac_filter.cc \
+    src/core/ext/xds/xds_lb_policy_registry.cc \
     src/core/ext/xds/xds_listener.cc \
     src/core/ext/xds/xds_resource_type.cc \
     src/core/ext/xds/xds_route_config.cc \
@@ -1221,6 +1224,8 @@ if test "$PHP_GRPC" != "no"; then
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upb-generated/envoy/extensions/filters/http/rbac/v3)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upb-generated/envoy/extensions/filters/http/router/v3)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upb-generated/envoy/extensions/filters/network/http_connection_manager/v3)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upb-generated/envoy/extensions/load_balancing_policies/ring_hash/v3)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upb-generated/envoy/extensions/load_balancing_policies/wrr_locality/v3)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upb-generated/envoy/extensions/transport_sockets/tls/v3)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upb-generated/envoy/service/discovery/v3)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upb-generated/envoy/service/load_stats/v3)

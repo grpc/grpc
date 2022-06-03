@@ -891,7 +891,6 @@ grpc_cc_library(
         "src/core/lib/gprpp/mpscq.cc",
         "src/core/lib/gprpp/stat_posix.cc",
         "src/core/lib/gprpp/stat_windows.cc",
-        "src/core/lib/gprpp/status_helper.cc",
         "src/core/lib/gprpp/thd_posix.cc",
         "src/core/lib/gprpp/thd_windows.cc",
         "src/core/lib/gprpp/time_util.cc",
@@ -917,7 +916,6 @@ grpc_cc_library(
         "src/core/lib/gprpp/memory.h",
         "src/core/lib/gprpp/mpscq.h",
         "src/core/lib/gprpp/stat.h",
-        "src/core/lib/gprpp/status_helper.h",
         "src/core/lib/gprpp/sync.h",
         "src/core/lib/gprpp/thd.h",
         "src/core/lib/gprpp/time_util.h",
@@ -935,7 +933,6 @@ grpc_cc_library(
         "absl/synchronization",
         "absl/time:time",
         "absl/types:optional",
-        "upb_lib",
     ],
     language = "c++",
     public_hdrs = GPR_PUBLIC_HDRS,
@@ -944,11 +941,9 @@ grpc_cc_library(
         "construct_destruct",
         "debug_location",
         "examine_stack",
-        "google_rpc_status_upb",
         "gpr_codegen",
         "gpr_tls",
         "grpc_codegen",
-        "protobuf_any_upb",
         "useful",
     ],
 )
@@ -984,6 +979,35 @@ grpc_cc_library(
     hdrs = ["src/core/lib/gprpp/cpp_impl_of.h"],
     language = "c++",
     tags = ["grpc-autodeps"],
+)
+
+grpc_cc_library(
+    name = "status_helper",
+    srcs = [
+        "src/core/lib/gprpp/status_helper.cc",
+    ],
+    hdrs = [
+        "src/core/lib/gprpp/status_helper.h",
+    ],
+    external_deps = [
+        "absl/status",
+        "absl/strings",
+        "absl/strings:cord",
+        "absl/time",
+        "absl/types:optional",
+        "upb_lib",
+    ],
+    language = "c++",
+    tags = ["grpc-autodeps"],
+    deps = [
+        "debug_location",
+        "google_rpc_status_upb",
+        "gpr_base",
+        "gpr_platform",
+        "percent_encoding",
+        "protobuf_any_upb",
+        "slice",
+    ],
 )
 
 grpc_cc_library(
@@ -1200,18 +1224,17 @@ grpc_cc_library(
     external_deps = [
         "absl/base:core_headers",
         "absl/status",
+        "absl/time",
     ],
     tags = ["grpc-autodeps"],
     deps = [
         "activity",
-        "closure",
-        "error",
+        "default_event_engine_factory_hdrs",
+        "event_engine_base_hdrs",
         "exec_ctx",
         "gpr_base",
         "gpr_platform",
-        "iomgr_timer",
         "poll",
-        "ref_counted",
         "time",
     ],
 )
@@ -2014,6 +2037,7 @@ grpc_cc_library(
         "grpc_trace",
         "slice",
         "slice_refcount",
+        "status_helper",
         "useful",
     ],
 )
@@ -3030,6 +3054,7 @@ grpc_cc_library(
         "absl/strings",
         "absl/strings:cord",
         "absl/strings:str_format",
+        "absl/time",
         "absl/types:optional",
         "absl/types:variant",
         "absl/status",
@@ -3046,6 +3071,7 @@ grpc_cc_library(
         "chunked_vector",
         "config",
         "debug_location",
+        "default_event_engine_factory_hdrs",
         "dual_ref_counted",
         "error",
         "gpr_base",
@@ -3623,6 +3649,7 @@ grpc_cc_library(
         "src/core/ext/xds/xds_http_fault_filter.cc",
         "src/core/ext/xds/xds_http_filters.cc",
         "src/core/ext/xds/xds_http_rbac_filter.cc",
+        "src/core/ext/xds/xds_lb_policy_registry.cc",
         "src/core/ext/xds/xds_listener.cc",
         "src/core/ext/xds/xds_resource_type.cc",
         "src/core/ext/xds/xds_route_config.cc",
@@ -3648,6 +3675,7 @@ grpc_cc_library(
         "src/core/ext/xds/xds_http_fault_filter.h",
         "src/core/ext/xds/xds_http_filters.h",
         "src/core/ext/xds/xds_http_rbac_filter.h",
+        "src/core/ext/xds/xds_lb_policy_registry.h",
         "src/core/ext/xds/xds_listener.h",
         "src/core/ext/xds/xds_resource_type.h",
         "src/core/ext/xds/xds_resource_type_impl.h",
@@ -3699,6 +3727,8 @@ grpc_cc_library(
         "envoy_extensions_filters_http_router_upbdefs",
         "envoy_extensions_filters_network_http_connection_manager_upb",
         "envoy_extensions_filters_network_http_connection_manager_upbdefs",
+        "envoy_extensions_load_balancing_policies_ring_hash_upb",
+        "envoy_extensions_load_balancing_policies_wrr_locality_upb",
         "envoy_extensions_transport_sockets_tls_upb",
         "envoy_extensions_transport_sockets_tls_upbdefs",
         "envoy_service_discovery_upb",
@@ -3736,6 +3766,7 @@ grpc_cc_library(
         "protobuf_any_upb",
         "protobuf_duration_upb",
         "protobuf_struct_upb",
+        "protobuf_struct_upbdefs",
         "protobuf_timestamp_upb",
         "protobuf_wrappers_upb",
         "ref_counted_ptr",
@@ -3745,6 +3776,7 @@ grpc_cc_library(
         "slice",
         "slice_refcount",
         "sockaddr_utils",
+        "status_helper",
         "time",
         "tsi_ssl_credentials",
         "uri_parser",
@@ -6624,6 +6656,16 @@ grpc_upb_proto_library(
 grpc_upb_proto_reflection_library(
     name = "envoy_extensions_filters_http_router_upbdefs",
     deps = ["@envoy_api//envoy/extensions/filters/http/router/v3:pkg"],
+)
+
+grpc_upb_proto_library(
+    name = "envoy_extensions_load_balancing_policies_ring_hash_upb",
+    deps = ["@envoy_api//envoy/extensions/load_balancing_policies/ring_hash/v3:pkg"],
+)
+
+grpc_upb_proto_library(
+    name = "envoy_extensions_load_balancing_policies_wrr_locality_upb",
+    deps = ["@envoy_api//envoy/extensions/load_balancing_policies/wrr_locality/v3:pkg"],
 )
 
 grpc_upb_proto_library(

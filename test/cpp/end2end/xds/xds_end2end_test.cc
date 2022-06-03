@@ -1082,7 +1082,9 @@ TEST_P(XdsEnabledServerTest, BadLdsUpdateNoApiListenerNorAddress) {
       ::testing::HasSubstr("Listener has neither address nor ApiListener"));
 }
 
-TEST_P(XdsEnabledServerTest, BadLdsUpdateBothApiListenerAndAddress) {
+// TODO(roth): Re-enable the following test once
+// github.com/istio/istio/issues/38914 is resolved.
+TEST_P(XdsEnabledServerTest, DISABLED_BadLdsUpdateBothApiListenerAndAddress) {
   Listener listener = default_server_listener_;
   listener.mutable_api_listener();
   SetServerListenerNameAndRouteConfiguration(balancer_.get(), listener,
@@ -1166,7 +1168,7 @@ TEST_P(XdsEnabledServerTest, UnsupportedHttpFilter) {
   auto* http_filter = http_connection_manager.add_http_filters();
   http_filter->set_name("grpc.testing.unsupported_http_filter");
   http_filter->mutable_typed_config()->set_type_url(
-      "grpc.testing.unsupported_http_filter");
+      "custom/grpc.testing.unsupported_http_filter");
   http_filter = http_connection_manager.add_http_filters();
   http_filter->set_name("router");
   http_filter->mutable_typed_config()->PackFrom(
@@ -1191,7 +1193,7 @@ TEST_P(XdsEnabledServerTest, HttpFilterNotSupportedOnServer) {
   auto* http_filter = http_connection_manager.add_http_filters();
   http_filter->set_name("grpc.testing.client_only_http_filter");
   http_filter->mutable_typed_config()->set_type_url(
-      "grpc.testing.client_only_http_filter");
+      "custom/grpc.testing.client_only_http_filter");
   http_filter = http_connection_manager.add_http_filters();
   http_filter->set_name("router");
   http_filter->mutable_typed_config()->PackFrom(
@@ -1218,7 +1220,7 @@ TEST_P(XdsEnabledServerTest,
   auto* http_filter = http_connection_manager.add_http_filters();
   http_filter->set_name("grpc.testing.client_only_http_filter");
   http_filter->mutable_typed_config()->set_type_url(
-      "grpc.testing.client_only_http_filter");
+      "custom/grpc.testing.client_only_http_filter");
   http_filter->set_is_optional(true);
   http_filter = http_connection_manager.add_http_filters();
   http_filter->set_name("router");

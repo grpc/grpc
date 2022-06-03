@@ -97,3 +97,23 @@ grpc_cc_test(
         "//test/core/util:grpc_test_util",
     ],
 )
+
+grpc_cc_test(
+    name = "xds_lb_policy_registry_test",
+    srcs = ["xds_lb_policy_registry_test.cc"],
+    external_deps = ["gtest"],
+    language = "C++",
+    uses_polling = False,
+    deps = [
+        "//:gpr",
+        "//:grpc",
+        "//src/proto/grpc/testing/xds/v3:cluster_proto",
+        "//src/proto/grpc/testing/xds/v3:ring_hash_proto",
+        "//src/proto/grpc/testing/xds/v3:round_robin_proto",
+        "//src/proto/grpc/testing/xds/v3:typed_struct_proto",
+        "//src/proto/grpc/testing/xds/v3:udpa_typed_struct_proto",
+        "//src/proto/grpc/testing/xds/v3:wrr_locality_proto",
+        "//test/core/util:grpc_test_util",
+        "//test/cpp/util:grpc_cli_utils",
+    ],
+)
