@@ -122,6 +122,17 @@ class Call : public CppImplOf<Call, grpc_call> {
   virtual grpc_call_stack* call_stack() = 0;
 
  protected:
+  // The maximum number of concurrent batches possible.
+  // Based upon the maximum number of individually queueable ops in the batch
+  // api:
+  //    - initial metadata send
+  //    - message send
+  //    - status/close send (depending on client/server)
+  //    - initial metadata recv
+  //    - message recv
+  //    - status/close recv (depending on client/server)
+  static constexpr size_t kMaxConcurrentBatches = 6;
+
   Call(Arena* arena, bool is_client, Timestamp send_deadline)
       : arena_(arena), send_deadline_(send_deadline), is_client_(is_client) {
     GPR_DEBUG_ASSERT(arena_ != nullptr);
@@ -383,17 +394,6 @@ class FilterStackCall final : public Call {
   }
 
  private:
-  // The maximum number of concurrent batches possible.
-  // Based upon the maximum number of individually queueable ops in the batch
-  // api:
-  //    - initial metadata send
-  //    - message send
-  //    - status/close send (depending on client/server)
-  //    - initial metadata recv
-  //    - message recv
-  //    - status/close recv (depending on client/server)
-  static constexpr size_t kMaxConcurrentBatches = 6;
-
   static constexpr gpr_atm kRecvNone = 0;
   static constexpr gpr_atm kRecvInitialMetadataFirst = 1;
 
@@ -1815,6 +1815,9 @@ class PromiseBasedCall : public Call {
       return *this;
     }
 
+    uint8_t index() const { return index_; }
+    uint8_t TakeIndex() { return absl::exchange(index_, kNullIndex); }
+
    private:
     static constexpr const uint8_t kNullIndex = 255;
     uint8_t index_;
@@ -1831,29 +1834,38 @@ class PromiseBasedCall : public Call {
     return ClientMetadataHandle(CToMetadata(metadata, count));
   }
 
-  void Start(ClientMetadataHandle client_initial_metadata)
-      ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
-
   Completion StartCompletion(void* tag, bool is_closure, const grpc_op* ops,
                              size_t num_ops) ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
 
   void FinishCompletion(Completion* completion)
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
 
-  virtual void Update() ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
+  Completion PauseCompletion(const Completion& completion)
+      ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
+
+  virtual void Update() ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_) = 0;
 
   grpc_completion_queue* cq();
+  Channel* channel() const { return channel_.get(); }
 
  private:
   grpc_metadata_batch* CToMetadata(grpc_metadata* metadata, size_t count);
 
+  union CompletionInfo {
+    struct Pending {
+      uint8_t refs;
+      bool is_closure;
+      void* tag;
+    } pending;
+    grpc_cq_completion completion;
+  };
+
   Mutex mu_;
-  ArenaPromise<ServerMetadataHandle> promise_ ABSL_GUARDED_BY(mu_);
-  Latch<ServerMetadata*> server_initial_metadata_ ABSL_GUARDED_BY(mu_);
 
   /* Contexts for various subsystems (security, tracing, ...). */
   grpc_call_context_element context_[GRPC_CONTEXT_COUNT] = {};
   const RefCountedPtr<Channel> channel_;
+  CompletionInfo completion_info_[6];
 };
 
 template <typename T>
@@ -1877,14 +1889,6 @@ PromiseBasedCall::PromiseBasedCall(Arena* arena,
                                    const grpc_call_create_args& args)
     : Call(arena, args.server_transport_data == nullptr, args.send_deadline) {}
 
-void PromiseBasedCall::Start(ClientMetadataHandle client_initial_metadata) {
-  GPR_ASSERT(!promise_.has_value());
-  promise_ = channel_->channel_stack()->MakeCallPromise(CallArgs{
-      std::move(client_initial_metadata),
-      &server_initial_metadata_,
-  });
-}
-
 void PromiseBasedCall::ContextSet(grpc_context_index elem, void* value,
                                   void (*destroy)(void*)) {
   if (context_[elem].destroy) {
@@ -1901,7 +1905,31 @@ void* PromiseBasedCall::ContextGet(grpc_context_index elem) const {
 PromiseBasedCall::Completion PromiseBasedCall::StartCompletion(
     void* tag, bool is_closure, const grpc_op* ops, size_t num_ops) {
   Completion c(BatchSlotForOp(ops[0].op));
+  completion_info_[c.index()].pending = {1, is_closure, tag};
   return c;
+}
+
+PromiseBasedCall::Completion PromiseBasedCall::PauseCompletion(
+    const Completion& completion) {
+  completion_info_[completion.index()].pending.refs++;
+  return Completion(completion.index());
+}
+
+void PromiseBasedCall::FinishCompletion(Completion* completion) {
+  const uint8_t i = completion->TakeIndex();
+  CompletionInfo::Pending& pending = completion_info_[i].pending;
+  --pending.refs;
+  if (pending.refs == 0) {
+    if (pending.is_closure) {
+      grpc_core::ExecCtx::Run(DEBUG_LOCATION,
+                              static_cast<grpc_closure*>(pending.tag),
+                              GRPC_ERROR_NONE);
+    } else {
+      grpc_cq_end_op(
+          cq(), pending.tag, GRPC_ERROR_NONE, [](void*, grpc_cq_completion*) {},
+          nullptr, &completion_info_[i].completion);
+    }
+  }
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -1918,8 +1946,14 @@ class ClientPromiseBasedCall final : public PromiseBasedCall {
 
  private:
   void Update() override ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu());
-  void FailCall(absl::Status status) ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu());
+  void Finish(ServerMetadataHandle trailing_metadata)
+      ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu());
 
+  void StartPromise(ClientMetadataHandle client_initial_metadata)
+      ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu());
+
+  ArenaPromise<ServerMetadataHandle> promise_ ABSL_GUARDED_BY(mu());
+  Latch<ServerMetadata*> server_initial_metadata_ ABSL_GUARDED_BY(mu());
   PipeSender<Message>* client_to_server_messages_ ABSL_GUARDED_BY(mu());
   PipeReceiver<Message>* const server_to_client_messages_
       ABSL_PT_GUARDED_BY(mu());
@@ -1937,6 +1971,15 @@ class ClientPromiseBasedCall final : public PromiseBasedCall {
   Completion send_message_completion_ ABSL_GUARDED_BY(mu());
   Completion recv_message_completion_ ABSL_GUARDED_BY(mu());
 };
+
+void ClientPromiseBasedCall::StartPromise(
+    ClientMetadataHandle client_initial_metadata) {
+  GPR_ASSERT(!promise_.has_value());
+  promise_ = channel()->channel_stack()->MakeCallPromise(CallArgs{
+      std::move(client_initial_metadata),
+      &server_initial_metadata_,
+  });
+}
 
 grpc_call_error ClientPromiseBasedCall::StartBatch(const grpc_op* ops,
                                                    size_t nops,
@@ -1956,21 +1999,22 @@ grpc_call_error ClientPromiseBasedCall::StartBatch(const grpc_op* ops,
         // compression not implemented
         GPR_ASSERT(
             !op.data.send_initial_metadata.maybe_compression_level.is_set);
-        Start(CToClientMetadataHandle(op.data.send_initial_metadata.metadata,
-                                      op.data.send_initial_metadata.count));
+        StartPromise(
+            CToClientMetadataHandle(op.data.send_initial_metadata.metadata,
+                                    op.data.send_initial_metadata.count));
       } break;
       case GRPC_OP_RECV_INITIAL_METADATA: {
         recv_initial_metadata_ =
             op.data.recv_initial_metadata.recv_initial_metadata;
-        recv_initial_metadata_completion_ = completion;
+        recv_initial_metadata_completion_ = PauseCompletion(completion);
       } break;
       case GRPC_OP_RECV_STATUS_ON_CLIENT: {
         recv_status_on_client_ = op.data.recv_status_on_client;
-        recv_status_on_client_completion_ = completion;
+        recv_status_on_client_completion_ = PauseCompletion(completion);
       } break;
       case GRPC_OP_SEND_MESSAGE: {
         GPR_ASSERT(!outstanding_send_.has_value());
-        send_message_completion_ = completion;
+        send_message_completion_ = PauseCompletion(completion);
         SliceBuffer send;
         grpc_slice_buffer_swap(
             &op.data.send_message.send_message->data.raw.slice_buffer,
@@ -1991,6 +2035,7 @@ grpc_call_error ClientPromiseBasedCall::StartBatch(const grpc_op* ops,
         abort();  // unreachable
     }
   }
+  Update();
   FinishCompletion(&completion);
   return GRPC_CALL_OK;
 }
@@ -2003,8 +2048,8 @@ void ClientPromiseBasedCall::Update() {
       if (*result) {
         FinishCompletion(&send_message_completion_);
       } else {
-        FailCall(absl::Status(absl::StatusCode::kInternal,
-                              "Failed to send message to server"));
+        Finish(ServerMetadataHandle(absl::Status(
+            absl::StatusCode::kInternal, "Failed to send message to server")));
       }
     }
   }
@@ -2020,7 +2065,12 @@ void ClientPromiseBasedCall::Update() {
       FinishCompletion(&recv_message_completion_);
     }
   }
-  PromiseBasedCall::Update();
+  if (promise_.has_value()) {
+    Poll<ServerMetadataHandle> r = promise_();
+    if (auto* result = absl::get_if<ServerMetadataHandle>(&r)) {
+      abort();  // not implemented
+    }
+  }
 }
 
 }  // namespace grpc_core
