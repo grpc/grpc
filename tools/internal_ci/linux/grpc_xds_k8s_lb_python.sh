@@ -19,9 +19,11 @@ set -eo pipefail
 readonly GITHUB_REPOSITORY_NAME="grpc"
 readonly TEST_DRIVER_INSTALL_SCRIPT_URL="https://raw.githubusercontent.com/${TEST_DRIVER_REPO_OWNER:-grpc}/grpc/${TEST_DRIVER_BRANCH:-master}/tools/internal_ci/linux/grpc_xds_k8s_install_test_driver.sh"
 ## xDS test client Docker images
-readonly CLIENT_IMAGE_NAME="gcr.io/grpc-testing/xds-interop/cpp-client"
+readonly SERVER_IMAGE_NAME="gcr.io/grpc-testing/xds-interop/cpp-server:13171a8b293837517c0446ec0e149e9d10ea3d10"
+readonly CLIENT_IMAGE_NAME="gcr.io/grpc-testing/xds-interop/python-client"
 readonly FORCE_IMAGE_BUILD="${FORCE_IMAGE_BUILD:-0}"
 readonly BUILD_APP_PATH="interop-testing/build/install/grpc-interop-testing"
+readonly LANGUAGE_NAME="Python"
 
 #######################################
 # Builds test app Docker images and pushes them to GCR
@@ -35,9 +37,18 @@ readonly BUILD_APP_PATH="interop-testing/build/install/grpc-interop-testing"
 #   Writes the output of `gcloud builds submit` to stdout, stderr
 #######################################
 build_test_app_docker_images() {
-  echo "Building C++ xDS interop test app Docker images"
-  docker build -f "${SRC_DIR}/tools/dockerfile/interoptest/grpc_interop_cxx_xds/Dockerfile.xds_client" -t "${CLIENT_IMAGE_NAME}:${GIT_COMMIT}" "${SRC_DIR}"
+  echo "Building ${LANGUAGE_NAME} xDS interop test app Docker images"
+
+  pushd "${SRC_DIR}"
+  docker build \
+    -f src/python/grpcio_tests/tests_py3_only/interop/Dockerfile.client \
+    -t "${CLIENT_IMAGE_NAME}:${GIT_COMMIT}" \
+    .
+
+  popd
+
   gcloud -q auth configure-docker
+
   docker push "${CLIENT_IMAGE_NAME}:${GIT_COMMIT}"
 }
 
@@ -62,7 +73,7 @@ build_docker_images_if_needed() {
   if [[ "${FORCE_IMAGE_BUILD}" == "1" || -z "${client_tags}" ]]; then
     build_test_app_docker_images
   else
-    echo "Skipping C++ test app build"
+    echo "Skipping ${LANGUAGE_NAME} test app build"
   fi
 }
 
@@ -71,6 +82,7 @@ build_docker_images_if_needed() {
 # Globals:
 #   TEST_DRIVER_FLAGFILE: Relative path to test driver flagfile
 #   KUBE_CONTEXT: The name of kubectl context with GKE cluster access
+#   SECONDARY_KUBE_CONTEXT: The name of kubectl context with secondary GKE cluster access, if any
 #   TEST_XML_OUTPUT_DIR: Output directory for the test xUnit XML report
 #   CLIENT_IMAGE_NAME: Test client Docker image name
 #   GIT_COMMIT: SHA-1 of git commit being built
@@ -89,15 +101,14 @@ run_test() {
   # 2 forms:
   #   grpc/core/master/linux/...
   #   grpc/core/v1.42.x/branch/linux/...
-  set -x
   python3 -m "tests.${test_name}" \
     --flagfile="${TEST_DRIVER_FLAGFILE}" \
     --kube_context="${KUBE_CONTEXT}" \
+    --secondary_kube_context="${SECONDARY_KUBE_CONTEXT}" \
     --client_image="${CLIENT_IMAGE_NAME}:${GIT_COMMIT}" \
+    --server_image="${SERVER_IMAGE_NAME}" \
     --testing_version=$(echo "$KOKORO_JOB_NAME" | sed -E 's|^grpc/core/([^/]+)/.*|\1|') \
-    --xml_output_file="${TEST_XML_OUTPUT_DIR}/${test_name}/sponge_log.xml" \
-    --flagfile="config/url-map.cfg"
-  set +x
+    --xml_output_file="${TEST_XML_OUTPUT_DIR}/${test_name}/sponge_log.xml"
 }
 
 #######################################
@@ -115,6 +126,7 @@ run_test() {
 #   GIT_COMMIT: Populated with the SHA-1 of git commit being built
 #   GIT_COMMIT_SHORT: Populated with the short SHA-1 of git commit being built
 #   KUBE_CONTEXT: Populated with name of kubectl context with GKE cluster access
+#   SECONDARY_KUBE_CONTEXT: Populated with name of kubectl context with secondary GKE cluster access, if any
 # Arguments:
 #   None
 # Outputs:
@@ -128,7 +140,8 @@ main() {
   echo "Sourcing test driver install script from: ${TEST_DRIVER_INSTALL_SCRIPT_URL}"
   source /dev/stdin <<< "$(curl -s "${TEST_DRIVER_INSTALL_SCRIPT_URL}")"
 
-  activate_gke_cluster GKE_CLUSTER_PSM_BASIC
+  activate_gke_cluster GKE_CLUSTER_PSM_SECURITY
+  activate_secondary_gke_cluster GKE_CLUSTER_PSM_SECURITY
 
   set -x
   if [[ -n "${KOKORO_ARTIFACTS_DIR}" ]]; then
@@ -137,9 +150,18 @@ main() {
     local_setup_test_driver "${script_dir}"
   fi
   build_docker_images_if_needed
+
   # Run tests
   cd "${TEST_DRIVER_FULL_DIR}"
-  run_test url_map
+  local failed_tests=0
+  test_suites=("api_listener_test" "change_backend_service_test" "failover_test" "remove_neg_test" "round_robin_test")
+  for test in "${test_suites[@]}"; do
+    run_test $test || (( failed_tests++ ))
+  done
+  echo "Failed test suites: ${failed_tests}"
+  if (( failed_tests > 0 )); then
+    exit 1
+  fi
 }
 
 main "$@"
