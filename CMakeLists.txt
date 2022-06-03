@@ -10707,8 +10707,11 @@ if(gRPC_BUILD_TESTS)
 
 add_executable(flow_control_test
   src/core/ext/transport/chttp2/transport/flow_control.cc
+  src/core/ext/upb-generated/google/protobuf/any.upb.c
+  src/core/ext/upb-generated/google/rpc/status.upb.c
   src/core/lib/debug/trace.cc
   src/core/lib/event_engine/memory_allocator.cc
+  src/core/lib/gprpp/status_helper.cc
   src/core/lib/gprpp/time.cc
   src/core/lib/iomgr/combiner.cc
   src/core/lib/iomgr/error.cc
@@ -10720,6 +10723,7 @@ add_executable(flow_control_test
   src/core/lib/resource_quota/resource_quota.cc
   src/core/lib/resource_quota/thread_quota.cc
   src/core/lib/resource_quota/trace.cc
+  src/core/lib/slice/percent_encoding.cc
   src/core/lib/slice/slice.cc
   src/core/lib/slice/slice_refcount.cc
   src/core/lib/slice/slice_string_helpers.cc
@@ -10757,6 +10761,7 @@ target_link_libraries(flow_control_test
   absl::variant
   absl::utility
   gpr
+  upb
 )
 
 
