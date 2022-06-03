@@ -48,8 +48,10 @@ namespace {
 
 absl::StatusOr<std::string> ReadPolicyFromFile(absl::string_view policy_path) {
   grpc_slice policy_slice = grpc_empty_slice();
+  gpr_log(GPR_DEBUG, "Before load file...");
   grpc_error_handle error =
       grpc_load_file(std::string(policy_path).c_str(), 0, &policy_slice);
+  gpr_log(GPR_DEBUG, "After load file...");
   if (error != GRPC_ERROR_NONE) {
     absl::Status status =
         absl::InvalidArgumentError(grpc_error_std_string(error));
