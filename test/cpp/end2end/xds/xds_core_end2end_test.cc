@@ -1025,8 +1025,7 @@ TEST_P(XdsFederationTest, EdsResourceNameAuthorityUnknown) {
   EXPECT_EQ(status.error_code(), StatusCode::UNAVAILABLE);
   // TODO(roth): Improve this error message as part of
   // https://github.com/grpc/grpc/issues/22883.
-  EXPECT_EQ(status.error_message(),
-            "weighted_target: all children report state TRANSIENT_FAILURE");
+  EXPECT_EQ(status.error_message(), "no ready priority");
   ASSERT_EQ(GRPC_CHANNEL_TRANSIENT_FAILURE, channel2->GetState(false));
 }
 

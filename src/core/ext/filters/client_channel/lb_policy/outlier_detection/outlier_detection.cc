@@ -154,7 +154,10 @@ class OutlierDetectionLb : public LoadBalancingPolicy {
 
     void Uneject();
 
+    grpc_connectivity_state CheckConnectivityState() override;
+
     void WatchConnectivityState(
+        grpc_connectivity_state initial_state,
         std::unique_ptr<ConnectivityStateWatcherInterface> watcher) override;
 
     void CancelConnectivityStateWatch(
@@ -171,32 +174,30 @@ class OutlierDetectionLb : public LoadBalancingPolicy {
       WatcherWrapper(std::unique_ptr<
                          SubchannelInterface::ConnectivityStateWatcherInterface>
                          watcher,
-                     bool ejected)
-          : watcher_(std::move(watcher)), ejected_(ejected) {}
+                     grpc_connectivity_state initial_state, bool ejected)
+          : watcher_(std::move(watcher)),
+            last_seen_state_(initial_state),
+            ejected_(ejected) {}
 
       void Eject() {
         ejected_ = true;
-        if (last_seen_state_.has_value() &&
-            *last_seen_state_ != GRPC_CHANNEL_TRANSIENT_FAILURE) {
+        if (last_seen_state_ != GRPC_CHANNEL_TRANSIENT_FAILURE) {
           watcher_->OnConnectivityStateChange(GRPC_CHANNEL_TRANSIENT_FAILURE);
         }
       }
 
       void Uneject() {
         ejected_ = false;
-        if (last_seen_state_.has_value() &&
-            *last_seen_state_ != GRPC_CHANNEL_TRANSIENT_FAILURE) {
-          watcher_->OnConnectivityStateChange(*last_seen_state_);
+        if (last_seen_state_ != GRPC_CHANNEL_TRANSIENT_FAILURE) {
+          watcher_->OnConnectivityStateChange(last_seen_state_);
         }
       }
 
       void OnConnectivityStateChange(
           grpc_connectivity_state new_state) override {
-        const bool send_update = !last_seen_state_.has_value() || !ejected_;
         last_seen_state_ = new_state;
-        if (send_update) {
-          watcher_->OnConnectivityStateChange(
-              ejected_ ? GRPC_CHANNEL_TRANSIENT_FAILURE : new_state);
+        if (!ejected_) {
+          watcher_->OnConnectivityStateChange(new_state);
         }
       }
 
@@ -207,7 +208,7 @@ class OutlierDetectionLb : public LoadBalancingPolicy {
      private:
       std::unique_ptr<SubchannelInterface::ConnectivityStateWatcherInterface>
           watcher_;
-      absl::optional<grpc_connectivity_state> last_seen_state_;
+      grpc_connectivity_state last_seen_state_;
       bool ejected_;
     };
 
@@ -417,13 +418,21 @@ void OutlierDetectionLb::SubchannelWrapper::Uneject() {
   }
 }
 
+grpc_connectivity_state
+OutlierDetectionLb::SubchannelWrapper::CheckConnectivityState() {
+  if (ejected_) return GRPC_CHANNEL_TRANSIENT_FAILURE;
+  return wrapped_subchannel()->CheckConnectivityState();
+}
+
 void OutlierDetectionLb::SubchannelWrapper::WatchConnectivityState(
+    grpc_connectivity_state initial_state,
     std::unique_ptr<ConnectivityStateWatcherInterface> watcher) {
   ConnectivityStateWatcherInterface* watcher_ptr = watcher.get();
-  auto watcher_wrapper =
-      absl::make_unique<WatcherWrapper>(std::move(watcher), ejected_);
+  auto watcher_wrapper = absl::make_unique<WatcherWrapper>(
+      std::move(watcher), initial_state, ejected_);
   watchers_.emplace(watcher_ptr, watcher_wrapper.get());
-  wrapped_subchannel()->WatchConnectivityState(std::move(watcher_wrapper));
+  wrapped_subchannel()->WatchConnectivityState(initial_state,
+                                               std::move(watcher_wrapper));
 }
 
 void OutlierDetectionLb::SubchannelWrapper::CancelConnectivityStateWatch(
