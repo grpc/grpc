@@ -41,6 +41,7 @@ grpc_error_handle grpc_load_file(const char* filename, int add_null_terminator,
 
   GRPC_SCHEDULING_START_BLOCKING_REGION;
   file = fopen(filename, "rb");
+  gpr_log(GPR_DEBUG, "file opened...");
   if (file == nullptr) {
     error = GRPC_OS_ERROR(errno, "fopen");
     goto end;
@@ -65,17 +66,18 @@ grpc_error_handle grpc_load_file(const char* filename, int add_null_terminator,
 
 end:
   *output = result;
+  gpr_log(GPR_DEBUG, "got contents...");
   if (file != nullptr) fclose(file);
   if (error != GRPC_ERROR_NONE) {
     grpc_error_handle error_out =
         grpc_error_set_str(GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(
                                "Failed to load file", &error, 1),
                            GRPC_ERROR_STR_FILENAME,
-
                            filename);
     GRPC_ERROR_UNREF(error);
     error = error_out;
   }
   GRPC_SCHEDULING_END_BLOCKING_REGION_NO_EXEC_CTX;
+  gpr_log(GPR_DEBUG, "load_file snippet complete...");
   return error;
 }
