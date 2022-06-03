@@ -3067,7 +3067,6 @@ grpc_cc_library(
         "absl/strings",
         "absl/strings:cord",
         "absl/strings:str_format",
-        "absl/time",
         "absl/types:optional",
         "absl/types:variant",
         "absl/status",
@@ -3086,7 +3085,6 @@ grpc_cc_library(
         "config",
         "construct_destruct",
         "debug_location",
-        "default_event_engine_factory_hdrs",
         "dual_ref_counted",
         "error",
         "gpr_base",
@@ -4118,7 +4116,10 @@ grpc_cc_library(
     hdrs = [
         "src/core/ext/filters/client_channel/lb_policy/subchannel_list.h",
     ],
-    external_deps = ["absl/container:inlined_vector"],
+    external_deps = [
+        "absl/container:inlined_vector",
+        "absl/types:optional",
+    ],
     language = "c++",
     tags = ["grpc-autodeps"],
     deps = [
