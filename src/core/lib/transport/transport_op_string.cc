@@ -113,8 +113,8 @@ std::string grpc_transport_op_string(grpc_transport_op* op) {
   }
 
   if (op->goaway_error != GRPC_ERROR_NONE) {
-    out.push_back(absl::StrCat(" SEND_GOAWAY:%s",
-                               grpc_error_std_string(op->goaway_error)));
+    out.push_back(
+        absl::StrCat(" SEND_GOAWAY:", grpc_error_std_string(op->goaway_error)));
   }
 
   if (op->set_accept_stream) {
