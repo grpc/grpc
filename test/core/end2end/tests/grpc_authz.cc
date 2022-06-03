@@ -679,7 +679,9 @@ static void test_file_watcher_recovers_from_failure(
   test_allow_authorized_request(f);
   // Replace exisiting policy in file with an invalid policy.
   authz_policy = "{}";
+  gpr_log(GPR_DEBUG, "Before rewrite:1");
   tmp_policy.RewriteFile(authz_policy);
+  gpr_log(GPR_DEBUG, "After rewrite:1");
   wait_for_policy_reload();
   test_allow_authorized_request(f);
   // Recover from reload errors, by replacing invalid policy in file with a
@@ -708,7 +710,9 @@ static void test_file_watcher_recovers_from_failure(
       "    }"
       "  ]"
       "}";
+  gpr_log(GPR_DEBUG, "Before rewrite:2");
   tmp_policy.RewriteFile(authz_policy);
+  gpr_log(GPR_DEBUG, "After rewrite:2");
   wait_for_policy_reload();
   test_deny_unauthorized_request(f);
 
