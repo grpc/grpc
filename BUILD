@@ -4118,7 +4118,10 @@ grpc_cc_library(
     hdrs = [
         "src/core/ext/filters/client_channel/lb_policy/subchannel_list.h",
     ],
-    external_deps = ["absl/container:inlined_vector"],
+    external_deps = [
+        "absl/container:inlined_vector",
+        "absl/types:optional",
+    ],
     language = "c++",
     tags = ["grpc-autodeps"],
     deps = [
@@ -4146,6 +4149,7 @@ grpc_cc_library(
         "absl/status",
         "absl/status:statusor",
         "absl/strings",
+        "absl/types:optional",
     ],
     language = "c++",
     tags = ["grpc-autodeps"],
@@ -4220,6 +4224,7 @@ grpc_cc_library(
         "absl/status",
         "absl/status:statusor",
         "absl/strings",
+        "absl/types:optional",
     ],
     language = "c++",
     tags = ["grpc-autodeps"],
