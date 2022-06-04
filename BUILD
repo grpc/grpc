@@ -1603,7 +1603,10 @@ grpc_cc_library(
 
 grpc_cc_library(
     name = "pipe",
-    external_deps = ["absl/types:optional"],
+    external_deps = [
+        "absl/types:optional",
+        "absl/utility",
+    ],
     language = "c++",
     public_hdrs = [
         "src/core/lib/promise/pipe.h",

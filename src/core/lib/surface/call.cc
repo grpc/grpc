@@ -336,7 +336,7 @@ void Call::DeleteThis() {
 
 class FilterStackCall final : public Call {
  public:
-  ~FilterStackCall() {
+  ~FilterStackCall() override {
     for (int i = 0; i < GRPC_CONTEXT_COUNT; ++i) {
       if (context_[i].destroy) {
         context_[i].destroy(context_[i].value);
