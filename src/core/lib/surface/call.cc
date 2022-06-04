@@ -35,9 +35,12 @@
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
 #include "absl/strings/string_view.h"
+#include "absl/types/variant.h"
+#include "absl/utility/utility.h"
 
 #include <grpc/byte_buffer.h>
 #include <grpc/compression.h>
+#include <grpc/event_engine/event_engine.h>
 #include <grpc/grpc.h>
 #include <grpc/impl/codegen/gpr_types.h>
 #include <grpc/impl/codegen/propagation_bits.h>
@@ -66,7 +69,11 @@
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/polling_entity.h"
 #include "src/core/lib/profiling/timers.h"
+#include "src/core/lib/promise/activity.h"
+#include "src/core/lib/promise/arena_promise.h"
+#include "src/core/lib/promise/latch.h"
 #include "src/core/lib/promise/pipe.h"
+#include "src/core/lib/promise/poll.h"
 #include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/slice/slice_buffer.h"
 #include "src/core/lib/slice/slice_internal.h"
@@ -2087,9 +2094,8 @@ void PromiseBasedCall::FinishCompletion(Completion* completion) {
   --pending.refs;
   if (pending.refs == 0) {
     if (pending.is_closure) {
-      grpc_core::ExecCtx::Run(DEBUG_LOCATION,
-                              static_cast<grpc_closure*>(pending.tag),
-                              GRPC_ERROR_NONE);
+      ExecCtx::Run(DEBUG_LOCATION, static_cast<grpc_closure*>(pending.tag),
+                   GRPC_ERROR_NONE);
     } else {
       grpc_cq_end_op(
           cq(), pending.tag, GRPC_ERROR_NONE, [](void*, grpc_cq_completion*) {},
