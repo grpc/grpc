@@ -358,7 +358,7 @@ class GrpcMemoryAllocatorImpl final : public EventEngineMemoryAllocatorImpl {
   std::atomic<size_t> free_bytes_{0};
   // Amount of memory taken from the quota by this allocator.
   std::atomic<size_t> taken_bytes_{sizeof(GrpcMemoryAllocatorImpl)};
-  std::atomic<bool> registered_reclaimer_;
+  std::atomic<bool> registered_reclaimer_{false};
   Mutex reclaimer_mu_;
   bool shutdown_ ABSL_GUARDED_BY(reclaimer_mu_) = false;
   // Indices into the various reclaimer queues, used so that we can cancel
