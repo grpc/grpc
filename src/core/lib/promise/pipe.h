@@ -20,6 +20,7 @@
 #include <stdint.h>
 
 #include "absl/types/optional.h"
+#include "absl/utility/utility.h"
 
 #include <grpc/support/log.h>
 
