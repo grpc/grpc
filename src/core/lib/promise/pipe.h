@@ -173,6 +173,10 @@ class PipeSender {
     if (center_ != nullptr) center_->UnrefSend();
   }
 
+  void Close() {
+    if (auto* center = absl::exchange(center_, nullptr)) center->UnrefSend();
+  }
+
   // Send a single message along the pipe.
   // Returns a promise that will resolve to a bool - true if the message was
   // sent, false if it could never be sent. Blocks the promise until the
