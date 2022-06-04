@@ -288,8 +288,13 @@ class XdsClient::ChannelState::AdsCallState
             ads_calld_->xds_client()->authority_state_map_[name_.authority];
         ResourceState& state = authority_state.resource_map[type_][name_.key];
         state.meta.client_status = XdsApi::ResourceMetadata::DOES_NOT_EXIST;
-        ads_calld_->xds_client()->NotifyWatchersOnResourceDoesNotExist(
-            state.watchers);
+        ads_calld_->xds_client()->NotifyWatchersOnErrorLocked(
+            state.watchers,
+            absl::UnavailableError(absl::StrFormat(
+                "timeout obtaining resource {type=%s name=%s} from xds server",
+                type_->type_url(),
+                XdsClient::ConstructFullXdsResourceName(
+                    name_.authority, type_->type_url(), name_.key))));
       }
       GRPC_ERROR_UNREF(error);
     }
