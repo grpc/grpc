@@ -964,7 +964,7 @@ void Subchannel::OnConnectingFinishedLocked(grpc_error_handle error) {
     // to be initialized.
     grpc_init();
     retry_timer_handle_ = GetDefaultEventEngine()->RunAt(
-        ee_deadline, [self = WeakRef(DEBUG_LOCATION, "RetryTimer")] () mutable {
+        ee_deadline, [self = WeakRef(DEBUG_LOCATION, "RetryTimer")]() mutable {
           {
             ApplicationCallbackExecCtx callback_exec_ctx;
             ExecCtx exec_ctx;
