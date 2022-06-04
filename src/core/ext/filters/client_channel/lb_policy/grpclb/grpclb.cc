@@ -382,6 +382,39 @@ class GrpcLb : public LoadBalancingPolicy {
     PickResult Pick(PickArgs args) override;
 
    private:
+    // A subchannel call tracker that unrefs the GrpcLbClientStats object
+    // in the case where the subchannel call is never actually started,
+    // since the client load reporting filter will not be able to do it
+    // in that case.
+    class SubchannelCallTracker : public SubchannelCallTrackerInterface {
+     public:
+      SubchannelCallTracker(
+          RefCountedPtr<GrpcLbClientStats> client_stats,
+          std::unique_ptr<SubchannelCallTrackerInterface> original_call_tracker)
+          : client_stats_(std::move(client_stats)),
+            original_call_tracker_(std::move(original_call_tracker)) {}
+
+      void Start() override {
+        if (original_call_tracker_ != nullptr) {
+          original_call_tracker_->Start();
+        }
+        // If we're actually starting the subchannel call, then the
+        // client load reporting filter will take ownership of the ref
+        // passed down to it via metadata.
+        client_stats_.release();
+      }
+
+      void Finish(FinishArgs args) override {
+        if (original_call_tracker_ != nullptr) {
+          original_call_tracker_->Finish(args);
+        }
+      }
+
+     private:
+      RefCountedPtr<GrpcLbClientStats> client_stats_;
+      std::unique_ptr<SubchannelCallTrackerInterface> original_call_tracker_;
+    };
+
     // Serverlist to be used for determining drops.
     RefCountedPtr<Serverlist> serverlist_;
 
@@ -694,7 +727,10 @@ GrpcLb::PickResult GrpcLb::Picker::Pick(PickArgs args) {
     // client_load_reporting filter.
     GrpcLbClientStats* client_stats = subchannel_wrapper->client_stats();
     if (client_stats != nullptr) {
-      client_stats->Ref().release();  // Ref passed via metadata.
+      complete_pick->subchannel_call_tracker =
+          absl::make_unique<SubchannelCallTracker>(
+              client_stats->Ref(),
+              std::move(complete_pick->subchannel_call_tracker));
       // The metadata value is a hack: we pretend the pointer points to
       // a string and rely on the client_load_reporting filter to know
       // how to interpret it.

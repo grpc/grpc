@@ -70,8 +70,8 @@ namespace testing {
 namespace {
 
 bool CheckIsLocalhost(const std::string& addr) {
-  const std::string kIpv6("ipv6:[::1]:");
-  const std::string kIpv4MappedIpv6("ipv6:[::ffff:127.0.0.1]:");
+  const std::string kIpv6("ipv6:%5B::1%5D:");
+  const std::string kIpv4MappedIpv6("ipv6:%5B::ffff:127.0.0.1%5D:");
   const std::string kIpv4("ipv4:127.0.0.1:");
   return addr.substr(0, kIpv4.size()) == kIpv4 ||
          addr.substr(0, kIpv4MappedIpv6.size()) == kIpv4MappedIpv6 ||
