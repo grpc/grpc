@@ -203,9 +203,21 @@ static void connected_channel_get_channel_info(
     grpc_channel_element* /*elem*/, const grpc_channel_info* /*channel_info*/) {
 }
 
+namespace grpc_core {
+namespace {
+
+ArenaPromise<grpc_core::ServerMetadataHandle> MakeCallPromise(
+    grpc_channel_element* elem, grpc_core::CallArgs call_args,
+    grpc_core::NextPromiseFactory) {
+  abort();
+}
+
+}  // namespace
+}  // namespace grpc_core
+
 const grpc_channel_filter grpc_connected_filter = {
     connected_channel_start_transport_stream_op_batch,
-    nullptr,
+    grpc_core::MakeCallPromise,
     connected_channel_start_transport_op,
     sizeof(call_data),
     connected_channel_init_call_elem,
