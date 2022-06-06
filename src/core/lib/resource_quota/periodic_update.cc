@@ -19,10 +19,16 @@
 namespace grpc_core {
 
 bool PeriodicUpdate::MaybeEndPeriod() {
+  // updates_remaining_ just reached 0 and the thread calling this function was
+  // the decrementer that got us there.
+  // We can now safely mutate any non-atomic mutable variables (we've got a
+  // guarantee that no other thread will), and by the time this function returns
+  // we must store a postive number into updates_remaining_.
   auto now = ExecCtx::Get()->Now();
   Duration time_so_far = now - period_start_;
   if (time_so_far < period_) {
-    // Double the number of updates remaining until the next period.
+    // At most double the number of updates remaining until the next period.
+    // At least try to estimate when we'll reach it.
     int64_t better_guess;
     if (time_so_far.millis() == 0) {
       better_guess = expected_updates_per_period_ * 2;
@@ -31,6 +37,7 @@ bool PeriodicUpdate::MaybeEndPeriod() {
       if (scale > 2) {
         better_guess = expected_updates_per_period_ * 2;
       } else {
+        // We expect scale >= 1.0 still.
         better_guess = expected_updates_per_period_ * scale;
         if (better_guess <= expected_updates_per_period_) {
           better_guess = expected_updates_per_period_ + 1;
@@ -42,8 +49,14 @@ bool PeriodicUpdate::MaybeEndPeriod() {
     const int64_t past_remaining =
         updates_remaining_.fetch_add(add, std::memory_order_release);
     // If adding more things still didn't get us back above 0 things remaining
-    // then we should continue adding more things.
-    if (add + past_remaining <= 0) return MaybeEndPeriod();
+    // then we should continue adding more things - otherwise no thread could
+    // ever enter MaybeEndPeriod again!
+    // (Remember: other threads may have decremented updates_remaining_ while we
+    // executed).
+    if (add + past_remaining <= 0) {
+      ExecCtx::Get()->InvalidateNow();
+      return MaybeEndPeriod();
+    }
     // Not quite done, return false, try for longer.
     return false;
   }

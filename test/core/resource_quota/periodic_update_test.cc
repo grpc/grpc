@@ -27,25 +27,31 @@ namespace testing {
 TEST(PeriodicUpdateTest, SimpleTest) {
   std::unique_ptr<PeriodicUpdate> upd;
   Timestamp start;
+  // Create a periodic update that updates every second.
   {
     ExecCtx exec_ctx;
     upd = absl::make_unique<PeriodicUpdate>(Duration::Seconds(1));
     start = exec_ctx.Now();
   }
+  // Wait until the first period has elapsed.
   while (true) {
     ExecCtx exec_ctx;
     if (upd->Tick()) break;
   }
+  // Ensure that took at least 1 second.
   {
     ExecCtx exec_ctx;
     EXPECT_GE(exec_ctx.Now() - start, Duration::Seconds(1));
     start = exec_ctx.Now();
   }
+  // Do ten more update cycles
   for (int i = 0; i < 10; i++) {
     while (true) {
       ExecCtx exec_ctx;
       if (upd->Tick()) break;
     }
+    // Ensure the time taken was between 1 and 1.5 seconds - we make a little
+    // allowance for the presumed inaccuracy of this type.
     {
       ExecCtx exec_ctx;
       EXPECT_GE(exec_ctx.Now() - start, Duration::Seconds(1));
@@ -59,11 +65,15 @@ TEST(PeriodicUpdate, ThreadTest) {
   std::unique_ptr<PeriodicUpdate> upd;
   std::atomic<int> count(0);
   Timestamp start;
+  // Create a periodic update that updates every second.
   {
     ExecCtx exec_ctx;
     upd = absl::make_unique<PeriodicUpdate>(Duration::Seconds(1));
     start = exec_ctx.Now();
   }
+  // Run ten threads all updating the counter continuously, for a total of ten
+  // update cycles.
+  // This allows TSAN to catch threading issues.
   std::vector<std::thread> threads;
   for (size_t i = 0; i < 10; i++) {
     threads.push_back(std::thread([&]() {
@@ -73,7 +83,12 @@ TEST(PeriodicUpdate, ThreadTest) {
       }
     }));
   }
-  for (auto& th : threads) th.join();
+
+  // Finish all threads.
+  for (auto& th : threads) {
+    th.join();
+  }
+  // Ensure our ten cycles took at least 10 seconds, and no more than 15.
   {
     ExecCtx exec_ctx;
     EXPECT_GE(exec_ctx.Now() - start, Duration::Seconds(10));

@@ -26,12 +26,23 @@
 
 namespace grpc_core {
 
+// Lightweight timer-like mechanism for periodic updates.
+// Fast path only decrements an atomic int64.
+// Slow path runs corrections and estimates how many ticks are required to hit
+// the target period.
+// This is super inaccurate of course, but for places where we can't run timers,
+// or places where continuous registration/unregistration would cause problems
+// it can be quite useful.
 class PeriodicUpdate {
  public:
   explicit PeriodicUpdate(Duration period) : period_(period) {}
 
   // Tick the update, return true if we think the period expired.
   GRPC_MUST_USE_RESULT bool Tick() {
+    // Atomically decrement the remaining ticks counter.
+    // If we hit 0 our estimate of period length has expired.
+    // See the comment next to the data members for a description of thread
+    // safety.
     if (updates_remaining_.fetch_sub(1, std::memory_order_acquire) == 1) {
       return MaybeEndPeriod();
     }
@@ -40,6 +51,13 @@ class PeriodicUpdate {
 
  private:
   GRPC_MUST_USE_RESULT bool MaybeEndPeriod();
+
+  // Thread safety:
+  // When updates_remaining_ reaches 0 the thread that decremented becomes
+  // responsible for updating any mutable variables and then setting
+  // updates_remaining_ to a value greater than zero.
+  // Whilst in this state other threads *may* decrement updates_remaining_, but
+  // this is fine because they'll observe an ignorable negative value.
 
   const Duration period_;
   Timestamp period_start_ = ExecCtx::Get()->Now();
