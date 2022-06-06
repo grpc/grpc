@@ -193,11 +193,12 @@ static void seal_unseal_small_buffer(tsi_zero_copy_grpc_protector* sender,
                                  &var->staging_sb);
     /* Unprotects one by one.  */
     GPR_ASSERT(tsi_zero_copy_grpc_protector_unprotect(
-                   receiver, &var->staging_sb, &var->unprotected_sb) == TSI_OK);
+                   receiver, &var->staging_sb, &var->unprotected_sb, nullptr) ==
+               TSI_OK);
     GPR_ASSERT(var->unprotected_sb.length == 0);
     GPR_ASSERT(tsi_zero_copy_grpc_protector_unprotect(
-                   receiver, &var->protected_sb, &var->unprotected_sb) ==
-               TSI_OK);
+                   receiver, &var->protected_sb, &var->unprotected_sb,
+                   nullptr) == TSI_OK);
     GPR_ASSERT(
         are_slice_buffers_equal(&var->unprotected_sb, &var->duplicate_sb));
     alts_zero_copy_grpc_protector_test_var_destroy(var);
@@ -226,12 +227,12 @@ static void seal_unseal_large_buffer(tsi_zero_copy_grpc_protector* sender,
       grpc_slice_buffer_move_first(&var->protected_sb, channel_size,
                                    &var->staging_sb);
       GPR_ASSERT(tsi_zero_copy_grpc_protector_unprotect(
-                     receiver, &var->staging_sb, &var->unprotected_sb) ==
-                 TSI_OK);
+                     receiver, &var->staging_sb, &var->unprotected_sb,
+                     nullptr) == TSI_OK);
     }
     GPR_ASSERT(tsi_zero_copy_grpc_protector_unprotect(
-                   receiver, &var->protected_sb, &var->unprotected_sb) ==
-               TSI_OK);
+                   receiver, &var->protected_sb, &var->unprotected_sb,
+                   nullptr) == TSI_OK);
     GPR_ASSERT(
         are_slice_buffers_equal(&var->unprotected_sb, &var->duplicate_sb));
     alts_zero_copy_grpc_protector_test_var_destroy(var);
