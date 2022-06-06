@@ -7631,6 +7631,19 @@ targets:
   - test/core/address_utils/sockaddr_utils_test.cc
   deps:
   - grpc_test_util
+- name: ssl_transport_security_util_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/core/tsi/ssl_transport_security_util_test.cc
+  deps:
+  - grpc_test_util
+  platforms:
+  - linux
+  - posix
+  - mac
 - name: stack_tracer_test
   gtest: true
   build: test
