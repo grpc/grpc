@@ -668,7 +668,7 @@ static void test_file_watcher_recovers_from_failure(
   grpc_channel_args server_args = {GPR_ARRAY_SIZE(args), args};
 
   grpc_end2end_test_fixture f = begin_test(
-      config, "test_file_watcher_valid_policy_reload", nullptr, &server_args);
+      config, "test_file_watcher_recovers_from_failure", nullptr, &server_args);
   grpc_authorization_policy_provider_release(provider);
   test_allow_authorized_request(f);
   // Replace exisiting policy in file with an invalid policy.
