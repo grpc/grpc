@@ -371,7 +371,6 @@ class XdsKubernetesTestCase(absltest.TestCase, metaclass=abc.ABCMeta):
         try:
             for attempt in retryer:
                 with attempt:
-                    self.assertSuccessfulRpcs(test_client)
                     raw_config = test_client.csds.fetch_client_status(
                         log_level=logging.INFO)
                     dumped_config = xds_url_map_testcase.DumpedXdsConfig(
