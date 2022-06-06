@@ -22,7 +22,7 @@ import setuptools  # isort:skip
 from distutils.unixccompiler import UnixCCompiler
 from distutils.dir_util import copy_tree
 import distutils
-DISTUTILS_DIR = distutils.__path__
+DISTUTILS_DIR = distutils.__path__[0]
 
 UnixCCompiler.src_extensions.append('.S')
 del UnixCCompiler
