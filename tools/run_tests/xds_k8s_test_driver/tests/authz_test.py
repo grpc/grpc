@@ -47,12 +47,12 @@ class AuthzTest(xds_k8s_testcase.SecurityXdsKubernetesTestCase):
     }
 
     @staticmethod
-    def isSupported(config: skips.TestConfig) -> bool:
-        if config.client_lang in ['cpp', 'python']:
-            return config.version_ge('v1.44.x')
-        elif config.client_lang in ['java', 'go']:
-            return config.version_ge('v1.42.x')
-        return False
+    def is_supported(config: skips.TestConfig) -> bool:
+        if config.client_lang in frozenset({'cpp', 'python'}):
+            return not config.version_lt('v1.44.x')
+        elif config.client_lang in frozenset({'java', 'go'}):
+            return not config.version_lt('v1.42.x')
+        return True
 
     def setUp(self):
         super().setUp()

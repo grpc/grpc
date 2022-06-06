@@ -85,7 +85,7 @@ class XdsKubernetesBaseTestCase(absltest.TestCase):
     td: TrafficDirectorManager
 
     @staticmethod
-    def isSupported(config: skips.TestConfig) -> bool:
+    def is_supported(config: skips.TestConfig) -> bool:
         """Overridden by the test class to decide if the config is supported.
 
         Returns:
@@ -104,7 +104,7 @@ class XdsKubernetesBaseTestCase(absltest.TestCase):
 
         # Raises unittest.SkipTest if given client/server/version does not
         # support current test case.
-        skips.evaluate_test_config(cls.isSupported)
+        skips.evaluate_test_config(cls.is_supported)
 
         # GCP
         cls.project: str = xds_flags.PROJECT.value

@@ -52,15 +52,25 @@ _TEST_METADATA = (
 _ChannelzChannelState = grpc_channelz.ChannelState
 
 
+def _is_supported(config: skips.TestConfig) -> bool:
+    # Per "Ring hash" in
+    # https://github.com/grpc/grpc/blob/master/doc/grpc_xds_features.md
+    if config.client_lang in frozenset({'cpp', 'java'}):
+        return not config.version_lt('v1.40.x')
+    elif config.client_lang == 'go':
+        return not config.version_lt('v1.41.x')
+    elif config.client_lang == 'python':
+        # TODO(https://github.com/grpc/grpc/issues/27430): supported after
+        #      the issue is fixed.
+        return False
+    return True
+
+
 class TestHeaderBasedAffinity(xds_url_map_testcase.XdsUrlMapTestCase):
 
     @staticmethod
     def is_supported(config: skips.TestConfig) -> bool:
-        if config.client_lang in ['cpp', 'java']:
-            return config.version_ge('v1.40.x')
-        if config.client_lang in ['go']:
-            return config.version_ge('v1.41.x')
-        return False
+        return _is_supported(config)
 
     @staticmethod
     def client_init_config(rpc: str, metadata: str):
@@ -125,11 +135,7 @@ class TestHeaderBasedAffinityMultipleHeaders(
 
     @staticmethod
     def is_supported(config: skips.TestConfig) -> bool:
-        if config.client_lang in ['cpp', 'java']:
-            return config.version_ge('v1.40.x')
-        if config.client_lang in ['go']:
-            return config.version_ge('v1.41.x')
-        return False
+        return _is_supported(config)
 
     @staticmethod
     def client_init_config(rpc: str, metadata: str):

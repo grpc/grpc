@@ -43,10 +43,11 @@ _RPC_COUNT = 100
 class AffinityTest(xds_k8s_testcase.RegularXdsKubernetesTestCase):
 
     @staticmethod
-    def isSupported(config: skips.TestConfig) -> bool:
-        if config.client_lang in ['cpp', 'java', 'python', 'go']:
-            return config.version_ge('v1.40.x')
-        return False
+    def is_supported(config: skips.TestConfig) -> bool:
+        if config.is_common_lang_client:
+            # Versions prior to v1.40.x don't support Affinity.
+            return not config.version_lt('v1.40.x')
+        return True
 
     def test_affinity(self) -> None:  # pylint: disable=too-many-statements
 

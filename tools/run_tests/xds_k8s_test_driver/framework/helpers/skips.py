@@ -13,6 +13,7 @@
 # limitations under the License.
 """The classes and predicates to assist validate test config for test cases."""
 from dataclasses import dataclass
+import functools
 import re
 from typing import Callable
 import unittest
@@ -40,17 +41,39 @@ class TestConfig:
     server_lang: str
     version: str
 
-    def version_ge(self, another: str) -> bool:
+    # Languages supported by the framework, that follow the same gRPC version
+    # release scheme.
+    common_langs = frozenset({'cpp', 'go', 'java', 'python'})
+
+    def version_gte(self, another: str) -> bool:
         """Returns a bool for whether the version is >= another one.
 
         A version is greater than or equal to another version means its version
         number is greater than or equal to another version's number. Version
-        "master" is always considered latest. E.g., master >= v1.41.x >= v1.40.x
-        >= v1.9.x.
+        "master" is always considered latest.
+        E.g., master >= v1.41.x >= v1.40.x >= v1.9.x.
         """
         if self.version == 'master':
             return True
         return _parse_version(self.version) >= _parse_version(another)
+
+    def version_lt(self, another: str) -> bool:
+        """Returns a bool for whether the version is < another one.
+
+        Version "master" is always considered latest.
+        E.g., v1.9.x < v1.40.x < v1.41.x < master.
+        """
+        if self.version == 'master':
+            return False
+        return _parse_version(self.version) < _parse_version(another)
+
+    @property
+    @functools.lru_cache(None)
+    def is_common_lang_client(self) -> bool:
+        """Whether the client is one of the gRPC implementations following common
+        release schema.
+        """
+        return self.client_lang in self.common_langs
 
 
 def evaluate_test_config(check: Callable[[TestConfig], bool]) -> None:

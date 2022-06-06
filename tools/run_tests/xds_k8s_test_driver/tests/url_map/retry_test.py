@@ -62,15 +62,21 @@ def _build_retry_route_rule(retryConditions, num_retries):
     }
 
 
+def _is_supported(config: skips.TestConfig) -> bool:
+    # Per "Retry" in
+    # https://github.com/grpc/grpc/blob/master/doc/grpc_xds_features.md
+    if config.client_lang in frozenset({'cpp', 'java', 'python'}):
+        return not config.version_lt('v1.40.x')
+    elif config.client_lang == 'go':
+        return not config.version_lt('v1.41.x')
+    return True
+
+
 class TestRetryUpTo3AttemptsAndFail(xds_url_map_testcase.XdsUrlMapTestCase):
 
     @staticmethod
     def is_supported(config: skips.TestConfig) -> bool:
-        if config.client_lang in ['cpp', 'java', 'python']:
-            return config.version_ge('v1.40.x')
-        elif config.client_lang == 'go':
-            return config.version_ge('v1.41.x')
-        return False
+        return _is_supported(config)
 
     @staticmethod
     def url_map_change(
@@ -111,11 +117,7 @@ class TestRetryUpTo4AttemptsAndSucceed(xds_url_map_testcase.XdsUrlMapTestCase):
 
     @staticmethod
     def is_supported(config: skips.TestConfig) -> bool:
-        if config.client_lang in ['cpp', 'java', 'python']:
-            return config.version_ge('v1.40.x')
-        elif config.client_lang == 'go':
-            return config.version_ge('v1.41.x')
-        return False
+        return _is_supported(config)
 
     @staticmethod
     def url_map_change(
