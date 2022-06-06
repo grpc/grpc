@@ -20,7 +20,7 @@ load("//bazel:grpc_build_system.bzl", "grpc_cc_test")
 load("@rules_proto//proto:defs.bzl", "proto_library")
 load("@rules_cc//cc:defs.bzl", "cc_proto_library")
 
-def grpc_fuzzer(name, corpus, srcs = [], deps = [], data = [], size = "large", **kwargs):
+def grpc_fuzzer(name, corpus, srcs = [], tags = [], deps = [], data = [], size = "large", **kwargs):
     """Instantiates a fuzzer test.
 
     Args:
@@ -36,6 +36,7 @@ def grpc_fuzzer(name, corpus, srcs = [], deps = [], data = [], size = "large", *
     grpc_cc_test(
         name = name,
         srcs = srcs,
+        tags = tags + ["grpc-fuzzer", "no-cache"],
         deps = deps + select({
             "//:grpc_build_fuzzers": [],
             "//conditions:default": ["//test/core/util:fuzzer_corpus_test"],
@@ -46,13 +47,13 @@ def grpc_fuzzer(name, corpus, srcs = [], deps = [], data = [], size = "large", *
         ],
         size = size,
         args = select({
-            "//:grpc_build_fuzzers": [CORPUS_DIR],
+            "//:grpc_build_fuzzers": [CORPUS_DIR, "-runs=5000"],
             "//conditions:default": ["--directory=" + CORPUS_DIR],
         }),
         **kwargs
     )
 
-def grpc_proto_fuzzer(name, corpus, proto, srcs = [], deps = [], data = [], size = "large", **kwargs):
+def grpc_proto_fuzzer(name, corpus, proto, srcs = [], tags = [], deps = [], data = [], size = "large", **kwargs):
     """Instantiates a protobuf mutator fuzzer test.
 
     Args:
@@ -82,6 +83,7 @@ def grpc_proto_fuzzer(name, corpus, proto, srcs = [], deps = [], data = [], size
     grpc_cc_test(
         name = name,
         srcs = srcs,
+        tags = tags + ["grpc-fuzzer", "no-cache"],
         deps = deps + [
             "@com_google_libprotobuf_mutator//:libprotobuf_mutator",
             CC_PROTO_LIBRARY,
@@ -95,7 +97,7 @@ def grpc_proto_fuzzer(name, corpus, proto, srcs = [], deps = [], data = [], size
         ],
         size = size,
         args = select({
-            "//:grpc_build_fuzzers": [CORPUS_DIR],
+            "//:grpc_build_fuzzers": [CORPUS_DIR, "-runs=5000"],
             "//conditions:default": ["--directory=" + CORPUS_DIR],
         }),
         **kwargs
