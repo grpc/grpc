@@ -86,9 +86,9 @@ grpc_cc_test(
 )
 
 grpc_cc_test(
-    name = "flow_control_test",
+    name = "flow_control_end2end_test",
     size = "large",
-    srcs = ["flow_control_test.cc"],
+    srcs = ["flow_control_end2end_test.cc"],
     external_deps = [
         "gtest",
     ],
@@ -98,6 +98,20 @@ grpc_cc_test(
         "//:grpc",
         "//test/core/end2end:cq_verifier",
         "//test/core/util:grpc_test_util",
+    ],
+)
+
+grpc_cc_test(
+    name = "flow_control_test",
+    srcs = ["flow_control_test.cc"],
+    external_deps = [
+        "gtest",
+    ],
+    language = "C++",
+    deps = [
+        "//:chttp2_flow_control",
+        "//:resource_quota",
+        "//test/core/util:grpc_suppressions",
     ],
 )
 

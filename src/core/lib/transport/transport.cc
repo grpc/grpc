@@ -161,9 +161,6 @@ void grpc_transport_stream_op_batch_finish_with_failure(
 void grpc_transport_stream_op_batch_queue_finish_with_failure(
     grpc_transport_stream_op_batch* batch, grpc_error_handle error,
     grpc_core::CallCombinerClosureList* closures) {
-  if (batch->send_message) {
-    batch->payload->send_message.send_message.reset();
-  }
   if (batch->cancel_stream) {
     GRPC_ERROR_UNREF(batch->payload->cancel_stream.cancel_error);
   }
