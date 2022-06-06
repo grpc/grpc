@@ -12,9 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "src/core/lib/resource_quota/periodic_update.h"
+#include <grpc/support/port_platform.h>
 
-#include <cstdint>
+#include "src/core/lib/resource_quota/periodic_update.h"
 
 namespace grpc_core {
 
