@@ -69,6 +69,8 @@ namespace grpc_core {
 
 namespace {
 
+const char* kC2PAuthority = "traffic-director-c2p.xds.googleapis.com";
+
 class GoogleCloud2ProdResolver : public Resolver {
  public:
   explicit GoogleCloud2ProdResolver(ResolverArgs args);
@@ -306,8 +308,9 @@ GoogleCloud2ProdResolver::GoogleCloud2ProdResolver(ResolverArgs args)
   }
   // Create xds resolver.
   child_resolver_ = CoreConfiguration::Get().resolver_registry().CreateResolver(
-      absl::StrCat("xds:", name_to_resolve).c_str(), args.args,
-      args.pollset_set, work_serializer_, std::move(args.result_handler));
+      absl::StrCat("xds://", kC2PAuthority, "/", name_to_resolve).c_str(),
+      args.args, args.pollset_set, work_serializer_,
+      std::move(args.result_handler));
   GPR_ASSERT(child_resolver_ != nullptr);
 }
 
@@ -396,7 +399,7 @@ void GoogleCloud2ProdResolver::StartXdsResolver() {
       {"xds_servers", xds_server},
       {"authorities",
        Json::Object{
-           {"traffic-director-c2p.xds.googleapis.com",
+           {kC2PAuthority,
             Json::Object{
                 {"xds_servers", std::move(xds_server)},
             }},
