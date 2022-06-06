@@ -44,7 +44,7 @@ class AffinityTest(xds_k8s_testcase.RegularXdsKubernetesTestCase):
 
     @staticmethod
     def is_supported(config: skips.TestConfig) -> bool:
-        if config.is_common_lang_client:
+        if config.client_lang in skips.Lang.VERSION_TYPE_1:
             # Versions prior to v1.40.x don't support Affinity.
             return not config.version_lt('v1.40.x')
         return True

@@ -30,6 +30,7 @@ DumpedXdsConfig = xds_url_map_testcase.DumpedXdsConfig
 RpcTypeUnaryCall = xds_url_map_testcase.RpcTypeUnaryCall
 XdsTestClient = client_app.XdsTestClient
 ExpectedResult = xds_url_map_testcase.ExpectedResult
+_Lang = skips.Lang
 
 logger = logging.getLogger(__name__)
 flags.adopt_module_key_flags(xds_url_map_testcase)
@@ -65,9 +66,9 @@ def _build_retry_route_rule(retryConditions, num_retries):
 def _is_supported(config: skips.TestConfig) -> bool:
     # Per "Retry" in
     # https://github.com/grpc/grpc/blob/master/doc/grpc_xds_features.md
-    if config.client_lang in frozenset({'cpp', 'java', 'python'}):
+    if config.client_lang in _Lang.CPP | _Lang.JAVA | _Lang.PYTHON:
         return not config.version_lt('v1.40.x')
-    elif config.client_lang == 'go':
+    elif config.client_lang in _Lang.GO:
         return not config.version_lt('v1.41.x')
     return True
 

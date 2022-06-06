@@ -12,8 +12,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """The classes and predicates to assist validate test config for test cases."""
+
 from dataclasses import dataclass
-import functools
+import enum
 import re
 from typing import Callable
 import unittest
@@ -24,26 +25,33 @@ from framework import xds_flags
 from framework import xds_k8s_flags
 
 
-def _get_lang(image_name: str) -> str:
-    return re.search(r'/(\w+)-(client|server):', image_name).group(1)
+class Lang(enum.Flag):
+    UNKNOWN = enum.auto()
+    CPP = enum.auto()
+    GO = enum.auto()
+    JAVA = enum.auto()
+    PYTHON = enum.auto()
+    NODE = enum.auto()
+    # Languages supported by the framework, that follow the same gRPC version
+    # release scheme.
+    VERSION_TYPE_1 = CPP | GO | JAVA | PYTHON
+    # Nodejs doesn't follow the same versioning scheme as other languages.
+    VERSION_TYPE_2 = NODE
 
-
-def _parse_version(s: str) -> pkg_version.Version:
-    if s.endswith(".x"):
-        s = s[:-2]
-    return pkg_version.Version(s)
+    @classmethod
+    def from_string(cls, lang: str):
+        try:
+            return cls[lang.upper()]
+        except KeyError:
+            return cls.UNKNOWN
 
 
 @dataclass
 class TestConfig:
     """Describes the config for the test suite."""
-    client_lang: str
-    server_lang: str
+    client_lang: Lang
+    server_lang: Lang
     version: str
-
-    # Languages supported by the framework, that follow the same gRPC version
-    # release scheme.
-    common_langs = frozenset({'cpp', 'go', 'java', 'python'})
 
     def version_gte(self, another: str) -> bool:
         """Returns a bool for whether the version is >= another one.
@@ -55,7 +63,7 @@ class TestConfig:
         """
         if self.version == 'master':
             return True
-        return _parse_version(self.version) >= _parse_version(another)
+        return self._parse_version(self.version) >= self._parse_version(another)
 
     def version_lt(self, another: str) -> bool:
         """Returns a bool for whether the version is < another one.
@@ -65,15 +73,18 @@ class TestConfig:
         """
         if self.version == 'master':
             return False
-        return _parse_version(self.version) < _parse_version(another)
+        return self._parse_version(self.version) < self._parse_version(another)
 
-    @property
-    @functools.lru_cache(None)
-    def is_common_lang_client(self) -> bool:
-        """Whether the client is one of the gRPC implementations following common
-        release schema.
-        """
-        return self.client_lang in self.common_langs
+    @staticmethod
+    def _parse_version(s: str) -> pkg_version.Version:
+        if s.endswith(".x"):
+            s = s[:-2]
+        return pkg_version.Version(s)
+
+
+def _get_lang(image_name: str) -> Lang:
+    return Lang.from_string(
+        re.search(r'/(\w+)-(client|server):', image_name).group(1))
 
 
 def evaluate_test_config(check: Callable[[TestConfig], bool]) -> None:

@@ -31,6 +31,7 @@ DumpedXdsConfig = xds_url_map_testcase.DumpedXdsConfig
 RpcTypeUnaryCall = xds_url_map_testcase.RpcTypeUnaryCall
 RpcTypeEmptyCall = xds_url_map_testcase.RpcTypeEmptyCall
 XdsTestClient = client_app.XdsTestClient
+_Lang = skips.Lang
 
 logger = logging.getLogger(__name__)
 flags.adopt_module_key_flags(xds_url_map_testcase)
@@ -55,11 +56,11 @@ _ChannelzChannelState = grpc_channelz.ChannelState
 def _is_supported(config: skips.TestConfig) -> bool:
     # Per "Ring hash" in
     # https://github.com/grpc/grpc/blob/master/doc/grpc_xds_features.md
-    if config.client_lang in frozenset({'cpp', 'java'}):
+    if config.client_lang in _Lang.CPP | _Lang.JAVA:
         return not config.version_lt('v1.40.x')
-    elif config.client_lang == 'go':
+    elif config.client_lang in _Lang.GO:
         return not config.version_lt('v1.41.x')
-    elif config.client_lang == 'python':
+    elif config.client_lang in _Lang.PYTHON:
         # TODO(https://github.com/grpc/grpc/issues/27430): supported after
         #      the issue is fixed.
         return False
