@@ -13,5 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-bazel test `bazel query "attr(tags, '\\bgrpc-fuzzer\\b', //test/...)"` \
+dir=$(dirname "${0}")
+cd "${dir}/../.."
+tools/bazel test `bazel query "attr(tags, '\\bgrpc-fuzzer\\b', //test/...)"` \
   -c dbg --config fuzzer_asan
