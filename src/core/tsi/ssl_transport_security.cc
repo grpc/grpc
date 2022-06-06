@@ -57,6 +57,7 @@
 #include "src/core/lib/gpr/useful.h"
 #include "src/core/tsi/ssl/key_logging/ssl_key_logging.h"
 #include "src/core/tsi/ssl/session_cache/ssl_session_cache.h"
+#include "src/core/tsi/ssl_transport_security_util.h"
 #include "src/core/tsi/ssl_types.h"
 #include "src/core/tsi/transport_security.h"
 
@@ -193,31 +194,6 @@ static void init_openssl(void) {
 }
 
 /* --- Ssl utils. ---*/
-
-static const char* ssl_error_string(int error) {
-  switch (error) {
-    case SSL_ERROR_NONE:
-      return "SSL_ERROR_NONE";
-    case SSL_ERROR_ZERO_RETURN:
-      return "SSL_ERROR_ZERO_RETURN";
-    case SSL_ERROR_WANT_READ:
-      return "SSL_ERROR_WANT_READ";
-    case SSL_ERROR_WANT_WRITE:
-      return "SSL_ERROR_WANT_WRITE";
-    case SSL_ERROR_WANT_CONNECT:
-      return "SSL_ERROR_WANT_CONNECT";
-    case SSL_ERROR_WANT_ACCEPT:
-      return "SSL_ERROR_WANT_ACCEPT";
-    case SSL_ERROR_WANT_X509_LOOKUP:
-      return "SSL_ERROR_WANT_X509_LOOKUP";
-    case SSL_ERROR_SYSCALL:
-      return "SSL_ERROR_SYSCALL";
-    case SSL_ERROR_SSL:
-      return "SSL_ERROR_SSL";
-    default:
-      return "Unknown error";
-  }
-}
 
 /* TODO(jboeuf): Remove when we are past the debugging phase with this code. */
 static void ssl_log_where_info(const SSL* ssl, int where, int flag,
@@ -520,71 +496,6 @@ static tsi_result peer_from_x509(X509* cert, int include_certificate_type,
 
   GPR_ASSERT((int)peer->property_count == current_insert_index);
   return result;
-}
-
-/* Logs the SSL error stack. */
-static void log_ssl_error_stack(void) {
-  unsigned long err;
-  while ((err = ERR_get_error()) != 0) {
-    char details[256];
-    ERR_error_string_n(static_cast<uint32_t>(err), details, sizeof(details));
-    gpr_log(GPR_ERROR, "%s", details);
-  }
-}
-
-/* Performs an SSL_read and handle errors. */
-static tsi_result do_ssl_read(SSL* ssl, unsigned char* unprotected_bytes,
-                              size_t* unprotected_bytes_size) {
-  GPR_ASSERT(*unprotected_bytes_size <= INT_MAX);
-  ERR_clear_error();
-  int read_from_ssl = SSL_read(ssl, unprotected_bytes,
-                               static_cast<int>(*unprotected_bytes_size));
-  if (read_from_ssl <= 0) {
-    read_from_ssl = SSL_get_error(ssl, read_from_ssl);
-    switch (read_from_ssl) {
-      case SSL_ERROR_ZERO_RETURN: /* Received a close_notify alert. */
-      case SSL_ERROR_WANT_READ:   /* We need more data to finish the frame. */
-        *unprotected_bytes_size = 0;
-        return TSI_OK;
-      case SSL_ERROR_WANT_WRITE:
-        gpr_log(
-            GPR_ERROR,
-            "Peer tried to renegotiate SSL connection. This is unsupported.");
-        return TSI_UNIMPLEMENTED;
-      case SSL_ERROR_SSL:
-        gpr_log(GPR_ERROR, "Corruption detected.");
-        log_ssl_error_stack();
-        return TSI_DATA_CORRUPTED;
-      default:
-        gpr_log(GPR_ERROR, "SSL_read failed with error %s.",
-                ssl_error_string(read_from_ssl));
-        return TSI_PROTOCOL_FAILURE;
-    }
-  }
-  *unprotected_bytes_size = static_cast<size_t>(read_from_ssl);
-  return TSI_OK;
-}
-
-/* Performs an SSL_write and handle errors. */
-static tsi_result do_ssl_write(SSL* ssl, unsigned char* unprotected_bytes,
-                               size_t unprotected_bytes_size) {
-  GPR_ASSERT(unprotected_bytes_size <= INT_MAX);
-  ERR_clear_error();
-  int ssl_write_result = SSL_write(ssl, unprotected_bytes,
-                                   static_cast<int>(unprotected_bytes_size));
-  if (ssl_write_result < 0) {
-    ssl_write_result = SSL_get_error(ssl, ssl_write_result);
-    if (ssl_write_result == SSL_ERROR_WANT_READ) {
-      gpr_log(GPR_ERROR,
-              "Peer tried to renegotiate SSL connection. This is unsupported.");
-      return TSI_UNIMPLEMENTED;
-    } else {
-      gpr_log(GPR_ERROR, "SSL_write failed with error %s.",
-              ssl_error_string(ssl_write_result));
-      return TSI_INTERNAL_ERROR;
-    }
-  }
-  return TSI_OK;
 }
 
 /* Loads an in-memory PEM certificate chain into the SSL context. */
@@ -1049,135 +960,6 @@ void tsi_ssl_session_cache_unref(tsi_ssl_session_cache* cache) {
   reinterpret_cast<tsi::SslSessionLRUCache*>(cache)->Unref();
 }
 
-/* --- tsi_frame_protector util methods implementation. ---*/
-tsi_result ssl_protector_protect_util(
-    const unsigned char* unprotected_bytes, const size_t buffer_size,
-    size_t& buffer_offset, unsigned char* buffer, SSL* ssl, BIO* network_io,
-    size_t* unprotected_bytes_size, unsigned char* protected_output_frames,
-    size_t* protected_output_frames_size) {
-  int read_from_ssl;
-  size_t available;
-  tsi_result result = TSI_OK;
-
-  /* First see if we have some pending data in the SSL BIO. */
-  int pending_in_ssl = static_cast<int>(BIO_pending(network_io));
-  if (pending_in_ssl > 0) {
-    *unprotected_bytes_size = 0;
-    GPR_ASSERT(*protected_output_frames_size <= INT_MAX);
-    read_from_ssl = BIO_read(network_io, protected_output_frames,
-                             static_cast<int>(*protected_output_frames_size));
-    if (read_from_ssl < 0) {
-      gpr_log(GPR_ERROR,
-              "Could not read from BIO even though some data is pending");
-      return TSI_INTERNAL_ERROR;
-    }
-    *protected_output_frames_size = static_cast<size_t>(read_from_ssl);
-    return TSI_OK;
-  }
-
-  /* Now see if we can send a complete frame. */
-  available = buffer_size - buffer_offset;
-  if (available > *unprotected_bytes_size) {
-    /* If we cannot, just copy the data in our internal buffer. */
-    memcpy(buffer + buffer_offset, unprotected_bytes, *unprotected_bytes_size);
-    buffer_offset += *unprotected_bytes_size;
-    *protected_output_frames_size = 0;
-    return TSI_OK;
-  }
-
-  /* If we can, prepare the buffer, send it to SSL_write and read. */
-  memcpy(buffer + buffer_offset, unprotected_bytes, available);
-  result = do_ssl_write(ssl, buffer, buffer_size);
-  if (result != TSI_OK) return result;
-
-  GPR_ASSERT(*protected_output_frames_size <= INT_MAX);
-  read_from_ssl = BIO_read(network_io, protected_output_frames,
-                           static_cast<int>(*protected_output_frames_size));
-  if (read_from_ssl < 0) {
-    gpr_log(GPR_ERROR, "Could not read from BIO after SSL_write.");
-    return TSI_INTERNAL_ERROR;
-  }
-  *protected_output_frames_size = static_cast<size_t>(read_from_ssl);
-  *unprotected_bytes_size = available;
-  buffer_offset = 0;
-  return TSI_OK;
-}
-
-tsi_result ssl_protector_protect_flush_util(
-    size_t& buffer_offset, unsigned char* buffer, SSL* ssl, BIO* network_io,
-    unsigned char* protected_output_frames,
-    size_t* protected_output_frames_size, size_t* still_pending_size) {
-  tsi_result result = TSI_OK;
-  int read_from_ssl = 0;
-  int pending;
-
-  if (buffer_offset != 0) {
-    result = do_ssl_write(ssl, buffer, buffer_offset);
-    if (result != TSI_OK) return result;
-    buffer_offset = 0;
-  }
-
-  pending = static_cast<int>(BIO_pending(network_io));
-  GPR_ASSERT(pending >= 0);
-  *still_pending_size = static_cast<size_t>(pending);
-  if (*still_pending_size == 0) return TSI_OK;
-
-  GPR_ASSERT(*protected_output_frames_size <= INT_MAX);
-  read_from_ssl = BIO_read(network_io, protected_output_frames,
-                           static_cast<int>(*protected_output_frames_size));
-  if (read_from_ssl <= 0) {
-    gpr_log(GPR_ERROR, "Could not read from BIO after SSL_write.");
-    return TSI_INTERNAL_ERROR;
-  }
-  *protected_output_frames_size = static_cast<size_t>(read_from_ssl);
-  pending = static_cast<int>(BIO_pending(network_io));
-  GPR_ASSERT(pending >= 0);
-  *still_pending_size = static_cast<size_t>(pending);
-  return TSI_OK;
-}
-
-tsi_result ssl_protector_unprotect_util(
-    const unsigned char* protected_frames_bytes, const size_t buffer_size,
-    size_t& buffer_offset, unsigned char* buffer, SSL* ssl, BIO* network_io,
-    size_t* protected_frames_bytes_size, unsigned char* unprotected_bytes,
-    size_t* unprotected_bytes_size) {
-  tsi_result result = TSI_OK;
-  int written_into_ssl = 0;
-  size_t output_bytes_size = *unprotected_bytes_size;
-  size_t output_bytes_offset = 0;
-
-  /* First, try to read remaining data from ssl. */
-  result = do_ssl_read(ssl, unprotected_bytes, unprotected_bytes_size);
-  if (result != TSI_OK) return result;
-  if (*unprotected_bytes_size == output_bytes_size) {
-    /* We have read everything we could and cannot process any more input. */
-    *protected_frames_bytes_size = 0;
-    return TSI_OK;
-  }
-  output_bytes_offset = *unprotected_bytes_size;
-  unprotected_bytes += output_bytes_offset;
-  *unprotected_bytes_size = output_bytes_size - output_bytes_offset;
-
-  /* Then, try to write some data to ssl. */
-  GPR_ASSERT(*protected_frames_bytes_size <= INT_MAX);
-  written_into_ssl = BIO_write(network_io, protected_frames_bytes,
-                               static_cast<int>(*protected_frames_bytes_size));
-  if (written_into_ssl < 0) {
-    gpr_log(GPR_ERROR, "Sending protected frame to ssl failed with %d",
-            written_into_ssl);
-    return TSI_INTERNAL_ERROR;
-  }
-  *protected_frames_bytes_size = static_cast<size_t>(written_into_ssl);
-
-  /* Now try to read some data again. */
-  result = do_ssl_read(ssl, unprotected_bytes, unprotected_bytes_size);
-  if (result == TSI_OK) {
-    /* Don't forget to output the total number of bytes read. */
-    *unprotected_bytes_size += output_bytes_offset;
-  }
-  return result;
-}
-
 /* --- tsi_frame_protector methods implementation. ---*/
 
 static tsi_result ssl_protector_protect(tsi_frame_protector* self,
@@ -1212,9 +994,8 @@ static tsi_result ssl_protector_unprotect(
   tsi_ssl_frame_protector* impl =
       reinterpret_cast<tsi_ssl_frame_protector*>(self);
   return ssl_protector_unprotect_util(
-      protected_frames_bytes, impl->buffer_size, impl->buffer_offset,
-      impl->buffer, impl->ssl, impl->network_io, protected_frames_bytes_size,
-      unprotected_bytes, unprotected_bytes_size);
+      protected_frames_bytes, impl->ssl, impl->network_io,
+      protected_frames_bytes_size, unprotected_bytes, unprotected_bytes_size);
 }
 
 static void ssl_protector_destroy(tsi_frame_protector* self) {

@@ -28,6 +28,7 @@
 #include <grpc/grpc_security_constants.h>
 
 #include "src/core/tsi/ssl/key_logging/ssl_key_logging.h"
+#include "src/core/tsi/ssl_transport_security_util.h"
 #include "src/core/tsi/transport_security_interface.h"
 
 /* Value for the TSI_CERTIFICATE_TYPE_PEER_PROPERTY property for X509 certs. */
@@ -371,47 +372,6 @@ void tsi_ssl_server_handshaker_factory_unref(
    - handle %encoded chars.
    - handle public suffix wildchar more strictly (e.g. *.co.uk) */
 int tsi_ssl_peer_matches_name(const tsi_peer* peer, absl::string_view name);
-
-/* Util that builds as many maximum-size TLS frames.
-   - unprotected_bytes is the plaintext to be protected.
-   - buffer_size, buffer_offset, buffer, ssl, and network_io are members of
-   tsi_frame_protector.
-   - unprotected_bytes_size is the size of the unprotected plaintext.
-   - protected_output_frames is the TLS frames built out of the plaintext.
-   - protected_output_frames_size is the size of the TLS frames built.
-   */
-tsi_result ssl_protector_protect_util(
-    const unsigned char* unprotected_bytes, const size_t buffer_size,
-    size_t& buffer_offset, unsigned char* buffer, SSL* ssl, BIO* network_io,
-    std::size_t* unprotected_bytes_size, unsigned char* protected_output_frames,
-    size_t* protected_output_frames_size);
-
-/* Util that builds a TLS frame out of the remaining plaintext bytes that have
-   been left in buffer.
-   - buffer_size, buffer_offset, buffer, ssl, and network_io are members of
-   tsi_frame_protector.
-   - protected_output_frames is the TLS frames built out of the plaintext.
-   - protected_output_frames_size is the size of the TLS frames built.
-   - still_pending_size is the size of data left in network_io.
-   */
-tsi_result ssl_protector_protect_flush_util(
-    size_t& buffer_offset, unsigned char* buffer, SSL* ssl, BIO* network_io,
-    unsigned char* protected_output_frames,
-    size_t* protected_output_frames_size, size_t* still_pending_size);
-
-/* Util that extracts the plaintext from a TLS frame.
-   - protected_frames_bytes is the TLS frame to extract plaintext from.
-   - buffer_size, buffer_offset, buffer, ssl, and network_io are members of
-   tsi_frame_protector.
-   - protected_frames_bytes_size is the size of the TLS frames.
-   - unprotected_bytes is the plaintext extracted from the TLS frames.
-   - unprotected_bytes_size is the size of plaintext extracted.
-   */
-tsi_result ssl_protector_unprotect_util(
-    const unsigned char* protected_frames_bytes, const size_t buffer_size,
-    size_t& buffer_offset, unsigned char* buffer, SSL* ssl, BIO* network_io,
-    size_t* protected_frames_bytes_size, unsigned char* unprotected_bytes,
-    size_t* unprotected_bytes_size);
 
 /* --- Testing support. ---
 
