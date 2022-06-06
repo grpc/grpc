@@ -93,7 +93,8 @@ bool IsXdsNonCfeCluster(const char* xds_cluster) {
   if (!absl::StartsWith(xds_cluster, "xdstp:")) return true;
   auto uri = grpc_core::URI::Parse(xds_cluster);
   if (!uri.ok()) return true;  // Shouldn't happen, but assume ALTS.
-  return !absl::StartsWith(uri->path(),
+  return uri->authority() != "traffic-director-c2p.xds.googleapis.com" ||
+         !absl::StartsWith(uri->path(),
                            "/envoy.config.cluster.v3.Cluster/google_cfe_");
 }
 

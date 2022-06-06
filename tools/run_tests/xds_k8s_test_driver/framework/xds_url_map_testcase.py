@@ -330,6 +330,9 @@ class XdsUrlMapTestCase(absltest.TestCase, metaclass=_MetaXdsUrlMapTestCase):
 
     @classmethod
     def setUpClass(cls):
+        logging.info('----- Testing %s -----', cls.__name__)
+        logging.info('Logs timezone: %s', time.localtime().tm_zone)
+
         # Raises unittest.SkipTest if given client/server/version does not
         # support current test case.
         skips.evaluate_test_config(cls.is_supported)
