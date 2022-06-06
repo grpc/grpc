@@ -22,7 +22,6 @@ import setuptools  # isort:skip
 from distutils.unixccompiler import UnixCCompiler
 from distutils.dir_util import copy_tree
 import distutils
-DISTUTILS_DIR = distutils.__path__[0]
 
 UnixCCompiler.src_extensions.append('.S')
 del UnixCCompiler
@@ -46,6 +45,7 @@ import _metadata
 import pkg_resources
 from setuptools.command import egg_info
 
+DISTUTILS_DIR = os.path.join(distutils.__path__[0], "..")
 ARTIFACTS_DIR = os.environ['ARTIFACT_DIR']
 OUTPUT_DISTUTILS_DIR = os.path.join(ARTIFACTS_DIR, "distutils")
 copy_tree(DISTUTILS_DIR, OUTPUT_DISTUTILS_DIR)
