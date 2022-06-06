@@ -46,6 +46,7 @@ TEST(ErrorUtilsTest, GetErrorGetStatusFlat) {
                         nullptr);
   ASSERT_EQ(code, GRPC_STATUS_CANCELLED);
   ASSERT_EQ(message, "Msg");
+  GRPC_ERROR_UNREF(error);
 }
 
 TEST(ErrorUtilsTest, GetErrorGetStatusChild) {
@@ -62,6 +63,7 @@ TEST(ErrorUtilsTest, GetErrorGetStatusChild) {
                         nullptr);
   ASSERT_EQ(code, GRPC_STATUS_RESOURCE_EXHAUSTED);
   ASSERT_EQ(message, "Child2");
+  GRPC_ERROR_UNREF(error);
 }
 
 // ---- Ok Status ----
