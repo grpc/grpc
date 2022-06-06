@@ -649,6 +649,15 @@ Subchannel::Subchannel(SubchannelKey key,
       pollset_set_(grpc_pollset_set_create()),
       connector_(std::move(connector)),
       backoff_(ParseArgsForBackoffValues(args, &min_connect_timeout_)) {
+  // A grpc_init is added here to ensure that grpc_shutdown does not happen
+  // until the subchannel is destroyed. Subchannels can persist longer than
+  // channels because they maybe reused/shared among multiple channels. As a
+  // result the subchannel destruction happens asynchronously to channel
+  // destruction. If the last channel destruction triggers a grpc_shutdown
+  // before the last subchannel destruction, then there maybe race conditions
+  // triggering segmentation faults. To prevent this issue, we call a grpc_init
+  // here and a grpc_shutdown in the subchannel destructor.
+  grpc_init();
   GRPC_STATS_INC_CLIENT_SUBCHANNELS_CREATED();
   GRPC_CLOSURE_INIT(&on_connecting_finished_, OnConnectingFinished, this,
                     grpc_schedule_on_exec_ctx);
@@ -697,6 +706,8 @@ Subchannel::~Subchannel() {
   grpc_channel_args_destroy(args_);
   connector_.reset();
   grpc_pollset_set_destroy(pollset_set_);
+  // grpc_shutdown is called here because grpc_init is called in the ctor.
+  grpc_shutdown();
 }
 
 RefCountedPtr<Subchannel> Subchannel::Create(
@@ -797,11 +808,6 @@ void Subchannel::ResetBackoff() {
   if (state_ == GRPC_CHANNEL_TRANSIENT_FAILURE &&
       GetDefaultEventEngine()->Cancel(retry_timer_handle_)) {
     OnRetryTimerLocked();
-    // Give up the subchannel ref.
-    self.reset();
-    // Since callback was not executed, call grpc_shutdown here since a
-    // grpc_init was made prior to scheduling of the timer callback.
-    grpc_shutdown();
   } else if (state_ == GRPC_CHANNEL_CONNECTING) {
     next_attempt_time_ = ExecCtx::Get()->Now();
   }
@@ -957,11 +963,6 @@ void Subchannel::OnConnectingFinishedLocked(grpc_error_handle error) {
             time_until_next_attempt.millis());
     SetConnectivityStateLocked(GRPC_CHANNEL_TRANSIENT_FAILURE,
                                grpc_error_to_absl_status(error));
-    // Ensure grpc remains initialized when the timer callback runs. The
-    // subchannel could get deleted when the timer callback is run and
-    // subchannel deletion may destroye some pollset_sets which required grpc
-    // to be initialized.
-    grpc_init();
     retry_timer_handle_ = GetDefaultEventEngine()->RunAt(
         ee_deadline, [self = WeakRef(DEBUG_LOCATION, "RetryTimer")]() mutable {
           {
@@ -976,9 +977,6 @@ void Subchannel::OnConnectingFinishedLocked(grpc_error_handle error) {
             // to crashes.
             self.reset();
           }
-          // This grpc_shutdown corresponds to grpc_init made when the callback
-          // is scheduled.
-          grpc_shutdown();
         });
   }
   (void)GRPC_ERROR_UNREF(error);
