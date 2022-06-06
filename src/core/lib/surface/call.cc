@@ -2016,9 +2016,8 @@ grpc_error_handle MakePromiseBasedCall(grpc_call_create_args* args,
 
   Arena* arena;
   PromiseBasedCall* call;
-  std::pair<Arena*, void*> arena_with_call =
-      Arena::CreateWithAlloc(channel->CallSizeEstimate(),
-                             sizeof(PromiseBasedCall), channel->allocator());
+  std::pair<Arena*, void*> arena_with_call = Arena::CreateWithAlloc(
+      channel->CallSizeEstimate(), sizeof(T), channel->allocator());
   arena = arena_with_call.first;
   call = new (arena_with_call.second) T(arena, *args);
 
@@ -2128,7 +2127,8 @@ void PromiseBasedCall::SetCompletionQueue(grpc_completion_queue* cq) {
 
 class ClientPromiseBasedCall final : public PromiseBasedCall {
  public:
-  using PromiseBasedCall::PromiseBasedCall;
+  ClientPromiseBasedCall(Arena* arena, const grpc_call_create_args& args)
+      : PromiseBasedCall(arena, args) {}
 
   absl::string_view GetServerAuthority() const override { abort(); }
   void CancelWithError(grpc_error_handle error) override;
