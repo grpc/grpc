@@ -313,7 +313,8 @@ pipe_detail::Next<T> PipeReceiver<T>::Next() {
 // polling code) would likely be more appropriate.
 template <typename T>
 struct Pipe {
-  Pipe() : Pipe(GetContext<Arena>()->New<pipe_detail::Center<T>>()) {}
+  Pipe() : Pipe(GetContext<Arena>()) {}
+  explicit Pipe(Arena* arena) : Pipe(arena->New<pipe_detail::Center<T>>()) {}
   Pipe(const Pipe&) = delete;
   Pipe& operator=(const Pipe&) = delete;
   Pipe(Pipe&&) noexcept = default;

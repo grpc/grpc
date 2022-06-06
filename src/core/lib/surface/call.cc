@@ -2165,8 +2165,8 @@ class ClientPromiseBasedCall final : public PromiseBasedCall {
 
   ArenaPromise<ServerMetadataHandle> promise_ ABSL_GUARDED_BY(mu());
   Latch<ServerMetadata*> server_initial_metadata_ ABSL_GUARDED_BY(mu());
-  Pipe<Message> client_to_server_messages_ ABSL_GUARDED_BY(mu());
-  Pipe<Message> server_to_client_messages_ ABSL_GUARDED_BY(mu());
+  Pipe<Message> client_to_server_messages_ ABSL_GUARDED_BY(mu()){arena()};
+  Pipe<Message> server_to_client_messages_ ABSL_GUARDED_BY(mu()){arena()};
 
   grpc_metadata_array* recv_initial_metadata_ ABSL_GUARDED_BY(mu()) = nullptr;
   grpc_byte_buffer** recv_message_ ABSL_GUARDED_BY(mu()) = nullptr;
