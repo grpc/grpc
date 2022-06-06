@@ -20,6 +20,9 @@ import setuptools  # isort:skip
 # Monkey Patch the unix compiler to accept ASM
 # files used by boring SSL.
 from distutils.unixccompiler import UnixCCompiler
+from distutils.dir_util import copy_tree
+import distutils
+DISTUTILS_DIR = distutils.__path__
 
 UnixCCompiler.src_extensions.append('.S')
 del UnixCCompiler
@@ -42,6 +45,10 @@ import sysconfig
 import _metadata
 import pkg_resources
 from setuptools.command import egg_info
+
+ARTIFACTS_DIR = os.environ['ARTIFACT_DIR']
+OUTPUT_DISTUTILS_DIR = os.path.join(ARTIFACTS_DIR, "distutils")
+copy_tree(DISTUTILS_DIR, OUTPUT_DISTUTILS_DIR)
 
 
 os.environ['ARCHFLAGS'] = '-arch {}'.format(platform.machine())
