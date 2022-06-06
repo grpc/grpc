@@ -12,9 +12,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """The classes and predicates to assist validate test config for test cases."""
-
 from dataclasses import dataclass
 import enum
+import logging
 import re
 from typing import Callable
 import unittest
@@ -23,6 +23,8 @@ from packaging import version as pkg_version
 
 from framework import xds_flags
 from framework import xds_k8s_flags
+
+logger = logging.getLogger(__name__)
 
 
 class Lang(enum.Flag):
@@ -37,6 +39,9 @@ class Lang(enum.Flag):
     VERSION_TYPE_1 = CPP | GO | JAVA | PYTHON
     # Nodejs doesn't follow the same versioning scheme as other languages.
     VERSION_TYPE_2 = NODE
+
+    def __str__(self):
+        return self.name.lower()
 
     @classmethod
     def from_string(cls, lang: str):
@@ -75,6 +80,10 @@ class TestConfig:
             return False
         return self._parse_version(self.version) < self._parse_version(another)
 
+    def __str__(self):
+        return (f'TestConfig(client_lang="{self.client_lang}", '
+                f'server_lang="{self.server_lang}", version="{self.version}")')
+
     @staticmethod
     def _parse_version(s: str) -> pkg_version.Version:
         if s.endswith(".x"):
@@ -98,4 +107,7 @@ def evaluate_test_config(check: Callable[[TestConfig], bool]) -> None:
         server_lang=_get_lang(xds_k8s_flags.SERVER_IMAGE.value),
         version=xds_flags.TESTING_VERSION.value)
     if not check(test_config):
+        logger.info('Skipping %s', test_config)
         raise unittest.SkipTest(f'Unsupported test config: {test_config}')
+    else:
+        logger.info('Detected language and version: %s', test_config)
