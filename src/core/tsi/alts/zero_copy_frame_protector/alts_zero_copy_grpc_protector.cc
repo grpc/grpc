@@ -174,7 +174,7 @@ static tsi_result alts_zero_copy_grpc_protector_protect(
 
 static tsi_result alts_zero_copy_grpc_protector_unprotect(
     tsi_zero_copy_grpc_protector* self, grpc_slice_buffer* protected_slices,
-    grpc_slice_buffer* unprotected_slices) {
+    grpc_slice_buffer* unprotected_slices, int* min_progress_size) {
   if (self == nullptr || unprotected_slices == nullptr ||
       protected_slices == nullptr) {
     gpr_log(GPR_ERROR,
@@ -215,24 +215,10 @@ static tsi_result alts_zero_copy_grpc_protector_unprotect(
       return status;
     }
   }
-  return TSI_OK;
-}
-
-static tsi_result
-alts_zero_copy_grpc_protector_unprotect_and_get_min_progress_size(
-    tsi_zero_copy_grpc_protector* self, grpc_slice_buffer* protected_slices,
-    grpc_slice_buffer* unprotected_slices, int* min_progress_size) {
-  if (min_progress_size == nullptr) {
-    return TSI_INVALID_ARGUMENT;
-  }
-  alts_zero_copy_grpc_protector* protector =
-      reinterpret_cast<alts_zero_copy_grpc_protector*>(self);
-  tsi_result result = alts_zero_copy_grpc_protector_unprotect(
-      self, protected_slices, unprotected_slices);
-  if (result == TSI_OK) {
+  if (min_progress_size != nullptr) {
     *min_progress_size = protector->parsed_frame_size;
   }
-  return result;
+  return TSI_OK;
 }
 
 static void alts_zero_copy_grpc_protector_destroy(
@@ -263,7 +249,6 @@ static const tsi_zero_copy_grpc_protector_vtable
     alts_zero_copy_grpc_protector_vtable = {
         alts_zero_copy_grpc_protector_protect,
         alts_zero_copy_grpc_protector_unprotect,
-        alts_zero_copy_grpc_protector_unprotect_and_get_min_progress_size,
         alts_zero_copy_grpc_protector_destroy,
         alts_zero_copy_grpc_protector_max_frame_size};
 

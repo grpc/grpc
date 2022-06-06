@@ -260,7 +260,7 @@ static void on_read(void* user_data, grpc_error_handle error) {
       // avoid reading of small slices from the network.
       // TODO(vigneshbabu): Set min_progress_size in the regular (non-zero-copy)
       // frame protector code path as well.
-      result = tsi_zero_copy_grpc_protector_unprotect_and_get_min_progress_size(
+      result = tsi_zero_copy_grpc_protector_unprotect(
           ep->zero_copy_protector, &ep->source_buffer, ep->read_buffer,
           &min_progress_size);
       min_progress_size = std::max(1, min_progress_size);

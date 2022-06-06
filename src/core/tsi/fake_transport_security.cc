@@ -432,7 +432,7 @@ static tsi_result fake_zero_copy_grpc_protector_protect(
 
 static tsi_result fake_zero_copy_grpc_protector_unprotect(
     tsi_zero_copy_grpc_protector* self, grpc_slice_buffer* protected_slices,
-    grpc_slice_buffer* unprotected_slices) {
+    grpc_slice_buffer* unprotected_slices, int* min_progress_size) {
   if (self == nullptr || unprotected_slices == nullptr ||
       protected_slices == nullptr) {
     return TSI_INVALID_ARGUMENT;
@@ -462,24 +462,10 @@ static tsi_result fake_zero_copy_grpc_protector_unprotect(
     impl->parsed_frame_size = 0;
     grpc_slice_buffer_reset_and_unref_internal(&impl->header_sb);
   }
-  return TSI_OK;
-}
-
-static tsi_result
-fake_zero_copy_grpc_protector_unprotect_and_get_min_progress_size(
-    tsi_zero_copy_grpc_protector* self, grpc_slice_buffer* protected_slices,
-    grpc_slice_buffer* unprotected_slices, int* min_progress_size) {
-  if (min_progress_size == nullptr) {
-    return TSI_INVALID_ARGUMENT;
-  }
-  tsi_fake_zero_copy_grpc_protector* impl =
-      reinterpret_cast<tsi_fake_zero_copy_grpc_protector*>(self);
-  tsi_result result = fake_zero_copy_grpc_protector_unprotect(
-      self, protected_slices, unprotected_slices);
-  if (result == TSI_OK) {
+  if (min_progress_size != nullptr) {
     *min_progress_size = impl->parsed_frame_size;
   }
-  return result;
+  return TSI_OK;
 }
 
 static void fake_zero_copy_grpc_protector_destroy(
@@ -505,7 +491,6 @@ static const tsi_zero_copy_grpc_protector_vtable
     zero_copy_grpc_protector_vtable = {
         fake_zero_copy_grpc_protector_protect,
         fake_zero_copy_grpc_protector_unprotect,
-        fake_zero_copy_grpc_protector_unprotect_and_get_min_progress_size,
         fake_zero_copy_grpc_protector_destroy,
         fake_zero_copy_grpc_protector_max_frame_size,
 };
