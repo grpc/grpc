@@ -30,6 +30,7 @@ def grpc_fuzzer(name, corpus, srcs = [], tags = [], deps = [], data = [], size =
         deps: The dependencies of the test.
         data: The data dependencies of the test.
         size: The size of the test.
+        tags: The tags for the test.
         **kwargs: Other arguments to supply to the test.
     """
     CORPUS_DIR = native.package_name() + "/" + corpus
@@ -64,6 +65,7 @@ def grpc_proto_fuzzer(name, corpus, proto, srcs = [], tags = [], deps = [], data
         deps: The dependencies of the test.
         data: The data dependencies of the test.
         size: The size of the test.
+        tags: The tags for the test.
         **kwargs: Other arguments to supply to the test.
     """
     PROTO_LIBRARY = "_%s_proto" % name
