@@ -20,6 +20,8 @@
 
 #include "src/core/lib/channel/connected_channel.h"
 
+#include <stdlib.h>
+
 #include <grpc/impl/codegen/grpc_types.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
@@ -31,6 +33,7 @@
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/polling_entity.h"
+#include "src/core/lib/promise/arena_promise.h"
 #include "src/core/lib/transport/transport.h"
 #include "src/core/lib/transport/transport_fwd.h"
 
@@ -206,9 +209,9 @@ static void connected_channel_get_channel_info(
 namespace grpc_core {
 namespace {
 
-ArenaPromise<grpc_core::ServerMetadataHandle> MakeCallPromise(
-    grpc_channel_element* elem, grpc_core::CallArgs call_args,
-    grpc_core::NextPromiseFactory) {
+ArenaPromise<ServerMetadataHandle> MakeCallPromise(grpc_channel_element* elem,
+                                                   CallArgs call_args,
+                                                   NextPromiseFactory) {
   abort();
 }
 
