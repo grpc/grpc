@@ -1594,7 +1594,7 @@ TEST_F(RoundRobinTest, UpdateInError) {
   std::vector<int> ports = {servers_[0]->port_, grpc_pick_unused_port_or_die(),
                             servers_[1]->port_};
   response_generator.SetNextResolution(ports);
-  WaitForServers(DEBUG_LOCATION, stub, 0, 2, /*status_predicate=*/nullptr,
+  WaitForServers(DEBUG_LOCATION, stub, 0, 2, /*status_check=*/nullptr,
                  /*timeout=*/absl::Seconds(60));
   // Send a bunch more RPCs.  They should all succeed and should be
   // split evenly between the two servers.
