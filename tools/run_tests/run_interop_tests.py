@@ -679,13 +679,14 @@ _SERVERS = [
 ]
 
 _TEST_CASES = [
-    'large_unary', 'empty_unary', 'ping_pong', 'empty_stream',
-    'client_streaming', 'server_streaming', 'cancel_after_begin',
-    'cancel_after_first_response', 'timeout_on_sleeping_server',
-    'custom_metadata', 'status_code_and_message', 'unimplemented_method',
-    'client_compressed_unary', 'server_compressed_unary',
-    'client_compressed_streaming', 'server_compressed_streaming',
-    'unimplemented_service', 'special_status_message', 'orca_per_rpc',
+    # 'large_unary', 'empty_unary', 'ping_pong', 'empty_stream',
+    # 'client_streaming', 'server_streaming', 'cancel_after_begin',
+    # 'cancel_after_first_response', 'timeout_on_sleeping_server',
+    # 'custom_metadata', 'status_code_and_message', 'unimplemented_method',
+    # 'client_compressed_unary', 'server_compressed_unary',
+    # 'client_compressed_streaming', 'server_compressed_streaming',
+    # 'unimplemented_service', 'special_status_message',
+    # 'orca_per_rpc',
     'orca_oob'
 ]
 
