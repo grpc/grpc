@@ -27,13 +27,15 @@ flags.adopt_module_key_flags(xds_k8s_testcase)
 _XdsTestServer = xds_k8s_testcase.XdsTestServer
 _XdsTestClient = xds_k8s_testcase.XdsTestClient
 _SecurityMode = xds_k8s_testcase.SecurityXdsKubernetesTestCase.SecurityMode
+_Lang = skips.Lang
 
 
 class SecurityTest(xds_k8s_testcase.SecurityXdsKubernetesTestCase):
 
     @staticmethod
     def is_supported(config: skips.TestConfig) -> bool:
-        if config.client_lang in skips.Lang.VERSION_TYPE_1:
+        if config.client_lang in (_Lang.CPP | _Lang.GO | _Lang.JAVA |
+                                  _Lang.PYTHON):
             # Versions prior to v1.41.x don't support PSM Security.
             # https://github.com/grpc/grpc/blob/master/doc/grpc_xds_features.md
             return not config.version_lt('v1.41.x')

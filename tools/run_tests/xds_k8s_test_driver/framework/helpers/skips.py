@@ -34,11 +34,6 @@ class Lang(enum.Flag):
     JAVA = enum.auto()
     PYTHON = enum.auto()
     NODE = enum.auto()
-    # Languages supported by the framework, that follow the same gRPC version
-    # release scheme.
-    VERSION_TYPE_1 = CPP | GO | JAVA | PYTHON
-    # Nodejs doesn't follow the same versioning scheme as other languages.
-    VERSION_TYPE_2 = NODE
 
     def __str__(self):
         return str(self.name).lower()
