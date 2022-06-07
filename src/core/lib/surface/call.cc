@@ -1416,7 +1416,7 @@ grpc_call_error FilterStackCall::StartBatch(const grpc_op* ops, size_t nops,
         // explictly or by using the set_deadline method of grpc::ClientContext
         // object.
         if (!is_client()) {
-          send_initial_metadata_.Remove(grpc_core::GrpcTimeoutMetadata());
+          send_initial_metadata_.Remove(GrpcTimeoutMetadata());
         }
 
         // Ignore any te metadata key value pairs specified.
@@ -1542,7 +1542,7 @@ grpc_call_error FilterStackCall::StartBatch(const grpc_op* ops, size_t nops,
 
         // On the server side, grpc-timeout metadata should not
         // be passed.
-        send_trailing_metadata_.Remove(grpc_core::GrpcTimeoutMetadata());
+        send_trailing_metadata_.Remove(GrpcTimeoutMetadata());
         status_error_.set(status_error);
         GRPC_ERROR_UNREF(status_error);
 
