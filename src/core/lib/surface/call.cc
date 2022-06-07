@@ -770,6 +770,16 @@ void FilterStackCall::CancelWithError(grpc_error_handle error) {
     GRPC_ERROR_UNREF(error);
     return;
   }
+  // (b/222144056): During normal operation, call->peer_string is made to point
+  // to a string/memory allocated by the transport. After the above ExecCtx
+  // flush due to grpc_call_cancel, the transport may be destroyed. When the
+  // transport gets destroyed, it frees the allocated peer_string. However,
+  // call->peer_string still continues to point to that free'ed memory location
+  // and may cause a heap-use after free error if there's an attempt to access
+  // it again using grpc_call_get_peer API call. By setting it to nullptr here
+  // we prevent such errors by forcing any grpc_call_get_peer invocation
+  // after a call cancellation to return nullptr.
+  gpr_atm_rel_store(&peer_string_, nullptr);
   InternalRef("termination");
   // Inform the call combiner of the cancellation, so that it can cancel
   // any in-flight asynchronous actions that may be holding the call
