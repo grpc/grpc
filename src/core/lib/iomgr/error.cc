@@ -71,7 +71,7 @@ std::string grpc_error_std_string(absl::Status error) {
 absl::Status grpc_os_error(const grpc_core::DebugLocation& location, int err,
                            const char* call_name) {
   absl::Status s =
-      StatusCreate(absl::StatusCode::kUnknown, "OS Error", location, {});
+      StatusCreate(absl::StatusCode::kUnknown, strerror(err), location, {});
   grpc_core::StatusSetInt(&s, grpc_core::StatusIntProperty::kErrorNo, err);
   grpc_core::StatusSetStr(&s, grpc_core::StatusStrProperty::kOsError,
                           strerror(err));
