@@ -85,12 +85,6 @@ class Fuzzer {
                              uint64_t{std::numeric_limits<ssize_t>::max()}));
           });
           break;
-        case memory_quota_fuzzer::Action::kRebindQuota:
-          WithQuota(action.quota(), [this, action](MemoryQuota* q) {
-            WithAllocator(action.allocator(),
-                          [q](MemoryOwner* a) { a->Rebind(q); });
-          });
-          break;
         case memory_quota_fuzzer::Action::kCreateAllocation: {
           auto min = action.create_allocation().min();
           auto max = action.create_allocation().max();

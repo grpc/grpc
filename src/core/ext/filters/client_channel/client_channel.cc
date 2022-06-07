@@ -96,9 +96,7 @@
 
 namespace grpc_core {
 
-using internal::ClientChannelGlobalParsedConfig;
 using internal::ClientChannelMethodParsedConfig;
-using internal::ClientChannelServiceConfigParser;
 
 TraceFlag grpc_client_channel_trace(false, "client_channel");
 TraceFlag grpc_client_channel_call_trace(false, "client_channel_call");
@@ -507,21 +505,15 @@ class ClientChannel::SubchannelWrapper : public SubchannelInterface {
     GRPC_CHANNEL_STACK_UNREF(chand_->owning_stack_, "SubchannelWrapper");
   }
 
-  grpc_connectivity_state CheckConnectivityState() override {
-    return subchannel_->CheckConnectivityState(health_check_service_name_);
-  }
-
   void WatchConnectivityState(
-      grpc_connectivity_state initial_state,
       std::unique_ptr<ConnectivityStateWatcherInterface> watcher) override
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(*chand_->work_serializer_) {
     auto& watcher_wrapper = watcher_map_[watcher.get()];
     GPR_ASSERT(watcher_wrapper == nullptr);
     watcher_wrapper = new WatcherWrapper(std::move(watcher),
-                                         Ref(DEBUG_LOCATION, "WatcherWrapper"),
-                                         initial_state);
+                                         Ref(DEBUG_LOCATION, "WatcherWrapper"));
     subchannel_->WatchConnectivityState(
-        initial_state, health_check_service_name_,
+        health_check_service_name_,
         RefCountedPtr<Subchannel::ConnectivityStateWatcherInterface>(
             watcher_wrapper));
   }
@@ -580,11 +572,8 @@ class ClientChannel::SubchannelWrapper : public SubchannelInterface {
     WatcherWrapper(
         std::unique_ptr<SubchannelInterface::ConnectivityStateWatcherInterface>
             watcher,
-        RefCountedPtr<SubchannelWrapper> parent,
-        grpc_connectivity_state initial_state)
-        : watcher_(std::move(watcher)),
-          parent_(std::move(parent)),
-          last_seen_state_(initial_state) {}
+        RefCountedPtr<SubchannelWrapper> parent)
+        : watcher_(std::move(watcher)), parent_(std::move(parent)) {}
 
     ~WatcherWrapper() override {
       auto* parent = parent_.release();  // ref owned by lambda
@@ -621,13 +610,10 @@ class ClientChannel::SubchannelWrapper : public SubchannelInterface {
     }
 
     WatcherWrapper* MakeReplacement() {
-      auto* replacement =
-          new WatcherWrapper(std::move(watcher_), parent_, last_seen_state_);
+      auto* replacement = new WatcherWrapper(std::move(watcher_), parent_);
       replacement_ = replacement;
       return replacement;
     }
-
-    grpc_connectivity_state last_seen_state() const { return last_seen_state_; }
 
    private:
     void ApplyUpdateInControlPlaneWorkSerializer()
@@ -670,7 +656,6 @@ class ClientChannel::SubchannelWrapper : public SubchannelInterface {
       // Ignore update if the parent WatcherWrapper has been replaced
       // since this callback was scheduled.
       if (watcher_ != nullptr) {
-        last_seen_state_ = state_change.state;
         watcher_->OnConnectivityStateChange(state_change.state);
       }
     }
@@ -678,7 +663,6 @@ class ClientChannel::SubchannelWrapper : public SubchannelInterface {
     std::unique_ptr<SubchannelInterface::ConnectivityStateWatcherInterface>
         watcher_;
     RefCountedPtr<SubchannelWrapper> parent_;
-    grpc_connectivity_state last_seen_state_;
     WatcherWrapper* replacement_ = nullptr;
   };
 
@@ -2958,7 +2942,7 @@ void ClientChannel::LoadBalancedCall::RecvMessageReady(
     gpr_log(GPR_INFO, "chand=%p lb_call=%p: got recv_message_ready: error=%s",
             self->chand_, self, grpc_error_std_string(error).c_str());
   }
-  if (*self->recv_message_ != nullptr) {
+  if (self->recv_message_->has_value()) {
     self->call_attempt_tracer_->RecordReceivedMessage(**self->recv_message_);
   }
   Closure::Run(DEBUG_LOCATION, self->original_recv_message_ready_,
