@@ -17,7 +17,7 @@ load("//bazel:grpc_build_system.bzl", "grpc_cc_library", "grpc_cc_test", "grpc_p
 licenses(["notice"])
 
 grpc_package(
-    name = "test/core/event_engine",
+    name = "test/core/event_engine/fuzzing_event_engine",
     visibility = "tests",
 )
 
