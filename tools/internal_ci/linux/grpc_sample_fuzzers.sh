@@ -18,6 +18,8 @@ set -ex
 # Enter the gRPC repo root
 cd $(dirname $0)/../../..
 
+cat tools/internal_ci/linux/grpc_sample_fuzzers_failure_explanation.txt
+
 source tools/internal_ci/helper_scripts/prepare_build_linux_rc
 
 export DOCKERFILE_DIR=tools/dockerfile/test/cxx_debian11_x64
