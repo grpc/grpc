@@ -161,6 +161,8 @@ void grpc_enable_error_creation();
 #define GRPC_ERROR_REF(err) (err)
 #define GRPC_ERROR_UNREF(err) (void)(err)
 
+#define GRPC_ERROR_IS_NONE(err) (err).ok()
+
 #define GRPC_ERROR_CREATE_FROM_STATIC_STRING(desc) \
   StatusCreate(absl::StatusCode::kUnknown, desc, DEBUG_LOCATION, {})
 #define GRPC_ERROR_CREATE_FROM_COPIED_STRING(desc) \
@@ -235,6 +237,8 @@ absl::Status grpc_wsa_error(const grpc_core::DebugLocation& location, int err,
 #define GRPC_ERROR_RESERVED_2 ((grpc_error_handle)3)
 #define GRPC_ERROR_CANCELLED ((grpc_error_handle)4)
 #define GRPC_ERROR_SPECIAL_MAX GRPC_ERROR_CANCELLED
+
+#define GRPC_ERROR_IS_NONE(err) ((err) == GRPC_ERROR_NONE)
 
 inline bool grpc_error_is_special(grpc_error_handle err) {
   return err <= GRPC_ERROR_SPECIAL_MAX;
