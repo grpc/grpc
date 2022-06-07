@@ -16,7 +16,7 @@
 set -e
 
 # directories to run against
-DIRS="examples/cpp examples/android/binder src/core/lib src/core/tsi src/core/ext src/cpp test/core test/cpp include src/compiler src/csharp src/ruby src/objective-c tools/distrib/python"
+DIRS="examples/cpp examples/android/binder src/core/lib src/core/tsi src/core/ext src/cpp test/core test/cpp include src/compiler src/ruby src/objective-c tools/distrib/python"
 
 # file matching patterns to check
 GLOB="*.h *.c *.cc *.m *.mm"
@@ -44,7 +44,7 @@ fi
 
 if [ "$TEST" == "" ]
 then
-  echo $files | xargs -P $CPU_COUNT -n 10 $CLANG_FORMAT -i
+  echo $files | xargs -P $CPU_COUNT -n 1 $CLANG_FORMAT -i
 else
   ok=yes
   for file in $files

@@ -56,7 +56,10 @@ grpc_alts_credentials::create_security_connector(
       this->Ref(), std::move(call_creds), target_name);
 }
 
-const char* grpc_alts_credentials::type() const { return "Alts"; }
+grpc_core::UniqueTypeName grpc_alts_credentials::type() const {
+  static grpc_core::UniqueTypeName::Factory kFactory("Alts");
+  return kFactory.Create();
+}
 
 grpc_alts_server_credentials::grpc_alts_server_credentials(
     const grpc_alts_credentials_options* options,
@@ -79,7 +82,10 @@ grpc_alts_server_credentials::~grpc_alts_server_credentials() {
   gpr_free(handshaker_service_url_);
 }
 
-const char* grpc_alts_server_credentials::type() const { return "Alts"; }
+grpc_core::UniqueTypeName grpc_alts_server_credentials::type() const {
+  static grpc_core::UniqueTypeName::Factory kFactory("Alts");
+  return kFactory.Create();
+}
 
 grpc_channel_credentials* grpc_alts_credentials_create_customized(
     const grpc_alts_credentials_options* options,

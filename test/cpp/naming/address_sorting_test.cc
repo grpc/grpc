@@ -357,14 +357,8 @@ TEST_F(AddressSortingTest,
        TestUsesDestinationWithHigherPrecedenceWithV4CompatAndLocalhostAddress) {
   bool ipv4_supported = true;
   bool ipv6_supported = true;
-// Handle unique observed behavior of inet_ntop(v4-compatible-address) on OS X.
-#if GPR_APPLE == 1
-  const char* v4_compat_dest = "[::0.0.0.2]:443";
-  const char* v4_compat_src = "[::0.0.0.2]:0";
-#else
   const char* v4_compat_dest = "[::2]:443";
   const char* v4_compat_src = "[::2]:0";
-#endif
   OverrideAddressSortingSourceAddrFactory(
       ipv4_supported, ipv6_supported,
       {
@@ -376,10 +370,24 @@ TEST_F(AddressSortingTest,
       {"[::1]:443", AF_INET6},
   });
   grpc_cares_wrapper_address_sorting_sort(nullptr, &lb_addrs);
-  VerifyLbAddrOutputs(lb_addrs, {
-                                    "[::1]:443",
-                                    v4_compat_dest,
-                                });
+  ASSERT_EQ(lb_addrs.size(), 2);
+  EXPECT_EQ(
+      grpc_sockaddr_to_string(&lb_addrs[0].address(), false /* normalize */)
+          .value(),
+      "[::1]:443");
+  // We've observed some inet_ntop implementations have special representations
+  // of IPv4-compatible IPv6 addresses, and others represent them as normal
+  // IPv6 addresses. For the purposes of this test, we don't care which
+  // representation is used.
+  std::vector<std::string> acceptable_addresses = {
+      "[::0.0.0.2]:443",
+      "[::2]:443",
+  };
+  EXPECT_THAT(
+      acceptable_addresses,
+      ::testing::Contains(
+          grpc_sockaddr_to_string(&lb_addrs[1].address(), false /* normalize */)
+              .value()));
 }
 
 TEST_F(AddressSortingTest,
@@ -724,14 +732,8 @@ TEST_F(AddressSortingTest, TestStableSortNoSrcAddrsExistWithIpv4) {
 TEST_F(AddressSortingTest, TestStableSortV4CompatAndSiteLocalAddresses) {
   bool ipv4_supported = true;
   bool ipv6_supported = true;
-// Handle unique observed behavior of inet_ntop(v4-compatible-address) on OS X.
-#if GPR_APPLE == 1
-  const char* v4_compat_dest = "[::0.0.0.2]:443";
-  const char* v4_compat_src = "[::0.0.0.3]:0";
-#else
   const char* v4_compat_dest = "[::2]:443";
   const char* v4_compat_src = "[::3]:0";
-#endif
   OverrideAddressSortingSourceAddrFactory(
       ipv4_supported, ipv6_supported,
       {
@@ -743,13 +745,26 @@ TEST_F(AddressSortingTest, TestStableSortV4CompatAndSiteLocalAddresses) {
       {v4_compat_dest, AF_INET6},
   });
   grpc_cares_wrapper_address_sorting_sort(nullptr, &lb_addrs);
-  VerifyLbAddrOutputs(lb_addrs,
-                      {
-                          // The sort should be stable since
-                          // v4-compatible has same precedence as site-local.
-                          "[fec0::2000]:443",
-                          v4_compat_dest,
-                      });
+  ASSERT_EQ(lb_addrs.size(), 2);
+  // The sort should be stable since
+  // v4-compatible has same precedence as site-local.
+  EXPECT_EQ(
+      grpc_sockaddr_to_string(&lb_addrs[0].address(), false /* normalize */)
+          .value(),
+      "[fec0::2000]:443");
+  // We've observed some inet_ntop implementations have special representations
+  // of IPv4-compatible IPv6 addresses, and others represent them as normal
+  // IPv6 addresses. For the purposes of this test, we don't care which
+  // representation is used.
+  std::vector<std::string> acceptable_addresses = {
+      "[::0.0.0.2]:443",
+      "[::2]:443",
+  };
+  EXPECT_THAT(
+      acceptable_addresses,
+      ::testing::Contains(
+          grpc_sockaddr_to_string(&lb_addrs[1].address(), false /* normalize */)
+              .value()));
 }
 
 /* TestPrefersIpv6Loopback tests the actual "address probing" code

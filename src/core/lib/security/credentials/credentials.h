@@ -29,7 +29,9 @@
 #include <grpc/grpc_security.h>
 #include <grpc/support/sync.h>
 
+#include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/gprpp/ref_counted.h"
+#include "src/core/lib/gprpp/unique_type_name.h"
 #include "src/core/lib/iomgr/polling_entity.h"
 #include "src/core/lib/promise/arena_promise.h"
 #include "src/core/lib/security/context/security_context.h"
@@ -92,6 +94,15 @@ void grpc_override_well_known_credentials_path_getter(
 struct grpc_channel_credentials
     : grpc_core::RefCounted<grpc_channel_credentials> {
  public:
+  static absl::string_view ChannelArgName() {
+    return GRPC_ARG_CHANNEL_CREDENTIALS;
+  }
+
+  static int ChannelArgsCompare(const grpc_channel_credentials* args1,
+                                const grpc_channel_credentials* args2) {
+    return args1->cmp(args2);
+  }
+
   // Creates a security connector for the channel. May also create new channel
   // args for the channel to be used in place of the passed in const args if
   // returned non NULL. In that case the caller is responsible for destroying
@@ -115,7 +126,7 @@ struct grpc_channel_credentials
   // By default, leave channel args as is. The callee takes ownership
   // of the passed-in channel args, and the caller takes ownership
   // of the returned channel args.
-  virtual grpc_channel_args* update_arguments(grpc_channel_args* args) {
+  virtual grpc_core::ChannelArgs update_arguments(grpc_core::ChannelArgs args) {
     return args;
   }
 
@@ -129,9 +140,7 @@ struct grpc_channel_credentials
   // as equal (assuming other channel args match).
   int cmp(const grpc_channel_credentials* other) const {
     GPR_ASSERT(other != nullptr);
-    // Intentionally uses grpc_core::QsortCompare instead of strcmp as a safety
-    // against different grpc_channel_credentials types using the same name.
-    int r = grpc_core::QsortCompare(type(), other->type());
+    int r = type().Compare(other->type());
     if (r != 0) return r;
     return cmp_impl(other);
   }
@@ -140,7 +149,7 @@ struct grpc_channel_credentials
   // implementation for down-casting purposes. Every creds implementation should
   // use a unique string instance, which should be returned by all instances of
   // that creds implementation.
-  virtual const char* type() const = 0;
+  virtual grpc_core::UniqueTypeName type() const = 0;
 
  private:
   // Implementation for `cmp` method intended to be overridden by subclasses.
@@ -212,9 +221,7 @@ struct grpc_call_credentials
   // credentials as effectively the same..
   int cmp(const grpc_call_credentials* other) const {
     GPR_ASSERT(other != nullptr);
-    // Intentionally uses grpc_core::QsortCompare instead of strcmp as a safety
-    // against different grpc_call_credentials types using the same name.
-    int r = grpc_core::QsortCompare(type(), other->type());
+    int r = type().Compare(other->type());
     if (r != 0) return r;
     return cmp_impl(other);
   }
@@ -227,7 +234,7 @@ struct grpc_call_credentials
   // implementation for down-casting purposes. Every creds implementation should
   // use a unique string instance, which should be returned by all instances of
   // that creds implementation.
-  virtual const char* type() const = 0;
+  virtual grpc_core::UniqueTypeName type() const = 0;
 
  private:
   // Implementation for `cmp` method intended to be overridden by subclasses.
@@ -256,7 +263,7 @@ struct grpc_server_credentials
   virtual grpc_core::RefCountedPtr<grpc_server_security_connector>
   create_security_connector(const grpc_channel_args* args) = 0;
 
-  virtual const char* type() const = 0;
+  virtual grpc_core::UniqueTypeName type() const = 0;
 
   const grpc_auth_metadata_processor& auth_metadata_processor() const {
     return processor_;

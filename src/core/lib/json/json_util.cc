@@ -20,9 +20,12 @@
 
 #include "src/core/lib/json/json_util.h"
 
+#include <string.h>
+
 #include <grpc/support/string_util.h>
 
 #include "src/core/lib/gpr/string.h"
+#include "src/core/lib/gprpp/memory.h"
 
 namespace grpc_core {
 
@@ -30,6 +33,10 @@ bool ParseDurationFromJson(const Json& field, Duration* duration) {
   if (field.type() != Json::Type::STRING) return false;
   size_t len = field.string_value().size();
   if (field.string_value()[len - 1] != 's') return false;
+  if (field.string_value() == Duration::Infinity().ToJsonString()) {
+    *duration = Duration::Infinity();
+    return true;
+  }
   UniquePtr<char> buf(gpr_strdup(field.string_value().c_str()));
   *(buf.get() + len - 1) = '\0';  // Remove trailing 's'.
   char* decimal_point = strchr(buf.get(), '.');

@@ -33,17 +33,21 @@ namespace testing {
 //
 //  // When an injection is desired.
 //  ConnectionDelayInjector delay_injector(grpc_core::Duration::Seconds(10));
+//  delay_injector.Start();
 //
 // The injection is global, so there must be only one ConnectionAttemptInjector
 // object at any one time.
 class ConnectionAttemptInjector {
  public:
   // Global initializer.  Replaces the iomgr TCP client vtable.
-  // Must be called exactly once before any TCP connections are established.
+  // Must be called exactly once after grpc_init() but before any TCP
+  // connections are established.
   static void Init();
 
-  ConnectionAttemptInjector();
   virtual ~ConnectionAttemptInjector();
+
+  // Must be called after instantiation.
+  void Start();
 
   // Invoked for every TCP connection attempt.
   // Implementations must eventually either invoke the closure

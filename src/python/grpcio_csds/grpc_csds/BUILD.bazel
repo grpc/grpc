@@ -12,6 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+load("@grpc_python_dependencies//:requirements.bzl", "requirement")
+
 package(default_visibility = ["//visibility:public"])
 
 py_library(
@@ -19,11 +21,7 @@ py_library(
     srcs = glob(["*.py"]),
     imports = ["../"],
     deps = [
-        "//src/proto/grpc/testing/xds/v3:base_py_pb2",
-        "//src/proto/grpc/testing/xds/v3:config_dump_py_pb2",
-        "//src/proto/grpc/testing/xds/v3:csds_py_pb2",
-        "//src/proto/grpc/testing/xds/v3:csds_py_pb2_grpc",
-        "//src/proto/grpc/testing/xds/v3:percent_py_pb2",
+        requirement("xds-protos"),
         "//src/python/grpcio/grpc:grpcio",
     ],
 )

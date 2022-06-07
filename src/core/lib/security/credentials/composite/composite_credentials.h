@@ -51,11 +51,12 @@ class grpc_composite_channel_credentials : public grpc_channel_credentials {
       const char* target, const grpc_channel_args* args,
       grpc_channel_args** new_args) override;
 
-  grpc_channel_args* update_arguments(grpc_channel_args* args) override {
+  grpc_core::ChannelArgs update_arguments(
+      grpc_core::ChannelArgs args) override {
     return inner_creds_->update_arguments(args);
   }
 
-  const char* type() const override;
+  grpc_core::UniqueTypeName type() const override;
 
   const grpc_channel_credentials* inner_creds() const {
     return inner_creds_.get();
@@ -98,9 +99,9 @@ class grpc_composite_call_credentials : public grpc_call_credentials {
   const CallCredentialsList& inner() const { return inner_; }
   std::string debug_string() override;
 
-  static const char* Type();
+  static grpc_core::UniqueTypeName Type();
 
-  const char* type() const override { return Type(); }
+  grpc_core::UniqueTypeName type() const override { return Type(); }
 
  private:
   int cmp_impl(const grpc_call_credentials* other) const override {

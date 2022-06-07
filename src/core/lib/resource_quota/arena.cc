@@ -20,17 +20,11 @@
 
 #include "src/core/lib/resource_quota/arena.h"
 
-#include <string.h>
-
 #include <new>
 
 #include <grpc/support/alloc.h>
-#include <grpc/support/atm.h>
-#include <grpc/support/log.h>
-#include <grpc/support/sync.h>
 
 #include "src/core/lib/gpr/alloc.h"
-#include "src/core/lib/gprpp/memory.h"
 
 namespace {
 

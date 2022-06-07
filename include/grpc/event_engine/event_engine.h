@@ -26,8 +26,9 @@
 #include <grpc/event_engine/endpoint_config.h>
 #include <grpc/event_engine/memory_allocator.h>
 #include <grpc/event_engine/port.h>
+#include <grpc/event_engine/slice_buffer.h>
 
-// TODO(hork): Define the Endpoint::Write metrics collection system
+// TODO(vigneshbabu): Define the Endpoint::Write metrics collection system
 namespace grpc_event_engine {
 namespace experimental {
 
@@ -138,6 +139,18 @@ class EventEngine {
     /// Shuts down all connections and invokes all pending read or write
     /// callbacks with an error status.
     virtual ~Endpoint() = default;
+    /// A struct representing optional arguments that may be provided to an
+    /// EventEngine Endpoint Read API  call.
+    ///
+    /// Passed as argument to an Endpoint \a Read
+    struct ReadArgs {
+      // A suggestion to the endpoint implementation to read at-least the
+      // specified number of bytes over the network connection before marking
+      // the endpoint read operation as complete. gRPC may use this argument
+      // to minimize the number of endpoint read API calls over the lifetime
+      // of a connection.
+      int64_t read_hint_bytes;
+    };
     /// Reads data from the Endpoint.
     ///
     /// When data is available on the connection, that data is moved into the
@@ -156,7 +169,21 @@ class EventEngine {
     /// statuses to \a on_read. For example, callbacks might expect to receive
     /// CANCELLED on endpoint shutdown.
     virtual void Read(std::function<void(absl::Status)> on_read,
-                      SliceBuffer* buffer) = 0;
+                      SliceBuffer* buffer, const ReadArgs* args) = 0;
+    /// A struct representing optional arguments that may be provided to an
+    /// EventEngine Endpoint Write API call.
+    ///
+    /// Passed as argument to an Endpoint \a Write
+    struct WriteArgs {
+      // Represents private information that may be passed by gRPC for
+      // select endpoints expected to be used only within google.
+      void* google_specific = nullptr;
+      // A suggestion to the endpoint implementation to group data to be written
+      // into frames of the specified max_frame_size. gRPC may use this
+      // argument to dynamically control the max sizes of frames sent to a
+      // receiver in response to high receiver memory pressure.
+      int64_t max_frame_size;
+    };
     /// Writes data out on the connection.
     ///
     /// \a on_writable is called when the connection is ready for more data. The
@@ -176,7 +203,7 @@ class EventEngine {
     /// statuses to \a on_writable. For example, callbacks might expect to
     /// receive CANCELLED on endpoint shutdown.
     virtual void Write(std::function<void(absl::Status)> on_writable,
-                       SliceBuffer* data) = 0;
+                       SliceBuffer* data, const WriteArgs* args) = 0;
     /// Returns an address in the format described in DNSResolver. The returned
     /// values are expected to remain valid for the life of the Endpoint.
     virtual const ResolvedAddress& GetPeerAddress() const = 0;
@@ -259,7 +286,13 @@ class EventEngine {
    public:
     /// Task handle for DNS Resolution requests.
     struct LookupTaskHandle {
-      intptr_t key[2];
+      intptr_t keys[2];
+    };
+    /// Optional configuration for DNSResolvers.
+    struct ResolverOptions {
+      /// If empty, default DNS servers will be used.
+      /// Must be in the "IP:port" format as described in naming.md.
+      std::string dns_server;
     };
     /// DNS SRV record type.
     struct SRVRecord {
@@ -293,7 +326,7 @@ class EventEngine {
     ///
     /// If cancelled, \a on_resolve will not be executed.
     virtual LookupTaskHandle LookupHostname(LookupHostnameCallback on_resolve,
-                                            absl::string_view address,
+                                            absl::string_view name,
                                             absl::string_view default_port,
                                             absl::Time deadline) = 0;
     /// Asynchronously perform an SRV record lookup.
@@ -331,8 +364,10 @@ class EventEngine {
   // de-experimentalize this API.
   virtual bool IsWorkerThread() = 0;
 
-  /// Creates and returns an instance of a DNSResolver.
-  virtual std::unique_ptr<DNSResolver> GetDNSResolver() = 0;
+  /// Creates and returns an instance of a DNSResolver, optionally configured by
+  /// the \a options struct.
+  virtual std::unique_ptr<DNSResolver> GetDNSResolver(
+      const DNSResolver::ResolverOptions& options) = 0;
 
   /// Asynchronously executes a task as soon as possible.
   ///

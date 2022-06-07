@@ -19,22 +19,34 @@
 
 #include "src/core/ext/filters/channel_idle/channel_idle_filter.h"
 
-#include <limits.h>
 #include <stdlib.h>
 
-#include <atomic>
-#include <limits>
+#include <functional>
+#include <utility>
+
+#include "absl/types/optional.h"
+
+#include <grpc/impl/codegen/grpc_types.h>
+#include <grpc/support/log.h>
 
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_stack_builder.h"
 #include "src/core/lib/channel/promise_based_filter.h"
 #include "src/core/lib/config/core_configuration.h"
-#include "src/core/lib/gprpp/capture.h"
-#include "src/core/lib/iomgr/timer.h"
+#include "src/core/lib/debug/trace.h"
+#include "src/core/lib/gprpp/debug_location.h"
+#include "src/core/lib/gprpp/orphanable.h"
+#include "src/core/lib/iomgr/closure.h"
+#include "src/core/lib/iomgr/error.h"
+#include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/promise/exec_ctx_wakeup_scheduler.h"
 #include "src/core/lib/promise/loop.h"
+#include "src/core/lib/promise/poll.h"
+#include "src/core/lib/promise/promise.h"
 #include "src/core/lib/promise/sleep.h"
 #include "src/core/lib/promise/try_seq.h"
+#include "src/core/lib/surface/channel_init.h"
+#include "src/core/lib/surface/channel_stack_type.h"
 #include "src/core/lib/transport/http2_errors.h"
 
 namespace grpc_core {
@@ -124,11 +136,7 @@ void MaxAgeFilter::Shutdown() {
   ChannelIdleFilter::Shutdown();
 }
 
-void MaxAgeFilter::Start() {
-  // Trigger idle timer immediately
-  IncreaseCallCount();
-  DecreaseCallCount();
-
+void MaxAgeFilter::PostInit() {
   struct StartupClosure {
     RefCountedPtr<grpc_channel_stack> channel_stack;
     MaxAgeFilter* filter;
@@ -136,6 +144,9 @@ void MaxAgeFilter::Start() {
   };
   auto run_startup = [](void* p, grpc_error_handle) {
     auto* startup = static_cast<StartupClosure*>(p);
+    // Trigger idle timer
+    startup->filter->IncreaseCallCount();
+    startup->filter->DecreaseCallCount();
     grpc_transport_op* op = grpc_make_transport_op(nullptr);
     op->start_connectivity_watch.reset(
         new ConnectivityWatcher(startup->filter));
@@ -198,9 +209,9 @@ ArenaPromise<ServerMetadataHandle> ChannelIdleFilter::MakeCallPromise(
   using Decrementer = std::unique_ptr<ChannelIdleFilter, CallCountDecreaser>;
   IncreaseCallCount();
   return ArenaPromise<ServerMetadataHandle>(
-      Capture([](Decrementer*, ArenaPromise<ServerMetadataHandle>* next)
-                  -> Poll<ServerMetadataHandle> { return (*next)(); },
-              Decrementer(this), next_promise_factory(std::move(call_args))));
+      [decrementer = Decrementer(this),
+       next = next_promise_factory(std::move(call_args))]() mutable
+      -> Poll<ServerMetadataHandle> { return next(); });
 }
 
 bool ChannelIdleFilter::StartTransportOp(grpc_transport_op* op) {
@@ -260,41 +271,30 @@ void ChannelIdleFilter::CloseChannel() {
   elem->filter->start_transport_op(elem, op);
 }
 
-namespace {
-
-const grpc_channel_filter grpc_client_idle_filter =
+const grpc_channel_filter ClientIdleFilter::kFilter =
     MakePromiseBasedFilter<ClientIdleFilter, FilterEndpoint::kClient>(
         "client_idle");
-const grpc_channel_filter grpc_max_age_filter =
+const grpc_channel_filter MaxAgeFilter::kFilter =
     MakePromiseBasedFilter<MaxAgeFilter, FilterEndpoint::kServer>("max_age");
-
-}  // namespace
 
 void RegisterChannelIdleFilters(CoreConfiguration::Builder* builder) {
   builder->channel_init()->RegisterStage(
       GRPC_CLIENT_CHANNEL, GRPC_CHANNEL_INIT_BUILTIN_PRIORITY,
       [](ChannelStackBuilder* builder) {
-        const grpc_channel_args* channel_args = builder->channel_args();
-        if (!grpc_channel_args_want_minimal_stack(channel_args) &&
-            GetClientIdleTimeout(ChannelArgs::FromC(channel_args)) !=
-                Duration::Infinity()) {
-          builder->PrependFilter(&grpc_client_idle_filter, nullptr);
+        auto channel_args = builder->channel_args();
+        if (!channel_args.WantMinimalStack() &&
+            GetClientIdleTimeout(channel_args) != Duration::Infinity()) {
+          builder->PrependFilter(&ClientIdleFilter::kFilter);
         }
         return true;
       });
   builder->channel_init()->RegisterStage(
       GRPC_SERVER_CHANNEL, GRPC_CHANNEL_INIT_BUILTIN_PRIORITY,
       [](ChannelStackBuilder* builder) {
-        const grpc_channel_args* channel_args = builder->channel_args();
-        if (!grpc_channel_args_want_minimal_stack(channel_args) &&
-            MaxAgeFilter::Config::FromChannelArgs(
-                ChannelArgs::FromC(channel_args))
-                .enable()) {
-          builder->PrependFilter(
-              &grpc_max_age_filter,
-              [](grpc_channel_stack*, grpc_channel_element* elem) {
-                static_cast<MaxAgeFilter*>(elem->channel_data)->Start();
-              });
+        auto channel_args = builder->channel_args();
+        if (!channel_args.WantMinimalStack() &&
+            MaxAgeFilter::Config::FromChannelArgs(channel_args).enable()) {
+          builder->PrependFilter(&MaxAgeFilter::kFilter);
         }
         return true;
       });

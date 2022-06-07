@@ -493,6 +493,8 @@ grpc_cc_test(
         "//:gpr",
         "//:grpc",
         "//:grpc++",
+        "//:grpcpp_orca_interceptor",
+        "//:grpcpp_orca_service",
         "//src/proto/grpc/testing:echo_messages_proto",
         "//src/proto/grpc/testing:echo_proto",
         "//src/proto/grpc/testing/duplicate:echo_duplicate_proto",
@@ -937,7 +939,7 @@ grpc_cc_test(
     ],
     deps = [
         "//:grpc++",
-        "//:grpcpp_orca",
+        "//:grpcpp_orca_service",
         "//src/proto/grpc/testing/xds/v3:orca_service_proto",
         "//test/core/util:grpc_test_util",
         "//test/cpp/util:test_util",

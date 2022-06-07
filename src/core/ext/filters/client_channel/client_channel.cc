@@ -20,30 +20,38 @@
 
 #include <inttypes.h>
 #include <limits.h>
-#include <stdbool.h>
-#include <stdio.h>
 #include <string.h>
 
+#include <algorithm>
+#include <functional>
+#include <new>
 #include <set>
+#include <vector>
 
 #include "absl/container/inlined_vector.h"
+#include "absl/memory/memory.h"
+#include "absl/status/statusor.h"
+#include "absl/strings/cord.h"
 #include "absl/strings/numbers.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_join.h"
 #include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
+#include "absl/types/variant.h"
 
+#include <grpc/impl/codegen/gpr_types.h>
+#include <grpc/slice.h>
+#include <grpc/status.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
-#include <grpc/support/sync.h>
 
 #include "src/core/ext/filters/client_channel/backend_metric.h"
 #include "src/core/ext/filters/client_channel/backup_poller.h"
+#include "src/core/ext/filters/client_channel/client_channel_channelz.h"
 #include "src/core/ext/filters/client_channel/config_selector.h"
 #include "src/core/ext/filters/client_channel/dynamic_filters.h"
 #include "src/core/ext/filters/client_channel/global_subchannel_pool.h"
-#include "src/core/ext/filters/client_channel/http_connect_handshaker.h"
 #include "src/core/ext/filters/client_channel/lb_policy/child_policy_handler.h"
 #include "src/core/ext/filters/client_channel/lb_policy_registry.h"
 #include "src/core/ext/filters/client_channel/local_subchannel_pool.h"
@@ -51,23 +59,29 @@
 #include "src/core/ext/filters/client_channel/resolver_result_parsing.h"
 #include "src/core/ext/filters/client_channel/retry_filter.h"
 #include "src/core/ext/filters/client_channel/subchannel.h"
+#include "src/core/ext/filters/client_channel/subchannel_interface.h"
+#include "src/core/ext/filters/client_channel/subchannel_interface_internal.h"
 #include "src/core/ext/filters/deadline/deadline_filter.h"
-#include "src/core/lib/backoff/backoff.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_stack.h"
-#include "src/core/lib/channel/connected_channel.h"
-#include "src/core/lib/channel/status_util.h"
-#include "src/core/lib/gpr/string.h"
+#include "src/core/lib/channel/channel_trace.h"
+#include "src/core/lib/config/core_configuration.h"
+#include "src/core/lib/debug/trace.h"
+#include "src/core/lib/gpr/useful.h"
+#include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/sync.h"
-#include "src/core/lib/iomgr/iomgr.h"
+#include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/polling_entity.h"
+#include "src/core/lib/iomgr/pollset_set.h"
 #include "src/core/lib/iomgr/work_serializer.h"
+#include "src/core/lib/json/json.h"
 #include "src/core/lib/profiling/timers.h"
 #include "src/core/lib/resolver/resolver_registry.h"
+#include "src/core/lib/resolver/server_address.h"
 #include "src/core/lib/service_config/service_config_call_data.h"
 #include "src/core/lib/service_config/service_config_impl.h"
 #include "src/core/lib/slice/slice_internal.h"
-#include "src/core/lib/slice/slice_string_helpers.h"
+#include "src/core/lib/slice/slice_refcount.h"
 #include "src/core/lib/surface/channel.h"
 #include "src/core/lib/transport/connectivity_state.h"
 #include "src/core/lib/transport/error_utils.h"
@@ -82,9 +96,7 @@
 
 namespace grpc_core {
 
-using internal::ClientChannelGlobalParsedConfig;
 using internal::ClientChannelMethodParsedConfig;
-using internal::ClientChannelServiceConfigParser;
 
 TraceFlag grpc_client_channel_trace(false, "client_channel");
 TraceFlag grpc_client_channel_call_trace(false, "client_channel_call");
@@ -241,6 +253,7 @@ const grpc_channel_filter ClientChannel::kFilterVtable = {
     ClientChannel::CallData::Destroy,
     sizeof(ClientChannel),
     ClientChannel::Init,
+    grpc_channel_stack_no_post_init,
     ClientChannel::Destroy,
     ClientChannel::GetChannelInfo,
     "client-channel",
@@ -392,6 +405,7 @@ const grpc_channel_filter DynamicTerminationFilter::kFilterVtable = {
     DynamicTerminationFilter::CallData::Destroy,
     sizeof(DynamicTerminationFilter),
     DynamicTerminationFilter::Init,
+    grpc_channel_stack_no_post_init,
     DynamicTerminationFilter::Destroy,
     DynamicTerminationFilter::GetChannelInfo,
     "dynamic_filter_termination",
@@ -491,21 +505,15 @@ class ClientChannel::SubchannelWrapper : public SubchannelInterface {
     GRPC_CHANNEL_STACK_UNREF(chand_->owning_stack_, "SubchannelWrapper");
   }
 
-  grpc_connectivity_state CheckConnectivityState() override {
-    return subchannel_->CheckConnectivityState(health_check_service_name_);
-  }
-
   void WatchConnectivityState(
-      grpc_connectivity_state initial_state,
       std::unique_ptr<ConnectivityStateWatcherInterface> watcher) override
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(*chand_->work_serializer_) {
     auto& watcher_wrapper = watcher_map_[watcher.get()];
     GPR_ASSERT(watcher_wrapper == nullptr);
     watcher_wrapper = new WatcherWrapper(std::move(watcher),
-                                         Ref(DEBUG_LOCATION, "WatcherWrapper"),
-                                         initial_state);
+                                         Ref(DEBUG_LOCATION, "WatcherWrapper"));
     subchannel_->WatchConnectivityState(
-        initial_state, health_check_service_name_,
+        health_check_service_name_,
         RefCountedPtr<Subchannel::ConnectivityStateWatcherInterface>(
             watcher_wrapper));
   }
@@ -523,9 +531,18 @@ class ClientChannel::SubchannelWrapper : public SubchannelInterface {
     return subchannel_->connected_subchannel();
   }
 
-  void AttemptToConnect() override { subchannel_->AttemptToConnect(); }
+  void RequestConnection() override { subchannel_->RequestConnection(); }
 
   void ResetBackoff() override { subchannel_->ResetBackoff(); }
+
+  void AddDataWatcher(std::unique_ptr<DataWatcherInterface> watcher) override
+      ABSL_EXCLUSIVE_LOCKS_REQUIRED(*chand_->work_serializer_) {
+    std::unique_ptr<InternalSubchannelDataWatcherInterface> internal_watcher(
+        static_cast<InternalSubchannelDataWatcherInterface*>(
+            watcher.release()));
+    internal_watcher->SetSubchannel(subchannel_.get());
+    data_watchers_.push_back(std::move(internal_watcher));
+  }
 
   const grpc_channel_args* channel_args() override {
     return subchannel_->channel_args();
@@ -555,11 +572,8 @@ class ClientChannel::SubchannelWrapper : public SubchannelInterface {
     WatcherWrapper(
         std::unique_ptr<SubchannelInterface::ConnectivityStateWatcherInterface>
             watcher,
-        RefCountedPtr<SubchannelWrapper> parent,
-        grpc_connectivity_state initial_state)
-        : watcher_(std::move(watcher)),
-          parent_(std::move(parent)),
-          last_seen_state_(initial_state) {}
+        RefCountedPtr<SubchannelWrapper> parent)
+        : watcher_(std::move(watcher)), parent_(std::move(parent)) {}
 
     ~WatcherWrapper() override {
       auto* parent = parent_.release();  // ref owned by lambda
@@ -596,13 +610,10 @@ class ClientChannel::SubchannelWrapper : public SubchannelInterface {
     }
 
     WatcherWrapper* MakeReplacement() {
-      auto* replacement =
-          new WatcherWrapper(std::move(watcher_), parent_, last_seen_state_);
+      auto* replacement = new WatcherWrapper(std::move(watcher_), parent_);
       replacement_ = replacement;
       return replacement;
     }
-
-    grpc_connectivity_state last_seen_state() const { return last_seen_state_; }
 
    private:
     void ApplyUpdateInControlPlaneWorkSerializer()
@@ -645,7 +656,6 @@ class ClientChannel::SubchannelWrapper : public SubchannelInterface {
       // Ignore update if the parent WatcherWrapper has been replaced
       // since this callback was scheduled.
       if (watcher_ != nullptr) {
-        last_seen_state_ = state_change.state;
         watcher_->OnConnectivityStateChange(state_change.state);
       }
     }
@@ -653,7 +663,6 @@ class ClientChannel::SubchannelWrapper : public SubchannelInterface {
     std::unique_ptr<SubchannelInterface::ConnectivityStateWatcherInterface>
         watcher_;
     RefCountedPtr<SubchannelWrapper> parent_;
-    grpc_connectivity_state last_seen_state_;
     WatcherWrapper* replacement_ = nullptr;
   };
 
@@ -667,6 +676,8 @@ class ClientChannel::SubchannelWrapper : public SubchannelInterface {
   // corresponding WrapperWatcher to cancel on the underlying subchannel.
   std::map<ConnectivityStateWatcherInterface*, WatcherWrapper*> watcher_map_
       ABSL_GUARDED_BY(*chand_->work_serializer_);
+  std::vector<std::unique_ptr<InternalSubchannelDataWatcherInterface>>
+      data_watchers_ ABSL_GUARDED_BY(*chand_->work_serializer_);
 };
 
 //
@@ -986,9 +997,9 @@ class ClientChannel::ClientChannelControlHelper
 // ClientChannel implementation
 //
 
-ClientChannel* ClientChannel::GetFromChannel(grpc_channel* channel) {
+ClientChannel* ClientChannel::GetFromChannel(Channel* channel) {
   grpc_channel_element* elem =
-      grpc_channel_stack_last_element(grpc_channel_get_channel_stack(channel));
+      grpc_channel_stack_last_element(channel->channel_stack());
   if (elem->filter != &kFilterVtable) return nullptr;
   return static_cast<ClientChannel*>(elem->channel_data);
 }
@@ -1487,6 +1498,7 @@ void ClientChannel::UpdateServiceConfigInDataPlaneLocked() {
       channel_args_, args_to_add.data(), args_to_add.size());
   new_args = config_selector->ModifyChannelArgs(new_args);
   bool enable_retries =
+      !grpc_channel_args_want_minimal_stack(new_args) &&
       grpc_channel_args_find_bool(new_args, GRPC_ARG_ENABLE_RETRIES, true);
   // Construct dynamic filter stack.
   std::vector<const grpc_channel_filter*> filters =
@@ -2513,25 +2525,16 @@ class ClientChannel::LoadBalancedCall::Metadata
 // ClientChannel::LoadBalancedCall::LbCallState
 //
 
-class ClientChannel::LoadBalancedCall::LbCallState
-    : public LoadBalancingPolicy::CallState {
- public:
-  explicit LbCallState(LoadBalancedCall* lb_call) : lb_call_(lb_call) {}
-
-  void* Alloc(size_t size) override { return lb_call_->arena_->Alloc(size); }
-
-  absl::string_view ExperimentalGetCallAttribute(const char* key) override {
-    auto* service_config_call_data = static_cast<ServiceConfigCallData*>(
-        lb_call_->call_context_[GRPC_CONTEXT_SERVICE_CONFIG_CALL_DATA].value);
-    auto& call_attributes = service_config_call_data->call_attributes();
-    auto it = call_attributes.find(key);
-    if (it == call_attributes.end()) return absl::string_view();
-    return it->second;
-  }
-
- private:
-  LoadBalancedCall* lb_call_;
-};
+absl::string_view
+ClientChannel::LoadBalancedCall::LbCallState::GetCallAttribute(
+    UniqueTypeName type) {
+  auto* service_config_call_data = static_cast<ServiceConfigCallData*>(
+      lb_call_->call_context_[GRPC_CONTEXT_SERVICE_CONFIG_CALL_DATA].value);
+  auto& call_attributes = service_config_call_data->call_attributes();
+  auto it = call_attributes.find(type);
+  if (it == call_attributes.end()) return absl::string_view();
+  return it->second;
+}
 
 //
 // ClientChannel::LoadBalancedCall::BackendMetricAccessor
@@ -2547,15 +2550,32 @@ class ClientChannel::LoadBalancedCall::BackendMetricAccessor
     if (lb_call_->backend_metric_data_ == nullptr &&
         lb_call_->recv_trailing_metadata_ != nullptr) {
       if (const auto* md = lb_call_->recv_trailing_metadata_->get_pointer(
-              XEndpointLoadMetricsBinMetadata())) {
+              EndpointLoadMetricsBinMetadata())) {
+        BackendMetricAllocator allocator(lb_call_->arena_);
         lb_call_->backend_metric_data_ =
-            ParseBackendMetricData(*md, lb_call_->arena_);
+            ParseBackendMetricData(md->as_string_view(), &allocator);
       }
     }
     return lb_call_->backend_metric_data_;
   }
 
  private:
+  class BackendMetricAllocator : public BackendMetricAllocatorInterface {
+   public:
+    explicit BackendMetricAllocator(Arena* arena) : arena_(arena) {}
+
+    BackendMetricData* AllocateBackendMetricData() override {
+      return arena_->New<BackendMetricData>();
+    }
+
+    char* AllocateString(size_t size) override {
+      return static_cast<char*>(arena_->Alloc(size));
+    }
+
+   private:
+    Arena* arena_;
+  };
+
   LoadBalancedCall* lb_call_;
 };
 
@@ -2605,8 +2625,7 @@ ClientChannel::LoadBalancedCall::~LoadBalancedCall() {
   GRPC_ERROR_UNREF(cancel_error_);
   GRPC_ERROR_UNREF(failure_error_);
   if (backend_metric_data_ != nullptr) {
-    backend_metric_data_->LoadBalancingPolicy::BackendMetricAccessor::
-        BackendMetricData::~BackendMetricData();
+    backend_metric_data_->BackendMetricData::~BackendMetricData();
   }
   // Make sure there are no remaining pending batches.
   for (size_t i = 0; i < GPR_ARRAY_SIZE(pending_batches_); ++i) {
@@ -2924,7 +2943,7 @@ void ClientChannel::LoadBalancedCall::RecvMessageReady(
     gpr_log(GPR_INFO, "chand=%p lb_call=%p: got recv_message_ready: error=%s",
             self->chand_, self, grpc_error_std_string(error).c_str());
   }
-  if (*self->recv_message_ != nullptr) {
+  if (self->recv_message_->has_value()) {
     self->call_attempt_tracer_->RecordReceivedMessage(**self->recv_message_);
   }
   Closure::Run(DEBUG_LOCATION, self->original_recv_message_ready_,

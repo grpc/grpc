@@ -21,12 +21,16 @@
 
 #include <grpc/support/port_platform.h>
 
-#include <string>
+#include <stddef.h>
 
+#include <string>
+#include <type_traits>
+#include <utility>
+
+#include "absl/meta/type_traits.h"
 #include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
 #include "absl/types/variant.h"
-#include "absl/utility/utility.h"
 
 #include <grpc/impl/codegen/grpc_types.h>
 
@@ -81,6 +85,11 @@ struct ChannelArgTypeTraits<
   };
 };
 
+// If a type declares some member 'struct RawPointerChannelArgTag {}' then
+// we automatically generate a vtable for it that does not do any ownership
+// management and compares the type by pointer identity.
+// This is intended to be relatively ugly because *most types should worry about
+// ownership*.
 template <typename T>
 struct ChannelArgTypeTraits<T,
                             absl::void_t<typename T::RawPointerChannelArgTag>> {
@@ -191,6 +200,11 @@ class ChannelArgs {
                 ChannelArgTypeTraits<
                     absl::remove_cvref_t<decltype(*store_value)>>::VTable()));
   }
+  template <typename T>
+  GRPC_MUST_USE_RESULT ChannelArgs SetIfUnset(absl::string_view name, T value) {
+    if (Contains(name)) return *this;
+    return Set(name, std::move(value));
+  }
   GRPC_MUST_USE_RESULT ChannelArgs Remove(absl::string_view name) const;
   bool Contains(absl::string_view name) const { return Get(name) != nullptr; }
 
@@ -203,6 +217,7 @@ class ChannelArgs {
   }
   absl::optional<Duration> GetDurationFromIntMillis(
       absl::string_view name) const;
+  absl::optional<bool> GetBool(absl::string_view name) const;
 
   // Object based get/set.
   // Deal with the common case that we set a pointer to an object under
@@ -221,11 +236,25 @@ class ChannelArgs {
   T* GetObject() {
     return GetPointer<T>(T::ChannelArgName());
   }
+  template <typename T>
+  RefCountedPtr<T> GetObjectRef() {
+    auto* p = GetObject<T>();
+    if (p == nullptr) return nullptr;
+    return p->Ref();
+  }
 
   bool operator<(const ChannelArgs& other) const { return args_ < other.args_; }
   bool operator==(const ChannelArgs& other) const {
     return args_ == other.args_;
   }
+
+  // Helpers for commonly accessed things
+
+  bool WantMinimalStack() const {
+    return GetBool(GRPC_ARG_MINIMAL_STACK).value_or(false);
+  }
+
+  std::string ToString() const;
 
  private:
   explicit ChannelArgs(AVL<std::string, Value> args) : args_(std::move(args)) {}
@@ -333,8 +362,9 @@ ChannelArgs ChannelArgsBuiltinPrecondition(const grpc_channel_args* src);
 }  // namespace grpc_core
 
 // Takes ownership of the old_args
-typedef grpc_channel_args* (*grpc_channel_args_client_channel_creation_mutator)(
-    const char* target, grpc_channel_args* old_args,
+typedef grpc_core::ChannelArgs (
+    *grpc_channel_args_client_channel_creation_mutator)(
+    const char* target, grpc_core::ChannelArgs old_args,
     grpc_channel_stack_type type);
 
 // Should be called only once globaly before grpc is init'ed.

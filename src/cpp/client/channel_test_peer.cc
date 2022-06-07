@@ -16,7 +16,6 @@
  *
  */
 
-#include <grpc/support/sync.h>
 #include <grpcpp/channel.h>
 #include <grpcpp/test/channel_test_peer.h>
 
@@ -26,13 +25,13 @@ namespace grpc {
 namespace testing {
 
 int ChannelTestPeer::registered_calls() const {
-  grpc_core::MutexLock lock(&channel_->c_channel_->registration_table->mu);
-  return static_cast<int>(channel_->c_channel_->registration_table->map.size());
+  return grpc_core::Channel::FromC(channel_->c_channel_)
+      ->TestOnlyRegisteredCalls();
 }
 
 int ChannelTestPeer::registration_attempts() const {
-  grpc_core::MutexLock lock(&channel_->c_channel_->registration_table->mu);
-  return channel_->c_channel_->registration_table->method_registration_attempts;
+  return grpc_core::Channel::FromC(channel_->c_channel_)
+      ->TestOnlyRegistrationAttempts();
 }
 
 }  // namespace testing

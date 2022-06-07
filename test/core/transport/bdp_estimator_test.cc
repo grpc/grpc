@@ -29,6 +29,7 @@
 
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gpr/useful.h"
+#include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/timer_manager.h"
 #include "test/core/util/test_config.h"
 
@@ -38,8 +39,10 @@ namespace grpc_core {
 namespace testing {
 namespace {
 int g_clock = 123;
+Mutex mu_;
 
 gpr_timespec fake_gpr_now(gpr_clock_type clock_type) {
+  MutexLock lock(&mu_);
   gpr_timespec ts;
   ts.tv_sec = g_clock;
   ts.tv_nsec = 0;
@@ -47,7 +50,10 @@ gpr_timespec fake_gpr_now(gpr_clock_type clock_type) {
   return ts;
 }
 
-void inc_time(void) { g_clock += 30; }
+void inc_time(void) {
+  MutexLock lock(&mu_);
+  g_clock += 30;
+}
 }  // namespace
 
 TEST(BdpEstimatorTest, NoOp) { BdpEstimator est("test"); }

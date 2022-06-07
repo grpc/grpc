@@ -22,6 +22,8 @@
 
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/surface/builtins.h"
+#include "src/core/lib/transport/http_connect_handshaker.h"
+#include "src/core/lib/transport/tcp_connect_handshaker.h"
 
 extern void grpc_register_extra_plugins(void);
 
@@ -33,6 +35,8 @@ void grpc_lb_policy_grpclb_init(void);
 void grpc_lb_policy_grpclb_shutdown(void);
 void grpc_lb_policy_priority_init(void);
 void grpc_lb_policy_priority_shutdown(void);
+void grpc_lb_policy_outlier_detection_init(void);
+void grpc_lb_policy_outlier_detection_shutdown(void);
 void grpc_lb_policy_weighted_target_init(void);
 void grpc_lb_policy_weighted_target_shutdown(void);
 void grpc_lb_policy_pick_first_init(void);
@@ -58,6 +62,8 @@ void grpc_register_built_in_plugins(void) {
   grpc_register_plugin(grpc_core::RlsLbPluginInit,
                        grpc_core::RlsLbPluginShutdown);
 #endif  // !GRPC_NO_RLS
+  grpc_register_plugin(grpc_lb_policy_outlier_detection_init,
+                       grpc_lb_policy_outlier_detection_shutdown);
   grpc_register_plugin(grpc_lb_policy_priority_init,
                        grpc_lb_policy_priority_shutdown);
   grpc_register_plugin(grpc_lb_policy_weighted_target_init,
@@ -101,6 +107,11 @@ extern void RegisterBinderResolver(CoreConfiguration::Builder* builder);
 #endif
 
 void BuildCoreConfiguration(CoreConfiguration::Builder* builder) {
+  // The order of the handshaker registration is crucial here.
+  // We want TCP connect handshaker to be registered last so that it is added to
+  // the start of the handshaker list.
+  RegisterHttpConnectHandshaker(builder);
+  RegisterTCPConnectHandshaker(builder);
   BuildClientChannelConfiguration(builder);
   SecurityRegisterHandshakerFactories(builder);
   RegisterClientAuthorityFilter(builder);

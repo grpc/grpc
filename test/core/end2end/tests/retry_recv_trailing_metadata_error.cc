@@ -333,6 +333,7 @@ grpc_channel_filter InjectStatusFilter::kFilterVtable = {
     CallData::Destroy,
     0,
     Init,
+    grpc_channel_stack_no_post_init,
     Destroy,
     grpc_channel_next_get_info,
     "InjectStatusFilter",
@@ -340,12 +341,13 @@ grpc_channel_filter InjectStatusFilter::kFilterVtable = {
 
 bool AddFilter(grpc_core::ChannelStackBuilder* builder) {
   // Skip on proxy (which explicitly disables retries).
-  const grpc_channel_args* args = builder->channel_args();
-  if (!grpc_channel_args_find_bool(args, GRPC_ARG_ENABLE_RETRIES, true)) {
+  if (!builder->channel_args()
+           .GetBool(GRPC_ARG_ENABLE_RETRIES)
+           .value_or(true)) {
     return true;
   }
   // Install filter.
-  builder->PrependFilter(&InjectStatusFilter::kFilterVtable, nullptr);
+  builder->PrependFilter(&InjectStatusFilter::kFilterVtable);
   return true;
 }
 

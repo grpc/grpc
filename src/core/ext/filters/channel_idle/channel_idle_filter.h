@@ -17,9 +17,25 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <memory>
+
+#include "absl/status/status.h"
+#include "absl/status/statusor.h"
+
+#include <grpc/impl/codegen/connectivity_state.h>
+
 #include "src/core/ext/filters/channel_idle/idle_filter_state.h"
+#include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/channel/channel_fwd.h"
+#include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/channel/promise_based_filter.h"
+#include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/gprpp/single_set_ptr.h"
+#include "src/core/lib/gprpp/time.h"
+#include "src/core/lib/promise/activity.h"
+#include "src/core/lib/promise/arena_promise.h"
+#include "src/core/lib/transport/connectivity_state.h"
+#include "src/core/lib/transport/transport.h"
 
 namespace grpc_core {
 
@@ -75,6 +91,8 @@ class ChannelIdleFilter : public ChannelFilter {
 
 class ClientIdleFilter final : public ChannelIdleFilter {
  public:
+  static const grpc_channel_filter kFilter;
+
   static absl::StatusOr<ClientIdleFilter> Create(
       ChannelArgs args, ChannelFilter::Args filter_args);
 
@@ -84,12 +102,13 @@ class ClientIdleFilter final : public ChannelIdleFilter {
 
 class MaxAgeFilter final : public ChannelIdleFilter {
  public:
+  static const grpc_channel_filter kFilter;
   struct Config;
 
   static absl::StatusOr<MaxAgeFilter> Create(ChannelArgs args,
                                              ChannelFilter::Args filter_args);
 
-  void Start();
+  void PostInit() override;
 
  private:
   class ConnectivityWatcher : public AsyncConnectivityStateWatcherInterface {

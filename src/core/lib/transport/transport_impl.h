@@ -21,7 +21,18 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <stddef.h>
+
+#include "absl/strings/string_view.h"
+
+#include "src/core/lib/iomgr/closure.h"
+#include "src/core/lib/iomgr/endpoint.h"
+#include "src/core/lib/iomgr/iomgr_fwd.h"
+#include "src/core/lib/iomgr/pollset.h"
+#include "src/core/lib/promise/arena_promise.h"
+#include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/transport/transport.h"
+#include "src/core/lib/transport/transport_fwd.h"
 
 typedef struct grpc_transport_vtable {
   /* Memory required for a single stream element - this is allocated by upper

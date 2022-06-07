@@ -22,54 +22,79 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <inttypes.h>
 #include <stdlib.h>
+#include <string.h>
 
 #include <algorithm>
 #include <deque>
-#include <functional>
 #include <list>
 #include <map>
+#include <memory>
 #include <random>
+#include <set>
 #include <string>
 #include <unordered_map>
 #include <utility>
+#include <vector>
 
+#include "absl/base/thread_annotations.h"
 #include "absl/container/inlined_vector.h"
 #include "absl/hash/hash.h"
 #include "absl/memory/memory.h"
+#include "absl/status/status.h"
+#include "absl/status/statusor.h"
 #include "absl/strings/str_cat.h"
+#include "absl/strings/str_format.h"
 #include "absl/strings/str_join.h"
 #include "absl/strings/string_view.h"
 #include "absl/strings/strip.h"
+#include "absl/types/optional.h"
+#include "upb/upb.h"
 #include "upb/upb.hpp"
 
+#include <grpc/byte_buffer.h>
+#include <grpc/byte_buffer_reader.h>
 #include <grpc/grpc.h>
-#include <grpc/grpc_security.h>
-#include <grpc/impl/codegen/byte_buffer_reader.h>
+#include <grpc/impl/codegen/connectivity_state.h>
 #include <grpc/impl/codegen/grpc_types.h>
-#include <grpc/support/time.h>
+#include <grpc/impl/codegen/propagation_bits.h>
+#include <grpc/slice.h>
+#include <grpc/status.h>
+#include <grpc/support/log.h>
 
 #include "src/core/ext/filters/client_channel/client_channel.h"
 #include "src/core/ext/filters/client_channel/lb_policy.h"
 #include "src/core/ext/filters/client_channel/lb_policy/child_policy_handler.h"
 #include "src/core/ext/filters/client_channel/lb_policy_factory.h"
 #include "src/core/ext/filters/client_channel/lb_policy_registry.h"
+#include "src/core/ext/filters/client_channel/subchannel_interface.h"
 #include "src/core/lib/backoff/backoff.h"
+#include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/channel/channelz.h"
 #include "src/core/lib/config/core_configuration.h"
-#include "src/core/lib/gpr/env.h"
-#include "src/core/lib/gpr/string.h"
+#include "src/core/lib/debug/trace.h"
+#include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/dual_ref_counted.h"
 #include "src/core/lib/gprpp/orphanable.h"
-#include "src/core/lib/gprpp/ref_counted.h"
+#include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/gprpp/sync.h"
+#include "src/core/lib/gprpp/time.h"
+#include "src/core/lib/iomgr/closure.h"
+#include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
+#include "src/core/lib/iomgr/pollset_set.h"
 #include "src/core/lib/iomgr/timer.h"
+#include "src/core/lib/iomgr/work_serializer.h"
 #include "src/core/lib/json/json.h"
 #include "src/core/lib/json/json_util.h"
 #include "src/core/lib/resolver/resolver_registry.h"
+#include "src/core/lib/resolver/server_address.h"
 #include "src/core/lib/security/credentials/credentials.h"
 #include "src/core/lib/security/credentials/fake/fake_credentials.h"
 #include "src/core/lib/service_config/service_config_impl.h"
+#include "src/core/lib/slice/slice_internal.h"
+#include "src/core/lib/slice/slice_refcount.h"
 #include "src/core/lib/surface/call.h"
 #include "src/core/lib/surface/channel.h"
 #include "src/core/lib/transport/connectivity_state.h"
@@ -1059,7 +1084,8 @@ LoadBalancingPolicy::PickResult RlsLb::Picker::Pick(PickArgs args) {
                 "[rlslb %p] picker=%p: RLS call in backoff; failing pick",
                 lb_policy_.get(), this);
       }
-      return PickResult::Fail(entry->status());
+      return PickResult::Fail(absl::UnavailableError(
+          absl::StrCat("RLS request failed: ", entry->status().ToString())));
     }
   }
   // RLS call pending.  Queue the pick.
@@ -1568,7 +1594,8 @@ RlsLb::RlsChannel::RlsChannel(RefCountedPtr<RlsLb> lb_policy)
       parent_channelz_node_ = parent_channelz_node->Ref();
     }
     // Start connectivity watch.
-    ClientChannel* client_channel = ClientChannel::GetFromChannel(channel_);
+    ClientChannel* client_channel =
+        ClientChannel::GetFromChannel(Channel::FromC(channel_));
     GPR_ASSERT(client_channel != nullptr);
     watcher_ = new StateWatcher(Ref(DEBUG_LOCATION, "StateWatcher"));
     client_channel->AddConnectivityWatcher(
@@ -1593,7 +1620,8 @@ void RlsLb::RlsChannel::Orphan() {
     }
     // Stop connectivity watch.
     if (watcher_ != nullptr) {
-      ClientChannel* client_channel = ClientChannel::GetFromChannel(channel_);
+      ClientChannel* client_channel =
+          ClientChannel::GetFromChannel(Channel::FromC(channel_));
       GPR_ASSERT(client_channel != nullptr);
       client_channel->RemoveConnectivityWatcher(watcher_);
       watcher_ = nullptr;

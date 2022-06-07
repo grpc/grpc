@@ -252,25 +252,18 @@ class CLanguage(object):
             _check_compiler(self.args.compiler, [
                 'default',
                 'cmake',
-                'cmake_ninja_vs2015',
                 'cmake_ninja_vs2017',
-                'cmake_vs2015',
                 'cmake_vs2017',
                 'cmake_vs2019',
             ])
             _check_arch(self.args.arch, ['default', 'x64', 'x86'])
 
             activate_vs_tools = ''
-            if self.args.compiler == 'cmake_ninja_vs2015' or self.args.compiler == 'cmake' or self.args.compiler == 'default':
+            if self.args.compiler == 'cmake_ninja_vs2017' or self.args.compiler == 'cmake' or self.args.compiler == 'default':
                 # cmake + ninja build is the default because it is faster and supports boringssl assembly optimizations
-                # the compiler used is exactly the same as for cmake_vs2015
-                cmake_generator = 'Ninja'
-                activate_vs_tools = '2015'
-            elif self.args.compiler == 'cmake_ninja_vs2017':
+                # the compiler used is exactly the same as for cmake_vs2017
                 cmake_generator = 'Ninja'
                 activate_vs_tools = '2017'
-            elif self.args.compiler == 'cmake_vs2015':
-                cmake_generator = 'Visual Studio 14 2015'
             elif self.args.compiler == 'cmake_vs2017':
                 cmake_generator = 'Visual Studio 15 2017'
             elif self.args.compiler == 'cmake_vs2019':
@@ -484,8 +477,8 @@ class CLanguage(object):
 
         if compiler == 'default' or compiler == 'cmake':
             return ('debian11', [])
-        elif compiler == 'gcc5':
-            return ('gcc_5', [])
+        elif compiler == 'gcc6':
+            return ('gcc_6', [])
         elif compiler == 'gcc10.2':
             return ('debian11', [])
         elif compiler == 'gcc10.2_openssl102':
@@ -496,8 +489,8 @@ class CLanguage(object):
             return ('gcc_11', [])
         elif compiler == 'gcc_musl':
             return ('alpine', [])
-        elif compiler == 'clang4':
-            return ('clang_4', self._clang_cmake_configure_extra_args())
+        elif compiler == 'clang6':
+            return ('clang_6', self._clang_cmake_configure_extra_args())
         elif compiler == 'clang13':
             return ('clang_13', self._clang_cmake_configure_extra_args())
         else:
@@ -981,18 +974,8 @@ class ObjCLanguage(object):
 
     def test_specs(self):
         out = []
-        out.append(
-            self.config.job_spec(
-                ['src/objective-c/tests/build_one_example_bazel.sh'],
-                timeout_seconds=10 * 60,
-                shortname='ios-buildtest-example-sample',
-                cpu_cost=1e6,
-                environ={
-                    'SCHEME': 'Sample',
-                    'EXAMPLE_PATH': 'src/objective-c/examples/Sample',
-                    'FRAMEWORKS': 'NO'
-                }))
         # Currently not supporting compiling as frameworks in Bazel
+        # TODO(jtattermusch): verify the above claim is still accurate.
         out.append(
             self.config.job_spec(
                 ['src/objective-c/tests/build_one_example.sh'],
@@ -1004,6 +987,7 @@ class ObjCLanguage(object):
                     'EXAMPLE_PATH': 'src/objective-c/examples/Sample',
                     'FRAMEWORKS': 'YES'
                 }))
+        # TODO(jtattermusch): Create bazel target for the sample and remove the test task from here.
         out.append(
             self.config.job_spec(
                 ['src/objective-c/tests/build_one_example.sh'],
@@ -1013,17 +997,6 @@ class ObjCLanguage(object):
                 environ={
                     'SCHEME': 'SwiftSample',
                     'EXAMPLE_PATH': 'src/objective-c/examples/SwiftSample'
-                }))
-        out.append(
-            self.config.job_spec(
-                ['src/objective-c/tests/build_one_example_bazel.sh'],
-                timeout_seconds=10 * 60,
-                shortname='ios-buildtest-example-tvOS-sample',
-                cpu_cost=1e6,
-                environ={
-                    'SCHEME': 'tvOS-sample',
-                    'EXAMPLE_PATH': 'src/objective-c/examples/tvOS-sample',
-                    'FRAMEWORKS': 'NO'
                 }))
         # Disabled due to #20258
         # TODO (mxyan): Reenable this test when #20258 is resolved.
@@ -1038,19 +1011,9 @@ class ObjCLanguage(object):
         #             'EXAMPLE_PATH': 'src/objective-c/examples/watchOS-sample',
         #             'FRAMEWORKS': 'NO'
         #         }))
-        out.append(
-            self.config.job_spec(['src/objective-c/tests/run_plugin_tests.sh'],
-                                 timeout_seconds=60 * 60,
-                                 shortname='ios-test-plugintest',
-                                 cpu_cost=1e6,
-                                 environ=_FORCE_ENVIRON_FOR_WRAPPERS))
-        out.append(
-            self.config.job_spec(
-                ['src/objective-c/tests/run_plugin_option_tests.sh'],
-                timeout_seconds=60 * 60,
-                shortname='ios-test-plugin-option-test',
-                cpu_cost=1e6,
-                environ=_FORCE_ENVIRON_FOR_WRAPPERS))
+
+        # TODO(jtattermusch): move the test out of the test/core/iomgr/CFStreamTests directory?
+        # How does one add the cfstream dependency in bazel?
         out.append(
             self.config.job_spec(
                 ['test/core/iomgr/ios/CFStreamTests/build_and_run_tests.sh'],
@@ -1058,6 +1021,8 @@ class ObjCLanguage(object):
                 shortname='ios-test-cfstream-tests',
                 cpu_cost=1e6,
                 environ=_FORCE_ENVIRON_FOR_WRAPPERS))
+        # TODO(jtattermusch): Create bazel target for the test and remove the test from here
+        # TODO(jtattermusch): Clarify what do these tests do?
         out.append(
             self.config.job_spec(
                 ['src/objective-c/tests/CoreTests/build_and_run_tests.sh'],
@@ -1065,52 +1030,45 @@ class ObjCLanguage(object):
                 shortname='ios-test-core-tests',
                 cpu_cost=1e6,
                 environ=_FORCE_ENVIRON_FOR_WRAPPERS))
-        # TODO: replace with run_one_test_bazel.sh when Bazel-Xcode is stable
-        out.append(
-            self.config.job_spec(['src/objective-c/tests/run_one_test.sh'],
-                                 timeout_seconds=60 * 60,
-                                 shortname='ios-test-unittests',
-                                 cpu_cost=1e6,
-                                 environ={'SCHEME': 'UnitTests'}))
+        # TODO(jtattermusch): Make sure the //src/objective-c/tests:InteropTests bazel test passes reliably and remove the test from there.
         out.append(
             self.config.job_spec(['src/objective-c/tests/run_one_test.sh'],
                                  timeout_seconds=60 * 60,
                                  shortname='ios-test-interoptests',
                                  cpu_cost=1e6,
                                  environ={'SCHEME': 'InteropTests'}))
+        # TODO(jtattermusch): Create bazel target for the test and remove the test from here
+        # (how does one add the cronet dependency in bazel?)
         out.append(
             self.config.job_spec(['src/objective-c/tests/run_one_test.sh'],
                                  timeout_seconds=60 * 60,
                                  shortname='ios-test-cronettests',
                                  cpu_cost=1e6,
                                  environ={'SCHEME': 'CronetTests'}))
+        # TODO(jtattermusch): Create bazel target for the test and remove the test from here.
         out.append(
             self.config.job_spec(['src/objective-c/tests/run_one_test.sh'],
                                  timeout_seconds=30 * 60,
                                  shortname='ios-perf-test',
                                  cpu_cost=1e6,
                                  environ={'SCHEME': 'PerfTests'}))
+        # TODO(jtattermusch): Clarify what's the difference between PerfTests and PerfTestsPosix
+        # TODO(jtattermusch): Create bazel target for the test and remove the test from here.
         out.append(
             self.config.job_spec(['src/objective-c/tests/run_one_test.sh'],
                                  timeout_seconds=30 * 60,
                                  shortname='ios-perf-test-posix',
                                  cpu_cost=1e6,
                                  environ={'SCHEME': 'PerfTestsPosix'}))
+        # TODO(jtattermusch): Create bazel target for the test (how does one add the cronet dependency in bazel?)
+        # TODO(jtattermusch): move the test out of the test/cpp/ios directory?
         out.append(
             self.config.job_spec(['test/cpp/ios/build_and_run_tests.sh'],
                                  timeout_seconds=60 * 60,
                                  shortname='ios-cpp-test-cronet',
                                  cpu_cost=1e6,
                                  environ=_FORCE_ENVIRON_FOR_WRAPPERS))
-        out.append(
-            self.config.job_spec(['src/objective-c/tests/run_one_test.sh'],
-                                 timeout_seconds=60 * 60,
-                                 shortname='mac-test-basictests',
-                                 cpu_cost=1e6,
-                                 environ={
-                                     'SCHEME': 'MacTests',
-                                     'PLATFORM': 'macos'
-                                 }))
+        # TODO(jtattermusch): Make sure the //src/objective-c/tests:TvTests bazel test passes and remove the test from here.
         out.append(
             self.config.job_spec(['src/objective-c/tests/run_one_test.sh'],
                                  timeout_seconds=30 * 60,
@@ -1157,6 +1115,7 @@ class Sanity(object):
             if _is_use_docker_child():
                 environ['CLANG_FORMAT_SKIP_DOCKER'] = 'true'
                 environ['CLANG_TIDY_SKIP_DOCKER'] = 'true'
+                environ['IWYU_SKIP_DOCKER'] = 'true'
                 # sanity tests run tools/bazel wrapper concurrently
                 # and that can result in a download/run race in the wrapper.
                 # under docker we already have the right version of bazel
@@ -1550,12 +1509,12 @@ argp.add_argument(
     '--compiler',
     choices=[
         'default',
-        'gcc5',
+        'gcc6',
         'gcc10.2',
         'gcc10.2_openssl102',
         'gcc11',
         'gcc_musl',
-        'clang4',
+        'clang6',
         'clang13',
         'python2.7',
         'python3.5',
@@ -1571,9 +1530,7 @@ argp.add_argument(
         'electron1.6',
         'coreclr',
         'cmake',
-        'cmake_ninja_vs2015',
         'cmake_ninja_vs2017',
-        'cmake_vs2015',
         'cmake_vs2017',
         'cmake_vs2019',
         'mono',

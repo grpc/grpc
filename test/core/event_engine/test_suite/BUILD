@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-load("//bazel:grpc_build_system.bzl", "grpc_cc_library", "grpc_package")
+load("//bazel:grpc_build_system.bzl", "grpc_cc_library", "grpc_cc_test", "grpc_package")
 
 licenses(["notice"])
 
@@ -69,6 +69,25 @@ grpc_cc_library(
     alwayslink = 1,
 )
 
+# -- EventEngine implementations --
+
+grpc_cc_test(
+    name = "iomgr_event_engine_test",
+    srcs = ["iomgr_event_engine_test.cc"],
+    uses_polling = False,
+    deps = ["//test/core/event_engine/test_suite:timer"],
+)
+
+grpc_cc_test(
+    name = "fuzzing_event_engine_test",
+    srcs = ["fuzzing_event_engine_test.cc"],
+    uses_polling = False,
+    deps = [
+        "//test/core/event_engine/fuzzing_event_engine",
+        "//test/core/event_engine/test_suite:timer",
+    ],
+)
+
 # -- Internal targets --
 
 grpc_cc_library(
@@ -78,6 +97,7 @@ grpc_cc_library(
     hdrs = COMMON_HEADERS,
     external_deps = ["gtest"],
     deps = [
+        "//:exec_ctx",
         "//:grpc",
         "//test/core/util:grpc_test_util",
     ],

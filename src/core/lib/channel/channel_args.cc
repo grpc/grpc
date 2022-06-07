@@ -21,12 +21,15 @@
 #include "src/core/lib/channel/channel_args.h"
 
 #include <limits.h>
+#include <stdlib.h>
 #include <string.h>
 
+#include <algorithm>
 #include <map>
 #include <vector>
 
 #include "absl/strings/match.h"
+#include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
 #include "absl/strings/str_join.h"
 
@@ -35,7 +38,6 @@
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
 
-#include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/gprpp/match.h"
 
@@ -158,6 +160,43 @@ void* ChannelArgs::GetVoidPointer(absl::string_view name) const {
   if (v == nullptr) return nullptr;
   if (!absl::holds_alternative<Pointer>(*v)) return nullptr;
   return absl::get<Pointer>(*v).c_pointer();
+}
+
+absl::optional<bool> ChannelArgs::GetBool(absl::string_view name) const {
+  auto* v = Get(name);
+  if (v == nullptr) return absl::nullopt;
+  auto* i = absl::get_if<int>(v);
+  if (i == nullptr) {
+    gpr_log(GPR_ERROR, "%s ignored: it must be an integer",
+            std::string(name).c_str());
+    return absl::nullopt;
+  }
+  switch (*i) {
+    case 0:
+      return false;
+    case 1:
+      return true;
+    default:
+      gpr_log(GPR_ERROR, "%s treated as bool but set to %d (assuming true)",
+              std::string(name).c_str(), *i);
+      return true;
+  }
+}
+
+std::string ChannelArgs::ToString() const {
+  std::vector<std::string> arg_strings;
+  args_.ForEach([&arg_strings](const std::string& key, const Value& value) {
+    std::string value_str;
+    if (auto* i = absl::get_if<int>(&value)) {
+      value_str = std::to_string(*i);
+    } else if (auto* s = absl::get_if<std::string>(&value)) {
+      value_str = *s;
+    } else if (auto* p = absl::get_if<Pointer>(&value)) {
+      value_str = absl::StrFormat("%p", p->c_pointer());
+    }
+    arg_strings.push_back(absl::StrCat(key, "=", value_str));
+  });
+  return absl::StrCat("{", absl::StrJoin(arg_strings, ", "), "}");
 }
 
 }  // namespace grpc_core
@@ -461,27 +500,7 @@ grpc_arg grpc_channel_arg_pointer_create(
 }
 
 std::string grpc_channel_args_string(const grpc_channel_args* args) {
-  if (args == nullptr) return "";
-  std::vector<std::string> arg_strings;
-  for (size_t i = 0; i < args->num_args; ++i) {
-    const grpc_arg& arg = args->args[i];
-    std::string arg_string;
-    switch (arg.type) {
-      case GRPC_ARG_INTEGER:
-        arg_string = absl::StrFormat("%s=%d", arg.key, arg.value.integer);
-        break;
-      case GRPC_ARG_STRING:
-        arg_string = absl::StrFormat("%s=%s", arg.key, arg.value.string);
-        break;
-      case GRPC_ARG_POINTER:
-        arg_string = absl::StrFormat("%s=%p", arg.key, arg.value.pointer.p);
-        break;
-      default:
-        arg_string = "arg with unknown type";
-    }
-    arg_strings.push_back(arg_string);
-  }
-  return absl::StrJoin(arg_strings, ", ");
+  return grpc_core::ChannelArgs::FromC(args).ToString();
 }
 
 namespace grpc_core {

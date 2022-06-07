@@ -18,7 +18,14 @@
 
 #include "src/core/ext/xds/xds_endpoint.h"
 
+#include <stdlib.h>
+
+#include <algorithm>
+#include <type_traits>
+#include <vector>
+
 #include "absl/memory/memory.h"
+#include "absl/status/status.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_join.h"
 #include "envoy/config/core/v3/address.upb.h"
@@ -30,12 +37,15 @@
 #include "envoy/type/v3/percent.upb.h"
 #include "google/protobuf/wrappers.upb.h"
 #include "upb/text_encode.h"
-#include "upb/upb.h"
-#include "upb/upb.hpp"
+
+#include <grpc/support/log.h>
 
 #include "src/core/ext/xds/upb_utils.h"
+#include "src/core/ext/xds/xds_resource_type.h"
 #include "src/core/lib/address_utils/parse_address.h"
-#include "src/core/lib/address_utils/sockaddr_utils.h"
+#include "src/core/lib/debug/trace.h"
+#include "src/core/lib/iomgr/error.h"
+#include "src/core/lib/iomgr/resolved_address.h"
 
 namespace grpc_core {
 

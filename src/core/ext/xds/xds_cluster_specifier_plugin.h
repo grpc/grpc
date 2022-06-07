@@ -20,19 +20,12 @@
 #include <grpc/support/port_platform.h>
 
 #include <memory>
-#include <set>
 #include <string>
 
 #include "absl/status/statusor.h"
-#include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
-#include "google/protobuf/any.upb.h"
 #include "upb/def.h"
-
-#include <grpc/grpc.h>
-
-#include "src/core/lib/channel/channel_stack.h"
-#include "src/core/lib/json/json.h"
+#include "upb/upb.h"
 
 namespace grpc_core {
 

@@ -18,17 +18,52 @@
 
 #include <grpc/support/port_platform.h>
 
-#include <limits.h>
+#include <inttypes.h>
+#include <stddef.h>
 
+#include <algorithm>
+#include <string>
+
+#include "absl/types/optional.h"
+
+#include <grpc/slice.h>
+#include <grpc/slice_buffer.h>
 #include <grpc/support/log.h>
+
+// IWYU pragma: no_include "src/core/lib/gprpp/orphanable.h"
 
 #include "src/core/ext/transport/chttp2/transport/chttp2_transport.h"
 #include "src/core/ext/transport/chttp2/transport/context_list.h"
+#include "src/core/ext/transport/chttp2/transport/flow_control.h"
+#include "src/core/ext/transport/chttp2/transport/frame.h"
+#include "src/core/ext/transport/chttp2/transport/frame_data.h"
+#include "src/core/ext/transport/chttp2/transport/frame_ping.h"
+#include "src/core/ext/transport/chttp2/transport/frame_rst_stream.h"
+#include "src/core/ext/transport/chttp2/transport/frame_settings.h"
+#include "src/core/ext/transport/chttp2/transport/frame_window_update.h"
+#include "src/core/ext/transport/chttp2/transport/hpack_encoder.h"
+#include "src/core/ext/transport/chttp2/transport/http2_settings.h"
 #include "src/core/ext/transport/chttp2/transport/internal.h"
+#include "src/core/ext/transport/chttp2/transport/stream_map.h"
+#include "src/core/lib/channel/channelz.h"
 #include "src/core/lib/debug/stats.h"
+#include "src/core/lib/debug/trace.h"
+#include "src/core/lib/gprpp/debug_location.h"
+#include "src/core/lib/gprpp/ref_counted.h"
+#include "src/core/lib/gprpp/ref_counted_ptr.h"
+#include "src/core/lib/gprpp/time.h"
+#include "src/core/lib/iomgr/closure.h"
+#include "src/core/lib/iomgr/endpoint.h"
+#include "src/core/lib/iomgr/error.h"
+#include "src/core/lib/iomgr/exec_ctx.h"
+#include "src/core/lib/iomgr/timer.h"
 #include "src/core/lib/profiling/timers.h"
+#include "src/core/lib/slice/slice.h"
 #include "src/core/lib/slice/slice_internal.h"
+#include "src/core/lib/transport/bdp_estimator.h"
 #include "src/core/lib/transport/http2_errors.h"
+#include "src/core/lib/transport/metadata_batch.h"
+#include "src/core/lib/transport/transport.h"
 
 static void add_to_write_list(grpc_chttp2_write_cb** list,
                               grpc_chttp2_write_cb* cb) {
@@ -183,14 +218,14 @@ static void report_stall(grpc_chttp2_transport* t, grpc_chttp2_stream* s,
         s->flow_controlled_buffer.length, s->flow_controlled_bytes_flowed,
         t->settings[GRPC_ACKED_SETTINGS]
                    [GRPC_CHTTP2_SETTINGS_INITIAL_WINDOW_SIZE],
-        t->flow_control->remote_window(),
+        t->flow_control.remote_window(),
         static_cast<uint32_t>(std::max(
             int64_t(0),
-            s->flow_control->remote_window_delta() +
+            s->flow_control.remote_window_delta() +
                 static_cast<int64_t>(
                     t->settings[GRPC_PEER_SETTINGS]
                                [GRPC_CHTTP2_SETTINGS_INITIAL_WINDOW_SIZE]))),
-        s->flow_control->remote_window_delta());
+        s->flow_control.remote_window_delta());
   }
 }
 
@@ -226,7 +261,6 @@ static bool is_default_initial_metadata(grpc_metadata_batch* initial_metadata) {
 }
 
 namespace {
-class StreamWriteContext;
 
 class WriteContext {
  public:
@@ -247,6 +281,11 @@ class WriteContext {
 
   void FlushSettings() {
     if (t_->dirtied_local_settings && !t_->sent_local_settings) {
+      t_->flow_control.SetSentInitialWindow(
+          t_->settings[GRPC_LOCAL_SETTINGS]
+                      [GRPC_CHTTP2_SETTINGS_INITIAL_WINDOW_SIZE]);
+      grpc_chttp2_act_on_flowctl_action(t_->flow_control.MakeAction(), t_,
+                                        nullptr);
       grpc_slice_buffer_add(
           &t_->outbuf, grpc_chttp2_settings_create(
                            t_->settings[GRPC_SENT_SETTINGS],
@@ -268,7 +307,7 @@ class WriteContext {
 
   void FlushWindowUpdates() {
     uint32_t transport_announce =
-        t_->flow_control->MaybeSendUpdate(t_->outbuf.count > 0);
+        t_->flow_control.MaybeSendUpdate(t_->outbuf.count > 0);
     if (transport_announce) {
       grpc_transport_one_way_stats throwaway_stats;
       grpc_slice_buffer_add(
@@ -356,7 +395,7 @@ class DataSendContext {
   uint32_t stream_remote_window() const {
     return static_cast<uint32_t>(std::max(
         int64_t(0),
-        s_->flow_control->remote_window_delta() +
+        s_->flow_control.remote_window_delta() +
             static_cast<int64_t>(
                 t_->settings[GRPC_PEER_SETTINGS]
                             [GRPC_CHTTP2_SETTINGS_INITIAL_WINDOW_SIZE])));
@@ -366,7 +405,7 @@ class DataSendContext {
     return static_cast<uint32_t>(std::min(
         t_->settings[GRPC_PEER_SETTINGS][GRPC_CHTTP2_SETTINGS_MAX_FRAME_SIZE],
         static_cast<uint32_t>(std::min(int64_t(stream_remote_window()),
-                                       t_->flow_control->remote_window()))));
+                                       t_->flow_control.remote_window()))));
   }
 
   bool AnyOutgoing() const { return max_outgoing() > 0; }
@@ -375,12 +414,11 @@ class DataSendContext {
     uint32_t send_bytes = static_cast<uint32_t>(
         std::min(size_t(max_outgoing()), s_->flow_controlled_buffer.length));
     is_last_frame_ = send_bytes == s_->flow_controlled_buffer.length &&
-                     s_->fetching_send_message == nullptr &&
                      s_->send_trailing_metadata != nullptr &&
                      s_->send_trailing_metadata->empty();
     grpc_chttp2_encode_data(s_->id, &s_->flow_controlled_buffer, send_bytes,
                             is_last_frame_, &s_->stats.outgoing, &t_->outbuf);
-    s_->flow_control->SentData(send_bytes);
+    s_->flow_control.SentData(send_bytes);
     s_->sending_bytes += send_bytes;
   }
 
@@ -412,8 +450,8 @@ class StreamWriteContext {
         gpr_log(GPR_INFO, "W:%p %s[%d] im-(sent,send)=(%d,%d) announce=%d", t_,
                 t_->is_client ? "CLIENT" : "SERVER", s->id,
                 s->sent_initial_metadata, s->send_initial_metadata != nullptr,
-                (int)(s->flow_control->local_window_delta() -
-                      s->flow_control->announced_window_delta())));
+                (int)(s->flow_control.local_window_delta() -
+                      s->flow_control.announced_window_delta())));
   }
 
   void FlushInitialMetadata() {
@@ -426,8 +464,7 @@ class StreamWriteContext {
     // trailing metadata.  This results in a Trailers-Only response,
     // which is required for retries, as per:
     // https://github.com/grpc/proposal/blob/master/A6-client-retries.md#when-retries-are-valid
-    if (!t_->is_client && s_->fetching_send_message == nullptr &&
-        s_->flow_controlled_buffer.length == 0 &&
+    if (!t_->is_client && s_->flow_controlled_buffer.length == 0 &&
         s_->send_trailing_metadata != nullptr &&
         is_default_initial_metadata(s_->send_initial_metadata)) {
       ConvertInitialMetadataToTrailingMetadata();
@@ -460,7 +497,7 @@ class StreamWriteContext {
 
   void FlushWindowUpdates() {
     /* send any window updates */
-    const uint32_t stream_announce = s_->flow_control->MaybeSendUpdate();
+    const uint32_t stream_announce = s_->flow_control.MaybeSendUpdate();
     if (stream_announce == 0) return;
 
     grpc_slice_buffer_add(
@@ -480,7 +517,7 @@ class StreamWriteContext {
     DataSendContext data_send_context(write_context_, t_, s_);
 
     if (!data_send_context.AnyOutgoing()) {
-      if (t_->flow_control->remote_window() <= 0) {
+      if (t_->flow_control.remote_window() <= 0) {
         report_stall(t_, s_, "transport");
         grpc_chttp2_list_add_stalled_by_transport(t_, s_);
       } else if (data_send_context.stream_remote_window() <= 0) {
@@ -511,7 +548,6 @@ class StreamWriteContext {
     if (!s_->sent_initial_metadata) return;
 
     if (s_->send_trailing_metadata == nullptr) return;
-    if (s_->fetching_send_message != nullptr) return;
     if (s_->flow_controlled_buffer.length != 0) return;
 
     GRPC_CHTTP2_IF_TRACING(gpr_log(GPR_INFO, "sending trailing_metadata"));
@@ -599,7 +635,7 @@ grpc_chttp2_begin_write_result grpc_chttp2_begin_write(
   ctx.FlushQueuedBuffers();
   ctx.EnactHpackSettings();
 
-  if (t->flow_control->remote_window() > 0) {
+  if (t->flow_control.remote_window() > 0) {
     ctx.UpdateStreamsNoLongerStalled();
   }
 

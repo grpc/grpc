@@ -20,15 +20,20 @@
 
 #include "src/core/ext/filters/client_channel/lb_policy/grpclb/client_load_reporting_filter.h"
 
-#include <string.h>
+#include <new>
 
-#include <grpc/support/atm.h>
+#include "absl/types/optional.h"
+
 #include <grpc/support/log.h>
 
-#include "src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb.h"
 #include "src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_client_stats.h"
+#include "src/core/lib/gprpp/debug_location.h"
+#include "src/core/lib/gprpp/ref_counted_ptr.h"
+#include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/profiling/timers.h"
+#include "src/core/lib/transport/metadata_batch.h"
+#include "src/core/lib/transport/transport.h"
 
 static grpc_error_handle clr_init_channel_elem(
     grpc_channel_element* /*elem*/, grpc_channel_element_args* /*args*/) {
@@ -140,6 +145,7 @@ const grpc_channel_filter grpc_client_load_reporting_filter = {
     clr_destroy_call_elem,
     0,  // sizeof(channel_data)
     clr_init_channel_elem,
+    grpc_channel_stack_no_post_init,
     clr_destroy_channel_elem,
     grpc_channel_next_get_info,
     "client_load_reporting"};
