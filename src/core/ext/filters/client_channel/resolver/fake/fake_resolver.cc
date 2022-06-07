@@ -154,8 +154,10 @@ void FakeResolver::MaybeSendResultLocked() {
     // When both next_results_ and channel_args_ contain an arg with the same
     // name, only the one in next_results_ will be kept since next_results_ is
     // before channel_args_.
-    next_result_.args =
+    grpc_channel_args* new_args =
         grpc_channel_args_union(next_result_.args, channel_args_);
+    grpc_channel_args_destroy(next_result_.args);
+    next_result_.args = new_args;
     result_handler_->ReportResult(std::move(next_result_));
     has_next_result_ = false;
   }
