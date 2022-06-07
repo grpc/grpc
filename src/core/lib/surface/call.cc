@@ -164,6 +164,7 @@ class Call : public CppImplOf<Call, grpc_call> {
         send_deadline_(send_deadline),
         is_client_(is_client) {
     GPR_DEBUG_ASSERT(arena_ != nullptr);
+    GPR_DEBUG_ASSERT(channel_ != nullptr);
   }
   virtual ~Call() = default;
 
@@ -171,7 +172,10 @@ class Call : public CppImplOf<Call, grpc_call> {
 
   ParentCall* GetOrCreateParentCall();
   ParentCall* parent_call();
-  Channel* channel() { return channel_.get(); }
+  Channel* channel() {
+    GPR_DEBUG_ASSERT(channel_ != nullptr);
+    return channel_.get();
+  }
 
   absl::Status InitParent(Call* parent, uint32_t propagation_mask);
   void PublishToParent(Call* parent);
@@ -1906,7 +1910,6 @@ class PromiseBasedCall : public Call, public Activity, public Wakeable {
   virtual void UpdateOnce() ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_) = 0;
 
   grpc_completion_queue* cq() ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_) { return cq_; }
-  Channel* channel() const { return channel_.get(); }
 
  private:
   struct CompletionData {
@@ -2003,7 +2006,6 @@ class PromiseBasedCall : public Call, public Activity, public Wakeable {
 
   /* Contexts for various subsystems (security, tracing, ...). */
   grpc_call_context_element context_[GRPC_CONTEXT_COUNT] = {};
-  RefCountedPtr<Channel> channel_;
   grpc_completion_queue* cq_ ABSL_GUARDED_BY(mu_) = nullptr;
   NonOwningWakable* non_owning_wakeable_ ABSL_GUARDED_BY(mu_) = nullptr;
   CompletionInfo completion_info_[6];
@@ -2020,8 +2022,8 @@ grpc_error_handle MakePromiseBasedCall(grpc_call_create_args* args,
       channel->CallSizeEstimate(), sizeof(T), channel->allocator());
   arena = arena_with_call.first;
   call = new (arena_with_call.second) T(arena, *args);
-
   *out_call = call->c_ptr();
+  GPR_DEBUG_ASSERT(Call::FromC(*out_call) == call);
   return GRPC_ERROR_NONE;
 }
 
