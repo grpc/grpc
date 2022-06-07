@@ -47,3 +47,5 @@
   RUN python3 -m pip install futures==3.1.1 enum34==1.1.10 protobuf==3.5.2.post1 six==1.16.0
 
   <%include file="../../gcp_api_libraries.include"/>
+
+  <%include file="../../ccache.include"/>

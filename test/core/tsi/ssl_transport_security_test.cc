@@ -99,6 +99,8 @@ typedef struct ssl_tsi_test_fixture {
   bool session_reused;
   const char* session_ticket_key;
   size_t session_ticket_key_size;
+  size_t network_bio_buf_size;
+  size_t ssl_bio_buf_size;
   tsi_ssl_server_handshaker_factory* server_handshaker_factory;
   tsi_ssl_client_handshaker_factory* client_handshaker_factory;
 } ssl_tsi_test_fixture;
@@ -174,9 +176,13 @@ static void ssl_test_setup_handshakers(tsi_test_fixture* fixture) {
   GPR_ASSERT(tsi_ssl_client_handshaker_factory_create_handshaker(
                  ssl_fixture->client_handshaker_factory,
                  ssl_fixture->server_name_indication,
+                 ssl_fixture->network_bio_buf_size,
+                 ssl_fixture->ssl_bio_buf_size,
                  &ssl_fixture->base.client_handshaker) == TSI_OK);
   GPR_ASSERT(tsi_ssl_server_handshaker_factory_create_handshaker(
                  ssl_fixture->server_handshaker_factory,
+                 ssl_fixture->network_bio_buf_size,
+                 ssl_fixture->ssl_bio_buf_size,
                  &ssl_fixture->base.server_handshaker) == TSI_OK);
 }
 
@@ -500,6 +506,8 @@ static tsi_test_fixture* ssl_tsi_test_fixture_create() {
   ssl_fixture->session_ticket_key = nullptr;
   ssl_fixture->session_ticket_key_size = 0;
   ssl_fixture->force_client_auth = false;
+  ssl_fixture->network_bio_buf_size = 0;
+  ssl_fixture->ssl_bio_buf_size = 0;
   return &ssl_fixture->base;
 }
 
@@ -805,8 +813,8 @@ void test_tsi_ssl_client_handshaker_factory_refcounting() {
 
   for (i = 0; i < 3; ++i) {
     GPR_ASSERT(tsi_ssl_client_handshaker_factory_create_handshaker(
-                   client_handshaker_factory, "google.com", &handshaker[i]) ==
-               TSI_OK);
+                   client_handshaker_factory, "google.com", 0, 0,
+                   &handshaker[i]) == TSI_OK);
   }
 
   tsi_handshaker_destroy(handshaker[1]);
@@ -850,7 +858,7 @@ void test_tsi_ssl_server_handshaker_factory_refcounting() {
 
   for (i = 0; i < 3; ++i) {
     GPR_ASSERT(tsi_ssl_server_handshaker_factory_create_handshaker(
-                   server_handshaker_factory, &handshaker[i]) == TSI_OK);
+                   server_handshaker_factory, 0, 0, &handshaker[i]) == TSI_OK);
   }
 
   tsi_handshaker_destroy(handshaker[1]);
@@ -1031,8 +1039,22 @@ void ssl_tsi_test_extract_cert_chain() {
   sk_X509_pop_free(cert_chain, X509_free);
 }
 
+void ssl_tsi_test_do_handshake_with_custom_bio_pair() {
+  gpr_log(GPR_INFO, "ssl_tsi_test_do_handshake_with_custom_bio_pair");
+  tsi_test_fixture* fixture = ssl_tsi_test_fixture_create();
+  ssl_tsi_test_fixture* ssl_fixture =
+      reinterpret_cast<ssl_tsi_test_fixture*>(fixture);
+#if OPENSSL_VERSION_NUMBER >= 0x10100000
+  ssl_fixture->network_bio_buf_size = TSI_TEST_DEFAULT_BUFFER_SIZE;
+  ssl_fixture->ssl_bio_buf_size = 256;
+#endif
+  ssl_fixture->force_client_auth = true;
+  tsi_test_do_handshake(fixture);
+  tsi_test_fixture_destroy(fixture);
+}
+
 int main(int argc, char** argv) {
-  grpc::testing::TestEnvironment env(argc, argv);
+  grpc::testing::TestEnvironment env(&argc, argv);
   grpc_init();
   const size_t number_tls_versions = 2;
   const tsi_tls_version tls_versions[] = {tsi_tls_version::TSI_TLS1_2,
@@ -1067,6 +1089,7 @@ int main(int argc, char** argv) {
     ssl_tsi_test_duplicate_root_certificates();
     ssl_tsi_test_extract_x509_subject_names();
     ssl_tsi_test_extract_cert_chain();
+    ssl_tsi_test_do_handshake_with_custom_bio_pair();
   }
   grpc_shutdown();
   return 0;

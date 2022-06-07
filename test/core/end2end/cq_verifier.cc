@@ -285,7 +285,7 @@ void cq_verify(cq_verifier* v, int timeout_sec) {
 
 void cq_verify_empty_timeout(cq_verifier* v, int timeout_sec) {
   gpr_timespec deadline =
-      gpr_time_add(gpr_now(GPR_CLOCK_REALTIME),
+      gpr_time_add(gpr_now(GPR_CLOCK_MONOTONIC),
                    gpr_time_from_seconds(timeout_sec, GPR_TIMESPAN));
   grpc_event ev;
 

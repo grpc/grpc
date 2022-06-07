@@ -19,23 +19,36 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <map>
+#include <memory>
 #include <set>
+#include <string>
+#include <utility>
 #include <vector>
 
+#include "absl/base/thread_annotations.h"
+#include "absl/status/status.h"
+#include "absl/status/statusor.h"
 #include "absl/strings/string_view.h"
-#include "absl/types/optional.h"
+#include "upb/def.hpp"
 
+#include <grpc/impl/codegen/grpc_types.h>
+
+#include "src/core/ext/xds/certificate_provider_store.h"
 #include "src/core/ext/xds/xds_api.h"
 #include "src/core/ext/xds/xds_bootstrap.h"
 #include "src/core/ext/xds/xds_client_stats.h"
 #include "src/core/ext/xds/xds_resource_type.h"
-#include "src/core/lib/channel/channelz.h"
+#include "src/core/lib/debug/trace.h"
 #include "src/core/lib/gprpp/dual_ref_counted.h"
-#include "src/core/lib/gprpp/memory.h"
 #include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/gprpp/ref_counted.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/gprpp/sync.h"
+#include "src/core/lib/gprpp/time.h"
+#include "src/core/lib/iomgr/error.h"
+#include "src/core/lib/iomgr/exec_ctx.h"
+#include "src/core/lib/iomgr/iomgr_fwd.h"
 #include "src/core/lib/iomgr/work_serializer.h"
 #include "src/core/lib/uri/uri_parser.h"
 
@@ -55,7 +68,7 @@ class XdsClient : public DualRefCounted<XdsClient> {
     virtual void OnGenericResourceChanged(
         const XdsResourceType::ResourceData* resource)
         ABSL_EXCLUSIVE_LOCKS_REQUIRED(&work_serializer_) = 0;
-    virtual void OnError(grpc_error_handle error)
+    virtual void OnError(absl::Status status)
         ABSL_EXCLUSIVE_LOCKS_REQUIRED(&work_serializer_) = 0;
     virtual void OnResourceDoesNotExist()
         ABSL_EXCLUSIVE_LOCKS_REQUIRED(&work_serializer_) = 0;
@@ -114,9 +127,9 @@ class XdsClient : public DualRefCounted<XdsClient> {
 
   // Adds and removes drop stats for cluster_name and eds_service_name.
   RefCountedPtr<XdsClusterDropStats> AddClusterDropStats(
-      absl::string_view lrs_server, absl::string_view cluster_name,
+      const XdsBootstrap::XdsServer& xds_server, absl::string_view cluster_name,
       absl::string_view eds_service_name);
-  void RemoveClusterDropStats(absl::string_view /*lrs_server*/,
+  void RemoveClusterDropStats(const XdsBootstrap::XdsServer& xds_server,
                               absl::string_view cluster_name,
                               absl::string_view eds_service_name,
                               XdsClusterDropStats* cluster_drop_stats);
@@ -124,11 +137,11 @@ class XdsClient : public DualRefCounted<XdsClient> {
   // Adds and removes locality stats for cluster_name and eds_service_name
   // for the specified locality.
   RefCountedPtr<XdsClusterLocalityStats> AddClusterLocalityStats(
-      absl::string_view lrs_server, absl::string_view cluster_name,
+      const XdsBootstrap::XdsServer& xds_server, absl::string_view cluster_name,
       absl::string_view eds_service_name,
       RefCountedPtr<XdsLocalityName> locality);
   void RemoveClusterLocalityStats(
-      absl::string_view /*lrs_server*/, absl::string_view cluster_name,
+      const XdsBootstrap::XdsServer& xds_server, absl::string_view cluster_name,
       absl::string_view eds_service_name,
       const RefCountedPtr<XdsLocalityName>& locality,
       XdsClusterLocalityStats* cluster_locality_stats);
@@ -189,12 +202,13 @@ class XdsClient : public DualRefCounted<XdsClient> {
     LrsCallState* lrs_calld() const;
 
     void MaybeStartLrsCall();
-    void StopLrsCall();
+    void StopLrsCallLocked() ABSL_EXCLUSIVE_LOCKS_REQUIRED(&XdsClient::mu_);
 
     bool HasAdsCall() const;
     bool HasActiveAdsCall() const;
 
-    void StartConnectivityWatchLocked();
+    void StartConnectivityWatchLocked()
+        ABSL_EXCLUSIVE_LOCKS_REQUIRED(&XdsClient::mu_);
     void CancelConnectivityWatchLocked();
 
     void SubscribeLocked(const XdsResourceType* type,
@@ -252,14 +266,31 @@ class XdsClient : public DualRefCounted<XdsClient> {
     std::map<RefCountedPtr<XdsLocalityName>, LocalityState,
              XdsLocalityName::Less>
         locality_stats;
-    grpc_millis last_report_time = ExecCtx::Get()->Now();
+    Timestamp last_report_time = ExecCtx::Get()->Now();
   };
 
-  class Notifier;
+  // Load report data.
+  using LoadReportMap = std::map<
+      std::pair<std::string /*cluster_name*/, std::string /*eds_service_name*/>,
+      LoadReportState>;
+
+  struct LoadReportServer {
+    RefCountedPtr<ChannelState> channel_state;
+    LoadReportMap load_report_map;
+  };
 
   // Sends an error notification to all watchers.
-  void NotifyOnErrorLocked(grpc_error_handle error)
+  void NotifyOnErrorLocked(absl::Status status)
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
+  // Sends an error notification to a specific set of watchers.
+  void NotifyWatchersOnErrorLocked(
+      const std::map<ResourceWatcherInterface*,
+                     RefCountedPtr<ResourceWatcherInterface>>& watchers,
+      absl::Status status);
+  // Sends a resource-does-not-exist notification to a specific set of watchers.
+  void NotifyWatchersOnResourceDoesNotExist(
+      const std::map<ResourceWatcherInterface*,
+                     RefCountedPtr<ResourceWatcherInterface>>& watchers);
 
   void MaybeRegisterResourceTypeLocked(const XdsResourceType* resource_type)
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
@@ -268,22 +299,23 @@ class XdsClient : public DualRefCounted<XdsClient> {
   const XdsResourceType* GetResourceTypeLocked(absl::string_view resource_type)
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
 
-  static absl::StatusOr<XdsResourceName> ParseXdsResourceName(
+  absl::StatusOr<XdsResourceName> ParseXdsResourceName(
       absl::string_view name, const XdsResourceType* type);
   static std::string ConstructFullXdsResourceName(
       absl::string_view authority, absl::string_view resource_type,
       const XdsResourceKey& key);
 
   XdsApi::ClusterLoadReportMap BuildLoadReportSnapshotLocked(
-      bool send_all_clusters, const std::set<std::string>& clusters)
-      ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
+      const XdsBootstrap::XdsServer& xds_server, bool send_all_clusters,
+      const std::set<std::string>& clusters) ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
 
   RefCountedPtr<ChannelState> GetOrCreateChannelStateLocked(
       const XdsBootstrap::XdsServer& server) ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
 
   std::unique_ptr<XdsBootstrap> bootstrap_;
   grpc_channel_args* args_;
-  const grpc_millis request_timeout_;
+  const Duration request_timeout_;
+  const bool xds_federation_enabled_;
   grpc_pollset_set* interested_parties_;
   OrphanablePtr<CertificateProviderStore> certificate_provider_store_;
   XdsApi api_;
@@ -305,11 +337,8 @@ class XdsClient : public DualRefCounted<XdsClient> {
   std::map<std::string /*authority*/, AuthorityState> authority_state_map_
       ABSL_GUARDED_BY(mu_);
 
-  // Load report data.
-  std::map<
-      std::pair<std::string /*cluster_name*/, std::string /*eds_service_name*/>,
-      LoadReportState>
-      load_report_map_ ABSL_GUARDED_BY(mu_);
+  std::map<XdsBootstrap::XdsServer, LoadReportServer>
+      xds_load_report_server_map_ ABSL_GUARDED_BY(mu_);
 
   // Stores started watchers whose resource name was not parsed successfully,
   // waiting to be cancelled or reset in Orphan().

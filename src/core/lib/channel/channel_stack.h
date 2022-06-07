@@ -48,28 +48,32 @@
 
 #include <stddef.h>
 
-#include <grpc/grpc.h>
-#include <grpc/support/log.h>
-#include <grpc/support/time.h>
+#include <functional>
 
+#include <grpc/impl/codegen/gpr_types.h>
+#include <grpc/impl/codegen/grpc_types.h>
+#include <grpc/slice.h>
+#include <grpc/status.h>
+#include <grpc/support/log.h>
+
+#include "src/core/lib/channel/channel_fwd.h"
+#include "src/core/lib/channel/context.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/gpr/time_precise.h"
+#include "src/core/lib/gprpp/manual_constructor.h"
+#include "src/core/lib/gprpp/ref_counted_ptr.h"
+#include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/iomgr/call_combiner.h"
+#include "src/core/lib/iomgr/closure.h"
+#include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/polling_entity.h"
+#include "src/core/lib/promise/arena_promise.h"
 #include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/transport/transport.h"
-
-typedef struct grpc_channel_element grpc_channel_element;
-typedef struct grpc_call_element grpc_call_element;
-
-typedef struct grpc_channel_stack grpc_channel_stack;
-typedef struct grpc_call_stack grpc_call_stack;
 
 struct grpc_channel_element_args {
   grpc_channel_stack* channel_stack;
   const grpc_channel_args* channel_args;
-  /** Transport, iff it is known */
-  grpc_transport* optional_transport;
   int is_first;
   int is_last;
 };
@@ -79,7 +83,7 @@ struct grpc_call_element_args {
   grpc_call_context_element* context;
   const grpc_slice& path;
   gpr_cycle_counter start_time;  // Note: not populated in subchannel stack.
-  grpc_millis deadline;
+  grpc_core::Timestamp deadline;
   grpc_core::Arena* arena;
   grpc_core::CallCombiner* call_combiner;
 };
@@ -109,6 +113,18 @@ struct grpc_channel_filter {
      See grpc_call_next_op on how to call the next element in the stack */
   void (*start_transport_stream_op_batch)(grpc_call_element* elem,
                                           grpc_transport_stream_op_batch* op);
+  /* Create a promise to execute one call.
+     If this is non-null, it may be used in preference to
+     start_transport_stream_op_batch.
+     If this is used in preference to start_transport_stream_op_batch, the
+     following can be omitted also:
+       - calling init_call_elem, destroy_call_elem, set_pollset_or_pollset_set
+       - allocation of memory for call data
+     There is an on-going migration to move all filters to providing this, and
+     then to drop start_transport_stream_op_batch. */
+  grpc_core::ArenaPromise<grpc_core::ServerMetadataHandle> (*make_call_promise)(
+      grpc_channel_element* elem, grpc_core::CallArgs call_args,
+      grpc_core::NextPromiseFactory next_promise_factory);
   /* Called to handle channel level operations - e.g. new calls, or transport
      closure.
      See grpc_channel_next_op on how to call the next element in the stack */
@@ -150,6 +166,10 @@ struct grpc_channel_filter {
      Implementations may assume that elem->channel_data is all zeros. */
   grpc_error_handle (*init_channel_elem)(grpc_channel_element* elem,
                                          grpc_channel_element_args* args);
+  /* Post init per-channel data.
+     Called after all channel elements have been successfully created. */
+  void (*post_init_channel_elem)(grpc_channel_stack* stk,
+                                 grpc_channel_element* elem);
   /* Destroy per channel data.
      The filter does not need to do any chaining */
   void (*destroy_channel_elem)(grpc_channel_element* elem);
@@ -181,10 +201,31 @@ struct grpc_call_element {
    guarantees they live within a single malloc() allocation */
 struct grpc_channel_stack {
   grpc_stream_refcount refcount;
+  bool is_client;
   size_t count;
   /* Memory required for a call stack (computed at channel stack
      initialization) */
   size_t call_stack_size;
+  // TODO(ctiller): remove this mechanism... it's a hack to allow
+  // Channel to be separated from grpc_channel_stack's allocation. As the
+  // promise conversion continues, we'll reconsider what grpc_channel_stack
+  // should look like and this can go.
+  grpc_core::ManualConstructor<std::function<void()>> on_destroy;
+
+  // Minimal infrastructure to act like a RefCounted thing without converting
+  // everything.
+  // It's likely that we'll want to replace grpc_channel_stack with something
+  // less regimented once the promise conversion completes, so avoiding doing a
+  // full C++-ification for now.
+  void IncrementRefCount();
+  void Unref();
+  grpc_core::RefCountedPtr<grpc_channel_stack> Ref() {
+    IncrementRefCount();
+    return grpc_core::RefCountedPtr<grpc_channel_stack>(this);
+  }
+
+  grpc_core::ArenaPromise<grpc_core::ServerMetadataHandle> MakeCallPromise(
+      grpc_core::CallArgs call_args);
 };
 
 /* A call stack tracks a set of related filters for one call, and guarantees
@@ -196,6 +237,16 @@ struct grpc_call_stack {
      about the address of the call stack itself. */
   grpc_stream_refcount refcount;
   size_t count;
+
+  // Minimal infrastructure to act like a RefCounted thing without converting
+  // everything.
+  // grpc_call_stack will be eliminated once the promise conversion completes.
+  void IncrementRefCount();
+  void Unref();
+  grpc_core::RefCountedPtr<grpc_call_stack> Ref() {
+    IncrementRefCount();
+    return grpc_core::RefCountedPtr<grpc_call_stack>(this);
+  }
 };
 
 /* Get a channel element given a channel stack and its index */
@@ -221,8 +272,7 @@ size_t grpc_channel_stack_size(const grpc_channel_filter** filters,
 grpc_error_handle grpc_channel_stack_init(
     int initial_refs, grpc_iomgr_cb_func destroy, void* destroy_arg,
     const grpc_channel_filter** filters, size_t filter_count,
-    const grpc_channel_args* args, grpc_transport* optional_transport,
-    const char* name, grpc_channel_stack* stack);
+    const grpc_channel_args* args, const char* name, grpc_channel_stack* stack);
 /* Destroy a channel stack */
 void grpc_channel_stack_destroy(grpc_channel_stack* stack);
 
@@ -271,6 +321,22 @@ void grpc_call_stack_set_pollset_or_pollset_set(grpc_call_stack* call_stack,
   } while (0);
 #endif
 
+inline void grpc_channel_stack::IncrementRefCount() {
+  GRPC_CHANNEL_STACK_REF(this, "smart_pointer");
+}
+
+inline void grpc_channel_stack::Unref() {
+  GRPC_CHANNEL_STACK_UNREF(this, "smart_pointer");
+}
+
+inline void grpc_call_stack::IncrementRefCount() {
+  GRPC_CALL_STACK_REF(this, "smart_pointer");
+}
+
+inline void grpc_call_stack::Unref() {
+  GRPC_CALL_STACK_UNREF(this, "smart_pointer");
+}
+
 /* Destroy a call stack */
 void grpc_call_stack_destroy(grpc_call_stack* stack,
                              const grpc_call_final_info* final_info,
@@ -299,6 +365,9 @@ grpc_call_stack* grpc_call_stack_from_top_element(grpc_call_element* elem);
 void grpc_call_log_op(const char* file, int line, gpr_log_severity severity,
                       grpc_call_element* elem,
                       grpc_transport_stream_op_batch* op);
+
+void grpc_channel_stack_no_post_init(grpc_channel_stack* stk,
+                                     grpc_channel_element* elem);
 
 extern grpc_core::TraceFlag grpc_trace_channel;
 

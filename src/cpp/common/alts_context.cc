@@ -16,11 +16,19 @@
  *
  */
 
-#include <grpc/grpc_security.h>
-#include <grpcpp/security/alts_context.h>
+#include <stddef.h>
 
-#include "src/core/tsi/alts/handshaker/alts_tsi_handshaker.h"
+#include <map>
+#include <string>
+
+#include "upb/upb.h"
+
+#include <grpc/grpc_security_constants.h>
+#include <grpcpp/security/alts_context.h>
+#include <grpcpp/support/config.h>
+
 #include "src/proto/grpc/gcp/altscontext.upb.h"
+#include "src/proto/grpc/gcp/transport_security_common.upb.h"
 
 namespace grpc {
 namespace experimental {
@@ -29,23 +37,23 @@ namespace experimental {
 // AltsContext. Normal users should use GetAltsContextFromAuthContext to get
 // AltsContext, instead of constructing their own.
 AltsContext::AltsContext(const grpc_gcp_AltsContext* ctx) {
-  upb_strview application_protocol =
+  upb_StringView application_protocol =
       grpc_gcp_AltsContext_application_protocol(ctx);
   if (application_protocol.data != nullptr && application_protocol.size > 0) {
     application_protocol_ =
         std::string(application_protocol.data, application_protocol.size);
   }
-  upb_strview record_protocol = grpc_gcp_AltsContext_record_protocol(ctx);
+  upb_StringView record_protocol = grpc_gcp_AltsContext_record_protocol(ctx);
   if (record_protocol.data != nullptr && record_protocol.size > 0) {
     record_protocol_ = std::string(record_protocol.data, record_protocol.size);
   }
-  upb_strview peer_service_account =
+  upb_StringView peer_service_account =
       grpc_gcp_AltsContext_peer_service_account(ctx);
   if (peer_service_account.data != nullptr && peer_service_account.size > 0) {
     peer_service_account_ =
         std::string(peer_service_account.data, peer_service_account.size);
   }
-  upb_strview local_service_account =
+  upb_StringView local_service_account =
       grpc_gcp_AltsContext_local_service_account(ctx);
   if (local_service_account.data != nullptr && local_service_account.size > 0) {
     local_service_account_ =
@@ -81,13 +89,13 @@ AltsContext::AltsContext(const grpc_gcp_AltsContext* ctx) {
         grpc_gcp_AltsContext_security_level(ctx));
   }
   if (grpc_gcp_AltsContext_has_peer_attributes(ctx)) {
-    size_t iter = UPB_MAP_BEGIN;
+    size_t iter = kUpb_Map_Begin;
     const grpc_gcp_AltsContext_PeerAttributesEntry* peer_attributes_entry =
         grpc_gcp_AltsContext_peer_attributes_next(ctx, &iter);
     while (peer_attributes_entry != nullptr) {
-      upb_strview key =
+      upb_StringView key =
           grpc_gcp_AltsContext_PeerAttributesEntry_key(peer_attributes_entry);
-      upb_strview val =
+      upb_StringView val =
           grpc_gcp_AltsContext_PeerAttributesEntry_value(peer_attributes_entry);
       peer_attributes_map_[std::string(key.data, key.size)] =
           std::string(val.data, val.size);

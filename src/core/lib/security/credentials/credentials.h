@@ -29,12 +29,15 @@
 #include <grpc/grpc_security.h>
 #include <grpc/support/sync.h>
 
+#include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/gprpp/ref_counted.h"
-#include "src/core/lib/http/httpcli.h"
-#include "src/core/lib/http/parser.h"
+#include "src/core/lib/gprpp/unique_type_name.h"
 #include "src/core/lib/iomgr/polling_entity.h"
+#include "src/core/lib/promise/arena_promise.h"
+#include "src/core/lib/security/context/security_context.h"
 #include "src/core/lib/security/security_connector/security_connector.h"
 #include "src/core/lib/transport/metadata_batch.h"
+#include "src/core/lib/transport/transport.h"
 
 struct grpc_http_response;
 
@@ -46,16 +49,6 @@ typedef enum {
 } grpc_credentials_status;
 
 #define GRPC_FAKE_TRANSPORT_SECURITY_TYPE "fake"
-
-#define GRPC_CHANNEL_CREDENTIALS_TYPE_SSL "Ssl"
-#define GRPC_CHANNEL_CREDENTIALS_TYPE_FAKE_TRANSPORT_SECURITY \
-  "FakeTransportSecurity"
-#define GRPC_CHANNEL_CREDENTIALS_TYPE_GOOGLE_DEFAULT "GoogleDefault"
-
-#define GRPC_CALL_CREDENTIALS_TYPE_OAUTH2 "Oauth2"
-#define GRPC_CALL_CREDENTIALS_TYPE_JWT "Jwt"
-#define GRPC_CALL_CREDENTIALS_TYPE_IAM "Iam"
-#define GRPC_CALL_CREDENTIALS_TYPE_COMPOSITE "Composite"
 
 #define GRPC_AUTHORIZATION_METADATA_KEY "authorization"
 #define GRPC_IAM_AUTHORIZATION_TOKEN_METADATA_KEY \
@@ -101,8 +94,14 @@ void grpc_override_well_known_credentials_path_getter(
 struct grpc_channel_credentials
     : grpc_core::RefCounted<grpc_channel_credentials> {
  public:
-  explicit grpc_channel_credentials(const char* type) : type_(type) {}
-  ~grpc_channel_credentials() override = default;
+  static absl::string_view ChannelArgName() {
+    return GRPC_ARG_CHANNEL_CREDENTIALS;
+  }
+
+  static int ChannelArgsCompare(const grpc_channel_credentials* args1,
+                                const grpc_channel_credentials* args2) {
+    return args1->cmp(args2);
+  }
 
   // Creates a security connector for the channel. May also create new channel
   // args for the channel to be used in place of the passed in const args if
@@ -127,14 +126,35 @@ struct grpc_channel_credentials
   // By default, leave channel args as is. The callee takes ownership
   // of the passed-in channel args, and the caller takes ownership
   // of the returned channel args.
-  virtual grpc_channel_args* update_arguments(grpc_channel_args* args) {
+  virtual grpc_core::ChannelArgs update_arguments(grpc_core::ChannelArgs args) {
     return args;
   }
 
-  const char* type() const { return type_; }
+  // Compares this grpc_channel_credentials object with \a other.
+  // If this method returns 0, it means that gRPC can treat the two channel
+  // credentials as effectively the same. This method is used to compare
+  // `grpc_channel_credentials` objects when they are present in channel_args.
+  // One important usage of this is when channel args are used in SubchannelKey,
+  // which leads to a useful property that allows subchannels to be reused when
+  // two different `grpc_channel_credentials` objects are used but they compare
+  // as equal (assuming other channel args match).
+  int cmp(const grpc_channel_credentials* other) const {
+    GPR_ASSERT(other != nullptr);
+    int r = type().Compare(other->type());
+    if (r != 0) return r;
+    return cmp_impl(other);
+  }
+
+  // The pointer value \a type is used to uniquely identify a creds
+  // implementation for down-casting purposes. Every creds implementation should
+  // use a unique string instance, which should be returned by all instances of
+  // that creds implementation.
+  virtual grpc_core::UniqueTypeName type() const = 0;
 
  private:
-  const char* type_;
+  // Implementation for `cmp` method intended to be overridden by subclasses.
+  // Only invoked if `type()` and `other->type()` point to the same string.
+  virtual int cmp_impl(const grpc_channel_credentials* other) const = 0;
 };
 
 // TODO(roth): Once we eliminate insecure builds, find a better way to
@@ -167,48 +187,67 @@ using CredentialsMetadataArray = std::vector<std::pair<Slice, Slice>>;
 struct grpc_call_credentials
     : public grpc_core::RefCounted<grpc_call_credentials> {
  public:
+  // TODO(roth): Consider whether security connector actually needs to
+  // be part of this interface.  Currently, it is here only for the
+  // url_scheme() method, which we might be able to instead add as an
+  // auth context property.
+  struct GetRequestMetadataArgs {
+    grpc_core::RefCountedPtr<grpc_channel_security_connector>
+        security_connector;
+    grpc_core::RefCountedPtr<grpc_auth_context> auth_context;
+  };
+
+  // The pointer value \a type is used to uniquely identify a creds
+  // implementation for down-casting purposes. Every creds implementation should
+  // use a unique string instance, which should be returned by all instances of
+  // that creds implementation.
   explicit grpc_call_credentials(
-      const char* type,
       grpc_security_level min_security_level = GRPC_PRIVACY_AND_INTEGRITY)
-      : type_(type), min_security_level_(min_security_level) {}
+      : min_security_level_(min_security_level) {}
 
   ~grpc_call_credentials() override = default;
 
-  // Returns true if completed synchronously, in which case \a error will
-  // be set to indicate the result.  Otherwise, \a on_request_metadata will
-  // be invoked asynchronously when complete.  \a md_array will be populated
-  // with the resulting metadata once complete.
-  virtual bool get_request_metadata(
-      grpc_polling_entity* pollent, grpc_auth_metadata_context context,
-      grpc_core::CredentialsMetadataArray* md_array,
-      grpc_closure* on_request_metadata, grpc_error_handle* error) = 0;
-
-  // Cancels a pending asynchronous operation started by
-  // grpc_call_credentials_get_request_metadata() with the corresponding
-  // value of \a md_array.
-  virtual void cancel_get_request_metadata(
-      grpc_core::CredentialsMetadataArray* md_array,
-      grpc_error_handle error) = 0;
+  virtual grpc_core::ArenaPromise<
+      absl::StatusOr<grpc_core::ClientMetadataHandle>>
+  GetRequestMetadata(grpc_core::ClientMetadataHandle initial_metadata,
+                     const GetRequestMetadataArgs* args) = 0;
 
   virtual grpc_security_level min_security_level() const {
     return min_security_level_;
+  }
+
+  // Compares this grpc_call_credentials object with \a other.
+  // If this method returns 0, it means that gRPC can treat the two call
+  // credentials as effectively the same..
+  int cmp(const grpc_call_credentials* other) const {
+    GPR_ASSERT(other != nullptr);
+    int r = type().Compare(other->type());
+    if (r != 0) return r;
+    return cmp_impl(other);
   }
 
   virtual std::string debug_string() {
     return "grpc_call_credentials did not provide debug string";
   }
 
-  const char* type() const { return type_; }
+  // The pointer value \a type is used to uniquely identify a creds
+  // implementation for down-casting purposes. Every creds implementation should
+  // use a unique string instance, which should be returned by all instances of
+  // that creds implementation.
+  virtual grpc_core::UniqueTypeName type() const = 0;
 
  private:
-  const char* type_;
+  // Implementation for `cmp` method intended to be overridden by subclasses.
+  // Only invoked if `type()` and `other->type()` point to the same string.
+  virtual int cmp_impl(const grpc_call_credentials* other) const = 0;
+
   const grpc_security_level min_security_level_;
 };
 
 /* Metadata-only credentials with the specified key and value where
    asynchronicity can be simulated for testing. */
 grpc_call_credentials* grpc_md_only_test_credentials_create(
-    const char* md_key, const char* md_value, bool is_async);
+    const char* md_key, const char* md_value);
 
 /* --- grpc_server_credentials. --- */
 
@@ -218,15 +257,13 @@ grpc_call_credentials* grpc_md_only_test_credentials_create(
 struct grpc_server_credentials
     : public grpc_core::RefCounted<grpc_server_credentials> {
  public:
-  explicit grpc_server_credentials(const char* type) : type_(type) {}
-
   ~grpc_server_credentials() override { DestroyProcessor(); }
 
   // Ownership of \a args is not passed.
   virtual grpc_core::RefCountedPtr<grpc_server_security_connector>
   create_security_connector(const grpc_channel_args* args) = 0;
 
-  const char* type() const { return type_; }
+  virtual grpc_core::UniqueTypeName type() const = 0;
 
   const grpc_auth_metadata_processor& auth_metadata_processor() const {
     return processor_;
@@ -241,7 +278,6 @@ struct grpc_server_credentials
     }
   }
 
-  const char* type_;
   grpc_auth_metadata_processor processor_ =
       grpc_auth_metadata_processor();  // Zero-initialize the C struct.
 };
@@ -252,30 +288,5 @@ grpc_arg grpc_server_credentials_to_arg(grpc_server_credentials* c);
 grpc_server_credentials* grpc_server_credentials_from_arg(const grpc_arg* arg);
 grpc_server_credentials* grpc_find_server_credentials_in_args(
     const grpc_channel_args* args);
-
-/* -- Credentials Metadata Request. -- */
-
-struct grpc_credentials_metadata_request {
-  explicit grpc_credentials_metadata_request(
-      grpc_core::RefCountedPtr<grpc_call_credentials> creds)
-      : creds(std::move(creds)) {}
-  ~grpc_credentials_metadata_request() {
-    grpc_http_response_destroy(&response);
-  }
-
-  grpc_core::RefCountedPtr<grpc_call_credentials> creds;
-  grpc_http_response response;
-};
-
-inline grpc_credentials_metadata_request*
-grpc_credentials_metadata_request_create(
-    grpc_core::RefCountedPtr<grpc_call_credentials> creds) {
-  return new grpc_credentials_metadata_request(std::move(creds));
-}
-
-inline void grpc_credentials_metadata_request_destroy(
-    grpc_credentials_metadata_request* r) {
-  delete r;
-}
 
 #endif /* GRPC_CORE_LIB_SECURITY_CREDENTIALS_CREDENTIALS_H */

@@ -18,15 +18,21 @@
 
 #include "src/cpp/server/health/default_health_check_service.h"
 
+#include <stddef.h>
+#include <stdint.h>
+
 #include <memory>
+#include <utility>
 
 #include "absl/memory/memory.h"
+#include "upb/upb.h"
 #include "upb/upb.hpp"
 
 #include <grpc/slice.h>
-#include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
-#include <grpcpp/impl/codegen/method_handler.h>
+#include <grpcpp/impl/rpc_method.h>
+#include <grpcpp/impl/rpc_service_method.h>
+#include <grpcpp/support/slice.h>
 
 #include "src/proto/grpc/health/v1/health.upb.h"
 
@@ -161,8 +167,8 @@ DefaultHealthCheckService::HealthCheckServiceImpl::HealthCheckServiceImpl(
   AddMethod(new internal::RpcServiceMethod(
       kHealthWatchMethodName, internal::RpcMethod::SERVER_STREAMING, nullptr));
   // Create serving thread.
-  thread_ = absl::make_unique<::grpc_core::Thread>("grpc_health_check_service",
-                                                   Serve, this);
+  thread_ = absl::make_unique<grpc_core::Thread>("grpc_health_check_service",
+                                                 Serve, this);
 }
 
 DefaultHealthCheckService::HealthCheckServiceImpl::~HealthCheckServiceImpl() {
@@ -215,7 +221,7 @@ bool DefaultHealthCheckService::HealthCheckServiceImpl::DecodeRequest(
   if (request_struct == nullptr) {
     return false;
   }
-  upb_strview service =
+  upb_StringView service =
       grpc_health_v1_HealthCheckRequest_service(request_struct);
   if (service.size > MAX_SERVICE_NAME_LENGTH) {
     return false;

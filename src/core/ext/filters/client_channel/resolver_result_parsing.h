@@ -19,16 +19,23 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <stddef.h>
+
+#include <memory>
+#include <string>
+#include <utility>
+
+#include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
 
+#include <grpc/impl/codegen/grpc_types.h>
+
 #include "src/core/ext/filters/client_channel/lb_policy.h"
-#include "src/core/ext/filters/client_channel/lb_policy_factory.h"
-#include "src/core/lib/channel/status_util.h"
-#include "src/core/lib/gprpp/ref_counted.h"
+#include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
-#include "src/core/lib/iomgr/exec_ctx.h"  // for grpc_millis
+#include "src/core/lib/gprpp/time.h"
+#include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/json/json.h"
-#include "src/core/lib/resolver/resolver.h"
 #include "src/core/lib/service_config/service_config_parser.h"
 
 namespace grpc_core {
@@ -66,21 +73,23 @@ class ClientChannelGlobalParsedConfig
 class ClientChannelMethodParsedConfig
     : public ServiceConfigParser::ParsedConfig {
  public:
-  ClientChannelMethodParsedConfig(grpc_millis timeout,
+  ClientChannelMethodParsedConfig(Duration timeout,
                                   const absl::optional<bool>& wait_for_ready)
       : timeout_(timeout), wait_for_ready_(wait_for_ready) {}
 
-  grpc_millis timeout() const { return timeout_; }
+  Duration timeout() const { return timeout_; }
 
   absl::optional<bool> wait_for_ready() const { return wait_for_ready_; }
 
  private:
-  grpc_millis timeout_ = 0;
+  Duration timeout_;
   absl::optional<bool> wait_for_ready_;
 };
 
 class ClientChannelServiceConfigParser : public ServiceConfigParser::Parser {
  public:
+  absl::string_view name() const override { return parser_name(); }
+
   std::unique_ptr<ServiceConfigParser::ParsedConfig> ParseGlobalParams(
       const grpc_channel_args* /*args*/, const Json& json,
       grpc_error_handle* error) override;
@@ -90,7 +99,10 @@ class ClientChannelServiceConfigParser : public ServiceConfigParser::Parser {
       grpc_error_handle* error) override;
 
   static size_t ParserIndex();
-  static void Register();
+  static void Register(CoreConfiguration::Builder* builder);
+
+ private:
+  static absl::string_view parser_name() { return "client_channel"; }
 };
 
 }  // namespace internal

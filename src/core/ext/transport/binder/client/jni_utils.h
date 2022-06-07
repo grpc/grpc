@@ -40,6 +40,7 @@ jclass FindNativeConnectionHelper(
 // Calls Java method NativeConnectionHelper.tryEstablishConnection
 void TryEstablishConnection(JNIEnv* env, jobject application,
                             absl::string_view pkg, absl::string_view cls,
+                            absl::string_view action_name,
                             absl::string_view conn_id);
 
 // Calls Java method NativeConnectionHelper.isSignatureMatch.

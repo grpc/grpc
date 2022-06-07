@@ -20,16 +20,23 @@
 
 #include "src/core/lib/json/json_util.h"
 
+#include <string.h>
+
 #include <grpc/support/string_util.h>
 
 #include "src/core/lib/gpr/string.h"
+#include "src/core/lib/gprpp/memory.h"
 
 namespace grpc_core {
 
-bool ParseDurationFromJson(const Json& field, grpc_millis* duration) {
+bool ParseDurationFromJson(const Json& field, Duration* duration) {
   if (field.type() != Json::Type::STRING) return false;
   size_t len = field.string_value().size();
   if (field.string_value()[len - 1] != 's') return false;
+  if (field.string_value() == Duration::Infinity().ToJsonString()) {
+    *duration = Duration::Infinity();
+    return true;
+  }
   UniquePtr<char> buf(gpr_strdup(field.string_value().c_str()));
   *(buf.get() + len - 1) = '\0';  // Remove trailing 's'.
   char* decimal_point = strchr(buf.get(), '.');
@@ -51,7 +58,7 @@ bool ParseDurationFromJson(const Json& field, grpc_millis* duration) {
   int seconds =
       decimal_point == buf.get() ? 0 : gpr_parse_nonnegative_int(buf.get());
   if (seconds == -1) return false;
-  *duration = seconds * GPR_MS_PER_SEC + nanos / GPR_NS_PER_MS;
+  *duration = Duration::FromSecondsAndNanoseconds(seconds, nanos);
   return true;
 }
 
@@ -99,7 +106,7 @@ bool ExtractJsonObject(const Json& json, absl::string_view field_name,
 
 bool ParseJsonObjectFieldAsDuration(const Json::Object& object,
                                     absl::string_view field_name,
-                                    grpc_millis* output,
+                                    Duration* output,
                                     std::vector<grpc_error_handle>* error_list,
                                     bool required) {
   // TODO(roth): Once we can use C++14 heterogenous lookups, stop
@@ -113,7 +120,7 @@ bool ParseJsonObjectFieldAsDuration(const Json::Object& object,
     return false;
   }
   if (!ParseDurationFromJson(it->second, output)) {
-    *output = GRPC_MILLIS_INF_PAST;
+    *output = Duration::NegativeInfinity();
     error_list->push_back(GRPC_ERROR_CREATE_FROM_CPP_STRING(
         absl::StrCat("field:", field_name,
                      " error:type should be STRING of the form given by "

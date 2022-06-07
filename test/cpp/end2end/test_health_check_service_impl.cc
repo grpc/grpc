@@ -40,7 +40,7 @@ Status HealthCheckServiceImpl::Check(ServerContext* /*context*/,
 
 Status HealthCheckServiceImpl::Watch(
     ServerContext* context, const HealthCheckRequest* request,
-    ::grpc::ServerWriter<HealthCheckResponse>* writer) {
+    grpc::ServerWriter<HealthCheckResponse>* writer) {
   auto last_state = HealthCheckResponse::UNKNOWN;
   while (!context->IsCancelled()) {
     {
@@ -53,7 +53,7 @@ Status HealthCheckServiceImpl::Watch(
         response.set_status(iter->second);
       }
       if (response.status() != last_state) {
-        writer->Write(response, ::grpc::WriteOptions());
+        writer->Write(response, grpc::WriteOptions());
         last_state = response.status();
       }
     }

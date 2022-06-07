@@ -12,7 +12,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// TODO(yashykt) : Figure out how to not need this
+// We would ideally just use the proto file from the googleapis submodule, but
+// that breaks the expectations of the CMake build system - gRPC C++ needs to
+// stay buildable/installable even if the submodules are not present (e.g. the
+// tar.gz archive with gRPC doesn't contain the submodules), assuming that the
+// dependencies are already installed. Given that this is needed for a test we
+// could probably say that this test does not build for CMake but that way we
+// would lose the ability to test xds_end2end_test for portability.
 
 syntax = "proto3";
 

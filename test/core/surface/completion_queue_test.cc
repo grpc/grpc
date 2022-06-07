@@ -18,6 +18,7 @@
 
 #include "src/core/lib/surface/completion_queue.h"
 
+#include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/time.h>
@@ -487,7 +488,7 @@ struct thread_state {
 };
 
 int main(int argc, char** argv) {
-  grpc::testing::TestEnvironment env(argc, argv);
+  grpc::testing::TestEnvironment env(&argc, argv);
   grpc_init();
   test_no_op();
   test_pollset_conversion();

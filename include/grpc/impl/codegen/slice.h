@@ -19,7 +19,7 @@
 #ifndef GRPC_IMPL_CODEGEN_SLICE_H
 #define GRPC_IMPL_CODEGEN_SLICE_H
 
-// IWYU pragma: private, include <grpc/slice.h>
+// IWYU pragma: private
 
 #include <grpc/impl/codegen/port_platform.h>
 
@@ -58,7 +58,10 @@ struct grpc_slice_refcount;
    Multiple grpc_slice values may share a ref count.
 
    If the slice does not have a refcount, it represents an inlined small piece
-   of data that is copied by value. */
+   of data that is copied by value.
+
+   As a special case, a slice can be given refcount == uintptr_t(1), meaning
+   that the slice represents external data that is not refcounted. */
 struct grpc_slice {
   struct grpc_slice_refcount* refcount;
   union grpc_slice_data {

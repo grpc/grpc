@@ -16,6 +16,8 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <memory>
+
 #include <grpc/event_engine/event_engine.h>
 
 namespace grpc_event_engine {
@@ -26,6 +28,12 @@ namespace experimental {
 /// The concept of a global EventEngine may go away in a post-iomgr world.
 /// Strongly consider whether you could use \a CreateEventEngine instead.
 EventEngine* GetDefaultEventEngine();
+
+/// Create an EventEngine using the default factory provided at link time.
+std::unique_ptr<EventEngine> DefaultEventEngineFactory();
+
+// TODO(hork): remove this when any other EE usage is landed
+void InitializeEventEngine();
 
 }  // namespace experimental
 }  // namespace grpc_event_engine

@@ -45,8 +45,10 @@
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/gpr/env.h"
 #include "src/core/lib/gprpp/host_port.h"
+#include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/iomgr/sockaddr.h"
 #include "src/core/lib/security/credentials/fake/fake_credentials.h"
+#include "src/core/lib/service_config/service_config_impl.h"
 #include "src/core/lib/uri/uri_parser.h"
 #include "src/cpp/client/secure_credentials.h"
 #include "src/cpp/server/secure_server_credentials.h"
@@ -58,11 +60,11 @@
 #include "test/core/util/test_config.h"
 #include "test/core/util/test_lb_policies.h"
 #include "test/cpp/end2end/counted_service.h"
+#include "test/cpp/end2end/rls_server.h"
 #include "test/cpp/end2end/test_service_impl.h"
 #include "test/cpp/util/test_config.h"
 
 using ::grpc::lookup::v1::RouteLookupRequest;
-using ::grpc::lookup::v1::RouteLookupResponse;
 
 namespace grpc {
 namespace testing {
@@ -85,92 +87,6 @@ const char* kConstantKey = "constant_key";
 const char* kConstantValue = "constant_value";
 
 using BackendService = CountedService<TestServiceImpl>;
-using RlsService =
-    CountedService<grpc::lookup::v1::RouteLookupService::Service>;
-
-class RlsServiceImpl : public RlsService {
- public:
-  ::grpc::Status RouteLookup(::grpc::ServerContext* context,
-                             const RouteLookupRequest* request,
-                             RouteLookupResponse* response) override {
-    gpr_log(GPR_INFO, "RLS: Received request: %s",
-            request->DebugString().c_str());
-    // RLS server should see call creds.
-    EXPECT_THAT(context->client_metadata(),
-                ::testing::Contains(
-                    ::testing::Pair(kCallCredsMdKey, kCallCredsMdValue)));
-    IncreaseRequestCount();
-    EXPECT_EQ(request->target_type(), "grpc");
-    // See if we have a configured response for this request.
-    ResponseData res;
-    {
-      grpc::internal::MutexLock lock(&mu_);
-      auto it = responses_.find(*request);
-      if (it == responses_.end()) {
-        gpr_log(GPR_INFO, "RLS: no matching request, returning INTERNAL");
-        unmatched_requests_.push_back(*request);
-        return Status(StatusCode::INTERNAL, "no response entry");
-      }
-      res = it->second;
-    }
-    // Configured response found, so use it.
-    if (res.response_delay > 0) {
-      gpr_sleep_until(
-          grpc_timeout_milliseconds_to_deadline(res.response_delay));
-    }
-    IncreaseResponseCount();
-    *response = res.response;
-    gpr_log(GPR_INFO, "RLS: returning configured response: %s",
-            response->DebugString().c_str());
-    return Status::OK;
-  }
-
-  void Start() {}
-
-  void Shutdown() {}
-
-  void SetResponse(RouteLookupRequest request, RouteLookupResponse response,
-                   grpc_millis response_delay = 0) {
-    grpc::internal::MutexLock lock(&mu_);
-    responses_[std::move(request)] = {std::move(response), response_delay};
-  }
-
-  void RemoveResponse(const RouteLookupRequest& request) {
-    grpc::internal::MutexLock lock(&mu_);
-    responses_.erase(request);
-  }
-
-  std::vector<RouteLookupRequest> GetUnmatchedRequests() {
-    grpc::internal::MutexLock lock(&mu_);
-    return std::move(unmatched_requests_);
-  }
-
- private:
-  // Sorting thunk for RouteLookupRequest.
-  struct RlsRequestLessThan {
-    bool operator()(const RouteLookupRequest& req1,
-                    const RouteLookupRequest& req2) const {
-      std::map<absl::string_view, absl::string_view> key_map1(
-          req1.key_map().begin(), req1.key_map().end());
-      std::map<absl::string_view, absl::string_view> key_map2(
-          req2.key_map().begin(), req2.key_map().end());
-      if (key_map1 < key_map2) return true;
-      if (req1.reason() < req2.reason()) return true;
-      if (req1.stale_header_data() < req2.stale_header_data()) return true;
-      return false;
-    }
-  };
-
-  struct ResponseData {
-    RouteLookupResponse response;
-    grpc_millis response_delay;
-  };
-
-  grpc::internal::Mutex mu_;
-  std::map<RouteLookupRequest, ResponseData, RlsRequestLessThan> responses_
-      ABSL_GUARDED_BY(&mu_);
-  std::vector<RouteLookupRequest> unmatched_requests_ ABSL_GUARDED_BY(&mu_);
-};
 
 // Subclass of TestServiceImpl that increments a request counter for
 // every call to the Echo Rpc.
@@ -230,7 +146,7 @@ class FakeResolverResponseGeneratorWrapper {
       absl::string_view service_config_json) {
     grpc_core::Resolver::Result result;
     grpc_error_handle error = GRPC_ERROR_NONE;
-    result.service_config = grpc_core::ServiceConfig::Create(
+    result.service_config = grpc_core::ServiceConfigImpl::Create(
         result.args, service_config_json, &error);
     EXPECT_EQ(error, GRPC_ERROR_NONE)
         << "JSON: " << service_config_json
@@ -263,7 +179,12 @@ class RlsEnd2endTest : public ::testing::Test {
     grpc_core::LocalhostResolves(&localhost_resolves_to_ipv4,
                                  &localhost_resolves_to_ipv6);
     ipv6_only_ = !localhost_resolves_to_ipv4 && localhost_resolves_to_ipv6;
-    rls_server_ = absl::make_unique<ServerThread<RlsServiceImpl>>("rls");
+    rls_server_ = absl::make_unique<ServerThread<RlsServiceImpl>>(
+        "rls", [](grpc::ServerContext* ctx) {
+          EXPECT_THAT(ctx->client_metadata(),
+                      ::testing::Contains(
+                          ::testing::Pair(kCallCredsMdKey, kCallCredsMdValue)));
+        });
     rls_server_->Start();
     resolver_response_generator_ =
         absl::make_unique<FakeResolverResponseGeneratorWrapper>();
@@ -283,13 +204,13 @@ class RlsEnd2endTest : public ::testing::Test {
     grpc_channel_credentials* channel_creds =
         grpc_fake_transport_security_credentials_create();
     grpc_call_credentials* call_creds = grpc_md_only_test_credentials_create(
-        kCallCredsMdKey, kCallCredsMdValue, false);
+        kCallCredsMdKey, kCallCredsMdValue);
     auto creds = std::make_shared<SecureChannelCredentials>(
         grpc_composite_channel_credentials_create(channel_creds, call_creds,
                                                   nullptr));
     call_creds->Unref();
     channel_creds->Unref();
-    channel_ = ::grpc::CreateCustomChannel(
+    channel_ = grpc::CreateCustomChannel(
         absl::StrCat("fake:///", kServerName).c_str(), std::move(creds), args);
     stub_ = grpc::testing::EchoTestService::NewStub(channel_);
   }
@@ -312,26 +233,6 @@ class RlsEnd2endTest : public ::testing::Test {
   std::string TargetStringForPort(int port) {
     if (ipv6_only_) return absl::StrCat("ipv6:[::1]:", port);
     return absl::StrCat("ipv4:127.0.0.1:", port);
-  }
-
-  static RouteLookupRequest BuildRlsRequest(
-      std::map<std::string, std::string> key,
-      RouteLookupRequest::Reason reason = RouteLookupRequest::REASON_MISS,
-      const char* stale_header_data = "") {
-    RouteLookupRequest request;
-    request.set_target_type("grpc");
-    request.mutable_key_map()->insert(key.begin(), key.end());
-    request.set_reason(reason);
-    request.set_stale_header_data(stale_header_data);
-    return request;
-  }
-
-  static RouteLookupResponse BuildRlsResponse(std::vector<std::string> targets,
-                                              const char* header_data = "") {
-    RouteLookupResponse response;
-    response.mutable_targets()->Add(targets.begin(), targets.end());
-    response.set_header_data(header_data);
-    return response;
   }
 
   struct RpcOptions {
@@ -403,7 +304,8 @@ class RlsEnd2endTest : public ::testing::Test {
     explicit ServiceConfigBuilder(int rls_server_port)
         : rls_server_port_(rls_server_port) {}
 
-    ServiceConfigBuilder& set_lookup_service_timeout(grpc_millis timeout) {
+    ServiceConfigBuilder& set_lookup_service_timeout(
+        grpc_core::Duration timeout) {
       lookup_service_timeout_ = timeout * grpc_test_slowdown_factor();
       return *this;
     }
@@ -413,12 +315,12 @@ class RlsEnd2endTest : public ::testing::Test {
       return *this;
     }
 
-    ServiceConfigBuilder& set_max_age(grpc_millis max_age) {
+    ServiceConfigBuilder& set_max_age(grpc_core::Duration max_age) {
       max_age_ = max_age * grpc_test_slowdown_factor();
       return *this;
     }
 
-    ServiceConfigBuilder& set_stale_age(grpc_millis stale_age) {
+    ServiceConfigBuilder& set_stale_age(grpc_core::Duration stale_age) {
       stale_age_ = stale_age * grpc_test_slowdown_factor();
       return *this;
     }
@@ -438,10 +340,10 @@ class RlsEnd2endTest : public ::testing::Test {
       std::vector<std::string> route_lookup_config_parts;
       route_lookup_config_parts.push_back(absl::StrFormat(
           "        \"lookupService\":\"localhost:%d\"", rls_server_port_));
-      if (lookup_service_timeout_ > 0) {
-        route_lookup_config_parts.push_back(absl::StrFormat(
-            "        \"lookupServiceTimeout\":\"%d.%09ds\"",
-            lookup_service_timeout_ / 1000, lookup_service_timeout_ % 1000));
+      if (lookup_service_timeout_ > grpc_core::Duration::Zero()) {
+        route_lookup_config_parts.push_back(
+            absl::StrFormat("        \"lookupServiceTimeout\":\"%fs\"",
+                            lookup_service_timeout_.seconds()));
       }
       if (!default_target_.empty()) {
         route_lookup_config_parts.push_back(absl::StrFormat(
@@ -449,15 +351,13 @@ class RlsEnd2endTest : public ::testing::Test {
       }
       route_lookup_config_parts.push_back(absl::StrFormat(
           "        \"cacheSizeBytes\":%" PRId64, cache_size_bytes_));
-      if (max_age_ > 0) {
+      if (max_age_ > grpc_core::Duration::Zero()) {
         route_lookup_config_parts.push_back(
-            absl::StrFormat("        \"maxAge\":\"%d.%09ds\"", max_age_ / 1000,
-                            max_age_ % 1000));
+            absl::StrFormat("        \"maxAge\":\"%fs\"", max_age_.seconds()));
       }
-      if (stale_age_ > 0) {
-        route_lookup_config_parts.push_back(
-            absl::StrFormat("        \"staleAge\":\"%d.%09ds\"",
-                            stale_age_ / 1000, stale_age_ % 1000));
+      if (stale_age_ > grpc_core::Duration::Zero()) {
+        route_lookup_config_parts.push_back(absl::StrFormat(
+            "        \"staleAge\":\"%fs\"", stale_age_.seconds()));
       }
       if (!key_builders_.empty()) {
         route_lookup_config_parts.push_back(
@@ -480,7 +380,7 @@ class RlsEnd2endTest : public ::testing::Test {
       return absl::StrCat(
           "{"
           "  \"loadBalancingConfig\":[{"
-          "    \"rls\":{",
+          "    \"rls_experimental\":{",
           absl::StrJoin(rls_config_parts, ","),
           "    }"
           "  }]"
@@ -489,10 +389,10 @@ class RlsEnd2endTest : public ::testing::Test {
 
    private:
     int rls_server_port_;
-    grpc_millis lookup_service_timeout_ = 0;
+    grpc_core::Duration lookup_service_timeout_;
     std::string default_target_;
-    grpc_millis max_age_ = 0;
-    grpc_millis stale_age_ = 0;
+    grpc_core::Duration max_age_;
+    grpc_core::Duration stale_age_;
     int64_t cache_size_bytes_ = 10485760;
     std::vector<std::string> key_builders_;
   };
@@ -1014,13 +914,13 @@ TEST_F(RlsEnd2endTest, RlsRequestTimeout) {
                                          "]",
                                          kServiceValue, kMethodValue, kTestKey))
           .set_default_target(TargetStringForPort(backends_[1]->port_))
-          .set_lookup_service_timeout(2000)
+          .set_lookup_service_timeout(grpc_core::Duration::Seconds(2))
           .Build());
   // RLS server will send a response, but it's longer than the timeout.
   rls_server_->service_.SetResponse(
       BuildRlsRequest({{kTestKey, kTestValue}}),
       BuildRlsResponse({TargetStringForPort(backends_[0]->port_)}),
-      /*response_delay=*/3000);
+      /*response_delay=*/grpc_core::Duration::Seconds(3));
   // The data plane RPC should be sent to the default target.
   CheckRpcSendOk(DEBUG_LOCATION, RpcOptions().set_timeout_ms(4000).set_metadata(
                                      {{"key1", kTestValue}}));
@@ -1128,8 +1028,8 @@ TEST_F(RlsEnd2endTest, StaleCacheEntry) {
                                          "  }"
                                          "]",
                                          kServiceValue, kMethodValue, kTestKey))
-          .set_max_age(5000)
-          .set_stale_age(1000)
+          .set_max_age(grpc_core::Duration::Seconds(5))
+          .set_stale_age(grpc_core::Duration::Seconds(1))
           .Build());
   rls_server_->service_.SetResponse(
       BuildRlsRequest({{kTestKey, kTestValue}}),
@@ -1178,8 +1078,8 @@ TEST_F(RlsEnd2endTest, StaleCacheEntryWithHeaderData) {
                                          "  }"
                                          "]",
                                          kServiceValue, kMethodValue, kTestKey))
-          .set_max_age(5000)
-          .set_stale_age(1000)
+          .set_max_age(grpc_core::Duration::Seconds(5))
+          .set_stale_age(grpc_core::Duration::Seconds(1))
           .Build());
   rls_server_->service_.SetResponse(
       BuildRlsRequest({{kTestKey, kTestValue}}),
@@ -1229,8 +1129,8 @@ TEST_F(RlsEnd2endTest, ExpiredCacheEntry) {
                                          "  }"
                                          "]",
                                          kServiceValue, kMethodValue, kTestKey))
-          .set_max_age(1000)
-          .set_lookup_service_timeout(1000)
+          .set_max_age(grpc_core::Duration::Seconds(1))
+          .set_lookup_service_timeout(grpc_core::Duration::Seconds(1))
           .Build());
   rls_server_->service_.SetResponse(
       BuildRlsRequest({{kTestKey, kTestValue}}),
@@ -1442,7 +1342,7 @@ TEST_F(RlsEnd2endTest, ConnectivityStateTransientFailure) {
 }
 
 TEST_F(RlsEnd2endTest, RlsAuthorityDeathTest) {
-  GRPC_GTEST_FLAG_SET_DEATH_TEST_STYLE("threadsafe");
+  GTEST_FLAG_SET(death_test_style, "threadsafe");
   ResetStub("incorrect_authority");
   SetNextResolution(
       MakeServiceConfigBuilder()
@@ -1476,6 +1376,6 @@ TEST_F(RlsEnd2endTest, RlsAuthorityDeathTest) {
 
 int main(int argc, char** argv) {
   ::testing::InitGoogleTest(&argc, argv);
-  grpc::testing::TestEnvironment env(argc, argv);
+  grpc::testing::TestEnvironment env(&argc, argv);
   return RUN_ALL_TESTS();
 }

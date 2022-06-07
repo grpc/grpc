@@ -16,6 +16,11 @@
 
 #include "src/core/lib/config/core_configuration.h"
 
+#include <algorithm>
+#include <atomic>
+#include <utility>
+#include <vector>
+
 #include <grpc/support/log.h>
 
 namespace grpc_core {
@@ -23,6 +28,7 @@ namespace grpc_core {
 std::atomic<CoreConfiguration*> CoreConfiguration::config_{nullptr};
 std::atomic<CoreConfiguration::RegisteredBuilder*> CoreConfiguration::builders_{
     nullptr};
+void (*CoreConfiguration::default_builder_)(CoreConfiguration::Builder*);
 
 CoreConfiguration::Builder::Builder() = default;
 
@@ -34,7 +40,10 @@ CoreConfiguration::CoreConfiguration(Builder* builder)
     : channel_args_preconditioning_(
           builder->channel_args_preconditioning_.Build()),
       channel_init_(builder->channel_init_.Build()),
-      handshaker_registry_(builder->handshaker_registry_.Build()) {}
+      handshaker_registry_(builder->handshaker_registry_.Build()),
+      channel_creds_registry_(builder->channel_creds_registry_.Build()),
+      service_config_parser_(builder->service_config_parser_.Build()),
+      resolver_registry_(builder->resolver_registry_.Build()) {}
 
 void CoreConfiguration::RegisterBuilder(std::function<void(Builder*)> builder) {
   GPR_ASSERT(config_.load(std::memory_order_relaxed) == nullptr &&
@@ -69,7 +78,7 @@ const CoreConfiguration& CoreConfiguration::BuildNewAndMaybeSet() {
     (*it)->builder(&builder);
   }
   // Finally, call the built in configuration builder.
-  BuildCoreConfiguration(&builder);
+  if (default_builder_ != nullptr) (*default_builder_)(&builder);
   // Use builder to construct a confguration
   CoreConfiguration* p = builder.Build();
   // Try to set configuration global - it's possible another thread raced us

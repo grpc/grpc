@@ -20,7 +20,7 @@
 #include <grpc/grpc.h>
 
 #include "src/core/lib/gpr/env.h"
-#include "src/core/lib/service_config/service_config.h"
+#include "src/core/lib/service_config/service_config_impl.h"
 #include "test/core/util/test_config.h"
 
 // A regular expression to enter referenced or child errors.
@@ -35,22 +35,16 @@ namespace {
 
 class RlsConfigParsingTest : public ::testing::Test {
  public:
-  static void SetUpTestSuite() {
-    gpr_setenv("GRPC_EXPERIMENTAL_ENABLE_RLS_LB_POLICY", "true");
-    grpc_init();
-  }
+  static void SetUpTestSuite() { grpc_init(); }
 
-  static void TearDownTestSuite() {
-    grpc_shutdown_blocking();
-    gpr_unsetenv("GRPC_EXPERIMENTAL_ENABLE_RLS_LB_POLICY");
-  }
+  static void TearDownTestSuite() { grpc_shutdown_blocking(); }
 };
 
 TEST_F(RlsConfigParsingTest, ValidConfig) {
   const char* service_config_json =
       "{\n"
       "  \"loadBalancingConfig\":[{\n"
-      "    \"rls\":{\n"
+      "    \"rls_experimental\":{\n"
       "      \"routeLookupConfig\":{\n"
       "        \"lookupService\":\"rls.example.com:80\",\n"
       "        \"cacheSizeBytes\":1,\n"
@@ -62,6 +56,9 @@ TEST_F(RlsConfigParsingTest, ValidConfig) {
       "          }\n"
       "        ]\n"
       "      },\n"
+      "      \"routeLookupChannelServiceConfig\": {\n"
+      "        \"loadBalancingPolicy\": \"ROUND_ROBIN\"\n"
+      "      },\n"
       "      \"childPolicy\":[\n"
       "        {\"unknown\":{}},\n"  // Okay, since the next one exists.
       "        {\"grpclb\":{}}\n"
@@ -71,7 +68,7 @@ TEST_F(RlsConfigParsingTest, ValidConfig) {
       "  }]\n"
       "}\n";
   grpc_error_handle error = GRPC_ERROR_NONE;
-  auto service_config = ServiceConfig::Create(
+  auto service_config = ServiceConfigImpl::Create(
       /*args=*/nullptr, service_config_json, &error);
   EXPECT_EQ(error, GRPC_ERROR_NONE) << grpc_error_std_string(error);
   EXPECT_NE(service_config, nullptr);
@@ -85,12 +82,12 @@ TEST_F(RlsConfigParsingTest, TopLevelRequiredFieldsMissing) {
   const char* service_config_json =
       "{\n"
       "  \"loadBalancingConfig\":[{\n"
-      "    \"rls\":{\n"
+      "    \"rls_experimental\":{\n"
       "    }\n"
       "  }]\n"
       "}\n";
   grpc_error_handle error = GRPC_ERROR_NONE;
-  auto service_config = ServiceConfig::Create(
+  auto service_config = ServiceConfigImpl::Create(
       /*args=*/nullptr, service_config_json, &error);
   EXPECT_THAT(
       grpc_error_std_string(error),
@@ -106,21 +103,23 @@ TEST_F(RlsConfigParsingTest, TopLevelFieldsWrongTypes) {
   const char* service_config_json =
       "{\n"
       "  \"loadBalancingConfig\":[{\n"
-      "    \"rls\":{\n"
+      "    \"rls_experimental\":{\n"
       "      \"routeLookupConfig\":1,\n"
+      "      \"routeLookupChannelServiceConfig\": 1,\n"
       "      \"childPolicy\":1,\n"
       "      \"childPolicyConfigTargetFieldName\":1\n"
       "    }\n"
       "  }]\n"
       "}\n";
   grpc_error_handle error = GRPC_ERROR_NONE;
-  auto service_config = ServiceConfig::Create(
+  auto service_config = ServiceConfigImpl::Create(
       /*args=*/nullptr, service_config_json, &error);
   EXPECT_THAT(
       grpc_error_std_string(error),
       ::testing::ContainsRegex(
           "errors parsing RLS LB policy config" CHILD_ERROR_TAG
           "field:routeLookupConfig error:type should be OBJECT.*"
+          "field:routeLookupChannelServiceConfig error:type should be OBJECT.*"
           "field:childPolicyConfigTargetFieldName error:type should be STRING.*"
           "field:childPolicy error:type should be ARRAY"));
   GRPC_ERROR_UNREF(error);
@@ -130,7 +129,7 @@ TEST_F(RlsConfigParsingTest, TopLevelFieldsInvalidValues) {
   const char* service_config_json =
       "{\n"
       "  \"loadBalancingConfig\":[{\n"
-      "    \"rls\":{\n"
+      "    \"rls_experimental\":{\n"
       "      \"childPolicy\":[\n"
       "        {\"unknown\":{}}\n"
       "      ],\n"
@@ -139,7 +138,7 @@ TEST_F(RlsConfigParsingTest, TopLevelFieldsInvalidValues) {
       "  }]\n"
       "}\n";
   grpc_error_handle error = GRPC_ERROR_NONE;
-  auto service_config = ServiceConfig::Create(
+  auto service_config = ServiceConfigImpl::Create(
       /*args=*/nullptr, service_config_json, &error);
   EXPECT_THAT(
       grpc_error_std_string(error),
@@ -155,7 +154,7 @@ TEST_F(RlsConfigParsingTest, InvalidChildPolicyConfig) {
   const char* service_config_json =
       "{\n"
       "  \"loadBalancingConfig\":[{\n"
-      "    \"rls\":{\n"
+      "    \"rls_experimental\":{\n"
       "      \"childPolicy\":[\n"
       "        {\"grpclb\":{\"childPolicy\":1}}\n"
       "      ],\n"
@@ -164,7 +163,7 @@ TEST_F(RlsConfigParsingTest, InvalidChildPolicyConfig) {
       "  }]\n"
       "}\n";
   grpc_error_handle error = GRPC_ERROR_NONE;
-  auto service_config = ServiceConfig::Create(
+  auto service_config = ServiceConfigImpl::Create(
       /*args=*/nullptr, service_config_json, &error);
   EXPECT_THAT(
       grpc_error_std_string(error),
@@ -172,6 +171,35 @@ TEST_F(RlsConfigParsingTest, InvalidChildPolicyConfig) {
           "errors parsing RLS LB policy config" CHILD_ERROR_TAG
           "field:childPolicy" CHILD_ERROR_TAG "GrpcLb Parser" CHILD_ERROR_TAG
           "field:childPolicy" CHILD_ERROR_TAG "type should be array"));
+  GRPC_ERROR_UNREF(error);
+}
+
+TEST_F(RlsConfigParsingTest, InvalidRlsChannelServiceConfig) {
+  const char* service_config_json =
+      "{\n"
+      "  \"loadBalancingConfig\":[{\n"
+      "    \"rls_experimental\":{\n"
+      "      \"routeLookupChannelServiceConfig\": {\n"
+      "        \"loadBalancingPolicy\": \"unknown\"\n"
+      "      },\n"
+      "      \"childPolicy\":[\n"
+      "        {\"grpclb\":{}}\n"
+      "      ],\n"
+      "      \"childPolicyConfigTargetFieldName\":\"serviceName\"\n"
+      "    }\n"
+      "  }]\n"
+      "}\n";
+  grpc_error_handle error = GRPC_ERROR_NONE;
+  auto service_config = ServiceConfigImpl::Create(
+      /*args=*/nullptr, service_config_json, &error);
+  EXPECT_THAT(grpc_error_std_string(error),
+              ::testing::ContainsRegex(
+                  "errors parsing RLS LB policy config" CHILD_ERROR_TAG
+                  "field:routeLookupChannelServiceConfig" CHILD_ERROR_TAG
+                  "Service config parsing error" CHILD_ERROR_TAG
+                  "Global Params" CHILD_ERROR_TAG
+                  "Client channel global parser" CHILD_ERROR_TAG
+                  "field:loadBalancingPolicy error:Unknown lb policy"));
   GRPC_ERROR_UNREF(error);
 }
 
@@ -183,14 +211,14 @@ TEST_F(RlsConfigParsingTest, RouteLookupConfigRequiredFieldsMissing) {
   const char* service_config_json =
       "{\n"
       "  \"loadBalancingConfig\":[{\n"
-      "    \"rls\":{\n"
+      "    \"rls_experimental\":{\n"
       "      \"routeLookupConfig\":{\n"
       "      }\n"
       "    }\n"
       "  }]\n"
       "}\n";
   grpc_error_handle error = GRPC_ERROR_NONE;
-  auto service_config = ServiceConfig::Create(
+  auto service_config = ServiceConfigImpl::Create(
       /*args=*/nullptr, service_config_json, &error);
   EXPECT_THAT(grpc_error_std_string(error),
               ::testing::ContainsRegex(
@@ -205,7 +233,7 @@ TEST_F(RlsConfigParsingTest, RouteLookupConfigFieldsWrongTypes) {
   const char* service_config_json =
       "{\n"
       "  \"loadBalancingConfig\":[{\n"
-      "    \"rls\":{\n"
+      "    \"rls_experimental\":{\n"
       "      \"routeLookupConfig\":{\n"
       "        \"grpcKeybuilders\":1,\n"
       "        \"name\":1,\n"
@@ -220,7 +248,7 @@ TEST_F(RlsConfigParsingTest, RouteLookupConfigFieldsWrongTypes) {
       "  }]\n"
       "}\n";
   grpc_error_handle error = GRPC_ERROR_NONE;
-  auto service_config = ServiceConfig::Create(
+  auto service_config = ServiceConfigImpl::Create(
       /*args=*/nullptr, service_config_json, &error);
   EXPECT_THAT(grpc_error_std_string(error),
               ::testing::ContainsRegex(
@@ -230,7 +258,7 @@ TEST_F(RlsConfigParsingTest, RouteLookupConfigFieldsWrongTypes) {
                   "field:lookupService error:type should be STRING.*"
                   "field:maxAge error:type should be STRING.*"
                   "field:staleAge error:type should be STRING.*"
-                  "field:cacheSizeBytes error:type should be NUMBER.*"
+                  "field:cacheSizeBytes error:failed to parse.*"
                   "field:defaultTarget error:type should be STRING"));
   GRPC_ERROR_UNREF(error);
 }
@@ -239,7 +267,7 @@ TEST_F(RlsConfigParsingTest, RouteLookupConfigFieldsInvalidValues) {
   const char* service_config_json =
       "{\n"
       "  \"loadBalancingConfig\":[{\n"
-      "    \"rls\":{\n"
+      "    \"rls_experimental\":{\n"
       "      \"routeLookupConfig\":{\n"
       "        \"lookupService\":\"\",\n"
       "        \"cacheSizeBytes\":0\n"
@@ -248,7 +276,7 @@ TEST_F(RlsConfigParsingTest, RouteLookupConfigFieldsInvalidValues) {
       "  }]\n"
       "}\n";
   grpc_error_handle error = GRPC_ERROR_NONE;
-  auto service_config = ServiceConfig::Create(
+  auto service_config = ServiceConfigImpl::Create(
       /*args=*/nullptr, service_config_json, &error);
   EXPECT_THAT(grpc_error_std_string(error),
               ::testing::ContainsRegex(
@@ -267,7 +295,7 @@ TEST_F(RlsConfigParsingTest, GrpcKeybuilderRequiredFieldsMissing) {
   const char* service_config_json =
       "{\n"
       "  \"loadBalancingConfig\":[{\n"
-      "    \"rls\":{\n"
+      "    \"rls_experimental\":{\n"
       "      \"routeLookupConfig\":{\n"
       "        \"grpcKeybuilders\":[\n"
       "          {\n"
@@ -278,7 +306,7 @@ TEST_F(RlsConfigParsingTest, GrpcKeybuilderRequiredFieldsMissing) {
       "  }]\n"
       "}\n";
   grpc_error_handle error = GRPC_ERROR_NONE;
-  auto service_config = ServiceConfig::Create(
+  auto service_config = ServiceConfigImpl::Create(
       /*args=*/nullptr, service_config_json, &error);
   EXPECT_THAT(
       grpc_error_std_string(error),
@@ -294,7 +322,7 @@ TEST_F(RlsConfigParsingTest, GrpcKeybuilderWrongFieldTypes) {
   const char* service_config_json =
       "{\n"
       "  \"loadBalancingConfig\":[{\n"
-      "    \"rls\":{\n"
+      "    \"rls_experimental\":{\n"
       "      \"routeLookupConfig\":{\n"
       "        \"grpcKeybuilders\":[\n"
       "          {\n"
@@ -309,7 +337,7 @@ TEST_F(RlsConfigParsingTest, GrpcKeybuilderWrongFieldTypes) {
       "  }]\n"
       "}\n";
   grpc_error_handle error = GRPC_ERROR_NONE;
-  auto service_config = ServiceConfig::Create(
+  auto service_config = ServiceConfigImpl::Create(
       /*args=*/nullptr, service_config_json, &error);
   EXPECT_THAT(
       grpc_error_std_string(error),
@@ -328,7 +356,7 @@ TEST_F(RlsConfigParsingTest, GrpcKeybuilderInvalidValues) {
   const char* service_config_json =
       "{\n"
       "  \"loadBalancingConfig\":[{\n"
-      "    \"rls\":{\n"
+      "    \"rls_experimental\":{\n"
       "      \"routeLookupConfig\":{\n"
       "        \"grpcKeybuilders\":[\n"
       "          {\n"
@@ -348,7 +376,7 @@ TEST_F(RlsConfigParsingTest, GrpcKeybuilderInvalidValues) {
       "  }]\n"
       "}\n";
   grpc_error_handle error = GRPC_ERROR_NONE;
-  auto service_config = ServiceConfig::Create(
+  auto service_config = ServiceConfigImpl::Create(
       /*args=*/nullptr, service_config_json, &error);
   EXPECT_THAT(grpc_error_std_string(error),
               ::testing::ContainsRegex(
@@ -369,7 +397,7 @@ TEST_F(RlsConfigParsingTest, GrpcKeybuilderInvalidHeaders) {
   const char* service_config_json =
       "{\n"
       "  \"loadBalancingConfig\":[{\n"
-      "    \"rls\":{\n"
+      "    \"rls_experimental\":{\n"
       "      \"routeLookupConfig\":{\n"
       "        \"grpcKeybuilders\":[\n"
       "          {\n"
@@ -400,7 +428,7 @@ TEST_F(RlsConfigParsingTest, GrpcKeybuilderInvalidHeaders) {
       "  }]\n"
       "}\n";
   grpc_error_handle error = GRPC_ERROR_NONE;
-  auto service_config = ServiceConfig::Create(
+  auto service_config = ServiceConfigImpl::Create(
       /*args=*/nullptr, service_config_json, &error);
   EXPECT_THAT(
       grpc_error_std_string(error),
@@ -429,7 +457,7 @@ TEST_F(RlsConfigParsingTest, GrpcKeybuilderNameWrongFieldTypes) {
   const char* service_config_json =
       "{\n"
       "  \"loadBalancingConfig\":[{\n"
-      "    \"rls\":{\n"
+      "    \"rls_experimental\":{\n"
       "      \"routeLookupConfig\":{\n"
       "        \"grpcKeybuilders\":[\n"
       "          {\n"
@@ -447,7 +475,7 @@ TEST_F(RlsConfigParsingTest, GrpcKeybuilderNameWrongFieldTypes) {
       "  }]\n"
       "}\n";
   grpc_error_handle error = GRPC_ERROR_NONE;
-  auto service_config = ServiceConfig::Create(
+  auto service_config = ServiceConfigImpl::Create(
       /*args=*/nullptr, service_config_json, &error);
   EXPECT_THAT(
       grpc_error_std_string(error),
@@ -466,7 +494,7 @@ TEST_F(RlsConfigParsingTest, DuplicateMethodNamesInSameKeyBuilder) {
   const char* service_config_json =
       "{\n"
       "  \"loadBalancingConfig\":[{\n"
-      "    \"rls\":{\n"
+      "    \"rls_experimental\":{\n"
       "      \"routeLookupConfig\":{\n"
       "        \"grpcKeybuilders\":[\n"
       "          {\n"
@@ -487,7 +515,7 @@ TEST_F(RlsConfigParsingTest, DuplicateMethodNamesInSameKeyBuilder) {
       "  }]\n"
       "}\n";
   grpc_error_handle error = GRPC_ERROR_NONE;
-  auto service_config = ServiceConfig::Create(
+  auto service_config = ServiceConfigImpl::Create(
       /*args=*/nullptr, service_config_json, &error);
   EXPECT_THAT(
       grpc_error_std_string(error),
@@ -503,7 +531,7 @@ TEST_F(RlsConfigParsingTest, DuplicateMethodNamesInDifferentKeyBuilders) {
   const char* service_config_json =
       "{\n"
       "  \"loadBalancingConfig\":[{\n"
-      "    \"rls\":{\n"
+      "    \"rls_experimental\":{\n"
       "      \"routeLookupConfig\":{\n"
       "        \"grpcKeybuilders\":[\n"
       "          {\n"
@@ -528,7 +556,7 @@ TEST_F(RlsConfigParsingTest, DuplicateMethodNamesInDifferentKeyBuilders) {
       "  }]\n"
       "}\n";
   grpc_error_handle error = GRPC_ERROR_NONE;
-  auto service_config = ServiceConfig::Create(
+  auto service_config = ServiceConfigImpl::Create(
       /*args=*/nullptr, service_config_json, &error);
   EXPECT_THAT(
       grpc_error_std_string(error),
@@ -545,6 +573,6 @@ TEST_F(RlsConfigParsingTest, DuplicateMethodNamesInDifferentKeyBuilders) {
 
 int main(int argc, char** argv) {
   ::testing::InitGoogleTest(&argc, argv);
-  grpc::testing::TestEnvironment env(argc, argv);
+  grpc::testing::TestEnvironment env(&argc, argv);
   return RUN_ALL_TESTS();
 }

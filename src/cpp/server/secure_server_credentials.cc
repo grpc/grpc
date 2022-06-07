@@ -18,13 +18,20 @@
 
 #include "src/cpp/server/secure_server_credentials.h"
 
-#include <functional>
+#include <algorithm>
 #include <map>
 #include <memory>
+#include <utility>
+#include <vector>
 
-#include <grpcpp/impl/codegen/slice.h>
-#include <grpcpp/impl/grpc_library.h>
+#include <grpc/grpc_security_constants.h>
+#include <grpc/slice.h>
+#include <grpc/status.h>
 #include <grpcpp/security/auth_metadata_processor.h>
+#include <grpcpp/security/tls_credentials_options.h>
+#include <grpcpp/support/slice.h>
+#include <grpcpp/support/status.h>
+#include <grpcpp/support/string_ref.h>
 
 #include "src/cpp/common/secure_auth_context.h"
 
@@ -93,7 +100,7 @@ void AuthMetadataProcessorAyncWrapper::InvokeProcessor(
 
 int SecureServerCredentials::AddPortToServer(const std::string& addr,
                                              grpc_server* server) {
-  return grpc_server_add_secure_http2_port(server, addr.c_str(), creds_);
+  return grpc_server_add_http2_port(server, addr.c_str(), creds_);
 }
 
 void SecureServerCredentials::SetAuthMetadataProcessor(

@@ -30,14 +30,17 @@ final class NativeConnectionHelper {
   // Maps connection id to GrpcBinderConnection instances
   static Map<String, GrpcBinderConnection> s = new HashMap<>();
 
-  static void tryEstablishConnection(Context context, String pkg, String cls, String connId) {
+  static void tryEstablishConnection(Context context, String pkg, String cls, String action_name, String connId) {
     // TODO(mingcl): Assert that connId is unique
     s.put(connId, new GrpcBinderConnection(context, connId));
-    s.get(connId).tryConnect(pkg, cls);
+    s.get(connId).tryConnect(pkg, cls, action_name);
   }
 
   // Returns true if the packages signature of the 2 UIDs match.
-  // `context` is used to get PackageManager
+  // `context` is used to get PackageManager.
+  // Suppress unnecessary internal warnings related to checkSignatures compatibility issue.
+  // BinderTransport code is only used on newer Android platform versions so this is fine.
+  @SuppressWarnings("CheckSignatures")
   static boolean isSignatureMatch(Context context, int uid1, int uid2) {
     int result = context.getPackageManager().checkSignatures(uid1, uid2);
     if (result == PackageManager.SIGNATURE_MATCH) {

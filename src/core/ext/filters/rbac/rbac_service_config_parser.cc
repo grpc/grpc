@@ -18,17 +18,26 @@
 
 #include "src/core/ext/filters/rbac/rbac_service_config_parser.h"
 
+#include <stdint.h>
+
+#include <map>
+#include <string>
+
+#include "absl/memory/memory.h"
+#include "absl/status/status.h"
+#include "absl/status/statusor.h"
 #include "absl/strings/str_format.h"
+
+#include <grpc/support/log.h>
 
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/json/json_util.h"
+#include "src/core/lib/matchers/matchers.h"
 #include "src/core/lib/transport/error_utils.h"
 
 namespace grpc_core {
 
 namespace {
-
-size_t g_rbac_parser_index;
 
 std::string ParseRegexMatcher(const Json::Object& regex_matcher_json,
                               std::vector<grpc_error_handle>* error_list) {
@@ -595,11 +604,14 @@ RbacServiceConfigParser::ParsePerMethodParams(const grpc_channel_args* args,
   return absl::make_unique<RbacMethodParsedConfig>(std::move(rbac_policies));
 }
 
-void RbacServiceConfigParser::Register() {
-  g_rbac_parser_index = ServiceConfigParser::RegisterParser(
+void RbacServiceConfigParser::Register(CoreConfiguration::Builder* builder) {
+  builder->service_config_parser()->RegisterParser(
       absl::make_unique<RbacServiceConfigParser>());
 }
 
-size_t RbacServiceConfigParser::ParserIndex() { return g_rbac_parser_index; }
+size_t RbacServiceConfigParser::ParserIndex() {
+  return CoreConfiguration::Get().service_config_parser().GetParserIndex(
+      parser_name());
+}
 
 }  // namespace grpc_core

@@ -153,13 +153,13 @@ class PortAuthorizationMatcher : public AuthorizationMatcher {
 // or DNS SAN in that order, otherwise uses subject field.
 class AuthenticatedAuthorizationMatcher : public AuthorizationMatcher {
  public:
-  explicit AuthenticatedAuthorizationMatcher(StringMatcher auth)
+  explicit AuthenticatedAuthorizationMatcher(absl::optional<StringMatcher> auth)
       : matcher_(std::move(auth)) {}
 
   bool Matches(const EvaluateArgs& args) const override;
 
  private:
-  const StringMatcher matcher_;
+  const absl::optional<StringMatcher> matcher_;
 };
 
 // Perform a match against the request server from the client's connection

@@ -20,9 +20,21 @@
 
 #include "src/core/ext/xds/certificate_provider_store.h"
 
+#include <grpc/support/log.h>
+
 #include "src/core/ext/xds/certificate_provider_registry.h"
 
 namespace grpc_core {
+
+//
+// CertificateProviderStore::CertificateProviderWrapper
+//
+
+UniqueTypeName CertificateProviderStore::CertificateProviderWrapper::type()
+    const {
+  static UniqueTypeName::Factory kFactory("Wrapper");
+  return kFactory.Create();
+}
 
 // If a certificate provider is created, the CertificateProviderStore
 // maintains a raw pointer to the created CertificateProviderWrapper so that

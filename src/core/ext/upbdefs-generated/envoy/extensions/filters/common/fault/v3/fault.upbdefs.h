@@ -19,31 +19,31 @@ extern "C" {
 
 #include "upb/port_def.inc"
 
-extern upb_def_init envoy_extensions_filters_common_fault_v3_fault_proto_upbdefinit;
+extern _upb_DefPool_Init envoy_extensions_filters_common_fault_v3_fault_proto_upbdefinit;
 
-UPB_INLINE const upb_msgdef *envoy_extensions_filters_common_fault_v3_FaultDelay_getmsgdef(upb_symtab *s) {
-  _upb_symtab_loaddefinit(s, &envoy_extensions_filters_common_fault_v3_fault_proto_upbdefinit);
-  return upb_symtab_lookupmsg(s, "envoy.extensions.filters.common.fault.v3.FaultDelay");
+UPB_INLINE const upb_MessageDef *envoy_extensions_filters_common_fault_v3_FaultDelay_getmsgdef(upb_DefPool *s) {
+  _upb_DefPool_LoadDefInit(s, &envoy_extensions_filters_common_fault_v3_fault_proto_upbdefinit);
+  return upb_DefPool_FindMessageByName(s, "envoy.extensions.filters.common.fault.v3.FaultDelay");
 }
 
-UPB_INLINE const upb_msgdef *envoy_extensions_filters_common_fault_v3_FaultDelay_HeaderDelay_getmsgdef(upb_symtab *s) {
-  _upb_symtab_loaddefinit(s, &envoy_extensions_filters_common_fault_v3_fault_proto_upbdefinit);
-  return upb_symtab_lookupmsg(s, "envoy.extensions.filters.common.fault.v3.FaultDelay.HeaderDelay");
+UPB_INLINE const upb_MessageDef *envoy_extensions_filters_common_fault_v3_FaultDelay_HeaderDelay_getmsgdef(upb_DefPool *s) {
+  _upb_DefPool_LoadDefInit(s, &envoy_extensions_filters_common_fault_v3_fault_proto_upbdefinit);
+  return upb_DefPool_FindMessageByName(s, "envoy.extensions.filters.common.fault.v3.FaultDelay.HeaderDelay");
 }
 
-UPB_INLINE const upb_msgdef *envoy_extensions_filters_common_fault_v3_FaultRateLimit_getmsgdef(upb_symtab *s) {
-  _upb_symtab_loaddefinit(s, &envoy_extensions_filters_common_fault_v3_fault_proto_upbdefinit);
-  return upb_symtab_lookupmsg(s, "envoy.extensions.filters.common.fault.v3.FaultRateLimit");
+UPB_INLINE const upb_MessageDef *envoy_extensions_filters_common_fault_v3_FaultRateLimit_getmsgdef(upb_DefPool *s) {
+  _upb_DefPool_LoadDefInit(s, &envoy_extensions_filters_common_fault_v3_fault_proto_upbdefinit);
+  return upb_DefPool_FindMessageByName(s, "envoy.extensions.filters.common.fault.v3.FaultRateLimit");
 }
 
-UPB_INLINE const upb_msgdef *envoy_extensions_filters_common_fault_v3_FaultRateLimit_FixedLimit_getmsgdef(upb_symtab *s) {
-  _upb_symtab_loaddefinit(s, &envoy_extensions_filters_common_fault_v3_fault_proto_upbdefinit);
-  return upb_symtab_lookupmsg(s, "envoy.extensions.filters.common.fault.v3.FaultRateLimit.FixedLimit");
+UPB_INLINE const upb_MessageDef *envoy_extensions_filters_common_fault_v3_FaultRateLimit_FixedLimit_getmsgdef(upb_DefPool *s) {
+  _upb_DefPool_LoadDefInit(s, &envoy_extensions_filters_common_fault_v3_fault_proto_upbdefinit);
+  return upb_DefPool_FindMessageByName(s, "envoy.extensions.filters.common.fault.v3.FaultRateLimit.FixedLimit");
 }
 
-UPB_INLINE const upb_msgdef *envoy_extensions_filters_common_fault_v3_FaultRateLimit_HeaderLimit_getmsgdef(upb_symtab *s) {
-  _upb_symtab_loaddefinit(s, &envoy_extensions_filters_common_fault_v3_fault_proto_upbdefinit);
-  return upb_symtab_lookupmsg(s, "envoy.extensions.filters.common.fault.v3.FaultRateLimit.HeaderLimit");
+UPB_INLINE const upb_MessageDef *envoy_extensions_filters_common_fault_v3_FaultRateLimit_HeaderLimit_getmsgdef(upb_DefPool *s) {
+  _upb_DefPool_LoadDefInit(s, &envoy_extensions_filters_common_fault_v3_fault_proto_upbdefinit);
+  return upb_DefPool_FindMessageByName(s, "envoy.extensions.filters.common.fault.v3.FaultRateLimit.HeaderLimit");
 }
 
 #ifdef __cplusplus

@@ -12,18 +12,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-FROM debian:bullseye
+FROM silkeh/clang:13
 
-RUN apt-get update && apt-get install -y clang-11 llvm-11-dev libclang-11-dev clang-format-11 jq git cmake python
-
-ENV CLANG_FORMAT=clang-format-11
-
-RUN git clone https://github.com/include-what-you-use/include-what-you-use.git /iwyu
-# latest commit on the clang 11 branch
-RUN cd /iwyu && git checkout 5db414ac448004fe019871c977905cb7c2cff23f
-
-RUN mkdir /iwyu_build && cd /iwyu_build && cmake -G "Unix Makefiles" -DCMAKE_PREFIX_PATH=/usr/lib/llvm-11 /iwyu && make
-
+# Install prerequisites for the iwyu script
+RUN apt-get update && apt-get install -y python3 jq git cmake python zlib1g-dev libtinfo-dev && apt-get clean
 ADD iwyu.sh /
 
 # When running locally, we'll be impersonating the current user, so we need

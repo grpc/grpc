@@ -21,39 +21,32 @@
 #include "src/core/lib/channel/channelz_registry.h"
 
 #include <algorithm>
+#include <cstdint>
 #include <cstring>
+#include <utility>
 
 #include "absl/container/inlined_vector.h"
 
-#include <grpc/support/alloc.h>
+#include <grpc/grpc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
-#include <grpc/support/sync.h>
 
-#include "src/core/lib/channel/channel_trace.h"
 #include "src/core/lib/channel/channelz.h"
-#include "src/core/lib/gpr/useful.h"
-#include "src/core/lib/gprpp/memory.h"
 #include "src/core/lib/gprpp/sync.h"
+#include "src/core/lib/iomgr/exec_ctx.h"
+#include "src/core/lib/json/json.h"
 
 namespace grpc_core {
 namespace channelz {
 namespace {
 
-// singleton instance of the registry.
-ChannelzRegistry* g_channelz_registry = nullptr;
-
 const int kPaginationLimit = 100;
 
 }  // anonymous namespace
 
-void ChannelzRegistry::Init() { g_channelz_registry = new ChannelzRegistry(); }
-
-void ChannelzRegistry::Shutdown() { delete g_channelz_registry; }
-
 ChannelzRegistry* ChannelzRegistry::Default() {
-  GPR_DEBUG_ASSERT(g_channelz_registry != nullptr);
-  return g_channelz_registry;
+  static ChannelzRegistry* singleton = new ChannelzRegistry();
+  return singleton;
 }
 
 void ChannelzRegistry::InternalRegister(BaseNode* node) {

@@ -21,9 +21,13 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <stdint.h>
+
+#include <string>
 #include <vector>
 
 #include "absl/status/status.h"
+#include "absl/strings/string_view.h"
 #include "absl/time/time.h"
 #include "absl/types/optional.h"
 
@@ -31,12 +35,13 @@
 
 extern "C" {
 struct google_rpc_Status;
-struct upb_arena;
+struct upb_Arena;
 }
 
 namespace grpc_core {
 
 /// This enum should have the same value of grpc_error_ints
+// TODO(veblush): Use camel-case names once migration to absl::Status is done.
 enum class StatusIntProperty {
   /// 'errno' from the operating system
   kErrorNo,
@@ -71,11 +76,10 @@ enum class StatusIntProperty {
   ChannelConnectivityState,
   /// LB policy drop
   kLbPolicyDrop,
-  /// stream network state
-  kStreamNetworkState,
 };
 
 /// This enum should have the same value of grpc_error_strs
+// TODO(veblush): Use camel-case names once migration to absl::Status is done.
 enum class StatusStrProperty {
   /// top-level textual description of this error
   kDescription,
@@ -154,7 +158,7 @@ namespace internal {
 /// Builds a upb message, google_rpc_Status from a status
 /// This is for internal implementation & test only
 google_rpc_Status* StatusToProto(const absl::Status& status,
-                                 upb_arena* arena) GRPC_MUST_USE_RESULT;
+                                 upb_Arena* arena) GRPC_MUST_USE_RESULT;
 
 /// Builds a status from a upb message, google_rpc_Status
 /// This is for internal implementation & test only

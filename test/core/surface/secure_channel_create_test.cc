@@ -22,6 +22,7 @@
 #include <grpc/grpc_security.h>
 #include <grpc/support/log.h>
 
+#include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/resolver/resolver_registry.h"
 #include "src/core/lib/security/credentials/fake/fake_credentials.h"
 #include "src/core/lib/security/security_connector/security_connector.h"
@@ -29,17 +30,14 @@
 #include "test/core/util/test_config.h"
 
 void test_unknown_scheme_target(void) {
-  grpc_core::ResolverRegistry::Builder::ShutdownRegistry();
-  grpc_core::ResolverRegistry::Builder::InitRegistry();
   grpc_channel_credentials* creds =
       grpc_fake_transport_security_credentials_create();
-  grpc_channel* chan =
-      grpc_secure_channel_create(creds, "blah://blah", nullptr, nullptr);
+  grpc_channel* chan = grpc_channel_create("blah://blah", creds, nullptr);
   grpc_channel_element* elem =
       grpc_channel_stack_element(grpc_channel_get_channel_stack(chan), 0);
   GPR_ASSERT(0 == strcmp(elem->filter->name, "lame-client"));
   grpc_core::ExecCtx exec_ctx;
-  GRPC_CHANNEL_INTERNAL_UNREF(chan, "test");
+  grpc_core::Channel::FromC(chan)->Unref();
   creds->Unref();
 }
 
@@ -48,31 +46,35 @@ void test_security_connector_already_in_arg(void) {
   grpc_channel_args args;
   args.num_args = 1;
   args.args = &arg;
-  grpc_channel* chan =
-      grpc_secure_channel_create(nullptr, nullptr, &args, nullptr);
+  grpc_channel* chan = grpc_channel_create(nullptr, nullptr, &args);
   grpc_channel_element* elem =
       grpc_channel_stack_element(grpc_channel_get_channel_stack(chan), 0);
   GPR_ASSERT(0 == strcmp(elem->filter->name, "lame-client"));
   grpc_core::ExecCtx exec_ctx;
-  GRPC_CHANNEL_INTERNAL_UNREF(chan, "test");
+  grpc_core::Channel::FromC(chan)->Unref();
 }
 
 void test_null_creds(void) {
-  grpc_channel* chan =
-      grpc_secure_channel_create(nullptr, nullptr, nullptr, nullptr);
+  grpc_channel* chan = grpc_channel_create(nullptr, nullptr, nullptr);
   grpc_channel_element* elem =
       grpc_channel_stack_element(grpc_channel_get_channel_stack(chan), 0);
   GPR_ASSERT(0 == strcmp(elem->filter->name, "lame-client"));
   grpc_core::ExecCtx exec_ctx;
-  GRPC_CHANNEL_INTERNAL_UNREF(chan, "test");
+  grpc_core::Channel::FromC(chan)->Unref();
 }
 
 int main(int argc, char** argv) {
-  grpc::testing::TestEnvironment env(argc, argv);
+  grpc::testing::TestEnvironment env(&argc, argv);
   grpc_init();
   test_security_connector_already_in_arg();
   test_null_creds();
-  test_unknown_scheme_target();
+  grpc_core::CoreConfiguration::RunWithSpecialConfiguration(
+      [](grpc_core::CoreConfiguration::Builder* builder) {
+        BuildCoreConfiguration(builder);
+        // Avoid default prefix
+        builder->resolver_registry()->Reset();
+      },
+      []() { test_unknown_scheme_target(); });
   grpc_shutdown();
   return 0;
 }

@@ -19,23 +19,21 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <map>
 #include <memory>
 #include <set>
 #include <string>
-#include <vector>
 
 #include "absl/container/inlined_vector.h"
-
-#include <grpc/slice.h>
+#include "absl/strings/string_view.h"
 
 #include "src/core/ext/xds/certificate_provider_store.h"
-#include "src/core/lib/gprpp/memory.h"
-#include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/json/json.h"
-#include "src/core/lib/security/credentials/credentials.h"
 
 namespace grpc_core {
+
+bool XdsFederationEnabled();
 
 class XdsClient;
 
@@ -58,6 +56,13 @@ class XdsBootstrap {
 
     static XdsServer Parse(const Json& json, grpc_error_handle* error);
 
+    bool operator==(const XdsServer& other) const {
+      return (server_uri == other.server_uri &&
+              channel_creds_type == other.channel_creds_type &&
+              channel_creds_config == other.channel_creds_config &&
+              server_features == other.server_features);
+    }
+
     bool operator<(const XdsServer& other) const {
       if (server_uri < other.server_uri) return true;
       if (channel_creds_type < other.channel_creds_type) return true;
@@ -67,6 +72,8 @@ class XdsBootstrap {
       if (server_features < other.server_features) return true;
       return false;
     }
+
+    Json::Object ToJson() const;
 
     bool ShouldUseV3() const;
   };
@@ -105,6 +112,8 @@ class XdsBootstrap {
       const {
     return certificate_providers_;
   }
+  // A util method to check that an xds server exists in this bootstrap file.
+  bool XdsServerExists(const XdsServer& server) const;
 
  private:
   grpc_error_handle ParseXdsServerList(

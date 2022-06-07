@@ -18,22 +18,23 @@
 
 #include "src/core/ext/filters/fault_injection/service_config_parser.h"
 
+#include <algorithm>
+#include <type_traits>
 #include <vector>
 
+#include "absl/memory/memory.h"
 #include "absl/strings/str_cat.h"
-#include "absl/strings/string_view.h"
+
+#include <grpc/support/log.h>
 
 #include "src/core/ext/filters/fault_injection/fault_injection_filter.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/status_util.h"
-#include "src/core/lib/gpr/string.h"
 #include "src/core/lib/json/json_util.h"
 
 namespace grpc_core {
 
 namespace {
-
-size_t g_fault_injection_parser_index;
 
 std::vector<FaultInjectionMethodParsedConfig::FaultInjectionPolicy>
 ParseFaultInjectionPolicy(const Json::Array& policies_json_array,
@@ -167,13 +168,15 @@ FaultInjectionServiceConfigParser::ParsePerMethodParams(
       std::move(fault_injection_policies));
 }
 
-void FaultInjectionServiceConfigParser::Register() {
-  g_fault_injection_parser_index = ServiceConfigParser::RegisterParser(
+void FaultInjectionServiceConfigParser::Register(
+    CoreConfiguration::Builder* builder) {
+  builder->service_config_parser()->RegisterParser(
       absl::make_unique<FaultInjectionServiceConfigParser>());
 }
 
 size_t FaultInjectionServiceConfigParser::ParserIndex() {
-  return g_fault_injection_parser_index;
+  return CoreConfiguration::Get().service_config_parser().GetParserIndex(
+      parser_name());
 }
 
 }  // namespace grpc_core

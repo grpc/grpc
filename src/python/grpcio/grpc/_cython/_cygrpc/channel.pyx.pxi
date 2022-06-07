@@ -382,7 +382,7 @@ cdef object _watch_connectivity_state(
           state.c_connectivity_completion_queue, <cpython.PyObject *>tag)
       state.connectivity_due.add(tag)
     else:
-      raise ValueError('Cannot invoke RPC: %s' % state.closed_reason)
+      raise ValueError('Cannot monitor channel state: %s' % state.closed_reason)
   completed_tag, event = _latent_event(
       state.c_connectivity_completion_queue, None)
   with state.condition:
@@ -452,14 +452,12 @@ cdef class Channel:
         grpc_completion_queue_create_for_next(NULL))
     self._arguments = arguments
     cdef _ChannelArgs channel_args = _ChannelArgs(arguments)
-    if channel_credentials is None:
-      self._state.c_channel = grpc_insecure_channel_create(
-          <char *>target, channel_args.c_args(), NULL)
-    else:
-      c_channel_credentials = channel_credentials.c()
-      self._state.c_channel = grpc_secure_channel_create(
-          c_channel_credentials, <char *>target, channel_args.c_args(), NULL)
-      grpc_channel_credentials_release(c_channel_credentials)
+    c_channel_credentials = (
+        channel_credentials.c() if channel_credentials is not None
+        else grpc_insecure_credentials_create())
+    self._state.c_channel = grpc_channel_create(
+        <char *>target, c_channel_credentials, channel_args.c_args())
+    grpc_channel_credentials_release(c_channel_credentials)
 
   def target(self):
     cdef char *c_target

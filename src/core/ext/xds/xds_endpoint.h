@@ -19,16 +19,23 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <stdint.h>
+
 #include <map>
-#include <set>
+#include <memory>
 #include <string>
+#include <utility>
 
 #include "absl/container/inlined_vector.h"
+#include "absl/status/statusor.h"
+#include "absl/strings/string_view.h"
 #include "envoy/config/endpoint/v3/endpoint.upbdefs.h"
+#include "upb/def.h"
 
-#include "src/core/ext/xds/xds_client.h"
+#include "src/core/ext/xds/upb_utils.h"
 #include "src/core/ext/xds/xds_client_stats.h"
 #include "src/core/ext/xds/xds_resource_type_impl.h"
+#include "src/core/lib/gprpp/ref_counted.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/resolver/server_address.h"
 
@@ -125,7 +132,7 @@ class XdsEndpointResourceType
                                       absl::string_view serialized_resource,
                                       bool is_v2) const override;
 
-  void InitUpbSymtab(upb_symtab* symtab) const override {
+  void InitUpbSymtab(upb_DefPool* symtab) const override {
     envoy_config_endpoint_v3_ClusterLoadAssignment_getmsgdef(symtab);
   }
 };

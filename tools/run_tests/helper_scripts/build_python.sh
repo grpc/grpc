@@ -116,7 +116,7 @@ if [ "$(is_msys)" ]; then
 fi
 
 ROOT=$(pwd)
-export CFLAGS="-I$ROOT/include -std=gnu99 -fno-wrapv $CFLAGS"
+export CFLAGS="-I$ROOT/include -fno-wrapv $CFLAGS"
 export GRPC_PYTHON_BUILD_WITH_CYTHON=1
 export LANG=en_US.UTF-8
 
@@ -125,17 +125,9 @@ export LANG=en_US.UTF-8
 DEFAULT_PARALLEL_JOBS=$(nproc) || DEFAULT_PARALLEL_JOBS=4
 export GRPC_PYTHON_BUILD_EXT_COMPILER_JOBS=${GRPC_PYTHON_BUILD_EXT_COMPILER_JOBS:-$DEFAULT_PARALLEL_JOBS}
 
-# If ccache is available on Linux, use it.
-if [ "$(is_linux)" ]; then
-  # We're not on Darwin (Mac OS X)
-  if [ -x "$(command -v ccache)" ]; then
-    if [ -x "$(command -v gcc)" ]; then
-      export CC='ccache gcc'
-    elif [ -x "$(command -v clang)" ]; then
-      export CC='ccache clang'
-    fi
-  fi
-fi
+# activate ccache if desired
+# shellcheck disable=SC1091
+source tools/internal_ci/helper_scripts/prepare_ccache_symlinks_rc
 
 ############################
 # Perform build operations #

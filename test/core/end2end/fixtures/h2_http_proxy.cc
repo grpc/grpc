@@ -61,7 +61,6 @@ static grpc_end2end_test_fixture chttp2_create_fixture_fullstack(
 
   f.fixture_data = ffd;
   f.cq = grpc_completion_queue_create_for_next(nullptr);
-  f.shutdown_cq = grpc_completion_queue_create_for_pluck(nullptr);
 
   return f;
 }
@@ -84,8 +83,7 @@ void chttp2_init_client_fullstack(grpc_end2end_test_fixture* f,
   }
   gpr_setenv("http_proxy", proxy_uri.c_str());
   grpc_channel_credentials* creds = grpc_insecure_credentials_create();
-  f->client = grpc_secure_channel_create(creds, ffd->server_addr.c_str(),
-                                         client_args, nullptr);
+  f->client = grpc_channel_create(ffd->server_addr.c_str(), creds, client_args);
   grpc_channel_credentials_release(creds);
   GPR_ASSERT(f->client);
 }
@@ -99,8 +97,11 @@ void chttp2_init_server_fullstack(grpc_end2end_test_fixture* f,
   }
   f->server = grpc_server_create(server_args, nullptr);
   grpc_server_register_completion_queue(f->server, f->cq, nullptr);
-  GPR_ASSERT(
-      grpc_server_add_insecure_http2_port(f->server, ffd->server_addr.c_str()));
+  grpc_server_credentials* server_creds =
+      grpc_insecure_server_credentials_create();
+  GPR_ASSERT(grpc_server_add_http2_port(f->server, ffd->server_addr.c_str(),
+                                        server_creds));
+  grpc_server_credentials_release(server_creds);
   grpc_server_start(f->server);
 }
 
@@ -123,7 +124,7 @@ static grpc_end2end_test_config configs[] = {
 int main(int argc, char** argv) {
   size_t i;
 
-  grpc::testing::TestEnvironment env(argc, argv);
+  grpc::testing::TestEnvironment env(&argc, argv);
   grpc_end2end_tests_pre_init();
   grpc_init();
 

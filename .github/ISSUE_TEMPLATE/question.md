@@ -1,8 +1,7 @@
 ---
 name: Ask a question
 about: Ask a question
-labels: kind/question, priority/P3
-assignees: yashykt
+labels: kind/question, priority/P3, untriaged
 
 ---
 

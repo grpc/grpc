@@ -30,14 +30,12 @@
 #include "src/core/lib/security/credentials/alts/check_gcp_environment.h"
 #include "src/core/lib/security/security_connector/alts/alts_security_connector.h"
 
-#define GRPC_CREDENTIALS_TYPE_ALTS "Alts"
 #define GRPC_ALTS_HANDSHAKER_SERVICE_URL "metadata.google.internal.:8080"
 
 grpc_alts_credentials::grpc_alts_credentials(
     const grpc_alts_credentials_options* options,
     const char* handshaker_service_url)
-    : grpc_channel_credentials(GRPC_CREDENTIALS_TYPE_ALTS),
-      options_(grpc_alts_credentials_options_copy(options)),
+    : options_(grpc_alts_credentials_options_copy(options)),
       handshaker_service_url_(handshaker_service_url == nullptr
                                   ? gpr_strdup(GRPC_ALTS_HANDSHAKER_SERVICE_URL)
                                   : gpr_strdup(handshaker_service_url)) {
@@ -58,11 +56,15 @@ grpc_alts_credentials::create_security_connector(
       this->Ref(), std::move(call_creds), target_name);
 }
 
+grpc_core::UniqueTypeName grpc_alts_credentials::type() const {
+  static grpc_core::UniqueTypeName::Factory kFactory("Alts");
+  return kFactory.Create();
+}
+
 grpc_alts_server_credentials::grpc_alts_server_credentials(
     const grpc_alts_credentials_options* options,
     const char* handshaker_service_url)
-    : grpc_server_credentials(GRPC_CREDENTIALS_TYPE_ALTS),
-      options_(grpc_alts_credentials_options_copy(options)),
+    : options_(grpc_alts_credentials_options_copy(options)),
       handshaker_service_url_(handshaker_service_url == nullptr
                                   ? gpr_strdup(GRPC_ALTS_HANDSHAKER_SERVICE_URL)
                                   : gpr_strdup(handshaker_service_url)) {
@@ -78,6 +80,11 @@ grpc_alts_server_credentials::create_security_connector(
 grpc_alts_server_credentials::~grpc_alts_server_credentials() {
   grpc_alts_credentials_options_destroy(options_);
   gpr_free(handshaker_service_url_);
+}
+
+grpc_core::UniqueTypeName grpc_alts_server_credentials::type() const {
+  static grpc_core::UniqueTypeName::Factory kFactory("Alts");
+  return kFactory.Create();
 }
 
 grpc_channel_credentials* grpc_alts_credentials_create_customized(

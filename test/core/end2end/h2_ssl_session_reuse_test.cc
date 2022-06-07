@@ -71,8 +71,7 @@ grpc_server* server_create(grpc_completion_queue* cq, const char* server_addr) {
 
   grpc_server* server = grpc_server_create(nullptr, nullptr);
   grpc_server_register_completion_queue(server, cq, nullptr);
-  GPR_ASSERT(
-      grpc_server_add_secure_http2_port(server, server_addr, server_creds));
+  GPR_ASSERT(grpc_server_add_http2_port(server, server_addr, server_creds));
   grpc_server_credentials_release(server_creds);
   grpc_server_start(server);
 
@@ -112,8 +111,8 @@ grpc_channel* client_create(const char* server_addr,
   grpc_channel_args* client_args =
       grpc_channel_args_copy_and_add(nullptr, args, GPR_ARRAY_SIZE(args));
 
-  grpc_channel* client = grpc_secure_channel_create(client_creds, server_addr,
-                                                    client_args, nullptr);
+  grpc_channel* client =
+      grpc_channel_create(server_addr, client_creds, client_args);
   GPR_ASSERT(client != nullptr);
   grpc_channel_credentials_release(client_creds);
 
@@ -268,15 +267,13 @@ TEST(H2SessionReuseTest, SingleReuse) {
                  cq, grpc_timeout_milliseconds_to_deadline(100), nullptr)
                  .type == GRPC_QUEUE_TIMEOUT);
 
-  grpc_completion_queue* shutdown_cq =
-      grpc_completion_queue_create_for_pluck(nullptr);
-  grpc_server_shutdown_and_notify(server, shutdown_cq, tag(1000));
-  GPR_ASSERT(grpc_completion_queue_pluck(shutdown_cq, tag(1000),
-                                         grpc_timeout_seconds_to_deadline(5),
-                                         nullptr)
-                 .type == GRPC_OP_COMPLETE);
+  grpc_server_shutdown_and_notify(server, cq, tag(1000));
+  grpc_event ev;
+  do {
+    ev = grpc_completion_queue_next(cq, grpc_timeout_seconds_to_deadline(5),
+                                    nullptr);
+  } while (ev.type != GRPC_OP_COMPLETE || ev.tag != tag(1000));
   grpc_server_destroy(server);
-  grpc_completion_queue_destroy(shutdown_cq);
 
   grpc_completion_queue_shutdown(cq);
   drain_cq(cq);
@@ -288,7 +285,7 @@ TEST(H2SessionReuseTest, SingleReuse) {
 }  // namespace grpc
 
 int main(int argc, char** argv) {
-  grpc::testing::TestEnvironment env(argc, argv);
+  grpc::testing::TestEnvironment env(&argc, argv);
   GPR_GLOBAL_CONFIG_SET(grpc_default_ssl_roots_file_path, CA_CERT_PATH);
 
   grpc_init();

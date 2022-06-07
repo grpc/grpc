@@ -20,16 +20,23 @@
 #define GRPC_INTERNAL_CPP_SERVER_DEFAULT_HEALTH_CHECK_SERVICE_H
 
 #include <atomic>
+#include <functional>
+#include <map>
+#include <memory>
 #include <set>
+#include <string>
+#include <utility>
 
 #include <grpc/support/log.h>
+#include <grpcpp/generic/async_generic_service.h>
 #include <grpcpp/grpcpp.h>
 #include <grpcpp/health_check_service_interface.h>
-#include <grpcpp/impl/codegen/async_generic_service.h>
-#include <grpcpp/impl/codegen/async_unary_call.h>
-#include <grpcpp/impl/codegen/completion_queue.h>
-#include <grpcpp/impl/codegen/service_type.h>
+#include <grpcpp/impl/codegen/async_generic_service.h>  // IWYU pragma: keep
+#include <grpcpp/impl/codegen/async_unary_call.h>       // IWYU pragma: keep
+#include <grpcpp/impl/service_type.h>
 #include <grpcpp/support/byte_buffer.h>
+#include <grpcpp/support/config.h>
+#include <grpcpp/support/status.h>
 
 #include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/gprpp/thd.h"
@@ -229,7 +236,7 @@ class DefaultHealthCheckService final : public HealthCheckServiceInterface {
     // we don't enqueue new tags into cq_ after it is already shut down.
     grpc_core::Mutex cq_shutdown_mu_;
     std::atomic_bool shutdown_{false};
-    std::unique_ptr<::grpc_core::Thread> thread_;
+    std::unique_ptr<grpc_core::Thread> thread_;
   };
 
   DefaultHealthCheckService();

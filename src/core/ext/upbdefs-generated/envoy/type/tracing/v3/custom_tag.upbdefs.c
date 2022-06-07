@@ -10,11 +10,11 @@
 #include "envoy/type/tracing/v3/custom_tag.upbdefs.h"
 #include "envoy/type/tracing/v3/custom_tag.upb.h"
 
-extern upb_def_init envoy_type_metadata_v3_metadata_proto_upbdefinit;
-extern upb_def_init udpa_annotations_status_proto_upbdefinit;
-extern upb_def_init udpa_annotations_versioning_proto_upbdefinit;
-extern upb_def_init validate_validate_proto_upbdefinit;
-static const char descriptor[1249] = {'\n', '&', 'e', 'n', 'v', 'o', 'y', '/', 't', 'y', 'p', 'e', '/', 't', 'r', 'a', 'c', 'i', 'n', 'g', '/', 'v', '3', '/', 'c', 
+extern _upb_DefPool_Init envoy_type_metadata_v3_metadata_proto_upbdefinit;
+extern _upb_DefPool_Init udpa_annotations_status_proto_upbdefinit;
+extern _upb_DefPool_Init udpa_annotations_versioning_proto_upbdefinit;
+extern _upb_DefPool_Init validate_validate_proto_upbdefinit;
+static const char descriptor[1322] = {'\n', '&', 'e', 'n', 'v', 'o', 'y', '/', 't', 'y', 'p', 'e', '/', 't', 'r', 'a', 'c', 'i', 'n', 'g', '/', 'v', '3', '/', 'c', 
 'u', 's', 't', 'o', 'm', '_', 't', 'a', 'g', '.', 'p', 'r', 'o', 't', 'o', '\022', '\025', 'e', 'n', 'v', 'o', 'y', '.', 't', 'y', 
 'p', 'e', '.', 't', 'r', 'a', 'c', 'i', 'n', 'g', '.', 'v', '3', '\032', '%', 'e', 'n', 'v', 'o', 'y', '/', 't', 'y', 'p', 'e', 
 '/', 'm', 'e', 't', 'a', 'd', 'a', 't', 'a', '/', 'v', '3', '/', 'm', 'e', 't', 'a', 'd', 'a', 't', 'a', '.', 'p', 'r', 'o', 
@@ -61,12 +61,15 @@ static const char descriptor[1249] = {'\n', '&', 'e', 'n', 'v', 'o', 'y', '/', '
 'g', '.', 'v', '2', '.', 'C', 'u', 's', 't', 'o', 'm', 'T', 'a', 'g', '.', 'M', 'e', 't', 'a', 'd', 'a', 't', 'a', ':', '&', 
 '\232', '\305', '\210', '\036', '!', '\n', '\037', 'e', 'n', 'v', 'o', 'y', '.', 't', 'y', 'p', 'e', '.', 't', 'r', 'a', 'c', 'i', 'n', 'g', 
 '.', 'v', '2', '.', 'C', 'u', 's', 't', 'o', 'm', 'T', 'a', 'g', 'B', '\013', '\n', '\004', 't', 'y', 'p', 'e', '\022', '\003', '\370', 'B', 
-'\001', 'B', '?', '\n', '#', 'i', 'o', '.', 'e', 'n', 'v', 'o', 'y', 'p', 'r', 'o', 'x', 'y', '.', 'e', 'n', 'v', 'o', 'y', '.', 
-'t', 'y', 'p', 'e', '.', 't', 'r', 'a', 'c', 'i', 'n', 'g', '.', 'v', '3', 'B', '\016', 'C', 'u', 's', 't', 'o', 'm', 'T', 'a', 
-'g', 'P', 'r', 'o', 't', 'o', 'P', '\001', '\272', '\200', '\310', '\321', '\006', '\002', '\020', '\002', 'b', '\006', 'p', 'r', 'o', 't', 'o', '3', 
+'\001', 'B', '\207', '\001', '\n', '#', 'i', 'o', '.', 'e', 'n', 'v', 'o', 'y', 'p', 'r', 'o', 'x', 'y', '.', 'e', 'n', 'v', 'o', 'y', 
+'.', 't', 'y', 'p', 'e', '.', 't', 'r', 'a', 'c', 'i', 'n', 'g', '.', 'v', '3', 'B', '\016', 'C', 'u', 's', 't', 'o', 'm', 'T', 
+'a', 'g', 'P', 'r', 'o', 't', 'o', 'P', '\001', 'Z', 'F', 'g', 'i', 't', 'h', 'u', 'b', '.', 'c', 'o', 'm', '/', 'e', 'n', 'v', 
+'o', 'y', 'p', 'r', 'o', 'x', 'y', '/', 'g', 'o', '-', 'c', 'o', 'n', 't', 'r', 'o', 'l', '-', 'p', 'l', 'a', 'n', 'e', '/', 
+'e', 'n', 'v', 'o', 'y', '/', 't', 'y', 'p', 'e', '/', 't', 'r', 'a', 'c', 'i', 'n', 'g', '/', 'v', '3', ';', 't', 'r', 'a', 
+'c', 'i', 'n', 'g', 'v', '3', '\272', '\200', '\310', '\321', '\006', '\002', '\020', '\002', 'b', '\006', 'p', 'r', 'o', 't', 'o', '3', 
 };
 
-static upb_def_init *deps[5] = {
+static _upb_DefPool_Init *deps[5] = {
   &envoy_type_metadata_v3_metadata_proto_upbdefinit,
   &udpa_annotations_status_proto_upbdefinit,
   &udpa_annotations_versioning_proto_upbdefinit,
@@ -74,9 +77,9 @@ static upb_def_init *deps[5] = {
   NULL
 };
 
-upb_def_init envoy_type_tracing_v3_custom_tag_proto_upbdefinit = {
+_upb_DefPool_Init envoy_type_tracing_v3_custom_tag_proto_upbdefinit = {
   deps,
   &envoy_type_tracing_v3_custom_tag_proto_upb_file_layout,
   "envoy/type/tracing/v3/custom_tag.proto",
-  UPB_STRVIEW_INIT(descriptor, 1249)
+  UPB_STRINGVIEW_INIT(descriptor, 1322)
 };

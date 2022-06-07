@@ -31,13 +31,13 @@
 
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channelz.h"
-#include "src/core/lib/channel/handshaker.h"
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/security/context/security_context.h"
 #include "src/core/lib/security/transport/secure_endpoint.h"
 #include "src/core/lib/security/transport/tsi_error.h"
 #include "src/core/lib/slice/slice_internal.h"
+#include "src/core/lib/transport/handshaker.h"
 #include "src/core/tsi/transport_security_grpc.h"
 
 #define GRPC_INITIAL_HANDSHAKE_BUFFER_SIZE 256
@@ -287,17 +287,21 @@ void SecurityHandshaker::OnPeerCheckedInner(grpc_error_handle error) {
     case TSI_FRAME_PROTECTOR_NONE:
       break;
   }
+  bool has_frame_protector =
+      zero_copy_protector != nullptr || protector != nullptr;
   // If we have a frame protector, create a secure endpoint.
-  if (zero_copy_protector != nullptr || protector != nullptr) {
+  if (has_frame_protector) {
     if (unused_bytes_size > 0) {
       grpc_slice slice = grpc_slice_from_copied_buffer(
           reinterpret_cast<const char*>(unused_bytes), unused_bytes_size);
-      args_->endpoint = grpc_secure_endpoint_create(
-          protector, zero_copy_protector, args_->endpoint, &slice, 1);
+      args_->endpoint =
+          grpc_secure_endpoint_create(protector, zero_copy_protector,
+                                      args_->endpoint, &slice, args_->args, 1);
       grpc_slice_unref_internal(slice);
     } else {
-      args_->endpoint = grpc_secure_endpoint_create(
-          protector, zero_copy_protector, args_->endpoint, nullptr, 0);
+      args_->endpoint =
+          grpc_secure_endpoint_create(protector, zero_copy_protector,
+                                      args_->endpoint, nullptr, args_->args, 0);
     }
   } else if (unused_bytes_size > 0) {
     // Not wrapping the endpoint, so just pass along unused bytes.
@@ -308,11 +312,17 @@ void SecurityHandshaker::OnPeerCheckedInner(grpc_error_handle error) {
   // Done with handshaker result.
   tsi_handshaker_result_destroy(handshaker_result_);
   handshaker_result_ = nullptr;
-  // Add auth context to channel args.
-  absl::InlinedVector<grpc_arg, 2> args_to_add;
-  args_to_add.push_back(grpc_auth_context_to_arg(auth_context_.get()));
-  auto security = MakeChannelzSecurityFromAuthContext(auth_context_.get());
-  args_to_add.push_back(security->MakeChannelArg());
+  absl::InlinedVector<grpc_arg, 2> args_to_add = {
+      // Add auth context to channel args.
+      grpc_auth_context_to_arg(auth_context_.get()),
+  };
+  RefCountedPtr<channelz::SocketNode::Security> channelz_security;
+  // Add channelz channel args only if frame protector is created.
+  if (has_frame_protector) {
+    channelz_security =
+        MakeChannelzSecurityFromAuthContext(auth_context_.get());
+    args_to_add.push_back(channelz_security->MakeChannelArg());
+  }
   grpc_channel_args* tmp_args = args_->args;
   args_->args = grpc_channel_args_copy_and_add(tmp_args, args_to_add.data(),
                                                args_to_add.size());
@@ -359,7 +369,7 @@ grpc_error_handle SecurityHandshaker::OnHandshakeNextDoneLocked(
             &on_handshake_data_received_from_peer_,
             &SecurityHandshaker::OnHandshakeDataReceivedFromPeerFnScheduler,
             this, grpc_schedule_on_exec_ctx),
-        /*urgent=*/true);
+        /*urgent=*/true, /*min_progress_size=*/1);
     return error;
   }
   if (result != TSI_OK) {
@@ -383,7 +393,7 @@ grpc_error_handle SecurityHandshaker::OnHandshakeNextDoneLocked(
             &on_handshake_data_sent_to_peer_,
             &SecurityHandshaker::OnHandshakeDataSentToPeerFnScheduler, this,
             grpc_schedule_on_exec_ctx),
-        nullptr);
+        nullptr, /*max_frame_size=*/INT_MAX);
   } else if (handshaker_result == nullptr) {
     // There is nothing to send, but need to read from peer.
     grpc_endpoint_read(
@@ -392,7 +402,7 @@ grpc_error_handle SecurityHandshaker::OnHandshakeNextDoneLocked(
             &on_handshake_data_received_from_peer_,
             &SecurityHandshaker::OnHandshakeDataReceivedFromPeerFnScheduler,
             this, grpc_schedule_on_exec_ctx),
-        /*urgent=*/true);
+        /*urgent=*/true, /*min_progress_size=*/1);
   } else {
     // Handshake has finished, check peer and so on.
     error = CheckPeerLocked();
@@ -498,7 +508,7 @@ void SecurityHandshaker::OnHandshakeDataSentToPeerFn(void* arg,
             &h->on_handshake_data_received_from_peer_,
             &SecurityHandshaker::OnHandshakeDataReceivedFromPeerFnScheduler,
             h.get(), grpc_schedule_on_exec_ctx),
-        /*urgent=*/true);
+        /*urgent=*/true, /*min_progress_size=*/1);
   } else {
     error = h->CheckPeerLocked();
     if (error != GRPC_ERROR_NONE) {

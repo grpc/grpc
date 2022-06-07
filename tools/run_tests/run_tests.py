@@ -63,7 +63,7 @@ _FORCE_ENVIRON_FOR_WRAPPERS = {
 }
 
 _POLLING_STRATEGIES = {
-    'linux': ['epollex', 'epoll1', 'poll'],
+    'linux': ['epoll1', 'poll'],
     'mac': ['poll'],
 }
 
@@ -92,6 +92,19 @@ def max_parallel_tests_for_current_platform():
     if jobset.platform_string() == 'windows':
         return 64
     return 1024
+
+
+def _print_debug_info_epilogue(dockerfile_dir=None):
+    """Use to print useful info for debug/repro just before exiting."""
+    print('')
+    print('=== run_tests.py DEBUG INFO ===')
+    print('command: \"%s\"' % ' '.join(sys.argv))
+    if dockerfile_dir:
+        print('dockerfile: %s' % dockerfile_dir)
+    kokoro_job_name = os.getenv('KOKORO_JOB_NAME')
+    if kokoro_job_name:
+        print('kokoro job name: %s' % kokoro_job_name)
+    print('===============================')
 
 
 # SimpleConfig: just compile with CONFIG=config, and run the binary to test
@@ -168,7 +181,7 @@ def _check_arch(arch, supported_archs):
 
 def _is_use_docker_child():
     """Returns True if running running as a --use_docker child."""
-    return True if os.getenv('RUN_TESTS_COMMAND') else False
+    return True if os.getenv('DOCKER_RUN_SCRIPT_COMMAND') else False
 
 
 _PythonConfigVars = collections.namedtuple('_ConfigVars', [
@@ -227,37 +240,51 @@ def _pypy_pattern_function(major):
 
 class CLanguage(object):
 
-    def __init__(self, make_target, test_lang):
-        self.make_target = make_target
+    def __init__(self, lang_suffix, test_lang):
+        self.lang_suffix = lang_suffix
         self.platform = platform_string()
         self.test_lang = test_lang
 
     def configure(self, config, args):
         self.config = config
         self.args = args
-        self._make_options = []
-        self._use_cmake = True
         if self.platform == 'windows':
             _check_compiler(self.args.compiler, [
-                'default', 'cmake', 'cmake_vs2015', 'cmake_vs2017',
-                'cmake_vs2019'
+                'default',
+                'cmake',
+                'cmake_ninja_vs2017',
+                'cmake_vs2017',
+                'cmake_vs2019',
             ])
             _check_arch(self.args.arch, ['default', 'x64', 'x86'])
-            if self.args.compiler == 'cmake_vs2019':
-                cmake_generator_option = 'Visual Studio 16 2019'
+
+            activate_vs_tools = ''
+            if self.args.compiler == 'cmake_ninja_vs2017' or self.args.compiler == 'cmake' or self.args.compiler == 'default':
+                # cmake + ninja build is the default because it is faster and supports boringssl assembly optimizations
+                # the compiler used is exactly the same as for cmake_vs2017
+                cmake_generator = 'Ninja'
+                activate_vs_tools = '2017'
             elif self.args.compiler == 'cmake_vs2017':
-                cmake_generator_option = 'Visual Studio 15 2017'
+                cmake_generator = 'Visual Studio 15 2017'
+            elif self.args.compiler == 'cmake_vs2019':
+                cmake_generator = 'Visual Studio 16 2019'
             else:
-                cmake_generator_option = 'Visual Studio 14 2015'
-            cmake_arch_option = 'x64' if self.args.arch == 'x64' else 'Win32'
-            self._cmake_configure_extra_args = [
-                '-G', cmake_generator_option, '-A', cmake_arch_option
-            ]
+                print('should never reach here.')
+                sys.exit(1)
+
+            self._cmake_configure_extra_args = []
+            self._cmake_generator_windows = cmake_generator
+            # required to pass as cmake "-A" configuration for VS builds (but not for Ninja)
+            self._cmake_architecture_windows = 'x64' if self.args.arch == 'x64' else 'Win32'
+            # when builing with Ninja, the VS common tools need to be activated first
+            self._activate_vs_tools_windows = activate_vs_tools
+            self._vs_tools_architecture_windows = 'x64' if self.args.arch == 'x64' else 'x86'
+
         else:
             if self.platform == 'linux':
                 # Allow all the known architectures. _check_arch_option has already checked that we're not doing
                 # something illegal when not running under docker.
-                _check_arch(self.args.arch, ['default', 'x64', 'x86'])
+                _check_arch(self.args.arch, ['default', 'x64', 'x86', 'arm64'])
             else:
                 _check_arch(self.args.arch, ['default'])
 
@@ -273,7 +300,7 @@ class CLanguage(object):
         out = []
         binaries = get_c_tests(self.args.travis, self.test_lang)
         for target in binaries:
-            if self._use_cmake and target.get('boringssl', False):
+            if target.get('boringssl', False):
                 # cmake doesn't build boringssl tests
                 continue
             auto_timeout_scaling = target.get('auto_timeout_scaling', True)
@@ -314,11 +341,8 @@ class CLanguage(object):
                     binary = 'cmake/build/%s/%s.exe' % (_MSBUILD_CONFIG[
                         self.config.build_config], target['name'])
                 else:
-                    if self._use_cmake:
-                        binary = 'cmake/build/%s' % target['name']
-                    else:
-                        binary = 'bins/%s/%s' % (self.config.build_config,
-                                                 target['name'])
+                    binary = 'cmake/build/%s' % target['name']
+
                 cpu_cost = target['cpu_cost']
                 if cpu_cost == 'capacity':
                     cpu_cost = multiprocessing.cpu_count()
@@ -406,44 +430,37 @@ class CLanguage(object):
                     print('\nWARNING: binary not found, skipping', binary)
         return sorted(out)
 
-    def make_targets(self):
-        if self.platform == 'windows':
-            # don't build tools on windows just yet
-            return ['buildtests_%s' % self.make_target]
-        return [
-            'buildtests_%s' % self.make_target,
-            'tools_%s' % self.make_target, 'check_epollexclusive'
-        ]
-
-    def make_options(self):
-        return self._make_options
-
     def pre_build_steps(self):
-        if self.platform == 'windows':
-            return [[
-                'tools\\run_tests\\helper_scripts\\pre_build_cmake.bat',
-                '-DgRPC_BUILD_MSVC_MP_COUNT=%d' % args.jobs
-            ] + self._cmake_configure_extra_args]
-        elif self._use_cmake:
-            return [['tools/run_tests/helper_scripts/pre_build_cmake.sh'] +
-                    self._cmake_configure_extra_args]
-        else:
-            return []
+        return []
 
     def build_steps(self):
-        return []
+        if self.platform == 'windows':
+            return [[
+                'tools\\run_tests\\helper_scripts\\build_cxx.bat',
+                '-DgRPC_BUILD_MSVC_MP_COUNT=%d' % self.args.jobs
+            ] + self._cmake_configure_extra_args]
+        else:
+            return [['tools/run_tests/helper_scripts/build_cxx.sh'] +
+                    self._cmake_configure_extra_args]
+
+    def build_steps_environ(self):
+        """Extra environment variables set for pre_build_steps and build_steps jobs."""
+        environ = {'GRPC_RUN_TESTS_CXX_LANGUAGE_SUFFIX': self.lang_suffix}
+        if self.platform == 'windows':
+            environ['GRPC_CMAKE_GENERATOR'] = self._cmake_generator_windows
+            environ[
+                'GRPC_CMAKE_ARCHITECTURE'] = self._cmake_architecture_windows
+            environ[
+                'GRPC_BUILD_ACTIVATE_VS_TOOLS'] = self._activate_vs_tools_windows
+            environ[
+                'GRPC_BUILD_VS_TOOLS_ARCHITECTURE'] = self._vs_tools_architecture_windows
+        return environ
 
     def post_tests_steps(self):
         if self.platform == 'windows':
             return []
         else:
             return [['tools/run_tests/helper_scripts/post_tests_c.sh']]
-
-    def makefile_name(self):
-        if self._use_cmake:
-            return 'cmake/build/Makefile'
-        else:
-            return 'Makefile'
 
     def _clang_cmake_configure_extra_args(self, version_suffix=''):
         return [
@@ -459,23 +476,23 @@ class CLanguage(object):
             _check_compiler(compiler, ['default', 'cmake'])
 
         if compiler == 'default' or compiler == 'cmake':
-            return ('debian9', [])
-        elif compiler == 'gcc4.9':
-            return ('gcc_4.9', [])
-        elif compiler == 'gcc8.3':
-            return ('debian10', [])
-        elif compiler == 'gcc8.3_openssl102':
-            return ('debian10_openssl102', [
+            return ('debian11', [])
+        elif compiler == 'gcc6':
+            return ('gcc_6', [])
+        elif compiler == 'gcc10.2':
+            return ('debian11', [])
+        elif compiler == 'gcc10.2_openssl102':
+            return ('debian11_openssl102', [
                 "-DgRPC_SSL_PROVIDER=package",
             ])
         elif compiler == 'gcc11':
             return ('gcc_11', [])
         elif compiler == 'gcc_musl':
             return ('alpine', [])
-        elif compiler == 'clang4':
-            return ('clang_4', self._clang_cmake_configure_extra_args())
-        elif compiler == 'clang12':
-            return ('clang_12', self._clang_cmake_configure_extra_args())
+        elif compiler == 'clang6':
+            return ('clang_6', self._clang_cmake_configure_extra_args())
+        elif compiler == 'clang13':
+            return ('clang_13', self._clang_cmake_configure_extra_args())
         else:
             raise Exception('Compiler %s not supported.' % compiler)
 
@@ -484,7 +501,7 @@ class CLanguage(object):
             self._docker_distro, _docker_arch_suffix(self.args.arch))
 
     def __str__(self):
-        return self.make_target
+        return self.lang_suffix
 
 
 # This tests Node on grpc/grpc-node and will become the standard for Node testing
@@ -532,20 +549,15 @@ class RemoteNodeLanguage(object):
     def pre_build_steps(self):
         return []
 
-    def make_targets(self):
-        return []
-
-    def make_options(self):
-        return []
-
     def build_steps(self):
         return []
 
+    def build_steps_environ(self):
+        """Extra environment variables set for pre_build_steps and build_steps jobs."""
+        return {}
+
     def post_tests_steps(self):
         return []
-
-    def makefile_name(self):
-        return 'Makefile'
 
     def dockerfile_dir(self):
         return 'tools/dockerfile/test/node_jessie_%s' % _docker_arch_suffix(
@@ -561,7 +573,6 @@ class Php7Language(object):
         self.config = config
         self.args = args
         _check_compiler(self.args.compiler, ['default'])
-        self._make_options = ['EMBED_OPENSSL=true', 'EMBED_ZLIB=true']
 
     def test_specs(self):
         return [
@@ -572,23 +583,18 @@ class Php7Language(object):
     def pre_build_steps(self):
         return []
 
-    def make_targets(self):
-        return ['static_c', 'shared_c']
-
-    def make_options(self):
-        return self._make_options
-
     def build_steps(self):
         return [['tools/run_tests/helper_scripts/build_php.sh']]
+
+    def build_steps_environ(self):
+        """Extra environment variables set for pre_build_steps and build_steps jobs."""
+        return {}
 
     def post_tests_steps(self):
         return [['tools/run_tests/helper_scripts/post_tests_php.sh']]
 
-    def makefile_name(self):
-        return 'Makefile'
-
     def dockerfile_dir(self):
-        return 'tools/dockerfile/test/php7_stretch_%s' % _docker_arch_suffix(
+        return 'tools/dockerfile/test/php7_debian11_%s' % _docker_arch_suffix(
             self.args.arch)
 
     def __str__(self):
@@ -658,14 +664,12 @@ class PythonLanguage(object):
     def pre_build_steps(self):
         return []
 
-    def make_targets(self):
-        return []
-
-    def make_options(self):
-        return []
-
     def build_steps(self):
         return [config.build for config in self.pythons]
+
+    def build_steps_environ(self):
+        """Extra environment variables set for pre_build_steps and build_steps jobs."""
+        return {}
 
     def post_tests_steps(self):
         if self.config.build_config != 'gcov':
@@ -673,21 +677,17 @@ class PythonLanguage(object):
         else:
             return [['tools/run_tests/helper_scripts/post_tests_python.sh']]
 
-    def makefile_name(self):
-        return 'Makefile'
-
     def dockerfile_dir(self):
         return 'tools/dockerfile/test/python_%s_%s' % (
-            self._python_manager_name(), _docker_arch_suffix(self.args.arch))
+            self._python_docker_distro_name(),
+            _docker_arch_suffix(self.args.arch))
 
-    def _python_manager_name(self):
+    def _python_docker_distro_name(self):
         """Choose the docker image to use based on python version."""
-        if self.args.compiler in ['python3.6', 'python3.7', 'python3.8']:
-            return 'stretch_' + self.args.compiler[len('python'):]
-        elif self.args.compiler == 'python_alpine':
+        if self.args.compiler == 'python_alpine':
             return 'alpine'
         else:
-            return 'stretch_default'
+            return 'debian11_default'
 
     def _get_pythons(self, args):
         """Get python runtimes to test with, based on current platform, architecture, compiler etc."""
@@ -767,6 +767,11 @@ class PythonLanguage(object):
                 # MacOS, so we restrict the number of interpreter versions
                 # tested.
                 return (python38_config,)
+            elif platform.machine() == 'aarch64':
+                # Currently the python_debian11_default_arm64 docker image
+                # only has python3.9 installed (and that seems sufficient
+                # for arm64 testing)
+                return (python39_config,)
             else:
                 return (
                     python36_config,
@@ -846,23 +851,18 @@ class RubyLanguage(object):
     def pre_build_steps(self):
         return [['tools/run_tests/helper_scripts/pre_build_ruby.sh']]
 
-    def make_targets(self):
-        return []
-
-    def make_options(self):
-        return []
-
     def build_steps(self):
         return [['tools/run_tests/helper_scripts/build_ruby.sh']]
+
+    def build_steps_environ(self):
+        """Extra environment variables set for pre_build_steps and build_steps jobs."""
+        return {}
 
     def post_tests_steps(self):
         return [['tools/run_tests/helper_scripts/post_tests_ruby.sh']]
 
-    def makefile_name(self):
-        return 'Makefile'
-
     def dockerfile_dir(self):
-        return 'tools/dockerfile/test/ruby_buster_%s' % _docker_arch_suffix(
+        return 'tools/dockerfile/test/ruby_debian11_%s' % _docker_arch_suffix(
             self.args.arch)
 
     def __str__(self):
@@ -889,7 +889,7 @@ class CSharpLanguage(object):
             _check_arch(self.args.arch, ['default'])
             self._cmake_arch_option = 'x64'
         else:
-            self._docker_distro = 'buster'
+            self._docker_distro = 'debian11'
 
     def test_specs(self):
         with open('src/csharp/tests.json') as f:
@@ -900,11 +900,11 @@ class CSharpLanguage(object):
 
         specs = []
         for test_runtime in self.test_runtimes:
-            if self.args.compiler == 'coreclr':
+            if test_runtime == 'coreclr':
                 assembly_extension = '.dll'
                 assembly_subdir = 'bin/%s/netcoreapp3.1' % msbuild_config
                 runtime_cmd = ['dotnet', 'exec']
-            else:
+            elif test_runtime == 'mono':
                 assembly_extension = '.exe'
                 assembly_subdir = 'bin/%s/net45' % msbuild_config
                 if self.platform == 'windows':
@@ -914,6 +914,8 @@ class CSharpLanguage(object):
                     runtime_cmd = ['mono', '--arch=64']
                 else:
                     runtime_cmd = ['mono']
+            else:
+                raise Exception('Illegal runtime "%s" was specified.')
 
             for assembly in six.iterkeys(tests_by_assembly):
                 assembly_file = 'src/csharp/%s/%s/%s%s' % (
@@ -932,18 +934,9 @@ class CSharpLanguage(object):
 
     def pre_build_steps(self):
         if self.platform == 'windows':
-            return [[
-                'tools\\run_tests\\helper_scripts\\pre_build_csharp.bat',
-                self._cmake_arch_option
-            ]]
+            return [['tools\\run_tests\\helper_scripts\\pre_build_csharp.bat']]
         else:
             return [['tools/run_tests/helper_scripts/pre_build_csharp.sh']]
-
-    def make_targets(self):
-        return ['grpc_csharp_ext']
-
-    def make_options(self):
-        return []
 
     def build_steps(self):
         if self.platform == 'windows':
@@ -951,19 +944,18 @@ class CSharpLanguage(object):
         else:
             return [['tools/run_tests/helper_scripts/build_csharp.sh']]
 
+    def build_steps_environ(self):
+        """Extra environment variables set for pre_build_steps and build_steps jobs."""
+        if self.platform == 'windows':
+            return {'ARCHITECTURE': self._cmake_arch_option}
+        else:
+            return {}
+
     def post_tests_steps(self):
         if self.platform == 'windows':
             return [['tools\\run_tests\\helper_scripts\\post_tests_csharp.bat']]
         else:
             return [['tools/run_tests/helper_scripts/post_tests_csharp.sh']]
-
-    def makefile_name(self):
-        if self.platform == 'windows':
-            return 'cmake/build/%s/Makefile' % self._cmake_arch_option
-        else:
-            # no need to set x86 specific flags as run_tests.py
-            # currently forbids x86 C# builds on both Linux and MacOS.
-            return 'cmake/build/Makefile'
 
     def dockerfile_dir(self):
         return 'tools/dockerfile/test/csharp_%s_%s' % (
@@ -982,18 +974,8 @@ class ObjCLanguage(object):
 
     def test_specs(self):
         out = []
-        out.append(
-            self.config.job_spec(
-                ['src/objective-c/tests/build_one_example_bazel.sh'],
-                timeout_seconds=10 * 60,
-                shortname='ios-buildtest-example-sample',
-                cpu_cost=1e6,
-                environ={
-                    'SCHEME': 'Sample',
-                    'EXAMPLE_PATH': 'src/objective-c/examples/Sample',
-                    'FRAMEWORKS': 'NO'
-                }))
         # Currently not supporting compiling as frameworks in Bazel
+        # TODO(jtattermusch): verify the above claim is still accurate.
         out.append(
             self.config.job_spec(
                 ['src/objective-c/tests/build_one_example.sh'],
@@ -1005,6 +987,7 @@ class ObjCLanguage(object):
                     'EXAMPLE_PATH': 'src/objective-c/examples/Sample',
                     'FRAMEWORKS': 'YES'
                 }))
+        # TODO(jtattermusch): Create bazel target for the sample and remove the test task from here.
         out.append(
             self.config.job_spec(
                 ['src/objective-c/tests/build_one_example.sh'],
@@ -1014,17 +997,6 @@ class ObjCLanguage(object):
                 environ={
                     'SCHEME': 'SwiftSample',
                     'EXAMPLE_PATH': 'src/objective-c/examples/SwiftSample'
-                }))
-        out.append(
-            self.config.job_spec(
-                ['src/objective-c/tests/build_one_example_bazel.sh'],
-                timeout_seconds=10 * 60,
-                shortname='ios-buildtest-example-tvOS-sample',
-                cpu_cost=1e6,
-                environ={
-                    'SCHEME': 'tvOS-sample',
-                    'EXAMPLE_PATH': 'src/objective-c/examples/tvOS-sample',
-                    'FRAMEWORKS': 'NO'
                 }))
         # Disabled due to #20258
         # TODO (mxyan): Reenable this test when #20258 is resolved.
@@ -1039,19 +1011,9 @@ class ObjCLanguage(object):
         #             'EXAMPLE_PATH': 'src/objective-c/examples/watchOS-sample',
         #             'FRAMEWORKS': 'NO'
         #         }))
-        out.append(
-            self.config.job_spec(['src/objective-c/tests/run_plugin_tests.sh'],
-                                 timeout_seconds=60 * 60,
-                                 shortname='ios-test-plugintest',
-                                 cpu_cost=1e6,
-                                 environ=_FORCE_ENVIRON_FOR_WRAPPERS))
-        out.append(
-            self.config.job_spec(
-                ['src/objective-c/tests/run_plugin_option_tests.sh'],
-                timeout_seconds=60 * 60,
-                shortname='ios-test-plugin-option-test',
-                cpu_cost=1e6,
-                environ=_FORCE_ENVIRON_FOR_WRAPPERS))
+
+        # TODO(jtattermusch): move the test out of the test/core/iomgr/CFStreamTests directory?
+        # How does one add the cfstream dependency in bazel?
         out.append(
             self.config.job_spec(
                 ['test/core/iomgr/ios/CFStreamTests/build_and_run_tests.sh'],
@@ -1059,6 +1021,8 @@ class ObjCLanguage(object):
                 shortname='ios-test-cfstream-tests',
                 cpu_cost=1e6,
                 environ=_FORCE_ENVIRON_FOR_WRAPPERS))
+        # TODO(jtattermusch): Create bazel target for the test and remove the test from here
+        # TODO(jtattermusch): Clarify what do these tests do?
         out.append(
             self.config.job_spec(
                 ['src/objective-c/tests/CoreTests/build_and_run_tests.sh'],
@@ -1066,52 +1030,45 @@ class ObjCLanguage(object):
                 shortname='ios-test-core-tests',
                 cpu_cost=1e6,
                 environ=_FORCE_ENVIRON_FOR_WRAPPERS))
-        # TODO: replace with run_one_test_bazel.sh when Bazel-Xcode is stable
-        out.append(
-            self.config.job_spec(['src/objective-c/tests/run_one_test.sh'],
-                                 timeout_seconds=60 * 60,
-                                 shortname='ios-test-unittests',
-                                 cpu_cost=1e6,
-                                 environ={'SCHEME': 'UnitTests'}))
+        # TODO(jtattermusch): Make sure the //src/objective-c/tests:InteropTests bazel test passes reliably and remove the test from there.
         out.append(
             self.config.job_spec(['src/objective-c/tests/run_one_test.sh'],
                                  timeout_seconds=60 * 60,
                                  shortname='ios-test-interoptests',
                                  cpu_cost=1e6,
                                  environ={'SCHEME': 'InteropTests'}))
+        # TODO(jtattermusch): Create bazel target for the test and remove the test from here
+        # (how does one add the cronet dependency in bazel?)
         out.append(
             self.config.job_spec(['src/objective-c/tests/run_one_test.sh'],
                                  timeout_seconds=60 * 60,
                                  shortname='ios-test-cronettests',
                                  cpu_cost=1e6,
                                  environ={'SCHEME': 'CronetTests'}))
+        # TODO(jtattermusch): Create bazel target for the test and remove the test from here.
         out.append(
             self.config.job_spec(['src/objective-c/tests/run_one_test.sh'],
                                  timeout_seconds=30 * 60,
                                  shortname='ios-perf-test',
                                  cpu_cost=1e6,
                                  environ={'SCHEME': 'PerfTests'}))
+        # TODO(jtattermusch): Clarify what's the difference between PerfTests and PerfTestsPosix
+        # TODO(jtattermusch): Create bazel target for the test and remove the test from here.
         out.append(
             self.config.job_spec(['src/objective-c/tests/run_one_test.sh'],
                                  timeout_seconds=30 * 60,
                                  shortname='ios-perf-test-posix',
                                  cpu_cost=1e6,
                                  environ={'SCHEME': 'PerfTestsPosix'}))
+        # TODO(jtattermusch): Create bazel target for the test (how does one add the cronet dependency in bazel?)
+        # TODO(jtattermusch): move the test out of the test/cpp/ios directory?
         out.append(
             self.config.job_spec(['test/cpp/ios/build_and_run_tests.sh'],
                                  timeout_seconds=60 * 60,
                                  shortname='ios-cpp-test-cronet',
                                  cpu_cost=1e6,
                                  environ=_FORCE_ENVIRON_FOR_WRAPPERS))
-        out.append(
-            self.config.job_spec(['src/objective-c/tests/run_one_test.sh'],
-                                 timeout_seconds=60 * 60,
-                                 shortname='mac-test-basictests',
-                                 cpu_cost=1e6,
-                                 environ={
-                                     'SCHEME': 'MacTests',
-                                     'PLATFORM': 'macos'
-                                 }))
+        # TODO(jtattermusch): Make sure the //src/objective-c/tests:TvTests bazel test passes and remove the test from here.
         out.append(
             self.config.job_spec(['src/objective-c/tests/run_one_test.sh'],
                                  timeout_seconds=30 * 60,
@@ -1127,20 +1084,15 @@ class ObjCLanguage(object):
     def pre_build_steps(self):
         return []
 
-    def make_targets(self):
-        return []
-
-    def make_options(self):
-        return []
-
     def build_steps(self):
         return []
 
+    def build_steps_environ(self):
+        """Extra environment variables set for pre_build_steps and build_steps jobs."""
+        return {}
+
     def post_tests_steps(self):
         return []
-
-    def makefile_name(self):
-        return 'Makefile'
 
     def dockerfile_dir(self):
         return None
@@ -1163,6 +1115,7 @@ class Sanity(object):
             if _is_use_docker_child():
                 environ['CLANG_FORMAT_SKIP_DOCKER'] = 'true'
                 environ['CLANG_TIDY_SKIP_DOCKER'] = 'true'
+                environ['IWYU_SKIP_DOCKER'] = 'true'
                 # sanity tests run tools/bazel wrapper concurrently
                 # and that can result in a download/run race in the wrapper.
                 # under docker we already have the right version of bazel
@@ -1179,20 +1132,15 @@ class Sanity(object):
     def pre_build_steps(self):
         return []
 
-    def make_targets(self):
-        return ['run_dep_checks']
-
-    def make_options(self):
-        return []
-
     def build_steps(self):
         return []
 
+    def build_steps_environ(self):
+        """Extra environment variables set for pre_build_steps and build_steps jobs."""
+        return {}
+
     def post_tests_steps(self):
         return []
-
-    def makefile_name(self):
-        return 'Makefile'
 
     def dockerfile_dir(self):
         return 'tools/dockerfile/test/sanity'
@@ -1225,6 +1173,16 @@ _MSBUILD_CONFIG = {
 }
 
 
+def _build_step_environ(cfg, extra_env={}):
+    """Environment variables set for each build step."""
+    environ = {'CONFIG': cfg, 'GRPC_RUN_TESTS_JOBS': str(args.jobs)}
+    msbuild_cfg = _MSBUILD_CONFIG.get(cfg)
+    if msbuild_cfg:
+        environ['MSBUILD_CONFIG'] = msbuild_cfg
+    environ.update(extra_env)
+    return environ
+
+
 def _windows_arch_option(arch):
     """Returns msbuild cmdline option for selected architecture."""
     if arch == 'default' or arch == 'x86':
@@ -1242,12 +1200,15 @@ def _check_arch_option(arch):
         _windows_arch_option(arch)
     elif platform_string() == 'linux':
         # On linux, we need to be running under docker with the right architecture.
+        runtime_machine = platform.machine()
         runtime_arch = platform.architecture()[0]
         if arch == 'default':
             return
-        elif runtime_arch == '64bit' and arch == 'x64':
+        elif runtime_machine == 'x86_64' and runtime_arch == '64bit' and arch == 'x64':
             return
-        elif runtime_arch == '32bit' and arch == 'x86':
+        elif runtime_machine == 'x86_64' and runtime_arch == '32bit' and arch == 'x86':
+            return
+        elif runtime_machine == 'aarch64' and runtime_arch == '64bit' and arch == 'arm64':
             return
         else:
             print(
@@ -1267,6 +1228,8 @@ def _docker_arch_suffix(arch):
         return 'x64'
     elif arch == 'x86':
         return 'x86'
+    elif arch == 'arm64':
+        return 'arm64'
     else:
         print('Architecture %s not supported with current settings.' % arch)
         sys.exit(1)
@@ -1307,373 +1270,8 @@ def isclose(a, b, rel_tol=1e-09, abs_tol=0.0):
     return abs(a - b) <= max(rel_tol * max(abs(a), abs(b)), abs_tol)
 
 
-# parse command line
-argp = argparse.ArgumentParser(description='Run grpc tests.')
-argp.add_argument('-c',
-                  '--config',
-                  choices=sorted(_CONFIGS.keys()),
-                  default='opt')
-argp.add_argument(
-    '-n',
-    '--runs_per_test',
-    default=1,
-    type=runs_per_test_type,
-    help='A positive integer or "inf". If "inf", all tests will run in an '
-    'infinite loop. Especially useful in combination with "-f"')
-argp.add_argument('-r', '--regex', default='.*', type=str)
-argp.add_argument('--regex_exclude', default='', type=str)
-argp.add_argument('-j', '--jobs', default=multiprocessing.cpu_count(), type=int)
-argp.add_argument('-s', '--slowdown', default=1.0, type=float)
-argp.add_argument('-p',
-                  '--sample_percent',
-                  default=100.0,
-                  type=percent_type,
-                  help='Run a random sample with that percentage of tests')
-argp.add_argument('-f',
-                  '--forever',
-                  default=False,
-                  action='store_const',
-                  const=True)
-argp.add_argument(
-    '-t',
-    '--travis',
-    default=False,
-    action='store_const',
-    const=True,
-    help='When set, indicates that the script is running on CI (= not locally).'
-)
-argp.add_argument('--newline_on_success',
-                  default=False,
-                  action='store_const',
-                  const=True)
-argp.add_argument('-l',
-                  '--language',
-                  choices=sorted(_LANGUAGES.keys()),
-                  nargs='+',
-                  required=True)
-argp.add_argument('-S',
-                  '--stop_on_failure',
-                  default=False,
-                  action='store_const',
-                  const=True)
-argp.add_argument('--use_docker',
-                  default=False,
-                  action='store_const',
-                  const=True,
-                  help='Run all the tests under docker. That provides ' +
-                  'additional isolation and prevents the need to install ' +
-                  'language specific prerequisites. Only available on Linux.')
-argp.add_argument(
-    '--allow_flakes',
-    default=False,
-    action='store_const',
-    const=True,
-    help=
-    'Allow flaky tests to show as passing (re-runs failed tests up to five times)'
-)
-argp.add_argument(
-    '--arch',
-    choices=['default', 'x86', 'x64'],
-    default='default',
-    help=
-    'Selects architecture to target. For some platforms "default" is the only supported choice.'
-)
-argp.add_argument(
-    '--compiler',
-    choices=[
-        'default',
-        'gcc4.9',
-        'gcc8.3',
-        'gcc8.3_openssl102',
-        'gcc11',
-        'gcc_musl',
-        'clang4',
-        'clang12',
-        'python2.7',
-        'python3.5',
-        'python3.6',
-        'python3.7',
-        'python3.8',
-        'python3.9',
-        'pypy',
-        'pypy3',
-        'python_alpine',
-        'all_the_cpythons',
-        'electron1.3',
-        'electron1.6',
-        'coreclr',
-        'cmake',
-        'cmake_vs2015',
-        'cmake_vs2017',
-        'cmake_vs2019',
-        'mono',
-    ],
-    default='default',
-    help=
-    'Selects compiler to use. Allowed values depend on the platform and language.'
-)
-argp.add_argument('--iomgr_platform',
-                  choices=['native', 'gevent', 'asyncio'],
-                  default='native',
-                  help='Selects iomgr platform to build on')
-argp.add_argument('--build_only',
-                  default=False,
-                  action='store_const',
-                  const=True,
-                  help='Perform all the build steps but don\'t run any tests.')
-argp.add_argument('--measure_cpu_costs',
-                  default=False,
-                  action='store_const',
-                  const=True,
-                  help='Measure the cpu costs of tests')
-argp.add_argument(
-    '--update_submodules',
-    default=[],
-    nargs='*',
-    help=
-    'Update some submodules before building. If any are updated, also run generate_projects. '
-    +
-    'Submodules are specified as SUBMODULE_NAME:BRANCH; if BRANCH is omitted, master is assumed.'
-)
-argp.add_argument('-a', '--antagonists', default=0, type=int)
-argp.add_argument('-x',
-                  '--xml_report',
-                  default=None,
-                  type=str,
-                  help='Generates a JUnit-compatible XML report')
-argp.add_argument('--report_suite_name',
-                  default='tests',
-                  type=str,
-                  help='Test suite name to use in generated JUnit XML report')
-argp.add_argument(
-    '--report_multi_target',
-    default=False,
-    const=True,
-    action='store_const',
-    help='Generate separate XML report for each test job (Looks better in UIs).'
-)
-argp.add_argument(
-    '--quiet_success',
-    default=False,
-    action='store_const',
-    const=True,
-    help=
-    'Don\'t print anything when a test passes. Passing tests also will not be reported in XML report. '
-    + 'Useful when running many iterations of each test (argument -n).')
-argp.add_argument(
-    '--force_default_poller',
-    default=False,
-    action='store_const',
-    const=True,
-    help='Don\'t try to iterate over many polling strategies when they exist')
-argp.add_argument(
-    '--force_use_pollers',
-    default=None,
-    type=str,
-    help='Only use the specified comma-delimited list of polling engines. '
-    'Example: --force_use_pollers epoll1,poll '
-    ' (This flag has no effect if --force_default_poller flag is also used)')
-argp.add_argument('--max_time',
-                  default=-1,
-                  type=int,
-                  help='Maximum test runtime in seconds')
-argp.add_argument('--bq_result_table',
-                  default='',
-                  type=str,
-                  nargs='?',
-                  help='Upload test results to a specified BQ table.')
-args = argp.parse_args()
-
-flaky_tests = set()
-shortname_to_cpu = {}
-
-if args.force_default_poller:
-    _POLLING_STRATEGIES = {}
-elif args.force_use_pollers:
-    _POLLING_STRATEGIES[platform_string()] = args.force_use_pollers.split(',')
-
-jobset.measure_cpu_costs = args.measure_cpu_costs
-
-# update submodules if necessary
-need_to_regenerate_projects = False
-for spec in args.update_submodules:
-    spec = spec.split(':', 1)
-    if len(spec) == 1:
-        submodule = spec[0]
-        branch = 'master'
-    elif len(spec) == 2:
-        submodule = spec[0]
-        branch = spec[1]
-    cwd = 'third_party/%s' % submodule
-
-    def git(cmd, cwd=cwd):
-        print('in %s: git %s' % (cwd, cmd))
-        run_shell_command('git %s' % cmd, cwd=cwd)
-
-    git('fetch')
-    git('checkout %s' % branch)
-    git('pull origin %s' % branch)
-    if os.path.exists('src/%s/gen_build_yaml.py' % submodule):
-        need_to_regenerate_projects = True
-if need_to_regenerate_projects:
-    if jobset.platform_string() == 'linux':
-        run_shell_command('tools/buildgen/generate_projects.sh')
-    else:
-        print(
-            'WARNING: may need to regenerate projects, but since we are not on')
-        print(
-            '         Linux this step is being skipped. Compilation MAY fail.')
-
-# grab config
-run_config = _CONFIGS[args.config]
-build_config = run_config.build_config
-
-if args.travis:
-    _FORCE_ENVIRON_FOR_WRAPPERS = {'GRPC_TRACE': 'api'}
-
-languages = set(_LANGUAGES[l] for l in args.language)
-for l in languages:
-    l.configure(run_config, args)
-
-language_make_options = []
-if any(language.make_options() for language in languages):
-    if not 'gcov' in args.config and len(languages) != 1:
-        print(
-            'languages with custom make options cannot be built simultaneously with other languages'
-        )
-        sys.exit(1)
-    else:
-        # Combining make options is not clean and just happens to work. It allows C & C++ to build
-        # together, and is only used under gcov. All other configs should build languages individually.
-        language_make_options = list(
-            set([
-                make_option for lang in languages
-                for make_option in lang.make_options()
-            ]))
-
-if args.use_docker:
-    if not args.travis:
-        print('Seen --use_docker flag, will run tests under docker.')
-        print('')
-        print(
-            'IMPORTANT: The changes you are testing need to be locally committed'
-        )
-        print(
-            'because only the committed changes in the current branch will be')
-        print('copied to the docker environment.')
-        time.sleep(5)
-
-    dockerfile_dirs = set([l.dockerfile_dir() for l in languages])
-    if len(dockerfile_dirs) > 1:
-        print('Languages to be tested require running under different docker '
-              'images.')
-        sys.exit(1)
-    else:
-        dockerfile_dir = next(iter(dockerfile_dirs))
-
-    child_argv = [arg for arg in sys.argv if not arg == '--use_docker']
-    run_tests_cmd = 'python3 tools/run_tests/run_tests.py %s' % ' '.join(
-        child_argv[1:])
-
-    env = os.environ.copy()
-    env['RUN_TESTS_COMMAND'] = run_tests_cmd
-    env['DOCKERFILE_DIR'] = dockerfile_dir
-    env['DOCKER_RUN_SCRIPT'] = 'tools/run_tests/dockerize/docker_run_tests.sh'
-    if args.xml_report:
-        env['XML_REPORT'] = args.xml_report
-
-    subprocess.check_call(
-        'tools/run_tests/dockerize/build_docker_and_run_tests.sh',
-        shell=True,
-        env=env)
-    sys.exit(0)
-
-_check_arch_option(args.arch)
-
-
-def make_jobspec(cfg, targets, makefile='Makefile'):
-    if platform_string() == 'windows':
-        return [
-            jobset.JobSpec([
-                'cmake', '--build', '.', '--target',
-                '%s' % target, '--config', _MSBUILD_CONFIG[cfg]
-            ],
-                           cwd=os.path.dirname(makefile),
-                           timeout_seconds=None) for target in targets
-        ]
-    else:
-        if targets and makefile.startswith('cmake/build/'):
-            # With cmake, we've passed all the build configuration in the pre-build step already
-            return [
-                jobset.JobSpec(
-                    [os.getenv('MAKE', 'make'), '-j',
-                     '%d' % args.jobs] + targets,
-                    cwd='cmake/build',
-                    timeout_seconds=None)
-            ]
-        if targets:
-            return [
-                jobset.JobSpec(
-                    [
-                        os.getenv('MAKE', 'make'), '-f', makefile, '-j',
-                        '%d' % args.jobs,
-                        'EXTRA_DEFINES=GRPC_TEST_SLOWDOWN_MACHINE_FACTOR=%f' %
-                        args.slowdown,
-                        'CONFIG=%s' % cfg, 'Q='
-                    ] + language_make_options +
-                    ([] if not args.travis else ['JENKINS_BUILD=1']) + targets,
-                    timeout_seconds=None)
-            ]
-        else:
-            return []
-
-
-make_targets = {}
-for l in languages:
-    makefile = l.makefile_name()
-    make_targets[makefile] = make_targets.get(makefile, set()).union(
-        set(l.make_targets()))
-
-
-def build_step_environ(cfg):
-    environ = {'CONFIG': cfg}
-    msbuild_cfg = _MSBUILD_CONFIG.get(cfg)
-    if msbuild_cfg:
-        environ['MSBUILD_CONFIG'] = msbuild_cfg
-    return environ
-
-
-build_steps = list(
-    set(
-        jobset.JobSpec(cmdline,
-                       environ=build_step_environ(build_config),
-                       timeout_seconds=_PRE_BUILD_STEP_TIMEOUT_SECONDS,
-                       flake_retries=2)
-        for l in languages
-        for cmdline in l.pre_build_steps()))
-if make_targets:
-    make_commands = itertools.chain.from_iterable(
-        make_jobspec(build_config, list(targets), makefile)
-        for (makefile, targets) in make_targets.items())
-    build_steps.extend(set(make_commands))
-build_steps.extend(
-    set(
-        jobset.JobSpec(cmdline,
-                       environ=build_step_environ(build_config),
-                       timeout_seconds=None)
-        for l in languages
-        for cmdline in l.build_steps()))
-
-post_tests_steps = list(
-    set(
-        jobset.JobSpec(cmdline, environ=build_step_environ(build_config))
-        for l in languages
-        for cmdline in l.post_tests_steps()))
-runs_per_test = args.runs_per_test
-forever = args.forever
-
-
 def _shut_down_legacy_server(legacy_server_port):
+    """Shut down legacy version of port server."""
     try:
         version = int(
             urllib.request.urlopen('http://localhost:%d/version_number' %
@@ -1704,26 +1302,12 @@ def _calculate_num_runs_failures(list_of_results):
     return num_runs, num_failures
 
 
-# _build_and_run results
 class BuildAndRunError(object):
+    """Represents error type in _build_and_run."""
 
     BUILD = object()
     TEST = object()
     POST_TEST = object()
-
-
-def _has_epollexclusive():
-    binary = 'bins/%s/check_epollexclusive' % args.config
-    if not os.path.exists(binary):
-        return False
-    try:
-        subprocess.check_call(binary)
-        return True
-    except subprocess.CalledProcessError as e:
-        return False
-    except OSError as e:
-        # For languages other than C and Windows the binary won't exist
-        return False
 
 
 # returns a list of things that failed (or an empty list on success)
@@ -1746,12 +1330,6 @@ def _build_and_run(check_cancelled,
             report_utils.render_junit_xml_report(
                 resultset, xml_report, suite_name=args.report_suite_name)
         return []
-
-    if not args.travis and not _has_epollexclusive() and platform_string(
-    ) in _POLLING_STRATEGIES and 'epollex' in _POLLING_STRATEGIES[
-            platform_string()]:
-        print('\n\nOmitting EPOLLEXCLUSIVE tests\n\n')
-        _POLLING_STRATEGIES[platform_string()].remove('epollex')
 
     # start antagonists
     antagonists = [
@@ -1861,37 +1439,286 @@ def _build_and_run(check_cancelled,
     return out
 
 
-if forever:
-    success = True
-    while True:
-        dw = watch_dirs.DirWatcher(['src', 'include', 'test', 'examples'])
-        initial_time = dw.most_recent_change()
-        have_files_changed = lambda: dw.most_recent_change() != initial_time
-        previous_success = success
-        errors = _build_and_run(check_cancelled=have_files_changed,
-                                newline_on_success=False,
-                                build_only=args.build_only) == 0
-        if not previous_success and not errors:
-            jobset.message('SUCCESS',
-                           'All tests are now passing properly',
-                           do_newline=True)
-        jobset.message('IDLE', 'No change detected')
-        while not have_files_changed():
-            time.sleep(1)
-else:
-    errors = _build_and_run(check_cancelled=lambda: False,
-                            newline_on_success=args.newline_on_success,
-                            xml_report=args.xml_report,
-                            build_only=args.build_only)
-    if not errors:
-        jobset.message('SUCCESS', 'All tests passed', do_newline=True)
+# parse command line
+argp = argparse.ArgumentParser(description='Run grpc tests.')
+argp.add_argument('-c',
+                  '--config',
+                  choices=sorted(_CONFIGS.keys()),
+                  default='opt')
+argp.add_argument(
+    '-n',
+    '--runs_per_test',
+    default=1,
+    type=runs_per_test_type,
+    help='A positive integer or "inf". If "inf", all tests will run in an '
+    'infinite loop. Especially useful in combination with "-f"')
+argp.add_argument('-r', '--regex', default='.*', type=str)
+argp.add_argument('--regex_exclude', default='', type=str)
+argp.add_argument('-j', '--jobs', default=multiprocessing.cpu_count(), type=int)
+argp.add_argument('-s', '--slowdown', default=1.0, type=float)
+argp.add_argument('-p',
+                  '--sample_percent',
+                  default=100.0,
+                  type=percent_type,
+                  help='Run a random sample with that percentage of tests')
+argp.add_argument(
+    '-t',
+    '--travis',
+    default=False,
+    action='store_const',
+    const=True,
+    help='When set, indicates that the script is running on CI (= not locally).'
+)
+argp.add_argument('--newline_on_success',
+                  default=False,
+                  action='store_const',
+                  const=True)
+argp.add_argument('-l',
+                  '--language',
+                  choices=sorted(_LANGUAGES.keys()),
+                  nargs='+',
+                  required=True)
+argp.add_argument('-S',
+                  '--stop_on_failure',
+                  default=False,
+                  action='store_const',
+                  const=True)
+argp.add_argument('--use_docker',
+                  default=False,
+                  action='store_const',
+                  const=True,
+                  help='Run all the tests under docker. That provides ' +
+                  'additional isolation and prevents the need to install ' +
+                  'language specific prerequisites. Only available on Linux.')
+argp.add_argument(
+    '--allow_flakes',
+    default=False,
+    action='store_const',
+    const=True,
+    help=
+    'Allow flaky tests to show as passing (re-runs failed tests up to five times)'
+)
+argp.add_argument(
+    '--arch',
+    choices=['default', 'x86', 'x64', 'arm64'],
+    default='default',
+    help=
+    'Selects architecture to target. For some platforms "default" is the only supported choice.'
+)
+argp.add_argument(
+    '--compiler',
+    choices=[
+        'default',
+        'gcc6',
+        'gcc10.2',
+        'gcc10.2_openssl102',
+        'gcc11',
+        'gcc_musl',
+        'clang6',
+        'clang13',
+        'python2.7',
+        'python3.5',
+        'python3.6',
+        'python3.7',
+        'python3.8',
+        'python3.9',
+        'pypy',
+        'pypy3',
+        'python_alpine',
+        'all_the_cpythons',
+        'electron1.3',
+        'electron1.6',
+        'coreclr',
+        'cmake',
+        'cmake_ninja_vs2017',
+        'cmake_vs2017',
+        'cmake_vs2019',
+        'mono',
+    ],
+    default='default',
+    help=
+    'Selects compiler to use. Allowed values depend on the platform and language.'
+)
+argp.add_argument('--iomgr_platform',
+                  choices=['native', 'gevent', 'asyncio'],
+                  default='native',
+                  help='Selects iomgr platform to build on')
+argp.add_argument('--build_only',
+                  default=False,
+                  action='store_const',
+                  const=True,
+                  help='Perform all the build steps but don\'t run any tests.')
+argp.add_argument('--measure_cpu_costs',
+                  default=False,
+                  action='store_const',
+                  const=True,
+                  help='Measure the cpu costs of tests')
+argp.add_argument('-a', '--antagonists', default=0, type=int)
+argp.add_argument('-x',
+                  '--xml_report',
+                  default=None,
+                  type=str,
+                  help='Generates a JUnit-compatible XML report')
+argp.add_argument('--report_suite_name',
+                  default='tests',
+                  type=str,
+                  help='Test suite name to use in generated JUnit XML report')
+argp.add_argument(
+    '--report_multi_target',
+    default=False,
+    const=True,
+    action='store_const',
+    help='Generate separate XML report for each test job (Looks better in UIs).'
+)
+argp.add_argument(
+    '--quiet_success',
+    default=False,
+    action='store_const',
+    const=True,
+    help=
+    'Don\'t print anything when a test passes. Passing tests also will not be reported in XML report. '
+    + 'Useful when running many iterations of each test (argument -n).')
+argp.add_argument(
+    '--force_default_poller',
+    default=False,
+    action='store_const',
+    const=True,
+    help='Don\'t try to iterate over many polling strategies when they exist')
+argp.add_argument(
+    '--force_use_pollers',
+    default=None,
+    type=str,
+    help='Only use the specified comma-delimited list of polling engines. '
+    'Example: --force_use_pollers epoll1,poll '
+    ' (This flag has no effect if --force_default_poller flag is also used)')
+argp.add_argument('--max_time',
+                  default=-1,
+                  type=int,
+                  help='Maximum test runtime in seconds')
+argp.add_argument('--bq_result_table',
+                  default='',
+                  type=str,
+                  nargs='?',
+                  help='Upload test results to a specified BQ table.')
+args = argp.parse_args()
+
+flaky_tests = set()
+shortname_to_cpu = {}
+
+if args.force_default_poller:
+    _POLLING_STRATEGIES = {}
+elif args.force_use_pollers:
+    _POLLING_STRATEGIES[platform_string()] = args.force_use_pollers.split(',')
+
+jobset.measure_cpu_costs = args.measure_cpu_costs
+
+# grab config
+run_config = _CONFIGS[args.config]
+build_config = run_config.build_config
+
+# TODO(jtattermusch): is this setting applied/being used?
+if args.travis:
+    _FORCE_ENVIRON_FOR_WRAPPERS = {'GRPC_TRACE': 'api'}
+
+languages = set(_LANGUAGES[l] for l in args.language)
+for l in languages:
+    l.configure(run_config, args)
+
+if len(languages) != 1:
+    print('Building multiple languages simultaneously is not supported!')
+    sys.exit(1)
+
+# If --use_docker was used, respawn the run_tests.py script under a docker container
+# instead of continuing.
+if args.use_docker:
+    if not args.travis:
+        print('Seen --use_docker flag, will run tests under docker.')
+        print('')
+        print(
+            'IMPORTANT: The changes you are testing need to be locally committed'
+        )
+        print(
+            'because only the committed changes in the current branch will be')
+        print('copied to the docker environment.')
+        time.sleep(5)
+
+    dockerfile_dirs = set([l.dockerfile_dir() for l in languages])
+    if len(dockerfile_dirs) > 1:
+        print('Languages to be tested require running under different docker '
+              'images.')
+        sys.exit(1)
     else:
-        jobset.message('FAILED', 'Some tests failed', do_newline=True)
-    exit_code = 0
-    if BuildAndRunError.BUILD in errors:
-        exit_code |= 1
-    if BuildAndRunError.TEST in errors:
-        exit_code |= 2
-    if BuildAndRunError.POST_TEST in errors:
-        exit_code |= 4
-    sys.exit(exit_code)
+        dockerfile_dir = next(iter(dockerfile_dirs))
+
+    child_argv = [arg for arg in sys.argv if not arg == '--use_docker']
+    run_tests_cmd = 'python3 tools/run_tests/run_tests.py %s' % ' '.join(
+        child_argv[1:])
+
+    env = os.environ.copy()
+    env['DOCKERFILE_DIR'] = dockerfile_dir
+    env['DOCKER_RUN_SCRIPT'] = 'tools/run_tests/dockerize/docker_run.sh'
+    env['DOCKER_RUN_SCRIPT_COMMAND'] = run_tests_cmd
+
+    retcode = subprocess.call(
+        'tools/run_tests/dockerize/build_and_run_docker.sh',
+        shell=True,
+        env=env)
+    _print_debug_info_epilogue(dockerfile_dir=dockerfile_dir)
+    sys.exit(retcode)
+
+_check_arch_option(args.arch)
+
+# collect pre-build steps (which get retried if they fail, e.g. to avoid
+# flakes on downloading dependencies etc.)
+build_steps = list(
+    set(
+        jobset.JobSpec(cmdline,
+                       environ=_build_step_environ(
+                           build_config, extra_env=l.build_steps_environ()),
+                       timeout_seconds=_PRE_BUILD_STEP_TIMEOUT_SECONDS,
+                       flake_retries=2)
+        for l in languages
+        for cmdline in l.pre_build_steps()))
+
+# collect build steps
+build_steps.extend(
+    set(
+        jobset.JobSpec(cmdline,
+                       environ=_build_step_environ(
+                           build_config, extra_env=l.build_steps_environ()),
+                       timeout_seconds=None)
+        for l in languages
+        for cmdline in l.build_steps()))
+
+# collect post test steps
+post_tests_steps = list(
+    set(
+        jobset.JobSpec(cmdline,
+                       environ=_build_step_environ(
+                           build_config, extra_env=l.build_steps_environ()))
+        for l in languages
+        for cmdline in l.post_tests_steps()))
+runs_per_test = args.runs_per_test
+
+errors = _build_and_run(check_cancelled=lambda: False,
+                        newline_on_success=args.newline_on_success,
+                        xml_report=args.xml_report,
+                        build_only=args.build_only)
+if not errors:
+    jobset.message('SUCCESS', 'All tests passed', do_newline=True)
+else:
+    jobset.message('FAILED', 'Some tests failed', do_newline=True)
+
+if not _is_use_docker_child():
+    # if --use_docker was used, the outer invocation of run_tests.py will
+    # print the debug info instead.
+    _print_debug_info_epilogue()
+
+exit_code = 0
+if BuildAndRunError.BUILD in errors:
+    exit_code |= 1
+if BuildAndRunError.TEST in errors:
+    exit_code |= 2
+if BuildAndRunError.POST_TEST in errors:
+    exit_code |= 4
+sys.exit(exit_code)

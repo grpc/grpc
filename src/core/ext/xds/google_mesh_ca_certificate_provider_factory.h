@@ -21,9 +21,19 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <stdint.h>
+
+#include <string>
+#include <vector>
+
+#include <grpc/grpc_security.h>
+
 #include "src/core/ext/xds/certificate_provider_factory.h"
-#include "src/core/lib/backoff/backoff.h"
-#include "src/core/lib/gprpp/ref_counted.h"
+#include "src/core/lib/gprpp/ref_counted_ptr.h"
+#include "src/core/lib/gprpp/time.h"
+#include "src/core/lib/iomgr/error.h"
+#include "src/core/lib/json/json.h"
+#include "src/core/lib/security/credentials/tls/grpc_tls_certificate_provider.h"
 
 namespace grpc_core {
 
@@ -52,11 +62,11 @@ class GoogleMeshCaCertificateProviderFactory
 
     const StsConfig& sts_config() const { return sts_config_; }
 
-    grpc_millis timeout() const { return timeout_; }
+    Duration timeout() const { return timeout_; }
 
-    grpc_millis certificate_lifetime() const { return certificate_lifetime_; }
+    Duration certificate_lifetime() const { return certificate_lifetime_; }
 
-    grpc_millis renewal_grace_period() const { return renewal_grace_period_; }
+    Duration renewal_grace_period() const { return renewal_grace_period_; }
 
     uint32_t key_size() const { return key_size_; }
 
@@ -80,9 +90,9 @@ class GoogleMeshCaCertificateProviderFactory
 
     std::string endpoint_;
     StsConfig sts_config_;
-    grpc_millis timeout_;
-    grpc_millis certificate_lifetime_;
-    grpc_millis renewal_grace_period_;
+    Duration timeout_;
+    Duration certificate_lifetime_;
+    Duration renewal_grace_period_;
     uint32_t key_size_;
     std::string location_;
   };

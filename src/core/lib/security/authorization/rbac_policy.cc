@@ -278,7 +278,7 @@ Rbac::Principal Rbac::Principal::MakeAnyPrincipal() {
 }
 
 Rbac::Principal Rbac::Principal::MakeAuthenticatedPrincipal(
-    StringMatcher string_matcher) {
+    absl::optional<StringMatcher> string_matcher) {
   Principal principal;
   principal.type = Principal::RuleType::kPrincipalName;
   principal.string_matcher = std::move(string_matcher);
@@ -398,7 +398,7 @@ std::string Rbac::Principal::ToString() const {
     case RuleType::kAny:
       return "any";
     case RuleType::kPrincipalName:
-      return absl::StrFormat("principal_name=%s", string_matcher.ToString());
+      return absl::StrFormat("principal_name=%s", string_matcher->ToString());
     case RuleType::kSourceIp:
       return absl::StrFormat("source_ip=%s", ip.ToString());
     case RuleType::kDirectRemoteIp:
@@ -408,7 +408,7 @@ std::string Rbac::Principal::ToString() const {
     case RuleType::kHeader:
       return absl::StrFormat("header=%s", header_matcher.ToString());
     case RuleType::kPath:
-      return absl::StrFormat("path=%s", string_matcher.ToString());
+      return absl::StrFormat("path=%s", string_matcher->ToString());
     case RuleType::kMetadata:
       return absl::StrFormat("%smetadata", invert ? "invert " : "");
     default:

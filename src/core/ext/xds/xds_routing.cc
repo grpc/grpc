@@ -20,7 +20,23 @@
 
 #include "src/core/ext/xds/xds_routing.h"
 
+#include <stdint.h>
+#include <stdlib.h>
+
+#include <algorithm>
 #include <cctype>
+#include <utility>
+
+#include "absl/status/status.h"
+#include "absl/status/statusor.h"
+#include "absl/strings/match.h"
+#include "absl/strings/str_cat.h"
+
+#include <grpc/support/log.h>
+
+#include "src/core/ext/xds/xds_http_filters.h"
+#include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/matchers/matchers.h"
 
 namespace grpc_core {
 
@@ -70,7 +86,7 @@ bool DomainMatch(MatchType match_type, absl::string_view domain_pattern_in,
 
 MatchType DomainPatternMatchType(absl::string_view domain_pattern) {
   if (domain_pattern.empty()) return INVALID_MATCH;
-  if (domain_pattern.find('*') == std::string::npos) return EXACT_MATCH;
+  if (!absl::StrContains(domain_pattern, '*')) return EXACT_MATCH;
   if (domain_pattern == "*") return UNIVERSE_MATCH;
   if (domain_pattern[0] == '*') return SUFFIX_MATCH;
   if (domain_pattern[domain_pattern.size() - 1] == '*') return PREFIX_MATCH;

@@ -196,7 +196,7 @@
   TMPOUT = `mktemp /tmp/test-out-XXXXXX`
   endif
 
-  CHECK_NO_CXX14_COMPAT_WORKS_CMD = $(CC) -std=c++11 -Werror -Wno-c++14-compat -o $(TMPOUT) -c test/build/no-c++14-compat.cc
+  CHECK_NO_CXX14_COMPAT_WORKS_CMD = $(CC) -std=c++14 -Werror -Wno-c++14-compat -o $(TMPOUT) -c test/build/no-c++14-compat.cc
   HAS_WORKING_NO_CXX14_COMPAT = $(shell $(CHECK_NO_CXX14_COMPAT_WORKS_CMD) 2> /dev/null && echo true || echo false)
   ifeq ($(HAS_WORKING_NO_CXX14_COMPAT),true)
   W_NO_CXX14_COMPAT=-Wno-c++14-compat
@@ -221,8 +221,8 @@
   HOST_LD ?= $(LD)
   HOST_LDXX ?= $(LDXX)
 
-  CFLAGS += -std=c99 ${' '.join(warning_var('$(W_%s)', warning) for warning in PREFERRED_WARNINGS)}
-  CXXFLAGS += -std=c++11
+  CFLAGS += -std=c11 ${' '.join(warning_var('$(W_%s)', warning) for warning in PREFERRED_WARNINGS)}
+  CXXFLAGS += -std=c++14
   ifeq ($(SYSTEM),Darwin)
   CXXFLAGS += -stdlib=libc++
   LDFLAGS += -framework CoreFoundation
@@ -401,7 +401,7 @@
 
   # Setup c-ares dependency
 
-  ifeq ($(wildcard third_party/cares/cares/ares.h),)
+  ifeq ($(wildcard third_party/cares/cares/include/ares.h),)
   HAS_EMBEDDED_CARES = false
   else
   HAS_EMBEDDED_CARES = true
@@ -419,7 +419,7 @@
   CARES_DEP = $(LIBDIR)/$(CONFIG)/libares.a
   CARES_MERGE_OBJS = $(LIBARES_OBJS)
   CARES_MERGE_LIBS = $(LIBDIR)/$(CONFIG)/libares.a
-  CPPFLAGS := -Ithird_party/cares -Ithird_party/cares/cares $(CPPFLAGS)
+  CPPFLAGS := -Ithird_party/cares/cares/include -Ithird_party/cares -Ithird_party/cares/cares $(CPPFLAGS)
   endif
 
   # Setup address_sorting dependency

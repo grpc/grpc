@@ -19,26 +19,26 @@ extern "C" {
 
 #include "upb/port_def.inc"
 
-extern upb_def_init google_protobuf_struct_proto_upbdefinit;
+extern _upb_DefPool_Init google_protobuf_struct_proto_upbdefinit;
 
-UPB_INLINE const upb_msgdef *google_protobuf_Struct_getmsgdef(upb_symtab *s) {
-  _upb_symtab_loaddefinit(s, &google_protobuf_struct_proto_upbdefinit);
-  return upb_symtab_lookupmsg(s, "google.protobuf.Struct");
+UPB_INLINE const upb_MessageDef *google_protobuf_Struct_getmsgdef(upb_DefPool *s) {
+  _upb_DefPool_LoadDefInit(s, &google_protobuf_struct_proto_upbdefinit);
+  return upb_DefPool_FindMessageByName(s, "google.protobuf.Struct");
 }
 
-UPB_INLINE const upb_msgdef *google_protobuf_Struct_FieldsEntry_getmsgdef(upb_symtab *s) {
-  _upb_symtab_loaddefinit(s, &google_protobuf_struct_proto_upbdefinit);
-  return upb_symtab_lookupmsg(s, "google.protobuf.Struct.FieldsEntry");
+UPB_INLINE const upb_MessageDef *google_protobuf_Struct_FieldsEntry_getmsgdef(upb_DefPool *s) {
+  _upb_DefPool_LoadDefInit(s, &google_protobuf_struct_proto_upbdefinit);
+  return upb_DefPool_FindMessageByName(s, "google.protobuf.Struct.FieldsEntry");
 }
 
-UPB_INLINE const upb_msgdef *google_protobuf_Value_getmsgdef(upb_symtab *s) {
-  _upb_symtab_loaddefinit(s, &google_protobuf_struct_proto_upbdefinit);
-  return upb_symtab_lookupmsg(s, "google.protobuf.Value");
+UPB_INLINE const upb_MessageDef *google_protobuf_Value_getmsgdef(upb_DefPool *s) {
+  _upb_DefPool_LoadDefInit(s, &google_protobuf_struct_proto_upbdefinit);
+  return upb_DefPool_FindMessageByName(s, "google.protobuf.Value");
 }
 
-UPB_INLINE const upb_msgdef *google_protobuf_ListValue_getmsgdef(upb_symtab *s) {
-  _upb_symtab_loaddefinit(s, &google_protobuf_struct_proto_upbdefinit);
-  return upb_symtab_lookupmsg(s, "google.protobuf.ListValue");
+UPB_INLINE const upb_MessageDef *google_protobuf_ListValue_getmsgdef(upb_DefPool *s) {
+  _upb_DefPool_LoadDefInit(s, &google_protobuf_struct_proto_upbdefinit);
+  return upb_DefPool_FindMessageByName(s, "google.protobuf.ListValue");
 }
 
 #ifdef __cplusplus

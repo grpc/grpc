@@ -19,11 +19,9 @@
 #ifndef GRPC_INTERNAL_CPP_DYNAMIC_THREAD_POOL_H
 #define GRPC_INTERNAL_CPP_DYNAMIC_THREAD_POOL_H
 
+#include <functional>
 #include <list>
-#include <memory>
 #include <queue>
-
-#include <grpcpp/support/config.h>
 
 #include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/gprpp/thd.h"

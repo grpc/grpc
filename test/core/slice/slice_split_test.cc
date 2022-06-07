@@ -23,6 +23,7 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include <grpc/slice_buffer.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
@@ -167,7 +168,7 @@ static void test_strsplit_nospace(void) {
 }
 
 int main(int argc, char** argv) {
-  grpc::testing::TestEnvironment env(argc, argv);
+  grpc::testing::TestEnvironment env(&argc, argv);
   test_strsplit();
   test_strsplit_nospace();
   return 0;

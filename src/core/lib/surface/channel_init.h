@@ -22,8 +22,10 @@
 #include <grpc/support/port_platform.h>
 
 #include <functional>
+#include <utility>
 #include <vector>
 
+#include "src/core/lib/channel/channel_stack_builder.h"
 #include "src/core/lib/surface/channel_stack_type.h"
 
 #define GRPC_CHANNEL_INIT_BUILTIN_PRIORITY 10000
@@ -33,15 +35,13 @@
 /// It also provides a universal entry path to run those mutators to build
 /// a channel stack for various subsystems.
 
-typedef struct grpc_channel_stack_builder grpc_channel_stack_builder;
-
 namespace grpc_core {
 
 class ChannelInit {
  public:
   /// One stage of mutation: call functions against \a builder to influence the
   /// finally constructed channel stack
-  using Stage = std::function<bool(grpc_channel_stack_builder* builder)>;
+  using Stage = std::function<bool(ChannelStackBuilder* builder)>;
 
   class Builder {
    public:
@@ -72,10 +72,8 @@ class ChannelInit {
   };
 
   /// Construct a channel stack of some sort: see channel_stack.h for details
-  /// \a type is the type of channel stack to create
   /// \a builder is the channel stack builder to build into.
-  bool CreateStack(grpc_channel_stack_builder* builder,
-                   grpc_channel_stack_type type) const;
+  bool CreateStack(ChannelStackBuilder* builder) const;
 
  private:
   std::vector<Stage> slots_[GRPC_NUM_CHANNEL_STACK_TYPES];

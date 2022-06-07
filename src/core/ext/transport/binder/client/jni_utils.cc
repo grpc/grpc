@@ -65,11 +65,12 @@ jclass FindNativeConnectionHelper(
 
 void TryEstablishConnection(JNIEnv* env, jobject application,
                             absl::string_view pkg, absl::string_view cls,
+                            absl::string_view action_name,
                             absl::string_view conn_id) {
   std::string method = "tryEstablishConnection";
   std::string type =
       "(Landroid/content/Context;Ljava/lang/String;Ljava/lang/String;Ljava/"
-      "lang/String;)V";
+      "lang/String;Ljava/lang/String;)V";
 
   jclass cl = FindNativeConnectionHelper(env);
   if (cl == nullptr) {
@@ -84,6 +85,7 @@ void TryEstablishConnection(JNIEnv* env, jobject application,
   env->CallStaticVoidMethod(cl, mid, application,
                             env->NewStringUTF(std::string(pkg).c_str()),
                             env->NewStringUTF(std::string(cls).c_str()),
+                            env->NewStringUTF(std::string(action_name).c_str()),
                             env->NewStringUTF(std::string(conn_id).c_str()));
 }
 

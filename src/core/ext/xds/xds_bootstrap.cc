@@ -18,32 +18,31 @@
 
 #include "src/core/ext/xds/xds_bootstrap.h"
 
-#include <errno.h>
 #include <stdlib.h>
 
+#include <algorithm>
+#include <utility>
 #include <vector>
 
+#include "absl/memory/memory.h"
+#include "absl/strings/match.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
 #include "absl/strings/str_join.h"
 #include "absl/strings/string_view.h"
 
-#include <grpc/grpc_security.h>
+#include <grpc/support/alloc.h>
 
+#include "src/core/ext/xds/certificate_provider_factory.h"
 #include "src/core/ext/xds/certificate_provider_registry.h"
-#include "src/core/ext/xds/xds_api.h"
-#include "src/core/ext/xds/xds_channel_creds.h"
+#include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/gpr/env.h"
 #include "src/core/lib/gpr/string.h"
-#include "src/core/lib/iomgr/load_file.h"
+#include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/json/json_util.h"
-#include "src/core/lib/security/credentials/credentials.h"
-#include "src/core/lib/security/credentials/fake/fake_credentials.h"
-#include "src/core/lib/slice/slice_internal.h"
+#include "src/core/lib/security/credentials/channel_creds_registry.h"
 
 namespace grpc_core {
-
-namespace {
 
 // TODO(donnadionne): check to see if federation is enabled, this will be
 // removed once federation is fully integrated and enabled by default.
@@ -55,6 +54,8 @@ bool XdsFederationEnabled() {
   return parse_succeeded && parsed_value;
 }
 
+namespace {
+
 grpc_error_handle ParseChannelCreds(const Json::Object& json, size_t idx,
                                     XdsBootstrap::XdsServer* server) {
   std::vector<grpc_error_handle> error_list;
@@ -65,10 +66,11 @@ grpc_error_handle ParseChannelCreds(const Json::Object& json, size_t idx,
                        /*required=*/false);
   // Select the first channel creds type that we support.
   if (server->channel_creds_type.empty() &&
-      XdsChannelCredsRegistry::IsSupported(type)) {
+      CoreConfiguration::Get().channel_creds_registry().IsSupported(type)) {
     Json config;
     if (config_ptr != nullptr) config = *config_ptr;
-    if (!XdsChannelCredsRegistry::IsValidConfig(type, config)) {
+    if (!CoreConfiguration::Get().channel_creds_registry().IsValidConfig(
+            type, config)) {
       error_list.push_back(GRPC_ERROR_CREATE_FROM_CPP_STRING(absl::StrCat(
           "invalid config for channel creds type \"", type, "\"")));
     }
@@ -135,6 +137,25 @@ XdsBootstrap::XdsServer XdsBootstrap::XdsServer::Parse(
   *error = GRPC_ERROR_CREATE_FROM_VECTOR_AND_CPP_STRING(
       "errors parsing xds server", &error_list);
   return server;
+}
+
+Json::Object XdsBootstrap::XdsServer::ToJson() const {
+  Json::Object channel_creds_json{{"type", channel_creds_type}};
+  if (channel_creds_config.type() != Json::Type::JSON_NULL) {
+    channel_creds_json["config"] = channel_creds_config;
+  }
+  Json::Object json{
+      {"server_uri", server_uri},
+      {"channel_creds", Json::Array{std::move(channel_creds_json)}},
+  };
+  if (!server_features.empty()) {
+    Json::Array server_features_json;
+    for (auto& feature : server_features) {
+      server_features_json.emplace_back(feature);
+    }
+    json["server_features"] = std::move(server_features_json);
+  }
+  return json;
 }
 
 bool XdsBootstrap::XdsServer::ShouldUseV3() const {
@@ -242,6 +263,17 @@ const XdsBootstrap::Authority* XdsBootstrap::LookupAuthority(
     return &it->second;
   }
   return nullptr;
+}
+
+bool XdsBootstrap::XdsServerExists(
+    const XdsBootstrap::XdsServer& server) const {
+  if (server == servers_[0]) return true;
+  for (auto& authority : authorities_) {
+    for (auto& xds_server : authority.second.xds_servers) {
+      if (server == xds_server) return true;
+    }
+  }
+  return false;
 }
 
 grpc_error_handle XdsBootstrap::ParseXdsServerList(

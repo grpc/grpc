@@ -14,20 +14,39 @@
 
 #include <grpc/support/port_platform.h>
 
-#include "src/core/lib/iomgr/port.h"
+#include "src/core/lib/iomgr/port.h"  // IWYU pragma: keep
 
 #ifdef GRPC_HAVE_UNIX_SOCKET
 
+#include <string.h>
+#include <sys/socket.h>
 #include <sys/un.h>
 
-#include <grpc/support/alloc.h>
-#include <grpc/support/string_util.h>
+#include <memory>
+#include <string>
+#include <type_traits>
+#include <utility>
 
-#include "src/core/lib/address_utils/parse_address.h"
+#include "absl/memory/memory.h"
+#include "absl/status/statusor.h"
+#include "absl/strings/str_cat.h"
+#include "absl/strings/string_view.h"
+#include "absl/strings/strip.h"
+
+#include <grpc/impl/codegen/grpc_types.h>
+#include <grpc/support/log.h>
+
 #include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/gpr/string.h"
+#include "src/core/lib/config/core_configuration.h"
+#include "src/core/lib/gprpp/orphanable.h"
+#include "src/core/lib/iomgr/error.h"
+#include "src/core/lib/iomgr/port.h"
+#include "src/core/lib/iomgr/resolved_address.h"
+#include "src/core/lib/resolver/resolver.h"
+#include "src/core/lib/resolver/resolver_factory.h"
 #include "src/core/lib/resolver/resolver_registry.h"
 #include "src/core/lib/resolver/server_address.h"
+#include "src/core/lib/uri/uri_parser.h"
 
 namespace grpc_core {
 namespace {
@@ -59,6 +78,8 @@ class BinderResolver : public Resolver {
 
 class BinderResolverFactory : public ResolverFactory {
  public:
+  absl::string_view scheme() const override { return "binder"; }
+
   bool IsValidUri(const URI& uri) const override {
     return ParseUri(uri, nullptr);
   }
@@ -69,8 +90,6 @@ class BinderResolverFactory : public ResolverFactory {
     return MakeOrphanable<BinderResolver>(std::move(addresses),
                                           std::move(args));
   }
-
-  const char* scheme() const override { return "binder"; }
 
  private:
   static grpc_error_handle BinderAddrPopulate(
@@ -121,19 +140,12 @@ class BinderResolverFactory : public ResolverFactory {
 };
 
 }  // namespace
-}  // namespace grpc_core
 
-void grpc_resolver_binder_init() {
-  grpc_core::ResolverRegistry::Builder::RegisterResolverFactory(
-      absl::make_unique<grpc_core::BinderResolverFactory>());
+void RegisterBinderResolver(CoreConfiguration::Builder* builder) {
+  builder->resolver_registry()->RegisterResolverFactory(
+      absl::make_unique<BinderResolverFactory>());
 }
 
-void grpc_resolver_binder_shutdown() {}
-
-#else
-
-void grpc_resolver_binder_init() {}
-
-void grpc_resolver_binder_shutdown() {}
+}  // namespace grpc_core
 
 #endif

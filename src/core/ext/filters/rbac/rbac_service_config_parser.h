@@ -19,9 +19,22 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <stddef.h>
+
+#include <algorithm>
+#include <memory>
+#include <utility>
 #include <vector>
 
+#include "absl/strings/string_view.h"
+
+#include <grpc/impl/codegen/grpc_types.h>
+
+#include "src/core/lib/config/core_configuration.h"
+#include "src/core/lib/iomgr/error.h"
+#include "src/core/lib/json/json.h"
 #include "src/core/lib/security/authorization/grpc_authorization_engine.h"
+#include "src/core/lib/security/authorization/rbac_policy.h"
 #include "src/core/lib/service_config/service_config_parser.h"
 
 namespace grpc_core {
@@ -55,6 +68,7 @@ class RbacMethodParsedConfig : public ServiceConfigParser::ParsedConfig {
 
 class RbacServiceConfigParser : public ServiceConfigParser::Parser {
  public:
+  absl::string_view name() const override { return parser_name(); }
   // Parses the per-method service config for rbac filter.
   std::unique_ptr<ServiceConfigParser::ParsedConfig> ParsePerMethodParams(
       const grpc_channel_args* args, const Json& json,
@@ -62,7 +76,10 @@ class RbacServiceConfigParser : public ServiceConfigParser::Parser {
   // Returns the parser index for RbacServiceConfigParser.
   static size_t ParserIndex();
   // Registers RbacServiceConfigParser to ServiceConfigParser.
-  static void Register();
+  static void Register(CoreConfiguration::Builder* builder);
+
+ private:
+  static absl::string_view parser_name() { return "rbac"; }
 };
 
 }  // namespace grpc_core

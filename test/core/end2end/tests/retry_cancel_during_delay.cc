@@ -20,6 +20,7 @@
 #include <string>
 
 #include "absl/strings/str_cat.h"
+#include "absl/strings/str_format.h"
 
 #include <grpc/byte_buffer.h>
 #include <grpc/grpc.h>
@@ -30,6 +31,7 @@
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gpr/useful.h"
+#include "src/core/lib/gprpp/time_util.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "test/core/end2end/cq_verifier.h"
 #include "test/core/end2end/end2end_tests.h"
@@ -66,11 +68,12 @@ static void drain_cq(grpc_completion_queue* cq) {
 
 static void shutdown_server(grpc_end2end_test_fixture* f) {
   if (!f->server) return;
-  grpc_server_shutdown_and_notify(f->server, f->shutdown_cq, tag(1000));
-  GPR_ASSERT(grpc_completion_queue_pluck(f->shutdown_cq, tag(1000),
-                                         grpc_timeout_seconds_to_deadline(5),
-                                         nullptr)
-                 .type == GRPC_OP_COMPLETE);
+  grpc_server_shutdown_and_notify(f->server, f->cq, tag(1000));
+  grpc_event ev;
+  do {
+    ev = grpc_completion_queue_next(f->cq, grpc_timeout_seconds_to_deadline(5),
+                                    nullptr);
+  } while (ev.type != GRPC_OP_COMPLETE || ev.tag != tag(1000));
   grpc_server_destroy(f->server);
   f->server = nullptr;
 }
@@ -88,7 +91,6 @@ static void end_test(grpc_end2end_test_fixture* f) {
   grpc_completion_queue_shutdown(f->cq);
   drain_cq(f->cq);
   grpc_completion_queue_destroy(f->cq);
-  grpc_completion_queue_destroy(f->shutdown_cq);
 }
 
 // Tests retry cancellation during backoff.
@@ -116,25 +118,26 @@ static void test_retry_cancel_during_delay(grpc_end2end_test_config config,
   int was_cancelled = 2;
   char* peer;
 
+  std::string service_config = absl::StrFormat(
+      "{\n"
+      "  \"methodConfig\": [ {\n"
+      "    \"name\": [\n"
+      "      { \"service\": \"service\", \"method\": \"method\" }\n"
+      "    ],\n"
+      "    \"retryPolicy\": {\n"
+      "      \"maxAttempts\": 3,\n"
+      "      \"initialBackoff\": \"%ds\",\n"
+      "      \"maxBackoff\": \"120s\",\n"
+      "      \"backoffMultiplier\": 1.6,\n"
+      "      \"retryableStatusCodes\": [ \"ABORTED\" ]\n"
+      "    }\n"
+      "  } ]\n"
+      "}",
+      10 * grpc_test_slowdown_factor());
+
   grpc_arg args[] = {
-      grpc_channel_arg_string_create(
-          const_cast<char*>(GRPC_ARG_SERVICE_CONFIG),
-          const_cast<char*>(
-              "{\n"
-              "  \"methodConfig\": [ {\n"
-              "    \"name\": [\n"
-              "      { \"service\": \"service\", \"method\": \"method\" }\n"
-              "    ],\n"
-              "    \"retryPolicy\": {\n"
-              "      \"maxAttempts\": 3,\n"
-              "      \"initialBackoff\": \"10s\",\n"
-              "      \"maxBackoff\": \"120s\",\n"
-              "      \"backoffMultiplier\": 1.6,\n"
-              "      \"retryableStatusCodes\": [ \"ABORTED\" ]\n"
-              "    },\n"
-              "    \"timeout\": \"5s\"\n"
-              "  } ]\n"
-              "}")),
+      grpc_channel_arg_string_create(const_cast<char*>(GRPC_ARG_SERVICE_CONFIG),
+                                     const_cast<char*>(service_config.c_str())),
   };
   grpc_channel_args client_args = {GPR_ARRAY_SIZE(args), args};
   std::string name = absl::StrCat("retry_cancel_during_delay/", mode.name);
@@ -236,7 +239,6 @@ static void test_retry_cancel_during_delay(grpc_end2end_test_config config,
       grpc_server_request_call(f.server, &s, &call_details,
                                &request_metadata_recv, f.cq, f.cq, tag(201));
   GPR_ASSERT(GRPC_CALL_OK == error);
-  cq_verify_empty(cqv);
 
   // Initiate cancellation.
   GPR_ASSERT(GRPC_CALL_OK == mode.initiate_cancel(c, nullptr));
@@ -244,16 +246,19 @@ static void test_retry_cancel_during_delay(grpc_end2end_test_config config,
   CQ_EXPECT_COMPLETION(cqv, tag(1), true);
   cq_verify(cqv);
 
+  gpr_timespec finish_time = gpr_now(GPR_CLOCK_MONOTONIC);
+
+  gpr_log(GPR_INFO, "status=%d expected=%d", status, mode.expect_status);
+  gpr_log(GPR_INFO, "message=\"%s\"",
+          std::string(grpc_core::StringViewFromSlice(details)).c_str());
+  GPR_ASSERT(status == mode.expect_status);
+  GPR_ASSERT(was_cancelled == 0);
+
   // Make sure we didn't wait the full deadline before failing.
   gpr_log(
       GPR_INFO, "Expect completion before: %s",
       absl::FormatTime(grpc_core::ToAbslTime(expect_finish_before)).c_str());
-  GPR_ASSERT(gpr_time_cmp(gpr_now(GPR_CLOCK_MONOTONIC), expect_finish_before) <
-             0);
-
-  gpr_log(GPR_INFO, "status=%d expected=%d", status, mode.expect_status);
-  GPR_ASSERT(status == mode.expect_status);
-  GPR_ASSERT(was_cancelled == 0);
+  GPR_ASSERT(gpr_time_cmp(finish_time, expect_finish_before) < 0);
 
   grpc_slice_unref(details);
   grpc_metadata_array_destroy(&initial_metadata_recv);

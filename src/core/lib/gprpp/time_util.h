@@ -21,7 +21,7 @@
 
 #include "absl/time/time.h"
 
-#include <grpc/support/time.h>
+#include <grpc/impl/codegen/gpr_types.h>
 
 namespace grpc_core {
 
