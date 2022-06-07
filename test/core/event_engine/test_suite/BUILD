@@ -78,16 +78,6 @@ grpc_cc_test(
     deps = ["//test/core/event_engine/test_suite:timer"],
 )
 
-grpc_cc_test(
-    name = "fuzzing_event_engine_test",
-    srcs = ["fuzzing_event_engine_test.cc"],
-    uses_polling = False,
-    deps = [
-        "//test/core/event_engine/fuzzing_event_engine",
-        "//test/core/event_engine/test_suite:timer",
-    ],
-)
-
 # -- Internal targets --
 
 grpc_cc_library(
