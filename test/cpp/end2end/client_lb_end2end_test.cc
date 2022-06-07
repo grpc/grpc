@@ -1221,8 +1221,10 @@ TEST_F(PickFirstTest, ReresolutionNoSelected) {
   response_generator.SetNextResolution(dead_ports);
   gpr_log(GPR_INFO, "****** INITIAL RESOLUTION SET *******");
   for (size_t i = 0; i < 10; ++i) {
-    CheckRpcSendFailure(DEBUG_LOCATION, stub, StatusCode::UNAVAILABLE,
-                        "failed to connect to all addresses");
+    CheckRpcSendFailure(
+        DEBUG_LOCATION, stub, StatusCode::UNAVAILABLE,
+        "failed to connect to all addresses; last error: "
+        "UNKNOWN: Failed to connect to remote host: Connection refused");
   }
   // Set a re-resolution result that contains reachable ports, so that the
   // pick_first LB policy can recover soon.
@@ -1230,7 +1232,10 @@ TEST_F(PickFirstTest, ReresolutionNoSelected) {
   gpr_log(GPR_INFO, "****** RE-RESOLUTION SET *******");
   WaitForServer(DEBUG_LOCATION, stub, 0, [](const Status& status) {
     EXPECT_EQ(StatusCode::UNAVAILABLE, status.error_code());
-    EXPECT_EQ("failed to connect to all addresses", status.error_message());
+    EXPECT_EQ(
+        "failed to connect to all addresses; last error: "
+        "UNKNOWN: Failed to connect to remote host: Connection refused",
+        status.error_message());
   });
   CheckRpcSendOk(DEBUG_LOCATION, stub);
   EXPECT_EQ(servers_[0]->service_.request_count(), 1);
@@ -1432,8 +1437,10 @@ TEST_F(PickFirstTest,
   response_generator.SetNextResolution(ports);
   EXPECT_EQ(GRPC_CHANNEL_IDLE, channel->GetState(false));
   // Send an RPC, which should fail.
-  CheckRpcSendFailure(DEBUG_LOCATION, stub, StatusCode::UNAVAILABLE,
-                      "failed to connect to all addresses");
+  CheckRpcSendFailure(
+      DEBUG_LOCATION, stub, StatusCode::UNAVAILABLE,
+      "failed to connect to all addresses; last error: "
+      "UNKNOWN: Failed to connect to remote host: Connection refused");
   // Channel should be in TRANSIENT_FAILURE.
   EXPECT_EQ(GRPC_CHANNEL_TRANSIENT_FAILURE, channel->GetState(false));
   // Now start a server on the last port.
@@ -1986,7 +1993,8 @@ TEST_F(RoundRobinTest, HealthChecking) {
   servers_[2]->SetServingStatus("health_check_service_name", false);
   EXPECT_TRUE(WaitForChannelNotReady(channel.get()));
   CheckRpcSendFailure(DEBUG_LOCATION, stub, StatusCode::UNAVAILABLE,
-                      "connections to all backends failing");
+                      "connections to all backends failing; last error: "
+                      "UNAVAILABLE: backend unhealthy");
   // Clean up.
   EnableDefaultHealthCheckService(false);
 }
@@ -2043,7 +2051,8 @@ TEST_F(RoundRobinTest, WithHealthCheckingInhibitPerChannel) {
   // failing.
   EXPECT_FALSE(WaitForChannelReady(channel1.get(), 1));
   CheckRpcSendFailure(DEBUG_LOCATION, stub1, StatusCode::UNAVAILABLE,
-                      "connections to all backends failing");
+                      "connections to all backends failing; last error: "
+                      "UNAVAILABLE: backend unhealthy");
   // Second channel should be READY.
   EXPECT_TRUE(WaitForChannelReady(channel2.get(), 1));
   CheckRpcSendOk(DEBUG_LOCATION, stub2);
@@ -2087,7 +2096,8 @@ TEST_F(RoundRobinTest, HealthCheckingServiceNamePerChannel) {
   // failing.
   EXPECT_FALSE(WaitForChannelReady(channel1.get(), 1));
   CheckRpcSendFailure(DEBUG_LOCATION, stub1, StatusCode::UNAVAILABLE,
-                      "connections to all backends failing");
+                      "connections to all backends failing; last error: "
+                      "UNAVAILABLE: backend unhealthy");
   // Second channel should be READY.
   EXPECT_TRUE(WaitForChannelReady(channel2.get(), 1));
   CheckRpcSendOk(DEBUG_LOCATION, stub2);
