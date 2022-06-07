@@ -47,6 +47,7 @@ StaticDataAuthorizationPolicyProvider::StaticDataAuthorizationPolicyProvider(
 
 namespace {
 
+/*
 time_t GetModificationTime(const char* filename) {
   time_t ts = 0;
   absl::Status status = GetFileModificationTime(filename, &ts);
@@ -94,6 +95,25 @@ absl::StatusOr<std::string> ReadPolicyFromFile(absl::string_view policy_path) {
   }
   gpr_log(GPR_ERROR, "Failed after 3 retries");
   return status;
+}*/
+
+absl::StatusOr<std::string> ReadPolicyFromFile(absl::string_view policy_path) {
+  grpc_slice policy_slice = grpc_empty_slice();
+  gpr_log(GPR_DEBUG, "Before load file...");
+  grpc_error_handle error =
+      grpc_load_file(std::string(policy_path).c_str(), 0, &policy_slice);
+  gpr_log(GPR_DEBUG, "After load file...");
+  if (error != GRPC_ERROR_NONE) {
+    gpr_log(GPR_ERROR, "Failed to read file %s.",
+            grpc_error_std_string(error).c_str());
+    absl::Status status =
+        absl::InvalidArgumentError(grpc_error_std_string(error));
+    GRPC_ERROR_UNREF(error);
+    return status;
+  }
+  std::string policy_contents(StringViewFromSlice(policy_slice));
+  grpc_slice_unref_internal(policy_slice);
+  return policy_contents;
 }
 
 gpr_timespec TimeoutSecondsToDeadline(int64_t seconds) {
@@ -170,13 +190,11 @@ absl::Status FileWatcherAuthorizationPolicyProvider::ForceUpdate() {
     return rbac_policies_or.status();
   }
   gpr_log(GPR_DEBUG, "After generating rbac policies...");
-  {
-    MutexLock lock(&mu_);
-    allow_engine_ = MakeRefCounted<GrpcAuthorizationEngine>(
-        std::move(rbac_policies_or->allow_policy));
-    deny_engine_ = MakeRefCounted<GrpcAuthorizationEngine>(
-        std::move(rbac_policies_or->deny_policy));
-  }
+  MutexLock lock(&mu_);
+  allow_engine_ = MakeRefCounted<GrpcAuthorizationEngine>(
+      std::move(rbac_policies_or->allow_policy));
+  deny_engine_ = MakeRefCounted<GrpcAuthorizationEngine>(
+      std::move(rbac_policies_or->deny_policy));
   if (GRPC_TRACE_FLAG_ENABLED(grpc_authz_trace)) {
     gpr_log(GPR_INFO,
             "authorization policy reload status: successfully loaded new "
