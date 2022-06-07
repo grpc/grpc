@@ -131,6 +131,8 @@ class PythonArtifact:
             # building the native extension is the most time-consuming part of the build
             environ['GRPC_PYTHON_BUILD_EXT_COMPILER_JOBS'] = str(inner_jobs)
 
+        # TODO: Clean up if this works.
+        environ['ARCHFLAGS'] = '-arch x86_64'
         if self.platform == 'linux_extra':
             # Crosscompilation build for armv7 (e.g. Raspberry Pi)
             environ['PYTHON'] = '/opt/python/{}/bin/python3'.format(
