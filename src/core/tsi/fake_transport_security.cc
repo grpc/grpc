@@ -463,7 +463,11 @@ static tsi_result fake_zero_copy_grpc_protector_unprotect(
     grpc_slice_buffer_reset_and_unref_internal(&impl->header_sb);
   }
   if (min_progress_size != nullptr) {
-    *min_progress_size = impl->parsed_frame_size;
+    if (impl->parsed_frame_size > 0) {
+      *min_progress_size = impl->parsed_frame_size - impl->protected_sb.length;
+    } else {
+      *min_progress_size = 1;
+    }
   }
   return TSI_OK;
 }

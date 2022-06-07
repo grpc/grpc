@@ -216,7 +216,12 @@ static tsi_result alts_zero_copy_grpc_protector_unprotect(
     }
   }
   if (min_progress_size != nullptr) {
-    *min_progress_size = protector->parsed_frame_size;
+    if (protector->parsed_frame_size > 0) {
+      *min_progress_size =
+          protector->parsed_frame_size - protector->protected_sb.length;
+    } else {
+      *min_progress_size = 1;
+    }
   }
   return TSI_OK;
 }
