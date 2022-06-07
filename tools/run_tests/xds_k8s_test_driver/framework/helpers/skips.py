@@ -16,7 +16,7 @@ from dataclasses import dataclass
 import enum
 import logging
 import re
-from typing import Callable
+from typing import Callable, Optional
 import unittest
 
 from packaging import version as pkg_version
@@ -56,7 +56,7 @@ class TestConfig:
     """Describes the config for the test suite."""
     client_lang: Lang
     server_lang: Lang
-    version: str
+    version: Optional[str]
 
     def version_gte(self, another: str) -> bool:
         """Returns a bool for whether the version is >= another one.
@@ -65,8 +65,10 @@ class TestConfig:
         number is greater than or equal to another version's number. Version
         "master" is always considered latest.
         E.g., master >= v1.41.x >= v1.40.x >= v1.9.x.
+
+        Unspecified version is treated as 'master', but isn't explicitly set.
         """
-        if self.version == 'master':
+        if self.version == 'master' or self.version is None:
             return True
         return self._parse_version(self.version) >= self._parse_version(another)
 
@@ -75,14 +77,16 @@ class TestConfig:
 
         Version "master" is always considered latest.
         E.g., v1.9.x < v1.40.x < v1.41.x < master.
+
+        Unspecified version is treated as 'master', but isn't explicitly set.
         """
-        if self.version == 'master':
+        if self.version == 'master' or self.version is None:
             return False
         return self._parse_version(self.version) < self._parse_version(another)
 
     def __str__(self):
-        return (f'TestConfig(client_lang="{self.client_lang}", '
-                f'server_lang="{self.server_lang}", version="{self.version}")')
+        return (f"TestConfig(client_lang='{self.client_lang}', "
+                f"server_lang='{self.server_lang}', version={self.version!r})")
 
     @staticmethod
     def _parse_version(s: str) -> pkg_version.Version:
