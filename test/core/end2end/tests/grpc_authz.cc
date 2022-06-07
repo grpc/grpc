@@ -250,6 +250,11 @@ static void test_deny_unauthorized_request(grpc_end2end_test_fixture f) {
   CQ_EXPECT_COMPLETION(cqv, tag(1), 1);
   cq_verify(cqv);
 
+  char* details_str = grpc_slice_to_c_string(details);
+  gpr_log(GPR_ERROR, "status=%d details=%s error_string=%s", status,
+          details_str, error_string);
+  gpr_free(details_str);
+
   GPR_ASSERT(GRPC_STATUS_PERMISSION_DENIED == status);
   GPR_ASSERT(0 ==
              grpc_slice_str_cmp(details, "Unauthorized RPC request rejected."));
