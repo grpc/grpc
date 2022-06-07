@@ -1903,6 +1903,7 @@ grpc_cc_library(
         "exec_ctx",
         "gpr_platform",
         "time",
+        "useful",
     ],
 )
 

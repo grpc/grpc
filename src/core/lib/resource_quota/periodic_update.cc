@@ -18,6 +18,8 @@
 
 #include <atomic>
 
+#include "src/core/lib/gpr/useful.h"
+
 namespace grpc_core {
 
 bool PeriodicUpdate::MaybeEndPeriod() {
