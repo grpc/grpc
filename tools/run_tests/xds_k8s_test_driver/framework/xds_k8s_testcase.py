@@ -365,7 +365,7 @@ class XdsKubernetesBaseTestCase(absltest.TestCase):
                 msg=f'Backend {backend} did not receive a single RPC')
 
 
-class XdsKubernetesIsolatedTestCase(XdsKubernetesBaseTestCase,
+class IsolatedXdsKubernetesTestCase(XdsKubernetesBaseTestCase,
                                     metaclass=abc.ABCMeta):
     """Isolated test case.
 
@@ -443,7 +443,7 @@ class XdsKubernetesIsolatedTestCase(XdsKubernetesBaseTestCase,
                                    force_namespace=self.force_cleanup)
 
 
-class RegularXdsKubernetesTestCase(XdsKubernetesIsolatedTestCase):
+class RegularXdsKubernetesTestCase(IsolatedXdsKubernetesTestCase):
     """Regular test case base class for testing PSM features in isolation."""
 
     @classmethod
@@ -534,7 +534,7 @@ class AppNetXdsKubernetesTestCase(RegularXdsKubernetesTestCase):
             compute_api_version=self.compute_api_version)
 
 
-class SecurityXdsKubernetesTestCase(XdsKubernetesIsolatedTestCase):
+class SecurityXdsKubernetesTestCase(IsolatedXdsKubernetesTestCase):
     """Test case base class for testing PSM security features in isolation."""
     td: TrafficDirectorSecureManager
 
