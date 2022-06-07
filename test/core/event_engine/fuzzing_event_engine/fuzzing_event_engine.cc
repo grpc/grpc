@@ -62,26 +62,25 @@ absl::Time FuzzingEventEngine::Now() {
 }
 
 absl::StatusOr<std::unique_ptr<EventEngine::Listener>>
-FuzzingEventEngine::CreateListener(
-    Listener::AcceptCallback on_accept,
-    std::function<void(absl::Status)> on_shutdown, const EndpointConfig& config,
-    std::unique_ptr<MemoryAllocatorFactory> memory_allocator_factory) {
+FuzzingEventEngine::CreateListener(Listener::AcceptCallback,
+                                   std::function<void(absl::Status)>,
+                                   const EndpointConfig&,
+                                   std::unique_ptr<MemoryAllocatorFactory>) {
   abort();
 }
 
 EventEngine::ConnectionHandle FuzzingEventEngine::Connect(
-    OnConnectCallback on_connect, const ResolvedAddress& addr,
-    const EndpointConfig& args, MemoryAllocator memory_allocator,
-    absl::Time deadline) {
+    OnConnectCallback, const ResolvedAddress&, const EndpointConfig&,
+    MemoryAllocator, absl::Time) {
   abort();
 }
 
-bool FuzzingEventEngine::CancelConnect(ConnectionHandle handle) { abort(); }
+bool FuzzingEventEngine::CancelConnect(ConnectionHandle) { abort(); }
 
 bool FuzzingEventEngine::IsWorkerThread() { abort(); }
 
 std::unique_ptr<EventEngine::DNSResolver> FuzzingEventEngine::GetDNSResolver(
-    const DNSResolver::ResolverOptions& options) {
+    const DNSResolver::ResolverOptions&) {
   abort();
 }
 
