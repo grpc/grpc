@@ -268,27 +268,47 @@ class ClientConnectedCallPromise {
         memset(&send_message_, 0, sizeof(send_message_));
         send_message_.payload = &batch_payload_;
         if (p->has_value()) {
-          send_message_state_ = std::move(*p);
+          send_message_state_ = std::move(**p);
           auto& msg = absl::get<Message>(send_message_state_);
           send_message_.send_message = true;
           batch_payload_.send_message.send_message = msg.payload();
           batch_payload_.send_message.flags = msg.flags();
         } else {
+          send_message_state_ = Closed{};
+          send_message_.send_trailing_metadata = true;
+          batch_payload_.send_trailing_metadata.send_trailing_metadata =
+              nullptr;
+          // DO NOT SUBMIT: figure this field out
+          batch_payload_.send_trailing_metadata.sent = nullptr;
+        }
+        push_send_message_ = true;
+        SchedulePush();
+      }
+    }
+    if (absl::holds_alternative<Idle>(recv_message_state_)) {
+      recv_message_state_ = absl::optional<Message>();
+      push_recv_message_ = true;
+      SchedulePush();
+    }
+    if (auto* message = absl::get_if<Message>(&recv_message_state_)) {
+      recv_message_state_ =
+          server_to_client_messages_->Push(std::move(*message));
+    }
+    if (auto* push =
+            absl::get_if<PipeSender<Message>::PushType>(&recv_message_state_)) {
+      auto r = (*push)();
+      if (bool* result = absl::get_if<bool>(&r)) {
+        if (*result) {
+          recv_message_state_ = absl::optional<Message>();
+          push_recv_message_ = true;
+          SchedulePush();
+        } else {
+          recv_message_state_ = Closed{};
         }
       }
     }
-    switch (send_message_state_) {
-      case MessageState::kInTransport:
-      case MessageState::kClosed:
-        break;
-      case MessageState::kGotResponse:
-        client_to_server_messages_next_ = client_to_server_messages_->Next();
-        ABSL_FALLTHROUGH_INTENDED;
-      case MessageState::kIdle:
-        break;
-    }
     if (absl::exchange(queued_initial_metadata_, false)) {
-      server_initial_metadata_latch_.Set(&server_initial_metadata_);
+      server_initial_metadata_latch_->Set(&server_initial_metadata_);
     }
     if (absl::exchange(queued_trailing_metadata_, false)) {
       return ServerMetadataHandle(&server_trailing_metadata_);
@@ -310,6 +330,9 @@ class ClientConnectedCallPromise {
     if (absl::exchange(push_metadata_, false)) {
       grpc_transport_perform_stream_op(transport_, stream_, &metadata_);
     }
+    if (absl::exchange(push_send_message_, false)) {
+      grpc_transport_perform_stream_op(transport_, stream_, &send_message_);
+    }
     scheduled_push_ = false;
   }
 
@@ -324,18 +347,22 @@ class ClientConnectedCallPromise {
 
   bool requested_metadata_ = false;
   bool push_metadata_ = false;
+  bool push_send_message_ = false;
+  bool push_recv_message_ = false;
   bool scheduled_push_ = false;
   bool queued_initial_metadata_ = false;
   bool queued_trailing_metadata_ = false;
-  MessageState send_message_state_ = MessageState::kIdle;
   Waker waker_;
   grpc_transport* const transport_;
   grpc_stream* const stream_;
-  Latch<ServerMetadata*> server_initial_metadata_latch_;
+  Latch<ServerMetadata*>* server_initial_metadata_latch_;
   PipeReceiver<Message>* client_to_server_messages_;
   PipeSender<Message>* server_to_client_messages_;
   absl::variant<Idle, Closed, PipeReceiver<Message>::NextType, Message>
       send_message_state_;
+  absl::variant<Idle, absl::optional<Message>, Message, Closed,
+                PipeSender<Message>::PushType>
+      recv_message_state_;
   grpc_closure recv_initial_metadata_ready_ =
       MakeMemberClosure<ClientConnectedCallPromise,
                         &ClientConnectedCallPromise::RecvInitialMetadataReady>(
