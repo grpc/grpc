@@ -20,23 +20,38 @@
 
 #include "src/core/lib/channel/connected_channel.h"
 
-#include <stdlib.h>
+#include <string.h>
 
-#include "channel_fwd.h"
-#include "context.h"
+#include <type_traits>
+#include <utility>
+
+#include "absl/types/optional.h"
+#include "absl/types/variant.h"
+#include "absl/utility/utility.h"
 
 #include <grpc/impl/codegen/grpc_types.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 
 #include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/channel/channel_fwd.h"
 #include "src/core/lib/channel/channel_stack.h"
+#include "src/core/lib/channel/context.h"
 #include "src/core/lib/gpr/alloc.h"
+#include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/iomgr/call_combiner.h"
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/error.h"
+#include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/polling_entity.h"
+#include "src/core/lib/promise/activity.h"
 #include "src/core/lib/promise/arena_promise.h"
+#include "src/core/lib/promise/context.h"
+#include "src/core/lib/promise/latch.h"
+#include "src/core/lib/promise/pipe.h"
+#include "src/core/lib/promise/poll.h"
+#include "src/core/lib/resource_quota/arena.h"
+#include "src/core/lib/surface/channel_stack_type.h"
 #include "src/core/lib/transport/transport.h"
 #include "src/core/lib/transport/transport_fwd.h"
 #include "src/core/lib/transport/transport_impl.h"
@@ -386,8 +401,8 @@ class ClientConnectedCallPromise {
 
 namespace {
 
-template <grpc_core::ArenaPromise<grpc_core::ServerMetadataHandle> (
-    *make_call_promise)(grpc_transport*, grpc_core::CallArgs)>
+template <ArenaPromise<ServerMetadataHandle> (*make_call_promise)(
+    grpc_transport*, CallArgs)>
 grpc_channel_filter MakeConnectedFilter() {
   return {
     connected_channel_start_transport_stream_op_batch,
