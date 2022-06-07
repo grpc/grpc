@@ -19,6 +19,7 @@
 #include <grpc/grpc_security.h>
 #include <grpc/support/string_util.h>
 
+#include "src/core/lib/gprpp/stat.h"
 #include "src/core/lib/iomgr/load_file.h"
 #include "src/core/lib/security/authorization/grpc_authorization_engine.h"
 #include "src/core/lib/slice/slice_internal.h"
@@ -46,21 +47,53 @@ StaticDataAuthorizationPolicyProvider::StaticDataAuthorizationPolicyProvider(
 
 namespace {
 
-absl::StatusOr<std::string> ReadPolicyFromFile(absl::string_view policy_path) {
-  grpc_slice policy_slice = grpc_empty_slice();
-  gpr_log(GPR_DEBUG, "Before load file...");
-  grpc_error_handle error =
-      grpc_load_file(std::string(policy_path).c_str(), 0, &policy_slice);
-  gpr_log(GPR_DEBUG, "After load file...");
-  if (error != GRPC_ERROR_NONE) {
-    absl::Status status =
-        absl::InvalidArgumentError(grpc_error_std_string(error));
-    GRPC_ERROR_UNREF(error);
-    return status;
+time_t GetModificationTime(const char* filename) {
+  time_t ts = 0;
+  absl::Status status = GetFileModificationTime(filename, &ts);
+  if (!status.ok()) {
+    gpr_log(GPR_ERROR,
+            "Failed to get file modification time. code=%d error_details=%s",
+            status.code(), std::string(status.message()).c_str());
   }
-  std::string policy_contents(StringViewFromSlice(policy_slice));
-  grpc_slice_unref_internal(policy_slice);
-  return policy_contents;
+  return ts;
+}
+
+absl::StatusOr<std::string> ReadPolicyFromFile(absl::string_view policy_path) {
+  absl::Status status = absl::OkStatus();
+  const int kNumRetries = 3;
+  for (int i = 0; i < kNumRetries; ++i) {
+    time_t ts_before = GetModificationTime(std::string(policy_path).c_str());
+    if (ts_before == 0) {
+      gpr_log(GPR_ERROR, "Failed to get modification time. Start retrying ...");
+      status =
+          absl::InvalidArgumentError("Failed to get file modification time");
+      continue;
+    }
+    grpc_slice policy_slice = grpc_empty_slice();
+    gpr_log(GPR_DEBUG, "Before load file...");
+    grpc_error_handle error =
+        grpc_load_file(std::string(policy_path).c_str(), 0, &policy_slice);
+    gpr_log(GPR_DEBUG, "After load file...");
+    if (error != GRPC_ERROR_NONE) {
+      gpr_log(GPR_ERROR, "Failed to read file %s. Start retrying ...",
+              grpc_error_std_string(error).c_str());
+      status = absl::InvalidArgumentError(grpc_error_std_string(error));
+      GRPC_ERROR_UNREF(error);
+      continue;
+    }
+    time_t ts_after = GetModificationTime(std::string(policy_path).c_str());
+    if (ts_after != ts_before) {
+      gpr_log(GPR_ERROR,
+              "Last modified time different %d %d. Start retrying ...",
+              ts_before, ts_after);
+      continue;
+    }
+    std::string policy_contents(StringViewFromSlice(policy_slice));
+    grpc_slice_unref_internal(policy_slice);
+    return policy_contents;
+  }
+  gpr_log(GPR_ERROR, "Failed after 3 retries");
+  return status;
 }
 
 gpr_timespec TimeoutSecondsToDeadline(int64_t seconds) {
