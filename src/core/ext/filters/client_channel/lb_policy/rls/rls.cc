@@ -1084,7 +1084,8 @@ LoadBalancingPolicy::PickResult RlsLb::Picker::Pick(PickArgs args) {
                 "[rlslb %p] picker=%p: RLS call in backoff; failing pick",
                 lb_policy_.get(), this);
       }
-      return PickResult::Fail(entry->status());
+      return PickResult::Fail(absl::UnavailableError(
+          absl::StrCat("RLS request failed: ", entry->status().ToString())));
     }
   }
   // RLS call pending.  Queue the pick.
