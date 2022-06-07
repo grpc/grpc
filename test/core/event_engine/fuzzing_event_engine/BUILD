@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-load("//bazel:grpc_build_system.bzl", "grpc_cc_library", "grpc_cc_test", "grpc_package")
+load("//bazel:grpc_build_system.bzl", "grpc_cc_library", "grpc_package")
 
 licenses(["notice"])
 
@@ -26,8 +26,8 @@ grpc_cc_library(
     srcs = ["fuzzing_event_engine.cc"],
     hdrs = ["fuzzing_event_engine.h"],
     deps = [
-        "//:event_engine_base_hdrs",
         ":fuzzing_event_engine_cc_proto",
+        "//:event_engine_base_hdrs",
     ],
 )
 

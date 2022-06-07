@@ -39,7 +39,7 @@ class ThreadedFuzzingEventEngine : public FuzzingEventEngine {
           }
         }) {}
 
-  ~ThreadedFuzzingEventEngine() {
+  ~ThreadedFuzzingEventEngine() override {
     done_.store(true);
     main_.join();
   }
