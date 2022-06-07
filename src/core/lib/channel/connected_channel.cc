@@ -36,6 +36,7 @@
 #include "src/core/lib/promise/arena_promise.h"
 #include "src/core/lib/transport/transport.h"
 #include "src/core/lib/transport/transport_fwd.h"
+#include "src/core/lib/transport/transport_impl.h"
 
 #define MAX_BUFFER_LENGTH 8192
 
@@ -212,13 +213,40 @@ namespace {
 ArenaPromise<ServerMetadataHandle> MakeCallPromise(grpc_channel_element* elem,
                                                    CallArgs call_args,
                                                    NextPromiseFactory) {
-  abort();
+  grpc_transport* transport =
+      static_cast<channel_data*>(elem->channel_data)->transport;
+  return transport->vtable->make_call_promise(transport, std::move(call_args));
 }
 
 }  // namespace
 }  // namespace grpc_core
 
 const grpc_channel_filter grpc_connected_filter = {
+    connected_channel_start_transport_stream_op_batch,
+    nullptr,
+    connected_channel_start_transport_op,
+    sizeof(call_data),
+    connected_channel_init_call_elem,
+    set_pollset_or_pollset_set,
+    connected_channel_destroy_call_elem,
+    sizeof(channel_data),
+    connected_channel_init_channel_elem,
+    [](grpc_channel_stack* channel_stack, grpc_channel_element* elem) {
+      /* HACK(ctiller): increase call stack size for the channel to make space
+         for channel data. We need a cleaner (but performant) way to do this,
+         and I'm not sure what that is yet.
+         This is only "safe" because call stacks place no additional data after
+         the last call element, and the last call element MUST be the connected
+         channel. */
+      channel_stack->call_stack_size += grpc_transport_stream_size(
+          static_cast<channel_data*>(elem->channel_data)->transport);
+    },
+    connected_channel_destroy_channel_elem,
+    connected_channel_get_channel_info,
+    "connected",
+};
+
+const grpc_channel_filter grpc_promising_connected_filter = {
     connected_channel_start_transport_stream_op_batch,
     grpc_core::MakeCallPromise,
     connected_channel_start_transport_op,
@@ -246,7 +274,11 @@ const grpc_channel_filter grpc_connected_filter = {
 bool grpc_add_connected_filter(grpc_core::ChannelStackBuilder* builder) {
   grpc_transport* t = builder->transport();
   GPR_ASSERT(t != nullptr);
-  builder->AppendFilter(&grpc_connected_filter);
+  if (t->vtable->make_call_promise != nullptr) {
+    builder->AppendFilter(&grpc_promising_connected_filter);
+  } else {
+    builder->AppendFilter(&grpc_connected_filter);
+  }
   return true;
 }
 
