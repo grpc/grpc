@@ -16,6 +16,8 @@
 
 #include "src/core/lib/resource_quota/periodic_update.h"
 
+#include <atomic>
+
 namespace grpc_core {
 
 bool PeriodicUpdate::MaybeEndPeriod() {
@@ -33,34 +35,29 @@ bool PeriodicUpdate::MaybeEndPeriod() {
     if (time_so_far.millis() == 0) {
       better_guess = expected_updates_per_period_ * 2;
     } else {
-      const double scale = period_.seconds() / time_so_far.seconds();
-      if (scale > 2) {
-        better_guess = expected_updates_per_period_ * 2;
-      } else {
-        // We expect scale >= 1.0 still.
-        better_guess = expected_updates_per_period_ * scale;
-        if (better_guess <= expected_updates_per_period_) {
-          better_guess = expected_updates_per_period_ + 1;
-        }
+      // Determine a scaling factor that would have gotten us to the next
+      // period, but clamp between 1.01 (at least 1% increase in guesses)
+      // and 2.0 (at most doubling) - to avoid running completely out of
+      // control.
+      const double scale =
+          Clamp(period_.seconds() / time_so_far.seconds(), 1.01, 2.0);
+      better_guess = expected_updates_per_period_ * scale;
+      if (better_guess <= expected_updates_per_period_) {
+        better_guess = expected_updates_per_period_ + 1;
       }
     }
-    const int64_t add = better_guess - expected_updates_per_period_;
-    expected_updates_per_period_ = better_guess;
-    const int64_t past_remaining =
-        updates_remaining_.fetch_add(add, std::memory_order_release);
-    // If adding more things still didn't get us back above 0 things remaining
-    // then we should continue adding more things - otherwise no thread could
-    // ever enter MaybeEndPeriod again!
-    // (Remember: other threads may have decremented updates_remaining_ while we
-    // executed).
-    if (add + past_remaining <= 0) {
-      ExecCtx::Get()->InvalidateNow();
-      return MaybeEndPeriod();
-    }
+    // Store the remainder left. Note that updates_remaining_ may have been
+    // decremented by another thread whilst we performed the above calculations:
+    // we simply discard those decrements.
+    updates_remaining_.store(better_guess - expected_updates_per_period_,
+                             std::memory_order_release);
     // Not quite done, return false, try for longer.
     return false;
   }
   // Finished period, start a new one and return true.
+  // We try to predict how many update periods we'd need to cover the full time
+  // span, and we increase that by 1% to attempt to tend to not enter the above
+  // stanza.
   expected_updates_per_period_ =
       period_.seconds() * expected_updates_per_period_ / time_so_far.seconds();
   if (expected_updates_per_period_ < 1) expected_updates_per_period_ = 1;
