@@ -41,12 +41,14 @@ AuthorizationPolicy = gcp.network_security.AuthorizationPolicy
 _NetworkServicesV1Alpha1 = gcp.network_services.NetworkServicesV1Alpha1
 _NetworkServicesV1Beta1 = gcp.network_services.NetworkServicesV1Beta1
 EndpointPolicy = gcp.network_services.EndpointPolicy
+GrpcRoute = gcp.network_services.GrpcRoute
+Mesh = gcp.network_services.Mesh
 
 # Testing metadata consts
 TEST_AFFINITY_METADATA_KEY = 'xds_md'
 
 
-class TrafficDirectorManager:
+class TrafficDirectorManager:  # pylint: disable=too-many-public-methods
     compute: _ComputeV1
     resource_prefix: str
     resource_suffix: str
@@ -193,7 +195,8 @@ class TrafficDirectorManager:
             self,
             protocol: Optional[BackendServiceProtocol] = _BackendGRPC,
             subset_size: Optional[int] = None,
-            affinity_header: Optional[str] = None):
+            affinity_header: Optional[str] = None,
+            locality_lb_policies: Optional[List[dict]] = None):
         if protocol is None:
             protocol = _BackendGRPC
 
@@ -204,7 +207,8 @@ class TrafficDirectorManager:
             health_check=self.health_check,
             protocol=protocol,
             subset_size=subset_size,
-            affinity_header=affinity_header)
+            affinity_header=affinity_header,
+            locality_lb_policies=locality_lb_policies)
         self.backend_service = resource
         self.backend_service_protocol = protocol
 
@@ -383,8 +387,8 @@ class TrafficDirectorManager:
         self.compute.wait_for_backends_healthy_status(
             self.affinity_backend_service, self.affinity_backends)
 
+    @staticmethod
     def _generate_url_map_body(
-        self,
         name: str,
         matcher_name: str,
         src_hosts,
@@ -547,9 +551,9 @@ class TrafficDirectorManager:
             lo: int = 1024,  # To avoid confusion, skip well-known ports.
             hi: int = 65535,
             attempts: int = 25) -> int:
-        for attempts in range(attempts):
+        for _ in range(attempts):
             src_port = random.randint(lo, hi)
-            if not (self.compute.exists_forwarding_rule(src_port)):
+            if not self.compute.exists_forwarding_rule(src_port):
                 return src_port
         # TODO(sergiitk): custom exception
         raise RuntimeError("Couldn't find unused forwarding rule port")
@@ -642,7 +646,6 @@ class TrafficDirectorAppNetManager(TrafficDirectorManager):
                  project: str,
                  *,
                  resource_prefix: str,
-                 config_scope: str,
                  resource_suffix: Optional[str] = None,
                  network: str = 'default',
                  compute_api_version: str = 'v1'):
@@ -653,22 +656,18 @@ class TrafficDirectorAppNetManager(TrafficDirectorManager):
                          network=network,
                          compute_api_version=compute_api_version)
 
-        self.config_scope = config_scope
-
         # API
         self.netsvc = _NetworkServicesV1Alpha1(gcp_api_manager, project)
 
         # Managed resources
-        self.grpc_route: Optional[_NetworkServicesV1Alpha1.GrpcRoute] = None
-        self.mesh: Optional[_NetworkServicesV1Alpha1.Mesh] = None
+        # TODO(gnossen) PTAL at the pylint error
+        self.grpc_route: Optional[GrpcRoute] = None
+        self.mesh: Optional[Mesh] = None
 
     def create_mesh(self) -> GcpResource:
         name = self.make_resource_name(self.MESH_NAME)
         logger.info("Creating Mesh %s", name)
-        body = {
-            "type": "PROXYLESS_GRPC",
-            "scope": self.config_scope,
-        }
+        body = {}
         resource = self.netsvc.create_mesh(name, body)
         self.mesh = self.netsvc.get_mesh(name)
         logger.debug("Loaded Mesh: %s", self.mesh)

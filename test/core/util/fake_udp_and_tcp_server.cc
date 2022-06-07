@@ -22,7 +22,6 @@
 #include "absl/strings/str_cat.h"
 
 #include "src/core/lib/address_utils/sockaddr_utils.h"
-#include "src/core/lib/event_engine/sockaddr.h"
 #include "test/core/util/port.h"
 
 #ifdef GPR_WINDOWS
@@ -120,7 +119,7 @@ FakeUdpAndTcpServer::FakeUdpAndTcpServer(
   grpc_resolved_address resolved_addr;
   memcpy(resolved_addr.addr, &addr, sizeof(addr));
   resolved_addr.len = sizeof(addr);
-  std::string addr_str = grpc_sockaddr_to_string(&resolved_addr, false);
+  std::string addr_str = grpc_sockaddr_to_string(&resolved_addr, false).value();
   gpr_log(GPR_INFO, "Fake UDP and TCP server listening on %s",
           addr_str.c_str());
   if (bind(udp_socket_, reinterpret_cast<const sockaddr*>(&addr),

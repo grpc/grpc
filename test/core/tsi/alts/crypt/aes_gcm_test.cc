@@ -2111,7 +2111,7 @@ static void gsec_test_do_vector_tests_ieee() {
 }
 
 int main(int argc, char** argv) {
-  grpc::testing::TestEnvironment env(argc, argv);
+  grpc::testing::TestEnvironment env(&argc, argv);
   grpc_init();
   gsec_test_do_generic_crypter_tests();
   gsec_test_do_vector_tests_nist();

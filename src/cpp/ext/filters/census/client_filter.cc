@@ -20,18 +20,41 @@
 
 #include "src/cpp/ext/filters/census/client_filter.h"
 
+#include <stddef.h>
+#include <stdint.h>
+
+#include <algorithm>
 #include <string>
 #include <utility>
 #include <vector>
 
+#include "absl/status/status.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
+#include "absl/time/clock.h"
+#include "absl/time/time.h"
+#include "absl/types/optional.h"
 #include "opencensus/stats/stats.h"
-#include "opencensus/tags/context_util.h"
 #include "opencensus/tags/tag_key.h"
 #include "opencensus/tags/tag_map.h"
+#include "opencensus/trace/span.h"
+#include "opencensus/trace/span_context.h"
+#include "opencensus/trace/status_code.h"
 
-#include "src/core/lib/surface/call.h"
+#include <grpc/impl/codegen/gpr_types.h>
+#include <grpc/slice.h>
+#include <grpc/support/log.h>
+#include <grpcpp/support/config.h>
+
+#include "src/core/lib/channel/context.h"
+#include "src/core/lib/gprpp/sync.h"
+#include "src/core/lib/resource_quota/arena.h"
+#include "src/core/lib/slice/slice.h"
+#include "src/core/lib/slice/slice_buffer.h"
+#include "src/core/lib/slice/slice_refcount.h"
+#include "src/core/lib/transport/metadata_batch.h"
+#include "src/core/lib/transport/transport.h"
+#include "src/cpp/ext/filters/census/context.h"
 #include "src/cpp/ext/filters/census/grpc_plugin.h"
 #include "src/cpp/ext/filters/census/measures.h"
 
@@ -95,7 +118,7 @@ OpenCensusCallTracer::OpenCensusCallAttemptTracer::OpenCensusCallAttemptTracer(
 
 void OpenCensusCallTracer::OpenCensusCallAttemptTracer::
     RecordSendInitialMetadata(grpc_metadata_batch* send_initial_metadata,
-                              uint32_t /* flags */) {
+                              uint32_t /*flags*/) {
   char tracing_buf[kMaxTraceContextLen];
   size_t tracing_len = TraceContextSerialize(context_.Context(), tracing_buf,
                                              kMaxTraceContextLen);
@@ -114,12 +137,12 @@ void OpenCensusCallTracer::OpenCensusCallAttemptTracer::
 }
 
 void OpenCensusCallTracer::OpenCensusCallAttemptTracer::RecordSendMessage(
-    const grpc_core::ByteStream& /* send_message */) {
+    const grpc_core::SliceBuffer& /*send_message*/) {
   ++sent_message_count_;
 }
 
 void OpenCensusCallTracer::OpenCensusCallAttemptTracer::RecordReceivedMessage(
-    const grpc_core::ByteStream& /* recv_message */) {
+    const grpc_core::SliceBuffer& /*recv_message*/) {
   ++recv_message_count_;
 }
 
@@ -140,21 +163,25 @@ void FilterTrailingMetadata(grpc_metadata_batch* b, uint64_t* elapsed_time) {
 void OpenCensusCallTracer::OpenCensusCallAttemptTracer::
     RecordReceivedTrailingMetadata(
         absl::Status status, grpc_metadata_batch* recv_trailing_metadata,
-        const grpc_transport_stream_stats& transport_stream_stats) {
-  FilterTrailingMetadata(recv_trailing_metadata, &elapsed_time_);
-  const uint64_t request_size = transport_stream_stats.outgoing.data_bytes;
-  const uint64_t response_size = transport_stream_stats.incoming.data_bytes;
+        const grpc_transport_stream_stats* transport_stream_stats) {
+  status_code_ = status.code();
+  if (recv_trailing_metadata == nullptr || transport_stream_stats == nullptr) {
+    return;
+  }
+  uint64_t elapsed_time = 0;
+  FilterTrailingMetadata(recv_trailing_metadata, &elapsed_time);
   std::vector<std::pair<opencensus::tags::TagKey, std::string>> tags =
       context_.tags().tags();
   tags.emplace_back(ClientMethodTagKey(), std::string(parent_->method_));
-  status_code_ = status.code();
   std::string final_status = absl::StatusCodeToString(status_code_);
   tags.emplace_back(ClientStatusTagKey(), final_status);
   ::opencensus::stats::Record(
-      {{RpcClientSentBytesPerRpc(), static_cast<double>(request_size)},
-       {RpcClientReceivedBytesPerRpc(), static_cast<double>(response_size)},
+      {{RpcClientSentBytesPerRpc(),
+        static_cast<double>(transport_stream_stats->outgoing.data_bytes)},
+       {RpcClientReceivedBytesPerRpc(),
+        static_cast<double>(transport_stream_stats->incoming.data_bytes)},
        {RpcClientServerLatency(),
-        ToDoubleMilliseconds(absl::Nanoseconds(elapsed_time_))}},
+        ToDoubleMilliseconds(absl::Nanoseconds(elapsed_time))}},
       tags);
 }
 
@@ -165,7 +192,7 @@ void OpenCensusCallTracer::OpenCensusCallAttemptTracer::RecordCancel(
 }
 
 void OpenCensusCallTracer::OpenCensusCallAttemptTracer::RecordEnd(
-    const gpr_timespec& /* latency */) {
+    const gpr_timespec& /*latency*/) {
   double latency_ms = absl::ToDoubleMilliseconds(absl::Now() - start_time_);
   std::vector<std::pair<opencensus::tags::TagKey, std::string>> tags =
       context_.tags().tags();

@@ -22,13 +22,22 @@
 #include <grpc/support/port_platform.h>
 
 #include <map>
+#include <string>
+#include <utility>
 
+#include "absl/base/thread_annotations.h"
 #include "absl/strings/string_view.h"
 
+#include <grpc/grpc_security.h>
+
 #include "src/core/ext/xds/certificate_provider_factory.h"
+#include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/gprpp/sync.h"
+#include "src/core/lib/gprpp/unique_type_name.h"
+#include "src/core/lib/iomgr/iomgr_fwd.h"
+#include "src/core/lib/security/credentials/tls/grpc_tls_certificate_distributor.h"
 #include "src/core/lib/security/credentials/tls/grpc_tls_certificate_provider.h"
 
 namespace grpc_core {
@@ -82,6 +91,15 @@ class CertificateProviderStore
     grpc_pollset_set* interested_parties() const override {
       return certificate_provider_->interested_parties();
     }
+
+    int CompareImpl(const grpc_tls_certificate_provider* other) const override {
+      // TODO(yashykt): This should probably delegate to the `Compare` method of
+      // the wrapped certificate_provider_ object.
+      return QsortCompare(
+          static_cast<const grpc_tls_certificate_provider*>(this), other);
+    }
+
+    UniqueTypeName type() const override;
 
     absl::string_view key() const { return key_; }
 

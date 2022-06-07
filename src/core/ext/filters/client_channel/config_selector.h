@@ -19,17 +19,19 @@
 
 #include <grpc/support/port_platform.h>
 
-#include <functional>
-#include <map>
+#include <string.h>
+
+#include <utility>
 #include <vector>
 
-#include "absl/strings/string_view.h"
+#include <grpc/impl/codegen/grpc_types.h>
+#include <grpc/slice.h>
+#include <grpc/support/log.h>
 
-#include <grpc/grpc.h>
-
-#include "src/core/lib/channel/channel_stack.h"
+#include "src/core/lib/channel/channel_fwd.h"
 #include "src/core/lib/gprpp/ref_counted.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
+#include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/service_config/service_config.h"
 #include "src/core/lib/service_config/service_config_call_data.h"

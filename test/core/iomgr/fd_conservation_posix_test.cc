@@ -30,7 +30,7 @@ int main(int argc, char** argv) {
   struct rlimit rlim;
   grpc_endpoint_pair p;
 
-  grpc::testing::TestEnvironment env(argc, argv);
+  grpc::testing::TestEnvironment env(&argc, argv);
   grpc_init();
   {
     grpc_core::ExecCtx exec_ctx;

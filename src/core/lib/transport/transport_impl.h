@@ -21,7 +21,18 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <stddef.h>
+
+#include "absl/strings/string_view.h"
+
+#include "src/core/lib/iomgr/closure.h"
+#include "src/core/lib/iomgr/endpoint.h"
+#include "src/core/lib/iomgr/iomgr_fwd.h"
+#include "src/core/lib/iomgr/pollset.h"
+#include "src/core/lib/promise/arena_promise.h"
+#include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/transport/transport.h"
+#include "src/core/lib/transport/transport_fwd.h"
 
 typedef struct grpc_transport_vtable {
   /* Memory required for a single stream element - this is allocated by upper
@@ -45,9 +56,8 @@ typedef struct grpc_transport_vtable {
        - allocation of memory for call data (sizeof_stream may be ignored)
      There is an on-going migration to move all filters to providing this, and
      then to drop perform_stream_op. */
-  grpc_core::ArenaPromise<grpc_core::TrailingMetadata> (*make_call_promise)(
-      grpc_transport* self, grpc_core::ClientInitialMetadata initial_metadata,
-      grpc_core::NextPromiseFactory next_promise_factory);
+  grpc_core::ArenaPromise<grpc_core::ServerMetadataHandle> (*make_call_promise)(
+      grpc_transport* self, grpc_core::ClientMetadataHandle initial_metadata);
 
   /* implementation of grpc_transport_set_pollset */
   void (*set_pollset)(grpc_transport* self, grpc_stream* stream,
@@ -77,6 +87,8 @@ typedef struct grpc_transport_vtable {
 
 /* an instance of a grpc transport */
 struct grpc_transport {
+  struct RawPointerChannelArgTag {};
+  static absl::string_view ChannelArgName() { return GRPC_ARG_TRANSPORT; }
   /* pointer to a vtable defining operations on this transport */
   const grpc_transport_vtable* vtable;
 };

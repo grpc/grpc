@@ -1,8 +1,7 @@
 ---
 name: Request a cleanup
 about: Suggest a cleanup in our repository
-labels: kind/internal cleanup, priority/P2
-assignees: veblush
+labels: kind/internal cleanup, priority/P2, untriaged
 
 ---
 

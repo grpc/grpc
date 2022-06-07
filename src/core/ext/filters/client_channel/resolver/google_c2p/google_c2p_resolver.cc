@@ -16,16 +16,54 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <string.h>
+
+#include <cstdint>
+#include <map>
+#include <memory>
 #include <random>
+#include <string>
+#include <utility>
+
+#include "absl/memory/memory.h"
+#include "absl/status/status.h"
+#include "absl/status/statusor.h"
+#include "absl/strings/str_cat.h"
+#include "absl/strings/str_format.h"
+#include "absl/strings/string_view.h"
+#include "absl/strings/strip.h"
+#include "absl/types/optional.h"
+
+#include <grpc/grpc.h>
+#include <grpc/grpc_security.h>
+#include <grpc/impl/codegen/grpc_types.h>
+#include <grpc/support/log.h>
 
 #include "src/core/ext/xds/xds_client.h"
+#include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/gpr/env.h"
-#include "src/core/lib/gpr/string.h"
+#include "src/core/lib/gprpp/debug_location.h"
+#include "src/core/lib/gprpp/memory.h"
+#include "src/core/lib/gprpp/orphanable.h"
+#include "src/core/lib/gprpp/ref_counted_ptr.h"
+#include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/http/httpcli.h"
+#include "src/core/lib/http/parser.h"
+#include "src/core/lib/iomgr/closure.h"
+#include "src/core/lib/iomgr/error.h"
+#include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/polling_entity.h"
+#include "src/core/lib/iomgr/work_serializer.h"
+#include "src/core/lib/json/json.h"
+#include "src/core/lib/resolver/resolver.h"
+#include "src/core/lib/resolver/resolver_factory.h"
 #include "src/core/lib/resolver/resolver_registry.h"
 #include "src/core/lib/resource_quota/api.h"
+#include "src/core/lib/resource_quota/resource_quota.h"
 #include "src/core/lib/security/credentials/alts/check_gcp_environment.h"
+#include "src/core/lib/security/credentials/credentials.h"
+#include "src/core/lib/uri/uri_parser.h"
 
 namespace grpc_core {
 
@@ -342,19 +380,26 @@ void GoogleCloud2ProdResolver::StartXdsResolver() {
       override_server != nullptr && strlen(override_server.get()) > 0
           ? override_server.get()
           : "directpath-pa.googleapis.com";
+  Json xds_server = Json::Array{
+      Json::Object{
+          {"server_uri", server_uri},
+          {"channel_creds",
+           Json::Array{
+               Json::Object{
+                   {"type", "google_default"},
+               },
+           }},
+          {"server_features", Json::Array{"xds_v3"}},
+      },
+  };
   Json bootstrap = Json::Object{
-      {"xds_servers",
-       Json::Array{
-           Json::Object{
-               {"server_uri", server_uri},
-               {"channel_creds",
-                Json::Array{
-                    Json::Object{
-                        {"type", "google_default"},
-                    },
-                }},
-               {"server_features", Json::Array{"xds_v3"}},
-           },
+      {"xds_servers", xds_server},
+      {"authorities",
+       Json::Object{
+           {"traffic-director-c2p.xds.googleapis.com",
+            Json::Object{
+                {"xds_servers", std::move(xds_server)},
+            }},
        }},
       {"node", std::move(node)},
   };

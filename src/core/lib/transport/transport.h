@@ -22,26 +22,64 @@
 #include <grpc/support/port_platform.h>
 
 #include <stddef.h>
+#include <stdint.h>
+#include <string.h>
+
+#include <functional>
+#include <string>
+
+#include "absl/status/status.h"
+#include "absl/strings/string_view.h"
+#include "absl/types/optional.h"
+
+#include <grpc/impl/codegen/connectivity_state.h>
+#include <grpc/slice.h>
+#include <grpc/status.h>
+#include <grpc/support/atm.h>
+#include <grpc/support/log.h>
 
 #include "src/core/lib/channel/context.h"
+#include "src/core/lib/debug/trace.h"
+#include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/orphanable.h"
+#include "src/core/lib/gprpp/ref_counted.h"
 #include "src/core/lib/iomgr/call_combiner.h"
+#include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/endpoint.h"
+#include "src/core/lib/iomgr/error.h"
+#include "src/core/lib/iomgr/iomgr_fwd.h"
 #include "src/core/lib/iomgr/polling_entity.h"
 #include "src/core/lib/iomgr/pollset.h"
-#include "src/core/lib/iomgr/pollset_set.h"
 #include "src/core/lib/promise/arena_promise.h"
+#include "src/core/lib/promise/context.h"
+#include "src/core/lib/promise/latch.h"
 #include "src/core/lib/resource_quota/arena.h"
-#include "src/core/lib/slice/slice_internal.h"
-#include "src/core/lib/transport/byte_stream.h"
+#include "src/core/lib/slice/slice.h"
+#include "src/core/lib/slice/slice_buffer.h"
 #include "src/core/lib/transport/connectivity_state.h"
 #include "src/core/lib/transport/metadata_batch.h"
+#include "src/core/lib/transport/transport_fwd.h"
+
+struct grpc_transport_stream_op_batch_payload;
 
 /* Minimum and maximum protocol accepted versions. */
 #define GRPC_PROTOCOL_VERSION_MAX_MAJOR 2
 #define GRPC_PROTOCOL_VERSION_MAX_MINOR 1
 #define GRPC_PROTOCOL_VERSION_MIN_MAJOR 2
 #define GRPC_PROTOCOL_VERSION_MIN_MINOR 1
+
+#define GRPC_ARG_TRANSPORT "grpc.internal.transport"
+
+/** Internal bit flag for grpc_begin_message's \a flags signaling the use of
+ * compression for the message. (Does not apply for stream compression.) */
+#define GRPC_WRITE_INTERNAL_COMPRESS (0x80000000u)
+/** Internal bit flag for determining whether the message was compressed and had
+ * to be decompressed by the message_decompress filter. (Does not apply for
+ * stream compression.) */
+#define GRPC_WRITE_INTERNAL_TEST_ONLY_WAS_COMPRESSED (0x40000000u)
+/** Mask of all valid internal flags. */
+#define GRPC_WRITE_INTERNAL_USED_MASK \
+  (GRPC_WRITE_INTERNAL_COMPRESS | GRPC_WRITE_INTERNAL_TEST_ONLY_WAS_COMPRESSED)
 
 namespace grpc_core {
 // TODO(ctiller): eliminate once MetadataHandle is constructable directly.
@@ -97,28 +135,38 @@ class MetadataHandle {
   T* handle_ = nullptr;
 };
 
-// Trailing metadata type
+// Server metadata type
 // TODO(ctiller): This should be a bespoke instance of MetadataMap<>
-using TrailingMetadata = MetadataHandle<grpc_metadata_batch>;
+using ServerMetadata = grpc_metadata_batch;
+using ServerMetadataHandle = MetadataHandle<ServerMetadata>;
 
 // Ok/not-ok check for trailing metadata, so that it can be used as result types
 // for TrySeq.
-inline bool IsStatusOk(const TrailingMetadata& m) {
+inline bool IsStatusOk(const ServerMetadataHandle& m) {
   return m->get(GrpcStatusMetadata()).value_or(GRPC_STATUS_UNKNOWN) ==
          GRPC_STATUS_OK;
 }
 
 // Client initial metadata type
 // TODO(ctiller): This should be a bespoke instance of MetadataMap<>
-using ClientInitialMetadata = MetadataHandle<grpc_metadata_batch>;
+using ClientMetadata = grpc_metadata_batch;
+using ClientMetadataHandle = MetadataHandle<ClientMetadata>;
+
+// Server initial metadata type
+// TODO(ctiller): This should be a bespoke instance of MetadataMap<>
+using ServerMetadataHandle = MetadataHandle<grpc_metadata_batch>;
+
+struct CallArgs {
+  ClientMetadataHandle client_initial_metadata;
+  Latch<ServerMetadata*>* server_initial_metadata;
+};
 
 using NextPromiseFactory =
-    std::function<ArenaPromise<TrailingMetadata>(ClientInitialMetadata)>;
+    std::function<ArenaPromise<ServerMetadataHandle>(CallArgs)>;
+
 }  // namespace grpc_core
 
 /* forward declarations */
-
-typedef struct grpc_transport grpc_transport;
 
 /* grpc_stream doesn't actually exist. It's used as a typesafe
    opaque pointer for whatever data the transport wants to track
@@ -294,12 +342,6 @@ struct grpc_transport_stream_op_batch_payload {
   explicit grpc_transport_stream_op_batch_payload(
       grpc_call_context_element* context)
       : context(context) {}
-  ~grpc_transport_stream_op_batch_payload() {
-    // We don't really own `send_message`, so release ownership and let the
-    // owner clean the data.
-    (void)send_message.send_message.release();
-  }
-
   struct {
     grpc_metadata_batch* send_initial_metadata = nullptr;
     /** Iff send_initial_metadata != NULL, flags associated with
@@ -328,7 +370,8 @@ struct grpc_transport_stream_op_batch_payload {
     // the op gets down to the transport) takes ownership.
     // The batch's on_complete will not be called until after the byte
     // stream is orphaned.
-    grpc_core::OrphanablePtr<grpc_core::ByteStream> send_message;
+    grpc_core::SliceBuffer* send_message;
+    uint32_t flags = 0;
     // Set by the transport if the stream has been closed for writes. If this
     // is set and send message op is present, we set the operation to be a
     // failure without sending a cancel OP down the stack. This is so that the
@@ -367,10 +410,11 @@ struct grpc_transport_stream_op_batch_payload {
   } recv_initial_metadata;
 
   struct {
-    // Will be set by the transport to point to the byte stream
-    // containing a received message.
-    // Will be NULL if trailing metadata is received instead of a message.
-    grpc_core::OrphanablePtr<grpc_core::ByteStream>* recv_message = nullptr;
+    // Will be set by the transport to point to the byte stream containing a
+    // received message. Will be nullopt if trailing metadata is received
+    // instead of a message.
+    absl::optional<grpc_core::SliceBuffer>* recv_message = nullptr;
+    uint32_t* flags = nullptr;
     // Was this recv_message failed for reasons other than a clean end-of-stream
     bool* call_failed_before_recv_message = nullptr;
     /** Should be enqueued when one message is ready to be processed. */
@@ -499,6 +543,9 @@ void grpc_transport_destroy_stream(grpc_transport* transport,
 void grpc_transport_stream_op_batch_finish_with_failure(
     grpc_transport_stream_op_batch* batch, grpc_error_handle error,
     grpc_core::CallCombiner* call_combiner);
+void grpc_transport_stream_op_batch_queue_finish_with_failure(
+    grpc_transport_stream_op_batch* batch, grpc_error_handle error,
+    grpc_core::CallCombinerClosureList* closures);
 
 std::string grpc_transport_stream_op_batch_string(
     grpc_transport_stream_op_batch* op);

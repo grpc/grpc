@@ -35,13 +35,9 @@
 /* -- Fake transport security credentials. -- */
 
 namespace {
+
 class grpc_fake_channel_credentials final : public grpc_channel_credentials {
  public:
-  grpc_fake_channel_credentials()
-      : grpc_channel_credentials(
-            GRPC_CHANNEL_CREDENTIALS_TYPE_FAKE_TRANSPORT_SECURITY) {}
-  ~grpc_fake_channel_credentials() override = default;
-
   grpc_core::RefCountedPtr<grpc_channel_security_connector>
   create_security_connector(
       grpc_core::RefCountedPtr<grpc_call_credentials> call_creds,
@@ -49,6 +45,11 @@ class grpc_fake_channel_credentials final : public grpc_channel_credentials {
       grpc_channel_args** /*new_args*/) override {
     return grpc_fake_channel_security_connector_create(
         this->Ref(), std::move(call_creds), target, args);
+  }
+
+  grpc_core::UniqueTypeName type() const override {
+    static grpc_core::UniqueTypeName::Factory kFactory("Fake");
+    return kFactory.Create();
   }
 
  private:
@@ -61,14 +62,14 @@ class grpc_fake_channel_credentials final : public grpc_channel_credentials {
 
 class grpc_fake_server_credentials final : public grpc_server_credentials {
  public:
-  grpc_fake_server_credentials()
-      : grpc_server_credentials(
-            GRPC_CHANNEL_CREDENTIALS_TYPE_FAKE_TRANSPORT_SECURITY) {}
-  ~grpc_fake_server_credentials() override = default;
-
   grpc_core::RefCountedPtr<grpc_server_security_connector>
   create_security_connector(const grpc_channel_args* /*args*/) override {
     return grpc_fake_server_security_connector_create(this->Ref());
+  }
+
+  grpc_core::UniqueTypeName type() const override {
+    static grpc_core::UniqueTypeName::Factory kFactory("Fake");
+    return kFactory.Create();
   }
 };
 }  // namespace
@@ -97,14 +98,19 @@ const char* grpc_fake_transport_get_expected_targets(
 
 /* -- Metadata-only test credentials. -- */
 
-grpc_core::ArenaPromise<absl::StatusOr<grpc_core::ClientInitialMetadata>>
+grpc_core::ArenaPromise<absl::StatusOr<grpc_core::ClientMetadataHandle>>
 grpc_md_only_test_credentials::GetRequestMetadata(
-    grpc_core::ClientInitialMetadata initial_metadata,
+    grpc_core::ClientMetadataHandle initial_metadata,
     const grpc_call_credentials::GetRequestMetadataArgs*) {
   initial_metadata->Append(
       key_.as_string_view(), value_.Ref(),
       [](absl::string_view, const grpc_core::Slice&) { abort(); });
   return grpc_core::Immediate(std::move(initial_metadata));
+}
+
+grpc_core::UniqueTypeName grpc_md_only_test_credentials::Type() {
+  static grpc_core::UniqueTypeName::Factory kFactory("MdOnlyTest");
+  return kFactory.Create();
 }
 
 grpc_call_credentials* grpc_md_only_test_credentials_create(

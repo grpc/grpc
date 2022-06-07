@@ -26,6 +26,7 @@
 #include <grpc/support/log.h>
 #include <grpc/support/time.h>
 
+#include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/channel/channel_stack_builder.h"
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/surface/channel_init.h"
@@ -275,31 +276,21 @@ static grpc_error_handle init_channel_elem(
 static void destroy_channel_elem(grpc_channel_element* /*elem*/) {}
 
 static const grpc_channel_filter test_client_filter = {
-    grpc_call_next_op,
-    nullptr,
-    grpc_channel_next_op,
-    0,
-    init_call_elem,
-    grpc_call_stack_ignore_set_pollset_or_pollset_set,
-    client_destroy_call_elem,
-    0,
-    init_channel_elem,
-    destroy_channel_elem,
-    grpc_channel_next_get_info,
+    grpc_call_next_op,        nullptr,
+    grpc_channel_next_op,     0,
+    init_call_elem,           grpc_call_stack_ignore_set_pollset_or_pollset_set,
+    client_destroy_call_elem, 0,
+    init_channel_elem,        grpc_channel_stack_no_post_init,
+    destroy_channel_elem,     grpc_channel_next_get_info,
     "client_filter_latency"};
 
 static const grpc_channel_filter test_server_filter = {
-    grpc_call_next_op,
-    nullptr,
-    grpc_channel_next_op,
-    0,
-    init_call_elem,
-    grpc_call_stack_ignore_set_pollset_or_pollset_set,
-    server_destroy_call_elem,
-    0,
-    init_channel_elem,
-    destroy_channel_elem,
-    grpc_channel_next_get_info,
+    grpc_call_next_op,        nullptr,
+    grpc_channel_next_op,     0,
+    init_call_elem,           grpc_call_stack_ignore_set_pollset_or_pollset_set,
+    server_destroy_call_elem, 0,
+    init_channel_elem,        grpc_channel_stack_no_post_init,
+    destroy_channel_elem,     grpc_channel_next_get_info,
     "server_filter_latency"};
 
 /*******************************************************************************
@@ -321,7 +312,7 @@ void filter_latency(grpc_end2end_test_config config) {
                 // right before the last one.
                 auto it = builder->mutable_stack()->end();
                 --it;
-                builder->mutable_stack()->insert(it, {filter, nullptr});
+                builder->mutable_stack()->insert(it, filter);
                 return true;
               });
         };

@@ -26,6 +26,7 @@
 #include <grpc/grpc.h>
 
 #include "src/core/ext/transport/chttp2/transport/chttp2_transport.h"
+#include "src/core/ext/transport/chttp2/transport/internal.h"
 #include "src/core/lib/iomgr/port.h"
 #include "src/core/lib/resource_quota/api.h"
 #include "src/core/lib/transport/transport.h"
@@ -74,7 +75,8 @@ TEST_F(ContextListTest, ExecuteFlushesList) {
   grpc_endpoint* mock_endpoint = grpc_mock_endpoint_create(discard_write);
   const grpc_channel_args* args = CoreConfiguration::Get()
                                       .channel_args_preconditioning()
-                                      .PreconditionChannelArgs(nullptr);
+                                      .PreconditionChannelArgs(nullptr)
+                                      .ToC();
   grpc_transport* t = grpc_create_chttp2_transport(args, mock_endpoint, true);
   grpc_channel_args_destroy(args);
   std::vector<grpc_chttp2_stream*> s;
@@ -129,7 +131,8 @@ TEST_F(ContextListTest, NonEmptyListEmptyTimestamp) {
   grpc_endpoint* mock_endpoint = grpc_mock_endpoint_create(discard_write);
   const grpc_channel_args* args = CoreConfiguration::Get()
                                       .channel_args_preconditioning()
-                                      .PreconditionChannelArgs(nullptr);
+                                      .PreconditionChannelArgs(nullptr)
+                                      .ToC();
   grpc_transport* t = grpc_create_chttp2_transport(args, mock_endpoint, true);
   grpc_channel_args_destroy(args);
   std::vector<grpc_chttp2_stream*> s;
@@ -165,7 +168,7 @@ TEST_F(ContextListTest, NonEmptyListEmptyTimestamp) {
 
 int main(int argc, char** argv) {
   ::testing::InitGoogleTest(&argc, argv);
-  grpc::testing::TestEnvironment env(argc, argv);
+  grpc::testing::TestEnvironment env(&argc, argv);
   grpc_init();
   int ret = RUN_ALL_TESTS();
   grpc_shutdown();

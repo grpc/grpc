@@ -30,7 +30,6 @@
 #include <grpc/support/log.h>
 
 #include "src/core/ext/transport/chttp2/alpn/alpn.h"
-#include "src/core/lib/channel/handshaker.h"
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gprpp/host_port.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
@@ -42,6 +41,7 @@
 #include "src/core/lib/security/security_connector/load_system_roots.h"
 #include "src/core/lib/security/security_connector/ssl_utils.h"
 #include "src/core/lib/security/transport/security_handshaker.h"
+#include "src/core/lib/transport/handshaker.h"
 #include "src/core/tsi/ssl_transport_security.h"
 #include "src/core/tsi/transport_security.h"
 
@@ -129,7 +129,8 @@ class grpc_ssl_channel_security_connector final
         client_handshaker_factory_,
         overridden_target_name_.empty() ? target_name_.c_str()
                                         : overridden_target_name_.c_str(),
-        &tsi_hs);
+        /*network_bio_buf_size=*/0,
+        /*ssl_bio_buf_size=*/0, &tsi_hs);
     if (result != TSI_OK) {
       gpr_log(GPR_ERROR, "Handshaker creation failed with error %s.",
               tsi_result_to_string(result));
@@ -272,7 +273,8 @@ class grpc_ssl_server_security_connector
     try_fetch_ssl_server_credentials();
     tsi_handshaker* tsi_hs = nullptr;
     tsi_result result = tsi_ssl_server_handshaker_factory_create_handshaker(
-        server_handshaker_factory_, &tsi_hs);
+        server_handshaker_factory_, /*network_bio_buf_size=*/0,
+        /*ssl_bio_buf_size=*/0, &tsi_hs);
     if (result != TSI_OK) {
       gpr_log(GPR_ERROR, "Handshaker creation failed with error %s.",
               tsi_result_to_string(result));

@@ -40,6 +40,7 @@
 #include "src/cpp/client/create_channel_internal.h"
 #include "test/core/util/passthru_endpoint.h"
 #include "test/core/util/port.h"
+#include "test/core/util/test_config.h"
 #include "test/cpp/microbenchmarks/helpers.h"
 
 namespace grpc {
@@ -85,7 +86,7 @@ class FullstackFixture : public BaseFixture {
   }
 
   ~FullstackFixture() override {
-    server_->Shutdown();
+    server_->Shutdown(grpc_timeout_milliseconds_to_deadline(0));
     cq_->Shutdown();
     void* tag;
     bool ok;
@@ -200,9 +201,12 @@ class EndpointPairFixture : public BaseFixture {
       client_transport_ =
           grpc_create_chttp2_transport(&c_args, endpoints.client, true);
       GPR_ASSERT(client_transport_);
-      grpc_channel* channel = grpc_channel_create_internal(
-          "target", &c_args, GRPC_CLIENT_DIRECT_CHANNEL, client_transport_,
-          nullptr);
+      grpc_channel* channel =
+          grpc_core::Channel::Create(
+              "target", grpc_core::ChannelArgs::FromC(&c_args),
+              GRPC_CLIENT_DIRECT_CHANNEL, client_transport_)
+              ->release()
+              ->c_ptr();
       grpc_chttp2_transport_start_reading(client_transport_, nullptr, nullptr,
                                           nullptr);
 
@@ -214,7 +218,7 @@ class EndpointPairFixture : public BaseFixture {
   }
 
   ~EndpointPairFixture() override {
-    server_->Shutdown();
+    server_->Shutdown(grpc_timeout_milliseconds_to_deadline(0));
     cq_->Shutdown();
     void* tag;
     bool ok;

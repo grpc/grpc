@@ -39,17 +39,32 @@ netsh interface ip set dns "Local Area Connection 8" static 169.254.169.254 prim
 netsh interface ip add dnsservers "Local Area Connection 8" 8.8.8.8 index=2
 netsh interface ip add dnsservers "Local Area Connection 8" 8.8.4.4 index=3
 
+@rem Uninstall protoc so that it doesn't clash with C++ distribtests.
+@rem (on grpc-win2016 kokoro workers it can result in GOOGLE_PROTOBUF_MIN_PROTOC_VERSION violation)
+choco uninstall protoc -y --limit-output
+
 @rem Install nasm (required for boringssl assembly optimized build as boringssl no long supports yasm)
 @rem Downloading from GCS should be very reliables when on a GCP VM.
 mkdir C:\nasm
-curl -sSL -o C:\nasm\nasm.exe https://storage.googleapis.com/grpc-build-helper/nasm-2.15.05/nasm.exe || goto :error
+curl -sSL --fail -o C:\nasm\nasm.exe https://storage.googleapis.com/grpc-build-helper/nasm-2.15.05/nasm.exe || goto :error
 set PATH=C:\nasm;%PATH%
 nasm
+
+@rem Install ccache
+mkdir C:\ccache
+curl -sSL --fail -o C:\ccache\ccache.exe https://storage.googleapis.com/grpc-build-helper/ccache-4.6-windows-64/ccache.exe || goto :error
+set PATH=C:\ccache;%PATH%
+ccache --version
 
 @rem Only install C# dependencies if we are running C# tests
 If "%PREPARE_BUILD_INSTALL_DEPS_CSHARP%" == "true" (
   @rem C# prerequisites: Install dotnet SDK
   powershell -File src\csharp\install_dotnet_sdk.ps1 || goto :error
+
+  @rem Explicitly add default nuget source.
+  @rem (on Kokoro grpc-win2016 workers, the default nuget source is not configured,
+  @rem which results in errors when "dotnet restore" is run)
+  %LOCALAPPDATA%\Microsoft\dotnet\dotnet nuget add source https://api.nuget.org/v3/index.json -n "nuget.org"
 )
 
 @rem Add dotnet on path and disable some unwanted dotnet

@@ -17,7 +17,10 @@
 
 #include <grpc/support/port_platform.h>
 
-#include <utility>
+#include <stddef.h>
+#include <stdint.h>
+
+#include <type_traits>
 
 #include "src/core/lib/gpr/useful.h"
 
@@ -33,6 +36,7 @@ namespace grpc_core {
 // exactly that number of bits. Undefined if that bit count is not available.
 template <size_t kBits>
 struct UintSelector;
+
 template <>
 struct UintSelector<8> {
   typedef uint8_t Type;
@@ -151,6 +155,18 @@ class BitSet {
       if (units_[i] != other.units_[i]) return false;
     }
     return true;
+  }
+
+  template <typename Int>
+  typename std::enable_if<std::is_unsigned<Int>::value &&
+                              (sizeof(Int) * 8 >= kTotalBits),
+                          Int>::type
+  ToInt() const {
+    Int result = 0;
+    for (size_t i = 0; i < kTotalBits; i++) {
+      if (is_set(i)) result |= (Int(1) << i);
+    }
+    return result;
   }
 
  private:

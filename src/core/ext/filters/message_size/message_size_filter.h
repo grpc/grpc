@@ -19,8 +19,21 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <stddef.h>
+
+#include <memory>
+
+#include "absl/strings/string_view.h"
+
+#include <grpc/impl/codegen/grpc_types.h>
+
+#include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/channel/channel_fwd.h"
 #include "src/core/lib/channel/channel_stack.h"
+#include "src/core/lib/channel/context.h"
 #include "src/core/lib/config/core_configuration.h"
+#include "src/core/lib/iomgr/error.h"
+#include "src/core/lib/json/json.h"
 #include "src/core/lib/service_config/service_config_parser.h"
 
 extern const grpc_channel_filter grpc_message_size_filter;
@@ -65,8 +78,8 @@ class MessageSizeParser : public ServiceConfigParser::Parser {
   static absl::string_view parser_name() { return "message_size"; }
 };
 
-int GetMaxRecvSizeFromChannelArgs(const grpc_channel_args* args);
-int GetMaxSendSizeFromChannelArgs(const grpc_channel_args* args);
+int GetMaxRecvSizeFromChannelArgs(const ChannelArgs& args);
+int GetMaxSendSizeFromChannelArgs(const ChannelArgs& args);
 
 }  // namespace grpc_core
 

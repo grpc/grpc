@@ -39,6 +39,7 @@
 #include "src/core/ext/filters/http/server/http_server_filter.h"
 #include "src/core/ext/filters/message_size/message_size_filter.h"
 #include "src/core/lib/channel/channel_stack.h"
+#include "src/core/lib/channel/channel_stack_builder_impl.h"
 #include "src/core/lib/channel/connected_channel.h"
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/iomgr/call_combiner.h"
@@ -395,8 +396,9 @@ static const grpc_channel_filter phony_filter = {
     StartTransportOp,       0,
     InitCallElem,           SetPollsetOrPollsetSet,
     DestroyCallElem,        0,
-    InitChannelElem,        DestroyChannelElem,
-    GetChannelInfo,         "phony_filter"};
+    InitChannelElem,        grpc_channel_stack_no_post_init,
+    DestroyChannelElem,     GetChannelInfo,
+    "phony_filter"};
 
 }  // namespace phony_filter
 
@@ -560,7 +562,7 @@ static void BM_IsolatedFilter(benchmark::State& state) {
   grpc_slice method = grpc_slice_from_static_string("/foo/bar");
   grpc_call_final_info final_info;
   TestOp test_op_data;
-  const int kArenaSize = 4096;
+  const int kArenaSize = 32 * 1024 * 1024;
   grpc_call_context_element context[GRPC_CONTEXT_COUNT] = {};
   grpc_call_element_args call_args{
       call_stack,
@@ -616,11 +618,13 @@ typedef Fixture<&grpc_server_deadline_filter, CHECKS_NOT_LAST>
     ServerDeadlineFilter;
 BENCHMARK_TEMPLATE(BM_IsolatedFilter, ServerDeadlineFilter, NoOp);
 BENCHMARK_TEMPLATE(BM_IsolatedFilter, ServerDeadlineFilter, SendEmptyMetadata);
-typedef Fixture<&grpc_http_client_filter, CHECKS_NOT_LAST | REQUIRES_TRANSPORT>
+typedef Fixture<&grpc_core::HttpClientFilter::kFilter,
+                CHECKS_NOT_LAST | REQUIRES_TRANSPORT>
     HttpClientFilter;
 BENCHMARK_TEMPLATE(BM_IsolatedFilter, HttpClientFilter, NoOp);
 BENCHMARK_TEMPLATE(BM_IsolatedFilter, HttpClientFilter, SendEmptyMetadata);
-typedef Fixture<&grpc_http_server_filter, CHECKS_NOT_LAST> HttpServerFilter;
+typedef Fixture<&grpc_core::HttpServerFilter::kFilter, CHECKS_NOT_LAST>
+    HttpServerFilter;
 BENCHMARK_TEMPLATE(BM_IsolatedFilter, HttpServerFilter, NoOp);
 BENCHMARK_TEMPLATE(BM_IsolatedFilter, HttpServerFilter, SendEmptyMetadata);
 typedef Fixture<&grpc_message_size_filter, CHECKS_NOT_LAST> MessageSizeFilter;
@@ -707,8 +711,9 @@ static const grpc_channel_filter isolated_call_filter = {
     StartTransportOp,       sizeof(call_data),
     InitCallElem,           SetPollsetOrPollsetSet,
     DestroyCallElem,        0,
-    InitChannelElem,        DestroyChannelElem,
-    GetChannelInfo,         "isolated_call_filter"};
+    InitChannelElem,        grpc_channel_stack_no_post_init,
+    DestroyChannelElem,     GetChannelInfo,
+    "isolated_call_filter"};
 }  // namespace isolated_call_filter
 
 class IsolatedCallFixture : public TrackCounters {
@@ -720,20 +725,19 @@ class IsolatedCallFixture : public TrackCounters {
     // the grpc_shutdown() run by grpc_channel_destroy().  So we need to
     // call grpc_init() manually here to balance things out.
     grpc_init();
-    const grpc_channel_args* args = grpc_core::CoreConfiguration::Get()
-                                        .channel_args_preconditioning()
-                                        .PreconditionChannelArgs(nullptr);
-    grpc_core::ChannelStackBuilder builder("phony");
+    auto args = grpc_core::CoreConfiguration::Get()
+                    .channel_args_preconditioning()
+                    .PreconditionChannelArgs(nullptr);
+    grpc_core::ChannelStackBuilderImpl builder("phony", GRPC_CLIENT_CHANNEL);
     builder.SetTarget("phony_target");
     builder.SetChannelArgs(args);
-    builder.AppendFilter(&isolated_call_filter::isolated_call_filter, nullptr);
+    builder.AppendFilter(&isolated_call_filter::isolated_call_filter);
     {
       grpc_core::ExecCtx exec_ctx;
-      channel_ = grpc_channel_create_with_builder(&builder, GRPC_CLIENT_CHANNEL,
-                                                  nullptr);
+      channel_ =
+          grpc_core::Channel::CreateWithBuilder(&builder)->release()->c_ptr();
     }
     cq_ = grpc_completion_queue_create_for_next(nullptr);
-    grpc_channel_args_destroy(args);
   }
 
   void Finish(benchmark::State& state) override {
@@ -858,7 +862,7 @@ void RunTheBenchmarksNamespaced() { RunSpecifiedBenchmarks(); }
 }  // namespace benchmark
 
 int main(int argc, char** argv) {
-  grpc::testing::TestEnvironment env(argc, argv);
+  grpc::testing::TestEnvironment env(&argc, argv);
   LibraryInitializer libInit;
   ::benchmark::Initialize(&argc, argv);
   grpc::testing::InitTest(&argc, &argv, false);

@@ -17,16 +17,17 @@ https://github.com/envoyproxy/envoy/blob/main/api/envoy/service/status/v3/csds.p
 """
 
 import logging
-import queue
-from typing import Callable, Optional
+from typing import Optional
 
-from envoy.extensions.filters.common.fault.v3 import fault_pb2
-from envoy.extensions.filters.http.fault.v3 import fault_pb2
-from envoy.extensions.filters.http.router.v3 import router_pb2
 # Envoy protos provided by PyPI package xds-protos
 # Needs to import the generated Python file to load descriptors
+# pylint: disable=unused-import
+from envoy.extensions.filters.common.fault.v3 import fault_pb2 as _
+from envoy.extensions.filters.http.fault.v3 import fault_pb2 as _
+from envoy.extensions.filters.http.router.v3 import router_pb2 as _
 from envoy.extensions.filters.network.http_connection_manager.v3 import \
-    http_connection_manager_pb2
+    http_connection_manager_pb2 as _
+# pylint: enable=unused-import
 from envoy.service.status.v3 import csds_pb2
 from envoy.service.status.v3 import csds_pb2_grpc
 import grpc

@@ -695,7 +695,7 @@ void GenerateBindServiceWithBinderMethod(Printer* out,
                                          const ServiceDescriptor* service) {
   out->Print(
       "/// <summary>Register service method with a service "
-      "binder with or without implementation. Useful when customizing the  "
+      "binder with or without implementation. Useful when customizing the "
       "service binding logic.\n"
       "/// Note: this method is part of an experimental API that can change or "
       "be "
@@ -801,7 +801,7 @@ std::string GetServices(const FileDescriptor* file, bool generate_client,
       out.PrintRaw(leading_comments.c_str());
     }
 
-    out.Print("#pragma warning disable 0414, 1591\n");
+    out.Print("#pragma warning disable 0414, 1591, 8981\n");
 
     out.Print("#region Designer generated code\n");
     out.Print("\n");

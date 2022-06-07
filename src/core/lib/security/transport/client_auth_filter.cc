@@ -98,8 +98,8 @@ ClientAuthFilter::ClientAuthFilter(
     RefCountedPtr<grpc_auth_context> auth_context)
     : args_{std::move(security_connector), std::move(auth_context)} {}
 
-ArenaPromise<absl::StatusOr<ClientInitialMetadata>>
-ClientAuthFilter::GetCallCredsMetadata(ClientInitialMetadata initial_metadata) {
+ArenaPromise<absl::StatusOr<CallArgs>> ClientAuthFilter::GetCallCredsMetadata(
+    CallArgs call_args) {
   auto* ctx = static_cast<grpc_client_security_context*>(
       GetContext<grpc_call_context_element>()[GRPC_CONTEXT_SECURITY].value);
   grpc_call_credentials* channel_call_creds =
@@ -108,8 +108,7 @@ ClientAuthFilter::GetCallCredsMetadata(ClientInitialMetadata initial_metadata) {
 
   if (channel_call_creds == nullptr && !call_creds_has_md) {
     /* Skip sending metadata altogether. */
-    return Immediate(
-        absl::StatusOr<ClientInitialMetadata>(std::move(initial_metadata)));
+    return Immediate(absl::StatusOr<CallArgs>(std::move(call_args)));
   }
 
   RefCountedPtr<grpc_call_credentials> creds;
@@ -148,12 +147,19 @@ ClientAuthFilter::GetCallCredsMetadata(ClientInitialMetadata initial_metadata) {
         "transfer call credential."));
   }
 
-  return creds->GetRequestMetadata(std::move(initial_metadata), &args_);
+  auto client_initial_metadata = std::move(call_args.client_initial_metadata);
+  return TrySeq(
+      creds->GetRequestMetadata(std::move(client_initial_metadata), &args_),
+      [call_args =
+           std::move(call_args)](ClientMetadataHandle new_metadata) mutable {
+        call_args.client_initial_metadata = std::move(new_metadata);
+        return Immediate<absl::StatusOr<CallArgs>>(
+            absl::StatusOr<CallArgs>(std::move(call_args)));
+      });
 }
 
-ArenaPromise<TrailingMetadata> ClientAuthFilter::MakeCallPromise(
-    ClientInitialMetadata initial_metadata,
-    NextPromiseFactory next_promise_factory) {
+ArenaPromise<ServerMetadataHandle> ClientAuthFilter::MakeCallPromise(
+    CallArgs call_args, NextPromiseFactory next_promise_factory) {
   auto* legacy_ctx = GetContext<grpc_call_context_element>();
   if (legacy_ctx[GRPC_CONTEXT_SECURITY].value == nullptr) {
     legacy_ctx[GRPC_CONTEXT_SECURITY].value =
@@ -166,24 +172,25 @@ ArenaPromise<TrailingMetadata> ClientAuthFilter::MakeCallPromise(
       legacy_ctx[GRPC_CONTEXT_SECURITY].value)
       ->auth_context = args_.auth_context;
 
-  auto* host = initial_metadata->get_pointer(HttpAuthorityMetadata());
+  auto* host =
+      call_args.client_initial_metadata->get_pointer(HttpAuthorityMetadata());
   if (host == nullptr) {
-    return next_promise_factory(std::move(initial_metadata));
+    return next_promise_factory(std::move(call_args));
   }
   return TrySeq(args_.security_connector->CheckCallHost(
                     host->as_string_view(), args_.auth_context.get()),
-                GetCallCredsMetadata(std::move(initial_metadata)),
+                GetCallCredsMetadata(std::move(call_args)),
                 next_promise_factory);
 }
 
-absl::StatusOr<ClientAuthFilter> ClientAuthFilter::Create(
-    const grpc_channel_args* args, ChannelFilter::Args) {
-  grpc_security_connector* sc = grpc_security_connector_find_in_args(args);
+absl::StatusOr<ClientAuthFilter> ClientAuthFilter::Create(ChannelArgs args,
+                                                          ChannelFilter::Args) {
+  auto* sc = args.GetObject<grpc_security_connector>();
   if (sc == nullptr) {
     return absl::InvalidArgumentError(
         "Security connector missing from client auth filter args");
   }
-  grpc_auth_context* auth_context = grpc_find_auth_context_in_args(args);
+  auto* auth_context = args.GetObject<grpc_auth_context>();
   if (auth_context == nullptr) {
     return absl::InvalidArgumentError(
         "Auth context missing from client auth filter args");
@@ -194,9 +201,8 @@ absl::StatusOr<ClientAuthFilter> ClientAuthFilter::Create(
       auth_context->Ref());
 }
 
-}  // namespace grpc_core
-
-const grpc_channel_filter grpc_client_auth_filter =
-    grpc_core::MakePromiseBasedFilter<grpc_core::ClientAuthFilter,
-                                      grpc_core::FilterEndpoint::kClient>(
+const grpc_channel_filter ClientAuthFilter::kFilter =
+    MakePromiseBasedFilter<ClientAuthFilter, FilterEndpoint::kClient>(
         "client-auth-filter");
+
+}  // namespace grpc_core

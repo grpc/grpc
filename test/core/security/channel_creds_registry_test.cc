@@ -43,7 +43,15 @@ class TestChannelCredsFactory : public ChannelCredsFactory<> {
   }
 };
 
-TEST(ChannelCredsRegistry2Test, DefaultCreds) {
+class ChannelCredsRegistryTest : public ::testing::Test {
+ protected:
+  void SetUp() override {
+    CoreConfiguration::Reset();
+    grpc_init();
+  }
+};
+
+TEST_F(ChannelCredsRegistryTest, DefaultCreds) {
   // Default creds.
   EXPECT_TRUE(CoreConfiguration::Get().channel_creds_registry().IsSupported(
       "google_default"));
@@ -63,10 +71,7 @@ TEST(ChannelCredsRegistry2Test, DefaultCreds) {
       nullptr);
 }
 
-TEST(ChannelCredsRegistry2Test, Register) {
-  CoreConfiguration::Reset();
-  grpc_init();
-
+TEST_F(ChannelCredsRegistryTest, Register) {
   // Before registration.
   EXPECT_FALSE(
       CoreConfiguration::Get().channel_creds_registry().IsSupported("test"));
@@ -97,7 +102,7 @@ TEST(ChannelCredsRegistry2Test, Register) {
 
 int main(int argc, char** argv) {
   ::testing::InitGoogleTest(&argc, argv);
-  grpc::testing::TestEnvironment env(argc, argv);
+  grpc::testing::TestEnvironment env(&argc, argv);
   grpc_init();
   auto result = RUN_ALL_TESTS();
   return result;

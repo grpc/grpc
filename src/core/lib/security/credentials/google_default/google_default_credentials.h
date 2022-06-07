@@ -46,9 +46,7 @@ class grpc_google_default_channel_credentials
   grpc_google_default_channel_credentials(
       grpc_core::RefCountedPtr<grpc_channel_credentials> alts_creds,
       grpc_core::RefCountedPtr<grpc_channel_credentials> ssl_creds)
-      : grpc_channel_credentials(GRPC_CHANNEL_CREDENTIALS_TYPE_GOOGLE_DEFAULT),
-        alts_creds_(std::move(alts_creds)),
-        ssl_creds_(std::move(ssl_creds)) {}
+      : alts_creds_(std::move(alts_creds)), ssl_creds_(std::move(ssl_creds)) {}
 
   ~grpc_google_default_channel_credentials() override = default;
 
@@ -58,7 +56,9 @@ class grpc_google_default_channel_credentials
       const char* target, const grpc_channel_args* args,
       grpc_channel_args** new_args) override;
 
-  grpc_channel_args* update_arguments(grpc_channel_args* args) override;
+  grpc_core::ChannelArgs update_arguments(grpc_core::ChannelArgs args) override;
+
+  grpc_core::UniqueTypeName type() const override;
 
   const grpc_channel_credentials* alts_creds() const {
     return alts_creds_.get();

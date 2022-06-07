@@ -18,8 +18,10 @@
 
 #include "src/core/lib/transport/status_conversion.h"
 
+#include <grpc/grpc.h>
 #include <grpc/support/log.h>
 
+#include "src/core/lib/iomgr/exec_ctx.h"
 #include "test/core/util/test_config.h"
 
 #define GRPC_STATUS_TO_HTTP2_ERROR(a, b) \
@@ -165,7 +167,7 @@ static void test_http2_status_to_grpc_status() {
 }
 
 int main(int argc, char** argv) {
-  grpc::testing::TestEnvironment env(argc, argv);
+  grpc::testing::TestEnvironment env(&argc, argv);
   grpc_init();
 
   test_grpc_status_to_http2_error();

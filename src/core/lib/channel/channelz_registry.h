@@ -21,13 +21,12 @@
 
 #include <grpc/support/port_platform.h>
 
-#include <stdint.h>
-
+#include <cstdint>
 #include <map>
 #include <string>
 
-#include "src/core/lib/channel/channel_trace.h"
 #include "src/core/lib/channel/channelz.h"
+#include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/gprpp/sync.h"
 
 namespace grpc_core {
@@ -37,12 +36,6 @@ namespace channelz {
 // channelz bookkeeping. All objects share globally distributed uuids.
 class ChannelzRegistry {
  public:
-  // To be called in grpc_init()
-  static void Init();
-
-  // To be called in grpc_shutdown();
-  static void Shutdown();
-
   static void Register(BaseNode* node) {
     return Default()->InternalRegister(node);
   }
@@ -66,6 +59,14 @@ class ChannelzRegistry {
   // Test only helper function to dump the JSON representation to std out.
   // This can aid in debugging channelz code.
   static void LogAllEntities() { Default()->InternalLogAllEntities(); }
+
+  // Test only helper function to reset to initial state.
+  static void TestOnlyReset() {
+    auto* p = Default();
+    MutexLock lock(&p->mu_);
+    p->node_map_.clear();
+    p->uuid_generator_ = 0;
+  }
 
  private:
   // Returned the singleton instance of ChannelzRegistry;

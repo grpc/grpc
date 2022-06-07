@@ -21,11 +21,14 @@
 
 #include <grpc/support/port_platform.h>
 
-#include "src/core/lib/avl/avl.h"
-#include "src/core/lib/channel/channel_args.h"
+#include <string>
+
+#include <grpc/impl/codegen/grpc_types.h>
+
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/gprpp/ref_counted.h"
-#include "src/core/lib/iomgr/resolve_address.h"
+#include "src/core/lib/gprpp/ref_counted_ptr.h"
+#include "src/core/lib/iomgr/resolved_address.h"
 
 namespace grpc_core {
 

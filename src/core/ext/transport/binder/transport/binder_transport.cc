@@ -37,7 +37,6 @@
 #include "src/core/ext/transport/binder/wire_format/wire_writer.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/slice/slice_internal.h"
-#include "src/core/lib/transport/byte_stream.h"
 #include "src/core/lib/transport/error_utils.h"
 #include "src/core/lib/transport/metadata_batch.h"
 #include "src/core/lib/transport/transport.h"
@@ -107,9 +106,8 @@ static int init_stream(grpc_transport* gt, grpc_stream* gs,
   GPR_TIMER_SCOPE("init_stream", 0);
   gpr_log(GPR_INFO, "%s = %p %p %p %p %p", __func__, gt, gs, refcount,
           server_data, arena);
+  // Note that this function is not locked and may be invoked concurrently
   grpc_binder_transport* t = reinterpret_cast<grpc_binder_transport*>(gt);
-  // TODO(mingcl): Figure out if we need to worry about concurrent invocation
-  // here
   new (gs) grpc_binder_stream(t, refcount, server_data, arena,
                               t->NewStreamTxCode(), t->is_client);
 
@@ -258,12 +256,9 @@ static void recv_message_locked(void* arg, grpc_error_handle /*error*/) {
           return absl_status_to_grpc_error(args->message.status());
         }
       }
-      grpc_slice_buffer buf;
-      grpc_slice_buffer_init(&buf);
-      grpc_slice_buffer_add(&buf, grpc_slice_from_cpp_string(*args->message));
-
-      gbs->sbs.Init(&buf, 0);
-      gbs->recv_message->reset(gbs->sbs.get());
+      grpc_core::SliceBuffer buf;
+      buf.Append(grpc_core::Slice(grpc_slice_from_cpp_string(*args->message)));
+      *gbs->recv_message = std::move(buf);
       return GRPC_ERROR_NONE;
     }();
 
@@ -412,7 +407,7 @@ static void perform_stream_op_locked(void* stream_op,
   if (gbs->is_closed) {
     if (op->send_message) {
       // Reset the send_message payload to prevent memory leaks.
-      op->payload->send_message.send_message.reset();
+      op->payload->send_message.send_message->Clear();
     }
     if (op->recv_initial_metadata) {
       grpc_core::ExecCtx::Run(
@@ -453,27 +448,7 @@ static void perform_stream_op_locked(void* stream_op,
   }
   if (op->send_message) {
     gpr_log(GPR_INFO, "send_message");
-    size_t remaining = op->payload->send_message.send_message->length();
-    std::string message_data;
-    while (remaining > 0) {
-      grpc_slice message_slice;
-      // TODO(waynetu): Temporarily assume that the message is ready.
-      GPR_ASSERT(
-          op->payload->send_message.send_message->Next(SIZE_MAX, nullptr));
-      grpc_error_handle error =
-          op->payload->send_message.send_message->Pull(&message_slice);
-      // TODO(waynetu): Cancel the stream if error is not GRPC_ERROR_NONE.
-      GPR_ASSERT(error == GRPC_ERROR_NONE);
-      uint8_t* p = GRPC_SLICE_START_PTR(message_slice);
-      size_t len = GRPC_SLICE_LENGTH(message_slice);
-      remaining -= len;
-      message_data += std::string(reinterpret_cast<char*>(p), len);
-      grpc_slice_unref_internal(message_slice);
-    }
-    tx.SetData(message_data);
-    // TODO(b/192369787): Are we supposed to reset here to avoid
-    // use-after-free issue in call.cc?
-    op->payload->send_message.send_message.reset();
+    tx.SetData(op->payload->send_message.send_message->JoinIntoString());
   }
 
   if (op->send_trailing_metadata) {
@@ -736,13 +711,13 @@ grpc_binder_transport::grpc_binder_transport(
       refs(1, nullptr) {
   gpr_log(GPR_INFO, __func__);
   base.vtable = get_vtable();
-  GRPC_CLOSURE_INIT(&accept_stream_closure, accept_stream_locked, this,
-                    nullptr);
   transport_stream_receiver =
       std::make_shared<grpc_binder::TransportStreamReceiverImpl>(
           is_client, /*accept_stream_callback=*/[this] {
             grpc_core::ExecCtx exec_ctx;
-            combiner->Run(&accept_stream_closure, GRPC_ERROR_NONE);
+            combiner->Run(
+                GRPC_CLOSURE_CREATE(accept_stream_locked, this, nullptr),
+                GRPC_ERROR_NONE);
           });
   // WireReader holds a ref to grpc_binder_transport.
   GRPC_BINDER_REF_TRANSPORT(this, "wire reader");

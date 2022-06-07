@@ -18,11 +18,16 @@
 
 #include "src/core/ext/xds/xds_api.h"
 
+#include <stdint.h>
+#include <stdlib.h>
+
+#include <algorithm>
 #include <set>
 #include <string>
 #include <vector>
 
 #include "absl/strings/str_cat.h"
+#include "absl/strings/strip.h"
 #include "envoy/admin/v3/config_dump.upb.h"
 #include "envoy/config/core/v3/base.upb.h"
 #include "envoy/config/endpoint/v3/load_report.upb.h"
@@ -31,34 +36,28 @@
 #include "envoy/service/load_stats/v3/lrs.upb.h"
 #include "envoy/service/load_stats/v3/lrs.upbdefs.h"
 #include "envoy/service/status/v3/csds.upb.h"
-#include "envoy/service/status/v3/csds.upbdefs.h"
 #include "google/protobuf/any.upb.h"
+#include "google/protobuf/duration.upb.h"
 #include "google/protobuf/struct.upb.h"
 #include "google/protobuf/timestamp.upb.h"
-#include "google/protobuf/wrappers.upb.h"
 #include "google/rpc/status.upb.h"
+#include "upb/def.h"
 #include "upb/text_encode.h"
 #include "upb/upb.h"
 #include "upb/upb.hpp"
 
-#include <grpc/impl/codegen/log.h>
-#include <grpc/support/alloc.h>
-#include <grpc/support/string_util.h>
+#include <grpc/grpc.h>
+#include <grpc/impl/codegen/gpr_types.h>
+#include <grpc/status.h>
+#include <grpc/support/log.h>
 
 #include "src/core/ext/xds/upb_utils.h"
-#include "src/core/ext/xds/xds_common_types.h"
-#include "src/core/ext/xds/xds_resource_type.h"
-#include "src/core/ext/xds/xds_routing.h"
-#include "src/core/lib/address_utils/parse_address.h"
-#include "src/core/lib/address_utils/sockaddr_utils.h"
-#include "src/core/lib/gpr/env.h"
-#include "src/core/lib/gpr/string.h"
-#include "src/core/lib/gprpp/host_port.h"
+#include "src/core/ext/xds/xds_client.h"
 #include "src/core/lib/iomgr/error.h"
-#include "src/core/lib/iomgr/sockaddr.h"
-#include "src/core/lib/iomgr/socket_utils.h"
-#include "src/core/lib/slice/slice_internal.h"
-#include "src/core/lib/uri/uri_parser.h"
+#include "src/core/lib/json/json.h"
+
+// IWYU pragma: no_include "upb/msg_internal.h"
+// IWYU pragma: no_include <ext/alloc_traits.h>
 
 namespace grpc_core {
 
@@ -326,6 +325,9 @@ grpc_slice XdsApi::CreateAdsRequest(
                                                                  arena.ptr());
     PopulateNode(context, node_, build_version_, user_agent_name_,
                  user_agent_version_, node_msg);
+    envoy_config_core_v3_Node_add_client_features(
+        node_msg, upb_StringView_FromString("xds.config.resource-in-sotw"),
+        context.arena);
   }
   // Add resource_names.
   for (const std::string& resource_name : resource_names) {
@@ -399,6 +401,23 @@ absl::Status XdsApi::ParseAdsResponse(const XdsBootstrap::XdsServer& server,
         "type.googleapis.com/");
     absl::string_view serialized_resource =
         UpbStringToAbsl(google_protobuf_Any_value(resources[i]));
+    // Unwrap Resource messages, if so wrapped.
+    if (type_url == "envoy.api.v2.Resource" ||
+        type_url == "envoy.service.discovery.v3.Resource") {
+      const auto* resource_wrapper = envoy_service_discovery_v3_Resource_parse(
+          serialized_resource.data(), serialized_resource.size(), arena.ptr());
+      if (resource_wrapper == nullptr) {
+        return absl::InvalidArgumentError(
+            "Can't decode Resource proto wrapper");
+      }
+      const auto* resource =
+          envoy_service_discovery_v3_Resource_resource(resource_wrapper);
+      type_url = absl::StripPrefix(
+          UpbStringToAbsl(google_protobuf_Any_type_url(resource)),
+          "type.googleapis.com/");
+      serialized_resource =
+          UpbStringToAbsl(google_protobuf_Any_value(resource));
+    }
     parser->ParseResource(context, i, type_url, serialized_resource);
   }
   return absl::OkStatus();

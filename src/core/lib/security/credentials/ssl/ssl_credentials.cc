@@ -37,8 +37,7 @@
 
 grpc_ssl_credentials::grpc_ssl_credentials(
     const char* pem_root_certs, grpc_ssl_pem_key_cert_pair* pem_key_cert_pair,
-    const grpc_ssl_verify_peer_options* verify_options)
-    : grpc_channel_credentials(GRPC_CHANNEL_CREDENTIALS_TYPE_SSL) {
+    const grpc_ssl_verify_peer_options* verify_options) {
   build_config(pem_root_certs, pem_key_cert_pair, verify_options);
 }
 
@@ -81,6 +80,11 @@ grpc_ssl_credentials::create_security_connector(
       const_cast<char*>(GRPC_ARG_HTTP2_SCHEME), const_cast<char*>("https"));
   *new_args = grpc_channel_args_copy_and_add(args, &new_arg, 1);
   return sc;
+}
+
+grpc_core::UniqueTypeName grpc_ssl_credentials::Type() {
+  static grpc_core::UniqueTypeName::Factory kFactory("Ssl");
+  return kFactory.Create();
 }
 
 void grpc_ssl_credentials::build_config(
@@ -162,8 +166,7 @@ struct grpc_ssl_server_credentials_options {
 };
 
 grpc_ssl_server_credentials::grpc_ssl_server_credentials(
-    const grpc_ssl_server_credentials_options& options)
-    : grpc_server_credentials(GRPC_CHANNEL_CREDENTIALS_TYPE_SSL) {
+    const grpc_ssl_server_credentials_options& options) {
   if (options.certificate_config_fetcher != nullptr) {
     config_.client_certificate_request = options.client_certificate_request;
     certificate_config_fetcher_ = *options.certificate_config_fetcher;
@@ -184,6 +187,11 @@ grpc_core::RefCountedPtr<grpc_server_security_connector>
 grpc_ssl_server_credentials::create_security_connector(
     const grpc_channel_args* /* args */) {
   return grpc_ssl_server_security_connector_create(this->Ref());
+}
+
+grpc_core::UniqueTypeName grpc_ssl_server_credentials::Type() {
+  static grpc_core::UniqueTypeName::Factory kFactory("Ssl");
+  return kFactory.Create();
 }
 
 tsi_ssl_pem_key_cert_pair* grpc_convert_grpc_to_tsi_cert_pairs(

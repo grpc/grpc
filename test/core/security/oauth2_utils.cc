@@ -25,6 +25,7 @@
 #include <grpc/slice.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
+#include <grpc/support/string_util.h>
 #include <grpc/support/sync.h>
 
 #include "src/core/lib/iomgr/exec_ctx.h"
@@ -57,10 +58,10 @@ char* grpc_test_fetch_oauth2_token_with_credentials(
       [creds, &initial_metadata, &get_request_metadata_args]() {
         return grpc_core::Map(
             creds->GetRequestMetadata(
-                grpc_core::ClientInitialMetadata::TestOnlyWrap(
+                grpc_core::ClientMetadataHandle::TestOnlyWrap(
                     &initial_metadata),
                 &get_request_metadata_args),
-            [](const absl::StatusOr<grpc_core::ClientInitialMetadata>& s) {
+            [](const absl::StatusOr<grpc_core::ClientMetadataHandle>& s) {
               return s.status();
             });
       },

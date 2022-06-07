@@ -66,7 +66,7 @@ class TestDNSResolver : public grpc_core::DNSResolver {
  public:
   // Wrapper around default resolve_address in order to count the number of
   // times we incur in a system-level name resolution.
-  grpc_core::OrphanablePtr<grpc_core::DNSResolver::Request> ResolveName(
+  TaskHandle ResolveName(
       absl::string_view name, absl::string_view default_port,
       grpc_pollset_set* interested_parties,
       std::function<void(absl::StatusOr<std::vector<grpc_resolved_address>>)>
@@ -100,6 +100,9 @@ class TestDNSResolver : public grpc_core::DNSResolver {
       absl::string_view name, absl::string_view default_port) override {
     return g_default_dns_resolver->ResolveNameBlocking(name, default_port);
   }
+
+  // Not cancellable
+  bool Cancel(TaskHandle /*handle*/) override { return false; }
 };
 
 }  // namespace
@@ -335,7 +338,7 @@ static void test_cooldown() {
 }
 
 int main(int argc, char** argv) {
-  grpc::testing::TestEnvironment env(argc, argv);
+  grpc::testing::TestEnvironment env(&argc, argv);
   grpc_init();
 
   auto work_serializer = std::make_shared<grpc_core::WorkSerializer>();

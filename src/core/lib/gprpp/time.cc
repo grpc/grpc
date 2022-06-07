@@ -20,6 +20,9 @@
 #include <cstdint>
 #include <limits>
 #include <string>
+#include <utility>
+
+#include "absl/strings/str_format.h"
 
 #include <grpc/impl/codegen/gpr_types.h>
 #include <grpc/support/log.h>
@@ -155,6 +158,12 @@ gpr_timespec Timestamp::as_timespec(gpr_clock_type clock_type) const {
 }
 
 std::string Timestamp::ToString() const {
+  if (millis_ == std::numeric_limits<int64_t>::max()) {
+    return "@∞";
+  }
+  if (millis_ == std::numeric_limits<int64_t>::min()) {
+    return "@-∞";
+  }
   return "@" + std::to_string(millis_) + "ms";
 }
 
@@ -167,7 +176,18 @@ Duration Duration::FromTimespec(gpr_timespec t) {
 }
 
 std::string Duration::ToString() const {
+  if (millis_ == std::numeric_limits<int64_t>::max()) {
+    return "∞";
+  }
+  if (millis_ == std::numeric_limits<int64_t>::min()) {
+    return "-∞";
+  }
   return std::to_string(millis_) + "ms";
+}
+
+std::string Duration::ToJsonString() const {
+  gpr_timespec ts = as_timespec();
+  return absl::StrFormat("%d.%09ds", ts.tv_sec, ts.tv_nsec);
 }
 
 void TestOnlySetProcessEpoch(gpr_timespec epoch) {

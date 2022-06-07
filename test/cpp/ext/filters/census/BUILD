@@ -37,6 +37,7 @@ grpc_cc_test(
         "//:grpc_opencensus_plugin",
         "//src/proto/grpc/testing:echo_proto",
         "//test/core/util:grpc_test_util",
+        "//test/cpp/end2end:test_service_impl",
         "//test/cpp/util:test_config",
         "//test/cpp/util:test_util",
     ],

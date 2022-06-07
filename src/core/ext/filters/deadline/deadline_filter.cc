@@ -18,19 +18,23 @@
 
 #include "src/core/ext/filters/deadline/deadline_filter.h"
 
-#include <stdbool.h>
-#include <string.h>
+#include <new>
 
-#include <grpc/support/alloc.h>
+#include "absl/types/optional.h"
+
+#include <grpc/status.h>
 #include <grpc/support/log.h>
-#include <grpc/support/sync.h>
-#include <grpc/support/time.h>
 
+#include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_stack_builder.h"
 #include "src/core/lib/config/core_configuration.h"
-#include "src/core/lib/gprpp/memory.h"
+#include "src/core/lib/gprpp/debug_location.h"
+#include "src/core/lib/iomgr/error.h"
+#include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/timer.h"
-#include "src/core/lib/slice/slice_internal.h"
+#include "src/core/lib/surface/channel_init.h"
+#include "src/core/lib/surface/channel_stack_type.h"
+#include "src/core/lib/transport/metadata_batch.h"
 
 namespace grpc_core {
 
@@ -347,6 +351,7 @@ const grpc_channel_filter grpc_client_deadline_filter = {
     deadline_destroy_call_elem,
     0,  // sizeof(channel_data)
     deadline_init_channel_elem,
+    grpc_channel_stack_no_post_init,
     deadline_destroy_channel_elem,
     grpc_channel_next_get_info,
     "deadline",
@@ -362,6 +367,7 @@ const grpc_channel_filter grpc_server_deadline_filter = {
     deadline_destroy_call_elem,
     0,  // sizeof(channel_data)
     deadline_init_channel_elem,
+    grpc_channel_stack_no_post_init,
     deadline_destroy_channel_elem,
     grpc_channel_next_get_info,
     "deadline",
@@ -380,8 +386,10 @@ void RegisterDeadlineFilter(CoreConfiguration::Builder* builder) {
     builder->channel_init()->RegisterStage(
         type, GRPC_CHANNEL_INIT_BUILTIN_PRIORITY,
         [filter](ChannelStackBuilder* builder) {
-          if (grpc_deadline_checking_enabled(builder->channel_args())) {
-            builder->PrependFilter(filter, nullptr);
+          auto args = builder->channel_args();
+          if (args.GetBool(GRPC_ARG_ENABLE_DEADLINE_CHECKS)
+                  .value_or(!args.WantMinimalStack())) {
+            builder->PrependFilter(filter);
           }
           return true;
         });

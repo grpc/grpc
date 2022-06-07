@@ -20,8 +20,17 @@
 
 #include "src/core/ext/xds/xds_certificate_provider.h"
 
+#include <utility>
+
 #include "absl/functional/bind_front.h"
-#include "absl/strings/str_cat.h"
+#include "absl/memory/memory.h"
+#include "absl/types/optional.h"
+
+#include <grpc/support/log.h>
+
+#include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/iomgr/error.h"
+#include "src/core/lib/security/security_connector/ssl_utils.h"
 
 namespace grpc_core {
 
@@ -261,6 +270,11 @@ XdsCertificateProvider::XdsCertificateProvider()
 
 XdsCertificateProvider::~XdsCertificateProvider() {
   distributor_->SetWatchStatusCallback(nullptr);
+}
+
+UniqueTypeName XdsCertificateProvider::type() const {
+  static UniqueTypeName::Factory kFactory("Xds");
+  return kFactory.Create();
 }
 
 bool XdsCertificateProvider::ProvidesRootCerts(const std::string& cert_name) {

@@ -25,6 +25,7 @@
 #include <grpc/support/log.h>
 #include <grpc/support/time.h>
 
+#include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/channel/channel_stack_builder.h"
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/surface/channel_init.h"
@@ -243,6 +244,7 @@ static const grpc_channel_filter test_filter = {
     destroy_call_elem,
     sizeof(channel_data),
     init_channel_elem,
+    grpc_channel_stack_no_post_init,
     destroy_channel_elem,
     grpc_channel_next_get_info,
     "filter_causes_close"};
@@ -258,7 +260,7 @@ void filter_causes_close(grpc_end2end_test_config config) {
         builder->channel_init()->RegisterStage(
             GRPC_SERVER_CHANNEL, 0,
             [](grpc_core::ChannelStackBuilder* builder) {
-              builder->PrependFilter(&test_filter, nullptr);
+              builder->PrependFilter(&test_filter);
               return true;
             });
       },
