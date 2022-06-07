@@ -22,6 +22,7 @@
 #include <grpc/support/time.h>
 
 #include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/gpr/env.h"
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/security/authorization/grpc_authorization_policy_provider.h"
 #include "src/core/lib/security/credentials/credentials.h"
@@ -722,4 +723,11 @@ void grpc_authz(grpc_end2end_test_config config) {
   test_file_watcher_recovers_from_failure(config);
 }
 
-void grpc_authz_pre_init(void) {}
+void grpc_authz_pre_init(void) {
+  // TODO(ashithasantosh): Remove below logs. Logs are enabled for debugging
+  // purpose.
+#if GPR_APPLE
+  gpr_setenv("GRPC_VERBOSITY", "DEBUG");
+  gpr_setenv("GRPC_TRACE", "grpc_authz_api");
+#endif
+}
