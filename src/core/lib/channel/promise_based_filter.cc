@@ -591,7 +591,13 @@ void ClientCallData::StartBatch(grpc_transport_stream_op_batch* b) {
     batch.CancelWith(GRPC_ERROR_REF(cancelled_error_), &flusher);
   }
 
-  if (batch.is_captured()) batch.ResumeWith(&flusher);
+  if (batch.is_captured()) {
+    if (!is_last()) {
+      batch.ResumeWith(&flusher);
+    } else {
+      batch.CancelWith(GRPC_ERROR_CANCELLED, &flusher);
+    }
+  }
 }
 
 // Handle cancellation.
