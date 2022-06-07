@@ -476,8 +476,9 @@ grpc_error_handle XdsBootstrap::ParseCertificateProvider(
           grpc_error_handle parse_error = GRPC_ERROR_NONE;
           config = factory->CreateCertificateProviderConfig(it->second,
                                                             &parse_error);
-          if (!GRPC_ERROR_IS_NONE(parse_error))
+          if (!GRPC_ERROR_IS_NONE(parse_error)) {
             error_list.push_back(parse_error);
+          }
         }
       } else {
         // "config" is an optional field, so create an empty JSON object.
