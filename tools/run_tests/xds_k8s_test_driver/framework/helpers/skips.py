@@ -41,7 +41,7 @@ class Lang(enum.Flag):
     VERSION_TYPE_2 = NODE
 
     def __str__(self):
-        return self.name.lower()
+        return str(self.name).lower()
 
     @classmethod
     def from_string(cls, lang: str):
@@ -113,5 +113,5 @@ def evaluate_test_config(check: Callable[[TestConfig], bool]) -> None:
     if not check(test_config):
         logger.info('Skipping %s', test_config)
         raise unittest.SkipTest(f'Unsupported test config: {test_config}')
-    else:
-        logger.info('Detected language and version: %s', test_config)
+
+    logger.info('Detected language and version: %s', test_config)

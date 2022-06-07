@@ -68,7 +68,7 @@ def _is_supported(config: skips.TestConfig) -> bool:
     # https://github.com/grpc/grpc/blob/master/doc/grpc_xds_features.md
     if config.client_lang in _Lang.CPP | _Lang.JAVA | _Lang.PYTHON:
         return not config.version_lt('v1.40.x')
-    elif config.client_lang in _Lang.GO:
+    elif config.client_lang == _Lang.GO:
         return not config.version_lt('v1.41.x')
     return True
 
