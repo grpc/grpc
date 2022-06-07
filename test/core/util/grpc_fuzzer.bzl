@@ -48,7 +48,7 @@ def grpc_fuzzer(name, corpus, srcs = [], tags = [], deps = [], data = [], size =
         ],
         size = size,
         args = select({
-            "//:grpc_build_fuzzers": [CORPUS_DIR, "-runs=5000"],
+            "//:grpc_build_fuzzers": [CORPUS_DIR, "-runs=5000", "-max_total_time=300"],
             "//conditions:default": ["--directory=" + CORPUS_DIR],
         }),
         **kwargs
@@ -99,7 +99,7 @@ def grpc_proto_fuzzer(name, corpus, proto, srcs = [], tags = [], deps = [], data
         ],
         size = size,
         args = select({
-            "//:grpc_build_fuzzers": [CORPUS_DIR, "-runs=5000"],
+            "//:grpc_build_fuzzers": [CORPUS_DIR, "-runs=5000", "-max_total_time=300"],
             "//conditions:default": ["--directory=" + CORPUS_DIR],
         }),
         **kwargs
