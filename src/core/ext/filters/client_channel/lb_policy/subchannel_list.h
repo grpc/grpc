@@ -27,6 +27,7 @@
 #include <utility>
 
 #include "absl/container/inlined_vector.h"
+#include "absl/status/status.h"
 #include "absl/types/optional.h"
 
 #include <grpc/impl/codegen/connectivity_state.h>
@@ -97,6 +98,7 @@ class SubchannelData {
   absl::optional<grpc_connectivity_state> connectivity_state() {
     return connectivity_state_;
   }
+  absl::Status connectivity_status() { return connectivity_status_; }
 
   // Resets the connection backoff.
   void ResetBackoffLocked();
@@ -137,7 +139,8 @@ class SubchannelData {
       subchannel_list_.reset(DEBUG_LOCATION, "Watcher dtor");
     }
 
-    void OnConnectivityStateChange(grpc_connectivity_state new_state) override;
+    void OnConnectivityStateChange(grpc_connectivity_state new_state,
+                                   absl::Status status) override;
 
     grpc_pollset_set* interested_parties() override {
       return subchannel_list_->policy()->interested_parties();
@@ -168,6 +171,7 @@ class SubchannelData {
       nullptr;
   // Data updated by the watcher.
   absl::optional<grpc_connectivity_state> connectivity_state_;
+  absl::Status connectivity_status_;
 };
 
 // A list of subchannels.
@@ -240,13 +244,14 @@ class SubchannelList : public InternallyRefCounted<SubchannelListType> {
 
 template <typename SubchannelListType, typename SubchannelDataType>
 void SubchannelData<SubchannelListType, SubchannelDataType>::Watcher::
-    OnConnectivityStateChange(grpc_connectivity_state new_state) {
+    OnConnectivityStateChange(grpc_connectivity_state new_state,
+                              absl::Status status) {
   if (GPR_UNLIKELY(subchannel_list_->tracer() != nullptr)) {
     gpr_log(
         GPR_INFO,
         "[%s %p] subchannel list %p index %" PRIuPTR " of %" PRIuPTR
         " (subchannel %p): connectivity changed: old_state=%s, new_state=%s, "
-        "shutting_down=%d, pending_watcher=%p",
+        "status=%s, shutting_down=%d, pending_watcher=%p",
         subchannel_list_->tracer(), subchannel_list_->policy(),
         subchannel_list_.get(), subchannel_data_->Index(),
         subchannel_list_->num_subchannels(),
@@ -254,14 +259,15 @@ void SubchannelData<SubchannelListType, SubchannelDataType>::Watcher::
         (subchannel_data_->connectivity_state_.has_value()
              ? ConnectivityStateName(*subchannel_data_->connectivity_state_)
              : "N/A"),
-        ConnectivityStateName(new_state), subchannel_list_->shutting_down(),
-        subchannel_data_->pending_watcher_);
+        ConnectivityStateName(new_state), status.ToString().c_str(),
+        subchannel_list_->shutting_down(), subchannel_data_->pending_watcher_);
   }
   if (!subchannel_list_->shutting_down() &&
       subchannel_data_->pending_watcher_ != nullptr) {
     absl::optional<grpc_connectivity_state> old_state =
         subchannel_data_->connectivity_state_;
     subchannel_data_->connectivity_state_ = new_state;
+    subchannel_data_->connectivity_status_ = status;
     // Call the subclass's ProcessConnectivityChangeLocked() method.
     subchannel_data_->ProcessConnectivityChangeLocked(old_state, new_state);
   }

@@ -4118,6 +4118,7 @@ grpc_cc_library(
     ],
     external_deps = [
         "absl/container:inlined_vector",
+        "absl/status",
         "absl/types:optional",
     ],
     language = "c++",

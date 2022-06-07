@@ -22,6 +22,8 @@
 #include <memory>
 #include <utility>
 
+#include "absl/status/status.h"
+
 #include <grpc/impl/codegen/connectivity_state.h>
 #include <grpc/impl/codegen/grpc_types.h>
 
@@ -38,11 +40,12 @@ class SubchannelInterface : public RefCounted<SubchannelInterface> {
    public:
     virtual ~ConnectivityStateWatcherInterface() = default;
 
-    // Will be invoked whenever the subchannel's connectivity state
-    // changes.  There will be only one invocation of this method on a
-    // given watcher instance at any given time.
-    virtual void OnConnectivityStateChange(
-        grpc_connectivity_state new_state) = 0;
+    // Will be invoked whenever the subchannel's connectivity state changes.
+    // If the new state is TRANSIENT_FAILURE, status indicates the reason
+    // for the failure.  There will be only one invocation of this method
+    // on a given watcher instance at any given time.
+    virtual void OnConnectivityStateChange(grpc_connectivity_state new_state,
+                                           absl::Status status) = 0;
 
     // TODO(roth): Remove this as soon as we move to EventManager-based
     // polling.

@@ -176,27 +176,34 @@ class OutlierDetectionLb : public LoadBalancingPolicy {
 
       void Eject() {
         ejected_ = true;
-        if (last_seen_state_.has_value() &&
-            *last_seen_state_ != GRPC_CHANNEL_TRANSIENT_FAILURE) {
-          watcher_->OnConnectivityStateChange(GRPC_CHANNEL_TRANSIENT_FAILURE);
+        if (last_seen_state_.has_value()) {
+          watcher_->OnConnectivityStateChange(
+              GRPC_CHANNEL_TRANSIENT_FAILURE,
+              absl::UnavailableError(
+                  "subchannel ejected by outlier detection"));
         }
       }
 
       void Uneject() {
         ejected_ = false;
-        if (last_seen_state_.has_value() &&
-            *last_seen_state_ != GRPC_CHANNEL_TRANSIENT_FAILURE) {
-          watcher_->OnConnectivityStateChange(*last_seen_state_);
+        if (last_seen_state_.has_value()) {
+          watcher_->OnConnectivityStateChange(*last_seen_state_,
+                                              last_seen_status_);
         }
       }
 
-      void OnConnectivityStateChange(
-          grpc_connectivity_state new_state) override {
+      void OnConnectivityStateChange(grpc_connectivity_state new_state,
+                                     absl::Status status) override {
         const bool send_update = !last_seen_state_.has_value() || !ejected_;
         last_seen_state_ = new_state;
+        last_seen_status_ = status;
         if (send_update) {
-          watcher_->OnConnectivityStateChange(
-              ejected_ ? GRPC_CHANNEL_TRANSIENT_FAILURE : new_state);
+          if (ejected_) {
+            new_state = GRPC_CHANNEL_TRANSIENT_FAILURE;
+            status = absl::UnavailableError(
+                "subchannel ejected by outlier detection");
+          }
+          watcher_->OnConnectivityStateChange(new_state, status);
         }
       }
 
@@ -208,6 +215,7 @@ class OutlierDetectionLb : public LoadBalancingPolicy {
       std::unique_ptr<SubchannelInterface::ConnectivityStateWatcherInterface>
           watcher_;
       absl::optional<grpc_connectivity_state> last_seen_state_;
+      absl::Status last_seen_status_;
       bool ejected_;
     };
 
