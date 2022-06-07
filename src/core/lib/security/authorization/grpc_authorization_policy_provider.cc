@@ -84,7 +84,7 @@ absl::StatusOr<std::string> ReadPolicyFromFile(absl::string_view policy_path) {
     time_t ts_after = GetModificationTime(std::string(policy_path).c_str());
     if (ts_after != ts_before) {
       gpr_log(GPR_ERROR,
-              "Last modified time different %d %d. Start retrying ...",
+              "Last modified time different %ld %ld. Start retrying ...",
               ts_before, ts_after);
       continue;
     }
