@@ -43,6 +43,7 @@ void FuzzingEventEngine::Tick() {
     } else if (tick_increments_.empty()) {
       now_ += final_tick_length_;
     }
+    ++current_tick_;
     // Find newly expired timers.
     while (!tasks_by_time_.empty() && tasks_by_time_.begin()->first <= now_) {
       tasks_by_id_.erase(tasks_by_time_.begin()->second->id);
