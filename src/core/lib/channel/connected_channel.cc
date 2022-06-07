@@ -22,6 +22,9 @@
 
 #include <stdlib.h>
 
+#include "channel_fwd.h"
+#include "context.h"
+
 #include <grpc/impl/codegen/grpc_types.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
@@ -210,79 +213,81 @@ static void connected_channel_get_channel_info(
 namespace grpc_core {
 namespace {
 
-ArenaPromise<ServerMetadataHandle> MakeCallPromise(grpc_channel_element* elem,
-                                                   CallArgs call_args,
-                                                   NextPromiseFactory) {
-  grpc_transport* transport =
-      static_cast<channel_data*>(elem->channel_data)->transport;
+template <grpc_core::ArenaPromise<grpc_core::ServerMetadataHandle> (
+    *make_call_promise)(grpc_transport*, grpc_core::CallArgs)>
+grpc_channel_filter MakeConnectedFilter() {
+  return {
+    connected_channel_start_transport_stream_op_batch,
+        make_call_promise == nullptr
+            ? nullptr
+            : [](grpc_channel_element* elem, CallArgs call_args,
+                 NextPromiseFactory) {
+                grpc_transport* transport =
+                    static_cast<channel_data*>(elem->channel_data)->transport;
+                return make_call_promise(transport, std::move(call_args));
+              },
+      connected_channel_start_transport_op,
+      sizeof(call_data),
+      connected_channel_init_call_elem,
+      set_pollset_or_pollset_set,
+      connected_channel_destroy_call_elem,
+      sizeof(channel_data),
+      connected_channel_init_channel_elem,
+      [](grpc_channel_stack* channel_stack, grpc_channel_element* elem) {
+        /* HACK(ctiller): increase call stack size for the channel to make space
+           for channel data. We need a cleaner (but performant) way to do this,
+           and I'm not sure what that is yet.
+           This is only "safe" because call stacks place no additional data
+           after the last call element, and the last call element MUST be the
+           connected channel. */
+        channel_stack->call_stack_size += grpc_transport_stream_size(
+            static_cast<channel_data*>(elem->channel_data)->transport);
+      },
+      connected_channel_destroy_channel_elem,
+      connected_channel_get_channel_info,
+      "connected",
+  };
+}
+
+ArenaPromise<ServerMetadataHandle> MakeTransportCallPromise(
+    grpc_transport* transport, CallArgs call_args) {
   return transport->vtable->make_call_promise(transport, std::move(call_args));
 }
 
+class ClientCallPromise {
+ public:
+  static ArenaPromise<ServerMetadataHandle> Make(grpc_transport* transport,
+                                                 CallArgs call_args) {
+    return ClientCallPromise();
+  }
+
+  Poll<ServerMetadataHandle> operator()() { abort(); }
+
+ private:
+  grpc_transport_stream_op_batch_payload batch_payload_{
+      GetContext<grpc_call_context_element>()};
+};
+
+const grpc_channel_filter kPromiseBasedTransportFilter =
+    MakeConnectedFilter<MakeTransportCallPromise>();
+
+const grpc_channel_filter kClientEmulatedFilter =
+    MakeConnectedFilter<ClientCallPromise::Make>();
+
+const grpc_channel_filter kNoPromiseFilter = MakeConnectedFilter<nullptr>();
+
 }  // namespace
 }  // namespace grpc_core
-
-const grpc_channel_filter grpc_connected_filter = {
-    connected_channel_start_transport_stream_op_batch,
-    nullptr,
-    connected_channel_start_transport_op,
-    sizeof(call_data),
-    connected_channel_init_call_elem,
-    set_pollset_or_pollset_set,
-    connected_channel_destroy_call_elem,
-    sizeof(channel_data),
-    connected_channel_init_channel_elem,
-    [](grpc_channel_stack* channel_stack, grpc_channel_element* elem) {
-      /* HACK(ctiller): increase call stack size for the channel to make space
-         for channel data. We need a cleaner (but performant) way to do this,
-         and I'm not sure what that is yet.
-         This is only "safe" because call stacks place no additional data after
-         the last call element, and the last call element MUST be the connected
-         channel. */
-      channel_stack->call_stack_size += grpc_transport_stream_size(
-          static_cast<channel_data*>(elem->channel_data)->transport);
-    },
-    connected_channel_destroy_channel_elem,
-    connected_channel_get_channel_info,
-    "connected",
-};
-
-const grpc_channel_filter grpc_promising_connected_filter = {
-    connected_channel_start_transport_stream_op_batch,
-    grpc_core::MakeCallPromise,
-    connected_channel_start_transport_op,
-    sizeof(call_data),
-    connected_channel_init_call_elem,
-    set_pollset_or_pollset_set,
-    connected_channel_destroy_call_elem,
-    sizeof(channel_data),
-    connected_channel_init_channel_elem,
-    [](grpc_channel_stack* channel_stack, grpc_channel_element* elem) {
-      /* HACK(ctiller): increase call stack size for the channel to make space
-         for channel data. We need a cleaner (but performant) way to do this,
-         and I'm not sure what that is yet.
-         This is only "safe" because call stacks place no additional data after
-         the last call element, and the last call element MUST be the connected
-         channel. */
-      channel_stack->call_stack_size += grpc_transport_stream_size(
-          static_cast<channel_data*>(elem->channel_data)->transport);
-    },
-    connected_channel_destroy_channel_elem,
-    connected_channel_get_channel_info,
-    "connected",
-};
 
 bool grpc_add_connected_filter(grpc_core::ChannelStackBuilder* builder) {
   grpc_transport* t = builder->transport();
   GPR_ASSERT(t != nullptr);
   if (t->vtable->make_call_promise != nullptr) {
-    builder->AppendFilter(&grpc_promising_connected_filter);
+    builder->AppendFilter(&grpc_core::kPromiseBasedTransportFilter);
+  } else if (grpc_channel_stack_type_is_client(builder->channel_stack_type())) {
+    builder->AppendFilter(&grpc_core::kClientEmulatedFilter);
   } else {
-    builder->AppendFilter(&grpc_connected_filter);
+    builder->AppendFilter(&grpc_core::kNoPromiseFilter);
   }
   return true;
-}
-
-grpc_stream* grpc_connected_channel_get_stream(grpc_call_element* elem) {
-  call_data* calld = static_cast<call_data*>(elem->call_data);
-  return TRANSPORT_STREAM_FROM_CALL_DATA(calld);
 }
