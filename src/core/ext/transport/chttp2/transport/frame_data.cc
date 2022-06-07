@@ -127,8 +127,7 @@ grpc_core::Poll<grpc_error_handle> grpc_deframe_unprocessed_incoming_frames(
     s->stats.incoming.framing_bytes += 5;
     s->stats.incoming.data_bytes += length;
     grpc_slice_buffer_move_first_into_buffer(slices, 5, header);
-    grpc_slice_buffer_move_first_no_ref(slices, length,
-                                        stream_out->c_slice_buffer());
+    grpc_slice_buffer_move_first(slices, length, stream_out->c_slice_buffer());
   }
 
   return GRPC_ERROR_NONE;
