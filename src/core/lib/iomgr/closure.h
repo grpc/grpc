@@ -119,6 +119,26 @@ inline grpc_closure* grpc_closure_init(grpc_closure* closure,
   grpc_closure_init(closure, cb, cb_arg)
 #endif
 
+namespace grpc_core {
+template <typename T, void (T::*cb)(grpc_error_handle)>
+grpc_closure MakeMemberClosure(T* p) {
+  grpc_closure out;
+  GRPC_CLOSURE_INIT(
+      &out, [](void* p, grpc_error_handle e) { (static_cast<T*>(p)->*cb)(e); },
+      p, nullptr);
+  return out;
+}
+
+template <typename T, void (T::*cb)()>
+grpc_closure MakeMemberClosure(T* p) {
+  grpc_closure out;
+  GRPC_CLOSURE_INIT(
+      &out, [](void* p, grpc_error_handle e) { (static_cast<T*>(p)->*cb)(); },
+      p, nullptr);
+  return out;
+}
+}  // namespace grpc_core
+
 namespace closure_impl {
 
 struct wrapped_closure {

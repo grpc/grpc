@@ -52,6 +52,7 @@
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
 
+#include "src/core/lib/channel/call_finalization.h"
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/channel/channelz.h"
 #include "src/core/lib/channel/context.h"
@@ -1838,6 +1839,7 @@ class PromiseBasedCall : public Call, public Activity, public Wakeable {
         ApplicationCallbackExecCtx app_exec_ctx;
         ExecCtx exec_ctx;
         MutexLock lock(&mu_);
+        ScopedContext activity_context(this);
         Update();
       }
       InternalUnref("wakeup");
@@ -1860,6 +1862,19 @@ class PromiseBasedCall : public Call, public Activity, public Wakeable {
   grpc_call_stack* call_stack() override { return nullptr; }
 
  protected:
+  class ScopedContext
+      : public ScopedActivity,
+        public promise_detail::Context<Arena>,
+        public promise_detail::Context<grpc_call_context_element>,
+        public promise_detail::Context<CallFinalization> {
+   public:
+    explicit ScopedContext(PromiseBasedCall* call)
+        : ScopedActivity(call),
+          promise_detail::Context<Arena>(call->arena()),
+          promise_detail::Context<grpc_call_context_element>(call->context_),
+          promise_detail::Context<CallFinalization>(&call->finalization_) {}
+  };
+
   class Completion {
    public:
     Completion() : index_(kNullIndex) {}
@@ -1887,6 +1902,8 @@ class PromiseBasedCall : public Call, public Activity, public Wakeable {
 
   ~PromiseBasedCall() override {
     if (non_owning_wakeable_) non_owning_wakeable_->DropActivity();
+    // DO NOT SUBMIT - need to get the correct call_final_info into this call
+    finalization_.Run(nullptr);
   }
 
   Mutex* mu() const ABSL_LOCK_RETURNED(mu_) { return &mu_; }
@@ -2009,6 +2026,7 @@ class PromiseBasedCall : public Call, public Activity, public Wakeable {
   grpc_completion_queue* cq_ ABSL_GUARDED_BY(mu_) = nullptr;
   NonOwningWakable* non_owning_wakeable_ ABSL_GUARDED_BY(mu_) = nullptr;
   CompletionInfo completion_info_[6];
+  CallFinalization finalization_;
 };
 
 template <typename T>
@@ -2261,6 +2279,7 @@ grpc_call_error ClientPromiseBasedCall::StartBatch(const grpc_op* ops,
                                                    void* notify_tag,
                                                    bool is_notify_tag_closure) {
   MutexLock lock(mu());
+  ScopedContext activity_context(this);
   if (nops == 0) {
     EndOpImmediately(cq(), notify_tag, is_notify_tag_closure);
     return GRPC_CALL_OK;

@@ -89,6 +89,7 @@ namespace promise_filter_detail {
 class BaseCallData;
 }
 class PromiseBasedCall;
+class ClientConnectedCallPromise;
 
 // Small unowned "handle" type to ensure one accessor at a time to metadata.
 // The focus here is to get promises to use the syntax we'd like - we'll
@@ -126,8 +127,11 @@ class MetadataHandle {
   static MetadataHandle TestOnlyWrap(T* p) { return MetadataHandle(p); }
 
  private:
+  // We restrict access to construction from a pointer to limit the number of
+  // cases that need dealing with as this code evolves.
   friend class promise_filter_detail::BaseCallData;
   friend class PromiseBasedCall;
+  friend class ClientConnectedCallPromise;
 
   explicit MetadataHandle(T* handle) : handle_(handle) {}
   T* Unwrap() {
@@ -172,6 +176,7 @@ class Message {
   Message& operator=(Message&& other) noexcept = default;
 
   uint32_t flags() const { return flags_; }
+  SliceBuffer* payload() { return &payload_; }
 
  private:
   SliceBuffer payload_;
