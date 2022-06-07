@@ -168,7 +168,7 @@ absl::StatusOr<Json> ParseStructToJson(const XdsEncodingContext& context,
                  reinterpret_cast<char*>(buf), json_size + 1, status.ptr());
   grpc_error_handle error = GRPC_ERROR_NONE;
   auto json = Json::Parse(reinterpret_cast<char*>(buf), &error);
-  if (error != GRPC_ERROR_NONE) {
+  if (!GRPC_ERROR_IS_NONE(error)) {
     // This should not happen
     auto ret_status = absl::InternalError(
         absl::StrCat("Error parsing JSON form of google::Protobuf::Struct "

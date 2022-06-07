@@ -135,7 +135,7 @@ grpc_error_handle UpstreamTlsContextParse(
     if (common_tls_context_proto != nullptr) {
       grpc_error_handle error = CommonTlsContext::Parse(
           context, common_tls_context_proto, common_tls_context);
-      if (error != GRPC_ERROR_NONE) {
+      if (!GRPC_ERROR_IS_NONE(error)) {
         return grpc_error_add_child(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
                                         "Error parsing UpstreamTlsContext"),
                                     error);
@@ -253,7 +253,7 @@ grpc_error_handle CdsResourceParse(
              envoy_config_cluster_v3_Cluster_LOGICAL_DNS) {
     cds_update->cluster_type = XdsClusterResource::ClusterType::LOGICAL_DNS;
     grpc_error_handle error = CdsLogicalDnsParse(cluster, cds_update);
-    if (error != GRPC_ERROR_NONE) errors.push_back(error);
+    if (!GRPC_ERROR_IS_NONE(error)) errors.push_back(error);
   } else {
     if (!envoy_config_cluster_v3_Cluster_has_cluster_type(cluster)) {
       errors.push_back(
@@ -354,7 +354,7 @@ grpc_error_handle CdsResourceParse(
   if (transport_socket != nullptr) {
     grpc_error_handle error = UpstreamTlsContextParse(
         context, transport_socket, &cds_update->common_tls_context);
-    if (error != GRPC_ERROR_NONE) {
+    if (!GRPC_ERROR_IS_NONE(error)) {
       errors.push_back(
           grpc_error_add_child(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
                                    "Error parsing security configuration"),
@@ -534,7 +534,7 @@ absl::StatusOr<XdsResourceType::DecodeResult> XdsClusterResourceType::Decode(
   auto cluster_data = absl::make_unique<ResourceDataSubclass>();
   grpc_error_handle error =
       CdsResourceParse(context, resource, is_v2, &cluster_data->resource);
-  if (error != GRPC_ERROR_NONE) {
+  if (!GRPC_ERROR_IS_NONE(error)) {
     std::string error_str = grpc_error_std_string(error);
     GRPC_ERROR_UNREF(error);
     if (GRPC_TRACE_FLAG_ENABLED(*context.tracer)) {

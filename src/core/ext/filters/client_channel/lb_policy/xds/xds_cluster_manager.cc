@@ -535,7 +535,7 @@ void XdsClusterManagerLb::ClusterChild::OnDelayedRemovalTimer(
 void XdsClusterManagerLb::ClusterChild::OnDelayedRemovalTimerLocked(
     grpc_error_handle error) {
   delayed_removal_timer_callback_pending_ = false;
-  if (error == GRPC_ERROR_NONE && !shutdown_) {
+  if (GRPC_ERROR_IS_NONE(error) && !shutdown_) {
     xds_cluster_manager_policy_->children_.erase(name_);
   }
   Unref(DEBUG_LOCATION, "ClusterChild+timer");
@@ -634,7 +634,7 @@ class XdsClusterManagerLbFactory : public LoadBalancingPolicyFactory {
 
   RefCountedPtr<LoadBalancingPolicy::Config> ParseLoadBalancingConfig(
       const Json& json, grpc_error_handle* error) const override {
-    GPR_DEBUG_ASSERT(error != nullptr && *error == GRPC_ERROR_NONE);
+    GPR_DEBUG_ASSERT(error != nullptr && GRPC_ERROR_IS_NONE(*error));
     if (json.type() == Json::Type::JSON_NULL) {
       // xds_cluster_manager was mentioned as a policy in the deprecated
       // loadBalancingPolicy field or in the client API.
@@ -705,7 +705,7 @@ class XdsClusterManagerLbFactory : public LoadBalancingPolicyFactory {
       *child_config = LoadBalancingPolicyRegistry::ParseLoadBalancingConfig(
           it->second, &parse_error);
       if (*child_config == nullptr) {
-        GPR_DEBUG_ASSERT(parse_error != GRPC_ERROR_NONE);
+        GPR_DEBUG_ASSERT(!GRPC_ERROR_IS_NONE(parse_error));
         std::vector<grpc_error_handle> child_errors;
         child_errors.push_back(parse_error);
         error_list.push_back(

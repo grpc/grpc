@@ -149,7 +149,7 @@ static void on_md_processing_done_inner(grpc_call_element* elem,
             "response_md in auth metadata processing not supported for now. "
             "Ignoring...");
   }
-  if (error == GRPC_ERROR_NONE) {
+  if (GRPC_ERROR_IS_NONE(error)) {
     for (size_t i = 0; i < num_consumed_md; i++) {
       batch->payload->recv_initial_metadata.recv_initial_metadata->Remove(
           grpc_core::StringViewFromSlice(consumed_md[i].key));
@@ -204,7 +204,7 @@ static void cancel_call(void* arg, grpc_error_handle error) {
   grpc_call_element* elem = static_cast<grpc_call_element*>(arg);
   call_data* calld = static_cast<call_data*>(elem->call_data);
   // If the result was not already processed, invoke the callback now.
-  if (error != GRPC_ERROR_NONE &&
+  if (!GRPC_ERROR_IS_NONE(error) &&
       gpr_atm_full_cas(&calld->state, static_cast<gpr_atm>(STATE_INIT),
                        static_cast<gpr_atm>(STATE_CANCELLED))) {
     on_md_processing_done_inner(elem, nullptr, 0, nullptr, 0,
@@ -218,7 +218,7 @@ static void recv_initial_metadata_ready(void* arg, grpc_error_handle error) {
   channel_data* chand = static_cast<channel_data*>(elem->channel_data);
   call_data* calld = static_cast<call_data*>(elem->call_data);
   grpc_transport_stream_op_batch* batch = calld->recv_initial_metadata_batch;
-  if (error == GRPC_ERROR_NONE) {
+  if (GRPC_ERROR_IS_NONE(error)) {
     if (chand->creds != nullptr &&
         chand->creds->auth_metadata_processor().process != nullptr) {
       // We're calling out to the application, so we need to make sure

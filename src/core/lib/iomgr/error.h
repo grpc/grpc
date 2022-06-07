@@ -210,7 +210,7 @@ absl::Status grpc_os_error(const grpc_core::DebugLocation& location, int err,
                            const char* call_name) GRPC_MUST_USE_RESULT;
 
 inline absl::Status grpc_assert_never_ok(absl::Status error) {
-  GPR_ASSERT(error != GRPC_ERROR_NONE);
+  GPR_ASSERT(!GRPC_ERROR_IS_NONE(error));
   return error;
 }
 
@@ -344,7 +344,7 @@ grpc_error_handle grpc_os_error(const char* file, int line, int err,
                                 const char* call_name) GRPC_MUST_USE_RESULT;
 
 inline grpc_error_handle grpc_assert_never_ok(grpc_error_handle error) {
-  GPR_ASSERT(error != GRPC_ERROR_NONE);
+  GPR_ASSERT(!GRPC_ERROR_IS_NONE(error));
   return error;
 }
 
@@ -391,8 +391,8 @@ bool grpc_log_error(const char* what, grpc_error_handle error, const char* file,
                     int line);
 inline bool grpc_log_if_error(const char* what, grpc_error_handle error,
                               const char* file, int line) {
-  return error == GRPC_ERROR_NONE ? true
-                                  : grpc_log_error(what, error, file, line);
+  return GRPC_ERROR_IS_NONE(error) ? true
+                                   : grpc_log_error(what, error, file, line);
 }
 
 #define GRPC_LOG_IF_ERROR(what, error) \
@@ -417,7 +417,7 @@ class AtomicError {
   /// returns get() == GRPC_ERROR_NONE
   bool ok() {
     gpr_spinlock_lock(&lock_);
-    bool ret = error_ == GRPC_ERROR_NONE;
+    bool ret = GRPC_ERROR_IS_NONE(error_);
     gpr_spinlock_unlock(&lock_);
     return ret;
   }

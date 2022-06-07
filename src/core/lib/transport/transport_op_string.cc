@@ -107,12 +107,12 @@ std::string grpc_transport_op_string(grpc_transport_op* op) {
                                   op->stop_connectivity_watch));
   }
 
-  if (op->disconnect_with_error != GRPC_ERROR_NONE) {
+  if (!GRPC_ERROR_IS_NONE(op->disconnect_with_error)) {
     out.push_back(absl::StrCat(
         " DISCONNECT:", grpc_error_std_string(op->disconnect_with_error)));
   }
 
-  if (op->goaway_error != GRPC_ERROR_NONE) {
+  if (!GRPC_ERROR_IS_NONE(op->goaway_error)) {
     out.push_back(
         absl::StrCat(" SEND_GOAWAY:", grpc_error_std_string(op->goaway_error)));
   }

@@ -92,13 +92,13 @@ static grpc_closure on_write;
 static void* tag(intptr_t t) { return reinterpret_cast<void*>(t); }
 
 static void done_write(void* /*arg*/, grpc_error_handle error) {
-  GPR_ASSERT(error == GRPC_ERROR_NONE);
+  GPR_ASSERT(GRPC_ERROR_IS_NONE(error));
   gpr_atm_rel_store(&state.done_atm, 1);
 }
 
 static void done_writing_settings_frame(void* /* arg */,
                                         grpc_error_handle error) {
-  GPR_ASSERT(error == GRPC_ERROR_NONE);
+  GPR_ASSERT(GRPC_ERROR_IS_NONE(error));
   grpc_endpoint_read(state.tcp, &state.temp_incoming_buffer, &on_read,
                      /*urgent=*/false, /*min_progress_size=*/1);
 }
@@ -114,7 +114,7 @@ static void handle_write() {
 }
 
 static void handle_read(void* /*arg*/, grpc_error_handle error) {
-  if (error != GRPC_ERROR_NONE) {
+  if (!GRPC_ERROR_IS_NONE(error)) {
     gpr_log(GPR_ERROR, "handle_read error: %s",
             grpc_error_std_string(error).c_str());
     return;
