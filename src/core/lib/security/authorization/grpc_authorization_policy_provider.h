@@ -53,6 +53,24 @@ class StaticDataAuthorizationPolicyProvider
   RefCountedPtr<AuthorizationEngine> deny_engine_;
 };
 
+class TmpFile {
+ public:
+  // Create a temporary file with |data| written in.
+  explicit TmpFile(absl::string_view data);
+
+  ~TmpFile();
+
+  const std::string& name() { return name_; }
+
+  // Rewrite |data| to the temporary file, in an atomic way.
+  void RewriteFile(absl::string_view data);
+
+ private:
+  std::string CreateTmpFileAndWriteData(absl::string_view data);
+
+  std::string name_;
+};
+
 // Provider class will get gRPC Authorization policy from provided file path.
 // This policy will be translated to Envoy RBAC policies and used to initialize
 // allow and deny AuthorizationEngine objects. This provider will periodically
@@ -80,6 +98,9 @@ class FileWatcherAuthorizationPolicyProvider
     MutexLock lock(&mu_);
     return {allow_engine_, deny_engine_};
   }
+
+  void RewriteFileForTesting(grpc_core::TmpFile& tmp_file,
+                             absl::string_view data);
 
  private:
   // Force an update from the file system regardless of the interval.

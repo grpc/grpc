@@ -19,6 +19,7 @@
 #include <grpc/grpc_security.h>
 #include <grpc/support/string_util.h>
 
+#include "src/core/lib/gpr/tmpfile.h"
 #include "src/core/lib/iomgr/load_file.h"
 #include "src/core/lib/security/authorization/grpc_authorization_engine.h"
 #include "src/core/lib/slice/slice_internal.h"
@@ -68,6 +69,36 @@ gpr_timespec TimeoutSecondsToDeadline(int64_t seconds) {
 
 }  // namespace
 
+TmpFile::TmpFile(absl::string_view data) {
+  name_ = CreateTmpFileAndWriteData(data);
+  GPR_ASSERT(!name_.empty());
+}
+
+TmpFile::~TmpFile() { GPR_ASSERT(remove(name_.c_str()) == 0); }
+
+void TmpFile::RewriteFile(absl::string_view data) {
+  // Create a new file containing new data.
+  std::string new_name = CreateTmpFileAndWriteData(data);
+  GPR_ASSERT(!new_name.empty());
+  // Remove the old file.
+  GPR_ASSERT(remove(name_.c_str()) == 0);
+  // Rename the new file to the original name.
+  GPR_ASSERT(rename(new_name.c_str(), name_.c_str()) == 0);
+}
+
+std::string TmpFile::CreateTmpFileAndWriteData(absl::string_view data) {
+  char* name = nullptr;
+  FILE* file_descriptor = gpr_tmpfile("test", &name);
+  GPR_ASSERT(fwrite(data.data(), 1, data.size(), file_descriptor) ==
+             data.size());
+  GPR_ASSERT(fclose(file_descriptor) == 0);
+  GPR_ASSERT(file_descriptor != nullptr);
+  GPR_ASSERT(name != nullptr);
+  std::string name_to_return = name;
+  gpr_free(name);
+  return name_to_return;
+}
+
 absl::StatusOr<RefCountedPtr<grpc_authorization_policy_provider>>
 FileWatcherAuthorizationPolicyProvider::Create(
     absl::string_view authz_policy_path, unsigned int refresh_interval_sec) {
@@ -114,6 +145,12 @@ FileWatcherAuthorizationPolicyProvider::FileWatcherAuthorizationPolicyProvider(
       "FileWatcherAuthorizationPolicyProvider_refreshing_thread", thread_lambda,
       WeakRef().release());
   refresh_thread_->Start();
+}
+
+void FileWatcherAuthorizationPolicyProvider::RewriteFileForTesting(
+    grpc_core::TmpFile& tmp_file, absl::string_view data) {
+  MutexLock lock(&mu_);
+  tmp_file.RewriteFile(data);
 }
 
 absl::Status FileWatcherAuthorizationPolicyProvider::ForceUpdate() {

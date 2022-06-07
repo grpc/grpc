@@ -405,7 +405,7 @@ static void test_file_watcher_init_allow_authorized_request(
       "    }"
       "  ]"
       "}";
-  grpc_core::testing::TmpFile tmp_policy(authz_policy);
+  grpc_core::TmpFile tmp_policy(authz_policy);
   grpc_status_code code = GRPC_STATUS_OK;
   const char* error_details;
   grpc_authorization_policy_provider* provider =
@@ -456,7 +456,7 @@ static void test_file_watcher_init_deny_unauthorized_request(
       "    }"
       "  ]"
       "}";
-  grpc_core::testing::TmpFile tmp_policy(authz_policy);
+  grpc_core::TmpFile tmp_policy(authz_policy);
   grpc_status_code code = GRPC_STATUS_OK;
   const char* error_details;
   grpc_authorization_policy_provider* provider =
@@ -497,7 +497,7 @@ static void test_file_watcher_init_deny_request_no_match_in_policy(
       "    }"
       "  ]"
       "}";
-  grpc_core::testing::TmpFile tmp_policy(authz_policy);
+  grpc_core::TmpFile tmp_policy(authz_policy);
   grpc_status_code code = GRPC_STATUS_OK;
   const char* error_details;
   grpc_authorization_policy_provider* provider =
@@ -538,7 +538,7 @@ static void test_file_watcher_valid_policy_reload(
       "    }"
       "  ]"
       "}";
-  grpc_core::testing::TmpFile tmp_policy(authz_policy);
+  grpc_core::TmpFile tmp_policy(authz_policy);
   grpc_status_code code = GRPC_STATUS_OK;
   const char* error_details;
   grpc_authorization_policy_provider* provider =
@@ -582,7 +582,8 @@ static void test_file_watcher_valid_policy_reload(
       "    }"
       "  ]"
       "}";
-  tmp_policy.RewriteFile(authz_policy);
+  dynamic_cast<grpc_core::FileWatcherAuthorizationPolicyProvider*>(provider)
+      ->RewriteFileForTesting(tmp_policy, authz_policy);
   wait_for_policy_reload();
   test_deny_unauthorized_request(f);
 
@@ -606,7 +607,7 @@ static void test_file_watcher_invalid_policy_skip_reload(
       "    }"
       "  ]"
       "}";
-  grpc_core::testing::TmpFile tmp_policy(authz_policy);
+  grpc_core::TmpFile tmp_policy(authz_policy);
   grpc_status_code code = GRPC_STATUS_OK;
   const char* error_details;
   grpc_authorization_policy_provider* provider =
@@ -628,7 +629,8 @@ static void test_file_watcher_invalid_policy_skip_reload(
   test_allow_authorized_request(f);
   // Replace exisiting policy in file with an invalid policy.
   authz_policy = "{}";
-  tmp_policy.RewriteFile(authz_policy);
+  dynamic_cast<grpc_core::FileWatcherAuthorizationPolicyProvider*>(provider)
+      ->RewriteFileForTesting(tmp_policy, authz_policy);
   wait_for_policy_reload();
   test_allow_authorized_request(f);
 
@@ -652,7 +654,7 @@ static void test_file_watcher_recovers_from_failure(
       "    }"
       "  ]"
       "}";
-  grpc_core::testing::TmpFile tmp_policy(authz_policy);
+  grpc_core::TmpFile tmp_policy(authz_policy);
   grpc_status_code code = GRPC_STATUS_OK;
   const char* error_details;
   grpc_authorization_policy_provider* provider =
@@ -673,7 +675,8 @@ static void test_file_watcher_recovers_from_failure(
   test_allow_authorized_request(f);
   // Replace exisiting policy in file with an invalid policy.
   authz_policy = "{}";
-  tmp_policy.RewriteFile(authz_policy);
+  dynamic_cast<grpc_core::FileWatcherAuthorizationPolicyProvider*>(provider)
+      ->RewriteFileForTesting(tmp_policy, authz_policy);
   wait_for_policy_reload();
   test_allow_authorized_request(f);
   // Recover from reload errors, by replacing invalid policy in file with a
@@ -702,7 +705,8 @@ static void test_file_watcher_recovers_from_failure(
       "    }"
       "  ]"
       "}";
-  tmp_policy.RewriteFile(authz_policy);
+  dynamic_cast<grpc_core::FileWatcherAuthorizationPolicyProvider*>(provider)
+      ->RewriteFileForTesting(tmp_policy, authz_policy);
   wait_for_policy_reload();
   test_deny_unauthorized_request(f);
 
