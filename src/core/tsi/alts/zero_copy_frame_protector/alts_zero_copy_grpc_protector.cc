@@ -216,7 +216,7 @@ static tsi_result alts_zero_copy_grpc_protector_unprotect(
     }
   }
   if (min_progress_size != nullptr) {
-    if (protector->parsed_frame_size > 0) {
+    if (protector->parsed_frame_size > kZeroCopyFrameLengthFieldSize) {
       *min_progress_size =
           protector->parsed_frame_size - protector->protected_sb.length;
     } else {
