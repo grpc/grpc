@@ -1078,7 +1078,8 @@ TEST_P(RingHashTest, ReattemptWhenGoingFromTransientFailureToIdle) {
   SetListenerAndRouteConfiguration(balancer_.get(), default_listener_,
                                    new_route_config);
   // Send empty EDS update.
-  EdsResourceArgs args({{"locality0", {}}});
+  EdsResourceArgs args(
+      {{"locality0", std::vector<EdsResourceArgs::Endpoint>()}});
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
   EXPECT_EQ(GRPC_CHANNEL_IDLE, channel_->GetState(false));
   // Channel should fail RPCs and go into TRANSIENT_FAILURE.
