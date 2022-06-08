@@ -38,10 +38,10 @@ KubernetesServerRunner = server_app.KubernetesServerRunner
 KubernetesClientRunner = client_app.KubernetesClientRunner
 _timedelta = datetime.timedelta
 
+
 class _BootstrapGeneratorBaseTest(xds_k8s_testcase.XdsKubernetesBaseTestCase):
     """Common functionality to support testing of bootstrap generator versions
     across gRPC clients and servers."""
-
 
     @classmethod
     def setUpClass(cls):
@@ -95,12 +95,10 @@ class _BootstrapGeneratorBaseTest(xds_k8s_testcase.XdsKubernetesBaseTestCase):
         cls.td.create_target_proxy()
         cls.td.create_forwarding_rule(cls.server_xds_port)
 
-
     @classmethod
     def tearDownClass(cls):
         cls.td.cleanup(force=cls.force_cleanup)
         super().tearDownClass()
-
 
     @classmethod
     def initTrafficDirectorManager(cls) -> TrafficDirectorManager:
@@ -112,14 +110,14 @@ class _BootstrapGeneratorBaseTest(xds_k8s_testcase.XdsKubernetesBaseTestCase):
             network=cls.network,
             compute_api_version=cls.compute_api_version)
 
-
     @classmethod
-    def initKubernetesServerRunner(cls, td_bootstrap_image=None) -> KubernetesServerRunner:
+    def initKubernetesServerRunner(cls,
+                                   td_bootstrap_image=None
+                                  ) -> KubernetesServerRunner:
         if td_bootstrap_image == None:
             td_bootstrap_image = cls.td_bootstrap_image
         return KubernetesServerRunner(
-            k8s.KubernetesNamespace(cls.k8s_api_manager,
-                                    cls.server_namespace),
+            k8s.KubernetesNamespace(cls.k8s_api_manager, cls.server_namespace),
             deployment_name=cls.server_name,
             image_name=cls.server_image,
             td_bootstrap_image=td_bootstrap_image,
@@ -131,7 +129,6 @@ class _BootstrapGeneratorBaseTest(xds_k8s_testcase.XdsKubernetesBaseTestCase):
             debug_use_port_forwarding=cls.debug_use_port_forwarding,
             enable_workload_identity=cls.enable_workload_identity)
 
-
     @staticmethod
     def startTestServer(server_runner,
                         port,
@@ -140,16 +137,16 @@ class _BootstrapGeneratorBaseTest(xds_k8s_testcase.XdsKubernetesBaseTestCase):
                         xds_port,
                         replica_count=1,
                         **kwargs) -> XdsTestServer:
-        test_server = server_runner.run(
-            replica_count=replica_count,
-            test_port=port,
-            maintenance_port=maintenance_port,
-            **kwargs)[0]
+        test_server = server_runner.run(replica_count=replica_count,
+                                        test_port=port,
+                                        maintenance_port=maintenance_port,
+                                        **kwargs)[0]
         test_server.set_xds_address(xds_host, xds_port)
         return test_server
 
-
-    def initKubernetesClientRunner(self, td_bootstrap_image=None) -> KubernetesClientRunner:
+    def initKubernetesClientRunner(self,
+                                   td_bootstrap_image=None
+                                  ) -> KubernetesClientRunner:
         if td_bootstrap_image == None:
             td_bootstrap_image = self.td_bootstrap_image
         return KubernetesClientRunner(
@@ -168,7 +165,6 @@ class _BootstrapGeneratorBaseTest(xds_k8s_testcase.XdsKubernetesBaseTestCase):
             stats_port=self.client_port,
             reuse_namespace=self.server_namespace == self.client_namespace)
 
-
     def startTestClient(self, test_server: XdsTestServer,
                         **kwargs) -> XdsTestClient:
         test_client = self.client_runner.run(server_target=test_server.xds_uri,
@@ -176,10 +172,11 @@ class _BootstrapGeneratorBaseTest(xds_k8s_testcase.XdsKubernetesBaseTestCase):
         test_client.wait_for_active_server_channel()
         return test_client
 
-class BootstrapGeneratorClientTest(_BootstrapGeneratorBaseTest, parameterized.TestCase):
+
+class BootstrapGeneratorClientTest(_BootstrapGeneratorBaseTest,
+                                   parameterized.TestCase):
     server_runner: KubernetesServerRunner
     test_server: XdsTestServer
-
 
     @classmethod
     def setUpClass(cls):
@@ -208,12 +205,10 @@ class BootstrapGeneratorClientTest(_BootstrapGeneratorBaseTest, parameterized.Te
         cls.td.backend_service_add_neg_backends(neg_name, neg_zones)
         cls.td.wait_for_backends_healthy_status()
 
-
     @classmethod
     def tearDownClass(cls):
         cls.server_runner.cleanup(force=cls.force_cleanup)
         super().tearDownClass()
-
 
     def tearDown(self):
         logger.info('----- TestMethod %s teardown -----', self.id())
@@ -226,7 +221,6 @@ class BootstrapGeneratorClientTest(_BootstrapGeneratorBaseTest, parameterized.Te
             logger.exception('Got error during teardown')
         super().tearDown()
 
-
     def _cleanup(self):
         self.client_runner.cleanup(force=self.force_cleanup)
 
@@ -235,10 +229,18 @@ class BootstrapGeneratorClientTest(_BootstrapGeneratorBaseTest, parameterized.Te
         #
         # TODO: Update bootstrap generator release instructions to add a newly
         # released version to this list.
-        ('v0.14.0', 'gcr.io/grpc-testing/td-grpc-bootstrap:d6baaf7b0e0c63054ac4d9bedc09021ff261d599'),
-        ('v0.13.0', 'gcr.io/grpc-testing/td-grpc-bootstrap:203db6ce70452996f4183c30dd4c5ecaada168b0'),
-        ('v0.12.0', 'gcr.io/grpc-testing/td-grpc-bootstrap:8765051ef3b742bc5cd20f16de078ae7547f2ba2'),
-        ('v0.11.0', 'gcr.io/grpc-testing/td-grpc-bootstrap:b96f7a73314668aee83cbf86ab1e40135a0542fc'),
+        ('v0.14.0',
+         'gcr.io/grpc-testing/td-grpc-bootstrap:d6baaf7b0e0c63054ac4d9bedc09021ff261d599'
+        ),
+        ('v0.13.0',
+         'gcr.io/grpc-testing/td-grpc-bootstrap:203db6ce70452996f4183c30dd4c5ecaada168b0'
+        ),
+        ('v0.12.0',
+         'gcr.io/grpc-testing/td-grpc-bootstrap:8765051ef3b742bc5cd20f16de078ae7547f2ba2'
+        ),
+        ('v0.11.0',
+         'gcr.io/grpc-testing/td-grpc-bootstrap:b96f7a73314668aee83cbf86ab1e40135a0542fc'
+        ),
         # v0.10.0 uses v2 xDS transport protocol by default. TD only supports v3
         # and we can force the bootstrap generator to emit config with v3
         # support by setting the --include-v3-features-experimental flag to
@@ -252,7 +254,8 @@ class BootstrapGeneratorClientTest(_BootstrapGeneratorBaseTest, parameterized.Te
         """Runs the baseline test for multiple versions of the bootstrap
         generator on the client.
         """
-        self.client_runner = self.initKubernetesClientRunner(td_bootstrap_image=image)
+        self.client_runner = self.initKubernetesClientRunner(
+            td_bootstrap_image=image)
         test_client: XdsTestClient = self.startTestClient(self.test_server)
         self.assertXdsConfigExists(test_client)
         self.assertSuccessfulRpcs(test_client)
@@ -261,11 +264,11 @@ class BootstrapGeneratorClientTest(_BootstrapGeneratorBaseTest, parameterized.Te
 # TODO: Use unique client and server deployment names while creating the
 # corresponding runners, by suffixing the version of the bootstrap generator
 # being tested. Then, run these in parallel.
-class BootstrapGeneratorServerTest(_BootstrapGeneratorBaseTest, parameterized.TestCase):
+class BootstrapGeneratorServerTest(_BootstrapGeneratorBaseTest,
+                                   parameterized.TestCase):
     server_runner: KubernetesServerRunner
     client_runner: KubernetesClientRunner
     test_server: XdsTestServer
-
 
     def tearDown(self):
         logger.info('----- TestMethod %s teardown -----', self.id())
@@ -278,22 +281,28 @@ class BootstrapGeneratorServerTest(_BootstrapGeneratorBaseTest, parameterized.Te
             logger.exception('Got error during teardown')
         super().tearDown()
 
-
     def _cleanup(self):
         self.client_runner.cleanup(force=self.force_cleanup)
         self.removeServerBackends()
         self.server_runner.cleanup(force=self.force_cleanup)
-
 
     @parameterized.named_parameters(
         # Add images corresponding to future releases here.
         #
         # TODO: Update bootstrap generator release instructions to add a newly
         # released version to this list.
-        ('v0.14.0', 'gcr.io/grpc-testing/td-grpc-bootstrap:d6baaf7b0e0c63054ac4d9bedc09021ff261d599'),
-        ('v0.13.0', 'gcr.io/grpc-testing/td-grpc-bootstrap:203db6ce70452996f4183c30dd4c5ecaada168b0'),
-        ('v0.12.0', 'gcr.io/grpc-testing/td-grpc-bootstrap:8765051ef3b742bc5cd20f16de078ae7547f2ba2'),
-        ('v0.11.0', 'gcr.io/grpc-testing/td-grpc-bootstrap:b96f7a73314668aee83cbf86ab1e40135a0542fc'),
+        ('v0.14.0',
+         'gcr.io/grpc-testing/td-grpc-bootstrap:d6baaf7b0e0c63054ac4d9bedc09021ff261d599'
+        ),
+        ('v0.13.0',
+         'gcr.io/grpc-testing/td-grpc-bootstrap:203db6ce70452996f4183c30dd4c5ecaada168b0'
+        ),
+        ('v0.12.0',
+         'gcr.io/grpc-testing/td-grpc-bootstrap:8765051ef3b742bc5cd20f16de078ae7547f2ba2'
+        ),
+        ('v0.11.0',
+         'gcr.io/grpc-testing/td-grpc-bootstrap:b96f7a73314668aee83cbf86ab1e40135a0542fc'
+        ),
         # v0.10.0 uses v2 xDS transport protocol by default. TD only supports v3
         # and we can force the bootstrap generator to emit config with v3
         # support by setting the --include-v3-features-experimental flag to
@@ -307,7 +316,8 @@ class BootstrapGeneratorServerTest(_BootstrapGeneratorBaseTest, parameterized.Te
         """Runs the baseline test for multiple versions of the bootstrap
         generator on the server.
         """
-        self.server_runner = self.initKubernetesServerRunner(td_bootstrap_image=image)
+        self.server_runner = self.initKubernetesServerRunner(
+            td_bootstrap_image=image)
         self.test_server = BootstrapGeneratorClientTest.startTestServer(
             server_runner=self.server_runner,
             port=self.server_port,
