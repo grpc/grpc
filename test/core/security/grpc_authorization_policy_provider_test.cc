@@ -178,6 +178,7 @@ TEST(AuthorizationPolicyProviderTest, FileWatcherRecoversFromFailure) {
   EXPECT_EQ(deny_engine->num_policies(), 1);
   // Skips the following policy update, and continues to use the valid policy.
   tmp_authz_policy->RewriteFile(testing::GetFileContents(INVALID_POLICY_PATH));
+  gpr_log(GPR_DEBUG, "After first rewrite...");
   // Wait 2 seconds for the provider's refresh thread to read the updated files.
   gpr_sleep_until(grpc_timeout_seconds_to_deadline(2));
   engines = (*provider)->engines();
@@ -193,6 +194,7 @@ TEST(AuthorizationPolicyProviderTest, FileWatcherRecoversFromFailure) {
   EXPECT_EQ(deny_engine->num_policies(), 1);
   // Rewrite the file with a valid authorization policy.
   tmp_authz_policy->RewriteFile(testing::GetFileContents(VALID_POLICY_PATH_2));
+  gpr_log(GPR_DEBUG, "After second rewrite...");
   // Wait 2 seconds for the provider's refresh thread to read the updated files.
   gpr_sleep_until(grpc_timeout_seconds_to_deadline(2));
   engines = (*provider)->engines();
@@ -206,6 +208,7 @@ TEST(AuthorizationPolicyProviderTest, FileWatcherRecoversFromFailure) {
   ASSERT_NE(deny_engine, nullptr);
   EXPECT_EQ(deny_engine->action(), Rbac::Action::kDeny);
   EXPECT_EQ(deny_engine->num_policies(), 0);
+  gpr_log(GPR_DEBUG, "Test end...");
 }
 
 }  // namespace grpc_core
