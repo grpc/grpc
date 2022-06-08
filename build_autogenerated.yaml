@@ -6039,22 +6039,6 @@ targets:
   - gpr
   - upb
   uses_polling: false
-- name: fuzzing_event_engine_test
-  gtest: true
-  build: test
-  language: c++
-  headers:
-  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h
-  - test/core/event_engine/test_suite/event_engine_test.h
-  src:
-  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.proto
-  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
-  - test/core/event_engine/test_suite/event_engine_test.cc
-  - test/core/event_engine/test_suite/fuzzing_event_engine_test.cc
-  - test/core/event_engine/test_suite/timer_test.cc
-  deps:
-  - grpc_test_util
-  uses_polling: false
 - name: generic_end2end_test
   gtest: true
   build: test
