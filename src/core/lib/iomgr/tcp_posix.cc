@@ -255,6 +255,7 @@ class TcpZerocopySendCtx {
   // with the implicit sequence number for this zerocopy sendmsg().
   void AssociateSeqWithSendRecord(uint32_t seq, TcpZerocopySendRecord* record) {
     MutexLock guard(&lock_);
+    ++is_in_write_;
     ctx_lookup_.emplace(seq, record);
   }
 
@@ -349,6 +350,7 @@ class TcpZerocopySendCtx {
   size_t threshold_bytes_ = kDefaultSendBytesThreshold;
   std::unordered_map<uint32_t, TcpZerocopySendRecord*> ctx_lookup_;
   bool memory_limited_ = false;
+  int is_in_write_ = 0;
 };
 
 }  // namespace grpc_core
@@ -1337,14 +1339,13 @@ void TcpZerocopySendRecord::UpdateOffsetForBytesSent(size_t sending_length,
 
 // returns true if done, false if pending; if returning true, *error is set
 static bool do_tcp_flush_zerocopy(grpc_tcp* tcp, TcpZerocopySendRecord* record,
-                                  grpc_error_handle* error) {
+                                  grpc_error_handle* error, int* saved_errno) {
   msg_iovlen_type iov_size;
   ssize_t sent_length = 0;
   size_t sending_length;
   size_t unwind_slice_idx;
   size_t unwind_byte_idx;
   bool tried_sending_message;
-  int saved_errno;
   msghdr msg;
   // iov consumes a large space. Keep it as the last item on the stack to
   // improve locality. After all, we expect only the first elements of it being
@@ -1363,11 +1364,11 @@ static bool do_tcp_flush_zerocopy(grpc_tcp* tcp, TcpZerocopySendRecord* record,
     // Before calling sendmsg (with or without timestamps): we
     // take a single ref on the zerocopy send record.
     tcp->tcp_zerocopy_send_ctx.NoteSend(record);
-    saved_errno = 0;
+    *saved_errno = 0;
     if (tcp->outgoing_buffer_arg != nullptr) {
       if (!tcp->ts_capable ||
           !tcp_write_with_timestamps(tcp, &msg, sending_length, &sent_length,
-                                     &saved_errno, MSG_ZEROCOPY)) {
+                                     saved_errno, MSG_ZEROCOPY)) {
         /* We could not set socket options to collect Fathom timestamps.
          * Fallback on writing without timestamps. */
         tcp->ts_capable = false;
@@ -1386,18 +1387,15 @@ static bool do_tcp_flush_zerocopy(grpc_tcp* tcp, TcpZerocopySendRecord* record,
     if (sent_length < 0) {
       // If this particular send failed, drop ref taken earlier in this method.
       tcp->tcp_zerocopy_send_ctx.UndoSend();
-      if (saved_errno == EAGAIN) {
+      if (*saved_errno == EAGAIN || *saved_errno == ENOBUFS) {
         record->UnwindIfThrottled(unwind_slice_idx, unwind_byte_idx);
         return false;
-      } else if (saved_errno == EPIPE) {
-        *error = tcp_annotate_error(GRPC_OS_ERROR(saved_errno, "sendmsg"), tcp);
+      } else if (*saved_errno == EPIPE) {
+        *error = tcp_annotate_error(GRPC_OS_ERROR(*saved_errno, "sendmsg"), tcp);
         tcp_shutdown_buffer_list(tcp);
         return true;
       } else {
-        if (saved_errno == ENOBUFS) {
-          gpr_log(GPR_ERROR, "gRPC TCP Tx0cp: ENOBUFS encountered.");
-        }
-        *error = tcp_annotate_error(GRPC_OS_ERROR(saved_errno, "sendmsg"), tcp);
+        *error = tcp_annotate_error(GRPC_OS_ERROR(*saved_errno, "sendmsg"), tcp);
         tcp_shutdown_buffer_list(tcp);
         return true;
       }
@@ -1422,8 +1420,8 @@ static void UnrefMaybePutZerocopySendRecord(grpc_tcp* tcp,
 }
 
 static bool tcp_flush_zerocopy(grpc_tcp* tcp, TcpZerocopySendRecord* record,
-                               grpc_error_handle* error) {
-  bool done = do_tcp_flush_zerocopy(tcp, record, error);
+                               grpc_error_handle* error, int* saved_errno) {
+  bool done = do_tcp_flush_zerocopy(tcp, record, error, saved_errno);
   if (done) {
     // Either we encountered an error, or we successfully sent all the bytes.
     // In either case, we're done with this record.
@@ -1432,7 +1430,7 @@ static bool tcp_flush_zerocopy(grpc_tcp* tcp, TcpZerocopySendRecord* record,
   return done;
 }
 
-static bool tcp_flush(grpc_tcp* tcp, grpc_error_handle* error) {
+static bool tcp_flush(grpc_tcp* tcp, grpc_error_handle* error, int* saved_errno) {
   struct msghdr msg;
   struct iovec iov[MAX_WRITE_IOVEC];
   msg_iovlen_type iov_size;
@@ -1441,7 +1439,6 @@ static bool tcp_flush(grpc_tcp* tcp, grpc_error_handle* error) {
   size_t trailing;
   size_t unwind_slice_idx;
   size_t unwind_byte_idx;
-  int saved_errno;
 
   // We always start at zero, because we eagerly unref and trim the slice
   // buffer as we write
@@ -1473,11 +1470,11 @@ static bool tcp_flush(grpc_tcp* tcp, grpc_error_handle* error) {
     msg.msg_iovlen = iov_size;
     msg.msg_flags = 0;
     bool tried_sending_message = false;
-    saved_errno = 0;
+    *saved_errno = 0;
     if (tcp->outgoing_buffer_arg != nullptr) {
       if (!tcp->ts_capable ||
           !tcp_write_with_timestamps(tcp, &msg, sending_length, &sent_length,
-                                     &saved_errno)) {
+                                     saved_errno)) {
         /* We could not set socket options to collect Fathom timestamps.
          * Fallback on writing without timestamps. */
         tcp->ts_capable = false;
@@ -1493,11 +1490,11 @@ static bool tcp_flush(grpc_tcp* tcp, grpc_error_handle* error) {
       GRPC_STATS_INC_TCP_WRITE_SIZE(sending_length);
       GRPC_STATS_INC_TCP_WRITE_IOV_SIZE(iov_size);
 
-      sent_length = tcp_send(tcp->fd, &msg, &saved_errno);
+      sent_length = tcp_send(tcp->fd, &msg, saved_errno);
     }
 
     if (sent_length < 0) {
-      if (saved_errno == EAGAIN) {
+      if (*saved_errno == EAGAIN) {
         tcp->outgoing_byte_idx = unwind_byte_idx;
         // unref all and forget about all slices that have been written to this
         // point
@@ -1505,13 +1502,13 @@ static bool tcp_flush(grpc_tcp* tcp, grpc_error_handle* error) {
           grpc_slice_buffer_remove_first(tcp->outgoing_buffer);
         }
         return false;
-      } else if (saved_errno == EPIPE) {
-        *error = tcp_annotate_error(GRPC_OS_ERROR(saved_errno, "sendmsg"), tcp);
+      } else if (*saved_errno == EPIPE) {
+        *error = tcp_annotate_error(GRPC_OS_ERROR(*saved_errno, "sendmsg"), tcp);
         grpc_slice_buffer_reset_and_unref_internal(tcp->outgoing_buffer);
         tcp_shutdown_buffer_list(tcp);
         return true;
       } else {
-        *error = tcp_annotate_error(GRPC_OS_ERROR(saved_errno, "sendmsg"), tcp);
+        *error = tcp_annotate_error(GRPC_OS_ERROR(*saved_errno, "sendmsg"), tcp);
         grpc_slice_buffer_reset_and_unref_internal(tcp->outgoing_buffer);
         tcp_shutdown_buffer_list(tcp);
         return true;
@@ -1559,11 +1556,11 @@ static void tcp_handle_write(void* arg /* grpc_tcp */,
     TCP_UNREF(tcp, "write");
     return;
   }
-
+  int saved_errno = 0;
   bool flush_result =
       tcp->current_zerocopy_send != nullptr
-          ? tcp_flush_zerocopy(tcp, tcp->current_zerocopy_send, &error)
-          : tcp_flush(tcp, &error);
+          ? tcp_flush_zerocopy(tcp, tcp->current_zerocopy_send, &error, &saved_errno)
+          : tcp_flush(tcp, &error, &saved_errno);
   if (!flush_result) {
     if (GRPC_TRACE_FLAG_ENABLED(grpc_tcp_trace)) {
       gpr_log(GPR_INFO, "write: delayed");
@@ -1630,10 +1627,11 @@ static void tcp_write(grpc_endpoint* ep, grpc_slice_buffer* buf,
     GPR_ASSERT(grpc_event_engine_can_track_errors());
   }
 
+  int saved_errno = 0;
   bool flush_result =
       zerocopy_send_record != nullptr
-          ? tcp_flush_zerocopy(tcp, zerocopy_send_record, &error)
-          : tcp_flush(tcp, &error);
+          ? tcp_flush_zerocopy(tcp, zerocopy_send_record, &error, &saved_errno)
+          : tcp_flush(tcp, &error, &saved_errno);
   if (!flush_result) {
     TCP_REF(tcp, "write");
     tcp->write_cb = cb;
