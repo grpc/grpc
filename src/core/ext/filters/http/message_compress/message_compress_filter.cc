@@ -77,11 +77,28 @@ class ChannelData {
               name);
       default_compression_algorithm_ = GRPC_COMPRESS_NONE;
     }
+
+    default_compression_lower_bound_ = grpc_core::DefaultCompressionLowerBoundFromChannelArgs(
+      args->channel_args
+    );
+
+    default_gzip_compression_level_ = grpc_core::DefaultGzipCompressionLevelFromChannelArgs(
+      args->channel_args
+    );
+
     GPR_ASSERT(!args->is_last);
   }
 
   grpc_compression_algorithm default_compression_algorithm() const {
     return default_compression_algorithm_;
+  }
+
+  int default_gzip_compression_level() const {
+    return default_gzip_compression_level_;
+  }
+
+  int default_compression_lower_bound() const {
+    return default_compression_lower_bound_;
   }
 
   grpc_core::CompressionAlgorithmSet enabled_compression_algorithms() const {
@@ -93,6 +110,8 @@ class ChannelData {
   grpc_compression_algorithm default_compression_algorithm_;
   /** Enabled compression algorithms */
   grpc_core::CompressionAlgorithmSet enabled_compression_algorithms_;
+  int default_gzip_compression_level_;
+  int default_compression_lower_bound_;
 };
 
 class CallData {
@@ -106,6 +125,9 @@ class CallData {
             channeld->default_compression_algorithm()))) {
       compression_algorithm_ = channeld->default_compression_algorithm();
     }
+
+    gzip_compression_level_ = channeld->default_gzip_compression_level();
+    compression_lower_bound_ = channeld->default_compression_lower_bound();
     GRPC_CLOSURE_INIT(&start_send_message_batch_in_call_combiner_,
                       StartSendMessageBatch, elem, grpc_schedule_on_exec_ctx);
   }
@@ -141,6 +163,8 @@ class CallData {
 
   grpc_core::CallCombiner* call_combiner_;
   grpc_compression_algorithm compression_algorithm_ = GRPC_COMPRESS_NONE;
+  int gzip_compression_level_;
+  int compression_lower_bound_;
   grpc_error_handle cancel_error_ = GRPC_ERROR_NONE;
   grpc_transport_stream_op_batch* send_message_batch_ = nullptr;
   bool seen_initial_metadata_ = false;
@@ -231,7 +255,7 @@ void CallData::FinishSendMessage(grpc_call_element* elem) {
   grpc_slice_buffer_init(&tmp);
   uint32_t send_flags =
       send_message_batch_->payload->send_message.send_message->flags();
-  bool did_compress = grpc_msg_compress(compression_algorithm_, &slices_, &tmp);
+  bool did_compress = grpc_msg_compress(compression_algorithm_, gzip_compression_level_, compression_lower_bound_, &slices_, &tmp);
   if (did_compress) {
     if (GRPC_TRACE_FLAG_ENABLED(grpc_compression_trace)) {
       const char* algo_name;

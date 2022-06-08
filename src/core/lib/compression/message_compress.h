@@ -28,6 +28,8 @@
    On success, appends compressed slices to output and returns 1.
    On failure, appends uncompressed slices to output and returns 0. */
 int grpc_msg_compress(grpc_compression_algorithm algorithm,
+                     int gzip_compression_level,
+                      int compression_lower_bound,
                       grpc_slice_buffer* input, grpc_slice_buffer* output);
 
 /* decompress 'input' to 'output' using 'algorithm'.

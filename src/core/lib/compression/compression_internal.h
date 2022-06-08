@@ -48,6 +48,10 @@ const char* CompressionAlgorithmAsString(grpc_compression_algorithm algorithm);
 absl::optional<grpc_compression_algorithm>
 DefaultCompressionAlgorithmFromChannelArgs(const grpc_channel_args* args);
 
+int DefaultGzipCompressionLevelFromChannelArgs(const grpc_channel_args* args);
+
+int DefaultCompressionLowerBoundFromChannelArgs(const grpc_channel_args* args);
+
 // A set of grpc_compression_algorithm values.
 class CompressionAlgorithmSet {
  public:
@@ -73,6 +77,7 @@ class CompressionAlgorithmSet {
   // Add algorithm to this set.
   void Set(grpc_compression_algorithm algorithm);
 
+  size_t GzipCompressionForLevel() const;
   // Return a comma separated string of the algorithms in this set.
   absl::string_view ToString() const;
   Slice ToSlice() const;

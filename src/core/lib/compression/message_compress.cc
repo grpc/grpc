@@ -94,7 +94,7 @@ static void* zalloc_gpr(void* /*opaque*/, unsigned int items,
 static void zfree_gpr(void* /*opaque*/, void* address) { gpr_free(address); }
 
 static int zlib_compress(grpc_slice_buffer* input, grpc_slice_buffer* output,
-                         int gzip) {
+                         int gzip, int compression_level) {
   z_stream zs;
   int r;
   size_t i;
@@ -103,7 +103,7 @@ static int zlib_compress(grpc_slice_buffer* input, grpc_slice_buffer* output,
   memset(&zs, 0, sizeof(zs));
   zs.zalloc = zalloc_gpr;
   zs.zfree = zfree_gpr;
-  r = deflateInit2(&zs, Z_DEFAULT_COMPRESSION, Z_DEFLATED, 15 | (gzip ? 16 : 0),
+  r = deflateInit2(&zs, compression_level, Z_DEFLATED, 15 | (gzip ? 16 : 0),
                    8, Z_DEFAULT_STRATEGY);
   GPR_ASSERT(r == Z_OK);
   r = zlib_body(&zs, input, output, deflate) && output->length < input->length;
@@ -151,6 +151,8 @@ static int copy(grpc_slice_buffer* input, grpc_slice_buffer* output) {
 }
 
 static int compress_inner(grpc_compression_algorithm algorithm,
+                          int gzip_compression_level,
+                          int compression_lower_bound,
                           grpc_slice_buffer* input, grpc_slice_buffer* output) {
   switch (algorithm) {
     case GRPC_COMPRESS_NONE:
@@ -158,9 +160,15 @@ static int compress_inner(grpc_compression_algorithm algorithm,
          rely on that here */
       return 0;
     case GRPC_COMPRESS_DEFLATE:
-      return zlib_compress(input, output, 0);
+      if(input->length > compression_lower_bound)
+        return zlib_compress(input, output, 0, gzip_compression_level);
+      else
+        return 0;
     case GRPC_COMPRESS_GZIP:
-      return zlib_compress(input, output, 1);
+      if(input->length > compression_lower_bound)
+        return zlib_compress(input, output, 1, gzip_compression_level);
+      else
+        return 0;
     case GRPC_COMPRESS_ALGORITHMS_COUNT:
       break;
   }
@@ -169,8 +177,10 @@ static int compress_inner(grpc_compression_algorithm algorithm,
 }
 
 int grpc_msg_compress(grpc_compression_algorithm algorithm,
+                      int gzip_compression_level,
+                      int compression_lower_bound,
                       grpc_slice_buffer* input, grpc_slice_buffer* output) {
-  if (!compress_inner(algorithm, input, output)) {
+  if (!compress_inner(algorithm, gzip_compression_level, compression_lower_bound, input, output)) {
     copy(input, output);
     return 0;
   }
