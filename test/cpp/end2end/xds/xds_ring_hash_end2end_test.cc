@@ -973,7 +973,9 @@ TEST_P(RingHashTest, ReattemptWhenAllEndpointsUnreachable) {
   ShutdownBackend(0);
   CheckRpcSendFailure(
       DEBUG_LOCATION, StatusCode::UNAVAILABLE,
-      "ring hash found a subchannel that is in TRANSIENT_FAILURE state",
+      "ring hash cannot find a connected subchannel; first failure: "
+      "(UNKNOWN: Failed to connect to remote host: Connection refused|"
+      "UNAVAILABLE: Failed to connect to remote host: FD shutdown)",
       RpcOptions().set_metadata(std::move(metadata)));
   StartBackend(0);
   // Ensure we are actively connecting without any traffic.
@@ -1010,7 +1012,9 @@ TEST_P(RingHashTest, TransientFailureSkipToAvailableReady) {
   EXPECT_EQ(GRPC_CHANNEL_IDLE, channel_->GetState(false));
   CheckRpcSendFailure(
       DEBUG_LOCATION, StatusCode::UNAVAILABLE,
-      "ring hash found a subchannel that is in TRANSIENT_FAILURE state",
+      "ring hash cannot find a connected subchannel; first failure: "
+      "(UNKNOWN: Failed to connect to remote host: Connection refused|"
+      "UNAVAILABLE: Failed to connect to remote host: FD shutdown)",
       rpc_options);
   EXPECT_EQ(GRPC_CHANNEL_TRANSIENT_FAILURE, channel_->GetState(false));
   // Bring up backend 0.  The channel should become connected without
