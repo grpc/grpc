@@ -149,8 +149,8 @@ Status EchoTestServiceImpl::ForwardEcho(ServerContext* /*context*/,
         std::chrono::microseconds(request->timeout_micros());
     calls[i].context.set_deadline(deadline);
     stub->async()->Echo(&calls[i].context, &echo_request, &calls[i].response,
-                        [&](Status s) {
-                          calls[i].status = s;
+                        [&, index = i](Status s) {
+                          calls[index].status = s;
                           counter.DecrementCount();
                         });
     std::this_thread::sleep_for(duration_per_query);
