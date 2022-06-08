@@ -545,6 +545,11 @@ setuptools.setup(
     author='The gRPC Authors',
     author_email='grpc-io@googlegroups.com',
     url='https://grpc.io',
+    project_urls={
+        'Changelog': 'https://github.com/grpc/grpc/releases',
+        'Documentation': 'https://grpc.io/docs/languages/python/',
+        'Source': 'https://github.com/grpc/grpc',
+    },
     license=LICENSE,
     classifiers=CLASSIFIERS,
     long_description=open(README).read(),
