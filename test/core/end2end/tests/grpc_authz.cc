@@ -737,6 +737,6 @@ void grpc_authz_pre_init(void) {
   // purpose.
 #if GPR_APPLE
   gpr_setenv("GRPC_VERBOSITY", "DEBUG");
-  gpr_setenv("GRPC_TRACE", "grpc_authz_api");
+  gpr_setenv("GRPC_TRACE", "all");
 #endif
 }
