@@ -69,6 +69,8 @@ _SKIP_SPECIAL_STATUS_MESSAGE = ['special_status_message']
 
 _ORCA_TEST_CASES = ['orca_per_rpc', 'orca_oob']
 
+_SERIALIZING_TEST_CASES = ['orca_oob']
+
 _GOOGLE_DEFAULT_CREDS_TEST_CASE = 'google_default_credentials'
 
 _SKIP_GOOGLE_DEFAULT_CREDS = [
@@ -1420,7 +1422,8 @@ try:
             # don't run the server, set server port to a placeholder value
             server_addresses[lang] = ('localhost', '${SERVER_PORT}')
 
-    jobs = []
+    jobs_sets = []
+    jobs_sets.append([])
     if args.cloud_to_prod:
         if args.transport_security not in ['tls']:
             print('TLS is always enabled for cloud_to_prod scenarios.')
@@ -1457,7 +1460,7 @@ try:
                                     default_service_account=args.
                                     default_service_account,
                                     transport_security=transport_security)
-                                jobs.append(test_job)
+                                jobs_sets[-1].append(test_job)
             if args.http2_interop:
                 for test_case in _HTTP2_TEST_CASES:
                     test_job = cloud_to_prod_jobspec(
@@ -1472,7 +1475,7 @@ try:
                         service_account_key_file=args.service_account_key_file,
                         default_service_account=args.default_service_account,
                         transport_security=args.transport_security)
-                    jobs.append(test_job)
+                    jobs_sets[-1].append(test_job)
 
     if args.cloud_to_prod_auth:
         if args.transport_security not in ['tls']:
@@ -1507,7 +1510,7 @@ try:
                                 default_service_account=args.
                                 default_service_account,
                                 transport_security=transport_security)
-                            jobs.append(test_job)
+                            jobs_sets[-1].append(test_job)
     for server in args.override_server:
         server_name = server[0]
         (server_host, server_port) = server[1].split(':')
@@ -1532,7 +1535,9 @@ try:
                             docker_image=docker_images.get(str(language)),
                             transport_security=args.transport_security,
                             manual_cmd_log=client_manual_cmd_log)
-                        jobs.append(test_job)
+                        if test_case in _SERIALIZING_TEST_CASES:
+                            jobs_sets.append([])
+                        jobs_sets[-1].append(test_job)
 
         if args.http2_interop:
             for test_case in _HTTP2_TEST_CASES:
@@ -1548,7 +1553,7 @@ try:
                     docker_image=docker_images.get(str(http2Interop)),
                     transport_security=args.transport_security,
                     manual_cmd_log=client_manual_cmd_log)
-                jobs.append(test_job)
+                jobs_sets[-1].append(test_job)
 
     if args.http2_server_interop:
         if not args.manual_run:
@@ -1568,7 +1573,7 @@ try:
                     server_port,
                     docker_image=docker_images.get(str(language)),
                     manual_cmd_log=client_manual_cmd_log)
-                jobs.append(test_job)
+                jobs_sets[-1].append(test_job)
         for language in languages:
             # HTTP2_SERVER_TEST_CASES_THAT_USE_GRPC_CLIENTS is a subset of
             # HTTP_SERVER_TEST_CASES, in which clients use their gRPC interop clients rather
@@ -1597,9 +1602,9 @@ try:
                         docker_image=docker_images.get(str(language)),
                         transport_security='insecure',
                         manual_cmd_log=client_manual_cmd_log)
-                    jobs.append(test_job)
+                    jobs_sets[-1].append(test_job)
 
-    if not jobs:
+    if not jobs_sets[0]:
         print('No jobs to run.')
         for image in six.itervalues(docker_images):
             dockerjob.remove_image(image, skip_nonexistent=True)
@@ -1608,26 +1613,32 @@ try:
     if args.manual_run:
         print('All tests will skipped --manual_run option is active.')
 
-    if args.verbose:
-        print('Jobs to run: \n%s\n' % '\n'.join(str(job) for job in jobs))
+    resultsets = {}
+    for jobs in jobs_sets:
+        if args.verbose:
+            print('Jobs to run: \n%s\n' % '\n'.join(str(job) for job in jobs))
 
-    num_failures, resultset = jobset.run(jobs,
-                                         newline_on_success=True,
-                                         maxjobs=args.jobs,
-                                         skip_jobs=args.manual_run)
-    if args.bq_result_table and resultset:
-        upload_interop_results_to_bq(resultset, args.bq_result_table)
-    if num_failures:
-        jobset.message('FAILED', 'Some tests failed', do_newline=True)
-    else:
+        num_failures, resultset = jobset.run(jobs,
+                                             newline_on_success=True,
+                                             maxjobs=args.jobs,
+                                             skip_jobs=args.manual_run)
+        if resultset:
+            resultsets.update(resultset)
+        if num_failures:
+            jobset.message('FAILED', 'Some tests failed', do_newline=True)
+            break
+    if not num_failures:
         jobset.message('SUCCESS', 'All tests passed', do_newline=True)
+
+    if args.bq_result_table and resultsets:
+        upload_interop_results_to_bq(resultsets, args.bq_result_table)
 
     write_cmdlog_maybe(server_manual_cmd_log, 'interop_server_cmds.sh')
     write_cmdlog_maybe(client_manual_cmd_log, 'interop_client_cmds.sh')
 
-    report_utils.render_junit_xml_report(resultset, _TESTS_XML_REPORT)
+    report_utils.render_junit_xml_report(resultsets, _TESTS_XML_REPORT)
 
-    for name, job in list(resultset.items()):
+    for name, job in list(resultsets.items()):
         if "http2" in name:
             job[0].http2results = aggregate_http2_results(job[0].message)
 
