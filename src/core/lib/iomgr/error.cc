@@ -71,7 +71,7 @@ std::string grpc_error_std_string(absl::Status error) {
 absl::Status grpc_os_error(const grpc_core::DebugLocation& location, int err,
                            const char* call_name) {
   absl::Status s =
-      StatusCreate(absl::StatusCode::kUnknown, "OS Error", location, {});
+      StatusCreate(absl::StatusCode::kUnknown, strerror(err), location, {});
   grpc_core::StatusSetInt(&s, grpc_core::StatusIntProperty::kErrorNo, err);
   grpc_core::StatusSetStr(&s, grpc_core::StatusStrProperty::kOsError,
                           strerror(err));
@@ -87,6 +87,8 @@ absl::Status grpc_wsa_error(const grpc_core::DebugLocation& location, int err,
   absl::Status s =
       StatusCreate(absl::StatusCode::kUnavailable, "WSA Error", location, {});
   StatusSetInt(&s, grpc_core::StatusIntProperty::kWsaError, err);
+  StatusSetInt(&s, grpc_core::StatusIntProperty::kRpcStatus,
+               GRPC_STATUS_UNAVAILABLE);
   StatusSetStr(&s, grpc_core::StatusStrProperty::kOsError, utf8_message);
   StatusSetStr(&s, grpc_core::StatusStrProperty::kSyscall, call_name);
   return s;

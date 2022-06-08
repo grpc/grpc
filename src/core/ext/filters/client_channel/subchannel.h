@@ -29,6 +29,7 @@
 #include "absl/status/status.h"
 #include "absl/types/optional.h"
 
+#include <grpc/event_engine/event_engine.h>
 #include <grpc/impl/codegen/connectivity_state.h>
 #include <grpc/impl/codegen/grpc_types.h>
 
@@ -53,7 +54,6 @@
 #include "src/core/lib/iomgr/iomgr_fwd.h"
 #include "src/core/lib/iomgr/polling_entity.h"
 #include "src/core/lib/iomgr/resolved_address.h"
-#include "src/core/lib/iomgr/timer.h"
 #include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/transport/connectivity_state.h"
@@ -242,24 +242,13 @@ class Subchannel : public DualRefCounted<Subchannel> {
 
   channelz::SubchannelNode* channelz_node();
 
-  // Returns the current connectivity state of the subchannel.
-  // If health_check_service_name is non-null, the returned connectivity
-  // state will be based on the state reported by the backend for that
-  // service name.
-  grpc_connectivity_state CheckConnectivityState(
-      const absl::optional<std::string>& health_check_service_name)
-      ABSL_LOCKS_EXCLUDED(mu_);
-
   // Starts watching the subchannel's connectivity state.
-  // The first callback to the watcher will be delivered when the
-  // subchannel's connectivity state becomes a value other than
-  // initial_state, which may happen immediately.
+  // The first callback to the watcher will be delivered ~immediately.
   // Subsequent callbacks will be delivered as the subchannel's state
   // changes.
   // The watcher will be destroyed either when the subchannel is
   // destroyed or when CancelConnectivityStateWatch() is called.
   void WatchConnectivityState(
-      grpc_connectivity_state initial_state,
       const absl::optional<std::string>& health_check_service_name,
       RefCountedPtr<ConnectivityStateWatcherInterface> watcher)
       ABSL_LOCKS_EXCLUDED(mu_);
@@ -336,7 +325,6 @@ class Subchannel : public DualRefCounted<Subchannel> {
    public:
     void AddWatcherLocked(
         WeakRefCountedPtr<Subchannel> subchannel,
-        grpc_connectivity_state initial_state,
         const std::string& health_check_service_name,
         RefCountedPtr<ConnectivityStateWatcherInterface> watcher);
     void RemoveWatcherLocked(const std::string& health_check_service_name,
@@ -367,8 +355,7 @@ class Subchannel : public DualRefCounted<Subchannel> {
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
 
   // Methods for connection.
-  static void OnRetryTimer(void* arg, grpc_error_handle error)
-      ABSL_LOCKS_EXCLUDED(mu_);
+  void OnRetryTimer() ABSL_LOCKS_EXCLUDED(mu_);
   void OnRetryTimerLocked() ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
   void StartConnectingLocked() ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
   static void OnConnectingFinished(void* arg, grpc_error_handle error)
@@ -426,8 +413,8 @@ class Subchannel : public DualRefCounted<Subchannel> {
   // Backoff state.
   BackOff backoff_ ABSL_GUARDED_BY(mu_);
   Timestamp next_attempt_time_ ABSL_GUARDED_BY(mu_);
-  grpc_timer retry_timer_ ABSL_GUARDED_BY(mu_);
-  grpc_closure on_retry_timer_ ABSL_GUARDED_BY(mu_);
+  grpc_event_engine::experimental::EventEngine::TaskHandle retry_timer_handle_
+      ABSL_GUARDED_BY(mu_);
 
   // Keepalive time period (-1 for unset)
   int keepalive_time_ ABSL_GUARDED_BY(mu_) = -1;

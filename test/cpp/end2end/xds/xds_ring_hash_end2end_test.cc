@@ -983,7 +983,7 @@ TEST_P(RingHashTest, ReattemptWhenAllEndpointsUnreachable) {
 // Test that when all backends are down and then up, we may pick a TF backend
 // and we will then jump to ready backend.
 TEST_P(RingHashTest, TransientFailureSkipToAvailableReady) {
-  CreateAndStartBackends(2);
+  CreateBackends(2);
   const uint32_t kConnectionTimeoutMilliseconds = 5000;
   auto cluster = default_cluster_;
   cluster.set_lb_policy(Cluster::RING_HASH);
@@ -1005,25 +1005,24 @@ TEST_P(RingHashTest, TransientFailureSkipToAvailableReady) {
       {"address_hash", CreateMetadataValueThatHashesToBackend(0)}};
   const auto rpc_options = RpcOptions().set_metadata(std::move(metadata));
   EXPECT_EQ(GRPC_CHANNEL_IDLE, channel_->GetState(false));
-  ShutdownBackend(0);
-  ShutdownBackend(1);
   CheckRpcSendFailure(
       DEBUG_LOCATION,
       CheckRpcSendFailureOptions().set_rpc_options(rpc_options));
   EXPECT_EQ(GRPC_CHANNEL_TRANSIENT_FAILURE, channel_->GetState(false));
-  // Bring up 0, should be picked as the RPC is hashed to it.
+  // Bring up backend 0.  The channel should become connected without
+  // any picks, because in TF, we are always trying to connect to at
+  // least one backend at all times.
   StartBackend(0);
   EXPECT_TRUE(channel_->WaitForConnected(
       grpc_timeout_milliseconds_to_deadline(kConnectionTimeoutMilliseconds)));
+  // RPCs should go to backend 0.
   WaitForBackend(DEBUG_LOCATION, 0, WaitForBackendOptions(), rpc_options);
-  // Bring down 0 and bring up 1.
+  // Bring down backend 0 and bring up backend 1.
   // Note the RPC contains a header value that will always be hashed to
-  // backend 0. So by purposely bring down backend 0 and bring up another
+  // backend 0. So by purposely bringing down backend 0 and bringing up another
   // backend, this will ensure Picker's first choice of backend 0 will fail
-  // and it will
-  // 1. reattempt backend 0 and
-  // 2. go through the remaining subchannels to find one in READY.
-  // Since the the entries in the ring is pretty distributed and we have
+  // and it will go through the remaining subchannels to find one in READY.
+  // Since the the entries in the ring are pretty distributed and we have
   // unused ports to fill the ring, it is almost guaranteed that the Picker
   // will go through some non-READY entries and skip them as per design.
   ShutdownBackend(0);

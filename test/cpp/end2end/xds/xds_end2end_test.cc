@@ -1168,7 +1168,7 @@ TEST_P(XdsEnabledServerTest, UnsupportedHttpFilter) {
   auto* http_filter = http_connection_manager.add_http_filters();
   http_filter->set_name("grpc.testing.unsupported_http_filter");
   http_filter->mutable_typed_config()->set_type_url(
-      "grpc.testing.unsupported_http_filter");
+      "custom/grpc.testing.unsupported_http_filter");
   http_filter = http_connection_manager.add_http_filters();
   http_filter->set_name("router");
   http_filter->mutable_typed_config()->PackFrom(
@@ -1193,7 +1193,7 @@ TEST_P(XdsEnabledServerTest, HttpFilterNotSupportedOnServer) {
   auto* http_filter = http_connection_manager.add_http_filters();
   http_filter->set_name("grpc.testing.client_only_http_filter");
   http_filter->mutable_typed_config()->set_type_url(
-      "grpc.testing.client_only_http_filter");
+      "custom/grpc.testing.client_only_http_filter");
   http_filter = http_connection_manager.add_http_filters();
   http_filter->set_name("router");
   http_filter->mutable_typed_config()->PackFrom(
@@ -1220,7 +1220,7 @@ TEST_P(XdsEnabledServerTest,
   auto* http_filter = http_connection_manager.add_http_filters();
   http_filter->set_name("grpc.testing.client_only_http_filter");
   http_filter->mutable_typed_config()->set_type_url(
-      "grpc.testing.client_only_http_filter");
+      "custom/grpc.testing.client_only_http_filter");
   http_filter->set_is_optional(true);
   http_filter = http_connection_manager.add_http_filters();
   http_filter->set_name("router");

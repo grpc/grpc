@@ -22,6 +22,7 @@ from google.protobuf import json_format
 
 from framework import xds_k8s_testcase
 from framework import xds_url_map_testcase
+from framework.helpers import skips
 
 flags.adopt_module_key_flags(xds_k8s_testcase)
 
@@ -35,6 +36,13 @@ _NUM_CLIENTS = 3
 
 
 class SubsettingTest(xds_k8s_testcase.RegularXdsKubernetesTestCase):
+
+    @staticmethod
+    def is_supported(config: skips.TestConfig) -> bool:
+        # Subsetting is an experimental feature where most work is done on the
+        # server-side. We limit it to only run on master branch to save
+        # resources.
+        return config.version_gte('master')
 
     def test_subsetting_basic(self) -> None:
         with self.subTest('00_create_health_check'):
