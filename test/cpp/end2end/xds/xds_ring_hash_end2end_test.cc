@@ -1006,7 +1006,9 @@ TEST_P(RingHashTest, TransientFailureSkipToAvailableReady) {
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
   std::vector<std::pair<std::string, std::string>> metadata = {
       {"address_hash", CreateMetadataValueThatHashesToBackend(0)}};
-  const auto rpc_options = RpcOptions().set_metadata(std::move(metadata));
+  const auto rpc_options = RpcOptions()
+                               .set_metadata(std::move(metadata))
+                               .set_timeout_ms(kConnectionTimeoutMilliseconds);
   EXPECT_EQ(GRPC_CHANNEL_IDLE, channel_->GetState(false));
   gpr_log(GPR_INFO, "=== SENDING FIRST RPC ===");
   CheckRpcSendFailure(
@@ -1028,6 +1030,7 @@ TEST_P(RingHashTest, TransientFailureSkipToAvailableReady) {
   // RPCs should go to backend 0.
   gpr_log(GPR_INFO, "=== WAITING FOR BACKEND 0 ===");
   WaitForBackend(DEBUG_LOCATION, 0, WaitForBackendOptions(), rpc_options);
+  EXPECT_EQ(GRPC_CHANNEL_READY, channel_->GetState(false));
   // Bring down backend 0 and bring up backend 1.
   // Note the RPC contains a header value that will always be hashed to
   // backend 0. So by purposely bringing down backend 0 and bringing up another
@@ -1040,7 +1043,8 @@ TEST_P(RingHashTest, TransientFailureSkipToAvailableReady) {
   ShutdownBackend(0);
   gpr_log(GPR_INFO, "=== WAITING FOR STATE CHANGE ===");
   EXPECT_TRUE(channel_->WaitForStateChange(
-      GRPC_CHANNEL_READY, grpc_timeout_seconds_to_deadline(5)));
+      GRPC_CHANNEL_READY,
+      grpc_timeout_milliseconds_to_deadline(kConnectionTimeoutMilliseconds)));
   EXPECT_EQ(GRPC_CHANNEL_TRANSIENT_FAILURE, channel_->GetState(false));
   gpr_log(GPR_INFO, "=== SENDING SECOND RPC ===");
   CheckRpcSendFailure(
@@ -1057,6 +1061,44 @@ TEST_P(RingHashTest, TransientFailureSkipToAvailableReady) {
   gpr_log(GPR_INFO, "=== WAITING FOR BACKEND 1 ===");
   WaitForBackend(DEBUG_LOCATION, 1, WaitForBackendOptions(), rpc_options);
   gpr_log(GPR_INFO, "=== DONE ===");
+}
+
+// This tests a bug seen in the wild where ring_hash started with no
+// endpoints and reported TRANSIENT_FAILURE, then got an update with
+// endpoints and reported IDLE, but the picker update was squelched, so
+// it failed to ever get reconnected.
+TEST_P(RingHashTest, ReattemptWhenGoingFromTransientFailureToIdle) {
+  CreateAndStartBackends(1);
+  const uint32_t kConnectionTimeoutMilliseconds = 5000;
+  auto cluster = default_cluster_;
+  cluster.set_lb_policy(Cluster::RING_HASH);
+  balancer_->ads_service()->SetCdsResource(cluster);
+  auto new_route_config = default_route_config_;
+  auto* route = new_route_config.mutable_virtual_hosts(0)->mutable_routes(0);
+  SetListenerAndRouteConfiguration(balancer_.get(), default_listener_,
+                                   new_route_config);
+  // Send empty EDS update.
+  EdsResourceArgs args({{"locality0", {}}});
+  balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
+  EXPECT_EQ(GRPC_CHANNEL_IDLE, channel_->GetState(false));
+  // Channel should fail RPCs and go into TRANSIENT_FAILURE.
+  CheckRpcSendFailure(
+      DEBUG_LOCATION, StatusCode::UNAVAILABLE,
+      // TODO(roth): As part of https://github.com/grpc/grpc/issues/22883,
+      // figure out how to get a useful resolution note plumbed down to
+      // improve this message.
+      "empty address list: ",
+      RpcOptions().set_timeout_ms(kConnectionTimeoutMilliseconds));
+  EXPECT_EQ(GRPC_CHANNEL_TRANSIENT_FAILURE, channel_->GetState(false));
+  // Send EDS update with 1 backend.
+  args = EdsResourceArgs({{"locality0", CreateEndpointsForBackends()}});
+  balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
+  // A wait_for_ready RPC should succeed, and the channel should report READY.
+  CheckRpcSendOk(DEBUG_LOCATION, 1,
+                 RpcOptions()
+                     .set_timeout_ms(kConnectionTimeoutMilliseconds)
+                     .set_wait_for_ready(true));
+  EXPECT_EQ(GRPC_CHANNEL_READY, channel_->GetState(false));
 }
 
 // Test unspported hash policy types are all ignored before a supported

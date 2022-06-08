@@ -824,8 +824,10 @@ class XdsEnd2endTest : public ::testing::TestWithParam<XdsTestType> {
                            absl::string_view expected_message_regex,
                            const RpcOptions& rpc_options = RpcOptions());
 
-  // Options to use with CheckRpcSendFailure().
 // FIXME: remove
+  // DEPRECATED -- USE THE ABOVE VARIANT INSTEAD.
+  // TODO(roth): Change all existing callers to use the above variant
+  // instead and then remove this.
   struct CheckRpcSendFailureOptions {
     std::function<bool(size_t)> continue_predicate = [](size_t i) {
       return i < 1;
@@ -856,8 +858,6 @@ class XdsEnd2endTest : public ::testing::TestWithParam<XdsTestType> {
       return *this;
     }
   };
-
-// FIXME: remove
   void CheckRpcSendFailure(
       const grpc_core::DebugLocation& debug_location,
       const CheckRpcSendFailureOptions& options = CheckRpcSendFailureOptions());
