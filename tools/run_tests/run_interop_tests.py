@@ -699,7 +699,9 @@ _AUTH_TEST_CASES = [
     _COMPUTE_ENGINE_CHANNEL_CREDS_TEST_CASE,
 ]
 
-_HTTP2_TEST_CASES = ['tls', 'framing']
+_HTTP2_TEST_CASES = [
+  # 'tls', 'framing'
+]
 
 _HTTP2_SERVER_TEST_CASES = [
     'rst_after_header', 'rst_after_data', 'rst_during_data', 'goaway', 'ping',
