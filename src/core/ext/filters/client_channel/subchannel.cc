@@ -697,6 +697,7 @@ Subchannel::Subchannel(SubchannelKey key,
 }
 
 Subchannel::~Subchannel() {
+  ExecCtx exec_ctx;
   if (channelz_node_ != nullptr) {
     channelz_node_->AddTraceEvent(
         channelz::ChannelTrace::Severity::Info,
