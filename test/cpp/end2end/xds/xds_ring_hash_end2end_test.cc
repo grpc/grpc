@@ -27,8 +27,6 @@
 #include "src/core/ext/filters/client_channel/resolver/fake/fake_resolver.h"
 #include "src/core/lib/address_utils/sockaddr_utils.h"
 #include "src/core/lib/gpr/env.h"
-#include "src/proto/grpc/testing/xds/v3/aggregate_cluster.grpc.pb.h"
-#include "src/proto/grpc/testing/xds/v3/cluster.grpc.pb.h"
 #include "test/cpp/end2end/connection_delay_injector.h"
 #include "test/cpp/end2end/xds/xds_end2end_test_lib.h"
 
@@ -36,8 +34,8 @@ namespace grpc {
 namespace testing {
 namespace {
 
-using ::envoy::config::cluster::v3::CustomClusterType;
-using ::envoy::config::endpoint::v3::HealthStatus;
+using ::envoy::config::cluster::v3::Cluster_CustomClusterType;
+using ::envoy::config::core::v3::HealthStatus;
 using ::envoy::extensions::clusters::aggregate::v3::ClusterConfig;
 
 class RingHashTest : public XdsEnd2endTest {
@@ -117,7 +115,7 @@ TEST_P(RingHashTest, AggregateClusterFallBackFromRingHashAtStartup) {
   // Create Aggregate Cluster
   auto cluster = default_cluster_;
   cluster.set_lb_policy(Cluster::RING_HASH);
-  CustomClusterType* custom_cluster = cluster.mutable_cluster_type();
+  Cluster_CustomClusterType* custom_cluster = cluster.mutable_cluster_type();
   custom_cluster->set_name("envoy.clusters.aggregate");
   ClusterConfig cluster_config;
   cluster_config.add_clusters(kNewCluster1Name);
@@ -183,7 +181,7 @@ TEST_P(RingHashTest,
   // Create Aggregate Cluster
   auto cluster = default_cluster_;
   cluster.set_lb_policy(Cluster::RING_HASH);
-  CustomClusterType* custom_cluster = cluster.mutable_cluster_type();
+  Cluster_CustomClusterType* custom_cluster = cluster.mutable_cluster_type();
   custom_cluster->set_name("envoy.clusters.aggregate");
   ClusterConfig cluster_config;
   cluster_config.add_clusters(kEdsClusterName);

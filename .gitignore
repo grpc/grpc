@@ -175,3 +175,5 @@ iwyu_files0.txt
 iwyu/
 iwyu_build/
 
+# CMake intermediate directories
+third_party/protoc-gen-validate/

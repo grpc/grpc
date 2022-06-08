@@ -20,6 +20,7 @@
 
 #include "absl/status/statusor.h"
 #include "absl/strings/str_cat.h"
+#include "envoy/config/cluster/v3/cluster.pb.h"
 
 #include "src/core/ext/filters/client_channel/backup_poller.h"
 #include "src/core/ext/filters/client_channel/lb_policy/xds/xds_channel_args.h"
@@ -27,7 +28,6 @@
 #include "src/core/lib/address_utils/sockaddr_utils.h"
 #include "src/core/lib/gpr/env.h"
 #include "src/core/lib/resolver/server_address.h"
-#include "src/proto/grpc/testing/xds/v3/aggregate_cluster.grpc.pb.h"
 #include "test/cpp/end2end/connection_delay_injector.h"
 #include "test/cpp/end2end/xds/xds_end2end_test_lib.h"
 
@@ -35,7 +35,7 @@ namespace grpc {
 namespace testing {
 namespace {
 
-using ::envoy::config::cluster::v3::CustomClusterType;
+using ::envoy::config::cluster::v3::Cluster_CustomClusterType;
 using ::envoy::extensions::clusters::aggregate::v3::ClusterConfig;
 
 class ClusterTypeTest : public XdsEnd2endTest {
@@ -316,7 +316,7 @@ TEST_P(AggregateClusterTest, ) {
   balancer_->ads_service()->SetCdsResource(new_cluster2);
   // Create Aggregate Cluster
   auto cluster = default_cluster_;
-  CustomClusterType* custom_cluster = cluster.mutable_cluster_type();
+  Cluster_CustomClusterType* custom_cluster = cluster.mutable_cluster_type();
   custom_cluster->set_name("envoy.clusters.aggregate");
   ClusterConfig cluster_config;
   cluster_config.add_clusters(kNewCluster1Name);
@@ -365,7 +365,7 @@ TEST_P(AggregateClusterTest, DiamondDependency) {
   // Populate top-level aggregate cluster pointing to kNewClusterName1
   // and kNewAggregateClusterName.
   auto cluster = default_cluster_;
-  CustomClusterType* custom_cluster = cluster.mutable_cluster_type();
+  Cluster_CustomClusterType* custom_cluster = cluster.mutable_cluster_type();
   custom_cluster->set_name("envoy.clusters.aggregate");
   ClusterConfig cluster_config;
   cluster_config.add_clusters(kNewClusterName1);
@@ -426,7 +426,7 @@ TEST_P(AggregateClusterTest, FallBackWithConnectivityChurn) {
   balancer_->ads_service()->SetCdsResource(cluster2);
   // Create Aggregate Cluster
   auto cluster = default_cluster_;
-  CustomClusterType* custom_cluster = cluster.mutable_cluster_type();
+  Cluster_CustomClusterType* custom_cluster = cluster.mutable_cluster_type();
   custom_cluster->set_name("envoy.clusters.aggregate");
   ClusterConfig cluster_config;
   cluster_config.add_clusters(kClusterName1);
@@ -565,7 +565,7 @@ TEST_P(AggregateClusterTest, EdsToLogicalDns) {
   balancer_->ads_service()->SetCdsResource(logical_dns_cluster);
   // Create Aggregate Cluster
   auto cluster = default_cluster_;
-  CustomClusterType* custom_cluster = cluster.mutable_cluster_type();
+  Cluster_CustomClusterType* custom_cluster = cluster.mutable_cluster_type();
   custom_cluster->set_name("envoy.clusters.aggregate");
   ClusterConfig cluster_config;
   cluster_config.add_clusters(kNewCluster1Name);
@@ -626,7 +626,7 @@ TEST_P(AggregateClusterTest, LogicalDnsToEds) {
   balancer_->ads_service()->SetCdsResource(logical_dns_cluster);
   // Create Aggregate Cluster
   auto cluster = default_cluster_;
-  CustomClusterType* custom_cluster = cluster.mutable_cluster_type();
+  Cluster_CustomClusterType* custom_cluster = cluster.mutable_cluster_type();
   custom_cluster->set_name("envoy.clusters.aggregate");
   ClusterConfig cluster_config;
   cluster_config.add_clusters(kLogicalDNSClusterName);
@@ -697,7 +697,7 @@ TEST_P(AggregateClusterTest, ReconfigEdsWhileLogicalDnsChildFails) {
   balancer_->ads_service()->SetCdsResource(logical_dns_cluster);
   // Create Aggregate Cluster
   auto cluster = default_cluster_;
-  CustomClusterType* custom_cluster = cluster.mutable_cluster_type();
+  Cluster_CustomClusterType* custom_cluster = cluster.mutable_cluster_type();
   custom_cluster->set_name("envoy.clusters.aggregate");
   ClusterConfig cluster_config;
   cluster_config.add_clusters(kNewCluster1Name);
@@ -755,7 +755,7 @@ TEST_P(AggregateClusterTest, MultipleClustersWithSameLocalities) {
   balancer_->ads_service()->SetCdsResource(new_cluster2);
   // Create Aggregate Cluster
   auto cluster = default_cluster_;
-  CustomClusterType* custom_cluster = cluster.mutable_cluster_type();
+  Cluster_CustomClusterType* custom_cluster = cluster.mutable_cluster_type();
   custom_cluster->set_name("envoy.clusters.aggregate");
   ClusterConfig cluster_config;
   cluster_config.add_clusters(kNewClusterName1);
@@ -785,7 +785,7 @@ TEST_P(AggregateClusterTest, RecursionDepthJustBelowMax) {
   for (int i = 14; i >= 0; --i) {
     auto cluster = default_cluster_;
     if (i > 0) cluster.set_name(absl::StrCat(kDefaultClusterName, i));
-    CustomClusterType* custom_cluster = cluster.mutable_cluster_type();
+    Cluster_CustomClusterType* custom_cluster = cluster.mutable_cluster_type();
     custom_cluster->set_name("envoy.clusters.aggregate");
     ClusterConfig cluster_config;
     cluster_config.add_clusters(absl::StrCat(kDefaultClusterName, i + 1));
@@ -809,7 +809,7 @@ TEST_P(AggregateClusterTest, RecursionMaxDepth) {
   for (int i = 15; i >= 0; --i) {
     auto cluster = default_cluster_;
     if (i > 0) cluster.set_name(absl::StrCat(kDefaultClusterName, i));
-    CustomClusterType* custom_cluster = cluster.mutable_cluster_type();
+    Cluster_CustomClusterType* custom_cluster = cluster.mutable_cluster_type();
     custom_cluster->set_name("envoy.clusters.aggregate");
     ClusterConfig cluster_config;
     cluster_config.add_clusters(absl::StrCat(kDefaultClusterName, i + 1));

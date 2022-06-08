@@ -25,6 +25,7 @@
 
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
+#include "envoy/service/status/v3/csds.grpc.pb.h"
 
 #include <grpc/slice.h>
 #include <grpcpp/support/config.h>

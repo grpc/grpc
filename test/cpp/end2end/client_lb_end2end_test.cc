@@ -30,6 +30,8 @@
 #include "absl/strings/str_join.h"
 #include "absl/strings/string_view.h"
 
+#include "xds/data/orca/v3/orca_load_report.pb.h"
+
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/atm.h>
@@ -66,7 +68,6 @@
 #include "src/cpp/client/secure_credentials.h"
 #include "src/cpp/server/secure_server_credentials.h"
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
-#include "src/proto/grpc/testing/xds/v3/orca_load_report.pb.h"
 #include "test/core/util/port.h"
 #include "test/core/util/resolve_localhost_ip46.h"
 #include "test/core/util/test_config.h"

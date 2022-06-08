@@ -21,16 +21,15 @@
 
 #include <grpc/support/port_platform.h>
 
+#include "absl/status/status.h"
+#include "envoy/service/status/v3/csds.grpc.pb.h"
+
 #include <grpcpp/grpcpp.h>
 #include <grpcpp/support/status.h>
 #include <grpcpp/support/sync_stream.h>
 
-#include "src/proto/grpc/testing/xds/v3/csds.grpc.pb.h"
-#include "src/proto/grpc/testing/xds/v3/csds.pb.h"
-
 namespace grpc {
 namespace xds {
-namespace experimental {
 
 // The implementation of
 // envoy::service::status::v3::ClientStatusDiscoveryService

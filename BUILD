@@ -18,6 +18,7 @@ load(
     "//bazel:grpc_build_system.bzl",
     "grpc_cc_library",
     "grpc_generate_one_off_targets",
+    "grpc_proto_library",
     "grpc_upb_proto_library",
     "grpc_upb_proto_reflection_library",
     "python_config_settings",
@@ -6450,12 +6451,16 @@ grpc_cc_library(
         "absl/status:statusor",
     ],
     language = "c++",
+    tags = [
+        "no_windows",  # TODO(#29499) support windows
+    ],
     deps = [
         "gpr",
         "grpc",
         "grpc++_codegen_base",
         "grpc++_internals",
-        "//src/proto/grpc/testing/xds/v3:csds_proto",
+        ":xds_proto",
+        # "@envoy_api//envoy/service/status/v3:pkg_cc_grpc",
     ],
     alwayslink = 1,
 )
@@ -6886,4 +6891,9 @@ filegroup(
         "etc/roots.pem",
     ],
     visibility = ["//visibility:public"],
+)
+
+grpc_proto_library(
+    name = "xds_proto",
+    srcs = ["@envoy_api//:all_protos"],
 )

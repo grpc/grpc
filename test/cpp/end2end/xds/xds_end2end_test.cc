@@ -42,6 +42,23 @@
 #include "absl/strings/str_join.h"
 #include "absl/strings/str_replace.h"
 #include "absl/types/optional.h"
+#include "envoy/api/v2/discovery.grpc.pb.h"
+#include "envoy/config/cluster/v3/cluster.pb.h"
+#include "envoy/config/endpoint/v3/endpoint.pb.h"
+#include "envoy/config/listener/v3/listener.pb.h"
+#include "envoy/config/route/v3/route.pb.h"
+#include "envoy/extensions/clusters/aggregate/v3/cluster.pb.h"
+#include "envoy/extensions/filters/common/fault/v3/fault.pb.h"
+#include "envoy/extensions/filters/http/fault/v3/fault.pb.h"
+#include "envoy/extensions/filters/http/rbac/v3/rbac.pb.h"
+#include "envoy/extensions/filters/http/router/v3/router.pb.h"
+#include "envoy/extensions/filters/network/http_connection_manager/v3/http_connection_manager.pb.h"
+#include "envoy/extensions/transport_sockets/tls/v3/tls.pb.h"
+#include "envoy/service/discovery/v2/ads.grpc.pb.h"
+#include "envoy/service/discovery/v3/ads.grpc.pb.h"
+#include "envoy/service/discovery/v3/discovery.grpc.pb.h"
+#include "envoy/service/load_stats/v2/lrs.grpc.pb.h"
+#include "envoy/service/load_stats/v3/lrs.grpc.pb.h"
 
 #include <grpc/grpc.h>
 #include <grpc/grpc_security.h>
@@ -82,25 +99,9 @@
 #include "src/core/lib/security/credentials/fake/fake_credentials.h"
 #include "src/cpp/client/secure_credentials.h"
 #include "src/cpp/server/secure_server_credentials.h"
-#include "src/proto/grpc/testing/echo.grpc.pb.h"
-#include "src/proto/grpc/testing/xds/ads_for_test.grpc.pb.h"
-#include "src/proto/grpc/testing/xds/cds_for_test.grpc.pb.h"
-#include "src/proto/grpc/testing/xds/eds_for_test.grpc.pb.h"
-#include "src/proto/grpc/testing/xds/lds_rds_for_test.grpc.pb.h"
-#include "src/proto/grpc/testing/xds/lrs_for_test.grpc.pb.h"
-#include "src/proto/grpc/testing/xds/v3/ads.grpc.pb.h"
-#include "src/proto/grpc/testing/xds/v3/aggregate_cluster.grpc.pb.h"
-#include "src/proto/grpc/testing/xds/v3/cluster.grpc.pb.h"
-#include "src/proto/grpc/testing/xds/v3/discovery.grpc.pb.h"
-#include "src/proto/grpc/testing/xds/v3/endpoint.grpc.pb.h"
-#include "src/proto/grpc/testing/xds/v3/fault.grpc.pb.h"
-#include "src/proto/grpc/testing/xds/v3/http_connection_manager.grpc.pb.h"
-#include "src/proto/grpc/testing/xds/v3/http_filter_rbac.grpc.pb.h"
-#include "src/proto/grpc/testing/xds/v3/listener.grpc.pb.h"
-#include "src/proto/grpc/testing/xds/v3/lrs.grpc.pb.h"
-#include "src/proto/grpc/testing/xds/v3/route.grpc.pb.h"
-#include "src/proto/grpc/testing/xds/v3/router.grpc.pb.h"
-#include "src/proto/grpc/testing/xds/v3/tls.grpc.pb.h"
+#include "src/proto/grpc/lookup/v1/rls.grpc.pb.h"
+#include "src/proto/grpc/lookup/v1/rls.pb.h"
+#include "src/proto/grpc/lookup/v1/rls_config.pb.h"
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
 #include "test/cpp/end2end/xds/no_op_http_filter.h"
@@ -261,6 +262,7 @@ class FakeCertificateProviderFactory
 };
 
 // Global variables for each provider.
+
 FakeCertificateProvider::CertDataMapWrapper* g_fake1_cert_data_map = nullptr;
 FakeCertificateProvider::CertDataMapWrapper* g_fake2_cert_data_map = nullptr;
 
