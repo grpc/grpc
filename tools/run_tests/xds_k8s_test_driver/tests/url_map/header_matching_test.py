@@ -19,6 +19,7 @@ from absl.testing import absltest
 
 from framework import xds_url_map_testcase
 from framework.test_app import client_app
+from framework.helpers import skips
 
 # Type aliases
 HostRule = xds_url_map_testcase.HostRule
@@ -28,6 +29,7 @@ DumpedXdsConfig = xds_url_map_testcase.DumpedXdsConfig
 RpcTypeUnaryCall = xds_url_map_testcase.RpcTypeUnaryCall
 RpcTypeEmptyCall = xds_url_map_testcase.RpcTypeEmptyCall
 XdsTestClient = client_app.XdsTestClient
+_Lang = skips.Lang
 
 logger = logging.getLogger(__name__)
 flags.adopt_module_key_flags(xds_url_map_testcase)
@@ -46,8 +48,17 @@ _TEST_METADATA = (
      _TEST_METADATA_NUMERIC_VALUE),
 )
 
+def _is_supported(config: skips.TestConfig) -> bool:
+    if config.client_lang == _Lang.NODE:
+        return not config.version_lt('v1.3.x')
+    return True
+
 
 class TestExactMatch(xds_url_map_testcase.XdsUrlMapTestCase):
+
+    @staticmethod
+    def is_supported(config: skips.TestConfig) -> bool:
+        return _is_supported(config)
 
     @staticmethod
     def url_map_change(
@@ -92,6 +103,10 @@ class TestExactMatch(xds_url_map_testcase.XdsUrlMapTestCase):
 class TestPrefixMatch(xds_url_map_testcase.XdsUrlMapTestCase):
 
     @staticmethod
+    def is_supported(config: skips.TestConfig) -> bool:
+        return _is_supported(config)
+
+    @staticmethod
     def url_map_change(
             host_rule: HostRule,
             path_matcher: PathMatcher) -> Tuple[HostRule, PathMatcher]:
@@ -132,6 +147,10 @@ class TestPrefixMatch(xds_url_map_testcase.XdsUrlMapTestCase):
 
 
 class TestSuffixMatch(xds_url_map_testcase.XdsUrlMapTestCase):
+
+    @staticmethod
+    def is_supported(config: skips.TestConfig) -> bool:
+        return _is_supported(config)
 
     @staticmethod
     def url_map_change(
@@ -175,6 +194,10 @@ class TestSuffixMatch(xds_url_map_testcase.XdsUrlMapTestCase):
 class TestPresentMatch(xds_url_map_testcase.XdsUrlMapTestCase):
 
     @staticmethod
+    def is_supported(config: skips.TestConfig) -> bool:
+        return _is_supported(config)
+
+    @staticmethod
     def url_map_change(
             host_rule: HostRule,
             path_matcher: PathMatcher) -> Tuple[HostRule, PathMatcher]:
@@ -215,6 +238,10 @@ class TestPresentMatch(xds_url_map_testcase.XdsUrlMapTestCase):
 
 
 class TestInvertMatch(xds_url_map_testcase.XdsUrlMapTestCase):
+
+    @staticmethod
+    def is_supported(config: skips.TestConfig) -> bool:
+        return _is_supported(config)
 
     @staticmethod
     def url_map_change(
@@ -261,6 +288,10 @@ class TestInvertMatch(xds_url_map_testcase.XdsUrlMapTestCase):
 
 
 class TestRangeMatch(xds_url_map_testcase.XdsUrlMapTestCase):
+
+    @staticmethod
+    def is_supported(config: skips.TestConfig) -> bool:
+        return _is_supported(config)
 
     @staticmethod
     def url_map_change(
@@ -311,6 +342,10 @@ class TestRangeMatch(xds_url_map_testcase.XdsUrlMapTestCase):
 
 
 class TestRegexMatch(xds_url_map_testcase.XdsUrlMapTestCase):
+
+    @staticmethod
+    def is_supported(config: skips.TestConfig) -> bool:
+        return _is_supported(config)
 
     @staticmethod
     def url_map_change(

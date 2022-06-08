@@ -64,6 +64,8 @@ def _is_supported(config: skips.TestConfig) -> bool:
         # TODO(https://github.com/grpc/grpc/issues/27430): supported after
         #      the issue is fixed.
         return False
+    elif config.client_lang == _Lang.NODE:
+        return False
     return True
 
 
