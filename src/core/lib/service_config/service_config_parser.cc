@@ -59,7 +59,7 @@ ServiceConfigParser::ParseGlobalParameters(const grpc_channel_args* args,
     grpc_error_handle parser_error = GRPC_ERROR_NONE;
     auto parsed_config =
         registered_parsers_[i]->ParseGlobalParams(args, json, &parser_error);
-    if (parser_error != GRPC_ERROR_NONE) {
+    if (!GRPC_ERROR_IS_NONE(parser_error)) {
       error_list.push_back(parser_error);
     }
     parsed_global_configs.push_back(std::move(parsed_config));
@@ -80,7 +80,7 @@ ServiceConfigParser::ParsePerMethodParameters(const grpc_channel_args* args,
     grpc_error_handle parser_error = GRPC_ERROR_NONE;
     auto parsed_config =
         registered_parsers_[i]->ParsePerMethodParams(args, json, &parser_error);
-    if (parser_error != GRPC_ERROR_NONE) {
+    if (!GRPC_ERROR_IS_NONE(parser_error)) {
       error_list.push_back(parser_error);
     }
     parsed_method_configs.push_back(std::move(parsed_config));

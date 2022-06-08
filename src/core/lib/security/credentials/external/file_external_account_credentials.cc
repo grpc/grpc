@@ -30,7 +30,7 @@ FileExternalAccountCredentials::Create(Options options,
                                        grpc_error_handle* error) {
   auto creds = MakeRefCounted<FileExternalAccountCredentials>(
       std::move(options), std::move(scopes), error);
-  if (*error == GRPC_ERROR_NONE) {
+  if (GRPC_ERROR_IS_NONE(*error)) {
     return creds;
   } else {
     return nullptr;
@@ -101,14 +101,15 @@ void FileExternalAccountCredentials::RetrieveSubjectToken(
   // request because it may have changed since the last request.
   grpc_error_handle error =
       grpc_load_file(file_.c_str(), 0, &content_slice.slice);
-  if (error != GRPC_ERROR_NONE) {
+  if (!GRPC_ERROR_IS_NONE(error)) {
     cb("", error);
     return;
   }
   absl::string_view content = StringViewFromSlice(content_slice.slice);
   if (format_type_ == "json") {
     Json content_json = Json::Parse(content, &error);
-    if (error != GRPC_ERROR_NONE || content_json.type() != Json::Type::OBJECT) {
+    if (!GRPC_ERROR_IS_NONE(error) ||
+        content_json.type() != Json::Type::OBJECT) {
       cb("", GRPC_ERROR_CREATE_FROM_STATIC_STRING(
                  "The content of the file is not a valid json object."));
       GRPC_ERROR_UNREF(error);

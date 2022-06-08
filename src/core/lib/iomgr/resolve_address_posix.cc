@@ -165,7 +165,7 @@ done:
   if (result) {
     freeaddrinfo(result);
   }
-  if (err == GRPC_ERROR_NONE) {
+  if (GRPC_ERROR_IS_NONE(err)) {
     return addresses;
   }
   auto error_result = grpc_error_to_absl_status(err);

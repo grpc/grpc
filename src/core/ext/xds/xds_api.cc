@@ -302,7 +302,7 @@ grpc_slice XdsApi::CreateAdsRequest(
   }
   // Set error_detail if it's a NACK.
   std::string error_string_storage;
-  if (error != GRPC_ERROR_NONE) {
+  if (!GRPC_ERROR_IS_NONE(error)) {
     google_rpc_Status* error_detail =
         envoy_service_discovery_v3_DiscoveryRequest_mutable_error_detail(
             request, arena.ptr());

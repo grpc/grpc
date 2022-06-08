@@ -137,7 +137,7 @@ grpc_service_account_jwt_access_credentials_create_from_auth_json_key(
 static char* redact_private_key(const char* json_key) {
   grpc_error_handle error = GRPC_ERROR_NONE;
   Json json = Json::Parse(json_key, &error);
-  if (error != GRPC_ERROR_NONE || json.type() != Json::Type::OBJECT) {
+  if (!GRPC_ERROR_IS_NONE(error) || json.type() != Json::Type::OBJECT) {
     GRPC_ERROR_UNREF(error);
     return gpr_strdup("<Json failed to parse.>");
   }

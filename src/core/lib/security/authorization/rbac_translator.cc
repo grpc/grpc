@@ -317,7 +317,7 @@ absl::StatusOr<RbacPolicies> GenerateRbacPolicies(
     absl::string_view authz_policy) {
   grpc_error_handle error = GRPC_ERROR_NONE;
   Json json = Json::Parse(authz_policy, &error);
-  if (error != GRPC_ERROR_NONE) {
+  if (!GRPC_ERROR_IS_NONE(error)) {
     absl::Status status = absl::InvalidArgumentError(
         absl::StrCat("Failed to parse gRPC authorization policy. Error: ",
                      grpc_error_std_string(error)));

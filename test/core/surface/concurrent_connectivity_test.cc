@@ -142,7 +142,7 @@ void bad_server_thread(void* vargs) {
                                               .ToC();
   grpc_error_handle error = grpc_tcp_server_create(nullptr, channel_args, &s);
   grpc_channel_args_destroy(channel_args);
-  GPR_ASSERT(error == GRPC_ERROR_NONE);
+  GPR_ASSERT(GRPC_ERROR_IS_NONE(error));
   memset(&resolved_addr, 0, sizeof(resolved_addr));
   addr->sa_family = GRPC_AF_INET;
   error = grpc_tcp_server_add_port(s, &resolved_addr, &port);

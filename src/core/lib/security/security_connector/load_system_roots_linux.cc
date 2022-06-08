@@ -71,7 +71,7 @@ grpc_slice GetSystemRootCerts() {
   for (size_t i = 0; i < num_cert_files_; i++) {
     grpc_error_handle error =
         grpc_load_file(kCertFiles[i], 1, &valid_bundle_slice);
-    if (error == GRPC_ERROR_NONE) {
+    if (GRPC_ERROR_IS_NONE(error)) {
       return valid_bundle_slice;
     } else {
       GRPC_ERROR_UNREF(error);

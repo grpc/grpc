@@ -165,7 +165,7 @@ SubchannelCall::SubchannelCall(Args args, grpc_error_handle* error)
   };
   *error = grpc_call_stack_init(connected_subchannel_->channel_stack(), 1,
                                 SubchannelCall::Destroy, this, &call_args);
-  if (GPR_UNLIKELY(*error != GRPC_ERROR_NONE)) {
+  if (GPR_UNLIKELY(!GRPC_ERROR_IS_NONE(*error))) {
     gpr_log(GPR_ERROR, "error: %s", grpc_error_std_string(*error).c_str());
     return;
   }
@@ -262,7 +262,7 @@ namespace {
 // Sets *status based on the rest of the parameters.
 void GetCallStatus(grpc_status_code* status, Timestamp deadline,
                    grpc_metadata_batch* md_batch, grpc_error_handle error) {
-  if (error != GRPC_ERROR_NONE) {
+  if (!GRPC_ERROR_IS_NONE(error)) {
     grpc_error_get_status(error, deadline, status, nullptr, nullptr, nullptr);
   } else {
     *status = md_batch->get(GrpcStatusMetadata()).value_or(GRPC_STATUS_UNKNOWN);
