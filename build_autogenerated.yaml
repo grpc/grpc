@@ -6613,6 +6613,20 @@ targets:
   deps:
   - grpc_test_util
   uses_polling: false
+- name: istio_echo_server_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - test/cpp/interop/istio_echo_server_lib.h
+  src:
+  - src/proto/grpc/testing/istio_echo.proto
+  - test/cpp/interop/istio_echo_server_lib.cc
+  - test/cpp/interop/istio_echo_server_test.cc
+  deps:
+  - grpc++
+  - grpc_test_util
+  - grpc++_test_config
 - name: join_test
   gtest: true
   build: test
