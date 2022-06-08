@@ -971,9 +971,10 @@ TEST_P(RingHashTest, ReattemptWhenAllEndpointsUnreachable) {
       {"address_hash", CreateMetadataValueThatHashesToBackend(0)}};
   EXPECT_EQ(GRPC_CHANNEL_IDLE, channel_->GetState(false));
   ShutdownBackend(0);
-  CheckRpcSendFailure(DEBUG_LOCATION,
-                      CheckRpcSendFailureOptions().set_rpc_options(
-                          RpcOptions().set_metadata(std::move(metadata))));
+  CheckRpcSendFailure(
+      DEBUG_LOCATION, StatusCode::UNAVAILABLE,
+      "ring hash found a subchannel that is in TRANSIENT_FAILURE state",
+      RpcOptions().set_metadata(std::move(metadata)));
   StartBackend(0);
   // Ensure we are actively connecting without any traffic.
   EXPECT_TRUE(channel_->WaitForConnected(
@@ -1003,11 +1004,14 @@ TEST_P(RingHashTest, TransientFailureSkipToAvailableReady) {
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
   std::vector<std::pair<std::string, std::string>> metadata = {
       {"address_hash", CreateMetadataValueThatHashesToBackend(0)}};
-  const auto rpc_options = RpcOptions().set_metadata(std::move(metadata));
+// FIXME: Even with this huge timeout, this is broken!
+  const auto rpc_options =
+      RpcOptions().set_metadata(std::move(metadata)).set_timeout_ms(15000);
   EXPECT_EQ(GRPC_CHANNEL_IDLE, channel_->GetState(false));
   CheckRpcSendFailure(
-      DEBUG_LOCATION,
-      CheckRpcSendFailureOptions().set_rpc_options(rpc_options));
+      DEBUG_LOCATION, StatusCode::UNAVAILABLE,
+      "ring hash found a subchannel that is in TRANSIENT_FAILURE state",
+      rpc_options);
   EXPECT_EQ(GRPC_CHANNEL_TRANSIENT_FAILURE, channel_->GetState(false));
   // Bring up backend 0.  The channel should become connected without
   // any picks, because in TF, we are always trying to connect to at
@@ -1027,8 +1031,7 @@ TEST_P(RingHashTest, TransientFailureSkipToAvailableReady) {
   // will go through some non-READY entries and skip them as per design.
   ShutdownBackend(0);
   CheckRpcSendFailure(
-      DEBUG_LOCATION,
-      CheckRpcSendFailureOptions().set_rpc_options(rpc_options));
+      DEBUG_LOCATION, StatusCode::UNAVAILABLE, "xxx", rpc_options);
   StartBackend(1);
   EXPECT_TRUE(channel_->WaitForConnected(
       grpc_timeout_milliseconds_to_deadline(kConnectionTimeoutMilliseconds)));

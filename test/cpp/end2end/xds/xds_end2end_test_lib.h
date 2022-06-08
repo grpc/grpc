@@ -801,12 +801,31 @@ class XdsEnd2endTest : public ::testing::TestWithParam<XdsTestType> {
     GPR_UNREACHABLE_CODE(return grpc::Status::OK);
   }
 
+  // Send RPCs in a loop until either continue_predicate() returns false
+  // or timeout_ms elapses.
+  struct RpcResult {
+    Status status;
+    EchoResponse response;
+  };
+  void SendRpcsUntil(const grpc_core::DebugLocation& debug_location,
+                     std::function<bool(const RpcResult&)> continue_predicate,
+                     int timeout_ms = 5000,
+                     const RpcOptions& rpc_options = RpcOptions());
+
   // Sends the specified number of RPCs and fails if the RPC fails.
   void CheckRpcSendOk(const grpc_core::DebugLocation& debug_location,
                       const size_t times = 1,
                       const RpcOptions& rpc_options = RpcOptions());
 
+  // Sends one RPC, which must fail with the specified status code and
+  // a message matching the specified regex.
+  void CheckRpcSendFailure(const grpc_core::DebugLocation& debug_location,
+                           StatusCode expected_status,
+                           absl::string_view expected_message_regex,
+                           const RpcOptions& rpc_options = RpcOptions());
+
   // Options to use with CheckRpcSendFailure().
+// FIXME: remove
   struct CheckRpcSendFailureOptions {
     std::function<bool(size_t)> continue_predicate = [](size_t i) {
       return i < 1;
@@ -838,11 +857,12 @@ class XdsEnd2endTest : public ::testing::TestWithParam<XdsTestType> {
     }
   };
 
-  // Sends RPCs and expects them to fail.
+// FIXME: remove
   void CheckRpcSendFailure(
       const grpc_core::DebugLocation& debug_location,
       const CheckRpcSendFailureOptions& options = CheckRpcSendFailureOptions());
 
+// FIXME: remove
   // Sends num_rpcs RPCs, counting how many of them fail with a message
   // matching the specfied drop_error_message_prefix.
   // Any failure with a non-matching message is a test failure.
@@ -895,6 +915,7 @@ class XdsEnd2endTest : public ::testing::TestWithParam<XdsTestType> {
     // If true, resets the backend counters before returning.
     bool reset_counters = true;
     // If true, RPC failures will not cause the test to fail.
+// FIXME: remove in favor of required status check callback
     bool allow_failures = false;
     // How long to wait for the backend(s) to see requests.
     int timeout_ms = 5000;

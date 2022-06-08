@@ -239,11 +239,16 @@ TEST_P(CdsTest, ClusterRemoved) {
   // Unset CDS resource.
   balancer_->ads_service()->UnsetResource(kCdsTypeUrl, kDefaultClusterName);
   // Wait for RPCs to start failing.
-  do {
-  } while (SendRpc(RpcOptions(), nullptr).ok());
-  // Make sure RPCs are still failing.
-  CheckRpcSendFailure(DEBUG_LOCATION,
-                      CheckRpcSendFailureOptions().set_times(1000));
+  SendRpcsUntil(
+      DEBUG_LOCATION,
+      [](const RpcResult& result) {
+        if (result.status.ok()) return true;  // Keep going.
+        EXPECT_EQ(StatusCode::UNAVAILABLE, result.status.error_code());
+        EXPECT_EQ(absl::StrCat("CDS resource \"", kDefaultClusterName,
+                               "\" does not exist"),
+                  result.status.error_message());
+        return false;
+      });
   // Make sure we ACK'ed the update.
   auto response_state = balancer_->ads_service()->cds_response_state();
   ASSERT_TRUE(response_state.has_value());
@@ -455,7 +460,11 @@ TEST_P(EdsTest, InitiallyEmptyServerlist) {
   EdsResourceArgs args({std::move(empty_locality)});
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
   // RPCs should fail.
-  CheckRpcSendFailure(DEBUG_LOCATION);
+  CheckRpcSendFailure(
+      DEBUG_LOCATION, StatusCode::UNAVAILABLE,
+      // TODO(roth): Improve this error message as part of
+      // https://github.com/grpc/grpc/issues/22883.
+      "weighted_target: all children report state TRANSIENT_FAILURE");
   // Send non-empty serverlist.
   args = EdsResourceArgs({{"locality0", CreateEndpointsForBackends()}});
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
@@ -493,17 +502,16 @@ TEST_P(EdsTest, BackendsRestart) {
   WaitForAllBackends(DEBUG_LOCATION);
   // Stop backends.  RPCs should fail.
   ShutdownAllBackends();
-  // Sending multiple failed requests instead of just one to ensure that the
-  // client notices that all backends are down before we restart them. If we
-  // didn't do this, then a single RPC could fail here due to the race
-  // condition between the LB pick and the GOAWAY from the chosen backend
-  // being shut down, which would not actually prove that the client noticed
-  // that all of the backends are down. Then, when we send another request
-  // below (which we expect to succeed), if the callbacks happen in the wrong
-  // order, the same race condition could happen again due to the client not
-  // yet having noticed that the backends were all down.
-  CheckRpcSendFailure(DEBUG_LOCATION,
-                      CheckRpcSendFailureOptions().set_times(backends_.size()));
+  // Wait for channel to report TRANSIENT_FAILURE.
+  EXPECT_TRUE(channel_->WaitForStateChange(
+      GRPC_CHANNEL_READY, grpc_timeout_seconds_to_deadline(5)));
+  EXPECT_EQ(GRPC_CHANNEL_TRANSIENT_FAILURE, channel_->GetState(false));
+  // RPCs should fail.
+  CheckRpcSendFailure(
+      DEBUG_LOCATION, StatusCode::UNAVAILABLE,
+      // TODO(roth): Improve this error message as part of
+      // https://github.com/grpc/grpc/issues/22883.
+      "weighted_target: all children report state TRANSIENT_FAILURE");
   // Restart all backends.  RPCs should start succeeding again.
   StartAllBackends();
   CheckRpcSendOk(DEBUG_LOCATION, 1,
@@ -1096,7 +1104,11 @@ TEST_P(FailoverTest, UpdateInitialUnavailable) {
       {"locality1", {MakeNonExistantEndpoint()}, kDefaultLocalityWeight, 1},
   });
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
-  CheckRpcSendFailure(DEBUG_LOCATION);
+  CheckRpcSendFailure(
+      DEBUG_LOCATION, StatusCode::UNAVAILABLE,
+      // TODO(roth): Improve this error message as part of
+      // https://github.com/grpc/grpc/issues/22883.
+      "weighted_target: all children report state TRANSIENT_FAILURE");
   args = EdsResourceArgs({
       {"locality0", CreateEndpointsForBackends(0, 1), kDefaultLocalityWeight,
        0},
@@ -1259,10 +1271,10 @@ TEST_P(ClientLoadReportingTest, Vanilla) {
       DEBUG_LOCATION, 0, 4, WaitForBackendOptions().set_reset_counters(false));
   // Send kNumRpcsPerAddress RPCs per server.
   CheckRpcSendOk(DEBUG_LOCATION, kNumRpcsPerAddress * backends_.size());
-  CheckRpcSendFailure(DEBUG_LOCATION,
-                      CheckRpcSendFailureOptions()
-                          .set_times(kNumFailuresPerAddress * backends_.size())
-                          .set_rpc_options(RpcOptions().set_server_fail(true)));
+  for (size_t i = 0; i < kNumFailuresPerAddress * backends_.size(); ++i) {
+    CheckRpcSendFailure(DEBUG_LOCATION, StatusCode::FAILED_PRECONDITION, "",
+                        RpcOptions().set_server_fail(true));
+  }
   const size_t total_successful_rpcs_sent =
       (kNumRpcsPerAddress * backends_.size()) + num_warmup_rpcs;
   const size_t total_failed_rpcs_sent =
@@ -1321,10 +1333,10 @@ TEST_P(ClientLoadReportingTest, SendAllClusters) {
   size_t num_warmup_rpcs = WaitForAllBackends(DEBUG_LOCATION);
   // Send kNumRpcsPerAddress RPCs per server.
   CheckRpcSendOk(DEBUG_LOCATION, kNumRpcsPerAddress * backends_.size());
-  CheckRpcSendFailure(DEBUG_LOCATION,
-                      CheckRpcSendFailureOptions()
-                          .set_times(kNumFailuresPerAddress * backends_.size())
-                          .set_rpc_options(RpcOptions().set_server_fail(true)));
+  for (size_t i = 0; i < kNumFailuresPerAddress * backends_.size(); ++i) {
+    CheckRpcSendFailure(DEBUG_LOCATION, StatusCode::FAILED_PRECONDITION, "",
+                        RpcOptions().set_server_fail(true));
+  }
   // Check that each backend got the right number of requests.
   for (size_t i = 0; i < backends_.size(); ++i) {
     EXPECT_EQ(kNumRpcsPerAddress + kNumFailuresPerAddress,

@@ -458,7 +458,7 @@ RingHash::PickResult RingHash::Picker::Pick(PickArgs args) {
   uint64_t h;
   if (!absl::SimpleAtoi(hash, &h)) {
     return PickResult::Fail(
-        absl::InternalError("xds ring hash value is not a number"));
+        absl::InternalError("ring hash value is not a number"));
   }
   const std::vector<Ring::Entry>& ring = ring_->ring();
   // Ported from https://github.com/RJ/ketama/blob/master/libketama/ketama.c
@@ -554,7 +554,7 @@ RingHash::PickResult RingHash::Picker::Pick(PickArgs args) {
     }
   }
   return PickResult::Fail(absl::UnavailableError(
-      "xds ring hash found a subchannel that is in TRANSIENT_FAILURE state"));
+      "ring hash found a subchannel that is in TRANSIENT_FAILURE state"));
 }
 
 //

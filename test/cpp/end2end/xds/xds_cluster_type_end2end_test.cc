@@ -713,7 +713,11 @@ TEST_P(AggregateClusterTest, ReconfigEdsWhileLogicalDnsChildFails) {
         std::move(result));
   }
   // When an RPC fails, we know the channel has seen the update.
-  CheckRpcSendFailure(DEBUG_LOCATION);
+  CheckRpcSendFailure(DEBUG_LOCATION, StatusCode::UNAVAILABLE,
+                      // TODO(roth): Figure out how to get some sort of
+                      // resolution note included here as part of
+                      // https://github.com/grpc/grpc/issues/22883.
+                      "empty address list: ");
   // Send an EDS update that moves locality1 to priority 0.
   args1 = EdsResourceArgs({
       {"locality1", CreateEndpointsForBackends(0, 1), kDefaultLocalityWeight,

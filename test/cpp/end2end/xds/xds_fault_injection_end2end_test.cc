@@ -116,12 +116,10 @@ TEST_P(FaultInjectionTest, XdsFaultInjectionAlwaysAbort) {
   // Config fault injection via different setup
   SetFilterConfig(http_fault);
   // Fire several RPCs, and expect all of them to be aborted.
-  CheckRpcSendFailure(
-      DEBUG_LOCATION,
-      CheckRpcSendFailureOptions()
-          .set_times(5)
-          .set_rpc_options(RpcOptions().set_wait_for_ready(true))
-          .set_expected_error_code(StatusCode::ABORTED));
+  for (size_t i = 0; i < 5; ++i) {
+    CheckRpcSendFailure(DEBUG_LOCATION, StatusCode::ABORTED, "Fault injected",
+                        RpcOptions().set_wait_for_ready(true));
+  }
 }
 
 // Without the listener config, the fault injection won't be enabled.

@@ -834,18 +834,52 @@ Status XdsEnd2endTest::SendRpc(const RpcOptions& rpc_options,
   return status;
 }
 
+void XdsEnd2endTest::SendRpcsUntil(
+    const grpc_core::DebugLocation& debug_location,
+    std::function<bool(const RpcResult&)> continue_predicate, int timeout_ms,
+    const RpcOptions& rpc_options) {
+  absl::Time deadline = absl::InfiniteFuture();
+  if (timeout_ms != 0) {
+    deadline = absl::Now() + (absl::Milliseconds(timeout_ms) *
+                              grpc_test_slowdown_factor());
+  }
+  while (true) {
+    RpcResult result;
+    result.status = SendRpc(rpc_options, &result.response);
+    if (!continue_predicate(result)) return;
+    EXPECT_LE(absl::Now(), deadline)
+        << debug_location.file() << ":" << debug_location.line();
+    if (absl::Now() >= deadline) break;
+  }
+}
+
 void XdsEnd2endTest::CheckRpcSendOk(
     const grpc_core::DebugLocation& debug_location, const size_t times,
     const RpcOptions& rpc_options) {
-  for (size_t i = 0; i < times; ++i) {
-    EchoResponse response;
-    const Status status = SendRpc(rpc_options, &response);
-    EXPECT_TRUE(status.ok())
-        << "code=" << status.error_code()
-        << " message=" << status.error_message() << " at "
-        << debug_location.file() << ":" << debug_location.line();
-    EXPECT_EQ(response.message(), kRequestMessage);
-  }
+  SendRpcsUntil(
+      debug_location,
+      [debug_location, times, n = size_t(0)](const RpcResult& result) mutable {
+        EXPECT_TRUE(result.status.ok())
+            << "code=" << result.status.error_code()
+            << " message=" << result.status.error_message() << " at "
+            << debug_location.file() << ":" << debug_location.line();
+        EXPECT_EQ(result.response.message(), kRequestMessage);
+        return ++n < times;
+      },
+      /*timeout_ms=*/0, rpc_options);
+}
+
+void XdsEnd2endTest::CheckRpcSendFailure(
+    const grpc_core::DebugLocation& debug_location, StatusCode expected_status,
+    absl::string_view expected_message_regex, const RpcOptions& rpc_options) {
+  const Status status = SendRpc(rpc_options);
+  EXPECT_FALSE(status.ok())
+      << debug_location.file() << ":" << debug_location.line();
+  EXPECT_EQ(expected_status, status.error_code())
+      << debug_location.file() << ":" << debug_location.line();
+  EXPECT_THAT(status.error_message(),
+              ::testing::ContainsRegex(expected_message_regex))
+      << debug_location.file() << ":" << debug_location.line();
 }
 
 void XdsEnd2endTest::CheckRpcSendFailure(
