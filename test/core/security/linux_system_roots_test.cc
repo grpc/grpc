@@ -20,7 +20,7 @@
 
 #include <stdio.h>
 
-#ifdef GPR_LINUX
+#if defined(GPR_LINUX) || defined(GPR_FREEBSD)
 #include <string.h>
 #include <sys/param.h>
 
@@ -94,7 +94,9 @@ int main(int argc, char** argv) {
 }
 #else
 int main() {
-  printf("*** WARNING: this test is only supported on Linux systems ***\n");
+  printf(
+      "*** WARNING: this test is only supported on Linux and FreeBSD systems"
+      "***\n");
   return 0;
 }
-#endif  // GPR_LINUX
+#endif  // GPR_LINUX || GPR_FREEBSD

@@ -22,7 +22,7 @@
 
 #include <grpc/slice_buffer.h>
 
-#if defined(GPR_LINUX) || defined(GPR_ANDROID)
+#if defined(GPR_LINUX) || defined(GPR_ANDROID) || defined(GPR_FREEBSD)
 
 #include <dirent.h>
 #include <fcntl.h>
@@ -51,20 +51,26 @@ GPR_GLOBAL_CONFIG_DEFINE_STRING(grpc_system_ssl_roots_dir, "",
 namespace grpc_core {
 namespace {
 
-const char* kLinuxCertFiles[] = {
+#if defined(GPR_LINUX) || defined(GPR_ANDROID)
+const char* kCertFiles[] = {
     "/etc/ssl/certs/ca-certificates.crt", "/etc/pki/tls/certs/ca-bundle.crt",
     "/etc/ssl/ca-bundle.pem", "/etc/pki/tls/cacert.pem",
     "/etc/pki/ca-trust/extracted/pem/tls-ca-bundle.pem"};
-const char* kLinuxCertDirectories[] = {
+const char* kCertDirectories[] = {
     "/etc/ssl/certs", "/system/etc/security/cacerts", "/usr/local/share/certs",
     "/etc/pki/tls/certs", "/etc/openssl/certs"};
+#elif defined(GPR_FREEBSD)  // endif GPR_LINUX || GPR_ANDROID
+const char* kCertFiles[] = {"/etc/ssl/cert.pem",
+                            "/usr/local/share/certs/ca-root-nss.crt"};
+const char* kCertDirectories[] = {""};
+#endif                      // GPR_FREEBSD
 
 grpc_slice GetSystemRootCerts() {
   grpc_slice valid_bundle_slice = grpc_empty_slice();
-  size_t num_cert_files_ = GPR_ARRAY_SIZE(kLinuxCertFiles);
+  size_t num_cert_files_ = GPR_ARRAY_SIZE(kCertFiles);
   for (size_t i = 0; i < num_cert_files_; i++) {
     grpc_error_handle error =
-        grpc_load_file(kLinuxCertFiles[i], 1, &valid_bundle_slice);
+        grpc_load_file(kCertFiles[i], 1, &valid_bundle_slice);
     if (error == GRPC_ERROR_NONE) {
       return valid_bundle_slice;
     } else {
@@ -155,8 +161,8 @@ grpc_slice LoadSystemRootCerts() {
     result = GetSystemRootCerts();
   }
   if (GRPC_SLICE_IS_EMPTY(result)) {
-    for (size_t i = 0; i < GPR_ARRAY_SIZE(kLinuxCertDirectories); i++) {
-      result = CreateRootCertsBundle(kLinuxCertDirectories[i]);
+    for (size_t i = 0; i < GPR_ARRAY_SIZE(kCertDirectories); i++) {
+      result = CreateRootCertsBundle(kCertDirectories[i]);
       if (!GRPC_SLICE_IS_EMPTY(result)) {
         break;
       }
@@ -167,4 +173,4 @@ grpc_slice LoadSystemRootCerts() {
 
 }  // namespace grpc_core
 
-#endif /* GPR_LINUX || GPR_ANDROID */
+#endif /* GPR_LINUX || GPR_ANDROID || GPR_FREEBSD */

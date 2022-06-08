@@ -23,7 +23,7 @@
 
 #include <grpc/slice.h>
 
-#ifdef GPR_LINUX
+#if defined(GPR_LINUX) || defined(GPR_FREEBSD)
 
 namespace grpc_core {
 
@@ -41,6 +41,6 @@ void GetAbsoluteFilePath(const char* valid_file_dir,
 
 }  // namespace grpc_core
 
-#endif /* GPR_LINUX */
+#endif /* GPR_LINUX || GPR_FREEBSD */
 #endif /* GRPC_CORE_LIB_SECURITY_SECURITY_CONNECTOR_LOAD_SYSTEM_ROOTS_LINUX_H \
         */
