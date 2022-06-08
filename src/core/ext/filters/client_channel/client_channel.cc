@@ -30,6 +30,7 @@
 
 #include "absl/container/inlined_vector.h"
 #include "absl/memory/memory.h"
+#include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/cord.h"
 #include "absl/strings/numbers.h"
@@ -656,7 +657,15 @@ class ClientChannel::SubchannelWrapper : public SubchannelInterface {
       // Ignore update if the parent WatcherWrapper has been replaced
       // since this callback was scheduled.
       if (watcher_ != nullptr) {
-        watcher_->OnConnectivityStateChange(state_change.state);
+        // Propagate status only in state TF.
+        // We specifically want to avoid propagating the status for
+        // state IDLE that the real subchannel gave us only for the
+        // purpose of keepalive propagation.
+        if (state_change.state != GRPC_CHANNEL_TRANSIENT_FAILURE) {
+          state_change.status = absl::OkStatus();
+        }
+        watcher_->OnConnectivityStateChange(state_change.state,
+                                            state_change.status);
       }
     }
 

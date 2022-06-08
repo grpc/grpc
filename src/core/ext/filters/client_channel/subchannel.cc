@@ -28,7 +28,10 @@
 #include <utility>
 
 #include "absl/status/statusor.h"
+#include "absl/time/clock.h"
+#include "absl/time/time.h"
 
+#include <grpc/grpc.h>
 #include <grpc/slice.h>
 #include <grpc/status.h>
 #include <grpc/support/alloc.h>
@@ -49,6 +52,7 @@
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/debug/stats.h"
 #include "src/core/lib/debug/trace.h"
+#include "src/core/lib/event_engine/event_engine_factory.h"
 #include "src/core/lib/gpr/alloc.h"
 #include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
@@ -81,6 +85,7 @@
                     GPR_ROUND_UP_TO_ALIGNMENT_SIZE(sizeof(SubchannelCall)))
 
 namespace grpc_core {
+using ::grpc_event_engine::experimental::GetDefaultEventEngine;
 
 TraceFlag grpc_trace_subchannel(false, "subchannel");
 DebugOnlyTraceFlag grpc_trace_subchannel_refcount(false, "subchannel_refcount");
@@ -644,10 +649,18 @@ Subchannel::Subchannel(SubchannelKey key,
       pollset_set_(grpc_pollset_set_create()),
       connector_(std::move(connector)),
       backoff_(ParseArgsForBackoffValues(args, &min_connect_timeout_)) {
+  // A grpc_init is added here to ensure that grpc_shutdown does not happen
+  // until the subchannel is destroyed. Subchannels can persist longer than
+  // channels because they maybe reused/shared among multiple channels. As a
+  // result the subchannel destruction happens asynchronously to channel
+  // destruction. If the last channel destruction triggers a grpc_shutdown
+  // before the last subchannel destruction, then there maybe race conditions
+  // triggering segmentation faults. To prevent this issue, we call a grpc_init
+  // here and a grpc_shutdown in the subchannel destructor.
+  grpc_init();
   GRPC_STATS_INC_CLIENT_SUBCHANNELS_CREATED();
   GRPC_CLOSURE_INIT(&on_connecting_finished_, OnConnectingFinished, this,
                     grpc_schedule_on_exec_ctx);
-  GRPC_CLOSURE_INIT(&on_retry_timer_, OnRetryTimer, this, nullptr);
   // Check proxy mapper to determine address to connect to and channel
   // args to use.
   address_for_connect_ = key_.address();
@@ -693,6 +706,8 @@ Subchannel::~Subchannel() {
   grpc_channel_args_destroy(args_);
   connector_.reset();
   grpc_pollset_set_destroy(pollset_set_);
+  // grpc_shutdown is called here because grpc_init is called in the ctor.
+  grpc_shutdown();
 }
 
 RefCountedPtr<Subchannel> Subchannel::Create(
@@ -784,10 +799,15 @@ void Subchannel::RequestConnection() {
 }
 
 void Subchannel::ResetBackoff() {
+  // Hold a ref to ensure cancellation and subsequent deletion of the closure
+  // does not eliminate the last ref and destroy the Subchannel before the
+  // method returns.
+  auto self = WeakRef(DEBUG_LOCATION, "ResetBackoff");
   MutexLock lock(&mu_);
   backoff_.Reset();
-  if (state_ == GRPC_CHANNEL_TRANSIENT_FAILURE) {
-    grpc_timer_cancel(&retry_timer_);
+  if (state_ == GRPC_CHANNEL_TRANSIENT_FAILURE &&
+      GetDefaultEventEngine()->Cancel(retry_timer_handle_)) {
+    OnRetryTimerLocked();
   } else if (state_ == GRPC_CHANNEL_CONNECTING) {
     next_attempt_time_ = ExecCtx::Get()->Now();
   }
@@ -872,13 +892,9 @@ void Subchannel::SetConnectivityStateLocked(grpc_connectivity_state state,
   health_watcher_map_.NotifyLocked(state, status);
 }
 
-void Subchannel::OnRetryTimer(void* arg, grpc_error_handle /*error*/) {
-  WeakRefCountedPtr<Subchannel> c(static_cast<Subchannel*>(arg));
-  {
-    MutexLock lock(&c->mu_);
-    c->OnRetryTimerLocked();
-  }
-  c.reset(DEBUG_LOCATION, "RetryTimer");
+void Subchannel::OnRetryTimer() {
+  MutexLock lock(&mu_);
+  OnRetryTimerLocked();
 }
 
 void Subchannel::OnRetryTimerLocked() {
@@ -938,6 +954,8 @@ void Subchannel::OnConnectingFinishedLocked(grpc_error_handle error) {
   if (connecting_result_.transport == nullptr || !PublishTransportLocked()) {
     const Duration time_until_next_attempt =
         next_attempt_time_ - ExecCtx::Get()->Now();
+    auto ee_deadline =
+        absl::Now() + absl::Milliseconds(time_until_next_attempt.millis());
     gpr_log(GPR_INFO,
             "subchannel %p %s: connect failed (%s), backing off for %" PRId64
             " ms",
@@ -945,8 +963,21 @@ void Subchannel::OnConnectingFinishedLocked(grpc_error_handle error) {
             time_until_next_attempt.millis());
     SetConnectivityStateLocked(GRPC_CHANNEL_TRANSIENT_FAILURE,
                                grpc_error_to_absl_status(error));
-    WeakRef(DEBUG_LOCATION, "RetryTimer").release();  // Ref held by callback.
-    grpc_timer_init(&retry_timer_, next_attempt_time_, &on_retry_timer_);
+    retry_timer_handle_ = GetDefaultEventEngine()->RunAt(
+        ee_deadline, [self = WeakRef(DEBUG_LOCATION, "RetryTimer")]() mutable {
+          {
+            ApplicationCallbackExecCtx callback_exec_ctx;
+            ExecCtx exec_ctx;
+            self->OnRetryTimer();
+            // Subchannel deletion might require an active ExecCtx. So if
+            // self.reset() is not called here, the WeakRefCountedPtr destructor
+            // may run after the ExecCtx declared in the callback is destroyed.
+            // Since subchannel may get destroyed when the WeakRefCountedPtr
+            // destructor runs, it may not have an active ExecCtx - thus leading
+            // to crashes.
+            self.reset();
+          }
+        });
   }
   (void)GRPC_ERROR_UNREF(error);
 }
