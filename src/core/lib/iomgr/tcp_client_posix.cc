@@ -348,7 +348,7 @@ static int64_t tcp_connect(grpc_closure* closure, grpc_endpoint** ep,
   return 0;
 }
 
-static bool tcp_cancel_connect(int64_t connection_handle) { return false; }
+static bool tcp_cancel_connect(int64_t /*connection_handle*/) { return false; }
 
 grpc_tcp_client_vtable grpc_posix_tcp_client_vtable = {tcp_connect,
                                                        tcp_cancel_connect};
