@@ -133,7 +133,7 @@ Status EchoTestServiceImpl::ForwardEcho(ServerContext* /*context*/,
     std::string status_msg =
         absl::StrFormat("Protocol %s not supported", scheme);
     gpr_log(GPR_ERROR, "Protocol %s not supported", status_msg.c_str());
-    return Status(StatusCode::UNIMPLEMENTED, std::move(status_msg));
+    return Status(StatusCode::UNIMPLEMENTED, status_msg);
   }
   auto stub = EchoTestService::NewStub(channel);
   auto count = request->count() == 0 ? 1 : request->count();
