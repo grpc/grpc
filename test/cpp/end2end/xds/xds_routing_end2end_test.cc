@@ -515,11 +515,16 @@ TEST_P(LdsRdsTest, ListenerRemoved) {
   // Unset LDS resource.
   balancer_->ads_service()->UnsetResource(kLdsTypeUrl, kServerName);
   // Wait for RPCs to start failing.
-  do {
-  } while (SendRpc(RpcOptions(), nullptr).ok());
-  // Make sure RPCs are still failing.
-  CheckRpcSendFailure(DEBUG_LOCATION,
-                      CheckRpcSendFailureOptions().set_times(1000));
+  SendRpcsUntil(
+      DEBUG_LOCATION,
+      [](const RpcResult& result) {
+        if (result.status.ok()) return true;  // Keep going.
+        EXPECT_EQ(result.status.error_code(), StatusCode::UNAVAILABLE);
+        EXPECT_EQ(result.status.error_message(),
+                  absl::StrCat("empty address list: ", kServerName,
+                               ": xDS listener resource does not exist"));
+        return false;
+      });
   // Make sure we ACK'ed the update.
   auto response_state = balancer_->ads_service()->lds_response_state();
   ASSERT_TRUE(response_state.has_value());
@@ -533,7 +538,13 @@ TEST_P(LdsRdsTest, NoMatchedDomain) {
   route_config.mutable_virtual_hosts(0)->clear_domains();
   route_config.mutable_virtual_hosts(0)->add_domains("unmatched_domain");
   SetRouteConfiguration(balancer_.get(), route_config);
-  CheckRpcSendFailure(DEBUG_LOCATION);
+  CheckRpcSendFailure(
+      DEBUG_LOCATION, StatusCode::UNAVAILABLE,
+      absl::StrCat((GetParam().enable_rds_testing()
+                        ? kDefaultRouteConfigurationName
+                        : kServerName),
+                   ": UNAVAILABLE: could not find VirtualHost for ",
+                   kServerName, " in RouteConfiguration"));
   // Do a bit of polling, to allow the ACK to get to the ADS server.
   channel_->WaitForConnected(grpc_timeout_milliseconds_to_deadline(100));
   auto response_state = RouteConfigurationResponseState(balancer_.get());
@@ -746,9 +757,8 @@ TEST_P(LdsRdsTest, MatchingRouteHasNoRouteAction) {
   route->mutable_match()->set_prefix("");
   route->mutable_route()->set_cluster(kDefaultClusterName);
   SetRouteConfiguration(balancer_.get(), route_config);
-  CheckRpcSendFailure(DEBUG_LOCATION,
-                      CheckRpcSendFailureOptions().set_expected_error_code(
-                          StatusCode::UNAVAILABLE));
+  CheckRpcSendFailure(DEBUG_LOCATION, StatusCode::UNAVAILABLE,
+                      "Matching route has inappropriate action");
 }
 
 TEST_P(LdsRdsTest, RouteActionClusterHasEmptyClusterName) {
@@ -1893,16 +1903,12 @@ TEST_P(LdsRdsTest, XdsRoutingApplyXdsTimeout) {
       t0 + grpc_core::Duration::Seconds(kTimeoutMaxStreamDurationSecond) +
       grpc_core::Duration::Milliseconds(kTimeoutMillis);
   CheckRpcSendFailure(
-      DEBUG_LOCATION,
-      CheckRpcSendFailureOptions()
-          .set_rpc_options(RpcOptions()
-                               .set_rpc_service(SERVICE_ECHO1)
-                               .set_rpc_method(METHOD_ECHO1)
-                               .set_wait_for_ready(true)
-                               .set_timeout_ms(grpc_core::Duration::Seconds(
-                                                   kTimeoutApplicationSecond)
-                                                   .millis()))
-          .set_expected_error_code(StatusCode::DEADLINE_EXCEEDED));
+      DEBUG_LOCATION, StatusCode::DEADLINE_EXCEEDED, "Deadline Exceeded",
+      RpcOptions().set_rpc_service(SERVICE_ECHO1)
+                  .set_rpc_method(METHOD_ECHO1)
+                  .set_wait_for_ready(true)
+                  .set_timeout_ms(grpc_core::Duration::Seconds(
+                                      kTimeoutApplicationSecond).millis()));
   EXPECT_THAT(NowFromCycleCounter(), AdjustedClockInRange(t1, t2));
   // Test max_stream_duration of 2.5 seconds applied
   t0 = NowFromCycleCounter();
@@ -1911,16 +1917,12 @@ TEST_P(LdsRdsTest, XdsRoutingApplyXdsTimeout) {
   t2 = t0 + grpc_core::Duration::Seconds(kTimeoutHttpMaxStreamDurationSecond) +
        grpc_core::Duration::Milliseconds(kTimeoutMillis);
   CheckRpcSendFailure(
-      DEBUG_LOCATION,
-      CheckRpcSendFailureOptions()
-          .set_rpc_options(RpcOptions()
-                               .set_rpc_service(SERVICE_ECHO2)
-                               .set_rpc_method(METHOD_ECHO2)
-                               .set_wait_for_ready(true)
-                               .set_timeout_ms(grpc_core::Duration::Seconds(
-                                                   kTimeoutApplicationSecond)
-                                                   .millis()))
-          .set_expected_error_code(StatusCode::DEADLINE_EXCEEDED));
+      DEBUG_LOCATION, StatusCode::DEADLINE_EXCEEDED, "Deadline Exceeded",
+      RpcOptions().set_rpc_service(SERVICE_ECHO2)
+                  .set_rpc_method(METHOD_ECHO2)
+                  .set_wait_for_ready(true)
+                  .set_timeout_ms(grpc_core::Duration::Seconds(
+                                      kTimeoutApplicationSecond).millis()));
   EXPECT_THAT(NowFromCycleCounter(), AdjustedClockInRange(t1, t2));
   // Test http_stream_duration of 3.5 seconds applied
   t0 = NowFromCycleCounter();
@@ -1929,11 +1931,9 @@ TEST_P(LdsRdsTest, XdsRoutingApplyXdsTimeout) {
   t2 = t0 + grpc_core::Duration::Seconds(kTimeoutApplicationSecond) +
        grpc_core::Duration::Milliseconds(kTimeoutMillis);
   CheckRpcSendFailure(
-      DEBUG_LOCATION,
-      CheckRpcSendFailureOptions()
-          .set_rpc_options(RpcOptions().set_wait_for_ready(true).set_timeout_ms(
-              grpc_core::Duration::Seconds(kTimeoutApplicationSecond).millis()))
-          .set_expected_error_code(StatusCode::DEADLINE_EXCEEDED));
+      DEBUG_LOCATION, StatusCode::DEADLINE_EXCEEDED, "Deadline Exceeded",
+      RpcOptions().set_wait_for_ready(true).set_timeout_ms(
+          grpc_core::Duration::Seconds(kTimeoutApplicationSecond).millis()));
   EXPECT_THAT(NowFromCycleCounter(), AdjustedClockInRange(t1, t2));
 }
 
@@ -2008,15 +2008,12 @@ TEST_P(LdsRdsTest, XdsRoutingApplyApplicationTimeoutWhenXdsTimeoutExplicit0) {
   // Test application timeout is applied for route 1
   auto t0 = system_clock::now();
   CheckRpcSendFailure(
-      DEBUG_LOCATION,
-      CheckRpcSendFailureOptions()
-          .set_rpc_options(
+      DEBUG_LOCATION, StatusCode::DEADLINE_EXCEEDED, "Deadline Exceeded",
               RpcOptions()
                   .set_rpc_service(SERVICE_ECHO1)
                   .set_rpc_method(METHOD_ECHO1)
                   .set_wait_for_ready(true)
-                  .set_timeout_ms(kTimeoutApplicationSecond * 1000))
-          .set_expected_error_code(StatusCode::DEADLINE_EXCEEDED));
+                  .set_timeout_ms(kTimeoutApplicationSecond * 1000));
   auto ellapsed_nano_seconds =
       std::chrono::duration_cast<std::chrono::nanoseconds>(system_clock::now() -
                                                            t0);
@@ -2025,15 +2022,12 @@ TEST_P(LdsRdsTest, XdsRoutingApplyApplicationTimeoutWhenXdsTimeoutExplicit0) {
   // Test application timeout is applied for route 2
   t0 = system_clock::now();
   CheckRpcSendFailure(
-      DEBUG_LOCATION,
-      CheckRpcSendFailureOptions()
-          .set_rpc_options(
+      DEBUG_LOCATION, StatusCode::DEADLINE_EXCEEDED, "Deadline Exceeded",
               RpcOptions()
                   .set_rpc_service(SERVICE_ECHO2)
                   .set_rpc_method(METHOD_ECHO2)
                   .set_wait_for_ready(true)
-                  .set_timeout_ms(kTimeoutApplicationSecond * 1000))
-          .set_expected_error_code(StatusCode::DEADLINE_EXCEEDED));
+                  .set_timeout_ms(kTimeoutApplicationSecond * 1000));
   ellapsed_nano_seconds = std::chrono::duration_cast<std::chrono::nanoseconds>(
       system_clock::now() - t0);
   EXPECT_GT(ellapsed_nano_seconds.count(),
@@ -2063,11 +2057,9 @@ TEST_P(LdsRdsTest, XdsRoutingApplyApplicationTimeoutWhenHttpTimeoutExplicit0) {
   // Test application timeout is applied for route 1
   auto t0 = system_clock::now();
   CheckRpcSendFailure(
-      DEBUG_LOCATION,
-      CheckRpcSendFailureOptions()
-          .set_rpc_options(RpcOptions().set_wait_for_ready(true).set_timeout_ms(
-              grpc_core::Duration::Seconds(kTimeoutApplicationSecond).millis()))
-          .set_expected_error_code(StatusCode::DEADLINE_EXCEEDED));
+      DEBUG_LOCATION, StatusCode::DEADLINE_EXCEEDED, "Deadline Exceeded",
+          RpcOptions().set_wait_for_ready(true).set_timeout_ms(
+              grpc_core::Duration::Seconds(kTimeoutApplicationSecond).millis()));
   auto ellapsed_nano_seconds =
       std::chrono::duration_cast<std::chrono::nanoseconds>(system_clock::now() -
                                                            t0);
@@ -2084,11 +2076,9 @@ TEST_P(LdsRdsTest, XdsRoutingWithOnlyApplicationTimeout) {
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
   auto t0 = system_clock::now();
   CheckRpcSendFailure(
-      DEBUG_LOCATION,
-      CheckRpcSendFailureOptions()
-          .set_rpc_options(RpcOptions().set_wait_for_ready(true).set_timeout_ms(
-              grpc_core::Duration::Seconds(kTimeoutApplicationSecond).millis()))
-          .set_expected_error_code(StatusCode::DEADLINE_EXCEEDED));
+      DEBUG_LOCATION, StatusCode::DEADLINE_EXCEEDED, "Deadline Exceeded",
+          RpcOptions().set_wait_for_ready(true).set_timeout_ms(
+              grpc_core::Duration::Seconds(kTimeoutApplicationSecond).millis()));
   auto ellapsed_nano_seconds =
       std::chrono::duration_cast<std::chrono::nanoseconds>(system_clock::now() -
                                                            t0);
@@ -2115,52 +2105,37 @@ TEST_P(LdsRdsTest, XdsRetryPolicyNumRetries) {
   SetRouteConfiguration(balancer_.get(), new_route_config);
   // Ensure we retried the correct number of times on all supported status.
   CheckRpcSendFailure(
-      DEBUG_LOCATION,
-      CheckRpcSendFailureOptions()
-          .set_rpc_options(
-              RpcOptions().set_server_expected_error(StatusCode::CANCELLED))
-          .set_expected_error_code(StatusCode::CANCELLED));
+      DEBUG_LOCATION, StatusCode::CANCELLED, "",
+              RpcOptions().set_server_expected_error(StatusCode::CANCELLED));
   EXPECT_EQ(kNumRetries + 1, backends_[0]->backend_service()->request_count());
   ResetBackendCounters();
   CheckRpcSendFailure(
-      DEBUG_LOCATION,
-      CheckRpcSendFailureOptions()
-          .set_rpc_options(RpcOptions().set_server_expected_error(
-              StatusCode::DEADLINE_EXCEEDED))
-          .set_expected_error_code(StatusCode::DEADLINE_EXCEEDED));
+      DEBUG_LOCATION, StatusCode::DEADLINE_EXCEEDED, "",
+          RpcOptions().set_server_expected_error(
+              StatusCode::DEADLINE_EXCEEDED));
   EXPECT_EQ(kNumRetries + 1, backends_[0]->backend_service()->request_count());
   ResetBackendCounters();
   CheckRpcSendFailure(
-      DEBUG_LOCATION,
-      CheckRpcSendFailureOptions()
-          .set_rpc_options(
-              RpcOptions().set_server_expected_error(StatusCode::INTERNAL))
-          .set_expected_error_code(StatusCode::INTERNAL));
+      DEBUG_LOCATION, StatusCode::INTERNAL, "",
+              RpcOptions().set_server_expected_error(StatusCode::INTERNAL));
   EXPECT_EQ(kNumRetries + 1, backends_[0]->backend_service()->request_count());
   ResetBackendCounters();
   CheckRpcSendFailure(
-      DEBUG_LOCATION,
-      CheckRpcSendFailureOptions()
-          .set_rpc_options(RpcOptions().set_server_expected_error(
-              StatusCode::RESOURCE_EXHAUSTED))
-          .set_expected_error_code(StatusCode::RESOURCE_EXHAUSTED));
+      DEBUG_LOCATION, StatusCode::RESOURCE_EXHAUSTED, "",
+          RpcOptions().set_server_expected_error(
+              StatusCode::RESOURCE_EXHAUSTED));
   EXPECT_EQ(kNumRetries + 1, backends_[0]->backend_service()->request_count());
   ResetBackendCounters();
   CheckRpcSendFailure(
-      DEBUG_LOCATION,
-      CheckRpcSendFailureOptions()
-          .set_rpc_options(
-              RpcOptions().set_server_expected_error(StatusCode::UNAVAILABLE))
-          .set_expected_error_code(StatusCode::UNAVAILABLE));
+      DEBUG_LOCATION, StatusCode::UNAVAILABLE, "",
+              RpcOptions().set_server_expected_error(StatusCode::UNAVAILABLE));
   EXPECT_EQ(kNumRetries + 1, backends_[0]->backend_service()->request_count());
   ResetBackendCounters();
   // Ensure we don't retry on an unsupported status.
   CheckRpcSendFailure(
-      DEBUG_LOCATION,
-      CheckRpcSendFailureOptions()
-          .set_rpc_options(RpcOptions().set_server_expected_error(
-              StatusCode::UNAUTHENTICATED))
-          .set_expected_error_code(StatusCode::UNAUTHENTICATED));
+      DEBUG_LOCATION, StatusCode::UNAUTHENTICATED, "",
+          RpcOptions().set_server_expected_error(
+              StatusCode::UNAUTHENTICATED));
   EXPECT_EQ(1, backends_[0]->backend_service()->request_count());
 }
 
@@ -2182,11 +2157,9 @@ TEST_P(LdsRdsTest, XdsRetryPolicyAtVirtualHostLevel) {
   SetRouteConfiguration(balancer_.get(), new_route_config);
   // Ensure we retried the correct number of times on a supported status.
   CheckRpcSendFailure(
-      DEBUG_LOCATION,
-      CheckRpcSendFailureOptions()
-          .set_rpc_options(RpcOptions().set_server_expected_error(
-              StatusCode::DEADLINE_EXCEEDED))
-          .set_expected_error_code(StatusCode::DEADLINE_EXCEEDED));
+      DEBUG_LOCATION, StatusCode::DEADLINE_EXCEEDED, "",
+          RpcOptions().set_server_expected_error(
+              StatusCode::DEADLINE_EXCEEDED));
   EXPECT_EQ(kNumRetries + 1, backends_[0]->backend_service()->request_count());
 }
 
@@ -2217,12 +2190,9 @@ TEST_P(LdsRdsTest, XdsRetryPolicyLongBackOff) {
   // No need to set max interval and just let it be the default of 10x of base.
   // We expect 1 retry before the RPC times out with DEADLINE_EXCEEDED.
   CheckRpcSendFailure(
-      DEBUG_LOCATION,
-      CheckRpcSendFailureOptions()
-          .set_rpc_options(
+      DEBUG_LOCATION, StatusCode::DEADLINE_EXCEEDED, "Deadline Exceeded",
               RpcOptions().set_timeout_ms(2500).set_server_expected_error(
-                  StatusCode::CANCELLED))
-          .set_expected_error_code(StatusCode::DEADLINE_EXCEEDED));
+                  StatusCode::CANCELLED));
   EXPECT_EQ(1 + 1, backends_[0]->backend_service()->request_count());
 }
 
@@ -2260,12 +2230,9 @@ TEST_P(LdsRdsTest, XdsRetryPolicyMaxBackOff) {
   SetRouteConfiguration(balancer_.get(), new_route_config);
   // We expect 2 retry before the RPC times out with DEADLINE_EXCEEDED.
   CheckRpcSendFailure(
-      DEBUG_LOCATION,
-      CheckRpcSendFailureOptions()
-          .set_rpc_options(
+      DEBUG_LOCATION, StatusCode::DEADLINE_EXCEEDED, "Deadline Exceeded",
               RpcOptions().set_timeout_ms(2500).set_server_expected_error(
-                  StatusCode::CANCELLED))
-          .set_expected_error_code(StatusCode::DEADLINE_EXCEEDED));
+                  StatusCode::CANCELLED));
   EXPECT_EQ(2 + 1, backends_[0]->backend_service()->request_count());
 }
 
@@ -2286,11 +2253,9 @@ TEST_P(LdsRdsTest, XdsRetryPolicyUnsupportedStatusCode) {
   SetRouteConfiguration(balancer_.get(), new_route_config);
   // We expect no retry.
   CheckRpcSendFailure(
-      DEBUG_LOCATION,
-      CheckRpcSendFailureOptions()
-          .set_rpc_options(RpcOptions().set_server_expected_error(
-              StatusCode::DEADLINE_EXCEEDED))
-          .set_expected_error_code(StatusCode::DEADLINE_EXCEEDED));
+      DEBUG_LOCATION, StatusCode::DEADLINE_EXCEEDED, "",
+          RpcOptions().set_server_expected_error(
+              StatusCode::DEADLINE_EXCEEDED));
   EXPECT_EQ(1, backends_[0]->backend_service()->request_count());
 }
 
@@ -2319,11 +2284,9 @@ TEST_P(LdsRdsTest,
   SetRouteConfiguration(balancer_.get(), new_route_config);
   // We expect no retry.
   CheckRpcSendFailure(
-      DEBUG_LOCATION,
-      CheckRpcSendFailureOptions()
-          .set_rpc_options(RpcOptions().set_server_expected_error(
-              StatusCode::DEADLINE_EXCEEDED))
-          .set_expected_error_code(StatusCode::DEADLINE_EXCEEDED));
+      DEBUG_LOCATION, StatusCode::DEADLINE_EXCEEDED, "",
+          RpcOptions().set_server_expected_error(
+              StatusCode::DEADLINE_EXCEEDED));
   EXPECT_EQ(1, backends_[0]->backend_service()->request_count());
 }
 
