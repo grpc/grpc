@@ -882,22 +882,6 @@ void XdsEnd2endTest::CheckRpcSendFailure(
       << debug_location.file() << ":" << debug_location.line();
 }
 
-void XdsEnd2endTest::CheckRpcSendFailure(
-    const grpc_core::DebugLocation& debug_location,
-    const CheckRpcSendFailureOptions& options) {
-  for (size_t i = 0; options.continue_predicate(i); ++i) {
-    const Status status = SendRpc(options.rpc_options);
-    EXPECT_FALSE(status.ok())
-        << " at " << debug_location.file() << ":" << debug_location.line();
-    if (options.expected_error_code != StatusCode::OK) {
-      EXPECT_EQ(options.expected_error_code, status.error_code())
-          << "code=" << status.error_code()
-          << " message=" << status.error_message() << " at "
-          << debug_location.file() << ":" << debug_location.line();
-    }
-  }
-}
-
 size_t XdsEnd2endTest::SendRpcsAndCountFailuresWithMessage(
     const grpc_core::DebugLocation& debug_location, size_t num_rpcs,
     const char* drop_error_message_prefix, const RpcOptions& rpc_options) {

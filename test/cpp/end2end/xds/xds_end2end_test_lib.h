@@ -825,44 +825,6 @@ class XdsEnd2endTest : public ::testing::TestWithParam<XdsTestType> {
                            const RpcOptions& rpc_options = RpcOptions());
 
 // FIXME: remove
-  // DEPRECATED -- USE THE ABOVE VARIANT INSTEAD.
-  // TODO(roth): Change all existing callers to use the above variant
-  // instead and then remove this.
-  struct CheckRpcSendFailureOptions {
-    std::function<bool(size_t)> continue_predicate = [](size_t i) {
-      return i < 1;
-    };
-    RpcOptions rpc_options;
-    StatusCode expected_error_code = StatusCode::OK;
-
-    CheckRpcSendFailureOptions() {}
-
-    CheckRpcSendFailureOptions& set_times(size_t times) {
-      continue_predicate = [times](size_t i) { return i < times; };
-      return *this;
-    }
-
-    CheckRpcSendFailureOptions& set_continue_predicate(
-        std::function<bool(size_t)> pred) {
-      continue_predicate = std::move(pred);
-      return *this;
-    }
-
-    CheckRpcSendFailureOptions& set_rpc_options(const RpcOptions& options) {
-      rpc_options = options;
-      return *this;
-    }
-
-    CheckRpcSendFailureOptions& set_expected_error_code(StatusCode code) {
-      expected_error_code = code;
-      return *this;
-    }
-  };
-  void CheckRpcSendFailure(
-      const grpc_core::DebugLocation& debug_location,
-      const CheckRpcSendFailureOptions& options = CheckRpcSendFailureOptions());
-
-// FIXME: remove
   // Sends num_rpcs RPCs, counting how many of them fail with a message
   // matching the specfied drop_error_message_prefix.
   // Any failure with a non-matching message is a test failure.
