@@ -164,7 +164,7 @@ TEST_P(FaultInjectionTest, XdsFaultInjectionPercentageAbort) {
   SetFilterConfig(http_fault);
   // Send kNumRpcs RPCs and count the aborts.
   size_t num_aborted = SendRpcsAndCountFailuresWithMessage(
-      DEBUG_LOCATION, kNumRpcs, "Fault injected");
+      DEBUG_LOCATION, kNumRpcs, StatusCode::ABORTED, "Fault injected");
   // The abort rate should be roughly equal to the expectation.
   const double seen_abort_rate = static_cast<double>(num_aborted) / kNumRpcs;
   EXPECT_THAT(seen_abort_rate,
@@ -194,7 +194,7 @@ TEST_P(FaultInjectionTest, XdsFaultInjectionPercentageAbortViaHeaders) {
       {"x-envoy-fault-abort-percentage", std::to_string(kAbortPercentage)},
   };
   size_t num_aborted = SendRpcsAndCountFailuresWithMessage(
-      DEBUG_LOCATION, kNumRpcs, "Fault injected",
+      DEBUG_LOCATION, kNumRpcs, StatusCode::ABORTED, "Fault injected",
       RpcOptions().set_metadata(metadata));
   // The abort rate should be roughly equal to the expectation.
   const double seen_abort_rate = static_cast<double>(num_aborted) / kNumRpcs;

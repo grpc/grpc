@@ -39,6 +39,7 @@ using ClientStats = LrsServiceImpl::ClientStats;
 
 constexpr char kLbDropType[] = "lb";
 constexpr char kThrottleDropType[] = "throttle";
+constexpr char kStatusMessageDropPrefix[] = "EDS-configured drop: ";
 
 //
 // CDS tests
@@ -843,7 +844,8 @@ TEST_P(EdsTest, Drops) {
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
   // Send kNumRpcs RPCs and count the drops.
   size_t num_drops = SendRpcsAndCountFailuresWithMessage(
-      DEBUG_LOCATION, kNumRpcs, "EDS-configured drop: ");
+      DEBUG_LOCATION, kNumRpcs, StatusCode::UNAVAILABLE,
+      kStatusMessageDropPrefix);
   // The drop rate should be roughly equal to the expectation.
   const double seen_drop_rate = static_cast<double>(num_drops) / kNumRpcs;
   EXPECT_THAT(seen_drop_rate, ::testing::DoubleNear(kDropRateForLbAndThrottle,
@@ -864,7 +866,8 @@ TEST_P(EdsTest, DropPerHundred) {
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
   // Send kNumRpcs RPCs and count the drops.
   size_t num_drops = SendRpcsAndCountFailuresWithMessage(
-      DEBUG_LOCATION, kNumRpcs, "EDS-configured drop: ");
+      DEBUG_LOCATION, kNumRpcs, StatusCode::UNAVAILABLE,
+      kStatusMessageDropPrefix);
   // The drop rate should be roughly equal to the expectation.
   const double seen_drop_rate = static_cast<double>(num_drops) / kNumRpcs;
   EXPECT_THAT(seen_drop_rate,
@@ -885,7 +888,8 @@ TEST_P(EdsTest, DropPerTenThousand) {
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
   // Send kNumRpcs RPCs and count the drops.
   size_t num_drops = SendRpcsAndCountFailuresWithMessage(
-      DEBUG_LOCATION, kNumRpcs, "EDS-configured drop: ");
+      DEBUG_LOCATION, kNumRpcs, StatusCode::UNAVAILABLE,
+      kStatusMessageDropPrefix);
   // The drop rate should be roughly equal to the expectation.
   const double seen_drop_rate = static_cast<double>(num_drops) / kNumRpcs;
   EXPECT_THAT(seen_drop_rate,
@@ -913,7 +917,8 @@ TEST_P(EdsTest, DropConfigUpdate) {
   // Send kNumRpcsLbOnly RPCs and count the drops.
   gpr_log(GPR_INFO, "========= BEFORE FIRST BATCH ==========");
   size_t num_drops = SendRpcsAndCountFailuresWithMessage(
-      DEBUG_LOCATION, kNumRpcsLbOnly, "EDS-configured drop: ");
+      DEBUG_LOCATION, kNumRpcsLbOnly, StatusCode::UNAVAILABLE,
+      kStatusMessageDropPrefix);
   gpr_log(GPR_INFO, "========= DONE WITH FIRST BATCH ==========");
   // The drop rate should be roughly equal to the expectation.
   double seen_drop_rate = static_cast<double>(num_drops) / kNumRpcsLbOnly;
@@ -930,24 +935,27 @@ TEST_P(EdsTest, DropConfigUpdate) {
   const double kDropRateThreshold =
       (kDropRateForLb + kDropRateForLbAndThrottle) / 2;
   size_t num_rpcs = kNumRpcsBoth;
-  while (seen_drop_rate < kDropRateThreshold) {
-    EchoResponse response;
-    const Status status = SendRpc(RpcOptions(), &response);
-    ++num_rpcs;
-    if (!status.ok() &&
-        absl::StartsWith(status.error_message(), "EDS-configured drop: ")) {
-      ++num_drops;
-    } else {
-      EXPECT_TRUE(status.ok()) << "code=" << status.error_code()
-                               << " message=" << status.error_message();
-      EXPECT_EQ(response.message(), kRequestMessage);
-    }
-    seen_drop_rate = static_cast<double>(num_drops) / num_rpcs;
-  }
+  SendRpcsUntil(
+      DEBUG_LOCATION,
+      [&](const RpcResult& result) {
+        ++num_rpcs;
+        if (result.status.ok()) {
+          EXPECT_EQ(result.response.message(), kRequestMessage);
+        } else {
+          EXPECT_EQ(result.status.error_code(), StatusCode::UNAVAILABLE);
+          EXPECT_THAT(result.status.error_message(),
+                      ::testing::StartsWith(kStatusMessageDropPrefix));
+          ++num_drops;
+        }
+        seen_drop_rate = static_cast<double>(num_drops) / num_rpcs;
+        return seen_drop_rate < kDropRateThreshold;
+      },
+      /*timeout_ms=*/20000);
   // Send kNumRpcsBoth RPCs and count the drops.
   gpr_log(GPR_INFO, "========= BEFORE SECOND BATCH ==========");
   num_drops = SendRpcsAndCountFailuresWithMessage(DEBUG_LOCATION, kNumRpcsBoth,
-                                                  "EDS-configured drop: ");
+                                                  StatusCode::UNAVAILABLE,
+                                                  kStatusMessageDropPrefix);
   gpr_log(GPR_INFO, "========= DONE WITH SECOND BATCH ==========");
   // The new drop rate should be roughly equal to the expectation.
   seen_drop_rate = static_cast<double>(num_drops) / kNumRpcsBoth;
@@ -968,7 +976,8 @@ TEST_P(EdsTest, DropAll) {
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
   // Send kNumRpcs RPCs and all of them are dropped.
   size_t num_drops = SendRpcsAndCountFailuresWithMessage(
-      DEBUG_LOCATION, kNumRpcs, "EDS-configured drop: ");
+      DEBUG_LOCATION, kNumRpcs, StatusCode::UNAVAILABLE,
+      kStatusMessageDropPrefix);
   EXPECT_EQ(num_drops, kNumRpcs);
 }
 
@@ -1562,7 +1571,6 @@ TEST_P(ClientLoadReportingTest, DropStats) {
       kDropRateForLb + (1 - kDropRateForLb) * kDropRateForThrottle;
   const size_t kNumRpcs =
       ComputeIdealNumRpcs(kDropRateForLbAndThrottle, kErrorTolerance);
-  const char kStatusMessageDropPrefix[] = "EDS-configured drop: ";
   // The ADS response contains two drop categories.
   EdsResourceArgs args({{"locality0", CreateEndpointsForBackends()}});
   args.drop_categories = {{kLbDropType, kDropPerMillionForLb},
@@ -1570,7 +1578,8 @@ TEST_P(ClientLoadReportingTest, DropStats) {
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
   // Send kNumRpcs RPCs and count the drops.
   size_t num_drops = SendRpcsAndCountFailuresWithMessage(
-      DEBUG_LOCATION, kNumRpcs, kStatusMessageDropPrefix);
+      DEBUG_LOCATION, kNumRpcs, StatusCode::UNAVAILABLE,
+      kStatusMessageDropPrefix);
   // The drop rate should be roughly equal to the expectation.
   const double seen_drop_rate = static_cast<double>(num_drops) / kNumRpcs;
   EXPECT_THAT(seen_drop_rate, ::testing::DoubleNear(kDropRateForLbAndThrottle,

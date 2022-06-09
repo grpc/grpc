@@ -824,13 +824,12 @@ class XdsEnd2endTest : public ::testing::TestWithParam<XdsTestType> {
                            absl::string_view expected_message_regex,
                            const RpcOptions& rpc_options = RpcOptions());
 
-// FIXME: remove
   // Sends num_rpcs RPCs, counting how many of them fail with a message
-  // matching the specfied drop_error_message_prefix.
-  // Any failure with a non-matching message is a test failure.
+  // matching the specfied expected_message_prefix.
+  // Any failure with a non-matching status or message is a test failure.
   size_t SendRpcsAndCountFailuresWithMessage(
       const grpc_core::DebugLocation& debug_location, size_t num_rpcs,
-      const char* drop_error_message_prefix,
+      StatusCode expected_status, absl::string_view expected_message_prefix,
       const RpcOptions& rpc_options = RpcOptions());
 
   // A class for running a long-running RPC in its own thread.

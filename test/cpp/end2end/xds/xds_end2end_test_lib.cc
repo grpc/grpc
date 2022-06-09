@@ -884,19 +884,23 @@ void XdsEnd2endTest::CheckRpcSendFailure(
 
 size_t XdsEnd2endTest::SendRpcsAndCountFailuresWithMessage(
     const grpc_core::DebugLocation& debug_location, size_t num_rpcs,
-    const char* drop_error_message_prefix, const RpcOptions& rpc_options) {
+    StatusCode expected_status, absl::string_view expected_message_prefix,
+    const RpcOptions& rpc_options) {
   size_t num_failed = 0;
-  for (size_t i = 0; i < num_rpcs; ++i) {
-    Status status = SendRpc(rpc_options);
-    if (!status.ok()) {
-      EXPECT_THAT(status.error_message(),
-                  ::testing::StartsWith(drop_error_message_prefix))
-          << "code=" << status.error_code()
-          << " message=" << status.error_message() << " at "
-          << debug_location.file() << ":" << debug_location.line();
-      ++num_failed;
-    }
-  }
+  SendRpcsUntil(
+      debug_location,
+      [&, n = size_t(0)](const RpcResult& result) mutable {
+        if (!result.status.ok()) {
+          EXPECT_EQ(result.status.error_code(), expected_status)
+              << debug_location.file() << ":" << debug_location.line();
+          EXPECT_THAT(result.status.error_message(),
+                      ::testing::StartsWith(expected_message_prefix))
+              << debug_location.file() << ":" << debug_location.line();
+          ++num_failed;
+        }
+        return ++n < num_rpcs;
+      },
+      /*timeout_ms=*/0, rpc_options);
   return num_failed;
 }
 
