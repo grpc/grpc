@@ -201,7 +201,11 @@ static int64_t CFStreamClientConnect(grpc_closure* closure, grpc_endpoint** ep,
   return 0;
 }
 
-grpc_tcp_client_vtable grpc_cfstream_client_vtable = {CFStreamClientConnect,
-                                                      nullptr};
+static bool CFStreamClientCancelConnect(int64_t /*connection_handle*/) {
+  return false;
+}
+
+grpc_tcp_client_vtable grpc_cfstream_client_vtable = {
+    CFStreamClientConnect, CFStreamClientCancelConnect};
 
 #endif /* GRPC_CFSTREAM_CLIENT */

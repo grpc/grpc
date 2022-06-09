@@ -235,6 +235,9 @@ failure:
   return 0;
 }
 
-grpc_tcp_client_vtable grpc_windows_tcp_client_vtable = {tcp_connect, nullptr};
+static bool tcp_cancel_connect(int64_t /*connection_handle*/) { return false; }
+
+grpc_tcp_client_vtable grpc_windows_tcp_client_vtable = {tcp_connect,
+                                                         tcp_cancel_connect};
 
 #endif /* GRPC_WINSOCK_SOCKET */
