@@ -54,7 +54,15 @@ int64_t TcpConnectWithDelay(grpc_closure* closure, grpc_endpoint** ep,
   return 0;
 }
 
-grpc_tcp_client_vtable kDelayedConnectVTable = {TcpConnectWithDelay, nullptr};
+// TODO(vigneshbabu): This method should check whether the connect attempt has
+// actually been started, and if so, it should call
+// g_original_vtable->cancel_connect(). If the attempt has not actually been
+// started, it should mark the connect request as cancelled, so that when the
+// request is resumed, it will not actually proceed.
+static bool TcpConnectCancel(int64_t /*connection_handle*/) { return false; }
+
+grpc_tcp_client_vtable kDelayedConnectVTable = {TcpConnectWithDelay,
+                                                TcpConnectCancel};
 
 }  // namespace
 

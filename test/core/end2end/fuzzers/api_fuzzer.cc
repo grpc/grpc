@@ -267,8 +267,12 @@ static int64_t my_tcp_client_connect(grpc_closure* closure, grpc_endpoint** ep,
   return 0;
 }
 
+static bool my_tcp_cancel_connect(int64_t /*connection_handle*/) {
+  return false;
+}
+
 grpc_tcp_client_vtable fuzz_tcp_client_vtable = {my_tcp_client_connect,
-                                                 nullptr};
+                                                 my_tcp_cancel_connect};
 
 ////////////////////////////////////////////////////////////////////////////////
 // test driver
