@@ -395,20 +395,20 @@ INSTANTIATE_TEST_SUITE_P(
 
 TEST_P(TimeoutTest, LdsServerIgnoresRequest) {
   balancer_->ads_service()->IgnoreResourceType(kLdsTypeUrl);
-  CheckRpcSendFailure(DEBUG_LOCATION, StatusCode::UNAVAILABLE,
-                      // TODO(roth): Improve this error as part of
-                      // https://github.com/grpc/grpc/issues/22883.
-                      "empty address list: ",
-                      RpcOptions().set_timeout_ms(4000));
+  CheckRpcSendFailure(
+      DEBUG_LOCATION, StatusCode::UNAVAILABLE,
+      // TODO(roth): Improve this error as part of
+      // https://github.com/grpc/grpc/issues/22883.
+      "empty address list: ", RpcOptions().set_timeout_ms(4000));
 }
 
 TEST_P(TimeoutTest, LdsResourceNotPresentInRequest) {
   balancer_->ads_service()->UnsetResource(kLdsTypeUrl, kServerName);
-  CheckRpcSendFailure(DEBUG_LOCATION, StatusCode::UNAVAILABLE,
-                      // TODO(roth): Improve this error as part of
-                      // https://github.com/grpc/grpc/issues/22883.
-                      "empty address list: ",
-                      RpcOptions().set_timeout_ms(4000));
+  CheckRpcSendFailure(
+      DEBUG_LOCATION, StatusCode::UNAVAILABLE,
+      // TODO(roth): Improve this error as part of
+      // https://github.com/grpc/grpc/issues/22883.
+      "empty address list: ", RpcOptions().set_timeout_ms(4000));
 }
 
 TEST_P(TimeoutTest, LdsSecondResourceNotPresentInRequest) {
@@ -445,8 +445,7 @@ TEST_P(TimeoutTest, RdsServerIgnoresRequest) {
       DEBUG_LOCATION, StatusCode::UNAVAILABLE,
       // TODO(roth): Improve this error as part of
       // https://github.com/grpc/grpc/issues/22883.
-      "empty address list: ",
-      RpcOptions().set_timeout_ms(4000));
+      "empty address list: ", RpcOptions().set_timeout_ms(4000));
 }
 
 TEST_P(TimeoutTest, RdsResourceNotPresentInRequest) {
@@ -456,8 +455,7 @@ TEST_P(TimeoutTest, RdsResourceNotPresentInRequest) {
       DEBUG_LOCATION, StatusCode::UNAVAILABLE,
       // TODO(roth): Improve this error as part of
       // https://github.com/grpc/grpc/issues/22883.
-      "empty address list: ",
-      RpcOptions().set_timeout_ms(4000));
+      "empty address list: ", RpcOptions().set_timeout_ms(4000));
 }
 
 TEST_P(TimeoutTest, RdsSecondResourceNotPresentInRequest) {
