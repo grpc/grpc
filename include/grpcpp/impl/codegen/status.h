@@ -92,17 +92,16 @@ class GRPC_MUST_USE_RESULT_WHEN_USE_STRICT_WARNING Status {
 
   /// Construct an instance with associated \a code and \a error_message.
   /// It is an error to construct an OK status with non-empty \a error_message.
-  Status(StatusCode code, const std::string& error_message)
-      : code_(code), error_message_(error_message) {}
+  Status(StatusCode code, std::string error_message)
+      : code_(code), error_message_(std::move(error_message)) {}
 
   /// Construct an instance with \a code,  \a error_message and
   /// \a error_details. It is an error to construct an OK status with non-empty
   /// \a error_message and/or \a error_details.
-  Status(StatusCode code, const std::string& error_message,
-         const std::string& error_details)
+  Status(StatusCode code, std::string error_message, std::string error_details)
       : code_(code),
-        error_message_(error_message),
-        binary_error_details_(error_details) {}
+        error_message_(std::move(error_message)),
+        binary_error_details_(std::move(error_details)) {}
 
   // Pre-defined special status objects.
   /// An OK pre-defined instance.
