@@ -69,11 +69,17 @@ build_interop_server/bazel_wrapper \
   -- \
   //test/cpp/interop:interop_server
 
+# Start port server and allocate ports to run interop_server
+python3 tools/run_tests/start_port_server.py
+
+PLAIN_PORT=$(curl localhost:32766/get)
+TLS_PORT=$(curl localhost:32766/get)
+
 INTEROP_SERVER_BINARY=bazel-bin/test/cpp/interop/interop_server
 # run the interop server on the background. The port numbers must match TestConfigs in BUILD.
 # TODO(jtattermusch): can we make the ports configurable (but avoid breaking bazel build cache at the same time?)
-"${INTEROP_SERVER_BINARY}" --port=5050 --max_send_message_size=8388608 &
-"${INTEROP_SERVER_BINARY}" --port=5051 --max_send_message_size=8388608 --use_tls &
+"${INTEROP_SERVER_BINARY}" --port=$PLAIN_PORT --max_send_message_size=8388608 &
+"${INTEROP_SERVER_BINARY}" --port=$TLS_PORT --max_send_message_size=8388608 --use_tls &
 # make sure the interop_server processes we started on the background are killed upon exit.
 trap 'echo "KILLING interop_server binaries running on the background"; kill -9 $(jobs -p)' EXIT
 # === END SECTION: run interop_server on the background ====
@@ -90,6 +96,8 @@ objc_bazel_tests/bazel_wrapper \
   --google_credentials="${KOKORO_GFILE_DIR}/GrpcTesting-d0eeee2db331.json" \
   "${BAZEL_REMOTE_CACHE_ARGS[@]}" \
   $BAZEL_FLAGS \
+  --test_env HOST_PORT_LOCAL=localhost:$PLAIN_PORT \
+  --test_env HOST_PORT_LOCALSSL=localhost:$TLS_PORT \
   -- \
   "${EXAMPLE_TARGETS[@]}" \
   "${TEST_TARGETS[@]}"
