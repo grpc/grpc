@@ -687,7 +687,8 @@ _TEST_CASES = [
     'custom_metadata', 'status_code_and_message', 'unimplemented_method',
     'client_compressed_unary', 'server_compressed_unary',
     'client_compressed_streaming', 'server_compressed_streaming',
-    'unimplemented_service', 'special_status_message', 'orca_per_rpc', 'orca_oob'
+    'unimplemented_service', 'special_status_message', 'orca_per_rpc',
+    'orca_oob'
 ]
 
 _AUTH_TEST_CASES = [
@@ -699,9 +700,7 @@ _AUTH_TEST_CASES = [
     _COMPUTE_ENGINE_CHANNEL_CREDS_TEST_CASE,
 ]
 
-_HTTP2_TEST_CASES = [
-  'tls', 'framing'
-]
+_HTTP2_TEST_CASES = ['tls', 'framing']
 
 _HTTP2_SERVER_TEST_CASES = [
     'rst_after_header', 'rst_after_data', 'rst_during_data', 'goaway', 'ping',
@@ -1533,7 +1532,8 @@ try:
                             docker_image=docker_images.get(str(language)),
                             transport_security=args.transport_security,
                             manual_cmd_log=client_manual_cmd_log)
-                        if test_case in _SERIALIZING_TEST_CASES and len(jobs_sets[-1]) > 0:
+                        if test_case in _SERIALIZING_TEST_CASES and len(
+                                jobs_sets[-1]) > 0:
                             jobs_sets.append([])
                         jobs_sets[-1].append(test_job)
 
