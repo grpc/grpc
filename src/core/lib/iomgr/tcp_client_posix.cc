@@ -411,6 +411,9 @@ static int64_t tcp_connect(grpc_closure* closure, grpc_endpoint** ep,
 }
 
 static bool tcp_cancel_connect(int64_t connection_handle) {
+  if (connection_handle <= 0) {
+    return false;
+  }
   int shard_number = connection_handle % g_pending_connection_shards;
   async_connect* ac = nullptr;
   {
