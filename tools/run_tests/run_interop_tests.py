@@ -1535,7 +1535,7 @@ try:
                             docker_image=docker_images.get(str(language)),
                             transport_security=args.transport_security,
                             manual_cmd_log=client_manual_cmd_log)
-                        if test_case in _SERIALIZING_TEST_CASES:
+                        if test_case in _SERIALIZING_TEST_CASES and len(jobs_sets[-1]) > 0:
                             jobs_sets.append([])
                         jobs_sets[-1].append(test_job)
 
