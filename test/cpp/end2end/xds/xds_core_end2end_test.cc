@@ -395,20 +395,18 @@ INSTANTIATE_TEST_SUITE_P(
 
 TEST_P(TimeoutTest, LdsServerIgnoresRequest) {
   balancer_->ads_service()->IgnoreResourceType(kLdsTypeUrl);
-  CheckRpcSendFailure(
-      DEBUG_LOCATION, StatusCode::UNAVAILABLE,
-      absl::StrCat("empty address list: ", kServerName,
-                   ": xDS listener resource does not exist"),
-      RpcOptions().set_timeout_ms(4000));
+  CheckRpcSendFailure(DEBUG_LOCATION, StatusCode::UNAVAILABLE,
+                      absl::StrCat("empty address list: ", kServerName,
+                                   ": xDS listener resource does not exist"),
+                      RpcOptions().set_timeout_ms(4000));
 }
 
 TEST_P(TimeoutTest, LdsResourceNotPresentInRequest) {
   balancer_->ads_service()->UnsetResource(kLdsTypeUrl, kServerName);
-  CheckRpcSendFailure(
-      DEBUG_LOCATION, StatusCode::UNAVAILABLE,
-      absl::StrCat("empty address list: ", kServerName,
-                   ": xDS listener resource does not exist"),
-      RpcOptions().set_timeout_ms(4000));
+  CheckRpcSendFailure(DEBUG_LOCATION, StatusCode::UNAVAILABLE,
+                      absl::StrCat("empty address list: ", kServerName,
+                                   ": xDS listener resource does not exist"),
+                      RpcOptions().set_timeout_ms(4000));
 }
 
 TEST_P(TimeoutTest, LdsSecondResourceNotPresentInRequest) {
@@ -491,17 +489,17 @@ TEST_P(TimeoutTest, RdsSecondResourceNotPresentInRequest) {
   auto status =
       SendRpcMethod(stub2.get(), rpc_options, &context, request, &response);
   EXPECT_EQ(StatusCode::UNAVAILABLE, status.error_code());
-  EXPECT_THAT(status.error_message(), absl::StrCat(
-      "empty address list: ", kNewRouteConfigName,
-      ": xDS route configuration resource does not exist"));
+  EXPECT_THAT(
+      status.error_message(),
+      absl::StrCat("empty address list: ", kNewRouteConfigName,
+                   ": xDS route configuration resource does not exist"));
 }
 
 TEST_P(TimeoutTest, CdsServerIgnoresRequest) {
   balancer_->ads_service()->IgnoreResourceType(kCdsTypeUrl);
   CheckRpcSendFailure(
       DEBUG_LOCATION, StatusCode::UNAVAILABLE,
-      absl::StrCat("CDS resource \"", kDefaultClusterName,
-                   "\" does not exist"),
+      absl::StrCat("CDS resource \"", kDefaultClusterName, "\" does not exist"),
       RpcOptions().set_timeout_ms(4000));
 }
 
@@ -509,8 +507,7 @@ TEST_P(TimeoutTest, CdsResourceNotPresentInRequest) {
   balancer_->ads_service()->UnsetResource(kCdsTypeUrl, kDefaultClusterName);
   CheckRpcSendFailure(
       DEBUG_LOCATION, StatusCode::UNAVAILABLE,
-      absl::StrCat("CDS resource \"", kDefaultClusterName,
-                   "\" does not exist"),
+      absl::StrCat("CDS resource \"", kDefaultClusterName, "\" does not exist"),
       RpcOptions().set_timeout_ms(4000));
 }
 

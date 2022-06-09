@@ -239,16 +239,14 @@ TEST_P(CdsTest, ClusterRemoved) {
   // Unset CDS resource.
   balancer_->ads_service()->UnsetResource(kCdsTypeUrl, kDefaultClusterName);
   // Wait for RPCs to start failing.
-  SendRpcsUntil(
-      DEBUG_LOCATION,
-      [](const RpcResult& result) {
-        if (result.status.ok()) return true;  // Keep going.
-        EXPECT_EQ(StatusCode::UNAVAILABLE, result.status.error_code());
-        EXPECT_EQ(absl::StrCat("CDS resource \"", kDefaultClusterName,
-                               "\" does not exist"),
-                  result.status.error_message());
-        return false;
-      });
+  SendRpcsUntil(DEBUG_LOCATION, [](const RpcResult& result) {
+    if (result.status.ok()) return true;  // Keep going.
+    EXPECT_EQ(StatusCode::UNAVAILABLE, result.status.error_code());
+    EXPECT_EQ(absl::StrCat("CDS resource \"", kDefaultClusterName,
+                           "\" does not exist"),
+              result.status.error_message());
+    return false;
+  });
   // Make sure we ACK'ed the update.
   auto response_state = balancer_->ads_service()->cds_response_state();
   ASSERT_TRUE(response_state.has_value());

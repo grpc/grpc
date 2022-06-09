@@ -840,8 +840,8 @@ void XdsEnd2endTest::SendRpcsUntil(
     const RpcOptions& rpc_options) {
   absl::Time deadline = absl::InfiniteFuture();
   if (timeout_ms != 0) {
-    deadline = absl::Now() + (absl::Milliseconds(timeout_ms) *
-                              grpc_test_slowdown_factor());
+    deadline = absl::Now() +
+               (absl::Milliseconds(timeout_ms) * grpc_test_slowdown_factor());
   }
   while (true) {
     RpcResult result;
@@ -878,7 +878,7 @@ void XdsEnd2endTest::CheckRpcSendFailure(
   EXPECT_EQ(expected_status, status.error_code())
       << debug_location.file() << ":" << debug_location.line();
   EXPECT_THAT(status.error_message(),
-              ::testing::ContainsRegex(expected_message_regex))
+              ::testing::MatchesRegex(expected_message_regex))
       << debug_location.file() << ":" << debug_location.line();
 }
 
