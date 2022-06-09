@@ -55,10 +55,10 @@
 // A list of ports to listen on, for gRPC traffic.
 ABSL_FLAG(std::vector<std::string>, grpc, std::vector<std::string>({"7070"}),
           "GRPC ports");
-ABSL_FLAG(std::vector<std::string>, tls, std::vector<std::string>({""}),
+ABSL_FLAG(std::vector<std::string>, tls, std::vector<std::string>({}),
           "Ports that are using TLS. These must be defined as http/grpc/tcp.");
 ABSL_FLAG(std::vector<std::string>, xds_grpc_server,
-          std::vector<std::string>({""}),
+          std::vector<std::string>({}),
           "Ports that should rely on XDS configuration to serve");
 ABSL_FLAG(std::string, crt, "", "gRPC TLS server-side certificate");
 ABSL_FLAG(std::string, key, "", "gRPC TLS server-side key");
@@ -69,13 +69,12 @@ ABSL_FLAG(std::vector<std::string>, port, std::vector<std::string>({"8080"}),
           "HTTP/1.1 ports");
 ABSL_FLAG(std::vector<std::string>, tcp, std::vector<std::string>({"9090"}),
           "TCP ports");
-ABSL_FLAG(std::vector<std::string>, bind_ip, std::vector<std::string>({""}),
+ABSL_FLAG(std::vector<std::string>, bind_ip, std::vector<std::string>({}),
           "Ports that are bound to INSTANCE_IP rather than wildcard IP.");
 ABSL_FLAG(std::vector<std::string>, bind_localhost,
-          std::vector<std::string>({""}),
+          std::vector<std::string>({}),
           "Ports that are bound to localhost rather than wildcard IP.");
-ABSL_FLAG(std::vector<std::string>, server_first,
-          std::vector<std::string>({""}),
+ABSL_FLAG(std::vector<std::string>, server_first, std::vector<std::string>({}),
           "Ports that are server first. These must be defined as tcp.");
 ABSL_FLAG(std::string, metrics, "", "Metrics port");
 ABSL_FLAG(std::string, uds, "", "HTTP server on unix domain socket");
@@ -206,6 +205,7 @@ int main(int argc, char** argv) {
     int port = 0;
     if (!absl::SimpleAtoi(p, &port)) {
       gpr_log(GPR_ERROR, "SimpleAtoi Failure: %s", p.c_str());
+      return 1;
     }
     xds_ports.insert(port);
   }
@@ -215,6 +215,7 @@ int main(int argc, char** argv) {
     int port = 0;
     if (!absl::SimpleAtoi(p, &port)) {
       gpr_log(GPR_ERROR, "SimpleAtoi Failure: %s", p.c_str());
+      return 1;
     }
     tls_ports.insert(port);
   }
