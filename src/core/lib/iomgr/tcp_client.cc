@@ -33,9 +33,6 @@ int64_t grpc_tcp_client_connect(grpc_closure* on_connect,
 }
 
 bool grpc_tcp_client_cancel_connect(int64_t connection_handle) {
-  if (grpc_tcp_client_impl->cancel_connect == nullptr) {
-    return false;
-  }
   return grpc_tcp_client_impl->cancel_connect(connection_handle);
 }
 

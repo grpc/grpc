@@ -27,6 +27,7 @@
 #include <string.h>
 #include <unistd.h>
 
+#include "absl/container/flat_hash_map.h"
 #include "absl/strings/str_cat.h"
 
 #include <grpc/support/alloc.h>
@@ -62,7 +63,36 @@ struct async_connect {
   grpc_endpoint** ep;
   grpc_closure* closure;
   grpc_channel_args* channel_args;
+  int64_t connection_handle;
+  bool connect_cancelled;
 };
+
+namespace {
+gpr_once g_tcp_client_posix_init = GPR_ONCE_INIT;
+size_t g_pending_connection_shards = 0;
+grpc_core::Mutex** g_shard_mu = nullptr;
+absl::flat_hash_map<int64_t, async_connect*>** g_pending_connections = nullptr;
+std::atomic<int64_t> g_connection_id{1};
+
+void do_tcp_client_global_init(void) {
+  g_pending_connection_shards = std::max(2 * gpr_cpu_num_cores(), 1u);
+  g_shard_mu = static_cast<grpc_core::Mutex**>(
+      gpr_zalloc(g_pending_connection_shards * sizeof(grpc_core::Mutex*)));
+  g_pending_connections =
+      static_cast<absl::flat_hash_map<int64_t, async_connect*>**>(
+          gpr_zalloc(g_pending_connection_shards *
+                     sizeof(absl::flat_hash_map<int64_t, async_connect*>*)));
+  for (uint32_t i = 0; i < g_pending_connection_shards; i++) {
+    g_shard_mu[i] = new grpc_core::Mutex();
+    g_pending_connections[i] = new absl::flat_hash_map<int64_t, async_connect*>;
+  }
+}
+
+}  // namespace
+
+void grpc_tcp_client_global_init() {
+  gpr_once_init(&g_tcp_client_posix_init, do_tcp_client_global_init);
+}
 
 static grpc_error_handle prepare_socket(const grpc_resolved_address* addr,
                                         int fd,
@@ -110,6 +140,11 @@ static void tc_on_alarm(void* acp, grpc_error_handle error) {
   }
   gpr_mu_lock(&ac->mu);
   if (ac->fd != nullptr) {
+    int shard_number = ac->connection_handle % g_pending_connection_shards;
+    {
+      grpc_core::MutexLock lock(g_shard_mu[shard_number]);
+      g_pending_connections[shard_number]->erase(ac->connection_handle);
+    }
     grpc_fd_shutdown(
         ac->fd, GRPC_ERROR_CREATE_FROM_STATIC_STRING("connect() timed out"));
   }
@@ -138,6 +173,7 @@ static void on_writable(void* acp, grpc_error_handle error) {
   grpc_closure* closure = ac->closure;
   std::string addr_str = ac->addr_str;
   grpc_fd* fd;
+  bool connect_cancelled = false;
 
   (void)GRPC_ERROR_REF(error);
 
@@ -150,6 +186,7 @@ static void on_writable(void* acp, grpc_error_handle error) {
   GPR_ASSERT(ac->fd);
   fd = ac->fd;
   ac->fd = nullptr;
+  connect_cancelled = ac->connect_cancelled;
   gpr_mu_unlock(&ac->mu);
 
   grpc_timer_cancel(&ac->alarm);
@@ -158,6 +195,12 @@ static void on_writable(void* acp, grpc_error_handle error) {
   if (!GRPC_ERROR_IS_NONE(error)) {
     error =
         grpc_error_set_str(error, GRPC_ERROR_STR_OS_ERROR, "Timeout occurred");
+    goto finish;
+  }
+
+  if (connect_cancelled) {
+    // The callback should not get scheduled in this case.
+    error = GRPC_ERROR_NONE;
     goto finish;
   }
 
@@ -208,6 +251,13 @@ static void on_writable(void* acp, grpc_error_handle error) {
   }
 
 finish:
+  if (!connect_cancelled) {
+    int shard_number = ac->connection_handle % g_pending_connection_shards;
+    {
+      grpc_core::MutexLock lock(g_shard_mu[shard_number]);
+      g_pending_connections[shard_number]->erase(ac->connection_handle);
+    }
+  }
   if (fd != nullptr) {
     grpc_pollset_set_del_fd(ac->interested_parties, fd);
     grpc_fd_orphan(fd, nullptr, nullptr, "tcp_client_orphan");
@@ -234,7 +284,9 @@ finish:
   // Push async connect closure to the executor since this may actually be
   // called during the shutdown process, in which case a deadlock could form
   // between the core shutdown mu and the connector mu (b/188239051)
-  grpc_core::Executor::Run(closure, error);
+  if (!connect_cancelled) {
+    grpc_core::Executor::Run(closure, error);
+  }
 }
 
 grpc_error_handle grpc_tcp_client_prepare_fd(
@@ -267,7 +319,7 @@ grpc_error_handle grpc_tcp_client_prepare_fd(
   return GRPC_ERROR_NONE;
 }
 
-void grpc_tcp_client_create_from_prepared_fd(
+int64_t grpc_tcp_client_create_from_prepared_fd(
     grpc_pollset_set* interested_parties, grpc_closure* closure, const int fd,
     const grpc_channel_args* channel_args, const grpc_resolved_address* addr,
     grpc_core::Timestamp deadline, grpc_endpoint** ep) {
@@ -282,16 +334,18 @@ void grpc_tcp_client_create_from_prepared_fd(
     grpc_error_handle error =
         GRPC_ERROR_CREATE_FROM_CPP_STRING(addr_uri.status().ToString());
     grpc_core::ExecCtx::Run(DEBUG_LOCATION, closure, error);
-    return;
+    return 0;
   }
 
   std::string name = absl::StrCat("tcp-client:", addr_uri.value());
   grpc_fd* fdobj = grpc_fd_create(fd, name.c_str(), true);
+  int64_t connection_id =
+      g_connection_id.fetch_add(1, std::memory_order_acq_rel);
 
   if (err >= 0) {
     *ep = grpc_tcp_client_create_from_fd(fdobj, channel_args, addr_uri.value());
     grpc_core::ExecCtx::Run(DEBUG_LOCATION, closure, GRPC_ERROR_NONE);
-    return;
+    return connection_id;
   }
   if (errno != EWOULDBLOCK && errno != EINPROGRESS) {
     grpc_error_handle error = GRPC_OS_ERROR(errno, "connect");
@@ -299,7 +353,7 @@ void grpc_tcp_client_create_from_prepared_fd(
                                addr_uri.value());
     grpc_fd_orphan(fdobj, nullptr, nullptr, "tcp_client_connect_error");
     grpc_core::ExecCtx::Run(DEBUG_LOCATION, closure, error);
-    return;
+    return 0;
   }
 
   grpc_pollset_set_add_fd(interested_parties, fdobj);
@@ -310,6 +364,8 @@ void grpc_tcp_client_create_from_prepared_fd(
   ac->fd = fdobj;
   ac->interested_parties = interested_parties;
   ac->addr_str = addr_uri.value();
+  ac->connection_handle = connection_id;
+  ac->connect_cancelled = false;
   gpr_mu_init(&ac->mu);
   ac->refs = 2;
   GRPC_CLOSURE_INIT(&ac->write_closure, on_writable, ac,
@@ -321,11 +377,18 @@ void grpc_tcp_client_create_from_prepared_fd(
             ac->addr_str.c_str(), fdobj);
   }
 
+  int shard_number = connection_id % g_pending_connection_shards;
+  {
+    grpc_core::MutexLock lock(g_shard_mu[shard_number]);
+    g_pending_connections[shard_number]->insert_or_assign(connection_id, ac);
+  }
+
   gpr_mu_lock(&ac->mu);
   GRPC_CLOSURE_INIT(&ac->on_alarm, tc_on_alarm, ac, grpc_schedule_on_exec_ctx);
   grpc_timer_init(&ac->alarm, deadline, &ac->on_alarm);
   grpc_fd_notify_on_write(ac->fd, &ac->write_closure);
   gpr_mu_unlock(&ac->mu);
+  return connection_id;
 }
 
 static int64_t tcp_connect(grpc_closure* closure, grpc_endpoint** ep,
@@ -342,13 +405,58 @@ static int64_t tcp_connect(grpc_closure* closure, grpc_endpoint** ep,
     grpc_core::ExecCtx::Run(DEBUG_LOCATION, closure, error);
     return 0;
   }
-  grpc_tcp_client_create_from_prepared_fd(interested_parties, closure, fd,
-                                          channel_args, &mapped_addr, deadline,
-                                          ep);
-  return 0;
+  return grpc_tcp_client_create_from_prepared_fd(interested_parties, closure,
+                                                 fd, channel_args, &mapped_addr,
+                                                 deadline, ep);
 }
 
-static bool tcp_cancel_connect(int64_t /*connection_handle*/) { return false; }
+static bool tcp_cancel_connect(int64_t connection_handle) {
+  int shard_number = connection_handle % g_pending_connection_shards;
+  async_connect* ac = nullptr;
+  {
+    grpc_core::MutexLock lock(g_shard_mu[shard_number]);
+    auto it = g_pending_connections[shard_number]->find(connection_handle);
+    if (it != g_pending_connections[shard_number]->end()) {
+      ac = it->second;
+      GPR_ASSERT(ac != nullptr);
+      // Trying to acquire ac->mu here would could cause a deadlock because
+      // on_writable and tc_on_alarm methods try to acquire the two mutexes used
+      // here in the reverse order. But we dont need to acquire ac->mu before
+      // incrementing ac->refs here. This is because tc_on_alarm and on_writable
+      // methods decrement ac->refs only after deleting the connection handle
+      // from the corresponding hashmap. If the code enters here, it means that
+      // deletion hasn't happened yet. The deletion can only happen after the
+      // corresponding g_shard_mu is unlocked.
+      ++ac->refs;
+      // Remove connection from list of active connections.
+      g_pending_connections[shard_number]->erase(it);
+    }
+  }
+  if (ac == nullptr) {
+    return false;
+  }
+  gpr_mu_lock(&ac->mu);
+  bool connection_cancel_success = (ac->fd != nullptr);
+  if (connection_cancel_success) {
+    // Connection is still pending. The on_writable callback hasn't executed
+    // yet because ac->fd != nullptr.
+    ac->connect_cancelled = true;
+    // Force on_writable to run as soon as possible and gracefully terminate.
+    // When the on_writable callback runs, it would detect that a connect
+    // cancellation is requested and take the necessary actions.
+    grpc_fd_set_writable(ac->fd);
+  }
+  bool done = (--ac->refs == 0);
+  gpr_mu_unlock(&ac->mu);
+  if (done) {
+    // This is safe even outside the lock, because "done", the sentinel, is
+    // populated *inside* the lock.
+    gpr_mu_destroy(&ac->mu);
+    grpc_channel_args_destroy(ac->channel_args);
+    delete ac;
+  }
+  return connection_cancel_success;
+}
 
 grpc_tcp_client_vtable grpc_posix_tcp_client_vtable = {tcp_connect,
                                                        tcp_cancel_connect};

@@ -56,7 +56,7 @@ int64_t grpc_tcp_client_connect(grpc_closure* on_connect,
 // is successfully cancelled. Otherwise it returns false.
 bool grpc_tcp_client_cancel_connect(int64_t connection_handle);
 
-void grpc_tcp_client_global_init();
+extern void grpc_tcp_client_global_init();
 
 void grpc_set_tcp_client_impl(grpc_tcp_client_vtable* impl);
 
