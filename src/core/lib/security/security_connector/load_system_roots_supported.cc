@@ -31,7 +31,6 @@
 
 #include "absl/container/inlined_vector.h"
 
-#include <grpc/slice_buffer.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 
