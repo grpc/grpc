@@ -38,22 +38,23 @@ grpc_tcp_client_vtable* g_original_vtable = nullptr;
 grpc_core::Mutex* g_mu = nullptr;
 ConnectionAttemptInjector* g_injector ABSL_GUARDED_BY(*g_mu) = nullptr;
 
-void TcpConnectWithDelay(grpc_closure* closure, grpc_endpoint** ep,
-                         grpc_pollset_set* interested_parties,
-                         const grpc_channel_args* channel_args,
-                         const grpc_resolved_address* addr,
-                         grpc_core::Timestamp deadline) {
+int64_t TcpConnectWithDelay(grpc_closure* closure, grpc_endpoint** ep,
+                            grpc_pollset_set* interested_parties,
+                            const grpc_channel_args* channel_args,
+                            const grpc_resolved_address* addr,
+                            grpc_core::Timestamp deadline) {
   grpc_core::MutexLock lock(g_mu);
   if (g_injector == nullptr) {
     g_original_vtable->connect(closure, ep, interested_parties, channel_args,
                                addr, deadline);
-    return;
+    return 0;
   }
   g_injector->HandleConnection(closure, ep, interested_parties, channel_args,
                                addr, deadline);
+  return 0;
 }
 
-grpc_tcp_client_vtable kDelayedConnectVTable = {TcpConnectWithDelay};
+grpc_tcp_client_vtable kDelayedConnectVTable = {TcpConnectWithDelay, nullptr};
 
 }  // namespace
 
