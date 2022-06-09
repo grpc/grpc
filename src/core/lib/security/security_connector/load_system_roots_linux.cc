@@ -20,10 +20,6 @@
 
 #if defined(GPR_LINUX) || defined(GPR_ANDROID) || defined(GPR_FREEBSD)
 
-#include "src/core/lib/security/security_connector/load_system_roots_linux.h"
-
-#include <grpc/slice_buffer.h>
-
 #include <dirent.h>
 #include <fcntl.h>
 #include <stdio.h>
