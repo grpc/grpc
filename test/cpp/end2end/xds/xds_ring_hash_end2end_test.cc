@@ -1074,7 +1074,6 @@ TEST_P(RingHashTest, ReattemptWhenGoingFromTransientFailureToIdle) {
   cluster.set_lb_policy(Cluster::RING_HASH);
   balancer_->ads_service()->SetCdsResource(cluster);
   auto new_route_config = default_route_config_;
-  auto* route = new_route_config.mutable_virtual_hosts(0)->mutable_routes(0);
   SetListenerAndRouteConfiguration(balancer_.get(), default_listener_,
                                    new_route_config);
   // Send empty EDS update.
