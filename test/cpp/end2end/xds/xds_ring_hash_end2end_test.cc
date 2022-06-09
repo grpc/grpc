@@ -1074,11 +1074,11 @@ TEST_P(RingHashTest, ReattemptWhenGoingFromTransientFailureToIdle) {
   cluster.set_lb_policy(Cluster::RING_HASH);
   balancer_->ads_service()->SetCdsResource(cluster);
   auto new_route_config = default_route_config_;
-  auto* route = new_route_config.mutable_virtual_hosts(0)->mutable_routes(0);
   SetListenerAndRouteConfiguration(balancer_.get(), default_listener_,
                                    new_route_config);
   // Send empty EDS update.
-  EdsResourceArgs args({{"locality0", {}}});
+  EdsResourceArgs args(
+      {{"locality0", std::vector<EdsResourceArgs::Endpoint>()}});
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
   EXPECT_EQ(GRPC_CHANNEL_IDLE, channel_->GetState(false));
   // Channel should fail RPCs and go into TRANSIENT_FAILURE.
