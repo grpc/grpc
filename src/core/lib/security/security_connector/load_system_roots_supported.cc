@@ -41,7 +41,6 @@
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/load_file.h"
 #include "src/core/lib/security/security_connector/load_system_roots.h"
-#include "src/core/lib/security/security_connector/load_system_roots_linux.h"
 #include "src/core/lib/security/security_connector/load_system_roots_supported.h"
 
 GPR_GLOBAL_CONFIG_DEFINE_STRING(grpc_system_ssl_roots_dir, "",
