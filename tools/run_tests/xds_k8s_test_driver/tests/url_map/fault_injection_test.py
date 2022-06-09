@@ -20,8 +20,8 @@ from absl.testing import absltest
 import grpc
 
 from framework import xds_url_map_testcase
-from framework.test_app import client_app
 from framework.helpers import skips
+from framework.test_app import client_app
 
 # Type aliases
 HostRule = xds_url_map_testcase.HostRule
@@ -117,10 +117,12 @@ def _wait_until_backlog_cleared(test_client: XdsTestClient,
 
     raise RuntimeError('failed to clear RPC backlog in %s seconds' % timeout)
 
+
 def _is_supported(config: skips.TestConfig) -> bool:
     if config.client_lang == _Lang.NODE:
         return not config.version_lt('v1.4.x')
     return True
+
 
 class TestZeroPercentFaultInjection(xds_url_map_testcase.XdsUrlMapTestCase):
 

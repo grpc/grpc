@@ -18,8 +18,8 @@ from absl import flags
 from absl.testing import absltest
 
 from framework import xds_url_map_testcase
-from framework.test_app import client_app
 from framework.helpers import skips
+from framework.test_app import client_app
 
 # Type aliases
 HostRule = xds_url_map_testcase.HostRule
@@ -47,6 +47,7 @@ _TEST_METADATA = (
     (RpcTypeUnaryCall, _TEST_METADATA_NUMERIC_KEY,
      _TEST_METADATA_NUMERIC_VALUE),
 )
+
 
 def _is_supported(config: skips.TestConfig) -> bool:
     if config.client_lang == _Lang.NODE:
