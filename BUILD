@@ -5431,13 +5431,13 @@ grpc_cc_library(
     srcs = [
         "src/core/lib/security/credentials/tls/tls_utils.cc",
         "src/core/lib/security/security_connector/load_system_roots_fallback.cc",
-        "src/core/lib/security/security_connector/load_system_roots_linux.cc",
+        "src/core/lib/security/security_connector/load_system_roots_supported.cc",
         "src/core/lib/security/util/json_util.cc",
     ],
     hdrs = [
         "src/core/lib/security/credentials/tls/tls_utils.h",
         "src/core/lib/security/security_connector/load_system_roots.h",
-        "src/core/lib/security/security_connector/load_system_roots_linux.h",
+        "src/core/lib/security/security_connector/load_system_roots_supported.h",
         "src/core/lib/security/util/json_util.h",
     ],
     external_deps = [

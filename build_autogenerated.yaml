@@ -906,7 +906,7 @@ libs:
   - src/core/lib/security/security_connector/fake/fake_security_connector.h
   - src/core/lib/security/security_connector/insecure/insecure_security_connector.h
   - src/core/lib/security/security_connector/load_system_roots.h
-  - src/core/lib/security/security_connector/load_system_roots_linux.h
+  - src/core/lib/security/security_connector/load_system_roots_supported.h
   - src/core/lib/security/security_connector/local/local_security_connector.h
   - src/core/lib/security/security_connector/security_connector.h
   - src/core/lib/security/security_connector/ssl/ssl_security_connector.h
@@ -1568,7 +1568,7 @@ libs:
   - src/core/lib/security/security_connector/fake/fake_security_connector.cc
   - src/core/lib/security/security_connector/insecure/insecure_security_connector.cc
   - src/core/lib/security/security_connector/load_system_roots_fallback.cc
-  - src/core/lib/security/security_connector/load_system_roots_linux.cc
+  - src/core/lib/security/security_connector/load_system_roots_supported.cc
   - src/core/lib/security/security_connector/local/local_security_connector.cc
   - src/core/lib/security/security_connector/security_connector.cc
   - src/core/lib/security/security_connector/ssl/ssl_security_connector.cc
@@ -2086,7 +2086,7 @@ libs:
   - src/core/lib/security/security_connector/fake/fake_security_connector.h
   - src/core/lib/security/security_connector/insecure/insecure_security_connector.h
   - src/core/lib/security/security_connector/load_system_roots.h
-  - src/core/lib/security/security_connector/load_system_roots_linux.h
+  - src/core/lib/security/security_connector/load_system_roots_supported.h
   - src/core/lib/security/security_connector/security_connector.h
   - src/core/lib/security/transport/auth_filters.h
   - src/core/lib/security/transport/secure_endpoint.h
@@ -2391,7 +2391,7 @@ libs:
   - src/core/lib/security/security_connector/fake/fake_security_connector.cc
   - src/core/lib/security/security_connector/insecure/insecure_security_connector.cc
   - src/core/lib/security/security_connector/load_system_roots_fallback.cc
-  - src/core/lib/security/security_connector/load_system_roots_linux.cc
+  - src/core/lib/security/security_connector/load_system_roots_supported.cc
   - src/core/lib/security/security_connector/security_connector.cc
   - src/core/lib/security/transport/client_auth_filter.cc
   - src/core/lib/security/transport/secure_endpoint.cc
@@ -6795,15 +6795,6 @@ targets:
   deps:
   - grpc++
   - grpc_test_util
-- name: linux_system_roots_test
-  gtest: true
-  build: test
-  language: c++
-  headers: []
-  src:
-  - test/core/security/linux_system_roots_test.cc
-  deps:
-  - grpc_test_util
 - name: log_test
   gtest: true
   build: test
@@ -8183,6 +8174,15 @@ targets:
   - grpc++
   - grpc_test_util
   uses_polling: false
+- name: system_roots_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/core/security/system_roots_test.cc
+  deps:
+  - grpc_test_util
 - name: table_test
   gtest: true
   build: test
