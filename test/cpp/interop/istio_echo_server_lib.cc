@@ -97,9 +97,7 @@ Status EchoTestServiceImpl::Echo(ServerContext* context,
   absl::StrAppend(&s, kStatusCodeField, "=", std::to_string(200), "\n");
   absl::StrAppend(&s, kHostnameField, "=", this->hostname_, "\n");
   absl::StrAppend(&s, "Echo=", request->message(), "\n");
-  gpr_log(GPR_ERROR, "here");
   response->set_message(s);
-  gpr_log(GPR_ERROR, "here");
   gpr_log(GPR_INFO, "Echo response:\n%s", s.c_str());
   return Status::OK;
 }
@@ -109,20 +107,34 @@ Status EchoTestServiceImpl::ForwardEcho(ServerContext* /*context*/,
                                         ForwardEchoResponse* response) {
   std::string raw_url = request->url();
   size_t colon = raw_url.find_first_of(':');
-  if (colon != std::string::npos) {
-    std::string scheme = raw_url.substr(0, colon);
-    if (scheme != "grpc") {
-      gpr_log(GPR_ERROR, "Protocol %s not supported", scheme.c_str());
-      return Status(
-          StatusCode::UNIMPLEMENTED,
-          absl::StrFormat("Protocol %s not supported", scheme.c_str()));
-    }
+  std::string scheme;
+  if (colon == std::string::npos) {
+    return Status(
+        StatusCode::INVALID_ARGUMENT,
+        absl::StrFormat("No protocol configured for url %s", raw_url));
   }
-  // May need to use xds security if urlScheme is "xds"
-  absl::string_view address = absl::StripPrefix(raw_url, "grpc://");
-  gpr_log(GPR_INFO, "Creating channel to %s", std::string(address).c_str());
-  auto channel =
-      CreateChannel(std::string(address), InsecureChannelCredentials());
+  scheme = raw_url.substr(0, colon);
+  std::shared_ptr<Channel> channel;
+  if (scheme == "xds") {
+    // We can optionally add support for TLS creds, but we are primarily
+    // concerned with proxyless-grpc here.
+    gpr_log(GPR_INFO, "Creating channel to %s using xDS Creds",
+            raw_url.c_str());
+    channel =
+        CreateChannel(raw_url, XdsCredentials(InsecureChannelCredentials()));
+  } else if (scheme == "grpc") {
+    // We don't really want to test this but the istio test infrastructure needs
+    // this to be supported. If we ever decide to add support for this properly,
+    // we would need to add support for TLS creds here.
+    absl::string_view address = absl::StripPrefix(raw_url, "grpc://");
+    gpr_log(GPR_INFO, "Creating channel to %s", std::string(address).c_str());
+    channel = CreateChannel(std::string(address), InsecureChannelCredentials());
+  } else {
+    std::string status_msg =
+        absl::StrFormat("Protocol %s not supported", scheme);
+    gpr_log(GPR_ERROR, "Protocol %s not supported", status_msg.c_str());
+    return Status(StatusCode::UNIMPLEMENTED, status_msg);
+  }
   auto stub = EchoTestService::NewStub(channel);
   auto count = request->count() == 0 ? 1 : request->count();
   // Calculate the amount of time to sleep after each call.

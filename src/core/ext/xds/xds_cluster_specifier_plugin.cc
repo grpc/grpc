@@ -81,7 +81,7 @@ XdsRouteLookupClusterSpecifierPlugin::GenerateLoadBalancingPolicyConfig(
   grpc_error_handle error = GRPC_ERROR_NONE;
   rls_policy["routeLookupConfig"] =
       Json::Parse(reinterpret_cast<char*>(buf), &error);
-  GPR_ASSERT(error == GRPC_ERROR_NONE);
+  GPR_ASSERT(GRPC_ERROR_IS_NONE(error));
   Json::Object cds_policy;
   cds_policy["cds_experimental"] = Json::Object();
   Json::Array child_policy;
@@ -100,7 +100,7 @@ XdsRouteLookupClusterSpecifierPlugin::GenerateLoadBalancingPolicyConfig(
   // itself.
   LoadBalancingPolicyRegistry::ParseLoadBalancingConfig(lb_policy_config,
                                                         &parse_error);
-  if (parse_error != GRPC_ERROR_NONE) {
+  if (!GRPC_ERROR_IS_NONE(parse_error)) {
     absl::Status status = absl::InvalidArgumentError(absl::StrCat(
         kXdsRouteLookupClusterSpecifierPluginConfigName,
         " ClusterSpecifierPlugin returned invalid LB policy config: ",

@@ -674,7 +674,7 @@ static void StartTransportStreamOp(grpc_call_element* elem,
 
 static void StartTransportOp(grpc_channel_element* /*elem*/,
                              grpc_transport_op* op) {
-  if (op->disconnect_with_error != GRPC_ERROR_NONE) {
+  if (!GRPC_ERROR_IS_NONE(op->disconnect_with_error)) {
     GRPC_ERROR_UNREF(op->disconnect_with_error);
   }
   grpc_core::ExecCtx::Run(DEBUG_LOCATION, op->on_consumed, GRPC_ERROR_NONE);

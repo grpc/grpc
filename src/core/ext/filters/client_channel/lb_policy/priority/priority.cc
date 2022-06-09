@@ -646,7 +646,7 @@ void PriorityLb::ChildPriority::DeactivationTimer::OnTimer(
 
 void PriorityLb::ChildPriority::DeactivationTimer::OnTimerLocked(
     grpc_error_handle error) {
-  if (error == GRPC_ERROR_NONE && timer_pending_) {
+  if (GRPC_ERROR_IS_NONE(error) && timer_pending_) {
     if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_priority_trace)) {
       gpr_log(GPR_INFO,
               "[priority_lb %p] child %s (%p): deactivation timer fired, "
@@ -710,7 +710,7 @@ void PriorityLb::ChildPriority::FailoverTimer::OnTimer(
 
 void PriorityLb::ChildPriority::FailoverTimer::OnTimerLocked(
     grpc_error_handle error) {
-  if (error == GRPC_ERROR_NONE && timer_pending_) {
+  if (GRPC_ERROR_IS_NONE(error) && timer_pending_) {
     if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_priority_trace)) {
       gpr_log(GPR_INFO,
               "[priority_lb %p] child %s (%p): failover timer fired, "
@@ -933,7 +933,7 @@ class PriorityLbFactory : public LoadBalancingPolicyFactory {
 
   RefCountedPtr<LoadBalancingPolicy::Config> ParseLoadBalancingConfig(
       const Json& json, grpc_error_handle* error) const override {
-    GPR_DEBUG_ASSERT(error != nullptr && *error == GRPC_ERROR_NONE);
+    GPR_DEBUG_ASSERT(error != nullptr && GRPC_ERROR_IS_NONE(*error));
     if (json.type() == Json::Type::JSON_NULL) {
       // priority was mentioned as a policy in the deprecated
       // loadBalancingPolicy field or in the client API.
@@ -988,7 +988,7 @@ class PriorityLbFactory : public LoadBalancingPolicyFactory {
               }
             }
             if (config == nullptr) {
-              GPR_DEBUG_ASSERT(parse_error != GRPC_ERROR_NONE);
+              GPR_DEBUG_ASSERT(!GRPC_ERROR_IS_NONE(parse_error));
               error_list.push_back(
                   GRPC_ERROR_CREATE_REFERENCING_FROM_COPIED_STRING(
                       absl::StrCat("field:children key:", child_name).c_str(),

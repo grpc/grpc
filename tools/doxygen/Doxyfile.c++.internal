@@ -2318,8 +2318,8 @@ src/core/lib/security/security_connector/insecure/insecure_security_connector.cc
 src/core/lib/security/security_connector/insecure/insecure_security_connector.h \
 src/core/lib/security/security_connector/load_system_roots.h \
 src/core/lib/security/security_connector/load_system_roots_fallback.cc \
-src/core/lib/security/security_connector/load_system_roots_linux.cc \
-src/core/lib/security/security_connector/load_system_roots_linux.h \
+src/core/lib/security/security_connector/load_system_roots_supported.cc \
+src/core/lib/security/security_connector/load_system_roots_supported.h \
 src/core/lib/security/security_connector/local/local_security_connector.cc \
 src/core/lib/security/security_connector/local/local_security_connector.h \
 src/core/lib/security/security_connector/security_connector.cc \
@@ -2403,6 +2403,8 @@ src/core/lib/surface/validate_metadata.h \
 src/core/lib/surface/version.cc \
 src/core/lib/transport/bdp_estimator.cc \
 src/core/lib/transport/bdp_estimator.h \
+src/core/lib/transport/byte_stream.cc \
+src/core/lib/transport/byte_stream.h \
 src/core/lib/transport/connectivity_state.cc \
 src/core/lib/transport/connectivity_state.h \
 src/core/lib/transport/error_utils.cc \

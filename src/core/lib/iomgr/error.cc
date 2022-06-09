@@ -97,7 +97,7 @@ absl::Status grpc_wsa_error(const grpc_core::DebugLocation& location, int err,
 
 grpc_error_handle grpc_error_set_int(grpc_error_handle src,
                                      grpc_error_ints which, intptr_t value) {
-  if (src == GRPC_ERROR_NONE) {
+  if (GRPC_ERROR_IS_NONE(src)) {
     src = absl::UnknownError("");
     StatusSetInt(&src, grpc_core::StatusIntProperty::kRpcStatus,
                  GRPC_STATUS_OK);
@@ -138,7 +138,7 @@ bool grpc_error_get_int(grpc_error_handle error, grpc_error_ints which,
 grpc_error_handle grpc_error_set_str(grpc_error_handle src,
                                      grpc_error_strs which,
                                      absl::string_view str) {
-  if (src == GRPC_ERROR_NONE) {
+  if (GRPC_ERROR_IS_NONE(src)) {
     src = absl::UnknownError("");
     StatusSetInt(&src, grpc_core::StatusIntProperty::kRpcStatus,
                  GRPC_STATUS_OK);
@@ -213,7 +213,7 @@ grpc_error_handle grpc_error_add_child(grpc_error_handle src,
 
 bool grpc_log_error(const char* what, grpc_error_handle error, const char* file,
                     int line) {
-  GPR_DEBUG_ASSERT(error != GRPC_ERROR_NONE);
+  GPR_DEBUG_ASSERT(!GRPC_ERROR_IS_NONE(error));
   gpr_log(file, line, GPR_LOG_SEVERITY_ERROR, "%s: %s", what,
           grpc_core::StatusToString(error).c_str());
   return false;
@@ -564,7 +564,7 @@ static grpc_error_handle copy_error_and_unref(grpc_error_handle in) {
   grpc_error_handle out;
   if (grpc_error_is_special(in)) {
     out = GRPC_ERROR_CREATE_FROM_STATIC_STRING("unknown");
-    if (in == GRPC_ERROR_NONE) {
+    if (GRPC_ERROR_IS_NONE(in)) {
       internal_set_str(&out, GRPC_ERROR_STR_DESCRIPTION,
                        grpc_slice_from_static_string("no error"));
       internal_set_int(&out, GRPC_ERROR_INT_GRPC_STATUS, GRPC_STATUS_OK);
@@ -677,8 +677,8 @@ bool grpc_error_get_str(grpc_error_handle err, grpc_error_strs which,
 
 grpc_error_handle grpc_error_add_child(grpc_error_handle src,
                                        grpc_error_handle child) {
-  if (src != GRPC_ERROR_NONE) {
-    if (child == GRPC_ERROR_NONE) {
+  if (!GRPC_ERROR_IS_NONE(src)) {
+    if (GRPC_ERROR_IS_NONE(child)) {
       /* \a child is empty. Simply return the ref to \a src */
       return src;
     } else if (child != src) {
@@ -908,7 +908,7 @@ static char* finish_kvs(kv_pairs* kvs) {
 }
 
 const char* grpc_error_string(grpc_error_handle err) {
-  if (err == GRPC_ERROR_NONE) return no_error_string;
+  if (GRPC_ERROR_IS_NONE(err)) return no_error_string;
   if (err == GRPC_ERROR_OOM) return oom_error_string;
   if (err == GRPC_ERROR_CANCELLED) return cancelled_error_string;
 
@@ -980,7 +980,7 @@ grpc_error_handle grpc_wsa_error(const char* file, int line, int err,
 
 bool grpc_log_error(const char* what, grpc_error_handle error, const char* file,
                     int line) {
-  GPR_DEBUG_ASSERT(error != GRPC_ERROR_NONE);
+  GPR_DEBUG_ASSERT(!GRPC_ERROR_IS_NONE(error));
   const char* msg = grpc_error_string(error);
   gpr_log(file, line, GPR_LOG_SEVERITY_ERROR, "%s: %s", what, msg);
   GRPC_ERROR_UNREF(error);

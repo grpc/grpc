@@ -68,8 +68,8 @@
 #include "src/core/lib/service_config/service_config_call_data.h"
 #include "src/core/lib/service_config/service_config_parser.h"
 #include "src/core/lib/slice/slice.h"
-#include "src/core/lib/slice/slice_buffer.h"
 #include "src/core/lib/surface/channel.h"
+#include "src/core/lib/transport/byte_stream.h"
 #include "src/core/lib/transport/connectivity_state.h"
 #include "src/core/lib/transport/metadata_batch.h"
 #include "src/core/lib/transport/transport.h"
@@ -534,7 +534,7 @@ class ClientChannel::LoadBalancedCall
   grpc_closure* original_recv_initial_metadata_ready_ = nullptr;
 
   // For intercepting recv_message_ready.
-  absl::optional<SliceBuffer>* recv_message_ = nullptr;
+  OrphanablePtr<ByteStream>* recv_message_ = nullptr;
   grpc_closure recv_message_ready_;
   grpc_closure* original_recv_message_ready_ = nullptr;
 
