@@ -187,9 +187,7 @@ class XdsResolver : public Resolver {
       Ref().release();  // ref held by lambda
       resolver_->work_serializer_->Run(
           [this]() {
-            resolver_->OnResourceDoesNotExist(
-                absl::StrCat(resolver_->lds_resource_name_,
-                             ": xDS listener resource does not exist"));
+            resolver_->OnResourceDoesNotExist();
             Unref();
           },
           DEBUG_LOCATION);
@@ -228,9 +226,7 @@ class XdsResolver : public Resolver {
       Ref().release();  // ref held by lambda
       resolver_->work_serializer_->Run(
           [this]() {
-            resolver_->OnResourceDoesNotExist(absl::StrCat(
-                resolver_->route_config_name_,
-                ": xDS route configuration resource does not exist"));
+            resolver_->OnResourceDoesNotExist();
             Unref();
           },
           DEBUG_LOCATION);
@@ -361,7 +357,7 @@ class XdsResolver : public Resolver {
   void OnListenerUpdate(XdsListenerResource listener);
   void OnRouteConfigUpdate(XdsRouteConfigResource rds_update);
   void OnError(absl::string_view context, absl::Status status);
-  void OnResourceDoesNotExist(std::string context);
+  void OnResourceDoesNotExist();
 
   absl::StatusOr<RefCountedPtr<ServiceConfig>> CreateServiceConfig();
   void GenerateResult();
@@ -981,7 +977,7 @@ void XdsResolver::OnError(absl::string_view context, absl::Status status) {
   result_handler_->ReportResult(std::move(result));
 }
 
-void XdsResolver::OnResourceDoesNotExist(std::string context) {
+void XdsResolver::OnResourceDoesNotExist() {
   gpr_log(GPR_ERROR,
           "[xds_resolver %p] LDS/RDS resource does not exist -- clearing "
           "update and returning empty service config",
@@ -995,7 +991,6 @@ void XdsResolver::OnResourceDoesNotExist(std::string context) {
   grpc_error_handle error = GRPC_ERROR_NONE;
   result.service_config = ServiceConfigImpl::Create(args_, "{}", &error);
   GPR_ASSERT(*result.service_config != nullptr);
-  result.resolution_note = std::move(context);
   result.args = grpc_channel_args_copy(args_);
   result_handler_->ReportResult(std::move(result));
 }

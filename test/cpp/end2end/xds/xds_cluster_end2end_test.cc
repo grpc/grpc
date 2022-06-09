@@ -1076,12 +1076,7 @@ TEST_P(FailoverTest, SwitchBackToHigherPriority) {
   WaitForBackend(DEBUG_LOCATION, 3);
   backends_[3]->StopListeningAndSendGoaways();
   backends_[0]->StopListeningAndSendGoaways();
-  WaitForBackend(DEBUG_LOCATION, 1, /*check_status=*/nullptr,
-                 WaitForBackendOptions().set_reset_counters(false));
-  for (size_t i = 0; i < backends_.size(); ++i) {
-    if (i == 1) continue;
-    EXPECT_EQ(0U, backends_[i]->backend_service()->request_count());
-  }
+  WaitForBackend(DEBUG_LOCATION, 1);
   ShutdownBackend(0);
   StartBackend(0);
   WaitForBackend(DEBUG_LOCATION, 0);

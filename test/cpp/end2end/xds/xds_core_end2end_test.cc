@@ -396,16 +396,18 @@ INSTANTIATE_TEST_SUITE_P(
 TEST_P(TimeoutTest, LdsServerIgnoresRequest) {
   balancer_->ads_service()->IgnoreResourceType(kLdsTypeUrl);
   CheckRpcSendFailure(DEBUG_LOCATION, StatusCode::UNAVAILABLE,
-                      absl::StrCat("empty address list: ", kServerName,
-                                   ": xDS listener resource does not exist"),
+                      // TODO(roth): Improve this error as part of
+                      // https://github.com/grpc/grpc/issues/22883.
+                      "empty address list: ",
                       RpcOptions().set_timeout_ms(4000));
 }
 
 TEST_P(TimeoutTest, LdsResourceNotPresentInRequest) {
   balancer_->ads_service()->UnsetResource(kLdsTypeUrl, kServerName);
   CheckRpcSendFailure(DEBUG_LOCATION, StatusCode::UNAVAILABLE,
-                      absl::StrCat("empty address list: ", kServerName,
-                                   ": xDS listener resource does not exist"),
+                      // TODO(roth): Improve this error as part of
+                      // https://github.com/grpc/grpc/issues/22883.
+                      "empty address list: ",
                       RpcOptions().set_timeout_ms(4000));
 }
 
@@ -432,16 +434,18 @@ TEST_P(TimeoutTest, LdsSecondResourceNotPresentInRequest) {
       SendRpcMethod(stub2.get(), rpc_options, &context, request, &response);
   EXPECT_EQ(StatusCode::UNAVAILABLE, status.error_code());
   EXPECT_THAT(status.error_message(),
-              absl::StrCat("empty address list: ", kNewServerName,
-                           ": xDS listener resource does not exist"));
+              // TODO(roth): Improve this error as part of
+              // https://github.com/grpc/grpc/issues/22883.
+              "empty address list: ");
 }
 
 TEST_P(TimeoutTest, RdsServerIgnoresRequest) {
   balancer_->ads_service()->IgnoreResourceType(kRdsTypeUrl);
   CheckRpcSendFailure(
       DEBUG_LOCATION, StatusCode::UNAVAILABLE,
-      absl::StrCat("empty address list: ", kDefaultRouteConfigurationName,
-                   ": xDS route configuration resource does not exist"),
+      // TODO(roth): Improve this error as part of
+      // https://github.com/grpc/grpc/issues/22883.
+      "empty address list: ",
       RpcOptions().set_timeout_ms(4000));
 }
 
@@ -450,8 +454,9 @@ TEST_P(TimeoutTest, RdsResourceNotPresentInRequest) {
                                           kDefaultRouteConfigurationName);
   CheckRpcSendFailure(
       DEBUG_LOCATION, StatusCode::UNAVAILABLE,
-      absl::StrCat("empty address list: ", kDefaultRouteConfigurationName,
-                   ": xDS route configuration resource does not exist"),
+      // TODO(roth): Improve this error as part of
+      // https://github.com/grpc/grpc/issues/22883.
+      "empty address list: ",
       RpcOptions().set_timeout_ms(4000));
 }
 
@@ -489,10 +494,10 @@ TEST_P(TimeoutTest, RdsSecondResourceNotPresentInRequest) {
   auto status =
       SendRpcMethod(stub2.get(), rpc_options, &context, request, &response);
   EXPECT_EQ(StatusCode::UNAVAILABLE, status.error_code());
-  EXPECT_THAT(
-      status.error_message(),
-      absl::StrCat("empty address list: ", kNewRouteConfigName,
-                   ": xDS route configuration resource does not exist"));
+  EXPECT_EQ(status.error_message(),
+            // TODO(roth): Improve this error as part of
+            // https://github.com/grpc/grpc/issues/22883.
+            "empty address list: ");
 }
 
 TEST_P(TimeoutTest, CdsServerIgnoresRequest) {
