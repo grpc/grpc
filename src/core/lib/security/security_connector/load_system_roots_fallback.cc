@@ -20,10 +20,10 @@
 
 #if !defined(GPR_LINUX) && !defined(GPR_ANDROID) && !defined(GPR_FREEBSD)
 
-#include "src/core/lib/security/security_connector/load_system_roots.h"
-
 #include <grpc/slice.h>
 #include <grpc/slice_buffer.h>
+
+#include "src/core/lib/security/security_connector/load_system_roots.h"
 
 namespace grpc_core {
 
