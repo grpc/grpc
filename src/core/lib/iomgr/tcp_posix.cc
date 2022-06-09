@@ -339,6 +339,7 @@ class TcpZerocopySendCtx {
   // returns false.
   bool UpdateZeroCopyOMemStateAfterSend(bool seen_enobuf) {
     MutexLock guard(&lock_);
+    is_in_write_ = false;
     if (seen_enobuf) {
       if (zcopy_enobuf_state_ == OMemState::CHECK) {
         zcopy_enobuf_state_ = OMemState::OPEN;
@@ -356,8 +357,8 @@ class TcpZerocopySendCtx {
   enum class OMemState : int8_t {
     OPEN,   // Everything is clear and omem is not full.
     FULL,   // The last sendmsg() has returned with an errno of ENOBUFS.
-    CHECK,  // Error queue is read while in_write_fd_ was true, so we should
-            // check this state after WriteFD.
+    CHECK,  // Error queue is read while is_in_write_ was true, so we should
+            // check this state after the sendmsg.
   };
 
   TcpZerocopySendRecord* ReleaseSendRecordLocked(uint32_t seq) {
