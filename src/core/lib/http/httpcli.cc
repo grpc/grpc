@@ -240,7 +240,7 @@ void HttpRequest::Orphan() {
 }
 
 void HttpRequest::AppendError(grpc_error_handle error) {
-  if (overall_error_ == GRPC_ERROR_NONE) {
+  if (GRPC_ERROR_IS_NONE(overall_error_)) {
     overall_error_ =
         GRPC_ERROR_CREATE_FROM_STATIC_STRING("Failed HTTP/1 client request");
   }
@@ -259,7 +259,7 @@ void HttpRequest::OnReadInternal(grpc_error_handle error) {
       have_read_byte_ = 1;
       grpc_error_handle err =
           grpc_http_parser_parse(&parser_, incoming_.slices[i], nullptr);
-      if (err != GRPC_ERROR_NONE) {
+      if (!GRPC_ERROR_IS_NONE(err)) {
         Finish(err);
         return;
       }
@@ -268,7 +268,7 @@ void HttpRequest::OnReadInternal(grpc_error_handle error) {
   if (cancelled_) {
     Finish(GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(
         "HTTP1 request cancelled during read", &overall_error_, 1));
-  } else if (error == GRPC_ERROR_NONE) {
+  } else if (GRPC_ERROR_IS_NONE(error)) {
     DoRead();
   } else if (!have_read_byte_) {
     NextAddress(GRPC_ERROR_REF(error));
@@ -281,7 +281,7 @@ void HttpRequest::ContinueDoneWriteAfterScheduleOnExecCtx(
     void* arg, grpc_error_handle error) {
   RefCountedPtr<HttpRequest> req(static_cast<HttpRequest*>(arg));
   MutexLock lock(&req->mu_);
-  if (error == GRPC_ERROR_NONE && !req->cancelled_) {
+  if (GRPC_ERROR_IS_NONE(error) && !req->cancelled_) {
     req->OnWritten();
   } else {
     req->NextAddress(GRPC_ERROR_REF(error));
@@ -306,7 +306,7 @@ void HttpRequest::OnHandshakeDone(void* arg, grpc_error_handle error) {
   }
   MutexLock lock(&req->mu_);
   req->own_endpoint_ = true;
-  if (error != GRPC_ERROR_NONE) {
+  if (!GRPC_ERROR_IS_NONE(error)) {
     req->handshake_mgr_.reset();
     req->NextAddress(GRPC_ERROR_REF(error));
     return;
@@ -370,7 +370,7 @@ void HttpRequest::DoHandshake(const grpc_resolved_address* addr) {
 }
 
 void HttpRequest::NextAddress(grpc_error_handle error) {
-  if (error != GRPC_ERROR_NONE) {
+  if (!GRPC_ERROR_IS_NONE(error)) {
     AppendError(error);
   }
   if (cancelled_) {

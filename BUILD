@@ -1891,6 +1891,23 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "periodic_update",
+    srcs = [
+        "src/core/lib/resource_quota/periodic_update.cc",
+    ],
+    hdrs = [
+        "src/core/lib/resource_quota/periodic_update.h",
+    ],
+    tags = ["grpc-autodeps"],
+    deps = [
+        "exec_ctx",
+        "gpr_platform",
+        "time",
+        "useful",
+    ],
+)
+
+grpc_cc_library(
     name = "arena",
     srcs = [
         "src/core/lib/resource_quota/arena.cc",
@@ -3074,6 +3091,7 @@ grpc_cc_library(
         "absl/strings",
         "absl/strings:cord",
         "absl/strings:str_format",
+        "absl/time",
         "absl/types:optional",
         "absl/types:variant",
         "absl/status",
@@ -3092,6 +3110,7 @@ grpc_cc_library(
         "config",
         "construct_destruct",
         "debug_location",
+        "default_event_engine_factory_hdrs",
         "dual_ref_counted",
         "error",
         "gpr_base",
@@ -4131,6 +4150,7 @@ grpc_cc_library(
     ],
     external_deps = [
         "absl/container:inlined_vector",
+        "absl/status",
         "absl/types:optional",
     ],
     language = "c++",

@@ -139,7 +139,7 @@ class OrcaService::Reactor : public ServerWriteReactor<ByteBuffer>,
   static void OnTimer(void* arg, grpc_error_handle error) {
     grpc_core::RefCountedPtr<Reactor> self(static_cast<Reactor*>(arg));
     grpc::internal::MutexLock lock(&self->timer_mu_);
-    if (error == GRPC_ERROR_NONE && self->timer_pending_) {
+    if (GRPC_ERROR_IS_NONE(error) && self->timer_pending_) {
       self->timer_pending_ = false;
       self->SendResponse();
     }

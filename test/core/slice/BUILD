@@ -27,6 +27,7 @@ grpc_fuzzer(
     tags = ["no_windows"],
     deps = [
         "//:grpc",
+        "//test/core/util:grpc_suppressions",
     ],
 )
 
@@ -38,6 +39,7 @@ grpc_fuzzer(
     tags = ["no_windows"],
     deps = [
         "//:grpc",
+        "//test/core/util:grpc_suppressions",
     ],
 )
 

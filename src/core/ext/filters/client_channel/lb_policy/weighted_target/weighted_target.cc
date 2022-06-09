@@ -476,7 +476,7 @@ void WeightedTargetLb::WeightedChild::DelayedRemovalTimer::OnTimer(
 
 void WeightedTargetLb::WeightedChild::DelayedRemovalTimer::OnTimerLocked(
     grpc_error_handle error) {
-  if (error == GRPC_ERROR_NONE && timer_pending_) {
+  if (GRPC_ERROR_IS_NONE(error) && timer_pending_) {
     timer_pending_ = false;
     weighted_child_->weighted_target_policy_->targets_.erase(
         weighted_child_->name_);
@@ -695,7 +695,7 @@ class WeightedTargetLbFactory : public LoadBalancingPolicyFactory {
 
   RefCountedPtr<LoadBalancingPolicy::Config> ParseLoadBalancingConfig(
       const Json& json, grpc_error_handle* error) const override {
-    GPR_DEBUG_ASSERT(error != nullptr && *error == GRPC_ERROR_NONE);
+    GPR_DEBUG_ASSERT(error != nullptr && GRPC_ERROR_IS_NONE(*error));
     if (json.type() == Json::Type::JSON_NULL) {
       // weighted_target was mentioned as a policy in the deprecated
       // loadBalancingPolicy field or in the client API.
@@ -773,7 +773,7 @@ class WeightedTargetLbFactory : public LoadBalancingPolicyFactory {
           LoadBalancingPolicyRegistry::ParseLoadBalancingConfig(it->second,
                                                                 &parse_error);
       if (child_config->config == nullptr) {
-        GPR_DEBUG_ASSERT(parse_error != GRPC_ERROR_NONE);
+        GPR_DEBUG_ASSERT(!GRPC_ERROR_IS_NONE(parse_error));
         std::vector<grpc_error_handle> child_errors;
         child_errors.push_back(parse_error);
         error_list.push_back(

@@ -37,7 +37,10 @@ cd ${IWYU_ROOT}
 sed -i 's,^#!/usr/bin/env python,#!/usr/bin/env python3,g' ${IWYU_ROOT}/iwyu/iwyu_tool.py
 sed -i 's,^#!/usr/bin/env python,#!/usr/bin/env python3,g' ${IWYU_ROOT}/iwyu/fix_includes.py
 
-cat compile_commands.json | sed "s,\"file\": \",\"file\": \"${IWYU_ROOT}/,g" > compile_commands_for_iwyu.json
+cat compile_commands.json                            \
+  | sed "s/ -DNDEBUG//g"                              \
+  | sed "s,\"file\": \",\"file\": \"${IWYU_ROOT}/,g" \
+  > compile_commands_for_iwyu.json
 
 export ENABLED_MODULES='
   src/core/ext

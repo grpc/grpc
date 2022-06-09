@@ -242,8 +242,8 @@ struct grpc_pollset_set {
 
 static bool append_error(grpc_error_handle* composite, grpc_error_handle error,
                          const char* desc) {
-  if (error == GRPC_ERROR_NONE) return true;
-  if (*composite == GRPC_ERROR_NONE) {
+  if (GRPC_ERROR_IS_NONE(error)) return true;
+  if (GRPC_ERROR_IS_NONE(*composite)) {
     *composite = GRPC_ERROR_CREATE_FROM_COPIED_STRING(desc);
   }
   *composite = grpc_error_add_child(*composite, error);
@@ -517,7 +517,7 @@ static grpc_error_handle pollset_global_init(void) {
   gpr_atm_no_barrier_store(&g_active_poller, 0);
   global_wakeup_fd.read_fd = -1;
   grpc_error_handle err = grpc_wakeup_fd_init(&global_wakeup_fd);
-  if (err != GRPC_ERROR_NONE) return err;
+  if (!GRPC_ERROR_IS_NONE(err)) return err;
   struct epoll_event ev;
   ev.events = static_cast<uint32_t>(EPOLLIN | EPOLLET);
   ev.data.ptr = &global_wakeup_fd;

@@ -93,7 +93,7 @@ class AlarmImpl : public grpc::internal::CompletionQueueTag {
               GRPC_CLOSURE_CREATE(
                   [](void* arg, grpc_error_handle error) {
                     AlarmImpl* alarm = static_cast<AlarmImpl*>(arg);
-                    alarm->callback_(error == GRPC_ERROR_NONE);
+                    alarm->callback_(GRPC_ERROR_IS_NONE(error));
                     alarm->Unref();
                   },
                   arg, nullptr),
