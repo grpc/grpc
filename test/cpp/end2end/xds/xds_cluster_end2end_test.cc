@@ -452,14 +452,12 @@ TEST_P(EdsTest, InitiallyEmptyServerlist) {
   args = EdsResourceArgs({{"locality0", CreateEndpointsForBackends()}});
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
   // RPCs should eventually succeed.
-  WaitForAllBackends(
-      DEBUG_LOCATION, 0, 1,
-      [&](const RpcResult& result) {
-        if (!result.status.ok()) {
-          EXPECT_EQ(result.status.error_code(), StatusCode::UNAVAILABLE);
-          EXPECT_EQ(result.status.error_message(), kErrorMessage);
-        }
-      });
+  WaitForAllBackends(DEBUG_LOCATION, 0, 1, [&](const RpcResult& result) {
+    if (!result.status.ok()) {
+      EXPECT_EQ(result.status.error_code(), StatusCode::UNAVAILABLE);
+      EXPECT_EQ(result.status.error_message(), kErrorMessage);
+    }
+  });
 }
 
 // Tests that RPCs will fail with UNAVAILABLE instead of DEADLINE_EXCEEDED if
@@ -1112,14 +1110,12 @@ TEST_P(FailoverTest, UpdateInitialUnavailable) {
        1},
   });
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
-  WaitForBackend(
-      DEBUG_LOCATION, 0,
-      [&](const RpcResult& result) {
-        if (!result.status.ok()) {
-          EXPECT_EQ(result.status.error_code(), StatusCode::UNAVAILABLE);
-          EXPECT_EQ(result.status.error_message(), kErrorMessage);
-        }
-      });
+  WaitForBackend(DEBUG_LOCATION, 0, [&](const RpcResult& result) {
+    if (!result.status.ok()) {
+      EXPECT_EQ(result.status.error_code(), StatusCode::UNAVAILABLE);
+      EXPECT_EQ(result.status.error_message(), kErrorMessage);
+    }
+  });
 }
 
 // Tests that after the localities' priorities are updated, we still choose
@@ -1269,9 +1265,9 @@ TEST_P(ClientLoadReportingTest, Vanilla) {
   });
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
   // Wait until all backends are ready.
-  size_t num_warmup_rpcs = WaitForAllBackends(
-      DEBUG_LOCATION, 0, 4, /*check_status=*/nullptr,
-      WaitForBackendOptions().set_reset_counters(false));
+  size_t num_warmup_rpcs =
+      WaitForAllBackends(DEBUG_LOCATION, 0, 4, /*check_status=*/nullptr,
+                         WaitForBackendOptions().set_reset_counters(false));
   // Send kNumRpcsPerAddress RPCs per server.
   CheckRpcSendOk(DEBUG_LOCATION, kNumRpcsPerAddress * backends_.size());
   for (size_t i = 0; i < kNumFailuresPerAddress * backends_.size(); ++i) {

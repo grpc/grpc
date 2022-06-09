@@ -964,8 +964,7 @@ std::vector<XdsEnd2endTest::ConcurrentRpc> XdsEnd2endTest::SendConcurrentRpcs(
 size_t XdsEnd2endTest::WaitForAllBackends(
     const grpc_core::DebugLocation& debug_location, size_t start_index,
     size_t stop_index, std::function<void(const RpcResult&)> check_status,
-    const WaitForBackendOptions& wait_options,
-    const RpcOptions& rpc_options) {
+    const WaitForBackendOptions& wait_options, const RpcOptions& rpc_options) {
   if (check_status == nullptr) {
     check_status = [&](const RpcResult& result) {
       EXPECT_TRUE(result.status.ok())

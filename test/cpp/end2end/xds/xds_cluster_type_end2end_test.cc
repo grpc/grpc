@@ -727,14 +727,12 @@ TEST_P(AggregateClusterTest, ReconfigEdsWhileLogicalDnsChildFails) {
   });
   balancer_->ads_service()->SetEdsResource(
       BuildEdsResource(args1, kNewEdsService1Name));
-  WaitForBackend(
-      DEBUG_LOCATION, 0,
-      [&](const RpcResult& result) {
-        if (!result.status.ok()) {
-          EXPECT_EQ(result.status.error_code(), StatusCode::UNAVAILABLE);
-          EXPECT_EQ(result.status.error_message(), kErrorMessage);
-        }
-      });
+  WaitForBackend(DEBUG_LOCATION, 0, [&](const RpcResult& result) {
+    if (!result.status.ok()) {
+      EXPECT_EQ(result.status.error_code(), StatusCode::UNAVAILABLE);
+      EXPECT_EQ(result.status.error_message(), kErrorMessage);
+    }
+  });
 }
 
 TEST_P(AggregateClusterTest, MultipleClustersWithSameLocalities) {
