@@ -20,6 +20,7 @@
 #include <condition_variable>
 #include <deque>
 #include <map>
+#include <memory>
 #include <mutex>
 #include <set>
 #include <sstream>
@@ -40,9 +41,11 @@
 #include <grpcpp/server_builder.h>
 #include <grpcpp/server_context.h>
 #include <grpcpp/support/string_ref.h>
+#include <grpcpp/xds_server_builder.h>
 
 #include "src/core/lib/channel/status_util.h"
 #include "src/core/lib/gpr/env.h"
+#include "src/core/lib/gprpp/host_port.h"
 #include "src/core/lib/iomgr/gethostname.h"
 #include "src/proto/grpc/testing/istio_echo.pb.h"
 #include "test/core/util/test_config.h"
@@ -52,6 +55,13 @@
 // A list of ports to listen on, for gRPC traffic.
 ABSL_FLAG(std::vector<std::string>, grpc, std::vector<std::string>({"7070"}),
           "GRPC ports");
+ABSL_FLAG(std::vector<std::string>, tls, std::vector<std::string>({}),
+          "Ports that are using TLS. These must be defined as http/grpc/tcp.");
+ABSL_FLAG(std::vector<std::string>, xds_grpc_server,
+          std::vector<std::string>({}),
+          "Ports that should rely on XDS configuration to serve");
+ABSL_FLAG(std::string, crt, "", "gRPC TLS server-side certificate");
+ABSL_FLAG(std::string, key, "", "gRPC TLS server-side key");
 
 // The following flags must be defined, but are not used for now. Some may be
 // necessary for certain tests.
@@ -59,32 +69,26 @@ ABSL_FLAG(std::vector<std::string>, port, std::vector<std::string>({"8080"}),
           "HTTP/1.1 ports");
 ABSL_FLAG(std::vector<std::string>, tcp, std::vector<std::string>({"9090"}),
           "TCP ports");
-ABSL_FLAG(std::vector<std::string>, tls, std::vector<std::string>({""}),
-          "Ports that are using TLS. These must be defined as http/grpc/tcp.");
-ABSL_FLAG(std::vector<std::string>, bind_ip, std::vector<std::string>({""}),
+ABSL_FLAG(std::vector<std::string>, bind_ip, std::vector<std::string>({}),
           "Ports that are bound to INSTANCE_IP rather than wildcard IP.");
 ABSL_FLAG(std::vector<std::string>, bind_localhost,
-          std::vector<std::string>({""}),
+          std::vector<std::string>({}),
           "Ports that are bound to localhost rather than wildcard IP.");
-ABSL_FLAG(std::vector<std::string>, server_first,
-          std::vector<std::string>({""}),
+ABSL_FLAG(std::vector<std::string>, server_first, std::vector<std::string>({}),
           "Ports that are server first. These must be defined as tcp.");
-ABSL_FLAG(std::vector<std::string>, xds_grpc_server,
-          std::vector<std::string>({""}),
-          "Ports that should rely on XDS configuration to serve");
 ABSL_FLAG(std::string, metrics, "", "Metrics port");
 ABSL_FLAG(std::string, uds, "", "HTTP server on unix domain socket");
 ABSL_FLAG(std::string, cluster, "", "Cluster where this server is deployed");
-ABSL_FLAG(std::string, crt, "", "gRPC TLS server-side certificate");
-ABSL_FLAG(std::string, key, "", "gRPC TLS server-side key");
 ABSL_FLAG(std::string, istio_version, "", "Istio sidecar version");
 ABSL_FLAG(std::string, disable_alpn, "", "disable ALPN negotiation");
 
 namespace grpc {
 namespace testing {
 namespace {
-/*std::vector<std::unique_ptr<grpc::Server>>*/
-void RunServer(std::vector<int> ports) {
+
+void RunServer(std::vector<int> grpc_ports, std::set<int> xds_ports,
+               std::set<int> tls_ports) {
+  // Get hostname
   std::string hostname;
   char* hostname_p = grpc_gethostname();
   if (hostname_p == nullptr) {
@@ -95,20 +99,49 @@ void RunServer(std::vector<int> ports) {
   }
   EchoTestServiceImpl echo_test_service(hostname);
   ServerBuilder builder;
+  XdsServerBuilder xds_builder;
+  bool has_xds_listeners = false;
   builder.RegisterService(&echo_test_service);
-  for (int port : ports) {
-    std::ostringstream server_address;
-    server_address << "0.0.0.0:" << port;
-    builder.AddListeningPort(server_address.str(),
-                             grpc::InsecureServerCredentials());
-    gpr_log(GPR_DEBUG, "Server listening on %s", server_address.str().c_str());
+  // Create Credentials for Tls Servers -
+  // 1. Uses FileWatcherCertificateProvider with a refresh interval of 600
+  // seconds. (Number decided based on gRPC defaults.
+  // 2. Do not ask for client certificates. (Not yet sure what is needed right
+  // now.)
+  experimental::TlsServerCredentialsOptions options(
+      std::make_shared<experimental::FileWatcherCertificateProvider>(
+          absl::GetFlag(FLAGS_key), absl::GetFlag(FLAGS_crt), 600));
+  options.set_cert_request_type(GRPC_SSL_DONT_REQUEST_CLIENT_CERTIFICATE);
+  options.watch_identity_key_cert_pairs();
+  options.set_check_call_host(false);
+  auto tls_creds = TlsServerCredentials(options);
+  // Add ports to the builders
+  for (int port : grpc_ports) {
+    auto server_address = grpc_core::JoinHostPort("0.0.0.0", port);
+    if (xds_ports.find(port) != xds_ports.end()) {
+      xds_builder.AddListeningPort(
+          server_address, XdsServerCredentials(InsecureServerCredentials()));
+      gpr_log(GPR_INFO, "Server listening on %s over xds",
+              server_address.c_str());
+      has_xds_listeners = true;
+    } else if (tls_ports.find(port) != tls_ports.end()) {
+      builder.AddListeningPort(server_address, tls_creds);
+      gpr_log(GPR_INFO, "Server listening on %s over tls",
+              server_address.c_str());
+    } else {
+      builder.AddListeningPort(server_address, InsecureServerCredentials());
+      gpr_log(GPR_INFO, "Server listening on %s over insecure",
+              server_address.c_str());
+    }
   }
-
+  // Enable the default health check service, probably not needed though.
+  grpc::EnableDefaultHealthCheckService(true);
+  std::unique_ptr<Server> xds_server;
+  if (has_xds_listeners) {
+    xds_server = xds_builder.BuildAndStart();
+  }
   // 3333 is the magic port that the istio testing for k8s health checks. And
   // it only needs TCP. So also make the gRPC server to listen on 3333.
-  std::ostringstream server_address_3333;
-  server_address_3333 << "0.0.0.0:" << 3333;
-  builder.AddListeningPort(server_address_3333.str(),
+  builder.AddListeningPort(grpc_core::JoinHostPort("0.0.0.0", 3333),
                            grpc::InsecureServerCredentials());
   std::unique_ptr<Server> server(builder.BuildAndStart());
   server->Wait();
@@ -124,6 +157,7 @@ int main(int argc, char** argv) {
   // "--grpc=8080,9090".
   // 2. replace '-' to '_'. So "--istio-version=123" becomes
   // "--istio_version=123".
+  // 3. remove --version since that is specially interpretted by absl
   std::map<std::string, std::vector<std::string>> argv_dict;
   for (int i = 0; i < argc; i++) {
     std::string arg(argv[i]);
@@ -165,6 +199,27 @@ int main(int argc, char** argv) {
     int grpc_port = std::stoi(p);
     grpc_ports.push_back(grpc_port);
   }
-  grpc::testing::RunServer(grpc_ports);
+  // Create a map of which ports are supposed to use xds
+  std::set<int> xds_ports;
+  for (const auto& p : absl::GetFlag(FLAGS_xds_grpc_server)) {
+    int port = 0;
+    if (!absl::SimpleAtoi(p, &port)) {
+      gpr_log(GPR_ERROR, "SimpleAtoi Failure: %s", p.c_str());
+      return 1;
+    }
+    xds_ports.insert(port);
+  }
+  // Create a map of which ports are supposed to use tls
+  std::set<int> tls_ports;
+  for (const auto& p : absl::GetFlag(FLAGS_tls)) {
+    int port = 0;
+    if (!absl::SimpleAtoi(p, &port)) {
+      gpr_log(GPR_ERROR, "SimpleAtoi Failure: %s", p.c_str());
+      return 1;
+    }
+    tls_ports.insert(port);
+  }
+  // Start the servers
+  grpc::testing::RunServer(grpc_ports, xds_ports, tls_ports);
   return 0;
 }
