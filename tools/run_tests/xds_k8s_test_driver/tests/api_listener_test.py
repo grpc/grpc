@@ -19,6 +19,7 @@ from google.protobuf import json_format
 
 from framework import xds_k8s_testcase
 from framework import xds_url_map_testcase
+from framework.helpers import skips
 
 logger = logging.getLogger(__name__)
 flags.adopt_module_key_flags(xds_k8s_testcase)
@@ -27,11 +28,20 @@ flags.adopt_module_key_flags(xds_k8s_testcase)
 _XdsTestServer = xds_k8s_testcase.XdsTestServer
 _XdsTestClient = xds_k8s_testcase.XdsTestClient
 _DumpedXdsConfig = xds_url_map_testcase.DumpedXdsConfig
+_Lang = skips.Lang
 
 _TD_CONFIG_RETRY_WAIT_SEC = 2
 
 
 class ApiListenerTest(xds_k8s_testcase.RegularXdsKubernetesTestCase):
+
+    @staticmethod
+    def is_supported(config: skips.TestConfig) -> bool:
+        if config.client_lang == _Lang.PYTHON:
+            # gRPC Python versions prior to v1.43.x don't support handling empty
+            # RDS update.
+            return not config.version_lt('v1.43.x')
+        return True
 
     def test_api_listener(self) -> None:
         with self.subTest('00_create_health_check'):

@@ -103,7 +103,7 @@ grpc_auth_refresh_token grpc_auth_refresh_token_create_from_string(
     const char* json_string) {
   grpc_error_handle error = GRPC_ERROR_NONE;
   Json json = Json::Parse(json_string, &error);
-  if (error != GRPC_ERROR_NONE) {
+  if (!GRPC_ERROR_IS_NONE(error)) {
     gpr_log(GPR_ERROR, "JSON parsing failed: %s",
             grpc_error_std_string(error).c_str());
     GRPC_ERROR_UNREF(error);
@@ -173,7 +173,7 @@ grpc_oauth2_token_fetcher_credentials_parse_server_response(
     Json::Object::const_iterator it;
     grpc_error_handle error = GRPC_ERROR_NONE;
     json = Json::Parse(null_terminated_body, &error);
-    if (error != GRPC_ERROR_NONE) {
+    if (!GRPC_ERROR_IS_NONE(error)) {
       gpr_log(GPR_ERROR, "Could not parse JSON from %s: %s",
               null_terminated_body, grpc_error_std_string(error).c_str());
       GRPC_ERROR_UNREF(error);
@@ -237,7 +237,7 @@ void grpc_oauth2_token_fetcher_credentials::on_http_response(
   absl::optional<grpc_core::Slice> access_token_value;
   grpc_core::Duration token_lifetime;
   grpc_credentials_status status =
-      error == GRPC_ERROR_NONE
+      GRPC_ERROR_IS_NONE(error)
           ? grpc_oauth2_token_fetcher_credentials_parse_server_response(
                 &r->response, &access_token_value, &token_lifetime)
           : GRPC_CREDENTIALS_ERROR;
@@ -523,7 +523,7 @@ void MaybeAddToBody(const char* field_name, const char* field,
 
 grpc_error_handle LoadTokenFile(const char* path, gpr_slice* token) {
   grpc_error_handle err = grpc_load_file(path, 1, token);
-  if (err != GRPC_ERROR_NONE) return err;
+  if (!GRPC_ERROR_IS_NONE(err)) return err;
   if (GRPC_SLICE_LENGTH(*token) == 0) {
     gpr_log(GPR_ERROR, "Token file %s is empty", path);
     err = GRPC_ERROR_CREATE_FROM_STATIC_STRING("Token file is empty.");
@@ -561,7 +561,7 @@ class StsTokenFetcherCredentials
     grpc_http_request request;
     memset(&request, 0, sizeof(grpc_http_request));
     grpc_error_handle err = FillBody(&request.body, &request.body_length);
-    if (err != GRPC_ERROR_NONE) {
+    if (!GRPC_ERROR_IS_NONE(err)) {
       response_cb(metadata_req, err);
       GRPC_ERROR_UNREF(err);
       return;
@@ -599,7 +599,7 @@ class StsTokenFetcherCredentials
 
     auto cleanup = [&body, &body_length, &body_parts, &subject_token,
                     &actor_token, &err]() {
-      if (err == GRPC_ERROR_NONE) {
+      if (GRPC_ERROR_IS_NONE(err)) {
         std::string body_str = absl::StrJoin(body_parts, "");
         *body = gpr_strdup(body_str.c_str());
         *body_length = body_str.size();
@@ -610,7 +610,7 @@ class StsTokenFetcherCredentials
     };
 
     err = LoadTokenFile(subject_token_path_.get(), &subject_token);
-    if (err != GRPC_ERROR_NONE) return cleanup();
+    if (!GRPC_ERROR_IS_NONE(err)) return cleanup();
     body_parts.push_back(absl::StrFormat(
         GRPC_STS_POST_MINIMAL_BODY_FORMAT_STRING,
         reinterpret_cast<const char*>(GRPC_SLICE_START_PTR(subject_token)),
@@ -622,7 +622,7 @@ class StsTokenFetcherCredentials
                    &body_parts);
     if ((actor_token_path_ != nullptr) && *actor_token_path_ != '\0') {
       err = LoadTokenFile(actor_token_path_.get(), &actor_token);
-      if (err != GRPC_ERROR_NONE) return cleanup();
+      if (!GRPC_ERROR_IS_NONE(err)) return cleanup();
       MaybeAddToBody(
           "actor_token",
           reinterpret_cast<const char*>(GRPC_SLICE_START_PTR(actor_token)),

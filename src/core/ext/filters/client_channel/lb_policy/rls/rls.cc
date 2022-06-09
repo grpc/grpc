@@ -783,7 +783,7 @@ void RlsLb::ChildPolicyWrapper::StartUpdate() {
   grpc_error_handle error = InsertOrUpdateChildPolicyField(
       lb_policy_->config_->child_policy_config_target_field_name(), target_,
       &child_policy_config);
-  GPR_ASSERT(error == GRPC_ERROR_NONE);
+  GPR_ASSERT(GRPC_ERROR_IS_NONE(error));
   if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_rls_trace)) {
     gpr_log(
         GPR_INFO,
@@ -794,7 +794,7 @@ void RlsLb::ChildPolicyWrapper::StartUpdate() {
   pending_config_ = LoadBalancingPolicyRegistry::ParseLoadBalancingConfig(
       child_policy_config, &error);
   // Returned RLS target fails the validation.
-  if (error != GRPC_ERROR_NONE) {
+  if (!GRPC_ERROR_IS_NONE(error)) {
     if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_rls_trace)) {
       gpr_log(GPR_INFO,
               "[rlslb %p] ChildPolicyWrapper=%p [%s]: config failed to parse: "
@@ -1777,7 +1777,7 @@ void RlsLb::RlsRequest::OnRlsCallCompleteLocked(grpc_error_handle error) {
   }
   // Parse response.
   ResponseInfo response;
-  if (error != GRPC_ERROR_NONE) {
+  if (!GRPC_ERROR_IS_NONE(error)) {
     grpc_status_code code;
     std::string message;
     grpc_error_get_status(error, deadline_, &code, &message,
@@ -2231,7 +2231,7 @@ grpc_error_handle ParseGrpcKeybuilder(
         grpc_error_handle child_error = GRPC_ERROR_NONE;
         std::string name =
             ParseJsonMethodName(name_idx++, name_json, &child_error);
-        if (child_error != GRPC_ERROR_NONE) {
+        if (!GRPC_ERROR_IS_NONE(child_error)) {
           error_list.push_back(child_error);
         } else {
           bool inserted = names.insert(name).second;
@@ -2267,7 +2267,7 @@ grpc_error_handle ParseGrpcKeybuilder(
       std::vector<std::string> headers;
       grpc_error_handle child_error =
           ParseJsonHeaders(header_idx++, header_json, &key, &headers);
-      if (child_error != GRPC_ERROR_NONE) {
+      if (!GRPC_ERROR_IS_NONE(child_error)) {
         error_list.push_back(child_error);
       } else {
         duplicate_key_check_func(key);
@@ -2360,7 +2360,7 @@ RlsLbConfig::KeyBuilderMap ParseGrpcKeybuilders(
   for (const Json& key_builder : key_builder_list) {
     grpc_error_handle child_error =
         ParseGrpcKeybuilder(idx++, key_builder, &key_builder_map);
-    if (child_error != GRPC_ERROR_NONE) error_list.push_back(child_error);
+    if (!GRPC_ERROR_IS_NONE(child_error)) error_list.push_back(child_error);
   }
   *error = GRPC_ERROR_CREATE_FROM_VECTOR("field:grpcKeybuilders", &error_list);
   return key_builder_map;
@@ -2377,7 +2377,7 @@ RlsLbConfig::RouteLookupConfig ParseRouteLookupConfig(
     grpc_error_handle child_error = GRPC_ERROR_NONE;
     route_lookup_config.key_builder_map =
         ParseGrpcKeybuilders(*keybuilder_list, &child_error);
-    if (child_error != GRPC_ERROR_NONE) error_list.push_back(child_error);
+    if (!GRPC_ERROR_IS_NONE(child_error)) error_list.push_back(child_error);
   }
   // Parse lookupService.
   if (ParseJsonObjectField(json, "lookupService",
@@ -2453,12 +2453,12 @@ grpc_error_handle ValidateChildPolicyList(
       default_target.empty() ? kFakeTargetFieldValue : default_target;
   grpc_error_handle error = InsertOrUpdateChildPolicyField(
       child_policy_config_target_field_name, target, child_policy_config);
-  if (error != GRPC_ERROR_NONE) return error;
+  if (!GRPC_ERROR_IS_NONE(error)) return error;
   // Parse the config.
   RefCountedPtr<LoadBalancingPolicy::Config> parsed_config =
       LoadBalancingPolicyRegistry::ParseLoadBalancingConfig(
           *child_policy_config, &error);
-  if (error != GRPC_ERROR_NONE) return error;
+  if (!GRPC_ERROR_IS_NONE(error)) return error;
   // Find the chosen config and return it in JSON form.
   // We remove all non-selected configs, and in the selected config, we leave
   // the target field in place, set to the default value.  This slightly
@@ -2501,7 +2501,7 @@ class RlsLbFactory : public LoadBalancingPolicyFactory {
       grpc_error_handle child_error = GRPC_ERROR_NONE;
       route_lookup_config =
           ParseRouteLookupConfig(*route_lookup_config_json, &child_error);
-      if (child_error != GRPC_ERROR_NONE) error_list.push_back(child_error);
+      if (!GRPC_ERROR_IS_NONE(child_error)) error_list.push_back(child_error);
     }
     // Parse routeLookupChannelServiceConfig.
     std::string rls_channel_service_config;
@@ -2517,7 +2517,7 @@ class RlsLbFactory : public LoadBalancingPolicyFactory {
       auto service_config = MakeRefCounted<ServiceConfigImpl>(
           /*args=*/nullptr, rls_channel_service_config,
           std::move(rls_channel_service_config_json), &child_error);
-      if (child_error != GRPC_ERROR_NONE) {
+      if (!GRPC_ERROR_IS_NONE(child_error)) {
         error_list.push_back(GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(
             "field:routeLookupChannelServiceConfig", &child_error, 1));
         GRPC_ERROR_UNREF(child_error);
@@ -2549,7 +2549,7 @@ class RlsLbFactory : public LoadBalancingPolicyFactory {
           it->second, child_policy_config_target_field_name,
           route_lookup_config.default_target, &child_policy_config,
           &default_child_policy_parsed_config);
-      if (child_error != GRPC_ERROR_NONE) {
+      if (!GRPC_ERROR_IS_NONE(child_error)) {
         error_list.push_back(GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(
             "field:childPolicy", &child_error, 1));
         GRPC_ERROR_UNREF(child_error);

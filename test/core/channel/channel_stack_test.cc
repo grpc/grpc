@@ -134,7 +134,7 @@ static void test_create_channel_stack(void) {
   };
   grpc_error_handle error =
       grpc_call_stack_init(channel_stack, 1, free_call, call_stack, &args);
-  GPR_ASSERT(error == GRPC_ERROR_NONE);
+  GPR_ASSERT(GRPC_ERROR_IS_NONE(error));
   GPR_ASSERT(call_stack->count == 1);
   call_elem = grpc_call_stack_element(call_stack, 0);
   GPR_ASSERT(call_elem->filter == channel_elem->filter);
