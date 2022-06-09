@@ -1334,7 +1334,7 @@ TEST_P(LdsRdsTest, XdsRoutingWeightedCluster) {
   default_route->mutable_route()->set_cluster(kDefaultClusterName);
   SetRouteConfiguration(balancer_.get(), new_route_config);
   WaitForAllBackends(DEBUG_LOCATION, 0, 1);
-  WaitForAllBackends(DEBUG_LOCATION, 1, 3, WaitForBackendOptions(),
+  WaitForAllBackends(DEBUG_LOCATION, 1, 3, /*check_status=*/nullptr, WaitForBackendOptions(),
                      RpcOptions().set_rpc_service(SERVICE_ECHO1));
   CheckRpcSendOk(DEBUG_LOCATION, kNumEchoRpcs);
   CheckRpcSendOk(DEBUG_LOCATION, kNumEcho1Rpcs,
@@ -1505,7 +1505,7 @@ TEST_P(LdsRdsTest, XdsRoutingWeightedClusterUpdateWeights) {
   default_route->mutable_route()->set_cluster(kDefaultClusterName);
   SetRouteConfiguration(balancer_.get(), new_route_config);
   WaitForAllBackends(DEBUG_LOCATION, 0, 1);
-  WaitForAllBackends(DEBUG_LOCATION, 1, 3, WaitForBackendOptions(),
+  WaitForAllBackends(DEBUG_LOCATION, 1, 3, /*check_status=*/nullptr, WaitForBackendOptions(),
                      RpcOptions().set_rpc_service(SERVICE_ECHO1));
   CheckRpcSendOk(DEBUG_LOCATION, kNumEchoRpcs);
   CheckRpcSendOk(DEBUG_LOCATION, kNumEcho1Rpcs7525,
@@ -1636,7 +1636,7 @@ TEST_P(LdsRdsTest, XdsRoutingWeightedClusterUpdateClusters) {
   default_route->mutable_route()->set_cluster(kDefaultClusterName);
   SetRouteConfiguration(balancer_.get(), new_route_config);
   WaitForBackend(DEBUG_LOCATION, 0);
-  WaitForBackend(DEBUG_LOCATION, 1, WaitForBackendOptions(),
+  WaitForBackend(DEBUG_LOCATION, 1, /*check_status=*/nullptr, WaitForBackendOptions(),
                  RpcOptions().set_rpc_service(SERVICE_ECHO1));
   CheckRpcSendOk(DEBUG_LOCATION, kNumEchoRpcs);
   CheckRpcSendOk(DEBUG_LOCATION, kNumEcho1Rpcs7525,
@@ -1664,7 +1664,7 @@ TEST_P(LdsRdsTest, XdsRoutingWeightedClusterUpdateClusters) {
   weighted_cluster2->mutable_weight()->set_value(kWeight50);
   SetRouteConfiguration(balancer_.get(), new_route_config);
   ResetBackendCounters();
-  WaitForBackend(DEBUG_LOCATION, 2, WaitForBackendOptions(),
+  WaitForBackend(DEBUG_LOCATION, 2, /*check_status=*/nullptr, WaitForBackendOptions(),
                  RpcOptions().set_rpc_service(SERVICE_ECHO1));
   CheckRpcSendOk(DEBUG_LOCATION, kNumEchoRpcs);
   CheckRpcSendOk(DEBUG_LOCATION, kNumEcho1Rpcs5050,
@@ -1692,7 +1692,7 @@ TEST_P(LdsRdsTest, XdsRoutingWeightedClusterUpdateClusters) {
   weighted_cluster2->mutable_weight()->set_value(kWeight25);
   SetRouteConfiguration(balancer_.get(), new_route_config);
   ResetBackendCounters();
-  WaitForBackend(DEBUG_LOCATION, 3, WaitForBackendOptions(),
+  WaitForBackend(DEBUG_LOCATION, 3, /*check_status=*/nullptr, WaitForBackendOptions(),
                  RpcOptions().set_rpc_service(SERVICE_ECHO1));
   CheckRpcSendOk(DEBUG_LOCATION, kNumEchoRpcs);
   CheckRpcSendOk(DEBUG_LOCATION, kNumEcho1Rpcs7525,
@@ -1754,17 +1754,28 @@ TEST_P(LdsRdsTest, XdsRoutingClusterUpdateClusters) {
 }
 
 TEST_P(LdsRdsTest, XdsRoutingClusterUpdateClustersWithPickingDelays) {
-  CreateAndStartBackends(2);
+  // Start with only backend 1 up, but the default cluster pointing to
+  // backend 0, which is down.
+  CreateBackends(2);
+  StartBackend(1);
+  EdsResourceArgs args({{"locality0", CreateEndpointsForBackends(0, 1)}});
+  balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
+  // Start an RPC with wait_for_ready=true and no deadline.  This will
+  // stay pending until backend 0 is reachable.
+  LongRunningRpc rpc;
+  rpc.StartRpc(stub_.get(),
+               RpcOptions().set_wait_for_ready(true).set_timeout_ms(0));
+  // Send a non-wait_for_ready RPC, which should fail.  This tells us
+  // that the client has received the update and attempted to connect.
+  constexpr char kErrorMessage[] =
+      // TODO(roth): Improve this error message as part of
+      // https://github.com/grpc/grpc/issues/22883.
+      "weighted_target: all children report state TRANSIENT_FAILURE";
+  CheckRpcSendFailure(DEBUG_LOCATION, StatusCode::UNAVAILABLE, kErrorMessage);
+  // Now create a new cluster, pointing to backend 1.
   const char* kNewClusterName = "new_cluster";
   const char* kNewEdsServiceName = "new_eds_service_name";
-  // Populate new EDS resources.
-  EdsResourceArgs args({
-      {"locality0", CreateEndpointsForBackends(0, 1)},
-  });
-  EdsResourceArgs args1({
-      {"locality0", CreateEndpointsForBackends(1, 2)},
-  });
-  balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
+  EdsResourceArgs args1({{"locality0", CreateEndpointsForBackends(1, 2)}});
   balancer_->ads_service()->SetEdsResource(
       BuildEdsResource(args1, kNewEdsServiceName));
   // Populate new CDS resources.
@@ -1773,24 +1784,8 @@ TEST_P(LdsRdsTest, XdsRoutingClusterUpdateClustersWithPickingDelays) {
   new_cluster.mutable_eds_cluster_config()->set_service_name(
       kNewEdsServiceName);
   balancer_->ads_service()->SetCdsResource(new_cluster);
-  // Bring down the current backend: 0, this will delay route picking time,
-  // resulting in un-committed RPCs.
-  ShutdownBackend(0);
-  // Send a RouteConfiguration with a default route that points to
-  // backend 0.
-  RouteConfiguration new_route_config = default_route_config_;
-  SetRouteConfiguration(balancer_.get(), new_route_config);
-  // Send exactly one RPC with no deadline and with wait_for_ready=true.
-  // This RPC will not complete until after backend 0 is started.
-  std::thread sending_rpc([this]() {
-    CheckRpcSendOk(DEBUG_LOCATION, 1,
-                   RpcOptions().set_wait_for_ready(true).set_timeout_ms(0));
-  });
-  // Send a non-wait_for_ready RPC which should fail, this will tell us
-  // that the client has received the update and attempted to connect.
-  const Status status = SendRpc(RpcOptions().set_timeout_ms(0));
-  EXPECT_FALSE(status.ok());
   // Send a update RouteConfiguration to use backend 1.
+  RouteConfiguration new_route_config = default_route_config_;
   auto* default_route =
       new_route_config.mutable_virtual_hosts(0)->mutable_routes(0);
   default_route->mutable_route()->set_cluster(kNewClusterName);
@@ -1799,13 +1794,20 @@ TEST_P(LdsRdsTest, XdsRoutingClusterUpdateClustersWithPickingDelays) {
   // has processed the update.
   WaitForBackend(
       DEBUG_LOCATION, 1,
-      WaitForBackendOptions().set_reset_counters(false).set_allow_failures(
-          true));
-  // Bring up the previous backend: 0, this will allow the delayed RPC to
-  // finally call on_call_committed upon completion.
+      [&](const RpcResult& result) {
+        if (!result.status.ok()) {
+          EXPECT_EQ(result.status.error_code(), StatusCode::UNAVAILABLE);
+          EXPECT_EQ(result.status.error_message(), kErrorMessage);
+        }
+      },
+      WaitForBackendOptions().set_reset_counters(false));
+  // Bring up the backend 0.  Yhis will allow the delayed RPC to finally
+  // complete.
   StartBackend(0);
-  sending_rpc.join();
-  // Make sure RPCs go to the correct backend:
+  Status status = rpc.GetStatus();
+  EXPECT_TRUE(status.ok()) << "code=" << status.error_code() << " message="
+                           << status.error_message();
+  // Make sure RPCs went to the correct backends.
   EXPECT_EQ(1, backends_[0]->backend_service()->request_count());
   EXPECT_EQ(1, backends_[1]->backend_service()->request_count());
 }
@@ -2410,7 +2412,7 @@ TEST_P(LdsRdsTest, XdsRoutingHeadersMatching) {
                                             .set_metadata(std::move(metadata));
   // Make sure all backends are up.
   WaitForBackend(DEBUG_LOCATION, 0);
-  WaitForBackend(DEBUG_LOCATION, 1, WaitForBackendOptions(),
+  WaitForBackend(DEBUG_LOCATION, 1, /*check_status=*/nullptr, WaitForBackendOptions(),
                  header_match_rpc_options);
   // Send RPCs.
   CheckRpcSendOk(DEBUG_LOCATION, kNumEchoRpcs);
@@ -2707,12 +2709,12 @@ TEST_P(LdsRdsTest, XdsRoutingChangeRoutesWithoutChangingClusters) {
   SetRouteConfiguration(balancer_.get(), route_config);
   // Make sure all backends are up and that requests for each RPC
   // service go to the right backends.
-  WaitForBackend(DEBUG_LOCATION, 0,
+  WaitForBackend(DEBUG_LOCATION, 0, /*check_status=*/nullptr,
                  WaitForBackendOptions().set_reset_counters(false));
-  WaitForBackend(DEBUG_LOCATION, 1,
+  WaitForBackend(DEBUG_LOCATION, 1, /*check_status=*/nullptr,
                  WaitForBackendOptions().set_reset_counters(false),
                  RpcOptions().set_rpc_service(SERVICE_ECHO1));
-  WaitForBackend(DEBUG_LOCATION, 0,
+  WaitForBackend(DEBUG_LOCATION, 0, /*check_status=*/nullptr,
                  WaitForBackendOptions().set_reset_counters(false),
                  RpcOptions().set_rpc_service(SERVICE_ECHO2));
   // Requests for services Echo and Echo2 should have gone to backend 0.
@@ -2727,16 +2729,16 @@ TEST_P(LdsRdsTest, XdsRoutingChangeRoutesWithoutChangingClusters) {
   // different RPC service, and wait for the client to make the change.
   route1->mutable_match()->set_prefix("/grpc.testing.EchoTest2Service/");
   SetRouteConfiguration(balancer_.get(), route_config);
-  WaitForBackend(DEBUG_LOCATION, 1, WaitForBackendOptions(),
+  WaitForBackend(DEBUG_LOCATION, 1, /*check_status=*/nullptr, WaitForBackendOptions(),
                  RpcOptions().set_rpc_service(SERVICE_ECHO2));
   // Now repeat the earlier test, making sure all traffic goes to the
   // right place.
-  WaitForBackend(DEBUG_LOCATION, 0,
+  WaitForBackend(DEBUG_LOCATION, 0, /*check_status=*/nullptr,
                  WaitForBackendOptions().set_reset_counters(false));
-  WaitForBackend(DEBUG_LOCATION, 0,
+  WaitForBackend(DEBUG_LOCATION, 0, /*check_status=*/nullptr,
                  WaitForBackendOptions().set_reset_counters(false),
                  RpcOptions().set_rpc_service(SERVICE_ECHO1));
-  WaitForBackend(DEBUG_LOCATION, 1,
+  WaitForBackend(DEBUG_LOCATION, 1, /*check_status=*/nullptr,
                  WaitForBackendOptions().set_reset_counters(false),
                  RpcOptions().set_rpc_service(SERVICE_ECHO2));
   // Requests for services Echo and Echo1 should have gone to backend 0.

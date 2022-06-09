@@ -963,28 +963,30 @@ std::vector<XdsEnd2endTest::ConcurrentRpc> XdsEnd2endTest::SendConcurrentRpcs(
 
 size_t XdsEnd2endTest::WaitForAllBackends(
     const grpc_core::DebugLocation& debug_location, size_t start_index,
-    size_t stop_index, const WaitForBackendOptions& wait_options,
+    size_t stop_index, std::function<void(const RpcResult&)> check_status,
+    const WaitForBackendOptions& wait_options,
     const RpcOptions& rpc_options) {
-  size_t num_rpcs = 0;
-  auto deadline = absl::Now() + (absl::Milliseconds(wait_options.timeout_ms) *
-                                 grpc_test_slowdown_factor());
+  if (check_status == nullptr) {
+    check_status = [&](const RpcResult& result) {
+      EXPECT_TRUE(result.status.ok())
+          << "code=" << result.status.error_code()
+          << " message=" << result.status.error_message() << " at "
+          << debug_location.file() << ":" << debug_location.line();
+    };
+  }
   gpr_log(GPR_INFO,
           "========= WAITING FOR BACKENDS [%" PRIuPTR ", %" PRIuPTR
           ") ==========",
           start_index, stop_index);
-  while (!SeenAllBackends(start_index, stop_index, rpc_options.service)) {
-    Status status = SendRpc(rpc_options);
-    if (!wait_options.allow_failures) {
-      EXPECT_TRUE(status.ok())
-          << "code=" << status.error_code()
-          << " message=" << status.error_message() << " at "
-          << debug_location.file() << ":" << debug_location.line();
-    }
-    EXPECT_LE(absl::Now(), deadline)
-        << " at " << debug_location.file() << ":" << debug_location.line();
-    if (absl::Now() >= deadline) break;
-    ++num_rpcs;
-  }
+  size_t num_rpcs = 0;
+  SendRpcsUntil(
+      debug_location,
+      [&](const RpcResult& result) {
+        ++num_rpcs;
+        check_status(result);
+        return !SeenAllBackends(start_index, stop_index, rpc_options.service);
+      },
+      wait_options.timeout_ms, rpc_options);
   if (wait_options.reset_counters) ResetBackendCounters();
   gpr_log(GPR_INFO, "Backends up; sent %" PRIuPTR " warm up requests",
           num_rpcs);

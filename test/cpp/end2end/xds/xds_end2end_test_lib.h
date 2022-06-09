@@ -875,9 +875,6 @@ class XdsEnd2endTest : public ::testing::TestWithParam<XdsTestType> {
   struct WaitForBackendOptions {
     // If true, resets the backend counters before returning.
     bool reset_counters = true;
-    // If true, RPC failures will not cause the test to fail.
-// FIXME: remove in favor of required status check callback
-    bool allow_failures = false;
     // How long to wait for the backend(s) to see requests.
     int timeout_ms = 5000;
 
@@ -888,11 +885,6 @@ class XdsEnd2endTest : public ::testing::TestWithParam<XdsTestType> {
       return *this;
     }
 
-    WaitForBackendOptions& set_allow_failures(bool enable) {
-      allow_failures = enable;
-      return *this;
-    }
-
     WaitForBackendOptions& set_timeout_ms(int ms) {
       timeout_ms = ms;
       return *this;
@@ -900,20 +892,24 @@ class XdsEnd2endTest : public ::testing::TestWithParam<XdsTestType> {
   };
 
   // Sends RPCs until all of the backends in the specified range see requests.
+  // The check_status callback will be invoked to check the status of
+  // every RPC; if null, the default is to check that the RPC succeeded.
   // Returns the total number of RPCs sent.
   size_t WaitForAllBackends(
       const grpc_core::DebugLocation& debug_location, size_t start_index = 0,
       size_t stop_index = 0,
+      std::function<void(const RpcResult&)> check_status = nullptr,
       const WaitForBackendOptions& wait_options = WaitForBackendOptions(),
       const RpcOptions& rpc_options = RpcOptions());
 
   // Sends RPCs until the backend at index backend_idx sees requests.
   void WaitForBackend(
       const grpc_core::DebugLocation& debug_location, size_t backend_idx,
+      std::function<void(const RpcResult&)> check_status = nullptr,
       const WaitForBackendOptions& wait_options = WaitForBackendOptions(),
       const RpcOptions& rpc_options = RpcOptions()) {
     WaitForAllBackends(debug_location, backend_idx, backend_idx + 1,
-                       wait_options, rpc_options);
+                       check_status, wait_options, rpc_options);
   }
 
   //

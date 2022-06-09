@@ -353,23 +353,7 @@ TEST_P(CdsTest, ClusterChangeAfterAdsCallFails) {
   cluster.mutable_eds_cluster_config()->set_service_name(kNewEdsResourceName);
   balancer_->ads_service()->SetCdsResource(cluster);
   // Make sure client sees the change.
-  // TODO(roth): This should not be allowing errors.  The errors are
-  // being caused by a bug that triggers in the following situation:
-  //
-  // 1. xDS call fails.
-  // 2. When xDS call is restarted, the server sends the updated CDS
-  //    resource that points to the new EDS resource name.
-  // 3. When the client receives the CDS update, it does two things:
-  //    - Sends the update to the CDS LB policy, which creates a new
-  //      xds_cluster_resolver policy using the new EDS service name.
-  //    - Notices that the CDS update no longer refers to the old EDS
-  //      service name, so removes that resource, notifying the old
-  //      xds_cluster_resolver policy that the resource no longer exists.
-  //
-  // Need to figure out a way to fix this bug, and then change this to
-  // not allow failures.
-  WaitForBackend(DEBUG_LOCATION, 1,
-                 WaitForBackendOptions().set_allow_failures(true));
+  WaitForBackend(DEBUG_LOCATION, 1);
 }
 
 //
@@ -459,17 +443,23 @@ TEST_P(EdsTest, InitiallyEmptyServerlist) {
   EdsResourceArgs args({std::move(empty_locality)});
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
   // RPCs should fail.
-  CheckRpcSendFailure(
-      DEBUG_LOCATION, StatusCode::UNAVAILABLE,
+  constexpr char kErrorMessage[] =
       // TODO(roth): Improve this error message as part of
       // https://github.com/grpc/grpc/issues/22883.
-      "weighted_target: all children report state TRANSIENT_FAILURE");
+      "weighted_target: all children report state TRANSIENT_FAILURE";
+  CheckRpcSendFailure(DEBUG_LOCATION, StatusCode::UNAVAILABLE, kErrorMessage);
   // Send non-empty serverlist.
   args = EdsResourceArgs({{"locality0", CreateEndpointsForBackends()}});
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
   // RPCs should eventually succeed.
-  WaitForAllBackends(DEBUG_LOCATION, 0, 1,
-                     WaitForBackendOptions().set_allow_failures(true));
+  WaitForAllBackends(
+      DEBUG_LOCATION, 0, 1,
+      [&](const RpcResult& result) {
+        if (!result.status.ok()) {
+          EXPECT_EQ(result.status.error_code(), StatusCode::UNAVAILABLE);
+          EXPECT_EQ(result.status.error_message(), kErrorMessage);
+        }
+      });
 }
 
 // Tests that RPCs will fail with UNAVAILABLE instead of DEADLINE_EXCEEDED if
@@ -679,7 +669,7 @@ TEST_P(EdsTest, ManyLocalitiesStressTest) {
   }
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
   // Wait until backend 0 is ready.
-  WaitForBackend(DEBUG_LOCATION, 0,
+  WaitForBackend(DEBUG_LOCATION, 0, /*check_status=*/nullptr,
                  WaitForBackendOptions().set_reset_counters(false),
                  RpcOptions().set_timeout_ms(kRpcTimeoutMs));
   EXPECT_EQ(0U, backends_[1]->backend_service()->request_count());
@@ -1012,7 +1002,7 @@ TEST_P(FailoverTest, ChooseHighestPriority) {
        0},
   });
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
-  WaitForBackend(DEBUG_LOCATION, 3,
+  WaitForBackend(DEBUG_LOCATION, 3, /*check_status=*/nullptr,
                  WaitForBackendOptions().set_reset_counters(false));
   for (size_t i = 0; i < 3; ++i) {
     EXPECT_EQ(0U, backends_[i]->backend_service()->request_count());
@@ -1032,7 +1022,7 @@ TEST_P(FailoverTest, DoesNotUsePriorityWithNoEndpoints) {
       {"locality3", {}, kDefaultLocalityWeight, 0},
   });
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
-  WaitForBackend(DEBUG_LOCATION, 0,
+  WaitForBackend(DEBUG_LOCATION, 0, /*check_status=*/nullptr,
                  WaitForBackendOptions().set_reset_counters(false));
   for (size_t i = 1; i < 3; ++i) {
     EXPECT_EQ(0U, backends_[i]->backend_service()->request_count());
@@ -1064,7 +1054,7 @@ TEST_P(FailoverTest, Failover) {
       {"locality3", {MakeNonExistantEndpoint()}, kDefaultLocalityWeight, 0},
   });
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
-  WaitForBackend(DEBUG_LOCATION, 0,
+  WaitForBackend(DEBUG_LOCATION, 0, /*check_status=*/nullptr,
                  WaitForBackendOptions().set_reset_counters(false));
   EXPECT_EQ(0U, backends_[1]->backend_service()->request_count());
 }
@@ -1086,16 +1076,15 @@ TEST_P(FailoverTest, SwitchBackToHigherPriority) {
   });
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
   WaitForBackend(DEBUG_LOCATION, 3);
-  ShutdownBackend(3);
-  ShutdownBackend(0);
-  WaitForBackend(
-      DEBUG_LOCATION, 1,
-      WaitForBackendOptions().set_reset_counters(false).set_allow_failures(
-          true));
+  backends_[3]->StopListeningAndSendGoaways();
+  backends_[0]->StopListeningAndSendGoaways();
+  WaitForBackend(DEBUG_LOCATION, 1, /*check_status=*/nullptr,
+                 WaitForBackendOptions().set_reset_counters(false));
   for (size_t i = 0; i < backends_.size(); ++i) {
     if (i == 1) continue;
     EXPECT_EQ(0U, backends_[i]->backend_service()->request_count());
   }
+  ShutdownBackend(0);
   StartBackend(0);
   WaitForBackend(DEBUG_LOCATION, 0);
   CheckRpcSendOk(DEBUG_LOCATION, kNumRpcs);
@@ -1111,11 +1100,11 @@ TEST_P(FailoverTest, UpdateInitialUnavailable) {
       {"locality1", {MakeNonExistantEndpoint()}, kDefaultLocalityWeight, 1},
   });
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
-  CheckRpcSendFailure(
-      DEBUG_LOCATION, StatusCode::UNAVAILABLE,
+  constexpr char kErrorMessage[] =
       // TODO(roth): Improve this error message as part of
       // https://github.com/grpc/grpc/issues/22883.
-      "weighted_target: all children report state TRANSIENT_FAILURE");
+      "weighted_target: all children report state TRANSIENT_FAILURE";
+  CheckRpcSendFailure(DEBUG_LOCATION, StatusCode::UNAVAILABLE, kErrorMessage);
   args = EdsResourceArgs({
       {"locality0", CreateEndpointsForBackends(0, 1), kDefaultLocalityWeight,
        0},
@@ -1123,8 +1112,14 @@ TEST_P(FailoverTest, UpdateInitialUnavailable) {
        1},
   });
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
-  WaitForBackend(DEBUG_LOCATION, 0,
-                 WaitForBackendOptions().set_allow_failures(true));
+  WaitForBackend(
+      DEBUG_LOCATION, 0,
+      [&](const RpcResult& result) {
+        if (!result.status.ok()) {
+          EXPECT_EQ(result.status.error_code(), StatusCode::UNAVAILABLE);
+          EXPECT_EQ(result.status.error_message(), kErrorMessage);
+        }
+      });
 }
 
 // Tests that after the localities' priorities are updated, we still choose
@@ -1143,7 +1138,7 @@ TEST_P(FailoverTest, UpdatePriority) {
        0},
   });
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
-  WaitForBackend(DEBUG_LOCATION, 3,
+  WaitForBackend(DEBUG_LOCATION, 3, /*check_status=*/nullptr,
                  WaitForBackendOptions().set_reset_counters(false));
   EXPECT_EQ(0U, backends_[0]->backend_service()->request_count());
   EXPECT_EQ(0U, backends_[1]->backend_service()->request_count());
@@ -1180,7 +1175,7 @@ TEST_P(FailoverTest, MoveAllLocalitiesInCurrentPriorityToHigherPriority) {
   // When we get the first update, all backends in priority 0 are down,
   // so we will create priority 1.  Backends 0 and 1 should have traffic,
   // but backend 2 should not.
-  WaitForAllBackends(DEBUG_LOCATION, 0, 2,
+  WaitForAllBackends(DEBUG_LOCATION, 0, 2, /*check_status=*/nullptr,
                      WaitForBackendOptions().set_reset_counters(false));
   EXPECT_EQ(0UL, backends_[2]->backend_service()->request_count());
   // Second update:
@@ -1246,7 +1241,7 @@ TEST_P(FailoverTest, PriorityChildNameChurn) {
        2},
   });
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
-  WaitForBackend(DEBUG_LOCATION, 3,
+  WaitForBackend(DEBUG_LOCATION, 3, /*check_status=*/nullptr,
                  WaitForBackendOptions().set_reset_counters(false));
   // P2 should not have gotten any traffic in this change.
   EXPECT_EQ(0UL, backends_[2]->backend_service()->request_count());
@@ -1275,7 +1270,8 @@ TEST_P(ClientLoadReportingTest, Vanilla) {
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
   // Wait until all backends are ready.
   size_t num_warmup_rpcs = WaitForAllBackends(
-      DEBUG_LOCATION, 0, 4, WaitForBackendOptions().set_reset_counters(false));
+      DEBUG_LOCATION, 0, 4, /*check_status=*/nullptr,
+      WaitForBackendOptions().set_reset_counters(false));
   // Send kNumRpcsPerAddress RPCs per server.
   CheckRpcSendOk(DEBUG_LOCATION, kNumRpcsPerAddress * backends_.size());
   for (size_t i = 0; i < kNumFailuresPerAddress * backends_.size(); ++i) {

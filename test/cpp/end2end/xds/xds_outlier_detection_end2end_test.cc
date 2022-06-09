@@ -99,8 +99,8 @@ TEST_P(OutlierDetectionTest, SuccessRateEjectionAndUnejection) {
       {"address_hash", CreateMetadataValueThatHashesToBackend(1)}};
   const auto rpc_options = RpcOptions().set_metadata(metadata);
   const auto rpc_options1 = RpcOptions().set_metadata(std::move(metadata1));
-  WaitForBackend(DEBUG_LOCATION, 0, WaitForBackendOptions(), rpc_options);
-  WaitForBackend(DEBUG_LOCATION, 1, WaitForBackendOptions(), rpc_options1);
+  WaitForBackend(DEBUG_LOCATION, 0, /*check_status=*/nullptr, WaitForBackendOptions(), rpc_options);
+  WaitForBackend(DEBUG_LOCATION, 1, /*check_status=*/nullptr, WaitForBackendOptions(), rpc_options1);
   // Cause an error and wait for 1 outlier detection interval to pass
   CheckRpcSendFailure(DEBUG_LOCATION, StatusCode::CANCELLED, "",
                       RpcOptions()
@@ -173,10 +173,10 @@ TEST_P(OutlierDetectionTest, SuccessRateMaxPercent) {
   const auto rpc_options1 = RpcOptions().set_metadata(metadata1);
   const auto rpc_options2 = RpcOptions().set_metadata(metadata2);
   const auto rpc_options3 = RpcOptions().set_metadata(metadata3);
-  WaitForBackend(DEBUG_LOCATION, 0, WaitForBackendOptions(), rpc_options);
-  WaitForBackend(DEBUG_LOCATION, 1, WaitForBackendOptions(), rpc_options1);
-  WaitForBackend(DEBUG_LOCATION, 2, WaitForBackendOptions(), rpc_options2);
-  WaitForBackend(DEBUG_LOCATION, 3, WaitForBackendOptions(), rpc_options3);
+  WaitForBackend(DEBUG_LOCATION, 0, /*check_status=*/nullptr, WaitForBackendOptions(), rpc_options);
+  WaitForBackend(DEBUG_LOCATION, 1, /*check_status=*/nullptr, WaitForBackendOptions(), rpc_options1);
+  WaitForBackend(DEBUG_LOCATION, 2, /*check_status=*/nullptr, WaitForBackendOptions(), rpc_options2);
+  WaitForBackend(DEBUG_LOCATION, 3, /*check_status=*/nullptr, WaitForBackendOptions(), rpc_options3);
   // Cause 2 error and wait for 1 outlier detection interval to pass to cause
   // the backend to be ejected.
   CheckRpcSendFailure(DEBUG_LOCATION, StatusCode::CANCELLED, "",
@@ -268,8 +268,8 @@ TEST_P(OutlierDetectionTest, SuccessRateStdevFactor) {
       {"address_hash", CreateMetadataValueThatHashesToBackend(1)}};
   const auto rpc_options = RpcOptions().set_metadata(metadata);
   const auto rpc_options1 = RpcOptions().set_metadata(std::move(metadata1));
-  WaitForBackend(DEBUG_LOCATION, 0, WaitForBackendOptions(), rpc_options);
-  WaitForBackend(DEBUG_LOCATION, 1, WaitForBackendOptions(), rpc_options1);
+  WaitForBackend(DEBUG_LOCATION, 0, /*check_status=*/nullptr, WaitForBackendOptions(), rpc_options);
+  WaitForBackend(DEBUG_LOCATION, 1, /*check_status=*/nullptr, WaitForBackendOptions(), rpc_options1);
   // Cause an error and wait for 1 outlier detection interval to pass
   CheckRpcSendFailure(DEBUG_LOCATION, StatusCode::CANCELLED, "",
                       RpcOptions()
@@ -335,8 +335,8 @@ TEST_P(OutlierDetectionTest, SuccessRateEnforcementPercentage) {
       {"address_hash", CreateMetadataValueThatHashesToBackend(1)}};
   const auto rpc_options = RpcOptions().set_metadata(metadata);
   const auto rpc_options1 = RpcOptions().set_metadata(std::move(metadata1));
-  WaitForBackend(DEBUG_LOCATION, 0, WaitForBackendOptions(), rpc_options);
-  WaitForBackend(DEBUG_LOCATION, 1, WaitForBackendOptions(), rpc_options1);
+  WaitForBackend(DEBUG_LOCATION, 0, /*check_status=*/nullptr, WaitForBackendOptions(), rpc_options);
+  WaitForBackend(DEBUG_LOCATION, 1, /*check_status=*/nullptr, WaitForBackendOptions(), rpc_options1);
   // Cause an error and wait for 1 outlier detection interval to pass
   CheckRpcSendFailure(DEBUG_LOCATION, StatusCode::CANCELLED, "",
                       RpcOptions()
@@ -401,8 +401,8 @@ TEST_P(OutlierDetectionTest, SuccessRateMinimumHosts) {
       {"address_hash", CreateMetadataValueThatHashesToBackend(1)}};
   const auto rpc_options = RpcOptions().set_metadata(metadata);
   const auto rpc_options1 = RpcOptions().set_metadata(std::move(metadata1));
-  WaitForBackend(DEBUG_LOCATION, 0, WaitForBackendOptions(), rpc_options);
-  WaitForBackend(DEBUG_LOCATION, 1, WaitForBackendOptions(), rpc_options1);
+  WaitForBackend(DEBUG_LOCATION, 0, /*check_status=*/nullptr, WaitForBackendOptions(), rpc_options);
+  WaitForBackend(DEBUG_LOCATION, 1, /*check_status=*/nullptr, WaitForBackendOptions(), rpc_options1);
   // Cause an error and wait for 1 outlier detection interval to pass
   CheckRpcSendFailure(DEBUG_LOCATION, StatusCode::CANCELLED, "",
                       RpcOptions()
@@ -468,8 +468,8 @@ TEST_P(OutlierDetectionTest, SuccessRateRequestVolume) {
       {"address_hash", CreateMetadataValueThatHashesToBackend(1)}};
   const auto rpc_options = RpcOptions().set_metadata(metadata);
   const auto rpc_options1 = RpcOptions().set_metadata(std::move(metadata1));
-  WaitForBackend(DEBUG_LOCATION, 0, WaitForBackendOptions(), rpc_options);
-  WaitForBackend(DEBUG_LOCATION, 1, WaitForBackendOptions(), rpc_options1);
+  WaitForBackend(DEBUG_LOCATION, 0, /*check_status=*/nullptr, WaitForBackendOptions(), rpc_options);
+  WaitForBackend(DEBUG_LOCATION, 1, /*check_status=*/nullptr, WaitForBackendOptions(), rpc_options1);
   // Cause an error and wait for 1 outlier detection interval to pass
   CheckRpcSendFailure(DEBUG_LOCATION, StatusCode::CANCELLED, "",
                       RpcOptions()
@@ -539,8 +539,8 @@ TEST_P(OutlierDetectionTest, FailurePercentageEjectionAndUnejection) {
       {"address_hash", CreateMetadataValueThatHashesToBackend(1)}};
   const auto rpc_options = RpcOptions().set_metadata(metadata);
   const auto rpc_options1 = RpcOptions().set_metadata(std::move(metadata1));
-  WaitForBackend(DEBUG_LOCATION, 0, WaitForBackendOptions(), rpc_options);
-  WaitForBackend(DEBUG_LOCATION, 1, WaitForBackendOptions(), rpc_options1);
+  WaitForBackend(DEBUG_LOCATION, 0, /*check_status=*/nullptr, WaitForBackendOptions(), rpc_options);
+  WaitForBackend(DEBUG_LOCATION, 1, /*check_status=*/nullptr, WaitForBackendOptions(), rpc_options1);
   // Cause an error and wait for 1 outlier detection interval to pass to cause
   // the backend to be ejected.
   CheckRpcSendFailure(DEBUG_LOCATION, StatusCode::CANCELLED, "",
@@ -614,10 +614,10 @@ TEST_P(OutlierDetectionTest, FailurePercentageMaxPercentage) {
   const auto rpc_options1 = RpcOptions().set_metadata(metadata1);
   const auto rpc_options2 = RpcOptions().set_metadata(metadata2);
   const auto rpc_options3 = RpcOptions().set_metadata(metadata3);
-  WaitForBackend(DEBUG_LOCATION, 0, WaitForBackendOptions(), rpc_options);
-  WaitForBackend(DEBUG_LOCATION, 1, WaitForBackendOptions(), rpc_options1);
-  WaitForBackend(DEBUG_LOCATION, 2, WaitForBackendOptions(), rpc_options2);
-  WaitForBackend(DEBUG_LOCATION, 3, WaitForBackendOptions(), rpc_options3);
+  WaitForBackend(DEBUG_LOCATION, 0, /*check_status=*/nullptr, WaitForBackendOptions(), rpc_options);
+  WaitForBackend(DEBUG_LOCATION, 1, /*check_status=*/nullptr, WaitForBackendOptions(), rpc_options1);
+  WaitForBackend(DEBUG_LOCATION, 2, /*check_status=*/nullptr, WaitForBackendOptions(), rpc_options2);
+  WaitForBackend(DEBUG_LOCATION, 3, /*check_status=*/nullptr, WaitForBackendOptions(), rpc_options3);
   // Cause 2 error and wait for 1 outlier detection interval to pass to cause
   // the backend to be ejected.
   CheckRpcSendFailure(DEBUG_LOCATION, StatusCode::CANCELLED, "",
@@ -703,8 +703,8 @@ TEST_P(OutlierDetectionTest, FailurePercentageThreshold) {
       {"address_hash", CreateMetadataValueThatHashesToBackend(1)}};
   const auto rpc_options = RpcOptions().set_metadata(metadata);
   const auto rpc_options1 = RpcOptions().set_metadata(std::move(metadata1));
-  WaitForBackend(DEBUG_LOCATION, 0, WaitForBackendOptions(), rpc_options);
-  WaitForBackend(DEBUG_LOCATION, 1, WaitForBackendOptions(), rpc_options1);
+  WaitForBackend(DEBUG_LOCATION, 0, /*check_status=*/nullptr, WaitForBackendOptions(), rpc_options);
+  WaitForBackend(DEBUG_LOCATION, 1, /*check_status=*/nullptr, WaitForBackendOptions(), rpc_options1);
   // Cause an error and wait for 1 outlier detection interval to pass to cause
   // the backend to be ejected.
   CheckRpcSendFailure(DEBUG_LOCATION, StatusCode::CANCELLED, "",
@@ -771,8 +771,8 @@ TEST_P(OutlierDetectionTest, FailurePercentageEnforcementPercentage) {
       {"address_hash", CreateMetadataValueThatHashesToBackend(1)}};
   const auto rpc_options = RpcOptions().set_metadata(metadata);
   const auto rpc_options1 = RpcOptions().set_metadata(std::move(metadata1));
-  WaitForBackend(DEBUG_LOCATION, 0, WaitForBackendOptions(), rpc_options);
-  WaitForBackend(DEBUG_LOCATION, 1, WaitForBackendOptions(), rpc_options1);
+  WaitForBackend(DEBUG_LOCATION, 0, /*check_status=*/nullptr, WaitForBackendOptions(), rpc_options);
+  WaitForBackend(DEBUG_LOCATION, 1, /*check_status=*/nullptr, WaitForBackendOptions(), rpc_options1);
   // Cause an error and wait for 1 outlier detection interval to pass to cause
   // the backend to be ejected.
   CheckRpcSendFailure(DEBUG_LOCATION, StatusCode::CANCELLED, "",
@@ -838,8 +838,8 @@ TEST_P(OutlierDetectionTest, FailurePercentageMinimumHosts) {
       {"address_hash", CreateMetadataValueThatHashesToBackend(1)}};
   const auto rpc_options = RpcOptions().set_metadata(metadata);
   const auto rpc_options1 = RpcOptions().set_metadata(std::move(metadata1));
-  WaitForBackend(DEBUG_LOCATION, 0, WaitForBackendOptions(), rpc_options);
-  WaitForBackend(DEBUG_LOCATION, 1, WaitForBackendOptions(), rpc_options1);
+  WaitForBackend(DEBUG_LOCATION, 0, /*check_status=*/nullptr, WaitForBackendOptions(), rpc_options);
+  WaitForBackend(DEBUG_LOCATION, 1, /*check_status=*/nullptr, WaitForBackendOptions(), rpc_options1);
   // Cause an error and wait for 1 outlier detection interval to pass to cause
   // the backend to be ejected.
   CheckRpcSendFailure(DEBUG_LOCATION, StatusCode::CANCELLED, "",
@@ -907,8 +907,8 @@ TEST_P(OutlierDetectionTest, FailurePercentageRequestVolume) {
       {"address_hash", CreateMetadataValueThatHashesToBackend(1)}};
   const auto rpc_options = RpcOptions().set_metadata(metadata);
   const auto rpc_options1 = RpcOptions().set_metadata(std::move(metadata1));
-  WaitForBackend(DEBUG_LOCATION, 0, WaitForBackendOptions(), rpc_options);
-  WaitForBackend(DEBUG_LOCATION, 1, WaitForBackendOptions(), rpc_options1);
+  WaitForBackend(DEBUG_LOCATION, 0, /*check_status=*/nullptr, WaitForBackendOptions(), rpc_options);
+  WaitForBackend(DEBUG_LOCATION, 1, /*check_status=*/nullptr, WaitForBackendOptions(), rpc_options1);
   // Cause an error and wait for 1 outlier detection interval to pass to cause
   // the backend to be ejected.
   CheckRpcSendFailure(DEBUG_LOCATION, StatusCode::CANCELLED, "",
@@ -994,10 +994,10 @@ TEST_P(OutlierDetectionTest, SuccessRateAndFailurePercentage) {
   const auto rpc_options1 = RpcOptions().set_metadata(metadata1);
   const auto rpc_options2 = RpcOptions().set_metadata(metadata2);
   const auto rpc_options3 = RpcOptions().set_metadata(metadata3);
-  WaitForBackend(DEBUG_LOCATION, 0, WaitForBackendOptions(), rpc_options);
-  WaitForBackend(DEBUG_LOCATION, 1, WaitForBackendOptions(), rpc_options1);
-  WaitForBackend(DEBUG_LOCATION, 2, WaitForBackendOptions(), rpc_options2);
-  WaitForBackend(DEBUG_LOCATION, 3, WaitForBackendOptions(), rpc_options3);
+  WaitForBackend(DEBUG_LOCATION, 0, /*check_status=*/nullptr, WaitForBackendOptions(), rpc_options);
+  WaitForBackend(DEBUG_LOCATION, 1, /*check_status=*/nullptr, WaitForBackendOptions(), rpc_options1);
+  WaitForBackend(DEBUG_LOCATION, 2, /*check_status=*/nullptr, WaitForBackendOptions(), rpc_options2);
+  WaitForBackend(DEBUG_LOCATION, 3, /*check_status=*/nullptr, WaitForBackendOptions(), rpc_options3);
   // Cause 2 errors on 1 backend and 1 error on 2 backends and wait for 1
   // outlier detection interval to pass. The 2 errors to the 1 backend will make
   // exactly 1 outlier from the success rate algorithm; all 4 errors will make 3
@@ -1081,8 +1081,8 @@ TEST_P(OutlierDetectionTest, SuccessRateAndFailurePercentageBothDisabled) {
       {"address_hash", CreateMetadataValueThatHashesToBackend(1)}};
   const auto rpc_options = RpcOptions().set_metadata(metadata);
   const auto rpc_options1 = RpcOptions().set_metadata(std::move(metadata1));
-  WaitForBackend(DEBUG_LOCATION, 0, WaitForBackendOptions(), rpc_options);
-  WaitForBackend(DEBUG_LOCATION, 1, WaitForBackendOptions(), rpc_options1);
+  WaitForBackend(DEBUG_LOCATION, 0, /*check_status=*/nullptr, WaitForBackendOptions(), rpc_options);
+  WaitForBackend(DEBUG_LOCATION, 1, /*check_status=*/nullptr, WaitForBackendOptions(), rpc_options1);
   // Cause an error and wait for 1 outlier detection interval to pass
   CheckRpcSendFailure(DEBUG_LOCATION, StatusCode::CANCELLED, "",
                       RpcOptions()
@@ -1163,10 +1163,10 @@ TEST_P(OutlierDetectionTest,
   const auto rpc_options1 = RpcOptions().set_metadata(metadata1);
   const auto rpc_options2 = RpcOptions().set_metadata(metadata2);
   const auto rpc_options3 = RpcOptions().set_metadata(metadata3);
-  WaitForBackend(DEBUG_LOCATION, 0, WaitForBackendOptions(), rpc_options);
-  WaitForBackend(DEBUG_LOCATION, 1, WaitForBackendOptions(), rpc_options1);
-  WaitForBackend(DEBUG_LOCATION, 2, WaitForBackendOptions(), rpc_options2);
-  WaitForBackend(DEBUG_LOCATION, 3, WaitForBackendOptions(), rpc_options3);
+  WaitForBackend(DEBUG_LOCATION, 0, /*check_status=*/nullptr, WaitForBackendOptions(), rpc_options);
+  WaitForBackend(DEBUG_LOCATION, 1, /*check_status=*/nullptr, WaitForBackendOptions(), rpc_options1);
+  WaitForBackend(DEBUG_LOCATION, 2, /*check_status=*/nullptr, WaitForBackendOptions(), rpc_options2);
+  WaitForBackend(DEBUG_LOCATION, 3, /*check_status=*/nullptr, WaitForBackendOptions(), rpc_options3);
   // Cause 2 errors on 1 backend and 1 error on 2 backends and wait for 1
   // outlier detection interval to pass. The errors should have caused 2
   // ejctionss but since the policy is disabled we are not ejecting any and
