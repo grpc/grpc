@@ -18,7 +18,8 @@
 
 #include <grpc/support/port_platform.h>
 
-#if defined(GPR_LINUX) || defined(GPR_ANDROID) || defined(GPR_FREEBSD)
+#if defined(GPR_LINUX) || defined(GPR_ANDROID) || defined(GPR_FREEBSD) || \
+    defined(GPR_APPLE)
 
 #include <dirent.h>
 #include <fcntl.h>
@@ -30,6 +31,7 @@
 
 #include "absl/container/inlined_vector.h"
 
+#include <grpc/slice_buffer.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 
@@ -40,6 +42,7 @@
 #include "src/core/lib/iomgr/load_file.h"
 #include "src/core/lib/security/security_connector/load_system_roots.h"
 #include "src/core/lib/security/security_connector/load_system_roots_linux.h"
+#include "src/core/lib/security/security_connector/load_system_roots_supported.h"
 
 GPR_GLOBAL_CONFIG_DEFINE_STRING(grpc_system_ssl_roots_dir, "",
                                 "Custom directory to SSL Roots");
@@ -59,7 +62,10 @@ const char* kCertDirectories[] = {
 const char* kCertFiles[] = {"/etc/ssl/cert.pem",
                             "/usr/local/share/certs/ca-root-nss.crt"};
 const char* kCertDirectories[] = {""};
-#endif                      // GPR_FREEBSD
+#elif defined(GPR_APPLE)    // endif GPR_FREEBSD
+const char* kCertFiles[] = {"/etc/ssl/cert.pem"};
+const char* kCertDirectories[] = {""};
+#endif                      // GPR_APPLE
 
 grpc_slice GetSystemRootCerts() {
   grpc_slice valid_bundle_slice = grpc_empty_slice();
@@ -169,4 +175,4 @@ grpc_slice LoadSystemRootCerts() {
 
 }  // namespace grpc_core
 
-#endif /* GPR_LINUX || GPR_ANDROID || GPR_FREEBSD */
+#endif /* GPR_LINUX || GPR_ANDROID || GPR_FREEBSD || GPR_APPLE */
