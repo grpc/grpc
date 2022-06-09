@@ -140,11 +140,6 @@ static void tc_on_alarm(void* acp, grpc_error_handle error) {
   }
   gpr_mu_lock(&ac->mu);
   if (ac->fd != nullptr) {
-    int shard_number = ac->connection_handle % g_pending_connection_shards;
-    {
-      grpc_core::MutexLock lock(g_shard_mu[shard_number]);
-      g_pending_connections[shard_number]->erase(ac->connection_handle);
-    }
     grpc_fd_shutdown(
         ac->fd, GRPC_ERROR_CREATE_FROM_STATIC_STRING("connect() timed out"));
   }
@@ -423,10 +418,10 @@ static bool tcp_cancel_connect(int64_t connection_handle) {
       ac = it->second;
       GPR_ASSERT(ac != nullptr);
       // Trying to acquire ac->mu here would could cause a deadlock because
-      // on_writable and tc_on_alarm methods try to acquire the two mutexes used
+      // the on_writable method tries to acquire the two mutexes used
       // here in the reverse order. But we dont need to acquire ac->mu before
-      // incrementing ac->refs here. This is because tc_on_alarm and on_writable
-      // methods decrement ac->refs only after deleting the connection handle
+      // incrementing ac->refs here. This is because the on_writable
+      // method decrements ac->refs only after deleting the connection handle
       // from the corresponding hashmap. If the code enters here, it means that
       // deletion hasn't happened yet. The deletion can only happen after the
       // corresponding g_shard_mu is unlocked.
