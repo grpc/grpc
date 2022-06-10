@@ -34,6 +34,8 @@ message Action {
         StreamWrite stream_write = 7;
         Empty perform_send_from_remote = 8;
         StreamWrite set_min_progress_size = 9;
+        uint32 allocate_memory = 10;
+        uint32 deallocate_memory = 11;
     }
 }
 

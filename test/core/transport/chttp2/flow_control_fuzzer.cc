@@ -15,6 +15,8 @@
 #include <limits>
 #include <queue>
 
+#include <grpc/grpc.h>
+
 #include "src/core/ext/transport/chttp2/transport/flow_control.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/libfuzzer/libfuzzer_macro.h"
@@ -50,6 +52,13 @@ class FlowControlFuzzer {
     ExecCtx exec_ctx;
     tfc_ = absl::make_unique<TransportFlowControl>("fuzzer", enable_bdp,
                                                    &memory_owner_);
+  }
+
+  ~FlowControlFuzzer() {
+    ExecCtx exec_ctx;
+    streams_.clear();
+    tfc_.reset();
+    memory_owner_.Release(allocated_memory_);
   }
 
   void Perform(const flow_control_fuzzer::Action& action);
@@ -102,6 +111,7 @@ class FlowControlFuzzer {
   int64_t remote_transport_window_size_ = kDefaultWindow;
   std::map<uint32_t, Stream> streams_;
   std::queue<uint32_t> streams_to_update_;
+  uint64_t allocated_memory_ = 0;
 };
 
 void FlowControlFuzzer::Perform(const flow_control_fuzzer::Action& action) {
@@ -198,6 +208,19 @@ void FlowControlFuzzer::Perform(const flow_control_fuzzer::Action& action) {
       Stream* s = GetStream(action.set_min_progress_size().id());
       s->fc.UpdateProgress(action.set_min_progress_size().size());
       PerformAction(s->fc.MakeAction(), s);
+    } break;
+    case flow_control_fuzzer::Action::kAllocateMemory: {
+      auto allocate = std::min(
+          size_t(action.allocate_memory()),
+          grpc_event_engine::experimental::MemoryRequest::max_allowed_size());
+      allocated_memory_ += allocate;
+      memory_owner_.Reserve(allocate);
+    } break;
+    case flow_control_fuzzer::Action::kDeallocateMemory: {
+      auto deallocate =
+          std::min(uint64_t(action.deallocate_memory()), allocated_memory_);
+      allocated_memory_ -= deallocate;
+      memory_owner_.Release(deallocate);
     } break;
   }
   if (scheduled_write_) {
