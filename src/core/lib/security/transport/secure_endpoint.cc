@@ -23,6 +23,7 @@
 #include <inttypes.h>
 #include <limits.h>
 
+#include <algorithm>
 #include <atomic>
 #include <memory>
 
