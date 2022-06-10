@@ -42,8 +42,8 @@ grpc_proto_fuzzer(
     uses_event_engine = False,
     uses_polling = False,
     deps = [
-        "//:gpr",
         "//:chttp2_flow_control",
+        "//:gpr",
     ],
 )
 
