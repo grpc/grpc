@@ -430,7 +430,7 @@ static void BM_TransportStreamSend(benchmark::State& state) {
   // is unreffed after each send_message op.
   grpc_slice send_slice = grpc_slice_malloc_large(state.range(0));
   memset(GRPC_SLICE_START_PTR(send_slice), 0, GRPC_SLICE_LENGTH(send_slice));
-  grpc_core::ManualConstructor<grpc_core::SliceBufferByteStream> send_stream;
+  grpc_core::SliceBuffer send_stream;
   auto arena = grpc_core::MakeScopedArena(1024, g_memory_allocator);
   grpc_metadata_batch b(arena.get());
   RepresentativeClientInitialMetadata::Prepare(&b);
@@ -444,18 +444,15 @@ static void BM_TransportStreamSend(benchmark::State& state) {
           gpr_event_set(bm_done, reinterpret_cast<void*>(1));
           return;
         }
-        grpc_slice_buffer send_buffer;
-        grpc_slice_buffer_init(&send_buffer);
-        grpc_slice_buffer_add(&send_buffer, grpc_slice_ref(send_slice));
-        send_stream.Init(&send_buffer, 0);
-        grpc_slice_buffer_destroy(&send_buffer);
+        send_stream.Clear();
+        send_stream.Append(grpc_core::Slice(grpc_slice_ref(send_slice)));
         // force outgoing window to be yuge
-        s->chttp2_stream()->flow_control->TestOnlyForceHugeWindow();
-        f.chttp2_transport()->flow_control->TestOnlyForceHugeWindow();
+        s->chttp2_stream()->flow_control.TestOnlyForceHugeWindow();
+        f.chttp2_transport()->flow_control.TestOnlyForceHugeWindow();
         reset_op();
         op.on_complete = c.get();
         op.send_message = true;
-        op.payload->send_message.send_message.reset(send_stream.get());
+        op.payload->send_message.send_message = &send_stream;
         s->Op(&op);
       });
 
@@ -557,7 +554,7 @@ static void BM_TransportStreamRecv(benchmark::State& state) {
   s->Init(state);
   grpc_transport_stream_op_batch_payload op_payload(nullptr);
   grpc_transport_stream_op_batch op;
-  grpc_core::OrphanablePtr<grpc_core::ByteStream> recv_stream;
+  absl::optional<grpc_core::SliceBuffer> recv_stream;
   grpc_slice incoming_data = CreateIncomingDataSlice(state.range(0), 16384);
 
   auto reset_op = [&]() {
@@ -574,56 +571,22 @@ static void BM_TransportStreamRecv(benchmark::State& state) {
 
   uint32_t received;
 
-  std::unique_ptr<TestClosure> drain_start;
-  std::unique_ptr<TestClosure> drain;
-  std::unique_ptr<TestClosure> drain_continue;
-  grpc_slice recv_slice;
-
   std::unique_ptr<TestClosure> c =
       MakeTestClosure([&](grpc_error_handle /*error*/) {
         if (!state.KeepRunning()) return;
         // force outgoing window to be yuge
-        s->chttp2_stream()->flow_control->TestOnlyForceHugeWindow();
-        f.chttp2_transport()->flow_control->TestOnlyForceHugeWindow();
+        s->chttp2_stream()->flow_control.TestOnlyForceHugeWindow();
+        f.chttp2_transport()->flow_control.TestOnlyForceHugeWindow();
         received = 0;
         reset_op();
         op.on_complete = do_nothing.get();
         op.recv_message = true;
         op.payload->recv_message.recv_message = &recv_stream;
         op.payload->recv_message.call_failed_before_recv_message = nullptr;
-        op.payload->recv_message.recv_message_ready = drain_start.get();
+        op.payload->recv_message.recv_message_ready = c.get();
         s->Op(&op);
         f.PushInput(grpc_slice_ref(incoming_data));
       });
-
-  drain_start = MakeTestClosure([&](grpc_error_handle /*error*/) {
-    if (recv_stream == nullptr) {
-      GPR_ASSERT(!state.KeepRunning());
-      return;
-    }
-    grpc_core::Closure::Run(DEBUG_LOCATION, drain.get(), GRPC_ERROR_NONE);
-  });
-
-  drain = MakeTestClosure([&](grpc_error_handle /*error*/) {
-    do {
-      if (received == recv_stream->length()) {
-        recv_stream.reset();
-        grpc_core::ExecCtx::Run(DEBUG_LOCATION, c.get(), GRPC_ERROR_NONE);
-        return;
-      }
-    } while (recv_stream->Next(recv_stream->length() - received,
-                               drain_continue.get()) &&
-             GRPC_ERROR_NONE == recv_stream->Pull(&recv_slice) &&
-             (received += GRPC_SLICE_LENGTH(recv_slice),
-              grpc_slice_unref_internal(recv_slice), true));
-  });
-
-  drain_continue = MakeTestClosure([&](grpc_error_handle /*error*/) {
-    GPR_ASSERT(GRPC_LOG_IF_ERROR("Pull", recv_stream->Pull(&recv_slice)));
-    received += GRPC_SLICE_LENGTH(recv_slice);
-    grpc_slice_unref_internal(recv_slice);
-    grpc_core::Closure::Run(DEBUG_LOCATION, drain.get(), GRPC_ERROR_NONE);
-  });
 
   reset_op();
   auto b_recv = absl::make_unique<grpc_metadata_batch>(arena.get());
