@@ -272,10 +272,14 @@ TEST_P(RingHashTest, HeaderHashing) {
   const auto rpc_options1 = RpcOptions().set_metadata(std::move(metadata1));
   const auto rpc_options2 = RpcOptions().set_metadata(std::move(metadata2));
   const auto rpc_options3 = RpcOptions().set_metadata(std::move(metadata3));
-  WaitForBackend(DEBUG_LOCATION, 0, WaitForBackendOptions(), rpc_options);
-  WaitForBackend(DEBUG_LOCATION, 1, WaitForBackendOptions(), rpc_options1);
-  WaitForBackend(DEBUG_LOCATION, 2, WaitForBackendOptions(), rpc_options2);
-  WaitForBackend(DEBUG_LOCATION, 3, WaitForBackendOptions(), rpc_options3);
+  WaitForBackend(DEBUG_LOCATION, 0, /*check_status=*/nullptr,
+                 WaitForBackendOptions(), rpc_options);
+  WaitForBackend(DEBUG_LOCATION, 1, /*check_status=*/nullptr,
+                 WaitForBackendOptions(), rpc_options1);
+  WaitForBackend(DEBUG_LOCATION, 2, /*check_status=*/nullptr,
+                 WaitForBackendOptions(), rpc_options2);
+  WaitForBackend(DEBUG_LOCATION, 3, /*check_status=*/nullptr,
+                 WaitForBackendOptions(), rpc_options3);
   CheckRpcSendOk(DEBUG_LOCATION, 100, rpc_options);
   CheckRpcSendOk(DEBUG_LOCATION, 100, rpc_options1);
   CheckRpcSendOk(DEBUG_LOCATION, 100, rpc_options2);
@@ -352,7 +356,8 @@ TEST_P(RingHashTest, NoHashPolicy) {
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
   // TODO(donnadionne): remove extended timeout after ring creation
   // optimization.
-  WaitForAllBackends(DEBUG_LOCATION, 0, 2, WaitForBackendOptions(),
+  WaitForAllBackends(DEBUG_LOCATION, 0, 2, /*check_status=*/nullptr,
+                     WaitForBackendOptions(),
                      RpcOptions().set_timeout_ms(kRpcTimeoutMs));
   CheckRpcSendOk(DEBUG_LOCATION, kNumRpcs);
   const int request_count_1 = backends_[0]->backend_service()->request_count();
@@ -418,7 +423,8 @@ TEST_P(RingHashTest, HashOnHeaderThatIsNotPresent) {
   const auto rpc_options = RpcOptions().set_metadata(std::move(metadata));
   // TODO(donnadionne): remove extended timeout after ring creation
   // optimization.
-  WaitForAllBackends(DEBUG_LOCATION, 0, 2, WaitForBackendOptions(),
+  WaitForAllBackends(DEBUG_LOCATION, 0, 2, /*check_status=*/nullptr,
+                     WaitForBackendOptions(),
                      RpcOptions().set_timeout_ms(kRpcTimeoutMs));
   CheckRpcSendOk(DEBUG_LOCATION, kNumRpcs, rpc_options);
   const int request_count_1 = backends_[0]->backend_service()->request_count();
@@ -460,7 +466,8 @@ TEST_P(RingHashTest, UnsupportedHashPolicyDefaultToRandomHashing) {
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
   // TODO(donnadionne): remove extended timeout after ring creation
   // optimization.
-  WaitForAllBackends(DEBUG_LOCATION, 0, 2, WaitForBackendOptions(),
+  WaitForAllBackends(DEBUG_LOCATION, 0, 2, /*check_status=*/nullptr,
+                     WaitForBackendOptions(),
                      RpcOptions().set_timeout_ms(kRpcTimeoutMs));
   CheckRpcSendOk(DEBUG_LOCATION, kNumRpcs);
   const int request_count_1 = backends_[0]->backend_service()->request_count();
@@ -496,7 +503,8 @@ TEST_P(RingHashTest, RandomHashingDistributionAccordingToEndpointWeight) {
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
   // TODO(donnadionne): remove extended timeout after ring creation
   // optimization.
-  WaitForAllBackends(DEBUG_LOCATION, 0, 2, WaitForBackendOptions(),
+  WaitForAllBackends(DEBUG_LOCATION, 0, 2, /*check_status=*/nullptr,
+                     WaitForBackendOptions(),
                      RpcOptions().set_timeout_ms(kRpcTimeoutMs));
   CheckRpcSendOk(DEBUG_LOCATION, kNumRpcs);
   const int weight_33_request_count =
@@ -535,7 +543,8 @@ TEST_P(RingHashTest,
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
   // TODO(donnadionne): remove extended timeout after ring creation
   // optimization.
-  WaitForAllBackends(DEBUG_LOCATION, 0, 2, WaitForBackendOptions(),
+  WaitForAllBackends(DEBUG_LOCATION, 0, 2, /*check_status=*/nullptr,
+                     WaitForBackendOptions(),
                      RpcOptions().set_timeout_ms(kRpcTimeoutMs));
   CheckRpcSendOk(DEBUG_LOCATION, kNumRpcs);
   const int weight_20_request_count =
@@ -912,7 +921,8 @@ TEST_P(RingHashTest, TransientFailureCheckNextOne) {
       {"address_hash",
        CreateMetadataValueThatHashesToBackendPort(unused_port)}};
   const auto rpc_options = RpcOptions().set_metadata(std::move(metadata));
-  WaitForBackend(DEBUG_LOCATION, 0, WaitForBackendOptions(), rpc_options);
+  WaitForBackend(DEBUG_LOCATION, 0, /*check_status=*/nullptr,
+                 WaitForBackendOptions(), rpc_options);
   CheckRpcSendOk(DEBUG_LOCATION, 100, rpc_options);
 }
 
@@ -940,12 +950,15 @@ TEST_P(RingHashTest, SwitchToLowerPrioirtyAndThenBack) {
   std::vector<std::pair<std::string, std::string>> metadata = {
       {"address_hash", CreateMetadataValueThatHashesToBackend(0)}};
   const auto rpc_options = RpcOptions().set_metadata(std::move(metadata));
-  WaitForBackend(DEBUG_LOCATION, 0, WaitForBackendOptions(), rpc_options);
+  WaitForBackend(DEBUG_LOCATION, 0, /*check_status=*/nullptr,
+                 WaitForBackendOptions(), rpc_options);
+  backends_[0]->StopListeningAndSendGoaways();
+  WaitForBackend(DEBUG_LOCATION, 1, /*check_status=*/nullptr,
+                 WaitForBackendOptions(), rpc_options);
   ShutdownBackend(0);
-  WaitForBackend(DEBUG_LOCATION, 1,
-                 WaitForBackendOptions().set_allow_failures(true), rpc_options);
   StartBackend(0);
-  WaitForBackend(DEBUG_LOCATION, 0, WaitForBackendOptions(), rpc_options);
+  WaitForBackend(DEBUG_LOCATION, 0, /*check_status=*/nullptr,
+                 WaitForBackendOptions(), rpc_options);
   CheckRpcSendOk(DEBUG_LOCATION, 100, rpc_options);
   EXPECT_EQ(100, backends_[0]->backend_service()->request_count());
   EXPECT_EQ(0, backends_[1]->backend_service()->request_count());
@@ -1029,7 +1042,8 @@ TEST_P(RingHashTest, TransientFailureSkipToAvailableReady) {
       grpc_timeout_milliseconds_to_deadline(kConnectionTimeoutMilliseconds)));
   // RPCs should go to backend 0.
   gpr_log(GPR_INFO, "=== WAITING FOR BACKEND 0 ===");
-  WaitForBackend(DEBUG_LOCATION, 0, WaitForBackendOptions(), rpc_options);
+  WaitForBackend(DEBUG_LOCATION, 0, /*check_status=*/nullptr,
+                 WaitForBackendOptions(), rpc_options);
   EXPECT_EQ(GRPC_CHANNEL_READY, channel_->GetState(false));
   // Bring down backend 0 and bring up backend 1.
   // Note the RPC contains a header value that will always be hashed to
@@ -1059,7 +1073,8 @@ TEST_P(RingHashTest, TransientFailureSkipToAvailableReady) {
   EXPECT_TRUE(channel_->WaitForConnected(
       grpc_timeout_milliseconds_to_deadline(kConnectionTimeoutMilliseconds)));
   gpr_log(GPR_INFO, "=== WAITING FOR BACKEND 1 ===");
-  WaitForBackend(DEBUG_LOCATION, 1, WaitForBackendOptions(), rpc_options);
+  WaitForBackend(DEBUG_LOCATION, 1, /*check_status=*/nullptr,
+                 WaitForBackendOptions(), rpc_options);
   gpr_log(GPR_INFO, "=== DONE ===");
 }
 
