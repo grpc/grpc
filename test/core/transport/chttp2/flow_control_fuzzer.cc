@@ -130,6 +130,10 @@ void FlowControlFuzzer::Perform(const flow_control_fuzzer::Action& action) {
       if (send_to_remote_.empty()) break;
       auto sent_to_remote = send_to_remote_.front();
       if (sent_to_remote.initial_window_size.has_value()) {
+        if (!squelch) {
+          fprintf(stderr, "Setting initial window size to %d\n",
+                  sent_to_remote.initial_window_size.value());
+        }
         SendFromRemote send_from_remote;
         send_from_remote.ack_initial_window_size =
             sent_to_remote.initial_window_size;
@@ -137,7 +141,14 @@ void FlowControlFuzzer::Perform(const flow_control_fuzzer::Action& action) {
         send_from_remote_.push_back(send_from_remote);
       }
       for (auto stream_update : sent_to_remote.stream_window_updates) {
-        GetStream(stream_update.id)->window_delta += stream_update.size;
+        Stream* s = GetStream(stream_update.id);
+        if (!squelch) {
+          fprintf(stderr,
+                  "[%" PRIu32 "]: increase window delta by %" PRIu64
+                  " from %" PRId64 "\n",
+                  stream_update.id, stream_update.size, s->window_delta);
+        }
+        s->window_delta += stream_update.size;
       }
       remote_transport_window_size_ += sent_to_remote.transport_window_update;
       send_to_remote_.pop_front();
@@ -146,12 +157,20 @@ void FlowControlFuzzer::Perform(const flow_control_fuzzer::Action& action) {
       if (send_from_remote_.empty()) break;
       auto sent_from_remote = send_from_remote_.front();
       if (sent_from_remote.ack_initial_window_size.has_value()) {
+        if (!squelch) {
+          fprintf(stderr, "Received ACK for initial window size %d\n",
+                  *sent_from_remote.ack_initial_window_size);
+        }
         tfc_->SetAckedInitialWindow(*sent_from_remote.ack_initial_window_size);
         PerformAction(tfc_->MakeAction(), nullptr);
         sending_initial_window_size_ = false;
       }
       for (const auto& stream_write : sent_from_remote.stream_writes) {
         Stream* stream = GetStream(stream_write.id);
+        if (!squelch) {
+          fprintf(stderr, "[%" PRIu32 "]: recv write of %" PRIu64 "\n",
+                  stream_write.id, stream_write.size);
+        }
         GPR_ASSERT(stream->fc.RecvData(stream_write.size).ok());
         PerformAction(stream->fc.MakeAction(), stream);
       }

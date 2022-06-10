@@ -24,6 +24,7 @@
 #include <limits.h>
 
 #include <algorithm>
+#include <cinttypes>
 #include <cmath>
 #include <ostream>
 #include <string>
@@ -193,13 +194,10 @@ void StreamFlowControl::UpdateProgress(uint32_t min_progress_size) {
     max_recv_bytes = static_cast<uint32_t>(min_progress_size);
   }
 
-  /* add some small lookahead to keep pipelines flowing */
   GPR_DEBUG_ASSERT(max_recv_bytes <=
                    kMaxWindowUpdateSize - tfc_->sent_init_window());
   if (local_window_delta_ < max_recv_bytes) {
-    uint32_t add_max_recv_bytes =
-        static_cast<uint32_t>(max_recv_bytes - local_window_delta_);
-    local_window_delta_ += add_max_recv_bytes;
+    local_window_delta_ = max_recv_bytes;
   }
 }
 
@@ -315,12 +313,14 @@ FlowControlAction TransportFlowControl::PeriodicUpdate() {
 
 FlowControlAction StreamFlowControl::UpdateAction(FlowControlAction action) {
   const uint32_t sent_init_window = tfc_->sent_init_window();
-  if (local_window_delta_ > announced_window_delta_ &&
-      announced_window_delta_ + sent_init_window <= sent_init_window / 2) {
-    action.set_send_stream_update(
-        FlowControlAction::Urgency::UPDATE_IMMEDIATELY);
-  } else if (local_window_delta_ > announced_window_delta_) {
-    action.set_send_stream_update(FlowControlAction::Urgency::QUEUE_UPDATE);
+  UpdateProgress(min_progress_size_);
+  if (local_window_delta_ > announced_window_delta_) {
+    if (announced_window_delta_ + sent_init_window <= sent_init_window / 2) {
+      action.set_send_stream_update(
+          FlowControlAction::Urgency::UPDATE_IMMEDIATELY);
+    } else {
+      action.set_send_stream_update(FlowControlAction::Urgency::QUEUE_UPDATE);
+    }
   }
 
   return action;
