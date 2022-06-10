@@ -42,6 +42,7 @@
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/slice/slice_string_helpers.h"
 #include "src/core/tsi/transport_security_grpc.h"
+#include "src/core/tsi/transport_security_interface.h"
 
 #define STAGING_BUFFER_SIZE 8192
 
@@ -84,6 +85,7 @@ struct secure_endpoint {
           memory_owner.MakeSlice(grpc_core::MemoryRequest(STAGING_BUFFER_SIZE));
     }
     has_posted_reclaimer.store(false, std::memory_order_relaxed);
+    min_progress_size = 1;
     gpr_ref_init(&ref, 1);
   }
 
@@ -121,6 +123,7 @@ struct secure_endpoint {
   grpc_core::MemoryOwner memory_owner;
   grpc_core::MemoryAllocator::Reservation self_reservation;
   std::atomic<bool> has_posted_reclaimer;
+  int min_progress_size;
 
   gpr_refcount ref;
 };
@@ -249,8 +252,19 @@ static void on_read(void* user_data, grpc_error_handle error) {
 
     if (ep->zero_copy_protector != nullptr) {
       // Use zero-copy grpc protector to unprotect.
+      int min_progress_size = 1;
+      // Get the size of the last frame which is not yet fully decrypted.
+      // This estimated frame size is stored in ep->min_progress_size which is
+      // passed to the TCP layer to indicate the minimum number of
+      // bytes that need to be read to make meaningful progress. This would
+      // avoid reading of small slices from the network.
+      // TODO(vigneshbabu): Set min_progress_size in the regular (non-zero-copy)
+      // frame protector code path as well.
       result = tsi_zero_copy_grpc_protector_unprotect(
-          ep->zero_copy_protector, &ep->source_buffer, ep->read_buffer);
+          ep->zero_copy_protector, &ep->source_buffer, ep->read_buffer,
+          &min_progress_size);
+      min_progress_size = std::max(1, min_progress_size);
+      ep->min_progress_size = result != TSI_OK ? 1 : min_progress_size;
     } else {
       // Use frame protector to unprotect.
       /* TODO(yangg) check error, maybe bail out early */
@@ -336,7 +350,7 @@ static void endpoint_read(grpc_endpoint* secure_ep, grpc_slice_buffer* slices,
   }
 
   grpc_endpoint_read(ep->wrapped_ep, &ep->source_buffer, &ep->on_read, urgent,
-                     /*min_progress_size=*/1);
+                     /*min_progress_size=*/ep->min_progress_size);
 }
 
 static void flush_write_staging_buffer(secure_endpoint* ep, uint8_t** cur,
