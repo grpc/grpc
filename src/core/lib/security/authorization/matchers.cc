@@ -145,7 +145,7 @@ IpAuthorizationMatcher::IpAuthorizationMatcher(Type type, Rbac::CidrRange range)
   grpc_error_handle error =
       grpc_string_to_sockaddr(&subnet_address_, range.address_prefix.c_str(),
                               /*port does not matter here*/ 0);
-  if (error == GRPC_ERROR_NONE) {
+  if (GRPC_ERROR_IS_NONE(error)) {
     grpc_sockaddr_mask_bits(&subnet_address_, prefix_len_);
   } else {
     gpr_log(GPR_DEBUG, "CidrRange address %s is not IPv4/IPv6. Error: %s",

@@ -37,6 +37,7 @@
 
 #include "src/core/lib/channel/call_finalization.h"
 #include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/channel/channel_fwd.h"
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/channel/context.h"
 #include "src/core/lib/gprpp/debug_location.h"
@@ -170,6 +171,7 @@ class BaseCallData : public Activity, private Wakeable {
     ~Flusher();
 
     void Resume(grpc_transport_stream_op_batch* batch) {
+      GPR_ASSERT(!call_->is_last());
       release_.push_back(batch);
     }
 

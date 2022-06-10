@@ -20,24 +20,36 @@
 
 #include "src/core/ext/filters/http/message_compress/message_decompress_filter.h"
 
-#include <assert.h>
+#include <stdint.h>
 #include <string.h>
+
+#include <memory>
+#include <new>
+#include <type_traits>
 
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
+#include "absl/types/optional.h"
 
-#include <grpc/compression.h>
+#include <grpc/impl/codegen/compression_types.h>
+#include <grpc/slice.h>
 #include <grpc/slice_buffer.h>
-#include <grpc/support/alloc.h>
+#include <grpc/status.h>
 #include <grpc/support/log.h>
 
 #include "src/core/ext/filters/message_size/message_size_filter.h"
 #include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/compression/compression_internal.h"
 #include "src/core/lib/compression/message_compress.h"
-#include "src/core/lib/gpr/string.h"
+#include "src/core/lib/gprpp/debug_location.h"
+#include "src/core/lib/gprpp/orphanable.h"
+#include "src/core/lib/iomgr/call_combiner.h"
+#include "src/core/lib/iomgr/closure.h"
+#include "src/core/lib/iomgr/error.h"
+#include "src/core/lib/profiling/timers.h"
 #include "src/core/lib/slice/slice_internal.h"
-#include "src/core/lib/slice/slice_string_helpers.h"
+#include "src/core/lib/transport/byte_stream.h"
+#include "src/core/lib/transport/metadata_batch.h"
+#include "src/core/lib/transport/transport.h"
 
 namespace grpc_core {
 namespace {
@@ -141,7 +153,7 @@ class CallData {
 
 void CallData::OnRecvInitialMetadataReady(void* arg, grpc_error_handle error) {
   CallData* calld = static_cast<CallData*>(arg);
-  if (error == GRPC_ERROR_NONE) {
+  if (GRPC_ERROR_IS_NONE(error)) {
     calld->algorithm_ =
         calld->recv_initial_metadata_->get(GrpcEncodingMetadata())
             .value_or(GRPC_COMPRESS_NONE);
@@ -164,7 +176,7 @@ void CallData::MaybeResumeOnRecvMessageReady() {
 
 void CallData::OnRecvMessageReady(void* arg, grpc_error_handle error) {
   CallData* calld = static_cast<CallData*>(arg);
-  if (error == GRPC_ERROR_NONE) {
+  if (GRPC_ERROR_IS_NONE(error)) {
     if (calld->original_recv_initial_metadata_ready_ != nullptr) {
       calld->seen_recv_message_ready_ = true;
       GRPC_CALL_COMBINER_STOP(calld->call_combiner_,
@@ -184,7 +196,7 @@ void CallData::OnRecvMessageReady(void* arg, grpc_error_handle error) {
       if (calld->max_recv_message_length_ >= 0 &&
           (*calld->recv_message_)->length() >
               static_cast<uint32_t>(calld->max_recv_message_length_)) {
-        GPR_DEBUG_ASSERT(calld->error_ == GRPC_ERROR_NONE);
+        GPR_DEBUG_ASSERT(GRPC_ERROR_IS_NONE(calld->error_));
         calld->error_ = grpc_error_set_int(
             GRPC_ERROR_CREATE_FROM_CPP_STRING(
                 absl::StrFormat("Received message larger than max (%u vs. %d)",

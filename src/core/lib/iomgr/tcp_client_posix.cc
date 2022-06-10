@@ -72,24 +72,24 @@ static grpc_error_handle prepare_socket(const grpc_resolved_address* addr,
   GPR_ASSERT(fd >= 0);
 
   err = grpc_set_socket_nonblocking(fd, 1);
-  if (err != GRPC_ERROR_NONE) goto error;
+  if (!GRPC_ERROR_IS_NONE(err)) goto error;
   err = grpc_set_socket_cloexec(fd, 1);
-  if (err != GRPC_ERROR_NONE) goto error;
+  if (!GRPC_ERROR_IS_NONE(err)) goto error;
   if (!grpc_is_unix_socket(addr)) {
     err = grpc_set_socket_low_latency(fd, 1);
-    if (err != GRPC_ERROR_NONE) goto error;
+    if (!GRPC_ERROR_IS_NONE(err)) goto error;
     err = grpc_set_socket_reuse_addr(fd, 1);
-    if (err != GRPC_ERROR_NONE) goto error;
+    if (!GRPC_ERROR_IS_NONE(err)) goto error;
     err = grpc_set_socket_tcp_user_timeout(fd, channel_args,
                                            true /* is_client */);
-    if (err != GRPC_ERROR_NONE) goto error;
+    if (!GRPC_ERROR_IS_NONE(err)) goto error;
   }
   err = grpc_set_socket_no_sigpipe_if_possible(fd);
-  if (err != GRPC_ERROR_NONE) goto error;
+  if (!GRPC_ERROR_IS_NONE(err)) goto error;
 
   err = grpc_apply_socket_mutator_in_args(fd, GRPC_FD_CLIENT_CONNECTION_USAGE,
                                           channel_args);
-  if (err != GRPC_ERROR_NONE) goto error;
+  if (!GRPC_ERROR_IS_NONE(err)) goto error;
 
   goto done;
 
@@ -155,7 +155,7 @@ static void on_writable(void* acp, grpc_error_handle error) {
   grpc_timer_cancel(&ac->alarm);
 
   gpr_mu_lock(&ac->mu);
-  if (error != GRPC_ERROR_NONE) {
+  if (!GRPC_ERROR_IS_NONE(error)) {
     error =
         grpc_error_set_str(error, GRPC_ERROR_STR_OS_ERROR, "Timeout occurred");
     goto finish;
@@ -215,7 +215,7 @@ finish:
   }
   done = (--ac->refs == 0);
   gpr_mu_unlock(&ac->mu);
-  if (error != GRPC_ERROR_NONE) {
+  if (!GRPC_ERROR_IS_NONE(error)) {
     std::string str;
     bool ret = grpc_error_get_str(error, GRPC_ERROR_STR_DESCRIPTION, &str);
     GPR_ASSERT(ret);
@@ -251,7 +251,7 @@ grpc_error_handle grpc_tcp_client_prepare_fd(
   }
   error =
       grpc_create_dualstack_socket(mapped_addr, SOCK_STREAM, 0, &dsmode, fd);
-  if (error != GRPC_ERROR_NONE) {
+  if (!GRPC_ERROR_IS_NONE(error)) {
     return error;
   }
   if (dsmode == GRPC_DSMODE_IPV4) {

@@ -351,7 +351,7 @@ void TlsChannelSecurityConnector::check_peer(
                                 ? target_name_.c_str()
                                 : overridden_target_name_.c_str();
   grpc_error_handle error = grpc_ssl_check_alpn(&peer);
-  if (error != GRPC_ERROR_NONE) {
+  if (!GRPC_ERROR_IS_NONE(error)) {
     ExecCtx::Run(DEBUG_LOCATION, on_peer_checked, error);
     tsi_peer_destruct(&peer);
     return;
@@ -370,7 +370,7 @@ void TlsChannelSecurityConnector::check_peer(
 
 void TlsChannelSecurityConnector::cancel_check_peer(
     grpc_closure* on_peer_checked, grpc_error_handle error) {
-  if (error != GRPC_ERROR_NONE) {
+  if (!GRPC_ERROR_IS_NONE(error)) {
     gpr_log(GPR_ERROR,
             "TlsChannelSecurityConnector::cancel_check_peer error: %s",
             grpc_error_std_string(error).c_str());
@@ -448,12 +448,12 @@ void TlsChannelSecurityConnector::TlsChannelCertificateWatcher::
 // BlockOnInitialCredentialHandshaker is implemented.
 void TlsChannelSecurityConnector::TlsChannelCertificateWatcher::OnError(
     grpc_error_handle root_cert_error, grpc_error_handle identity_cert_error) {
-  if (root_cert_error != GRPC_ERROR_NONE) {
+  if (!GRPC_ERROR_IS_NONE(root_cert_error)) {
     gpr_log(GPR_ERROR,
             "TlsChannelCertificateWatcher getting root_cert_error: %s",
             grpc_error_std_string(root_cert_error).c_str());
   }
-  if (identity_cert_error != GRPC_ERROR_NONE) {
+  if (!GRPC_ERROR_IS_NONE(identity_cert_error)) {
     gpr_log(GPR_ERROR,
             "TlsChannelCertificateWatcher getting identity_cert_error: %s",
             grpc_error_std_string(identity_cert_error).c_str());
@@ -635,7 +635,7 @@ void TlsServerSecurityConnector::check_peer(
     RefCountedPtr<grpc_auth_context>* auth_context,
     grpc_closure* on_peer_checked) {
   grpc_error_handle error = grpc_ssl_check_alpn(&peer);
-  if (error != GRPC_ERROR_NONE) {
+  if (!GRPC_ERROR_IS_NONE(error)) {
     ExecCtx::Run(DEBUG_LOCATION, on_peer_checked, error);
     tsi_peer_destruct(&peer);
     return;
@@ -658,7 +658,7 @@ void TlsServerSecurityConnector::check_peer(
 
 void TlsServerSecurityConnector::cancel_check_peer(
     grpc_closure* on_peer_checked, grpc_error_handle error) {
-  if (error != GRPC_ERROR_NONE) {
+  if (!GRPC_ERROR_IS_NONE(error)) {
     gpr_log(GPR_ERROR,
             "TlsServerSecurityConnector::cancel_check_peer error: %s",
             grpc_error_std_string(error).c_str());
@@ -726,12 +726,12 @@ void TlsServerSecurityConnector::TlsServerCertificateWatcher::
 // BlockOnInitialCredentialHandshaker is implemented.
 void TlsServerSecurityConnector::TlsServerCertificateWatcher::OnError(
     grpc_error_handle root_cert_error, grpc_error_handle identity_cert_error) {
-  if (root_cert_error != GRPC_ERROR_NONE) {
+  if (!GRPC_ERROR_IS_NONE(root_cert_error)) {
     gpr_log(GPR_ERROR,
             "TlsServerCertificateWatcher getting root_cert_error: %s",
             grpc_error_std_string(root_cert_error).c_str());
   }
-  if (identity_cert_error != GRPC_ERROR_NONE) {
+  if (!GRPC_ERROR_IS_NONE(identity_cert_error)) {
     gpr_log(GPR_ERROR,
             "TlsServerCertificateWatcher getting identity_cert_error: %s",
             grpc_error_std_string(identity_cert_error).c_str());

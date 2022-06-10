@@ -88,7 +88,7 @@ static Json parse_json_part_from_jwt(const char* str, size_t len) {
   absl::string_view string = grpc_core::StringViewFromSlice(slice);
   grpc_error_handle error = GRPC_ERROR_NONE;
   Json json = Json::Parse(string, &error);
-  if (error != GRPC_ERROR_NONE) {
+  if (!GRPC_ERROR_IS_NONE(error)) {
     gpr_log(GPR_ERROR, "JSON parse error: %s",
             grpc_error_std_string(error).c_str());
     GRPC_ERROR_UNREF(error);
@@ -413,7 +413,7 @@ static Json json_from_http(const grpc_http_response* response) {
   grpc_error_handle error = GRPC_ERROR_NONE;
   Json json = Json::Parse(
       absl::string_view(response->body, response->body_length), &error);
-  if (error != GRPC_ERROR_NONE) {
+  if (!GRPC_ERROR_IS_NONE(error)) {
     gpr_log(GPR_ERROR, "Invalid JSON found in response.");
     return Json();  // JSON null
   }

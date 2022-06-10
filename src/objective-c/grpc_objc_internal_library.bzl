@@ -31,6 +31,43 @@ load(
     "generate_objc_non_arc_srcs",
     "generate_objc_srcs",
 )
+load("@build_bazel_rules_apple//apple:ios.bzl", "ios_unit_test")
+load(
+    "@build_bazel_rules_apple//apple/testing/default_runner:ios_test_runner.bzl",
+    "ios_test_runner",
+)
+
+# The default device type for ios objc unit tests
+IOS_UNIT_TEST_DEVICE_TYPE = "iPhone 11"
+
+# The default iOS version for ios objc unit tests
+# IOS_UNIT_TEST_OS_VERSION = "13.3"
+
+def grpc_objc_ios_unit_test(
+        name,
+        deps,
+        env = {}):
+    """ios unit test for running objc test suite on iOS simulator runner
+
+    Args:
+        name: The name of the unit test target.
+        deps: The dependencies of the target.
+        env: Optional test environment variables passed to the test
+    """
+    test_runner = "grpc_ios_sim_runner_" + name
+    ios_test_runner(
+        name = test_runner,
+        device_type = IOS_UNIT_TEST_DEVICE_TYPE,
+        # os_version = IOS_UNIT_TEST_OS_VERSION,
+        test_environment = env,
+    )
+
+    ios_unit_test(
+        name = name,
+        minimum_os_version = "9.0",
+        runner = test_runner,
+        deps = deps,
+    )
 
 def proto_library_objc_wrapper(
         name,
