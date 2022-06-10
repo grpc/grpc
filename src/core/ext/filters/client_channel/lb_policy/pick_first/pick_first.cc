@@ -438,7 +438,8 @@ void PickFirst::PickFirstSubchannelData::ProcessConnectivityChangeLocked(
       // If it's already in CONNECTING, we don't need to do this.
       // If it's in TRANSIENT_FAILURE, then we will trigger the
       // connection attempt later when it reports IDLE.
-      if (sd->connectivity_state().value() == GRPC_CHANNEL_IDLE) {
+      auto sd_state = sd->connectivity_state();
+      if (sd_state.has_value() && *sd_state == GRPC_CHANNEL_IDLE) {
         sd->subchannel()->RequestConnection();
       }
       break;
