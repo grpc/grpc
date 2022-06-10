@@ -519,9 +519,8 @@ TEST_P(LdsRdsTest, ListenerRemoved) {
     if (result.status.ok()) return true;  // Keep going.
     EXPECT_EQ(result.status.error_code(), StatusCode::UNAVAILABLE);
     EXPECT_EQ(result.status.error_message(),
-              // TODO(roth): Improve this error message as part of
-              // https://github.com/grpc/grpc/issues/22883.
-              "empty address list: ");
+              absl::StrCat("empty address list: ", kServerName,
+                           ": xDS listener resource does not exist"));
     return false;
   });
   // Make sure we ACK'ed the update.
