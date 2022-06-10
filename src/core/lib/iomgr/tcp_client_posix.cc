@@ -334,15 +334,22 @@ int64_t grpc_tcp_client_create_from_prepared_fd(
 
   std::string name = absl::StrCat("tcp-client:", addr_uri.value());
   grpc_fd* fdobj = grpc_fd_create(fd, name.c_str(), true);
-  int64_t connection_id =
-      g_connection_id.fetch_add(1, std::memory_order_acq_rel);
+  int64_t connection_id = 0;
+  if (errno == EWOULDBLOCK || errno == EINPROGRESS) {
+    // Connection is still in progress.
+    connection_id = g_connection_id.fetch_add(1, std::memory_order_acq_rel);
+  }
 
   if (err >= 0) {
+    // Connection already succeded. Return 0 to discourage any cancellation
+    // attempts.
     *ep = grpc_tcp_client_create_from_fd(fdobj, channel_args, addr_uri.value());
     grpc_core::ExecCtx::Run(DEBUG_LOCATION, closure, GRPC_ERROR_NONE);
-    return connection_id;
+    return 0;
   }
   if (errno != EWOULDBLOCK && errno != EINPROGRESS) {
+    // Connection already failed. Return 0 to discourage any cancellation
+    // attempts.
     grpc_error_handle error = GRPC_OS_ERROR(errno, "connect");
     error = grpc_error_set_str(error, GRPC_ERROR_STR_TARGET_ADDRESS,
                                addr_uri.value());
