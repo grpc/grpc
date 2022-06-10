@@ -1771,11 +1771,12 @@ TEST_P(LdsRdsTest, XdsRoutingClusterUpdateClustersWithPickingDelays) {
                RpcOptions().set_wait_for_ready(true).set_timeout_ms(0));
   // Send a non-wait_for_ready RPC, which should fail.  This tells us
   // that the client has received the update and attempted to connect.
-  constexpr char kErrorMessage[] =
-      // TODO(roth): Improve this error message as part of
-      // https://github.com/grpc/grpc/issues/22883.
-      "weighted_target: all children report state TRANSIENT_FAILURE";
-  CheckRpcSendFailure(DEBUG_LOCATION, StatusCode::UNAVAILABLE, kErrorMessage);
+  constexpr char kErrorMessageRegex[] =
+      "connections to all backends failing; last error: "
+      "(UNKNOWN: Failed to connect to remote host: Connection refused|"
+      "UNAVAILABLE: Failed to connect to remote host: FD shutdown)";
+  CheckRpcSendFailure(DEBUG_LOCATION, StatusCode::UNAVAILABLE,
+                      kErrorMessageRegex);
   // Now create a new cluster, pointing to backend 1.
   const char* kNewClusterName = "new_cluster";
   const char* kNewEdsServiceName = "new_eds_service_name";
@@ -1801,7 +1802,8 @@ TEST_P(LdsRdsTest, XdsRoutingClusterUpdateClustersWithPickingDelays) {
       [&](const RpcResult& result) {
         if (!result.status.ok()) {
           EXPECT_EQ(result.status.error_code(), StatusCode::UNAVAILABLE);
-          EXPECT_EQ(result.status.error_message(), kErrorMessage);
+          EXPECT_THAT(result.status.error_message(),
+                      ::testing::MatchesRegex(kErrorMessageRegex));
         }
       },
       WaitForBackendOptions().set_reset_counters(false));
