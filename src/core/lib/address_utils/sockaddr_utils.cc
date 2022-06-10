@@ -244,7 +244,7 @@ absl::StatusOr<std::string> grpc_sockaddr_to_string(
     if (sin6_scope_id != 0) {
       // Enclose sin6_scope_id with the format defined in RFC 6874 section 2.
       std::string host_with_scope =
-          absl::StrFormat("%s%%25%" PRIu32, ntop_buf, sin6_scope_id);
+          absl::StrFormat("%s%%%" PRIu32, ntop_buf, sin6_scope_id);
       out = grpc_core::JoinHostPort(host_with_scope, port);
     } else {
       out = grpc_core::JoinHostPort(ntop_buf, port);
