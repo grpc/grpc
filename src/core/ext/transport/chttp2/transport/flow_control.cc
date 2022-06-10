@@ -172,14 +172,11 @@ uint32_t StreamFlowControl::MaybeSendUpdate() {
   // to go in the negative (or < min_progress_size_), update the delta.
   // In this case, we want to make sure that bytes are still flowing.
   UpdateProgress(min_progress_size_);
-  if (local_window_delta_ > announced_window_delta_) {
-    uint32_t announce = static_cast<uint32_t>(
-        Clamp(local_window_delta_ - announced_window_delta_, int64_t(0),
-              kMaxWindowUpdateSize));
-    UpdateAnnouncedWindowDelta(tfc_, announce);
-    return announce;
-  }
-  return 0;
+  uint32_t announce =
+      static_cast<uint32_t>(Clamp(local_window_delta_ - announced_window_delta_,
+                                  int64_t(0), kMaxWindowUpdateSize));
+  UpdateAnnouncedWindowDelta(tfc_, announce);
+  return announce;
 }
 
 void StreamFlowControl::UpdateProgress(uint32_t min_progress_size) {
@@ -191,7 +188,7 @@ void StreamFlowControl::UpdateProgress(uint32_t min_progress_size) {
   if (min_progress_size >= kMaxWindowDelta) {
     max_recv_bytes = kMaxWindowDelta;
   } else {
-    max_recv_bytes = static_cast<uint32_t>(min_progress_size);
+    max_recv_bytes = min_progress_size;
   }
 
   GPR_DEBUG_ASSERT(max_recv_bytes <=
@@ -328,6 +325,7 @@ FlowControlAction StreamFlowControl::UpdateAction(FlowControlAction action) {
 
 void StreamFlowControl::UpdateAnnouncedWindowDelta(TransportFlowControl* tfc,
                                                    int64_t change) {
+  if (change == 0) return;
   tfc->PreUpdateAnnouncedWindowOverIncomingWindow(announced_window_delta_);
   announced_window_delta_ += change;
   tfc->PostUpdateAnnouncedWindowOverIncomingWindow(announced_window_delta_);
