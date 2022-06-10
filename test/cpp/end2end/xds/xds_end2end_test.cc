@@ -1107,8 +1107,8 @@ TEST_P(XdsEnabledServerTest, ListenerDeletionIgnored) {
   balancer_->ads_service()->UnsetResource(
       kLdsTypeUrl, GetServerListenerName(backends_[0]->port()));
   // Wait for update to be ACKed.
-  absl::Time deadline = absl::Now() + (absl::Seconds(10) *
-                                       grpc_test_slowdown_factor());
+  absl::Time deadline =
+      absl::Now() + (absl::Seconds(10) * grpc_test_slowdown_factor());
   while (true) {
     auto response_state = balancer_->ads_service()->lds_response_state();
     if (!response_state.has_value()) {
