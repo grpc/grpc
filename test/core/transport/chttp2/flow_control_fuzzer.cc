@@ -71,12 +71,14 @@ class FlowControlFuzzer {
   };
 
   struct SendToRemote {
+    bool bdp_ping = false;
     absl::optional<uint32_t> initial_window_size;
     uint32_t transport_window_update;
     std::vector<StreamPayload> stream_window_updates;
   };
 
   struct SendFromRemote {
+    bool bdp_pong = false;
     absl::optional<uint32_t> ack_initial_window_size;
     std::vector<StreamPayload> stream_writes;
   };
@@ -112,6 +114,7 @@ class FlowControlFuzzer {
   std::map<uint32_t, Stream> streams_;
   std::queue<uint32_t> streams_to_update_;
   uint64_t allocated_memory_ = 0;
+  Timestamp next_bdp_ping_ = Timestamp::ProcessEpoch();
 };
 
 void FlowControlFuzzer::Perform(const flow_control_fuzzer::Action& action) {
@@ -129,6 +132,10 @@ void FlowControlFuzzer::Perform(const flow_control_fuzzer::Action& action) {
           g_now, gpr_time_from_millis(Clamp(action.step_time_ms(), uint64_t(1),
                                             kMaxAdvanceTimeMillis),
                                       GPR_TIMESPAN));
+      exec_ctx.InvalidateNow();
+      if (exec_ctx.Now() >= next_bdp_ping_) {
+        scheduled_write_ = true;
+      }
     } break;
     case flow_control_fuzzer::Action::kPeriodicUpdate: {
       PerformAction(tfc_->PeriodicUpdate(), nullptr);
@@ -148,6 +155,11 @@ void FlowControlFuzzer::Perform(const flow_control_fuzzer::Action& action) {
         send_from_remote.ack_initial_window_size =
             sent_to_remote.initial_window_size;
         remote_initial_window_size_ = *sent_to_remote.initial_window_size;
+        send_from_remote_.push_back(send_from_remote);
+      }
+      if (sent_to_remote.bdp_ping) {
+        SendFromRemote send_from_remote;
+        send_from_remote.bdp_pong = true;
         send_from_remote_.push_back(send_from_remote);
       }
       for (auto stream_update : sent_to_remote.stream_window_updates) {
@@ -175,11 +187,17 @@ void FlowControlFuzzer::Perform(const flow_control_fuzzer::Action& action) {
         PerformAction(tfc_->MakeAction(), nullptr);
         sending_initial_window_size_ = false;
       }
+      if (sent_from_remote.bdp_pong) {
+        next_bdp_ping_ = tfc_->bdp_estimator()->CompletePing();
+      }
       for (const auto& stream_write : sent_from_remote.stream_writes) {
         Stream* stream = GetStream(stream_write.id);
         if (!squelch) {
           fprintf(stderr, "[%" PRIu32 "]: recv write of %" PRIu64 "\n",
                   stream_write.id, stream_write.size);
+        }
+        if (auto* bdp = tfc_->bdp_estimator()) {
+          bdp->AddIncomingBytes(stream_write.size);
         }
         GPR_ASSERT(stream->fc.RecvData(stream_write.size).ok());
         PerformAction(stream->fc.MakeAction(), stream);
@@ -225,6 +243,14 @@ void FlowControlFuzzer::Perform(const flow_control_fuzzer::Action& action) {
   }
   if (scheduled_write_) {
     SendToRemote send;
+    if (exec_ctx.Now() >= next_bdp_ping_) {
+      if (auto* bdp = tfc_->bdp_estimator()) {
+        bdp->SchedulePing();
+        bdp->StartPing();
+        next_bdp_ping_ = Timestamp::InfFuture();
+        send.bdp_ping = true;
+      }
+    }
     if (!sending_initial_window_size_ &&
         queued_initial_window_size_.has_value()) {
       sending_initial_window_size_ = true;
