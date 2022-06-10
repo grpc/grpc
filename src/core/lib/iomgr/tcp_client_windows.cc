@@ -121,11 +121,11 @@ static void on_connect(void* acp, grpc_error_handle error) {
 
 /* Tries to issue one async connection, then schedules both an IOCP
    notification request for the connection, and one timeout alert. */
-static void tcp_connect(grpc_closure* on_done, grpc_endpoint** endpoint,
-                        grpc_pollset_set* interested_parties,
-                        const grpc_channel_args* channel_args,
-                        const grpc_resolved_address* addr,
-                        grpc_core::Timestamp deadline) {
+static int64_t tcp_connect(grpc_closure* on_done, grpc_endpoint** endpoint,
+                           grpc_pollset_set* interested_parties,
+                           const grpc_channel_args* channel_args,
+                           const grpc_resolved_address* addr,
+                           grpc_core::Timestamp deadline) {
   SOCKET sock = INVALID_SOCKET;
   BOOL success;
   int status;
@@ -216,7 +216,7 @@ static void tcp_connect(grpc_closure* on_done, grpc_endpoint** endpoint,
   grpc_timer_init(&ac->alarm, deadline, &ac->on_alarm);
   grpc_socket_notify_on_write(socket, &ac->on_connect);
   gpr_mu_unlock(&ac->mu);
-  return;
+  return 0;
 
 failure:
   GPR_ASSERT(!GRPC_ERROR_IS_NONE(error));
@@ -232,8 +232,12 @@ failure:
     closesocket(sock);
   }
   grpc_core::ExecCtx::Run(DEBUG_LOCATION, on_done, final_error);
+  return 0;
 }
 
-grpc_tcp_client_vtable grpc_windows_tcp_client_vtable = {tcp_connect};
+static bool tcp_cancel_connect(int64_t /*connection_handle*/) { return false; }
+
+grpc_tcp_client_vtable grpc_windows_tcp_client_vtable = {tcp_connect,
+                                                         tcp_cancel_connect};
 
 #endif /* GRPC_WINSOCK_SOCKET */
