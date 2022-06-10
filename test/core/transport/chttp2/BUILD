@@ -32,6 +32,21 @@ grpc_proto_fuzzer(
     ],
 )
 
+grpc_proto_fuzzer(
+    name = "flow_control_fuzzer",
+    srcs = ["flow_control_fuzzer.cc"],
+    corpus = "flow_control_fuzzer_corpus",
+    language = "C++",
+    proto = "flow_control_fuzzer.proto",
+    tags = ["no_windows"],
+    uses_event_engine = False,
+    uses_polling = False,
+    deps = [
+        "//:gpr",
+        "//:chttp2_flow_control",
+    ],
+)
+
 grpc_cc_test(
     name = "alpn_test",
     srcs = ["alpn_test.cc"],

@@ -175,3 +175,6 @@ iwyu_files0.txt
 iwyu/
 iwyu_build/
 
+# fuzzer logs
+fuzz-*.log
+
