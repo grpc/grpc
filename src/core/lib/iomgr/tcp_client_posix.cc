@@ -67,25 +67,21 @@ struct async_connect {
   bool connect_cancelled;
 };
 
+struct ConnectionShard {
+  grpc_core::Mutex mu;
+  absl::flat_hash_map<int64_t, async_connect*> pending_connections
+      ABSL_GUARDED_BY(&mu);
+};
+
 namespace {
+
 gpr_once g_tcp_client_posix_init = GPR_ONCE_INIT;
-size_t g_pending_connection_shards = 0;
-grpc_core::Mutex** g_shard_mu = nullptr;
-absl::flat_hash_map<int64_t, async_connect*>** g_pending_connections = nullptr;
+std::vector<ConnectionShard>* g_connection_shards = nullptr;
 std::atomic<int64_t> g_connection_id{1};
 
 void do_tcp_client_global_init(void) {
-  g_pending_connection_shards = std::max(2 * gpr_cpu_num_cores(), 1u);
-  g_shard_mu = static_cast<grpc_core::Mutex**>(
-      gpr_zalloc(g_pending_connection_shards * sizeof(grpc_core::Mutex*)));
-  g_pending_connections =
-      static_cast<absl::flat_hash_map<int64_t, async_connect*>**>(
-          gpr_zalloc(g_pending_connection_shards *
-                     sizeof(absl::flat_hash_map<int64_t, async_connect*>*)));
-  for (uint32_t i = 0; i < g_pending_connection_shards; i++) {
-    g_shard_mu[i] = new grpc_core::Mutex();
-    g_pending_connections[i] = new absl::flat_hash_map<int64_t, async_connect*>;
-  }
+  size_t num_shards = std::max(2 * gpr_cpu_num_cores(), 1u);
+  g_connection_shards = new std::vector<struct ConnectionShard>(num_shards);
 }
 
 }  // namespace
@@ -168,7 +164,6 @@ static void on_writable(void* acp, grpc_error_handle error) {
   grpc_closure* closure = ac->closure;
   std::string addr_str = ac->addr_str;
   grpc_fd* fd;
-  bool connect_cancelled = false;
 
   (void)GRPC_ERROR_REF(error);
 
@@ -181,7 +176,7 @@ static void on_writable(void* acp, grpc_error_handle error) {
   GPR_ASSERT(ac->fd);
   fd = ac->fd;
   ac->fd = nullptr;
-  connect_cancelled = ac->connect_cancelled;
+  bool connect_cancelled = ac->connect_cancelled;
   gpr_mu_unlock(&ac->mu);
 
   grpc_timer_cancel(&ac->alarm);
@@ -247,10 +242,11 @@ static void on_writable(void* acp, grpc_error_handle error) {
 
 finish:
   if (!connect_cancelled) {
-    int shard_number = ac->connection_handle % g_pending_connection_shards;
+    int shard_number = ac->connection_handle % (*g_connection_shards).size();
+    struct ConnectionShard* shard = &(*g_connection_shards)[shard_number];
     {
-      grpc_core::MutexLock lock(g_shard_mu[shard_number]);
-      g_pending_connections[shard_number]->erase(ac->connection_handle);
+      grpc_core::MutexLock lock(&shard->mu);
+      shard->pending_connections.erase(ac->connection_handle);
     }
   }
   if (fd != nullptr) {
@@ -382,10 +378,11 @@ int64_t grpc_tcp_client_create_from_prepared_fd(
             ac->addr_str.c_str(), fdobj);
   }
 
-  int shard_number = connection_id % g_pending_connection_shards;
+  int shard_number = connection_id % (*g_connection_shards).size();
+  struct ConnectionShard* shard = &(*g_connection_shards)[shard_number];
   {
-    grpc_core::MutexLock lock(g_shard_mu[shard_number]);
-    g_pending_connections[shard_number]->insert_or_assign(connection_id, ac);
+    grpc_core::MutexLock lock(&shard->mu);
+    shard->pending_connections.insert_or_assign(connection_id, ac);
   }
 
   gpr_mu_lock(&ac->mu);
@@ -419,12 +416,13 @@ static bool tcp_cancel_connect(int64_t connection_handle) {
   if (connection_handle <= 0) {
     return false;
   }
-  int shard_number = connection_handle % g_pending_connection_shards;
+  int shard_number = connection_handle % (*g_connection_shards).size();
+  struct ConnectionShard* shard = &(*g_connection_shards)[shard_number];
   async_connect* ac = nullptr;
   {
-    grpc_core::MutexLock lock(g_shard_mu[shard_number]);
-    auto it = g_pending_connections[shard_number]->find(connection_handle);
-    if (it != g_pending_connections[shard_number]->end()) {
+    grpc_core::MutexLock lock(&shard->mu);
+    auto it = shard->pending_connections.find(connection_handle);
+    if (it != shard->pending_connections.end()) {
       ac = it->second;
       GPR_ASSERT(ac != nullptr);
       // Trying to acquire ac->mu here would could cause a deadlock because
@@ -437,7 +435,7 @@ static bool tcp_cancel_connect(int64_t connection_handle) {
       // corresponding g_shard_mu is unlocked.
       ++ac->refs;
       // Remove connection from list of active connections.
-      g_pending_connections[shard_number]->erase(it);
+      shard->pending_connections.erase(it);
     }
   }
   if (ac == nullptr) {
@@ -449,10 +447,10 @@ static bool tcp_cancel_connect(int64_t connection_handle) {
     // Connection is still pending. The on_writable callback hasn't executed
     // yet because ac->fd != nullptr.
     ac->connect_cancelled = true;
-    // Force on_writable to run as soon as possible and gracefully terminate.
-    // When the on_writable callback runs, it would detect that a connect
-    // cancellation is requested and take the necessary actions.
-    grpc_fd_set_writable(ac->fd);
+    // Shutdown the fd. This would cause on_writable to run as soon as possible.
+    // We dont need to pass a custom error here because it wont be used since
+    // the on_connect_closure is not run if connect cancellation is successfull.
+    grpc_fd_shutdown(ac->fd, GRPC_ERROR_NONE);
   }
   bool done = (--ac->refs == 0);
   gpr_mu_unlock(&ac->mu);

@@ -112,8 +112,9 @@ void test_succeeds(void) {
                                       .channel_args_preconditioning()
                                       .PreconditionChannelArgs(nullptr)
                                       .ToC();
-  grpc_tcp_client_connect(&done, &g_connecting, g_pollset_set, args,
-                          &resolved_addr, grpc_core::Timestamp::InfFuture());
+  int64_t connection_handle = grpc_tcp_client_connect(
+      &done, &g_connecting, g_pollset_set, args, &resolved_addr,
+      grpc_core::Timestamp::InfFuture());
   grpc_channel_args_destroy(args);
   /* await the connection */
   do {
@@ -139,6 +140,10 @@ void test_succeeds(void) {
   }
 
   gpr_mu_unlock(g_mu);
+
+  // A cancellation attempt should fail because connect already succeeded.
+  GPR_ASSERT(grpc_tcp_client_cancel_connect(connection_handle) == false);
+
   gpr_log(GPR_ERROR, "---- finished test_succeeds() ----");
 }
 
@@ -161,8 +166,9 @@ void test_fails(void) {
 
   /* connect to a broken address */
   GRPC_CLOSURE_INIT(&done, must_fail, nullptr, grpc_schedule_on_exec_ctx);
-  grpc_tcp_client_connect(&done, &g_connecting, g_pollset_set, nullptr,
-                          &resolved_addr, grpc_core::Timestamp::InfFuture());
+  int64_t connection_handle = grpc_tcp_client_connect(
+      &done, &g_connecting, g_pollset_set, nullptr, &resolved_addr,
+      grpc_core::Timestamp::InfFuture());
   gpr_mu_lock(g_mu);
 
   /* wait for the connection callback to finish */
@@ -187,6 +193,10 @@ void test_fails(void) {
   }
 
   gpr_mu_unlock(g_mu);
+
+  // A cancellation attempt should fail because connect already failed.
+  GPR_ASSERT(grpc_tcp_client_cancel_connect(connection_handle) == false);
+
   gpr_log(GPR_ERROR, "---- finished test_fails() ----");
 }
 
@@ -210,8 +220,8 @@ void test_connect_cancellation_succeeds(void) {
       0 == bind(svr_fd, (struct sockaddr*)addr, (socklen_t)resolved_addr.len));
   GPR_ASSERT(0 == listen(svr_fd, 1));
 
-  /* connect to it. accept() is not called on the bind socket. So the connection
-   * should appear to hang. */
+  // connect to it. accept() is not called on the bind socket. So the connection
+  // should appear to hang.
   GPR_ASSERT(getsockname(svr_fd, (struct sockaddr*)addr,
                          (socklen_t*)&resolved_addr.len) == 0);
   GRPC_CLOSURE_INIT(&done, must_succeed, nullptr, grpc_schedule_on_exec_ctx);
