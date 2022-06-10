@@ -2421,6 +2421,7 @@ grpc_cc_library(
 grpc_cc_library(
     name = "grpc_base",
     srcs = [
+        "src/core/lib/security/util/file_util.cc"
         "src/core/lib/address_utils/parse_address.cc",
         "src/core/lib/backoff/backoff.cc",
         "src/core/lib/channel/channel_stack.cc",
@@ -2533,6 +2534,7 @@ grpc_cc_library(
         "src/core/lib/transport/transport_op_string.cc",
     ],
     hdrs = [
+        "src/core/lib/security/util/file_util.h"
         "src/core/lib/transport/error_utils.h",
         "src/core/lib/transport/http2_errors.h",
         "src/core/lib/address_utils/parse_address.h",

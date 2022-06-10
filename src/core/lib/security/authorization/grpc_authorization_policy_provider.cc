@@ -19,8 +19,6 @@
 #include <grpc/grpc_security.h>
 #include <grpc/support/string_util.h>
 
-#include "src/core/lib/gpr/tmpfile.h"
-#include "src/core/lib/iomgr/load_file.h"
 #include "src/core/lib/security/authorization/grpc_authorization_engine.h"
 #include "src/core/lib/slice/slice_internal.h"
 
@@ -44,60 +42,6 @@ StaticDataAuthorizationPolicyProvider::StaticDataAuthorizationPolicyProvider(
           std::move(policies.allow_policy))),
       deny_engine_(MakeRefCounted<GrpcAuthorizationEngine>(
           std::move(policies.deny_policy))) {}
-
-namespace {
-
-absl::StatusOr<std::string> ReadPolicyFromFile(absl::string_view policy_path) {
-  grpc_slice policy_slice = grpc_empty_slice();
-  grpc_error_handle error =
-      grpc_load_file(std::string(policy_path).c_str(), 0, &policy_slice);
-  if (error != GRPC_ERROR_NONE) {
-    absl::Status status =
-        absl::InvalidArgumentError(grpc_error_std_string(error));
-    GRPC_ERROR_UNREF(error);
-    return status;
-  }
-  std::string policy_contents(StringViewFromSlice(policy_slice));
-  grpc_slice_unref_internal(policy_slice);
-  return policy_contents;
-}
-
-gpr_timespec TimeoutSecondsToDeadline(int64_t seconds) {
-  return gpr_time_add(gpr_now(GPR_CLOCK_MONOTONIC),
-                      gpr_time_from_seconds(seconds, GPR_TIMESPAN));
-}
-
-}  // namespace
-
-TmpFile::TmpFile(absl::string_view data) {
-  name_ = CreateTmpFileAndWriteData(data);
-  GPR_ASSERT(!name_.empty());
-}
-
-TmpFile::~TmpFile() { GPR_ASSERT(remove(name_.c_str()) == 0); }
-
-void TmpFile::RewriteFile(absl::string_view data) {
-  // Create a new file containing new data.
-  std::string new_name = CreateTmpFileAndWriteData(data);
-  GPR_ASSERT(!new_name.empty());
-  // Remove the old file.
-  GPR_ASSERT(remove(name_.c_str()) == 0);
-  // Rename the new file to the original name.
-  GPR_ASSERT(rename(new_name.c_str(), name_.c_str()) == 0);
-}
-
-std::string TmpFile::CreateTmpFileAndWriteData(absl::string_view data) {
-  char* name = nullptr;
-  FILE* file_descriptor = gpr_tmpfile("test", &name);
-  GPR_ASSERT(fwrite(data.data(), 1, data.size(), file_descriptor) ==
-             data.size());
-  GPR_ASSERT(fclose(file_descriptor) == 0);
-  GPR_ASSERT(file_descriptor != nullptr);
-  GPR_ASSERT(name != nullptr);
-  std::string name_to_return = name;
-  gpr_free(name);
-  return name_to_return;
-}
 
 absl::StatusOr<RefCountedPtr<grpc_authorization_policy_provider>>
 FileWatcherAuthorizationPolicyProvider::Create(
@@ -129,7 +73,7 @@ FileWatcherAuthorizationPolicyProvider::FileWatcherAuthorizationPolicyProvider(
     while (true) {
       void* value = gpr_event_wait(
           &provider->shutdown_event_,
-          TimeoutSecondsToDeadline(provider->refresh_interval_sec_));
+          grpc_timeout_seconds_to_deadline(provider->refresh_interval_sec_));
       if (value != nullptr) {
         return;
       }
@@ -154,8 +98,7 @@ void FileWatcherAuthorizationPolicyProvider::RewriteFileForTesting(
 }
 
 absl::Status FileWatcherAuthorizationPolicyProvider::ForceUpdate() {
-  absl::StatusOr<std::string> file_contents =
-      ReadPolicyFromFile(authz_policy_path_);
+  absl::StatusOr<std::string> file_contents = ReadPolicyFromFile();
   if (!file_contents.ok()) {
     return file_contents.status();
   }
@@ -179,6 +122,23 @@ absl::Status FileWatcherAuthorizationPolicyProvider::ForceUpdate() {
             file_contents_.c_str());
   }
   return absl::OkStatus();
+}
+
+absl::StatusOr<std::string>
+FileWatcherAuthorizationPolicyProvider::ReadPolicyFromFile() {
+  MutexLock lock(&file_mu_);
+  grpc_slice policy_slice = grpc_empty_slice();
+  grpc_error_handle error =
+      grpc_load_file(authz_policy_path_.c_str(), 0, &policy_slice);
+  if (error != GRPC_ERROR_NONE) {
+    absl::Status status =
+        absl::InvalidArgumentError(grpc_error_std_string(error));
+    GRPC_ERROR_UNREF(error);
+    return status;
+  }
+  std::string policy_contents(StringViewFromSlice(policy_slice));
+  grpc_slice_unref_internal(policy_slice);
+  return policy_contents;
 }
 
 void FileWatcherAuthorizationPolicyProvider::Orphan() {

@@ -25,6 +25,7 @@
 #include "src/core/lib/gprpp/thd.h"
 #include "src/core/lib/security/authorization/authorization_policy_provider.h"
 #include "src/core/lib/security/authorization/rbac_translator.h"
+#include "src/core/lib/security/util/file_util.h"
 
 namespace grpc_core {
 
@@ -51,24 +52,6 @@ class StaticDataAuthorizationPolicyProvider
  private:
   RefCountedPtr<AuthorizationEngine> allow_engine_;
   RefCountedPtr<AuthorizationEngine> deny_engine_;
-};
-
-class TmpFile {
- public:
-  // Create a temporary file with |data| written in.
-  explicit TmpFile(absl::string_view data);
-
-  ~TmpFile();
-
-  const std::string& name() { return name_; }
-
-  // Rewrite |data| to the temporary file, in an atomic way.
-  void RewriteFile(absl::string_view data);
-
- private:
-  std::string CreateTmpFileAndWriteData(absl::string_view data);
-
-  std::string name_;
 };
 
 // Provider class will get gRPC Authorization policy from provided file path.
@@ -105,7 +88,12 @@ class FileWatcherAuthorizationPolicyProvider
  private:
   // Force an update from the file system regardless of the interval.
   absl::Status ForceUpdate();
+  // Returns authorization policy content in authz_policy_path_.
+  absl::StatusOr<std::string> ReadPolicyFromFile();
 
+  // Synchronizes file read operations by refresh thread and file rewrites in
+  // test.
+  Mutex file_mu_;
   std::string authz_policy_path_;
   std::string file_contents_;
   unsigned int refresh_interval_sec_;
