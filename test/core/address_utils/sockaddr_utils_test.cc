@@ -180,19 +180,19 @@ TEST(SockAddrUtilsTest, SockAddrToString) {
 
   SetIPv6ScopeId(&input6, 2);
   EXPECT_EQ(grpc_sockaddr_to_string(&input6, false).value(),
-            "[2001:db8::1%252]:12345");
+            "[2001:db8::1%2]:12345");
   EXPECT_EQ(grpc_sockaddr_to_string(&input6, true).value(),
-            "[2001:db8::1%252]:12345");
+            "[2001:db8::1%2]:12345");
   EXPECT_EQ(grpc_sockaddr_to_uri(&input6).value(),
-            "ipv6:%5B2001:db8::1%25252%5D:12345");
+            "ipv6:%5B2001:db8::1%252%5D:12345");
 
   SetIPv6ScopeId(&input6, 101);
   EXPECT_EQ(grpc_sockaddr_to_string(&input6, false).value(),
-            "[2001:db8::1%25101]:12345");
+            "[2001:db8::1%101]:12345");
   EXPECT_EQ(grpc_sockaddr_to_string(&input6, true).value(),
-            "[2001:db8::1%25101]:12345");
+            "[2001:db8::1%101]:12345");
   EXPECT_EQ(grpc_sockaddr_to_uri(&input6).value(),
-            "ipv6:%5B2001:db8::1%2525101%5D:12345");
+            "ipv6:%5B2001:db8::1%25101%5D:12345");
 
   grpc_resolved_address input6x = MakeAddr6(kMapped, sizeof(kMapped));
   EXPECT_EQ(grpc_sockaddr_to_string(&input6x, false).value(),
