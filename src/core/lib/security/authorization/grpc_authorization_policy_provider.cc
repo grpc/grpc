@@ -58,7 +58,16 @@ StaticDataAuthorizationPolicyProvider::StaticDataAuthorizationPolicyProvider(
       deny_engine_(MakeRefCounted<GrpcAuthorizationEngine>(
           std::move(policies.deny_policy))) {}
 
+namespace {
 
+gpr_timespec TimeoutSecondsToDeadline(int64_t seconds) {
+  return gpr_time_add(gpr_now(GPR_CLOCK_MONOTONIC),
+                      gpr_time_from_seconds(seconds, GPR_TIMESPAN));
+}
+
+}  // namespace
+
+absl::StatusOr<RefCountedPtr<grpc_authorization_policy_provider>>
 FileWatcherAuthorizationPolicyProvider::Create(
     absl::string_view authz_policy_path, unsigned int refresh_interval_sec) {
   GPR_ASSERT(!authz_policy_path.empty());
@@ -88,7 +97,7 @@ FileWatcherAuthorizationPolicyProvider::FileWatcherAuthorizationPolicyProvider(
     while (true) {
       void* value = gpr_event_wait(
           &provider->shutdown_event_,
-          grpc_timeout_seconds_to_deadline(provider->refresh_interval_sec_));
+          TimeoutSecondsToDeadline(provider->refresh_interval_sec_));
       if (value != nullptr) {
         return;
       }

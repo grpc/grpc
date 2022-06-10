@@ -1358,6 +1358,8 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/lib/security/transport/server_auth_filter.cc )
   s.files += %w( src/core/lib/security/transport/tsi_error.cc )
   s.files += %w( src/core/lib/security/transport/tsi_error.h )
+  s.files += %w( src/core/lib/security/util/file_util.cc )
+  s.files += %w( src/core/lib/security/util/file_util.h )
   s.files += %w( src/core/lib/security/util/json_util.cc )
   s.files += %w( src/core/lib/security/util/json_util.h )
   s.files += %w( src/core/lib/service_config/service_config.h )

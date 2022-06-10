@@ -2215,6 +2215,7 @@ add_library(grpc
   src/core/lib/security/transport/security_handshaker.cc
   src/core/lib/security/transport/server_auth_filter.cc
   src/core/lib/security/transport/tsi_error.cc
+  src/core/lib/security/util/file_util.cc
   src/core/lib/security/util/json_util.cc
   src/core/lib/service_config/service_config_impl.cc
   src/core/lib/service_config/service_config_parser.cc
@@ -2803,6 +2804,7 @@ add_library(grpc_unsecure
   src/core/lib/security/transport/security_handshaker.cc
   src/core/lib/security/transport/server_auth_filter.cc
   src/core/lib/security/transport/tsi_error.cc
+  src/core/lib/security/util/file_util.cc
   src/core/lib/security/util/json_util.cc
   src/core/lib/service_config/service_config_impl.cc
   src/core/lib/service_config/service_config_parser.cc

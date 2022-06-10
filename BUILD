@@ -2422,7 +2422,6 @@ grpc_cc_library(
 grpc_cc_library(
     name = "grpc_base",
     srcs = [
-        "src/core/lib/security/util/file_util.cc"
         "src/core/lib/address_utils/parse_address.cc",
         "src/core/lib/backoff/backoff.cc",
         "src/core/lib/channel/channel_stack.cc",
@@ -2504,6 +2503,7 @@ grpc_cc_library(
         "src/core/lib/iomgr/wakeup_fd_posix.cc",
         "src/core/lib/iomgr/work_serializer.cc",
         "src/core/lib/resource_quota/api.cc",
+        "src/core/lib/security/util/file_util.cc",
         "src/core/lib/slice/b64.cc",
         "src/core/lib/slice/slice_api.cc",
         "src/core/lib/slice/slice_buffer_api.cc",
@@ -2537,7 +2537,7 @@ grpc_cc_library(
         "src/core/lib/transport/transport_op_string.cc",
     ],
     hdrs = [
-        "src/core/lib/security/util/file_util.h"
+        "src/core/lib/security/util/file_util.h",
         "src/core/lib/transport/error_utils.h",
         "src/core/lib/transport/http2_errors.h",
         "src/core/lib/address_utils/parse_address.h",
@@ -4922,6 +4922,7 @@ grpc_cc_library(
         "src/core/lib/security/authorization/authorization_policy_provider_vtable.cc",
         "src/core/lib/security/authorization/evaluate_args.cc",
         "src/core/lib/security/authorization/grpc_server_authz_filter.cc",
+        "src/core/lib/security/util/file_util.cc",
     ],
     hdrs = [
         "src/core/lib/security/authorization/authorization_engine.h",

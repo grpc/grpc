@@ -25,8 +25,6 @@
 
 namespace grpc_core {
 
-namespace testing {
-
 TmpFile::TmpFile(absl::string_view data) {
   name_ = CreateTmpFileAndWriteData(data);
   GPR_ASSERT(!name_.empty());
@@ -64,7 +62,5 @@ std::string GetFileContents(const char* path) {
   grpc_slice_unref(slice);
   return data;
 }
-
-}  // namespace testing
 
 }  // namespace grpc_core

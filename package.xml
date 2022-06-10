@@ -1340,6 +1340,8 @@
     <file baseinstalldir="/" name="src/core/lib/security/transport/server_auth_filter.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/security/transport/tsi_error.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/security/transport/tsi_error.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/security/util/file_util.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/security/util/file_util.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/security/util/json_util.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/security/util/json_util.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/service_config/service_config.h" role="src" />

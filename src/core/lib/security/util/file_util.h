@@ -15,7 +15,8 @@
 //
 
 //#include "src/core/lib/gprpp/thd.h"
-#include "test/core/util/test_config.h"
+//#include "test/core/util/test_config.h"
+#include "absl/strings/string_view.h"
 
 namespace grpc_core {
 
