@@ -378,14 +378,15 @@ def grpc_cc_test(name, srcs = [], deps = [], external_deps = [], args = [], data
         "linkstatic": linkstatic,
     }
 
-    ios_cc_test(
-        name = name,
-        srcs = srcs,
-        tags = tags,
-        deps = core_deps,
-        args = args,
-        **test_args
-    )
+    if "grpc-fuzzer" not in tags:
+        ios_cc_test(
+            name = name,
+            srcs = srcs,
+            tags = tags,
+            deps = core_deps,
+            args = args,
+            **test_args
+        )
     if not uses_polling:
         # the test behavior doesn't depend on polling, just generate the test
         native.cc_test(

@@ -107,7 +107,7 @@ void PollingResolver::OnNextResolutionLocked(grpc_error_handle error) {
             this, grpc_error_std_string(error).c_str(), shutdown_);
   }
   have_next_resolution_timer_ = false;
-  if (error == GRPC_ERROR_NONE && !shutdown_) {
+  if (GRPC_ERROR_IS_NONE(error) && !shutdown_) {
     StartResolvingLocked();
   }
   Unref(DEBUG_LOCATION, "retry-timer");

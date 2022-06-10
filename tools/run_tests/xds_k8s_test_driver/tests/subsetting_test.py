@@ -38,11 +38,11 @@ _NUM_CLIENTS = 3
 class SubsettingTest(xds_k8s_testcase.RegularXdsKubernetesTestCase):
 
     @staticmethod
-    def isSupported(config: skips.TestConfig) -> bool:
+    def is_supported(config: skips.TestConfig) -> bool:
         # Subsetting is an experimental feature where most work is done on the
         # server-side. We limit it to only run on master branch to save
         # resources.
-        return config.version_ge('master')
+        return config.version_gte('master')
 
     def test_subsetting_basic(self) -> None:
         with self.subTest('00_create_health_check'):

@@ -21,6 +21,8 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <stddef.h>
+
 #include <string>
 
 #include <grpc/support/atm.h>

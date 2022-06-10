@@ -17,9 +17,8 @@
 
 #include <grpc/support/port_platform.h>
 
-#include <memory>
 #include <set>
-#include <vector>
+#include <string>
 
 #include "absl/status/statusor.h"
 #include "google/api/expr/v1alpha1/syntax.upb.h"

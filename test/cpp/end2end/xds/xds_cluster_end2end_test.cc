@@ -39,6 +39,7 @@ using ClientStats = LrsServiceImpl::ClientStats;
 
 constexpr char kLbDropType[] = "lb";
 constexpr char kThrottleDropType[] = "throttle";
+constexpr char kStatusMessageDropPrefix[] = "EDS-configured drop: ";
 
 //
 // CDS tests
@@ -239,11 +240,14 @@ TEST_P(CdsTest, ClusterRemoved) {
   // Unset CDS resource.
   balancer_->ads_service()->UnsetResource(kCdsTypeUrl, kDefaultClusterName);
   // Wait for RPCs to start failing.
-  do {
-  } while (SendRpc(RpcOptions(), nullptr).ok());
-  // Make sure RPCs are still failing.
-  CheckRpcSendFailure(DEBUG_LOCATION,
-                      CheckRpcSendFailureOptions().set_times(1000));
+  SendRpcsUntil(DEBUG_LOCATION, [](const RpcResult& result) {
+    if (result.status.ok()) return true;  // Keep going.
+    EXPECT_EQ(StatusCode::UNAVAILABLE, result.status.error_code());
+    EXPECT_EQ(absl::StrCat("CDS resource \"", kDefaultClusterName,
+                           "\" does not exist"),
+              result.status.error_message());
+    return false;
+  });
   // Make sure we ACK'ed the update.
   auto response_state = balancer_->ads_service()->cds_response_state();
   ASSERT_TRUE(response_state.has_value());
@@ -349,23 +353,7 @@ TEST_P(CdsTest, ClusterChangeAfterAdsCallFails) {
   cluster.mutable_eds_cluster_config()->set_service_name(kNewEdsResourceName);
   balancer_->ads_service()->SetCdsResource(cluster);
   // Make sure client sees the change.
-  // TODO(roth): This should not be allowing errors.  The errors are
-  // being caused by a bug that triggers in the following situation:
-  //
-  // 1. xDS call fails.
-  // 2. When xDS call is restarted, the server sends the updated CDS
-  //    resource that points to the new EDS resource name.
-  // 3. When the client receives the CDS update, it does two things:
-  //    - Sends the update to the CDS LB policy, which creates a new
-  //      xds_cluster_resolver policy using the new EDS service name.
-  //    - Notices that the CDS update no longer refers to the old EDS
-  //      service name, so removes that resource, notifying the old
-  //      xds_cluster_resolver policy that the resource no longer exists.
-  //
-  // Need to figure out a way to fix this bug, and then change this to
-  // not allow failures.
-  WaitForBackend(DEBUG_LOCATION, 1,
-                 WaitForBackendOptions().set_allow_failures(true));
+  WaitForBackend(DEBUG_LOCATION, 1);
 }
 
 //
@@ -455,13 +443,21 @@ TEST_P(EdsTest, InitiallyEmptyServerlist) {
   EdsResourceArgs args({std::move(empty_locality)});
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
   // RPCs should fail.
-  CheckRpcSendFailure(DEBUG_LOCATION);
+  constexpr char kErrorMessage[] =
+      // TODO(roth): Improve this error message as part of
+      // https://github.com/grpc/grpc/issues/22883.
+      "weighted_target: all children report state TRANSIENT_FAILURE";
+  CheckRpcSendFailure(DEBUG_LOCATION, StatusCode::UNAVAILABLE, kErrorMessage);
   // Send non-empty serverlist.
   args = EdsResourceArgs({{"locality0", CreateEndpointsForBackends()}});
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
   // RPCs should eventually succeed.
-  WaitForAllBackends(DEBUG_LOCATION, 0, 1,
-                     WaitForBackendOptions().set_allow_failures(true));
+  WaitForAllBackends(DEBUG_LOCATION, 0, 1, [&](const RpcResult& result) {
+    if (!result.status.ok()) {
+      EXPECT_EQ(result.status.error_code(), StatusCode::UNAVAILABLE);
+      EXPECT_EQ(result.status.error_message(), kErrorMessage);
+    }
+  });
 }
 
 // Tests that RPCs will fail with UNAVAILABLE instead of DEADLINE_EXCEEDED if
@@ -493,17 +489,16 @@ TEST_P(EdsTest, BackendsRestart) {
   WaitForAllBackends(DEBUG_LOCATION);
   // Stop backends.  RPCs should fail.
   ShutdownAllBackends();
-  // Sending multiple failed requests instead of just one to ensure that the
-  // client notices that all backends are down before we restart them. If we
-  // didn't do this, then a single RPC could fail here due to the race
-  // condition between the LB pick and the GOAWAY from the chosen backend
-  // being shut down, which would not actually prove that the client noticed
-  // that all of the backends are down. Then, when we send another request
-  // below (which we expect to succeed), if the callbacks happen in the wrong
-  // order, the same race condition could happen again due to the client not
-  // yet having noticed that the backends were all down.
-  CheckRpcSendFailure(DEBUG_LOCATION,
-                      CheckRpcSendFailureOptions().set_times(backends_.size()));
+  // Wait for channel to report TRANSIENT_FAILURE.
+  EXPECT_TRUE(channel_->WaitForStateChange(
+      GRPC_CHANNEL_READY, grpc_timeout_seconds_to_deadline(5)));
+  EXPECT_EQ(GRPC_CHANNEL_TRANSIENT_FAILURE, channel_->GetState(false));
+  // RPCs should fail.
+  CheckRpcSendFailure(
+      DEBUG_LOCATION, StatusCode::UNAVAILABLE,
+      // TODO(roth): Improve this error message as part of
+      // https://github.com/grpc/grpc/issues/22883.
+      "weighted_target: all children report state TRANSIENT_FAILURE");
   // Restart all backends.  RPCs should start succeeding again.
   StartAllBackends();
   CheckRpcSendOk(DEBUG_LOCATION, 1,
@@ -672,7 +667,7 @@ TEST_P(EdsTest, ManyLocalitiesStressTest) {
   }
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
   // Wait until backend 0 is ready.
-  WaitForBackend(DEBUG_LOCATION, 0,
+  WaitForBackend(DEBUG_LOCATION, 0, /*check_status=*/nullptr,
                  WaitForBackendOptions().set_reset_counters(false),
                  RpcOptions().set_timeout_ms(kRpcTimeoutMs));
   EXPECT_EQ(0U, backends_[1]->backend_service()->request_count());
@@ -837,7 +832,8 @@ TEST_P(EdsTest, Drops) {
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
   // Send kNumRpcs RPCs and count the drops.
   size_t num_drops = SendRpcsAndCountFailuresWithMessage(
-      DEBUG_LOCATION, kNumRpcs, "EDS-configured drop: ");
+      DEBUG_LOCATION, kNumRpcs, StatusCode::UNAVAILABLE,
+      kStatusMessageDropPrefix);
   // The drop rate should be roughly equal to the expectation.
   const double seen_drop_rate = static_cast<double>(num_drops) / kNumRpcs;
   EXPECT_THAT(seen_drop_rate, ::testing::DoubleNear(kDropRateForLbAndThrottle,
@@ -858,7 +854,8 @@ TEST_P(EdsTest, DropPerHundred) {
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
   // Send kNumRpcs RPCs and count the drops.
   size_t num_drops = SendRpcsAndCountFailuresWithMessage(
-      DEBUG_LOCATION, kNumRpcs, "EDS-configured drop: ");
+      DEBUG_LOCATION, kNumRpcs, StatusCode::UNAVAILABLE,
+      kStatusMessageDropPrefix);
   // The drop rate should be roughly equal to the expectation.
   const double seen_drop_rate = static_cast<double>(num_drops) / kNumRpcs;
   EXPECT_THAT(seen_drop_rate,
@@ -879,7 +876,8 @@ TEST_P(EdsTest, DropPerTenThousand) {
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
   // Send kNumRpcs RPCs and count the drops.
   size_t num_drops = SendRpcsAndCountFailuresWithMessage(
-      DEBUG_LOCATION, kNumRpcs, "EDS-configured drop: ");
+      DEBUG_LOCATION, kNumRpcs, StatusCode::UNAVAILABLE,
+      kStatusMessageDropPrefix);
   // The drop rate should be roughly equal to the expectation.
   const double seen_drop_rate = static_cast<double>(num_drops) / kNumRpcs;
   EXPECT_THAT(seen_drop_rate,
@@ -907,7 +905,8 @@ TEST_P(EdsTest, DropConfigUpdate) {
   // Send kNumRpcsLbOnly RPCs and count the drops.
   gpr_log(GPR_INFO, "========= BEFORE FIRST BATCH ==========");
   size_t num_drops = SendRpcsAndCountFailuresWithMessage(
-      DEBUG_LOCATION, kNumRpcsLbOnly, "EDS-configured drop: ");
+      DEBUG_LOCATION, kNumRpcsLbOnly, StatusCode::UNAVAILABLE,
+      kStatusMessageDropPrefix);
   gpr_log(GPR_INFO, "========= DONE WITH FIRST BATCH ==========");
   // The drop rate should be roughly equal to the expectation.
   double seen_drop_rate = static_cast<double>(num_drops) / kNumRpcsLbOnly;
@@ -924,24 +923,27 @@ TEST_P(EdsTest, DropConfigUpdate) {
   const double kDropRateThreshold =
       (kDropRateForLb + kDropRateForLbAndThrottle) / 2;
   size_t num_rpcs = kNumRpcsBoth;
-  while (seen_drop_rate < kDropRateThreshold) {
-    EchoResponse response;
-    const Status status = SendRpc(RpcOptions(), &response);
-    ++num_rpcs;
-    if (!status.ok() &&
-        absl::StartsWith(status.error_message(), "EDS-configured drop: ")) {
-      ++num_drops;
-    } else {
-      EXPECT_TRUE(status.ok()) << "code=" << status.error_code()
-                               << " message=" << status.error_message();
-      EXPECT_EQ(response.message(), kRequestMessage);
-    }
-    seen_drop_rate = static_cast<double>(num_drops) / num_rpcs;
-  }
+  SendRpcsUntil(
+      DEBUG_LOCATION,
+      [&](const RpcResult& result) {
+        ++num_rpcs;
+        if (result.status.ok()) {
+          EXPECT_EQ(result.response.message(), kRequestMessage);
+        } else {
+          EXPECT_EQ(result.status.error_code(), StatusCode::UNAVAILABLE);
+          EXPECT_THAT(result.status.error_message(),
+                      ::testing::StartsWith(kStatusMessageDropPrefix));
+          ++num_drops;
+        }
+        seen_drop_rate = static_cast<double>(num_drops) / num_rpcs;
+        return seen_drop_rate < kDropRateThreshold;
+      },
+      /*timeout_ms=*/20000);
   // Send kNumRpcsBoth RPCs and count the drops.
   gpr_log(GPR_INFO, "========= BEFORE SECOND BATCH ==========");
   num_drops = SendRpcsAndCountFailuresWithMessage(DEBUG_LOCATION, kNumRpcsBoth,
-                                                  "EDS-configured drop: ");
+                                                  StatusCode::UNAVAILABLE,
+                                                  kStatusMessageDropPrefix);
   gpr_log(GPR_INFO, "========= DONE WITH SECOND BATCH ==========");
   // The new drop rate should be roughly equal to the expectation.
   seen_drop_rate = static_cast<double>(num_drops) / kNumRpcsBoth;
@@ -962,7 +964,8 @@ TEST_P(EdsTest, DropAll) {
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
   // Send kNumRpcs RPCs and all of them are dropped.
   size_t num_drops = SendRpcsAndCountFailuresWithMessage(
-      DEBUG_LOCATION, kNumRpcs, "EDS-configured drop: ");
+      DEBUG_LOCATION, kNumRpcs, StatusCode::UNAVAILABLE,
+      kStatusMessageDropPrefix);
   EXPECT_EQ(num_drops, kNumRpcs);
 }
 
@@ -997,7 +1000,7 @@ TEST_P(FailoverTest, ChooseHighestPriority) {
        0},
   });
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
-  WaitForBackend(DEBUG_LOCATION, 3,
+  WaitForBackend(DEBUG_LOCATION, 3, /*check_status=*/nullptr,
                  WaitForBackendOptions().set_reset_counters(false));
   for (size_t i = 0; i < 3; ++i) {
     EXPECT_EQ(0U, backends_[i]->backend_service()->request_count());
@@ -1017,7 +1020,7 @@ TEST_P(FailoverTest, DoesNotUsePriorityWithNoEndpoints) {
       {"locality3", {}, kDefaultLocalityWeight, 0},
   });
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
-  WaitForBackend(DEBUG_LOCATION, 0,
+  WaitForBackend(DEBUG_LOCATION, 0, /*check_status=*/nullptr,
                  WaitForBackendOptions().set_reset_counters(false));
   for (size_t i = 1; i < 3; ++i) {
     EXPECT_EQ(0U, backends_[i]->backend_service()->request_count());
@@ -1049,7 +1052,7 @@ TEST_P(FailoverTest, Failover) {
       {"locality3", {MakeNonExistantEndpoint()}, kDefaultLocalityWeight, 0},
   });
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
-  WaitForBackend(DEBUG_LOCATION, 0,
+  WaitForBackend(DEBUG_LOCATION, 0, /*check_status=*/nullptr,
                  WaitForBackendOptions().set_reset_counters(false));
   EXPECT_EQ(0U, backends_[1]->backend_service()->request_count());
 }
@@ -1071,16 +1074,10 @@ TEST_P(FailoverTest, SwitchBackToHigherPriority) {
   });
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
   WaitForBackend(DEBUG_LOCATION, 3);
-  ShutdownBackend(3);
+  backends_[3]->StopListeningAndSendGoaways();
+  backends_[0]->StopListeningAndSendGoaways();
+  WaitForBackend(DEBUG_LOCATION, 1);
   ShutdownBackend(0);
-  WaitForBackend(
-      DEBUG_LOCATION, 1,
-      WaitForBackendOptions().set_reset_counters(false).set_allow_failures(
-          true));
-  for (size_t i = 0; i < backends_.size(); ++i) {
-    if (i == 1) continue;
-    EXPECT_EQ(0U, backends_[i]->backend_service()->request_count());
-  }
   StartBackend(0);
   WaitForBackend(DEBUG_LOCATION, 0);
   CheckRpcSendOk(DEBUG_LOCATION, kNumRpcs);
@@ -1096,7 +1093,11 @@ TEST_P(FailoverTest, UpdateInitialUnavailable) {
       {"locality1", {MakeNonExistantEndpoint()}, kDefaultLocalityWeight, 1},
   });
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
-  CheckRpcSendFailure(DEBUG_LOCATION);
+  constexpr char kErrorMessage[] =
+      // TODO(roth): Improve this error message as part of
+      // https://github.com/grpc/grpc/issues/22883.
+      "weighted_target: all children report state TRANSIENT_FAILURE";
+  CheckRpcSendFailure(DEBUG_LOCATION, StatusCode::UNAVAILABLE, kErrorMessage);
   args = EdsResourceArgs({
       {"locality0", CreateEndpointsForBackends(0, 1), kDefaultLocalityWeight,
        0},
@@ -1104,8 +1105,12 @@ TEST_P(FailoverTest, UpdateInitialUnavailable) {
        1},
   });
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
-  WaitForBackend(DEBUG_LOCATION, 0,
-                 WaitForBackendOptions().set_allow_failures(true));
+  WaitForBackend(DEBUG_LOCATION, 0, [&](const RpcResult& result) {
+    if (!result.status.ok()) {
+      EXPECT_EQ(result.status.error_code(), StatusCode::UNAVAILABLE);
+      EXPECT_EQ(result.status.error_message(), kErrorMessage);
+    }
+  });
 }
 
 // Tests that after the localities' priorities are updated, we still choose
@@ -1124,7 +1129,7 @@ TEST_P(FailoverTest, UpdatePriority) {
        0},
   });
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
-  WaitForBackend(DEBUG_LOCATION, 3,
+  WaitForBackend(DEBUG_LOCATION, 3, /*check_status=*/nullptr,
                  WaitForBackendOptions().set_reset_counters(false));
   EXPECT_EQ(0U, backends_[0]->backend_service()->request_count());
   EXPECT_EQ(0U, backends_[1]->backend_service()->request_count());
@@ -1161,7 +1166,7 @@ TEST_P(FailoverTest, MoveAllLocalitiesInCurrentPriorityToHigherPriority) {
   // When we get the first update, all backends in priority 0 are down,
   // so we will create priority 1.  Backends 0 and 1 should have traffic,
   // but backend 2 should not.
-  WaitForAllBackends(DEBUG_LOCATION, 0, 2,
+  WaitForAllBackends(DEBUG_LOCATION, 0, 2, /*check_status=*/nullptr,
                      WaitForBackendOptions().set_reset_counters(false));
   EXPECT_EQ(0UL, backends_[2]->backend_service()->request_count());
   // Second update:
@@ -1227,7 +1232,7 @@ TEST_P(FailoverTest, PriorityChildNameChurn) {
        2},
   });
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
-  WaitForBackend(DEBUG_LOCATION, 3,
+  WaitForBackend(DEBUG_LOCATION, 3, /*check_status=*/nullptr,
                  WaitForBackendOptions().set_reset_counters(false));
   // P2 should not have gotten any traffic in this change.
   EXPECT_EQ(0UL, backends_[2]->backend_service()->request_count());
@@ -1255,14 +1260,15 @@ TEST_P(ClientLoadReportingTest, Vanilla) {
   });
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
   // Wait until all backends are ready.
-  size_t num_warmup_rpcs = WaitForAllBackends(
-      DEBUG_LOCATION, 0, 4, WaitForBackendOptions().set_reset_counters(false));
+  size_t num_warmup_rpcs =
+      WaitForAllBackends(DEBUG_LOCATION, 0, 4, /*check_status=*/nullptr,
+                         WaitForBackendOptions().set_reset_counters(false));
   // Send kNumRpcsPerAddress RPCs per server.
   CheckRpcSendOk(DEBUG_LOCATION, kNumRpcsPerAddress * backends_.size());
-  CheckRpcSendFailure(DEBUG_LOCATION,
-                      CheckRpcSendFailureOptions()
-                          .set_times(kNumFailuresPerAddress * backends_.size())
-                          .set_rpc_options(RpcOptions().set_server_fail(true)));
+  for (size_t i = 0; i < kNumFailuresPerAddress * backends_.size(); ++i) {
+    CheckRpcSendFailure(DEBUG_LOCATION, StatusCode::FAILED_PRECONDITION, "",
+                        RpcOptions().set_server_fail(true));
+  }
   const size_t total_successful_rpcs_sent =
       (kNumRpcsPerAddress * backends_.size()) + num_warmup_rpcs;
   const size_t total_failed_rpcs_sent =
@@ -1321,10 +1327,10 @@ TEST_P(ClientLoadReportingTest, SendAllClusters) {
   size_t num_warmup_rpcs = WaitForAllBackends(DEBUG_LOCATION);
   // Send kNumRpcsPerAddress RPCs per server.
   CheckRpcSendOk(DEBUG_LOCATION, kNumRpcsPerAddress * backends_.size());
-  CheckRpcSendFailure(DEBUG_LOCATION,
-                      CheckRpcSendFailureOptions()
-                          .set_times(kNumFailuresPerAddress * backends_.size())
-                          .set_rpc_options(RpcOptions().set_server_fail(true)));
+  for (size_t i = 0; i < kNumFailuresPerAddress * backends_.size(); ++i) {
+    CheckRpcSendFailure(DEBUG_LOCATION, StatusCode::FAILED_PRECONDITION, "",
+                        RpcOptions().set_server_fail(true));
+  }
   // Check that each backend got the right number of requests.
   for (size_t i = 0; i < backends_.size(); ++i) {
     EXPECT_EQ(kNumRpcsPerAddress + kNumFailuresPerAddress,
@@ -1552,7 +1558,6 @@ TEST_P(ClientLoadReportingTest, DropStats) {
       kDropRateForLb + (1 - kDropRateForLb) * kDropRateForThrottle;
   const size_t kNumRpcs =
       ComputeIdealNumRpcs(kDropRateForLbAndThrottle, kErrorTolerance);
-  const char kStatusMessageDropPrefix[] = "EDS-configured drop: ";
   // The ADS response contains two drop categories.
   EdsResourceArgs args({{"locality0", CreateEndpointsForBackends()}});
   args.drop_categories = {{kLbDropType, kDropPerMillionForLb},
@@ -1560,7 +1565,8 @@ TEST_P(ClientLoadReportingTest, DropStats) {
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
   // Send kNumRpcs RPCs and count the drops.
   size_t num_drops = SendRpcsAndCountFailuresWithMessage(
-      DEBUG_LOCATION, kNumRpcs, kStatusMessageDropPrefix);
+      DEBUG_LOCATION, kNumRpcs, StatusCode::UNAVAILABLE,
+      kStatusMessageDropPrefix);
   // The drop rate should be roughly equal to the expectation.
   const double seen_drop_rate = static_cast<double>(num_drops) / kNumRpcs;
   EXPECT_THAT(seen_drop_rate, ::testing::DoubleNear(kDropRateForLbAndThrottle,
