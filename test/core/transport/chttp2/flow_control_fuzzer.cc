@@ -42,7 +42,7 @@ gpr_timespec now_impl(gpr_clock_type clock_type) {
 
 void InitGlobals() {
   g_now = {1, 0, GPR_CLOCK_MONOTONIC};
-  grpc_core::TestOnlySetProcessEpoch(g_now);
+  TestOnlySetProcessEpoch(g_now);
   gpr_now_impl = now_impl;
 }
 

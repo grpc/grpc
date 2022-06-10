@@ -24,7 +24,6 @@
 #include <limits.h>
 
 #include <algorithm>
-#include <cinttypes>
 #include <cmath>
 #include <ostream>
 #include <string>
