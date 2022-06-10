@@ -28,10 +28,9 @@
 #include "google/api/expr/v1alpha1/syntax.upb.h"
 #include "upb/upb.hpp"
 
-#include <grpc/support/log.h>
-
 #include "src/core/lib/security/authorization/evaluate_args.h"
 #include "src/core/lib/security/authorization/mock_cel/activation.h"
+#include "src/core/lib/security/authorization/mock_cel/cel_value.h"
 
 namespace grpc_core {
 

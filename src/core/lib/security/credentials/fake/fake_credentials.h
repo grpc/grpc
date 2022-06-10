@@ -21,9 +21,21 @@
 
 #include <grpc/support/port_platform.h>
 
-#include <string.h>
+#include <string>
 
+#include "absl/status/statusor.h"
+
+#include <grpc/grpc.h>
+#include <grpc/grpc_security.h>
+#include <grpc/grpc_security_constants.h>
+#include <grpc/impl/codegen/grpc_types.h>
+
+#include "src/core/lib/gpr/useful.h"
+#include "src/core/lib/gprpp/unique_type_name.h"
+#include "src/core/lib/promise/arena_promise.h"
 #include "src/core/lib/security/credentials/credentials.h"
+#include "src/core/lib/slice/slice.h"
+#include "src/core/lib/transport/transport.h"
 
 #define GRPC_ARG_FAKE_SECURITY_EXPECTED_TARGETS \
   "grpc.fake_security.expected_targets"
