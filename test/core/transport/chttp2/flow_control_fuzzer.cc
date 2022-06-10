@@ -119,6 +119,7 @@ class FlowControlFuzzer {
 
 void FlowControlFuzzer::Perform(const flow_control_fuzzer::Action& action) {
   ExecCtx exec_ctx;
+  bool sending_payload = false;
   switch (action.action_case()) {
     case flow_control_fuzzer::Action::ACTION_NOT_SET:
       break;
@@ -142,6 +143,10 @@ void FlowControlFuzzer::Perform(const flow_control_fuzzer::Action& action) {
     } break;
     case flow_control_fuzzer::Action::kPerformSendToRemote: {
       scheduled_write_ = true;
+    } break;
+    case flow_control_fuzzer::Action::kPerformSendToRemoteWithPayload: {
+      scheduled_write_ = true;
+      sending_payload = true;
     } break;
     case flow_control_fuzzer::Action::kReadSendToRemote: {
       if (send_to_remote_.empty()) break;
@@ -264,7 +269,7 @@ void FlowControlFuzzer::Perform(const flow_control_fuzzer::Action& action) {
       send.stream_window_updates.push_back(
           {stream->id, stream->fc.MaybeSendUpdate()});
     }
-    send.transport_window_update = tfc_->MaybeSendUpdate(false);
+    send.transport_window_update = tfc_->MaybeSendUpdate(sending_payload);
     queued_send_max_frame_size_.reset();
     send_to_remote_.emplace_back(std::move(send));
     scheduled_write_ = false;
