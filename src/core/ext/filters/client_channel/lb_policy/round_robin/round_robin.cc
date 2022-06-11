@@ -131,10 +131,6 @@ class RoundRobin : public LoadBalancingPolicy {
       // any references to subchannels, since the subchannels'
       // pollset_sets will include the LB policy's pollset_set.
       policy->Ref(DEBUG_LOCATION, "subchannel_list").release();
-      // Start connecting to all subchannels.
-      for (size_t i = 0; i < num_subchannels(); i++) {
-        subchannel(i)->subchannel()->RequestConnection();
-      }
     }
 
     ~RoundRobinSubchannelList() override {
@@ -417,10 +413,9 @@ void RoundRobin::RoundRobinSubchannelData::ProcessConnectivityChangeLocked(
   RoundRobin* p = static_cast<RoundRobin*>(subchannel_list()->policy());
   GPR_ASSERT(subchannel() != nullptr);
   // If this is not the initial state notification and the new state is
-  // TRANSIENT_FAILURE or IDLE, re-resolve and attempt to reconnect.
-  // Note that we don't want to do this on the initial state
-  // notification, because that would result in an endless loop of
-  // re-resolution.
+  // TRANSIENT_FAILURE or IDLE, re-resolve.
+  // Note that we don't want to do this on the initial state notification,
+  // because that would result in an endless loop of re-resolution.
   if (old_state.has_value() && (new_state == GRPC_CHANNEL_TRANSIENT_FAILURE ||
                                 new_state == GRPC_CHANNEL_IDLE)) {
     if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_round_robin_trace)) {
@@ -429,6 +424,13 @@ void RoundRobin::RoundRobinSubchannelData::ProcessConnectivityChangeLocked(
               subchannel(), ConnectivityStateName(new_state));
     }
     p->channel_control_helper()->RequestReresolution();
+  }
+  if (new_state == GRPC_CHANNEL_IDLE) {
+    if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_round_robin_trace)) {
+      gpr_log(GPR_INFO,
+              "[RR %p] Subchannel %p reported IDLE; requesting connection", p,
+              subchannel());
+    }
     subchannel()->RequestConnection();
   }
   // Update logical connectivity state.
