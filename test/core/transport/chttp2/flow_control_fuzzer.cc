@@ -62,7 +62,8 @@ class FlowControlFuzzer {
   }
 
   void Perform(const flow_control_fuzzer::Action& action);
-  void AssertNoneStuck();
+  void AssertNoneStuck() const;
+  void AssertAnnouncedOverInitialWindowSizeCorrect() const;
 
  private:
   struct StreamPayload {
@@ -297,6 +298,10 @@ void FlowControlFuzzer::PerformAction(FlowControlAction action,
         break;
     }
   };
+  if (stream != nullptr && stream->fc.min_progress_size() == 0) {
+    GPR_ASSERT(action.send_stream_update() ==
+               FlowControlAction::Urgency::NO_ACTION_NEEDED);
+  }
   with_urgency(action.send_stream_update(),
                [this, stream]() { streams_to_update_.push(stream->id); });
   with_urgency(action.send_transport_update(), []() {});
@@ -308,7 +313,7 @@ void FlowControlFuzzer::PerformAction(FlowControlAction action,
   });
 }
 
-void FlowControlFuzzer::AssertNoneStuck() {
+void FlowControlFuzzer::AssertNoneStuck() const {
   GPR_ASSERT(!scheduled_write_);
 
   // Reconcile all the values to get the view of the remote that is knowable to
@@ -361,6 +366,20 @@ void FlowControlFuzzer::AssertNoneStuck() {
   }
 }
 
+void FlowControlFuzzer::AssertAnnouncedOverInitialWindowSizeCorrect() const {
+  uint64_t value_from_streams = 0;
+
+  for (const auto& id_stream : streams_) {
+    const auto& stream = id_stream.second;
+    if (stream.fc.announced_window_delta() > 0) {
+      value_from_streams += stream.fc.announced_window_delta();
+    }
+  }
+
+  GPR_ASSERT(value_from_streams ==
+             tfc_->announced_stream_total_over_incoming_window());
+}
+
 }  // namespace
 }  // namespace chttp2
 }  // namespace grpc_core
@@ -374,5 +393,6 @@ DEFINE_PROTO_FUZZER(const flow_control_fuzzer::Msg& msg) {
     }
     fuzzer.Perform(action);
     fuzzer.AssertNoneStuck();
+    fuzzer.AssertAnnouncedOverInitialWindowSizeCorrect();
   }
 }

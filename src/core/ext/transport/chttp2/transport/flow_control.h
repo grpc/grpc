@@ -199,6 +199,10 @@ class TransportFlowControl final {
   int64_t remote_window() const { return remote_window_; }
   int64_t announced_window() const { return announced_window_; }
 
+  int64_t announced_stream_total_over_incoming_window() const {
+    return announced_stream_total_over_incoming_window_;
+  }
+
  private:
   double TargetLogBdp();
   double SmoothLogBdp(double value);

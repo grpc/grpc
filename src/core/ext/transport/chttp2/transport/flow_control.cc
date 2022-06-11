@@ -192,7 +192,7 @@ void StreamFlowControl::UpdateProgress(uint32_t min_progress_size) {
 
   GPR_DEBUG_ASSERT(max_recv_bytes <=
                    kMaxWindowUpdateSize - tfc_->sent_init_window());
-  if (local_window_delta_ < max_recv_bytes) {
+  if (max_recv_bytes > 0 && local_window_delta_ < max_recv_bytes) {
     local_window_delta_ = max_recv_bytes;
   }
 }
@@ -310,7 +310,7 @@ FlowControlAction TransportFlowControl::PeriodicUpdate() {
 FlowControlAction StreamFlowControl::UpdateAction(FlowControlAction action) {
   const uint32_t sent_init_window = tfc_->sent_init_window();
   UpdateProgress(min_progress_size_);
-  if (local_window_delta_ > announced_window_delta_) {
+  if (min_progress_size_ > 0 && local_window_delta_ > announced_window_delta_) {
     if (announced_window_delta_ + sent_init_window <= sent_init_window / 2) {
       action.set_send_stream_update(
           FlowControlAction::Urgency::UPDATE_IMMEDIATELY);
