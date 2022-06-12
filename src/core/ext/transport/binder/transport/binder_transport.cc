@@ -395,10 +395,11 @@ static void perform_stream_op_locked(void* stream_op,
     if (!gbs->is_client) {
       // Send trailing metadata to inform the other end about the cancellation,
       // regardless if we'd already done that or not.
-      grpc_binder::Transaction cancel_tx(gbs->GetTxCode(), gbt->is_client);
-      cancel_tx.SetSuffix(grpc_binder::Metadata{});
-      cancel_tx.SetStatus(1);
-      absl::Status status = gbt->wire_writer->RpcCall(cancel_tx);
+      auto cancel_tx = std::make_unique<grpc_binder::Transaction>(
+          gbs->GetTxCode(), gbt->is_client);
+      cancel_tx->SetSuffix(grpc_binder::Metadata{});
+      cancel_tx->SetStatus(1);
+      absl::Status status = gbt->wire_writer->RpcCall(std::move(cancel_tx));
     }
     cancel_stream_locked(gbt, gbs, op->payload->cancel_stream.cancel_error);
     if (op->on_complete != nullptr) {
@@ -439,16 +440,16 @@ static void perform_stream_op_locked(void* stream_op,
   }
 
   int tx_code = gbs->tx_code;
-  grpc_binder::Transaction tx(tx_code, gbt->is_client);
+  auto tx = std::make_unique<grpc_binder::Transaction>(tx_code, gbt->is_client);
 
   if (op->send_initial_metadata) {
     gpr_log(GPR_INFO, "send_initial_metadata");
     grpc_binder::Metadata init_md;
     auto batch = op->payload->send_initial_metadata.send_initial_metadata;
 
-    grpc_binder::MetadataEncoder encoder(gbt->is_client, &tx, &init_md);
+    grpc_binder::MetadataEncoder encoder(gbt->is_client, tx.get(), &init_md);
     batch->Encode(&encoder);
-    tx.SetPrefix(init_md);
+    tx->SetPrefix(init_md);
   }
   if (op->send_message) {
     gpr_log(GPR_INFO, "send_message");
@@ -469,7 +470,7 @@ static void perform_stream_op_locked(void* stream_op,
       message_data += std::string(reinterpret_cast<char*>(p), len);
       grpc_slice_unref_internal(message_slice);
     }
-    tx.SetData(message_data);
+    tx->SetData(message_data);
     // TODO(b/192369787): Are we supposed to reset here to avoid
     // use-after-free issue in call.cc?
     op->payload->send_message.send_message.reset();
@@ -480,13 +481,13 @@ static void perform_stream_op_locked(void* stream_op,
     auto batch = op->payload->send_trailing_metadata.send_trailing_metadata;
     grpc_binder::Metadata trailing_metadata;
 
-    grpc_binder::MetadataEncoder encoder(gbt->is_client, &tx,
+    grpc_binder::MetadataEncoder encoder(gbt->is_client, tx.get(),
                                          &trailing_metadata);
     batch->Encode(&encoder);
 
     // TODO(mingcl): Will we ever has key-value pair here? According to
     // wireformat client suffix data is always empty.
-    tx.SetSuffix(trailing_metadata);
+    tx->SetSuffix(trailing_metadata);
   }
   if (op->recv_initial_metadata) {
     gpr_log(GPR_INFO, "recv_initial_metadata");
@@ -556,10 +557,7 @@ static void perform_stream_op_locked(void* stream_op,
   absl::Status status = absl::OkStatus();
   if (op->send_initial_metadata || op->send_message ||
       op->send_trailing_metadata) {
-    // TODO(waynetu): RpcCall() is doing a lot of work (including waiting for
-    // acknowledgements from the other side). Consider delaying this operation
-    // with combiner.
-    status = gbt->wire_writer->RpcCall(tx);
+    status = gbt->wire_writer->RpcCall(std::move(tx));
     if (!gbs->is_client && op->send_trailing_metadata) {
       gbs->trailing_metadata_sent = true;
       // According to transport explaineer - "Server extra: This op shouldn't
