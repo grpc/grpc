@@ -37,6 +37,7 @@ message Action {
         uint32 allocate_memory = 10;
         uint32 deallocate_memory = 11;
         Empty perform_send_to_remote_with_payload = 12;
+        StreamWrite set_pending_size = 13;
     }
 }
 

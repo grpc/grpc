@@ -253,6 +253,12 @@ void FlowControlFuzzer::Perform(const flow_control_fuzzer::Action& action) {
       allocated_memory_ -= deallocate;
       memory_owner_.Release(deallocate);
     } break;
+    case flow_control_fuzzer::Action::kSetPendingSize: {
+      Stream* s = GetStream(action.set_min_progress_size().id());
+      StreamFlowControl::IncomingUpdateContext upd(&s->fc);
+      upd.SetPendingSize(action.set_pending_size().size());
+      PerformAction(upd.MakeAction(), s);
+    } break;
   }
   if (scheduled_write_) {
     SendToRemote send;
@@ -304,10 +310,6 @@ void FlowControlFuzzer::PerformAction(FlowControlAction action,
         break;
     }
   };
-  if (stream != nullptr && stream->fc.min_progress_size() == 0) {
-    GPR_ASSERT(action.send_stream_update() ==
-               FlowControlAction::Urgency::NO_ACTION_NEEDED);
-  }
   with_urgency(action.send_stream_update(),
                [this, stream]() { streams_to_update_.push(stream->id); });
   with_urgency(action.send_transport_update(), []() {});
