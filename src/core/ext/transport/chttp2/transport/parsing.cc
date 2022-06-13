@@ -27,6 +27,7 @@
 #include "absl/status/status.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
+#include "flow_control.h"
 
 #include <grpc/slice.h>
 #include <grpc/support/log.h>
@@ -398,11 +399,15 @@ static grpc_error_handle init_data_frame_parser(grpc_chttp2_transport* t) {
   absl::Status status;
   grpc_core::chttp2::FlowControlAction action;
   if (s == nullptr) {
-    status = t->flow_control.RecvData(t->incoming_frame_size);
-    action = t->flow_control.MakeAction();
+    grpc_core::chttp2::TransportFlowControl::IncomingUpdateContext upd(
+        &t->flow_control);
+    status = upd.RecvData(t->incoming_frame_size);
+    action = upd.MakeAction();
   } else {
-    status = s->flow_control.RecvData(t->incoming_frame_size);
-    action = s->flow_control.MakeAction();
+    grpc_core::chttp2::StreamFlowControl::IncomingUpdateContext upd(
+        &s->flow_control);
+    status = upd.RecvData(t->incoming_frame_size);
+    action = upd.MakeAction();
   }
   grpc_chttp2_act_on_flowctl_action(action, t, s);
   if (!status.ok()) {
@@ -650,7 +655,6 @@ static grpc_error_handle init_settings_frame_parser(grpc_chttp2_transport* t) {
     t->flow_control.SetAckedInitialWindow(
         t->settings[GRPC_ACKED_SETTINGS]
                    [GRPC_CHTTP2_SETTINGS_INITIAL_WINDOW_SIZE]);
-    grpc_chttp2_act_on_flowctl_action(t->flow_control.MakeAction(), t, nullptr);
     t->sent_local_settings = false;
   }
   t->parser = grpc_chttp2_settings_parser_parse;

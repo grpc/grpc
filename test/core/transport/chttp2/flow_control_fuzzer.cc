@@ -160,6 +160,11 @@ void FlowControlFuzzer::Perform(const flow_control_fuzzer::Action& action) {
         SendFromRemote send_from_remote;
         send_from_remote.ack_initial_window_size =
             sent_to_remote.initial_window_size;
+        for (const auto& id_stream : streams_) {
+          GPR_ASSERT(id_stream.second.window_delta +
+                         *sent_to_remote.initial_window_size <=
+                     (1u << 31) - 1);
+        }
         remote_initial_window_size_ = *sent_to_remote.initial_window_size;
         send_from_remote_.push_back(send_from_remote);
       }
@@ -177,6 +182,7 @@ void FlowControlFuzzer::Perform(const flow_control_fuzzer::Action& action) {
                   stream_update.id, stream_update.size, s->window_delta);
         }
         s->window_delta += stream_update.size;
+        GPR_ASSERT(s->window_delta <= grpc_core::chttp2::kMaxWindowDelta);
       }
       remote_transport_window_size_ += sent_to_remote.transport_window_update;
       send_to_remote_.pop_front();
@@ -190,7 +196,6 @@ void FlowControlFuzzer::Perform(const flow_control_fuzzer::Action& action) {
                   *sent_from_remote.ack_initial_window_size);
         }
         tfc_->SetAckedInitialWindow(*sent_from_remote.ack_initial_window_size);
-        PerformAction(tfc_->MakeAction(), nullptr);
         sending_initial_window_size_ = false;
       }
       if (sent_from_remote.bdp_pong) {
@@ -205,8 +210,9 @@ void FlowControlFuzzer::Perform(const flow_control_fuzzer::Action& action) {
         if (auto* bdp = tfc_->bdp_estimator()) {
           bdp->AddIncomingBytes(stream_write.size);
         }
-        GPR_ASSERT(stream->fc.RecvData(stream_write.size).ok());
-        PerformAction(stream->fc.MakeAction(), stream);
+        StreamFlowControl::IncomingUpdateContext upd(&stream->fc);
+        GPR_ASSERT(upd.RecvData(stream_write.size).ok());
+        PerformAction(upd.MakeAction(), stream);
       }
       send_from_remote_.pop_front();
     } break;
@@ -230,8 +236,9 @@ void FlowControlFuzzer::Perform(const flow_control_fuzzer::Action& action) {
     } break;
     case flow_control_fuzzer::Action::kSetMinProgressSize: {
       Stream* s = GetStream(action.set_min_progress_size().id());
-      s->fc.UpdateProgress(action.set_min_progress_size().size());
-      PerformAction(s->fc.MakeAction(), s);
+      StreamFlowControl::IncomingUpdateContext upd(&s->fc);
+      upd.SetMinProgressSize(action.set_min_progress_size().size());
+      PerformAction(upd.MakeAction(), s);
     } break;
     case flow_control_fuzzer::Action::kAllocateMemory: {
       auto allocate = std::min(
@@ -262,7 +269,6 @@ void FlowControlFuzzer::Perform(const flow_control_fuzzer::Action& action) {
       sending_initial_window_size_ = true;
       send.initial_window_size =
           absl::exchange(queued_initial_window_size_, absl::nullopt);
-      tfc_->SetSentInitialWindow(*send.initial_window_size);
     }
     while (!streams_to_update_.empty()) {
       auto* stream = GetStream(streams_to_update_.front());
@@ -306,6 +312,10 @@ void FlowControlFuzzer::PerformAction(FlowControlAction action,
                [this, stream]() { streams_to_update_.push(stream->id); });
   with_urgency(action.send_transport_update(), []() {});
   with_urgency(action.send_initial_window_update(), [this, &action]() {
+    GPR_ASSERT(action.initial_window_size() >=
+               grpc_core::chttp2::kMinInitialWindowSize);
+    GPR_ASSERT(action.initial_window_size() <=
+               grpc_core::chttp2::kMaxInitialWindowSize);
     queued_initial_window_size_ = action.initial_window_size();
   });
   with_urgency(action.send_max_frame_size_update(), [this, &action]() {

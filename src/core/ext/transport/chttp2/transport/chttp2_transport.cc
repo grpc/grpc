@@ -38,6 +38,7 @@
 #include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
 #include "absl/types/variant.h"
+#include "flow_control.h"
 
 #include <grpc/impl/codegen/connectivity_state.h>
 #include <grpc/slice_buffer.h>
@@ -1944,9 +1945,10 @@ void grpc_chttp2_maybe_complete_recv_message(grpc_chttp2_transport* t,
               s->recv_message->reset();
               break;
             } else {
-              s->flow_control.UpdateProgress(min_progress_size);
-              grpc_chttp2_act_on_flowctl_action(s->flow_control.MakeAction(), t,
-                                                s);
+              grpc_core::chttp2::StreamFlowControl::IncomingUpdateContext upd(
+                  &s->flow_control);
+              upd.SetMinProgressSize(min_progress_size);
+              grpc_chttp2_act_on_flowctl_action(upd.MakeAction(), t, s);
               return;
             }
           } else {
@@ -1966,8 +1968,10 @@ void grpc_chttp2_maybe_complete_recv_message(grpc_chttp2_transport* t,
       } else if (s->read_closed) {
         s->recv_message->reset();
       } else {
-        s->flow_control.UpdateProgress(GRPC_HEADER_SIZE_IN_BYTES);
-        grpc_chttp2_act_on_flowctl_action(s->flow_control.MakeAction(), t, s);
+        grpc_core::chttp2::StreamFlowControl::IncomingUpdateContext upd(
+            &s->flow_control);
+        upd.SetMinProgressSize(GRPC_HEADER_SIZE_IN_BYTES);
+        grpc_chttp2_act_on_flowctl_action(upd.MakeAction(), t, s);
         return;
       }
     }
@@ -2569,7 +2573,6 @@ static void continue_read_action_locked(grpc_chttp2_transport* t) {
                     grpc_schedule_on_exec_ctx);
   grpc_endpoint_read(t->ep, &t->read_buffer, &t->read_action_locked, urgent,
                      /*min_progress_size=*/1);
-  grpc_chttp2_act_on_flowctl_action(t->flow_control.MakeAction(), t, nullptr);
 }
 
 // t is reffed prior to calling the first time, and once the callback chain

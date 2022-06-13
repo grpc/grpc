@@ -25,6 +25,7 @@
 #include <string>
 
 #include "absl/types/optional.h"
+#include "flow_control.h"
 
 #include <grpc/slice.h>
 #include <grpc/slice_buffer.h>
@@ -281,11 +282,6 @@ class WriteContext {
 
   void FlushSettings() {
     if (t_->dirtied_local_settings && !t_->sent_local_settings) {
-      t_->flow_control.SetSentInitialWindow(
-          t_->settings[GRPC_LOCAL_SETTINGS]
-                      [GRPC_CHTTP2_SETTINGS_INITIAL_WINDOW_SIZE]);
-      grpc_chttp2_act_on_flowctl_action(t_->flow_control.MakeAction(), t_,
-                                        nullptr);
       grpc_slice_buffer_add(
           &t_->outbuf, grpc_chttp2_settings_create(
                            t_->settings[GRPC_SENT_SETTINGS],
@@ -418,7 +414,7 @@ class DataSendContext {
                      s_->send_trailing_metadata->empty();
     grpc_chttp2_encode_data(s_->id, &s_->flow_controlled_buffer, send_bytes,
                             is_last_frame_, &s_->stats.outgoing, &t_->outbuf);
-    s_->flow_control.SentData(send_bytes);
+    sfc_upd_.SentData(send_bytes);
     s_->sending_bytes += send_bytes;
   }
 
@@ -438,6 +434,8 @@ class DataSendContext {
   WriteContext* write_context_;
   grpc_chttp2_transport* t_;
   grpc_chttp2_stream* s_;
+  grpc_core::chttp2::StreamFlowControl::OutgoingUpdateContext sfc_upd_{
+      &s_->flow_control};
   const size_t sending_bytes_before_;
   bool is_last_frame_ = false;
 };
@@ -447,11 +445,9 @@ class StreamWriteContext {
   StreamWriteContext(WriteContext* write_context, grpc_chttp2_stream* s)
       : write_context_(write_context), t_(write_context->transport()), s_(s) {
     GRPC_CHTTP2_IF_TRACING(
-        gpr_log(GPR_INFO, "W:%p %s[%d] im-(sent,send)=(%d,%d) announce=%d", t_,
+        gpr_log(GPR_INFO, "W:%p %s[%d] im-(sent,send)=(%d,%d)", t_,
                 t_->is_client ? "CLIENT" : "SERVER", s->id,
-                s->sent_initial_metadata, s->send_initial_metadata != nullptr,
-                (int)(s->flow_control.local_window_delta() -
-                      s->flow_control.announced_window_delta())));
+                s->sent_initial_metadata, s->send_initial_metadata != nullptr));
   }
 
   void FlushInitialMetadata() {
