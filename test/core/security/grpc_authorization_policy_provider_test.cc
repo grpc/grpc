@@ -90,7 +90,7 @@ TEST(AuthorizationPolicyProviderTest,
 }
 
 TEST(AuthorizationPolicyProviderTest, FileWatcherSuccessValidPolicyRefresh) {
-  grpc_core::TmpFile tmp_policy(testing::GetFileContents(VALID_POLICY_PATH_1));
+  TmpFile tmp_policy(testing::GetFileContents(VALID_POLICY_PATH_1));
   auto provider = FileWatcherAuthorizationPolicyProvider::Create(
       tmp_policy.name(), /*refresh_interval_sec=*/1);
   ASSERT_TRUE(provider.ok());
@@ -106,8 +106,7 @@ TEST(AuthorizationPolicyProviderTest, FileWatcherSuccessValidPolicyRefresh) {
   EXPECT_EQ(deny_engine->action(), Rbac::Action::kDeny);
   EXPECT_EQ(deny_engine->num_policies(), 1);
   // Rewrite the file with a different valid authorization policy.
-  dynamic_cast<grpc_core::FileWatcherAuthorizationPolicyProvider*>(
-      provider->get())
+  dynamic_cast<FileWatcherAuthorizationPolicyProvider*>(provider->get())
       ->RewriteFileForTesting(tmp_policy,
                               testing::GetFileContents(VALID_POLICY_PATH_2));
   // Wait 2 seconds for the provider's refresh thread to read the updated files.
@@ -127,7 +126,7 @@ TEST(AuthorizationPolicyProviderTest, FileWatcherSuccessValidPolicyRefresh) {
 
 TEST(AuthorizationPolicyProviderTest,
      FileWatcherInvalidPolicyRefreshSkipReload) {
-  grpc_core::TmpFile tmp_policy(testing::GetFileContents(VALID_POLICY_PATH_1));
+  TmpFile tmp_policy(testing::GetFileContents(VALID_POLICY_PATH_1));
   auto provider = FileWatcherAuthorizationPolicyProvider::Create(
       tmp_policy.name(), /*refresh_interval_sec=*/1);
   ASSERT_TRUE(provider.ok());
@@ -143,8 +142,7 @@ TEST(AuthorizationPolicyProviderTest,
   EXPECT_EQ(deny_engine->action(), Rbac::Action::kDeny);
   EXPECT_EQ(deny_engine->num_policies(), 1);
   // Skips the following policy update, and continues to use the valid policy.
-  dynamic_cast<grpc_core::FileWatcherAuthorizationPolicyProvider*>(
-      provider->get())
+  dynamic_cast<FileWatcherAuthorizationPolicyProvider*>(provider->get())
       ->RewriteFileForTesting(tmp_policy,
                               testing::GetFileContents(INVALID_POLICY_PATH));
   // Wait 2 seconds for the provider's refresh thread to read the updated files.
@@ -163,7 +161,7 @@ TEST(AuthorizationPolicyProviderTest,
 }
 
 TEST(AuthorizationPolicyProviderTest, FileWatcherRecoversFromFailure) {
-  grpc_core::TmpFile tmp_policy(testing::GetFileContents(VALID_POLICY_PATH_1));
+  TmpFile tmp_policy(testing::GetFileContents(VALID_POLICY_PATH_1));
   auto provider = FileWatcherAuthorizationPolicyProvider::Create(
       tmp_policy.name(), /*refresh_interval_sec=*/1);
   ASSERT_TRUE(provider.ok());
@@ -179,8 +177,7 @@ TEST(AuthorizationPolicyProviderTest, FileWatcherRecoversFromFailure) {
   EXPECT_EQ(deny_engine->action(), Rbac::Action::kDeny);
   EXPECT_EQ(deny_engine->num_policies(), 1);
   // Skips the following policy update, and continues to use the valid policy.
-  dynamic_cast<grpc_core::FileWatcherAuthorizationPolicyProvider*>(
-      provider->get())
+  dynamic_cast<FileWatcherAuthorizationPolicyProvider*>(provider->get())
       ->RewriteFileForTesting(tmp_policy,
                               testing::GetFileContents(INVALID_POLICY_PATH));
   // Wait 2 seconds for the provider's refresh thread to read the updated files.
@@ -197,8 +194,7 @@ TEST(AuthorizationPolicyProviderTest, FileWatcherRecoversFromFailure) {
   EXPECT_EQ(deny_engine->action(), Rbac::Action::kDeny);
   EXPECT_EQ(deny_engine->num_policies(), 1);
   // Rewrite the file with a valid authorization policy.
-  dynamic_cast<grpc_core::FileWatcherAuthorizationPolicyProvider*>(
-      provider->get())
+  dynamic_cast<FileWatcherAuthorizationPolicyProvider*>(provider->get())
       ->RewriteFileForTesting(tmp_policy,
                               testing::GetFileContents(VALID_POLICY_PATH_2));
   // Wait 2 seconds for the provider's refresh thread to read the updated files.

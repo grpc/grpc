@@ -91,8 +91,7 @@ class FileWatcherAuthorizationPolicyProvider
     return {allow_engine_, deny_engine_};
   }
 
-  void RewriteFileForTesting(grpc_core::TmpFile& tmp_file,
-                             absl::string_view data);
+  void RewriteFileForTesting(TmpFile& tmp_file, absl::string_view data);
 
  private:
   // Force an update from the file system regardless of the interval.

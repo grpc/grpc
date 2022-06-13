@@ -12,12 +12,20 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-//
+
+#include <grpc/support/port_platform.h>
 
 #include "src/core/lib/security/util/file_util.h"
 
+#include <stdio.h>
+
+#include <grpc/support/alloc.h>
+#include <grpc/support/log.h>
+
 #include "src/core/lib/gpr/tmpfile.h"
+#include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/load_file.h"
+#include "src/core/lib/slice/slice_internal.h"
 
 namespace grpc_core {
 

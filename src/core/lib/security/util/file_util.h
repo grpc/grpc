@@ -12,7 +12,11 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-//
+
+#ifndef GRPC_CORE_LIB_SECURITY_UTIL_FILE_UTIL_H
+#define GRPC_CORE_LIB_SECURITY_UTIL_FILE_UTIL_H
+
+#include <grpc/support/port_platform.h>
 
 #include "absl/strings/string_view.h"
 
@@ -39,3 +43,5 @@ class TmpFile {
 std::string GetFileContents(const char* path);
 
 }  // namespace grpc_core
+
+#endif  // GRPC_CORE_LIB_SECURITY_UTIL_FILE_UTIL_H
