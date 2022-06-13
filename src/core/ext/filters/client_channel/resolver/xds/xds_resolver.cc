@@ -45,6 +45,8 @@
 #include "absl/types/variant.h"
 #include "re2/re2.h"
 
+#include "src/core/lib/gprpp/unique_type_name.h"
+
 #define XXH_INLINE_ALL
 #include "xxhash.h"
 
@@ -94,7 +96,10 @@ namespace grpc_core {
 
 TraceFlag grpc_xds_resolver_trace(false, "xds_resolver");
 
-const char* kXdsClusterAttribute = "xds_cluster_name";
+UniqueTypeName XdsClusterAttributeTypeName() {
+  static UniqueTypeName::Factory kFactory("xds_cluster_name");
+  return kFactory.Create();
+}
 
 namespace {
 
@@ -487,7 +492,7 @@ XdsResolver::XdsConfigSelector::XdsConfigSelector(
           Route::ClusterWeightState cluster_weight_state;
           *error = CreateMethodConfig(route_entry.route, &weighted_cluster,
                                       &cluster_weight_state.method_config);
-          if (*error != GRPC_ERROR_NONE) return;
+          if (!GRPC_ERROR_IS_NONE(*error)) return;
           end += weighted_cluster.weight;
           cluster_weight_state.range_end = end;
           cluster_weight_state.cluster = weighted_cluster.name;
@@ -591,7 +596,7 @@ grpc_error_handle XdsResolver::XdsConfigSelector::CreateMethodConfig(
           resolver_->current_listener_.http_connection_manager.http_filters,
           resolver_->current_virtual_host_, route, cluster_weight,
           grpc_channel_args_copy(resolver_->args_));
-  if (result.error != GRPC_ERROR_NONE) {
+  if (!GRPC_ERROR_IS_NONE(result.error)) {
     return result.error;
   }
   for (const auto& p : result.per_filter_configs) {
@@ -764,13 +769,13 @@ ConfigSelector::CallConfig XdsResolver::XdsConfigSelector::GetCallConfig(
         method_config->GetMethodParsedConfigVector(grpc_empty_slice());
     call_config.service_config = std::move(method_config);
   }
-  call_config.call_attributes[kXdsClusterAttribute] = it->first;
+  call_config.call_attributes[XdsClusterAttributeTypeName()] = it->first;
   std::string hash_string = absl::StrCat(hash.value());
   char* hash_value =
       static_cast<char*>(args.arena->Alloc(hash_string.size() + 1));
   memcpy(hash_value, hash_string.c_str(), hash_string.size());
   hash_value[hash_string.size()] = '\0';
-  call_config.call_attributes[kRequestRingHashAttribute] = hash_value;
+  call_config.call_attributes[RequestHashAttributeName()] = hash_value;
   call_config.call_dispatch_controller =
       args.arena->New<XdsCallDispatchController>(it->second->Ref());
   return call_config;
@@ -783,7 +788,7 @@ ConfigSelector::CallConfig XdsResolver::XdsConfigSelector::GetCallConfig(
 void XdsResolver::StartLocked() {
   grpc_error_handle error = GRPC_ERROR_NONE;
   xds_client_ = XdsClient::GetOrCreate(args_, &error);
-  if (error != GRPC_ERROR_NONE) {
+  if (!GRPC_ERROR_IS_NONE(error)) {
     gpr_log(GPR_ERROR,
             "Failed to create xds client -- channel will remain in "
             "TRANSIENT_FAILURE: %s",
@@ -1031,7 +1036,7 @@ XdsResolver::CreateServiceConfig() {
   grpc_error_handle error = GRPC_ERROR_NONE;
   absl::StatusOr<RefCountedPtr<ServiceConfig>> result =
       ServiceConfigImpl::Create(args_, json.c_str(), &error);
-  if (error != GRPC_ERROR_NONE) {
+  if (!GRPC_ERROR_IS_NONE(error)) {
     result = grpc_error_to_absl_status(error);
     GRPC_ERROR_UNREF(error);
   }
@@ -1044,7 +1049,7 @@ void XdsResolver::GenerateResult() {
   // state map, and then CreateServiceConfig for LB policies.
   grpc_error_handle error = GRPC_ERROR_NONE;
   auto config_selector = MakeRefCounted<XdsConfigSelector>(Ref(), &error);
-  if (error != GRPC_ERROR_NONE) {
+  if (!GRPC_ERROR_IS_NONE(error)) {
     OnError("could not create ConfigSelector",
             absl::UnavailableError(grpc_error_std_string(error)));
     GRPC_ERROR_UNREF(error);

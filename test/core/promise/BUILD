@@ -374,6 +374,7 @@ grpc_cc_test(
     deps = [
         "test_wakeup_schedulers",
         "//:activity",
+        "//:exec_ctx",
         "//:grpc",
         "//:sleep",
         "//test/core/util:grpc_suppressions",

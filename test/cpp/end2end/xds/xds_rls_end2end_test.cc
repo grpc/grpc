@@ -153,8 +153,8 @@ TEST_P(RlsTest, XdsRoutingClusterSpecifierPlugin) {
       kRlsClusterSpecifierPluginInstanceName);
   SetRouteConfiguration(balancer_.get(), new_route_config);
   auto rpc_options = RpcOptions().set_metadata({{kRlsTestKey1, kRlsTestValue}});
-  WaitForAllBackends(DEBUG_LOCATION, 1, 2, WaitForBackendOptions(),
-                     rpc_options);
+  WaitForAllBackends(DEBUG_LOCATION, 1, 2, /*check_status=*/nullptr,
+                     WaitForBackendOptions(), rpc_options);
   CheckRpcSendOk(DEBUG_LOCATION, kNumEchoRpcs, rpc_options);
   // Make sure RPCs all go to the correct backend.
   EXPECT_EQ(kNumEchoRpcs, backends_[1]->backend_service()->request_count());
@@ -338,8 +338,8 @@ TEST_P(RlsTest, XdsRoutingClusterSpecifierPluginDisabled) {
   // Ensure we ignore the cluster specifier plugin and send traffic according to
   // the default route.
   auto rpc_options = RpcOptions().set_metadata({{kRlsTestKey1, kRlsTestValue}});
-  WaitForAllBackends(DEBUG_LOCATION, 0, 1, WaitForBackendOptions(),
-                     rpc_options);
+  WaitForAllBackends(DEBUG_LOCATION, 0, 1, /*check_status=*/nullptr,
+                     WaitForBackendOptions(), rpc_options);
 }
 
 }  // namespace

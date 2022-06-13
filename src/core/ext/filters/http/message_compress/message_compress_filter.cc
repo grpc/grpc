@@ -376,7 +376,7 @@ void CallData::CompressStartTransportStreamOpBatch(
             GRPC_ERROR_REF(cancel_error_));
       }
     }
-  } else if (cancel_error_ != GRPC_ERROR_NONE) {
+  } else if (!GRPC_ERROR_IS_NONE(cancel_error_)) {
     grpc_transport_stream_op_batch_finish_with_failure(
         batch, GRPC_ERROR_REF(cancel_error_), call_combiner_);
     return;

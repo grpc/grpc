@@ -1356,7 +1356,7 @@ static enum e_op_result execute_stream_op(struct op_and_state* oas) {
       result = ACTION_TAKEN_NO_CALLBACK;
     }
     stream_state->state_op_done[OP_CANCEL_ERROR] = true;
-    if (stream_state->cancel_error == GRPC_ERROR_NONE) {
+    if (GRPC_ERROR_IS_NONE(stream_state->cancel_error)) {
       stream_state->cancel_error =
           GRPC_ERROR_REF(stream_op->payload->cancel_stream.cancel_error);
     }

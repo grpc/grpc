@@ -56,7 +56,7 @@ struct grpc_endpoint_vtable {
    Callback success indicates that the endpoint can accept more reads, failure
    indicates the endpoint is closed.
    Valid slices may be placed into \a slices even when the callback is
-   invoked with error != GRPC_ERROR_NONE. */
+   invoked with !GRPC_ERROR_IS_NONE(error). */
 void grpc_endpoint_read(grpc_endpoint* ep, grpc_slice_buffer* slices,
                         grpc_closure* cb, bool urgent, int min_progress_size);
 

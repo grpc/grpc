@@ -23,17 +23,14 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include <cstdint>
-
 #include "absl/container/inlined_vector.h"
-#include "absl/strings/str_join.h"
+#include "absl/strings/ascii.h"
 #include "absl/strings/str_split.h"
 
-#include <grpc/compression.h>
+#include <grpc/support/log.h>
 
 #include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/gpr/useful.h"
-#include "src/core/lib/slice/slice_internal.h"
+#include "src/core/lib/debug/trace.h"
 #include "src/core/lib/surface/api_trace.h"
 
 namespace grpc_core {

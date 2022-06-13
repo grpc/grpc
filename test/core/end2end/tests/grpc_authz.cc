@@ -636,6 +636,7 @@ static void test_file_watcher_invalid_policy_skip_reload(
   config.tear_down_data(&f);
 }
 
+#ifndef GPR_APPLE
 static void test_file_watcher_recovers_from_failure(
     grpc_end2end_test_config config) {
   const char* authz_policy =
@@ -668,7 +669,7 @@ static void test_file_watcher_recovers_from_failure(
   grpc_channel_args server_args = {GPR_ARRAY_SIZE(args), args};
 
   grpc_end2end_test_fixture f = begin_test(
-      config, "test_file_watcher_valid_policy_reload", nullptr, &server_args);
+      config, "test_file_watcher_recovers_from_failure", nullptr, &server_args);
   grpc_authorization_policy_provider_release(provider);
   test_allow_authorized_request(f);
   // Replace exisiting policy in file with an invalid policy.
@@ -709,6 +710,7 @@ static void test_file_watcher_recovers_from_failure(
   end_test(&f);
   config.tear_down_data(&f);
 }
+#endif
 
 void grpc_authz(grpc_end2end_test_config config) {
   test_static_init_allow_authorized_request(config);
@@ -719,7 +721,10 @@ void grpc_authz(grpc_end2end_test_config config) {
   test_file_watcher_init_deny_request_no_match_in_policy(config);
   test_file_watcher_valid_policy_reload(config);
   test_file_watcher_invalid_policy_skip_reload(config);
+#ifndef GPR_APPLE  // test case highly flaky on Mac
+  // TODO(jtattermusch): reenable the test once b/204329811 is fixed.
   test_file_watcher_recovers_from_failure(config);
+#endif
 }
 
 void grpc_authz_pre_init(void) {}

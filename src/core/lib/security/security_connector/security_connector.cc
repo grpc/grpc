@@ -20,18 +20,16 @@
 
 #include "src/core/lib/security/security_connector/security_connector.h"
 
-#include <grpc/slice_buffer.h>
-#include <grpc/support/alloc.h>
+#include <string.h>
+
+#include <utility>
+
 #include <grpc/support/log.h>
-#include <grpc/support/string_util.h>
 
 #include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/gpr/string.h"
-#include "src/core/lib/security/context/security_context.h"
+#include "src/core/lib/gpr/useful.h"
+#include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/security/credentials/credentials.h"
-#include "src/core/lib/security/security_connector/security_connector.h"
-#include "src/core/lib/security/transport/security_handshaker.h"
-#include "src/core/lib/transport/handshaker.h"
 
 grpc_core::DebugOnlyTraceFlag grpc_trace_security_connector_refcount(
     false, "security_connector_refcount");

@@ -20,17 +20,19 @@
 
 #include "src/core/lib/security/credentials/fake/fake_credentials.h"
 
-#include <string.h>
+#include <stdlib.h>
 
-#include <grpc/support/alloc.h>
-#include <grpc/support/log.h>
-#include <grpc/support/string_util.h>
+#include <utility>
+
+#include "absl/strings/string_view.h"
 
 #include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/gpr/string.h"
-#include "src/core/lib/iomgr/executor.h"
+#include "src/core/lib/gprpp/ref_counted_ptr.h"
+#include "src/core/lib/promise/poll.h"
 #include "src/core/lib/promise/promise.h"
 #include "src/core/lib/security/security_connector/fake/fake_security_connector.h"
+#include "src/core/lib/security/security_connector/security_connector.h"
+#include "src/core/lib/transport/metadata_batch.h"
 
 /* -- Fake transport security credentials. -- */
 

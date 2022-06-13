@@ -101,48 +101,6 @@ TEST(MemoryQuotaTest, CreateSomeObjectsAndExpectReclamation) {
   EXPECT_EQ(object2.get(), nullptr);
 }
 
-TEST(MemoryQuotaTest, BasicRebind) {
-  ExecCtx exec_ctx;
-
-  MemoryQuota memory_quota("foo");
-  memory_quota.SetSize(4096);
-  MemoryQuota memory_quota2("foo2");
-  memory_quota2.SetSize(4096);
-
-  auto memory_allocator = memory_quota2.CreateMemoryOwner("bar");
-  auto object = memory_allocator.MakeUnique<Sized<2048>>();
-
-  memory_allocator.Rebind(&memory_quota);
-  auto memory_allocator2 = memory_quota2.CreateMemoryOwner("bar2");
-
-  auto checker1 = CallChecker::Make();
-  memory_allocator2.PostReclaimer(
-      ReclamationPass::kDestructive,
-      [checker1](absl::optional<ReclamationSweep> sweep) {
-        checker1->Called();
-        // Taken memory should be reassigned to
-        // memory_quota, so this should be cancelled
-        EXPECT_FALSE(sweep.has_value());
-      });
-
-  auto checker2 = CallChecker::Make();
-  memory_allocator.PostReclaimer(
-      ReclamationPass::kDestructive,
-      [&object, checker2](absl::optional<ReclamationSweep> sweep) {
-        checker2->Called();
-        EXPECT_TRUE(sweep.has_value());
-        // The new memory allocator should reclaim
-        // the object allocated against the previous
-        // quota because that's now part of this
-        // quota.
-        object.reset();
-      });
-
-  auto object2 = memory_allocator.MakeUnique<Sized<2048>>();
-  exec_ctx.Flush();
-  EXPECT_EQ(object.get(), nullptr);
-}
-
 TEST(MemoryQuotaTest, ReserveRangeNoPressure) {
   MemoryQuota memory_quota("foo");
   auto memory_allocator = memory_quota.CreateMemoryAllocator("bar");

@@ -61,7 +61,7 @@ struct call_data {
 
 static void on_complete_for_send(void* arg, grpc_error_handle error) {
   call_data* calld = static_cast<call_data*>(arg);
-  if (error == GRPC_ERROR_NONE) {
+  if (GRPC_ERROR_IS_NONE(error)) {
     calld->send_initial_metadata_succeeded = true;
   }
   grpc_core::Closure::Run(DEBUG_LOCATION, calld->original_on_complete_for_send,
@@ -70,7 +70,7 @@ static void on_complete_for_send(void* arg, grpc_error_handle error) {
 
 static void recv_initial_metadata_ready(void* arg, grpc_error_handle error) {
   call_data* calld = static_cast<call_data*>(arg);
-  if (error == GRPC_ERROR_NONE) {
+  if (GRPC_ERROR_IS_NONE(error)) {
     calld->recv_initial_metadata_succeeded = true;
   }
   grpc_core::Closure::Run(DEBUG_LOCATION,

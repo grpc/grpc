@@ -1030,13 +1030,6 @@ class ObjCLanguage(object):
                 shortname='ios-test-core-tests',
                 cpu_cost=1e6,
                 environ=_FORCE_ENVIRON_FOR_WRAPPERS))
-        # TODO(jtattermusch): Make sure the //src/objective-c/tests:InteropTests bazel test passes reliably and remove the test from there.
-        out.append(
-            self.config.job_spec(['src/objective-c/tests/run_one_test.sh'],
-                                 timeout_seconds=60 * 60,
-                                 shortname='ios-test-interoptests',
-                                 cpu_cost=1e6,
-                                 environ={'SCHEME': 'InteropTests'}))
         # TODO(jtattermusch): Create bazel target for the test and remove the test from here
         # (how does one add the cronet dependency in bazel?)
         out.append(
