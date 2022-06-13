@@ -131,6 +131,12 @@ class PythonArtifact:
             # building the native extension is the most time-consuming part of the build
             environ['GRPC_PYTHON_BUILD_EXT_COMPILER_JOBS'] = str(inner_jobs)
 
+        # This is necessary due to https://github.com/pypa/wheel/issues/406.
+        # distutils incorrectly generates a universal2 artifact that only contains
+        # x86_64 libraries.
+        if self.platform == "macos" and arch == "x64":
+            environ["GRPC_UNIVERSAL2_REPAIR"] = True
+
         # TODO: Clean up if this works.
         environ['ARCHFLAGS'] = '-arch x86_64'
         if self.platform == 'linux_extra':
