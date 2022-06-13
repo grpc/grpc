@@ -98,6 +98,12 @@ GPR_GLOBAL_CONFIG_DEFINE_BOOL(
     "assume the remote peer does the same. Thus we can ignore any flow control "
     "bookkeeping, error checking, and decision making");
 
+GPR_GLOBAL_CONFIG_DEFINE_BOOL(
+    grpc_experimental_enable_peer_state_based_framing, false,
+    "If set, the max sizes of frames sent to lower layers is controlled based "
+    "on the peer's memory pressure which is reflected in its max http2 frame "
+    "size.");
+
 #define DEFAULT_CONNECTION_WINDOW_TARGET (1024 * 1024)
 #define MAX_WINDOW 0x7fffffffu
 #define MAX_WRITE_BUFFER_SIZE (64 * 1024 * 1024)
@@ -1014,14 +1020,26 @@ static void write_action_begin_locked(void* gt,
 
 static void write_action(void* gt, grpc_error_handle /*error*/) {
   GPR_TIMER_SCOPE("write_action", 0);
+  static bool kEnablePeerStateBasedFraming =
+      GPR_GLOBAL_CONFIG_GET(grpc_experimental_enable_peer_state_based_framing);
   grpc_chttp2_transport* t = static_cast<grpc_chttp2_transport*>(gt);
   void* cl = t->cl;
   t->cl = nullptr;
+  // If grpc_experimental_enable_peer_state_based_framing is set to true,
+  // chose max_frame_size as 2 * http2 frame size of peer. If peer is under high
+  // memory pressure, then it would advertise a smaller max http2 frame size.
+  // With this logic, the sender would automatically reduce the sending
+  // frame size as well.
+  int max_frame_size =
+      kEnablePeerStateBasedFraming
+          ? 2 * t->settings[GRPC_PEER_SETTINGS]
+                           [GRPC_CHTTP2_SETTINGS_MAX_FRAME_SIZE]
+          : INT_MAX;
   grpc_endpoint_write(
       t->ep, &t->outbuf,
       GRPC_CLOSURE_INIT(&t->write_action_end_locked, write_action_end, t,
                         grpc_schedule_on_exec_ctx),
-      cl, /*max_frame_size=*/INT_MAX);
+      cl, max_frame_size);
 }
 
 static void write_action_end(void* tp, grpc_error_handle error) {
