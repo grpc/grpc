@@ -16279,8 +16279,6 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(test_core_event_engine_iomgr_event_engine_time_averaged_stats_test
-  src/core/ext/upb-generated/google/protobuf/any.upb.c
-  src/core/ext/upb-generated/google/rpc/status.upb.c
   src/core/lib/event_engine/iomgr_engine/time_averaged_stats.cc
   src/core/lib/gpr/alloc.cc
   src/core/lib/gpr/atm.cc
@@ -16320,7 +16318,6 @@ add_executable(test_core_event_engine_iomgr_event_engine_time_averaged_stats_tes
   src/core/lib/gprpp/mpscq.cc
   src/core/lib/gprpp/stat_posix.cc
   src/core/lib/gprpp/stat_windows.cc
-  src/core/lib/gprpp/status_helper.cc
   src/core/lib/gprpp/thd_posix.cc
   src/core/lib/gprpp/thd_windows.cc
   src/core/lib/gprpp/time_util.cc
@@ -16364,7 +16361,6 @@ target_link_libraries(test_core_event_engine_iomgr_event_engine_time_averaged_st
   absl::synchronization
   absl::time
   absl::optional
-  upb
 )
 
 
@@ -16372,8 +16368,6 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(test_core_event_engine_iomgr_event_engine_timer_heap_test
-  src/core/ext/upb-generated/google/protobuf/any.upb.c
-  src/core/ext/upb-generated/google/rpc/status.upb.c
   src/core/lib/event_engine/iomgr_engine/time_averaged_stats.cc
   src/core/lib/event_engine/iomgr_engine/timer.cc
   src/core/lib/event_engine/iomgr_engine/timer_heap.cc
@@ -16415,7 +16409,6 @@ add_executable(test_core_event_engine_iomgr_event_engine_timer_heap_test
   src/core/lib/gprpp/mpscq.cc
   src/core/lib/gprpp/stat_posix.cc
   src/core/lib/gprpp/stat_windows.cc
-  src/core/lib/gprpp/status_helper.cc
   src/core/lib/gprpp/thd_posix.cc
   src/core/lib/gprpp/thd_windows.cc
   src/core/lib/gprpp/time.cc
@@ -16461,7 +16454,6 @@ target_link_libraries(test_core_event_engine_iomgr_event_engine_timer_heap_test
   absl::synchronization
   absl::time
   absl::optional
-  upb
 )
 
 
@@ -16469,8 +16461,6 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(test_core_event_engine_iomgr_event_engine_timer_list_test
-  src/core/ext/upb-generated/google/protobuf/any.upb.c
-  src/core/ext/upb-generated/google/rpc/status.upb.c
   src/core/lib/event_engine/iomgr_engine/time_averaged_stats.cc
   src/core/lib/event_engine/iomgr_engine/timer.cc
   src/core/lib/event_engine/iomgr_engine/timer_heap.cc
@@ -16512,7 +16502,6 @@ add_executable(test_core_event_engine_iomgr_event_engine_timer_list_test
   src/core/lib/gprpp/mpscq.cc
   src/core/lib/gprpp/stat_posix.cc
   src/core/lib/gprpp/stat_windows.cc
-  src/core/lib/gprpp/status_helper.cc
   src/core/lib/gprpp/thd_posix.cc
   src/core/lib/gprpp/thd_windows.cc
   src/core/lib/gprpp/time.cc
@@ -16558,7 +16547,6 @@ target_link_libraries(test_core_event_engine_iomgr_event_engine_timer_list_test
   absl::synchronization
   absl::time
   absl::optional
-  upb
 )
 
 
