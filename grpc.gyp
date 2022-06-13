@@ -357,10 +357,10 @@
       'type': 'static_library',
       'dependencies': [
         'absl/cleanup:cleanup',
-        'absl/container:flat_hash_map',
         'absl/container:flat_hash_set',
         'absl/container:inlined_vector',
         'absl/functional:bind_front',
+        'absl/functional:function_ref',
         'absl/hash:hash',
         'absl/meta:type_traits',
         'absl/status:statusor',
@@ -1111,10 +1111,10 @@
       'type': 'static_library',
       'dependencies': [
         'absl/cleanup:cleanup',
-        'absl/container:flat_hash_map',
         'absl/container:flat_hash_set',
         'absl/container:inlined_vector',
         'absl/functional:bind_front',
+        'absl/functional:function_ref',
         'absl/hash:hash',
         'absl/meta:type_traits',
         'absl/status:statusor',
@@ -1456,6 +1456,7 @@
       'target_name': 'grpc++',
       'type': 'static_library',
       'dependencies': [
+        'absl/container:flat_hash_map',
         'grpc',
       ],
       'sources': [
