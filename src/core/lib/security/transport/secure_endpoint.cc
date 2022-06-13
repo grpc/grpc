@@ -414,6 +414,10 @@ static void endpoint_write(grpc_endpoint* secure_ep, grpc_slice_buffer* slices,
       grpc_slice_buffer_reset_and_unref_internal(
           &ep->tmp_frame_size_clip_buffer);
       result = TSI_OK;
+      // Break the input slices into chunks of size = max_frame_size and call
+      // tsi_zero_copy_grpc_protector_protect on each chunk. This ensures that
+      // the protector cannot create frames larger than the specified
+      // max_frame_size.
       while (slices->length > static_cast<size_t>(max_frame_size) &&
              result == TSI_OK) {
         grpc_slice_buffer_move_first(slices,
