@@ -418,7 +418,7 @@ grpc_cc_library(
         "channel_init",
         "channel_stack_type",
         "config",
-        "default_event_engine_factory_hdrs",
+        "event_engine_base",
         "gpr_base",
         "grpc_authorization_base",
         "grpc_base",
@@ -477,7 +477,7 @@ grpc_cc_library(
         "channel_init",
         "channel_stack_type",
         "config",
-        "default_event_engine_factory_hdrs",
+        "event_engine_base",
         "gpr_base",
         "grpc_authorization_base",
         "grpc_base",
@@ -1229,7 +1229,7 @@ grpc_cc_library(
     tags = ["grpc-autodeps"],
     deps = [
         "activity",
-        "default_event_engine_factory_hdrs",
+        "event_engine_base",
         "event_engine_base_hdrs",
         "exec_ctx",
         "gpr_base",
@@ -2245,32 +2245,6 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
-    name = "default_event_engine_factory_hdrs",
-    hdrs = [
-        "src/core/lib/event_engine/event_engine_factory.h",
-    ],
-    deps = [
-        "event_engine_base_hdrs",
-        "gpr_base",
-    ],
-)
-
-grpc_cc_library(
-    name = "default_event_engine_factory",
-    srcs = [
-        "src/core/lib/event_engine/default_event_engine_factory.cc",
-    ],
-    external_deps = ["absl/memory"],
-    deps = [
-        "default_event_engine_factory_hdrs",
-        "event_engine_base_hdrs",
-        "gpr_base",
-        "iomgr_event_engine",
-        "iomgr_port",
-    ],
-)
-
-grpc_cc_library(
     name = "iomgr_event_engine",
     srcs = ["src/core/lib/event_engine/iomgr_engine.cc"],
     hdrs = ["src/core/lib/event_engine/iomgr_engine.h"],
@@ -2337,15 +2311,21 @@ grpc_cc_library(
 grpc_cc_library(
     name = "event_engine_base",
     srcs = [
+        "src/core/lib/event_engine/default_event_engine_factory.cc",
         "src/core/lib/event_engine/event_engine.cc",
     ],
+    hdrs = [
+        "src/core/lib/event_engine/event_engine_factory.h",
+    ],
+    external_deps = [
+        "absl/memory",
+    ],
     deps = [
-        "default_event_engine_factory",
-        "default_event_engine_factory_hdrs",
         "event_engine_base_hdrs",
         "event_engine_trace",
         "gpr_base",
         "grpc_trace",
+        "iomgr_event_engine",
     ],
 )
 
@@ -3098,9 +3078,9 @@ grpc_cc_library(
         "chunked_vector",
         "config",
         "debug_location",
-        "default_event_engine_factory_hdrs",
         "dual_ref_counted",
         "error",
+        "event_engine_base",
         "gpr_base",
         "gpr_codegen",
         "grpc_backend_metric_data",
@@ -3568,8 +3548,8 @@ grpc_cc_library(
         "channel_stack_type",
         "config",
         "debug_location",
-        "default_event_engine_factory_hdrs",
         "error",
+        "event_engine_base",
         "gpr_base",
         "gpr_codegen",
         "grpc_base",
