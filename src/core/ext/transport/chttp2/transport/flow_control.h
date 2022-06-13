@@ -23,11 +23,14 @@
 
 #include <stdint.h>
 
-#include <cstdint>
 #include <iosfwd>
 #include <string>
 
+#include "absl/functional/function_ref.h"
 #include "absl/status/status.h"
+#include "absl/utility/utility.h"
+
+#include <grpc/support/log.h>
 
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/gprpp/time.h"
@@ -184,7 +187,7 @@ class TransportFlowControl final {
 
   class OutgoingUpdateContext {
    public:
-    OutgoingUpdateContext(TransportFlowControl* tfc) : tfc_(tfc) {}
+    explicit OutgoingUpdateContext(TransportFlowControl* tfc) : tfc_(tfc) {}
     void StreamSentData(int64_t size) { tfc_->remote_window_ -= size; }
 
     // we have received a WINDOW_UPDATE frame for a transport

@@ -182,7 +182,7 @@ void FlowControlFuzzer::Perform(const flow_control_fuzzer::Action& action) {
                   stream_update.id, stream_update.size, s->window_delta);
         }
         s->window_delta += stream_update.size;
-        GPR_ASSERT(s->window_delta <= grpc_core::chttp2::kMaxWindowDelta);
+        GPR_ASSERT(s->window_delta <= chttp2::kMaxWindowDelta);
       }
       remote_transport_window_size_ += sent_to_remote.transport_window_update;
       send_to_remote_.pop_front();
@@ -312,10 +312,8 @@ void FlowControlFuzzer::PerformAction(FlowControlAction action,
                [this, stream]() { streams_to_update_.push(stream->id); });
   with_urgency(action.send_transport_update(), []() {});
   with_urgency(action.send_initial_window_update(), [this, &action]() {
-    GPR_ASSERT(action.initial_window_size() >=
-               grpc_core::chttp2::kMinInitialWindowSize);
-    GPR_ASSERT(action.initial_window_size() <=
-               grpc_core::chttp2::kMaxInitialWindowSize);
+    GPR_ASSERT(action.initial_window_size() >= chttp2::kMinInitialWindowSize);
+    GPR_ASSERT(action.initial_window_size() <= chttp2::kMaxInitialWindowSize);
     queued_initial_window_size_ = action.initial_window_size();
   });
   with_urgency(action.send_max_frame_size_update(), [this, &action]() {
