@@ -1,5 +1,5 @@
 //
-// Copyright 2020 gRPC authors.
+// Copyright 2022 gRPC authors.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -16,12 +16,8 @@
 
 #include "src/core/lib/security/util/file_util.h"
 
-#include <grpc/support/log.h>
-#include <grpc/support/string_util.h>
-
 #include "src/core/lib/gpr/tmpfile.h"
 #include "src/core/lib/iomgr/load_file.h"
-#include "src/core/lib/slice/slice_internal.h"
 
 namespace grpc_core {
 

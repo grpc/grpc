@@ -1,5 +1,5 @@
 //
-// Copyright 2020 gRPC authors.
+// Copyright 2022 gRPC authors.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -14,8 +14,6 @@
 // limitations under the License.
 //
 
-//#include "src/core/lib/gprpp/thd.h"
-//#include "test/core/util/test_config.h"
 #include "absl/strings/string_view.h"
 
 namespace grpc_core {

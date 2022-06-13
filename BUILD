@@ -4922,7 +4922,6 @@ grpc_cc_library(
         "src/core/lib/security/authorization/authorization_policy_provider_vtable.cc",
         "src/core/lib/security/authorization/evaluate_args.cc",
         "src/core/lib/security/authorization/grpc_server_authz_filter.cc",
-        "src/core/lib/security/util/file_util.cc",
     ],
     hdrs = [
         "src/core/lib/security/authorization/authorization_engine.h",
