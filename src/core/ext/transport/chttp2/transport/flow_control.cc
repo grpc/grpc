@@ -277,7 +277,7 @@ uint32_t StreamFlowControl::DesiredAnnounceSize() const {
   int64_t desired_window_delta = [this]() {
     if (min_progress_size_ == 0) {
       if (pending_size_.has_value() &&
-          annouced_window_delta_ < -*pending_size_) {
+          announced_window_delta_ < -*pending_size_) {
         return -*pending_size_;
       } else {
         return announced_window_delta_;
