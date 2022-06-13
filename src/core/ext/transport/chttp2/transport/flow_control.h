@@ -23,6 +23,7 @@
 
 #include <stdint.h>
 
+#include <cstdint>
 #include <iosfwd>
 #include <string>
 
@@ -158,10 +159,9 @@ class TransportFlowControl final {
 
   void StreamSentData(int64_t size) { remote_window_ -= size; }
 
-  absl::Status ValidateRecvData(int64_t incoming_frame_size);
-  void CommitRecvData(int64_t incoming_frame_size);
-
-  absl::Status RecvData(int64_t incoming_frame_size);
+  absl::Status RecvData(
+      int64_t incoming_frame_size, absl::FunctionRef<absl::Status()> stream =
+                                       []() { return absl::OkStatus(); });
 
   // we have received a WINDOW_UPDATE frame for a transport
   void RecvUpdate(uint32_t size);
@@ -210,6 +210,9 @@ class TransportFlowControl final {
                             FlowControlAction* action,
                             FlowControlAction& (FlowControlAction::*set)(
                                 FlowControlAction::Urgency, uint32_t));
+
+  absl::Status ValidateRecvData(int64_t incoming_frame_size);
+  void CommitRecvData(int64_t incoming_frame_size);
 
   FlowControlAction UpdateAction(FlowControlAction action);
 

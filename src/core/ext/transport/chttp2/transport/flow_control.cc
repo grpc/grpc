@@ -147,23 +147,21 @@ void TransportFlowControl::CommitRecvData(int64_t incoming_frame_size) {
 StreamFlowControl::StreamFlowControl(TransportFlowControl* tfc) : tfc_(tfc) {}
 
 absl::Status StreamFlowControl::RecvData(int64_t incoming_frame_size) {
-  absl::Status error = tfc_->ValidateRecvData(incoming_frame_size);
-  if (!error.ok()) return error;
+  return tfc_->RecvData(incoming_frame_size, [this, incoming_frame_size]() {
+    int64_t acked_stream_window =
+        announced_window_delta_ + tfc_->acked_init_window();
+    if (incoming_frame_size > acked_stream_window) {
+      return absl::InternalError(absl::StrFormat(
+          "frame of size %" PRId64 " overflows local window of %" PRId64,
+          incoming_frame_size, acked_stream_window));
+    }
 
-  int64_t acked_stream_window =
-      announced_window_delta_ + tfc_->acked_init_window();
-  if (incoming_frame_size > acked_stream_window) {
-    return absl::InternalError(absl::StrFormat(
-        "frame of size %" PRId64 " overflows local window of %" PRId64,
-        incoming_frame_size, acked_stream_window));
-  }
-
-  UpdateAnnouncedWindowDelta(tfc_, -incoming_frame_size);
-  local_window_delta_ -= incoming_frame_size;
-  min_progress_size_ -=
-      std::min(static_cast<int64_t>(min_progress_size_), incoming_frame_size);
-  tfc_->CommitRecvData(incoming_frame_size);
-  return absl::OkStatus();
+    UpdateAnnouncedWindowDelta(tfc_, -incoming_frame_size);
+    local_window_delta_ -= incoming_frame_size;
+    min_progress_size_ -=
+        std::min(static_cast<int64_t>(min_progress_size_), incoming_frame_size);
+    return absl::OkStatus();
+  });
 }
 
 uint32_t StreamFlowControl::MaybeSendUpdate() {
@@ -197,9 +195,12 @@ void StreamFlowControl::UpdateProgress(uint32_t min_progress_size) {
   }
 }
 
-absl::Status TransportFlowControl::RecvData(int64_t incoming_frame_size) {
+absl::Status TransportFlowControl::RecvData(
+    int64_t incoming_frame_size, absl::FunctionRef<absl::Status()> stream) {
   absl::Status error = ValidateRecvData(incoming_frame_size);
-  if (error.ok()) return error;
+  if (!error.ok()) return error;
+  error = stream();
+  if (!error.ok()) return error;
   CommitRecvData(incoming_frame_size);
   return absl::OkStatus();
 }
