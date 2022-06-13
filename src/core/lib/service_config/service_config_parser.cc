@@ -26,8 +26,6 @@
 
 #include <grpc/support/log.h>
 
-// IWYU pragma: no_include <ext/alloc_traits.h>
-
 namespace grpc_core {
 
 ServiceConfigParser ServiceConfigParser::Builder::Build() {

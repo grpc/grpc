@@ -53,6 +53,7 @@ grpc_cc_test(
         "no_windows",
     ],
     deps = [
+        "//:exec_ctx",
         "//:gpr",
         "//:grpc",
         "//:grpc++",

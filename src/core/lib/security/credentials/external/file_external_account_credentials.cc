@@ -17,10 +17,17 @@
 
 #include "src/core/lib/security/credentials/external/file_external_account_credentials.h"
 
-#include <fstream>
+#include <map>
+#include <utility>
+
+#include "absl/strings/string_view.h"
+
+#include <grpc/slice.h>
 
 #include "src/core/lib/iomgr/load_file.h"
+#include "src/core/lib/json/json.h"
 #include "src/core/lib/slice/slice_internal.h"
+#include "src/core/lib/slice/slice_refcount.h"
 
 namespace grpc_core {
 

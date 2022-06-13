@@ -793,8 +793,6 @@ void Subchannel::RequestConnection() {
   MutexLock lock(&mu_);
   if (state_ == GRPC_CHANNEL_IDLE) {
     StartConnectingLocked();
-  } else if (state_ == GRPC_CHANNEL_TRANSIENT_FAILURE) {
-    connection_requested_ = true;
   }
 }
 
@@ -899,18 +897,9 @@ void Subchannel::OnRetryTimer() {
 
 void Subchannel::OnRetryTimerLocked() {
   if (shutdown_) return;
-  if (connection_requested_) {
-    gpr_log(GPR_INFO,
-            "subchannel %p %s: connection attempt requested while backoff "
-            "timer was pending, retrying now",
-            this, key_.ToString().c_str());
-    connection_requested_ = false;
-    StartConnectingLocked();
-  } else {
-    gpr_log(GPR_INFO, "subchannel %p %s: backoff delay elapsed, reporting IDLE",
-            this, key_.ToString().c_str());
-    SetConnectivityStateLocked(GRPC_CHANNEL_IDLE, absl::OkStatus());
-  }
+  gpr_log(GPR_INFO, "subchannel %p %s: backoff delay elapsed, reporting IDLE",
+          this, key_.ToString().c_str());
+  SetConnectivityStateLocked(GRPC_CHANNEL_IDLE, absl::OkStatus());
 }
 
 void Subchannel::StartConnectingLocked() {

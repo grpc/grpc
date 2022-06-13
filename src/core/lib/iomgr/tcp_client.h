@@ -30,23 +30,31 @@
 #include "src/core/lib/resource_quota/memory_quota.h"
 
 typedef struct grpc_tcp_client_vtable {
-  void (*connect)(grpc_closure* on_connect, grpc_endpoint** endpoint,
-                  grpc_pollset_set* interested_parties,
-                  const grpc_channel_args* channel_args,
-                  const grpc_resolved_address* addr,
-                  grpc_core::Timestamp deadline);
+  int64_t (*connect)(grpc_closure* on_connect, grpc_endpoint** endpoint,
+                     grpc_pollset_set* interested_parties,
+                     const grpc_channel_args* channel_args,
+                     const grpc_resolved_address* addr,
+                     grpc_core::Timestamp deadline);
+  bool (*cancel_connect)(int64_t connection_handle);
 } grpc_tcp_client_vtable;
 
 /* Asynchronously connect to an address (specified as (addr, len)), and call
    cb with arg and the completed connection when done (or call cb with arg and
    NULL on failure).
    interested_parties points to a set of pollsets that would be interested
-   in this connection being established (in order to continue their work) */
-void grpc_tcp_client_connect(grpc_closure* on_connect, grpc_endpoint** endpoint,
-                             grpc_pollset_set* interested_parties,
-                             const grpc_channel_args* channel_args,
-                             const grpc_resolved_address* addr,
-                             grpc_core::Timestamp deadline);
+   in this connection being established (in order to continue their work). It
+   returns a handle to the connect operation which can be used to cancel the
+   connection attempt. */
+int64_t grpc_tcp_client_connect(grpc_closure* on_connect,
+                                grpc_endpoint** endpoint,
+                                grpc_pollset_set* interested_parties,
+                                const grpc_channel_args* channel_args,
+                                const grpc_resolved_address* addr,
+                                grpc_core::Timestamp deadline);
+
+// Returns true if a connect attempt corresponding to the provided handle
+// is successfully cancelled. Otherwise it returns false.
+bool grpc_tcp_client_cancel_connect(int64_t connection_handle);
 
 void grpc_tcp_client_global_init();
 
