@@ -53,7 +53,10 @@ int64_t grpc_tcp_client_connect(grpc_closure* on_connect,
                                 grpc_core::Timestamp deadline);
 
 // Returns true if a connect attempt corresponding to the provided handle
-// is successfully cancelled. Otherwise it returns false.
+// is successfully cancelled. Otherwise it returns false. If the connect
+// attempt is successfully cancelled, then the on_connect closure passed to
+// grpc_tcp_client_connect will not be executed. Its upto the caller to free
+// up any resources that may have been allocated to create the closure.
 bool grpc_tcp_client_cancel_connect(int64_t connection_handle);
 
 extern void grpc_tcp_client_global_init();
