@@ -5754,6 +5754,7 @@ grpc_cc_library(
         "absl/status",
         "absl/strings",
         "absl/strings:str_format",
+        "absl/types:optional",
         "absl/utility",
     ],
     tags = ["grpc-autodeps"],
