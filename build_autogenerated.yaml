@@ -8181,8 +8181,6 @@ targets:
   build: test
   language: c++
   headers:
-  - src/core/ext/upb-generated/google/protobuf/any.upb.h
-  - src/core/ext/upb-generated/google/rpc/status.upb.h
   - src/core/lib/event_engine/iomgr_engine/time_averaged_stats.h
   - src/core/lib/gpr/alloc.h
   - src/core/lib/gpr/env.h
@@ -8207,14 +8205,11 @@ targets:
   - src/core/lib/gprpp/memory.h
   - src/core/lib/gprpp/mpscq.h
   - src/core/lib/gprpp/stat.h
-  - src/core/lib/gprpp/status_helper.h
   - src/core/lib/gprpp/sync.h
   - src/core/lib/gprpp/thd.h
   - src/core/lib/gprpp/time_util.h
   - src/core/lib/profiling/timers.h
   src:
-  - src/core/ext/upb-generated/google/protobuf/any.upb.c
-  - src/core/ext/upb-generated/google/rpc/status.upb.c
   - src/core/lib/event_engine/iomgr_engine/time_averaged_stats.cc
   - src/core/lib/gpr/alloc.cc
   - src/core/lib/gpr/atm.cc
@@ -8254,7 +8249,6 @@ targets:
   - src/core/lib/gprpp/mpscq.cc
   - src/core/lib/gprpp/stat_posix.cc
   - src/core/lib/gprpp/stat_windows.cc
-  - src/core/lib/gprpp/status_helper.cc
   - src/core/lib/gprpp/thd_posix.cc
   - src/core/lib/gprpp/thd_windows.cc
   - src/core/lib/gprpp/time_util.cc
@@ -8273,15 +8267,12 @@ targets:
   - absl/synchronization:synchronization
   - absl/time:time
   - absl/types:optional
-  - upb
   uses_polling: false
 - name: test_core_event_engine_iomgr_event_engine_timer_heap_test
   gtest: true
   build: test
   language: c++
   headers:
-  - src/core/ext/upb-generated/google/protobuf/any.upb.h
-  - src/core/ext/upb-generated/google/rpc/status.upb.h
   - src/core/lib/event_engine/iomgr_engine/time_averaged_stats.h
   - src/core/lib/event_engine/iomgr_engine/timer.h
   - src/core/lib/event_engine/iomgr_engine/timer_heap.h
@@ -8309,15 +8300,12 @@ targets:
   - src/core/lib/gprpp/memory.h
   - src/core/lib/gprpp/mpscq.h
   - src/core/lib/gprpp/stat.h
-  - src/core/lib/gprpp/status_helper.h
   - src/core/lib/gprpp/sync.h
   - src/core/lib/gprpp/thd.h
   - src/core/lib/gprpp/time.h
   - src/core/lib/gprpp/time_util.h
   - src/core/lib/profiling/timers.h
   src:
-  - src/core/ext/upb-generated/google/protobuf/any.upb.c
-  - src/core/ext/upb-generated/google/rpc/status.upb.c
   - src/core/lib/event_engine/iomgr_engine/time_averaged_stats.cc
   - src/core/lib/event_engine/iomgr_engine/timer.cc
   - src/core/lib/event_engine/iomgr_engine/timer_heap.cc
@@ -8359,7 +8347,6 @@ targets:
   - src/core/lib/gprpp/mpscq.cc
   - src/core/lib/gprpp/stat_posix.cc
   - src/core/lib/gprpp/stat_windows.cc
-  - src/core/lib/gprpp/status_helper.cc
   - src/core/lib/gprpp/thd_posix.cc
   - src/core/lib/gprpp/thd_windows.cc
   - src/core/lib/gprpp/time.cc
@@ -8380,15 +8367,12 @@ targets:
   - absl/synchronization:synchronization
   - absl/time:time
   - absl/types:optional
-  - upb
   uses_polling: false
 - name: test_core_event_engine_iomgr_event_engine_timer_list_test
   gtest: true
   build: test
   language: c++
   headers:
-  - src/core/ext/upb-generated/google/protobuf/any.upb.h
-  - src/core/ext/upb-generated/google/rpc/status.upb.h
   - src/core/lib/event_engine/iomgr_engine/time_averaged_stats.h
   - src/core/lib/event_engine/iomgr_engine/timer.h
   - src/core/lib/event_engine/iomgr_engine/timer_heap.h
@@ -8415,15 +8399,12 @@ targets:
   - src/core/lib/gprpp/memory.h
   - src/core/lib/gprpp/mpscq.h
   - src/core/lib/gprpp/stat.h
-  - src/core/lib/gprpp/status_helper.h
   - src/core/lib/gprpp/sync.h
   - src/core/lib/gprpp/thd.h
   - src/core/lib/gprpp/time.h
   - src/core/lib/gprpp/time_util.h
   - src/core/lib/profiling/timers.h
   src:
-  - src/core/ext/upb-generated/google/protobuf/any.upb.c
-  - src/core/ext/upb-generated/google/rpc/status.upb.c
   - src/core/lib/event_engine/iomgr_engine/time_averaged_stats.cc
   - src/core/lib/event_engine/iomgr_engine/timer.cc
   - src/core/lib/event_engine/iomgr_engine/timer_heap.cc
@@ -8465,7 +8446,6 @@ targets:
   - src/core/lib/gprpp/mpscq.cc
   - src/core/lib/gprpp/stat_posix.cc
   - src/core/lib/gprpp/stat_windows.cc
-  - src/core/lib/gprpp/status_helper.cc
   - src/core/lib/gprpp/thd_posix.cc
   - src/core/lib/gprpp/thd_windows.cc
   - src/core/lib/gprpp/time.cc
@@ -8486,7 +8466,6 @@ targets:
   - absl/synchronization:synchronization
   - absl/time:time
   - absl/types:optional
-  - upb
   uses_polling: false
 - name: test_core_event_engine_slice_buffer_test
   gtest: true
