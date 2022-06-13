@@ -20,13 +20,12 @@
 
 #include "src/core/lib/http/parser.h"
 
-#include <stdbool.h>
 #include <string.h>
+
+#include <algorithm>
 
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
-
-#include "src/core/lib/gpr/useful.h"
 
 grpc_core::TraceFlag grpc_http1_trace(false, "http1");
 

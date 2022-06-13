@@ -390,9 +390,6 @@ class Subchannel : public DualRefCounted<Subchannel> {
 
   bool shutdown_ ABSL_GUARDED_BY(mu_) = false;
 
-  // Records if RequestConnection() was called while in backoff.
-  bool connection_requested_ ABSL_GUARDED_BY(mu_) = false;
-
   // Connectivity state tracking.
   // Note that the connectivity state implies the state of the
   // Subchannel object:

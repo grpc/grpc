@@ -328,11 +328,11 @@ void grpc_tcp_client_create_from_prepared_fd(
   gpr_mu_unlock(&ac->mu);
 }
 
-static void tcp_connect(grpc_closure* closure, grpc_endpoint** ep,
-                        grpc_pollset_set* interested_parties,
-                        const grpc_channel_args* channel_args,
-                        const grpc_resolved_address* addr,
-                        grpc_core::Timestamp deadline) {
+static int64_t tcp_connect(grpc_closure* closure, grpc_endpoint** ep,
+                           grpc_pollset_set* interested_parties,
+                           const grpc_channel_args* channel_args,
+                           const grpc_resolved_address* addr,
+                           grpc_core::Timestamp deadline) {
   grpc_resolved_address mapped_addr;
   int fd = -1;
   grpc_error_handle error;
@@ -340,12 +340,16 @@ static void tcp_connect(grpc_closure* closure, grpc_endpoint** ep,
   if ((error = grpc_tcp_client_prepare_fd(channel_args, addr, &mapped_addr,
                                           &fd)) != GRPC_ERROR_NONE) {
     grpc_core::ExecCtx::Run(DEBUG_LOCATION, closure, error);
-    return;
+    return 0;
   }
   grpc_tcp_client_create_from_prepared_fd(interested_parties, closure, fd,
                                           channel_args, &mapped_addr, deadline,
                                           ep);
+  return 0;
 }
 
-grpc_tcp_client_vtable grpc_posix_tcp_client_vtable = {tcp_connect};
+static bool tcp_cancel_connect(int64_t /*connection_handle*/) { return false; }
+
+grpc_tcp_client_vtable grpc_posix_tcp_client_vtable = {tcp_connect,
+                                                       tcp_cancel_connect};
 #endif

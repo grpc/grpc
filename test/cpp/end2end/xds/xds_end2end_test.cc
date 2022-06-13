@@ -1068,22 +1068,63 @@ TEST_P(XdsSecurityTest, TestFileWatcherCertificateProvider) {
 
 class XdsEnabledServerTest : public XdsEnd2endTest {
  protected:
-  void SetUp() override {
-    XdsEnd2endTest::SetUp();
+  void SetUp() override {}  // No-op -- individual tests do this themselves.
+
+  void DoSetUp(BootstrapBuilder builder = BootstrapBuilder()) {
+    InitClient(builder);
     CreateBackends(1, /*xds_enabled=*/true);
-    EdsResourceArgs args({
-        {"locality0", CreateEndpointsForBackends(0, 1)},
-    });
+    EdsResourceArgs args({{"locality0", CreateEndpointsForBackends(0, 1)}});
     balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
   }
 };
 
 TEST_P(XdsEnabledServerTest, Basic) {
+  DoSetUp();
   backends_[0]->Start();
   WaitForBackend(DEBUG_LOCATION, 0);
 }
 
+TEST_P(XdsEnabledServerTest, ListenerDeletionIgnored) {
+  DoSetUp(BootstrapBuilder().SetIgnoreResourceDeletion());
+  backends_[0]->Start();
+  WaitForBackend(DEBUG_LOCATION, 0);
+  // Check that we ACKed.
+  // TODO(roth): There may be multiple entries in the resource state response
+  // queue, because the client doesn't necessarily subscribe to all resources
+  // in a single message, and the server currently (I suspect incorrectly?)
+  // thinks that each subscription message is an ACK.  So for now, we
+  // drain the entire LDS resource state response queue, ensuring that
+  // all responses are ACKs.  Need to look more closely at the protocol
+  // semantics here and make sure the server is doing the right thing,
+  // in which case we may be able to avoid this.
+  while (true) {
+    auto response_state = balancer_->ads_service()->lds_response_state();
+    if (!response_state.has_value()) break;
+    ASSERT_TRUE(response_state.has_value());
+    EXPECT_EQ(response_state->state, AdsServiceImpl::ResponseState::ACKED);
+  }
+  // Now unset the resource.
+  balancer_->ads_service()->UnsetResource(
+      kLdsTypeUrl, GetServerListenerName(backends_[0]->port()));
+  // Wait for update to be ACKed.
+  absl::Time deadline =
+      absl::Now() + (absl::Seconds(10) * grpc_test_slowdown_factor());
+  while (true) {
+    auto response_state = balancer_->ads_service()->lds_response_state();
+    if (!response_state.has_value()) {
+      gpr_sleep_until(grpc_timeout_seconds_to_deadline(1));
+      continue;
+    }
+    EXPECT_EQ(response_state->state, AdsServiceImpl::ResponseState::ACKED);
+    ASSERT_LT(absl::Now(), deadline);
+    break;
+  }
+  // Make sure server is still serving.
+  CheckRpcSendOk(DEBUG_LOCATION);
+}
+
 TEST_P(XdsEnabledServerTest, BadLdsUpdateNoApiListenerNorAddress) {
+  DoSetUp();
   Listener listener = default_server_listener_;
   listener.clear_address();
   listener.set_name(
@@ -1101,6 +1142,7 @@ TEST_P(XdsEnabledServerTest, BadLdsUpdateNoApiListenerNorAddress) {
 // TODO(roth): Re-enable the following test once
 // github.com/istio/istio/issues/38914 is resolved.
 TEST_P(XdsEnabledServerTest, DISABLED_BadLdsUpdateBothApiListenerAndAddress) {
+  DoSetUp();
   Listener listener = default_server_listener_;
   listener.mutable_api_listener();
   SetServerListenerNameAndRouteConfiguration(balancer_.get(), listener,
@@ -1115,6 +1157,7 @@ TEST_P(XdsEnabledServerTest, DISABLED_BadLdsUpdateBothApiListenerAndAddress) {
 }
 
 TEST_P(XdsEnabledServerTest, NacksNonZeroXffNumTrusterHops) {
+  DoSetUp();
   Listener listener = default_server_listener_;
   HttpConnectionManager http_connection_manager =
       ServerHcmAccessor().Unpack(listener);
@@ -1131,6 +1174,7 @@ TEST_P(XdsEnabledServerTest, NacksNonZeroXffNumTrusterHops) {
 }
 
 TEST_P(XdsEnabledServerTest, NacksNonEmptyOriginalIpDetectionExtensions) {
+  DoSetUp();
   Listener listener = default_server_listener_;
   HttpConnectionManager http_connection_manager =
       ServerHcmAccessor().Unpack(listener);
@@ -1148,6 +1192,7 @@ TEST_P(XdsEnabledServerTest, NacksNonEmptyOriginalIpDetectionExtensions) {
 }
 
 TEST_P(XdsEnabledServerTest, UnsupportedL4Filter) {
+  DoSetUp();
   Listener listener = default_server_listener_;
   listener.mutable_default_filter_chain()->clear_filters();
   listener.mutable_default_filter_chain()->add_filters()->mutable_typed_config()->PackFrom(default_listener_ /* any proto object other than HttpConnectionManager */);
@@ -1161,6 +1206,7 @@ TEST_P(XdsEnabledServerTest, UnsupportedL4Filter) {
 }
 
 TEST_P(XdsEnabledServerTest, NacksEmptyHttpFilterList) {
+  DoSetUp();
   Listener listener = default_server_listener_;
   HttpConnectionManager http_connection_manager =
       ServerHcmAccessor().Unpack(listener);
@@ -1177,6 +1223,7 @@ TEST_P(XdsEnabledServerTest, NacksEmptyHttpFilterList) {
 }
 
 TEST_P(XdsEnabledServerTest, UnsupportedHttpFilter) {
+  DoSetUp();
   Listener listener = default_server_listener_;
   HttpConnectionManager http_connection_manager =
       ServerHcmAccessor().Unpack(listener);
@@ -1202,6 +1249,7 @@ TEST_P(XdsEnabledServerTest, UnsupportedHttpFilter) {
 }
 
 TEST_P(XdsEnabledServerTest, HttpFilterNotSupportedOnServer) {
+  DoSetUp();
   Listener listener = default_server_listener_;
   HttpConnectionManager http_connection_manager =
       ServerHcmAccessor().Unpack(listener);
@@ -1229,6 +1277,7 @@ TEST_P(XdsEnabledServerTest, HttpFilterNotSupportedOnServer) {
 
 TEST_P(XdsEnabledServerTest,
        HttpFilterNotSupportedOnServerIgnoredWhenOptional) {
+  DoSetUp();
   Listener listener = default_server_listener_;
   HttpConnectionManager http_connection_manager =
       ServerHcmAccessor().Unpack(listener);
@@ -1256,6 +1305,7 @@ TEST_P(XdsEnabledServerTest,
 // Verify that a mismatch of listening address results in "not serving"
 // status.
 TEST_P(XdsEnabledServerTest, ListenerAddressMismatch) {
+  DoSetUp();
   Listener listener = default_server_listener_;
   // Set a different listening address in the LDS update
   listener.mutable_address()->mutable_socket_address()->set_address(
@@ -1270,6 +1320,7 @@ TEST_P(XdsEnabledServerTest, ListenerAddressMismatch) {
 }
 
 TEST_P(XdsEnabledServerTest, UseOriginalDstNotSupported) {
+  DoSetUp();
   Listener listener = default_server_listener_;
   listener.mutable_use_original_dst()->set_value(true);
   SetServerListenerNameAndRouteConfiguration(balancer_.get(), listener,
@@ -1318,8 +1369,6 @@ class XdsServerSecurityTest : public XdsEnd2endTest {
     });
     balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
   }
-
-  void TearDown() override { XdsEnd2endTest::TearDown(); }
 
   void SetLdsUpdate(absl::string_view root_instance_name,
                     absl::string_view root_certificate_name,
