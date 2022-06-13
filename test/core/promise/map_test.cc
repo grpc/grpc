@@ -16,8 +16,6 @@
 
 #include <functional>
 
-#include <gtest/gtest.h>
-
 #include "gtest/gtest.h"
 
 #include "src/core/lib/promise/promise.h"

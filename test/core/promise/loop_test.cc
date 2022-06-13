@@ -14,8 +14,6 @@
 
 #include "src/core/lib/promise/loop.h"
 
-#include <gtest/gtest.h>
-
 #include "gtest/gtest.h"
 
 #include "src/core/lib/promise/detail/basic_seq.h"

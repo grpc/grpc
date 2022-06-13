@@ -16,8 +16,6 @@
 
 #include <type_traits>
 
-#include <gtest/gtest.h>
-
 #include "absl/synchronization/notification.h"
 #include "gtest/gtest.h"
 
