@@ -46,6 +46,7 @@ export ENABLED_MODULES='
   src/core/ext
   src/core/lib
   src/cpp
+  test/core/promise
 '
 
 export DISABLED_MODULES='
