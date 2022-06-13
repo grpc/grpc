@@ -136,6 +136,32 @@ TEST(FlowControl, NoUpdateWithoutReader) {
   EXPECT_GT(sfc.MaybeSendUpdate(), 0);
 }
 
+TEST(FlowControl, GradualReadsUpdate) {
+  ExecCtx exec_ctx;
+  TransportFlowControl tfc("test", true, g_memory_owner);
+  StreamFlowControl sfc(&tfc);
+  int immediate_updates = 0;
+  int queued_updates = 0;
+  for (int i = 0; i < 65535; i++) {
+    StreamFlowControl::IncomingUpdateContext sfc_upd(&sfc);
+    EXPECT_EQ(sfc_upd.RecvData(1), absl::OkStatus());
+    sfc_upd.SetPendingSize(0);
+    switch (sfc_upd.MakeAction().send_stream_update()) {
+      case FlowControlAction::Urgency::UPDATE_IMMEDIATELY:
+        immediate_updates++;
+        break;
+      case FlowControlAction::Urgency::QUEUE_UPDATE:
+        queued_updates++;
+        break;
+      case FlowControlAction::Urgency::NO_ACTION_NEEDED:
+        break;
+    }
+  }
+  EXPECT_GT(immediate_updates, 0);
+  EXPECT_GT(queued_updates, 0);
+  EXPECT_EQ(immediate_updates + queued_updates, 65535);
+}
+
 }  // namespace chttp2
 }  // namespace grpc_core
 

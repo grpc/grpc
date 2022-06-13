@@ -293,7 +293,8 @@ uint32_t StreamFlowControl::DesiredAnnounceSize() const {
 FlowControlAction StreamFlowControl::UpdateAction(FlowControlAction action) {
   const int64_t desired_announce_size = DesiredAnnounceSize();
   if (desired_announce_size > 0) {
-    if (announced_window_delta_ < 0 || desired_announce_size >= 1024) {
+    if ((min_progress_size_ > 0 && announced_window_delta_ < 0) ||
+        desired_announce_size >= 8192) {
       action.set_send_stream_update(
           FlowControlAction::Urgency::UPDATE_IMMEDIATELY);
     } else {
@@ -306,7 +307,7 @@ FlowControlAction StreamFlowControl::UpdateAction(FlowControlAction action) {
 void StreamFlowControl::IncomingUpdateContext::SetPendingSize(
     int64_t pending_size) {
   GPR_ASSERT(pending_size >= 0);
-  pending_size_ = pending_size;
+  sfc_->pending_size_ = pending_size;
 }
 
 }  // namespace chttp2
