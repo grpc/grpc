@@ -18,20 +18,11 @@
 
 #include "test/core/end2end/fixtures/local_util.h"
 
-#include <grpc/support/alloc.h>
-#include <grpc/support/log.h>
-#include <grpc/support/string_util.h>
-#include <grpc/support/sync.h>
+#include <string.h>
 
-#include "src/core/ext/filters/client_channel/client_channel.h"
-#include "src/core/ext/filters/http/server/http_server_filter.h"
-#include "src/core/ext/transport/chttp2/transport/chttp2_transport.h"
-#include "src/core/lib/channel/connected_channel.h"
-#include "src/core/lib/gpr/string.h"
-#include "src/core/lib/security/credentials/credentials.h"
-#include "src/core/lib/surface/server.h"
-#include "test/core/util/port.h"
-#include "test/core/util/test_config.h"
+#include <grpc/grpc_security.h>
+#include <grpc/status.h>
+#include <grpc/support/log.h>
 
 grpc_end2end_test_fixture grpc_end2end_local_chttp2_create_fixture_fullstack() {
   grpc_end2end_test_fixture f;

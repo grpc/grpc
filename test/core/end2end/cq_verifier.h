@@ -19,11 +19,8 @@
 #ifndef GRPC_TEST_CORE_END2END_CQ_VERIFIER_H
 #define GRPC_TEST_CORE_END2END_CQ_VERIFIER_H
 
-#include <stdbool.h>
-
 #include <grpc/grpc.h>
-
-#include "test/core/util/test_config.h"
+#include <grpc/slice.h>
 
 /* A cq_verifier can verify that expected events arrive in a timely fashion
    on a single completion queue */

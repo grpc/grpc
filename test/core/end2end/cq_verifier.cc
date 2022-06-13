@@ -19,10 +19,11 @@
 #include "test/core/end2end/cq_verifier.h"
 
 #include <inttypes.h>
-#include <stdarg.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 
+#include <algorithm>
 #include <list>
 #include <string>
 #include <vector>
@@ -31,16 +32,14 @@
 #include "absl/strings/str_join.h"
 
 #include <grpc/byte_buffer.h>
-#include <grpc/byte_buffer_reader.h>
-#include <grpc/support/alloc.h>
+#include <grpc/compression.h>
+#include <grpc/slice_buffer.h>
 #include <grpc/support/log.h>
-#include <grpc/support/string_util.h>
 #include <grpc/support/time.h>
 
-#include "src/core/lib/compression/compression_internal.h"
 #include "src/core/lib/compression/message_compress.h"
-#include "src/core/lib/gpr/string.h"
 #include "src/core/lib/surface/event_string.h"
+#include "test/core/util/test_config.h"
 
 #define ROOT_EXPECTATION 1000
 

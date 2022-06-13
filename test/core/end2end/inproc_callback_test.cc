@@ -16,18 +16,20 @@
  *
  */
 
+#include <inttypes.h>
 #include <string.h>
 
+#include <grpc/grpc.h>
+#include <grpc/impl/codegen/propagation_bits.h>
+#include <grpc/slice.h>
+#include <grpc/status.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/sync.h>
+#include <grpc/support/time.h>
 
 #include "src/core/ext/transport/inproc/inproc_transport.h"
-#include "src/core/lib/surface/channel.h"
-#include "src/core/lib/surface/completion_queue.h"
-#include "src/core/lib/surface/server.h"
 #include "test/core/end2end/end2end_tests.h"
-#include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
 
 typedef struct inproc_fixture_data {
