@@ -18,7 +18,6 @@
 
 #include "src/core/lib/channel/channelz.h"
 
-#include <stdint.h>
 #include <string.h>
 
 #include <string>

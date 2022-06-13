@@ -21,9 +21,10 @@
 
 #include "test/core/end2end/end2end_tests.h"
 
+#include <stdbool.h>
 #include <string.h>
+
 #include <grpc/support/log.h>
-#include <stdlib.h>
 
 
 static bool g_pre_init_called = false;
