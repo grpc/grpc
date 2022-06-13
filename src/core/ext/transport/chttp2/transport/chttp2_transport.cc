@@ -1026,9 +1026,9 @@ static void write_action(void* gt, grpc_error_handle /*error*/) {
   void* cl = t->cl;
   t->cl = nullptr;
   // If grpc_experimental_enable_peer_state_based_framing is set to true,
-  // chose max_frame_size as 2 * http2 frame size of peer. If peer is under high
-  // memory pressure, then it would advertise a smaller max http2 frame size.
-  // With this logic, the sender would automatically reduce the sending
+  // choose max_frame_size as 2 * max http2 frame size of peer. If peer is under
+  // high memory pressure, then it would advertise a smaller max http2 frame
+  // size. With this logic, the sender would automatically reduce the sending
   // frame size as well.
   int max_frame_size =
       kEnablePeerStateBasedFraming
