@@ -717,10 +717,10 @@ void grpc_authz(grpc_end2end_test_config config) {
   test_file_watcher_init_allow_authorized_request(config);
   test_file_watcher_init_deny_unauthorized_request(config);
   test_file_watcher_init_deny_request_no_match_in_policy(config);
-  test_file_watcher_valid_policy_reload(config);
   test_file_watcher_invalid_policy_skip_reload(config);
-#ifndef GPR_APPLE  // test case highly flaky on Mac
-  // TODO(jtattermusch): reenable the test once b/204329811 is fixed.
+#ifndef GPR_APPLE  // test cases highly flaky on Mac
+  // TODO(jtattermusch): reenable the tests once b/204329811 is fixed.
+  test_file_watcher_valid_policy_reload(config);
   test_file_watcher_recovers_from_failure(config);
 #endif
 }
