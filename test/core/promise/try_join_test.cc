@@ -14,7 +14,14 @@
 
 #include "src/core/lib/promise/try_join.h"
 
+#include <functional>
+#include <tuple>
+#include <utility>
+
 #include <gtest/gtest.h>
+
+#include "absl/utility/utility.h"
+#include "gtest/gtest.h"
 
 namespace grpc_core {
 

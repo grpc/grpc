@@ -14,7 +14,11 @@
 
 #include "src/core/lib/promise/poll.h"
 
+#include <memory>
+
 #include <gtest/gtest.h>
+
+#include "gtest/gtest.h"
 
 namespace grpc_core {
 

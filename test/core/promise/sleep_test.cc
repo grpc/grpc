@@ -14,18 +14,17 @@
 
 #include "src/core/lib/promise/sleep.h"
 
-#include <atomic>
+#include <type_traits>
 
-#include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
 #include "absl/synchronization/notification.h"
+#include "gtest/gtest.h"
 
 #include <grpc/grpc.h>
 
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/promise/race.h"
-#include "src/core/lib/promise/seq.h"
 #include "test/core/promise/test_wakeup_schedulers.h"
 
 namespace grpc_core {

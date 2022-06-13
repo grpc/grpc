@@ -16,6 +16,9 @@
 
 #include <gtest/gtest.h>
 
+#include "gtest/gtest.h"
+
+#include "src/core/lib/promise/detail/basic_seq.h"
 #include "src/core/lib/promise/seq.h"
 
 namespace grpc_core {
