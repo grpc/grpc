@@ -25,7 +25,6 @@
 #include <string>
 
 #include "absl/types/optional.h"
-#include "flow_control.h"
 
 #include <grpc/slice.h>
 #include <grpc/slice_buffer.h>

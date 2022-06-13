@@ -38,7 +38,6 @@
 #include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
 #include "absl/types/variant.h"
-#include "flow_control.h"
 
 #include <grpc/impl/codegen/connectivity_state.h>
 #include <grpc/slice_buffer.h>

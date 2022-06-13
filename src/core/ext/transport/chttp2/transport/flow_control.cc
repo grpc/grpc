@@ -25,7 +25,6 @@
 
 #include <algorithm>
 #include <cmath>
-#include <cstdint>
 #include <ostream>
 #include <string>
 #include <vector>
@@ -33,10 +32,10 @@
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
 #include "absl/strings/str_join.h"
-#include "flow_control.h"
 
 #include <grpc/support/log.h>
 
+#include "src/core/ext/transport/chttp2/transport/flow_control.h"
 #include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/resource_quota/memory_quota.h"
