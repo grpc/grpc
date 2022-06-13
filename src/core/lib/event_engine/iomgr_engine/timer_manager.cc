@@ -149,7 +149,8 @@ bool TimerManager::WaitUntil(grpc_core::Timestamp next) {
       }
     }
 
-    cv_.WaitWithTimeout(&mu_, absl::Milliseconds((next - Now()).millis()));
+    cv_.WaitWithTimeout(&mu_,
+                        absl::Milliseconds((next - host_.Now()).millis()));
 
     // if this was the timed waiter, then we need to check timers, and flag
     // that there's now no timed waiter... we'll look for a replacement if
@@ -203,13 +204,13 @@ void TimerManager::RunThread(void* arg) {
   thread->self->cv_.Signal();
 }
 
-TimerManager::TimerManager() {
-  timer_list_ = absl::make_unique<TimerList>(this);
+TimerManager::TimerManager() : host_(this) {
+  timer_list_ = absl::make_unique<TimerList>(&host_);
   grpc_core::MutexLock lock(&mu_);
   StartThread();
 }
 
-grpc_core::Timestamp TimerManager::Now() {
+grpc_core::Timestamp TimerManager::Host::Now() {
   return grpc_core::Timestamp::FromTimespecRoundDown(
       gpr_now(GPR_CLOCK_MONOTONIC));
 }
@@ -237,6 +238,8 @@ TimerManager::~TimerManager() {
     cv_.Wait(&mu_);
   }
 }
+
+void TimerManager::Host::Kick() { timer_manager_->Kick(); }
 
 void TimerManager::Kick() {
   grpc_core::MutexLock lock(&mu_);

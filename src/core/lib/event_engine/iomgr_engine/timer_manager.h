@@ -43,13 +43,12 @@ namespace iomgr_engine {
 // all times, and thus effectively preventing the thundering herd problem.
 // TODO(ctiller): consider unifying this thread pool and the one in
 // thread_pool.{h,cc}.
-class TimerManager final : public TimerListHost {
+class TimerManager final {
  public:
   TimerManager();
   ~TimerManager();
 
-  void Kick() override;
-  grpc_core::Timestamp Now() override;
+  grpc_core::Timestamp Now() { return host_.Now(); }
 
   void TimerInit(Timer* timer, grpc_core::Timestamp deadline,
                  experimental::EventEngine::Closure* closure);
@@ -61,14 +60,28 @@ class TimerManager final : public TimerListHost {
     grpc_core::Thread thread;
   };
 
+  class Host final : public TimerListHost {
+   public:
+    explicit Host(TimerManager* timer_manager)
+        : timer_manager_(timer_manager) {}
+
+    void Kick() override;
+    grpc_core::Timestamp Now() override;
+
+   private:
+    TimerManager* const timer_manager_;
+  };
+
   void StartThread() ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
   static void RunThread(void* arg);
   void MainLoop();
   void RunSomeTimers(std::vector<experimental::EventEngine::Closure*> timers);
   bool WaitUntil(grpc_core::Timestamp next);
+  void Kick();
 
   grpc_core::Mutex mu_;
   grpc_core::CondVar cv_;
+  Host host_;
   // number of threads in the system
   size_t thread_count_ ABSL_GUARDED_BY(mu_) = 0;
   // number of threads sitting around waiting
