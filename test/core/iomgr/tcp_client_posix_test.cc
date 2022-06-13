@@ -221,7 +221,7 @@ void test_connect_cancellation_succeeds(void) {
   GPR_ASSERT(0 == listen(svr_fd, 1));
 
   // connect to it. accept() is not called on the bind socket. So the connection
-  // should appear to hang.
+  // should appear to be stuck giving ample time to try to cancel it.
   GPR_ASSERT(getsockname(svr_fd, (struct sockaddr*)addr,
                          (socklen_t*)&resolved_addr.len) == 0);
   GRPC_CLOSURE_INIT(&done, must_succeed, nullptr, grpc_schedule_on_exec_ctx);
