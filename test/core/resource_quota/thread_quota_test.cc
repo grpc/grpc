@@ -14,8 +14,6 @@
 
 #include "src/core/lib/resource_quota/thread_quota.h"
 
-#include <gtest/gtest.h>
-
 #include "gtest/gtest.h"
 
 namespace grpc_core {
