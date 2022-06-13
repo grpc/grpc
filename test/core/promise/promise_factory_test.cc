@@ -16,8 +16,6 @@
 
 #include <functional>
 
-#include <gtest/gtest.h>
-
 #include "absl/functional/bind_front.h"
 #include "absl/types/variant.h"
 #include "gtest/gtest.h"

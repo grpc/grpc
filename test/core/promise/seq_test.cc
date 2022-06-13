@@ -17,8 +17,6 @@
 #include <string>
 #include <vector>
 
-#include <gtest/gtest.h>
-
 #include "absl/types/variant.h"
 #include "gtest/gtest.h"
 
