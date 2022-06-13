@@ -268,6 +268,7 @@ FlowControlAction TransportFlowControl::PeriodicUpdate() {
 uint32_t StreamFlowControl::MaybeSendUpdate() {
   TransportFlowControl::IncomingUpdateContext tfc_upd(tfc_);
   const uint32_t announce = DesiredAnnounceSize();
+  force_announce_ = 0;
   tfc_upd.UpdateAnnouncedWindowDelta(&announced_window_delta_, announce);
   GPR_ASSERT(DesiredAnnounceSize() == 0);
   tfc_upd.MakeAction();
@@ -276,7 +277,7 @@ uint32_t StreamFlowControl::MaybeSendUpdate() {
 
 uint32_t StreamFlowControl::DesiredAnnounceSize() const {
   const int64_t desired_window_delta =
-      std::min(min_progress_size_, kMaxWindowDelta);
+      std::min(min_progress_size_ + force_announce_, kMaxWindowDelta);
   return Clamp(desired_window_delta - announced_window_delta_, int64_t(0),
                kMaxWindowUpdateSize);
 }
@@ -294,6 +295,17 @@ FlowControlAction StreamFlowControl::UpdateAction(FlowControlAction action) {
     }
   }
   return action;
+}
+
+void StreamFlowControl::IncomingUpdateContext::SetPendingSize(
+    int64_t pending_size) {
+  GPR_ASSERT(pending_size >= 0);
+  if (sfc_->announced_window_delta_ < -pending_size) {
+    sfc_->force_announce_ = -(pending_size + sfc_->announced_window_delta_);
+    GPR_ASSERT(sfc_->force_announce_ >= 0);
+  } else {
+    sfc_->force_announce_ = 0;
+  }
 }
 
 }  // namespace chttp2

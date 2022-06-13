@@ -297,6 +297,8 @@ class StreamFlowControl final {
       sfc_->min_progress_size_ = min_progress_size;
     }
 
+    void SetPendingSize(int64_t pending_size);
+
    private:
     TransportFlowControl::IncomingUpdateContext tfc_upd_;
     StreamFlowControl* const sfc_;
@@ -333,6 +335,7 @@ class StreamFlowControl final {
   int64_t min_progress_size_ = 0;
   int64_t remote_window_delta_ = 0;
   int64_t announced_window_delta_ = 0;
+  int64_t force_announce_ = 0;
 
   void UpdateAnnouncedWindowDelta(TransportFlowControl* tfc, int64_t change);
   FlowControlAction UpdateAction(FlowControlAction action);

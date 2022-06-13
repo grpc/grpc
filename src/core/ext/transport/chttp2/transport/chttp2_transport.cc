@@ -1927,8 +1927,15 @@ void grpc_chttp2_maybe_complete_recv_initial_metadata(grpc_chttp2_transport* t,
 
 void grpc_chttp2_maybe_complete_recv_message(grpc_chttp2_transport* t,
                                              grpc_chttp2_stream* s) {
+  if (s->recv_message_ready == nullptr) return;
+
+  grpc_core::chttp2::StreamFlowControl::IncomingUpdateContext upd(
+      &s->flow_control);
   grpc_error_handle error = GRPC_ERROR_NONE;
-  if (s->recv_message_ready != nullptr) {
+
+  // Lambda is immediately invoked as a big scoped section that can be
+  // exited out of at any point by returning.
+  [&]() {
     if (s->final_metadata_requested && s->seen_error) {
       grpc_slice_buffer_reset_and_unref_internal(&s->frame_storage);
       s->recv_message->reset();
@@ -1945,11 +1952,8 @@ void grpc_chttp2_maybe_complete_recv_message(grpc_chttp2_transport* t,
               s->recv_message->reset();
               break;
             } else {
-              grpc_core::chttp2::StreamFlowControl::IncomingUpdateContext upd(
-                  &s->flow_control);
               upd.SetMinProgressSize(min_progress_size);
-              grpc_chttp2_act_on_flowctl_action(upd.MakeAction(), t, s);
-              return;
+              return;  // Out of lambda to enclosing function
             }
           } else {
             error = absl::get<grpc_error_handle>(r);
@@ -1968,11 +1972,8 @@ void grpc_chttp2_maybe_complete_recv_message(grpc_chttp2_transport* t,
       } else if (s->read_closed) {
         s->recv_message->reset();
       } else {
-        grpc_core::chttp2::StreamFlowControl::IncomingUpdateContext upd(
-            &s->flow_control);
         upd.SetMinProgressSize(GRPC_HEADER_SIZE_IN_BYTES);
-        grpc_chttp2_act_on_flowctl_action(upd.MakeAction(), t, s);
-        return;
+        return;  // Out of lambda to enclosing function
       }
     }
     // save the length of the buffer before handing control back to application
@@ -1987,7 +1988,10 @@ void grpc_chttp2_maybe_complete_recv_message(grpc_chttp2_transport* t,
       null_then_sched_closure(&s->recv_message_ready);
     }
     GRPC_ERROR_UNREF(error);
-  }
+  }();
+
+  upd.SetPendingSize(s->frame_storage.length);
+  grpc_chttp2_act_on_flowctl_action(upd.MakeAction(), t, s);
 }
 
 void grpc_chttp2_maybe_complete_recv_trailing_metadata(grpc_chttp2_transport* t,
