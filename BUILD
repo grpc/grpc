@@ -2347,7 +2347,6 @@ grpc_cc_library(
         "absl/status:statusor",
         "absl/strings",
         "absl/time",
-        "absl/types:variant",
     ],
     tags = ["grpc-autodeps"],
     deps = [
@@ -2360,7 +2359,6 @@ grpc_cc_library(
         "iomgr_ee_thread_pool",
         "iomgr_ee_timer",
         "iomgr_ee_timer_manager",
-        "match",
         "time",
     ],
 )

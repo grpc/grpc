@@ -16,7 +16,6 @@
 #include "src/core/lib/event_engine/iomgr_engine/iomgr_engine.h"
 
 #include <string>
-#include <type_traits>
 #include <utility>
 
 #include "absl/container/flat_hash_set.h"
@@ -29,7 +28,6 @@
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/event_engine/iomgr_engine/timer.h"
 #include "src/core/lib/event_engine/trace.h"
-#include "src/core/lib/gprpp/match.h"
 #include "src/core/lib/gprpp/time.h"
 
 namespace grpc_event_engine {
