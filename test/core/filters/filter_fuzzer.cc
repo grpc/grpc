@@ -57,8 +57,9 @@ const grpc_transport_vtable kFakeTransportVTable = {
     [](grpc_transport*, grpc_stream*, grpc_stream_refcount*, const void*,
        Arena*) -> int { abort(); },
     // make_call_promise
-    [](grpc_transport*,
-       ClientMetadataHandle) -> ArenaPromise<ServerMetadataHandle> { abort(); },
+    [](grpc_transport*, CallArgs) -> ArenaPromise<ServerMetadataHandle> {
+      abort();
+    },
     // set_pollset
     [](grpc_transport*, grpc_stream*, grpc_pollset*) { abort(); },
     // set_pollset_set
