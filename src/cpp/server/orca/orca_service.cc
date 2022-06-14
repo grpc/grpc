@@ -132,8 +132,8 @@ class OrcaService::Reactor : public ServerWriteReactor<ByteBuffer>,
 
   void MaybeCancelTimer() {
     grpc::internal::MutexLock lock(&timer_mu_);
-    if (timer_handle_ &&
-        GetDefaultEventEngine()->Cancel(timer_handle_.value())) {
+    if (timer_handle_.has_value() &&
+        GetDefaultEventEngine()->Cancel(*timer_handle_)) {
       timer_handle_.reset();
     }
   }
