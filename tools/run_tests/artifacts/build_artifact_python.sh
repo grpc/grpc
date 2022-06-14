@@ -146,7 +146,7 @@ fi
 
 fix_faulty_universal2_wheel() {
   WHL="$1"
-  if [ echo "$WHL" | grep "universal2" ]; then
+  if echo "$WHL" | grep "universal2"; then
     UPDATED_NAME=$(echo "$WHL" | sed 's/universal2/x86_64/g')
     mv "$WHL" "$UPDATED_NAME"
   fi
@@ -161,7 +161,7 @@ if [ "$GRPC_UNIVERSAL2_REPAIR" != "" ]; then
   done
 fi
 
-exit 1
+# exit 1
 
 
 if [ "$GRPC_RUN_AUDITWHEEL_REPAIR" != "" ]
