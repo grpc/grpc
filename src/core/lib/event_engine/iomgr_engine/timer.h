@@ -155,9 +155,9 @@ class TimerList {
     /* All and only timers with deadlines < this will be in the heap. */
     grpc_core::Timestamp queue_deadline_cap ABSL_GUARDED_BY(mu);
     /* The deadline of the next timer due in this shard. */
-    grpc_core::Timestamp min_deadline;  // Guarded by TimerList::mu_
+    grpc_core::Timestamp min_deadline ABSL_GUARDED_BY(&TimerList::mu_);
     /* Index of this timer_shard in the g_shard_queue. */
-    uint32_t shard_queue_index;  // Guarded by TimerList::mu_
+    uint32_t shard_queue_index ABSL_GUARDED_BY(&TimerList::mu_);
     /* This holds all timers with deadlines < queue_deadline_cap. Timers in this
        list have the top bit of their deadline set to 0. */
     TimerHeap heap ABSL_GUARDED_BY(mu);
