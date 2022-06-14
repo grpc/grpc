@@ -106,9 +106,8 @@ class IomgrEventEngine final : public EventEngine {
  private:
   struct ClosureData;
 
-  EventEngine::TaskHandle RunAtInternal(
-      absl::Time when,
-      absl::variant<std::function<void()>, EventEngine::Closure*> cb);
+  EventEngine::TaskHandle RunAtInternal(absl::Time when,
+                                        std::function<void()> cb);
 
   iomgr_engine::TimerManager timer_manager_;
   iomgr_engine::ThreadPool thread_pool_{2};

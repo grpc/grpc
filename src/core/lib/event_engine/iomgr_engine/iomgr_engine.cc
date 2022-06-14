@@ -55,7 +55,7 @@ std::string HandleToString(EventEngine::TaskHandle handle) {
 }  // namespace
 
 struct IomgrEventEngine::ClosureData final : public EventEngine::Closure {
-  absl::variant<std::function<void()>, EventEngine::Closure*> cb;
+  std::function<void()> cb;
   iomgr_engine::Timer timer;
   IomgrEventEngine* engine;
   EventEngine::TaskHandle handle;
@@ -67,9 +67,7 @@ struct IomgrEventEngine::ClosureData final : public EventEngine::Closure {
       grpc_core::MutexLock lock(&engine->mu_);
       engine->known_handles_.erase(handle);
     }
-    grpc_core::Match(
-        cb, [](EventEngine::Closure* cb) { cb->Run(); },
-        [](std::function<void()> fn) { fn(); });
+    cb();
     delete this;
   }
 };
@@ -106,7 +104,7 @@ EventEngine::TaskHandle IomgrEventEngine::RunAt(absl::Time when,
 
 EventEngine::TaskHandle IomgrEventEngine::RunAt(absl::Time when,
                                                 EventEngine::Closure* closure) {
-  return RunAtInternal(when, closure);
+  return RunAtInternal(when, [closure]() { closure->Run(); });
 }
 
 void IomgrEventEngine::Run(std::function<void()> closure) {
@@ -118,8 +116,7 @@ void IomgrEventEngine::Run(EventEngine::Closure* closure) {
 }
 
 EventEngine::TaskHandle IomgrEventEngine::RunAtInternal(
-    absl::Time when,
-    absl::variant<std::function<void()>, EventEngine::Closure*> cb) {
+    absl::Time when, std::function<void()> cb) {
   when = Clamp(when);
   auto* cd = new ClosureData;
   cd->cb = std::move(cb);
