@@ -20,6 +20,10 @@
 
 #include "src/core/lib/security/credentials/insecure/insecure_credentials.h"
 
+#include <utility>
+
+#include "absl/strings/string_view.h"
+
 #include "src/core/lib/security/security_connector/insecure/insecure_security_connector.h"
 
 namespace grpc_core {

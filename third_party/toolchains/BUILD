@@ -27,8 +27,8 @@ alias(
 platform(
     name = "rbe_windows_2019",
     constraint_values = [
-        "@bazel_tools//platforms:x86_64",
-        "@bazel_tools//platforms:windows",
+        "@platforms//cpu:x86_64",
+        "@platforms//os:windows",
     ],
     exec_properties = create_rbe_exec_properties_dict(
         # See rbe_win2019/Dockerfile for image details

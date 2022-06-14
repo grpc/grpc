@@ -203,6 +203,7 @@ Pod::Spec.new do |s|
     ss.dependency 'abseil/container/flat_hash_set', abseil_version
     ss.dependency 'abseil/container/inlined_vector', abseil_version
     ss.dependency 'abseil/functional/bind_front', abseil_version
+    ss.dependency 'abseil/functional/function_ref', abseil_version
     ss.dependency 'abseil/hash/hash', abseil_version
     ss.dependency 'abseil/memory/memory', abseil_version
     ss.dependency 'abseil/meta/type_traits', abseil_version
@@ -865,7 +866,7 @@ Pod::Spec.new do |s|
                       'src/core/lib/security/security_connector/fake/fake_security_connector.h',
                       'src/core/lib/security/security_connector/insecure/insecure_security_connector.h',
                       'src/core/lib/security/security_connector/load_system_roots.h',
-                      'src/core/lib/security/security_connector/load_system_roots_linux.h',
+                      'src/core/lib/security/security_connector/load_system_roots_supported.h',
                       'src/core/lib/security/security_connector/local/local_security_connector.h',
                       'src/core/lib/security/security_connector/security_connector.h',
                       'src/core/lib/security/security_connector/ssl/ssl_security_connector.h',
@@ -1686,7 +1687,7 @@ Pod::Spec.new do |s|
                               'src/core/lib/security/security_connector/fake/fake_security_connector.h',
                               'src/core/lib/security/security_connector/insecure/insecure_security_connector.h',
                               'src/core/lib/security/security_connector/load_system_roots.h',
-                              'src/core/lib/security/security_connector/load_system_roots_linux.h',
+                              'src/core/lib/security/security_connector/load_system_roots_supported.h',
                               'src/core/lib/security/security_connector/local/local_security_connector.h',
                               'src/core/lib/security/security_connector/security_connector.h',
                               'src/core/lib/security/security_connector/ssl/ssl_security_connector.h',

@@ -801,54 +801,35 @@ class XdsEnd2endTest : public ::testing::TestWithParam<XdsTestType> {
     GPR_UNREACHABLE_CODE(return grpc::Status::OK);
   }
 
+  // Send RPCs in a loop until either continue_predicate() returns false
+  // or timeout_ms elapses.
+  struct RpcResult {
+    Status status;
+    EchoResponse response;
+  };
+  void SendRpcsUntil(const grpc_core::DebugLocation& debug_location,
+                     std::function<bool(const RpcResult&)> continue_predicate,
+                     int timeout_ms = 5000,
+                     const RpcOptions& rpc_options = RpcOptions());
+
   // Sends the specified number of RPCs and fails if the RPC fails.
   void CheckRpcSendOk(const grpc_core::DebugLocation& debug_location,
                       const size_t times = 1,
                       const RpcOptions& rpc_options = RpcOptions());
 
-  // Options to use with CheckRpcSendFailure().
-  struct CheckRpcSendFailureOptions {
-    std::function<bool(size_t)> continue_predicate = [](size_t i) {
-      return i < 1;
-    };
-    RpcOptions rpc_options;
-    StatusCode expected_error_code = StatusCode::OK;
-
-    CheckRpcSendFailureOptions() {}
-
-    CheckRpcSendFailureOptions& set_times(size_t times) {
-      continue_predicate = [times](size_t i) { return i < times; };
-      return *this;
-    }
-
-    CheckRpcSendFailureOptions& set_continue_predicate(
-        std::function<bool(size_t)> pred) {
-      continue_predicate = std::move(pred);
-      return *this;
-    }
-
-    CheckRpcSendFailureOptions& set_rpc_options(const RpcOptions& options) {
-      rpc_options = options;
-      return *this;
-    }
-
-    CheckRpcSendFailureOptions& set_expected_error_code(StatusCode code) {
-      expected_error_code = code;
-      return *this;
-    }
-  };
-
-  // Sends RPCs and expects them to fail.
-  void CheckRpcSendFailure(
-      const grpc_core::DebugLocation& debug_location,
-      const CheckRpcSendFailureOptions& options = CheckRpcSendFailureOptions());
+  // Sends one RPC, which must fail with the specified status code and
+  // a message matching the specified regex.
+  void CheckRpcSendFailure(const grpc_core::DebugLocation& debug_location,
+                           StatusCode expected_status,
+                           absl::string_view expected_message_regex,
+                           const RpcOptions& rpc_options = RpcOptions());
 
   // Sends num_rpcs RPCs, counting how many of them fail with a message
-  // matching the specfied drop_error_message_prefix.
-  // Any failure with a non-matching message is a test failure.
+  // matching the specfied expected_message_prefix.
+  // Any failure with a non-matching status or message is a test failure.
   size_t SendRpcsAndCountFailuresWithMessage(
       const grpc_core::DebugLocation& debug_location, size_t num_rpcs,
-      const char* drop_error_message_prefix,
+      StatusCode expected_status, absl::string_view expected_message_prefix,
       const RpcOptions& rpc_options = RpcOptions());
 
   // A class for running a long-running RPC in its own thread.
@@ -894,8 +875,6 @@ class XdsEnd2endTest : public ::testing::TestWithParam<XdsTestType> {
   struct WaitForBackendOptions {
     // If true, resets the backend counters before returning.
     bool reset_counters = true;
-    // If true, RPC failures will not cause the test to fail.
-    bool allow_failures = false;
     // How long to wait for the backend(s) to see requests.
     int timeout_ms = 5000;
 
@@ -906,11 +885,6 @@ class XdsEnd2endTest : public ::testing::TestWithParam<XdsTestType> {
       return *this;
     }
 
-    WaitForBackendOptions& set_allow_failures(bool enable) {
-      allow_failures = enable;
-      return *this;
-    }
-
     WaitForBackendOptions& set_timeout_ms(int ms) {
       timeout_ms = ms;
       return *this;
@@ -918,20 +892,24 @@ class XdsEnd2endTest : public ::testing::TestWithParam<XdsTestType> {
   };
 
   // Sends RPCs until all of the backends in the specified range see requests.
+  // The check_status callback will be invoked to check the status of
+  // every RPC; if null, the default is to check that the RPC succeeded.
   // Returns the total number of RPCs sent.
   size_t WaitForAllBackends(
       const grpc_core::DebugLocation& debug_location, size_t start_index = 0,
       size_t stop_index = 0,
+      std::function<void(const RpcResult&)> check_status = nullptr,
       const WaitForBackendOptions& wait_options = WaitForBackendOptions(),
       const RpcOptions& rpc_options = RpcOptions());
 
   // Sends RPCs until the backend at index backend_idx sees requests.
   void WaitForBackend(
       const grpc_core::DebugLocation& debug_location, size_t backend_idx,
+      std::function<void(const RpcResult&)> check_status = nullptr,
       const WaitForBackendOptions& wait_options = WaitForBackendOptions(),
       const RpcOptions& rpc_options = RpcOptions()) {
     WaitForAllBackends(debug_location, backend_idx, backend_idx + 1,
-                       wait_options, rpc_options);
+                       check_status, wait_options, rpc_options);
   }
 
   //

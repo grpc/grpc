@@ -19,10 +19,9 @@
 
 #include <list>
 
-#include <gtest/gtest.h>
-
 #include "src/core/lib/resource_quota/resource_quota.h"
 #include "src/core/lib/security/authorization/evaluate_args.h"
+#include "src/core/lib/security/context/security_context.h"
 #include "test/core/util/mock_authorization_endpoint.h"
 
 namespace grpc_core {

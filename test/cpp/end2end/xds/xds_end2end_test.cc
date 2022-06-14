@@ -369,8 +369,16 @@ class XdsSecurityTest : public XdsEnd2endTest {
           continue;
         }
       } else {
-        WaitForBackend(DEBUG_LOCATION, 0,
-                       WaitForBackendOptions().set_allow_failures(true));
+        WaitForBackend(DEBUG_LOCATION, 0, [](const RpcResult& result) {
+          if (!result.status.ok()) {
+            EXPECT_EQ(result.status.error_code(), StatusCode::UNAVAILABLE);
+            EXPECT_EQ(result.status.error_message(),
+                      // TODO(roth): Improve this message as part of
+                      // https://github.com/grpc/grpc/issues/22883.
+                      "weighted_target: all children report state "
+                      "TRANSIENT_FAILURE");
+          }
+        });
         Status status = SendRpc();
         if (!status.ok()) {
           gpr_log(GPR_ERROR, "RPC failed. code=%d message=%s Trying again.",
@@ -768,11 +776,15 @@ TEST_P(XdsSecurityTest, TestTlsConfigurationInCombinedValidationContext) {
       ->set_instance_name("fake_plugin1");
   transport_socket->mutable_typed_config()->PackFrom(upstream_tls_context);
   balancer_->ads_service()->SetCdsResource(cluster);
-  WaitForBackend(DEBUG_LOCATION, 0,
-                 WaitForBackendOptions().set_allow_failures(true));
-  Status status = SendRpc();
-  EXPECT_TRUE(status.ok()) << "code=" << status.error_code()
-                           << " message=" << status.error_message();
+  WaitForBackend(DEBUG_LOCATION, 0, [](const RpcResult& result) {
+    if (!result.status.ok()) {
+      EXPECT_EQ(result.status.error_code(), StatusCode::UNAVAILABLE);
+      EXPECT_EQ(result.status.error_message(),
+                // TODO(roth): Improve this message as part of
+                // https://github.com/grpc/grpc/issues/22883.
+                "weighted_target: all children report state TRANSIENT_FAILURE");
+    }
+  });
 }
 
 // TODO(yashykt): Remove this test once we stop supporting old fields
@@ -789,11 +801,15 @@ TEST_P(XdsSecurityTest,
       ->set_instance_name("fake_plugin1");
   transport_socket->mutable_typed_config()->PackFrom(upstream_tls_context);
   balancer_->ads_service()->SetCdsResource(cluster);
-  WaitForBackend(DEBUG_LOCATION, 0,
-                 WaitForBackendOptions().set_allow_failures(true));
-  Status status = SendRpc();
-  EXPECT_TRUE(status.ok()) << "code=" << status.error_code()
-                           << " message=" << status.error_message();
+  WaitForBackend(DEBUG_LOCATION, 0, [](const RpcResult& result) {
+    if (!result.status.ok()) {
+      EXPECT_EQ(result.status.error_code(), StatusCode::UNAVAILABLE);
+      EXPECT_EQ(result.status.error_message(),
+                // TODO(roth): Improve this message as part of
+                // https://github.com/grpc/grpc/issues/22883.
+                "weighted_target: all children report state TRANSIENT_FAILURE");
+    }
+  });
 }
 
 TEST_P(XdsSecurityTest, TestMtlsConfigurationWithNoSanMatchers) {

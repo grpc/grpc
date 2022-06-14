@@ -134,13 +134,13 @@ static void read_and_write_test_read_handler(void* data,
 
   state->bytes_read += count_slices(
       state->incoming.slices, state->incoming.count, &state->current_read_data);
-  if (state->bytes_read == state->target_bytes || error != GRPC_ERROR_NONE) {
+  if (state->bytes_read == state->target_bytes || !GRPC_ERROR_IS_NONE(error)) {
     gpr_log(GPR_INFO, "Read handler done");
     gpr_mu_lock(g_mu);
-    state->read_done = 1 + (error == GRPC_ERROR_NONE);
+    state->read_done = 1 + (GRPC_ERROR_IS_NONE(error));
     GRPC_LOG_IF_ERROR("pollset_kick", grpc_pollset_kick(g_pollset, nullptr));
     gpr_mu_unlock(g_mu);
-  } else if (error == GRPC_ERROR_NONE) {
+  } else if (GRPC_ERROR_IS_NONE(error)) {
     /* We perform many reads one after another. If grpc_endpoint_read and the
      * read_handler are both run inline, we might end up growing the stack
      * beyond the limit. Schedule the read on ExecCtx to avoid this. */
@@ -163,7 +163,7 @@ static void read_and_write_test_write_handler(void* data,
   grpc_slice* slices = nullptr;
   size_t nslices;
 
-  if (error == GRPC_ERROR_NONE) {
+  if (GRPC_ERROR_IS_NONE(error)) {
     state->bytes_written += state->current_write_size;
     if (state->target_bytes - state->bytes_written <
         state->current_write_size) {
@@ -186,7 +186,7 @@ static void read_and_write_test_write_handler(void* data,
 
   gpr_log(GPR_INFO, "Write handler done");
   gpr_mu_lock(g_mu);
-  state->write_done = 1 + (error == GRPC_ERROR_NONE);
+  state->write_done = 1 + (GRPC_ERROR_IS_NONE(error));
   GRPC_LOG_IF_ERROR("pollset_kick", grpc_pollset_kick(g_pollset, nullptr));
   gpr_mu_unlock(g_mu);
 }
@@ -278,7 +278,7 @@ static void read_and_write_test(grpc_endpoint_test_config config,
 
 static void inc_on_failure(void* arg, grpc_error_handle error) {
   gpr_mu_lock(g_mu);
-  *static_cast<int*>(arg) += (error != GRPC_ERROR_NONE);
+  *static_cast<int*>(arg) += (!GRPC_ERROR_IS_NONE(error));
   GPR_ASSERT(GRPC_LOG_IF_ERROR("kick", grpc_pollset_kick(g_pollset, nullptr)));
   gpr_mu_unlock(g_mu);
 }

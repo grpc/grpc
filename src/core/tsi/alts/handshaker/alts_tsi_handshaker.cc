@@ -391,7 +391,7 @@ static void on_handshaker_service_resp_recv(void* arg,
     return;
   }
   bool success = true;
-  if (error != GRPC_ERROR_NONE) {
+  if (!GRPC_ERROR_IS_NONE(error)) {
     gpr_log(GPR_INFO,
             "ALTS handshaker on_handshaker_service_resp_recv error: %s",
             grpc_error_std_string(error).c_str());

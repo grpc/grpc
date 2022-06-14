@@ -18,15 +18,17 @@
 
 #ifndef GRPC_CORE_LIB_SECURITY_SECURITY_CONNECTOR_SSL_SSL_SECURITY_CONNECTOR_H
 #define GRPC_CORE_LIB_SECURITY_SECURITY_CONNECTOR_SSL_SSL_SECURITY_CONNECTOR_H
-
 #include <grpc/support/port_platform.h>
 
+#include <stddef.h>
+
+#include <grpc/grpc.h>
 #include <grpc/grpc_security.h>
+#include <grpc/grpc_security_constants.h>
 
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/security/security_connector/security_connector.h"
 #include "src/core/tsi/ssl_transport_security.h"
-#include "src/core/tsi/transport_security_interface.h"
 
 struct grpc_ssl_config {
   tsi_ssl_pem_key_cert_pair* pem_key_cert_pair;
