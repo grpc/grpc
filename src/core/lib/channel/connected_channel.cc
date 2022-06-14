@@ -215,11 +215,24 @@ namespace grpc_core {
 class ClientConnectedCallPromise {
  public:
   ClientConnectedCallPromise(grpc_transport* transport, CallArgs call_args)
-      : transport_(transport),
+      : stream_owning_waker_(Activity::current()->MakeOwningWaker()),
+        stream_refcount_(GetContext<Arena>()->New<grpc_stream_refcount>()),
+        transport_(transport),
         stream_(static_cast<grpc_stream*>(
-            GetContext<Arena>()->Alloc(transport->vtable->sizeof_stream))) {
-    grpc_transport_init_stream(transport_, stream_, nullptr, nullptr,
+            GetContext<Arena>()->Alloc(transport->vtable->sizeof_stream))),
+        server_initial_metadata_latch_(call_args.server_initial_metadata),
+        client_to_server_messages_(call_args.client_to_server_messages),
+        server_to_client_messages_(call_args.server_to_client_messages),
+        client_initial_metadata_(std::move(call_args.client_initial_metadata)) {
+    GRPC_STREAM_REF_INIT(stream_refcount_, 1, StreamRefCountDestroyed, this,
+                         "connected_channel");
+    grpc_transport_init_stream(transport_, stream_, stream_refcount_, nullptr,
                                GetContext<Arena>());
+#ifndef NDEBUG
+    grpc_stream_unref(stream_refcount_, "finished construction");
+#else
+    grpc_stream_unref(stream_refcount_);
+#endif
   }
 
   static ArenaPromise<ServerMetadataHandle> Make(grpc_transport* transport,
@@ -242,6 +255,9 @@ class ClientConnectedCallPromise {
       batch_payload_.send_initial_metadata.peer_string = nullptr;
       batch_payload_.recv_initial_metadata.recv_initial_metadata =
           &server_initial_metadata_;
+      recv_initial_metadata_ready_ = MakeMemberClosure<
+          ClientConnectedCallPromise,
+          &ClientConnectedCallPromise::RecvInitialMetadataReady>(this);
       batch_payload_.recv_initial_metadata.recv_initial_metadata_ready =
           &recv_initial_metadata_ready_;
       // DO NOT SUBMIT: figure this field out
@@ -253,6 +269,9 @@ class ClientConnectedCallPromise {
       batch_payload_.recv_initial_metadata.peer_string = nullptr;
       batch_payload_.recv_trailing_metadata.recv_trailing_metadata =
           &server_trailing_metadata_;
+      recv_trailing_metadata_ready_ = MakeMemberClosure<
+          ClientConnectedCallPromise,
+          &ClientConnectedCallPromise::RecvTrailingMetadataReady>(this);
       batch_payload_.recv_trailing_metadata.recv_trailing_metadata_ready =
           &recv_trailing_metadata_ready_;
       push_metadata_ = true;
@@ -342,7 +361,13 @@ class ClientConnectedCallPromise {
 
   void SchedulePush() {
     if (absl::exchange(scheduled_push_, true)) return;
+    push_ = MakeMemberClosure<ClientConnectedCallPromise,
+                              &ClientConnectedCallPromise::Push>(this);
     ExecCtx::Run(DEBUG_LOCATION, &push_, GRPC_ERROR_NONE);
+  }
+
+  static void StreamRefCountDestroyed(void* p, grpc_error_handle) {
+    static_cast<ClientConnectedCallPromise*>(p)->stream_owning_waker_.Wakeup();
   }
 
   bool requested_metadata_ = false;
@@ -353,6 +378,8 @@ class ClientConnectedCallPromise {
   bool queued_initial_metadata_ = false;
   bool queued_trailing_metadata_ = false;
   Waker waker_;
+  Waker stream_owning_waker_;
+  grpc_stream_refcount* stream_refcount_;
   grpc_transport* const transport_;
   grpc_stream* const stream_;
   Latch<ServerMetadata*>* server_initial_metadata_latch_;
@@ -363,17 +390,9 @@ class ClientConnectedCallPromise {
   absl::variant<Idle, absl::optional<Message>, Message, Closed,
                 PipeSender<Message>::PushType>
       recv_message_state_;
-  grpc_closure recv_initial_metadata_ready_ =
-      MakeMemberClosure<ClientConnectedCallPromise,
-                        &ClientConnectedCallPromise::RecvInitialMetadataReady>(
-          this);
-  grpc_closure recv_trailing_metadata_ready_ =
-      MakeMemberClosure<ClientConnectedCallPromise,
-                        &ClientConnectedCallPromise::RecvTrailingMetadataReady>(
-          this);
-  grpc_closure push_ =
-      MakeMemberClosure<ClientConnectedCallPromise,
-                        &ClientConnectedCallPromise::Push>(this);
+  grpc_closure recv_initial_metadata_ready_;
+  grpc_closure recv_trailing_metadata_ready_;
+  grpc_closure push_;
   ClientMetadataHandle client_initial_metadata_;
   ServerMetadata server_initial_metadata_{GetContext<Arena>()};
   ServerMetadata server_trailing_metadata_{GetContext<Arena>()};
