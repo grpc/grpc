@@ -134,8 +134,8 @@ class PythonArtifact:
         # This is necessary due to https://github.com/pypa/wheel/issues/406.
         # distutils incorrectly generates a universal2 artifact that only contains
         # x86_64 libraries.
-        if self.platform == "macos" and arch == "x64":
-            environ["GRPC_UNIVERSAL2_REPAIR"] = True
+        if self.platform == "macos" and self.arch == "x64":
+            environ["GRPC_UNIVERSAL2_REPAIR"] = "true"
 
         # TODO: Clean up if this works.
         environ['ARCHFLAGS'] = '-arch x86_64'
