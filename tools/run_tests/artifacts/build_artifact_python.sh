@@ -149,7 +149,7 @@ fix_faulty_universal2_wheel() {
   if [ echo "$WHL" | grep "universal2" ]; then
     UPDATED_NAME=$(echo "$WHL" | sed 's/universal2/x86_64/g')
     mv "$WHL" "$UPDATED_NAME"
-  else
+  fi
 }
 
 # This is necessary due to https://github.com/pypa/wheel/issues/406.
