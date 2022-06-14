@@ -161,6 +161,8 @@ if [ "$GRPC_UNIVERSAL2_REPAIR" != "" ]; then
   done
 fi
 
+exit 1
+
 
 if [ "$GRPC_RUN_AUDITWHEEL_REPAIR" != "" ]
 then
