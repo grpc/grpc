@@ -111,7 +111,7 @@ Status EchoTestServiceImpl::Echo(ServerContext* context,
   return Status::OK;
 }
 
-Status EchoTestServiceImpl::ForwardEcho(ServerContext* /*context*/,
+Status EchoTestServiceImpl::ForwardEcho(ServerContext* context,
                                         const ForwardEchoRequest* request,
                                         ForwardEchoResponse* response) {
   std::string raw_url = request->url();
@@ -142,6 +142,7 @@ Status EchoTestServiceImpl::ForwardEcho(ServerContext* /*context*/,
     gpr_log(GPR_INFO, "Protocol %s not supported. Forwarding to %s",
             scheme.c_str(), forwarding_address_.c_str());
     ClientContext forwarding_ctx;
+    forwarding_ctx.set_deadline(context->deadline());
     return forwarding_stub_->ForwardEcho(&forwarding_ctx, *request, response);
   }
   auto stub = EchoTestService::NewStub(channel);
