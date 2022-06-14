@@ -1017,10 +1017,10 @@ results of each iteration (i.e. RPC) in a format the matches the following
 regexes:
 
 - Upon success:
-  - `soak iteration: \d+ elapsed_ms: \d+ peer: (\S+) succeeded`
+  - `soak iteration: \d+ elapsed_ms: \d+ peer: \S+ succeeded`
 
 - Upon failure:
-  - `soak iteration: \d+ elapsed_ms: \d+ peer: (\S+) failed:`
+  - `soak iteration: \d+ elapsed_ms: \d+ peer: \S+ failed:`
 
 This test must be configurable via a few different command line flags:
 
