@@ -233,7 +233,7 @@ class ChannelArgs {
     return Set(T::ChannelArgName(), std::move(p));
   }
   template <typename T>
-  T* GetObject() {
+  T* GetObject() const {
     return GetPointer<T>(T::ChannelArgName());
   }
   template <typename T>

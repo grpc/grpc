@@ -76,12 +76,11 @@ bool ProxyMapperRegistry::MapName(const char* server_uri,
 }
 
 bool ProxyMapperRegistry::MapAddress(const grpc_resolved_address& address,
-                                     const grpc_channel_args* args,
-                                     grpc_resolved_address** new_address,
-                                     grpc_channel_args** new_args) {
+                                     ChannelArgs* args,
+                                     grpc_resolved_address** new_address) {
   Init();
   for (const auto& mapper : *g_proxy_mapper_list) {
-    if (mapper->MapAddress(address, args, new_address, new_args)) {
+    if (mapper->MapAddress(address, args, new_address)) {
       return true;
     }
   }

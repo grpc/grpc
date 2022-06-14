@@ -28,34 +28,8 @@
 
 namespace grpc_core {
 
-namespace {
-
-void* factory_arg_copy(void* f) { return f; }
-void factory_arg_destroy(void* /*f*/) {}
-int factory_arg_cmp(void* factory1, void* factory2) {
-  return QsortCompare(factory1, factory2);
-}
-const grpc_arg_pointer_vtable factory_arg_vtable = {
-    factory_arg_copy, factory_arg_destroy, factory_arg_cmp};
-
-}  // namespace
-
 absl::string_view ClientChannelFactory::ChannelArgName() {
   return GRPC_ARG_CLIENT_CHANNEL_FACTORY;
-}
-
-grpc_arg ClientChannelFactory::CreateChannelArg(ClientChannelFactory* factory) {
-  return grpc_channel_arg_pointer_create(
-      const_cast<char*>(GRPC_ARG_CLIENT_CHANNEL_FACTORY), factory,
-      &factory_arg_vtable);
-}
-
-ClientChannelFactory* ClientChannelFactory::GetFromChannelArgs(
-    const grpc_channel_args* args) {
-  const grpc_arg* arg =
-      grpc_channel_args_find(args, GRPC_ARG_CLIENT_CHANNEL_FACTORY);
-  if (arg == nullptr || arg->type != GRPC_ARG_POINTER) return nullptr;
-  return static_cast<ClientChannelFactory*>(arg->value.pointer.p);
 }
 
 }  // namespace grpc_core

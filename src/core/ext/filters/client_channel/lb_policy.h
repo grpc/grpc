@@ -279,7 +279,7 @@ class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
 
     /// Creates a new subchannel with the specified channel args.
     virtual RefCountedPtr<SubchannelInterface> CreateSubchannel(
-        ServerAddress address, const grpc_channel_args& args) = 0;
+        ServerAddress address, ChannelArgs args) = 0;
 
     /// Sets the connectivity state and returns a new picker to be used
     /// by the client channel.
@@ -327,16 +327,7 @@ class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
 
     // TODO(roth): Before making this a public API, find a better
     // abstraction for representing channel args.
-    const grpc_channel_args* args = nullptr;
-
-    // TODO(roth): Remove everything below once channel args is
-    // converted to a copyable and movable C++ object.
-    UpdateArgs() = default;
-    ~UpdateArgs() { grpc_channel_args_destroy(args); }
-    UpdateArgs(const UpdateArgs& other);
-    UpdateArgs(UpdateArgs&& other) noexcept;
-    UpdateArgs& operator=(const UpdateArgs& other);
-    UpdateArgs& operator=(UpdateArgs&& other) noexcept;
+    ChannelArgs args;
   };
 
   /// Args used to instantiate an LB policy.
@@ -349,10 +340,7 @@ class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
     std::unique_ptr<ChannelControlHelper> channel_control_helper;
     /// Channel args.
     // TODO(roth): Find a better channel args representation for this API.
-    // TODO(roth): Clarify ownership semantics here -- currently, this
-    // does not take ownership of args, which is the opposite of how we
-    // handle them in UpdateArgs.
-    const grpc_channel_args* args = nullptr;
+    ChannelArgs args;
   };
 
   explicit LoadBalancingPolicy(Args args, intptr_t initial_refcount = 1);

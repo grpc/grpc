@@ -176,7 +176,7 @@ class PriorityLb : public LoadBalancingPolicy {
       ~Helper() override { priority_.reset(DEBUG_LOCATION, "Helper"); }
 
       RefCountedPtr<SubchannelInterface> CreateSubchannel(
-          ServerAddress address, const grpc_channel_args& args) override;
+          ServerAddress address, ChannelArgs args) override;
       void UpdateState(grpc_connectivity_state state,
                        const absl::Status& status,
                        std::unique_ptr<SubchannelPicker> picker) override;
@@ -223,7 +223,7 @@ class PriorityLb : public LoadBalancingPolicy {
 
     // Methods for dealing with the child policy.
     OrphanablePtr<LoadBalancingPolicy> CreateChildPolicyLocked(
-        const grpc_channel_args* args);
+        ChannelArgs args);
 
     void OnConnectivityStateUpdateLocked(
         grpc_connectivity_state state, const absl::Status& status,
@@ -282,7 +282,7 @@ class PriorityLb : public LoadBalancingPolicy {
   const Duration child_failover_timeout_;
 
   // Current channel args and config from the resolver.
-  const grpc_channel_args* args_ = nullptr;
+  ChannelArgs args_;
   RefCountedPtr<PriorityLbConfig> config_;
   absl::StatusOr<HierarchicalAddressMap> addresses_;
 
@@ -308,11 +308,11 @@ class PriorityLb : public LoadBalancingPolicy {
 
 PriorityLb::PriorityLb(Args args)
     : LoadBalancingPolicy(std::move(args)),
-      child_failover_timeout_(
-          Duration::Milliseconds(grpc_channel_args_find_integer(
-              args.args, GRPC_ARG_PRIORITY_FAILOVER_TIMEOUT_MS,
-              {static_cast<int>(kDefaultChildFailoverTimeout.millis()), 0,
-               INT_MAX}))) {
+      child_failover_timeout_(std::max(
+          Duration::Zero(),
+          args.args
+              .GetDurationFromIntMillis(GRPC_ARG_PRIORITY_FAILOVER_TIMEOUT_MS)
+              .value_or(kDefaultChildFailoverTimeout))) {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_priority_trace)) {
     gpr_log(GPR_INFO, "[priority_lb %p] created", this);
   }
@@ -322,7 +322,6 @@ PriorityLb::~PriorityLb() {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_priority_trace)) {
     gpr_log(GPR_INFO, "[priority_lb %p] destroying priority LB policy", this);
   }
-  grpc_channel_args_destroy(args_);
 }
 
 void PriorityLb::ShutdownLocked() {
@@ -365,9 +364,7 @@ void PriorityLb::UpdateLocked(UpdateArgs args) {
   // Update config.
   config_ = std::move(args.config);
   // Update args.
-  grpc_channel_args_destroy(args_);
-  args_ = args.args;
-  args.args = nullptr;
+  args_ = std::move(args.args);
   // Update addresses.
   addresses_ = MakeHierarchicalAddressMap(args.addresses);
   // Check all existing children against the new config.
@@ -789,7 +786,7 @@ void PriorityLb::ChildPriority::UpdateLocked(
   } else {
     update_args.addresses = priority_policy_->addresses_.status();
   }
-  update_args.args = grpc_channel_args_copy(priority_policy_->args_);
+  update_args.args = priority_policy_->args_;
   // Update the policy.
   if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_priority_trace)) {
     gpr_log(GPR_INFO,
@@ -800,8 +797,7 @@ void PriorityLb::ChildPriority::UpdateLocked(
 }
 
 OrphanablePtr<LoadBalancingPolicy>
-PriorityLb::ChildPriority::CreateChildPolicyLocked(
-    const grpc_channel_args* args) {
+PriorityLb::ChildPriority::CreateChildPolicyLocked(ChannelArgs args) {
   LoadBalancingPolicy::Args lb_policy_args;
   lb_policy_args.work_serializer = priority_policy_->work_serializer();
   lb_policy_args.args = args;
@@ -882,8 +878,8 @@ void PriorityLb::ChildPriority::MaybeReactivateLocked() {
 //
 
 RefCountedPtr<SubchannelInterface>
-PriorityLb::ChildPriority::Helper::CreateSubchannel(
-    ServerAddress address, const grpc_channel_args& args) {
+PriorityLb::ChildPriority::Helper::CreateSubchannel(ServerAddress address,
+                                                    ChannelArgs args) {
   if (priority_->priority_policy_->shutting_down_) return nullptr;
   return priority_->priority_policy_->channel_control_helper()
       ->CreateSubchannel(std::move(address), args);

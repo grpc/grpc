@@ -58,32 +58,26 @@ grpc_ssl_credentials::~grpc_ssl_credentials() {
 grpc_core::RefCountedPtr<grpc_channel_security_connector>
 grpc_ssl_credentials::create_security_connector(
     grpc_core::RefCountedPtr<grpc_call_credentials> call_creds,
-    const char* target, const grpc_channel_args* args,
-    grpc_channel_args** new_args) {
-  const char* overridden_target_name = nullptr;
-  tsi_ssl_session_cache* ssl_session_cache = nullptr;
-  for (size_t i = 0; args && i < args->num_args; i++) {
-    grpc_arg* arg = &args->args[i];
-    if (strcmp(arg->key, GRPC_SSL_TARGET_NAME_OVERRIDE_ARG) == 0 &&
-        arg->type == GRPC_ARG_STRING) {
-      overridden_target_name = arg->value.string;
-    }
-    if (strcmp(arg->key, GRPC_SSL_SESSION_CACHE_ARG) == 0 &&
-        arg->type == GRPC_ARG_POINTER) {
-      ssl_session_cache =
-          static_cast<tsi_ssl_session_cache*>(arg->value.pointer.p);
-    }
+    const char* target, grpc_core::ChannelArgs* args) {
+  absl::optional<absl::string_view> overridden_target_name =
+      args->GetString(GRPC_SSL_TARGET_NAME_OVERRIDE_ARG);
+  tsi_ssl_session_cache* ssl_session_cache =
+      args->GetPointer<tsi_ssl_session_cache>(GRPC_SSL_SESSION_CACHE_ARG);
+  std::string overridden_target_name_string;
+  if (overridden_target_name.has_value()) {
+    overridden_target_name_string = std::string(overridden_target_name.value());
   }
   grpc_core::RefCountedPtr<grpc_channel_security_connector> sc =
       grpc_ssl_channel_security_connector_create(
           this->Ref(), std::move(call_creds), &config_, target,
-          overridden_target_name, ssl_session_cache);
+          overridden_target_name.has_value()
+              ? overridden_target_name_string.c_str()
+              : nullptr,
+          ssl_session_cache);
   if (sc == nullptr) {
     return sc;
   }
-  grpc_arg new_arg = grpc_channel_arg_string_create(
-      const_cast<char*>(GRPC_ARG_HTTP2_SCHEME), const_cast<char*>("https"));
-  *new_args = grpc_channel_args_copy_and_add(args, &new_arg, 1);
+  *args = args->Set(GRPC_ARG_HTTP2_SCHEME, "https");
   return sc;
 }
 
@@ -190,7 +184,7 @@ grpc_ssl_server_credentials::~grpc_ssl_server_credentials() {
 }
 grpc_core::RefCountedPtr<grpc_server_security_connector>
 grpc_ssl_server_credentials::create_security_connector(
-    const grpc_channel_args* /* args */) {
+    grpc_core::ChannelArgs /* args */) {
   return grpc_ssl_server_security_connector_create(this->Ref());
 }
 

@@ -27,6 +27,8 @@
 #include "absl/container/inlined_vector.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
+#include "absl/strings/str_format.h"
+#include "absl/strings/string_view.h"
 
 #include <grpc/grpc.h>
 #include <grpc/grpc_posix.h>
@@ -120,8 +122,10 @@ void Chttp2Connector::Connect(const Args& args, Result* result,
           const_cast<char*>(GRPC_ARG_TCP_HANDSHAKER_BIND_ENDPOINT_TO_POLLSET),
           1),
   };
-  grpc_channel_args* channel_args = grpc_channel_args_copy_and_add(
-      args_.channel_args, args_to_add.data(), args_to_add.size());
+  ChannelArgs channel_args =
+      args_.channel_args
+          .Set(GRPC_ARG_TCP_HANDSHAKER_RESOLVED_ADDRESS, address.value())
+          .Set(GRPC_ARG_TCP_HANDSHAKER_BIND_ENDPOINT_TO_POLLSET, 1);
   handshake_mgr_ = MakeRefCounted<HandshakeManager>();
   CoreConfiguration::Get().handshaker_registry().AddHandshakers(
       HANDSHAKER_CLIENT, channel_args, args_.interested_parties,
@@ -130,7 +134,6 @@ void Chttp2Connector::Connect(const Args& args, Result* result,
   handshake_mgr_->DoHandshake(nullptr /* endpoint */, channel_args,
                               args.deadline, nullptr /* acceptor */,
                               OnHandshakeDone, this);
-  grpc_channel_args_destroy(channel_args);
 }
 
 void Chttp2Connector::Shutdown(grpc_error_handle error) {
@@ -160,7 +163,6 @@ void Chttp2Connector::OnHandshakeDone(void* arg, grpc_error_handle error) {
           // point this can be removed.
           grpc_endpoint_shutdown(args->endpoint, GRPC_ERROR_REF(error));
           grpc_endpoint_destroy(args->endpoint);
-          grpc_channel_args_destroy(args->args);
           grpc_slice_buffer_destroy_internal(args->read_buffer);
           gpr_free(args->read_buffer);
         }
@@ -170,8 +172,9 @@ void Chttp2Connector::OnHandshakeDone(void* arg, grpc_error_handle error) {
       self->result_->Reset();
       NullThenSchedClosure(DEBUG_LOCATION, &self->notify_, error);
     } else if (args->endpoint != nullptr) {
+      auto* channel_args = args->args.ToC();
       self->result_->transport =
-          grpc_create_chttp2_transport(args->args, args->endpoint, true);
+          grpc_create_chttp2_transport(channel_args, args->endpoint, true);
       self->result_->socket_node =
           grpc_chttp2_transport_get_socket_node(self->result_->transport);
       self->result_->channel_args = args->args;
@@ -187,6 +190,7 @@ void Chttp2Connector::OnHandshakeDone(void* arg, grpc_error_handle error) {
       GRPC_CLOSURE_INIT(&self->on_timeout_, OnTimeout, self,
                         grpc_schedule_on_exec_ctx);
       grpc_timer_init(&self->timer_, self->args_.deadline, &self->on_timeout_);
+      grpc_channel_args_destroy(channel_args);
     } else {
       // If the handshaking succeeded but there is no endpoint, then the
       // handshaker may have handed off the connection to some external
@@ -211,7 +215,6 @@ void Chttp2Connector::OnReceiveSettings(void* arg, grpc_error_handle error) {
         // TODO(yashykt): The following two lines should be moved to
         // SubchannelConnector::Result::Reset()
         grpc_transport_destroy(self->result_->transport);
-        grpc_channel_args_destroy(self->result_->channel_args);
         self->result_->Reset();
       }
       self->MaybeNotify(GRPC_ERROR_REF(error));
@@ -237,7 +240,6 @@ void Chttp2Connector::OnTimeout(void* arg, grpc_error_handle /*error*/) {
       // TODO(yashykt): The following two lines should be moved to
       // SubchannelConnector::Result::Reset()
       grpc_transport_destroy(self->result_->transport);
-      grpc_channel_args_destroy(self->result_->channel_args);
       self->result_->Reset();
       self->MaybeNotify(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
           "connection attempt timed out before receiving SETTINGS frame"));
@@ -269,64 +271,46 @@ namespace {
 class Chttp2SecureClientChannelFactory : public ClientChannelFactory {
  public:
   RefCountedPtr<Subchannel> CreateSubchannel(
-      const grpc_resolved_address& address,
-      const grpc_channel_args* args) override {
-    grpc_channel_args* new_args = GetSecureNamingChannelArgs(args);
-    if (new_args == nullptr) {
+      const grpc_resolved_address& address, ChannelArgs args) override {
+    absl::StatusOr<ChannelArgs> new_args = GetSecureNamingChannelArgs(args);
+    if (!new_args.ok()) {
       gpr_log(GPR_ERROR,
-              "Failed to create channel args during subchannel creation.");
+              "Failed to create channel args during subchannel creation: %s; "
+              "Got args: %s",
+              new_args.status().ToString().c_str(), args.ToString().c_str());
       return nullptr;
     }
     RefCountedPtr<Subchannel> s = Subchannel::Create(
-        MakeOrphanable<Chttp2Connector>(), address, new_args);
-    grpc_channel_args_destroy(new_args);
+        MakeOrphanable<Chttp2Connector>(), address, std::move(*new_args));
     return s;
   }
 
  private:
-  static grpc_channel_args* GetSecureNamingChannelArgs(
-      const grpc_channel_args* args) {
-    grpc_channel_credentials* channel_credentials =
-        grpc_channel_credentials_find_in_args(args);
+  static absl::StatusOr<ChannelArgs> GetSecureNamingChannelArgs(
+      ChannelArgs args) {
+    auto* channel_credentials = args.GetObject<grpc_channel_credentials>();
     if (channel_credentials == nullptr) {
-      gpr_log(GPR_ERROR,
-              "Can't create subchannel: channel credentials missing for secure "
-              "channel. Got args: %s",
-              grpc_channel_args_string(args).c_str());
-      return nullptr;
+      return absl::InternalError(
+          "channel credentials missing for secure channel");
     }
     // Make sure security connector does not already exist in args.
-    if (grpc_security_connector_find_in_args(args) != nullptr) {
-      gpr_log(GPR_ERROR,
-              "Can't create subchannel: security connector already present in "
-              "channel args.");
-      return nullptr;
+    if (args.Contains(GRPC_ARG_SECURITY_CONNECTOR)) {
+      return absl::InternalError(
+          "security connector already present in channel args.");
     }
     // Find the authority to use in the security connector.
-    const char* authority =
-        grpc_channel_args_find_string(args, GRPC_ARG_DEFAULT_AUTHORITY);
-    GPR_ASSERT(authority != nullptr);
+    absl::string_view authority = *args.GetString(GRPC_ARG_DEFAULT_AUTHORITY);
     // Create the security connector using the credentials and target name.
-    grpc_channel_args* new_args_from_connector = nullptr;
     RefCountedPtr<grpc_channel_security_connector>
         subchannel_security_connector =
             channel_credentials->create_security_connector(
-                /*call_creds=*/nullptr, authority, args,
-                &new_args_from_connector);
+                /*call_creds=*/nullptr, std::string(authority).c_str(), &args);
     if (subchannel_security_connector == nullptr) {
-      gpr_log(GPR_ERROR,
-              "Failed to create secure subchannel for secure name '%s'",
-              authority);
-      return nullptr;
+      return absl::InternalError(absl::StrFormat(
+          "Failed to create secure subchannel for secure name '%s'",
+          authority));
     }
-    grpc_arg new_security_connector_arg =
-        grpc_security_connector_to_arg(subchannel_security_connector.get());
-    grpc_channel_args* new_args = grpc_channel_args_copy_and_add(
-        new_args_from_connector != nullptr ? new_args_from_connector : args,
-        &new_security_connector_arg, 1);
-    subchannel_security_connector.reset(DEBUG_LOCATION, "lb_channel_create");
-    grpc_channel_args_destroy(new_args_from_connector);
-    return new_args;
+    return args.SetObject(std::move(subchannel_security_connector));
   }
 };
 

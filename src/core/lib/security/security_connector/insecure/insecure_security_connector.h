@@ -62,7 +62,7 @@ class InsecureChannelSecurityConnector
   ArenaPromise<absl::Status> CheckCallHost(
       absl::string_view host, grpc_auth_context* auth_context) override;
 
-  void add_handshakers(const grpc_channel_args* args,
+  void add_handshakers(ChannelArgs args,
                        grpc_pollset_set* /* interested_parties */,
                        HandshakeManager* handshake_manager) override;
 
@@ -85,7 +85,7 @@ class InsecureServerSecurityConnector : public grpc_server_security_connector {
       : grpc_server_security_connector("" /* url_scheme */,
                                        std::move(server_creds)) {}
 
-  void add_handshakers(const grpc_channel_args* args,
+  void add_handshakers(ChannelArgs args,
                        grpc_pollset_set* /* interested_parties */,
                        HandshakeManager* handshake_manager) override;
 

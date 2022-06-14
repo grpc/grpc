@@ -50,6 +50,10 @@ class XdsCertificateProvider : public grpc_tls_certificate_provider {
   XdsCertificateProvider();
   ~XdsCertificateProvider() override;
 
+  static absl::string_view ChannelArgName() {
+    return GRPC_ARG_XDS_CERTIFICATE_PROVIDER;
+  }
+
   RefCountedPtr<grpc_tls_certificate_distributor> distributor() const override {
     return distributor_;
   }

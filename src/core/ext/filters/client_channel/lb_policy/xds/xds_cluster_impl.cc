@@ -247,7 +247,7 @@ class XdsClusterImplLb : public LoadBalancingPolicy {
     }
 
     RefCountedPtr<SubchannelInterface> CreateSubchannel(
-        ServerAddress address, const grpc_channel_args& args) override;
+        ServerAddress address, ChannelArgs args) override;
     void UpdateState(grpc_connectivity_state state, const absl::Status& status,
                      std::unique_ptr<SubchannelPicker> picker) override;
     void RequestReresolution() override;
@@ -263,10 +263,9 @@ class XdsClusterImplLb : public LoadBalancingPolicy {
 
   void ShutdownLocked() override;
 
-  OrphanablePtr<LoadBalancingPolicy> CreateChildPolicyLocked(
-      const grpc_channel_args* args);
+  OrphanablePtr<LoadBalancingPolicy> CreateChildPolicyLocked(ChannelArgs args);
   void UpdateChildPolicyLocked(absl::StatusOr<ServerAddressList> addresses,
-                               const grpc_channel_args* args);
+                               ChannelArgs args);
 
   void MaybeUpdatePickerLocked();
 
@@ -553,7 +552,7 @@ void XdsClusterImplLb::MaybeUpdatePickerLocked() {
 }
 
 OrphanablePtr<LoadBalancingPolicy> XdsClusterImplLb::CreateChildPolicyLocked(
-    const grpc_channel_args* args) {
+    ChannelArgs args) {
   LoadBalancingPolicy::Args lb_policy_args;
   lb_policy_args.work_serializer = work_serializer();
   lb_policy_args.args = args;
@@ -576,8 +575,7 @@ OrphanablePtr<LoadBalancingPolicy> XdsClusterImplLb::CreateChildPolicyLocked(
 }
 
 void XdsClusterImplLb::UpdateChildPolicyLocked(
-    absl::StatusOr<ServerAddressList> addresses,
-    const grpc_channel_args* args) {
+    absl::StatusOr<ServerAddressList> addresses, ChannelArgs args) {
   // Create policy if needed.
   if (child_policy_ == nullptr) {
     child_policy_ = CreateChildPolicyLocked(args);
@@ -604,7 +602,7 @@ void XdsClusterImplLb::UpdateChildPolicyLocked(
 //
 
 RefCountedPtr<SubchannelInterface> XdsClusterImplLb::Helper::CreateSubchannel(
-    ServerAddress address, const grpc_channel_args& args) {
+    ServerAddress address, ChannelArgs args) {
   if (xds_cluster_impl_policy_->shutting_down_) return nullptr;
   // If load reporting is enabled, wrap the subchannel such that it
   // includes the locality stats object, which will be used by the EdsPicker.
@@ -690,8 +688,7 @@ class XdsClusterImplLbFactory : public LoadBalancingPolicyFactory {
  public:
   OrphanablePtr<LoadBalancingPolicy> CreateLoadBalancingPolicy(
       LoadBalancingPolicy::Args args) const override {
-    RefCountedPtr<XdsClient> xds_client =
-        XdsClient::GetFromChannelArgs(*args.args);
+    auto xds_client = args.args.GetObjectRef<XdsClient>();
     if (xds_client == nullptr) {
       gpr_log(GPR_ERROR,
               "XdsClient not present in channel args -- cannot instantiate "

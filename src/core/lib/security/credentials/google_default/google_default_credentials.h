@@ -62,8 +62,7 @@ class grpc_google_default_channel_credentials
   grpc_core::RefCountedPtr<grpc_channel_security_connector>
   create_security_connector(
       grpc_core::RefCountedPtr<grpc_call_credentials> call_creds,
-      const char* target, const grpc_channel_args* args,
-      grpc_channel_args** new_args) override;
+      const char* target, grpc_core::ChannelArgs* args) override;
 
   grpc_core::ChannelArgs update_arguments(grpc_core::ChannelArgs args) override;
 

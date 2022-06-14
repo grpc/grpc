@@ -25,6 +25,7 @@
 
 #include <grpc/impl/codegen/grpc_types.h>
 
+#include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/gprpp/ref_counted.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
@@ -39,34 +40,20 @@ extern TraceFlag grpc_subchannel_pool_trace;
 // A key that can uniquely identify a subchannel.
 class SubchannelKey {
  public:
-  SubchannelKey(const grpc_resolved_address& address,
-                const grpc_channel_args* args);
+  SubchannelKey(const grpc_resolved_address& address, ChannelArgs args);
   ~SubchannelKey();
-
-  // Copyable.
-  SubchannelKey(const SubchannelKey& other);
-  SubchannelKey& operator=(const SubchannelKey& other);
-  // Movable
-  SubchannelKey(SubchannelKey&&) noexcept;
-  SubchannelKey& operator=(SubchannelKey&&) noexcept;
 
   bool operator<(const SubchannelKey& other) const;
 
   const grpc_resolved_address& address() const { return address_; }
-  const grpc_channel_args* args() const { return args_; }
+  const ChannelArgs& args() const { return args_; }
 
   // Human-readable string suitable for logging.
   std::string ToString() const;
 
  private:
-  // Initializes the subchannel key with the given \a args and the function to
-  // copy channel args.
-  void Init(
-      const grpc_resolved_address& address, const grpc_channel_args* args,
-      grpc_channel_args* (*copy_channel_args)(const grpc_channel_args* args));
-
   grpc_resolved_address address_;
-  const grpc_channel_args* args_;
+  ChannelArgs args_;
 };
 
 // Interface for subchannel pool.
@@ -80,6 +67,8 @@ class SubchannelPoolInterface : public RefCounted<SubchannelPoolInterface> {
                        ? "SubchannelPoolInterface"
                        : nullptr) {}
   ~SubchannelPoolInterface() override {}
+
+  static absl::string_view ChannelArgName();
 
   // Registers a subchannel against a key. Returns the subchannel registered
   // with \a key, which may be different from \a constructed because we reuse
@@ -95,13 +84,6 @@ class SubchannelPoolInterface : public RefCounted<SubchannelPoolInterface> {
   // if no such channel exists. Thread-safe.
   virtual RefCountedPtr<Subchannel> FindSubchannel(
       const SubchannelKey& key) = 0;
-
-  // Creates a channel arg from \a subchannel pool.
-  static grpc_arg CreateChannelArg(SubchannelPoolInterface* subchannel_pool);
-
-  // Gets the subchannel pool from the channel args.
-  static SubchannelPoolInterface* GetSubchannelPoolFromChannelArgs(
-      const grpc_channel_args* args);
 };
 
 }  // namespace grpc_core

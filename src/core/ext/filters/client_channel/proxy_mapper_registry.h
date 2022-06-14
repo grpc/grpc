@@ -26,6 +26,7 @@
 #include <grpc/impl/codegen/grpc_types.h>
 
 #include "src/core/ext/filters/client_channel/proxy_mapper.h"
+#include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/iomgr/resolved_address.h"
 
 namespace grpc_core {
@@ -45,9 +46,8 @@ class ProxyMapperRegistry {
                       char** name_to_resolve, grpc_channel_args** new_args);
 
   static bool MapAddress(const grpc_resolved_address& address,
-                         const grpc_channel_args* args,
-                         grpc_resolved_address** new_address,
-                         grpc_channel_args** new_args);
+                         ChannelArgs* args,
+                         grpc_resolved_address** new_address);
 };
 
 }  // namespace grpc_core

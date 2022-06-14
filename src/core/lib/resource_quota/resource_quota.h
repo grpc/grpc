@@ -24,6 +24,7 @@
 
 #include <grpc/impl/codegen/grpc_types.h>
 
+#include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/gprpp/cpp_impl_of.h"
 #include "src/core/lib/gprpp/ref_counted.h"
@@ -63,6 +64,11 @@ class ResourceQuota : public RefCounted<ResourceQuota>,
  private:
   MemoryQuotaRefPtr memory_quota_;
   RefCountedPtr<ThreadQuota> thread_quota_;
+};
+
+template <>
+struct ChannelArgTypeTraits<ResourceQuota> {
+  static const grpc_arg_pointer_vtable* VTable();
 };
 
 inline ResourceQuotaRefPtr MakeResourceQuota(std::string name) {

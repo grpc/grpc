@@ -61,7 +61,8 @@ SubchannelStreamClient::SubchannelStreamClient(
       interested_parties_(interested_parties),
       tracer_(tracer),
       call_allocator_(
-          ResourceQuotaFromChannelArgs(connected_subchannel_->args())
+          connected_subchannel_->args()
+              .GetObject<ResourceQuota>()
               ->memory_quota()
               ->CreateMemoryAllocator(
                   (tracer != nullptr) ? tracer : "SubchannelStreamClient")),

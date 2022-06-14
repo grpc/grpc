@@ -1740,6 +1740,7 @@ grpc_cc_library(
         "grpc_codegen",
         "handshaker_factory",
         "iomgr_fwd",
+        "channel_args",
     ],
 )
 
@@ -1976,6 +1977,7 @@ grpc_cc_library(
         "ref_counted_ptr",
         "thread_quota",
         "useful",
+        "channel_args"
     ],
 )
 
@@ -6089,6 +6091,8 @@ grpc_cc_library(
     external_deps = [
         "absl/container:inlined_vector",
         "absl/status",
+        "absl/strings",
+        "absl/strings:str_format",
         "absl/status:statusor",
     ],
     language = "c++",

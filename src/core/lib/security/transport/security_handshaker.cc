@@ -188,8 +188,7 @@ void SecurityHandshaker::CleanupArgsForFailureLocked() {
   args_->endpoint = nullptr;
   read_buffer_to_destroy_ = args_->read_buffer;
   args_->read_buffer = nullptr;
-  grpc_channel_args_destroy(args_->args);
-  args_->args = nullptr;
+  args_->args = ChannelArgs();
 }
 
 // If the handshake failed or we're shutting down, clean up and invoke the
@@ -313,18 +312,20 @@ void SecurityHandshaker::OnPeerCheckedInner(grpc_error_handle error) {
       zero_copy_protector != nullptr || protector != nullptr;
   // If we have a frame protector, create a secure endpoint.
   if (has_frame_protector) {
+    auto* channel_args = args_->args.ToC();
     if (unused_bytes_size > 0) {
       grpc_slice slice = grpc_slice_from_copied_buffer(
           reinterpret_cast<const char*>(unused_bytes), unused_bytes_size);
       args_->endpoint =
           grpc_secure_endpoint_create(protector, zero_copy_protector,
-                                      args_->endpoint, &slice, args_->args, 1);
+                                      args_->endpoint, &slice, channel_args, 1);
       grpc_slice_unref_internal(slice);
     } else {
-      args_->endpoint =
-          grpc_secure_endpoint_create(protector, zero_copy_protector,
-                                      args_->endpoint, nullptr, args_->args, 0);
+      args_->endpoint = grpc_secure_endpoint_create(
+          protector, zero_copy_protector, args_->endpoint, nullptr,
+          channel_args, 0);
     }
+    grpc_channel_args_destroy(channel_args);
   } else if (unused_bytes_size > 0) {
     // Not wrapping the endpoint, so just pass along unused bytes.
     grpc_slice slice = grpc_slice_from_copied_buffer(
@@ -334,21 +335,12 @@ void SecurityHandshaker::OnPeerCheckedInner(grpc_error_handle error) {
   // Done with handshaker result.
   tsi_handshaker_result_destroy(handshaker_result_);
   handshaker_result_ = nullptr;
-  absl::InlinedVector<grpc_arg, 2> args_to_add = {
-      // Add auth context to channel args.
-      grpc_auth_context_to_arg(auth_context_.get()),
-  };
-  RefCountedPtr<channelz::SocketNode::Security> channelz_security;
+  args_->args = args_->args.SetObject(auth_context_);
   // Add channelz channel args only if frame protector is created.
   if (has_frame_protector) {
-    channelz_security =
-        MakeChannelzSecurityFromAuthContext(auth_context_.get());
-    args_to_add.push_back(channelz_security->MakeChannelArg());
+    args_->args = args_->args.SetObject(
+        MakeChannelzSecurityFromAuthContext(auth_context_.get()));
   }
-  grpc_channel_args* tmp_args = args_->args;
-  args_->args = grpc_channel_args_copy_and_add(tmp_args, args_to_add.data(),
-                                               args_to_add.size());
-  grpc_channel_args_destroy(tmp_args);
   // Invoke callback.
   ExecCtx::Run(DEBUG_LOCATION, on_handshake_done_, GRPC_ERROR_NONE);
   // Set shutdown to true so that subsequent calls to
@@ -590,8 +582,7 @@ class FailHandshaker : public Handshaker {
     grpc_endpoint_shutdown(args->endpoint, GRPC_ERROR_REF(error));
     grpc_endpoint_destroy(args->endpoint);
     args->endpoint = nullptr;
-    grpc_channel_args_destroy(args->args);
-    args->args = nullptr;
+    args->args = ChannelArgs();
     grpc_slice_buffer_destroy_internal(args->read_buffer);
     gpr_free(args->read_buffer);
     args->read_buffer = nullptr;
@@ -608,12 +599,10 @@ class FailHandshaker : public Handshaker {
 
 class ClientSecurityHandshakerFactory : public HandshakerFactory {
  public:
-  void AddHandshakers(const grpc_channel_args* args,
-                      grpc_pollset_set* interested_parties,
+  void AddHandshakers(ChannelArgs args, grpc_pollset_set* interested_parties,
                       HandshakeManager* handshake_mgr) override {
     auto* security_connector =
-        reinterpret_cast<grpc_channel_security_connector*>(
-            grpc_security_connector_find_in_args(args));
+        args.GetObject<grpc_channel_security_connector>();
     if (security_connector) {
       security_connector->add_handshakers(args, interested_parties,
                                           handshake_mgr);
@@ -624,12 +613,9 @@ class ClientSecurityHandshakerFactory : public HandshakerFactory {
 
 class ServerSecurityHandshakerFactory : public HandshakerFactory {
  public:
-  void AddHandshakers(const grpc_channel_args* args,
-                      grpc_pollset_set* interested_parties,
+  void AddHandshakers(ChannelArgs args, grpc_pollset_set* interested_parties,
                       HandshakeManager* handshake_mgr) override {
-    auto* security_connector =
-        reinterpret_cast<grpc_server_security_connector*>(
-            grpc_security_connector_find_in_args(args));
+    auto* security_connector = args.GetObject<grpc_server_security_connector>();
     if (security_connector) {
       security_connector->add_handshakers(args, interested_parties,
                                           handshake_mgr);

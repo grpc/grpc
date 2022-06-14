@@ -83,7 +83,7 @@ class grpc_httpcli_ssl_channel_security_connector final
         &options, &handshaker_factory_);
   }
 
-  void add_handshakers(const grpc_channel_args* args,
+  void add_handshakers(ChannelArgs args,
                        grpc_pollset_set* /*interested_parties*/,
                        HandshakeManager* handshake_mgr) override {
     tsi_handshaker* handshaker = nullptr;
@@ -167,8 +167,7 @@ class HttpRequestSSLCredentials : public grpc_channel_credentials {
  public:
   RefCountedPtr<grpc_channel_security_connector> create_security_connector(
       RefCountedPtr<grpc_call_credentials> /*call_creds*/, const char* target,
-      const grpc_channel_args* args,
-      grpc_channel_args** /*new_args*/) override {
+      ChannelArgs* args) override {
     const char* pem_root_certs = DefaultSslRootStore::GetPemRootCerts();
     const tsi_ssl_root_certs_store* root_store =
         DefaultSslRootStore::GetRootStore();
@@ -176,10 +175,12 @@ class HttpRequestSSLCredentials : public grpc_channel_credentials {
       gpr_log(GPR_ERROR, "Could not get default pem root certs.");
       return nullptr;
     }
-    const char* ssl_host_override =
-        grpc_channel_args_find_string(args, GRPC_SSL_TARGET_NAME_OVERRIDE_ARG);
-    if (ssl_host_override != nullptr) {
-      target = ssl_host_override;
+    absl::optional<absl::string_view> ssl_host_override =
+        args->GetString(GRPC_SSL_TARGET_NAME_OVERRIDE_ARG);
+    std::string target_string;
+    if (ssl_host_override.has_value()) {
+      target_string = std::string(ssl_host_override.value());
+      target = target_string.c_str();
     }
     return httpcli_ssl_channel_security_connector_create(pem_root_certs,
                                                          root_store, target);

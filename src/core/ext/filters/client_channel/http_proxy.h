@@ -34,9 +34,8 @@ class HttpProxyMapper : public ProxyMapperInterface {
                char** name_to_resolve, grpc_channel_args** new_args) override;
 
   bool MapAddress(const grpc_resolved_address& /*address*/,
-                  const grpc_channel_args* /*args*/,
-                  grpc_resolved_address** /*new_address*/,
-                  grpc_channel_args** /*new_args*/) override {
+                  ChannelArgs* /*args*/,
+                  grpc_resolved_address** /*new_address*/) override {
     return false;
   }
 };

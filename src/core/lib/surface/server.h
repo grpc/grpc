@@ -129,7 +129,7 @@ class Server : public InternallyRefCounted<Server>,
 
   void Orphan() ABSL_LOCKS_EXCLUDED(mu_global_) override;
 
-  const grpc_channel_args* channel_args() const { return channel_args_; }
+  ChannelArgs channel_args() const { return channel_args_; }
   channelz::ServerNode* channelz_node() const { return channelz_node_.get(); }
 
   // Do not call this before Start(). Returns the pollsets. The
@@ -161,8 +161,7 @@ class Server : public InternallyRefCounted<Server>,
   // Takes ownership of a ref on resource_user from the caller.
   grpc_error_handle SetupTransport(
       grpc_transport* transport, grpc_pollset* accepting_pollset,
-      const grpc_channel_args* args,
-      const RefCountedPtr<channelz::SocketNode>& socket_node);
+      ChannelArgs args, const RefCountedPtr<channelz::SocketNode>& socket_node);
 
   void RegisterCompletionQueue(grpc_completion_queue* cq);
 
@@ -443,7 +442,7 @@ class Server : public InternallyRefCounted<Server>,
     return shutdown_refs_.load(std::memory_order_acquire) == 0;
   }
 
-  const grpc_channel_args* const channel_args_;
+  ChannelArgs const channel_args_;
   RefCountedPtr<channelz::ServerNode> channelz_node_;
   std::unique_ptr<grpc_server_config_fetcher> config_fetcher_;
 
@@ -500,8 +499,9 @@ struct grpc_server_config_fetcher {
       : public grpc_core::DualRefCounted<ConnectionManager> {
    public:
     // Ownership of \a args is transfered.
-    virtual absl::StatusOr<grpc_channel_args*> UpdateChannelArgsForConnection(
-        grpc_channel_args* args, grpc_endpoint* tcp) = 0;
+    virtual absl::StatusOr<grpc_core::ChannelArgs>
+    UpdateChannelArgsForConnection(grpc_core::ChannelArgs args,
+                                   grpc_endpoint* tcp) = 0;
   };
 
   class WatcherInterface {

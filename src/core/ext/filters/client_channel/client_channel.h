@@ -296,7 +296,7 @@ class ClientChannel {
   const bool deadline_checking_enabled_;
   grpc_channel_stack* owning_stack_;
   ClientChannelFactory* client_channel_factory_;
-  const grpc_channel_args* channel_args_;
+  ChannelArgs channel_args_;
   RefCountedPtr<ServiceConfig> default_service_config_;
   std::string uri_to_resolve_;
   std::string default_authority_;

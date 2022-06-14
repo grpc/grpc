@@ -112,8 +112,7 @@ struct grpc_channel_credentials
   virtual grpc_core::RefCountedPtr<grpc_channel_security_connector>
   create_security_connector(
       grpc_core::RefCountedPtr<grpc_call_credentials> call_creds,
-      const char* target, const grpc_channel_args* args,
-      grpc_channel_args** new_args) = 0;
+      const char* target, grpc_core::ChannelArgs* args) = 0;
 
   // Creates a version of the channel credentials without any attached call
   // credentials. This can be used in order to open a channel to a non-trusted
@@ -253,6 +252,8 @@ grpc_call_credentials* grpc_md_only_test_credentials_create(
 
 /* --- grpc_server_credentials. --- */
 
+#define GRPC_SERVER_CREDENTIALS_ARG "grpc.server_credentials"
+
 // This type is forward declared as a C struct and we cannot define it as a
 // class. Otherwise, compiler will complain about type mismatch due to
 // -Wmismatched-tags.
@@ -261,9 +262,18 @@ struct grpc_server_credentials
  public:
   ~grpc_server_credentials() override { DestroyProcessor(); }
 
+  static absl::string_view ChannelArgName() {
+    return GRPC_SERVER_CREDENTIALS_ARG;
+  }
+
+  static int ChannelArgsCompare(const grpc_server_credentials* a,
+                                const grpc_server_credentials* b) {
+    return grpc_core::QsortCompare(a, b);
+  }
+
   // Ownership of \a args is not passed.
   virtual grpc_core::RefCountedPtr<grpc_server_security_connector>
-  create_security_connector(const grpc_channel_args* args) = 0;
+  create_security_connector(grpc_core::ChannelArgs args) = 0;
 
   virtual grpc_core::UniqueTypeName type() const = 0;
 
@@ -283,8 +293,6 @@ struct grpc_server_credentials
   grpc_auth_metadata_processor processor_ =
       grpc_auth_metadata_processor();  // Zero-initialize the C struct.
 };
-
-#define GRPC_SERVER_CREDENTIALS_ARG "grpc.server_credentials"
 
 grpc_arg grpc_server_credentials_to_arg(grpc_server_credentials* c);
 grpc_server_credentials* grpc_server_credentials_from_arg(const grpc_arg* arg);

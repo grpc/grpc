@@ -1260,9 +1260,7 @@ const grpc_transport_vtable inproc_vtable = {
  * Main inproc transport functions
  */
 void inproc_transports_create(grpc_transport** server_transport,
-                              const grpc_channel_args* /*server_args*/,
-                              grpc_transport** client_transport,
-                              const grpc_channel_args* /*client_args*/) {
+                              grpc_transport** client_transport) {
   INPROC_LOG(GPR_INFO, "inproc_transports_create");
   shared_mu* mu = new (gpr_malloc(sizeof(*mu))) shared_mu();
   inproc_transport* st = new (gpr_malloc(sizeof(*st)))
@@ -1287,26 +1285,21 @@ grpc_channel* grpc_inproc_channel_create(grpc_server* server,
   grpc_core::Server* core_server = grpc_core::Server::FromC(server);
   // Remove max_connection_idle and max_connection_age channel arguments since
   // those do not apply to inproc transports.
-  const char* args_to_remove[] = {GRPC_ARG_MAX_CONNECTION_IDLE_MS,
-                                  GRPC_ARG_MAX_CONNECTION_AGE_MS};
-  const grpc_channel_args* server_args = grpc_channel_args_copy_and_remove(
-      core_server->channel_args(), args_to_remove,
-      GPR_ARRAY_SIZE(args_to_remove));
+  grpc_core::ChannelArgs server_args =
+      core_server->channel_args()
+          .Remove(GRPC_ARG_MAX_CONNECTION_IDLE_MS)
+          .Remove(GRPC_ARG_MAX_CONNECTION_AGE_MS);
+
   // Add a default authority channel argument for the client
-  grpc_arg default_authority_arg;
-  default_authority_arg.type = GRPC_ARG_STRING;
-  default_authority_arg.key = const_cast<char*>(GRPC_ARG_DEFAULT_AUTHORITY);
-  default_authority_arg.value.string = const_cast<char*>("inproc.authority");
-  args = grpc_channel_args_copy_and_add(args, &default_authority_arg, 1);
-  const grpc_channel_args* client_args = grpc_core::CoreConfiguration::Get()
-                                             .channel_args_preconditioning()
-                                             .PreconditionChannelArgs(args)
-                                             .ToC();
-  grpc_channel_args_destroy(args);
+  const grpc_channel_args* client_args =
+      grpc_core::CoreConfiguration::Get()
+          .channel_args_preconditioning()
+          .PreconditionChannelArgs(args)
+          .Set(GRPC_ARG_DEFAULT_AUTHORITY, "inproc.authority")
+          .ToC();
   grpc_transport* server_transport;
   grpc_transport* client_transport;
-  inproc_transports_create(&server_transport, server_args, &client_transport,
-                           client_args);
+  inproc_transports_create(&server_transport, &client_transport);
 
   // TODO(ncteisen): design and support channelz GetSocket for inproc.
   grpc_error_handle error = core_server->SetupTransport(
@@ -1351,7 +1344,6 @@ grpc_channel* grpc_inproc_channel_create(grpc_server* server,
   }
 
   // Free up created channel args
-  grpc_channel_args_destroy(server_args);
   grpc_channel_args_destroy(client_args);
 
   // Now finish scheduled operations

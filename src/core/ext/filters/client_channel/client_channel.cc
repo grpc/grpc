@@ -545,9 +545,7 @@ class ClientChannel::SubchannelWrapper : public SubchannelInterface {
     data_watchers_.push_back(std::move(internal_watcher));
   }
 
-  const grpc_channel_args* channel_args() override {
-    return subchannel_->channel_args();
-  }
+  ChannelArgs channel_args() override { return subchannel_->channel_args(); }
 
   void ThrottleKeepaliveTime(int new_keepalive_time) {
     subchannel_->ThrottleKeepaliveTime(new_keepalive_time);
@@ -878,8 +876,8 @@ class ClientChannel::ClientChannelControlHelper
                              "ClientChannelControlHelper");
   }
 
-  RefCountedPtr<SubchannelInterface> CreateSubchannel(
-      ServerAddress address, const grpc_channel_args& args) override
+  RefCountedPtr<SubchannelInterface> CreateSubchannel(ServerAddress address,
+                                                      ChannelArgs args) override
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(*chand_->work_serializer_) {
     if (chand_->resolver_ == nullptr) return nullptr;  // Shutting down.
     // Determine health check service name.
@@ -1139,7 +1137,6 @@ ClientChannel::~ClientChannel() {
     gpr_log(GPR_INFO, "chand=%p: destroying channel", this);
   }
   DestroyResolverAndLbPolicyLocked();
-  grpc_channel_args_destroy(channel_args_);
   // Stop backup polling.
   grpc_client_channel_stop_backup_polling(interested_parties_);
   grpc_pollset_set_destroy(interested_parties_);

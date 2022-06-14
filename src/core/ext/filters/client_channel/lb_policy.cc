@@ -53,48 +53,6 @@ void LoadBalancingPolicy::Orphan() {
 }
 
 //
-// LoadBalancingPolicy::UpdateArgs
-//
-
-LoadBalancingPolicy::UpdateArgs::UpdateArgs(const UpdateArgs& other)
-    : addresses(other.addresses),
-      config(other.config),
-      resolution_note(other.resolution_note),
-      args(grpc_channel_args_copy(other.args)) {}
-
-LoadBalancingPolicy::UpdateArgs::UpdateArgs(UpdateArgs&& other) noexcept
-    : addresses(std::move(other.addresses)),
-      config(std::move(other.config)),
-      resolution_note(std::move(other.resolution_note)),
-      // TODO(roth): Use std::move() once channel args is converted to C++.
-      args(other.args) {
-  other.args = nullptr;
-}
-
-LoadBalancingPolicy::UpdateArgs& LoadBalancingPolicy::UpdateArgs::operator=(
-    const UpdateArgs& other) {
-  if (&other == this) return *this;
-  addresses = other.addresses;
-  config = other.config;
-  resolution_note = other.resolution_note;
-  grpc_channel_args_destroy(args);
-  args = grpc_channel_args_copy(other.args);
-  return *this;
-}
-
-LoadBalancingPolicy::UpdateArgs& LoadBalancingPolicy::UpdateArgs::operator=(
-    UpdateArgs&& other) noexcept {
-  addresses = std::move(other.addresses);
-  config = std::move(other.config);
-  resolution_note = std::move(other.resolution_note);
-  // TODO(roth): Use std::move() once channel args is converted to C++.
-  grpc_channel_args_destroy(args);
-  args = other.args;
-  other.args = nullptr;
-  return *this;
-}
-
-//
 // LoadBalancingPolicy::QueuePicker
 //
 
