@@ -23,6 +23,7 @@
 #include "absl/strings/str_split.h"
 #include "absl/synchronization/blocking_counter.h"
 
+#include <grpcpp/client_context.h>
 #include <grpcpp/grpcpp.h>
 
 #include "src/core/lib/gprpp/host_port.h"
@@ -63,6 +64,14 @@ struct EchoCall {
 };
 
 }  // namespace
+
+EchoTestServiceImpl::EchoTestServiceImpl(std::string hostname,
+                                         std::string forwarding_address)
+    : hostname_(std::move(hostname)),
+      forwarding_address_(std::move(forwarding_address)) {
+  forwarding_stub_ = EchoTestService::NewStub(
+      CreateChannel(forwarding_address_, InsecureChannelCredentials()));
+}
 
 Status EchoTestServiceImpl::Echo(ServerContext* context,
                                  const EchoRequest* request,
@@ -130,10 +139,10 @@ Status EchoTestServiceImpl::ForwardEcho(ServerContext* /*context*/,
     gpr_log(GPR_INFO, "Creating channel to %s", std::string(address).c_str());
     channel = CreateChannel(std::string(address), InsecureChannelCredentials());
   } else {
-    std::string status_msg =
-        absl::StrFormat("Protocol %s not supported", scheme);
-    gpr_log(GPR_ERROR, "Protocol %s not supported", status_msg.c_str());
-    return Status(StatusCode::UNIMPLEMENTED, status_msg);
+    gpr_log(GPR_INFO, "Protocol %s not supported. Forwarding to %s",
+            scheme.c_str(), forwarding_address_.c_str());
+    ClientContext forwarding_ctx;
+    return forwarding_stub_->ForwardEcho(&forwarding_ctx, *request, response);
   }
   auto stub = EchoTestService::NewStub(channel);
   auto count = request->count() == 0 ? 1 : request->count();

@@ -62,6 +62,8 @@ ABSL_FLAG(std::vector<std::string>, xds_grpc_server,
           "Ports that should rely on XDS configuration to serve");
 ABSL_FLAG(std::string, crt, "", "gRPC TLS server-side certificate");
 ABSL_FLAG(std::string, key, "", "gRPC TLS server-side key");
+ABSL_FLAG(std::string, forwarding_address, "0.0.0.0:7072",
+          "Forwarding address for unhandled protocols");
 
 // The following flags must be defined, but are not used for now. Some may be
 // necessary for certain tests.
@@ -97,7 +99,8 @@ void RunServer(std::vector<int> grpc_ports, std::set<int> xds_ports,
     hostname = hostname_p;
     free(hostname_p);
   }
-  EchoTestServiceImpl echo_test_service(hostname);
+  EchoTestServiceImpl echo_test_service(
+      std::move(hostname), absl::GetFlag(FLAGS_forwarding_address));
   ServerBuilder builder;
   XdsServerBuilder xds_builder;
   bool has_xds_listeners = false;
