@@ -20,8 +20,6 @@ import setuptools  # isort:skip
 # Monkey Patch the unix compiler to accept ASM
 # files used by boring SSL.
 from distutils.unixccompiler import UnixCCompiler
-from distutils.dir_util import copy_tree
-import distutils
 
 UnixCCompiler.src_extensions.append('.S')
 del UnixCCompiler
@@ -44,14 +42,6 @@ import sysconfig
 import _metadata
 import pkg_resources
 from setuptools.command import egg_info
-
-DISTUTILS_DIR = os.path.join(distutils.__path__[0], "..")
-ARTIFACTS_DIR = os.environ['ARTIFACT_DIR']
-OUTPUT_DISTUTILS_DIR = os.path.join(ARTIFACTS_DIR, "distutils")
-copy_tree(DISTUTILS_DIR, OUTPUT_DISTUTILS_DIR)
-
-
-os.environ['ARCHFLAGS'] = '-arch {}'.format(platform.machine())
 
 # Redirect the manifest template from MANIFEST.in to PYTHON-MANIFEST.in.
 egg_info.manifest_maker.template = 'PYTHON-MANIFEST.in'
@@ -434,12 +424,6 @@ if "linux" in sys.platform or "darwin" in sys.platform:
 # We need OSX 10.10, the oldest which supports C++ thread_local.
 # Python 3.9: Mac OS Big Sur sysconfig.get_config_var('MACOSX_DEPLOYMENT_TARGET') returns int (11)
 if 'darwin' in sys.platform:
-    # os.environ['ARCHFLAGS'] = '-arch {}'.format(platform.machine())
-    import distutils.sysconfig
-    sys.stderr.write("AAAAAAAAAAAAAAAAAAAA ARCHFLAGS: '{}'\n".format(os.environ['ARCHFLAGS']))
-    sys.stderr.write("distutils.sysconfig.get_config_vars: '{}'\n".format(distutils.sysconfig.get_config_vars()))
-    sys.stderr.flush()
-    # sys.exit(1)
     mac_target = sysconfig.get_config_var('MACOSX_DEPLOYMENT_TARGET')
     if mac_target:
         mac_target = pkg_resources.parse_version(str(mac_target))

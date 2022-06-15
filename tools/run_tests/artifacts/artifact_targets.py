@@ -137,8 +137,6 @@ class PythonArtifact:
         if self.platform == "macos" and self.arch == "x64":
             environ["GRPC_UNIVERSAL2_REPAIR"] = "true"
 
-        # TODO: Clean up if this works.
-        environ['ARCHFLAGS'] = '-arch x86_64'
         if self.platform == 'linux_extra':
             # Crosscompilation build for armv7 (e.g. Raspberry Pi)
             environ['PYTHON'] = '/opt/python/{}/bin/python3'.format(
