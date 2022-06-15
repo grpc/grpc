@@ -184,7 +184,7 @@ grpc_error_handle ServerAddressParseAndAppend(
       attributes;
   attributes[ServerAddressWeightAttribute::kServerAddressWeightAttributeKey] =
       absl::make_unique<ServerAddressWeightAttribute>(weight);
-  list->emplace_back(addr, nullptr, std::move(attributes));
+  list->emplace_back(addr, ChannelArgs(), std::move(attributes));
   return GRPC_ERROR_NONE;
 }
 

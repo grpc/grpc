@@ -140,7 +140,7 @@ void NativeClientChannelDNSResolver::OnResolved(
   if (addresses_or.ok()) {
     ServerAddressList addresses;
     for (auto& addr : *addresses_or) {
-      addresses.emplace_back(addr, nullptr /* args */);
+      addresses.emplace_back(addr, ChannelArgs());
     }
     result.addresses = std::move(addresses);
   } else {

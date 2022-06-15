@@ -373,10 +373,10 @@ const grpc_channel_filter grpc_server_deadline_filter = {
     "deadline",
 };
 
-bool grpc_deadline_checking_enabled(const grpc_channel_args* channel_args) {
-  return grpc_channel_arg_get_bool(
-      grpc_channel_args_find(channel_args, GRPC_ARG_ENABLE_DEADLINE_CHECKS),
-      !grpc_channel_args_want_minimal_stack(channel_args));
+bool grpc_deadline_checking_enabled(
+    const grpc_core::ChannelArgs& channel_args) {
+  return channel_args.GetBool(GRPC_ARG_ENABLE_DEADLINE_CHECKS)
+      .value_or(!channel_args.WantMinimalStack());
 }
 
 namespace grpc_core {

@@ -52,12 +52,22 @@
 //   ]
 // }
 
+#define GRPC_ARG_SERVICE_CONFIG_OBJ "grpc.internal.service_config_obj"
+
 namespace grpc_core {
 
 // TODO(roth): Consider stripping this down further to the completely minimal
 // interface requied to be exposed as part of the resolver API.
 class ServiceConfig : public RefCounted<ServiceConfig> {
  public:
+  static absl::string_view ChannelArgName() {
+    return GRPC_ARG_SERVICE_CONFIG_OBJ;
+  }
+  static int ChannelArgsCompare(const ServiceConfig* a,
+                                const ServiceConfig* b) {
+    return QsortCompare(a, b);
+  }
+
   virtual absl::string_view json_string() const = 0;
 
   /// Retrieves the global parsed config at index \a index. The

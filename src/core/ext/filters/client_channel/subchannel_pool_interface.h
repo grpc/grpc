@@ -69,6 +69,10 @@ class SubchannelPoolInterface : public RefCounted<SubchannelPoolInterface> {
   ~SubchannelPoolInterface() override {}
 
   static absl::string_view ChannelArgName();
+  static int ChannelArgsCompare(const SubchannelPoolInterface* a,
+                                const SubchannelPoolInterface* b) {
+    return QsortCompare(a, b);
+  }
 
   // Registers a subchannel against a key. Returns the subchannel registered
   // with \a key, which may be different from \a constructed because we reuse

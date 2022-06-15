@@ -86,8 +86,8 @@ class XdsRouting {
     // Map of field name to list of elements for that field
     std::map<std::string, std::vector<std::string>> per_filter_configs;
     grpc_error_handle error = GRPC_ERROR_NONE;
-    // Guaranteed to be nullptr if error is GRPC_ERROR_NONE
-    grpc_channel_args* args = nullptr;
+    // Guaranteed to be empty if error is not GRPC_ERROR_NONE
+    ChannelArgs args;
   };
 
   // Generates a map of per_filter_configs. \a args is consumed.
@@ -98,7 +98,7 @@ class XdsRouting {
       const XdsRouteConfigResource::Route& route,
       const XdsRouteConfigResource::Route::RouteAction::ClusterWeight*
           cluster_weight,
-      grpc_channel_args* args);
+      ChannelArgs args);
 };
 
 }  // namespace grpc_core

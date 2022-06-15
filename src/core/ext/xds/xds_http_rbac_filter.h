@@ -45,7 +45,7 @@ class XdsHttpRbacFilter : public XdsHttpFilterImpl {
 
   const grpc_channel_filter* channel_filter() const override;
 
-  grpc_channel_args* ModifyChannelArgs(grpc_channel_args* args) const override;
+  ChannelArgs ModifyChannelArgs(ChannelArgs args) const override;
 
   absl::StatusOr<ServiceConfigJsonEntry> GenerateServiceConfig(
       const FilterConfig& hcm_filter_config,

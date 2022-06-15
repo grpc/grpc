@@ -98,7 +98,7 @@ bool ParseUri(const URI& uri,
       break;
     }
     if (addresses != nullptr) {
-      addresses->emplace_back(addr, nullptr /* args */);
+      addresses->emplace_back(addr, ChannelArgs());
     }
   }
   return !errors_found;

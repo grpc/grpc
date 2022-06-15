@@ -31,6 +31,7 @@
 
 #include <grpc/impl/codegen/grpc_types.h>
 
+#include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_fwd.h"
 #include "src/core/lib/json/json.h"
 
@@ -88,9 +89,7 @@ class XdsHttpFilterImpl {
   // Modifies channel args that may affect service config parsing (not
   // visible to the channel as a whole).
   // Takes ownership of args.  Caller takes ownership of return value.
-  virtual grpc_channel_args* ModifyChannelArgs(grpc_channel_args* args) const {
-    return args;
-  }
+  virtual ChannelArgs ModifyChannelArgs(ChannelArgs args) const { return args; }
 
   // Function to convert the Configs into a JSON string to be added to the
   // per-method part of the service config.

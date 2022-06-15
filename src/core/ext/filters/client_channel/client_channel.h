@@ -91,9 +91,6 @@
 // Channel arg containing a pointer to the ClientChannel object.
 #define GRPC_ARG_CLIENT_CHANNEL "grpc.internal.client_channel"
 
-// Channel arg containing a pointer to the ServiceConfig object.
-#define GRPC_ARG_SERVICE_CONFIG_OBJ "grpc.internal.service_config_obj"
-
 // Max number of batches that can be pending on a call at any given
 // time.  This includes one batch for each of the following ops:
 //   recv_initial_metadata
@@ -111,6 +108,10 @@ class ClientChannel {
   static const grpc_channel_filter kFilterVtable;
 
   class LoadBalancedCall;
+
+  // Flag that this object gets stored in channel args as a raw pointer.
+  struct RawPointerChannelArgTag {};
+  static absl::string_view ChannelArgName() { return GRPC_ARG_CLIENT_CHANNEL; }
 
   // Returns the ClientChannel object from channel, or null if channel
   // is not a client channel.
@@ -292,10 +293,10 @@ class ClientChannel {
   //
   // Fields set at construction and never modified.
   //
+  ChannelArgs channel_args_;
   const bool deadline_checking_enabled_;
   grpc_channel_stack* owning_stack_;
   ClientChannelFactory* client_channel_factory_;
-  ChannelArgs channel_args_;
   RefCountedPtr<ServiceConfig> default_service_config_;
   std::string uri_to_resolve_;
   std::string default_authority_;

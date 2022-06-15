@@ -54,6 +54,11 @@ class XdsCertificateProvider : public grpc_tls_certificate_provider {
     return GRPC_ARG_XDS_CERTIFICATE_PROVIDER;
   }
 
+  static int ChannelArgsCompare(const XdsCertificateProvider* a,
+                                const XdsCertificateProvider* b) {
+    return QsortCompare(a, b);
+  }
+
   RefCountedPtr<grpc_tls_certificate_distributor> distributor() const override {
     return distributor_;
   }

@@ -49,7 +49,7 @@ class XdsHttpFaultFilter : public XdsHttpFilterImpl {
   const grpc_channel_filter* channel_filter() const override;
 
   // Overrides the ModifyChannelArgs method
-  grpc_channel_args* ModifyChannelArgs(grpc_channel_args* args) const override;
+  ChannelArgs ModifyChannelArgs(ChannelArgs args) const override;
 
   // Overrides the GenerateServiceConfig method
   absl::StatusOr<ServiceConfigJsonEntry> GenerateServiceConfig(

@@ -661,13 +661,10 @@ static void on_hostbyname_done_locked(void* arg, int status, int /*timeouts*/,
     }
     ServerAddressList& addresses = **address_list_ptr;
     for (size_t i = 0; hostent->h_addr_list[i] != nullptr; ++i) {
-      absl::InlinedVector<grpc_arg, 1> args_to_add;
+      grpc_core::ChannelArgs args;
       if (hr->is_balancer) {
-        args_to_add.emplace_back(grpc_channel_arg_string_create(
-            const_cast<char*>(GRPC_ARG_DEFAULT_AUTHORITY), hr->host));
+        args = args.Set(GRPC_ARG_DEFAULT_AUTHORITY, hr->host);
       }
-      grpc_channel_args* args = grpc_channel_args_copy_and_add(
-          nullptr, args_to_add.data(), args_to_add.size());
       switch (hostent->h_addrtype) {
         case AF_INET6: {
           size_t addr_len = sizeof(struct sockaddr_in6);
@@ -948,7 +945,7 @@ static bool inner_resolve_as_ip_literal_locked(
                                false /* log errors */)) {
     GPR_ASSERT(*addrs == nullptr);
     *addrs = absl::make_unique<ServerAddressList>();
-    (*addrs)->emplace_back(addr.addr, addr.len, nullptr /* args */);
+    (*addrs)->emplace_back(addr.addr, addr.len, grpc_core::ChannelArgs());
     return true;
   }
   return false;

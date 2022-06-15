@@ -472,8 +472,6 @@ class GrpcLb : public LoadBalancingPolicy {
     RefCountedPtr<GrpcLb> parent_;
   };
 
-  ~GrpcLb() override;
-
   void ShutdownLocked() override;
 
   // Helper functions used in UpdateLocked().
@@ -675,7 +673,7 @@ ServerAddressList GrpcLb::Serverlist::GetServerAddressList(
         absl::make_unique<TokenAndClientStatsAttribute>(std::move(lb_token),
                                                         stats);
     // Add address.
-    addresses.emplace_back(addr, /*args=*/nullptr, std::move(attributes));
+    addresses.emplace_back(addr, ChannelArgs(), std::move(attributes));
   }
   return addresses;
 }

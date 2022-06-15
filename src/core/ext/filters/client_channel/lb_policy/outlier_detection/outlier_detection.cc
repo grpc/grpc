@@ -555,9 +555,7 @@ OutlierDetectionLb::~OutlierDetectionLb() {
 std::string OutlierDetectionLb::MakeKeyForAddress(
     const ServerAddress& address) {
   // Strip off attributes to construct the key.
-  return ServerAddress(address.address(),
-                       grpc_channel_args_copy(address.args()))
-      .ToString();
+  return ServerAddress(address.address(), address.args()).ToString();
 }
 
 void OutlierDetectionLb::ShutdownLocked() {

@@ -131,7 +131,7 @@ class BinderResolverFactory : public ResolverFactory {
       }
     }
     if (addresses != nullptr) {
-      addresses->emplace_back(addr, nullptr /* args */);
+      addresses->emplace_back(addr, ChannelArgs());
     }
     return true;
   }

@@ -197,8 +197,8 @@ class XdsServerConfigFetcher::ListenerWatcher::FilterChainMatchManager
                           absl::optional<XdsListenerResource::FilterChainData>
                               default_filter_chain);
 
-  absl::StatusOr<grpc_channel_args*> UpdateChannelArgsForConnection(
-      grpc_channel_args* args, grpc_endpoint* tcp) override;
+  absl::StatusOr<ChannelArgs> UpdateChannelArgsForConnection(
+      ChannelArgs args, grpc_endpoint* tcp) override;
 
   void Orphan() override;
 
@@ -1031,19 +1031,17 @@ const XdsListenerResource::FilterChainData* FindFilterChainDataForDestinationIp(
                                           host);
 }
 
-absl::StatusOr<grpc_channel_args*> XdsServerConfigFetcher::ListenerWatcher::
+absl::StatusOr<ChannelArgs> XdsServerConfigFetcher::ListenerWatcher::
     FilterChainMatchManager::UpdateChannelArgsForConnection(
-        grpc_channel_args* args, grpc_endpoint* tcp) {
+        ChannelArgs args, grpc_endpoint* tcp) {
   const auto* filter_chain = FindFilterChainDataForDestinationIp(
       filter_chain_map_.destination_ip_vector, tcp);
   if (filter_chain == nullptr && default_filter_chain_.has_value()) {
     filter_chain = &default_filter_chain_.value();
   }
   if (filter_chain == nullptr) {
-    grpc_channel_args_destroy(args);
     return absl::UnavailableError("No matching filter chain found");
   }
-  absl::InlinedVector<grpc_arg, 3> args_to_add;
   RefCountedPtr<ServerConfigSelectorProvider> server_config_selector_provider;
   RefCountedPtr<XdsChannelStackModifier> channel_stack_modifier;
   RefCountedPtr<XdsCertificateProvider> xds_certificate_provider;
@@ -1089,29 +1087,21 @@ absl::StatusOr<grpc_channel_args*> XdsServerConfigFetcher::ListenerWatcher::
               std::move(initial_resource),
               filter_chain->http_connection_manager.http_filters);
     }
-    args_to_add.emplace_back(server_config_selector_provider->MakeChannelArg());
-    args_to_add.emplace_back(channel_stack_modifier->MakeChannelArg());
+    args = args.SetObject(server_config_selector_provider)
+               .SetObject(channel_stack_modifier);
   }
   // Add XdsCertificateProvider if credentials are xDS.
-  grpc_server_credentials* server_creds =
-      grpc_find_server_credentials_in_args(args);
+  auto* server_creds = args.GetObject<grpc_server_credentials>();
   if (server_creds != nullptr &&
       server_creds->type() == XdsServerCredentials::Type()) {
     absl::StatusOr<RefCountedPtr<XdsCertificateProvider>> result =
         CreateOrGetXdsCertificateProviderFromFilterChainData(filter_chain);
     if (!result.ok()) {
-      grpc_channel_args_destroy(args);
       return result.status();
     }
     xds_certificate_provider = std::move(*result);
     GPR_ASSERT(xds_certificate_provider != nullptr);
-    args_to_add.emplace_back(xds_certificate_provider->MakeChannelArg());
-  }
-  if (!args_to_add.empty()) {
-    grpc_channel_args* updated_args = grpc_channel_args_copy_and_add(
-        args, args_to_add.data(), args_to_add.size());
-    grpc_channel_args_destroy(args);
-    args = updated_args;
+    args = args.SetObject(xds_certificate_provider);
   }
   return args;
 }
@@ -1143,7 +1133,7 @@ XdsServerConfigFetcher::ListenerWatcher::FilterChainMatchManager::
               &route.action) == nullptr;
       XdsRouting::GeneratePerHttpFilterConfigsResult result =
           XdsRouting::GeneratePerHTTPFilterConfigs(http_filters, vhost, route,
-                                                   nullptr, nullptr);
+                                                   nullptr, ChannelArgs());
       if (!GRPC_ERROR_IS_NONE(result.error)) {
         return grpc_error_to_absl_status(result.error);
       }

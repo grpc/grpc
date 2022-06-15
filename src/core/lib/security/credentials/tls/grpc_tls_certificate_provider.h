@@ -79,6 +79,12 @@ struct grpc_tls_certificate_provider
   // instances of that provider implementation.
   virtual grpc_core::UniqueTypeName type() const = 0;
 
+  static absl::string_view ChannelArgName();
+  static int ChannelArgsCompare(const grpc_tls_certificate_provider* a,
+                                const grpc_tls_certificate_provider* b) {
+    return a->Compare(b);
+  }
+
  private:
   // Implementation for `Compare` method intended to be overridden by
   // subclasses. Only invoked if `type()` and `other->type()` point to the same
