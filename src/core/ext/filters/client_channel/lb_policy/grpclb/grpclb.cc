@@ -1571,11 +1571,10 @@ void GrpcLb::UpdateBalancerChannelLocked(ChannelArgs args) {
     std::string uri_str = absl::StrCat("fake:///", server_name_);
     auto* creds = lb_channel_args.GetObject<grpc_channel_credentials>();
     GPR_ASSERT(creds != nullptr);
-    const grpc_channel_args* new_args =
-        lb_channel_args.Remove(GRPC_ARG_CHANNEL_CREDENTIALS).ToC();
-    lb_channel_ = grpc_channel_create(uri_str.c_str(), creds, new_args);
+    lb_channel_ = grpc_channel_create(
+        uri_str.c_str(), creds,
+        lb_channel_args.Remove(GRPC_ARG_CHANNEL_CREDENTIALS).ToC().get());
     GPR_ASSERT(lb_channel_ != nullptr);
-    grpc_channel_args_destroy(new_args);
     // Set up channelz linkage.
     channelz::ChannelNode* child_channelz_node =
         grpc_channel_get_channelz_node(lb_channel_);

@@ -77,12 +77,9 @@ void RegisterChannelFilter(
   auto maybe_add_filter = [include_filter,
                            filter](grpc_core::ChannelStackBuilder* builder) {
     if (include_filter != nullptr) {
-      const grpc_channel_args* args = builder->channel_args().ToC();
-      if (!include_filter(*args)) {
-        grpc_channel_args_destroy(args);
+      if (!include_filter(*builder->channel_args().ToC())) {
         return true;
       }
-      grpc_channel_args_destroy(args);
     }
     builder->PrependFilter(filter);
     return true;

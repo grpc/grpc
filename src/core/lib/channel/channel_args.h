@@ -158,16 +158,22 @@ class ChannelArgs {
   };
   using Value = absl::variant<int, std::string, Pointer>;
 
+  struct ChannelArgsDeleter {
+    void operator()(const grpc_channel_args* p) const;
+  };
+  using CPtr =
+      std::unique_ptr<const grpc_channel_args, ChannelArgs::ChannelArgsDeleter>;
+
   ChannelArgs();
 
   static ChannelArgs FromC(const grpc_channel_args* args);
   // Construct a new grpc_channel_args struct which the caller will own.
   // It should be destroyed with grpc_channel_args_destroy.
-  const grpc_channel_args* ToC() const;
+  CPtr ToC() const;
 
   // Returns the union of this channel args with other.
   // If a key is present in both, the value from this is used.
-  GRPC_MUST_USE_RESULT ChannelArgs UnionWith(const ChannelArgs& other);
+  GRPC_MUST_USE_RESULT ChannelArgs UnionWith(ChannelArgs other) const;
 
   const Value* Get(absl::string_view name) const { return args_.Lookup(name); }
   GRPC_MUST_USE_RESULT ChannelArgs Set(absl::string_view name,

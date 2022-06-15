@@ -73,10 +73,9 @@ TEST_F(GrpcTlsCredentialsOptionsTest, ClientOptionsOnDefaultRootCerts) {
   auto options = MakeRefCounted<grpc_tls_credentials_options>();
   auto credentials = MakeRefCounted<TlsCredentials>(options);
   ASSERT_NE(credentials, nullptr);
-  grpc_channel_args* new_args = nullptr;
+  grpc_core::ChannelArgs new_args;
   auto connector = credentials->create_security_connector(
-      nullptr, "random targets", nullptr, &new_args);
-  grpc_channel_args_destroy(new_args);
+      nullptr, "random targets", &new_args);
   ASSERT_NE(connector, nullptr);
   TlsChannelSecurityConnector* tls_connector =
       static_cast<TlsChannelSecurityConnector*>(connector.get());
@@ -97,10 +96,9 @@ TEST_F(GrpcTlsCredentialsOptionsTest,
   options->set_watch_identity_pair(true);
   auto credentials = MakeRefCounted<TlsCredentials>(options);
   ASSERT_NE(credentials, nullptr);
-  grpc_channel_args* new_args = nullptr;
+  grpc_core::ChannelArgs new_args;
   auto connector = credentials->create_security_connector(
-      nullptr, "random targets", nullptr, &new_args);
-  grpc_channel_args_destroy(new_args);
+      nullptr, "random targets", &new_args);
   ASSERT_NE(connector, nullptr);
   TlsChannelSecurityConnector* tls_connector =
       static_cast<TlsChannelSecurityConnector*>(connector.get());
@@ -118,10 +116,9 @@ TEST_F(GrpcTlsCredentialsOptionsTest,
   options->set_watch_root_cert(true);
   auto credentials = MakeRefCounted<TlsCredentials>(options);
   ASSERT_NE(credentials, nullptr);
-  grpc_channel_args* new_args = nullptr;
+  grpc_core::ChannelArgs new_args;
   auto connector = credentials->create_security_connector(
-      nullptr, "random targets", nullptr, &new_args);
-  grpc_channel_args_destroy(new_args);
+      nullptr, "random targets", &new_args);
   ASSERT_NE(connector, nullptr);
   TlsChannelSecurityConnector* tls_connector =
       static_cast<TlsChannelSecurityConnector*>(connector.get());
@@ -139,10 +136,9 @@ TEST_F(GrpcTlsCredentialsOptionsTest,
   options->set_watch_root_cert(true);
   auto credentials = MakeRefCounted<TlsCredentials>(options);
   ASSERT_NE(credentials, nullptr);
-  grpc_channel_args* new_args = nullptr;
+  grpc_core::ChannelArgs new_args;
   auto connector = credentials->create_security_connector(
-      nullptr, "random targets", nullptr, &new_args);
-  grpc_channel_args_destroy(new_args);
+      nullptr, "random targets", &new_args);
   ASSERT_NE(connector, nullptr);
   TlsChannelSecurityConnector* tls_connector =
       static_cast<TlsChannelSecurityConnector*>(connector.get());
@@ -158,10 +154,9 @@ TEST_F(GrpcTlsCredentialsOptionsTest,
   options->set_watch_identity_pair(true);
   auto credentials = MakeRefCounted<TlsCredentials>(options);
   ASSERT_NE(credentials, nullptr);
-  grpc_channel_args* new_args = nullptr;
+  grpc_core::ChannelArgs new_args;
   auto connector = credentials->create_security_connector(
-      nullptr, "random targets", nullptr, &new_args);
-  grpc_channel_args_destroy(new_args);
+      nullptr, "random targets", &new_args);
   ASSERT_NE(connector, nullptr);
   TlsChannelSecurityConnector* tls_connector =
       static_cast<TlsChannelSecurityConnector*>(connector.get());
@@ -180,7 +175,8 @@ TEST_F(GrpcTlsCredentialsOptionsTest,
       GRPC_SSL_REQUEST_AND_REQUIRE_CLIENT_CERTIFICATE_AND_VERIFY);
   auto credentials = MakeRefCounted<TlsServerCredentials>(options);
   ASSERT_NE(credentials, nullptr);
-  auto connector = credentials->create_security_connector(nullptr);
+  auto connector =
+      credentials->create_security_connector(grpc_core::ChannelArgs());
   ASSERT_NE(connector, nullptr);
   TlsServerSecurityConnector* tls_connector =
       static_cast<TlsServerSecurityConnector*>(connector.get());
@@ -199,7 +195,8 @@ TEST_F(GrpcTlsCredentialsOptionsTest,
   options->set_cert_request_type(GRPC_SSL_DONT_REQUEST_CLIENT_CERTIFICATE);
   auto credentials = MakeRefCounted<TlsServerCredentials>(options);
   ASSERT_NE(credentials, nullptr);
-  auto connector = credentials->create_security_connector(nullptr);
+  auto connector =
+      credentials->create_security_connector(grpc_core::ChannelArgs());
   ASSERT_NE(connector, nullptr);
   TlsServerSecurityConnector* tls_connector =
       static_cast<TlsServerSecurityConnector*>(connector.get());
@@ -218,7 +215,8 @@ TEST_F(GrpcTlsCredentialsOptionsTest,
   options->set_cert_request_type(GRPC_SSL_DONT_REQUEST_CLIENT_CERTIFICATE);
   auto credentials = MakeRefCounted<TlsServerCredentials>(options);
   ASSERT_NE(credentials, nullptr);
-  auto connector = credentials->create_security_connector(nullptr);
+  auto connector =
+      credentials->create_security_connector(grpc_core::ChannelArgs());
   ASSERT_NE(connector, nullptr);
   TlsServerSecurityConnector* tls_connector =
       static_cast<TlsServerSecurityConnector*>(connector.get());
@@ -239,10 +237,9 @@ TEST_F(GrpcTlsCredentialsOptionsTest,
   options->set_watch_identity_pair(true);
   auto credentials = MakeRefCounted<TlsCredentials>(options);
   ASSERT_NE(credentials, nullptr);
-  grpc_channel_args* new_args = nullptr;
+  grpc_core::ChannelArgs new_args;
   auto connector = credentials->create_security_connector(
-      nullptr, "random targets", nullptr, &new_args);
-  grpc_channel_args_destroy(new_args);
+      nullptr, "random targets", &new_args);
   ASSERT_NE(connector, nullptr);
   TlsChannelSecurityConnector* tls_connector =
       static_cast<TlsChannelSecurityConnector*>(connector.get());
@@ -260,10 +257,9 @@ TEST_F(GrpcTlsCredentialsOptionsTest,
   options->set_watch_root_cert(true);
   auto credentials = MakeRefCounted<TlsCredentials>(options);
   ASSERT_NE(credentials, nullptr);
-  grpc_channel_args* new_args = nullptr;
+  grpc_core::ChannelArgs new_args;
   auto connector = credentials->create_security_connector(
-      nullptr, "random targets", nullptr, &new_args);
-  grpc_channel_args_destroy(new_args);
+      nullptr, "random targets", &new_args);
   ASSERT_NE(connector, nullptr);
   TlsChannelSecurityConnector* tls_connector =
       static_cast<TlsChannelSecurityConnector*>(connector.get());
@@ -281,10 +277,9 @@ TEST_F(GrpcTlsCredentialsOptionsTest,
   options->set_watch_root_cert(true);
   auto credentials = MakeRefCounted<TlsCredentials>(options);
   ASSERT_NE(credentials, nullptr);
-  grpc_channel_args* new_args = nullptr;
+  grpc_core::ChannelArgs new_args;
   auto connector = credentials->create_security_connector(
-      nullptr, "random targets", nullptr, &new_args);
-  grpc_channel_args_destroy(new_args);
+      nullptr, "random targets", &new_args);
   ASSERT_NE(connector, nullptr);
   TlsChannelSecurityConnector* tls_connector =
       static_cast<TlsChannelSecurityConnector*>(connector.get());
@@ -300,10 +295,9 @@ TEST_F(GrpcTlsCredentialsOptionsTest,
   options->set_watch_root_cert(true);
   auto credentials = MakeRefCounted<TlsCredentials>(options);
   ASSERT_NE(credentials, nullptr);
-  grpc_channel_args* new_args = nullptr;
+  grpc_core::ChannelArgs new_args;
   auto connector = credentials->create_security_connector(
-      nullptr, "random targets", nullptr, &new_args);
-  grpc_channel_args_destroy(new_args);
+      nullptr, "random targets", &new_args);
   ASSERT_NE(connector, nullptr);
   TlsChannelSecurityConnector* tls_connector =
       static_cast<TlsChannelSecurityConnector*>(connector.get());
@@ -322,7 +316,8 @@ TEST_F(GrpcTlsCredentialsOptionsTest,
       GRPC_SSL_REQUEST_AND_REQUIRE_CLIENT_CERTIFICATE_AND_VERIFY);
   auto credentials = MakeRefCounted<TlsServerCredentials>(options);
   ASSERT_NE(credentials, nullptr);
-  auto connector = credentials->create_security_connector(nullptr);
+  auto connector =
+      credentials->create_security_connector(grpc_core::ChannelArgs());
   ASSERT_NE(connector, nullptr);
   TlsServerSecurityConnector* tls_connector =
       static_cast<TlsServerSecurityConnector*>(connector.get());
@@ -341,7 +336,8 @@ TEST_F(GrpcTlsCredentialsOptionsTest,
   options->set_cert_request_type(GRPC_SSL_DONT_REQUEST_CLIENT_CERTIFICATE);
   auto credentials = MakeRefCounted<TlsServerCredentials>(options);
   ASSERT_NE(credentials, nullptr);
-  auto connector = credentials->create_security_connector(nullptr);
+  auto connector =
+      credentials->create_security_connector(grpc_core::ChannelArgs());
   ASSERT_NE(connector, nullptr);
   TlsServerSecurityConnector* tls_connector =
       static_cast<TlsServerSecurityConnector*>(connector.get());
@@ -360,7 +356,8 @@ TEST_F(GrpcTlsCredentialsOptionsTest,
   options->set_cert_request_type(GRPC_SSL_DONT_REQUEST_CLIENT_CERTIFICATE);
   auto credentials = MakeRefCounted<TlsServerCredentials>(options);
   ASSERT_NE(credentials, nullptr);
-  auto connector = credentials->create_security_connector(nullptr);
+  auto connector =
+      credentials->create_security_connector(grpc_core::ChannelArgs());
   ASSERT_NE(connector, nullptr);
   TlsServerSecurityConnector* tls_connector =
       static_cast<TlsServerSecurityConnector*>(connector.get());
@@ -377,7 +374,8 @@ TEST_F(GrpcTlsCredentialsOptionsTest,
   options->set_cert_request_type(GRPC_SSL_DONT_REQUEST_CLIENT_CERTIFICATE);
   auto credentials = MakeRefCounted<TlsServerCredentials>(options);
   ASSERT_NE(credentials, nullptr);
-  auto connector = credentials->create_security_connector(nullptr);
+  auto connector =
+      credentials->create_security_connector(grpc_core::ChannelArgs());
   ASSERT_NE(connector, nullptr);
   TlsServerSecurityConnector* tls_connector =
       static_cast<TlsServerSecurityConnector*>(connector.get());
@@ -405,10 +403,9 @@ TEST_F(GrpcTlsCredentialsOptionsTest,
   options->set_watch_identity_pair(true);
   auto credentials = MakeRefCounted<TlsCredentials>(options);
   ASSERT_NE(credentials, nullptr);
-  grpc_channel_args* new_args = nullptr;
+  grpc_core::ChannelArgs new_args;
   auto connector = credentials->create_security_connector(
-      nullptr, "random targets", nullptr, &new_args);
-  grpc_channel_args_destroy(new_args);
+      nullptr, "random targets", &new_args);
   ASSERT_NE(connector, nullptr);
   TlsChannelSecurityConnector* tls_connector =
       static_cast<TlsChannelSecurityConnector*>(connector.get());
@@ -453,10 +450,9 @@ TEST_F(GrpcTlsCredentialsOptionsTest,
   options->set_watch_identity_pair(true);
   auto credentials = MakeRefCounted<TlsCredentials>(options);
   ASSERT_NE(credentials, nullptr);
-  grpc_channel_args* new_args = nullptr;
+  grpc_core::ChannelArgs new_args;
   auto connector = credentials->create_security_connector(
-      nullptr, "random targets", nullptr, &new_args);
-  grpc_channel_args_destroy(new_args);
+      nullptr, "random targets", &new_args);
   ASSERT_NE(connector, nullptr);
   TlsChannelSecurityConnector* tls_connector =
       static_cast<TlsChannelSecurityConnector*>(connector.get());
@@ -502,10 +498,9 @@ TEST_F(GrpcTlsCredentialsOptionsTest, ClientOptionsWithExternalVerifier) {
   options->set_check_call_host(false);
   auto credentials = MakeRefCounted<TlsCredentials>(options);
   ASSERT_NE(credentials, nullptr);
-  grpc_channel_args* new_args = nullptr;
+  grpc_core::ChannelArgs new_args;
   auto connector = credentials->create_security_connector(
-      nullptr, "random targets", nullptr, &new_args);
-  grpc_channel_args_destroy(new_args);
+      nullptr, "random targets", &new_args);
   ASSERT_NE(connector, nullptr);
   TlsChannelSecurityConnector* tls_connector =
       static_cast<TlsChannelSecurityConnector*>(connector.get());
@@ -525,7 +520,8 @@ TEST_F(GrpcTlsCredentialsOptionsTest, ServerOptionsWithExternalVerifier) {
   options->set_watch_identity_pair(true);
   auto credentials = MakeRefCounted<TlsServerCredentials>(options);
   ASSERT_NE(credentials, nullptr);
-  auto connector = credentials->create_security_connector(nullptr);
+  auto connector =
+      credentials->create_security_connector(grpc_core::ChannelArgs());
   ASSERT_NE(connector, nullptr);
   TlsServerSecurityConnector* tls_connector =
       static_cast<TlsServerSecurityConnector*>(connector.get());
@@ -543,10 +539,9 @@ TEST_F(GrpcTlsCredentialsOptionsTest,
   options->set_certificate_verifier(hostname_certificate_verifier_.Ref());
   auto credentials = MakeRefCounted<TlsCredentials>(options);
   ASSERT_NE(credentials, nullptr);
-  grpc_channel_args* new_args = nullptr;
+  grpc_core::ChannelArgs new_args;
   auto connector = credentials->create_security_connector(
-      nullptr, "random targets", nullptr, &new_args);
-  grpc_channel_args_destroy(new_args);
+      nullptr, "random targets", &new_args);
   ASSERT_NE(connector, nullptr);
   TlsChannelSecurityConnector* tls_connector =
       static_cast<TlsChannelSecurityConnector*>(connector.get());
@@ -565,7 +560,8 @@ TEST_F(GrpcTlsCredentialsOptionsTest,
   options->set_watch_identity_pair(true);
   auto credentials = MakeRefCounted<TlsServerCredentials>(options);
   ASSERT_NE(credentials, nullptr);
-  auto connector = credentials->create_security_connector(nullptr);
+  auto connector =
+      credentials->create_security_connector(grpc_core::ChannelArgs());
   ASSERT_NE(connector, nullptr);
   TlsServerSecurityConnector* tls_connector =
       static_cast<TlsServerSecurityConnector*>(connector.get());

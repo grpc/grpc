@@ -77,4 +77,12 @@ const ServerAddressList* FindGrpclbBalancerAddressesInChannelArgs(
       GRPC_ARG_GRPCLB_BALANCER_ADDRESSES);
 }
 
+ChannelArgs SetGrpcLbBalancerAddresses(ChannelArgs args,
+                                       const ServerAddressList* address_list) {
+  return args.Set(
+      GRPC_ARG_GRPCLB_BALANCER_ADDRESSES,
+      ChannelArgs::Pointer(const_cast<ServerAddressList*>(address_list),
+                           &kBalancerAddressesArgVtable));
+}
+
 }  // namespace grpc_core

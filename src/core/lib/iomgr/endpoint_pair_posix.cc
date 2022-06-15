@@ -63,7 +63,8 @@ grpc_endpoint_pair grpc_iomgr_create_endpoint_pair(const char* name,
   const grpc_channel_args* new_args = grpc_core::CoreConfiguration::Get()
                                           .channel_args_preconditioning()
                                           .PreconditionChannelArgs(args)
-                                          .ToC();
+                                          .ToC()
+                                          .release();
   p.client = grpc_tcp_create(grpc_fd_create(sv[1], final_name.c_str(), false),
                              new_args, "socketpair-server");
   final_name = absl::StrCat(name, ":server");

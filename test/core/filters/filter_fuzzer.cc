@@ -20,6 +20,7 @@
 #include "src/core/ext/filters/http/client/http_client_filter.h"
 #include "src/core/ext/filters/http/client_authority_filter.h"
 #include "src/core/ext/filters/http/server/http_server_filter.h"
+#include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_stack_builder_impl.h"
 #include "src/core/lib/gpr/env.h"
 #include "src/core/lib/iomgr/executor.h"
@@ -102,7 +103,7 @@ class FakeChannelSecurityConnector final
     };
   }
 
-  void add_handshakers(const grpc_channel_args*, grpc_pollset_set*,
+  void add_handshakers(ChannelArgs, grpc_pollset_set*,
                        HandshakeManager*) override {
     abort();
   }

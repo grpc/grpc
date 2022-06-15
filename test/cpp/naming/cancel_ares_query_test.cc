@@ -165,7 +165,8 @@ void TestCancelActiveDNSQuery(ArgsStruct* args) {
   // create resolver and resolve
   grpc_core::OrphanablePtr<grpc_core::Resolver> resolver =
       grpc_core::CoreConfiguration::Get().resolver_registry().CreateResolver(
-          client_target.c_str(), nullptr, args->pollset_set, args->lock,
+          client_target.c_str(), grpc_core::ChannelArgs(), args->pollset_set,
+          args->lock,
           std::unique_ptr<grpc_core::Resolver::ResultHandler>(
               new AssertFailureResultHandler(args)));
   resolver->StartLocked();

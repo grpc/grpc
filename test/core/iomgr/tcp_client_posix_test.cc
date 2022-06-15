@@ -16,6 +16,7 @@
  *
  */
 
+#include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/iomgr/port.h"
 
@@ -108,14 +109,12 @@ void test_succeeds(void) {
   GPR_ASSERT(getsockname(svr_fd, (struct sockaddr*)addr,
                          (socklen_t*)&resolved_addr.len) == 0);
   GRPC_CLOSURE_INIT(&done, must_succeed, nullptr, grpc_schedule_on_exec_ctx);
-  const grpc_channel_args* args = grpc_core::CoreConfiguration::Get()
-                                      .channel_args_preconditioning()
-                                      .PreconditionChannelArgs(nullptr)
-                                      .ToC();
+  grpc_core::ChannelArgs args = grpc_core::CoreConfiguration::Get()
+                                    .channel_args_preconditioning()
+                                    .PreconditionChannelArgs(nullptr);
   int64_t connection_handle = grpc_tcp_client_connect(
-      &done, &g_connecting, g_pollset_set, args, &resolved_addr,
+      &done, &g_connecting, g_pollset_set, args.ToC().get(), &resolved_addr,
       grpc_core::Timestamp::InfFuture());
-  grpc_channel_args_destroy(args);
   /* await the connection */
   do {
     resolved_addr.len = static_cast<socklen_t>(sizeof(addr));
@@ -225,14 +224,12 @@ void test_connect_cancellation_succeeds(void) {
   GPR_ASSERT(getsockname(svr_fd, (struct sockaddr*)addr,
                          (socklen_t*)&resolved_addr.len) == 0);
   GRPC_CLOSURE_INIT(&done, must_succeed, nullptr, grpc_schedule_on_exec_ctx);
-  const grpc_channel_args* args = grpc_core::CoreConfiguration::Get()
-                                      .channel_args_preconditioning()
-                                      .PreconditionChannelArgs(nullptr)
-                                      .ToC();
+  grpc_core::ChannelArgs args = grpc_core::CoreConfiguration::Get()
+                                    .channel_args_preconditioning()
+                                    .PreconditionChannelArgs(nullptr);
   int64_t connection_handle = grpc_tcp_client_connect(
-      &done, &g_connecting, g_pollset_set, args, &resolved_addr,
+      &done, &g_connecting, g_pollset_set, args.ToC().get(), &resolved_addr,
       grpc_core::Timestamp::InfFuture());
-  grpc_channel_args_destroy(args);
   GPR_ASSERT(connection_handle > 0);
   GPR_ASSERT(grpc_tcp_client_cancel_connect(connection_handle) == true);
   close(svr_fd);

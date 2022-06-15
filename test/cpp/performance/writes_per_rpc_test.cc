@@ -73,16 +73,17 @@ class EndpointPairFixture {
     {
       grpc_core::Server* core_server =
           grpc_core::Server::FromC(server_->c_server());
-      const grpc_channel_args* server_args = core_server->channel_args();
-      grpc_transport* transport = grpc_create_chttp2_transport(
-          server_args, endpoints.server, false /* is_client */);
+      grpc_transport* transport =
+          grpc_create_chttp2_transport(core_server->channel_args().ToC().get(),
+                                       endpoints.server, false /* is_client */);
       for (grpc_pollset* pollset : core_server->pollsets()) {
         grpc_endpoint_add_to_pollset(endpoints.server, pollset);
       }
 
       GPR_ASSERT(GRPC_LOG_IF_ERROR(
-          "SetupTransport", core_server->SetupTransport(transport, nullptr,
-                                                        server_args, nullptr)));
+          "SetupTransport",
+          core_server->SetupTransport(transport, nullptr,
+                                      core_server->channel_args(), nullptr)));
       grpc_chttp2_transport_start_reading(transport, nullptr, nullptr, nullptr);
     }
 

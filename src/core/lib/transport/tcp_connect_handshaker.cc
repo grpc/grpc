@@ -154,11 +154,9 @@ void TCPConnectHandshaker::DoHandshake(grpc_tcp_server_acceptor* /*acceptor*/,
   // we don't want to pass args->endpoint directly.
   // Instead pass endpoint_ and swap this endpoint to
   // args endpoint on success.
-  const grpc_channel_args* channel_args = args->args.ToC();
   grpc_tcp_client_connect(&connected_, &endpoint_to_destroy_,
-                          interested_parties_, channel_args, &addr_,
+                          interested_parties_, args->args.ToC().get(), &addr_,
                           args->deadline);
-  grpc_channel_args_destroy(channel_args);
 }
 
 void TCPConnectHandshaker::Connected(void* arg, grpc_error_handle error) {

@@ -27,6 +27,7 @@
 
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
+#include "absl/strings/match.h"
 #include "absl/strings/string_view.h"
 
 #include <grpc/grpc.h>
@@ -266,7 +267,7 @@ grpc_core::RefCountedPtr<grpc_channel_security_connector>
 grpc_local_channel_security_connector_create(
     grpc_core::RefCountedPtr<grpc_channel_credentials> channel_creds,
     grpc_core::RefCountedPtr<grpc_call_credentials> request_metadata_creds,
-    const grpc_channel_args* args, const char* target_name) {
+    const grpc_core::ChannelArgs& args, const char* target_name) {
   if (channel_creds == nullptr || target_name == nullptr) {
     gpr_log(
         GPR_ERROR,
@@ -277,14 +278,11 @@ grpc_local_channel_security_connector_create(
   // will be done during check_peer procedure.
   grpc_local_credentials* creds =
       static_cast<grpc_local_credentials*>(channel_creds.get());
-  const grpc_arg* server_uri_arg =
-      grpc_channel_args_find(args, GRPC_ARG_SERVER_URI);
-  const char* server_uri_str = grpc_channel_arg_get_string(server_uri_arg);
+  absl::string_view server_uri_str =
+      args.GetString(GRPC_ARG_SERVER_URI).value_or("");
   if (creds->connect_type() == UDS &&
-      strncmp(GRPC_UDS_URI_PATTERN, server_uri_str,
-              strlen(GRPC_UDS_URI_PATTERN)) != 0 &&
-      strncmp(GRPC_ABSTRACT_UDS_URI_PATTERN, server_uri_str,
-              strlen(GRPC_ABSTRACT_UDS_URI_PATTERN)) != 0) {
+      !absl::StartsWith(server_uri_str, GRPC_UDS_URI_PATTERN) &&
+      !absl::StartsWith(server_uri_str, GRPC_ABSTRACT_UDS_URI_PATTERN)) {
     gpr_log(GPR_ERROR,
             "Invalid UDS target name to "
             "grpc_local_channel_security_connector_create()");

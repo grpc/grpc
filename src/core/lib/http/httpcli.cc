@@ -165,7 +165,8 @@ HttpRequest::HttpRequest(
       channel_args_(CoreConfiguration::Get()
                         .channel_args_preconditioning()
                         .PreconditionChannelArgs(channel_args)
-                        .ToC()),
+                        .ToC()
+                        .release()),
       channel_creds_(std::move(channel_creds)),
       on_done_(on_done),
       resource_quota_(ResourceQuotaFromChannelArgs(channel_args_)),

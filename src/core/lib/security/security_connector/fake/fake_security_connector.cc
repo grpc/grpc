@@ -320,10 +320,11 @@ grpc_core::RefCountedPtr<grpc_channel_security_connector>
 grpc_fake_channel_security_connector_create(
     grpc_core::RefCountedPtr<grpc_channel_credentials> channel_creds,
     grpc_core::RefCountedPtr<grpc_call_credentials> request_metadata_creds,
-    const char* target, const grpc_channel_args* args) {
-  return grpc_core::MakeRefCounted<grpc_fake_channel_security_connector>(
+    const char* target, const grpc_core::ChannelArgs& args) {
+  auto r = grpc_core::MakeRefCounted<grpc_fake_channel_security_connector>(
       std::move(channel_creds), std::move(request_metadata_creds), target,
-      args);
+      args.ToC().get());
+  return r;
 }
 
 grpc_core::RefCountedPtr<grpc_server_security_connector>

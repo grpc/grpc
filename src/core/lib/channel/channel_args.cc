@@ -91,7 +91,7 @@ ChannelArgs ChannelArgs::FromC(const grpc_channel_args* args) {
   return result;
 }
 
-const grpc_channel_args* ChannelArgs::ToC() const {
+ChannelArgs::CPtr ChannelArgs::ToC() const {
   std::vector<grpc_arg> c_args;
   args_.ForEach([&c_args](const std::string& key, const Value& value) {
     char* name = const_cast<char*>(key.c_str());
@@ -107,7 +107,8 @@ const grpc_channel_args* ChannelArgs::ToC() const {
                                                  p.c_vtable());
         }));
   });
-  return grpc_channel_args_copy_and_add(nullptr, c_args.data(), c_args.size());
+  return CPtr(static_cast<const grpc_channel_args*>(
+      grpc_channel_args_copy_and_add(nullptr, c_args.data(), c_args.size())));
 }
 
 ChannelArgs ChannelArgs::Set(absl::string_view key, Value value) const {
@@ -197,6 +198,18 @@ std::string ChannelArgs::ToString() const {
     arg_strings.push_back(absl::StrCat(key, "=", value_str));
   });
   return absl::StrCat("{", absl::StrJoin(arg_strings, ", "), "}");
+}
+
+ChannelArgs ChannelArgs::UnionWith(ChannelArgs other) const {
+  args_.ForEach([&other](const std::string& key, const Value& value) {
+    other.args_ = other.args_.Add(key, value);
+  });
+  return other;
+}
+
+void ChannelArgs::ChannelArgsDeleter::operator()(
+    const grpc_channel_args* p) const {
+  grpc_channel_args_destroy(p);
 }
 
 }  // namespace grpc_core

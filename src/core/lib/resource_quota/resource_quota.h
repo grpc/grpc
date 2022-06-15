@@ -66,11 +66,6 @@ class ResourceQuota : public RefCounted<ResourceQuota>,
   RefCountedPtr<ThreadQuota> thread_quota_;
 };
 
-template <>
-struct ChannelArgTypeTraits<ResourceQuota> {
-  static const grpc_arg_pointer_vtable* VTable();
-};
-
 inline ResourceQuotaRefPtr MakeResourceQuota(std::string name) {
   return MakeRefCounted<ResourceQuota>(std::move(name));
 }

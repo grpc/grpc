@@ -467,10 +467,8 @@ void Chttp2ServerListener::ActiveConnection::HandshakingState::OnHandshakeDone(
       // handshaker may have handed off the connection to some external
       // code, so we can just clean up here without creating a transport.
       if (args->endpoint != nullptr) {
-        const grpc_channel_args* channel_args = args->args.ToC();
-        grpc_transport* transport =
-            grpc_create_chttp2_transport(channel_args, args->endpoint, false);
-        grpc_channel_args_destroy(channel_args);
+        grpc_transport* transport = grpc_create_chttp2_transport(
+            args->args.ToC().get(), args->endpoint, false);
         grpc_error_handle channel_init_err =
             self->connection_->listener_->server_->SetupTransport(
                 transport, self->accepting_pollset_, args->args,
@@ -683,10 +681,8 @@ grpc_error_handle Chttp2ServerListener::Create(
     grpc_error_handle error = GRPC_ERROR_NONE;
     // Create Chttp2ServerListener.
     listener = new Chttp2ServerListener(server, args, args_modifier);
-    auto* channel_args = args.ToC();
     error = grpc_tcp_server_create(&listener->tcp_server_shutdown_complete_,
-                                   channel_args, &listener->tcp_server_);
-    grpc_channel_args_destroy(channel_args);
+                                   args.ToC().get(), &listener->tcp_server_);
     if (!GRPC_ERROR_IS_NONE(error)) return error;
     if (server->config_fetcher() != nullptr) {
       listener->resolved_address_ = *addr;
@@ -731,11 +727,9 @@ grpc_error_handle Chttp2ServerListener::CreateWithAcceptor(
     Chttp2ServerArgsModifier args_modifier) {
   Chttp2ServerListener* listener =
       new Chttp2ServerListener(server, args, args_modifier);
-  auto* channel_args = args.ToC();
   grpc_error_handle error =
       grpc_tcp_server_create(&listener->tcp_server_shutdown_complete_,
-                             channel_args, &listener->tcp_server_);
-  grpc_channel_args_destroy(channel_args);
+                             args.ToC().get(), &listener->tcp_server_);
   if (!GRPC_ERROR_IS_NONE(error)) {
     delete listener;
     return error;
@@ -1079,13 +1073,12 @@ void grpc_server_add_channel_from_fd(grpc_server* server, int fd,
   std::string name = absl::StrCat("fd:", fd);
   auto memory_quota =
       server_args.GetObject<grpc_core::ResourceQuota>()->memory_quota();
-  const grpc_channel_args* server_channel_args = server_args.ToC();
+  auto server_channel_args = server_args.ToC();
   grpc_endpoint* server_endpoint = grpc_tcp_create(
-      grpc_fd_create(fd, name.c_str(), true), server_channel_args, name);
+      grpc_fd_create(fd, name.c_str(), true), server_channel_args.get(), name);
   grpc_transport* transport = grpc_create_chttp2_transport(
-      server_channel_args, server_endpoint, false /* is_client */
+      server_channel_args.get(), server_endpoint, false /* is_client */
   );
-  grpc_channel_args_destroy(server_channel_args);
   grpc_error_handle error =
       core_server->SetupTransport(transport, nullptr, server_args, nullptr);
   if (GRPC_ERROR_IS_NONE(error)) {

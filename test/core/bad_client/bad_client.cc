@@ -214,12 +214,12 @@ void grpc_run_bad_client_test(
                                   GRPC_BAD_CLIENT_REGISTERED_HOST,
                                   GRPC_SRM_PAYLOAD_READ_INITIAL_BYTE_BUFFER, 0);
   grpc_server_start(a.server);
-  const grpc_channel_args* channel_args = grpc_core::CoreConfiguration::Get()
-                                              .channel_args_preconditioning()
-                                              .PreconditionChannelArgs(nullptr)
-                                              .ToC();
-  transport = grpc_create_chttp2_transport(channel_args, sfd.server, false);
-  grpc_channel_args_destroy(channel_args);
+  transport = grpc_create_chttp2_transport(grpc_core::CoreConfiguration::Get()
+                                               .channel_args_preconditioning()
+                                               .PreconditionChannelArgs(nullptr)
+                                               .ToC()
+                                               .get(),
+                                           sfd.server, false);
   server_setup_transport(&a, transport);
   grpc_chttp2_transport_start_reading(transport, nullptr, nullptr, nullptr);
 

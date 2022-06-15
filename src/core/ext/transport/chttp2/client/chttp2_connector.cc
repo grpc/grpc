@@ -172,9 +172,8 @@ void Chttp2Connector::OnHandshakeDone(void* arg, grpc_error_handle error) {
       self->result_->Reset();
       NullThenSchedClosure(DEBUG_LOCATION, &self->notify_, error);
     } else if (args->endpoint != nullptr) {
-      auto* channel_args = args->args.ToC();
-      self->result_->transport =
-          grpc_create_chttp2_transport(channel_args, args->endpoint, true);
+      self->result_->transport = grpc_create_chttp2_transport(
+          args->args.ToC().get(), args->endpoint, true);
       self->result_->socket_node =
           grpc_chttp2_transport_get_socket_node(self->result_->transport);
       self->result_->channel_args = args->args;
@@ -190,7 +189,6 @@ void Chttp2Connector::OnHandshakeDone(void* arg, grpc_error_handle error) {
       GRPC_CLOSURE_INIT(&self->on_timeout_, OnTimeout, self,
                         grpc_schedule_on_exec_ctx);
       grpc_timer_init(&self->timer_, self->args_.deadline, &self->on_timeout_);
-      grpc_channel_args_destroy(channel_args);
     } else {
       // If the handshaking succeeded but there is no endpoint, then the
       // handshaker may have handed off the connection to some external
@@ -401,25 +399,23 @@ grpc_channel* grpc_channel_create_from_fd(const char* target, int fd,
         target, GRPC_STATUS_INTERNAL,
         "Failed to create client channel due to invalid creds");
   }
-  const grpc_channel_args* final_args =
+  grpc_core::ChannelArgs final_args =
       grpc_core::CoreConfiguration::Get()
           .channel_args_preconditioning()
           .PreconditionChannelArgs(args)
           .SetIfUnset(GRPC_ARG_DEFAULT_AUTHORITY, "test.authority")
-          .SetObject(creds->Ref())
-          .ToC();
+          .SetObject(creds->Ref());
+  auto c_final_args = final_args.ToC();
 
   int flags = fcntl(fd, F_GETFL, 0);
   GPR_ASSERT(fcntl(fd, F_SETFL, flags | O_NONBLOCK) == 0);
   grpc_endpoint* client = grpc_tcp_client_create_from_fd(
-      grpc_fd_create(fd, "client", true), final_args, "fd-client");
+      grpc_fd_create(fd, "client", true), c_final_args.get(), "fd-client");
   grpc_transport* transport =
-      grpc_create_chttp2_transport(final_args, client, true);
+      grpc_create_chttp2_transport(c_final_args.get(), client, true);
   GPR_ASSERT(transport);
   auto channel = grpc_core::Channel::Create(
-      target, grpc_core::ChannelArgs::FromC(final_args),
-      GRPC_CLIENT_DIRECT_CHANNEL, transport);
-  grpc_channel_args_destroy(final_args);
+      target, final_args, GRPC_CLIENT_DIRECT_CHANNEL, transport);
   if (channel.ok()) {
     grpc_chttp2_transport_start_reading(transport, nullptr, nullptr, nullptr);
     grpc_core::ExecCtx::Get()->Flush();

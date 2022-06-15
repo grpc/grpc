@@ -19,6 +19,7 @@
 #include <grpc/grpc.h>
 
 #include "src/core/ext/transport/chttp2/transport/chttp2_transport.h"
+#include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/iomgr/executor.h"
 #include "src/core/lib/resource_quota/api.h"
@@ -53,18 +54,15 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
     // TODO(ctiller): add more registered methods (one for POST, one for PUT)
     grpc_server_register_method(server, "/reg", nullptr, {}, 0);
     grpc_server_start(server);
-    const grpc_channel_args* channel_args =
-        grpc_core::CoreConfiguration::Get()
-            .channel_args_preconditioning()
-            .PreconditionChannelArgs(nullptr)
-            .ToC();
-    grpc_transport* transport =
-        grpc_create_chttp2_transport(channel_args, mock_endpoint, false);
+    grpc_core::ChannelArgs channel_args = grpc_core::CoreConfiguration::Get()
+                                              .channel_args_preconditioning()
+                                              .PreconditionChannelArgs(nullptr);
+    grpc_transport* transport = grpc_create_chttp2_transport(
+        channel_args.ToC().get(), mock_endpoint, false);
     grpc_resource_quota_unref(resource_quota);
     GPR_ASSERT(GRPC_LOG_IF_ERROR(
         "SetupTransport", grpc_core::Server::FromC(server)->SetupTransport(
                               transport, nullptr, channel_args, nullptr)));
-    grpc_channel_args_destroy(channel_args);
     grpc_chttp2_transport_start_reading(transport, nullptr, nullptr, nullptr);
 
     grpc_call* call1 = nullptr;

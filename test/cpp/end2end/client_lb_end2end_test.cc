@@ -200,7 +200,8 @@ class FakeResolverResponseGeneratorWrapper {
         attributes[attribute_key] = attribute->Copy();
       }
       result.addresses->emplace_back(address.addr, address.len,
-                                     nullptr /* args */, std::move(attributes));
+                                     grpc_core::ChannelArgs(),
+                                     std::move(attributes));
     }
     if (result.addresses->empty()) {
       result.resolution_note = "fake resolver empty address list";
@@ -208,7 +209,7 @@ class FakeResolverResponseGeneratorWrapper {
     if (service_config_json != nullptr) {
       grpc_error_handle error = GRPC_ERROR_NONE;
       result.service_config = grpc_core::ServiceConfigImpl::Create(
-          nullptr, service_config_json, &error);
+          grpc_core::ChannelArgs(), service_config_json, &error);
       GPR_ASSERT(*result.service_config != nullptr);
     }
     return result;

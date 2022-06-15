@@ -546,14 +546,13 @@ static void on_read_request_done_locked(void* arg, grpc_error_handle error) {
       grpc_core::ExecCtx::Get()->Now() + grpc_core::Duration::Seconds(10);
   GRPC_CLOSURE_INIT(&conn->on_server_connect_done, on_server_connect_done, conn,
                     grpc_schedule_on_exec_ctx);
-  const grpc_channel_args* args = grpc_core::CoreConfiguration::Get()
-                                      .channel_args_preconditioning()
-                                      .PreconditionChannelArgs(nullptr)
-                                      .ToC();
+  auto args = grpc_core::CoreConfiguration::Get()
+                  .channel_args_preconditioning()
+                  .PreconditionChannelArgs(nullptr)
+                  .ToC();
   grpc_tcp_client_connect(&conn->on_server_connect_done, &conn->server_endpoint,
-                          conn->pollset_set, args, &(*addresses_or)[0],
+                          conn->pollset_set, args.get(), &(*addresses_or)[0],
                           deadline);
-  grpc_channel_args_destroy(args);
 }
 
 static void on_read_request_done(void* arg, grpc_error_handle error) {
@@ -627,7 +626,8 @@ grpc_end2end_http_proxy* grpc_end2end_http_proxy_create(
   proxy->channel_args = grpc_core::CoreConfiguration::Get()
                             .channel_args_preconditioning()
                             .PreconditionChannelArgs(args)
-                            .ToC();
+                            .ToC()
+                            .release();
   grpc_error_handle error =
       grpc_tcp_server_create(nullptr, proxy->channel_args, &proxy->server);
   GPR_ASSERT(GRPC_ERROR_IS_NONE(error));

@@ -1566,10 +1566,8 @@ RlsLb::RlsChannel::RlsChannel(RefCountedPtr<RlsLb> lb_policy)
     args = args.Set(GRPC_ARG_SERVICE_CONFIG, service_config)
                .Set(GRPC_ARG_SERVICE_CONFIG_DISABLE_RESOLUTION, 1);
   }
-  const grpc_channel_args* rls_channel_args = args.ToC();
   channel_ = grpc_channel_create(lb_policy_->config_->lookup_service().c_str(),
-                                 creds, rls_channel_args);
-  grpc_channel_args_destroy(rls_channel_args);
+                                 creds, args.ToC().get());
   if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_rls_trace)) {
     gpr_log(GPR_INFO, "[rlslb %p] RlsChannel=%p: created channel %p for %s",
             lb_policy_.get(), this, channel_,

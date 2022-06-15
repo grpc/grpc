@@ -1291,12 +1291,11 @@ grpc_channel* grpc_inproc_channel_create(grpc_server* server,
           .Remove(GRPC_ARG_MAX_CONNECTION_AGE_MS);
 
   // Add a default authority channel argument for the client
-  const grpc_channel_args* client_args =
+  grpc_core::ChannelArgs client_args =
       grpc_core::CoreConfiguration::Get()
           .channel_args_preconditioning()
           .PreconditionChannelArgs(args)
-          .Set(GRPC_ARG_DEFAULT_AUTHORITY, "inproc.authority")
-          .ToC();
+          .Set(GRPC_ARG_DEFAULT_AUTHORITY, "inproc.authority");
   grpc_transport* server_transport;
   grpc_transport* client_transport;
   inproc_transports_create(&server_transport, &client_transport);
@@ -1307,8 +1306,7 @@ grpc_channel* grpc_inproc_channel_create(grpc_server* server,
   grpc_channel* channel = nullptr;
   if (GRPC_ERROR_IS_NONE(error)) {
     auto new_channel = grpc_core::Channel::Create(
-        "inproc", grpc_core::ChannelArgs::FromC(client_args),
-        GRPC_CLIENT_DIRECT_CHANNEL, client_transport);
+        "inproc", client_args, GRPC_CLIENT_DIRECT_CHANNEL, client_transport);
     if (!new_channel.ok()) {
       GPR_ASSERT(!channel);
       gpr_log(GPR_ERROR, "Failed to create client channel: %s",
@@ -1342,11 +1340,6 @@ grpc_channel* grpc_inproc_channel_create(grpc_server* server,
     channel = grpc_lame_client_channel_create(
         nullptr, status, "Failed to create server channel");
   }
-
-  // Free up created channel args
-  grpc_channel_args_destroy(client_args);
-
-  // Now finish scheduled operations
 
   return channel;
 }

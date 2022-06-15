@@ -1453,11 +1453,9 @@ void ClientChannel::UpdateServiceConfigInDataPlaneLocked() {
   } else {
     filters.push_back(&DynamicTerminationFilter::kFilterVtable);
   }
-  const grpc_channel_args* new_channel_args = new_args.ToC();
   RefCountedPtr<DynamicFilters> dynamic_filters =
-      DynamicFilters::Create(new_channel_args, std::move(filters));
+      DynamicFilters::Create(new_args.ToC().get(), std::move(filters));
   GPR_ASSERT(dynamic_filters != nullptr);
-  grpc_channel_args_destroy(new_channel_args);
   // Grab data plane lock to update service config.
   //
   // We defer unreffing the old values (and deallocating memory) until
