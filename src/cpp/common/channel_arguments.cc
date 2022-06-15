@@ -89,14 +89,6 @@ void ChannelArguments::SetCompressionAlgorithm(
   SetInt(GRPC_COMPRESSION_CHANNEL_DEFAULT_ALGORITHM, algorithm);
 }
 
-void ChannelArguments::SetCompressionLowerBound(int bytes) {
-  SetInt(GRPC_COMPRESSION_LOWER_BOUND, bytes);
-}
-
-void ChannelArguments::SetGzipCompressionLevel(int level) {
-  SetInt(GRPC_GZIP_COMPRESSION_LEVEL, level);
-}
-
 void ChannelArguments::SetGrpclbFallbackTimeout(int fallback_timeout) {
   SetInt(GRPC_ARG_GRPCLB_FALLBACK_TIMEOUT_MS, fallback_timeout);
 }

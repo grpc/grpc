@@ -255,11 +255,9 @@ int DefaultGzipCompressionLevelFromChannelArgs(const grpc_channel_args* args) {
   for (size_t i = 0; i < args->num_args; i++) {
     if (strcmp(args->args[i].key, GRPC_GZIP_COMPRESSION_LEVEL) ==
         0) {
-      if (args->args[i].type == GRPC_ARG_INTEGER) {
-        return args->args[i].value.integer;
-      } else if (args->args[i].type == GRPC_ARG_STRING) {
-        return Z_DEFAULT_COMPRESSION;
-      }
+      return grpc_channel_arg_get_integer(
+        &args->args[i],
+        {Z_DEFAULT_COMPRESSION, 0, INT_MAX});
     }
   }
   return Z_DEFAULT_COMPRESSION;
@@ -270,11 +268,9 @@ int DefaultCompressionLowerBoundFromChannelArgs(const grpc_channel_args* args) {
   for (size_t i = 0; i < args->num_args; i++) {
     if (strcmp(args->args[i].key, GRPC_COMPRESSION_LOWER_BOUND) ==
         0) {
-      if (args->args[i].type == GRPC_ARG_INTEGER) {
-        return args->args[i].value.integer;
-      } else if (args->args[i].type == GRPC_ARG_STRING) {
-        return Z_DEFAULT_COMPRESSION_LOWER_BOUND;
-      }
+      return grpc_channel_arg_get_integer(
+        &args->args[i],
+        {Z_DEFAULT_COMPRESSION_LOWER_BOUND, 0, INT_MAX});
     }
   }
   return Z_DEFAULT_COMPRESSION_LOWER_BOUND;

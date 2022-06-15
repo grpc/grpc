@@ -55,12 +55,6 @@ extern "C" {
   "grpc.compression_enabled_algorithms_bitset"
 /** \} */
 
-#define GRPC_GZIP_COMPRESSION_LEVEL \
-  "grpc.gzip_compression_level"
-
-#define GRPC_COMPRESSION_LOWER_BOUND \
-  "grpc.compression_lower_bound"
-
 /** The various compression algorithms supported by gRPC (not sorted by
  * compression level) */
 typedef enum {

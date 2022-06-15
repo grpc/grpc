@@ -83,10 +83,6 @@ class ChannelArguments {
   void SetMaxReceiveMessageSize(int size);
   void SetMaxSendMessageSize(int size);
 
-  void SetGzipCompressionLevel(int level);
-
-  void SetCompressionLowerBound(int bytes);
-
   /// Set LB policy name.
   /// Note that if the name resolver returns only balancer addresses, the
   /// grpclb LB policy will be used, regardless of what is specified here.
