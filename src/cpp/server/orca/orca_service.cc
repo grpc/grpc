@@ -125,7 +125,7 @@ class OrcaService::Reactor : public ServerWriteReactor<ByteBuffer>,
     grpc_core::ExecCtx exec_ctx;
     grpc::internal::MutexLock lock(&timer_mu_);
     timer_handle_ = GetDefaultEventEngine()->RunAt(
-        absl::Now() + absl::Milliseconds(report_interval_.millis()),
+        report_interval_,
         [self = Ref(DEBUG_LOCATION, "Orca Service")] { self->OnTimer(); });
   }
 
