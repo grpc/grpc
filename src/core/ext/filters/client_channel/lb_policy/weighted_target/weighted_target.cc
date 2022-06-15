@@ -32,7 +32,11 @@
 #include "absl/status/statusor.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
+#include "absl/time/clock.h"
+#include "absl/time/time.h"
+#include "absl/types/optional.h"
 
+#include <grpc/event_engine/event_engine.h>
 #include <grpc/impl/codegen/connectivity_state.h>
 #include <grpc/impl/codegen/grpc_types.h>
 #include <grpc/support/log.h>
@@ -45,17 +49,14 @@
 #include "src/core/ext/filters/client_channel/subchannel_interface.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/debug/trace.h"
+#include "src/core/lib/event_engine/event_engine_factory.h"
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/gprpp/ref_counted.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
-#include "src/core/lib/gprpp/time.h"
-#include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/error.h"
-#include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/pollset_set.h"
-#include "src/core/lib/iomgr/timer.h"
 #include "src/core/lib/iomgr/work_serializer.h"
 #include "src/core/lib/json/json.h"
 #include "src/core/lib/resolver/server_address.h"
@@ -69,11 +70,14 @@ TraceFlag grpc_lb_weighted_target_trace(false, "weighted_target_lb");
 
 namespace {
 
+using ::grpc_event_engine::experimental::EventEngine;
+using ::grpc_event_engine::experimental::GetDefaultEventEngine;
+
 constexpr char kWeightedTarget[] = "weighted_target_experimental";
 
 // How long we keep a child around for after it has been removed from
 // the config.
-constexpr Duration kChildRetentionInterval = Duration::Minutes(15);
+constexpr absl::Duration kChildRetentionInterval = absl::Minutes(15);
 
 // Config for weighted_target LB policy.
 class WeightedTargetLbConfig : public LoadBalancingPolicy::Config {
@@ -189,15 +193,13 @@ class WeightedTargetLb : public LoadBalancingPolicy {
       explicit DelayedRemovalTimer(RefCountedPtr<WeightedChild> weighted_child);
 
       void Orphan() override;
+      void OnTimer();
 
      private:
-      static void OnTimer(void* arg, grpc_error_handle error);
-      void OnTimerLocked(grpc_error_handle error);
+      void OnTimerLocked();
 
       RefCountedPtr<WeightedChild> weighted_child_;
-      grpc_timer timer_;
-      grpc_closure on_timer_;
-      bool timer_pending_ = true;
+      absl::optional<EventEngine::TaskHandle> timer_handle_;
     };
 
     // Methods for dealing with the child policy.
@@ -444,14 +446,13 @@ void WeightedTargetLb::UpdateStateLocked() {
 WeightedTargetLb::WeightedChild::DelayedRemovalTimer::DelayedRemovalTimer(
     RefCountedPtr<WeightedTargetLb::WeightedChild> weighted_child)
     : weighted_child_(std::move(weighted_child)) {
-  GRPC_CLOSURE_INIT(&on_timer_, OnTimer, this, nullptr);
-  Ref().release();
-  grpc_timer_init(&timer_, ExecCtx::Get()->Now() + kChildRetentionInterval,
-                  &on_timer_);
+  timer_handle_ =
+      GetDefaultEventEngine()->RunAt(absl::Now() + kChildRetentionInterval,
+                                     [self = Ref()] { self->OnTimer(); });
 }
 
 void WeightedTargetLb::WeightedChild::DelayedRemovalTimer::Orphan() {
-  if (timer_pending_) {
+  if (timer_handle_.has_value()) {
     if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_weighted_target_trace)) {
       gpr_log(GPR_INFO,
               "[weighted_target_lb %p] WeightedChild %p %s: cancelling "
@@ -459,29 +460,21 @@ void WeightedTargetLb::WeightedChild::DelayedRemovalTimer::Orphan() {
               weighted_child_->weighted_target_policy_.get(),
               weighted_child_.get(), weighted_child_->name_.c_str());
     }
-    timer_pending_ = false;
-    grpc_timer_cancel(&timer_);
+    GetDefaultEventEngine()->Cancel(*timer_handle_);
   }
   Unref();
 }
 
-void WeightedTargetLb::WeightedChild::DelayedRemovalTimer::OnTimer(
-    void* arg, grpc_error_handle error) {
-  auto* self = static_cast<DelayedRemovalTimer*>(arg);
-  (void)GRPC_ERROR_REF(error);  // ref owned by lambda
-  self->weighted_child_->weighted_target_policy_->work_serializer()->Run(
-      [self, error]() { self->OnTimerLocked(error); }, DEBUG_LOCATION);
+void WeightedTargetLb::WeightedChild::DelayedRemovalTimer::OnTimer() {
+  weighted_child_->weighted_target_policy_->work_serializer()->Run(
+      [self = Ref()] { self->OnTimerLocked(); }, DEBUG_LOCATION);
 }
 
-void WeightedTargetLb::WeightedChild::DelayedRemovalTimer::OnTimerLocked(
-    grpc_error_handle error) {
-  if (GRPC_ERROR_IS_NONE(error) && timer_pending_) {
-    timer_pending_ = false;
-    weighted_child_->weighted_target_policy_->targets_.erase(
-        weighted_child_->name_);
-  }
-  GRPC_ERROR_UNREF(error);
-  Unref();
+void WeightedTargetLb::WeightedChild::DelayedRemovalTimer::OnTimerLocked() {
+  GPR_ASSERT(timer_handle_.has_value());
+  timer_handle_.reset();
+  weighted_child_->weighted_target_policy_->targets_.erase(
+      weighted_child_->name_);
 }
 
 //
