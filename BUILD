@@ -144,8 +144,8 @@ config_setting(
 )
 
 config_setting(
-    name = "use_abseil_status",
-    values = {"define": "use_abseil_status=true"},
+    name = "disable_use_abseil_status",
+    values = {"define": "use_abseil_status=false"},
 )
 
 python_config_settings()
@@ -2716,6 +2716,7 @@ grpc_cc_library(
         "slice_buffer",
         "slice_refcount",
         "sockaddr_utils",
+        "status_helper",
         "table",
         "thread_quota",
         "time",
@@ -3268,7 +3269,10 @@ grpc_cc_library(
     hdrs = [
         "src/core/ext/filters/deadline/deadline_filter.h",
     ],
-    external_deps = ["absl/types:optional"],
+    external_deps = [
+        "absl/status",
+        "absl/types:optional",
+    ],
     language = "c++",
     tags = ["grpc-autodeps"],
     deps = [
@@ -4720,6 +4724,7 @@ grpc_cc_library(
     ],
     external_deps = [
         "absl/memory",
+        "absl/status",
         "absl/status:statusor",
         "absl/strings",
     ],
@@ -6057,6 +6062,7 @@ grpc_cc_library(
         "resource_quota_trace",
         "slice",
         "slice_refcount",
+        "status_helper",
         "time",
         "uri_parser",
         "useful",
@@ -6281,6 +6287,7 @@ grpc_cc_library(
     external_deps = [
         "absl/base:core_headers",
         "absl/memory",
+        "absl/status",
         "absl/strings",
         "absl/synchronization",
         "absl/types:optional",
@@ -6326,6 +6333,7 @@ grpc_cc_library(
     external_deps = [
         "absl/base:core_headers",
         "absl/memory",
+        "absl/status",
         "absl/strings",
         "absl/synchronization",
         "absl/types:optional",
@@ -6584,6 +6592,7 @@ grpc_cc_library(
     ],
     external_deps = [
         "absl/base:core_headers",
+        "absl/status",
         "absl/time",
         "absl/types:optional",
         "upb_lib",
