@@ -446,7 +446,7 @@ WeightedTargetLb::WeightedChild::DelayedRemovalTimer::DelayedRemovalTimer(
     RefCountedPtr<WeightedTargetLb::WeightedChild> weighted_child)
     : weighted_child_(std::move(weighted_child)) {
   timer_handle_ = GetDefaultEventEngine()->RunAt(
-      absl::Now() + kChildRetentionInterval, [self = Ref()] mutable {
+      absl::Now() + kChildRetentionInterval, [self = Ref()]() mutable {
         self->weighted_child_->weighted_target_policy_->work_serializer()->Run(
             [self = std::move(self)] { self->OnTimerLocked(); },
             DEBUG_LOCATION);
