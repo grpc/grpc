@@ -105,19 +105,6 @@ void RunServer(std::vector<int> grpc_ports, std::set<int> xds_ports,
   XdsServerBuilder xds_builder;
   bool has_xds_listeners = false;
   builder.RegisterService(&echo_test_service);
-  // Create Credentials for Tls Servers -
-  // 1. Uses FileWatcherCertificateProvider with a refresh interval of 600
-  // seconds. (Number decided based on gRPC defaults.
-  // 2. Do not ask for client certificates. (Not yet sure what is needed right
-  // now.)
-  experimental::TlsServerCredentialsOptions options(
-      std::make_shared<experimental::FileWatcherCertificateProvider>(
-          absl::GetFlag(FLAGS_key), absl::GetFlag(FLAGS_crt), 600));
-  options.set_cert_request_type(GRPC_SSL_DONT_REQUEST_CLIENT_CERTIFICATE);
-  options.watch_identity_key_cert_pairs();
-  options.set_check_call_host(false);
-  auto tls_creds = TlsServerCredentials(options);
-  // Add ports to the builders
   for (int port : grpc_ports) {
     auto server_address = grpc_core::JoinHostPort("0.0.0.0", port);
     if (xds_ports.find(port) != xds_ports.end()) {
@@ -127,7 +114,18 @@ void RunServer(std::vector<int> grpc_ports, std::set<int> xds_ports,
               server_address.c_str());
       has_xds_listeners = true;
     } else if (tls_ports.find(port) != tls_ports.end()) {
-      builder.AddListeningPort(server_address, tls_creds);
+      // Create Credentials for Tls Servers -
+      // 1. Uses FileWatcherCertificateProvider with a refresh interval of 600
+      // seconds. (Number decided based on gRPC defaults.
+      // 2. Do not ask for client certificates. (Not yet sure what is needed
+      // right now.) Add ports to the builders
+      experimental::TlsServerCredentialsOptions options(
+          std::make_shared<experimental::FileWatcherCertificateProvider>(
+              absl::GetFlag(FLAGS_key), absl::GetFlag(FLAGS_crt), 600));
+      options.set_cert_request_type(GRPC_SSL_DONT_REQUEST_CLIENT_CERTIFICATE);
+      options.watch_identity_key_cert_pairs();
+      options.set_check_call_host(false);
+      builder.AddListeningPort(server_address, TlsServerCredentials(options));
       gpr_log(GPR_INFO, "Server listening on %s over tls",
               server_address.c_str());
     } else {

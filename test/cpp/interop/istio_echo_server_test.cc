@@ -49,14 +49,14 @@ class SimpleEchoTestServerImpl : public proto::EchoTestService::Service {
 
   grpc::Status Echo(grpc::ServerContext* context,
                     const proto::EchoRequest* request,
-                    proto::EchoResponse* response) {
+                    proto::EchoResponse* response) override {
     GPR_ASSERT(false);
     return Status(StatusCode::INVALID_ARGUMENT, "Unexpected");
   }
 
   grpc::Status ForwardEcho(grpc::ServerContext* /*context*/,
                            const proto::ForwardEchoRequest* request,
-                           proto::ForwardEchoResponse* response) {
+                           proto::ForwardEchoResponse* response) override {
     response->add_output(request->message());
     return Status::OK;
   }
