@@ -336,9 +336,15 @@ std::string XdsEnd2endTest::BootstrapBuilder::MakeXdsServersText(
       "          \"server_features\": [<SERVER_FEATURES>]\n"
       "        }\n"
       "      ]";
+  std::vector<std::string> server_features;
+  if (!v2_) server_features.push_back("\"xds_v3\"");
+  if (ignore_resource_deletion_) {
+    server_features.push_back("\"ignore_resource_deletion\"");
+  }
   return absl::StrReplaceAll(
-      kXdsServerTemplate, {{"<SERVER_URI>", server_uri},
-                           {"<SERVER_FEATURES>", (v2_ ? "" : "\"xds_v3\"")}});
+      kXdsServerTemplate,
+      {{"<SERVER_URI>", server_uri},
+       {"<SERVER_FEATURES>", absl::StrJoin(server_features, ", ")}});
 }
 
 std::string XdsEnd2endTest::BootstrapBuilder::MakeNodeText() {
