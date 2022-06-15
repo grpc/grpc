@@ -31,18 +31,15 @@
 
 #include "src/core/lib/gpr/time_precise.h"
 
-static LARGE_INTEGER g_start_time = []() {
-  LARGE_INTEGER x;
-  QueryPerformanceCounter(&x);
-  return x;
-}();
-static double g_time_scale = []() {
+static LARGE_INTEGER g_start_time;
+static double g_time_scale;
+
+void gpr_time_init(void) {
   LARGE_INTEGER frequency;
   QueryPerformanceFrequency(&frequency);
-  return 1.0 / (double)frequency.QuadPart;
-}();
-
-void gpr_time_init(void) {}
+  QueryPerformanceCounter(&g_start_time);
+  g_time_scale = 1.0 / (double)frequency.QuadPart;
+}
 
 static gpr_timespec now_impl(gpr_clock_type clock) {
   gpr_timespec now_tv;
