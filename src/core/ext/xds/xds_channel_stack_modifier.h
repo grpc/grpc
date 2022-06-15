@@ -47,6 +47,11 @@ class XdsChannelStackModifier : public RefCounted<XdsChannelStackModifier> {
   grpc_arg MakeChannelArg() const;
   static RefCountedPtr<XdsChannelStackModifier> GetFromChannelArgs(
       const grpc_channel_args& args);
+  static absl::string_view ChannelArgName();
+  static int ChannelArgsCompare(const XdsChannelStackModifier* a,
+                                const XdsChannelStackModifier* b) {
+    return QsortCompare(a, b);
+  }
 
  private:
   std::vector<const grpc_channel_filter*> filters_;

@@ -266,28 +266,6 @@ const grpc_channel_filter ClientChannel::kFilterVtable = {
 
 namespace {
 
-// Channel arg pointer vtable for GRPC_ARG_CLIENT_CHANNEL.
-void* ClientChannelArgCopy(void* p) { return p; }
-void ClientChannelArgDestroy(void* /*p*/) {}
-int ClientChannelArgCmp(void* p, void* q) { return QsortCompare(p, q); }
-const grpc_arg_pointer_vtable kClientChannelArgPointerVtable = {
-    ClientChannelArgCopy, ClientChannelArgDestroy, ClientChannelArgCmp};
-
-// Channel arg pointer vtable for GRPC_ARG_SERVICE_CONFIG_OBJ.
-void* ServiceConfigObjArgCopy(void* p) {
-  auto* service_config = static_cast<ServiceConfig*>(p);
-  service_config->Ref().release();
-  return p;
-}
-void ServiceConfigObjArgDestroy(void* p) {
-  auto* service_config = static_cast<ServiceConfig*>(p);
-  service_config->Unref();
-}
-int ServiceConfigObjArgCmp(void* p, void* q) { return QsortCompare(p, q); }
-const grpc_arg_pointer_vtable kServiceConfigObjArgPointerVtable = {
-    ServiceConfigObjArgCopy, ServiceConfigObjArgDestroy,
-    ServiceConfigObjArgCmp};
-
 class DynamicTerminationFilter {
  public:
   class CallData;

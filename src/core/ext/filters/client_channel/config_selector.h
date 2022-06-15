@@ -109,6 +109,10 @@ class ConfigSelector : public RefCounted<ConfigSelector> {
   static RefCountedPtr<ConfigSelector> GetFromChannelArgs(
       const grpc_channel_args& args);
   static absl::string_view ChannelArgName() { return GRPC_ARG_CONFIG_SELECTOR; }
+  static int ChannelArgsCompare(const ConfigSelector* a,
+                                const ConfigSelector* b) {
+    return QsortCompare(a, b);
+  }
 };
 
 // Default ConfigSelector that gets the MethodConfig from the service config.

@@ -71,6 +71,10 @@ class ServerConfigSelectorProvider
   virtual void CancelWatch() = 0;
 
   static absl::string_view ChannelArgName();
+  static int ChannelArgsCompare(const ServerConfigSelectorProvider* a,
+                                const ServerConfigSelectorProvider* b) {
+    return QsortCompare(a, b);
+  }
 
   grpc_arg MakeChannelArg() const;
 };

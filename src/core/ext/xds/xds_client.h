@@ -163,6 +163,9 @@ class XdsClient : public DualRefCounted<XdsClient> {
   static RefCountedPtr<XdsClient> GetFromChannelArgs(
       const grpc_channel_args& args);
   static absl::string_view ChannelArgName();
+  static int ChannelArgsCompare(const XdsClient* a, const XdsClient* b) {
+    return QsortCompare(a, b);
+  }
 
  private:
   struct XdsResourceKey {

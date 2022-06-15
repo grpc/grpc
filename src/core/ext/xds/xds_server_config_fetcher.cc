@@ -1160,7 +1160,6 @@ XdsServerConfigFetcher::ListenerWatcher::FilterChainMatchManager::
             ServiceConfigImpl::Create(result.args, json.c_str(), &error);
         GPR_ASSERT(GRPC_ERROR_IS_NONE(error));
       }
-      grpc_channel_args_destroy(result.args);
     }
   }
   return config_selector;
@@ -1323,17 +1322,16 @@ grpc_server_config_fetcher* grpc_server_config_fetcher_xds_create(
     grpc_server_xds_status_notifier notifier, const grpc_channel_args* args) {
   grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
   grpc_core::ExecCtx exec_ctx;
-  args = grpc_core::CoreConfiguration::Get()
-             .channel_args_preconditioning()
-             .PreconditionChannelArgs(args)
-             .ToC();
+  grpc_core::ChannelArgs channel_args = grpc_core::CoreConfiguration::Get()
+                                            .channel_args_preconditioning()
+                                            .PreconditionChannelArgs(args);
   GRPC_API_TRACE(
       "grpc_server_config_fetcher_xds_create(notifier={on_serving_status_"
       "update=%p, user_data=%p}, args=%p)",
       3, (notifier.on_serving_status_update, notifier.user_data, args));
   grpc_error_handle error = GRPC_ERROR_NONE;
   grpc_core::RefCountedPtr<grpc_core::XdsClient> xds_client =
-      grpc_core::XdsClient::GetOrCreate(args, &error);
+      grpc_core::XdsClient::GetOrCreate(channel_args, &error);
   grpc_channel_args_destroy(args);
   if (!GRPC_ERROR_IS_NONE(error)) {
     gpr_log(GPR_ERROR, "Failed to create xds client: %s",
