@@ -6337,6 +6337,7 @@ grpc_cc_library(
         "arena",
         "channel_init",
         "config",
+        "default_event_engine_factory_hdrs",
         "gpr_base",
         "gpr_codegen",
         "grpc++_codegen_base",
