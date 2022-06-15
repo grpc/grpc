@@ -193,7 +193,6 @@ class WeightedTargetLb : public LoadBalancingPolicy {
       explicit DelayedRemovalTimer(RefCountedPtr<WeightedChild> weighted_child);
 
       void Orphan() override;
-      void OnTimer();
 
      private:
       void OnTimerLocked();
@@ -446,9 +445,11 @@ void WeightedTargetLb::UpdateStateLocked() {
 WeightedTargetLb::WeightedChild::DelayedRemovalTimer::DelayedRemovalTimer(
     RefCountedPtr<WeightedTargetLb::WeightedChild> weighted_child)
     : weighted_child_(std::move(weighted_child)) {
-  timer_handle_ =
-      GetDefaultEventEngine()->RunAt(absl::Now() + kChildRetentionInterval,
-                                     [self = Ref()] { self->OnTimer(); });
+  timer_handle_ = GetDefaultEventEngine()->RunAt(
+      absl::Now() + kChildRetentionInterval, [self = Ref()] {
+        self->weighted_child_->weighted_target_policy_->work_serializer()->Run(
+            [self = std::move(self)] { self->OnTimerLocked(); }, DEBUG_LOCATION);
+      });
 }
 
 void WeightedTargetLb::WeightedChild::DelayedRemovalTimer::Orphan() {
@@ -463,11 +464,6 @@ void WeightedTargetLb::WeightedChild::DelayedRemovalTimer::Orphan() {
     GetDefaultEventEngine()->Cancel(*timer_handle_);
   }
   Unref();
-}
-
-void WeightedTargetLb::WeightedChild::DelayedRemovalTimer::OnTimer() {
-  weighted_child_->weighted_target_policy_->work_serializer()->Run(
-      [self = Ref()] { self->OnTimerLocked(); }, DEBUG_LOCATION);
 }
 
 void WeightedTargetLb::WeightedChild::DelayedRemovalTimer::OnTimerLocked() {
