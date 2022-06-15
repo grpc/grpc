@@ -584,10 +584,8 @@ void XdsClusterImplLb::UpdateChildPolicyLocked(
   UpdateArgs update_args;
   update_args.addresses = std::move(addresses);
   update_args.config = config_->child_policy();
-  grpc_arg cluster_arg = grpc_channel_arg_string_create(
-      const_cast<char*>(GRPC_ARG_XDS_CLUSTER_NAME),
-      const_cast<char*>(config_->cluster_name().c_str()));
-  update_args.args = grpc_channel_args_copy_and_add(args, &cluster_arg, 1);
+  update_args.args =
+      args.Set(GRPC_ARG_XDS_CLUSTER_NAME, config_->cluster_name());
   // Update the policy.
   if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_cluster_impl_lb_trace)) {
     gpr_log(GPR_INFO,

@@ -2560,6 +2560,8 @@ grpc_arg XdsClient::MakeChannelArg() const {
                                          &kXdsClientArgVtable);
 }
 
+absl::string_view XdsClient::ChannelArgName() { return GRPC_ARG_XDS_CLIENT; }
+
 RefCountedPtr<XdsClient> XdsClient::GetFromChannelArgs(
     const grpc_channel_args& args) {
   XdsClient* xds_client =

@@ -165,6 +165,10 @@ class ChannelArgs {
   // It should be destroyed with grpc_channel_args_destroy.
   const grpc_channel_args* ToC() const;
 
+  // Returns the union of this channel args with other.
+  // If a key is present in both, the value from this is used.
+  GRPC_MUST_USE_RESULT ChannelArgs UnionWith(const ChannelArgs& other);
+
   const Value* Get(absl::string_view name) const { return args_.Lookup(name); }
   GRPC_MUST_USE_RESULT ChannelArgs Set(absl::string_view name,
                                        Value value) const;
@@ -247,6 +251,7 @@ class ChannelArgs {
   bool operator==(const ChannelArgs& other) const {
     return args_ == other.args_;
   }
+  bool operator!=(const ChannelArgs& other) const { return !(*this == other); }
 
   // Helpers for commonly accessed things
 

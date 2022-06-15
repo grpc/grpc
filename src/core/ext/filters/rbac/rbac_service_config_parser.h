@@ -71,8 +71,7 @@ class RbacServiceConfigParser : public ServiceConfigParser::Parser {
   absl::string_view name() const override { return parser_name(); }
   // Parses the per-method service config for rbac filter.
   std::unique_ptr<ServiceConfigParser::ParsedConfig> ParsePerMethodParams(
-      const grpc_channel_args* args, const Json& json,
-      grpc_error_handle* error) override;
+      ChannelArgs args, const Json& json, grpc_error_handle* error) override;
   // Returns the parser index for RbacServiceConfigParser.
   static size_t ParserIndex();
   // Registers RbacServiceConfigParser to ServiceConfigParser.

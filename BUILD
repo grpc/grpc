@@ -2902,6 +2902,7 @@ grpc_cc_library(
         "gpr_base",
         "gpr_platform",
         "grpc_codegen",
+        "channel_args",
         "json",
     ],
 )

@@ -162,6 +162,7 @@ class XdsClient : public DualRefCounted<XdsClient> {
   grpc_arg MakeChannelArg() const;
   static RefCountedPtr<XdsClient> GetFromChannelArgs(
       const grpc_channel_args& args);
+  static absl::string_view ChannelArgName();
 
  private:
   struct XdsResourceKey {

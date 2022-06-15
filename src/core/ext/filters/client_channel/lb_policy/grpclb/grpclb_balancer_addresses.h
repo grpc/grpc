@@ -28,6 +28,9 @@ namespace grpc_core {
 
 grpc_arg CreateGrpclbBalancerAddressesArg(
     const ServerAddressList* address_list);
+GRPC_MUST_USE_RESULT
+ChannelArgs SetGrpcLbBalancerAddresses(ChannelArgs args,
+                                       const ServerAddressList* address_list);
 const ServerAddressList* FindGrpclbBalancerAddressesInChannelArgs(
     ChannelArgs args);
 

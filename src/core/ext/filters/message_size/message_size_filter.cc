@@ -74,8 +74,7 @@ const MessageSizeParsedConfig* MessageSizeParsedConfig::GetFromCallContext(
 //
 
 std::unique_ptr<ServiceConfigParser::ParsedConfig>
-MessageSizeParser::ParsePerMethodParams(const grpc_channel_args* /*args*/,
-                                        const Json& json,
+MessageSizeParser::ParsePerMethodParams(ChannelArgs /*args*/, const Json& json,
                                         grpc_error_handle* error) {
   GPR_DEBUG_ASSERT(error != nullptr && GRPC_ERROR_IS_NONE(*error));
   std::vector<grpc_error_handle> error_list;

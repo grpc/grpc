@@ -82,6 +82,15 @@ class FakeResolverResponseGenerator
   static RefCountedPtr<FakeResolverResponseGenerator> GetFromArgs(
       const grpc_channel_args* args);
 
+  static absl::string_view ChannelArgName() {
+    return GRPC_ARG_FAKE_RESOLVER_RESPONSE_GENERATOR;
+  }
+
+  static int ChannelArgsCompare(const FakeResolverResponseGenerator* a,
+                                const FakeResolverResponseGenerator* b) {
+    return QsortCompare(a, b);
+  }
+
  private:
   friend class FakeResolver;
   // Set the corresponding FakeResolver to this generator.

@@ -31,6 +31,7 @@
 #include <grpc/impl/codegen/grpc_types.h>
 #include <grpc/support/log.h>
 
+#include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/json/json.h"
 
@@ -55,8 +56,7 @@ class ServiceConfigParser {
     virtual absl::string_view name() const = 0;
 
     virtual std::unique_ptr<ParsedConfig> ParseGlobalParams(
-        const grpc_channel_args*, const Json& /* json */,
-        grpc_error_handle* error) {
+        ChannelArgs, const Json& /* json */, grpc_error_handle* error) {
       // Avoid unused parameter warning on debug-only parameter
       (void)error;
       GPR_DEBUG_ASSERT(error != nullptr);
@@ -64,8 +64,7 @@ class ServiceConfigParser {
     }
 
     virtual std::unique_ptr<ParsedConfig> ParsePerMethodParams(
-        const grpc_channel_args*, const Json& /* json */,
-        grpc_error_handle* error) {
+        ChannelArgs, const Json& /* json */, grpc_error_handle* error) {
       // Avoid unused parameter warning on debug-only parameter
       (void)error;
       GPR_DEBUG_ASSERT(error != nullptr);
@@ -90,11 +89,10 @@ class ServiceConfigParser {
     ServiceConfigParserList registered_parsers_;
   };
 
-  ParsedConfigVector ParseGlobalParameters(const grpc_channel_args* args,
-                                           const Json& json,
+  ParsedConfigVector ParseGlobalParameters(ChannelArgs args, const Json& json,
                                            grpc_error_handle* error) const;
 
-  ParsedConfigVector ParsePerMethodParameters(const grpc_channel_args* args,
+  ParsedConfigVector ParsePerMethodParameters(ChannelArgs args,
                                               const Json& json,
                                               grpc_error_handle* error) const;
 

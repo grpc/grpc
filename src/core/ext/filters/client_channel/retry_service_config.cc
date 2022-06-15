@@ -138,7 +138,7 @@ grpc_error_handle ParseRetryThrottling(const Json& json,
 }  // namespace
 
 std::unique_ptr<ServiceConfigParser::ParsedConfig>
-RetryServiceConfigParser::ParseGlobalParams(const grpc_channel_args* /*args*/,
+RetryServiceConfigParser::ParseGlobalParams(ChannelArgs /*args*/,
                                             const Json& json,
                                             grpc_error_handle* error) {
   GPR_DEBUG_ASSERT(error != nullptr && GRPC_ERROR_IS_NONE(*error));
@@ -156,7 +156,7 @@ RetryServiceConfigParser::ParseGlobalParams(const grpc_channel_args* /*args*/,
 namespace {
 
 grpc_error_handle ParseRetryPolicy(
-    const grpc_channel_args* args, const Json& json, int* max_attempts,
+    ChannelArgs args, const Json& json, int* max_attempts,
     Duration* initial_backoff, Duration* max_backoff, float* backoff_multiplier,
     StatusCodeSet* retryable_status_codes,
     absl::optional<Duration>* per_attempt_recv_timeout) {
@@ -248,8 +248,7 @@ grpc_error_handle ParseRetryPolicy(
     }
   }
   // Parse perAttemptRecvTimeout.
-  if (grpc_channel_args_find_bool(args, GRPC_ARG_EXPERIMENTAL_ENABLE_HEDGING,
-                                  false)) {
+  if (args.GetBool(GRPC_ARG_EXPERIMENTAL_ENABLE_HEDGING).value_or(false)) {
     it = json.object_value().find("perAttemptRecvTimeout");
     if (it != json.object_value().end()) {
       Duration per_attempt_recv_timeout_value;
@@ -287,7 +286,7 @@ grpc_error_handle ParseRetryPolicy(
 }  // namespace
 
 std::unique_ptr<ServiceConfigParser::ParsedConfig>
-RetryServiceConfigParser::ParsePerMethodParams(const grpc_channel_args* args,
+RetryServiceConfigParser::ParsePerMethodParams(ChannelArgs args,
                                                const Json& json,
                                                grpc_error_handle* error) {
   GPR_DEBUG_ASSERT(error != nullptr && GRPC_ERROR_IS_NONE(*error));

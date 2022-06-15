@@ -56,15 +56,13 @@ class BinderResolver : public Resolver {
   BinderResolver(ServerAddressList addresses, ResolverArgs args)
       : result_handler_(std::move(args.result_handler)),
         addresses_(std::move(addresses)),
-        channel_args_(grpc_channel_args_copy(args.args)) {}
-
-  ~BinderResolver() override { grpc_channel_args_destroy(channel_args_); };
+        channel_args_(args.args) {}
 
   void StartLocked() override {
     Result result;
     result.addresses = std::move(addresses_);
     result.args = channel_args_;
-    channel_args_ = nullptr;
+    channel_args_ = ChannelArgs();
     result_handler_->ReportResult(std::move(result));
   }
 
@@ -73,7 +71,7 @@ class BinderResolver : public Resolver {
  private:
   std::unique_ptr<ResultHandler> result_handler_;
   ServerAddressList addresses_;
-  const grpc_channel_args* channel_args_ = nullptr;
+  ChannelArgs channel_args_;
 };
 
 class BinderResolverFactory : public ResolverFactory {

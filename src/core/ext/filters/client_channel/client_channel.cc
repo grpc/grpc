@@ -1400,7 +1400,7 @@ void ClientChannel::CreateOrUpdateLbPolicyLocked(
       result.args, &arg_to_remove, 1, args_to_add.data(), args_to_add.size());
   // Create policy if needed.
   if (lb_policy_ == nullptr) {
-    lb_policy_ = CreateLbPolicyLocked(*update_args.args);
+    lb_policy_ = CreateLbPolicyLocked(update_args.args);
   }
   // Update the policy.
   if (GRPC_TRACE_FLAG_ENABLED(grpc_client_channel_trace)) {

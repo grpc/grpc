@@ -45,7 +45,7 @@ namespace grpc_core {
 // Implementations need only to implement StartRequest().
 class PollingResolver : public Resolver {
  public:
-  PollingResolver(ResolverArgs args, const grpc_channel_args* channel_args,
+  PollingResolver(ResolverArgs args, ChannelArgs channel_args,
                   Duration min_time_between_resolutions,
                   BackOff::Options backoff_options, TraceFlag* tracer);
   ~PollingResolver() override;
@@ -70,7 +70,7 @@ class PollingResolver : public Resolver {
   const std::string& authority() const { return authority_; }
   const std::string& name_to_resolve() const { return name_to_resolve_; }
   grpc_pollset_set* interested_parties() const { return interested_parties_; }
-  const grpc_channel_args* channel_args() const { return channel_args_; }
+  const ChannelArgs& channel_args() const { return channel_args_; }
 
  private:
   void MaybeStartResolvingLocked();
@@ -86,7 +86,7 @@ class PollingResolver : public Resolver {
   /// name to resolve
   std::string name_to_resolve_;
   /// channel args
-  const grpc_channel_args* channel_args_ = nullptr;
+  ChannelArgs channel_args_;
   std::shared_ptr<WorkSerializer> work_serializer_;
   std::unique_ptr<ResultHandler> result_handler_;
   TraceFlag* tracer_;
