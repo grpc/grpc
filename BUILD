@@ -6595,6 +6595,8 @@ grpc_cc_library(
     ],
     visibility = ["@grpc:public"],
     deps = [
+        "debug_location",
+        "default_event_engine_factory_hdrs",
         "gpr",
         "grpc++",
         "grpc++_codegen_base",
