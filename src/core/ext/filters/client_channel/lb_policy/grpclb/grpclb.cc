@@ -995,7 +995,7 @@ void GrpcLb::BalancerCallState::StartQuery() {
 
 void GrpcLb::BalancerCallState::ScheduleNextClientLoadReportLocked() {
   client_load_report_handle_ =
-      GetDefaultEventEngine()->RunAt(client_stats_report_interval_, [this] {
+      GetDefaultEventEngine()->RunAfter(client_stats_report_interval_, [this] {
         ApplicationCallbackExecCtx callback_exec_ctx;
         ExecCtx exec_ctx;
         MaybeSendClientLoadReport();

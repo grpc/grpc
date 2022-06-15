@@ -388,13 +388,13 @@ class EventEngine {
   /// in some scenarios. This overload is useful in situations where performance
   /// is not a critical concern.
   virtual void Run(std::function<void()> closure) = 0;
-  /// Synonymous with scheduling an alarm to run at time \a when.
+  /// Synonymous with scheduling an alarm to run after duration \a when.
   ///
   /// The \a closure will execute when time \a when arrives unless it has been
   /// cancelled via the \a Cancel method. If cancelled, the closure will not be
   /// run, nor will it be deleted. Ownership remains with the caller.
-  virtual TaskHandle RunAt(Duration when, Closure* closure) = 0;
-  /// Synonymous with scheduling an alarm to run at time \a when.
+  virtual TaskHandle RunAfter(Duration when, Closure* closure) = 0;
+  /// Synonymous with scheduling an alarm to run after duration \a when.
   ///
   /// The \a closure will execute when time \a when arrives unless it has been
   /// cancelled via the \a Cancel method. If cancelled, the closure will not be
@@ -402,10 +402,10 @@ class EventEngine {
   /// version's \a closure will be deleted by the EventEngine after the closure
   /// has been run, or upon cancellation.
   ///
-  /// This version of \a RunAt may be less performant than the \a Closure
+  /// This version of \a RunAfter may be less performant than the \a Closure
   /// version in some scenarios. This overload is useful in situations where
   /// performance is not a critical concern.
-  virtual TaskHandle RunAt(Duration when, std::function<void()> closure) = 0;
+  virtual TaskHandle RunAfter(Duration when, std::function<void()> closure) = 0;
   /// Request cancellation of a task.
   ///
   /// If the associated closure has already been scheduled to run, it will not

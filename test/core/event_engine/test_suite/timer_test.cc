@@ -47,7 +47,7 @@ TEST_F(EventEngineTimerTest, ImmediateCallbackIsExecutedQuickly) {
   grpc_core::ExecCtx exec_ctx;
   auto engine = this->NewEventEngine();
   grpc_core::MutexLock lock(&mu_);
-  engine->RunAt(0ms, [this]() {
+  engine->RunAfter(0ms, [this]() {
     grpc_core::MutexLock lock(&mu_);
     signaled_ = true;
     cv_.Signal();
@@ -59,7 +59,7 @@ TEST_F(EventEngineTimerTest, ImmediateCallbackIsExecutedQuickly) {
 TEST_F(EventEngineTimerTest, SupportsCancellation) {
   grpc_core::ExecCtx exec_ctx;
   auto engine = this->NewEventEngine();
-  auto handle = engine->RunAt(24h, []() {});
+  auto handle = engine->RunAfter(24h, []() {});
   ASSERT_TRUE(engine->Cancel(handle));
 }
 
@@ -67,7 +67,7 @@ TEST_F(EventEngineTimerTest, CancelledCallbackIsNotExecuted) {
   grpc_core::ExecCtx exec_ctx;
   {
     auto engine = this->NewEventEngine();
-    auto handle = engine->RunAt(24h, [this]() {
+    auto handle = engine->RunAfter(24h, [this]() {
       grpc_core::MutexLock lock(&mu_);
       signaled_ = true;
     });
@@ -80,20 +80,20 @@ TEST_F(EventEngineTimerTest, CancelledCallbackIsNotExecuted) {
 
 TEST_F(EventEngineTimerTest, TimersRespectScheduleOrdering) {
   grpc_core::ExecCtx exec_ctx;
-  // Note: this is a brittle test if the first call to `RunAt` takes longer than
-  // the second callback's wait time.
+  // Note: this is a brittle test if the first call to `RunAfter` takes longer
+  // than the second callback's wait time.
   std::vector<uint8_t> ordered;
   uint8_t count = 0;
   grpc_core::MutexLock lock(&mu_);
   {
     auto engine = this->NewEventEngine();
-    engine->RunAt(100ms, [&]() {
+    engine->RunAfter(100ms, [&]() {
       grpc_core::MutexLock lock(&mu_);
       ordered.push_back(2);
       ++count;
       cv_.Signal();
     });
-    engine->RunAt(0ms, [&]() {
+    engine->RunAfter(0ms, [&]() {
       grpc_core::MutexLock lock(&mu_);
       ordered.push_back(1);
       ++count;
@@ -112,7 +112,7 @@ TEST_F(EventEngineTimerTest, CancellingExecutedCallbackIsNoopAndReturnsFalse) {
   grpc_core::ExecCtx exec_ctx;
   auto engine = this->NewEventEngine();
   grpc_core::MutexLock lock(&mu_);
-  auto handle = engine->RunAt(0ms, [this]() {
+  auto handle = engine->RunAfter(0ms, [this]() {
     grpc_core::MutexLock lock(&mu_);
     signaled_ = true;
     cv_.Signal();
@@ -163,7 +163,7 @@ TEST_F(EventEngineTimerTest, StressTestTimersNotCalledBeforeScheduled) {
       for (int call_n = 0; call_n < call_count_per_thread; ++call_n) {
         const auto dur = static_cast<int64_t>(1e9 * dis(gen));
         auto deadline = absl::Now() + absl::Nanoseconds(dur);
-        engine->RunAt(
+        engine->RunAfter(
             std::chrono::nanoseconds(dur),
             absl::bind_front(&EventEngineTimerTest::ScheduleCheckCB, this,
                              deadline, &call_count, &failed_call_count,

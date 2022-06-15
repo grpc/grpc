@@ -948,7 +948,7 @@ void Subchannel::OnConnectingFinishedLocked(grpc_error_handle error) {
             time_until_next_attempt.millis());
     SetConnectivityStateLocked(GRPC_CHANNEL_TRANSIENT_FAILURE,
                                grpc_error_to_absl_status(error));
-    retry_timer_handle_ = GetDefaultEventEngine()->RunAt(
+    retry_timer_handle_ = GetDefaultEventEngine()->RunAfter(
         time_until_next_attempt,
         [self = WeakRef(DEBUG_LOCATION, "RetryTimer")]() mutable {
           {

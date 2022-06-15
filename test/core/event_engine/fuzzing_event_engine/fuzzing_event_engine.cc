@@ -87,19 +87,19 @@ std::unique_ptr<EventEngine::DNSResolver> FuzzingEventEngine::GetDNSResolver(
 }
 
 void FuzzingEventEngine::Run(Closure* closure) {
-  RunAt(Duration::zero(), closure);
+  RunAfter(Duration::zero(), closure);
 }
 
 void FuzzingEventEngine::Run(std::function<void()> closure) {
-  RunAt(Duration::zero(), closure);
+  RunAfter(Duration::zero(), closure);
 }
 
-EventEngine::TaskHandle FuzzingEventEngine::RunAt(Duration when,
-                                                  Closure* closure) {
-  return RunAt(when, [closure]() { closure->Run(); });
+EventEngine::TaskHandle FuzzingEventEngine::RunAfter(Duration when,
+                                                     Closure* closure) {
+  return RunAfter(when, [closure]() { closure->Run(); });
 }
 
-EventEngine::TaskHandle FuzzingEventEngine::RunAt(
+EventEngine::TaskHandle FuzzingEventEngine::RunAfter(
     Duration when, std::function<void()> closure) {
   grpc_core::MutexLock lock(&mu_);
   const intptr_t id = next_task_id_;
