@@ -147,7 +147,7 @@ fi
 fix_faulty_universal2_wheel() {
   WHL="$1"
   if echo "$WHL" | grep "universal2"; then
-    UPDATED_NAME=$(echo "$WHL" | sed 's/universal2/x86_64/g')
+    UPDATED_NAME="${WHL//universal2/x86_64}"
     mv "$WHL" "$UPDATED_NAME"
   fi
 }
