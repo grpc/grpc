@@ -47,6 +47,7 @@ class MockClosure : public experimental::EventEngine::Closure {
 
 class MockHost : public TimerListHost {
  public:
+  virtual ~MockHost() {}
   MOCK_METHOD(grpc_core::Timestamp, Now, ());
   MOCK_METHOD(void, Kick, ());
 };
