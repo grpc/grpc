@@ -21,7 +21,6 @@
 #include <utility>
 
 #include "absl/base/thread_annotations.h"
-#include "absl/time/clock.h"
 #include "absl/time/time.h"
 #include "absl/types/optional.h"
 #include "google/protobuf/duration.upb.h"

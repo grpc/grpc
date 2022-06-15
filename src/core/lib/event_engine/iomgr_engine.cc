@@ -15,6 +15,7 @@
 
 #include "src/core/lib/event_engine/iomgr_engine.h"
 
+#include <algorithm>
 #include <string>
 #include <type_traits>
 #include <utility>
@@ -22,7 +23,6 @@
 #include "absl/cleanup/cleanup.h"
 #include "absl/container/flat_hash_set.h"
 #include "absl/strings/str_cat.h"
-#include "absl/time/clock.h"
 
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/support/log.h>

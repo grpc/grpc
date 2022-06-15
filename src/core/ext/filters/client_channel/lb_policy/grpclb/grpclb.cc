@@ -78,8 +78,6 @@
 #include "absl/strings/str_join.h"
 #include "absl/strings/string_view.h"
 #include "absl/strings/strip.h"
-#include "absl/time/clock.h"
-#include "absl/time/time.h"
 #include "absl/types/optional.h"
 #include "absl/types/variant.h"
 #include "upb/upb.hpp"
