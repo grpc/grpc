@@ -65,13 +65,13 @@ cc_toolchain_config(
 toolchain(
     name = "cc-toolchain-x64_windows_msys",
     exec_compatible_with = [
-        "@bazel_tools//platforms:x86_64",
-        "@bazel_tools//platforms:windows",
+        "@platforms//cpu:x86_64",
+        "@platforms//os:windows",
         "@bazel_tools//tools/cpp:msys",
     ],
     target_compatible_with = [
-        "@bazel_tools//platforms:x86_64",
-        "@bazel_tools//platforms:windows",
+        "@platforms//cpu:x86_64",
+        "@platforms//os:windows",
     ],
     toolchain = ":cc-compiler-x64_windows_msys",
     toolchain_type = "@bazel_tools//tools/cpp:toolchain_type",
@@ -101,13 +101,13 @@ cc_toolchain_config(
 toolchain(
     name = "cc-toolchain-x64_windows_mingw",
     exec_compatible_with = [
-        "@bazel_tools//platforms:x86_64",
-        "@bazel_tools//platforms:windows",
+        "@platforms//cpu:x86_64",
+        "@platforms//os:windows",
         "@bazel_tools//tools/cpp:mingw",
     ],
     target_compatible_with = [
-        "@bazel_tools//platforms:x86_64",
-        "@bazel_tools//platforms:windows",
+        "@platforms//cpu:x86_64",
+        "@platforms//os:windows",
     ],
     toolchain = ":cc-compiler-x64_windows_mingw",
     toolchain_type = "@bazel_tools//tools/cpp:toolchain_type",
@@ -137,12 +137,12 @@ cc_toolchain_config(
 toolchain(
     name = "cc-toolchain-x64_windows",
     exec_compatible_with = [
-        "@bazel_tools//platforms:x86_64",
-        "@bazel_tools//platforms:windows",
+        "@platforms//cpu:x86_64",
+        "@platforms//os:windows",
     ],
     target_compatible_with = [
-        "@bazel_tools//platforms:x86_64",
-        "@bazel_tools//platforms:windows",
+        "@platforms//cpu:x86_64",
+        "@platforms//os:windows",
     ],
     toolchain = ":cc-compiler-x64_windows",
     toolchain_type = "@bazel_tools//tools/cpp:toolchain_type",
@@ -174,8 +174,8 @@ toolchain(
     exec_compatible_with = [
     ],
     target_compatible_with = [
-        "@bazel_tools//platforms:arm",
-        "@bazel_tools//platforms:android",
+        "@platforms//cpu:arm",
+        "@platforms//os:android",
     ],
     toolchain = ":cc-compiler-armeabi-v7a",
     toolchain_type = "@bazel_tools//tools/cpp:toolchain_type",
