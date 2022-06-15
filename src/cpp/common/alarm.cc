@@ -20,6 +20,8 @@
 #include <functional>
 #include <utility>
 
+#include "absl/types/optional.h"
+
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/impl/codegen/gpr_types.h>
 #include <grpc/impl/codegen/grpc_types.h>
@@ -31,13 +33,9 @@
 #include <grpcpp/impl/grpc_library.h>
 
 #include "src/core/lib/event_engine/event_engine_factory.h"
-#include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/gprpp/time_util.h"
-#include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
-#include "src/core/lib/iomgr/executor.h"
-#include "src/core/lib/iomgr/timer.h"
 #include "src/core/lib/surface/completion_queue.h"
 
 namespace grpc {
