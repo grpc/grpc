@@ -12,24 +12,18 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "src/core/lib/promise/race.h"
+syntax = "proto3";
 
-#include <utility>
+package fuzzing_event_engine;
 
-#include "gtest/gtest.h"
+message Actions {
+    // Map of tick event (0..??) to the amount to increment the timer by.
+    repeated Delay tick_lengths = 1;
+    // Map of task id to the amount to delay execution of the task by.
+    repeated Delay run_delay = 2;
+};
 
-namespace grpc_core {
-
-Poll<int> instant() { return 1; }
-Poll<int> never() { return Pending(); }
-
-TEST(RaceTest, Race1) { EXPECT_EQ(Race(instant)(), Poll<int>(1)); }
-TEST(RaceTest, Race2A) { EXPECT_EQ(Race(instant, never)(), Poll<int>(1)); }
-TEST(RaceTest, Race2B) { EXPECT_EQ(Race(never, instant)(), Poll<int>(1)); }
-
-}  // namespace grpc_core
-
-int main(int argc, char** argv) {
-  ::testing::InitGoogleTest(&argc, argv);
-  return RUN_ALL_TESTS();
-}
+message Delay {
+    uint32 id = 1;
+    uint64 delay_us = 2;
+};

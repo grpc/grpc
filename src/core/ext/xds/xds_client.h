@@ -247,6 +247,7 @@ class XdsClient : public DualRefCounted<XdsClient> {
     // The latest data seen for the resource.
     std::unique_ptr<XdsResourceType::ResourceData> resource;
     XdsApi::ResourceMetadata meta;
+    bool ignored_deletion = false;
   };
 
   struct AuthorityState {
