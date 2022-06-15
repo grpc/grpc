@@ -41,8 +41,8 @@ using proto::EchoTestService;
 using proto::ForwardEchoRequest;
 using proto::ForwardEchoResponse;
 
-// A ver simple EchoTestService implementation that just echoes back the message
-// without handling any other expectations for ForwardEcho.
+// A very simple EchoTestService implementation that just echoes back the
+// message without handling any other expectations for ForwardEcho.
 class SimpleEchoTestServerImpl : public proto::EchoTestService::Service {
  public:
   explicit SimpleEchoTestServerImpl() {}
@@ -160,7 +160,7 @@ TEST_F(EchoTest, ForwardEchoTestUnhandledProtocols) {
   auto status = stub_->ForwardEcho(&context, request, &response);
   ASSERT_TRUE(status.ok()) << "Code = " << status.error_code()
                            << " Message = " << status.error_message();
-  ASSERT_TRUE(!response.output().empty());
+  ASSERT_FALSE(response.output().empty());
   EXPECT_EQ(response.output()[0], "hello");
 }
 
