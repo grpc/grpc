@@ -943,8 +943,6 @@ void Subchannel::OnConnectingFinishedLocked(grpc_error_handle error) {
   if (connecting_result_.transport == nullptr || !PublishTransportLocked()) {
     const Duration time_until_next_attempt =
         next_attempt_time_ - ExecCtx::Get()->Now();
-    auto ee_deadline =
-        absl::Now() + absl::Milliseconds(time_until_next_attempt.millis());
     gpr_log(GPR_INFO,
             "subchannel %p %s: connect failed (%s), backing off for %" PRId64
             " ms",
@@ -953,7 +951,8 @@ void Subchannel::OnConnectingFinishedLocked(grpc_error_handle error) {
     SetConnectivityStateLocked(GRPC_CHANNEL_TRANSIENT_FAILURE,
                                grpc_error_to_absl_status(error));
     retry_timer_handle_ = GetDefaultEventEngine()->RunAt(
-        ee_deadline, [self = WeakRef(DEBUG_LOCATION, "RetryTimer")]() mutable {
+        time_until_next_attempt,
+        [self = WeakRef(DEBUG_LOCATION, "RetryTimer")]() mutable {
           {
             ApplicationCallbackExecCtx callback_exec_ctx;
             ExecCtx exec_ctx;

@@ -65,13 +65,13 @@ class IomgrEventEngine final : public EventEngine {
     LookupTaskHandle LookupHostname(LookupHostnameCallback on_resolve,
                                     absl::string_view name,
                                     absl::string_view default_port,
-                                    absl::Time deadline) override;
+                                    Duration timeout) override;
     LookupTaskHandle LookupSRV(LookupSRVCallback on_resolve,
                                absl::string_view name,
-                               absl::Time deadline) override;
+                               Duration timeout) override;
     LookupTaskHandle LookupTXT(LookupTXTCallback on_resolve,
                                absl::string_view name,
-                               absl::Time deadline) override;
+                               Duration timeout) override;
     bool CancelLookup(LookupTaskHandle handle) override;
   };
 
@@ -89,7 +89,7 @@ class IomgrEventEngine final : public EventEngine {
                            const ResolvedAddress& addr,
                            const EndpointConfig& args,
                            MemoryAllocator memory_allocator,
-                           absl::Time deadline) override;
+                           Duration timeout) override;
 
   bool CancelConnect(ConnectionHandle handle) override;
   bool IsWorkerThread() override;
@@ -97,13 +97,13 @@ class IomgrEventEngine final : public EventEngine {
       const DNSResolver::ResolverOptions& options) override;
   void Run(Closure* closure) override;
   void Run(std::function<void()> closure) override;
-  TaskHandle RunAt(absl::Time when, Closure* closure) override;
-  TaskHandle RunAt(absl::Time when, std::function<void()> closure) override;
+  TaskHandle RunAt(Duration when, Closure* closure) override;
+  TaskHandle RunAt(Duration when, std::function<void()> closure) override;
   bool Cancel(TaskHandle handle) override;
 
  private:
   EventEngine::TaskHandle RunAtInternal(
-      absl::Time when,
+      Duration when,
       absl::variant<std::function<void()>, EventEngine::Closure*> cb);
 
   void RunInternal(

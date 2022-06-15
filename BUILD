@@ -2087,6 +2087,7 @@ grpc_cc_library(
         "gpr_base",
         "gpr_codegen",
         "gpr_platform",
+        "event_engine_base_hdrs",
         "useful",
     ],
 )
