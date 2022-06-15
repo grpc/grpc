@@ -198,7 +198,6 @@ Pod::Spec.new do |s|
     abseil_version = '1.20211102.0'
     ss.dependency 'abseil/base/base', abseil_version
     ss.dependency 'abseil/base/core_headers', abseil_version
-    ss.dependency 'abseil/cleanup/cleanup', abseil_version
     ss.dependency 'abseil/container/flat_hash_map', abseil_version
     ss.dependency 'abseil/container/flat_hash_set', abseil_version
     ss.dependency 'abseil/container/inlined_vector', abseil_version
@@ -675,7 +674,12 @@ Pod::Spec.new do |s|
                       'src/core/lib/event_engine/channel_args_endpoint_config.h',
                       'src/core/lib/event_engine/event_engine_factory.h',
                       'src/core/lib/event_engine/handle_containers.h',
-                      'src/core/lib/event_engine/iomgr_engine.h',
+                      'src/core/lib/event_engine/iomgr_engine/iomgr_engine.h',
+                      'src/core/lib/event_engine/iomgr_engine/thread_pool.h',
+                      'src/core/lib/event_engine/iomgr_engine/time_averaged_stats.h',
+                      'src/core/lib/event_engine/iomgr_engine/timer.h',
+                      'src/core/lib/event_engine/iomgr_engine/timer_heap.h',
+                      'src/core/lib/event_engine/iomgr_engine/timer_manager.h',
                       'src/core/lib/event_engine/trace.h',
                       'src/core/lib/gpr/alloc.h',
                       'src/core/lib/gpr/env.h',
@@ -1496,7 +1500,12 @@ Pod::Spec.new do |s|
                               'src/core/lib/event_engine/channel_args_endpoint_config.h',
                               'src/core/lib/event_engine/event_engine_factory.h',
                               'src/core/lib/event_engine/handle_containers.h',
-                              'src/core/lib/event_engine/iomgr_engine.h',
+                              'src/core/lib/event_engine/iomgr_engine/iomgr_engine.h',
+                              'src/core/lib/event_engine/iomgr_engine/thread_pool.h',
+                              'src/core/lib/event_engine/iomgr_engine/time_averaged_stats.h',
+                              'src/core/lib/event_engine/iomgr_engine/timer.h',
+                              'src/core/lib/event_engine/iomgr_engine/timer_heap.h',
+                              'src/core/lib/event_engine/iomgr_engine/timer_manager.h',
                               'src/core/lib/event_engine/trace.h',
                               'src/core/lib/gpr/alloc.h',
                               'src/core/lib/gpr/env.h',
