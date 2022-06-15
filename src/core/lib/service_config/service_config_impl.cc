@@ -43,7 +43,7 @@ RefCountedPtr<ServiceConfig> ServiceConfigImpl::Create(
     grpc_error_handle* error) {
   GPR_DEBUG_ASSERT(error != nullptr);
   Json json = Json::Parse(json_string, error);
-  if (*error != GRPC_ERROR_NONE) return nullptr;
+  if (!GRPC_ERROR_IS_NONE(*error)) return nullptr;
   return MakeRefCounted<ServiceConfigImpl>(args, std::string(json_string),
                                            std::move(json), error);
 }
@@ -63,9 +63,9 @@ ServiceConfigImpl::ServiceConfigImpl(const grpc_channel_args* args,
   parsed_global_configs_ =
       CoreConfiguration::Get().service_config_parser().ParseGlobalParameters(
           args, json_, &global_error);
-  if (global_error != GRPC_ERROR_NONE) error_list.push_back(global_error);
+  if (!GRPC_ERROR_IS_NONE(global_error)) error_list.push_back(global_error);
   grpc_error_handle local_error = ParsePerMethodParams(args);
-  if (local_error != GRPC_ERROR_NONE) error_list.push_back(local_error);
+  if (!GRPC_ERROR_IS_NONE(local_error)) error_list.push_back(local_error);
   if (!error_list.empty()) {
     *error = GRPC_ERROR_CREATE_FROM_VECTOR("Service config parsing error",
                                            &error_list);
@@ -88,7 +88,7 @@ grpc_error_handle ServiceConfigImpl::ParseJsonMethodConfig(
   *parsed_configs =
       CoreConfiguration::Get().service_config_parser().ParsePerMethodParameters(
           args, json, &parser_error);
-  if (parser_error != GRPC_ERROR_NONE) {
+  if (!GRPC_ERROR_IS_NONE(parser_error)) {
     error_list.push_back(parser_error);
   }
   parsed_method_config_vectors_storage_.push_back(std::move(parsed_configs));
@@ -106,7 +106,7 @@ grpc_error_handle ServiceConfigImpl::ParseJsonMethodConfig(
     for (const Json& name : name_array) {
       grpc_error_handle parse_error = GRPC_ERROR_NONE;
       std::string path = ParseJsonMethodName(name, &parse_error);
-      if (parse_error != GRPC_ERROR_NONE) {
+      if (!GRPC_ERROR_IS_NONE(parse_error)) {
         error_list.push_back(parse_error);
       } else {
         found_name = true;
@@ -156,7 +156,7 @@ grpc_error_handle ServiceConfigImpl::ParsePerMethodParams(
         continue;
       }
       grpc_error_handle error = ParseJsonMethodConfig(args, method_config);
-      if (error != GRPC_ERROR_NONE) {
+      if (!GRPC_ERROR_IS_NONE(error)) {
         error_list.push_back(error);
       }
     }

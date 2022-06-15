@@ -46,6 +46,9 @@ class GuardValidator(object):
         self.endif_c_core_re = re.compile(
             r'#endif /\* (?: *\\\n *)?([A-Z][A-Z_1-9]*) (?:\\\n *)?\*/$')
         self.endif_re = re.compile(r'#endif  // ([A-Z][A-Z_1-9]*)')
+        self.comments_then_includes_re = re.compile(
+            r'^((//.*?$|/\*.*?\*/|[ \r\n\t])*)(([ \r\n\t]|#include .*)*)(#ifndef [^\n]*\n#define [^\n]*\n)',
+            re.DOTALL | re.MULTILINE)
         self.failed = False
 
     def _is_c_core_header(self, fpath):
@@ -154,6 +157,18 @@ class GuardValidator(object):
             fcontents = self.fail(fpath, self.endif_re, fcontents,
                                   match.group(1), valid_guard, fix)
             if fix:
+                save(fpath, fcontents)
+
+        match = self.comments_then_includes_re.search(fcontents)
+        assert (match)
+        bad_includes = match.group(3)
+        if bad_includes:
+            print(
+                "includes after initial comments but before include guards in",
+                fpath)
+            if fix:
+                fcontents = fcontents[:match.start(3)] + match.group(
+                    5) + match.group(3) + fcontents[match.end(5):]
                 save(fpath, fcontents)
 
         return not self.failed  # Did the check succeed? (ie, not failed)

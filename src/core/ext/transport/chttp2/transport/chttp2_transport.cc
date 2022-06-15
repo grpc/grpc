@@ -610,13 +610,13 @@ static void close_transport_locked(grpc_chttp2_transport* t,
                                    grpc_error_handle error) {
   end_all_the_calls(t, GRPC_ERROR_REF(error));
   cancel_pings(t, GRPC_ERROR_REF(error));
-  if (t->closed_with_error == GRPC_ERROR_NONE) {
+  if (GRPC_ERROR_IS_NONE(t->closed_with_error)) {
     if (!grpc_error_has_clear_grpc_status(error)) {
       error = grpc_error_set_int(error, GRPC_ERROR_INT_GRPC_STATUS,
                                  GRPC_STATUS_UNAVAILABLE);
     }
     if (t->write_state != GRPC_CHTTP2_WRITE_STATE_IDLE) {
-      if (t->close_transport_on_writes_finished == GRPC_ERROR_NONE) {
+      if (GRPC_ERROR_IS_NONE(t->close_transport_on_writes_finished)) {
         t->close_transport_on_writes_finished =
             GRPC_ERROR_CREATE_FROM_STATIC_STRING(
                 "Delayed close due to in-progress write");
@@ -625,7 +625,7 @@ static void close_transport_locked(grpc_chttp2_transport* t,
           grpc_error_add_child(t->close_transport_on_writes_finished, error);
       return;
     }
-    GPR_ASSERT(error != GRPC_ERROR_NONE);
+    GPR_ASSERT(!GRPC_ERROR_IS_NONE(error));
     t->closed_with_error = GRPC_ERROR_REF(error);
     connectivity_state_set(t, GRPC_CHANNEL_SHUTDOWN, absl::Status(),
                            "close_transport");
@@ -836,7 +836,7 @@ static void set_write_state(grpc_chttp2_transport* t,
   // from peer while we had some pending writes)
   if (st == GRPC_CHTTP2_WRITE_STATE_IDLE) {
     grpc_core::ExecCtx::RunList(DEBUG_LOCATION, &t->run_after_write);
-    if (t->close_transport_on_writes_finished != GRPC_ERROR_NONE) {
+    if (!GRPC_ERROR_IS_NONE(t->close_transport_on_writes_finished)) {
       grpc_error_handle err = t->close_transport_on_writes_finished;
       t->close_transport_on_writes_finished = GRPC_ERROR_NONE;
       close_transport_locked(t, err);
@@ -958,7 +958,7 @@ void grpc_chttp2_initiate_write(grpc_chttp2_transport* t,
 
 void grpc_chttp2_mark_stream_writable(grpc_chttp2_transport* t,
                                       grpc_chttp2_stream* s) {
-  if (t->closed_with_error == GRPC_ERROR_NONE &&
+  if (GRPC_ERROR_IS_NONE(t->closed_with_error) &&
       grpc_chttp2_list_add_writable_stream(t, s)) {
     GRPC_CHTTP2_STREAM_REF(s, "chttp2_writing:become");
   }
@@ -978,7 +978,7 @@ static void write_action_begin_locked(void* gt,
   grpc_chttp2_transport* t = static_cast<grpc_chttp2_transport*>(gt);
   GPR_ASSERT(t->write_state != GRPC_CHTTP2_WRITE_STATE_IDLE);
   grpc_chttp2_begin_write_result r;
-  if (t->closed_with_error != GRPC_ERROR_NONE) {
+  if (!GRPC_ERROR_IS_NONE(t->closed_with_error)) {
     r.writing = false;
   } else {
     r = grpc_chttp2_begin_write(t);
@@ -1038,7 +1038,7 @@ static void write_action_end_locked(void* tp, grpc_error_handle error) {
   grpc_chttp2_transport* t = static_cast<grpc_chttp2_transport*>(tp);
 
   bool closed = false;
-  if (error != GRPC_ERROR_NONE) {
+  if (!GRPC_ERROR_IS_NONE(error)) {
     close_transport_locked(t, GRPC_ERROR_REF(error));
     closed = true;
   }
@@ -1117,7 +1117,7 @@ void grpc_chttp2_add_incoming_goaway(grpc_chttp2_transport* t,
                                      uint32_t last_stream_id,
                                      absl::string_view goaway_text) {
   // Discard the error from a previous goaway frame (if any)
-  if (t->goaway_error != GRPC_ERROR_NONE) {
+  if (!GRPC_ERROR_IS_NONE(t->goaway_error)) {
     GRPC_ERROR_UNREF(t->goaway_error);
   }
   t->goaway_error = grpc_error_set_str(
@@ -1187,7 +1187,7 @@ static void maybe_start_some_streams(grpc_chttp2_transport* t) {
   grpc_chttp2_stream* s;
   // maybe cancel out streams that haven't yet started if we have received a
   // GOAWAY
-  if (t->goaway_error != GRPC_ERROR_NONE) {
+  if (!GRPC_ERROR_IS_NONE(t->goaway_error)) {
     cancel_unstarted_streams(t, GRPC_ERROR_REF(t->goaway_error));
     return;
   }
@@ -1251,7 +1251,7 @@ static grpc_closure* add_closure_barrier(grpc_closure* closure) {
 static void null_then_sched_closure(grpc_closure** closure) {
   grpc_closure* c = *closure;
   *closure = nullptr;
-  grpc_core::ExecCtx::Run(DEBUG_LOCATION, c, GRPC_ERROR_NONE);
+  grpc_core::Closure::Run(DEBUG_LOCATION, c, GRPC_ERROR_NONE);
 }
 
 void grpc_chttp2_complete_closure_step(grpc_chttp2_transport* t,
@@ -1279,7 +1279,7 @@ void grpc_chttp2_complete_closure_step(grpc_chttp2_transport* t,
         desc, grpc_error_std_string(error).c_str(),
         write_state_name(t->write_state));
   }
-  if (error != GRPC_ERROR_NONE) {
+  if (!GRPC_ERROR_IS_NONE(error)) {
 #ifdef GRPC_ERROR_IS_ABSEIL_STATUS
     grpc_error_handle cl_err =
         grpc_core::internal::StatusMoveFromHeapPtr(closure->error_data.error);
@@ -1287,7 +1287,7 @@ void grpc_chttp2_complete_closure_step(grpc_chttp2_transport* t,
     grpc_error_handle cl_err =
         reinterpret_cast<grpc_error_handle>(closure->error_data.error);
 #endif
-    if (cl_err == GRPC_ERROR_NONE) {
+    if (GRPC_ERROR_IS_NONE(cl_err)) {
       cl_err = GRPC_ERROR_CREATE_FROM_STATIC_STRING(
           "Error in HTTP transport completing operation");
       cl_err = grpc_error_set_str(cl_err, GRPC_ERROR_STR_TARGET_ADDRESS,
@@ -1488,7 +1488,7 @@ static void perform_stream_op_locked(void* stream_op,
     }
     if (!s->write_closed) {
       if (t->is_client) {
-        if (t->closed_with_error == GRPC_ERROR_NONE) {
+        if (GRPC_ERROR_IS_NONE(t->closed_with_error)) {
           GPR_ASSERT(s->id == 0);
           grpc_chttp2_list_add_waiting_for_concurrency(t, s);
           maybe_start_some_streams(t);
@@ -1703,7 +1703,7 @@ static void cancel_pings(grpc_chttp2_transport* t, grpc_error_handle error) {
   // callback remaining pings: they're not allowed to call into the transport,
   //   and maybe they hold resources that need to be freed
   grpc_chttp2_ping_queue* pq = &t->ping_queue;
-  GPR_ASSERT(error != GRPC_ERROR_NONE);
+  GPR_ASSERT(!GRPC_ERROR_IS_NONE(error));
   for (size_t j = 0; j < GRPC_CHTTP2_PCL_COUNT; j++) {
     grpc_closure_list_fail_all(&pq->lists[j], GRPC_ERROR_REF(error));
     grpc_core::ExecCtx::RunList(DEBUG_LOCATION, &pq->lists[j]);
@@ -1713,7 +1713,7 @@ static void cancel_pings(grpc_chttp2_transport* t, grpc_error_handle error) {
 
 static void send_ping_locked(grpc_chttp2_transport* t,
                              grpc_closure* on_initiate, grpc_closure* on_ack) {
-  if (t->closed_with_error != GRPC_ERROR_NONE) {
+  if (!GRPC_ERROR_IS_NONE(t->closed_with_error)) {
     grpc_core::ExecCtx::Run(DEBUG_LOCATION, on_initiate,
                             GRPC_ERROR_REF(t->closed_with_error));
     grpc_core::ExecCtx::Run(DEBUG_LOCATION, on_ack,
@@ -1731,7 +1731,7 @@ static void send_ping_locked(grpc_chttp2_transport* t,
 // a ping in progress, the keepalive ping would piggyback onto that ping,
 // instead of waiting for that ping to complete and then starting a new ping.
 static void send_keepalive_ping_locked(grpc_chttp2_transport* t) {
-  if (t->closed_with_error != GRPC_ERROR_NONE) {
+  if (!GRPC_ERROR_IS_NONE(t->closed_with_error)) {
     t->combiner->Run(GRPC_CLOSURE_INIT(&t->start_keepalive_ping_locked,
                                        start_keepalive_ping_locked, t, nullptr),
                      GRPC_ERROR_REF(t->closed_with_error));
@@ -1776,7 +1776,7 @@ void grpc_chttp2_retry_initiate_ping(void* tp, grpc_error_handle error) {
 static void retry_initiate_ping_locked(void* tp, grpc_error_handle error) {
   grpc_chttp2_transport* t = static_cast<grpc_chttp2_transport*>(tp);
   t->ping_state.is_delayed_ping_timer_set = false;
-  if (error == GRPC_ERROR_NONE) {
+  if (GRPC_ERROR_IS_NONE(error)) {
     grpc_chttp2_initiate_write(t, GRPC_CHTTP2_INITIATE_WRITE_RETRY_SEND_PING);
   }
   GRPC_CHTTP2_UNREF_TRANSPORT(t, "retry_initiate_ping_locked");
@@ -1833,7 +1833,7 @@ class GracefulGoaway : public grpc_core::RefCounted<GracefulGoaway> {
       // We already sent the final GOAWAY.
       return;
     }
-    if (t_->destroying || t_->closed_with_error != GRPC_ERROR_NONE) {
+    if (t_->destroying || !GRPC_ERROR_IS_NONE(t_->closed_with_error)) {
       GRPC_CHTTP2_IF_TRACING(gpr_log(
           GPR_INFO,
           "transport:%p %s peer:%s Transport already shutting down. "
@@ -1870,7 +1870,7 @@ class GracefulGoaway : public grpc_core::RefCounted<GracefulGoaway> {
 
   static void OnTimer(void* arg, grpc_error_handle error) {
     auto* self = static_cast<GracefulGoaway*>(arg);
-    if (error != GRPC_ERROR_NONE) {
+    if (!GRPC_ERROR_IS_NONE(error)) {
       self->Unref();
       return;
     }
@@ -1954,7 +1954,7 @@ static void perform_transport_op_locked(void* stream_op,
   grpc_chttp2_transport* t =
       static_cast<grpc_chttp2_transport*>(op->handler_private.extra_arg);
 
-  if (op->goaway_error != GRPC_ERROR_NONE) {
+  if (!GRPC_ERROR_IS_NONE(op->goaway_error)) {
     send_goaway(t, op->goaway_error, /*immediate_disconnect_hint=*/false);
   }
 
@@ -1984,7 +1984,7 @@ static void perform_transport_op_locked(void* stream_op,
     t->state_tracker.RemoveWatcher(op->stop_connectivity_watch);
   }
 
-  if (op->disconnect_with_error != GRPC_ERROR_NONE) {
+  if (!GRPC_ERROR_IS_NONE(op->disconnect_with_error)) {
     send_goaway(t, GRPC_ERROR_REF(op->disconnect_with_error),
                 /*immediate_disconnect_hint=*/true);
     close_transport_locked(t, op->disconnect_with_error);
@@ -2060,7 +2060,7 @@ void grpc_chttp2_maybe_complete_recv_message(grpc_chttp2_transport* /*t*/,
         error = grpc_deframe_unprocessed_incoming_frames(
             &s->data_parser, s, &s->unprocessed_incoming_frames_buffer, nullptr,
             s->recv_message);
-        if (error != GRPC_ERROR_NONE) {
+        if (!GRPC_ERROR_IS_NONE(error)) {
           s->seen_error = true;
           grpc_slice_buffer_reset_and_unref_internal(&s->frame_storage);
           grpc_slice_buffer_reset_and_unref_internal(
@@ -2075,7 +2075,7 @@ void grpc_chttp2_maybe_complete_recv_message(grpc_chttp2_transport* /*t*/,
     // threads. Needed to support correct flow control bookkeeping
     s->unprocessed_incoming_frames_buffer_cached_length =
         s->unprocessed_incoming_frames_buffer.length;
-    if (error == GRPC_ERROR_NONE && *s->recv_message != nullptr) {
+    if (GRPC_ERROR_IS_NONE(error) && *s->recv_message != nullptr) {
       null_then_sched_closure(&s->recv_message_ready);
     } else if (s->published_metadata[1] != GRPC_METADATA_NOT_PUBLISHED) {
       *s->recv_message = nullptr;
@@ -2187,7 +2187,7 @@ void grpc_chttp2_cancel_stream(grpc_chttp2_transport* t, grpc_chttp2_stream* s,
       grpc_chttp2_initiate_write(t, GRPC_CHTTP2_INITIATE_WRITE_RST_STREAM);
     }
   }
-  if (due_to_error != GRPC_ERROR_NONE && !s->seen_error) {
+  if (!GRPC_ERROR_IS_NONE(due_to_error) && !s->seen_error) {
     s->seen_error = true;
   }
   grpc_chttp2_mark_stream_closed(t, s, 1, 1, due_to_error);
@@ -2225,7 +2225,7 @@ void grpc_chttp2_fake_status(grpc_chttp2_transport* t, grpc_chttp2_stream* s,
 
 static void add_error(grpc_error_handle error, grpc_error_handle* refs,
                       size_t* nrefs) {
-  if (error == GRPC_ERROR_NONE) return;
+  if (GRPC_ERROR_IS_NONE(error)) return;
   for (size_t i = 0; i < *nrefs; i++) {
     if (error == refs[i]) {
       return;
@@ -2296,7 +2296,7 @@ void grpc_chttp2_mark_stream_closed(grpc_chttp2_transport* t,
   if (s->read_closed && s->write_closed) {
     // already closed, but we should still fake the status if needed.
     grpc_error_handle overall_error = removal_error(error, s, "Stream removed");
-    if (overall_error != GRPC_ERROR_NONE) {
+    if (!GRPC_ERROR_IS_NONE(overall_error)) {
       grpc_chttp2_fake_status(t, s, overall_error);
     }
     grpc_chttp2_maybe_complete_recv_trailing_metadata(t, s);
@@ -2324,7 +2324,7 @@ void grpc_chttp2_mark_stream_closed(grpc_chttp2_transport* t,
       // Purge streams waiting on concurrency still waiting for id assignment
       grpc_chttp2_list_remove_waiting_for_concurrency(t, s);
     }
-    if (overall_error != GRPC_ERROR_NONE) {
+    if (!GRPC_ERROR_IS_NONE(overall_error)) {
       grpc_chttp2_fake_status(t, s, overall_error);
     }
   }
@@ -2579,11 +2579,11 @@ static grpc_error_handle try_http_parsing(grpc_chttp2_transport* t) {
   grpc_http_parser_init(&parser, GRPC_HTTP_RESPONSE, &response);
 
   grpc_error_handle parse_error = GRPC_ERROR_NONE;
-  for (; i < t->read_buffer.count && parse_error == GRPC_ERROR_NONE; i++) {
+  for (; i < t->read_buffer.count && GRPC_ERROR_IS_NONE(parse_error); i++) {
     parse_error =
         grpc_http_parser_parse(&parser, t->read_buffer.slices[i], nullptr);
   }
-  if (parse_error == GRPC_ERROR_NONE &&
+  if (GRPC_ERROR_IS_NONE(parse_error) &&
       (parse_error = grpc_http_parser_eof(&parser)) == GRPC_ERROR_NONE) {
     error = grpc_error_set_int(
         grpc_error_set_int(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
@@ -2614,7 +2614,7 @@ static void read_action_locked(void* tp, grpc_error_handle error) {
   (void)GRPC_ERROR_REF(error);
 
   grpc_error_handle err = error;
-  if (err != GRPC_ERROR_NONE) {
+  if (!GRPC_ERROR_IS_NONE(err)) {
     err = grpc_error_set_int(GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(
                                  "Endpoint read failed", &err, 1),
                              GRPC_ERROR_INT_OCCURRED_DURING_WRITE,
@@ -2622,7 +2622,7 @@ static void read_action_locked(void* tp, grpc_error_handle error) {
   }
   std::swap(err, error);
   GRPC_ERROR_UNREF(err);
-  if (t->closed_with_error == GRPC_ERROR_NONE) {
+  if (GRPC_ERROR_IS_NONE(t->closed_with_error)) {
     GPR_TIMER_SCOPE("reading_action.parse", 0);
     size_t i = 0;
     grpc_error_handle errors[3] = {GRPC_ERROR_REF(error), GRPC_ERROR_NONE,
@@ -2656,20 +2656,20 @@ static void read_action_locked(void* tp, grpc_error_handle error) {
 
   GPR_TIMER_SCOPE("post_reading_action_locked", 0);
   bool keep_reading = false;
-  if (error == GRPC_ERROR_NONE && t->closed_with_error != GRPC_ERROR_NONE) {
+  if (GRPC_ERROR_IS_NONE(error) && !GRPC_ERROR_IS_NONE(t->closed_with_error)) {
     error = GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(
         "Transport closed", &t->closed_with_error, 1);
   }
-  if (error != GRPC_ERROR_NONE) {
+  if (!GRPC_ERROR_IS_NONE(error)) {
     // If a goaway frame was received, this might be the reason why the read
     // failed. Add this info to the error
-    if (t->goaway_error != GRPC_ERROR_NONE) {
+    if (!GRPC_ERROR_IS_NONE(t->goaway_error)) {
       error = grpc_error_add_child(error, GRPC_ERROR_REF(t->goaway_error));
     }
 
     close_transport_locked(t, GRPC_ERROR_REF(error));
     t->endpoint_reading = 0;
-  } else if (t->closed_with_error == GRPC_ERROR_NONE) {
+  } else if (GRPC_ERROR_IS_NONE(t->closed_with_error)) {
     keep_reading = true;
     // Since we have read a byte, reset the keepalive timer
     if (t->keepalive_state == GRPC_CHTTP2_KEEPALIVE_STATE_WAITING) {
@@ -2697,7 +2697,7 @@ static void read_action_locked(void* tp, grpc_error_handle error) {
 }
 
 static void continue_read_action_locked(grpc_chttp2_transport* t) {
-  const bool urgent = t->goaway_error != GRPC_ERROR_NONE;
+  const bool urgent = !GRPC_ERROR_IS_NONE(t->goaway_error);
   GRPC_CLOSURE_INIT(&t->read_action_locked, read_action, t,
                     grpc_schedule_on_exec_ctx);
   grpc_endpoint_read(t->ep, &t->read_buffer, &t->read_action_locked, urgent,
@@ -2731,7 +2731,7 @@ static void start_bdp_ping_locked(void* tp, grpc_error_handle error) {
     gpr_log(GPR_INFO, "%s: Start BDP ping err=%s", t->peer_string.c_str(),
             grpc_error_std_string(error).c_str());
   }
-  if (error != GRPC_ERROR_NONE || t->closed_with_error != GRPC_ERROR_NONE) {
+  if (!GRPC_ERROR_IS_NONE(error) || !GRPC_ERROR_IS_NONE(t->closed_with_error)) {
     return;
   }
   // Reset the keepalive ping timer
@@ -2755,7 +2755,7 @@ static void finish_bdp_ping_locked(void* tp, grpc_error_handle error) {
     gpr_log(GPR_INFO, "%s: Complete BDP ping err=%s", t->peer_string.c_str(),
             grpc_error_std_string(error).c_str());
   }
-  if (error != GRPC_ERROR_NONE || t->closed_with_error != GRPC_ERROR_NONE) {
+  if (!GRPC_ERROR_IS_NONE(error) || !GRPC_ERROR_IS_NONE(t->closed_with_error)) {
     GRPC_CHTTP2_UNREF_TRANSPORT(t, "bdp_ping");
     return;
   }
@@ -2793,7 +2793,7 @@ static void next_bdp_ping_timer_expired_locked(void* tp,
   grpc_chttp2_transport* t = static_cast<grpc_chttp2_transport*>(tp);
   GPR_ASSERT(t->have_next_bdp_ping_timer);
   t->have_next_bdp_ping_timer = false;
-  if (error != GRPC_ERROR_NONE) {
+  if (!GRPC_ERROR_IS_NONE(error)) {
     GRPC_CHTTP2_UNREF_TRANSPORT(t, "bdp_ping");
     return;
   }
@@ -2875,9 +2875,9 @@ static void init_keepalive_ping(void* arg, grpc_error_handle error) {
 static void init_keepalive_ping_locked(void* arg, grpc_error_handle error) {
   grpc_chttp2_transport* t = static_cast<grpc_chttp2_transport*>(arg);
   GPR_ASSERT(t->keepalive_state == GRPC_CHTTP2_KEEPALIVE_STATE_WAITING);
-  if (t->destroying || t->closed_with_error != GRPC_ERROR_NONE) {
+  if (t->destroying || !GRPC_ERROR_IS_NONE(t->closed_with_error)) {
     t->keepalive_state = GRPC_CHTTP2_KEEPALIVE_STATE_DYING;
-  } else if (error == GRPC_ERROR_NONE) {
+  } else if (GRPC_ERROR_IS_NONE(error)) {
     if (t->keepalive_permit_without_calls ||
         grpc_chttp2_stream_map_size(&t->stream_map) > 0) {
       t->keepalive_state = GRPC_CHTTP2_KEEPALIVE_STATE_PINGING;
@@ -2914,7 +2914,7 @@ static void start_keepalive_ping(void* arg, grpc_error_handle error) {
 
 static void start_keepalive_ping_locked(void* arg, grpc_error_handle error) {
   grpc_chttp2_transport* t = static_cast<grpc_chttp2_transport*>(arg);
-  if (error != GRPC_ERROR_NONE) {
+  if (!GRPC_ERROR_IS_NONE(error)) {
     return;
   }
   if (t->channelz_socket != nullptr) {
@@ -2943,7 +2943,7 @@ static void finish_keepalive_ping(void* arg, grpc_error_handle error) {
 static void finish_keepalive_ping_locked(void* arg, grpc_error_handle error) {
   grpc_chttp2_transport* t = static_cast<grpc_chttp2_transport*>(arg);
   if (t->keepalive_state == GRPC_CHTTP2_KEEPALIVE_STATE_PINGING) {
-    if (error == GRPC_ERROR_NONE) {
+    if (GRPC_ERROR_IS_NONE(error)) {
       if (GRPC_TRACE_FLAG_ENABLED(grpc_http_trace) ||
           GRPC_TRACE_FLAG_ENABLED(grpc_keepalive_trace)) {
         gpr_log(GPR_INFO, "%s: Finish keepalive ping", t->peer_string.c_str());
@@ -2983,7 +2983,7 @@ static void keepalive_watchdog_fired_locked(void* arg,
                                             grpc_error_handle error) {
   grpc_chttp2_transport* t = static_cast<grpc_chttp2_transport*>(arg);
   if (t->keepalive_state == GRPC_CHTTP2_KEEPALIVE_STATE_PINGING) {
-    if (error == GRPC_ERROR_NONE) {
+    if (GRPC_ERROR_IS_NONE(error)) {
       gpr_log(GPR_INFO, "%s: Keepalive watchdog fired. Closing transport.",
               t->peer_string.c_str());
       t->keepalive_state = GRPC_CHTTP2_KEEPALIVE_STATE_DYING;
@@ -3260,7 +3260,7 @@ static void post_destructive_reclaimer(grpc_chttp2_transport* t) {
 
 static void benign_reclaimer_locked(void* arg, grpc_error_handle error) {
   grpc_chttp2_transport* t = static_cast<grpc_chttp2_transport*>(arg);
-  if (error == GRPC_ERROR_NONE &&
+  if (GRPC_ERROR_IS_NONE(error) &&
       grpc_chttp2_stream_map_size(&t->stream_map) == 0) {
     // Channel with no active streams: send a goaway to try and make it
     // disconnect cleanly
@@ -3273,7 +3273,7 @@ static void benign_reclaimer_locked(void* arg, grpc_error_handle error) {
                     GRPC_ERROR_CREATE_FROM_STATIC_STRING("Buffers full"),
                     GRPC_ERROR_INT_HTTP2_ERROR, GRPC_HTTP2_ENHANCE_YOUR_CALM),
                 /*immediate_disconnect_hint=*/true);
-  } else if (error == GRPC_ERROR_NONE &&
+  } else if (GRPC_ERROR_IS_NONE(error) &&
              GRPC_TRACE_FLAG_ENABLED(grpc_resource_quota_trace)) {
     gpr_log(GPR_INFO,
             "HTTP2: %s - skip benign reclamation, there are still %" PRIdPTR
@@ -3292,7 +3292,7 @@ static void destructive_reclaimer_locked(void* arg, grpc_error_handle error) {
   grpc_chttp2_transport* t = static_cast<grpc_chttp2_transport*>(arg);
   size_t n = grpc_chttp2_stream_map_size(&t->stream_map);
   t->destructive_reclaimer_registered = false;
-  if (error == GRPC_ERROR_NONE && n > 0) {
+  if (GRPC_ERROR_IS_NONE(error) && n > 0) {
     grpc_chttp2_stream* s = static_cast<grpc_chttp2_stream*>(
         grpc_chttp2_stream_map_rand(&t->stream_map));
     if (GRPC_TRACE_FLAG_ENABLED(grpc_resource_quota_trace)) {

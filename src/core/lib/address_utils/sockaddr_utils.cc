@@ -25,17 +25,16 @@
 #include <string.h>
 
 #include <string>
+#include <utility>
 
 #include "absl/status/status.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
-#include "absl/strings/str_replace.h"
 
-#include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 
-#include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gprpp/host_port.h"
+#include "src/core/lib/iomgr/port.h"
 #include "src/core/lib/iomgr/sockaddr.h"
 #include "src/core/lib/iomgr/socket_utils.h"
 #include "src/core/lib/uri/uri_parser.h"
@@ -244,7 +243,7 @@ absl::StatusOr<std::string> grpc_sockaddr_to_string(
     if (sin6_scope_id != 0) {
       // Enclose sin6_scope_id with the format defined in RFC 6874 section 2.
       std::string host_with_scope =
-          absl::StrFormat("%s%%25%" PRIu32, ntop_buf, sin6_scope_id);
+          absl::StrFormat("%s%%%" PRIu32, ntop_buf, sin6_scope_id);
       out = grpc_core::JoinHostPort(host_with_scope, port);
     } else {
       out = grpc_core::JoinHostPort(ntop_buf, port);
@@ -271,11 +270,13 @@ absl::StatusOr<std::string> grpc_sockaddr_to_uri(
   if (scheme == nullptr || strcmp("unix", scheme) == 0) {
     return grpc_sockaddr_to_uri_unix_if_possible(resolved_addr);
   }
-  // TODO(anramach): Encode the string using URI::Create() and URI::ToString()
-  // before returning.
   auto path = grpc_sockaddr_to_string(resolved_addr, false /* normalize */);
   if (!path.ok()) return path;
-  return absl::StrCat(scheme, ":", path.value());
+  absl::StatusOr<grpc_core::URI> uri =
+      grpc_core::URI::Create(scheme, /*authority=*/"", std::move(path.value()),
+                             /*query_parameter_pairs=*/{}, /*fragment=*/"");
+  if (!uri.ok()) return uri.status();
+  return uri->ToString();
 }
 
 const char* grpc_sockaddr_get_uri_scheme(

@@ -21,7 +21,7 @@
 
 Pod::Spec.new do |s|
   s.name     = 'gRPC-Core'
-  version = '1.47.0-dev'
+  version = '1.48.0-dev'
   s.version  = version
   s.summary  = 'Core cross-platform gRPC library, written in C'
   s.homepage = 'https://grpc.io'
@@ -519,6 +519,10 @@ Pod::Spec.new do |s|
                       'src/core/ext/upb-generated/envoy/extensions/filters/http/router/v3/router.upb.h',
                       'src/core/ext/upb-generated/envoy/extensions/filters/network/http_connection_manager/v3/http_connection_manager.upb.c',
                       'src/core/ext/upb-generated/envoy/extensions/filters/network/http_connection_manager/v3/http_connection_manager.upb.h',
+                      'src/core/ext/upb-generated/envoy/extensions/load_balancing_policies/ring_hash/v3/ring_hash.upb.c',
+                      'src/core/ext/upb-generated/envoy/extensions/load_balancing_policies/ring_hash/v3/ring_hash.upb.h',
+                      'src/core/ext/upb-generated/envoy/extensions/load_balancing_policies/wrr_locality/v3/wrr_locality.upb.c',
+                      'src/core/ext/upb-generated/envoy/extensions/load_balancing_policies/wrr_locality/v3/wrr_locality.upb.h',
                       'src/core/ext/upb-generated/envoy/extensions/transport_sockets/tls/v3/cert.upb.c',
                       'src/core/ext/upb-generated/envoy/extensions/transport_sockets/tls/v3/cert.upb.h',
                       'src/core/ext/upb-generated/envoy/extensions/transport_sockets/tls/v3/common.upb.c',
@@ -972,6 +976,8 @@ Pod::Spec.new do |s|
                       'src/core/ext/xds/xds_http_filters.h',
                       'src/core/ext/xds/xds_http_rbac_filter.cc',
                       'src/core/ext/xds/xds_http_rbac_filter.h',
+                      'src/core/ext/xds/xds_lb_policy_registry.cc',
+                      'src/core/ext/xds/xds_lb_policy_registry.h',
                       'src/core/ext/xds/xds_listener.cc',
                       'src/core/ext/xds/xds_listener.h',
                       'src/core/ext/xds/xds_resource_type.cc',
@@ -1417,8 +1423,8 @@ Pod::Spec.new do |s|
                       'src/core/lib/security/security_connector/insecure/insecure_security_connector.h',
                       'src/core/lib/security/security_connector/load_system_roots.h',
                       'src/core/lib/security/security_connector/load_system_roots_fallback.cc',
-                      'src/core/lib/security/security_connector/load_system_roots_linux.cc',
-                      'src/core/lib/security/security_connector/load_system_roots_linux.h',
+                      'src/core/lib/security/security_connector/load_system_roots_supported.cc',
+                      'src/core/lib/security/security_connector/load_system_roots_supported.h',
                       'src/core/lib/security/security_connector/local/local_security_connector.cc',
                       'src/core/lib/security/security_connector/local/local_security_connector.h',
                       'src/core/lib/security/security_connector/security_connector.cc',
@@ -1829,6 +1835,8 @@ Pod::Spec.new do |s|
                               'src/core/ext/upb-generated/envoy/extensions/filters/http/rbac/v3/rbac.upb.h',
                               'src/core/ext/upb-generated/envoy/extensions/filters/http/router/v3/router.upb.h',
                               'src/core/ext/upb-generated/envoy/extensions/filters/network/http_connection_manager/v3/http_connection_manager.upb.h',
+                              'src/core/ext/upb-generated/envoy/extensions/load_balancing_policies/ring_hash/v3/ring_hash.upb.h',
+                              'src/core/ext/upb-generated/envoy/extensions/load_balancing_policies/wrr_locality/v3/wrr_locality.upb.h',
                               'src/core/ext/upb-generated/envoy/extensions/transport_sockets/tls/v3/cert.upb.h',
                               'src/core/ext/upb-generated/envoy/extensions/transport_sockets/tls/v3/common.upb.h',
                               'src/core/ext/upb-generated/envoy/extensions/transport_sockets/tls/v3/secret.upb.h',
@@ -2057,6 +2065,7 @@ Pod::Spec.new do |s|
                               'src/core/ext/xds/xds_http_fault_filter.h',
                               'src/core/ext/xds/xds_http_filters.h',
                               'src/core/ext/xds/xds_http_rbac_filter.h',
+                              'src/core/ext/xds/xds_lb_policy_registry.h',
                               'src/core/ext/xds/xds_listener.h',
                               'src/core/ext/xds/xds_resource_type.h',
                               'src/core/ext/xds/xds_resource_type_impl.h',
@@ -2280,7 +2289,7 @@ Pod::Spec.new do |s|
                               'src/core/lib/security/security_connector/fake/fake_security_connector.h',
                               'src/core/lib/security/security_connector/insecure/insecure_security_connector.h',
                               'src/core/lib/security/security_connector/load_system_roots.h',
-                              'src/core/lib/security/security_connector/load_system_roots_linux.h',
+                              'src/core/lib/security/security_connector/load_system_roots_supported.h',
                               'src/core/lib/security/security_connector/local/local_security_connector.h',
                               'src/core/lib/security/security_connector/security_connector.h',
                               'src/core/lib/security/security_connector/ssl/ssl_security_connector.h',

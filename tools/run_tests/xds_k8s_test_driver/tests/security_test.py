@@ -27,15 +27,19 @@ flags.adopt_module_key_flags(xds_k8s_testcase)
 _XdsTestServer = xds_k8s_testcase.XdsTestServer
 _XdsTestClient = xds_k8s_testcase.XdsTestClient
 _SecurityMode = xds_k8s_testcase.SecurityXdsKubernetesTestCase.SecurityMode
+_Lang = skips.Lang
 
 
 class SecurityTest(xds_k8s_testcase.SecurityXdsKubernetesTestCase):
 
     @staticmethod
-    def isSupported(config: skips.TestConfig) -> bool:
-        if config.client_lang in ['cpp', 'python', 'go']:
-            return config.version_ge('v1.41.x')
-        return False
+    def is_supported(config: skips.TestConfig) -> bool:
+        if config.client_lang in (_Lang.CPP | _Lang.GO | _Lang.JAVA |
+                                  _Lang.PYTHON):
+            # Versions prior to v1.41.x don't support PSM Security.
+            # https://github.com/grpc/grpc/blob/master/doc/grpc_xds_features.md
+            return not config.version_lt('v1.41.x')
+        return True
 
     def test_mtls(self):
         """mTLS test.

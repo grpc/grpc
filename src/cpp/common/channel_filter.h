@@ -86,7 +86,7 @@ class TransportOp {
   grpc_error_handle disconnect_with_error() const {
     return op_->disconnect_with_error;
   }
-  bool send_goaway() const { return op_->goaway_error != GRPC_ERROR_NONE; }
+  bool send_goaway() const { return !GRPC_ERROR_IS_NONE(op_->goaway_error); }
 
   // TODO(roth): Add methods for additional fields as needed.
 

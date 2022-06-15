@@ -154,10 +154,7 @@ class OutlierDetectionLb : public LoadBalancingPolicy {
 
     void Uneject();
 
-    grpc_connectivity_state CheckConnectivityState() override;
-
     void WatchConnectivityState(
-        grpc_connectivity_state initial_state,
         std::unique_ptr<ConnectivityStateWatcherInterface> watcher) override;
 
     void CancelConnectivityStateWatch(
@@ -174,30 +171,39 @@ class OutlierDetectionLb : public LoadBalancingPolicy {
       WatcherWrapper(std::unique_ptr<
                          SubchannelInterface::ConnectivityStateWatcherInterface>
                          watcher,
-                     grpc_connectivity_state initial_state, bool ejected)
-          : watcher_(std::move(watcher)),
-            last_seen_state_(initial_state),
-            ejected_(ejected) {}
+                     bool ejected)
+          : watcher_(std::move(watcher)), ejected_(ejected) {}
 
       void Eject() {
         ejected_ = true;
-        if (last_seen_state_ != GRPC_CHANNEL_TRANSIENT_FAILURE) {
-          watcher_->OnConnectivityStateChange(GRPC_CHANNEL_TRANSIENT_FAILURE);
+        if (last_seen_state_.has_value()) {
+          watcher_->OnConnectivityStateChange(
+              GRPC_CHANNEL_TRANSIENT_FAILURE,
+              absl::UnavailableError(
+                  "subchannel ejected by outlier detection"));
         }
       }
 
       void Uneject() {
         ejected_ = false;
-        if (last_seen_state_ != GRPC_CHANNEL_TRANSIENT_FAILURE) {
-          watcher_->OnConnectivityStateChange(last_seen_state_);
+        if (last_seen_state_.has_value()) {
+          watcher_->OnConnectivityStateChange(*last_seen_state_,
+                                              last_seen_status_);
         }
       }
 
-      void OnConnectivityStateChange(
-          grpc_connectivity_state new_state) override {
+      void OnConnectivityStateChange(grpc_connectivity_state new_state,
+                                     absl::Status status) override {
+        const bool send_update = !last_seen_state_.has_value() || !ejected_;
         last_seen_state_ = new_state;
-        if (!ejected_) {
-          watcher_->OnConnectivityStateChange(new_state);
+        last_seen_status_ = status;
+        if (send_update) {
+          if (ejected_) {
+            new_state = GRPC_CHANNEL_TRANSIENT_FAILURE;
+            status = absl::UnavailableError(
+                "subchannel ejected by outlier detection");
+          }
+          watcher_->OnConnectivityStateChange(new_state, status);
         }
       }
 
@@ -208,7 +214,8 @@ class OutlierDetectionLb : public LoadBalancingPolicy {
      private:
       std::unique_ptr<SubchannelInterface::ConnectivityStateWatcherInterface>
           watcher_;
-      grpc_connectivity_state last_seen_state_;
+      absl::optional<grpc_connectivity_state> last_seen_state_;
+      absl::Status last_seen_status_;
       bool ejected_;
     };
 
@@ -418,21 +425,13 @@ void OutlierDetectionLb::SubchannelWrapper::Uneject() {
   }
 }
 
-grpc_connectivity_state
-OutlierDetectionLb::SubchannelWrapper::CheckConnectivityState() {
-  if (ejected_) return GRPC_CHANNEL_TRANSIENT_FAILURE;
-  return wrapped_subchannel()->CheckConnectivityState();
-}
-
 void OutlierDetectionLb::SubchannelWrapper::WatchConnectivityState(
-    grpc_connectivity_state initial_state,
     std::unique_ptr<ConnectivityStateWatcherInterface> watcher) {
   ConnectivityStateWatcherInterface* watcher_ptr = watcher.get();
-  auto watcher_wrapper = absl::make_unique<WatcherWrapper>(
-      std::move(watcher), initial_state, ejected_);
+  auto watcher_wrapper =
+      absl::make_unique<WatcherWrapper>(std::move(watcher), ejected_);
   watchers_.emplace(watcher_ptr, watcher_wrapper.get());
-  wrapped_subchannel()->WatchConnectivityState(initial_state,
-                                               std::move(watcher_wrapper));
+  wrapped_subchannel()->WatchConnectivityState(std::move(watcher_wrapper));
 }
 
 void OutlierDetectionLb::SubchannelWrapper::CancelConnectivityStateWatch(
@@ -785,7 +784,7 @@ void OutlierDetectionLb::EjectionTimer::OnTimer(void* arg,
 }
 
 void OutlierDetectionLb::EjectionTimer::OnTimerLocked(grpc_error_handle error) {
-  if (error == GRPC_ERROR_NONE && timer_pending_) {
+  if (GRPC_ERROR_IS_NONE(error) && timer_pending_) {
     std::map<SubchannelState*, double> success_rate_ejection_candidates;
     std::map<SubchannelState*, double> failure_percentage_ejection_candidates;
     size_t ejected_host_count = 0;
@@ -918,7 +917,7 @@ class OutlierDetectionLbFactory : public LoadBalancingPolicyFactory {
 
   RefCountedPtr<LoadBalancingPolicy::Config> ParseLoadBalancingConfig(
       const Json& json, grpc_error_handle* error) const override {
-    GPR_DEBUG_ASSERT(error != nullptr && *error == GRPC_ERROR_NONE);
+    GPR_DEBUG_ASSERT(error != nullptr && GRPC_ERROR_IS_NONE(*error));
     if (json.type() == Json::Type::JSON_NULL) {
       // This policy was configured in the deprecated loadBalancingPolicy
       // field or in the client API.
@@ -1002,7 +1001,7 @@ class OutlierDetectionLbFactory : public LoadBalancingPolicyFactory {
       child_policy = LoadBalancingPolicyRegistry::ParseLoadBalancingConfig(
           it->second, &parse_error);
       if (child_policy == nullptr) {
-        GPR_DEBUG_ASSERT(parse_error != GRPC_ERROR_NONE);
+        GPR_DEBUG_ASSERT(!GRPC_ERROR_IS_NONE(parse_error));
         std::vector<grpc_error_handle> child_errors;
         child_errors.push_back(parse_error);
         error_list.push_back(

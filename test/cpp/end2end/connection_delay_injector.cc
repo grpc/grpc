@@ -38,22 +38,31 @@ grpc_tcp_client_vtable* g_original_vtable = nullptr;
 grpc_core::Mutex* g_mu = nullptr;
 ConnectionAttemptInjector* g_injector ABSL_GUARDED_BY(*g_mu) = nullptr;
 
-void TcpConnectWithDelay(grpc_closure* closure, grpc_endpoint** ep,
-                         grpc_pollset_set* interested_parties,
-                         const grpc_channel_args* channel_args,
-                         const grpc_resolved_address* addr,
-                         grpc_core::Timestamp deadline) {
+int64_t TcpConnectWithDelay(grpc_closure* closure, grpc_endpoint** ep,
+                            grpc_pollset_set* interested_parties,
+                            const grpc_channel_args* channel_args,
+                            const grpc_resolved_address* addr,
+                            grpc_core::Timestamp deadline) {
   grpc_core::MutexLock lock(g_mu);
   if (g_injector == nullptr) {
     g_original_vtable->connect(closure, ep, interested_parties, channel_args,
                                addr, deadline);
-    return;
+    return 0;
   }
   g_injector->HandleConnection(closure, ep, interested_parties, channel_args,
                                addr, deadline);
+  return 0;
 }
 
-grpc_tcp_client_vtable kDelayedConnectVTable = {TcpConnectWithDelay};
+// TODO(vigneshbabu): This method should check whether the connect attempt has
+// actually been started, and if so, it should call
+// g_original_vtable->cancel_connect(). If the attempt has not actually been
+// started, it should mark the connect request as cancelled, so that when the
+// request is resumed, it will not actually proceed.
+bool TcpConnectCancel(int64_t /*connection_handle*/) { return false; }
+
+grpc_tcp_client_vtable kDelayedConnectVTable = {TcpConnectWithDelay,
+                                                TcpConnectCancel};
 
 }  // namespace
 

@@ -20,7 +20,7 @@
 
 #include <stdio.h>
 
-#ifdef GPR_LINUX
+#if defined(GPR_LINUX) || defined(GPR_FREEBSD) || defined(GPR_APPLE)
 #include <string.h>
 #include <sys/param.h>
 
@@ -36,7 +36,7 @@
 #include "src/core/lib/iomgr/load_file.h"
 #include "src/core/lib/security/context/security_context.h"
 #include "src/core/lib/security/security_connector/load_system_roots.h"
-#include "src/core/lib/security/security_connector/load_system_roots_linux.h"
+#include "src/core/lib/security/security_connector/load_system_roots_supported.h"
 #include "src/core/lib/security/security_connector/security_connector.h"
 #include "src/core/lib/slice/slice_string_helpers.h"
 #include "src/core/tsi/ssl_transport_security.h"
@@ -94,7 +94,9 @@ int main(int argc, char** argv) {
 }
 #else
 int main() {
-  printf("*** WARNING: this test is only supported on Linux systems ***\n");
+  printf(
+      "*** WARNING: this test is only supported on Linux, FreeBSD, and MacOS"
+      "systems ***\n");
   return 0;
 }
-#endif  // GPR_LINUX
+#endif  // GPR_LINUX || GPR_FREEBSD || GPR_APPLE

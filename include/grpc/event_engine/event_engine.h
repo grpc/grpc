@@ -410,6 +410,11 @@ class EventEngine {
   /// If the associated callback has not been scheduled to run, it will be
   /// cancelled, and the associated std::function or \a Closure* will not be
   /// executed. In this case, Cancel will return true.
+  ///
+  /// Implementation note: closures should be destroyed in a timely manner after
+  /// execution or cancelliation (milliseconds), since any state bound to the
+  /// closure may need to be destroyed for things to progress (e.g., if a
+  /// closure holds a ref to some ref-counted object).
   virtual bool Cancel(TaskHandle handle) = 0;
 };
 

@@ -93,7 +93,7 @@ typedef struct addr_req {
 static void finish_resolve(void* arg, grpc_error_handle error) {
   addr_req* r = static_cast<addr_req*>(arg);
 
-  if (error == GRPC_ERROR_NONE && 0 == strcmp(r->addr, "server")) {
+  if (GRPC_ERROR_IS_NONE(error) && 0 == strcmp(r->addr, "server")) {
     *r->addresses = absl::make_unique<grpc_core::ServerAddressList>();
     grpc_resolved_address fake_resolved_address;
     GPR_ASSERT(
@@ -130,7 +130,7 @@ class FuzzerDNSResolver : public grpc_core::DNSResolver {
    private:
     static void FinishResolve(void* arg, grpc_error_handle error) {
       FuzzerDNSRequest* self = static_cast<FuzzerDNSRequest*>(arg);
-      if (error == GRPC_ERROR_NONE && self->name_ == "server") {
+      if (GRPC_ERROR_IS_NONE(error) && self->name_ == "server") {
         std::vector<grpc_resolved_address> addrs;
         grpc_resolved_address addr;
         addr.len = 0;
@@ -211,7 +211,7 @@ typedef struct {
 
 static void do_connect(void* arg, grpc_error_handle error) {
   future_connect* fc = static_cast<future_connect*>(arg);
-  if (error != GRPC_ERROR_NONE) {
+  if (!GRPC_ERROR_IS_NONE(error)) {
     *fc->ep = nullptr;
     grpc_core::ExecCtx::Run(DEBUG_LOCATION, fc->closure, GRPC_ERROR_REF(error));
   } else if (g_server != nullptr) {
@@ -258,15 +258,21 @@ static void sched_connect(grpc_closure* closure, grpc_endpoint** ep,
       GRPC_CLOSURE_CREATE(do_connect, fc, grpc_schedule_on_exec_ctx));
 }
 
-static void my_tcp_client_connect(grpc_closure* closure, grpc_endpoint** ep,
-                                  grpc_pollset_set* /*interested_parties*/,
-                                  const grpc_channel_args* /*channel_args*/,
-                                  const grpc_resolved_address* /*addr*/,
-                                  grpc_core::Timestamp deadline) {
+static int64_t my_tcp_client_connect(grpc_closure* closure, grpc_endpoint** ep,
+                                     grpc_pollset_set* /*interested_parties*/,
+                                     const grpc_channel_args* /*channel_args*/,
+                                     const grpc_resolved_address* /*addr*/,
+                                     grpc_core::Timestamp deadline) {
   sched_connect(closure, ep, deadline.as_timespec(GPR_CLOCK_MONOTONIC));
+  return 0;
 }
 
-grpc_tcp_client_vtable fuzz_tcp_client_vtable = {my_tcp_client_connect};
+static bool my_tcp_cancel_connect(int64_t /*connection_handle*/) {
+  return false;
+}
+
+grpc_tcp_client_vtable fuzz_tcp_client_vtable = {my_tcp_client_connect,
+                                                 my_tcp_cancel_connect};
 
 ////////////////////////////////////////////////////////////////////////////////
 // test driver

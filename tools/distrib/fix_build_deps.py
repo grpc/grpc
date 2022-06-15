@@ -127,6 +127,8 @@ EXTERNAL_DEPS = {
         'opencensus-trace-propagation',
     'opencensus/tags/context_util.h':
         'opencensus-tags-context_util',
+    'openssl/base.h':
+        'libssl',
     'openssl/bio.h':
         'libssl',
     'openssl/bn.h':
@@ -135,6 +137,8 @@ EXTERNAL_DEPS = {
         'libcrypto',
     'openssl/crypto.h':
         'libcrypto',
+    'openssl/digest.h':
+        'libssl',
     'openssl/engine.h':
         'libcrypto',
     'openssl/err.h':
@@ -178,6 +182,8 @@ EXTERNAL_DEPS = {
 }
 
 INTERNAL_DEPS = {
+    'google/api/expr/v1alpha1/syntax.upb.h':
+        'google_type_expr_upb',
     'google/rpc/status.upb.h':
         'google_rpc_status_upb',
     'google/protobuf/any.upb.h':
@@ -223,8 +229,6 @@ INTERNAL_DEPS = {
     'xds/type/v3/typed_struct.upb.h':
         'xds_type_upb',
 }
-
-SKIP_DEPS = {'google/api/expr/v1alpha1/syntax.upb.h'}
 
 
 class FakeSelects:
@@ -458,9 +462,6 @@ for library in sorted(consumes.keys()):
                 break
         if is_sys_include:
             # assume a system include
-            continue
-
-        if hdr in SKIP_DEPS:
             continue
 
         print("# ERROR: can't categorize header: %s" % hdr)

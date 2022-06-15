@@ -530,8 +530,7 @@ void XdsClusterImplLb::MaybeUpdatePickerLocked() {
     if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_cluster_impl_lb_trace)) {
       gpr_log(GPR_INFO,
               "[xds_cluster_impl_lb %p] updating connectivity (drop all): "
-              "state=READY "
-              "picker=%p",
+              "state=READY picker=%p",
               this, drop_picker.get());
     }
     channel_control_helper()->UpdateState(GRPC_CHANNEL_READY, absl::Status(),
@@ -544,8 +543,7 @@ void XdsClusterImplLb::MaybeUpdatePickerLocked() {
     if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_cluster_impl_lb_trace)) {
       gpr_log(GPR_INFO,
               "[xds_cluster_impl_lb %p] updating connectivity: state=%s "
-              "status=(%s) "
-              "picker=%p",
+              "status=(%s) picker=%p",
               this, ConnectivityStateName(state_), status_.ToString().c_str(),
               drop_picker.get());
     }
@@ -708,7 +706,7 @@ class XdsClusterImplLbFactory : public LoadBalancingPolicyFactory {
 
   RefCountedPtr<LoadBalancingPolicy::Config> ParseLoadBalancingConfig(
       const Json& json, grpc_error_handle* error) const override {
-    GPR_DEBUG_ASSERT(error != nullptr && *error == GRPC_ERROR_NONE);
+    GPR_DEBUG_ASSERT(error != nullptr && GRPC_ERROR_IS_NONE(*error));
     if (json.type() == Json::Type::JSON_NULL) {
       // This policy was configured in the deprecated loadBalancingPolicy
       // field or in the client API.
@@ -730,7 +728,7 @@ class XdsClusterImplLbFactory : public LoadBalancingPolicyFactory {
       child_policy = LoadBalancingPolicyRegistry::ParseLoadBalancingConfig(
           it->second, &parse_error);
       if (child_policy == nullptr) {
-        GPR_DEBUG_ASSERT(parse_error != GRPC_ERROR_NONE);
+        GPR_DEBUG_ASSERT(!GRPC_ERROR_IS_NONE(parse_error));
         std::vector<grpc_error_handle> child_errors;
         child_errors.push_back(parse_error);
         error_list.push_back(
@@ -771,7 +769,7 @@ class XdsClusterImplLbFactory : public LoadBalancingPolicyFactory {
         grpc_error_handle parser_error;
         lrs_load_reporting_server = XdsBootstrap::XdsServer::Parse(
             it->second.object_value(), &parser_error);
-        if (parser_error != GRPC_ERROR_NONE) {
+        if (!GRPC_ERROR_IS_NONE(parser_error)) {
           error_list.push_back(GRPC_ERROR_CREATE_FROM_CPP_STRING(
               absl::StrCat("errors parsing lrs_load_reporting_server")));
           error_list.push_back(parser_error);
