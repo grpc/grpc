@@ -99,14 +99,9 @@ class OrcaService::Reactor : public ServerWriteReactor<ByteBuffer>,
       return;
     }
     response_.Clear();
-    {
-      grpc::internal::MutexLock lock(&timer_mu_);
-      if (!cancelled_) {
-        ScheduleTimerLocked();
-        return;
-      }
+    if (!MaybeScheduleTimer()) {
+      Finish(Status(StatusCode::UNKNOWN, "call cancelled by client"));
     }
-    Finish(Status(StatusCode::UNKNOWN, "call cancelled by client"));
   }
 
   void OnCancel() override {
@@ -128,12 +123,15 @@ class OrcaService::Reactor : public ServerWriteReactor<ByteBuffer>,
     StartWrite(&response_);
   }
 
-  void ScheduleTimerLocked() ABSL_GUARDED_BY(timer_mu_) {
+  bool MaybeScheduleTimer() {
     grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
     grpc_core::ExecCtx exec_ctx;
+    grpc::internal::MutexLock lock(&timer_mu_);
+    if (cancelled_) return false;
     timer_handle_ = GetDefaultEventEngine()->RunAt(
         absl::Now() + absl::Milliseconds(report_interval_.millis()),
         [self = Ref(DEBUG_LOCATION, "Orca Service")] { self->OnTimer(); });
+    return true;
   }
 
   bool MaybeCancelTimer() {
