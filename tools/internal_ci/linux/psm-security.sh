@@ -31,7 +31,6 @@ readonly BUILD_APP_PATH="interop-testing/build/install/grpc-interop-testing"
 #   SERVER_IMAGE_NAME: Test server Docker image name
 #   CLIENT_IMAGE_NAME: Test client Docker image name
 #   GIT_COMMIT: SHA-1 of git commit being built
-#   LOCAL_BUILD: set to "true" when the build isn't executed on a CI
 #   TESTING_VERSION: version branch under test, f.e. v1.42.x, master
 # Arguments:
 #   None
@@ -45,7 +44,7 @@ build_test_app_docker_images() {
   gcloud -q auth configure-docker
   docker push "${CLIENT_IMAGE_NAME}:${GIT_COMMIT}"
   docker push "${SERVER_IMAGE_NAME}:${GIT_COMMIT}"
-  if [[ -z "${LOCAL_BUILD}" ]]; then
+  if is_version_branch "${TESTING_VERSION}"; then
     tag_and_push_docker_image "${CLIENT_IMAGE_NAME}" "${GIT_COMMIT}" "${TESTING_VERSION}"
     tag_and_push_docker_image "${SERVER_IMAGE_NAME}" "${GIT_COMMIT}" "${TESTING_VERSION}"
   fi

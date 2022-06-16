@@ -121,6 +121,29 @@ parse_src_repo_git_info() {
   readonly GIT_COMMIT_SHORT=$(git -C "${src_dir}" rev-parse --short HEAD)
 }
 
+
+#######################################
+# Checks if the given string is a version branch.
+# Version branches: "master", "v1.47.x"
+# NOT version branches: "v1.47.0", "1.47.x", "", "dev", "main"
+# Arguments:
+#   Version to test
+#######################################
+is_version_branch() {
+  if [ $# -eq 0 ]; then
+    echo "Usage is_version_branch VERSION"
+    false
+    return
+  fi
+  if [[ $1 == "master" ]]; then
+    true
+    return
+  fi
+  # Do not inline version_regex: keep it a string to avoid issues with escaping chars in ~= expr.
+  local version_regex='^v[0-9]+\.[0-9]+\.x$'
+  [[ "${1}" =~ $version_regex ]]
+}
+
 #######################################
 # List GCR image tags matching given tag name.
 # Arguments:
@@ -417,8 +440,6 @@ kokoro_setup_test_driver() {
 #   TEST_DRIVER_REPO_NAME
 #   TEST_DRIVER_REPO_DIR: Unless provided, populated with a temporary dir with
 #                         the path to the test driver repo
-#   LOCAL_BUILD: populated with "true"
-#   TESTING_VERSION: Unless provided, populated with "master"
 #   SRC_DIR: Populated with absolute path to the source repo
 #   KUBE_CONTEXT: Populated with name of kubectl context with GKE cluster access
 #   TEST_DRIVER_FLAGFILE: Populated with relative path to test driver flagfile
@@ -434,9 +455,6 @@ kokoro_setup_test_driver() {
 #######################################
 local_setup_test_driver() {
   local script_dir="${1:?Usage: local_setup_test_driver SCRIPT_DIR}"
-  readonly LOCAL_BUILD="true"
-  # For local dev, allow setting TESTING_VERSION directly, otherwise fallback to "master"
-  readonly TESTING_VERSION="${TESTING_VERSION:-master}"
   readonly SRC_DIR="$(git -C "${script_dir}" rev-parse --show-toplevel)"
   parse_src_repo_git_info "${SRC_DIR}"
   readonly KUBE_CONTEXT="${KUBE_CONTEXT:-$(kubectl config current-context)}"
