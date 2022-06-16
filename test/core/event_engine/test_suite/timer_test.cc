@@ -12,7 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <chrono>
 #include <random>
 #include <thread>
 
@@ -30,7 +29,6 @@
 #include "test/core/event_engine/test_suite/event_engine_test.h"
 
 using ::testing::ElementsAre;
-using namespace std::chrono_literals;
 
 class EventEngineTimerTest : public EventEngineTest {
  public:
@@ -47,7 +45,7 @@ TEST_F(EventEngineTimerTest, ImmediateCallbackIsExecutedQuickly) {
   grpc_core::ExecCtx exec_ctx;
   auto engine = this->NewEventEngine();
   grpc_core::MutexLock lock(&mu_);
-  engine->RunAfter(0ms, [this]() {
+  engine->RunAt(absl::Now(), [this]() {
     grpc_core::MutexLock lock(&mu_);
     signaled_ = true;
     cv_.Signal();
@@ -59,7 +57,7 @@ TEST_F(EventEngineTimerTest, ImmediateCallbackIsExecutedQuickly) {
 TEST_F(EventEngineTimerTest, SupportsCancellation) {
   grpc_core::ExecCtx exec_ctx;
   auto engine = this->NewEventEngine();
-  auto handle = engine->RunAfter(24h, []() {});
+  auto handle = engine->RunAt(absl::InfiniteFuture(), []() {});
   ASSERT_TRUE(engine->Cancel(handle));
 }
 
@@ -67,7 +65,7 @@ TEST_F(EventEngineTimerTest, CancelledCallbackIsNotExecuted) {
   grpc_core::ExecCtx exec_ctx;
   {
     auto engine = this->NewEventEngine();
-    auto handle = engine->RunAfter(24h, [this]() {
+    auto handle = engine->RunAt(absl::InfiniteFuture(), [this]() {
       grpc_core::MutexLock lock(&mu_);
       signaled_ = true;
     });
@@ -80,20 +78,20 @@ TEST_F(EventEngineTimerTest, CancelledCallbackIsNotExecuted) {
 
 TEST_F(EventEngineTimerTest, TimersRespectScheduleOrdering) {
   grpc_core::ExecCtx exec_ctx;
-  // Note: this is a brittle test if the first call to `RunAfter` takes longer
-  // than the second callback's wait time.
+  // Note: this is a brittle test if the first call to `RunAt` takes longer than
+  // the second callback's wait time.
   std::vector<uint8_t> ordered;
   uint8_t count = 0;
   grpc_core::MutexLock lock(&mu_);
   {
     auto engine = this->NewEventEngine();
-    engine->RunAfter(100ms, [&]() {
+    engine->RunAt(absl::Now() + absl::Milliseconds(100), [&]() {
       grpc_core::MutexLock lock(&mu_);
       ordered.push_back(2);
       ++count;
       cv_.Signal();
     });
-    engine->RunAfter(0ms, [&]() {
+    engine->RunAt(absl::Now(), [&]() {
       grpc_core::MutexLock lock(&mu_);
       ordered.push_back(1);
       ++count;
@@ -112,7 +110,7 @@ TEST_F(EventEngineTimerTest, CancellingExecutedCallbackIsNoopAndReturnsFalse) {
   grpc_core::ExecCtx exec_ctx;
   auto engine = this->NewEventEngine();
   grpc_core::MutexLock lock(&mu_);
-  auto handle = engine->RunAfter(0ms, [this]() {
+  auto handle = engine->RunAt(absl::Now(), [this]() {
     grpc_core::MutexLock lock(&mu_);
     signaled_ = true;
     cv_.Signal();
@@ -132,9 +130,10 @@ void EventEngineTimerTest::ScheduleCheckCB(absl::Time when,
   // to the lowest common denominator until EventEngines can compare relative
   // times with supported resolution.
   grpc_core::ExecCtx exec_ctx;
-  auto now = absl::Now();
-  EXPECT_LE(when, now);
-  if (when > now) ++(*fail_count);
+  int64_t now_millis = absl::ToUnixMillis(absl::Now());
+  int64_t when_millis = absl::ToUnixMillis(when);
+  EXPECT_LE(when_millis, now_millis);
+  if (when_millis > now_millis) ++(*fail_count);
   if (++(*call_count) == total_expected) {
     grpc_core::MutexLock lock(&mu_);
     signaled_ = true;
@@ -161,13 +160,11 @@ TEST_F(EventEngineTimerTest, StressTestTimersNotCalledBeforeScheduled) {
       std::uniform_real_distribution<> dis(timeout_min_seconds,
                                            timeout_max_seconds);
       for (int call_n = 0; call_n < call_count_per_thread; ++call_n) {
-        const auto dur = static_cast<int64_t>(1e9 * dis(gen));
-        auto deadline = absl::Now() + absl::Nanoseconds(dur);
-        engine->RunAfter(
-            std::chrono::nanoseconds(dur),
-            absl::bind_front(&EventEngineTimerTest::ScheduleCheckCB, this,
-                             deadline, &call_count, &failed_call_count,
-                             thread_count * call_count_per_thread));
+        absl::Time when = absl::Now() + absl::Seconds(dis(gen));
+        engine->RunAt(
+            when, absl::bind_front(&EventEngineTimerTest::ScheduleCheckCB, this,
+                                   when, &call_count, &failed_call_count,
+                                   thread_count * call_count_per_thread));
       }
     });
   }

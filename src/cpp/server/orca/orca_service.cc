@@ -21,6 +21,7 @@
 #include <utility>
 
 #include "absl/base/thread_annotations.h"
+#include "absl/time/clock.h"
 #include "absl/time/time.h"
 #include "absl/types/optional.h"
 #include "google/protobuf/duration.upb.h"
@@ -123,8 +124,8 @@ class OrcaService::Reactor : public ServerWriteReactor<ByteBuffer>,
     grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
     grpc_core::ExecCtx exec_ctx;
     grpc::internal::MutexLock lock(&timer_mu_);
-    timer_handle_ = GetDefaultEventEngine()->RunAfter(
-        report_interval_,
+    timer_handle_ = GetDefaultEventEngine()->RunAt(
+        absl::Now() + absl::Milliseconds(report_interval_.millis()),
         [self = Ref(DEBUG_LOCATION, "Orca Service")] { self->OnTimer(); });
   }
 

@@ -14,10 +14,7 @@
 
 #include "test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h"
 
-#include <chrono>
 #include <thread>
-
-#include "absl/time/clock.h"
 
 #include <grpc/grpc.h>
 
@@ -32,15 +29,12 @@ class ThreadedFuzzingEventEngine : public FuzzingEventEngine {
   ThreadedFuzzingEventEngine()
       : FuzzingEventEngine([]() {
           Options options;
-          options.final_tick_length = std::chrono::milliseconds(10);
+          options.final_tick_length = absl::Milliseconds(10);
           return options;
         }()),
         main_([this]() {
           while (!done_.load()) {
-            auto tick_start = absl::Now();
-            while (absl::Now() - tick_start < absl::Milliseconds(10)) {
-              absl::SleepFor(absl::Milliseconds(1));
-            }
+            absl::SleepFor(absl::Milliseconds(10));
             Tick();
           }
         }) {}

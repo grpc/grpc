@@ -25,6 +25,7 @@
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/string_view.h"
+#include "absl/time/time.h"
 #include "absl/types/variant.h"
 
 #include <grpc/event_engine/endpoint_config.h>
@@ -64,13 +65,13 @@ class IomgrEventEngine final : public EventEngine {
     LookupTaskHandle LookupHostname(LookupHostnameCallback on_resolve,
                                     absl::string_view name,
                                     absl::string_view default_port,
-                                    Duration timeout) override;
+                                    absl::Time deadline) override;
     LookupTaskHandle LookupSRV(LookupSRVCallback on_resolve,
                                absl::string_view name,
-                               Duration timeout) override;
+                               absl::Time deadline) override;
     LookupTaskHandle LookupTXT(LookupTXTCallback on_resolve,
                                absl::string_view name,
-                               Duration timeout) override;
+                               absl::Time deadline) override;
     bool CancelLookup(LookupTaskHandle handle) override;
   };
 
@@ -88,7 +89,7 @@ class IomgrEventEngine final : public EventEngine {
                            const ResolvedAddress& addr,
                            const EndpointConfig& args,
                            MemoryAllocator memory_allocator,
-                           Duration timeout) override;
+                           absl::Time deadline) override;
 
   bool CancelConnect(ConnectionHandle handle) override;
   bool IsWorkerThread() override;
@@ -96,13 +97,13 @@ class IomgrEventEngine final : public EventEngine {
       const DNSResolver::ResolverOptions& options) override;
   void Run(Closure* closure) override;
   void Run(std::function<void()> closure) override;
-  TaskHandle RunAfter(Duration when, Closure* closure) override;
-  TaskHandle RunAfter(Duration when, std::function<void()> closure) override;
+  TaskHandle RunAt(absl::Time when, Closure* closure) override;
+  TaskHandle RunAt(absl::Time when, std::function<void()> closure) override;
   bool Cancel(TaskHandle handle) override;
 
  private:
-  EventEngine::TaskHandle RunAfterInternal(
-      Duration when,
+  EventEngine::TaskHandle RunAtInternal(
+      absl::Time when,
       absl::variant<std::function<void()>, EventEngine::Closure*> cb);
 
   void RunInternal(
