@@ -23,7 +23,6 @@
 
 #include <grpc/event_engine/endpoint_config.h>
 
-#include "src/core/lib/event_engine/map_backed_endpoint_config.h"
 #include "src/core/lib/iomgr/ev_posix.h"
 #include "src/core/lib/iomgr/resolve_address.h"
 #include "src/core/lib/iomgr/socket_utils_posix.h"
@@ -94,7 +93,7 @@ struct grpc_tcp_server {
   gpr_atm next_pollset_to_assign = 0;
 
   /* Contains config extracted from channel args for this server */
-  grpc_event_engine::experimental::ConfigMap config;
+  grpc_event_engine::experimental::EndpointConfig config;
 
   /* a handler for external connections, owned */
   grpc_core::TcpServerFdHandler* fd_handler = nullptr;

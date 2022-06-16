@@ -19,42 +19,16 @@
 #include "absl/memory/memory.h"
 #include "absl/utility/utility.h"
 
-#include "src/core/lib/event_engine/map_backed_endpoint_config.h"
 #include "src/core/lib/gprpp/sync.h"
+#include "src/core/lib/resource_quota/api.h"
 
 // defined in tcp_client.cc
 extern grpc_tcp_client_vtable* grpc_tcp_client_impl;
 
-using ::grpc_event_engine::experimental::ConfigMap;
 using ::grpc_event_engine::experimental::EndpointConfig;
 
 namespace grpc {
 namespace testing {
-
-ConfigMap CopyFromEndpointConfig(const EndpointConfig& config) {
-  ConfigMap map;
-  map.CopyFrom(config, GRPC_ARG_TCP_READ_CHUNK_SIZE);
-  map.CopyFrom(config, GRPC_ARG_TCP_MIN_READ_CHUNK_SIZE);
-  map.CopyFrom(config, GRPC_ARG_TCP_MAX_READ_CHUNK_SIZE);
-  map.CopyFrom(config, GRPC_ARG_KEEPALIVE_TIME_MS);
-  map.CopyFrom(config, GRPC_ARG_KEEPALIVE_TIMEOUT_MS);
-  map.CopyFrom(config, GRPC_ARG_TCP_TX_ZEROCOPY_SEND_BYTES_THRESHOLD);
-  map.CopyFrom(config, GRPC_ARG_TCP_TX_ZEROCOPY_MAX_SIMULT_SENDS);
-  map.CopyFrom(config, GRPC_ARG_TCP_TX_ZEROCOPY_ENABLED);
-  map.CopyFrom(config, GRPC_ARG_SOCKET_MUTATOR);
-  map.CopyFrom(config, GRPC_ARG_ALLOW_REUSEPORT);
-  map.CopyFrom(config, GRPC_ARG_EXPAND_WILDCARD_ADDRS);
-  // For resource quota, a copy operation should increment its ref-count.
-  auto value = map.Get(GRPC_ARG_RESOURCE_QUOTA);
-  if (!absl::holds_alternative<absl::monostate>(value)) {
-    map.Insert(
-        GRPC_ARG_RESOURCE_QUOTA,
-        reinterpret_cast<grpc_core::ResourceQuota*>(absl::get<void*>(value))
-            ->Ref()
-            .release());
-  }
-  return map;
-}
 
 //
 // ConnectionAttemptInjector

@@ -17,16 +17,12 @@
 
 #include <memory>
 
-#include "src/core/lib/event_engine/map_backed_endpoint_config.h"
 #include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/iomgr/tcp_client.h"
 #include "src/core/lib/iomgr/timer.h"
 
 namespace grpc {
 namespace testing {
-
-grpc_event_engine::experimental::ConfigMap CopyFromEndpointConfig(
-    const grpc_event_engine::experimental::EndpointConfig& config);
 
 // Allows injecting connection-establishment delays into C-core.
 // Typical usage:
@@ -76,7 +72,7 @@ class ConnectionAttemptInjector {
         : closure_(closure),
           endpoint_(ep),
           interested_parties_(interested_parties),
-          config_map_(CopyFromEndpointConfig(config)),
+          config_(config),
           deadline_(deadline) {
       memcpy(&address_, addr, sizeof(address_));
     }
@@ -86,7 +82,7 @@ class ConnectionAttemptInjector {
     // Caller must invoke this from a thread with an ExecCtx.
     void Resume() {
       GPR_ASSERT(closure_ != nullptr);
-      AttemptConnection(closure_, endpoint_, interested_parties_, config_map_,
+      AttemptConnection(closure_, endpoint_, interested_parties_, config_,
                         &address_, deadline_);
       closure_ = nullptr;
     }
@@ -102,7 +98,7 @@ class ConnectionAttemptInjector {
     grpc_closure* closure_;
     grpc_endpoint** endpoint_;
     grpc_pollset_set* interested_parties_;
-    grpc_event_engine::experimental::ConfigMap config_map_;
+    grpc_event_engine::experimental::EndpointConfig config_;
     grpc_resolved_address address_;
     grpc_core::Timestamp deadline_;
   };

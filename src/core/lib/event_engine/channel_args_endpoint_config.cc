@@ -27,21 +27,38 @@
 namespace grpc_event_engine {
 namespace experimental {
 
-EndpointConfig::Setting ChannelArgsEndpointConfig::Get(
-    absl::string_view key) const {
-  const grpc_arg* arg = grpc_channel_args_find(args_, std::string(key).c_str());
-  if (arg == nullptr) {
+EndpointConfig::EndpointConfig() : impl_(nullptr){};
+
+EndpointConfig::~EndpointConfig() = default;
+
+EndpointConfig::EndpointConfig(
+    std::shared_ptr<EndpointConfig::OptionsAccessor> impl)
+    : impl_(std::move(impl)){};
+
+EndpointConfig::Setting EndpointConfig::Get(absl::string_view key) const {
+  if (impl_ == nullptr) {
     return absl::monostate();
   }
-  switch (arg->type) {
-    case GRPC_ARG_STRING:
-      return absl::string_view(arg->value.string);
-    case GRPC_ARG_INTEGER:
-      return arg->value.integer;
-    case GRPC_ARG_POINTER:
-      return arg->value.pointer.p;
-  }
-  GPR_UNREACHABLE_CODE(return absl::monostate());
+  return impl_->Get(key);
+}
+
+EndpointConfig::EndpointConfig(const EndpointConfig& other) {
+  impl_ = other.impl_;
+}
+
+EndpointConfig& EndpointConfig::operator=(EndpointConfig other) {
+  impl_ = other.impl_;
+  return *this;
+}
+
+EndpointConfig ChannelArgsEndpointConfig(const grpc_core::ChannelArgs& args) {
+  return EndpointConfig(
+      std::make_shared<EndpointConfig::OptionsAccessor>(args));
+}
+
+EndpointConfig ChannelArgsEndpointConfig(const grpc_channel_args* args) {
+  return EndpointConfig(
+      std::make_shared<EndpointConfig::OptionsAccessor>(args));
 }
 
 }  // namespace experimental

@@ -37,7 +37,6 @@
 #include <grpc/support/time.h>
 
 #include "src/core/lib/address_utils/sockaddr_utils.h"
-#include "src/core/lib/event_engine/map_backed_endpoint_config.h"
 #include "src/core/lib/iomgr/iocp_windows.h"
 #include "src/core/lib/iomgr/pollset_windows.h"
 #include "src/core/lib/iomgr/resolve_address.h"
@@ -45,39 +44,12 @@
 #include "src/core/lib/iomgr/socket_windows.h"
 #include "src/core/lib/iomgr/tcp_server.h"
 #include "src/core/lib/iomgr/tcp_windows.h"
+#include "src/core/lib/resource_quota/api.h"
 #include "src/core/lib/slice/slice_internal.h"
 
 #define MIN_SAFE_ACCEPT_QUEUE_SIZE 100
 
-using ::grpc_event_engine::experimental::ConfigMap;
 using ::grpc_event_engine::experimental::EndpointConfig;
-
-namespace {
-ConfigMap CopyFromEndpointConfig(const EndpointConfig& config) {
-  ConfigMap map;
-  map.CopyFrom(config, GRPC_ARG_TCP_READ_CHUNK_SIZE);
-  map.CopyFrom(config, GRPC_ARG_TCP_MIN_READ_CHUNK_SIZE);
-  map.CopyFrom(config, GRPC_ARG_TCP_MAX_READ_CHUNK_SIZE);
-  map.CopyFrom(config, GRPC_ARG_KEEPALIVE_TIME_MS);
-  map.CopyFrom(config, GRPC_ARG_KEEPALIVE_TIMEOUT_MS);
-  map.CopyFrom(config, GRPC_ARG_TCP_TX_ZEROCOPY_SEND_BYTES_THRESHOLD);
-  map.CopyFrom(config, GRPC_ARG_TCP_TX_ZEROCOPY_MAX_SIMULT_SENDS);
-  map.CopyFrom(config, GRPC_ARG_TCP_TX_ZEROCOPY_ENABLED);
-  map.CopyFrom(config, GRPC_ARG_SOCKET_MUTATOR);
-  map.CopyFrom(config, GRPC_ARG_ALLOW_REUSEPORT);
-  map.CopyFrom(config, GRPC_ARG_EXPAND_WILDCARD_ADDRS);
-  // For resource quota, a copy operation should increment its ref-count.
-  auto value = map.Get(GRPC_ARG_RESOURCE_QUOTA);
-  if (!absl::holds_alternative<absl::monostate>(value)) {
-    map.Insert(
-        GRPC_ARG_RESOURCE_QUOTA,
-        reinterpret_cast<grpc_core::ResourceQuota*>(absl::get<void*>(value))
-            ->Ref()
-            .release());
-  }
-  return map;
-}
-}  // namespace
 
 /* one listening port */
 typedef struct grpc_tcp_listener grpc_tcp_listener;
@@ -134,7 +106,7 @@ static grpc_error_handle tcp_server_create(grpc_closure* shutdown_complete,
                                            const EndpointConfig& config,
                                            grpc_tcp_server** server) {
   grpc_tcp_server* s = (grpc_tcp_server*)gpr_malloc(sizeof(grpc_tcp_server));
-  s->config = CopyFromEndpointConfig(config);
+  s->config = config;
   gpr_ref_init(&s->refs, 1);
   gpr_mu_init(&s->mu);
   s->active_ports = 0;

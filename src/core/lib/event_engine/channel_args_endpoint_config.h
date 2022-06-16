@@ -21,21 +21,41 @@
 #include <grpc/event_engine/endpoint_config.h>
 #include <grpc/impl/codegen/grpc_types.h>
 
+#include "src/core/lib/channel/channel_args.h"
+
 namespace grpc_event_engine {
 namespace experimental {
 
-/// A readonly \a EndpointConfig based on grpc_channel_args. This class does not
-/// take ownership of the grpc_endpoint_args*, and instances of this class
-/// should not be used after the underlying args are destroyed.
-class ChannelArgsEndpointConfig : public EndpointConfig {
+class EndpointConfig::OptionsAccessor {
  public:
-  explicit ChannelArgsEndpointConfig(const grpc_channel_args* args)
-      : args_(args) {}
-  Setting Get(absl::string_view key) const override;
+  OptionsAccessor(const grpc_core::ChannelArgs& args) : args_(args) {}
+  OptionsAccessor(const grpc_channel_args* args)
+      : args_(grpc_core::ChannelArgs::FromC(args)) {}
+  EndpointConfig::Setting Get(absl::string_view key) const {
+    auto value = args_.Get(key);
+    if (value == nullptr) {
+      return absl::monostate();
+    }
+    if (absl::holds_alternative<grpc_core::ChannelArgs::Pointer>(*value)) {
+      return absl::get<grpc_core::ChannelArgs::Pointer>((*value)).c_pointer();
+    }
+
+    if (absl::holds_alternative<int>(*value)) {
+      return absl::get<int>(*value);
+    }
+
+    if (absl::holds_alternative<std::string>(*value)) {
+      return absl::get<std::string>(*value);
+    }
+    return absl::monostate();
+  }
 
  private:
-  const grpc_channel_args* args_;
+  grpc_core::ChannelArgs args_;
 };
+
+EndpointConfig ChannelArgsEndpointConfig(const grpc_core::ChannelArgs& args);
+EndpointConfig ChannelArgsEndpointConfig(const grpc_channel_args* args);
 
 }  // namespace experimental
 }  // namespace grpc_event_engine

@@ -118,14 +118,14 @@ void UpdateConfigIntegerValue(const EndpointConfig& config,
   update = ClampInteger(default_value, min, max, absl::get<int>(value));
 }
 
-bool GetConfigBoolValue(const EndpointConfig& config, absl::string_view key,
+/*bool GetConfigBoolValue(const EndpointConfig& config, absl::string_view key,
                         bool default_value) {
   auto value = config.Get(key);
   if (!absl::holds_alternative<bool>(value)) {
     return default_value;
   }
   return absl::get<bool>(value);
-}
+}*/
 }  // namespace
 
 namespace grpc_core {
@@ -1757,8 +1757,8 @@ grpc_endpoint* grpc_tcp_create(grpc_fd* em_fd, const EndpointConfig& config,
   UpdateConfigIntegerValue(config, GRPC_ARG_TCP_TX_ZEROCOPY_MAX_SIMULT_SENDS,
                            grpc_core::TcpZerocopySendCtx::kDefaultMaxSends, 0,
                            INT_MAX, tcp_tx_zerocopy_max_simult_sends);
-  tcp_tx_zerocopy_enabled = GetConfigBoolValue(
-      config, GRPC_ARG_TCP_TX_ZEROCOPY_ENABLED, kZerocpTxEnabledDefault);
+  // tcp_tx_zerocopy_enabled = GetConfigBoolValue(
+  //     config, GRPC_ARG_TCP_TX_ZEROCOPY_ENABLED, kZerocpTxEnabledDefault);
   if (tcp_min_read_chunk_size > tcp_max_read_chunk_size) {
     tcp_min_read_chunk_size = tcp_max_read_chunk_size;
   }

@@ -30,7 +30,6 @@
 #include <grpc/support/log_windows.h>
 
 #include "src/core/lib/address_utils/sockaddr_utils.h"
-#include "src/core/lib/event_engine/map_backed_endpoint_config.h"
 #include "src/core/lib/iomgr/iocp_windows.h"
 #include "src/core/lib/iomgr/sockaddr.h"
 #include "src/core/lib/iomgr/sockaddr_windows.h"
@@ -38,9 +37,9 @@
 #include "src/core/lib/iomgr/tcp_client.h"
 #include "src/core/lib/iomgr/tcp_windows.h"
 #include "src/core/lib/iomgr/timer.h"
+#include "src/core/lib/resource_quota/api.h"
 #include "src/core/lib/slice/slice_internal.h"
 
-using ::grpc_event_engine::experimental::ConfigMap;
 using ::grpc_event_engine::experimental::EndpointConfig;
 
 struct async_connect {
@@ -53,33 +52,8 @@ struct async_connect {
   int refs;
   grpc_closure on_connect;
   grpc_endpoint** endpoint;
-  ConfigMap config;
+  EndpointConfig config;
 };
-
-namespace {
-ConfigMap CopyFromEndpointConfig(const EndpointConfig& config) {
-  ConfigMap map;
-  map.CopyFrom(config, GRPC_ARG_TCP_READ_CHUNK_SIZE);
-  map.CopyFrom(config, GRPC_ARG_TCP_MIN_READ_CHUNK_SIZE);
-  map.CopyFrom(config, GRPC_ARG_TCP_MAX_READ_CHUNK_SIZE);
-  map.CopyFrom(config, GRPC_ARG_KEEPALIVE_TIME_MS);
-  map.CopyFrom(config, GRPC_ARG_KEEPALIVE_TIMEOUT_MS);
-  map.CopyFrom(config, GRPC_ARG_TCP_TX_ZEROCOPY_SEND_BYTES_THRESHOLD);
-  map.CopyFrom(config, GRPC_ARG_TCP_TX_ZEROCOPY_MAX_SIMULT_SENDS);
-  map.CopyFrom(config, GRPC_ARG_TCP_TX_ZEROCOPY_ENABLED);
-  map.CopyFrom(config, GRPC_ARG_SOCKET_MUTATOR);
-  // For resource quota, a copy operation should increment its ref-count.
-  auto value = map.Get(GRPC_ARG_RESOURCE_QUOTA);
-  if (!absl::holds_alternative<absl::monostate>(value)) {
-    map.Insert(
-        GRPC_ARG_RESOURCE_QUOTA,
-        reinterpret_cast<grpc_core::ResourceQuota*>(absl::get<void*>(value))
-            ->Ref()
-            .release());
-  }
-  return map;
-}
-}  // namespace
 
 static void async_connect_unlock_and_cleanup(async_connect* ac,
                                              grpc_winsocket* socket) {
@@ -235,7 +209,7 @@ static int64_t tcp_connect(grpc_closure* on_done, grpc_endpoint** endpoint,
   ac->refs = 2;
   ac->addr_name = addr_uri.value();
   ac->endpoint = endpoint;
-  ac->config = CopyFromEndpointConfig(config);
+  ac->config = config;
   GRPC_CLOSURE_INIT(&ac->on_connect, on_connect, ac, grpc_schedule_on_exec_ctx);
 
   GRPC_CLOSURE_INIT(&ac->on_alarm, on_alarm, ac, grpc_schedule_on_exec_ctx);

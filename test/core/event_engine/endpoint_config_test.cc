@@ -24,16 +24,17 @@
 #include "test/core/util/test_config.h"
 
 using ::grpc_event_engine::experimental::ChannelArgsEndpointConfig;
+using ::grpc_event_engine::experimental::EndpointConfig;
 
 TEST(EndpointConfigTest, CanSRetrieveValuesFromChannelArgs) {
   grpc_arg arg = grpc_channel_arg_integer_create(const_cast<char*>("arst"), 3);
   const grpc_channel_args args = {1, &arg};
-  ChannelArgsEndpointConfig config(&args);
+  EndpointConfig config = ChannelArgsEndpointConfig(&args);
   EXPECT_EQ(absl::get<int>(config.Get("arst")), 3);
 }
 
 TEST(EndpointConfigTest, ReturnsMonostateForMissingKeys) {
-  ChannelArgsEndpointConfig config(nullptr);
+  EndpointConfig config = ChannelArgsEndpointConfig(nullptr);
   EXPECT_TRUE(
       absl::holds_alternative<absl::monostate>(config.Get("nonexistent")));
 }

@@ -35,7 +35,6 @@
 #include <grpc/support/time.h>
 
 #include "src/core/lib/address_utils/sockaddr_utils.h"
-#include "src/core/lib/event_engine/map_backed_endpoint_config.h"
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/iomgr/ev_posix.h"
 #include "src/core/lib/iomgr/executor.h"
@@ -47,12 +46,10 @@
 #include "src/core/lib/iomgr/tcp_posix.h"
 #include "src/core/lib/iomgr/timer.h"
 #include "src/core/lib/iomgr/unix_sockets_posix.h"
-#include "src/core/lib/resource_quota/api.h"
 #include "src/core/lib/slice/slice_internal.h"
 
 extern grpc_core::TraceFlag grpc_tcp_trace;
 
-using ::grpc_event_engine::experimental::ConfigMap;
 using ::grpc_event_engine::experimental::EndpointConfig;
 
 struct async_connect {
@@ -66,7 +63,7 @@ struct async_connect {
   std::string addr_str;
   grpc_endpoint** ep;
   grpc_closure* closure;
-  ConfigMap config;
+  EndpointConfig config;
   int64_t connection_handle;
   bool connect_cancelled;
 };
@@ -86,29 +83,6 @@ std::atomic<int64_t> g_connection_id{1};
 void do_tcp_client_global_init(void) {
   size_t num_shards = std::max(2 * gpr_cpu_num_cores(), 1u);
   g_connection_shards = new std::vector<struct ConnectionShard>(num_shards);
-}
-
-ConfigMap CopyFromEndpointConfig(const EndpointConfig& config) {
-  ConfigMap map;
-  map.CopyFrom(config, GRPC_ARG_TCP_READ_CHUNK_SIZE);
-  map.CopyFrom(config, GRPC_ARG_TCP_MIN_READ_CHUNK_SIZE);
-  map.CopyFrom(config, GRPC_ARG_TCP_MAX_READ_CHUNK_SIZE);
-  map.CopyFrom(config, GRPC_ARG_KEEPALIVE_TIME_MS);
-  map.CopyFrom(config, GRPC_ARG_KEEPALIVE_TIMEOUT_MS);
-  map.CopyFrom(config, GRPC_ARG_TCP_TX_ZEROCOPY_SEND_BYTES_THRESHOLD);
-  map.CopyFrom(config, GRPC_ARG_TCP_TX_ZEROCOPY_MAX_SIMULT_SENDS);
-  map.CopyFrom(config, GRPC_ARG_TCP_TX_ZEROCOPY_ENABLED);
-  map.CopyFrom(config, GRPC_ARG_SOCKET_MUTATOR);
-  // For resource quota, a copy operation should increment its ref-count.
-  auto value = map.Get(GRPC_ARG_RESOURCE_QUOTA);
-  if (!absl::holds_alternative<absl::monostate>(value)) {
-    map.Insert(
-        GRPC_ARG_RESOURCE_QUOTA,
-        reinterpret_cast<grpc_core::ResourceQuota*>(absl::get<void*>(value))
-            ->Ref()
-            .release());
-  }
-  return map;
 }
 
 }  // namespace
@@ -394,7 +368,7 @@ int64_t grpc_tcp_client_create_from_prepared_fd(
   ac->refs = 2;
   GRPC_CLOSURE_INIT(&ac->write_closure, on_writable, ac,
                     grpc_schedule_on_exec_ctx);
-  ac->config = CopyFromEndpointConfig(config);
+  ac->config = config;
 
   if (GRPC_TRACE_FLAG_ENABLED(grpc_tcp_trace)) {
     gpr_log(GPR_INFO, "CLIENT_CONNECT: %s: asynchronously connecting fd %p",

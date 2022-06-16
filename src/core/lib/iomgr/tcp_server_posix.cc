@@ -49,7 +49,6 @@
 #include <grpc/support/time.h>
 
 #include "src/core/lib/address_utils/sockaddr_utils.h"
-#include "src/core/lib/event_engine/map_backed_endpoint_config.h"
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gprpp/memory.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
@@ -64,35 +63,7 @@
 
 static std::atomic<int64_t> num_dropped_connections{0};
 
-using ::grpc_event_engine::experimental::ConfigMap;
 using ::grpc_event_engine::experimental::EndpointConfig;
-
-namespace {
-ConfigMap CopyFromEndpointConfig(const EndpointConfig& config) {
-  ConfigMap map;
-  map.CopyFrom(config, GRPC_ARG_TCP_READ_CHUNK_SIZE);
-  map.CopyFrom(config, GRPC_ARG_TCP_MIN_READ_CHUNK_SIZE);
-  map.CopyFrom(config, GRPC_ARG_TCP_MAX_READ_CHUNK_SIZE);
-  map.CopyFrom(config, GRPC_ARG_KEEPALIVE_TIME_MS);
-  map.CopyFrom(config, GRPC_ARG_KEEPALIVE_TIMEOUT_MS);
-  map.CopyFrom(config, GRPC_ARG_TCP_TX_ZEROCOPY_SEND_BYTES_THRESHOLD);
-  map.CopyFrom(config, GRPC_ARG_TCP_TX_ZEROCOPY_MAX_SIMULT_SENDS);
-  map.CopyFrom(config, GRPC_ARG_TCP_TX_ZEROCOPY_ENABLED);
-  map.CopyFrom(config, GRPC_ARG_SOCKET_MUTATOR);
-  map.CopyFrom(config, GRPC_ARG_ALLOW_REUSEPORT);
-  map.CopyFrom(config, GRPC_ARG_EXPAND_WILDCARD_ADDRS);
-  // For resource quota, a copy operation should increment its ref-count.
-  auto value = map.Get(GRPC_ARG_RESOURCE_QUOTA);
-  if (!absl::holds_alternative<absl::monostate>(value)) {
-    map.Insert(
-        GRPC_ARG_RESOURCE_QUOTA,
-        reinterpret_cast<grpc_core::ResourceQuota*>(absl::get<void*>(value))
-            ->Ref()
-            .release());
-  }
-  return map;
-}
-}  // namespace
 
 static grpc_error_handle tcp_server_create(grpc_closure* shutdown_complete,
                                            const EndpointConfig& config,
@@ -130,7 +101,7 @@ static grpc_error_handle tcp_server_create(grpc_closure* shutdown_complete,
   s->head = nullptr;
   s->tail = nullptr;
   s->nports = 0;
-  s->config = CopyFromEndpointConfig(config);
+  s->config = config;
   s->fd_handler = nullptr;
   s->memory_quota =
       grpc_core::ResourceQuotaFromEndpointConfig(s->config)->memory_quota();
