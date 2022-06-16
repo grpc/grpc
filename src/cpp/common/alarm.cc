@@ -55,8 +55,9 @@ class AlarmImpl : public grpc::internal::CompletionQueueTag {
     return true;
   }
   void Set(grpc::CompletionQueue* cq, gpr_timespec deadline, void* tag) {
+    grpc_core::MutexLock lock(&mu_);
     GPR_ASSERT(!cq_timer_handle_.has_value() &&
-               !callback_timer_handle_.has_value() && "cq");
+               !callback_timer_handle_.has_value());
     grpc_core::ExecCtx exec_ctx;
     GRPC_CQ_INTERNAL_REF(cq->cq(), "alarm");
     cq_ = cq->cq();
@@ -68,8 +69,9 @@ class AlarmImpl : public grpc::internal::CompletionQueueTag {
                                        [this] { OnCQAlarm(GRPC_ERROR_NONE); });
   }
   void Set(gpr_timespec deadline, std::function<void(bool)> f) {
+    grpc_core::MutexLock lock(&mu_);
     GPR_ASSERT(!cq_timer_handle_.has_value() &&
-               !callback_timer_handle_.has_value() && "callback");
+               !callback_timer_handle_.has_value());
     grpc_core::ExecCtx exec_ctx;
     // Don't use any CQ at all. Instead just use the timer to fire the function
     callback_ = std::move(f);
@@ -79,6 +81,7 @@ class AlarmImpl : public grpc::internal::CompletionQueueTag {
   }
   void Cancel() {
     grpc_core::ExecCtx exec_ctx;
+    grpc_core::MutexLock lock(&mu_);
     if (callback_timer_handle_.has_value() &&
         GetDefaultEventEngine()->Cancel(*callback_timer_handle_)) {
       GetDefaultEventEngine()->Run(
@@ -97,9 +100,12 @@ class AlarmImpl : public grpc::internal::CompletionQueueTag {
 
  private:
   void OnCQAlarm(grpc_error_handle error) {
+    {
+      grpc_core::MutexLock lock(&mu_);
+      cq_timer_handle_.reset();
+    }
     grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
     grpc_core::ExecCtx exec_ctx;
-    cq_timer_handle_.reset();
     // Preserve the cq and reset the cq_ so that the alarm
     // can be reset when the alarm tag is delivered.
     grpc_completion_queue* cq = cq_;
@@ -112,9 +118,12 @@ class AlarmImpl : public grpc::internal::CompletionQueueTag {
   }
 
   void OnCallbackAlarm(bool is_ok) {
+    {
+      grpc_core::MutexLock lock(&mu_);
+      callback_timer_handle_.reset();
+    }
     grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
     grpc_core::ExecCtx exec_ctx;
-    callback_timer_handle_.reset();
     callback_(is_ok);
     Unref();
   }
@@ -126,8 +135,10 @@ class AlarmImpl : public grpc::internal::CompletionQueueTag {
     }
   }
 
-  absl::optional<EventEngine::TaskHandle> cq_timer_handle_;
-  absl::optional<EventEngine::TaskHandle> callback_timer_handle_;
+  grpc_core::Mutex mu_;
+  absl::optional<EventEngine::TaskHandle> cq_timer_handle_ ABSL_GUARDED_BY(mu_);
+  absl::optional<EventEngine::TaskHandle> callback_timer_handle_
+      ABSL_GUARDED_BY(mu_);
   gpr_refcount refs_;
   grpc_cq_completion completion_;
   // completion queue where events about this alarm will be posted
