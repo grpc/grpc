@@ -25,7 +25,6 @@
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/string_view.h"
-#include "absl/time/time.h"
 #include "absl/types/variant.h"
 
 #include <grpc/event_engine/endpoint_config.h>
