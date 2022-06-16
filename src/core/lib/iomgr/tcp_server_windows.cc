@@ -29,6 +29,7 @@
 
 #include "absl/strings/str_cat.h"
 
+#include <grpc/event_engine/endpoint_config.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/log_windows.h>
@@ -37,6 +38,7 @@
 #include <grpc/support/time.h>
 
 #include "src/core/lib/address_utils/sockaddr_utils.h"
+#include "src/core/lib/event_engine/channel_args_endpoint_config.h"
 #include "src/core/lib/iomgr/iocp_windows.h"
 #include "src/core/lib/iomgr/pollset_windows.h"
 #include "src/core/lib/iomgr/resolve_address.h"
@@ -97,7 +99,7 @@ struct grpc_tcp_server {
   /* shutdown callback */
   grpc_closure* shutdown_complete;
 
-  ConfigMap config;
+  EndpointConfig config;
 };
 
 /* Public function. Allocates the proper data structures to hold a
