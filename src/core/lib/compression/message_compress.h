@@ -19,15 +19,23 @@
 #ifndef GRPC_CORE_LIB_COMPRESSION_MESSAGE_COMPRESS_H
 #define GRPC_CORE_LIB_COMPRESSION_MESSAGE_COMPRESS_H
 
+#include <memory>
 #include <grpc/support/port_platform.h>
 
+#include <grpc/impl/codegen/grpc_types.h>
 #include <grpc/impl/codegen/compression_types.h>
 #include <grpc/slice.h>
 
-struct gzip_compression_options {
-   int gzip_compression_level;
-   int compression_lower_bound;
+namespace grpc_core {
+class CompressionOptions {
+ public:
+  virtual ~CompressionOptions() = default;
 };
+
+// Return Compression options
+std::unique_ptr<CompressionOptions> MakeCompressionOptions(const grpc_channel_args* args);
+
+}  // namespace grpc_core
 
 /* compress 'input' to 'output' using 'algorithm'.
    On success, appends compressed slices to output and returns 1.
@@ -35,7 +43,7 @@ struct gzip_compression_options {
 int grpc_msg_compress(grpc_compression_algorithm algorithm,
                       grpc_slice_buffer* input, 
                       grpc_slice_buffer* output,
-                      gzip_compression_options options);
+                      std::unique_ptr<grpc_core::CompressionOptions> options);
 
 /* decompress 'input' to 'output' using 'algorithm'.
    On success, appends slices to output and returns 1.
