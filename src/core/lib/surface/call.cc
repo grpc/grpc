@@ -2211,6 +2211,8 @@ void ClientPromiseBasedCall::StartPromise(
   promise_ = channel()->channel_stack()->MakeCallPromise(CallArgs{
       std::move(client_initial_metadata),
       &server_initial_metadata_,
+      &client_to_server_messages_.receiver,
+      &server_to_client_messages_.sender,
   });
 }
 

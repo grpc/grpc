@@ -262,6 +262,11 @@ class ClientConnectedCallPromise {
       metadata_.recv_initial_metadata = true;
       metadata_.recv_trailing_metadata = true;
       metadata_.payload = &batch_payload_;
+      metadata_batch_done_ =
+          MakeMemberClosure<ClientConnectedCallPromise,
+                            &ClientConnectedCallPromise::MetadataBatchDone>(
+              this);
+      metadata_.on_complete = &metadata_batch_done_;
       batch_payload_.send_initial_metadata.send_initial_metadata =
           client_initial_metadata_.get();
       // DO NOT SUBMIT: figure this field out
@@ -290,6 +295,8 @@ class ClientConnectedCallPromise {
       batch_payload_.recv_trailing_metadata.recv_trailing_metadata_ready =
           &recv_trailing_metadata_ready_;
       push_metadata_ = true;
+      initial_metadata_waker_ = Activity::current()->MakeOwningWaker();
+      trailing_metadata_waker_ = Activity::current()->MakeOwningWaker();
       SchedulePush();
     }
     if (absl::holds_alternative<Idle>(send_message_state_)) {
@@ -301,6 +308,10 @@ class ClientConnectedCallPromise {
       if (auto* p = absl::get_if<absl::optional<Message>>(&r)) {
         memset(&send_message_, 0, sizeof(send_message_));
         send_message_.payload = &batch_payload_;
+        send_message_batch_done_ = MakeMemberClosure<
+            ClientConnectedCallPromise,
+            &ClientConnectedCallPromise::SendMessageBatchDone>(this);
+        send_message_.on_complete = &send_message_batch_done_;
         if (p->has_value()) {
           send_message_state_ = std::move(**p);
           auto& msg = absl::get<Message>(send_message_state_);
@@ -311,7 +322,7 @@ class ClientConnectedCallPromise {
           send_message_state_ = Closed{};
           send_message_.send_trailing_metadata = true;
           batch_payload_.send_trailing_metadata.send_trailing_metadata =
-              nullptr;
+              &client_trailing_metadata_;
           // DO NOT SUBMIT: figure this field out
           batch_payload_.send_trailing_metadata.sent = nullptr;
         }
@@ -350,14 +361,21 @@ class ClientConnectedCallPromise {
     return Pending{};
   }
 
-  void RecvInitialMetadataReady(grpc_error_handle error) {
+  void RecvInitialMetadataReady(grpc_error_handle) {
     queued_initial_metadata_ = true;
-    waker_.Wakeup();
+    initial_metadata_waker_.Wakeup();
   }
 
-  void RecvTrailingMetadataReady(grpc_error_handle error) {
+  void RecvTrailingMetadataReady(grpc_error_handle) {
     queued_trailing_metadata_ = true;
-    waker_.Wakeup();
+    trailing_metadata_waker_.Wakeup();
+  }
+
+  void MetadataBatchDone(grpc_error_handle) {}
+
+  void SendMessageBatchDone(grpc_error_handle) {
+    send_message_state_ = Idle{};
+    send_message_waker_.Wakeup();
   }
 
   void Push() {
@@ -392,7 +410,9 @@ class ClientConnectedCallPromise {
   bool scheduled_push_ = false;
   bool queued_initial_metadata_ = false;
   bool queued_trailing_metadata_ = false;
-  Waker waker_;
+  Waker initial_metadata_waker_;
+  Waker trailing_metadata_waker_;
+  Waker send_message_waker_;
   Waker stream_owning_waker_;
   grpc_stream_refcount* stream_refcount_;
   grpc_transport* const transport_;
@@ -409,10 +429,13 @@ class ClientConnectedCallPromise {
   grpc_closure recv_trailing_metadata_ready_;
   grpc_closure push_;
   ClientMetadataHandle client_initial_metadata_;
+  ClientMetadata client_trailing_metadata_{GetContext<Arena>()};
   ServerMetadata server_initial_metadata_{GetContext<Arena>()};
   ServerMetadata server_trailing_metadata_{GetContext<Arena>()};
   grpc_transport_stream_op_batch metadata_;
+  grpc_closure metadata_batch_done_;
   grpc_transport_stream_op_batch send_message_;
+  grpc_closure send_message_batch_done_;
   grpc_transport_stream_op_batch recv_message_;
   grpc_transport_stream_op_batch_payload batch_payload_{
       GetContext<grpc_call_context_element>()};
