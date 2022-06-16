@@ -47,7 +47,7 @@ class EndpointConfig::OptionsAccessor {
     if (absl::holds_alternative<std::string>(*value)) {
       return absl::get<std::string>(*value);
     }
-    return absl::monostate();
+    GPR_UNREACHABLE_CODE(return absl::monostate());
   }
 
  private:
