@@ -149,7 +149,7 @@ done:
   if (result) {
     freeaddrinfo(result);
   }
-  if (error == GRPC_ERROR_NONE) {
+  if (GRPC_ERROR_IS_NONE(error)) {
     return addresses;
   }
   auto error_result = grpc_error_to_absl_status(error);

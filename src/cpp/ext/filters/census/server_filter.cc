@@ -20,13 +20,24 @@
 
 #include "src/cpp/ext/filters/census/server_filter.h"
 
+#include <memory>
+#include <utility>
+
 #include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
 #include "absl/time/clock.h"
 #include "absl/time/time.h"
+#include "absl/types/optional.h"
 #include "opencensus/stats/stats.h"
+#include "opencensus/tags/tag_key.h"
 
+#include <grpc/grpc.h>
+#include <grpc/support/log.h>
+
+#include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/surface/call.h"
+#include "src/core/lib/transport/transport.h"
+#include "src/cpp/ext/filters/census/channel_filter.h"
 #include "src/cpp/ext/filters/census/grpc_plugin.h"
 #include "src/cpp/ext/filters/census/measures.h"
 
@@ -84,7 +95,7 @@ void CensusServerCallData::OnDoneRecvInitialMetadataCb(
   CensusServerCallData* calld =
       reinterpret_cast<CensusServerCallData*>(elem->call_data);
   GPR_ASSERT(calld != nullptr);
-  if (error == GRPC_ERROR_NONE) {
+  if (GRPC_ERROR_IS_NONE(error)) {
     grpc_metadata_batch* initial_metadata = calld->recv_initial_metadata_;
     GPR_ASSERT(initial_metadata != nullptr);
     ServerMetadataElements sml;

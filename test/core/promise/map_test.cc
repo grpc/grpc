@@ -14,7 +14,9 @@
 
 #include "src/core/lib/promise/map.h"
 
-#include <gtest/gtest.h>
+#include <functional>
+
+#include "gtest/gtest.h"
 
 #include "src/core/lib/promise/promise.h"
 

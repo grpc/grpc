@@ -23,7 +23,6 @@
 #include <memory>
 #include <random>
 #include <string>
-#include <type_traits>
 #include <utility>
 
 #include "absl/memory/memory.h"
@@ -216,7 +215,7 @@ void GoogleCloud2ProdResolver::ZoneQuery::OnDone(
     GoogleCloud2ProdResolver* resolver, const grpc_http_response* response,
     grpc_error_handle error) {
   absl::StatusOr<std::string> zone;
-  if (error != GRPC_ERROR_NONE) {
+  if (!GRPC_ERROR_IS_NONE(error)) {
     zone = absl::UnknownError(
         absl::StrCat("error fetching zone from metadata server: ",
                      grpc_error_std_string(error)));
@@ -257,11 +256,11 @@ GoogleCloud2ProdResolver::IPv6Query::IPv6Query(
 void GoogleCloud2ProdResolver::IPv6Query::OnDone(
     GoogleCloud2ProdResolver* resolver, const grpc_http_response* response,
     grpc_error_handle error) {
-  if (error != GRPC_ERROR_NONE) {
+  if (!GRPC_ERROR_IS_NONE(error)) {
     gpr_log(GPR_ERROR, "error fetching IPv6 address from metadata server: %s",
             grpc_error_std_string(error).c_str());
   }
-  resolver->IPv6QueryDone(error == GRPC_ERROR_NONE && response->status == 200);
+  resolver->IPv6QueryDone(GRPC_ERROR_IS_NONE(error) && response->status == 200);
   GRPC_ERROR_UNREF(error);
 }
 
@@ -381,19 +380,26 @@ void GoogleCloud2ProdResolver::StartXdsResolver() {
       override_server != nullptr && strlen(override_server.get()) > 0
           ? override_server.get()
           : "directpath-pa.googleapis.com";
+  Json xds_server = Json::Array{
+      Json::Object{
+          {"server_uri", server_uri},
+          {"channel_creds",
+           Json::Array{
+               Json::Object{
+                   {"type", "google_default"},
+               },
+           }},
+          {"server_features", Json::Array{"xds_v3"}},
+      },
+  };
   Json bootstrap = Json::Object{
-      {"xds_servers",
-       Json::Array{
-           Json::Object{
-               {"server_uri", server_uri},
-               {"channel_creds",
-                Json::Array{
-                    Json::Object{
-                        {"type", "google_default"},
-                    },
-                }},
-               {"server_features", Json::Array{"xds_v3"}},
-           },
+      {"xds_servers", xds_server},
+      {"authorities",
+       Json::Object{
+           {"traffic-director-c2p.xds.googleapis.com",
+            Json::Object{
+                {"xds_servers", std::move(xds_server)},
+            }},
        }},
       {"node", std::move(node)},
   };

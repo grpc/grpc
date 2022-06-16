@@ -22,6 +22,8 @@
 #include <memory>
 #include <utility>
 
+#include "absl/status/status.h"
+
 #include <grpc/impl/codegen/connectivity_state.h>
 #include <grpc/impl/codegen/grpc_types.h>
 
@@ -38,11 +40,12 @@ class SubchannelInterface : public RefCounted<SubchannelInterface> {
    public:
     virtual ~ConnectivityStateWatcherInterface() = default;
 
-    // Will be invoked whenever the subchannel's connectivity state
-    // changes.  There will be only one invocation of this method on a
-    // given watcher instance at any given time.
-    virtual void OnConnectivityStateChange(
-        grpc_connectivity_state new_state) = 0;
+    // Will be invoked whenever the subchannel's connectivity state changes.
+    // If the new state is TRANSIENT_FAILURE, status indicates the reason
+    // for the failure.  There will be only one invocation of this method
+    // on a given watcher instance at any given time.
+    virtual void OnConnectivityStateChange(grpc_connectivity_state new_state,
+                                           absl::Status status) = 0;
 
     // TODO(roth): Remove this as soon as we move to EventManager-based
     // polling.
@@ -61,13 +64,8 @@ class SubchannelInterface : public RefCounted<SubchannelInterface> {
 
   ~SubchannelInterface() override = default;
 
-  // Returns the current connectivity state of the subchannel.
-  virtual grpc_connectivity_state CheckConnectivityState() = 0;
-
   // Starts watching the subchannel's connectivity state.
-  // The first callback to the watcher will be delivered when the
-  // subchannel's connectivity state becomes a value other than
-  // initial_state, which may happen immediately.
+  // The first callback to the watcher will be delivered ~immediately.
   // Subsequent callbacks will be delivered as the subchannel's state
   // changes.
   // The watcher will be destroyed either when the subchannel is
@@ -76,7 +74,6 @@ class SubchannelInterface : public RefCounted<SubchannelInterface> {
   // valid to call this method a second time without first cancelling
   // the previous watcher using CancelConnectivityStateWatch().
   virtual void WatchConnectivityState(
-      grpc_connectivity_state initial_state,
       std::unique_ptr<ConnectivityStateWatcherInterface> watcher) = 0;
 
   // Cancels a connectivity state watch.
@@ -115,14 +112,9 @@ class DelegatingSubchannel : public SubchannelInterface {
     return wrapped_subchannel_;
   }
 
-  grpc_connectivity_state CheckConnectivityState() override {
-    return wrapped_subchannel_->CheckConnectivityState();
-  }
   void WatchConnectivityState(
-      grpc_connectivity_state initial_state,
       std::unique_ptr<ConnectivityStateWatcherInterface> watcher) override {
-    return wrapped_subchannel_->WatchConnectivityState(initial_state,
-                                                       std::move(watcher));
+    return wrapped_subchannel_->WatchConnectivityState(std::move(watcher));
   }
   void CancelConnectivityStateWatch(
       ConnectivityStateWatcherInterface* watcher) override {

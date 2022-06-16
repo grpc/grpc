@@ -65,7 +65,7 @@ static grpc_error_handle get_unused_port(int* port) {
   int fd;
   grpc_error_handle err =
       grpc_create_dualstack_socket(&wild, SOCK_STREAM, 0, &dsmode, &fd);
-  if (err != GRPC_ERROR_NONE) {
+  if (!GRPC_ERROR_IS_NONE(err)) {
     return err;
   }
   if (dsmode == GRPC_DSMODE_IPV4) {
@@ -164,7 +164,7 @@ grpc_error_handle grpc_tcp_server_add_all_local_addrs(grpc_tcp_server* s,
     }
   }
   freeifaddrs(ifa);
-  if (err != GRPC_ERROR_NONE) {
+  if (!GRPC_ERROR_IS_NONE(err)) {
     return err;
   } else if (sp == nullptr) {
     return GRPC_ERROR_CREATE_FROM_STATIC_STRING("No local addresses");

@@ -151,6 +151,7 @@ bloaty-build/
 **/cmake/build/
 
 # Visual Studio Code artifacts
+.cache/*
 .vscode/*
 .history/
 

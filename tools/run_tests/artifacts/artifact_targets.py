@@ -131,6 +131,12 @@ class PythonArtifact:
             # building the native extension is the most time-consuming part of the build
             environ['GRPC_PYTHON_BUILD_EXT_COMPILER_JOBS'] = str(inner_jobs)
 
+        # This is necessary due to https://github.com/pypa/wheel/issues/406.
+        # distutils incorrectly generates a universal2 artifact that only contains
+        # x86_64 libraries.
+        if self.platform == "macos" and self.arch == "x64":
+            environ["GRPC_UNIVERSAL2_REPAIR"] = "true"
+
         if self.platform == 'linux_extra':
             # Crosscompilation build for armv7 (e.g. Raspberry Pi)
             environ['PYTHON'] = '/opt/python/{}/bin/python3'.format(
@@ -433,23 +439,15 @@ def targets():
         CSharpExtArtifact('linux', 'android', arch_abi='x86', presubmit=True),
         CSharpExtArtifact('macos', 'ios', presubmit=True),
         PythonArtifact('manylinux2014', 'x64', 'cp36-cp36m', presubmit=True),
-        PythonArtifact('manylinux2014', 'x64', 'cp37-cp37m'),
+        PythonArtifact('manylinux2014', 'x64', 'cp37-cp37m', presubmit=True),
         PythonArtifact('manylinux2014', 'x64', 'cp38-cp38'),
         PythonArtifact('manylinux2014', 'x64', 'cp39-cp39'),
         PythonArtifact('manylinux2014', 'x64', 'cp310-cp310', presubmit=True),
         PythonArtifact('manylinux2014', 'x86', 'cp36-cp36m', presubmit=True),
-        PythonArtifact('manylinux2014', 'x86', 'cp37-cp37m'),
+        PythonArtifact('manylinux2014', 'x86', 'cp37-cp37m', presubmit=True),
         PythonArtifact('manylinux2014', 'x86', 'cp38-cp38'),
         PythonArtifact('manylinux2014', 'x86', 'cp39-cp39'),
         PythonArtifact('manylinux2014', 'x86', 'cp310-cp310', presubmit=True),
-        PythonArtifact('manylinux2010', 'x64', 'cp36-cp36m'),
-        PythonArtifact('manylinux2010', 'x64', 'cp37-cp37m', presubmit=True),
-        PythonArtifact('manylinux2010', 'x64', 'cp38-cp38'),
-        PythonArtifact('manylinux2010', 'x64', 'cp39-cp39'),
-        PythonArtifact('manylinux2010', 'x86', 'cp36-cp36m'),
-        PythonArtifact('manylinux2010', 'x86', 'cp37-cp37m', presubmit=True),
-        PythonArtifact('manylinux2010', 'x86', 'cp38-cp38'),
-        PythonArtifact('manylinux2010', 'x86', 'cp39-cp39'),
         PythonArtifact('manylinux2014', 'aarch64', 'cp36-cp36m',
                        presubmit=True),
         PythonArtifact('manylinux2014', 'aarch64', 'cp37-cp37m'),

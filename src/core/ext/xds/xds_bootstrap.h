@@ -19,21 +19,17 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <map>
 #include <memory>
 #include <set>
 #include <string>
-#include <vector>
 
 #include "absl/container/inlined_vector.h"
-
-#include <grpc/slice.h>
+#include "absl/strings/string_view.h"
 
 #include "src/core/ext/xds/certificate_provider_store.h"
-#include "src/core/lib/gprpp/memory.h"
-#include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/json/json.h"
-#include "src/core/lib/security/credentials/credentials.h"
 
 namespace grpc_core {
 
@@ -80,6 +76,7 @@ class XdsBootstrap {
     Json::Object ToJson() const;
 
     bool ShouldUseV3() const;
+    bool IgnoreResourceDeletion() const;
   };
 
   struct Authority {
@@ -140,4 +137,4 @@ class XdsBootstrap {
 
 }  // namespace grpc_core
 
-#endif /* GRPC_CORE_EXT_XDS_XDS_BOOTSTRAP_H */
+#endif  // GRPC_CORE_EXT_XDS_XDS_BOOTSTRAP_H

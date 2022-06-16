@@ -73,10 +73,10 @@ void test_tcp_server_start(test_tcp_server* server, int port) {
   grpc_error_handle error = grpc_tcp_server_create(&server->shutdown_complete,
                                                    args, &server->tcp_server);
   grpc_channel_args_destroy(args);
-  GPR_ASSERT(error == GRPC_ERROR_NONE);
+  GPR_ASSERT(GRPC_ERROR_IS_NONE(error));
   error =
       grpc_tcp_server_add_port(server->tcp_server, &resolved_addr, &port_added);
-  GPR_ASSERT(error == GRPC_ERROR_NONE);
+  GPR_ASSERT(GRPC_ERROR_IS_NONE(error));
   GPR_ASSERT(port_added == port);
 
   grpc_tcp_server_start(server->tcp_server, &server->pollset,

@@ -21,13 +21,11 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <stdint.h>
 #include <string.h>
 
 #include "absl/base/internal/endian.h"
 #include "absl/strings/string_view.h"
-#include "opencensus/trace/span_context.h"
-#include "opencensus/trace/span_id.h"
-#include "opencensus/trace/trace_id.h"
 
 namespace grpc {
 

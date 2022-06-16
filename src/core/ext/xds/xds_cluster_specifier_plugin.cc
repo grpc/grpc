@@ -18,14 +18,23 @@
 
 #include "src/core/ext/xds/xds_cluster_specifier_plugin.h"
 
-#include "absl/strings/str_format.h"
-#include "envoy/extensions/filters/http/router/v3/router.upb.h"
-#include "envoy/extensions/filters/http/router/v3/router.upbdefs.h"
-#include "google/protobuf/duration.upb.h"
+#include <stddef.h>
+
+#include <algorithm>
+#include <map>
+#include <utility>
+
+#include "absl/memory/memory.h"
+#include "absl/status/status.h"
+#include "absl/strings/str_cat.h"
 #include "upb/json_encode.h"
+#include "upb/upb.hpp"
+
+#include <grpc/support/log.h>
 
 #include "src/core/ext/filters/client_channel/lb_policy_registry.h"
-#include "src/core/ext/xds/upb_utils.h"
+#include "src/core/lib/iomgr/error.h"
+#include "src/core/lib/json/json.h"
 #include "src/proto/grpc/lookup/v1/rls_config.upb.h"
 #include "src/proto/grpc/lookup/v1/rls_config.upbdefs.h"
 
@@ -72,7 +81,7 @@ XdsRouteLookupClusterSpecifierPlugin::GenerateLoadBalancingPolicyConfig(
   grpc_error_handle error = GRPC_ERROR_NONE;
   rls_policy["routeLookupConfig"] =
       Json::Parse(reinterpret_cast<char*>(buf), &error);
-  GPR_ASSERT(error == GRPC_ERROR_NONE);
+  GPR_ASSERT(GRPC_ERROR_IS_NONE(error));
   Json::Object cds_policy;
   cds_policy["cds_experimental"] = Json::Object();
   Json::Array child_policy;
@@ -91,7 +100,7 @@ XdsRouteLookupClusterSpecifierPlugin::GenerateLoadBalancingPolicyConfig(
   // itself.
   LoadBalancingPolicyRegistry::ParseLoadBalancingConfig(lb_policy_config,
                                                         &parse_error);
-  if (parse_error != GRPC_ERROR_NONE) {
+  if (!GRPC_ERROR_IS_NONE(parse_error)) {
     absl::Status status = absl::InvalidArgumentError(absl::StrCat(
         kXdsRouteLookupClusterSpecifierPluginConfigName,
         " ClusterSpecifierPlugin returned invalid LB policy config: ",

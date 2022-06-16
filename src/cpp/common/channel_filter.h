@@ -19,16 +19,30 @@
 #ifndef GRPCXX_CHANNEL_FILTER_H
 #define GRPCXX_CHANNEL_FILTER_H
 
+#include <stddef.h>
+#include <stdint.h>
+
 #include <functional>
-#include <vector>
+#include <new>
+#include <string>
+#include <utility>
 
 #include <grpc/grpc.h>
-#include <grpc/support/alloc.h>
-#include <grpcpp/impl/codegen/config.h>
+#include <grpc/impl/codegen/grpc_types.h>
+#include <grpc/support/atm.h>
+#include <grpcpp/support/config.h>
 
+#include "src/core/lib/channel/channel_fwd.h"
 #include "src/core/lib/channel/channel_stack.h"
-#include "src/core/lib/surface/channel_init.h"
+#include "src/core/lib/channel/context.h"
+#include "src/core/lib/gprpp/orphanable.h"
+#include "src/core/lib/iomgr/closure.h"
+#include "src/core/lib/iomgr/error.h"
+#include "src/core/lib/iomgr/polling_entity.h"
+#include "src/core/lib/surface/channel_stack_type.h"
+#include "src/core/lib/transport/byte_stream.h"
 #include "src/core/lib/transport/metadata_batch.h"
+#include "src/core/lib/transport/transport.h"
 
 /// An interface to define filters.
 ///
@@ -72,7 +86,7 @@ class TransportOp {
   grpc_error_handle disconnect_with_error() const {
     return op_->disconnect_with_error;
   }
-  bool send_goaway() const { return op_->goaway_error != GRPC_ERROR_NONE; }
+  bool send_goaway() const { return !GRPC_ERROR_IS_NONE(op_->goaway_error); }
 
   // TODO(roth): Add methods for additional fields as needed.
 

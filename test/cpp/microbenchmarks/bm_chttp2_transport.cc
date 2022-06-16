@@ -397,7 +397,7 @@ static void BM_TransportEmptyOp(benchmark::State& state) {
   gpr_event_init(stream_cancel_done);
   std::unique_ptr<TestClosure> stream_cancel_closure =
       MakeTestClosure([&](grpc_error_handle error) {
-        GPR_ASSERT(error == GRPC_ERROR_NONE);
+        GPR_ASSERT(GRPC_ERROR_IS_NONE(error));
         gpr_event_set(stream_cancel_done, reinterpret_cast<void*>(1));
       });
   op.on_complete = stream_cancel_closure.get();
@@ -476,7 +476,7 @@ static void BM_TransportStreamSend(benchmark::State& state) {
   gpr_event_init(stream_cancel_done);
   std::unique_ptr<TestClosure> stream_cancel_closure =
       MakeTestClosure([&](grpc_error_handle error) {
-        GPR_ASSERT(error == GRPC_ERROR_NONE);
+        GPR_ASSERT(GRPC_ERROR_IS_NONE(error));
         gpr_event_set(stream_cancel_done, reinterpret_cast<void*>(1));
       });
   op.on_complete = stream_cancel_closure.get();
@@ -656,7 +656,7 @@ static void BM_TransportStreamRecv(benchmark::State& state) {
   gpr_event_init(stream_cancel_done);
   std::unique_ptr<TestClosure> stream_cancel_closure =
       MakeTestClosure([&](grpc_error_handle error) {
-        GPR_ASSERT(error == GRPC_ERROR_NONE);
+        GPR_ASSERT(GRPC_ERROR_IS_NONE(error));
         gpr_event_set(stream_cancel_done, reinterpret_cast<void*>(1));
       });
   op.on_complete = stream_cancel_closure.get();

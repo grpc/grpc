@@ -12,9 +12,24 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <functional>
+#include <map>
+#include <memory>
+#include <tuple>
+#include <utility>
+#include <vector>
+
+#include "absl/status/status.h"
+#include "absl/types/optional.h"
+#include "absl/utility/utility.h"
+
+#include <grpc/support/log.h>
+
 #include "src/core/lib/promise/activity.h"
+#include "src/core/lib/promise/detail/basic_join.h"
 #include "src/core/lib/promise/join.h"
 #include "src/core/lib/promise/map.h"
+#include "src/core/lib/promise/poll.h"
 #include "src/core/lib/promise/promise.h"
 #include "src/core/lib/promise/race.h"
 #include "src/core/lib/promise/seq.h"
