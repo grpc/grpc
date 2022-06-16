@@ -107,13 +107,15 @@ int ClampInteger(int default_value, int min, int max, int value) {
   return value;
 }
 
-int GetConfigIntegerValue(const EndpointConfig& config, absl::string_view key,
-                          int default_value, int min, int max) {
+void UpdateConfigIntegerValue(const EndpointConfig& config,
+                              absl::string_view key, int default_value, int min,
+                              int max, int& update) {
   auto value = config.Get(key);
   if (!absl::holds_alternative<int>(value)) {
-    return default_value;
+    // Dont update if the key is not present.
+    return;
   }
-  return ClampInteger(default_value, min, max, absl::get<int>(value));
+  update = ClampInteger(default_value, min, max, absl::get<int>(value));
 }
 
 bool GetConfigBoolValue(const EndpointConfig& config, absl::string_view key,
@@ -1739,21 +1741,22 @@ grpc_endpoint* grpc_tcp_create(grpc_fd* em_fd, const EndpointConfig& config,
       grpc_core::TcpZerocopySendCtx::kDefaultSendBytesThreshold;
   int tcp_tx_zerocopy_max_simult_sends =
       grpc_core::TcpZerocopySendCtx::kDefaultMaxSends;
-  tcp_read_chunk_size =
-      GetConfigIntegerValue(config, GRPC_ARG_TCP_READ_CHUNK_SIZE,
-                            tcp_read_chunk_size, 1, MAX_CHUNK_SIZE);
-  tcp_min_read_chunk_size =
-      GetConfigIntegerValue(config, GRPC_ARG_TCP_MIN_READ_CHUNK_SIZE,
-                            tcp_read_chunk_size, 1, MAX_CHUNK_SIZE);
-  tcp_max_read_chunk_size =
-      GetConfigIntegerValue(config, GRPC_ARG_TCP_MAX_READ_CHUNK_SIZE,
-                            tcp_read_chunk_size, 1, MAX_CHUNK_SIZE);
-  tcp_tx_zerocopy_send_bytes_thresh = GetConfigIntegerValue(
+  UpdateConfigIntegerValue(config, GRPC_ARG_TCP_READ_CHUNK_SIZE,
+                           tcp_read_chunk_size, 1, MAX_CHUNK_SIZE,
+                           tcp_read_chunk_size);
+  UpdateConfigIntegerValue(config, GRPC_ARG_TCP_MIN_READ_CHUNK_SIZE,
+                           tcp_read_chunk_size, 1, MAX_CHUNK_SIZE,
+                           tcp_min_read_chunk_size);
+  UpdateConfigIntegerValue(config, GRPC_ARG_TCP_MAX_READ_CHUNK_SIZE,
+                           tcp_read_chunk_size, 1, MAX_CHUNK_SIZE,
+                           tcp_max_read_chunk_size);
+  UpdateConfigIntegerValue(
       config, GRPC_ARG_TCP_TX_ZEROCOPY_SEND_BYTES_THRESHOLD,
-      grpc_core::TcpZerocopySendCtx::kDefaultSendBytesThreshold, 0, INT_MAX);
-  tcp_tx_zerocopy_max_simult_sends = GetConfigIntegerValue(
-      config, GRPC_ARG_TCP_TX_ZEROCOPY_MAX_SIMULT_SENDS,
-      grpc_core::TcpZerocopySendCtx::kDefaultMaxSends, 0, INT_MAX);
+      grpc_core::TcpZerocopySendCtx::kDefaultSendBytesThreshold, 0, INT_MAX,
+      tcp_tx_zerocopy_send_bytes_thresh);
+  UpdateConfigIntegerValue(config, GRPC_ARG_TCP_TX_ZEROCOPY_MAX_SIMULT_SENDS,
+                           grpc_core::TcpZerocopySendCtx::kDefaultMaxSends, 0,
+                           INT_MAX, tcp_tx_zerocopy_max_simult_sends);
   tcp_tx_zerocopy_enabled = GetConfigBoolValue(
       config, GRPC_ARG_TCP_TX_ZEROCOPY_ENABLED, kZerocpTxEnabledDefault);
   if (tcp_min_read_chunk_size > tcp_max_read_chunk_size) {

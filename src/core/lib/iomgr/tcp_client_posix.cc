@@ -47,6 +47,7 @@
 #include "src/core/lib/iomgr/tcp_posix.h"
 #include "src/core/lib/iomgr/timer.h"
 #include "src/core/lib/iomgr/unix_sockets_posix.h"
+#include "src/core/lib/resource_quota/api.h"
 #include "src/core/lib/slice/slice_internal.h"
 
 extern grpc_core::TraceFlag grpc_tcp_trace;
@@ -98,7 +99,15 @@ ConfigMap CopyFromEndpointConfig(const EndpointConfig& config) {
   map.CopyFrom(config, GRPC_ARG_TCP_TX_ZEROCOPY_MAX_SIMULT_SENDS);
   map.CopyFrom(config, GRPC_ARG_TCP_TX_ZEROCOPY_ENABLED);
   map.CopyFrom(config, GRPC_ARG_SOCKET_MUTATOR);
-  map.CopyFrom(config, GRPC_ARG_RESOURCE_QUOTA);
+  // For resource quota, a copy operation should increment its ref-count.
+  auto value = map.Get(GRPC_ARG_RESOURCE_QUOTA);
+  if (!absl::holds_alternative<absl::monostate>(value)) {
+    map.Insert(
+        GRPC_ARG_RESOURCE_QUOTA,
+        reinterpret_cast<grpc_core::ResourceQuota*>(absl::get<void*>(value))
+            ->Ref()
+            .release());
+  }
   return map;
 }
 

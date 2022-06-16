@@ -66,7 +66,15 @@ ConfigMap CopyFromEndpointConfig(const EndpointConfig& config) {
   map.CopyFrom(config, GRPC_ARG_SOCKET_MUTATOR);
   map.CopyFrom(config, GRPC_ARG_ALLOW_REUSEPORT);
   map.CopyFrom(config, GRPC_ARG_EXPAND_WILDCARD_ADDRS);
-  map.CopyFrom(config, GRPC_ARG_RESOURCE_QUOTA);
+  // For resource quota, a copy operation should increment its ref-count.
+  auto value = map.Get(GRPC_ARG_RESOURCE_QUOTA);
+  if (!absl::holds_alternative<absl::monostate>(value)) {
+    map.Insert(
+        GRPC_ARG_RESOURCE_QUOTA,
+        reinterpret_cast<grpc_core::ResourceQuota*>(absl::get<void*>(value))
+            ->Ref()
+            .release());
+  }
   return map;
 }
 }  // namespace
