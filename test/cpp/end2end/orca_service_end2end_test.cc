@@ -197,5 +197,7 @@ TEST_F(OrcaServiceEnd2endTest, Basic) {
 int main(int argc, char** argv) {
   grpc::testing::TestEnvironment env(&argc, argv);
   ::testing::InitGoogleTest(&argc, argv);
+  grpc_init();
   return RUN_ALL_TESTS();
+  grpc_shutdown();
 }
