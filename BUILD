@@ -1224,7 +1224,6 @@ grpc_cc_library(
     external_deps = [
         "absl/base:core_headers",
         "absl/status",
-        "absl/time",
     ],
     tags = ["grpc-autodeps"],
     deps = [
@@ -2084,6 +2083,7 @@ grpc_cc_library(
     external_deps = ["absl/strings:str_format"],
     tags = ["grpc-autodeps"],
     deps = [
+        "event_engine_base_hdrs",
         "gpr_base",
         "gpr_codegen",
         "gpr_platform",
