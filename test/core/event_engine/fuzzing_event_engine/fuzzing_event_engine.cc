@@ -39,6 +39,8 @@ FuzzingEventEngine::FuzzingEventEngine(Options options)
   g_fuzzing_event_engine = this;
 
   gpr_now_impl = GlobalNowImpl;
+
+  Restart(fuzzing_event_engine::Actions());
 }
 
 void FuzzingEventEngine::Restart(const fuzzing_event_engine::Actions& actions) {
