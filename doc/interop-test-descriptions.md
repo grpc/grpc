@@ -1135,7 +1135,7 @@ Server features:
 * [Backend Metrics Report][]
 
 Procedures:
-* Client starts a bidi-streaming call to the server. In the first message the request sets `orca_oob_report` to a test load report.
+1. Client starts a bidi-streaming call to the server. In the first message the request sets `orca_oob_report` to a test load report.
     ```
     {
       orca_oob_report:{
@@ -1149,13 +1149,12 @@ Procedures:
     ```
 The test then blocks until the first response is received. This means the server lock is acquired.
 It is important that if the stream is completed or terminated with error at this time, 
-the test aborts and fails.
-* Client samples the latest OOB load report by doing empty unary calls. The call 
-carries a reference to receive the load report, e.g. using CallOptions.
-The reference will be passed to the custom LB policy as part of the `OrcaOobReportListener` API. 
-Client waits 1 second between each retry to check the latest OOB load report received, 
-until it is equal to the test load report. If retry exceeds 5 times limit the test fails.
-* Client then sends another request on the stream to the server. The request sets `orca_oob_report` to a 
+the test aborts and fails. 
+2. Client verifies (timeout=5s) that the latest OOB load report received is equal to the test load report.
+To do verification, client may inject a callback to the custom LB policy, or poll the result by
+doing empty unary calls that carries a reference, e.g. using CallOptions, that will be filled in
+by the custom LB policy as part of the `OrcaOobReportListener` API.
+3. Client then sends another request on the stream to the server. The request sets `orca_oob_report` to a 
 different test load report. 
     ```
     {
@@ -1170,10 +1169,9 @@ different test load report.
     ```
 The call then blocks until the second response is received. If the stream is completed or terminated 
 with error at this time, the test aborts and fails.
-* Similarly, client then keeps trying to check the latest OOB load report received by using 
-an empty unary call, waiting 1 second between each retry, until it is equal to the test load report.
-If retry exceeds 5 times limit the test fails.
-* Client asserts the streaming call is successful. 
+4. Similar to step 2, client then verifies (timeout=5s) that the latest OOB load report received is
+equal to the new test load report.
+5. Client completes the call, and asserts the streaming call is successful. 
 
 ### Experimental Tests
 
