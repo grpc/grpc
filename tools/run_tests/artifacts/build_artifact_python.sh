@@ -144,6 +144,24 @@ then
   rm -rf venv/
 fi
 
+fix_faulty_universal2_wheel() {
+  WHL="$1"
+  if echo "$WHL" | grep "universal2"; then
+    UPDATED_NAME="${WHL//universal2/x86_64}"
+    mv "$WHL" "$UPDATED_NAME"
+  fi
+}
+
+# This is necessary due to https://github.com/pypa/wheel/issues/406.
+# distutils incorrectly generates a universal2 artifact that only contains
+# x86_64 libraries.
+if [ "$GRPC_UNIVERSAL2_REPAIR" != "" ]; then
+  for WHEEL in dist/*.whl tools/distrib/python/grpcio_tools/dist/*.whl; do
+    fix_faulty_universal2_wheel "$WHEEL"
+  done
+fi
+
+
 if [ "$GRPC_RUN_AUDITWHEEL_REPAIR" != "" ]
 then
   for wheel in dist/*.whl; do
