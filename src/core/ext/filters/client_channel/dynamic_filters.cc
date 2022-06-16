@@ -24,8 +24,6 @@
 #include <string>
 #include <utility>
 
-#include "absl/status/status.h"
-
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 
