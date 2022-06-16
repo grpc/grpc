@@ -55,6 +55,18 @@ using ::grpc_event_engine::experimental::EndpointConfig;
 namespace {
 ConfigMap CopyFromEndpointConfig(const EndpointConfig& config) {
   ConfigMap map;
+  map.CopyFrom(config, GRPC_ARG_TCP_READ_CHUNK_SIZE);
+  map.CopyFrom(config, GRPC_ARG_TCP_MIN_READ_CHUNK_SIZE);
+  map.CopyFrom(config, GRPC_ARG_TCP_MAX_READ_CHUNK_SIZE);
+  map.CopyFrom(config, GRPC_ARG_KEEPALIVE_TIME_MS);
+  map.CopyFrom(config, GRPC_ARG_KEEPALIVE_TIMEOUT_MS);
+  map.CopyFrom(config, GRPC_ARG_TCP_TX_ZEROCOPY_SEND_BYTES_THRESHOLD);
+  map.CopyFrom(config, GRPC_ARG_TCP_TX_ZEROCOPY_MAX_SIMULT_SENDS);
+  map.CopyFrom(config, GRPC_ARG_TCP_TX_ZEROCOPY_ENABLED);
+  map.CopyFrom(config, GRPC_ARG_SOCKET_MUTATOR);
+  map.CopyFrom(config, GRPC_ARG_ALLOW_REUSEPORT);
+  map.CopyFrom(config, GRPC_ARG_EXPAND_WILDCARD_ADDRS);
+  map.CopyFrom(config, GRPC_ARG_RESOURCE_QUOTA);
   return map;
 }
 }  // namespace
