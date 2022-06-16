@@ -19,8 +19,7 @@
 #include "absl/memory/memory.h"
 #include "absl/utility/utility.h"
 
-#include <grpc/event_engine/endpoint_config.h>
-
+#include "src/core/lib/event_engine/map_backed_endpoint_config.h"
 #include "src/core/lib/gprpp/sync.h"
 
 // defined in tcp_client.cc
