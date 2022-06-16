@@ -30,7 +30,7 @@
 #include <grpc/support/log_windows.h>
 
 #include "src/core/lib/address_utils/sockaddr_utils.h"
-#include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/event_engine/map_backed_endpoint_config.h"
 #include "src/core/lib/iomgr/iocp_windows.h"
 #include "src/core/lib/iomgr/sockaddr.h"
 #include "src/core/lib/iomgr/sockaddr_windows.h"
@@ -39,6 +39,9 @@
 #include "src/core/lib/iomgr/tcp_windows.h"
 #include "src/core/lib/iomgr/timer.h"
 #include "src/core/lib/slice/slice_internal.h"
+
+using ::grpc_event_engine::experimental::ConfigMap;
+using ::grpc_event_engine::experimental::EndpointConfig;
 
 struct async_connect {
   grpc_closure* on_done;
@@ -50,15 +53,21 @@ struct async_connect {
   int refs;
   grpc_closure on_connect;
   grpc_endpoint** endpoint;
-  grpc_channel_args* channel_args;
+  ConfigMap config;
 };
+
+namespace {
+ConfigMap CopyFromEndpointConfig(const EndpointConfig& config) {
+  ConfigMap map;
+  return map;
+}
+}  // namespace
 
 static void async_connect_unlock_and_cleanup(async_connect* ac,
                                              grpc_winsocket* socket) {
   int done = (--ac->refs == 0);
   gpr_mu_unlock(&ac->mu);
   if (done) {
-    grpc_channel_args_destroy(ac->channel_args);
     gpr_mu_destroy(&ac->mu);
     delete ac;
   }
@@ -105,7 +114,7 @@ static void on_connect(void* acp, grpc_error_handle error) {
         error = GRPC_WSA_ERROR(WSAGetLastError(), "ConnectEx");
         closesocket(socket->socket);
       } else {
-        *ep = grpc_tcp_create(socket, ac->channel_args, ac->addr_name);
+        *ep = grpc_tcp_create(socket, ac->config, ac->addr_name);
         socket = nullptr;
       }
     } else {
@@ -123,7 +132,7 @@ static void on_connect(void* acp, grpc_error_handle error) {
    notification request for the connection, and one timeout alert. */
 static int64_t tcp_connect(grpc_closure* on_done, grpc_endpoint** endpoint,
                            grpc_pollset_set* interested_parties,
-                           const grpc_channel_args* channel_args,
+                           const EndpointConfig& config,
                            const grpc_resolved_address* addr,
                            grpc_core::Timestamp deadline) {
   SOCKET sock = INVALID_SOCKET;
@@ -208,7 +217,7 @@ static int64_t tcp_connect(grpc_closure* on_done, grpc_endpoint** endpoint,
   ac->refs = 2;
   ac->addr_name = addr_uri.value();
   ac->endpoint = endpoint;
-  ac->channel_args = grpc_channel_args_copy(channel_args);
+  ac->config = CopyFromEndpointConfig(config);
   GRPC_CLOSURE_INIT(&ac->on_connect, on_connect, ac, grpc_schedule_on_exec_ctx);
 
   GRPC_CLOSURE_INIT(&ac->on_alarm, on_alarm, ac, grpc_schedule_on_exec_ctx);

@@ -31,6 +31,8 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <grpc/event_engine/endpoint_config.h>
+
 #include "src/core/lib/iomgr/port.h"
 
 #ifdef GRPC_WINSOCK_SOCKET
@@ -40,9 +42,10 @@
 /* Create a tcp endpoint given a winsock handle.
  * Takes ownership of the handle.
  */
-grpc_endpoint* grpc_tcp_create(grpc_winsocket* socket,
-                               grpc_channel_args* channel_args,
-                               absl::string_view peer_string);
+grpc_endpoint* grpc_tcp_create(
+    grpc_winsocket* socket,
+    const grpc_event_engine::experimental::EndpointConfig& config,
+    absl::string_view peer_string);
 
 grpc_error_handle grpc_tcp_prepare_socket(SOCKET sock);
 

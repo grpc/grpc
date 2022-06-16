@@ -30,6 +30,7 @@
 #include "absl/strings/str_join.h"
 #include "absl/strings/string_view.h"
 
+#include <grpc/event_engine/endpoint_config.h>
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/atm.h>
@@ -76,6 +77,7 @@
 
 using grpc::testing::EchoRequest;
 using grpc::testing::EchoResponse;
+using ::grpc_event_engine::experimental::EndpointConfig;
 
 namespace grpc {
 namespace testing {
@@ -778,7 +780,7 @@ TEST_F(ClientLbEnd2endTest,
 
     void HandleConnection(grpc_closure* closure, grpc_endpoint** ep,
                           grpc_pollset_set* interested_parties,
-                          const grpc_channel_args* channel_args,
+                          const EndpointConfig& config,
                           const grpc_resolved_address* addr,
                           grpc_core::Timestamp deadline) override {
       const int port = grpc_sockaddr_get_port(addr);
@@ -789,13 +791,13 @@ TEST_F(ClientLbEnd2endTest,
           gpr_log(GPR_INFO, "*** INTERCEPTING CONNECTION ATTEMPT");
           GPR_ASSERT(queued_attempt_ == nullptr);
           queued_attempt_ = absl::make_unique<QueuedAttempt>(
-              closure, ep, interested_parties, channel_args, addr, deadline);
+              closure, ep, interested_parties, config, addr, deadline);
           cv_->Signal();
           cv_ = nullptr;
           return;
         }
       }
-      AttemptConnection(closure, ep, interested_parties, channel_args, addr,
+      AttemptConnection(closure, ep, interested_parties, config, addr,
                         deadline);
     }
 
@@ -909,7 +911,7 @@ TEST_F(
 
     void HandleConnection(grpc_closure* closure, grpc_endpoint** ep,
                           grpc_pollset_set* interested_parties,
-                          const grpc_channel_args* channel_args,
+                          const EndpointConfig& config,
                           const grpc_resolved_address* addr,
                           grpc_core::Timestamp deadline) override {
       const int port = grpc_sockaddr_get_port(addr);
@@ -921,14 +923,14 @@ TEST_F(
           if (port == hold->port()) {
             gpr_log(GPR_INFO, "*** INTERCEPTING CONNECTION ATTEMPT");
             hold->set_queued_attempt(absl::make_unique<QueuedAttempt>(
-                closure, ep, interested_parties, channel_args, addr, deadline));
+                closure, ep, interested_parties, config, addr, deadline));
             holds_.erase(it);
             return;
           }
         }
       }
       // Anything we're not holding should proceed normally.
-      AttemptConnection(closure, ep, interested_parties, channel_args, addr,
+      AttemptConnection(closure, ep, interested_parties, config, addr,
                         deadline);
     }
 
@@ -1764,7 +1766,7 @@ TEST_F(RoundRobinTest, DoesNotFailRpcsUponDisconnection) {
 
     void HandleConnection(grpc_closure* closure, grpc_endpoint** ep,
                           grpc_pollset_set* interested_parties,
-                          const grpc_channel_args* channel_args,
+                          const EndpointConfig& config,
                           const grpc_resolved_address* addr,
                           grpc_core::Timestamp deadline) override {
       const int port = grpc_sockaddr_get_port(addr);
@@ -1777,12 +1779,12 @@ TEST_F(RoundRobinTest, DoesNotFailRpcsUponDisconnection) {
           closure = GRPC_CLOSURE_INIT(&closure_, OnComplete, this, nullptr);
           intercept_next_attempt_ = false;
           queued_attempt_ = absl::make_unique<QueuedAttempt>(
-              closure, ep, interested_parties, channel_args, addr, deadline);
+              closure, ep, interested_parties, config, addr, deadline);
           start_cond_.Signal();
           return;
         }
       }
-      AttemptConnection(closure, ep, interested_parties, channel_args, addr,
+      AttemptConnection(closure, ep, interested_parties, config, addr,
                         deadline);
     }
 

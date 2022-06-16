@@ -34,6 +34,7 @@
 #include "src/core/lib/address_utils/parse_address.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/config/core_configuration.h"
+#include "src/core/lib/event_engine/channel_args_endpoint_config.h"
 #include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
@@ -159,9 +160,10 @@ void TCPConnectHandshaker::DoHandshake(grpc_tcp_server_acceptor* /*acceptor*/,
   // we don't want to pass args->endpoint directly.
   // Instead pass endpoint_ and swap this endpoint to
   // args endpoint on success.
-  grpc_tcp_client_connect(&connected_, &endpoint_to_destroy_,
-                          interested_parties_, args->args, &addr_,
-                          args->deadline);
+  grpc_tcp_client_connect(
+      &connected_, &endpoint_to_destroy_, interested_parties_,
+      grpc_event_engine::experimental::ChannelArgsEndpointConfig(args->args),
+      &addr_, args->deadline);
 }
 
 void TCPConnectHandshaker::Connected(void* arg, grpc_error_handle error) {

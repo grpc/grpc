@@ -48,6 +48,7 @@
 #include "src/core/lib/channel/channelz.h"
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/debug/trace.h"
+#include "src/core/lib/event_engine/channel_args_endpoint_config.h"
 #include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/gprpp/unique_type_name.h"
@@ -428,7 +429,9 @@ grpc_channel* grpc_channel_create_from_fd(const char* target, int fd,
   int flags = fcntl(fd, F_GETFL, 0);
   GPR_ASSERT(fcntl(fd, F_SETFL, flags | O_NONBLOCK) == 0);
   grpc_endpoint* client = grpc_tcp_client_create_from_fd(
-      grpc_fd_create(fd, "client", true), final_args, "fd-client");
+      grpc_fd_create(fd, "client", true),
+      grpc_event_engine::experimental::ChannelArgsEndpointConfig(final_args),
+      "fd-client");
   grpc_transport* transport =
       grpc_create_chttp2_transport(final_args, client, true);
   GPR_ASSERT(transport);

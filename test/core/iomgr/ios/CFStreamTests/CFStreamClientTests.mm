@@ -30,6 +30,7 @@
 
 #include "src/core/lib/address_utils/parse_address.h"
 #include "src/core/lib/address_utils/sockaddr_utils.h"
+#include "src/core/lib/event_engine/channel_args_endpoint_config.h"
 #include "src/core/lib/iomgr/endpoint.h"
 #include "src/core/lib/iomgr/resolve_address.h"
 #include "src/core/lib/iomgr/tcp_client.h"
@@ -107,8 +108,10 @@ static void must_fail(void* arg, grpc_error_handle error) {
                                       .channel_args_preconditioning()
                                       .PreconditionChannelArgs(nullptr)
                                       .ToC();
-  grpc_tcp_client_connect(&done, &g_connecting, nullptr, args, &resolved_addr,
-                          grpc_core::Timestamp::InfFuture());
+  grpc_tcp_client_connect(
+    &done, &g_connecting, nullptr,
+    grpc_event_engine::experimental::ChannelArgsEndpointConfig(args),
+    &resolved_addr, grpc_core::Timestamp::InfFuture());
   grpc_channel_args_destroy(args);
 
   /* await the connection */
@@ -165,8 +168,10 @@ static void must_fail(void* arg, grpc_error_handle error) {
                                       .channel_args_preconditioning()
                                       .PreconditionChannelArgs(nullptr)
                                       .ToC();
-  grpc_tcp_client_connect(&done, &g_connecting, nullptr, args, &resolved_addr,
-                          grpc_core::Timestamp::InfFuture());
+  grpc_tcp_client_connect(
+    &done, &g_connecting, nullptr,
+    grpc_event_engine::experimental::ChannelArgsEndpointConfig(args),
+    &resolved_addr, grpc_core::Timestamp::InfFuture());
   grpc_channel_args_destroy(args);
 
   grpc_core::ExecCtx::Get()->Flush();

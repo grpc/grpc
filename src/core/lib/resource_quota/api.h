@@ -19,6 +19,7 @@
 
 #include <stddef.h>
 
+#include <grpc/event_engine/endpoint_config.h>
 #include <grpc/impl/codegen/grpc_types.h>
 
 #include "src/core/lib/config/core_configuration.h"
@@ -35,6 +36,11 @@ constexpr size_t kResourceQuotaChannelSize = 34 * 1024;
 // Retrieve the resource quota from the channel args.
 // UB if not set.
 ResourceQuotaRefPtr ResourceQuotaFromChannelArgs(const grpc_channel_args* args);
+
+// Retrieve the resource quota from the EndpointConfig.
+// Returns nullptr if not set.
+ResourceQuotaRefPtr ResourceQuotaFromEndpointConfig(
+    const grpc_event_engine::experimental::EndpointConfig& config);
 
 void RegisterResourceQuota(CoreConfiguration::Builder* builder);
 

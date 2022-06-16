@@ -39,6 +39,7 @@
 #include <algorithm>
 #include <unordered_map>
 
+#include <grpc/event_engine/endpoint_config.h>
 #include <grpc/slice.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
@@ -47,7 +48,6 @@
 #include <grpc/support/time.h>
 
 #include "src/core/lib/address_utils/sockaddr_utils.h"
-#include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/debug/stats.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/gpr/string.h"
@@ -96,6 +96,35 @@ typedef size_t msg_iovlen_type;
 #endif
 
 extern grpc_core::TraceFlag grpc_tcp_trace;
+
+using ::grpc_event_engine::experimental::EndpointConfig;
+
+namespace {
+int ClampInteger(int default_value, int min, int max, int value) {
+  if (value < min || value > max) {
+    return default_value;
+  }
+  return value;
+}
+
+int GetConfigIntegerValue(const EndpointConfig& config, absl::string_view key,
+                          int default_value, int min, int max) {
+  auto value = config.Get(key);
+  if (!absl::holds_alternative<int>(value)) {
+    return default_value;
+  }
+  return ClampInteger(default_value, min, max, absl::get<int>(value));
+}
+
+bool GetConfigBoolValue(const EndpointConfig& config, absl::string_view key,
+                        bool default_value) {
+  auto value = config.Get(key);
+  if (!absl::holds_alternative<bool>(value)) {
+    return default_value;
+  }
+  return absl::get<bool>(value);
+}
+}  // namespace
 
 namespace grpc_core {
 
@@ -1699,8 +1728,7 @@ static const grpc_endpoint_vtable vtable = {tcp_read,
 
 #define MAX_CHUNK_SIZE (32 * 1024 * 1024)
 
-grpc_endpoint* grpc_tcp_create(grpc_fd* em_fd,
-                               const grpc_channel_args* channel_args,
+grpc_endpoint* grpc_tcp_create(grpc_fd* em_fd, const EndpointConfig& config,
                                absl::string_view peer_string) {
   static constexpr bool kZerocpTxEnabledDefault = false;
   int tcp_read_chunk_size = GRPC_TCP_DEFAULT_READ_SLICE_SIZE;
@@ -1711,44 +1739,23 @@ grpc_endpoint* grpc_tcp_create(grpc_fd* em_fd,
       grpc_core::TcpZerocopySendCtx::kDefaultSendBytesThreshold;
   int tcp_tx_zerocopy_max_simult_sends =
       grpc_core::TcpZerocopySendCtx::kDefaultMaxSends;
-  if (channel_args != nullptr) {
-    for (size_t i = 0; i < channel_args->num_args; i++) {
-      if (0 ==
-          strcmp(channel_args->args[i].key, GRPC_ARG_TCP_READ_CHUNK_SIZE)) {
-        grpc_integer_options options = {tcp_read_chunk_size, 1, MAX_CHUNK_SIZE};
-        tcp_read_chunk_size =
-            grpc_channel_arg_get_integer(&channel_args->args[i], options);
-      } else if (0 == strcmp(channel_args->args[i].key,
-                             GRPC_ARG_TCP_MIN_READ_CHUNK_SIZE)) {
-        grpc_integer_options options = {tcp_read_chunk_size, 1, MAX_CHUNK_SIZE};
-        tcp_min_read_chunk_size =
-            grpc_channel_arg_get_integer(&channel_args->args[i], options);
-      } else if (0 == strcmp(channel_args->args[i].key,
-                             GRPC_ARG_TCP_MAX_READ_CHUNK_SIZE)) {
-        grpc_integer_options options = {tcp_read_chunk_size, 1, MAX_CHUNK_SIZE};
-        tcp_max_read_chunk_size =
-            grpc_channel_arg_get_integer(&channel_args->args[i], options);
-      } else if (0 == strcmp(channel_args->args[i].key,
-                             GRPC_ARG_TCP_TX_ZEROCOPY_ENABLED)) {
-        tcp_tx_zerocopy_enabled = grpc_channel_arg_get_bool(
-            &channel_args->args[i], kZerocpTxEnabledDefault);
-      } else if (0 == strcmp(channel_args->args[i].key,
-                             GRPC_ARG_TCP_TX_ZEROCOPY_SEND_BYTES_THRESHOLD)) {
-        grpc_integer_options options = {
-            grpc_core::TcpZerocopySendCtx::kDefaultSendBytesThreshold, 0,
-            INT_MAX};
-        tcp_tx_zerocopy_send_bytes_thresh =
-            grpc_channel_arg_get_integer(&channel_args->args[i], options);
-      } else if (0 == strcmp(channel_args->args[i].key,
-                             GRPC_ARG_TCP_TX_ZEROCOPY_MAX_SIMULT_SENDS)) {
-        grpc_integer_options options = {
-            grpc_core::TcpZerocopySendCtx::kDefaultMaxSends, 0, INT_MAX};
-        tcp_tx_zerocopy_max_simult_sends =
-            grpc_channel_arg_get_integer(&channel_args->args[i], options);
-      }
-    }
-  }
-
+  tcp_read_chunk_size =
+      GetConfigIntegerValue(config, GRPC_ARG_TCP_READ_CHUNK_SIZE,
+                            tcp_read_chunk_size, 1, MAX_CHUNK_SIZE);
+  tcp_min_read_chunk_size =
+      GetConfigIntegerValue(config, GRPC_ARG_TCP_MIN_READ_CHUNK_SIZE,
+                            tcp_read_chunk_size, 1, MAX_CHUNK_SIZE);
+  tcp_max_read_chunk_size =
+      GetConfigIntegerValue(config, GRPC_ARG_TCP_MAX_READ_CHUNK_SIZE,
+                            tcp_read_chunk_size, 1, MAX_CHUNK_SIZE);
+  tcp_tx_zerocopy_send_bytes_thresh = GetConfigIntegerValue(
+      config, GRPC_ARG_TCP_TX_ZEROCOPY_SEND_BYTES_THRESHOLD,
+      grpc_core::TcpZerocopySendCtx::kDefaultSendBytesThreshold, 0, INT_MAX);
+  tcp_tx_zerocopy_max_simult_sends = GetConfigIntegerValue(
+      config, GRPC_ARG_TCP_TX_ZEROCOPY_MAX_SIMULT_SENDS,
+      grpc_core::TcpZerocopySendCtx::kDefaultMaxSends, 0, INT_MAX);
+  tcp_tx_zerocopy_enabled = GetConfigBoolValue(
+      config, GRPC_ARG_TCP_TX_ZEROCOPY_ENABLED, kZerocpTxEnabledDefault);
   if (tcp_min_read_chunk_size > tcp_max_read_chunk_size) {
     tcp_min_read_chunk_size = tcp_max_read_chunk_size;
   }
@@ -1760,7 +1767,7 @@ grpc_endpoint* grpc_tcp_create(grpc_fd* em_fd,
   tcp->base.vtable = &vtable;
   tcp->peer_string = std::string(peer_string);
   tcp->fd = grpc_fd_wrapped_fd(em_fd);
-  tcp->memory_owner = grpc_core::ResourceQuotaFromChannelArgs(channel_args)
+  tcp->memory_owner = grpc_core::ResourceQuotaFromEndpointConfig(config)
                           ->memory_quota()
                           ->CreateMemoryOwner(peer_string);
   tcp->self_reservation = tcp->memory_owner.MakeReservation(sizeof(grpc_tcp));

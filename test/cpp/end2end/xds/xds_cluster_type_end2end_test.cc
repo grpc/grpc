@@ -21,6 +21,8 @@
 #include "absl/status/statusor.h"
 #include "absl/strings/str_cat.h"
 
+#include <grpc/event_engine/endpoint_config.h>
+
 #include "src/core/ext/filters/client_channel/backup_poller.h"
 #include "src/core/ext/filters/client_channel/lb_policy/xds/xds_channel_args.h"
 #include "src/core/ext/filters/client_channel/resolver/fake/fake_resolver.h"
@@ -37,6 +39,7 @@ namespace {
 
 using ::envoy::config::cluster::v3::CustomClusterType;
 using ::envoy::extensions::clusters::aggregate::v3::ClusterConfig;
+using ::grpc_event_engine::experimental::EndpointConfig;
 
 class ClusterTypeTest : public XdsEnd2endTest {
  protected:
@@ -444,7 +447,7 @@ TEST_P(AggregateClusterTest, FallBackWithConnectivityChurn) {
 
     void HandleConnection(grpc_closure* closure, grpc_endpoint** ep,
                           grpc_pollset_set* interested_parties,
-                          const grpc_channel_args* channel_args,
+                          const EndpointConfig& config,
                           const grpc_resolved_address* addr,
                           grpc_core::Timestamp deadline) override {
       {
@@ -471,8 +474,7 @@ TEST_P(AggregateClusterTest, FallBackWithConnectivityChurn) {
               gpr_log(GPR_INFO,
                       "*** DELAYING CONNECTION ATTEMPT FOR P1 ENDPOINT");
               queued_p1_attempt_ = absl::make_unique<QueuedAttempt>(
-                  closure, ep, interested_parties, channel_args, addr,
-                  deadline);
+                  closure, ep, interested_parties, config, addr, deadline);
               state_ = kDone;
               return;
             }
@@ -488,7 +490,7 @@ TEST_P(AggregateClusterTest, FallBackWithConnectivityChurn) {
             break;
         }
       }
-      AttemptConnection(closure, ep, interested_parties, channel_args, addr,
+      AttemptConnection(closure, ep, interested_parties, config, addr,
                         deadline);
     }
 

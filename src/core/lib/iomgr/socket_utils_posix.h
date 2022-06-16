@@ -24,6 +24,7 @@
 #include <sys/socket.h>
 #include <unistd.h>
 
+#include <grpc/event_engine/endpoint_config.h>
 #include <grpc/impl/codegen/grpc_types.h>
 
 #include "src/core/lib/iomgr/error.h"
@@ -70,7 +71,8 @@ void config_default_tcp_user_timeout(bool enable, int timeout, bool is_client);
 
 /* Set TCP_USER_TIMEOUT */
 grpc_error_handle grpc_set_socket_tcp_user_timeout(
-    int fd, const grpc_channel_args* channel_args, bool is_client);
+    int fd, const grpc_event_engine::experimental::EndpointConfig& config,
+    bool is_client);
 
 /* Returns true if this system can create AF_INET6 sockets bound to ::1.
    The value is probed once, and cached for the life of the process.
@@ -104,9 +106,11 @@ grpc_error_handle grpc_set_socket_rcvbuf(int fd, int buffer_size_bytes);
 grpc_error_handle grpc_set_socket_with_mutator(int fd, grpc_fd_usage usage,
                                                grpc_socket_mutator* mutator);
 
-/* Extracts the first socket mutator from args if any and applies on the fd. */
+/* Extracts the first socket mutator from config if any and applies on the fd.
+ */
 grpc_error_handle grpc_apply_socket_mutator_in_args(
-    int fd, grpc_fd_usage usage, const grpc_channel_args* args);
+    int fd, grpc_fd_usage usage,
+    const grpc_event_engine::experimental::EndpointConfig& config);
 
 /* An enum to keep track of IPv4/IPv6 socket modes.
 

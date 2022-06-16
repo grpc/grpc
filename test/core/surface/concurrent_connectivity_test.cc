@@ -30,6 +30,7 @@
 #include <grpc/support/log.h>
 
 #include "src/core/lib/address_utils/sockaddr_utils.h"
+#include "src/core/lib/event_engine/channel_args_endpoint_config.h"
 #include "src/core/lib/gprpp/thd.h"
 #include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
@@ -140,7 +141,10 @@ void bad_server_thread(void* vargs) {
                                               .channel_args_preconditioning()
                                               .PreconditionChannelArgs(nullptr)
                                               .ToC();
-  grpc_error_handle error = grpc_tcp_server_create(nullptr, channel_args, &s);
+  grpc_error_handle error = grpc_tcp_server_create(
+      nullptr,
+      grpc_event_engine::experimental::ChannelArgsEndpointConfig(channel_args),
+      &s);
   grpc_channel_args_destroy(channel_args);
   GPR_ASSERT(GRPC_ERROR_IS_NONE(error));
   memset(&resolved_addr, 0, sizeof(resolved_addr));

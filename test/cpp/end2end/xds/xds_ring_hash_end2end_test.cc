@@ -22,6 +22,8 @@
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
 
+#include <grpc/event_engine/endpoint_config.h>
+
 #include "src/core/ext/filters/client_channel/backup_poller.h"
 #include "src/core/ext/filters/client_channel/lb_policy/xds/xds_channel_args.h"
 #include "src/core/ext/filters/client_channel/resolver/fake/fake_resolver.h"
@@ -39,6 +41,7 @@ namespace {
 using ::envoy::config::cluster::v3::CustomClusterType;
 using ::envoy::config::endpoint::v3::HealthStatus;
 using ::envoy::extensions::clusters::aggregate::v3::ClusterConfig;
+using ::grpc_event_engine::experimental::EndpointConfig;
 
 class RingHashTest : public XdsEnd2endTest {
  protected:
@@ -643,7 +646,7 @@ TEST_P(RingHashTest, ContinuesConnectingWithoutPicks) {
 
     void HandleConnection(grpc_closure* closure, grpc_endpoint** ep,
                           grpc_pollset_set* interested_parties,
-                          const grpc_channel_args* channel_args,
+                          const EndpointConfig& config,
                           const grpc_resolved_address* addr,
                           grpc_core::Timestamp deadline) override {
       {
@@ -654,13 +657,13 @@ TEST_P(RingHashTest, ContinuesConnectingWithoutPicks) {
         if (!seen_port_ && port == port_) {
           gpr_log(GPR_INFO, "*** SEEN P0 CONNECTION ATTEMPT");
           queued_p0_attempt_ = absl::make_unique<QueuedAttempt>(
-              closure, ep, interested_parties, channel_args, addr, deadline);
+              closure, ep, interested_parties, config, addr, deadline);
           seen_port_ = true;
           cond_.Signal();
           return;
         }
       }
-      AttemptConnection(closure, ep, interested_parties, channel_args, addr,
+      AttemptConnection(closure, ep, interested_parties, config, addr,
                         deadline);
     }
 
@@ -744,7 +747,7 @@ TEST_P(RingHashTest, ContinuesConnectingWithoutPicksOneSubchannelAtATime) {
 
     void HandleConnection(grpc_closure* closure, grpc_endpoint** ep,
                           grpc_pollset_set* interested_parties,
-                          const grpc_channel_args* channel_args,
+                          const EndpointConfig& config,
                           const grpc_resolved_address* addr,
                           grpc_core::Timestamp deadline) override {
       {
@@ -759,8 +762,8 @@ TEST_P(RingHashTest, ContinuesConnectingWithoutPicksOneSubchannelAtATime) {
             EXPECT_NE(port, good_port_);
             if (port == port0_) {
               gpr_log(GPR_INFO, "*** DELAYING ENDPOINT 0");
-              new DelayedAttempt(this, closure, ep, interested_parties,
-                                 channel_args, addr, deadline);
+              new DelayedAttempt(this, closure, ep, interested_parties, config,
+                                 addr, deadline);
               state_ = kDelayedEndpoint0;
               cond_.Signal();
               return;
@@ -772,8 +775,8 @@ TEST_P(RingHashTest, ContinuesConnectingWithoutPicksOneSubchannelAtATime) {
             EXPECT_NE(port, good_port_);
             if (port == port1_) {
               gpr_log(GPR_INFO, "*** DELAYING ENDPOINT 1");
-              new DelayedAttempt(this, closure, ep, interested_parties,
-                                 channel_args, addr, deadline);
+              new DelayedAttempt(this, closure, ep, interested_parties, config,
+                                 addr, deadline);
               state_ = kDelayedEndpoint1;
               return;
             } else {
@@ -786,8 +789,8 @@ TEST_P(RingHashTest, ContinuesConnectingWithoutPicksOneSubchannelAtATime) {
             EXPECT_NE(port, good_port_);
             if (port == port2_) {
               gpr_log(GPR_INFO, "*** DELAYING ENDPOINT 2");
-              new DelayedAttempt(this, closure, ep, interested_parties,
-                                 channel_args, addr, deadline);
+              new DelayedAttempt(this, closure, ep, interested_parties, config,
+                                 addr, deadline);
               state_ = kDelayedEndpoint2;
               return;
             } else {
@@ -816,7 +819,7 @@ TEST_P(RingHashTest, ContinuesConnectingWithoutPicksOneSubchannelAtATime) {
             break;
         }
       }
-      AttemptConnection(closure, ep, interested_parties, channel_args, addr,
+      AttemptConnection(closure, ep, interested_parties, config, addr,
                         deadline);
     }
 
@@ -832,12 +835,12 @@ TEST_P(RingHashTest, ContinuesConnectingWithoutPicksOneSubchannelAtATime) {
      public:
       DelayedAttempt(ConnectionInjector* parent, grpc_closure* closure,
                      grpc_endpoint** ep, grpc_pollset_set* interested_parties,
-                     const grpc_channel_args* channel_args,
+                     const EndpointConfig& config,
                      const grpc_resolved_address* addr,
                      grpc_core::Timestamp deadline)
           : InjectedDelay(
                 grpc_core::Duration::Seconds(1 * grpc_test_slowdown_factor()),
-                closure, ep, interested_parties, channel_args, addr, deadline),
+                closure, ep, interested_parties, config, addr, deadline),
             parent_(parent) {}
 
      private:

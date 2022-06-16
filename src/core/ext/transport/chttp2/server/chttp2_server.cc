@@ -55,6 +55,7 @@
 #include "src/core/lib/channel/channelz.h"
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/debug/trace.h"
+#include "src/core/lib/event_engine/channel_args_endpoint_config.h"
 #include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/orphanable.h"
@@ -681,8 +682,10 @@ grpc_error_handle Chttp2ServerListener::Create(
     grpc_error_handle error = GRPC_ERROR_NONE;
     // Create Chttp2ServerListener.
     listener = new Chttp2ServerListener(server, args, args_modifier);
-    error = grpc_tcp_server_create(&listener->tcp_server_shutdown_complete_,
-                                   args, &listener->tcp_server_);
+    error = grpc_tcp_server_create(
+        &listener->tcp_server_shutdown_complete_,
+        grpc_event_engine::experimental::ChannelArgsEndpointConfig(args),
+        &listener->tcp_server_);
     if (!GRPC_ERROR_IS_NONE(error)) return error;
     if (server->config_fetcher() != nullptr) {
       listener->resolved_address_ = *addr;
@@ -730,7 +733,9 @@ grpc_error_handle Chttp2ServerListener::CreateWithAcceptor(
   Chttp2ServerListener* listener =
       new Chttp2ServerListener(server, args, args_modifier);
   grpc_error_handle error = grpc_tcp_server_create(
-      &listener->tcp_server_shutdown_complete_, args, &listener->tcp_server_);
+      &listener->tcp_server_shutdown_complete_,
+      grpc_event_engine::experimental::ChannelArgsEndpointConfig(args),
+      &listener->tcp_server_);
   if (!GRPC_ERROR_IS_NONE(error)) {
     delete listener;
     return error;
@@ -1101,7 +1106,9 @@ void grpc_server_add_channel_from_fd(grpc_server* server, int fd,
   auto memory_quota =
       grpc_core::ResourceQuotaFromChannelArgs(server_args)->memory_quota();
   grpc_endpoint* server_endpoint = grpc_tcp_create(
-      grpc_fd_create(fd, name.c_str(), true), server_args, name);
+      grpc_fd_create(fd, name.c_str(), true),
+      grpc_event_engine::experimental::ChannelArgsEndpointConfig(server_args),
+      name);
   grpc_transport* transport = grpc_create_chttp2_transport(
       server_args, server_endpoint, false /* is_client */
   );

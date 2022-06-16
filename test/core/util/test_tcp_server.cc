@@ -26,6 +26,7 @@
 #include <grpc/support/sync.h>
 #include <grpc/support/time.h>
 
+#include "src/core/lib/event_engine/channel_args_endpoint_config.h"
 #include "src/core/lib/iomgr/endpoint.h"
 #include "src/core/lib/iomgr/resolve_address.h"
 #include "src/core/lib/iomgr/sockaddr.h"
@@ -70,8 +71,10 @@ void test_tcp_server_start(test_tcp_server* server, int port) {
                                       .channel_args_preconditioning()
                                       .PreconditionChannelArgs(nullptr)
                                       .ToC();
-  grpc_error_handle error = grpc_tcp_server_create(&server->shutdown_complete,
-                                                   args, &server->tcp_server);
+  grpc_error_handle error = grpc_tcp_server_create(
+      &server->shutdown_complete,
+      grpc_event_engine::experimental::ChannelArgsEndpointConfig(args),
+      &server->tcp_server);
   grpc_channel_args_destroy(args);
   GPR_ASSERT(GRPC_ERROR_IS_NONE(error));
   error =

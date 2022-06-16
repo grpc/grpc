@@ -32,6 +32,7 @@
 
 #include "src/core/lib/address_utils/sockaddr_utils.h"
 #include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/event_engine/channel_args_endpoint_config.h"
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gprpp/host_port.h"
 #include "src/core/lib/gprpp/memory.h"
@@ -550,9 +551,10 @@ static void on_read_request_done_locked(void* arg, grpc_error_handle error) {
                                       .channel_args_preconditioning()
                                       .PreconditionChannelArgs(nullptr)
                                       .ToC();
-  grpc_tcp_client_connect(&conn->on_server_connect_done, &conn->server_endpoint,
-                          conn->pollset_set, args, &(*addresses_or)[0],
-                          deadline);
+  grpc_tcp_client_connect(
+      &conn->on_server_connect_done, &conn->server_endpoint, conn->pollset_set,
+      grpc_event_engine::experimental::ChannelArgsEndpointConfig(args),
+      &(*addresses_or)[0], deadline);
   grpc_channel_args_destroy(args);
 }
 
@@ -628,8 +630,11 @@ grpc_end2end_http_proxy* grpc_end2end_http_proxy_create(
                             .channel_args_preconditioning()
                             .PreconditionChannelArgs(args)
                             .ToC();
-  grpc_error_handle error =
-      grpc_tcp_server_create(nullptr, proxy->channel_args, &proxy->server);
+  grpc_error_handle error = grpc_tcp_server_create(
+      nullptr,
+      grpc_event_engine::experimental::ChannelArgsEndpointConfig(
+          proxy->channel_args),
+      &proxy->server);
   GPR_ASSERT(GRPC_ERROR_IS_NONE(error));
   // Bind to port.
   grpc_resolved_address resolved_addr;

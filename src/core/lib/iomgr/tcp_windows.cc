@@ -53,6 +53,8 @@
 
 extern grpc_core::TraceFlag grpc_tcp_trace;
 
+using ::grpc_event_engine::experimental::EndpointConfig;
+
 grpc_error_handle grpc_tcp_set_non_block(SOCKET sock) {
   int status;
   uint32_t param = 1;
@@ -505,7 +507,7 @@ static grpc_endpoint_vtable vtable = {win_read,
                                       win_can_track_err};
 
 grpc_endpoint* grpc_tcp_create(grpc_winsocket* socket,
-                               grpc_channel_args* channel_args,
+                               const EndpointConfig& /* config */,
                                absl::string_view peer_string) {
   // TODO(jtattermusch): C++ize grpc_tcp and its dependencies (i.e. add
   // constructors) to ensure proper initialization

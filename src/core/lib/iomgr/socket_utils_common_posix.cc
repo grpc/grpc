@@ -43,14 +43,34 @@
 
 #include <string>
 
+#include <grpc/event_engine/endpoint_config.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/sync.h>
 
 #include "src/core/lib/address_utils/sockaddr_utils.h"
-#include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/iomgr/sockaddr.h"
+
+using ::grpc_event_engine::experimental::EndpointConfig;
+
+namespace {
+int ClampInteger(int default_value, int min, int max, int value) {
+  if (value < min || value > max) {
+    return default_value;
+  }
+  return value;
+}
+
+int GetConfigIntegerValue(const EndpointConfig& config, absl::string_view key,
+                          int default_value, int min, int max) {
+  auto value = config.Get(key);
+  if (!absl::holds_alternative<int>(value)) {
+    return default_value;
+  }
+  return ClampInteger(default_value, min, max, absl::get<int>(value));
+}
+}  // namespace
 
 /* set a socket to use zerocopy */
 grpc_error_handle grpc_set_socket_zerocopy(int fd) {
@@ -297,11 +317,11 @@ void config_default_tcp_user_timeout(bool enable, int timeout, bool is_client) {
 }
 
 /* Set TCP_USER_TIMEOUT */
-grpc_error_handle grpc_set_socket_tcp_user_timeout(
-    int fd, const grpc_channel_args* channel_args, bool is_client) {
+grpc_error_handle grpc_set_socket_tcp_user_timeout(int fd,
+                                                   const EndpointConfig& config,
+                                                   bool is_client) {
   // Use conditionally-important parameter to avoid warning
   (void)fd;
-  (void)channel_args;
   (void)is_client;
   extern grpc_core::TraceFlag grpc_tcp_trace;
   if (g_socket_supports_tcp_user_timeout.load() >= 0) {
@@ -314,29 +334,15 @@ grpc_error_handle grpc_set_socket_tcp_user_timeout(
       enable = g_default_server_tcp_user_timeout_enabled;
       timeout = g_default_server_tcp_user_timeout_ms;
     }
-    if (channel_args) {
-      for (unsigned int i = 0; i < channel_args->num_args; i++) {
-        if (0 ==
-            strcmp(channel_args->args[i].key, GRPC_ARG_KEEPALIVE_TIME_MS)) {
-          const int value = grpc_channel_arg_get_integer(
-              &channel_args->args[i], grpc_integer_options{0, 1, INT_MAX});
-          /* Continue using default if value is 0 */
-          if (value == 0) {
-            continue;
-          }
-          /* Disable if value is INT_MAX */
-          enable = value != INT_MAX;
-        } else if (0 == strcmp(channel_args->args[i].key,
-                               GRPC_ARG_KEEPALIVE_TIMEOUT_MS)) {
-          const int value = grpc_channel_arg_get_integer(
-              &channel_args->args[i], grpc_integer_options{0, 1, INT_MAX});
-          /* Continue using default if value is 0 */
-          if (value == 0) {
-            continue;
-          }
-          timeout = value;
-        }
-      }
+    int value = GetConfigIntegerValue(config, GRPC_ARG_KEEPALIVE_TIME_MS, 0, 1,
+                                      INT_MAX);
+    if (value > 0) {
+      enable = value != INT_MAX;
+    }
+    value = GetConfigIntegerValue(config, GRPC_ARG_KEEPALIVE_TIMEOUT_MS, 0, 1,
+                                  INT_MAX);
+    if (value > 0) {
+      timeout = value;
     }
     if (enable) {
       int newval;
@@ -398,9 +404,12 @@ grpc_error_handle grpc_set_socket_with_mutator(int fd, grpc_fd_usage usage,
 }
 
 grpc_error_handle grpc_apply_socket_mutator_in_args(
-    int fd, grpc_fd_usage usage, const grpc_channel_args* args) {
-  const grpc_arg* socket_mutator_arg =
-      grpc_channel_args_find(args, GRPC_ARG_SOCKET_MUTATOR);
+    int fd, grpc_fd_usage usage, const EndpointConfig& config) {
+  const grpc_arg* socket_mutator_arg = nullptr;
+  auto value = config.Get(GRPC_ARG_SOCKET_MUTATOR);
+  if (absl::holds_alternative<void*>(value)) {
+    socket_mutator_arg = reinterpret_cast<grpc_arg*>(absl::get<void*>(value));
+  }
   if (socket_mutator_arg == nullptr) {
     return GRPC_ERROR_NONE;
   }

@@ -17,13 +17,17 @@
 
 #include <memory>
 
-#include "src/core/lib/channel/channel_args.h"
+#include <grpc/event_engine/endpoint_config.h>
+
 #include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/iomgr/tcp_client.h"
 #include "src/core/lib/iomgr/timer.h"
 
 namespace grpc {
 namespace testing {
+
+grpc_event_engine::experimental::ConfigMap CopyFromEndpointConfig(
+    const grpc_event_engine::experimental::EndpointConfig& config);
 
 // Allows injecting connection-establishment delays into C-core.
 // Typical usage:
@@ -54,11 +58,11 @@ class ConnectionAttemptInjector {
   // themselves or delegate to the iomgr implementation by calling
   // AttemptConnection().  QueuedAttempt may be used to queue an attempt
   // for asynchronous processing.
-  virtual void HandleConnection(grpc_closure* closure, grpc_endpoint** ep,
-                                grpc_pollset_set* interested_parties,
-                                const grpc_channel_args* channel_args,
-                                const grpc_resolved_address* addr,
-                                grpc_core::Timestamp deadline) = 0;
+  virtual void HandleConnection(
+      grpc_closure* closure, grpc_endpoint** ep,
+      grpc_pollset_set* interested_parties,
+      const grpc_event_engine::experimental::EndpointConfig& config,
+      const grpc_resolved_address* addr, grpc_core::Timestamp deadline) = 0;
 
  protected:
   // Represents a queued attempt.
@@ -67,26 +71,23 @@ class ConnectionAttemptInjector {
    public:
     QueuedAttempt(grpc_closure* closure, grpc_endpoint** ep,
                   grpc_pollset_set* interested_parties,
-                  const grpc_channel_args* channel_args,
+                  const grpc_event_engine::experimental::EndpointConfig& config,
                   const grpc_resolved_address* addr,
                   grpc_core::Timestamp deadline)
         : closure_(closure),
           endpoint_(ep),
           interested_parties_(interested_parties),
-          channel_args_(grpc_channel_args_copy(channel_args)),
+          config_map_(CopyFromEndpointConfig(config)),
           deadline_(deadline) {
       memcpy(&address_, addr, sizeof(address_));
     }
 
-    ~QueuedAttempt() {
-      GPR_ASSERT(closure_ == nullptr);
-      grpc_channel_args_destroy(channel_args_);
-    }
+    ~QueuedAttempt() { GPR_ASSERT(closure_ == nullptr); }
 
     // Caller must invoke this from a thread with an ExecCtx.
     void Resume() {
       GPR_ASSERT(closure_ != nullptr);
-      AttemptConnection(closure_, endpoint_, interested_parties_, channel_args_,
+      AttemptConnection(closure_, endpoint_, interested_parties_, config_map_,
                         &address_, deadline_);
       closure_ = nullptr;
     }
@@ -102,7 +103,7 @@ class ConnectionAttemptInjector {
     grpc_closure* closure_;
     grpc_endpoint** endpoint_;
     grpc_pollset_set* interested_parties_;
-    const grpc_channel_args* channel_args_;
+    grpc_event_engine::experimental::ConfigMap config_map_;
     grpc_resolved_address address_;
     grpc_core::Timestamp deadline_;
   };
@@ -114,7 +115,7 @@ class ConnectionAttemptInjector {
 
     InjectedDelay(grpc_core::Duration duration, grpc_closure* closure,
                   grpc_endpoint** ep, grpc_pollset_set* interested_parties,
-                  const grpc_channel_args* channel_args,
+                  const grpc_event_engine::experimental::EndpointConfig& config,
                   const grpc_resolved_address* addr,
                   grpc_core::Timestamp deadline);
 
@@ -129,11 +130,11 @@ class ConnectionAttemptInjector {
     grpc_closure timer_callback_;
   };
 
-  static void AttemptConnection(grpc_closure* closure, grpc_endpoint** ep,
-                                grpc_pollset_set* interested_parties,
-                                const grpc_channel_args* channel_args,
-                                const grpc_resolved_address* addr,
-                                grpc_core::Timestamp deadline);
+  static void AttemptConnection(
+      grpc_closure* closure, grpc_endpoint** ep,
+      grpc_pollset_set* interested_parties,
+      const grpc_event_engine::experimental::EndpointConfig& config,
+      const grpc_resolved_address* addr, grpc_core::Timestamp deadline);
 };
 
 // A concrete implementation that injects a fixed delay.
@@ -142,11 +143,12 @@ class ConnectionDelayInjector : public ConnectionAttemptInjector {
   explicit ConnectionDelayInjector(grpc_core::Duration duration)
       : duration_(duration) {}
 
-  void HandleConnection(grpc_closure* closure, grpc_endpoint** ep,
-                        grpc_pollset_set* interested_parties,
-                        const grpc_channel_args* channel_args,
-                        const grpc_resolved_address* addr,
-                        grpc_core::Timestamp deadline) override;
+  void HandleConnection(
+      grpc_closure* closure, grpc_endpoint** ep,
+      grpc_pollset_set* interested_parties,
+      const grpc_event_engine::experimental::EndpointConfig& config,
+      const grpc_resolved_address* addr,
+      grpc_core::Timestamp deadline) override;
 
  private:
   grpc_core::Duration duration_;
