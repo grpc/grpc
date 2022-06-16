@@ -1865,13 +1865,15 @@ class PromiseBasedCall : public Call, public Activity, public Wakeable {
       : public ScopedActivity,
         public promise_detail::Context<Arena>,
         public promise_detail::Context<grpc_call_context_element>,
-        public promise_detail::Context<CallFinalization> {
+        public promise_detail::Context<CallFinalization>,
+        public promise_detail::Context<grpc_call_stats> {
    public:
     explicit ScopedContext(PromiseBasedCall* call)
         : ScopedActivity(call),
           promise_detail::Context<Arena>(call->arena()),
           promise_detail::Context<grpc_call_context_element>(call->context_),
-          promise_detail::Context<CallFinalization>(&call->finalization_) {}
+          promise_detail::Context<CallFinalization>(&call->finalization_),
+          promise_detail::Context<grpc_call_stats>(&call->final_info_.stats) {}
   };
 
   class Completion {
@@ -2026,6 +2028,7 @@ class PromiseBasedCall : public Call, public Activity, public Wakeable {
   NonOwningWakable* non_owning_wakeable_ ABSL_GUARDED_BY(mu_) = nullptr;
   CompletionInfo completion_info_[6];
   CallFinalization finalization_;
+  grpc_call_final_info final_info_;
 };
 
 template <typename T>

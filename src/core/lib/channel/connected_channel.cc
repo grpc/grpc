@@ -239,15 +239,6 @@ class ClientConnectedCallPromise {
         client_to_server_messages_(call_args.client_to_server_messages),
         server_to_client_messages_(call_args.server_to_client_messages),
         client_initial_metadata_(std::move(call_args.client_initial_metadata)) {
-    GRPC_STREAM_REF_INIT(stream_refcount_, 1, StreamRefCountDestroyed, this,
-                         "connected_channel");
-    grpc_transport_init_stream(transport_, stream_, stream_refcount_, nullptr,
-                               GetContext<Arena>());
-#ifndef NDEBUG
-    grpc_stream_unref(stream_refcount_, "finished construction");
-#else
-    grpc_stream_unref(stream_refcount_);
-#endif
   }
 
   static ArenaPromise<ServerMetadataHandle> Make(grpc_transport* transport,
@@ -257,6 +248,10 @@ class ClientConnectedCallPromise {
 
   Poll<ServerMetadataHandle> operator()() {
     if (!absl::exchange(requested_metadata_, true)) {
+      GRPC_STREAM_REF_INIT(stream_refcount_, 1, StreamRefCountDestroyed, this,
+                           "connected_channel");
+      grpc_transport_init_stream(transport_, stream_, stream_refcount_, nullptr,
+                                 GetContext<Arena>());
       memset(&metadata_, 0, sizeof(metadata_));
       metadata_.send_initial_metadata = true;
       metadata_.recv_initial_metadata = true;
@@ -289,6 +284,8 @@ class ClientConnectedCallPromise {
       batch_payload_.recv_initial_metadata.peer_string = nullptr;
       batch_payload_.recv_trailing_metadata.recv_trailing_metadata =
           &server_trailing_metadata_;
+      batch_payload_.recv_trailing_metadata.collect_stats =
+          &GetContext<grpc_call_stats>()->transport_stream_stats;
       recv_trailing_metadata_ready_ = MakeMemberClosure<
           ClientConnectedCallPromise,
           &ClientConnectedCallPromise::RecvTrailingMetadataReady>(this);
@@ -386,6 +383,7 @@ class ClientConnectedCallPromise {
       grpc_transport_perform_stream_op(transport_, stream_, &send_message_);
     }
     scheduled_push_ = false;
+    UnrefStream();
   }
 
  private:
@@ -394,6 +392,7 @@ class ClientConnectedCallPromise {
 
   void SchedulePush() {
     if (absl::exchange(scheduled_push_, true)) return;
+    RefStream();
     push_ = MakeMemberClosure<ClientConnectedCallPromise,
                               &ClientConnectedCallPromise::Push>(this);
     ExecCtx::Run(DEBUG_LOCATION, &push_, GRPC_ERROR_NONE);
@@ -401,6 +400,22 @@ class ClientConnectedCallPromise {
 
   static void StreamRefCountDestroyed(void* p, grpc_error_handle) {
     static_cast<ClientConnectedCallPromise*>(p)->stream_owning_waker_.Wakeup();
+  }
+
+  void RefStream() {
+#ifndef NDEBUG
+    grpc_stream_ref(stream_refcount_, "connected_channel");
+#else
+    grpc_stream_ref(stream_refcount_);
+#endif
+  }
+
+  void UnrefStream() {
+#ifndef NDEBUG
+    grpc_stream_unref(stream_refcount_, "connected_channel");
+#else
+    grpc_stream_unref(stream_refcount_);
+#endif
   }
 
   bool requested_metadata_ = false;

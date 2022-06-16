@@ -98,6 +98,11 @@ struct grpc_call_final_info {
   const char* error_string = nullptr;
 };
 
+namespace grpc_core {
+template <>
+struct ContextType<grpc_call_stats> {};
+}  // namespace grpc_core
+
 /* Channel filters specify:
    1. the amount of memory needed in the channel & call (via the sizeof_XXX
       members)
