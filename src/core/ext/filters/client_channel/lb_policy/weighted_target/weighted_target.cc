@@ -77,7 +77,7 @@ constexpr char kWeightedTarget[] = "weighted_target_experimental";
 
 // How long we keep a child around for after it has been removed from
 // the config.
-constexpr absl::Duration kChildRetentionInterval = absl::Minutes(15);
+constexpr Duration kChildRetentionInterval = Duration::Minutes(15);
 
 // Config for weighted_target LB policy.
 class WeightedTargetLbConfig : public LoadBalancingPolicy::Config {
@@ -445,8 +445,8 @@ void WeightedTargetLb::UpdateStateLocked() {
 WeightedTargetLb::WeightedChild::DelayedRemovalTimer::DelayedRemovalTimer(
     RefCountedPtr<WeightedTargetLb::WeightedChild> weighted_child)
     : weighted_child_(std::move(weighted_child)) {
-  timer_handle_ = GetDefaultEventEngine()->RunAt(
-      absl::Now() + kChildRetentionInterval, [self = Ref()]() mutable {
+  timer_handle_ = GetDefaultEventEngine()->RunAfter(
+      kChildRetentionInterval, [self = Ref()]() mutable {
         self->weighted_child_->weighted_target_policy_->work_serializer()->Run(
             [self = std::move(self)] { self->OnTimerLocked(); },
             DEBUG_LOCATION);
