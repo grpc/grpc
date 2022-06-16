@@ -29,11 +29,15 @@ grpc_proto_fuzzer(
     tags = ["no_windows"],
     uses_event_engine = False,
     uses_polling = False,
+    proto_deps = [
+        "//test/core/event_engine/fuzzing_event_engine:fuzzing_event_engine_proto",
+    ],
     deps = [
         "//:gpr",
         "//:grpc",
         "//test/core/end2end:ssl_test_data",
         "//test/core/util:grpc_test_util",
+        "//test/core/event_engine/fuzzing_event_engine",
     ],
 )
 
