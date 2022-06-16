@@ -111,21 +111,16 @@ class ChannelArgs {
  public:
   class Pointer {
    public:
-    Pointer(void* p, const grpc_arg_pointer_vtable* vtable)
-        : p_(p), vtable_(vtable == nullptr ? EmptyVTable() : vtable) {}
+    Pointer(void* p, const grpc_arg_pointer_vtable* vtable);
     ~Pointer() { vtable_->destroy(p_); }
 
-    Pointer(const Pointer& other)
-        : p_(other.vtable_->copy(other.p_)), vtable_(other.vtable_) {}
+    Pointer(const Pointer& other);
     Pointer& operator=(Pointer other) {
       std::swap(p_, other.p_);
       std::swap(vtable_, other.vtable_);
       return *this;
     }
-    Pointer(Pointer&& other) noexcept : p_(other.p_), vtable_(other.vtable_) {
-      other.p_ = nullptr;
-      other.vtable_ = EmptyVTable();
-    }
+    Pointer(Pointer&& other) noexcept;
     Pointer& operator=(Pointer&& other) noexcept {
       std::swap(p_, other.p_);
       std::swap(vtable_, other.vtable_);
@@ -134,24 +129,13 @@ class ChannelArgs {
 
     bool operator==(const Pointer& rhs) const;
     bool operator<(const Pointer& rhs) const;
-    bool operator!=(const Pointer& rhs) const { return !(*this == rhs); }
+    bool operator!=(const Pointer& rhs) const;
 
     void* c_pointer() const { return p_; }
-
     const grpc_arg_pointer_vtable* c_vtable() const { return vtable_; }
 
    private:
-    static const grpc_arg_pointer_vtable* EmptyVTable() {
-      static const grpc_arg_pointer_vtable vtable = {
-          // copy
-          [](void* p) { return p; },
-          // destroy
-          [](void*) {},
-          // cmp
-          [](void* p1, void* p2) -> int { return QsortCompare(p1, p2); },
-      };
-      return &vtable;
-    }
+    static const grpc_arg_pointer_vtable* EmptyVTable();
 
     void* p_;
     const grpc_arg_pointer_vtable* vtable_;
@@ -165,6 +149,11 @@ class ChannelArgs {
       std::unique_ptr<const grpc_channel_args, ChannelArgs::ChannelArgsDeleter>;
 
   ChannelArgs();
+  ~ChannelArgs();
+  ChannelArgs(const ChannelArgs&);
+  ChannelArgs& operator=(const ChannelArgs&);
+  ChannelArgs(ChannelArgs&&) noexcept;
+  ChannelArgs& operator=(ChannelArgs&&) noexcept;
 
   static ChannelArgs FromC(const grpc_channel_args* args);
   // Construct a new grpc_channel_args struct which the caller will own.
@@ -175,9 +164,10 @@ class ChannelArgs {
   // If a key is present in both, the value from this is used.
   GRPC_MUST_USE_RESULT ChannelArgs UnionWith(ChannelArgs other) const;
 
-  const Value* Get(absl::string_view name) const { return args_.Lookup(name); }
+  const Value* Get(absl::string_view name) const;
   GRPC_MUST_USE_RESULT ChannelArgs Set(absl::string_view name,
-                                       Value value) const;
+                                       Pointer value) const;
+  GRPC_MUST_USE_RESULT ChannelArgs Set(absl::string_view name, int value) const;
   GRPC_MUST_USE_RESULT ChannelArgs Set(absl::string_view name,
                                        absl::string_view value) const;
   GRPC_MUST_USE_RESULT ChannelArgs Set(absl::string_view name,
@@ -216,7 +206,7 @@ class ChannelArgs {
     return Set(name, std::move(value));
   }
   GRPC_MUST_USE_RESULT ChannelArgs Remove(absl::string_view name) const;
-  bool Contains(absl::string_view name) const { return Get(name) != nullptr; }
+  bool Contains(absl::string_view name) const;
 
   absl::optional<int> GetInt(absl::string_view name) const;
   absl::optional<absl::string_view> GetString(absl::string_view name) const;
@@ -253,22 +243,20 @@ class ChannelArgs {
     return p->Ref();
   }
 
-  bool operator<(const ChannelArgs& other) const { return args_ < other.args_; }
-  bool operator==(const ChannelArgs& other) const {
-    return args_ == other.args_;
-  }
-  bool operator!=(const ChannelArgs& other) const { return !(*this == other); }
+  bool operator!=(const ChannelArgs& other) const;
+  bool operator<(const ChannelArgs& other) const;
+  bool operator==(const ChannelArgs& other) const;
 
   // Helpers for commonly accessed things
 
-  bool WantMinimalStack() const {
-    return GetBool(GRPC_ARG_MINIMAL_STACK).value_or(false);
-  }
-
+  bool WantMinimalStack() const;
   std::string ToString() const;
 
  private:
-  explicit ChannelArgs(AVL<std::string, Value> args) : args_(std::move(args)) {}
+  explicit ChannelArgs(AVL<std::string, Value> args);
+
+  GRPC_MUST_USE_RESULT ChannelArgs Set(absl::string_view name,
+                                       Value value) const;
 
   AVL<std::string, Value> args_;
 };

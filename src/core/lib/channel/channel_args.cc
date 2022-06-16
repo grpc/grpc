@@ -56,6 +56,64 @@ int PointerCompare(void* a_ptr, const grpc_arg_pointer_vtable* a_vtable,
 
 namespace grpc_core {
 
+ChannelArgs::ChannelArgs() = default;
+ChannelArgs::~ChannelArgs() = default;
+ChannelArgs::ChannelArgs(const ChannelArgs& other) = default;
+ChannelArgs& ChannelArgs::operator=(const ChannelArgs& other) = default;
+ChannelArgs::ChannelArgs(ChannelArgs&& other) noexcept = default;
+ChannelArgs& ChannelArgs::operator=(ChannelArgs&& other) noexcept = default;
+
+ChannelArgs::Pointer::Pointer(void* p, const grpc_arg_pointer_vtable* vtable)
+    : p_(p), vtable_(vtable == nullptr ? EmptyVTable() : vtable) {}
+
+ChannelArgs::Pointer::Pointer(const Pointer& other)
+    : p_(other.vtable_->copy(other.p_)), vtable_(other.vtable_) {}
+
+ChannelArgs::Pointer::Pointer(Pointer&& other) noexcept
+    : p_(other.p_), vtable_(other.vtable_) {
+  other.p_ = nullptr;
+  other.vtable_ = EmptyVTable();
+}
+
+const grpc_arg_pointer_vtable* ChannelArgs::Pointer::EmptyVTable() {
+  static const grpc_arg_pointer_vtable vtable = {
+      // copy
+      [](void* p) { return p; },
+      // destroy
+      [](void*) {},
+      // cmp
+      [](void* p1, void* p2) -> int { return QsortCompare(p1, p2); },
+  };
+  return &vtable;
+}
+
+const ChannelArgs::Value* ChannelArgs::Get(absl::string_view name) const {
+  return args_.Lookup(name);
+}
+
+bool ChannelArgs::Contains(absl::string_view name) const {
+  return Get(name) != nullptr;
+}
+
+bool ChannelArgs::operator<(const ChannelArgs& other) const {
+  return args_ < other.args_;
+}
+
+bool ChannelArgs::operator==(const ChannelArgs& other) const {
+  return args_ == other.args_;
+}
+
+bool ChannelArgs::operator!=(const ChannelArgs& other) const {
+  return !(*this == other);
+}
+
+bool ChannelArgs::WantMinimalStack() const {
+  return GetBool(GRPC_ARG_MINIMAL_STACK).value_or(false);
+}
+
+ChannelArgs::ChannelArgs(AVL<std::string, Value> args)
+    : args_(std::move(args)) {}
+
 bool ChannelArgs::Pointer::operator==(const Pointer& rhs) const {
   return PointerCompare(p_, vtable_, rhs.p_, rhs.vtable_) == 0;
 }
@@ -64,7 +122,9 @@ bool ChannelArgs::Pointer::operator<(const Pointer& rhs) const {
   return PointerCompare(p_, vtable_, rhs.p_, rhs.vtable_) < 0;
 }
 
-ChannelArgs::ChannelArgs() = default;
+bool ChannelArgs::Pointer::operator!=(const Pointer& rhs) const {
+  return !(*this == rhs);
+}
 
 ChannelArgs ChannelArgs::Set(grpc_arg arg) const {
   switch (arg.type) {
@@ -109,6 +169,14 @@ ChannelArgs::CPtr ChannelArgs::ToC() const {
   });
   return CPtr(static_cast<const grpc_channel_args*>(
       grpc_channel_args_copy_and_add(nullptr, c_args.data(), c_args.size())));
+}
+
+ChannelArgs ChannelArgs::Set(absl::string_view name, Pointer value) const {
+  return Set(name, Value(std::move(value)));
+}
+
+ChannelArgs ChannelArgs::Set(absl::string_view name, int value) const {
+  return Set(name, Value(value));
 }
 
 ChannelArgs ChannelArgs::Set(absl::string_view key, Value value) const {
@@ -553,6 +621,7 @@ ChannelArgs ChannelArgsBuiltinPrecondition(const grpc_channel_args* src) {
   }
   return output;
 }
+
 }  // namespace grpc_core
 
 namespace {
