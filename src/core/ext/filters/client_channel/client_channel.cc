@@ -896,8 +896,8 @@ class ClientChannel::ClientChannelControlHelper
     // Make sure the subchannel has updated keepalive time.
     subchannel->ThrottleKeepaliveTime(chand_->keepalive_time_);
     // Create and return wrapper for the subchannel.
-    return MakeRefCounted<SubchannelWrapper>(
-        chand_, std::move(subchannel), std::move(health_check_service_name));
+    return MakeRefCounted<SubchannelWrapper>(chand_, std::move(subchannel),
+                                             health_check_service_name);
   }
 
   void UpdateState(

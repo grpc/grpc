@@ -629,7 +629,7 @@ Subchannel::Subchannel(SubchannelKey key,
     : DualRefCounted<Subchannel>(
           GRPC_TRACE_FLAG_ENABLED(grpc_trace_subchannel_refcount) ? "Subchannel"
                                                                   : nullptr),
-      key_(std::move(key)),
+      key_(key),
       args_(std::move(args)),
       pollset_set_(grpc_pollset_set_create()),
       connector_(std::move(connector)),
