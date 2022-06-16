@@ -37,8 +37,8 @@ EndpointConfig::Setting MapBackedEndpointConfig::Get(
 }
 
 void MapBackedEndpointConfig::CopyFrom(const EndpointConfig& config,
-                                       absl::string_view key) const {
-  auto value = config.find(key);
+                                       absl::string_view key) {
+  auto value = config.Get(key);
   if (!absl::holds_alternative<absl::monostate>(value)) {
     Insert(key, value);
   }

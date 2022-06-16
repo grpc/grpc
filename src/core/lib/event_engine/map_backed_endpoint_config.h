@@ -25,7 +25,7 @@
 namespace grpc_event_engine {
 namespace experimental {
 
-/// A readonly \a EndpointConfig based on an absl::flat_hash_map.
+/// A read/writable \a EndpointConfig based on an absl::flat_hash_map.
 class MapBackedEndpointConfig : public EndpointConfig {
  public:
   MapBackedEndpointConfig() {}
