@@ -2346,7 +2346,6 @@ grpc_cc_library(
         "absl/status",
         "absl/status:statusor",
         "absl/strings",
-        "absl/time",
     ],
     tags = ["grpc-autodeps"],
     deps = [
