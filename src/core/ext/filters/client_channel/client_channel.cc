@@ -1074,7 +1074,7 @@ ClientChannel::ClientChannel(grpc_channel_element_args* args,
   // Set default authority.
   absl::optional<absl::string_view> default_authority =
       channel_args_.GetString(GRPC_ARG_DEFAULT_AUTHORITY);
-  if (default_authority == nullptr) {
+  if (!default_authority.has_value()) {
     default_authority_ =
         CoreConfiguration::Get().resolver_registry().GetDefaultAuthority(
             server_uri);
@@ -1144,7 +1144,7 @@ RefCountedPtr<LoadBalancingPolicy::Config> ChooseLbPolicy(
   }
   // Use pick_first if nothing was specified and we didn't select grpclb
   // above.
-  if (policy_name == nullptr) policy_name = "pick_first";
+  if (!policy_name.has_value()) policy_name = "pick_first";
   // Now that we have the policy name, construct an empty config for it.
   Json config_json = Json::Array{Json::Object{
       {std::string(*policy_name), Json::Object{}},
