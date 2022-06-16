@@ -657,17 +657,17 @@ TEST_F(StatsPluginEnd2EndTest, TestAllSpansAreExported) {
   }
   ::opencensus::trace::exporter::SpanExporterTestPeer::ExportForTesting();
   traces_recorder_->StopRecording();
-  auto recorded_spans_ = traces_recorder_->GetSpansAndClearState();
-  auto GetSpanByName = [&recorded_spans_](absl::string_view name) {
+  auto recorded_spans = traces_recorder_->GetSpansAndClearState();
+  auto GetSpanByName = [&recorded_spans](absl::string_view name) {
     auto it = std::find_if(
-        recorded_spans_.begin(), recorded_spans_.end(),
+        recorded_spans.begin(), recorded_spans.end(),
         [name](auto const& span_data) { return span_data.name() == name; });
-    ASSERT_NE(it, recorded_spans_.end());
+    ASSERT_NE(it, recorded_spans.end());
     return *it;
   };
   // We never ended the two spans created in the scope above, so we don't
   // expect them to be exported.
-  ASSERT_EQ(3, recorded_spans_.size());
+  ASSERT_EQ(3, recorded_spans.size());
   auto sent_span_data =
       GetSpanByName(absl::StrCat("Sent.", client_method_name_));
   auto attempt_span_data =
