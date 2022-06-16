@@ -14,6 +14,8 @@
 
 #include "test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h"
 
+#include <chrono>
+
 namespace grpc_event_engine {
 namespace experimental {
 
@@ -24,10 +26,10 @@ const intptr_t kTaskHandleSalt = 12345;
 FuzzingEventEngine::FuzzingEventEngine(Options options)
     : final_tick_length_(options.final_tick_length) {
   for (const auto& delay : options.actions.tick_lengths()) {
-    tick_increments_[delay.id()] += absl::Microseconds(delay.delay_us());
+    tick_increments_[delay.id()] += std::chrono::microseconds(delay.delay_us());
   }
   for (const auto& delay : options.actions.run_delay()) {
-    task_delays_[delay.id()] += absl::Microseconds(delay.delay_us());
+    task_delays_[delay.id()] += std::chrono::microseconds(delay.delay_us());
   }
 }
 
@@ -56,7 +58,7 @@ void FuzzingEventEngine::Tick() {
   }
 }
 
-absl::Time FuzzingEventEngine::Now() {
+FuzzingEventEngine::Time FuzzingEventEngine::Now() {
   grpc_core::MutexLock lock(&mu_);
   return now_;
 }
@@ -71,7 +73,7 @@ FuzzingEventEngine::CreateListener(Listener::AcceptCallback,
 
 EventEngine::ConnectionHandle FuzzingEventEngine::Connect(
     OnConnectCallback, const ResolvedAddress&, const EndpointConfig&,
-    MemoryAllocator, absl::Time) {
+    MemoryAllocator, Duration) {
   abort();
 }
 
@@ -84,19 +86,21 @@ std::unique_ptr<EventEngine::DNSResolver> FuzzingEventEngine::GetDNSResolver(
   abort();
 }
 
-void FuzzingEventEngine::Run(Closure* closure) { RunAt(Now(), closure); }
+void FuzzingEventEngine::Run(Closure* closure) {
+  RunAfter(Duration::zero(), closure);
+}
 
 void FuzzingEventEngine::Run(std::function<void()> closure) {
-  RunAt(Now(), closure);
+  RunAfter(Duration::zero(), closure);
 }
 
-EventEngine::TaskHandle FuzzingEventEngine::RunAt(absl::Time when,
-                                                  Closure* closure) {
-  return RunAt(when, [closure]() { closure->Run(); });
+EventEngine::TaskHandle FuzzingEventEngine::RunAfter(Duration when,
+                                                     Closure* closure) {
+  return RunAfter(when, [closure]() { closure->Run(); });
 }
 
-EventEngine::TaskHandle FuzzingEventEngine::RunAt(
-    absl::Time when, std::function<void()> closure) {
+EventEngine::TaskHandle FuzzingEventEngine::RunAfter(
+    Duration when, std::function<void()> closure) {
   grpc_core::MutexLock lock(&mu_);
   const intptr_t id = next_task_id_;
   ++next_task_id_;
@@ -108,7 +112,7 @@ EventEngine::TaskHandle FuzzingEventEngine::RunAt(
   }
   auto task = std::make_shared<Task>(id, std::move(closure));
   tasks_by_id_.emplace(id, task);
-  tasks_by_time_.emplace(when, std::move(task));
+  tasks_by_time_.emplace(now_ + when, std::move(task));
   return TaskHandle{id, kTaskHandleSalt};
 }
 

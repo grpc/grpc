@@ -11,8 +11,8 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-#ifndef GRPC_CORE_LIB_EVENT_ENGINE_IOMGR_ENGINE_IOMGR_ENGINE_H
-#define GRPC_CORE_LIB_EVENT_ENGINE_IOMGR_ENGINE_IOMGR_ENGINE_H
+#ifndef GRPC_CORE_LIB_EVENT_ENGINE_IOMGR_ENGINE_H
+#define GRPC_CORE_LIB_EVENT_ENGINE_IOMGR_ENGINE_H
 #include <grpc/support/port_platform.h>
 
 #include <stdint.h>
@@ -25,7 +25,7 @@
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/string_view.h"
-#include "absl/time/time.h"
+#include "absl/types/variant.h"
 
 #include <grpc/event_engine/endpoint_config.h>
 #include <grpc/event_engine/event_engine.h>
@@ -33,8 +33,6 @@
 #include <grpc/event_engine/slice_buffer.h>
 
 #include "src/core/lib/event_engine/handle_containers.h"
-#include "src/core/lib/event_engine/iomgr_engine/thread_pool.h"
-#include "src/core/lib/event_engine/iomgr_engine/timer_manager.h"
 #include "src/core/lib/gprpp/sync.h"
 
 namespace grpc_event_engine {
@@ -66,13 +64,13 @@ class IomgrEventEngine final : public EventEngine {
     LookupTaskHandle LookupHostname(LookupHostnameCallback on_resolve,
                                     absl::string_view name,
                                     absl::string_view default_port,
-                                    absl::Time deadline) override;
+                                    Duration timeout) override;
     LookupTaskHandle LookupSRV(LookupSRVCallback on_resolve,
                                absl::string_view name,
-                               absl::Time deadline) override;
+                               Duration timeout) override;
     LookupTaskHandle LookupTXT(LookupTXTCallback on_resolve,
                                absl::string_view name,
-                               absl::Time deadline) override;
+                               Duration timeout) override;
     bool CancelLookup(LookupTaskHandle handle) override;
   };
 
@@ -90,7 +88,7 @@ class IomgrEventEngine final : public EventEngine {
                            const ResolvedAddress& addr,
                            const EndpointConfig& args,
                            MemoryAllocator memory_allocator,
-                           absl::Time deadline) override;
+                           Duration timeout) override;
 
   bool CancelConnect(ConnectionHandle handle) override;
   bool IsWorkerThread() override;
@@ -98,18 +96,17 @@ class IomgrEventEngine final : public EventEngine {
       const DNSResolver::ResolverOptions& options) override;
   void Run(Closure* closure) override;
   void Run(std::function<void()> closure) override;
-  TaskHandle RunAt(absl::Time when, Closure* closure) override;
-  TaskHandle RunAt(absl::Time when, std::function<void()> closure) override;
+  TaskHandle RunAfter(Duration when, Closure* closure) override;
+  TaskHandle RunAfter(Duration when, std::function<void()> closure) override;
   bool Cancel(TaskHandle handle) override;
 
  private:
-  struct ClosureData;
+  EventEngine::TaskHandle RunAfterInternal(
+      Duration when,
+      absl::variant<std::function<void()>, EventEngine::Closure*> cb);
 
-  EventEngine::TaskHandle RunAtInternal(absl::Time when,
-                                        std::function<void()> cb);
-
-  iomgr_engine::TimerManager timer_manager_;
-  iomgr_engine::ThreadPool thread_pool_{2};
+  void RunInternal(
+      absl::variant<std::function<void()>, EventEngine::Closure*> cb);
 
   grpc_core::Mutex mu_;
   TaskHandleSet known_handles_ ABSL_GUARDED_BY(mu_);
@@ -119,4 +116,4 @@ class IomgrEventEngine final : public EventEngine {
 }  // namespace experimental
 }  // namespace grpc_event_engine
 
-#endif  // GRPC_CORE_LIB_EVENT_ENGINE_IOMGR_ENGINE_IOMGR_ENGINE_H
+#endif  // GRPC_CORE_LIB_EVENT_ENGINE_IOMGR_ENGINE_H
