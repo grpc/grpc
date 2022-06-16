@@ -13823,6 +13823,7 @@ target_include_directories(periodic_update_test
 target_link_libraries(periodic_update_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
+  absl::statusor
   gpr
   upb
 )
@@ -16667,6 +16668,7 @@ target_link_libraries(test_core_gprpp_time_test
   absl::memory
   absl::random_random
   absl::status
+  absl::statusor
   absl::cord
   absl::str_format
   absl::strings
