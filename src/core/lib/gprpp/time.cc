@@ -16,8 +16,6 @@
 
 #include "src/core/lib/gprpp/time.h"
 
-#include <inttypes.h>
-
 #include <atomic>
 #include <chrono>
 #include <cstdint>
