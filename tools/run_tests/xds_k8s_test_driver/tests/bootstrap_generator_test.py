@@ -21,7 +21,6 @@ from absl.testing import parameterized
 from framework import xds_k8s_testcase
 from framework.helpers import rand as helpers_rand
 from framework.helpers import retryers
-from framework.helpers import skips
 from framework.infrastructure import k8s
 from framework.infrastructure import traffic_director
 from framework.test_app import client_app
@@ -89,11 +88,9 @@ class _BootstrapGeneratorBaseTest(xds_k8s_testcase.XdsKubernetesBaseTestCase):
             logger.info('Found unused xds port: %s', cls.server_xds_port)
 
         # Common TD resources across client and server tests.
-        cls.td.create_health_check()
-        cls.td.create_backend_service()
-        cls.td.create_url_map(cls.server_xds_host, cls.server_xds_port)
-        cls.td.create_target_proxy()
-        cls.td.create_forwarding_rule(cls.server_xds_port)
+        cls.td.setup_for_grpc(cls.server_xds_host,
+                              cls.server_xds_port,
+                              health_check_port=cls.server_maintenance_port)
 
     @classmethod
     def tearDownClass(cls):
@@ -112,9 +109,10 @@ class _BootstrapGeneratorBaseTest(xds_k8s_testcase.XdsKubernetesBaseTestCase):
 
     @classmethod
     def initKubernetesServerRunner(cls,
-                                   td_bootstrap_image=None
-                                  ) -> KubernetesServerRunner:
-        if td_bootstrap_image == None:
+                                   *,
+                                   td_bootstrap_image: Optional[str] = None
+                                   ) -> KubernetesServerRunner:
+        if not td_bootstrap_image:
             td_bootstrap_image = cls.td_bootstrap_image
         return KubernetesServerRunner(
             k8s.KubernetesNamespace(cls.k8s_api_manager, cls.server_namespace),
