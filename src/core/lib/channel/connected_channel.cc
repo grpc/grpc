@@ -22,7 +22,6 @@
 
 #include <string.h>
 
-#include <type_traits>
 #include <utility>
 
 #include "absl/types/optional.h"
