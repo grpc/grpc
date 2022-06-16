@@ -23,8 +23,6 @@
 #include <memory>
 #include <utility>
 
-#include "absl/status/status.h"
-
 #include <grpc/slice_buffer.h>
 #include <grpc/support/log.h>
 
