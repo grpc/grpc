@@ -327,8 +327,10 @@ std::string StatusToString(const absl::Status& status) {
                                    absl::CHexEscape(payload_view), "\""));
       } else if (absl::StartsWith(type_url, kTypeTimeTag)) {
         type_url.remove_prefix(kTypeTimeTag.size());
-        absl::Time t =
-            *reinterpret_cast<const absl::Time*>(payload_view.data());
+        // copy the content before casting to avoid misaligned address access
+        alignas(absl::Time) char buf[sizeof(const absl::Time)];
+        memcpy(buf, payload_view.data(), sizeof(const absl::Time));
+        absl::Time t = *reinterpret_cast<const absl::Time*>(buf);
         kvs.push_back(absl::StrCat(type_url, ":\"", absl::FormatTime(t), "\""));
       } else {
         kvs.push_back(absl::StrCat(type_url, ":\"",
