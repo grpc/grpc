@@ -31,6 +31,7 @@ readonly BUILD_APP_PATH="interop-testing/build/install/grpc-interop-testing"
 #   SERVER_IMAGE_NAME: Test server Docker image name
 #   CLIENT_IMAGE_NAME: Test client Docker image name
 #   GIT_COMMIT: SHA-1 of git commit being built
+#   TESTING_VERSION: version branch under test, f.e. v1.42.x, master
 # Arguments:
 #   None
 # Outputs:
@@ -43,6 +44,10 @@ build_test_app_docker_images() {
   gcloud -q auth configure-docker
   docker push "${CLIENT_IMAGE_NAME}:${GIT_COMMIT}"
   docker push "${SERVER_IMAGE_NAME}:${GIT_COMMIT}"
+  if is_version_branch "${TESTING_VERSION}"; then
+    tag_and_push_docker_image "${CLIENT_IMAGE_NAME}" "${GIT_COMMIT}" "${TESTING_VERSION}"
+    tag_and_push_docker_image "${SERVER_IMAGE_NAME}" "${GIT_COMMIT}" "${TESTING_VERSION}"
+  fi
 }
 
 #######################################
@@ -84,6 +89,8 @@ build_docker_images_if_needed() {
 #   SERVER_IMAGE_NAME: Test server Docker image name
 #   CLIENT_IMAGE_NAME: Test client Docker image name
 #   GIT_COMMIT: SHA-1 of git commit being built
+#   TESTING_VERSION: version branch under test: used by the framework to determine the supported PSM
+#                    features.
 # Arguments:
 #   Test case name
 # Outputs:
@@ -100,6 +107,7 @@ run_test() {
     --kube_context="${KUBE_CONTEXT}" \
     --server_image="${SERVER_IMAGE_NAME}:${GIT_COMMIT}" \
     --client_image="${CLIENT_IMAGE_NAME}:${GIT_COMMIT}" \
+    --testing_version="${TESTING_VERSION}" \
     --xml_output_file="${TEST_XML_OUTPUT_DIR}/${test_name}/sponge_log.xml" \
     --force_cleanup \
     --nocheck_local_certs
