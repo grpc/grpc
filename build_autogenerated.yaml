@@ -750,6 +750,7 @@ libs:
   - src/core/lib/event_engine/iomgr_engine/timer.h
   - src/core/lib/event_engine/iomgr_engine/timer_heap.h
   - src/core/lib/event_engine/iomgr_engine/timer_manager.h
+  - src/core/lib/event_engine/map_backed_endpoint_config.h
   - src/core/lib/event_engine/trace.h
   - src/core/lib/gprpp/atomic_utils.h
   - src/core/lib/gprpp/bitset.h
@@ -1969,6 +1970,7 @@ libs:
   - src/core/lib/event_engine/iomgr_engine/timer.h
   - src/core/lib/event_engine/iomgr_engine/timer_heap.h
   - src/core/lib/event_engine/iomgr_engine/timer_manager.h
+  - src/core/lib/event_engine/map_backed_endpoint_config.h
   - src/core/lib/event_engine/trace.h
   - src/core/lib/gprpp/atomic_utils.h
   - src/core/lib/gprpp/bitset.h

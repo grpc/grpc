@@ -965,6 +965,7 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/lib/event_engine/iomgr_engine/timer_heap.h )
   s.files += %w( src/core/lib/event_engine/iomgr_engine/timer_manager.cc )
   s.files += %w( src/core/lib/event_engine/iomgr_engine/timer_manager.h )
+  s.files += %w( src/core/lib/event_engine/map_backed_endpoint_config.h )
   s.files += %w( src/core/lib/event_engine/memory_allocator.cc )
   s.files += %w( src/core/lib/event_engine/resolved_address.cc )
   s.files += %w( src/core/lib/event_engine/slice.cc )
