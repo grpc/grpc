@@ -19,7 +19,6 @@
 
 #include <stdint.h>
 
-#include <chrono>
 #include <limits>
 #include <ostream>
 #include <string>
