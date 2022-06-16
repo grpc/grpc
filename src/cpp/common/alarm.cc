@@ -20,6 +20,7 @@
 #include <functional>
 #include <utility>
 
+#include "absl/base/thread_annotations.h"
 #include "absl/types/optional.h"
 
 #include <grpc/event_engine/event_engine.h>
@@ -33,6 +34,7 @@
 #include <grpcpp/impl/grpc_library.h>
 
 #include "src/core/lib/event_engine/event_engine_factory.h"
+#include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/gprpp/time_util.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
