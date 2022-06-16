@@ -59,6 +59,7 @@ def grpc_proto_fuzzer(name, corpus, proto, proto_deps = [], srcs = [], tags = []
         name: The name of the test.
         corpus: The corpus for the test.
         proto: The proto for the test.
+        proto_deps: Deps for proto.
         srcs: The source files for the test.
         deps: The dependencies of the test.
         data: The data dependencies of the test.
