@@ -25,6 +25,7 @@ from framework.infrastructure import k8s
 from framework.infrastructure import traffic_director
 from framework.test_app import client_app
 from framework.test_app import server_app
+from typing import Optional
 
 logger = logging.getLogger(__name__)
 flags.adopt_module_key_flags(xds_k8s_testcase)
@@ -58,7 +59,7 @@ class _BootstrapGeneratorBaseTest(xds_k8s_testcase.XdsKubernetesBaseTestCase):
         #
         # Here, we perform setup steps which are common across client and server
         # side variants of the bootstrap generator test.
-        if cls._resource_suffix_randomize:
+        if cls.resource_suffix_randomize:
             cls.resource_suffix = helpers_rand.random_resource_suffix()
         logger.info('Test run resource prefix: %s, suffix: %s',
                     cls.resource_prefix, cls.resource_suffix)
