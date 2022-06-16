@@ -6611,7 +6611,6 @@ grpc_cc_library(
         "protobuf_duration_upb",
         "ref_counted",
         "ref_counted_ptr",
-        "//test/core/util:stack_tracer",
         "time",
         "xds_orca_service_upb",
         "xds_orca_upb",

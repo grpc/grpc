@@ -50,7 +50,6 @@
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
-#include "test/core/util/stack_tracer.h"
 
 namespace grpc {
 namespace experimental {
@@ -67,8 +66,6 @@ class OrcaService::Reactor : public ServerWriteReactor<ByteBuffer>,
  public:
   explicit Reactor(OrcaService* service, const ByteBuffer* request_buffer)
       : RefCounted("OrcaService::Reactor"), service_(service) {
-    gpr_log(GPR_DEBUG, "DO NOT SUBMIT - Orcaservice::Reactor::%p created. %s",
-            this, grpc_core::testing::GetCurrentStackTrace().c_str());
     // Get slice from request.
     Slice slice;
     GPR_ASSERT(request_buffer->DumpToSingleSlice(&slice).ok());
@@ -98,24 +95,24 @@ class OrcaService::Reactor : public ServerWriteReactor<ByteBuffer>,
 
   void OnWriteDone(bool ok) override {
     if (!ok) {
-      gpr_log(
-          GPR_DEBUG,
-          "DO NOT SUBMIT: OrcaService::Reactor::%p Finishing in OnWriteDone",
-          this);
       Finish(Status(StatusCode::UNKNOWN, "write failed"));
       return;
     }
     response_.Clear();
-    ScheduleTimer();
+    {
+      grpc::internal::MutexLock lock(&timer_mu_);
+      if (!cancelled_) {
+        ScheduleTimerLocked();
+        return;
+      }
+    }
+    Finish(Status(StatusCode::UNKNOWN, "call cancelled by client"));
   }
 
   void OnCancel() override {
-    gpr_log(
-        GPR_DEBUG,
-        "DO NOT SUBMIT, OrcaService::Reactor::%p attempting to cancel timer",
-        this);
-    MaybeCancelTimer();
-    Finish(Status(StatusCode::UNKNOWN, "call cancelled by client"));
+    if (MaybeCancelTimer()) {
+      Finish(Status(StatusCode::UNKNOWN, "call cancelled by client"));
+    }
   }
 
   void OnDone() override {
@@ -131,32 +128,26 @@ class OrcaService::Reactor : public ServerWriteReactor<ByteBuffer>,
     StartWrite(&response_);
   }
 
-  void ScheduleTimer() {
+  void ScheduleTimerLocked() ABSL_GUARDED_BY(timer_mu_) {
     grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
     grpc_core::ExecCtx exec_ctx;
-    grpc::internal::MutexLock lock(&timer_mu_);
     timer_handle_ = GetDefaultEventEngine()->RunAt(
         absl::Now() + absl::Milliseconds(report_interval_.millis()),
         [self = Ref(DEBUG_LOCATION, "Orca Service")] { self->OnTimer(); });
   }
 
-  void MaybeCancelTimer() {
+  bool MaybeCancelTimer() {
     grpc::internal::MutexLock lock(&timer_mu_);
-    if (timer_handle_.has_value()) {
-      if (GetDefaultEventEngine()->Cancel(*timer_handle_)) {
-        timer_handle_.reset();
-        gpr_log(GPR_DEBUG,
-                "DO NOT SUBMIT - OrcaService::%p - cancellation successful",
-                this);
-      } else {
-        gpr_log(GPR_DEBUG, "DO NOT SUBMIT - could not cancel");
-      }
+    cancelled_ = true;
+    if (timer_handle_.has_value() &&
+        GetDefaultEventEngine()->Cancel(*timer_handle_)) {
+      timer_handle_.reset();
+      return true;
     }
+    return false;
   }
 
   void OnTimer() {
-    gpr_log(GPR_DEBUG, "DO NOT SUBMIT. OrcaService::Reactor::%p - in OnTimer",
-            this);
     grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
     grpc_core::ExecCtx exec_ctx;
     grpc::internal::MutexLock lock(&timer_mu_);
@@ -169,7 +160,7 @@ class OrcaService::Reactor : public ServerWriteReactor<ByteBuffer>,
   grpc::internal::Mutex timer_mu_;
   absl::optional<EventEngine::TaskHandle> timer_handle_
       ABSL_GUARDED_BY(&timer_mu_);
-  ;
+  bool cancelled_ ABSL_GUARDED_BY(&timer_mu_) = false;
 
   grpc_core::Duration report_interval_;
   ByteBuffer response_;
