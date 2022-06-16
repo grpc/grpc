@@ -13,7 +13,7 @@
 // limitations under the License.
 #include <grpc/grpc.h>
 
-#include "src/core/lib/event_engine/iomgr_engine/iomgr_engine.h"
+#include "src/core/lib/event_engine/iomgr_engine.h"
 #include "test/core/event_engine/test_suite/event_engine_test.h"
 #include "test/core/util/test_config.h"
 
@@ -24,5 +24,8 @@ int main(int argc, char** argv) {
     return absl::make_unique<
         grpc_event_engine::experimental::IomgrEventEngine>();
   });
-  return RUN_ALL_TESTS();
+  grpc_init();
+  auto result = RUN_ALL_TESTS();
+  grpc_shutdown();
+  return result;
 }

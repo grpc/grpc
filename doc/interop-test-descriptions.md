@@ -1012,6 +1012,16 @@ debugging in case of failure. For example, if RPC deadlines are set to
 `soak_per_iteration_max_acceptable_latency_ms` and one of the RPCs hits that
 deadline, it's not clear if the RPC was late by a millisecond or a minute.
 
+In order to make it easy to analyze results, implementations should log the
+results of each iteration (i.e. RPC) in a format the matches the following
+regexes:
+
+- Upon success:
+  - `soak iteration: \d+ elapsed_ms: \d+ peer: \S+ succeeded`
+
+- Upon failure:
+  - `soak iteration: \d+ elapsed_ms: \d+ peer: \S+ failed:`
+
 This test must be configurable via a few different command line flags:
 
 * `soak_iterations`: Controls the number of RPCs to perform. This should
