@@ -210,10 +210,7 @@ class Duration {
   double seconds() const { return static_cast<double>(millis_) / 1000.0; }
 
   // NOLINTNEXTLINE: google-explicit-constructor
-  operator grpc_event_engine::experimental::EventEngine::Duration() const {
-    return grpc_event_engine::experimental::EventEngine::Duration(
-        std::chrono::milliseconds(millis_));
-  }
+  operator grpc_event_engine::experimental::EventEngine::Duration() const;
 
   gpr_timespec as_timespec() const;
 
