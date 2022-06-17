@@ -149,13 +149,12 @@ void RunServer(const std::set<int>& grpc_ports, const std::set<int>& xds_ports,
 }  // namespace grpc
 
 int main(int argc, char** argv) {
-  std::this_thread::sleep_for(std::chrono::seconds(30));
-  // Preprocess argv, for two things:
-  // 1. merge duplciate flags. So "--grpc=8080 --grpc=9090" becomes
-  // "--grpc=8080,9090".
-  // 2. replace '-' to '_'. So "--istio-version=123" becomes
-  // "--istio_version=123".
-  // 3. remove --version since that is specially interpretted by absl
+  //  Preprocess argv, for two things:
+  //  1. merge duplciate flags. So "--grpc=8080 --grpc=9090" becomes
+  //  "--grpc=8080,9090".
+  //  2. replace '-' to '_'. So "--istio-version=123" becomes
+  //  "--istio_version=123".
+  //  3. remove --version since that is specially interpretted by absl
   std::map<std::string, std::vector<std::string>> argv_dict;
   for (int i = 0; i < argc; i++) {
     std::string arg(argv[i]);
