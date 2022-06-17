@@ -1,4 +1,4 @@
-// Copyright 2021 gRPC authors.
+// Copyright 2022 gRPC authors.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -11,27 +11,19 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+#include "test/core/event_engine/test_suite/oracle_event_engine_posix.h"
 
-#include "src/core/lib/resource_quota/resource_quota.h"
-
-#include "gtest/gtest.h"
-
-namespace grpc_core {
-namespace testing {
-
-TEST(ResourceQuotaTest, Works) {
-  auto q = MakeRefCounted<ResourceQuota>("foo");
-  EXPECT_NE(q->thread_quota(), nullptr);
-  EXPECT_NE(q->memory_quota(), nullptr);
-}
-
-}  // namespace testing
-}  // namespace grpc_core
-
-// Hook needed to run ExecCtx outside of iomgr.
-void grpc_set_default_iomgr_platform() {}
+#include "test/core/event_engine/test_suite/event_engine_test.h"
+#include "test/core/util/test_config.h"
 
 int main(int argc, char** argv) {
-  ::testing::InitGoogleTest(&argc, argv);
+  testing::InitGoogleTest(&argc, argv);
+  grpc::testing::TestEnvironment env(&argc, argv);
+  auto ee_factory = []() {
+    return absl::make_unique<
+        grpc_event_engine::experimental::PosixOracleEventEngine>();
+  };
+  SetEventEngineFactories(/*ee_factory=*/ee_factory,
+                          /*oracle_ee_factory=*/ee_factory);
   return RUN_ALL_TESTS();
 }

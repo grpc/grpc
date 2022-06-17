@@ -14,9 +14,12 @@
 
 #include "src/core/lib/resource_quota/memory_quota.h"
 
-#include <gtest/gtest.h>
+#include <algorithm>
+#include <vector>
 
-#include "absl/synchronization/notification.h"
+#include "gtest/gtest.h"
+
+#include <grpc/slice.h>
 
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/slice/slice_refcount.h"
