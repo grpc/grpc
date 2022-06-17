@@ -62,16 +62,18 @@ void ProxyMapperRegistry::Register(
   }
 }
 
-bool ProxyMapperRegistry::MapName(const char* server_uri,
-                                  const grpc_channel_args* args,
-                                  char** name_to_resolve,
-                                  grpc_channel_args** new_args) {
+bool ProxyMapperRegistry::MapName(
+    absl::string_view server_uri, ChannelArgs* args,
+    absl::optional<std::string>* name_to_resolve) {
   Init();
+  ChannelArgs args_backup = *args;
   for (const auto& mapper : *g_proxy_mapper_list) {
-    if (mapper->MapName(server_uri, args, name_to_resolve, new_args)) {
+    *args = args_backup;
+    if (mapper->MapName(server_uri, args, name_to_resolve)) {
       return true;
     }
   }
+  *args = args_backup;
   return false;
 }
 
@@ -79,11 +81,14 @@ bool ProxyMapperRegistry::MapAddress(const grpc_resolved_address& address,
                                      ChannelArgs* args,
                                      grpc_resolved_address** new_address) {
   Init();
+  ChannelArgs args_backup = *args;
   for (const auto& mapper : *g_proxy_mapper_list) {
+    *args = args_backup;
     if (mapper->MapAddress(address, args, new_address)) {
       return true;
     }
   }
+  *args = args_backup;
   return false;
 }
 

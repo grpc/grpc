@@ -982,18 +982,11 @@ void ClientChannel::Destroy(grpc_channel_element* elem) {
 namespace {
 
 RefCountedPtr<SubchannelPoolInterface> GetSubchannelPool(
-    const grpc_channel_args* args) {
-  const bool use_local_subchannel_pool = grpc_channel_args_find_bool(
-      args, GRPC_ARG_USE_LOCAL_SUBCHANNEL_POOL, false);
-  if (use_local_subchannel_pool) {
+    const ChannelArgs& args) {
+  if (args.GetBool(GRPC_ARG_USE_LOCAL_SUBCHANNEL_POOL).value_or(false)) {
     return MakeRefCounted<LocalSubchannelPool>();
   }
   return GlobalSubchannelPool::instance();
-}
-
-channelz::ChannelNode* GetChannelzNode(const grpc_channel_args* args) {
-  return grpc_channel_args_find_pointer<channelz::ChannelNode>(
-      args, GRPC_ARG_CHANNELZ_CHANNEL_NODE);
 }
 
 }  // namespace
@@ -1004,13 +997,13 @@ ClientChannel::ClientChannel(grpc_channel_element_args* args,
       deadline_checking_enabled_(grpc_deadline_checking_enabled(channel_args_)),
       owning_stack_(args->channel_stack),
       client_channel_factory_(channel_args_.GetObject<ClientChannelFactory>()),
-      channelz_node_(GetChannelzNode(args->channel_args)),
+      channelz_node_(channel_args_.GetObject<channelz::ChannelNode>()),
       interested_parties_(grpc_pollset_set_create()),
       service_config_parser_index_(
           internal::ClientChannelServiceConfigParser::ParserIndex()),
       work_serializer_(std::make_shared<WorkSerializer>()),
       state_tracker_("client_channel", GRPC_CHANNEL_IDLE),
-      subchannel_pool_(GetSubchannelPool(args->channel_args)) {
+      subchannel_pool_(GetSubchannelPool(channel_args_)) {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_client_channel_trace)) {
     gpr_log(GPR_INFO, "chand=%p: creating client_channel for channel stack %p",
             this, owning_stack_);
@@ -1025,33 +1018,30 @@ ClientChannel::ClientChannel(grpc_channel_element_args* args,
   }
   // Get default service config.  If none is specified via the client API,
   // we use an empty config.
-  const char* service_config_json = grpc_channel_args_find_string(
-      args->channel_args, GRPC_ARG_SERVICE_CONFIG);
-  if (service_config_json == nullptr) service_config_json = "{}";
+  absl::optional<absl::string_view> service_config_json =
+      channel_args_.GetString(GRPC_ARG_SERVICE_CONFIG);
+  if (!service_config_json.has_value()) service_config_json = "{}";
   *error = GRPC_ERROR_NONE;
   default_service_config_ =
-      ServiceConfigImpl::Create(channel_args_, service_config_json, error);
+      ServiceConfigImpl::Create(channel_args_, *service_config_json, error);
   if (!GRPC_ERROR_IS_NONE(*error)) {
     default_service_config_.reset();
     return;
   }
   // Get URI to resolve, using proxy mapper if needed.
-  const char* server_uri =
-      grpc_channel_args_find_string(args->channel_args, GRPC_ARG_SERVER_URI);
-  if (server_uri == nullptr) {
+  absl::optional<absl::string_view> server_uri =
+      channel_args_.GetString(GRPC_ARG_SERVER_URI);
+  if (!server_uri.has_value()) {
     *error = GRPC_ERROR_CREATE_FROM_STATIC_STRING(
         "target URI channel arg missing or wrong type in client channel "
         "filter");
     return;
   }
-  uri_to_resolve_ = server_uri;
-  char* proxy_name = nullptr;
-  grpc_channel_args* new_args = nullptr;
-  ProxyMapperRegistry::MapName(server_uri, args->channel_args, &proxy_name,
-                               &new_args);
-  if (proxy_name != nullptr) {
-    uri_to_resolve_ = proxy_name;
-    gpr_free(proxy_name);
+  uri_to_resolve_ = std::string(*server_uri);
+  absl::optional<std::string> proxy_name;
+  ProxyMapperRegistry::MapName(*server_uri, &channel_args_, &proxy_name);
+  if (proxy_name.has_value()) {
+    uri_to_resolve_ = std::move(*proxy_name);
   }
   // Make sure the URI to resolve is valid, so that we know that
   // resolver creation will succeed later.
@@ -1077,7 +1067,7 @@ ClientChannel::ClientChannel(grpc_channel_element_args* args,
   if (!default_authority.has_value()) {
     default_authority_ =
         CoreConfiguration::Get().resolver_registry().GetDefaultAuthority(
-            server_uri);
+            *server_uri);
   } else {
     default_authority_ = std::string(*default_authority);
   }

@@ -210,6 +210,7 @@ class ChannelArgs {
 
   absl::optional<int> GetInt(absl::string_view name) const;
   absl::optional<absl::string_view> GetString(absl::string_view name) const;
+  absl::optional<std::string> GetOwnedString(absl::string_view name) const;
   void* GetVoidPointer(absl::string_view name) const;
   template <typename T>
   T* GetPointer(absl::string_view name) const {

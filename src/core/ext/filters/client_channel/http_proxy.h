@@ -30,8 +30,8 @@ namespace grpc_core {
 
 class HttpProxyMapper : public ProxyMapperInterface {
  public:
-  bool MapName(const char* server_uri, const grpc_channel_args* args,
-               char** name_to_resolve, grpc_channel_args** new_args) override;
+  bool MapName(absl::string_view server_uri, ChannelArgs* args,
+               absl::optional<std::string>* name_to_resolve) override;
 
   bool MapAddress(const grpc_resolved_address& /*address*/,
                   ChannelArgs* /*args*/,

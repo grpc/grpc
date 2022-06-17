@@ -59,13 +59,10 @@ namespace {
  * credentials if present in the 'http_proxy' env var, otherwise leaves it
  * unchanged. It is caller's responsibility to gpr_free user_cred.
  */
-// TODO(hork): change this to return std::string
-char* GetHttpProxyServer(const grpc_channel_args* args, char** user_cred) {
+absl::optional<std::string> GetHttpProxyServer(const ChannelArgs& args,
+                                               char** user_cred) {
   GPR_ASSERT(user_cred != nullptr);
   absl::StatusOr<URI> uri;
-  char* proxy_name = nullptr;
-  char** authority_strs = nullptr;
-  size_t authority_nstrs;
   /* We check the following places to determine the HTTP proxy to use, stopping
    * at the first one that is set:
    * 1. GRPC_ARG_HTTP_PROXY channel arg
@@ -74,29 +71,43 @@ char* GetHttpProxyServer(const grpc_channel_args* args, char** user_cred) {
    * 4. http_proxy environment variable
    * If none of the above are set, then no HTTP proxy will be used.
    */
-  auto uri_str = UniquePtr<char>(
-      gpr_strdup(grpc_channel_args_find_string(args, GRPC_ARG_HTTP_PROXY)));
-  if (uri_str == nullptr) uri_str = UniquePtr<char>(gpr_getenv("grpc_proxy"));
-  if (uri_str == nullptr) uri_str = UniquePtr<char>(gpr_getenv("https_proxy"));
-  if (uri_str == nullptr) uri_str = UniquePtr<char>(gpr_getenv("http_proxy"));
-  if (uri_str == nullptr) return nullptr;
+  absl::optional<std::string> uri_str =
+      args.GetOwnedString(GRPC_ARG_HTTP_PROXY);
+  auto c_str_to_opt_string =
+      [](const char* c_str) -> absl::optional<std::string> {
+    if (c_str == nullptr) return absl::nullopt;
+    return std::string(c_str);
+  };
+  if (!uri_str.has_value()) {
+    uri_str = c_str_to_opt_string(gpr_getenv("grpc_proxy"));
+  }
+  if (!uri_str.has_value()) {
+    uri_str = c_str_to_opt_string(gpr_getenv("https_proxy"));
+  }
+  if (!uri_str.has_value()) {
+    uri_str = c_str_to_opt_string(gpr_getenv("http_proxy"));
+  }
+  if (!uri_str.has_value()) return absl::nullopt;
   // an emtpy value means "don't use proxy"
-  if (uri_str.get()[0] == '\0') return nullptr;
-  uri = URI::Parse(uri_str.get());
+  if (uri_str->empty()) return absl::nullopt;
+  uri = URI::Parse(*uri_str);
   if (!uri.ok() || uri->authority().empty()) {
     gpr_log(GPR_ERROR, "cannot parse value of 'http_proxy' env var. Error: %s",
             uri.status().ToString().c_str());
-    return nullptr;
+    return absl::nullopt;
   }
   if (uri->scheme() != "http") {
     gpr_log(GPR_ERROR, "'%s' scheme not supported in proxy URI",
             uri->scheme().c_str());
-    return nullptr;
+    return absl::nullopt;
   }
   /* Split on '@' to separate user credentials from host */
+  char** authority_strs = nullptr;
+  size_t authority_nstrs;
   gpr_string_split(uri->authority().c_str(), "@", &authority_strs,
                    &authority_nstrs);
   GPR_ASSERT(authority_nstrs != 0); /* should have at least 1 string */
+  absl::optional<std::string> proxy_name;
   if (authority_nstrs == 1) {
     /* User cred not present in authority */
     proxy_name = authority_strs[0];
@@ -110,7 +121,7 @@ char* GetHttpProxyServer(const grpc_channel_args* args, char** user_cred) {
     for (size_t i = 0; i < authority_nstrs; i++) {
       gpr_free(authority_strs[i]);
     }
-    proxy_name = nullptr;
+    proxy_name = absl::nullopt;
   }
   gpr_free(authority_strs);
   return proxy_name;
@@ -129,21 +140,16 @@ std::string MaybeAddDefaultPort(absl::string_view target) {
 
 }  // namespace
 
-bool HttpProxyMapper::MapName(const char* server_uri,
-                              const grpc_channel_args* args,
-                              char** name_to_resolve,
-                              grpc_channel_args** new_args) {
-  if (!grpc_channel_args_find_bool(args, GRPC_ARG_ENABLE_HTTP_PROXY, true)) {
-    return false;
-  }
+bool HttpProxyMapper::MapName(absl::string_view server_uri, ChannelArgs* args,
+                              absl::optional<std::string>* name_to_resolve) {
+  if (!args->GetBool(GRPC_ARG_ENABLE_HTTP_PROXY).value_or(true)) return false;
+
   char* user_cred = nullptr;
-  *name_to_resolve = GetHttpProxyServer(args, &user_cred);
+  *name_to_resolve = GetHttpProxyServer(*args, &user_cred);
   if (*name_to_resolve == nullptr) return false;
-  std::string server_target;
   absl::StatusOr<URI> uri = URI::Parse(server_uri);
   auto no_use_proxy = [&]() {
-    gpr_free(*name_to_resolve);
-    *name_to_resolve = nullptr;
+    *name_to_resolve = absl::nullopt;
     gpr_free(user_cred);
     return false;
   };
@@ -151,12 +157,12 @@ bool HttpProxyMapper::MapName(const char* server_uri,
     gpr_log(GPR_ERROR,
             "'http_proxy' environment variable set, but cannot "
             "parse server URI '%s' -- not using proxy. Error: %s",
-            server_uri, uri.status().ToString().c_str());
+            std::string(server_uri).c_str(), uri.status().ToString().c_str());
     return no_use_proxy();
   }
   if (uri->scheme() == "unix") {
     gpr_log(GPR_INFO, "not using proxy for Unix domain socket '%s'",
-            server_uri);
+            std::string(server_uri).c_str());
     return no_use_proxy();
   }
   /* Prefer using 'no_grpc_proxy'. Fallback on 'no_proxy' if it is not set. */
@@ -173,14 +179,14 @@ bool HttpProxyMapper::MapName(const char* server_uri,
       gpr_log(GPR_INFO,
               "unable to split host and port, not checking no_proxy list for "
               "host '%s'",
-              server_uri);
+              std::string(server_uri).c_str());
     } else {
       std::vector<absl::string_view> no_proxy_hosts =
           absl::StrSplit(no_proxy_str.get(), ',', absl::SkipEmpty());
       for (const auto& no_proxy_entry : no_proxy_hosts) {
         if (absl::EndsWithIgnoreCase(server_host, no_proxy_entry)) {
           gpr_log(GPR_INFO, "not using proxy for host in no_proxy list '%s'",
-                  server_uri);
+                  std::string(server_uri).c_str());
           use_proxy = false;
           break;
         }
@@ -188,25 +194,16 @@ bool HttpProxyMapper::MapName(const char* server_uri,
       if (!use_proxy) return no_use_proxy();
     }
   }
-  server_target =
-      MaybeAddDefaultPort(absl::StripPrefix(uri->path(), "/")).c_str();
-  absl::InlinedVector<grpc_arg, 2> args_to_add;
-  args_to_add.push_back(grpc_channel_arg_string_create(
-      const_cast<char*>(GRPC_ARG_HTTP_CONNECT_SERVER),
-      const_cast<char*>(server_target.c_str())));
-  std::string header;
+  *args = args->Set(GRPC_ARG_HTTP_CONNECT_SERVER,
+                    MaybeAddDefaultPort(absl::StripPrefix(uri->path(), "/")));
   if (user_cred != nullptr) {
     /* Use base64 encoding for user credentials as stated in RFC 7617 */
     auto encoded_user_cred =
         UniquePtr<char>(grpc_base64_encode(user_cred, strlen(user_cred), 0, 0));
-    header =
-        absl::StrCat("Proxy-Authorization:Basic ", encoded_user_cred.get());
-    args_to_add.push_back(grpc_channel_arg_string_create(
-        const_cast<char*>(GRPC_ARG_HTTP_CONNECT_HEADERS),
-        const_cast<char*>(header.c_str())));
+    *args = args->Set(
+        GRPC_ARG_HTTP_CONNECT_HEADERS,
+        absl::StrCat("Proxy-Authorization:Basic ", encoded_user_cred.get()));
   }
-  *new_args = grpc_channel_args_copy_and_add(args, args_to_add.data(),
-                                             args_to_add.size());
   gpr_free(user_cred);
   return true;
 }

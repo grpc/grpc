@@ -224,6 +224,13 @@ absl::optional<absl::string_view> ChannelArgs::GetString(
   return absl::get<std::string>(*v);
 }
 
+absl::optional<std::string> ChannelArgs::GetOwnedString(
+    absl::string_view name) const {
+  absl::optional<absl::string_view> v = GetString(name);
+  if (!v.has_value()) return absl::nullopt;
+  return std::string(*v);
+}
+
 void* ChannelArgs::GetVoidPointer(absl::string_view name) const {
   auto* v = Get(name);
   if (v == nullptr) return nullptr;
