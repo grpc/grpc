@@ -657,7 +657,8 @@ TEST_P(RingHashTest, ContinuesConnectingWithoutPicks) {
         if (!seen_port_ && port == port_) {
           gpr_log(GPR_INFO, "*** SEEN P0 CONNECTION ATTEMPT");
           queued_p0_attempt_ = absl::make_unique<QueuedAttempt>(
-              closure, ep, interested_parties, config, addr, deadline);
+              closure, ep, interested_parties,
+              TcpOptionsFromEndpointConfig(config), addr, deadline);
           seen_port_ = true;
           cond_.Signal();
           return;

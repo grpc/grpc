@@ -1508,6 +1508,7 @@ LIBGRPC_SRC = \
     src/core/lib/iomgr/tcp_client_cfstream.cc \
     src/core/lib/iomgr/tcp_client_posix.cc \
     src/core/lib/iomgr/tcp_client_windows.cc \
+    src/core/lib/iomgr/tcp_generic_options.cc \
     src/core/lib/iomgr/tcp_posix.cc \
     src/core/lib/iomgr/tcp_server.cc \
     src/core/lib/iomgr/tcp_server_posix.cc \
@@ -1975,6 +1976,7 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/lib/iomgr/tcp_client_cfstream.cc \
     src/core/lib/iomgr/tcp_client_posix.cc \
     src/core/lib/iomgr/tcp_client_windows.cc \
+    src/core/lib/iomgr/tcp_generic_options.cc \
     src/core/lib/iomgr/tcp_posix.cc \
     src/core/lib/iomgr/tcp_server.cc \
     src/core/lib/iomgr/tcp_server_posix.cc \

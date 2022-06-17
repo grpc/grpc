@@ -70,6 +70,7 @@
 #include "src/core/lib/iomgr/pollset_set.h"
 #include "src/core/lib/iomgr/resolve_address.h"
 #include "src/core/lib/iomgr/resolved_address.h"
+#include "src/core/lib/iomgr/tcp_generic_options.h"
 #include "src/core/lib/iomgr/tcp_server.h"
 #include "src/core/lib/iomgr/timer.h"
 #include "src/core/lib/iomgr/unix_sockets_posix.h"
@@ -1105,10 +1106,9 @@ void grpc_server_add_channel_from_fd(grpc_server* server, int fd,
   std::string name = absl::StrCat("fd:", fd);
   auto memory_quota =
       grpc_core::ResourceQuotaFromChannelArgs(server_args)->memory_quota();
-  grpc_endpoint* server_endpoint = grpc_tcp_create(
-      grpc_fd_create(fd, name.c_str(), true),
-      grpc_event_engine::experimental::ChannelArgsEndpointConfig(server_args),
-      name);
+  grpc_endpoint* server_endpoint =
+      grpc_tcp_create(grpc_fd_create(fd, name.c_str(), true),
+                      TcpOptionsFromChannelArgs(server_args), name);
   grpc_transport* transport = grpc_create_chttp2_transport(
       server_args, server_endpoint, false /* is_client */
   );

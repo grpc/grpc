@@ -791,7 +791,8 @@ TEST_F(ClientLbEnd2endTest,
           gpr_log(GPR_INFO, "*** INTERCEPTING CONNECTION ATTEMPT");
           GPR_ASSERT(queued_attempt_ == nullptr);
           queued_attempt_ = absl::make_unique<QueuedAttempt>(
-              closure, ep, interested_parties, config, addr, deadline);
+              closure, ep, interested_parties,
+              TcpOptionsFromEndpointConfig(config), addr, deadline);
           cv_->Signal();
           cv_ = nullptr;
           return;
@@ -923,7 +924,8 @@ TEST_F(
           if (port == hold->port()) {
             gpr_log(GPR_INFO, "*** INTERCEPTING CONNECTION ATTEMPT");
             hold->set_queued_attempt(absl::make_unique<QueuedAttempt>(
-                closure, ep, interested_parties, config, addr, deadline));
+                closure, ep, interested_parties,
+                TcpOptionsFromEndpointConfig(config), addr, deadline));
             holds_.erase(it);
             return;
           }
@@ -1779,7 +1781,8 @@ TEST_F(RoundRobinTest, DoesNotFailRpcsUponDisconnection) {
           closure = GRPC_CLOSURE_INIT(&closure_, OnComplete, this, nullptr);
           intercept_next_attempt_ = false;
           queued_attempt_ = absl::make_unique<QueuedAttempt>(
-              closure, ep, interested_parties, config, addr, deadline);
+              closure, ep, interested_parties,
+              TcpOptionsFromEndpointConfig(config), addr, deadline);
           start_cond_.Signal();
           return;
         }

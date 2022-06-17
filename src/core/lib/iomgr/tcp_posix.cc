@@ -39,7 +39,6 @@
 #include <algorithm>
 #include <unordered_map>
 
-#include <grpc/event_engine/endpoint_config.h>
 #include <grpc/slice.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
@@ -97,8 +96,6 @@ typedef size_t msg_iovlen_type;
 
 extern grpc_core::TraceFlag grpc_tcp_trace;
 
-using ::grpc_event_engine::experimental::EndpointConfig;
-
 namespace {
 int ClampInteger(int default_value, int min, int max, int value) {
   if (value < min || value > max) {
@@ -107,24 +104,24 @@ int ClampInteger(int default_value, int min, int max, int value) {
   return value;
 }
 
-void UpdateConfigIntegerValue(const EndpointConfig& config,
+void UpdateConfigIntegerValue(const grpc_tcp_generic_options& options,
                               absl::string_view key, int default_value, int min,
                               int max, int& update) {
-  auto value = config.Get(key);
-  if (!absl::holds_alternative<int>(value)) {
+  auto it = options.int_options.find(key);
+  if (it == options.int_options.end()) {
     // Dont update if the key is not present.
     return;
   }
-  update = ClampInteger(default_value, min, max, absl::get<int>(value));
+  update = ClampInteger(default_value, min, max, it->second);
 }
 
-bool GetConfigBoolValue(const EndpointConfig& config, absl::string_view key,
-                        bool default_value) {
-  auto value = config.Get(key);
-  if (!absl::holds_alternative<int>(value)) {
+bool GetConfigBoolValue(const grpc_tcp_generic_options& options,
+                        absl::string_view key, bool default_value) {
+  auto it = options.int_options.find(key);
+  if (it == options.int_options.end()) {
     return default_value;
   }
-  return absl::get<int>(value) != 0;
+  return it->second != 0;
 }
 }  // namespace
 
@@ -1730,7 +1727,8 @@ static const grpc_endpoint_vtable vtable = {tcp_read,
 
 #define MAX_CHUNK_SIZE (32 * 1024 * 1024)
 
-grpc_endpoint* grpc_tcp_create(grpc_fd* em_fd, const EndpointConfig& config,
+grpc_endpoint* grpc_tcp_create(grpc_fd* em_fd,
+                               const grpc_tcp_generic_options& options,
                                absl::string_view peer_string) {
   static constexpr bool kZerocpTxEnabledDefault = false;
   int tcp_read_chunk_size = GRPC_TCP_DEFAULT_READ_SLICE_SIZE;
@@ -1741,24 +1739,24 @@ grpc_endpoint* grpc_tcp_create(grpc_fd* em_fd, const EndpointConfig& config,
       grpc_core::TcpZerocopySendCtx::kDefaultSendBytesThreshold;
   int tcp_tx_zerocopy_max_simult_sends =
       grpc_core::TcpZerocopySendCtx::kDefaultMaxSends;
-  UpdateConfigIntegerValue(config, GRPC_ARG_TCP_READ_CHUNK_SIZE,
+  UpdateConfigIntegerValue(options, GRPC_ARG_TCP_READ_CHUNK_SIZE,
                            tcp_read_chunk_size, 1, MAX_CHUNK_SIZE,
                            tcp_read_chunk_size);
-  UpdateConfigIntegerValue(config, GRPC_ARG_TCP_MIN_READ_CHUNK_SIZE,
+  UpdateConfigIntegerValue(options, GRPC_ARG_TCP_MIN_READ_CHUNK_SIZE,
                            tcp_read_chunk_size, 1, MAX_CHUNK_SIZE,
                            tcp_min_read_chunk_size);
-  UpdateConfigIntegerValue(config, GRPC_ARG_TCP_MAX_READ_CHUNK_SIZE,
+  UpdateConfigIntegerValue(options, GRPC_ARG_TCP_MAX_READ_CHUNK_SIZE,
                            tcp_read_chunk_size, 1, MAX_CHUNK_SIZE,
                            tcp_max_read_chunk_size);
   UpdateConfigIntegerValue(
-      config, GRPC_ARG_TCP_TX_ZEROCOPY_SEND_BYTES_THRESHOLD,
+      options, GRPC_ARG_TCP_TX_ZEROCOPY_SEND_BYTES_THRESHOLD,
       grpc_core::TcpZerocopySendCtx::kDefaultSendBytesThreshold, 0, INT_MAX,
       tcp_tx_zerocopy_send_bytes_thresh);
-  UpdateConfigIntegerValue(config, GRPC_ARG_TCP_TX_ZEROCOPY_MAX_SIMULT_SENDS,
+  UpdateConfigIntegerValue(options, GRPC_ARG_TCP_TX_ZEROCOPY_MAX_SIMULT_SENDS,
                            grpc_core::TcpZerocopySendCtx::kDefaultMaxSends, 0,
                            INT_MAX, tcp_tx_zerocopy_max_simult_sends);
   tcp_tx_zerocopy_enabled = GetConfigBoolValue(
-      config, GRPC_ARG_TCP_TX_ZEROCOPY_ENABLED, kZerocpTxEnabledDefault);
+      options, GRPC_ARG_TCP_TX_ZEROCOPY_ENABLED, kZerocpTxEnabledDefault);
   if (tcp_min_read_chunk_size > tcp_max_read_chunk_size) {
     tcp_min_read_chunk_size = tcp_max_read_chunk_size;
   }
@@ -1770,9 +1768,9 @@ grpc_endpoint* grpc_tcp_create(grpc_fd* em_fd, const EndpointConfig& config,
   tcp->base.vtable = &vtable;
   tcp->peer_string = std::string(peer_string);
   tcp->fd = grpc_fd_wrapped_fd(em_fd);
-  tcp->memory_owner = grpc_core::ResourceQuotaFromEndpointConfig(config)
-                          ->memory_quota()
-                          ->CreateMemoryOwner(peer_string);
+  GPR_ASSERT(options.resource_quota != nullptr);
+  tcp->memory_owner =
+      options.resource_quota->memory_quota()->CreateMemoryOwner(peer_string);
   tcp->self_reservation = tcp->memory_owner.MakeReservation(sizeof(grpc_tcp));
   grpc_resolved_address resolved_local_addr;
   memset(&resolved_local_addr, 0, sizeof(resolved_local_addr));

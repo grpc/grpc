@@ -474,7 +474,8 @@ TEST_P(AggregateClusterTest, FallBackWithConnectivityChurn) {
               gpr_log(GPR_INFO,
                       "*** DELAYING CONNECTION ATTEMPT FOR P1 ENDPOINT");
               queued_p1_attempt_ = absl::make_unique<QueuedAttempt>(
-                  closure, ep, interested_parties, config, addr, deadline);
+                  closure, ep, interested_parties,
+                  TcpOptionsFromEndpointConfig(config), addr, deadline);
               state_ = kDone;
               return;
             }

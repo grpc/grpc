@@ -179,14 +179,14 @@ grpc_error_handle grpc_tcp_server_prepare_socket(
     err = grpc_set_socket_reuse_addr(fd, 1);
     if (!GRPC_ERROR_IS_NONE(err)) goto error;
     err =
-        grpc_set_socket_tcp_user_timeout(fd, s->config, false /* is_client */);
+        grpc_set_socket_tcp_user_timeout(fd, s->options, false /* is_client */);
     if (!GRPC_ERROR_IS_NONE(err)) goto error;
   }
   err = grpc_set_socket_no_sigpipe_if_possible(fd);
   if (!GRPC_ERROR_IS_NONE(err)) goto error;
 
   err = grpc_apply_socket_mutator_in_args(fd, GRPC_FD_SERVER_LISTENER_USAGE,
-                                          s->config);
+                                          s->options);
   if (!GRPC_ERROR_IS_NONE(err)) goto error;
 
   if (bind(fd, reinterpret_cast<grpc_sockaddr*>(const_cast<char*>(addr->addr)),

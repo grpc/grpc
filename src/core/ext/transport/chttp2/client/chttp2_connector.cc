@@ -55,6 +55,7 @@
 #include "src/core/lib/iomgr/endpoint.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/resolved_address.h"
+#include "src/core/lib/iomgr/tcp_generic_options.h"
 #include "src/core/lib/resolver/resolver_registry.h"
 #include "src/core/lib/security/credentials/credentials.h"
 #include "src/core/lib/security/credentials/insecure/insecure_credentials.h"
@@ -429,8 +430,7 @@ grpc_channel* grpc_channel_create_from_fd(const char* target, int fd,
   int flags = fcntl(fd, F_GETFL, 0);
   GPR_ASSERT(fcntl(fd, F_SETFL, flags | O_NONBLOCK) == 0);
   grpc_endpoint* client = grpc_tcp_client_create_from_fd(
-      grpc_fd_create(fd, "client", true),
-      grpc_event_engine::experimental::ChannelArgsEndpointConfig(final_args),
+      grpc_fd_create(fd, "client", true), TcpOptionsFromChannelArgs(final_args),
       "fd-client");
   grpc_transport* transport =
       grpc_create_chttp2_transport(final_args, client, true);

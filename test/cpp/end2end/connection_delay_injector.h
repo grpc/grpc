@@ -17,8 +17,10 @@
 
 #include <memory>
 
+#include "src/core/lib/event_engine/channel_args_endpoint_config.h"
 #include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/iomgr/tcp_client.h"
+#include "src/core/lib/iomgr/tcp_generic_options.h"
 #include "src/core/lib/iomgr/timer.h"
 
 namespace grpc {
@@ -66,13 +68,13 @@ class ConnectionAttemptInjector {
    public:
     QueuedAttempt(grpc_closure* closure, grpc_endpoint** ep,
                   grpc_pollset_set* interested_parties,
-                  const grpc_event_engine::experimental::EndpointConfig& config,
+                  const grpc_tcp_generic_options& options,
                   const grpc_resolved_address* addr,
                   grpc_core::Timestamp deadline)
         : closure_(closure),
           endpoint_(ep),
           interested_parties_(interested_parties),
-          config_(config),
+          options_(options),
           deadline_(deadline) {
       memcpy(&address_, addr, sizeof(address_));
     }
@@ -82,8 +84,11 @@ class ConnectionAttemptInjector {
     // Caller must invoke this from a thread with an ExecCtx.
     void Resume() {
       GPR_ASSERT(closure_ != nullptr);
-      AttemptConnection(closure_, endpoint_, interested_parties_, config_,
-                        &address_, deadline_);
+      AttemptConnection(
+          closure_, endpoint_, interested_parties_,
+          grpc_event_engine::experimental::ChannelArgsEndpointConfig(
+              TcpOptionsIntoChannelArgs(options_)),
+          &address_, deadline_);
       closure_ = nullptr;
     }
 
@@ -98,7 +103,7 @@ class ConnectionAttemptInjector {
     grpc_closure* closure_;
     grpc_endpoint** endpoint_;
     grpc_pollset_set* interested_parties_;
-    grpc_event_engine::experimental::EndpointConfig config_;
+    grpc_tcp_generic_options options_;
     grpc_resolved_address address_;
     grpc_core::Timestamp deadline_;
   };

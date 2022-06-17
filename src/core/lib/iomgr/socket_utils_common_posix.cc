@@ -52,8 +52,6 @@
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/iomgr/sockaddr.h"
 
-using ::grpc_event_engine::experimental::EndpointConfig;
-
 namespace {
 int ClampInteger(int default_value, int min, int max, int value) {
   if (value < min || value > max) {
@@ -62,13 +60,14 @@ int ClampInteger(int default_value, int min, int max, int value) {
   return value;
 }
 
-int GetConfigIntegerValue(const EndpointConfig& config, absl::string_view key,
-                          int default_value, int min, int max) {
-  auto value = config.Get(key);
-  if (!absl::holds_alternative<int>(value)) {
+int GetConfigIntegerValue(const grpc_tcp_generic_options& options,
+                          absl::string_view key, int default_value, int min,
+                          int max) {
+  auto it = options.int_options.find(key);
+  if (it == options.int_options.end()) {
     return default_value;
   }
-  return ClampInteger(default_value, min, max, absl::get<int>(value));
+  return ClampInteger(default_value, min, max, it->second);
 }
 }  // namespace
 
@@ -317,9 +316,8 @@ void config_default_tcp_user_timeout(bool enable, int timeout, bool is_client) {
 }
 
 /* Set TCP_USER_TIMEOUT */
-grpc_error_handle grpc_set_socket_tcp_user_timeout(int fd,
-                                                   const EndpointConfig& config,
-                                                   bool is_client) {
+grpc_error_handle grpc_set_socket_tcp_user_timeout(
+    int fd, const grpc_tcp_generic_options& options, bool is_client) {
   // Use conditionally-important parameter to avoid warning
   (void)fd;
   (void)is_client;
@@ -334,12 +332,12 @@ grpc_error_handle grpc_set_socket_tcp_user_timeout(int fd,
       enable = g_default_server_tcp_user_timeout_enabled;
       timeout = g_default_server_tcp_user_timeout_ms;
     }
-    int value = GetConfigIntegerValue(config, GRPC_ARG_KEEPALIVE_TIME_MS, 0, 1,
+    int value = GetConfigIntegerValue(options, GRPC_ARG_KEEPALIVE_TIME_MS, 0, 1,
                                       INT_MAX);
     if (value > 0) {
       enable = value != INT_MAX;
     }
-    value = GetConfigIntegerValue(config, GRPC_ARG_KEEPALIVE_TIMEOUT_MS, 0, 1,
+    value = GetConfigIntegerValue(options, GRPC_ARG_KEEPALIVE_TIMEOUT_MS, 0, 1,
                                   INT_MAX);
     if (value > 0) {
       timeout = value;
@@ -404,16 +402,11 @@ grpc_error_handle grpc_set_socket_with_mutator(int fd, grpc_fd_usage usage,
 }
 
 grpc_error_handle grpc_apply_socket_mutator_in_args(
-    int fd, grpc_fd_usage usage, const EndpointConfig& config) {
-  grpc_socket_mutator* mutator = nullptr;
-  auto value = config.Get(GRPC_ARG_SOCKET_MUTATOR);
-  if (absl::holds_alternative<void*>(value)) {
-    mutator = static_cast<grpc_socket_mutator*>(absl::get<void*>(value));
-  }
-  if (mutator == nullptr) {
+    int fd, grpc_fd_usage usage, const grpc_tcp_generic_options& options) {
+  if (options.socket_mutator == nullptr) {
     return GRPC_ERROR_NONE;
   }
-  return grpc_set_socket_with_mutator(fd, usage, mutator);
+  return grpc_set_socket_with_mutator(fd, usage, options.socket_mutator);
 }
 
 static gpr_once g_probe_ipv6_once = GPR_ONCE_INIT;

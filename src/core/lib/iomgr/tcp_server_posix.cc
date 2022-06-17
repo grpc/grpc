@@ -43,6 +43,7 @@
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
 
+#include <grpc/event_engine/endpoint_config.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/sync.h>
@@ -101,10 +102,10 @@ static grpc_error_handle tcp_server_create(grpc_closure* shutdown_complete,
   s->head = nullptr;
   s->tail = nullptr;
   s->nports = 0;
-  s->config = config;
+  s->options = TcpOptionsFromEndpointConfig(config);
   s->fd_handler = nullptr;
-  s->memory_quota =
-      grpc_core::ResourceQuotaFromEndpointConfig(s->config)->memory_quota();
+  GPR_ASSERT(s->options.resource_quota != nullptr);
+  s->memory_quota = s->options.resource_quota->memory_quota();
   gpr_atm_no_barrier_store(&s->next_pollset_to_assign, 0);
   *server = s;
   return GRPC_ERROR_NONE;
@@ -249,7 +250,7 @@ static void on_read(void* arg, grpc_error_handle err) {
     (void)grpc_set_socket_no_sigpipe_if_possible(fd);
 
     err = grpc_apply_socket_mutator_in_args(fd, GRPC_FD_SERVER_CONNECTION_USAGE,
-                                            sp->server->config);
+                                            sp->server->options);
     if (!GRPC_ERROR_IS_NONE(err)) {
       goto error;
     }
@@ -284,7 +285,7 @@ static void on_read(void* arg, grpc_error_handle err) {
     acceptor->external_connection = false;
     sp->server->on_accept_cb(
         sp->server->on_accept_cb_arg,
-        grpc_tcp_create(fdobj, sp->server->config, addr_uri.value()),
+        grpc_tcp_create(fdobj, sp->server->options, addr_uri.value()),
         read_notifier_pollset, acceptor);
   }
 
@@ -636,7 +637,7 @@ class ExternalConnectionHandler : public grpc_core::TcpServerFdHandler {
     acceptor->listener_fd = listener_fd;
     acceptor->pending_data = buf;
     s_->on_accept_cb(s_->on_accept_cb_arg,
-                     grpc_tcp_create(fdobj, s_->config, addr_uri.value()),
+                     grpc_tcp_create(fdobj, s_->options, addr_uri.value()),
                      read_notifier_pollset, acceptor);
   }
 

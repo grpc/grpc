@@ -31,12 +31,12 @@
 #include <grpc/support/log_windows.h>
 
 #include "src/core/lib/address_utils/sockaddr_utils.h"
-#include "src/core/lib/event_engine/channel_args_endpoint_config.h"
 #include "src/core/lib/iomgr/iocp_windows.h"
 #include "src/core/lib/iomgr/sockaddr.h"
 #include "src/core/lib/iomgr/sockaddr_windows.h"
 #include "src/core/lib/iomgr/socket_windows.h"
 #include "src/core/lib/iomgr/tcp_client.h"
+#include "src/core/lib/iomgr/tcp_generic_options.h"
 #include "src/core/lib/iomgr/tcp_windows.h"
 #include "src/core/lib/iomgr/timer.h"
 #include "src/core/lib/resource_quota/api.h"
@@ -54,7 +54,7 @@ struct async_connect {
   int refs;
   grpc_closure on_connect;
   grpc_endpoint** endpoint;
-  EndpointConfig config;
+  grpc_tcp_generic_options options;
 };
 
 static void async_connect_unlock_and_cleanup(async_connect* ac,
@@ -108,7 +108,7 @@ static void on_connect(void* acp, grpc_error_handle error) {
         error = GRPC_WSA_ERROR(WSAGetLastError(), "ConnectEx");
         closesocket(socket->socket);
       } else {
-        *ep = grpc_tcp_create(socket, ac->config, ac->addr_name);
+        *ep = grpc_tcp_create(socket, ac->options, ac->addr_name);
         socket = nullptr;
       }
     } else {
@@ -211,7 +211,7 @@ static int64_t tcp_connect(grpc_closure* on_done, grpc_endpoint** endpoint,
   ac->refs = 2;
   ac->addr_name = addr_uri.value();
   ac->endpoint = endpoint;
-  ac->config = config;
+  ac->options = TcpOptionsFromEndpointConfig(config);
   GRPC_CLOSURE_INIT(&ac->on_connect, on_connect, ac, grpc_schedule_on_exec_ctx);
 
   GRPC_CLOSURE_INIT(&ac->on_alarm, on_alarm, ac, grpc_schedule_on_exec_ctx);

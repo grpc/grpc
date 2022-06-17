@@ -38,12 +38,12 @@
 #include <grpc/support/time.h>
 
 #include "src/core/lib/address_utils/sockaddr_utils.h"
-#include "src/core/lib/event_engine/channel_args_endpoint_config.h"
 #include "src/core/lib/iomgr/iocp_windows.h"
 #include "src/core/lib/iomgr/pollset_windows.h"
 #include "src/core/lib/iomgr/resolve_address.h"
 #include "src/core/lib/iomgr/sockaddr.h"
 #include "src/core/lib/iomgr/socket_windows.h"
+#include "src/core/lib/iomgr/tcp_generic_options.h"
 #include "src/core/lib/iomgr/tcp_server.h"
 #include "src/core/lib/iomgr/tcp_windows.h"
 #include "src/core/lib/resource_quota/api.h"
@@ -99,7 +99,7 @@ struct grpc_tcp_server {
   /* shutdown callback */
   grpc_closure* shutdown_complete;
 
-  EndpointConfig config;
+  grpc_tcp_generic_options options;
 };
 
 /* Public function. Allocates the proper data structures to hold a
@@ -108,7 +108,7 @@ static grpc_error_handle tcp_server_create(grpc_closure* shutdown_complete,
                                            const EndpointConfig& config,
                                            grpc_tcp_server** server) {
   grpc_tcp_server* s = (grpc_tcp_server*)gpr_malloc(sizeof(grpc_tcp_server));
-  s->config = config;
+  s->options = TcpOptionsFromEndpointConfig(config);
   gpr_ref_init(&s->refs, 1);
   gpr_mu_init(&s->mu);
   s->active_ports = 0;
@@ -366,7 +366,7 @@ static void on_accept(void* arg, grpc_error_handle error) {
       }
       std::string fd_name = absl::StrCat("tcp_server:", peer_name_string);
       ep = grpc_tcp_create(grpc_winsocket_create(sock, fd_name.c_str()),
-                           sp->server->config, peer_name_string);
+                           sp->server->options, peer_name_string);
     } else {
       closesocket(sock);
     }

@@ -28,18 +28,18 @@
 /* Create an endpoint from a connected grpc_fd.
 
    fd: a connected FD. Ownership is taken.
-   config: may contain custom settings for the endpoint
+   options: may contain custom settings for the endpoint
    addr_str: destination address in printable format
    slice_allocator: ownership is taken by client.
    Returns: a new endpoint
 */
 grpc_endpoint* grpc_tcp_client_create_from_fd(
-    grpc_fd* fd, const grpc_event_engine::experimental::EndpointConfig& config,
+    grpc_fd* fd, const grpc_tcp_generic_options& options,
     absl::string_view addr_str);
 
 /* Return a configured, unbound, unconnected TCP client fd.
 
-   config: may contain custom settings for the fd
+   options: may contain custom settings for the fd
    addr: the destination address
    mapped_addr: out parameter. addr mapped to an address appropriate to the
      type of socket FD created. For example, if addr is IPv4 and dual stack
@@ -48,9 +48,8 @@ grpc_endpoint* grpc_tcp_client_create_from_fd(
    Returns: error, if any. Out parameters are not set on error
 */
 grpc_error_handle grpc_tcp_client_prepare_fd(
-    const grpc_event_engine::experimental::EndpointConfig& config,
-    const grpc_resolved_address* addr, grpc_resolved_address* mapped_addr,
-    int* fd);
+    const grpc_tcp_generic_options& options, const grpc_resolved_address* addr,
+    grpc_resolved_address* mapped_addr, int* fd);
 
 /* Connect a configured TCP client fd.
 
@@ -58,14 +57,13 @@ grpc_error_handle grpc_tcp_client_prepare_fd(
      connection being established (in order to continue their work
    closure: called when complete. On success, *ep will be set.
    fd: an FD returned from grpc_tcp_client_prepare_fd().
-   config: may contain custom settings for the endpoint
+   options: may contain custom settings for the endpoint
    deadline: connection deadline
    ep: out parameter. Set before closure is called if successful
 */
 void grpc_tcp_client_create_from_prepared_fd(
     grpc_pollset_set* interested_parties, grpc_closure* closure, const int fd,
-    const grpc_event_engine::experimental::EndpointConfig& config,
-    const grpc_resolved_address* addr, grpc_core::Timestamp deadline,
-    grpc_endpoint** ep);
+    const grpc_tcp_generic_options& options, const grpc_resolved_address* addr,
+    grpc_core::Timestamp deadline, grpc_endpoint** ep);
 
 #endif /* GRPC_CORE_LIB_IOMGR_TCP_CLIENT_POSIX_H */

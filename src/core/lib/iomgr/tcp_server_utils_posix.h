@@ -21,11 +21,10 @@
 
 #include <grpc/support/port_platform.h>
 
-#include <grpc/event_engine/endpoint_config.h>
-
 #include "src/core/lib/iomgr/ev_posix.h"
 #include "src/core/lib/iomgr/resolve_address.h"
 #include "src/core/lib/iomgr/socket_utils_posix.h"
+#include "src/core/lib/iomgr/tcp_generic_options.h"
 #include "src/core/lib/iomgr/tcp_server.h"
 #include "src/core/lib/resource_quota/memory_quota.h"
 
@@ -93,7 +92,7 @@ struct grpc_tcp_server {
   gpr_atm next_pollset_to_assign = 0;
 
   /* Contains config extracted from channel args for this server */
-  grpc_event_engine::experimental::EndpointConfig config;
+  grpc_tcp_generic_options options;
 
   /* a handler for external connections, owned */
   grpc_core::TcpServerFdHandler* fd_handler = nullptr;

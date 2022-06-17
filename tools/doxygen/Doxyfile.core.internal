@@ -1939,6 +1939,8 @@ src/core/lib/iomgr/tcp_client_cfstream.cc \
 src/core/lib/iomgr/tcp_client_posix.cc \
 src/core/lib/iomgr/tcp_client_posix.h \
 src/core/lib/iomgr/tcp_client_windows.cc \
+src/core/lib/iomgr/tcp_generic_options.cc \
+src/core/lib/iomgr/tcp_generic_options.h \
 src/core/lib/iomgr/tcp_posix.cc \
 src/core/lib/iomgr/tcp_posix.h \
 src/core/lib/iomgr/tcp_server.cc \

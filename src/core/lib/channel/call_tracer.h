@@ -52,9 +52,9 @@ class CallTracer {
     virtual void RecordSendInitialMetadata(
         grpc_metadata_batch* send_initial_metadata, uint32_t flags) = 0;
     // TODO(yashkt): We are using gpr_atm here instead of absl::string_view
-    // since that's what the transport API uses, and performing an atomic load
-    // is unnecessary if the census tracer does not need it at present. Fix this
-    // when the transport API changes.
+    // since that's what the transport API uses, and performing an atomic
+    // load is unnecessary if the census tracer does not need it at present.
+    // Fix this when the transport API changes.
     virtual void RecordOnDoneSendInitialMetadata(gpr_atm* peer_string) = 0;
     virtual void RecordSendTrailingMetadata(
         grpc_metadata_batch* send_trailing_metadata) = 0;
