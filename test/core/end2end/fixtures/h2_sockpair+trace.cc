@@ -17,17 +17,12 @@
  */
 
 #include <string.h>
-#include <unistd.h>
-
-#include <grpc/grpc.h>
-#include <grpc/status.h>
-#ifdef GRPC_POSIX_SOCKET
-#include <unistd.h>
-#endif
 
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 
+#include <grpc/grpc.h>
+#include <grpc/status.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 
@@ -52,6 +47,10 @@
 #include "src/core/lib/transport/transport_fwd.h"
 #include "test/core/end2end/end2end_tests.h"
 #include "test/core/util/test_config.h"
+
+#ifdef GRPC_POSIX_SOCKET
+#include <unistd.h>
+#endif
 
 /* chttp2 transport that is immediately available (used for testing
    connected_channel without a client_channel */
