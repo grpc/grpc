@@ -48,6 +48,7 @@ export ENABLED_MODULES='
   src/cpp
   test/core/end2end
   test/core/promise
+  test/core/uri
 '
 
 export DISABLED_MODULES='

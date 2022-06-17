@@ -65,6 +65,8 @@ class TestConfig:
         """
         if self.version == 'master' or self.version is None:
             return True
+        if another == 'master':
+            return False
         return self._parse_version(self.version) >= self._parse_version(another)
 
     def version_lt(self, another: str) -> bool:
@@ -77,6 +79,8 @@ class TestConfig:
         """
         if self.version == 'master' or self.version is None:
             return False
+        if another == 'master':
+            return True
         return self._parse_version(self.version) < self._parse_version(another)
 
     def __str__(self):
