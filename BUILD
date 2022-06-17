@@ -3631,6 +3631,7 @@ grpc_cc_library(
     deps = [
         "config",
         "debug_location",
+        "default_event_engine_factory_hdrs",
         "dual_ref_counted",
         "gpr_base",
         "gpr_codegen",
@@ -3642,7 +3643,6 @@ grpc_cc_library(
         "grpc_security_base",
         "grpc_service_config_impl",
         "grpc_trace",
-        "iomgr_timer",
         "json",
         "json_util",
         "orphanable",
