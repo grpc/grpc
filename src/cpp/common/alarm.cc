@@ -35,7 +35,7 @@
 
 #include "src/core/lib/event_engine/event_engine_factory.h"
 #include "src/core/lib/gprpp/sync.h"
-#include "src/core/lib/gprpp/time_util.h"
+#include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/surface/completion_queue.h"
