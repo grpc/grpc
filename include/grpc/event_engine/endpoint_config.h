@@ -34,9 +34,6 @@ class EndpointConfig {
   EndpointConfig();
   EndpointConfig(std::shared_ptr<OptionsAccessor> impl);
   ~EndpointConfig();
-  // Assignment Operator and Copy Constructor
-  EndpointConfig(const EndpointConfig& other);
-  EndpointConfig& operator=(EndpointConfig other);
   using Setting =
       absl::variant<absl::monostate, int, absl::string_view, bool, void*>;
   /// Returns the Setting for a specified key, or \a absl::monostate if there is

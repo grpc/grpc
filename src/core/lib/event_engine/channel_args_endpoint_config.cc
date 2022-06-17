@@ -42,15 +42,6 @@ EndpointConfig::Setting EndpointConfig::Get(absl::string_view key) const {
   return impl_->Get(key);
 }
 
-EndpointConfig::EndpointConfig(const EndpointConfig& other) {
-  impl_ = other.impl_;
-}
-
-EndpointConfig& EndpointConfig::operator=(EndpointConfig other) {
-  impl_ = other.impl_;
-  return *this;
-}
-
 EndpointConfig ChannelArgsEndpointConfig(const grpc_core::ChannelArgs& args) {
   return EndpointConfig(
       std::make_shared<EndpointConfig::OptionsAccessor>(args));

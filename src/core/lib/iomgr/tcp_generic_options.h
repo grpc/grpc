@@ -38,7 +38,8 @@ typedef struct grpc_tcp_generic_options {
     }
     resource_quota = other.resource_quota;
   }
-  grpc_tcp_generic_options& operator=(struct grpc_tcp_generic_options other) {
+  grpc_tcp_generic_options& operator=(
+      const struct grpc_tcp_generic_options& other) {
     if (other.socket_mutator != nullptr) {
       socket_mutator = grpc_socket_mutator_ref(other.socket_mutator);
     }
@@ -57,15 +58,22 @@ typedef struct grpc_tcp_generic_options {
   }
 } grpc_tcp_generic_options;
 
+// Given an EndpointConfig object, returns a grpc_tcp_generic_options struct
+// constructed from it
 grpc_tcp_generic_options TcpOptionsFromEndpointConfig(
     const grpc_event_engine::experimental::EndpointConfig& config);
 
+// Given an grpc_core::ChannelArgs object, returns a grpc_tcp_generic_options
+// struct constructed from it
 grpc_tcp_generic_options TcpOptionsFromChannelArgs(
     const grpc_core::ChannelArgs& args);
 
+// Given an grpc_channel_args pointer, returns a grpc_tcp_generic_options
+// struct constructed from it
 grpc_tcp_generic_options TcpOptionsFromChannelArgs(
     const grpc_channel_args* args);
 
+/* For use in tests only */
 grpc_core::ChannelArgs TcpOptionsIntoChannelArgs(
     const grpc_tcp_generic_options& options);
 
