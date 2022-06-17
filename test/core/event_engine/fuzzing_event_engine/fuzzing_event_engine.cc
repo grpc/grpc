@@ -52,6 +52,10 @@ void FuzzingEventEngine::Restart(const fuzzing_event_engine::Actions& actions) {
   tasks_by_time_.clear();
   next_task_id_ = 1;
   current_tick_ = 0;
+  // Start at 5 seconds after the epoch.
+  // This needs to be more than 1, and otherwise is kind of arbitrary.
+  // The grpc_core::Timer code special cases the zero second time period after
+  // epoch to allow for some fancy atomic stuff.
   now_ = Time() + std::chrono::seconds(5);
 
   // Whilst a fuzzing event engine is active we override grpc's now function.
