@@ -74,6 +74,11 @@ class BootstrapGeneratorClientTest(
 
     @classmethod
     def tearDownClass(cls):
+        # Remove backends from the Backend Service before closing the server
+        # runner.
+        neg_name, neg_zones = cls.server_runner.k8s_namespace.get_service_neg(
+            cls.server_runner.service_name, cls.server_port)
+        cls.td.backend_service_remove_neg_backends(neg_name, neg_zones)
         cls.server_runner.cleanup(force=cls.force_cleanup)
         super().tearDownClass()
 
