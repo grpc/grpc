@@ -4294,6 +4294,7 @@ grpc_cc_library(
         "channel_args",
         "closure",
         "debug_location",
+        "default_event_engine_factory_hdrs",
         "error",
         "exec_ctx",
         "gpr_base",
