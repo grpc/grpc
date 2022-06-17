@@ -1011,7 +1011,7 @@ static bool inner_maybe_resolve_localhost_manually_locked(
     ipv6_loopback_addr.sin6_family = AF_INET6;
     ipv6_loopback_addr.sin6_port = numeric_port;
     (*addrs)->emplace_back(&ipv6_loopback_addr, sizeof(ipv6_loopback_addr),
-                           nullptr /* args */);
+                           grpc_core::ChannelArgs() /* args */);
     // Append the ipv4 loopback address.
     struct sockaddr_in ipv4_loopback_addr;
     memset(&ipv4_loopback_addr, 0, sizeof(ipv4_loopback_addr));
@@ -1020,7 +1020,7 @@ static bool inner_maybe_resolve_localhost_manually_locked(
     ipv4_loopback_addr.sin_family = AF_INET;
     ipv4_loopback_addr.sin_port = numeric_port;
     (*addrs)->emplace_back(&ipv4_loopback_addr, sizeof(ipv4_loopback_addr),
-                           nullptr /* args */);
+                           grpc_core::ChannelArgs() /* args */);
     // Let the address sorter figure out which one should be tried first.
     grpc_cares_wrapper_address_sorting_sort(r, addrs->get());
     return true;
