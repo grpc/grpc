@@ -66,9 +66,10 @@ class AlarmImpl : public grpc::internal::CompletionQueueTag {
     tag_ = tag;
     GPR_ASSERT(grpc_cq_begin_op(cq_, this));
     Ref();
-    cq_timer_handle_ =
-        GetDefaultEventEngine()->RunAt(grpc_core::ToAbslTime(deadline),
-                                       [this] { OnCQAlarm(GRPC_ERROR_NONE); });
+    cq_timer_handle_ = GetDefaultEventEngine()->RunAfter(
+        grpc_core::Timestamp::FromTimespecRoundUp(deadline) -
+            grpc_core::ExecCtx::Get()->Now(),
+        [this] { OnCQAlarm(GRPC_ERROR_NONE); });
   }
   void Set(gpr_timespec deadline, std::function<void(bool)> f) {
     grpc_core::MutexLock lock(&mu_);
@@ -78,8 +79,10 @@ class AlarmImpl : public grpc::internal::CompletionQueueTag {
     // Don't use any CQ at all. Instead just use the timer to fire the function
     callback_ = std::move(f);
     Ref();
-    callback_timer_handle_ = GetDefaultEventEngine()->RunAt(
-        grpc_core::ToAbslTime(deadline), [this] { OnCallbackAlarm(true); });
+    callback_timer_handle_ = GetDefaultEventEngine()->RunAfter(
+        grpc_core::Timestamp::FromTimespecRoundUp(deadline) -
+            grpc_core::ExecCtx::Get()->Now(),
+        [this] { OnCallbackAlarm(true); });
   }
   void Cancel() {
     grpc_core::ExecCtx exec_ctx;
