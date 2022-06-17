@@ -7165,6 +7165,7 @@ targets:
   - src/core/lib/slice/slice_string_helpers.cc
   - test/core/resource_quota/periodic_update_test.cc
   deps:
+  - absl/status:statusor
   - gpr
   - upb
   uses_polling: false
@@ -8252,6 +8253,7 @@ targets:
   - absl/memory:memory
   - absl/random:random
   - absl/status:status
+  - absl/status:statusor
   - absl/strings:cord
   - absl/strings:str_format
   - absl/strings:strings
