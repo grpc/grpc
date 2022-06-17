@@ -769,16 +769,11 @@ OutlierDetectionLb::EjectionTimer::EjectionTimer(
 }
 
 void OutlierDetectionLb::EjectionTimer::Orphan() {
-  if (timer_handle_.has_value() &&
-      GetDefaultEventEngine()->Cancel(*timer_handle_)) {
-    timer_handle_.reset();
-  }
+  GetDefaultEventEngine()->Cancel(*timer_handle_);
   Unref();
 }
 
 void OutlierDetectionLb::EjectionTimer::OnTimerLocked() {
-  GPR_ASSERT(timer_handle_.has_value());
-  timer_handle_.reset();
   std::map<SubchannelState*, double> success_rate_ejection_candidates;
   std::map<SubchannelState*, double> failure_percentage_ejection_candidates;
   size_t ejected_host_count = 0;
