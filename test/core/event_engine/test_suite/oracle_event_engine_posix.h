@@ -23,6 +23,7 @@
 
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
+#include "absl/time/time.h"
 
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/event_engine/slice_buffer.h>
@@ -158,7 +159,7 @@ class PosixOracleEventEngine final : public EventEngine {
                            const ResolvedAddress& addr,
                            const EndpointConfig& args,
                            MemoryAllocator memory_allocator,
-                           absl::Time deadline) override;
+                           EventEngine::Duration timeout) override;
 
   bool CancelConnect(ConnectionHandle /*handle*/) override {
     GPR_ASSERT(false && "unimplemented");
@@ -174,11 +175,12 @@ class PosixOracleEventEngine final : public EventEngine {
   void Run(std::function<void()> /*closure*/) override {
     GPR_ASSERT(false && "unimplemented");
   }
-  TaskHandle RunAt(absl::Time /*when*/, Closure* /*closure*/) override {
+  TaskHandle RunAfter(EventEngine::Duration /*duration*/,
+                      Closure* /*closure*/) override {
     GPR_ASSERT(false && "unimplemented");
   }
-  TaskHandle RunAt(absl::Time /*when*/,
-                   std::function<void()> /*closure*/) override {
+  TaskHandle RunAfter(EventEngine::Duration /*duration*/,
+                      std::function<void()> /*closure*/) override {
     GPR_ASSERT(false && "unimplemented");
   }
   bool Cancel(TaskHandle /*handle*/) override {

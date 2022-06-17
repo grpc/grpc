@@ -421,8 +421,9 @@ absl::StatusOr<int> PosixOracleListener::Bind(
 EventEngine::ConnectionHandle PosixOracleEventEngine::Connect(
     OnConnectCallback on_connect, const ResolvedAddress& addr,
     const EndpointConfig& /*args*/, MemoryAllocator /*memory_allocator*/,
-    absl::Time deadline) {
+    EventEngine::Duration timeout) {
   int client_sock_fd;
+  absl::Time deadline = absl::Now() + absl::FromChrono(timeout);
   grpc_resolved_address address = CreateGRPCResolvedAddress(addr);
   const char* scheme = grpc_sockaddr_get_uri_scheme(&address);
   if (scheme == nullptr || strcmp(scheme, "ipv6") != 0) {

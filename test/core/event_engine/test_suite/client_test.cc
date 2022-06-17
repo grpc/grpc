@@ -19,7 +19,6 @@
 
 #include "absl/status/status.h"
 #include "absl/strings/str_cat.h"
-#include "absl/time/time.h"
 
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/event_engine/memory_allocator.h>
@@ -44,6 +43,7 @@ using ::grpc_event_engine::experimental::Promise;
 using ::grpc_event_engine::experimental::URIToResolvedAddress;
 using Endpoint = ::grpc_event_engine::experimental::EventEngine::Endpoint;
 using Listener = ::grpc_event_engine::experimental::EventEngine::Listener;
+using namespace std::chrono_literals;
 
 constexpr int kMinMessageSize = 1024;
 constexpr int kMaxMessageSize = 4096;
@@ -93,7 +93,7 @@ TEST_F(EventEngineClientTest, ConnectToNonExistentListenerTest) {
       },
       URIToResolvedAddress("ipv6:[::1]:7000"),
       ChannelArgsEndpointConfig(nullptr),
-      memory_quota->CreateMemoryAllocator("conn-1"), absl::InfiniteFuture());
+      memory_quota->CreateMemoryAllocator("conn-1"), 24h);
 
   auto client_endpoint = std::move(client_endpoint_promise.Get());
   EXPECT_EQ(client_endpoint, nullptr);
@@ -142,7 +142,7 @@ TEST_F(EventEngineClientTest, ConnectExchangeBidiDataTransferTest) {
         }
       },
       URIToResolvedAddress(target_addr), ChannelArgsEndpointConfig(nullptr),
-      memory_quota->CreateMemoryAllocator("conn-1"), absl::InfiniteFuture());
+      memory_quota->CreateMemoryAllocator("conn-1"), 24h);
 
   auto client_endpoint = std::move(client_endpoint_promise.Get());
   auto server_endpoint = std::move(server_endpoint_promise.Get());
@@ -221,7 +221,7 @@ TEST_F(EventEngineClientTest, MultipleIPv6ConnectionsToOneOracleListenerTest) {
         ChannelArgsEndpointConfig(nullptr),
         memory_quota->CreateMemoryAllocator(
             absl::StrCat("conn-", std::to_string(i))),
-        absl::InfiniteFuture());
+        24h);
 
     auto client_endpoint = std::move(client_endpoint_promise.Get());
     auto server_endpoint = std::move(server_endpoint_promise.Get());

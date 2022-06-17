@@ -78,7 +78,7 @@ class ConnectionManager {
   // encountered.
   absl::StatusOr<std::tuple<std::unique_ptr<EventEngine::Endpoint>,
                             std::unique_ptr<EventEngine::Endpoint>>>
-  CreateConnection(std::string target_addr, absl::Time deadline,
+  CreateConnection(std::string target_addr, EventEngine::Duration timeout,
                    bool client_type_oracle);
 
  private:

@@ -167,7 +167,7 @@ absl::Status ConnectionManager::BindAndStartListener(
 
 absl::StatusOr<std::tuple<std::unique_ptr<Endpoint>, std::unique_ptr<Endpoint>>>
 ConnectionManager::CreateConnection(std::string target_addr,
-                                    absl::Time deadline,
+                                    EventEngine::Duration timeout,
                                     bool client_type_oracle) {
   // Only allow one CreateConnection call to proceed at a time.
   grpc_core::MutexLock lock(&mu_);
@@ -186,7 +186,7 @@ ConnectionManager::CreateConnection(std::string target_addr,
         }
       },
       URIToResolvedAddress(target_addr), ChannelArgsEndpointConfig(nullptr),
-      memory_quota_->CreateMemoryAllocator(conn_name), deadline);
+      memory_quota_->CreateMemoryAllocator(conn_name), timeout);
 
   auto client_endpoint = last_in_progress_connection_.GetClientEndpoint();
   if (client_endpoint != nullptr &&
