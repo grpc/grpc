@@ -1412,6 +1412,7 @@ void RlsLb::Cache::Shutdown() {
       gpr_log(GPR_INFO, "[rlslb %p] cache cleanup timer canceled", lb_policy_);
     }
     cleanup_timer_handle_.reset();
+    lb_policy_->Unref(DEBUG_LOCATION, "Shutdown");
   }
 }
 
