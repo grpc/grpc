@@ -167,7 +167,7 @@ class TransportFlowControl final {
     IncomingUpdateContext(const IncomingUpdateContext&) = delete;
     IncomingUpdateContext& operator=(const IncomingUpdateContext&) = delete;
 
-    // Reads the flow control data and returns and actionable struct that will
+    // Reads the flow control data and returns an actionable struct that will
     // tell chttp2 exactly what it needs to do
     FlowControlAction MakeAction() {
       return absl::exchange(tfc_, nullptr)->UpdateAction(FlowControlAction());
