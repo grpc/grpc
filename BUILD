@@ -4360,7 +4360,6 @@ grpc_cc_library(
         "absl/status",
         "absl/status:statusor",
         "absl/strings",
-        "absl/time",
         "absl/types:optional",
     ],
     language = "c++",
@@ -4382,6 +4381,7 @@ grpc_cc_library(
         "ref_counted",
         "ref_counted_ptr",
         "server_address",
+        "time",
     ],
 )
 
