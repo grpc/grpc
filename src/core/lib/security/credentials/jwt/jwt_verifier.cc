@@ -21,24 +21,49 @@
 #include "src/core/lib/security/credentials/jwt/jwt_verifier.h"
 
 #include <limits.h>
+#include <stdlib.h>
 #include <string.h>
 
+#include <map>
+#include <memory>
+#include <string>
+#include <utility>
+#include <vector>
+
+#include <openssl/bio.h>
 #include <openssl/bn.h>
+#include <openssl/crypto.h>
+#include <openssl/evp.h>
 #include <openssl/pem.h>
 #include <openssl/rsa.h>
+#include <openssl/x509.h>
 
+#include "absl/status/statusor.h"
+#include "absl/strings/string_view.h"
+
+#include <grpc/grpc.h>
+#include <grpc/slice.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
-#include <grpc/support/sync.h>
+#include <grpc/support/time.h>
 
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gprpp/manual_constructor.h"
+#include "src/core/lib/gprpp/memory.h"
+#include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/http/httpcli.h"
 #include "src/core/lib/http/httpcli_ssl_credentials.h"
+#include "src/core/lib/http/parser.h"
+#include "src/core/lib/iomgr/closure.h"
+#include "src/core/lib/iomgr/error.h"
+#include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/polling_entity.h"
+#include "src/core/lib/security/credentials/credentials.h"
 #include "src/core/lib/slice/b64.h"
 #include "src/core/lib/slice/slice_internal.h"
+#include "src/core/lib/slice/slice_refcount.h"
+#include "src/core/lib/uri/uri_parser.h"
 #include "src/core/tsi/ssl_types.h"
 
 using grpc_core::Json;

@@ -711,10 +711,9 @@ void RingHash::RingHashSubchannelData::ProcessConnectivityChangeLocked(
   }
   GPR_ASSERT(subchannel() != nullptr);
   // If this is not the initial state notification and the new state is
-  // TRANSIENT_FAILURE or IDLE, re-resolve and attempt to reconnect.
-  // Note that we don't want to do this on the initial state
-  // notification, because that would result in an endless loop of
-  // re-resolution.
+  // TRANSIENT_FAILURE or IDLE, re-resolve.
+  // Note that we don't want to do this on the initial state notification,
+  // because that would result in an endless loop of re-resolution.
   if (old_state.has_value() && (new_state == GRPC_CHANNEL_TRANSIENT_FAILURE ||
                                 new_state == GRPC_CHANNEL_IDLE)) {
     if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_ring_hash_trace)) {

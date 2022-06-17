@@ -745,6 +745,7 @@ libs:
   - src/core/lib/event_engine/event_engine_factory.h
   - src/core/lib/event_engine/handle_containers.h
   - src/core/lib/event_engine/iomgr_engine.h
+  - src/core/lib/event_engine/promise.h
   - src/core/lib/event_engine/trace.h
   - src/core/lib/gprpp/atomic_utils.h
   - src/core/lib/gprpp/bitset.h
@@ -1953,6 +1954,7 @@ libs:
   - src/core/lib/event_engine/event_engine_factory.h
   - src/core/lib/event_engine/handle_containers.h
   - src/core/lib/event_engine/iomgr_engine.h
+  - src/core/lib/event_engine/promise.h
   - src/core/lib/event_engine/trace.h
   - src/core/lib/gprpp/atomic_utils.h
   - src/core/lib/gprpp/bitset.h
@@ -4930,6 +4932,7 @@ targets:
   build: test
   language: c++
   headers:
+  - src/core/ext/upb-generated/google/type/expr.upb.h
   - src/core/lib/security/authorization/cel_authorization_engine.h
   - src/core/lib/security/authorization/mock_cel/activation.h
   - src/core/lib/security/authorization/mock_cel/cel_expr_builder_factory.h
@@ -4938,6 +4941,7 @@ targets:
   - src/core/lib/security/authorization/mock_cel/evaluator_core.h
   - src/core/lib/security/authorization/mock_cel/flat_expr_builder.h
   src:
+  - src/core/ext/upb-generated/google/type/expr.upb.c
   - src/core/lib/security/authorization/cel_authorization_engine.cc
   - test/core/security/cel_authorization_engine_test.cc
   deps:
@@ -6039,6 +6043,24 @@ targets:
   - gpr
   - upb
   uses_polling: false
+- name: fuzzing_event_engine_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h
+  - test/core/event_engine/test_suite/event_engine_test.h
+  - test/core/event_engine/test_suite/event_engine_test_utils.h
+  src:
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.proto
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
+  - test/core/event_engine/test_suite/event_engine_test.cc
+  - test/core/event_engine/test_suite/event_engine_test_utils.cc
+  - test/core/event_engine/test_suite/fuzzing_event_engine_test.cc
+  - test/core/event_engine/test_suite/timer_test.cc
+  deps:
+  - grpc_test_util
+  uses_polling: false
 - name: generic_end2end_test
   gtest: true
   build: test
@@ -6590,8 +6612,10 @@ targets:
   language: c++
   headers:
   - test/core/event_engine/test_suite/event_engine_test.h
+  - test/core/event_engine/test_suite/event_engine_test_utils.h
   src:
   - test/core/event_engine/test_suite/event_engine_test.cc
+  - test/core/event_engine/test_suite/event_engine_test_utils.cc
   - test/core/event_engine/test_suite/iomgr_event_engine_test.cc
   - test/core/event_engine/test_suite/timer_test.cc
   deps:
@@ -7109,6 +7133,27 @@ targets:
   - absl/types:variant
   - absl/utility:utility
   uses_polling: false
+- name: oracle_event_engine_posix_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - test/core/event_engine/test_suite/event_engine_test.h
+  - test/core/event_engine/test_suite/event_engine_test_utils.h
+  - test/core/event_engine/test_suite/oracle_event_engine_posix.h
+  src:
+  - test/core/event_engine/test_suite/client_test.cc
+  - test/core/event_engine/test_suite/event_engine_test.cc
+  - test/core/event_engine/test_suite/event_engine_test_utils.cc
+  - test/core/event_engine/test_suite/oracle_event_engine_posix.cc
+  - test/core/event_engine/test_suite/oracle_event_engine_posix_test.cc
+  deps:
+  - grpc_test_util
+  platforms:
+  - linux
+  - posix
+  - mac
+  uses_polling: false
 - name: orca_service_end2end_test
   gtest: true
   build: test
@@ -7205,6 +7250,7 @@ targets:
   - src/core/lib/slice/slice_string_helpers.cc
   - test/core/resource_quota/periodic_update_test.cc
   deps:
+  - absl/status:statusor
   - gpr
   - upb
   uses_polling: false
@@ -8292,6 +8338,7 @@ targets:
   - absl/memory:memory
   - absl/random:random
   - absl/status:status
+  - absl/status:statusor
   - absl/strings:cord
   - absl/strings:str_format
   - absl/strings:strings

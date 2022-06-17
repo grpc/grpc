@@ -258,15 +258,21 @@ static void sched_connect(grpc_closure* closure, grpc_endpoint** ep,
       GRPC_CLOSURE_CREATE(do_connect, fc, grpc_schedule_on_exec_ctx));
 }
 
-static void my_tcp_client_connect(grpc_closure* closure, grpc_endpoint** ep,
-                                  grpc_pollset_set* /*interested_parties*/,
-                                  const grpc_channel_args* /*channel_args*/,
-                                  const grpc_resolved_address* /*addr*/,
-                                  grpc_core::Timestamp deadline) {
+static int64_t my_tcp_client_connect(grpc_closure* closure, grpc_endpoint** ep,
+                                     grpc_pollset_set* /*interested_parties*/,
+                                     const grpc_channel_args* /*channel_args*/,
+                                     const grpc_resolved_address* /*addr*/,
+                                     grpc_core::Timestamp deadline) {
   sched_connect(closure, ep, deadline.as_timespec(GPR_CLOCK_MONOTONIC));
+  return 0;
 }
 
-grpc_tcp_client_vtable fuzz_tcp_client_vtable = {my_tcp_client_connect};
+static bool my_tcp_cancel_connect(int64_t /*connection_handle*/) {
+  return false;
+}
+
+grpc_tcp_client_vtable fuzz_tcp_client_vtable = {my_tcp_client_connect,
+                                                 my_tcp_cancel_connect};
 
 ////////////////////////////////////////////////////////////////////////////////
 // test driver

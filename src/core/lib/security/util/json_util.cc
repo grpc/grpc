@@ -20,11 +20,12 @@
 
 #include "src/core/lib/security/util/json_util.h"
 
-#include <string.h>
+#include <map>
+#include <string>
+#include <utility>
 
 #include "absl/strings/str_cat.h"
 
-#include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
 
 #include "src/core/lib/iomgr/error.h"
