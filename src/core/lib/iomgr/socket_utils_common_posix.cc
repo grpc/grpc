@@ -405,17 +405,14 @@ grpc_error_handle grpc_set_socket_with_mutator(int fd, grpc_fd_usage usage,
 
 grpc_error_handle grpc_apply_socket_mutator_in_args(
     int fd, grpc_fd_usage usage, const EndpointConfig& config) {
-  const grpc_arg* socket_mutator_arg = nullptr;
+  grpc_socket_mutator* mutator = nullptr;
   auto value = config.Get(GRPC_ARG_SOCKET_MUTATOR);
   if (absl::holds_alternative<void*>(value)) {
-    socket_mutator_arg = reinterpret_cast<grpc_arg*>(absl::get<void*>(value));
+    mutator = static_cast<grpc_socket_mutator*>(absl::get<void*>(value));
   }
-  if (socket_mutator_arg == nullptr) {
+  if (mutator == nullptr) {
     return GRPC_ERROR_NONE;
   }
-  GPR_DEBUG_ASSERT(socket_mutator_arg->type == GRPC_ARG_POINTER);
-  grpc_socket_mutator* mutator =
-      static_cast<grpc_socket_mutator*>(socket_mutator_arg->value.pointer.p);
   return grpc_set_socket_with_mutator(fd, usage, mutator);
 }
 
