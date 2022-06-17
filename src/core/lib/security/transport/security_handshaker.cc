@@ -395,8 +395,12 @@ grpc_error_handle SecurityHandshaker::OnHandshakeNextDoneLocked(
     return error;
   }
   if (result != TSI_OK) {
+    auto* security_connector =
+        grpc_security_connector_find_in_args(args_->args);
     return grpc_set_tsi_error_result(
-        GRPC_ERROR_CREATE_FROM_STATIC_STRING("Handshake failed"), result);
+        GRPC_ERROR_CREATE_FROM_CPP_STRING(absl::StrCat(
+            security_connector->type().name(), " handshake failed")),
+        result);
   }
   // Update handshaker result.
   if (handshaker_result != nullptr) {
