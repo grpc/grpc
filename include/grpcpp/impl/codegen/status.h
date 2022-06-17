@@ -92,6 +92,10 @@ class GRPC_MUST_USE_RESULT_WHEN_USE_STRICT_WARNING Status {
 
   /// Construct an instance with associated \a code and \a error_message.
   /// It is an error to construct an OK status with non-empty \a error_message.
+  /// Note that \a message is intentionally accepted as a const reference
+  /// instead of a value (which results in a copy instead of a move) to allow
+  /// for easy transition to absl::Status in the future which accepts an
+  /// absl::string_view as a parameter.
   Status(StatusCode code, const std::string& error_message)
       : code_(code), error_message_(error_message) {}
 

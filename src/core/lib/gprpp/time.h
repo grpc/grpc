@@ -23,6 +23,7 @@
 #include <ostream>
 #include <string>
 
+#include <grpc/event_engine/event_engine.h>
 #include <grpc/impl/codegen/gpr_types.h>
 #include <grpc/support/time.h>
 
@@ -206,6 +207,9 @@ class Duration {
 
   constexpr int64_t millis() const { return millis_; }
   double seconds() const { return static_cast<double>(millis_) / 1000.0; }
+
+  // NOLINTNEXTLINE: google-explicit-constructor
+  operator grpc_event_engine::experimental::EventEngine::Duration() const;
 
   gpr_timespec as_timespec() const;
 
