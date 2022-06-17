@@ -33,6 +33,8 @@ readonly VERSION_TAG="v1.41.x"
 #   SERVER_IMAGE_NAME: Test server Docker image name
 #   CLIENT_IMAGE_NAME: Test client Docker image name
 #   GIT_COMMIT: SHA-1 of git commit being built
+#   TESTING_VERSION: version branch under test: used by the framework to determine the supported PSM
+#                    features.
 # Arguments:
 #   Test case name
 # Outputs:
@@ -48,19 +50,13 @@ run_test() {
   local server_image_name="${IMAGE_REPO}/${slang}-server:${tag}"
   local client_image_name="${IMAGE_REPO}/${clang}-client:${tag}"
   # TODO(sanjaypujare): skip test if image not found (by using gcloud_gcr_list_image_tags)
-
-  # testing_version is used by the framework to determine the supported PSM
-  # features. It's captured from Kokoro job name of the Core repo, which takes
-  # 2 forms:
-  #   grpc/core/master/linux/...
-  #   grpc/core/v1.42.x/branch/linux/...
   set -x
   python -m "tests.security_test" \
     --flagfile="${TEST_DRIVER_FLAGFILE}" \
     --kube_context="${KUBE_CONTEXT}" \
     --server_image="${server_image_name}" \
     --client_image="${client_image_name}" \
-    --testing_version=$(echo "$KOKORO_JOB_NAME" | sed -E 's|^grpc/core/([^/]+)/.*|\1|') \
+    --testing_version="${TESTING_VERSION}" \
     --xml_output_file="${TEST_XML_OUTPUT_DIR}/${tag}/${clang}-${slang}/sponge_log.xml" \
     --force_cleanup \
     --nocheck_local_certs
