@@ -27,17 +27,12 @@
 #import "src/objective-c/tests/RemoteTestClient/Test.pbobjc.h"
 #import "src/objective-c/tests/RemoteTestClient/Test.pbrpc.h"
 
+#import "../Common/TestUtils.h"
 #import "InteropTests.h"
 
 // Package and service name of test server
 static NSString *const kPackage = @"grpc.testing";
 static NSString *const kService = @"TestService";
-
-// The server address is derived from preprocessor macro, which is
-// in turn derived from environment variable of the same name.
-#define NSStringize_helper(x) #x
-#define NSStringize(x) @NSStringize_helper(x)
-static NSString *const kRemoteSSLHost = NSStringize(HOST_PORT_REMOTE);
 
 // The Protocol Buffers encoding overhead of remote interop server. Acquired
 // by experiment. Adjust this when server's proto file changes.
@@ -56,7 +51,7 @@ static GRPCProtoMethod *kUnaryCallMethod;
 #pragma mark - InteropTests
 
 + (NSString *)host {
-  return kRemoteSSLHost;
+  return GRPCGetRemoteInteropTestServerAddress();
 }
 
 + (NSString *)PEMRootCertificates {
@@ -147,7 +142,7 @@ static GRPCProtoMethod *kUnaryCallMethod;
   request.fillOauthScope = YES;
   GRXWriter *requestsWriter = [GRXWriter writerWithValue:[request data]];
 
-  GRPCCall *call = [[GRPCCall alloc] initWithHost:kRemoteSSLHost
+  GRPCCall *call = [[GRPCCall alloc] initWithHost:GRPCGetRemoteInteropTestServerAddress()
                                              path:kUnaryCallMethod.HTTPPath
                                    requestsWriter:requestsWriter];
 
@@ -183,7 +178,7 @@ static GRPCProtoMethod *kUnaryCallMethod;
   request.fillOauthScope = YES;
   GRXWriter *requestsWriter = [GRXWriter writerWithValue:[request data]];
 
-  GRPCCall *call = [[GRPCCall alloc] initWithHost:kRemoteSSLHost
+  GRPCCall *call = [[GRPCCall alloc] initWithHost:GRPCGetRemoteInteropTestServerAddress()
                                              path:kUnaryCallMethod.HTTPPath
                                    requestsWriter:requestsWriter];
 
