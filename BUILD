@@ -4292,7 +4292,6 @@ grpc_cc_library(
     tags = ["grpc-autodeps"],
     deps = [
         "channel_args",
-        "closure",
         "debug_location",
         "default_event_engine_factory_hdrs",
         "error",
@@ -4305,7 +4304,6 @@ grpc_cc_library(
         "grpc_outlier_detection_header",
         "grpc_trace",
         "iomgr_fwd",
-        "iomgr_timer",
         "json",
         "json_util",
         "orphanable",
