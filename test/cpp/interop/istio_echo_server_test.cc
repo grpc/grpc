@@ -48,9 +48,9 @@ class SimpleEchoTestServerImpl : public proto::EchoTestService::Service {
  public:
   explicit SimpleEchoTestServerImpl() {}
 
-  grpc::Status Echo(grpc::ServerContext* context,
+  grpc::Status Echo(grpc::ServerContext* /* context */,
                     const proto::EchoRequest* request,
-                    proto::EchoResponse* response) override {
+                    proto::EchoResponse* /* response */) override {
     GPR_ASSERT(false);
     return Status(StatusCode::INVALID_ARGUMENT, "Unexpected");
   }
