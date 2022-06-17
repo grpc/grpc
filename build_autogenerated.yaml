@@ -1664,6 +1664,7 @@ libs:
   - absl/container:flat_hash_set
   - absl/container:inlined_vector
   - absl/functional:bind_front
+  - absl/functional:function_ref
   - absl/hash:hash
   - absl/meta:type_traits
   - absl/status:statusor
@@ -2459,6 +2460,7 @@ libs:
   - absl/container:flat_hash_set
   - absl/container:inlined_vector
   - absl/functional:bind_front
+  - absl/functional:function_ref
   - absl/hash:hash
   - absl/meta:type_traits
   - absl/status:statusor
@@ -5863,17 +5865,6 @@ targets:
   - test/cpp/end2end/test_service_impl.cc
   deps:
   - grpc++_test_util
-- name: flow_control_end2end_test
-  gtest: true
-  build: test
-  language: c++
-  headers:
-  - test/core/end2end/cq_verifier.h
-  src:
-  - test/core/end2end/cq_verifier.cc
-  - test/core/transport/chttp2/flow_control_end2end_test.cc
-  deps:
-  - grpc_test_util
 - name: flow_control_test
   gtest: true
   build: test
@@ -5949,12 +5940,14 @@ targets:
   - src/core/lib/transport/pid_controller.cc
   - test/core/transport/chttp2/flow_control_test.cc
   deps:
+  - absl/functional:function_ref
   - absl/meta:type_traits
   - absl/status:statusor
   - absl/types:variant
   - absl/utility:utility
   - gpr
   - upb
+  uses_polling: false
 - name: for_each_test
   gtest: true
   build: test

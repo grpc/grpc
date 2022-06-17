@@ -5996,9 +5996,12 @@ grpc_cc_library(
         "src/core/ext/transport/chttp2/transport/flow_control.h",
     ],
     external_deps = [
+        "absl/functional:function_ref",
         "absl/status",
         "absl/strings",
         "absl/strings:str_format",
+        "absl/types:optional",
+        "absl/utility",
     ],
     tags = ["grpc-autodeps"],
     deps = [

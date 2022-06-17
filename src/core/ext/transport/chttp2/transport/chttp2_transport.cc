@@ -690,6 +690,8 @@ grpc_chttp2_stream::grpc_chttp2_stream(grpc_chttp2_transport* t,
 }
 
 grpc_chttp2_stream::~grpc_chttp2_stream() {
+  grpc_chttp2_list_remove_stalled_by_stream(t, this);
+
   if (t->channelz_socket != nullptr) {
     if ((t->is_client && eos_received) || (!t->is_client && eos_sent)) {
       t->channelz_socket->RecordStreamSucceeded();
@@ -1926,8 +1928,15 @@ void grpc_chttp2_maybe_complete_recv_initial_metadata(grpc_chttp2_transport* t,
 
 void grpc_chttp2_maybe_complete_recv_message(grpc_chttp2_transport* t,
                                              grpc_chttp2_stream* s) {
+  if (s->recv_message_ready == nullptr) return;
+
+  grpc_core::chttp2::StreamFlowControl::IncomingUpdateContext upd(
+      &s->flow_control);
   grpc_error_handle error = GRPC_ERROR_NONE;
-  if (s->recv_message_ready != nullptr) {
+
+  // Lambda is immediately invoked as a big scoped section that can be
+  // exited out of at any point by returning.
+  [&]() {
     if (s->final_metadata_requested && s->seen_error) {
       grpc_slice_buffer_reset_and_unref_internal(&s->frame_storage);
       s->recv_message->reset();
@@ -1944,10 +1953,8 @@ void grpc_chttp2_maybe_complete_recv_message(grpc_chttp2_transport* t,
               s->recv_message->reset();
               break;
             } else {
-              s->flow_control.UpdateProgress(min_progress_size);
-              grpc_chttp2_act_on_flowctl_action(s->flow_control.MakeAction(), t,
-                                                s);
-              return;
+              upd.SetMinProgressSize(min_progress_size);
+              return;  // Out of lambda to enclosing function
             }
           } else {
             error = absl::get<grpc_error_handle>(r);
@@ -1966,9 +1973,8 @@ void grpc_chttp2_maybe_complete_recv_message(grpc_chttp2_transport* t,
       } else if (s->read_closed) {
         s->recv_message->reset();
       } else {
-        s->flow_control.UpdateProgress(GRPC_HEADER_SIZE_IN_BYTES);
-        grpc_chttp2_act_on_flowctl_action(s->flow_control.MakeAction(), t, s);
-        return;
+        upd.SetMinProgressSize(GRPC_HEADER_SIZE_IN_BYTES);
+        return;  // Out of lambda to enclosing function
       }
     }
     // save the length of the buffer before handing control back to application
@@ -1983,7 +1989,10 @@ void grpc_chttp2_maybe_complete_recv_message(grpc_chttp2_transport* t,
       null_then_sched_closure(&s->recv_message_ready);
     }
     GRPC_ERROR_UNREF(error);
-  }
+  }();
+
+  upd.SetPendingSize(s->frame_storage.length);
+  grpc_chttp2_act_on_flowctl_action(upd.MakeAction(), t, s);
 }
 
 void grpc_chttp2_maybe_complete_recv_trailing_metadata(grpc_chttp2_transport* t,
@@ -2569,7 +2578,6 @@ static void continue_read_action_locked(grpc_chttp2_transport* t) {
                     grpc_schedule_on_exec_ctx);
   grpc_endpoint_read(t->ep, &t->read_buffer, &t->read_action_locked, urgent,
                      /*min_progress_size=*/1);
-  grpc_chttp2_act_on_flowctl_action(t->flow_control.MakeAction(), t, nullptr);
 }
 
 // t is reffed prior to calling the first time, and once the callback chain
