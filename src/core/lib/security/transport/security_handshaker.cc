@@ -399,9 +399,13 @@ grpc_error_handle SecurityHandshaker::OnHandshakeNextDoneLocked(
   if (result != TSI_OK) {
     auto* security_connector =
         grpc_security_connector_find_in_args(args_->args);
+    absl::string_view connector_type = "<unknown>";
+    if (security_connector != nullptr) {
+      connector_type = security_connector->type().name();
+    }
     return grpc_set_tsi_error_result(
-        GRPC_ERROR_CREATE_FROM_CPP_STRING(absl::StrCat(
-            security_connector->type().name(), " handshake failed")),
+        GRPC_ERROR_CREATE_FROM_CPP_STRING(
+            absl::StrCat(connector_type, " handshake failed")),
         result);
   }
   // Update handshaker result.
