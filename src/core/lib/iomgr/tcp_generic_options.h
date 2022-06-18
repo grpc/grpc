@@ -11,6 +11,7 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+
 #ifndef GRPC_CORE_LIB_IOMGR_TCP_GENERIC_OPTIONS_H
 #define GRPC_CORE_LIB_IOMGR_TCP_GENERIC_OPTIONS_H
 
@@ -77,4 +78,4 @@ grpc_tcp_generic_options TcpOptionsFromChannelArgs(
 grpc_core::ChannelArgs TcpOptionsIntoChannelArgs(
     const grpc_tcp_generic_options& options);
 
-#endif  //  GRPC_CORE_LIB_IOMGR_TCP_GENERIC_OPTIONS_H
+#endif  // GRPC_CORE_LIB_IOMGR_TCP_GENERIC_OPTIONS_H

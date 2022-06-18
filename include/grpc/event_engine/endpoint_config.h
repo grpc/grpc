@@ -32,7 +32,7 @@ class EndpointConfig {
  public:
   class OptionsAccessor;
   EndpointConfig();
-  EndpointConfig(std::shared_ptr<OptionsAccessor> impl);
+  explicit EndpointConfig(std::shared_ptr<OptionsAccessor> impl);
   ~EndpointConfig();
   using Setting =
       absl::variant<absl::monostate, int, absl::string_view, bool, void*>;

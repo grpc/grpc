@@ -28,8 +28,8 @@ namespace experimental {
 
 class EndpointConfig::OptionsAccessor {
  public:
-  OptionsAccessor(const grpc_core::ChannelArgs& args) : args_(args) {}
-  OptionsAccessor(const grpc_channel_args* args)
+  explicit OptionsAccessor(const grpc_core::ChannelArgs& args) : args_(args) {}
+  explicit OptionsAccessor(const grpc_channel_args* args)
       : args_(grpc_core::ChannelArgs::FromC(args)) {}
   EndpointConfig::Setting Get(absl::string_view key) const {
     auto value = args_.Get(key);
