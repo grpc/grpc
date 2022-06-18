@@ -19,6 +19,8 @@
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
+#include "absl/synchronization/notification.h"
+
 #include <grpc/grpc_security.h>
 
 #include "src/core/lib/security/authorization/grpc_authorization_engine.h"
@@ -92,8 +94,17 @@ TEST(AuthorizationPolicyProviderTest,
 TEST(AuthorizationPolicyProviderTest, FileWatcherSuccessValidPolicyRefresh) {
   auto tmp_authz_policy = absl::make_unique<testing::TmpFile>(
       testing::GetFileContents(VALID_POLICY_PATH_1));
+  absl::Notification on_reload_done;
+  std::function<void(grpc_status_code code, const char* error_details)>
+      callback = [&on_reload_done](grpc_status_code status,
+                                   const char* error_details) {
+        EXPECT_EQ(status, GRPC_STATUS_OK);
+        EXPECT_EQ(error_details, nullptr);
+        on_reload_done.Notify();
+      };
   auto provider = FileWatcherAuthorizationPolicyProvider::Create(
-      tmp_authz_policy->name(), /*refresh_interval_sec=*/1);
+      tmp_authz_policy->name(), /*refresh_interval_sec=*/1,
+      std::move(callback));
   ASSERT_TRUE(provider.ok());
   auto engines = (*provider)->engines();
   auto* allow_engine =
@@ -108,8 +119,8 @@ TEST(AuthorizationPolicyProviderTest, FileWatcherSuccessValidPolicyRefresh) {
   EXPECT_EQ(deny_engine->num_policies(), 1);
   // Rewrite the file with a different valid authorization policy.
   tmp_authz_policy->RewriteFile(testing::GetFileContents(VALID_POLICY_PATH_2));
-  // Wait 2 seconds for the provider's refresh thread to read the updated files.
-  gpr_sleep_until(grpc_timeout_seconds_to_deadline(2));
+  // Wait for the provider's refresh thread to read the updated files.
+  on_reload_done.WaitForNotification();
   engines = (*provider)->engines();
   allow_engine =
       dynamic_cast<GrpcAuthorizationEngine*>(engines.allow_engine.get());
@@ -127,8 +138,17 @@ TEST(AuthorizationPolicyProviderTest,
      FileWatcherInvalidPolicyRefreshSkipReload) {
   auto tmp_authz_policy = absl::make_unique<testing::TmpFile>(
       testing::GetFileContents(VALID_POLICY_PATH_1));
+  absl::Notification on_reload_done;
+  std::function<void(grpc_status_code code, const char* error_details)>
+      callback = [&on_reload_done](grpc_status_code status,
+                                   const char* error_details) {
+        EXPECT_EQ(status, GRPC_STATUS_INVALID_ARGUMENT);
+        EXPECT_STREQ(error_details, "\"name\" field is not present.");
+        on_reload_done.Notify();
+      };
   auto provider = FileWatcherAuthorizationPolicyProvider::Create(
-      tmp_authz_policy->name(), /*refresh_interval_sec=*/1);
+      tmp_authz_policy->name(), /*refresh_interval_sec=*/1,
+      std::move(callback));
   ASSERT_TRUE(provider.ok());
   auto engines = (*provider)->engines();
   auto* allow_engine =
@@ -143,8 +163,8 @@ TEST(AuthorizationPolicyProviderTest,
   EXPECT_EQ(deny_engine->num_policies(), 1);
   // Skips the following policy update, and continues to use the valid policy.
   tmp_authz_policy->RewriteFile(testing::GetFileContents(INVALID_POLICY_PATH));
-  // Wait 2 seconds for the provider's refresh thread to read the updated files.
-  gpr_sleep_until(grpc_timeout_seconds_to_deadline(2));
+  // Wait for the provider's refresh thread to read the updated files.
+  on_reload_done.WaitForNotification();
   engines = (*provider)->engines();
   allow_engine =
       dynamic_cast<GrpcAuthorizationEngine*>(engines.allow_engine.get());
@@ -161,8 +181,25 @@ TEST(AuthorizationPolicyProviderTest,
 TEST(AuthorizationPolicyProviderTest, FileWatcherRecoversFromFailure) {
   auto tmp_authz_policy = absl::make_unique<testing::TmpFile>(
       testing::GetFileContents(VALID_POLICY_PATH_1));
+  absl::Notification on_first_reload_done;
+  absl::Notification on_second_reload_done;
+  bool first_reload = true;
+  std::function<void(grpc_status_code code, const char* error_details)>
+      callback = [&on_first_reload_done, &on_second_reload_done, &first_reload](
+                     grpc_status_code status, const char* error_details) {
+        if (first_reload) {
+          EXPECT_EQ(status, GRPC_STATUS_INVALID_ARGUMENT);
+          EXPECT_STREQ(error_details, "\"name\" field is not present.");
+          on_first_reload_done.Notify();
+        } else {
+          EXPECT_EQ(status, GRPC_STATUS_OK);
+          EXPECT_EQ(error_details, nullptr);
+          on_second_reload_done.Notify();
+        }
+      };
   auto provider = FileWatcherAuthorizationPolicyProvider::Create(
-      tmp_authz_policy->name(), /*refresh_interval_sec=*/1);
+      tmp_authz_policy->name(), /*refresh_interval_sec=*/1,
+      std::move(callback));
   ASSERT_TRUE(provider.ok());
   auto engines = (*provider)->engines();
   auto* allow_engine =
@@ -177,8 +214,9 @@ TEST(AuthorizationPolicyProviderTest, FileWatcherRecoversFromFailure) {
   EXPECT_EQ(deny_engine->num_policies(), 1);
   // Skips the following policy update, and continues to use the valid policy.
   tmp_authz_policy->RewriteFile(testing::GetFileContents(INVALID_POLICY_PATH));
-  // Wait 2 seconds for the provider's refresh thread to read the updated files.
-  gpr_sleep_until(grpc_timeout_seconds_to_deadline(2));
+  // Wait for the provider's refresh thread to read the updated files.
+  on_first_reload_done.WaitForNotification();
+  first_reload = false;
   engines = (*provider)->engines();
   allow_engine =
       dynamic_cast<GrpcAuthorizationEngine*>(engines.allow_engine.get());
@@ -192,8 +230,8 @@ TEST(AuthorizationPolicyProviderTest, FileWatcherRecoversFromFailure) {
   EXPECT_EQ(deny_engine->num_policies(), 1);
   // Rewrite the file with a valid authorization policy.
   tmp_authz_policy->RewriteFile(testing::GetFileContents(VALID_POLICY_PATH_2));
-  // Wait 2 seconds for the provider's refresh thread to read the updated files.
-  gpr_sleep_until(grpc_timeout_seconds_to_deadline(2));
+  // Wait for the provider's refresh thread to read the updated files.
+  on_second_reload_done.WaitForNotification();
   engines = (*provider)->engines();
   allow_engine =
       dynamic_cast<GrpcAuthorizationEngine*>(engines.allow_engine.get());

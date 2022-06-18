@@ -84,21 +84,24 @@ gpr_timespec TimeoutSecondsToDeadline(int64_t seconds) {
 
 absl::StatusOr<RefCountedPtr<grpc_authorization_policy_provider>>
 FileWatcherAuthorizationPolicyProvider::Create(
-    absl::string_view authz_policy_path, unsigned int refresh_interval_sec) {
+    absl::string_view authz_policy_path, unsigned int refresh_interval_sec,
+    std::function<void(grpc_status_code code, const char* error_details)> cb) {
   GPR_ASSERT(!authz_policy_path.empty());
   GPR_ASSERT(refresh_interval_sec > 0);
   absl::Status status;
   auto provider = MakeRefCounted<FileWatcherAuthorizationPolicyProvider>(
-      authz_policy_path, refresh_interval_sec, &status);
+      authz_policy_path, refresh_interval_sec, &status, std::move(cb));
   if (!status.ok()) return status;
   return provider;
 }
 
 FileWatcherAuthorizationPolicyProvider::FileWatcherAuthorizationPolicyProvider(
     absl::string_view authz_policy_path, unsigned int refresh_interval_sec,
-    absl::Status* status)
+    absl::Status* status,
+    std::function<void(grpc_status_code code, const char* error_details)> cb)
     : authz_policy_path_(std::string(authz_policy_path)),
-      refresh_interval_sec_(refresh_interval_sec) {
+      refresh_interval_sec_(refresh_interval_sec),
+      cb_(std::move(cb)) {
   gpr_event_init(&shutdown_event_);
   // Initial read is done synchronously.
   *status = ForceUpdate();
@@ -117,6 +120,12 @@ FileWatcherAuthorizationPolicyProvider::FileWatcherAuthorizationPolicyProvider(
         return;
       }
       absl::Status status = provider->ForceUpdate();
+      if (provider->cb_ != nullptr && provider->execute_cb_) {
+        provider->cb_(
+            static_cast<grpc_status_code>(status.code()),
+            !status.ok() ? std::string(status.message()).c_str() : nullptr);
+        provider->execute_cb_ = false;
+      }
       if (GRPC_TRACE_FLAG_ENABLED(grpc_authz_trace) && !status.ok()) {
         gpr_log(GPR_ERROR,
                 "authorization policy reload status. code=%d error_details=%s",
@@ -140,6 +149,7 @@ absl::Status FileWatcherAuthorizationPolicyProvider::ForceUpdate() {
     return absl::OkStatus();
   }
   file_contents_ = std::move(*file_contents);
+  execute_cb_ = true;
   auto rbac_policies_or = GenerateRbacPolicies(file_contents_);
   if (!rbac_policies_or.ok()) {
     return rbac_policies_or.status();

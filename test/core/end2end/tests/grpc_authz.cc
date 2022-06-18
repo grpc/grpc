@@ -15,6 +15,8 @@
 #include <stdio.h>
 #include <string.h>
 
+#include "absl/synchronization/notification.h"
+
 #include <grpc/byte_buffer.h>
 #include <grpc/grpc_security.h>
 #include <grpc/support/alloc.h>
@@ -22,6 +24,7 @@
 #include <grpc/support/time.h>
 
 #include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/gpr/env.h"
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/security/authorization/grpc_authorization_policy_provider.h"
 #include "src/core/lib/security/credentials/credentials.h"
@@ -51,13 +54,6 @@ static gpr_timespec five_seconds_from_now(void) {
   return n_seconds_from_now(5);
 }
 
-static void wait_for_policy_reload(void) {
-  // Wait for the provider's refresh thread to read the updated files.
-  // TODO(jtattermusch): Refactor the tests to use a more reliable mechanism of
-  // detecting that the policy has been reloaded. See b/204329811
-  gpr_sleep_until(grpc_timeout_seconds_to_deadline(5));
-}
-
 static void drain_cq(grpc_completion_queue* cq) {
   grpc_event ev;
   do {
@@ -70,8 +66,7 @@ static void shutdown_server(grpc_end2end_test_fixture* f) {
   grpc_server_shutdown_and_notify(f->server, f->cq, tag(1000));
   grpc_event ev;
   do {
-    ev = grpc_completion_queue_next(f->cq, grpc_timeout_seconds_to_deadline(5),
-                                    nullptr);
+    ev = grpc_completion_queue_next(f->cq, five_seconds_from_now(), nullptr);
   } while (ev.type != GRPC_OP_COMPLETE || ev.tag != tag(1000));
   grpc_server_destroy(f->server);
   f->server = nullptr;
@@ -539,13 +534,19 @@ static void test_file_watcher_valid_policy_reload(
       "  ]"
       "}";
   grpc_core::testing::TmpFile tmp_policy(authz_policy);
-  grpc_status_code code = GRPC_STATUS_OK;
-  const char* error_details;
-  grpc_authorization_policy_provider* provider =
-      grpc_authorization_policy_provider_file_watcher_create(
-          tmp_policy.name().c_str(), /*refresh_interval_sec=*/1, &code,
-          &error_details);
-  GPR_ASSERT(GRPC_STATUS_OK == code);
+  absl::Notification on_reload_done;
+  std::function<void(grpc_status_code code, const char* error_details)>
+      callback = [&on_reload_done](grpc_status_code status,
+                                   const char* error_details) {
+        GPR_ASSERT(GRPC_STATUS_OK == status);
+        GPR_ASSERT(nullptr == error_details);
+        on_reload_done.Notify();
+      };
+  auto fw_provider = grpc_core::FileWatcherAuthorizationPolicyProvider::Create(
+      tmp_policy.name(), /*refresh_interval_sec=*/1, std::move(callback));
+  GPR_ASSERT(GRPC_STATUS_OK ==
+             static_cast<grpc_status_code>(fw_provider.status().code()));
+  grpc_authorization_policy_provider* provider = fw_provider->release();
   grpc_arg args[] = {
       grpc_channel_arg_pointer_create(
           const_cast<char*>(GRPC_ARG_AUTHORIZATION_POLICY_PROVIDER), provider,
@@ -583,7 +584,7 @@ static void test_file_watcher_valid_policy_reload(
       "  ]"
       "}";
   tmp_policy.RewriteFile(authz_policy);
-  wait_for_policy_reload();
+  on_reload_done.WaitForNotification();
   test_deny_unauthorized_request(f);
 
   end_test(&f);
@@ -607,13 +608,20 @@ static void test_file_watcher_invalid_policy_skip_reload(
       "  ]"
       "}";
   grpc_core::testing::TmpFile tmp_policy(authz_policy);
-  grpc_status_code code = GRPC_STATUS_OK;
-  const char* error_details;
-  grpc_authorization_policy_provider* provider =
-      grpc_authorization_policy_provider_file_watcher_create(
-          tmp_policy.name().c_str(), /*refresh_interval_sec=*/1, &code,
-          &error_details);
-  GPR_ASSERT(GRPC_STATUS_OK == code);
+  absl::Notification on_reload_done;
+  std::function<void(grpc_status_code code, const char* error_details)>
+      callback = [&on_reload_done](grpc_status_code status,
+                                   const char* error_details) {
+        GPR_ASSERT(GRPC_STATUS_INVALID_ARGUMENT == status);
+        GPR_ASSERT(nullptr !=
+                   strstr(error_details, "\"name\" field is not present."));
+        on_reload_done.Notify();
+      };
+  auto fw_provider = grpc_core::FileWatcherAuthorizationPolicyProvider::Create(
+      tmp_policy.name(), /*refresh_interval_sec=*/1, std::move(callback));
+  GPR_ASSERT(GRPC_STATUS_OK ==
+             static_cast<grpc_status_code>(fw_provider.status().code()));
+  grpc_authorization_policy_provider* provider = fw_provider->release();
   grpc_arg args[] = {
       grpc_channel_arg_pointer_create(
           const_cast<char*>(GRPC_ARG_AUTHORIZATION_POLICY_PROVIDER), provider,
@@ -629,14 +637,13 @@ static void test_file_watcher_invalid_policy_skip_reload(
   // Replace exisiting policy in file with an invalid policy.
   authz_policy = "{}";
   tmp_policy.RewriteFile(authz_policy);
-  wait_for_policy_reload();
+  on_reload_done.WaitForNotification();
   test_allow_authorized_request(f);
 
   end_test(&f);
   config.tear_down_data(&f);
 }
 
-#ifndef GPR_APPLE
 static void test_file_watcher_recovers_from_failure(
     grpc_end2end_test_config config) {
   const char* authz_policy =
@@ -654,13 +661,28 @@ static void test_file_watcher_recovers_from_failure(
       "  ]"
       "}";
   grpc_core::testing::TmpFile tmp_policy(authz_policy);
-  grpc_status_code code = GRPC_STATUS_OK;
-  const char* error_details;
-  grpc_authorization_policy_provider* provider =
-      grpc_authorization_policy_provider_file_watcher_create(
-          tmp_policy.name().c_str(), /*refresh_interval_sec=*/1, &code,
-          &error_details);
-  GPR_ASSERT(GRPC_STATUS_OK == code);
+  absl::Notification on_first_reload_done;
+  absl::Notification on_second_reload_done;
+  bool first_reload = true;
+  std::function<void(grpc_status_code code, const char* error_details)>
+      callback = [&on_first_reload_done, &on_second_reload_done, &first_reload](
+                     grpc_status_code status, const char* error_details) {
+        if (first_reload) {
+          GPR_ASSERT(GRPC_STATUS_INVALID_ARGUMENT == status);
+          GPR_ASSERT(nullptr !=
+                     strstr(error_details, "\"name\" field is not present."));
+          on_first_reload_done.Notify();
+        } else {
+          GPR_ASSERT(GRPC_STATUS_OK == status);
+          GPR_ASSERT(nullptr == error_details);
+          on_second_reload_done.Notify();
+        }
+      };
+  auto fw_provider = grpc_core::FileWatcherAuthorizationPolicyProvider::Create(
+      tmp_policy.name(), /*refresh_interval_sec=*/1, std::move(callback));
+  GPR_ASSERT(GRPC_STATUS_OK ==
+             static_cast<grpc_status_code>(fw_provider.status().code()));
+  grpc_authorization_policy_provider* provider = fw_provider->release();
   grpc_arg args[] = {
       grpc_channel_arg_pointer_create(
           const_cast<char*>(GRPC_ARG_AUTHORIZATION_POLICY_PROVIDER), provider,
@@ -675,7 +697,8 @@ static void test_file_watcher_recovers_from_failure(
   // Replace exisiting policy in file with an invalid policy.
   authz_policy = "{}";
   tmp_policy.RewriteFile(authz_policy);
-  wait_for_policy_reload();
+  on_first_reload_done.WaitForNotification();
+  first_reload = false;
   test_allow_authorized_request(f);
   // Recover from reload errors, by replacing invalid policy in file with a
   // valid policy.
@@ -704,13 +727,12 @@ static void test_file_watcher_recovers_from_failure(
       "  ]"
       "}";
   tmp_policy.RewriteFile(authz_policy);
-  wait_for_policy_reload();
+  on_second_reload_done.WaitForNotification();
   test_deny_unauthorized_request(f);
 
   end_test(&f);
   config.tear_down_data(&f);
 }
-#endif
 
 void grpc_authz(grpc_end2end_test_config config) {
   test_static_init_allow_authorized_request(config);
@@ -721,10 +743,7 @@ void grpc_authz(grpc_end2end_test_config config) {
   test_file_watcher_init_deny_request_no_match_in_policy(config);
   test_file_watcher_valid_policy_reload(config);
   test_file_watcher_invalid_policy_skip_reload(config);
-#ifndef GPR_APPLE  // test case highly flaky on Mac
-  // TODO(jtattermusch): reenable the test once b/204329811 is fixed.
   test_file_watcher_recovers_from_failure(config);
-#endif
 }
 
 void grpc_authz_pre_init(void) {}
