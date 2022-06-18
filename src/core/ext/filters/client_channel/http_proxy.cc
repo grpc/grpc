@@ -73,20 +73,16 @@ absl::optional<std::string> GetHttpProxyServer(const ChannelArgs& args,
    */
   absl::optional<std::string> uri_str =
       args.GetOwnedString(GRPC_ARG_HTTP_PROXY);
-  auto c_str_to_opt_string =
-      [](const char* c_str) -> absl::optional<std::string> {
-    if (c_str == nullptr) return absl::nullopt;
-    return std::string(c_str);
+  auto get_env = [](const char* name) -> absl::optional<std::string> {
+    char* v = gpr_getenv(name);
+    if (v == nullptr) return absl::nullopt;
+    std::string s(v);
+    gpr_free(v);
+    return s;
   };
-  if (!uri_str.has_value()) {
-    uri_str = c_str_to_opt_string(gpr_getenv("grpc_proxy"));
-  }
-  if (!uri_str.has_value()) {
-    uri_str = c_str_to_opt_string(gpr_getenv("https_proxy"));
-  }
-  if (!uri_str.has_value()) {
-    uri_str = c_str_to_opt_string(gpr_getenv("http_proxy"));
-  }
+  if (!uri_str.has_value()) uri_str = get_env("grpc_proxy");
+  if (!uri_str.has_value()) uri_str = get_env("https_proxy");
+  if (!uri_str.has_value()) uri_str = get_env("http_proxy");
   if (!uri_str.has_value()) return absl::nullopt;
   // an emtpy value means "don't use proxy"
   if (uri_str->empty()) return absl::nullopt;
@@ -118,10 +114,10 @@ absl::optional<std::string> GetHttpProxyServer(const ChannelArgs& args,
     gpr_log(GPR_DEBUG, "userinfo found in proxy URI");
   } else {
     /* Bad authority */
-    for (size_t i = 0; i < authority_nstrs; i++) {
-      gpr_free(authority_strs[i]);
-    }
     proxy_name = absl::nullopt;
+  }
+  for (size_t i = 0; i < authority_nstrs; i++) {
+    gpr_free(authority_strs[i]);
   }
   gpr_free(authority_strs);
   return proxy_name;
