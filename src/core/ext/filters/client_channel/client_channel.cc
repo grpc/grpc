@@ -1029,15 +1029,15 @@ ClientChannel::ClientChannel(grpc_channel_element_args* args,
     return;
   }
   // Get URI to resolve, using proxy mapper if needed.
-  absl::optional<absl::string_view> server_uri =
-      channel_args_.GetString(GRPC_ARG_SERVER_URI);
+  absl::optional<std::string> server_uri =
+      channel_args_.GetOwnedString(GRPC_ARG_SERVER_URI);
   if (!server_uri.has_value()) {
     *error = GRPC_ERROR_CREATE_FROM_STATIC_STRING(
         "target URI channel arg missing or wrong type in client channel "
         "filter");
     return;
   }
-  uri_to_resolve_ = std::string(*server_uri);
+  uri_to_resolve_ = *server_uri;
   absl::optional<std::string> proxy_name;
   ProxyMapperRegistry::MapName(*server_uri, &channel_args_, &proxy_name);
   if (proxy_name.has_value()) {
@@ -1062,14 +1062,14 @@ ClientChannel::ClientChannel(grpc_channel_element_args* args,
     keepalive_time_ = -1;  // unset
   }
   // Set default authority.
-  absl::optional<absl::string_view> default_authority =
-      channel_args_.GetString(GRPC_ARG_DEFAULT_AUTHORITY);
+  absl::optional<std::string> default_authority =
+      channel_args_.GetOwnedString(GRPC_ARG_DEFAULT_AUTHORITY);
   if (!default_authority.has_value()) {
     default_authority_ =
         CoreConfiguration::Get().resolver_registry().GetDefaultAuthority(
             *server_uri);
   } else {
-    default_authority_ = std::string(*default_authority);
+    default_authority_ = std::move(*default_authority);
   }
   // Success.
   *error = GRPC_ERROR_NONE;

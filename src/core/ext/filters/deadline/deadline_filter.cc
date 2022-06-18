@@ -387,8 +387,7 @@ void RegisterDeadlineFilter(CoreConfiguration::Builder* builder) {
         type, GRPC_CHANNEL_INIT_BUILTIN_PRIORITY,
         [filter](ChannelStackBuilder* builder) {
           auto args = builder->channel_args();
-          if (args.GetBool(GRPC_ARG_ENABLE_DEADLINE_CHECKS)
-                  .value_or(!args.WantMinimalStack())) {
+          if (grpc_deadline_checking_enabled(args)) {
             builder->PrependFilter(filter);
           }
           return true;

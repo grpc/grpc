@@ -146,7 +146,7 @@ bool HttpProxyMapper::MapName(absl::string_view server_uri, ChannelArgs* args,
 
   char* user_cred = nullptr;
   *name_to_resolve = GetHttpProxyServer(*args, &user_cred);
-  if (*name_to_resolve == nullptr) return false;
+  if (!name_to_resolve->has_value()) return false;
   absl::StatusOr<URI> uri = URI::Parse(server_uri);
   auto no_use_proxy = [&]() {
     *name_to_resolve = absl::nullopt;
