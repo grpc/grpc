@@ -38,7 +38,6 @@
 #include "src/core/lib/resource_quota/memory_quota.h"
 #include "src/core/lib/uri/uri_parser.h"
 
-using ::grpc_event_engine::experimental::EventEngine;
 using Endpoint = ::grpc_event_engine::experimental::EventEngine::Endpoint;
 using Listener = ::grpc_event_engine::experimental::EventEngine::Listener;
 

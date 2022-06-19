@@ -74,7 +74,7 @@ class ConnectionManager {
   // If connection is successful, returns a tuple containing:
   //    1. a pointer to the client side endpoint of the connection.
   //    2. a pointer to the server side endpoint of the connection.
-  // If un-successfull it returns a non-OK  status containing the error
+  // If un-successful it returns a non-OK  status containing the error
   // encountered.
   absl::StatusOr<std::tuple<std::unique_ptr<EventEngine::Endpoint>,
                             std::unique_ptr<EventEngine::Endpoint>>>

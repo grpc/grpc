@@ -53,7 +53,7 @@ grpc_resolved_address CreateGRPCResolvedAddress(
 
 // Blocks until poll(2) indicates that one of the fds has pending I/O
 // the deadline is reached whichever comes first. Returns an OK
-// status a valid I/O event is available for atleast one of the fds, a Status
+// status a valid I/O event is available for at least one of the fds, a Status
 // with canonical code DEADLINE_EXCEEDED if the deadline expired and a non-OK
 // Status if any other error occurred.
 absl::Status PollFds(struct pollfd* pfds, int nfds, absl::Duration timeout) {
@@ -381,7 +381,7 @@ absl::StatusOr<int> PosixOracleListener::Bind(
   const char* scheme = grpc_sockaddr_get_uri_scheme(&address);
   if (scheme == nullptr || strcmp(scheme, "ipv6") != 0) {
     return absl::UnimplementedError(
-        "Unsupported bind address type. Only IPV6 addresses are suported "
+        "Unsupported bind address type. Only IPV6 addresses are supported "
         "currently by the PosixOracleListener ...");
   }
 
