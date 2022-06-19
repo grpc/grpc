@@ -61,11 +61,9 @@ class ThreadedFuzzingEventEngine : public FuzzingEventEngine {
 
 int main(int argc, char** argv) {
   testing::InitGoogleTest(&argc, argv);
-  SetEventEngineFactories(
-      []() {
-        return absl::make_unique<
-            grpc_event_engine::experimental::ThreadedFuzzingEventEngine>();
-      },
-      nullptr);
+  SetEventEngineFactory([]() {
+    return absl::make_unique<
+        grpc_event_engine::experimental::ThreadedFuzzingEventEngine>();
+  });
   return RUN_ALL_TESTS();
 }

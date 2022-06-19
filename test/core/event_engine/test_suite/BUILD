@@ -18,10 +18,7 @@ licenses(["notice"])
 
 grpc_package(name = "test/core/event_engine/test_suite")
 
-COMMON_HEADERS = [
-    "event_engine_test.h",
-    "event_engine_test_utils.h",
-]
+COMMON_HEADERS = ["event_engine_test.h"]
 
 grpc_cc_library(
     name = "timer",
@@ -94,45 +91,9 @@ grpc_cc_test(
 # -- Internal targets --
 
 grpc_cc_library(
-    name = "oracle_event_engine_posix",
-    testonly = True,
-    srcs = ["oracle_event_engine_posix.cc"],
-    hdrs = ["oracle_event_engine_posix.h"],
-    tags = [
-        "no_windows",
-    ],
-    deps = [
-        ":conformance_test_base_lib",
-        "//:grpc",
-        "//test/core/util:grpc_test_util",
-    ],
-)
-
-grpc_cc_test(
-    name = "oracle_event_engine_posix_test",
-    srcs = ["oracle_event_engine_posix_test.cc"],
-    external_deps = ["gtest"],
-    language = "C++",
-    tags = [
-        "no_test_ios",
-        "no_windows",
-    ],
-    uses_polling = False,
-    deps = [
-        ":client",
-        ":oracle_event_engine_posix",
-        "//:grpc",
-        "//test/core/util:grpc_test_util",
-    ],
-)
-
-grpc_cc_library(
     name = "conformance_test_base_lib",
     testonly = True,
-    srcs = [
-        "event_engine_test.cc",
-        "event_engine_test_utils.cc",
-    ],
+    srcs = ["event_engine_test.cc"],
     hdrs = COMMON_HEADERS,
     external_deps = ["gtest"],
     deps = [
