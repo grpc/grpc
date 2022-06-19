@@ -349,9 +349,11 @@ void grpc_endpoint_tests(grpc_endpoint_test_config config,
   g_pollset = pollset;
   g_mu = mu;
   multiple_shutdown_test(config);
-  read_and_write_test(config, 10000000, 100000, 8192, 1024, false);
-  read_and_write_test(config, 1000000, 100000, 1, 4096, false);
-  read_and_write_test(config, 100000000, 100000, 1, 8192, true);
+  for (int i = 1; i <= 8192; i = i * 2) {
+    read_and_write_test(config, 10000000, 100000, 8192, i, false);
+    read_and_write_test(config, 1000000, 100000, 1, i, false);
+    read_and_write_test(config, 100000000, 100000, 1, i, true);
+  }
   for (i = 1; i < 1000; i = std::max(i + 1, i * 5 / 4)) {
     read_and_write_test(config, 40320, i, i, i, false);
   }
