@@ -105,7 +105,8 @@ class FileWatcherAuthorizationPolicyProvider
   std::unique_ptr<Thread> refresh_thread_;
   gpr_event shutdown_event_;
   bool execute_cb_ = false;
-  // Callback is executed when the policy contents in file are modified.
+  // Callback is executed when the authorization policy contents in file are
+  // modified. This is useful for testing purpose.
   std::function<void(grpc_status_code code, const char* error_details)> cb_ =
       nullptr;
 

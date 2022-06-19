@@ -108,6 +108,8 @@ FileWatcherAuthorizationPolicyProvider::FileWatcherAuthorizationPolicyProvider(
   if (!status->ok()) {
     return;
   }
+  // Callback is not executed on initial file read.
+  execute_cb_ = false;
   auto thread_lambda = [](void* arg) {
     WeakRefCountedPtr<FileWatcherAuthorizationPolicyProvider> provider(
         static_cast<FileWatcherAuthorizationPolicyProvider*>(arg));
