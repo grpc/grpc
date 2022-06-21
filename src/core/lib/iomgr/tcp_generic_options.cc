@@ -42,10 +42,27 @@ void CopyIntegerConfigValueToChannelArgs(
 }
 }  // namespace
 
+void grpc_tcp_generic_options_init(grpc_tcp_generic_options* options) {
+  if (options != nullptr) {
+    new (options) grpc_tcp_generic_options();
+  }
+}
+
+void grpc_tcp_generic_options_destroy(grpc_tcp_generic_options* options) {
+  if (options != nullptr) {
+    if (options->socket_mutator != nullptr) {
+      grpc_socket_mutator_unref(options->socket_mutator);
+      options->socket_mutator = nullptr;
+    }
+    options->resource_quota.reset(nullptr);
+  }
+}
+
 grpc_tcp_generic_options TcpOptionsFromEndpointConfig(
     const EndpointConfig& config) {
   EndpointConfig::Setting value;
   grpc_tcp_generic_options options;
+  grpc_tcp_generic_options_init(&options);
   CopyIntegerConfigValueToTCPOptions(config, options,
                                      GRPC_ARG_TCP_READ_CHUNK_SIZE);
   CopyIntegerConfigValueToTCPOptions(config, options,

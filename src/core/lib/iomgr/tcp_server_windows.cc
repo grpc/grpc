@@ -108,6 +108,7 @@ static grpc_error_handle tcp_server_create(grpc_closure* shutdown_complete,
                                            const EndpointConfig& config,
                                            grpc_tcp_server** server) {
   grpc_tcp_server* s = (grpc_tcp_server*)gpr_malloc(sizeof(grpc_tcp_server));
+  grpc_tcp_generic_options_init(&s->options);
   s->options = TcpOptionsFromEndpointConfig(config);
   gpr_ref_init(&s->refs, 1);
   gpr_mu_init(&s->mu);
@@ -136,6 +137,7 @@ static void destroy_server(void* arg, grpc_error_handle error) {
     grpc_winsocket_destroy(sp->socket);
     gpr_free(sp);
   }
+  grpc_tcp_generic_options_destroy(&s->options);
   gpr_mu_destroy(&s->mu);
   gpr_free(s);
 }
