@@ -553,8 +553,8 @@ static void on_read_request_done_locked(void* arg, grpc_error_handle error) {
                                       .ToC();
   auto config = grpc_event_engine::experimental::CreateEndpointConfig(args);
   grpc_tcp_client_connect(&conn->on_server_connect_done, &conn->server_endpoint,
-                          conn->pollset_set, *(config.get()),
-                          &(*addresses_or)[0], deadline);
+                          conn->pollset_set, *config, &(*addresses_or)[0],
+                          deadline);
   grpc_channel_args_destroy(args);
 }
 
@@ -633,7 +633,7 @@ grpc_end2end_http_proxy* grpc_end2end_http_proxy_create(
   auto config = grpc_event_engine::experimental::CreateEndpointConfig(
       proxy->channel_args);
   grpc_error_handle error =
-      grpc_tcp_server_create(nullptr, *(config.get()), &proxy->server);
+      grpc_tcp_server_create(nullptr, *config, &proxy->server);
   GPR_ASSERT(GRPC_ERROR_IS_NONE(error));
   // Bind to port.
   grpc_resolved_address resolved_addr;

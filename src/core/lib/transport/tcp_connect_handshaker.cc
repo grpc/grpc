@@ -163,9 +163,7 @@ void TCPConnectHandshaker::DoHandshake(grpc_tcp_server_acceptor* /*acceptor*/,
   auto config =
       grpc_event_engine::experimental::CreateEndpointConfig(args->args);
   grpc_tcp_client_connect(&connected_, &endpoint_to_destroy_,
-                          interested_parties_, (*config.get()), &addr_,
-                          args->deadline);
-}
+                          interested_parties_, *config args->deadline);
 
 void TCPConnectHandshaker::Connected(void* arg, grpc_error_handle error) {
   RefCountedPtr<TCPConnectHandshaker> self(

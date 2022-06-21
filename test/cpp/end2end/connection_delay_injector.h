@@ -89,8 +89,8 @@ class ConnectionAttemptInjector {
       GPR_ASSERT(closure_ != nullptr);
       auto config = grpc_event_engine::experimental::CreateEndpointConfig(
           TcpOptionsIntoChannelArgs(options_));
-      AttemptConnection(closure_, endpoint_, interested_parties_,
-                        *(config.get()), &address_, deadline_);
+      AttemptConnection(closure_, endpoint_, interested_parties_, *config,
+                        &address_, deadline_);
       closure_ = nullptr;
     }
 

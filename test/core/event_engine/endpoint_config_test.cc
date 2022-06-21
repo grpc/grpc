@@ -24,7 +24,6 @@
 #include "test/core/util/test_config.h"
 
 using ::grpc_event_engine::experimental::CreateEndpointConfig;
-using ::grpc_event_engine::experimental::EndpointConfig;
 
 TEST(EndpointConfigTest, CanSRetrieveValuesFromChannelArgs) {
   grpc_arg arg = grpc_channel_arg_integer_create(const_cast<char*>("arst"), 3);

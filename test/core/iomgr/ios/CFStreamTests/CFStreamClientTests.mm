@@ -109,7 +109,7 @@ static void must_fail(void* arg, grpc_error_handle error) {
                                       .PreconditionChannelArgs(nullptr)
                                       .ToC();
   auto config = grpc_event_engine::experimental::CreateEndpointConfig(args);
-  grpc_tcp_client_connect(&done, &g_connecting, nullptr, *(config.get()), &resolved_addr,
+  grpc_tcp_client_connect(&done, &g_connecting, nullptr, *config, &resolved_addr,
                           grpc_core::Timestamp::InfFuture());
   grpc_channel_args_destroy(args);
 
@@ -168,7 +168,7 @@ static void must_fail(void* arg, grpc_error_handle error) {
                                       .PreconditionChannelArgs(nullptr)
                                       .ToC();
   auto config = grpc_event_engine::experimental::CreateEndpointConfig(args);
-  grpc_tcp_client_connect(&done, &g_connecting, nullptr, *(config.get()), &resolved_addr,
+  grpc_tcp_client_connect(&done, &g_connecting, nullptr, *config, &resolved_addr,
                           grpc_core::Timestamp::InfFuture());
   grpc_channel_args_destroy(args);
 

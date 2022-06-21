@@ -171,8 +171,7 @@ static void test_no_op(void) {
                                       .PreconditionChannelArgs(nullptr)
                                       .ToC();
   auto config = grpc_event_engine::experimental::CreateEndpointConfig(args);
-  GPR_ASSERT(GRPC_ERROR_NONE ==
-             grpc_tcp_server_create(nullptr, *(config.get()), &s));
+  GPR_ASSERT(GRPC_ERROR_NONE == grpc_tcp_server_create(nullptr, *config, &s));
   grpc_channel_args_destroy(args);
   grpc_tcp_server_unref(s);
 }
@@ -185,8 +184,7 @@ static void test_no_op_with_start(void) {
                                       .PreconditionChannelArgs(nullptr)
                                       .ToC();
   auto config = grpc_event_engine::experimental::CreateEndpointConfig(args);
-  GPR_ASSERT(GRPC_ERROR_NONE ==
-             grpc_tcp_server_create(nullptr, *(config.get()), &s));
+  GPR_ASSERT(GRPC_ERROR_NONE == grpc_tcp_server_create(nullptr, *config, &s));
   grpc_channel_args_destroy(args);
   LOG_TEST("test_no_op_with_start");
   std::vector<grpc_pollset*> empty_pollset;
@@ -205,8 +203,7 @@ static void test_no_op_with_port(void) {
                                       .PreconditionChannelArgs(nullptr)
                                       .ToC();
   auto config = grpc_event_engine::experimental::CreateEndpointConfig(args);
-  GPR_ASSERT(GRPC_ERROR_NONE ==
-             grpc_tcp_server_create(nullptr, *(config.get()), &s));
+  GPR_ASSERT(GRPC_ERROR_NONE == grpc_tcp_server_create(nullptr, *config, &s));
   grpc_channel_args_destroy(args);
   LOG_TEST("test_no_op_with_port");
 
@@ -232,8 +229,7 @@ static void test_no_op_with_port_and_start(void) {
                                       .PreconditionChannelArgs(nullptr)
                                       .ToC();
   auto config = grpc_event_engine::experimental::CreateEndpointConfig(args);
-  GPR_ASSERT(GRPC_ERROR_NONE ==
-             grpc_tcp_server_create(nullptr, *(config.get()), &s));
+  GPR_ASSERT(GRPC_ERROR_NONE == grpc_tcp_server_create(nullptr, *config, &s));
   grpc_channel_args_destroy(args);
   LOG_TEST("test_no_op_with_port_and_start");
   int port = -1;
@@ -337,8 +333,7 @@ static void test_connect(size_t num_connects,
           .ToC();
   auto config =
       grpc_event_engine::experimental::CreateEndpointConfig(new_channel_args);
-  GPR_ASSERT(GRPC_ERROR_NONE ==
-             grpc_tcp_server_create(nullptr, *(config.get()), &s));
+  GPR_ASSERT(GRPC_ERROR_NONE == grpc_tcp_server_create(nullptr, *config, &s));
   grpc_channel_args_destroy(new_channel_args);
   unsigned port_num;
   server_weak_ref weak_ref;

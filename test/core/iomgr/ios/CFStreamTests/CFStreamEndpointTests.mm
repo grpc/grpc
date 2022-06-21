@@ -132,7 +132,7 @@ static bool compare_slice_buffer_with_buffer(grpc_slice_buffer *slices, const ch
                                       .PreconditionChannelArgs(nullptr)
                                       .ToC();
   auto config = grpc_event_engine::experimental::CreateEndpointConfig(args);
-  grpc_tcp_client_connect(&done, &ep_, nullptr, *(config.get()), &resolved_addr,
+  grpc_tcp_client_connect(&done, &ep_, nullptr, *config, &resolved_addr,
                           grpc_core::Timestamp::InfFuture());
   grpc_channel_args_destroy(args);
 

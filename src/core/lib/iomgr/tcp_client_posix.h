@@ -24,6 +24,7 @@
 #include "src/core/lib/iomgr/endpoint.h"
 #include "src/core/lib/iomgr/ev_posix.h"
 #include "src/core/lib/iomgr/tcp_client.h"
+#include "src/core/lib/iomgr/tcp_generic_options.h"
 
 /* Create an endpoint from a connected grpc_fd.
 

@@ -100,7 +100,7 @@ grpc_tcp_generic_options TcpOptionsFromEndpointConfig(
 grpc_tcp_generic_options TcpOptionsFromChannelArgs(
     const grpc_core::ChannelArgs& args) {
   auto config = grpc_event_engine::experimental::CreateEndpointConfig(args);
-  return TcpOptionsFromEndpointConfig(*(config.get()));
+  return TcpOptionsFromEndpointConfig(*config);
 }
 
 grpc_tcp_generic_options TcpOptionsFromChannelArgs(

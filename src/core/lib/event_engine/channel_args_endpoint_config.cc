@@ -44,14 +44,14 @@ EndpointConfig::Setting EndpointConfig::Get(absl::string_view key) const {
 
 std::unique_ptr<EndpointConfig> CreateEndpointConfig(
     const grpc_core::ChannelArgs& args) {
-  return std::make_unique<EndpointConfig>(
-      std::make_unique<EndpointConfig::OptionsAccessor>(args));
+  return absl::make_unique<EndpointConfig>(
+      absl::make_unique<EndpointConfig::OptionsAccessor>(args));
 }
 
 std::unique_ptr<EndpointConfig> CreateEndpointConfig(
     const grpc_channel_args* args) {
-  return std::make_unique<EndpointConfig>(
-      std::make_unique<EndpointConfig::OptionsAccessor>(args));
+  return absl::make_unique<EndpointConfig>(
+      absl::make_unique<EndpointConfig::OptionsAccessor>(args));
 }
 
 }  // namespace experimental
