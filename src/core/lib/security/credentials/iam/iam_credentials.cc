@@ -35,6 +35,7 @@
 #include "src/core/lib/promise/poll.h"
 #include "src/core/lib/promise/promise.h"
 #include "src/core/lib/surface/api_trace.h"
+#include "src/core/lib/transport/metadata_allocator.h"
 #include "src/core/lib/transport/metadata_batch.h"
 
 grpc_core::ArenaPromise<absl::StatusOr<grpc_core::ClientMetadataHandle>>

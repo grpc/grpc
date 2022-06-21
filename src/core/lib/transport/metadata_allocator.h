@@ -15,6 +15,17 @@
 #ifndef GRPC_CORE_LIB_TRANSPORT_METADATA_ALLOCATOR_H
 #define GRPC_CORE_LIB_TRANSPORT_METADATA_ALLOCATOR_H
 
+#include <grpc/support/port_platform.h>
+
+#include <new>
+
+#include "absl/status/status.h"
+
+#include <grpc/status.h>
+
+#include "src/core/lib/promise/context.h"
+#include "src/core/lib/resource_quota/arena.h"
+#include "src/core/lib/slice/slice.h"
 #include "src/core/lib/transport/metadata_batch.h"
 
 namespace grpc_core {
@@ -165,4 +176,4 @@ MetadataHandle<T>::~MetadataHandle() {
 
 }  // namespace grpc_core
 
-#endif
+#endif  // GRPC_CORE_LIB_TRANSPORT_METADATA_ALLOCATOR_H
