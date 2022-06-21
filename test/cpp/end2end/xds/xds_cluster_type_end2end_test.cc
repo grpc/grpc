@@ -286,7 +286,7 @@ using AggregateClusterTest = ClusterTypeTest;
 INSTANTIATE_TEST_SUITE_P(XdsTest, AggregateClusterTest,
                          ::testing::Values(XdsTestType()), &XdsTestType::Name);
 
-TEST_P(AggregateClusterTest, ) {
+TEST_P(AggregateClusterTest, Basic) {
   CreateAndStartBackends(2);
   const char* kNewCluster1Name = "new_cluster_1";
   const char* kNewEdsService1Name = "new_eds_service_name_1";
@@ -326,13 +326,13 @@ TEST_P(AggregateClusterTest, ) {
   // Wait for traffic to go to backend 0.
   WaitForBackend(DEBUG_LOCATION, 0);
   // Shutdown backend 0 and wait for all traffic to go to backend 1.
-  ShutdownBackend(0);
-  WaitForBackend(DEBUG_LOCATION, 1,
-                 WaitForBackendOptions().set_allow_failures(true));
+  backends_[0]->StopListeningAndSendGoaways();
+  WaitForBackend(DEBUG_LOCATION, 1);
   auto response_state = balancer_->ads_service()->cds_response_state();
   ASSERT_TRUE(response_state.has_value());
   EXPECT_EQ(response_state->state, AdsServiceImpl::ResponseState::ACKED);
-  // Bring backend 0 back and ensure all traffic go back to it.
+  // Bring backend 0 back and ensure all traffic goes back to it.
+  ShutdownBackend(0);
   StartBackend(0);
   WaitForBackend(DEBUG_LOCATION, 0);
 }
@@ -386,13 +386,13 @@ TEST_P(AggregateClusterTest, DiamondDependency) {
   // Wait for traffic to go to backend 0.
   WaitForBackend(DEBUG_LOCATION, 0);
   // Shutdown backend 0 and wait for all traffic to go to backend 1.
-  ShutdownBackend(0);
-  WaitForBackend(DEBUG_LOCATION, 1,
-                 WaitForBackendOptions().set_allow_failures(true));
+  backends_[0]->StopListeningAndSendGoaways();
+  WaitForBackend(DEBUG_LOCATION, 1);
   auto response_state = balancer_->ads_service()->cds_response_state();
   ASSERT_TRUE(response_state.has_value());
   EXPECT_EQ(response_state->state, AdsServiceImpl::ResponseState::ACKED);
   // Bring backend 0 back and ensure all traffic go back to it.
+  ShutdownBackend(0);
   StartBackend(0);
   WaitForBackend(DEBUG_LOCATION, 0);
 }
@@ -522,8 +522,8 @@ TEST_P(AggregateClusterTest, FallBackWithConnectivityChurn) {
   connection_attempt_injector.Start();
   // Wait for P0 backend.
   // Increase timeout to account for subchannel connection delays.
-  WaitForBackend(DEBUG_LOCATION, 0, WaitForBackendOptions(),
-                 RpcOptions().set_timeout_ms(2000));
+  WaitForBackend(DEBUG_LOCATION, 0, /*check_status=*/nullptr,
+                 WaitForBackendOptions(), RpcOptions().set_timeout_ms(2000));
   // Send GOAWAY from the P0 backend.
   // We don't actually shut it down here to avoid flakiness caused by
   // failing an RPC after the client has already sent it but before the
@@ -583,13 +583,13 @@ TEST_P(AggregateClusterTest, EdsToLogicalDns) {
   // Wait for traffic to go to backend 0.
   WaitForBackend(DEBUG_LOCATION, 0);
   // Shutdown backend 0 and wait for all traffic to go to backend 1.
-  ShutdownBackend(0);
-  WaitForBackend(DEBUG_LOCATION, 1,
-                 WaitForBackendOptions().set_allow_failures(true));
+  backends_[0]->StopListeningAndSendGoaways();
+  WaitForBackend(DEBUG_LOCATION, 1);
   auto response_state = balancer_->ads_service()->cds_response_state();
   ASSERT_TRUE(response_state.has_value());
   EXPECT_EQ(response_state->state, AdsServiceImpl::ResponseState::ACKED);
   // Bring backend 0 back and ensure all traffic go back to it.
+  ShutdownBackend(0);
   StartBackend(0);
   WaitForBackend(DEBUG_LOCATION, 0);
 }
@@ -644,13 +644,13 @@ TEST_P(AggregateClusterTest, LogicalDnsToEds) {
   // Wait for traffic to go to backend 0.
   WaitForBackend(DEBUG_LOCATION, 0);
   // Shutdown backend 0 and wait for all traffic to go to backend 1.
-  ShutdownBackend(0);
-  WaitForBackend(DEBUG_LOCATION, 1,
-                 WaitForBackendOptions().set_allow_failures(true));
+  backends_[0]->StopListeningAndSendGoaways();
+  WaitForBackend(DEBUG_LOCATION, 1);
   auto response_state = balancer_->ads_service()->cds_response_state();
   ASSERT_TRUE(response_state.has_value());
   EXPECT_EQ(response_state->state, AdsServiceImpl::ResponseState::ACKED);
   // Bring backend 0 back and ensure all traffic go back to it.
+  ShutdownBackend(0);
   StartBackend(0);
   WaitForBackend(DEBUG_LOCATION, 0);
 }
@@ -713,7 +713,11 @@ TEST_P(AggregateClusterTest, ReconfigEdsWhileLogicalDnsChildFails) {
         std::move(result));
   }
   // When an RPC fails, we know the channel has seen the update.
-  CheckRpcSendFailure(DEBUG_LOCATION);
+  constexpr char kErrorMessage[] =
+      // TODO(roth): Figure out how to get some sort of resolution note
+      // included here as part of https://github.com/grpc/grpc/issues/22883.
+      "empty address list: ";
+  CheckRpcSendFailure(DEBUG_LOCATION, StatusCode::UNAVAILABLE, kErrorMessage);
   // Send an EDS update that moves locality1 to priority 0.
   args1 = EdsResourceArgs({
       {"locality1", CreateEndpointsForBackends(0, 1), kDefaultLocalityWeight,
@@ -723,8 +727,12 @@ TEST_P(AggregateClusterTest, ReconfigEdsWhileLogicalDnsChildFails) {
   });
   balancer_->ads_service()->SetEdsResource(
       BuildEdsResource(args1, kNewEdsService1Name));
-  WaitForBackend(DEBUG_LOCATION, 0,
-                 WaitForBackendOptions().set_allow_failures(true));
+  WaitForBackend(DEBUG_LOCATION, 0, [&](const RpcResult& result) {
+    if (!result.status.ok()) {
+      EXPECT_EQ(result.status.error_code(), StatusCode::UNAVAILABLE);
+      EXPECT_EQ(result.status.error_message(), kErrorMessage);
+    }
+  });
 }
 
 TEST_P(AggregateClusterTest, MultipleClustersWithSameLocalities) {

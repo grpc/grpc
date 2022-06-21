@@ -78,8 +78,6 @@
 #include "absl/strings/str_join.h"
 #include "absl/strings/string_view.h"
 #include "absl/strings/strip.h"
-#include "absl/time/clock.h"
-#include "absl/time/time.h"
 #include "absl/types/optional.h"
 #include "absl/types/variant.h"
 #include "upb/upb.hpp"
@@ -996,9 +994,8 @@ void GrpcLb::BalancerCallState::StartQuery() {
 }
 
 void GrpcLb::BalancerCallState::ScheduleNextClientLoadReportLocked() {
-  client_load_report_handle_ = GetDefaultEventEngine()->RunAt(
-      absl::Now() + absl::Milliseconds(client_stats_report_interval_.millis()),
-      [this] {
+  client_load_report_handle_ =
+      GetDefaultEventEngine()->RunAfter(client_stats_report_interval_, [this] {
         ApplicationCallbackExecCtx callback_exec_ctx;
         ExecCtx exec_ctx;
         MaybeSendClientLoadReport();
@@ -1089,7 +1086,7 @@ void GrpcLb::BalancerCallState::ClientLoadReportDoneLocked(
     grpc_error_handle error) {
   grpc_byte_buffer_destroy(send_message_payload_);
   send_message_payload_ = nullptr;
-  if (error != GRPC_ERROR_NONE || this != grpclb_policy()->lb_calld_.get()) {
+  if (!GRPC_ERROR_IS_NONE(error) || this != grpclb_policy()->lb_calld_.get()) {
     Unref(DEBUG_LOCATION, "client_load_report");
     GRPC_ERROR_UNREF(error);
     return;
@@ -1675,7 +1672,7 @@ void GrpcLb::OnBalancerCallRetryTimer(void* arg, grpc_error_handle error) {
 
 void GrpcLb::OnBalancerCallRetryTimerLocked(grpc_error_handle error) {
   retry_timer_callback_pending_ = false;
-  if (!shutting_down_ && error == GRPC_ERROR_NONE && lb_calld_ == nullptr) {
+  if (!shutting_down_ && GRPC_ERROR_IS_NONE(error) && lb_calld_ == nullptr) {
     if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_glb_trace)) {
       gpr_log(GPR_INFO, "[grpclb %p] Restarting call to LB server", this);
     }
@@ -1719,7 +1716,7 @@ void GrpcLb::OnFallbackTimerLocked(grpc_error_handle error) {
   // If we receive a serverlist after the timer fires but before this callback
   // actually runs, don't fall back.
   if (fallback_at_startup_checks_pending_ && !shutting_down_ &&
-      error == GRPC_ERROR_NONE) {
+      GRPC_ERROR_IS_NONE(error)) {
     gpr_log(GPR_INFO,
             "[grpclb %p] No response from balancer after fallback timeout; "
             "entering fallback mode",
@@ -1840,7 +1837,7 @@ void GrpcLb::OnSubchannelCacheTimer(void* arg, grpc_error_handle error) {
 }
 
 void GrpcLb::OnSubchannelCacheTimerLocked(grpc_error_handle error) {
-  if (subchannel_cache_timer_pending_ && error == GRPC_ERROR_NONE) {
+  if (subchannel_cache_timer_pending_ && GRPC_ERROR_IS_NONE(error)) {
     auto it = cached_subchannels_.begin();
     if (it != cached_subchannels_.end()) {
       if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_glb_trace)) {
@@ -1875,7 +1872,7 @@ class GrpcLbFactory : public LoadBalancingPolicyFactory {
 
   RefCountedPtr<LoadBalancingPolicy::Config> ParseLoadBalancingConfig(
       const Json& json, grpc_error_handle* error) const override {
-    GPR_DEBUG_ASSERT(error != nullptr && *error == GRPC_ERROR_NONE);
+    GPR_DEBUG_ASSERT(error != nullptr && GRPC_ERROR_IS_NONE(*error));
     if (json.type() == Json::Type::JSON_NULL) {
       return MakeRefCounted<GrpcLbConfig>(nullptr, "");
     }
@@ -1906,7 +1903,7 @@ class GrpcLbFactory : public LoadBalancingPolicyFactory {
     RefCountedPtr<LoadBalancingPolicy::Config> child_policy_config =
         LoadBalancingPolicyRegistry::ParseLoadBalancingConfig(
             *child_policy_config_json, &parse_error);
-    if (parse_error != GRPC_ERROR_NONE) {
+    if (!GRPC_ERROR_IS_NONE(parse_error)) {
       std::vector<grpc_error_handle> child_errors;
       child_errors.push_back(parse_error);
       error_list.push_back(

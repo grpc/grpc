@@ -187,7 +187,9 @@ class XdsResolver : public Resolver {
       Ref().release();  // ref held by lambda
       resolver_->work_serializer_->Run(
           [this]() {
-            resolver_->OnResourceDoesNotExist();
+            resolver_->OnResourceDoesNotExist(
+                absl::StrCat(resolver_->lds_resource_name_,
+                             ": xDS listener resource does not exist"));
             Unref();
           },
           DEBUG_LOCATION);
@@ -226,7 +228,9 @@ class XdsResolver : public Resolver {
       Ref().release();  // ref held by lambda
       resolver_->work_serializer_->Run(
           [this]() {
-            resolver_->OnResourceDoesNotExist();
+            resolver_->OnResourceDoesNotExist(absl::StrCat(
+                resolver_->route_config_name_,
+                ": xDS route configuration resource does not exist"));
             Unref();
           },
           DEBUG_LOCATION);
@@ -357,7 +361,7 @@ class XdsResolver : public Resolver {
   void OnListenerUpdate(XdsListenerResource listener);
   void OnRouteConfigUpdate(XdsRouteConfigResource rds_update);
   void OnError(absl::string_view context, absl::Status status);
-  void OnResourceDoesNotExist();
+  void OnResourceDoesNotExist(std::string context);
 
   absl::StatusOr<RefCountedPtr<ServiceConfig>> CreateServiceConfig();
   void GenerateResult();
@@ -492,7 +496,7 @@ XdsResolver::XdsConfigSelector::XdsConfigSelector(
           Route::ClusterWeightState cluster_weight_state;
           *error = CreateMethodConfig(route_entry.route, &weighted_cluster,
                                       &cluster_weight_state.method_config);
-          if (*error != GRPC_ERROR_NONE) return;
+          if (!GRPC_ERROR_IS_NONE(*error)) return;
           end += weighted_cluster.weight;
           cluster_weight_state.range_end = end;
           cluster_weight_state.cluster = weighted_cluster.name;
@@ -596,7 +600,7 @@ grpc_error_handle XdsResolver::XdsConfigSelector::CreateMethodConfig(
           resolver_->current_listener_.http_connection_manager.http_filters,
           resolver_->current_virtual_host_, route, cluster_weight,
           grpc_channel_args_copy(resolver_->args_));
-  if (result.error != GRPC_ERROR_NONE) {
+  if (!GRPC_ERROR_IS_NONE(result.error)) {
     return result.error;
   }
   for (const auto& p : result.per_filter_configs) {
@@ -788,7 +792,7 @@ ConfigSelector::CallConfig XdsResolver::XdsConfigSelector::GetCallConfig(
 void XdsResolver::StartLocked() {
   grpc_error_handle error = GRPC_ERROR_NONE;
   xds_client_ = XdsClient::GetOrCreate(args_, &error);
-  if (error != GRPC_ERROR_NONE) {
+  if (!GRPC_ERROR_IS_NONE(error)) {
     gpr_log(GPR_ERROR,
             "Failed to create xds client -- channel will remain in "
             "TRANSIENT_FAILURE: %s",
@@ -977,7 +981,7 @@ void XdsResolver::OnError(absl::string_view context, absl::Status status) {
   result_handler_->ReportResult(std::move(result));
 }
 
-void XdsResolver::OnResourceDoesNotExist() {
+void XdsResolver::OnResourceDoesNotExist(std::string context) {
   gpr_log(GPR_ERROR,
           "[xds_resolver %p] LDS/RDS resource does not exist -- clearing "
           "update and returning empty service config",
@@ -991,6 +995,7 @@ void XdsResolver::OnResourceDoesNotExist() {
   grpc_error_handle error = GRPC_ERROR_NONE;
   result.service_config = ServiceConfigImpl::Create(args_, "{}", &error);
   GPR_ASSERT(*result.service_config != nullptr);
+  result.resolution_note = std::move(context);
   result.args = grpc_channel_args_copy(args_);
   result_handler_->ReportResult(std::move(result));
 }
@@ -1036,7 +1041,7 @@ XdsResolver::CreateServiceConfig() {
   grpc_error_handle error = GRPC_ERROR_NONE;
   absl::StatusOr<RefCountedPtr<ServiceConfig>> result =
       ServiceConfigImpl::Create(args_, json.c_str(), &error);
-  if (error != GRPC_ERROR_NONE) {
+  if (!GRPC_ERROR_IS_NONE(error)) {
     result = grpc_error_to_absl_status(error);
     GRPC_ERROR_UNREF(error);
   }
@@ -1049,7 +1054,7 @@ void XdsResolver::GenerateResult() {
   // state map, and then CreateServiceConfig for LB policies.
   grpc_error_handle error = GRPC_ERROR_NONE;
   auto config_selector = MakeRefCounted<XdsConfigSelector>(Ref(), &error);
-  if (error != GRPC_ERROR_NONE) {
+  if (!GRPC_ERROR_IS_NONE(error)) {
     OnError("could not create ConfigSelector",
             absl::UnavailableError(grpc_error_std_string(error)));
     GRPC_ERROR_UNREF(error);

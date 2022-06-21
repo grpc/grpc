@@ -324,8 +324,13 @@ void PickFirst::PickFirstSubchannelData::ProcessConnectivityChangeLocked(
       p->subchannel_list_ = std::move(p->latest_pending_subchannel_list_);
       // Set our state to that of the pending subchannel list.
       if (p->subchannel_list_->in_transient_failure()) {
-        absl::Status status = absl::UnavailableError(
-            "selected subchannel failed; switching to pending update");
+        absl::Status status = absl::UnavailableError(absl::StrCat(
+            "selected subchannel failed; switching to pending update; "
+            "last failure: ",
+            p->subchannel_list_
+                ->subchannel(p->subchannel_list_->num_subchannels())
+                ->connectivity_status()
+                .ToString()));
         p->channel_control_helper()->UpdateState(
             GRPC_CHANNEL_TRANSIENT_FAILURE, status,
             absl::make_unique<TransientFailurePicker>(status));
@@ -341,6 +346,9 @@ void PickFirst::PickFirstSubchannelData::ProcessConnectivityChangeLocked(
     // TODO(qianchengz): We may want to request re-resolution in
     // ExitIdleLocked().
     p->channel_control_helper()->RequestReresolution();
+    // TODO(roth): We chould check the connectivity states of all the
+    // subchannels here, just in case one of them happens to be READY,
+    // and we could switch to that rather than going IDLE.
     // Enter idle.
     p->idle_ = true;
     p->selected_ = nullptr;
@@ -384,13 +392,10 @@ void PickFirst::PickFirstSubchannelData::ProcessConnectivityChangeLocked(
     case GRPC_CHANNEL_READY:
       // Already handled this case above, so this should not happen.
       GPR_UNREACHABLE_CODE(break);
-    case GRPC_CHANNEL_TRANSIENT_FAILURE:
-    case GRPC_CHANNEL_IDLE: {
-      PickFirstSubchannelData* sd = this;
-      size_t next_index =
-          (sd->Index() + 1) % subchannel_list()->num_subchannels();
+    case GRPC_CHANNEL_TRANSIENT_FAILURE: {
+      size_t next_index = (Index() + 1) % subchannel_list()->num_subchannels();
       subchannel_list()->set_attempting_index(next_index);
-      sd = subchannel_list()->subchannel(next_index);
+      PickFirstSubchannelData* sd = subchannel_list()->subchannel(next_index);
       // If we're tried all subchannels, set state to TRANSIENT_FAILURE.
       if (sd->Index() == 0) {
         if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_pick_first_trace)) {
@@ -419,14 +424,28 @@ void PickFirst::PickFirstSubchannelData::ProcessConnectivityChangeLocked(
         // be the current list), re-resolve and report new state.
         if (subchannel_list() == p->subchannel_list_.get()) {
           p->channel_control_helper()->RequestReresolution();
-          absl::Status status =
-              absl::UnavailableError("failed to connect to all addresses");
+          absl::Status status = absl::UnavailableError(
+              absl::StrCat("failed to connect to all addresses; last error: ",
+                           connectivity_status().ToString()));
           p->channel_control_helper()->UpdateState(
               GRPC_CHANNEL_TRANSIENT_FAILURE, status,
               absl::make_unique<TransientFailurePicker>(status));
         }
       }
-      sd->subchannel()->RequestConnection();
+      // If the next subchannel is in IDLE, trigger a connection attempt.
+      // If it's in READY, we can't get here, because we would already
+      // have selected the subchannel above.
+      // If it's already in CONNECTING, we don't need to do this.
+      // If it's in TRANSIENT_FAILURE, then we will trigger the
+      // connection attempt later when it reports IDLE.
+      auto sd_state = sd->connectivity_state();
+      if (sd_state.has_value() && *sd_state == GRPC_CHANNEL_IDLE) {
+        sd->subchannel()->RequestConnection();
+      }
+      break;
+    }
+    case GRPC_CHANNEL_IDLE: {
+      subchannel()->RequestConnection();
       break;
     }
     case GRPC_CHANNEL_CONNECTING: {

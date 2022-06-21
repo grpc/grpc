@@ -142,7 +142,7 @@ class GracefulShutdownTest : public ::testing::Test {
 
   static void OnReadDone(void* arg, grpc_error_handle error) {
     GracefulShutdownTest* self = static_cast<GracefulShutdownTest*>(arg);
-    if (error == GRPC_ERROR_NONE) {
+    if (GRPC_ERROR_IS_NONE(error)) {
       {
         MutexLock lock(&self->mu_);
         for (size_t i = 0; i < self->read_buffer_.count; ++i) {
@@ -221,7 +221,7 @@ class GracefulShutdownTest : public ::testing::Test {
   }
 
   static void OnWriteDone(void* arg, grpc_error_handle error) {
-    GPR_ASSERT(error == GRPC_ERROR_NONE);
+    GPR_ASSERT(GRPC_ERROR_IS_NONE(error));
     absl::Notification* on_write_done_notification_ =
         static_cast<absl::Notification*>(arg);
     on_write_done_notification_->Notify();

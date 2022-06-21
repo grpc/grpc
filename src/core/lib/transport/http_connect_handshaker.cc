@@ -125,7 +125,7 @@ void HttpConnectHandshaker::CleanupArgsForFailureLocked() {
 // If the handshake failed or we're shutting down, clean up and invoke the
 // callback with the error.
 void HttpConnectHandshaker::HandshakeFailedLocked(grpc_error_handle error) {
-  if (error == GRPC_ERROR_NONE) {
+  if (GRPC_ERROR_IS_NONE(error)) {
     // If we were shut down after an endpoint operation succeeded but
     // before the endpoint callback was invoked, we need to generate our
     // own error.
@@ -164,7 +164,7 @@ void HttpConnectHandshaker::OnWriteDoneScheduler(void* arg,
 void HttpConnectHandshaker::OnWriteDone(void* arg, grpc_error_handle error) {
   auto* handshaker = static_cast<HttpConnectHandshaker*>(arg);
   ReleasableMutexLock lock(&handshaker->mu_);
-  if (error != GRPC_ERROR_NONE || handshaker->is_shutdown_) {
+  if (!GRPC_ERROR_IS_NONE(error) || handshaker->is_shutdown_) {
     // If the write failed or we're shutting down, clean up and invoke the
     // callback with the error.
     handshaker->HandshakeFailedLocked(GRPC_ERROR_REF(error));
@@ -198,7 +198,7 @@ void HttpConnectHandshaker::OnReadDoneScheduler(void* arg,
 void HttpConnectHandshaker::OnReadDone(void* arg, grpc_error_handle error) {
   auto* handshaker = static_cast<HttpConnectHandshaker*>(arg);
   ReleasableMutexLock lock(&handshaker->mu_);
-  if (error != GRPC_ERROR_NONE || handshaker->is_shutdown_) {
+  if (!GRPC_ERROR_IS_NONE(error) || handshaker->is_shutdown_) {
     // If the read failed or we're shutting down, clean up and invoke the
     // callback with the error.
     handshaker->HandshakeFailedLocked(GRPC_ERROR_REF(error));
@@ -211,7 +211,7 @@ void HttpConnectHandshaker::OnReadDone(void* arg, grpc_error_handle error) {
       error = grpc_http_parser_parse(&handshaker->http_parser_,
                                      handshaker->args_->read_buffer->slices[i],
                                      &body_start_offset);
-      if (error != GRPC_ERROR_NONE) {
+      if (!GRPC_ERROR_IS_NONE(error)) {
         handshaker->HandshakeFailedLocked(error);
         goto done;
       }

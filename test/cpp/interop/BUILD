@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-load("//bazel:grpc_build_system.bzl", "grpc_cc_binary", "grpc_cc_library", "grpc_package")
+load("//bazel:grpc_build_system.bzl", "grpc_cc_binary", "grpc_cc_library", "grpc_cc_test", "grpc_package")
 
 licenses(["notice"])
 
@@ -275,18 +275,46 @@ grpc_cc_binary(
     ],
 )
 
-grpc_cc_binary(
-    name = "istio_test_echo_server",
+grpc_cc_library(
+    name = "istio_echo_server_lib",
     srcs = [
-        "istio_test_echo_server.cc",
+        "istio_echo_server_lib.cc",
+    ],
+    hdrs = ["istio_echo_server_lib.h"],
+    deps = [
+        "//:grpc++",
+        "//src/proto/grpc/testing:istio_echo_proto",
+    ],
+)
+
+grpc_cc_binary(
+    name = "istio_echo_server",
+    srcs = [
+        "istio_echo_server.cc",
     ],
     external_deps = [
         "absl/flags:flag",
     ],
     deps = [
+        ":istio_echo_server_lib",
         "//:grpc++",
         "//:grpc++_reflection",
         "//:grpcpp_admin",
+        "//src/proto/grpc/testing:istio_echo_proto",
+        "//test/core/util:grpc_test_util",
+        "//test/cpp/util:test_config",
+    ],
+)
+
+grpc_cc_test(
+    name = "istio_echo_server_test",
+    srcs = [
+        "istio_echo_server_test.cc",
+    ],
+    external_deps = ["gtest"],
+    deps = [
+        ":istio_echo_server_lib",
+        "//:grpc++",
         "//src/proto/grpc/testing:istio_echo_proto",
         "//test/core/util:grpc_test_util",
         "//test/cpp/util:test_config",

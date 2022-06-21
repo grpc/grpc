@@ -757,8 +757,8 @@ static void push_front_worker(grpc_pollset* p, grpc_pollset_worker* worker) {
 
 static void kick_append_error(grpc_error_handle* composite,
                               grpc_error_handle error) {
-  if (error == GRPC_ERROR_NONE) return;
-  if (*composite == GRPC_ERROR_NONE) {
+  if (GRPC_ERROR_IS_NONE(error)) return;
+  if (GRPC_ERROR_IS_NONE(*composite)) {
     *composite = GRPC_ERROR_CREATE_FROM_STATIC_STRING("Kick Failure");
   }
   *composite = grpc_error_add_child(*composite, error);
@@ -904,8 +904,8 @@ static void finish_shutdown(grpc_pollset* pollset) {
 
 static void work_combine_error(grpc_error_handle* composite,
                                grpc_error_handle error) {
-  if (error == GRPC_ERROR_NONE) return;
-  if (*composite == GRPC_ERROR_NONE) {
+  if (GRPC_ERROR_IS_NONE(error)) return;
+  if (GRPC_ERROR_IS_NONE(*composite)) {
     *composite = GRPC_ERROR_CREATE_FROM_STATIC_STRING("pollset_work");
   }
   *composite = grpc_error_add_child(*composite, error);
@@ -940,7 +940,7 @@ static grpc_error_handle pollset_work(grpc_pollset* pollset,
         gpr_malloc(sizeof(*worker.wakeup_fd)));
     error = grpc_wakeup_fd_init(&worker.wakeup_fd->fd);
     fork_fd_list_add_wakeup_fd(worker.wakeup_fd);
-    if (error != GRPC_ERROR_NONE) {
+    if (!GRPC_ERROR_IS_NONE(error)) {
       GRPC_LOG_IF_ERROR("pollset_work", GRPC_ERROR_REF(error));
       return error;
     }
@@ -1100,7 +1100,7 @@ static grpc_error_handle pollset_work(grpc_pollset* pollset,
     /* If we're forced to re-evaluate polling (via pollset_kick with
        GRPC_POLLSET_REEVALUATE_POLLING_ON_WAKEUP) then we land here and force
        a loop */
-    if (worker.reevaluate_polling_on_wakeup && error == GRPC_ERROR_NONE) {
+    if (worker.reevaluate_polling_on_wakeup && GRPC_ERROR_IS_NONE(error)) {
       worker.reevaluate_polling_on_wakeup = 0;
       pollset->kicked_without_pollers = 0;
       if (queued_work || worker.kicked_specifically) {
