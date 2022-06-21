@@ -238,6 +238,10 @@ class ClientConnectedCallPromise {
         client_to_server_messages_(call_args.client_to_server_messages),
         server_to_client_messages_(call_args.server_to_client_messages),
         client_initial_metadata_(std::move(call_args.client_initial_metadata)) {
+    gpr_log(GPR_INFO,
+            "ClientConnectedCallPromise::ClientConnectedCallPromise: "
+            "intitial_metadata=%s",
+            client_initial_metadata_->DebugString().c_str());
   }
 
   static ArenaPromise<ServerMetadataHandle> Make(grpc_transport* transport,
@@ -267,8 +271,10 @@ class ClientConnectedCallPromise {
       batch_payload_.send_initial_metadata.send_initial_metadata_flags = 0;
       // DO NOT SUBMIT: figure this field out
       batch_payload_.send_initial_metadata.peer_string = nullptr;
+      server_initial_metadata_ =
+          GetContext<MetadataAllocator>()->MakeMetadata<ServerMetadata>();
       batch_payload_.recv_initial_metadata.recv_initial_metadata =
-          &server_initial_metadata_;
+          server_initial_metadata_.get();
       recv_initial_metadata_ready_ = MakeMemberClosure<
           ClientConnectedCallPromise,
           &ClientConnectedCallPromise::RecvInitialMetadataReady>(this);
@@ -281,8 +287,10 @@ class ClientConnectedCallPromise {
           nullptr;
       // DO NOT SUBMIT: figure this field out
       batch_payload_.recv_initial_metadata.peer_string = nullptr;
+      server_trailing_metadata_ =
+          GetContext<MetadataAllocator>()->MakeMetadata<ServerMetadata>();
       batch_payload_.recv_trailing_metadata.recv_trailing_metadata =
-          &server_trailing_metadata_;
+          server_trailing_metadata_.get();
       batch_payload_.recv_trailing_metadata.collect_stats =
           &GetContext<grpc_call_stats>()->transport_stream_stats;
       recv_trailing_metadata_ready_ = MakeMemberClosure<
@@ -315,10 +323,12 @@ class ClientConnectedCallPromise {
           batch_payload_.send_message.send_message = msg.payload();
           batch_payload_.send_message.flags = msg.flags();
         } else {
+          client_trailing_metadata_ =
+              GetContext<MetadataAllocator>()->MakeMetadata<ClientMetadata>();
           send_message_state_ = Closed{};
           send_message_.send_trailing_metadata = true;
           batch_payload_.send_trailing_metadata.send_trailing_metadata =
-              &client_trailing_metadata_;
+              client_trailing_metadata_.get();
           // DO NOT SUBMIT: figure this field out
           batch_payload_.send_trailing_metadata.sent = nullptr;
         }
@@ -349,10 +359,10 @@ class ClientConnectedCallPromise {
       }
     }
     if (absl::exchange(queued_initial_metadata_, false)) {
-      server_initial_metadata_latch_->Set(&server_initial_metadata_);
+      server_initial_metadata_latch_->Set(server_initial_metadata_.get());
     }
     if (absl::exchange(queued_trailing_metadata_, false)) {
-      return ServerMetadataHandle(&server_trailing_metadata_);
+      return ServerMetadataHandle(std::move(server_trailing_metadata_));
     }
     return Pending{};
   }
@@ -443,9 +453,9 @@ class ClientConnectedCallPromise {
   grpc_closure recv_trailing_metadata_ready_;
   grpc_closure push_;
   ClientMetadataHandle client_initial_metadata_;
-  ClientMetadata client_trailing_metadata_{GetContext<Arena>()};
-  ServerMetadata server_initial_metadata_{GetContext<Arena>()};
-  ServerMetadata server_trailing_metadata_{GetContext<Arena>()};
+  ClientMetadataHandle client_trailing_metadata_;
+  ServerMetadataHandle server_initial_metadata_;
+  ServerMetadataHandle server_trailing_metadata_;
   grpc_transport_stream_op_batch metadata_;
   grpc_closure metadata_batch_done_;
   grpc_transport_stream_op_batch send_message_;

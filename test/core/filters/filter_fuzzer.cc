@@ -259,11 +259,12 @@ const grpc_channel_filter* FindFilter(absl::string_view name) {
 
 class MainLoop {
  public:
-  MainLoop(RefCountedPtr<grpc_channel_stack> channel_stack,
+  MainLoop(bool is_client, RefCountedPtr<grpc_channel_stack> channel_stack,
            ChannelArgs channel_args)
       : memory_allocator_(channel_args.GetObject<ResourceQuota>()
                               ->memory_quota()
                               ->CreateMemoryAllocator("test")),
+        is_client_(is_client),
         channel_stack_(std::move(channel_stack)) {}
 
   ~MainLoop() {
@@ -289,9 +290,9 @@ class MainLoop {
         calls_.erase(action.call());
         break;
       case filter_fuzzer::Action::kCreateCall:
-        calls_.emplace(
-            action.call(),
-            absl::make_unique<Call>(this, action.call(), action.create_call()));
+        calls_.emplace(action.call(), absl::make_unique<Call>(
+                                          this, action.call(),
+                                          action.create_call(), is_client_));
         break;
       case filter_fuzzer::Action::kReceiveInitialMetadata:
         if (auto* call = GetCall(action.call())) {
@@ -402,14 +403,20 @@ class MainLoop {
     };
 
     Call(MainLoop* main_loop, uint32_t id,
-         const filter_fuzzer::Metadata& client_initial_metadata)
+         const filter_fuzzer::Metadata& client_initial_metadata, bool is_client)
         : main_loop_(main_loop), id_(id) {
       ScopedContext context(this);
       auto* server_initial_metadata = arena_->New<Latch<ServerMetadata*>>();
-      promise_ = main_loop_->channel_stack_->MakeCallPromise(
-          CallArgs{std::move(*LoadMetadata(client_initial_metadata,
-                                           &client_initial_metadata_)),
-                   server_initial_metadata});
+      CallArgs call_args{std::move(*LoadMetadata(client_initial_metadata,
+                                                 &client_initial_metadata_)),
+                         server_initial_metadata};
+      if (is_client) {
+        promise_ = main_loop_->channel_stack_->MakeClientCallPromise(
+            std::move(call_args));
+      } else {
+        promise_ = main_loop_->channel_stack_->MakeServerCallPromise(
+            std::move(call_args));
+      }
       Step();
     }
 
@@ -568,6 +575,7 @@ class MainLoop {
   }
 
   MemoryAllocator memory_allocator_;
+  const bool is_client_;
   RefCountedPtr<grpc_channel_stack> channel_stack_;
   std::map<uint32_t, std::unique_ptr<Call>> calls_;
   std::vector<uint32_t> wakeups_;
@@ -620,7 +628,8 @@ DEFINE_PROTO_FUZZER(const filter_fuzzer::Msg& msg) {
   }();
 
   if (stack.ok()) {
-    grpc_core::MainLoop main_loop(std::move(*stack), std::move(channel_args));
+    grpc_core::MainLoop main_loop(is_client, std::move(*stack),
+                                  std::move(channel_args));
     for (const auto& action : msg.actions()) {
       grpc_timer_manager_tick();
       main_loop.Run(action, &globals);

@@ -1866,14 +1866,17 @@ class PromiseBasedCall : public Call, public Activity, public Wakeable {
         public promise_detail::Context<Arena>,
         public promise_detail::Context<grpc_call_context_element>,
         public promise_detail::Context<CallFinalization>,
-        public promise_detail::Context<grpc_call_stats> {
+        public promise_detail::Context<grpc_call_stats>,
+        public promise_detail::Context<MetadataAllocator> {
    public:
     explicit ScopedContext(PromiseBasedCall* call)
         : ScopedActivity(call),
           promise_detail::Context<Arena>(call->arena()),
           promise_detail::Context<grpc_call_context_element>(call->context_),
           promise_detail::Context<CallFinalization>(&call->finalization_),
-          promise_detail::Context<grpc_call_stats>(&call->final_info_.stats) {}
+          promise_detail::Context<grpc_call_stats>(&call->final_info_.stats),
+          promise_detail::Context<MetadataAllocator>(
+              &call->metadata_allocator_) {}
   };
 
   class Completion {
@@ -1909,15 +1912,6 @@ class PromiseBasedCall : public Call, public Activity, public Wakeable {
 
   Mutex* mu() const ABSL_LOCK_RETURNED(mu_) { return &mu_; }
 
-  ServerMetadataHandle CToServerMetadataHandle(grpc_metadata* metadata,
-                                               size_t count) {
-    return ServerMetadataHandle(CToMetadata(metadata, count));
-  }
-  ClientMetadataHandle CToClientMetadataHandle(grpc_metadata* metadata,
-                                               size_t count) {
-    return ClientMetadataHandle(CToMetadata(metadata, count));
-  }
-
   Completion StartCompletion(void* tag, bool is_closure, const grpc_op* ops,
                              size_t num_ops) ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
   void FinishCompletion(Completion* completion)
@@ -1928,6 +1922,9 @@ class PromiseBasedCall : public Call, public Activity, public Wakeable {
   virtual void UpdateOnce() ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_) = 0;
 
   grpc_completion_queue* cq() ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_) { return cq_; }
+
+  void CToMetadata(grpc_metadata* metadata, size_t count,
+                   grpc_metadata_batch* batch);
 
  private:
   struct CompletionData {
@@ -2010,7 +2007,6 @@ class PromiseBasedCall : public Call, public Activity, public Wakeable {
     PromiseBasedCall* call_ ABSL_GUARDED_BY(mu_);
   };
 
-  grpc_metadata_batch* CToMetadata(grpc_metadata* metadata, size_t count);
   static constexpr uint64_t MakeRefPair(uint32_t strong, uint32_t weak) {
     return (static_cast<uint64_t>(strong) << 32) + static_cast<int64_t>(weak);
   }
@@ -2025,6 +2021,7 @@ class PromiseBasedCall : public Call, public Activity, public Wakeable {
   /* Contexts for various subsystems (security, tracing, ...). */
   grpc_call_context_element context_[GRPC_CONTEXT_COUNT] = {};
   grpc_completion_queue* cq_ ABSL_GUARDED_BY(mu_) = nullptr;
+  MetadataAllocator metadata_allocator_ ABSL_GUARDED_BY(mu_);
   NonOwningWakable* non_owning_wakeable_ ABSL_GUARDED_BY(mu_) = nullptr;
   CompletionInfo completion_info_[6];
   CallFinalization finalization_;
@@ -2041,7 +2038,7 @@ grpc_error_handle MakePromiseBasedCall(grpc_call_create_args* args,
   std::pair<Arena*, void*> arena_with_call = Arena::CreateWithAlloc(
       channel->CallSizeEstimate(), sizeof(T), channel->allocator());
   arena = arena_with_call.first;
-  call = new (arena_with_call.second) T(arena, *args);
+  call = new (arena_with_call.second) T(arena, args);
   *out_call = call->c_ptr();
   GPR_DEBUG_ASSERT(Call::FromC(*out_call) == call);
   return GRPC_ERROR_NONE;
@@ -2061,11 +2058,10 @@ Waker PromiseBasedCall::MakeNonOwningWaker() {
   return Waker(non_owning_wakeable_);
 }
 
-grpc_metadata_batch* PromiseBasedCall::CToMetadata(grpc_metadata* metadata,
-                                                   size_t count) {
+void PromiseBasedCall::CToMetadata(grpc_metadata* metadata, size_t count,
+                                   grpc_metadata_batch* b) {
   // DO NOT SUBMIT
   // Need to add a ValidateMetadata to the op validation loop.
-  grpc_metadata_batch* b = arena()->New<grpc_metadata_batch>(arena());
   for (size_t i = 0; i < count; i++) {
     grpc_metadata* md = &metadata[i];
     auto key = StringViewFromSlice(md->key);
@@ -2080,7 +2076,6 @@ grpc_metadata_batch* PromiseBasedCall::CToMetadata(grpc_metadata* metadata,
                             .c_str());
               });
   }
-  return b;
 }
 
 void PromiseBasedCall::ContextSet(grpc_context_index elem, void* value,
@@ -2149,8 +2144,17 @@ void PromiseBasedCall::SetCompletionQueue(grpc_completion_queue* cq) {
 
 class ClientPromiseBasedCall final : public PromiseBasedCall {
  public:
-  ClientPromiseBasedCall(Arena* arena, const grpc_call_create_args& args)
-      : PromiseBasedCall(arena, args) {}
+  ClientPromiseBasedCall(Arena* arena, grpc_call_create_args* args)
+      : PromiseBasedCall(arena, *args) {
+    ScopedContext context(this);
+    send_initial_metadata_ =
+        GetContext<MetadataAllocator>()->MakeMetadata<ClientMetadata>();
+    send_initial_metadata_->Set(HttpPathMetadata(), std::move(*args->path));
+    if (args->authority.has_value()) {
+      send_initial_metadata_->Set(HttpAuthorityMetadata(),
+                                  std::move(*args->authority));
+    }
+  }
 
   absl::string_view GetServerAuthority() const override { abort(); }
   void CancelWithError(grpc_error_handle error) override;
@@ -2190,6 +2194,7 @@ class ClientPromiseBasedCall final : public PromiseBasedCall {
   Pipe<Message> client_to_server_messages_ ABSL_GUARDED_BY(mu()){arena()};
   Pipe<Message> server_to_client_messages_ ABSL_GUARDED_BY(mu()){arena()};
 
+  ClientMetadataHandle send_initial_metadata_;
   grpc_metadata_array* recv_initial_metadata_ ABSL_GUARDED_BY(mu()) = nullptr;
   grpc_byte_buffer** recv_message_ ABSL_GUARDED_BY(mu()) = nullptr;
   absl::variant<absl::monostate,
@@ -2211,7 +2216,7 @@ class ClientPromiseBasedCall final : public PromiseBasedCall {
 void ClientPromiseBasedCall::StartPromise(
     ClientMetadataHandle client_initial_metadata) {
   GPR_ASSERT(!promise_.has_value());
-  promise_ = channel()->channel_stack()->MakeCallPromise(CallArgs{
+  promise_ = channel()->channel_stack()->MakeClientCallPromise(CallArgs{
       std::move(client_initial_metadata),
       &server_initial_metadata_,
       &client_to_server_messages_.receiver,
@@ -2234,9 +2239,10 @@ void ClientPromiseBasedCall::CommitBatch(const grpc_op* ops, size_t nops,
         // compression not implemented
         GPR_ASSERT(
             !op.data.send_initial_metadata.maybe_compression_level.is_set);
-        StartPromise(
-            CToClientMetadataHandle(op.data.send_initial_metadata.metadata,
-                                    op.data.send_initial_metadata.count));
+        CToMetadata(op.data.send_initial_metadata.metadata,
+                    op.data.send_initial_metadata.count,
+                    send_initial_metadata_.get());
+        StartPromise(std::move(send_initial_metadata_));
       } break;
       case GRPC_OP_RECV_INITIAL_METADATA: {
         recv_initial_metadata_ =

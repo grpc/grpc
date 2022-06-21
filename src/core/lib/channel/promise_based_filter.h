@@ -230,7 +230,7 @@ class BaseCallData : public Activity, private Wakeable {
 
   static MetadataHandle<grpc_metadata_batch> WrapMetadata(
       grpc_metadata_batch* p) {
-    return MetadataHandle<grpc_metadata_batch>(p);
+    return MetadataHandle<grpc_metadata_batch>(p, false);
   }
 
   static grpc_metadata_batch* UnwrapMetadata(

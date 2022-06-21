@@ -59,6 +59,7 @@
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/slice/slice_buffer.h"
 #include "src/core/lib/transport/connectivity_state.h"
+#include "src/core/lib/transport/metadata_allocator.h"
 #include "src/core/lib/transport/metadata_batch.h"
 #include "src/core/lib/transport/transport_fwd.h"
 
@@ -84,64 +85,6 @@ struct grpc_transport_stream_op_batch_payload;
   (GRPC_WRITE_INTERNAL_COMPRESS | GRPC_WRITE_INTERNAL_TEST_ONLY_WAS_COMPRESSED)
 
 namespace grpc_core {
-// TODO(ctiller): eliminate once MetadataHandle is constructable directly.
-namespace promise_filter_detail {
-class BaseCallData;
-}
-class PromiseBasedCall;
-class ClientConnectedCallPromise;
-
-// Small unowned "handle" type to ensure one accessor at a time to metadata.
-// The focus here is to get promises to use the syntax we'd like - we'll
-// probably substitute some other smart pointer later.
-template <typename T>
-class MetadataHandle {
- public:
-  MetadataHandle() = default;
-
-  MetadataHandle(const MetadataHandle&) = delete;
-  MetadataHandle& operator=(const MetadataHandle&) = delete;
-
-  MetadataHandle(MetadataHandle&& other) noexcept : handle_(other.handle_) {
-    other.handle_ = nullptr;
-  }
-  MetadataHandle& operator=(MetadataHandle&& other) noexcept {
-    handle_ = other.handle_;
-    other.handle_ = nullptr;
-    return *this;
-  }
-
-  explicit MetadataHandle(const absl::Status& status) {
-    handle_ = GetContext<Arena>()->New<T>(GetContext<Arena>());
-    handle_->Set(GrpcStatusMetadata(),
-                 static_cast<grpc_status_code>(status.code()));
-    if (status.ok()) return;
-    handle_->Set(GrpcMessageMetadata(),
-                 Slice::FromCopiedString(status.message()));
-  }
-
-  T* operator->() const { return handle_; }
-  bool has_value() const { return handle_ != nullptr; }
-  T* get() const { return handle_; }
-
-  static MetadataHandle TestOnlyWrap(T* p) { return MetadataHandle(p); }
-
- private:
-  // We restrict access to construction from a pointer to limit the number of
-  // cases that need dealing with as this code evolves.
-  friend class promise_filter_detail::BaseCallData;
-  friend class PromiseBasedCall;
-  friend class ClientConnectedCallPromise;
-
-  explicit MetadataHandle(T* handle) : handle_(handle) {}
-  T* Unwrap() {
-    T* result = handle_;
-    handle_ = nullptr;
-    return result;
-  }
-
-  T* handle_ = nullptr;
-};
 
 // Server metadata type
 // TODO(ctiller): This should be a bespoke instance of MetadataMap<>

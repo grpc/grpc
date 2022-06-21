@@ -64,6 +64,21 @@ grpc_cc_test(
 )
 
 grpc_cc_test(
+    name = "metadata_allocator_test",
+    srcs = ["metadata_allocator_test.cc"],
+    external_deps = [
+        "gtest",
+    ],
+    language = "C++",
+    deps = [
+        "//:gpr",
+        "//:grpc",
+        "//test/core/util:grpc_test_util",
+        "//test/core/promise:test_context"
+    ],
+)
+
+grpc_cc_test(
     name = "metadata_map_test",
     srcs = ["metadata_map_test.cc"],
     external_deps = [
