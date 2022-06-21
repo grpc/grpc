@@ -49,7 +49,7 @@ class SimpleEchoTestServerImpl : public proto::EchoTestService::Service {
   explicit SimpleEchoTestServerImpl() {}
 
   grpc::Status Echo(grpc::ServerContext* /* context */,
-                    const proto::EchoRequest* request,
+                    const proto::EchoRequest* /* request */,
                     proto::EchoResponse* /* response */) override {
     GPR_ASSERT(false);
     return Status(StatusCode::INVALID_ARGUMENT, "Unexpected");
@@ -59,7 +59,7 @@ class SimpleEchoTestServerImpl : public proto::EchoTestService::Service {
                            const proto::ForwardEchoRequest* request,
                            proto::ForwardEchoResponse* response) override {
     if (fail_rpc_) {
-      return Status(UNAVAILABLE, "fail rpc");
+      return Status(StatusCode::UNAVAILABLE, "fail rpc");
     }
     response->add_output(request->message());
     return Status::OK;
