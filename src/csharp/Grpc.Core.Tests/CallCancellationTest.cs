@@ -180,6 +180,122 @@ namespace Grpc.Core.Tests
         }
 
         [Test]
+        public async Task ServerStreamingCall_DisposeCallBeforeAllRead()
+        {
+            // Test to reproduce https://github.com/grpc/grpc/issues/8451
+            // "Client channel socket leaks unless read stream drained explicitly"
+            // This version of the test disposes the call before the response stream is
+            // fully read.
+
+            helper.ServerStreamingHandler = new ServerStreamingServerMethod<string, string>(async (request, responseStream, context) => {
+                try
+                {
+                    // send responses to the client with a short delay between each response
+                    foreach (string resp in request.Split(new[] { ' ' }))
+                    {
+                        await responseStream.WriteAsync(resp);
+                        await Task.Delay(50);
+                    }
+                    context.ResponseTrailers.Add("xyz", "");
+                }
+                catch (RpcException ex)
+                {
+                    // server may get an exception when the client cancels
+                    Assert.AreEqual(StatusCode.Cancelled, ex.Status.StatusCode);
+                }
+            });
+
+            using (var call = Calls.AsyncServerStreamingCall(helper.CreateServerStreamingCall(), "A B C D E"))
+            {
+                Assert.AreEqual(1, channel.GetCallReferenceCount());
+
+                try
+                {
+                    while (await call.ResponseStream.MoveNext())
+                    {
+                        Assert.AreEqual("A", call.ResponseStream.Current);
+                        // To reproduce issue #8451 - leave the loop early and ignore other responses
+                        break;
+                    }
+                }
+                catch (RpcException ex)
+                {
+                    Assert.Fail("Unexpected exception thrown {}", ex);
+                }
+            }
+            
+            // short delay to allow callbacks to fire
+            await Task.Delay(500);
+
+            // Resources for the call should have been cleaned up and thus no reference
+            // to the call in the channel. This would fail with a count of 1 before the
+            // fix for #8451.
+            Assert.AreEqual(0, channel.GetCallReferenceCount());
+        }
+
+        [Test]
+        public async Task ServerStreamingCall_CancelCallBeforeAllRead()
+        {
+            // Test to reproduce https://github.com/grpc/grpc/issues/8451
+            // "Client channel socket leaks unless read stream drained explicitly"
+            // This version of the test cancels the call before the response stream is
+            // fully read.
+
+            helper.ServerStreamingHandler = new ServerStreamingServerMethod<string, string>(async (request, responseStream, context) => {
+                try
+                {
+                    // send responses to the client with a short delay between each response
+                    foreach (string resp in request.Split(new[] { ' ' }))
+                    {
+                        await responseStream.WriteAsync(resp);
+                        await Task.Delay(50);
+                    }
+                    context.ResponseTrailers.Add("xyz", "");
+                }
+                catch (RpcException ex)
+                {
+                    // server may get an exception when the client cancels
+                    Assert.AreEqual(StatusCode.Cancelled, ex.Status.StatusCode);
+                }
+            });
+
+            var tokenSource = new CancellationTokenSource();
+
+            var call = Calls.AsyncServerStreamingCall(
+                helper.CreateServerStreamingCall(new CallOptions(cancellationToken: tokenSource.Token)),
+                "A B C D E");
+            
+            Assert.AreEqual(1, channel.GetCallReferenceCount());
+
+            try
+            {
+                while (await call.ResponseStream.MoveNext())
+                {
+                    Assert.AreEqual("A", call.ResponseStream.Current);
+                    // To reproduce issue #8451 - cancel the call and leave
+                    // the loop early and ignore other responses
+                    tokenSource.Cancel();
+                    break;
+                }
+            }
+            catch (RpcException ex)
+            {
+                Assert.Fail("Unexpected exception thrown {}", ex);
+            }
+            
+            // short delay to allow callbacks to fire
+            await Task.Delay(500);
+
+            // Note: this version of the test does not explicitly Dispose the call. It
+            // is assuming the cancel of the call triggers the cleanup.
+
+            // Resources for the call should have been cleaned up and thus no reference
+            // to the call in the channel. This would fail with a count of 1 before the
+            // fix for #8451.
+            Assert.AreEqual(0, channel.GetCallReferenceCount());
+        }
+
+        [Test]
         public void CanDisposeDefaultCancellationRegistration()
         {
             // prove that we're fine to dispose default CancellationTokenRegistration

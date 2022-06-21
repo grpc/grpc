@@ -630,6 +630,15 @@ namespace Grpc.Core.Internal
                     streamingWriteTcs = null;
                 }
 
+                if (cancelRequested)
+                {
+                    // Fix for issue #8451. If the client cancelled the call then anything left to read is
+                    // discarded. Set readingDone to true so that the cleanup happens correctly.
+                    // Note: since MoveNext on the response stream would have thrown an exception with
+                    // Cancelled status anyway, no additional server data is lost.
+                    readingDone = true;
+                }
+
                 releasedResources = ReleaseResourcesIfPossible();
                 origCancelRequested = cancelRequested;
             }
