@@ -173,9 +173,7 @@ void TCPConnectHandshaker::Connected(void* arg, grpc_error_handle error) {
     MutexLock lock(&self->mu_);
     if (!GRPC_ERROR_IS_NONE(error) || self->shutdown_) {
       if (GRPC_ERROR_IS_NONE(error)) {
-        error = GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-            "tcp handshaker "
-            "shutdown");
+        error = GRPC_ERROR_CREATE_FROM_STATIC_STRING("tcp handshaker shutdown");
       } else {
         error = GRPC_ERROR_REF(error);
       }
@@ -188,11 +186,9 @@ void TCPConnectHandshaker::Connected(void* arg, grpc_error_handle error) {
         self->shutdown_ = true;
         self->FinishLocked(error);
       } else {
-        // The on_handshake_done_ is
-        // already as part of shutdown
-        // when connecting So nothing to
-        // be done here other than
-        // unrefing the error.
+        // The on_handshake_done_ is already as part of shutdown when
+        // connecting So nothing to be done here other than unrefing the
+        // error.
         GRPC_ERROR_UNREF(error);
       }
       return;
