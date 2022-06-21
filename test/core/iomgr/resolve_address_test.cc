@@ -491,6 +491,36 @@ TEST_F(ResolveAddressTest, DeleteInterestedPartiesAfterCancellation) {
   PollPollsetUntilRequestDone();
 }
 
+TEST_F(ResolveAddressTest, NativeResolverCannotLookupSRVRecords) {
+  if (absl::string_view(g_resolver_type) == "ares") {
+    GTEST_SKIP() << "this test is only for native resolvers";
+  }
+  grpc_core::ExecCtx exec_ctx;
+  grpc_core::GetDNSResolver()->LookupSRV(
+      [this](absl::StatusOr<std::vector<grpc_resolved_address>> error) {
+        EXPECT_EQ(error.status().code(), absl::StatusCode::kUnimplemented);
+        Finish();
+      },
+      "localhost", absl::InfiniteFuture(), pollset_set(), /*nameserver=*/"");
+  grpc_core::ExecCtx::Get()->Flush();
+  PollPollsetUntilRequestDone();
+}
+
+TEST_F(ResolveAddressTest, NativeResolverCannotLookupTXTRecords) {
+  if (absl::string_view(g_resolver_type) == "ares") {
+    GTEST_SKIP() << "this test is only for native resolvers";
+  }
+  grpc_core::ExecCtx exec_ctx;
+  grpc_core::GetDNSResolver()->LookupTXT(
+      [this](absl::StatusOr<std::string> error) {
+        EXPECT_EQ(error.status().code(), absl::StatusCode::kUnimplemented);
+        Finish();
+      },
+      "localhost", absl::InfiniteFuture(), pollset_set(), /*nameserver=*/"");
+  grpc_core::ExecCtx::Get()->Flush();
+  PollPollsetUntilRequestDone();
+}
+
 int main(int argc, char** argv) {
   // Configure the DNS resolver (c-ares vs. native) based on the
   // name of the binary. TODO(apolcyn): is there a way to pass command
