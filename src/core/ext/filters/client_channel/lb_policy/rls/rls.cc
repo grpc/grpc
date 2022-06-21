@@ -1888,7 +1888,7 @@ std::string GetServerUri(const ChannelArgs& args) {
 
 RlsLb::RlsLb(Args args)
     : LoadBalancingPolicy(std::move(args)),
-      server_name_(GetServerUri(args.args)),
+      server_name_(GetServerUri(channel_args())),
       cache_(this) {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_rls_trace)) {
     gpr_log(GPR_INFO, "[rlslb %p] policy created", this);

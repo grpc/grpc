@@ -409,6 +409,8 @@ class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
     return work_serializer_;
   }
 
+  ChannelArgs channel_args() const { return channel_args_; }
+
   // Note: LB policies MUST NOT call any method on the helper from their
   // constructor.
   ChannelControlHelper* channel_control_helper() const {
@@ -425,6 +427,8 @@ class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
   grpc_pollset_set* interested_parties_;
   /// Channel control helper.
   std::unique_ptr<ChannelControlHelper> channel_control_helper_;
+  /// Channel args passed in.
+  ChannelArgs channel_args_;
 };
 
 }  // namespace grpc_core

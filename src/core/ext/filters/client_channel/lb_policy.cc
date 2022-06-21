@@ -41,7 +41,8 @@ LoadBalancingPolicy::LoadBalancingPolicy(Args args, intptr_t initial_refcount)
           initial_refcount),
       work_serializer_(std::move(args.work_serializer)),
       interested_parties_(grpc_pollset_set_create()),
-      channel_control_helper_(std::move(args.channel_control_helper)) {}
+      channel_control_helper_(std::move(args.channel_control_helper)),
+      channel_args_(std::move(args.args)) {}
 
 LoadBalancingPolicy::~LoadBalancingPolicy() {
   grpc_pollset_set_destroy(interested_parties_);
