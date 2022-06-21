@@ -68,18 +68,21 @@ class ConnectionAttemptInjector {
    public:
     QueuedAttempt(grpc_closure* closure, grpc_endpoint** ep,
                   grpc_pollset_set* interested_parties,
-                  const grpc_tcp_generic_options& options,
+                  grpc_tcp_generic_options&& options,
                   const grpc_resolved_address* addr,
                   grpc_core::Timestamp deadline)
         : closure_(closure),
           endpoint_(ep),
           interested_parties_(interested_parties),
-          options_(options),
+          options_(std::move(options)),
           deadline_(deadline) {
       memcpy(&address_, addr, sizeof(address_));
     }
 
-    ~QueuedAttempt() { GPR_ASSERT(closure_ == nullptr); }
+    ~QueuedAttempt() {
+      GPR_ASSERT(closure_ == nullptr);
+      grpc_tcp_generic_options_destroy(&options_);
+    }
 
     // Caller must invoke this from a thread with an ExecCtx.
     void Resume() {

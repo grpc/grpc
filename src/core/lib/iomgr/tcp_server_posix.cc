@@ -102,6 +102,7 @@ static grpc_error_handle tcp_server_create(grpc_closure* shutdown_complete,
   s->head = nullptr;
   s->tail = nullptr;
   s->nports = 0;
+  grpc_tcp_generic_options_init(&s->options);
   s->options = TcpOptionsFromEndpointConfig(config);
   s->fd_handler = nullptr;
   GPR_ASSERT(s->options.resource_quota != nullptr);
@@ -125,6 +126,7 @@ static void finish_shutdown(grpc_tcp_server* s) {
     s->head = sp->next;
     gpr_free(sp);
   }
+  grpc_tcp_generic_options_destroy(&s->options);
   delete s->fd_handler;
   delete s;
 }

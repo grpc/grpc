@@ -33,19 +33,15 @@ typedef struct grpc_tcp_generic_options {
   struct grpc_socket_mutator* socket_mutator = nullptr;
   grpc_tcp_generic_options()
       : resource_quota(nullptr), socket_mutator(nullptr) {}
+  // Move ctor
   grpc_tcp_generic_options(struct grpc_tcp_generic_options&& other) {
-    if (socket_mutator != nullptr) {
-      grpc_socket_mutator_unref(socket_mutator);
-    }
-    if (resource_quota != nullptr) {
-      resource_quota.reset(nullptr);
-    }
     socket_mutator = other.socket_mutator;
     other.socket_mutator = nullptr;
     resource_quota = other.resource_quota;
     other.resource_quota.reset(nullptr);
     int_options = other.int_options;
   }
+  // Move assignment
   grpc_tcp_generic_options& operator=(struct grpc_tcp_generic_options&& other) {
     if (socket_mutator != nullptr) {
       grpc_socket_mutator_unref(socket_mutator);
@@ -60,6 +56,7 @@ typedef struct grpc_tcp_generic_options {
     int_options = other.int_options;
     return *this;
   }
+  // Copy ctor
   grpc_tcp_generic_options(const struct grpc_tcp_generic_options& other) {
     if (other.socket_mutator != nullptr) {
       socket_mutator = grpc_socket_mutator_ref(other.socket_mutator);
@@ -67,6 +64,7 @@ typedef struct grpc_tcp_generic_options {
     resource_quota = other.resource_quota;
     int_options = other.int_options;
   }
+  // Copy assignment
   grpc_tcp_generic_options& operator=(
       const struct grpc_tcp_generic_options& other) {
     if (other.socket_mutator != nullptr) {
@@ -76,9 +74,18 @@ typedef struct grpc_tcp_generic_options {
     int_options = other.int_options;
     return *this;
   }
+  // Destructor.
+  ~grpc_tcp_generic_options() {
+    if (socket_mutator != nullptr) {
+      grpc_socket_mutator_unref(socket_mutator);
+      socket_mutator = nullptr;
+    }
+    resource_quota.reset(nullptr);
+  }
 } grpc_tcp_generic_options;
 
-// Initialize the tcp generic options struct members.
+// Initialize the tcp generic options struct members. This method can be used
+// to initialize dynamically allocated struct objects.
 void grpc_tcp_generic_options_init(grpc_tcp_generic_options* options);
 
 // Unref members of the tcp generic options struct.

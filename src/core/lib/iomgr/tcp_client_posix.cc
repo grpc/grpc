@@ -117,6 +117,7 @@ static void tc_on_alarm(void* acp, grpc_error_handle error) {
   done = (--ac->refs == 0);
   gpr_mu_unlock(&ac->mu);
   if (done) {
+    grpc_tcp_generic_options_destroy(&ac->options);
     gpr_mu_destroy(&ac->mu);
     delete ac;
   }
@@ -227,6 +228,7 @@ finish:
   if (done) {
     // This is safe even outside the lock, because "done", the sentinel, is
     // populated *inside* the lock.
+    grpc_tcp_generic_options_destroy(&ac->options);
     gpr_mu_destroy(&ac->mu);
     delete ac;
   }
@@ -312,6 +314,7 @@ void grpc_tcp_client_create_from_prepared_fd(
   ac->refs = 2;
   GRPC_CLOSURE_INIT(&ac->write_closure, on_writable, ac,
                     grpc_schedule_on_exec_ctx);
+  grpc_tcp_generic_options_init(&ac->options);
   ac->options = options;
 
   if (GRPC_TRACE_FLAG_ENABLED(grpc_tcp_trace)) {
