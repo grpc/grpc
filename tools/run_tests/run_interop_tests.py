@@ -963,6 +963,11 @@ def cloud_to_cloud_jobspec(language,
               (repr(language), client_test_case))
         sys.exit(1)
 
+    if test_case in _ORCA_TEST_CASES:
+        interop_only_options = interop_only_options + [
+            '--service_config_json=\'{"loadBalancingConfig":[{"test_backend_metrics_load_balancer":{}}]}\''
+        ]
+
     common_options = [
         '--test_case=%s' % client_test_case,
         '--server_host=%s' % server_host,
@@ -980,10 +985,6 @@ def cloud_to_cloud_jobspec(language,
             cwd = language.http2_cwd
     else:
         cmd_options = common_options + interop_only_options
-        if test_case in _ORCA_TEST_CASES:
-            cmd_options = cmd_options + [
-                '--service_config_json=\'{"loadBalancingConfig":[{"test_backend_metrics_load_balancer":{}}]}\''
-            ]
         cmdline = bash_cmdline(language.client_cmd(cmd_options))
         cwd = language.client_cwd
 
@@ -1425,7 +1426,7 @@ try:
             for language in languages:
                 for test_case in _TEST_CASES:
                     if not test_case in language.unimplemented_test_cases():
-                        if not test_case in _SKIP_ADVANCED + _SKIP_COMPRESSION + _SKIP_SPECIAL_STATUS_MESSAGE + _ORCA_TEST_CASES:
+                        if not test_case in _SKIP_ADVANCED + _SKIP_COMPRESSION + _SKIP_SPECIAL_STATUS_MESSAGE:
                             for transport_security in args.custom_credentials_type:
                                 # google_default_credentials not yet supported by all languages
                                 if transport_security == 'google_default_credentials' and str(
