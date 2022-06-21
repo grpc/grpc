@@ -375,8 +375,6 @@ class XdsSecurityTest : public XdsEnd2endTest {
             // TODO(yashkt): Rework this test suite such that the caller
             // explicitly indicates which failure they're allowed to see here,
             // rather than blindly allowing every possibility in every test.
-            // TODO(roth): Plumb a better error out of the handshakers
-            // as part of https://github.com/grpc/grpc/issues/22883.
             EXPECT_THAT(
                 result.status.error_message(),
                 ::testing::MatchesRegex(
