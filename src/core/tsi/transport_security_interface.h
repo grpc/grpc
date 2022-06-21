@@ -24,6 +24,8 @@
 #include <stdint.h>
 #include <stdlib.h>
 
+#include <string>
+
 #include "src/core/lib/debug/trace.h"
 
 /* --- tsi result ---  */
@@ -482,11 +484,14 @@ typedef void (*tsi_handshaker_on_next_done_cb)(
    The caller is responsible for destroying the handshaker_result. However,
    the caller should not free bytes_to_send, as the buffer is owned by the
    tsi_handshaker object.  */
-tsi_result tsi_handshaker_next(
-    tsi_handshaker* self, const unsigned char* received_bytes,
-    size_t received_bytes_size, const unsigned char** bytes_to_send,
-    size_t* bytes_to_send_size, tsi_handshaker_result** handshaker_result,
-    tsi_handshaker_on_next_done_cb cb, void* user_data);
+tsi_result tsi_handshaker_next(tsi_handshaker* self,
+                               const unsigned char* received_bytes,
+                               size_t received_bytes_size,
+                               const unsigned char** bytes_to_send,
+                               size_t* bytes_to_send_size,
+                               tsi_handshaker_result** handshaker_result,
+                               tsi_handshaker_on_next_done_cb cb,
+                               void* user_data, std::string* error = nullptr);
 
 /* This method shuts down a TSI handshake that is in progress.
  *

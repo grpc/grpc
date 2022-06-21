@@ -383,7 +383,9 @@ class XdsSecurityTest : public XdsEnd2endTest {
                     "connections to all backends failing; last error: "
                     "(UNKNOWN: Failed to connect to remote host: Connection "
                     "(refused|reset by peer)|UNAVAILABLE: Failed to connect "
-                    "to remote host: FD shutdown|UNKNOWN: Tls handshake failed|"
+                    "to remote host: FD shutdown|UNKNOWN: Tls handshake "
+                    "failed: SSL_ERROR_SSL: error:1000007d:SSL "
+                    "routines:OPENSSL_internal:CERTIFICATE_VERIFY_FAILED|"
                     "UNAVAILABLE: Socket closed)"));
           }
         });
