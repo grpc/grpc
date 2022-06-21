@@ -184,7 +184,7 @@ TEST_F(EchoTest, ForwardEchoFailure) {
   request.set_url(absl::StrCat("http://", server_address_));
   request.set_message("hello");
   auto status = stub_->ForwardEcho(&context, request, &response);
-  ASSERT_EQ(status.error_code(), UNAVAILABLE);
+  ASSERT_EQ(status.error_code(), StatusCode::UNAVAILABLE);
 }
 
 }  // namespace
