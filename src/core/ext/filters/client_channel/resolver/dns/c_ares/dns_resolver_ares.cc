@@ -503,6 +503,25 @@ class AresDNSResolver : public DNSResolver {
     return default_resolver_->LookupHostnameBlocking(name, default_port);
   }
 
+  TaskHandle LookupSRV(
+      std::function<void(absl::StatusOr<std::vector<grpc_resolved_address>>)>
+          on_resolved,
+      absl::string_view name, absl::Time deadline,
+      grpc_pollset_set* interested_parties,
+      absl::string_view name_server) override {
+    // DO NOT SUBMIT - implement
+    abort();
+  };
+
+  TaskHandle LookupTXT(
+      std::function<void(absl::StatusOr<std::string>)> on_resolved,
+      absl::string_view name, absl::Time deadline,
+      grpc_pollset_set* interested_parties,
+      absl::string_view name_server) override {
+    // DO NOT SUBMIT - implement
+    abort();
+  };
+
   bool Cancel(TaskHandle handle) override {
     MutexLock lock(&mu_);
     if (!open_requests_.contains(handle)) {

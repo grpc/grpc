@@ -28,6 +28,7 @@
 #include "src/core/ext/transport/chttp2/transport/chttp2_transport.h"
 #include "src/core/lib/address_utils/parse_address.h"
 #include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/event_engine/event_engine_factory.h"
 #include "src/core/lib/gpr/env.h"
 #include "src/core/lib/iomgr/executor.h"
 #include "src/core/lib/iomgr/resolve_address.h"
@@ -112,6 +113,8 @@ static void finish_resolve(void* arg, grpc_error_handle error) {
 
 namespace {
 
+using ::grpc_event_engine::experimental::GetDefaultEventEngine;
+
 class FuzzerDNSResolver : public grpc_core::DNSResolver {
  public:
   class FuzzerDNSRequest {
@@ -169,6 +172,32 @@ class FuzzerDNSResolver : public grpc_core::DNSResolver {
       absl::string_view /* default_port */) override {
     GPR_ASSERT(0);
   }
+
+  TaskHandle LookupSRV(
+      std::function<void(absl::StatusOr<std::vector<grpc_resolved_address>>)>
+          on_resolved,
+      absl::string_view /* name */, absl::Time /* deadline */,
+      grpc_pollset_set* /* interested_parties */,
+      absl::string_view /* name_server */) override {
+    GetDefaultEventEngine()->Run([on_resolved] {
+      on_resolved(absl::UnimplementedError(
+          "The Fuzzing DNS resolver does not support looking up SRV records"));
+    });
+    return {-1, -1};
+  };
+
+  TaskHandle LookupTXT(
+      std::function<void(absl::StatusOr<std::string>)> on_resolved,
+      absl::string_view /* name */, absl::Time /* deadline */,
+      grpc_pollset_set* /* interested_parties */,
+      absl::string_view /* name_server */) override {
+    // Not supported
+    GetDefaultEventEngine()->Run([on_resolved] {
+      on_resolved(absl::UnimplementedError(
+          "The Fuzing DNS resolver does not support looking up TXT records"));
+    });
+    return {-1, -1};
+  };
 
   // FuzzerDNSResolver does not support cancellation.
   bool Cancel(TaskHandle /*handle*/) override { return false; }

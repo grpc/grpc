@@ -27,6 +27,7 @@
 #include "src/core/lib/address_utils/sockaddr_utils.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/config/core_configuration.h"
+#include "src/core/lib/event_engine/event_engine_factory.h"
 #include "src/core/lib/gprpp/memory.h"
 #include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/iomgr/resolve_address.h"
@@ -59,6 +60,8 @@ static struct iomgr_args {
 } g_iomgr_args;
 
 namespace {
+
+using ::grpc_event_engine::experimental::GetDefaultEventEngine;
 
 grpc_core::DNSResolver* g_default_dns_resolver;
 
@@ -100,6 +103,32 @@ class TestDNSResolver : public grpc_core::DNSResolver {
       absl::string_view name, absl::string_view default_port) override {
     return g_default_dns_resolver->LookupHostnameBlocking(name, default_port);
   }
+
+  TaskHandle LookupSRV(
+      std::function<void(absl::StatusOr<std::vector<grpc_resolved_address>>)>
+          on_resolved,
+      absl::string_view /* name */, absl::Time /* deadline */,
+      grpc_pollset_set* /* interested_parties */,
+      absl::string_view /* name_server */) override {
+    GetDefaultEventEngine()->Run([on_resolved] {
+      on_resolved(absl::UnimplementedError(
+          "The Testing DNS resolver does not support looking up SRV records"));
+    });
+    return {-1, -1};
+  };
+
+  TaskHandle LookupTXT(
+      std::function<void(absl::StatusOr<std::string>)> on_resolved,
+      absl::string_view /* name */, absl::Time /* deadline */,
+      grpc_pollset_set* /* interested_parties */,
+      absl::string_view /* name_server */) override {
+    // Not supported
+    GetDefaultEventEngine()->Run([on_resolved] {
+      on_resolved(absl::UnimplementedError(
+          "The Testing DNS resolver does not support looking up TXT records"));
+    });
+    return {-1, -1};
+  };
 
   // Not cancellable
   bool Cancel(TaskHandle /*handle*/) override { return false; }

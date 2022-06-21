@@ -72,6 +72,27 @@ class DNSResolver {
   LookupHostnameBlocking(absl::string_view name,
                          absl::string_view default_port) = 0;
 
+  // Asynchronously resolve an SRV Record per gRFC A5: Load Balancing and DNS.
+  // On completion, \a on_done is invoked with the result.
+  //
+  // The same caveats in \a LookupHostname apply here as well.
+  //
+  // Reference: https://github.com/grpc/proposal/blob/master/A5-grpclb-in-dns.md
+  virtual TaskHandle LookupSRV(
+      std::function<void(absl::StatusOr<std::vector<grpc_resolved_address>>)>
+          on_resolved,
+      absl::string_view name, absl::Time deadline,
+      grpc_pollset_set* interested_parties, absl::string_view name_server) = 0;
+
+  // Asynchronously resolve a TXT Record. On completion, \a on_done is invoked
+  // with the resulting string.
+  //
+  // The same caveats in \a LookupHostname apply here.
+  virtual TaskHandle LookupTXT(
+      std::function<void(absl::StatusOr<std::string>)> on_resolved,
+      absl::string_view name, absl::Time deadline,
+      grpc_pollset_set* interested_parties, absl::string_view name_server) = 0;
+
   // This shares the same semantics with \a EventEngine::Cancel: successfully
   // cancelled lookups will not have their callbacks executed, and this
   // method returns true. If a TaskHandle is unknown, this method should return
