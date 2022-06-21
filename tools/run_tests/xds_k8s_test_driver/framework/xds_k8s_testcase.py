@@ -73,16 +73,26 @@ class TdPropagationRetryableError(Exception):
 class XdsKubernetesBaseTestCase(absltest.TestCase):
     client_namespace: str
     client_runner: KubernetesClientRunner
+    ensure_firewall: bool
+    force_cleanup: bool
     gcp_api_manager: gcp.api.GcpApiManager
+    gcp_service_account: Optional[str]
     k8s_api_manager: k8s.KubernetesApiManager
     secondary_k8s_api_manager: k8s.KubernetesApiManager
+    network: str
+    project: str
     resource_prefix: str
     resource_suffix: str = ''
+    # Whether to randomize resources names for each test by appending a
+    # unique suffix.
+    resource_suffix_randomize: bool = True
+    server_maintenance_port: Optional[int]
     server_namespace: str
     server_runner: KubernetesServerRunner
+    server_xds_host: str
     server_xds_port: int
-    server_maintenance_port: int
     td: TrafficDirectorManager
+    td_bootstrap_image: str
 
     @staticmethod
     def is_supported(config: skips.TestConfig) -> bool:
@@ -107,9 +117,9 @@ class XdsKubernetesBaseTestCase(absltest.TestCase):
         skips.evaluate_test_config(cls.is_supported)
 
         # GCP
-        cls.project: str = xds_flags.PROJECT.value
-        cls.network: str = xds_flags.NETWORK.value
-        cls.gcp_service_account: str = xds_k8s_flags.GCP_SERVICE_ACCOUNT.value
+        cls.project = xds_flags.PROJECT.value
+        cls.network = xds_flags.NETWORK.value
+        cls.gcp_service_account = xds_k8s_flags.GCP_SERVICE_ACCOUNT.value
         cls.td_bootstrap_image = xds_k8s_flags.TD_BOOTSTRAP_IMAGE.value
         cls.xds_server_uri = xds_flags.XDS_SERVER_URI.value
         cls.ensure_firewall = xds_flags.ENSURE_FIREWALL.value
@@ -119,7 +129,7 @@ class XdsKubernetesBaseTestCase(absltest.TestCase):
         # Resource names.
         cls.resource_prefix = xds_flags.RESOURCE_PREFIX.value
         if xds_flags.RESOURCE_SUFFIX.value is not None:
-            cls._resource_suffix_randomize = False
+            cls.resource_suffix_randomize = False
             cls.resource_suffix = xds_flags.RESOURCE_SUFFIX.value
 
         # Test server
@@ -373,15 +383,11 @@ class IsolatedXdsKubernetesTestCase(XdsKubernetesBaseTestCase,
     each test, and destroyed after.
     """
 
-    # Whether to randomize resources names for each test by appending a
-    # unique suffix.
-    _resource_suffix_randomize: bool = True
-
     def setUp(self):
         """Hook method for setting up the test fixture before exercising it."""
         super().setUp()
 
-        if self._resource_suffix_randomize:
+        if self.resource_suffix_randomize:
             self.resource_suffix = helpers_rand.random_resource_suffix()
         logger.info('Test run resource prefix: %s, suffix: %s',
                     self.resource_prefix, self.resource_suffix)

@@ -16,10 +16,18 @@
 
 #include "src/core/lib/security/authorization/matchers.h"
 
+#include <algorithm>
+#include <string>
+
+#include "absl/memory/memory.h"
+#include "absl/strings/string_view.h"
+
 #include <grpc/grpc_security_constants.h>
+#include <grpc/support/log.h>
 
 #include "src/core/lib/address_utils/parse_address.h"
 #include "src/core/lib/address_utils/sockaddr_utils.h"
+#include "src/core/lib/iomgr/error.h"
 
 namespace grpc_core {
 

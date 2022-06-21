@@ -28,8 +28,6 @@
 #include <utility>
 
 #include "absl/status/statusor.h"
-#include "absl/time/clock.h"
-#include "absl/time/time.h"
 
 #include <grpc/grpc.h>
 #include <grpc/slice.h>
@@ -793,8 +791,6 @@ void Subchannel::RequestConnection() {
   MutexLock lock(&mu_);
   if (state_ == GRPC_CHANNEL_IDLE) {
     StartConnectingLocked();
-  } else if (state_ == GRPC_CHANNEL_TRANSIENT_FAILURE) {
-    connection_requested_ = true;
   }
 }
 
@@ -899,18 +895,9 @@ void Subchannel::OnRetryTimer() {
 
 void Subchannel::OnRetryTimerLocked() {
   if (shutdown_) return;
-  if (connection_requested_) {
-    gpr_log(GPR_INFO,
-            "subchannel %p %s: connection attempt requested while backoff "
-            "timer was pending, retrying now",
-            this, key_.ToString().c_str());
-    connection_requested_ = false;
-    StartConnectingLocked();
-  } else {
-    gpr_log(GPR_INFO, "subchannel %p %s: backoff delay elapsed, reporting IDLE",
-            this, key_.ToString().c_str());
-    SetConnectivityStateLocked(GRPC_CHANNEL_IDLE, absl::OkStatus());
-  }
+  gpr_log(GPR_INFO, "subchannel %p %s: backoff delay elapsed, reporting IDLE",
+          this, key_.ToString().c_str());
+  SetConnectivityStateLocked(GRPC_CHANNEL_IDLE, absl::OkStatus());
 }
 
 void Subchannel::StartConnectingLocked() {
@@ -954,8 +941,6 @@ void Subchannel::OnConnectingFinishedLocked(grpc_error_handle error) {
   if (connecting_result_.transport == nullptr || !PublishTransportLocked()) {
     const Duration time_until_next_attempt =
         next_attempt_time_ - ExecCtx::Get()->Now();
-    auto ee_deadline =
-        absl::Now() + absl::Milliseconds(time_until_next_attempt.millis());
     gpr_log(GPR_INFO,
             "subchannel %p %s: connect failed (%s), backing off for %" PRId64
             " ms",
@@ -963,8 +948,9 @@ void Subchannel::OnConnectingFinishedLocked(grpc_error_handle error) {
             time_until_next_attempt.millis());
     SetConnectivityStateLocked(GRPC_CHANNEL_TRANSIENT_FAILURE,
                                grpc_error_to_absl_status(error));
-    retry_timer_handle_ = GetDefaultEventEngine()->RunAt(
-        ee_deadline, [self = WeakRef(DEBUG_LOCATION, "RetryTimer")]() mutable {
+    retry_timer_handle_ = GetDefaultEventEngine()->RunAfter(
+        time_until_next_attempt,
+        [self = WeakRef(DEBUG_LOCATION, "RetryTimer")]() mutable {
           {
             ApplicationCallbackExecCtx callback_exec_ctx;
             ExecCtx exec_ctx;

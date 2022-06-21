@@ -21,6 +21,7 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include <grpc/compression.h>
 #include <grpc/grpc.h>
 #include <grpc/support/log.h>
 

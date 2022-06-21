@@ -62,6 +62,8 @@ ABSL_FLAG(std::vector<std::string>, xds_grpc_server,
           "Ports that should rely on XDS configuration to serve");
 ABSL_FLAG(std::string, crt, "", "gRPC TLS server-side certificate");
 ABSL_FLAG(std::string, key, "", "gRPC TLS server-side key");
+ABSL_FLAG(std::string, forwarding_address, "0.0.0.0:7072",
+          "Forwarding address for unhandled protocols");
 
 // The following flags must be defined, but are not used for now. Some may be
 // necessary for certain tests.
@@ -86,8 +88,8 @@ namespace grpc {
 namespace testing {
 namespace {
 
-void RunServer(std::vector<int> grpc_ports, std::set<int> xds_ports,
-               std::set<int> tls_ports) {
+void RunServer(const std::set<int>& grpc_ports, const std::set<int>& xds_ports,
+               const std::set<int>& tls_ports) {
   // Get hostname
   std::string hostname;
   char* hostname_p = grpc_gethostname();
@@ -97,24 +99,12 @@ void RunServer(std::vector<int> grpc_ports, std::set<int> xds_ports,
     hostname = hostname_p;
     free(hostname_p);
   }
-  EchoTestServiceImpl echo_test_service(hostname);
+  EchoTestServiceImpl echo_test_service(
+      std::move(hostname), absl::GetFlag(FLAGS_forwarding_address));
   ServerBuilder builder;
   XdsServerBuilder xds_builder;
   bool has_xds_listeners = false;
   builder.RegisterService(&echo_test_service);
-  // Create Credentials for Tls Servers -
-  // 1. Uses FileWatcherCertificateProvider with a refresh interval of 600
-  // seconds. (Number decided based on gRPC defaults.
-  // 2. Do not ask for client certificates. (Not yet sure what is needed right
-  // now.)
-  experimental::TlsServerCredentialsOptions options(
-      std::make_shared<experimental::FileWatcherCertificateProvider>(
-          absl::GetFlag(FLAGS_key), absl::GetFlag(FLAGS_crt), 600));
-  options.set_cert_request_type(GRPC_SSL_DONT_REQUEST_CLIENT_CERTIFICATE);
-  options.watch_identity_key_cert_pairs();
-  options.set_check_call_host(false);
-  auto tls_creds = TlsServerCredentials(options);
-  // Add ports to the builders
   for (int port : grpc_ports) {
     auto server_address = grpc_core::JoinHostPort("0.0.0.0", port);
     if (xds_ports.find(port) != xds_ports.end()) {
@@ -124,7 +114,18 @@ void RunServer(std::vector<int> grpc_ports, std::set<int> xds_ports,
               server_address.c_str());
       has_xds_listeners = true;
     } else if (tls_ports.find(port) != tls_ports.end()) {
-      builder.AddListeningPort(server_address, tls_creds);
+      // Create Credentials for Tls Servers -
+      // 1. Uses FileWatcherCertificateProvider with a refresh interval of 600
+      // seconds. (Number decided based on gRPC defaults.
+      // 2. Do not ask for client certificates. (Not yet sure what is needed
+      // right now.) Add ports to the builders
+      experimental::TlsServerCredentialsOptions options(
+          std::make_shared<experimental::FileWatcherCertificateProvider>(
+              absl::GetFlag(FLAGS_key), absl::GetFlag(FLAGS_crt), 600));
+      options.set_cert_request_type(GRPC_SSL_DONT_REQUEST_CLIENT_CERTIFICATE);
+      options.watch_identity_key_cert_pairs();
+      options.set_check_call_host(false);
+      builder.AddListeningPort(server_address, TlsServerCredentials(options));
       gpr_log(GPR_INFO, "Server listening on %s over tls",
               server_address.c_str());
     } else {
@@ -139,10 +140,6 @@ void RunServer(std::vector<int> grpc_ports, std::set<int> xds_ports,
   if (has_xds_listeners) {
     xds_server = xds_builder.BuildAndStart();
   }
-  // 3333 is the magic port that the istio testing for k8s health checks. And
-  // it only needs TCP. So also make the gRPC server to listen on 3333.
-  builder.AddListeningPort(grpc_core::JoinHostPort("0.0.0.0", 3333),
-                           grpc::InsecureServerCredentials());
   std::unique_ptr<Server> server(builder.BuildAndStart());
   server->Wait();
 }
@@ -152,12 +149,12 @@ void RunServer(std::vector<int> grpc_ports, std::set<int> xds_ports,
 }  // namespace grpc
 
 int main(int argc, char** argv) {
-  // Preprocess argv, for two things:
-  // 1. merge duplciate flags. So "--grpc=8080 --grpc=9090" becomes
-  // "--grpc=8080,9090".
-  // 2. replace '-' to '_'. So "--istio-version=123" becomes
-  // "--istio_version=123".
-  // 3. remove --version since that is specially interpretted by absl
+  //  Preprocess argv, for two things:
+  //  1. merge duplciate flags. So "--grpc=8080 --grpc=9090" becomes
+  //  "--grpc=8080,9090".
+  //  2. replace '-' to '_'. So "--istio-version=123" becomes
+  //  "--istio_version=123".
+  //  3. remove --version since that is specially interpretted by absl
   std::map<std::string, std::vector<std::string>> argv_dict;
   for (int i = 0; i < argc; i++) {
     std::string arg(argv[i]);
@@ -194,10 +191,10 @@ int main(int argc, char** argv) {
   grpc::testing::TestEnvironment env(&new_argc, new_argv);
   grpc::testing::InitTest(&new_argc, &new_argv, true);
   // Turn gRPC ports from a string vector to an int vector.
-  std::vector<int> grpc_ports;
+  std::set<int> grpc_ports;
   for (const auto& p : absl::GetFlag(FLAGS_grpc)) {
     int grpc_port = std::stoi(p);
-    grpc_ports.push_back(grpc_port);
+    grpc_ports.insert(grpc_port);
   }
   // Create a map of which ports are supposed to use xds
   std::set<int> xds_ports;
@@ -208,6 +205,10 @@ int main(int argc, char** argv) {
       return 1;
     }
     xds_ports.insert(port);
+    // If the port does not exist in gRPC ports set, add it.
+    if (grpc_ports.find(port) == grpc_ports.end()) {
+      grpc_ports.insert(port);
+    }
   }
   // Create a map of which ports are supposed to use tls
   std::set<int> tls_ports;
