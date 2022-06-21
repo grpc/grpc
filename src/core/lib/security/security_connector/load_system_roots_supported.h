@@ -16,14 +16,14 @@
  *
  */
 
-#ifndef GRPC_CORE_LIB_SECURITY_SECURITY_CONNECTOR_LOAD_SYSTEM_ROOTS_LINUX_H
-#define GRPC_CORE_LIB_SECURITY_SECURITY_CONNECTOR_LOAD_SYSTEM_ROOTS_LINUX_H
+#ifndef GRPC_CORE_LIB_SECURITY_SECURITY_CONNECTOR_LOAD_SYSTEM_ROOTS_SUPPORTED_H
+#define GRPC_CORE_LIB_SECURITY_SECURITY_CONNECTOR_LOAD_SYSTEM_ROOTS_SUPPORTED_H
 
 #include <grpc/support/port_platform.h>
 
 #include <grpc/slice.h>
 
-#ifdef GPR_LINUX
+#if defined(GPR_LINUX) || defined(GPR_FREEBSD) || defined(GPR_APPLE)
 
 namespace grpc_core {
 
@@ -41,6 +41,6 @@ void GetAbsoluteFilePath(const char* valid_file_dir,
 
 }  // namespace grpc_core
 
-#endif /* GPR_LINUX */
-#endif /* GRPC_CORE_LIB_SECURITY_SECURITY_CONNECTOR_LOAD_SYSTEM_ROOTS_LINUX_H \
+#endif /* GPR_LINUX || GPR_FREEBSD || GPR_APPLE  */
+#endif /* GRPC_CORE_LIB_SECURITY_SECURITY_CONNECTOR_LOAD_SYSTEM_ROOTS_SUPPORTED_H \
         */

@@ -45,7 +45,6 @@
 #include "src/core/lib/address_utils/sockaddr_utils.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_args_preconditioning.h"
-#include "src/core/lib/channel/channel_stack_builder.h"
 #include "src/core/lib/channel/channelz.h"
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/debug/trace.h"
@@ -68,6 +67,7 @@
 #include "src/core/lib/transport/handshaker_registry.h"
 #include "src/core/lib/transport/tcp_connect_handshaker.h"
 #include "src/core/lib/transport/transport.h"
+#include "src/core/lib/transport/transport_fwd.h"
 
 #ifdef GPR_SUPPORT_CHANNELS_FROM_FD
 
@@ -148,8 +148,8 @@ void Chttp2Connector::OnHandshakeDone(void* arg, grpc_error_handle error) {
   Chttp2Connector* self = static_cast<Chttp2Connector*>(args->user_data);
   {
     MutexLock lock(&self->mu_);
-    if (error != GRPC_ERROR_NONE || self->shutdown_) {
-      if (error == GRPC_ERROR_NONE) {
+    if (!GRPC_ERROR_IS_NONE(error) || self->shutdown_) {
+      if (GRPC_ERROR_IS_NONE(error)) {
         error = GRPC_ERROR_CREATE_FROM_STATIC_STRING("connector shutdown");
         // We were shut down after handshaking completed successfully, so
         // destroy the endpoint here.
@@ -206,7 +206,7 @@ void Chttp2Connector::OnReceiveSettings(void* arg, grpc_error_handle error) {
     if (!self->notify_error_.has_value()) {
       grpc_endpoint_delete_from_pollset_set(self->endpoint_,
                                             self->args_.interested_parties);
-      if (error != GRPC_ERROR_NONE) {
+      if (!GRPC_ERROR_IS_NONE(error)) {
         // Transport got an error while waiting on SETTINGS frame.
         // TODO(yashykt): The following two lines should be moved to
         // SubchannelConnector::Result::Reset()

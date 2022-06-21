@@ -51,6 +51,13 @@ static gpr_timespec five_seconds_from_now(void) {
   return n_seconds_from_now(5);
 }
 
+static void wait_for_policy_reload(void) {
+  // Wait for the provider's refresh thread to read the updated files.
+  // TODO(jtattermusch): Refactor the tests to use a more reliable mechanism of
+  // detecting that the policy has been reloaded. See b/204329811
+  gpr_sleep_until(grpc_timeout_seconds_to_deadline(5));
+}
+
 static void drain_cq(grpc_completion_queue* cq) {
   grpc_event ev;
   do {
@@ -576,8 +583,7 @@ static void test_file_watcher_valid_policy_reload(
       "  ]"
       "}";
   tmp_policy.RewriteFile(authz_policy);
-  // Wait 2 seconds for the provider's refresh thread to read the updated files.
-  gpr_sleep_until(grpc_timeout_seconds_to_deadline(2));
+  wait_for_policy_reload();
   test_deny_unauthorized_request(f);
 
   end_test(&f);
@@ -623,14 +629,14 @@ static void test_file_watcher_invalid_policy_skip_reload(
   // Replace exisiting policy in file with an invalid policy.
   authz_policy = "{}";
   tmp_policy.RewriteFile(authz_policy);
-  // Wait 2 seconds for the provider's refresh thread to read the updated files.
-  gpr_sleep_until(grpc_timeout_seconds_to_deadline(2));
+  wait_for_policy_reload();
   test_allow_authorized_request(f);
 
   end_test(&f);
   config.tear_down_data(&f);
 }
 
+#ifndef GPR_APPLE
 static void test_file_watcher_recovers_from_failure(
     grpc_end2end_test_config config) {
   const char* authz_policy =
@@ -663,14 +669,13 @@ static void test_file_watcher_recovers_from_failure(
   grpc_channel_args server_args = {GPR_ARRAY_SIZE(args), args};
 
   grpc_end2end_test_fixture f = begin_test(
-      config, "test_file_watcher_valid_policy_reload", nullptr, &server_args);
+      config, "test_file_watcher_recovers_from_failure", nullptr, &server_args);
   grpc_authorization_policy_provider_release(provider);
   test_allow_authorized_request(f);
   // Replace exisiting policy in file with an invalid policy.
   authz_policy = "{}";
   tmp_policy.RewriteFile(authz_policy);
-  // Wait 2 seconds for the provider's refresh thread to read the updated files.
-  gpr_sleep_until(grpc_timeout_seconds_to_deadline(2));
+  wait_for_policy_reload();
   test_allow_authorized_request(f);
   // Recover from reload errors, by replacing invalid policy in file with a
   // valid policy.
@@ -699,13 +704,13 @@ static void test_file_watcher_recovers_from_failure(
       "  ]"
       "}";
   tmp_policy.RewriteFile(authz_policy);
-  // Wait 2 seconds for the provider's refresh thread to read the updated files.
-  gpr_sleep_until(grpc_timeout_seconds_to_deadline(2));
+  wait_for_policy_reload();
   test_deny_unauthorized_request(f);
 
   end_test(&f);
   config.tear_down_data(&f);
 }
+#endif
 
 void grpc_authz(grpc_end2end_test_config config) {
   test_static_init_allow_authorized_request(config);
@@ -716,7 +721,10 @@ void grpc_authz(grpc_end2end_test_config config) {
   test_file_watcher_init_deny_request_no_match_in_policy(config);
   test_file_watcher_valid_policy_reload(config);
   test_file_watcher_invalid_policy_skip_reload(config);
+#ifndef GPR_APPLE  // test case highly flaky on Mac
+  // TODO(jtattermusch): reenable the test once b/204329811 is fixed.
   test_file_watcher_recovers_from_failure(config);
+#endif
 }
 
 void grpc_authz_pre_init(void) {}

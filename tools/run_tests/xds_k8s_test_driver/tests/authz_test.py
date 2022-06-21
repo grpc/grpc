@@ -29,6 +29,7 @@ flags.adopt_module_key_flags(xds_k8s_testcase)
 _XdsTestServer = xds_k8s_testcase.XdsTestServer
 _XdsTestClient = xds_k8s_testcase.XdsTestClient
 _SecurityMode = xds_k8s_testcase.SecurityXdsKubernetesTestCase.SecurityMode
+_Lang = skips.Lang
 
 # The client generates QPS even when it is still loading information from xDS.
 # Once it finally connects there will be an outpouring of the bufferred RPCs and
@@ -47,12 +48,14 @@ class AuthzTest(xds_k8s_testcase.SecurityXdsKubernetesTestCase):
     }
 
     @staticmethod
-    def isSupported(config: skips.TestConfig) -> bool:
-        if config.client_lang in ['cpp', 'python']:
-            return config.version_ge('v1.44.x')
-        elif config.client_lang in ['java', 'go']:
-            return config.version_ge('v1.42.x')
-        return False
+    def is_supported(config: skips.TestConfig) -> bool:
+        # Per "Authorization (RBAC)" in
+        # https://github.com/grpc/grpc/blob/master/doc/grpc_xds_features.md
+        if config.client_lang in _Lang.CPP | _Lang.PYTHON:
+            return not config.version_lt('v1.44.x')
+        elif config.client_lang in _Lang.GO | _Lang.JAVA:
+            return not config.version_lt('v1.42.x')
+        return True
 
     def setUp(self):
         super().setUp()

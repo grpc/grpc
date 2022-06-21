@@ -12,9 +12,27 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <stddef.h>
+
+#include <algorithm>
+#include <atomic>
+#include <chrono>
+#include <initializer_list>
+#include <memory>
 #include <random>
 #include <thread>
+#include <utility>
+#include <vector>
 
+#include "absl/base/thread_annotations.h"
+#include "absl/strings/str_cat.h"
+#include "absl/types/optional.h"
+
+#include <grpc/event_engine/memory_allocator.h>
+#include <grpc/event_engine/memory_request.h>
+#include <grpc/support/log.h>
+
+#include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/resource_quota/memory_quota.h"
 
@@ -40,10 +58,8 @@ class StressTest {
   void Run(int seconds) {
     std::vector<std::thread> threads;
 
-    // A few threads constantly rebinding allocators to different quotas.
-    threads.reserve(2 + 2 + 3 * allocators_.size());
-    for (int i = 0; i < 2; i++) threads.push_back(Run(Rebinder));
     // And another few threads constantly resizing quotas.
+    threads.reserve(2 + allocators_.size());
     for (int i = 0; i < 2; i++) threads.push_back(Run(Resizer));
 
     // For each (allocator, pass), start a thread continuously allocating from
@@ -165,13 +181,6 @@ class StressTest {
   };
   // Type alias since we always pass around these shared pointers.
   using StatePtr = std::shared_ptr<State>;
-
-  // Choose one allocator, one quota, rebind the allocator to the quota.
-  static void Rebinder(StatePtr st) {
-    auto* allocator = st->RandomAllocator();
-    auto* quota = st->RandomQuota();
-    allocator->Rebind(quota);
-  }
 
   // Choose one allocator, resize it to a randomly chosen size.
   static void Resizer(StatePtr st) {

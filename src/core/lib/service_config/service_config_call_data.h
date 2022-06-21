@@ -19,12 +19,16 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <stddef.h>
+
 #include <map>
+#include <memory>
+#include <utility>
 
 #include "absl/strings/string_view.h"
 
-#include "src/core/lib/channel/context.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
+#include "src/core/lib/gprpp/unique_type_name.h"
 #include "src/core/lib/service_config/service_config.h"
 #include "src/core/lib/service_config/service_config_parser.h"
 
@@ -36,7 +40,7 @@ namespace grpc_core {
 /// easily access method and global parameters for the call.
 class ServiceConfigCallData {
  public:
-  using CallAttributes = std::map<const char*, absl::string_view>;
+  using CallAttributes = std::map<UniqueTypeName, absl::string_view>;
 
   ServiceConfigCallData() : method_configs_(nullptr) {}
 

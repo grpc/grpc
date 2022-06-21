@@ -40,6 +40,7 @@
 #include <grpc/slice.h>
 
 #include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/channel/channel_fwd.h"
 #include "src/core/lib/channel/channel_stack.h"  // IWYU pragma: keep
 #include "src/core/lib/channel/channel_stack_builder.h"
 #include "src/core/lib/channel/channelz.h"
@@ -53,6 +54,7 @@
 #include "src/core/lib/resource_quota/memory_quota.h"
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/surface/channel_stack_type.h"
+#include "src/core/lib/transport/transport_fwd.h"
 
 /** The same as grpc_channel_destroy, but doesn't create an ExecCtx, and so
  * is safe to use from within core. */

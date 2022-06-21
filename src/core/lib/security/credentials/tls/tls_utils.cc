@@ -24,6 +24,8 @@
 #include "absl/strings/match.h"
 #include "absl/strings/str_cat.h"
 
+#include <grpc/support/log.h>
+
 namespace grpc_core {
 
 // Based on

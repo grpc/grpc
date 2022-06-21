@@ -292,7 +292,8 @@ int external_dns_works(const char* host) {
     // "dualstack_socket_test" due to loopback4.unittest.grpc.io resolving to
     // [64:ff9b::7f00:1]. (Working as expected for DNS64, but it prevents the
     // dualstack_socket_test from functioning correctly). See b/201064791.
-    if (grpc_sockaddr_to_uri(&addr).value() == "ipv6:[64:ff9b::7f00:1]:80") {
+    if (grpc_sockaddr_to_uri(&addr).value() ==
+        "ipv6:%5B64:ff9b::7f00:1%5D:80") {
       gpr_log(
           GPR_INFO,
           "Detected DNS64 server response. Tests that depend on "

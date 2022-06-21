@@ -22,45 +22,62 @@
 #include <limits.h>
 #include <string.h>
 
+#include <algorithm>
+
 #include "absl/container/inlined_vector.h"
+#include "absl/strings/match.h"
+#include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
 #include "absl/strings/str_join.h"
+#include "absl/strings/str_split.h"
 #include "absl/strings/string_view.h"
+#include "absl/strings/strip.h"
 
+#include <grpc/byte_buffer.h>
 #include <grpc/byte_buffer_reader.h>
 #include <grpc/grpc.h>
+#include <grpc/impl/codegen/connectivity_state.h>
+#include <grpc/impl/codegen/propagation_bits.h>
+#include <grpc/slice.h>
+#include <grpc/status.h>
 #include <grpc/support/alloc.h>
+#include <grpc/support/log.h>
+#include <grpc/support/string_util.h>
 #include <grpc/support/time.h>
 
 #include "src/core/ext/filters/client_channel/client_channel.h"
+#include "src/core/ext/xds/upb_utils.h"
 #include "src/core/ext/xds/xds_api.h"
 #include "src/core/ext/xds/xds_bootstrap.h"
 #include "src/core/ext/xds/xds_channel_args.h"
 #include "src/core/ext/xds/xds_client_stats.h"
-#include "src/core/ext/xds/xds_cluster.h"
 #include "src/core/ext/xds/xds_cluster_specifier_plugin.h"
-#include "src/core/ext/xds/xds_endpoint.h"
 #include "src/core/ext/xds/xds_http_filters.h"
-#include "src/core/ext/xds/xds_listener.h"
-#include "src/core/lib/address_utils/sockaddr_utils.h"
 #include "src/core/lib/backoff/backoff.h"
 #include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/channel/channel_fwd.h"
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/gpr/env.h"
-#include "src/core/lib/gpr/string.h"
+#include "src/core/lib/gpr/useful.h"
+#include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/memory.h"
 #include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/gprpp/sync.h"
-#include "src/core/lib/iomgr/sockaddr.h"
+#include "src/core/lib/iomgr/closure.h"
+#include "src/core/lib/iomgr/load_file.h"
+#include "src/core/lib/iomgr/pollset_set.h"
 #include "src/core/lib/iomgr/timer.h"
 #include "src/core/lib/security/credentials/channel_creds_registry.h"
+#include "src/core/lib/security/credentials/credentials.h"
+#include "src/core/lib/slice/slice.h"
 #include "src/core/lib/slice/slice_internal.h"
-#include "src/core/lib/slice/slice_string_helpers.h"
+#include "src/core/lib/slice/slice_refcount.h"
 #include "src/core/lib/surface/call.h"
 #include "src/core/lib/surface/channel.h"
 #include "src/core/lib/surface/lame_client.h"
+#include "src/core/lib/transport/connectivity_state.h"
 #include "src/core/lib/uri/uri_parser.h"
 
 #define GRPC_XDS_INITIAL_CONNECT_BACKOFF_SECONDS 1
@@ -254,7 +271,7 @@ class XdsClient::ChannelState::AdsCallState
 
     void OnTimerLocked(grpc_error_handle error)
         ABSL_EXCLUSIVE_LOCKS_REQUIRED(&XdsClient::mu_) {
-      if (error == GRPC_ERROR_NONE && timer_pending_) {
+      if (GRPC_ERROR_IS_NONE(error) && timer_pending_) {
         timer_pending_ = false;
         if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_client_trace)) {
           gpr_log(GPR_INFO,
@@ -727,7 +744,7 @@ template <typename T>
 void XdsClient::ChannelState::RetryableCall<T>::OnRetryTimerLocked(
     grpc_error_handle error) {
   retry_timer_callback_pending_ = false;
-  if (!shutting_down_ && error == GRPC_ERROR_NONE) {
+  if (!shutting_down_ && GRPC_ERROR_IS_NONE(error)) {
     if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_client_trace)) {
       gpr_log(GPR_INFO,
               "[xds_client %p] xds server %s: retry timer fired (retryable "
@@ -855,6 +872,17 @@ void XdsClient::ChannelState::AdsCallState::AdsResponseParser::ParseResource(
   // If needed, record that we've seen this resource.
   if (result_.type->AllResourcesRequiredInSotW()) {
     result_.resources_seen[resource_name->authority].insert(resource_name->key);
+  }
+  // If we previously ignored the resource's deletion, log that we're
+  // now re-adding it.
+  if (resource_state.ignored_deletion) {
+    gpr_log(GPR_INFO,
+            "[xds_client %p] xds server %s: server returned new version of "
+            "resource for which we previously ignored a deletion: type %s "
+            "name %s",
+            xds_client(), ads_call_state_->chand()->server_.server_uri.c_str(),
+            std::string(type_url).c_str(), result->name.c_str());
+    resource_state.ignored_deletion = false;
   }
   // Update resource state based on whether the resource is valid.
   if (!result->resource.ok()) {
@@ -1126,7 +1154,7 @@ void XdsClient::ChannelState::AdsCallState::OnRequestSent(
 
 void XdsClient::ChannelState::AdsCallState::OnRequestSentLocked(
     grpc_error_handle error) {
-  if (IsCurrentCallOnChannel() && error == GRPC_ERROR_NONE) {
+  if (IsCurrentCallOnChannel() && GRPC_ERROR_IS_NONE(error)) {
     // Clean up the sent message.
     grpc_byte_buffer_destroy(send_message_payload_);
     send_message_payload_ = nullptr;
@@ -1231,9 +1259,23 @@ bool XdsClient::ChannelState::AdsCallState::OnResponseReceivedLocked() {
             // does not exist.  For that case, we rely on the request timeout
             // instead.
             if (resource_state.resource == nullptr) continue;
-            resource_state.resource.reset();
-            xds_client()->NotifyWatchersOnResourceDoesNotExist(
-                resource_state.watchers);
+            if (chand()->server_.IgnoreResourceDeletion()) {
+              if (!resource_state.ignored_deletion) {
+                gpr_log(GPR_ERROR,
+                        "[xds_client %p] xds server %s: ignoring deletion "
+                        "for resource type %s name %s",
+                        xds_client(), chand()->server_.server_uri.c_str(),
+                        result.type_url.c_str(),
+                        XdsClient::ConstructFullXdsResourceName(
+                            authority, result.type_url.c_str(), resource_key)
+                            .c_str());
+                resource_state.ignored_deletion = true;
+              }
+            } else {
+              resource_state.resource.reset();
+              xds_client()->NotifyWatchersOnResourceDoesNotExist(
+                  resource_state.watchers);
+            }
           }
         }
       }
@@ -1365,7 +1407,7 @@ void XdsClient::ChannelState::LrsCallState::Reporter::OnNextReportTimer(
 bool XdsClient::ChannelState::LrsCallState::Reporter::OnNextReportTimerLocked(
     grpc_error_handle error) {
   next_report_timer_callback_pending_ = false;
-  if (error != GRPC_ERROR_NONE || !IsCurrentReporterOnCall()) {
+  if (!GRPC_ERROR_IS_NONE(error) || !IsCurrentReporterOnCall()) {
     GRPC_ERROR_UNREF(error);
     return true;
   }
@@ -1457,7 +1499,7 @@ bool XdsClient::ChannelState::LrsCallState::Reporter::OnReportDoneLocked(
     GRPC_ERROR_UNREF(error);
     return true;
   }
-  if (error != GRPC_ERROR_NONE || !IsCurrentReporterOnCall()) {
+  if (!GRPC_ERROR_IS_NONE(error) || !IsCurrentReporterOnCall()) {
     GRPC_ERROR_UNREF(error);
     // If this reporter is no longer the current one on the call, the reason
     // might be that it was orphaned for a new one due to config update.
@@ -1667,7 +1709,7 @@ bool XdsClient::ChannelState::LrsCallState::OnResponseReceivedLocked() {
     grpc_error_handle parse_error = xds_client()->api_.ParseLrsResponse(
         response_slice, &send_all_clusters, &new_cluster_names,
         &new_load_reporting_interval);
-    if (parse_error != GRPC_ERROR_NONE) {
+    if (!GRPC_ERROR_IS_NONE(parse_error)) {
       gpr_log(GPR_ERROR,
               "[xds_client %p] xds server %s: LRS response parsing failed: %s",
               xds_client(), chand()->server_.server_uri.c_str(),
@@ -1971,6 +2013,13 @@ void XdsClient::CancelResourceWatch(const XdsResourceType* type,
   resource_state.watchers.erase(watcher);
   // Clean up empty map entries, if any.
   if (resource_state.watchers.empty()) {
+    if (resource_state.ignored_deletion) {
+      gpr_log(GPR_INFO,
+              "[xds_client %p] unsubscribing from a resource for which we "
+              "previously ignored a deletion: type %s name %s",
+              this, std::string(type->type_url()).c_str(),
+              std::string(name).c_str());
+    }
     authority_state.channel_state->UnsubscribeLocked(type, *resource_name,
                                                      delay_unsubscription);
     type_map.erase(resource_it);
@@ -2382,7 +2431,7 @@ std::string GetBootstrapContents(const char* fallback_config,
     grpc_slice contents;
     *error =
         grpc_load_file(path.get(), /*add_null_terminator=*/true, &contents);
-    if (*error != GRPC_ERROR_NONE) return "";
+    if (!GRPC_ERROR_IS_NONE(*error)) return "";
     std::string contents_str(StringViewFromSlice(contents));
     grpc_slice_unref_internal(contents);
     return contents_str;
@@ -2423,7 +2472,7 @@ RefCountedPtr<XdsClient> XdsClient::GetOrCreate(const grpc_channel_args* args,
   if (bootstrap_config != nullptr) {
     std::unique_ptr<XdsBootstrap> bootstrap =
         XdsBootstrap::Create(bootstrap_config, error);
-    if (*error == GRPC_ERROR_NONE) {
+    if (GRPC_ERROR_IS_NONE(*error)) {
       grpc_channel_args* xds_channel_args =
           grpc_channel_args_find_pointer<grpc_channel_args>(
               args,
@@ -2442,7 +2491,7 @@ RefCountedPtr<XdsClient> XdsClient::GetOrCreate(const grpc_channel_args* args,
     // Find bootstrap contents.
     std::string bootstrap_contents =
         GetBootstrapContents(g_fallback_bootstrap_config, error);
-    if (*error != GRPC_ERROR_NONE) return nullptr;
+    if (!GRPC_ERROR_IS_NONE(*error)) return nullptr;
     if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_client_trace)) {
       gpr_log(GPR_INFO, "xDS bootstrap contents: %s",
               bootstrap_contents.c_str());
@@ -2450,7 +2499,7 @@ RefCountedPtr<XdsClient> XdsClient::GetOrCreate(const grpc_channel_args* args,
     // Parse bootstrap.
     std::unique_ptr<XdsBootstrap> bootstrap =
         XdsBootstrap::Create(bootstrap_contents, error);
-    if (*error != GRPC_ERROR_NONE) return nullptr;
+    if (!GRPC_ERROR_IS_NONE(*error)) return nullptr;
     // Instantiate XdsClient.
     xds_client =
         MakeRefCounted<XdsClient>(std::move(bootstrap), g_channel_args);
@@ -2527,7 +2576,7 @@ grpc_slice grpc_dump_xds_configs() {
   grpc_core::ExecCtx exec_ctx;
   grpc_error_handle error = GRPC_ERROR_NONE;
   auto xds_client = grpc_core::XdsClient::GetOrCreate(nullptr, &error);
-  if (error != GRPC_ERROR_NONE) {
+  if (!GRPC_ERROR_IS_NONE(error)) {
     // If we isn't using xDS, just return an empty string.
     GRPC_ERROR_UNREF(error);
     return grpc_empty_slice();

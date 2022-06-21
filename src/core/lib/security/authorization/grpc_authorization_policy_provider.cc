@@ -16,12 +16,26 @@
 
 #include "src/core/lib/security/authorization/grpc_authorization_policy_provider.h"
 
-#include <grpc/grpc_security.h>
-#include <grpc/support/string_util.h>
+#include <stdint.h>
 
+#include <utility>
+
+#include "absl/memory/memory.h"
+
+#include <grpc/grpc_security.h>
+#include <grpc/impl/codegen/gpr_types.h>
+#include <grpc/slice.h>
+#include <grpc/status.h>
+#include <grpc/support/log.h>
+#include <grpc/support/string_util.h>
+#include <grpc/support/time.h>
+
+#include "src/core/lib/debug/trace.h"
+#include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/load_file.h"
 #include "src/core/lib/security/authorization/grpc_authorization_engine.h"
 #include "src/core/lib/slice/slice_internal.h"
+#include "src/core/lib/slice/slice_refcount.h"
 
 namespace grpc_core {
 
@@ -50,7 +64,7 @@ absl::StatusOr<std::string> ReadPolicyFromFile(absl::string_view policy_path) {
   grpc_slice policy_slice = grpc_empty_slice();
   grpc_error_handle error =
       grpc_load_file(std::string(policy_path).c_str(), 0, &policy_slice);
-  if (error != GRPC_ERROR_NONE) {
+  if (!GRPC_ERROR_IS_NONE(error)) {
     absl::Status status =
         absl::InvalidArgumentError(grpc_error_std_string(error));
     GRPC_ERROR_UNREF(error);

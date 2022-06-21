@@ -152,7 +152,7 @@ static void cancel_stream_locked(grpc_binder_transport* gbt,
                                  grpc_error_handle error) {
   gpr_log(GPR_INFO, "cancel_stream_locked");
   if (!gbs->is_closed) {
-    GPR_ASSERT(gbs->cancel_self_error == GRPC_ERROR_NONE);
+    GPR_ASSERT(GRPC_ERROR_IS_NONE(gbs->cancel_self_error));
     gbs->is_closed = true;
     gbs->cancel_self_error = GRPC_ERROR_REF(error);
     gbt->transport_stream_receiver->CancelStream(gbs->tx_code);
@@ -266,7 +266,7 @@ static void recv_message_locked(void* arg, grpc_error_handle /*error*/) {
       return GRPC_ERROR_NONE;
     }();
 
-    if (error != GRPC_ERROR_NONE &&
+    if (!GRPC_ERROR_IS_NONE(error) &&
         gbs->call_failed_before_recv_message != nullptr) {
       *gbs->call_failed_before_recv_message = true;
     }
@@ -633,11 +633,11 @@ static void perform_transport_op_locked(void* transport_op,
     grpc_core::ExecCtx::Run(DEBUG_LOCATION, op->on_consumed, GRPC_ERROR_NONE);
   }
   bool do_close = false;
-  if (op->disconnect_with_error != GRPC_ERROR_NONE) {
+  if (!GRPC_ERROR_IS_NONE(op->disconnect_with_error)) {
     do_close = true;
     GRPC_ERROR_UNREF(op->disconnect_with_error);
   }
-  if (op->goaway_error != GRPC_ERROR_NONE) {
+  if (!GRPC_ERROR_IS_NONE(op->goaway_error)) {
     do_close = true;
     GRPC_ERROR_UNREF(op->goaway_error);
   }

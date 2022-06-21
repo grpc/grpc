@@ -76,6 +76,16 @@ class NativeClientChannelDNSResolver : public PollingResolver {
   OrphanablePtr<Orphanable> StartRequest() override;
 
  private:
+  // No-op request class, used so that the PollingResolver code knows
+  // when there is a request in flight, even if the request is not
+  // actually cancellable.
+  class Request : public Orphanable {
+   public:
+    Request() = default;
+
+    void Orphan() override {}
+  };
+
   void OnResolved(
       absl::StatusOr<std::vector<grpc_resolved_address>> addresses_or);
 };
@@ -115,8 +125,7 @@ OrphanablePtr<Orphanable> NativeClientChannelDNSResolver::StartRequest() {
     gpr_log(GPR_DEBUG, "[dns_resolver=%p] starting request=%p", this,
             DNSResolver::HandleToString(dns_request_handle).c_str());
   }
-  // Not cancellable.
-  return nullptr;
+  return MakeOrphanable<Request>();
 }
 
 void NativeClientChannelDNSResolver::OnResolved(

@@ -14,6 +14,8 @@
 // limitations under the License.
 //
 
+#ifndef GRPC_CORE_EXT_XDS_XDS_RESOURCE_TYPE_H
+#define GRPC_CORE_EXT_XDS_XDS_RESOURCE_TYPE_H
 #include <grpc/support/port_platform.h>
 
 #include <memory>
@@ -21,11 +23,9 @@
 
 #include "absl/status/statusor.h"
 #include "absl/strings/string_view.h"
+#include "upb/def.h"
 
 #include "src/core/ext/xds/upb_utils.h"
-
-#ifndef GRPC_CORE_EXT_XDS_XDS_RESOURCE_TYPE_H
-#define GRPC_CORE_EXT_XDS_XDS_RESOURCE_TYPE_H
 
 namespace grpc_core {
 

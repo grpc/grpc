@@ -200,7 +200,7 @@ bool ValueInJsonArray(const Json::Array& array, const char* value) {
 std::string ChooseServiceConfig(char* service_config_choice_json,
                                 grpc_error_handle* error) {
   Json json = Json::Parse(service_config_choice_json, error);
-  if (*error != GRPC_ERROR_NONE) return "";
+  if (!GRPC_ERROR_IS_NONE(*error)) return "";
   if (json.type() != Json::Type::ARRAY) {
     *error = GRPC_ERROR_CREATE_FROM_STATIC_STRING(
         "Service Config Choices, error: should be of type array");
@@ -300,7 +300,7 @@ void AresClientChannelDNSResolver::AresRequestWrapper::OnResolved(
       std::string service_config_string =
           ChooseServiceConfig(service_config_json_, &service_config_error);
       RefCountedPtr<ServiceConfig> service_config;
-      if (service_config_error == GRPC_ERROR_NONE &&
+      if (GRPC_ERROR_IS_NONE(service_config_error) &&
           !service_config_string.empty()) {
         GRPC_CARES_TRACE_LOG("resolver:%p selected service config choice: %s",
                              this, service_config_string.c_str());
@@ -308,7 +308,7 @@ void AresClientChannelDNSResolver::AresRequestWrapper::OnResolved(
                                                    service_config_string,
                                                    &service_config_error);
       }
-      if (service_config_error != GRPC_ERROR_NONE) {
+      if (!GRPC_ERROR_IS_NONE(service_config_error)) {
         result.service_config = absl::UnavailableError(
             absl::StrCat("failed to parse service config: ",
                          grpc_error_std_string(service_config_error)));
@@ -438,7 +438,7 @@ class AresDNSResolver : public DNSResolver {
       }
       grpc_pollset_set_del_pollset_set(request->pollset_set_,
                                        request->interested_parties_);
-      if (error != GRPC_ERROR_NONE) {
+      if (!GRPC_ERROR_IS_NONE(error)) {
         request->on_resolve_address_done_(grpc_error_to_absl_status(error));
         return;
       }
@@ -563,7 +563,7 @@ void grpc_resolver_dns_ares_init() {
   if (grpc_core::UseAresDnsResolver()) {
     address_sorting_init();
     grpc_error_handle error = grpc_ares_init();
-    if (error != GRPC_ERROR_NONE) {
+    if (!GRPC_ERROR_IS_NONE(error)) {
       GRPC_LOG_IF_ERROR("grpc_ares_init() failed", error);
       return;
     }

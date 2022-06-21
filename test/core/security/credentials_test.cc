@@ -517,8 +517,8 @@ class RequestMetadataState : public RefCounted<RequestMetadataState> {
     gpr_log(GPR_INFO, "expected_error: %s",
             grpc_error_std_string(expected_error_).c_str());
     gpr_log(GPR_INFO, "actual_error: %s", grpc_error_std_string(error).c_str());
-    if (expected_error_ == GRPC_ERROR_NONE) {
-      GPR_ASSERT(error == GRPC_ERROR_NONE);
+    if (GRPC_ERROR_IS_NONE(expected_error_)) {
+      GPR_ASSERT(GRPC_ERROR_IS_NONE(error));
     } else {
       std::string expected_error;
       GPR_ASSERT(grpc_error_get_str(expected_error_, GRPC_ERROR_STR_DESCRIPTION,
@@ -2626,7 +2626,7 @@ TEST(CredentialsTest, TestUrlExternalAccountCredsSuccessFormatText) {
   Json credential_source = Json::Parse(
       valid_url_external_account_creds_options_credential_source_format_text,
       &error);
-  GPR_ASSERT(error == GRPC_ERROR_NONE);
+  GPR_ASSERT(GRPC_ERROR_IS_NONE(error));
   ExternalAccountCredentials::Options options = {
       "external_account",                 // type;
       "audience",                         // audience;
@@ -2642,7 +2642,7 @@ TEST(CredentialsTest, TestUrlExternalAccountCredsSuccessFormatText) {
   };
   auto creds = UrlExternalAccountCredentials::Create(options, {}, &error);
   GPR_ASSERT(creds != nullptr);
-  GPR_ASSERT(error == GRPC_ERROR_NONE);
+  GPR_ASSERT(GRPC_ERROR_IS_NONE(error));
   GPR_ASSERT(creds->min_security_level() == GRPC_PRIVACY_AND_INTEGRITY);
   auto state = RequestMetadataState::NewInstance(
       GRPC_ERROR_NONE, "authorization: Bearer token_exchange_access_token");
@@ -2664,7 +2664,7 @@ TEST(CredentialsTest,
   Json credential_source = Json::Parse(
       valid_url_external_account_creds_options_credential_source_with_qurey_params_format_text,
       &error);
-  GPR_ASSERT(error == GRPC_ERROR_NONE);
+  GPR_ASSERT(GRPC_ERROR_IS_NONE(error));
   ExternalAccountCredentials::Options options = {
       "external_account",                 // type;
       "audience",                         // audience;
@@ -2680,7 +2680,7 @@ TEST(CredentialsTest,
   };
   auto creds = UrlExternalAccountCredentials::Create(options, {}, &error);
   GPR_ASSERT(creds != nullptr);
-  GPR_ASSERT(error == GRPC_ERROR_NONE);
+  GPR_ASSERT(GRPC_ERROR_IS_NONE(error));
   GPR_ASSERT(creds->min_security_level() == GRPC_PRIVACY_AND_INTEGRITY);
   auto state = RequestMetadataState::NewInstance(
       GRPC_ERROR_NONE, "authorization: Bearer token_exchange_access_token");
@@ -2699,7 +2699,7 @@ TEST(CredentialsTest, TestUrlExternalAccountCredsSuccessFormatJson) {
   Json credential_source = Json::Parse(
       valid_url_external_account_creds_options_credential_source_format_json,
       &error);
-  GPR_ASSERT(error == GRPC_ERROR_NONE);
+  GPR_ASSERT(GRPC_ERROR_IS_NONE(error));
   ExternalAccountCredentials::Options options = {
       "external_account",                 // type;
       "audience",                         // audience;
@@ -2715,7 +2715,7 @@ TEST(CredentialsTest, TestUrlExternalAccountCredsSuccessFormatJson) {
   };
   auto creds = UrlExternalAccountCredentials::Create(options, {}, &error);
   GPR_ASSERT(creds != nullptr);
-  GPR_ASSERT(error == GRPC_ERROR_NONE);
+  GPR_ASSERT(GRPC_ERROR_IS_NONE(error));
   GPR_ASSERT(creds->min_security_level() == GRPC_PRIVACY_AND_INTEGRITY);
   auto state = RequestMetadataState::NewInstance(
       GRPC_ERROR_NONE, "authorization: Bearer token_exchange_access_token");
@@ -2733,7 +2733,7 @@ TEST(CredentialsTest,
   grpc_error_handle error = GRPC_ERROR_NONE;
   Json credential_source = Json::Parse(
       invalid_url_external_account_creds_options_credential_source, &error);
-  GPR_ASSERT(error == GRPC_ERROR_NONE);
+  GPR_ASSERT(GRPC_ERROR_IS_NONE(error));
   ExternalAccountCredentials::Options options = {
       "external_account",                 // type;
       "audience",                         // audience;
@@ -2765,7 +2765,7 @@ TEST(CredentialsTest, TestFileExternalAccountCredsSuccessFormatText) {
           "{\"file\":\"%s\"}",
           absl::StrReplaceAll(subject_token_path, {{"\\", "\\\\"}})),
       &error);
-  GPR_ASSERT(error == GRPC_ERROR_NONE);
+  GPR_ASSERT(GRPC_ERROR_IS_NONE(error));
   ExternalAccountCredentials::Options options = {
       "external_account",                 // type;
       "audience",                         // audience;
@@ -2781,7 +2781,7 @@ TEST(CredentialsTest, TestFileExternalAccountCredsSuccessFormatText) {
   };
   auto creds = FileExternalAccountCredentials::Create(options, {}, &error);
   GPR_ASSERT(creds != nullptr);
-  GPR_ASSERT(error == GRPC_ERROR_NONE);
+  GPR_ASSERT(GRPC_ERROR_IS_NONE(error));
   GPR_ASSERT(creds->min_security_level() == GRPC_PRIVACY_AND_INTEGRITY);
   auto state = RequestMetadataState::NewInstance(
       GRPC_ERROR_NONE, "authorization: Bearer token_exchange_access_token");
@@ -2813,7 +2813,7 @@ TEST(CredentialsTest, TestFileExternalAccountCredsSuccessFormatJson) {
           "}",
           absl::StrReplaceAll(subject_token_path, {{"\\", "\\\\"}})),
       &error);
-  GPR_ASSERT(error == GRPC_ERROR_NONE);
+  GPR_ASSERT(GRPC_ERROR_IS_NONE(error));
   ExternalAccountCredentials::Options options = {
       "external_account",                 // type;
       "audience",                         // audience;
@@ -2829,7 +2829,7 @@ TEST(CredentialsTest, TestFileExternalAccountCredsSuccessFormatJson) {
   };
   auto creds = FileExternalAccountCredentials::Create(options, {}, &error);
   GPR_ASSERT(creds != nullptr);
-  GPR_ASSERT(error == GRPC_ERROR_NONE);
+  GPR_ASSERT(GRPC_ERROR_IS_NONE(error));
   GPR_ASSERT(creds->min_security_level() == GRPC_PRIVACY_AND_INTEGRITY);
   auto state = RequestMetadataState::NewInstance(
       GRPC_ERROR_NONE, "authorization: Bearer token_exchange_access_token");
@@ -2849,7 +2849,7 @@ TEST(CredentialsTest, TestFileExternalAccountCredsFailureFileNotFound) {
   grpc_error_handle error = GRPC_ERROR_NONE;
   Json credential_source =
       Json::Parse("{\"file\":\"non_exisiting_file\"}", &error);
-  GPR_ASSERT(error == GRPC_ERROR_NONE);
+  GPR_ASSERT(GRPC_ERROR_IS_NONE(error));
   ExternalAccountCredentials::Options options = {
       "external_account",                 // type;
       "audience",                         // audience;
@@ -2865,7 +2865,7 @@ TEST(CredentialsTest, TestFileExternalAccountCredsFailureFileNotFound) {
   };
   auto creds = FileExternalAccountCredentials::Create(options, {}, &error);
   GPR_ASSERT(creds != nullptr);
-  GPR_ASSERT(error == GRPC_ERROR_NONE);
+  GPR_ASSERT(GRPC_ERROR_IS_NONE(error));
   HttpRequest::SetOverride(httpcli_get_should_not_be_called,
                            httpcli_post_should_not_be_called,
                            httpcli_put_should_not_be_called);
@@ -2897,7 +2897,7 @@ TEST(CredentialsTest, TestFileExternalAccountCredsFailureInvalidJsonContent) {
           "}",
           absl::StrReplaceAll(subject_token_path, {{"\\", "\\\\"}})),
       &error);
-  GPR_ASSERT(error == GRPC_ERROR_NONE);
+  GPR_ASSERT(GRPC_ERROR_IS_NONE(error));
   ExternalAccountCredentials::Options options = {
       "external_account",                 // type;
       "audience",                         // audience;
@@ -2913,7 +2913,7 @@ TEST(CredentialsTest, TestFileExternalAccountCredsFailureInvalidJsonContent) {
   };
   auto creds = FileExternalAccountCredentials::Create(options, {}, &error);
   GPR_ASSERT(creds != nullptr);
-  GPR_ASSERT(error == GRPC_ERROR_NONE);
+  GPR_ASSERT(GRPC_ERROR_IS_NONE(error));
   HttpRequest::SetOverride(httpcli_get_should_not_be_called,
                            httpcli_post_should_not_be_called,
                            httpcli_put_should_not_be_called);
@@ -2936,7 +2936,7 @@ TEST(CredentialsTest, TestAwsExternalAccountCredsSuccess) {
   grpc_error_handle error = GRPC_ERROR_NONE;
   Json credential_source = Json::Parse(
       valid_aws_external_account_creds_options_credential_source, &error);
-  GPR_ASSERT(error == GRPC_ERROR_NONE);
+  GPR_ASSERT(GRPC_ERROR_IS_NONE(error));
   ExternalAccountCredentials::Options options = {
       "external_account",                 // type;
       "audience",                         // audience;
@@ -2952,7 +2952,7 @@ TEST(CredentialsTest, TestAwsExternalAccountCredsSuccess) {
   };
   auto creds = AwsExternalAccountCredentials::Create(options, {}, &error);
   GPR_ASSERT(creds != nullptr);
-  GPR_ASSERT(error == GRPC_ERROR_NONE);
+  GPR_ASSERT(GRPC_ERROR_IS_NONE(error));
   GPR_ASSERT(creds->min_security_level() == GRPC_PRIVACY_AND_INTEGRITY);
   auto state = RequestMetadataState::NewInstance(
       GRPC_ERROR_NONE, "authorization: Bearer token_exchange_access_token");
@@ -2971,7 +2971,7 @@ TEST(CredentialsTest, TestAwsImdsv2ExternalAccountCredsSuccess) {
   Json credential_source = Json::Parse(
       valid_aws_imdsv2_external_account_creds_options_credential_source,
       &error);
-  GPR_ASSERT(error == GRPC_ERROR_NONE);
+  GPR_ASSERT(GRPC_ERROR_IS_NONE(error));
   ExternalAccountCredentials::Options options = {
       "external_account",                 // type;
       "audience",                         // audience;
@@ -2987,7 +2987,7 @@ TEST(CredentialsTest, TestAwsImdsv2ExternalAccountCredsSuccess) {
   };
   auto creds = AwsExternalAccountCredentials::Create(options, {}, &error);
   GPR_ASSERT(creds != nullptr);
-  GPR_ASSERT(error == GRPC_ERROR_NONE);
+  GPR_ASSERT(GRPC_ERROR_IS_NONE(error));
   GPR_ASSERT(creds->min_security_level() == GRPC_PRIVACY_AND_INTEGRITY);
   auto state = RequestMetadataState::NewInstance(
       GRPC_ERROR_NONE, "authorization: Bearer token_exchange_access_token");
@@ -3007,7 +3007,7 @@ TEST(CredentialsTest, TestAwsExternalAccountCredsSuccessPathRegionEnvKeysUrl) {
   grpc_error_handle error = GRPC_ERROR_NONE;
   Json credential_source = Json::Parse(
       valid_aws_external_account_creds_options_credential_source, &error);
-  GPR_ASSERT(error == GRPC_ERROR_NONE);
+  GPR_ASSERT(GRPC_ERROR_IS_NONE(error));
   ExternalAccountCredentials::Options options = {
       "external_account",                 // type;
       "audience",                         // audience;
@@ -3023,7 +3023,7 @@ TEST(CredentialsTest, TestAwsExternalAccountCredsSuccessPathRegionEnvKeysUrl) {
   };
   auto creds = AwsExternalAccountCredentials::Create(options, {}, &error);
   GPR_ASSERT(creds != nullptr);
-  GPR_ASSERT(error == GRPC_ERROR_NONE);
+  GPR_ASSERT(GRPC_ERROR_IS_NONE(error));
   GPR_ASSERT(creds->min_security_level() == GRPC_PRIVACY_AND_INTEGRITY);
   auto state = RequestMetadataState::NewInstance(
       GRPC_ERROR_NONE, "authorization: Bearer token_exchange_access_token");
@@ -3044,7 +3044,7 @@ TEST(CredentialsTest,
   grpc_error_handle error = GRPC_ERROR_NONE;
   Json credential_source = Json::Parse(
       valid_aws_external_account_creds_options_credential_source, &error);
-  GPR_ASSERT(error == GRPC_ERROR_NONE);
+  GPR_ASSERT(GRPC_ERROR_IS_NONE(error));
   ExternalAccountCredentials::Options options = {
       "external_account",                 // type;
       "audience",                         // audience;
@@ -3060,7 +3060,7 @@ TEST(CredentialsTest,
   };
   auto creds = AwsExternalAccountCredentials::Create(options, {}, &error);
   GPR_ASSERT(creds != nullptr);
-  GPR_ASSERT(error == GRPC_ERROR_NONE);
+  GPR_ASSERT(GRPC_ERROR_IS_NONE(error));
   GPR_ASSERT(creds->min_security_level() == GRPC_PRIVACY_AND_INTEGRITY);
   auto state = RequestMetadataState::NewInstance(
       GRPC_ERROR_NONE, "authorization: Bearer token_exchange_access_token");
@@ -3083,7 +3083,7 @@ TEST(CredentialsTest,
   grpc_error_handle error = GRPC_ERROR_NONE;
   Json credential_source = Json::Parse(
       valid_aws_external_account_creds_options_credential_source, &error);
-  GPR_ASSERT(error == GRPC_ERROR_NONE);
+  GPR_ASSERT(GRPC_ERROR_IS_NONE(error));
   ExternalAccountCredentials::Options options = {
       "external_account",                 // type;
       "audience",                         // audience;
@@ -3099,7 +3099,7 @@ TEST(CredentialsTest,
   };
   auto creds = AwsExternalAccountCredentials::Create(options, {}, &error);
   GPR_ASSERT(creds != nullptr);
-  GPR_ASSERT(error == GRPC_ERROR_NONE);
+  GPR_ASSERT(GRPC_ERROR_IS_NONE(error));
   GPR_ASSERT(creds->min_security_level() == GRPC_PRIVACY_AND_INTEGRITY);
   auto state = RequestMetadataState::NewInstance(
       GRPC_ERROR_NONE, "authorization: Bearer token_exchange_access_token");
@@ -3122,7 +3122,7 @@ TEST(CredentialsTest, TestAwsExternalAccountCredsSuccessPathRegionUrlKeysEnv) {
   grpc_error_handle error = GRPC_ERROR_NONE;
   Json credential_source = Json::Parse(
       valid_aws_external_account_creds_options_credential_source, &error);
-  GPR_ASSERT(error == GRPC_ERROR_NONE);
+  GPR_ASSERT(GRPC_ERROR_IS_NONE(error));
   ExternalAccountCredentials::Options options = {
       "external_account",                 // type;
       "audience",                         // audience;
@@ -3138,7 +3138,7 @@ TEST(CredentialsTest, TestAwsExternalAccountCredsSuccessPathRegionUrlKeysEnv) {
   };
   auto creds = AwsExternalAccountCredentials::Create(options, {}, &error);
   GPR_ASSERT(creds != nullptr);
-  GPR_ASSERT(error == GRPC_ERROR_NONE);
+  GPR_ASSERT(GRPC_ERROR_IS_NONE(error));
   GPR_ASSERT(creds->min_security_level() == GRPC_PRIVACY_AND_INTEGRITY);
   auto state = RequestMetadataState::NewInstance(
       GRPC_ERROR_NONE, "authorization: Bearer token_exchange_access_token");
@@ -3163,7 +3163,7 @@ TEST(CredentialsTest, TestAwsExternalAccountCredsSuccessPathRegionEnvKeysEnv) {
   grpc_error_handle error = GRPC_ERROR_NONE;
   Json credential_source = Json::Parse(
       valid_aws_external_account_creds_options_credential_source, &error);
-  GPR_ASSERT(error == GRPC_ERROR_NONE);
+  GPR_ASSERT(GRPC_ERROR_IS_NONE(error));
   ExternalAccountCredentials::Options options = {
       "external_account",                 // type;
       "audience",                         // audience;
@@ -3179,7 +3179,7 @@ TEST(CredentialsTest, TestAwsExternalAccountCredsSuccessPathRegionEnvKeysEnv) {
   };
   auto creds = AwsExternalAccountCredentials::Create(options, {}, &error);
   GPR_ASSERT(creds != nullptr);
-  GPR_ASSERT(error == GRPC_ERROR_NONE);
+  GPR_ASSERT(GRPC_ERROR_IS_NONE(error));
   GPR_ASSERT(creds->min_security_level() == GRPC_PRIVACY_AND_INTEGRITY);
   auto state = RequestMetadataState::NewInstance(
       GRPC_ERROR_NONE, "authorization: Bearer token_exchange_access_token");
@@ -3208,7 +3208,7 @@ TEST(CredentialsTest,
   grpc_error_handle error = GRPC_ERROR_NONE;
   Json credential_source = Json::Parse(
       valid_aws_external_account_creds_options_credential_source, &error);
-  GPR_ASSERT(error == GRPC_ERROR_NONE);
+  GPR_ASSERT(GRPC_ERROR_IS_NONE(error));
   ExternalAccountCredentials::Options options = {
       "external_account",                 // type;
       "audience",                         // audience;
@@ -3224,7 +3224,7 @@ TEST(CredentialsTest,
   };
   auto creds = AwsExternalAccountCredentials::Create(options, {}, &error);
   GPR_ASSERT(creds != nullptr);
-  GPR_ASSERT(error == GRPC_ERROR_NONE);
+  GPR_ASSERT(GRPC_ERROR_IS_NONE(error));
   GPR_ASSERT(creds->min_security_level() == GRPC_PRIVACY_AND_INTEGRITY);
   auto state = RequestMetadataState::NewInstance(
       GRPC_ERROR_NONE, "authorization: Bearer token_exchange_access_token");
@@ -3253,7 +3253,7 @@ TEST(CredentialsTest,
   grpc_error_handle error = GRPC_ERROR_NONE;
   Json credential_source = Json::Parse(
       valid_aws_external_account_creds_options_credential_source, &error);
-  GPR_ASSERT(error == GRPC_ERROR_NONE);
+  GPR_ASSERT(GRPC_ERROR_IS_NONE(error));
   ExternalAccountCredentials::Options options = {
       "external_account",                 // type;
       "audience",                         // audience;
@@ -3269,7 +3269,7 @@ TEST(CredentialsTest,
   };
   auto creds = AwsExternalAccountCredentials::Create(options, {}, &error);
   GPR_ASSERT(creds != nullptr);
-  GPR_ASSERT(error == GRPC_ERROR_NONE);
+  GPR_ASSERT(GRPC_ERROR_IS_NONE(error));
   GPR_ASSERT(creds->min_security_level() == GRPC_PRIVACY_AND_INTEGRITY);
   auto state = RequestMetadataState::NewInstance(
       GRPC_ERROR_NONE, "authorization: Bearer token_exchange_access_token");
@@ -3293,7 +3293,7 @@ TEST(CredentialsTest,
   Json credential_source = Json::Parse(
       invalid_aws_external_account_creds_options_credential_source_unmatched_environment_id,
       &error);
-  GPR_ASSERT(error == GRPC_ERROR_NONE);
+  GPR_ASSERT(GRPC_ERROR_IS_NONE(error));
   ExternalAccountCredentials::Options options = {
       "external_account",                 // type;
       "audience",                         // audience;
@@ -3323,7 +3323,7 @@ TEST(CredentialsTest, TestAwsExternalAccountCredsFailureInvalidRegionUrl) {
   Json credential_source = Json::Parse(
       invalid_aws_external_account_creds_options_credential_source_invalid_region_url,
       &error);
-  GPR_ASSERT(error == GRPC_ERROR_NONE);
+  GPR_ASSERT(GRPC_ERROR_IS_NONE(error));
   ExternalAccountCredentials::Options options = {
       "external_account",                 // type;
       "audience",                         // audience;
@@ -3339,7 +3339,7 @@ TEST(CredentialsTest, TestAwsExternalAccountCredsFailureInvalidRegionUrl) {
   };
   auto creds = AwsExternalAccountCredentials::Create(options, {}, &error);
   GPR_ASSERT(creds != nullptr);
-  GPR_ASSERT(error == GRPC_ERROR_NONE);
+  GPR_ASSERT(GRPC_ERROR_IS_NONE(error));
   GPR_ASSERT(creds->min_security_level() == GRPC_PRIVACY_AND_INTEGRITY);
   error = GRPC_ERROR_CREATE_FROM_STATIC_STRING(
       "Invalid region url: invalid_region_url.");
@@ -3363,7 +3363,7 @@ TEST(CredentialsTest, TestAwsExternalAccountCredsFailureInvalidUrl) {
   Json credential_source = Json::Parse(
       invalid_aws_external_account_creds_options_credential_source_invalid_url,
       &error);
-  GPR_ASSERT(error == GRPC_ERROR_NONE);
+  GPR_ASSERT(GRPC_ERROR_IS_NONE(error));
   ExternalAccountCredentials::Options options = {
       "external_account",                 // type;
       "audience",                         // audience;
@@ -3379,7 +3379,7 @@ TEST(CredentialsTest, TestAwsExternalAccountCredsFailureInvalidUrl) {
   };
   auto creds = AwsExternalAccountCredentials::Create(options, {}, &error);
   GPR_ASSERT(creds != nullptr);
-  GPR_ASSERT(error == GRPC_ERROR_NONE);
+  GPR_ASSERT(GRPC_ERROR_IS_NONE(error));
   GPR_ASSERT(creds->min_security_level() == GRPC_PRIVACY_AND_INTEGRITY);
   error = GRPC_ERROR_CREATE_FROM_STATIC_STRING("Invalid url: invalid_url.");
   grpc_error_handle expected_error =
@@ -3402,7 +3402,7 @@ TEST(CredentialsTest, TestAwsExternalAccountCredsFailureMissingRoleName) {
   Json credential_source = Json::Parse(
       invalid_aws_external_account_creds_options_credential_source_missing_role_name,
       &error);
-  GPR_ASSERT(error == GRPC_ERROR_NONE);
+  GPR_ASSERT(GRPC_ERROR_IS_NONE(error));
   ExternalAccountCredentials::Options options = {
       "external_account",                 // type;
       "audience",                         // audience;
@@ -3418,7 +3418,7 @@ TEST(CredentialsTest, TestAwsExternalAccountCredsFailureMissingRoleName) {
   };
   auto creds = AwsExternalAccountCredentials::Create(options, {}, &error);
   GPR_ASSERT(creds != nullptr);
-  GPR_ASSERT(error == GRPC_ERROR_NONE);
+  GPR_ASSERT(GRPC_ERROR_IS_NONE(error));
   GPR_ASSERT(creds->min_security_level() == GRPC_PRIVACY_AND_INTEGRITY);
   error = GRPC_ERROR_CREATE_FROM_STATIC_STRING(
       "Missing role name when retrieving signing keys.");
@@ -3443,7 +3443,7 @@ TEST(CredentialsTest,
   Json credential_source = Json::Parse(
       invalid_aws_external_account_creds_options_credential_source_invalid_regional_cred_verification_url,
       &error);
-  GPR_ASSERT(error == GRPC_ERROR_NONE);
+  GPR_ASSERT(GRPC_ERROR_IS_NONE(error));
   ExternalAccountCredentials::Options options = {
       "external_account",                 // type;
       "audience",                         // audience;
@@ -3459,7 +3459,7 @@ TEST(CredentialsTest,
   };
   auto creds = AwsExternalAccountCredentials::Create(options, {}, &error);
   GPR_ASSERT(creds != nullptr);
-  GPR_ASSERT(error == GRPC_ERROR_NONE);
+  GPR_ASSERT(GRPC_ERROR_IS_NONE(error));
   GPR_ASSERT(creds->min_security_level() == GRPC_PRIVACY_AND_INTEGRITY);
   error = GRPC_ERROR_CREATE_FROM_STATIC_STRING(
       "Creating aws request signer failed.");

@@ -25,8 +25,8 @@
 #include <grpc/support/log.h>
 
 #include "src/core/ext/filters/client_channel/client_channel.h"
+#include "src/core/lib/channel/channel_fwd.h"
 #include "src/core/lib/channel/channel_stack.h"
-#include "src/core/lib/channel/channel_stack_builder.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/gprpp/dual_ref_counted.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
@@ -179,7 +179,7 @@ class StateWatcher : public DualRefCounted<StateWatcher> {
 
   static void TimeoutComplete(void* arg, grpc_error_handle error) {
     auto* self = static_cast<StateWatcher*>(arg);
-    self->timer_fired_ = error == GRPC_ERROR_NONE;
+    self->timer_fired_ = GRPC_ERROR_IS_NONE(error);
     // If this is a client channel (not a lame channel), cancel the watch.
     ClientChannel* client_channel =
         ClientChannel::GetFromChannel(self->channel_.get());
