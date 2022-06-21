@@ -20,11 +20,10 @@
 int main(int argc, char** argv) {
   testing::InitGoogleTest(&argc, argv);
   grpc::testing::TestEnvironment env(&argc, argv);
-  SetEventEngineFactories(
-      []() {
-        return absl::make_unique<
-            grpc_event_engine::experimental::IomgrEventEngine>();
-      },
-      nullptr);
-  return RUN_ALL_TESTS();
+  SetEventEngineFactory([]() {
+    return absl::make_unique<
+        grpc_event_engine::experimental::IomgrEventEngine>();
+  });
+  auto result = RUN_ALL_TESTS();
+  return result;
 }
