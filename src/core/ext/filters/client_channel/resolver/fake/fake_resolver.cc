@@ -94,7 +94,7 @@ FakeResolver::FakeResolver(ResolverArgs args)
     : work_serializer_(std::move(args.work_serializer)),
       result_handler_(std::move(args.result_handler)),
       response_generator_(
-          args.args.GetObject<FakeResolverResponseGenerator>()) {
+          args.args.GetObjectRef<FakeResolverResponseGenerator>()) {
   // Channels sharing the same subchannels may have different resolver response
   // generators. If we don't remove this arg, subchannel pool will create new
   // subchannels for the same address instead of reusing existing ones because
