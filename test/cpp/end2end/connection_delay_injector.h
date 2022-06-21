@@ -87,11 +87,10 @@ class ConnectionAttemptInjector {
     // Caller must invoke this from a thread with an ExecCtx.
     void Resume() {
       GPR_ASSERT(closure_ != nullptr);
-      AttemptConnection(
-          closure_, endpoint_, interested_parties_,
-          grpc_event_engine::experimental::ChannelArgsEndpointConfig(
-              TcpOptionsIntoChannelArgs(options_)),
-          &address_, deadline_);
+      auto config = grpc_event_engine::experimental::CreateEndpointConfig(
+          TcpOptionsIntoChannelArgs(options_));
+      AttemptConnection(closure_, endpoint_, interested_parties_,
+                        *(config.get()), &address_, deadline_);
       closure_ = nullptr;
     }
 

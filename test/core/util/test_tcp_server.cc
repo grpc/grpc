@@ -71,10 +71,9 @@ void test_tcp_server_start(test_tcp_server* server, int port) {
                                       .channel_args_preconditioning()
                                       .PreconditionChannelArgs(nullptr)
                                       .ToC();
+  auto config = grpc_event_engine::experimental::CreateEndpointConfig(args);
   grpc_error_handle error = grpc_tcp_server_create(
-      &server->shutdown_complete,
-      grpc_event_engine::experimental::ChannelArgsEndpointConfig(args),
-      &server->tcp_server);
+      &server->shutdown_complete, *(config.get()), &server->tcp_server);
   grpc_channel_args_destroy(args);
   GPR_ASSERT(GRPC_ERROR_IS_NONE(error));
   error =

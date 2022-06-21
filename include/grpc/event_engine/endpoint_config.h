@@ -32,9 +32,10 @@ class EndpointConfig {
  public:
   class OptionsAccessor;
   EndpointConfig();
-  explicit EndpointConfig(std::shared_ptr<OptionsAccessor> impl);
+  explicit EndpointConfig(std::unique_ptr<OptionsAccessor> impl);
   ~EndpointConfig();
-  /// Prevent copy assignment.
+  /// Prevent copy.
+  EndpointConfig(const EndpointConfig&) = delete;
   EndpointConfig& operator=(const EndpointConfig&) = delete;
   using Setting =
       absl::variant<absl::monostate, int, absl::string_view, bool, void*>;
@@ -43,7 +44,7 @@ class EndpointConfig {
   Setting Get(absl::string_view key) const;
 
  private:
-  std::shared_ptr<OptionsAccessor> impl_;
+  std::unique_ptr<OptionsAccessor> impl_;
 };
 
 }  // namespace experimental

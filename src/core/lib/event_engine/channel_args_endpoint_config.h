@@ -54,8 +54,10 @@ class EndpointConfig::OptionsAccessor {
   grpc_core::ChannelArgs args_;
 };
 
-EndpointConfig ChannelArgsEndpointConfig(const grpc_core::ChannelArgs& args);
-EndpointConfig ChannelArgsEndpointConfig(const grpc_channel_args* args);
+std::unique_ptr<EndpointConfig> CreateEndpointConfig(
+    const grpc_core::ChannelArgs& args);
+std::unique_ptr<EndpointConfig> CreateEndpointConfig(
+    const grpc_channel_args* args);
 
 }  // namespace experimental
 }  // namespace grpc_event_engine

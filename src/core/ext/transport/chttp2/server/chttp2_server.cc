@@ -683,10 +683,9 @@ grpc_error_handle Chttp2ServerListener::Create(
     grpc_error_handle error = GRPC_ERROR_NONE;
     // Create Chttp2ServerListener.
     listener = new Chttp2ServerListener(server, args, args_modifier);
-    error = grpc_tcp_server_create(
-        &listener->tcp_server_shutdown_complete_,
-        grpc_event_engine::experimental::ChannelArgsEndpointConfig(args),
-        &listener->tcp_server_);
+    auto config = grpc_event_engine::experimental::CreateEndpointConfig(args);
+    error = grpc_tcp_server_create(&listener->tcp_server_shutdown_complete_,
+                                   *(config.get()), &listener->tcp_server_);
     if (!GRPC_ERROR_IS_NONE(error)) return error;
     if (server->config_fetcher() != nullptr) {
       listener->resolved_address_ = *addr;
@@ -733,10 +732,10 @@ grpc_error_handle Chttp2ServerListener::CreateWithAcceptor(
     Chttp2ServerArgsModifier args_modifier) {
   Chttp2ServerListener* listener =
       new Chttp2ServerListener(server, args, args_modifier);
-  grpc_error_handle error = grpc_tcp_server_create(
-      &listener->tcp_server_shutdown_complete_,
-      grpc_event_engine::experimental::ChannelArgsEndpointConfig(args),
-      &listener->tcp_server_);
+  auto config = grpc_event_engine::experimental::CreateEndpointConfig(args);
+  grpc_error_handle error =
+      grpc_tcp_server_create(&listener->tcp_server_shutdown_complete_,
+                             *(config.get()), &listener->tcp_server_);
   if (!GRPC_ERROR_IS_NONE(error)) {
     delete listener;
     return error;

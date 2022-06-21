@@ -32,7 +32,7 @@ EndpointConfig::EndpointConfig() : impl_(nullptr){};
 EndpointConfig::~EndpointConfig() = default;
 
 EndpointConfig::EndpointConfig(
-    std::shared_ptr<EndpointConfig::OptionsAccessor> impl)
+    std::unique_ptr<EndpointConfig::OptionsAccessor> impl)
     : impl_(std::move(impl)){};
 
 EndpointConfig::Setting EndpointConfig::Get(absl::string_view key) const {
@@ -42,14 +42,16 @@ EndpointConfig::Setting EndpointConfig::Get(absl::string_view key) const {
   return impl_->Get(key);
 }
 
-EndpointConfig ChannelArgsEndpointConfig(const grpc_core::ChannelArgs& args) {
-  return EndpointConfig(
-      std::make_shared<EndpointConfig::OptionsAccessor>(args));
+std::unique_ptr<EndpointConfig> CreateEndpointConfig(
+    const grpc_core::ChannelArgs& args) {
+  return std::make_unique<EndpointConfig>(
+      std::make_unique<EndpointConfig::OptionsAccessor>(args));
 }
 
-EndpointConfig ChannelArgsEndpointConfig(const grpc_channel_args* args) {
-  return EndpointConfig(
-      std::make_shared<EndpointConfig::OptionsAccessor>(args));
+std::unique_ptr<EndpointConfig> CreateEndpointConfig(
+    const grpc_channel_args* args) {
+  return std::make_unique<EndpointConfig>(
+      std::make_unique<EndpointConfig::OptionsAccessor>(args));
 }
 
 }  // namespace experimental
