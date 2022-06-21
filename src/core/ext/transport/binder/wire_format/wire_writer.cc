@@ -383,7 +383,10 @@ void WireWriterImpl::TryScheduleTransaction() {
                      GRPC_ERROR_NONE);
       pending_outgoing_tx_.pop();
     } else {
-      gpr_log(GPR_INFO,
+      // It is common to fill `kFlowControlWindowSize` completely because
+      // transactions are send at faster rate than the other end of transport
+      // can handle it, so here we use `GPR_DEBUG` log level.
+      gpr_log(GPR_DEBUG,
               "Some work cannot be scheduled yet due to slow ack from the "
               "other end of transport. This transport might be blocked if this "
               "number don't go down. pending_outgoing_tx_.size() = %lu",
