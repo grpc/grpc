@@ -1730,7 +1730,6 @@ src/core/lib/event_engine/handle_containers.h \
 src/core/lib/event_engine/iomgr_engine.cc \
 src/core/lib/event_engine/iomgr_engine.h \
 src/core/lib/event_engine/memory_allocator.cc \
-src/core/lib/event_engine/promise.h \
 src/core/lib/event_engine/resolved_address.cc \
 src/core/lib/event_engine/slice.cc \
 src/core/lib/event_engine/slice_buffer.cc \
