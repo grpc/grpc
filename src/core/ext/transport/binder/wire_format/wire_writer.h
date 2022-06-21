@@ -103,7 +103,7 @@ class WireWriterImpl : public WireWriter {
   absl::flat_hash_map<int, int> next_seq_num_ ABSL_GUARDED_BY(write_mu_);
 
   // Number of bytes we have already sent in stream transactions.
-  std::atomic_int64_t num_outgoing_bytes_{0};
+  std::atomic<int64_t> num_outgoing_bytes_{0};
 
   // Guards variables related to flow control logic.
   grpc_core::Mutex flow_control_mu_;
