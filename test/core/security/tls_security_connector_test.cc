@@ -28,6 +28,7 @@
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
 
+#include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/gprpp/unique_type_name.h"
 #include "src/core/lib/iomgr/load_file.h"
 #include "src/core/lib/security/context/security_context.h"
@@ -455,10 +456,14 @@ TEST_F(TlsSecurityConnectorTest,
   options->set_root_cert_name(kRootCertName);
   RefCountedPtr<TlsCredentials> credential =
       MakeRefCounted<TlsCredentials>(options);
+  ChannelArgs connector_args;
+  ChannelArgs other_connector_args;
   RefCountedPtr<grpc_channel_security_connector> connector =
-      credential->create_security_connector(nullptr, kTargetName, nullptr);
+      credential->create_security_connector(nullptr, kTargetName,
+                                            &connector_args);
   RefCountedPtr<grpc_channel_security_connector> other_connector =
-      credential->create_security_connector(nullptr, kTargetName, nullptr);
+      credential->create_security_connector(nullptr, kTargetName,
+                                            &other_connector_args);
   // Comparing the equality of security connectors generated from the same
   // channel credentials with same settings should succeed.
   EXPECT_EQ(connector->cmp(other_connector.get()), 0);
@@ -477,8 +482,10 @@ TEST_F(TlsSecurityConnectorTest,
   options->set_root_cert_name(kRootCertName);
   RefCountedPtr<TlsCredentials> credential =
       MakeRefCounted<TlsCredentials>(options);
+  ChannelArgs connector_args;
   RefCountedPtr<grpc_channel_security_connector> connector =
-      credential->create_security_connector(nullptr, kTargetName, nullptr);
+      credential->create_security_connector(nullptr, kTargetName,
+                                            &connector_args);
   auto other_options = MakeRefCounted<grpc_tls_credentials_options>();
   other_options->set_certificate_provider(provider);
   other_options->set_watch_root_cert(true);
@@ -486,9 +493,10 @@ TEST_F(TlsSecurityConnectorTest,
   other_options->set_watch_identity_pair(true);
   RefCountedPtr<TlsCredentials> other_credential =
       MakeRefCounted<TlsCredentials>(other_options);
+  ChannelArgs other_connector_args;
   RefCountedPtr<grpc_channel_security_connector> other_connector =
       other_credential->create_security_connector(nullptr, kTargetName,
-                                                  nullptr);
+                                                  &other_connector_args);
   // Comparing the equality of security connectors generated from different
   // channel credentials should fail.
   EXPECT_NE(connector->cmp(other_connector.get()), 0);
@@ -507,14 +515,17 @@ TEST_F(TlsSecurityConnectorTest,
   options->set_root_cert_name(kRootCertName);
   RefCountedPtr<TlsCredentials> credential =
       MakeRefCounted<TlsCredentials>(options);
+  ChannelArgs connector_args;
   RefCountedPtr<grpc_channel_security_connector> connector =
-      credential->create_security_connector(nullptr, kTargetName, nullptr);
+      credential->create_security_connector(nullptr, kTargetName,
+                                            &connector_args);
   grpc_call_credentials* call_creds =
       grpc_md_only_test_credentials_create("", "");
+  ChannelArgs other_connector_args;
   RefCountedPtr<grpc_channel_security_connector> other_connector =
       credential->create_security_connector(
           RefCountedPtr<grpc_call_credentials>(call_creds), kTargetName,
-          nullptr);
+          &other_connector_args);
   // Comparing the equality of security connectors generated with different call
   // credentials should fail.
   EXPECT_NE(connector->cmp(other_connector.get()), 0);
@@ -533,10 +544,13 @@ TEST_F(TlsSecurityConnectorTest,
   options->set_root_cert_name(kRootCertName);
   RefCountedPtr<TlsCredentials> credential =
       MakeRefCounted<TlsCredentials>(options);
+  ChannelArgs connector_args;
+  ChannelArgs other_connector_args;
   RefCountedPtr<grpc_channel_security_connector> connector =
-      credential->create_security_connector(nullptr, kTargetName, nullptr);
+      credential->create_security_connector(nullptr, kTargetName,
+                                            &connector_args);
   RefCountedPtr<grpc_channel_security_connector> other_connector =
-      credential->create_security_connector(nullptr, "", nullptr);
+      credential->create_security_connector(nullptr, "", &other_connector_args);
   // Comparing the equality of security connectors generated with different
   // target names should fail.
   EXPECT_NE(connector->cmp(other_connector.get()), 0);
