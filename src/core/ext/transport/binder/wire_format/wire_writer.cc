@@ -389,8 +389,10 @@ void WireWriterImpl::TryScheduleTransaction() {
       gpr_log(GPR_DEBUG,
               "Some work cannot be scheduled yet due to slow ack from the "
               "other end of transport. This transport might be blocked if this "
-              "number don't go down. pending_outgoing_tx_.size() = %lu",
-              pending_outgoing_tx_.size());
+              "number don't go down. pending_outgoing_tx_.size() = %lu "
+              "pending_outgoing_tx_.front() = %p",
+              pending_outgoing_tx_.size(), pending_outgoing_tx_.front());
+      break;
     }
   }
 }
