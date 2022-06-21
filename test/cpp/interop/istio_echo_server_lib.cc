@@ -197,6 +197,8 @@ Status EchoTestServiceImpl::ForwardEcho(ServerContext* context,
       gpr_log(GPR_ERROR, "RPC %d failed %d: %s", i,
               calls[i].status.error_code(),
               calls[i].status.error_message().c_str());
+      response->clear_output();
+      return calls[i].status;
     }
   }
   return Status::OK;
