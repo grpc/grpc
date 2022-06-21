@@ -98,8 +98,8 @@ class ConnectionInjector : public ConnectionAttemptInjector {
           intercept_completion_(intercept_completion) {}
 
     void Wait() {
-      gpr_log(GPR_INFO, "=== WAITING FOR CONNECTION ATTEMPT ON PORT %d ===",
-              port_);
+      gpr_log(GPR_INFO,
+              "=== WAITING FOR CONNECTION ATTEMPT ON PORT %d ===", port_);
       grpc_core::MutexLock lock(&injector_->mu_);
       while (queued_attempt_ == nullptr) {
         start_cv_.Wait(&injector_->mu_);
@@ -108,8 +108,8 @@ class ConnectionInjector : public ConnectionAttemptInjector {
     }
 
     void Resume() {
-      gpr_log(GPR_INFO, "=== RESUMING CONNECTION ATTEMPT ON PORT %d ===",
-              port_);
+      gpr_log(GPR_INFO,
+              "=== RESUMING CONNECTION ATTEMPT ON PORT %d ===", port_);
       grpc_core::ExecCtx exec_ctx;
       std::unique_ptr<QueuedAttempt> attempt;
       {
@@ -131,8 +131,8 @@ class ConnectionInjector : public ConnectionAttemptInjector {
     }
 
     void WaitForCompletion() {
-      gpr_log(GPR_INFO, "=== WAITING FOR CONNECTION COMPLETION ON PORT %d ===",
-              port_);
+      gpr_log(GPR_INFO,
+              "=== WAITING FOR CONNECTION COMPLETION ON PORT %d ===", port_);
       grpc_core::MutexLock lock(&injector_->mu_);
       while (original_on_complete_ != nullptr) {
         complete_cv_.Wait(&injector_->mu_);
@@ -1773,8 +1773,8 @@ TEST_F(RoundRobinTest, ReportsLatestStatusInTransientFailure) {
   hold1->Wait();
   hold1->Fail(GRPC_ERROR_CREATE_FROM_STATIC_STRING("Survey says... Bzzzzt!"));
   // Wait until RPC fails with the right message.
-  absl::Time deadline = absl::Now() + (absl::Seconds(5) *
-                                       grpc_test_slowdown_factor());
+  absl::Time deadline =
+      absl::Now() + (absl::Seconds(5) * grpc_test_slowdown_factor());
   while (true) {
     Status status = SendRpc(stub);
     EXPECT_EQ(StatusCode::UNAVAILABLE, status.error_code());
