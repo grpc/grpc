@@ -36,6 +36,7 @@
 #include "src/core/lib/promise/poll.h"
 #include "src/core/lib/surface/channel_init.h"
 #include "src/core/lib/surface/channel_stack_type.h"
+#include "src/core/lib/transport/metadata_allocator.h"
 #include "src/core/lib/transport/metadata_batch.h"
 
 namespace grpc_core {

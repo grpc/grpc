@@ -73,8 +73,8 @@ grpc_cc_test(
     deps = [
         "//:gpr",
         "//:grpc",
+        "//test/core/promise:test_context",
         "//test/core/util:grpc_test_util",
-        "//test/core/promise:test_context"
     ],
 )
 
