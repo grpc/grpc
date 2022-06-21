@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015 gRPC authors.
+ * Copyright 2022 gRPC authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -116,11 +116,6 @@ tsi_result ssl_protector_protect_flush_util(
     unsigned char* protected_output_frames,
     size_t* protected_output_frames_size, size_t* still_pending_size);
 
-/* Util that extracts the plaintext from a TLS frame.
-   - protected_frames_bytes_size is the size of the TLS frames.
-   - unprotected_bytes is the plaintext extracted from the TLS frames.
-   - unprotected_bytes_size is the size of plaintext extracted.
-   */
 // Extracts the plaintext from a TLS frame.
 //
 // protected_frames_bytes: the TLS frame to extract plaintext from.

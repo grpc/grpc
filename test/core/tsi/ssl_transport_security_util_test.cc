@@ -1,5 +1,5 @@
 //
-// Copyright 2021 gRPC authors.
+// Copyright 2022 gRPC authors.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 
 #include "src/core/tsi/ssl_transport_security_util.h"
 
+#include <array>
 #include <string>
 #include <vector>
 
@@ -45,10 +46,16 @@ using ::testing::ValuesIn;
 
 constexpr std::size_t kMaxPlaintextBytesPerTlsRecord = 16384;
 constexpr std::size_t kTls13RecordOverhead = 22;
+constexpr std::array<std::size_t, 4> kTestPlainTextSizeArray = {
+    1, 1000, kMaxPlaintextBytesPerTlsRecord,
+    kMaxPlaintextBytesPerTlsRecord + 1000};
 
 // Used for debugging.
 int VerifySucceed(X509_STORE_CTX* store_ctx, void* arg) { return 1; }
 
+// Drives two SSL objects to finish a complete handshake with the hard-coded
+// credentials and outputs those two SSL objects to `out_client` and
+// `out_server` respectively.
 absl::Status DoHandshake(SSL** out_client, SSL** out_server) {
   if (out_client == nullptr || out_server == nullptr) {
     return absl::InvalidArgumentError(
@@ -207,7 +214,7 @@ struct FrameProtectorUtilTestData {
 // Generates the testing data |FrameProtectorUtilTestData|.
 std::vector<FrameProtectorUtilTestData> GenerateTestData() {
   std::vector<FrameProtectorUtilTestData> data;
-  for (std::size_t plaintext_size : {1, 1000, 16384, 17000}) {
+  for (std::size_t plaintext_size : kTestPlainTextSizeArray) {
     std::size_t expected_size = plaintext_size + kTls13RecordOverhead;
     if (plaintext_size > kMaxPlaintextBytesPerTlsRecord) {
       expected_size = kMaxPlaintextBytesPerTlsRecord + kTls13RecordOverhead;
@@ -326,7 +333,12 @@ class FlowTest : public TestWithParam<FrameProtectorUtilTestData> {
   std::size_t server_buffer_offset;
 };
 
-TEST_P(FlowTest, TestWorkFlows) {
+// This test consists of two tests, namely for each combination of parameters,
+// we create a message on one side, protect it (encrypt it), and send it to
+// the other side for unprotecting (decrypting).
+TEST_P(
+    FlowTest,
+    ClientMessageToServerAndServerMessageToClientCanBeProtectedAndUnprotectedSuccessfully) {
   SslFrameProtectorUtilFunctionTestHelper(
       GetParam().plaintext_size, GetParam().expected_encrypted_bytes_size,
       client_ssl, client_bio, client_buffer, client_buffer_offset, server_ssl,
