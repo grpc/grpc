@@ -109,7 +109,7 @@ grpc_core::Poll<grpc_error_handle> grpc_deframe_unprocessed_incoming_frames(
       return error;
   }
 
-  uint32_t length = (static_cast<uint32_t>(header[1]) << 24) |
+  uint64_t length = (static_cast<uint32_t>(header[1]) << 24) |
                     (static_cast<uint32_t>(header[2]) << 16) |
                     (static_cast<uint32_t>(header[3]) << 8) |
                     static_cast<uint32_t>(header[4]);
