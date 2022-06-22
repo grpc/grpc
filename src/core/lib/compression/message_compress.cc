@@ -39,9 +39,6 @@ class GzipCompressionOptionsImpl : public CompressionOptions {
   explicit GzipCompressionOptionsImpl(const grpc_channel_args* args)
       : gzip_compression_level_(
             DefaultGzipCompressionLevelFromChannelArgs(args)) {}
-  
-  explicit GzipCompressionOptionsImpl(int compression_level)
-      : gzip_compression_level_(compression_level) {}
       
   int gzip_compression_level() const { return gzip_compression_level_; }
   
@@ -117,7 +114,7 @@ static void* zalloc_gpr(void* /*opaque*/, unsigned int items,
 static void zfree_gpr(void* /*opaque*/, void* address) { gpr_free(address); }
 
 static int zlib_compress(grpc_slice_buffer* input, grpc_slice_buffer* output,
-                         int gzip, std::unique_ptr<grpc_core::GzipCompressionOptionsImpl> options) {
+                         int gzip, const grpc_core::GzipCompressionOptionsImpl* options) {
   z_stream zs;
   int r;
   size_t i;
@@ -176,16 +173,16 @@ static int copy(grpc_slice_buffer* input, grpc_slice_buffer* output) {
 static int compress_inner(grpc_compression_algorithm algorithm,
                           grpc_slice_buffer* input, 
                           grpc_slice_buffer* output,
-                          std::unique_ptr<grpc_core::GzipCompressionOptionsImpl> options) {
+                          const grpc_core::GzipCompressionOptionsImpl* options) {
   switch (algorithm) {
     case GRPC_COMPRESS_NONE:
       /* the fallback path always needs to be send uncompressed: we simply
          rely on that here */
       return 0;
     case GRPC_COMPRESS_DEFLATE:
-      return zlib_compress(input, output, 0, std::move(options));
+      return zlib_compress(input, output, 0, options);
     case GRPC_COMPRESS_GZIP:
-      return zlib_compress(input, output, 1, std::move(options));
+      return zlib_compress(input, output, 1, options);
     case GRPC_COMPRESS_ALGORITHMS_COUNT:
       break;
   }
@@ -196,9 +193,9 @@ static int compress_inner(grpc_compression_algorithm algorithm,
 int grpc_msg_compress(grpc_compression_algorithm algorithm,
                       grpc_slice_buffer* input, 
                       grpc_slice_buffer* output,
-                      std::unique_ptr<grpc_core::CompressionOptions> options) {
-  auto compression_options = std::unique_ptr<grpc_core::GzipCompressionOptionsImpl>(dynamic_cast<grpc_core::GzipCompressionOptionsImpl*>(options.release()));
-  if (!compress_inner(algorithm, input, output, std::move(compression_options))) {
+                      const grpc_core::CompressionOptions options) {
+  auto compression_options = static_cast<const grpc_core::GzipCompressionOptionsImpl*>(options); 
+  if (!compress_inner(algorithm, input, output, compression_options)) {
     copy(input, output);
     return 0;
   }

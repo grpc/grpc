@@ -43,7 +43,7 @@ std::unique_ptr<CompressionOptions> MakeCompressionOptions(const grpc_channel_ar
 int grpc_msg_compress(grpc_compression_algorithm algorithm,
                       grpc_slice_buffer* input, 
                       grpc_slice_buffer* output,
-                      std::unique_ptr<grpc_core::CompressionOptions> options);
+                      const grpc_core::CompressionOptions* options);
 
 /* decompress 'input' to 'output' using 'algorithm'.
    On success, appends slices to output and returns 1.

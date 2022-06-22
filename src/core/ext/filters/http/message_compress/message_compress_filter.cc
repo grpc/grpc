@@ -90,8 +90,8 @@ class ChannelData {
     return default_compression_algorithm_;
   }
 
-  std::unique_ptr<grpc_core::CompressionOptions> default_compression_options() {
-    return std::move(compression_options_);
+  const grpc_core::CompressionOptions* default_compression_options() {
+    return compression_options_.get();
   }
 
   int default_grpc_min_message_size_to_compress() const {
@@ -160,7 +160,7 @@ class CallData {
   grpc_core::CallCombiner* call_combiner_;
   grpc_compression_algorithm compression_algorithm_ = GRPC_COMPRESS_NONE;
   int grpc_min_message_size_to_compress_;
-  std::unique_ptr<grpc_core::CompressionOptions> compression_options_;
+  const grpc_core::CompressionOptions* compression_options_;
   grpc_error_handle cancel_error_ = GRPC_ERROR_NONE;
   grpc_transport_stream_op_batch* send_message_batch_ = nullptr;
   bool seen_initial_metadata_ = false;
@@ -256,10 +256,8 @@ void CallData::FinishSendMessage(grpc_call_element* elem) {
   grpc_slice_buffer tmp;
   grpc_slice_buffer_init(&tmp);
   uint32_t send_flags =
-      send_message_batch_->payload->send_message.send_message->flags();
-  
-  bool did_compress = grpc_msg_compress(compression_algorithm_, &slices_, &tmp, 
-                                        std::move(compression_options_) );
+      send_message_batch_->payload->send_message.send_message->flags(); 
+  bool did_compress = grpc_msg_compress(compression_algorithm_, &slices_, &tmp, compression_options_);
   if (did_compress) {
     if (GRPC_TRACE_FLAG_ENABLED(grpc_compression_trace)) {
       const char* algo_name;
