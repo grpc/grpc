@@ -110,6 +110,8 @@ set(gRPC_ABSL_USED_TARGETS
   absl_bits
   absl_city
   absl_civil_time
+  absl_cleanup
+  absl_cleanup_internal
   absl_compressed_tuple
   absl_config
   absl_container_common
@@ -3166,6 +3168,7 @@ target_link_libraries(grpc++
   ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
+  absl::cleanup
   grpc
 )
 
@@ -8302,6 +8305,7 @@ target_include_directories(binder_transport_test
 target_link_libraries(binder_transport_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
+  absl::cleanup
   grpc_test_util
 )
 
@@ -10182,6 +10186,7 @@ target_include_directories(endpoint_binder_pool_test
 target_link_libraries(endpoint_binder_pool_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
+  absl::cleanup
   grpc_test_util
 )
 
@@ -10606,6 +10611,7 @@ target_include_directories(fake_binder_test
 target_link_libraries(fake_binder_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
+  absl::cleanup
   grpc_test_util
 )
 
@@ -17536,6 +17542,7 @@ target_include_directories(transport_stream_receiver_test
 target_link_libraries(transport_stream_receiver_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
+  absl::cleanup
   grpc_test_util
 )
 
@@ -17920,6 +17927,7 @@ target_include_directories(wire_reader_test
 target_link_libraries(wire_reader_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
+  absl::cleanup
   grpc_test_util
 )
 
@@ -18012,6 +18020,7 @@ target_include_directories(wire_writer_test
 target_link_libraries(wire_writer_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
+  absl::cleanup
   grpc_test_util
 )
 
@@ -20424,7 +20433,7 @@ generate_pkgconfig(
   "gRPC++"
   "C++ wrapper for gRPC"
   "${gRPC_CPP_VERSION}"
-  "grpc absl_base absl_bind_front absl_cord absl_core_headers absl_flat_hash_map absl_flat_hash_set absl_hash absl_inlined_vector absl_memory absl_optional absl_random_random absl_span absl_status absl_statusor absl_str_format absl_strings absl_synchronization absl_time absl_type_traits absl_utility absl_variant"
+  "grpc absl_base absl_bind_front absl_cleanup absl_cord absl_core_headers absl_flat_hash_map absl_flat_hash_set absl_hash absl_inlined_vector absl_memory absl_optional absl_random_random absl_span absl_status absl_statusor absl_str_format absl_strings absl_synchronization absl_time absl_type_traits absl_utility absl_variant"
   "-lgrpc++"
   ""
   "grpc++.pc")
