@@ -227,8 +227,7 @@ absl::Status WireReaderImpl::ProcessTransaction(transaction_code_t code,
     case BinderTransportTxCode::ACKNOWLEDGE_BYTES: {
       int64_t num_bytes = -1;
       RETURN_IF_ERROR(parcel->ReadInt64(&num_bytes));
-      gpr_log(GPR_INFO, "received acknowledge bytes = %lld",
-              static_cast<long long>(num_bytes));
+      gpr_log(GPR_INFO, "received acknowledge bytes = %" PRId64, num_bytes);
       wire_writer_->OnAckReceived(num_bytes);
       break;
     }
@@ -317,7 +316,7 @@ absl::Status WireReaderImpl::ProcessStreamingTransactionImpl(
     transaction_code_t code, ReadableParcel* parcel, int* cancellation_flags) {
   GPR_ASSERT(cancellation_flags);
   num_incoming_bytes_ += parcel->GetDataSize();
-  gpr_log(GPR_INFO, "Total incoming bytes: %ld", num_incoming_bytes_);
+  gpr_log(GPR_INFO, "Total incoming bytes: %" PRId64, num_incoming_bytes_);
 
   int flags;
   RETURN_IF_ERROR(parcel->ReadInt32(&flags));

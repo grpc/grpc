@@ -113,11 +113,12 @@ absl::Status WireWriterImpl::MakeBinderTransaction(
       gpr_log(GPR_ERROR,
               "Unexpected large transaction (possibly caused by a very large "
               "metadata). This might overflow the binder "
-              "transaction buffer. Size: %ld bytes",
+              "transaction buffer. Size: %" PRId64 " bytes",
               parcel_size);
     }
     num_outgoing_bytes_ += parcel_size;
-    gpr_log(GPR_INFO, "Total outgoing bytes: %ld", num_outgoing_bytes_.load());
+    gpr_log(GPR_INFO, "Total outgoing bytes: %" PRId64,
+            num_outgoing_bytes_.load());
   }
   GPR_ASSERT(!is_transacting_);
   is_transacting_ = true;
@@ -286,7 +287,7 @@ absl::Status WireWriterImpl::SendAck(int64_t num_bytes) {
   // Ensure combiner will be run if this is not called from top-level gRPC API
   // entrypoint.
   grpc_core::ExecCtx exec_ctx;
-  gpr_log(GPR_INFO, "Ack %ld bytes received", num_bytes);
+  gpr_log(GPR_INFO, "Ack %" PRId64 " bytes received", num_bytes);
   if (is_transacting_) {
     // This can happen because NDK might call our registered callback function
     // in the same thread while we are telling it to send a transaction
@@ -324,7 +325,7 @@ void WireWriterImpl::OnAckReceived(int64_t num_bytes) {
   // Ensure combiner will be run if this is not called from top-level gRPC API
   // entrypoint.
   grpc_core::ExecCtx exec_ctx;
-  gpr_log(GPR_INFO, "OnAckReceived %ld", num_bytes);
+  gpr_log(GPR_INFO, "OnAckReceived %" PRId64, num_bytes);
   // Do not try to obtain `write_mu_` in this function. NDKBinder might invoke
   // the callback to notify us about new incoming binder transaction when we are
   // sending transaction. i.e. `write_mu_` might have already been acquired by
@@ -336,7 +337,7 @@ void WireWriterImpl::OnAckReceived(int64_t num_bytes) {
     if (num_acknowledged_bytes_ > num_outgoing_bytes) {
       gpr_log(GPR_ERROR,
               "The other end of transport acked more bytes than we ever sent, "
-              "%ld > %ld",
+              "%" PRId64 " > %" PRId64,
               num_acknowledged_bytes_, num_outgoing_bytes);
     }
   }
@@ -370,7 +371,7 @@ void WireWriterImpl::TryScheduleTransaction() {
       gpr_log(
           GPR_ERROR,
           "Something went wrong. `num_non_acked_bytes_estimation` should be "
-          "non-negative but it is %ld",
+          "non-negative but it is %" PRId64,
           num_non_acked_bytes_estimation);
     }
     // If we can schedule another transaction (which has size estimation of
@@ -389,7 +390,7 @@ void WireWriterImpl::TryScheduleTransaction() {
       gpr_log(GPR_DEBUG,
               "Some work cannot be scheduled yet due to slow ack from the "
               "other end of transport. This transport might be blocked if this "
-              "number don't go down. pending_outgoing_tx_.size() = %lu "
+              "number don't go down. pending_outgoing_tx_.size() = %zu "
               "pending_outgoing_tx_.front() = %p",
               pending_outgoing_tx_.size(), pending_outgoing_tx_.front());
       break;
