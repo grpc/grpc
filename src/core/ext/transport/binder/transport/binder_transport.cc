@@ -440,7 +440,8 @@ static void perform_stream_op_locked(void* stream_op,
   }
 
   int tx_code = gbs->tx_code;
-  auto tx = absl::make_unique<grpc_binder::Transaction>(tx_code, gbt->is_client);
+  auto tx =
+      absl::make_unique<grpc_binder::Transaction>(tx_code, gbt->is_client);
 
   if (op->send_initial_metadata) {
     gpr_log(GPR_INFO, "send_initial_metadata");
