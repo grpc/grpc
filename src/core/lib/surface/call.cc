@@ -2096,6 +2096,7 @@ void* PromiseBasedCall::ContextGet(grpc_context_index elem) const {
 PromiseBasedCall::Completion PromiseBasedCall::StartCompletion(
     void* tag, bool is_closure, const grpc_op* ops, size_t num_ops) {
   Completion c(BatchSlotForOp(ops[0].op));
+  grpc_cq_begin_op(cq(), tag);
   completion_info_[c.index()].pending = {1, is_closure, tag};
   return c;
 }
