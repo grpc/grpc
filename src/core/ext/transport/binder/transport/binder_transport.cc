@@ -395,7 +395,7 @@ static void perform_stream_op_locked(void* stream_op,
     if (!gbs->is_client) {
       // Send trailing metadata to inform the other end about the cancellation,
       // regardless if we'd already done that or not.
-      auto cancel_tx = std::make_unique<grpc_binder::Transaction>(
+      auto cancel_tx = absl::make_unique<grpc_binder::Transaction>(
           gbs->GetTxCode(), gbt->is_client);
       cancel_tx->SetSuffix(grpc_binder::Metadata{});
       cancel_tx->SetStatus(1);
@@ -440,7 +440,7 @@ static void perform_stream_op_locked(void* stream_op,
   }
 
   int tx_code = gbs->tx_code;
-  auto tx = std::make_unique<grpc_binder::Transaction>(tx_code, gbt->is_client);
+  auto tx = absl::make_unique<grpc_binder::Transaction>(tx_code, gbt->is_client);
 
   if (op->send_initial_metadata) {
     gpr_log(GPR_INFO, "send_initial_metadata");
