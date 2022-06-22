@@ -596,12 +596,10 @@ static void grpc_ares_request_unref_locked(grpc_ares_request* r)
 
 void grpc_ares_complete_request_locked(grpc_ares_request* r)
     ABSL_EXCLUSIVE_LOCKS_REQUIRED(r->mu) {
-  /* Invoke on_done callback and destroy the
-     request */
+  // Invoke on_done callback and destroy the request
   r->ev_driver = nullptr;
-  ServerAddressList* addresses = r->addresses_out->get();
-  if (addresses != nullptr) {
-    grpc_cares_wrapper_address_sorting_sort(r, addresses);
+  if (r->addresses_out != nullptr && r->addresses_out->get() != nullptr) {
+    grpc_cares_wrapper_address_sorting_sort(r, r->addresses_out->get());
     GRPC_ERROR_UNREF(r->error);
     r->error = GRPC_ERROR_NONE;
     // TODO(apolcyn): allow c-ares to return a service config
@@ -914,13 +912,6 @@ void grpc_dns_lookup_ares_continue_after_check_localhost_and_ip_literals_locked(
                                         /*is_balancer=*/false, "A");
   ares_gethostbyname(r->ev_driver->channel, hr->host, AF_INET,
                      on_hostbyname_done_locked, hr);
-  if (r->balancer_addresses_out != nullptr) {
-    /* Query the SRV record */
-    std::string service_name = absl::StrCat("_grpclb._tcp.", host);
-    GrpcAresQuery* srv_query = new GrpcAresQuery(r, service_name);
-    ares_query(r->ev_driver->channel, service_name.c_str(), ns_c_in, ns_t_srv,
-               on_srv_query_done_locked, srv_query);
-  }
   if (r->service_config_json_out != nullptr) {
     std::string config_name = absl::StrCat("_grpc_config.", host);
     GrpcAresQuery* txt_query = new GrpcAresQuery(r, config_name);
@@ -1066,6 +1057,7 @@ static grpc_ares_request* grpc_dns_lookup_ares_impl(
     std::unique_ptr<grpc_core::ServerAddressList>* addrs,
     std::unique_ptr<grpc_core::ServerAddressList>* balancer_addrs,
     char** service_config_json, int query_timeout_ms) {
+  // DO NOT SUBMIT(hork): ensure all callers know not to expect SRV records
   grpc_ares_request* r = new grpc_ares_request();
   grpc_core::MutexLock lock(&r->mu);
   r->ev_driver = nullptr;
@@ -1101,6 +1093,64 @@ static grpc_ares_request* grpc_dns_lookup_ares_impl(
   return r;
 }
 
+grpc_ares_request* grpc_dns_lookup_srv_ares_impl(
+    const char* dns_server, const char* name,
+    grpc_pollset_set* interested_parties, grpc_closure* on_done,
+    std::unique_ptr<grpc_core::ServerAddressList>* balancer_addresses,
+    int query_timeout_ms) {
+  // DO NOT SUBMIT(hork): deduplicate with grpc_dns_lookup_ares_impl
+  grpc_ares_request* r = new grpc_ares_request();
+  grpc_core::MutexLock lock(&r->mu);
+  r->ev_driver = nullptr;
+  r->on_done = on_done;
+  r->addresses_out = nullptr;
+  r->balancer_addresses_out = balancer_addresses;
+  GRPC_CARES_TRACE_LOG(
+      "request:%p c-ares grpc_dns_lookup_srv_ares_impl name=%s", r, name);
+  grpc_error_handle error = GRPC_ERROR_NONE;
+  // Don't query for SRV records if the target is "localhost"
+  if (target_matches_localhost(name)) {
+    error = grpc_error_set_str(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+                                   "cannot lookup SRV records for localhost"),
+                               GRPC_ERROR_STR_TARGET_ADDRESS, name);
+    grpc_core::ExecCtx::Run(DEBUG_LOCATION, r->on_done, error);
+    return r;
+  }
+  // parse name, splitting it into host and port parts.
+  std::string host;
+  std::string port;
+  grpc_core::SplitHostPort(name, &host, &port);
+  if (host.empty()) {
+    error = grpc_error_set_str(
+        GRPC_ERROR_CREATE_FROM_STATIC_STRING("unparseable host:port"),
+        GRPC_ERROR_STR_TARGET_ADDRESS, name);
+    grpc_core::ExecCtx::Run(DEBUG_LOCATION, r->on_done, error);
+    return r;
+  }
+  // When the function returns, execute the callback if any error occurred.
+  auto error_cleanup =
+      absl::MakeCleanup([r, &error]() ABSL_EXCLUSIVE_LOCKS_REQUIRED(r->mu) {
+        if (!GRPC_ERROR_IS_NONE(error)) {
+          grpc_core::ExecCtx::Run(DEBUG_LOCATION, r->on_done, error);
+        }
+      });
+  error = grpc_ares_ev_driver_create_locked(&r->ev_driver, interested_parties,
+                                            query_timeout_ms, r);
+  if (!GRPC_ERROR_IS_NONE(error)) return r;
+  // If dns_server is specified, use it.
+  error = set_request_dns_server(r, dns_server, name);
+  if (error != GRPC_ERROR_NONE) return r;
+  r->pending_queries = 1;
+  /* Query the SRV record */
+  std::string service_name = absl::StrCat("_grpclb._tcp.", host);
+  GrpcAresQuery* srv_query = new GrpcAresQuery(r, service_name);
+  ares_query(r->ev_driver->channel, service_name.c_str(), ns_c_in, ns_t_srv,
+             on_srv_query_done_locked, srv_query);
+  grpc_ares_ev_driver_start_locked(r->ev_driver);
+  grpc_ares_request_unref_locked(r);
+  return r;
+}
+
 grpc_ares_request* (*grpc_dns_lookup_ares)(
     const char* dns_server, const char* name, const char* default_port,
     grpc_pollset_set* interested_parties, grpc_closure* on_done,
@@ -1108,6 +1158,12 @@ grpc_ares_request* (*grpc_dns_lookup_ares)(
     std::unique_ptr<grpc_core::ServerAddressList>* balancer_addrs,
     char** service_config_json,
     int query_timeout_ms) = grpc_dns_lookup_ares_impl;
+
+grpc_ares_request* (*grpc_dns_lookup_srv_ares)(
+    const char* dns_server, const char* name,
+    grpc_pollset_set* interested_parties, grpc_closure* on_done,
+    std::unique_ptr<grpc_core::ServerAddressList>* balancer_addresses,
+    int query_timeout_ms) = grpc_dns_lookup_srv_ares_impl;
 
 static void grpc_cancel_ares_request_impl(grpc_ares_request* r) {
   GPR_ASSERT(r != nullptr);

@@ -109,17 +109,33 @@ class AresClientChannelDNSResolver : public PollingResolver {
     explicit AresRequestWrapper(
         RefCountedPtr<AresClientChannelDNSResolver> resolver)
         : resolver_(std::move(resolver)) {
-      Ref(DEBUG_LOCATION, "OnResolved").release();
-      GRPC_CLOSURE_INIT(&on_resolved_, OnResolved, this, nullptr);
-      request_.reset(grpc_dns_lookup_ares(
+      // TODO(hork): replace this callback bookkeeping with promises.
+      // Locking to prevent completion before all records are queried
+      MutexLock lock(&on_resolved_mu_);
+      Ref(DEBUG_LOCATION, "OnHostnameResolved").release();
+      GRPC_CLOSURE_INIT(&on_hostname_resolved_, OnHostnameResolved, this,
+                        nullptr);
+      hostname_request_.reset(grpc_dns_lookup_ares(
           resolver_->authority().c_str(), resolver_->name_to_resolve().c_str(),
-          kDefaultSecurePort, resolver_->interested_parties(), &on_resolved_,
-          &addresses_,
-          resolver_->enable_srv_queries_ ? &balancer_addresses_ : nullptr,
+          kDefaultSecurePort, resolver_->interested_parties(),
+          &on_hostname_resolved_, &addresses_, nullptr,
           resolver_->request_service_config_ ? &service_config_json_ : nullptr,
           resolver_->query_timeout_ms_));
-      GRPC_CARES_TRACE_LOG("resolver:%p Started resolving. request_:%p",
-                           resolver_.get(), request_.get());
+      GRPC_CARES_TRACE_LOG(
+          "resolver:%p Started resolving hostnames. hostname_request_:%p",
+          resolver_.get(), hostname_request_.get());
+      if (resolver_->enable_srv_queries_) {
+        Ref(DEBUG_LOCATION, "OnSRVResolved").release();
+        GRPC_CLOSURE_INIT(&on_srv_resolved_, OnSRVResolved, this, nullptr);
+        srv_request_.reset(grpc_dns_lookup_srv_ares(
+            resolver_->authority().c_str(),
+            resolver_->name_to_resolve().c_str(),
+            resolver_->interested_parties(), &on_srv_resolved_,
+            &balancer_addresses_, resolver_->query_timeout_ms_));
+        GRPC_CARES_TRACE_LOG(
+            "resolver:%p Started resolving SRV records. srv_request_:%p",
+            resolver_.get(), srv_request_.get());
+      }
     }
 
     ~AresRequestWrapper() override {
@@ -128,17 +144,26 @@ class AresClientChannelDNSResolver : public PollingResolver {
     }
 
     void Orphan() override {
-      grpc_cancel_ares_request(request_.get());
+      if (hostname_request_ != nullptr) {
+        grpc_cancel_ares_request(hostname_request_.get());
+      }
+      if (srv_request_ != nullptr) {
+        grpc_cancel_ares_request(srv_request_.get());
+      }
       Unref(DEBUG_LOCATION, "Orphan");
     }
 
    private:
-    static void OnResolved(void* arg, grpc_error_handle error);
-    void OnResolved(grpc_error_handle error);
+    static void OnHostnameResolved(void* arg, grpc_error_handle error);
+    static void OnSRVResolved(void* arg, grpc_error_handle error);
+    void OnResolvedLocked(grpc_error_handle error);
 
     RefCountedPtr<AresClientChannelDNSResolver> resolver_;
-    std::unique_ptr<grpc_ares_request> request_;
-    grpc_closure on_resolved_;
+    grpc_closure on_hostname_resolved_;
+    std::unique_ptr<grpc_ares_request> hostname_request_;
+    grpc_closure on_srv_resolved_;
+    std::unique_ptr<grpc_ares_request> srv_request_;
+    Mutex on_resolved_mu_;
     // Output fields from ares request.
     std::unique_ptr<ServerAddressList> addresses_;
     std::unique_ptr<ServerAddressList> balancer_addresses_;
@@ -276,15 +301,35 @@ std::string ChooseServiceConfig(char* service_config_choice_json,
   return service_config->Dump();
 }
 
-void AresClientChannelDNSResolver::AresRequestWrapper::OnResolved(
+void AresClientChannelDNSResolver::AresRequestWrapper::OnHostnameResolved(
     void* arg, grpc_error_handle error) {
   auto* self = static_cast<AresRequestWrapper*>(arg);
-  self->OnResolved(error);
+  {
+    MutexLock lock(&self->on_resolved_mu_);
+    self->hostname_request_.reset();
+    self->OnResolvedLocked(error);
+  }
+  self->Unref(DEBUG_LOCATION, "OnHostnameResolved");
 }
 
-void AresClientChannelDNSResolver::AresRequestWrapper::OnResolved(
-    grpc_error_handle error) {
+void AresClientChannelDNSResolver::AresRequestWrapper::OnSRVResolved(
+    void* arg, grpc_error_handle error) {
+  auto* self = static_cast<AresRequestWrapper*>(arg);
+  {
+    MutexLock lock(&self->on_resolved_mu_);
+    self->srv_request_.reset();
+    self->OnResolvedLocked(error);
+  }
+  self->Unref(DEBUG_LOCATION, "OnSRVResolved");
+}
+
+void AresClientChannelDNSResolver::AresRequestWrapper::OnResolvedLocked(
+    grpc_error_handle error) ABSL_EXCLUSIVE_LOCKS_REQUIRED(on_resolved_mu_) {
   GRPC_CARES_TRACE_LOG("resolver:%p OnResolved()", this);
+  if (hostname_request_ != nullptr || srv_request_ != nullptr) {
+    GRPC_CARES_TRACE_LOG("resolver:%p OnResolved() waiting for results", this);
+    return;
+  }
   Result result;
   absl::InlinedVector<grpc_arg, 1> new_args;
   // TODO(roth): Change logic to be able to report failures for addresses
@@ -335,7 +380,6 @@ void AresClientChannelDNSResolver::AresRequestWrapper::OnResolved(
   result.args = grpc_channel_args_copy_and_add(
       resolver_->channel_args(), new_args.data(), new_args.size());
   resolver_->OnRequestComplete(std::move(result));
-  Unref(DEBUG_LOCATION, "OnResolved");
 }
 
 //
