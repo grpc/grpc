@@ -55,10 +55,13 @@ static void me_write(grpc_endpoint* ep, grpc_slice_buffer* slices,
   intercept_endpoint* m = reinterpret_cast<intercept_endpoint*>(ep);
   int remaining = slices->length;
   while (remaining > 0) {
+    // Estimate the frame size of the next frame.
     int next_frame_size =
         tsi_fake_zero_copy_grpc_protector_next_frame_size(slices);
     GPR_ASSERT(next_frame_size > TSI_FAKE_FRAME_HEADER_SIZE);
+    // Ensure the protected data size does not exceed the max_frame_size.
     GPR_ASSERT(next_frame_size - TSI_FAKE_FRAME_HEADER_SIZE <= max_frame_size);
+    // Move this frame into a staging buffer and repeat.
     grpc_slice_buffer_move_first(slices, next_frame_size, &m->staging_buffer);
     remaining -= next_frame_size;
   }
@@ -151,6 +154,9 @@ static grpc_endpoint_test_fixture secure_endpoint_create_fixture_tcp_socketpair(
   tcp = grpc_iomgr_create_endpoint_pair("fixture", &args);
   grpc_endpoint_add_to_pollset(tcp.client, g_pollset);
   grpc_endpoint_add_to_pollset(tcp.server, g_pollset);
+
+  // TODO(vigneshbabu): Extend the intercept endpoint logic to cover non-zero
+  // copy based frame protectors as well.
   if (use_zero_copy_protector && leftover_nslices == 0) {
     tcp.client = wrap_with_intercept_endpoint(tcp.client);
     tcp.server = wrap_with_intercept_endpoint(tcp.server);
