@@ -164,16 +164,13 @@ grpc_error_handle ServerAddressParseAndAppend(
     return GRPC_ERROR_CREATE_FROM_STATIC_STRING("Invalid port.");
   }
   // Find load_balancing_weight for the endpoint.
+  int32_t weight = 0;
   const google_protobuf_UInt32Value* load_balancing_weight =
       envoy_config_endpoint_v3_LbEndpoint_load_balancing_weight(lb_endpoint);
-  const int32_t weight =
-      load_balancing_weight != nullptr
-          ? google_protobuf_UInt32Value_value(load_balancing_weight)
-          : 500;
-  if (weight == 0) {
-    return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-        "Invalid endpoint weight of 0.");
+  if (load_balancing_weight != nullptr) {
+    weight = google_protobuf_UInt32Value_value(load_balancing_weight);
   }
+  weight = std::max(1, weight);
   // Populate grpc_resolved_address.
   grpc_resolved_address addr;
   grpc_error_handle error =
