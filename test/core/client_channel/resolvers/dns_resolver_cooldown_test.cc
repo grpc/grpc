@@ -142,6 +142,7 @@ static grpc_ares_request* test_dns_lookup_ares(
     std::unique_ptr<grpc_core::ServerAddressList>* addresses,
     std::unique_ptr<grpc_core::ServerAddressList>* balancer_addresses,
     char** service_config_json, int query_timeout_ms) {
+  // DO NOT SUBMIT(hork): fix to support SRV and TXT queries?
   grpc_ares_request* result = g_default_dns_lookup_ares(
       dns_server, name, default_port, g_iomgr_args.pollset_set, on_done,
       addresses, balancer_addresses, service_config_json, query_timeout_ms);
