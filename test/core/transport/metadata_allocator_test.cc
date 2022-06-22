@@ -16,13 +16,16 @@
 
 #include "src/core/lib/transport/metadata_allocator.h"
 
-#include <gtest/gtest.h>
+#include "gmock/gmock.h"
+#include "gtest/gtest.h"
 
 #include "src/core/lib/resource_quota/resource_quota.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/transport/transport.h"
 #include "test/core/promise/test_context.h"
 #include "test/core/util/test_config.h"
+
+using testing::Each;
 
 namespace grpc_core {
 namespace testing {
@@ -57,12 +60,26 @@ TEST_F(MetadataAllocatorTest, ServerMetadata) {
 }
 
 // Ensure repeated allocation/deallocations reuse memory.
-TEST_F(MetadataAllocatorTest, RepeatedAllocation) {
+TEST_F(MetadataAllocatorTest, RepeatedAllocationsReuseMemory) {
   void* p =
       GetContext<MetadataAllocator>()->MakeMetadata<ClientMetadata>().get();
   void* q =
       GetContext<MetadataAllocator>()->MakeMetadata<ClientMetadata>().get();
   EXPECT_EQ(p, q);
+}
+
+// Ensure repeated allocation reinitializes.
+TEST_F(MetadataAllocatorTest, RepeatedAllocationsReinitialize) {
+  std::vector<void*> addresses;
+  for (int i = 0; i < 4; i++) {
+    ClientMetadataHandle metadata =
+        GetContext<MetadataAllocator>()->MakeMetadata<ClientMetadata>();
+    EXPECT_EQ(metadata->get_pointer(HttpPathMetadata()), nullptr);
+    metadata->Set(HttpPathMetadata(), Slice::FromCopiedString("/"));
+    EXPECT_EQ(metadata->get_pointer(HttpPathMetadata())->as_string_view(), "/");
+    addresses.push_back(metadata.get());
+  }
+  EXPECT_THAT(addresses, Each(addresses[0]));
 }
 
 }  // namespace testing

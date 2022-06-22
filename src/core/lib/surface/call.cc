@@ -2184,7 +2184,7 @@ class ClientPromiseBasedCall final : public PromiseBasedCall {
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu());
   void MaybePublishResult() ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu());
   static void PublishMetadataArray(grpc_metadata_array* array,
-                                   ServerMetadataHandle md);
+                                   ServerMetadata* md);
   void PublishStatus(
       grpc_op::grpc_op_data::grpc_op_recv_status_on_client op_args,
       ServerMetadataHandle trailing_metadata)
@@ -2206,6 +2206,8 @@ class ClientPromiseBasedCall final : public PromiseBasedCall {
       ABSL_GUARDED_BY(mu());
   absl::optional<PipeReceiver<Message>::NextType> outstanding_recv_
       ABSL_GUARDED_BY(mu());
+  absl::optional<Latch<ServerMetadata*>::WaitPromise>
+      server_initial_metadata_ready_;
   Completion recv_initial_metadata_completion_ ABSL_GUARDED_BY(mu());
   Completion recv_status_on_client_completion_ ABSL_GUARDED_BY(mu());
   Completion send_message_completion_ ABSL_GUARDED_BY(mu());
@@ -2248,6 +2250,7 @@ void ClientPromiseBasedCall::CommitBatch(const grpc_op* ops, size_t nops,
       case GRPC_OP_RECV_INITIAL_METADATA: {
         recv_initial_metadata_ =
             op.data.recv_initial_metadata.recv_initial_metadata;
+        server_initial_metadata_ready_ = server_initial_metadata_.Wait();
         recv_initial_metadata_completion_ = PauseCompletion(completion);
       } break;
       case GRPC_OP_RECV_STATUS_ON_CLIENT: {
@@ -2304,6 +2307,17 @@ grpc_call_error ClientPromiseBasedCall::StartBatch(const grpc_op* ops,
 }
 
 void ClientPromiseBasedCall::UpdateOnce() {
+  if (server_initial_metadata_ready_.has_value()) {
+    Poll<ServerMetadata**> r = (*server_initial_metadata_ready_)();
+    if (ServerMetadata*** server_initial_metadata =
+            absl::get_if<ServerMetadata**>(&r)) {
+      server_initial_metadata_ready_.reset();
+      GPR_ASSERT(recv_initial_metadata_ != nullptr);
+      PublishMetadataArray(absl::exchange(recv_initial_metadata_, nullptr),
+                           **server_initial_metadata);
+      FinishCompletion(&recv_initial_metadata_completion_);
+    }
+  }
   if (outstanding_send_.has_value()) {
     Poll<bool> r = (*outstanding_send_)();
     if (const bool* result = absl::get_if<bool>(&r)) {
@@ -2363,12 +2377,12 @@ void ClientPromiseBasedCall::PublishStatus(
   if (Slice* message = trailing_metadata->get_pointer(GrpcMessageMetadata())) {
     *op_args.status_details = message->c_slice();
   }
-  PublishMetadataArray(op_args.trailing_metadata, std::move(trailing_metadata));
+  PublishMetadataArray(op_args.trailing_metadata, trailing_metadata.get());
   FinishCompletion(&recv_status_on_client_completion_);
 }
 
 void ClientPromiseBasedCall::PublishMetadataArray(grpc_metadata_array* array,
-                                                  ServerMetadataHandle md) {
+                                                  ServerMetadata* md) {
   const auto md_count = md->count();
   if (md_count > array->capacity) {
     array->capacity =

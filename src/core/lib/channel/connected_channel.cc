@@ -253,6 +253,7 @@ class ClientConnectedCallPromise {
   }
 
   Poll<ServerMetadataHandle> operator()() {
+    GPR_ASSERT(!finished_);
     if (!absl::exchange(requested_metadata_, true)) {
       GRPC_STREAM_REF_INIT(stream_refcount_, 1, StreamRefCountDestroyed, this,
                            "connected_channel");
@@ -326,6 +327,7 @@ class ClientConnectedCallPromise {
           batch_payload_.send_message.send_message = msg.payload();
           batch_payload_.send_message.flags = msg.flags();
         } else {
+          GPR_ASSERT(!absl::holds_alternative<Closed>(send_message_state_));
           client_trailing_metadata_ =
               GetContext<MetadataAllocator>()->MakeMetadata<ClientMetadata>();
           send_message_state_ = Closed{};
@@ -365,6 +367,7 @@ class ClientConnectedCallPromise {
       server_initial_metadata_latch_->Set(server_initial_metadata_.get());
     }
     if (absl::exchange(queued_trailing_metadata_, false)) {
+      finished_ = true;
       return ServerMetadataHandle(std::move(server_trailing_metadata_));
     }
     return Pending{};
@@ -383,6 +386,7 @@ class ClientConnectedCallPromise {
   void MetadataBatchDone(grpc_error_handle) {}
 
   void SendMessageBatchDone(grpc_error_handle) {
+    if (absl::holds_alternative<Closed>(send_message_state_)) return;
     send_message_state_ = Idle{};
     send_message_waker_.Wakeup();
   }
@@ -437,6 +441,7 @@ class ClientConnectedCallPromise {
   bool scheduled_push_ = false;
   bool queued_initial_metadata_ = false;
   bool queued_trailing_metadata_ = false;
+  bool finished_ = false;
   Waker initial_metadata_waker_;
   Waker trailing_metadata_waker_;
   Waker send_message_waker_;
