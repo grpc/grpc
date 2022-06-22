@@ -368,6 +368,52 @@ TEST_P(RingHashTest, NoHashPolicy) {
               ::testing::DoubleNear(kDistribution50Percent, kErrorTolerance));
 }
 
+// Tests that we observe endpoint weights.
+TEST_P(RingHashTest, EndpointWeights) {
+  CreateAndStartBackends(3);
+  const double kDistribution50Percent = 0.5;
+  const double kDistribution25Percent = 0.25;
+  const double kErrorTolerance = 0.05;
+  const uint32_t kRpcTimeoutMs = 10000;
+  const size_t kNumRpcs =
+      ComputeIdealNumRpcs(kDistribution50Percent, kErrorTolerance);
+  auto cluster = default_cluster_;
+  // Increasing min ring size for random distribution.
+  cluster.mutable_ring_hash_lb_config()->mutable_minimum_ring_size()->set_value(
+      100000);
+  cluster.set_lb_policy(Cluster::RING_HASH);
+  balancer_->ads_service()->SetCdsResource(cluster);
+  // Endpoint 0 has weight 0, will be treated as weight 1.
+  // Endpoint 1 has weight 1.
+  // Endpoint 2 has weight 2.
+  EdsResourceArgs args(
+      {{"locality0",
+        {CreateEndpoint(0, ::envoy::config::endpoint::v3::HealthStatus::UNKNOWN,
+                        0),
+         CreateEndpoint(1, ::envoy::config::endpoint::v3::HealthStatus::UNKNOWN,
+                        1),
+         CreateEndpoint(2, ::envoy::config::endpoint::v3::HealthStatus::UNKNOWN,
+                        2)}}});
+  balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
+  // TODO(donnadionne): remove extended timeout after ring creation
+  // optimization.
+  WaitForAllBackends(DEBUG_LOCATION, 0, 3, /*check_status=*/nullptr,
+                     WaitForBackendOptions(),
+                     RpcOptions().set_timeout_ms(kRpcTimeoutMs));
+  CheckRpcSendOk(DEBUG_LOCATION, kNumRpcs);
+  // Endpoint 2 should see 50% of traffic, and endpoints 0 and 1 should
+  // each see 25% of traffic.
+  const int request_count_0 = backends_[0]->backend_service()->request_count();
+  const int request_count_1 = backends_[1]->backend_service()->request_count();
+  const int request_count_2 = backends_[2]->backend_service()->request_count();
+  EXPECT_THAT(static_cast<double>(request_count_0) / kNumRpcs,
+              ::testing::DoubleNear(kDistribution25Percent, kErrorTolerance));
+  EXPECT_THAT(static_cast<double>(request_count_1) / kNumRpcs,
+              ::testing::DoubleNear(kDistribution25Percent, kErrorTolerance));
+  EXPECT_THAT(static_cast<double>(request_count_2) / kNumRpcs,
+              ::testing::DoubleNear(kDistribution50Percent, kErrorTolerance));
+}
+
 // Test that ring hash policy evaluation will continue past the terminal
 // policy if no results are produced yet.
 TEST_P(RingHashTest, ContinuesPastTerminalPolicyThatDoesNotProduceResult) {
