@@ -867,33 +867,33 @@ static bool tcp_do_read(grpc_tcp* tcp, grpc_error_handle* error)
 
   GPR_DEBUG_ASSERT(total_read_bytes > 0);
   *error = GRPC_ERROR_NONE;
-  if (total_read_bytes < tcp->incoming_buffer->length) {
-    if (tcp->frame_size_tuning_enabled) {
-      // Update min progress size based on the total number of bytes read in
-      // this round.
-      tcp->min_progress_size -= total_read_bytes;
-      if (tcp->min_progress_size > 0) {
-        // There is still some bytes left to be read before we can signal
-        // the read as complete. Append the bytes read so far into
-        // last_read_buffer which serves as a staging buffer. Return false
-        // to indicate tcp_handle_read needs to be scheduled again.
-        grpc_slice_buffer_move_first(tcp->incoming_buffer, total_read_bytes,
-                                     &tcp->last_read_buffer);
-        return false;
-      } else {
-        // The required number of bytes have been read. Append the bytes
-        // read in this round into last_read_buffer. Then swap last_read_buffer
-        // and incoming_buffer. Now incoming buffer contains all the bytes
-        // read since the start of the last tcp_read operation. last_read_buffer
-        // would contain any spare space left in the incoming buffer. This
-        // space will be used in the next tcp_read operation.
-        tcp->min_progress_size = 1;
-        grpc_slice_buffer_move_first(tcp->incoming_buffer, total_read_bytes,
-                                     &tcp->last_read_buffer);
-        grpc_slice_buffer_swap(&tcp->last_read_buffer, tcp->incoming_buffer);
-        return true;
-      }
+  if (tcp->frame_size_tuning_enabled) {
+    // Update min progress size based on the total number of bytes read in
+    // this round.
+    tcp->min_progress_size -= total_read_bytes;
+    if (tcp->min_progress_size > 0) {
+      // There is still some bytes left to be read before we can signal
+      // the read as complete. Append the bytes read so far into
+      // last_read_buffer which serves as a staging buffer. Return false
+      // to indicate tcp_handle_read needs to be scheduled again.
+      grpc_slice_buffer_move_first(tcp->incoming_buffer, total_read_bytes,
+                                   &tcp->last_read_buffer);
+      return false;
+    } else {
+      // The required number of bytes have been read. Append the bytes
+      // read in this round into last_read_buffer. Then swap last_read_buffer
+      // and incoming_buffer. Now incoming buffer contains all the bytes
+      // read since the start of the last tcp_read operation. last_read_buffer
+      // would contain any spare space left in the incoming buffer. This
+      // space will be used in the next tcp_read operation.
+      tcp->min_progress_size = 1;
+      grpc_slice_buffer_move_first(tcp->incoming_buffer, total_read_bytes,
+                                   &tcp->last_read_buffer);
+      grpc_slice_buffer_swap(&tcp->last_read_buffer, tcp->incoming_buffer);
+      return true;
     }
+  }
+  if (total_read_bytes < tcp->incoming_buffer->length) {
     grpc_slice_buffer_trim_end(tcp->incoming_buffer,
                                tcp->incoming_buffer->length - total_read_bytes,
                                &tcp->last_read_buffer);
