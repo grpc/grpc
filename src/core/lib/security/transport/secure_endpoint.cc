@@ -497,7 +497,7 @@ static void endpoint_write(grpc_endpoint* secure_ep, grpc_slice_buffer* slices,
   }
 
   grpc_endpoint_write(ep->wrapped_ep, &ep->output_buffer, cb, arg,
-                      /*max_frame_size=*/INT_MAX);
+                      max_frame_size);
 }
 
 static void endpoint_shutdown(grpc_endpoint* secure_ep, grpc_error_handle why) {

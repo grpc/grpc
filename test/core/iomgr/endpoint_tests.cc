@@ -308,7 +308,6 @@ static void multiple_shutdown_test(grpc_endpoint_test_config config) {
   grpc_endpoint_test_fixture f =
       begin_test(config, "multiple_shutdown_test", 128);
   int fail_count = 0;
-
   grpc_slice_buffer slice_buffer;
   grpc_slice_buffer_init(&slice_buffer);
 
