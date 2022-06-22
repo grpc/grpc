@@ -1070,24 +1070,26 @@ logged and recorded in the latency histogram.
 ### orca_per_rpc
 [orca_per_rpc]: #orca_per_rpc
 
-The client verifies that a custom LB policy, which is integrated with ORCA APIs, will receive 
-per-query metric reports from the backend. 
+The client verifies that a custom LB policy, which is integrated with ORCA APIs, 
+will receive per-query metric reports from the backend. 
 
-The client will register the custom LB policy named `test_backend_metrics_load_balancer`, which
-using ORCA APIs already installed a per-query report listener. The interop-testing client will run with a
-service config to select the load balancing config (using argument `--service_config_json`), so that 
-it effectively uses this newly registered custom LB policy. A load report reference can be passed 
-from the call to the LB policy through, e.g. CallOptions, to receive metric reports. 
-The LB policy will fill in the reference with the latest load report from the report listener.
-This way, together with server behaviors we can verify the expected metric reports are received.
+The client will register the custom LB policy named 
+`test_backend_metrics_load_balancer`, which using ORCA APIs already installed a 
+per-query report listener. The interop-testing client will run with a service 
+config to select the load balancing config (using argument 
+`--service_config_json`), so that it effectively uses this newly registered 
+custom LB policy. A load report reference can be passed from the call to the LB 
+policy through, e.g. CallOptions, to receive metric reports. The LB policy will 
+fill in the reference with the latest load report from the report listener.
+This way, together with server behaviors we can verify the expected metric 
+reports are received.
 
 Server features:
 * [UnaryCall][]
 * [Backend Metrics Report][]
 
 Procedures:
-* The client sends a unary request to the server. The call request sets `orca_per_rpc_report` to a 
-test load report.
+* The client sends a unary request: 
     ```
     {
       orca_per_rpc_report:{
@@ -1104,30 +1106,30 @@ test load report.
     ```
 
 The call carries a reference to receive the load report, e.g. using CallOptions.
-The reference is passed to the custom LB policy as part of the `OrcaPerRequestReportListener` API.
+The reference is passed to the custom LB policy as part of the 
+`OrcaPerRequestReportListener` API.
 
 Client asserts:
 * The call is successful.
-* The per-query load report reference contains a metrics report that is identical to the metrics
-data sent in the request shown above. 
+* The per-query load report reference contains a metrics report that is 
+identical to the metrics data sent in the request shown above. 
 
 ### orca_oob
 
-The client verifies that a custom LB policy, which is integrated with ORCA APIs, will receive 
-out-of-band metric reports from the backend.
+The client verifies that a custom LB policy, which is integrated with ORCA APIs, 
+will receive out-of-band metric reports from the backend.
 
-The client will register the custom LB policy named `test_backend_metrics_load_balancer`. It has
-similar and additional functions as described in the [orca_per_rpc][] test. 
-We use ORCA APIs to install an out-of-band report listener (configure load report interval to be 1s)
-in the LB policy. The interop-testing client will run with a service config to select the load 
-balancing config(using argument `--service_config_json`), so that it effectively uses this newly 
-registered custom LB policy. A load report reference can be passed from the call to the LB policy 
-through, e.g. CallOptions, to receive metric reports.
-The test framework will fill in the reference with the latest load report from the report listener.
-This way, together with server behaviors we can verify the expected metric reports are received.
-Note that this test client includes multiple verification steps that requires the server to keep the states.
-Therefore, server side is required to have the capability of allowing only one client to perform the 
-`orca_oob` test case at a time, using a lock, see server features below.
+The client will register the custom LB policy named 
+`test_backend_metrics_load_balancer`. It has similar and additional functions as
+described in the [orca_per_rpc][] test. We use ORCA APIs to install an 
+out-of-band report listener (configure load report interval to be 1s) in the LB 
+policy. The interop-testing client will run with a service config to select the 
+load balancing config(using argument `--service_config_json`), so that it 
+effectively uses this newly registered custom LB policy. A load report reference
+can be passed from the call to the LB policy through, e.g. CallOptions, to 
+receive metric reports. The test framework will fill in the reference with the 
+latest load report from the report listener. This way, together with server 
+behaviors we can verify the expected metric reports are received.
 
 Server features:
 * [UnaryCall][]
@@ -1135,7 +1137,7 @@ Server features:
 * [Backend Metrics Report][]
 
 Procedures:
-1. Client starts a bidi-streaming call to the server. In the first message the request sets `orca_oob_report` to a test load report.
+1. Client starts a bidi-streaming and sends: 
     ```
     {
       orca_oob_report:{
@@ -1147,15 +1149,13 @@ Procedures:
       }
     }
     ```
-The test then blocks until the first response is received. This means the server lock is acquired.
-It is important that if the stream is completed or terminated with error at this time, 
-the test aborts and fails. 
-2. Client verifies (timeout=5s) that the latest OOB load report received is equal to the test load report.
-To do verification, client may inject a callback to the custom LB policy, or poll the result by
-doing empty unary calls that carries a reference, e.g. using CallOptions, that will be filled in
-by the custom LB policy as part of the `OrcaOobReportListener` API.
-3. Client then sends another request on the stream to the server. The request sets `orca_oob_report` to a 
-different test load report. 
+2. After getting a response, client waits up to 5 seconds to receive a OOB load 
+report that matches the requested load report in step 1. To wait for load 
+report, client may inject a callback to the custom LB policy, or poll the result
+by doing empty unary call that carries a reference, e.g. using 
+CallOptions, that will be filled in by the custom LB policy as part of the 
+`OrcaOobReportListener` API.
+3. Then client sends: 
     ```
     {
       orca_oob_report:{
@@ -1167,11 +1167,9 @@ different test load report.
       }
     }
     ```
-The call then blocks until the second response is received. If the stream is completed or terminated 
-with error at this time, the test aborts and fails.
-4. Similar to step 2, client then verifies (timeout=5s) that the latest OOB load report received is
-equal to the new test load report.
-5. Client completes the call, and asserts the streaming call is successful. 
+4. After getting a response, client waits up to 5 seconds to receive a OOB load
+report that matches the requested load report in step 3. Similar to step 2.
+5. Client half closes the stream, and asserts the streaming call is successful. 
 
 ### Experimental Tests
 
@@ -1404,38 +1402,20 @@ fully communicate metadata.
 ### Backend metrics report
 [Backend Metrics Report]: #backend-metrics-report
 
-#### Report per-query metrics
+Server reports backend metrics data in both per-query and out-of-band cases, 
+echoing metrics data from the unary or fullDuplex call.
 
-Server reports backend metrics data in per-query case, echoing metrics data from the unary call request.
+Using ORCA APIs we install the per-query metrics reporting server interceptor, 
+so that it can attach metrics per RPC. We also register the `OpenRCAService` 
+implementation to the server, so that it can report metrics periodically. 
+The minimum report interval in the ORCA service is set to 1 sec.
 
-Using ORCA APIs we install the per-query metrics reporting server interceptor, so that it can attach 
-metrics per RPC.
+If `SimpleRequest.orca_per_rpc_report` is set in unary call, the server will add
+the metric data from `orca_per_rpc_report` to the RPC using the language's 
+CallMetricRecorder.
 
-During `orca_per_query` test, the server will receive unary requests from the client that may contain a 
-test load report, indicating whether it needs to update metrics for the current call.
-Then the server sets the metrics data, echoing the test load report it just received.
-Specifically, if the `orca_per_rpc_report` is set in the request, the server test driver will call
-`CallMetricRecorder` to record both utilization and 
-request cost metrics for the current RPC, the metrics data is coped from the received test load 
-report from the request.
-
-#### Report out-of-band metrics
-Server reports backend metrics data in out-of-band case, echoing metrics data from full duplex
-call request.
-
-Using ORCA APIs we register the `OpenRCAService` implementation to the server, so that it can
-report metrics periodically. The minimum report interval in the ORCA service is set to 1 sec.
-
-The server implementation should use a lock or similar mechanism to allow only one client to perform the `orca_oob` test at a time
-in order to not interfere with other clients' tests.
-
-During `orca_oob` test, the server receives full duplex requests from the client that contains a
-test load report, indicating whether it needs to update metrics at the OOB server.
-When the `orca_oob_report` is set in the request, the server test driver will block until
-it acquires the oob lock. If the stream wins the lock, the server calls `MetricRecorder` to first clear 
-all the previous metrics data, and then record the utilization 
-metrics, the metrics data is coped from the received test load report from the request. This stream
-keeps holding the lock for all the subsequent messages, and it always echoes the test report received from the 
-request.
-It is important that whenever the stream is closed, either successfully completed or terminated with error,
-the lock is released so that other clients can acquire the lock to perform the test.
+If `SimpleRequest.orca_oob_report` is set in fullDuplexCall call, the server 
+will first clear all the previous metrics data, and then add utilization metrics
+from `orca_oob_report` to the `OpenRCAService`.
+The server implementation should use a lock or similar mechanism to allow only
+one client to control the server's out-of-band reports.
