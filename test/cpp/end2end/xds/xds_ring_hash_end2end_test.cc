@@ -408,7 +408,7 @@ TEST_P(RingHashTest, EndpointWeights) {
   const int request_count_2 = backends_[2]->backend_service()->request_count();
   EXPECT_THAT(static_cast<double>(request_count_0) / kNumRpcs,
               ::testing::DoubleNear(kDistribution25Percent, kErrorTolerance));
-  EXPECT_THAT(static_cast<double>(request_count_0) / kNumRpcs,
+  EXPECT_THAT(static_cast<double>(request_count_1) / kNumRpcs,
               ::testing::DoubleNear(kDistribution25Percent, kErrorTolerance));
   EXPECT_THAT(static_cast<double>(request_count_2) / kNumRpcs,
               ::testing::DoubleNear(kDistribution50Percent, kErrorTolerance));
