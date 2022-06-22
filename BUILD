@@ -2337,6 +2337,48 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "iomgr_ee_poller",
+    srcs = [
+        "src/core/lib/event_engine/iomgr_engine/ev_epoll1_linux.cc",
+        "src/core/lib/event_engine/iomgr_engine/ev_posix.cc",
+        "src/core/lib/event_engine/iomgr_engine/lockfree_event.cc",
+        "src/core/lib/event_engine/iomgr_engine/wakeup_fd_eventfd.cc",
+        "src/core/lib/event_engine/iomgr_engine/wakeup_fd_pipe.cc",
+        "src/core/lib/event_engine/iomgr_engine/wakeup_fd_posix.cc",
+    ],
+    hdrs = [
+        "src/core/lib/event_engine/iomgr_engine/closure.h",
+        "src/core/lib/event_engine/iomgr_engine/ev_epoll1_linux.h",
+        "src/core/lib/event_engine/iomgr_engine/ev_posix.h",
+        "src/core/lib/event_engine/iomgr_engine/lockfree_event.h",
+        "src/core/lib/event_engine/iomgr_engine/wakeup_fd_eventfd.h",
+        "src/core/lib/event_engine/iomgr_engine/wakeup_fd_pipe.h",
+        "src/core/lib/event_engine/iomgr_engine/wakeup_fd_posix.h",
+    ],
+    external_deps = [
+        "absl/base:core_headers",
+        "absl/status",
+        "absl/status:statusor",
+        "absl/strings",
+        "absl/strings:str_format",
+    ],
+    tags = ["grpc-autodeps"],
+    deps = [
+        "event_engine_base_hdrs",
+        "event_engine_common",
+        "gpr_base",
+        "gpr_tls",
+        "grpc_base",
+        "grpc_trace",
+        "iomgr_ee_thread_pool",
+        "iomgr_ee_timer_manager",
+        "iomgr_port",
+        "time",
+        "useful",
+    ],
+)
+
+grpc_cc_library(
     name = "iomgr_event_engine",
     srcs = ["src/core/lib/event_engine/iomgr_engine/iomgr_engine.cc"],
     hdrs = ["src/core/lib/event_engine/iomgr_engine/iomgr_engine.h"],
