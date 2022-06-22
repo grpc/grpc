@@ -23,6 +23,7 @@
 #include <grpcpp/server_builder.h>
 
 #include "src/core/lib/iomgr/load_file.h"
+#include "src/core/lib/security/authorization/grpc_authorization_policy_provider.h"
 #include "src/core/lib/security/credentials/fake/fake_credentials.h"
 #include "src/core/lib/security/util/file_util.h"
 #include "src/cpp/client/secure_credentials.h"
@@ -658,8 +659,12 @@ TEST_F(GrpcAuthzEnd2EndTest, FileWatcherValidPolicyRefresh) {
       "    }"
       "  ]"
       "}";
-  grpc_core::testing::TmpFile tmp_policy(policy);
-  InitServer(CreateFileWatcherAuthzPolicyProvider(tmp_policy.name(), 1));
+  grpc_core::TmpFile tmp_policy(policy);
+  auto provider = CreateFileWatcherAuthzPolicyProvider(tmp_policy.name(), 1);
+  auto* fw_provider =
+      dynamic_cast<grpc_core::FileWatcherAuthorizationPolicyProvider*>(
+          provider->c_provider());
+  InitServer(provider);
   auto channel = BuildChannel();
   ClientContext context1;
   grpc::testing::EchoResponse resp1;
@@ -691,7 +696,7 @@ TEST_F(GrpcAuthzEnd2EndTest, FileWatcherValidPolicyRefresh) {
       "    }"
       "  ]"
       "}";
-  tmp_policy.RewriteFile(policy);
+  fw_provider->RewriteFileForTesting(tmp_policy, policy);
   // Wait 2 seconds for the provider's refresh thread to read the updated files.
   gpr_sleep_until(grpc_timeout_seconds_to_deadline(2));
   ClientContext context2;
@@ -717,8 +722,12 @@ TEST_F(GrpcAuthzEnd2EndTest, FileWatcherInvalidPolicyRefreshSkipsReload) {
       "    }"
       "  ]"
       "}";
-  grpc_core::testing::TmpFile tmp_policy(policy);
-  InitServer(CreateFileWatcherAuthzPolicyProvider(tmp_policy.name(), 1));
+  grpc_core::TmpFile tmp_policy(policy);
+  auto provider = CreateFileWatcherAuthzPolicyProvider(tmp_policy.name(), 1);
+  auto* fw_provider =
+      dynamic_cast<grpc_core::FileWatcherAuthorizationPolicyProvider*>(
+          provider->c_provider());
+  InitServer(provider);
   auto channel = BuildChannel();
   ClientContext context1;
   grpc::testing::EchoResponse resp1;
@@ -727,7 +736,7 @@ TEST_F(GrpcAuthzEnd2EndTest, FileWatcherInvalidPolicyRefreshSkipsReload) {
   EXPECT_EQ(resp1.message(), kMessage);
   // Replaces existing policy with an invalid authorization policy.
   policy = "{}";
-  tmp_policy.RewriteFile(policy);
+  fw_provider->RewriteFileForTesting(tmp_policy, policy);
   // Wait 2 seconds for the provider's refresh thread to read the updated files.
   gpr_sleep_until(grpc_timeout_seconds_to_deadline(2));
   ClientContext context2;
@@ -752,8 +761,12 @@ TEST_F(GrpcAuthzEnd2EndTest, FileWatcherRecoversFromFailure) {
       "    }"
       "  ]"
       "}";
-  grpc_core::testing::TmpFile tmp_policy(policy);
-  InitServer(CreateFileWatcherAuthzPolicyProvider(tmp_policy.name(), 1));
+  grpc_core::TmpFile tmp_policy(policy);
+  auto provider = CreateFileWatcherAuthzPolicyProvider(tmp_policy.name(), 1);
+  auto* fw_provider =
+      dynamic_cast<grpc_core::FileWatcherAuthorizationPolicyProvider*>(
+          provider->c_provider());
+  InitServer(provider);
   auto channel = BuildChannel();
   ClientContext context1;
   grpc::testing::EchoResponse resp1;
@@ -762,7 +775,7 @@ TEST_F(GrpcAuthzEnd2EndTest, FileWatcherRecoversFromFailure) {
   EXPECT_EQ(resp1.message(), kMessage);
   // Replaces existing policy with an invalid authorization policy.
   policy = "{}";
-  tmp_policy.RewriteFile(policy);
+  fw_provider->RewriteFileForTesting(tmp_policy, policy);
   // Wait 2 seconds for the provider's refresh thread to read the updated files.
   gpr_sleep_until(grpc_timeout_seconds_to_deadline(2));
   ClientContext context2;
@@ -795,7 +808,7 @@ TEST_F(GrpcAuthzEnd2EndTest, FileWatcherRecoversFromFailure) {
       "    }"
       "  ]"
       "}";
-  tmp_policy.RewriteFile(policy);
+  fw_provider->RewriteFileForTesting(tmp_policy, policy);
   // Wait 2 seconds for the provider's refresh thread to read the updated files.
   gpr_sleep_until(grpc_timeout_seconds_to_deadline(2));
   ClientContext context3;

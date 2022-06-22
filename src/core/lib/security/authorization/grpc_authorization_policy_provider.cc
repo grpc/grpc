@@ -117,7 +117,7 @@ FileWatcherAuthorizationPolicyProvider::FileWatcherAuthorizationPolicyProvider(
 
 void FileWatcherAuthorizationPolicyProvider::RewriteFileForTesting(
     TmpFile& tmp_file, absl::string_view data) {
-  MutexLock lock(&mu_);
+  MutexLock lock(&file_mu_);
   tmp_file.RewriteFile(data);
 }
 
