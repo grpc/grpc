@@ -616,7 +616,7 @@ TEST_P(EdsTest, NacksEndpointWeightZero) {
       ->mutable_lb_endpoints(0)
       ->mutable_load_balancing_weight()
       ->set_value(0);
-  balancer_->ads_service()->SetEdsResource(std::move(eds_resource));
+  balancer_->ads_service()->SetEdsResource(eds_resource);
   const auto response_state = WaitForEdsNack(DEBUG_LOCATION);
   ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
   EXPECT_THAT(response_state->error_message,
