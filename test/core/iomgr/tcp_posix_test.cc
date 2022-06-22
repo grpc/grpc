@@ -153,6 +153,7 @@ static size_t fill_socket_partial(int fd, size_t bytes) {
 
 struct read_socket_state {
   grpc_endpoint* ep;
+  int min_progress_size;
   size_t read_bytes;
   size_t target_read_bytes;
   grpc_slice_buffer incoming;
@@ -185,6 +186,9 @@ static void read_cb(void* user_data, grpc_error_handle error) {
 
   gpr_mu_lock(g_mu);
   current_data = state->read_bytes % 256;
+  // The number of bytes read each time this callback is invoked must be >=
+  // the min_progress_size.
+  GPR_ASSERT(state->min_progress_size <= state->incoming.length);
   read_bytes = count_slices(state->incoming.slices, state->incoming.count,
                             &current_data);
   state->read_bytes += read_bytes;
@@ -196,8 +200,9 @@ static void read_cb(void* user_data, grpc_error_handle error) {
     gpr_mu_unlock(g_mu);
   } else {
     gpr_mu_unlock(g_mu);
+    state->min_progress_size = state->target_read_bytes - state->read_bytes;
     grpc_endpoint_read(state->ep, &state->incoming, &state->read_cb,
-                       /*urgent=*/false, /*min_progress_size=*/1);
+                       /*urgent=*/false, state->min_progress_size);
   }
 }
 
@@ -236,11 +241,13 @@ static void read_test(size_t num_bytes, size_t slice_size,
   state.ep = ep;
   state.read_bytes = 0;
   state.target_read_bytes = written_bytes;
+  state.min_progress_size =
+      std::min(min_progress_size, static_cast<int>(written_bytes));
   grpc_slice_buffer_init(&state.incoming);
   GRPC_CLOSURE_INIT(&state.read_cb, read_cb, &state, grpc_schedule_on_exec_ctx);
 
   grpc_endpoint_read(ep, &state.incoming, &state.read_cb, /*urgent=*/false,
-                     /*min_progress_size=*/min_progress_size);
+                     /*min_progress_size=*/state.min_progress_size);
 
   gpr_mu_lock(g_mu);
   while (state.read_bytes < state.target_read_bytes) {
@@ -294,11 +301,13 @@ static void large_read_test(size_t slice_size, int min_progress_size) {
   state.ep = ep;
   state.read_bytes = 0;
   state.target_read_bytes = static_cast<size_t>(written_bytes);
+  state.min_progress_size =
+      std::min(min_progress_size, static_cast<int>(written_bytes));
   grpc_slice_buffer_init(&state.incoming);
   GRPC_CLOSURE_INIT(&state.read_cb, read_cb, &state, grpc_schedule_on_exec_ctx);
 
   grpc_endpoint_read(ep, &state.incoming, &state.read_cb, /*urgent=*/false,
-                     /*min_progress_size=*/min_progress_size);
+                     /*min_progress_size=*/state.min_progress_size);
 
   gpr_mu_lock(g_mu);
   while (state.read_bytes < state.target_read_bytes) {
@@ -547,11 +556,12 @@ static void release_fd_test(size_t num_bytes, size_t slice_size) {
   state.ep = ep;
   state.read_bytes = 0;
   state.target_read_bytes = written_bytes;
+  state.min_progress_size = 1;
   grpc_slice_buffer_init(&state.incoming);
   GRPC_CLOSURE_INIT(&state.read_cb, read_cb, &state, grpc_schedule_on_exec_ctx);
 
   grpc_endpoint_read(ep, &state.incoming, &state.read_cb, /*urgent=*/false,
-                     /*min_progress_size=*/1);
+                     /*min_progress_size=*/state.min_progress_size);
 
   gpr_mu_lock(g_mu);
   while (state.read_bytes < state.target_read_bytes) {
