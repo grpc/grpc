@@ -193,7 +193,7 @@ static int compress_inner(grpc_compression_algorithm algorithm,
 int grpc_msg_compress(grpc_compression_algorithm algorithm,
                       grpc_slice_buffer* input, 
                       grpc_slice_buffer* output,
-                      const grpc_core::CompressionOptions options) {
+                      const grpc_core::CompressionOptions* options) {
   auto compression_options = static_cast<const grpc_core::GzipCompressionOptionsImpl*>(options); 
   if (!compress_inner(algorithm, input, output, compression_options)) {
     copy(input, output);
