@@ -72,9 +72,13 @@ struct ChannelArgTypeTraits<
   static const grpc_arg_pointer_vtable* VTable() {
     static const grpc_arg_pointer_vtable tbl = {
         // copy
-        [](void* p) -> void* { return static_cast<T*>(p)->Ref().release(); },
+        [](void* p) -> void* {
+          return p == nullptr ? nullptr : static_cast<T*>(p)->Ref().release();
+        },
         // destroy
-        [](void* p) { static_cast<T*>(p)->Unref(); },
+        [](void* p) {
+          if (p != nullptr) static_cast<T*>(p)->Unref();
+        },
         // compare
         [](void* p1, void* p2) {
           return T::ChannelArgsCompare(static_cast<const T*>(p1),
@@ -186,19 +190,18 @@ class ChannelArgs {
   }
   template <typename T>
   GRPC_MUST_USE_RESULT auto Set(absl::string_view name,
-                                const RefCountedPtr<T>& value) const
+                                RefCountedPtr<T> value) const
       -> absl::enable_if_t<
           std::is_same<
               const grpc_arg_pointer_vtable*,
               decltype(ChannelArgTypeTraits<absl::remove_cvref_t<
                            decltype(*value->Ref())>>::VTable())>::value,
           ChannelArgs> {
-    auto store_value = value->Ref();
     return Set(
         name,
-        Pointer(store_value.release(),
+        Pointer(value.release(),
                 ChannelArgTypeTraits<
-                    absl::remove_cvref_t<decltype(*store_value)>>::VTable()));
+                    absl::remove_cvref_t<decltype(*value->Ref())>>::VTable()));
   }
   template <typename T>
   GRPC_MUST_USE_RESULT ChannelArgs SetIfUnset(absl::string_view name, T value) {
