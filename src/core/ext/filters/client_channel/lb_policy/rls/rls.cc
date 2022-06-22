@@ -1210,6 +1210,7 @@ LoadBalancingPolicy::PickResult RlsLb::Cache::Entry::Pick(PickArgs args) {
       }
       continue;
     }
+    break;
   }
   // Child policy not in TRANSIENT_FAILURE or is the last target in
   // the list, so delegate.
