@@ -40,56 +40,6 @@
 namespace grpc_event_engine {
 namespace experimental {
 
-class GrpcFd;
-
-class EventPoller {
- public:
-  virtual GrpcFd* FdCreate(int fd, absl::string_view name, bool track_err) = 0;
-  virtual int FdWrappedFd(GrpcFd* fd) = 0;
-  virtual void FdOrphan(GrpcFd* fd, EventEngine::Closure* on_done,
-                        int* release_fd, absl::string_view reason) = 0;
-  virtual void FdShutdown(GrpcFd* fd, grpc_error_handle why);
-  virtual void FdNotifyOnRead(GrpcFd* fd,
-                              std::function<void(absl::Status)> on_read) = 0;
-  virtual void FdNotifyOnWrite(GrpcFd* fd,
-                               std::function<void(absl::Status)> on_write) = 0;
-  virtual void FdNotifyOnError(GrpcFd* fd,
-                               std::function<void(absl::Status)> on_write) = 0;
-  virtual void FdSetReadable(GrpcFd* fd) = 0;
-  virtual void FdSetWritable(GrpcFd* fd) = 0;
-  virtual void FdSetError(GrpcFd* fd) = 0;
-  virtual bool FdIsShutdown(GrpcFd* fd) = 0;
-
-  void (*pollset_init)(grpc_pollset* pollset, gpr_mu** mu);
-  void (*pollset_shutdown)(grpc_pollset* pollset, grpc_closure* closure);
-  void (*pollset_destroy)(grpc_pollset* pollset);
-  grpc_error_handle (*pollset_work)(grpc_pollset* pollset,
-                                    grpc_pollset_worker** worker,
-                                    grpc_core::Timestamp deadline);
-  grpc_error_handle (*pollset_kick)(grpc_pollset* pollset,
-                                    grpc_pollset_worker* specific_worker);
-  void (*pollset_add_fd)(grpc_pollset* pollset, struct grpc_fd* fd);
-
-  grpc_pollset_set* (*pollset_set_create)(void);
-  void (*pollset_set_destroy)(grpc_pollset_set* pollset_set);
-  void (*pollset_set_add_pollset)(grpc_pollset_set* pollset_set,
-                                  grpc_pollset* pollset);
-  void (*pollset_set_del_pollset)(grpc_pollset_set* pollset_set,
-                                  grpc_pollset* pollset);
-  void (*pollset_set_add_pollset_set)(grpc_pollset_set* bag,
-                                      grpc_pollset_set* item);
-  void (*pollset_set_del_pollset_set)(grpc_pollset_set* bag,
-                                      grpc_pollset_set* item);
-  void (*pollset_set_add_fd)(grpc_pollset_set* pollset_set, grpc_fd* fd);
-  void (*pollset_set_del_fd)(grpc_pollset_set* pollset_set, grpc_fd* fd);
-
-  bool (*is_any_background_poller_thread)(void);
-  void (*shutdown_background_closure)(void);
-  void (*shutdown_engine)(void);
-  bool (*add_closure_to_background_poller)(grpc_closure* closure,
-                                           grpc_error_handle error);
-};
-
 // An iomgr-based EventEngine implementation.
 // All methods require an ExecCtx to already exist on the thread's stack.
 class IomgrEventEngine final : public EventEngine {
