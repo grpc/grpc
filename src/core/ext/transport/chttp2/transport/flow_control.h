@@ -156,21 +156,31 @@ class TransportFlowControl final {
   // this announce will cause a write to occur
   uint32_t MaybeSendUpdate(bool writing_anyway);
 
+  // Track an update to the incoming flow control counters - that is how many
+  // tokens we report to our peer that we're willing to accept.
+  // Instantiators *must* call MakeAction before destruction of this value.
   class IncomingUpdateContext {
    public:
     explicit IncomingUpdateContext(TransportFlowControl* tfc) : tfc_(tfc) {}
     ~IncomingUpdateContext() { GPR_ASSERT(tfc_ == nullptr); }
 
-    // Reads the flow control data and returns and actionable struct that will
+    IncomingUpdateContext(const IncomingUpdateContext&) = delete;
+    IncomingUpdateContext& operator=(const IncomingUpdateContext&) = delete;
+
+    // Reads the flow control data and returns an actionable struct that will
     // tell chttp2 exactly what it needs to do
     FlowControlAction MakeAction() {
       return absl::exchange(tfc_, nullptr)->UpdateAction(FlowControlAction());
     }
 
+    // Notify of data receipt. Returns OkStatus if the data was accepted,
+    // else an error status if the connection should be closed.
     absl::Status RecvData(
         int64_t incoming_frame_size, absl::FunctionRef<absl::Status()> stream =
                                          []() { return absl::OkStatus(); });
 
+    // Update a stream announce window delta, keeping track of how much total
+    // positive delta is present on the transport.
     void UpdateAnnouncedWindowDelta(int64_t* delta, int64_t change) {
       if (change == 0) return;
       if (*delta > 0) {
@@ -186,6 +196,8 @@ class TransportFlowControl final {
     TransportFlowControl* tfc_;
   };
 
+  // Track an update to the outgoing flow control counters - that is how many
+  // tokens our peer has said we can send.
   class OutgoingUpdateContext {
    public:
     explicit OutgoingUpdateContext(TransportFlowControl* tfc) : tfc_(tfc) {}
@@ -194,6 +206,7 @@ class TransportFlowControl final {
     // we have received a WINDOW_UPDATE frame for a transport
     void RecvUpdate(uint32_t size) { tfc_->remote_window_ += size; }
 
+    // Finish the update and check whether we became stalled or unstalled.
     StallEdge Finish() {
       bool is_stalled = tfc_->remote_window_ <= 0;
       if (is_stalled != was_stalled_) {
@@ -284,6 +297,9 @@ class StreamFlowControl final {
     tfc_->RemoveAnnouncedWindowDelta(announced_window_delta_);
   }
 
+  // Track an update to the incoming flow control counters - that is how many
+  // tokens we report to our peer that we're willing to accept.
+  // Instantiators *must* call MakeAction before destruction of this value.
   class IncomingUpdateContext {
    public:
     explicit IncomingUpdateContext(StreamFlowControl* sfc)
@@ -308,6 +324,8 @@ class StreamFlowControl final {
     StreamFlowControl* const sfc_;
   };
 
+  // Track an update to the outgoing flow control counters - that is how many
+  // tokens our peer has said we can send.
   class OutgoingUpdateContext {
    public:
     explicit OutgoingUpdateContext(StreamFlowControl* sfc)
@@ -341,7 +359,6 @@ class StreamFlowControl final {
   int64_t announced_window_delta_ = 0;
   absl::optional<int64_t> pending_size_;
 
-  void UpdateAnnouncedWindowDelta(TransportFlowControl* tfc, int64_t change);
   FlowControlAction UpdateAction(FlowControlAction action);
   uint32_t DesiredAnnounceSize() const;
 };
