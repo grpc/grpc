@@ -372,11 +372,19 @@ class XdsSecurityTest : public XdsEnd2endTest {
         WaitForBackend(DEBUG_LOCATION, 0, [](const RpcResult& result) {
           if (!result.status.ok()) {
             EXPECT_EQ(result.status.error_code(), StatusCode::UNAVAILABLE);
-            EXPECT_EQ(result.status.error_message(),
-                      // TODO(roth): Improve this message as part of
-                      // https://github.com/grpc/grpc/issues/22883.
-                      "weighted_target: all children report state "
-                      "TRANSIENT_FAILURE");
+            // TODO(yashkt): Rework this test suite such that the caller
+            // explicitly indicates which failure they're allowed to see here,
+            // rather than blindly allowing every possibility in every test.
+            // TODO(roth): Plumb a better error out of the handshakers
+            // as part of https://github.com/grpc/grpc/issues/22883.
+            EXPECT_THAT(
+                result.status.error_message(),
+                ::testing::MatchesRegex(
+                    "connections to all backends failing; last error: "
+                    "(UNKNOWN: Failed to connect to remote host: Connection "
+                    "(refused|reset by peer)|UNAVAILABLE: Failed to connect "
+                    "to remote host: FD shutdown|UNKNOWN: Handshake failed|"
+                    "UNAVAILABLE: Socket closed)"));
           }
         });
         Status status = SendRpc();
@@ -776,15 +784,7 @@ TEST_P(XdsSecurityTest, TestTlsConfigurationInCombinedValidationContext) {
       ->set_instance_name("fake_plugin1");
   transport_socket->mutable_typed_config()->PackFrom(upstream_tls_context);
   balancer_->ads_service()->SetCdsResource(cluster);
-  WaitForBackend(DEBUG_LOCATION, 0, [](const RpcResult& result) {
-    if (!result.status.ok()) {
-      EXPECT_EQ(result.status.error_code(), StatusCode::UNAVAILABLE);
-      EXPECT_EQ(result.status.error_message(),
-                // TODO(roth): Improve this message as part of
-                // https://github.com/grpc/grpc/issues/22883.
-                "weighted_target: all children report state TRANSIENT_FAILURE");
-    }
-  });
+  CheckRpcSendOk(DEBUG_LOCATION);
 }
 
 // TODO(yashykt): Remove this test once we stop supporting old fields
@@ -801,15 +801,7 @@ TEST_P(XdsSecurityTest,
       ->set_instance_name("fake_plugin1");
   transport_socket->mutable_typed_config()->PackFrom(upstream_tls_context);
   balancer_->ads_service()->SetCdsResource(cluster);
-  WaitForBackend(DEBUG_LOCATION, 0, [](const RpcResult& result) {
-    if (!result.status.ok()) {
-      EXPECT_EQ(result.status.error_code(), StatusCode::UNAVAILABLE);
-      EXPECT_EQ(result.status.error_message(),
-                // TODO(roth): Improve this message as part of
-                // https://github.com/grpc/grpc/issues/22883.
-                "weighted_target: all children report state TRANSIENT_FAILURE");
-    }
-  });
+  CheckRpcSendOk(DEBUG_LOCATION);
 }
 
 TEST_P(XdsSecurityTest, TestMtlsConfigurationWithNoSanMatchers) {
