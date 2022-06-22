@@ -254,7 +254,7 @@ int DefaultGzipCompressionLevelFromChannelArgs(const grpc_channel_args* args) {
   return grpc_channel_args_find_integer(
     args,
     GRPC_ARG_GZIP_COMPRESSION_LEVEL,
-    {Z_DEFAULT_COMPRESSION, 0, 12});
+    {Z_DEFAULT_COMPRESSION, Z_NO_COMPRESSION, Z_BEST_COMPRESSION});
 }
 
 int DefaultGrpcMinMessageSizeToCompressFromChannelArgs(const grpc_channel_args* args) {
