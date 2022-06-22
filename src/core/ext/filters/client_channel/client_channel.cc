@@ -869,25 +869,17 @@ class ClientChannel::ClientChannelControlHelper
       health_check_service_name.reset();
     }
     // Construct channel args for subchannel.
-    // Remove channel args that should not affect subchannel uniqueness.
-    absl::InlinedVector<const char*, 4> args_to_remove = {
-        GRPC_ARG_HEALTH_CHECK_SERVICE_NAME,
-        GRPC_ARG_INHIBIT_HEALTH_CHECKING,
-        GRPC_ARG_CHANNELZ_CHANNEL_NODE,
-    };
-    // Add channel args needed for the subchannel.
-    args = args.SetObject(chand_->subchannel_pool_);
-    // Check if default authority arg is already set.
-    absl::optional<absl::string_view> default_authority =
-        address.args().GetString(GRPC_ARG_DEFAULT_AUTHORITY);
-    if (!default_authority.has_value()) {
-      default_authority = args.GetString(GRPC_ARG_DEFAULT_AUTHORITY);
-    }
-    // If we haven't already set the default authority arg, add it from
-    // the channel.
-    if (!default_authority.has_value()) {
-      args = args.Set(GRPC_ARG_DEFAULT_AUTHORITY, chand_->default_authority_);
-    }
+    args =
+        address.args()
+            .UnionWith(args)
+            .SetObject(chand_->subchannel_pool_)
+            // If we haven't already set the default authority arg, add it from
+            // the channel.
+            .SetIfUnset(GRPC_ARG_DEFAULT_AUTHORITY, chand_->default_authority_)
+            // Remove channel args that should not affect subchannel uniqueness.
+            .Remove(GRPC_ARG_HEALTH_CHECK_SERVICE_NAME)
+            .Remove(GRPC_ARG_INHIBIT_HEALTH_CHECKING)
+            .Remove(GRPC_ARG_CHANNELZ_CHANNEL_NODE);
     // Create subchannel.
     RefCountedPtr<Subchannel> subchannel =
         chand_->client_channel_factory_->CreateSubchannel(address.address(),
