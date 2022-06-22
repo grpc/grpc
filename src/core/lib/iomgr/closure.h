@@ -133,8 +133,8 @@ template <typename T, void (T::*cb)()>
 grpc_closure MakeMemberClosure(T* p) {
   grpc_closure out;
   GRPC_CLOSURE_INIT(
-      &out, [](void* p, grpc_error_handle e) { (static_cast<T*>(p)->*cb)(); },
-      p, nullptr);
+      &out, [](void* p, grpc_error_handle) { (static_cast<T*>(p)->*cb)(); }, p,
+      nullptr);
   return out;
 }
 }  // namespace grpc_core
