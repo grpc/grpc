@@ -2021,7 +2021,7 @@ class PromiseBasedCall : public Call, public Activity, public Wakeable {
 
   /* Contexts for various subsystems (security, tracing, ...). */
   grpc_call_context_element context_[GRPC_CONTEXT_COUNT] = {};
-  grpc_completion_queue* cq_ ABSL_GUARDED_BY(mu_) = nullptr;
+  grpc_completion_queue* cq_ ABSL_GUARDED_BY(mu_);
   MetadataAllocator metadata_allocator_ ABSL_GUARDED_BY(mu_);
   NonOwningWakable* non_owning_wakeable_ ABSL_GUARDED_BY(mu_) = nullptr;
   CompletionInfo completion_info_[6];
@@ -2048,7 +2048,8 @@ grpc_error_handle MakePromiseBasedCall(grpc_call_create_args* args,
 PromiseBasedCall::PromiseBasedCall(Arena* arena,
                                    const grpc_call_create_args& args)
     : Call(arena, args.server_transport_data == nullptr, args.send_deadline,
-           args.channel->Ref()) {}
+           args.channel->Ref()),
+      cq_(args.cq) {}
 
 Waker PromiseBasedCall::MakeNonOwningWaker() {
   if (non_owning_wakeable_ == nullptr) {
