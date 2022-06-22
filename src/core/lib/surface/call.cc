@@ -2330,6 +2330,11 @@ void ClientPromiseBasedCall::UpdateOnce() {
   }
   if (promise_.has_value()) {
     Poll<ServerMetadataHandle> r = promise_();
+    gpr_log(GPR_INFO,
+            "ClientPromiseBasedCall::UpdateOnce(): promise returns %s",
+            PollToString(r, [](const ServerMetadataHandle& h) {
+              return h->DebugString();
+            }).c_str());
     if (auto* result = absl::get_if<ServerMetadataHandle>(&r)) {
       Finish(std::move(*result));
     }

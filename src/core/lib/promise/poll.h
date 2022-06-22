@@ -61,6 +61,17 @@ struct PollTraits<Poll<T>> {
   static constexpr bool is_poll() { return true; }
 };
 
+// Convert a poll to a string
+template <typename T, typename F>
+std::string PollToString(
+    const Poll<T>& poll,
+    F t_to_string = [](const T& t) { return t.ToString(); }) {
+  if (absl::holds_alternative<Pending>(poll)) {
+    return "<<pending>>";
+  }
+  return t_to_string(absl::get<T>(poll));
+}
+
 }  // namespace grpc_core
 
 #endif  // GRPC_CORE_LIB_PROMISE_POLL_H
