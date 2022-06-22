@@ -230,30 +230,6 @@ TEST_P(CdsTest, ChangeClusters) {
   WaitForAllBackends(DEBUG_LOCATION, 1, 2);
 }
 
-// Tests that we go into TRANSIENT_FAILURE if the Cluster disappears.
-TEST_P(CdsTest, ClusterRemoved) {
-  CreateAndStartBackends(1);
-  EdsResourceArgs args({{"locality0", CreateEndpointsForBackends()}});
-  balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
-  // We need to wait for all backends to come online.
-  WaitForAllBackends(DEBUG_LOCATION);
-  // Unset CDS resource.
-  balancer_->ads_service()->UnsetResource(kCdsTypeUrl, kDefaultClusterName);
-  // Wait for RPCs to start failing.
-  SendRpcsUntil(DEBUG_LOCATION, [](const RpcResult& result) {
-    if (result.status.ok()) return true;  // Keep going.
-    EXPECT_EQ(StatusCode::UNAVAILABLE, result.status.error_code());
-    EXPECT_EQ(absl::StrCat("CDS resource \"", kDefaultClusterName,
-                           "\" does not exist"),
-              result.status.error_message());
-    return false;
-  });
-  // Make sure we ACK'ed the update.
-  auto response_state = balancer_->ads_service()->cds_response_state();
-  ASSERT_TRUE(response_state.has_value());
-  EXPECT_EQ(response_state->state, AdsServiceImpl::ResponseState::ACKED);
-}
-
 TEST_P(CdsTest, CircuitBreaking) {
   CreateAndStartBackends(1);
   constexpr size_t kMaxConcurrentRequests = 10;
@@ -354,6 +330,79 @@ TEST_P(CdsTest, ClusterChangeAfterAdsCallFails) {
   balancer_->ads_service()->SetCdsResource(cluster);
   // Make sure client sees the change.
   WaitForBackend(DEBUG_LOCATION, 1);
+}
+
+//
+// CDS deletion tests
+//
+
+class CdsDeletionTest : public XdsEnd2endTest {
+ protected:
+  void SetUp() override {}  // Individual tests call InitClient().
+};
+
+INSTANTIATE_TEST_SUITE_P(XdsTest, CdsDeletionTest,
+                         ::testing::Values(XdsTestType()), &XdsTestType::Name);
+
+// Tests that we go into TRANSIENT_FAILURE if the Cluster is deleted.
+TEST_P(CdsDeletionTest, ClusterDeleted) {
+  InitClient();
+  CreateAndStartBackends(1);
+  EdsResourceArgs args({{"locality0", CreateEndpointsForBackends()}});
+  balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
+  // We need to wait for all backends to come online.
+  WaitForAllBackends(DEBUG_LOCATION);
+  // Unset CDS resource.
+  balancer_->ads_service()->UnsetResource(kCdsTypeUrl, kDefaultClusterName);
+  // Wait for RPCs to start failing.
+  SendRpcsUntil(DEBUG_LOCATION, [](const RpcResult& result) {
+    if (result.status.ok()) return true;  // Keep going.
+    EXPECT_EQ(StatusCode::UNAVAILABLE, result.status.error_code());
+    EXPECT_EQ(absl::StrCat("CDS resource \"", kDefaultClusterName,
+                           "\" does not exist"),
+              result.status.error_message());
+    return false;
+  });
+  // Make sure we ACK'ed the update.
+  auto response_state = balancer_->ads_service()->cds_response_state();
+  ASSERT_TRUE(response_state.has_value());
+  EXPECT_EQ(response_state->state, AdsServiceImpl::ResponseState::ACKED);
+}
+
+// Tests that we ignore Cluster deletions if configured to do so.
+TEST_P(CdsDeletionTest, ClusterDeletionIgnored) {
+  InitClient(BootstrapBuilder().SetIgnoreResourceDeletion());
+  CreateAndStartBackends(2);
+  // Bring up client pointing to backend 0 and wait for it to connect.
+  EdsResourceArgs args({{"locality0", CreateEndpointsForBackends(0, 1)}});
+  balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
+  WaitForAllBackends(DEBUG_LOCATION, 0, 1);
+  // Make sure we ACKed the CDS update.
+  auto response_state = balancer_->ads_service()->cds_response_state();
+  ASSERT_TRUE(response_state.has_value());
+  EXPECT_EQ(response_state->state, AdsServiceImpl::ResponseState::ACKED);
+  // Unset CDS resource and wait for client to ACK the update.
+  balancer_->ads_service()->UnsetResource(kCdsTypeUrl, kDefaultClusterName);
+  const auto deadline = absl::Now() + absl::Seconds(30);
+  while (true) {
+    ASSERT_LT(absl::Now(), deadline) << "timed out waiting for CDS ACK";
+    response_state = balancer_->ads_service()->cds_response_state();
+    if (response_state.has_value()) break;
+  }
+  EXPECT_EQ(response_state->state, AdsServiceImpl::ResponseState::ACKED);
+  // Make sure we can still send RPCs.
+  CheckRpcSendOk(DEBUG_LOCATION);
+  // Now recreate the CDS resource pointing to a new EDS resource that
+  // specified backend 1, and make sure the client uses it.
+  const char* kNewEdsResourceName = "new_eds_resource_name";
+  auto cluster = default_cluster_;
+  cluster.mutable_eds_cluster_config()->set_service_name(kNewEdsResourceName);
+  balancer_->ads_service()->SetCdsResource(cluster);
+  args = EdsResourceArgs({{"locality0", CreateEndpointsForBackends(1, 2)}});
+  balancer_->ads_service()->SetEdsResource(
+      BuildEdsResource(args, kNewEdsResourceName));
+  // Wait for client to start using backend 1.
+  WaitForAllBackends(DEBUG_LOCATION, 1, 2);
 }
 
 //

@@ -14,9 +14,10 @@
 
 #include "src/core/lib/promise/call_push_pull.h"
 
-#include <gtest/gtest.h>
+#include <utility>
 
 #include "absl/status/status.h"
+#include "gtest/gtest.h"
 
 namespace grpc_core {
 
