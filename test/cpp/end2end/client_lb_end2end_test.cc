@@ -119,6 +119,17 @@ class ConnectionInjector : public ConnectionAttemptInjector {
       attempt->Resume();
     }
 
+    void Fail(grpc_error_handle error) {
+      gpr_log(GPR_INFO, "=== FAILING CONNECTION ATTEMPT ON PORT %d ===", port_);
+      grpc_core::ExecCtx exec_ctx;
+      std::unique_ptr<QueuedAttempt> attempt;
+      {
+        grpc_core::MutexLock lock(&injector_->mu_);
+        attempt = std::move(queued_attempt_);
+      }
+      attempt->Fail(error);
+    }
+
     void WaitForCompletion() {
       gpr_log(GPR_INFO,
               "=== WAITING FOR CONNECTION COMPLETION ON PORT %d ===", port_);
@@ -1732,6 +1743,57 @@ TEST_F(RoundRobinTest, StaysInTransientFailureInSubsequentConnecting) {
   }
   // Clean up.
   hold->Resume();
+}
+
+TEST_F(RoundRobinTest, ReportsLatestStatusInTransientFailure) {
+  // Start connection injector.
+  ConnectionInjector injector;
+  injector.Start();
+  // Get port.
+  const std::vector<int> ports = {grpc_pick_unused_port_or_die(),
+                                  grpc_pick_unused_port_or_die()};
+  // Create channel.
+  auto response_generator = BuildResolverResponseGenerator();
+  auto channel = BuildChannel("round_robin", response_generator);
+  auto stub = BuildStub(channel);
+  response_generator.SetNextResolution(ports);
+  // Allow first connection attempts to fail normally, and check that
+  // the RPC fails with the right status message.
+  CheckRpcSendFailure(
+      DEBUG_LOCATION, stub, StatusCode::UNAVAILABLE,
+      "connections to all backends failing; last error: "
+      "(UNKNOWN: Failed to connect to remote host: Connection refused|"
+      "UNAVAILABLE: Failed to connect to remote host: FD shutdown)");
+  // Now intercept the next connection attempt for each port.
+  auto hold1 = injector.AddHold(ports[0]);
+  auto hold2 = injector.AddHold(ports[1]);
+  hold1->Wait();
+  hold2->Wait();
+  // Inject a custom failure message.
+  hold1->Wait();
+  hold1->Fail(GRPC_ERROR_CREATE_FROM_STATIC_STRING("Survey says... Bzzzzt!"));
+  // Wait until RPC fails with the right message.
+  absl::Time deadline =
+      absl::Now() + (absl::Seconds(5) * grpc_test_slowdown_factor());
+  while (true) {
+    Status status = SendRpc(stub);
+    EXPECT_EQ(StatusCode::UNAVAILABLE, status.error_code());
+    if (status.error_message() ==
+        "connections to all backends failing; last error: "
+        "UNKNOWN: Survey says... Bzzzzt!") {
+      break;
+    }
+    EXPECT_THAT(
+        status.error_message(),
+        ::testing::MatchesRegex(
+            "connections to all backends failing; last error: "
+            "(UNKNOWN: Failed to connect to remote host: Connection refused|"
+            "UNAVAILABLE: Failed to connect to remote host: FD shutdown)"));
+    EXPECT_LT(absl::Now(), deadline);
+    if (absl::Now() >= deadline) break;
+  }
+  // Clean up.
+  hold2->Resume();
 }
 
 TEST_F(RoundRobinTest, DoesNotFailRpcsUponDisconnection) {

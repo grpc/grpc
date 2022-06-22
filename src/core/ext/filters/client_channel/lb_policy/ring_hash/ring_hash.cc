@@ -270,6 +270,12 @@ class RingHash : public LoadBalancingPolicy {
     // The index of the subchannel currently doing an internally
     // triggered connection attempt, if any.
     absl::optional<size_t> internally_triggered_connection_index_;
+
+    // TODO(roth): If we ever change the helper UpdateState() API to not
+    // need the status reported for TRANSIENT_FAILURE state (because
+    // it's not currently actually used for anything outside of the picker),
+    // then we will no longer need this data member.
+    absl::Status last_failure_;
   };
 
   class Ring : public RefCounted<Ring> {
@@ -646,8 +652,17 @@ void RingHash::RingHashSubchannelList::UpdateRingHashConnectivityStateLocked(
     state = GRPC_CHANNEL_TRANSIENT_FAILURE;
     start_connection_attempt = true;
   }
-  // Pass along status only in TRANSIENT_FAILURE.
-  if (state != GRPC_CHANNEL_TRANSIENT_FAILURE) status = absl::OkStatus();
+  // In TRANSIENT_FAILURE, report the last reported failure.
+  // Otherwise, report OK.
+  if (state == GRPC_CHANNEL_TRANSIENT_FAILURE) {
+    if (!status.ok()) {
+      last_failure_ = absl::UnavailableError(absl::StrCat(
+          "no reachable subchannels; last error: ", status.ToString()));
+    }
+    status = last_failure_;
+  } else {
+    status = absl::OkStatus();
+  }
   // Generate new picker and return it to the channel.
   // Note that we use our own picker regardless of connectivity state.
   p->channel_control_helper()->UpdateState(
@@ -755,9 +770,7 @@ void RingHash::RingHashSubchannelData::ProcessConnectivityChangeLocked(
   // Update the RH policy's connectivity state, creating new picker and new
   // ring.
   subchannel_list()->UpdateRingHashConnectivityStateLocked(
-      Index(), connection_attempt_complete,
-      absl::UnavailableError(absl::StrCat(
-          "no reachable subchannels; last error: ", status.ToString())));
+      Index(), connection_attempt_complete, status);
 }
 
 //
