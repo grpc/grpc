@@ -501,7 +501,7 @@ TEST_F(ResolveAddressTest, NativeResolverCannotLookupSRVRecords) {
         EXPECT_EQ(error.status().code(), absl::StatusCode::kUnimplemented);
         Finish();
       },
-      "localhost", absl::InfiniteFuture(), pollset_set(), /*nameserver=*/"");
+      "localhost", absl::InfiniteFuture(), pollset_set(), /*name_server=*/"");
   grpc_core::ExecCtx::Get()->Flush();
   PollPollsetUntilRequestDone();
 }
@@ -516,7 +516,7 @@ TEST_F(ResolveAddressTest, NativeResolverCannotLookupTXTRecords) {
         EXPECT_EQ(error.status().code(), absl::StatusCode::kUnimplemented);
         Finish();
       },
-      "localhost", absl::InfiniteFuture(), pollset_set(), /*nameserver=*/"");
+      "localhost", absl::InfiniteFuture(), pollset_set(), /*name_server=*/"");
   grpc_core::ExecCtx::Get()->Flush();
   PollPollsetUntilRequestDone();
 }

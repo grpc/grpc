@@ -38,6 +38,7 @@
 #include <address_sorting/address_sorting.h>
 #include <ares.h>
 
+#include "absl/cleanup/cleanup.h"
 #include "absl/container/inlined_vector.h"
 #include "absl/memory/memory.h"
 #include "absl/status/status.h"
@@ -824,38 +825,15 @@ fail:
   r->error = grpc_error_add_child(error, r->error);
 }
 
-void grpc_dns_lookup_ares_continue_after_check_localhost_and_ip_literals_locked(
-    grpc_ares_request* r, const char* dns_server, const char* name,
-    const char* default_port, grpc_pollset_set* interested_parties,
-    int query_timeout_ms) ABSL_EXCLUSIVE_LOCKS_REQUIRED(r->mu) {
-  grpc_error_handle error = GRPC_ERROR_NONE;
-  grpc_ares_hostbyname_request* hr = nullptr;
-  /* parse name, splitting it into host and port parts */
-  std::string host;
-  std::string port;
-  grpc_core::SplitHostPort(name, &host, &port);
-  if (host.empty()) {
-    error = grpc_error_set_str(
-        GRPC_ERROR_CREATE_FROM_STATIC_STRING("unparseable host:port"),
-        GRPC_ERROR_STR_TARGET_ADDRESS, name);
-    goto error_cleanup;
-  } else if (port.empty()) {
-    if (default_port == nullptr || strlen(default_port) == 0) {
-      error = grpc_error_set_str(
-          GRPC_ERROR_CREATE_FROM_STATIC_STRING("no port in name"),
-          GRPC_ERROR_STR_TARGET_ADDRESS, name);
-      goto error_cleanup;
-    }
-    port = default_port;
-  }
-  error = grpc_ares_ev_driver_create_locked(&r->ev_driver, interested_parties,
-                                            query_timeout_ms, r);
-  if (!GRPC_ERROR_IS_NONE(error)) goto error_cleanup;
-  // If dns_server is specified, use it.
-  if (dns_server != nullptr && dns_server[0] != '\0') {
-    GRPC_CARES_TRACE_LOG("request:%p Using DNS server %s", r, dns_server);
+grpc_error_handle set_request_dns_server(grpc_ares_request* r,
+                                         absl::string_view dns_server,
+                                         const char* name)
+    ABSL_EXCLUSIVE_LOCKS_REQUIRED(r->mu) {
+  if (!dns_server.empty()) {
+    GRPC_CARES_TRACE_LOG("request:%p Using DNS server %s", r,
+                         dns_server.data());
     grpc_resolved_address addr;
-    if (grpc_parse_ipv4_hostport(dns_server, &addr, false /* log_errors */)) {
+    if (grpc_parse_ipv4_hostport(dns_server, &addr, /*log_errors=*/false)) {
       r->dns_server_addr.family = AF_INET;
       struct sockaddr_in* in = reinterpret_cast<struct sockaddr_in*>(addr.addr);
       memcpy(&r->dns_server_addr.addr.addr4, &in->sin_addr,
@@ -863,7 +841,7 @@ void grpc_dns_lookup_ares_continue_after_check_localhost_and_ip_literals_locked(
       r->dns_server_addr.tcp_port = grpc_sockaddr_get_port(&addr);
       r->dns_server_addr.udp_port = grpc_sockaddr_get_port(&addr);
     } else if (grpc_parse_ipv6_hostport(dns_server, &addr,
-                                        false /* log_errors */)) {
+                                        /*log_errors=*/false)) {
       r->dns_server_addr.family = AF_INET6;
       struct sockaddr_in6* in6 =
           reinterpret_cast<struct sockaddr_in6*>(addr.addr);
@@ -872,19 +850,57 @@ void grpc_dns_lookup_ares_continue_after_check_localhost_and_ip_literals_locked(
       r->dns_server_addr.tcp_port = grpc_sockaddr_get_port(&addr);
       r->dns_server_addr.udp_port = grpc_sockaddr_get_port(&addr);
     } else {
-      error = grpc_error_set_str(
+      return grpc_error_set_str(
           GRPC_ERROR_CREATE_FROM_STATIC_STRING("cannot parse authority"),
           GRPC_ERROR_STR_TARGET_ADDRESS, name);
-      goto error_cleanup;
     }
     int status =
         ares_set_servers_ports(r->ev_driver->channel, &r->dns_server_addr);
     if (status != ARES_SUCCESS) {
-      error = GRPC_ERROR_CREATE_FROM_CPP_STRING(absl::StrCat(
+      return GRPC_ERROR_CREATE_FROM_CPP_STRING(absl::StrCat(
           "C-ares status is not ARES_SUCCESS: ", ares_strerror(status)));
-      goto error_cleanup;
     }
   }
+  return GRPC_ERROR_NONE;
+}
+
+void grpc_dns_lookup_ares_continue_after_check_localhost_and_ip_literals_locked(
+    grpc_ares_request* r, const char* dns_server, const char* name,
+    const char* default_port, grpc_pollset_set* interested_parties,
+    int query_timeout_ms) ABSL_EXCLUSIVE_LOCKS_REQUIRED(r->mu) {
+  grpc_error_handle error = GRPC_ERROR_NONE;
+  grpc_ares_hostbyname_request* hr = nullptr;
+  // When the function returns, execute the callback if any error occurred.
+  auto error_cleanup =
+      absl::MakeCleanup([r, &error]() ABSL_EXCLUSIVE_LOCKS_REQUIRED(r->mu) {
+        if (!GRPC_ERROR_IS_NONE(error)) {
+          grpc_core::ExecCtx::Run(DEBUG_LOCATION, r->on_done, error);
+        }
+      });
+  /* parse name, splitting it into host and port parts */
+  std::string host;
+  std::string port;
+  grpc_core::SplitHostPort(name, &host, &port);
+  if (host.empty()) {
+    error = grpc_error_set_str(
+        GRPC_ERROR_CREATE_FROM_STATIC_STRING("unparseable host:port"),
+        GRPC_ERROR_STR_TARGET_ADDRESS, name);
+    return;
+  } else if (port.empty()) {
+    if (default_port == nullptr || strlen(default_port) == 0) {
+      error = grpc_error_set_str(
+          GRPC_ERROR_CREATE_FROM_STATIC_STRING("no port in name"),
+          GRPC_ERROR_STR_TARGET_ADDRESS, name);
+      return;
+    }
+    port = default_port;
+  }
+  error = grpc_ares_ev_driver_create_locked(&r->ev_driver, interested_parties,
+                                            query_timeout_ms, r);
+  if (!GRPC_ERROR_IS_NONE(error)) return;
+  // If dns_server is specified, use it.
+  error = set_request_dns_server(r, dns_server, name);
+  if (error != GRPC_ERROR_NONE) return;
   r->pending_queries = 1;
   if (grpc_ares_query_ipv6()) {
     hr = create_hostbyname_request_locked(r, host.c_str(),
@@ -913,10 +929,6 @@ void grpc_dns_lookup_ares_continue_after_check_localhost_and_ip_literals_locked(
   }
   grpc_ares_ev_driver_start_locked(r->ev_driver);
   grpc_ares_request_unref_locked(r);
-  return;
-
-error_cleanup:
-  grpc_core::ExecCtx::Run(DEBUG_LOCATION, r->on_done, error);
 }
 
 static bool inner_resolve_as_ip_literal_locked(
