@@ -2271,27 +2271,93 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
-    name = "iomgr_event_engine",
-    srcs = ["src/core/lib/event_engine/iomgr_engine.cc"],
-    hdrs = ["src/core/lib/event_engine/iomgr_engine.h"],
+    name = "iomgr_ee_time_averaged_stats",
+    srcs = ["src/core/lib/event_engine/iomgr_engine/time_averaged_stats.cc"],
+    hdrs = [
+        "src/core/lib/event_engine/iomgr_engine/time_averaged_stats.h",
+    ],
+    tags = ["grpc-autodeps"],
+    deps = ["gpr_base"],
+)
+
+grpc_cc_library(
+    name = "iomgr_ee_timer",
+    srcs = [
+        "src/core/lib/event_engine/iomgr_engine/timer.cc",
+        "src/core/lib/event_engine/iomgr_engine/timer_heap.cc",
+    ],
+    hdrs = [
+        "src/core/lib/event_engine/iomgr_engine/timer.h",
+        "src/core/lib/event_engine/iomgr_engine/timer_heap.h",
+    ],
     external_deps = [
-        "absl/cleanup",
-        "absl/container:flat_hash_set",
+        "absl/base:core_headers",
+        "absl/types:optional",
+    ],
+    tags = ["grpc-autodeps"],
+    deps = [
+        "event_engine_base_hdrs",
+        "gpr_base",
+        "iomgr_ee_time_averaged_stats",
+        "time",
+        "useful",
+    ],
+)
+
+grpc_cc_library(
+    name = "iomgr_ee_thread_pool",
+    srcs = ["src/core/lib/event_engine/iomgr_engine/thread_pool.cc"],
+    hdrs = [
+        "src/core/lib/event_engine/iomgr_engine/thread_pool.h",
+    ],
+    tags = ["grpc-autodeps"],
+    deps = ["gpr_base"],
+)
+
+grpc_cc_library(
+    name = "iomgr_ee_timer_manager",
+    srcs = ["src/core/lib/event_engine/iomgr_engine/timer_manager.cc"],
+    hdrs = [
+        "src/core/lib/event_engine/iomgr_engine/timer_manager.h",
+    ],
+    external_deps = [
+        "absl/base:core_headers",
+        "absl/memory",
         "absl/time",
+        "absl/types:optional",
+    ],
+    tags = ["grpc-autodeps"],
+    deps = [
+        "event_engine_base_hdrs",
+        "gpr_base",
+        "gpr_codegen",
+        "iomgr_ee_timer",
+        "time",
+    ],
+)
+
+grpc_cc_library(
+    name = "iomgr_event_engine",
+    srcs = ["src/core/lib/event_engine/iomgr_engine/iomgr_engine.cc"],
+    hdrs = ["src/core/lib/event_engine/iomgr_engine/iomgr_engine.h"],
+    external_deps = [
+        "absl/base:core_headers",
+        "absl/container:flat_hash_set",
+        "absl/status",
+        "absl/status:statusor",
         "absl/strings",
     ],
+    tags = ["grpc-autodeps"],
     deps = [
-        "closure",
-        "error",
         "event_engine_base_hdrs",
         "event_engine_common",
         "event_engine_trace",
-        "exec_ctx",
         "gpr_base",
         "gpr_platform",
         "grpc_trace",
-        "iomgr_timer",
-        "match",
+        "iomgr_ee_thread_pool",
+        "iomgr_ee_timer",
+        "iomgr_ee_timer_manager",
         "time",
     ],
 )
@@ -2557,7 +2623,6 @@ grpc_cc_library(
         "src/core/lib/debug/stats.h",
         "src/core/lib/debug/stats_data.h",
         "src/core/lib/event_engine/channel_args_endpoint_config.h",
-        "src/core/lib/event_engine/promise.h",
         "src/core/lib/iomgr/block_annotate.h",
         "src/core/lib/iomgr/buffer_list.h",
         "src/core/lib/iomgr/call_combiner.h",

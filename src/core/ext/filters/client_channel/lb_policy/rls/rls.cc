@@ -1210,6 +1210,7 @@ LoadBalancingPolicy::PickResult RlsLb::Cache::Entry::Pick(PickArgs args) {
       }
       continue;
     }
+    break;
   }
   // Child policy not in TRANSIENT_FAILURE or is the last target in
   // the list, so delegate.
@@ -1223,6 +1224,9 @@ LoadBalancingPolicy::PickResult RlsLb::Cache::Entry::Pick(PickArgs args) {
             ConnectivityStateName(child_policy_wrapper->connectivity_state()));
   }
   // Add header data.
+  // Note that even if the target we're using is in TRANSIENT_FAILURE,
+  // the pick might still succeed (e.g., if the child is ring_hash), so
+  // we need to pass the right header info down in all cases.
   if (!header_data_.empty()) {
     char* copied_header_data =
         static_cast<char*>(args.call_state->Alloc(header_data_.length() + 1));
