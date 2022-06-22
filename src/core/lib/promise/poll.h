@@ -19,6 +19,8 @@
 
 #include <stddef.h>
 
+#include <string>
+
 #include "absl/types/variant.h"
 
 namespace grpc_core {
