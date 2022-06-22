@@ -1417,11 +1417,12 @@ std::string GetServerNameFromChannelArgs(ChannelArgs args) {
 
 GrpcLb::GrpcLb(Args args)
     : LoadBalancingPolicy(std::move(args)),
-      server_name_(GetServerNameFromChannelArgs(args.args)),
+      server_name_(GetServerNameFromChannelArgs(channel_args())),
       response_generator_(MakeRefCounted<FakeResolverResponseGenerator>()),
       lb_call_timeout_(std::max(
           Duration::Zero(),
-          args.args.GetDurationFromIntMillis(GRPC_ARG_GRPCLB_CALL_TIMEOUT_MS)
+          channel_args()
+              .GetDurationFromIntMillis(GRPC_ARG_GRPCLB_CALL_TIMEOUT_MS)
               .value_or(Duration::Zero()))),
       lb_call_backoff_(
           BackOff::Options()
@@ -1433,13 +1434,13 @@ GrpcLb::GrpcLb(Args args)
                   GRPC_GRPCLB_RECONNECT_MAX_BACKOFF_SECONDS))),
       fallback_at_startup_timeout_(std::max(
           Duration::Zero(),
-          args.args
+          channel_args()
               .GetDurationFromIntMillis(GRPC_ARG_GRPCLB_FALLBACK_TIMEOUT_MS)
               .value_or(Duration::Milliseconds(
                   GRPC_GRPCLB_DEFAULT_FALLBACK_TIMEOUT_MS)))),
       subchannel_cache_interval_(std::max(
           Duration::Zero(),
-          args.args
+          channel_args()
               .GetDurationFromIntMillis(
                   GRPC_ARG_GRPCLB_SUBCHANNEL_CACHE_INTERVAL_MS)
               .value_or(Duration::Milliseconds(

@@ -536,7 +536,7 @@ class GrpclbEnd2endTest : public ::testing::Test {
         CreateLbAddressesFromAddressDataList(balancer_address_data);
     // TODO(ctiller): consider not leaking a pointer on the stack
     result.args = grpc_core::SetGrpcLbBalancerAddresses(
-        grpc_core::ChannelArgs(), &balancer_addresses);
+        grpc_core::ChannelArgs(), balancer_addresses);
     return result;
   }
 

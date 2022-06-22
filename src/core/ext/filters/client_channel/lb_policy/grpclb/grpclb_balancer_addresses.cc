@@ -78,10 +78,10 @@ const ServerAddressList* FindGrpclbBalancerAddressesInChannelArgs(
 }
 
 ChannelArgs SetGrpcLbBalancerAddresses(ChannelArgs args,
-                                       const ServerAddressList* address_list) {
+                                       ServerAddressList address_list) {
   return args.Set(
       GRPC_ARG_GRPCLB_BALANCER_ADDRESSES,
-      ChannelArgs::Pointer(const_cast<ServerAddressList*>(address_list),
+      ChannelArgs::Pointer(new ServerAddressList(std::move(address_list)),
                            &kBalancerAddressesArgVtable));
 }
 

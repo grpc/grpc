@@ -75,7 +75,7 @@ void TryConnectAndDestroy() {
       &error);
   ASSERT_EQ(error, GRPC_ERROR_NONE) << grpc_error_std_string(error);
   lb_address_result.args = grpc_core::SetGrpcLbBalancerAddresses(
-      grpc_core::ChannelArgs(), &addresses);
+      grpc_core::ChannelArgs(), addresses);
   response_generator->SetResponse(lb_address_result);
   grpc::ChannelArguments args;
   args.SetPointer(GRPC_ARG_FAKE_RESOLVER_RESPONSE_GENERATOR,

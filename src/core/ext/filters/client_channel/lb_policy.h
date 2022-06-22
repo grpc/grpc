@@ -409,7 +409,7 @@ class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
     return work_serializer_;
   }
 
-  ChannelArgs channel_args() const { return channel_args_; }
+  const ChannelArgs& channel_args() const { return channel_args_; }
 
   // Note: LB policies MUST NOT call any method on the helper from their
   // constructor.

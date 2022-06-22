@@ -320,8 +320,8 @@ void AresClientChannelDNSResolver::AresRequestWrapper::OnResolved(
       }
     }
     if (balancer_addresses_ != nullptr) {
-      result.args =
-          SetGrpcLbBalancerAddresses(result.args, balancer_addresses_.get());
+      result.args = SetGrpcLbBalancerAddresses(
+          result.args, ServerAddressList(*balancer_addresses_));
     }
   } else {
     GRPC_CARES_TRACE_LOG("resolver:%p dns resolution failed: %s", this,
