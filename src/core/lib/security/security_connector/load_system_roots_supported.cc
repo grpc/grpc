@@ -18,33 +18,29 @@
 
 #include <grpc/support/port_platform.h>
 
-#include "src/core/lib/security/security_connector/load_system_roots_supported.h"
-
-#include <grpc/slice_buffer.h>
-
 #if defined(GPR_LINUX) || defined(GPR_ANDROID) || defined(GPR_FREEBSD) || \
     defined(GPR_APPLE)
 
 #include <dirent.h>
 #include <fcntl.h>
-#include <stdbool.h>
+#include <stdio.h>
 #include <string.h>
 #include <sys/param.h>
 #include <sys/stat.h>
-#include <sys/types.h>
 #include <unistd.h>
 
 #include "absl/container/inlined_vector.h"
 
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
-#include <grpc/support/string_util.h>
 
-#include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/gprpp/global_config.h"
+#include "src/core/lib/gprpp/memory.h"
+#include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/load_file.h"
 #include "src/core/lib/security/security_connector/load_system_roots.h"
+#include "src/core/lib/security/security_connector/load_system_roots_supported.h"
 
 GPR_GLOBAL_CONFIG_DEFINE_STRING(grpc_system_ssl_roots_dir, "",
                                 "Custom directory to SSL Roots");

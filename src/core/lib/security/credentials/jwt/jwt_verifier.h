@@ -21,9 +21,11 @@
 
 #include <grpc/support/port_platform.h>
 
-#include <grpc/slice.h>
-#include <grpc/support/time.h>
+#include <stddef.h>
 
+#include <grpc/impl/codegen/gpr_types.h>
+
+#include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/iomgr/pollset.h"
 #include "src/core/lib/json/json.h"
 

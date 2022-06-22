@@ -367,7 +367,6 @@ class FilterStackCall final : public Call {
   bool received_initial_metadata_ = false;
   bool receiving_message_ = false;
   bool requested_final_op_ = false;
-  gpr_atm any_ops_sent_atm_ = 0;
   gpr_atm received_final_op_atm_ = 0;
 
   BatchControl* active_batches_[kMaxConcurrentBatches] = {};
@@ -707,8 +706,7 @@ void FilterStackCall::ExternalUnref() {
 
   GPR_ASSERT(!destroy_called_);
   destroy_called_ = true;
-  bool cancel = gpr_atm_acq_load(&any_ops_sent_atm_) != 0 &&
-                gpr_atm_acq_load(&received_final_op_atm_) == 0;
+  bool cancel = gpr_atm_acq_load(&received_final_op_atm_) == 0;
   if (cancel) {
     CancelWithError(GRPC_ERROR_CANCELLED);
   } else {
@@ -1773,7 +1771,6 @@ grpc_call_error FilterStackCall::StartBatch(const grpc_op* ops, size_t nops,
     stream_op->on_complete = &bctl->finish_batch_;
   }
 
-  gpr_atm_rel_store(&any_ops_sent_atm_, 1);
   ExecuteBatch(stream_op, &bctl->start_batch_);
 
 done:

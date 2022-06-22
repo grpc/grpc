@@ -22,9 +22,18 @@
 
 #include <string.h>
 
+#include <map>
+#include <memory>
+#include <string>
+
+#include "absl/status/statusor.h"
 #include "absl/strings/match.h"
+#include "absl/strings/string_view.h"
 #include "absl/strings/strip.h"
 
+#include <grpc/grpc_security.h>  // IWYU pragma: keep
+#include <grpc/grpc_security_constants.h>
+#include <grpc/slice.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/sync.h>
@@ -32,22 +41,29 @@
 #include "src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb.h"
 #include "src/core/ext/filters/client_channel/lb_policy/xds/xds_channel_args.h"
 #include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/debug/trace.h"
 #include "src/core/lib/gpr/env.h"
-#include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gprpp/host_port.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
+#include "src/core/lib/gprpp/sync.h"
+#include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/http/httpcli.h"
 #include "src/core/lib/http/parser.h"
+#include "src/core/lib/iomgr/closure.h"
+#include "src/core/lib/iomgr/error.h"
+#include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/load_file.h"
 #include "src/core/lib/iomgr/polling_entity.h"
-#include "src/core/lib/security/credentials/alts/alts_credentials.h"
+#include "src/core/lib/iomgr/pollset.h"
+#include "src/core/lib/json/json.h"
 #include "src/core/lib/security/credentials/alts/check_gcp_environment.h"
 #include "src/core/lib/security/credentials/credentials.h"
 #include "src/core/lib/security/credentials/external/external_account_credentials.h"
+#include "src/core/lib/security/credentials/jwt/json_token.h"
 #include "src/core/lib/security/credentials/jwt/jwt_credentials.h"
 #include "src/core/lib/security/credentials/oauth2/oauth2_credentials.h"
 #include "src/core/lib/slice/slice_internal.h"
-#include "src/core/lib/slice/slice_string_helpers.h"
+#include "src/core/lib/slice/slice_refcount.h"
 #include "src/core/lib/surface/api_trace.h"
 #include "src/core/lib/uri/uri_parser.h"
 

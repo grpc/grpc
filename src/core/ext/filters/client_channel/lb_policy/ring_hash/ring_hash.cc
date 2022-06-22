@@ -25,6 +25,7 @@
 #include <map>
 #include <memory>
 #include <string>
+#include <type_traits>
 #include <utility>
 #include <vector>
 
@@ -385,8 +386,9 @@ RingHash::Ring::Ring(RingHash* parent,
     AddressWeight address_weight;
     address_weight.address =
         grpc_sockaddr_to_string(&sd->address().address(), false).value();
-    if (weight_attribute != nullptr) {
-      GPR_ASSERT(weight_attribute->weight() != 0);
+    // Weight should never be zero, but ignore it just in case, since
+    // that value would screw up the ring-building algorithm.
+    if (weight_attribute != nullptr && weight_attribute->weight() > 0) {
       address_weight.weight = weight_attribute->weight();
     }
     sum += address_weight.weight;
@@ -726,10 +728,9 @@ void RingHash::RingHashSubchannelData::ProcessConnectivityChangeLocked(
   }
   GPR_ASSERT(subchannel() != nullptr);
   // If this is not the initial state notification and the new state is
-  // TRANSIENT_FAILURE or IDLE, re-resolve and attempt to reconnect.
-  // Note that we don't want to do this on the initial state
-  // notification, because that would result in an endless loop of
-  // re-resolution.
+  // TRANSIENT_FAILURE or IDLE, re-resolve.
+  // Note that we don't want to do this on the initial state notification,
+  // because that would result in an endless loop of re-resolution.
   if (old_state.has_value() && (new_state == GRPC_CHANNEL_TRANSIENT_FAILURE ||
                                 new_state == GRPC_CHANNEL_IDLE)) {
     if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_ring_hash_trace)) {
@@ -814,16 +815,7 @@ void RingHash::UpdateLocked(UpdateArgs args) {
       gpr_log(GPR_INFO, "[RH %p] received update with %" PRIuPTR " addresses",
               this, args.addresses->size());
     }
-    // Filter out any address with weight 0.
-    addresses.reserve(args.addresses->size());
-    for (ServerAddress& address : *args.addresses) {
-      const ServerAddressWeightAttribute* weight_attribute =
-          static_cast<const ServerAddressWeightAttribute*>(address.GetAttribute(
-              ServerAddressWeightAttribute::kServerAddressWeightAttributeKey));
-      if (weight_attribute == nullptr || weight_attribute->weight() > 0) {
-        addresses.emplace_back(std::move(address));
-      }
-    }
+    addresses = *std::move(args.addresses);
   } else {
     if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_ring_hash_trace)) {
       gpr_log(GPR_INFO, "[RH %p] received update with addresses error: %s",
