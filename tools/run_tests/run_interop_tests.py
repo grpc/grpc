@@ -964,7 +964,7 @@ def cloud_to_cloud_jobspec(language,
         sys.exit(1)
 
     if test_case in _ORCA_TEST_CASES:
-        interop_only_options = interop_only_options + [
+        interop_only_options += [
             '--service_config_json=\'{"loadBalancingConfig":[{"test_backend_metrics_load_balancer":{}}]}\''
         ]
 
@@ -984,8 +984,8 @@ def cloud_to_cloud_jobspec(language,
                 language.client_cmd_http2interop(common_options))
             cwd = language.http2_cwd
     else:
-        cmd_options = common_options + interop_only_options
-        cmdline = bash_cmdline(language.client_cmd(cmd_options))
+        cmdline = bash_cmdline(
+            language.client_cmd(common_options + interop_only_options))
         cwd = language.client_cwd
 
     environ = language.global_env()
