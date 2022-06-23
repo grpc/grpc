@@ -372,8 +372,8 @@ int main(int argc, char** argv) {
   auto work_serializer = std::make_shared<grpc_core::WorkSerializer>();
   g_work_serializer = &work_serializer;
 
-  g_default_dns_lookup_ares = grpc_dns_lookup_ares;
-  grpc_dns_lookup_ares = test_dns_lookup_ares;
+  g_default_dns_lookup_ares = grpc_dns_lookup_hostname_ares;
+  grpc_dns_lookup_hostname_ares = test_dns_lookup_ares;
   g_default_dns_resolver = grpc_core::GetDNSResolver();
   grpc_core::SetDNSResolver(new TestDNSResolver());
 

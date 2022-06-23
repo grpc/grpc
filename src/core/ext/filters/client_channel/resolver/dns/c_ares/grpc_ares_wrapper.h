@@ -89,14 +89,14 @@ struct grpc_ares_request {
   synchronized by the caller. TODO(apolcyn): we should remove this requirement
   by changing this API to use two phase initialization - one API to create
   the grpc_ares_request* and another to start the async work. */
-extern grpc_ares_request* (*grpc_dns_lookup_ares)(
+extern grpc_ares_request* (*grpc_dns_lookup_hostname_ares)(
     const char* dns_server, const char* name, const char* default_port,
     grpc_pollset_set* interested_parties, grpc_closure* on_done,
     std::unique_ptr<grpc_core::ServerAddressList>* addresses,
     int query_timeout_ms);
 
 // Asynchronously resolve a SRV record.
-// See \a grpc_dns_lookup_ares for usage details and caveats.
+// See \a grpc_dns_lookup_hostname_ares for usage details and caveats.
 extern grpc_ares_request* (*grpc_dns_lookup_srv_ares)(
     const char* dns_server, const char* name,
     grpc_pollset_set* interested_parties, grpc_closure* on_done,
@@ -104,7 +104,7 @@ extern grpc_ares_request* (*grpc_dns_lookup_srv_ares)(
     int query_timeout_ms);
 
 // Asynchronously resolve a TXT record.
-// See \a grpc_dns_lookup_ares for usage details and caveats.
+// See \a grpc_dns_lookup_hostname_ares for usage details and caveats.
 extern grpc_ares_request* (*grpc_dns_lookup_txt_ares)(
     const char* dns_server, const char* name,
     grpc_pollset_set* interested_parties, grpc_closure* on_done,

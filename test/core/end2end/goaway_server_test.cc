@@ -188,9 +188,9 @@ int main(int argc, char** argv) {
   g_default_dns_resolver = grpc_core::GetDNSResolver();
   auto* resolver = new TestDNSResolver();
   grpc_core::SetDNSResolver(resolver);
-  iomgr_dns_lookup_ares = grpc_dns_lookup_ares;
+  iomgr_dns_lookup_ares = grpc_dns_lookup_hostname_ares;
   iomgr_cancel_ares_request = grpc_cancel_ares_request;
-  grpc_dns_lookup_ares = my_dns_lookup_ares;
+  grpc_dns_lookup_hostname_ares = my_dns_lookup_ares;
   grpc_cancel_ares_request = my_cancel_ares_request;
 
   int was_cancelled1;

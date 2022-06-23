@@ -865,7 +865,7 @@ grpc_error_handle set_request_dns_server(grpc_ares_request* r,
   return GRPC_ERROR_NONE;
 }
 
-void grpc_dns_lookup_ares_continue_after_check_localhost_and_ip_literals_locked(
+void grpc_dns_lookup_hostname_ares_continue_after_check_localhost_and_ip_literals_locked(
     grpc_ares_request* r, const char* dns_server, const char* name,
     const char* default_port, grpc_pollset_set* interested_parties,
     int query_timeout_ms) ABSL_EXCLUSIVE_LOCKS_REQUIRED(r->mu) {
@@ -1048,7 +1048,7 @@ static bool grpc_ares_maybe_resolve_localhost_manually_locked(
 }
 #endif /* GRPC_ARES_RESOLVE_LOCALHOST_MANUALLY */
 
-static grpc_ares_request* grpc_dns_lookup_ares_impl(
+static grpc_ares_request* grpc_dns_lookup_hostname_ares_impl(
     const char* dns_server, const char* name, const char* default_port,
     grpc_pollset_set* interested_parties, grpc_closure* on_done,
     std::unique_ptr<grpc_core::ServerAddressList>* addrs,
@@ -1060,7 +1060,7 @@ static grpc_ares_request* grpc_dns_lookup_ares_impl(
   r->on_done = on_done;
   r->addresses_out = addrs;
   GRPC_CARES_TRACE_LOG(
-      "request:%p c-ares grpc_dns_lookup_ares_impl name=%s, "
+      "request:%p c-ares grpc_dns_lookup_hostname_ares_impl name=%s, "
       "default_port=%s",
       r, name, default_port);
   // Early out if the target is an ipv4 or ipv6 literal.
@@ -1075,7 +1075,7 @@ static grpc_ares_request* grpc_dns_lookup_ares_impl(
     return r;
   }
   // Look up name using c-ares lib.
-  grpc_dns_lookup_ares_continue_after_check_localhost_and_ip_literals_locked(
+  grpc_dns_lookup_hostname_ares_continue_after_check_localhost_and_ip_literals_locked(
       r, dns_server, name, default_port, interested_parties, query_timeout_ms);
   return r;
 }
@@ -1085,7 +1085,7 @@ grpc_ares_request* grpc_dns_lookup_srv_ares_impl(
     grpc_pollset_set* interested_parties, grpc_closure* on_done,
     std::unique_ptr<grpc_core::ServerAddressList>* balancer_addresses,
     int query_timeout_ms) {
-  // DO NOT SUBMIT(hork): deduplicate with grpc_dns_lookup_ares_impl
+  // DO NOT SUBMIT(hork): deduplicate with grpc_dns_lookup_hostname_ares_impl
   grpc_ares_request* r = new grpc_ares_request();
   grpc_core::MutexLock lock(&r->mu);
   r->ev_driver = nullptr;
@@ -1141,7 +1141,7 @@ grpc_ares_request* grpc_dns_lookup_txt_ares_impl(
     const char* dns_server, const char* name,
     grpc_pollset_set* interested_parties, grpc_closure* on_done,
     char** service_config_json, int query_timeout_ms) {
-  // DO NOT SUBMIT(hork): deduplicate with grpc_dns_lookup_ares_impl
+  // DO NOT SUBMIT(hork): deduplicate with grpc_dns_lookup_hostname_ares_impl
   grpc_ares_request* r = new grpc_ares_request();
   grpc_core::MutexLock lock(&r->mu);
   r->ev_driver = nullptr;
@@ -1193,11 +1193,11 @@ grpc_ares_request* grpc_dns_lookup_txt_ares_impl(
   return r;
 }
 
-grpc_ares_request* (*grpc_dns_lookup_ares)(
+grpc_ares_request* (*grpc_dns_lookup_hostname_ares)(
     const char* dns_server, const char* name, const char* default_port,
     grpc_pollset_set* interested_parties, grpc_closure* on_done,
     std::unique_ptr<grpc_core::ServerAddressList>* addrs,
-    int query_timeout_ms) = grpc_dns_lookup_ares_impl;
+    int query_timeout_ms) = grpc_dns_lookup_hostname_ares_impl;
 
 grpc_ares_request* (*grpc_dns_lookup_srv_ares)(
     const char* dns_server, const char* name,

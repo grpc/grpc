@@ -116,7 +116,7 @@ class AresClientChannelDNSResolver : public PollingResolver {
       Ref(DEBUG_LOCATION, "OnHostnameResolved").release();
       GRPC_CLOSURE_INIT(&on_hostname_resolved_, OnHostnameResolved, this,
                         nullptr);
-      hostname_request_.reset(grpc_dns_lookup_ares(
+      hostname_request_.reset(grpc_dns_lookup_hostname_ares(
           resolver_->authority().c_str(), resolver_->name_to_resolve().c_str(),
           kDefaultSecurePort, resolver_->interested_parties(),
           &on_hostname_resolved_, &addresses_, resolver_->query_timeout_ms_));
@@ -458,10 +458,11 @@ class AresDNSResolver : public DNSResolver {
                         grpc_schedule_on_exec_ctx);
       MutexLock lock(&mu_);
       grpc_pollset_set_add_pollset_set(pollset_set_, interested_parties);
-      ares_request_ = std::unique_ptr<grpc_ares_request>(grpc_dns_lookup_ares(
-          /*dns_server=*/"", name_.c_str(), default_port_.c_str(), pollset_set_,
-          &on_dns_lookup_done_, &addresses_,
-          GRPC_DNS_ARES_DEFAULT_QUERY_TIMEOUT_MS));
+      ares_request_ =
+          std::unique_ptr<grpc_ares_request>(grpc_dns_lookup_hostname_ares(
+              /*dns_server=*/"", name_.c_str(), default_port_.c_str(),
+              pollset_set_, &on_dns_lookup_done_, &addresses_,
+              GRPC_DNS_ARES_DEFAULT_QUERY_TIMEOUT_MS));
       GRPC_CARES_TRACE_LOG("AresRequest:%p Start ares_request_:%p", this,
                            ares_request_.get());
     }
@@ -538,7 +539,7 @@ class AresDNSResolver : public DNSResolver {
     std::unique_ptr<ServerAddressList> addresses_ ABSL_GUARDED_BY(mu_);
     // closure to call when the resolve_address_ares request completes
     // a closure wrapping on_resolve_address_done, which should be invoked
-    // when the grpc_dns_lookup_ares operation is done.
+    // when the grpc_dns_lookup_hostname_ares operation is done.
     grpc_closure on_dns_lookup_done_ ABSL_GUARDED_BY(mu_);
     // underlying ares_request that the query is performed on
     std::unique_ptr<grpc_ares_request> ares_request_ ABSL_GUARDED_BY(mu_);

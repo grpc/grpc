@@ -808,7 +808,7 @@ DEFINE_PROTO_FUZZER(const api_fuzzer::Msg& msg) {
     grpc_core::Executor::SetThreadingAll(false);
   }
   grpc_core::SetDNSResolver(FuzzerDNSResolver::GetOrCreate());
-  grpc_dns_lookup_ares = my_dns_lookup_ares;
+  grpc_dns_lookup_hostname_ares = my_dns_lookup_ares;
   grpc_cancel_ares_request = my_cancel_ares_request;
 
   GPR_ASSERT(g_channel == nullptr);
