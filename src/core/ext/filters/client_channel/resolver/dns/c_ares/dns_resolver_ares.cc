@@ -19,6 +19,7 @@
 #include <stdint.h>
 #include <stdlib.h>
 
+#include <algorithm>
 #include <functional>
 #include <map>
 #include <memory>

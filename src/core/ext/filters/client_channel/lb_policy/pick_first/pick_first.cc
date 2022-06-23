@@ -19,6 +19,7 @@
 #include <inttypes.h>
 #include <string.h>
 
+#include <algorithm>
 #include <memory>
 #include <string>
 #include <utility>

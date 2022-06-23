@@ -16,6 +16,7 @@
 
 #include "src/core/lib/security/authorization/grpc_authorization_engine.h"
 
+#include <algorithm>
 #include <map>
 #include <utility>
 

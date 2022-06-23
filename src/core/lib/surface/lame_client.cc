@@ -22,7 +22,6 @@
 
 #include <memory>
 #include <utility>
-#include <vector>
 
 #include "absl/memory/memory.h"
 #include "absl/status/statusor.h"

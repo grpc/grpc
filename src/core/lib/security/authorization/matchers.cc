@@ -16,6 +16,7 @@
 
 #include "src/core/lib/security/authorization/matchers.h"
 
+#include <algorithm>
 #include <string>
 
 #include "absl/memory/memory.h"

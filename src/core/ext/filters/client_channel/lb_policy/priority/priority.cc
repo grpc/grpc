@@ -20,6 +20,7 @@
 #include <limits.h>
 #include <stddef.h>
 
+#include <algorithm>
 #include <map>
 #include <memory>
 #include <string>

@@ -20,6 +20,8 @@
 
 #include "src/core/ext/xds/google_mesh_ca_certificate_provider_factory.h"
 
+#include <algorithm>
+
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/json/json_util.h"
 

@@ -20,6 +20,7 @@
 
 #include <string.h>
 
+#include <algorithm>
 #include <set>
 #include <string>
 #include <utility>

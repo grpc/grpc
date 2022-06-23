@@ -18,6 +18,7 @@
 
 #include "src/cpp/server/secure_server_credentials.h"
 
+#include <algorithm>
 #include <map>
 #include <memory>
 #include <utility>

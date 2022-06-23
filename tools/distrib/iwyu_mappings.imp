@@ -5,6 +5,5 @@
     { include: ["<openssl/base.h>", "private", "<openssl/crypto.h>", "public"] },
     { include: ["<openssl/digest.h>", "private", "<openssl/evp.h>", "public"] },
     # workaround: https://github.com/include-what-you-use/include-what-you-use/issues/908
-    { symbol: ["std::max", "private", "<vector>", "public" ] },
     { symbol: ["std::max", "private", "<algorithm>", "public" ] },
 ] 

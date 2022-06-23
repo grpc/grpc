@@ -20,6 +20,7 @@
 
 #include "src/core/lib/event_engine/iomgr_engine/timer_manager.h"
 
+#include <algorithm>
 #include <memory>
 #include <utility>
 

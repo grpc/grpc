@@ -16,6 +16,7 @@
 
 #include "src/cpp/server/orca/orca_interceptor.h"
 
+#include <algorithm>
 #include <map>
 #include <memory>
 #include <string>

@@ -19,6 +19,7 @@
 
 #include <stdlib.h>
 
+#include <algorithm>  // IWYU pragma: keep
 #include <memory>
 #include <utility>
 #include <vector>

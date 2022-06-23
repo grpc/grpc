@@ -16,6 +16,7 @@
 
 #include "src/core/lib/security/authorization/rbac_policy.h"
 
+#include <algorithm>
 #include <type_traits>
 #include <utility>
 

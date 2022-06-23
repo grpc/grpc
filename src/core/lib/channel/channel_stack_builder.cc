@@ -20,6 +20,7 @@
 
 #include "src/core/lib/channel/channel_stack_builder.h"
 
+#include <algorithm>
 #include <utility>
 
 #include "src/core/lib/channel/channel_args.h"

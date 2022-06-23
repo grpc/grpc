@@ -22,6 +22,7 @@
 
 #include <stdlib.h>
 
+#include <algorithm>
 #include <atomic>
 #include <memory>
 #include <type_traits>

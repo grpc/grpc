@@ -18,6 +18,7 @@
 
 #include "src/core/ext/xds/xds_http_filters.h"
 
+#include <algorithm>
 #include <map>
 #include <utility>
 #include <vector>

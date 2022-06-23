@@ -21,6 +21,7 @@
 #include <inttypes.h>
 #include <stdlib.h>
 
+#include <algorithm>
 #include <map>
 #include <string>
 #include <utility>

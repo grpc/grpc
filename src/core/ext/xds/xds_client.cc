@@ -22,6 +22,8 @@
 #include <limits.h>
 #include <string.h>
 
+#include <algorithm>
+
 #include "absl/container/inlined_vector.h"
 #include "absl/strings/match.h"
 #include "absl/strings/str_cat.h"

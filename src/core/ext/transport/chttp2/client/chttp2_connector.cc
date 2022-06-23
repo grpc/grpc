@@ -23,7 +23,6 @@
 #include <stdint.h>
 
 #include <string>
-#include <vector>
 
 #include "absl/container/inlined_vector.h"
 #include "absl/status/status.h"
