@@ -18,6 +18,8 @@
 
 #include <grpc/support/port_platform.h>
 
+#include "absl/strings/string_view.h"
+
 #include "src/core/lib/iomgr/sockaddr.h"
 
 // IWYU pragma: no_include <arpa/nameser.h>
@@ -598,7 +600,7 @@ void grpc_ares_complete_request_locked(grpc_ares_request* r)
     ABSL_EXCLUSIVE_LOCKS_REQUIRED(r->mu) {
   // Invoke on_done callback and destroy the request
   r->ev_driver = nullptr;
-  if (r->addresses_out != nullptr && r->addresses_out->get() != nullptr) {
+  if (r->addresses_out != nullptr && *r->addresses_out != nullptr) {
     grpc_cares_wrapper_address_sorting_sort(r, r->addresses_out->get());
     GRPC_ERROR_UNREF(r->error);
     r->error = GRPC_ERROR_NONE;
