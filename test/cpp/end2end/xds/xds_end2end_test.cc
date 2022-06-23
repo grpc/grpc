@@ -383,7 +383,7 @@ class XdsSecurityTest : public XdsEnd2endTest {
                     "connections to all backends failing; last error: "
                     "(UNKNOWN: Failed to connect to remote host: Connection "
                     "(refused|reset by peer)|UNAVAILABLE: Failed to connect "
-                    "to remote host: FD shutdown|UNKNOWN: Handshake failed|"
+                    "to remote host: FD shutdown|UNKNOWN: Tls handshake failed|"
                     "UNAVAILABLE: Socket closed)"));
           }
         });
