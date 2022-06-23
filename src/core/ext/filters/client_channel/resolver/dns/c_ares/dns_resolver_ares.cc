@@ -597,6 +597,111 @@ class AresDNSResolver : public DNSResolver {
     std::unique_ptr<ServerAddressList> addresses_;
   };
 
+  class AresSRVRequest : public AresRequest {
+   public:
+    AresSRVRequest(
+        absl::string_view name, absl::string_view name_server,
+        grpc_pollset_set* interested_parties,
+        std::function<void(absl::StatusOr<std::vector<grpc_resolved_address>>)>
+            on_resolve_address_done,
+        AresDNSResolver* resolver, intptr_t aba_token)
+        : AresRequest(interested_parties, resolver, aba_token),
+          name_(std::string(name)),
+          name_server_(std::string(name_server)),
+          on_resolve_address_done_(std::move(on_resolve_address_done)) {
+      GRPC_CARES_TRACE_LOG("AresSRVRequest:%p ctor", this);
+    }
+
+    std::unique_ptr<grpc_ares_request> MakeRequestLocked() override {
+      auto ares_request =
+          std::unique_ptr<grpc_ares_request>(grpc_dns_lookup_srv_ares(
+              name_server_.c_str(), name_.c_str(), pollset_set_,
+              &on_dns_lookup_done_, &balancer_addresses_,
+              GRPC_DNS_ARES_DEFAULT_QUERY_TIMEOUT_MS));
+      GRPC_CARES_TRACE_LOG("AresSRVRequest:%p Start ares_request_:%p", this,
+                           ares_request.get());
+      return ares_request;
+    }
+
+    void OnComplete(grpc_error_handle error) override {
+      GRPC_CARES_TRACE_LOG("AresSRVRequest:%p OnComplete", this);
+      if (!GRPC_ERROR_IS_NONE(error)) {
+        on_resolve_address_done_(grpc_error_to_absl_status(error));
+        return;
+      }
+      std::vector<grpc_resolved_address> resolved_addresses;
+      if (balancer_addresses_ != nullptr) {
+        resolved_addresses.reserve(balancer_addresses_->size());
+        for (const auto& server_address : *balancer_addresses_) {
+          resolved_addresses.push_back(server_address.address());
+        }
+      }
+      on_resolve_address_done_(std::move(resolved_addresses));
+    }
+
+    // the name to resolve
+    const std::string name_;
+    // the default port to use if name doesn't have one
+    const std::string default_port_;
+    // the name server to query
+    const std::string name_server_;
+    // user-provided completion callback
+    const std::function<void(
+        absl::StatusOr<std::vector<grpc_resolved_address>>)>
+        on_resolve_address_done_;
+    // currently resolving addresses
+    std::unique_ptr<ServerAddressList> balancer_addresses_;
+  };
+
+  class AresTXTRequest : public AresRequest {
+   public:
+    AresTXTRequest(absl::string_view name, absl::string_view name_server,
+                   grpc_pollset_set* interested_parties,
+                   std::function<void(absl::StatusOr<std::string>)> on_resolved,
+                   AresDNSResolver* resolver, intptr_t aba_token)
+        : AresRequest(interested_parties, resolver, aba_token),
+          name_(std::string(name)),
+          name_server_(std::string(name_server)),
+          on_resolved_(std::move(on_resolved)) {
+      GRPC_CARES_TRACE_LOG("AresTXTRequest:%p ctor", this);
+    }
+
+    ~AresTXTRequest() override {
+      gpr_free(service_config_json_);
+    }
+
+    std::unique_ptr<grpc_ares_request> MakeRequestLocked() override {
+      auto ares_request =
+          std::unique_ptr<grpc_ares_request>(grpc_dns_lookup_txt_ares(
+              name_server_.c_str(), name_.c_str(), pollset_set_,
+              &on_dns_lookup_done_, &service_config_json_,
+              GRPC_DNS_ARES_DEFAULT_QUERY_TIMEOUT_MS));
+      GRPC_CARES_TRACE_LOG("AresSRVRequest:%p Start ares_request_:%p", this,
+                           ares_request.get());
+      return ares_request;
+    }
+
+    void OnComplete(grpc_error_handle error) override {
+      GRPC_CARES_TRACE_LOG("AresSRVRequest:%p OnComplete", this);
+      if (!GRPC_ERROR_IS_NONE(error)) {
+        on_resolved_(grpc_error_to_absl_status(error));
+        return;
+      }
+      on_resolved_(service_config_json_);
+    }
+
+    // the name to resolve
+    const std::string name_;
+    // the default port to use if name doesn't have one
+    const std::string default_port_;
+    // the name server to query
+    const std::string name_server_;
+    // service config from the TXT record
+    char* service_config_json_ = nullptr;
+    // user-provided completion callback
+    const std::function<void(absl::StatusOr<std::string>)> on_resolved_;
+  };
+
   // gets the singleton instance, possibly creating it first
   static AresDNSResolver* GetOrCreate() {
     static AresDNSResolver* instance = new AresDNSResolver();
@@ -631,8 +736,14 @@ class AresDNSResolver : public DNSResolver {
       absl::string_view name, absl::Time deadline,
       grpc_pollset_set* interested_parties,
       absl::string_view name_server) override {
-    // DO NOT SUBMIT - implement
-    abort();
+    MutexLock lock(&mu_);
+    auto* request =
+        new AresSRVRequest(name, name_server, interested_parties,
+                           std::move(on_resolved), this, aba_token_++);
+    request->Run();
+    auto handle = request->task_handle();
+    open_requests_.insert(handle);
+    return handle;
   };
 
   TaskHandle LookupTXT(
@@ -640,8 +751,14 @@ class AresDNSResolver : public DNSResolver {
       absl::string_view name, absl::Time deadline,
       grpc_pollset_set* interested_parties,
       absl::string_view name_server) override {
-    // DO NOT SUBMIT - implement
-    abort();
+    MutexLock lock(&mu_);
+    auto* request =
+        new AresTXTRequest(name, name_server, interested_parties,
+                           std::move(on_resolved), this, aba_token_++);
+    request->Run();
+    auto handle = request->task_handle();
+    open_requests_.insert(handle);
+    return handle;
   };
 
   bool Cancel(TaskHandle handle) override {
