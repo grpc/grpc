@@ -15,7 +15,7 @@
 
 echo "It's recommended that you run this script from a virtual environment."
 
-set -ex
+set -e
 
 BASEDIR=$(dirname "$0")
 BASEDIR=$(realpath "$BASEDIR")/../..
