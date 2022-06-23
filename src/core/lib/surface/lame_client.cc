@@ -20,7 +20,6 @@
 
 #include "src/core/lib/surface/lame_client.h"
 
-#include <algorithm>
 #include <memory>
 #include <utility>
 

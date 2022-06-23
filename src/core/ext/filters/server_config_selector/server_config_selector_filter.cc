@@ -16,7 +16,6 @@
 
 #include "src/core/ext/filters/server_config_selector/server_config_selector_filter.h"
 
-#include <algorithm>
 #include <functional>
 #include <memory>
 #include <type_traits>
