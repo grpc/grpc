@@ -127,6 +127,5 @@ grpc_channel* grpc_binder_channel_create_for_testing(
   auto channel = grpc_core::Channel::Create(
       "binder", client_args, GRPC_CLIENT_DIRECT_CHANNEL, client_transport);
   GPR_ASSERT(channel.ok());
-  grpc_channel_args_destroy(args);
   return channel->release()->c_ptr();
 }
