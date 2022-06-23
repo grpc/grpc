@@ -22,6 +22,7 @@
 
 #include <limits.h>
 
+#include <algorithm>
 #include <functional>
 
 #include "absl/status/status.h"

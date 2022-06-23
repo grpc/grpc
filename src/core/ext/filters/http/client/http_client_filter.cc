@@ -19,6 +19,7 @@
 
 #include "src/core/ext/filters/http/client/http_client_filter.h"
 
+#include <algorithm>
 #include <functional>
 #include <string>
 #include <utility>
