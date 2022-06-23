@@ -4718,6 +4718,7 @@ grpc_cc_library(
         "absl/status:statusor",
         "absl/strings",
         "absl/strings:str_format",
+        "absl/time",
         "address_sorting",
         "cares",
     ],
