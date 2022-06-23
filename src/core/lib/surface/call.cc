@@ -1800,25 +1800,22 @@ class PromiseBasedCall : public Call, public Activity, public Wakeable {
 
   // Implementation of call refcounting: move this to DualRefCounted once we
   // don't need to maintain FilterStackCall compatibility
-  void ExternalRef() override {
+  void ExternalRef() final {
     refs_.fetch_add(MakeRefPair(1, 0), std::memory_order_relaxed);
   }
-  void ExternalUnref() override {
+  void ExternalUnref() final {
     const uint64_t prev_ref_pair =
         refs_.fetch_add(MakeRefPair(-1, 1), std::memory_order_acq_rel);
     const uint32_t strong_refs = GetStrongRefs(prev_ref_pair);
     if (strong_refs == 1) {
       Orphan();
     }
-    if (refs_.fetch_add(MakeRefPair(0, -1), std::memory_order_acq_rel) ==
-        MakeRefPair(0, 1)) {
-      DeleteThis();
-    }
+    InternalUnref("");
   }
-  void InternalRef(const char* reason) override {
+  void InternalRef(const char* reason) final {
     refs_.fetch_add(MakeRefPair(0, 1), std::memory_order_relaxed);
   }
-  void InternalUnref(const char* reason) override {
+  void InternalUnref(const char* reason) final {
     if (refs_.fetch_add(MakeRefPair(0, -1), std::memory_order_acq_rel) ==
         MakeRefPair(0, 1)) {
       DeleteThis();

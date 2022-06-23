@@ -326,6 +326,7 @@ class ClientConnectedCallPromise {
           send_message_.send_message = true;
           batch_payload_.send_message.send_message = msg.payload();
           batch_payload_.send_message.flags = msg.flags();
+          send_message_waker_ = Activity::current()->MakeOwningWaker();
         } else {
           GPR_ASSERT(!absl::holds_alternative<Closed>(send_message_state_));
           client_trailing_metadata_ =
@@ -368,6 +369,8 @@ class ClientConnectedCallPromise {
     }
     if (absl::exchange(queued_trailing_metadata_, false)) {
       finished_ = true;
+      UnrefStream();
+      stream_ = nullptr;
       return ServerMetadataHandle(std::move(server_trailing_metadata_));
     }
     return Pending{};
@@ -448,7 +451,7 @@ class ClientConnectedCallPromise {
   Waker stream_owning_waker_;
   grpc_stream_refcount* stream_refcount_;
   grpc_transport* const transport_;
-  grpc_stream* const stream_;
+  grpc_stream* stream_;
   Latch<ServerMetadata*>* server_initial_metadata_latch_;
   PipeReceiver<Message>* client_to_server_messages_;
   PipeSender<Message>* server_to_client_messages_;
