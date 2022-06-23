@@ -609,6 +609,20 @@ TEST_P(EdsTest, NacksDuplicateLocalityInSamePriority) {
                   "found in priority 0"));
 }
 
+TEST_P(EdsTest, NacksEndpointWeightZero) {
+  EdsResourceArgs args({{"locality0", {MakeNonExistantEndpoint()}}});
+  auto eds_resource = BuildEdsResource(args);
+  eds_resource.mutable_endpoints(0)
+      ->mutable_lb_endpoints(0)
+      ->mutable_load_balancing_weight()
+      ->set_value(0);
+  balancer_->ads_service()->SetEdsResource(eds_resource);
+  const auto response_state = WaitForEdsNack(DEBUG_LOCATION);
+  ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
+  EXPECT_THAT(response_state->error_message,
+              ::testing::HasSubstr("Invalid endpoint weight of 0."));
+}
+
 // Tests that if the balancer is down, the RPCs will still be sent to the
 // backends according to the last balancer response, until a new balancer is
 // reachable.
