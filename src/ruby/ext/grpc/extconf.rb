@@ -67,8 +67,9 @@ if apple_toolchain && !cross_compiling
   ENV['ARFLAGS'] = '-o'
 end
 
-# Don't embed on Truffleruby (constant-time crypto is unsafe with Sulong, slow build times)
+# Don't embed on TruffleRuby (constant-time crypto is unsafe with Sulong, slow build times)
 ENV['EMBED_OPENSSL'] = (RUBY_ENGINE != 'truffleruby').to_s
+# Don't embed on TruffleRuby (the system zlib is already linked for the zlib C extension, slow build times)
 ENV['EMBED_ZLIB'] = (RUBY_ENGINE != 'truffleruby').to_s
 
 ENV['EMBED_CARES'] = 'true'
