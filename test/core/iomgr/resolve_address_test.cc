@@ -498,6 +498,7 @@ TEST_F(ResolveAddressTest, NativeResolverCannotLookupSRVRecords) {
   grpc_core::ExecCtx exec_ctx;
   grpc_core::GetDNSResolver()->LookupSRV(
       [this](absl::StatusOr<std::vector<grpc_resolved_address>> error) {
+        grpc_core::ExecCtx exec_ctx;
         EXPECT_EQ(error.status().code(), absl::StatusCode::kUnimplemented);
         Finish();
       },
@@ -513,6 +514,7 @@ TEST_F(ResolveAddressTest, NativeResolverCannotLookupTXTRecords) {
   grpc_core::ExecCtx exec_ctx;
   grpc_core::GetDNSResolver()->LookupTXT(
       [this](absl::StatusOr<std::string> error) {
+        grpc_core::ExecCtx exec_ctx;
         EXPECT_EQ(error.status().code(), absl::StatusCode::kUnimplemented);
         Finish();
       },
