@@ -103,7 +103,6 @@ class TestLite(setuptools.Command):
     def _add_eggs_to_path(self):
         """Fetch install and test requirements"""
         self.distribution.fetch_build_eggs(self.distribution.install_requires)
-        self.distribution.fetch_build_eggs(self.distribution.tests_require)
 
 
 class TestPy3Only(setuptools.Command):
@@ -134,7 +133,6 @@ class TestPy3Only(setuptools.Command):
 
     def _add_eggs_to_path(self):
         self.distribution.fetch_build_eggs(self.distribution.install_requires)
-        self.distribution.fetch_build_eggs(self.distribution.tests_require)
 
 
 class TestAio(setuptools.Command):
@@ -166,7 +164,6 @@ class TestAio(setuptools.Command):
     def _add_eggs_to_path(self):
         """Fetch install and test requirements"""
         self.distribution.fetch_build_eggs(self.distribution.install_requires)
-        self.distribution.fetch_build_eggs(self.distribution.tests_require)
 
 
 class TestGevent(setuptools.Command):
