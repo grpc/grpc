@@ -14,14 +14,23 @@
 
 #include "src/core/lib/promise/for_each.h"
 
-#include <gmock/gmock.h>
-#include <gtest/gtest.h>
+#include <memory>
 
+#include "absl/memory/memory.h"
+#include "gmock/gmock.h"
+#include "gtest/gtest.h"
+
+#include <grpc/event_engine/memory_allocator.h>
+
+#include "src/core/lib/gprpp/ref_counted_ptr.h"
+#include "src/core/lib/promise/activity.h"
+#include "src/core/lib/promise/detail/basic_seq.h"
 #include "src/core/lib/promise/join.h"
 #include "src/core/lib/promise/map.h"
-#include "src/core/lib/promise/observable.h"
 #include "src/core/lib/promise/pipe.h"
 #include "src/core/lib/promise/seq.h"
+#include "src/core/lib/resource_quota/arena.h"
+#include "src/core/lib/resource_quota/memory_quota.h"
 #include "src/core/lib/resource_quota/resource_quota.h"
 #include "test/core/promise/test_wakeup_schedulers.h"
 

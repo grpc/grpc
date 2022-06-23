@@ -17,6 +17,7 @@
 #include "src/core/lib/gprpp/time.h"
 
 #include <atomic>
+#include <chrono>
 #include <cstdint>
 #include <limits>
 #include <string>
@@ -188,6 +189,13 @@ std::string Duration::ToString() const {
 std::string Duration::ToJsonString() const {
   gpr_timespec ts = as_timespec();
   return absl::StrFormat("%d.%09ds", ts.tv_sec, ts.tv_nsec);
+}
+
+Duration::operator grpc_event_engine::experimental::EventEngine::Duration()
+    const {
+  return std::chrono::milliseconds(
+      Clamp(millis_, std::numeric_limits<int64_t>::min() / GPR_NS_PER_MS,
+            std::numeric_limits<int64_t>::max() / GPR_NS_PER_MS));
 }
 
 void TestOnlySetProcessEpoch(gpr_timespec epoch) {

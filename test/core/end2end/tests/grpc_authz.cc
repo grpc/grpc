@@ -636,6 +636,7 @@ static void test_file_watcher_invalid_policy_skip_reload(
   config.tear_down_data(&f);
 }
 
+#ifndef GPR_APPLE
 static void test_file_watcher_recovers_from_failure(
     grpc_end2end_test_config config) {
   const char* authz_policy =
@@ -709,6 +710,7 @@ static void test_file_watcher_recovers_from_failure(
   end_test(&f);
   config.tear_down_data(&f);
 }
+#endif
 
 void grpc_authz(grpc_end2end_test_config config) {
   test_static_init_allow_authorized_request(config);

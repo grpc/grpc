@@ -76,6 +76,7 @@ class XdsBootstrap {
     Json::Object ToJson() const;
 
     bool ShouldUseV3() const;
+    bool IgnoreResourceDeletion() const;
   };
 
   struct Authority {
@@ -136,4 +137,4 @@ class XdsBootstrap {
 
 }  // namespace grpc_core
 
-#endif /* GRPC_CORE_EXT_XDS_XDS_BOOTSTRAP_H */
+#endif  // GRPC_CORE_EXT_XDS_XDS_BOOTSTRAP_H

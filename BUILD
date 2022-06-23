@@ -144,8 +144,8 @@ config_setting(
 )
 
 config_setting(
-    name = "use_abseil_status",
-    values = {"define": "use_abseil_status=true"},
+    name = "disable_use_abseil_status",
+    values = {"define": "use_abseil_status=false"},
 )
 
 python_config_settings()
@@ -1224,7 +1224,6 @@ grpc_cc_library(
     external_deps = [
         "absl/base:core_headers",
         "absl/status",
-        "absl/time",
     ],
     tags = ["grpc-autodeps"],
     deps = [
@@ -2084,6 +2083,7 @@ grpc_cc_library(
     external_deps = ["absl/strings:str_format"],
     tags = ["grpc-autodeps"],
     deps = [
+        "event_engine_base_hdrs",
         "gpr_base",
         "gpr_codegen",
         "gpr_platform",
@@ -2271,27 +2271,93 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
-    name = "iomgr_event_engine",
-    srcs = ["src/core/lib/event_engine/iomgr_engine.cc"],
-    hdrs = ["src/core/lib/event_engine/iomgr_engine.h"],
+    name = "iomgr_ee_time_averaged_stats",
+    srcs = ["src/core/lib/event_engine/iomgr_engine/time_averaged_stats.cc"],
+    hdrs = [
+        "src/core/lib/event_engine/iomgr_engine/time_averaged_stats.h",
+    ],
+    tags = ["grpc-autodeps"],
+    deps = ["gpr_base"],
+)
+
+grpc_cc_library(
+    name = "iomgr_ee_timer",
+    srcs = [
+        "src/core/lib/event_engine/iomgr_engine/timer.cc",
+        "src/core/lib/event_engine/iomgr_engine/timer_heap.cc",
+    ],
+    hdrs = [
+        "src/core/lib/event_engine/iomgr_engine/timer.h",
+        "src/core/lib/event_engine/iomgr_engine/timer_heap.h",
+    ],
     external_deps = [
-        "absl/cleanup",
-        "absl/container:flat_hash_set",
+        "absl/base:core_headers",
+        "absl/types:optional",
+    ],
+    tags = ["grpc-autodeps"],
+    deps = [
+        "event_engine_base_hdrs",
+        "gpr_base",
+        "iomgr_ee_time_averaged_stats",
+        "time",
+        "useful",
+    ],
+)
+
+grpc_cc_library(
+    name = "iomgr_ee_thread_pool",
+    srcs = ["src/core/lib/event_engine/iomgr_engine/thread_pool.cc"],
+    hdrs = [
+        "src/core/lib/event_engine/iomgr_engine/thread_pool.h",
+    ],
+    tags = ["grpc-autodeps"],
+    deps = ["gpr_base"],
+)
+
+grpc_cc_library(
+    name = "iomgr_ee_timer_manager",
+    srcs = ["src/core/lib/event_engine/iomgr_engine/timer_manager.cc"],
+    hdrs = [
+        "src/core/lib/event_engine/iomgr_engine/timer_manager.h",
+    ],
+    external_deps = [
+        "absl/base:core_headers",
+        "absl/memory",
         "absl/time",
+        "absl/types:optional",
+    ],
+    tags = ["grpc-autodeps"],
+    deps = [
+        "event_engine_base_hdrs",
+        "gpr_base",
+        "gpr_codegen",
+        "iomgr_ee_timer",
+        "time",
+    ],
+)
+
+grpc_cc_library(
+    name = "iomgr_event_engine",
+    srcs = ["src/core/lib/event_engine/iomgr_engine/iomgr_engine.cc"],
+    hdrs = ["src/core/lib/event_engine/iomgr_engine/iomgr_engine.h"],
+    external_deps = [
+        "absl/base:core_headers",
+        "absl/container:flat_hash_set",
+        "absl/status",
+        "absl/status:statusor",
         "absl/strings",
     ],
+    tags = ["grpc-autodeps"],
     deps = [
-        "closure",
-        "error",
         "event_engine_base_hdrs",
         "event_engine_common",
         "event_engine_trace",
-        "exec_ctx",
         "gpr_base",
         "gpr_platform",
         "grpc_trace",
-        "iomgr_timer",
-        "match",
+        "iomgr_ee_thread_pool",
+        "iomgr_ee_timer",
+        "iomgr_ee_timer_manager",
         "time",
     ],
 )
@@ -2557,6 +2623,7 @@ grpc_cc_library(
         "src/core/lib/debug/stats.h",
         "src/core/lib/debug/stats_data.h",
         "src/core/lib/event_engine/channel_args_endpoint_config.h",
+        "src/core/lib/event_engine/promise.h",
         "src/core/lib/iomgr/block_annotate.h",
         "src/core/lib/iomgr/buffer_list.h",
         "src/core/lib/iomgr/call_combiner.h",
@@ -2716,6 +2783,7 @@ grpc_cc_library(
         "slice_buffer",
         "slice_refcount",
         "sockaddr_utils",
+        "status_helper",
         "table",
         "thread_quota",
         "time",
@@ -3268,7 +3336,10 @@ grpc_cc_library(
     hdrs = [
         "src/core/ext/filters/deadline/deadline_filter.h",
     ],
-    external_deps = ["absl/types:optional"],
+    external_deps = [
+        "absl/status",
+        "absl/types:optional",
+    ],
     language = "c++",
     tags = ["grpc-autodeps"],
     deps = [
@@ -4360,15 +4431,15 @@ grpc_cc_library(
         "absl/status",
         "absl/status:statusor",
         "absl/strings",
+        "absl/types:optional",
     ],
     language = "c++",
     tags = ["grpc-autodeps"],
     deps = [
         "channel_args",
-        "closure",
         "debug_location",
+        "default_event_engine_factory_hdrs",
         "error",
-        "exec_ctx",
         "gpr_base",
         "gpr_platform",
         "grpc_base",
@@ -4376,7 +4447,6 @@ grpc_cc_library(
         "grpc_codegen",
         "grpc_lb_address_filtering",
         "grpc_trace",
-        "iomgr_timer",
         "json",
         "orphanable",
         "ref_counted",
@@ -4720,6 +4790,7 @@ grpc_cc_library(
     ],
     external_deps = [
         "absl/memory",
+        "absl/status",
         "absl/status:statusor",
         "absl/strings",
     ],
@@ -6057,6 +6128,7 @@ grpc_cc_library(
         "resource_quota_trace",
         "slice",
         "slice_refcount",
+        "status_helper",
         "time",
         "uri_parser",
         "useful",
@@ -6280,9 +6352,11 @@ grpc_cc_library(
     hdrs = GRPCXX_HDRS,
     external_deps = [
         "absl/base:core_headers",
+        "absl/memory",
+        "absl/status",
         "absl/strings",
         "absl/synchronization",
-        "absl/memory",
+        "absl/types:optional",
         "upb_lib",
         "protobuf_headers",
     ],
@@ -6293,6 +6367,7 @@ grpc_cc_library(
         "arena",
         "channel_init",
         "config",
+        "default_event_engine_factory_hdrs",
         "gpr_base",
         "gpr_codegen",
         "grpc",
@@ -6323,9 +6398,11 @@ grpc_cc_library(
     hdrs = GRPCXX_HDRS,
     external_deps = [
         "absl/base:core_headers",
+        "absl/memory",
+        "absl/status",
         "absl/strings",
         "absl/synchronization",
-        "absl/memory",
+        "absl/types:optional",
         "upb_lib",
         "protobuf_headers",
     ],
@@ -6337,6 +6414,7 @@ grpc_cc_library(
         "arena",
         "channel_init",
         "config",
+        "default_event_engine_factory_hdrs",
         "gpr_base",
         "gpr_codegen",
         "grpc++_codegen_base",
@@ -6580,6 +6658,7 @@ grpc_cc_library(
     ],
     external_deps = [
         "absl/base:core_headers",
+        "absl/status",
         "absl/time",
         "absl/types:optional",
         "upb_lib",
@@ -6591,6 +6670,8 @@ grpc_cc_library(
     ],
     visibility = ["@grpc:public"],
     deps = [
+        "debug_location",
+        "default_event_engine_factory_hdrs",
         "gpr",
         "grpc++",
         "grpc++_codegen_base",

@@ -25,6 +25,7 @@
 #include <map>
 #include <memory>
 #include <string>
+#include <type_traits>
 #include <utility>
 #include <vector>
 
@@ -269,6 +270,12 @@ class RingHash : public LoadBalancingPolicy {
     // The index of the subchannel currently doing an internally
     // triggered connection attempt, if any.
     absl::optional<size_t> internally_triggered_connection_index_;
+
+    // TODO(roth): If we ever change the helper UpdateState() API to not
+    // need the status reported for TRANSIENT_FAILURE state (because
+    // it's not currently actually used for anything outside of the picker),
+    // then we will no longer need this data member.
+    absl::Status last_failure_;
   };
 
   class Ring : public RefCounted<Ring> {
@@ -379,8 +386,9 @@ RingHash::Ring::Ring(RingHash* parent,
     AddressWeight address_weight;
     address_weight.address =
         grpc_sockaddr_to_string(&sd->address().address(), false).value();
-    if (weight_attribute != nullptr) {
-      GPR_ASSERT(weight_attribute->weight() != 0);
+    // Weight should never be zero, but ignore it just in case, since
+    // that value would screw up the ring-building algorithm.
+    if (weight_attribute != nullptr && weight_attribute->weight() > 0) {
       address_weight.weight = weight_attribute->weight();
     }
     sum += address_weight.weight;
@@ -644,8 +652,17 @@ void RingHash::RingHashSubchannelList::UpdateRingHashConnectivityStateLocked(
     state = GRPC_CHANNEL_TRANSIENT_FAILURE;
     start_connection_attempt = true;
   }
-  // Pass along status only in TRANSIENT_FAILURE.
-  if (state != GRPC_CHANNEL_TRANSIENT_FAILURE) status = absl::OkStatus();
+  // In TRANSIENT_FAILURE, report the last reported failure.
+  // Otherwise, report OK.
+  if (state == GRPC_CHANNEL_TRANSIENT_FAILURE) {
+    if (!status.ok()) {
+      last_failure_ = absl::UnavailableError(absl::StrCat(
+          "no reachable subchannels; last error: ", status.ToString()));
+    }
+    status = last_failure_;
+  } else {
+    status = absl::OkStatus();
+  }
   // Generate new picker and return it to the channel.
   // Note that we use our own picker regardless of connectivity state.
   p->channel_control_helper()->UpdateState(
@@ -753,9 +770,7 @@ void RingHash::RingHashSubchannelData::ProcessConnectivityChangeLocked(
   // Update the RH policy's connectivity state, creating new picker and new
   // ring.
   subchannel_list()->UpdateRingHashConnectivityStateLocked(
-      Index(), connection_attempt_complete,
-      absl::UnavailableError(absl::StrCat(
-          "no reachable subchannels; last error: ", status.ToString())));
+      Index(), connection_attempt_complete, status);
 }
 
 //
@@ -800,16 +815,7 @@ void RingHash::UpdateLocked(UpdateArgs args) {
       gpr_log(GPR_INFO, "[RH %p] received update with %" PRIuPTR " addresses",
               this, args.addresses->size());
     }
-    // Filter out any address with weight 0.
-    addresses.reserve(args.addresses->size());
-    for (ServerAddress& address : *args.addresses) {
-      const ServerAddressWeightAttribute* weight_attribute =
-          static_cast<const ServerAddressWeightAttribute*>(address.GetAttribute(
-              ServerAddressWeightAttribute::kServerAddressWeightAttributeKey));
-      if (weight_attribute == nullptr || weight_attribute->weight() > 0) {
-        addresses.emplace_back(std::move(address));
-      }
-    }
+    addresses = *std::move(args.addresses);
   } else {
     if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_ring_hash_trace)) {
       gpr_log(GPR_INFO, "[RH %p] received update with addresses error: %s",
