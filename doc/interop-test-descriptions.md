@@ -1137,7 +1137,7 @@ Server features:
 * [Backend Metrics Report][]
 
 Procedures:
-1. Client starts a bidi-streaming and sends: 
+1. Client starts a full duplex call and sends: 
     ```
     {
       orca_oob_report:{
@@ -1149,6 +1149,7 @@ Procedures:
       }
     }
     ```
+And client requests a response.
 2. After getting a response, client waits up to 5 seconds to receive a OOB load 
 report that matches the requested load report in step 1. To wait for load 
 report, client may inject a callback to the custom LB policy, or poll the result
@@ -1284,7 +1285,6 @@ Server implements UnaryCall which immediately returns a SimpleResponse with a
 payload body of size `SimpleRequest.response_size` bytes and type as appropriate
 for the `SimpleRequest.response_type`. If the server does not support the
 `response_type`, then it should fail the RPC with `INVALID_ARGUMENT`.
-Server has special handling for `orca_per_rpc` test case, see [Backend Metrics Report][].
 
 ### CacheableUnaryCall
 [CacheableUnaryCall]: #cacheableunarycall
@@ -1339,7 +1339,6 @@ StreamingOutputCallRequest. Each StreamingOutputCallResponse should have a
 payload body of size ResponseParameters.size bytes, as specified by its
 respective ResponseParameters. After receiving half close and sending all
 responses, it closes with OK.
-Server has special handling for `orca_oob` test case, see [Backend Metrics Report][].
 
 ### Echo Status
 [Echo Status]: #echo-status
@@ -1418,4 +1417,4 @@ If `SimpleRequest.orca_oob_report` is set in fullDuplexCall call, the server
 will first clear all the previous metrics data, and then add utilization metrics
 from `orca_oob_report` to the `OpenRCAService`.
 The server implementation should use a lock or similar mechanism to allow only
-one client to control the server's out-of-band reports.
+one client to control the server's out-of-band reports until the end of the RPC.
