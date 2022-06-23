@@ -16,6 +16,8 @@
  *
  */
 
+#include <algorithm>
+#include <vector>
 #ifndef GRPC_CORE_LIB_SECURITY_CREDENTIALS_COMPOSITE_COMPOSITE_CREDENTIALS_H
 #define GRPC_CORE_LIB_SECURITY_CREDENTIALS_COMPOSITE_COMPOSITE_CREDENTIALS_H
 #include <grpc/support/port_platform.h>
@@ -23,7 +25,6 @@
 #include <string>
 #include <utility>
 
-#include "absl/container/inlined_vector.h"
 #include "absl/status/statusor.h"
 
 #include <grpc/grpc.h>

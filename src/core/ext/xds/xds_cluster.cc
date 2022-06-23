@@ -23,7 +23,6 @@
 #include <type_traits>
 #include <utility>
 
-#include "absl/container/inlined_vector.h"
 #include "absl/memory/memory.h"
 #include "absl/status/status.h"
 #include "absl/strings/str_cat.h"

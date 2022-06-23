@@ -22,6 +22,7 @@
 
 #include <string.h>
 
+#include <algorithm>
 #include <map>
 #include <memory>
 #include <string>

@@ -22,9 +22,9 @@
 
 #include <string.h>
 
+#include <algorithm>
 #include <utility>
-
-#include "absl/container/inlined_vector.h"
+#include <vector>
 
 #include <grpc/support/log.h>
 

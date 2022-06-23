@@ -21,6 +21,7 @@
 
 #include <stdlib.h>
 
+#include <algorithm>
 #include <functional>
 #include <utility>
 

@@ -22,6 +22,7 @@
 
 #include <stdint.h>
 
+#include <algorithm>
 #include <string>
 
 #include "absl/container/inlined_vector.h"

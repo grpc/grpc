@@ -20,6 +20,7 @@
 
 #include <string.h>
 
+#include <algorithm>
 #include <functional>
 #include <type_traits>
 #include <utility>

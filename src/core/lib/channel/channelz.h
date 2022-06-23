@@ -29,8 +29,8 @@
 #include <set>
 #include <string>
 #include <utility>
+#include <vector>
 
-#include "absl/container/inlined_vector.h"
 #include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
 

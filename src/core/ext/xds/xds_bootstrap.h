@@ -19,12 +19,13 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <algorithm>
 #include <map>
 #include <memory>
 #include <set>
 #include <string>
+#include <vector>
 
-#include "absl/container/inlined_vector.h"
 #include "absl/strings/string_view.h"
 
 #include "src/core/ext/xds/certificate_provider_store.h"

@@ -18,6 +18,10 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <algorithm>
+#include <memory>
+#include <vector>
+
 #if defined(GPR_LINUX) || defined(GPR_ANDROID) || defined(GPR_FREEBSD) || \
     defined(GPR_APPLE)
 
@@ -28,8 +32,6 @@
 #include <sys/param.h>
 #include <sys/stat.h>
 #include <unistd.h>
-
-#include "absl/container/inlined_vector.h"
 
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>

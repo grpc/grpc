@@ -24,8 +24,7 @@
 #include <cstdint>
 #include <cstring>
 #include <utility>
-
-#include "absl/container/inlined_vector.h"
+#include <vector>
 
 #include <grpc/grpc.h>
 #include <grpc/support/log.h>

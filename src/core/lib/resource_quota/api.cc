@@ -18,6 +18,7 @@
 
 #include <stdint.h>
 
+#include <algorithm>
 #include <atomic>
 #include <memory>
 #include <string>

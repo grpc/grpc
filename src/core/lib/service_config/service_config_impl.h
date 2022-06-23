@@ -26,7 +26,6 @@
 #include <unordered_map>
 #include <vector>
 
-#include "absl/container/inlined_vector.h"
 #include "absl/strings/string_view.h"
 
 #include <grpc/impl/codegen/grpc_types.h>

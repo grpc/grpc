@@ -23,8 +23,6 @@
 #include <utility>
 #include <vector>
 
-#include "absl/container/inlined_vector.h"
-
 namespace grpc_core {
 
 template <class K, class V = void>

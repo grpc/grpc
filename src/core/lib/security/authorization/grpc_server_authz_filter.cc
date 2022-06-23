@@ -16,6 +16,7 @@
 
 #include "src/core/lib/security/authorization/grpc_server_authz_filter.h"
 
+#include <algorithm>
 #include <functional>
 #include <string>
 #include <utility>
