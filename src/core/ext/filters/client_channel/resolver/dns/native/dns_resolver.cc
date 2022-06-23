@@ -61,6 +61,8 @@
 #define GRPC_DNS_RECONNECT_MAX_BACKOFF_SECONDS 120
 #define GRPC_DNS_RECONNECT_JITTER 0.2
 
+// DO NOT SUBMIT(hork): delete this file after the iomgr resolver lands
+
 namespace grpc_core {
 
 namespace {
