@@ -487,8 +487,8 @@ class AresDNSResolver : public DNSResolver {
     AresRequest(grpc_pollset_set* interested_parties, AresDNSResolver* resolver,
                 intptr_t aba_token)
         : pollset_set_(grpc_pollset_set_create()),
-          completed_(false),
           interested_parties_(interested_parties),
+          completed_(false),
           resolver_(resolver),
           aba_token_(aba_token) {
       GRPC_CLOSURE_INIT(&on_dns_lookup_done_, OnDnsLookupDone, this,
@@ -540,13 +540,14 @@ class AresDNSResolver : public DNSResolver {
    public:
     AresHostnameRequest(
         absl::string_view name, absl::string_view default_port,
-        grpc_pollset_set* interested_parties,
+        absl::string_view name_server, grpc_pollset_set* interested_parties,
         std::function<void(absl::StatusOr<std::vector<grpc_resolved_address>>)>
             on_resolve_address_done,
         AresDNSResolver* resolver, intptr_t aba_token)
         : AresRequest(interested_parties, resolver, aba_token),
           name_(std::string(name)),
           default_port_(std::string(default_port)),
+          name_server_(std::string(name_server)),
           on_resolve_address_done_(std::move(on_resolve_address_done)) {
       GRPC_CARES_TRACE_LOG("AresHostnameRequest:%p ctor", this);
     }
@@ -554,7 +555,7 @@ class AresDNSResolver : public DNSResolver {
     std::unique_ptr<grpc_ares_request> MakeRequestLocked() override {
       auto ares_request =
           std::unique_ptr<grpc_ares_request>(grpc_dns_lookup_hostname_ares(
-              /*dns_server=*/"", name_.c_str(), default_port_.c_str(),
+              name_server_.c_str(), name_.c_str(), default_port_.c_str(),
               pollset_set_, &on_dns_lookup_done_, &addresses_,
               GRPC_DNS_ARES_DEFAULT_QUERY_TIMEOUT_MS));
       GRPC_CARES_TRACE_LOG("AresHostnameRequest:%p Start ares_request_:%p",
@@ -582,6 +583,8 @@ class AresDNSResolver : public DNSResolver {
     const std::string name_;
     // the default port to use if name doesn't have one
     const std::string default_port_;
+    // the name server to query
+    const std::string name_server_;
     // user-provided completion callback
     const std::function<void(
         absl::StatusOr<std::vector<grpc_resolved_address>>)>
@@ -602,9 +605,9 @@ class AresDNSResolver : public DNSResolver {
       std::function<void(absl::StatusOr<std::vector<grpc_resolved_address>>)>
           on_done) override {
     MutexLock lock(&mu_);
-    auto* request =
-        new AresHostnameRequest(name, default_port, interested_parties,
-                                std::move(on_done), this, aba_token_++);
+    auto* request = new AresHostnameRequest(
+        name, default_port, /*name_server=*/"", interested_parties,
+        std::move(on_done), this, aba_token_++);
     request->Run();
     auto handle = request->task_handle();
     open_requests_.insert(handle);
