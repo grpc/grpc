@@ -25,6 +25,7 @@
 
 #include <string>
 #include <utility>
+#include <vector>
 
 #include "absl/container/inlined_vector.h"
 #include "absl/status/status.h"
@@ -180,7 +181,7 @@ class PemKeyCertPair {
   std::string cert_chain_;
 };
 
-typedef absl::InlinedVector<PemKeyCertPair, 1> PemKeyCertPairList;
+using PemKeyCertPairList = std::vector<PemKeyCertPair>;
 
 }  // namespace grpc_core
 

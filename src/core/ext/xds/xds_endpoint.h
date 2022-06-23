@@ -61,7 +61,7 @@ struct XdsEndpointResource {
     bool operator==(const Priority& other) const;
     std::string ToString() const;
   };
-  using PriorityList = absl::InlinedVector<Priority, 2>;
+  using PriorityList = std::vector<Priority>;
 
   // There are two phases of accessing this class's content:
   // 1. to initialize in the control plane combiner;
@@ -79,7 +79,7 @@ struct XdsEndpointResource {
       const uint32_t parts_per_million;
     };
 
-    using DropCategoryList = absl::InlinedVector<DropCategory, 2>;
+    using DropCategoryList = std::vector<DropCategory>;
 
     void AddCategory(std::string name, uint32_t parts_per_million) {
       drop_category_list_.emplace_back(

@@ -55,13 +55,7 @@ class RegistryState {
   }
 
  private:
-  // We currently support 3 factories without doing additional
-  // allocation.  This number could be raised if there is a case where
-  // more factories are needed and the additional allocations are
-  // hurting performance (which is unlikely, since these allocations
-  // only occur at gRPC initialization time).
-  absl::InlinedVector<std::unique_ptr<CertificateProviderFactory>, 3>
-      factories_;
+  std::vector<std::unique_ptr<CertificateProviderFactory>> factories_;
 };
 
 RegistryState* g_state = nullptr;

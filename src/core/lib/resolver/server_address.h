@@ -117,7 +117,7 @@ class ServerAddress {
 // ServerAddressList
 //
 
-typedef absl::InlinedVector<ServerAddress, 1> ServerAddressList;
+using ServerAddressList = std::vector<ServerAddress>;
 
 //
 // ServerAddressWeightAttribute

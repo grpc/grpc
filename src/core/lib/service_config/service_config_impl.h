@@ -122,8 +122,7 @@ class ServiceConfigImpl final : public ServiceConfig {
       nullptr;
   // Storage for all the vectors that are being used in
   // parsed_method_configs_table_.
-  absl::InlinedVector<std::unique_ptr<ServiceConfigParser::ParsedConfigVector>,
-                      32>
+  std::vector<std::unique_ptr<ServiceConfigParser::ParsedConfigVector>>
       parsed_method_config_vectors_storage_;
 };
 

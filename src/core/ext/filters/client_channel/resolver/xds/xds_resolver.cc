@@ -337,7 +337,7 @@ class XdsResolver : public Resolver {
 
       XdsRouteConfigResource::Route route;
       RefCountedPtr<ServiceConfig> method_config;
-      absl::InlinedVector<ClusterWeightState, 2> weighted_cluster_state;
+      std::vector<ClusterWeightState> weighted_cluster_state;
 
       bool operator==(const Route& other) const;
     };

@@ -62,7 +62,7 @@ namespace grpc_core {
 //
 
 std::string XdsClusterResource::ToString() const {
-  absl::InlinedVector<std::string, 8> contents;
+  std::vector<std::string> contents;
   switch (cluster_type) {
     case EDS:
       contents.push_back("cluster_type=EDS");

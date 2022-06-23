@@ -65,8 +65,7 @@ class RegistryState {
   }
 
  private:
-  absl::InlinedVector<std::unique_ptr<LoadBalancingPolicyFactory>, 10>
-      factories_;
+  std::vector<std::unique_ptr<LoadBalancingPolicyFactory>> factories_;
 };
 
 RegistryState* g_state = nullptr;

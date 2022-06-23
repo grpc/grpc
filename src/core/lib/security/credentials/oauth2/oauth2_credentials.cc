@@ -663,7 +663,7 @@ class StsTokenFetcherCredentials
 
 absl::StatusOr<URI> ValidateStsCredentialsOptions(
     const grpc_sts_credentials_options* options) {
-  absl::InlinedVector<grpc_error_handle, 3> error_list;
+  std::vector<grpc_error_handle> error_list;
   absl::StatusOr<URI> sts_url =
       URI::Parse(options->token_exchange_service_uri == nullptr
                      ? ""

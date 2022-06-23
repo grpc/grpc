@@ -25,6 +25,7 @@
 #include <memory>
 #include <string>
 #include <utility>
+#include <vector>
 
 #include "absl/container/inlined_vector.h"
 #include "absl/status/status.h"
@@ -180,8 +181,7 @@ class SubchannelList : public InternallyRefCounted<SubchannelListType> {
  public:
   // We use ManualConstructor here to support SubchannelDataType classes
   // that are not copyable.
-  typedef absl::InlinedVector<ManualConstructor<SubchannelDataType>, 10>
-      SubchannelVector;
+  using SubchannelVector = std::vector<ManualConstructor<SubchannelDataType>>;
 
   // The number of subchannels in the list.
   size_t num_subchannels() const { return subchannels_.size(); }

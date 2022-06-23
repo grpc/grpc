@@ -21,6 +21,7 @@
 
 #include <memory>
 #include <utility>
+#include <vector>
 
 #include "absl/container/inlined_vector.h"
 
@@ -127,7 +128,7 @@ class AVL {
     }
 
    private:
-    absl::InlinedVector<Node*, 8> stack_;
+    std::vector<Node*> stack_;
   };
 
   explicit AVL(NodePtr root) : root_(std::move(root)) {}

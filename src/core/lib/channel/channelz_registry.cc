@@ -77,7 +77,7 @@ RefCountedPtr<BaseNode> ChannelzRegistry::InternalGet(intptr_t uuid) {
 
 std::string ChannelzRegistry::InternalGetTopChannels(
     intptr_t start_channel_id) {
-  absl::InlinedVector<RefCountedPtr<BaseNode>, 10> top_level_channels;
+  std::vector<RefCountedPtr<BaseNode>> top_level_channels;
   RefCountedPtr<BaseNode> node_after_pagination_limit;
   {
     MutexLock lock(&mu_);
@@ -116,7 +116,7 @@ std::string ChannelzRegistry::InternalGetTopChannels(
 }
 
 std::string ChannelzRegistry::InternalGetServers(intptr_t start_server_id) {
-  absl::InlinedVector<RefCountedPtr<BaseNode>, 10> servers;
+  std::vector<RefCountedPtr<BaseNode>> servers;
   RefCountedPtr<BaseNode> node_after_pagination_limit;
   {
     MutexLock lock(&mu_);
@@ -155,7 +155,7 @@ std::string ChannelzRegistry::InternalGetServers(intptr_t start_server_id) {
 }
 
 void ChannelzRegistry::InternalLogAllEntities() {
-  absl::InlinedVector<RefCountedPtr<BaseNode>, 10> nodes;
+  std::vector<RefCountedPtr<BaseNode>> nodes;
   {
     MutexLock lock(&mu_);
     for (auto& p : node_map_) {

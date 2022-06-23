@@ -107,7 +107,7 @@ grpc_slice CreateRootCertsBundle(const char* certs_directory) {
     char path[MAXPATHLEN];
     off_t size;
   };
-  absl::InlinedVector<FileData, 2> roots_filenames;
+  std::vector<FileData> roots_filenames;
   size_t total_bundle_size = 0;
   struct dirent* directory_entry;
   while ((directory_entry = readdir(ca_directory)) != nullptr) {
