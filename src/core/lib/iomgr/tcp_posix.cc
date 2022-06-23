@@ -782,7 +782,8 @@ static bool tcp_do_read(grpc_tcp* tcp, grpc_error_handle* error)
 
     /* We have read something in previous reads. We need to deliver those
      * bytes to the upper layer. */
-    if (read_bytes <= 0 && total_read_bytes >= tcp->min_progress_size) {
+    if (read_bytes <= 0 &&
+        total_read_bytes >= static_cast<size_t>(tcp->min_progress_size)) {
       tcp->inq = 1;
       break;
     }
