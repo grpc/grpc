@@ -29,8 +29,9 @@ bool squelch = true;
 
 extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
   if (size < 1) return 0;
-  
-  std::unique_ptr<CompressionOptions> options = grpc_core::MakeCompressionOptions(nullptr);
+
+  std::unique_ptr<CompressionOptions> options =
+      grpc_core::MakeCompressionOptions(nullptr);
   // Instead of rolling something complicated to convert a uint8_t to the enum,
   // just bail out if it isn't trivially convertible.
   if (data[0] >= GRPC_COMPRESS_ALGORITHMS_COUNT) return 0;
@@ -46,8 +47,8 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
   grpc_slice_buffer output_buffer;
   grpc_slice_buffer_init(&output_buffer);
 
-  grpc_msg_compress(compression_algorithm, 
-                    &input_buffer, &output_buffer, options.get());
+  grpc_msg_compress(compression_algorithm, &input_buffer, &output_buffer,
+                    options.get());
 
   grpc_slice_buffer_destroy(&input_buffer);
   grpc_slice_buffer_destroy(&output_buffer);

@@ -311,12 +311,14 @@ typedef struct {
 #define GRPC_ARG_SOCKET_MUTATOR "grpc.socket_mutator"
 /** The grpc_socket_factory instance to create and bind sockets. A pointer. */
 #define GRPC_ARG_SOCKET_FACTORY "grpc.socket_factory"
-/** Gzip compression level. Used only if gzip message compression is used. 
-    The value must be in the range 0 to 9. If not specified, the gzip default will be used. */
+/** Gzip compression level. Used only if gzip message compression is used.
+    The value must be in the range 0 to 9. If not specified, the gzip default
+   will be used. */
 #define GRPC_ARG_GZIP_COMPRESSION_LEVEL "grpc.gzip_compression_level"
-/** The minimum message size in bytes for a message to be compressed. 
+/** The minimum message size in bytes for a message to be compressed.
     If not specified, messages will be compressed regardless of size. */
-#define GRPC_ARG_MIN_MESSAGE_SIZE_TO_COMPRESS "grpc.gprc_min_message_size_to_compress"
+#define GRPC_ARG_MIN_MESSAGE_SIZE_TO_COMPRESS \
+  "grpc.gprc_min_message_size_to_compress"
 /** The maximum amount of memory used by trace events per channel trace node.
  * Once the maximum is reached, subsequent events will evict the oldest events
  * from the buffer. The unit for this knob is bytes. Setting it to zero causes
