@@ -541,23 +541,21 @@ TEST_P(TimeoutTest, CdsSecondResourceNotPresentInRequest) {
 
 TEST_P(TimeoutTest, EdsServerIgnoresRequest) {
   balancer_->ads_service()->IgnoreResourceType(kEdsTypeUrl);
-  CheckRpcSendFailure(
-      DEBUG_LOCATION, StatusCode::UNAVAILABLE,
-      // TODO(roth): Improve this error message as part of
-      // https://github.com/grpc/grpc/issues/22883.
-      "weighted_target: all children report state TRANSIENT_FAILURE",
-      RpcOptions().set_timeout_ms(4000));
+  CheckRpcSendFailure(DEBUG_LOCATION, StatusCode::UNAVAILABLE,
+                      // TODO(roth): Improve this error message as part of
+                      // https://github.com/grpc/grpc/issues/22883.
+                      "no children in weighted_target policy: ",
+                      RpcOptions().set_timeout_ms(4000));
 }
 
 TEST_P(TimeoutTest, EdsResourceNotPresentInRequest) {
   // No need to remove EDS resource, since the test suite does not add it
   // by default.
-  CheckRpcSendFailure(
-      DEBUG_LOCATION, StatusCode::UNAVAILABLE,
-      // TODO(roth): Improve this error message as part of
-      // https://github.com/grpc/grpc/issues/22883.
-      "weighted_target: all children report state TRANSIENT_FAILURE",
-      RpcOptions().set_timeout_ms(4000));
+  CheckRpcSendFailure(DEBUG_LOCATION, StatusCode::UNAVAILABLE,
+                      // TODO(roth): Improve this error message as part of
+                      // https://github.com/grpc/grpc/issues/22883.
+                      "no children in weighted_target policy: ",
+                      RpcOptions().set_timeout_ms(4000));
 }
 
 TEST_P(TimeoutTest, EdsSecondResourceNotPresentInRequest) {
@@ -586,11 +584,10 @@ TEST_P(TimeoutTest, EdsSecondResourceNotPresentInRequest) {
       [](const RpcResult& result) {
         if (result.status.ok()) return true;  // Keep going.
         EXPECT_EQ(StatusCode::UNAVAILABLE, result.status.error_code());
-        // TODO(roth): Improve this error message as part of
-        // https://github.com/grpc/grpc/issues/22883.
-        EXPECT_EQ(
-            result.status.error_message(),
-            "weighted_target: all children report state TRANSIENT_FAILURE");
+        EXPECT_EQ(result.status.error_message(),
+                  // TODO(roth): Improve this error message as part of
+                  // https://github.com/grpc/grpc/issues/22883.
+                  "no children in weighted_target policy: ");
         return false;
       },
       /*timeout_ms=*/30000,
@@ -1051,10 +1048,10 @@ TEST_P(XdsFederationTest, EdsResourceNameAuthorityUnknown) {
   EchoResponse response;
   grpc::Status status = stub2->Echo(&context, request, &response);
   EXPECT_EQ(status.error_code(), StatusCode::UNAVAILABLE);
-  // TODO(roth): Improve this error message as part of
-  // https://github.com/grpc/grpc/issues/22883.
   EXPECT_EQ(status.error_message(),
-            "weighted_target: all children report state TRANSIENT_FAILURE");
+            // TODO(roth): Improve this error message as part of
+            // https://github.com/grpc/grpc/issues/22883.
+            "no children in weighted_target policy: ");
   ASSERT_EQ(GRPC_CHANNEL_TRANSIENT_FAILURE, channel2->GetState(false));
 }
 
