@@ -1256,6 +1256,37 @@ TEST_F(RlsEnd2endTest, MultipleTargets) {
   rls_server_->service_.SetResponse(
       BuildRlsRequest({{kTestKey, kTestValue}}),
       BuildRlsResponse(
+          // Second target will report TRANSIENT_FAILURE, but should
+          // never be used.
+          {TargetStringForPort(backends_[0]->port_), "invalid_target"}));
+  CheckRpcSendOk(DEBUG_LOCATION,
+                 RpcOptions().set_metadata({{"key1", kTestValue}}));
+  EXPECT_EQ(rls_server_->service_.request_count(), 1);
+  EXPECT_EQ(rls_server_->service_.response_count(), 1);
+  EXPECT_EQ(backends_[0]->service_.request_count(), 1);
+}
+
+TEST_F(RlsEnd2endTest, MultipleTargetsFirstInTransientFailure) {
+  StartBackends(1);
+  SetNextResolution(
+      MakeServiceConfigBuilder()
+          .AddKeyBuilder(absl::StrFormat("\"names\":[{"
+                                         "  \"service\":\"%s\","
+                                         "  \"method\":\"%s\""
+                                         "}],"
+                                         "\"headers\":["
+                                         "  {"
+                                         "    \"key\":\"%s\","
+                                         "    \"names\":["
+                                         "      \"key1\""
+                                         "    ]"
+                                         "  }"
+                                         "]",
+                                         kServiceValue, kMethodValue, kTestKey))
+          .Build());
+  rls_server_->service_.SetResponse(
+      BuildRlsRequest({{kTestKey, kTestValue}}),
+      BuildRlsResponse(
           // First target will report TRANSIENT_FAILURE.
           {"invalid_target", TargetStringForPort(backends_[0]->port_)}));
   CheckRpcSendOk(DEBUG_LOCATION,
