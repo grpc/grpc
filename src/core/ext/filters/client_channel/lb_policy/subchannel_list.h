@@ -211,7 +211,7 @@ class SubchannelList : public InternallyRefCounted<SubchannelListType> {
   SubchannelList(LoadBalancingPolicy* policy, const char* tracer,
                  ServerAddressList addresses,
                  LoadBalancingPolicy::ChannelControlHelper* helper,
-                 ChannelArgs args);
+                 const ChannelArgs& args);
 
   virtual ~SubchannelList();
 
@@ -364,7 +364,7 @@ template <typename SubchannelListType, typename SubchannelDataType>
 SubchannelList<SubchannelListType, SubchannelDataType>::SubchannelList(
     LoadBalancingPolicy* policy, const char* tracer,
     ServerAddressList addresses,
-    LoadBalancingPolicy::ChannelControlHelper* helper, ChannelArgs args)
+    LoadBalancingPolicy::ChannelControlHelper* helper, const ChannelArgs& args)
     : InternallyRefCounted<SubchannelListType>(tracer),
       policy_(policy),
       tracer_(tracer) {

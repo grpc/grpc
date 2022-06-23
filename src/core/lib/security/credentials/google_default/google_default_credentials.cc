@@ -153,7 +153,7 @@ grpc_google_default_channel_credentials::create_security_connector(
 
 grpc_core::ChannelArgs
 grpc_google_default_channel_credentials::update_arguments(
-    grpc_core::ChannelArgs args) {
+    const grpc_core::ChannelArgs& args) {
   return args.SetIfUnset(GRPC_ARG_DNS_ENABLE_SRV_QUERIES, true);
 }
 

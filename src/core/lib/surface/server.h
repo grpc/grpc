@@ -124,7 +124,7 @@ class Server : public InternallyRefCounted<Server>,
     virtual void SetOnDestroyDone(grpc_closure* on_destroy_done) = 0;
   };
 
-  explicit Server(ChannelArgs args);
+  explicit Server(const ChannelArgs& args);
   ~Server() override;
 
   void Orphan() ABSL_LOCKS_EXCLUDED(mu_global_) override;
@@ -161,7 +161,8 @@ class Server : public InternallyRefCounted<Server>,
   // Takes ownership of a ref on resource_user from the caller.
   grpc_error_handle SetupTransport(
       grpc_transport* transport, grpc_pollset* accepting_pollset,
-      ChannelArgs args, const RefCountedPtr<channelz::SocketNode>& socket_node);
+      const grpc_core::ChannelArgs& args,
+      const RefCountedPtr<channelz::SocketNode>& socket_node);
 
   void RegisterCompletionQueue(grpc_completion_queue* cq);
 
@@ -500,7 +501,7 @@ struct grpc_server_config_fetcher {
    public:
     // Ownership of \a args is transfered.
     virtual absl::StatusOr<grpc_core::ChannelArgs>
-    UpdateChannelArgsForConnection(grpc_core::ChannelArgs args,
+    UpdateChannelArgsForConnection(const grpc_core::ChannelArgs& args,
                                    grpc_endpoint* tcp) = 0;
   };
 

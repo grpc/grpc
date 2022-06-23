@@ -347,7 +347,7 @@ class OutlierDetectionLb : public LoadBalancingPolicy {
     }
 
     RefCountedPtr<SubchannelInterface> CreateSubchannel(
-        ServerAddress address, ChannelArgs args) override;
+        ServerAddress address, const ChannelArgs& args) override;
     void UpdateState(grpc_connectivity_state state, const absl::Status& status,
                      std::unique_ptr<SubchannelPicker> picker) override;
     void RequestReresolution() override;
@@ -386,7 +386,8 @@ class OutlierDetectionLb : public LoadBalancingPolicy {
 
   void ShutdownLocked() override;
 
-  OrphanablePtr<LoadBalancingPolicy> CreateChildPolicyLocked(ChannelArgs args);
+  OrphanablePtr<LoadBalancingPolicy> CreateChildPolicyLocked(
+      const ChannelArgs& args);
 
   void MaybeUpdatePickerLocked();
 
@@ -667,7 +668,7 @@ void OutlierDetectionLb::MaybeUpdatePickerLocked() {
 }
 
 OrphanablePtr<LoadBalancingPolicy> OutlierDetectionLb::CreateChildPolicyLocked(
-    ChannelArgs args) {
+    const grpc_core::ChannelArgs& args) {
   LoadBalancingPolicy::Args lb_policy_args;
   lb_policy_args.work_serializer = work_serializer();
   lb_policy_args.args = args;
@@ -694,7 +695,7 @@ OrphanablePtr<LoadBalancingPolicy> OutlierDetectionLb::CreateChildPolicyLocked(
 //
 
 RefCountedPtr<SubchannelInterface> OutlierDetectionLb::Helper::CreateSubchannel(
-    ServerAddress address, ChannelArgs args) {
+    ServerAddress address, const ChannelArgs& args) {
   if (outlier_detection_policy_->shutting_down_) return nullptr;
   std::string key = MakeKeyForAddress(address);
   RefCountedPtr<SubchannelState> subchannel_state;

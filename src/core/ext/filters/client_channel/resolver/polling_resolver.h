@@ -45,7 +45,7 @@ namespace grpc_core {
 // Implementations need only to implement StartRequest().
 class PollingResolver : public Resolver {
  public:
-  PollingResolver(ResolverArgs args, ChannelArgs channel_args,
+  PollingResolver(ResolverArgs args, const ChannelArgs& channel_args,
                   Duration min_time_between_resolutions,
                   BackOff::Options backoff_options, TraceFlag* tracer);
   ~PollingResolver() override;

@@ -247,7 +247,7 @@ class XdsClusterImplLb : public LoadBalancingPolicy {
     }
 
     RefCountedPtr<SubchannelInterface> CreateSubchannel(
-        ServerAddress address, ChannelArgs args) override;
+        ServerAddress address, const ChannelArgs& args) override;
     void UpdateState(grpc_connectivity_state state, const absl::Status& status,
                      std::unique_ptr<SubchannelPicker> picker) override;
     void RequestReresolution() override;
@@ -263,9 +263,10 @@ class XdsClusterImplLb : public LoadBalancingPolicy {
 
   void ShutdownLocked() override;
 
-  OrphanablePtr<LoadBalancingPolicy> CreateChildPolicyLocked(ChannelArgs args);
+  OrphanablePtr<LoadBalancingPolicy> CreateChildPolicyLocked(
+      const ChannelArgs& args);
   void UpdateChildPolicyLocked(absl::StatusOr<ServerAddressList> addresses,
-                               ChannelArgs args);
+                               const grpc_core::ChannelArgs& args);
 
   void MaybeUpdatePickerLocked();
 
@@ -552,7 +553,7 @@ void XdsClusterImplLb::MaybeUpdatePickerLocked() {
 }
 
 OrphanablePtr<LoadBalancingPolicy> XdsClusterImplLb::CreateChildPolicyLocked(
-    ChannelArgs args) {
+    const grpc_core::ChannelArgs& args) {
   LoadBalancingPolicy::Args lb_policy_args;
   lb_policy_args.work_serializer = work_serializer();
   lb_policy_args.args = args;
@@ -575,7 +576,7 @@ OrphanablePtr<LoadBalancingPolicy> XdsClusterImplLb::CreateChildPolicyLocked(
 }
 
 void XdsClusterImplLb::UpdateChildPolicyLocked(
-    absl::StatusOr<ServerAddressList> addresses, ChannelArgs args) {
+    absl::StatusOr<ServerAddressList> addresses, const ChannelArgs& args) {
   // Create policy if needed.
   if (child_policy_ == nullptr) {
     child_policy_ = CreateChildPolicyLocked(args);
@@ -600,7 +601,7 @@ void XdsClusterImplLb::UpdateChildPolicyLocked(
 //
 
 RefCountedPtr<SubchannelInterface> XdsClusterImplLb::Helper::CreateSubchannel(
-    ServerAddress address, ChannelArgs args) {
+    ServerAddress address, const ChannelArgs& args) {
   if (xds_cluster_impl_policy_->shutting_down_) return nullptr;
   // If load reporting is enabled, wrap the subchannel such that it
   // includes the locality stats object, which will be used by the EdsPicker.

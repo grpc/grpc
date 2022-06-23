@@ -64,7 +64,7 @@ class grpc_fake_channel_credentials final : public grpc_channel_credentials {
 class grpc_fake_server_credentials final : public grpc_server_credentials {
  public:
   grpc_core::RefCountedPtr<grpc_server_security_connector>
-  create_security_connector(grpc_core::ChannelArgs /*args*/) override {
+  create_security_connector(const grpc_core::ChannelArgs& /*args*/) override {
     return grpc_fake_server_security_connector_create(this->Ref());
   }
 

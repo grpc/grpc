@@ -43,7 +43,7 @@ HandshakerRegistry HandshakerRegistry::Builder::Build() {
 }
 
 void HandshakerRegistry::AddHandshakers(HandshakerType handshaker_type,
-                                        ChannelArgs args,
+                                        const ChannelArgs& args,
                                         grpc_pollset_set* interested_parties,
                                         HandshakeManager* handshake_mgr) const {
   for (const auto& factory : factories_[handshaker_type]) {

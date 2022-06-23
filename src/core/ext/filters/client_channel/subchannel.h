@@ -68,7 +68,7 @@ class SubchannelCall;
 class ConnectedSubchannel : public RefCounted<ConnectedSubchannel> {
  public:
   ConnectedSubchannel(
-      grpc_channel_stack* channel_stack, ChannelArgs args,
+      grpc_channel_stack* channel_stack, const ChannelArgs& args,
       RefCountedPtr<channelz::SubchannelNode> channelz_subchannel);
   ~ConnectedSubchannel() override;
 
@@ -225,11 +225,11 @@ class Subchannel : public DualRefCounted<Subchannel> {
   // Creates a subchannel.
   static RefCountedPtr<Subchannel> Create(
       OrphanablePtr<SubchannelConnector> connector,
-      const grpc_resolved_address& address, ChannelArgs args);
+      const grpc_resolved_address& address, const ChannelArgs& args);
 
   // The ctor and dtor are not intended to use directly.
   Subchannel(SubchannelKey key, OrphanablePtr<SubchannelConnector> connector,
-             ChannelArgs args);
+             const grpc_core::ChannelArgs& args);
   ~Subchannel() override;
 
   // Throttles keepalive time to \a new_keepalive_time iff \a new_keepalive_time

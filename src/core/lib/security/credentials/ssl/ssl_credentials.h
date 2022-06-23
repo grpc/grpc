@@ -90,7 +90,7 @@ class grpc_ssl_server_credentials final : public grpc_server_credentials {
   ~grpc_ssl_server_credentials() override;
 
   grpc_core::RefCountedPtr<grpc_server_security_connector>
-      create_security_connector(grpc_core::ChannelArgs /* args */) override;
+  create_security_connector(const grpc_core::ChannelArgs& /* args */) override;
 
   static grpc_core::UniqueTypeName Type();
 

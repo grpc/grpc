@@ -138,7 +138,7 @@ grpc_error_handle ParseRetryThrottling(const Json& json,
 }  // namespace
 
 std::unique_ptr<ServiceConfigParser::ParsedConfig>
-RetryServiceConfigParser::ParseGlobalParams(ChannelArgs /*args*/,
+RetryServiceConfigParser::ParseGlobalParams(const ChannelArgs& /*args*/,
                                             const Json& json,
                                             grpc_error_handle* error) {
   GPR_DEBUG_ASSERT(error != nullptr && GRPC_ERROR_IS_NONE(*error));
@@ -156,7 +156,7 @@ RetryServiceConfigParser::ParseGlobalParams(ChannelArgs /*args*/,
 namespace {
 
 grpc_error_handle ParseRetryPolicy(
-    ChannelArgs args, const Json& json, int* max_attempts,
+    const grpc_core::ChannelArgs& args, const Json& json, int* max_attempts,
     Duration* initial_backoff, Duration* max_backoff, float* backoff_multiplier,
     StatusCodeSet* retryable_status_codes,
     absl::optional<Duration>* per_attempt_recv_timeout) {
@@ -286,7 +286,7 @@ grpc_error_handle ParseRetryPolicy(
 }  // namespace
 
 std::unique_ptr<ServiceConfigParser::ParsedConfig>
-RetryServiceConfigParser::ParsePerMethodParams(ChannelArgs args,
+RetryServiceConfigParser::ParsePerMethodParams(const ChannelArgs& args,
                                                const Json& json,
                                                grpc_error_handle* error) {
   GPR_DEBUG_ASSERT(error != nullptr && GRPC_ERROR_IS_NONE(*error));

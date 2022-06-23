@@ -143,7 +143,8 @@ ParseFaultInjectionPolicy(const Json::Array& policies_json_array,
 
 std::unique_ptr<ServiceConfigParser::ParsedConfig>
 FaultInjectionServiceConfigParser::ParsePerMethodParams(
-    ChannelArgs args, const Json& json, grpc_error_handle* error) {
+    const grpc_core::ChannelArgs& args, const Json& json,
+    grpc_error_handle* error) {
   GPR_DEBUG_ASSERT(error != nullptr && GRPC_ERROR_IS_NONE(*error));
   // Only parse fault injection policy if the following channel arg is present.
   if (!args.GetBool(GRPC_ARG_PARSE_FAULT_INJECTION_METHOD_CONFIG)

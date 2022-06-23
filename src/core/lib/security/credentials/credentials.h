@@ -127,7 +127,8 @@ struct grpc_channel_credentials
   // By default, leave channel args as is. The callee takes ownership
   // of the passed-in channel args, and the caller takes ownership
   // of the returned channel args.
-  virtual grpc_core::ChannelArgs update_arguments(grpc_core::ChannelArgs args) {
+  virtual grpc_core::ChannelArgs update_arguments(
+      const grpc_core::ChannelArgs& args) {
     return args;
   }
 
@@ -273,7 +274,7 @@ struct grpc_server_credentials
 
   // Ownership of \a args is not passed.
   virtual grpc_core::RefCountedPtr<grpc_server_security_connector>
-  create_security_connector(grpc_core::ChannelArgs args) = 0;
+  create_security_connector(const grpc_core::ChannelArgs& args) = 0;
 
   virtual grpc_core::UniqueTypeName type() const = 0;
 

@@ -49,7 +49,8 @@ int InsecureCredentials::cmp_impl(
 }
 
 RefCountedPtr<grpc_server_security_connector>
-InsecureServerCredentials::create_security_connector(ChannelArgs /* args */) {
+InsecureServerCredentials::create_security_connector(
+    const ChannelArgs& /* args */) {
   return MakeRefCounted<InsecureServerSecurityConnector>(Ref());
 }
 

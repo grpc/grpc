@@ -126,7 +126,7 @@ class TestPickArgsLb : public ForwardingLoadBalancingPolicy {
         : parent_(std::move(parent)), cb_(std::move(cb)) {}
 
     RefCountedPtr<SubchannelInterface> CreateSubchannel(
-        ServerAddress address, ChannelArgs args) override {
+        ServerAddress address, const ChannelArgs& args) override {
       return parent_->channel_control_helper()->CreateSubchannel(
           std::move(address), args);
     }
@@ -244,7 +244,7 @@ class InterceptRecvTrailingMetadataLoadBalancingPolicy
         : parent_(std::move(parent)), cb_(std::move(cb)) {}
 
     RefCountedPtr<SubchannelInterface> CreateSubchannel(
-        ServerAddress address, ChannelArgs args) override {
+        ServerAddress address, const ChannelArgs& args) override {
       return parent_->channel_control_helper()->CreateSubchannel(
           std::move(address), args);
     }
@@ -354,7 +354,7 @@ class AddressTestLoadBalancingPolicy : public ForwardingLoadBalancingPolicy {
         : parent_(std::move(parent)), cb_(std::move(cb)) {}
 
     RefCountedPtr<SubchannelInterface> CreateSubchannel(
-        ServerAddress address, ChannelArgs args) override {
+        ServerAddress address, const ChannelArgs& args) override {
       cb_(address);
       return parent_->channel_control_helper()->CreateSubchannel(
           std::move(address), args);
@@ -470,7 +470,7 @@ class FixedAddressLoadBalancingPolicy : public ForwardingLoadBalancingPolicy {
         : parent_(std::move(parent)) {}
 
     RefCountedPtr<SubchannelInterface> CreateSubchannel(
-        ServerAddress address, ChannelArgs args) override {
+        ServerAddress address, const ChannelArgs& args) override {
       return parent_->channel_control_helper()->CreateSubchannel(
           std::move(address), args);
     }
@@ -582,7 +582,7 @@ class OobBackendMetricTestLoadBalancingPolicy
         : parent_(std::move(parent)) {}
 
     RefCountedPtr<SubchannelInterface> CreateSubchannel(
-        ServerAddress address, ChannelArgs args) override {
+        ServerAddress address, const ChannelArgs& args) override {
       auto subchannel =
           parent_->channel_control_helper()->CreateSubchannel(address, args);
       subchannel->AddDataWatcher(MakeOobBackendMetricWatcher(

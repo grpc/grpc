@@ -40,7 +40,8 @@
 
 namespace grpc_core {
 
-PollingResolver::PollingResolver(ResolverArgs args, ChannelArgs channel_args,
+PollingResolver::PollingResolver(ResolverArgs args,
+                                 const ChannelArgs& channel_args,
                                  Duration min_time_between_resolutions,
                                  BackOff::Options backoff_options,
                                  TraceFlag* tracer)

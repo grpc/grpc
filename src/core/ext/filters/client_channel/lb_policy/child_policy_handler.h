@@ -66,7 +66,7 @@ class ChildPolicyHandler : public LoadBalancingPolicy {
   void ShutdownLocked() override;
 
   OrphanablePtr<LoadBalancingPolicy> CreateChildPolicy(
-      const char* child_policy_name, ChannelArgs args);
+      const char* child_policy_name, const ChannelArgs& args);
 
   // Passed in from caller at construction time.
   TraceFlag* tracer_;

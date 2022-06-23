@@ -38,7 +38,8 @@ ChannelStackBuilder& ChannelStackBuilder::SetTarget(const char* target) {
   return *this;
 }
 
-ChannelStackBuilder& ChannelStackBuilder::SetChannelArgs(ChannelArgs args) {
+ChannelStackBuilder& ChannelStackBuilder::SetChannelArgs(
+    const ChannelArgs& args) {
   args_ = std::move(args);
   return *this;
 }

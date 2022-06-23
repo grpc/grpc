@@ -40,7 +40,7 @@ namespace grpc_core {
 TraceFlag grpc_subchannel_pool_trace(false, "subchannel_pool");
 
 SubchannelKey::SubchannelKey(const grpc_resolved_address& address,
-                             ChannelArgs args)
+                             const ChannelArgs& args)
     : address_(address), args_(std::move(args)) {}
 
 SubchannelKey::~SubchannelKey() {}

@@ -144,7 +144,7 @@ class XdsClusterManagerLb : public LoadBalancingPolicy {
 
     void UpdateLocked(RefCountedPtr<LoadBalancingPolicy::Config> config,
                       const absl::StatusOr<ServerAddressList>& addresses,
-                      ChannelArgs args);
+                      const grpc_core::ChannelArgs& args);
     void ExitIdleLocked();
     void ResetBackoffLocked();
     void DeactivateLocked();
@@ -167,7 +167,7 @@ class XdsClusterManagerLb : public LoadBalancingPolicy {
       }
 
       RefCountedPtr<SubchannelInterface> CreateSubchannel(
-          ServerAddress address, ChannelArgs args) override;
+          ServerAddress address, const ChannelArgs& args) override;
       void UpdateState(grpc_connectivity_state state,
                        const absl::Status& status,
                        std::unique_ptr<SubchannelPicker> picker) override;
@@ -182,7 +182,7 @@ class XdsClusterManagerLb : public LoadBalancingPolicy {
 
     // Methods for dealing with the child policy.
     OrphanablePtr<LoadBalancingPolicy> CreateChildPolicyLocked(
-        ChannelArgs args);
+        const grpc_core::ChannelArgs& args);
 
     static void OnDelayedRemovalTimer(void* arg, grpc_error_handle error);
     void OnDelayedRemovalTimerLocked(grpc_error_handle error);
@@ -440,7 +440,8 @@ void XdsClusterManagerLb::ClusterChild::Orphan() {
 }
 
 OrphanablePtr<LoadBalancingPolicy>
-XdsClusterManagerLb::ClusterChild::CreateChildPolicyLocked(ChannelArgs args) {
+XdsClusterManagerLb::ClusterChild::CreateChildPolicyLocked(
+    const ChannelArgs& args) {
   LoadBalancingPolicy::Args lb_policy_args;
   lb_policy_args.work_serializer =
       xds_cluster_manager_policy_->work_serializer();
@@ -469,7 +470,8 @@ XdsClusterManagerLb::ClusterChild::CreateChildPolicyLocked(ChannelArgs args) {
 
 void XdsClusterManagerLb::ClusterChild::UpdateLocked(
     RefCountedPtr<LoadBalancingPolicy::Config> config,
-    const absl::StatusOr<ServerAddressList>& addresses, ChannelArgs args) {
+    const absl::StatusOr<ServerAddressList>& addresses,
+    const ChannelArgs& args) {
   if (xds_cluster_manager_policy_->shutting_down_) return;
   // Update child weight.
   // Reactivate if needed.
@@ -545,7 +547,7 @@ void XdsClusterManagerLb::ClusterChild::OnDelayedRemovalTimerLocked(
 
 RefCountedPtr<SubchannelInterface>
 XdsClusterManagerLb::ClusterChild::Helper::CreateSubchannel(
-    ServerAddress address, ChannelArgs args) {
+    ServerAddress address, const ChannelArgs& args) {
   if (xds_cluster_manager_child_->xds_cluster_manager_policy_->shutting_down_) {
     return nullptr;
   }

@@ -2462,7 +2462,7 @@ std::string GetBootstrapContents(const char* fallback_config,
 
 }  // namespace
 
-RefCountedPtr<XdsClient> XdsClient::GetOrCreate(ChannelArgs args,
+RefCountedPtr<XdsClient> XdsClient::GetOrCreate(const ChannelArgs& args,
                                                 grpc_error_handle* error) {
   RefCountedPtr<XdsClient> xds_client;
   // If getting bootstrap from channel args, create a local XdsClient

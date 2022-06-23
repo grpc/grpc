@@ -169,7 +169,8 @@ void HandshakeManager::OnTimeoutFn(void* arg, grpc_error_handle error) {
 }
 
 void HandshakeManager::DoHandshake(grpc_endpoint* endpoint,
-                                   ChannelArgs channel_args, Timestamp deadline,
+                                   const ChannelArgs& channel_args,
+                                   Timestamp deadline,
                                    grpc_tcp_server_acceptor* acceptor,
                                    grpc_iomgr_cb_func on_handshake_done,
                                    void* user_data) {

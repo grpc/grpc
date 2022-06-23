@@ -520,7 +520,8 @@ const grpc_channel_filter Server::kServerTopFilter = {
 
 namespace {
 
-RefCountedPtr<channelz::ServerNode> CreateChannelzNode(ChannelArgs args) {
+RefCountedPtr<channelz::ServerNode> CreateChannelzNode(
+    const ChannelArgs& args) {
   RefCountedPtr<channelz::ServerNode> channelz_node;
   if (args.GetBool(GRPC_ARG_ENABLE_CHANNELZ)
           .value_or(GRPC_ENABLE_CHANNELZ_DEFAULT)) {
@@ -538,7 +539,7 @@ RefCountedPtr<channelz::ServerNode> CreateChannelzNode(ChannelArgs args) {
 
 }  // namespace
 
-Server::Server(ChannelArgs args)
+Server::Server(const ChannelArgs& args)
     : channel_args_(args), channelz_node_(CreateChannelzNode(args)) {}
 
 Server::~Server() {
@@ -603,7 +604,8 @@ void Server::Start() {
 
 grpc_error_handle Server::SetupTransport(
     grpc_transport* transport, grpc_pollset* accepting_pollset,
-    ChannelArgs args, const RefCountedPtr<channelz::SocketNode>& socket_node) {
+    const grpc_core::ChannelArgs& args,
+    const RefCountedPtr<channelz::SocketNode>& socket_node) {
   // Create channel.
   absl::StatusOr<RefCountedPtr<Channel>> channel =
       Channel::Create(nullptr, std::move(args), GRPC_SERVER_CHANNEL, transport);

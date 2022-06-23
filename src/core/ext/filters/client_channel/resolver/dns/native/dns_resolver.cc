@@ -69,7 +69,8 @@ TraceFlag grpc_trace_dns_resolver(false, "dns_resolver");
 
 class NativeClientChannelDNSResolver : public PollingResolver {
  public:
-  NativeClientChannelDNSResolver(ResolverArgs args, ChannelArgs channel_args);
+  NativeClientChannelDNSResolver(ResolverArgs args,
+                                 const ChannelArgs& channel_args);
   ~NativeClientChannelDNSResolver() override;
 
   OrphanablePtr<Orphanable> StartRequest() override;
@@ -90,7 +91,7 @@ class NativeClientChannelDNSResolver : public PollingResolver {
 };
 
 NativeClientChannelDNSResolver::NativeClientChannelDNSResolver(
-    ResolverArgs args, ChannelArgs channel_args)
+    ResolverArgs args, const ChannelArgs& channel_args)
     : PollingResolver(
           std::move(args), channel_args,
           std::max(Duration::Zero(),

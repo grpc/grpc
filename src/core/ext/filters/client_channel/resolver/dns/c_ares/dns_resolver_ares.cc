@@ -98,7 +98,8 @@ namespace {
 
 class AresClientChannelDNSResolver : public PollingResolver {
  public:
-  AresClientChannelDNSResolver(ResolverArgs args, ChannelArgs channel_args);
+  AresClientChannelDNSResolver(ResolverArgs args,
+                               const ChannelArgs& channel_args);
 
   OrphanablePtr<Orphanable> StartRequest() override;
 
@@ -155,7 +156,7 @@ class AresClientChannelDNSResolver : public PollingResolver {
 };
 
 AresClientChannelDNSResolver::AresClientChannelDNSResolver(
-    ResolverArgs args, ChannelArgs channel_args)
+    ResolverArgs args, const ChannelArgs& channel_args)
     : PollingResolver(
           std::move(args), channel_args,
           std::max(Duration::Zero(),

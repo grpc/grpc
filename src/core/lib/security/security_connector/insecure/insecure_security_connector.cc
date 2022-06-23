@@ -68,7 +68,7 @@ ArenaPromise<absl::Status> InsecureChannelSecurityConnector::CheckCallHost(
 // security handshaker so that check_peer is invoked and an auth_context is
 // created with the security level of TSI_SECURITY_NONE.
 void InsecureChannelSecurityConnector::add_handshakers(
-    ChannelArgs args, grpc_pollset_set* /* interested_parties */,
+    const ChannelArgs& args, grpc_pollset_set* /* interested_parties */,
     HandshakeManager* handshake_manager) {
   tsi_handshaker* handshaker = nullptr;
   // Re-use local_tsi_handshaker_create as a minimalist handshaker.
@@ -95,7 +95,7 @@ int InsecureChannelSecurityConnector::cmp(
 // security handshaker so that check_peer is invoked and an auth_context is
 // created with the security level of TSI_SECURITY_NONE.
 void InsecureServerSecurityConnector::add_handshakers(
-    ChannelArgs args, grpc_pollset_set* /* interested_parties */,
+    const ChannelArgs& args, grpc_pollset_set* /* interested_parties */,
     HandshakeManager* handshake_manager) {
   tsi_handshaker* handshaker = nullptr;
   // Re-use local_tsi_handshaker_create as a minimalist handshaker.

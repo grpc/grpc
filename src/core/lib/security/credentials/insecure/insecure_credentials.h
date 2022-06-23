@@ -49,7 +49,7 @@ class InsecureCredentials final : public grpc_channel_credentials {
 class InsecureServerCredentials final : public grpc_server_credentials {
  public:
   RefCountedPtr<grpc_server_security_connector> create_security_connector(
-      ChannelArgs /* args */) override;
+      const grpc_core::ChannelArgs& /* args */) override;
 
   static UniqueTypeName Type();
 

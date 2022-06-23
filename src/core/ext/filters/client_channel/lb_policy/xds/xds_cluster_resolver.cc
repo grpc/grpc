@@ -318,7 +318,7 @@ class XdsClusterResolverLb : public LoadBalancingPolicy {
     }
 
     RefCountedPtr<SubchannelInterface> CreateSubchannel(
-        ServerAddress address, ChannelArgs args) override;
+        ServerAddress address, const ChannelArgs& args) override;
     void UpdateState(grpc_connectivity_state state, const absl::Status& status,
                      std::unique_ptr<SubchannelPicker> picker) override;
     // This is a no-op, because we get the addresses from the xds
@@ -343,10 +343,11 @@ class XdsClusterResolverLb : public LoadBalancingPolicy {
   void MaybeDestroyChildPolicyLocked();
 
   void UpdateChildPolicyLocked();
-  OrphanablePtr<LoadBalancingPolicy> CreateChildPolicyLocked(ChannelArgs args);
+  OrphanablePtr<LoadBalancingPolicy> CreateChildPolicyLocked(
+      const ChannelArgs& args);
   ServerAddressList CreateChildPolicyAddressesLocked();
   RefCountedPtr<Config> CreateChildPolicyConfigLocked();
-  ChannelArgs CreateChildPolicyArgsLocked(ChannelArgs args_in);
+  ChannelArgs CreateChildPolicyArgsLocked(const ChannelArgs& args_in);
 
   // The xds client and endpoint watcher.
   RefCountedPtr<XdsClient> xds_client_;
@@ -369,8 +370,8 @@ class XdsClusterResolverLb : public LoadBalancingPolicy {
 //
 
 RefCountedPtr<SubchannelInterface>
-XdsClusterResolverLb::Helper::CreateSubchannel(ServerAddress address,
-                                               ChannelArgs args) {
+XdsClusterResolverLb::Helper::CreateSubchannel(
+    ServerAddress address, const grpc_core::ChannelArgs& args) {
   if (xds_cluster_resolver_policy_->shutting_down_) return nullptr;
   return xds_cluster_resolver_policy_->channel_control_helper()
       ->CreateSubchannel(std::move(address), args);
@@ -960,14 +961,14 @@ void XdsClusterResolverLb::UpdateChildPolicyLocked() {
 }
 
 ChannelArgs XdsClusterResolverLb::CreateChildPolicyArgsLocked(
-    ChannelArgs args) {
+    const grpc_core::ChannelArgs& args) {
   // Inhibit client-side health checking, since the balancer does this
   // for us.
   return args.Set(GRPC_ARG_INHIBIT_HEALTH_CHECKING, 1);
 }
 
 OrphanablePtr<LoadBalancingPolicy>
-XdsClusterResolverLb::CreateChildPolicyLocked(ChannelArgs args) {
+XdsClusterResolverLb::CreateChildPolicyLocked(const ChannelArgs& args) {
   LoadBalancingPolicy::Args lb_policy_args;
   lb_policy_args.work_serializer = work_serializer();
   lb_policy_args.args = args;

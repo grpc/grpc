@@ -113,7 +113,7 @@ std::string GetDefaultAuthorityInternal(const URI& uri) {
   return uri.path().substr(pos + 1);
 }
 
-std::string GetDataPlaneAuthority(ChannelArgs args, const URI& uri) {
+std::string GetDataPlaneAuthority(const ChannelArgs& args, const URI& uri) {
   absl::optional<absl::string_view> authority =
       args.GetString(GRPC_ARG_DEFAULT_AUTHORITY);
   if (authority.has_value()) return std::string(*authority);
@@ -321,7 +321,7 @@ class XdsResolver : public Resolver {
       return filters_;
     }
 
-    ChannelArgs ModifyChannelArgs(ChannelArgs args) override;
+    ChannelArgs ModifyChannelArgs(const ChannelArgs& args) override;
 
    private:
     struct Route {
@@ -626,7 +626,7 @@ grpc_error_handle XdsResolver::XdsConfigSelector::CreateMethodConfig(
 }
 
 ChannelArgs XdsResolver::XdsConfigSelector::ModifyChannelArgs(
-    ChannelArgs args) {
+    const grpc_core::ChannelArgs& args) {
   return args;
 }
 

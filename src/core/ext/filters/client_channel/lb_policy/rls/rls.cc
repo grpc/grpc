@@ -325,7 +325,7 @@ class RlsLb : public LoadBalancingPolicy {
       }
 
       RefCountedPtr<SubchannelInterface> CreateSubchannel(
-          ServerAddress address, ChannelArgs args) override;
+          ServerAddress address, const ChannelArgs& args) override;
       void UpdateState(grpc_connectivity_state state,
                        const absl::Status& status,
                        std::unique_ptr<SubchannelPicker> picker) override;
@@ -853,7 +853,7 @@ void RlsLb::ChildPolicyWrapper::MaybeFinishUpdate() {
 
 RefCountedPtr<SubchannelInterface>
 RlsLb::ChildPolicyWrapper::ChildPolicyHelper::CreateSubchannel(
-    ServerAddress address, ChannelArgs args) {
+    ServerAddress address, const ChannelArgs& args) {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_rls_trace)) {
     gpr_log(GPR_INFO,
             "[rlslb %p] ChildPolicyWrapper=%p [%s] ChildPolicyHelper=%p: "

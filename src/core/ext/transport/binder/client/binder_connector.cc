@@ -114,7 +114,7 @@ class BinderConnector : public grpc_core::SubchannelConnector {
 namespace grpc_core {
 
 RefCountedPtr<Subchannel> BinderClientChannelFactory::CreateSubchannel(
-    const grpc_resolved_address& address, ChannelArgs args) {
+    const grpc_resolved_address& address, const ChannelArgs& args) {
   gpr_log(GPR_INFO, "BinderClientChannelFactory creating subchannel %p", this);
   return Subchannel::Create(
       MakeOrphanable<BinderConnector>(), address,

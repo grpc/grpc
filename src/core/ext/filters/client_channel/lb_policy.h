@@ -279,7 +279,7 @@ class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
 
     /// Creates a new subchannel with the specified channel args.
     virtual RefCountedPtr<SubchannelInterface> CreateSubchannel(
-        ServerAddress address, ChannelArgs args) = 0;
+        ServerAddress address, const ChannelArgs& args) = 0;
 
     /// Sets the connectivity state and returns a new picker to be used
     /// by the client channel.

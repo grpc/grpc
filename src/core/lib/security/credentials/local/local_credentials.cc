@@ -43,7 +43,7 @@ grpc_core::UniqueTypeName grpc_local_credentials::type() const {
 
 grpc_core::RefCountedPtr<grpc_server_security_connector>
 grpc_local_server_credentials::create_security_connector(
-    grpc_core::ChannelArgs /* args */) {
+    const grpc_core::ChannelArgs& /* args */) {
   return grpc_local_server_security_connector_create(this->Ref());
 }
 

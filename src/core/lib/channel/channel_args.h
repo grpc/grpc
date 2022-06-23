@@ -166,7 +166,8 @@ class ChannelArgs {
 
   // Returns the union of this channel args with other.
   // If a key is present in both, the value from this is used.
-  GRPC_MUST_USE_RESULT ChannelArgs UnionWith(ChannelArgs other) const;
+  GRPC_MUST_USE_RESULT ChannelArgs
+  UnionWith(grpc_core::ChannelArgs other) const;
 
   const Value* Get(absl::string_view name) const;
   GRPC_MUST_USE_RESULT ChannelArgs Set(absl::string_view name,
@@ -204,7 +205,8 @@ class ChannelArgs {
                     absl::remove_cvref_t<decltype(*value->Ref())>>::VTable()));
   }
   template <typename T>
-  GRPC_MUST_USE_RESULT ChannelArgs SetIfUnset(absl::string_view name, T value) {
+  GRPC_MUST_USE_RESULT ChannelArgs SetIfUnset(absl::string_view name,
+                                              T value) const {
     if (Contains(name)) return *this;
     return Set(name, std::move(value));
   }
@@ -241,7 +243,7 @@ class ChannelArgs {
     return GetPointer<T>(T::ChannelArgName());
   }
   template <typename T>
-  RefCountedPtr<T> GetObjectRef() {
+  RefCountedPtr<T> GetObjectRef() const {
     auto* p = GetObject<T>();
     if (p == nullptr) return nullptr;
     return p->Ref();
@@ -367,7 +369,7 @@ ChannelArgs ChannelArgsBuiltinPrecondition(const grpc_channel_args* src);
 // Takes ownership of the old_args
 typedef grpc_core::ChannelArgs (
     *grpc_channel_args_client_channel_creation_mutator)(
-    const char* target, grpc_core::ChannelArgs old_args,
+    const char* target, const grpc_core::ChannelArgs& old_args,
     grpc_channel_stack_type type);
 
 // Should be called only once globaly before grpc is init'ed.

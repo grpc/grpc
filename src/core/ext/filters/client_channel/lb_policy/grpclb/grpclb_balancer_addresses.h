@@ -29,10 +29,10 @@ namespace grpc_core {
 grpc_arg CreateGrpclbBalancerAddressesArg(
     const ServerAddressList* address_list);
 GRPC_MUST_USE_RESULT
-ChannelArgs SetGrpcLbBalancerAddresses(ChannelArgs args,
+ChannelArgs SetGrpcLbBalancerAddresses(const ChannelArgs& args,
                                        ServerAddressList address_list);
 const ServerAddressList* FindGrpclbBalancerAddressesInChannelArgs(
-    ChannelArgs args);
+    const grpc_core::ChannelArgs& args);
 
 }  // namespace grpc_core
 

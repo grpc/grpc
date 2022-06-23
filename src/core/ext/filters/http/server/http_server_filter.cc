@@ -150,8 +150,8 @@ ArenaPromise<ServerMetadataHandle> HttpServerFilter::MakeCallPromise(
                       []() { return absl::OkStatus(); });
 }
 
-absl::StatusOr<HttpServerFilter> HttpServerFilter::Create(ChannelArgs args,
-                                                          ChannelFilter::Args) {
+absl::StatusOr<HttpServerFilter> HttpServerFilter::Create(
+    const ChannelArgs& args, ChannelFilter::Args) {
   return HttpServerFilter(
       args.GetBool(GRPC_ARG_SURFACE_USER_AGENT).value_or(true),
       args.GetBool(

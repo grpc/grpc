@@ -123,7 +123,7 @@ TlsServerCredentials::~TlsServerCredentials() {}
 
 grpc_core::RefCountedPtr<grpc_server_security_connector>
 TlsServerCredentials::create_security_connector(
-    grpc_core::ChannelArgs /* args */) {
+    const grpc_core::ChannelArgs& /* args */) {
   return grpc_core::TlsServerSecurityConnector::
       CreateTlsServerSecurityConnector(this->Ref(), options_);
 }

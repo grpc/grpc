@@ -198,7 +198,7 @@ class XdsServerConfigFetcher::ListenerWatcher::FilterChainMatchManager
                               default_filter_chain);
 
   absl::StatusOr<ChannelArgs> UpdateChannelArgsForConnection(
-      ChannelArgs args, grpc_endpoint* tcp) override;
+      const grpc_core::ChannelArgs& args, grpc_endpoint* tcp) override;
 
   void Orphan() override;
 
@@ -1033,7 +1033,8 @@ const XdsListenerResource::FilterChainData* FindFilterChainDataForDestinationIp(
 
 absl::StatusOr<ChannelArgs> XdsServerConfigFetcher::ListenerWatcher::
     FilterChainMatchManager::UpdateChannelArgsForConnection(
-        ChannelArgs args, grpc_endpoint* tcp) {
+        const grpc_core::ChannelArgs& input_args, grpc_endpoint* tcp) {
+  ChannelArgs args = input_args;
   const auto* filter_chain = FindFilterChainDataForDestinationIp(
       filter_chain_map_.destination_ip_vector, tcp);
   if (filter_chain == nullptr && default_filter_chain_.has_value()) {

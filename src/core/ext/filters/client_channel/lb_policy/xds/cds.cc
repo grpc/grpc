@@ -155,7 +155,7 @@ class CdsLb : public LoadBalancingPolicy {
    public:
     explicit Helper(RefCountedPtr<CdsLb> parent) : parent_(std::move(parent)) {}
     RefCountedPtr<SubchannelInterface> CreateSubchannel(
-        ServerAddress address, ChannelArgs args) override;
+        ServerAddress address, const ChannelArgs& args) override;
     void UpdateState(grpc_connectivity_state state, const absl::Status& status,
                      std::unique_ptr<SubchannelPicker> picker) override;
     void RequestReresolution() override;
@@ -216,7 +216,7 @@ class CdsLb : public LoadBalancingPolicy {
 //
 
 RefCountedPtr<SubchannelInterface> CdsLb::Helper::CreateSubchannel(
-    ServerAddress address, ChannelArgs args) {
+    ServerAddress address, const ChannelArgs& args) {
   if (parent_->shutting_down_) return nullptr;
   return parent_->channel_control_helper()->CreateSubchannel(std::move(address),
                                                              std::move(args));

@@ -101,7 +101,9 @@ class ConfigSelector : public RefCounted<ConfigSelector> {
   // to determine what set of dynamic filters will be configured.
   virtual std::vector<const grpc_channel_filter*> GetFilters() { return {}; }
   // Modifies channel args to be passed to the dynamic filter stack.
-  virtual ChannelArgs ModifyChannelArgs(ChannelArgs args) { return args; }
+  virtual ChannelArgs ModifyChannelArgs(const ChannelArgs& args) {
+    return args;
+  }
 
   virtual CallConfig GetCallConfig(GetCallConfigArgs args) = 0;
 

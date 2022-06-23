@@ -121,7 +121,7 @@ class HandshakeManager : public RefCounted<HandshakeManager> {
   /// GRPC_ERROR_NONE, then handshaking failed and the handshaker has done
   /// the necessary clean-up.  Otherwise, the callback takes ownership of
   /// the arguments.
-  void DoHandshake(grpc_endpoint* endpoint, ChannelArgs channel_args,
+  void DoHandshake(grpc_endpoint* endpoint, const ChannelArgs& channel_args,
                    Timestamp deadline, grpc_tcp_server_acceptor* acceptor,
                    grpc_iomgr_cb_func on_handshake_done, void* user_data);
 

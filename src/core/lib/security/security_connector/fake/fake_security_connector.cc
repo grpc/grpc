@@ -115,7 +115,7 @@ class grpc_fake_channel_security_connector final
     return grpc_core::QsortCompare(is_lb_channel_, other->is_lb_channel_);
   }
 
-  void add_handshakers(grpc_core::ChannelArgs args,
+  void add_handshakers(const grpc_core::ChannelArgs& args,
                        grpc_pollset_set* /*interested_parties*/,
                        grpc_core::HandshakeManager* handshake_mgr) override {
     handshake_mgr->Add(grpc_core::SecurityHandshakerCreate(
@@ -302,7 +302,7 @@ class grpc_fake_server_security_connector
     GRPC_ERROR_UNREF(error);
   }
 
-  void add_handshakers(grpc_core::ChannelArgs args,
+  void add_handshakers(const grpc_core::ChannelArgs& args,
                        grpc_pollset_set* /*interested_parties*/,
                        grpc_core::HandshakeManager* handshake_mgr) override {
     handshake_mgr->Add(grpc_core::SecurityHandshakerCreate(

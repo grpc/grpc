@@ -103,16 +103,16 @@ const char kUnixAbstractUriPrefix[] = "unix-abstract:";
 class Chttp2ServerListener : public Server::ListenerInterface {
  public:
   static grpc_error_handle Create(Server* server, grpc_resolved_address* addr,
-                                  ChannelArgs args,
+                                  const grpc_core::ChannelArgs& args,
                                   Chttp2ServerArgsModifier args_modifier,
                                   int* port_num);
 
   static grpc_error_handle CreateWithAcceptor(
-      Server* server, const char* name, ChannelArgs args,
+      Server* server, const char* name, const ChannelArgs& args,
       Chttp2ServerArgsModifier args_modifier);
 
   // Do not instantiate directly.  Use one of the factory methods above.
-  Chttp2ServerListener(Server* server, ChannelArgs args,
+  Chttp2ServerListener(Server* server, const ChannelArgs& args,
                        Chttp2ServerArgsModifier args_modifier);
   ~Chttp2ServerListener() override;
 
@@ -150,13 +150,14 @@ class Chttp2ServerListener : public Server::ListenerInterface {
      public:
       HandshakingState(RefCountedPtr<ActiveConnection> connection_ref,
                        grpc_pollset* accepting_pollset,
-                       grpc_tcp_server_acceptor* acceptor, ChannelArgs args);
+                       grpc_tcp_server_acceptor* acceptor,
+                       const ChannelArgs& args);
 
       ~HandshakingState() override;
 
       void Orphan() override;
 
-      void Start(grpc_endpoint* endpoint, ChannelArgs args);
+      void Start(grpc_endpoint* endpoint, const ChannelArgs& args);
 
       // Needed to be able to grab an external ref in ActiveConnection::Start()
       using InternallyRefCounted<HandshakingState>::Ref;
@@ -179,8 +180,8 @@ class Chttp2ServerListener : public Server::ListenerInterface {
     };
 
     ActiveConnection(grpc_pollset* accepting_pollset,
-                     grpc_tcp_server_acceptor* acceptor, ChannelArgs args,
-                     MemoryOwner memory_owner);
+                     grpc_tcp_server_acceptor* acceptor,
+                     const ChannelArgs& args, MemoryOwner memory_owner);
     ~ActiveConnection() override;
 
     void Orphan() override;
@@ -188,7 +189,7 @@ class Chttp2ServerListener : public Server::ListenerInterface {
     void SendGoAway();
 
     void Start(RefCountedPtr<Chttp2ServerListener> listener,
-               grpc_endpoint* endpoint, ChannelArgs args);
+               grpc_endpoint* endpoint, const ChannelArgs& args);
 
     // Needed to be able to grab an external ref in
     // Chttp2ServerListener::OnAccept()
@@ -358,7 +359,7 @@ void Chttp2ServerListener::ConfigFetcherWatcher::StopServing() {
 // Chttp2ServerListener::ActiveConnection::HandshakingState
 //
 
-Timestamp GetConnectionDeadline(ChannelArgs args) {
+Timestamp GetConnectionDeadline(const ChannelArgs& args) {
   return ExecCtx::Get()->Now() +
          std::max(
              Duration::Milliseconds(1),
@@ -369,7 +370,7 @@ Timestamp GetConnectionDeadline(ChannelArgs args) {
 Chttp2ServerListener::ActiveConnection::HandshakingState::HandshakingState(
     RefCountedPtr<ActiveConnection> connection_ref,
     grpc_pollset* accepting_pollset, grpc_tcp_server_acceptor* acceptor,
-    ChannelArgs args)
+    const grpc_core::ChannelArgs& args)
     : connection_(std::move(connection_ref)),
       accepting_pollset_(accepting_pollset),
       acceptor_(acceptor),
@@ -399,7 +400,7 @@ void Chttp2ServerListener::ActiveConnection::HandshakingState::Orphan() {
 }
 
 void Chttp2ServerListener::ActiveConnection::HandshakingState::Start(
-    grpc_endpoint* endpoint, ChannelArgs channel_args) {
+    grpc_endpoint* endpoint, const ChannelArgs& channel_args) {
   Ref().release();  // Held by OnHandshakeDone
   RefCountedPtr<HandshakeManager> handshake_mgr;
   {
@@ -552,7 +553,7 @@ void Chttp2ServerListener::ActiveConnection::HandshakingState::OnHandshakeDone(
 
 Chttp2ServerListener::ActiveConnection::ActiveConnection(
     grpc_pollset* accepting_pollset, grpc_tcp_server_acceptor* acceptor,
-    ChannelArgs args, MemoryOwner memory_owner)
+    const grpc_core::ChannelArgs& args, MemoryOwner memory_owner)
     : handshaking_state_(memory_owner.MakeOrphanable<HandshakingState>(
           Ref(), accepting_pollset, acceptor, args)) {
   GRPC_CLOSURE_INIT(&on_close_, ActiveConnection::OnClose, this,
@@ -610,7 +611,7 @@ void Chttp2ServerListener::ActiveConnection::SendGoAway() {
 
 void Chttp2ServerListener::ActiveConnection::Start(
     RefCountedPtr<Chttp2ServerListener> listener, grpc_endpoint* endpoint,
-    ChannelArgs args) {
+    const grpc_core::ChannelArgs& args) {
   RefCountedPtr<HandshakingState> handshaking_state_ref;
   listener_ = std::move(listener);
   {
@@ -672,7 +673,7 @@ void Chttp2ServerListener::ActiveConnection::OnDrainGraceTimeExpiry(
 //
 
 grpc_error_handle Chttp2ServerListener::Create(
-    Server* server, grpc_resolved_address* addr, ChannelArgs args,
+    Server* server, grpc_resolved_address* addr, const ChannelArgs& args,
     Chttp2ServerArgsModifier args_modifier, int* port_num) {
   Chttp2ServerListener* listener = nullptr;
   // The bulk of this method is inside of a lambda to make cleanup
@@ -723,7 +724,7 @@ grpc_error_handle Chttp2ServerListener::Create(
 }
 
 grpc_error_handle Chttp2ServerListener::CreateWithAcceptor(
-    Server* server, const char* name, ChannelArgs args,
+    Server* server, const char* name, const ChannelArgs& args,
     Chttp2ServerArgsModifier args_modifier) {
   Chttp2ServerListener* listener =
       new Chttp2ServerListener(server, args, args_modifier);
@@ -742,7 +743,8 @@ grpc_error_handle Chttp2ServerListener::CreateWithAcceptor(
 }
 
 Chttp2ServerListener::Chttp2ServerListener(
-    Server* server, ChannelArgs args, Chttp2ServerArgsModifier args_modifier)
+    Server* server, const ChannelArgs& args,
+    Chttp2ServerArgsModifier args_modifier)
     : server_(server),
       args_modifier_(args_modifier),
       args_(args),
@@ -905,7 +907,7 @@ void Chttp2ServerListener::Orphan() {
 //
 
 grpc_error_handle Chttp2ServerAddPort(Server* server, const char* addr,
-                                      ChannelArgs args,
+                                      const grpc_core::ChannelArgs& args,
                                       Chttp2ServerArgsModifier args_modifier,
                                       int* port_num) {
   if (addr == nullptr) {
@@ -984,7 +986,7 @@ grpc_error_handle Chttp2ServerAddPort(Server* server, const char* addr,
 
 namespace {
 
-ChannelArgs ModifyArgsForConnection(ChannelArgs args,
+ChannelArgs ModifyArgsForConnection(const ChannelArgs& args,
                                     grpc_error_handle* error) {
   auto* server_credentials = args.GetObject<grpc_server_credentials>();
   if (server_credentials == nullptr) {

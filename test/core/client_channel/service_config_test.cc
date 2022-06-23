@@ -68,7 +68,8 @@ class TestParser1 : public ServiceConfigParser::Parser {
   absl::string_view name() const override { return "test_parser_1"; }
 
   std::unique_ptr<ServiceConfigParser::ParsedConfig> ParseGlobalParams(
-      ChannelArgs args, const Json& json, grpc_error_handle* error) override {
+      const grpc_core::ChannelArgs& args, const Json& json,
+      grpc_error_handle* error) override {
     GPR_DEBUG_ASSERT(error != nullptr);
     if (args.GetBool(GRPC_ARG_DISABLE_PARSING).value_or(false)) {
       return nullptr;
@@ -105,7 +106,8 @@ class TestParser2 : public ServiceConfigParser::Parser {
   absl::string_view name() const override { return "test_parser_2"; }
 
   std::unique_ptr<ServiceConfigParser::ParsedConfig> ParsePerMethodParams(
-      ChannelArgs args, const Json& json, grpc_error_handle* error) override {
+      const grpc_core::ChannelArgs& args, const Json& json,
+      grpc_error_handle* error) override {
     GPR_DEBUG_ASSERT(error != nullptr);
     if (args.GetBool(GRPC_ARG_DISABLE_PARSING).value_or(false)) {
       return nullptr;
@@ -145,7 +147,7 @@ class ErrorParser : public ServiceConfigParser::Parser {
   absl::string_view name() const override { return name_; }
 
   std::unique_ptr<ServiceConfigParser::ParsedConfig> ParsePerMethodParams(
-      ChannelArgs /*arg*/, const Json& /*json*/,
+      const grpc_core::ChannelArgs& /*arg*/, const Json& /*json*/,
       grpc_error_handle* error) override {
     GPR_DEBUG_ASSERT(error != nullptr);
     *error = GRPC_ERROR_CREATE_FROM_STATIC_STRING(MethodError());
@@ -153,7 +155,7 @@ class ErrorParser : public ServiceConfigParser::Parser {
   }
 
   std::unique_ptr<ServiceConfigParser::ParsedConfig> ParseGlobalParams(
-      ChannelArgs /*arg*/, const Json& /*json*/,
+      const grpc_core::ChannelArgs& /*arg*/, const Json& /*json*/,
       grpc_error_handle* error) override {
     GPR_DEBUG_ASSERT(error != nullptr);
     *error = GRPC_ERROR_CREATE_FROM_STATIC_STRING(GlobalError());

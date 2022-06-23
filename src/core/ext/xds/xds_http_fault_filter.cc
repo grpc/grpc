@@ -203,7 +203,8 @@ const grpc_channel_filter* XdsHttpFaultFilter::channel_filter() const {
   return &FaultInjectionFilter::kFilter;
 }
 
-ChannelArgs XdsHttpFaultFilter::ModifyChannelArgs(ChannelArgs args) const {
+ChannelArgs XdsHttpFaultFilter::ModifyChannelArgs(
+    const ChannelArgs& args) const {
   return args.Set(GRPC_ARG_PARSE_FAULT_INJECTION_METHOD_CONFIG, 1);
 }
 

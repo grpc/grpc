@@ -176,7 +176,7 @@ class PriorityLb : public LoadBalancingPolicy {
       ~Helper() override { priority_.reset(DEBUG_LOCATION, "Helper"); }
 
       RefCountedPtr<SubchannelInterface> CreateSubchannel(
-          ServerAddress address, ChannelArgs args) override;
+          ServerAddress address, const ChannelArgs& args) override;
       void UpdateState(grpc_connectivity_state state,
                        const absl::Status& status,
                        std::unique_ptr<SubchannelPicker> picker) override;
@@ -223,7 +223,7 @@ class PriorityLb : public LoadBalancingPolicy {
 
     // Methods for dealing with the child policy.
     OrphanablePtr<LoadBalancingPolicy> CreateChildPolicyLocked(
-        ChannelArgs args);
+        const grpc_core::ChannelArgs& args);
 
     void OnConnectivityStateUpdateLocked(
         grpc_connectivity_state state, const absl::Status& status,
@@ -797,7 +797,7 @@ void PriorityLb::ChildPriority::UpdateLocked(
 }
 
 OrphanablePtr<LoadBalancingPolicy>
-PriorityLb::ChildPriority::CreateChildPolicyLocked(ChannelArgs args) {
+PriorityLb::ChildPriority::CreateChildPolicyLocked(const ChannelArgs& args) {
   LoadBalancingPolicy::Args lb_policy_args;
   lb_policy_args.work_serializer = priority_policy_->work_serializer();
   lb_policy_args.args = args;
@@ -878,8 +878,8 @@ void PriorityLb::ChildPriority::MaybeReactivateLocked() {
 //
 
 RefCountedPtr<SubchannelInterface>
-PriorityLb::ChildPriority::Helper::CreateSubchannel(ServerAddress address,
-                                                    ChannelArgs args) {
+PriorityLb::ChildPriority::Helper::CreateSubchannel(
+    ServerAddress address, const grpc_core::ChannelArgs& args) {
   if (priority_->priority_policy_->shutting_down_) return nullptr;
   return priority_->priority_policy_->channel_control_helper()
       ->CreateSubchannel(std::move(address), args);

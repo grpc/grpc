@@ -67,7 +67,7 @@ class ReadAheadHandshaker : public Handshaker {
 
 class ReadAheadHandshakerFactory : public HandshakerFactory {
  public:
-  void AddHandshakers(ChannelArgs /*args*/,
+  void AddHandshakers(const ChannelArgs& /*args*/,
                       grpc_pollset_set* /*interested_parties*/,
                       HandshakeManager* handshake_mgr) override {
     handshake_mgr->Add(MakeRefCounted<ReadAheadHandshaker>());

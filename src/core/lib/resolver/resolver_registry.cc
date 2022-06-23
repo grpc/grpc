@@ -71,7 +71,8 @@ bool ResolverRegistry::IsValidTarget(absl::string_view target) const {
 }
 
 OrphanablePtr<Resolver> ResolverRegistry::CreateResolver(
-    absl::string_view target, ChannelArgs args, grpc_pollset_set* pollset_set,
+    absl::string_view target, const ChannelArgs& args,
+    grpc_pollset_set* pollset_set,
     std::shared_ptr<WorkSerializer> work_serializer,
     std::unique_ptr<Resolver::ResultHandler> result_handler) const {
   std::string canonical_target;

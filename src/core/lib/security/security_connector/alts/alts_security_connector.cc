@@ -98,7 +98,7 @@ class grpc_alts_channel_security_connector final
   ~grpc_alts_channel_security_connector() override { gpr_free(target_name_); }
 
   void add_handshakers(
-      grpc_core::ChannelArgs args, grpc_pollset_set* interested_parties,
+      const grpc_core::ChannelArgs& args, grpc_pollset_set* interested_parties,
       grpc_core::HandshakeManager* handshake_manager) override {
     tsi_handshaker* handshaker = nullptr;
     const grpc_alts_credentials* creds =
@@ -156,7 +156,7 @@ class grpc_alts_server_security_connector final
   ~grpc_alts_server_security_connector() override = default;
 
   void add_handshakers(
-      grpc_core::ChannelArgs args, grpc_pollset_set* interested_parties,
+      const grpc_core::ChannelArgs& args, grpc_pollset_set* interested_parties,
       grpc_core::HandshakeManager* handshake_manager) override {
     tsi_handshaker* handshaker = nullptr;
     const grpc_alts_server_credentials* creds =

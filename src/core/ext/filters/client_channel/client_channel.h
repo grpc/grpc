@@ -247,8 +247,8 @@ class ClientChannel {
       RefCountedPtr<LoadBalancingPolicy::Config> lb_policy_config,
       const absl::optional<std::string>& health_check_service_name,
       Resolver::Result result) ABSL_EXCLUSIVE_LOCKS_REQUIRED(*work_serializer_);
-  OrphanablePtr<LoadBalancingPolicy> CreateLbPolicyLocked(ChannelArgs args)
-      ABSL_EXCLUSIVE_LOCKS_REQUIRED(*work_serializer_);
+  OrphanablePtr<LoadBalancingPolicy> CreateLbPolicyLocked(
+      const ChannelArgs& args) ABSL_EXCLUSIVE_LOCKS_REQUIRED(*work_serializer_);
 
   void UpdateStateAndPickerLocked(
       grpc_connectivity_state state, const absl::Status& status,

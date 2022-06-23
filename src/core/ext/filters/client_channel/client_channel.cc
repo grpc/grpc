@@ -857,8 +857,8 @@ class ClientChannel::ClientChannelControlHelper
                              "ClientChannelControlHelper");
   }
 
-  RefCountedPtr<SubchannelInterface> CreateSubchannel(ServerAddress address,
-                                                      ChannelArgs args) override
+  RefCountedPtr<SubchannelInterface> CreateSubchannel(
+      ServerAddress address, const grpc_core::ChannelArgs& args) override
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(*chand_->work_serializer_) {
     if (chand_->resolver_ == nullptr) return nullptr;  // Shutting down.
     // Determine health check service name.
@@ -869,7 +869,7 @@ class ClientChannel::ClientChannelControlHelper
       health_check_service_name.reset();
     }
     // Construct channel args for subchannel.
-    args =
+    ChannelArgs subchannel_args =
         address.args()
             .UnionWith(args)
             .SetObject(chand_->subchannel_pool_)
@@ -883,7 +883,7 @@ class ClientChannel::ClientChannelControlHelper
     // Create subchannel.
     RefCountedPtr<Subchannel> subchannel =
         chand_->client_channel_factory_->CreateSubchannel(address.address(),
-                                                          args);
+                                                          subchannel_args);
     if (subchannel == nullptr) return nullptr;
     // Make sure the subchannel has updated keepalive time.
     subchannel->ThrottleKeepaliveTime(chand_->keepalive_time_);
@@ -1342,7 +1342,7 @@ void ClientChannel::CreateOrUpdateLbPolicyLocked(
 
 // Creates a new LB policy.
 OrphanablePtr<LoadBalancingPolicy> ClientChannel::CreateLbPolicyLocked(
-    ChannelArgs args) {
+    const grpc_core::ChannelArgs& args) {
   LoadBalancingPolicy::Args lb_policy_args;
   lb_policy_args.work_serializer = work_serializer_;
   lb_policy_args.channel_control_helper =

@@ -63,7 +63,7 @@ class grpc_composite_channel_credentials : public grpc_channel_credentials {
       const char* target, grpc_core::ChannelArgs* args) override;
 
   grpc_core::ChannelArgs update_arguments(
-      grpc_core::ChannelArgs args) override {
+      const grpc_core::ChannelArgs& args) override {
     return inner_creds_->update_arguments(args);
   }
 

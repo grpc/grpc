@@ -275,7 +275,7 @@ std::string ChannelArgs::ToString() const {
   return absl::StrCat("{", absl::StrJoin(arg_strings, ", "), "}");
 }
 
-ChannelArgs ChannelArgs::UnionWith(ChannelArgs other) const {
+ChannelArgs ChannelArgs::UnionWith(grpc_core::ChannelArgs other) const {
   args_.ForEach([&other](const std::string& key, const Value& value) {
     other.args_ = other.args_.Add(key, value);
   });

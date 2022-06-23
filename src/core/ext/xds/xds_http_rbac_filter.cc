@@ -555,7 +555,8 @@ const grpc_channel_filter* XdsHttpRbacFilter::channel_filter() const {
   return &RbacFilter::kFilterVtable;
 }
 
-ChannelArgs XdsHttpRbacFilter::ModifyChannelArgs(ChannelArgs args) const {
+ChannelArgs XdsHttpRbacFilter::ModifyChannelArgs(
+    const ChannelArgs& args) const {
   return args.Set(GRPC_ARG_PARSE_RBAC_METHOD_CONFIG, 1);
 }
 

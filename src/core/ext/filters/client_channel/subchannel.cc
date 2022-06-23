@@ -93,7 +93,7 @@ DebugOnlyTraceFlag grpc_trace_subchannel_refcount(false, "subchannel_refcount");
 //
 
 ConnectedSubchannel::ConnectedSubchannel(
-    grpc_channel_stack* channel_stack, ChannelArgs args,
+    grpc_channel_stack* channel_stack, const ChannelArgs& args,
     RefCountedPtr<channelz::SubchannelNode> channelz_subchannel)
     : RefCounted<ConnectedSubchannel>(
           GRPC_TRACE_FLAG_ENABLED(grpc_trace_subchannel_refcount)
@@ -623,7 +623,7 @@ BackOff::Options ParseArgsForBackoffValues(const ChannelArgs& args,
 
 Subchannel::Subchannel(SubchannelKey key,
                        OrphanablePtr<SubchannelConnector> connector,
-                       ChannelArgs args)
+                       const grpc_core::ChannelArgs& args)
     : DualRefCounted<Subchannel>(
           GRPC_TRACE_FLAG_ENABLED(grpc_trace_subchannel_refcount) ? "Subchannel"
                                                                   : nullptr),
@@ -687,7 +687,7 @@ Subchannel::~Subchannel() {
 
 RefCountedPtr<Subchannel> Subchannel::Create(
     OrphanablePtr<SubchannelConnector> connector,
-    const grpc_resolved_address& address, ChannelArgs args) {
+    const grpc_resolved_address& address, const ChannelArgs& args) {
   SubchannelKey key(address, args);
   auto* subchannel_pool = args.GetObject<SubchannelPoolInterface>();
   GPR_ASSERT(subchannel_pool != nullptr);

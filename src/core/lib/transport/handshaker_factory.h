@@ -39,7 +39,7 @@ class HandshakeManager;
 
 class HandshakerFactory {
  public:
-  virtual void AddHandshakers(ChannelArgs args,
+  virtual void AddHandshakers(const ChannelArgs& args,
                               grpc_pollset_set* interested_parties,
                               HandshakeManager* handshake_mgr) = 0;
   virtual ~HandshakerFactory() = default;

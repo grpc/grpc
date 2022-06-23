@@ -338,7 +338,7 @@ class FakeClientChannelFactory : public grpc_core::ClientChannelFactory {
  public:
   grpc_core::RefCountedPtr<grpc_core::Subchannel> CreateSubchannel(
       const grpc_resolved_address& /*address*/,
-      grpc_core::ChannelArgs /*args*/) override {
+      const grpc_core::ChannelArgs& /*args*/) override {
     return nullptr;
   }
 };

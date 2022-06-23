@@ -119,7 +119,7 @@ class RoundRobin : public LoadBalancingPolicy {
                               RoundRobinSubchannelData> {
    public:
     RoundRobinSubchannelList(RoundRobin* policy, ServerAddressList addresses,
-                             ChannelArgs args)
+                             const grpc_core::ChannelArgs& args)
         : SubchannelList(policy,
                          (GRPC_TRACE_FLAG_ENABLED(grpc_lb_round_robin_trace)
                               ? "RoundRobinSubchannelList"

@@ -269,7 +269,7 @@ namespace {
 class Chttp2SecureClientChannelFactory : public ClientChannelFactory {
  public:
   RefCountedPtr<Subchannel> CreateSubchannel(
-      const grpc_resolved_address& address, ChannelArgs args) override {
+      const grpc_resolved_address& address, const ChannelArgs& args) override {
     absl::StatusOr<ChannelArgs> new_args = GetSecureNamingChannelArgs(args);
     if (!new_args.ok()) {
       gpr_log(GPR_ERROR,
@@ -285,7 +285,7 @@ class Chttp2SecureClientChannelFactory : public ClientChannelFactory {
 
  private:
   static absl::StatusOr<ChannelArgs> GetSecureNamingChannelArgs(
-      ChannelArgs args) {
+      grpc_core::ChannelArgs args) {
     auto* channel_credentials = args.GetObject<grpc_channel_credentials>();
     if (channel_credentials == nullptr) {
       return absl::InternalError(
@@ -312,8 +312,8 @@ class Chttp2SecureClientChannelFactory : public ClientChannelFactory {
   }
 };
 
-absl::StatusOr<RefCountedPtr<Channel>> CreateChannel(const char* target,
-                                                     ChannelArgs args) {
+absl::StatusOr<RefCountedPtr<Channel>> CreateChannel(
+    const char* target, const grpc_core::ChannelArgs& args) {
   if (target == nullptr) {
     gpr_log(GPR_ERROR, "cannot create channel with NULL target name");
     return absl::InvalidArgumentError("channel target is NULL");

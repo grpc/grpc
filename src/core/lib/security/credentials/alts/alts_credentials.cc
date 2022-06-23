@@ -74,7 +74,7 @@ grpc_alts_server_credentials::grpc_alts_server_credentials(
 
 grpc_core::RefCountedPtr<grpc_server_security_connector>
 grpc_alts_server_credentials::create_security_connector(
-    grpc_core::ChannelArgs /* args */) {
+    const grpc_core::ChannelArgs& /* args */) {
   return grpc_alts_server_security_connector_create(this->Ref());
 }
 

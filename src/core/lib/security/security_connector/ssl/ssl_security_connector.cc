@@ -133,7 +133,7 @@ class grpc_ssl_channel_security_connector final
     return GRPC_SECURITY_OK;
   }
 
-  void add_handshakers(grpc_core::ChannelArgs args,
+  void add_handshakers(const grpc_core::ChannelArgs& args,
                        grpc_pollset_set* /*interested_parties*/,
                        grpc_core::HandshakeManager* handshake_mgr) override {
     // Instantiate TSI handshaker.
@@ -279,7 +279,7 @@ class grpc_ssl_server_security_connector
     return GRPC_SECURITY_OK;
   }
 
-  void add_handshakers(grpc_core::ChannelArgs args,
+  void add_handshakers(const grpc_core::ChannelArgs& args,
                        grpc_pollset_set* /*interested_parties*/,
                        grpc_core::HandshakeManager* handshake_mgr) override {
     // Instantiate TSI handshaker.

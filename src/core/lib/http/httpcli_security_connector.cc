@@ -83,7 +83,7 @@ class grpc_httpcli_ssl_channel_security_connector final
         &options, &handshaker_factory_);
   }
 
-  void add_handshakers(ChannelArgs args,
+  void add_handshakers(const ChannelArgs& args,
                        grpc_pollset_set* /*interested_parties*/,
                        HandshakeManager* handshake_mgr) override {
     tsi_handshaker* handshaker = nullptr;

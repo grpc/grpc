@@ -71,7 +71,8 @@ namespace {
 class SecurityHandshaker : public Handshaker {
  public:
   SecurityHandshaker(tsi_handshaker* handshaker,
-                     grpc_security_connector* connector, ChannelArgs args);
+                     grpc_security_connector* connector,
+                     const ChannelArgs& args);
   ~SecurityHandshaker() override;
   void Shutdown(grpc_error_handle why) override;
   void DoHandshake(grpc_tcp_server_acceptor* acceptor,
@@ -132,7 +133,7 @@ class SecurityHandshaker : public Handshaker {
 
 SecurityHandshaker::SecurityHandshaker(tsi_handshaker* handshaker,
                                        grpc_security_connector* connector,
-                                       ChannelArgs args)
+                                       const grpc_core::ChannelArgs& args)
     : handshaker_(handshaker),
       connector_(connector->Ref(DEBUG_LOCATION, "handshake")),
       handshake_buffer_size_(GRPC_INITIAL_HANDSHAKE_BUFFER_SIZE),
@@ -595,7 +596,8 @@ class FailHandshaker : public Handshaker {
 
 class ClientSecurityHandshakerFactory : public HandshakerFactory {
  public:
-  void AddHandshakers(ChannelArgs args, grpc_pollset_set* interested_parties,
+  void AddHandshakers(const ChannelArgs& args,
+                      grpc_pollset_set* interested_parties,
                       HandshakeManager* handshake_mgr) override {
     auto* security_connector =
         args.GetObject<grpc_channel_security_connector>();
@@ -609,7 +611,8 @@ class ClientSecurityHandshakerFactory : public HandshakerFactory {
 
 class ServerSecurityHandshakerFactory : public HandshakerFactory {
  public:
-  void AddHandshakers(ChannelArgs args, grpc_pollset_set* interested_parties,
+  void AddHandshakers(const ChannelArgs& args,
+                      grpc_pollset_set* interested_parties,
                       HandshakeManager* handshake_mgr) override {
     auto* security_connector = args.GetObject<grpc_server_security_connector>();
     if (security_connector) {
@@ -628,7 +631,7 @@ class ServerSecurityHandshakerFactory : public HandshakerFactory {
 
 RefCountedPtr<Handshaker> SecurityHandshakerCreate(
     tsi_handshaker* handshaker, grpc_security_connector* connector,
-    ChannelArgs args) {
+    const grpc_core::ChannelArgs& args) {
   // If no TSI handshaker was created, return a handshaker that always fails.
   // Otherwise, return a real security handshaker.
   if (handshaker == nullptr) {

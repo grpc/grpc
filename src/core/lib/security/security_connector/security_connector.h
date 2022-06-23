@@ -128,7 +128,7 @@ class grpc_channel_security_connector : public grpc_security_connector {
       absl::string_view host, grpc_auth_context* auth_context) = 0;
 
   /// Registers handshakers with \a handshake_mgr.
-  virtual void add_handshakers(grpc_core::ChannelArgs args,
+  virtual void add_handshakers(const grpc_core::ChannelArgs& args,
                                grpc_pollset_set* interested_parties,
                                grpc_core::HandshakeManager* handshake_mgr) = 0;
 
@@ -173,7 +173,7 @@ class grpc_server_security_connector : public grpc_security_connector {
       grpc_core::RefCountedPtr<grpc_server_credentials> server_creds);
   ~grpc_server_security_connector() override;
 
-  virtual void add_handshakers(grpc_core::ChannelArgs args,
+  virtual void add_handshakers(const grpc_core::ChannelArgs& args,
                                grpc_pollset_set* interested_parties,
                                grpc_core::HandshakeManager* handshake_mgr) = 0;
 

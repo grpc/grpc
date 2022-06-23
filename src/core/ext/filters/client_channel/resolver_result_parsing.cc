@@ -79,7 +79,7 @@ absl::optional<std::string> ParseHealthCheckConfig(const Json& field,
 }  // namespace
 
 std::unique_ptr<ServiceConfigParser::ParsedConfig>
-ClientChannelServiceConfigParser::ParseGlobalParams(ChannelArgs /*args*/,
+ClientChannelServiceConfigParser::ParseGlobalParams(const ChannelArgs& /*args*/,
                                                     const Json& json,
                                                     grpc_error_handle* error) {
   GPR_DEBUG_ASSERT(error != nullptr && GRPC_ERROR_IS_NONE(*error));
@@ -146,7 +146,8 @@ ClientChannelServiceConfigParser::ParseGlobalParams(ChannelArgs /*args*/,
 
 std::unique_ptr<ServiceConfigParser::ParsedConfig>
 ClientChannelServiceConfigParser::ParsePerMethodParams(
-    ChannelArgs /*args*/, const Json& json, grpc_error_handle* error) {
+    const grpc_core::ChannelArgs& /*args*/, const Json& json,
+    grpc_error_handle* error) {
   GPR_DEBUG_ASSERT(error != nullptr && GRPC_ERROR_IS_NONE(*error));
   std::vector<grpc_error_handle> error_list;
   // Parse waitForReady.

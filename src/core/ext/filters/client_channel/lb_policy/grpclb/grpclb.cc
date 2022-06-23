@@ -426,7 +426,7 @@ class GrpcLb : public LoadBalancingPolicy {
         : parent_(std::move(parent)) {}
 
     RefCountedPtr<SubchannelInterface> CreateSubchannel(
-        ServerAddress address, ChannelArgs args) override;
+        ServerAddress address, const ChannelArgs& args) override;
     void UpdateState(grpc_connectivity_state state, const absl::Status& status,
                      std::unique_ptr<SubchannelPicker> picker) override;
     void RequestReresolution() override;
@@ -473,7 +473,7 @@ class GrpcLb : public LoadBalancingPolicy {
   void ShutdownLocked() override;
 
   // Helper functions used in UpdateLocked().
-  void UpdateBalancerChannelLocked(ChannelArgs args);
+  void UpdateBalancerChannelLocked(const ChannelArgs& args);
 
   void CancelBalancerChannelConnectivityWatchLocked();
 
@@ -491,7 +491,8 @@ class GrpcLb : public LoadBalancingPolicy {
   // Methods for dealing with the child policy.
   ChannelArgs CreateChildPolicyArgsLocked(
       bool is_backend_from_grpclb_load_balancer);
-  OrphanablePtr<LoadBalancingPolicy> CreateChildPolicyLocked(ChannelArgs args);
+  OrphanablePtr<LoadBalancingPolicy> CreateChildPolicyLocked(
+      const ChannelArgs& args);
   void CreateOrUpdateChildPolicyLocked();
 
   // Subchannel caching.
@@ -756,7 +757,7 @@ GrpcLb::PickResult GrpcLb::Picker::Pick(PickArgs args) {
 //
 
 RefCountedPtr<SubchannelInterface> GrpcLb::Helper::CreateSubchannel(
-    ServerAddress address, ChannelArgs args) {
+    ServerAddress address, const ChannelArgs& args) {
   if (parent_->shutting_down_) return nullptr;
   const TokenAndClientStatsAttribute* attribute =
       static_cast<const TokenAndClientStatsAttribute*>(
@@ -1340,7 +1341,7 @@ void GrpcLb::BalancerCallState::OnBalancerStatusReceivedLocked(
 // helper code for creating balancer channel
 //
 
-ServerAddressList ExtractBalancerAddresses(ChannelArgs args) {
+ServerAddressList ExtractBalancerAddresses(const ChannelArgs& args) {
   const ServerAddressList* addresses =
       FindGrpclbBalancerAddressesInChannelArgs(args);
   if (addresses != nullptr) return *addresses;
@@ -1355,7 +1356,8 @@ ServerAddressList ExtractBalancerAddresses(ChannelArgs args) {
  *   above the grpclb policy.
  *   - \a args: other args inherited from the grpclb policy. */
 ChannelArgs BuildBalancerChannelArgs(
-    FakeResolverResponseGenerator* response_generator, ChannelArgs args) {
+    FakeResolverResponseGenerator* response_generator,
+    const ChannelArgs& args) {
   // Create channel args for channel credentials that does not contain bearer
   // token credentials.
   auto* channel_credentials = args.GetObject<grpc_channel_credentials>();
@@ -1409,7 +1411,7 @@ ChannelArgs BuildBalancerChannelArgs(
 // ctor and dtor
 //
 
-std::string GetServerNameFromChannelArgs(ChannelArgs args) {
+std::string GetServerNameFromChannelArgs(const ChannelArgs& args) {
   absl::StatusOr<URI> uri = URI::Parse(*args.GetString(GRPC_ARG_SERVER_URI));
   GPR_ASSERT(uri.ok() && !uri->path().empty());
   return std::string(absl::StripPrefix(uri->path(), "/"));
@@ -1556,7 +1558,7 @@ void GrpcLb::UpdateLocked(UpdateArgs args) {
 // helpers for UpdateLocked()
 //
 
-void GrpcLb::UpdateBalancerChannelLocked(ChannelArgs args) {
+void GrpcLb::UpdateBalancerChannelLocked(const ChannelArgs& args) {
   // Make sure that GRPC_ARG_LB_POLICY_NAME is set in channel args,
   // since we use this to trigger the client_load_reporting filter.
   args_ = args.Set(GRPC_ARG_LB_POLICY_NAME, "grpclb");
@@ -1724,7 +1726,7 @@ ChannelArgs GrpcLb::CreateChildPolicyArgsLocked(
 }
 
 OrphanablePtr<LoadBalancingPolicy> GrpcLb::CreateChildPolicyLocked(
-    ChannelArgs args) {
+    const grpc_core::ChannelArgs& args) {
   LoadBalancingPolicy::Args lb_policy_args;
   lb_policy_args.work_serializer = work_serializer();
   lb_policy_args.args = args;

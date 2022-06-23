@@ -72,12 +72,12 @@ grpc_arg CreateGrpclbBalancerAddressesArg(
 }
 
 const ServerAddressList* FindGrpclbBalancerAddressesInChannelArgs(
-    ChannelArgs args) {
+    const grpc_core::ChannelArgs& args) {
   return args.GetPointer<const ServerAddressList>(
       GRPC_ARG_GRPCLB_BALANCER_ADDRESSES);
 }
 
-ChannelArgs SetGrpcLbBalancerAddresses(ChannelArgs args,
+ChannelArgs SetGrpcLbBalancerAddresses(const ChannelArgs& args,
                                        ServerAddressList address_list) {
   return args.Set(
       GRPC_ARG_GRPCLB_BALANCER_ADDRESSES,

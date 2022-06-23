@@ -52,7 +52,7 @@ class ChildPolicyHandler::Helper
   ~Helper() override { parent_.reset(DEBUG_LOCATION, "Helper"); }
 
   RefCountedPtr<SubchannelInterface> CreateSubchannel(
-      ServerAddress address, ChannelArgs args) override {
+      ServerAddress address, const ChannelArgs& args) override {
     if (parent_->shutting_down_) return nullptr;
     if (!CalledByCurrentChild() && !CalledByPendingChild()) return nullptr;
     return parent_->channel_control_helper()->CreateSubchannel(
@@ -274,7 +274,7 @@ void ChildPolicyHandler::ResetBackoffLocked() {
 }
 
 OrphanablePtr<LoadBalancingPolicy> ChildPolicyHandler::CreateChildPolicy(
-    const char* child_policy_name, ChannelArgs args) {
+    const char* child_policy_name, const ChannelArgs& args) {
   Helper* helper = new Helper(Ref(DEBUG_LOCATION, "Helper"));
   LoadBalancingPolicy::Args lb_policy_args;
   lb_policy_args.work_serializer = work_serializer();

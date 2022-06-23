@@ -75,7 +75,8 @@ class TlsChannelSecurityConnector final
 
   ~TlsChannelSecurityConnector() override;
 
-  void add_handshakers(ChannelArgs args, grpc_pollset_set* interested_parties,
+  void add_handshakers(const ChannelArgs& args,
+                       grpc_pollset_set* interested_parties,
                        HandshakeManager* handshake_mgr) override;
 
   void check_peer(tsi_peer peer, grpc_endpoint* ep,
@@ -187,7 +188,8 @@ class TlsServerSecurityConnector final : public grpc_server_security_connector {
       RefCountedPtr<grpc_tls_credentials_options> options);
   ~TlsServerSecurityConnector() override;
 
-  void add_handshakers(ChannelArgs args, grpc_pollset_set* interested_parties,
+  void add_handshakers(const ChannelArgs& args,
+                       grpc_pollset_set* interested_parties,
                        HandshakeManager* handshake_mgr) override;
 
   void check_peer(tsi_peer peer, grpc_endpoint* ep,

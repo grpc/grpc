@@ -185,7 +185,8 @@ UniqueTypeName XdsCredentials::Type() {
 //
 
 RefCountedPtr<grpc_server_security_connector>
-XdsServerCredentials::create_security_connector(grpc_core::ChannelArgs args) {
+XdsServerCredentials::create_security_connector(
+    const grpc_core::ChannelArgs& args) {
   auto xds_certificate_provider = args.GetObjectRef<XdsCertificateProvider>();
   // Identity certs are a must for TLS.
   if (xds_certificate_provider != nullptr &&

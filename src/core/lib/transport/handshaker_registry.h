@@ -56,7 +56,7 @@ class HandshakerRegistry {
         factories_[NUM_HANDSHAKER_TYPES];
   };
 
-  void AddHandshakers(HandshakerType handshaker_type, ChannelArgs args,
+  void AddHandshakers(HandshakerType handshaker_type, const ChannelArgs& args,
                       grpc_pollset_set* interested_parties,
                       HandshakeManager* handshake_mgr) const;
 

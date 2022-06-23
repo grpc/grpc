@@ -48,7 +48,8 @@ void ServiceConfigParser::Builder::RegisterParser(
 }
 
 ServiceConfigParser::ParsedConfigVector
-ServiceConfigParser::ParseGlobalParameters(ChannelArgs args, const Json& json,
+ServiceConfigParser::ParseGlobalParameters(const ChannelArgs& args,
+                                           const Json& json,
                                            grpc_error_handle* error) const {
   ParsedConfigVector parsed_global_configs;
   std::vector<grpc_error_handle> error_list;
@@ -68,7 +69,7 @@ ServiceConfigParser::ParseGlobalParameters(ChannelArgs args, const Json& json,
 }
 
 ServiceConfigParser::ParsedConfigVector
-ServiceConfigParser::ParsePerMethodParameters(ChannelArgs args,
+ServiceConfigParser::ParsePerMethodParameters(const ChannelArgs& args,
                                               const Json& json,
                                               grpc_error_handle* error) const {
   ParsedConfigVector parsed_method_configs;

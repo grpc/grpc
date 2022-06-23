@@ -152,7 +152,7 @@ class WeightedTargetLb : public LoadBalancingPolicy {
 
     void UpdateLocked(const WeightedTargetLbConfig::ChildConfig& config,
                       absl::StatusOr<ServerAddressList> addresses,
-                      ChannelArgs args);
+                      const grpc_core::ChannelArgs& args);
     void ResetBackoffLocked();
     void DeactivateLocked();
 
@@ -173,7 +173,7 @@ class WeightedTargetLb : public LoadBalancingPolicy {
       ~Helper() override { weighted_child_.reset(DEBUG_LOCATION, "Helper"); }
 
       RefCountedPtr<SubchannelInterface> CreateSubchannel(
-          ServerAddress address, ChannelArgs args) override;
+          ServerAddress address, const ChannelArgs& args) override;
       void UpdateState(grpc_connectivity_state state,
                        const absl::Status& status,
                        std::unique_ptr<SubchannelPicker> picker) override;
@@ -202,7 +202,7 @@ class WeightedTargetLb : public LoadBalancingPolicy {
 
     // Methods for dealing with the child policy.
     OrphanablePtr<LoadBalancingPolicy> CreateChildPolicyLocked(
-        ChannelArgs args);
+        const grpc_core::ChannelArgs& args);
 
     void OnConnectivityStateUpdateLocked(
         grpc_connectivity_state state, const absl::Status& status,
@@ -526,7 +526,8 @@ void WeightedTargetLb::WeightedChild::Orphan() {
 }
 
 OrphanablePtr<LoadBalancingPolicy>
-WeightedTargetLb::WeightedChild::CreateChildPolicyLocked(ChannelArgs args) {
+WeightedTargetLb::WeightedChild::CreateChildPolicyLocked(
+    const ChannelArgs& args) {
   LoadBalancingPolicy::Args lb_policy_args;
   lb_policy_args.work_serializer = weighted_target_policy_->work_serializer();
   lb_policy_args.args = args;
@@ -553,7 +554,7 @@ WeightedTargetLb::WeightedChild::CreateChildPolicyLocked(ChannelArgs args) {
 
 void WeightedTargetLb::WeightedChild::UpdateLocked(
     const WeightedTargetLbConfig::ChildConfig& config,
-    absl::StatusOr<ServerAddressList> addresses, ChannelArgs args) {
+    absl::StatusOr<ServerAddressList> addresses, const ChannelArgs& args) {
   if (weighted_target_policy_->shutting_down_) return;
   // Update child weight.
   weight_ = config.weight;
@@ -636,8 +637,8 @@ void WeightedTargetLb::WeightedChild::DeactivateLocked() {
 //
 
 RefCountedPtr<SubchannelInterface>
-WeightedTargetLb::WeightedChild::Helper::CreateSubchannel(ServerAddress address,
-                                                          ChannelArgs args) {
+WeightedTargetLb::WeightedChild::Helper::CreateSubchannel(
+    ServerAddress address, const grpc_core::ChannelArgs& args) {
   if (weighted_child_->weighted_target_policy_->shutting_down_) return nullptr;
   return weighted_child_->weighted_target_policy_->channel_control_helper()
       ->CreateSubchannel(std::move(address), args);

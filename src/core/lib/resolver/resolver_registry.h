@@ -93,7 +93,8 @@ class ResolverRegistry {
   /// which all resolver calls will be run. \a result_handler is used to return
   /// results from the resolver.
   OrphanablePtr<Resolver> CreateResolver(
-      absl::string_view target, ChannelArgs args, grpc_pollset_set* pollset_set,
+      absl::string_view target, const ChannelArgs& args,
+      grpc_pollset_set* pollset_set,
       std::shared_ptr<WorkSerializer> work_serializer,
       std::unique_ptr<Resolver::ResultHandler> result_handler) const;
 

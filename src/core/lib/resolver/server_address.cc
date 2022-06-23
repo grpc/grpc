@@ -52,12 +52,12 @@ const char* ServerAddressWeightAttribute::kServerAddressWeightAttributeKey =
 //
 
 ServerAddress::ServerAddress(
-    const grpc_resolved_address& address, ChannelArgs args,
+    const grpc_resolved_address& address, const ChannelArgs& args,
     std::map<const char*, std::unique_ptr<AttributeInterface>> attributes)
     : address_(address), args_(args), attributes_(std::move(attributes)) {}
 
 ServerAddress::ServerAddress(
-    const void* address, size_t address_len, ChannelArgs args,
+    const void* address, size_t address_len, const ChannelArgs& args,
     std::map<const char*, std::unique_ptr<AttributeInterface>> attributes)
     : args_(args), attributes_(std::move(attributes)) {
   memcpy(address_.addr, address, address_len);
