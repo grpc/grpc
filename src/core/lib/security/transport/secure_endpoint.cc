@@ -21,7 +21,6 @@
 #include "src/core/lib/security/transport/secure_endpoint.h"
 
 #include <inttypes.h>
-#include <limits.h>
 
 #include <algorithm>
 #include <atomic>
