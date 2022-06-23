@@ -13,7 +13,6 @@
 # limitations under the License.
 import datetime
 import logging
-from typing import Optional
 
 from absl import flags
 from absl.testing import absltest
@@ -23,8 +22,6 @@ from framework import bootstrap_generator_testcase
 from framework import xds_k8s_testcase
 from framework.helpers import rand as helpers_rand
 from framework.helpers import retryers
-from framework.infrastructure import k8s
-from framework.infrastructure import traffic_director
 from framework.test_app import client_app
 from framework.test_app import server_app
 
@@ -57,7 +54,7 @@ class BootstrapGeneratorClientTest(
         # the version of the bootstrap generator as configured via the
         # --td_bootstrap_image flag.
         cls.server_runner = cls.initKubernetesServerRunner()
-        cls.test_server = BootstrapGeneratorClientTest.startTestServer(
+        cls.test_server = cls.startTestServer(
             server_runner=cls.server_runner,
             port=cls.server_port,
             maintenance_port=cls.server_maintenance_port,
@@ -191,7 +188,7 @@ class BootstrapGeneratorServerTest(
         """
         self.server_runner = self.initKubernetesServerRunner(
             td_bootstrap_image=image)
-        self.test_server = BootstrapGeneratorClientTest.startTestServer(
+        self.test_server = self.startTestServer(
             server_runner=self.server_runner,
             port=self.server_port,
             maintenance_port=self.server_maintenance_port,
@@ -213,4 +210,4 @@ class BootstrapGeneratorServerTest(
 
 
 if __name__ == '__main__':
-    absltest.main(failfast=True)
+    absltest.main()
