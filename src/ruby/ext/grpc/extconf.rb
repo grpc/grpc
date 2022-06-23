@@ -126,6 +126,7 @@ if grpc_config == 'dbg'
 end
 
 $LDFLAGS << ' -Wl,-wrap,memcpy' if linux
+# Do not statically link standard libraries on TruffleRuby as this does not work when compiling to bitcode
 if linux && RUBY_ENGINE != 'truffleruby'
   $LDFLAGS << ' -static-libgcc -static-libstdc++'
 end
