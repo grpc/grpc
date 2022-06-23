@@ -20,7 +20,6 @@
 
 #include <ctype.h>
 
-#include <algorithm>
 #include <map>
 #include <vector>
 

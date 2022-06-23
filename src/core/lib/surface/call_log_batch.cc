@@ -21,7 +21,6 @@
 #include <inttypes.h>
 #include <stddef.h>
 
-#include <algorithm>
 #include <string>
 #include <vector>
 

@@ -18,7 +18,6 @@
 
 #include <stdlib.h>
 
-#include <algorithm>
 #include <cstdint>
 #include <map>
 #include <memory>

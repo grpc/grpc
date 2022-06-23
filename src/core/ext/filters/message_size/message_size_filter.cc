@@ -18,7 +18,6 @@
 
 #include "src/core/ext/filters/message_size/message_size_filter.h"
 
-#include <algorithm>
 #include <map>
 #include <new>
 #include <string>

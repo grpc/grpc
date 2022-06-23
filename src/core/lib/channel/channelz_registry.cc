@@ -20,7 +20,6 @@
 
 #include "src/core/lib/channel/channelz_registry.h"
 
-#include <algorithm>
 #include <cstdint>
 #include <cstring>
 #include <utility>

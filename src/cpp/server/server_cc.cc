@@ -18,7 +18,6 @@
 #include <limits.h>
 #include <string.h>
 
-#include <algorithm>
 #include <atomic>
 #include <cstdlib>
 #include <memory>

@@ -22,7 +22,6 @@
 
 #include <string.h>
 
-#include <algorithm>
 #include <new>
 #include <utility>
 

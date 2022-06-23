@@ -25,7 +25,6 @@
 #include <stddef.h>
 #include <stdlib.h>
 
-#include <algorithm>
 #include <cstdint>
 #include <string>
 #include <utility>

@@ -20,7 +20,6 @@
 
 #include <stdlib.h>
 
-#include <algorithm>
 #include <utility>
 #include <vector>
 

@@ -22,7 +22,6 @@
 #include <limits.h>
 #include <string.h>
 
-#include <algorithm>
 #include <functional>
 #include <new>
 #include <set>

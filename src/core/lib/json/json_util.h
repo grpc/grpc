@@ -21,7 +21,6 @@
 
 #include <grpc/support/port_platform.h>
 
-#include <algorithm>
 #include <map>
 #include <string>
 #include <type_traits>

@@ -19,7 +19,6 @@
 #include <stddef.h>
 #include <stdint.h>
 
-#include <algorithm>
 #include <atomic>
 #include <map>
 #include <memory>

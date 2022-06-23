@@ -22,7 +22,6 @@
 #include <inttypes.h>
 #include <stdio.h>
 
-#include <algorithm>
 #include <atomic>
 #include <new>
 #include <string>

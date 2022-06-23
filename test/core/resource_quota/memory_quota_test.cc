@@ -14,7 +14,6 @@
 
 #include "src/core/lib/resource_quota/memory_quota.h"
 
-#include <algorithm>
 #include <vector>
 
 #include "gtest/gtest.h"

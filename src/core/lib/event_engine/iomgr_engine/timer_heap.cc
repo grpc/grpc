@@ -22,8 +22,6 @@
 
 #include <stdint.h>
 
-#include <algorithm>
-
 #include "src/core/lib/event_engine/iomgr_engine/timer.h"
 
 namespace grpc_event_engine {

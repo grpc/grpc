@@ -23,7 +23,6 @@
 #include <inttypes.h>
 #include <string.h>
 
-#include <algorithm>
 #include <vector>
 
 #include "absl/strings/str_format.h"

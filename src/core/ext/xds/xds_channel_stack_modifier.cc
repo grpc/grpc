@@ -23,8 +23,6 @@
 #include <limits.h>
 #include <string.h>
 
-#include <algorithm>
-
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/config/core_configuration.h"
