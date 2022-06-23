@@ -105,6 +105,13 @@ extern grpc_ares_request* (*grpc_dns_lookup_srv_ares)(
     std::unique_ptr<grpc_core::ServerAddressList>* balancer_addresses,
     int query_timeout_ms);
 
+// Asynchronously resolve a TXT record.
+// See \a grpc_dns_lookup_ares for usage details and caveats.
+extern grpc_ares_request* (*grpc_dns_lookup_txt_ares)(
+    const char* dns_server, const char* name,
+    grpc_pollset_set* interested_parties, grpc_closure* on_done,
+    char** service_config_json, int query_timeout_ms);
+
 /* Cancel the pending grpc_ares_request \a request */
 extern void (*grpc_cancel_ares_request)(grpc_ares_request* request);
 

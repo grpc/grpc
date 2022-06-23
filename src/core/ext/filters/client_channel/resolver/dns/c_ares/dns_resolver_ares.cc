@@ -118,8 +118,7 @@ class AresClientChannelDNSResolver : public PollingResolver {
       hostname_request_.reset(grpc_dns_lookup_ares(
           resolver_->authority().c_str(), resolver_->name_to_resolve().c_str(),
           kDefaultSecurePort, resolver_->interested_parties(),
-          &on_hostname_resolved_, &addresses_, nullptr,
-          resolver_->request_service_config_ ? &service_config_json_ : nullptr,
+          &on_hostname_resolved_, &addresses_, nullptr, nullptr,
           resolver_->query_timeout_ms_));
       GRPC_CARES_TRACE_LOG(
           "resolver:%p Started resolving hostnames. hostname_request_:%p",
@@ -134,6 +133,18 @@ class AresClientChannelDNSResolver : public PollingResolver {
             &balancer_addresses_, resolver_->query_timeout_ms_));
         GRPC_CARES_TRACE_LOG(
             "resolver:%p Started resolving SRV records. srv_request_:%p",
+            resolver_.get(), srv_request_.get());
+      }
+      if (resolver_->request_service_config_) {
+        Ref(DEBUG_LOCATION, "OnTXTResolved").release();
+        GRPC_CLOSURE_INIT(&on_txt_resolved_, OnTXTResolved, this, nullptr);
+        txt_request_.reset(grpc_dns_lookup_txt_ares(
+            resolver_->authority().c_str(),
+            resolver_->name_to_resolve().c_str(),
+            resolver_->interested_parties(), &on_txt_resolved_,
+            &service_config_json_, resolver_->query_timeout_ms_));
+        GRPC_CARES_TRACE_LOG(
+            "resolver:%p Started resolving TXT records. txt_request_:%p",
             resolver_.get(), srv_request_.get());
       }
     }
@@ -156,6 +167,7 @@ class AresClientChannelDNSResolver : public PollingResolver {
    private:
     static void OnHostnameResolved(void* arg, grpc_error_handle error);
     static void OnSRVResolved(void* arg, grpc_error_handle error);
+    static void OnTXTResolved(void* arg, grpc_error_handle error);
     void OnResolvedLocked(grpc_error_handle error);
 
     RefCountedPtr<AresClientChannelDNSResolver> resolver_;
@@ -163,6 +175,8 @@ class AresClientChannelDNSResolver : public PollingResolver {
     std::unique_ptr<grpc_ares_request> hostname_request_;
     grpc_closure on_srv_resolved_;
     std::unique_ptr<grpc_ares_request> srv_request_;
+    grpc_closure on_txt_resolved_;
+    std::unique_ptr<grpc_ares_request> txt_request_;
     Mutex on_resolved_mu_;
     // Output fields from ares request.
     std::unique_ptr<ServerAddressList> addresses_;
@@ -323,13 +337,29 @@ void AresClientChannelDNSResolver::AresRequestWrapper::OnSRVResolved(
   self->Unref(DEBUG_LOCATION, "OnSRVResolved");
 }
 
+void AresClientChannelDNSResolver::AresRequestWrapper::OnTXTResolved(
+    void* arg, grpc_error_handle error) {
+  auto* self = static_cast<AresRequestWrapper*>(arg);
+  {
+    MutexLock lock(&self->on_resolved_mu_);
+    self->txt_request_.reset();
+    self->OnResolvedLocked(error);
+  }
+  self->Unref(DEBUG_LOCATION, "OnTXTResolved");
+}
+
 void AresClientChannelDNSResolver::AresRequestWrapper::OnResolvedLocked(
     grpc_error_handle error) ABSL_EXCLUSIVE_LOCKS_REQUIRED(on_resolved_mu_) {
-  GRPC_CARES_TRACE_LOG("resolver:%p OnResolved()", this);
-  if (hostname_request_ != nullptr || srv_request_ != nullptr) {
-    GRPC_CARES_TRACE_LOG("resolver:%p OnResolved() waiting for results", this);
+  if (hostname_request_ != nullptr || srv_request_ != nullptr ||
+      txt_request_ != nullptr) {
+    GRPC_CARES_TRACE_LOG(
+        "resolver:%p OnResolved() waiting for results (hostname: %s, srv: %s, "
+        "txt: %s)",
+        this, hostname_request_ ? "waiting" : "done",
+        srv_request_ ? "waiting" : "done", txt_request_ ? "waiting" : "done");
     return;
   }
+  GRPC_CARES_TRACE_LOG("resolver:%p OnResolved() proceeding", this);
   Result result;
   absl::InlinedVector<grpc_arg, 1> new_args;
   // TODO(roth): Change logic to be able to report failures for addresses
