@@ -338,6 +338,14 @@ void WeightedTargetLb::UpdateLocked(UpdateArgs args) {
     target->UpdateLocked(config, std::move(addresses), args.args);
   }
   update_in_progress_ = false;
+  if (config_->target_map().empty()) {
+    absl::Status status = absl::UnavailableError(absl::StrCat(
+        "no children in weighted_target policy: ", args.resolution_note));
+    channel_control_helper()->UpdateState(
+        GRPC_CHANNEL_TRANSIENT_FAILURE, status,
+        absl::make_unique<TransientFailurePicker>(status));
+    return;
+  }
   UpdateStateLocked();
 }
 
@@ -354,17 +362,19 @@ void WeightedTargetLb::UpdateStateLocked() {
             "connectivity state",
             this);
   }
-  // Construct a new picker which maintains a map of all child pickers
-  // that are ready. Each child is represented by a portion of the range
-  // proportional to its weight, such that the total range is the sum of the
-  // weights of all children.
-  WeightedPicker::PickerList picker_list;
-  uint32_t end = 0;
-  // Also count the number of children in each state, to determine the
-  // overall state.
+  // Construct lists of child pickers with associated weights, one for
+  // children that are in state READY and another for children that are
+  // in state TRANSIENT_FAILURE.  Each child is represented by a portion of
+  // the range proportional to its weight, such that the total range is the
+  // sum of the weights of all children.
+  WeightedPicker::PickerList ready_picker_list;
+  uint32_t ready_end = 0;
+  WeightedPicker::PickerList tf_picker_list;
+  uint32_t tf_end = 0;
+  // Also count the number of children in CONNECTING and IDLE, to determine
+  // the aggregated state.
   size_t num_connecting = 0;
   size_t num_idle = 0;
-  size_t num_transient_failures = 0;
   for (const auto& p : targets_) {
     const std::string& child_name = p.first;
     const WeightedChild* child = p.second.get();
@@ -382,8 +392,8 @@ void WeightedTargetLb::UpdateStateLocked() {
     switch (child->connectivity_state()) {
       case GRPC_CHANNEL_READY: {
         GPR_ASSERT(child->weight() > 0);
-        end += child->weight();
-        picker_list.push_back(std::make_pair(end, child->picker_wrapper()));
+        ready_end += child->weight();
+        ready_picker_list.emplace_back(ready_end, child->picker_wrapper());
         break;
       }
       case GRPC_CHANNEL_CONNECTING: {
@@ -395,7 +405,9 @@ void WeightedTargetLb::UpdateStateLocked() {
         break;
       }
       case GRPC_CHANNEL_TRANSIENT_FAILURE: {
-        ++num_transient_failures;
+        GPR_ASSERT(child->weight() > 0);
+        tf_end += child->weight();
+        tf_picker_list.emplace_back(tf_end, child->picker_wrapper());
         break;
       }
       default:
@@ -404,7 +416,7 @@ void WeightedTargetLb::UpdateStateLocked() {
   }
   // Determine aggregated connectivity state.
   grpc_connectivity_state connectivity_state;
-  if (!picker_list.empty()) {
+  if (!ready_picker_list.empty()) {
     connectivity_state = GRPC_CHANNEL_READY;
   } else if (num_connecting > 0) {
     connectivity_state = GRPC_CHANNEL_CONNECTING;
@@ -421,7 +433,7 @@ void WeightedTargetLb::UpdateStateLocked() {
   absl::Status status;
   switch (connectivity_state) {
     case GRPC_CHANNEL_READY:
-      picker = absl::make_unique<WeightedPicker>(std::move(picker_list));
+      picker = absl::make_unique<WeightedPicker>(std::move(ready_picker_list));
       break;
     case GRPC_CHANNEL_CONNECTING:
     case GRPC_CHANNEL_IDLE:
@@ -429,9 +441,7 @@ void WeightedTargetLb::UpdateStateLocked() {
           absl::make_unique<QueuePicker>(Ref(DEBUG_LOCATION, "QueuePicker"));
       break;
     default:
-      status = absl::UnavailableError(
-          "weighted_target: all children report state TRANSIENT_FAILURE");
-      picker = absl::make_unique<TransientFailurePicker>(status);
+      picker = absl::make_unique<WeightedPicker>(std::move(tf_picker_list));
   }
   channel_control_helper()->UpdateState(connectivity_state, status,
                                         std::move(picker));

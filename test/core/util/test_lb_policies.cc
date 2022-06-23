@@ -458,6 +458,7 @@ class FixedAddressLoadBalancingPolicy : public ForwardingLoadBalancingPolicy {
       gpr_log(GPR_ERROR,
               "%s: could not parse URI (%s), using empty address list",
               kFixedAddressLbPolicyName, uri.status().ToString().c_str());
+      args.resolution_note = "no address in fixed_address_lb policy";
     }
     ForwardingLoadBalancingPolicy::UpdateLocked(std::move(args));
   }

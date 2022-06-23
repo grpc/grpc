@@ -1192,46 +1192,48 @@ size_t RlsLb::Cache::Entry::Size() const {
 }
 
 LoadBalancingPolicy::PickResult RlsLb::Cache::Entry::Pick(PickArgs args) {
-  for (const auto& child_policy_wrapper : child_policy_wrappers_) {
+  size_t i = 0;
+  ChildPolicyWrapper* child_policy_wrapper = nullptr;
+  // Skip targets before the last one that are in state TRANSIENT_FAILURE.
+  for (; i < child_policy_wrappers_.size(); ++i) {
+    child_policy_wrapper = child_policy_wrappers_[i].get();
     if (child_policy_wrapper->connectivity_state() ==
-        GRPC_CHANNEL_TRANSIENT_FAILURE) {
+            GRPC_CHANNEL_TRANSIENT_FAILURE &&
+        i < child_policy_wrappers_.size() - 1) {
       if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_rls_trace)) {
         gpr_log(GPR_INFO,
-                "[rlslb %p] cache entry=%p %s: target %s in state "
-                "TRANSIENT_FAILURE; skipping",
+                "[rlslb %p] cache entry=%p %s: target %s (%" PRIuPTR
+                " of %" PRIuPTR ") in state TRANSIENT_FAILURE; skipping",
                 lb_policy_.get(), this, lru_iterator_->ToString().c_str(),
-                child_policy_wrapper->target().c_str());
+                child_policy_wrapper->target().c_str(), i,
+                child_policy_wrappers_.size());
       }
       continue;
     }
-    // Child policy not in TRANSIENT_FAILURE, so delegate.
-    if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_rls_trace)) {
-      gpr_log(
-          GPR_INFO,
-          "[rlslb %p] cache entry=%p %s: target %s in state %s; "
-          "delegating",
-          lb_policy_.get(), this, lru_iterator_->ToString().c_str(),
-          child_policy_wrapper->target().c_str(),
-          ConnectivityStateName(child_policy_wrapper->connectivity_state()));
-    }
-    // Add header data.
-    if (!header_data_.empty()) {
-      char* copied_header_data =
-          static_cast<char*>(args.call_state->Alloc(header_data_.length() + 1));
-      strcpy(copied_header_data, header_data_.c_str());
-      args.initial_metadata->Add(kRlsHeaderKey, copied_header_data);
-    }
-    return child_policy_wrapper->Pick(args);
+    break;
   }
-  // No child policy found.
+  // Child policy not in TRANSIENT_FAILURE or is the last target in
+  // the list, so delegate.
   if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_rls_trace)) {
     gpr_log(GPR_INFO,
-            "[rlslb %p] cache entry=%p %s: no healthy target found; "
-            "failing pick",
-            lb_policy_.get(), this, lru_iterator_->ToString().c_str());
+            "[rlslb %p] cache entry=%p %s: target %s (%" PRIuPTR " of %" PRIuPTR
+            ") in state %s; delegating",
+            lb_policy_.get(), this, lru_iterator_->ToString().c_str(),
+            child_policy_wrapper->target().c_str(), i,
+            child_policy_wrappers_.size(),
+            ConnectivityStateName(child_policy_wrapper->connectivity_state()));
   }
-  return PickResult::Fail(
-      absl::UnavailableError("all RLS targets unreachable"));
+  // Add header data.
+  // Note that even if the target we're using is in TRANSIENT_FAILURE,
+  // the pick might still succeed (e.g., if the child is ring_hash), so
+  // we need to pass the right header info down in all cases.
+  if (!header_data_.empty()) {
+    char* copied_header_data =
+        static_cast<char*>(args.call_state->Alloc(header_data_.length() + 1));
+    strcpy(copied_header_data, header_data_.c_str());
+    args.initial_metadata->Add(kRlsHeaderKey, copied_header_data);
+  }
+  return child_policy_wrapper->Pick(args);
 }
 
 void RlsLb::Cache::Entry::ResetBackoff() {
