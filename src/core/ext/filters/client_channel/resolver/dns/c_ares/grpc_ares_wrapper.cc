@@ -1054,7 +1054,7 @@ static grpc_ares_request* grpc_dns_lookup_ares_impl(
     std::unique_ptr<grpc_core::ServerAddressList>* addrs,
     std::unique_ptr<grpc_core::ServerAddressList>* balancer_addrs,
     char** service_config_json, int query_timeout_ms) {
-  // DO NOT SUBMIT(hork): ensure all callers know not to expect SRV records
+  // DO NOT SUBMIT(hork): ensure callers know not to expect SRV or TXT records
   grpc_ares_request* r = new grpc_ares_request();
   grpc_core::MutexLock lock(&r->mu);
   r->ev_driver = nullptr;
