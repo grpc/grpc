@@ -542,7 +542,7 @@ GRPCAPI void grpc_resource_quota_set_max_threads(
 
 /** EXPERIMENTAL.  Dumps xDS configs as a serialized ClientConfig proto.
     The full name of the proto is envoy.service.status.v3.ClientConfig. */
-GRPCAPI grpc_slice grpc_dump_xds_configs();
+GRPCAPI grpc_slice grpc_dump_xds_configs(void);
 
 /** Fetch a vtable for a grpc_channel_arg that points to a grpc_resource_quota
  */
