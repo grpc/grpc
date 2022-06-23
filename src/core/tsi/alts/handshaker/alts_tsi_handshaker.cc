@@ -471,11 +471,6 @@ static tsi_result alts_tsi_handshaker_continue_handshaker_next(
     ok = handshaker->is_client
              ? alts_handshaker_client_start_client(handshaker->client)
              : alts_handshaker_client_start_server(handshaker->client, &slice);
-    if (ok != TSI_OK && error != nullptr) {
-      // TODO(ZhenLian): Plumb a better error message up from the
-      // ALTS handshaker client.
-      *error = "could not start ALTS handshake client";
-    }
     // It's unsafe for the current thread to access any state in handshaker
     // at this point, since alts_handshaker_client_start_client/server
     // have potentially just started an op batch on the handshake call.
@@ -485,11 +480,6 @@ static tsi_result alts_tsi_handshaker_continue_handshaker_next(
     // from being destroyed.
   } else {
     ok = alts_handshaker_client_next(handshaker->client, &slice);
-    if (ok != TSI_OK && error != nullptr) {
-      // TODO(ZhenLian): Plumb a better error message up from the
-      // ALTS handshaker client.
-      *error = "ALTS handshake client failed";
-    }
   }
   grpc_slice_unref_internal(slice);
   return ok;
