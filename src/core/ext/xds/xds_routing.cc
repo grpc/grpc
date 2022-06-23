@@ -226,7 +226,7 @@ XdsRouting::GeneratePerHTTPFilterConfigs(
     const XdsRouteConfigResource::Route& route,
     const XdsRouteConfigResource::Route::RouteAction::ClusterWeight*
         cluster_weight,
-    const grpc_core::ChannelArgs& args) {
+    const ChannelArgs& args) {
   GeneratePerHttpFilterConfigsResult result;
   result.args = args;
   for (const auto& http_filter : http_filters) {

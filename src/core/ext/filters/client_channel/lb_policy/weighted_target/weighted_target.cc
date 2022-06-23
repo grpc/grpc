@@ -152,7 +152,7 @@ class WeightedTargetLb : public LoadBalancingPolicy {
 
     void UpdateLocked(const WeightedTargetLbConfig::ChildConfig& config,
                       absl::StatusOr<ServerAddressList> addresses,
-                      const grpc_core::ChannelArgs& args);
+                      const ChannelArgs& args);
     void ResetBackoffLocked();
     void DeactivateLocked();
 
@@ -202,7 +202,7 @@ class WeightedTargetLb : public LoadBalancingPolicy {
 
     // Methods for dealing with the child policy.
     OrphanablePtr<LoadBalancingPolicy> CreateChildPolicyLocked(
-        const grpc_core::ChannelArgs& args);
+        const ChannelArgs& args);
 
     void OnConnectivityStateUpdateLocked(
         grpc_connectivity_state state, const absl::Status& status,
@@ -638,7 +638,7 @@ void WeightedTargetLb::WeightedChild::DeactivateLocked() {
 
 RefCountedPtr<SubchannelInterface>
 WeightedTargetLb::WeightedChild::Helper::CreateSubchannel(
-    ServerAddress address, const grpc_core::ChannelArgs& args) {
+    ServerAddress address, const ChannelArgs& args) {
   if (weighted_child_->weighted_target_policy_->shutting_down_) return nullptr;
   return weighted_child_->weighted_target_policy_->channel_control_helper()
       ->CreateSubchannel(std::move(address), args);

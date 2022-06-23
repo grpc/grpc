@@ -36,8 +36,8 @@ namespace grpc_core {
 // configured with a config fetcher. Not invoked if there is no config fetcher
 // added to the server. Takes ownership of the args.  Caller takes ownership of
 // returned args. On failure, the error parameter will be set.
-using Chttp2ServerArgsModifier = std::function<ChannelArgs(
-    const grpc_core::ChannelArgs&, grpc_error_handle*)>;
+using Chttp2ServerArgsModifier =
+    std::function<ChannelArgs(const ChannelArgs&, grpc_error_handle*)>;
 
 /// Adds a port to \a server.  Sets \a port_num to the port number.
 /// Takes ownership of \a args.

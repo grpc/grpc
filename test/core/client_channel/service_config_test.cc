@@ -68,7 +68,7 @@ class TestParser1 : public ServiceConfigParser::Parser {
   absl::string_view name() const override { return "test_parser_1"; }
 
   std::unique_ptr<ServiceConfigParser::ParsedConfig> ParseGlobalParams(
-      const grpc_core::ChannelArgs& args, const Json& json,
+      const ChannelArgs& args, const Json& json,
       grpc_error_handle* error) override {
     GPR_DEBUG_ASSERT(error != nullptr);
     if (args.GetBool(GRPC_ARG_DISABLE_PARSING).value_or(false)) {
@@ -106,7 +106,7 @@ class TestParser2 : public ServiceConfigParser::Parser {
   absl::string_view name() const override { return "test_parser_2"; }
 
   std::unique_ptr<ServiceConfigParser::ParsedConfig> ParsePerMethodParams(
-      const grpc_core::ChannelArgs& args, const Json& json,
+      const ChannelArgs& args, const Json& json,
       grpc_error_handle* error) override {
     GPR_DEBUG_ASSERT(error != nullptr);
     if (args.GetBool(GRPC_ARG_DISABLE_PARSING).value_or(false)) {
@@ -147,7 +147,7 @@ class ErrorParser : public ServiceConfigParser::Parser {
   absl::string_view name() const override { return name_; }
 
   std::unique_ptr<ServiceConfigParser::ParsedConfig> ParsePerMethodParams(
-      const grpc_core::ChannelArgs& /*arg*/, const Json& /*json*/,
+      const ChannelArgs& /*arg*/, const Json& /*json*/,
       grpc_error_handle* error) override {
     GPR_DEBUG_ASSERT(error != nullptr);
     *error = GRPC_ERROR_CREATE_FROM_STATIC_STRING(MethodError());
@@ -155,7 +155,7 @@ class ErrorParser : public ServiceConfigParser::Parser {
   }
 
   std::unique_ptr<ServiceConfigParser::ParsedConfig> ParseGlobalParams(
-      const grpc_core::ChannelArgs& /*arg*/, const Json& /*json*/,
+      const ChannelArgs& /*arg*/, const Json& /*json*/,
       grpc_error_handle* error) override {
     GPR_DEBUG_ASSERT(error != nullptr);
     *error = GRPC_ERROR_CREATE_FROM_STATIC_STRING(GlobalError());
@@ -356,8 +356,8 @@ TEST_F(ServiceConfigTest, Parser1DisabledViaChannelArg) {
   grpc_channel_args args = {1, &arg};
   const char* test_json = "{\"global_param\":5}";
   grpc_error_handle error = GRPC_ERROR_NONE;
-  auto svc_cfg = ServiceConfigImpl::Create(grpc_core::ChannelArgs::FromC(&args),
-                                           test_json, &error);
+  auto svc_cfg =
+      ServiceConfigImpl::Create(ChannelArgs::FromC(&args), test_json, &error);
   ASSERT_EQ(error, GRPC_ERROR_NONE) << grpc_error_std_string(error);
   EXPECT_EQ(svc_cfg->GetGlobalParsedConfig(0), nullptr);
 }
@@ -408,8 +408,8 @@ TEST_F(ServiceConfigTest, Parser2DisabledViaChannelArg) {
       "{\"methodConfig\": [{\"name\":[{\"service\":\"TestServ\"}], "
       "\"method_param\":5}]}";
   grpc_error_handle error = GRPC_ERROR_NONE;
-  auto svc_cfg = ServiceConfigImpl::Create(grpc_core::ChannelArgs::FromC(&args),
-                                           test_json, &error);
+  auto svc_cfg =
+      ServiceConfigImpl::Create(ChannelArgs::FromC(&args), test_json, &error);
   ASSERT_EQ(error, GRPC_ERROR_NONE) << grpc_error_std_string(error);
   const auto* vector_ptr = svc_cfg->GetMethodParsedConfigVector(
       grpc_slice_from_static_string("/TestServ/TestMethod"));
@@ -1301,8 +1301,8 @@ TEST_F(RetryParserTest, ValidRetryPolicyWithPerAttemptRecvTimeout) {
   grpc_arg arg = grpc_channel_arg_integer_create(
       const_cast<char*>(GRPC_ARG_EXPERIMENTAL_ENABLE_HEDGING), 1);
   grpc_channel_args args = {1, &arg};
-  auto svc_cfg = ServiceConfigImpl::Create(grpc_core::ChannelArgs::FromC(&args),
-                                           test_json, &error);
+  auto svc_cfg =
+      ServiceConfigImpl::Create(ChannelArgs::FromC(&args), test_json, &error);
   ASSERT_EQ(error, GRPC_ERROR_NONE) << grpc_error_std_string(error);
   const auto* vector_ptr = svc_cfg->GetMethodParsedConfigVector(
       grpc_slice_from_static_string("/TestServ/TestMethod"));
@@ -1376,8 +1376,8 @@ TEST_F(RetryParserTest,
   grpc_arg arg = grpc_channel_arg_integer_create(
       const_cast<char*>(GRPC_ARG_EXPERIMENTAL_ENABLE_HEDGING), 1);
   grpc_channel_args args = {1, &arg};
-  auto svc_cfg = ServiceConfigImpl::Create(grpc_core::ChannelArgs::FromC(&args),
-                                           test_json, &error);
+  auto svc_cfg =
+      ServiceConfigImpl::Create(ChannelArgs::FromC(&args), test_json, &error);
   ASSERT_EQ(error, GRPC_ERROR_NONE) << grpc_error_std_string(error);
   const auto* vector_ptr = svc_cfg->GetMethodParsedConfigVector(
       grpc_slice_from_static_string("/TestServ/TestMethod"));
@@ -1414,8 +1414,8 @@ TEST_F(RetryParserTest, InvalidRetryPolicyPerAttemptRecvTimeoutUnparseable) {
   grpc_arg arg = grpc_channel_arg_integer_create(
       const_cast<char*>(GRPC_ARG_EXPERIMENTAL_ENABLE_HEDGING), 1);
   grpc_channel_args args = {1, &arg};
-  auto svc_cfg = ServiceConfigImpl::Create(grpc_core::ChannelArgs::FromC(&args),
-                                           test_json, &error);
+  auto svc_cfg =
+      ServiceConfigImpl::Create(ChannelArgs::FromC(&args), test_json, &error);
   EXPECT_THAT(grpc_error_std_string(error),
               ::testing::ContainsRegex(
                   "Service config parsing error" CHILD_ERROR_TAG
@@ -1447,8 +1447,8 @@ TEST_F(RetryParserTest, InvalidRetryPolicyPerAttemptRecvTimeoutWrongType) {
   grpc_arg arg = grpc_channel_arg_integer_create(
       const_cast<char*>(GRPC_ARG_EXPERIMENTAL_ENABLE_HEDGING), 1);
   grpc_channel_args args = {1, &arg};
-  auto svc_cfg = ServiceConfigImpl::Create(grpc_core::ChannelArgs::FromC(&args),
-                                           test_json, &error);
+  auto svc_cfg =
+      ServiceConfigImpl::Create(ChannelArgs::FromC(&args), test_json, &error);
   EXPECT_THAT(grpc_error_std_string(error),
               ::testing::ContainsRegex(
                   "Service config parsing error" CHILD_ERROR_TAG
@@ -1480,8 +1480,8 @@ TEST_F(RetryParserTest, InvalidRetryPolicyPerAttemptRecvTimeoutBadValue) {
   grpc_arg arg = grpc_channel_arg_integer_create(
       const_cast<char*>(GRPC_ARG_EXPERIMENTAL_ENABLE_HEDGING), 1);
   grpc_channel_args args = {1, &arg};
-  auto svc_cfg = ServiceConfigImpl::Create(grpc_core::ChannelArgs::FromC(&args),
-                                           test_json, &error);
+  auto svc_cfg =
+      ServiceConfigImpl::Create(ChannelArgs::FromC(&args), test_json, &error);
   EXPECT_THAT(grpc_error_std_string(error),
               ::testing::ContainsRegex(
                   "Service config parsing error" CHILD_ERROR_TAG

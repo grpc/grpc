@@ -156,7 +156,7 @@ RetryServiceConfigParser::ParseGlobalParams(const ChannelArgs& /*args*/,
 namespace {
 
 grpc_error_handle ParseRetryPolicy(
-    const grpc_core::ChannelArgs& args, const Json& json, int* max_attempts,
+    const ChannelArgs& args, const Json& json, int* max_attempts,
     Duration* initial_backoff, Duration* max_backoff, float* backoff_multiplier,
     StatusCodeSet* retryable_status_codes,
     absl::optional<Duration>* per_attempt_recv_timeout) {

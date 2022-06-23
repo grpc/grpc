@@ -32,7 +32,7 @@ GRPC_MUST_USE_RESULT
 ChannelArgs SetGrpcLbBalancerAddresses(const ChannelArgs& args,
                                        ServerAddressList address_list);
 const ServerAddressList* FindGrpclbBalancerAddressesInChannelArgs(
-    const grpc_core::ChannelArgs& args);
+    const ChannelArgs& args);
 
 }  // namespace grpc_core
 

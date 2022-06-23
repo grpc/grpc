@@ -118,14 +118,14 @@ struct MaxAgeFilter::Config {
 };
 
 absl::StatusOr<ClientIdleFilter> ClientIdleFilter::Create(
-    const grpc_core::ChannelArgs& args, ChannelFilter::Args filter_args) {
+    const ChannelArgs& args, ChannelFilter::Args filter_args) {
   ClientIdleFilter filter(filter_args.channel_stack(),
                           GetClientIdleTimeout(args));
   return absl::StatusOr<ClientIdleFilter>(std::move(filter));
 }
 
 absl::StatusOr<MaxAgeFilter> MaxAgeFilter::Create(
-    const grpc_core::ChannelArgs& args, ChannelFilter::Args filter_args) {
+    const ChannelArgs& args, ChannelFilter::Args filter_args) {
   MaxAgeFilter filter(filter_args.channel_stack(),
                       Config::FromChannelArgs(args));
   return absl::StatusOr<MaxAgeFilter>(std::move(filter));

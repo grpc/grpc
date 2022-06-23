@@ -98,7 +98,7 @@ class XdsRouting {
       const XdsRouteConfigResource::Route& route,
       const XdsRouteConfigResource::Route::RouteAction::ClusterWeight*
           cluster_weight,
-      const grpc_core::ChannelArgs& args);
+      const ChannelArgs& args);
 };
 
 }  // namespace grpc_core

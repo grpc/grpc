@@ -146,8 +146,7 @@ ClientChannelServiceConfigParser::ParseGlobalParams(const ChannelArgs& /*args*/,
 
 std::unique_ptr<ServiceConfigParser::ParsedConfig>
 ClientChannelServiceConfigParser::ParsePerMethodParams(
-    const grpc_core::ChannelArgs& /*args*/, const Json& json,
-    grpc_error_handle* error) {
+    const ChannelArgs& /*args*/, const Json& json, grpc_error_handle* error) {
   GPR_DEBUG_ASSERT(error != nullptr && GRPC_ERROR_IS_NONE(*error));
   std::vector<grpc_error_handle> error_list;
   // Parse waitForReady.

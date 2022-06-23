@@ -285,7 +285,7 @@ class Chttp2SecureClientChannelFactory : public ClientChannelFactory {
 
  private:
   static absl::StatusOr<ChannelArgs> GetSecureNamingChannelArgs(
-      grpc_core::ChannelArgs args) {
+      ChannelArgs args) {
     auto* channel_credentials = args.GetObject<grpc_channel_credentials>();
     if (channel_credentials == nullptr) {
       return absl::InternalError(
@@ -312,8 +312,8 @@ class Chttp2SecureClientChannelFactory : public ClientChannelFactory {
   }
 };
 
-absl::StatusOr<RefCountedPtr<Channel>> CreateChannel(
-    const char* target, const grpc_core::ChannelArgs& args) {
+absl::StatusOr<RefCountedPtr<Channel>> CreateChannel(const char* target,
+                                                     const ChannelArgs& args) {
   if (target == nullptr) {
     gpr_log(GPR_ERROR, "cannot create channel with NULL target name");
     return absl::InvalidArgumentError("channel target is NULL");

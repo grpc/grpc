@@ -626,7 +626,7 @@ grpc_error_handle XdsResolver::XdsConfigSelector::CreateMethodConfig(
 }
 
 ChannelArgs XdsResolver::XdsConfigSelector::ModifyChannelArgs(
-    const grpc_core::ChannelArgs& args) {
+    const ChannelArgs& args) {
   return args;
 }
 

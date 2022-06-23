@@ -99,7 +99,7 @@ class ServerConfigSelectorFilter final : public ChannelFilter {
 };
 
 absl::StatusOr<ServerConfigSelectorFilter> ServerConfigSelectorFilter::Create(
-    const grpc_core::ChannelArgs& args, ChannelFilter::Args) {
+    const ChannelArgs& args, ChannelFilter::Args) {
   ServerConfigSelectorProvider* server_config_selector_provider =
       args.GetObject<ServerConfigSelectorProvider>();
   if (server_config_selector_provider == nullptr) {

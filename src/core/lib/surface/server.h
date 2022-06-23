@@ -161,7 +161,7 @@ class Server : public InternallyRefCounted<Server>,
   // Takes ownership of a ref on resource_user from the caller.
   grpc_error_handle SetupTransport(
       grpc_transport* transport, grpc_pollset* accepting_pollset,
-      const grpc_core::ChannelArgs& args,
+      const ChannelArgs& args,
       const RefCountedPtr<channelz::SocketNode>& socket_node);
 
   void RegisterCompletionQueue(grpc_completion_queue* cq);

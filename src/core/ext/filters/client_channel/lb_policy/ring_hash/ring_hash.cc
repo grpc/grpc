@@ -212,7 +212,7 @@ class RingHash : public LoadBalancingPolicy {
       : public SubchannelList<RingHashSubchannelList, RingHashSubchannelData> {
    public:
     RingHashSubchannelList(RingHash* policy, ServerAddressList addresses,
-                           const grpc_core::ChannelArgs& args)
+                           const ChannelArgs& args)
         : SubchannelList(policy,
                          (GRPC_TRACE_FLAG_ENABLED(grpc_lb_ring_hash_trace)
                               ? "RingHashSubchannelList"

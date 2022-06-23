@@ -223,7 +223,7 @@ class PriorityLb : public LoadBalancingPolicy {
 
     // Methods for dealing with the child policy.
     OrphanablePtr<LoadBalancingPolicy> CreateChildPolicyLocked(
-        const grpc_core::ChannelArgs& args);
+        const ChannelArgs& args);
 
     void OnConnectivityStateUpdateLocked(
         grpc_connectivity_state state, const absl::Status& status,
@@ -878,8 +878,8 @@ void PriorityLb::ChildPriority::MaybeReactivateLocked() {
 //
 
 RefCountedPtr<SubchannelInterface>
-PriorityLb::ChildPriority::Helper::CreateSubchannel(
-    ServerAddress address, const grpc_core::ChannelArgs& args) {
+PriorityLb::ChildPriority::Helper::CreateSubchannel(ServerAddress address,
+                                                    const ChannelArgs& args) {
   if (priority_->priority_policy_->shutting_down_) return nullptr;
   return priority_->priority_policy_->channel_control_helper()
       ->CreateSubchannel(std::move(address), args);

@@ -103,7 +103,7 @@ class FakeChannelSecurityConnector final
     };
   }
 
-  void add_handshakers(const grpc_core::ChannelArgs&, grpc_pollset_set*,
+  void add_handshakers(const ChannelArgs&, grpc_pollset_set*,
                        HandshakeManager*) override {
     abort();
   }
@@ -260,7 +260,7 @@ const grpc_channel_filter* FindFilter(absl::string_view name) {
 class MainLoop {
  public:
   MainLoop(RefCountedPtr<grpc_channel_stack> channel_stack,
-           const grpc_core::ChannelArgs& channel_args)
+           const ChannelArgs& channel_args)
       : memory_allocator_(channel_args.GetObject<ResourceQuota>()
                               ->memory_quota()
                               ->CreateMemoryAllocator("test")),
@@ -357,7 +357,7 @@ class MainLoop {
     // EndFilter is the last filter that will be invoked for a call
     class EndFilter : public ChannelFilter {
      public:
-      static absl::StatusOr<EndFilter> Create(const grpc_core::ChannelArgs&,
+      static absl::StatusOr<EndFilter> Create(const ChannelArgs&,
                                               ChannelFilter::Args) {
         return EndFilter{};
       }
@@ -382,7 +382,7 @@ class MainLoop {
     // BottomFilter is the last filter on a channel stack (for sinking ops)
     class BottomFilter : public ChannelFilter {
      public:
-      static absl::StatusOr<BottomFilter> Create(const grpc_core::ChannelArgs&,
+      static absl::StatusOr<BottomFilter> Create(const ChannelArgs&,
                                                  ChannelFilter::Args) {
         return BottomFilter{};
       }

@@ -508,7 +508,7 @@ class RequestMetadataState : public RefCounted<RequestMetadataState> {
           return Immediate(absl::PermissionDeniedError("should never happen")));
     }
 
-    void add_handshakers(const grpc_core::ChannelArgs&, grpc_pollset_set*,
+    void add_handshakers(const ChannelArgs&, grpc_pollset_set*,
                          HandshakeManager*) override {
       GPR_ASSERT(false);
     }

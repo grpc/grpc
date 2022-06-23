@@ -94,7 +94,7 @@ class ClientIdleFilter final : public ChannelIdleFilter {
   static const grpc_channel_filter kFilter;
 
   static absl::StatusOr<ClientIdleFilter> Create(
-      const grpc_core::ChannelArgs& args, ChannelFilter::Args filter_args);
+      const ChannelArgs& args, ChannelFilter::Args filter_args);
 
  private:
   using ChannelIdleFilter::ChannelIdleFilter;

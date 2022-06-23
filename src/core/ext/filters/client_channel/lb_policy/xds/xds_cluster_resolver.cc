@@ -370,8 +370,8 @@ class XdsClusterResolverLb : public LoadBalancingPolicy {
 //
 
 RefCountedPtr<SubchannelInterface>
-XdsClusterResolverLb::Helper::CreateSubchannel(
-    ServerAddress address, const grpc_core::ChannelArgs& args) {
+XdsClusterResolverLb::Helper::CreateSubchannel(ServerAddress address,
+                                               const ChannelArgs& args) {
   if (xds_cluster_resolver_policy_->shutting_down_) return nullptr;
   return xds_cluster_resolver_policy_->channel_control_helper()
       ->CreateSubchannel(std::move(address), args);
@@ -961,7 +961,7 @@ void XdsClusterResolverLb::UpdateChildPolicyLocked() {
 }
 
 ChannelArgs XdsClusterResolverLb::CreateChildPolicyArgsLocked(
-    const grpc_core::ChannelArgs& args) {
+    const ChannelArgs& args) {
   // Inhibit client-side health checking, since the balancer does this
   // for us.
   return args.Set(GRPC_ARG_INHIBIT_HEALTH_CHECKING, 1);

@@ -604,7 +604,7 @@ void Server::Start() {
 
 grpc_error_handle Server::SetupTransport(
     grpc_transport* transport, grpc_pollset* accepting_pollset,
-    const grpc_core::ChannelArgs& args,
+    const ChannelArgs& args,
     const RefCountedPtr<channelz::SocketNode>& socket_node) {
   // Create channel.
   absl::StatusOr<RefCountedPtr<Channel>> channel =

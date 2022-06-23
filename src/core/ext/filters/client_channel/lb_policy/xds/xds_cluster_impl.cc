@@ -266,7 +266,7 @@ class XdsClusterImplLb : public LoadBalancingPolicy {
   OrphanablePtr<LoadBalancingPolicy> CreateChildPolicyLocked(
       const ChannelArgs& args);
   void UpdateChildPolicyLocked(absl::StatusOr<ServerAddressList> addresses,
-                               const grpc_core::ChannelArgs& args);
+                               const ChannelArgs& args);
 
   void MaybeUpdatePickerLocked();
 
@@ -553,7 +553,7 @@ void XdsClusterImplLb::MaybeUpdatePickerLocked() {
 }
 
 OrphanablePtr<LoadBalancingPolicy> XdsClusterImplLb::CreateChildPolicyLocked(
-    const grpc_core::ChannelArgs& args) {
+    const ChannelArgs& args) {
   LoadBalancingPolicy::Args lb_policy_args;
   lb_policy_args.work_serializer = work_serializer();
   lb_policy_args.args = args;

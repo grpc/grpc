@@ -100,7 +100,7 @@ class PickFirst : public LoadBalancingPolicy {
                               PickFirstSubchannelData> {
    public:
     PickFirstSubchannelList(PickFirst* policy, ServerAddressList addresses,
-                            const grpc_core::ChannelArgs& args)
+                            const ChannelArgs& args)
         : SubchannelList(policy,
                          (GRPC_TRACE_FLAG_ENABLED(grpc_lb_pick_first_trace)
                               ? "PickFirstSubchannelList"

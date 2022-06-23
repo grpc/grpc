@@ -166,8 +166,7 @@ class ChannelArgs {
 
   // Returns the union of this channel args with other.
   // If a key is present in both, the value from this is used.
-  GRPC_MUST_USE_RESULT ChannelArgs
-  UnionWith(grpc_core::ChannelArgs other) const;
+  GRPC_MUST_USE_RESULT ChannelArgs UnionWith(ChannelArgs other) const;
 
   const Value* Get(absl::string_view name) const;
   GRPC_MUST_USE_RESULT ChannelArgs Set(absl::string_view name,

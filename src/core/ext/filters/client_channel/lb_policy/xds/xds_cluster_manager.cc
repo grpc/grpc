@@ -144,7 +144,7 @@ class XdsClusterManagerLb : public LoadBalancingPolicy {
 
     void UpdateLocked(RefCountedPtr<LoadBalancingPolicy::Config> config,
                       const absl::StatusOr<ServerAddressList>& addresses,
-                      const grpc_core::ChannelArgs& args);
+                      const ChannelArgs& args);
     void ExitIdleLocked();
     void ResetBackoffLocked();
     void DeactivateLocked();
@@ -182,7 +182,7 @@ class XdsClusterManagerLb : public LoadBalancingPolicy {
 
     // Methods for dealing with the child policy.
     OrphanablePtr<LoadBalancingPolicy> CreateChildPolicyLocked(
-        const grpc_core::ChannelArgs& args);
+        const ChannelArgs& args);
 
     static void OnDelayedRemovalTimer(void* arg, grpc_error_handle error);
     void OnDelayedRemovalTimerLocked(grpc_error_handle error);

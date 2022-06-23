@@ -623,7 +623,7 @@ BackOff::Options ParseArgsForBackoffValues(const ChannelArgs& args,
 
 Subchannel::Subchannel(SubchannelKey key,
                        OrphanablePtr<SubchannelConnector> connector,
-                       const grpc_core::ChannelArgs& args)
+                       const ChannelArgs& args)
     : DualRefCounted<Subchannel>(
           GRPC_TRACE_FLAG_ENABLED(grpc_trace_subchannel_refcount) ? "Subchannel"
                                                                   : nullptr),

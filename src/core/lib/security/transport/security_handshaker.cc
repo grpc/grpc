@@ -136,7 +136,7 @@ class SecurityHandshaker : public Handshaker {
 
 SecurityHandshaker::SecurityHandshaker(tsi_handshaker* handshaker,
                                        grpc_security_connector* connector,
-                                       const grpc_core::ChannelArgs& args)
+                                       const ChannelArgs& args)
     : handshaker_(handshaker),
       connector_(connector->Ref(DEBUG_LOCATION, "handshake")),
       handshake_buffer_size_(GRPC_INITIAL_HANDSHAKE_BUFFER_SIZE),
@@ -641,7 +641,7 @@ class ServerSecurityHandshakerFactory : public HandshakerFactory {
 
 RefCountedPtr<Handshaker> SecurityHandshakerCreate(
     tsi_handshaker* handshaker, grpc_security_connector* connector,
-    const grpc_core::ChannelArgs& args) {
+    const ChannelArgs& args) {
   // If no TSI handshaker was created, return a handshaker that always fails.
   // Otherwise, return a real security handshaker.
   if (handshaker == nullptr) {

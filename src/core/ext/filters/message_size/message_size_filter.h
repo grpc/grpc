@@ -67,7 +67,7 @@ class MessageSizeParser : public ServiceConfigParser::Parser {
   absl::string_view name() const override { return parser_name(); }
 
   std::unique_ptr<ServiceConfigParser::ParsedConfig> ParsePerMethodParams(
-      const grpc_core::ChannelArgs& /*args*/, const Json& json,
+      const ChannelArgs& /*args*/, const Json& json,
       grpc_error_handle* error) override;
 
   static void Register(CoreConfiguration::Builder* builder);

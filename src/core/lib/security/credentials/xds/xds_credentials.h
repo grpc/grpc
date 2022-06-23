@@ -94,7 +94,7 @@ class XdsServerCredentials final : public grpc_server_credentials {
       : fallback_credentials_(std::move(fallback_credentials)) {}
 
   RefCountedPtr<grpc_server_security_connector> create_security_connector(
-      const grpc_core::ChannelArgs& /* args */) override;
+      const ChannelArgs& /* args */) override;
 
   static UniqueTypeName Type();
 

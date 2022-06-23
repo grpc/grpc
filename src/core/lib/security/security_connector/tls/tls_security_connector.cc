@@ -332,8 +332,8 @@ TlsChannelSecurityConnector::~TlsChannelSecurityConnector() {
 }
 
 void TlsChannelSecurityConnector::add_handshakers(
-    const grpc_core::ChannelArgs& args,
-    grpc_pollset_set* /*interested_parties*/, HandshakeManager* handshake_mgr) {
+    const ChannelArgs& args, grpc_pollset_set* /*interested_parties*/,
+    HandshakeManager* handshake_mgr) {
   MutexLock lock(&mu_);
   tsi_handshaker* tsi_hs = nullptr;
   if (client_handshaker_factory_ != nullptr) {
@@ -622,8 +622,8 @@ TlsServerSecurityConnector::~TlsServerSecurityConnector() {
 }
 
 void TlsServerSecurityConnector::add_handshakers(
-    const grpc_core::ChannelArgs& args,
-    grpc_pollset_set* /*interested_parties*/, HandshakeManager* handshake_mgr) {
+    const ChannelArgs& args, grpc_pollset_set* /*interested_parties*/,
+    HandshakeManager* handshake_mgr) {
   MutexLock lock(&mu_);
   tsi_handshaker* tsi_hs = nullptr;
   if (server_handshaker_factory_ != nullptr) {

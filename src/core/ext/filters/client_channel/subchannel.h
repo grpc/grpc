@@ -229,7 +229,7 @@ class Subchannel : public DualRefCounted<Subchannel> {
 
   // The ctor and dtor are not intended to use directly.
   Subchannel(SubchannelKey key, OrphanablePtr<SubchannelConnector> connector,
-             const grpc_core::ChannelArgs& args);
+             const ChannelArgs& args);
   ~Subchannel() override;
 
   // Throttles keepalive time to \a new_keepalive_time iff \a new_keepalive_time

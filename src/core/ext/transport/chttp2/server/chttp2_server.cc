@@ -103,7 +103,7 @@ const char kUnixAbstractUriPrefix[] = "unix-abstract:";
 class Chttp2ServerListener : public Server::ListenerInterface {
  public:
   static grpc_error_handle Create(Server* server, grpc_resolved_address* addr,
-                                  const grpc_core::ChannelArgs& args,
+                                  const ChannelArgs& args,
                                   Chttp2ServerArgsModifier args_modifier,
                                   int* port_num);
 
@@ -370,7 +370,7 @@ Timestamp GetConnectionDeadline(const ChannelArgs& args) {
 Chttp2ServerListener::ActiveConnection::HandshakingState::HandshakingState(
     RefCountedPtr<ActiveConnection> connection_ref,
     grpc_pollset* accepting_pollset, grpc_tcp_server_acceptor* acceptor,
-    const grpc_core::ChannelArgs& args)
+    const ChannelArgs& args)
     : connection_(std::move(connection_ref)),
       accepting_pollset_(accepting_pollset),
       acceptor_(acceptor),
@@ -553,7 +553,7 @@ void Chttp2ServerListener::ActiveConnection::HandshakingState::OnHandshakeDone(
 
 Chttp2ServerListener::ActiveConnection::ActiveConnection(
     grpc_pollset* accepting_pollset, grpc_tcp_server_acceptor* acceptor,
-    const grpc_core::ChannelArgs& args, MemoryOwner memory_owner)
+    const ChannelArgs& args, MemoryOwner memory_owner)
     : handshaking_state_(memory_owner.MakeOrphanable<HandshakingState>(
           Ref(), accepting_pollset, acceptor, args)) {
   GRPC_CLOSURE_INIT(&on_close_, ActiveConnection::OnClose, this,
@@ -611,7 +611,7 @@ void Chttp2ServerListener::ActiveConnection::SendGoAway() {
 
 void Chttp2ServerListener::ActiveConnection::Start(
     RefCountedPtr<Chttp2ServerListener> listener, grpc_endpoint* endpoint,
-    const grpc_core::ChannelArgs& args) {
+    const ChannelArgs& args) {
   RefCountedPtr<HandshakingState> handshaking_state_ref;
   listener_ = std::move(listener);
   {
@@ -907,7 +907,7 @@ void Chttp2ServerListener::Orphan() {
 //
 
 grpc_error_handle Chttp2ServerAddPort(Server* server, const char* addr,
-                                      const grpc_core::ChannelArgs& args,
+                                      const ChannelArgs& args,
                                       Chttp2ServerArgsModifier args_modifier,
                                       int* port_num) {
   if (addr == nullptr) {
