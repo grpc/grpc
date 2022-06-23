@@ -452,10 +452,10 @@ class AresDNSResolver : public DNSResolver {
 
     // Initiates the low-level c-ares request and returns its handle.
     virtual std::unique_ptr<grpc_ares_request> MakeRequestLocked() = 0;
-    // Called on ares resolution, or upon cancellation. Called exactly once.
+    // Called on ares resolution, but not upon cancellation.
     // After execution, the AresRequest will perform any final cleanup and
     // delete itself.
-    virtual void OnCancelOrComplete(grpc_error_handle error) = 0;
+    virtual void OnComplete(grpc_error_handle error) = 0;
 
     // Called to initiate the request.
     void Run() {
@@ -471,10 +471,11 @@ class AresDNSResolver : public DNSResolver {
         if (completed_) return false;
         // OnDnsLookupDone will still be run
         grpc_cancel_ares_request(grpc_ares_request_.get());
+        completed_ = true;
       } else {
-        OnCancelOrComplete(GRPC_ERROR_CANCELLED);
+        completed_ = true;
+        OnDnsLookupDone(this, GRPC_ERROR_CANCELLED);
       }
-      completed_ = true;
       grpc_pollset_set_del_pollset_set(pollset_set_, interested_parties_);
       return true;
     }
@@ -509,14 +510,17 @@ class AresDNSResolver : public DNSResolver {
     // called exactly once, and it triggers self-deletion.
     static void OnDnsLookupDone(void* arg, grpc_error_handle error) {
       AresRequest* r = static_cast<AresRequest*>(arg);
+      auto deleter = std::unique_ptr<AresRequest>(r);
       {
         MutexLock lock(&r->mu_);
-        r->completed_ = true;
         grpc_pollset_set_del_pollset_set(r->pollset_set_,
                                          r->interested_parties_);
+        if (r->completed_) {
+          return;
+        }
+        r->completed_ = true;
       }
-      r->OnCancelOrComplete(error);
-      delete r;
+      r->OnComplete(error);
     }
 
     // mutex to synchronize access to this object (but not to the ares_request
@@ -563,13 +567,13 @@ class AresDNSResolver : public DNSResolver {
       return ares_request;
     }
 
-    void OnCancelOrComplete(grpc_error_handle error) override {
-      GRPC_CARES_TRACE_LOG("AresHostnameRequest:%p OnCancelOrComplete", this);
-      std::vector<grpc_resolved_address> resolved_addresses;
+    void OnComplete(grpc_error_handle error) override {
+      GRPC_CARES_TRACE_LOG("AresHostnameRequest:%p OnComplete", this);
       if (!GRPC_ERROR_IS_NONE(error)) {
         on_resolve_address_done_(grpc_error_to_absl_status(error));
         return;
       }
+      std::vector<grpc_resolved_address> resolved_addresses;
       if (addresses_ != nullptr) {
         resolved_addresses.reserve(addresses_->size());
         for (const auto& server_address : *addresses_) {
