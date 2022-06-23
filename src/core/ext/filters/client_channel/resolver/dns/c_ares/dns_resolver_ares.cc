@@ -119,8 +119,7 @@ class AresClientChannelDNSResolver : public PollingResolver {
       hostname_request_.reset(grpc_dns_lookup_ares(
           resolver_->authority().c_str(), resolver_->name_to_resolve().c_str(),
           kDefaultSecurePort, resolver_->interested_parties(),
-          &on_hostname_resolved_, &addresses_, nullptr, nullptr,
-          resolver_->query_timeout_ms_));
+          &on_hostname_resolved_, &addresses_, resolver_->query_timeout_ms_));
       GRPC_CARES_TRACE_LOG(
           "resolver:%p Started resolving hostnames. hostname_request_:%p",
           resolver_.get(), hostname_request_.get());
@@ -462,7 +461,6 @@ class AresDNSResolver : public DNSResolver {
       ares_request_ = std::unique_ptr<grpc_ares_request>(grpc_dns_lookup_ares(
           /*dns_server=*/"", name_.c_str(), default_port_.c_str(), pollset_set_,
           &on_dns_lookup_done_, &addresses_,
-          /*balancer_addresses=*/nullptr, /*service_config_json=*/nullptr,
           GRPC_DNS_ARES_DEFAULT_QUERY_TIMEOUT_MS));
       GRPC_CARES_TRACE_LOG("AresRequest:%p Start ares_request_:%p", this,
                            ares_request_.get());

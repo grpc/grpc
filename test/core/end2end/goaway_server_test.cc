@@ -47,8 +47,7 @@ static grpc_ares_request* (*iomgr_dns_lookup_ares)(
     const char* dns_server, const char* addr, const char* default_port,
     grpc_pollset_set* interested_parties, grpc_closure* on_done,
     std::unique_ptr<grpc_core::ServerAddressList>* addresses,
-    std::unique_ptr<grpc_core::ServerAddressList>* balancer_addresses,
-    char** service_config_json, int query_timeout_ms);
+    int query_timeout_ms);
 
 static void (*iomgr_cancel_ares_request)(grpc_ares_request* request);
 
@@ -143,13 +142,12 @@ static grpc_ares_request* my_dns_lookup_ares(
     const char* dns_server, const char* addr, const char* default_port,
     grpc_pollset_set* interested_parties, grpc_closure* on_done,
     std::unique_ptr<grpc_core::ServerAddressList>* addresses,
-    std::unique_ptr<grpc_core::ServerAddressList>* /*balancer_addresses*/,
-    char** /*service_config_json*/, int query_timeout_ms) {
+    int query_timeout_ms) {
   if (0 != strcmp(addr, "test")) {
     // A records should suffice
     return iomgr_dns_lookup_ares(dns_server, addr, default_port,
                                  interested_parties, on_done, addresses,
-                                 nullptr, nullptr, query_timeout_ms);
+                                 query_timeout_ms);
   }
 
   grpc_error_handle error = GRPC_ERROR_NONE;

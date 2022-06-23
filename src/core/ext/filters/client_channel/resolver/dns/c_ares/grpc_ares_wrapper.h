@@ -78,12 +78,11 @@ struct grpc_ares_request {
   grpc_error_handle error ABSL_GUARDED_BY(mu) = GRPC_ERROR_NONE;
 };
 
-/* Asynchronously resolve \a name. It will try to resolve grpclb SRV records in
-  addition to the normal address records. For normal address records, it uses
-  \a default_port if a port isn't designated in \a name, otherwise it uses the
-  port in \a name. grpc_ares_init() must be called at least once before this
-  function. The returned grpc_ares_request object is owned by the caller and it
-  is safe to free after on_done is called back.
+/* Asynchronously resolve \a name (A/AAAA records only).
+  It uses \a default_port if a port isn't designated in \a name, otherwise it
+  uses the port in \a name. grpc_ares_init() must be called at least once before
+  this function. The returned grpc_ares_request object is owned by the caller
+  and it is safe to free after on_done is called back.
 
   Note on synchronization: \a as on_done might be called from another thread
   ~immediately, access to the grpc_ares_request* return value must be
@@ -94,8 +93,7 @@ extern grpc_ares_request* (*grpc_dns_lookup_ares)(
     const char* dns_server, const char* name, const char* default_port,
     grpc_pollset_set* interested_parties, grpc_closure* on_done,
     std::unique_ptr<grpc_core::ServerAddressList>* addresses,
-    std::unique_ptr<grpc_core::ServerAddressList>* balancer_addresses,
-    char** service_config_json, int query_timeout_ms);
+    int query_timeout_ms);
 
 // Asynchronously resolve a SRV record.
 // See \a grpc_dns_lookup_ares for usage details and caveats.

@@ -1052,8 +1052,7 @@ static grpc_ares_request* grpc_dns_lookup_ares_impl(
     const char* dns_server, const char* name, const char* default_port,
     grpc_pollset_set* interested_parties, grpc_closure* on_done,
     std::unique_ptr<grpc_core::ServerAddressList>* addrs,
-    std::unique_ptr<grpc_core::ServerAddressList>* balancer_addrs,
-    char** service_config_json, int query_timeout_ms) {
+    int query_timeout_ms) {
   // DO NOT SUBMIT(hork): ensure callers know not to expect SRV or TXT records
   grpc_ares_request* r = new grpc_ares_request();
   grpc_core::MutexLock lock(&r->mu);
@@ -1198,8 +1197,6 @@ grpc_ares_request* (*grpc_dns_lookup_ares)(
     const char* dns_server, const char* name, const char* default_port,
     grpc_pollset_set* interested_parties, grpc_closure* on_done,
     std::unique_ptr<grpc_core::ServerAddressList>* addrs,
-    std::unique_ptr<grpc_core::ServerAddressList>* balancer_addrs,
-    char** service_config_json,
     int query_timeout_ms) = grpc_dns_lookup_ares_impl;
 
 grpc_ares_request* (*grpc_dns_lookup_srv_ares)(
