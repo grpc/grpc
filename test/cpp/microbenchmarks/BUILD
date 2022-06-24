@@ -156,6 +156,19 @@ grpc_cc_test(
     deps = [":helpers"],
 )
 
+grpc_cc_test(
+    name = "bm_cq_multiple_threads",
+    srcs = ["bm_cq_multiple_threads.cc"],
+    args = grpc_benchmark_args(),
+    tags = [
+        "no_mac",
+        "no_windows",
+    ],
+    uses_event_engine = False,
+    uses_polling = False,
+    deps = [":helpers"],
+)
+
 grpc_cc_library(
     name = "fullstack_streaming_ping_pong_h",
     testonly = 1,
