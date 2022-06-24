@@ -865,58 +865,36 @@ grpc_error_handle set_request_dns_server(grpc_ares_request* r,
   return GRPC_ERROR_NONE;
 }
 
-void grpc_dns_lookup_hostname_ares_continue_after_check_localhost_and_ip_literals_locked(
+// Common logic for all lookup methods.
+// If an error occurs, callers must run the client callback.
+grpc_error_handle grpc_dns_lookup_ares_continued(
     grpc_ares_request* r, const char* dns_server, const char* name,
     const char* default_port, grpc_pollset_set* interested_parties,
-    int query_timeout_ms) ABSL_EXCLUSIVE_LOCKS_REQUIRED(r->mu) {
+    int query_timeout_ms, std::string* host, std::string* port, bool check_port)
+    ABSL_EXCLUSIVE_LOCKS_REQUIRED(r->mu) {
   grpc_error_handle error = GRPC_ERROR_NONE;
-  grpc_ares_hostbyname_request* hr = nullptr;
-  // When the function returns, execute the callback if any error occurred.
-  auto error_cleanup =
-      absl::MakeCleanup([r, &error]() ABSL_EXCLUSIVE_LOCKS_REQUIRED(r->mu) {
-        if (!GRPC_ERROR_IS_NONE(error)) {
-          grpc_core::ExecCtx::Run(DEBUG_LOCATION, r->on_done, error);
-        }
-      });
   /* parse name, splitting it into host and port parts */
-  std::string host;
-  std::string port;
-  grpc_core::SplitHostPort(name, &host, &port);
-  if (host.empty()) {
+  grpc_core::SplitHostPort(name, host, port);
+  if (host->empty()) {
     error = grpc_error_set_str(
         GRPC_ERROR_CREATE_FROM_STATIC_STRING("unparseable host:port"),
         GRPC_ERROR_STR_TARGET_ADDRESS, name);
-    return;
-  } else if (port.empty()) {
+    return error;
+  } else if (check_port && port->empty()) {
     if (default_port == nullptr || strlen(default_port) == 0) {
       error = grpc_error_set_str(
           GRPC_ERROR_CREATE_FROM_STATIC_STRING("no port in name"),
           GRPC_ERROR_STR_TARGET_ADDRESS, name);
-      return;
+      return error;
     }
-    port = default_port;
+    *port = default_port;
   }
   error = grpc_ares_ev_driver_create_locked(&r->ev_driver, interested_parties,
                                             query_timeout_ms, r);
-  if (!GRPC_ERROR_IS_NONE(error)) return;
+  if (!GRPC_ERROR_IS_NONE(error)) return error;
   // If dns_server is specified, use it.
   error = set_request_dns_server(r, dns_server, name);
-  if (error != GRPC_ERROR_NONE) return;
-  r->pending_queries = 1;
-  if (grpc_ares_query_ipv6()) {
-    hr = create_hostbyname_request_locked(r, host.c_str(),
-                                          grpc_strhtons(port.c_str()),
-                                          /*is_balancer=*/false, "AAAA");
-    ares_gethostbyname(r->ev_driver->channel, hr->host, AF_INET6,
-                       on_hostbyname_done_locked, hr);
-  }
-  hr = create_hostbyname_request_locked(r, host.c_str(),
-                                        grpc_strhtons(port.c_str()),
-                                        /*is_balancer=*/false, "A");
-  ares_gethostbyname(r->ev_driver->channel, hr->host, AF_INET,
-                     on_hostbyname_done_locked, hr);
-  grpc_ares_ev_driver_start_locked(r->ev_driver);
-  grpc_ares_request_unref_locked(r);
+  return error;
 }
 
 static bool inner_resolve_as_ip_literal_locked(
@@ -1074,8 +1052,31 @@ static grpc_ares_request* grpc_dns_lookup_hostname_ares_impl(
     return r;
   }
   // Look up name using c-ares lib.
-  grpc_dns_lookup_hostname_ares_continue_after_check_localhost_and_ip_literals_locked(
-      r, dns_server, name, default_port, interested_parties, query_timeout_ms);
+  std::string host;
+  std::string port;
+  grpc_error_handle error = grpc_dns_lookup_ares_continued(
+      r, dns_server, name, default_port, interested_parties, query_timeout_ms,
+      &host, &port, true);
+  if (!GRPC_ERROR_IS_NONE(error)) {
+    grpc_core::ExecCtx::Run(DEBUG_LOCATION, r->on_done, error);
+    return r;
+  }
+  r->pending_queries = 1;
+  grpc_ares_hostbyname_request* hr = nullptr;
+  if (grpc_ares_query_ipv6()) {
+    hr = create_hostbyname_request_locked(r, host.c_str(),
+                                          grpc_strhtons(port.c_str()),
+                                          /*is_balancer=*/false, "AAAA");
+    ares_gethostbyname(r->ev_driver->channel, hr->host, AF_INET6,
+                       on_hostbyname_done_locked, hr);
+  }
+  hr = create_hostbyname_request_locked(r, host.c_str(),
+                                        grpc_strhtons(port.c_str()),
+                                        /*is_balancer=*/false, "A");
+  ares_gethostbyname(r->ev_driver->channel, hr->host, AF_INET,
+                     on_hostbyname_done_locked, hr);
+  grpc_ares_ev_driver_start_locked(r->ev_driver);
+  grpc_ares_request_unref_locked(r);
   return r;
 }
 
@@ -1084,7 +1085,7 @@ grpc_ares_request* grpc_dns_lookup_srv_ares_impl(
     grpc_pollset_set* interested_parties, grpc_closure* on_done,
     std::unique_ptr<grpc_core::ServerAddressList>* balancer_addresses,
     int query_timeout_ms) {
-  // DO NOT SUBMIT(hork): deduplicate with grpc_dns_lookup_hostname_ares_impl
+  // TODO(hork): deduplicate with grpc_dns_lookup_hostname_ares_impl
   grpc_ares_request* r = new grpc_ares_request();
   grpc_core::MutexLock lock(&r->mu);
   r->ev_driver = nullptr;
@@ -1101,30 +1102,16 @@ grpc_ares_request* grpc_dns_lookup_srv_ares_impl(
     grpc_core::ExecCtx::Run(DEBUG_LOCATION, r->on_done, error);
     return r;
   }
-  // parse name, splitting it into host and port parts.
+  // Look up name using c-ares lib.
   std::string host;
   std::string port;
-  grpc_core::SplitHostPort(name, &host, &port);
-  if (host.empty()) {
-    error = grpc_error_set_str(
-        GRPC_ERROR_CREATE_FROM_STATIC_STRING("unparseable host:port"),
-        GRPC_ERROR_STR_TARGET_ADDRESS, name);
+  error = grpc_dns_lookup_ares_continued(r, dns_server, name, nullptr,
+                                         interested_parties, query_timeout_ms,
+                                         &host, &port, false);
+  if (!GRPC_ERROR_IS_NONE(error)) {
     grpc_core::ExecCtx::Run(DEBUG_LOCATION, r->on_done, error);
     return r;
   }
-  // When the function returns, execute the callback if any error occurred.
-  auto error_cleanup =
-      absl::MakeCleanup([r, &error]() ABSL_EXCLUSIVE_LOCKS_REQUIRED(r->mu) {
-        if (!GRPC_ERROR_IS_NONE(error)) {
-          grpc_core::ExecCtx::Run(DEBUG_LOCATION, r->on_done, error);
-        }
-      });
-  error = grpc_ares_ev_driver_create_locked(&r->ev_driver, interested_parties,
-                                            query_timeout_ms, r);
-  if (!GRPC_ERROR_IS_NONE(error)) return r;
-  // If dns_server is specified, use it.
-  error = set_request_dns_server(r, dns_server, name);
-  if (error != GRPC_ERROR_NONE) return r;
   r->pending_queries = 1;
   /* Query the SRV record */
   std::string service_name = absl::StrCat("_grpclb._tcp.", host);
@@ -1140,7 +1127,7 @@ grpc_ares_request* grpc_dns_lookup_txt_ares_impl(
     const char* dns_server, const char* name,
     grpc_pollset_set* interested_parties, grpc_closure* on_done,
     char** service_config_json, int query_timeout_ms) {
-  // DO NOT SUBMIT(hork): deduplicate with grpc_dns_lookup_hostname_ares_impl
+  // TODO(hork): deduplicate with grpc_dns_lookup_hostname_ares_impl
   grpc_ares_request* r = new grpc_ares_request();
   grpc_core::MutexLock lock(&r->mu);
   r->ev_driver = nullptr;
@@ -1157,30 +1144,16 @@ grpc_ares_request* grpc_dns_lookup_txt_ares_impl(
     grpc_core::ExecCtx::Run(DEBUG_LOCATION, r->on_done, error);
     return r;
   }
-  // parse name, splitting it into host and port parts.
+  // Look up name using c-ares lib.
   std::string host;
   std::string port;
-  grpc_core::SplitHostPort(name, &host, &port);
-  if (host.empty()) {
-    error = grpc_error_set_str(
-        GRPC_ERROR_CREATE_FROM_STATIC_STRING("unparseable host:port"),
-        GRPC_ERROR_STR_TARGET_ADDRESS, name);
+  error = grpc_dns_lookup_ares_continued(r, dns_server, name, nullptr,
+                                         interested_parties, query_timeout_ms,
+                                         &host, &port, false);
+  if (!GRPC_ERROR_IS_NONE(error)) {
     grpc_core::ExecCtx::Run(DEBUG_LOCATION, r->on_done, error);
     return r;
   }
-  // When the function returns, execute the callback if any error occurred.
-  auto error_cleanup =
-      absl::MakeCleanup([r, &error]() ABSL_EXCLUSIVE_LOCKS_REQUIRED(r->mu) {
-        if (!GRPC_ERROR_IS_NONE(error)) {
-          grpc_core::ExecCtx::Run(DEBUG_LOCATION, r->on_done, error);
-        }
-      });
-  error = grpc_ares_ev_driver_create_locked(&r->ev_driver, interested_parties,
-                                            query_timeout_ms, r);
-  if (!GRPC_ERROR_IS_NONE(error)) return r;
-  // If dns_server is specified, use it.
-  error = set_request_dns_server(r, dns_server, name);
-  if (error != GRPC_ERROR_NONE) return r;
   r->pending_queries = 1;
   /* Query the TXT record */
   std::string config_name = absl::StrCat("_grpc_config.", host);
