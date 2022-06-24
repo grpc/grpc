@@ -227,7 +227,7 @@ absl::optional<std::string> StatusGetStr(const absl::Status& status,
 
 void StatusSetTime(absl::Status* status, StatusTimeProperty key,
                    absl::Time time) {
-#if !defined(__clang__) && defined(_MSC_VER) && _MSC_VER < 1910
+#if !defined(__clang__) && defined(_MSC_VER) && _MSC_VER < 1930
   // Abseil has a workaround for MSVC 2015 which prevents absl::Time
   // from being is_trivially_copyable but it's still safe to be
   // memcopied.
