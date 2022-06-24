@@ -20432,7 +20432,7 @@ function(generate_pkgconfig name description version requires
     "${output_filepath}"
     @ONLY)
   install(FILES "${output_filepath}"
-    DESTINATION "lib/pkgconfig/")
+    DESTINATION "${gRPC_INSTALL_LIBDIR}/pkgconfig")
 endfunction()
 
 # gpr .pc file
