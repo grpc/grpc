@@ -43,7 +43,7 @@ class EventEngineTimerTest : public EventEngineTest {
     absl::Time deadline = absl::Now() + timeout;
     while (!signaled_) {
       timeout = deadline - absl::Now();
-      GPR_ASSERT(timeout > absl::ZeroDuration());
+      ASSERT_GT(timeout, absl::ZeroDuration());
       cv_.WaitWithTimeout(&mu_, timeout);
     }
   }
