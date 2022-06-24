@@ -1084,7 +1084,6 @@ grpc_ares_request* grpc_dns_lookup_srv_ares_impl(
     grpc_pollset_set* interested_parties, grpc_closure* on_done,
     std::unique_ptr<grpc_core::ServerAddressList>* balancer_addresses,
     int query_timeout_ms) {
-  // TODO(hork): deduplicate with grpc_dns_lookup_hostname_ares_impl
   grpc_ares_request* r = new grpc_ares_request();
   grpc_core::MutexLock lock(&r->mu);
   r->ev_driver = nullptr;
@@ -1126,7 +1125,6 @@ grpc_ares_request* grpc_dns_lookup_txt_ares_impl(
     const char* dns_server, const char* name,
     grpc_pollset_set* interested_parties, grpc_closure* on_done,
     char** service_config_json, int query_timeout_ms) {
-  // TODO(hork): deduplicate with grpc_dns_lookup_hostname_ares_impl
   grpc_ares_request* r = new grpc_ares_request();
   grpc_core::MutexLock lock(&r->mu);
   r->ev_driver = nullptr;
