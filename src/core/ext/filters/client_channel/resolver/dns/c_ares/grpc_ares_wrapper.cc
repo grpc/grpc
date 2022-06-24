@@ -1053,7 +1053,6 @@ static grpc_ares_request* grpc_dns_lookup_hostname_ares_impl(
     grpc_pollset_set* interested_parties, grpc_closure* on_done,
     std::unique_ptr<grpc_core::ServerAddressList>* addrs,
     int query_timeout_ms) {
-  // DO NOT SUBMIT(hork): ensure callers know not to expect SRV or TXT records
   grpc_ares_request* r = new grpc_ares_request();
   grpc_core::MutexLock lock(&r->mu);
   r->ev_driver = nullptr;

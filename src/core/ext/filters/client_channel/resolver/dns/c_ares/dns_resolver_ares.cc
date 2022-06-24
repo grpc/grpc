@@ -161,6 +161,9 @@ class AresClientChannelDNSResolver : public PollingResolver {
       if (srv_request_ != nullptr) {
         grpc_cancel_ares_request(srv_request_.get());
       }
+      if (txt_request_ != nullptr) {
+        grpc_cancel_ares_request(txt_request_.get());
+      }
       Unref(DEBUG_LOCATION, "Orphan");
     }
 
@@ -437,8 +440,8 @@ class AresClientChannelDNSResolverFactory : public ResolverFactory {
 
 class AresDNSResolver : public DNSResolver {
  public:
-  // Abstract class that centralizes common request handling logic
-  // See template method pattern.
+  // Abstract class that centralizes common request handling logic via the
+  // template method pattern.
   // This requires a two-phase initialization, where 1) a request is created via
   // a subclass constructor, and 2) the request is initiated via Run()
   class AresRequest {
@@ -470,8 +473,8 @@ class AresDNSResolver : public DNSResolver {
                              grpc_ares_request_.get());
         if (completed_) return false;
         // OnDnsLookupDone will still be run
-        grpc_cancel_ares_request(grpc_ares_request_.get());
         completed_ = true;
+        grpc_cancel_ares_request(grpc_ares_request_.get());
       } else {
         completed_ = true;
         OnDnsLookupDone(this, GRPC_ERROR_CANCELLED);
@@ -497,12 +500,12 @@ class AresDNSResolver : public DNSResolver {
       grpc_pollset_set_add_pollset_set(pollset_set_, interested_parties_);
     }
 
-    // closure to call when the resolve_address_ares request completes
-    // a closure wrapping on_resolve_address_done, which should be invoked
-    // when the grpc_dns_lookup_hostname_ares operation is done.
+    // closure to call when the ares resolution request completes. Subclasses
+    // should use this as the ares callback in MakeRequestLocked()
     grpc_closure on_dns_lookup_done_ ABSL_GUARDED_BY(mu_);
     // locally owned pollset_set, required to support cancellation of requests
-    // while ares still needs a valid pollset_set.
+    // while ares still needs a valid pollset_set. Subclasses should give this
+    // pollset to ares in MakeRequestLocked();
     grpc_pollset_set* pollset_set_;
 
    private:
@@ -641,8 +644,6 @@ class AresDNSResolver : public DNSResolver {
 
     // the name to resolve
     const std::string name_;
-    // the default port to use if name doesn't have one
-    const std::string default_port_;
     // the name server to query
     const std::string name_server_;
     // user-provided completion callback
@@ -666,9 +667,7 @@ class AresDNSResolver : public DNSResolver {
       GRPC_CARES_TRACE_LOG("AresTXTRequest:%p ctor", this);
     }
 
-    ~AresTXTRequest() override {
-      gpr_free(service_config_json_);
-    }
+    ~AresTXTRequest() override { gpr_free(service_config_json_); }
 
     std::unique_ptr<grpc_ares_request> MakeRequestLocked() override {
       auto ares_request =
@@ -692,8 +691,6 @@ class AresDNSResolver : public DNSResolver {
 
     // the name to resolve
     const std::string name_;
-    // the default port to use if name doesn't have one
-    const std::string default_port_;
     // the name server to query
     const std::string name_server_;
     // service config from the TXT record
