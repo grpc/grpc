@@ -1418,4 +1418,38 @@ const grpc_event_engine_vtable grpc_ev_poll_posix = {
     add_closure_to_background_poller,
 };
 
+namespace {
+
+grpc_poll_function_type real_poll_function;
+
+int phony_poll(struct pollfd fds[], nfds_t nfds, int timeout) {
+  if (timeout == 0) {
+    return real_poll_function(fds, nfds, 0);
+  } else {
+    gpr_log(GPR_ERROR, "Attempted a blocking poll when declared non-polling.");
+    GPR_ASSERT(false);
+    return -1;
+  }
+}
+
+}  // namespace
+
+const grpc_event_engine_vtable grpc_ev_none_posix = []() {
+  grpc_event_engine_vtable v = grpc_ev_poll_posix;
+  v.check_engine_available = [](bool explicit_request) {
+    if (!explicit_request) return false;
+    // return the simplest engine as a phony but also override the poller
+    if (!grpc_ev_poll_posix.check_engine_available(explicit_request)) {
+      return false;
+    }
+    real_poll_function = grpc_poll_function;
+    grpc_poll_function = phony_poll;
+    return true;
+  };
+  v.name = "none";
+  v.init_engine = []() {};
+  v.shutdown_engine = []() {};
+  return v;
+}();
+
 #endif /* GRPC_POSIX_SOCKET_EV_POLL */
