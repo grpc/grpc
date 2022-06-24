@@ -18,8 +18,6 @@
 
 #include <grpc/support/port_platform.h>
 
-#include <grpc/support/sync.h>
-
 #include "src/core/lib/iomgr/port.h"
 
 #ifdef GRPC_POSIX_SOCKET_EV
@@ -76,7 +74,6 @@ grpc_poll_function_type grpc_poll_function = aix_poll;
 grpc_wakeup_fd grpc_global_wakeup_fd;
 
 static const grpc_event_engine_vtable* g_event_engine = nullptr;
-static gpr_once g_init_event_engine = GPR_ONCE_INIT;
 static const char* g_poll_strategy_name = nullptr;
 
 typedef const grpc_event_engine_vtable* (*event_engine_factory_fn)(
@@ -211,32 +208,32 @@ void grpc_register_event_engine_factory(const char* name,
 const char* grpc_get_poll_strategy_name() { return g_poll_strategy_name; }
 
 void grpc_event_engine_init(void) {
-  gpr_once_init(&g_init_event_engine, []() {
-    grpc_core::UniquePtr<char> value =
-        GPR_GLOBAL_CONFIG_GET(grpc_poll_strategy);
+  grpc_core::UniquePtr<char> value = GPR_GLOBAL_CONFIG_GET(grpc_poll_strategy);
 
-    char** strings = nullptr;
-    size_t nstrings = 0;
-    split(value.get(), &strings, &nstrings);
+  char** strings = nullptr;
+  size_t nstrings = 0;
+  split(value.get(), &strings, &nstrings);
 
-    for (size_t i = 0; g_event_engine == nullptr && i < nstrings; i++) {
-      try_engine(strings[i]);
-    }
+  for (size_t i = 0; g_event_engine == nullptr && i < nstrings; i++) {
+    try_engine(strings[i]);
+  }
 
-    for (size_t i = 0; i < nstrings; i++) {
-      gpr_free(strings[i]);
-    }
-    gpr_free(strings);
+  for (size_t i = 0; i < nstrings; i++) {
+    gpr_free(strings[i]);
+  }
+  gpr_free(strings);
 
-    if (g_event_engine == nullptr) {
-      gpr_log(GPR_ERROR, "No event engine could be initialized from %s",
-              value.get());
-      abort();
-    }
-  });
+  if (g_event_engine == nullptr) {
+    gpr_log(GPR_ERROR, "No event engine could be initialized from %s",
+            value.get());
+    abort();
+  }
 }
 
-void grpc_event_engine_shutdown(void) {}
+void grpc_event_engine_shutdown(void) {
+  g_event_engine->shutdown_engine();
+  g_event_engine = nullptr;
+}
 
 bool grpc_event_engine_can_track_errors(void) {
   /* Only track errors if platform supports errqueue. */
