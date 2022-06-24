@@ -1576,8 +1576,6 @@ Gem::Specification.new do |s|
   s.files += %w( third_party/abseil-cpp/absl/base/policy_checks.h )
   s.files += %w( third_party/abseil-cpp/absl/base/port.h )
   s.files += %w( third_party/abseil-cpp/absl/base/thread_annotations.h )
-  s.files += %w( third_party/abseil-cpp/absl/cleanup/cleanup.h )
-  s.files += %w( third_party/abseil-cpp/absl/cleanup/internal/cleanup.h )
   s.files += %w( third_party/abseil-cpp/absl/container/fixed_array.h )
   s.files += %w( third_party/abseil-cpp/absl/container/flat_hash_map.h )
   s.files += %w( third_party/abseil-cpp/absl/container/flat_hash_set.h )
