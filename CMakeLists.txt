@@ -7941,7 +7941,6 @@ target_include_directories(avl_test
 target_link_libraries(avl_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
-  absl::inlined_vector
 )
 
 
