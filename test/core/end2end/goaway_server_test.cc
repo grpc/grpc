@@ -66,15 +66,17 @@ grpc_core::DNSResolver* g_default_dns_resolver;
 class TestDNSResolver : public grpc_core::DNSResolver {
  public:
   TaskHandle LookupHostname(
-      absl::string_view name, absl::string_view default_port,
-      grpc_pollset_set* interested_parties,
       std::function<void(absl::StatusOr<std::vector<grpc_resolved_address>>)>
-          on_done) override {
+          on_resolved,
+      absl::string_view name, absl::string_view default_port,
+      grpc_core::Duration timeout, grpc_pollset_set* interested_parties,
+      absl::string_view name_server) override {
     if (name != "test") {
       return g_default_dns_resolver->LookupHostname(
-          name, default_port, interested_parties, std::move(on_done));
+          std::move(on_resolved), name, default_port, timeout,
+          interested_parties, name_server);
     }
-    MakeDNSRequest(std::move(on_done));
+    MakeDNSRequest(std::move(on_resolved));
     return kNullHandle;
   }
 
@@ -86,9 +88,9 @@ class TestDNSResolver : public grpc_core::DNSResolver {
   TaskHandle LookupSRV(
       std::function<void(absl::StatusOr<std::vector<grpc_resolved_address>>)>
           on_resolved,
-      absl::string_view name, absl::Time deadline,
-      grpc_pollset_set* interested_parties,
-      absl::string_view name_server) override {
+      absl::string_view /* name */, grpc_core::Duration /* timeout */,
+      grpc_pollset_set* /* interested_parties */,
+      absl::string_view /* name_server */) override {
     GetDefaultEventEngine()->Run([on_resolved] {
       on_resolved(absl::UnimplementedError(
           "The Testing DNS resolver does not support looking up SRV records"));
@@ -98,9 +100,9 @@ class TestDNSResolver : public grpc_core::DNSResolver {
 
   TaskHandle LookupTXT(
       std::function<void(absl::StatusOr<std::string>)> on_resolved,
-      absl::string_view name, absl::Time deadline,
-      grpc_pollset_set* interested_parties,
-      absl::string_view name_server) override {
+      absl::string_view /* name */, grpc_core::Duration /* timeout */,
+      grpc_pollset_set* /* interested_parties */,
+      absl::string_view /* name_server */) override {
     // Not supported
     GetDefaultEventEngine()->Run([on_resolved] {
       on_resolved(absl::UnimplementedError(

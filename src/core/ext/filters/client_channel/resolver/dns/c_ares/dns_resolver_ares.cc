@@ -547,7 +547,8 @@ class AresDNSResolver : public DNSResolver {
    public:
     AresHostnameRequest(
         absl::string_view name, absl::string_view default_port,
-        absl::string_view name_server, grpc_pollset_set* interested_parties,
+        absl::string_view name_server, Duration timeout,
+        grpc_pollset_set* interested_parties,
         std::function<void(absl::StatusOr<std::vector<grpc_resolved_address>>)>
             on_resolve_address_done,
         AresDNSResolver* resolver, intptr_t aba_token)
@@ -555,6 +556,7 @@ class AresDNSResolver : public DNSResolver {
           name_(std::string(name)),
           default_port_(std::string(default_port)),
           name_server_(std::string(name_server)),
+          timeout_(timeout),
           on_resolve_address_done_(std::move(on_resolve_address_done)) {
       GRPC_CARES_TRACE_LOG("AresHostnameRequest:%p ctor", this);
     }
@@ -564,7 +566,7 @@ class AresDNSResolver : public DNSResolver {
           std::unique_ptr<grpc_ares_request>(grpc_dns_lookup_hostname_ares(
               name_server_.c_str(), name_.c_str(), default_port_.c_str(),
               pollset_set_, &on_dns_lookup_done_, &addresses_,
-              GRPC_DNS_ARES_DEFAULT_QUERY_TIMEOUT_MS));
+              timeout_.millis()));
       GRPC_CARES_TRACE_LOG("AresHostnameRequest:%p Start ares_request_:%p",
                            this, ares_request.get());
       return ares_request;
@@ -592,6 +594,8 @@ class AresDNSResolver : public DNSResolver {
     const std::string default_port_;
     // the name server to query
     const std::string name_server_;
+    // request-specific timeout
+    Duration timeout_;
     // user-provided completion callback
     const std::function<void(
         absl::StatusOr<std::vector<grpc_resolved_address>>)>
@@ -603,7 +607,7 @@ class AresDNSResolver : public DNSResolver {
   class AresSRVRequest : public AresRequest {
    public:
     AresSRVRequest(
-        absl::string_view name, absl::string_view name_server,
+        absl::string_view name, absl::string_view name_server, Duration timeout,
         grpc_pollset_set* interested_parties,
         std::function<void(absl::StatusOr<std::vector<grpc_resolved_address>>)>
             on_resolve_address_done,
@@ -611,6 +615,7 @@ class AresDNSResolver : public DNSResolver {
         : AresRequest(interested_parties, resolver, aba_token),
           name_(std::string(name)),
           name_server_(std::string(name_server)),
+          timeout_(timeout),
           on_resolve_address_done_(std::move(on_resolve_address_done)) {
       GRPC_CARES_TRACE_LOG("AresSRVRequest:%p ctor", this);
     }
@@ -619,8 +624,7 @@ class AresDNSResolver : public DNSResolver {
       auto ares_request =
           std::unique_ptr<grpc_ares_request>(grpc_dns_lookup_srv_ares(
               name_server_.c_str(), name_.c_str(), pollset_set_,
-              &on_dns_lookup_done_, &balancer_addresses_,
-              GRPC_DNS_ARES_DEFAULT_QUERY_TIMEOUT_MS));
+              &on_dns_lookup_done_, &balancer_addresses_, timeout_.millis()));
       GRPC_CARES_TRACE_LOG("AresSRVRequest:%p Start ares_request_:%p", this,
                            ares_request.get());
       return ares_request;
@@ -646,6 +650,8 @@ class AresDNSResolver : public DNSResolver {
     const std::string name_;
     // the name server to query
     const std::string name_server_;
+    // request-specific timeout
+    Duration timeout_;
     // user-provided completion callback
     const std::function<void(
         absl::StatusOr<std::vector<grpc_resolved_address>>)>
@@ -657,12 +663,13 @@ class AresDNSResolver : public DNSResolver {
   class AresTXTRequest : public AresRequest {
    public:
     AresTXTRequest(absl::string_view name, absl::string_view name_server,
-                   grpc_pollset_set* interested_parties,
+                   Duration timeout, grpc_pollset_set* interested_parties,
                    std::function<void(absl::StatusOr<std::string>)> on_resolved,
                    AresDNSResolver* resolver, intptr_t aba_token)
         : AresRequest(interested_parties, resolver, aba_token),
           name_(std::string(name)),
           name_server_(std::string(name_server)),
+          timeout_(timeout),
           on_resolved_(std::move(on_resolved)) {
       GRPC_CARES_TRACE_LOG("AresTXTRequest:%p ctor", this);
     }
@@ -673,8 +680,7 @@ class AresDNSResolver : public DNSResolver {
       auto ares_request =
           std::unique_ptr<grpc_ares_request>(grpc_dns_lookup_txt_ares(
               name_server_.c_str(), name_.c_str(), pollset_set_,
-              &on_dns_lookup_done_, &service_config_json_,
-              GRPC_DNS_ARES_DEFAULT_QUERY_TIMEOUT_MS));
+              &on_dns_lookup_done_, &service_config_json_, timeout_.millis()));
       GRPC_CARES_TRACE_LOG("AresSRVRequest:%p Start ares_request_:%p", this,
                            ares_request.get());
       return ares_request;
@@ -693,6 +699,8 @@ class AresDNSResolver : public DNSResolver {
     const std::string name_;
     // the name server to query
     const std::string name_server_;
+    // request-specific timeout
+    Duration timeout_;
     // service config from the TXT record
     char* service_config_json_ = nullptr;
     // user-provided completion callback
@@ -706,14 +714,15 @@ class AresDNSResolver : public DNSResolver {
   }
 
   TaskHandle LookupHostname(
-      absl::string_view name, absl::string_view default_port,
-      grpc_pollset_set* interested_parties,
       std::function<void(absl::StatusOr<std::vector<grpc_resolved_address>>)>
-          on_done) override {
+          on_resolved,
+      absl::string_view name, absl::string_view default_port, Duration timeout,
+      grpc_pollset_set* interested_parties,
+      absl::string_view name_server) override {
     MutexLock lock(&mu_);
     auto* request = new AresHostnameRequest(
-        name, default_port, /*name_server=*/"", interested_parties,
-        std::move(on_done), this, aba_token_++);
+        name, default_port, name_server, timeout, interested_parties,
+        std::move(on_resolved), this, aba_token_++);
     request->Run();
     auto handle = request->task_handle();
     open_requests_.insert(handle);
@@ -730,12 +739,12 @@ class AresDNSResolver : public DNSResolver {
   TaskHandle LookupSRV(
       std::function<void(absl::StatusOr<std::vector<grpc_resolved_address>>)>
           on_resolved,
-      absl::string_view name, absl::Time deadline,
+      absl::string_view name, Duration timeout,
       grpc_pollset_set* interested_parties,
       absl::string_view name_server) override {
     MutexLock lock(&mu_);
     auto* request =
-        new AresSRVRequest(name, name_server, interested_parties,
+        new AresSRVRequest(name, name_server, timeout, interested_parties,
                            std::move(on_resolved), this, aba_token_++);
     request->Run();
     auto handle = request->task_handle();
@@ -745,12 +754,12 @@ class AresDNSResolver : public DNSResolver {
 
   TaskHandle LookupTXT(
       std::function<void(absl::StatusOr<std::string>)> on_resolved,
-      absl::string_view name, absl::Time deadline,
+      absl::string_view name, Duration timeout,
       grpc_pollset_set* interested_parties,
       absl::string_view name_server) override {
     MutexLock lock(&mu_);
     auto* request =
-        new AresTXTRequest(name, name_server, interested_parties,
+        new AresTXTRequest(name, name_server, timeout, interested_parties,
                            std::move(on_resolved), this, aba_token_++);
     request->Run();
     auto handle = request->task_handle();

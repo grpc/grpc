@@ -169,11 +169,13 @@ class FuzzerDNSResolver : public grpc_core::DNSResolver {
   }
 
   TaskHandle LookupHostname(
-      absl::string_view name, absl::string_view /* default_port */,
-      grpc_pollset_set* /* interested_parties */,
       std::function<void(absl::StatusOr<std::vector<grpc_resolved_address>>)>
-          on_done) override {
-    new FuzzerDNSRequest(name, std::move(on_done));
+          on_resolved,
+      absl::string_view name, absl::string_view /* default_port */,
+      grpc_core::Duration /* timeout */,
+      grpc_pollset_set* /* interested_parties */,
+      absl::string_view /* name_server */) override {
+    new FuzzerDNSRequest(name, std::move(on_resolved));
     return kNullHandle;
   }
 
@@ -186,7 +188,7 @@ class FuzzerDNSResolver : public grpc_core::DNSResolver {
   TaskHandle LookupSRV(
       std::function<void(absl::StatusOr<std::vector<grpc_resolved_address>>)>
           on_resolved,
-      absl::string_view /* name */, absl::Time /* deadline */,
+      absl::string_view /* name */, grpc_core::Duration /* timeout */,
       grpc_pollset_set* /* interested_parties */,
       absl::string_view /* name_server */) override {
     GetDefaultEventEngine()->Run([on_resolved] {
@@ -198,7 +200,7 @@ class FuzzerDNSResolver : public grpc_core::DNSResolver {
 
   TaskHandle LookupTXT(
       std::function<void(absl::StatusOr<std::string>)> on_resolved,
-      absl::string_view /* name */, absl::Time /* deadline */,
+      absl::string_view /* name */, grpc_core::Duration /* timeout */,
       grpc_pollset_set* /* interested_parties */,
       absl::string_view /* name_server */) override {
     // Not supported

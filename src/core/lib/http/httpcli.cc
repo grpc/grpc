@@ -210,8 +210,8 @@ void HttpRequest::Start() {
   }
   Ref().release();  // ref held by pending DNS resolution
   dns_request_handle_ = GetDNSResolver()->LookupHostname(
-      uri_.authority(), uri_.scheme(), pollset_set_,
-      absl::bind_front(&HttpRequest::OnResolved, this));
+      absl::bind_front(&HttpRequest::OnResolved, this), uri_.authority(),
+      uri_.scheme(), kDefaultRequestTimeout, pollset_set_, /*name_server=*/"");
 }
 
 void HttpRequest::Orphan() {

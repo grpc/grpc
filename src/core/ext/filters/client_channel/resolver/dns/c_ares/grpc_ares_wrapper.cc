@@ -40,7 +40,6 @@
 #include <address_sorting/address_sorting.h>
 #include <ares.h>
 
-#include "absl/cleanup/cleanup.h"
 #include "absl/container/inlined_vector.h"
 #include "absl/memory/memory.h"
 #include "absl/status/status.h"

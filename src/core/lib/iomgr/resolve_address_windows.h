@@ -33,10 +33,11 @@ class NativeDNSResolver : public DNSResolver {
   static NativeDNSResolver* GetOrCreate();
 
   TaskHandle LookupHostname(
-      absl::string_view name, absl::string_view default_port,
-      grpc_pollset_set* /* interested_parties */,
       std::function<void(absl::StatusOr<std::vector<grpc_resolved_address>>)>
-          on_done) override;
+          on_resolved,
+      absl::string_view name, absl::string_view default_port, Duration timeout,
+      grpc_pollset_set* interested_parties,
+      absl::string_view name_server) override;
 
   absl::StatusOr<std::vector<grpc_resolved_address>> LookupHostnameBlocking(
       absl::string_view name, absl::string_view default_port) override;
@@ -44,13 +45,13 @@ class NativeDNSResolver : public DNSResolver {
   TaskHandle LookupSRV(
       std::function<void(absl::StatusOr<std::vector<grpc_resolved_address>>)>
           on_resolved,
-      absl::string_view name, absl::Time deadline,
+      absl::string_view name, Duration timeout,
       grpc_pollset_set* interested_parties,
       absl::string_view name_server) override;
 
   TaskHandle LookupTXT(
       std::function<void(absl::StatusOr<std::string>)> on_resolved,
-      absl::string_view name, absl::Time deadline,
+      absl::string_view name, Duration timeout,
       grpc_pollset_set* interested_parties,
       absl::string_view name_server) override;
 

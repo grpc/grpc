@@ -86,10 +86,11 @@ NativeDNSResolver* NativeDNSResolver::GetOrCreate() {
 }
 
 DNSResolver::TaskHandle NativeDNSResolver::LookupHostname(
-    absl::string_view name, absl::string_view default_port,
-    grpc_pollset_set* /* interested_parties */,
     std::function<void(absl::StatusOr<std::vector<grpc_resolved_address>>)>
-        on_done) {
+        on_done,
+    absl::string_view name, absl::string_view default_port,
+    Duration /* timeout */, grpc_pollset_set* /* interested_parties */,
+    absl::string_view /* name_server */) {
   // self-deleting class
   new NativeDNSRequest(name, default_port, std::move(on_done));
   return kNullHandle;
@@ -179,7 +180,7 @@ done:
 DNSResolver::TaskHandle NativeDNSResolver::LookupSRV(
     std::function<void(absl::StatusOr<std::vector<grpc_resolved_address>>)>
         on_resolved,
-    absl::string_view /* name */, absl::Time /* deadline */,
+    absl::string_view /* name */, Duration /* timeout */,
     grpc_pollset_set* /* interested_parties */,
     absl::string_view /* name_server */) {
   GetDefaultEventEngine()->Run([on_resolved] {
@@ -191,7 +192,7 @@ DNSResolver::TaskHandle NativeDNSResolver::LookupSRV(
 
 DNSResolver::TaskHandle NativeDNSResolver::LookupTXT(
     std::function<void(absl::StatusOr<std::string>)> on_resolved,
-    absl::string_view /* name */, absl::Time /* deadline */,
+    absl::string_view /* name */, Duration /* timeout */,
     grpc_pollset_set* /* interested_parties */,
     absl::string_view /* name_server */) {
   // Not supported

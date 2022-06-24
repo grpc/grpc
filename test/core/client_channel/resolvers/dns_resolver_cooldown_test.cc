@@ -69,12 +69,14 @@ class TestDNSResolver : public grpc_core::DNSResolver {
   // Wrapper around default resolve_address in order to count the number of
   // times we incur in a system-level name resolution.
   TaskHandle LookupHostname(
-      absl::string_view name, absl::string_view default_port,
-      grpc_pollset_set* interested_parties,
       std::function<void(absl::StatusOr<std::vector<grpc_resolved_address>>)>
-          on_done) override {
+          on_resolved,
+      absl::string_view name, absl::string_view default_port,
+      grpc_core::Duration timeout, grpc_pollset_set* interested_parties,
+      absl::string_view name_server) override {
     auto result = g_default_dns_resolver->LookupHostname(
-        name, default_port, interested_parties, std::move(on_done));
+        std::move(on_resolved), name, default_port, timeout, interested_parties,
+        name_server);
     ++g_resolution_count;
     static grpc_core::Timestamp last_resolution_time =
         grpc_core::Timestamp::ProcessEpoch();
@@ -106,7 +108,7 @@ class TestDNSResolver : public grpc_core::DNSResolver {
   TaskHandle LookupSRV(
       std::function<void(absl::StatusOr<std::vector<grpc_resolved_address>>)>
           on_resolved,
-      absl::string_view /* name */, absl::Time /* deadline */,
+      absl::string_view /* name */, grpc_core::Duration /* timeout */,
       grpc_pollset_set* /* interested_parties */,
       absl::string_view /* name_server */) override {
     GetDefaultEventEngine()->Run([on_resolved] {
@@ -118,7 +120,7 @@ class TestDNSResolver : public grpc_core::DNSResolver {
 
   TaskHandle LookupTXT(
       std::function<void(absl::StatusOr<std::string>)> on_resolved,
-      absl::string_view /* name */, absl::Time /* deadline */,
+      absl::string_view /* name */, grpc_core::Duration /* timeout */,
       grpc_pollset_set* /* interested_parties */,
       absl::string_view /* name_server */) override {
     // Not supported

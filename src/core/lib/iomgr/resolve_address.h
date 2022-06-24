@@ -37,6 +37,7 @@
 namespace grpc_core {
 extern const char* kDefaultSecurePort;
 constexpr int kDefaultSecurePortInt = 443;
+constexpr Duration kDefaultRequestTimeout = Duration::Minutes(2);
 
 // A singleton class used for async and blocking DNS resolution
 class DNSResolver {
@@ -61,10 +62,10 @@ class DNSResolver {
   //
   // \a interested_parties may be deleted after a request is cancelled.
   virtual TaskHandle LookupHostname(
-      absl::string_view name, absl::string_view default_port,
-      grpc_pollset_set* interested_parties,
       std::function<void(absl::StatusOr<std::vector<grpc_resolved_address>>)>
-          on_done) = 0;
+          on_resolved,
+      absl::string_view name, absl::string_view default_port, Duration timeout,
+      grpc_pollset_set* interested_parties, absl::string_view name_server) = 0;
 
   // Resolve name in a blocking fashion. Use \a default_port if a port isn't
   // designated in \a name, otherwise use the port in \a name.
@@ -81,7 +82,7 @@ class DNSResolver {
   virtual TaskHandle LookupSRV(
       std::function<void(absl::StatusOr<std::vector<grpc_resolved_address>>)>
           on_resolved,
-      absl::string_view name, absl::Time deadline,
+      absl::string_view name, Duration timeout,
       grpc_pollset_set* interested_parties, absl::string_view name_server) = 0;
 
   // Asynchronously resolve a TXT Record. On completion, \a on_done is invoked
@@ -90,7 +91,7 @@ class DNSResolver {
   // The same caveats in \a LookupHostname apply here.
   virtual TaskHandle LookupTXT(
       std::function<void(absl::StatusOr<std::string>)> on_resolved,
-      absl::string_view name, absl::Time deadline,
+      absl::string_view name, Duration timeout,
       grpc_pollset_set* interested_parties, absl::string_view name_server) = 0;
 
   // This shares the same semantics with \a EventEngine::Cancel: successfully
