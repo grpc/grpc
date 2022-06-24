@@ -85,6 +85,10 @@ grpc_cc_test(
     name = "fuzzing_event_engine_test",
     srcs = ["fuzzing_event_engine_test.cc"],
     uses_polling = False,
+    tags = [
+        "no_mac",
+        "no_windows",
+    ],
     deps = [
         "//test/core/event_engine/fuzzing_event_engine",
         "//test/core/event_engine/test_suite:timer",
