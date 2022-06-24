@@ -106,6 +106,8 @@ const grpc_event_engine_vtable* non_polling() {
       return true;
     };
     v.name = "none";
+    v.init_engine = []() {};
+    v.shutdown_engine = []() {};
     return v;
   }();
   return &vtable;
