@@ -47,7 +47,7 @@ INSTALL_REQUIRES = (
     'google-auth>=1.17.2', 'requests>=2.14.2')
 
 print("AAAAAAAAAAAA Running pip freeze.")
-print(subprocess.check_output("pip freeze",
+print(subprocess.check_output("{} -m pip freeze".format(sys.executable),
                         shell=True,
                               stderr=subprocess.STDOUT).decode('ascii'))
 
