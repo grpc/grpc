@@ -59,8 +59,6 @@ void grpc_wakeup_fd_global_destroy(void);
 void grpc_wakeup_fd_global_init_force_fallback(void);
 
 int grpc_has_wakeup_fd(void);
-int grpc_cv_wakeup_fds_enabled(void);
-void grpc_enable_cv_wakeup_fds(int enable);
 
 typedef struct grpc_wakeup_fd grpc_wakeup_fd;
 

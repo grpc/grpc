@@ -840,8 +840,6 @@ static grpc_error_handle pollset_kick(grpc_pollset* p,
 
 static grpc_error_handle pollset_global_init(void) { return GRPC_ERROR_NONE; }
 
-static void pollset_global_shutdown(void) {}
-
 /* main interface */
 
 static void pollset_init(grpc_pollset* pollset, gpr_mu** mu) {
