@@ -28,12 +28,19 @@ import java.util.Map;
  */
 final class NativeConnectionHelper {
   // Maps connection id to GrpcBinderConnection instances
-  static Map<String, GrpcBinderConnection> s = new HashMap<>();
+  static Map<String, GrpcBinderConnection> connectionIdToGrpcBinderConnectionMap = new HashMap<>();
 
-  static void tryEstablishConnection(Context context, String pkg, String cls, String action_name, String connId) {
+  static void tryEstablishConnection(
+      Context context, String pkg, String cls, String actionName, String connId) {
     // TODO(mingcl): Assert that connId is unique
-    s.put(connId, new GrpcBinderConnection(context, connId));
-    s.get(connId).tryConnect(pkg, cls, action_name);
+    connectionIdToGrpcBinderConnectionMap.put(connId, new GrpcBinderConnection(context, connId));
+    connectionIdToGrpcBinderConnectionMap.get(connId).tryConnect(pkg, cls, actionName);
+  }
+
+  static void tryEstablishConnectionWithUri(Context context, String uri, String connId) {
+    // TODO(mingcl): Assert that connId is unique
+    connectionIdToGrpcBinderConnectionMap.put(connId, new GrpcBinderConnection(context, connId));
+    connectionIdToGrpcBinderConnectionMap.get(connId).tryConnect(uri);
   }
 
   // Returns true if the packages signature of the 2 UIDs match.
