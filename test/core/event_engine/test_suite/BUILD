@@ -117,7 +117,7 @@ grpc_cc_test(
         "no_test_ios",
         "no_windows",
     ],
-    uses_polling = False,
+    uses_polling = True,
     deps = [
         ":client",
         ":oracle_event_engine_posix",
