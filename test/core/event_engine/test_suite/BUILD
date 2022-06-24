@@ -117,7 +117,12 @@ grpc_cc_test(
         "no_test_ios",
         "no_windows",
     ],
-    uses_polling = False,
+    # TODO(vignesbabu): This is required because the oracle event engine uses
+    # poll syscall. If uses_polling is set to False, there will be an attempt
+    # to run this test with GRPC_POLL_STRATEGY=none which will hijack the poll
+    # c-wrapper causing the test to fail. A more generic posix oracle event
+    # engine design which doesn't rely on poll is required.
+    uses_polling = True,
     deps = [
         ":client",
         ":oracle_event_engine_posix",
