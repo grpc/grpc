@@ -4710,8 +4710,7 @@ targets:
   - src/core/lib/avl/avl.h
   src:
   - test/core/avl/avl_test.cc
-  deps:
-  - absl/container:inlined_vector
+  deps: []
   uses_polling: false
 - name: aws_request_signer_test
   gtest: true
