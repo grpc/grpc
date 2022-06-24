@@ -1394,7 +1394,8 @@ const grpc_event_engine_vtable grpc_ev_poll_posix = {
     pollset_set_del_fd,
 
     is_any_background_poller_thread,
-    "poll",
+    /* name = */ "poll",
+    /* check_engine_available = */
     [](bool) {
       if (!grpc_has_wakeup_fd()) {
         gpr_log(GPR_ERROR, "Skipping poll because of no wakeup fd.");
@@ -1411,8 +1412,8 @@ const grpc_event_engine_vtable grpc_ev_poll_posix = {
       }
       return true;
     },
-    []() {},
-    shutdown_background_closure,
+    /* init_engine = */ []() {},
+    /* shutdown_engine = */ shutdown_background_closure,
     []() {},
     add_closure_to_background_poller,
 };

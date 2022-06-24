@@ -190,6 +190,7 @@ void grpc_register_event_engine_factory(const grpc_event_engine_vtable* vtable,
       if (first_null == nullptr) first_null = &g_vtables[i];
       last_null = &g_vtables[i];
     } else if (0 == strcmp(g_vtables[i]->name, vtable->name)) {
+      g_vtables[i] = vtable;
       return;
     }
   }

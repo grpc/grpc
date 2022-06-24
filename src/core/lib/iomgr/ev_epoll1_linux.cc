@@ -1304,11 +1304,11 @@ const grpc_event_engine_vtable grpc_ev_epoll1_posix = {
     pollset_set_del_fd,
 
     is_any_background_poller_thread,
-    "epoll1",
-    [](bool) { return init_epoll1_linux(); },
-    []() {},
+    /* name = */ "epoll1",
+    /* check_engine_available = */ [](bool) { return init_epoll1_linux(); },
+    /* init_engine = */ []() {},
     shutdown_background_closure,
-    []() {},
+    /* shutdown_engine = */ []() {},
     add_closure_to_background_poller,
 };
 
@@ -1360,22 +1360,44 @@ static bool init_epoll1_linux() {
 #if defined(GRPC_POSIX_SOCKET_EV_EPOLL1)
 #include "src/core/lib/iomgr/ev_epoll1_linux.h"
 const grpc_event_engine_vtable grpc_ev_epoll1_posix = {
-    1,       true,     false,
+    1,
+    true,
+    false,
 
-    nullptr, nullptr,  nullptr,
-    nullptr, nullptr,  nullptr,
-    nullptr, nullptr,  nullptr,
-    nullptr, nullptr,
+    nullptr,
+    nullptr,
+    nullptr,
+    nullptr,
+    nullptr,
+    nullptr,
+    nullptr,
+    nullptr,
+    nullptr,
+    nullptr,
+    nullptr,
 
-    nullptr, nullptr,  nullptr,
-    nullptr, nullptr,  nullptr,
+    nullptr,
+    nullptr,
+    nullptr,
+    nullptr,
+    nullptr,
+    nullptr,
 
-    nullptr, nullptr,  nullptr,
-    nullptr, nullptr,  nullptr,
-    nullptr, nullptr,
+    nullptr,
+    nullptr,
+    nullptr,
+    nullptr,
+    nullptr,
+    nullptr,
+    nullptr,
+    nullptr,
 
-    nullptr, "epoll1", [](bool) { return false; },
-    nullptr, nullptr,  nullptr,
+    nullptr,
+    /* name = */ "epoll1",
+    /* check_engine_available = */ [](bool) { return false; },
+    nullptr,
+    nullptr,
+    nullptr,
     nullptr,
 };
 #endif /* defined(GRPC_POSIX_SOCKET_EV_EPOLL1) */
