@@ -47,25 +47,6 @@
 #include "test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h"
 #include "test/core/util/passthru_endpoint.h"
 
-static grpc_event_engine::experimental::FuzzingEventEngine* g_event_engine =
-    new grpc_event_engine::experimental::FuzzingEventEngine(
-        grpc_event_engine::experimental::FuzzingEventEngine::Options());
-static int g_unused_initialize_event_engine = []() {
-  grpc_event_engine::experimental::SetDefaultEventEngineFactory(
-      new std::function<std::unique_ptr<
-          grpc_event_engine::experimental::EventEngine>()>([]() {
-        // HACK HACK HACK
-        // We know that this event engine will never be deleted by the
-        // caller, instead release() will be called and the value stashed in
-        // a global elsewhere. Therefore it's safe to wrap our global in a
-        // unique_ptr and return it, knowing it will never be deleted
-        // elsewhere.
-        return std::unique_ptr<grpc_event_engine::experimental::EventEngine>(
-            g_event_engine);
-      }));
-  return 42;
-}();
-
 // Applicable when simulating channel actions. Prevents overflows.
 static constexpr uint64_t kMaxWaitMs =
     31536000000;  // 1 year (24 * 365 * 3600 * 1000)
@@ -768,12 +749,20 @@ static grpc_channel_credentials* ReadChannelCreds(
 }
 
 DEFINE_PROTO_FUZZER(const api_fuzzer::Msg& msg) {
+  grpc_event_engine::experimental::ResetDefaultEventEngine();
   grpc_test_only_set_slice_hash_seed(0);
   char* grpc_trace_fuzzer = gpr_getenv("GRPC_TRACE_FUZZER");
   if (squelch && grpc_trace_fuzzer == nullptr) gpr_set_log_function(dont_log);
   gpr_free(grpc_trace_fuzzer);
   grpc_set_tcp_client_impl(&fuzz_tcp_client_vtable);
-  g_event_engine->Restart(msg.event_engine_actions());
+  grpc_event_engine::experimental::SetDefaultEventEngineFactory(
+      [actions = msg.event_engine_actions()]() {
+        return absl::make_unique<
+            grpc_event_engine::experimental::FuzzingEventEngine>(
+            grpc_event_engine::experimental::FuzzingEventEngine::Options(),
+            actions);
+      });
+  grpc_event_engine::experimental::GetDefaultEventEngine();
   grpc_init();
   grpc_timer_manager_set_threading(false);
   {
@@ -817,10 +806,14 @@ DEFINE_PROTO_FUZZER(const api_fuzzer::Msg& msg) {
   while (action_index < msg.actions_size() || g_channel != nullptr ||
          g_server != nullptr || pending_channel_watches > 0 ||
          pending_pings > 0 || ActiveCall() != nullptr) {
-    g_event_engine->Tick();
+    static_cast<grpc_event_engine::experimental::FuzzingEventEngine*>(
+        grpc_event_engine::experimental::GetDefaultEventEngine())
+        ->Tick();
 
     if (action_index == msg.actions_size()) {
-      g_event_engine->FuzzingDone();
+      static_cast<grpc_event_engine::experimental::FuzzingEventEngine*>(
+          grpc_event_engine::experimental::GetDefaultEventEngine())
+          ->FuzzingDone();
       if (g_channel != nullptr) {
         grpc_channel_destroy(g_channel);
         g_channel = nullptr;
