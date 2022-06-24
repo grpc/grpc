@@ -163,8 +163,9 @@ done:
 DNSResolver::TaskHandle NativeDNSResolver::LookupSRV(
     std::function<void(absl::StatusOr<std::vector<grpc_resolved_address>>)>
         on_resolved,
-    absl::string_view name, absl::Time deadline,
-    grpc_pollset_set* interested_parties, absl::string_view name_server) {
+    absl::string_view /* name */, absl::Time /* deadline */,
+    grpc_pollset_set* /* interested_parties */,
+    absl::string_view /* name_server */) {
   GetDefaultEventEngine()->Run([on_resolved] {
     on_resolved(absl::UnimplementedError(
         "The Native resolver does not support looking up SRV records"));
@@ -174,8 +175,9 @@ DNSResolver::TaskHandle NativeDNSResolver::LookupSRV(
 
 DNSResolver::TaskHandle NativeDNSResolver::LookupTXT(
     std::function<void(absl::StatusOr<std::string>)> on_resolved,
-    absl::string_view name, absl::Time deadline,
-    grpc_pollset_set* interested_parties, absl::string_view name_server) {
+    absl::string_view /* name */, absl::Time /* deadline */,
+    grpc_pollset_set* /* interested_parties */,
+    absl::string_view /* name_server */) {
   // Not supported
   GetDefaultEventEngine()->Run([on_resolved] {
     on_resolved(absl::UnimplementedError(
