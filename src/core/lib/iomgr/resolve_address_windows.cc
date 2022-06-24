@@ -164,7 +164,7 @@ done:
 DNSResolver::TaskHandle NativeDNSResolver::LookupSRV(
     std::function<void(absl::StatusOr<std::vector<grpc_resolved_address>>)>
         on_resolved,
-    absl::string_view /* name */, absl::Time /* deadline */,
+    absl::string_view /* name */, Duration /* deadline */,
     grpc_pollset_set* /* interested_parties */,
     absl::string_view /* name_server */) {
   GetDefaultEventEngine()->Run([on_resolved] {
