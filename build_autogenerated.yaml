@@ -6019,6 +6019,9 @@ targets:
   - test/core/event_engine/test_suite/timer_test.cc
   deps:
   - grpc_test_util
+  platforms:
+  - linux
+  - posix
   uses_polling: false
 - name: generic_end2end_test
   gtest: true
