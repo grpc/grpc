@@ -29,7 +29,7 @@ grpc_proto_fuzzer(
     proto_deps = [
         "//test/core/event_engine/fuzzing_event_engine:fuzzing_event_engine_proto",
     ],
-    tags = ["no_windows"],
+    tags = ["no_windows", "no_mac"],
     uses_event_engine = False,
     uses_polling = False,
     deps = [
