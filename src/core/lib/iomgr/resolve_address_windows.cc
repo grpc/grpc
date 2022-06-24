@@ -94,7 +94,7 @@ DNSResolver::TaskHandle NativeDNSResolver::LookupHostname(
     absl::string_view name, absl::string_view default_port,
     Duration /* timeout */, grpc_pollset_set* /* interested_parties */,
     absl::string_view /* name_server */) {
-  new NativeDNSRequest(name, default_port, std::move(on_done));
+  new NativeDNSRequest(name, default_port, std::move(on_resolved));
   return kNullHandle;
 }
 
