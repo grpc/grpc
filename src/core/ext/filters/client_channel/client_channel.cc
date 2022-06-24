@@ -1234,7 +1234,7 @@ void ClientChannel::OnResolverResultChangedLocked(Resolver::Result result) {
   // (d) Address resolution that causes a new LB policy to be created.
   //
   // We track a list of strings to eventually be concatenated and traced.
-  absl::InlinedVector<const char*, 3> trace_strings;
+  std::vector<const char*> trace_strings;
   const bool resolution_contains_addresses =
       result.addresses.ok() && !result.addresses->empty();
   if (!resolution_contains_addresses &&
