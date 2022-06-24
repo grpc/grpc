@@ -340,7 +340,7 @@ class RingHash : public LoadBalancingPolicy {
 
       RefCountedPtr<RingHash> ring_hash_lb_;
       grpc_closure closure_;
-      absl::InlinedVector<RefCountedPtr<SubchannelInterface>, 10> subchannels_;
+      std::vector<RefCountedPtr<SubchannelInterface>> subchannels_;
     };
 
     RefCountedPtr<RingHash> parent_;

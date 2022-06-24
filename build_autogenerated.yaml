@@ -4712,8 +4712,7 @@ targets:
   - src/core/lib/avl/avl.h
   src:
   - test/core/avl/avl_test.cc
-  deps:
-  - absl/container:inlined_vector
+  deps: []
   uses_polling: false
 - name: aws_request_signer_test
   gtest: true
@@ -6022,6 +6021,9 @@ targets:
   - test/core/event_engine/test_suite/timer_test.cc
   deps:
   - grpc_test_util
+  platforms:
+  - linux
+  - posix
   uses_polling: false
 - name: generic_end2end_test
   gtest: true
@@ -7115,7 +7117,6 @@ targets:
   - linux
   - posix
   - mac
-  uses_polling: false
 - name: orca_service_end2end_test
   gtest: true
   build: test

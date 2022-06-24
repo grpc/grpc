@@ -32,6 +32,7 @@
 #include "src/core/lib/uri/uri_parser.h"
 #include "test/core/event_engine/test_suite/event_engine_test.h"
 #include "test/core/event_engine/test_suite/event_engine_test_utils.h"
+#include "test/core/util/port.h"
 
 class EventEngineClientTest : public EventEngineTest {};
 
@@ -108,7 +109,8 @@ TEST_F(EventEngineClientTest, ConnectExchangeBidiDataTransferTest) {
   auto oracle_ee = this->NewOracleEventEngine();
   auto test_ee = this->NewEventEngine();
   auto memory_quota = std::make_unique<grpc_core::MemoryQuota>("bar");
-  std::string target_addr = "ipv6:[::1]:7000";
+  std::string target_addr = absl::StrCat(
+      "ipv6:[::1]:", std::to_string(grpc_pick_unused_port_or_die()));
   Promise<std::unique_ptr<EventEngine::Endpoint>> client_endpoint_promise;
   Promise<std::unique_ptr<EventEngine::Endpoint>> server_endpoint_promise;
 
@@ -167,7 +169,6 @@ TEST_F(EventEngineClientTest, ConnectExchangeBidiDataTransferTest) {
 // exchange and verify random number of messages over each connection.
 TEST_F(EventEngineClientTest, MultipleIPv6ConnectionsToOneOracleListenerTest) {
   grpc_core::ExecCtx ctx;
-  static constexpr int kStartPortNumber = 7000;
   static constexpr int kNumListenerAddresses = 10;  // N
   static constexpr int kNumConnections = 100;       // M
   auto oracle_ee = this->NewOracleEventEngine();
@@ -195,8 +196,8 @@ TEST_F(EventEngineClientTest, MultipleIPv6ConnectionsToOneOracleListenerTest) {
 
   target_addrs.reserve(kNumListenerAddresses);
   for (int i = 0; i < kNumListenerAddresses; i++) {
-    std::string target_addr =
-        absl::StrCat("ipv6:[::1]:", std::to_string(kStartPortNumber + i));
+    std::string target_addr = absl::StrCat(
+        "ipv6:[::1]:", std::to_string(grpc_pick_unused_port_or_die()));
     EXPECT_TRUE(listener->Bind(URIToResolvedAddress(target_addr)).ok());
     target_addrs.push_back(target_addr);
   }

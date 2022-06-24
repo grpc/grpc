@@ -18,6 +18,9 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <algorithm>
+#include <vector>
+
 #include "absl/strings/string_view.h"
 
 #include "src/core/lib/iomgr/sockaddr.h"
