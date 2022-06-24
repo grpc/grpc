@@ -1268,7 +1268,9 @@ static void shutdown_engine(void) {
   }
 }
 
-static const grpc_event_engine_vtable vtable = {
+static bool init_epoll1_linux();
+
+const grpc_event_engine_vtable grpc_ev_epoll1_posix = {
     sizeof(grpc_pollset),
     true,
     false,
@@ -1302,8 +1304,11 @@ static const grpc_event_engine_vtable vtable = {
     pollset_set_del_fd,
 
     is_any_background_poller_thread,
+    "epoll1",
+    [](bool) { return init_epoll1_linux(); },
+    []() {},
     shutdown_background_closure,
-    shutdown_engine,
+    []() {},
     add_closure_to_background_poller,
 };
 
@@ -1319,21 +1324,20 @@ static void reset_event_manager_on_fork() {
   }
   gpr_mu_unlock(&fork_fd_list_mu);
   shutdown_engine();
-  grpc_init_epoll1_linux(true);
+  init_epoll1_linux();
 }
 
 /* It is possible that GLIBC has epoll but the underlying kernel doesn't.
  * Create epoll_fd (epoll_set_init() takes care of that) to make sure epoll
  * support is available */
-const grpc_event_engine_vtable* grpc_init_epoll1_linux(
-    bool /*explicit_request*/) {
+static bool init_epoll1_linux() {
   if (!grpc_has_wakeup_fd()) {
     gpr_log(GPR_ERROR, "Skipping epoll1 because of no wakeup fd.");
-    return nullptr;
+    return false;
   }
 
   if (!epoll_set_init()) {
-    return nullptr;
+    return false;
   }
 
   fd_global_init();
@@ -1341,7 +1345,7 @@ const grpc_event_engine_vtable* grpc_init_epoll1_linux(
   if (!GRPC_LOG_IF_ERROR("pollset_global_init", pollset_global_init())) {
     fd_global_shutdown();
     epoll_set_shutdown();
-    return nullptr;
+    return false;
   }
 
   if (grpc_core::Fork::Enabled()) {
@@ -1349,7 +1353,7 @@ const grpc_event_engine_vtable* grpc_init_epoll1_linux(
     grpc_core::Fork::SetResetChildPollingEngineFunc(
         reset_event_manager_on_fork);
   }
-  return &vtable;
+  return true;
 }
 
 #else /* defined(GRPC_LINUX_EPOLL) */

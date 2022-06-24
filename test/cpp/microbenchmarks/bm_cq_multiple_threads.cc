@@ -91,7 +91,7 @@ static grpc_error_handle pollset_work(grpc_pollset* ps,
   return GRPC_ERROR_NONE;
 }
 
-static const grpc_event_engine_vtable* init_engine_vtable(bool) {
+static const grpc_event_engine_vtable* make_engine_vtable(const char* name) {
   memset(&g_vtable, 0, sizeof(g_vtable));
 
   g_vtable.pollset_size = sizeof(grpc_pollset);
@@ -107,6 +107,9 @@ static const grpc_event_engine_vtable* init_engine_vtable(bool) {
   };
   g_vtable.shutdown_background_closure = [] {};
   g_vtable.shutdown_engine = [] {};
+  g_vtable.check_engine_available = [](bool) { return true; };
+  g_vtable.init_engine = [] {};
+  g_vtable.name = name;
 
   return &g_vtable;
 }
@@ -115,9 +118,9 @@ static void setup() {
   // This test should only ever be run with a non or any polling engine
   // Override the polling engine for the non-polling engine
   // and add a custom polling engine
-  grpc_register_event_engine_factory("none", init_engine_vtable, false);
-  grpc_register_event_engine_factory("bm_cq_multiple_threads",
-                                     init_engine_vtable, true);
+  grpc_register_event_engine_factory(make_engine_vtable("none"), false);
+  grpc_register_event_engine_factory(
+      make_engine_vtable("bm_cq_multiple_threads"), true);
 
   grpc_init();
   GPR_ASSERT(strcmp(grpc_get_poll_strategy_name(), "none") == 0 ||
