@@ -32,7 +32,7 @@ platform(
     ],
     exec_properties = create_rbe_exec_properties_dict(
         # See rbe_win2019/Dockerfile for image details
-        container_image = "docker://gcr.io/grpc-testing/rbe_windows2019_withdbg_toolchain@sha256:7b04ee7e29f942adbf4f70edd2ec4ba20a3e7237e1b54f5cae4b239c6ca41105",
+        container_image = "docker://gcr.io/grpc-testing/rbe_windows2019@sha256:6b3c21d52cdce63ff2e7027ca2bc70b959ffc3bac52119165927008c3a9dec22",
         os_family = "Windows",
         labels = {"os": "windows_2019", "machine_size": "small"},
     ),
