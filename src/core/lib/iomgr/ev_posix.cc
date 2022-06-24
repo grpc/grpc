@@ -78,40 +78,6 @@ grpc_wakeup_fd grpc_global_wakeup_fd;
 static const grpc_event_engine_vtable* g_event_engine = nullptr;
 static gpr_once g_choose_engine = GPR_ONCE_INIT;
 
-namespace {
-
-grpc_poll_function_type real_poll_function;
-
-int phony_poll(struct pollfd fds[], nfds_t nfds, int timeout) {
-  if (timeout == 0) {
-    return real_poll_function(fds, nfds, 0);
-  } else {
-    gpr_log(GPR_ERROR, "Attempted a blocking poll when declared non-polling.");
-    GPR_ASSERT(false);
-    return -1;
-  }
-}
-
-const grpc_event_engine_vtable* non_polling() {
-  static const grpc_event_engine_vtable vtable = []() {
-    grpc_event_engine_vtable v = grpc_ev_poll_posix;
-    v.check_engine_available = [](bool explicit_request) {
-      if (!explicit_request) return false;
-      // return the simplest engine as a phony but also override the poller
-      if (!grpc_ev_poll_posix.check_engine_available(explicit_request)) {
-        return false;
-      }
-      real_poll_function = grpc_poll_function;
-      grpc_poll_function = phony_poll;
-      return true;
-    };
-    v.name = "none";
-    return v;
-  }();
-  return &vtable;
-}
-}  // namespace
-
 // The global array of event-engine factories. Each entry is a pair with a name
 // and an event-engine generator function (nullptr if there is no generator
 // registered for this name). The middle entries are the engines predefined by
@@ -130,7 +96,7 @@ static const grpc_event_engine_vtable* g_vtables[] = {
     nullptr,
     &grpc_ev_epoll1_posix,
     &grpc_ev_poll_posix,
-    non_polling(),
+    &grpc_ev_none_posix,
     nullptr,
     nullptr,
     nullptr,
