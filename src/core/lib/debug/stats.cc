@@ -31,6 +31,7 @@
 
 #include <grpc/support/alloc.h>
 #include <grpc/support/cpu.h>
+#include <grpc/support/sync.h>
 
 grpc_stats_data* grpc_stats_per_cpu_storage = nullptr;
 static size_t g_num_cores;
