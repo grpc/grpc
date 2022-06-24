@@ -11,8 +11,8 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-#ifndef GRPC_CORE_LIB_EVENT_ENGINE_IOMGR_ENGINE_H
-#define GRPC_CORE_LIB_EVENT_ENGINE_IOMGR_ENGINE_H
+#ifndef GRPC_CORE_LIB_EVENT_ENGINE_IOMGR_ENGINE_IOMGR_ENGINE_H
+#define GRPC_CORE_LIB_EVENT_ENGINE_IOMGR_ENGINE_IOMGR_ENGINE_H
 #include <grpc/support/port_platform.h>
 
 #include <stdint.h>
@@ -25,7 +25,6 @@
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/string_view.h"
-#include "absl/types/variant.h"
 
 #include <grpc/event_engine/endpoint_config.h>
 #include <grpc/event_engine/event_engine.h>
@@ -33,7 +32,10 @@
 #include <grpc/event_engine/slice_buffer.h>
 
 #include "src/core/lib/event_engine/handle_containers.h"
+#include "src/core/lib/event_engine/iomgr_engine/thread_pool.h"
+#include "src/core/lib/event_engine/iomgr_engine/timer_manager.h"
 #include "src/core/lib/gprpp/sync.h"
+#include "src/core/lib/gprpp/time.h"
 
 namespace grpc_event_engine {
 namespace experimental {
@@ -101,12 +103,13 @@ class IomgrEventEngine final : public EventEngine {
   bool Cancel(TaskHandle handle) override;
 
  private:
-  EventEngine::TaskHandle RunAfterInternal(
-      Duration when,
-      absl::variant<std::function<void()>, EventEngine::Closure*> cb);
+  struct ClosureData;
+  EventEngine::TaskHandle RunAfterInternal(Duration when,
+                                           std::function<void()> cb);
+  grpc_core::Timestamp ToTimestamp(EventEngine::Duration when);
 
-  void RunInternal(
-      absl::variant<std::function<void()>, EventEngine::Closure*> cb);
+  iomgr_engine::TimerManager timer_manager_;
+  iomgr_engine::ThreadPool thread_pool_{2};
 
   grpc_core::Mutex mu_;
   TaskHandleSet known_handles_ ABSL_GUARDED_BY(mu_);
@@ -116,4 +119,4 @@ class IomgrEventEngine final : public EventEngine {
 }  // namespace experimental
 }  // namespace grpc_event_engine
 
-#endif  // GRPC_CORE_LIB_EVENT_ENGINE_IOMGR_ENGINE_H
+#endif  // GRPC_CORE_LIB_EVENT_ENGINE_IOMGR_ENGINE_IOMGR_ENGINE_H

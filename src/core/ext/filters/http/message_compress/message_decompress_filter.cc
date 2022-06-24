@@ -27,6 +27,7 @@
 #include <new>
 #include <type_traits>
 
+#include "absl/status/status.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
 #include "absl/types/optional.h"

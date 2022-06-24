@@ -101,9 +101,8 @@ class RoundRobin : public LoadBalancingPolicy {
         absl::optional<grpc_connectivity_state> old_state,
         grpc_connectivity_state new_state) override;
 
-    // Updates the logical connectivity state.  Returns true if the
-    // state has changed.
-    bool UpdateLogicalConnectivityStateLocked(
+    // Updates the logical connectivity state.
+    void UpdateLogicalConnectivityStateLocked(
         grpc_connectivity_state connectivity_state);
 
     // The logical connectivity state of the subchannel.
@@ -161,6 +160,8 @@ class RoundRobin : public LoadBalancingPolicy {
     size_t num_ready_ = 0;
     size_t num_connecting_ = 0;
     size_t num_transient_failure_ = 0;
+
+    absl::Status last_failure_;
   };
 
   class Picker : public SubchannelPicker {
@@ -397,9 +398,14 @@ void RoundRobin::RoundRobinSubchannelList::
               "[RR %p] reporting TRANSIENT_FAILURE with subchannel list %p: %s",
               p, this, status_for_tf.ToString().c_str());
     }
+    if (!status_for_tf.ok()) {
+      last_failure_ = absl::UnavailableError(
+          absl::StrCat("connections to all backends failing; last error: ",
+                       status_for_tf.ToString()));
+    }
     p->channel_control_helper()->UpdateState(
-        GRPC_CHANNEL_TRANSIENT_FAILURE, status_for_tf,
-        absl::make_unique<TransientFailurePicker>(status_for_tf));
+        GRPC_CHANNEL_TRANSIENT_FAILURE, last_failure_,
+        absl::make_unique<TransientFailurePicker>(last_failure_));
   }
 }
 
@@ -434,16 +440,13 @@ void RoundRobin::RoundRobinSubchannelData::ProcessConnectivityChangeLocked(
     subchannel()->RequestConnection();
   }
   // Update logical connectivity state.
-  // If it changed, update the policy state.
-  if (UpdateLogicalConnectivityStateLocked(new_state)) {
-    subchannel_list()->MaybeUpdateRoundRobinConnectivityStateLocked(
-        absl::UnavailableError(
-            absl::StrCat("connections to all backends failing; last error: ",
-                         connectivity_status().ToString())));
-  }
+  UpdateLogicalConnectivityStateLocked(new_state);
+  // Update the policy state.
+  subchannel_list()->MaybeUpdateRoundRobinConnectivityStateLocked(
+      connectivity_status());
 }
 
-bool RoundRobin::RoundRobinSubchannelData::UpdateLogicalConnectivityStateLocked(
+void RoundRobin::RoundRobinSubchannelData::UpdateLogicalConnectivityStateLocked(
     grpc_connectivity_state connectivity_state) {
   RoundRobin* p = static_cast<RoundRobin*>(subchannel_list()->policy());
   if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_round_robin_trace)) {
@@ -464,7 +467,7 @@ bool RoundRobin::RoundRobinSubchannelData::UpdateLogicalConnectivityStateLocked(
   if (logical_connectivity_state_.has_value() &&
       *logical_connectivity_state_ == GRPC_CHANNEL_TRANSIENT_FAILURE &&
       connectivity_state != GRPC_CHANNEL_READY) {
-    return false;
+    return;
   }
   // If the new state is IDLE, treat it as CONNECTING, since it will
   // immediately transition into CONNECTING anyway.
@@ -481,13 +484,12 @@ bool RoundRobin::RoundRobinSubchannelData::UpdateLogicalConnectivityStateLocked(
   // If no change, return false.
   if (logical_connectivity_state_.has_value() &&
       *logical_connectivity_state_ == connectivity_state) {
-    return false;
+    return;
   }
   // Otherwise, update counters and logical state.
   subchannel_list()->UpdateStateCountersLocked(logical_connectivity_state_,
                                                connectivity_state);
   logical_connectivity_state_ = connectivity_state;
-  return true;
 }
 
 //

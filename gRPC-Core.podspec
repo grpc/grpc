@@ -172,10 +172,8 @@ Pod::Spec.new do |s|
     ss.libraries = 'z'
     ss.dependency "#{s.name}/Interface", version
     ss.dependency 'BoringSSL-GRPC', '0.0.24'
-    ss.dependency 'Libuv-gRPC', '0.0.10'
     ss.dependency 'abseil/base/base', abseil_version
     ss.dependency 'abseil/base/core_headers', abseil_version
-    ss.dependency 'abseil/cleanup/cleanup', abseil_version
     ss.dependency 'abseil/container/flat_hash_map', abseil_version
     ss.dependency 'abseil/container/flat_hash_set', abseil_version
     ss.dependency 'abseil/container/inlined_vector', abseil_version
@@ -1040,9 +1038,20 @@ Pod::Spec.new do |s|
                       'src/core/lib/event_engine/event_engine.cc',
                       'src/core/lib/event_engine/event_engine_factory.h',
                       'src/core/lib/event_engine/handle_containers.h',
-                      'src/core/lib/event_engine/iomgr_engine.cc',
-                      'src/core/lib/event_engine/iomgr_engine.h',
+                      'src/core/lib/event_engine/iomgr_engine/iomgr_engine.cc',
+                      'src/core/lib/event_engine/iomgr_engine/iomgr_engine.h',
+                      'src/core/lib/event_engine/iomgr_engine/thread_pool.cc',
+                      'src/core/lib/event_engine/iomgr_engine/thread_pool.h',
+                      'src/core/lib/event_engine/iomgr_engine/time_averaged_stats.cc',
+                      'src/core/lib/event_engine/iomgr_engine/time_averaged_stats.h',
+                      'src/core/lib/event_engine/iomgr_engine/timer.cc',
+                      'src/core/lib/event_engine/iomgr_engine/timer.h',
+                      'src/core/lib/event_engine/iomgr_engine/timer_heap.cc',
+                      'src/core/lib/event_engine/iomgr_engine/timer_heap.h',
+                      'src/core/lib/event_engine/iomgr_engine/timer_manager.cc',
+                      'src/core/lib/event_engine/iomgr_engine/timer_manager.h',
                       'src/core/lib/event_engine/memory_allocator.cc',
+                      'src/core/lib/event_engine/promise.h',
                       'src/core/lib/event_engine/resolved_address.cc',
                       'src/core/lib/event_engine/slice.cc',
                       'src/core/lib/event_engine/slice_buffer.cc',
@@ -2100,7 +2109,13 @@ Pod::Spec.new do |s|
                               'src/core/lib/event_engine/channel_args_endpoint_config.h',
                               'src/core/lib/event_engine/event_engine_factory.h',
                               'src/core/lib/event_engine/handle_containers.h',
-                              'src/core/lib/event_engine/iomgr_engine.h',
+                              'src/core/lib/event_engine/iomgr_engine/iomgr_engine.h',
+                              'src/core/lib/event_engine/iomgr_engine/thread_pool.h',
+                              'src/core/lib/event_engine/iomgr_engine/time_averaged_stats.h',
+                              'src/core/lib/event_engine/iomgr_engine/timer.h',
+                              'src/core/lib/event_engine/iomgr_engine/timer_heap.h',
+                              'src/core/lib/event_engine/iomgr_engine/timer_manager.h',
+                              'src/core/lib/event_engine/promise.h',
                               'src/core/lib/event_engine/trace.h',
                               'src/core/lib/gpr/alloc.h',
                               'src/core/lib/gpr/env.h',
