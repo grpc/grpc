@@ -26,6 +26,7 @@
 #include <new>
 
 #include "absl/meta/type_traits.h"
+#include "absl/status/status.h"
 #include "absl/types/optional.h"
 #include "absl/utility/utility.h"
 
