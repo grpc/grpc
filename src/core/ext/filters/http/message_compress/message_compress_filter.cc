@@ -28,6 +28,7 @@
 #include <type_traits>
 
 #include "absl/meta/type_traits.h"
+#include "absl/status/status.h"
 #include "absl/types/optional.h"
 
 #include <grpc/compression.h>
