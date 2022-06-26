@@ -376,10 +376,9 @@ class ChannelzServicerTest(AioTestBase):
         self.assertGreater(len(gc_resp.channel.subchannel_ref), 0)
 
         while True:
-            gsc_resp = self._channelz_stub.GetSubchannel(
+            gsc_resp = await self._channelz_stub.GetSubchannel(
                 channelz_pb2.GetSubchannelRequest(
-                    subchannel_id=gc_resp.channel.subchannel_ref[0].
-                    subchannel_id))
+                    subchannel_id=gc_resp.channel.subchannel_ref[0].subchannel_id))
             if gsc_resp.subchannel.data.calls_started == gsc_resp.subchannel.data.calls_succeeded + gsc_resp.subchannel.data.calls_failed:
                 break
         self.assertEqual(gsc_resp.subchannel.data.calls_started, 1)
@@ -389,7 +388,7 @@ class ChannelzServicerTest(AioTestBase):
         self.assertEqual(len(gsc_resp.subchannel.socket_ref), 1)
 
         while True:
-            gs_resp = self._channelz_stub.GetSocket(
+            gs_resp = await self._channelz_stub.GetSocket(
                 channelz_pb2.GetSocketRequest(
                     socket_id=gsc_resp.subchannel.socket_ref[0].socket_id))
             if gs_resp.socket.data.streams_started == gs_resp.socket.data.streams_succeeded + gs_resp.socket.data.streams_failed:
