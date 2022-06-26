@@ -378,7 +378,8 @@ class ChannelzServicerTest(AioTestBase):
         while True:
             gsc_resp = await self._channelz_stub.GetSubchannel(
                 channelz_pb2.GetSubchannelRequest(
-                    subchannel_id=gc_resp.channel.subchannel_ref[0].subchannel_id))
+                    subchannel_id=gc_resp.channel.subchannel_ref[0].
+                    subchannel_id))
             if gsc_resp.subchannel.data.calls_started == gsc_resp.subchannel.data.calls_succeeded + gsc_resp.subchannel.data.calls_failed:
                 break
         self.assertEqual(gsc_resp.subchannel.data.calls_started, 1)
