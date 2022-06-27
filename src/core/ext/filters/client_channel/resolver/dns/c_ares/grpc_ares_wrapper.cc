@@ -18,6 +18,9 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <algorithm>
+#include <vector>
+
 #include "src/core/lib/iomgr/sockaddr.h"
 
 // IWYU pragma: no_include <arpa/nameser.h>

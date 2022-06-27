@@ -653,15 +653,17 @@ grpc_cc_library(
     }),
     external_deps = [
         "absl/base:core_headers",
+        "absl/cleanup",
         "absl/container:flat_hash_map",
         "absl/hash",
         "absl/memory",
         "absl/meta:type_traits",
         "absl/status",
+        "absl/status:statusor",
         "absl/strings",
         "absl/synchronization",
-        "absl/status:statusor",
         "absl/time",
+        "absl/types:variant",
     ],
     language = "c++",
     public_hdrs = [
@@ -2228,7 +2230,6 @@ grpc_cc_library(
     hdrs = [
         "src/core/lib/avl/avl.h",
     ],
-    external_deps = ["absl/container:inlined_vector"],
     tags = ["grpc-autodeps"],
     deps = ["gpr_platform"],
 )
@@ -2932,7 +2933,6 @@ grpc_cc_library(
         "src/core/lib/service_config/service_config_impl.h",
     ],
     external_deps = [
-        "absl/container:inlined_vector",
         "absl/memory",
         "absl/strings",
     ],
@@ -2984,7 +2984,6 @@ grpc_cc_library(
         "src/core/lib/resolver/server_address.h",
     ],
     external_deps = [
-        "absl/container:inlined_vector",
         "absl/memory",
         "absl/status",
         "absl/status:statusor",
@@ -3594,7 +3593,6 @@ grpc_cc_library(
     hdrs = [
         "src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_balancer_addresses.h",
     ],
-    external_deps = ["absl/container:inlined_vector"],
     language = "c++",
     tags = ["grpc-autodeps"],
     visibility = ["@grpc:grpclb"],
@@ -4187,7 +4185,6 @@ grpc_cc_library(
         "src/core/ext/filters/client_channel/lb_policy/address_filtering.h",
     ],
     external_deps = [
-        "absl/container:inlined_vector",
         "absl/memory",
         "absl/status:statusor",
         "absl/strings",
@@ -4206,7 +4203,6 @@ grpc_cc_library(
         "src/core/ext/filters/client_channel/lb_policy/subchannel_list.h",
     ],
     external_deps = [
-        "absl/container:inlined_vector",
         "absl/status",
         "absl/types:optional",
     ],
@@ -4232,7 +4228,6 @@ grpc_cc_library(
         "src/core/ext/filters/client_channel/lb_policy/pick_first/pick_first.cc",
     ],
     external_deps = [
-        "absl/container:inlined_vector",
         "absl/memory",
         "absl/status",
         "absl/status:statusor",
@@ -4307,7 +4302,6 @@ grpc_cc_library(
         "src/core/ext/filters/client_channel/lb_policy/round_robin/round_robin.cc",
     ],
     external_deps = [
-        "absl/container:inlined_vector",
         "absl/memory",
         "absl/status",
         "absl/status:statusor",
@@ -4353,7 +4347,6 @@ grpc_cc_library(
         "src/core/ext/filters/client_channel/lb_policy/outlier_detection/outlier_detection.cc",
     ],
     external_deps = [
-        "absl/container:inlined_vector",
         "absl/memory",
         "absl/random",
         "absl/status",
@@ -4429,7 +4422,6 @@ grpc_cc_library(
         "src/core/ext/filters/client_channel/lb_policy/weighted_target/weighted_target.cc",
     ],
     external_deps = [
-        "absl/container:inlined_vector",
         "absl/memory",
         "absl/status",
         "absl/status:statusor",
@@ -5447,7 +5439,6 @@ grpc_cc_library(
         "src/core/lib/security/credentials/oauth2/oauth2_credentials.h",
     ],
     external_deps = [
-        "absl/container:inlined_vector",
         "absl/status",
         "absl/status:statusor",
         "absl/strings",
@@ -5707,10 +5698,7 @@ grpc_cc_library(
         "src/core/lib/security/security_connector/load_system_roots_supported.h",
         "src/core/lib/security/util/json_util.h",
     ],
-    external_deps = [
-        "absl/container:inlined_vector",
-        "absl/strings",
-    ],
+    external_deps = ["absl/strings"],
     language = "c++",
     tags = ["grpc-autodeps"],
     visibility = ["@grpc:public"],
@@ -5824,7 +5812,6 @@ grpc_cc_library(
     ],
     external_deps = [
         "absl/base:core_headers",
-        "absl/container:inlined_vector",
         "absl/status",
         "absl/strings",
         "libcrypto",

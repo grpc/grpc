@@ -156,6 +156,7 @@ TransactionProcessor::TransactionProcessor(absl::Duration delay)
       tx_thread_(
           "process-thread",
           [](void* arg) {
+            grpc_core::ExecCtx exec_ctx;
             auto* self = static_cast<TransactionProcessor*>(arg);
             self->ProcessLoop();
           },
@@ -233,6 +234,7 @@ void TransactionProcessor::ProcessLoop() {
         static_cast<PersistentFakeTransactionReceiver*>(target->owner);
     auto parcel = absl::make_unique<FakeReadableParcel>(std::move(data));
     tx_receiver->Receive(tx_code, parcel.get()).IgnoreError();
+    grpc_core::ExecCtx::Get()->Flush();
   }
   Flush();
 }

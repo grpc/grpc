@@ -55,8 +55,8 @@ class RbacMethodParsedConfig : public ServiceConfigParser::ParsedConfig {
   // a connection on the server, multiple RBAC policies might be active. The
   // RBAC filter uses this method to get the RBAC policy configured for a
   // instance at a particular instance.
-  const GrpcAuthorizationEngine* authorization_engine(int index) const {
-    if (static_cast<size_t>(index) >= authorization_engines_.size()) {
+  const GrpcAuthorizationEngine* authorization_engine(size_t index) const {
+    if (index >= authorization_engines_.size()) {
       return nullptr;
     }
     return &authorization_engines_[index];

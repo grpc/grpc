@@ -28,7 +28,6 @@
 #include <utility>
 #include <vector>
 
-#include "absl/container/inlined_vector.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
 #include "absl/strings/str_join.h"
@@ -65,8 +64,7 @@ class RegistryState {
   }
 
  private:
-  absl::InlinedVector<std::unique_ptr<LoadBalancingPolicyFactory>, 10>
-      factories_;
+  std::vector<std::unique_ptr<LoadBalancingPolicyFactory>> factories_;
 };
 
 RegistryState* g_state = nullptr;

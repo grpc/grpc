@@ -26,7 +26,6 @@
 #include <utility>
 #include <vector>
 
-#include "absl/container/inlined_vector.h"
 #include "absl/memory/memory.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
@@ -129,8 +128,8 @@ class WeightedTargetLb : public LoadBalancingPolicy {
     // ready state. The first element in the pair represents the end of a
     // range proportional to the child's weight. The start of the range
     // is the previous value in the vector and is 0 for the first element.
-    using PickerList = absl::InlinedVector<
-        std::pair<uint32_t, RefCountedPtr<ChildPickerWrapper>>, 1>;
+    using PickerList =
+        std::vector<std::pair<uint32_t, RefCountedPtr<ChildPickerWrapper>>>;
 
     explicit WeightedPicker(PickerList pickers)
         : pickers_(std::move(pickers)) {}
