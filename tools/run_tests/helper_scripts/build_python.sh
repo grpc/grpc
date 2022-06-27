@@ -157,6 +157,7 @@ pip_install() {
 export SETUPTOOLS_USE_DISTUTILS=stdlib
 pip_install --upgrade pip==21.3.1
 pip_install --upgrade setuptools==59.6.0
+pip_install --upgrade wheel==0.37.1
 
 # pip-installs the directory specified. Used because on MSYS the vanilla Windows
 # Python gets confused when parsing paths.
