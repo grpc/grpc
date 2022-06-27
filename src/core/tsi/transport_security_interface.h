@@ -474,6 +474,13 @@ typedef void (*tsi_handshaker_on_next_done_cb)(
    - cb is the callback function defined above. It can be NULL for synchronous
      TSI handshaker implementation.
    - user_data is the argument to callback function passed from the caller.
+   - error, if non-null, will be populated with a human-readable error
+     message whenever the result value is something other than TSI_OK,
+     TSI_ASYNC, or TSI_INCOMPLETE_DATA.  The object pointed to by this
+     argument is owned by the caller and must continue to exist until after the
+     handshake is finished.  Some TSI implementations cache this value,
+     so callers must pass the same value to all calls to tsi_handshaker_next()
+     for a given handshake.
    This method returns TSI_ASYNC if the TSI handshaker implementation is
    asynchronous, and in this case, the callback is guaranteed to run in another
    thread owned by TSI. It returns TSI_OK if the handshake completes or if
