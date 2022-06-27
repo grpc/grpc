@@ -40,10 +40,8 @@ class ScopedSetEnv {
 TEST(NoProxyTest, EmptyList) {
   ScopedSetEnv no_proxy("");
   auto args = ChannelArgs().Set(GRPC_ARG_HTTP_PROXY, "http://proxy.google.com");
-  absl::optional<std::string> name_to_resolve;
-  EXPECT_TRUE(HttpProxyMapper().MapName("dns:///test.google.com:443", &args,
-                                        &name_to_resolve));
-  EXPECT_EQ(name_to_resolve, "proxy.google.com");
+  EXPECT_EQ(HttpProxyMapper().MapName("dns:///test.google.com:443", &args),
+            "proxy.google.com");
   EXPECT_EQ(args.GetString(GRPC_ARG_HTTP_CONNECT_SERVER),
             "test.google.com:443");
 }
@@ -52,10 +50,8 @@ TEST(NoProxyTest, EmptyList) {
 TEST(NoProxyTest, Basic) {
   ScopedSetEnv no_proxy("google.com");
   auto args = ChannelArgs().Set(GRPC_ARG_HTTP_PROXY, "http://proxy.google.com");
-  absl::optional<std::string> name_to_resolve;
-  EXPECT_FALSE(HttpProxyMapper().MapName("dns:///test.google.com:443", &args,
-                                         &name_to_resolve));
-  EXPECT_EQ(name_to_resolve, absl::nullopt);
+  EXPECT_EQ(HttpProxyMapper().MapName("dns:///test.google.com:443", &args),
+            absl::nullopt);
   EXPECT_EQ(args.GetString(GRPC_ARG_HTTP_CONNECT_SERVER), absl::nullopt);
 }
 
@@ -64,9 +60,8 @@ TEST(NoProxyTest, EmptyEntries) {
   ScopedSetEnv no_proxy("foo.com,,google.com,,");
   auto args = ChannelArgs().Set(GRPC_ARG_HTTP_PROXY, "http://proxy.google.com");
   absl::optional<std::string> name_to_resolve;
-  EXPECT_FALSE(HttpProxyMapper().MapName("dns:///test.google.com:443", &args,
-                                         &name_to_resolve));
-  EXPECT_EQ(name_to_resolve, absl::nullopt);
+  EXPECT_EQ(HttpProxyMapper().MapName("dns:///test.google.com:443", &args),
+            absl::nullopt);
   EXPECT_EQ(args.GetString(GRPC_ARG_HTTP_CONNECT_SERVER), absl::nullopt);
 }
 

@@ -33,15 +33,14 @@ class ProxyMapperInterface {
   virtual ~ProxyMapperInterface() = default;
 
   /// Determines the proxy name to resolve for \a server_uri.
-  /// If no proxy is needed, returns false.
-  /// Otherwise, sets \a name_to_resolve, optionally sets \a new_args,
-  /// and returns true.
-  virtual bool MapName(absl::string_view server_uri, ChannelArgs* args,
-                       absl::optional<std::string>* name_to_resolve) = 0;
+  /// If no proxy is needed, returns nullopt.
+  /// Otherwise, updates \a args and returns the name to resolve.
+  virtual absl::optional<std::string> MapName(absl::string_view server_uri,
+                                              ChannelArgs* args) = 0;
 
   /// Determines the proxy address to use to contact \a address.
   /// If no proxy is needed, returns false.
-  /// Otherwise, sets \a new_address, optionally sets \a new_args, and
+  /// Otherwise, sets \a new_address, updates \a args, and
   /// returns true.
   virtual bool MapAddress(const grpc_resolved_address& address,
                           ChannelArgs* args,

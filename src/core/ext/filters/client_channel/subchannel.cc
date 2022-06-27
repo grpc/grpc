@@ -100,7 +100,7 @@ ConnectedSubchannel::ConnectedSubchannel(
               ? "ConnectedSubchannel"
               : nullptr),
       channel_stack_(channel_stack),
-      args_(std::move(args)),
+      args_(args),
       channelz_subchannel_(std::move(channelz_subchannel)) {}
 
 ConnectedSubchannel::~ConnectedSubchannel() {
@@ -627,8 +627,8 @@ Subchannel::Subchannel(SubchannelKey key,
     : DualRefCounted<Subchannel>(
           GRPC_TRACE_FLAG_ENABLED(grpc_trace_subchannel_refcount) ? "Subchannel"
                                                                   : nullptr),
-      key_(key),
-      args_(std::move(args)),
+      key_(std::move(key)),
+      args_(args),
       pollset_set_(grpc_pollset_set_create()),
       connector_(std::move(connector)),
       backoff_(ParseArgsForBackoffValues(args_, &min_connect_timeout_)) {

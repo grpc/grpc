@@ -24,6 +24,8 @@
 #include <utility>
 #include <vector>
 
+#include "absl/types/optional.h"
+
 namespace grpc_core {
 
 namespace {
@@ -61,19 +63,17 @@ void ProxyMapperRegistry::Register(
   }
 }
 
-bool ProxyMapperRegistry::MapName(
-    absl::string_view server_uri, ChannelArgs* args,
-    absl::optional<std::string>* name_to_resolve) {
+absl::optional<std::string> ProxyMapperRegistry::MapName(
+    absl::string_view server_uri, ChannelArgs* args) {
   Init();
   ChannelArgs args_backup = *args;
   for (const auto& mapper : *g_proxy_mapper_list) {
     *args = args_backup;
-    if (mapper->MapName(server_uri, args, name_to_resolve)) {
-      return true;
-    }
+    auto r = mapper->MapName(server_uri, args);
+    if (r.has_value()) return r;
   }
   *args = args_backup;
-  return false;
+  return absl::nullopt;
 }
 
 bool ProxyMapperRegistry::MapAddress(const grpc_resolved_address& address,

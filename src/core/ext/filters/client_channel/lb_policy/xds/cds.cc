@@ -219,7 +219,7 @@ RefCountedPtr<SubchannelInterface> CdsLb::Helper::CreateSubchannel(
     ServerAddress address, const ChannelArgs& args) {
   if (parent_->shutting_down_) return nullptr;
   return parent_->channel_control_helper()->CreateSubchannel(std::move(address),
-                                                             std::move(args));
+                                                             args);
 }
 
 void CdsLb::Helper::UpdateState(grpc_connectivity_state state,

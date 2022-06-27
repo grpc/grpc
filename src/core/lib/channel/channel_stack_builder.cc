@@ -40,7 +40,7 @@ ChannelStackBuilder& ChannelStackBuilder::SetTarget(const char* target) {
 
 ChannelStackBuilder& ChannelStackBuilder::SetChannelArgs(
     const ChannelArgs& args) {
-  args_ = std::move(args);
+  args_ = args;
   return *this;
 }
 

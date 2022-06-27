@@ -1029,12 +1029,8 @@ ClientChannel::ClientChannel(grpc_channel_element_args* args,
         "filter");
     return;
   }
-  uri_to_resolve_ = *server_uri;
-  absl::optional<std::string> proxy_name;
-  ProxyMapperRegistry::MapName(*server_uri, &channel_args_, &proxy_name);
-  if (proxy_name.has_value()) {
-    uri_to_resolve_ = std::move(*proxy_name);
-  }
+  uri_to_resolve_ = ProxyMapperRegistry::MapName(*server_uri, &channel_args_)
+                        .value_or(*server_uri);
   // Make sure the URI to resolve is valid, so that we know that
   // resolver creation will succeed later.
   if (!CoreConfiguration::Get().resolver_registry().IsValidTarget(

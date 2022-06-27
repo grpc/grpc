@@ -42,8 +42,8 @@ class ProxyMapperRegistry {
   static void Register(bool at_start,
                        std::unique_ptr<ProxyMapperInterface> mapper);
 
-  static bool MapName(absl::string_view server_uri, ChannelArgs* args,
-                      absl::optional<std::string>* name_to_resolve);
+  static absl::optional<std::string> MapName(absl::string_view server_uri,
+                                             ChannelArgs* args);
 
   static bool MapAddress(const grpc_resolved_address& address,
                          ChannelArgs* args,

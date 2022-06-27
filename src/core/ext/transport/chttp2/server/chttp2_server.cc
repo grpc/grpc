@@ -408,8 +408,8 @@ void Chttp2ServerListener::ActiveConnection::HandshakingState::Start(
     if (handshake_mgr_ == nullptr) return;
     handshake_mgr = handshake_mgr_;
   }
-  handshake_mgr->DoHandshake(endpoint, std::move(channel_args), deadline_,
-                             acceptor_, OnHandshakeDone, this);
+  handshake_mgr->DoHandshake(endpoint, channel_args, deadline_, acceptor_,
+                             OnHandshakeDone, this);
 }
 
 void Chttp2ServerListener::ActiveConnection::HandshakingState::OnTimeout(

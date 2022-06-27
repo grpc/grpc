@@ -279,7 +279,7 @@ class Chttp2SecureClientChannelFactory : public ClientChannelFactory {
       return nullptr;
     }
     RefCountedPtr<Subchannel> s = Subchannel::Create(
-        MakeOrphanable<Chttp2Connector>(), address, std::move(*new_args));
+        MakeOrphanable<Chttp2Connector>(), address, *new_args);
     return s;
   }
 

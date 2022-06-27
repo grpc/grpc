@@ -608,7 +608,7 @@ grpc_error_handle Server::SetupTransport(
     const RefCountedPtr<channelz::SocketNode>& socket_node) {
   // Create channel.
   absl::StatusOr<RefCountedPtr<Channel>> channel =
-      Channel::Create(nullptr, std::move(args), GRPC_SERVER_CHANNEL, transport);
+      Channel::Create(nullptr, args, GRPC_SERVER_CHANNEL, transport);
   if (!channel.ok()) {
     return absl_status_to_grpc_error(channel.status());
   }

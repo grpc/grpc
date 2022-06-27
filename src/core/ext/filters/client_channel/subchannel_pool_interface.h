@@ -43,6 +43,11 @@ class SubchannelKey {
   SubchannelKey(const grpc_resolved_address& address, const ChannelArgs& args);
   ~SubchannelKey();
 
+  SubchannelKey(const SubchannelKey& other) = default;
+  SubchannelKey& operator=(const SubchannelKey& other) = default;
+  SubchannelKey(SubchannelKey&& other) noexcept = default;
+  SubchannelKey& operator=(SubchannelKey&& other) noexcept = default;
+
   bool operator<(const SubchannelKey& other) const;
 
   const grpc_resolved_address& address() const { return address_; }

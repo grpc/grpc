@@ -248,7 +248,7 @@ class ClientChannelStressTest {
     grpc_core::ServerAddressList balancer_addresses =
         CreateAddressListFromAddressDataList(balancer_address_data);
     result.args = grpc_core::SetGrpcLbBalancerAddresses(
-        grpc_core::ChannelArgs(), &balancer_addresses);
+        grpc_core::ChannelArgs(), std::move(balancer_addresses));
     return result;
   }
 
