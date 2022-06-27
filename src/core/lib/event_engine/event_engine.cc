@@ -65,12 +65,5 @@ void ResetDefaultEventEngine() {
   delete g_event_engine.exchange(nullptr, std::memory_order_acq_rel);
 }
 
-void InitializeEventEngine() {
-  GetDefaultEventEngine()->Run([]() {
-    GRPC_EVENT_ENGINE_TRACE("EventEngine:%p initialized",
-                            GetDefaultEventEngine());
-  });
-}
-
 }  // namespace experimental
 }  // namespace grpc_event_engine
