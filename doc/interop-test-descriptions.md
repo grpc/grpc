@@ -1147,9 +1147,11 @@ Procedures:
           util: 0.30499
         }
       }
+      response_parameters:{
+        size: 1
+      }
     }
     ```
-And client requests a response.
 2. After getting a response, client waits up to 5 seconds to receive a OOB load 
 report that matches the requested load report in step 1. To wait for load 
 report, client may inject a callback to the custom LB policy, or poll the result
@@ -1165,6 +1167,9 @@ CallOptions, that will be filled in by the custom LB policy as part of the
         utilization: {
           util: 100.2039
         }
+      }
+      response_parameters:{
+        size: 1
       }
     }
     ```
