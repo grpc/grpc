@@ -38,7 +38,6 @@ for general contribution guidelines.
 - [muxi](https://github.com/muxi), Google LLC
 - [nanahpang](https://github.com/nanahpang), Google LLC
 - [nathanielmanistaatgoogle](https://github.com/nathanielmanistaatgoogle), Google LLC
-- [nicolasnoble](https://github.com/nicolasnoble), Google LLC
 - [pfreixes](https://github.com/pfreixes), Skyscanner Ltd
 - [qixuanl1](https://github.com/qixuanl1), Google LLC
 - [ran-su](https://github.com/ran-su), Google LLC
@@ -76,6 +75,7 @@ for general contribution guidelines.
 - [mit-mit](https://github.com/mit-mit), Google LLC
 - [mpwarres](https://github.com/mpwarres), Google LLC
 - [ncteisen](https://github.com/ncteisen), Google LLC
+- [nicolasnoble](https://github.com/nicolasnoble), Google LLC
 - [pmarks-net](https://github.com/pmarks-net), Google LLC
 - [slash-lib](https://github.com/slash-lib), Google LLC
 - [soltanmm](https://github.com/soltanmm), Google LLC

@@ -78,8 +78,6 @@
 #include "absl/strings/str_join.h"
 #include "absl/strings/string_view.h"
 #include "absl/strings/strip.h"
-#include "absl/time/clock.h"
-#include "absl/time/time.h"
 #include "absl/types/optional.h"
 #include "absl/types/variant.h"
 #include "upb/upb.hpp"
@@ -996,9 +994,8 @@ void GrpcLb::BalancerCallState::StartQuery() {
 }
 
 void GrpcLb::BalancerCallState::ScheduleNextClientLoadReportLocked() {
-  client_load_report_handle_ = GetDefaultEventEngine()->RunAt(
-      absl::Now() + absl::Milliseconds(client_stats_report_interval_.millis()),
-      [this] {
+  client_load_report_handle_ =
+      GetDefaultEventEngine()->RunAfter(client_stats_report_interval_, [this] {
         ApplicationCallbackExecCtx callback_exec_ctx;
         ExecCtx exec_ctx;
         MaybeSendClientLoadReport();
