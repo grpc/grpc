@@ -21,6 +21,8 @@
 
 #include "absl/memory/memory.h"
 
+#include <grpcpp/impl/grpc_library.h>
+
 #include "test/core/transport/binder/mock_objects.h"
 #include "test/core/util/test_config.h"
 
@@ -34,6 +36,10 @@ MATCHER_P(StrEqInt8Ptr, target, "") {
 }
 
 TEST(WireWriterTest, RpcCall) {
+  grpc::internal::GrpcLibrary init_lib;
+  init_lib.init();
+  // Required because wire writer uses combiner internally.
+  grpc_core::ExecCtx exec_ctx;
   auto mock_binder = absl::make_unique<MockBinder>();
   MockBinder& mock_binder_ref = *mock_binder;
   MockWritableParcel mock_writable_parcel;
@@ -62,9 +68,10 @@ TEST(WireWriterTest, RpcCall) {
 
     EXPECT_CALL(mock_binder_ref, Transact(BinderTransportTxCode(kFirstCallId)));
 
-    Transaction tx(kFirstCallId, /*is_client=*/true);
-    EXPECT_TRUE(wire_writer.RpcCall(tx).ok());
+    auto tx = std::make_unique<Transaction>(kFirstCallId, /*is_client=*/true);
+    EXPECT_TRUE(wire_writer.RpcCall(std::move(tx)).ok());
     sequence_number++;
+    grpc_core::ExecCtx::Get()->Flush();
   }
   {
     // flag
@@ -95,10 +102,12 @@ TEST(WireWriterTest, RpcCall) {
     EXPECT_CALL(mock_binder_ref,
                 Transact(BinderTransportTxCode(kFirstCallId + 1)));
 
-    Transaction tx(kFirstCallId + 1, /*is_client=*/true);
-    tx.SetPrefix(kMetadata);
-    tx.SetMethodRef("/example/method/ref");
-    EXPECT_TRUE(wire_writer.RpcCall(tx).ok());
+    auto tx =
+        std::make_unique<Transaction>(kFirstCallId + 1, /*is_client=*/true);
+    tx->SetPrefix(kMetadata);
+    tx->SetMethodRef("/example/method/ref");
+    EXPECT_TRUE(wire_writer.RpcCall(std::move(tx)).ok());
+    grpc_core::ExecCtx::Get()->Flush();
   }
   {
     // flag
@@ -109,10 +118,11 @@ TEST(WireWriterTest, RpcCall) {
     ExpectWriteByteArray("data");
     EXPECT_CALL(mock_binder_ref, Transact(BinderTransportTxCode(kFirstCallId)));
 
-    Transaction tx(kFirstCallId, /*is_client=*/true);
-    tx.SetData("data");
-    EXPECT_TRUE(wire_writer.RpcCall(tx).ok());
+    auto tx = std::make_unique<Transaction>(kFirstCallId, /*is_client=*/true);
+    tx->SetData("data");
+    EXPECT_TRUE(wire_writer.RpcCall(std::move(tx)).ok());
     sequence_number++;
+    grpc_core::ExecCtx::Get()->Flush();
   }
   {
     // flag
@@ -122,10 +132,11 @@ TEST(WireWriterTest, RpcCall) {
 
     EXPECT_CALL(mock_binder_ref, Transact(BinderTransportTxCode(kFirstCallId)));
 
-    Transaction tx(kFirstCallId, /*is_client=*/true);
-    tx.SetSuffix({});
-    EXPECT_TRUE(wire_writer.RpcCall(tx).ok());
+    auto tx = std::make_unique<Transaction>(kFirstCallId, /*is_client=*/true);
+    tx->SetSuffix({});
+    EXPECT_TRUE(wire_writer.RpcCall(std::move(tx)).ok());
     sequence_number++;
+    grpc_core::ExecCtx::Get()->Flush();
   }
   {
     // flag
@@ -158,15 +169,16 @@ TEST(WireWriterTest, RpcCall) {
 
     EXPECT_CALL(mock_binder_ref, Transact(BinderTransportTxCode(kFirstCallId)));
 
-    Transaction tx(kFirstCallId, /*is_client=*/true);
+    auto tx = std::make_unique<Transaction>(kFirstCallId, /*is_client=*/true);
     // TODO(waynetu): Implement a helper function that automatically creates
     // EXPECT_CALL based on the tx object.
-    tx.SetPrefix(kMetadata);
-    tx.SetMethodRef("/example/method/ref");
-    tx.SetData("");
-    tx.SetSuffix({});
-    EXPECT_TRUE(wire_writer.RpcCall(tx).ok());
+    tx->SetPrefix(kMetadata);
+    tx->SetMethodRef("/example/method/ref");
+    tx->SetData("");
+    tx->SetSuffix({});
+    EXPECT_TRUE(wire_writer.RpcCall(std::move(tx)).ok());
     sequence_number++;
+    grpc_core::ExecCtx::Get()->Flush();
   }
 
   // Really large message
@@ -197,9 +209,11 @@ TEST(WireWriterTest, RpcCall) {
                 Transact(BinderTransportTxCode(kFirstCallId + 2)));
 
     // Use a new stream.
-    Transaction tx(kFirstCallId + 2, /*is_client=*/true);
-    tx.SetData(std::string(2 * WireWriterImpl::kBlockSize + 1, 'a'));
-    EXPECT_TRUE(wire_writer.RpcCall(tx).ok());
+    auto tx =
+        std::make_unique<Transaction>(kFirstCallId + 2, /*is_client=*/true);
+    tx->SetData(std::string(2 * WireWriterImpl::kBlockSize + 1, 'a'));
+    EXPECT_TRUE(wire_writer.RpcCall(std::move(tx)).ok());
+    grpc_core::ExecCtx::Get()->Flush();
   }
   // Really large message with metadata
   {
@@ -233,13 +247,17 @@ TEST(WireWriterTest, RpcCall) {
                 Transact(BinderTransportTxCode(kFirstCallId + 3)));
 
     // Use a new stream.
-    Transaction tx(kFirstCallId + 3, /*is_client=*/true);
-    tx.SetPrefix({});
-    tx.SetMethodRef("123");
-    tx.SetData(std::string(2 * WireWriterImpl::kBlockSize + 1, 'a'));
-    tx.SetSuffix({});
-    EXPECT_TRUE(wire_writer.RpcCall(tx).ok());
+    auto tx =
+        std::make_unique<Transaction>(kFirstCallId + 3, /*is_client=*/true);
+    tx->SetPrefix({});
+    tx->SetMethodRef("123");
+    tx->SetData(std::string(2 * WireWriterImpl::kBlockSize + 1, 'a'));
+    tx->SetSuffix({});
+    EXPECT_TRUE(wire_writer.RpcCall(std::move(tx)).ok());
+    grpc_core::ExecCtx::Get()->Flush();
   }
+  grpc_core::ExecCtx::Get()->Flush();
+  init_lib.shutdown();
 }
 
 }  // namespace grpc_binder

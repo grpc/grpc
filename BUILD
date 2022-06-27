@@ -653,15 +653,17 @@ grpc_cc_library(
     }),
     external_deps = [
         "absl/base:core_headers",
+        "absl/cleanup",
         "absl/container:flat_hash_map",
         "absl/hash",
         "absl/memory",
         "absl/meta:type_traits",
         "absl/status",
+        "absl/status:statusor",
         "absl/strings",
         "absl/synchronization",
-        "absl/status:statusor",
         "absl/time",
+        "absl/types:variant",
     ],
     language = "c++",
     public_hdrs = [

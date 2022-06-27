@@ -2809,6 +2809,7 @@ libs:
   - src/cpp/util/string_ref.cc
   - src/cpp/util/time_cc.cc
   deps:
+  - absl/cleanup:cleanup
   - grpc
   baselib: true
 - name: grpc++_alts
@@ -4890,6 +4891,7 @@ targets:
   - test/core/transport/binder/binder_transport_test.cc
   - test/core/transport/binder/mock_objects.cc
   deps:
+  - absl/cleanup:cleanup
   - grpc_test_util
   uses_polling: false
 - name: bitset_test
@@ -5627,6 +5629,7 @@ targets:
   - test/core/transport/binder/endpoint_binder_pool_test.cc
   - test/core/transport/binder/mock_objects.cc
   deps:
+  - absl/cleanup:cleanup
   - grpc_test_util
   uses_polling: false
 - name: endpoint_config_test
@@ -5862,6 +5865,7 @@ targets:
   - test/core/transport/binder/end2end/fake_binder.cc
   - test/core/transport/binder/end2end/fake_binder_test.cc
   deps:
+  - absl/cleanup:cleanup
   - grpc_test_util
   uses_polling: false
 - name: file_watcher_certificate_provider_factory_test
@@ -8988,6 +8992,7 @@ targets:
   - src/cpp/util/time_cc.cc
   - test/core/transport/binder/transport_stream_receiver_test.cc
   deps:
+  - absl/cleanup:cleanup
   - grpc_test_util
   uses_polling: false
 - name: try_join_test
@@ -9195,6 +9200,7 @@ targets:
   - test/core/transport/binder/mock_objects.cc
   - test/core/transport/binder/wire_reader_test.cc
   deps:
+  - absl/cleanup:cleanup
   - grpc_test_util
   uses_polling: false
 - name: wire_writer_test
@@ -9290,6 +9296,7 @@ targets:
   - test/core/transport/binder/mock_objects.cc
   - test/core/transport/binder/wire_writer_test.cc
   deps:
+  - absl/cleanup:cleanup
   - grpc_test_util
   uses_polling: false
 - name: work_serializer_test
