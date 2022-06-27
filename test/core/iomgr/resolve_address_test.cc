@@ -437,10 +437,7 @@ class PollsetSetWrapper {
   ~PollsetSetWrapper() {
     grpc_pollset_set_del_pollset(pss_, ps_);
     grpc_pollset_set_destroy(pss_);
-    grpc_closure do_nothing_cb;
-    GRPC_CLOSURE_INIT(&do_nothing_cb, DoNothing, nullptr,
-                      grpc_schedule_on_exec_ctx);
-    grpc_pollset_shutdown(ps_, &do_nothing_cb);
+    grpc_pollset_shutdown(ps_, nullptr);
     grpc_core::ExecCtx::Get()->Flush();
     grpc_pollset_destroy(ps_);
     gpr_free(ps_);
@@ -457,7 +454,6 @@ class PollsetSetWrapper {
     grpc_pollset_set_add_pollset(pss_, ps_);
     gpr_log(GPR_DEBUG, "PollsetSetWrapper:%p created", this);
   }
-  static void DoNothing(void* /*arg*/, grpc_error_handle /*error*/) {}
 
   gpr_mu* mu_;
   grpc_pollset* ps_;
