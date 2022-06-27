@@ -47,9 +47,12 @@ INSTALL_REQUIRES = (
     'google-auth>=1.17.2', 'requests>=2.14.2')
 
 print("AAAAAAAAAAAA Showing egg directory.")
-print(subprocess.check_output("ls /var/local/git/grpc/src/python/grpcio_tests/.eggs",
-                        shell=True,
-                              stderr=subprocess.STDOUT).decode('ascii'))
+try:
+    print(subprocess.check_output("ls /var/local/git/grpc/src/python/grpcio_tests/.eggs",
+                            shell=True,
+                                  stderr=subprocess.STDOUT).decode('ascii'))
+except Exception as e:
+    print(e)
 
 print("AAAAAAAAAAAA Running pip freeze.")
 print(subprocess.check_output("{} -m pip freeze".format(sys.executable),
