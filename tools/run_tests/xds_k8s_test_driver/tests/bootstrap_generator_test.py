@@ -77,6 +77,8 @@ def bootstrap_version_testcases() -> List:
     )
 
 
+# TODO: Reuse service account and namespaces for significant improvements in
+# running time.
 class BootstrapGeneratorClientTest(
         bootstrap_generator_testcase.BootstrapGeneratorBaseTest,
         parameterized.TestCase):
