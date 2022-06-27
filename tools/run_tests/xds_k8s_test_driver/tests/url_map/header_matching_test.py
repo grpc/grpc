@@ -51,7 +51,7 @@ _TEST_METADATA = (
 
 def _is_supported(config: skips.TestConfig) -> bool:
     if config.client_lang == _Lang.NODE:
-        return not config.version_lt('v1.3.x')
+        return config.version_gte('v1.3.x')
     return True
 
 

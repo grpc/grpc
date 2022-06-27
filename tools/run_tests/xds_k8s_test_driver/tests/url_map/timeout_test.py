@@ -86,7 +86,7 @@ class TestTimeoutInRouteRule(_BaseXdsTimeOutTestCase):
         if config.server_lang != 'java':
             return False
         if config.client_lang == skips.Lang.NODE:
-            return not config.version_lt('v1.4.x')
+            return config.version_gte('v1.4.x')
         return True
 
     def rpc_distribution_validate(self, test_client: XdsTestClient):
@@ -121,7 +121,7 @@ class TestTimeoutInApplication(_BaseXdsTimeOutTestCase):
         if config.server_lang != 'java':
             return False
         if config.client_lang == skips.Lang.NODE:
-            return not config.version_lt('v1.4.x')
+            return config.version_gte('v1.4.x')
         return True
 
     def rpc_distribution_validate(self, test_client: XdsTestClient):
@@ -146,7 +146,7 @@ class TestTimeoutNotExceeded(_BaseXdsTimeOutTestCase):
     @staticmethod
     def is_supported(config: skips.TestConfig) -> bool:
         if config.client_lang == skips.Lang.NODE:
-            return not config.version_lt('v1.4.x')
+            return config.version_gte('v1.4.x')
         return True
 
     def rpc_distribution_validate(self, test_client: XdsTestClient):
