@@ -384,7 +384,7 @@ class XdsSecurityTest : public XdsEnd2endTest {
                     "to remote host: FD shutdown|UNKNOWN: Tls handshake "
                     "failed: SSL_ERROR_SSL: error:1000007d:SSL "
                     "routines:OPENSSL_internal:CERTIFICATE_VERIFY_FAILED|"
-                    "UNAVAILABLE: Socket closed)"));
+                    "UNAVAILABLE: Socket closed|UNAVAILABLE: Broken pipe)"));
           }
         });
         Status status = SendRpc();

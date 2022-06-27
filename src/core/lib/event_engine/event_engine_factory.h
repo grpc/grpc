@@ -32,6 +32,9 @@ EventEngine* GetDefaultEventEngine();
 /// Create an EventEngine using the default factory provided at link time.
 std::unique_ptr<EventEngine> DefaultEventEngineFactory();
 
+/// Reset the default event engine
+void ResetDefaultEventEngine();
+
 // TODO(hork): remove this when any other EE usage is landed
 void InitializeEventEngine();
 

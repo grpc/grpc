@@ -2571,7 +2571,7 @@ RefCountedPtr<XdsClient> XdsClient::GetFromChannelArgs(
 }  // namespace grpc_core
 
 // The returned bytes may contain NULL(0), so we can't use c-string.
-grpc_slice grpc_dump_xds_configs() {
+grpc_slice grpc_dump_xds_configs(void) {
   grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
   grpc_core::ExecCtx exec_ctx;
   grpc_error_handle error = GRPC_ERROR_NONE;

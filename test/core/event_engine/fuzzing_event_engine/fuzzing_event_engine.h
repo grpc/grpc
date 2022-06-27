@@ -36,10 +36,10 @@ class FuzzingEventEngine : public EventEngine {
     // time Now() will be incremented each tick.
     Duration final_tick_length = std::chrono::seconds(1);
   };
-  explicit FuzzingEventEngine(Options options);
+  explicit FuzzingEventEngine(Options options,
+                              const fuzzing_event_engine::Actions& actions);
   ~FuzzingEventEngine() override;
 
-  void Restart(const fuzzing_event_engine::Actions& actions);
   void FuzzingDone();
   void Tick();
 
