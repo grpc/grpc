@@ -135,7 +135,8 @@ class BootstrapGeneratorClientTest(
     def _cleanup(self):
         self.client_runner.cleanup(force=self.force_cleanup)
 
-    @parameterized.parameters((t["version"], t["image"]) for t in bootstrap_version_testcases())
+    @parameterized.parameters(
+        (t["version"], t["image"]) for t in bootstrap_version_testcases())
     def test_baseline_in_client_with_bootstrap_version(self, version, image):
         """Runs the baseline test for multiple versions of the bootstrap
         generator on the client.
@@ -175,7 +176,8 @@ class BootstrapGeneratorServerTest(
         self.removeServerBackends()
         self.server_runner.cleanup(force=self.force_cleanup)
 
-    @parameterized.parameters((t["version"], t["image"]) for t in bootstrap_version_testcases())
+    @parameterized.parameters(
+        (t["version"], t["image"]) for t in bootstrap_version_testcases())
     def test_baseline_in_server_with_bootstrap_version(self, version, image):
         """Runs the baseline test for multiple versions of the bootstrap
         generator on the server.
