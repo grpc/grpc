@@ -2,7 +2,6 @@
 # Local modifications:
 # * install VS2019 (instead of VS2022)
 # TODO(jtattermusch): check the --compilation_mode=dbg fix
-# TODO(jtattermusch): revisit https://github.com/grpc/grpc/pull/28544
 
 # This Dockerfile creates an image that has the following:
 #  * correct MTU setting for networking from inside the container to work.
