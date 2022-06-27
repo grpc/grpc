@@ -81,11 +81,13 @@ class TestTimeoutInRouteRule(_BaseXdsTimeOutTestCase):
 
     @staticmethod
     def is_supported(config: skips.TestConfig) -> bool:
-        if config.client_lang == skips.Lang.NODE:
-            return not config.version_lt('v1.4.x')
         # TODO(lidiz) either add support for rpc-behavior to other languages, or we
         # should always use Java server as backend.
-        return config.server_lang == 'java'
+        if config.server_lang != 'java':
+            return False
+        if config.client_lang == skips.Lang.NODE:
+            return not config.version_lt('v1.4.x')
+        return True
 
     def rpc_distribution_validate(self, test_client: XdsTestClient):
         self.configure_and_send(
@@ -114,9 +116,13 @@ class TestTimeoutInApplication(_BaseXdsTimeOutTestCase):
 
     @staticmethod
     def is_supported(config: skips.TestConfig) -> bool:
+        # TODO(lidiz) either add support for rpc-behavior to other languages, or we
+        # should always use Java server as backend.
+        if config.server_lang != 'java':
+            return False
         if config.client_lang == skips.Lang.NODE:
             return not config.version_lt('v1.4.x')
-        return config.server_lang == 'java'
+        return True
 
     def rpc_distribution_validate(self, test_client: XdsTestClient):
         self.configure_and_send(
