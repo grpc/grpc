@@ -743,9 +743,9 @@ static void check_handle_response_nullptr_handshaker() {
   alts_handshaker_client* client =
       alts_tsi_handshaker_get_client_for_testing(alts_handshaker);
   /* Check nullptr handshaker. */
-  alts_handshaker_client_set_fields_for_testing(client, nullptr,
-                                                on_invalid_input_cb, nullptr,
-                                                recv_buffer, GRPC_STATUS_OK);
+  alts_handshaker_client_set_fields_for_testing(
+      client, nullptr, on_invalid_input_cb, nullptr, recv_buffer,
+      /*inject_read_failure=*/false);
   alts_handshaker_client_handle_response(client, true);
   /* Note: here and elsewhere in this test, we first ref the handshaker in order
    * to match the unref that on_status_received will do. This necessary
@@ -780,9 +780,9 @@ static void check_handle_response_nullptr_recv_bytes() {
   alts_handshaker_client* client =
       alts_tsi_handshaker_get_client_for_testing(alts_handshaker);
   /* Check nullptr recv_bytes. */
-  alts_handshaker_client_set_fields_for_testing(client, alts_handshaker,
-                                                on_invalid_input_cb, nullptr,
-                                                nullptr, GRPC_STATUS_OK);
+  alts_handshaker_client_set_fields_for_testing(
+      client, alts_handshaker, on_invalid_input_cb, nullptr, nullptr,
+      /*inject_read_failure=*/false);
   alts_handshaker_client_handle_response(client, true);
   alts_handshaker_client_ref_for_testing(client);
   {
@@ -816,7 +816,7 @@ static void check_handle_response_failed_grpc_call_to_handshaker_service() {
   /* Check failed grpc call made to handshaker service. */
   alts_handshaker_client_set_fields_for_testing(
       client, alts_handshaker, on_failed_grpc_call_cb, nullptr, recv_buffer,
-      GRPC_STATUS_UNKNOWN);
+      /*inject_read_failure=*/true);
   alts_handshaker_client_handle_response(client, true);
   alts_handshaker_client_ref_for_testing(client);
   {
@@ -850,9 +850,9 @@ check_handle_response_failed_recv_message_from_handshaker_service() {
   alts_handshaker_client* client =
       alts_tsi_handshaker_get_client_for_testing(alts_handshaker);
   /* Check failed recv message op from handshaker service. */
-  alts_handshaker_client_set_fields_for_testing(client, alts_handshaker,
-                                                on_failed_grpc_call_cb, nullptr,
-                                                recv_buffer, GRPC_STATUS_OK);
+  alts_handshaker_client_set_fields_for_testing(
+      client, alts_handshaker, on_failed_grpc_call_cb, nullptr, recv_buffer,
+      /*inject_read_failure=*/false);
   alts_handshaker_client_handle_response(client, false);
   alts_handshaker_client_ref_for_testing(client);
   {
@@ -895,9 +895,9 @@ static void check_handle_response_invalid_resp() {
       alts_tsi_handshaker_get_client_for_testing(alts_handshaker);
   /* Tests. */
   grpc_byte_buffer* recv_buffer = generate_handshaker_response(INVALID);
-  alts_handshaker_client_set_fields_for_testing(client, alts_handshaker,
-                                                on_invalid_resp_cb, nullptr,
-                                                recv_buffer, GRPC_STATUS_OK);
+  alts_handshaker_client_set_fields_for_testing(
+      client, alts_handshaker, on_invalid_resp_cb, nullptr, recv_buffer,
+      /*inject_read_failure=*/false);
   alts_handshaker_client_handle_response(client, true);
   alts_handshaker_client_ref_for_testing(client);
   {
@@ -966,9 +966,9 @@ static void check_handle_response_failure() {
       alts_tsi_handshaker_get_client_for_testing(alts_handshaker);
   /* Tests. */
   grpc_byte_buffer* recv_buffer = generate_handshaker_response(FAILED);
-  alts_handshaker_client_set_fields_for_testing(client, alts_handshaker,
-                                                on_failed_resp_cb, nullptr,
-                                                recv_buffer, GRPC_STATUS_OK);
+  alts_handshaker_client_set_fields_for_testing(
+      client, alts_handshaker, on_failed_resp_cb, nullptr, recv_buffer,
+      /*inject_read_failure=*/false);
   alts_handshaker_client_handle_response(client, true /* is_ok*/);
   alts_handshaker_client_ref_for_testing(client);
   {
@@ -1011,9 +1011,9 @@ static void check_handle_response_after_shutdown() {
   /* Tests. */
   tsi_handshaker_shutdown(handshaker);
   grpc_byte_buffer* recv_buffer = generate_handshaker_response(CLIENT_START);
-  alts_handshaker_client_set_fields_for_testing(client, alts_handshaker,
-                                                on_shutdown_resp_cb, nullptr,
-                                                recv_buffer, GRPC_STATUS_OK);
+  alts_handshaker_client_set_fields_for_testing(
+      client, alts_handshaker, on_shutdown_resp_cb, nullptr, recv_buffer,
+      /*inject_read_failure=*/false);
   alts_handshaker_client_handle_response(client, true);
   alts_handshaker_client_ref_for_testing(client);
   {

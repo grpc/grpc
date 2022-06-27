@@ -71,6 +71,8 @@ typedef struct alts_grpc_handshaker_client {
    * handshaker service. */
   grpc_byte_buffer* send_buffer = nullptr;
   grpc_byte_buffer* recv_buffer = nullptr;
+  // Used to inject a read failure from tests.
+  bool inject_read_failure = false;
   /* Initial metadata to be received from handshaker service. */
   grpc_metadata_array recv_initial_metadata;
   /* A callback function provided by an application to be invoked when response
@@ -195,7 +197,6 @@ void alts_handshaker_client_handle_response(alts_handshaker_client* c,
   alts_grpc_handshaker_client* client =
       reinterpret_cast<alts_grpc_handshaker_client*>(c);
   grpc_byte_buffer* recv_buffer = client->recv_buffer;
-  grpc_status_code status = client->handshake_status_code;
   alts_tsi_handshaker* handshaker = client->handshaker;
   /* Invalid input check. */
   if (client->cb == nullptr) {
@@ -219,15 +220,12 @@ void alts_handshaker_client_handle_response(alts_handshaker_client* c,
                          "TSI handshake shutdown", nullptr, 0, nullptr);
     return;
   }
-  /* Failed grpc call check. */
-  if (!is_ok || status != GRPC_STATUS_OK) {
-    gpr_log(GPR_INFO, "grpc call made to handshaker service failed");
-    handle_response_done(
-        client, TSI_INTERNAL_ERROR,
-        absl::StrCat(
-            "handshake service call failed with status ", status, ": ",
-            grpc_core::StringViewFromSlice(client->handshake_status_details)),
-        nullptr, 0, nullptr);
+  /* Check for failed grpc read. */
+  if (!is_ok || client->inject_read_failure) {
+    gpr_log(GPR_INFO, "read failed on grpc call to handshaker service");
+    handle_response_done(client, TSI_INTERNAL_ERROR,
+                         "read failed on grpc call to handshaker service",
+                         nullptr, 0, nullptr);
     return;
   }
   if (recv_buffer == nullptr) {
@@ -294,7 +292,7 @@ void alts_handshaker_client_handle_response(alts_handshaker_client* c,
   if (code != GRPC_STATUS_OK) {
     upb_StringView details = grpc_gcp_HandshakerStatus_details(resp_status);
     if (details.size > 0) {
-      error = absl::StrCat("Error from handshaker service: ",
+      error = absl::StrCat("Status ", code, " from handshaker service: ",
                            absl::string_view(details.data, details.size));
       gpr_log(GPR_ERROR, "%s", error.c_str());
     }
@@ -797,7 +795,7 @@ void alts_handshaker_client_set_recv_bytes_for_testing(
 void alts_handshaker_client_set_fields_for_testing(
     alts_handshaker_client* c, alts_tsi_handshaker* handshaker,
     tsi_handshaker_on_next_done_cb cb, void* user_data,
-    grpc_byte_buffer* recv_buffer, grpc_status_code status) {
+    grpc_byte_buffer* recv_buffer, bool inject_read_failure) {
   GPR_ASSERT(c != nullptr);
   alts_grpc_handshaker_client* client =
       reinterpret_cast<alts_grpc_handshaker_client*>(c);
@@ -805,7 +803,7 @@ void alts_handshaker_client_set_fields_for_testing(
   client->cb = cb;
   client->user_data = user_data;
   client->recv_buffer = recv_buffer;
-  client->handshake_status_code = status;
+  client->inject_read_failure = inject_read_failure;
 }
 
 void alts_handshaker_client_check_fields_for_testing(
