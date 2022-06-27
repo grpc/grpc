@@ -130,7 +130,7 @@ void TCPConnectHandshaker::DoHandshake(grpc_tcp_server_acceptor* /*acceptor*/,
   GPR_ASSERT(args->endpoint == nullptr);
   args_ = args;
   absl::StatusOr<URI> uri = URI::Parse(
-      *args->args.GetString(GRPC_ARG_TCP_HANDSHAKER_RESOLVED_ADDRESS));
+      args->args.GetString(GRPC_ARG_TCP_HANDSHAKER_RESOLVED_ADDRESS).value());
   if (!uri.ok() || !grpc_parse_uri(*uri, &addr_)) {
     MutexLock lock(&mu_);
     FinishLocked(GRPC_ERROR_CREATE_FROM_STATIC_STRING(

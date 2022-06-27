@@ -2552,21 +2552,7 @@ const grpc_arg_pointer_vtable kXdsClientArgVtable = {
 
 }  // namespace
 
-grpc_arg XdsClient::MakeChannelArg() const {
-  return grpc_channel_arg_pointer_create(const_cast<char*>(GRPC_ARG_XDS_CLIENT),
-                                         const_cast<XdsClient*>(this),
-                                         &kXdsClientArgVtable);
-}
-
 absl::string_view XdsClient::ChannelArgName() { return GRPC_ARG_XDS_CLIENT; }
-
-RefCountedPtr<XdsClient> XdsClient::GetFromChannelArgs(
-    const grpc_channel_args& args) {
-  XdsClient* xds_client =
-      grpc_channel_args_find_pointer<XdsClient>(&args, GRPC_ARG_XDS_CLIENT);
-  if (xds_client == nullptr) return nullptr;
-  return xds_client->Ref(DEBUG_LOCATION, "GetFromChannelArgs");
-}
 
 }  // namespace grpc_core
 

@@ -64,31 +64,19 @@ class grpc_fake_channel_security_connector final
   grpc_fake_channel_security_connector(
       grpc_core::RefCountedPtr<grpc_channel_credentials> channel_creds,
       grpc_core::RefCountedPtr<grpc_call_credentials> request_metadata_creds,
-      const char* target, const grpc_channel_args* args)
+      const char* target, const grpc_core::ChannelArgs& args)
       : grpc_channel_security_connector(GRPC_FAKE_SECURITY_URL_SCHEME,
                                         std::move(channel_creds),
                                         std::move(request_metadata_creds)),
         target_(gpr_strdup(target)),
         expected_targets_(
-            gpr_strdup(grpc_fake_transport_get_expected_targets(args))),
-        is_lb_channel_(grpc_channel_args_find(
-                           args, GRPC_ARG_ADDRESS_IS_GRPCLB_LOAD_BALANCER) !=
-                       nullptr) {
-    const grpc_arg* target_name_override_arg =
-        grpc_channel_args_find(args, GRPC_SSL_TARGET_NAME_OVERRIDE_ARG);
-    if (target_name_override_arg != nullptr) {
-      target_name_override_ =
-          gpr_strdup(grpc_channel_arg_get_string(target_name_override_arg));
-    } else {
-      target_name_override_ = nullptr;
-    }
-  }
+            args.GetOwnedString(GRPC_ARG_FAKE_SECURITY_EXPECTED_TARGETS)),
+        is_lb_channel_(args.GetBool(GRPC_ARG_ADDRESS_IS_GRPCLB_LOAD_BALANCER)
+                           .value_or(false)),
+        target_name_override_(
+            args.GetOwnedString(GRPC_SSL_TARGET_NAME_OVERRIDE_ARG)) {}
 
-  ~grpc_fake_channel_security_connector() override {
-    gpr_free(target_);
-    gpr_free(expected_targets_);
-    if (target_name_override_ != nullptr) gpr_free(target_name_override_);
-  }
+  ~grpc_fake_channel_security_connector() override { gpr_free(target_); }
 
   void check_peer(tsi_peer peer, grpc_endpoint* ep,
                   grpc_core::RefCountedPtr<grpc_auth_context>* auth_context,
@@ -106,11 +94,7 @@ class grpc_fake_channel_security_connector final
     if (c != 0) return c;
     c = strcmp(target_, other->target_);
     if (c != 0) return c;
-    if (expected_targets_ == nullptr || other->expected_targets_ == nullptr) {
-      c = grpc_core::QsortCompare(expected_targets_, other->expected_targets_);
-    } else {
-      c = strcmp(expected_targets_, other->expected_targets_);
-    }
+    c = grpc_core::QsortCompare(expected_targets_, other->expected_targets_);
     if (c != 0) return c;
     return grpc_core::QsortCompare(is_lb_channel_, other->is_lb_channel_);
   }
@@ -131,11 +115,12 @@ class grpc_fake_channel_security_connector final
     grpc_core::SplitHostPort(host, &authority_hostname,
                              &authority_ignored_port);
     grpc_core::SplitHostPort(target_, &target_hostname, &target_ignored_port);
-    if (target_name_override_ != nullptr) {
+    if (target_name_override_.has_value()) {
       absl::string_view fake_security_target_name_override_hostname;
       absl::string_view fake_security_target_name_override_ignored_port;
       grpc_core::SplitHostPort(
-          target_name_override_, &fake_security_target_name_override_hostname,
+          target_name_override_->c_str(),
+          &fake_security_target_name_override_hostname,
           &fake_security_target_name_override_ignored_port);
       if (authority_hostname != fake_security_target_name_override_hostname) {
         gpr_log(GPR_ERROR,
@@ -153,9 +138,7 @@ class grpc_fake_channel_security_connector final
   }
 
   char* target() const { return target_; }
-  char* expected_targets() const { return expected_targets_; }
   bool is_lb_channel() const { return is_lb_channel_; }
-  char* target_name_override() const { return target_name_override_; }
 
  private:
   bool fake_check_target(const char* target, const char* set_str) const {
@@ -175,15 +158,15 @@ class grpc_fake_channel_security_connector final
   }
 
   void fake_secure_name_check() const {
-    if (expected_targets_ == nullptr) return;
+    if (!expected_targets_.has_value()) return;
     char** lbs_and_backends = nullptr;
     size_t lbs_and_backends_size = 0;
     bool success = false;
-    gpr_string_split(expected_targets_, ";", &lbs_and_backends,
+    gpr_string_split(expected_targets_->c_str(), ";", &lbs_and_backends,
                      &lbs_and_backends_size);
     if (lbs_and_backends_size > 2 || lbs_and_backends_size == 0) {
       gpr_log(GPR_ERROR, "Invalid expected targets arg value: '%s'",
-              expected_targets_);
+              expected_targets_->c_str());
       goto done;
     }
     if (is_lb_channel_) {
@@ -191,7 +174,7 @@ class grpc_fake_channel_security_connector final
         gpr_log(GPR_ERROR,
                 "Invalid expected targets arg value: '%s'. Expectations for LB "
                 "channels must be of the form 'be1,be2,be3,...;lb1,lb2,...",
-                expected_targets_);
+                expected_targets_->c_str());
         goto done;
       }
       if (!fake_check_target(target_, lbs_and_backends[1])) {
@@ -217,9 +200,9 @@ class grpc_fake_channel_security_connector final
   }
 
   char* target_;
-  char* expected_targets_;
+  absl::optional<std::string> expected_targets_;
   bool is_lb_channel_;
-  char* target_name_override_;
+  absl::optional<std::string> target_name_override_;
 };
 
 void fake_check_peer(grpc_security_connector* /*sc*/, tsi_peer peer,
@@ -321,10 +304,9 @@ grpc_fake_channel_security_connector_create(
     grpc_core::RefCountedPtr<grpc_channel_credentials> channel_creds,
     grpc_core::RefCountedPtr<grpc_call_credentials> request_metadata_creds,
     const char* target, const grpc_core::ChannelArgs& args) {
-  auto r = grpc_core::MakeRefCounted<grpc_fake_channel_security_connector>(
+  return grpc_core::MakeRefCounted<grpc_fake_channel_security_connector>(
       std::move(channel_creds), std::move(request_metadata_creds), target,
-      args.ToC().get());
-  return r;
+      args);
 }
 
 grpc_core::RefCountedPtr<grpc_server_security_connector>

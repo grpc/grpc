@@ -640,7 +640,7 @@ void OutlierDetectionLb::UpdateLocked(UpdateArgs args) {
   UpdateArgs update_args;
   update_args.addresses = std::move(args.addresses);
   update_args.config = config_->child_policy();
-  update_args.args = args.args;
+  update_args.args = std::move(args.args);
   // Update the policy.
   if (GRPC_TRACE_FLAG_ENABLED(grpc_outlier_detection_lb_trace)) {
     gpr_log(GPR_INFO,

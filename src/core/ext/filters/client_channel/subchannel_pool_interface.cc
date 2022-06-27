@@ -41,9 +41,7 @@ TraceFlag grpc_subchannel_pool_trace(false, "subchannel_pool");
 
 SubchannelKey::SubchannelKey(const grpc_resolved_address& address,
                              const ChannelArgs& args)
-    : address_(address), args_(std::move(args)) {}
-
-SubchannelKey::~SubchannelKey() {}
+    : address_(address), args_(args) {}
 
 bool SubchannelKey::operator<(const SubchannelKey& other) const {
   if (address_.len < other.address_.len) return true;

@@ -56,7 +56,7 @@ namespace {
 
 /**
  * Parses the 'https_proxy' env var (fallback on 'http_proxy') and returns the
- * proxy hostname to resolve or nullptr on error. Also sets 'user_cred' to user
+ * proxy hostname to resolve or nullopt on error. Also sets 'user_cred' to user
  * credentials if present in the 'http_proxy' env var, otherwise leaves it
  * unchanged.
  */
@@ -142,7 +142,6 @@ absl::optional<std::string> HttpProxyMapper::MapName(
   if (!args->GetBool(GRPC_ARG_ENABLE_HTTP_PROXY).value_or(true)) {
     return absl::nullopt;
   }
-
   absl::optional<std::string> user_cred;
   auto name_to_resolve = GetHttpProxyServer(*args, &user_cred);
   if (!name_to_resolve.has_value()) return name_to_resolve;

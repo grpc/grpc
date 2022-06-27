@@ -161,8 +161,7 @@ class ChannelArgs {
   ChannelArgs& operator=(ChannelArgs&&) noexcept;
 
   static ChannelArgs FromC(const grpc_channel_args* args);
-  // Construct a new grpc_channel_args struct which the caller will own.
-  // It should be destroyed with grpc_channel_args_destroy.
+  // Construct a new grpc_channel_args struct.
   CPtr ToC() const;
 
   // Returns the union of this channel args with other.

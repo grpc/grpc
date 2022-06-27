@@ -433,16 +433,13 @@ class ClientChannel::ResolverResultHandler : public Resolver::ResultHandler {
 class ClientChannel::SubchannelWrapper : public SubchannelInterface {
  public:
   SubchannelWrapper(ClientChannel* chand, RefCountedPtr<Subchannel> subchannel,
-                    absl::optional<absl::string_view> health_check_service_name)
+                    absl::optional<std::string> health_check_service_name)
       : SubchannelInterface(GRPC_TRACE_FLAG_ENABLED(grpc_client_channel_trace)
                                 ? "SubchannelWrapper"
                                 : nullptr),
         chand_(chand),
         subchannel_(std::move(subchannel)),
-        health_check_service_name_(
-            health_check_service_name.has_value()
-                ? absl::optional<std::string>(*health_check_service_name)
-                : absl::nullopt) {
+        health_check_service_name_(std::move(health_check_service_name)) {
     if (GRPC_TRACE_FLAG_ENABLED(grpc_client_channel_trace)) {
       gpr_log(GPR_INFO,
               "chand=%p: creating subchannel wrapper %p for subchannel %p",
@@ -862,16 +859,15 @@ class ClientChannel::ClientChannelControlHelper
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(*chand_->work_serializer_) {
     if (chand_->resolver_ == nullptr) return nullptr;  // Shutting down.
     // Determine health check service name.
-    absl::optional<absl::string_view> health_check_service_name =
-        args.GetString(GRPC_ARG_HEALTH_CHECK_SERVICE_NAME);
-    if (health_check_service_name.has_value() &&
-        !args.GetBool(GRPC_ARG_INHIBIT_HEALTH_CHECKING).value_or(false)) {
-      health_check_service_name.reset();
+    absl::optional<std::string> health_check_service_name;
+    if (!args.GetBool(GRPC_ARG_INHIBIT_HEALTH_CHECKING).value_or(false)) {
+      health_check_service_name =
+          args.GetOwnedString(GRPC_ARG_HEALTH_CHECK_SERVICE_NAME);
     }
     // Construct channel args for subchannel.
+    // TODO(roth): add a test that default authority overrides work as intended.
     ChannelArgs subchannel_args =
-        address.args()
-            .UnionWith(args)
+        args.UnionWith(address.args())
             .SetObject(chand_->subchannel_pool_)
             // If we haven't already set the default authority arg, add it from
             // the channel.
@@ -888,8 +884,8 @@ class ClientChannel::ClientChannelControlHelper
     // Make sure the subchannel has updated keepalive time.
     subchannel->ThrottleKeepaliveTime(chand_->keepalive_time_);
     // Create and return wrapper for the subchannel.
-    return MakeRefCounted<SubchannelWrapper>(chand_, std::move(subchannel),
-                                             health_check_service_name);
+    return MakeRefCounted<SubchannelWrapper>(
+        chand_, std::move(subchannel), std::move(health_check_service_name));
   }
 
   void UpdateState(

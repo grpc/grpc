@@ -105,10 +105,8 @@ struct grpc_channel_credentials
     return args1->cmp(args2);
   }
 
-  // Creates a security connector for the channel. May also create new channel
-  // args for the channel to be used in place of the passed in const args if
-  // returned non NULL. In that case the caller is responsible for destroying
-  // new_args after channel creation.
+  // Creates a security connector for the channel. Also updates passed in
+  // channel args for the channel.
   virtual grpc_core::RefCountedPtr<grpc_channel_security_connector>
   create_security_connector(
       grpc_core::RefCountedPtr<grpc_call_credentials> call_creds,
@@ -124,11 +122,8 @@ struct grpc_channel_credentials
   }
 
   // Allows credentials to optionally modify a parent channel's args.
-  // By default, leave channel args as is. The callee takes ownership
-  // of the passed-in channel args, and the caller takes ownership
-  // of the returned channel args.
-  virtual grpc_core::ChannelArgs update_arguments(
-      const grpc_core::ChannelArgs& args) {
+  // By default, leave channel args as is.
+  virtual grpc_core::ChannelArgs update_arguments(grpc_core::ChannelArgs args) {
     return args;
   }
 
@@ -253,7 +248,7 @@ grpc_call_credentials* grpc_md_only_test_credentials_create(
 
 /* --- grpc_server_credentials. --- */
 
-#define GRPC_SERVER_CREDENTIALS_ARG "grpc.server_credentials"
+#define GRPC_SERVER_CREDENTIALS_ARG "grpc.internal.server_credentials"
 
 // This type is forward declared as a C struct and we cannot define it as a
 // class. Otherwise, compiler will complain about type mismatch due to

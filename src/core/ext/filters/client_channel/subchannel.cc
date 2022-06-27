@@ -646,14 +646,9 @@ Subchannel::Subchannel(SubchannelKey key,
                     grpc_schedule_on_exec_ctx);
   // Check proxy mapper to determine address to connect to and channel
   // args to use.
-  address_for_connect_ = key_.address();
-  grpc_resolved_address* new_address = nullptr;
-  if (ProxyMapperRegistry::MapAddress(address_for_connect_, &args_,
-                                      &new_address)) {
-    GPR_ASSERT(new_address != nullptr);
-    address_for_connect_ = *new_address;
-    gpr_free(new_address);
-  }
+  address_for_connect_ =
+      ProxyMapperRegistry::MapAddress(address_for_connect_, &args_)
+          .value_or(key_.address());
   // Initialize channelz.
   const bool channelz_enabled = args_.GetBool(GRPC_ARG_ENABLE_CHANNELZ)
                                     .value_or(GRPC_ENABLE_CHANNELZ_DEFAULT);

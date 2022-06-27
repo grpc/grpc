@@ -297,12 +297,12 @@ GoogleCloud2ProdResolver::GoogleCloud2ProdResolver(ResolverArgs args)
     return;
   }
   // Maybe override metadata server name for testing
-  absl::optional<absl::string_view> test_only_metadata_server_override =
-      args.args.GetString(
+  absl::optional<std::string> test_only_metadata_server_override =
+      args.args.GetOwnedString(
           "grpc.testing.google_c2p_resolver_metadata_server_override");
   if (test_only_metadata_server_override.has_value() &&
       !test_only_metadata_server_override->empty()) {
-    metadata_server_name_ = std::string(*test_only_metadata_server_override);
+    metadata_server_name_ = std::move(*test_only_metadata_server_override);
   }
   // Create xds resolver.
   child_resolver_ = CoreConfiguration::Get().resolver_registry().CreateResolver(

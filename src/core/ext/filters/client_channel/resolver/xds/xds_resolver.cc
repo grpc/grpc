@@ -113,9 +113,9 @@ std::string GetDefaultAuthorityInternal(const URI& uri) {
 }
 
 std::string GetDataPlaneAuthority(const ChannelArgs& args, const URI& uri) {
-  absl::optional<absl::string_view> authority =
-      args.GetString(GRPC_ARG_DEFAULT_AUTHORITY);
-  if (authority.has_value()) return std::string(*authority);
+  absl::optional<std::string> authority =
+      args.GetOwnedString(GRPC_ARG_DEFAULT_AUTHORITY);
+  if (authority.has_value()) return std::move(*authority);
   return GetDefaultAuthorityInternal(uri);
 }
 
@@ -128,10 +128,10 @@ class XdsResolver : public Resolver {
   explicit XdsResolver(ResolverArgs args)
       : work_serializer_(std::move(args.work_serializer)),
         result_handler_(std::move(args.result_handler)),
-        args_(args.args),
+        args_(std::move(args.args)),
         interested_parties_(args.pollset_set),
         uri_(std::move(args.uri)),
-        data_plane_authority_(GetDataPlaneAuthority(args.args, uri_)),
+        data_plane_authority_(GetDataPlaneAuthority(args_, uri_)),
         channel_id_(absl::Uniform<uint64_t>(absl::BitGen())) {
     if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_resolver_trace)) {
       gpr_log(

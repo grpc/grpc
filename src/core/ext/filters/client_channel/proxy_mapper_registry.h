@@ -45,9 +45,8 @@ class ProxyMapperRegistry {
   static absl::optional<std::string> MapName(absl::string_view server_uri,
                                              ChannelArgs* args);
 
-  static bool MapAddress(const grpc_resolved_address& address,
-                         ChannelArgs* args,
-                         grpc_resolved_address** new_address);
+  static absl::optional<grpc_resolved_address> MapAddress(
+      const grpc_resolved_address& address, ChannelArgs* args);
 };
 
 }  // namespace grpc_core

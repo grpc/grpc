@@ -58,7 +58,7 @@ class BinderResolver : public Resolver {
   BinderResolver(ServerAddressList addresses, ResolverArgs args)
       : result_handler_(std::move(args.result_handler)),
         addresses_(std::move(addresses)),
-        channel_args_(args.args) {}
+        channel_args_(std::move(args.args)) {}
 
   void StartLocked() override {
     Result result;

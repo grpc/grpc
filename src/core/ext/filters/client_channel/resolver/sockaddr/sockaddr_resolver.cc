@@ -64,7 +64,7 @@ SockaddrResolver::SockaddrResolver(ServerAddressList addresses,
                                    ResolverArgs args)
     : result_handler_(std::move(args.result_handler)),
       addresses_(std::move(addresses)),
-      channel_args_(args.args) {}
+      channel_args_(std::move(args.args)) {}
 
 void SockaddrResolver::StartLocked() {
   Result result;

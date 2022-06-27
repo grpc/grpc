@@ -534,9 +534,8 @@ class GrpclbEnd2endTest : public ::testing::Test {
     GPR_ASSERT(GRPC_ERROR_IS_NONE(error));
     grpc_core::ServerAddressList balancer_addresses =
         CreateLbAddressesFromAddressDataList(balancer_address_data);
-    // TODO(ctiller): consider not leaking a pointer on the stack
     result.args = grpc_core::SetGrpcLbBalancerAddresses(
-        grpc_core::ChannelArgs(), balancer_addresses);
+        grpc_core::ChannelArgs(), std::move(balancer_addresses));
     return result;
   }
 

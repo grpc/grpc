@@ -81,20 +81,15 @@ grpc_core::RefCountedPtr<grpc_channel_security_connector>
 TlsCredentials::create_security_connector(
     grpc_core::RefCountedPtr<grpc_call_credentials> call_creds,
     const char* target_name, grpc_core::ChannelArgs* args) {
-  absl::optional<absl::string_view> overridden_target_name =
-      args->GetString(GRPC_SSL_TARGET_NAME_OVERRIDE_ARG);
+  absl::optional<std::string> overridden_target_name =
+      args->GetOwnedString(GRPC_SSL_TARGET_NAME_OVERRIDE_ARG);
   tsi_ssl_session_cache* ssl_session_cache =
       args->GetPointer<tsi_ssl_session_cache>(GRPC_SSL_SESSION_CACHE_ARG);
-  std::string overridden_target_name_string;
-  if (overridden_target_name.has_value()) {
-    overridden_target_name_string = std::string(overridden_target_name.value());
-  }
   grpc_core::RefCountedPtr<grpc_channel_security_connector> sc =
       grpc_core::TlsChannelSecurityConnector::CreateTlsChannelSecurityConnector(
           this->Ref(), options_, std::move(call_creds), target_name,
-          overridden_target_name.has_value()
-              ? overridden_target_name_string.c_str()
-              : nullptr,
+          overridden_target_name.has_value() ? overridden_target_name->c_str()
+                                             : nullptr,
           ssl_session_cache);
   if (sc == nullptr) {
     return nullptr;

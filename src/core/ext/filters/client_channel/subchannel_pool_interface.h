@@ -41,7 +41,6 @@ extern TraceFlag grpc_subchannel_pool_trace;
 class SubchannelKey {
  public:
   SubchannelKey(const grpc_resolved_address& address, const ChannelArgs& args);
-  ~SubchannelKey();
 
   SubchannelKey(const SubchannelKey& other) = default;
   SubchannelKey& operator=(const SubchannelKey& other) = default;

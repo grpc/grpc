@@ -135,13 +135,12 @@ XdsCredentials::create_security_connector(
     ChannelArgs* args) {
   // TODO(yashykt): This arg will no longer need to be added after b/173119596
   // is fixed.
-  if (!args->Contains(GRPC_SSL_TARGET_NAME_OVERRIDE_ARG)) {
-    *args = args->Set(GRPC_SSL_TARGET_NAME_OVERRIDE_ARG, target_name);
-  }
+  *args = args->SetIfUnset(GRPC_SSL_TARGET_NAME_OVERRIDE_ARG, target_name);
   RefCountedPtr<grpc_channel_security_connector> security_connector;
   auto xds_certificate_provider = args->GetObjectRef<XdsCertificateProvider>();
   if (xds_certificate_provider != nullptr) {
-    std::string cluster_name(*args->GetString(GRPC_ARG_XDS_CLUSTER_NAME));
+    std::string cluster_name(
+        args->GetString(GRPC_ARG_XDS_CLUSTER_NAME).value());
     const bool watch_root =
         xds_certificate_provider->ProvidesRootCerts(cluster_name);
     const bool watch_identity =

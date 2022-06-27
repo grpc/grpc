@@ -114,14 +114,6 @@ void Chttp2Connector::Connect(const Args& args, Result* result,
     NullThenSchedClosure(DEBUG_LOCATION, &notify_, error);
     return;
   }
-  absl::InlinedVector<grpc_arg, 2> args_to_add = {
-      grpc_channel_arg_string_create(
-          const_cast<char*>(GRPC_ARG_TCP_HANDSHAKER_RESOLVED_ADDRESS),
-          const_cast<char*>(address.value().c_str())),
-      grpc_channel_arg_integer_create(
-          const_cast<char*>(GRPC_ARG_TCP_HANDSHAKER_BIND_ENDPOINT_TO_POLLSET),
-          1),
-  };
   ChannelArgs channel_args =
       args_.channel_args
           .Set(GRPC_ARG_TCP_HANDSHAKER_RESOLVED_ADDRESS, address.value())
@@ -297,12 +289,13 @@ class Chttp2SecureClientChannelFactory : public ClientChannelFactory {
           "security connector already present in channel args.");
     }
     // Find the authority to use in the security connector.
-    absl::string_view authority = *args.GetString(GRPC_ARG_DEFAULT_AUTHORITY);
+    std::string authority =
+        args.GetOwnedString(GRPC_ARG_DEFAULT_AUTHORITY).value();
     // Create the security connector using the credentials and target name.
     RefCountedPtr<grpc_channel_security_connector>
         subchannel_security_connector =
             channel_credentials->create_security_connector(
-                /*call_creds=*/nullptr, std::string(authority).c_str(), &args);
+                /*call_creds=*/nullptr, authority.c_str(), &args);
     if (subchannel_security_connector == nullptr) {
       return absl::InternalError(absl::StrFormat(
           "Failed to create secure subchannel for secure name '%s'",

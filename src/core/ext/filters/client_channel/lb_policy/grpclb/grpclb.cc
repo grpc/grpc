@@ -1412,7 +1412,8 @@ ChannelArgs BuildBalancerChannelArgs(
 //
 
 std::string GetServerNameFromChannelArgs(const ChannelArgs& args) {
-  absl::StatusOr<URI> uri = URI::Parse(*args.GetString(GRPC_ARG_SERVER_URI));
+  absl::StatusOr<URI> uri =
+      URI::Parse(args.GetString(GRPC_ARG_SERVER_URI).value());
   GPR_ASSERT(uri.ok() && !uri->path().empty());
   return std::string(absl::StripPrefix(uri->path(), "/"));
 }
@@ -1843,7 +1844,7 @@ class GrpcLbFactory : public LoadBalancingPolicyFactory {
   OrphanablePtr<LoadBalancingPolicy> CreateLoadBalancingPolicy(
       LoadBalancingPolicy::Args args) const override {
     return MakeOrphanable<GrpcLb>(std::move(args));
-  }  // namespace
+  }
 
   const char* name() const override { return kGrpclb; }
 

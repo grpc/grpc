@@ -59,8 +59,6 @@ class FakeResolver : public Resolver {
   friend class FakeResolverResponseGenerator;
   friend class FakeResolverResponseSetter;
 
-  ~FakeResolver() override = default;
-
   void ShutdownLocked() override;
 
   void MaybeSendResultLocked();

@@ -33,10 +33,10 @@ class HttpProxyMapper : public ProxyMapperInterface {
   absl::optional<std::string> MapName(absl::string_view server_uri,
                                       ChannelArgs* args) override;
 
-  bool MapAddress(const grpc_resolved_address& /*address*/,
-                  ChannelArgs* /*args*/,
-                  grpc_resolved_address** /*new_address*/) override {
-    return false;
+  absl::optional<grpc_resolved_address> MapAddress(
+      const grpc_resolved_address& /*address*/,
+      ChannelArgs* /*args*/) override {
+    return absl::nullopt;
   }
 };
 

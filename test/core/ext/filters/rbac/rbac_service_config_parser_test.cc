@@ -45,11 +45,8 @@ TEST(RbacServiceConfigParsingTest, EmptyRbacPolicy) {
       "  } ]\n"
       "}";
   grpc_error_handle error = GRPC_ERROR_NONE;
-  grpc_arg arg = grpc_channel_arg_integer_create(
-      const_cast<char*>(GRPC_ARG_PARSE_RBAC_METHOD_CONFIG), 1);
-  grpc_channel_args args = {1, &arg};
-  auto svc_cfg =
-      ServiceConfigImpl::Create(ChannelArgs::FromC(&args), test_json, &error);
+  ChannelArgs args = ChannelArgs().Set(GRPC_ARG_PARSE_RBAC_METHOD_CONFIG, 1);
+  auto svc_cfg = ServiceConfigImpl::Create(args, test_json, &error);
   ASSERT_EQ(error, GRPC_ERROR_NONE) << grpc_error_std_string(error);
   const auto* vector_ptr =
       svc_cfg->GetMethodParsedConfigVector(grpc_empty_slice());
@@ -99,11 +96,8 @@ TEST(RbacServiceConfigParsingTest, EmptyRbacPolicyArray) {
       "  } ]\n"
       "}";
   grpc_error_handle error = GRPC_ERROR_NONE;
-  grpc_arg arg = grpc_channel_arg_integer_create(
-      const_cast<char*>(GRPC_ARG_PARSE_RBAC_METHOD_CONFIG), 1);
-  grpc_channel_args args = {1, &arg};
-  auto svc_cfg =
-      ServiceConfigImpl::Create(ChannelArgs::FromC(&args), test_json, &error);
+  ChannelArgs args = ChannelArgs().Set(GRPC_ARG_PARSE_RBAC_METHOD_CONFIG, 1);
+  auto svc_cfg = ServiceConfigImpl::Create(args, test_json, &error);
   ASSERT_EQ(error, GRPC_ERROR_NONE) << grpc_error_std_string(error);
   const auto* vector_ptr =
       svc_cfg->GetMethodParsedConfigVector(grpc_empty_slice());
@@ -125,11 +119,8 @@ TEST(RbacServiceConfigParsingTest, MultipleRbacPolicies) {
       "  } ]\n"
       "}";
   grpc_error_handle error = GRPC_ERROR_NONE;
-  grpc_arg arg = grpc_channel_arg_integer_create(
-      const_cast<char*>(GRPC_ARG_PARSE_RBAC_METHOD_CONFIG), 1);
-  grpc_channel_args args = {1, &arg};
-  auto svc_cfg =
-      ServiceConfigImpl::Create(ChannelArgs::FromC(&args), test_json, &error);
+  ChannelArgs args = ChannelArgs().Set(GRPC_ARG_PARSE_RBAC_METHOD_CONFIG, 1);
+  auto svc_cfg = ServiceConfigImpl::Create(args, test_json, &error);
   ASSERT_EQ(error, GRPC_ERROR_NONE) << grpc_error_std_string(error);
   const auto* vector_ptr =
       svc_cfg->GetMethodParsedConfigVector(grpc_empty_slice());
@@ -156,11 +147,8 @@ TEST(RbacServiceConfigParsingTest, BadRbacPolicyType) {
       "  } ]\n"
       "}";
   grpc_error_handle error = GRPC_ERROR_NONE;
-  grpc_arg arg = grpc_channel_arg_integer_create(
-      const_cast<char*>(GRPC_ARG_PARSE_RBAC_METHOD_CONFIG), 1);
-  grpc_channel_args args = {1, &arg};
-  auto svc_cfg =
-      ServiceConfigImpl::Create(ChannelArgs::FromC(&args), test_json, &error);
+  ChannelArgs args = ChannelArgs().Set(GRPC_ARG_PARSE_RBAC_METHOD_CONFIG, 1);
+  auto svc_cfg = ServiceConfigImpl::Create(args, test_json, &error);
   EXPECT_THAT(
       grpc_error_std_string(error),
       ::testing::ContainsRegex("Rbac parser" CHILD_ERROR_TAG
@@ -179,11 +167,8 @@ TEST(RbacServiceConfigParsingTest, BadRulesType) {
       "  } ]\n"
       "}";
   grpc_error_handle error = GRPC_ERROR_NONE;
-  grpc_arg arg = grpc_channel_arg_integer_create(
-      const_cast<char*>(GRPC_ARG_PARSE_RBAC_METHOD_CONFIG), 1);
-  grpc_channel_args args = {1, &arg};
-  auto svc_cfg =
-      ServiceConfigImpl::Create(ChannelArgs::FromC(&args), test_json, &error);
+  ChannelArgs args = ChannelArgs().Set(GRPC_ARG_PARSE_RBAC_METHOD_CONFIG, 1);
+  auto svc_cfg = ServiceConfigImpl::Create(args, test_json, &error);
   EXPECT_THAT(
       grpc_error_std_string(error),
       ::testing::ContainsRegex("Rbac parser" CHILD_ERROR_TAG
@@ -208,11 +193,8 @@ TEST(RbacServiceConfigParsingTest, BadActionAndPolicyType) {
       "  } ]\n"
       "}";
   grpc_error_handle error = GRPC_ERROR_NONE;
-  grpc_arg arg = grpc_channel_arg_integer_create(
-      const_cast<char*>(GRPC_ARG_PARSE_RBAC_METHOD_CONFIG), 1);
-  grpc_channel_args args = {1, &arg};
-  auto svc_cfg =
-      ServiceConfigImpl::Create(ChannelArgs::FromC(&args), test_json, &error);
+  ChannelArgs args = ChannelArgs().Set(GRPC_ARG_PARSE_RBAC_METHOD_CONFIG, 1);
+  auto svc_cfg = ServiceConfigImpl::Create(args, test_json, &error);
   EXPECT_THAT(
       grpc_error_std_string(error),
       ::testing::ContainsRegex("Rbac parser" CHILD_ERROR_TAG
@@ -241,11 +223,8 @@ TEST(RbacServiceConfigParsingTest, MissingPermissionAndPrincipals) {
       "  } ]\n"
       "}";
   grpc_error_handle error = GRPC_ERROR_NONE;
-  grpc_arg arg = grpc_channel_arg_integer_create(
-      const_cast<char*>(GRPC_ARG_PARSE_RBAC_METHOD_CONFIG), 1);
-  grpc_channel_args args = {1, &arg};
-  auto svc_cfg =
-      ServiceConfigImpl::Create(ChannelArgs::FromC(&args), test_json, &error);
+  ChannelArgs args = ChannelArgs().Set(GRPC_ARG_PARSE_RBAC_METHOD_CONFIG, 1);
+  auto svc_cfg = ServiceConfigImpl::Create(args, test_json, &error);
   EXPECT_THAT(
       grpc_error_std_string(error),
       ::testing::ContainsRegex("Rbac parser" CHILD_ERROR_TAG
@@ -277,11 +256,8 @@ TEST(RbacServiceConfigParsingTest, EmptyPrincipalAndPermission) {
       "  } ]\n"
       "}";
   grpc_error_handle error = GRPC_ERROR_NONE;
-  grpc_arg arg = grpc_channel_arg_integer_create(
-      const_cast<char*>(GRPC_ARG_PARSE_RBAC_METHOD_CONFIG), 1);
-  grpc_channel_args args = {1, &arg};
-  auto svc_cfg =
-      ServiceConfigImpl::Create(ChannelArgs::FromC(&args), test_json, &error);
+  ChannelArgs args = ChannelArgs().Set(GRPC_ARG_PARSE_RBAC_METHOD_CONFIG, 1);
+  auto svc_cfg = ServiceConfigImpl::Create(args, test_json, &error);
   EXPECT_THAT(
       grpc_error_std_string(error),
       ::testing::ContainsRegex(
@@ -337,11 +313,8 @@ TEST(RbacServiceConfigParsingTest, VariousPermissionsAndPrincipalsTypes) {
       "  } ]\n"
       "}";
   grpc_error_handle error = GRPC_ERROR_NONE;
-  grpc_arg arg = grpc_channel_arg_integer_create(
-      const_cast<char*>(GRPC_ARG_PARSE_RBAC_METHOD_CONFIG), 1);
-  grpc_channel_args args = {1, &arg};
-  auto svc_cfg =
-      ServiceConfigImpl::Create(ChannelArgs::FromC(&args), test_json, &error);
+  ChannelArgs args = ChannelArgs().Set(GRPC_ARG_PARSE_RBAC_METHOD_CONFIG, 1);
+  auto svc_cfg = ServiceConfigImpl::Create(args, test_json, &error);
   ASSERT_EQ(error, GRPC_ERROR_NONE) << grpc_error_std_string(error);
   const auto* vector_ptr =
       svc_cfg->GetMethodParsedConfigVector(grpc_empty_slice());
@@ -397,11 +370,8 @@ TEST(RbacServiceConfigParsingTest, VariousPermissionsAndPrincipalsBadTypes) {
       "  } ]\n"
       "}";
   grpc_error_handle error = GRPC_ERROR_NONE;
-  grpc_arg arg = grpc_channel_arg_integer_create(
-      const_cast<char*>(GRPC_ARG_PARSE_RBAC_METHOD_CONFIG), 1);
-  grpc_channel_args args = {1, &arg};
-  auto svc_cfg =
-      ServiceConfigImpl::Create(ChannelArgs::FromC(&args), test_json, &error);
+  ChannelArgs args = ChannelArgs().Set(GRPC_ARG_PARSE_RBAC_METHOD_CONFIG, 1);
+  auto svc_cfg = ServiceConfigImpl::Create(args, test_json, &error);
   EXPECT_THAT(
       grpc_error_std_string(error),
       ::testing::ContainsRegex(
@@ -484,11 +454,8 @@ TEST(RbacServiceConfigParsingTest, HeaderMatcherVariousTypes) {
       "  } ]\n"
       "}";
   grpc_error_handle error = GRPC_ERROR_NONE;
-  grpc_arg arg = grpc_channel_arg_integer_create(
-      const_cast<char*>(GRPC_ARG_PARSE_RBAC_METHOD_CONFIG), 1);
-  grpc_channel_args args = {1, &arg};
-  auto svc_cfg =
-      ServiceConfigImpl::Create(ChannelArgs::FromC(&args), test_json, &error);
+  ChannelArgs args = ChannelArgs().Set(GRPC_ARG_PARSE_RBAC_METHOD_CONFIG, 1);
+  auto svc_cfg = ServiceConfigImpl::Create(args, test_json, &error);
   ASSERT_EQ(error, GRPC_ERROR_NONE) << grpc_error_std_string(error);
   const auto* vector_ptr =
       svc_cfg->GetMethodParsedConfigVector(grpc_empty_slice());
@@ -530,11 +497,8 @@ TEST(RbacServiceConfigParsingTest, HeaderMatcherBadTypes) {
       "  } ]\n"
       "}";
   grpc_error_handle error = GRPC_ERROR_NONE;
-  grpc_arg arg = grpc_channel_arg_integer_create(
-      const_cast<char*>(GRPC_ARG_PARSE_RBAC_METHOD_CONFIG), 1);
-  grpc_channel_args args = {1, &arg};
-  auto svc_cfg =
-      ServiceConfigImpl::Create(ChannelArgs::FromC(&args), test_json, &error);
+  ChannelArgs args = ChannelArgs().Set(GRPC_ARG_PARSE_RBAC_METHOD_CONFIG, 1);
+  auto svc_cfg = ServiceConfigImpl::Create(args, test_json, &error);
   EXPECT_THAT(
       grpc_error_std_string(error),
       ::testing::ContainsRegex(
@@ -587,11 +551,8 @@ TEST(RbacServiceConfigParsingTest, StringMatcherVariousTypes) {
       "  } ]\n"
       "}";
   grpc_error_handle error = GRPC_ERROR_NONE;
-  grpc_arg arg = grpc_channel_arg_integer_create(
-      const_cast<char*>(GRPC_ARG_PARSE_RBAC_METHOD_CONFIG), 1);
-  grpc_channel_args args = {1, &arg};
-  auto svc_cfg =
-      ServiceConfigImpl::Create(ChannelArgs::FromC(&args), test_json, &error);
+  ChannelArgs args = ChannelArgs().Set(GRPC_ARG_PARSE_RBAC_METHOD_CONFIG, 1);
+  auto svc_cfg = ServiceConfigImpl::Create(args, test_json, &error);
   ASSERT_EQ(error, GRPC_ERROR_NONE) << grpc_error_std_string(error);
   const auto* vector_ptr =
       svc_cfg->GetMethodParsedConfigVector(grpc_empty_slice());
@@ -631,11 +592,8 @@ TEST(RbacServiceConfigParsingTest, StringMatcherBadTypes) {
       "  } ]\n"
       "}";
   grpc_error_handle error = GRPC_ERROR_NONE;
-  grpc_arg arg = grpc_channel_arg_integer_create(
-      const_cast<char*>(GRPC_ARG_PARSE_RBAC_METHOD_CONFIG), 1);
-  grpc_channel_args args = {1, &arg};
-  auto svc_cfg =
-      ServiceConfigImpl::Create(ChannelArgs::FromC(&args), test_json, &error);
+  ChannelArgs args = ChannelArgs().Set(GRPC_ARG_PARSE_RBAC_METHOD_CONFIG, 1);
+  auto svc_cfg = ServiceConfigImpl::Create(args, test_json, &error);
   EXPECT_THAT(
       grpc_error_std_string(error),
       ::testing::ContainsRegex("Rbac parser" CHILD_ERROR_TAG

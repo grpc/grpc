@@ -428,6 +428,7 @@ class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
   /// Channel control helper.
   std::unique_ptr<ChannelControlHelper> channel_control_helper_;
   /// Channel args passed in.
+  // TODO(roth): Rework Args so that we don't need to capture channel args here.
   ChannelArgs channel_args_;
 };
 

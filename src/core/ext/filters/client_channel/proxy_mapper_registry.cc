@@ -76,19 +76,17 @@ absl::optional<std::string> ProxyMapperRegistry::MapName(
   return absl::nullopt;
 }
 
-bool ProxyMapperRegistry::MapAddress(const grpc_resolved_address& address,
-                                     ChannelArgs* args,
-                                     grpc_resolved_address** new_address) {
+absl::optional<grpc_resolved_address> ProxyMapperRegistry::MapAddress(
+    const grpc_resolved_address& address, ChannelArgs* args) {
   Init();
   ChannelArgs args_backup = *args;
   for (const auto& mapper : *g_proxy_mapper_list) {
     *args = args_backup;
-    if (mapper->MapAddress(address, args, new_address)) {
-      return true;
-    }
+    auto r = mapper->MapAddress(address, args);
+    if (r.has_value()) return r;
   }
   *args = args_backup;
-  return false;
+  return absl::nullopt;
 }
 
 }  // namespace grpc_core

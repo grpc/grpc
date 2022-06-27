@@ -159,9 +159,6 @@ class XdsClient : public DualRefCounted<XdsClient> {
   std::string DumpClientConfigBinary();
 
   // Helpers for encoding the XdsClient object in channel args.
-  grpc_arg MakeChannelArg() const;
-  static RefCountedPtr<XdsClient> GetFromChannelArgs(
-      const grpc_channel_args& args);
   static absl::string_view ChannelArgName();
   static int ChannelArgsCompare(const XdsClient* a, const XdsClient* b) {
     return QsortCompare(a, b);

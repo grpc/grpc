@@ -39,12 +39,10 @@ class ProxyMapperInterface {
                                               ChannelArgs* args) = 0;
 
   /// Determines the proxy address to use to contact \a address.
-  /// If no proxy is needed, returns false.
-  /// Otherwise, sets \a new_address, updates \a args, and
-  /// returns true.
-  virtual bool MapAddress(const grpc_resolved_address& address,
-                          ChannelArgs* args,
-                          grpc_resolved_address** new_address) = 0;
+  /// If no proxy is needed, returns nullopt.
+  /// Otherwise, updates \a args, and returns a new address.
+  virtual absl::optional<grpc_resolved_address> MapAddress(
+      const grpc_resolved_address& address, ChannelArgs* args) = 0;
 };
 
 }  // namespace grpc_core

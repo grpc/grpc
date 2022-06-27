@@ -129,7 +129,7 @@ class Server : public InternallyRefCounted<Server>,
 
   void Orphan() ABSL_LOCKS_EXCLUDED(mu_global_) override;
 
-  ChannelArgs channel_args() const { return channel_args_; }
+  const ChannelArgs& channel_args() const { return channel_args_; }
   channelz::ServerNode* channelz_node() const { return channelz_node_.get(); }
 
   // Do not call this before Start(). Returns the pollsets. The

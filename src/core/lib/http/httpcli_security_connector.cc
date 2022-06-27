@@ -175,15 +175,11 @@ class HttpRequestSSLCredentials : public grpc_channel_credentials {
       gpr_log(GPR_ERROR, "Could not get default pem root certs.");
       return nullptr;
     }
-    absl::optional<absl::string_view> ssl_host_override =
-        args->GetString(GRPC_SSL_TARGET_NAME_OVERRIDE_ARG);
-    std::string target_string;
-    if (ssl_host_override.has_value()) {
-      target_string = std::string(ssl_host_override.value());
-      target = target_string.c_str();
-    }
-    return httpcli_ssl_channel_security_connector_create(pem_root_certs,
-                                                         root_store, target);
+    absl::optional<std::string> target_string =
+        args->GetOwnedString(GRPC_SSL_TARGET_NAME_OVERRIDE_ARG)
+            .value_or(target);
+    return httpcli_ssl_channel_security_connector_create(
+        pem_root_certs, root_store, target_string->c_str());
   }
 
   RefCountedPtr<grpc_channel_credentials> duplicate_without_call_credentials()

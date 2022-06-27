@@ -285,10 +285,10 @@ void CheckLBPolicyResultLocked(const grpc_core::ChannelArgs channel_args,
   absl::optional<absl::string_view> lb_policy_arg =
       channel_args.GetString(GRPC_ARG_LB_POLICY_NAME);
   if (!args->expected_lb_policy.empty()) {
-    EXPECT_NE(lb_policy_arg, nullptr);
+    EXPECT_TRUE(lb_policy_arg.has_value());
     EXPECT_EQ(*lb_policy_arg, args->expected_lb_policy);
   } else {
-    EXPECT_EQ(lb_policy_arg, nullptr);
+    EXPECT_FALSE(lb_policy_arg.has_value());
   }
 }
 

@@ -56,13 +56,6 @@ int PointerCompare(void* a_ptr, const grpc_arg_pointer_vtable* a_vtable,
 
 namespace grpc_core {
 
-ChannelArgs::ChannelArgs() = default;
-ChannelArgs::~ChannelArgs() = default;
-ChannelArgs::ChannelArgs(const ChannelArgs& other) = default;
-ChannelArgs& ChannelArgs::operator=(const ChannelArgs& other) = default;
-ChannelArgs::ChannelArgs(ChannelArgs&& other) noexcept = default;
-ChannelArgs& ChannelArgs::operator=(ChannelArgs&& other) noexcept = default;
-
 ChannelArgs::Pointer::Pointer(void* p, const grpc_arg_pointer_vtable* vtable)
     : p_(p), vtable_(vtable == nullptr ? EmptyVTable() : vtable) {}
 
@@ -86,6 +79,25 @@ const grpc_arg_pointer_vtable* ChannelArgs::Pointer::EmptyVTable() {
   };
   return &vtable;
 }
+
+bool ChannelArgs::Pointer::operator==(const Pointer& rhs) const {
+  return PointerCompare(p_, vtable_, rhs.p_, rhs.vtable_) == 0;
+}
+
+bool ChannelArgs::Pointer::operator<(const Pointer& rhs) const {
+  return PointerCompare(p_, vtable_, rhs.p_, rhs.vtable_) < 0;
+}
+
+bool ChannelArgs::Pointer::operator!=(const Pointer& rhs) const {
+  return !(*this == rhs);
+}
+
+ChannelArgs::ChannelArgs() = default;
+ChannelArgs::~ChannelArgs() = default;
+ChannelArgs::ChannelArgs(const ChannelArgs& other) = default;
+ChannelArgs& ChannelArgs::operator=(const ChannelArgs& other) = default;
+ChannelArgs::ChannelArgs(ChannelArgs&& other) noexcept = default;
+ChannelArgs& ChannelArgs::operator=(ChannelArgs&& other) noexcept = default;
 
 const ChannelArgs::Value* ChannelArgs::Get(absl::string_view name) const {
   return args_.Lookup(name);
@@ -113,18 +125,6 @@ bool ChannelArgs::WantMinimalStack() const {
 
 ChannelArgs::ChannelArgs(AVL<std::string, Value> args)
     : args_(std::move(args)) {}
-
-bool ChannelArgs::Pointer::operator==(const Pointer& rhs) const {
-  return PointerCompare(p_, vtable_, rhs.p_, rhs.vtable_) == 0;
-}
-
-bool ChannelArgs::Pointer::operator<(const Pointer& rhs) const {
-  return PointerCompare(p_, vtable_, rhs.p_, rhs.vtable_) < 0;
-}
-
-bool ChannelArgs::Pointer::operator!=(const Pointer& rhs) const {
-  return !(*this == rhs);
-}
 
 ChannelArgs ChannelArgs::Set(grpc_arg arg) const {
   switch (arg.type) {
