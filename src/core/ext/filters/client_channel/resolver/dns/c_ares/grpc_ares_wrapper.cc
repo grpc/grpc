@@ -1096,9 +1096,6 @@ grpc_ares_request* grpc_dns_lookup_srv_ares_impl(
   grpc_error_handle error = GRPC_ERROR_NONE;
   // Don't query for SRV records if the target is "localhost"
   if (target_matches_localhost(name)) {
-    error = grpc_error_set_str(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-                                   "cannot lookup SRV records for localhost"),
-                               GRPC_ERROR_STR_TARGET_ADDRESS, name);
     grpc_core::ExecCtx::Run(DEBUG_LOCATION, r->on_done, error);
     return r;
   }
