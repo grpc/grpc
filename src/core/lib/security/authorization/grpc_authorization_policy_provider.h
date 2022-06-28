@@ -105,13 +105,13 @@ class FileWatcherAuthorizationPolicyProvider
 
   std::unique_ptr<Thread> refresh_thread_;
   gpr_event shutdown_event_;
+
   bool execute_cb_ = false;
+  Mutex mu_;
   // Callback is executed when the authorization policy contents in file are
   // modified. This is useful for testing purpose.
-  std::function<void(grpc_status_code code, const char* error_details)> cb_ =
-      nullptr;
-
-  Mutex mu_;
+  std::function<void(grpc_status_code code, const char* error_details)> cb_
+      ABSL_GUARDED_BY(mu_) = nullptr;
   // Engines created using authz_policy_.
   RefCountedPtr<AuthorizationEngine> allow_engine_ ABSL_GUARDED_BY(mu_);
   RefCountedPtr<AuthorizationEngine> deny_engine_ ABSL_GUARDED_BY(mu_);

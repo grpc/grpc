@@ -119,11 +119,14 @@ FileWatcherAuthorizationPolicyProvider::FileWatcherAuthorizationPolicyProvider(
         return;
       }
       absl::Status status = provider->ForceUpdate();
-      if (provider->cb_ != nullptr && provider->execute_cb_) {
-        provider->cb_(
-            static_cast<grpc_status_code>(status.code()),
-            !status.ok() ? std::string(status.message()).c_str() : nullptr);
-        provider->execute_cb_ = false;
+      {
+        MutexLock lock(&provider->mu_);
+        if (provider->cb_ != nullptr && provider->execute_cb_) {
+          provider->cb_(
+              static_cast<grpc_status_code>(status.code()),
+              !status.ok() ? std::string(status.message()).c_str() : nullptr);
+          provider->execute_cb_ = false;
+        }
       }
       if (GRPC_TRACE_FLAG_ENABLED(grpc_authz_trace) && !status.ok()) {
         gpr_log(GPR_ERROR,
@@ -140,6 +143,7 @@ FileWatcherAuthorizationPolicyProvider::FileWatcherAuthorizationPolicyProvider(
 
 void FileWatcherAuthorizationPolicyProvider::SetCallbackForTesting(
     std::function<void(grpc_status_code code, const char* error_details)> cb) {
+  MutexLock lock(&mu_);
   if (cb_ == nullptr) {
     cb_ = std::move(cb);
   }
