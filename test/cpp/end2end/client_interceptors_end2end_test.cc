@@ -1262,6 +1262,6 @@ int main(int argc, char** argv) {
   ::testing::InitGoogleTest(&argc, argv);
   int ret = RUN_ALL_TESTS();
   // Make sure that gRPC shuts down cleanly
-  GPR_ASSERT(grpc_wait_until_shutdown(1));
+  GPR_ASSERT(grpc_wait_until_shutdown(10));
   return ret;
 }

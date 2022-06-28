@@ -28,7 +28,6 @@
 #include <utility>
 #include <vector>
 
-#include "absl/container/inlined_vector.h"
 #include "absl/memory/memory.h"
 #include "absl/meta/type_traits.h"
 #include "absl/random/random.h"
@@ -337,7 +336,7 @@ class XdsResolver : public Resolver {
 
       XdsRouteConfigResource::Route route;
       RefCountedPtr<ServiceConfig> method_config;
-      absl::InlinedVector<ClusterWeightState, 2> weighted_cluster_state;
+      std::vector<ClusterWeightState> weighted_cluster_state;
 
       bool operator==(const Route& other) const;
     };

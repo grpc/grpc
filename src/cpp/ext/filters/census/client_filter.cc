@@ -50,8 +50,8 @@
 #include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/slice/slice.h"
+#include "src/core/lib/slice/slice_buffer.h"
 #include "src/core/lib/slice/slice_refcount.h"
-#include "src/core/lib/transport/byte_stream.h"
 #include "src/core/lib/transport/metadata_batch.h"
 #include "src/core/lib/transport/transport.h"
 #include "src/cpp/ext/filters/census/context.h"
@@ -137,12 +137,12 @@ void OpenCensusCallTracer::OpenCensusCallAttemptTracer::
 }
 
 void OpenCensusCallTracer::OpenCensusCallAttemptTracer::RecordSendMessage(
-    const grpc_core::ByteStream& /*send_message*/) {
+    const grpc_core::SliceBuffer& /*send_message*/) {
   ++sent_message_count_;
 }
 
 void OpenCensusCallTracer::OpenCensusCallAttemptTracer::RecordReceivedMessage(
-    const grpc_core::ByteStream& /*recv_message*/) {
+    const grpc_core::SliceBuffer& /*recv_message*/) {
   ++recv_message_count_;
 }
 
