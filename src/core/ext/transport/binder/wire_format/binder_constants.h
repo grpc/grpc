@@ -28,7 +28,7 @@ ABSL_CONST_INIT extern const int LAST_CALL_TRANSACTION;
 
 namespace grpc_binder {
 
-enum class BinderTransportTxCode {
+enum class BinderTransportTxCode : int32_t {
   SETUP_TRANSPORT = 1,
   SHUTDOWN_TRANSPORT = 2,
   ACKNOWLEDGE_BYTES = 3,

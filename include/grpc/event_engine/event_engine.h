@@ -21,7 +21,6 @@
 
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
-#include "absl/time/time.h"
 
 #include <grpc/event_engine/endpoint_config.h>
 #include <grpc/event_engine/memory_allocator.h>
@@ -74,6 +73,11 @@ namespace experimental {
 ////////////////////////////////////////////////////////////////////////////////
 class EventEngine {
  public:
+  /// A duration between two events.
+  ///
+  /// Throughout the EventEngine API durations are used to express how long
+  /// until an action should be performed.
+  using Duration = std::chrono::duration<int64_t, std::nano>;
   /// A custom closure type for EventEngine task execution.
   ///
   /// Throughout the EventEngine API, \a Closure ownership is retained by the
@@ -270,7 +274,7 @@ class EventEngine {
                                    const ResolvedAddress& addr,
                                    const EndpointConfig& args,
                                    MemoryAllocator memory_allocator,
-                                   absl::Time deadline) = 0;
+                                   Duration timeout) = 0;
 
   /// Request cancellation of a connection attempt.
   ///
@@ -328,21 +332,21 @@ class EventEngine {
     virtual LookupTaskHandle LookupHostname(LookupHostnameCallback on_resolve,
                                             absl::string_view name,
                                             absl::string_view default_port,
-                                            absl::Time deadline) = 0;
+                                            Duration timeout) = 0;
     /// Asynchronously perform an SRV record lookup.
     ///
     /// \a on_resolve has the same meaning and expectations as \a
     /// LookupHostname's \a on_resolve callback.
     virtual LookupTaskHandle LookupSRV(LookupSRVCallback on_resolve,
                                        absl::string_view name,
-                                       absl::Time deadline) = 0;
+                                       Duration timeout) = 0;
     /// Asynchronously perform a TXT record lookup.
     ///
     /// \a on_resolve has the same meaning and expectations as \a
     /// LookupHostname's \a on_resolve callback.
     virtual LookupTaskHandle LookupTXT(LookupTXTCallback on_resolve,
                                        absl::string_view name,
-                                       absl::Time deadline) = 0;
+                                       Duration timeout) = 0;
     /// Cancel an asynchronous lookup operation.
     ///
     /// This shares the same semantics with \a EventEngine::Cancel: successfully
@@ -384,13 +388,13 @@ class EventEngine {
   /// in some scenarios. This overload is useful in situations where performance
   /// is not a critical concern.
   virtual void Run(std::function<void()> closure) = 0;
-  /// Synonymous with scheduling an alarm to run at time \a when.
+  /// Synonymous with scheduling an alarm to run after duration \a when.
   ///
   /// The \a closure will execute when time \a when arrives unless it has been
   /// cancelled via the \a Cancel method. If cancelled, the closure will not be
   /// run, nor will it be deleted. Ownership remains with the caller.
-  virtual TaskHandle RunAt(absl::Time when, Closure* closure) = 0;
-  /// Synonymous with scheduling an alarm to run at time \a when.
+  virtual TaskHandle RunAfter(Duration when, Closure* closure) = 0;
+  /// Synonymous with scheduling an alarm to run after duration \a when.
   ///
   /// The \a closure will execute when time \a when arrives unless it has been
   /// cancelled via the \a Cancel method. If cancelled, the closure will not be
@@ -398,10 +402,10 @@ class EventEngine {
   /// version's \a closure will be deleted by the EventEngine after the closure
   /// has been run, or upon cancellation.
   ///
-  /// This version of \a RunAt may be less performant than the \a Closure
+  /// This version of \a RunAfter may be less performant than the \a Closure
   /// version in some scenarios. This overload is useful in situations where
   /// performance is not a critical concern.
-  virtual TaskHandle RunAt(absl::Time when, std::function<void()> closure) = 0;
+  virtual TaskHandle RunAfter(Duration when, std::function<void()> closure) = 0;
   /// Request cancellation of a task.
   ///
   /// If the associated closure has already been scheduled to run, it will not
@@ -410,6 +414,11 @@ class EventEngine {
   /// If the associated callback has not been scheduled to run, it will be
   /// cancelled, and the associated std::function or \a Closure* will not be
   /// executed. In this case, Cancel will return true.
+  ///
+  /// Implementation note: closures should be destroyed in a timely manner after
+  /// execution or cancelliation (milliseconds), since any state bound to the
+  /// closure may need to be destroyed for things to progress (e.g., if a
+  /// closure holds a ref to some ref-counted object).
   virtual bool Cancel(TaskHandle handle) = 0;
 };
 
@@ -423,7 +432,7 @@ class EventEngine {
 /// created, applications must set a custom EventEngine factory method *before*
 /// grpc is initialized.
 void SetDefaultEventEngineFactory(
-    const std::function<std::unique_ptr<EventEngine>()>* factory);
+    std::function<std::unique_ptr<EventEngine>()> factory);
 
 /// Create an EventEngine using the default factory.
 std::unique_ptr<EventEngine> CreateEventEngine();

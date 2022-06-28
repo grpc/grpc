@@ -21,10 +21,17 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <stddef.h>
+#include <stdint.h>
+
 #include <map>
 #include <memory>
+#include <string>
+#include <vector>
 
-#include "absl/container/inlined_vector.h"
+#include "absl/memory/memory.h"
+
+#include <grpc/impl/codegen/grpc_types.h>
 
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/gpr/useful.h"
@@ -110,7 +117,7 @@ class ServerAddress {
 // ServerAddressList
 //
 
-typedef absl::InlinedVector<ServerAddress, 1> ServerAddressList;
+using ServerAddressList = std::vector<ServerAddress>;
 
 //
 // ServerAddressWeightAttribute

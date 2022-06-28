@@ -44,6 +44,21 @@ grpc_cc_test(
 )
 
 grpc_cc_test(
+    name = "periodic_update_test",
+    srcs = ["periodic_update_test.cc"],
+    external_deps = [
+        "gtest",
+    ],
+    language = "c++",
+    uses_event_engine = False,
+    uses_polling = False,
+    deps = [
+        "//:periodic_update",
+        "//test/core/util:grpc_suppressions",
+    ],
+)
+
+grpc_cc_test(
     name = "thread_quota_test",
     srcs = ["thread_quota_test.cc"],
     external_deps = [

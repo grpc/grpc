@@ -16,6 +16,8 @@
  *
  */
 
+#ifndef GRPC_CORE_LIB_IOMGR_WORK_SERIALIZER_H
+#define GRPC_CORE_LIB_IOMGR_WORK_SERIALIZER_H
 #include <grpc/support/port_platform.h>
 
 #include <atomic>
@@ -29,9 +31,6 @@
 #include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/gprpp/ref_counted.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
-
-#ifndef GRPC_CORE_LIB_IOMGR_WORK_SERIALIZER_H
-#define GRPC_CORE_LIB_IOMGR_WORK_SERIALIZER_H
 
 namespace grpc_core {
 

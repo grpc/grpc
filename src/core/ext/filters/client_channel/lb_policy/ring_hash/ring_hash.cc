@@ -25,10 +25,12 @@
 #include <map>
 #include <memory>
 #include <string>
+#include <type_traits>
 #include <utility>
 #include <vector>
 
 #include "absl/base/attributes.h"
+#include "absl/base/thread_annotations.h"
 #include "absl/container/inlined_vector.h"
 #include "absl/memory/memory.h"
 #include "absl/status/status.h"
@@ -37,8 +39,6 @@
 #include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
-
-#include "src/core/lib/gprpp/unique_type_name.h"
 
 #define XXH_INLINE_ALL
 #include "xxhash.h"
@@ -60,6 +60,8 @@
 #include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/gprpp/ref_counted.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
+#include "src/core/lib/gprpp/sync.h"
+#include "src/core/lib/gprpp/unique_type_name.h"
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
@@ -177,6 +179,11 @@ class RingHash : public LoadBalancingPolicy {
       return connectivity_state_.load(std::memory_order_relaxed);
     }
 
+    absl::Status GetConnectivityStatus() const {
+      MutexLock lock(&mu_);
+      return connectivity_status_;
+    }
+
    private:
     // Performs connectivity state updates that need to be done only
     // after we have started watching.
@@ -193,6 +200,9 @@ class RingHash : public LoadBalancingPolicy {
     // so we skip any interim stops in CONNECTING.
     // Uses an atomic so that it can be accessed outside of the WorkSerializer.
     std::atomic<grpc_connectivity_state> connectivity_state_{GRPC_CHANNEL_IDLE};
+
+    mutable Mutex mu_;
+    absl::Status connectivity_status_ ABSL_GUARDED_BY(&mu_);
   };
 
   // A list of subchannels.
@@ -260,6 +270,12 @@ class RingHash : public LoadBalancingPolicy {
     // The index of the subchannel currently doing an internally
     // triggered connection attempt, if any.
     absl::optional<size_t> internally_triggered_connection_index_;
+
+    // TODO(roth): If we ever change the helper UpdateState() API to not
+    // need the status reported for TRANSIENT_FAILURE state (because
+    // it's not currently actually used for anything outside of the picker),
+    // then we will no longer need this data member.
+    absl::Status last_failure_;
   };
 
   class Ring : public RefCounted<Ring> {
@@ -324,7 +340,7 @@ class RingHash : public LoadBalancingPolicy {
 
       RefCountedPtr<RingHash> ring_hash_lb_;
       grpc_closure closure_;
-      absl::InlinedVector<RefCountedPtr<SubchannelInterface>, 10> subchannels_;
+      std::vector<RefCountedPtr<SubchannelInterface>> subchannels_;
     };
 
     RefCountedPtr<RingHash> parent_;
@@ -370,8 +386,9 @@ RingHash::Ring::Ring(RingHash* parent,
     AddressWeight address_weight;
     address_weight.address =
         grpc_sockaddr_to_string(&sd->address().address(), false).value();
-    if (weight_attribute != nullptr) {
-      GPR_ASSERT(weight_attribute->weight() != 0);
+    // Weight should never be zero, but ignore it just in case, since
+    // that value would screw up the ring-building algorithm.
+    if (weight_attribute != nullptr && weight_attribute->weight() > 0) {
       address_weight.weight = weight_attribute->weight();
     }
     sum += address_weight.weight;
@@ -400,7 +417,7 @@ RingHash::Ring::Ring(RingHash* parent,
       std::ceil(min_normalized_weight * min_ring_size) / min_normalized_weight,
       static_cast<double>(max_ring_size));
   // Reserve memory for the entire ring up front.
-  const uint64_t ring_size = std::ceil(scale);
+  const size_t ring_size = std::ceil(scale);
   ring_.reserve(ring_size);
   // Populate the hash ring by walking through the (host, weight) pairs in
   // normalized_host_weights, and generating (scale * weight) hashes for each
@@ -458,18 +475,18 @@ RingHash::PickResult RingHash::Picker::Pick(PickArgs args) {
   uint64_t h;
   if (!absl::SimpleAtoi(hash, &h)) {
     return PickResult::Fail(
-        absl::InternalError("xds ring hash value is not a number"));
+        absl::InternalError("ring hash value is not a number"));
   }
   const std::vector<Ring::Entry>& ring = ring_->ring();
   // Ported from https://github.com/RJ/ketama/blob/master/libketama/ketama.c
   // (ketama_get_server) NOTE: The algorithm depends on using signed integers
   // for lowp, highp, and first_index. Do not change them!
-  int64_t lowp = 0;
-  int64_t highp = ring.size();
-  int64_t first_index = 0;
+  size_t lowp = 0;
+  size_t highp = ring.size();
+  size_t first_index = 0;
   while (true) {
     first_index = (lowp + highp) / 2;
-    if (first_index == static_cast<int64_t>(ring.size())) {
+    if (first_index == ring.size()) {
       first_index = 0;
       break;
     }
@@ -553,8 +570,9 @@ RingHash::PickResult RingHash::Picker::Pick(PickArgs args) {
       }
     }
   }
-  return PickResult::Fail(absl::UnavailableError(
-      "xds ring hash found a subchannel that is in TRANSIENT_FAILURE state"));
+  return PickResult::Fail(absl::UnavailableError(absl::StrCat(
+      "ring hash cannot find a connected subchannel; first failure: ",
+      ring[first_index].subchannel->GetConnectivityStatus().ToString())));
 }
 
 //
@@ -634,8 +652,17 @@ void RingHash::RingHashSubchannelList::UpdateRingHashConnectivityStateLocked(
     state = GRPC_CHANNEL_TRANSIENT_FAILURE;
     start_connection_attempt = true;
   }
-  // Pass along status only in TRANSIENT_FAILURE.
-  if (state != GRPC_CHANNEL_TRANSIENT_FAILURE) status = absl::OkStatus();
+  // In TRANSIENT_FAILURE, report the last reported failure.
+  // Otherwise, report OK.
+  if (state == GRPC_CHANNEL_TRANSIENT_FAILURE) {
+    if (!status.ok()) {
+      last_failure_ = absl::UnavailableError(absl::StrCat(
+          "no reachable subchannels; last error: ", status.ToString()));
+    }
+    status = last_failure_;
+  } else {
+    status = absl::OkStatus();
+  }
   // Generate new picker and return it to the channel.
   // Note that we use our own picker regardless of connectivity state.
   p->channel_control_helper()->UpdateState(
@@ -701,10 +728,9 @@ void RingHash::RingHashSubchannelData::ProcessConnectivityChangeLocked(
   }
   GPR_ASSERT(subchannel() != nullptr);
   // If this is not the initial state notification and the new state is
-  // TRANSIENT_FAILURE or IDLE, re-resolve and attempt to reconnect.
-  // Note that we don't want to do this on the initial state
-  // notification, because that would result in an endless loop of
-  // re-resolution.
+  // TRANSIENT_FAILURE or IDLE, re-resolve.
+  // Note that we don't want to do this on the initial state notification,
+  // because that would result in an endless loop of re-resolution.
   if (old_state.has_value() && (new_state == GRPC_CHANNEL_TRANSIENT_FAILURE ||
                                 new_state == GRPC_CHANNEL_IDLE)) {
     if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_ring_hash_trace)) {
@@ -719,20 +745,32 @@ void RingHash::RingHashSubchannelData::ProcessConnectivityChangeLocked(
   // picker behavior.
   // If the last recorded state was TRANSIENT_FAILURE, ignore the update
   // unless the new state is READY.
+  bool update_status = true;
+  absl::Status status = connectivity_status();
   if (last_connectivity_state == GRPC_CHANNEL_TRANSIENT_FAILURE &&
-      new_state != GRPC_CHANNEL_READY) {
+      new_state != GRPC_CHANNEL_READY &&
+      new_state != GRPC_CHANNEL_TRANSIENT_FAILURE) {
     new_state = GRPC_CHANNEL_TRANSIENT_FAILURE;
+    {
+      MutexLock lock(&mu_);
+      status = connectivity_status_;
+    }
+    update_status = false;
   }
   // Update state counters used for aggregation.
   subchannel_list()->UpdateStateCountersLocked(last_connectivity_state,
                                                new_state);
+  // Update status seen by picker if needed.
+  if (update_status) {
+    MutexLock lock(&mu_);
+    connectivity_status_ = connectivity_status();
+  }
   // Update last seen state, also used by picker.
   connectivity_state_.store(new_state, std::memory_order_relaxed);
   // Update the RH policy's connectivity state, creating new picker and new
   // ring.
   subchannel_list()->UpdateRingHashConnectivityStateLocked(
-      Index(), connection_attempt_complete,
-      absl::UnavailableError("connections to backends failing"));
+      Index(), connection_attempt_complete, status);
 }
 
 //
@@ -777,16 +815,7 @@ void RingHash::UpdateLocked(UpdateArgs args) {
       gpr_log(GPR_INFO, "[RH %p] received update with %" PRIuPTR " addresses",
               this, args.addresses->size());
     }
-    // Filter out any address with weight 0.
-    addresses.reserve(args.addresses->size());
-    for (ServerAddress& address : *args.addresses) {
-      const ServerAddressWeightAttribute* weight_attribute =
-          static_cast<const ServerAddressWeightAttribute*>(address.GetAttribute(
-              ServerAddressWeightAttribute::kServerAddressWeightAttributeKey));
-      if (weight_attribute == nullptr || weight_attribute->weight() > 0) {
-        addresses.emplace_back(std::move(address));
-      }
-    }
+    addresses = *std::move(args.addresses);
   } else {
     if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_ring_hash_trace)) {
       gpr_log(GPR_INFO, "[RH %p] received update with addresses error: %s",
