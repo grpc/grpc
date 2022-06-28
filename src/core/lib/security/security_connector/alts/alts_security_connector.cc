@@ -22,11 +22,12 @@
 
 #include <string.h>
 
-#include <limits>
+#include <algorithm>
 #include <utility>
 
 #include "absl/status/status.h"
 #include "absl/strings/string_view.h"
+#include "absl/types/optional.h"
 
 #include <grpc/grpc.h>
 #include <grpc/grpc_security_constants.h>

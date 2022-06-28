@@ -26,7 +26,6 @@
 #include <string>
 #include <vector>
 
-#include "absl/container/inlined_vector.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/match.h"
@@ -36,9 +35,9 @@
 #include "absl/strings/strip.h"
 #include "absl/types/optional.h"
 
+#include <grpc/impl/codegen/grpc_types.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
-#include <grpc/support/string_util.h>
 
 #include "src/core/ext/filters/client_channel/proxy_mapper_registry.h"
 #include "src/core/lib/channel/channel_args.h"

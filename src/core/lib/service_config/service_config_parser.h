@@ -28,7 +28,6 @@
 
 #include "absl/strings/string_view.h"
 
-#include <grpc/impl/codegen/grpc_types.h>
 #include <grpc/support/log.h>
 
 #include "src/core/lib/channel/channel_args.h"

@@ -25,6 +25,7 @@
 
 #include <grpc/slice.h>
 
+#include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/gprpp/ref_counted.h"
 #include "src/core/lib/service_config/service_config_parser.h"
 

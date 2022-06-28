@@ -23,8 +23,6 @@
 
 #include <functional>
 
-#include <grpc/impl/codegen/grpc_types.h>
-
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/surface/server.h"

@@ -21,9 +21,13 @@
 
 #include <grpc/support/port_platform.h>
 
-#include <grpc/impl/codegen/grpc_types.h>
+#include <string>
+
+#include "absl/strings/string_view.h"
+#include "absl/types/optional.h"
 
 #include "src/core/ext/filters/client_channel/proxy_mapper.h"
+#include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/iomgr/resolved_address.h"
 
 namespace grpc_core {

@@ -24,6 +24,7 @@
 
 #include "absl/memory/memory.h"
 #include "absl/strings/str_cat.h"
+#include "absl/types/optional.h"
 
 #include <grpc/support/log.h>
 

@@ -30,9 +30,9 @@
 
 #include "absl/strings/string_view.h"
 
-#include <grpc/impl/codegen/grpc_types.h>
 #include <grpc/status.h>
 
+#include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/iomgr/error.h"

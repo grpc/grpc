@@ -23,6 +23,8 @@
 
 #include <memory>
 
+#include "absl/strings/string_view.h"
+
 #include "src/core/ext/filters/client_channel/lb_policy.h"
 #include "src/core/ext/filters/client_channel/lb_policy_factory.h"
 #include "src/core/lib/gprpp/orphanable.h"

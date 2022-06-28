@@ -17,7 +17,6 @@
 #include <grpc/support/port_platform.h>
 
 #include <inttypes.h>
-#include <limits.h>
 #include <stddef.h>
 
 #include <algorithm>
@@ -32,6 +31,7 @@
 #include "absl/status/statusor.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
+#include "absl/types/optional.h"
 
 #include <grpc/impl/codegen/connectivity_state.h>
 #include <grpc/impl/codegen/grpc_types.h>

@@ -32,6 +32,7 @@
 #include "absl/strings/str_split.h"
 #include "absl/strings/string_view.h"
 #include "absl/strings/strip.h"
+#include "absl/types/optional.h"
 
 #include <grpc/byte_buffer.h>
 #include <grpc/byte_buffer_reader.h>

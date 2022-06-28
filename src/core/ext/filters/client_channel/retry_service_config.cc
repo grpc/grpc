@@ -30,6 +30,7 @@
 #include "absl/memory/memory.h"
 #include "absl/types/optional.h"
 
+#include <grpc/impl/codegen/grpc_types.h>
 #include <grpc/status.h>
 #include <grpc/support/log.h>
 

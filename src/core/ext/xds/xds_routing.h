@@ -30,10 +30,9 @@
 #include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
 
-#include <grpc/impl/codegen/grpc_types.h>
-
 #include "src/core/ext/xds/xds_listener.h"
 #include "src/core/ext/xds/xds_route_config.h"
+#include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/transport/metadata_batch.h"
 

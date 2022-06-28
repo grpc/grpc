@@ -28,7 +28,6 @@
 
 #include "src/core/lib/address_utils/sockaddr_utils.h"
 #include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/gpr/useful.h"
 
 // The subchannel pool to reuse subchannels.
 #define GRPC_ARG_SUBCHANNEL_POOL "grpc.internal.subchannel_pool"

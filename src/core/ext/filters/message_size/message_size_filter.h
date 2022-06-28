@@ -25,8 +25,6 @@
 
 #include "absl/strings/string_view.h"
 
-#include <grpc/impl/codegen/grpc_types.h>
-
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_fwd.h"
 #include "src/core/lib/channel/channel_stack.h"

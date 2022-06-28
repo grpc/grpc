@@ -16,8 +16,6 @@
 
 #include <grpc/support/port_platform.h>
 
-#include <limits.h>
-
 #include <algorithm>
 #include <memory>
 #include <string>
@@ -31,6 +29,7 @@
 #include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
 #include "absl/strings/strip.h"
+#include "absl/types/optional.h"
 
 #include <grpc/impl/codegen/grpc_types.h>
 #include <grpc/support/log.h>

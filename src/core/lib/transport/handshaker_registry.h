@@ -24,8 +24,6 @@
 #include <memory>
 #include <vector>
 
-#include <grpc/impl/codegen/grpc_types.h>
-
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/iomgr/iomgr_fwd.h"
 #include "src/core/lib/transport/handshaker_factory.h"

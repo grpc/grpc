@@ -27,7 +27,6 @@
 #include "absl/strings/str_split.h"
 #include "absl/strings/string_view.h"
 
-#include <grpc/impl/codegen/grpc_types.h>
 #include <grpc/support/log.h>
 
 #include "src/core/lib/address_utils/parse_address.h"

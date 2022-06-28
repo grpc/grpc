@@ -34,6 +34,7 @@
 #include "absl/status/statusor.h"
 #include "absl/strings/string_view.h"
 #include "absl/strings/strip.h"
+#include "absl/types/optional.h"
 
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/impl/codegen/grpc_types.h>
@@ -61,14 +62,12 @@
 
 #if GRPC_ARES == 1
 
-#include <limits.h>
 #include <stdio.h>
 #include <string.h>
 
 #include <address_sorting/address_sorting.h>
 
 #include "absl/container/flat_hash_set.h"
-#include "absl/container/inlined_vector.h"
 #include "absl/strings/str_cat.h"
 
 #include "src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_balancer_addresses.h"

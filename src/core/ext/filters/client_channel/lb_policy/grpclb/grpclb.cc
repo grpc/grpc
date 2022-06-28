@@ -58,7 +58,6 @@
 // IWYU pragma: no_include <sys/socket.h>
 
 #include <inttypes.h>
-#include <limits.h>
 #include <stdlib.h>
 #include <string.h>
 

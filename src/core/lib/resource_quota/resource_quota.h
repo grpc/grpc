@@ -24,7 +24,6 @@
 
 #include <grpc/impl/codegen/grpc_types.h>
 
-#include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/gprpp/cpp_impl_of.h"
 #include "src/core/lib/gprpp/ref_counted.h"

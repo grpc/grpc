@@ -21,8 +21,6 @@
 
 #include <utility>
 
-#include <grpc/impl/codegen/grpc_types.h>
-
 #include "src/core/ext/filters/client_channel/lb_policy.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/debug/trace.h"

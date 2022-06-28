@@ -29,6 +29,7 @@
 #include "absl/status/statusor.h"
 #include "absl/strings/match.h"
 #include "absl/strings/string_view.h"
+#include "absl/types/optional.h"
 
 #include <grpc/grpc.h>
 #include <grpc/grpc_security_constants.h>

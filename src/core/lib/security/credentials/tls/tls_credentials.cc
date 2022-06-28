@@ -20,13 +20,15 @@
 
 #include "src/core/lib/security/credentials/tls/tls_credentials.h"
 
-#include <cstring>
+#include <string>
 #include <utility>
 
 #include "absl/strings/string_view.h"
+#include "absl/types/optional.h"
 
 #include <grpc/grpc.h>
 #include <grpc/grpc_security_constants.h>
+#include <grpc/impl/codegen/grpc_types.h>
 #include <grpc/support/log.h>
 
 #include "src/core/lib/channel/channel_args.h"

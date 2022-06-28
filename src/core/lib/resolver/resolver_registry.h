@@ -26,8 +26,7 @@
 
 #include "absl/strings/string_view.h"
 
-#include <grpc/impl/codegen/grpc_types.h>
-
+#include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/iomgr/iomgr_fwd.h"
 #include "src/core/lib/resolver/resolver.h"

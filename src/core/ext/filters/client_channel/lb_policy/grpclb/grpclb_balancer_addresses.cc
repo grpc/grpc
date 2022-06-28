@@ -21,6 +21,7 @@
 #include <stddef.h>
 
 #include <memory>
+#include <utility>
 
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/gpr/useful.h"
