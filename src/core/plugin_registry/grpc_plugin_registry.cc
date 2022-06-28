@@ -105,8 +105,10 @@ extern void RegisterFakeResolver(CoreConfiguration::Builder* builder);
 #ifdef GPR_SUPPORT_BINDER_TRANSPORT
 extern void RegisterBinderResolver(CoreConfiguration::Builder* builder);
 #endif
+extern void RegisterEventEngine(CoreConfiguration::Builder* builder);
 
 void BuildCoreConfiguration(CoreConfiguration::Builder* builder) {
+  RegisterEventEngine(builder);
   // The order of the handshaker registration is crucial here.
   // We want TCP connect handshaker to be registered last so that it is added to
   // the start of the handshaker list.

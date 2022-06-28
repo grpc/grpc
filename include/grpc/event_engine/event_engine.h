@@ -26,6 +26,7 @@
 #include <grpc/event_engine/memory_allocator.h>
 #include <grpc/event_engine/port.h>
 #include <grpc/event_engine/slice_buffer.h>
+#include <grpc/impl/codegen/grpc_types.h>
 
 // TODO(vigneshbabu): Define the Endpoint::Write metrics collection system
 namespace grpc_event_engine {
@@ -420,6 +421,9 @@ class EventEngine {
   /// closure may need to be destroyed for things to progress (e.g., if a
   /// closure holds a ref to some ref-counted object).
   virtual bool Cancel(TaskHandle handle) = 0;
+
+  // Internal helpers
+  struct RawPointerChannelArgTag {};
 };
 
 /// Replace gRPC's default EventEngine factory.

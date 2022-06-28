@@ -419,6 +419,7 @@ grpc_cc_library(
         "channel_stack_type",
         "config",
         "default_event_engine_factory_hdrs",
+        "event_engine_base",
         "gpr_base",
         "grpc_authorization_base",
         "grpc_base",
@@ -478,6 +479,7 @@ grpc_cc_library(
         "channel_stack_type",
         "config",
         "default_event_engine_factory_hdrs",
+        "event_engine_base",
         "gpr_base",
         "grpc_authorization_base",
         "grpc_base",
@@ -2251,6 +2253,7 @@ grpc_cc_library(
         "src/core/lib/event_engine/event_engine_factory.h",
     ],
     deps = [
+        "config",
         "event_engine_base_hdrs",
         "gpr_base",
     ],
@@ -2407,6 +2410,8 @@ grpc_cc_library(
         "src/core/lib/event_engine/event_engine.cc",
     ],
     deps = [
+        "channel_args",
+        "channel_args_preconditioning",
         "default_event_engine_factory",
         "default_event_engine_factory_hdrs",
         "event_engine_base_hdrs",

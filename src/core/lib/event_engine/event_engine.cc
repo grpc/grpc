@@ -20,6 +20,8 @@
 
 #include <grpc/event_engine/event_engine.h>
 
+#include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/channel/channel_args_preconditioning.h"
 #include "src/core/lib/event_engine/event_engine_factory.h"
 
 namespace grpc_event_engine {
@@ -63,5 +65,22 @@ void ResetDefaultEventEngine() {
   delete g_event_engine.exchange(nullptr, std::memory_order_acq_rel);
 }
 
+namespace {
+grpc_core::ChannelArgs EnsureEventEngineInChannelArgs(
+    grpc_core::ChannelArgs args) {
+  if (args.GetPointer<EventEngine>(GRPC_ARG_EVENT_ENGINE) != nullptr)
+    return args;
+  return args.Set<EventEngine>(GRPC_ARG_EVENT_ENGINE, GetDefaultEventEngine());
+}
+}  // namespace
+
 }  // namespace experimental
 }  // namespace grpc_event_engine
+
+namespace grpc_core {
+void RegisterEventEngine(grpc_core::CoreConfiguration::Builder* builder) {
+  builder->channel_args_preconditioning()->RegisterStage(
+      grpc_event_engine::experimental::EnsureEventEngineInChannelArgs);
+}
+
+}  // namespace grpc_core
