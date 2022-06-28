@@ -2357,26 +2357,21 @@ grpc_cc_library(
         "src/core/lib/event_engine/iomgr_engine/wakeup_fd_posix.h",
     ],
     external_deps = [
-        "absl/base:core_headers",
-        "absl/synchronization",
         "absl/status",
         "absl/status:statusor",
         "absl/strings",
-        "absl/strings:str_format",
+        "absl/synchronization",
     ],
     tags = ["grpc-autodeps"],
     deps = [
         "event_engine_base_hdrs",
         "event_engine_common",
         "gpr_base",
-        "gpr_codegen",
-        "gpr_tls",
         "iomgr_ee_thread_pool",
         "iomgr_ee_timer_manager",
         "iomgr_port",
         "status_helper",
         "time",
-        "useful",
     ],
 )
 
