@@ -39,10 +39,10 @@ def main
   s = GRPC::RpcServer.new
   s.add_http2_port('0.0.0.0:50051', :this_port_is_insecure)
   s.handle(GreeterServer)
-  # Runs the server with SIGHUP, SIGINT and SIGQUIT signal handlers to 
+  # Runs the server with SIGHUP, SIGINT and SIGTERM signal handlers to
   #   gracefully shutdown.
   # User could also choose to run server via call to run_till_terminated
-  s.run_till_terminated_or_interrupted([1, 'int', 'SIGQUIT'])
+  s.run_till_terminated_or_interrupted([1, 'int', 'SIGTERM'])
 end
 
 main
