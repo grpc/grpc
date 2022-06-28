@@ -153,7 +153,7 @@ class AresClientChannelDNSResolver : public PollingResolver {
       resolver_.reset(DEBUG_LOCATION, "dns-resolving");
     }
 
-    void Orphan() override {
+    void Orphan() override ABSL_NO_THREAD_SAFETY_ANALYSIS {
       if (hostname_request_ != nullptr) {
         grpc_cancel_ares_request(hostname_request_.get());
       }
@@ -496,23 +496,18 @@ class AresDNSResolver : public DNSResolver {
    protected:
     AresRequest(grpc_pollset_set* interested_parties, AresDNSResolver* resolver,
                 intptr_t aba_token)
-        : pollset_set_(grpc_pollset_set_create()),
-          interested_parties_(interested_parties),
+        : interested_parties_(interested_parties),
           completed_(false),
           resolver_(resolver),
-          aba_token_(aba_token) {
+          aba_token_(aba_token),
+          pollset_set_(grpc_pollset_set_create()) {
       GRPC_CLOSURE_INIT(&on_dns_lookup_done_, OnDnsLookupDone, this,
                         grpc_schedule_on_exec_ctx);
       grpc_pollset_set_add_pollset_set(pollset_set_, interested_parties_);
     }
 
-    // closure to call when the ares resolution request completes. Subclasses
-    // should use this as the ares callback in MakeRequestLocked()
-    grpc_closure on_dns_lookup_done_ ABSL_GUARDED_BY(mu_);
-    // locally owned pollset_set, required to support cancellation of requests
-    // while ares still needs a valid pollset_set. Subclasses should give this
-    // pollset to ares in MakeRequestLocked();
-    grpc_pollset_set* pollset_set_;
+    grpc_pollset_set* pollset_set() { return pollset_set_; };
+    grpc_closure* on_dns_lookup_done() { return &on_dns_lookup_done_; };
 
    private:
     // Called by ares when lookup has completed or when cancelled. It is always
@@ -547,6 +542,13 @@ class AresDNSResolver : public DNSResolver {
     // Unique token to help distinguish this request from others that may later
     // be created in the same memory location.
     intptr_t aba_token_;
+    // closure to call when the ares resolution request completes. Subclasses
+    // should use this as the ares callback in MakeRequestLocked()
+    grpc_closure on_dns_lookup_done_ ABSL_GUARDED_BY(mu_);
+    // locally owned pollset_set, required to support cancellation of requests
+    // while ares still needs a valid pollset_set. Subclasses should give this
+    // pollset to ares in MakeRequestLocked();
+    grpc_pollset_set* pollset_set_;
   };
 
   class AresHostnameRequest : public AresRequest {
@@ -571,7 +573,7 @@ class AresDNSResolver : public DNSResolver {
       auto ares_request =
           std::unique_ptr<grpc_ares_request>(grpc_dns_lookup_hostname_ares(
               name_server_.c_str(), name_.c_str(), default_port_.c_str(),
-              pollset_set_, &on_dns_lookup_done_, &addresses_,
+              pollset_set(), on_dns_lookup_done(), &addresses_,
               timeout_.millis()));
       GRPC_CARES_TRACE_LOG("AresHostnameRequest:%p Start ares_request_:%p",
                            this, ares_request.get());
@@ -629,8 +631,8 @@ class AresDNSResolver : public DNSResolver {
     std::unique_ptr<grpc_ares_request> MakeRequestLocked() override {
       auto ares_request =
           std::unique_ptr<grpc_ares_request>(grpc_dns_lookup_srv_ares(
-              name_server_.c_str(), name_.c_str(), pollset_set_,
-              &on_dns_lookup_done_, &balancer_addresses_, timeout_.millis()));
+              name_server_.c_str(), name_.c_str(), pollset_set(),
+              on_dns_lookup_done(), &balancer_addresses_, timeout_.millis()));
       GRPC_CARES_TRACE_LOG("AresSRVRequest:%p Start ares_request_:%p", this,
                            ares_request.get());
       return ares_request;
@@ -685,8 +687,8 @@ class AresDNSResolver : public DNSResolver {
     std::unique_ptr<grpc_ares_request> MakeRequestLocked() override {
       auto ares_request =
           std::unique_ptr<grpc_ares_request>(grpc_dns_lookup_txt_ares(
-              name_server_.c_str(), name_.c_str(), pollset_set_,
-              &on_dns_lookup_done_, &service_config_json_, timeout_.millis()));
+              name_server_.c_str(), name_.c_str(), pollset_set(),
+              on_dns_lookup_done(), &service_config_json_, timeout_.millis()));
       GRPC_CARES_TRACE_LOG("AresSRVRequest:%p Start ares_request_:%p", this,
                            ares_request.get());
       return ares_request;
