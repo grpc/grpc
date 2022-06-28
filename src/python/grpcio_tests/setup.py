@@ -18,7 +18,6 @@ import os
 import os.path
 import sys
 
-import subprocess
 import grpc_tools.command
 import setuptools
 
@@ -45,20 +44,6 @@ INSTALL_REQUIRES = (
     'grpcio-health-checking>={version}'.format(version=grpc_version.VERSION),
     'oauth2client>=1.4.7', 'protobuf>=3.12.0', 'six>=1.10',
     'google-auth>=1.17.2', 'requests>=2.14.2')
-
-print("AAAAAAAAAAAA Showing egg directory.")
-try:
-    print(subprocess.check_output("ls /var/local/git/grpc/src/python/grpcio_tests/.eggs",
-                            shell=True,
-                                  stderr=subprocess.STDOUT).decode('ascii'))
-except Exception as e:
-    print(e)
-
-print("AAAAAAAAAAAA Running pip freeze.")
-print(subprocess.check_output("{} -m pip freeze".format(sys.executable),
-                        shell=True,
-                              stderr=subprocess.STDOUT).decode('ascii'))
-
 
 if not PY3:
     INSTALL_REQUIRES += ('futures>=2.2.0', 'enum34>=1.0.4')
@@ -110,22 +95,17 @@ PACKAGES = setuptools.find_packages('.')
 
 if __name__ == "__main__":
     multiprocessing.freeze_support()
-    try:
-        setuptools.setup(
-            name='grpcio-tests',
-            version=grpc_version.VERSION,
-            license=LICENSE,
-            packages=list(PACKAGES),
-            package_dir=PACKAGE_DIRECTORIES,
-            package_data=PACKAGE_DATA,
-            install_requires=INSTALL_REQUIRES,
-            cmdclass=COMMAND_CLASS,
-            tests_require=TESTS_REQUIRE,
-            test_suite=TEST_SUITE,
-            test_loader=TEST_LOADER,
-            test_runner=TEST_RUNNER,
-        )
-    except:
-        import traceback
-        traceback.print_exc()
-        raise
+    setuptools.setup(
+        name='grpcio-tests',
+        version=grpc_version.VERSION,
+        license=LICENSE,
+        packages=list(PACKAGES),
+        package_dir=PACKAGE_DIRECTORIES,
+        package_data=PACKAGE_DATA,
+        install_requires=INSTALL_REQUIRES,
+        cmdclass=COMMAND_CLASS,
+        tests_require=TESTS_REQUIRE,
+        test_suite=TEST_SUITE,
+        test_loader=TEST_LOADER,
+        test_runner=TEST_RUNNER,
+    )
