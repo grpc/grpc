@@ -2546,7 +2546,7 @@ TEST_F(ClientLbAddressTest, Basic) {
   for (const int port : GetServersPorts()) {
     expected.emplace_back(
         absl::StrCat(ipv6_only_ ? "[::1]:" : "127.0.0.1:", port,
-                     " args={} attributes={", kAttributeKey, "=foo}"));
+                     " attributes={", kAttributeKey, "=foo}"));
   }
   EXPECT_EQ(addresses_seen(), expected);
 }
