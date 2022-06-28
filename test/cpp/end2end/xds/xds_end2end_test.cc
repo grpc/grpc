@@ -41,6 +41,7 @@
 #include "absl/strings/str_format.h"
 #include "absl/strings/str_join.h"
 #include "absl/strings/str_replace.h"
+#include "absl/time/time.h"
 #include "absl/types/optional.h"
 
 #include <grpc/grpc.h>
@@ -280,7 +281,7 @@ class XdsSecurityTest : public XdsEnd2endTest {
     builder.AddCertificateProviderPlugin("file_plugin", "file_watcher",
                                          absl::StrJoin(fields, ",\n"));
     InitClient(builder);
-    CreateAndStartBackends(1);
+    CreateAndStartBackends(2);
     root_cert_ = ReadFile(kCaCertPath);
     bad_root_cert_ = ReadFile(kBadClientCertPath);
     identity_pair_ = ReadTlsIdentityPair(kClientKeyPath, kClientCertPath);
@@ -321,7 +322,20 @@ class XdsSecurityTest : public XdsEnd2endTest {
       const std::vector<StringMatcher>& san_matchers,
       const std::vector<std::string>& expected_authenticated_identity,
       bool test_expects_failure = false) {
+    // Change the backend and use a unique service name to use so that we know
+    // that the CDS update was applied.
+    std::string service_name = absl::StrCat(
+        "eds_service_name",
+        absl::FormatTime("%H%M%E3S", absl::Now(), absl::LocalTimeZone()));
+    backend_index_ = (backend_index_ + 1) % 2;
+    EdsResourceArgs args({
+        {"locality0",
+         CreateEndpointsForBackends(backend_index_, backend_index_ + 1)},
+    });
+    balancer_->ads_service()->SetEdsResource(
+        BuildEdsResource(args, service_name.c_str()));
     auto cluster = default_cluster_;
+    cluster.mutable_eds_cluster_config()->set_service_name(service_name);
     if (!identity_instance_name.empty() || !root_instance_name.empty()) {
       auto* transport_socket = cluster.mutable_transport_socket();
       transport_socket->set_name("envoy.transport_sockets.tls");
@@ -356,59 +370,37 @@ class XdsSecurityTest : public XdsEnd2endTest {
     }
     balancer_->ads_service()->SetCdsResource(cluster);
     // The updates might take time to have an effect, so use a retry loop.
-    constexpr int kRetryCount = 100;
-    int num_tries = 0;
-    for (; num_tries < kRetryCount; num_tries++) {
-      // Restart the servers to force a reconnection so that previously
-      // connected subchannels are not used for the RPC.
-      ShutdownBackend(0);
-      StartBackend(0);
-      if (test_expects_failure) {
+    if (test_expects_failure) {
+      auto overall_deadline = absl::Now() + absl::Seconds(20);
+      while (absl::Now() < overall_deadline) {
+        // TODO(yashykt): Change individual test cases to expect the exact error
+        // message here.
         if (SendRpc().ok()) {
           gpr_log(GPR_ERROR, "RPC succeeded. Failure expected. Trying again.");
           continue;
         }
-      } else {
-        WaitForBackend(DEBUG_LOCATION, 0, [](const RpcResult& result) {
-          if (!result.status.ok()) {
-            EXPECT_EQ(result.status.error_code(), StatusCode::UNAVAILABLE);
-            // TODO(yashkt): Rework this test suite such that the caller
-            // explicitly indicates which failure they're allowed to see here,
-            // rather than blindly allowing every possibility in every test.
-            // TODO(roth): Plumb a better error out of the handshakers
-            // as part of https://github.com/grpc/grpc/issues/22883.
-            EXPECT_THAT(
-                result.status.error_message(),
-                ::testing::MatchesRegex(
-                    "connections to all backends failing; last error: "
-                    "(UNKNOWN: Failed to connect to remote host: Connection "
-                    "(refused|reset by peer)|UNAVAILABLE: Failed to connect "
-                    "to remote host: FD shutdown|UNKNOWN: Tls handshake failed|"
-                    "UNAVAILABLE: Socket closed|UNAVAILABLE: Broken pipe)"));
-          }
-        });
-        Status status = SendRpc();
-        if (!status.ok()) {
-          gpr_log(GPR_ERROR, "RPC failed. code=%d message=%s Trying again.",
-                  status.error_code(), status.error_message().c_str());
-          continue;
-        }
-        if (backends_[0]->backend_service()->last_peer_identity() !=
-            expected_authenticated_identity) {
-          gpr_log(
-              GPR_ERROR,
-              "Expected client identity does not match. (actual) %s vs "
-              "(expected) %s Trying again.",
-              absl::StrJoin(
-                  backends_[0]->backend_service()->last_peer_identity(), ",")
-                  .c_str(),
-              absl::StrJoin(expected_authenticated_identity, ",").c_str());
-          continue;
-        }
+        break;
       }
-      break;
+      EXPECT_LT(absl::Now(), overall_deadline);
+    } else {
+      // Make sure that we are hitting the correct backend.
+      backends_[backend_index_]->backend_service()->ResetCounters();
+      SendRpcsUntil(
+          DEBUG_LOCATION,
+          [this](const RpcResult& result) {
+            return backends_[backend_index_]
+                       ->backend_service()
+                       ->request_count() == 0;
+          },
+          20 * 1000, RpcOptions());
+      // Check that the identity is as expected.
+      Status status = SendRpc();
+      EXPECT_TRUE(status.ok()) << "code=" << status.error_code()
+                               << " message=" << status.error_message();
+      EXPECT_EQ(
+          backends_[backend_index_]->backend_service()->last_peer_identity(),
+          expected_authenticated_identity);
     }
-    EXPECT_LT(num_tries, kRetryCount);
   }
 
   std::string root_cert_;
@@ -425,6 +417,7 @@ class XdsSecurityTest : public XdsEnd2endTest {
   StringMatcher bad_san_2_;
   std::vector<std::string> authenticated_identity_;
   std::vector<std::string> fallback_authenticated_identity_;
+  int backend_index_ = 0;
 };
 
 TEST_P(XdsSecurityTest, UnknownTransportSocket) {
