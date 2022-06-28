@@ -116,7 +116,7 @@ void EventFdWakeupFd::Destroy() { GPR_ASSERT(false && "unimplemented"); }
 
 bool EventFdWakeupFd::Supported() { return false; }
 
-absl::StatusOr<std::unique_ptr<EventFdWakeupFd>>
+absl::StatusOr<std::unique_ptr<WakeupFd>>
 EventFdWakeupFd::CreatePipeWakeupFd() {
   return absl::NotFoundError("Eventfd wakeup fd is not supported");
 }

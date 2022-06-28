@@ -147,8 +147,7 @@ void PipeWakeupFd::Destroy() { GPR_ASSERT(false && "unimplemented"); }
 
 bool PipeWakeupFd::IsSupported() { return false; }
 
-absl::StatusOr<std::unique_ptr<PipeWakeupFd>>
-PipeWakeupFd::CreatePipeWakeupFd() {
+absl::StatusOr<std::unique_ptr<WakeupFd>> PipeWakeupFd::CreatePipeWakeupFd() {
   return absl::NotFoundError("Pipe wakeup fd is not supported");
 }
 
