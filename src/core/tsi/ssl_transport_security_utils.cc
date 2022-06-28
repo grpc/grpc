@@ -16,11 +16,13 @@
  *
  */
 
-#include "src/core/tsi/ssl_transport_security_util.h"
+#include "src/core/tsi/ssl_transport_security_utils.h"
 
 #include "src/core/tsi/transport_security_interface.h"
 
-const char* ssl_error_string(int error) {
+namespace grpc_core {
+
+const char* SslErrorString(int error) {
   switch (error) {
     case SSL_ERROR_NONE:
       return "SSL_ERROR_NONE";
@@ -45,7 +47,7 @@ const char* ssl_error_string(int error) {
   }
 }
 
-void log_ssl_error_stack(void) {
+void LogSslErrorStack(void) {
   unsigned long err;
   while ((err = ERR_get_error()) != 0) {
     char details[256];
@@ -54,8 +56,8 @@ void log_ssl_error_stack(void) {
   }
 }
 
-tsi_result do_ssl_write(SSL* ssl, unsigned char* unprotected_bytes,
-                        size_t unprotected_bytes_size) {
+tsi_result DoSslWrite(SSL* ssl, unsigned char* unprotected_bytes,
+                      size_t unprotected_bytes_size) {
   GPR_ASSERT(unprotected_bytes_size <= INT_MAX);
   ERR_clear_error();
   int ssl_write_result = SSL_write(ssl, unprotected_bytes,
@@ -68,15 +70,15 @@ tsi_result do_ssl_write(SSL* ssl, unsigned char* unprotected_bytes,
       return TSI_UNIMPLEMENTED;
     } else {
       gpr_log(GPR_ERROR, "SSL_write failed with error %s.",
-              ssl_error_string(ssl_write_result));
+              SslErrorString(ssl_write_result));
       return TSI_INTERNAL_ERROR;
     }
   }
   return TSI_OK;
 }
 
-tsi_result do_ssl_read(SSL* ssl, unsigned char* unprotected_bytes,
-                       size_t* unprotected_bytes_size) {
+tsi_result DoSslRead(SSL* ssl, unsigned char* unprotected_bytes,
+                     size_t* unprotected_bytes_size) {
   GPR_ASSERT(*unprotected_bytes_size <= INT_MAX);
   ERR_clear_error();
   int read_from_ssl = SSL_read(ssl, unprotected_bytes,
@@ -95,11 +97,11 @@ tsi_result do_ssl_read(SSL* ssl, unsigned char* unprotected_bytes,
         return TSI_UNIMPLEMENTED;
       case SSL_ERROR_SSL:
         gpr_log(GPR_ERROR, "Corruption detected.");
-        log_ssl_error_stack();
+        LogSslErrorStack();
         return TSI_DATA_CORRUPTED;
       default:
         gpr_log(GPR_ERROR, "SSL_read failed with error %s.",
-                ssl_error_string(read_from_ssl));
+                SslErrorString(read_from_ssl));
         return TSI_PROTOCOL_FAILURE;
     }
   }
@@ -108,11 +110,12 @@ tsi_result do_ssl_read(SSL* ssl, unsigned char* unprotected_bytes,
 }
 
 /* --- tsi_frame_protector util methods implementation. ---*/
-tsi_result ssl_protector_protect_util(
-    const unsigned char* unprotected_bytes, const size_t buffer_size,
-    size_t& buffer_offset, unsigned char* buffer, SSL* ssl, BIO* network_io,
-    size_t* unprotected_bytes_size, unsigned char* protected_output_frames,
-    size_t* protected_output_frames_size) {
+tsi_result SslProtectorProtect(const unsigned char* unprotected_bytes,
+                               const size_t buffer_size, size_t& buffer_offset,
+                               unsigned char* buffer, SSL* ssl, BIO* network_io,
+                               size_t* unprotected_bytes_size,
+                               unsigned char* protected_output_frames,
+                               size_t* protected_output_frames_size) {
   int read_from_ssl;
   size_t available;
   tsi_result result = TSI_OK;
@@ -145,7 +148,7 @@ tsi_result ssl_protector_protect_util(
 
   /* If we can, prepare the buffer, send it to SSL_write and read. */
   memcpy(buffer + buffer_offset, unprotected_bytes, available);
-  result = do_ssl_write(ssl, buffer, buffer_size);
+  result = DoSslWrite(ssl, buffer, buffer_size);
   if (result != TSI_OK) return result;
 
   GPR_ASSERT(*protected_output_frames_size <= INT_MAX);
@@ -161,16 +164,18 @@ tsi_result ssl_protector_protect_util(
   return TSI_OK;
 }
 
-tsi_result ssl_protector_protect_flush_util(
-    size_t& buffer_offset, unsigned char* buffer, SSL* ssl, BIO* network_io,
-    unsigned char* protected_output_frames,
-    size_t* protected_output_frames_size, size_t* still_pending_size) {
+tsi_result SslProtectorProtectFlush(size_t& buffer_offset,
+                                    unsigned char* buffer, SSL* ssl,
+                                    BIO* network_io,
+                                    unsigned char* protected_output_frames,
+                                    size_t* protected_output_frames_size,
+                                    size_t* still_pending_size) {
   tsi_result result = TSI_OK;
   int read_from_ssl = 0;
   int pending;
 
   if (buffer_offset != 0) {
-    result = do_ssl_write(ssl, buffer, buffer_offset);
+    result = DoSslWrite(ssl, buffer, buffer_offset);
     if (result != TSI_OK) return result;
     buffer_offset = 0;
   }
@@ -194,17 +199,18 @@ tsi_result ssl_protector_protect_flush_util(
   return TSI_OK;
 }
 
-tsi_result ssl_protector_unprotect_util(
-    const unsigned char* protected_frames_bytes, SSL* ssl, BIO* network_io,
-    size_t* protected_frames_bytes_size, unsigned char* unprotected_bytes,
-    size_t* unprotected_bytes_size) {
+tsi_result SslProtectorUnprotect(const unsigned char* protected_frames_bytes,
+                                 SSL* ssl, BIO* network_io,
+                                 size_t* protected_frames_bytes_size,
+                                 unsigned char* unprotected_bytes,
+                                 size_t* unprotected_bytes_size) {
   tsi_result result = TSI_OK;
   int written_into_ssl = 0;
   size_t output_bytes_size = *unprotected_bytes_size;
   size_t output_bytes_offset = 0;
 
   /* First, try to read remaining data from ssl. */
-  result = do_ssl_read(ssl, unprotected_bytes, unprotected_bytes_size);
+  result = DoSslRead(ssl, unprotected_bytes, unprotected_bytes_size);
   if (result != TSI_OK) return result;
   if (*unprotected_bytes_size == output_bytes_size) {
     /* We have read everything we could and cannot process any more input. */
@@ -227,10 +233,12 @@ tsi_result ssl_protector_unprotect_util(
   *protected_frames_bytes_size = static_cast<size_t>(written_into_ssl);
 
   /* Now try to read some data again. */
-  result = do_ssl_read(ssl, unprotected_bytes, unprotected_bytes_size);
+  result = DoSslRead(ssl, unprotected_bytes, unprotected_bytes_size);
   if (result == TSI_OK) {
     /* Don't forget to output the total number of bytes read. */
     *unprotected_bytes_size += output_bytes_offset;
   }
   return result;
 }
+
+}  // namespace grpc_core

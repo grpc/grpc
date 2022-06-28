@@ -16,8 +16,8 @@
  *
  */
 
-#ifndef GRPC_CORE_TSI_SSL_TRANSPORT_SECURITY_UTIL_H_
-#define GRPC_CORE_TSI_SSL_TRANSPORT_SECURITY_UTIL_H_
+#ifndef GRPC_CORE_TSI_SSL_TRANSPORT_SECURITY_UTILS_H_
+#define GRPC_CORE_TSI_SSL_TRANSPORT_SECURITY_UTILS_H_
 
 #include <grpc/support/port_platform.h>
 
@@ -30,15 +30,17 @@
 #include "src/core/tsi/ssl/key_logging/ssl_key_logging.h"
 #include "src/core/tsi/transport_security_interface.h"
 
+namespace grpc_core {
+
 // Converts an SSL error status code to a readable string.
 //
 // error: the SSL error status code.
 //
 // return: the corresponding status string.
-const char* ssl_error_string(int error);
+const char* SslErrorString(int error);
 
 // Logs the SSL error stack.
-void log_ssl_error_stack(void);
+void LogSslErrorStack(void);
 
 // Performs an SSL_write and handle errors.
 //
@@ -47,8 +49,8 @@ void log_ssl_error_stack(void);
 // unprotected_bytes_size: the size of the buffer |unprotected_bytes|.
 //
 // return: TSI_OK if the write operation succeeds or corresponding TSI errors.
-tsi_result do_ssl_write(SSL* ssl, unsigned char* unprotected_bytes,
-                        size_t unprotected_bytes_size);
+tsi_result DoSslWrite(SSL* ssl, unsigned char* unprotected_bytes,
+                      size_t unprotected_bytes_size);
 
 // Performs an SSL_read and handle errors.
 //
@@ -60,8 +62,8 @@ tsi_result do_ssl_write(SSL* ssl, unsigned char* unprotected_bytes,
 //                         read from |ssl| if this function returns TSI_OK.
 //
 // return: TSI_OK if the write operation succeeds or corresponding TSI errors.
-tsi_result do_ssl_read(SSL* ssl, unsigned char* unprotected_bytes,
-                       size_t* unprotected_bytes_size);
+tsi_result DoSslRead(SSL* ssl, unsigned char* unprotected_bytes,
+                     size_t* unprotected_bytes_size);
 
 // Builds a maximum-size TLS frame if there is enough (|buffer_offset| +
 // |unprotected_bytes_size| >= |buffers_size|) data. Otherwise it copies the
@@ -87,11 +89,12 @@ tsi_result do_ssl_read(SSL* ssl, unsigned char* unprotected_bytes,
 // return: TSI_OK if either successfully created a TSI frame or copied the
 //         |unprotected_data| into |buffer|. Returns corresponding TSI errors
 //         otherwise.
-tsi_result ssl_protector_protect_util(
-    const unsigned char* unprotected_bytes, const size_t buffer_size,
-    size_t& buffer_offset, unsigned char* buffer, SSL* ssl, BIO* network_io,
-    std::size_t* unprotected_bytes_size, unsigned char* protected_output_frames,
-    size_t* protected_output_frames_size);
+tsi_result SslProtectorProtect(const unsigned char* unprotected_bytes,
+                               const size_t buffer_size, size_t& buffer_offset,
+                               unsigned char* buffer, SSL* ssl, BIO* network_io,
+                               std::size_t* unprotected_bytes_size,
+                               unsigned char* protected_output_frames,
+                               size_t* protected_output_frames_size);
 
 // Builds a TLS frame out of the remaining plaintext bytes that's left in
 // buffer. Populates the size of the remianing TLS frame to
@@ -111,10 +114,12 @@ tsi_result ssl_protector_protect_util(
 //
 // return: TSI_OK if successfully created a TSI frame. Returns corresponding TSI
 //         errors otherwise.
-tsi_result ssl_protector_protect_flush_util(
-    size_t& buffer_offset, unsigned char* buffer, SSL* ssl, BIO* network_io,
-    unsigned char* protected_output_frames,
-    size_t* protected_output_frames_size, size_t* still_pending_size);
+tsi_result SslProtectorProtectFlush(size_t& buffer_offset,
+                                    unsigned char* buffer, SSL* ssl,
+                                    BIO* network_io,
+                                    unsigned char* protected_output_frames,
+                                    size_t* protected_output_frames_size,
+                                    size_t* still_pending_size);
 
 // Extracts the plaintext from a TLS frame.
 //
@@ -131,9 +136,12 @@ tsi_result ssl_protector_protect_flush_util(
 // return: TSI_OK if either successfully created a TSI frame or copied the
 //         |unprotected_data| into |buffer|. Returns corresponding TSI errors
 //         otherwise.
-tsi_result ssl_protector_unprotect_util(
-    const unsigned char* protected_frames_bytes, SSL* ssl, BIO* network_io,
-    size_t* protected_frames_bytes_size, unsigned char* unprotected_bytes,
-    size_t* unprotected_bytes_size);
+tsi_result SslProtectorUnprotect(const unsigned char* protected_frames_bytes,
+                                 SSL* ssl, BIO* network_io,
+                                 size_t* protected_frames_bytes_size,
+                                 unsigned char* unprotected_bytes,
+                                 size_t* unprotected_bytes_size);
 
-#endif  // GRPC_CORE_TSI_SSL_TRANSPORT_SECURITY_UTIL_H_
+}  // namespace grpc_core
+
+#endif  // GRPC_CORE_TSI_SSL_TRANSPORT_SECURITY_UTILS_H_

@@ -1129,7 +1129,7 @@ if(gRPC_BUILD_TESTS)
   add_dependencies(buildtests_cxx smoke_test)
   add_dependencies(buildtests_cxx sockaddr_utils_test)
   if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
-    add_dependencies(buildtests_cxx ssl_transport_security_util_test)
+    add_dependencies(buildtests_cxx ssl_transport_security_utils_test)
   endif()
   if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     add_dependencies(buildtests_cxx stack_tracer_test)
@@ -2285,7 +2285,7 @@ add_library(grpc
   src/core/tsi/ssl/session_cache/ssl_session_cache.cc
   src/core/tsi/ssl/session_cache/ssl_session_openssl.cc
   src/core/tsi/ssl_transport_security.cc
-  src/core/tsi/ssl_transport_security_util.cc
+  src/core/tsi/ssl_transport_security_utils.cc
   src/core/tsi/transport_security.cc
   src/core/tsi/transport_security_grpc.cc
 )
@@ -15524,13 +15524,13 @@ endif()
 if(gRPC_BUILD_TESTS)
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 
-  add_executable(ssl_transport_security_util_test
-    test/core/tsi/ssl_transport_security_util_test.cc
+  add_executable(ssl_transport_security_utils_test
+    test/core/tsi/ssl_transport_security_utils_test.cc
     third_party/googletest/googletest/src/gtest-all.cc
     third_party/googletest/googlemock/src/gmock-all.cc
   )
 
-  target_include_directories(ssl_transport_security_util_test
+  target_include_directories(ssl_transport_security_utils_test
     PRIVATE
       ${CMAKE_CURRENT_SOURCE_DIR}
       ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -15549,7 +15549,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
       ${_gRPC_PROTO_GENS_DIR}
   )
 
-  target_link_libraries(ssl_transport_security_util_test
+  target_link_libraries(ssl_transport_security_utils_test
     ${_gRPC_PROTOBUF_LIBRARIES}
     ${_gRPC_ALLTARGETS_LIBRARIES}
     grpc_test_util

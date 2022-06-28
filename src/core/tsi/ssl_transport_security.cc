@@ -57,7 +57,7 @@
 #include "src/core/lib/gpr/useful.h"
 #include "src/core/tsi/ssl/key_logging/ssl_key_logging.h"
 #include "src/core/tsi/ssl/session_cache/ssl_session_cache.h"
-#include "src/core/tsi/ssl_transport_security_util.h"
+#include "src/core/tsi/ssl_transport_security_utils.h"
 #include "src/core/tsi/ssl_types.h"
 #include "src/core/tsi/transport_security.h"
 
@@ -970,7 +970,7 @@ static tsi_result ssl_protector_protect(tsi_frame_protector* self,
   tsi_ssl_frame_protector* impl =
       reinterpret_cast<tsi_ssl_frame_protector*>(self);
 
-  return ssl_protector_protect_util(
+  return grpc_core::SslProtectorProtect(
       unprotected_bytes, impl->buffer_size, impl->buffer_offset, impl->buffer,
       impl->ssl, impl->network_io, unprotected_bytes_size,
       protected_output_frames, protected_output_frames_size);
@@ -981,7 +981,7 @@ static tsi_result ssl_protector_protect_flush(
     size_t* protected_output_frames_size, size_t* still_pending_size) {
   tsi_ssl_frame_protector* impl =
       reinterpret_cast<tsi_ssl_frame_protector*>(self);
-  return ssl_protector_protect_flush_util(
+  return grpc_core::SslProtectorProtectFlush(
       impl->buffer_offset, impl->buffer, impl->ssl, impl->network_io,
       protected_output_frames, protected_output_frames_size,
       still_pending_size);
@@ -993,7 +993,7 @@ static tsi_result ssl_protector_unprotect(
     size_t* unprotected_bytes_size) {
   tsi_ssl_frame_protector* impl =
       reinterpret_cast<tsi_ssl_frame_protector*>(self);
-  return ssl_protector_unprotect_util(
+  return grpc_core::SslProtectorUnprotect(
       protected_frames_bytes, impl->ssl, impl->network_io,
       protected_frames_bytes_size, unprotected_bytes, unprotected_bytes_size);
 }
@@ -1307,7 +1307,7 @@ static tsi_result ssl_handshaker_do_handshake(tsi_ssl_handshaker* impl) {
         char err_str[256];
         ERR_error_string_n(ERR_get_error(), err_str, sizeof(err_str));
         gpr_log(GPR_ERROR, "Handshake failed with fatal error %s: %s.",
-                ssl_error_string(ssl_result), err_str);
+                grpc_core::SslErrorString(ssl_result), err_str);
         impl->result = TSI_PROTOCOL_FAILURE;
         return impl->result;
       }
@@ -1532,7 +1532,7 @@ static tsi_result create_tsi_ssl_handshaker(SSL_CTX* ctx, int is_client,
     if (ssl_result != SSL_ERROR_WANT_READ) {
       gpr_log(GPR_ERROR,
               "Unexpected error received from first SSL_do_handshake call: %s",
-              ssl_error_string(ssl_result));
+              grpc_core::SslErrorString(ssl_result));
       SSL_free(ssl);
       BIO_free(network_io);
       return TSI_INTERNAL_ERROR;
@@ -1839,7 +1839,7 @@ tsi_result tsi_create_ssl_client_handshaker_factory_with_options(
   ssl_context = SSL_CTX_new(TLSv1_2_method());
 #endif
   if (ssl_context == nullptr) {
-    log_ssl_error_stack();
+    grpc_core::LogSslErrorStack();
     gpr_log(GPR_ERROR, "Could not create ssl context.");
     return TSI_INVALID_ARGUMENT;
   }
@@ -2044,7 +2044,7 @@ tsi_result tsi_create_ssl_server_handshaker_factory_with_options(
       impl->ssl_contexts[i] = SSL_CTX_new(TLSv1_2_method());
 #endif
       if (impl->ssl_contexts[i] == nullptr) {
-        log_ssl_error_stack();
+        grpc_core::LogSslErrorStack();
         gpr_log(GPR_ERROR, "Could not create ssl context.");
         result = TSI_OUT_OF_RESOURCES;
         break;
