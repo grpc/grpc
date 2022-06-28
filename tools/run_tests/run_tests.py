@@ -774,7 +774,7 @@ class PythonLanguage(object):
                 return (python39_config,)
             else:
                 return (
-                    python310_config,
+                    python38_config,
                 )
         elif args.compiler == 'python3.6':
             return (python36_config,)
