@@ -620,6 +620,7 @@ namespace Grpc.Core.Internal
 
             bool releasedResources;
             bool origCancelRequested;
+            var status = receivedStatus.Status;
             lock (myLock)
             {
                 finished = true;
@@ -630,10 +631,11 @@ namespace Grpc.Core.Internal
                     streamingWriteTcs = null;
                 }
 
-                if (cancelRequested)
+                if (cancelRequested && status.StatusCode != StatusCode.OK)
                 {
                     // Fix for issue #8451. If the client cancelled the call then anything left to read is
                     // discarded. Set readingDone to true so that the cleanup happens correctly.
+                    // Checking the status as this is likely to be Cancelled.
                     // Note: since MoveNext on the response stream would have thrown an exception with
                     // Cancelled status anyway, no additional server data is lost.
                     readingDone = true;
@@ -653,7 +655,7 @@ namespace Grpc.Core.Internal
                 delayedStreamingWriteTcs.SetException(GetRpcExceptionClientOnly());
             }
 
-            var status = receivedStatus.Status;
+            
             if (status.StatusCode != StatusCode.OK)
             {
                 streamingResponseCallFinishedTcs.SetException(new RpcException(status, receivedStatus.Trailers));

@@ -473,6 +473,113 @@ namespace Grpc.Core.Internal.Tests
         }
 
         [Test]
+        public void ServerStreaming_CancelCall()
+        {
+            // Test client cancelling the call before the reading the server stream is complete.
+
+            asyncCall.StartServerStreamingCall("request1");
+            var responseStream = new ClientResponseStream<string, string>(asyncCall);
+
+            // Check that the client has a reference to exactly one call
+            Assert.AreEqual(1, channel.GetCallReferenceCount());
+            // Check that the call is not yet disposed
+            Assert.IsFalse(fakeCall.IsDisposed);
+
+            fakeCall.ReceivedResponseHeadersCallback.OnReceivedResponseHeaders(true, new Metadata());
+            Assert.AreEqual(0, asyncCall.ResponseHeadersAsync.Result.Count);
+
+            // read some data
+            var readTask1 = responseStream.MoveNext();
+            fakeCall.ReceivedMessageCallback.OnReceivedMessage(true, CreateResponsePayload());
+            Assert.IsTrue(readTask1.Result);
+            Assert.AreEqual("response1", responseStream.Current);
+
+            // Cancel the call. This will trigger ReceivedStatusOnClientCallback to be called with a Cancelled status.
+            asyncCall.Cancel();
+            fakeCall.ReceivedStatusOnClientCallback.OnReceivedStatusOnClient(true, new ClientSideStatus(Status.DefaultCancelled, new Metadata()));
+
+            // Check that the resources have been released and that the client no longer references the call
+            Assert.AreEqual(0, channel.GetCallReferenceCount());
+            Assert.IsTrue(fakeCall.IsDisposed);
+        }
+
+        [Test]
+        public void ServerStreaming_CancelCallMoreResponses()
+        {
+            // Test client cancelling the call before the reading the server stream is complete.
+            // This version of the test simulates a race condition where the some data is
+            // received before the OnReceivedStatusOnClient callback is triggered by the cancel.
+
+            asyncCall.StartServerStreamingCall("request1");
+            var responseStream = new ClientResponseStream<string, string>(asyncCall);
+
+            Assert.AreEqual(1, channel.GetCallReferenceCount());
+            Assert.IsFalse(fakeCall.IsDisposed);
+
+            fakeCall.ReceivedResponseHeadersCallback.OnReceivedResponseHeaders(true, new Metadata());
+            Assert.AreEqual(0, asyncCall.ResponseHeadersAsync.Result.Count);
+
+            var readTask1 = responseStream.MoveNext();
+            fakeCall.ReceivedMessageCallback.OnReceivedMessage(true, CreateResponsePayload());
+            Assert.IsTrue(readTask1.Result);
+            Assert.AreEqual("response1", responseStream.Current);
+
+            // Cancel the call
+            asyncCall.Cancel();
+
+            // Receive some more data before the cancel propagates through
+            var readTask2 = responseStream.MoveNext();
+            fakeCall.ReceivedMessageCallback.OnReceivedMessage(true, CreateResponsePayload());
+            Assert.IsTrue(readTask2.Result);
+            Assert.AreEqual("response1", responseStream.Current);
+
+            // Cancel propagates through
+            fakeCall.ReceivedStatusOnClientCallback.OnReceivedStatusOnClient(true, new ClientSideStatus(Status.DefaultCancelled, new Metadata()));
+
+            // Check that the resources have been released and that the client no longer references the call
+            Assert.AreEqual(0, channel.GetCallReferenceCount());
+            Assert.IsTrue(fakeCall.IsDisposed);
+        }
+
+        [Test]
+        public void ServerStreaming_CancelReadFail()
+        {
+            // Test client cancelling the call before the reading the server stream is complete.
+            // This version of the test checks that the client can no longer read after the
+            // cancel has propegated through.
+
+            asyncCall.StartServerStreamingCall("request1");
+            var responseStream = new ClientResponseStream<string, string>(asyncCall);
+
+            Assert.AreEqual(1, channel.GetCallReferenceCount());
+            Assert.IsFalse(fakeCall.IsDisposed);
+
+            fakeCall.ReceivedResponseHeadersCallback.OnReceivedResponseHeaders(true, new Metadata());
+            Assert.AreEqual(0, asyncCall.ResponseHeadersAsync.Result.Count);
+
+            var readTask1 = responseStream.MoveNext();
+            fakeCall.ReceivedMessageCallback.OnReceivedMessage(true, CreateResponsePayload());
+            Assert.IsTrue(readTask1.Result);
+            Assert.AreEqual("response1", responseStream.Current);
+
+            // Cancel the call. This will trigger ReceivedStatusOnClientCallback to be called with a Cancelled status.
+            asyncCall.Cancel();
+            fakeCall.ReceivedStatusOnClientCallback.OnReceivedStatusOnClient(true, new ClientSideStatus(Status.DefaultCancelled, new Metadata()));
+            
+            // Try reading after the call is cancelled
+            var readTask2 = responseStream.MoveNext();
+            Assert.IsTrue(readTask2.IsCompleted);
+            Assert.IsTrue(fakeCall.IsDisposed);
+
+            // Reading should fail as we are in an invalid state
+            var ex = Assert.ThrowsAsync<System.InvalidOperationException>(async () => await readTask2);
+
+            // Check that the resources have been released and that the client no longer references the call
+            Assert.AreEqual(0, channel.GetCallReferenceCount());
+            Assert.IsTrue(fakeCall.IsDisposed);
+        }
+
+        [Test]
         public void ServerStreaming_RequestSerializationExceptionDoesntLeakResources()
         {
             string nullRequest = null;  // will throw when serializing
