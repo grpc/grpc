@@ -69,6 +69,6 @@ Alternatively, generate code using the following and then run the client and ser
 directly:
 
 ```python
-cd examples/python/helloworld
+cd examples/python/multiprocessing
 python -m grpc_tools.protoc -I . prime.proto  --python_out=. --grpc_python_out=.
 ```
