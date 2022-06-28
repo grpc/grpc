@@ -11,7 +11,6 @@ for general contribution guidelines.
 - [a11r](https://github.com/a11r), Google LLC
 - [apolcyn](https://github.com/apolcyn), Google LLC
 - [arjunroy](https://github.com/arjunroy), Google LLC
-- [bogdandrutu](https://github.com/bogdandrutu), Google LLC
 - [ctiller](https://github.com/ctiller), Google LLC
 - [daniel-j-born](https://github.com/daniel-j-born), Google LLC
 - [dapengzhang0](https://github.com/dapengzhang0), Google LLC
@@ -22,7 +21,6 @@ for general contribution guidelines.
 - [gnossen](https://github.com/gnossen), Google LLC
 - [guantaol](https://github.com/guantaol), Google LLC
 - [hcaseyal](https://github.com/hcaseyal), Google LLC
-- [jboeuf](https://github.com/jboeuf), Google LLC
 - [jtattermusch](https://github.com/jtattermusch), Google LLC
 - [LittleCVR](https://github.com/littlecvr), Google LLC
 - [markdroth](https://github.com/markdroth), Google LLC
@@ -39,7 +37,6 @@ for general contribution guidelines.
 - [veblush](https://github.com/veblush), Google LLC
 - [vishalpowar](https://github.com/vishalpowar), Google LLC
 - [Vizerai](https://github.com/Vizerai), Google LLC
-- [wcevans](https://github.com/wcevans), Google LLC
 - [wenbozhu](https://github.com/wenbozhu), Google LLC
 - [yashykt](https://github.com/yashykt), Google LLC
 - [yihuazhang](https://github.com/yihuazhang), Google LLC
@@ -50,9 +47,11 @@ for general contribution guidelines.
 - [adelez](https://github.com/adelez), Google LLC
 - [AspirinSJL](https://github.com/AspirinSJL), Google LLC
 - [billfeng327](https://github.com/billfeng327), Google LLC
+- [bogdandrutu](https://github.com/bogdandrutu), Google LLC
 - [dgquintas](https://github.com/dgquintas), Google LLC
 - [ericgribkoff](https://github.com/ericgribkoff), Google LLC
 - [fengli79](https://github.com/fengli79), Google LLC
+- [jboeuf](https://github.com/jboeuf), Google LLC
 - [jcanizales](https://github.com/jcanizales), Google LLC
 - [jiangtaoli2016](https://github.com/jiangtaoli2016), Google LLC
 - [jkolhe](https://github.com/jkolhe), Google LLC
@@ -82,6 +81,7 @@ for general contribution guidelines.
 - [srini100](https://github.com/srini100), Google LLC
 - [summerxyt](https://github.com/summerxyt), Google LLC
 - [vjpai](https://github.com/vjpai), Google LLC
+- [wcevans](https://github.com/wcevans), Google LLC
 - [y-zeng](https://github.com/y-zeng), Google LLC
 - [yang-g](https://github.com/yang-g), Google LLC
 - [zpencer](https://github.com/zpencer), Google LLC
