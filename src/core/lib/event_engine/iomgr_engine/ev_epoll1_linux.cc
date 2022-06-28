@@ -585,6 +585,9 @@ Epoll1Poller* GetEpoll1Poller(experimental::EventEngine* engine) {
 #else /* defined(GRPC_LINUX_EPOLL) */
 #if defined(GRPC_POSIX_SOCKET_EV_EPOLL1)
 
+namespace grpc_event_engine {
+namespace iomgr_engine {
+
 // If GRPC_LINUX_EPOLL is not defined, it means epoll is not available. Return
 // nullptr.
 
@@ -663,6 +666,9 @@ void Epoll1Poller::Kick() { GPR_ASSERT(false && "unimplemented"); }
 Epoll1Poller* GetEpoll1Poller(experimental::EventEngine* /*engine*/) {
   return nullptr;
 }
+
+}  // namespace iomgr_engine
+}  // namespace grpc_event_engine
 
 #endif /* defined(GRPC_POSIX_SOCKET_EV_EPOLL1) */
 #endif /* !defined(GRPC_LINUX_EPOLL) */
