@@ -5686,6 +5686,10 @@ targets:
   - test/core/event_engine/iomgr_event_engine/event_poller_posix_test.cc
   deps:
   - grpc_test_util
+  platforms:
+  - linux
+  - posix
+  - mac
 - name: examine_stack_test
   gtest: true
   build: test
