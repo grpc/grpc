@@ -38,7 +38,7 @@
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/slice/slice.h"
-#include "src/core/lib/transport/byte_stream.h"
+#include "src/core/lib/slice/slice_buffer.h"
 #include "src/core/lib/transport/metadata_batch.h"
 #include "src/core/lib/transport/transport.h"
 #include "src/cpp/ext/filters/census/context.h"
@@ -58,12 +58,12 @@ class OpenCensusCallTracer : public grpc_core::CallTracer {
     void RecordSendTrailingMetadata(
         grpc_metadata_batch* /*send_trailing_metadata*/) override {}
     void RecordSendMessage(
-        const grpc_core::ByteStream& /*send_message*/) override;
+        const grpc_core::SliceBuffer& /*send_message*/) override;
     void RecordReceivedInitialMetadata(
         grpc_metadata_batch* /*recv_initial_metadata*/,
         uint32_t /*flags*/) override {}
     void RecordReceivedMessage(
-        const grpc_core::ByteStream& /*recv_message*/) override;
+        const grpc_core::SliceBuffer& /*recv_message*/) override;
     void RecordReceivedTrailingMetadata(
         absl::Status status, grpc_metadata_batch* recv_trailing_metadata,
         const grpc_transport_stream_stats* transport_stream_stats) override;
