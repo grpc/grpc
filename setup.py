@@ -69,6 +69,8 @@ if 'linux' in sys.platform:
 if 'openbsd' in sys.platform:
     CARES_INCLUDE += (os.path.join('third_party', 'cares', 'config_openbsd'),)
 if 'os400' in sys.platform:
+    # This change is for OS400 platform.
+    # Please contact GavinZhang (zheddie@163.com) for support on OS400.
     CARES_INCLUDE += (os.path.join('third_party', 'cares', 'config_os400'),)
 RE2_INCLUDE = (os.path.join('third_party', 're2'),)
 SSL_INCLUDE = (os.path.join('third_party', 'boringssl-with-bazel', 'src',
@@ -258,6 +260,8 @@ if EXTRA_ENV_COMPILE_ARGS is None:
     elif "darwin" in sys.platform:
         EXTRA_ENV_COMPILE_ARGS += ' -stdlib=libc++ -fvisibility=hidden -fno-wrapv -fno-exceptions -DHAVE_UNISTD_H'
     elif "os400" in sys.platform:
+        # This change is for OS400 platform.
+        # Please contact GavinZhang (zheddie@163.com) for support on OS400
         EXTRA_ENV_COMPILE_ARGS += ' -fno-extern-tls-init -fno-wrapv -fno-exceptions'
 
 if EXTRA_ENV_LINK_ARGS is None:
@@ -272,6 +276,8 @@ if EXTRA_ENV_LINK_ARGS is None:
             ' -static-libgcc -static-libstdc++ -mcrtdll={msvcr}'
             ' -static -lshlwapi'.format(msvcr=msvcr))
     if "linux" in sys.platform or "os400" in sys.platform:
+    	# Following params could also be used for OS400 platform. 
+	# Please contact GavinZhang (zheddie@163.com) for support on OS400.
         EXTRA_ENV_LINK_ARGS += ' -static-libgcc'
 
 EXTRA_COMPILE_ARGS = shlex.split(EXTRA_ENV_COMPILE_ARGS)

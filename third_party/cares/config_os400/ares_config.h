@@ -1,5 +1,8 @@
 /* Generated from ares_config.h.cmake*/
 
+/* This file is used for OS400 platform.
+   Please contact GavinZhang (zheddie@163.com) for support*/
+
 /* Define if building universal (internal helper macro) */
 #undef AC_APPLE_UNIVERSAL_BUILD
 
