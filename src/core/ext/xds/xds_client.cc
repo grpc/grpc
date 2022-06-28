@@ -2533,26 +2533,6 @@ void SetXdsFallbackBootstrapConfig(const char* config) {
 
 #define GRPC_ARG_XDS_CLIENT "grpc.internal.xds_client"
 
-namespace {
-
-void* XdsClientArgCopy(void* p) {
-  XdsClient* xds_client = static_cast<XdsClient*>(p);
-  xds_client->Ref(DEBUG_LOCATION, "channel arg").release();
-  return p;
-}
-
-void XdsClientArgDestroy(void* p) {
-  XdsClient* xds_client = static_cast<XdsClient*>(p);
-  xds_client->Unref(DEBUG_LOCATION, "channel arg");
-}
-
-int XdsClientArgCmp(void* p, void* q) { return QsortCompare(p, q); }
-
-const grpc_arg_pointer_vtable kXdsClientArgVtable = {
-    XdsClientArgCopy, XdsClientArgDestroy, XdsClientArgCmp};
-
-}  // namespace
-
 absl::string_view XdsClient::ChannelArgName() { return GRPC_ARG_XDS_CLIENT; }
 
 }  // namespace grpc_core

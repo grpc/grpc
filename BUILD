@@ -4666,6 +4666,7 @@ grpc_cc_library(
         "absl/status:statusor",
         "absl/strings",
         "absl/functional:bind_front",
+        "absl/types:optional",
     ],
     language = "c++",
     deps = [
@@ -4712,6 +4713,7 @@ grpc_cc_library(
         "absl/status:statusor",
         "absl/strings",
         "absl/strings:str_format",
+        "absl/types:optional",
         "address_sorting",
         "cares",
     ],
@@ -5263,6 +5265,7 @@ grpc_cc_library(
     external_deps = [
         "absl/status:statusor",
         "absl/strings",
+        "absl/types:optional"
     ],
     language = "c++",
     deps = [
@@ -6196,6 +6199,7 @@ grpc_cc_library(
         "absl/status:statusor",
         "absl/strings",
         "absl/strings:str_format",
+        "absl/types:optional",
     ],
     language = "c++",
     deps = [
