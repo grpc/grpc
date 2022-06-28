@@ -123,7 +123,7 @@ typedef struct {
 
 // Called when an upload session can be safely shutdown.
 // Close session FD and start to shutdown listen FD.
-static void SessionShutdownCb(session* se, bool /*success*/) {
+void SessionShutdownCb(session* se, bool /*success*/) {
   server* sv = se->sv;
   g_event_poller->OrphanHandle(se->em_fd, nullptr, nullptr, "a");
   gpr_free(se);
@@ -133,7 +133,7 @@ static void SessionShutdownCb(session* se, bool /*success*/) {
 }
 
 /* Called when data become readable in a session. */
-static void SessionReadCb(session* se, absl::Status status) {
+void SessionReadCb(session* se, absl::Status status) {
   int fd = g_event_poller->WrappedFd(se->em_fd);
 
   ssize_t read_once = 0;
@@ -171,7 +171,7 @@ static void SessionReadCb(session* se, absl::Status status) {
 
 // Called when the listen FD can be safely shutdown. Close listen FD and signal
 // that server can be shutdown.
-static void ListenShutdownCb(server* sv) {
+void ListenShutdownCb(server* sv) {
   g_event_poller->OrphanHandle(sv->em_fd, nullptr, nullptr, "b");
   gpr_mu_lock(&g_mu);
   sv->done = 1;

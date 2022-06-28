@@ -123,7 +123,7 @@ bool PipeWakeupFd::IsSupported() {
 absl::StatusOr<std::unique_ptr<WakeupFd>> PipeWakeupFd::CreatePipeWakeupFd() {
   static bool kIsPipeWakeupFdSupported = PipeWakeupFd::IsSupported();
   if (kIsPipeWakeupFdSupported) {
-    auto pipe_wakeup_fd = std::make_unique<PipeWakeupFd>();
+    auto pipe_wakeup_fd = absl::make_unique<PipeWakeupFd>();
     auto status = pipe_wakeup_fd->Init();
     if (status.ok()) {
       return pipe_wakeup_fd;

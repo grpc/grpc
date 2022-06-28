@@ -29,7 +29,7 @@ class IomgrEngineClosure final
       : cb_(std::move(cb)),
         is_permanent_(is_permanent),
         status_(absl::OkStatus()) {}
-  ~IomgrEngineClosure() = default;
+  ~IomgrEngineClosure() final = default;
   void SetStatus(absl::Status status) { status_ = status; }
   void Run() override {
     cb_(absl::exchange(status_, absl::OkStatus()));

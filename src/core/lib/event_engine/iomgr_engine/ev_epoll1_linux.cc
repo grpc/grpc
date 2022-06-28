@@ -128,9 +128,9 @@ class Epoll1EventHandle : public EventHandle {
       : fd_(fd),
         pending_actions_(0),
         list_(),
-        read_closure_(std::make_unique<LockfreeEvent>(engine)),
-        write_closure_(std::make_unique<LockfreeEvent>(engine)),
-        error_closure_(std::make_unique<LockfreeEvent>(engine)) {
+        read_closure_(absl::make_unique<LockfreeEvent>(engine)),
+        write_closure_(absl::make_unique<LockfreeEvent>(engine)),
+        error_closure_(absl::make_unique<LockfreeEvent>(engine)) {
     read_closure_->InitEvent();
     write_closure_->InitEvent();
     error_closure_->InitEvent();
