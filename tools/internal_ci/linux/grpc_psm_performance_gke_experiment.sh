@@ -134,6 +134,7 @@ buildConfigs() {
         --allow_client_language=c++ --allow_server_language=c++ \
         -o "regular_loadtest_with_prebuilt_workers_${pool}.yaml"
 }
+
 buildConfigs "${WORKER_POOL_8CORE}" "${BIGQUERY_TABLE_8CORE}" -a queue="${WORKER_POOL_8CORE}-regular" -l c++ -l java --client_channels=8 --server_threads=16 --offered_loads 100 300 500 700 900 1000 1500 2000 2500 4000 6000 8000 10000 12000 14000 16000 18000 20000 22000 24000 26000 28000 30000
 
 # Delete prebuilt images on exit.
