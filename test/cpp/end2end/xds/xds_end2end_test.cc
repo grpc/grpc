@@ -384,7 +384,7 @@ class XdsSecurityTest : public XdsEnd2endTest {
                     "(UNKNOWN: Failed to connect to remote host: Connection "
                     "(refused|reset by peer)|UNAVAILABLE: Failed to connect "
                     "to remote host: FD shutdown|UNKNOWN: Tls handshake failed|"
-                    "UNAVAILABLE: Socket closed)"));
+                    "UNAVAILABLE: Socket closed|UNAVAILABLE: Broken pipe)"));
           }
         });
         Status status = SendRpc();
