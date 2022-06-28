@@ -68,7 +68,7 @@ void ResetDefaultEventEngine() {
 namespace {
 grpc_core::ChannelArgs EnsureEventEngineInChannelArgs(
     grpc_core::ChannelArgs args) {
-  if (args.GetPointer<EventEngine>(GRPC_ARG_EVENT_ENGINE) != nullptr)
+  if (args.GetObject<EventEngine>() != nullptr)
     return args;
   return args.Set<EventEngine>(GRPC_ARG_EVENT_ENGINE, GetDefaultEventEngine());
 }

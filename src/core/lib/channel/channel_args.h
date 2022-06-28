@@ -108,6 +108,19 @@ struct ChannelArgTypeTraits<T,
   };
 };
 
+// Provide the canonical name for a type's channel arg key
+template <typename T>
+struct ChannelArgNameTraits {
+  static absl::string_view ChannelArgName() { return T::ChannelArgName(); }
+};
+
+// Specialization for the EventEngine
+// TODO(hork): consider where this should live permanently
+template <>
+struct ChannelArgNameTraits<grpc_event_engine::experimental::EventEngine> {
+  static absl::string_view ChannelArgName() { return GRPC_ARG_EVENT_ENGINE; }
+};
+
 class ChannelArgs {
  public:
   class Pointer {
@@ -235,7 +248,7 @@ class ChannelArgs {
   }
   template <typename T>
   T* GetObject() {
-    return GetPointer<T>(T::ChannelArgName());
+    return GetPointer<T>(ChannelArgNameTraits<T>::ChannelArgName());
   }
   template <typename T>
   RefCountedPtr<T> GetObjectRef() {
