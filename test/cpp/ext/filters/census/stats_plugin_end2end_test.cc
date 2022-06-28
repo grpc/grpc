@@ -657,27 +657,28 @@ TEST_F(StatsPluginEnd2EndTest, TestAllSpansAreExported) {
   }
   ::opencensus::trace::exporter::SpanExporterTestPeer::ExportForTesting();
   traces_recorder_->StopRecording();
-  auto recorded_spans = traces_recorder_->GetSpansAndClearState();
+  auto recorded_spans = traces_recorder_->GetAndClearSpans();
   auto GetSpanByName = [&recorded_spans](absl::string_view name) {
-    auto it = std::find_if(
+    return std::find_if(
         recorded_spans.begin(), recorded_spans.end(),
         [name](auto const& span_data) { return span_data.name() == name; });
-    ASSERT_NE(it, recorded_spans.end());
-    return *it;
   };
   // We never ended the two spans created in the scope above, so we don't
   // expect them to be exported.
   ASSERT_EQ(3, recorded_spans.size());
   auto sent_span_data =
       GetSpanByName(absl::StrCat("Sent.", client_method_name_));
+  ASSERT_NE(sent_span_data, recorded_spans.end());
   auto attempt_span_data =
       GetSpanByName(absl::StrCat("Attempt.", client_method_name_));
-  EXPECT_EQ(sent_span_data.context().span_id(),
-            attempt_span_data.parent_span_id());
+  ASSERT_NE(attempt_span_data, recorded_spans.end());
+  EXPECT_EQ(sent_span_data->context().span_id(),
+            attempt_span_data->parent_span_id());
   auto recv_span_data =
       GetSpanByName(absl::StrCat("Recv.", server_method_name_));
-  EXPECT_EQ(attempt_span_data.context().span_id(),
-            recv_span_data.parent_span_id());
+  ASSERT_NE(recv_span_data, recorded_spans.end());
+  EXPECT_EQ(attempt_span_data->context().span_id(),
+            recv_span_data->parent_span_id());
 }
 
 }  // namespace
