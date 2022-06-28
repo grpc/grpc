@@ -829,8 +829,7 @@ fail:
 }
 
 grpc_error_handle set_request_dns_server(grpc_ares_request* r,
-                                         absl::string_view dns_server,
-                                         const char* name)
+                                         absl::string_view dns_server)
     ABSL_EXCLUSIVE_LOCKS_REQUIRED(r->mu) {
   if (!dns_server.empty()) {
     GRPC_CARES_TRACE_LOG("request:%p Using DNS server %s", r,
@@ -855,7 +854,7 @@ grpc_error_handle set_request_dns_server(grpc_ares_request* r,
     } else {
       return grpc_error_set_str(
           GRPC_ERROR_CREATE_FROM_STATIC_STRING("cannot parse authority"),
-          GRPC_ERROR_STR_TARGET_ADDRESS, name);
+          GRPC_ERROR_STR_TARGET_ADDRESS, dns_server);
     }
     int status =
         ares_set_servers_ports(r->ev_driver->channel, &r->dns_server_addr);
@@ -895,7 +894,7 @@ grpc_error_handle grpc_dns_lookup_ares_continued(
                                             query_timeout_ms, r);
   if (!GRPC_ERROR_IS_NONE(error)) return error;
   // If dns_server is specified, use it.
-  error = set_request_dns_server(r, dns_server, name);
+  error = set_request_dns_server(r, dns_server);
   return error;
 }
 
@@ -1138,9 +1137,6 @@ grpc_ares_request* grpc_dns_lookup_txt_ares_impl(
   grpc_error_handle error = GRPC_ERROR_NONE;
   // Don't query for TXT records if the target is "localhost"
   if (target_matches_localhost(name)) {
-    error = grpc_error_set_str(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-                                   "cannot lookup TXT records for localhost"),
-                               GRPC_ERROR_STR_TARGET_ADDRESS, name);
     grpc_core::ExecCtx::Run(DEBUG_LOCATION, r->on_done, error);
     return r;
   }

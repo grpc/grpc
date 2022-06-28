@@ -37,7 +37,7 @@
 namespace grpc_core {
 extern const char* kDefaultSecurePort;
 constexpr int kDefaultSecurePortInt = 443;
-constexpr Duration kDefaultRequestTimeout = Duration::Minutes(2);
+constexpr Duration kDefaultDNSRequestTimeout = Duration::Minutes(2);
 
 // A singleton class used for async and blocking DNS resolution
 class DNSResolver {
@@ -77,8 +77,6 @@ class DNSResolver {
   // On completion, \a on_done is invoked with the result.
   //
   // The same caveats in \a LookupHostname apply here as well.
-  //
-  // Reference: https://github.com/grpc/proposal/blob/master/A5-grpclb-in-dns.md
   virtual TaskHandle LookupSRV(
       std::function<void(absl::StatusOr<std::vector<grpc_resolved_address>>)>
           on_resolved,

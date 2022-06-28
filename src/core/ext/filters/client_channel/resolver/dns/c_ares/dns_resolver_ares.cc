@@ -170,20 +170,26 @@ class AresClientChannelDNSResolver : public PollingResolver {
     static void OnHostnameResolved(void* arg, grpc_error_handle error);
     static void OnSRVResolved(void* arg, grpc_error_handle error);
     static void OnTXTResolved(void* arg, grpc_error_handle error);
-    void OnResolvedLocked(grpc_error_handle error);
+    void OnResolvedLocked(grpc_error_handle error)
+        ABSL_EXCLUSIVE_LOCKS_REQUIRED(on_resolved_mu_);
 
+    Mutex on_resolved_mu_;
     RefCountedPtr<AresClientChannelDNSResolver> resolver_;
     grpc_closure on_hostname_resolved_;
-    std::unique_ptr<grpc_ares_request> hostname_request_;
+    std::unique_ptr<grpc_ares_request> hostname_request_
+        ABSL_GUARDED_BY(on_resolved_mu_);
     grpc_closure on_srv_resolved_;
-    std::unique_ptr<grpc_ares_request> srv_request_;
+    std::unique_ptr<grpc_ares_request> srv_request_
+        ABSL_GUARDED_BY(on_resolved_mu_);
     grpc_closure on_txt_resolved_;
-    std::unique_ptr<grpc_ares_request> txt_request_;
-    Mutex on_resolved_mu_;
+    std::unique_ptr<grpc_ares_request> txt_request_
+        ABSL_GUARDED_BY(on_resolved_mu_);
     // Output fields from ares request.
-    std::unique_ptr<ServerAddressList> addresses_;
-    std::unique_ptr<ServerAddressList> balancer_addresses_;
-    char* service_config_json_ = nullptr;
+    std::unique_ptr<ServerAddressList> addresses_
+        ABSL_GUARDED_BY(on_resolved_mu_);
+    std::unique_ptr<ServerAddressList> balancer_addresses_
+        ABSL_GUARDED_BY(on_resolved_mu_);
+    char* service_config_json_ ABSL_GUARDED_BY(on_resolved_mu_) = nullptr;
   };
 
   ~AresClientChannelDNSResolver() override;
@@ -357,8 +363,9 @@ void AresClientChannelDNSResolver::AresRequestWrapper::OnResolvedLocked(
     GRPC_CARES_TRACE_LOG(
         "resolver:%p OnResolved() waiting for results (hostname: %s, srv: %s, "
         "txt: %s)",
-        this, hostname_request_ ? "waiting" : "done",
-        srv_request_ ? "waiting" : "done", txt_request_ ? "waiting" : "done");
+        this, hostname_request_ != nullptr ? "waiting" : "done",
+        srv_request_ != nullptr ? "waiting" : "done",
+        txt_request_ != nullptr ? "waiting" : "done");
     return;
   }
   GRPC_CARES_TRACE_LOG("resolver:%p OnResolved() proceeding", this);
