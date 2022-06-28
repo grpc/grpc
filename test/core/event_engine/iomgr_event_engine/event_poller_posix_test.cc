@@ -459,7 +459,10 @@ int main(int argc, char** argv) {
   EXPECT_NE(grpc_event_engine::experimental::GetDefaultEventEngine(), nullptr);
   g_event_poller = grpc_event_engine::iomgr_engine::GetDefaultPoller(
       grpc_event_engine::experimental::GetDefaultEventEngine());
-  EXPECT_NE(g_event_poller, nullptr);
+  if (g_event_poller == nullptr) {
+    // Poller is not supported on this system.
+    return 0;
+  }
   int result = RUN_ALL_TESTS();
   g_event_poller->Shutdown();
   return result;
