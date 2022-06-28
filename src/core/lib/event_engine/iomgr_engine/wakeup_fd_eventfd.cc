@@ -14,6 +14,8 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <grpc/support/log.h>
+
 #include "src/core/lib/iomgr/port.h"
 
 #ifdef GRPC_LINUX_EVENTFD
@@ -23,8 +25,6 @@
 #include <string.h>
 #include <sys/eventfd.h>
 #include <unistd.h>
-
-#include <grpc/support/log.h>
 
 #include "src/core/lib/event_engine/iomgr_engine/wakeup_fd_posix.h"
 #endif
@@ -114,10 +114,10 @@ absl::Status EventFdWakeupFd::Wakeup() { GPR_ASSERT(false && "unimplemented"); }
 
 void EventFdWakeupFd::Destroy() { GPR_ASSERT(false && "unimplemented"); }
 
-bool EventFdWakeupFd::Supported() { return false; }
+bool EventFdWakeupFd::IsSupported() { return false; }
 
 absl::StatusOr<std::unique_ptr<WakeupFd>>
-EventFdWakeupFd::CreatePipeWakeupFd() {
+EventFdWakeupFd::CreateEventFdWakeupFd() {
   return absl::NotFoundError("Eventfd wakeup fd is not supported");
 }
 

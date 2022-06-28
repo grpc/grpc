@@ -16,6 +16,8 @@
 
 #include <memory>
 
+#include <grpc/support/log.h>
+
 #include "src/core/lib/iomgr/port.h"
 
 #ifdef GRPC_POSIX_WAKEUP_FD
@@ -23,8 +25,6 @@
 #include <fcntl.h>
 #include <string.h>
 #include <unistd.h>
-
-#include <grpc/support/log.h>
 
 #include "src/core/lib/event_engine/iomgr_engine/wakeup_fd_posix.h"
 #endif
