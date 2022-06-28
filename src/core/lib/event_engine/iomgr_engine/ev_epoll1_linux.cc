@@ -66,8 +66,6 @@ namespace iomgr_engine {
 //  NOTE ON SYNCHRONIZATION:
 //  - Fields in this struct are only modified by the designated poller. Hence
 //    there is no need for any locks to protect the struct.
-//  - num_events and cursor fields have to be of atomic type to provide
-//  memory visibility guarantees only.
 typedef struct epoll_set {
   int epfd;
 
