@@ -1394,9 +1394,6 @@ static bool do_tcp_flush_zerocopy(grpc_tcp* tcp, TcpZerocopySendRecord* record,
         tcp_shutdown_buffer_list(tcp);
         return true;
       } else {
-        if (saved_errno == ENOBUFS) {
-          gpr_log(GPR_ERROR, "gRPC TCP Tx0cp: ENOBUFS encountered.");
-        }
         *error = tcp_annotate_error(GRPC_OS_ERROR(saved_errno, "sendmsg"), tcp);
         tcp_shutdown_buffer_list(tcp);
         return true;
