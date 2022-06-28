@@ -20,7 +20,6 @@
 
 #include "src/core/lib/security/credentials/composite/composite_credentials.h"
 
-#include <algorithm>
 #include <cstring>
 #include <vector>
 

@@ -750,6 +750,7 @@ libs:
   - src/core/lib/event_engine/iomgr_engine/timer.h
   - src/core/lib/event_engine/iomgr_engine/timer_heap.h
   - src/core/lib/event_engine/iomgr_engine/timer_manager.h
+  - src/core/lib/event_engine/promise.h
   - src/core/lib/event_engine/trace.h
   - src/core/lib/gprpp/atomic_utils.h
   - src/core/lib/gprpp/bitset.h
@@ -1971,6 +1972,7 @@ libs:
   - src/core/lib/event_engine/iomgr_engine/timer.h
   - src/core/lib/event_engine/iomgr_engine/timer_heap.h
   - src/core/lib/event_engine/iomgr_engine/timer_manager.h
+  - src/core/lib/event_engine/promise.h
   - src/core/lib/event_engine/trace.h
   - src/core/lib/gprpp/atomic_utils.h
   - src/core/lib/gprpp/bitset.h
@@ -2811,6 +2813,7 @@ libs:
   - src/cpp/util/string_ref.cc
   - src/cpp/util/time_cc.cc
   deps:
+  - absl/cleanup:cleanup
   - grpc
   baselib: true
 - name: grpc++_alts
@@ -4703,8 +4706,7 @@ targets:
   - src/core/lib/avl/avl.h
   src:
   - test/core/avl/avl_test.cc
-  deps:
-  - absl/container:inlined_vector
+  deps: []
   uses_polling: false
 - name: aws_request_signer_test
   gtest: true
@@ -4884,6 +4886,7 @@ targets:
   - test/core/transport/binder/binder_transport_test.cc
   - test/core/transport/binder/mock_objects.cc
   deps:
+  - absl/cleanup:cleanup
   - grpc_test_util
   uses_polling: false
 - name: bitset_test
@@ -5611,6 +5614,7 @@ targets:
   - test/core/transport/binder/endpoint_binder_pool_test.cc
   - test/core/transport/binder/mock_objects.cc
   deps:
+  - absl/cleanup:cleanup
   - grpc_test_util
   uses_polling: false
 - name: endpoint_config_test
@@ -5846,6 +5850,7 @@ targets:
   - test/core/transport/binder/end2end/fake_binder.cc
   - test/core/transport/binder/end2end/fake_binder_test.cc
   deps:
+  - absl/cleanup:cleanup
   - grpc_test_util
   uses_polling: false
 - name: file_watcher_certificate_provider_factory_test
@@ -6065,14 +6070,19 @@ targets:
   headers:
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h
   - test/core/event_engine/test_suite/event_engine_test.h
+  - test/core/event_engine/test_suite/event_engine_test_utils.h
   src:
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.proto
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   - test/core/event_engine/test_suite/event_engine_test.cc
+  - test/core/event_engine/test_suite/event_engine_test_utils.cc
   - test/core/event_engine/test_suite/fuzzing_event_engine_test.cc
   - test/core/event_engine/test_suite/timer_test.cc
   deps:
   - grpc_test_util
+  platforms:
+  - linux
+  - posix
   uses_polling: false
 - name: generic_end2end_test
   gtest: true
@@ -6625,8 +6635,10 @@ targets:
   language: c++
   headers:
   - test/core/event_engine/test_suite/event_engine_test.h
+  - test/core/event_engine/test_suite/event_engine_test_utils.h
   src:
   - test/core/event_engine/test_suite/event_engine_test.cc
+  - test/core/event_engine/test_suite/event_engine_test_utils.cc
   - test/core/event_engine/test_suite/iomgr_event_engine_test.cc
   - test/core/event_engine/test_suite/timer_test.cc
   deps:
@@ -7154,6 +7166,26 @@ targets:
   - absl/types:variant
   - absl/utility:utility
   uses_polling: false
+- name: oracle_event_engine_posix_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - test/core/event_engine/test_suite/event_engine_test.h
+  - test/core/event_engine/test_suite/event_engine_test_utils.h
+  - test/core/event_engine/test_suite/oracle_event_engine_posix.h
+  src:
+  - test/core/event_engine/test_suite/client_test.cc
+  - test/core/event_engine/test_suite/event_engine_test.cc
+  - test/core/event_engine/test_suite/event_engine_test_utils.cc
+  - test/core/event_engine/test_suite/oracle_event_engine_posix.cc
+  - test/core/event_engine/test_suite/oracle_event_engine_posix_test.cc
+  deps:
+  - grpc_test_util
+  platforms:
+  - linux
+  - posix
+  - mac
 - name: orca_service_end2end_test
   gtest: true
   build: test
@@ -9027,6 +9059,7 @@ targets:
   - src/cpp/util/time_cc.cc
   - test/core/transport/binder/transport_stream_receiver_test.cc
   deps:
+  - absl/cleanup:cleanup
   - grpc_test_util
   uses_polling: false
 - name: try_join_test
@@ -9234,6 +9267,7 @@ targets:
   - test/core/transport/binder/mock_objects.cc
   - test/core/transport/binder/wire_reader_test.cc
   deps:
+  - absl/cleanup:cleanup
   - grpc_test_util
   uses_polling: false
 - name: wire_writer_test
@@ -9329,6 +9363,7 @@ targets:
   - test/core/transport/binder/mock_objects.cc
   - test/core/transport/binder/wire_writer_test.cc
   deps:
+  - absl/cleanup:cleanup
   - grpc_test_util
   uses_polling: false
 - name: work_serializer_test

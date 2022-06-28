@@ -491,6 +491,8 @@ class StreamWriteContext {
   }
 
   void FlushWindowUpdates() {
+    if (s_->read_closed) return;
+
     /* send any window updates */
     const uint32_t stream_announce = s_->flow_control.MaybeSendUpdate();
     if (stream_announce == 0) return;

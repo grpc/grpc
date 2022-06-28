@@ -1466,6 +1466,7 @@
       'target_name': 'grpc++',
       'type': 'static_library',
       'dependencies': [
+        'absl/cleanup:cleanup',
         'grpc',
       ],
       'sources': [

@@ -436,9 +436,11 @@ class PollsetSetWrapper {
 
   ~PollsetSetWrapper() {
     grpc_pollset_set_del_pollset(pss_, ps_);
+    grpc_pollset_set_destroy(pss_);
+    grpc_pollset_shutdown(ps_, nullptr);
+    grpc_core::ExecCtx::Get()->Flush();
     grpc_pollset_destroy(ps_);
     gpr_free(ps_);
-    grpc_pollset_set_destroy(pss_);
     gpr_log(GPR_DEBUG, "PollsetSetWrapper:%p deleted", this);
   }
 
