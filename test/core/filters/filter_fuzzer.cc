@@ -620,7 +620,7 @@ DEFINE_PROTO_FUZZER(const filter_fuzzer::Msg& msg) {
   }();
 
   if (stack.ok()) {
-    grpc_core::MainLoop main_loop(std::move(*stack), std::move(channel_args));
+    grpc_core::MainLoop main_loop(std::move(*stack), channel_args);
     for (const auto& action : msg.actions()) {
       grpc_timer_manager_tick();
       main_loop.Run(action, &globals);
