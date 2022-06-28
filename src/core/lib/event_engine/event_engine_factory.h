@@ -35,9 +35,6 @@ std::unique_ptr<EventEngine> DefaultEventEngineFactory();
 /// Reset the default event engine
 void ResetDefaultEventEngine();
 
-// TODO(hork): remove this when any other EE usage is landed
-void InitializeEventEngine();
-
 }  // namespace experimental
 }  // namespace grpc_event_engine
 
