@@ -84,24 +84,21 @@ gpr_timespec TimeoutSecondsToDeadline(int64_t seconds) {
 
 absl::StatusOr<RefCountedPtr<grpc_authorization_policy_provider>>
 FileWatcherAuthorizationPolicyProvider::Create(
-    absl::string_view authz_policy_path, unsigned int refresh_interval_sec,
-    std::function<void(grpc_status_code code, const char* error_details)> cb) {
+    absl::string_view authz_policy_path, unsigned int refresh_interval_sec) {
   GPR_ASSERT(!authz_policy_path.empty());
   GPR_ASSERT(refresh_interval_sec > 0);
   absl::Status status;
   auto provider = MakeRefCounted<FileWatcherAuthorizationPolicyProvider>(
-      authz_policy_path, refresh_interval_sec, &status, std::move(cb));
+      authz_policy_path, refresh_interval_sec, &status);
   if (!status.ok()) return status;
   return provider;
 }
 
 FileWatcherAuthorizationPolicyProvider::FileWatcherAuthorizationPolicyProvider(
     absl::string_view authz_policy_path, unsigned int refresh_interval_sec,
-    absl::Status* status,
-    std::function<void(grpc_status_code code, const char* error_details)> cb)
+    absl::Status* status)
     : authz_policy_path_(std::string(authz_policy_path)),
-      refresh_interval_sec_(refresh_interval_sec),
-      cb_(std::move(cb)) {
+      refresh_interval_sec_(refresh_interval_sec) {
   gpr_event_init(&shutdown_event_);
   // Initial read is done synchronously.
   *status = ForceUpdate();
@@ -139,6 +136,13 @@ FileWatcherAuthorizationPolicyProvider::FileWatcherAuthorizationPolicyProvider(
       "FileWatcherAuthorizationPolicyProvider_refreshing_thread", thread_lambda,
       WeakRef().release());
   refresh_thread_->Start();
+}
+
+void FileWatcherAuthorizationPolicyProvider::SetCallbackForTesting(
+    std::function<void(grpc_status_code code, const char* error_details)> cb) {
+  if (cb_ == nullptr) {
+    cb_ = std::move(cb);
+  }
 }
 
 absl::Status FileWatcherAuthorizationPolicyProvider::ForceUpdate() {

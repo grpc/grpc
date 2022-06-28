@@ -76,15 +76,16 @@ class FileWatcherAuthorizationPolicyProvider
     : public grpc_authorization_policy_provider {
  public:
   static absl::StatusOr<RefCountedPtr<grpc_authorization_policy_provider>>
-  Create(absl::string_view authz_policy_path, unsigned int refresh_interval_sec,
-         std::function<void(grpc_status_code code, const char* error_details)>
-             cb = nullptr);
+  Create(absl::string_view authz_policy_path,
+         unsigned int refresh_interval_sec);
 
   // Use factory method "Create" to create an instance of
   // FileWatcherAuthorizationPolicyProvider.
-  FileWatcherAuthorizationPolicyProvider(
-      absl::string_view authz_policy_path, unsigned int refresh_interval_sec,
-      absl::Status* status,
+  FileWatcherAuthorizationPolicyProvider(absl::string_view authz_policy_path,
+                                         unsigned int refresh_interval_sec,
+                                         absl::Status* status);
+
+  void SetCallbackForTesting(
       std::function<void(grpc_status_code code, const char* error_details)> cb);
 
   void Orphan() override;

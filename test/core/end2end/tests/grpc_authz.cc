@@ -533,6 +533,13 @@ static void test_file_watcher_valid_policy_reload(
       "  ]"
       "}";
   grpc_core::testing::TmpFile tmp_policy(authz_policy);
+  grpc_status_code code = GRPC_STATUS_OK;
+  const char* error_details;
+  grpc_authorization_policy_provider* provider =
+      grpc_authorization_policy_provider_file_watcher_create(
+          tmp_policy.name().c_str(), /*refresh_interval_sec=*/1, &code,
+          &error_details);
+  GPR_ASSERT(GRPC_STATUS_OK == code);
   absl::Notification on_reload_done;
   std::function<void(grpc_status_code code, const char* error_details)>
       callback = [&on_reload_done](grpc_status_code status,
@@ -541,11 +548,8 @@ static void test_file_watcher_valid_policy_reload(
         GPR_ASSERT(nullptr == error_details);
         on_reload_done.Notify();
       };
-  auto fw_provider = grpc_core::FileWatcherAuthorizationPolicyProvider::Create(
-      tmp_policy.name(), /*refresh_interval_sec=*/1, std::move(callback));
-  GPR_ASSERT(GRPC_STATUS_OK ==
-             static_cast<grpc_status_code>(fw_provider.status().code()));
-  grpc_authorization_policy_provider* provider = fw_provider->release();
+  dynamic_cast<grpc_core::FileWatcherAuthorizationPolicyProvider*>(provider)
+      ->SetCallbackForTesting(std::move(callback));
   grpc_arg args[] = {
       grpc_channel_arg_pointer_create(
           const_cast<char*>(GRPC_ARG_AUTHORIZATION_POLICY_PROVIDER), provider,
@@ -607,6 +611,13 @@ static void test_file_watcher_invalid_policy_skip_reload(
       "  ]"
       "}";
   grpc_core::testing::TmpFile tmp_policy(authz_policy);
+  grpc_status_code code = GRPC_STATUS_OK;
+  const char* error_details;
+  grpc_authorization_policy_provider* provider =
+      grpc_authorization_policy_provider_file_watcher_create(
+          tmp_policy.name().c_str(), /*refresh_interval_sec=*/1, &code,
+          &error_details);
+  GPR_ASSERT(GRPC_STATUS_OK == code);
   absl::Notification on_reload_done;
   std::function<void(grpc_status_code code, const char* error_details)>
       callback = [&on_reload_done](grpc_status_code status,
@@ -616,11 +627,8 @@ static void test_file_watcher_invalid_policy_skip_reload(
                    strstr(error_details, "\"name\" field is not present."));
         on_reload_done.Notify();
       };
-  auto fw_provider = grpc_core::FileWatcherAuthorizationPolicyProvider::Create(
-      tmp_policy.name(), /*refresh_interval_sec=*/1, std::move(callback));
-  GPR_ASSERT(GRPC_STATUS_OK ==
-             static_cast<grpc_status_code>(fw_provider.status().code()));
-  grpc_authorization_policy_provider* provider = fw_provider->release();
+  dynamic_cast<grpc_core::FileWatcherAuthorizationPolicyProvider*>(provider)
+      ->SetCallbackForTesting(std::move(callback));
   grpc_arg args[] = {
       grpc_channel_arg_pointer_create(
           const_cast<char*>(GRPC_ARG_AUTHORIZATION_POLICY_PROVIDER), provider,
@@ -660,6 +668,13 @@ static void test_file_watcher_recovers_from_failure(
       "  ]"
       "}";
   grpc_core::testing::TmpFile tmp_policy(authz_policy);
+  grpc_status_code code = GRPC_STATUS_OK;
+  const char* error_details;
+  grpc_authorization_policy_provider* provider =
+      grpc_authorization_policy_provider_file_watcher_create(
+          tmp_policy.name().c_str(), /*refresh_interval_sec=*/1, &code,
+          &error_details);
+  GPR_ASSERT(GRPC_STATUS_OK == code);
   absl::Notification on_first_reload_done;
   absl::Notification on_second_reload_done;
   bool first_reload = true;
@@ -677,11 +692,8 @@ static void test_file_watcher_recovers_from_failure(
           on_second_reload_done.Notify();
         }
       };
-  auto fw_provider = grpc_core::FileWatcherAuthorizationPolicyProvider::Create(
-      tmp_policy.name(), /*refresh_interval_sec=*/1, std::move(callback));
-  GPR_ASSERT(GRPC_STATUS_OK ==
-             static_cast<grpc_status_code>(fw_provider.status().code()));
-  grpc_authorization_policy_provider* provider = fw_provider->release();
+  dynamic_cast<grpc_core::FileWatcherAuthorizationPolicyProvider*>(provider)
+      ->SetCallbackForTesting(std::move(callback));
   grpc_arg args[] = {
       grpc_channel_arg_pointer_create(
           const_cast<char*>(GRPC_ARG_AUTHORIZATION_POLICY_PROVIDER), provider,

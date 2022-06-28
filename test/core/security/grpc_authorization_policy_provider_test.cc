@@ -94,6 +94,9 @@ TEST(AuthorizationPolicyProviderTest,
 TEST(AuthorizationPolicyProviderTest, FileWatcherSuccessValidPolicyRefresh) {
   auto tmp_authz_policy = absl::make_unique<testing::TmpFile>(
       testing::GetFileContents(VALID_POLICY_PATH_1));
+  auto provider = FileWatcherAuthorizationPolicyProvider::Create(
+      tmp_authz_policy->name(), /*refresh_interval_sec=*/1);
+  ASSERT_TRUE(provider.ok());
   absl::Notification on_reload_done;
   std::function<void(grpc_status_code code, const char* error_details)>
       callback = [&on_reload_done](grpc_status_code status,
@@ -102,10 +105,8 @@ TEST(AuthorizationPolicyProviderTest, FileWatcherSuccessValidPolicyRefresh) {
         EXPECT_EQ(error_details, nullptr);
         on_reload_done.Notify();
       };
-  auto provider = FileWatcherAuthorizationPolicyProvider::Create(
-      tmp_authz_policy->name(), /*refresh_interval_sec=*/1,
-      std::move(callback));
-  ASSERT_TRUE(provider.ok());
+  dynamic_cast<FileWatcherAuthorizationPolicyProvider*>(provider->get())
+      ->SetCallbackForTesting(std::move(callback));
   auto engines = (*provider)->engines();
   auto* allow_engine =
       dynamic_cast<GrpcAuthorizationEngine*>(engines.allow_engine.get());
@@ -138,6 +139,9 @@ TEST(AuthorizationPolicyProviderTest,
      FileWatcherInvalidPolicyRefreshSkipReload) {
   auto tmp_authz_policy = absl::make_unique<testing::TmpFile>(
       testing::GetFileContents(VALID_POLICY_PATH_1));
+  auto provider = FileWatcherAuthorizationPolicyProvider::Create(
+      tmp_authz_policy->name(), /*refresh_interval_sec=*/1);
+  ASSERT_TRUE(provider.ok());
   absl::Notification on_reload_done;
   std::function<void(grpc_status_code code, const char* error_details)>
       callback = [&on_reload_done](grpc_status_code status,
@@ -146,10 +150,8 @@ TEST(AuthorizationPolicyProviderTest,
         EXPECT_STREQ(error_details, "\"name\" field is not present.");
         on_reload_done.Notify();
       };
-  auto provider = FileWatcherAuthorizationPolicyProvider::Create(
-      tmp_authz_policy->name(), /*refresh_interval_sec=*/1,
-      std::move(callback));
-  ASSERT_TRUE(provider.ok());
+  dynamic_cast<FileWatcherAuthorizationPolicyProvider*>(provider->get())
+      ->SetCallbackForTesting(std::move(callback));
   auto engines = (*provider)->engines();
   auto* allow_engine =
       dynamic_cast<GrpcAuthorizationEngine*>(engines.allow_engine.get());
@@ -181,6 +183,9 @@ TEST(AuthorizationPolicyProviderTest,
 TEST(AuthorizationPolicyProviderTest, FileWatcherRecoversFromFailure) {
   auto tmp_authz_policy = absl::make_unique<testing::TmpFile>(
       testing::GetFileContents(VALID_POLICY_PATH_1));
+  auto provider = FileWatcherAuthorizationPolicyProvider::Create(
+      tmp_authz_policy->name(), /*refresh_interval_sec=*/1);
+  ASSERT_TRUE(provider.ok());
   absl::Notification on_first_reload_done;
   absl::Notification on_second_reload_done;
   bool first_reload = true;
@@ -197,10 +202,8 @@ TEST(AuthorizationPolicyProviderTest, FileWatcherRecoversFromFailure) {
           on_second_reload_done.Notify();
         }
       };
-  auto provider = FileWatcherAuthorizationPolicyProvider::Create(
-      tmp_authz_policy->name(), /*refresh_interval_sec=*/1,
-      std::move(callback));
-  ASSERT_TRUE(provider.ok());
+  dynamic_cast<FileWatcherAuthorizationPolicyProvider*>(provider->get())
+      ->SetCallbackForTesting(std::move(callback));
   auto engines = (*provider)->engines();
   auto* allow_engine =
       dynamic_cast<GrpcAuthorizationEngine*>(engines.allow_engine.get());
