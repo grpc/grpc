@@ -14,8 +14,6 @@
 
 #include <grpc/support/port_platform.h>
 
-#include "src/core/lib/event_engine/iomgr_engine/wakeup_fd_posix.h"
-
 #include <stddef.h>
 
 #include "src/core/lib/event_engine/iomgr_engine/wakeup_fd_eventfd.h"
@@ -28,7 +26,7 @@ namespace iomgr_engine {
 #ifdef GRPC_POSIX_WAKEUP_FD
 
 namespace {
-std::function<absl::StatusOr<std::shared_ptr<WakeupFd>>()>* g_wakeup_fd_fn =
+std::function<absl::StatusOr<std::unique_ptr<WakeupFd>>()> g_wakeup_fd_fn =
     nullptr;
 
 bool GlobalInit(void) {
@@ -53,7 +51,7 @@ bool SupportsWakeupFd() {
   return kSupportsWakeupFd;
 }
 
-absl::StatusOr<std::shared_ptr<WakeupFd>> CreateWakeupFd() {
+absl::StatusOr<std::unique_ptr<WakeupFd>> CreateWakeupFd() {
   if (SupportsWakeupFd()) {
     return g_wakeup_fd_fn();
   }
@@ -64,7 +62,7 @@ absl::StatusOr<std::shared_ptr<WakeupFd>> CreateWakeupFd() {
 
 bool SupportsWakeupFd() { return false; }
 
-absl::StatusOr<std::shared_ptr<WakeupFd>> CreateWakeupFd() {
+absl::StatusOr<std::unique_ptr<WakeupFd>> CreateWakeupFd() {
   return absl::NotFoundError("Wakeup-fd is not supported on this system");
 }
 
@@ -72,5 +70,3 @@ absl::StatusOr<std::shared_ptr<WakeupFd>> CreateWakeupFd() {
 
 }  // namespace iomgr_engine
 }  // namespace grpc_event_engine
-
-#endif  // GRPC_POSIX_WAKEUP_FD

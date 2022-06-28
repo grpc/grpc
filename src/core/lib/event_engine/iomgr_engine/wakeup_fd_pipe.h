@@ -23,17 +23,19 @@ namespace iomgr_engine {
 
 class PipeWakeupFd : public WakeupFd {
  public:
-  PipeWakeupFd() : read_fd_(0), write_fd_(0){};
+  PipeWakeupFd() {
+    read_fd_ = 0;
+    write_fd_ = 0;
+  }
   absl::Status Init();
   absl::Status ConsumeWakeup() override;
   absl::Status Wakeup() override;
   void Destroy() override;
-  static absl::StatusOr<std::shared_ptr<PipeWakeupFd>> CreatePipeWakeupFd();
+  static absl::StatusOr<std::unique_ptr<WakeupFd>> CreatePipeWakeupFd();
   static bool IsSupported();
 };
 
 }  // namespace iomgr_engine
 }  // namespace grpc_event_engine
 
-#endif  // GRPC_LINUX_EVENTFD
 #endif  // GRPC_CORE_LIB_IOMGR_EVENT_ENGINE_IOMGR_ENGINE_WAKEUP_FD_PIPE_H

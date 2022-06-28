@@ -1,3 +1,17 @@
+// Copyright 2022 The gRPC Authors
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 #include <grpc/support/port_platform.h>
 
 #include "src/core/lib/iomgr/port.h"
@@ -7,13 +21,12 @@
 #include <errno.h>
 #include <fcntl.h>
 #include <string.h>
+#include <sys/eventfd.h>
 #include <unistd.h>
 
 #include <grpc/support/log.h>
 
 #include "src/core/lib/event_engine/iomgr_engine/wakeup_fd_posix.h"
-#include "src/core/lib/iomgr/socket_utils_posix.h"
-#include "src/core/lib/profiling/timers.h"
 #endif
 
 #include "src/core/lib/event_engine/iomgr_engine/wakeup_fd_eventfd.h"
@@ -27,19 +40,21 @@ absl::Status EventFdWakeupFd::Init() {
   this->read_fd_ = eventfd(0, EFD_NONBLOCK | EFD_CLOEXEC);
   this->write_fd_ = -1;
   if (this->read_fd_ < 0) {
-    return GRPC_OS_ERROR(errno, "eventfd");
+    return absl::Status(absl::StatusCode::kInternal,
+                        absl::StrCat("eventfd: ", strerror(errno)));
   }
   return absl::OkStatus();
 }
 
-absl::Status EventFdWakeupFd::Consume() {
+absl::Status EventFdWakeupFd::ConsumeWakeup() {
   eventfd_t value;
   int err;
   do {
     err = eventfd_read(this->read_fd_, &value);
   } while (err < 0 && errno == EINTR);
   if (err < 0 && errno != EAGAIN) {
-    return GRPC_OS_ERROR(errno, "eventfd_read");
+    return absl::Status(absl::StatusCode::kInternal,
+                        absl::StrCat("eventfd_read: ", strerror(errno)));
   }
   return absl::OkStatus();
 }
@@ -50,7 +65,8 @@ absl::Status EventFdWakeupFd::Wakeup() {
     err = eventfd_write(this->read_fd_, 1);
   } while (err < 0 && errno == EINTR);
   if (err < 0) {
-    return GRPC_OS_ERROR(errno, "eventfd_write");
+    return absl::Status(absl::StatusCode::kInternal,
+                        absl::StrCat("eventfd_write: ", strerror(errno)));
   }
   return absl::OkStatus();
 }
@@ -72,18 +88,18 @@ bool EventFdWakeupFd::IsSupported() {
   }
 }
 
-absl::StatusOr<std::shared_ptr<EventFdWakeupFd>>
+absl::StatusOr<std::unique_ptr<WakeupFd>>
 EventFdWakeupFd::CreateEventFdWakeupFd() {
-  static kIsEventFdWakeupFdSupported = EventFdWakeupFd::IsSupported();
+  static bool kIsEventFdWakeupFdSupported = EventFdWakeupFd::IsSupported();
   if (kIsEventFdWakeupFdSupported) {
-    auto event_fd_wakeup_fd = std::make_shared<EventFdWakeupFd>();
-    auto status = pipe_wakeup_fd.Init();
+    auto event_fd_wakeup_fd = std::make_unique<EventFdWakeupFd>();
+    auto status = event_fd_wakeup_fd->Init();
     if (status.ok()) {
-      return pipe_wakeup_fd;
+      return event_fd_wakeup_fd;
     }
     return status;
   }
-  return nullptr;
+  return absl::NotFoundError("Eventfd wakeup fd is not supported");
 }
 
 #else  //  GRPC_LINUX_EVENTFD
@@ -100,7 +116,7 @@ void EventFdWakeupFd::Destroy() { GPR_ASSERT(false && "unimplemented"); }
 
 bool EventFdWakeupFd::Supported() { return false; }
 
-absl::StatusOr<std::shared_ptr<EventFdWakeupFd>>
+absl::StatusOr<std::unique_ptr<EventFdWakeupFd>>
 EventFdWakeupFd::CreatePipeWakeupFd() {
   return absl::NotFoundError("Eventfd wakeup fd is not supported");
 }

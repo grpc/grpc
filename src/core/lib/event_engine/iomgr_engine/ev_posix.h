@@ -21,16 +21,12 @@
 #include <atomic>
 #include <functional>
 #include <memory>
+#include <vector>
 
-#include "absl/base/thread_annotations.h"
 #include "absl/status/status.h"
-#include "absl/status/statusor.h"
 #include "absl/strings/string_view.h"
 
-#include <grpc/event_engine/endpoint_config.h>
 #include <grpc/event_engine/event_engine.h>
-#include <grpc/event_engine/memory_allocator.h>
-#include <grpc/event_engine/slice_buffer.h>
 
 #include "src/core/lib/event_engine/handle_containers.h"
 #include "src/core/lib/event_engine/iomgr_engine/closure.h"
@@ -44,29 +40,75 @@ namespace iomgr_engine {
 
 class EventHandle {
  public:
-  virtual ~EventHandle() = 0;
+  virtual ~EventHandle() = default;
 };
 
 class EventPoller {
  public:
-  virtual EventHandle* FdCreate(int fd, absl::string_view name,
-                                bool track_err) = 0;
-  virtual int FdWrappedFd(EventHandle* fd) = 0;
-  virtual void FdOrphan(EventHandle* fd, IomgrEngineClosure* on_done,
-                        int* release_fd, absl::string_view reason) = 0;
-  virtual void FdShutdown(EventHandle* fd, absl::Status why);
-  virtual void FdNotifyOnRead(EventHandle* fd, IomgrEngineClosure* on_read) = 0;
-  virtual void FdNotifyOnWrite(EventHandle* fd,
-                               IomgrEngineClosure* on_write) = 0;
-  virtual void FdNotifyOnError(EventHandle* fd,
-                               IomgrEngineClosure* on_error) = 0;
-  virtual void FdSetReadable(EventHandle* fd) = 0;
-  virtual void FdSetWritable(EventHandle* fd) = 0;
-  virtual void FdSetError(EventHandle* fd) = 0;
-  virtual bool FdIsShutdown(EventHandle* fd) = 0;
-  virtual absl::StatusOr<std::vector<experimental::EventEngine::Closure*>> Work(
-      grpc_core::Timestamp deadline) = 0;
+  // Return an opaque handle to perform actions on the provided file descriptor.
+  virtual EventHandle* CreateHandle(int fd, absl::string_view name,
+                                    bool track_err) = 0;
+  // Return wrapped file descriptor corresponding to the handle.
+  virtual int WrappedFd(EventHandle* handle) = 0;
+  // Delete the handle and optionally close the underlying file descriptor if
+  // release_fd != nullptr. The on_done closure is scheduled to be invoked
+  // after the operation is complete. After this operation, NotifyXXX and SetXXX
+  // operations cannot be performed on the handle.
+  virtual void OrphanHandle(EventHandle* handle, IomgrEngineClosure* on_done,
+                            int* release_fd, absl::string_view reason) = 0;
+  // Shutdown a handle. After this operation, NotifyXXX and SetXXX operations
+  // cannot be performed.
+  virtual void ShutdownHandle(EventHandle* handle, absl::Status why) = 0;
+  // Schedule on_read to be invoked when the underlying file descriptor
+  // becomes readable.
+  virtual void NotifyOnRead(EventHandle* handle,
+                            IomgrEngineClosure* on_read) = 0;
+  // Schedule on_write to be invoked when the underlying file descriptor
+  // becomes writable.
+  virtual void NotifyOnWrite(EventHandle* handle,
+                             IomgrEngineClosure* on_write) = 0;
+  // Schedule on_error to be invoked when the underlying file descriptor
+  // encounters errors.
+  virtual void NotifyOnError(EventHandle* handle,
+                             IomgrEngineClosure* on_error) = 0;
+  // Force set a readable event on the underlying file descriptor.
+  virtual void SetReadable(EventHandle* handle) = 0;
+  // Force set a writable event on the underlying file descriptor.
+  virtual void SetWritable(EventHandle* handle) = 0;
+  // Force set a error event on the underlying file descriptor.
+  virtual void SetHasError(EventHandle* handle) = 0;
+  // Returns true if the handle has been shutdown.
+  virtual bool IsHandleShutdown(EventHandle* handle) = 0;
+  // Execute any pending actions that may have been set to a handle after the
+  // last invocation of Work(...) function.
+  virtual void ExecutePendingActions(EventHandle* handle) = 0;
+  // Shuts down and deletes the poller. It is legal to call this function
+  // only when no other poller method is in progress. For instance, it is
+  // not safe to call this method, while a thread is blocked on Work(...).
+  // A graceful way to terminate the poller could be to:
+  // 1. First orphan all created handles.
+  // 2. Send a Kick() to the thread executing Work(...) and wait for the
+  //    thread to return.
+  // 3. Call Shutdown() on the poller.
+  virtual void Shutdown() = 0;
+  // Poll all the underlying file descriptors for the specified period
+  // and return a vector containing a list of handles which have pending
+  // events. The calling thread should invoke ExecutePendingActions on each
+  // returned handle to take the necessary pending actions. Only one thread
+  // may invoke the Work function at any given point in time. The Work(...)
+  // method returns an absl Non-OK status if it was Kicked.
+  virtual absl::Status Work(grpc_core::Timestamp deadline,
+                            std::vector<EventHandle*>& pending_events) = 0;
+  // Trigger the thread executing Work(..) to break out as soon as possible.
+  // This function is useful in tests. It may also be used to break a thread
+  // out of Work(...) before calling Shutdown() on the poller.
+  virtual void Kick() = 0;
+  virtual ~EventPoller() = default;
 };
+
+// Return an instance of an event poller which is tied to the specified
+// event engine.
+EventPoller* GetDefaultPoller(experimental::EventEngine* engine);
 
 }  // namespace iomgr_engine
 }  // namespace grpc_event_engine

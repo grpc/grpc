@@ -17,28 +17,41 @@
 #include <grpc/support/port_platform.h>
 
 #include <grpc/event_engine/event_engine.h>
-#include <grpc/support/atm.h>
 
 namespace grpc_event_engine {
 namespace iomgr_engine {
 
-class IomgrEngineClosure : public experimental::EventEngine::Closure {
+class IomgrEngineClosure final
+    : public grpc_event_engine::experimental::EventEngine::Closure {
  public:
-  IomgrEngineClosure(std::function<void(absl::Status)>&& cb) cb_(std::move(cb)),
-      status_(absl::OkStatus()){};
+  IomgrEngineClosure() = default;
+  IomgrEngineClosure(std::function<void(absl::Status)>&& cb, bool is_permanent)
+      : cb_(std::move(cb)),
+        is_permanent_(is_permanent),
+        status_(absl::OkStatus()) {}
   ~IomgrEngineClosure() = default;
   void SetStatus(absl::Status status) { status_ = status; }
-  void Run() override { cb_(absl::exchange(status_, absl::OkStatus())); }
+  void Run() override {
+    cb_(absl::exchange(status_, absl::OkStatus()));
+    if (!is_permanent_) {
+      delete this;
+    }
+  }
+
+  static IomgrEngineClosure* ToPermanentClosure(
+      std::function<void(absl::Status)>&& cb) {
+    return new IomgrEngineClosure(std::move(cb), true);
+  }
+
+  static IomgrEngineClosure* ToClosure(std::function<void(absl::Status)>&& cb) {
+    return new IomgrEngineClosure(std::move(cb), false);
+  }
 
  private:
   std::function<void(absl::Status)> cb_;
+  bool is_permanent_ = false;
   absl::Status status_;
-}
-
-experimental::EventEngine::Closure*
-MakeIomgrEngineClosure(std::function<void(absl::Status)>&& cb) {
-  return new IomgrEngineClosure(std::move(cb));
-}
+};
 
 }  // namespace iomgr_engine
 }  // namespace grpc_event_engine

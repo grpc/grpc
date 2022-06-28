@@ -16,11 +16,12 @@
 
 #include "src/core/lib/event_engine/iomgr_engine/lockfree_event.h"
 
+#include "absl/status/status.h"
+
 #include <grpc/support/log.h>
 
-#include "src/core/lib/debug/trace.h"
-
-extern grpc_core::DebugOnlyTraceFlag grpc_polling_trace;
+#include "src/core/lib/event_engine/iomgr_engine/closure.h"
+#include "src/core/lib/gprpp/status_helper.h"
 
 //  'state' holds the to call when the fd is readable or writable respectively.
 //    It can contain one of the following values:
@@ -53,12 +54,8 @@ extern grpc_core::DebugOnlyTraceFlag grpc_polling_trace;
 //     For 2, 3 : See NotifyOn() function
 //     For 5,6,7: See SetShutdown() function
 
-using ::grpc_event_engine::experimental::EventEngine::Closure;
-
 namespace grpc_event_engine {
 namespace iomgr_engine {
-
-LockfreeEvent::LockfreeEvent() { InitEvent(); }
 
 void LockfreeEvent::InitEvent() {
   // Perform an atomic store to start the state machine.
@@ -75,7 +72,7 @@ void LockfreeEvent::DestroyEvent() {
   do {
     curr = gpr_atm_no_barrier_load(&state_);
     if (curr & kShutdownBit) {
-      internal::StatusFreeHeapPtr(curr & ~kShutdownBit);
+      grpc_core::internal::StatusFreeHeapPtr(curr & ~kShutdownBit);
     } else {
       GPR_ASSERT(curr == kClosureNotReady || curr == kClosureReady);
     }
@@ -93,11 +90,6 @@ void LockfreeEvent::NotifyOn(IomgrEngineClosure* closure) {
     // sure that the shutdown error has been initialized properly before us
     // referencing it.
     gpr_atm curr = gpr_atm_acq_load(&state_);
-    if (GRPC_TRACE_FLAG_ENABLED(grpc_polling_trace)) {
-      gpr_log(GPR_DEBUG,
-              "LockfreeEvent::NotifyOn: %p curr=%" PRIxPTR " closure=%p", this,
-              curr, closure);
-    }
     switch (curr) {
       case kClosureNotReady: {
         // kClosureNotReady -> <closure>.
@@ -128,7 +120,6 @@ void LockfreeEvent::NotifyOn(IomgrEngineClosure* closure) {
           engine_->Run(closure);
           return;  // Successful. Return.
         }
-
         break;  // retry
       }
 
@@ -138,7 +129,7 @@ void LockfreeEvent::NotifyOn(IomgrEngineClosure* closure) {
         // schedule the closure with the shutdown error
         if ((curr & kShutdownBit) > 0) {
           absl::Status shutdown_err =
-              internal::StatusGetFromHeapPtr(curr & ~kShutdownBit);
+              grpc_core::internal::StatusGetFromHeapPtr(curr & ~kShutdownBit);
           closure->SetStatus(shutdown_err);
           engine_->Run(closure);
           return;
@@ -157,16 +148,11 @@ void LockfreeEvent::NotifyOn(IomgrEngineClosure* closure) {
 }
 
 bool LockfreeEvent::SetShutdown(absl::Status shutdown_error) {
-  intptr_t status_ptr = internal::StatusAllocHeapPtr(shutdown_error);
+  intptr_t status_ptr = grpc_core::internal::StatusAllocHeapPtr(shutdown_error);
   gpr_atm new_state = status_ptr | kShutdownBit;
 
   while (true) {
     gpr_atm curr = gpr_atm_no_barrier_load(&state_);
-    if (GRPC_TRACE_FLAG_ENABLED(grpc_polling_trace)) {
-      gpr_log(GPR_DEBUG,
-              "LockfreeEvent::SetShutdown: %p curr=%" PRIxPTR " err=%s",
-              &state_, curr, shutdown_error.message().c_str());
-    }
     switch (curr) {
       case kClosureReady:
       case kClosureNotReady:
@@ -182,7 +168,7 @@ bool LockfreeEvent::SetShutdown(absl::Status shutdown_error) {
 
         // If fd is already shutdown, we are done.
         if ((curr & kShutdownBit) > 0) {
-          internal::StatusFreeHeapPtr(status_ptr);
+          grpc_core::internal::StatusFreeHeapPtr(status_ptr);
           return false;
         }
 
@@ -192,31 +178,23 @@ bool LockfreeEvent::SetShutdown(absl::Status shutdown_error) {
         // happens-after on that edge), and a release to pair with anything
         // loading the shutdown state.
         if (gpr_atm_full_cas(&state_, curr, new_state)) {
-          auto closure = reinterpret_cast<Closure*>(curr);
+          auto closure = reinterpret_cast<IomgrEngineClosure*>(curr);
           closure->SetStatus(shutdown_error);
           engine_->Run(closure);
           return true;
         }
-
         // 'curr' was a closure but now changed to a different state. We will
         // have to retry
         break;
       }
     }
   }
-
   GPR_UNREACHABLE_CODE(return false);
 }
 
 void LockfreeEvent::SetReady() {
   while (true) {
     gpr_atm curr = gpr_atm_no_barrier_load(&state_);
-
-    if (GRPC_TRACE_FLAG_ENABLED(grpc_polling_trace)) {
-      gpr_log(GPR_DEBUG, "LockfreeEvent::SetReady: %p curr=%" PRIxPTR, &state_,
-              curr);
-    }
-
     switch (curr) {
       case kClosureReady: {
         // Already ready. We are done here.
@@ -237,12 +215,13 @@ void LockfreeEvent::SetReady() {
         if ((curr & kShutdownBit) > 0) {
           // The fd is shutdown. Do nothing.
           return;
-        }
-        // Full cas: acquire pairs with this cas' release in the event of a
-        // spurious set_ready; release pairs with this or the acquire in
-        // notify_on (or set_shutdown)
-        else if (gpr_atm_full_cas(&state_, curr, kClosureNotReady)) {
-          engine_->Run(reinterpret_cast<Closure*>(curr));
+        } else if (gpr_atm_full_cas(&state_, curr, kClosureNotReady)) {
+          // Full cas: acquire pairs with this cas' release in the event of a
+          // spurious set_ready; release pairs with this or the acquire in
+          // notify_on (or set_shutdown)
+          auto closure = reinterpret_cast<IomgrEngineClosure*>(curr);
+          closure->SetStatus(absl::OkStatus());
+          engine_->Run(closure);
           return;
         }
         // else the state changed again (only possible by either a racing

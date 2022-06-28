@@ -60,3 +60,18 @@ grpc_cc_test(
         "//test/core/util:grpc_suppressions",
     ],
 )
+
+grpc_cc_test(
+    name = "event_poller_posix_test",
+    srcs = ["event_poller_posix_test.cc"],
+    external_deps = ["gtest"],
+    language = "C++",
+    uses_event_engine = True,
+    uses_polling = True,
+    deps = [
+        "//:iomgr_ee_poller",
+        "//:iomgr_event_engine",
+        "//test/core/util:grpc_suppressions",
+        "//test/core/util:grpc_test_util",
+    ],
+)

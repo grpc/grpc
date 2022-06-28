@@ -44,7 +44,8 @@
 
 #include <grpc/support/port_platform.h>
 
-#include "src/core/lib/iomgr/error.h"
+#include "absl/status/status.h"
+#include "absl/status/statusor.h"
 
 namespace grpc_event_engine {
 namespace iomgr_engine {
@@ -54,6 +55,7 @@ class WakeupFd {
   virtual absl::Status ConsumeWakeup() = 0;
   virtual absl::Status Wakeup() = 0;
   virtual void Destroy() = 0;
+  virtual ~WakeupFd() = default;
 
   int ReadFd() { return read_fd_; }
   int WriteFd() { return write_fd_; }
@@ -67,7 +69,7 @@ class WakeupFd {
 bool SupportsWakeupFd();
 
 // Create and return an initialized WakeupFd instance if supported.
-absl::StatusOr<std::shared_ptr<WakeupFd>> CreateWakeupFd();
+absl::StatusOr<std::unique_ptr<WakeupFd>> CreateWakeupFd();
 
 }  // namespace iomgr_engine
 }  // namespace grpc_event_engine

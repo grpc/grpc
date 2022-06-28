@@ -14,6 +14,8 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <memory>
+
 #include "src/core/lib/iomgr/port.h"
 
 #ifdef GRPC_POSIX_WAKEUP_FD
@@ -25,7 +27,6 @@
 #include <grpc/support/log.h>
 
 #include "src/core/lib/event_engine/iomgr_engine/wakeup_fd_posix.h"
-#include "src/core/lib/iomgr/socket_utils_posix.h"
 #endif
 
 #include "src/core/lib/event_engine/iomgr_engine/wakeup_fd_pipe.h"
@@ -40,17 +41,15 @@ namespace {
 absl::Status SetSocketNonBlocking(int fd) {
   int oldflags = fcntl(fd, F_GETFL, 0);
   if (oldflags < 0) {
-    return GRPC_OS_ERROR(errno, "fcntl");
+    return absl::Status(absl::StatusCode::kInternal,
+                        absl::StrCat("fcntl: ", strerror(errno)));
   }
 
-  if (non_blocking) {
-    oldflags |= O_NONBLOCK;
-  } else {
-    oldflags &= ~O_NONBLOCK;
-  }
+  oldflags |= O_NONBLOCK;
 
   if (fcntl(fd, F_SETFL, oldflags) != 0) {
-    return GRPC_OS_ERROR(errno, "fcntl");
+    return absl::Status(absl::StatusCode::kInternal,
+                        absl::StrCat("fcntl: ", strerror(errno)));
   }
 
   return absl::OkStatus();
@@ -61,8 +60,8 @@ absl::Status PipeWakeupFd::Init() {
   int pipefd[2];
   int r = pipe(pipefd);
   if (0 != r) {
-    gpr_log(GPR_ERROR, "pipe creation failed (%d): %s", errno, strerror(errno));
-    return GRPC_OS_ERROR(errno, "pipe");
+    return absl::Status(absl::StatusCode::kInternal,
+                        absl::StrCat("pipe: ", strerror(errno)));
   }
   auto status = SetSocketNonBlocking(pipefd[0]);
   if (!status.ok()) return status;
@@ -87,7 +86,8 @@ absl::Status PipeWakeupFd::ConsumeWakeup() {
       case EINTR:
         continue;
       default:
-        return GRPC_OS_ERROR(errno, "read");
+        return absl::Status(absl::StatusCode::kInternal,
+                            absl::StrCat("read: ", strerror(errno)));
     }
   }
 }
@@ -120,20 +120,20 @@ bool PipeWakeupFd::IsSupported() {
   }
 }
 
-std::shared_ptr<PipeWakeupFd> PipeWakeupFd::CreatePipeWakeupFd() {
-  static kIsPipeWakeupFdSupported = PipeWakeupFd::IsSupported();
+absl::StatusOr<std::unique_ptr<WakeupFd>> PipeWakeupFd::CreatePipeWakeupFd() {
+  static bool kIsPipeWakeupFdSupported = PipeWakeupFd::IsSupported();
   if (kIsPipeWakeupFdSupported) {
-    auto pipe_wakeup_fd = std::make_shared<PipeWakeupFd>();
-    auto status = pipe_wakeup_fd.Init();
+    auto pipe_wakeup_fd = std::make_unique<PipeWakeupFd>();
+    auto status = pipe_wakeup_fd->Init();
     if (status.ok()) {
       return pipe_wakeup_fd;
     }
     return status;
   }
-  return nullptr;
+  return absl::NotFoundError("Pipe wakeup fd is not supported");
 }
 
-#else  //  GPR_POSIX_WAKUP_FD
+#else  //  GRPC_POSIX_WAKEUP_FD
 
 absl::Status PipeWakeupFd::Init() { GPR_ASSERT(false && "unimplemented"); }
 
@@ -145,14 +145,14 @@ absl::Status PipeWakeupFd::Wakeup() { GPR_ASSERT(false && "unimplemented"); }
 
 void PipeWakeupFd::Destroy() { GPR_ASSERT(false && "unimplemented"); }
 
-bool PipeWakeupFd::Supported() { return false; }
+bool PipeWakeupFd::IsSupported() { return false; }
 
-absl::StatusOr<std::shared_ptr<PipeWakeupFd> >
+absl::StatusOr<std::unique_ptr<PipeWakeupFd>>
 PipeWakeupFd::CreatePipeWakeupFd() {
   return absl::NotFoundError("Pipe wakeup fd is not supported");
 }
 
-#endif  //  GPR_POSIX_WAKUP_FD
+#endif  //  GRPC_POSIX_WAKEUP_FD
 
 }  // namespace iomgr_engine
 }  // namespace grpc_event_engine

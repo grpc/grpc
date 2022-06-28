@@ -11,8 +11,8 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-#ifndef GRPC_CORE_LIB_IOMGR_EVENT_ENGINE_IOMGR_ENGINE_WAKEUP_FD_PIPE_H
-#define GRPC_CORE_LIB_IOMGR_EVENT_ENGINE_IOMGR_ENGINE_WAKEUP_FD_PIPE_H
+#ifndef GRPC_CORE_LIB_IOMGR_EVENT_ENGINE_IOMGR_ENGINE_WAKEUP_FD_EVENTFD_H
+#define GRPC_CORE_LIB_IOMGR_EVENT_ENGINE_IOMGR_ENGINE_WAKEUP_FD_EVENTFD_H
 
 #include <grpc/support/port_platform.h>
 
@@ -24,19 +24,19 @@ namespace iomgr_engine {
 
 class EventFdWakeupFd : public WakeupFd {
  public:
-  EventFdWakeupFd() : read_fd_(0), write_fd_(0){};
+  EventFdWakeupFd() {
+    read_fd_ = 0;
+    write_fd_ = 0;
+  }
   absl::Status Init();
   absl::Status ConsumeWakeup() override;
   absl::Status Wakeup() override;
   void Destroy() override;
-  static absl::StatusOr<std::shared_ptr<EventFdWakeupFd>>
-  CreateEventFdWakeupFd();
+  static absl::StatusOr<std::unique_ptr<WakeupFd>> CreateEventFdWakeupFd();
   static bool IsSupported();
 };
-
-bool IsEventFdWakeupFdSupported();
 
 }  // namespace iomgr_engine
 }  // namespace grpc_event_engine
 
-#endif  // GRPC_CORE_LIB_IOMGR_EVENT_ENGINE_IOMGR_ENGINE_WAKEUP_FD_PIPE_H
+#endif  // GRPC_CORE_LIB_IOMGR_EVENT_ENGINE_IOMGR_ENGINE_WAKEUP_FD_EVENTFD_H

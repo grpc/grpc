@@ -29,7 +29,7 @@ namespace iomgr_engine {
 
 class LockfreeEvent {
  public:
-  LockfreeEvent(experimental::EventEngine* engine) : engine_(engine){};
+  LockfreeEvent(experimental::EventEngine* engine) : engine_(engine) {}
 
   LockfreeEvent(const LockfreeEvent&) = delete;
   LockfreeEvent& operator=(const LockfreeEvent&) = delete;
