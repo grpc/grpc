@@ -113,6 +113,26 @@ TEST(ChannelArgsTest, StoreAndRetrieveSharedPtr) {
   EXPECT_EQ(copied_obj->n, 42);
 }
 
+TEST(ChannelArgsTest, RetrieveRawPointerFromStoredSharedPtr) {
+  struct Test {
+    explicit Test(int n) : n(n) {}
+    int n;
+    static int ChannelArgsCompare(const Test* a, const Test* b) {
+      return a->n - b->n;
+    }
+    static absl::string_view ChannelArgName() { return "grpc.test"; }
+  };
+  ChannelArgs a;
+  auto p = std::make_shared<Test>(42);
+  EXPECT_TRUE(p.unique());
+  a = a.SetObject(p);
+  EXPECT_FALSE(p.unique());
+  Test* testp = a.GetObject<std::shared_ptr<Test>>();
+  EXPECT_EQ(testp->n, 42);
+  // Refs: p and ChannelArgs
+  EXPECT_EQ(2, p.use_count());
+}
+
 TEST(ChannelArgsTest, StoreSharedPtrEventEngine) {
   auto p = std::shared_ptr<grpc_event_engine::experimental::EventEngine>(
       grpc_event_engine::experimental::GetDefaultEventEngine());

@@ -142,7 +142,7 @@ struct GetObjectImpl;
 // std::shared_ptr implementation
 template <typename T>
 struct GetObjectImpl<T, absl::enable_if_t<is_shared_ptr<T>::value, void>> {
-  using Result = typename T::element_type;
+  using Result = typename T::element_type*;
   using ReffedResult = T;
   static Result Get(T* p) { return p->get(); };
   static ReffedResult GetReffed(T* p) { return ReffedResult(*p); };
