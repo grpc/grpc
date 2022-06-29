@@ -1802,23 +1802,31 @@ class PromiseBasedCall : public Call, public Activity, public Wakeable {
   // Implementation of call refcounting: move this to DualRefCounted once we
   // don't need to maintain FilterStackCall compatibility
   void ExternalRef() final {
-    refs_.fetch_add(MakeRefPair(1, 0), std::memory_order_relaxed);
+    auto last = refs_.fetch_add(MakeRefPair(1, 0), std::memory_order_relaxed);
+    gpr_log(GPR_DEBUG, "%p: ExternalRef from=%s", this,
+            RefPairString(last).c_str());
   }
   void ExternalUnref() final {
     const uint64_t prev_ref_pair =
         refs_.fetch_add(MakeRefPair(-1, 1), std::memory_order_acq_rel);
+    gpr_log(GPR_DEBUG, "%p: ExternalUnref from=%s", this,
+            RefPairString(prev_ref_pair).c_str());
     const uint32_t strong_refs = GetStrongRefs(prev_ref_pair);
     if (strong_refs == 1) {
       Orphan();
     }
-    InternalUnref("");
+    InternalUnref("external");
   }
   void InternalRef(const char* reason) final {
-    refs_.fetch_add(MakeRefPair(0, 1), std::memory_order_relaxed);
+    auto last = refs_.fetch_add(MakeRefPair(0, 1), std::memory_order_relaxed);
+    gpr_log(GPR_DEBUG, "%p: InternalRef[%s] from=%s", this, reason,
+            RefPairString(last).c_str());
   }
   void InternalUnref(const char* reason) final {
-    if (refs_.fetch_add(MakeRefPair(0, -1), std::memory_order_acq_rel) ==
-        MakeRefPair(0, 1)) {
+    auto last = refs_.fetch_sub(MakeRefPair(0, 1), std::memory_order_acq_rel);
+    gpr_log(GPR_DEBUG, "%p: InternalUnref[%s] from=%s", this, reason,
+            RefPairString(last).c_str());
+    if (last == MakeRefPair(0, 1)) {
       DeleteThis();
     }
   }
@@ -2030,15 +2038,19 @@ class PromiseBasedCall : public Call, public Activity, public Wakeable {
     PromiseBasedCall* call_ ABSL_GUARDED_BY(mu_);
   };
 
-  static constexpr uint64_t MakeRefPair(uint32_t strong, uint32_t weak) {
+  static uint64_t MakeRefPair(uint32_t strong, uint32_t weak) {
     return (static_cast<uint64_t>(strong) << 32) + static_cast<int64_t>(weak);
   }
   static uint32_t GetStrongRefs(uint64_t ref_pair) {
     return static_cast<uint32_t>(ref_pair >> 32);
   }
+  std::string RefPairString(uint64_t ref_pair) {
+    return absl::StrCat("[", GetStrongRefs(ref_pair), "/",
+                        ref_pair & 0xffffffff, "]");
+  }
 
   mutable Mutex mu_;
-  std::atomic<uint64_t> refs_;
+  std::atomic<uint64_t> refs_{MakeRefPair(1, 0)};
   bool keep_polling_ ABSL_GUARDED_BY(mu()) = false;
 
   /* Contexts for various subsystems (security, tracing, ...). */

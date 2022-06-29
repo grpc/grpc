@@ -232,248 +232,274 @@ namespace grpc_core {
 class ClientConnectedCallPromise {
  public:
   ClientConnectedCallPromise(grpc_transport* transport, CallArgs call_args)
-      : stream_owning_waker_(Activity::current()->MakeOwningWaker()),
-        stream_refcount_(GetContext<Arena>()->New<grpc_stream_refcount>()),
-        transport_(transport),
-        stream_(static_cast<grpc_stream*>(
-            GetContext<Arena>()->Alloc(transport->vtable->sizeof_stream))),
-        server_initial_metadata_latch_(call_args.server_initial_metadata),
-        client_to_server_messages_(call_args.client_to_server_messages),
-        server_to_client_messages_(call_args.server_to_client_messages),
-        client_initial_metadata_(std::move(call_args.client_initial_metadata)) {
-    gpr_log(GPR_INFO,
-            "ClientConnectedCallPromise::ClientConnectedCallPromise: "
-            "intitial_metadata=%s",
-            client_initial_metadata_->DebugString().c_str());
+      : impl_(GetContext<Arena>()->New<Impl>(transport, std::move(call_args))) {
   }
+
+  ClientConnectedCallPromise(const ClientConnectedCallPromise&) = delete;
+  ClientConnectedCallPromise& operator=(const ClientConnectedCallPromise&) =
+      delete;
+  ClientConnectedCallPromise(ClientConnectedCallPromise&&) = default;
+  ClientConnectedCallPromise& operator=(ClientConnectedCallPromise&&) = default;
 
   static ArenaPromise<ServerMetadataHandle> Make(grpc_transport* transport,
                                                  CallArgs call_args) {
     return ClientConnectedCallPromise(transport, std::move(call_args));
   }
 
-  Poll<ServerMetadataHandle> operator()() {
-    GPR_ASSERT(!finished_);
-    if (!absl::exchange(requested_metadata_, true)) {
-      GRPC_STREAM_REF_INIT(stream_refcount_, 1, StreamRefCountDestroyed, this,
-                           "connected_channel");
-      grpc_transport_init_stream(transport_, stream_, stream_refcount_, nullptr,
-                                 GetContext<Arena>());
-      memset(&metadata_, 0, sizeof(metadata_));
-      metadata_.send_initial_metadata = true;
-      metadata_.recv_initial_metadata = true;
-      metadata_.recv_trailing_metadata = true;
-      metadata_.payload = &batch_payload_;
-      metadata_batch_done_ =
-          MakeMemberClosure<ClientConnectedCallPromise,
-                            &ClientConnectedCallPromise::MetadataBatchDone>(
-              this);
-      metadata_.on_complete = &metadata_batch_done_;
-      batch_payload_.send_initial_metadata.send_initial_metadata =
-          client_initial_metadata_.get();
-      // DO NOT SUBMIT: figure this field out
-      batch_payload_.send_initial_metadata.send_initial_metadata_flags = 0;
-      // DO NOT SUBMIT: figure this field out
-      batch_payload_.send_initial_metadata.peer_string = nullptr;
-      server_initial_metadata_ =
-          GetContext<MetadataAllocator>()->MakeMetadata<ServerMetadata>();
-      batch_payload_.recv_initial_metadata.recv_initial_metadata =
-          server_initial_metadata_.get();
-      recv_initial_metadata_ready_ = MakeMemberClosure<
-          ClientConnectedCallPromise,
-          &ClientConnectedCallPromise::RecvInitialMetadataReady>(this);
-      batch_payload_.recv_initial_metadata.recv_initial_metadata_ready =
-          &recv_initial_metadata_ready_;
-      // DO NOT SUBMIT: figure this field out
-      batch_payload_.recv_initial_metadata.recv_flags = nullptr;
-      // DO NOT SUBMIT: figure this field out
-      batch_payload_.recv_initial_metadata.trailing_metadata_available =
-          nullptr;
-      // DO NOT SUBMIT: figure this field out
-      batch_payload_.recv_initial_metadata.peer_string = nullptr;
-      server_trailing_metadata_ =
-          GetContext<MetadataAllocator>()->MakeMetadata<ServerMetadata>();
-      batch_payload_.recv_trailing_metadata.recv_trailing_metadata =
-          server_trailing_metadata_.get();
-      batch_payload_.recv_trailing_metadata.collect_stats =
-          &GetContext<grpc_call_stats>()->transport_stream_stats;
-      recv_trailing_metadata_ready_ = MakeMemberClosure<
-          ClientConnectedCallPromise,
-          &ClientConnectedCallPromise::RecvTrailingMetadataReady>(this);
-      batch_payload_.recv_trailing_metadata.recv_trailing_metadata_ready =
-          &recv_trailing_metadata_ready_;
-      push_metadata_ = true;
-      initial_metadata_waker_ = Activity::current()->MakeOwningWaker();
-      trailing_metadata_waker_ = Activity::current()->MakeOwningWaker();
-      SchedulePush();
-    }
-    if (absl::holds_alternative<Idle>(send_message_state_)) {
-      send_message_state_ = client_to_server_messages_->Next();
-    }
-    if (auto* next = absl::get_if<PipeReceiver<Message>::NextType>(
-            &send_message_state_)) {
-      auto r = (*next)();
-      if (auto* p = absl::get_if<absl::optional<Message>>(&r)) {
-        memset(&send_message_, 0, sizeof(send_message_));
-        send_message_.payload = &batch_payload_;
-        send_message_batch_done_ = MakeMemberClosure<
-            ClientConnectedCallPromise,
-            &ClientConnectedCallPromise::SendMessageBatchDone>(this);
-        send_message_.on_complete = &send_message_batch_done_;
-        if (p->has_value()) {
-          send_message_state_ = std::move(**p);
-          auto& msg = absl::get<Message>(send_message_state_);
-          send_message_.send_message = true;
-          batch_payload_.send_message.send_message = msg.payload();
-          batch_payload_.send_message.flags = msg.flags();
-          send_message_waker_ = Activity::current()->MakeOwningWaker();
-        } else {
-          GPR_ASSERT(!absl::holds_alternative<Closed>(send_message_state_));
-          client_trailing_metadata_ =
-              GetContext<MetadataAllocator>()->MakeMetadata<ClientMetadata>();
-          send_message_state_ = Closed{};
-          send_message_.send_trailing_metadata = true;
-          batch_payload_.send_trailing_metadata.send_trailing_metadata =
-              client_trailing_metadata_.get();
-          // DO NOT SUBMIT: figure this field out
-          batch_payload_.send_trailing_metadata.sent = nullptr;
-        }
-        push_send_message_ = true;
-        SchedulePush();
-      }
-    }
-    if (absl::holds_alternative<Idle>(recv_message_state_)) {
-      recv_message_state_ = absl::optional<Message>();
-      push_recv_message_ = true;
-      SchedulePush();
-    }
-    if (auto* message = absl::get_if<Message>(&recv_message_state_)) {
-      recv_message_state_ =
-          server_to_client_messages_->Push(std::move(*message));
-    }
-    if (auto* push =
-            absl::get_if<PipeSender<Message>::PushType>(&recv_message_state_)) {
-      auto r = (*push)();
-      if (bool* result = absl::get_if<bool>(&r)) {
-        if (*result) {
-          recv_message_state_ = absl::optional<Message>();
-          push_recv_message_ = true;
-          SchedulePush();
-        } else {
-          recv_message_state_ = Closed{};
-        }
-      }
-    }
-    if (absl::exchange(queued_initial_metadata_, false)) {
-      server_initial_metadata_latch_->Set(server_initial_metadata_.get());
-    }
-    if (absl::exchange(queued_trailing_metadata_, false)) {
-      finished_ = true;
-      UnrefStream();
-      stream_ = nullptr;
-      return ServerMetadataHandle(std::move(server_trailing_metadata_));
-    }
-    return Pending{};
-  }
-
-  void RecvInitialMetadataReady(grpc_error_handle) {
-    queued_initial_metadata_ = true;
-    initial_metadata_waker_.Wakeup();
-  }
-
-  void RecvTrailingMetadataReady(grpc_error_handle) {
-    queued_trailing_metadata_ = true;
-    trailing_metadata_waker_.Wakeup();
-  }
-
-  void MetadataBatchDone(grpc_error_handle) {}
-
-  void SendMessageBatchDone(grpc_error_handle) {
-    if (absl::holds_alternative<Closed>(send_message_state_)) return;
-    send_message_state_ = Idle{};
-    send_message_waker_.Wakeup();
-  }
-
-  void Push() {
-    if (absl::exchange(push_metadata_, false)) {
-      grpc_transport_perform_stream_op(transport_, stream_, &metadata_);
-    }
-    if (absl::exchange(push_send_message_, false)) {
-      grpc_transport_perform_stream_op(transport_, stream_, &send_message_);
-    }
-    scheduled_push_ = false;
-    UnrefStream();
-  }
+  Poll<ServerMetadataHandle> operator()() { return impl_->PollOnce(); }
 
  private:
-  struct Idle {};
-  struct Closed {};
+  class Impl : public Orphanable {
+   public:
+    Impl(grpc_transport* transport, CallArgs call_args)
+        : stream_owning_waker_(Activity::current()->MakeOwningWaker()),
+          transport_(transport),
+          stream_(static_cast<grpc_stream*>(GetContext<Arena>()->Alloc(
+                      transport->vtable->sizeof_stream)),
+                  StreamDeleter(transport)),
+          server_initial_metadata_latch_(call_args.server_initial_metadata),
+          client_to_server_messages_(call_args.client_to_server_messages),
+          server_to_client_messages_(call_args.server_to_client_messages),
+          client_initial_metadata_(
+              std::move(call_args.client_initial_metadata)) {
+      GRPC_STREAM_REF_INIT(&stream_refcount_, 1, StreamRefCountDestroyed, this,
+                           "connected_channel");
+      gpr_log(GPR_INFO,
+              "ClientConnectedCallPromise::ClientConnectedCallPromise: "
+              "intitial_metadata=%s",
+              client_initial_metadata_->DebugString().c_str());
+    }
 
-  void SchedulePush() {
-    if (absl::exchange(scheduled_push_, true)) return;
-    RefStream();
-    push_ = MakeMemberClosure<ClientConnectedCallPromise,
-                              &ClientConnectedCallPromise::Push>(this);
-    ExecCtx::Run(DEBUG_LOCATION, &push_, GRPC_ERROR_NONE);
-  }
+    void Orphan() override {
+      stream_.reset();
+      Unref();
+    }
 
-  static void StreamRefCountDestroyed(void* p, grpc_error_handle) {
-    static_cast<ClientConnectedCallPromise*>(p)->stream_owning_waker_.Wakeup();
-  }
+    Poll<ServerMetadataHandle> PollOnce() {
+      GPR_ASSERT(!finished_);
+      if (!absl::exchange(requested_metadata_, true)) {
+        grpc_transport_init_stream(transport_, stream_.get(), &stream_refcount_,
+                                   nullptr, GetContext<Arena>());
+        memset(&metadata_, 0, sizeof(metadata_));
+        metadata_.send_initial_metadata = true;
+        metadata_.recv_initial_metadata = true;
+        metadata_.recv_trailing_metadata = true;
+        metadata_.payload = &batch_payload_;
+        metadata_.on_complete = &metadata_batch_done_;
+        batch_payload_.send_initial_metadata.send_initial_metadata =
+            client_initial_metadata_.get();
+        // DO NOT SUBMIT: figure this field out
+        batch_payload_.send_initial_metadata.send_initial_metadata_flags = 0;
+        // DO NOT SUBMIT: figure this field out
+        batch_payload_.send_initial_metadata.peer_string = nullptr;
+        server_initial_metadata_ =
+            GetContext<MetadataAllocator>()->MakeMetadata<ServerMetadata>();
+        batch_payload_.recv_initial_metadata.recv_initial_metadata =
+            server_initial_metadata_.get();
+        batch_payload_.recv_initial_metadata.recv_initial_metadata_ready =
+            &recv_initial_metadata_ready_;
+        // DO NOT SUBMIT: figure this field out
+        batch_payload_.recv_initial_metadata.recv_flags = nullptr;
+        // DO NOT SUBMIT: figure this field out
+        batch_payload_.recv_initial_metadata.trailing_metadata_available =
+            nullptr;
+        // DO NOT SUBMIT: figure this field out
+        batch_payload_.recv_initial_metadata.peer_string = nullptr;
+        server_trailing_metadata_ =
+            GetContext<MetadataAllocator>()->MakeMetadata<ServerMetadata>();
+        batch_payload_.recv_trailing_metadata.recv_trailing_metadata =
+            server_trailing_metadata_.get();
+        batch_payload_.recv_trailing_metadata.collect_stats =
+            &GetContext<grpc_call_stats>()->transport_stream_stats;
+        batch_payload_.recv_trailing_metadata.recv_trailing_metadata_ready =
+            &recv_trailing_metadata_ready_;
+        push_metadata_ = true;
+        initial_metadata_waker_ = Activity::current()->MakeOwningWaker();
+        trailing_metadata_waker_ = Activity::current()->MakeOwningWaker();
+        SchedulePush();
+      }
+      if (absl::holds_alternative<Idle>(send_message_state_)) {
+        send_message_state_ = client_to_server_messages_->Next();
+      }
+      if (auto* next = absl::get_if<PipeReceiver<Message>::NextType>(
+              &send_message_state_)) {
+        auto r = (*next)();
+        if (auto* p = absl::get_if<absl::optional<Message>>(&r)) {
+          memset(&send_message_, 0, sizeof(send_message_));
+          send_message_.payload = &batch_payload_;
+          send_message_.on_complete = &send_message_batch_done_;
+          if (p->has_value()) {
+            send_message_state_ = std::move(**p);
+            auto& msg = absl::get<Message>(send_message_state_);
+            send_message_.send_message = true;
+            batch_payload_.send_message.send_message = msg.payload();
+            batch_payload_.send_message.flags = msg.flags();
+            send_message_waker_ = Activity::current()->MakeOwningWaker();
+          } else {
+            GPR_ASSERT(!absl::holds_alternative<Closed>(send_message_state_));
+            client_trailing_metadata_ =
+                GetContext<MetadataAllocator>()->MakeMetadata<ClientMetadata>();
+            send_message_state_ = Closed{};
+            send_message_.send_trailing_metadata = true;
+            batch_payload_.send_trailing_metadata.send_trailing_metadata =
+                client_trailing_metadata_.get();
+            // DO NOT SUBMIT: figure this field out
+            batch_payload_.send_trailing_metadata.sent = nullptr;
+          }
+          push_send_message_ = true;
+          SchedulePush();
+        }
+      }
+      if (absl::holds_alternative<Idle>(recv_message_state_)) {
+        recv_message_state_ = absl::optional<Message>();
+        push_recv_message_ = true;
+        SchedulePush();
+      }
+      if (auto* message = absl::get_if<Message>(&recv_message_state_)) {
+        recv_message_state_ =
+            server_to_client_messages_->Push(std::move(*message));
+      }
+      if (auto* push = absl::get_if<PipeSender<Message>::PushType>(
+              &recv_message_state_)) {
+        auto r = (*push)();
+        if (bool* result = absl::get_if<bool>(&r)) {
+          if (*result) {
+            recv_message_state_ = absl::optional<Message>();
+            push_recv_message_ = true;
+            SchedulePush();
+          } else {
+            recv_message_state_ = Closed{};
+          }
+        }
+      }
+      if (absl::exchange(queued_initial_metadata_, false)) {
+        server_initial_metadata_latch_->Set(server_initial_metadata_.get());
+      }
+      if (absl::exchange(queued_trailing_metadata_, false)) {
+        finished_ = true;
+        stream_.reset();
+        return ServerMetadataHandle(std::move(server_trailing_metadata_));
+      }
+      return Pending{};
+    }
 
-  void RefStream() {
+    void RecvInitialMetadataReady(grpc_error_handle) {
+      queued_initial_metadata_ = true;
+      initial_metadata_waker_.Wakeup();
+    }
+
+    void RecvTrailingMetadataReady(grpc_error_handle) {
+      queued_trailing_metadata_ = true;
+      trailing_metadata_waker_.Wakeup();
+    }
+
+    void MetadataBatchDone(grpc_error_handle) {}
+
+    void SendMessageBatchDone(grpc_error_handle) {
+      if (absl::holds_alternative<Closed>(send_message_state_)) return;
+      send_message_state_ = Idle{};
+      send_message_waker_.Wakeup();
+    }
+
+    void Push() {
+      RefCountedPtr<Impl> self(this);  // decrement inc in SchedulePush
+      if (absl::exchange(push_metadata_, false)) {
+        grpc_transport_perform_stream_op(transport_, stream_.get(), &metadata_);
+      }
+      if (absl::exchange(push_send_message_, false)) {
+        grpc_transport_perform_stream_op(transport_, stream_.get(),
+                                         &send_message_);
+      }
+      scheduled_push_ = false;
+    }
+
+    void IncrementRefCount() {
 #ifndef NDEBUG
-    grpc_stream_ref(stream_refcount_, "connected_channel");
+      grpc_stream_ref(&stream_refcount_, "connected_channel");
 #else
-    grpc_stream_ref(stream_refcount_);
+      grpc_stream_ref(&stream_refcount_);
 #endif
-  }
+    }
 
-  void UnrefStream() {
+    void Unref() {
 #ifndef NDEBUG
-    grpc_stream_unref(stream_refcount_, "connected_channel");
+      grpc_stream_unref(&stream_refcount_, "connected_channel");
 #else
-    grpc_stream_unref(stream_refcount_);
+      grpc_stream_unref(&stream_refcount_);
 #endif
-  }
+    }
 
-  bool requested_metadata_ = false;
-  bool push_metadata_ = false;
-  bool push_send_message_ = false;
-  bool push_recv_message_ = false;
-  bool scheduled_push_ = false;
-  bool queued_initial_metadata_ = false;
-  bool queued_trailing_metadata_ = false;
-  bool finished_ = false;
-  Waker initial_metadata_waker_;
-  Waker trailing_metadata_waker_;
-  Waker send_message_waker_;
-  Waker stream_owning_waker_;
-  grpc_stream_refcount* stream_refcount_;
-  grpc_transport* const transport_;
-  grpc_stream* stream_;
-  Latch<ServerMetadata*>* server_initial_metadata_latch_;
-  PipeReceiver<Message>* client_to_server_messages_;
-  PipeSender<Message>* server_to_client_messages_;
-  absl::variant<Idle, Closed, PipeReceiver<Message>::NextType, Message>
-      send_message_state_;
-  absl::variant<Idle, absl::optional<Message>, Message, Closed,
-                PipeSender<Message>::PushType>
-      recv_message_state_;
-  grpc_closure recv_initial_metadata_ready_;
-  grpc_closure recv_trailing_metadata_ready_;
-  grpc_closure push_;
-  ClientMetadataHandle client_initial_metadata_;
-  ClientMetadataHandle client_trailing_metadata_;
-  ServerMetadataHandle server_initial_metadata_;
-  ServerMetadataHandle server_trailing_metadata_;
-  grpc_transport_stream_op_batch metadata_;
-  grpc_closure metadata_batch_done_;
-  grpc_transport_stream_op_batch send_message_;
-  grpc_closure send_message_batch_done_;
-  grpc_transport_stream_op_batch recv_message_;
-  grpc_transport_stream_op_batch_payload batch_payload_{
-      GetContext<grpc_call_context_element>()};
+   private:
+    struct Idle {};
+    struct Closed {};
+
+    class StreamDeleter {
+     public:
+      explicit StreamDeleter(grpc_transport* transport)
+          : transport_(transport) {}
+      void operator()(grpc_stream* stream) const {
+        grpc_transport_destroy_stream(transport_, stream, nullptr);
+      }
+
+     private:
+      grpc_transport* transport_;
+    };
+    using StreamPtr = std::unique_ptr<grpc_stream, StreamDeleter>;
+
+    void SchedulePush() {
+      if (absl::exchange(scheduled_push_, true)) return;
+      IncrementRefCount();
+      ExecCtx::Run(DEBUG_LOCATION, &push_, GRPC_ERROR_NONE);
+    }
+
+    static void StreamRefCountDestroyed(void* p, grpc_error_handle) {
+      static_cast<Impl*>(p)->~Impl();
+    }
+
+    bool requested_metadata_ = false;
+    bool push_metadata_ = false;
+    bool push_send_message_ = false;
+    bool push_recv_message_ = false;
+    bool scheduled_push_ = false;
+    bool queued_initial_metadata_ = false;
+    bool queued_trailing_metadata_ = false;
+    bool finished_ = false;
+    Waker initial_metadata_waker_;
+    Waker trailing_metadata_waker_;
+    Waker send_message_waker_;
+    Waker stream_owning_waker_;
+    grpc_stream_refcount stream_refcount_;
+    grpc_transport* const transport_;
+    StreamPtr stream_;
+    Latch<ServerMetadata*>* server_initial_metadata_latch_;
+    PipeReceiver<Message>* client_to_server_messages_;
+    PipeSender<Message>* server_to_client_messages_;
+    absl::variant<Idle, Closed, PipeReceiver<Message>::NextType, Message>
+        send_message_state_;
+    absl::variant<Idle, absl::optional<Message>, Message, Closed,
+                  PipeSender<Message>::PushType>
+        recv_message_state_;
+    grpc_closure recv_initial_metadata_ready_ =
+        MakeMemberClosure<Impl, &Impl::RecvInitialMetadataReady>(this);
+    grpc_closure recv_trailing_metadata_ready_ =
+        MakeMemberClosure<Impl, &Impl::RecvTrailingMetadataReady>(this);
+    grpc_closure push_ = MakeMemberClosure<Impl, &Impl::Push>(this);
+    ClientMetadataHandle client_initial_metadata_;
+    ClientMetadataHandle client_trailing_metadata_;
+    ServerMetadataHandle server_initial_metadata_;
+    ServerMetadataHandle server_trailing_metadata_;
+    grpc_transport_stream_op_batch metadata_;
+    grpc_closure metadata_batch_done_ =
+        MakeMemberClosure<Impl, &Impl::MetadataBatchDone>(this);
+    grpc_transport_stream_op_batch send_message_;
+    grpc_closure send_message_batch_done_ =
+        MakeMemberClosure<Impl, &Impl::SendMessageBatchDone>(this);
+    grpc_transport_stream_op_batch recv_message_;
+    grpc_transport_stream_op_batch_payload batch_payload_{
+        GetContext<grpc_call_context_element>()};
+  };
+
+  OrphanablePtr<Impl> impl_;
 };
 
 namespace {

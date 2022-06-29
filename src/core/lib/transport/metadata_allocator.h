@@ -52,13 +52,13 @@ class MetadataHandle {
       : handle_(other.handle_),
         allocated_by_allocator_(other.allocated_by_allocator_) {
     other.handle_ = nullptr;
-    other.allocated_by_allocator_ = false;
+    other.allocated_by_allocator_ = nullptr;
   }
   MetadataHandle& operator=(MetadataHandle&& other) noexcept {
     handle_ = other.handle_;
     allocated_by_allocator_ = other.allocated_by_allocator_;
     other.handle_ = nullptr;
-    other.allocated_by_allocator_ = false;
+    other.allocated_by_allocator_ = nullptr;
     return *this;
   }
 
@@ -78,8 +78,9 @@ class MetadataHandle {
   friend class promise_filter_detail::BaseCallData;
   friend class MetadataAllocator;
 
-  explicit MetadataHandle(T* handle, bool allocated_by_allocator)
+  explicit MetadataHandle(T* handle, MetadataAllocator* allocated_by_allocator)
       : handle_(handle), allocated_by_allocator_(allocated_by_allocator) {}
+
   T* Unwrap() {
     T* result = handle_;
     handle_ = nullptr;
@@ -87,11 +88,12 @@ class MetadataHandle {
   }
 
   T* handle_ = nullptr;
-  // TODO(ctiller): remove this once promise_based_filter goes away.
+  // TODO(ctiller): remove this once promise_based_filter goes away and
+  // transports are all converted to promises.
   // This bit determines whether the pointer is allocated by a metadata
-  // allocator or some other system. If it's held by a metadata allocator,
-  // we'll release it back when we're done with it.
-  bool allocated_by_allocator_;
+  // allocator or some other system. If it's held by a metadata allocator, we'll
+  // release it back when we're done with it.
+  MetadataAllocator* allocated_by_allocator_;
 };
 
 // Within a call arena we need metadata at least four times - (client,server) x
@@ -116,7 +118,7 @@ class MetadataAllocator {
     // (we could do so before, but there's enough places where we don't have a
     // promise context up that it's too much whackamole)
     new (&node->batch) T(GetContext<Arena>());
-    return MetadataHandle<T>(&node->batch, true);
+    return MetadataHandle<T>(&node->batch, GetContext<MetadataAllocator>());
   }
 
  private:
@@ -154,11 +156,11 @@ MetadataHandle<T>::MetadataHandle(const absl::Status& status) {
   // just assume there's an allocator present and move forward.
   if (auto* allocator = GetContext<MetadataAllocator>()) {
     handle_ = nullptr;
-    allocated_by_allocator_ = false;
+    allocated_by_allocator_ = nullptr;
     *this = allocator->MakeMetadata<T>();
   } else {
     handle_ = GetContext<Arena>()->New<T>(GetContext<Arena>());
-    allocated_by_allocator_ = false;
+    allocated_by_allocator_ = nullptr;
   }
   handle_->Set(GrpcStatusMetadata(),
                static_cast<grpc_status_code>(status.code()));
@@ -169,8 +171,8 @@ MetadataHandle<T>::MetadataHandle(const absl::Status& status) {
 
 template <typename T>
 MetadataHandle<T>::~MetadataHandle() {
-  if (allocated_by_allocator_) {
-    GetContext<MetadataAllocator>()->Delete(handle_);
+  if (allocated_by_allocator_ != nullptr) {
+    allocated_by_allocator_->Delete(handle_);
   }
 }
 
