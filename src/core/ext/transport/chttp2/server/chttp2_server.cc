@@ -325,7 +325,7 @@ void Chttp2ServerListener::ConfigFetcherWatcher::UpdateConnectionManager(
   int port_temp;
   grpc_error_handle error = grpc_tcp_server_add_port(
       listener_->tcp_server_, &listener_->resolved_address_, &port_temp);
-  if (error != GRPC_ERROR_NONE) {
+  if (!GRPC_ERROR_IS_NONE(error)) {
     GRPC_ERROR_UNREF(error);
     gpr_log(GPR_ERROR, "Error adding port to server: %s",
             grpc_error_std_string(error).c_str());
@@ -446,11 +446,11 @@ void Chttp2ServerListener::ActiveConnection::HandshakingState::OnHandshakeDone(
   bool cleanup_connection = false;
   {
     MutexLock connection_lock(&self->connection_->mu_);
-    if (error != GRPC_ERROR_NONE || self->connection_->shutdown_) {
+    if (!GRPC_ERROR_IS_NONE(error) || self->connection_->shutdown_) {
       std::string error_str = grpc_error_std_string(error);
       gpr_log(GPR_DEBUG, "Handshaking failed: %s", error_str.c_str());
       cleanup_connection = true;
-      if (error == GRPC_ERROR_NONE && args->endpoint != nullptr) {
+      if (GRPC_ERROR_IS_NONE(error) && args->endpoint != nullptr) {
         // We were shut down or stopped serving after handshaking completed
         // successfully, so destroy the endpoint here.
         // TODO(ctiller): It is currently necessary to shutdown endpoints
@@ -474,7 +474,7 @@ void Chttp2ServerListener::ActiveConnection::HandshakingState::OnHandshakeDone(
             self->connection_->listener_->server_->SetupTransport(
                 transport, self->accepting_pollset_, args->args,
                 grpc_chttp2_transport_get_socket_node(transport));
-        if (channel_init_err == GRPC_ERROR_NONE) {
+        if (GRPC_ERROR_IS_NONE(channel_init_err)) {
           // Use notify_on_receive_settings callback to enforce the
           // handshake deadline.
           // Note: The reinterpret_cast<>s here are safe, because
@@ -653,7 +653,7 @@ void Chttp2ServerListener::ActiveConnection::OnDrainGraceTimeExpiry(
   ActiveConnection* self = static_cast<ActiveConnection*>(arg);
   // If the drain_grace_timer_ was not cancelled, disconnect the transport
   // immediately.
-  if (error == GRPC_ERROR_NONE) {
+  if (GRPC_ERROR_IS_NONE(error)) {
     grpc_chttp2_transport* transport = nullptr;
     {
       MutexLock lock(&self->mu_);
@@ -683,14 +683,14 @@ grpc_error_handle Chttp2ServerListener::Create(
     listener = new Chttp2ServerListener(server, args, args_modifier);
     error = grpc_tcp_server_create(&listener->tcp_server_shutdown_complete_,
                                    args, &listener->tcp_server_);
-    if (error != GRPC_ERROR_NONE) return error;
+    if (!GRPC_ERROR_IS_NONE(error)) return error;
     if (server->config_fetcher() != nullptr) {
       listener->resolved_address_ = *addr;
       // TODO(yashykt): Consider binding so as to be able to return the port
       // number.
     } else {
       error = grpc_tcp_server_add_port(listener->tcp_server_, addr, port_num);
-      if (error != GRPC_ERROR_NONE) return error;
+      if (!GRPC_ERROR_IS_NONE(error)) return error;
     }
     // Create channelz node.
     if (grpc_channel_args_find_bool(args, GRPC_ARG_ENABLE_CHANNELZ,
@@ -709,7 +709,7 @@ grpc_error_handle Chttp2ServerListener::Create(
     server->AddListener(OrphanablePtr<Server::ListenerInterface>(listener));
     return GRPC_ERROR_NONE;
   }();
-  if (error != GRPC_ERROR_NONE) {
+  if (!GRPC_ERROR_IS_NONE(error)) {
     if (listener != nullptr) {
       if (listener->tcp_server_ != nullptr) {
         // listener is deleted when tcp_server_ is shutdown.
@@ -731,7 +731,7 @@ grpc_error_handle Chttp2ServerListener::CreateWithAcceptor(
       new Chttp2ServerListener(server, args, args_modifier);
   grpc_error_handle error = grpc_tcp_server_create(
       &listener->tcp_server_shutdown_complete_, args, &listener->tcp_server_);
-  if (error != GRPC_ERROR_NONE) {
+  if (!GRPC_ERROR_IS_NONE(error)) {
     delete listener;
     return error;
   }
@@ -832,7 +832,7 @@ void Chttp2ServerListener::OnAccept(void* arg, grpc_endpoint* tcp,
     }
     grpc_error_handle error = GRPC_ERROR_NONE;
     args = self->args_modifier_(*args_result, &error);
-    if (error != GRPC_ERROR_NONE) {
+    if (!GRPC_ERROR_IS_NONE(error)) {
       gpr_log(GPR_DEBUG, "Closing connection: %s",
               grpc_error_std_string(error).c_str());
       endpoint_cleanup(error);
@@ -959,7 +959,7 @@ grpc_error_handle Chttp2ServerAddPort(Server* server, const char* addr,
       error = Chttp2ServerListener::Create(server, &addr,
                                            grpc_channel_args_copy(args),
                                            args_modifier, &port_temp);
-      if (error != GRPC_ERROR_NONE) {
+      if (!GRPC_ERROR_IS_NONE(error)) {
         error_list.push_back(error);
       } else {
         if (*port_num == -1) {
@@ -992,7 +992,7 @@ grpc_error_handle Chttp2ServerAddPort(Server* server, const char* addr,
     GRPC_ERROR_UNREF(error);
   }
   grpc_channel_args_destroy(args);
-  if (error != GRPC_ERROR_NONE) *port_num = 0;
+  if (!GRPC_ERROR_IS_NONE(error)) *port_num = 0;
   return error;
 }
 
@@ -1076,7 +1076,7 @@ int grpc_server_add_http2_port(grpc_server* server, const char* addr,
                                        ModifyArgsForConnection, &port_num);
 done:
   sc.reset(DEBUG_LOCATION, "server");
-  if (err != GRPC_ERROR_NONE) {
+  if (!GRPC_ERROR_IS_NONE(err)) {
     gpr_log(GPR_ERROR, "%s", grpc_error_std_string(err).c_str());
 
     GRPC_ERROR_UNREF(err);
@@ -1107,7 +1107,7 @@ void grpc_server_add_channel_from_fd(grpc_server* server, int fd,
   );
   grpc_error_handle error =
       core_server->SetupTransport(transport, nullptr, server_args, nullptr);
-  if (error == GRPC_ERROR_NONE) {
+  if (GRPC_ERROR_IS_NONE(error)) {
     for (grpc_pollset* pollset : core_server->pollsets()) {
       grpc_endpoint_add_to_pollset(server_endpoint, pollset);
     }

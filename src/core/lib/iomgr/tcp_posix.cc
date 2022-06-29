@@ -995,7 +995,7 @@ static void tcp_handle_read(void* arg /* grpc_tcp */, grpc_error_handle error) {
   }
   tcp->read_mu.Lock();
   grpc_error_handle tcp_read_error;
-  if (GPR_LIKELY(error == GRPC_ERROR_NONE)) {
+  if (GPR_LIKELY(GRPC_ERROR_IS_NONE(error))) {
     maybe_make_read_slices(tcp);
     if (!tcp_do_read(tcp, &tcp_read_error)) {
       /* We've consumed the edge, request a new one */
@@ -1341,7 +1341,7 @@ static void tcp_handle_error(void* arg /* grpc_tcp */,
             grpc_error_std_string(error).c_str());
   }
 
-  if (error != GRPC_ERROR_NONE ||
+  if (!GRPC_ERROR_IS_NONE(error) ||
       static_cast<bool>(gpr_atm_acq_load(&tcp->stop_error_notification))) {
     /* We aren't going to register to hear on error anymore, so it is safe to
      * unref. */
@@ -1453,12 +1453,12 @@ static bool do_tcp_flush_zerocopy(grpc_tcp* tcp, TcpZerocopySendRecord* record,
   size_t unwind_slice_idx;
   size_t unwind_byte_idx;
   bool tried_sending_message;
+  int saved_errno;
   msghdr msg;
   // iov consumes a large space. Keep it as the last item on the stack to
   // improve locality. After all, we expect only the first elements of it being
   // populated in most cases.
   iovec iov[MAX_WRITE_IOVEC];
-  int saved_errno;
   while (true) {
     sending_length = 0;
     iov_size = record->PopulateIovs(&unwind_slice_idx, &unwind_byte_idx,
@@ -1551,6 +1551,7 @@ static bool tcp_flush(grpc_tcp* tcp, grpc_error_handle* error) {
   size_t trailing;
   size_t unwind_slice_idx;
   size_t unwind_byte_idx;
+  int saved_errno;
 
   // We always start at zero, because we eagerly unref and trim the slice
   // buffer as we write
@@ -1582,7 +1583,7 @@ static bool tcp_flush(grpc_tcp* tcp, grpc_error_handle* error) {
     msg.msg_iovlen = iov_size;
     msg.msg_flags = 0;
     bool tried_sending_message = false;
-    int saved_errno = 0;
+    saved_errno = 0;
     if (tcp->outgoing_buffer_arg != nullptr) {
       if (!tcp->ts_capable ||
           !tcp_write_with_timestamps(tcp, &msg, sending_length, &sent_length,
@@ -1656,7 +1657,7 @@ static void tcp_handle_write(void* arg /* grpc_tcp */,
   grpc_tcp* tcp = static_cast<grpc_tcp*>(arg);
   grpc_closure* cb;
 
-  if (error != GRPC_ERROR_NONE) {
+  if (!GRPC_ERROR_IS_NONE(error)) {
     cb = tcp->write_cb;
     tcp->write_cb = nullptr;
     if (tcp->current_zerocopy_send != nullptr) {
@@ -1678,7 +1679,7 @@ static void tcp_handle_write(void* arg /* grpc_tcp */,
     }
     notify_on_write(tcp);
     // tcp_flush does not populate error if it has returned false.
-    GPR_DEBUG_ASSERT(error == GRPC_ERROR_NONE);
+    GPR_DEBUG_ASSERT(GRPC_ERROR_IS_NONE(error));
   } else {
     cb = tcp->write_cb;
     tcp->write_cb = nullptr;

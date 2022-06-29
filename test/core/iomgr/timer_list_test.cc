@@ -43,7 +43,7 @@ static const grpc_core::Duration k25Days =
     grpc_core::Duration::Hours(kHoursIn25Days);
 
 static void cb(void* arg, grpc_error_handle error) {
-  cb_called[reinterpret_cast<intptr_t>(arg)][error == GRPC_ERROR_NONE]++;
+  cb_called[reinterpret_cast<intptr_t>(arg)][GRPC_ERROR_IS_NONE(error)]++;
 }
 
 static void add_test(void) {

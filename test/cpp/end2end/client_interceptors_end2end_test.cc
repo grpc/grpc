@@ -984,6 +984,26 @@ TEST_F(ClientInterceptorsCallbackEnd2endTest,
 }
 
 TEST_F(ClientInterceptorsCallbackEnd2endTest,
+       ClientInterceptorHijackingTestWithCallback) {
+  ChannelArguments args;
+  PhonyInterceptor::Reset();
+  std::vector<std::unique_ptr<experimental::ClientInterceptorFactoryInterface>>
+      creators;
+  creators.push_back(absl::make_unique<LoggingInterceptorFactory>());
+  // Add 20 phony interceptors
+  for (auto i = 0; i < 20; i++) {
+    creators.push_back(absl::make_unique<PhonyInterceptorFactory>());
+  }
+  creators.push_back(absl::make_unique<HijackingInterceptorFactory>());
+  auto channel = server_->experimental().InProcessChannelWithInterceptors(
+      args, std::move(creators));
+  MakeCallbackCall(channel);
+  LoggingInterceptor::VerifyUnaryCall();
+  // Make sure all 20 phony interceptors were run
+  EXPECT_EQ(PhonyInterceptor::GetNumTimesRun(), 20);
+}
+
+TEST_F(ClientInterceptorsCallbackEnd2endTest,
        ClientInterceptorFactoryAllowsNullptrReturn) {
   ChannelArguments args;
   PhonyInterceptor::Reset();
@@ -1240,5 +1260,8 @@ TEST_F(ClientGlobalInterceptorEnd2endTest, HijackingGlobalInterceptor) {
 int main(int argc, char** argv) {
   grpc::testing::TestEnvironment env(&argc, argv);
   ::testing::InitGoogleTest(&argc, argv);
-  return RUN_ALL_TESTS();
+  int ret = RUN_ALL_TESTS();
+  // Make sure that gRPC shuts down cleanly
+  GPR_ASSERT(grpc_wait_until_shutdown(10));
+  return ret;
 }

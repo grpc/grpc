@@ -1020,7 +1020,7 @@ bool InteropClient::DoCustomMetadata() {
   return true;
 }
 
-std::tuple<bool, int32_t, std::string>
+std::tuple<bool, int32_t, std::string, std::string>
 InteropClient::PerformOneSoakTestIteration(
     const bool reset_channel,
     const int32_t max_acceptable_per_iteration_latency_ms) {
@@ -1042,14 +1042,16 @@ InteropClient::PerformOneSoakTestIteration(
   gpr_timespec now = gpr_now(GPR_CLOCK_MONOTONIC);
   int32_t elapsed_ms = gpr_time_to_millis(gpr_time_sub(now, start));
   if (!s.ok()) {
-    return std::make_tuple(false, elapsed_ms, context.debug_error_string());
+    return std::make_tuple(false, elapsed_ms, context.debug_error_string(),
+                           context.peer());
   } else if (elapsed_ms > max_acceptable_per_iteration_latency_ms) {
     std::string debug_string = absl::StrFormat(
         "%d ms exceeds max acceptable latency: %d ms, peer: %s", elapsed_ms,
         max_acceptable_per_iteration_latency_ms, context.peer());
-    return std::make_tuple(false, elapsed_ms, std::move(debug_string));
+    return std::make_tuple(false, elapsed_ms, std::move(debug_string),
+                           context.peer());
   } else {
-    return std::make_tuple(true, elapsed_ms, "");
+    return std::make_tuple(true, elapsed_ms, "", context.peer());
   }
 }
 
@@ -1059,7 +1061,7 @@ void InteropClient::PerformSoakTest(
     const int32_t max_acceptable_per_iteration_latency_ms,
     const int32_t min_time_ms_between_rpcs,
     const int32_t overall_timeout_seconds) {
-  std::vector<std::tuple<bool, int32_t, std::string>> results;
+  std::vector<std::tuple<bool, int32_t, std::string, std::string>> results;
   grpc_histogram* latencies_ms_histogram = grpc_histogram_create(
       1 /* resolution */,
       500 * 1e3 /* largest bucket; 500 seconds is unlikely */);
@@ -1080,14 +1082,16 @@ void InteropClient::PerformSoakTest(
     bool success = std::get<0>(result);
     int32_t elapsed_ms = std::get<1>(result);
     std::string debug_string = std::get<2>(result);
+    std::string peer = std::get<3>(result);
     results.push_back(result);
     if (!success) {
-      gpr_log(GPR_DEBUG, "soak iteration: %d elapsed_ms: %d failed: %s", i,
-              elapsed_ms, debug_string.c_str());
+      gpr_log(GPR_DEBUG,
+              "soak iteration: %d elapsed_ms: %d peer: %s failed: %s", i,
+              elapsed_ms, peer.c_str(), debug_string.c_str());
       total_failures++;
     } else {
-      gpr_log(GPR_DEBUG, "soak iteration: %d elapsed_ms: %d succeeded", i,
-              elapsed_ms);
+      gpr_log(GPR_DEBUG, "soak iteration: %d elapsed_ms: %d peer: %s succeeded",
+              i, elapsed_ms, peer.c_str());
     }
     grpc_histogram_add(latencies_ms_histogram, std::get<1>(result));
     iterations_ran++;

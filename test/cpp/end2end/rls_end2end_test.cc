@@ -294,9 +294,15 @@ class RlsEnd2endTest : public ::testing::Test {
   }
 
   void CheckRpcSendFailure(const grpc_core::DebugLocation& location,
+                           StatusCode expected_code,
+                           absl::string_view expected_message,
                            const RpcOptions& rpc_options = RpcOptions()) {
     Status status = SendRpc(rpc_options);
     ASSERT_FALSE(status.ok()) << location.file() << ":" << location.line();
+    EXPECT_EQ(expected_code, status.error_code())
+        << location.file() << ":" << location.line();
+    EXPECT_EQ(expected_message, status.error_message())
+        << location.file() << ":" << location.line();
   }
 
   class ServiceConfigBuilder {
@@ -837,7 +843,8 @@ TEST_F(RlsEnd2endTest, FailedRlsRequestWithoutDefaultTarget) {
   // Now start the real test.
   // Send an RPC before we give the RLS server a response.
   // The RLS request will fail, and thus so will the data plane RPC.
-  CheckRpcSendFailure(DEBUG_LOCATION,
+  CheckRpcSendFailure(DEBUG_LOCATION, StatusCode::UNAVAILABLE,
+                      "RLS request failed: INTERNAL: no response entry",
                       RpcOptions().set_metadata({{"key1", kTestValue}}));
   EXPECT_THAT(
       rls_server_->service_.GetUnmatchedRequests(),
@@ -1148,7 +1155,8 @@ TEST_F(RlsEnd2endTest, ExpiredCacheEntry) {
   gpr_sleep_until(grpc_timeout_seconds_to_deadline(2));
   // Send another RPC.  This should trigger a second RLS request, but
   // that fails, so the RPC fails.
-  CheckRpcSendFailure(DEBUG_LOCATION,
+  CheckRpcSendFailure(DEBUG_LOCATION, StatusCode::UNAVAILABLE,
+                      "RLS request failed: INTERNAL: no response entry",
                       RpcOptions().set_metadata({{"key1", kTestValue}}));
   EXPECT_EQ(rls_server_->service_.request_count(), 2);
   EXPECT_EQ(rls_server_->service_.response_count(), 1);
@@ -1248,6 +1256,37 @@ TEST_F(RlsEnd2endTest, MultipleTargets) {
   rls_server_->service_.SetResponse(
       BuildRlsRequest({{kTestKey, kTestValue}}),
       BuildRlsResponse(
+          // Second target will report TRANSIENT_FAILURE, but should
+          // never be used.
+          {TargetStringForPort(backends_[0]->port_), "invalid_target"}));
+  CheckRpcSendOk(DEBUG_LOCATION,
+                 RpcOptions().set_metadata({{"key1", kTestValue}}));
+  EXPECT_EQ(rls_server_->service_.request_count(), 1);
+  EXPECT_EQ(rls_server_->service_.response_count(), 1);
+  EXPECT_EQ(backends_[0]->service_.request_count(), 1);
+}
+
+TEST_F(RlsEnd2endTest, MultipleTargetsFirstInTransientFailure) {
+  StartBackends(1);
+  SetNextResolution(
+      MakeServiceConfigBuilder()
+          .AddKeyBuilder(absl::StrFormat("\"names\":[{"
+                                         "  \"service\":\"%s\","
+                                         "  \"method\":\"%s\""
+                                         "}],"
+                                         "\"headers\":["
+                                         "  {"
+                                         "    \"key\":\"%s\","
+                                         "    \"names\":["
+                                         "      \"key1\""
+                                         "    ]"
+                                         "  }"
+                                         "]",
+                                         kServiceValue, kMethodValue, kTestKey))
+          .Build());
+  rls_server_->service_.SetResponse(
+      BuildRlsRequest({{kTestKey, kTestValue}}),
+      BuildRlsResponse(
           // First target will report TRANSIENT_FAILURE.
           {"invalid_target", TargetStringForPort(backends_[0]->port_)}));
   CheckRpcSendOk(DEBUG_LOCATION,
@@ -1308,7 +1347,8 @@ TEST_F(RlsEnd2endTest, ConnectivityStateIdle) {
           .Build());
   EXPECT_EQ(GRPC_CHANNEL_IDLE, channel_->GetState(/*try_to_connect=*/false));
   // RLS server not given any responses, so the request will fail.
-  CheckRpcSendFailure(DEBUG_LOCATION);
+  CheckRpcSendFailure(DEBUG_LOCATION, StatusCode::UNAVAILABLE,
+                      "RLS request failed: INTERNAL: no response entry");
   // No child policies, so should be IDLE.
   EXPECT_EQ(GRPC_CHANNEL_IDLE, channel_->GetState(/*try_to_connect=*/false));
 }
@@ -1333,8 +1373,10 @@ TEST_F(RlsEnd2endTest, ConnectivityStateTransientFailure) {
   EXPECT_EQ(GRPC_CHANNEL_IDLE, channel_->GetState(/*try_to_connect=*/false));
   rls_server_->service_.SetResponse(BuildRlsRequest({{kTestKey, kTestValue}}),
                                     BuildRlsResponse({"invalid_target"}));
-  CheckRpcSendFailure(DEBUG_LOCATION,
-                      RpcOptions().set_metadata({{"key1", kTestValue}}));
+  CheckRpcSendFailure(
+      DEBUG_LOCATION, StatusCode::UNAVAILABLE,
+      "empty address list: no address in fixed_address_lb policy",
+      RpcOptions().set_metadata({{"key1", kTestValue}}));
   EXPECT_EQ(rls_server_->service_.request_count(), 1);
   EXPECT_EQ(rls_server_->service_.response_count(), 1);
   EXPECT_EQ(GRPC_CHANNEL_TRANSIENT_FAILURE,

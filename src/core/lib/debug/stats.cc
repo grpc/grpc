@@ -23,27 +23,27 @@
 #include <inttypes.h>
 #include <string.h>
 
+#include <algorithm>
 #include <vector>
 
 #include "absl/strings/str_format.h"
 #include "absl/strings/str_join.h"
 
 #include <grpc/support/alloc.h>
-#include <grpc/support/string_util.h>
-
-#include "src/core/lib/gpr/string.h"
-#include "src/core/lib/gpr/useful.h"
+#include <grpc/support/cpu.h>
+#include <grpc/support/sync.h>
 
 grpc_stats_data* grpc_stats_per_cpu_storage = nullptr;
 static size_t g_num_cores;
+static gpr_once g_once = GPR_ONCE_INIT;
 
 void grpc_stats_init(void) {
-  g_num_cores = std::max(1u, gpr_cpu_num_cores());
-  grpc_stats_per_cpu_storage = static_cast<grpc_stats_data*>(
-      gpr_zalloc(sizeof(grpc_stats_data) * g_num_cores));
+  gpr_once_init(&g_once, []() {
+    g_num_cores = gpr_cpu_num_cores();
+    grpc_stats_per_cpu_storage = static_cast<grpc_stats_data*>(
+        gpr_zalloc(sizeof(grpc_stats_data) * g_num_cores));
+  });
 }
-
-void grpc_stats_shutdown(void) { gpr_free(grpc_stats_per_cpu_storage); }
 
 void grpc_stats_collect(grpc_stats_data* output) {
   memset(output, 0, sizeof(*output));

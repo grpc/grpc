@@ -19,10 +19,10 @@
 
 #include <stdlib.h>
 
+#include <algorithm>  // IWYU pragma: keep
 #include <memory>
 #include <utility>
-
-#include "absl/container/inlined_vector.h"
+#include <vector>
 
 namespace grpc_core {
 
@@ -127,7 +127,7 @@ class AVL {
     }
 
    private:
-    absl::InlinedVector<Node*, 8> stack_;
+    std::vector<Node*> stack_;
   };
 
   explicit AVL(NodePtr root) : root_(std::move(root)) {}
