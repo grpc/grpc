@@ -2412,6 +2412,7 @@ grpc_cc_library(
     deps = [
         "channel_args",
         "channel_args_preconditioning",
+        "config",
         "default_event_engine_factory",
         "default_event_engine_factory_hdrs",
         "event_engine_base_hdrs",
