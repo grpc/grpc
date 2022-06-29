@@ -35,7 +35,6 @@ class Latch {
   class WaitPromise {
    public:
     Poll<T*> operator()() const {
-      gpr_log(GPR_DEBUG, "Latch::Poll: %p %d", latch_, latch_->has_value_);
       if (latch_->has_value_) {
         return &latch_->value_;
       } else {
@@ -77,7 +76,6 @@ class Latch {
 
   // Set the value of the latch. Can only be called once.
   void Set(T value) {
-    gpr_log(GPR_DEBUG, "Latch::Set: %p %p", this, value);
     GPR_DEBUG_ASSERT(!has_value_);
     value_ = std::move(value);
     has_value_ = true;

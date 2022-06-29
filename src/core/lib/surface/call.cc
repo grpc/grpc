@@ -2266,6 +2266,7 @@ void ClientPromiseBasedCall::StartPromise(
 
 void ClientPromiseBasedCall::CancelWithError(grpc_error_handle error) {
   MutexLock lock(mu());
+  ScopedContext context(this);
   Finish(ServerMetadataHandle(grpc_error_to_absl_status(error)));
   GRPC_ERROR_UNREF(error);
 }
