@@ -405,7 +405,7 @@ class XdsSecurityTest : public XdsEnd2endTest {
                       expected_authenticated_identity);
             return false;
           },
-          20 * 1000, RpcOptions());
+          /* timeout_ms= */ 20 * 1000, RpcOptions());
     }
   }
 
