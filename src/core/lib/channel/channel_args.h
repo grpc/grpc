@@ -88,9 +88,9 @@ struct ChannelArgTypeTraits<
 
 // Specialization for shared_ptr
 // Incurs an allocation because shared_ptr.release is not a thing.
-template <class T>
+template <typename T>
 struct is_shared_ptr : std::false_type {};
-template <class T>
+template <typename T>
 struct is_shared_ptr<std::shared_ptr<T>> : std::true_type {};
 template <typename T>
 struct ChannelArgTypeTraits<T,

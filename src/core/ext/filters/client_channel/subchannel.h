@@ -421,7 +421,7 @@ class Subchannel : public DualRefCounted<Subchannel> {
       ABSL_GUARDED_BY(mu_);
 
   // Engine used in this Subchannel
-  grpc_event_engine::experimental::EventEngine* event_engine_
+  std::shared_ptr<grpc_event_engine::experimental::EventEngine> event_engine_
       ABSL_GUARDED_BY(mu_);
 };
 
