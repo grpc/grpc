@@ -35,7 +35,7 @@ LOAD_TEST_PREFIX="${KOKORO_BUILD_INITIATOR}"
 if [[ "${KOKORO_BUILD_INITIATOR%%-*}" == kokoro ]]; then
     LOAD_TEST_PREFIX=kokoro-test
 fi
-BIGQUERY_TABLE_8CORE=e2e_benchmarks.experimental_results
+BIGQUERY_TABLE_8CORE=e2e_benchmarks.psm_experimental_results_8core
 # END differentiate experimental configuration from master configuration.
 CLOUD_LOGGING_URL="https://source.cloud.google.com/results/invocations/${KOKORO_BUILD_ID}"
 PREBUILT_IMAGE_PREFIX="gcr.io/grpc-testing/e2etest/prebuilt/${LOAD_TEST_PREFIX}"
