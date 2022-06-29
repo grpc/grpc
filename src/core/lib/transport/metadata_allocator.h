@@ -70,7 +70,9 @@ class MetadataHandle {
   bool has_value() const { return handle_ != nullptr; }
   T* get() const { return handle_; }
 
-  static MetadataHandle TestOnlyWrap(T* p) { return MetadataHandle(p, false); }
+  static MetadataHandle TestOnlyWrap(T* p) {
+    return MetadataHandle(p, nullptr);
+  }
 
  private:
   // We restrict access to construction from a pointer to limit the number of
