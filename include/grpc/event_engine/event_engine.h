@@ -421,9 +421,6 @@ class EventEngine {
   /// closure may need to be destroyed for things to progress (e.g., if a
   /// closure holds a ref to some ref-counted object).
   virtual bool Cancel(TaskHandle handle) = 0;
-
-  // Internal helpers
-  struct RawPointerChannelArgTag {};
 };
 
 /// Replace gRPC's default EventEngine factory.

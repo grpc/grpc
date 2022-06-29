@@ -52,7 +52,7 @@ namespace grpc_core {
 // ChannelArgs to automatically derive a vtable from a T*.
 // To participate as a pointer, instances should expose the function:
 //   // Gets the vtable for this type
-//   static const grpc_channel_arg_vtable* VTable();
+//   static const grpc_arg_pointer_vtable* VTable();
 //   // Performs any mutations required for channel args to own a pointer
 //   // Only needed if ChannelArgs::Set is to be called with a raw pointer.
 //   static void* TakeUnownedPointer(T* p);
@@ -86,6 +86,32 @@ struct ChannelArgTypeTraits<
   };
 };
 
+// Specialization for shared_ptr
+// Incurs an allocation because shared_ptr.release is not a thing.
+template <class T>
+struct is_shared_ptr : std::false_type {};
+template <class T>
+struct is_shared_ptr<std::shared_ptr<T>> : std::true_type {};
+template <typename T>
+struct ChannelArgTypeTraits<T,
+                            absl::enable_if_t<is_shared_ptr<T>::value, void>> {
+  static void* TakeUnownedPointer(T* p) { return p; }
+  static const grpc_arg_pointer_vtable* VTable() {
+    static const grpc_arg_pointer_vtable tbl = {
+        // copy
+        [](void* p) -> void* { return new T(*static_cast<T*>(p)); },
+        // destroy
+        [](void* p) { delete static_cast<T*>(p); },
+        // compare
+        [](void* p1, void* p2) {
+          return QsortCompare(static_cast<const T*>(p1)->get(),
+                              static_cast<const T*>(p2)->get());
+        },
+    };
+    return &tbl;
+  };
+};
+
 // If a type declares some member 'struct RawPointerChannelArgTag {}' then
 // we automatically generate a vtable for it that does not do any ownership
 // management and compares the type by pointer identity.
@@ -113,11 +139,16 @@ template <typename T>
 struct ChannelArgNameTraits {
   static absl::string_view ChannelArgName() { return T::ChannelArgName(); }
 };
+template <typename T>
+struct ChannelArgNameTraits<std::shared_ptr<T>> {
+  static absl::string_view ChannelArgName() { return T::ChannelArgName(); }
+};
 
 // Specialization for the EventEngine
-// TODO(hork): consider where this should live permanently
+// TODO(hork): should we just add ChannelArgName to the public EventEngine API?
 template <>
-struct ChannelArgNameTraits<grpc_event_engine::experimental::EventEngine> {
+struct ChannelArgNameTraits<
+    std::shared_ptr<grpc_event_engine::experimental::EventEngine>> {
   static absl::string_view ChannelArgName() { return GRPC_ARG_EVENT_ENGINE; }
 };
 
@@ -215,12 +246,31 @@ class ChannelArgs {
                     absl::remove_cvref_t<decltype(*store_value)>>::VTable()));
   }
   template <typename T>
+  GRPC_MUST_USE_RESULT absl::enable_if_t<
+      std::is_same<
+          const grpc_arg_pointer_vtable*,
+          decltype(ChannelArgTypeTraits<std::shared_ptr<T>>::VTable())>::value,
+      ChannelArgs>
+  Set(absl::string_view name, std::shared_ptr<T> value) const {
+    auto* store_value = new std::shared_ptr<T>(value);
+    return Set(
+        name,
+        Pointer(ChannelArgTypeTraits<std::shared_ptr<T>>::TakeUnownedPointer(
+                    store_value),
+                ChannelArgTypeTraits<std::shared_ptr<T>>::VTable()));
+  }
+  template <typename T>
   GRPC_MUST_USE_RESULT ChannelArgs SetIfUnset(absl::string_view name, T value) {
     if (Contains(name)) return *this;
     return Set(name, std::move(value));
   }
   GRPC_MUST_USE_RESULT ChannelArgs Remove(absl::string_view name) const;
   bool Contains(absl::string_view name) const { return Get(name) != nullptr; }
+
+  template <typename T>
+  bool ContainsObject() const {
+    return Get(ChannelArgNameTraits<T>::ChannelArgName()) != nullptr;
+  }
 
   absl::optional<int> GetInt(absl::string_view name) const;
   absl::optional<absl::string_view> GetString(absl::string_view name) const;
@@ -247,8 +297,20 @@ class ChannelArgs {
     return Set(T::ChannelArgName(), std::move(p));
   }
   template <typename T>
+  GRPC_MUST_USE_RESULT ChannelArgs SetObject(std::shared_ptr<T> p) const {
+    return Set(ChannelArgNameTraits<std::shared_ptr<T>>::ChannelArgName(),
+               std::move(p));
+  }
+  template <typename T>
   T* GetObject() {
     return GetPointer<T>(ChannelArgNameTraits<T>::ChannelArgName());
+  }
+  // Makes a copy of the shared_ptr and returns it
+  template <typename T>
+  std::shared_ptr<T> GetSharedPtr() {
+    std::shared_ptr<T>* ptr = GetPointer<std::shared_ptr<T>>(
+        ChannelArgNameTraits<std::shared_ptr<T>>::ChannelArgName());
+    return std::shared_ptr<T>(*ptr);
   }
   template <typename T>
   RefCountedPtr<T> GetObjectRef() {

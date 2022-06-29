@@ -33,6 +33,7 @@
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/surface/channel.h"
+#include "src/core/lib/event_engine/event_engine_factory.h"
 #include "test/core/util/test_config.h"
 
 namespace grpc_core {
@@ -84,6 +85,53 @@ TEST(ChannelArgsTest, StoreRefCountedPtr) {
   ChannelArgs a;
   a = a.Set("test", p);
   EXPECT_EQ(a.GetPointer<Test>("test")->n, 123);
+}
+
+TEST(ChannelArgsTest, StoreAndRetrieveSharedPtr) {
+  struct Test {
+    explicit Test(int n) : n(n) {}
+    int n;
+    static int ChannelArgsCompare(const Test* a, const Test* b) {
+      return a->n - b->n;
+    }
+    static absl::string_view ChannelArgName() { return "grpc.test"; }
+  };
+  std::shared_ptr<Test> copied_obj;
+  {
+    ChannelArgs a;
+    auto p = std::make_shared<Test>(42);
+    EXPECT_TRUE(p.unique());
+    a = a.SetObject(p);
+    EXPECT_FALSE(p.unique());
+    copied_obj = a.GetSharedPtr<Test>();
+    EXPECT_EQ(copied_obj->n, 42);
+    // Refs: p, copied_obj, and ChannelArgs
+    EXPECT_EQ(3, copied_obj.use_count());
+  }
+  // The p and ChannelArgs are deleted.
+  EXPECT_TRUE(copied_obj.unique());
+  EXPECT_EQ(copied_obj->n, 42);
+}
+
+TEST(ChannelArgsTest, StoreSharedPtrEventEngine) {
+  auto p = std::shared_ptr<grpc_event_engine::experimental::EventEngine>(
+      grpc_event_engine::experimental::GetDefaultEventEngine());
+
+  ChannelArgs a;
+   a = a.SetObject(p);
+
+  Mutex mu;
+  CondVar cv;
+  bool triggered = false;
+  MutexLock lock(&mu);
+  a.GetSharedPtr<grpc_event_engine::experimental::EventEngine>()->Run(
+      [&mu, &triggered, &cv] {
+        MutexLock lock(&mu);
+        triggered = true;
+        cv.Signal();
+      });
+  cv.WaitWithTimeout(&mu, absl::Seconds(1));
+  ASSERT_TRUE(triggered);
 }
 
 TEST(ChannelArgsTest, ObjectApi) {
