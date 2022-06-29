@@ -6318,7 +6318,6 @@ grpc_cc_library(
         "slice_buffer",
         "time",
         "transport_fwd",
-        "useful",
     ],
 )
 
