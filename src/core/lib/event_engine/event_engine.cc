@@ -22,6 +22,7 @@
 
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_args_preconditioning.h"
+#include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/event_engine/event_engine_factory.h"
 
 namespace grpc_event_engine {
@@ -83,7 +84,7 @@ grpc_core::ChannelArgs EnsureEventEngineInChannelArgs(
 }  // namespace grpc_event_engine
 
 namespace grpc_core {
-void RegisterEventEngine(grpc_core::CoreConfiguration::Builder* builder) {
+void RegisterEventEngine(CoreConfiguration::Builder* builder) {
   builder->channel_args_preconditioning()->RegisterStage(
       grpc_event_engine::experimental::EnsureEventEngineInChannelArgs);
 }
