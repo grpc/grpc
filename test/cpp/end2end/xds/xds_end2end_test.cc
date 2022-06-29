@@ -371,35 +371,41 @@ class XdsSecurityTest : public XdsEnd2endTest {
     balancer_->ads_service()->SetCdsResource(cluster);
     // The updates might take time to have an effect, so use a retry loop.
     if (test_expects_failure) {
-      auto overall_deadline = absl::Now() + absl::Seconds(20);
-      while (absl::Now() < overall_deadline) {
-        // TODO(yashykt): Change individual test cases to expect the exact error
-        // message here.
-        if (SendRpc().ok()) {
-          gpr_log(GPR_ERROR, "RPC succeeded. Failure expected. Trying again.");
-          continue;
-        }
-        break;
-      }
-      EXPECT_LT(absl::Now(), overall_deadline);
+      SendRpcsUntil(
+          DEBUG_LOCATION,
+          [&](const RpcResult& result) {
+            if (result.status.ok()) {
+              gpr_log(GPR_ERROR,
+                      "RPC succeeded. Failure expected. Trying again.");
+              return true;
+            }
+            EXPECT_EQ(result.status.error_code(), StatusCode::UNAVAILABLE);
+            // TODO(yashkt): Change individual test cases to expect the exact
+            // error message here.
+            return false;
+          },
+          /* timeout_ms= */ 20 * 1000);
     } else {
-      // Make sure that we are hitting the correct backend.
       backends_[backend_index_]->backend_service()->ResetCounters();
       SendRpcsUntil(
           DEBUG_LOCATION,
-          [this](const RpcResult& result) {
-            return backends_[backend_index_]
-                       ->backend_service()
-                       ->request_count() == 0;
+          [&](const RpcResult& result) {
+            // Make sure that we are hitting the correct backend.
+            if (backends_[backend_index_]->backend_service()->request_count() ==
+                0) {
+              return true;
+            }
+            EXPECT_TRUE(result.status.ok())
+                << "code=" << result.status.error_code()
+                << " message=" << result.status.error_message();
+            // Check that the identity is as expected.
+            EXPECT_EQ(backends_[backend_index_]
+                          ->backend_service()
+                          ->last_peer_identity(),
+                      expected_authenticated_identity);
+            return false;
           },
           20 * 1000, RpcOptions());
-      // Check that the identity is as expected.
-      Status status = SendRpc();
-      EXPECT_TRUE(status.ok()) << "code=" << status.error_code()
-                               << " message=" << status.error_message();
-      EXPECT_EQ(
-          backends_[backend_index_]->backend_service()->last_peer_identity(),
-          expected_authenticated_identity);
     }
   }
 
