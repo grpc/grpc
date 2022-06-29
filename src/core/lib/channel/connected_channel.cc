@@ -22,6 +22,7 @@
 
 #include <string.h>
 
+#include <memory>
 #include <string>
 #include <utility>
 
@@ -39,6 +40,8 @@
 #include "src/core/lib/channel/context.h"
 #include "src/core/lib/gpr/alloc.h"
 #include "src/core/lib/gprpp/debug_location.h"
+#include "src/core/lib/gprpp/orphanable.h"
+#include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/iomgr/call_combiner.h"
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/error.h"
