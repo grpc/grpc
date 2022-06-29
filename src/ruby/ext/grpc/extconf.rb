@@ -86,7 +86,7 @@ end
 
 env_append 'CPPFLAGS', '-DGPR_BACKWARDS_COMPATIBILITY_MODE'
 env_append 'CPPFLAGS', '-DGRPC_XDS_USER_AGENT_NAME_SUFFIX="\"RUBY\""'
-env_append 'CPPFLAGS', '-DGPR_WINDOWS_UCRT' if windows_ucrt
+env_append 'CPPFLAGS', '-DGRPC_RUBY_WINDOWS_UCRT' if windows_ucrt
 
 require_relative '../../lib/grpc/version'
 env_append 'CPPFLAGS', '-DGRPC_XDS_USER_AGENT_VERSION_SUFFIX="\"' + GRPC::VERSION + '\""'
