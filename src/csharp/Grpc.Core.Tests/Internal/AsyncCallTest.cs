@@ -494,6 +494,20 @@ namespace Grpc.Core.Internal.Tests
         }
 
         [Test]
+        public void ServerStreaming_ServerResponseFailureDoesntLeakResources()
+        {
+            // Test for https://github.com/grpc/grpc/issues/28153
+            // Memory leak if resources not released when server unavailable
+            asyncCall.StartServerStreamingCall("request1");
+
+            // error reading response headers - possibly because server unavailable
+            fakeCall.ReceivedResponseHeadersCallback.OnReceivedResponseHeaders(false, new Metadata());
+            fakeCall.ReceivedStatusOnClientCallback.OnReceivedStatusOnClient(true, new ClientSideStatus(new Status(StatusCode.Unavailable, ""), new Metadata()));
+
+            Assert.AreEqual(0, channel.GetCallReferenceCount());
+        }
+
+        [Test]
         public void DuplexStreaming_NoRequestNoResponse_Success1()
         {
             asyncCall.StartDuplexStreamingCall();

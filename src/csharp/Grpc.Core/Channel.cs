@@ -223,6 +223,17 @@ namespace Grpc.Core
             shutdownTokenSource.Cancel();
 
             var activeCallCount = activeCallCounter.Count;
+
+            // Part of fix for https://github.com/grpc/grpc/issues/28153 memory leak
+            if (activeCallCount > 0)
+            {
+                // There may be a race condition when disposing of a call and then
+                // immediately closing the channel. This reduces the chance although
+                // not completely eliminating it. It gives callbacks a chance to happen.
+                await Task.Delay(200);
+            }
+
+            activeCallCount = activeCallCounter.Count;
             if (activeCallCount > 0)
             {
                 Logger.Warning("Channel shutdown was called but there are still {0} active calls for that channel.", activeCallCount);

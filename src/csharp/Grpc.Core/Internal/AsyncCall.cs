@@ -537,11 +537,19 @@ namespace Grpc.Core.Internal
         /// </summary>
         private void HandleReceivedResponseHeaders(bool success, Metadata responseHeaders)
         {
-            // TODO(jtattermusch): handle success==false
-
             bool releasedResources;
             lock (myLock)
             {
+                if (!success)
+                {
+                    // Fix https://github.com/grpc/grpc/issues/28153 memory leak if resources not released
+                    // when there is an error - e.g. if can't connect to server and trying to execute
+                    // a streaming call.
+                    // If success is false then there has been an error in reading streaming response,
+                    // possibly because connection to the server could not be made.
+                    // Set readingDone as this is the end of the attempt to read from the server.
+                    readingDone = true;
+                }
                 receiveResponseHeadersPending = false;
                 releasedResources = ReleaseResourcesIfPossible();
             }
