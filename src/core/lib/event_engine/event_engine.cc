@@ -20,9 +20,7 @@
 
 #include <grpc/event_engine/event_engine.h>
 
-#include "src/core/lib/debug/trace.h"
 #include "src/core/lib/event_engine/event_engine_factory.h"
-#include "src/core/lib/event_engine/trace.h"
 
 namespace grpc_event_engine {
 namespace experimental {
@@ -63,13 +61,6 @@ EventEngine* GetDefaultEventEngine() {
 
 void ResetDefaultEventEngine() {
   delete g_event_engine.exchange(nullptr, std::memory_order_acq_rel);
-}
-
-void InitializeEventEngine() {
-  GetDefaultEventEngine()->Run([]() {
-    GRPC_EVENT_ENGINE_TRACE("EventEngine:%p initialized",
-                            GetDefaultEventEngine());
-  });
 }
 
 }  // namespace experimental
