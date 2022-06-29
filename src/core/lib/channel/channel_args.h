@@ -134,6 +134,29 @@ struct ChannelArgTypeTraits<T,
   };
 };
 
+// GetObject support for shared_ptr and RefCountedPtr
+template <typename T, typename Ignored = void /* for SFINAE */>
+struct GetObjectImpl;
+// std::shared_ptr implementation
+template <typename T>
+struct GetObjectImpl<T, absl::enable_if_t<is_shared_ptr<T>::value, void>> {
+  using Result = typename T::element_type;
+  using ReffedResult = T;
+  static Result Get(T* p) { return p->get(); };
+  static ReffedResult GetReffed(T* p) { return ReffedResult(*p); };
+};
+// RefCountedPtr
+template <typename T>
+struct GetObjectImpl<T, absl::enable_if_t<!is_shared_ptr<T>::value, void>> {
+  using Result = T*;
+  using ReffedResult = RefCountedPtr<T>;
+  static Result Get(T* p) { return p; };
+  static ReffedResult GetReffed(T* p) {
+    if (p == nullptr) return nullptr;
+    return p->Ref();
+  };
+};
+
 // Provide the canonical name for a type's channel arg key
 template <typename T>
 struct ChannelArgNameTraits {
@@ -302,21 +325,14 @@ class ChannelArgs {
                std::move(p));
   }
   template <typename T>
-  T* GetObject() {
-    return GetPointer<T>(ChannelArgNameTraits<T>::ChannelArgName());
-  }
-  // Makes a copy of the shared_ptr and returns it
-  template <typename T>
-  std::shared_ptr<T> GetSharedPtr() {
-    std::shared_ptr<T>* ptr = GetPointer<std::shared_ptr<T>>(
-        ChannelArgNameTraits<std::shared_ptr<T>>::ChannelArgName());
-    return std::shared_ptr<T>(*ptr);
+  typename GetObjectImpl<T>::Result GetObject() {
+    return GetObjectImpl<T>::Get(
+        GetPointer<T>(ChannelArgNameTraits<T>::ChannelArgName()));
   }
   template <typename T>
-  RefCountedPtr<T> GetObjectRef() {
-    auto* p = GetObject<T>();
-    if (p == nullptr) return nullptr;
-    return p->Ref();
+  typename GetObjectImpl<T>::ReffedResult GetObjectRef() {
+    return GetObjectImpl<T>::GetReffed(
+        GetPointer<T>(ChannelArgNameTraits<T>::ChannelArgName()));
   }
 
   bool operator<(const ChannelArgs& other) const { return args_ < other.args_; }
