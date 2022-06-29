@@ -320,23 +320,65 @@ class TcpZerocopySendCtx {
   // It is used to indicate that some OMem meory is now available. It returns
   // true to tell the caller to mark the file descriptor as immediately
   // writable.
+  //
+  // If a write is currently in progress on the socket (ie. we have issued a
+  // sendmsg() and are about to check its return value) then we set omem state
+  // to CHECK to make the sending thread know that some tcp_omem was
+  // concurrently freed even if sendmsg() returns ENOBUFS. In this case, since
+  // there is already an active send thread, we do not need to mark the
+  // socket writeable, so we return false.
+  //
+  // If there was no write in progress on the socket, and the socket was not
+  // marked as FULL, then we need not mark the socket writeable now that some
+  // tcp_omem memory is freed since it was not considered as blocked on
+  // tcp_omem to begin with. So in this case, return false.
+  //
+  // But, if a write was not in progress and the omem state was FULL, then we
+  // need to mark the socket writeable since it is no longer blocked by
+  // tcp_omem. In this case, return true.
+  //
+  // Please refer to the STATE TRANSITION DIAGRAM below for more details.
+  //
   bool UpdateZeroCopyOMemStateAfterFree() {
     MutexLock guard(&lock_);
     if (is_in_write_) {
       zcopy_enobuf_state_ = OMemState::CHECK;
       return false;
-    } else if (zcopy_enobuf_state_ != OMemState::OPEN) {
+    }
+    GPR_DEBUG_ASSERT(zcopy_enobuf_state_ != OMemState::CHECK);
+    if (zcopy_enobuf_state_ == OMemState::FULL) {
+      // A previous sendmsg attempt was blocked by ENOBUFS. Return true to
+      // mark the fd as writable so the next write attempt could be made.
       zcopy_enobuf_state_ = OMemState::OPEN;
       return true;
+    } else if (zcopy_enobuf_state_ == OMemState::OPEN) {
+      // No need to mark the fd as writable because the previous write
+      // attempt did not encounter ENOBUFS.
+      return false;
+    } else {
+      // This state should never be reached because it implies that the previous
+      // state was CHECK and is_in_write is false. This means that after the
+      // previous sendmsg returned and set is_in_write to false, it did
+      // not update the z-copy change from CHECK to OPEN.
+      GPR_ASSERT(false && "OMem state error!");
     }
-    return false;
   }
 
   // Expected to be called by the thread calling sendmsg after the syscall
-  // invocation. is complete. If an enobuf is seen, it checks if the error
-  // handler has already run and free'ed up some OMem. It returns true
-  // indicating that the write can be attempted again immediately. Otherwise it
-  // returns false.
+  // invocation. is complete. If an ENOBUF is seen, it checks if the error
+  // handler (Tx0cp completions) has already run and free'ed up some OMem. It
+  // returns true indicating that the write can be attempted again immediately.
+  // If ENOBUFS was seen but no Tx0cp completions have been received between the
+  // sendmsg() and us taking this lock, then tcp_omem is still full from our
+  // point of view. Therefore, we do not signal that the socket is writeable
+  // with respect to the availability of tcp_omem. Therefore the function
+  // returns false. This indicates that another write should not be attempted
+  // immediately and the calling thread should wait until the socket is writable
+  // again. If ENOBUFS was not seen, then again return false because the next
+  // write should be attempted only when the socket is writable again.
+  //
+  // Please refer to the STATE TRANSITION DIAGRAM below for more details.
+  //
   bool UpdateZeroCopyOMemStateAfterSend(bool seen_enobuf) {
     MutexLock guard(&lock_);
     is_in_write_ = false;
@@ -354,6 +396,20 @@ class TcpZerocopySendCtx {
   }
 
  private:
+  //                      STATE TRANSITION DIAGRAM
+  //
+  // sendmsg succeeds       Tx-zero copy succeeds and there is no active sendmsg
+  //      ----<<--+  +------<<-------------------------------------+
+  //      |       |  |                                             |
+  //      |       |  v       sendmsg returns ENOBUFS               |
+  //      +-----> OPEN  ------------->>-------------------------> FULL
+  //                ^                                              |
+  //                |                                              |
+  //                | sendmsg completes                            |
+  //                +----<<---------- CHECK <-------<<-------------+
+  //                                        Tx-zero copy succeeds and there is
+  //                                        an active sendmsg
+  //
   enum class OMemState : int8_t {
     OPEN,   // Everything is clear and omem is not full.
     FULL,   // The last sendmsg() has returned with an errno of ENOBUFS.
