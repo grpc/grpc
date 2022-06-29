@@ -1866,10 +1866,10 @@ class PromiseBasedCall : public Call, public Activity, public Wakeable {
   void Wakeup() override {
     grpc_event_engine::experimental::GetDefaultEventEngine()->Run([this] {
       {
+        ScopedContext activity_context(this);
         ApplicationCallbackExecCtx app_exec_ctx;
         ExecCtx exec_ctx;
         MutexLock lock(&mu_);
-        ScopedContext activity_context(this);
         Update();
       }
       InternalUnref("wakeup");
@@ -2192,6 +2192,12 @@ class ClientPromiseBasedCall final : public PromiseBasedCall {
       send_initial_metadata_->Set(HttpAuthorityMetadata(),
                                   std::move(*args->authority));
     }
+  }
+
+  ~ClientPromiseBasedCall() override {
+    ScopedContext context(this);
+    send_initial_metadata_.reset();
+    recv_status_on_client_ = absl::monostate();
   }
 
   absl::string_view GetServerAuthority() const override { abort(); }
