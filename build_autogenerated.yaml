@@ -936,7 +936,6 @@ libs:
   - src/core/lib/slice/slice_internal.h
   - src/core/lib/slice/slice_refcount.h
   - src/core/lib/slice/slice_refcount_base.h
-  - src/core/lib/slice/slice_split.h
   - src/core/lib/slice/slice_string_helpers.h
   - src/core/lib/surface/api_trace.h
   - src/core/lib/surface/builtins.h
@@ -1603,7 +1602,6 @@ libs:
   - src/core/lib/slice/slice_buffer.cc
   - src/core/lib/slice/slice_buffer_api.cc
   - src/core/lib/slice/slice_refcount.cc
-  - src/core/lib/slice/slice_split.cc
   - src/core/lib/slice/slice_string_helpers.cc
   - src/core/lib/surface/api_trace.cc
   - src/core/lib/surface/builtins.cc
@@ -2125,7 +2123,6 @@ libs:
   - src/core/lib/slice/slice_internal.h
   - src/core/lib/slice/slice_refcount.h
   - src/core/lib/slice/slice_refcount_base.h
-  - src/core/lib/slice/slice_split.h
   - src/core/lib/slice/slice_string_helpers.h
   - src/core/lib/surface/api_trace.h
   - src/core/lib/surface/builtins.h
@@ -2435,7 +2432,6 @@ libs:
   - src/core/lib/slice/slice_buffer.cc
   - src/core/lib/slice/slice_buffer_api.cc
   - src/core/lib/slice/slice_refcount.cc
-  - src/core/lib/slice/slice_split.cc
   - src/core/lib/slice/slice_string_helpers.cc
   - src/core/lib/surface/api_trace.cc
   - src/core/lib/surface/builtins.cc
@@ -4127,15 +4123,6 @@ targets:
   - test/core/surface/server_test.cc
   deps:
   - grpc_test_util
-- name: slice_split_test
-  build: test
-  language: c
-  headers: []
-  src:
-  - test/core/slice/slice_split_test.cc
-  deps:
-  - grpc_test_util
-  uses_polling: false
 - name: slice_string_helpers_test
   build: test
   language: c

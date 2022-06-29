@@ -1216,7 +1216,13 @@ static grpc_closure* add_closure_barrier(grpc_closure* closure) {
 static void null_then_sched_closure(grpc_closure** closure) {
   grpc_closure* c = *closure;
   *closure = nullptr;
-  grpc_core::Closure::Run(DEBUG_LOCATION, c, GRPC_ERROR_NONE);
+  // null_then_schedule_closure might be run during a start_batch which might
+  // subsequently examine the batch for more operations contained within.
+  // However, the closure run might make it back to the call object, push a
+  // completion, have the application see it, and make a new operation on the
+  // call which recycles the batch BEFORE the call to start_batch completes,
+  // forcing a race.
+  grpc_core::ExecCtx::Run(DEBUG_LOCATION, c, GRPC_ERROR_NONE);
 }
 
 void grpc_chttp2_complete_closure_step(grpc_chttp2_transport* t,

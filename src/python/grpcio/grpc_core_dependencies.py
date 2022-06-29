@@ -660,7 +660,6 @@ CORE_SOURCE_FILES = [
     'src/core/lib/slice/slice_buffer.cc',
     'src/core/lib/slice/slice_buffer_api.cc',
     'src/core/lib/slice/slice_refcount.cc',
-    'src/core/lib/slice/slice_split.cc',
     'src/core/lib/slice/slice_string_helpers.cc',
     'src/core/lib/surface/api_trace.cc',
     'src/core/lib/surface/builtins.cc',
