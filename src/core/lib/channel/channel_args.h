@@ -24,6 +24,7 @@
 #include <stddef.h>
 
 #include <algorithm>  // IWYU pragma: keep
+#include <memory>
 #include <string>
 #include <type_traits>
 #include <utility>
@@ -33,6 +34,7 @@
 #include "absl/types/optional.h"
 #include "absl/types/variant.h"
 
+#include <grpc/event_engine/event_engine.h>
 #include <grpc/impl/codegen/grpc_types.h>
 
 #include "src/core/lib/avl/avl.h"

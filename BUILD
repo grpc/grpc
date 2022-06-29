@@ -3061,6 +3061,7 @@ grpc_cc_library(
         "avl",
         "channel_stack_type",
         "dual_ref_counted",
+        "event_engine_base_hdrs",
         "gpr_base",
         "gpr_platform",
         "grpc_codegen",
