@@ -485,7 +485,7 @@ grpc_channel_filter MakeConnectedFilter() {
     connected_channel_start_transport_stream_op_batch,
         make_call_promise == nullptr
             ? nullptr
-            : [](grpc_channel_element* elem, CallArgs call_args,
+            : +[](grpc_channel_element* elem, CallArgs call_args,
                  NextPromiseFactory) {
                 grpc_transport* transport =
                     static_cast<channel_data*>(elem->channel_data)->transport;
@@ -498,7 +498,7 @@ grpc_channel_filter MakeConnectedFilter() {
       connected_channel_destroy_call_elem,
       sizeof(channel_data),
       connected_channel_init_channel_elem,
-      [](grpc_channel_stack* channel_stack, grpc_channel_element* elem) {
+      +[](grpc_channel_stack* channel_stack, grpc_channel_element* elem) {
         /* HACK(ctiller): increase call stack size for the channel to make space
            for channel data. We need a cleaner (but performant) way to do this,
            and I'm not sure what that is yet.
