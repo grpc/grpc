@@ -61,12 +61,12 @@ class Wakeable {
 class Waker {
  public:
   explicit Waker(Wakeable* wakeable) : wakeable_(wakeable) {}
-  Waker() : wakeable_(&unwakeable_) {}
+  Waker() : wakeable_(unwakeable_) {}
   ~Waker() { wakeable_->Drop(); }
   Waker(const Waker&) = delete;
   Waker& operator=(const Waker&) = delete;
   Waker(Waker&& other) noexcept : wakeable_(other.wakeable_) {
-    other.wakeable_ = &unwakeable_;
+    other.wakeable_ = unwakeable_;
   }
   Waker& operator=(Waker&& other) noexcept {
     std::swap(wakeable_, other.wakeable_);
@@ -76,7 +76,7 @@ class Waker {
   // Wake the underlying activity.
   void Wakeup() {
     wakeable_->Wakeup();
-    wakeable_ = &unwakeable_;
+    wakeable_ = unwakeable_;
   }
 
   template <typename H>
@@ -96,7 +96,7 @@ class Waker {
   };
 
   Wakeable* wakeable_;
-  static Unwakeable unwakeable_;
+  static Unwakeable* const unwakeable_;
 };
 
 // An Activity tracks execution of a single promise.

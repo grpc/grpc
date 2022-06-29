@@ -26,7 +26,7 @@ namespace grpc_core {
 // GLOBALS
 
 GPR_THREAD_LOCAL(Activity*) Activity::g_current_activity_{nullptr};
-Waker::Unwakeable Waker::unwakeable_;
+Waker::Unwakeable* const Waker::unwakeable_ = new Unwakeable;
 
 namespace promise_detail {
 
