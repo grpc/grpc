@@ -1827,7 +1827,30 @@ class PromiseBasedCall : public Call, public Activity, public Wakeable {
   void ForceImmediateRepoll() ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_) override;
   Waker MakeOwningWaker() ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_) override {
     InternalRef("wakeup");
+#if defined(__has_feature)
+#if __has_feature(address_sanitizer)
+    class AsanWaker final : public Wakeable {
+     public:
+      explicit AsanWaker(PromiseBasedCall* call) : call_(call) {}
+
+      void Wakeup() override {
+        call_->Wakeup();
+        delete this;
+      }
+
+      void Drop() override {
+        call_->Drop();
+        delete this;
+      }
+
+     private:
+      PromiseBasedCall* call_;
+    };
+    return Waker(new AsanWaker(this));
+#else
     return Waker(this);
+#endif
+#endif
   }
   Waker MakeNonOwningWaker() ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_) override;
 
