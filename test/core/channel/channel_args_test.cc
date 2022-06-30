@@ -38,8 +38,8 @@
 
 namespace grpc_core {
 
-using ::grpc_event_engine::experimental::EventEngine;
 using ::grpc_event_engine::experimental::CreateEventEngine;
+using ::grpc_event_engine::experimental::EventEngine;
 
 TEST(ChannelArgsTest, Noop) { ChannelArgs(); }
 
