@@ -37,7 +37,6 @@
 #include <grpc/event_engine/memory_allocator.h>
 
 #include "src/core/lib/gpr/alloc.h"
-#include "src/core/lib/gprpp/manual_constructor.h"
 #include "src/core/lib/promise/context.h"
 #include "src/core/lib/resource_quota/memory_quota.h"
 
