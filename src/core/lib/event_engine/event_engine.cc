@@ -69,7 +69,7 @@ void ResetDefaultEventEngine() {
 namespace {
 grpc_core::ChannelArgs EnsureEventEngineInChannelArgs(
     grpc_core::ChannelArgs args) {
-  if (args.ContainsObject<std::shared_ptr<EventEngine>>()) return args;
+  if (args.ContainsObject<EventEngine>()) return args;
   // TODO(hork): Consider deleting GetDefaultEventEngine(), use the factory
   // directly when ChannelArgs aren't available. That would eliminate the no-op
   // deleter below.

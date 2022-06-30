@@ -137,23 +137,30 @@ struct ChannelArgTypeTraits<T,
 };
 
 // GetObject support for shared_ptr and RefCountedPtr
+template <typename T>
+struct WrapInSharedPtr : std::false_type {};
+template <>
+struct WrapInSharedPtr<grpc_event_engine::experimental::EventEngine>
+    : std::true_type {};
 template <typename T, typename Ignored = void /* for SFINAE */>
 struct GetObjectImpl;
 // std::shared_ptr implementation
 template <typename T>
-struct GetObjectImpl<T, absl::enable_if_t<is_shared_ptr<T>::value, void>> {
-  using Result = typename T::element_type*;
-  using ReffedResult = T;
-  static Result Get(T* p) { return p->get(); };
-  static ReffedResult GetReffed(T* p) { return ReffedResult(*p); };
+struct GetObjectImpl<T, absl::enable_if_t<WrapInSharedPtr<T>::value, void>> {
+  using Result = T*;
+  using ReffedResult = std::shared_ptr<T>;
+  using StoredType = std::shared_ptr<T>*;
+  static Result Get(StoredType p) { return p->get(); };
+  static ReffedResult GetReffed(StoredType p) { return ReffedResult(*p); };
 };
 // RefCountedPtr
 template <typename T>
-struct GetObjectImpl<T, absl::enable_if_t<!is_shared_ptr<T>::value, void>> {
+struct GetObjectImpl<T, absl::enable_if_t<!WrapInSharedPtr<T>::value, void>> {
   using Result = T*;
   using ReffedResult = RefCountedPtr<T>;
-  static Result Get(T* p) { return p; };
-  static ReffedResult GetReffed(T* p) {
+  using StoredType = Result;
+  static Result Get(StoredType p) { return p; };
+  static ReffedResult GetReffed(StoredType p) {
     if (p == nullptr) return nullptr;
     return p->Ref();
   };
@@ -170,10 +177,8 @@ struct ChannelArgNameTraits<std::shared_ptr<T>> {
 };
 
 // Specialization for the EventEngine
-// TODO(hork): should we just add ChannelArgName to the public EventEngine API?
 template <>
-struct ChannelArgNameTraits<
-    std::shared_ptr<grpc_event_engine::experimental::EventEngine>> {
+struct ChannelArgNameTraits<grpc_event_engine::experimental::EventEngine> {
   static absl::string_view ChannelArgName() { return GRPC_ARG_EVENT_ENGINE; }
 };
 
@@ -301,8 +306,10 @@ class ChannelArgs {
   absl::optional<absl::string_view> GetString(absl::string_view name) const;
   void* GetVoidPointer(absl::string_view name) const;
   template <typename T>
-  T* GetPointer(absl::string_view name) const {
-    return static_cast<T*>(GetVoidPointer(name));
+  typename GetObjectImpl<T>::StoredType GetPointer(
+      absl::string_view name) const {
+    return static_cast<typename GetObjectImpl<T>::StoredType>(
+        GetVoidPointer(name));
   }
   absl::optional<Duration> GetDurationFromIntMillis(
       absl::string_view name) const;
@@ -323,8 +330,7 @@ class ChannelArgs {
   }
   template <typename T>
   GRPC_MUST_USE_RESULT ChannelArgs SetObject(std::shared_ptr<T> p) const {
-    return Set(ChannelArgNameTraits<std::shared_ptr<T>>::ChannelArgName(),
-               std::move(p));
+    return Set(ChannelArgNameTraits<T>::ChannelArgName(), std::move(p));
   }
   template <typename T>
   typename GetObjectImpl<T>::Result GetObject() {
