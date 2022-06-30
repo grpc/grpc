@@ -16,11 +16,6 @@
 #define GRPC_CORE_LIB_EVENT_ENGINE_IOMGR_ENGINE_EV_POSIX_H
 #include <grpc/support/port_platform.h>
 
-#include <stdint.h>
-
-#include <atomic>
-#include <functional>
-#include <memory>
 #include <vector>
 
 #include "absl/status/status.h"
@@ -28,11 +23,7 @@
 
 #include <grpc/event_engine/event_engine.h>
 
-#include "src/core/lib/event_engine/handle_containers.h"
 #include "src/core/lib/event_engine/iomgr_engine/closure.h"
-#include "src/core/lib/event_engine/iomgr_engine/thread_pool.h"
-#include "src/core/lib/event_engine/iomgr_engine/timer_manager.h"
-#include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/gprpp/time.h"
 
 namespace grpc_event_engine {

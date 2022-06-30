@@ -14,7 +14,13 @@
 
 #include <grpc/support/port_platform.h>
 
-#include <stddef.h>
+#include "src/core/lib/event_engine/iomgr_engine/wakeup_fd_posix.h"
+
+#include <functional>
+#include <memory>
+
+#include "absl/status/status.h"
+#include "absl/status/statusor.h"
 
 #include "src/core/lib/event_engine/iomgr_engine/wakeup_fd_eventfd.h"
 #include "src/core/lib/event_engine/iomgr_engine/wakeup_fd_pipe.h"

@@ -11,13 +11,17 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-#ifndef GRPC_CORE_LIB_IOMGR_EVENT_ENGINE_IOMGR_ENGINE_WAKEUP_FD_EVENTFD_H
-#define GRPC_CORE_LIB_IOMGR_EVENT_ENGINE_IOMGR_ENGINE_WAKEUP_FD_EVENTFD_H
+#ifndef GRPC_CORE_LIB_EVENT_ENGINE_IOMGR_ENGINE_WAKEUP_FD_EVENTFD_H
+#define GRPC_CORE_LIB_EVENT_ENGINE_IOMGR_ENGINE_WAKEUP_FD_EVENTFD_H
 
 #include <grpc/support/port_platform.h>
 
+#include <memory>
+
+#include "absl/status/status.h"
+#include "absl/status/statusor.h"
+
 #include "src/core/lib/event_engine/iomgr_engine/wakeup_fd_posix.h"
-#include "src/core/lib/iomgr/port.h"
 
 namespace grpc_event_engine {
 namespace iomgr_engine {
@@ -40,4 +44,4 @@ class EventFdWakeupFd : public WakeupFd {
 }  // namespace iomgr_engine
 }  // namespace grpc_event_engine
 
-#endif  // GRPC_CORE_LIB_IOMGR_EVENT_ENGINE_IOMGR_ENGINE_WAKEUP_FD_EVENTFD_H
+#endif  // GRPC_CORE_LIB_EVENT_ENGINE_IOMGR_ENGINE_WAKEUP_FD_EVENTFD_H

@@ -39,10 +39,12 @@
  * 2. If the polling thread was awakened by a WakeupFd event, call
  *    WakeupFd::Consume() on it.
  */
-#ifndef GRPC_CORE_LIB_IOMGR_EVENT_ENGINE_IOMGR_ENGINE_WAKEUP_FD_POSIX_H
-#define GRPC_CORE_LIB_IOMGR_EVENT_ENGINE_IOMGR_ENGINE_WAKEUP_FD_POSIX_H
+#ifndef GRPC_CORE_LIB_EVENT_ENGINE_IOMGR_ENGINE_WAKEUP_FD_POSIX_H
+#define GRPC_CORE_LIB_EVENT_ENGINE_IOMGR_ENGINE_WAKEUP_FD_POSIX_H
 
 #include <grpc/support/port_platform.h>
+
+#include <memory>
 
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
@@ -74,4 +76,4 @@ absl::StatusOr<std::unique_ptr<WakeupFd>> CreateWakeupFd();
 }  // namespace iomgr_engine
 }  // namespace grpc_event_engine
 
-#endif  // GRPC_CORE_LIB_IOMGR_EVENT_ENGINE_IOMGR_ENGINE_WAKEUP_FD_POSIX_H
+#endif  // GRPC_CORE_LIB_EVENT_ENGINE_IOMGR_ENGINE_WAKEUP_FD_POSIX_H
