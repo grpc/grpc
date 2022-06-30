@@ -15,8 +15,6 @@
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
-#include "absl/synchronization/notification.h"
-
 #include <grpcpp/channel.h>
 #include <grpcpp/client_context.h>
 #include <grpcpp/create_channel.h>
@@ -662,17 +660,6 @@ TEST_F(GrpcAuthzEnd2EndTest, FileWatcherValidPolicyRefresh) {
       "}";
   grpc_core::testing::TmpFile tmp_policy(policy);
   auto provider = CreateFileWatcherAuthzPolicyProvider(tmp_policy.name(), 1);
-  absl::Notification on_reload_done;
-  std::function<void(grpc_status_code code, const char* error_details)>
-      callback = [&on_reload_done](grpc_status_code status,
-                                   const char* error_details) {
-        EXPECT_EQ(status, GRPC_STATUS_OK);
-        EXPECT_EQ(error_details, nullptr);
-        on_reload_done.Notify();
-      };
-  dynamic_cast<grpc_core::FileWatcherAuthorizationPolicyProvider*>(
-      provider->c_provider())
-      ->SetCallbackForTesting(std::move(callback));
   InitServer(std::move(provider));
   auto channel = BuildChannel();
   ClientContext context1;
@@ -680,6 +667,16 @@ TEST_F(GrpcAuthzEnd2EndTest, FileWatcherValidPolicyRefresh) {
   grpc::Status status = SendRpc(channel, &context1, &resp1);
   EXPECT_TRUE(status.ok());
   EXPECT_EQ(resp1.message(), kMessage);
+  gpr_event on_reload_done;
+  gpr_event_init(&on_reload_done);
+  std::function<void(bool contents_changed, absl::Status status)> callback =
+      [&on_reload_done](bool contents_changed, absl::Status status) {
+        EXPECT_TRUE(status.ok());
+        gpr_event_set(&on_reload_done, reinterpret_cast<void*>(1));
+      };
+  dynamic_cast<grpc_core::FileWatcherAuthorizationPolicyProvider*>(
+      provider->c_provider())
+      ->SetCallbackForTesting(std::move(callback));
   // Replace the existing policy with a new authorization policy.
   policy =
       "{"
@@ -707,7 +704,9 @@ TEST_F(GrpcAuthzEnd2EndTest, FileWatcherValidPolicyRefresh) {
       "}";
   tmp_policy.RewriteFile(policy);
   // Wait for the provider's refresh thread to read the updated files.
-  on_reload_done.WaitForNotification();
+  ASSERT_EQ(
+      gpr_event_wait(&on_reload_done, gpr_inf_future(GPR_CLOCK_MONOTONIC)),
+      reinterpret_cast<void*>(1));
   ClientContext context2;
   grpc::testing::EchoResponse resp2;
   status = SendRpc(channel, &context2, &resp2);
@@ -733,17 +732,6 @@ TEST_F(GrpcAuthzEnd2EndTest, FileWatcherInvalidPolicyRefreshSkipsReload) {
       "}";
   grpc_core::testing::TmpFile tmp_policy(policy);
   auto provider = CreateFileWatcherAuthzPolicyProvider(tmp_policy.name(), 1);
-  absl::Notification on_reload_done;
-  std::function<void(grpc_status_code code, const char* error_details)>
-      callback = [&on_reload_done](grpc_status_code status,
-                                   const char* error_details) {
-        EXPECT_EQ(status, GRPC_STATUS_INVALID_ARGUMENT);
-        EXPECT_STREQ(error_details, "\"name\" field is not present.");
-        on_reload_done.Notify();
-      };
-  dynamic_cast<grpc_core::FileWatcherAuthorizationPolicyProvider*>(
-      provider->c_provider())
-      ->SetCallbackForTesting(std::move(callback));
   InitServer(std::move(provider));
   auto channel = BuildChannel();
   ClientContext context1;
@@ -751,11 +739,24 @@ TEST_F(GrpcAuthzEnd2EndTest, FileWatcherInvalidPolicyRefreshSkipsReload) {
   grpc::Status status = SendRpc(channel, &context1, &resp1);
   EXPECT_TRUE(status.ok());
   EXPECT_EQ(resp1.message(), kMessage);
+  gpr_event on_reload_done;
+  gpr_event_init(&on_reload_done);
+  std::function<void(bool contents_changed, absl::Status status)> callback =
+      [&on_reload_done](bool contents_changed, absl::Status status) {
+        EXPECT_EQ(status.code(), absl::StatusCode::kInvalidArgument);
+        EXPECT_EQ(status.message(), "\"name\" field is not present.");
+        gpr_event_set(&on_reload_done, reinterpret_cast<void*>(1));
+      };
+  dynamic_cast<grpc_core::FileWatcherAuthorizationPolicyProvider*>(
+      provider->c_provider())
+      ->SetCallbackForTesting(std::move(callback));
   // Replaces existing policy with an invalid authorization policy.
   policy = "{}";
   tmp_policy.RewriteFile(policy);
   // Wait for the provider's refresh thread to read the updated files.
-  on_reload_done.WaitForNotification();
+  ASSERT_EQ(
+      gpr_event_wait(&on_reload_done, gpr_inf_future(GPR_CLOCK_MONOTONIC)),
+      reinterpret_cast<void*>(1));
   ClientContext context2;
   grpc::testing::EchoResponse resp2;
   status = SendRpc(channel, &context2, &resp2);
@@ -780,43 +781,46 @@ TEST_F(GrpcAuthzEnd2EndTest, FileWatcherRecoversFromFailure) {
       "}";
   grpc_core::testing::TmpFile tmp_policy(policy);
   auto provider = CreateFileWatcherAuthzPolicyProvider(tmp_policy.name(), 1);
-  absl::Notification on_first_reload_done;
-  absl::Notification on_second_reload_done;
-  bool first_reload = true;
-  std::function<void(grpc_status_code code, const char* error_details)>
-      callback = [&on_first_reload_done, &on_second_reload_done, &first_reload](
-                     grpc_status_code status, const char* error_details) {
-        if (first_reload) {
-          EXPECT_EQ(status, GRPC_STATUS_INVALID_ARGUMENT);
-          EXPECT_STREQ(error_details, "\"name\" field is not present.");
-          on_first_reload_done.Notify();
-        } else {
-          EXPECT_EQ(status, GRPC_STATUS_OK);
-          EXPECT_EQ(error_details, nullptr);
-          on_second_reload_done.Notify();
-        }
-      };
-  dynamic_cast<grpc_core::FileWatcherAuthorizationPolicyProvider*>(
-      provider->c_provider())
-      ->SetCallbackForTesting(std::move(callback));
-  InitServer(std::move(provider));
+  InitServer(provider);
   auto channel = BuildChannel();
   ClientContext context1;
   grpc::testing::EchoResponse resp1;
   grpc::Status status = SendRpc(channel, &context1, &resp1);
   EXPECT_TRUE(status.ok());
   EXPECT_EQ(resp1.message(), kMessage);
+  gpr_event on_first_reload_done;
+  gpr_event_init(&on_first_reload_done);
+  std::function<void(bool contents_changed, absl::Status status)> callback1 =
+      [&on_first_reload_done](bool contents_changed, absl::Status status) {
+        EXPECT_EQ(status.code(), absl::StatusCode::kInvalidArgument);
+        EXPECT_EQ(status.message(), "\"name\" field is not present.");
+        gpr_event_set(&on_first_reload_done, reinterpret_cast<void*>(1));
+      };
+  dynamic_cast<grpc_core::FileWatcherAuthorizationPolicyProvider*>(
+      provider->c_provider())
+      ->SetCallbackForTesting(std::move(callback1));
   // Replaces existing policy with an invalid authorization policy.
   policy = "{}";
   tmp_policy.RewriteFile(policy);
   // Wait for the provider's refresh thread to read the updated files.
-  on_first_reload_done.WaitForNotification();
-  first_reload = false;
+  ASSERT_EQ(gpr_event_wait(&on_first_reload_done,
+                           gpr_inf_future(GPR_CLOCK_MONOTONIC)),
+            reinterpret_cast<void*>(1));
   ClientContext context2;
   grpc::testing::EchoResponse resp2;
   status = SendRpc(channel, &context2, &resp2);
   EXPECT_TRUE(status.ok());
   EXPECT_EQ(resp2.message(), kMessage);
+  gpr_event on_second_reload_done;
+  gpr_event_init(&on_second_reload_done);
+  std::function<void(bool contents_changed, absl::Status status)> callback2 =
+      [&on_second_reload_done](bool contents_changed, absl::Status status) {
+        EXPECT_TRUE(status.ok());
+        gpr_event_set(&on_second_reload_done, reinterpret_cast<void*>(1));
+      };
+  dynamic_cast<grpc_core::FileWatcherAuthorizationPolicyProvider*>(
+      provider->c_provider())
+      ->SetCallbackForTesting(std::move(callback2));
   // Replace the existing invalid policy with a valid authorization policy.
   policy =
       "{"
@@ -844,7 +848,9 @@ TEST_F(GrpcAuthzEnd2EndTest, FileWatcherRecoversFromFailure) {
       "}";
   tmp_policy.RewriteFile(policy);
   // Wait for the provider's refresh thread to read the updated files.
-  on_second_reload_done.WaitForNotification();
+  ASSERT_EQ(gpr_event_wait(&on_second_reload_done,
+                           gpr_inf_future(GPR_CLOCK_MONOTONIC)),
+            reinterpret_cast<void*>(1));
   ClientContext context3;
   grpc::testing::EchoResponse resp3;
   status = SendRpc(channel, &context3, &resp3);

@@ -27,7 +27,6 @@
 #include "absl/strings/string_view.h"
 
 #include <grpc/grpc_security.h>
-#include <grpc/status.h>
 #include <grpc/support/sync.h>
 
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
@@ -86,7 +85,7 @@ class FileWatcherAuthorizationPolicyProvider
                                          absl::Status* status);
 
   void SetCallbackForTesting(
-      std::function<void(grpc_status_code code, const char* error_details)> cb);
+      std::function<void(bool contents_changed, absl::Status Status)> cb);
 
   void Orphan() override;
 
@@ -106,11 +105,9 @@ class FileWatcherAuthorizationPolicyProvider
   std::unique_ptr<Thread> refresh_thread_;
   gpr_event shutdown_event_;
 
-  bool execute_cb_ = false;
   Mutex mu_;
-  // Callback is executed when the authorization policy contents in file are
-  // modified. This is useful for testing purpose.
-  std::function<void(grpc_status_code code, const char* error_details)> cb_
+  // Callback is executed on every reload. This is useful for testing purpose.
+  std::function<void(bool contents_changed, absl::Status status)> cb_
       ABSL_GUARDED_BY(mu_) = nullptr;
   // Engines created using authz_policy_.
   RefCountedPtr<AuthorizationEngine> allow_engine_ ABSL_GUARDED_BY(mu_);

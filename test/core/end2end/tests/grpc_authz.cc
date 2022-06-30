@@ -15,8 +15,6 @@
 #include <stdio.h>
 #include <string.h>
 
-#include "absl/synchronization/notification.h"
-
 #include <grpc/byte_buffer.h>
 #include <grpc/grpc_security.h>
 #include <grpc/support/alloc.h>
@@ -540,16 +538,6 @@ static void test_file_watcher_valid_policy_reload(
           tmp_policy.name().c_str(), /*refresh_interval_sec=*/1, &code,
           &error_details);
   GPR_ASSERT(GRPC_STATUS_OK == code);
-  absl::Notification on_reload_done;
-  std::function<void(grpc_status_code code, const char* error_details)>
-      callback = [&on_reload_done](grpc_status_code status,
-                                   const char* error_details) {
-        GPR_ASSERT(GRPC_STATUS_OK == status);
-        GPR_ASSERT(nullptr == error_details);
-        on_reload_done.Notify();
-      };
-  dynamic_cast<grpc_core::FileWatcherAuthorizationPolicyProvider*>(provider)
-      ->SetCallbackForTesting(std::move(callback));
   grpc_arg args[] = {
       grpc_channel_arg_pointer_create(
           const_cast<char*>(GRPC_ARG_AUTHORIZATION_POLICY_PROVIDER), provider,
@@ -561,6 +549,15 @@ static void test_file_watcher_valid_policy_reload(
       config, "test_file_watcher_valid_policy_reload", nullptr, &server_args);
   grpc_authorization_policy_provider_release(provider);
   test_allow_authorized_request(f);
+  gpr_event on_reload_done;
+  gpr_event_init(&on_reload_done);
+  std::function<void(bool contents_changed, absl::Status status)> callback =
+      [&on_reload_done](bool contents_changed, absl::Status status) {
+        GPR_ASSERT(status.ok());
+        gpr_event_set(&on_reload_done, reinterpret_cast<void*>(1));
+      };
+  dynamic_cast<grpc_core::FileWatcherAuthorizationPolicyProvider*>(provider)
+      ->SetCallbackForTesting(std::move(callback));
   // Replace existing policy in file with a different authorization policy.
   authz_policy =
       "{"
@@ -587,7 +584,9 @@ static void test_file_watcher_valid_policy_reload(
       "  ]"
       "}";
   tmp_policy.RewriteFile(authz_policy);
-  on_reload_done.WaitForNotification();
+  GPR_ASSERT(
+      reinterpret_cast<void*>(1) ==
+      gpr_event_wait(&on_reload_done, gpr_inf_future(GPR_CLOCK_MONOTONIC)));
   test_deny_unauthorized_request(f);
 
   end_test(&f);
@@ -618,17 +617,6 @@ static void test_file_watcher_invalid_policy_skip_reload(
           tmp_policy.name().c_str(), /*refresh_interval_sec=*/1, &code,
           &error_details);
   GPR_ASSERT(GRPC_STATUS_OK == code);
-  absl::Notification on_reload_done;
-  std::function<void(grpc_status_code code, const char* error_details)>
-      callback = [&on_reload_done](grpc_status_code status,
-                                   const char* error_details) {
-        GPR_ASSERT(GRPC_STATUS_INVALID_ARGUMENT == status);
-        GPR_ASSERT(nullptr !=
-                   strstr(error_details, "\"name\" field is not present."));
-        on_reload_done.Notify();
-      };
-  dynamic_cast<grpc_core::FileWatcherAuthorizationPolicyProvider*>(provider)
-      ->SetCallbackForTesting(std::move(callback));
   grpc_arg args[] = {
       grpc_channel_arg_pointer_create(
           const_cast<char*>(GRPC_ARG_AUTHORIZATION_POLICY_PROVIDER), provider,
@@ -641,10 +629,23 @@ static void test_file_watcher_invalid_policy_skip_reload(
                  nullptr, &server_args);
   grpc_authorization_policy_provider_release(provider);
   test_allow_authorized_request(f);
+  gpr_event on_reload_done;
+  gpr_event_init(&on_reload_done);
+  std::function<void(bool contents_changed, absl::Status status)> callback =
+      [&on_reload_done](bool contents_changed, absl::Status status) {
+        GPR_ASSERT(absl::StatusCode::kInvalidArgument == status.code());
+        GPR_ASSERT(status.message().compare("\"name\" field is not present.") ==
+                   0);
+        gpr_event_set(&on_reload_done, reinterpret_cast<void*>(1));
+      };
+  dynamic_cast<grpc_core::FileWatcherAuthorizationPolicyProvider*>(provider)
+      ->SetCallbackForTesting(std::move(callback));
   // Replace exisiting policy in file with an invalid policy.
   authz_policy = "{}";
   tmp_policy.RewriteFile(authz_policy);
-  on_reload_done.WaitForNotification();
+  GPR_ASSERT(
+      reinterpret_cast<void*>(1) ==
+      gpr_event_wait(&on_reload_done, gpr_inf_future(GPR_CLOCK_MONOTONIC)));
   test_allow_authorized_request(f);
 
   end_test(&f);
@@ -675,25 +676,6 @@ static void test_file_watcher_recovers_from_failure(
           tmp_policy.name().c_str(), /*refresh_interval_sec=*/1, &code,
           &error_details);
   GPR_ASSERT(GRPC_STATUS_OK == code);
-  absl::Notification on_first_reload_done;
-  absl::Notification on_second_reload_done;
-  bool first_reload = true;
-  std::function<void(grpc_status_code code, const char* error_details)>
-      callback = [&on_first_reload_done, &on_second_reload_done, &first_reload](
-                     grpc_status_code status, const char* error_details) {
-        if (first_reload) {
-          GPR_ASSERT(GRPC_STATUS_INVALID_ARGUMENT == status);
-          GPR_ASSERT(nullptr !=
-                     strstr(error_details, "\"name\" field is not present."));
-          on_first_reload_done.Notify();
-        } else {
-          GPR_ASSERT(GRPC_STATUS_OK == status);
-          GPR_ASSERT(nullptr == error_details);
-          on_second_reload_done.Notify();
-        }
-      };
-  dynamic_cast<grpc_core::FileWatcherAuthorizationPolicyProvider*>(provider)
-      ->SetCallbackForTesting(std::move(callback));
   grpc_arg args[] = {
       grpc_channel_arg_pointer_create(
           const_cast<char*>(GRPC_ARG_AUTHORIZATION_POLICY_PROVIDER), provider,
@@ -705,12 +687,33 @@ static void test_file_watcher_recovers_from_failure(
       config, "test_file_watcher_recovers_from_failure", nullptr, &server_args);
   grpc_authorization_policy_provider_release(provider);
   test_allow_authorized_request(f);
+  gpr_event on_first_reload_done;
+  gpr_event_init(&on_first_reload_done);
+  std::function<void(bool contents_changed, absl::Status status)> callback1 =
+      [&on_first_reload_done](bool contents_changed, absl::Status status) {
+        GPR_ASSERT(absl::StatusCode::kInvalidArgument == status.code());
+        GPR_ASSERT(status.message().compare("\"name\" field is not present.") ==
+                   0);
+        gpr_event_set(&on_first_reload_done, reinterpret_cast<void*>(1));
+      };
+  dynamic_cast<grpc_core::FileWatcherAuthorizationPolicyProvider*>(provider)
+      ->SetCallbackForTesting(std::move(callback1));
   // Replace exisiting policy in file with an invalid policy.
   authz_policy = "{}";
   tmp_policy.RewriteFile(authz_policy);
-  on_first_reload_done.WaitForNotification();
-  first_reload = false;
+  GPR_ASSERT(reinterpret_cast<void*>(1) ==
+             gpr_event_wait(&on_first_reload_done,
+                            gpr_inf_future(GPR_CLOCK_MONOTONIC)));
   test_allow_authorized_request(f);
+  gpr_event on_second_reload_done;
+  gpr_event_init(&on_second_reload_done);
+  std::function<void(bool contents_changed, absl::Status status)> callback2 =
+      [&on_second_reload_done](bool contents_changed, absl::Status status) {
+        GPR_ASSERT(status.ok());
+        gpr_event_set(&on_second_reload_done, reinterpret_cast<void*>(1));
+      };
+  dynamic_cast<grpc_core::FileWatcherAuthorizationPolicyProvider*>(provider)
+      ->SetCallbackForTesting(std::move(callback2));
   // Recover from reload errors, by replacing invalid policy in file with a
   // valid policy.
   authz_policy =
@@ -738,7 +741,9 @@ static void test_file_watcher_recovers_from_failure(
       "  ]"
       "}";
   tmp_policy.RewriteFile(authz_policy);
-  on_second_reload_done.WaitForNotification();
+  GPR_ASSERT(reinterpret_cast<void*>(1) ==
+             gpr_event_wait(&on_second_reload_done,
+                            gpr_inf_future(GPR_CLOCK_MONOTONIC)));
   test_deny_unauthorized_request(f);
 
   end_test(&f);
