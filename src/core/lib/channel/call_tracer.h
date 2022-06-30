@@ -29,7 +29,7 @@
 #include <grpc/support/atm.h>
 
 #include "src/core/lib/iomgr/error.h"
-#include "src/core/lib/transport/byte_stream.h"
+#include "src/core/lib/slice/slice_buffer.h"
 #include "src/core/lib/transport/metadata_batch.h"
 #include "src/core/lib/transport/transport.h"
 
@@ -58,13 +58,13 @@ class CallTracer {
     virtual void RecordOnDoneSendInitialMetadata(gpr_atm* peer_string) = 0;
     virtual void RecordSendTrailingMetadata(
         grpc_metadata_batch* send_trailing_metadata) = 0;
-    virtual void RecordSendMessage(const ByteStream& send_message) = 0;
+    virtual void RecordSendMessage(const SliceBuffer& send_message) = 0;
     // The `RecordReceivedInitialMetadata()` and `RecordReceivedMessage()`
     // methods should only be invoked when the metadata/message was
     // successfully received, i.e., without any error.
     virtual void RecordReceivedInitialMetadata(
         grpc_metadata_batch* recv_initial_metadata, uint32_t flags) = 0;
-    virtual void RecordReceivedMessage(const ByteStream& recv_message) = 0;
+    virtual void RecordReceivedMessage(const SliceBuffer& recv_message) = 0;
     // If the call was cancelled before the recv_trailing_metadata op
     // was started, recv_trailing_metadata and transport_stream_stats
     // will be null.

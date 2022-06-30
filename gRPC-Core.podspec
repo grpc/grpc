@@ -178,6 +178,7 @@ Pod::Spec.new do |s|
     ss.dependency 'abseil/container/flat_hash_set', abseil_version
     ss.dependency 'abseil/container/inlined_vector', abseil_version
     ss.dependency 'abseil/functional/bind_front', abseil_version
+    ss.dependency 'abseil/functional/function_ref', abseil_version
     ss.dependency 'abseil/hash/hash', abseil_version
     ss.dependency 'abseil/memory/memory', abseil_version
     ss.dependency 'abseil/meta/type_traits', abseil_version
@@ -1478,8 +1479,6 @@ Pod::Spec.new do |s|
                       'src/core/lib/slice/slice_refcount.cc',
                       'src/core/lib/slice/slice_refcount.h',
                       'src/core/lib/slice/slice_refcount_base.h',
-                      'src/core/lib/slice/slice_split.cc',
-                      'src/core/lib/slice/slice_split.h',
                       'src/core/lib/slice/slice_string_helpers.cc',
                       'src/core/lib/slice/slice_string_helpers.h',
                       'src/core/lib/surface/api_trace.cc',
@@ -1518,8 +1517,6 @@ Pod::Spec.new do |s|
                       'src/core/lib/surface/version.cc',
                       'src/core/lib/transport/bdp_estimator.cc',
                       'src/core/lib/transport/bdp_estimator.h',
-                      'src/core/lib/transport/byte_stream.cc',
-                      'src/core/lib/transport/byte_stream.h',
                       'src/core/lib/transport/connectivity_state.cc',
                       'src/core/lib/transport/connectivity_state.h',
                       'src/core/lib/transport/error_utils.cc',
@@ -2328,7 +2325,6 @@ Pod::Spec.new do |s|
                               'src/core/lib/slice/slice_internal.h',
                               'src/core/lib/slice/slice_refcount.h',
                               'src/core/lib/slice/slice_refcount_base.h',
-                              'src/core/lib/slice/slice_split.h',
                               'src/core/lib/slice/slice_string_helpers.h',
                               'src/core/lib/surface/api_trace.h',
                               'src/core/lib/surface/builtins.h',
@@ -2345,7 +2341,6 @@ Pod::Spec.new do |s|
                               'src/core/lib/surface/server.h',
                               'src/core/lib/surface/validate_metadata.h',
                               'src/core/lib/transport/bdp_estimator.h',
-                              'src/core/lib/transport/byte_stream.h',
                               'src/core/lib/transport/connectivity_state.h',
                               'src/core/lib/transport/error_utils.h',
                               'src/core/lib/transport/handshaker.h',

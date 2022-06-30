@@ -46,9 +46,9 @@ class AffinityTest(xds_k8s_testcase.RegularXdsKubernetesTestCase):
     @staticmethod
     def is_supported(config: skips.TestConfig) -> bool:
         if config.client_lang in _Lang.CPP | _Lang.JAVA:
-            return not config.version_lt('v1.40.x')
+            return config.version_gte('v1.40.x')
         elif config.client_lang == _Lang.GO:
-            return not config.version_lt('v1.41.x')
+            return config.version_gte('v1.41.x')
         elif config.client_lang == _Lang.PYTHON:
             # TODO(https://github.com/grpc/grpc/issues/27430): supported after
             #      the issue is fixed.

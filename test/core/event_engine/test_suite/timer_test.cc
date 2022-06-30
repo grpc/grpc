@@ -38,6 +38,16 @@ class EventEngineTimerTest : public EventEngineTest {
                        std::atomic<int>* fail_count, int total_expected);
 
  protected:
+  void WaitForSignalled(absl::Duration timeout)
+      ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_) {
+    absl::Time deadline = absl::Now() + timeout;
+    while (!signaled_) {
+      timeout = deadline - absl::Now();
+      ASSERT_GT(timeout, absl::ZeroDuration());
+      cv_.WaitWithTimeout(&mu_, timeout);
+    }
+  }
+
   grpc_core::Mutex mu_;
   grpc_core::CondVar cv_;
   bool signaled_ ABSL_GUARDED_BY(mu_) = false;
@@ -52,8 +62,7 @@ TEST_F(EventEngineTimerTest, ImmediateCallbackIsExecutedQuickly) {
     signaled_ = true;
     cv_.Signal();
   });
-  cv_.WaitWithTimeout(&mu_, absl::Seconds(5));
-  ASSERT_TRUE(signaled_);
+  WaitForSignalled(absl::Seconds(5));
 }
 
 TEST_F(EventEngineTimerTest, SupportsCancellation) {
@@ -117,8 +126,7 @@ TEST_F(EventEngineTimerTest, CancellingExecutedCallbackIsNoopAndReturnsFalse) {
     signaled_ = true;
     cv_.Signal();
   });
-  cv_.WaitWithTimeout(&mu_, absl::Seconds(10));
-  ASSERT_TRUE(signaled_);
+  WaitForSignalled(absl::Seconds(10));
   // The callback has run, and now we'll try to cancel it.
   ASSERT_FALSE(engine->Cancel(handle));
 }

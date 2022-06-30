@@ -432,7 +432,7 @@ class EventEngine {
 /// created, applications must set a custom EventEngine factory method *before*
 /// grpc is initialized.
 void SetDefaultEventEngineFactory(
-    const std::function<std::unique_ptr<EventEngine>()>* factory);
+    std::function<std::unique_ptr<EventEngine>()> factory);
 
 /// Create an EventEngine using the default factory.
 std::unique_ptr<EventEngine> CreateEventEngine();
