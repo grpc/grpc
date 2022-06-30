@@ -2050,6 +2050,8 @@
         'third_party/upb/upb/def.c',
         'third_party/upb/upb/encode.c',
         'third_party/upb/upb/extension_registry.c',
+        'third_party/upb/upb/json_decode.c',
+        'third_party/upb/upb/json_encode.c',
         'third_party/upb/upb/map.c',
         'third_party/upb/upb/mini_table.c',
         'third_party/upb/upb/msg.c',

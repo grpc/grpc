@@ -2387,6 +2387,10 @@
     <file baseinstalldir="/" name="third_party/upb/upb/internal/table.h" role="src" />
     <file baseinstalldir="/" name="third_party/upb/upb/internal/upb.h" role="src" />
     <file baseinstalldir="/" name="third_party/upb/upb/internal/vsnprintf_compat.h" role="src" />
+    <file baseinstalldir="/" name="third_party/upb/upb/json_decode.c" role="src" />
+    <file baseinstalldir="/" name="third_party/upb/upb/json_decode.h" role="src" />
+    <file baseinstalldir="/" name="third_party/upb/upb/json_encode.c" role="src" />
+    <file baseinstalldir="/" name="third_party/upb/upb/json_encode.h" role="src" />
     <file baseinstalldir="/" name="third_party/upb/upb/map.c" role="src" />
     <file baseinstalldir="/" name="third_party/upb/upb/map.h" role="src" />
     <file baseinstalldir="/" name="third_party/upb/upb/message_value.h" role="src" />
