@@ -2407,6 +2407,8 @@
     <file baseinstalldir="/" name="third_party/upb/upb/status.h" role="src" />
     <file baseinstalldir="/" name="third_party/upb/upb/table.c" role="src" />
     <file baseinstalldir="/" name="third_party/upb/upb/table_internal.h" role="src" />
+    <file baseinstalldir="/" name="third_party/upb/upb/text_encode.c" role="src" />
+    <file baseinstalldir="/" name="third_party/upb/upb/text_encode.h" role="src" />
     <file baseinstalldir="/" name="third_party/upb/upb/upb.c" role="src" />
     <file baseinstalldir="/" name="third_party/upb/upb/upb.h" role="src" />
     <file baseinstalldir="/" name="third_party/upb/upb/upb.hpp" role="src" />

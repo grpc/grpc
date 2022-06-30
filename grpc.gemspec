@@ -2489,6 +2489,8 @@ Gem::Specification.new do |s|
   s.files += %w( third_party/upb/upb/status.h )
   s.files += %w( third_party/upb/upb/table.c )
   s.files += %w( third_party/upb/upb/table_internal.h )
+  s.files += %w( third_party/upb/upb/text_encode.c )
+  s.files += %w( third_party/upb/upb/text_encode.h )
   s.files += %w( third_party/upb/upb/upb.c )
   s.files += %w( third_party/upb/upb/upb.h )
   s.files += %w( third_party/upb/upb/upb.hpp )

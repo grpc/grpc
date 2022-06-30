@@ -1695,6 +1695,8 @@ Pod::Spec.new do |s|
                       'third_party/upb/upb/status.h',
                       'third_party/upb/upb/table.c',
                       'third_party/upb/upb/table_internal.h',
+                      'third_party/upb/upb/text_encode.c',
+                      'third_party/upb/upb/text_encode.h',
                       'third_party/upb/upb/upb.c',
                       'third_party/upb/upb/upb.h',
                       'third_party/upb/upb/upb.hpp',
@@ -2446,6 +2448,7 @@ Pod::Spec.new do |s|
                               'third_party/upb/upb/reflection.hpp',
                               'third_party/upb/upb/status.h',
                               'third_party/upb/upb/table_internal.h',
+                              'third_party/upb/upb/text_encode.h',
                               'third_party/upb/upb/upb.h',
                               'third_party/upb/upb/upb.hpp',
                               'third_party/xxhash/xxhash.h'

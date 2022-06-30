@@ -2058,6 +2058,7 @@
         'third_party/upb/upb/reflection.c',
         'third_party/upb/upb/status.c',
         'third_party/upb/upb/table.c',
+        'third_party/upb/upb/text_encode.c',
         'third_party/upb/upb/upb.c',
         'src/core/ext/upb-generated/google/protobuf/descriptor.upb.c',
         'src/core/ext/upbdefs-generated/google/protobuf/descriptor.upbdefs.c',

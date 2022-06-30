@@ -1167,6 +1167,7 @@ if test "$PHP_GRPC" != "no"; then
     third_party/upb/upb/reflection.c \
     third_party/upb/upb/status.c \
     third_party/upb/upb/table.c \
+    third_party/upb/upb/text_encode.c \
     third_party/upb/upb/upb.c \
     , $ext_shared, , -fvisibility=hidden \
     -DOPENSSL_NO_ASM -D_GNU_SOURCE -DWIN32_LEAN_AND_MEAN \

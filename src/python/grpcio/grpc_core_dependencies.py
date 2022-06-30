@@ -1188,6 +1188,7 @@ CORE_SOURCE_FILES = [
     'third_party/upb/upb/reflection.c',
     'third_party/upb/upb/status.c',
     'third_party/upb/upb/table.c',
+    'third_party/upb/upb/text_encode.c',
     'third_party/upb/upb/upb.c',
     'third_party/zlib/adler32.c',
     'third_party/zlib/compress.c',
