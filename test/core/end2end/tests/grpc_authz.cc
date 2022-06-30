@@ -639,8 +639,7 @@ static void test_file_watcher_invalid_policy_skip_reload(
       [&on_reload_done](bool contents_changed, absl::Status status) {
         if (contents_changed) {
           GPR_ASSERT(absl::StatusCode::kInvalidArgument == status.code());
-          GPR_ASSERT(
-              status.message().compare("\"name\" field is not present.") == 0);
+          GPR_ASSERT("\"name\" field is not present." == status.message());
           gpr_event_set(&on_reload_done, reinterpret_cast<void*>(1));
         }
       };
@@ -701,8 +700,7 @@ static void test_file_watcher_recovers_from_failure(
       [&on_first_reload_done](bool contents_changed, absl::Status status) {
         if (contents_changed) {
           GPR_ASSERT(absl::StatusCode::kInvalidArgument == status.code());
-          GPR_ASSERT(
-              status.message().compare("\"name\" field is not present.") == 0);
+          GPR_ASSERT("\"name\" field is not present." == status.message());
           gpr_event_set(&on_first_reload_done, reinterpret_cast<void*>(1));
         }
       };
