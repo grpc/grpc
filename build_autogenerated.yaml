@@ -3320,15 +3320,6 @@ targets:
   - test/core/tsi/alts/zero_copy_frame_protector/alts_zero_copy_grpc_protector_test.cc
   deps:
   - grpc_test_util
-- name: arena_test
-  build: test
-  language: c
-  headers: []
-  src:
-  - test/core/gpr/arena_test.cc
-  deps:
-  - grpc_test_util
-  uses_polling: false
 - name: auth_context_test
   build: test
   language: c
@@ -4629,6 +4620,16 @@ targets:
   - absl/utility:utility
   - gpr
   - upb
+  uses_polling: false
+- name: arena_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/core/resource_quota/arena_test.cc
+  deps:
+  - grpc_test_util
   uses_polling: false
 - name: async_end2end_test
   gtest: true

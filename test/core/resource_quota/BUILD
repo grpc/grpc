@@ -22,12 +22,12 @@ grpc_package(name = "test/core/resource_quota")
 grpc_cc_test(
     name = "arena_test",
     srcs = ["arena_test.cc"],
+    external_deps = [
+        "gtest",
+    ],
     language = "C++",
     uses_event_engine = False,
     uses_polling = False,
-    external_deps = [
-        "gtest"
-    ],
     deps = [
         "//:gpr",
         "//test/core/util:grpc_test_util",
