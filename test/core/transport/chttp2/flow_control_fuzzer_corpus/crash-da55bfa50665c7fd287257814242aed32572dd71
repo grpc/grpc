@@ -1,0 +1,90 @@
+enable_bdp: true
+actions {
+  perform_send_from_remote {
+  }
+}
+actions {
+  perform_send_from_remote {
+  }
+}
+actions {
+  perform_send_from_remote {
+  }
+}
+actions {
+  perform_send_from_remote {
+  }
+}
+actions {
+  stream_write {
+    id: 11008
+    size: 2883584
+  }
+}
+actions {
+  set_min_progress_size {
+    id: 11008
+    size: 2883584
+  }
+}
+actions {
+  perform_send_to_remote {
+  }
+}
+actions {
+  perform_send_to_remote {
+  }
+}
+actions {
+  read_send_to_remote {
+  }
+}
+actions {
+  read_send_from_remote {
+  }
+}
+actions {
+  read_send_from_remote {
+  }
+}
+actions {
+  perform_send_from_remote {
+  }
+}
+actions {
+  perform_send_from_remote {
+  }
+}
+actions {
+  perform_send_from_remote {
+  }
+}
+actions {
+}
+actions {
+  read_send_from_remote {
+  }
+}
+actions {
+  read_send_from_remote {
+  }
+}
+actions {
+}
+actions {
+  perform_send_from_remote {
+  }
+}
+actions {
+  read_send_from_remote {
+  }
+}
+actions {
+  set_memory_quota: 0
+}
+actions {
+  read_send_from_remote {
+  }
+}
+actions {
+}

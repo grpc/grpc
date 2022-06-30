@@ -1234,7 +1234,7 @@ void ClientChannel::OnResolverResultChangedLocked(Resolver::Result result) {
   // (d) Address resolution that causes a new LB policy to be created.
   //
   // We track a list of strings to eventually be concatenated and traced.
-  absl::InlinedVector<const char*, 3> trace_strings;
+  std::vector<const char*> trace_strings;
   const bool resolution_contains_addresses =
       result.addresses.ok() && !result.addresses->empty();
   if (!resolution_contains_addresses &&
@@ -2953,7 +2953,7 @@ void ClientChannel::LoadBalancedCall::RecvMessageReady(
     gpr_log(GPR_INFO, "chand=%p lb_call=%p: got recv_message_ready: error=%s",
             self->chand_, self, grpc_error_std_string(error).c_str());
   }
-  if (*self->recv_message_ != nullptr) {
+  if (self->recv_message_->has_value()) {
     self->call_attempt_tracer_->RecordReceivedMessage(**self->recv_message_);
   }
   Closure::Run(DEBUG_LOCATION, self->original_recv_message_ready_,

@@ -20,12 +20,10 @@
 
 #include <grpc/support/log.h>
 
-#include "src/core/ext/transport/chttp2/transport/flow_control.h"
 #include "src/core/ext/transport/chttp2/transport/frame.h"
 #include "src/core/ext/transport/chttp2/transport/internal.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/gprpp/bitset.h"
-#include "src/core/lib/gprpp/manual_constructor.h"
 
 static const char* stream_list_id_string(grpc_chttp2_stream_list_id id) {
   switch (id) {
@@ -189,7 +187,6 @@ void grpc_chttp2_list_remove_waiting_for_concurrency(grpc_chttp2_transport* t,
 
 void grpc_chttp2_list_add_stalled_by_transport(grpc_chttp2_transport* t,
                                                grpc_chttp2_stream* s) {
-  GPR_ASSERT(t->flow_control->flow_control_enabled());
   stream_list_add(t, s, GRPC_CHTTP2_LIST_STALLED_BY_TRANSPORT);
 }
 
@@ -205,7 +202,6 @@ void grpc_chttp2_list_remove_stalled_by_transport(grpc_chttp2_transport* t,
 
 void grpc_chttp2_list_add_stalled_by_stream(grpc_chttp2_transport* t,
                                             grpc_chttp2_stream* s) {
-  GPR_ASSERT(t->flow_control->flow_control_enabled());
   stream_list_add(t, s, GRPC_CHTTP2_LIST_STALLED_BY_STREAM);
 }
 

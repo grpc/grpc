@@ -33,18 +33,13 @@ const intptr_t kTaskHandleSalt = 12345;
 FuzzingEventEngine* g_fuzzing_event_engine = nullptr;
 }  // namespace
 
-FuzzingEventEngine::FuzzingEventEngine(Options options)
+FuzzingEventEngine::FuzzingEventEngine(
+    Options options, const fuzzing_event_engine::Actions& actions)
     : final_tick_length_(options.final_tick_length) {
   GPR_ASSERT(g_fuzzing_event_engine == nullptr);
   g_fuzzing_event_engine = this;
 
   gpr_now_impl = GlobalNowImpl;
-
-  Restart(fuzzing_event_engine::Actions());
-}
-
-void FuzzingEventEngine::Restart(const fuzzing_event_engine::Actions& actions) {
-  grpc_core::MutexLock lock(&mu_);
 
   tick_increments_.clear();
   task_delays_.clear();

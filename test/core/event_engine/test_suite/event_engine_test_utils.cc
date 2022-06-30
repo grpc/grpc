@@ -67,7 +67,7 @@ std::string ExtractSliceBufferIntoString(SliceBuffer* buf) {
   }
   std::string tmp(buf->Length(), '\0');
   char* bytes = const_cast<char*>(tmp.c_str());
-  grpc_slice_buffer_move_first_into_buffer(buf->RawSliceBuffer(), buf->Length(),
+  grpc_slice_buffer_move_first_into_buffer(buf->c_slice_buffer(), buf->Length(),
                                            bytes);
   return tmp;
 }
