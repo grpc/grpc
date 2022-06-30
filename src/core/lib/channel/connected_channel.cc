@@ -236,8 +236,8 @@ namespace grpc_core {
 class ClientConnectedCallPromise {
  public:
   ClientConnectedCallPromise(grpc_transport* transport, CallArgs call_args)
-      : impl_(GetContext<Arena>()->New<Impl>(transport, std::move(call_args))) {
-  }
+      : impl_(GetContext<Arena>()->ManagedNew<Impl>(transport,
+                                                    std::move(call_args))) {}
 
   ClientConnectedCallPromise(const ClientConnectedCallPromise&) = delete;
   ClientConnectedCallPromise& operator=(const ClientConnectedCallPromise&) =
@@ -253,7 +253,7 @@ class ClientConnectedCallPromise {
   Poll<ServerMetadataHandle> operator()() { return impl_->PollOnce(); }
 
  private:
-  class Impl : public Orphanable {
+  class Impl {
    public:
     Impl(grpc_transport* transport, CallArgs call_args)
         : stream_owning_waker_(Activity::current()->MakeOwningWaker()),
@@ -270,11 +270,6 @@ class ClientConnectedCallPromise {
               "ClientConnectedCallPromise::ClientConnectedCallPromise: "
               "intitial_metadata=%s",
               client_initial_metadata_->DebugString().c_str());
-    }
-
-    void Orphan() override {
-      stream_.reset();
-      Unref();
     }
 
     Poll<ServerMetadataHandle> PollOnce() {
@@ -480,7 +475,7 @@ class ClientConnectedCallPromise {
         GetContext<grpc_call_context_element>()};
   };
 
-  OrphanablePtr<Impl> impl_;
+  Impl* impl_;
 };
 
 namespace {
