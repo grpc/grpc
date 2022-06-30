@@ -43,7 +43,6 @@
 #include "src/core/lib/iomgr/resolve_address.h"
 #include "src/core/lib/iomgr/sockaddr.h"
 #include "src/core/lib/iomgr/socket_windows.h"
-#include "src/core/lib/iomgr/tcp_generic_options.h"
 #include "src/core/lib/iomgr/tcp_server.h"
 #include "src/core/lib/iomgr/tcp_windows.h"
 #include "src/core/lib/resource_quota/api.h"

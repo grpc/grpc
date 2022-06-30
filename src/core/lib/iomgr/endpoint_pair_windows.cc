@@ -31,7 +31,6 @@
 #include "src/core/lib/iomgr/endpoint_pair.h"
 #include "src/core/lib/iomgr/sockaddr.h"
 #include "src/core/lib/iomgr/socket_windows.h"
-#include "src/core/lib/iomgr/tcp_generic_options.h"
 #include "src/core/lib/iomgr/tcp_windows.h"
 
 static void create_sockets(SOCKET sv[2]) {
@@ -78,10 +77,8 @@ grpc_endpoint_pair grpc_iomgr_create_endpoint_pair(
   create_sockets(sv);
   grpc_core::ExecCtx exec_ctx;
   p.client = grpc_tcp_create(grpc_winsocket_create(sv[1], "endpoint:client"),
-                             TcpOptionsFromChannelArgs(channel_args),
                              "endpoint:server");
   p.server = grpc_tcp_create(grpc_winsocket_create(sv[0], "endpoint:server"),
-                             TcpOptionsFromChannelArgs(channel_args),
                              "endpoint:client");
   return p;
 }

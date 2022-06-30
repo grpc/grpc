@@ -36,7 +36,6 @@
 #include "src/core/lib/iomgr/sockaddr_windows.h"
 #include "src/core/lib/iomgr/socket_windows.h"
 #include "src/core/lib/iomgr/tcp_client.h"
-#include "src/core/lib/iomgr/tcp_generic_options.h"
 #include "src/core/lib/iomgr/tcp_windows.h"
 #include "src/core/lib/iomgr/timer.h"
 #include "src/core/lib/resource_quota/api.h"
