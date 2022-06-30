@@ -19,8 +19,8 @@
 #include "absl/memory/memory.h"
 #include "absl/utility/utility.h"
 
-#include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/address_utils/sockaddr_utils.h"
+#include "src/core/lib/gprpp/sync.h"
 
 // defined in tcp_client.cc
 extern grpc_tcp_client_vtable* grpc_tcp_client_impl;
@@ -134,15 +134,14 @@ void ConnectionDelayInjector::HandleConnection(
 // ConnectionHoldInjector::Hold
 //
 
-ConnectionHoldInjector::Hold::Hold(ConnectionHoldInjector* injector,
-                                   int port, bool intercept_completion)
+ConnectionHoldInjector::Hold::Hold(ConnectionHoldInjector* injector, int port,
+                                   bool intercept_completion)
     : injector_(injector),
       port_(port),
       intercept_completion_(intercept_completion) {}
 
 void ConnectionHoldInjector::Hold::Wait() {
-  gpr_log(GPR_INFO,
-          "=== WAITING FOR CONNECTION ATTEMPT ON PORT %d ===", port_);
+  gpr_log(GPR_INFO, "=== WAITING FOR CONNECTION ATTEMPT ON PORT %d ===", port_);
   grpc_core::MutexLock lock(&injector_->mu_);
   while (queued_attempt_ == nullptr) {
     start_cv_.Wait(&injector_->mu_);
@@ -151,8 +150,7 @@ void ConnectionHoldInjector::Hold::Wait() {
 }
 
 void ConnectionHoldInjector::Hold::Resume() {
-  gpr_log(GPR_INFO,
-          "=== RESUMING CONNECTION ATTEMPT ON PORT %d ===", port_);
+  gpr_log(GPR_INFO, "=== RESUMING CONNECTION ATTEMPT ON PORT %d ===", port_);
   grpc_core::ExecCtx exec_ctx;
   std::unique_ptr<QueuedAttempt> attempt;
   {
@@ -198,8 +196,7 @@ void ConnectionHoldInjector::Hold::OnComplete(void* arg,
     self->original_on_complete_ = nullptr;
     self->complete_cv_.Signal();
   }
-  grpc_core::Closure::Run(DEBUG_LOCATION, on_complete,
-                          GRPC_ERROR_REF(error));
+  grpc_core::Closure::Run(DEBUG_LOCATION, on_complete, GRPC_ERROR_REF(error));
 }
 
 //
