@@ -362,10 +362,8 @@ static void on_accept(void* arg, grpc_error_handle error) {
         gpr_free(utf8_message);
       }
       std::string fd_name = absl::StrCat("tcp_server:", peer_name_string);
-      auto config =
-          grpc_event_engine::experimental::CreateEndpointConfig(nullptr);
       ep = grpc_tcp_create(grpc_winsocket_create(sock, fd_name.c_str()),
-                           *config, peer_name_string);
+                           peer_name_string);
     } else {
       closesocket(sock);
     }

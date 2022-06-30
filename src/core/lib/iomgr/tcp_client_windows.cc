@@ -107,9 +107,7 @@ static void on_connect(void* acp, grpc_error_handle error) {
         error = GRPC_WSA_ERROR(WSAGetLastError(), "ConnectEx");
         closesocket(socket->socket);
       } else {
-        auto config =
-            grpc_event_engine::experimental::CreateEndpointConfig(nullptr);
-        *ep = grpc_tcp_create(socket, *config, ac->addr_name);
+        *ep = grpc_tcp_create(socket, ac->addr_name);
         socket = nullptr;
       }
     } else {
