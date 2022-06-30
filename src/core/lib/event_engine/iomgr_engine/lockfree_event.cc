@@ -16,6 +16,9 @@
 
 #include "src/core/lib/event_engine/iomgr_engine/lockfree_event.h"
 
+#include <stdint.h>
+#include <stdlib.h>
+
 #include "absl/status/status.h"
 
 #include <grpc/support/log.h>

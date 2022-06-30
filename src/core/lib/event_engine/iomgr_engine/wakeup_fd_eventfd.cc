@@ -14,14 +14,17 @@
 
 #include <grpc/support/port_platform.h>
 
-#include <grpc/support/log.h>
+#include <utility>
+
+#include "absl/memory/memory.h"
+#include "absl/strings/str_cat.h"
+#include "absl/strings/string_view.h"
 
 #include "src/core/lib/iomgr/port.h"
 
 #ifdef GRPC_LINUX_EVENTFD
 
 #include <errno.h>
-#include <fcntl.h>
 #include <string.h>
 #include <sys/eventfd.h>
 #include <unistd.h>

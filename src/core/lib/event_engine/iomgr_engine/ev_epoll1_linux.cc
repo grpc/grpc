@@ -16,38 +16,40 @@
 
 #include "src/core/lib/event_engine/iomgr_engine/ev_epoll1_linux.h"
 
-#include <atomic>
+#include <stdint.h>
+
+#include <algorithm>
 #include <memory>
 
+#include "absl/memory/memory.h"
+#include "absl/status/statusor.h"
+#include "absl/strings/str_cat.h"
+
+#include <grpc/impl/codegen/gpr_types.h>
 #include <grpc/support/log.h>
+#include <grpc/support/sync.h>
+#include <grpc/support/time.h>
 
 #include "src/core/lib/iomgr/port.h"
 
 // This polling engine is only relevant on linux kernels supporting epoll
 // epoll_create() or epoll_create1()
 #ifdef GRPC_LINUX_EPOLL
-#include <assert.h>
 #include <errno.h>
-#include <fcntl.h>
 #include <limits.h>
-#include <poll.h>
-#include <pthread.h>
 #include <string.h>
 #include <sys/epoll.h>
 #include <sys/socket.h>
 #include <unistd.h>
 
-#include <string>
 #include <vector>
 
 #include "absl/synchronization/mutex.h"
 
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/support/alloc.h>
-#include <grpc/support/cpu.h>
 
 #include "src/core/lib/event_engine/iomgr_engine/closure.h"
-#include "src/core/lib/event_engine/iomgr_engine/ev_epoll1_linux.h"
 #include "src/core/lib/event_engine/iomgr_engine/ev_posix.h"
 #include "src/core/lib/event_engine/iomgr_engine/lockfree_event.h"
 #include "src/core/lib/event_engine/iomgr_engine/wakeup_fd_posix.h"

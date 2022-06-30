@@ -16,8 +16,6 @@
 
 #include "src/core/lib/event_engine/iomgr_engine/ev_posix.h"
 
-#include <grpc/support/log.h>
-
 #include "src/core/lib/event_engine/iomgr_engine/ev_epoll1_linux.h"
 
 namespace grpc_event_engine {
