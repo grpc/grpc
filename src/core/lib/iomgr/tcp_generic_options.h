@@ -38,8 +38,8 @@ struct TcpGenericOptions {
   int keep_alive_timeout_ms;
   int expand_wildcard_addrs;
   int allow_reuse_port;
-  grpc_core::RefCountedPtr<grpc_core::ResourceQuota> resource_quota = nullptr;
-  struct grpc_socket_mutator* socket_mutator = nullptr;
+  grpc_core::RefCountedPtr<grpc_core::ResourceQuota> resource_quota;
+  struct grpc_socket_mutator* socket_mutator;
   TcpGenericOptions() : resource_quota(nullptr), socket_mutator(nullptr) {}
   // Move ctor
   TcpGenericOptions(TcpGenericOptions&& other) noexcept {
