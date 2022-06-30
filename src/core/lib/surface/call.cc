@@ -1866,9 +1866,9 @@ class PromiseBasedCall : public Call, public Activity, public Wakeable {
   void Wakeup() override {
     grpc_event_engine::experimental::GetDefaultEventEngine()->Run([this] {
       {
-        ScopedContext activity_context(this);
         ApplicationCallbackExecCtx app_exec_ctx;
         ExecCtx exec_ctx;
+        ScopedContext activity_context(this);
         MutexLock lock(&mu_);
         Update();
       }
