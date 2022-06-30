@@ -1566,7 +1566,7 @@ static tsi_result ssl_handshaker_write_output_buffer(tsi_handshaker* self,
                                                      size_t* bytes_written) {
   tsi_ssl_handshaker* impl = reinterpret_cast<tsi_ssl_handshaker*>(self);
   tsi_result status = TSI_OK;
-  int offset = *bytes_written;
+  size_t offset = *bytes_written;
   do {
     size_t to_send_size = impl->outgoing_bytes_buffer_size - offset;
     status = ssl_handshaker_get_bytes_to_send_to_peer(

@@ -27,8 +27,8 @@
 #include <map>
 #include <memory>
 #include <string>
+#include <vector>
 
-#include "absl/container/inlined_vector.h"
 #include "absl/memory/memory.h"
 
 #include <grpc/impl/codegen/grpc_types.h>
@@ -117,7 +117,7 @@ class ServerAddress {
 // ServerAddressList
 //
 
-typedef absl::InlinedVector<ServerAddress, 1> ServerAddressList;
+using ServerAddressList = std::vector<ServerAddress>;
 
 //
 // ServerAddressWeightAttribute

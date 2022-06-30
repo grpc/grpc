@@ -19,6 +19,7 @@
 
 #include "src/core/ext/transport/binder/utils/transport_stream_receiver.h"
 #include "src/core/ext/transport/binder/wire_format/binder.h"
+#include "src/core/ext/transport/binder/wire_format/binder_constants.h"
 #include "src/core/ext/transport/binder/wire_format/wire_reader.h"
 #include "src/core/ext/transport/binder/wire_format/wire_writer.h"
 
@@ -92,7 +93,8 @@ class MockTransactionReceiver : public TransactionReceiver {
 
 class MockWireWriter : public WireWriter {
  public:
-  MOCK_METHOD(absl::Status, RpcCall, (const Transaction&), (override));
+  MOCK_METHOD(absl::Status, RpcCall, (std::unique_ptr<Transaction>),
+              (override));
   MOCK_METHOD(absl::Status, SendAck, (int64_t), (override));
   MOCK_METHOD(void, OnAckReceived, (int64_t), (override));
 };

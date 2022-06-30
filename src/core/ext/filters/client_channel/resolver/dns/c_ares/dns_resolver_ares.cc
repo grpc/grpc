@@ -207,7 +207,7 @@ std::string ChooseServiceConfig(char* service_config_choice_json,
     return "";
   }
   const Json* service_config = nullptr;
-  absl::InlinedVector<grpc_error_handle, 4> error_list;
+  std::vector<grpc_error_handle> error_list;
   for (const Json& choice : json.array_value()) {
     if (choice.type() != Json::Type::OBJECT) {
       error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
