@@ -54,6 +54,7 @@
 #include "src/core/lib/promise/pipe.h"
 #include "src/core/lib/promise/poll.h"
 #include "src/core/lib/resource_quota/arena.h"
+#include "src/core/lib/surface/call.h"
 #include "src/core/lib/surface/channel_stack_type.h"
 #include "src/core/lib/transport/metadata_allocator.h"
 #include "src/core/lib/transport/metadata_batch.h"
@@ -265,8 +266,6 @@ class ClientConnectedCallPromise {
           server_to_client_messages_(call_args.server_to_client_messages),
           client_initial_metadata_(
               std::move(call_args.client_initial_metadata)) {
-      GRPC_STREAM_REF_INIT(&stream_refcount_, 1, StreamRefCountDestroyed, this,
-                           "connected_channel");
       gpr_log(GPR_INFO,
               "ClientConnectedCallPromise::ClientConnectedCallPromise: "
               "intitial_metadata=%s",
@@ -416,22 +415,6 @@ class ClientConnectedCallPromise {
       scheduled_push_ = false;
     }
 
-    void IncrementRefCount() {
-#ifndef NDEBUG
-      grpc_stream_ref(&stream_refcount_, "connected_channel");
-#else
-      grpc_stream_ref(&stream_refcount_);
-#endif
-    }
-
-    void Unref() {
-#ifndef NDEBUG
-      grpc_stream_unref(&stream_refcount_, "connected_channel");
-#else
-      grpc_stream_unref(&stream_refcount_);
-#endif
-    }
-
    private:
     struct Idle {};
     struct Closed {};
@@ -451,12 +434,8 @@ class ClientConnectedCallPromise {
 
     void SchedulePush() {
       if (absl::exchange(scheduled_push_, true)) return;
-      IncrementRefCount();
+      GetContext<CallContext>()->IncrementRefCount();
       ExecCtx::Run(DEBUG_LOCATION, &push_, GRPC_ERROR_NONE);
-    }
-
-    static void StreamRefCountDestroyed(void* p, grpc_error_handle) {
-      static_cast<Impl*>(p)->~Impl();
     }
 
     bool requested_metadata_ = false;
@@ -471,7 +450,6 @@ class ClientConnectedCallPromise {
     Waker trailing_metadata_waker_;
     Waker send_message_waker_;
     Waker stream_owning_waker_;
-    grpc_stream_refcount stream_refcount_;
     grpc_transport* const transport_;
     StreamPtr stream_;
     Latch<ServerMetadata*>* server_initial_metadata_latch_;

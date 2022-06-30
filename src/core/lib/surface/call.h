@@ -44,6 +44,7 @@
 #include "src/core/lib/surface/api_trace.h"
 #include "src/core/lib/surface/channel.h"
 #include "src/core/lib/surface/server.h"
+#include "src/core/lib/transport/transport.h"
 
 typedef void (*grpc_ioreq_completion_func)(grpc_call* call, int success,
                                            void* user_data);
@@ -66,6 +67,44 @@ typedef struct grpc_call_create_args {
 
   grpc_core::Timestamp send_deadline;
 } grpc_call_create_args;
+
+namespace grpc_core {
+// TODO(ctiller): move more call things into this type
+class CallContext {
+ public:
+  CallContext(grpc_iomgr_cb_func on_destroyed, void* on_destroyed_arg) {
+    GRPC_STREAM_REF_INIT(&stream_refcount_, 1, on_destroyed, on_destroyed_arg,
+                         "call_context");
+  }
+  // TODO(ctiller): remove this once transport APIs are promise based
+  void IncrementRefCount() {
+#ifndef NDEBUG
+    grpc_stream_ref(&stream_refcount_, "CallContext");
+#else
+    grpc_stream_ref(&stream_refcount_);
+#endif
+  }
+
+  // TODO(ctiller): remove this once transport APIs are promise based
+  void Unref() {
+#ifndef NDEBUG
+    grpc_stream_unref(&stream_refcount_, "CallContext");
+#else
+    grpc_stream_unref(&stream_refcount_);
+#endif
+  }
+
+  // TODO(ctiller): remove this once transport APIs are promise based
+  grpc_stream_refcount* c_stream_refcount() { return &stream_refcount_; }
+
+ private:
+  // TODO(ctiller): remove this once transport APIs are promise based
+  grpc_stream_refcount stream_refcount_;
+};
+
+template <>
+struct ContextType<CallContext> {};
+}  // namespace grpc_core
 
 /* Create a new call based on \a args.
    Regardless of success or failure, always returns a valid new call into *call
