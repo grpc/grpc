@@ -73,10 +73,13 @@ class DNSResolver {
   LookupHostnameBlocking(absl::string_view name,
                          absl::string_view default_port) = 0;
 
-  // Asynchronously resolve an SRV Record per gRFC A5: Load Balancing and DNS.
+  // Asynchronously resolve an SRV Record to Hostnames.
   // On completion, \a on_done is invoked with the result.
   //
   // The same caveats in \a LookupHostname apply here as well.
+  //
+  // TODO(hork): return std::vector<SRVRecord> and ask the client to do the
+  // subsequent hostname lookups.
   virtual TaskHandle LookupSRV(
       std::function<void(absl::StatusOr<std::vector<grpc_resolved_address>>)>
           on_resolved,

@@ -153,6 +153,9 @@ class AresClientChannelDNSResolver : public PollingResolver {
       resolver_.reset(DEBUG_LOCATION, "dns-resolving");
     }
 
+    // Note that thread safety cannot be analyzed due to this being invoked from
+    // OrphanablePtr<>, and there's no way to pass the lock annotation through
+    // there.
     void Orphan() override ABSL_NO_THREAD_SAFETY_ANALYSIS {
       if (hostname_request_ != nullptr) {
         grpc_cancel_ares_request(hostname_request_.get());

@@ -852,9 +852,8 @@ grpc_error_handle set_request_dns_server(grpc_ares_request* r,
       r->dns_server_addr.tcp_port = grpc_sockaddr_get_port(&addr);
       r->dns_server_addr.udp_port = grpc_sockaddr_get_port(&addr);
     } else {
-      return grpc_error_set_str(
-          GRPC_ERROR_CREATE_FROM_STATIC_STRING("cannot parse authority"),
-          GRPC_ERROR_STR_TARGET_ADDRESS, dns_server);
+      return grpc_error_set_str(GRPC_ERROR_CREATE_FROM_CPP_STRING(
+          absl::StrCat("cannot parse authority ", dns_server)));
     }
     int status =
         ares_set_servers_ports(r->ev_driver->channel, &r->dns_server_addr);
