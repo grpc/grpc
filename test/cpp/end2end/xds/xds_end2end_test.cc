@@ -391,6 +391,9 @@ class XdsSecurityTest : public XdsEnd2endTest {
           DEBUG_LOCATION,
           [&](const RpcResult& result) {
             // Make sure that we are hitting the correct backend.
+            // TODO(yashykt): Even if we haven't moved to the correct backend
+            // and are still using the previous update, we should still check
+            // for the status and make sure that it fits our expectations.
             if (backends_[backend_index_]->backend_service()->request_count() ==
                 0) {
               return true;
