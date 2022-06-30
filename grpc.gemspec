@@ -2454,6 +2454,7 @@ Gem::Specification.new do |s|
   s.files += %w( third_party/upb/upb/arena.c )
   s.files += %w( third_party/upb/upb/arena.h )
   s.files += %w( third_party/upb/upb/array.c )
+  s.files += %w( third_party/upb/upb/array.h )
   s.files += %w( third_party/upb/upb/collections.h )
   s.files += %w( third_party/upb/upb/decode.c )
   s.files += %w( third_party/upb/upb/decode.h )

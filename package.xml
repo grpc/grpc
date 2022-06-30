@@ -2372,6 +2372,7 @@
     <file baseinstalldir="/" name="third_party/upb/upb/arena.c" role="src" />
     <file baseinstalldir="/" name="third_party/upb/upb/arena.h" role="src" />
     <file baseinstalldir="/" name="third_party/upb/upb/array.c" role="src" />
+    <file baseinstalldir="/" name="third_party/upb/upb/array.h" role="src" />
     <file baseinstalldir="/" name="third_party/upb/upb/collections.h" role="src" />
     <file baseinstalldir="/" name="third_party/upb/upb/decode.c" role="src" />
     <file baseinstalldir="/" name="third_party/upb/upb/decode.h" role="src" />
