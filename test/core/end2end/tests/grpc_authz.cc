@@ -553,8 +553,10 @@ static void test_file_watcher_valid_policy_reload(
   gpr_event_init(&on_reload_done);
   std::function<void(bool contents_changed, absl::Status status)> callback =
       [&on_reload_done](bool contents_changed, absl::Status status) {
-        GPR_ASSERT(status.ok());
-        gpr_event_set(&on_reload_done, reinterpret_cast<void*>(1));
+        if (contents_changed) {
+          GPR_ASSERT(status.ok());
+          gpr_event_set(&on_reload_done, reinterpret_cast<void*>(1));
+        }
       };
   dynamic_cast<grpc_core::FileWatcherAuthorizationPolicyProvider*>(provider)
       ->SetCallbackForTesting(std::move(callback));
@@ -633,10 +635,12 @@ static void test_file_watcher_invalid_policy_skip_reload(
   gpr_event_init(&on_reload_done);
   std::function<void(bool contents_changed, absl::Status status)> callback =
       [&on_reload_done](bool contents_changed, absl::Status status) {
-        GPR_ASSERT(absl::StatusCode::kInvalidArgument == status.code());
-        GPR_ASSERT(status.message().compare("\"name\" field is not present.") ==
-                   0);
-        gpr_event_set(&on_reload_done, reinterpret_cast<void*>(1));
+        if (contents_changed) {
+          GPR_ASSERT(absl::StatusCode::kInvalidArgument == status.code());
+          GPR_ASSERT(
+              status.message().compare("\"name\" field is not present.") == 0);
+          gpr_event_set(&on_reload_done, reinterpret_cast<void*>(1));
+        }
       };
   dynamic_cast<grpc_core::FileWatcherAuthorizationPolicyProvider*>(provider)
       ->SetCallbackForTesting(std::move(callback));
@@ -691,10 +695,12 @@ static void test_file_watcher_recovers_from_failure(
   gpr_event_init(&on_first_reload_done);
   std::function<void(bool contents_changed, absl::Status status)> callback1 =
       [&on_first_reload_done](bool contents_changed, absl::Status status) {
-        GPR_ASSERT(absl::StatusCode::kInvalidArgument == status.code());
-        GPR_ASSERT(status.message().compare("\"name\" field is not present.") ==
-                   0);
-        gpr_event_set(&on_first_reload_done, reinterpret_cast<void*>(1));
+        if (contents_changed) {
+          GPR_ASSERT(absl::StatusCode::kInvalidArgument == status.code());
+          GPR_ASSERT(
+              status.message().compare("\"name\" field is not present.") == 0);
+          gpr_event_set(&on_first_reload_done, reinterpret_cast<void*>(1));
+        }
       };
   dynamic_cast<grpc_core::FileWatcherAuthorizationPolicyProvider*>(provider)
       ->SetCallbackForTesting(std::move(callback1));
@@ -709,8 +715,10 @@ static void test_file_watcher_recovers_from_failure(
   gpr_event_init(&on_second_reload_done);
   std::function<void(bool contents_changed, absl::Status status)> callback2 =
       [&on_second_reload_done](bool contents_changed, absl::Status status) {
-        GPR_ASSERT(status.ok());
-        gpr_event_set(&on_second_reload_done, reinterpret_cast<void*>(1));
+        if (contents_changed) {
+          GPR_ASSERT(status.ok());
+          gpr_event_set(&on_second_reload_done, reinterpret_cast<void*>(1));
+        }
       };
   dynamic_cast<grpc_core::FileWatcherAuthorizationPolicyProvider*>(provider)
       ->SetCallbackForTesting(std::move(callback2));

@@ -660,7 +660,7 @@ TEST_F(GrpcAuthzEnd2EndTest, FileWatcherValidPolicyRefresh) {
       "}";
   grpc_core::testing::TmpFile tmp_policy(policy);
   auto provider = CreateFileWatcherAuthzPolicyProvider(tmp_policy.name(), 1);
-  InitServer(std::move(provider));
+  InitServer(provider);
   auto channel = BuildChannel();
   ClientContext context1;
   grpc::testing::EchoResponse resp1;
@@ -671,8 +671,10 @@ TEST_F(GrpcAuthzEnd2EndTest, FileWatcherValidPolicyRefresh) {
   gpr_event_init(&on_reload_done);
   std::function<void(bool contents_changed, absl::Status status)> callback =
       [&on_reload_done](bool contents_changed, absl::Status status) {
-        EXPECT_TRUE(status.ok());
-        gpr_event_set(&on_reload_done, reinterpret_cast<void*>(1));
+        if (contents_changed) {
+          EXPECT_TRUE(status.ok());
+          gpr_event_set(&on_reload_done, reinterpret_cast<void*>(1));
+        }
       };
   dynamic_cast<grpc_core::FileWatcherAuthorizationPolicyProvider*>(
       provider->c_provider())
@@ -732,7 +734,7 @@ TEST_F(GrpcAuthzEnd2EndTest, FileWatcherInvalidPolicyRefreshSkipsReload) {
       "}";
   grpc_core::testing::TmpFile tmp_policy(policy);
   auto provider = CreateFileWatcherAuthzPolicyProvider(tmp_policy.name(), 1);
-  InitServer(std::move(provider));
+  InitServer(provider);
   auto channel = BuildChannel();
   ClientContext context1;
   grpc::testing::EchoResponse resp1;
@@ -743,9 +745,11 @@ TEST_F(GrpcAuthzEnd2EndTest, FileWatcherInvalidPolicyRefreshSkipsReload) {
   gpr_event_init(&on_reload_done);
   std::function<void(bool contents_changed, absl::Status status)> callback =
       [&on_reload_done](bool contents_changed, absl::Status status) {
-        EXPECT_EQ(status.code(), absl::StatusCode::kInvalidArgument);
-        EXPECT_EQ(status.message(), "\"name\" field is not present.");
-        gpr_event_set(&on_reload_done, reinterpret_cast<void*>(1));
+        if (contents_changed) {
+          EXPECT_EQ(status.code(), absl::StatusCode::kInvalidArgument);
+          EXPECT_EQ(status.message(), "\"name\" field is not present.");
+          gpr_event_set(&on_reload_done, reinterpret_cast<void*>(1));
+        }
       };
   dynamic_cast<grpc_core::FileWatcherAuthorizationPolicyProvider*>(
       provider->c_provider())
@@ -792,9 +796,11 @@ TEST_F(GrpcAuthzEnd2EndTest, FileWatcherRecoversFromFailure) {
   gpr_event_init(&on_first_reload_done);
   std::function<void(bool contents_changed, absl::Status status)> callback1 =
       [&on_first_reload_done](bool contents_changed, absl::Status status) {
-        EXPECT_EQ(status.code(), absl::StatusCode::kInvalidArgument);
-        EXPECT_EQ(status.message(), "\"name\" field is not present.");
-        gpr_event_set(&on_first_reload_done, reinterpret_cast<void*>(1));
+        if (contents_changed) {
+          EXPECT_EQ(status.code(), absl::StatusCode::kInvalidArgument);
+          EXPECT_EQ(status.message(), "\"name\" field is not present.");
+          gpr_event_set(&on_first_reload_done, reinterpret_cast<void*>(1));
+        }
       };
   dynamic_cast<grpc_core::FileWatcherAuthorizationPolicyProvider*>(
       provider->c_provider())
@@ -815,8 +821,10 @@ TEST_F(GrpcAuthzEnd2EndTest, FileWatcherRecoversFromFailure) {
   gpr_event_init(&on_second_reload_done);
   std::function<void(bool contents_changed, absl::Status status)> callback2 =
       [&on_second_reload_done](bool contents_changed, absl::Status status) {
-        EXPECT_TRUE(status.ok());
-        gpr_event_set(&on_second_reload_done, reinterpret_cast<void*>(1));
+        if (contents_changed) {
+          EXPECT_TRUE(status.ok());
+          gpr_event_set(&on_second_reload_done, reinterpret_cast<void*>(1));
+        }
       };
   dynamic_cast<grpc_core::FileWatcherAuthorizationPolicyProvider*>(
       provider->c_provider())

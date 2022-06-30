@@ -140,7 +140,9 @@ absl::Status FileWatcherAuthorizationPolicyProvider::ForceUpdate() {
   bool contents_changed = false;
   auto done_early = [&](absl::Status status) {
     MutexLock lock(&mu_);
-    if (cb_ != nullptr) cb_(contents_changed, status);
+    if (cb_ != nullptr) {
+      cb_(contents_changed, status);
+    }
     return status;
   };
   absl::StatusOr<std::string> file_contents =
@@ -162,7 +164,9 @@ absl::Status FileWatcherAuthorizationPolicyProvider::ForceUpdate() {
       std::move(rbac_policies_or->allow_policy));
   deny_engine_ = MakeRefCounted<GrpcAuthorizationEngine>(
       std::move(rbac_policies_or->deny_policy));
-  if (cb_ != nullptr) cb_(contents_changed, absl::OkStatus());
+  if (cb_ != nullptr) {
+    cb_(contents_changed, absl::OkStatus());
+  }
   if (GRPC_TRACE_FLAG_ENABLED(grpc_authz_trace)) {
     gpr_log(GPR_INFO,
             "authorization policy reload status: successfully loaded new "
