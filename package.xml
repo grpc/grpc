@@ -2370,6 +2370,7 @@
     <file baseinstalldir="/" name="third_party/upb/third_party/utf8_range/range2-sse.c" role="src" />
     <file baseinstalldir="/" name="third_party/upb/third_party/utf8_range/utf8_range.h" role="src" />
     <file baseinstalldir="/" name="third_party/upb/upb/arena.c" role="src" />
+    <file baseinstalldir="/" name="third_party/upb/upb/arena.h" role="src" />
     <file baseinstalldir="/" name="third_party/upb/upb/array.c" role="src" />
     <file baseinstalldir="/" name="third_party/upb/upb/collections.h" role="src" />
     <file baseinstalldir="/" name="third_party/upb/upb/decode.c" role="src" />

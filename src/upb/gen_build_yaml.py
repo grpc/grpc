@@ -54,6 +54,7 @@ try:
         ],
         'headers': [
             "third_party/upb/third_party/utf8_range/utf8_range.h",
+            "third_party/upb/upb/arena.h",
             "third_party/upb/upb/collections.h",
             "third_party/upb/upb/decode_fast.h",
             "third_party/upb/upb/decode.h",
