@@ -142,7 +142,6 @@ set(gRPC_ABSL_USED_TARGETS
   absl_hash_policy_traits
   absl_hashtable_debug_hooks
   absl_hashtablez_sampler
-  absl_have_sse
   absl_inlined_vector
   absl_inlined_vector_internal
   absl_int128
@@ -154,6 +153,7 @@ set(gRPC_ABSL_USED_TARGETS
   absl_memory
   absl_numeric_representation
   absl_optional
+  absl_prefetch
   absl_random_distributions
   absl_random_internal_distribution_caller
   absl_random_internal_fast_uniform_bits
@@ -188,6 +188,7 @@ set(gRPC_ABSL_USED_TARGETS
   absl_statusor
   absl_str_format
   absl_str_format_internal
+  absl_strerror
   absl_strings
   absl_strings_internal
   absl_symbolize
