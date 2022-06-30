@@ -43,10 +43,8 @@ struct TcpGenericOptions {
   TcpGenericOptions() : resource_quota(nullptr), socket_mutator(nullptr) {}
   // Move ctor
   TcpGenericOptions(TcpGenericOptions&& other) noexcept {
-    socket_mutator = other.socket_mutator;
-    other.socket_mutator = nullptr;
-    resource_quota = other.resource_quota;
-    other.resource_quota.reset(nullptr);
+    socket_mutator = absl::exchange(other.socket_mutator, nullptr);
+    resource_quota = std::move(other.resource_quota);
     ResetAllIntegerOptions(other);
   }
   // Move assignment
@@ -54,13 +52,8 @@ struct TcpGenericOptions {
     if (socket_mutator != nullptr) {
       grpc_socket_mutator_unref(socket_mutator);
     }
-    if (resource_quota != nullptr) {
-      resource_quota.reset(nullptr);
-    }
-    socket_mutator = other.socket_mutator;
-    other.socket_mutator = nullptr;
-    resource_quota = other.resource_quota;
-    other.resource_quota.reset(nullptr);
+    socket_mutator = absl::exchange(other.socket_mutator, nullptr);
+    resource_quota = std::move(other.resource_quota);
     ResetAllIntegerOptions(other);
     return *this;
   }
@@ -68,6 +61,8 @@ struct TcpGenericOptions {
   TcpGenericOptions(const TcpGenericOptions& other) {
     if (other.socket_mutator != nullptr) {
       socket_mutator = grpc_socket_mutator_ref(other.socket_mutator);
+    } else {
+      socket_mutator = nullptr;
     }
     resource_quota = other.resource_quota;
     ResetAllIntegerOptions(other);
@@ -76,6 +71,10 @@ struct TcpGenericOptions {
   TcpGenericOptions& operator=(const TcpGenericOptions& other) {
     if (&other == this) {
       return *this;
+    }
+    if (socket_mutator != nullptr) {
+      grpc_socket_mutator_unref(socket_mutator);
+      socket_mutator = nullptr;
     }
     if (other.socket_mutator != nullptr) {
       socket_mutator = grpc_socket_mutator_ref(other.socket_mutator);
@@ -88,9 +87,7 @@ struct TcpGenericOptions {
   ~TcpGenericOptions() {
     if (socket_mutator != nullptr) {
       grpc_socket_mutator_unref(socket_mutator);
-      socket_mutator = nullptr;
     }
-    resource_quota.reset(nullptr);
   }
 
  private:

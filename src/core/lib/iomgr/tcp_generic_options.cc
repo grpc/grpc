@@ -91,7 +91,7 @@ TcpGenericOptions TcpOptionsFromEndpointConfig(const EndpointConfig& config) {
   options.keep_alive_time_ms =
       GetConfigValue(config, GRPC_ARG_KEEPALIVE_TIME_MS, 1, INT_MAX, 0);
   options.keep_alive_timeout_ms =
-      GetConfigValue(config, GRPC_ARG_KEEPALIVE_TIME_MS, 1, INT_MAX, 0);
+      GetConfigValue(config, GRPC_ARG_KEEPALIVE_TIMEOUT_MS, 1, INT_MAX, 0);
   options.expand_wildcard_addrs =
       GetConfigValue(config, GRPC_ARG_EXPAND_WILDCARD_ADDRS, 1, INT_MAX, 0);
   options.allow_reuse_port =

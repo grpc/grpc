@@ -406,9 +406,7 @@ static int64_t tcp_connect(grpc_closure* closure, grpc_endpoint** ep,
                            const grpc_resolved_address* addr,
                            grpc_core::Timestamp deadline) {
   grpc_resolved_address mapped_addr;
-  TcpGenericOptions options;
-  grpc_tcp_generic_options_init(&options);
-  options = TcpOptionsFromEndpointConfig(config);
+  TcpGenericOptions options(TcpOptionsFromEndpointConfig(config));
   int fd = -1;
   grpc_error_handle error;
   *ep = nullptr;
