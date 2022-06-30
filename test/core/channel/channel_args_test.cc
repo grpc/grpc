@@ -39,7 +39,7 @@
 namespace grpc_core {
 
 using ::grpc_event_engine::experimental::EventEngine;
-using ::grpc_event_engine::experimental::GetDefaultEventEngine;
+using ::grpc_event_engine::experimental::CreateEventEngine;
 
 TEST(ChannelArgsTest, Noop) { ChannelArgs(); }
 
@@ -91,11 +91,9 @@ TEST(ChannelArgsTest, StoreRefCountedPtr) {
 }
 
 TEST(ChannelArgsTest, StoreSharedPtrEventEngine) {
-  auto p = std::shared_ptr<EventEngine>(GetDefaultEventEngine(), [](auto) {});
-
+  auto p = std::shared_ptr<EventEngine>(CreateEventEngine());
   ChannelArgs a;
   a = a.SetObject(p);
-
   Mutex mu;
   CondVar cv;
   bool triggered = false;
@@ -110,12 +108,10 @@ TEST(ChannelArgsTest, StoreSharedPtrEventEngine) {
 }
 
 TEST(ChannelArgsTest, GetNonOwningEventEngine) {
-  auto p = std::shared_ptr<EventEngine>(GetDefaultEventEngine(), [](auto) {});
-
+  auto p = std::shared_ptr<EventEngine>(CreateEventEngine());
   ChannelArgs a;
   a = a.SetObject(p);
   ASSERT_FALSE(p.unique());
-
   EventEngine* engine = a.GetObject<EventEngine>();
   (void)engine;
   // p and the channel args
