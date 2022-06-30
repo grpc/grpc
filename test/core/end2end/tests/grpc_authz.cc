@@ -590,6 +590,8 @@ static void test_file_watcher_valid_policy_reload(
       reinterpret_cast<void*>(1) ==
       gpr_event_wait(&on_reload_done, gpr_inf_future(GPR_CLOCK_MONOTONIC)));
   test_deny_unauthorized_request(f);
+  dynamic_cast<grpc_core::FileWatcherAuthorizationPolicyProvider*>(provider)
+      ->SetCallbackForTesting(nullptr);
 
   end_test(&f);
   config.tear_down_data(&f);
@@ -651,6 +653,8 @@ static void test_file_watcher_invalid_policy_skip_reload(
       reinterpret_cast<void*>(1) ==
       gpr_event_wait(&on_reload_done, gpr_inf_future(GPR_CLOCK_MONOTONIC)));
   test_allow_authorized_request(f);
+  dynamic_cast<grpc_core::FileWatcherAuthorizationPolicyProvider*>(provider)
+      ->SetCallbackForTesting(nullptr);
 
   end_test(&f);
   config.tear_down_data(&f);
@@ -753,6 +757,8 @@ static void test_file_watcher_recovers_from_failure(
              gpr_event_wait(&on_second_reload_done,
                             gpr_inf_future(GPR_CLOCK_MONOTONIC)));
   test_deny_unauthorized_request(f);
+  dynamic_cast<grpc_core::FileWatcherAuthorizationPolicyProvider*>(provider)
+      ->SetCallbackForTesting(nullptr);
 
   end_test(&f);
   config.tear_down_data(&f);

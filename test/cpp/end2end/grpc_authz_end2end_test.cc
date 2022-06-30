@@ -715,6 +715,9 @@ TEST_F(GrpcAuthzEnd2EndTest, FileWatcherValidPolicyRefresh) {
   EXPECT_EQ(status.error_code(), grpc::StatusCode::PERMISSION_DENIED);
   EXPECT_EQ(status.error_message(), "Unauthorized RPC request rejected.");
   EXPECT_TRUE(resp2.message().empty());
+  dynamic_cast<grpc_core::FileWatcherAuthorizationPolicyProvider*>(
+      provider->c_provider())
+      ->SetCallbackForTesting(nullptr);
 }
 
 TEST_F(GrpcAuthzEnd2EndTest, FileWatcherInvalidPolicyRefreshSkipsReload) {
@@ -766,6 +769,9 @@ TEST_F(GrpcAuthzEnd2EndTest, FileWatcherInvalidPolicyRefreshSkipsReload) {
   status = SendRpc(channel, &context2, &resp2);
   EXPECT_TRUE(status.ok());
   EXPECT_EQ(resp2.message(), kMessage);
+  dynamic_cast<grpc_core::FileWatcherAuthorizationPolicyProvider*>(
+      provider->c_provider())
+      ->SetCallbackForTesting(nullptr);
 }
 
 TEST_F(GrpcAuthzEnd2EndTest, FileWatcherRecoversFromFailure) {
@@ -865,6 +871,9 @@ TEST_F(GrpcAuthzEnd2EndTest, FileWatcherRecoversFromFailure) {
   EXPECT_EQ(status.error_code(), grpc::StatusCode::PERMISSION_DENIED);
   EXPECT_EQ(status.error_message(), "Unauthorized RPC request rejected.");
   EXPECT_TRUE(resp3.message().empty());
+  dynamic_cast<grpc_core::FileWatcherAuthorizationPolicyProvider*>(
+      provider->c_provider())
+      ->SetCallbackForTesting(nullptr);
 }
 
 }  // namespace

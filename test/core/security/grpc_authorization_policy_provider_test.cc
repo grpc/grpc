@@ -134,6 +134,8 @@ TEST(AuthorizationPolicyProviderTest, FileWatcherSuccessValidPolicyRefresh) {
   ASSERT_NE(deny_engine, nullptr);
   EXPECT_EQ(deny_engine->action(), Rbac::Action::kDeny);
   EXPECT_EQ(deny_engine->num_policies(), 0);
+  dynamic_cast<FileWatcherAuthorizationPolicyProvider*>(provider->get())
+      ->SetCallbackForTesting(nullptr);
 }
 
 TEST(AuthorizationPolicyProviderTest,
@@ -183,6 +185,8 @@ TEST(AuthorizationPolicyProviderTest,
   ASSERT_NE(deny_engine, nullptr);
   EXPECT_EQ(deny_engine->action(), Rbac::Action::kDeny);
   EXPECT_EQ(deny_engine->num_policies(), 1);
+  dynamic_cast<FileWatcherAuthorizationPolicyProvider*>(provider->get())
+      ->SetCallbackForTesting(nullptr);
 }
 
 TEST(AuthorizationPolicyProviderTest, FileWatcherRecoversFromFailure) {
@@ -259,6 +263,8 @@ TEST(AuthorizationPolicyProviderTest, FileWatcherRecoversFromFailure) {
   ASSERT_NE(deny_engine, nullptr);
   EXPECT_EQ(deny_engine->action(), Rbac::Action::kDeny);
   EXPECT_EQ(deny_engine->num_policies(), 0);
+  dynamic_cast<FileWatcherAuthorizationPolicyProvider*>(provider->get())
+      ->SetCallbackForTesting(nullptr);
 }
 
 }  // namespace grpc_core
