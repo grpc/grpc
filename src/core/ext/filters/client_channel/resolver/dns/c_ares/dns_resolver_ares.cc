@@ -500,8 +500,8 @@ class AresDNSResolver : public DNSResolver {
     AresRequest(absl::string_view name, absl::string_view name_server,
                 Duration timeout, grpc_pollset_set* interested_parties,
                 AresDNSResolver* resolver, intptr_t aba_token)
-        : name_(std::string(name)),
-          name_server_(std::string(name_server)),
+        : name_(name),
+          name_server_(name_server),
           timeout_(timeout),
           interested_parties_(interested_parties),
           completed_(false),
@@ -578,7 +578,7 @@ class AresDNSResolver : public DNSResolver {
         AresDNSResolver* resolver, intptr_t aba_token)
         : AresRequest(name, name_server, timeout, interested_parties, resolver,
                       aba_token),
-          default_port_(std::string(default_port)),
+          default_port_(default_port),
           on_resolve_address_done_(std::move(on_resolve_address_done)) {
       GRPC_CARES_TRACE_LOG("AresHostnameRequest:%p ctor", this);
     }
