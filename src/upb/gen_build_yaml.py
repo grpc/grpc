@@ -74,6 +74,8 @@ try:
             "third_party/upb/upb/mini_table.hpp",
             "third_party/upb/upb/msg_internal.h",
             "third_party/upb/upb/msg.h",
+            "third_party/upb/upb/port_def.inc",
+            "third_party/upb/upb/port_undef.inc",
             "third_party/upb/upb/reflection.h",
             "third_party/upb/upb/reflection.hpp",
             "third_party/upb/upb/status.h",
