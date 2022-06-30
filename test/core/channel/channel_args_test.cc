@@ -117,9 +117,55 @@ TEST(ChannelArgsTest, GetNonOwningEventEngine) {
   ASSERT_FALSE(p.unique());
 
   EventEngine* engine = a.GetObject<EventEngine>();
-  (void) engine;
+  (void)engine;
   // p and the channel args
   ASSERT_EQ(p.use_count(), 2);
+}
+
+TEST(ChannelArgsTest, StoreAndRetrieveSharedPtr) {
+  struct Test : public std::enable_shared_from_this<Test> {
+    explicit Test(int n) : n(n) {}
+    int n;
+    static int ChannelArgsCompare(const Test* a, const Test* b) {
+      return a->n - b->n;
+    }
+    static absl::string_view ChannelArgName() { return "grpc.test"; }
+  };
+  std::shared_ptr<Test> copied_obj;
+  {
+    ChannelArgs a;
+    auto p = std::make_shared<Test>(42);
+    EXPECT_TRUE(p.unique());
+    a = a.SetObject(p);
+    EXPECT_FALSE(p.unique());
+    copied_obj = a.GetObjectRef<Test>();
+    EXPECT_EQ(copied_obj->n, 42);
+    // Refs: p, copied_obj, and ChannelArgs
+    EXPECT_EQ(3, copied_obj.use_count());
+  }
+  // The p and ChannelArgs are deleted.
+  EXPECT_TRUE(copied_obj.unique());
+  EXPECT_EQ(copied_obj->n, 42);
+}
+
+TEST(ChannelArgsTest, RetrieveRawPointerFromStoredSharedPtr) {
+  struct Test : public std::enable_shared_from_this<Test> {
+    explicit Test(int n) : n(n) {}
+    int n;
+    static int ChannelArgsCompare(const Test* a, const Test* b) {
+      return a->n - b->n;
+    }
+    static absl::string_view ChannelArgName() { return "grpc.test"; }
+  };
+  ChannelArgs a;
+  auto p = std::make_shared<Test>(42);
+  EXPECT_TRUE(p.unique());
+  a = a.SetObject(p);
+  EXPECT_FALSE(p.unique());
+  Test* testp = a.GetObject<Test>();
+  EXPECT_EQ(testp->n, 42);
+  // Refs: p and ChannelArgs
+  EXPECT_EQ(2, p.use_count());
 }
 
 TEST(ChannelArgsTest, ObjectApi) {

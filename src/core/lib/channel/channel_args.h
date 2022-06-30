@@ -138,7 +138,9 @@ struct ChannelArgTypeTraits<T,
 
 // GetObject support for shared_ptr and RefCountedPtr
 template <typename T>
-struct WrapInSharedPtr : std::false_type {};
+struct WrapInSharedPtr
+    : std::integral_constant<
+          bool, std::is_base_of<std::enable_shared_from_this<T>, T>::value> {};
 template <>
 struct WrapInSharedPtr<grpc_event_engine::experimental::EventEngine>
     : std::true_type {};
