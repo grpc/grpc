@@ -28,7 +28,7 @@ static const upb_MiniTable_Field envoy_admin_v3_ConfigDump__fields[1] = {
 const upb_MiniTable envoy_admin_v3_ConfigDump_msginit = {
   &envoy_admin_v3_ConfigDump_submsgs[0],
   &envoy_admin_v3_ConfigDump__fields[0],
-  UPB_SIZE(4, 8), 1, kUpb_ExtMode_NonExtendable, 1, 255, 0,
+  UPB_SIZE(8, 8), 1, kUpb_ExtMode_NonExtendable, 1, 255, 0,
 };
 
 static const upb_MiniTable_Sub envoy_admin_v3_UpdateFailureState_submsgs[2] = {
@@ -46,7 +46,7 @@ static const upb_MiniTable_Field envoy_admin_v3_UpdateFailureState__fields[4] = 
 const upb_MiniTable envoy_admin_v3_UpdateFailureState_msginit = {
   &envoy_admin_v3_UpdateFailureState_submsgs[0],
   &envoy_admin_v3_UpdateFailureState__fields[0],
-  UPB_SIZE(28, 56), 4, kUpb_ExtMode_NonExtendable, 4, 255, 0,
+  UPB_SIZE(32, 56), 4, kUpb_ExtMode_NonExtendable, 4, 255, 0,
 };
 
 static const upb_MiniTable_Sub envoy_admin_v3_BootstrapConfigDump_submsgs[2] = {
@@ -62,7 +62,7 @@ static const upb_MiniTable_Field envoy_admin_v3_BootstrapConfigDump__fields[2] =
 const upb_MiniTable envoy_admin_v3_BootstrapConfigDump_msginit = {
   &envoy_admin_v3_BootstrapConfigDump_submsgs[0],
   &envoy_admin_v3_BootstrapConfigDump__fields[0],
-  UPB_SIZE(12, 24), 2, kUpb_ExtMode_NonExtendable, 2, 255, 0,
+  UPB_SIZE(16, 24), 2, kUpb_ExtMode_NonExtendable, 2, 255, 0,
 };
 
 static const upb_MiniTable_Sub envoy_admin_v3_ListenersConfigDump_submsgs[2] = {
@@ -79,7 +79,7 @@ static const upb_MiniTable_Field envoy_admin_v3_ListenersConfigDump__fields[3] =
 const upb_MiniTable envoy_admin_v3_ListenersConfigDump_msginit = {
   &envoy_admin_v3_ListenersConfigDump_submsgs[0],
   &envoy_admin_v3_ListenersConfigDump__fields[0],
-  UPB_SIZE(16, 40), 3, kUpb_ExtMode_NonExtendable, 3, 255, 0,
+  UPB_SIZE(16, 32), 3, kUpb_ExtMode_NonExtendable, 3, 255, 0,
 };
 
 static const upb_MiniTable_Sub envoy_admin_v3_ListenersConfigDump_StaticListener_submsgs[2] = {
@@ -95,7 +95,7 @@ static const upb_MiniTable_Field envoy_admin_v3_ListenersConfigDump_StaticListen
 const upb_MiniTable envoy_admin_v3_ListenersConfigDump_StaticListener_msginit = {
   &envoy_admin_v3_ListenersConfigDump_StaticListener_submsgs[0],
   &envoy_admin_v3_ListenersConfigDump_StaticListener__fields[0],
-  UPB_SIZE(12, 24), 2, kUpb_ExtMode_NonExtendable, 2, 255, 0,
+  UPB_SIZE(16, 24), 2, kUpb_ExtMode_NonExtendable, 2, 255, 0,
 };
 
 static const upb_MiniTable_Sub envoy_admin_v3_ListenersConfigDump_DynamicListenerState_submsgs[2] = {
@@ -112,7 +112,7 @@ static const upb_MiniTable_Field envoy_admin_v3_ListenersConfigDump_DynamicListe
 const upb_MiniTable envoy_admin_v3_ListenersConfigDump_DynamicListenerState_msginit = {
   &envoy_admin_v3_ListenersConfigDump_DynamicListenerState_submsgs[0],
   &envoy_admin_v3_ListenersConfigDump_DynamicListenerState__fields[0],
-  UPB_SIZE(20, 40), 3, kUpb_ExtMode_NonExtendable, 3, 255, 0,
+  UPB_SIZE(24, 40), 3, kUpb_ExtMode_NonExtendable, 3, 255, 0,
 };
 
 static const upb_MiniTable_Sub envoy_admin_v3_ListenersConfigDump_DynamicListener_submsgs[4] = {
@@ -153,7 +153,7 @@ static const upb_MiniTable_Field envoy_admin_v3_ClustersConfigDump__fields[4] = 
 const upb_MiniTable envoy_admin_v3_ClustersConfigDump_msginit = {
   &envoy_admin_v3_ClustersConfigDump_submsgs[0],
   &envoy_admin_v3_ClustersConfigDump__fields[0],
-  UPB_SIZE(20, 40), 4, kUpb_ExtMode_NonExtendable, 4, 255, 0,
+  UPB_SIZE(24, 40), 4, kUpb_ExtMode_NonExtendable, 4, 255, 0,
 };
 
 static const upb_MiniTable_Sub envoy_admin_v3_ClustersConfigDump_StaticCluster_submsgs[2] = {
@@ -169,7 +169,7 @@ static const upb_MiniTable_Field envoy_admin_v3_ClustersConfigDump_StaticCluster
 const upb_MiniTable envoy_admin_v3_ClustersConfigDump_StaticCluster_msginit = {
   &envoy_admin_v3_ClustersConfigDump_StaticCluster_submsgs[0],
   &envoy_admin_v3_ClustersConfigDump_StaticCluster__fields[0],
-  UPB_SIZE(12, 24), 2, kUpb_ExtMode_NonExtendable, 2, 255, 0,
+  UPB_SIZE(16, 24), 2, kUpb_ExtMode_NonExtendable, 2, 255, 0,
 };
 
 static const upb_MiniTable_Sub envoy_admin_v3_ClustersConfigDump_DynamicCluster_submsgs[3] = {
@@ -189,7 +189,7 @@ static const upb_MiniTable_Field envoy_admin_v3_ClustersConfigDump_DynamicCluste
 const upb_MiniTable envoy_admin_v3_ClustersConfigDump_DynamicCluster_msginit = {
   &envoy_admin_v3_ClustersConfigDump_DynamicCluster_submsgs[0],
   &envoy_admin_v3_ClustersConfigDump_DynamicCluster__fields[0],
-  UPB_SIZE(28, 56), 5, kUpb_ExtMode_NonExtendable, 5, 255, 0,
+  UPB_SIZE(32, 48), 5, kUpb_ExtMode_NonExtendable, 5, 255, 0,
 };
 
 static const upb_MiniTable_Sub envoy_admin_v3_RoutesConfigDump_submsgs[2] = {
@@ -205,7 +205,7 @@ static const upb_MiniTable_Field envoy_admin_v3_RoutesConfigDump__fields[2] = {
 const upb_MiniTable envoy_admin_v3_RoutesConfigDump_msginit = {
   &envoy_admin_v3_RoutesConfigDump_submsgs[0],
   &envoy_admin_v3_RoutesConfigDump__fields[0],
-  UPB_SIZE(8, 24), 2, kUpb_ExtMode_NonExtendable, 0, 255, 0,
+  UPB_SIZE(8, 16), 2, kUpb_ExtMode_NonExtendable, 0, 255, 0,
 };
 
 static const upb_MiniTable_Sub envoy_admin_v3_RoutesConfigDump_StaticRouteConfig_submsgs[2] = {
@@ -221,7 +221,7 @@ static const upb_MiniTable_Field envoy_admin_v3_RoutesConfigDump_StaticRouteConf
 const upb_MiniTable envoy_admin_v3_RoutesConfigDump_StaticRouteConfig_msginit = {
   &envoy_admin_v3_RoutesConfigDump_StaticRouteConfig_submsgs[0],
   &envoy_admin_v3_RoutesConfigDump_StaticRouteConfig__fields[0],
-  UPB_SIZE(12, 24), 2, kUpb_ExtMode_NonExtendable, 2, 255, 0,
+  UPB_SIZE(16, 24), 2, kUpb_ExtMode_NonExtendable, 2, 255, 0,
 };
 
 static const upb_MiniTable_Sub envoy_admin_v3_RoutesConfigDump_DynamicRouteConfig_submsgs[3] = {
@@ -241,7 +241,7 @@ static const upb_MiniTable_Field envoy_admin_v3_RoutesConfigDump_DynamicRouteCon
 const upb_MiniTable envoy_admin_v3_RoutesConfigDump_DynamicRouteConfig_msginit = {
   &envoy_admin_v3_RoutesConfigDump_DynamicRouteConfig_submsgs[0],
   &envoy_admin_v3_RoutesConfigDump_DynamicRouteConfig__fields[0],
-  UPB_SIZE(28, 56), 5, kUpb_ExtMode_NonExtendable, 5, 255, 0,
+  UPB_SIZE(32, 48), 5, kUpb_ExtMode_NonExtendable, 5, 255, 0,
 };
 
 static const upb_MiniTable_Sub envoy_admin_v3_ScopedRoutesConfigDump_submsgs[2] = {
@@ -257,7 +257,7 @@ static const upb_MiniTable_Field envoy_admin_v3_ScopedRoutesConfigDump__fields[2
 const upb_MiniTable envoy_admin_v3_ScopedRoutesConfigDump_msginit = {
   &envoy_admin_v3_ScopedRoutesConfigDump_submsgs[0],
   &envoy_admin_v3_ScopedRoutesConfigDump__fields[0],
-  UPB_SIZE(8, 24), 2, kUpb_ExtMode_NonExtendable, 2, 255, 0,
+  UPB_SIZE(8, 16), 2, kUpb_ExtMode_NonExtendable, 2, 255, 0,
 };
 
 static const upb_MiniTable_Sub envoy_admin_v3_ScopedRoutesConfigDump_InlineScopedRouteConfigs_submsgs[2] = {
@@ -274,7 +274,7 @@ static const upb_MiniTable_Field envoy_admin_v3_ScopedRoutesConfigDump_InlineSco
 const upb_MiniTable envoy_admin_v3_ScopedRoutesConfigDump_InlineScopedRouteConfigs_msginit = {
   &envoy_admin_v3_ScopedRoutesConfigDump_InlineScopedRouteConfigs_submsgs[0],
   &envoy_admin_v3_ScopedRoutesConfigDump_InlineScopedRouteConfigs__fields[0],
-  UPB_SIZE(20, 40), 3, kUpb_ExtMode_NonExtendable, 3, 255, 0,
+  UPB_SIZE(24, 40), 3, kUpb_ExtMode_NonExtendable, 3, 255, 0,
 };
 
 static const upb_MiniTable_Sub envoy_admin_v3_ScopedRoutesConfigDump_DynamicScopedRouteConfigs_submsgs[3] = {
@@ -295,7 +295,7 @@ static const upb_MiniTable_Field envoy_admin_v3_ScopedRoutesConfigDump_DynamicSc
 const upb_MiniTable envoy_admin_v3_ScopedRoutesConfigDump_DynamicScopedRouteConfigs_msginit = {
   &envoy_admin_v3_ScopedRoutesConfigDump_DynamicScopedRouteConfigs_submsgs[0],
   &envoy_admin_v3_ScopedRoutesConfigDump_DynamicScopedRouteConfigs__fields[0],
-  UPB_SIZE(36, 72), 6, kUpb_ExtMode_NonExtendable, 6, 255, 0,
+  UPB_SIZE(40, 64), 6, kUpb_ExtMode_NonExtendable, 6, 255, 0,
 };
 
 static const upb_MiniTable_Sub envoy_admin_v3_SecretsConfigDump_submsgs[3] = {
@@ -313,7 +313,7 @@ static const upb_MiniTable_Field envoy_admin_v3_SecretsConfigDump__fields[3] = {
 const upb_MiniTable envoy_admin_v3_SecretsConfigDump_msginit = {
   &envoy_admin_v3_SecretsConfigDump_submsgs[0],
   &envoy_admin_v3_SecretsConfigDump__fields[0],
-  UPB_SIZE(12, 24), 3, kUpb_ExtMode_NonExtendable, 3, 255, 0,
+  UPB_SIZE(16, 24), 3, kUpb_ExtMode_NonExtendable, 3, 255, 0,
 };
 
 static const upb_MiniTable_Sub envoy_admin_v3_SecretsConfigDump_DynamicSecret_submsgs[3] = {
@@ -334,7 +334,7 @@ static const upb_MiniTable_Field envoy_admin_v3_SecretsConfigDump_DynamicSecret_
 const upb_MiniTable envoy_admin_v3_SecretsConfigDump_DynamicSecret_msginit = {
   &envoy_admin_v3_SecretsConfigDump_DynamicSecret_submsgs[0],
   &envoy_admin_v3_SecretsConfigDump_DynamicSecret__fields[0],
-  UPB_SIZE(36, 72), 6, kUpb_ExtMode_NonExtendable, 6, 255, 0,
+  UPB_SIZE(40, 64), 6, kUpb_ExtMode_NonExtendable, 6, 255, 0,
 };
 
 static const upb_MiniTable_Sub envoy_admin_v3_SecretsConfigDump_StaticSecret_submsgs[2] = {
@@ -351,7 +351,7 @@ static const upb_MiniTable_Field envoy_admin_v3_SecretsConfigDump_StaticSecret__
 const upb_MiniTable envoy_admin_v3_SecretsConfigDump_StaticSecret_msginit = {
   &envoy_admin_v3_SecretsConfigDump_StaticSecret_submsgs[0],
   &envoy_admin_v3_SecretsConfigDump_StaticSecret__fields[0],
-  UPB_SIZE(20, 40), 3, kUpb_ExtMode_NonExtendable, 3, 255, 0,
+  UPB_SIZE(24, 40), 3, kUpb_ExtMode_NonExtendable, 3, 255, 0,
 };
 
 static const upb_MiniTable_Sub envoy_admin_v3_EndpointsConfigDump_submsgs[2] = {
@@ -367,7 +367,7 @@ static const upb_MiniTable_Field envoy_admin_v3_EndpointsConfigDump__fields[2] =
 const upb_MiniTable envoy_admin_v3_EndpointsConfigDump_msginit = {
   &envoy_admin_v3_EndpointsConfigDump_submsgs[0],
   &envoy_admin_v3_EndpointsConfigDump__fields[0],
-  UPB_SIZE(8, 24), 2, kUpb_ExtMode_NonExtendable, 0, 255, 0,
+  UPB_SIZE(8, 16), 2, kUpb_ExtMode_NonExtendable, 0, 255, 0,
 };
 
 static const upb_MiniTable_Sub envoy_admin_v3_EndpointsConfigDump_StaticEndpointConfig_submsgs[2] = {
@@ -383,7 +383,7 @@ static const upb_MiniTable_Field envoy_admin_v3_EndpointsConfigDump_StaticEndpoi
 const upb_MiniTable envoy_admin_v3_EndpointsConfigDump_StaticEndpointConfig_msginit = {
   &envoy_admin_v3_EndpointsConfigDump_StaticEndpointConfig_submsgs[0],
   &envoy_admin_v3_EndpointsConfigDump_StaticEndpointConfig__fields[0],
-  UPB_SIZE(12, 24), 2, kUpb_ExtMode_NonExtendable, 2, 255, 0,
+  UPB_SIZE(16, 24), 2, kUpb_ExtMode_NonExtendable, 2, 255, 0,
 };
 
 static const upb_MiniTable_Sub envoy_admin_v3_EndpointsConfigDump_DynamicEndpointConfig_submsgs[3] = {
@@ -403,7 +403,7 @@ static const upb_MiniTable_Field envoy_admin_v3_EndpointsConfigDump_DynamicEndpo
 const upb_MiniTable envoy_admin_v3_EndpointsConfigDump_DynamicEndpointConfig_msginit = {
   &envoy_admin_v3_EndpointsConfigDump_DynamicEndpointConfig_submsgs[0],
   &envoy_admin_v3_EndpointsConfigDump_DynamicEndpointConfig__fields[0],
-  UPB_SIZE(28, 56), 5, kUpb_ExtMode_NonExtendable, 5, 255, 0,
+  UPB_SIZE(32, 48), 5, kUpb_ExtMode_NonExtendable, 5, 255, 0,
 };
 
 static const upb_MiniTable *messages_layout[22] = {

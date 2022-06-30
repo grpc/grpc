@@ -23,7 +23,7 @@ static const upb_MiniTable_Field envoy_type_v3_SemanticVersion__fields[3] = {
 const upb_MiniTable envoy_type_v3_SemanticVersion_msginit = {
   NULL,
   &envoy_type_v3_SemanticVersion__fields[0],
-  UPB_SIZE(12, 24), 3, kUpb_ExtMode_NonExtendable, 3, 255, 0,
+  UPB_SIZE(16, 16), 3, kUpb_ExtMode_NonExtendable, 3, 255, 0,
 };
 
 static const upb_MiniTable *messages_layout[1] = {
