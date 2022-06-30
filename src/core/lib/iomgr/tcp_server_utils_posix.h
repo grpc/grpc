@@ -92,7 +92,7 @@ struct grpc_tcp_server {
   gpr_atm next_pollset_to_assign = 0;
 
   /* Contains config extracted from channel args for this server */
-  grpc_tcp_generic_options options;
+  TcpGenericOptions options;
 
   /* a handler for external connections, owned */
   grpc_core::TcpServerFdHandler* fd_handler = nullptr;

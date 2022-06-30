@@ -54,7 +54,6 @@ struct async_connect {
   int refs;
   grpc_closure on_connect;
   grpc_endpoint** endpoint;
-  grpc_tcp_generic_options options;
 };
 
 static void async_connect_unlock_and_cleanup(async_connect* ac,
@@ -62,7 +61,6 @@ static void async_connect_unlock_and_cleanup(async_connect* ac,
   int done = (--ac->refs == 0);
   gpr_mu_unlock(&ac->mu);
   if (done) {
-    grpc_tcp_generic_options_destroy(&ac->options);
     gpr_mu_destroy(&ac->mu);
     delete ac;
   }
@@ -109,7 +107,9 @@ static void on_connect(void* acp, grpc_error_handle error) {
         error = GRPC_WSA_ERROR(WSAGetLastError(), "ConnectEx");
         closesocket(socket->socket);
       } else {
-        *ep = grpc_tcp_create(socket, ac->options, ac->addr_name);
+        auto config =
+            grpc_event_engine::experimental::CreateEndpointConfig(nullptr);
+        *ep = grpc_tcp_create(socket, *config, ac->addr_name);
         socket = nullptr;
       }
     } else {
@@ -212,8 +212,6 @@ static int64_t tcp_connect(grpc_closure* on_done, grpc_endpoint** endpoint,
   ac->refs = 2;
   ac->addr_name = addr_uri.value();
   ac->endpoint = endpoint;
-  grpc_tcp_generic_options_init(&ac->options);
-  ac->options = TcpOptionsFromEndpointConfig(config);
   GRPC_CLOSURE_INIT(&ac->on_connect, on_connect, ac, grpc_schedule_on_exec_ctx);
 
   GRPC_CLOSURE_INIT(&ac->on_alarm, on_alarm, ac, grpc_schedule_on_exec_ctx);

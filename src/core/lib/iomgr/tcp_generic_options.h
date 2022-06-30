@@ -27,23 +27,30 @@
 #include "src/core/lib/iomgr/socket_mutator.h"
 #include "src/core/lib/resource_quota/api.h"
 
-typedef struct grpc_tcp_generic_options {
-  absl::flat_hash_map<absl::string_view, int> int_options;
+struct TcpGenericOptions {
+  int tcp_read_chunk_size;
+  int tcp_min_read_chunk_size;
+  int tcp_max_read_chunk_size;
+  int tcp_tx_zerocopy_send_bytes_threshold;
+  int tcp_tx_zerocopy_max_simultaneous_sends;
+  int tcp_tx_zero_copy_enabled;
+  int keep_alive_time_ms;
+  int keep_alive_timeout_ms;
+  int expand_wildcard_addrs;
+  int allow_reuse_port;
   grpc_core::RefCountedPtr<grpc_core::ResourceQuota> resource_quota = nullptr;
   struct grpc_socket_mutator* socket_mutator = nullptr;
-  grpc_tcp_generic_options()
-      : resource_quota(nullptr), socket_mutator(nullptr) {}
+  TcpGenericOptions() : resource_quota(nullptr), socket_mutator(nullptr) {}
   // Move ctor
-  grpc_tcp_generic_options(struct grpc_tcp_generic_options&& other) noexcept {
+  TcpGenericOptions(TcpGenericOptions&& other) noexcept {
     socket_mutator = other.socket_mutator;
     other.socket_mutator = nullptr;
     resource_quota = other.resource_quota;
     other.resource_quota.reset(nullptr);
-    int_options = other.int_options;
+    ResetAllIntegerOptions(other);
   }
   // Move assignment
-  grpc_tcp_generic_options& operator=(
-      struct grpc_tcp_generic_options&& other) noexcept {
+  TcpGenericOptions& operator=(TcpGenericOptions&& other) noexcept {
     if (socket_mutator != nullptr) {
       grpc_socket_mutator_unref(socket_mutator);
     }
@@ -54,20 +61,19 @@ typedef struct grpc_tcp_generic_options {
     other.socket_mutator = nullptr;
     resource_quota = other.resource_quota;
     other.resource_quota.reset(nullptr);
-    int_options = other.int_options;
+    ResetAllIntegerOptions(other);
     return *this;
   }
   // Copy ctor
-  grpc_tcp_generic_options(const struct grpc_tcp_generic_options& other) {
+  TcpGenericOptions(const TcpGenericOptions& other) {
     if (other.socket_mutator != nullptr) {
       socket_mutator = grpc_socket_mutator_ref(other.socket_mutator);
     }
     resource_quota = other.resource_quota;
-    int_options = other.int_options;
+    ResetAllIntegerOptions(other);
   }
   // Copy assignment
-  grpc_tcp_generic_options& operator=(
-      const struct grpc_tcp_generic_options& other) {
+  TcpGenericOptions& operator=(const TcpGenericOptions& other) {
     if (&other == this) {
       return *this;
     }
@@ -75,43 +81,57 @@ typedef struct grpc_tcp_generic_options {
       socket_mutator = grpc_socket_mutator_ref(other.socket_mutator);
     }
     resource_quota = other.resource_quota;
-    int_options = other.int_options;
+    ResetAllIntegerOptions(other);
     return *this;
   }
   // Destructor.
-  ~grpc_tcp_generic_options() {
+  ~TcpGenericOptions() {
     if (socket_mutator != nullptr) {
       grpc_socket_mutator_unref(socket_mutator);
       socket_mutator = nullptr;
     }
     resource_quota.reset(nullptr);
   }
-} grpc_tcp_generic_options;
+
+ private:
+  void ResetAllIntegerOptions(const TcpGenericOptions& other) {
+    tcp_read_chunk_size = other.tcp_read_chunk_size;
+    tcp_min_read_chunk_size = other.tcp_min_read_chunk_size;
+    tcp_max_read_chunk_size = other.tcp_max_read_chunk_size;
+    tcp_tx_zerocopy_send_bytes_threshold =
+        other.tcp_tx_zerocopy_send_bytes_threshold;
+    tcp_tx_zerocopy_max_simultaneous_sends =
+        other.tcp_tx_zerocopy_max_simultaneous_sends;
+    tcp_tx_zero_copy_enabled = other.tcp_tx_zero_copy_enabled;
+    keep_alive_time_ms = other.keep_alive_time_ms;
+    keep_alive_timeout_ms = other.keep_alive_timeout_ms;
+    expand_wildcard_addrs = other.expand_wildcard_addrs;
+    allow_reuse_port = other.allow_reuse_port;
+  }
+};
 
 // Initialize the tcp generic options struct members. This method can be used
 // to initialize dynamically allocated struct objects.
-void grpc_tcp_generic_options_init(grpc_tcp_generic_options* options);
+void grpc_tcp_generic_options_init(TcpGenericOptions* options);
 
 // Unref members of the tcp generic options struct.
-void grpc_tcp_generic_options_destroy(grpc_tcp_generic_options* options);
+void grpc_tcp_generic_options_destroy(TcpGenericOptions* options);
 
-// Given an EndpointConfig object, returns a grpc_tcp_generic_options struct
+// Given an EndpointConfig object, returns a TcpGenericOptions struct
 // constructed from it
-grpc_tcp_generic_options TcpOptionsFromEndpointConfig(
+TcpGenericOptions TcpOptionsFromEndpointConfig(
     const grpc_event_engine::experimental::EndpointConfig& config);
 
-// Given an grpc_core::ChannelArgs object, returns a grpc_tcp_generic_options
+// Given an grpc_core::ChannelArgs object, returns a TcpGenericOptions
 // struct constructed from it
-grpc_tcp_generic_options TcpOptionsFromChannelArgs(
-    const grpc_core::ChannelArgs& args);
+TcpGenericOptions TcpOptionsFromChannelArgs(const grpc_core::ChannelArgs& args);
 
-// Given an grpc_channel_args pointer, returns a grpc_tcp_generic_options
+// Given an grpc_channel_args pointer, returns a TcpGenericOptions
 // struct constructed from it
-grpc_tcp_generic_options TcpOptionsFromChannelArgs(
-    const grpc_channel_args* args);
+TcpGenericOptions TcpOptionsFromChannelArgs(const grpc_channel_args* args);
 
 /* For use in tests only */
 grpc_core::ChannelArgs TcpOptionsIntoChannelArgs(
-    const grpc_tcp_generic_options& options);
+    const TcpGenericOptions& options);
 
 #endif  // GRPC_CORE_LIB_IOMGR_TCP_GENERIC_OPTIONS_H

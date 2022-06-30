@@ -72,7 +72,7 @@ void config_default_tcp_user_timeout(bool enable, int timeout, bool is_client);
 
 /* Set TCP_USER_TIMEOUT */
 grpc_error_handle grpc_set_socket_tcp_user_timeout(
-    int fd, const grpc_tcp_generic_options& options, bool is_client);
+    int fd, const TcpGenericOptions& options, bool is_client);
 
 /* Returns true if this system can create AF_INET6 sockets bound to ::1.
    The value is probed once, and cached for the life of the process.
@@ -109,7 +109,7 @@ grpc_error_handle grpc_set_socket_with_mutator(int fd, grpc_fd_usage usage,
 /* Extracts the first socket mutator from config if any and applies on the fd.
  */
 grpc_error_handle grpc_apply_socket_mutator_in_args(
-    int fd, grpc_fd_usage usage, const grpc_tcp_generic_options& options);
+    int fd, grpc_fd_usage usage, const TcpGenericOptions& options);
 
 /* An enum to keep track of IPv4/IPv6 socket modes.
 

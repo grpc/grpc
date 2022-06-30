@@ -68,7 +68,7 @@ class ConnectionAttemptInjector {
    public:
     QueuedAttempt(grpc_closure* closure, grpc_endpoint** ep,
                   grpc_pollset_set* interested_parties,
-                  grpc_tcp_generic_options&& options,
+                  TcpGenericOptions&& options,
                   const grpc_resolved_address* addr,
                   grpc_core::Timestamp deadline)
         : closure_(closure),
@@ -105,7 +105,7 @@ class ConnectionAttemptInjector {
     grpc_closure* closure_;
     grpc_endpoint** endpoint_;
     grpc_pollset_set* interested_parties_;
-    grpc_tcp_generic_options options_;
+    TcpGenericOptions options_;
     grpc_resolved_address address_;
     grpc_core::Timestamp deadline_;
   };

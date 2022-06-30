@@ -29,13 +29,13 @@
 /* Create an endpoint from a connected grpc_fd.
 
    fd: a connected FD. Ownership is taken.
-   options: may contain custom settings for the endpoint
+   config: may contain custom settings for the endpoint
    addr_str: destination address in printable format
    slice_allocator: ownership is taken by client.
    Returns: a new endpoint
 */
-grpc_endpoint* grpc_tcp_client_create_from_fd(
-    grpc_fd* fd, const grpc_tcp_generic_options& options,
+grpc_endpoint* grpc_tcp_create_from_fd(
+    grpc_fd* fd, const grpc_event_engine::experimental::EndpointConfig& config,
     absl::string_view addr_str);
 
 /* Return a configured, unbound, unconnected TCP client fd.
@@ -48,9 +48,10 @@ grpc_endpoint* grpc_tcp_client_create_from_fd(
    fd: out parameter. The new FD
    Returns: error, if any. Out parameters are not set on error
 */
-grpc_error_handle grpc_tcp_client_prepare_fd(
-    const grpc_tcp_generic_options& options, const grpc_resolved_address* addr,
-    grpc_resolved_address* mapped_addr, int* fd);
+grpc_error_handle grpc_tcp_client_prepare_fd(const TcpGenericOptions& options,
+                                             const grpc_resolved_address* addr,
+                                             grpc_resolved_address* mapped_addr,
+                                             int* fd);
 
 /* Connect a configured TCP client fd.
 
@@ -64,7 +65,7 @@ grpc_error_handle grpc_tcp_client_prepare_fd(
 */
 int64_t grpc_tcp_client_create_from_prepared_fd(
     grpc_pollset_set* interested_parties, grpc_closure* closure, const int fd,
-    const grpc_tcp_generic_options& options, const grpc_resolved_address* addr,
+    const TcpGenericOptions& options, const grpc_resolved_address* addr,
     grpc_core::Timestamp deadline, grpc_endpoint** ep);
 
 #endif /* GRPC_CORE_LIB_IOMGR_TCP_CLIENT_POSIX_H */

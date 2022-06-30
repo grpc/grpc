@@ -26,29 +26,13 @@
 namespace grpc_event_engine {
 namespace experimental {
 
-class EndpointConfig::OptionsAccessor {
+class ChannelArgsEndpointConfig : public EndpointConfig {
  public:
-  explicit OptionsAccessor(const grpc_core::ChannelArgs& args) : args_(args) {}
-  explicit OptionsAccessor(const grpc_channel_args* args)
+  explicit ChannelArgsEndpointConfig(const grpc_core::ChannelArgs& args)
+      : args_(args) {}
+  explicit ChannelArgsEndpointConfig(const grpc_channel_args* args)
       : args_(grpc_core::ChannelArgs::FromC(args)) {}
-  EndpointConfig::Setting Get(absl::string_view key) const {
-    auto value = args_.Get(key);
-    if (value == nullptr) {
-      return absl::monostate();
-    }
-    if (absl::holds_alternative<grpc_core::ChannelArgs::Pointer>(*value)) {
-      return absl::get<grpc_core::ChannelArgs::Pointer>((*value)).c_pointer();
-    }
-
-    if (absl::holds_alternative<int>(*value)) {
-      return absl::get<int>(*value);
-    }
-
-    if (absl::holds_alternative<std::string>(*value)) {
-      return absl::get<std::string>(*value);
-    }
-    GPR_UNREACHABLE_CODE(return absl::monostate());
-  }
+  EndpointConfig::Setting Get(absl::string_view key) const override;
 
  private:
   grpc_core::ChannelArgs args_;

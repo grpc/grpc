@@ -93,6 +93,7 @@
 #ifdef GPR_SUPPORT_CHANNELS_FROM_FD
 #include "src/core/lib/iomgr/ev_posix.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
+#include "src/core/lib/iomgr/tcp_client_posix.h"
 #include "src/core/lib/iomgr/tcp_posix.h"
 #endif  // GPR_SUPPORT_CHANNELS_FROM_FD
 
@@ -1105,9 +1106,10 @@ void grpc_server_add_channel_from_fd(grpc_server* server, int fd,
   std::string name = absl::StrCat("fd:", fd);
   auto memory_quota =
       grpc_core::ResourceQuotaFromChannelArgs(server_args)->memory_quota();
-  grpc_endpoint* server_endpoint =
-      grpc_tcp_create(grpc_fd_create(fd, name.c_str(), true),
-                      TcpOptionsFromChannelArgs(server_args), name);
+  auto config =
+      grpc_event_engine::experimental::CreateEndpointConfig(server_args);
+  grpc_endpoint* server_endpoint = grpc_tcp_create_from_fd(
+      grpc_fd_create(fd, name.c_str(), true), *config, name);
   grpc_transport* transport = grpc_create_chttp2_transport(
       server_args, server_endpoint, false /* is_client */
   );

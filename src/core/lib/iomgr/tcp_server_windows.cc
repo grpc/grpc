@@ -98,8 +98,6 @@ struct grpc_tcp_server {
 
   /* shutdown callback */
   grpc_closure* shutdown_complete;
-
-  grpc_tcp_generic_options options;
 };
 
 /* Public function. Allocates the proper data structures to hold a
@@ -108,8 +106,6 @@ static grpc_error_handle tcp_server_create(grpc_closure* shutdown_complete,
                                            const EndpointConfig& config,
                                            grpc_tcp_server** server) {
   grpc_tcp_server* s = (grpc_tcp_server*)gpr_malloc(sizeof(grpc_tcp_server));
-  grpc_tcp_generic_options_init(&s->options);
-  s->options = TcpOptionsFromEndpointConfig(config);
   gpr_ref_init(&s->refs, 1);
   gpr_mu_init(&s->mu);
   s->active_ports = 0;
@@ -137,7 +133,6 @@ static void destroy_server(void* arg, grpc_error_handle error) {
     grpc_winsocket_destroy(sp->socket);
     gpr_free(sp);
   }
-  grpc_tcp_generic_options_destroy(&s->options);
   gpr_mu_destroy(&s->mu);
   gpr_free(s);
 }
@@ -367,8 +362,10 @@ static void on_accept(void* arg, grpc_error_handle error) {
         gpr_free(utf8_message);
       }
       std::string fd_name = absl::StrCat("tcp_server:", peer_name_string);
+      auto config =
+          grpc_event_engine::experimental::CreateEndpointConfig(nullptr);
       ep = grpc_tcp_create(grpc_winsocket_create(sock, fd_name.c_str()),
-                           sp->server->options, peer_name_string);
+                           *config, peer_name_string);
     } else {
       closesocket(sock);
     }

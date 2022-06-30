@@ -429,9 +429,10 @@ grpc_channel* grpc_channel_create_from_fd(const char* target, int fd,
 
   int flags = fcntl(fd, F_GETFL, 0);
   GPR_ASSERT(fcntl(fd, F_SETFL, flags | O_NONBLOCK) == 0);
-  grpc_endpoint* client = grpc_tcp_client_create_from_fd(
-      grpc_fd_create(fd, "client", true), TcpOptionsFromChannelArgs(final_args),
-      "fd-client");
+  auto config =
+      grpc_event_engine::experimental::CreateEndpointConfig(final_args);
+  grpc_endpoint* client = grpc_tcp_create_from_fd(
+      grpc_fd_create(fd, "client", true), *config, "fd-client");
   grpc_transport* transport =
       grpc_create_chttp2_transport(final_args, client, true);
   GPR_ASSERT(transport);

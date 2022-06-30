@@ -42,8 +42,7 @@ extern grpc_core::TraceFlag grpc_tcp_trace;
 
 /// Create a tcp endpoint given a file desciptor and a read slice size.
 /// Takes ownership of \a fd. Takes ownership of the \a slice_allocator.
-grpc_endpoint* grpc_tcp_create(grpc_fd* fd,
-                               const grpc_tcp_generic_options& options,
+grpc_endpoint* grpc_tcp_create(grpc_fd* fd, const TcpGenericOptions& options,
                                absl::string_view peer_string);
 
 /// Return the tcp endpoint's fd, or -1 if this is not available. Does not

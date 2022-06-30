@@ -27,31 +27,34 @@
 namespace grpc_event_engine {
 namespace experimental {
 
-EndpointConfig::EndpointConfig() : impl_(nullptr){};
-
-EndpointConfig::~EndpointConfig() = default;
-
-EndpointConfig::EndpointConfig(
-    std::unique_ptr<EndpointConfig::OptionsAccessor> impl)
-    : impl_(std::move(impl)){};
-
-EndpointConfig::Setting EndpointConfig::Get(absl::string_view key) const {
-  if (impl_ == nullptr) {
+EndpointConfig::Setting ChannelArgsEndpointConfig::Get(
+    absl::string_view key) const {
+  auto value = args_.Get(key);
+  if (value == nullptr) {
     return absl::monostate();
   }
-  return impl_->Get(key);
+  if (absl::holds_alternative<grpc_core::ChannelArgs::Pointer>(*value)) {
+    return absl::get<grpc_core::ChannelArgs::Pointer>((*value)).c_pointer();
+  }
+
+  if (absl::holds_alternative<int>(*value)) {
+    return absl::get<int>(*value);
+  }
+
+  if (absl::holds_alternative<std::string>(*value)) {
+    return absl::get<std::string>(*value);
+  }
+  GPR_UNREACHABLE_CODE(return absl::monostate());
 }
 
 std::unique_ptr<EndpointConfig> CreateEndpointConfig(
     const grpc_core::ChannelArgs& args) {
-  return absl::make_unique<EndpointConfig>(
-      absl::make_unique<EndpointConfig::OptionsAccessor>(args));
+  return absl::make_unique<ChannelArgsEndpointConfig>(args);
 }
 
 std::unique_ptr<EndpointConfig> CreateEndpointConfig(
     const grpc_channel_args* args) {
-  return absl::make_unique<EndpointConfig>(
-      absl::make_unique<EndpointConfig::OptionsAccessor>(args));
+  return absl::make_unique<ChannelArgsEndpointConfig>(args);
 }
 
 }  // namespace experimental

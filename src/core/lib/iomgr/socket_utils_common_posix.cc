@@ -52,25 +52,6 @@
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/iomgr/sockaddr.h"
 
-namespace {
-int ClampInteger(int default_value, int min, int max, int value) {
-  if (value < min || value > max) {
-    return default_value;
-  }
-  return value;
-}
-
-int GetConfigIntegerValue(const grpc_tcp_generic_options& options,
-                          absl::string_view key, int default_value, int min,
-                          int max) {
-  auto it = options.int_options.find(key);
-  if (it == options.int_options.end()) {
-    return default_value;
-  }
-  return ClampInteger(default_value, min, max, it->second);
-}
-}  // namespace
-
 /* set a socket to use zerocopy */
 grpc_error_handle grpc_set_socket_zerocopy(int fd) {
 #ifdef GRPC_LINUX_ERRQUEUE
@@ -317,7 +298,7 @@ void config_default_tcp_user_timeout(bool enable, int timeout, bool is_client) {
 
 /* Set TCP_USER_TIMEOUT */
 grpc_error_handle grpc_set_socket_tcp_user_timeout(
-    int fd, const grpc_tcp_generic_options& options, bool is_client) {
+    int fd, const TcpGenericOptions& options, bool is_client) {
   // Use conditionally-important parameter to avoid warning
   (void)fd;
   (void)is_client;
@@ -332,13 +313,11 @@ grpc_error_handle grpc_set_socket_tcp_user_timeout(
       enable = g_default_server_tcp_user_timeout_enabled;
       timeout = g_default_server_tcp_user_timeout_ms;
     }
-    int value = GetConfigIntegerValue(options, GRPC_ARG_KEEPALIVE_TIME_MS, 0, 1,
-                                      INT_MAX);
+    int value = options.keep_alive_time_ms;
     if (value > 0) {
       enable = value != INT_MAX;
     }
-    value = GetConfigIntegerValue(options, GRPC_ARG_KEEPALIVE_TIMEOUT_MS, 0, 1,
-                                  INT_MAX);
+    value = options.keep_alive_timeout_ms;
     if (value > 0) {
       timeout = value;
     }
@@ -402,7 +381,7 @@ grpc_error_handle grpc_set_socket_with_mutator(int fd, grpc_fd_usage usage,
 }
 
 grpc_error_handle grpc_apply_socket_mutator_in_args(
-    int fd, grpc_fd_usage usage, const grpc_tcp_generic_options& options) {
+    int fd, grpc_fd_usage usage, const TcpGenericOptions& options) {
   if (options.socket_mutator == nullptr) {
     return GRPC_ERROR_NONE;
   }

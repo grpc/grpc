@@ -30,21 +30,11 @@ namespace experimental {
 /// document its set of supported configuration options.
 class EndpointConfig {
  public:
-  class OptionsAccessor;
-  EndpointConfig();
-  explicit EndpointConfig(std::unique_ptr<OptionsAccessor> impl);
-  ~EndpointConfig();
-  /// Prevent copy.
-  EndpointConfig(const EndpointConfig&) = delete;
-  EndpointConfig& operator=(const EndpointConfig&) = delete;
-  using Setting =
-      absl::variant<absl::monostate, int, absl::string_view, bool, void*>;
+  virtual ~EndpointConfig() = default;
+  using Setting = absl::variant<absl::monostate, int, absl::string_view, void*>;
   /// Returns the Setting for a specified key, or \a absl::monostate if there is
   /// no such entry. Caller does not take ownership of the resulting value.
-  Setting Get(absl::string_view key) const;
-
- private:
-  std::unique_ptr<OptionsAccessor> impl_;
+  virtual Setting Get(absl::string_view key) const = 0;
 };
 
 }  // namespace experimental
