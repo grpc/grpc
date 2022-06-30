@@ -126,7 +126,7 @@ absl::StatusOr<std::unique_ptr<WakeupFd>> PipeWakeupFd::CreatePipeWakeupFd() {
     auto pipe_wakeup_fd = absl::make_unique<PipeWakeupFd>();
     auto status = pipe_wakeup_fd->Init();
     if (status.ok()) {
-      return pipe_wakeup_fd;
+      return std::unique_ptr<WakeupFd>(std::move(pipe_wakeup_fd));
     }
     return status;
   }

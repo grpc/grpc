@@ -28,6 +28,7 @@ class EventFdWakeupFd : public WakeupFd {
     read_fd_ = 0;
     write_fd_ = 0;
   }
+  ~EventFdWakeupFd() override = default;
   absl::Status Init();
   absl::Status ConsumeWakeup() override;
   absl::Status Wakeup() override;

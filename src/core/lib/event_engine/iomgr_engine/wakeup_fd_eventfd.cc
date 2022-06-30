@@ -95,7 +95,7 @@ EventFdWakeupFd::CreateEventFdWakeupFd() {
     auto event_fd_wakeup_fd = absl::make_unique<EventFdWakeupFd>();
     auto status = event_fd_wakeup_fd->Init();
     if (status.ok()) {
-      return event_fd_wakeup_fd;
+      return std::unique_ptr<WakeupFd>(std::move(event_fd_wakeup_fd));
     }
     return status;
   }
