@@ -676,8 +676,7 @@ Subchannel::Subchannel(SubchannelKey key,
     args_ = grpc_channel_args_copy(args);
   }
   // Initialize EventEngine
-  event_engine_ =
-      ChannelArgs::FromC(args_).GetObjectRef<EventEngine>();
+  event_engine_ = ChannelArgs::FromC(args_).GetObjectRef<EventEngine>();
   // Initialize channelz.
   const bool channelz_enabled = grpc_channel_args_find_bool(
       args_, GRPC_ARG_ENABLE_CHANNELZ, GRPC_ENABLE_CHANNELZ_DEFAULT);
