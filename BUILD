@@ -153,7 +153,7 @@ python_config_settings()
 # This should be updated along with build_handwritten.yaml
 g_stands_for = "garum"  # @unused
 
-core_version = "25.0.0"  # @unused
+core_version = "26.0.0"  # @unused
 
 version = "1.48.0-dev"  # @unused
 
@@ -4372,6 +4372,7 @@ grpc_cc_library(
         "ref_counted",
         "ref_counted_ptr",
         "server_address",
+        "sockaddr_utils",
     ],
 )
 
@@ -6372,11 +6373,9 @@ grpc_cc_library(
     hdrs = GRPCXX_HDRS,
     external_deps = [
         "absl/base:core_headers",
-        "absl/memory",
-        "absl/status",
         "absl/strings",
         "absl/synchronization",
-        "absl/types:optional",
+        "absl/memory",
         "upb_lib",
         "protobuf_headers",
     ],
@@ -6387,7 +6386,6 @@ grpc_cc_library(
         "arena",
         "channel_init",
         "config",
-        "event_engine_base",
         "gpr_base",
         "gpr_codegen",
         "grpc",
@@ -6418,11 +6416,9 @@ grpc_cc_library(
     hdrs = GRPCXX_HDRS,
     external_deps = [
         "absl/base:core_headers",
-        "absl/memory",
-        "absl/status",
         "absl/strings",
         "absl/synchronization",
-        "absl/types:optional",
+        "absl/memory",
         "upb_lib",
         "protobuf_headers",
     ],
@@ -6434,7 +6430,6 @@ grpc_cc_library(
         "arena",
         "channel_init",
         "config",
-        "event_engine_base",
         "gpr_base",
         "gpr_codegen",
         "grpc++_codegen_base",
