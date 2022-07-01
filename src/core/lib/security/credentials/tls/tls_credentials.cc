@@ -37,7 +37,6 @@
 #include "src/core/lib/security/credentials/tls/grpc_tls_credentials_options.h"
 #include "src/core/lib/security/security_connector/tls/tls_security_connector.h"
 #include "src/core/tsi/ssl/session_cache/ssl_session_cache.h"
-#include "src/core/tsi/ssl_transport_security.h"
 
 namespace {
 
