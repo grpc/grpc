@@ -15,8 +15,11 @@
 #include <stdint.h>
 #include <string.h>
 
+#include <functional>
 #include <string>
+#include <utility>
 
+#include "absl/status/status.h"
 #include "absl/strings/string_view.h"
 
 #include <grpc/grpc.h>
@@ -26,10 +29,13 @@
 #include <grpc/status.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
+#include <grpc/support/sync.h>
 #include <grpc/support/time.h>
 
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/gpr/useful.h"
+#include "src/core/lib/security/authorization/authorization_policy_provider.h"
+#include "src/core/lib/security/authorization/grpc_authorization_policy_provider.h"
 #include "test/core/end2end/cq_verifier.h"
 #include "test/core/end2end/end2end_tests.h"
 #include "test/core/util/test_config.h"

@@ -31,7 +31,6 @@
 
 #include <google/protobuf/repeated_ptr_field.h>
 
-#include "absl/container/inlined_vector.h"
 #include "absl/memory/memory.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
@@ -54,6 +53,7 @@
 #include "src/core/lib/address_utils/parse_address.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channelz.h"
+#include "src/core/lib/event_engine/event_engine_factory.h"
 #include "src/core/lib/gpr/env.h"
 #include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/time.h"
@@ -77,6 +77,7 @@
 #include "test/core/end2end/data/ssl_test_data.h"
 #include "test/core/end2end/fuzzers/api_fuzzer.pb.h"
 #include "test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h"
+#include "test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.h"
 #include "test/core/util/passthru_endpoint.h"
 
 // Applicable when simulating channel actions. Prevents overflows.
