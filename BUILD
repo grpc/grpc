@@ -1918,8 +1918,10 @@ grpc_cc_library(
     hdrs = [
         "src/core/lib/resource_quota/arena.h",
     ],
+    external_deps = ["absl/utility"],
     tags = ["grpc-autodeps"],
     deps = [
+        "construct_destruct",
         "context",
         "event_engine_memory_allocator",
         "gpr_base",
