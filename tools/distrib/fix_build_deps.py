@@ -23,7 +23,6 @@ import re
 import subprocess
 import sys
 import tempfile
-import multiprocessing
 
 # find our home
 ROOT = os.path.abspath(os.path.join(os.path.dirname(sys.argv[0]), '../..'))
