@@ -17,8 +17,11 @@
 #include "wakeup_fd_pipe.h"
 
 #include <memory>
+#include <utility>
 
-#include <grpc/support/log.h>
+#include "absl/memory/memory.h"
+#include "absl/strings/str_cat.h"
+#include "absl/strings/string_view.h"
 
 #include "src/core/lib/iomgr/port.h"
 
