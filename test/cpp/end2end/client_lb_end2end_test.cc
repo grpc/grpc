@@ -156,11 +156,12 @@ class FakeResolverResponseGeneratorWrapper {
       const std::vector<int>& ports, const char* service_config_json = nullptr,
       const char* attribute_key = nullptr,
       std::unique_ptr<grpc_core::ServerAddress::AttributeInterface> attribute =
-          nullptr) {
+          nullptr,
+      grpc_channel_args* per_address_args = nullptr) {
     grpc_core::ExecCtx exec_ctx;
     response_generator_->SetResponse(
         BuildFakeResults(ipv6_only_, ports, service_config_json, attribute_key,
-                         std::move(attribute)));
+                         std::move(attribute), per_address_args));
   }
 
   void SetNextResolutionUponError(const std::vector<int>& ports) {
@@ -184,7 +185,8 @@ class FakeResolverResponseGeneratorWrapper {
       const char* service_config_json = nullptr,
       const char* attribute_key = nullptr,
       std::unique_ptr<grpc_core::ServerAddress::AttributeInterface> attribute =
-          nullptr) {
+          nullptr,
+      grpc_channel_args* per_address_args = nullptr) {
     grpc_core::Resolver::Result result;
     result.addresses = grpc_core::ServerAddressList();
     for (const int& port : ports) {
@@ -200,7 +202,8 @@ class FakeResolverResponseGeneratorWrapper {
         attributes[attribute_key] = attribute->Copy();
       }
       result.addresses->emplace_back(address.addr, address.len,
-                                     nullptr /* args */, std::move(attributes));
+                                     grpc_channel_args_copy(per_address_args),
+                                     std::move(attributes));
     }
     if (result.addresses->empty()) {
       result.resolution_note = "fake resolver empty address list";
@@ -302,7 +305,7 @@ class ClientLbEnd2endTest : public ::testing::Test {
     }  // else, default to pick first
     args.SetPointer(GRPC_ARG_FAKE_RESOLVER_RESPONSE_GENERATOR,
                     response_generator.Get());
-    return grpc::CreateCustomChannel("fake:///", creds_, args);
+    return grpc::CreateCustomChannel("fake:default.example.com", creds_, args);
   }
 
   Status SendRpc(
@@ -573,6 +576,82 @@ TEST_F(ClientLbEnd2endTest, ChannelIdleness) {
   response_generator.SetNextResolution(GetServersPorts());
   CheckRpcSendOk(DEBUG_LOCATION, stub);
   EXPECT_EQ(channel->GetState(false), GRPC_CHANNEL_READY);
+}
+
+TEST_F(ClientLbEnd2endTest, AuthorityOverrideOnChannel) {
+  StartServers(1);
+  // Set authority via channel arg.
+  auto response_generator = BuildResolverResponseGenerator();
+  ChannelArguments args;
+  args.SetString(GRPC_ARG_DEFAULT_AUTHORITY, "foo.example.com");
+  auto channel = BuildChannel("", response_generator, args);
+  auto stub = BuildStub(channel);
+  response_generator.SetNextResolution(GetServersPorts());
+  // Send an RPC.
+  EchoRequest request;
+  request.mutable_param()->set_echo_host_from_authority_header(true);
+  EchoResponse response;
+  Status status = SendRpc(stub, &response, /*timeout_ms=*/1000,
+                          /*wait_for_ready=*/false, &request);
+  EXPECT_TRUE(status.ok()) << "code=" << status.error_code()
+                           << " message=" << status.error_message();
+  // Check that the right authority was seen by the server.
+  EXPECT_EQ("foo.example.com", response.param().host());
+}
+
+TEST_F(ClientLbEnd2endTest, AuthorityOverrideFromResolver) {
+  StartServers(1);
+  auto response_generator = BuildResolverResponseGenerator();
+  auto channel = BuildChannel("", response_generator);
+  auto stub = BuildStub(channel);
+  // Inject resolver result that sets the per-address authority to a
+  // different value.
+  grpc_arg arg = grpc_channel_arg_string_create(
+      const_cast<char*>(GRPC_ARG_DEFAULT_AUTHORITY),
+      const_cast<char*>("foo.example.com"));
+  grpc_channel_args per_address_args = {1, &arg};
+  response_generator.SetNextResolution(
+      GetServersPorts(), /*service_config_json=*/nullptr,
+      /*attribute_key=*/nullptr, /*attribute=*/nullptr, &per_address_args);
+  // Send an RPC.
+  EchoRequest request;
+  request.mutable_param()->set_echo_host_from_authority_header(true);
+  EchoResponse response;
+  Status status = SendRpc(stub, &response, /*timeout_ms=*/1000,
+                          /*wait_for_ready=*/false, &request);
+  EXPECT_TRUE(status.ok()) << "code=" << status.error_code()
+                           << " message=" << status.error_message();
+  // Check that the right authority was seen by the server.
+  EXPECT_EQ("foo.example.com", response.param().host());
+}
+
+TEST_F(ClientLbEnd2endTest, AuthorityOverridePrecedence) {
+  StartServers(1);
+  // Set authority via channel arg.
+  auto response_generator = BuildResolverResponseGenerator();
+  ChannelArguments args;
+  args.SetString(GRPC_ARG_DEFAULT_AUTHORITY, "foo.example.com");
+  auto channel = BuildChannel("", response_generator, args);
+  auto stub = BuildStub(channel);
+  // Inject resolver result that sets the per-address authority to a
+  // different value.
+  grpc_arg arg = grpc_channel_arg_string_create(
+      const_cast<char*>(GRPC_ARG_DEFAULT_AUTHORITY),
+      const_cast<char*>("bar.example.com"));
+  grpc_channel_args per_address_args = {1, &arg};
+  response_generator.SetNextResolution(
+      GetServersPorts(), /*service_config_json=*/nullptr,
+      /*attribute_key=*/nullptr, /*attribute=*/nullptr, &per_address_args);
+  // Send an RPC.
+  EchoRequest request;
+  request.mutable_param()->set_echo_host_from_authority_header(true);
+  EchoResponse response;
+  Status status = SendRpc(stub, &response, /*timeout_ms=*/1000,
+                          /*wait_for_ready=*/false, &request);
+  EXPECT_TRUE(status.ok()) << "code=" << status.error_code()
+                           << " message=" << status.error_message();
+  // Check that the right authority was seen by the server.
+  EXPECT_EQ("foo.example.com", response.param().host());
 }
 
 //
