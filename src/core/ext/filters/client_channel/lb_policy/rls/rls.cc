@@ -1982,7 +1982,7 @@ void RlsLb::UpdateLocked(UpdateArgs args) {
     // Resize cache if needed.
     if (old_config == nullptr ||
         config_->cache_size_bytes() != old_config->cache_size_bytes()) {
-      cache_.Resize(config_->cache_size_bytes());
+      cache_.Resize(static_cast<size_t>(config_->cache_size_bytes()));
     }
     // Start update of child policies if needed.
     if (update_child_policies) {

@@ -195,13 +195,15 @@ Pod::Spec.new do |s|
     ss.header_mappings_dir = '.'
     ss.dependency "#{s.name}/Interface", version
     ss.dependency 'gRPC-Core', version
-    abseil_version = '1.20211102.0'
+    abseil_version = '1.20220623.0'
     ss.dependency 'abseil/base/base', abseil_version
     ss.dependency 'abseil/base/core_headers', abseil_version
+    ss.dependency 'abseil/cleanup/cleanup', abseil_version
     ss.dependency 'abseil/container/flat_hash_map', abseil_version
     ss.dependency 'abseil/container/flat_hash_set', abseil_version
     ss.dependency 'abseil/container/inlined_vector', abseil_version
     ss.dependency 'abseil/functional/bind_front', abseil_version
+    ss.dependency 'abseil/functional/function_ref', abseil_version
     ss.dependency 'abseil/hash/hash', abseil_version
     ss.dependency 'abseil/memory/memory', abseil_version
     ss.dependency 'abseil/meta/type_traits', abseil_version
@@ -680,6 +682,7 @@ Pod::Spec.new do |s|
                       'src/core/lib/event_engine/iomgr_engine/timer.h',
                       'src/core/lib/event_engine/iomgr_engine/timer_heap.h',
                       'src/core/lib/event_engine/iomgr_engine/timer_manager.h',
+                      'src/core/lib/event_engine/promise.h',
                       'src/core/lib/event_engine/trace.h',
                       'src/core/lib/gpr/alloc.h',
                       'src/core/lib/gpr/env.h',
@@ -891,7 +894,6 @@ Pod::Spec.new do |s|
                       'src/core/lib/slice/slice_internal.h',
                       'src/core/lib/slice/slice_refcount.h',
                       'src/core/lib/slice/slice_refcount_base.h',
-                      'src/core/lib/slice/slice_split.h',
                       'src/core/lib/slice/slice_string_helpers.h',
                       'src/core/lib/surface/api_trace.h',
                       'src/core/lib/surface/builtins.h',
@@ -908,7 +910,6 @@ Pod::Spec.new do |s|
                       'src/core/lib/surface/server.h',
                       'src/core/lib/surface/validate_metadata.h',
                       'src/core/lib/transport/bdp_estimator.h',
-                      'src/core/lib/transport/byte_stream.h',
                       'src/core/lib/transport/connectivity_state.h',
                       'src/core/lib/transport/error_utils.h',
                       'src/core/lib/transport/handshaker.h',
@@ -1506,6 +1507,7 @@ Pod::Spec.new do |s|
                               'src/core/lib/event_engine/iomgr_engine/timer.h',
                               'src/core/lib/event_engine/iomgr_engine/timer_heap.h',
                               'src/core/lib/event_engine/iomgr_engine/timer_manager.h',
+                              'src/core/lib/event_engine/promise.h',
                               'src/core/lib/event_engine/trace.h',
                               'src/core/lib/gpr/alloc.h',
                               'src/core/lib/gpr/env.h',
@@ -1717,7 +1719,6 @@ Pod::Spec.new do |s|
                               'src/core/lib/slice/slice_internal.h',
                               'src/core/lib/slice/slice_refcount.h',
                               'src/core/lib/slice/slice_refcount_base.h',
-                              'src/core/lib/slice/slice_split.h',
                               'src/core/lib/slice/slice_string_helpers.h',
                               'src/core/lib/surface/api_trace.h',
                               'src/core/lib/surface/builtins.h',
@@ -1734,7 +1735,6 @@ Pod::Spec.new do |s|
                               'src/core/lib/surface/server.h',
                               'src/core/lib/surface/validate_metadata.h',
                               'src/core/lib/transport/bdp_estimator.h',
-                              'src/core/lib/transport/byte_stream.h',
                               'src/core/lib/transport/connectivity_state.h',
                               'src/core/lib/transport/error_utils.h',
                               'src/core/lib/transport/handshaker.h',

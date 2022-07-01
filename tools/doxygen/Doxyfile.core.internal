@@ -40,7 +40,7 @@ PROJECT_NAME           = "GRPC Core"
 # could be handy for archiving the generated documentation or if some version
 # control system is used.
 
-PROJECT_NUMBER         = 25.0.0
+PROJECT_NUMBER         = 26.0.0
 
 # Using the PROJECT_BRIEF tag one can provide an optional one line description
 # for a project that appears at the top of each page and should give viewer a
@@ -1740,6 +1740,7 @@ src/core/lib/event_engine/iomgr_engine/timer_heap.h \
 src/core/lib/event_engine/iomgr_engine/timer_manager.cc \
 src/core/lib/event_engine/iomgr_engine/timer_manager.h \
 src/core/lib/event_engine/memory_allocator.cc \
+src/core/lib/event_engine/promise.h \
 src/core/lib/event_engine/resolved_address.cc \
 src/core/lib/event_engine/slice.cc \
 src/core/lib/event_engine/slice_buffer.cc \
@@ -2167,8 +2168,6 @@ src/core/lib/slice/slice_internal.h \
 src/core/lib/slice/slice_refcount.cc \
 src/core/lib/slice/slice_refcount.h \
 src/core/lib/slice/slice_refcount_base.h \
-src/core/lib/slice/slice_split.cc \
-src/core/lib/slice/slice_split.h \
 src/core/lib/slice/slice_string_helpers.cc \
 src/core/lib/slice/slice_string_helpers.h \
 src/core/lib/surface/README.md \
@@ -2209,8 +2208,6 @@ src/core/lib/surface/version.cc \
 src/core/lib/transport/README.md \
 src/core/lib/transport/bdp_estimator.cc \
 src/core/lib/transport/bdp_estimator.h \
-src/core/lib/transport/byte_stream.cc \
-src/core/lib/transport/byte_stream.h \
 src/core/lib/transport/connectivity_state.cc \
 src/core/lib/transport/connectivity_state.h \
 src/core/lib/transport/error_utils.cc \

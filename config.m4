@@ -685,7 +685,6 @@ if test "$PHP_GRPC" != "no"; then
     src/core/lib/slice/slice_buffer.cc \
     src/core/lib/slice/slice_buffer_api.cc \
     src/core/lib/slice/slice_refcount.cc \
-    src/core/lib/slice/slice_split.cc \
     src/core/lib/slice/slice_string_helpers.cc \
     src/core/lib/surface/api_trace.cc \
     src/core/lib/surface/builtins.cc \
@@ -708,7 +707,6 @@ if test "$PHP_GRPC" != "no"; then
     src/core/lib/surface/validate_metadata.cc \
     src/core/lib/surface/version.cc \
     src/core/lib/transport/bdp_estimator.cc \
-    src/core/lib/transport/byte_stream.cc \
     src/core/lib/transport/connectivity_state.cc \
     src/core/lib/transport/error_utils.cc \
     src/core/lib/transport/handshaker.cc \
@@ -768,6 +766,7 @@ if test "$PHP_GRPC" != "no"; then
     third_party/abseil-cpp/absl/base/internal/raw_logging.cc \
     third_party/abseil-cpp/absl/base/internal/spinlock.cc \
     third_party/abseil-cpp/absl/base/internal/spinlock_wait.cc \
+    third_party/abseil-cpp/absl/base/internal/strerror.cc \
     third_party/abseil-cpp/absl/base/internal/sysinfo.cc \
     third_party/abseil-cpp/absl/base/internal/thread_identity.cc \
     third_party/abseil-cpp/absl/base/internal/throw_delegate.cc \
@@ -804,6 +803,8 @@ if test "$PHP_GRPC" != "no"; then
     third_party/abseil-cpp/absl/strings/ascii.cc \
     third_party/abseil-cpp/absl/strings/charconv.cc \
     third_party/abseil-cpp/absl/strings/cord.cc \
+    third_party/abseil-cpp/absl/strings/cord_analysis.cc \
+    third_party/abseil-cpp/absl/strings/cord_buffer.cc \
     third_party/abseil-cpp/absl/strings/escaping.cc \
     third_party/abseil-cpp/absl/strings/internal/charconv_bigint.cc \
     third_party/abseil-cpp/absl/strings/internal/charconv_parse.cc \
@@ -812,6 +813,7 @@ if test "$PHP_GRPC" != "no"; then
     third_party/abseil-cpp/absl/strings/internal/cord_rep_btree_navigator.cc \
     third_party/abseil-cpp/absl/strings/internal/cord_rep_btree_reader.cc \
     third_party/abseil-cpp/absl/strings/internal/cord_rep_consume.cc \
+    third_party/abseil-cpp/absl/strings/internal/cord_rep_crc.cc \
     third_party/abseil-cpp/absl/strings/internal/cord_rep_ring.cc \
     third_party/abseil-cpp/absl/strings/internal/cordz_functions.cc \
     third_party/abseil-cpp/absl/strings/internal/cordz_handle.cc \

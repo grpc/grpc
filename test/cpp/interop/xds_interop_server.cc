@@ -35,7 +35,7 @@
 
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/iomgr/gethostname.h"
-#include "src/core/lib/transport/byte_stream.h"
+#include "src/core/lib/transport/transport.h"
 #include "src/proto/grpc/testing/empty.pb.h"
 #include "src/proto/grpc/testing/messages.pb.h"
 #include "src/proto/grpc/testing/test.grpc.pb.h"
