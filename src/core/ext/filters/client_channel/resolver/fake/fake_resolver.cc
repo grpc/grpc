@@ -146,8 +146,7 @@ void FakeResolver::MaybeSendResultLocked() {
     return_failure_ = false;
   } else if (has_next_result_) {
     // When both next_results_ and channel_args_ contain an arg with the same
-    // name, only the one in next_results_ will be kept since next_results_ is
-    // before channel_args_.
+    // name, only the one in next_results_.
     next_result_.args = next_result_.args.UnionWith(channel_args_);
     result_handler_->ReportResult(std::move(next_result_));
     has_next_result_ = false;
