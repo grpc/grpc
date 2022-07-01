@@ -39,11 +39,15 @@ grpc_cc_test(
 grpc_cc_test(
     name = "parse_address_test",
     srcs = ["parse_address_test.cc"],
+    external_deps = [
+        "gtest",
+    ],
     language = "C++",
     deps = [
         "//:gpr",
         "//:grpc",
         "//test/core/util:grpc_test_util",
+        "//test/core/util:gtest_main",
     ],
 )
 

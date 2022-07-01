@@ -23,6 +23,8 @@
 #include <sys/un.h>
 #endif
 
+#include <gtest/gtest.h>
+
 #include <grpc/grpc.h>
 #include <grpc/support/log.h>
 
@@ -128,10 +130,7 @@ static void test_grpc_parse_ipv6_invalid(const char* uri_text) {
   GPR_ASSERT(!grpc_parse_ipv6(*uri, &addr));
 }
 
-int main(int argc, char** argv) {
-  grpc::testing::TestEnvironment env(&argc, argv);
-  grpc_init();
-
+TEST(ParseAddressTest, LegacyTests) {
   test_grpc_parse_unix("unix:/path/name", "/path/name");
   test_grpc_parse_unix_abstract("unix-abstract:foobar", "foobar");
   test_grpc_parse_ipv4("ipv4:192.0.2.1:12345", "192.0.2.1", 12345);
@@ -142,6 +141,4 @@ int main(int argc, char** argv) {
   test_grpc_parse_ipv6_invalid(
       "ipv6:WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW45%"
       "25v6:45%25x$1*");
-
-  grpc_shutdown();
 }

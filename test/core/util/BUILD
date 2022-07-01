@@ -227,3 +227,13 @@ grpc_cc_library(
     srcs = ["build.cc"],
     hdrs = ["build.h"],
 )
+
+grpc_cc_library(
+    name = "gtest_main",
+    srcs = ["gtest_main.cc"],
+    external_deps = ["gtest"],
+    language = "C++",
+    deps = [
+        ":grpc_test_util_base",
+    ],
+)

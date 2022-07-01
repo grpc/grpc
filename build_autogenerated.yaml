@@ -3967,14 +3967,6 @@ targets:
   - test/core/surface/num_external_connectivity_watchers_test.cc
   deps:
   - grpc_test_util
-- name: parse_address_test
-  build: test
-  language: c
-  headers: []
-  src:
-  - test/core/address_utils/parse_address_test.cc
-  deps:
-  - grpc_test_util
 - name: parse_address_with_named_scope_id_test
   build: test
   language: c
@@ -7202,6 +7194,16 @@ targets:
   - test/core/gprpp/overload_test.cc
   deps: []
   uses_polling: false
+- name: parse_address_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/core/address_utils/parse_address_test.cc
+  - test/core/util/gtest_main.cc
+  deps:
+  - grpc_test_util
 - name: parsed_metadata_test
   gtest: true
   build: test
