@@ -51,7 +51,6 @@
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/debug/stats.h"
 #include "src/core/lib/debug/trace.h"
-#include "src/core/lib/event_engine/event_engine_factory.h"
 #include "src/core/lib/gpr/alloc.h"
 #include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
@@ -84,7 +83,8 @@
                     GPR_ROUND_UP_TO_ALIGNMENT_SIZE(sizeof(SubchannelCall)))
 
 namespace grpc_core {
-using ::grpc_event_engine::experimental::GetDefaultEventEngine;
+
+using ::grpc_event_engine::experimental::EventEngine;
 
 TraceFlag grpc_trace_subchannel(false, "subchannel");
 DebugOnlyTraceFlag grpc_trace_subchannel_refcount(false, "subchannel_refcount");
@@ -676,6 +676,8 @@ Subchannel::Subchannel(SubchannelKey key,
   } else {
     args_ = grpc_channel_args_copy(args);
   }
+  // Initialize EventEngine
+  event_engine_ = ChannelArgs::FromC(args_).GetObjectRef<EventEngine>();
   // Initialize channelz.
   const bool channelz_enabled = grpc_channel_args_find_bool(
       args_, GRPC_ARG_ENABLE_CHANNELZ, GRPC_ENABLE_CHANNELZ_DEFAULT);
@@ -803,7 +805,7 @@ void Subchannel::ResetBackoff() {
   MutexLock lock(&mu_);
   backoff_.Reset();
   if (state_ == GRPC_CHANNEL_TRANSIENT_FAILURE &&
-      GetDefaultEventEngine()->Cancel(retry_timer_handle_)) {
+      event_engine_->Cancel(retry_timer_handle_)) {
     OnRetryTimerLocked();
   } else if (state_ == GRPC_CHANNEL_CONNECTING) {
     next_attempt_time_ = ExecCtx::Get()->Now();
@@ -949,7 +951,7 @@ void Subchannel::OnConnectingFinishedLocked(grpc_error_handle error) {
             time_until_next_attempt.millis());
     SetConnectivityStateLocked(GRPC_CHANNEL_TRANSIENT_FAILURE,
                                grpc_error_to_absl_status(error));
-    retry_timer_handle_ = GetDefaultEventEngine()->RunAfter(
+    retry_timer_handle_ = event_engine_->RunAfter(
         time_until_next_attempt,
         [self = WeakRef(DEBUG_LOCATION, "RetryTimer")]() mutable {
           {
