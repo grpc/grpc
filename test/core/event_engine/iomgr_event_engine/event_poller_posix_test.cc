@@ -70,7 +70,7 @@ namespace {
 
 class TestScheduler : public Scheduler {
  public:
-  TestScheduler(experimental::EventEngine* engine) : engine_(engine) {}
+  explicit TestScheduler(experimental::EventEngine* engine) : engine_(engine) {}
   void Run(experimental::EventEngine::Closure* closure) override {
     engine_->Run(closure);
   }

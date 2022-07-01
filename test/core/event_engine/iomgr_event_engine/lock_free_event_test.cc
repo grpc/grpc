@@ -31,7 +31,7 @@ using ::grpc_event_engine::iomgr_engine::Scheduler;
 namespace {
 class TestScheduler : public Scheduler {
  public:
-  TestScheduler(grpc_event_engine::experimental::EventEngine* engine)
+  explicit TestScheduler(grpc_event_engine::experimental::EventEngine* engine)
       : engine_(engine) {}
   void Run(
       grpc_event_engine::experimental::EventEngine::Closure* closure) override {
