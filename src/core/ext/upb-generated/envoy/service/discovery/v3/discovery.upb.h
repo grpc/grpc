@@ -79,11 +79,15 @@ UPB_INLINE envoy_service_discovery_v3_DiscoveryRequest* envoy_service_discovery_
   return ret;
 }
 UPB_INLINE char* envoy_service_discovery_v3_DiscoveryRequest_serialize(const envoy_service_discovery_v3_DiscoveryRequest* msg, upb_Arena* arena, size_t* len) {
-  return upb_Encode(msg, &envoy_service_discovery_v3_DiscoveryRequest_msginit, 0, arena, len);
+  char* ptr;
+  (void)upb_Encode(msg, &envoy_service_discovery_v3_DiscoveryRequest_msginit, 0, arena, &ptr, len);
+  return ptr;
 }
 UPB_INLINE char* envoy_service_discovery_v3_DiscoveryRequest_serialize_ex(const envoy_service_discovery_v3_DiscoveryRequest* msg, int options,
                                  upb_Arena* arena, size_t* len) {
-  return upb_Encode(msg, &envoy_service_discovery_v3_DiscoveryRequest_msginit, options, arena, len);
+  char* ptr;
+  (void)upb_Encode(msg, &envoy_service_discovery_v3_DiscoveryRequest_msginit, options, arena, &ptr, len);
+  return ptr;
 }
 UPB_INLINE void envoy_service_discovery_v3_DiscoveryRequest_clear_version_info(const envoy_service_discovery_v3_DiscoveryRequest* msg) {
   *UPB_PTR_AT(msg, UPB_SIZE(4, 8), upb_StringView) = upb_StringView_FromDataAndSize(NULL, 0);
@@ -198,11 +202,15 @@ UPB_INLINE envoy_service_discovery_v3_DiscoveryResponse* envoy_service_discovery
   return ret;
 }
 UPB_INLINE char* envoy_service_discovery_v3_DiscoveryResponse_serialize(const envoy_service_discovery_v3_DiscoveryResponse* msg, upb_Arena* arena, size_t* len) {
-  return upb_Encode(msg, &envoy_service_discovery_v3_DiscoveryResponse_msginit, 0, arena, len);
+  char* ptr;
+  (void)upb_Encode(msg, &envoy_service_discovery_v3_DiscoveryResponse_msginit, 0, arena, &ptr, len);
+  return ptr;
 }
 UPB_INLINE char* envoy_service_discovery_v3_DiscoveryResponse_serialize_ex(const envoy_service_discovery_v3_DiscoveryResponse* msg, int options,
                                  upb_Arena* arena, size_t* len) {
-  return upb_Encode(msg, &envoy_service_discovery_v3_DiscoveryResponse_msginit, options, arena, len);
+  char* ptr;
+  (void)upb_Encode(msg, &envoy_service_discovery_v3_DiscoveryResponse_msginit, options, arena, &ptr, len);
+  return ptr;
 }
 UPB_INLINE void envoy_service_discovery_v3_DiscoveryResponse_clear_version_info(const envoy_service_discovery_v3_DiscoveryResponse* msg) {
   *UPB_PTR_AT(msg, UPB_SIZE(4, 8), upb_StringView) = upb_StringView_FromDataAndSize(NULL, 0);
@@ -310,11 +318,15 @@ UPB_INLINE envoy_service_discovery_v3_DeltaDiscoveryRequest* envoy_service_disco
   return ret;
 }
 UPB_INLINE char* envoy_service_discovery_v3_DeltaDiscoveryRequest_serialize(const envoy_service_discovery_v3_DeltaDiscoveryRequest* msg, upb_Arena* arena, size_t* len) {
-  return upb_Encode(msg, &envoy_service_discovery_v3_DeltaDiscoveryRequest_msginit, 0, arena, len);
+  char* ptr;
+  (void)upb_Encode(msg, &envoy_service_discovery_v3_DeltaDiscoveryRequest_msginit, 0, arena, &ptr, len);
+  return ptr;
 }
 UPB_INLINE char* envoy_service_discovery_v3_DeltaDiscoveryRequest_serialize_ex(const envoy_service_discovery_v3_DeltaDiscoveryRequest* msg, int options,
                                  upb_Arena* arena, size_t* len) {
-  return upb_Encode(msg, &envoy_service_discovery_v3_DeltaDiscoveryRequest_msginit, options, arena, len);
+  char* ptr;
+  (void)upb_Encode(msg, &envoy_service_discovery_v3_DeltaDiscoveryRequest_msginit, options, arena, &ptr, len);
+  return ptr;
 }
 UPB_INLINE bool envoy_service_discovery_v3_DeltaDiscoveryRequest_has_node(const envoy_service_discovery_v3_DeltaDiscoveryRequest* msg) {
   return _upb_hasbit(msg, 1);
@@ -477,11 +489,15 @@ UPB_INLINE envoy_service_discovery_v3_DeltaDiscoveryResponse* envoy_service_disc
   return ret;
 }
 UPB_INLINE char* envoy_service_discovery_v3_DeltaDiscoveryResponse_serialize(const envoy_service_discovery_v3_DeltaDiscoveryResponse* msg, upb_Arena* arena, size_t* len) {
-  return upb_Encode(msg, &envoy_service_discovery_v3_DeltaDiscoveryResponse_msginit, 0, arena, len);
+  char* ptr;
+  (void)upb_Encode(msg, &envoy_service_discovery_v3_DeltaDiscoveryResponse_msginit, 0, arena, &ptr, len);
+  return ptr;
 }
 UPB_INLINE char* envoy_service_discovery_v3_DeltaDiscoveryResponse_serialize_ex(const envoy_service_discovery_v3_DeltaDiscoveryResponse* msg, int options,
                                  upb_Arena* arena, size_t* len) {
-  return upb_Encode(msg, &envoy_service_discovery_v3_DeltaDiscoveryResponse_msginit, options, arena, len);
+  char* ptr;
+  (void)upb_Encode(msg, &envoy_service_discovery_v3_DeltaDiscoveryResponse_msginit, options, arena, &ptr, len);
+  return ptr;
 }
 UPB_INLINE void envoy_service_discovery_v3_DeltaDiscoveryResponse_clear_system_version_info(const envoy_service_discovery_v3_DeltaDiscoveryResponse* msg) {
   *UPB_PTR_AT(msg, UPB_SIZE(4, 8), upb_StringView) = upb_StringView_FromDataAndSize(NULL, 0);
@@ -595,11 +611,15 @@ UPB_INLINE envoy_service_discovery_v3_Resource* envoy_service_discovery_v3_Resou
   return ret;
 }
 UPB_INLINE char* envoy_service_discovery_v3_Resource_serialize(const envoy_service_discovery_v3_Resource* msg, upb_Arena* arena, size_t* len) {
-  return upb_Encode(msg, &envoy_service_discovery_v3_Resource_msginit, 0, arena, len);
+  char* ptr;
+  (void)upb_Encode(msg, &envoy_service_discovery_v3_Resource_msginit, 0, arena, &ptr, len);
+  return ptr;
 }
 UPB_INLINE char* envoy_service_discovery_v3_Resource_serialize_ex(const envoy_service_discovery_v3_Resource* msg, int options,
                                  upb_Arena* arena, size_t* len) {
-  return upb_Encode(msg, &envoy_service_discovery_v3_Resource_msginit, options, arena, len);
+  char* ptr;
+  (void)upb_Encode(msg, &envoy_service_discovery_v3_Resource_msginit, options, arena, &ptr, len);
+  return ptr;
 }
 UPB_INLINE void envoy_service_discovery_v3_Resource_clear_version(const envoy_service_discovery_v3_Resource* msg) {
   *UPB_PTR_AT(msg, UPB_SIZE(4, 8), upb_StringView) = upb_StringView_FromDataAndSize(NULL, 0);
@@ -727,11 +747,15 @@ UPB_INLINE envoy_service_discovery_v3_Resource_CacheControl* envoy_service_disco
   return ret;
 }
 UPB_INLINE char* envoy_service_discovery_v3_Resource_CacheControl_serialize(const envoy_service_discovery_v3_Resource_CacheControl* msg, upb_Arena* arena, size_t* len) {
-  return upb_Encode(msg, &envoy_service_discovery_v3_Resource_CacheControl_msginit, 0, arena, len);
+  char* ptr;
+  (void)upb_Encode(msg, &envoy_service_discovery_v3_Resource_CacheControl_msginit, 0, arena, &ptr, len);
+  return ptr;
 }
 UPB_INLINE char* envoy_service_discovery_v3_Resource_CacheControl_serialize_ex(const envoy_service_discovery_v3_Resource_CacheControl* msg, int options,
                                  upb_Arena* arena, size_t* len) {
-  return upb_Encode(msg, &envoy_service_discovery_v3_Resource_CacheControl_msginit, options, arena, len);
+  char* ptr;
+  (void)upb_Encode(msg, &envoy_service_discovery_v3_Resource_CacheControl_msginit, options, arena, &ptr, len);
+  return ptr;
 }
 UPB_INLINE void envoy_service_discovery_v3_Resource_CacheControl_clear_do_not_cache(const envoy_service_discovery_v3_Resource_CacheControl* msg) {
   *UPB_PTR_AT(msg, UPB_SIZE(0, 0), bool) = 0;

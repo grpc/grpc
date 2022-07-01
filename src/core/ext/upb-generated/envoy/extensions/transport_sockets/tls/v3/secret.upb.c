@@ -30,7 +30,7 @@ static const upb_MiniTable_Field envoy_extensions_transport_sockets_tls_v3_Gener
 const upb_MiniTable envoy_extensions_transport_sockets_tls_v3_GenericSecret_msginit = {
   &envoy_extensions_transport_sockets_tls_v3_GenericSecret_submsgs[0],
   &envoy_extensions_transport_sockets_tls_v3_GenericSecret__fields[0],
-  UPB_SIZE(8, 24), 1, kUpb_ExtMode_NonExtendable, 1, 255, 0,
+  UPB_SIZE(8, 16), 1, kUpb_ExtMode_NonExtendable, 1, 255, 0,
 };
 
 static const upb_MiniTable_Sub envoy_extensions_transport_sockets_tls_v3_SdsSecretConfig_submsgs[1] = {
@@ -45,7 +45,7 @@ static const upb_MiniTable_Field envoy_extensions_transport_sockets_tls_v3_SdsSe
 const upb_MiniTable envoy_extensions_transport_sockets_tls_v3_SdsSecretConfig_msginit = {
   &envoy_extensions_transport_sockets_tls_v3_SdsSecretConfig_submsgs[0],
   &envoy_extensions_transport_sockets_tls_v3_SdsSecretConfig__fields[0],
-  UPB_SIZE(16, 40), 2, kUpb_ExtMode_NonExtendable, 2, 255, 0,
+  UPB_SIZE(16, 32), 2, kUpb_ExtMode_NonExtendable, 2, 255, 0,
 };
 
 static const upb_MiniTable_Sub envoy_extensions_transport_sockets_tls_v3_Secret_submsgs[4] = {
@@ -66,7 +66,7 @@ static const upb_MiniTable_Field envoy_extensions_transport_sockets_tls_v3_Secre
 const upb_MiniTable envoy_extensions_transport_sockets_tls_v3_Secret_msginit = {
   &envoy_extensions_transport_sockets_tls_v3_Secret_submsgs[0],
   &envoy_extensions_transport_sockets_tls_v3_Secret__fields[0],
-  UPB_SIZE(16, 40), 5, kUpb_ExtMode_NonExtendable, 5, 255, 0,
+  UPB_SIZE(16, 32), 5, kUpb_ExtMode_NonExtendable, 5, 255, 0,
 };
 
 static const upb_MiniTable *messages_layout[3] = {

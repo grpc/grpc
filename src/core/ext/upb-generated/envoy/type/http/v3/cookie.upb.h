@@ -53,11 +53,15 @@ UPB_INLINE envoy_type_http_v3_Cookie* envoy_type_http_v3_Cookie_parse_ex(const c
   return ret;
 }
 UPB_INLINE char* envoy_type_http_v3_Cookie_serialize(const envoy_type_http_v3_Cookie* msg, upb_Arena* arena, size_t* len) {
-  return upb_Encode(msg, &envoy_type_http_v3_Cookie_msginit, 0, arena, len);
+  char* ptr;
+  (void)upb_Encode(msg, &envoy_type_http_v3_Cookie_msginit, 0, arena, &ptr, len);
+  return ptr;
 }
 UPB_INLINE char* envoy_type_http_v3_Cookie_serialize_ex(const envoy_type_http_v3_Cookie* msg, int options,
                                  upb_Arena* arena, size_t* len) {
-  return upb_Encode(msg, &envoy_type_http_v3_Cookie_msginit, options, arena, len);
+  char* ptr;
+  (void)upb_Encode(msg, &envoy_type_http_v3_Cookie_msginit, options, arena, &ptr, len);
+  return ptr;
 }
 UPB_INLINE void envoy_type_http_v3_Cookie_clear_name(const envoy_type_http_v3_Cookie* msg) {
   *UPB_PTR_AT(msg, UPB_SIZE(4, 8), upb_StringView) = upb_StringView_FromDataAndSize(NULL, 0);

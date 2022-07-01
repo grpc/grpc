@@ -56,11 +56,15 @@ UPB_INLINE envoy_extensions_filters_http_rbac_v3_RBAC* envoy_extensions_filters_
   return ret;
 }
 UPB_INLINE char* envoy_extensions_filters_http_rbac_v3_RBAC_serialize(const envoy_extensions_filters_http_rbac_v3_RBAC* msg, upb_Arena* arena, size_t* len) {
-  return upb_Encode(msg, &envoy_extensions_filters_http_rbac_v3_RBAC_msginit, 0, arena, len);
+  char* ptr;
+  (void)upb_Encode(msg, &envoy_extensions_filters_http_rbac_v3_RBAC_msginit, 0, arena, &ptr, len);
+  return ptr;
 }
 UPB_INLINE char* envoy_extensions_filters_http_rbac_v3_RBAC_serialize_ex(const envoy_extensions_filters_http_rbac_v3_RBAC* msg, int options,
                                  upb_Arena* arena, size_t* len) {
-  return upb_Encode(msg, &envoy_extensions_filters_http_rbac_v3_RBAC_msginit, options, arena, len);
+  char* ptr;
+  (void)upb_Encode(msg, &envoy_extensions_filters_http_rbac_v3_RBAC_msginit, options, arena, &ptr, len);
+  return ptr;
 }
 UPB_INLINE bool envoy_extensions_filters_http_rbac_v3_RBAC_has_rules(const envoy_extensions_filters_http_rbac_v3_RBAC* msg) {
   return _upb_hasbit(msg, 1);
@@ -142,11 +146,15 @@ UPB_INLINE envoy_extensions_filters_http_rbac_v3_RBACPerRoute* envoy_extensions_
   return ret;
 }
 UPB_INLINE char* envoy_extensions_filters_http_rbac_v3_RBACPerRoute_serialize(const envoy_extensions_filters_http_rbac_v3_RBACPerRoute* msg, upb_Arena* arena, size_t* len) {
-  return upb_Encode(msg, &envoy_extensions_filters_http_rbac_v3_RBACPerRoute_msginit, 0, arena, len);
+  char* ptr;
+  (void)upb_Encode(msg, &envoy_extensions_filters_http_rbac_v3_RBACPerRoute_msginit, 0, arena, &ptr, len);
+  return ptr;
 }
 UPB_INLINE char* envoy_extensions_filters_http_rbac_v3_RBACPerRoute_serialize_ex(const envoy_extensions_filters_http_rbac_v3_RBACPerRoute* msg, int options,
                                  upb_Arena* arena, size_t* len) {
-  return upb_Encode(msg, &envoy_extensions_filters_http_rbac_v3_RBACPerRoute_msginit, options, arena, len);
+  char* ptr;
+  (void)upb_Encode(msg, &envoy_extensions_filters_http_rbac_v3_RBACPerRoute_msginit, options, arena, &ptr, len);
+  return ptr;
 }
 UPB_INLINE bool envoy_extensions_filters_http_rbac_v3_RBACPerRoute_has_rbac(const envoy_extensions_filters_http_rbac_v3_RBACPerRoute* msg) {
   return _upb_hasbit(msg, 1);

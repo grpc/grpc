@@ -38,7 +38,7 @@ const upb_MiniTable envoy_extensions_filters_common_fault_v3_FaultDelay_msginit 
 const upb_MiniTable envoy_extensions_filters_common_fault_v3_FaultDelay_HeaderDelay_msginit = {
   NULL,
   NULL,
-  UPB_SIZE(0, 8), 0, kUpb_ExtMode_NonExtendable, 0, 255, 0,
+  UPB_SIZE(0, 0), 0, kUpb_ExtMode_NonExtendable, 0, 255, 0,
 };
 
 static const upb_MiniTable_Sub envoy_extensions_filters_common_fault_v3_FaultRateLimit_submsgs[3] = {
@@ -72,7 +72,7 @@ const upb_MiniTable envoy_extensions_filters_common_fault_v3_FaultRateLimit_Fixe
 const upb_MiniTable envoy_extensions_filters_common_fault_v3_FaultRateLimit_HeaderLimit_msginit = {
   NULL,
   NULL,
-  UPB_SIZE(0, 8), 0, kUpb_ExtMode_NonExtendable, 0, 255, 0,
+  UPB_SIZE(0, 0), 0, kUpb_ExtMode_NonExtendable, 0, 255, 0,
 };
 
 static const upb_MiniTable *messages_layout[5] = {
