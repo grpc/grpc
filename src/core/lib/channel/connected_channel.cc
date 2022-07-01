@@ -258,9 +258,7 @@ class ClientConnectedCallPromise {
     Impl(grpc_transport* transport, CallArgs call_args)
         : stream_owning_waker_(Activity::current()->MakeOwningWaker()),
           transport_(transport),
-          stream_(static_cast<grpc_stream*>(GetContext<Arena>()->Alloc(
-                      transport->vtable->sizeof_stream)),
-                  StreamDeleter(transport)),
+          stream_(nullptr, StreamDeleter(transport)),
           server_initial_metadata_latch_(call_args.server_initial_metadata),
           client_to_server_messages_(call_args.client_to_server_messages),
           server_to_client_messages_(call_args.server_to_client_messages),
@@ -275,8 +273,12 @@ class ClientConnectedCallPromise {
     Poll<ServerMetadataHandle> PollOnce() {
       GPR_ASSERT(!finished_);
       if (!absl::exchange(requested_metadata_, true)) {
-        grpc_transport_init_stream(transport_, stream_.get(), &stream_refcount_,
-                                   nullptr, GetContext<Arena>());
+        stream_.reset(static_cast<grpc_stream*>(
+            GetContext<Arena>()->Alloc(transport_->vtable->sizeof_stream)));
+        grpc_transport_init_stream(
+            transport_, stream_.get(),
+            GetContext<CallContext>()->c_stream_refcount(), nullptr,
+            GetContext<Arena>());
         memset(&metadata_, 0, sizeof(metadata_));
         metadata_.send_initial_metadata = true;
         metadata_.recv_initial_metadata = true;
@@ -399,7 +401,8 @@ class ClientConnectedCallPromise {
     }
 
     void Push() {
-      RefCountedPtr<Impl> self(this);  // decrement inc in SchedulePush
+      RefCountedPtr<CallContext> self(
+          GetContext<CallContext>());  // decrement inc in SchedulePush
       if (absl::exchange(push_metadata_, false)) {
         grpc_transport_perform_stream_op(transport_, stream_.get(), &metadata_);
       }
@@ -419,6 +422,7 @@ class ClientConnectedCallPromise {
       explicit StreamDeleter(grpc_transport* transport)
           : transport_(transport) {}
       void operator()(grpc_stream* stream) const {
+        if (stream == nullptr) return;
         grpc_transport_destroy_stream(transport_, stream, nullptr);
       }
 

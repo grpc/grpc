@@ -1801,35 +1801,16 @@ class PromiseBasedCall : public Call, public Activity, public Wakeable {
 
   // Implementation of call refcounting: move this to DualRefCounted once we
   // don't need to maintain FilterStackCall compatibility
-  void ExternalRef() final {
-    auto last = refs_.fetch_add(MakeRefPair(1, 0), std::memory_order_relaxed);
-    gpr_log(GPR_DEBUG, "%p: ExternalRef from=%s", this,
-            RefPairString(last).c_str());
-  }
+  void ExternalRef() final { external_refs_.Ref(); }
   void ExternalUnref() final {
-    const uint64_t prev_ref_pair =
-        refs_.fetch_add(MakeRefPair(-1, 1), std::memory_order_acq_rel);
-    gpr_log(GPR_DEBUG, "%p: ExternalUnref from=%s", this,
-            RefPairString(prev_ref_pair).c_str());
-    const uint32_t strong_refs = GetStrongRefs(prev_ref_pair);
-    if (strong_refs == 1) {
-      Orphan();
+    if (external_refs_.Unref()) {
+      call_context_.Unref();
     }
-    InternalUnref("external");
   }
   void InternalRef(const char* reason) final {
-    auto last = refs_.fetch_add(MakeRefPair(0, 1), std::memory_order_relaxed);
-    gpr_log(GPR_DEBUG, "%p: InternalRef[%s] from=%s", this, reason,
-            RefPairString(last).c_str());
+    call_context_.IncrementRefCount();
   }
-  void InternalUnref(const char* reason) final {
-    auto last = refs_.fetch_sub(MakeRefPair(0, 1), std::memory_order_acq_rel);
-    gpr_log(GPR_DEBUG, "%p: InternalUnref[%s] from=%s", this, reason,
-            RefPairString(last).c_str());
-    if (last == MakeRefPair(0, 1)) {
-      DeleteThis();
-    }
-  }
+  void InternalUnref(const char* reason) final { call_context_.Unref(); }
 
   // Activity methods
   void ForceImmediateRepoll() ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_) override;
@@ -1896,6 +1877,7 @@ class PromiseBasedCall : public Call, public Activity, public Wakeable {
       : public ScopedActivity,
         public promise_detail::Context<Arena>,
         public promise_detail::Context<grpc_call_context_element>,
+        public promise_detail::Context<CallContext>,
         public promise_detail::Context<CallFinalization>,
         public promise_detail::Context<grpc_call_stats>,
         public promise_detail::Context<MetadataAllocator> {
@@ -1904,6 +1886,7 @@ class PromiseBasedCall : public Call, public Activity, public Wakeable {
         : ScopedActivity(call),
           promise_detail::Context<Arena>(call->arena()),
           promise_detail::Context<grpc_call_context_element>(call->context_),
+          promise_detail::Context<CallContext>(&call->call_context_),
           promise_detail::Context<CallFinalization>(&call->finalization_),
           promise_detail::Context<grpc_call_stats>(&call->final_info_.stats),
           promise_detail::Context<MetadataAllocator>(
@@ -1973,17 +1956,6 @@ class PromiseBasedCall : public Call, public Activity, public Wakeable {
     grpc_cq_completion completion;
   };
 
-  bool RefIfNonzero() {
-    uint64_t prev_ref_pair = refs_.load(std::memory_order_acquire);
-    do {
-      const uint32_t strong_refs = GetStrongRefs(prev_ref_pair);
-      if (strong_refs == 0) return false;
-    } while (!refs_.compare_exchange_weak(
-        prev_ref_pair, prev_ref_pair + MakeRefPair(1, 0),
-        std::memory_order_acq_rel, std::memory_order_acquire));
-    return true;
-  }
-
   class NonOwningWakable final : public Wakeable {
    public:
     explicit NonOwningWakable(PromiseBasedCall* call) : call_(call) {}
@@ -2008,7 +1980,8 @@ class PromiseBasedCall : public Call, public Activity, public Wakeable {
       // Note that activity refcount can drop to zero, but we could win the lock
       // against DropActivity, so we need to only increase activities refcount
       // if it is non-zero.
-      if (call_ && call_->RefIfNonzero()) {
+      if (call_ &&
+          call_->call_context_.c_stream_refcount()->refs.RefIfNonZero()) {
         PromiseBasedCall* call = call_;
         mu_.Unlock();
         // Activity still exists and we have a reference: wake it up, which will
@@ -2038,19 +2011,11 @@ class PromiseBasedCall : public Call, public Activity, public Wakeable {
     PromiseBasedCall* call_ ABSL_GUARDED_BY(mu_);
   };
 
-  static uint64_t MakeRefPair(uint32_t strong, uint32_t weak) {
-    return (static_cast<uint64_t>(strong) << 32) + static_cast<int64_t>(weak);
-  }
-  static uint32_t GetStrongRefs(uint64_t ref_pair) {
-    return static_cast<uint32_t>(ref_pair >> 32);
-  }
-  std::string RefPairString(uint64_t ref_pair) {
-    return absl::StrCat("[", GetStrongRefs(ref_pair), "/",
-                        ref_pair & 0xffffffff, "]");
-  }
+  static void OnDestroy(void* arg, grpc_error_handle error) { abort(); }
 
   mutable Mutex mu_;
-  std::atomic<uint64_t> refs_{MakeRefPair(1, 0)};
+  RefCount external_refs_{1, "client_call"};
+  CallContext call_context_{OnDestroy, this};
   bool keep_polling_ ABSL_GUARDED_BY(mu()) = false;
 
   /* Contexts for various subsystems (security, tracing, ...). */

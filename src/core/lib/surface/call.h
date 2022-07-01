@@ -76,6 +76,7 @@ class CallContext {
     GRPC_STREAM_REF_INIT(&stream_refcount_, 1, on_destroyed, on_destroyed_arg,
                          "call_context");
   }
+
   // TODO(ctiller): remove this once transport APIs are promise based
   void IncrementRefCount() {
 #ifndef NDEBUG
