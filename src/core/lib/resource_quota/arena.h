@@ -76,7 +76,7 @@ class Arena {
   template <typename T, typename... Args>
   T* New(Args&&... args) {
     T* t = static_cast<T*>(Alloc(sizeof(T)));
-    new (t) T(std::forward<Args>(args)...);
+    Construct(t, std::forward<Args>(args)...);
     return t;
   }
 

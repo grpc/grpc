@@ -84,7 +84,7 @@ size_t Arena::Destroy() {
   }
   size_t size = total_used_.load(std::memory_order_relaxed);
   memory_allocator_->Release(total_allocated_.load(std::memory_order_relaxed));
-  Destruct(this);
+  this->~Arena();
   gpr_free_aligned(this);
   return size;
 }
