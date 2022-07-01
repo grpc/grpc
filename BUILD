@@ -153,7 +153,7 @@ python_config_settings()
 # This should be updated along with build_handwritten.yaml
 g_stands_for = "garum"  # @unused
 
-core_version = "25.0.0"  # @unused
+core_version = "26.0.0"  # @unused
 
 version = "1.48.0-dev"  # @unused
 
