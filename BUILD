@@ -1916,8 +1916,10 @@ grpc_cc_library(
     hdrs = [
         "src/core/lib/resource_quota/arena.h",
     ],
+    external_deps = ["absl/utility"],
     tags = ["grpc-autodeps"],
     deps = [
+        "construct_destruct",
         "context",
         "event_engine_memory_allocator",
         "gpr_base",
@@ -2765,6 +2767,7 @@ grpc_cc_library(
         "cpp_impl_of",
         "debug_location",
         "default_event_engine_factory",
+        "default_event_engine_factory_hdrs",
         "dual_ref_counted",
         "error",
         "event_engine_base",
@@ -4729,6 +4732,7 @@ grpc_cc_library(
         "absl/status:statusor",
         "absl/strings",
         "absl/strings:str_format",
+        "absl/time",
         "address_sorting",
         "cares",
     ],
