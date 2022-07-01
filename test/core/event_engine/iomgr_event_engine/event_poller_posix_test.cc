@@ -42,9 +42,9 @@
 #include <grpc/support/sync.h>
 #include <grpc/support/time.h>
 
-#include "src/core/lib/event_engine/event_engine_factory.h"
 #include "src/core/lib/event_engine/iomgr_engine/closure.h"
 #include "src/core/lib/event_engine/iomgr_engine/event_poller.h"
+#include "src/core/lib/event_engine/iomgr_engine/iomgr_engine.h"
 #include "src/core/lib/iomgr/socket_utils_posix.h"
 #include "test/core/util/port.h"
 
@@ -467,10 +467,10 @@ TEST(EventPollerTest, TestEventPollerHandleChange) {
 
 int main(int argc, char** argv) {
   ::testing::InitGoogleTest(&argc, argv);
-  grpc_event_engine::experimental::EventEngine* engine =
-      grpc_event_engine::experimental::GetDefaultEventEngine();
+  auto engine =
+      absl::make_unique<grpc_event_engine::experimental::IomgrEventEngine>();
   EXPECT_NE(engine, nullptr);
-  grpc_event_engine::iomgr_engine::TestScheduler scheduler(engine);
+  grpc_event_engine::iomgr_engine::TestScheduler scheduler(engine.get());
   g_event_poller =
       grpc_event_engine::iomgr_engine::GetDefaultPoller(&scheduler);
   if (g_event_poller == nullptr) {
