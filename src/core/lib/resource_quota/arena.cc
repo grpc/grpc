@@ -79,7 +79,7 @@ size_t Arena::Destroy() {
          nullptr) {
     // Inner loop: destruct a batch of objects.
     while (p != nullptr) {
-      Destruct(std::exchange(p, p->next));
+      Destruct(absl::exchange(p, p->next));
     }
   }
   size_t size = total_used_.load(std::memory_order_relaxed);
