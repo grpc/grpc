@@ -195,7 +195,7 @@ Pod::Spec.new do |s|
     ss.header_mappings_dir = '.'
     ss.dependency "#{s.name}/Interface", version
     ss.dependency 'gRPC-Core', version
-    abseil_version = '1.20211102.0'
+    abseil_version = '1.20220623.0'
     ss.dependency 'abseil/base/base', abseil_version
     ss.dependency 'abseil/base/core_headers', abseil_version
     ss.dependency 'abseil/cleanup/cleanup', abseil_version
@@ -894,7 +894,6 @@ Pod::Spec.new do |s|
                       'src/core/lib/slice/slice_internal.h',
                       'src/core/lib/slice/slice_refcount.h',
                       'src/core/lib/slice/slice_refcount_base.h',
-                      'src/core/lib/slice/slice_split.h',
                       'src/core/lib/slice/slice_string_helpers.h',
                       'src/core/lib/surface/api_trace.h',
                       'src/core/lib/surface/builtins.h',
@@ -1720,7 +1719,6 @@ Pod::Spec.new do |s|
                               'src/core/lib/slice/slice_internal.h',
                               'src/core/lib/slice/slice_refcount.h',
                               'src/core/lib/slice/slice_refcount_base.h',
-                              'src/core/lib/slice/slice_split.h',
                               'src/core/lib/slice/slice_string_helpers.h',
                               'src/core/lib/surface/api_trace.h',
                               'src/core/lib/surface/builtins.h',

@@ -26,8 +26,8 @@ cmake_minimum_required(VERSION 3.5.1)
 
 set(PACKAGE_NAME          "grpc")
 set(PACKAGE_VERSION       "1.48.0-dev")
-set(gRPC_CORE_VERSION     "25.0.0")
-set(gRPC_CORE_SOVERSION   "25")
+set(gRPC_CORE_VERSION     "26.0.0")
+set(gRPC_CORE_SOVERSION   "26")
 set(gRPC_CPP_VERSION      "1.48.0-dev")
 set(gRPC_CPP_SOVERSION    "1.48")
 set(gRPC_CSHARP_VERSION   "2.48.0-dev")
@@ -142,7 +142,6 @@ set(gRPC_ABSL_USED_TARGETS
   absl_hash_policy_traits
   absl_hashtable_debug_hooks
   absl_hashtablez_sampler
-  absl_have_sse
   absl_inlined_vector
   absl_inlined_vector_internal
   absl_int128
@@ -154,6 +153,7 @@ set(gRPC_ABSL_USED_TARGETS
   absl_memory
   absl_numeric_representation
   absl_optional
+  absl_prefetch
   absl_random_distributions
   absl_random_internal_distribution_caller
   absl_random_internal_fast_uniform_bits
@@ -188,6 +188,7 @@ set(gRPC_ABSL_USED_TARGETS
   absl_statusor
   absl_str_format
   absl_str_format_internal
+  absl_strerror
   absl_strings
   absl_strings_internal
   absl_symbolize
@@ -893,7 +894,6 @@ if(gRPC_BUILD_TESTS)
     add_dependencies(buildtests_c server_ssl_test)
   endif()
   add_dependencies(buildtests_c server_test)
-  add_dependencies(buildtests_c slice_split_test)
   add_dependencies(buildtests_c slice_string_helpers_test)
   add_dependencies(buildtests_c sockaddr_resolver_test)
   if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
@@ -2242,7 +2242,6 @@ add_library(grpc
   src/core/lib/slice/slice_buffer.cc
   src/core/lib/slice/slice_buffer_api.cc
   src/core/lib/slice/slice_refcount.cc
-  src/core/lib/slice/slice_split.cc
   src/core/lib/slice/slice_string_helpers.cc
   src/core/lib/surface/api_trace.cc
   src/core/lib/surface/builtins.cc
@@ -2834,7 +2833,6 @@ add_library(grpc_unsecure
   src/core/lib/slice/slice_buffer.cc
   src/core/lib/slice/slice_buffer_api.cc
   src/core/lib/slice/slice_refcount.cc
-  src/core/lib/slice/slice_split.cc
   src/core/lib/slice/slice_string_helpers.cc
   src/core/lib/surface/api_trace.cc
   src/core/lib/surface/builtins.cc
@@ -6666,33 +6664,6 @@ target_include_directories(server_test
 )
 
 target_link_libraries(server_test
-  ${_gRPC_ALLTARGETS_LIBRARIES}
-  grpc_test_util
-)
-
-
-endif()
-if(gRPC_BUILD_TESTS)
-
-add_executable(slice_split_test
-  test/core/slice/slice_split_test.cc
-)
-
-target_include_directories(slice_split_test
-  PRIVATE
-    ${CMAKE_CURRENT_SOURCE_DIR}
-    ${CMAKE_CURRENT_SOURCE_DIR}/include
-    ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
-    ${_gRPC_RE2_INCLUDE_DIR}
-    ${_gRPC_SSL_INCLUDE_DIR}
-    ${_gRPC_UPB_GENERATED_DIR}
-    ${_gRPC_UPB_GRPC_GENERATED_DIR}
-    ${_gRPC_UPB_INCLUDE_DIR}
-    ${_gRPC_XXHASH_INCLUDE_DIR}
-    ${_gRPC_ZLIB_INCLUDE_DIR}
-)
-
-target_link_libraries(slice_split_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
 )

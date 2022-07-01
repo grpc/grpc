@@ -46,7 +46,7 @@ Pod::Spec.new do |s|
   s.requires_arc = false
 
   name = 'grpc'
-  abseil_version = '1.20211102.0'
+  abseil_version = '1.20220623.0'
 
   # When creating a dynamic framework, name it grpc.framework instead of gRPC-Core.framework.
   # This lets users write their includes like `#include <grpc/grpc.h>` as opposed to `#include
@@ -1477,8 +1477,6 @@ Pod::Spec.new do |s|
                       'src/core/lib/slice/slice_refcount.cc',
                       'src/core/lib/slice/slice_refcount.h',
                       'src/core/lib/slice/slice_refcount_base.h',
-                      'src/core/lib/slice/slice_split.cc',
-                      'src/core/lib/slice/slice_split.h',
                       'src/core/lib/slice/slice_string_helpers.cc',
                       'src/core/lib/slice/slice_string_helpers.h',
                       'src/core/lib/surface/api_trace.cc',
@@ -2324,7 +2322,6 @@ Pod::Spec.new do |s|
                               'src/core/lib/slice/slice_internal.h',
                               'src/core/lib/slice/slice_refcount.h',
                               'src/core/lib/slice/slice_refcount_base.h',
-                              'src/core/lib/slice/slice_split.h',
                               'src/core/lib/slice/slice_string_helpers.h',
                               'src/core/lib/surface/api_trace.h',
                               'src/core/lib/surface/builtins.h',
