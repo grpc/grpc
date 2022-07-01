@@ -22,6 +22,7 @@ import re
 import subprocess
 import sys
 import tempfile
+import multiprocessing
 
 # find our home
 ROOT = os.path.abspath(os.path.join(os.path.dirname(sys.argv[0]), '../..'))
@@ -55,6 +56,8 @@ EXTERNAL_DEPS = {
         'absl/container:flat_hash_set',
     'absl/container/inlined_vector.h':
         'absl/container:inlined_vector',
+    'absl/cleanup/cleanup.h':
+        'absl/cleanup',
     'absl/functional/bind_front.h':
         'absl/functional:bind_front',
     'absl/functional/function_ref.h':
@@ -391,12 +394,8 @@ class Choices:
         return best
 
 
-error = False
-for library in sorted(consumes.keys()):
-    if library in no_update:
-        continue
-    if args.targets and library not in args.targets:
-        continue
+def make_library(library):
+    error = False
     hdrs = sorted(consumes[library])
     deps = Choices()
     external_deps = Choices()
@@ -477,6 +476,26 @@ for library in sorted(consumes.keys()):
     external_deps = sorted(
         external_deps.best(lambda x: SCORERS[args.score]
                            (x, original_external_deps[library])))
+
+    return (library, error, deps, external_deps)
+
+
+update_libraries = []
+for library in sorted(consumes.keys()):
+    if library in no_update:
+        continue
+    if args.targets and library not in args.targets:
+        continue
+    update_libraries.append(library)
+with multiprocessing.Pool(processes = multiprocessing.cpu_count()) as p:
+    updated_libraries = p.map(make_library, update_libraries, 1)
+
+
+error = False
+for library, lib_error, deps, external_deps in updated_libraries:
+    if lib_error:
+        error = True
+        continue
     target = ':' + library
     buildozer_set_list('external_deps', external_deps, target, via='deps')
     buildozer_set_list('deps', deps, target)

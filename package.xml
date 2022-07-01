@@ -935,9 +935,20 @@
     <file baseinstalldir="/" name="src/core/lib/event_engine/event_engine.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/event_engine/event_engine_factory.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/event_engine/handle_containers.h" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/event_engine/iomgr_engine.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/event_engine/iomgr_engine.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/event_engine/iomgr_engine/iomgr_engine.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/event_engine/iomgr_engine/iomgr_engine.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/event_engine/iomgr_engine/thread_pool.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/event_engine/iomgr_engine/thread_pool.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/event_engine/iomgr_engine/time_averaged_stats.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/event_engine/iomgr_engine/time_averaged_stats.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/event_engine/iomgr_engine/timer.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/event_engine/iomgr_engine/timer.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/event_engine/iomgr_engine/timer_heap.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/event_engine/iomgr_engine/timer_heap.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/event_engine/iomgr_engine/timer_manager.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/event_engine/iomgr_engine/timer_manager.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/event_engine/memory_allocator.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/event_engine/promise.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/event_engine/resolved_address.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/event_engine/slice.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/event_engine/slice_buffer.cc" role="src" />
@@ -1362,8 +1373,6 @@
     <file baseinstalldir="/" name="src/core/lib/slice/slice_refcount.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/slice/slice_refcount.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/slice/slice_refcount_base.h" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/slice/slice_split.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/slice/slice_split.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/slice/slice_string_helpers.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/slice/slice_string_helpers.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/surface/api_trace.cc" role="src" />
@@ -1402,8 +1411,6 @@
     <file baseinstalldir="/" name="src/core/lib/surface/version.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/transport/bdp_estimator.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/transport/bdp_estimator.h" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/transport/byte_stream.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/transport/byte_stream.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/transport/connectivity_state.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/transport/connectivity_state.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/transport/error_utils.cc" role="src" />
@@ -1569,9 +1576,8 @@
     <file baseinstalldir="/" name="third_party/abseil-cpp/absl/base/policy_checks.h" role="src" />
     <file baseinstalldir="/" name="third_party/abseil-cpp/absl/base/port.h" role="src" />
     <file baseinstalldir="/" name="third_party/abseil-cpp/absl/base/thread_annotations.h" role="src" />
-    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/cleanup/cleanup.h" role="src" />
-    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/cleanup/internal/cleanup.h" role="src" />
     <file baseinstalldir="/" name="third_party/abseil-cpp/absl/container/fixed_array.h" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/container/flat_hash_map.h" role="src" />
     <file baseinstalldir="/" name="third_party/abseil-cpp/absl/container/flat_hash_set.h" role="src" />
     <file baseinstalldir="/" name="third_party/abseil-cpp/absl/container/inlined_vector.h" role="src" />
     <file baseinstalldir="/" name="third_party/abseil-cpp/absl/container/internal/common.h" role="src" />
@@ -1586,6 +1592,7 @@
     <file baseinstalldir="/" name="third_party/abseil-cpp/absl/container/internal/have_sse.h" role="src" />
     <file baseinstalldir="/" name="third_party/abseil-cpp/absl/container/internal/inlined_vector.h" role="src" />
     <file baseinstalldir="/" name="third_party/abseil-cpp/absl/container/internal/layout.h" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/container/internal/raw_hash_map.h" role="src" />
     <file baseinstalldir="/" name="third_party/abseil-cpp/absl/container/internal/raw_hash_set.cc" role="src" />
     <file baseinstalldir="/" name="third_party/abseil-cpp/absl/container/internal/raw_hash_set.h" role="src" />
     <file baseinstalldir="/" name="third_party/abseil-cpp/absl/debugging/internal/address_is_readable.cc" role="src" />

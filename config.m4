@@ -465,7 +465,12 @@ if test "$PHP_GRPC" != "no"; then
     src/core/lib/event_engine/channel_args_endpoint_config.cc \
     src/core/lib/event_engine/default_event_engine_factory.cc \
     src/core/lib/event_engine/event_engine.cc \
-    src/core/lib/event_engine/iomgr_engine.cc \
+    src/core/lib/event_engine/iomgr_engine/iomgr_engine.cc \
+    src/core/lib/event_engine/iomgr_engine/thread_pool.cc \
+    src/core/lib/event_engine/iomgr_engine/time_averaged_stats.cc \
+    src/core/lib/event_engine/iomgr_engine/timer.cc \
+    src/core/lib/event_engine/iomgr_engine/timer_heap.cc \
+    src/core/lib/event_engine/iomgr_engine/timer_manager.cc \
     src/core/lib/event_engine/memory_allocator.cc \
     src/core/lib/event_engine/resolved_address.cc \
     src/core/lib/event_engine/slice.cc \
@@ -680,7 +685,6 @@ if test "$PHP_GRPC" != "no"; then
     src/core/lib/slice/slice_buffer.cc \
     src/core/lib/slice/slice_buffer_api.cc \
     src/core/lib/slice/slice_refcount.cc \
-    src/core/lib/slice/slice_split.cc \
     src/core/lib/slice/slice_string_helpers.cc \
     src/core/lib/surface/api_trace.cc \
     src/core/lib/surface/builtins.cc \
@@ -703,7 +707,6 @@ if test "$PHP_GRPC" != "no"; then
     src/core/lib/surface/validate_metadata.cc \
     src/core/lib/surface/version.cc \
     src/core/lib/transport/bdp_estimator.cc \
-    src/core/lib/transport/byte_stream.cc \
     src/core/lib/transport/connectivity_state.cc \
     src/core/lib/transport/error_utils.cc \
     src/core/lib/transport/handshaker.cc \
@@ -1302,6 +1305,7 @@ if test "$PHP_GRPC" != "no"; then
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/config)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/debug)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/event_engine)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/event_engine/iomgr_engine)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/gpr)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/gprpp)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/http)

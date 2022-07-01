@@ -14,9 +14,14 @@
 
 #include "src/core/lib/promise/latch.h"
 
-#include <gmock/gmock.h>
-#include <gtest/gtest.h>
+#include <tuple>
+#include <utility>
 
+#include "absl/status/status.h"
+#include "gmock/gmock.h"
+#include "gtest/gtest.h"
+
+#include "src/core/lib/promise/activity.h"
 #include "src/core/lib/promise/join.h"
 #include "src/core/lib/promise/seq.h"
 #include "test/core/promise/test_wakeup_schedulers.h"
