@@ -151,11 +151,11 @@ config_setting(
 python_config_settings()
 
 # This should be updated along with build_handwritten.yaml
-g_stands_for = "garum"  # @unused
+g_stands_for = "gamma"  # @unused
 
 core_version = "26.0.0"  # @unused
 
-version = "1.48.0-dev"  # @unused
+version = "1.49.0-dev"  # @unused
 
 GPR_PUBLIC_HDRS = [
     "include/grpc/support/alloc.h",
