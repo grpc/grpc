@@ -78,18 +78,18 @@ class CallContext {
   }
 
   // TODO(ctiller): remove this once transport APIs are promise based
-  void IncrementRefCount() {
+  void IncrementRefCount(const char* reason = "CallContext") {
 #ifndef NDEBUG
-    grpc_stream_ref(&stream_refcount_, "CallContext");
+    grpc_stream_ref(&stream_refcount_, reason);
 #else
     grpc_stream_ref(&stream_refcount_);
 #endif
   }
 
   // TODO(ctiller): remove this once transport APIs are promise based
-  void Unref() {
+  void Unref(const char* reason = "CallContext") {
 #ifndef NDEBUG
-    grpc_stream_unref(&stream_refcount_, "CallContext");
+    grpc_stream_unref(&stream_refcount_, reason);
 #else
     grpc_stream_unref(&stream_refcount_);
 #endif

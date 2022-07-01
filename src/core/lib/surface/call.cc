@@ -1804,13 +1804,13 @@ class PromiseBasedCall : public Call, public Activity, public Wakeable {
   void ExternalRef() final { external_refs_.Ref(); }
   void ExternalUnref() final {
     if (external_refs_.Unref()) {
-      call_context_.Unref();
+      call_context_.Unref("orphan");
     }
   }
   void InternalRef(const char* reason) final {
-    call_context_.IncrementRefCount();
+    call_context_.IncrementRefCount(reason);
   }
-  void InternalUnref(const char* reason) final { call_context_.Unref(); }
+  void InternalUnref(const char* reason) final { call_context_.Unref(reason); }
 
   // Activity methods
   void ForceImmediateRepoll() ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_) override;
@@ -1846,9 +1846,9 @@ class PromiseBasedCall : public Call, public Activity, public Wakeable {
   // Wakeable methods
   void Wakeup() override {
     grpc_event_engine::experimental::GetDefaultEventEngine()->Run([this] {
+      ApplicationCallbackExecCtx app_exec_ctx;
+      ExecCtx exec_ctx;
       {
-        ApplicationCallbackExecCtx app_exec_ctx;
-        ExecCtx exec_ctx;
         ScopedContext activity_context(this);
         MutexLock lock(&mu_);
         Update();
@@ -2011,7 +2011,11 @@ class PromiseBasedCall : public Call, public Activity, public Wakeable {
     PromiseBasedCall* call_ ABSL_GUARDED_BY(mu_);
   };
 
-  static void OnDestroy(void* arg, grpc_error_handle error) { abort(); }
+  static void OnDestroy(void* arg, grpc_error_handle error) {
+    auto* call = static_cast<PromiseBasedCall*>(arg);
+    ScopedContext context(call);
+    call->DeleteThis();
+  }
 
   mutable Mutex mu_;
   RefCount external_refs_{1, "client_call"};
@@ -2469,6 +2473,7 @@ void grpc_call_set_completion_queue(grpc_call* call,
 void grpc_call_ref(grpc_call* c) { grpc_core::Call::FromC(c)->ExternalRef(); }
 
 void grpc_call_unref(grpc_call* c) {
+  grpc_core::ExecCtx exec_ctx;
   grpc_core::Call::FromC(c)->ExternalUnref();
 }
 

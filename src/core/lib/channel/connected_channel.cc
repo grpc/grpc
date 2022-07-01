@@ -256,8 +256,7 @@ class ClientConnectedCallPromise {
   class Impl {
    public:
     Impl(grpc_transport* transport, CallArgs call_args)
-        : stream_owning_waker_(Activity::current()->MakeOwningWaker()),
-          transport_(transport),
+        : transport_(transport),
           stream_(nullptr, StreamDeleter(transport)),
           server_initial_metadata_latch_(call_args.server_initial_metadata),
           client_to_server_messages_(call_args.client_to_server_messages),
@@ -275,10 +274,9 @@ class ClientConnectedCallPromise {
       if (!absl::exchange(requested_metadata_, true)) {
         stream_.reset(static_cast<grpc_stream*>(
             GetContext<Arena>()->Alloc(transport_->vtable->sizeof_stream)));
-        grpc_transport_init_stream(
-            transport_, stream_.get(),
-            GetContext<CallContext>()->c_stream_refcount(), nullptr,
-            GetContext<Arena>());
+        grpc_transport_init_stream(transport_, stream_.get(),
+                                   call_context_->c_stream_refcount(), nullptr,
+                                   GetContext<Arena>());
         memset(&metadata_, 0, sizeof(metadata_));
         metadata_.send_initial_metadata = true;
         metadata_.recv_initial_metadata = true;
@@ -401,8 +399,6 @@ class ClientConnectedCallPromise {
     }
 
     void Push() {
-      RefCountedPtr<CallContext> self(
-          GetContext<CallContext>());  // decrement inc in SchedulePush
       if (absl::exchange(push_metadata_, false)) {
         grpc_transport_perform_stream_op(transport_, stream_.get(), &metadata_);
       }
@@ -411,6 +407,7 @@ class ClientConnectedCallPromise {
                                          &send_message_);
       }
       scheduled_push_ = false;
+      call_context_->Unref("push");
     }
 
    private:
@@ -433,7 +430,7 @@ class ClientConnectedCallPromise {
 
     void SchedulePush() {
       if (absl::exchange(scheduled_push_, true)) return;
-      GetContext<CallContext>()->IncrementRefCount();
+      call_context_->IncrementRefCount("push");
       ExecCtx::Run(DEBUG_LOCATION, &push_, GRPC_ERROR_NONE);
     }
 
@@ -445,10 +442,10 @@ class ClientConnectedCallPromise {
     bool queued_initial_metadata_ = false;
     bool queued_trailing_metadata_ = false;
     bool finished_ = false;
+    CallContext* const call_context_{GetContext<CallContext>()};
     Waker initial_metadata_waker_;
     Waker trailing_metadata_waker_;
     Waker send_message_waker_;
-    Waker stream_owning_waker_;
     grpc_transport* const transport_;
     StreamPtr stream_;
     Latch<ServerMetadata*>* server_initial_metadata_latch_;
