@@ -16,6 +16,8 @@
 
 #include <grpc/support/port_platform.h>
 
+#include "wakeup_fd_posix.h"
+
 #include "src/core/lib/event_engine/iomgr_engine/wakeup_fd_posix.h"
 
 namespace grpc_event_engine {
@@ -23,17 +25,15 @@ namespace iomgr_engine {
 
 class PipeWakeupFd : public WakeupFd {
  public:
-  PipeWakeupFd() {
-    read_fd_ = 0;
-    write_fd_ = 0;
-  }
-  ~PipeWakeupFd() override = default;
-  absl::Status Init();
+  PipeWakeupFd() : WakeupFd() {}
+  ~PipeWakeupFd() override;
   absl::Status ConsumeWakeup() override;
   absl::Status Wakeup() override;
-  void Destroy() override;
   static absl::StatusOr<std::unique_ptr<WakeupFd>> CreatePipeWakeupFd();
   static bool IsSupported();
+
+ private:
+  absl::Status Init();
 };
 
 }  // namespace iomgr_engine

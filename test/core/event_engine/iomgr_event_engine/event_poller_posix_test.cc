@@ -44,7 +44,7 @@
 
 #include "src/core/lib/event_engine/event_engine_factory.h"
 #include "src/core/lib/event_engine/iomgr_engine/closure.h"
-#include "src/core/lib/event_engine/iomgr_engine/ev_posix.h"
+#include "src/core/lib/event_engine/iomgr_engine/event_poller.h"
 #include "src/core/lib/iomgr/socket_utils_posix.h"
 #include "test/core/util/port.h"
 
@@ -67,6 +67,17 @@ namespace grpc_event_engine {
 namespace iomgr_engine {
 
 namespace {
+
+class TestScheduler : public Scheduler {
+ public:
+  TestScheduler(experimental::EventEngine* engine) : engine_(engine) {}
+  void Run(experimental::EventEngine::Closure* closure) override {
+    engine_->Run(closure);
+  }
+
+ private:
+  experimental::EventEngine* engine_;
+};
 
 // Create a test socket with the right properties for testing.
 // port is the TCP port to listen or connect to.
@@ -125,16 +136,16 @@ typedef struct {
 // Close session FD and start to shutdown listen FD.
 void SessionShutdownCb(session* se, bool /*success*/) {
   server* sv = se->sv;
-  g_event_poller->OrphanHandle(se->em_fd, nullptr, nullptr, "a");
+  se->em_fd->OrphanHandle(nullptr, nullptr, "a");
   gpr_free(se);
   // Start to shutdown listen fd.
-  g_event_poller->ShutdownHandle(
-      sv->em_fd, absl::Status(absl::StatusCode::kUnknown, "SessionShutdownCb"));
+  sv->em_fd->ShutdownHandle(
+      absl::Status(absl::StatusCode::kUnknown, "SessionShutdownCb"));
 }
 
 /* Called when data become readable in a session. */
 void SessionReadCb(session* se, absl::Status status) {
-  int fd = g_event_poller->WrappedFd(se->em_fd);
+  int fd = se->em_fd->WrappedFd();
 
   ssize_t read_once = 0;
   ssize_t read_total = 0;
@@ -165,14 +176,14 @@ void SessionReadCb(session* se, absl::Status status) {
     // before notify_on_read.
     se->session_read_closure = IomgrEngineClosure::ToClosure(
         [se](absl::Status status) { SessionReadCb(se, status); });
-    g_event_poller->NotifyOnRead(se->em_fd, se->session_read_closure);
+    se->em_fd->NotifyOnRead(se->session_read_closure);
   }
 }
 
 // Called when the listen FD can be safely shutdown. Close listen FD and signal
 // that server can be shutdown.
 void ListenShutdownCb(server* sv) {
-  g_event_poller->OrphanHandle(sv->em_fd, nullptr, nullptr, "b");
+  sv->em_fd->OrphanHandle(nullptr, nullptr, "b");
   gpr_mu_lock(&g_mu);
   sv->done = 1;
   g_event_poller->Kick();
@@ -193,7 +204,7 @@ void ListenCb(server* sv, absl::Status status) {
     return;
   }
 
-  fd = accept(g_event_poller->WrappedFd(listen_em_fd),
+  fd = accept(listen_em_fd->WrappedFd(),
               reinterpret_cast<struct sockaddr*>(&ss), &slen);
   EXPECT_GE(fd, 0);
   EXPECT_LT(fd, FD_SETSIZE);
@@ -204,10 +215,10 @@ void ListenCb(server* sv, absl::Status status) {
   se->em_fd = g_event_poller->CreateHandle(fd, "listener", false);
   se->session_read_closure = IomgrEngineClosure::ToClosure(
       [se](absl::Status status) { SessionReadCb(se, status); });
-  g_event_poller->NotifyOnRead(se->em_fd, se->session_read_closure);
+  se->em_fd->NotifyOnRead(se->session_read_closure);
   sv->listen_closure = IomgrEngineClosure::ToClosure(
       [sv](absl::Status status) { ListenCb(sv, status); });
-  g_event_poller->NotifyOnRead(listen_em_fd, sv->listen_closure);
+  listen_em_fd->NotifyOnRead(sv->listen_closure);
 }
 
 // Start a test server, return the TCP listening port bound to listen_fd.
@@ -230,7 +241,7 @@ int ServerStart(server* sv) {
   sv->em_fd = g_event_poller->CreateHandle(fd, "server", false);
   sv->listen_closure = IomgrEngineClosure::ToClosure(
       [sv](absl::Status status) { ListenCb(sv, status); });
-  g_event_poller->NotifyOnRead(sv->em_fd, sv->listen_closure);
+  sv->em_fd->NotifyOnRead(sv->listen_closure);
   return port;
 }
 
@@ -257,7 +268,7 @@ void ClientInit(client* cl) {
 
 // Called when a client upload session is ready to shutdown.
 void ClientSessionShutdownCb(client* cl) {
-  g_event_poller->OrphanHandle(cl->em_fd, nullptr, nullptr, "c");
+  cl->em_fd->OrphanHandle(nullptr, nullptr, "c");
   gpr_mu_lock(&g_mu);
   cl->done = 1;
   g_event_poller->Kick();
@@ -266,7 +277,7 @@ void ClientSessionShutdownCb(client* cl) {
 
 // Write as much as possible, then register notify_on_write.
 void ClientSessionWrite(client* cl, absl::Status status) {
-  int fd = g_event_poller->WrappedFd(cl->em_fd);
+  int fd = cl->em_fd->WrappedFd();
   ssize_t write_once = 0;
 
   if (!status.ok()) {
@@ -284,7 +295,7 @@ void ClientSessionWrite(client* cl, absl::Status status) {
   if (cl->client_write_cnt < CLIENT_TOTAL_WRITE_CNT) {
     cl->write_closure = IomgrEngineClosure::ToClosure(
         [cl](absl::Status status) { ClientSessionWrite(cl, status); });
-    g_event_poller->NotifyOnWrite(cl->em_fd, cl->write_closure);
+    cl->em_fd->NotifyOnWrite(cl->write_closure);
     cl->client_write_cnt++;
     gpr_mu_unlock(&g_mu);
   } else {
@@ -328,7 +339,7 @@ void WaitAndShutdown(server* sv, client* cl) {
     (void)g_event_poller->Work(grpc_core::Timestamp::InfFuture(),
                                pending_events);
     for (auto it = pending_events.begin(); it != pending_events.end(); ++it) {
-      g_event_poller->ExecutePendingActions(*it);
+      (*it)->ExecutePendingActions();
     }
     pending_events.clear();
     gpr_mu_lock(&g_mu);
@@ -403,7 +414,7 @@ TEST(EventPollerTest, TestEventPollerHandleChange) {
       g_event_poller->CreateHandle(sv[0], "TestEventPollerHandleChange", false);
   EXPECT_NE(em_fd, nullptr);
   // Register the first callback, then make its FD readable
-  g_event_poller->NotifyOnRead(em_fd, first_closure);
+  em_fd->NotifyOnRead(first_closure);
   data = 0;
   result = write(sv[1], &data, 1);
   EXPECT_EQ(result, 1);
@@ -417,7 +428,7 @@ TEST(EventPollerTest, TestEventPollerHandleChange) {
       (void)g_event_poller->Work(grpc_core::Timestamp::InfFuture(),
                                  pending_events);
       for (auto it = pending_events.begin(); it != pending_events.end(); ++it) {
-        g_event_poller->ExecutePendingActions(*it);
+        (*it)->ExecutePendingActions();
       }
       pending_events.clear();
       gpr_mu_lock(&g_mu);
@@ -433,7 +444,7 @@ TEST(EventPollerTest, TestEventPollerHandleChange) {
 
   // Now register a second callback with distinct change data, and do the same
   // thing again.
-  g_event_poller->NotifyOnRead(em_fd, second_closure);
+  em_fd->NotifyOnRead(second_closure);
   data = 0;
   result = write(sv[1], &data, 1);
   EXPECT_EQ(result, 1);
@@ -444,7 +455,7 @@ TEST(EventPollerTest, TestEventPollerHandleChange) {
   EXPECT_EQ(b.cb_that_ran, SecondReadCallback);
   gpr_mu_unlock(&g_mu);
 
-  g_event_poller->OrphanHandle(em_fd, nullptr, nullptr, "d");
+  em_fd->OrphanHandle(nullptr, nullptr, "d");
   DestroyChangeData(&a);
   DestroyChangeData(&b);
   close(sv[1]);
@@ -456,9 +467,12 @@ TEST(EventPollerTest, TestEventPollerHandleChange) {
 
 int main(int argc, char** argv) {
   ::testing::InitGoogleTest(&argc, argv);
-  EXPECT_NE(grpc_event_engine::experimental::GetDefaultEventEngine(), nullptr);
-  g_event_poller = grpc_event_engine::iomgr_engine::GetDefaultPoller(
-      grpc_event_engine::experimental::GetDefaultEventEngine());
+  grpc_event_engine::experimental::EventEngine* engine =
+      grpc_event_engine::experimental::GetDefaultEventEngine();
+  EXPECT_NE(engine, nullptr);
+  grpc_event_engine::iomgr_engine::TestScheduler scheduler(engine);
+  g_event_poller =
+      grpc_event_engine::iomgr_engine::GetDefaultPoller(&scheduler);
   if (g_event_poller == nullptr) {
     // Poller is not supported on this system.
     return 0;

@@ -14,6 +14,8 @@
 
 #include <grpc/support/port_platform.h>
 
+#include "wakeup_fd_eventfd.h"
+
 #include <grpc/support/log.h>
 
 #include "src/core/lib/iomgr/port.h"
@@ -37,12 +39,13 @@ namespace iomgr_engine {
 #ifdef GRPC_LINUX_EVENTFD
 
 absl::Status EventFdWakeupFd::Init() {
-  this->read_fd_ = eventfd(0, EFD_NONBLOCK | EFD_CLOEXEC);
-  this->write_fd_ = -1;
-  if (this->read_fd_ < 0) {
+  int read_fd = eventfd(0, EFD_NONBLOCK | EFD_CLOEXEC);
+  int write_fd = -1;
+  if (read_fd < 0) {
     return absl::Status(absl::StatusCode::kInternal,
                         absl::StrCat("eventfd: ", strerror(errno)));
   }
+  SetWakeupFds(read_fd, write_fd);
   return absl::OkStatus();
 }
 
@@ -50,7 +53,7 @@ absl::Status EventFdWakeupFd::ConsumeWakeup() {
   eventfd_t value;
   int err;
   do {
-    err = eventfd_read(this->read_fd_, &value);
+    err = eventfd_read(ReadFd(), &value);
   } while (err < 0 && errno == EINTR);
   if (err < 0 && errno != EAGAIN) {
     return absl::Status(absl::StatusCode::kInternal,
@@ -62,7 +65,7 @@ absl::Status EventFdWakeupFd::ConsumeWakeup() {
 absl::Status EventFdWakeupFd::Wakeup() {
   int err;
   do {
-    err = eventfd_write(this->read_fd_, 1);
+    err = eventfd_write(ReadFd(), 1);
   } while (err < 0 && errno == EINTR);
   if (err < 0) {
     return absl::Status(absl::StatusCode::kInternal,
@@ -71,21 +74,15 @@ absl::Status EventFdWakeupFd::Wakeup() {
   return absl::OkStatus();
 }
 
-void EventFdWakeupFd::Destroy() {
-  if (this->read_fd_ != 0) {
-    close(this->read_fd_);
-    this->read_fd_ = 0;
+EventFdWakeupFd::~EventFdWakeupFd() {
+  if (ReadFd() != 0) {
+    close(ReadFd());
   }
 }
 
 bool EventFdWakeupFd::IsSupported() {
   EventFdWakeupFd event_fd_wakeup_fd;
-  if (event_fd_wakeup_fd.Init().ok()) {
-    event_fd_wakeup_fd.Destroy();
-    return true;
-  } else {
-    return false;
-  }
+  return event_fd_wakeup_fd.Init().ok();
 }
 
 absl::StatusOr<std::unique_ptr<WakeupFd>>
@@ -111,8 +108,6 @@ absl::Status EventFdWakeupFd::ConsumeWakeup() {
 }
 
 absl::Status EventFdWakeupFd::Wakeup() { GPR_ASSERT(false && "unimplemented"); }
-
-void EventFdWakeupFd::Destroy() { GPR_ASSERT(false && "unimplemented"); }
 
 bool EventFdWakeupFd::IsSupported() { return false; }
 

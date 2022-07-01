@@ -16,11 +16,15 @@
 
 #include "src/core/lib/event_engine/iomgr_engine/lockfree_event.h"
 
+#include <atomic>
+#include <cstdint>
+
 #include "absl/status/status.h"
 
 #include <grpc/support/log.h>
 
 #include "src/core/lib/event_engine/iomgr_engine/closure.h"
+#include "src/core/lib/event_engine/iomgr_engine/event_poller.h"
 #include "src/core/lib/gprpp/status_helper.h"
 
 //  'state' holds the to call when the fd is readable or writable respectively.
@@ -64,13 +68,13 @@ void LockfreeEvent::InitEvent() {
   // state, while a file descriptor is on a freelist. In such a state it may
   // be SetReady'd, and so we need to perform an atomic operation here to
   // ensure no races
-  gpr_atm_no_barrier_store(&state_, kClosureNotReady);
+  state_.store(kClosureNotReady, std::memory_order_relaxed);
 }
 
 void LockfreeEvent::DestroyEvent() {
-  gpr_atm curr;
+  intptr_t curr;
   do {
-    curr = gpr_atm_no_barrier_load(&state_);
+    curr = state_.load(std::memory_order_relaxed);
     if (curr & kShutdownBit) {
       grpc_core::internal::StatusFreeHeapPtr(curr & ~kShutdownBit);
     } else {
@@ -79,17 +83,21 @@ void LockfreeEvent::DestroyEvent() {
     // we CAS in a shutdown, no error value here. If this event is interacted
     // with post-deletion (see the note in the constructor) we want the bit
     // pattern to prevent error retention in a deleted object
-  } while (!gpr_atm_no_barrier_cas(&state_, curr,
-                                   kShutdownBit /* shutdown, no error */));
+  } while (!state_.compare_exchange_strong(curr, kShutdownBit,
+                                           std::memory_order_relaxed,
+                                           std::memory_order_relaxed));
 }
 
 void LockfreeEvent::NotifyOn(IomgrEngineClosure* closure) {
+  // This load needs to be an acquire load because this can be a shutdown
+  // error that we might need to reference. Adding acquire semantics makes
+  // sure that the shutdown error has been initialized properly before us
+  // referencing it. The load() needs to be performed only once before entry
+  // into the loop. This is because if any of the compare_exchange_strong
+  // operations inside the loop return false, they automatically update curr
+  // with the new value. So it doesn't need to be loaded again.
+  intptr_t curr = state_.load(std::memory_order_acquire);
   while (true) {
-    // This load needs to be an acquire load because this can be a shutdown
-    // error that we might need to reference. Adding acquire semantics makes
-    // sure that the shutdown error has been initialized properly before us
-    // referencing it.
-    gpr_atm curr = gpr_atm_acq_load(&state_);
     switch (curr) {
       case kClosureNotReady: {
         // kClosureNotReady -> <closure>.
@@ -99,8 +107,9 @@ void LockfreeEvent::NotifyOn(IomgrEngineClosure* closure) {
 
         // The release itself pairs with the acquire half of a set_ready full
         // barrier.
-        if (gpr_atm_rel_cas(&state_, kClosureNotReady,
-                            reinterpret_cast<gpr_atm>(closure))) {
+        if (state_.compare_exchange_strong(
+                curr, reinterpret_cast<intptr_t>(closure),
+                std::memory_order_release, std::memory_order_relaxed)) {
           return;  // Successful. Return
         }
 
@@ -116,8 +125,10 @@ void LockfreeEvent::NotifyOn(IomgrEngineClosure* closure) {
         // kClosureNotReady; set_ready and set_shutdown do not schedule any
         // closure when transitioning out of CLOSURE_NO_READY state (i.e there
         // is no other code that needs to 'happen-after' this)
-        if (gpr_atm_no_barrier_cas(&state_, kClosureReady, kClosureNotReady)) {
-          engine_->Run(closure);
+        if (state_.compare_exchange_strong(curr, kClosureNotReady,
+                                           std::memory_order_relaxed,
+                                           std::memory_order_relaxed)) {
+          scheduler_->Run(closure);
           return;  // Successful. Return.
         }
         break;  // retry
@@ -131,7 +142,7 @@ void LockfreeEvent::NotifyOn(IomgrEngineClosure* closure) {
           absl::Status shutdown_err =
               grpc_core::internal::StatusGetFromHeapPtr(curr & ~kShutdownBit);
           closure->SetStatus(shutdown_err);
-          engine_->Run(closure);
+          scheduler_->Run(closure);
           return;
         }
 
@@ -144,21 +155,27 @@ void LockfreeEvent::NotifyOn(IomgrEngineClosure* closure) {
     }
   }
 
-  GPR_UNREACHABLE_CODE(return );
+  GPR_UNREACHABLE_CODE(return);
 }
 
 bool LockfreeEvent::SetShutdown(absl::Status shutdown_error) {
   intptr_t status_ptr = grpc_core::internal::StatusAllocHeapPtr(shutdown_error);
   gpr_atm new_state = status_ptr | kShutdownBit;
+  // The load() needs to be performed only once before entry
+  // into the loop. This is because if any of the compare_exchange_strong
+  // operations inside the loop return false, they automatically update curr
+  // with the new value. So it doesn't need to be loaded again.
+  intptr_t curr = state_.load(std::memory_order_acquire);
 
   while (true) {
-    gpr_atm curr = gpr_atm_no_barrier_load(&state_);
     switch (curr) {
       case kClosureReady:
       case kClosureNotReady:
         // Need a full barrier here so that the initial load in notify_on
         // doesn't need a barrier
-        if (gpr_atm_full_cas(&state_, curr, new_state)) {
+        if (state_.compare_exchange_strong(curr, new_state,
+                                           std::memory_order_acq_rel,
+                                           std::memory_order_relaxed)) {
           return true;  // early out
         }
         break;  // retry
@@ -177,10 +194,12 @@ bool LockfreeEvent::SetShutdown(absl::Status shutdown_error) {
         // Needs an acquire to pair with setting the closure (and get a
         // happens-after on that edge), and a release to pair with anything
         // loading the shutdown state.
-        if (gpr_atm_full_cas(&state_, curr, new_state)) {
+        if (state_.compare_exchange_strong(curr, new_state,
+                                           std::memory_order_acq_rel,
+                                           std::memory_order_relaxed)) {
           auto closure = reinterpret_cast<IomgrEngineClosure*>(curr);
           closure->SetStatus(shutdown_error);
-          engine_->Run(closure);
+          scheduler_->Run(closure);
           return true;
         }
         // 'curr' was a closure but now changed to a different state. We will
@@ -193,8 +212,12 @@ bool LockfreeEvent::SetShutdown(absl::Status shutdown_error) {
 }
 
 void LockfreeEvent::SetReady() {
+  // The load() needs to be performed only once before entry
+  // into the loop. This is because if any of the compare_exchange_strong
+  // operations inside the loop return false, they automatically update curr
+  // with the new value. So it doesn't need to be loaded again.
+  intptr_t curr = state_.load(std::memory_order_acquire);
   while (true) {
-    gpr_atm curr = gpr_atm_no_barrier_load(&state_);
     switch (curr) {
       case kClosureReady: {
         // Already ready. We are done here.
@@ -204,7 +227,9 @@ void LockfreeEvent::SetReady() {
       case kClosureNotReady: {
         // No barrier required as we're transitioning to a state that does not
         // involve a closure
-        if (gpr_atm_no_barrier_cas(&state_, kClosureNotReady, kClosureReady)) {
+        if (state_.compare_exchange_strong(curr, kClosureReady,
+                                           std::memory_order_relaxed,
+                                           std::memory_order_relaxed)) {
           return;  // early out
         }
         break;  // retry
@@ -215,13 +240,15 @@ void LockfreeEvent::SetReady() {
         if ((curr & kShutdownBit) > 0) {
           // The fd is shutdown. Do nothing.
           return;
-        } else if (gpr_atm_full_cas(&state_, curr, kClosureNotReady)) {
+        } else if (state_.compare_exchange_strong(curr, kClosureNotReady,
+                                                  std::memory_order_acq_rel,
+                                                  std::memory_order_relaxed)) {
           // Full cas: acquire pairs with this cas' release in the event of a
           // spurious set_ready; release pairs with this or the acquire in
           // notify_on (or set_shutdown)
           auto closure = reinterpret_cast<IomgrEngineClosure*>(curr);
           closure->SetStatus(absl::OkStatus());
-          engine_->Run(closure);
+          scheduler_->Run(closure);
           return;
         }
         // else the state changed again (only possible by either a racing

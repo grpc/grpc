@@ -24,17 +24,15 @@ namespace iomgr_engine {
 
 class EventFdWakeupFd : public WakeupFd {
  public:
-  EventFdWakeupFd() {
-    read_fd_ = 0;
-    write_fd_ = 0;
-  }
-  ~EventFdWakeupFd() override = default;
-  absl::Status Init();
+  EventFdWakeupFd() : WakeupFd() {}
+  ~EventFdWakeupFd() override;
   absl::Status ConsumeWakeup() override;
   absl::Status Wakeup() override;
-  void Destroy() override;
   static absl::StatusOr<std::unique_ptr<WakeupFd>> CreateEventFdWakeupFd();
   static bool IsSupported();
+
+ private:
+  absl::Status Init();
 };
 
 }  // namespace iomgr_engine

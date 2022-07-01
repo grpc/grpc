@@ -19,6 +19,8 @@
 #include <atomic>
 #include <memory>
 
+#include "ev_epoll1_linux.h"
+
 #include <grpc/support/log.h>
 
 #include "src/core/lib/iomgr/port.h"
@@ -48,7 +50,6 @@
 
 #include "src/core/lib/event_engine/iomgr_engine/closure.h"
 #include "src/core/lib/event_engine/iomgr_engine/ev_epoll1_linux.h"
-#include "src/core/lib/event_engine/iomgr_engine/ev_posix.h"
 #include "src/core/lib/event_engine/iomgr_engine/lockfree_event.h"
 #include "src/core/lib/event_engine/iomgr_engine/wakeup_fd_posix.h"
 #include "src/core/lib/gprpp/fork.h"
@@ -57,28 +58,90 @@
 using ::grpc_event_engine::iomgr_engine::LockfreeEvent;
 using ::grpc_event_engine::iomgr_engine::WakeupFd;
 
-#define MAX_EPOLL_EVENTS 100
 #define MAX_EPOLL_EVENTS_HANDLED_PER_ITERATION 1
 
 namespace grpc_event_engine {
 namespace iomgr_engine {
 
-//  NOTE ON SYNCHRONIZATION:
-//  - Fields in this struct are only modified by the designated poller. Hence
-//    there is no need for any locks to protect the struct.
-typedef struct epoll_set {
-  int epfd;
+namespace {
+// Only used when GRPC_ENABLE_FORK_SUPPORT=1
+struct ForkFdList {
+  Epoll1EventHandle* handle;
+  Epoll1EventHandle* next;
+  Epoll1EventHandle* prev;
+};
+}  // namespace
 
-  // The epoll_events after the last call to epoll_wait()
-  struct epoll_event events[MAX_EPOLL_EVENTS];
+class Epoll1EventHandle : public EventHandle {
+ public:
+  Epoll1EventHandle(int fd, Epoll1Poller* poller)
+      : fd_(fd),
+        pending_actions_(0),
+        list_(),
+        poller_(poller),
+        read_closure_(absl::make_unique<LockfreeEvent>(poller->GetScheduler())),
+        write_closure_(
+            absl::make_unique<LockfreeEvent>(poller->GetScheduler())),
+        error_closure_(
+            absl::make_unique<LockfreeEvent>(poller->GetScheduler())) {
+    read_closure_->InitEvent();
+    write_closure_->InitEvent();
+    error_closure_->InitEvent();
+    pending_actions_ = 0;
+  }
+  Epoll1Poller* Poller() { return poller_; }
+  void SetPendingActions(bool pending_read, bool pending_write,
+                         bool pending_error) {
+    pending_actions_ |= pending_read;
+    if (pending_write) {
+      pending_actions_ |= (1 << 2);
+    }
+    if (pending_error) {
+      pending_actions_ |= (1 << 3);
+    }
+  }
+  int WrappedFd() override { return fd_; }
+  void OrphanHandle(IomgrEngineClosure* on_done, int* release_fd,
+                    absl::string_view reason) override;
+  void ShutdownHandle(absl::Status why) override;
+  void NotifyOnRead(IomgrEngineClosure* on_read) override;
+  void NotifyOnWrite(IomgrEngineClosure* on_write) override;
+  void NotifyOnError(IomgrEngineClosure* on_error) override;
+  void SetReadable() override;
+  void SetWritable() override;
+  void SetHasError() override;
+  bool IsHandleShutdown() override;
+  void ExecutePendingActions() override {
+    if (pending_actions_ & 1UL) {
+      read_closure_->SetReady();
+    }
+    if ((pending_actions_ >> 2) & 1UL) {
+      write_closure_->SetReady();
+    }
+    if ((pending_actions_ >> 3) & 1UL) {
+      error_closure_->SetReady();
+    }
+    pending_actions_ = 0;
+  }
+  absl::Mutex* mu() { return &mu_; }
+  LockfreeEvent* ReadClosure() { return read_closure_.get(); }
+  LockfreeEvent* WriteClosure() { return write_closure_.get(); }
+  LockfreeEvent* ErrorClosure() { return error_closure_.get(); }
+  ForkFdList& ForkFdListPos() { return list_; }
 
-  // The number of epoll_events after the last call to epoll_wait()
-  int num_events;
-
-  // Index of the first event in epoll_events that has to be processed. This
-  // field is only valid if num_events > 0
-  int cursor;
-} epoll_set;
+ private:
+  void HandleShutdownInternal(absl::Status why, bool releasing_fd);
+  // See Epoll1Poller::ShutdownHandle for explanation on why a mutex is
+  // required.
+  absl::Mutex mu_;
+  int fd_;
+  int pending_actions_;
+  ForkFdList list_;
+  Epoll1Poller* poller_;
+  std::unique_ptr<LockfreeEvent> read_closure_;
+  std::unique_ptr<LockfreeEvent> write_closure_;
+  std::unique_ptr<LockfreeEvent> error_closure_;
+};
 
 namespace {
 
@@ -103,79 +166,12 @@ int EpollCreateAndCloexec() {
   return fd;
 }
 
-class Epoll1EventHandle;
-
-// Only used when GRPC_ENABLE_FORK_SUPPORT=1
-struct ForkFdList {
-  Epoll1EventHandle* handle;
-  Epoll1EventHandle* next;
-  Epoll1EventHandle* prev;
-};
-
 // Only used when GRPC_ENABLE_FORK_SUPPORT=1
 std::list<Epoll1Poller*> fork_poller_list;
 
 // Only used when GRPC_ENABLE_FORK_SUPPORT=1
 Epoll1EventHandle* fork_fd_list_head = nullptr;
 gpr_mu fork_fd_list_mu;
-
-class Epoll1EventHandle : public EventHandle {
- public:
-  Epoll1EventHandle(int fd,
-                    grpc_event_engine::experimental::EventEngine* engine)
-      : fd_(fd),
-        pending_actions_(0),
-        list_(),
-        read_closure_(absl::make_unique<LockfreeEvent>(engine)),
-        write_closure_(absl::make_unique<LockfreeEvent>(engine)),
-        error_closure_(absl::make_unique<LockfreeEvent>(engine)) {
-    read_closure_->InitEvent();
-    write_closure_->InitEvent();
-    error_closure_->InitEvent();
-    pending_actions_ = 0;
-  }
-  int Fd() { return fd_; }
-  Epoll1Poller* Poller() { return poller_; }
-  void SetPendingActions(bool pending_read, bool pending_write,
-                         bool pending_error) {
-    pending_actions_ |= pending_read;
-    if (pending_write) {
-      pending_actions_ |= (1 << 2);
-    }
-    if (pending_error) {
-      pending_actions_ |= (1 << 3);
-    }
-  }
-  void ExecutePendingActions() {
-    if (pending_actions_ & 1UL) {
-      read_closure_->SetReady();
-    }
-    if ((pending_actions_ >> 2) & 1UL) {
-      write_closure_->SetReady();
-    }
-    if ((pending_actions_ >> 3) & 1UL) {
-      error_closure_->SetReady();
-    }
-    pending_actions_ = 0;
-  }
-  absl::Mutex* mu() { return &mu_; }
-  LockfreeEvent* ReadClosure() { return read_closure_.get(); }
-  LockfreeEvent* WriteClosure() { return write_closure_.get(); }
-  LockfreeEvent* ErrorClosure() { return error_closure_.get(); }
-  ForkFdList& ForkFdListPos() { return list_; }
-
- private:
-  // See Epoll1Poller::ShutdownHandle for explanation on why a mutex is
-  // required.
-  absl::Mutex mu_;
-  int fd_;
-  int pending_actions_;
-  ForkFdList list_;
-  Epoll1Poller* poller_;
-  std::unique_ptr<LockfreeEvent> read_closure_;
-  std::unique_ptr<LockfreeEvent> write_closure_;
-  std::unique_ptr<LockfreeEvent> error_closure_;
-};
 
 void ForkFdListAddHandle(Epoll1EventHandle* handle) {
   if (grpc_core::Fork::Enabled()) {
@@ -224,26 +220,6 @@ void ForkPollerListRemovePoller(Epoll1Poller* poller) {
   }
 }
 
-// if 'releasing_fd' is true, it means that we are going to detach the internal
-// fd from grpc_fd structure (i.e which means we should not be calling
-// shutdown() syscall on that fd)
-void HandleShutdownInternal(epoll_set& g_epoll_set, Epoll1EventHandle* handle,
-                            absl::Status why, bool releasing_fd) {
-  if (handle->ReadClosure()->SetShutdown(why)) {
-    if (!releasing_fd) {
-      shutdown(handle->Fd(), SHUT_RDWR);
-    } else {
-      epoll_event phony_event;
-      if (epoll_ctl(g_epoll_set.epfd, EPOLL_CTL_DEL, handle->Fd(),
-                    &phony_event) != 0) {
-        gpr_log(GPR_ERROR, "epoll_ctl failed: %s", strerror(errno));
-      }
-    }
-    handle->WriteClosure()->SetShutdown(why);
-    handle->ErrorClosure()->SetShutdown(why);
-  }
-}
-
 int PollDeadlineToMillisTimeout(grpc_core::Timestamp millis) {
   if (millis == grpc_core::Timestamp::InfFuture()) return -1;
   grpc_core::Timestamp now =
@@ -258,66 +234,6 @@ int PollDeadlineToMillisTimeout(grpc_core::Timestamp millis) {
   }
 }
 
-// Process the epoll events found by DoEpollWait() function.
-// - g_epoll_set.cursor points to the index of the first event to be processed
-// - This function then processes up-to MAX_EPOLL_EVENTS_PER_ITERATION and
-//   updates the g_epoll_set.cursor
-absl::Status ProcessEpollEvents(epoll_set& g_epoll_set, WakeupFd* wakeup_fd,
-                                int max_epoll_events_to_handle,
-                                std::vector<EventHandle*>& pending_events) {
-  int64_t num_events = g_epoll_set.num_events;
-  int64_t cursor = g_epoll_set.cursor;
-  bool was_kicked = false;
-  for (int idx = 0; (idx < max_epoll_events_to_handle) && cursor != num_events;
-       idx++) {
-    int64_t c = cursor++;
-    struct epoll_event* ev = &g_epoll_set.events[c];
-    void* data_ptr = ev->data.ptr;
-    if (data_ptr == wakeup_fd) {
-      GPR_ASSERT(wakeup_fd->ConsumeWakeup().ok());
-      was_kicked = true;
-    } else {
-      Epoll1EventHandle* handle = reinterpret_cast<Epoll1EventHandle*>(
-          reinterpret_cast<intptr_t>(data_ptr) & ~static_cast<intptr_t>(1));
-      bool track_err =
-          reinterpret_cast<intptr_t>(data_ptr) & static_cast<intptr_t>(1);
-      bool cancel = (ev->events & EPOLLHUP) != 0;
-      bool error = (ev->events & EPOLLERR) != 0;
-      bool read_ev = (ev->events & (EPOLLIN | EPOLLPRI)) != 0;
-      bool write_ev = (ev->events & EPOLLOUT) != 0;
-      bool err_fallback = error && !track_err;
-
-      handle->SetPendingActions(read_ev || cancel || err_fallback,
-                                write_ev || cancel || err_fallback,
-                                error && !err_fallback);
-      pending_events.push_back(handle);
-    }
-  }
-  g_epoll_set.cursor = cursor;
-  return was_kicked ? absl::Status(absl::StatusCode::kInternal, "Kicked")
-                    : absl::OkStatus();
-}
-
-//  Do epoll_wait and store the events in g_epoll_set.events field. This does
-//  not "process" any of the events yet; that is done in ProcessEpollEvents().
-//  See ProcessEpollEvents() function for more details.
-absl::Status DoEpollWait(epoll_set& g_epoll_set,
-                         grpc_core::Timestamp deadline) {
-  int r;
-  int timeout = PollDeadlineToMillisTimeout(deadline);
-  do {
-    r = epoll_wait(g_epoll_set.epfd, g_epoll_set.events, MAX_EPOLL_EVENTS,
-                   timeout);
-  } while (r < 0 && errno == EINTR);
-  if (r < 0) {
-    return absl::Status(absl::StatusCode::kInternal,
-                        absl::StrCat("epoll_wait: ", strerror(errno)));
-  }
-  g_epoll_set.num_events = r;
-  g_epoll_set.cursor = 0;
-  return absl::OkStatus();
-}
-
 void InitEpoll1PollerLinux();
 
 // Called by the child process's post-fork handler to close open fds,
@@ -328,7 +244,7 @@ void ResetEventManagerOnFork() {
   // Delete all pending Epoll1EventHandles.
   gpr_mu_lock(&fork_fd_list_mu);
   while (fork_fd_list_head != nullptr) {
-    close(fork_fd_list_head->Fd());
+    close(fork_fd_list_head->WrappedFd());
     Epoll1EventHandle* next = fork_fd_list_head->ForkFdListPos().next;
     delete fork_fd_list_head;
     fork_fd_list_head = next;
@@ -369,21 +285,78 @@ void InitEpoll1PollerLinux() {
 
 }  // namespace
 
-Epoll1Poller::Epoll1Poller(experimental::EventEngine* engine)
-    : engine_(engine), g_epoll_set_(nullptr), was_kicked_(false) {
-  g_epoll_set_ = static_cast<struct epoll_set*>(gpr_malloc(sizeof(epoll_set)));
-  g_epoll_set_->epfd = EpollCreateAndCloexec();
+void Epoll1EventHandle::OrphanHandle(IomgrEngineClosure* on_done,
+                                     int* release_fd,
+                                     absl::string_view reason) {
+  bool is_release_fd = (release_fd != nullptr);
+  if (!read_closure_->IsShutdown()) {
+    HandleShutdownInternal(absl::Status(absl::StatusCode::kUnknown, reason),
+                           is_release_fd);
+  }
+
+  // If release_fd is not NULL, we should be relinquishing control of the file
+  // descriptor fd->fd (but we still own the grpc_fd structure).
+  if (is_release_fd) {
+    *release_fd = fd_;
+  } else {
+    close(fd_);
+  }
+
+  ForkFdListRemoveHandle(this);
+  {
+    // See Epoll1Poller::ShutdownHandle for explanation on why a mutex is
+    // required here.
+    absl::MutexLock lock(&mu_);
+    read_closure_->DestroyEvent();
+    write_closure_->DestroyEvent();
+    error_closure_->DestroyEvent();
+  }
+
+  {
+    absl::MutexLock lock(&poller_->mu_);
+    poller_->free_epoll1_handles_list_.push_back(this);
+  }
+
+  if (on_done != nullptr) {
+    on_done->SetStatus(absl::OkStatus());
+    poller_->GetScheduler()->Run(on_done);
+  }
+}
+
+// if 'releasing_fd' is true, it means that we are going to detach the internal
+// fd from grpc_fd structure (i.e which means we should not be calling
+// shutdown() syscall on that fd)
+void Epoll1EventHandle::HandleShutdownInternal(absl::Status why,
+                                               bool releasing_fd) {
+  if (read_closure_->SetShutdown(why)) {
+    if (!releasing_fd) {
+      shutdown(fd_, SHUT_RDWR);
+    } else {
+      epoll_event phony_event;
+      if (epoll_ctl(poller_->g_epoll_set_.epfd, EPOLL_CTL_DEL, fd_,
+                    &phony_event) != 0) {
+        gpr_log(GPR_ERROR, "epoll_ctl failed: %s", strerror(errno));
+      }
+    }
+    write_closure_->SetShutdown(why);
+    write_closure_->SetShutdown(why);
+  }
+}
+
+Epoll1Poller::Epoll1Poller(Scheduler* scheduler)
+    : scheduler_(scheduler), was_kicked_(false) {
+  g_epoll_set_.epfd = EpollCreateAndCloexec();
   wakeup_fd_ = *CreateWakeupFd();
   GPR_ASSERT(wakeup_fd_ != nullptr);
-  GPR_ASSERT(g_epoll_set_->epfd >= 0);
-  gpr_log(GPR_INFO, "grpc epoll fd: %d", g_epoll_set_->epfd);
+  GPR_ASSERT(g_epoll_set_.epfd >= 0);
+  gpr_log(GPR_INFO, "grpc epoll fd: %d", g_epoll_set_.epfd);
   struct epoll_event ev;
   ev.events = static_cast<uint32_t>(EPOLLIN | EPOLLET);
   ev.data.ptr = wakeup_fd_.get();
-  GPR_ASSERT(epoll_ctl(g_epoll_set_->epfd, EPOLL_CTL_ADD, wakeup_fd_->ReadFd(),
+  GPR_ASSERT(epoll_ctl(g_epoll_set_.epfd, EPOLL_CTL_ADD, wakeup_fd_->ReadFd(),
                        &ev) == 0);
-  g_epoll_set_->num_events = 0;
-  g_epoll_set_->cursor = 0;
+  g_epoll_set_.num_events = 0;
+  g_epoll_set_.cursor = 0;
   ForkPollerListAddPoller(this);
 }
 
@@ -393,13 +366,10 @@ void Epoll1Poller::Shutdown() {
 }
 
 Epoll1Poller::~Epoll1Poller() {
-  if (g_epoll_set_ != nullptr && g_epoll_set_->epfd >= 0) {
-    close(g_epoll_set_->epfd);
-    g_epoll_set_->epfd = -1;
-    gpr_free(g_epoll_set_);
-    g_epoll_set_ = nullptr;
+  if (g_epoll_set_.epfd >= 0) {
+    close(g_epoll_set_.epfd);
+    g_epoll_set_.epfd = -1;
   }
-  wakeup_fd_->Destroy();
   {
     absl::MutexLock lock(&mu_);
     while (!free_epoll1_handles_list_.empty()) {
@@ -417,7 +387,7 @@ EventHandle* Epoll1Poller::CreateHandle(int fd, absl::string_view /*name*/,
   {
     absl::MutexLock lock(&mu_);
     if (free_epoll1_handles_list_.empty()) {
-      new_handle = new Epoll1EventHandle(fd, Engine());
+      new_handle = new Epoll1EventHandle(fd, this);
     } else {
       new_handle = reinterpret_cast<Epoll1EventHandle*>(
           free_epoll1_handles_list_.front());
@@ -434,114 +404,109 @@ EventHandle* Epoll1Poller::CreateHandle(int fd, absl::string_view /*name*/,
   // returned to the free list at that point.
   ev.data.ptr = reinterpret_cast<void*>(reinterpret_cast<intptr_t>(new_handle) |
                                         (track_err ? 1 : 0));
-  if (epoll_ctl(g_epoll_set_->epfd, EPOLL_CTL_ADD, fd, &ev) != 0) {
+  if (epoll_ctl(g_epoll_set_.epfd, EPOLL_CTL_ADD, fd, &ev) != 0) {
     gpr_log(GPR_ERROR, "epoll_ctl failed: %s", strerror(errno));
   }
 
   return new_handle;
 }
 
-int Epoll1Poller::WrappedFd(EventHandle* handle) {
-  return reinterpret_cast<Epoll1EventHandle*>(handle)->Fd();
+// Process the epoll events found by DoEpollWait() function.
+// - g_epoll_set.cursor points to the index of the first event to be processed
+// - This function then processes up-to MAX_EPOLL_EVENTS_PER_ITERATION and
+//   updates the g_epoll_set.cursor
+absl::Status Epoll1Poller::ProcessEpollEvents(
+    int max_epoll_events_to_handle, std::vector<EventHandle*>& pending_events) {
+  int64_t num_events = g_epoll_set_.num_events;
+  int64_t cursor = g_epoll_set_.cursor;
+  bool was_kicked = false;
+  for (int idx = 0; (idx < max_epoll_events_to_handle) && cursor != num_events;
+       idx++) {
+    int64_t c = cursor++;
+    struct epoll_event* ev = &g_epoll_set_.events[c];
+    void* data_ptr = ev->data.ptr;
+    if (data_ptr == wakeup_fd_.get()) {
+      GPR_ASSERT(wakeup_fd_->ConsumeWakeup().ok());
+      was_kicked = true;
+    } else {
+      Epoll1EventHandle* handle = reinterpret_cast<Epoll1EventHandle*>(
+          reinterpret_cast<intptr_t>(data_ptr) & ~static_cast<intptr_t>(1));
+      bool track_err =
+          reinterpret_cast<intptr_t>(data_ptr) & static_cast<intptr_t>(1);
+      bool cancel = (ev->events & EPOLLHUP) != 0;
+      bool error = (ev->events & EPOLLERR) != 0;
+      bool read_ev = (ev->events & (EPOLLIN | EPOLLPRI)) != 0;
+      bool write_ev = (ev->events & EPOLLOUT) != 0;
+      bool err_fallback = error && !track_err;
+
+      handle->SetPendingActions(read_ev || cancel || err_fallback,
+                                write_ev || cancel || err_fallback,
+                                error && !err_fallback);
+      pending_events.push_back(handle);
+    }
+  }
+  g_epoll_set_.cursor = cursor;
+  return was_kicked ? absl::Status(absl::StatusCode::kInternal, "Kicked")
+                    : absl::OkStatus();
+}
+
+//  Do epoll_wait and store the events in g_epoll_set.events field. This does
+//  not "process" any of the events yet; that is done in ProcessEpollEvents().
+//  See ProcessEpollEvents() function for more details.
+absl::Status Epoll1Poller::DoEpollWait(grpc_core::Timestamp deadline) {
+  int r;
+  int timeout = PollDeadlineToMillisTimeout(deadline);
+  do {
+    r = epoll_wait(g_epoll_set_.epfd, g_epoll_set_.events, MAX_EPOLL_EVENTS,
+                   timeout);
+  } while (r < 0 && errno == EINTR);
+  if (r < 0) {
+    return absl::Status(absl::StatusCode::kInternal,
+                        absl::StrCat("epoll_wait: ", strerror(errno)));
+  }
+  g_epoll_set_.num_events = r;
+  g_epoll_set_.cursor = 0;
+  return absl::OkStatus();
 }
 
 // Might be called multiple times
-void Epoll1Poller::ShutdownHandle(EventHandle* handle, absl::Status why) {
-  Epoll1EventHandle* h = reinterpret_cast<Epoll1EventHandle*>(handle);
+void Epoll1EventHandle::ShutdownHandle(absl::Status why) {
   // A mutex is required here because, the SetShutdown method of the
   // lockfree event may schedule a closure if it is already ready and that
   // closure may call OrphanHandle. Execution of ShutdownHandle and OrphanHandle
   // in parallel is not safe because some of the lockfree event types e.g, read,
   // write, error may-not have called SetShutdown when DestroyEvent gets
   // called in the OrphanHandle method.
-  absl::MutexLock lock(h->mu());
-  HandleShutdownInternal(*g_epoll_set_, h, why, false);
+  absl::MutexLock lock(&mu_);
+  HandleShutdownInternal(why, false);
 }
 
-void Epoll1Poller::OrphanHandle(EventHandle* handle,
-                                IomgrEngineClosure* on_done, int* release_fd,
-                                absl::string_view reason) {
-  bool is_release_fd = (release_fd != nullptr);
-  Epoll1EventHandle* h = reinterpret_cast<Epoll1EventHandle*>(handle);
-  if (!h->ReadClosure()->IsShutdown()) {
-    HandleShutdownInternal(*g_epoll_set_, h,
-                           absl::Status(absl::StatusCode::kUnknown, reason),
-                           is_release_fd);
-  }
-
-  // If release_fd is not NULL, we should be relinquishing control of the file
-  // descriptor fd->fd (but we still own the grpc_fd structure).
-  if (is_release_fd) {
-    *release_fd = h->Fd();
-  } else {
-    close(h->Fd());
-  }
-
-  ForkFdListRemoveHandle(h);
-  {
-    // See Epoll1Poller::ShutdownHandle for explanation on why a mutex is
-    // required here.
-    absl::MutexLock lock(h->mu());
-    h->ReadClosure()->DestroyEvent();
-    h->WriteClosure()->DestroyEvent();
-    h->ErrorClosure()->DestroyEvent();
-  }
-
-  {
-    absl::MutexLock lock(&mu_);
-    free_epoll1_handles_list_.push_back(h);
-  }
-
-  if (on_done != nullptr) {
-    on_done->SetStatus(absl::OkStatus());
-    engine_->Run(on_done);
-  }
+bool Epoll1EventHandle::IsHandleShutdown() {
+  return read_closure_->IsShutdown();
 }
 
-bool Epoll1Poller::IsHandleShutdown(EventHandle* handle) {
-  return reinterpret_cast<Epoll1EventHandle*>(handle)
-      ->ReadClosure()
-      ->IsShutdown();
+void Epoll1EventHandle::NotifyOnRead(IomgrEngineClosure* on_read) {
+  read_closure_->NotifyOn(on_read);
 }
 
-void Epoll1Poller::NotifyOnRead(EventHandle* handle,
-                                IomgrEngineClosure* on_read) {
-  reinterpret_cast<Epoll1EventHandle*>(handle)->ReadClosure()->NotifyOn(
-      on_read);
+void Epoll1EventHandle::NotifyOnWrite(IomgrEngineClosure* on_write) {
+  write_closure_->NotifyOn(on_write);
 }
 
-void Epoll1Poller::NotifyOnWrite(EventHandle* handle,
-                                 IomgrEngineClosure* on_write) {
-  reinterpret_cast<Epoll1EventHandle*>(handle)->WriteClosure()->NotifyOn(
-      on_write);
+void Epoll1EventHandle::NotifyOnError(IomgrEngineClosure* on_error) {
+  error_closure_->NotifyOn(on_error);
 }
 
-void Epoll1Poller::NotifyOnError(EventHandle* handle,
-                                 IomgrEngineClosure* on_error) {
-  reinterpret_cast<Epoll1EventHandle*>(handle)->ErrorClosure()->NotifyOn(
-      on_error);
-}
+void Epoll1EventHandle::SetReadable() { read_closure_->SetReady(); }
 
-void Epoll1Poller::SetReadable(EventHandle* handle) {
-  reinterpret_cast<Epoll1EventHandle*>(handle)->ReadClosure()->SetReady();
-}
+void Epoll1EventHandle::SetWritable() { write_closure_->SetReady(); }
 
-void Epoll1Poller::SetWritable(EventHandle* handle) {
-  reinterpret_cast<Epoll1EventHandle*>(handle)->WriteClosure()->SetReady();
-}
-
-void Epoll1Poller::SetHasError(EventHandle* handle) {
-  reinterpret_cast<Epoll1EventHandle*>(handle)->ErrorClosure()->SetReady();
-}
-
-void Epoll1Poller::ExecutePendingActions(EventHandle* handle) {
-  reinterpret_cast<Epoll1EventHandle*>(handle)->ExecutePendingActions();
-}
+void Epoll1EventHandle::SetHasError() { error_closure_->SetReady(); }
 
 absl::Status Epoll1Poller::Work(grpc_core::Timestamp deadline,
                                 std::vector<EventHandle*>& pending_events) {
-  if (g_epoll_set_->cursor == g_epoll_set_->num_events) {
-    auto status = DoEpollWait(*g_epoll_set_, deadline);
+  if (g_epoll_set_.cursor == g_epoll_set_.num_events) {
+    auto status = DoEpollWait(deadline);
     if (!status.ok()) {
       return status;
     }
@@ -550,7 +515,6 @@ absl::Status Epoll1Poller::Work(grpc_core::Timestamp deadline,
     absl::MutexLock lock(&mu_);
     // If was_kicked_ is true, collect all pending events in this iteration.
     auto status = ProcessEpollEvents(
-        *g_epoll_set_, wakeup_fd_.get(),
         was_kicked_ ? INT_MAX : MAX_EPOLL_EVENTS_HANDLED_PER_ITERATION,
         pending_events);
     if (!status.ok()) {
@@ -569,10 +533,10 @@ void Epoll1Poller::Kick() {
   GPR_ASSERT(wakeup_fd_->Wakeup().ok());
 }
 
-Epoll1Poller* GetEpoll1Poller(experimental::EventEngine* engine) {
+Epoll1Poller* GetEpoll1Poller(Scheduler* scheduler) {
   gpr_once_init(&g_init_epoll1_poller, []() { InitEpoll1PollerLinux(); });
   if (kEpoll1PollerSupported) {
-    return new Epoll1Poller(engine);
+    return new Epoll1Poller(scheduler);
   }
   return nullptr;
 }
@@ -599,55 +563,13 @@ EventHandle* Epoll1Poller::CreateHandle(int /*fd*/, absl::string_view /*name*/,
   GPR_ASSERT(false && "unimplemented");
 }
 
-int Epoll1Poller::WrappedFd(EventHandle* /*handle*/) {
+absl::Status Epoll1Poller::ProcessEpollEvents(
+    int /*max_epoll_events_to_handle*/,
+    std::vector<EventHandle*>& /*pending_events*/) {
   GPR_ASSERT(false && "unimplemented");
 }
 
-// Might be called multiple times
-void Epoll1Poller::ShutdownHandle(EventHandle* /*handle*/,
-                                  absl::Status /*why*/) {
-  GPR_ASSERT(false && "unimplemented");
-}
-
-void Epoll1Poller::OrphanHandle(EventHandle* /*handle*/,
-                                IomgrEngineClosure* /*on_done*/,
-                                int* /*release_fd*/,
-                                absl::string_view /*reason*/) {
-  GPR_ASSERT(false && "unimplemented");
-}
-
-bool Epoll1Poller::IsHandleShutdown(EventHandle* /*handle*/) {
-  GPR_ASSERT(false && "unimplemented");
-}
-
-void Epoll1Poller::NotifyOnRead(EventHandle* /*handle*/,
-                                IomgrEngineClosure* /*on_read*/) {
-  GPR_ASSERT(false && "unimplemented");
-}
-
-void Epoll1Poller::NotifyOnWrite(EventHandle* /*handle*/,
-                                 IomgrEngineClosure* /*on_write*/) {
-  GPR_ASSERT(false && "unimplemented");
-}
-
-void Epoll1Poller::NotifyOnError(EventHandle* /*handle*/,
-                                 IomgrEngineClosure* /*on_error*/) {
-  GPR_ASSERT(false && "unimplemented");
-}
-
-void Epoll1Poller::SetReadable(EventHandle* /*handle*/) {
-  GPR_ASSERT(false && "unimplemented");
-}
-
-void Epoll1Poller::SetWritable(EventHandle* /*handle*/) {
-  GPR_ASSERT(false && "unimplemented");
-}
-
-void Epoll1Poller::SetHasError(EventHandle* /*handle*/) {
-  GPR_ASSERT(false && "unimplemented");
-}
-
-void Epoll1Poller::ExecutePendingActions(EventHandle* /*handle*/) {
+absl::Status Epoll1Poller::DoEpollWait(grpc_core::Timestamp /*deadline*/) {
   GPR_ASSERT(false && "unimplemented");
 }
 

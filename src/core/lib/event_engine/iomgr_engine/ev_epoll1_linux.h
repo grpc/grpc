@@ -17,50 +17,68 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <list>
+
 #include "absl/synchronization/mutex.h"
 
 #include <grpc/event_engine/event_engine.h>
 
-#include "src/core/lib/event_engine/iomgr_engine/ev_posix.h"
+#include "src/core/lib/event_engine/iomgr_engine/event_poller.h"
 #include "src/core/lib/event_engine/iomgr_engine/wakeup_fd_posix.h"
+#include "src/core/lib/iomgr/port.h"
+
+#ifdef GRPC_LINUX_EPOLL
+#include <fcntl.h>
+#include <poll.h>
+#include <sys/epoll.h>
+#endif
+
+#define MAX_EPOLL_EVENTS 100
 
 namespace grpc_event_engine {
 namespace iomgr_engine {
 
-typedef struct epoll_set epoll_set;
+class Epoll1EventHandle;
 
 // Definition of epoll1 based poller.
 class Epoll1Poller : public EventPoller {
  public:
-  explicit Epoll1Poller(experimental::EventEngine* engine);
+  explicit Epoll1Poller(Scheduler* scheduler);
   EventHandle* CreateHandle(int fd, absl::string_view name,
                             bool track_err) override;
-  int WrappedFd(EventHandle* handle) override;
-  void OrphanHandle(EventHandle* handle, IomgrEngineClosure* on_done,
-                    int* release_fd, absl::string_view reason) override;
-  void ShutdownHandle(EventHandle* handle, absl::Status why) override;
-  void NotifyOnRead(EventHandle* handle, IomgrEngineClosure* on_read) override;
-  void NotifyOnWrite(EventHandle* handle,
-                     IomgrEngineClosure* on_write) override;
-  void NotifyOnError(EventHandle* handle,
-                     IomgrEngineClosure* on_error) override;
-  void SetReadable(EventHandle* handle) override;
-  void SetWritable(EventHandle* handle) override;
-  void SetHasError(EventHandle* handle) override;
-  bool IsHandleShutdown(EventHandle* handle) override;
-  void ExecutePendingActions(EventHandle* handle) override;
   absl::Status Work(grpc_core::Timestamp deadline,
                     std::vector<EventHandle*>& pending_events) override;
   void Kick() override;
-  experimental::EventEngine* Engine() { return engine_; }
+  Scheduler* GetScheduler() { return scheduler_; }
   void Shutdown() override;
   ~Epoll1Poller() override;
 
  private:
+  absl::Status ProcessEpollEvents(int max_epoll_events_to_handle,
+                                  std::vector<EventHandle*>& pending_events);
+  absl::Status DoEpollWait(grpc_core::Timestamp deadline);
+  friend class Epoll1EventHandle;
+#ifdef GRPC_LINUX_EPOLL
+  struct EpollSet {
+    int epfd;
+
+    // The epoll_events after the last call to epoll_wait()
+    struct epoll_event events[MAX_EPOLL_EVENTS];
+
+    // The number of epoll_events after the last call to epoll_wait()
+    int num_events;
+
+    // Index of the first event in epoll_events that has to be processed. This
+    // field is only valid if num_events > 0
+    int cursor;
+  };
+#else
+  struct EpollSet {};
+#endif
   absl::Mutex mu_;
-  experimental::EventEngine* engine_;
+  Scheduler* scheduler_;
   // A singleton epoll set
-  epoll_set* g_epoll_set_;
+  EpollSet g_epoll_set_;
   bool was_kicked_ ABSL_GUARDED_BY(mu_);
   std::list<EventHandle*> free_epoll1_handles_list_ ABSL_GUARDED_BY(mu_);
   std::unique_ptr<WakeupFd> wakeup_fd_;
@@ -68,7 +86,7 @@ class Epoll1Poller : public EventPoller {
 
 // Return an instance of a epoll1 based poller tied to the specified event
 // engine.
-Epoll1Poller* GetEpoll1Poller(experimental::EventEngine* engine);
+Epoll1Poller* GetEpoll1Poller(Scheduler* scheduler);
 
 }  // namespace iomgr_engine
 }  // namespace grpc_event_engine

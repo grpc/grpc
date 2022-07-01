@@ -14,6 +14,8 @@
 
 #include <grpc/support/port_platform.h>
 
+#include "wakeup_fd_pipe.h"
+
 #include <memory>
 
 #include <grpc/support/log.h>
@@ -67,8 +69,7 @@ absl::Status PipeWakeupFd::Init() {
   if (!status.ok()) return status;
   status = SetSocketNonBlocking(pipefd[1]);
   if (!status.ok()) return status;
-  this->read_fd_ = pipefd[0];
-  this->write_fd_ = pipefd[1];
+  SetWakeupFds(pipefd[0], pipefd[1]);
   return absl::OkStatus();
 }
 
@@ -77,7 +78,7 @@ absl::Status PipeWakeupFd::ConsumeWakeup() {
   ssize_t r;
 
   for (;;) {
-    r = read(this->read_fd_, buf, sizeof(buf));
+    r = read(ReadFd(), buf, sizeof(buf));
     if (r > 0) continue;
     if (r == 0) return absl::OkStatus();
     switch (errno) {
@@ -94,30 +95,23 @@ absl::Status PipeWakeupFd::ConsumeWakeup() {
 
 absl::Status PipeWakeupFd::Wakeup() {
   char c = 0;
-  while (write(this->write_fd_, &c, 1) != 1 && errno == EINTR) {
+  while (write(WriteFd(), &c, 1) != 1 && errno == EINTR) {
   }
   return absl::OkStatus();
 }
 
-void PipeWakeupFd::Destroy() {
-  if (this->read_fd_ != 0) {
-    close(this->read_fd_);
-    this->read_fd_ = 0;
+PipeWakeupFd::~PipeWakeupFd() {
+  if (ReadFd() != 0) {
+    close(ReadFd());
   }
-  if (this->write_fd_ != 0) {
-    close(this->write_fd_);
-    this->write_fd_ = 0;
+  if (WriteFd() != 0) {
+    close(WriteFd());
   }
 }
 
 bool PipeWakeupFd::IsSupported() {
   PipeWakeupFd pipe_wakeup_fd;
-  if (pipe_wakeup_fd.Init().ok()) {
-    pipe_wakeup_fd.Destroy();
-    return true;
-  } else {
-    return false;
-  }
+  return pipe_wakeup_fd.Init().ok();
 }
 
 absl::StatusOr<std::unique_ptr<WakeupFd>> PipeWakeupFd::CreatePipeWakeupFd() {
@@ -142,8 +136,6 @@ absl::Status PipeWakeupFd::ConsumeWakeup() {
 }
 
 absl::Status PipeWakeupFd::Wakeup() { GPR_ASSERT(false && "unimplemented"); }
-
-void PipeWakeupFd::Destroy() { GPR_ASSERT(false && "unimplemented"); }
 
 bool PipeWakeupFd::IsSupported() { return false; }
 

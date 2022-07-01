@@ -72,8 +72,44 @@ grpc_cc_test(
     uses_event_engine = True,
     uses_polling = True,
     deps = [
-        "//:iomgr_ee_poller",
+        "//:iomgr_ee_poller_common_hdrs",
+        "//:iomgr_ee_poller_posix",
         "//:iomgr_event_engine",
+        "//test/core/util:grpc_suppressions",
+        "//test/core/util:grpc_test_util",
+    ],
+)
+
+grpc_cc_test(
+    name = "lock_free_event_test",
+    srcs = ["lock_free_event_test.cc"],
+    external_deps = ["gtest"],
+    language = "C++",
+    uses_event_engine = True,
+    uses_polling = False,
+    deps = [
+        "//:iomgr_ee_lockfree_event",
+        "//:iomgr_ee_poller_common_hdrs",
+        "//:iomgr_event_engine",
+        "//test/core/util:grpc_suppressions",
+        "//test/core/util:grpc_test_util",
+    ],
+)
+
+grpc_cc_test(
+    name = "wakeup_fd_posix_test",
+    srcs = ["wakeup_fd_posix_test.cc"],
+    external_deps = ["gtest"],
+    language = "C++",
+    tags = [
+        "no_windows",
+    ],
+    uses_event_engine = False,
+    uses_polling = True,
+    deps = [
+        "//:iomgr_ee_wakeup_fd_posix",
+        "//:iomgr_ee_wakeup_fd_posix_eventfd",
+        "//:iomgr_ee_wakeup_fd_posix_pipe",
         "//test/core/util:grpc_suppressions",
         "//test/core/util:grpc_test_util",
     ],

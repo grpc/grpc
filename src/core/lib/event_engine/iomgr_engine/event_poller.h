@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef GRPC_CORE_LIB_EVENT_ENGINE_IOMGR_ENGINE_EV_POSIX_H
-#define GRPC_CORE_LIB_EVENT_ENGINE_IOMGR_ENGINE_EV_POSIX_H
+#ifndef GRPC_CORE_LIB_EVENT_ENGINE_IOMGR_ENGINE_EVENT_POLLER_H
+#define GRPC_CORE_LIB_EVENT_ENGINE_IOMGR_ENGINE_EVENT_POLLER_H
 #include <grpc/support/port_platform.h>
 
 #include <stdint.h>
@@ -28,18 +28,50 @@
 
 #include <grpc/event_engine/event_engine.h>
 
-#include "src/core/lib/event_engine/handle_containers.h"
 #include "src/core/lib/event_engine/iomgr_engine/closure.h"
-#include "src/core/lib/event_engine/iomgr_engine/thread_pool.h"
-#include "src/core/lib/event_engine/iomgr_engine/timer_manager.h"
-#include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/gprpp/time.h"
 
 namespace grpc_event_engine {
 namespace iomgr_engine {
 
+class Scheduler {
+ public:
+  virtual void Run(experimental::EventEngine::Closure* closure) = 0;
+  virtual ~Scheduler() = default;
+};
+
 class EventHandle {
  public:
+  virtual int WrappedFd() = 0;
+  // Delete the handle and optionally close the underlying file descriptor if
+  // release_fd != nullptr. The on_done closure is scheduled to be invoked
+  // after the operation is complete. After this operation, NotifyXXX and SetXXX
+  // operations cannot be performed on the handle.
+  virtual void OrphanHandle(IomgrEngineClosure* on_done, int* release_fd,
+                            absl::string_view reason) = 0;
+  // Shutdown a handle. After this operation, NotifyXXX and SetXXX operations
+  // cannot be performed.
+  virtual void ShutdownHandle(absl::Status why) = 0;
+  // Schedule on_read to be invoked when the underlying file descriptor
+  // becomes readable.
+  virtual void NotifyOnRead(IomgrEngineClosure* on_read) = 0;
+  // Schedule on_write to be invoked when the underlying file descriptor
+  // becomes writable.
+  virtual void NotifyOnWrite(IomgrEngineClosure* on_write) = 0;
+  // Schedule on_error to be invoked when the underlying file descriptor
+  // encounters errors.
+  virtual void NotifyOnError(IomgrEngineClosure* on_error) = 0;
+  // Force set a readable event on the underlying file descriptor.
+  virtual void SetReadable() = 0;
+  // Force set a writable event on the underlying file descriptor.
+  virtual void SetWritable() = 0;
+  // Force set a error event on the underlying file descriptor.
+  virtual void SetHasError() = 0;
+  // Returns true if the handle has been shutdown.
+  virtual bool IsHandleShutdown() = 0;
+  // Execute any pending actions that may have been set to a handle after the
+  // last invocation of Work(...) function.
+  virtual void ExecutePendingActions() = 0;
   virtual ~EventHandle() = default;
 };
 
@@ -48,40 +80,6 @@ class EventPoller {
   // Return an opaque handle to perform actions on the provided file descriptor.
   virtual EventHandle* CreateHandle(int fd, absl::string_view name,
                                     bool track_err) = 0;
-  // Return wrapped file descriptor corresponding to the handle.
-  virtual int WrappedFd(EventHandle* handle) = 0;
-  // Delete the handle and optionally close the underlying file descriptor if
-  // release_fd != nullptr. The on_done closure is scheduled to be invoked
-  // after the operation is complete. After this operation, NotifyXXX and SetXXX
-  // operations cannot be performed on the handle.
-  virtual void OrphanHandle(EventHandle* handle, IomgrEngineClosure* on_done,
-                            int* release_fd, absl::string_view reason) = 0;
-  // Shutdown a handle. After this operation, NotifyXXX and SetXXX operations
-  // cannot be performed.
-  virtual void ShutdownHandle(EventHandle* handle, absl::Status why) = 0;
-  // Schedule on_read to be invoked when the underlying file descriptor
-  // becomes readable.
-  virtual void NotifyOnRead(EventHandle* handle,
-                            IomgrEngineClosure* on_read) = 0;
-  // Schedule on_write to be invoked when the underlying file descriptor
-  // becomes writable.
-  virtual void NotifyOnWrite(EventHandle* handle,
-                             IomgrEngineClosure* on_write) = 0;
-  // Schedule on_error to be invoked when the underlying file descriptor
-  // encounters errors.
-  virtual void NotifyOnError(EventHandle* handle,
-                             IomgrEngineClosure* on_error) = 0;
-  // Force set a readable event on the underlying file descriptor.
-  virtual void SetReadable(EventHandle* handle) = 0;
-  // Force set a writable event on the underlying file descriptor.
-  virtual void SetWritable(EventHandle* handle) = 0;
-  // Force set a error event on the underlying file descriptor.
-  virtual void SetHasError(EventHandle* handle) = 0;
-  // Returns true if the handle has been shutdown.
-  virtual bool IsHandleShutdown(EventHandle* handle) = 0;
-  // Execute any pending actions that may have been set to a handle after the
-  // last invocation of Work(...) function.
-  virtual void ExecutePendingActions(EventHandle* handle) = 0;
   // Shuts down and deletes the poller. It is legal to call this function
   // only when no other poller method is in progress. For instance, it is
   // not safe to call this method, while a thread is blocked on Work(...).
@@ -108,9 +106,9 @@ class EventPoller {
 
 // Return an instance of an event poller which is tied to the specified
 // event engine.
-EventPoller* GetDefaultPoller(experimental::EventEngine* engine);
+EventPoller* GetDefaultPoller(Scheduler* scheduler);
 
 }  // namespace iomgr_engine
 }  // namespace grpc_event_engine
 
-#endif  // GRPC_CORE_LIB_EVENT_ENGINE_IOMGR_ENGINE_EV_POSIX_H
+#endif  // GRPC_CORE_LIB_EVENT_ENGINE_IOMGR_ENGINE_EVENT_POLLER_H

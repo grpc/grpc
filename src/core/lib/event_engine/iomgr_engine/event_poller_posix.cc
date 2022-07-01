@@ -14,17 +14,15 @@
 
 #include <grpc/support/port_platform.h>
 
-#include "src/core/lib/event_engine/iomgr_engine/ev_posix.h"
-
-#include <grpc/support/log.h>
+#include "src/core/lib/event_engine/iomgr_engine/event_poller.h"
 
 #include "src/core/lib/event_engine/iomgr_engine/ev_epoll1_linux.h"
 
 namespace grpc_event_engine {
 namespace iomgr_engine {
 
-EventPoller* GetDefaultPoller(experimental::EventEngine* engine) {
-  EventPoller* poller = GetEpoll1Poller(engine);
+EventPoller* GetDefaultPoller(Scheduler* scheduler) {
+  EventPoller* poller = GetEpoll1Poller(scheduler);
   return poller;
 }
 

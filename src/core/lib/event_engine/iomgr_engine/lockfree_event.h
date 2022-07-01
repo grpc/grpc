@@ -27,9 +27,11 @@
 namespace grpc_event_engine {
 namespace iomgr_engine {
 
+class Scheduler;
+
 class LockfreeEvent {
  public:
-  explicit LockfreeEvent(experimental::EventEngine* engine) : engine_(engine) {}
+  explicit LockfreeEvent(Scheduler* scheduler) : scheduler_(scheduler) {}
 
   LockfreeEvent(const LockfreeEvent&) = delete;
   LockfreeEvent& operator=(const LockfreeEvent&) = delete;
@@ -42,7 +44,7 @@ class LockfreeEvent {
 
   // Returns true if fd has been shutdown, false otherwise.
   bool IsShutdown() const {
-    return (gpr_atm_no_barrier_load(&state_) & kShutdownBit) != 0;
+    return (state_.load(std::memory_order_relaxed) & kShutdownBit) != 0;
   }
 
   // Schedules \a closure when the event is received (see SetReady()) or the
@@ -62,8 +64,8 @@ class LockfreeEvent {
  private:
   enum State { kClosureNotReady = 0, kClosureReady = 2, kShutdownBit = 1 };
 
-  gpr_atm state_;
-  experimental::EventEngine* engine_;
+  std::atomic<intptr_t> state_;
+  Scheduler* scheduler_;
 };
 
 }  // namespace iomgr_engine
