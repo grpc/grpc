@@ -36,6 +36,7 @@
 #include "src/core/lib/security/credentials/tls/grpc_tls_certificate_verifier.h"
 #include "src/core/lib/security/credentials/tls/grpc_tls_credentials_options.h"
 #include "src/core/lib/security/security_connector/tls/tls_security_connector.h"
+#include "src/core/tsi/ssl/session_cache/ssl_session_cache.h"
 #include "src/core/tsi/ssl_transport_security.h"
 
 namespace {
@@ -85,14 +86,13 @@ TlsCredentials::create_security_connector(
     const char* target_name, grpc_core::ChannelArgs* args) {
   absl::optional<std::string> overridden_target_name =
       args->GetOwnedString(GRPC_SSL_TARGET_NAME_OVERRIDE_ARG);
-  tsi_ssl_session_cache* ssl_session_cache =
-      args->GetPointer<tsi_ssl_session_cache>(GRPC_SSL_SESSION_CACHE_ARG);
+  auto* ssl_session_cache = args->GetObject<tsi::SslSessionLRUCache>();
   grpc_core::RefCountedPtr<grpc_channel_security_connector> sc =
       grpc_core::TlsChannelSecurityConnector::CreateTlsChannelSecurityConnector(
           this->Ref(), options_, std::move(call_creds), target_name,
           overridden_target_name.has_value() ? overridden_target_name->c_str()
                                              : nullptr,
-          ssl_session_cache);
+          ssl_session_cache == nullptr ? nullptr : ssl_session_cache->c_ptr());
   if (sc == nullptr) {
     return nullptr;
   }

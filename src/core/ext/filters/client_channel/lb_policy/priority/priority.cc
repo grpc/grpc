@@ -487,7 +487,7 @@ void PriorityLb::ChoosePriorityLocked() {
       // immediately report CONNECTING and cause us to report that state
       // anyway, but we do this just in case the child fails to report
       // state before UpdateLocked() returns.
-      if (current_child_from_before_update_ != nullptr) {
+      if (current_child_from_before_update_ == nullptr) {
         channel_control_helper()->UpdateState(
             GRPC_CHANNEL_CONNECTING, absl::Status(),
             absl::make_unique<QueuePicker>(Ref(DEBUG_LOCATION, "QueuePicker")));
@@ -521,7 +521,7 @@ void PriorityLb::ChoosePriorityLocked() {
       current_priority_ = priority;
       // If we're not still using an old child from before the last
       // update, report CONNECTING here.
-      if (current_child_from_before_update_ != nullptr) {
+      if (current_child_from_before_update_ == nullptr) {
         channel_control_helper()->UpdateState(child->connectivity_state(),
                                               child->connectivity_status(),
                                               child->GetPicker());

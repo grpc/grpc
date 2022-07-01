@@ -34,6 +34,7 @@
 #include "absl/types/optional.h"
 #include "absl/types/variant.h"
 
+#include <grpc/event_engine/event_engine.h>
 #include <grpc/impl/codegen/grpc_types.h>
 
 #include "src/core/lib/avl/avl.h"
@@ -53,7 +54,7 @@ namespace grpc_core {
 // ChannelArgs to automatically derive a vtable from a T*.
 // To participate as a pointer, instances should expose the function:
 //   // Gets the vtable for this type
-//   static const grpc_channel_arg_vtable* VTable();
+//   static const grpc_arg_pointer_vtable* VTable();
 //   // Performs any mutations required for channel args to own a pointer
 //   // Only needed if ChannelArgs::Set is to be called with a raw pointer.
 //   static void* TakeUnownedPointer(T* p);
@@ -91,6 +92,32 @@ struct ChannelArgTypeTraits<
   };
 };
 
+// Specialization for shared_ptr
+// Incurs an allocation because shared_ptr.release is not a thing.
+template <typename T>
+struct is_shared_ptr : std::false_type {};
+template <typename T>
+struct is_shared_ptr<std::shared_ptr<T>> : std::true_type {};
+template <typename T>
+struct ChannelArgTypeTraits<T,
+                            absl::enable_if_t<is_shared_ptr<T>::value, void>> {
+  static void* TakeUnownedPointer(T* p) { return p; }
+  static const grpc_arg_pointer_vtable* VTable() {
+    static const grpc_arg_pointer_vtable tbl = {
+        // copy
+        [](void* p) -> void* { return new T(*static_cast<T*>(p)); },
+        // destroy
+        [](void* p) { delete static_cast<T*>(p); },
+        // compare
+        [](void* p1, void* p2) {
+          return QsortCompare(static_cast<const T*>(p1)->get(),
+                              static_cast<const T*>(p2)->get());
+        },
+    };
+    return &tbl;
+  };
+};
+
 // If a type declares some member 'struct RawPointerChannelArgTag {}' then
 // we automatically generate a vtable for it that does not do any ownership
 // management and compares the type by pointer identity.
@@ -111,6 +138,54 @@ struct ChannelArgTypeTraits<T,
     };
     return &tbl;
   };
+};
+
+// GetObject support for shared_ptr and RefCountedPtr
+template <typename T>
+struct WrapInSharedPtr
+    : std::integral_constant<
+          bool, std::is_base_of<std::enable_shared_from_this<T>, T>::value> {};
+template <>
+struct WrapInSharedPtr<grpc_event_engine::experimental::EventEngine>
+    : std::true_type {};
+template <typename T, typename Ignored = void /* for SFINAE */>
+struct GetObjectImpl;
+// std::shared_ptr implementation
+template <typename T>
+struct GetObjectImpl<T, absl::enable_if_t<WrapInSharedPtr<T>::value, void>> {
+  using Result = T*;
+  using ReffedResult = std::shared_ptr<T>;
+  using StoredType = std::shared_ptr<T>*;
+  static Result Get(StoredType p) { return p->get(); };
+  static ReffedResult GetReffed(StoredType p) { return ReffedResult(*p); };
+};
+// RefCountedPtr
+template <typename T>
+struct GetObjectImpl<T, absl::enable_if_t<!WrapInSharedPtr<T>::value, void>> {
+  using Result = T*;
+  using ReffedResult = RefCountedPtr<T>;
+  using StoredType = Result;
+  static Result Get(StoredType p) { return p; };
+  static ReffedResult GetReffed(StoredType p) {
+    if (p == nullptr) return nullptr;
+    return p->Ref();
+  };
+};
+
+// Provide the canonical name for a type's channel arg key
+template <typename T>
+struct ChannelArgNameTraits {
+  static absl::string_view ChannelArgName() { return T::ChannelArgName(); }
+};
+template <typename T>
+struct ChannelArgNameTraits<std::shared_ptr<T>> {
+  static absl::string_view ChannelArgName() { return T::ChannelArgName(); }
+};
+
+// Specialization for the EventEngine
+template <>
+struct ChannelArgNameTraits<grpc_event_engine::experimental::EventEngine> {
+  static absl::string_view ChannelArgName() { return GRPC_ARG_EVENT_ENGINE; }
 };
 
 class ChannelArgs {
@@ -205,6 +280,20 @@ class ChannelArgs {
                     absl::remove_cvref_t<decltype(*value->Ref())>>::VTable()));
   }
   template <typename T>
+  GRPC_MUST_USE_RESULT absl::enable_if_t<
+      std::is_same<
+          const grpc_arg_pointer_vtable*,
+          decltype(ChannelArgTypeTraits<std::shared_ptr<T>>::VTable())>::value,
+      ChannelArgs>
+  Set(absl::string_view name, std::shared_ptr<T> value) const {
+    auto* store_value = new std::shared_ptr<T>(value);
+    return Set(
+        name,
+        Pointer(ChannelArgTypeTraits<std::shared_ptr<T>>::TakeUnownedPointer(
+                    store_value),
+                ChannelArgTypeTraits<std::shared_ptr<T>>::VTable()));
+  }
+  template <typename T>
   GRPC_MUST_USE_RESULT ChannelArgs SetIfUnset(absl::string_view name,
                                               T value) const {
     if (Contains(name)) return *this;
@@ -213,13 +302,20 @@ class ChannelArgs {
   GRPC_MUST_USE_RESULT ChannelArgs Remove(absl::string_view name) const;
   bool Contains(absl::string_view name) const;
 
+  template <typename T>
+  bool ContainsObject() const {
+    return Get(ChannelArgNameTraits<T>::ChannelArgName()) != nullptr;
+  }
+
   absl::optional<int> GetInt(absl::string_view name) const;
   absl::optional<absl::string_view> GetString(absl::string_view name) const;
   absl::optional<std::string> GetOwnedString(absl::string_view name) const;
   void* GetVoidPointer(absl::string_view name) const;
   template <typename T>
-  T* GetPointer(absl::string_view name) const {
-    return static_cast<T*>(GetVoidPointer(name));
+  typename GetObjectImpl<T>::StoredType GetPointer(
+      absl::string_view name) const {
+    return static_cast<typename GetObjectImpl<T>::StoredType>(
+        GetVoidPointer(name));
   }
   absl::optional<Duration> GetDurationFromIntMillis(
       absl::string_view name) const;
@@ -239,14 +335,18 @@ class ChannelArgs {
     return Set(T::ChannelArgName(), std::move(p));
   }
   template <typename T>
-  T* GetObject() const {
-    return GetPointer<T>(T::ChannelArgName());
+  GRPC_MUST_USE_RESULT ChannelArgs SetObject(std::shared_ptr<T> p) const {
+    return Set(ChannelArgNameTraits<T>::ChannelArgName(), std::move(p));
   }
   template <typename T>
-  RefCountedPtr<T> GetObjectRef() const {
-    auto* p = GetObject<T>();
-    if (p == nullptr) return nullptr;
-    return p->Ref();
+  typename GetObjectImpl<T>::Result GetObject() const {
+    return GetObjectImpl<T>::Get(
+        GetPointer<T>(ChannelArgNameTraits<T>::ChannelArgName()));
+  }
+  template <typename T>
+  typename GetObjectImpl<T>::ReffedResult GetObjectRef() const {
+    return GetObjectImpl<T>::GetReffed(
+        GetPointer<T>(ChannelArgNameTraits<T>::ChannelArgName()));
   }
 
   bool operator!=(const ChannelArgs& other) const;

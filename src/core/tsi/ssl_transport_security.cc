@@ -1036,17 +1036,16 @@ void tsi_ssl_root_certs_store_destroy(tsi_ssl_root_certs_store* self) {
 
 tsi_ssl_session_cache* tsi_ssl_session_cache_create_lru(size_t capacity) {
   /* Pointer will be dereferenced by unref call. */
-  return reinterpret_cast<tsi_ssl_session_cache*>(
-      tsi::SslSessionLRUCache::Create(capacity).release());
+  return tsi::SslSessionLRUCache::Create(capacity).release()->c_ptr();
 }
 
 void tsi_ssl_session_cache_ref(tsi_ssl_session_cache* cache) {
   /* Pointer will be dereferenced by unref call. */
-  reinterpret_cast<tsi::SslSessionLRUCache*>(cache)->Ref().release();
+  tsi::SslSessionLRUCache::FromC(cache)->Ref().release();
 }
 
 void tsi_ssl_session_cache_unref(tsi_ssl_session_cache* cache) {
-  reinterpret_cast<tsi::SslSessionLRUCache*>(cache)->Unref();
+  tsi::SslSessionLRUCache::FromC(cache)->Unref();
 }
 
 /* --- tsi_frame_protector methods implementation. ---*/
