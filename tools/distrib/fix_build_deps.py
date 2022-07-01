@@ -58,6 +58,8 @@ EXTERNAL_DEPS = {
         'absl/container:inlined_vector',
     'absl/cleanup/cleanup.h':
         'absl/cleanup',
+    'absl/functional/any_invocable.h':
+        'absl/functional:any_invocable',
     'absl/functional/bind_front.h':
         'absl/functional:bind_front',
     'absl/functional/function_ref.h':

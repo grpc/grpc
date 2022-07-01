@@ -19,6 +19,7 @@
 #include <functional>
 #include <vector>
 
+#include "absl/functional/any_invocable.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 
@@ -172,7 +173,7 @@ class EventEngine {
     /// For failed read operations, implementations should pass the appropriate
     /// statuses to \a on_read. For example, callbacks might expect to receive
     /// CANCELLED on endpoint shutdown.
-    virtual void Read(std::function<void(absl::Status)> on_read,
+    virtual void Read(absl::AnyInvocable<void(absl::Status)> on_read,
                       SliceBuffer* buffer, const ReadArgs* args) = 0;
     /// A struct representing optional arguments that may be provided to an
     /// EventEngine Endpoint Write API call.
@@ -206,7 +207,7 @@ class EventEngine {
     /// For failed write operations, implementations should pass the appropriate
     /// statuses to \a on_writable. For example, callbacks might expect to
     /// receive CANCELLED on endpoint shutdown.
-    virtual void Write(std::function<void(absl::Status)> on_writable,
+    virtual void Write(absl::AnyInvocable<void(absl::Status)> on_writable,
                        SliceBuffer* data, const WriteArgs* args) = 0;
     /// Returns an address in the format described in DNSResolver. The returned
     /// values are expected to remain valid for the life of the Endpoint.
@@ -221,14 +222,14 @@ class EventEngine {
   /// expect to receive DEADLINE_EXCEEDED statuses when appropriate, or
   /// CANCELLED statuses on EventEngine shutdown.
   using OnConnectCallback =
-      std::function<void(absl::StatusOr<std::unique_ptr<Endpoint>>)>;
+      absl::AnyInvocable<void(absl::StatusOr<std::unique_ptr<Endpoint>>)>;
 
   /// Listens for incoming connection requests from gRPC clients and initiates
   /// request processing once connections are established.
   class Listener {
    public:
     /// Called when the listener has accepted a new client connection.
-    using AcceptCallback = std::function<void(
+    using AcceptCallback = absl::AnyInvocable<void(
         std::unique_ptr<Endpoint>, MemoryAllocator memory_allocator)>;
     virtual ~Listener() = default;
     /// Bind an address/port to this Listener.
@@ -256,7 +257,7 @@ class EventEngine {
   /// MemoryAllocators for Endpoint construction.
   virtual absl::StatusOr<std::unique_ptr<Listener>> CreateListener(
       Listener::AcceptCallback on_accept,
-      std::function<void(absl::Status)> on_shutdown,
+      absl::AnyInvocable<void(absl::Status)> on_shutdown,
       const EndpointConfig& config,
       std::unique_ptr<MemoryAllocatorFactory> memory_allocator_factory) = 0;
   /// Creates a client network connection to a remote network listener.
@@ -308,12 +309,13 @@ class EventEngine {
     /// Called with the collection of sockaddrs that were resolved from a given
     /// target address.
     using LookupHostnameCallback =
-        std::function<void(absl::StatusOr<std::vector<ResolvedAddress>>)>;
+        absl::AnyInvocable<void(absl::StatusOr<std::vector<ResolvedAddress>>)>;
     /// Called with a collection of SRV records.
     using LookupSRVCallback =
-        std::function<void(absl::StatusOr<std::vector<SRVRecord>>)>;
+        absl::AnyInvocable<void(absl::StatusOr<std::vector<SRVRecord>>)>;
     /// Called with the result of a TXT record lookup
-    using LookupTXTCallback = std::function<void(absl::StatusOr<std::string>)>;
+    using LookupTXTCallback =
+        absl::AnyInvocable<void(absl::StatusOr<std::string>)>;
 
     virtual ~DNSResolver() = default;
 
@@ -381,13 +383,13 @@ class EventEngine {
   /// Asynchronously executes a task as soon as possible.
   ///
   /// \a Closures scheduled with \a Run cannot be cancelled. Unlike the
-  /// overloaded \a Closure alternative, the std::function version's \a closure
-  /// will be deleted by the EventEngine after the closure has been run.
+  /// overloaded \a Closure alternative, the absl::AnyInvocable version's \a
+  /// closure will be deleted by the EventEngine after the closure has been run.
   ///
   /// This version of \a Run may be less performant than the \a Closure version
   /// in some scenarios. This overload is useful in situations where performance
   /// is not a critical concern.
-  virtual void Run(std::function<void()> closure) = 0;
+  virtual void Run(absl::AnyInvocable<void()> closure) = 0;
   /// Synonymous with scheduling an alarm to run after duration \a when.
   ///
   /// The \a closure will execute when time \a when arrives unless it has been
@@ -398,22 +400,23 @@ class EventEngine {
   ///
   /// The \a closure will execute when time \a when arrives unless it has been
   /// cancelled via the \a Cancel method. If cancelled, the closure will not be
-  /// run. Unilke the overloaded \a Closure alternative, the std::function
+  /// run. Unilke the overloaded \a Closure alternative, the absl::AnyInvocable
   /// version's \a closure will be deleted by the EventEngine after the closure
   /// has been run, or upon cancellation.
   ///
   /// This version of \a RunAfter may be less performant than the \a Closure
   /// version in some scenarios. This overload is useful in situations where
   /// performance is not a critical concern.
-  virtual TaskHandle RunAfter(Duration when, std::function<void()> closure) = 0;
+  virtual TaskHandle RunAfter(Duration when,
+                              absl::AnyInvocable<void()> closure) = 0;
   /// Request cancellation of a task.
   ///
   /// If the associated closure has already been scheduled to run, it will not
   /// be cancelled, and this function will return false.
   ///
   /// If the associated callback has not been scheduled to run, it will be
-  /// cancelled, and the associated std::function or \a Closure* will not be
-  /// executed. In this case, Cancel will return true.
+  /// cancelled, and the associated absl::AnyInvocable or \a Closure* will not
+  /// be executed. In this case, Cancel will return true.
   ///
   /// Implementation note: closures should be destroyed in a timely manner after
   /// execution or cancelliation (milliseconds), since any state bound to the
@@ -432,7 +435,7 @@ class EventEngine {
 /// created, applications must set a custom EventEngine factory method *before*
 /// grpc is initialized.
 void SetDefaultEventEngineFactory(
-    std::function<std::unique_ptr<EventEngine>()> factory);
+    absl::AnyInvocable<std::unique_ptr<EventEngine>()> factory);
 
 /// Create an EventEngine using the default factory.
 std::unique_ptr<EventEngine> CreateEventEngine();
