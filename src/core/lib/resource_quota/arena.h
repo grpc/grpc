@@ -31,12 +31,12 @@
 
 #include <atomic>
 #include <memory>
-#include <new>
 #include <utility>
 
 #include <grpc/event_engine/memory_allocator.h>
 
 #include "src/core/lib/gpr/alloc.h"
+#include "src/core/lib/gprpp/construct_destruct.h"
 #include "src/core/lib/promise/context.h"
 #include "src/core/lib/resource_quota/memory_quota.h"
 

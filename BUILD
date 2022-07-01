@@ -1918,6 +1918,7 @@ grpc_cc_library(
     ],
     tags = ["grpc-autodeps"],
     deps = [
+        "construct_destruct",
         "context",
         "event_engine_memory_allocator",
         "gpr_base",
