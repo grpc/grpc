@@ -94,11 +94,28 @@ class ObjectiveCGrpcGenerator : public grpc::protobuf::compiler::CodeGenerator {
     }
 
 #ifdef SUPPORT_OBJC_PREFIX_VALIDATION
+    std::set<const grpc::protobuf::FileDescriptor*> files_set({file});
+
+#ifdef SUPPORT_OBJC_METHOD_MESSAGES_PREFIX_VALIDATION
+    // NOTE: Can't just check the dependencies to have prefixes because they
+    // might have a public imports where the message is really defined.
+    for (int i = 0; i < file->service_count(); i++) {
+      const auto service = file->service(i);
+      for (int i = 0; i < service->method_count(); i++) {
+        const auto method = service->method(i);
+        files_set.insert(method->input_type()->file());
+        files_set.insert(method->output_type()->file());
+      }
+    }
+#endif  // SUPPORT_OBJC_METHOD_TYPE_PREFIX_VALIDATION
+
+    const std::vector<const grpc::protobuf::FileDescriptor*> files(
+        files_set.begin(), files_set.end());
     // Default options will use env variables for controls.
-    if (!ValidateObjCClassPrefixes({file}, {}, error)) {
+    if (!ValidateObjCClassPrefixes(files, {}, error)) {
       return false;
     }
-#endif
+#endif  // SUPPORT_OBJC_PREFIX_VALIDATION
 
     bool grpc_local_import = false;
     ::std::string framework;
