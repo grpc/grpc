@@ -153,7 +153,7 @@ python_config_settings()
 # This should be updated along with build_handwritten.yaml
 g_stands_for = "garum"  # @unused
 
-core_version = "25.0.0"  # @unused
+core_version = "26.0.0"  # @unused
 
 version = "1.48.0-dev"  # @unused
 
@@ -419,6 +419,7 @@ grpc_cc_library(
         "channel_stack_type",
         "config",
         "default_event_engine_factory_hdrs",
+        "event_engine_base",
         "gpr_base",
         "grpc_authorization_base",
         "grpc_base",
@@ -478,6 +479,7 @@ grpc_cc_library(
         "channel_stack_type",
         "config",
         "default_event_engine_factory_hdrs",
+        "event_engine_base",
         "gpr_base",
         "grpc_authorization_base",
         "grpc_base",
@@ -1919,8 +1921,10 @@ grpc_cc_library(
     hdrs = [
         "src/core/lib/resource_quota/arena.h",
     ],
+    external_deps = ["absl/utility"],
     tags = ["grpc-autodeps"],
     deps = [
+        "construct_destruct",
         "context",
         "event_engine_memory_allocator",
         "gpr_base",
@@ -2254,6 +2258,7 @@ grpc_cc_library(
         "src/core/lib/event_engine/event_engine_factory.h",
     ],
     deps = [
+        "config",
         "event_engine_base_hdrs",
         "gpr_base",
     ],
@@ -2410,6 +2415,9 @@ grpc_cc_library(
         "src/core/lib/event_engine/event_engine.cc",
     ],
     deps = [
+        "channel_args",
+        "channel_args_preconditioning",
+        "config",
         "default_event_engine_factory",
         "default_event_engine_factory_hdrs",
         "event_engine_base_hdrs",
@@ -3076,6 +3084,7 @@ grpc_cc_library(
         "avl",
         "channel_stack_type",
         "dual_ref_counted",
+        "event_engine_base_hdrs",
         "gpr_base",
         "gpr_platform",
         "grpc_codegen",
@@ -4398,6 +4407,7 @@ grpc_cc_library(
         "ref_counted",
         "ref_counted_ptr",
         "server_address",
+        "sockaddr_utils",
     ],
 )
 
@@ -4737,6 +4747,7 @@ grpc_cc_library(
         "absl/status:statusor",
         "absl/strings",
         "absl/strings:str_format",
+        "absl/time",
         "address_sorting",
         "cares",
     ],

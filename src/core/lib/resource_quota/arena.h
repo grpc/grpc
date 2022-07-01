@@ -31,12 +31,12 @@
 
 #include <atomic>
 #include <memory>
-#include <new>
 #include <utility>
 
 #include <grpc/event_engine/memory_allocator.h>
 
 #include "src/core/lib/gpr/alloc.h"
+#include "src/core/lib/gprpp/construct_destruct.h"
 #include "src/core/lib/promise/context.h"
 #include "src/core/lib/resource_quota/memory_quota.h"
 
@@ -76,7 +76,7 @@ class Arena {
   template <typename T, typename... Args>
   T* New(Args&&... args) {
     T* t = static_cast<T*>(Alloc(sizeof(T)));
-    new (t) T(std::forward<Args>(args)...);
+    Construct(t, std::forward<Args>(args)...);
     return t;
   }
 

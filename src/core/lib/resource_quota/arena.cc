@@ -23,6 +23,8 @@
 #include <atomic>
 #include <new>
 
+#include "absl/utility/utility.h"
+
 #include <grpc/support/alloc.h>
 
 #include "src/core/lib/gpr/alloc.h"
@@ -50,7 +52,7 @@ Arena::~Arena() {
   Zone* z = last_zone_;
   while (z) {
     Zone* prev_z = z->prev;
-    z->~Zone();
+    Destruct(z);
     gpr_free_aligned(z);
     z = prev_z;
   }
@@ -72,10 +74,14 @@ std::pair<Arena*, void*> Arena::CreateWithAlloc(
 }
 
 size_t Arena::Destroy() {
-  while (auto* p =
-             managed_new_head_.exchange(nullptr, std::memory_order_relaxed)) {
+  ManagedNewObject* p;
+  // Outer loop: clear the managed new object list.
+  // We do this repeatedly in case a destructor ends up allocating something.
+  while ((p = managed_new_head_.exchange(nullptr, std::memory_order_relaxed)) !=
+         nullptr) {
+    // Inner loop: destruct a batch of objects.
     while (p != nullptr) {
-      std::exchange(p, p->next)->~ManagedNewObject();
+      Destruct(absl::exchange(p, p->next));
     }
   }
   size_t size = total_used_.load(std::memory_order_relaxed);
