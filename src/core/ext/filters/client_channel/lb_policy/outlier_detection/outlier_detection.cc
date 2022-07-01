@@ -48,6 +48,7 @@
 #include "src/core/ext/filters/client_channel/lb_policy_factory.h"
 #include "src/core/ext/filters/client_channel/lb_policy_registry.h"
 #include "src/core/ext/filters/client_channel/subchannel_interface.h"
+#include "src/core/lib/address_utils/sockaddr_utils.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/gpr/env.h"
@@ -554,10 +555,9 @@ OutlierDetectionLb::~OutlierDetectionLb() {
 
 std::string OutlierDetectionLb::MakeKeyForAddress(
     const ServerAddress& address) {
-  // Strip off attributes to construct the key.
-  return ServerAddress(address.address(),
-                       grpc_channel_args_copy(address.args()))
-      .ToString();
+  // Use only the address, not the attributes.
+  auto addr_str = grpc_sockaddr_to_string(&address.address(), false);
+  return addr_str.ok() ? addr_str.value() : addr_str.status().ToString();
 }
 
 void OutlierDetectionLb::ShutdownLocked() {
