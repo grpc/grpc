@@ -16,6 +16,8 @@
  *
  */
 
+#include <grpc/impl/codegen/port_platform.h>
+
 #include <string.h>
 
 #include <grpc/grpc.h>
