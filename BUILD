@@ -2754,6 +2754,7 @@ grpc_cc_library(
         "debug_location",
         "dual_ref_counted",
         "error",
+        "event_engine_base",
         "exec_ctx",
         "gpr_base",
         "gpr_codegen",
