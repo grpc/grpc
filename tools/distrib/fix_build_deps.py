@@ -17,6 +17,7 @@
 import argparse
 import collections
 from doctest import SKIP
+import multiprocessing
 import os
 import re
 import subprocess
@@ -495,9 +496,8 @@ for library in sorted(consumes.keys()):
     if args.targets and library not in args.targets:
         continue
     update_libraries.append(library)
-with multiprocessing.Pool(processes = multiprocessing.cpu_count()) as p:
+with multiprocessing.Pool(processes=multiprocessing.cpu_count()) as p:
     updated_libraries = p.map(make_library, update_libraries, 1)
-
 
 error = False
 for library, lib_error, deps, external_deps in updated_libraries:
