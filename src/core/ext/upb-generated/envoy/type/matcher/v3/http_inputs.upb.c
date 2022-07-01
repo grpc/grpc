@@ -21,7 +21,7 @@ static const upb_MiniTable_Field envoy_type_matcher_v3_HttpRequestHeaderMatchInp
 const upb_MiniTable envoy_type_matcher_v3_HttpRequestHeaderMatchInput_msginit = {
   NULL,
   &envoy_type_matcher_v3_HttpRequestHeaderMatchInput__fields[0],
-  UPB_SIZE(8, 24), 1, kUpb_ExtMode_NonExtendable, 1, 255, 0,
+  UPB_SIZE(8, 16), 1, kUpb_ExtMode_NonExtendable, 1, 255, 0,
 };
 
 static const upb_MiniTable_Field envoy_type_matcher_v3_HttpRequestTrailerMatchInput__fields[1] = {
@@ -31,7 +31,7 @@ static const upb_MiniTable_Field envoy_type_matcher_v3_HttpRequestTrailerMatchIn
 const upb_MiniTable envoy_type_matcher_v3_HttpRequestTrailerMatchInput_msginit = {
   NULL,
   &envoy_type_matcher_v3_HttpRequestTrailerMatchInput__fields[0],
-  UPB_SIZE(8, 24), 1, kUpb_ExtMode_NonExtendable, 1, 255, 0,
+  UPB_SIZE(8, 16), 1, kUpb_ExtMode_NonExtendable, 1, 255, 0,
 };
 
 static const upb_MiniTable_Field envoy_type_matcher_v3_HttpResponseHeaderMatchInput__fields[1] = {
@@ -41,7 +41,7 @@ static const upb_MiniTable_Field envoy_type_matcher_v3_HttpResponseHeaderMatchIn
 const upb_MiniTable envoy_type_matcher_v3_HttpResponseHeaderMatchInput_msginit = {
   NULL,
   &envoy_type_matcher_v3_HttpResponseHeaderMatchInput__fields[0],
-  UPB_SIZE(8, 24), 1, kUpb_ExtMode_NonExtendable, 1, 255, 0,
+  UPB_SIZE(8, 16), 1, kUpb_ExtMode_NonExtendable, 1, 255, 0,
 };
 
 static const upb_MiniTable_Field envoy_type_matcher_v3_HttpResponseTrailerMatchInput__fields[1] = {
@@ -51,7 +51,7 @@ static const upb_MiniTable_Field envoy_type_matcher_v3_HttpResponseTrailerMatchI
 const upb_MiniTable envoy_type_matcher_v3_HttpResponseTrailerMatchInput_msginit = {
   NULL,
   &envoy_type_matcher_v3_HttpResponseTrailerMatchInput__fields[0],
-  UPB_SIZE(8, 24), 1, kUpb_ExtMode_NonExtendable, 1, 255, 0,
+  UPB_SIZE(8, 16), 1, kUpb_ExtMode_NonExtendable, 1, 255, 0,
 };
 
 static const upb_MiniTable *messages_layout[4] = {

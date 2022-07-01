@@ -59,11 +59,15 @@ UPB_INLINE envoy_type_matcher_v3_RegexMatcher* envoy_type_matcher_v3_RegexMatche
   return ret;
 }
 UPB_INLINE char* envoy_type_matcher_v3_RegexMatcher_serialize(const envoy_type_matcher_v3_RegexMatcher* msg, upb_Arena* arena, size_t* len) {
-  return upb_Encode(msg, &envoy_type_matcher_v3_RegexMatcher_msginit, 0, arena, len);
+  char* ptr;
+  (void)upb_Encode(msg, &envoy_type_matcher_v3_RegexMatcher_msginit, 0, arena, &ptr, len);
+  return ptr;
 }
 UPB_INLINE char* envoy_type_matcher_v3_RegexMatcher_serialize_ex(const envoy_type_matcher_v3_RegexMatcher* msg, int options,
                                  upb_Arena* arena, size_t* len) {
-  return upb_Encode(msg, &envoy_type_matcher_v3_RegexMatcher_msginit, options, arena, len);
+  char* ptr;
+  (void)upb_Encode(msg, &envoy_type_matcher_v3_RegexMatcher_msginit, options, arena, &ptr, len);
+  return ptr;
 }
 typedef enum {
   envoy_type_matcher_v3_RegexMatcher_engine_type_google_re2 = 1,
@@ -129,11 +133,15 @@ UPB_INLINE envoy_type_matcher_v3_RegexMatcher_GoogleRE2* envoy_type_matcher_v3_R
   return ret;
 }
 UPB_INLINE char* envoy_type_matcher_v3_RegexMatcher_GoogleRE2_serialize(const envoy_type_matcher_v3_RegexMatcher_GoogleRE2* msg, upb_Arena* arena, size_t* len) {
-  return upb_Encode(msg, &envoy_type_matcher_v3_RegexMatcher_GoogleRE2_msginit, 0, arena, len);
+  char* ptr;
+  (void)upb_Encode(msg, &envoy_type_matcher_v3_RegexMatcher_GoogleRE2_msginit, 0, arena, &ptr, len);
+  return ptr;
 }
 UPB_INLINE char* envoy_type_matcher_v3_RegexMatcher_GoogleRE2_serialize_ex(const envoy_type_matcher_v3_RegexMatcher_GoogleRE2* msg, int options,
                                  upb_Arena* arena, size_t* len) {
-  return upb_Encode(msg, &envoy_type_matcher_v3_RegexMatcher_GoogleRE2_msginit, options, arena, len);
+  char* ptr;
+  (void)upb_Encode(msg, &envoy_type_matcher_v3_RegexMatcher_GoogleRE2_msginit, options, arena, &ptr, len);
+  return ptr;
 }
 UPB_INLINE bool envoy_type_matcher_v3_RegexMatcher_GoogleRE2_has_max_program_size(const envoy_type_matcher_v3_RegexMatcher_GoogleRE2* msg) {
   return _upb_hasbit(msg, 1);
@@ -184,11 +192,15 @@ UPB_INLINE envoy_type_matcher_v3_RegexMatchAndSubstitute* envoy_type_matcher_v3_
   return ret;
 }
 UPB_INLINE char* envoy_type_matcher_v3_RegexMatchAndSubstitute_serialize(const envoy_type_matcher_v3_RegexMatchAndSubstitute* msg, upb_Arena* arena, size_t* len) {
-  return upb_Encode(msg, &envoy_type_matcher_v3_RegexMatchAndSubstitute_msginit, 0, arena, len);
+  char* ptr;
+  (void)upb_Encode(msg, &envoy_type_matcher_v3_RegexMatchAndSubstitute_msginit, 0, arena, &ptr, len);
+  return ptr;
 }
 UPB_INLINE char* envoy_type_matcher_v3_RegexMatchAndSubstitute_serialize_ex(const envoy_type_matcher_v3_RegexMatchAndSubstitute* msg, int options,
                                  upb_Arena* arena, size_t* len) {
-  return upb_Encode(msg, &envoy_type_matcher_v3_RegexMatchAndSubstitute_msginit, options, arena, len);
+  char* ptr;
+  (void)upb_Encode(msg, &envoy_type_matcher_v3_RegexMatchAndSubstitute_msginit, options, arena, &ptr, len);
+  return ptr;
 }
 UPB_INLINE bool envoy_type_matcher_v3_RegexMatchAndSubstitute_has_pattern(const envoy_type_matcher_v3_RegexMatchAndSubstitute* msg) {
   return _upb_hasbit(msg, 1);

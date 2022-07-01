@@ -34,7 +34,7 @@ static const upb_MiniTable_Field envoy_config_endpoint_v3_Endpoint__fields[3] = 
 const upb_MiniTable envoy_config_endpoint_v3_Endpoint_msginit = {
   &envoy_config_endpoint_v3_Endpoint_submsgs[0],
   &envoy_config_endpoint_v3_Endpoint__fields[0],
-  UPB_SIZE(20, 40), 3, kUpb_ExtMode_NonExtendable, 3, 255, 0,
+  UPB_SIZE(24, 40), 3, kUpb_ExtMode_NonExtendable, 3, 255, 0,
 };
 
 static const upb_MiniTable_Field envoy_config_endpoint_v3_Endpoint_HealthCheckConfig__fields[2] = {
@@ -45,7 +45,7 @@ static const upb_MiniTable_Field envoy_config_endpoint_v3_Endpoint_HealthCheckCo
 const upb_MiniTable envoy_config_endpoint_v3_Endpoint_HealthCheckConfig_msginit = {
   NULL,
   &envoy_config_endpoint_v3_Endpoint_HealthCheckConfig__fields[0],
-  UPB_SIZE(12, 24), 2, kUpb_ExtMode_NonExtendable, 2, 255, 0,
+  UPB_SIZE(16, 24), 2, kUpb_ExtMode_NonExtendable, 2, 255, 0,
 };
 
 static const upb_MiniTable_Sub envoy_config_endpoint_v3_LbEndpoint_submsgs[3] = {
@@ -65,7 +65,7 @@ static const upb_MiniTable_Field envoy_config_endpoint_v3_LbEndpoint__fields[5] 
 const upb_MiniTable envoy_config_endpoint_v3_LbEndpoint_msginit = {
   &envoy_config_endpoint_v3_LbEndpoint_submsgs[0],
   &envoy_config_endpoint_v3_LbEndpoint__fields[0],
-  UPB_SIZE(28, 56), 5, kUpb_ExtMode_NonExtendable, 5, 255, 0,
+  UPB_SIZE(32, 48), 5, kUpb_ExtMode_NonExtendable, 5, 255, 0,
 };
 
 static const upb_MiniTable_Sub envoy_config_endpoint_v3_LedsClusterLocalityConfig_submsgs[1] = {
@@ -80,7 +80,7 @@ static const upb_MiniTable_Field envoy_config_endpoint_v3_LedsClusterLocalityCon
 const upb_MiniTable envoy_config_endpoint_v3_LedsClusterLocalityConfig_msginit = {
   &envoy_config_endpoint_v3_LedsClusterLocalityConfig_submsgs[0],
   &envoy_config_endpoint_v3_LedsClusterLocalityConfig__fields[0],
-  UPB_SIZE(16, 40), 2, kUpb_ExtMode_NonExtendable, 2, 255, 0,
+  UPB_SIZE(16, 32), 2, kUpb_ExtMode_NonExtendable, 2, 255, 0,
 };
 
 static const upb_MiniTable_Sub envoy_config_endpoint_v3_LocalityLbEndpoints_submsgs[6] = {
@@ -119,7 +119,7 @@ static const upb_MiniTable_Field envoy_config_endpoint_v3_LocalityLbEndpoints_Lb
 const upb_MiniTable envoy_config_endpoint_v3_LocalityLbEndpoints_LbEndpointList_msginit = {
   &envoy_config_endpoint_v3_LocalityLbEndpoints_LbEndpointList_submsgs[0],
   &envoy_config_endpoint_v3_LocalityLbEndpoints_LbEndpointList__fields[0],
-  UPB_SIZE(4, 8), 1, kUpb_ExtMode_NonExtendable, 1, 255, 0,
+  UPB_SIZE(8, 8), 1, kUpb_ExtMode_NonExtendable, 1, 255, 0,
 };
 
 static const upb_MiniTable *messages_layout[6] = {

@@ -37,8 +37,9 @@
 #include <string.h>
 
 #include "upb/decode.h"
+#include "upb/internal/upb.h"
+#include "upb/internal/vsnprintf_compat.h"
 #include "upb/reflection.h"
-#include "upb/upb_internal.h"
 
 /* Must be last. */
 #include "upb/port_def.inc"
@@ -112,7 +113,7 @@ static void jsonenc_printf(jsonenc* e, const char* fmt, ...) {
   va_list args;
 
   va_start(args, fmt);
-  n = vsnprintf(e->ptr, have, fmt, args);
+  n = _upb_vsnprintf(e->ptr, have, fmt, args);
   va_end(args);
 
   if (UPB_LIKELY(have > n)) {
@@ -209,7 +210,10 @@ static void jsonenc_enum(int32_t val, const upb_FieldDef* f, jsonenc* e) {
   if (strcmp(upb_EnumDef_FullName(e_def), "google.protobuf.NullValue") == 0) {
     jsonenc_putstr(e, "null");
   } else {
-    const upb_EnumValueDef* ev = upb_EnumDef_FindValueByNumber(e_def, val);
+    const upb_EnumValueDef* ev =
+        (e->options & upb_JsonEncode_FormatEnumsAsIntegers)
+            ? NULL
+            : upb_EnumDef_FindValueByNumber(e_def, val);
 
     if (ev) {
       jsonenc_printf(e, "\"%s\"", upb_EnumValueDef_Name(ev));

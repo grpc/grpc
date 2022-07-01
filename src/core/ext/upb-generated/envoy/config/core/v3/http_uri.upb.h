@@ -53,11 +53,15 @@ UPB_INLINE envoy_config_core_v3_HttpUri* envoy_config_core_v3_HttpUri_parse_ex(c
   return ret;
 }
 UPB_INLINE char* envoy_config_core_v3_HttpUri_serialize(const envoy_config_core_v3_HttpUri* msg, upb_Arena* arena, size_t* len) {
-  return upb_Encode(msg, &envoy_config_core_v3_HttpUri_msginit, 0, arena, len);
+  char* ptr;
+  (void)upb_Encode(msg, &envoy_config_core_v3_HttpUri_msginit, 0, arena, &ptr, len);
+  return ptr;
 }
 UPB_INLINE char* envoy_config_core_v3_HttpUri_serialize_ex(const envoy_config_core_v3_HttpUri* msg, int options,
                                  upb_Arena* arena, size_t* len) {
-  return upb_Encode(msg, &envoy_config_core_v3_HttpUri_msginit, options, arena, len);
+  char* ptr;
+  (void)upb_Encode(msg, &envoy_config_core_v3_HttpUri_msginit, options, arena, &ptr, len);
+  return ptr;
 }
 typedef enum {
   envoy_config_core_v3_HttpUri_http_upstream_type_cluster = 2,

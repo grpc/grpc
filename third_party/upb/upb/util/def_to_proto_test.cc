@@ -65,22 +65,24 @@ std::unique_ptr<google::protobuf::Message> ToProto(
   EXPECT_TRUE(desc != nullptr);
   std::unique_ptr<google::protobuf::Message> google_msg(
       factory->GetPrototype(desc)->New());
+  char* buf;
   size_t size;
-  const char* buf =
-      upb_Encode(msg, upb_MessageDef_MiniTable(msgdef), 0, arena.ptr(), &size);
+  upb_EncodeStatus status = upb_Encode(msg, upb_MessageDef_MiniTable(msgdef), 0,
+                                       arena.ptr(), &buf, &size);
+  EXPECT_EQ(status, kUpb_EncodeStatus_Ok);
   google_msg->ParseFromArray(buf, size);
   return google_msg;
 }
 
 // A gtest matcher that verifies that a proto is equal to `proto`.  Both `proto`
 // and `arg` must be messages of type `msgdef_func` (a .upbdefs.h function that
-// loads a known msgdef into the given symtab).
+// loads a known msgdef into the given defpool).
 MATCHER_P2(EqualsUpbProto, proto, msgdef_func,
            negation ? "are not equal" : "are equal") {
-  upb::SymbolTable symtab;
+  upb::DefPool defpool;
   google::protobuf::DescriptorPool pool;
   google::protobuf::DynamicMessageFactory factory;
-  upb::MessageDefPtr msgdef(msgdef_func(symtab.ptr()));
+  upb::MessageDefPtr msgdef(msgdef_func(defpool.ptr()));
   EXPECT_TRUE(msgdef.ptr() != nullptr);
   const google::protobuf::Descriptor* desc =
       AddMessageDescriptor(msgdef, &pool);
@@ -115,13 +117,13 @@ void CheckFile(const upb::FileDefPtr file,
 //   serialized descriptor -> upb def -> serialized descriptor
 TEST(DefToProto, Test) {
   upb::Arena arena;
-  upb::SymbolTable symtab;
+  upb::DefPool defpool;
   upb_StringView test_file_desc =
       upb_util_def_to_proto_test_proto_upbdefinit.descriptor;
   const auto* file_desc = google_protobuf_FileDescriptorProto_parse(
       test_file_desc.data, test_file_desc.size, arena.ptr());
 
-  upb::MessageDefPtr msgdef(pkg_Message_getmsgdef(symtab.ptr()));
+  upb::MessageDefPtr msgdef(pkg_Message_getmsgdef(defpool.ptr()));
   upb::FileDefPtr file = msgdef.file();
   CheckFile(file, file_desc);
 }
@@ -129,15 +131,16 @@ TEST(DefToProto, Test) {
 // Like the previous test, but uses a message layout built at runtime.
 TEST(DefToProto, TestRuntimeReflection) {
   upb::Arena arena;
-  upb::SymbolTable symtab;
+  upb::DefPool defpool;
   upb_StringView test_file_desc =
       upb_util_def_to_proto_test_proto_upbdefinit.descriptor;
   const auto* file_desc = google_protobuf_FileDescriptorProto_parse(
       test_file_desc.data, test_file_desc.size, arena.ptr());
 
   _upb_DefPool_LoadDefInitEx(
-      symtab.ptr(), &upb_util_def_to_proto_test_proto_upbdefinit, true);
-  upb::FileDefPtr file = symtab.FindFileByName(
+      defpool.ptr(),
+      &upb_util_def_to_proto_test_proto_upbdefinit, true);
+  upb::FileDefPtr file = defpool.FindFileByName(
       upb_util_def_to_proto_test_proto_upbdefinit.filename);
   CheckFile(file, file_desc);
 }

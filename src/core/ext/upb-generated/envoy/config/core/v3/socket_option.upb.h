@@ -57,11 +57,15 @@ UPB_INLINE envoy_config_core_v3_SocketOption* envoy_config_core_v3_SocketOption_
   return ret;
 }
 UPB_INLINE char* envoy_config_core_v3_SocketOption_serialize(const envoy_config_core_v3_SocketOption* msg, upb_Arena* arena, size_t* len) {
-  return upb_Encode(msg, &envoy_config_core_v3_SocketOption_msginit, 0, arena, len);
+  char* ptr;
+  (void)upb_Encode(msg, &envoy_config_core_v3_SocketOption_msginit, 0, arena, &ptr, len);
+  return ptr;
 }
 UPB_INLINE char* envoy_config_core_v3_SocketOption_serialize_ex(const envoy_config_core_v3_SocketOption* msg, int options,
                                  upb_Arena* arena, size_t* len) {
-  return upb_Encode(msg, &envoy_config_core_v3_SocketOption_msginit, options, arena, len);
+  char* ptr;
+  (void)upb_Encode(msg, &envoy_config_core_v3_SocketOption_msginit, options, arena, &ptr, len);
+  return ptr;
 }
 typedef enum {
   envoy_config_core_v3_SocketOption_value_int_value = 4,

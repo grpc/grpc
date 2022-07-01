@@ -166,6 +166,8 @@ EXTERNAL_DEPS = {
         'libcrypto',
     're2/re2.h':
         're2',
+    'upb/arena.h':
+        'upb_lib',
     'upb/def.h':
         'upb_lib',
     'upb/json_encode.h':

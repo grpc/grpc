@@ -23,7 +23,7 @@ static const upb_MiniTable_Field envoy_config_core_v3_DnsResolverOptions__fields
 const upb_MiniTable envoy_config_core_v3_DnsResolverOptions_msginit = {
   NULL,
   &envoy_config_core_v3_DnsResolverOptions__fields[0],
-  UPB_SIZE(2, 8), 2, kUpb_ExtMode_NonExtendable, 2, 255, 0,
+  UPB_SIZE(8, 8), 2, kUpb_ExtMode_NonExtendable, 2, 255, 0,
 };
 
 static const upb_MiniTable_Sub envoy_config_core_v3_DnsResolutionConfig_submsgs[2] = {
@@ -39,7 +39,7 @@ static const upb_MiniTable_Field envoy_config_core_v3_DnsResolutionConfig__field
 const upb_MiniTable envoy_config_core_v3_DnsResolutionConfig_msginit = {
   &envoy_config_core_v3_DnsResolutionConfig_submsgs[0],
   &envoy_config_core_v3_DnsResolutionConfig__fields[0],
-  UPB_SIZE(12, 24), 2, kUpb_ExtMode_NonExtendable, 2, 255, 0,
+  UPB_SIZE(16, 24), 2, kUpb_ExtMode_NonExtendable, 2, 255, 0,
 };
 
 static const upb_MiniTable *messages_layout[2] = {

@@ -29,7 +29,7 @@ static const upb_MiniTable_Field xds_core_v3_CollectionEntry__fields[2] = {
 const upb_MiniTable xds_core_v3_CollectionEntry_msginit = {
   &xds_core_v3_CollectionEntry_submsgs[0],
   &xds_core_v3_CollectionEntry__fields[0],
-  UPB_SIZE(8, 24), 2, kUpb_ExtMode_NonExtendable, 2, 255, 0,
+  UPB_SIZE(8, 16), 2, kUpb_ExtMode_NonExtendable, 2, 255, 0,
 };
 
 static const upb_MiniTable_Sub xds_core_v3_CollectionEntry_InlineEntry_submsgs[1] = {
@@ -45,7 +45,7 @@ static const upb_MiniTable_Field xds_core_v3_CollectionEntry_InlineEntry__fields
 const upb_MiniTable xds_core_v3_CollectionEntry_InlineEntry_msginit = {
   &xds_core_v3_CollectionEntry_InlineEntry_submsgs[0],
   &xds_core_v3_CollectionEntry_InlineEntry__fields[0],
-  UPB_SIZE(24, 56), 3, kUpb_ExtMode_NonExtendable, 3, 255, 0,
+  UPB_SIZE(24, 48), 3, kUpb_ExtMode_NonExtendable, 3, 255, 0,
 };
 
 static const upb_MiniTable *messages_layout[2] = {
