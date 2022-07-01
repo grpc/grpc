@@ -105,7 +105,7 @@ gpr_timespec FuzzingEventEngine::GlobalNowImpl(gpr_clock_type clock_type) {
 }
 
 void FuzzingEventEngine::Tick() {
-  std::vector<std::function<void()>> to_run;
+  std::vector<absl::AnyInvocable<void()>> to_run;
   {
     grpc_core::MutexLock lock(&mu_);
     // Increment time
@@ -138,7 +138,7 @@ FuzzingEventEngine::Time FuzzingEventEngine::Now() {
 
 absl::StatusOr<std::unique_ptr<EventEngine::Listener>>
 FuzzingEventEngine::CreateListener(Listener::AcceptCallback,
-                                   std::function<void(absl::Status)>,
+                                   absl::AnyInvocable<void(absl::Status)>,
                                    const EndpointConfig&,
                                    std::unique_ptr<MemoryAllocatorFactory>) {
   abort();
@@ -163,8 +163,8 @@ void FuzzingEventEngine::Run(Closure* closure) {
   RunAfter(Duration::zero(), closure);
 }
 
-void FuzzingEventEngine::Run(std::function<void()> closure) {
-  RunAfter(Duration::zero(), closure);
+void FuzzingEventEngine::Run(absl::AnyInvocable<void()> closure) {
+  RunAfter(Duration::zero(), std::move(closure));
 }
 
 EventEngine::TaskHandle FuzzingEventEngine::RunAfter(Duration when,
@@ -173,7 +173,7 @@ EventEngine::TaskHandle FuzzingEventEngine::RunAfter(Duration when,
 }
 
 EventEngine::TaskHandle FuzzingEventEngine::RunAfter(
-    Duration when, std::function<void()> closure) {
+    Duration when, absl::AnyInvocable<void()> closure) {
   grpc_core::MutexLock lock(&mu_);
   const intptr_t id = next_task_id_;
   ++next_task_id_;

@@ -2241,6 +2241,7 @@ grpc_cc_library(
         "absl/status",
         "absl/status:statusor",
         "absl/time",
+        "absl/functional:any_invocable",
     ],
     deps = [
         "gpr_base",
@@ -2314,6 +2315,9 @@ grpc_cc_library(
     hdrs = [
         "src/core/lib/event_engine/iomgr_engine/thread_pool.h",
     ],
+    external_deps = [
+      "absl/functional:any_invocable",
+    ],
     tags = ["grpc-autodeps"],
     deps = ["gpr_base"],
 )
@@ -2350,6 +2354,7 @@ grpc_cc_library(
         "absl/status",
         "absl/status:statusor",
         "absl/strings",
+        "absl/functional:any_invocable",
     ],
     tags = ["grpc-autodeps"],
     deps = [
