@@ -2133,12 +2133,7 @@ void PromiseBasedCall::Update() {
   } while (absl::exchange(keep_polling_, false));
 }
 
-void PromiseBasedCall::ForceImmediateRepoll() {
-#ifndef NDEBUG
-  mu_.AssertHeld();
-#endif
-  keep_polling_ = true;
-}
+void PromiseBasedCall::ForceImmediateRepoll() { keep_polling_ = true; }
 
 void PromiseBasedCall::SetCompletionQueue(grpc_completion_queue* cq) {
   MutexLock lock(&mu_);
