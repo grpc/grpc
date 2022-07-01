@@ -17,9 +17,9 @@
  */
 
 #include <string.h>
-#include <unistd.h>
 
 #include <grpc/grpc.h>
+
 #ifdef GRPC_POSIX_SOCKET
 #include <unistd.h>
 #endif
