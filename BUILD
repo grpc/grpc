@@ -2357,15 +2357,13 @@ grpc_cc_library(
     hdrs = [
         "src/core/lib/event_engine/iomgr_engine/lockfree_event.h",
     ],
-    external_deps = [
-        "absl/status",
-    ],
+    external_deps = ["absl/status"],
     tags = ["grpc-autodeps"],
     deps = [
+        "event_engine_base_hdrs",
         "gpr_base",
         "iomgr_ee_poller_common_hdrs",
         "status_helper",
-        "time",
     ],
 )
 
@@ -2386,7 +2384,6 @@ grpc_cc_library(
     ],
     tags = ["grpc-autodeps"],
     deps = [
-        "gpr_base",
         "gpr_platform",
         "iomgr_port",
     ],
@@ -2409,7 +2406,6 @@ grpc_cc_library(
     ],
     tags = ["grpc-autodeps"],
     deps = [
-        "gpr_base",
         "gpr_platform",
         "iomgr_port",
     ],
@@ -2424,8 +2420,6 @@ grpc_cc_library(
         "src/core/lib/event_engine/iomgr_engine/wakeup_fd_posix.h",
     ],
     external_deps = [
-        "absl/base:core_headers",
-        "absl/memory",
         "absl/status",
         "absl/status:statusor",
     ],
@@ -2448,11 +2442,9 @@ grpc_cc_library(
     ],
     external_deps = [
         "absl/memory",
-        "absl/status",
         "absl/status:statusor",
         "absl/strings",
         "absl/synchronization",
-        "absl/utility",
     ],
     tags = ["grpc-autodeps"],
     deps = [
