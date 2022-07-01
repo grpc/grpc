@@ -23,6 +23,8 @@
 #include <atomic>
 #include <new>
 
+#include "absl/utility/utility.h"
+
 #include <grpc/support/alloc.h>
 
 #include "src/core/lib/gpr/alloc.h"
