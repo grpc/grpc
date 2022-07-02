@@ -19,11 +19,15 @@
 
 #include <grpc/support/port_platform.h>
 
-#include <functional>
 #include <memory>
+
+#include <grpc/impl/codegen/grpc_types.h>
 
 #include "src/core/ext/xds/xds_bootstrap.h"
 #include "src/core/ext/xds/xds_client.h"
+#include "src/core/lib/gprpp/ref_counted_ptr.h"
+#include "src/core/lib/iomgr/error.h"
+#include "src/core/lib/iomgr/iomgr_fwd.h"
 
 namespace grpc_core {
 
@@ -38,7 +42,7 @@ class GrpcXdsClient : public XdsClient {
   // Do not instantiate directly -- use GetOrCreate() instead.
   GrpcXdsClient(std::unique_ptr<XdsBootstrap> bootstrap,
                 const grpc_channel_args* args);
-  ~GrpcXdsClient();
+  ~GrpcXdsClient() override;
 
   grpc_pollset_set* interested_parties() const;
 

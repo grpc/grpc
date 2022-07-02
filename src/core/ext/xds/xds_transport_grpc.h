@@ -21,50 +21,21 @@
 
 #include <functional>
 #include <memory>
+#include <string>
 
-#include "absl/status/statusor.h"
-#include "absl/strings/string_view.h"
+#include "absl/status/status.h"
 
-#include <grpc/byte_buffer.h>
-#include <grpc/byte_buffer_reader.h>
-#include <grpc/grpc.h>
-#include <grpc/impl/codegen/connectivity_state.h>
-#include <grpc/impl/codegen/propagation_bits.h>
+#include <grpc/impl/codegen/grpc_types.h>
 #include <grpc/slice.h>
 #include <grpc/status.h>
-#include <grpc/support/alloc.h>
-#include <grpc/support/log.h>
-#include <grpc/support/string_util.h>
-#include <grpc/support/time.h>
 
-#include "src/core/ext/filters/client_channel/client_channel.h"
+#include "src/core/ext/xds/xds_bootstrap.h"
 #include "src/core/ext/xds/xds_transport.h"
-#include "src/core/lib/backoff/backoff.h"
-#include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/channel/channel_fwd.h"
-#include "src/core/lib/channel/channel_stack.h"
-#include "src/core/lib/config/core_configuration.h"
-#include "src/core/lib/gpr/env.h"
-#include "src/core/lib/gpr/useful.h"
-#include "src/core/lib/gprpp/debug_location.h"
-#include "src/core/lib/gprpp/memory.h"
 #include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
-#include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/iomgr/closure.h"
-#include "src/core/lib/iomgr/load_file.h"
-#include "src/core/lib/iomgr/pollset_set.h"
-#include "src/core/lib/iomgr/timer.h"
-#include "src/core/lib/security/credentials/channel_creds_registry.h"
-#include "src/core/lib/security/credentials/credentials.h"
-#include "src/core/lib/slice/slice.h"
-#include "src/core/lib/slice/slice_internal.h"
-#include "src/core/lib/slice/slice_refcount.h"
-#include "src/core/lib/surface/call.h"
-#include "src/core/lib/surface/channel.h"
-#include "src/core/lib/surface/lame_client.h"
-#include "src/core/lib/transport/connectivity_state.h"
-#include "src/core/lib/uri/uri_parser.h"
+#include "src/core/lib/iomgr/error.h"
+#include "src/core/lib/iomgr/iomgr_fwd.h"
 
 namespace grpc_core {
 
@@ -73,7 +44,7 @@ class GrpcXdsTransportFactory : public XdsTransportFactory {
   class GrpcXdsTransport;
 
   explicit GrpcXdsTransportFactory(const grpc_channel_args* args);
-  ~GrpcXdsTransportFactory();
+  ~GrpcXdsTransportFactory() override;
 
   void Orphan() override { Unref(); }
 
@@ -98,7 +69,7 @@ class GrpcXdsTransportFactory::GrpcXdsTransport
                    const XdsBootstrap::XdsServer& server,
                    std::function<void(absl::Status)> on_connectivity_failure,
                    absl::Status* status);
-  ~GrpcXdsTransport();
+  ~GrpcXdsTransport() override;
 
   void Orphan() override;
 
@@ -122,7 +93,7 @@ class GrpcXdsTransportFactory::GrpcXdsTransport::GrpcStreamingCall
   GrpcStreamingCall(RefCountedPtr<GrpcXdsTransportFactory> factory,
                     grpc_channel* channel, const char* method,
                     std::unique_ptr<StreamingCall::EventHandler> event_handler);
-  ~GrpcStreamingCall();
+  ~GrpcStreamingCall() override;
 
   void Orphan() override;
 
