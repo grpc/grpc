@@ -32,8 +32,6 @@
 #include "absl/strings/string_view.h"
 #include "upb/def.hpp"
 
-#include <grpc/impl/codegen/grpc_types.h>
-
 #include "src/core/ext/xds/certificate_provider_store.h"
 #include "src/core/ext/xds/xds_api.h"
 #include "src/core/ext/xds/xds_bootstrap.h"
@@ -47,9 +45,7 @@
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/gprpp/time.h"
-#include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
-#include "src/core/lib/iomgr/iomgr_fwd.h"
 #include "src/core/lib/iomgr/work_serializer.h"
 #include "src/core/lib/uri/uri_parser.h"
 

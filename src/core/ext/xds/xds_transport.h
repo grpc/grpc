@@ -21,9 +21,9 @@
 
 #include <functional>
 #include <memory>
+#include <string>
 
 #include "absl/status/status.h"
-#include "absl/status/statusor.h"
 #include "absl/strings/string_view.h"
 
 #include "src/core/ext/xds/xds_bootstrap.h"
@@ -73,7 +73,7 @@ class XdsTransportFactory : public InternallyRefCounted<XdsTransportFactory> {
     virtual void ResetBackoff() = 0;
   };
 
-  virtual ~XdsTransportFactory() = default;
+  ~XdsTransportFactory() override = default;
 
   // Creates a new transport for the specified server.
   // The on_connectivity_failure callback will be invoked whenever there is
