@@ -457,7 +457,6 @@ class XdsClient::ChannelState::StateWatcher
       : parent_(std::move(parent)) {}
 
  private:
-
   WeakRefCountedPtr<ChannelState> parent_;
 };
 
@@ -571,8 +570,7 @@ void XdsClient::ChannelState::UnsubscribeLocked(const XdsResourceType* type,
   }
 }
 
-void XdsClient::ChannelState::OnConnectivityStateChange(
-    absl::Status status) {
+void XdsClient::ChannelState::OnConnectivityStateChange(absl::Status status) {
   {
     MutexLock lock(&xds_client_->mu_);
     if (!shutting_down_) {
@@ -582,10 +580,9 @@ void XdsClient::ChannelState::OnConnectivityStateChange(
               "state TRANSIENT_FAILURE: %s",
               xds_client(), server_.server_uri.c_str(),
               status.ToString().c_str());
-      xds_client_->NotifyOnErrorLocked(
-          absl::UnavailableError(absl::StrCat(
-              "xds channel in TRANSIENT_FAILURE, connectivity error: ",
-              status.ToString())));
+      xds_client_->NotifyOnErrorLocked(absl::UnavailableError(
+          absl::StrCat("xds channel in TRANSIENT_FAILURE, connectivity error: ",
+                       status.ToString())));
     }
   }
   xds_client_->work_serializer_.DrainQueue();
@@ -883,11 +880,10 @@ XdsClient::ChannelState::AdsCallState::AdsCallState(
           : "/envoy.service.discovery.v2.AggregatedDiscoveryService/"
             "StreamAggregatedResources";
   call_ = chand()->transport_->CreateStreamingCall(
-      method,
-      absl::make_unique<StreamEventHandler>(
-          // Passing the initial ref here.  This ref will go away when
-          // the StreamEventHandler is destroyed.
-          RefCountedPtr<AdsCallState>(this)));
+      method, absl::make_unique<StreamEventHandler>(
+                  // Passing the initial ref here.  This ref will go away when
+                  // the StreamEventHandler is destroyed.
+                  RefCountedPtr<AdsCallState>(this)));
   GPR_ASSERT(call_ != nullptr);
   // Start the call.
   if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_client_trace)) {
@@ -1276,11 +1272,10 @@ XdsClient::ChannelState::LrsCallState::LrsCallState(
           ? "/envoy.service.load_stats.v3.LoadReportingService/StreamLoadStats"
           : "/envoy.service.load_stats.v2.LoadReportingService/StreamLoadStats";
   call_ = chand()->transport_->CreateStreamingCall(
-      method,
-      absl::make_unique<StreamEventHandler>(
-          // Passing the initial ref here.  This ref will go away when
-          // the StreamEventHandler is destroyed.
-          RefCountedPtr<LrsCallState>(this)));
+      method, absl::make_unique<StreamEventHandler>(
+                  // Passing the initial ref here.  This ref will go away when
+                  // the StreamEventHandler is destroyed.
+                  RefCountedPtr<LrsCallState>(this)));
   GPR_ASSERT(call_ != nullptr);
   // Start the call.
   if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_client_trace)) {
@@ -1370,10 +1365,9 @@ void XdsClient::ChannelState::LrsCallState::OnRecvMessage(
     }
   }
   if (new_load_reporting_interval <
-      Duration::Milliseconds(
-          GRPC_XDS_MIN_CLIENT_LOAD_REPORTING_INTERVAL_MS)) {
-    new_load_reporting_interval = Duration::Milliseconds(
-        GRPC_XDS_MIN_CLIENT_LOAD_REPORTING_INTERVAL_MS);
+      Duration::Milliseconds(GRPC_XDS_MIN_CLIENT_LOAD_REPORTING_INTERVAL_MS)) {
+    new_load_reporting_interval =
+        Duration::Milliseconds(GRPC_XDS_MIN_CLIENT_LOAD_REPORTING_INTERVAL_MS);
     if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_client_trace)) {
       gpr_log(GPR_INFO,
               "[xds_client %p] xds server %s: increased load_report_interval "
@@ -1387,11 +1381,10 @@ void XdsClient::ChannelState::LrsCallState::OnRecvMessage(
       cluster_names_ == new_cluster_names &&
       load_reporting_interval_ == new_load_reporting_interval) {
     if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_client_trace)) {
-      gpr_log(
-          GPR_INFO,
-          "[xds_client %p] xds server %s: incoming LRS response identical "
-          "to current, ignoring.",
-          xds_client(), chand()->server_.server_uri.c_str());
+      gpr_log(GPR_INFO,
+              "[xds_client %p] xds server %s: incoming LRS response identical "
+              "to current, ignoring.",
+              xds_client(), chand()->server_.server_uri.c_str());
     }
     return;
   }

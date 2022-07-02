@@ -78,15 +78,13 @@ namespace grpc_core {
 //
 
 GrpcXdsTransportFactory::GrpcXdsTransport::GrpcStreamingCall::GrpcStreamingCall(
-    RefCountedPtr<GrpcXdsTransportFactory> factory,
-    grpc_channel *channel, const char* method,
+    RefCountedPtr<GrpcXdsTransportFactory> factory, grpc_channel* channel,
+    const char* method,
     std::unique_ptr<StreamingCall::EventHandler> event_handler)
-    : factory_(std::move(factory)),
-      event_handler_(std::move(event_handler)) {
+    : factory_(std::move(factory)), event_handler_(std::move(event_handler)) {
   // Create call.
   call_ = grpc_channel_create_pollset_set_call(
-      channel, nullptr, GRPC_PROPAGATE_DEFAULTS,
-      factory_->interested_parties(),
+      channel, nullptr, GRPC_PROPAGATE_DEFAULTS, factory_->interested_parties(),
       StaticSlice::FromStaticString(method).c_slice(), nullptr,
       Timestamp::InfFuture(), nullptr);
   GPR_ASSERT(call_ != nullptr);
@@ -147,7 +145,8 @@ GrpcXdsTransportFactory::GrpcXdsTransport::GrpcStreamingCall::GrpcStreamingCall(
   GPR_ASSERT(GRPC_CALL_OK == call_error);
 }
 
-GrpcXdsTransportFactory::GrpcXdsTransport::GrpcStreamingCall::~GrpcStreamingCall() {
+GrpcXdsTransportFactory::GrpcXdsTransport::GrpcStreamingCall::
+    ~GrpcStreamingCall() {
   grpc_metadata_array_destroy(&initial_metadata_recv_);
   grpc_metadata_array_destroy(&trailing_metadata_recv_);
   grpc_byte_buffer_destroy(send_message_payload_);
@@ -185,12 +184,13 @@ void GrpcXdsTransportFactory::GrpcXdsTransport::GrpcStreamingCall::SendMessage(
   GPR_ASSERT(GRPC_CALL_OK == call_error);
 }
 
-bool GrpcXdsTransportFactory::GrpcXdsTransport::GrpcStreamingCall::SendMessagePending() {
+bool GrpcXdsTransportFactory::GrpcXdsTransport::GrpcStreamingCall::
+    SendMessagePending() {
   return send_message_payload_ != nullptr;
 }
 
-void GrpcXdsTransportFactory::GrpcXdsTransport::GrpcStreamingCall::OnRequestSent(
-    void* arg, grpc_error_handle error) {
+void GrpcXdsTransportFactory::GrpcXdsTransport::GrpcStreamingCall::
+    OnRequestSent(void* arg, grpc_error_handle error) {
   auto* self = static_cast<GrpcStreamingCall*>(arg);
   // Clean up the sent message.
   grpc_byte_buffer_destroy(self->send_message_payload_);
@@ -201,8 +201,8 @@ void GrpcXdsTransportFactory::GrpcXdsTransport::GrpcStreamingCall::OnRequestSent
   self->Unref(DEBUG_LOCATION, "OnRequestSent");
 }
 
-void GrpcXdsTransportFactory::GrpcXdsTransport::GrpcStreamingCall::OnResponseReceived(
-    void* arg, grpc_error_handle /*error*/) {
+void GrpcXdsTransportFactory::GrpcXdsTransport::GrpcStreamingCall::
+    OnResponseReceived(void* arg, grpc_error_handle /*error*/) {
   auto* self = static_cast<GrpcStreamingCall*>(arg);
   // If there was no payload, then we received status before we received
   // another message, so we stop reading.
@@ -230,8 +230,8 @@ void GrpcXdsTransportFactory::GrpcXdsTransport::GrpcStreamingCall::OnResponseRec
   GPR_ASSERT(GRPC_CALL_OK == call_error);
 }
 
-void GrpcXdsTransportFactory::GrpcXdsTransport::GrpcStreamingCall::OnStatusReceived(
-    void* arg, grpc_error_handle /*error*/) {
+void GrpcXdsTransportFactory::GrpcXdsTransport::GrpcStreamingCall::
+    OnStatusReceived(void* arg, grpc_error_handle /*error*/) {
   auto* self = static_cast<GrpcStreamingCall*>(arg);
   self->event_handler_->OnStatusReceived(
       absl::Status(static_cast<absl::StatusCode>(self->status_code_),
@@ -347,8 +347,7 @@ grpc_channel_args* ModifyChannelArgs(const grpc_channel_args* args) {
 
 }  // namespace
 
-GrpcXdsTransportFactory::GrpcXdsTransportFactory(
-    const grpc_channel_args* args)
+GrpcXdsTransportFactory::GrpcXdsTransportFactory(const grpc_channel_args* args)
     : args_(ModifyChannelArgs(args)),
       interested_parties_(grpc_pollset_set_create()) {
   // Calling grpc_init to ensure gRPC does not shut down until the XdsClient is

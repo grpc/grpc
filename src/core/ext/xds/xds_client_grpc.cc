@@ -207,7 +207,7 @@ Duration GetResourceDurationFromArgs(const grpc_channel_args* args) {
 GrpcXdsClient::GrpcXdsClient(std::unique_ptr<XdsBootstrap> bootstrap,
                              const grpc_channel_args* args)
     : XdsClient(std::move(bootstrap),
-                MakeOrphanable<GrpcXdsTransportFactory>(args), 
+                MakeOrphanable<GrpcXdsTransportFactory>(args),
                 GetResourceDurationFromArgs(args)) {}
 
 GrpcXdsClient::~GrpcXdsClient() {

@@ -94,10 +94,10 @@ class GrpcXdsTransportFactory::GrpcXdsTransport
  public:
   class GrpcStreamingCall;
 
-  GrpcXdsTransport(
-      GrpcXdsTransportFactory* factory, const XdsBootstrap::XdsServer& server,
-      std::function<void(absl::Status)> on_connectivity_failure,
-      absl::Status* status);
+  GrpcXdsTransport(GrpcXdsTransportFactory* factory,
+                   const XdsBootstrap::XdsServer& server,
+                   std::function<void(absl::Status)> on_connectivity_failure,
+                   absl::Status* status);
   ~GrpcXdsTransport();
 
   void Orphan() override;
@@ -119,10 +119,9 @@ class GrpcXdsTransportFactory::GrpcXdsTransport
 class GrpcXdsTransportFactory::GrpcXdsTransport::GrpcStreamingCall
     : public XdsTransportFactory::XdsTransport::StreamingCall {
  public:
-  GrpcStreamingCall(
-      RefCountedPtr<GrpcXdsTransportFactory> factory,
-      grpc_channel* channel, const char* method,
-      std::unique_ptr<StreamingCall::EventHandler> event_handler);
+  GrpcStreamingCall(RefCountedPtr<GrpcXdsTransportFactory> factory,
+                    grpc_channel* channel, const char* method,
+                    std::unique_ptr<StreamingCall::EventHandler> event_handler);
   ~GrpcStreamingCall();
 
   void Orphan() override;
