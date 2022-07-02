@@ -583,9 +583,7 @@ void Epoll1Poller::Kick() { GPR_ASSERT(false && "unimplemented"); }
 
 // If GRPC_LINUX_EPOLL is not defined, it means epoll is not available. Return
 // nullptr.
-Epoll1Poller* GetEpoll1Poller(experimental::EventEngine* /*engine*/) {
-  return nullptr;
-}
+Epoll1Poller* GetEpoll1Poller(Scheduler* /*scheduler*/) { return nullptr; }
 
 }  // namespace iomgr_engine
 }  // namespace grpc_event_engine
