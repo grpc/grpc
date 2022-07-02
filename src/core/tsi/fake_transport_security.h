@@ -21,6 +21,7 @@
 
 #include <grpc/support/port_platform.h>
 
+#include "src/core/lib/slice/slice_internal.h"
 #include "src/core/tsi/transport_security_interface.h"
 
 /* Value for the TSI_CERTIFICATE_TYPE_PEER_PROPERTY property for FAKE certs. */
@@ -44,4 +45,9 @@ tsi_frame_protector* tsi_create_fake_frame_protector(
 tsi_zero_copy_grpc_protector* tsi_create_fake_zero_copy_grpc_protector(
     size_t* max_protected_frame_size);
 
+/* Given a buffer containing slices encrypted by a fake_zero_copy_protector
+ * it parses these protected slices to return the total frame size of the first
+ * contained frame */
+uint32_t tsi_fake_zero_copy_grpc_protector_next_frame_size(
+    const grpc_slice_buffer* protected_slices);
 #endif /* GRPC_CORE_TSI_FAKE_TRANSPORT_SECURITY_H */

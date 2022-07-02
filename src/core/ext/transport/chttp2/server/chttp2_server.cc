@@ -70,7 +70,7 @@
 #include "src/core/lib/iomgr/pollset_set.h"
 #include "src/core/lib/iomgr/resolve_address.h"
 #include "src/core/lib/iomgr/resolved_address.h"
-#include "src/core/lib/iomgr/tcp_generic_options.h"
+#include "src/core/lib/iomgr/socket_utils_posix.h"
 #include "src/core/lib/iomgr/tcp_server.h"
 #include "src/core/lib/iomgr/timer.h"
 #include "src/core/lib/iomgr/unix_sockets_posix.h"
@@ -684,9 +684,10 @@ grpc_error_handle Chttp2ServerListener::Create(
     grpc_error_handle error = GRPC_ERROR_NONE;
     // Create Chttp2ServerListener.
     listener = new Chttp2ServerListener(server, args, args_modifier);
-    auto config = grpc_event_engine::experimental::CreateEndpointConfig(args);
-    error = grpc_tcp_server_create(&listener->tcp_server_shutdown_complete_,
-                                   *config, &listener->tcp_server_);
+    error = grpc_tcp_server_create(
+        &listener->tcp_server_shutdown_complete_,
+        grpc_event_engine::experimental::ChannelArgsEndpointConfig(args),
+        &listener->tcp_server_);
     if (!GRPC_ERROR_IS_NONE(error)) return error;
     if (server->config_fetcher() != nullptr) {
       listener->resolved_address_ = *addr;
@@ -733,10 +734,10 @@ grpc_error_handle Chttp2ServerListener::CreateWithAcceptor(
     Chttp2ServerArgsModifier args_modifier) {
   Chttp2ServerListener* listener =
       new Chttp2ServerListener(server, args, args_modifier);
-  auto config = grpc_event_engine::experimental::CreateEndpointConfig(args);
-  grpc_error_handle error =
-      grpc_tcp_server_create(&listener->tcp_server_shutdown_complete_, *config,
-                             &listener->tcp_server_);
+  grpc_error_handle error = grpc_tcp_server_create(
+      &listener->tcp_server_shutdown_complete_,
+      grpc_event_engine::experimental::ChannelArgsEndpointConfig(args),
+      &listener->tcp_server_);
   if (!GRPC_ERROR_IS_NONE(error)) {
     delete listener;
     return error;
@@ -1106,10 +1107,10 @@ void grpc_server_add_channel_from_fd(grpc_server* server, int fd,
   std::string name = absl::StrCat("fd:", fd);
   auto memory_quota =
       grpc_core::ResourceQuotaFromChannelArgs(server_args)->memory_quota();
-  auto config =
-      grpc_event_engine::experimental::CreateEndpointConfig(server_args);
   grpc_endpoint* server_endpoint = grpc_tcp_create_from_fd(
-      grpc_fd_create(fd, name.c_str(), true), *config, name);
+      grpc_fd_create(fd, name.c_str(), true),
+      grpc_event_engine::experimental::ChannelArgsEndpointConfig(server_args),
+      name);
   grpc_transport* transport = grpc_create_chttp2_transport(
       server_args, server_endpoint, false /* is_client */
   );

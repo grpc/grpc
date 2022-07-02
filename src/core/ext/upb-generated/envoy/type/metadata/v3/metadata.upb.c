@@ -27,7 +27,7 @@ static const upb_MiniTable_Field envoy_type_metadata_v3_MetadataKey__fields[2] =
 const upb_MiniTable envoy_type_metadata_v3_MetadataKey_msginit = {
   &envoy_type_metadata_v3_MetadataKey_submsgs[0],
   &envoy_type_metadata_v3_MetadataKey__fields[0],
-  UPB_SIZE(12, 24), 2, kUpb_ExtMode_NonExtendable, 2, 255, 0,
+  UPB_SIZE(16, 24), 2, kUpb_ExtMode_NonExtendable, 2, 255, 0,
 };
 
 static const upb_MiniTable_Field envoy_type_metadata_v3_MetadataKey_PathSegment__fields[1] = {
@@ -37,7 +37,7 @@ static const upb_MiniTable_Field envoy_type_metadata_v3_MetadataKey_PathSegment_
 const upb_MiniTable envoy_type_metadata_v3_MetadataKey_PathSegment_msginit = {
   NULL,
   &envoy_type_metadata_v3_MetadataKey_PathSegment__fields[0],
-  UPB_SIZE(12, 24), 1, kUpb_ExtMode_NonExtendable, 1, 255, 0,
+  UPB_SIZE(16, 24), 1, kUpb_ExtMode_NonExtendable, 1, 255, 0,
 };
 
 static const upb_MiniTable_Sub envoy_type_metadata_v3_MetadataKind_submsgs[4] = {
@@ -57,31 +57,31 @@ static const upb_MiniTable_Field envoy_type_metadata_v3_MetadataKind__fields[4] 
 const upb_MiniTable envoy_type_metadata_v3_MetadataKind_msginit = {
   &envoy_type_metadata_v3_MetadataKind_submsgs[0],
   &envoy_type_metadata_v3_MetadataKind__fields[0],
-  UPB_SIZE(8, 24), 4, kUpb_ExtMode_NonExtendable, 4, 255, 0,
+  UPB_SIZE(8, 16), 4, kUpb_ExtMode_NonExtendable, 4, 255, 0,
 };
 
 const upb_MiniTable envoy_type_metadata_v3_MetadataKind_Request_msginit = {
   NULL,
   NULL,
-  UPB_SIZE(0, 8), 0, kUpb_ExtMode_NonExtendable, 0, 255, 0,
+  UPB_SIZE(0, 0), 0, kUpb_ExtMode_NonExtendable, 0, 255, 0,
 };
 
 const upb_MiniTable envoy_type_metadata_v3_MetadataKind_Route_msginit = {
   NULL,
   NULL,
-  UPB_SIZE(0, 8), 0, kUpb_ExtMode_NonExtendable, 0, 255, 0,
+  UPB_SIZE(0, 0), 0, kUpb_ExtMode_NonExtendable, 0, 255, 0,
 };
 
 const upb_MiniTable envoy_type_metadata_v3_MetadataKind_Cluster_msginit = {
   NULL,
   NULL,
-  UPB_SIZE(0, 8), 0, kUpb_ExtMode_NonExtendable, 0, 255, 0,
+  UPB_SIZE(0, 0), 0, kUpb_ExtMode_NonExtendable, 0, 255, 0,
 };
 
 const upb_MiniTable envoy_type_metadata_v3_MetadataKind_Host_msginit = {
   NULL,
   NULL,
-  UPB_SIZE(0, 8), 0, kUpb_ExtMode_NonExtendable, 0, 255, 0,
+  UPB_SIZE(0, 0), 0, kUpb_ExtMode_NonExtendable, 0, 255, 0,
 };
 
 static const upb_MiniTable *messages_layout[7] = {

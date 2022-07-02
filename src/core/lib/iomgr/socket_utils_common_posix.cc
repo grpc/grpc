@@ -298,7 +298,7 @@ void config_default_tcp_user_timeout(bool enable, int timeout, bool is_client) {
 
 /* Set TCP_USER_TIMEOUT */
 grpc_error_handle grpc_set_socket_tcp_user_timeout(
-    int fd, const TcpGenericOptions& options, bool is_client) {
+    int fd, const grpc_core::PosixTcpOptions& options, bool is_client) {
   // Use conditionally-important parameter to avoid warning
   (void)fd;
   (void)is_client;
@@ -381,7 +381,7 @@ grpc_error_handle grpc_set_socket_with_mutator(int fd, grpc_fd_usage usage,
 }
 
 grpc_error_handle grpc_apply_socket_mutator_in_args(
-    int fd, grpc_fd_usage usage, const TcpGenericOptions& options) {
+    int fd, grpc_fd_usage usage, const grpc_core::PosixTcpOptions& options) {
   if (options.socket_mutator == nullptr) {
     return GRPC_ERROR_NONE;
   }

@@ -43,7 +43,6 @@
 #include "src/core/lib/iomgr/socket_mutator.h"
 #include "src/core/lib/iomgr/socket_utils_posix.h"
 #include "src/core/lib/iomgr/tcp_client_posix.h"
-#include "src/core/lib/iomgr/tcp_generic_options.h"
 #include "src/core/lib/iomgr/tcp_posix.h"
 #include "src/core/lib/iomgr/timer.h"
 #include "src/core/lib/iomgr/unix_sockets_posix.h"
@@ -66,7 +65,7 @@ struct async_connect {
   grpc_closure* closure;
   int64_t connection_handle;
   bool connect_cancelled;
-  TcpGenericOptions options;
+  grpc_core::PosixTcpOptions options;
 };
 
 struct ConnectionShard {
@@ -92,9 +91,9 @@ void grpc_tcp_client_global_init() {
   gpr_once_init(&g_tcp_client_posix_init, do_tcp_client_global_init);
 }
 
-static grpc_error_handle prepare_socket(const grpc_resolved_address* addr,
-                                        int fd,
-                                        const TcpGenericOptions& options) {
+static grpc_error_handle prepare_socket(
+    const grpc_resolved_address* addr, int fd,
+    const grpc_core::PosixTcpOptions& options) {
   grpc_error_handle err = GRPC_ERROR_NONE;
 
   GPR_ASSERT(fd >= 0);
@@ -143,14 +142,14 @@ static void tc_on_alarm(void* acp, grpc_error_handle error) {
   done = (--ac->refs == 0);
   gpr_mu_unlock(&ac->mu);
   if (done) {
-    grpc_tcp_generic_options_destroy(&ac->options);
     gpr_mu_destroy(&ac->mu);
     delete ac;
   }
 }
 
 static grpc_endpoint* grpc_tcp_client_create_from_fd(
-    grpc_fd* fd, const TcpGenericOptions& options, absl::string_view addr_str) {
+    grpc_fd* fd, const grpc_core::PosixTcpOptions& options,
+    absl::string_view addr_str) {
   return grpc_tcp_create(fd, options, addr_str);
 }
 
@@ -274,7 +273,6 @@ finish:
   if (done) {
     // This is safe even outside the lock, because "done", the sentinel, is
     // populated *inside* the lock.
-    grpc_tcp_generic_options_destroy(&ac->options);
     gpr_mu_destroy(&ac->mu);
     delete ac;
   }
@@ -289,10 +287,10 @@ finish:
   }
 }
 
-grpc_error_handle grpc_tcp_client_prepare_fd(const TcpGenericOptions& options,
-                                             const grpc_resolved_address* addr,
-                                             grpc_resolved_address* mapped_addr,
-                                             int* fd) {
+grpc_error_handle grpc_tcp_client_prepare_fd(
+    const grpc_core::PosixTcpOptions& options,
+    const grpc_resolved_address* addr, grpc_resolved_address* mapped_addr,
+    int* fd) {
   grpc_dualstack_mode dsmode;
   grpc_error_handle error;
   *fd = -1;
@@ -321,8 +319,9 @@ grpc_error_handle grpc_tcp_client_prepare_fd(const TcpGenericOptions& options,
 
 int64_t grpc_tcp_client_create_from_prepared_fd(
     grpc_pollset_set* interested_parties, grpc_closure* closure, const int fd,
-    const TcpGenericOptions& options, const grpc_resolved_address* addr,
-    grpc_core::Timestamp deadline, grpc_endpoint** ep) {
+    const grpc_core::PosixTcpOptions& options,
+    const grpc_resolved_address* addr, grpc_core::Timestamp deadline,
+    grpc_endpoint** ep) {
   int err;
   do {
     err = connect(fd, reinterpret_cast<const grpc_sockaddr*>(addr->addr),
@@ -377,7 +376,6 @@ int64_t grpc_tcp_client_create_from_prepared_fd(
   ac->refs = 2;
   GRPC_CLOSURE_INIT(&ac->write_closure, on_writable, ac,
                     grpc_schedule_on_exec_ctx);
-  grpc_tcp_generic_options_init(&ac->options);
   ac->options = options;
 
   if (GRPC_TRACE_FLAG_ENABLED(grpc_tcp_trace)) {
@@ -406,7 +404,7 @@ static int64_t tcp_connect(grpc_closure* closure, grpc_endpoint** ep,
                            const grpc_resolved_address* addr,
                            grpc_core::Timestamp deadline) {
   grpc_resolved_address mapped_addr;
-  TcpGenericOptions options(TcpOptionsFromEndpointConfig(config));
+  grpc_core::PosixTcpOptions options(TcpOptionsFromEndpointConfig(config));
   int fd = -1;
   grpc_error_handle error;
   *ep = nullptr;
@@ -465,7 +463,6 @@ static bool tcp_cancel_connect(int64_t connection_handle) {
     // This is safe even outside the lock, because "done", the sentinel, is
     // populated *inside* the lock.
     gpr_mu_destroy(&ac->mu);
-    grpc_tcp_generic_options_destroy(&ac->options);
     delete ac;
   }
   return connection_cancel_success;

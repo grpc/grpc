@@ -64,11 +64,15 @@ UPB_INLINE google_protobuf_Struct* google_protobuf_Struct_parse_ex(const char* b
   return ret;
 }
 UPB_INLINE char* google_protobuf_Struct_serialize(const google_protobuf_Struct* msg, upb_Arena* arena, size_t* len) {
-  return upb_Encode(msg, &google_protobuf_Struct_msginit, 0, arena, len);
+  char* ptr;
+  (void)upb_Encode(msg, &google_protobuf_Struct_msginit, 0, arena, &ptr, len);
+  return ptr;
 }
 UPB_INLINE char* google_protobuf_Struct_serialize_ex(const google_protobuf_Struct* msg, int options,
                                  upb_Arena* arena, size_t* len) {
-  return upb_Encode(msg, &google_protobuf_Struct_msginit, options, arena, len);
+  char* ptr;
+  (void)upb_Encode(msg, &google_protobuf_Struct_msginit, options, arena, &ptr, len);
+  return ptr;
 }
 UPB_INLINE bool google_protobuf_Struct_has_fields(const google_protobuf_Struct* msg) {
   return _upb_has_submsg_nohasbit(msg, UPB_SIZE(0, 0));
@@ -142,11 +146,15 @@ UPB_INLINE google_protobuf_Value* google_protobuf_Value_parse_ex(const char* buf
   return ret;
 }
 UPB_INLINE char* google_protobuf_Value_serialize(const google_protobuf_Value* msg, upb_Arena* arena, size_t* len) {
-  return upb_Encode(msg, &google_protobuf_Value_msginit, 0, arena, len);
+  char* ptr;
+  (void)upb_Encode(msg, &google_protobuf_Value_msginit, 0, arena, &ptr, len);
+  return ptr;
 }
 UPB_INLINE char* google_protobuf_Value_serialize_ex(const google_protobuf_Value* msg, int options,
                                  upb_Arena* arena, size_t* len) {
-  return upb_Encode(msg, &google_protobuf_Value_msginit, options, arena, len);
+  char* ptr;
+  (void)upb_Encode(msg, &google_protobuf_Value_msginit, options, arena, &ptr, len);
+  return ptr;
 }
 typedef enum {
   google_protobuf_Value_kind_null_value = 1,
@@ -277,11 +285,15 @@ UPB_INLINE google_protobuf_ListValue* google_protobuf_ListValue_parse_ex(const c
   return ret;
 }
 UPB_INLINE char* google_protobuf_ListValue_serialize(const google_protobuf_ListValue* msg, upb_Arena* arena, size_t* len) {
-  return upb_Encode(msg, &google_protobuf_ListValue_msginit, 0, arena, len);
+  char* ptr;
+  (void)upb_Encode(msg, &google_protobuf_ListValue_msginit, 0, arena, &ptr, len);
+  return ptr;
 }
 UPB_INLINE char* google_protobuf_ListValue_serialize_ex(const google_protobuf_ListValue* msg, int options,
                                  upb_Arena* arena, size_t* len) {
-  return upb_Encode(msg, &google_protobuf_ListValue_msginit, options, arena, len);
+  char* ptr;
+  (void)upb_Encode(msg, &google_protobuf_ListValue_msginit, options, arena, &ptr, len);
+  return ptr;
 }
 UPB_INLINE bool google_protobuf_ListValue_has_values(const google_protobuf_ListValue* msg) {
   return _upb_has_submsg_nohasbit(msg, UPB_SIZE(0, 0));

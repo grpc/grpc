@@ -19,8 +19,8 @@
 
 #include "src/core/lib/event_engine/channel_args_endpoint_config.h"
 #include "src/core/lib/gprpp/time.h"
+#include "src/core/lib/iomgr/socket_utils_posix.h"
 #include "src/core/lib/iomgr/tcp_client.h"
-#include "src/core/lib/iomgr/tcp_generic_options.h"
 #include "src/core/lib/iomgr/timer.h"
 
 namespace grpc {
@@ -68,28 +68,24 @@ class ConnectionAttemptInjector {
    public:
     QueuedAttempt(grpc_closure* closure, grpc_endpoint** ep,
                   grpc_pollset_set* interested_parties,
-                  TcpGenericOptions&& options,
+                  const grpc_event_engine::experimental::EndpointConfig& config,
                   const grpc_resolved_address* addr,
                   grpc_core::Timestamp deadline)
         : closure_(closure),
           endpoint_(ep),
           interested_parties_(interested_parties),
-          options_(std::move(options)),
+          config_(*reinterpret_cast<const grpc_event_engine::experimental::
+                                        ChannelArgsEndpointConfig*>(&config)),
           deadline_(deadline) {
       memcpy(&address_, addr, sizeof(address_));
     }
 
-    ~QueuedAttempt() {
-      GPR_ASSERT(closure_ == nullptr);
-      grpc_tcp_generic_options_destroy(&options_);
-    }
+    ~QueuedAttempt() { GPR_ASSERT(closure_ == nullptr); }
 
     // Caller must invoke this from a thread with an ExecCtx.
     void Resume() {
       GPR_ASSERT(closure_ != nullptr);
-      auto config = grpc_event_engine::experimental::CreateEndpointConfig(
-          TcpOptionsIntoChannelArgs(options_));
-      AttemptConnection(closure_, endpoint_, interested_parties_, *config,
+      AttemptConnection(closure_, endpoint_, interested_parties_, config_,
                         &address_, deadline_);
       closure_ = nullptr;
     }
@@ -105,7 +101,7 @@ class ConnectionAttemptInjector {
     grpc_closure* closure_;
     grpc_endpoint** endpoint_;
     grpc_pollset_set* interested_parties_;
-    TcpGenericOptions options_;
+    grpc_event_engine::experimental::ChannelArgsEndpointConfig config_;
     grpc_resolved_address address_;
     grpc_core::Timestamp deadline_;
   };
@@ -154,6 +150,69 @@ class ConnectionDelayInjector : public ConnectionAttemptInjector {
 
  private:
   grpc_core::Duration duration_;
+};
+
+// A concrete implementation that allows injecting holds for individual
+// connection attemps, one at a time.
+class ConnectionHoldInjector : public ConnectionAttemptInjector {
+ private:
+  grpc_core::Mutex mu_;  // Needs to be declared up front.
+
+ public:
+  class Hold {
+   public:
+    // Do not instantiate directly -- must be created via AddHold().
+    Hold(ConnectionHoldInjector* injector, int port, bool intercept_completion);
+
+    // Waits for the connection attempt to start.
+    // After this returns, exactly one of Resume() or Fail() must be called.
+    void Wait();
+
+    // Resumes a connection attempt.  Must be called after Wait().
+    void Resume();
+
+    // Fails a connection attempt.  Must be called after Wait().
+    void Fail(grpc_error_handle error);
+
+    // If the hold was created with intercept_completion=true, then this
+    // can be called after Resume() to wait for the connection attempt
+    // to complete.
+    void WaitForCompletion();
+
+    // Returns true if the connection attempt has been started.
+    bool IsStarted();
+
+   private:
+    friend class ConnectionHoldInjector;
+
+    static void OnComplete(void* arg, grpc_error_handle error);
+
+    ConnectionHoldInjector* injector_;
+    const int port_;
+    const bool intercept_completion_;
+    std::unique_ptr<QueuedAttempt> queued_attempt_
+        ABSL_GUARDED_BY(&ConnectionHoldInjector::mu_);
+    grpc_core::CondVar start_cv_;
+    grpc_closure on_complete_;
+    grpc_closure* original_on_complete_;
+    grpc_core::CondVar complete_cv_;
+  };
+
+  // Adds a hold for a given port.  The caller may then use Wait() on
+  // the resulting Hold object to wait for the connection attempt to start.
+  // If intercept_completion is true, the caller can use WaitForCompletion()
+  // on the resulting Hold object.
+  std::unique_ptr<Hold> AddHold(int port, bool intercept_completion = false);
+
+ private:
+  void HandleConnection(
+      grpc_closure* closure, grpc_endpoint** ep,
+      grpc_pollset_set* interested_parties,
+      const grpc_event_engine::experimental::EndpointConfig& config,
+      const grpc_resolved_address* addr,
+      grpc_core::Timestamp deadline) override;
+
+  std::vector<Hold*> holds_;
 };
 
 }  // namespace testing

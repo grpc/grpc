@@ -47,15 +47,5 @@ EndpointConfig::Setting ChannelArgsEndpointConfig::Get(
   GPR_UNREACHABLE_CODE(return absl::monostate());
 }
 
-std::unique_ptr<EndpointConfig> CreateEndpointConfig(
-    const grpc_core::ChannelArgs& args) {
-  return absl::make_unique<ChannelArgsEndpointConfig>(args);
-}
-
-std::unique_ptr<EndpointConfig> CreateEndpointConfig(
-    const grpc_channel_args* args) {
-  return absl::make_unique<ChannelArgsEndpointConfig>(args);
-}
-
 }  // namespace experimental
 }  // namespace grpc_event_engine

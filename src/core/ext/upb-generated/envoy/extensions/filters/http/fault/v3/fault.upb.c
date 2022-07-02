@@ -40,7 +40,7 @@ const upb_MiniTable envoy_extensions_filters_http_fault_v3_FaultAbort_msginit = 
 const upb_MiniTable envoy_extensions_filters_http_fault_v3_FaultAbort_HeaderAbort_msginit = {
   NULL,
   NULL,
-  UPB_SIZE(0, 8), 0, kUpb_ExtMode_NonExtendable, 0, 255, 0,
+  UPB_SIZE(0, 0), 0, kUpb_ExtMode_NonExtendable, 0, 255, 0,
 };
 
 static const upb_MiniTable_Sub envoy_extensions_filters_http_fault_v3_HTTPFault_submsgs[5] = {
@@ -72,7 +72,7 @@ static const upb_MiniTable_Field envoy_extensions_filters_http_fault_v3_HTTPFaul
 const upb_MiniTable envoy_extensions_filters_http_fault_v3_HTTPFault_msginit = {
   &envoy_extensions_filters_http_fault_v3_HTTPFault_submsgs[0],
   &envoy_extensions_filters_http_fault_v3_HTTPFault__fields[0],
-  UPB_SIZE(92, 184), 15, kUpb_ExtMode_NonExtendable, 15, 255, 0,
+  UPB_SIZE(96, 184), 15, kUpb_ExtMode_NonExtendable, 15, 255, 0,
 };
 
 static const upb_MiniTable *messages_layout[3] = {

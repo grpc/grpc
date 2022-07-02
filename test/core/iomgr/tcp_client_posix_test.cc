@@ -113,10 +113,10 @@ void test_succeeds(void) {
                                       .channel_args_preconditioning()
                                       .PreconditionChannelArgs(nullptr)
                                       .ToC();
-  auto config = grpc_event_engine::experimental::CreateEndpointConfig(args);
   int64_t connection_handle = grpc_tcp_client_connect(
-      &done, &g_connecting, g_pollset_set, *config, &resolved_addr,
-      grpc_core::Timestamp::InfFuture());
+      &done, &g_connecting, g_pollset_set,
+      grpc_event_engine::experimental::ChannelArgsEndpointConfig(args),
+      &resolved_addr, grpc_core::Timestamp::InfFuture());
   grpc_channel_args_destroy(args);
   /* await the connection */
   do {
@@ -168,10 +168,10 @@ void test_fails(void) {
 
   /* connect to a broken address */
   GRPC_CLOSURE_INIT(&done, must_fail, nullptr, grpc_schedule_on_exec_ctx);
-  auto config = grpc_event_engine::experimental::CreateEndpointConfig(nullptr);
   int64_t connection_handle = grpc_tcp_client_connect(
-      &done, &g_connecting, g_pollset_set, *config, &resolved_addr,
-      grpc_core::Timestamp::InfFuture());
+      &done, &g_connecting, g_pollset_set,
+      grpc_event_engine::experimental::ChannelArgsEndpointConfig(nullptr),
+      &resolved_addr, grpc_core::Timestamp::InfFuture());
   gpr_mu_lock(g_mu);
 
   /* wait for the connection callback to finish */
@@ -232,10 +232,10 @@ void test_connect_cancellation_succeeds(void) {
                                       .channel_args_preconditioning()
                                       .PreconditionChannelArgs(nullptr)
                                       .ToC();
-  auto config = grpc_event_engine::experimental::CreateEndpointConfig(args);
   int64_t connection_handle = grpc_tcp_client_connect(
-      &done, &g_connecting, g_pollset_set, *config, &resolved_addr,
-      grpc_core::Timestamp::InfFuture());
+      &done, &g_connecting, g_pollset_set,
+      grpc_event_engine::experimental::ChannelArgsEndpointConfig(args),
+      &resolved_addr, grpc_core::Timestamp::InfFuture());
   grpc_channel_args_destroy(args);
   GPR_ASSERT(connection_handle > 0);
   GPR_ASSERT(grpc_tcp_client_cancel_connect(connection_handle) == true);
@@ -260,9 +260,10 @@ void test_fails_bad_addr_no_leak(void) {
   gpr_mu_unlock(g_mu);
   // connect to an invalid address.
   GRPC_CLOSURE_INIT(&done, must_fail, nullptr, grpc_schedule_on_exec_ctx);
-  auto config = grpc_event_engine::experimental::CreateEndpointConfig(nullptr);
-  grpc_tcp_client_connect(&done, &g_connecting, g_pollset_set, *config,
-                          &resolved_addr, grpc_core::Timestamp::InfFuture());
+  grpc_tcp_client_connect(
+      &done, &g_connecting, g_pollset_set,
+      grpc_event_engine::experimental::ChannelArgsEndpointConfig(nullptr),
+      &resolved_addr, grpc_core::Timestamp::InfFuture());
   gpr_mu_lock(g_mu);
   while (g_connections_complete == connections_complete_before) {
     grpc_pollset_worker* worker = nullptr;

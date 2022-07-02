@@ -153,7 +153,7 @@ python_config_settings()
 # This should be updated along with build_handwritten.yaml
 g_stands_for = "garum"  # @unused
 
-core_version = "25.0.0"  # @unused
+core_version = "26.0.0"  # @unused
 
 version = "1.48.0-dev"  # @unused
 
@@ -1916,8 +1916,10 @@ grpc_cc_library(
     hdrs = [
         "src/core/lib/resource_quota/arena.h",
     ],
+    external_deps = ["absl/utility"],
     tags = ["grpc-autodeps"],
     deps = [
+        "construct_destruct",
         "context",
         "event_engine_memory_allocator",
         "gpr_base",
@@ -2571,7 +2573,6 @@ grpc_cc_library(
         "src/core/lib/iomgr/tcp_client_cfstream.cc",
         "src/core/lib/iomgr/tcp_client_posix.cc",
         "src/core/lib/iomgr/tcp_client_windows.cc",
-        "src/core/lib/iomgr/tcp_generic_options.cc",
         "src/core/lib/iomgr/tcp_posix.cc",
         "src/core/lib/iomgr/tcp_server.cc",
         "src/core/lib/iomgr/tcp_server_posix.cc",
@@ -2682,7 +2683,6 @@ grpc_cc_library(
         "src/core/lib/iomgr/socket_windows.h",
         "src/core/lib/iomgr/tcp_client.h",
         "src/core/lib/iomgr/tcp_client_posix.h",
-        "src/core/lib/iomgr/tcp_generic_options.h",
         "src/core/lib/iomgr/tcp_posix.h",
         "src/core/lib/iomgr/tcp_server.h",
         "src/core/lib/iomgr/tcp_server_utils_posix.h",
@@ -4391,6 +4391,7 @@ grpc_cc_library(
         "ref_counted",
         "ref_counted_ptr",
         "server_address",
+        "sockaddr_utils",
     ],
 )
 

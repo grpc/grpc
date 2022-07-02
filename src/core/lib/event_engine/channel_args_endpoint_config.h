@@ -32,16 +32,14 @@ class ChannelArgsEndpointConfig : public EndpointConfig {
       : args_(args) {}
   explicit ChannelArgsEndpointConfig(const grpc_channel_args* args)
       : args_(grpc_core::ChannelArgs::FromC(args)) {}
+  ChannelArgsEndpointConfig(const ChannelArgsEndpointConfig& config) = default;
+  ChannelArgsEndpointConfig& operator=(const ChannelArgsEndpointConfig& other) =
+      default;
   EndpointConfig::Setting Get(absl::string_view key) const override;
 
  private:
   grpc_core::ChannelArgs args_;
 };
-
-std::unique_ptr<EndpointConfig> CreateEndpointConfig(
-    const grpc_core::ChannelArgs& args);
-std::unique_ptr<EndpointConfig> CreateEndpointConfig(
-    const grpc_channel_args* args);
 
 }  // namespace experimental
 }  // namespace grpc_event_engine

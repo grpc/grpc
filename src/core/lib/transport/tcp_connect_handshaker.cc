@@ -160,10 +160,10 @@ void TCPConnectHandshaker::DoHandshake(grpc_tcp_server_acceptor* /*acceptor*/,
   // we don't want to pass args->endpoint directly.
   // Instead pass endpoint_ and swap this endpoint to
   // args endpoint on success.
-  auto config =
-      grpc_event_engine::experimental::CreateEndpointConfig(args->args);
-  grpc_tcp_client_connect(&connected_, &endpoint_to_destroy_,
-                          interested_parties_, *config, &addr_, args->deadline);
+  grpc_tcp_client_connect(
+      &connected_, &endpoint_to_destroy_, interested_parties_,
+      grpc_event_engine::experimental::ChannelArgsEndpointConfig(args->args),
+      &addr_, args->deadline);
 }
 
 void TCPConnectHandshaker::Connected(void* arg, grpc_error_handle error) {

@@ -51,11 +51,15 @@ UPB_INLINE google_protobuf_Duration* google_protobuf_Duration_parse_ex(const cha
   return ret;
 }
 UPB_INLINE char* google_protobuf_Duration_serialize(const google_protobuf_Duration* msg, upb_Arena* arena, size_t* len) {
-  return upb_Encode(msg, &google_protobuf_Duration_msginit, 0, arena, len);
+  char* ptr;
+  (void)upb_Encode(msg, &google_protobuf_Duration_msginit, 0, arena, &ptr, len);
+  return ptr;
 }
 UPB_INLINE char* google_protobuf_Duration_serialize_ex(const google_protobuf_Duration* msg, int options,
                                  upb_Arena* arena, size_t* len) {
-  return upb_Encode(msg, &google_protobuf_Duration_msginit, options, arena, len);
+  char* ptr;
+  (void)upb_Encode(msg, &google_protobuf_Duration_msginit, options, arena, &ptr, len);
+  return ptr;
 }
 UPB_INLINE void google_protobuf_Duration_clear_seconds(const google_protobuf_Duration* msg) {
   *UPB_PTR_AT(msg, UPB_SIZE(8, 8), int64_t) = 0;

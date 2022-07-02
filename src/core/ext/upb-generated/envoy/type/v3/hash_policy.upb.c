@@ -28,13 +28,13 @@ static const upb_MiniTable_Field envoy_type_v3_HashPolicy__fields[2] = {
 const upb_MiniTable envoy_type_v3_HashPolicy_msginit = {
   &envoy_type_v3_HashPolicy_submsgs[0],
   &envoy_type_v3_HashPolicy__fields[0],
-  UPB_SIZE(8, 24), 2, kUpb_ExtMode_NonExtendable, 2, 255, 0,
+  UPB_SIZE(8, 16), 2, kUpb_ExtMode_NonExtendable, 2, 255, 0,
 };
 
 const upb_MiniTable envoy_type_v3_HashPolicy_SourceIp_msginit = {
   NULL,
   NULL,
-  UPB_SIZE(0, 8), 0, kUpb_ExtMode_NonExtendable, 0, 255, 0,
+  UPB_SIZE(0, 0), 0, kUpb_ExtMode_NonExtendable, 0, 255, 0,
 };
 
 static const upb_MiniTable_Field envoy_type_v3_HashPolicy_FilterState__fields[1] = {
@@ -44,7 +44,7 @@ static const upb_MiniTable_Field envoy_type_v3_HashPolicy_FilterState__fields[1]
 const upb_MiniTable envoy_type_v3_HashPolicy_FilterState_msginit = {
   NULL,
   &envoy_type_v3_HashPolicy_FilterState__fields[0],
-  UPB_SIZE(8, 24), 1, kUpb_ExtMode_NonExtendable, 1, 255, 0,
+  UPB_SIZE(8, 16), 1, kUpb_ExtMode_NonExtendable, 1, 255, 0,
 };
 
 static const upb_MiniTable *messages_layout[3] = {
