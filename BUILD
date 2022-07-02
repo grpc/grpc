@@ -3799,6 +3799,7 @@ grpc_cc_library(
         "src/core/lib/security/credentials/xds/xds_credentials.h",
     ],
     external_deps = [
+        "absl/base:core_headers",
         "absl/container:inlined_vector",
         "absl/functional:bind_front",
         "absl/memory",
