@@ -1173,8 +1173,6 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/lib/iomgr/tcp_client_posix.cc )
   s.files += %w( src/core/lib/iomgr/tcp_client_posix.h )
   s.files += %w( src/core/lib/iomgr/tcp_client_windows.cc )
-  s.files += %w( src/core/lib/iomgr/tcp_generic_options.cc )
-  s.files += %w( src/core/lib/iomgr/tcp_generic_options.h )
   s.files += %w( src/core/lib/iomgr/tcp_posix.cc )
   s.files += %w( src/core/lib/iomgr/tcp_posix.h )
   s.files += %w( src/core/lib/iomgr/tcp_server.cc )

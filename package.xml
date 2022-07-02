@@ -1155,8 +1155,6 @@
     <file baseinstalldir="/" name="src/core/lib/iomgr/tcp_client_posix.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/tcp_client_posix.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/tcp_client_windows.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/iomgr/tcp_generic_options.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/iomgr/tcp_generic_options.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/tcp_posix.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/tcp_posix.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/tcp_server.cc" role="src" />
