@@ -2752,6 +2752,7 @@ grpc_cc_library(
         "context",
         "cpp_impl_of",
         "debug_location",
+
         "dual_ref_counted",
         "error",
         "event_engine_base",
@@ -4715,7 +4716,6 @@ grpc_cc_library(
         "absl/status:statusor",
         "absl/strings",
         "absl/strings:str_format",
-        "absl/time",
         "address_sorting",
         "cares",
     ],
