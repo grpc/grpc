@@ -40,6 +40,7 @@
 #include <grpc/support/log.h>
 
 #include "src/core/ext/xds/xds_client.h"
+#include "src/core/ext/xds/xds_client_grpc.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/gpr/env.h"

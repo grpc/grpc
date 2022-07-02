@@ -3751,6 +3751,7 @@ grpc_cc_library(
         "src/core/ext/xds/xds_bootstrap.cc",
         "src/core/ext/xds/xds_certificate_provider.cc",
         "src/core/ext/xds/xds_client.cc",
+        "src/core/ext/xds/xds_client_grpc.cc",
         "src/core/ext/xds/xds_client_stats.cc",
         "src/core/ext/xds/xds_cluster.cc",
         "src/core/ext/xds/xds_cluster_specifier_plugin.cc",
@@ -3764,6 +3765,7 @@ grpc_cc_library(
         "src/core/ext/xds/xds_resource_type.cc",
         "src/core/ext/xds/xds_route_config.cc",
         "src/core/ext/xds/xds_routing.cc",
+        "src/core/ext/xds/xds_transport_grpc.cc",
         "src/core/lib/security/credentials/xds/xds_credentials.cc",
     ],
     hdrs = [
@@ -3777,6 +3779,7 @@ grpc_cc_library(
         "src/core/ext/xds/xds_certificate_provider.h",
         "src/core/ext/xds/xds_channel_args.h",
         "src/core/ext/xds/xds_client.h",
+        "src/core/ext/xds/xds_client_grpc.h",
         "src/core/ext/xds/xds_client_stats.h",
         "src/core/ext/xds/xds_cluster.h",
         "src/core/ext/xds/xds_cluster_specifier_plugin.h",
@@ -3791,6 +3794,8 @@ grpc_cc_library(
         "src/core/ext/xds/xds_resource_type_impl.h",
         "src/core/ext/xds/xds_route_config.h",
         "src/core/ext/xds/xds_routing.h",
+        "src/core/ext/xds/xds_transport.h",
+        "src/core/ext/xds/xds_transport_grpc.h",
         "src/core/lib/security/credentials/xds/xds_credentials.h",
     ],
     external_deps = [
