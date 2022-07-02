@@ -33,6 +33,8 @@
 #include "src/core/lib/iomgr/sockaddr.h"
 #endif
 
+#ifdef GRPC_POSIX_SOCKET_TCP
+
 #include "src/core/lib/event_engine/channel_args_endpoint_config.h"
 
 using ::grpc_event_engine::experimental::EndpointConfig;
@@ -113,6 +115,8 @@ PosixTcpOptions TcpOptionsFromEndpointConfig(const EndpointConfig& config) {
   }
   return options;
 }
+
+#endif /* GRPC_POSIX_SOCKET_TCP */
 
 #ifdef GRPC_POSIX_SOCKETUTILS
 
