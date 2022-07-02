@@ -2752,10 +2752,8 @@ grpc_cc_library(
         "context",
         "cpp_impl_of",
         "debug_location",
-
         "dual_ref_counted",
         "error",
-        "event_engine_base",
         "exec_ctx",
         "gpr_base",
         "gpr_codegen",
