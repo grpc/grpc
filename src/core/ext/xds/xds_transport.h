@@ -73,8 +73,6 @@ class XdsTransportFactory : public InternallyRefCounted<XdsTransportFactory> {
     virtual void ResetBackoff() = 0;
   };
 
-  ~XdsTransportFactory() override = default;
-
   // Creates a new transport for the specified server.
   // The on_connectivity_failure callback will be invoked whenever there is
   // a connectivity failure on the transport.
