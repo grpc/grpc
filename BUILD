@@ -2346,6 +2346,7 @@ grpc_cc_library(
     ],
     deps = [
         "event_engine_base_hdrs",
+        "time",
     ],
 )
 
