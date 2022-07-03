@@ -237,11 +237,22 @@ class ClientConnectedCallPromise {
       : impl_(GetContext<Arena>()->ManagedNew<Impl>(transport,
                                                     std::move(call_args))) {}
 
+  ~ClientConnectedCallPromise() {
+    if (impl_ != nullptr) {
+      impl_->DropStream();
+    }
+  }
+
   ClientConnectedCallPromise(const ClientConnectedCallPromise&) = delete;
   ClientConnectedCallPromise& operator=(const ClientConnectedCallPromise&) =
       delete;
-  ClientConnectedCallPromise(ClientConnectedCallPromise&&) = default;
-  ClientConnectedCallPromise& operator=(ClientConnectedCallPromise&&) = default;
+  ClientConnectedCallPromise(ClientConnectedCallPromise&& other) noexcept
+      : impl_(absl::exchange(other.impl_, nullptr)) {}
+  ClientConnectedCallPromise& operator=(
+      ClientConnectedCallPromise&& other) noexcept {
+    impl_ = absl::exchange(impl_, other.impl_);
+    return *this;
+  }
 
   static ArenaPromise<ServerMetadataHandle> Make(grpc_transport* transport,
                                                  CallArgs call_args) {
@@ -266,6 +277,8 @@ class ClientConnectedCallPromise {
               "intitial_metadata=%s",
               client_initial_metadata_->DebugString().c_str());
     }
+
+    void DropStream() { stream_.reset(); }
 
     Poll<ServerMetadataHandle> PollOnce() {
       GPR_ASSERT(!finished_);
@@ -309,6 +322,7 @@ class ClientConnectedCallPromise {
         batch_payload_.recv_trailing_metadata.recv_trailing_metadata_ready =
             &recv_trailing_metadata_ready_;
         push_metadata_ = true;
+        call_context_->IncrementRefCount("metadata_batch_done");
         initial_metadata_waker_ = Activity::current()->MakeOwningWaker();
         trailing_metadata_waker_ = Activity::current()->MakeOwningWaker();
         SchedulePush();
@@ -329,7 +343,6 @@ class ClientConnectedCallPromise {
             send_message_.send_message = true;
             batch_payload_.send_message.send_message = msg.payload();
             batch_payload_.send_message.flags = msg.flags();
-            send_message_waker_ = Activity::current()->MakeOwningWaker();
           } else {
             GPR_ASSERT(!absl::holds_alternative<Closed>(send_message_state_));
             client_trailing_metadata_ =
@@ -341,6 +354,7 @@ class ClientConnectedCallPromise {
             // DO NOT SUBMIT: figure this field out
             batch_payload_.send_trailing_metadata.sent = nullptr;
           }
+          send_message_waker_ = Activity::current()->MakeOwningWaker();
           push_send_message_ = true;
           SchedulePush();
         }
@@ -388,11 +402,14 @@ class ClientConnectedCallPromise {
       trailing_metadata_waker_.Wakeup();
     }
 
-    void MetadataBatchDone(grpc_error_handle) {}
+    void MetadataBatchDone(grpc_error_handle) {
+      call_context_->Unref("metadata_batch_done");
+    }
 
     void SendMessageBatchDone(grpc_error_handle) {
-      if (absl::holds_alternative<Closed>(send_message_state_)) return;
-      send_message_state_ = Idle{};
+      if (!absl::holds_alternative<Closed>(send_message_state_)) {
+        send_message_state_ = Idle{};
+      }
       send_message_waker_.Wakeup();
     }
 

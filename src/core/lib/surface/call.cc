@@ -2250,10 +2250,12 @@ void ClientPromiseBasedCall::CommitBatch(const grpc_op* ops, size_t nops,
         // compression not implemented
         GPR_ASSERT(
             !op.data.send_initial_metadata.maybe_compression_level.is_set);
-        CToMetadata(op.data.send_initial_metadata.metadata,
-                    op.data.send_initial_metadata.count,
-                    send_initial_metadata_.get());
-        StartPromise(std::move(send_initial_metadata_));
+        if (!completed_) {
+          CToMetadata(op.data.send_initial_metadata.metadata,
+                      op.data.send_initial_metadata.count,
+                      send_initial_metadata_.get());
+          StartPromise(std::move(send_initial_metadata_));
+        }
       } break;
       case GRPC_OP_RECV_INITIAL_METADATA: {
         recv_initial_metadata_ =
