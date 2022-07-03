@@ -5056,11 +5056,8 @@ grpc_cc_library(
     hdrs = [
         "src/core/tsi/fake_transport_security.h",
     ],
-    external_deps = [
-        "absl/strings",
-        "absl/strings:str_format",
-    ],
     language = "c++",
+    tags = ["grpc-autodeps"],
     visibility = [
         "@grpc:public",
     ],
@@ -5153,8 +5150,9 @@ grpc_cc_library(
         "src/core/tsi/local_transport_security.h",
     ],
     language = "c++",
+    tags = ["grpc-autodeps"],
     deps = [
-        "gpr",
+        "gpr_base",
         "grpc_base",
         "tsi_base",
     ],
@@ -5806,16 +5804,16 @@ grpc_cc_library(
         "src/core/tsi/ssl/session_cache/ssl_session_cache.h",
     ],
     external_deps = [
-        "absl/strings",
         "absl/memory",
         "libssl",
-        "libcrypto",
     ],
     language = "c++",
+    tags = ["grpc-autodeps"],
     visibility = ["@grpc:public"],
     deps = [
         "gpr_base",
         "grpc_base",
+        "ref_counted",
     ],
 )
 
