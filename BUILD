@@ -6787,6 +6787,7 @@ grpc_cc_library(
         "grpc_no_xds": [],
         "//conditions:default": ["//:grpcpp_csds"],
     }],
+    tags = ["grpc-autodeps"],
     deps = [
         "gpr",
         "grpc++",
