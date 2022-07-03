@@ -3815,6 +3815,7 @@ grpc_cc_library(
         "channel_fwd",
         "config",
         "debug_location",
+        "default_event_engine_factory_hdrs",
         "envoy_admin_upb",
         "envoy_config_cluster_upb",
         "envoy_config_cluster_upbdefs",
