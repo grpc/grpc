@@ -205,8 +205,6 @@ class XdsClient : public DualRefCounted<XdsClient> {
         ABSL_EXCLUSIVE_LOCKS_REQUIRED(&XdsClient::mu_);
 
    private:
-    class StateWatcher;
-
     void OnConnectivityStateChange(absl::Status status);
 
     // The owning xds client.

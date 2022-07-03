@@ -47,7 +47,6 @@
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/timer.h"
-#include "src/core/lib/transport/connectivity_state.h"
 #include "src/core/lib/uri/uri_parser.h"
 
 #define GRPC_XDS_INITIAL_CONNECT_BACKOFF_SECONDS 1
@@ -414,20 +413,6 @@ class XdsClient::ChannelState::LrsCallState
   std::set<std::string> cluster_names_;  // Asked for by the LRS server.
   Duration load_reporting_interval_;
   OrphanablePtr<Reporter> reporter_;
-};
-
-//
-// XdsClient::ChannelState::StateWatcher
-//
-
-class XdsClient::ChannelState::StateWatcher
-    : public AsyncConnectivityStateWatcherInterface {
- public:
-  explicit StateWatcher(WeakRefCountedPtr<ChannelState> parent)
-      : parent_(std::move(parent)) {}
-
- private:
-  WeakRefCountedPtr<ChannelState> parent_;
 };
 
 //
