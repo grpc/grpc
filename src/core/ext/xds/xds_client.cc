@@ -1277,7 +1277,7 @@ void XdsClient::ChannelState::LrsCallState::MaybeStartReportingLocked() {
       Ref(DEBUG_LOCATION, "LRS+load_report+start"), load_reporting_interval_);
 }
 
-void XdsClient::ChannelState::LrsCallState::OnRequestSent(bool ok) {
+void XdsClient::ChannelState::LrsCallState::OnRequestSent(bool /*ok*/) {
   MutexLock lock(&xds_client()->mu_);
   if (reporter_ != nullptr) {
     reporter_->OnReportDoneLocked();
