@@ -23,6 +23,7 @@
 #include <memory>
 #include <random>
 #include <string>
+#include <type_traits>
 #include <utility>
 
 #include "absl/memory/memory.h"
