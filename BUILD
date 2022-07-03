@@ -1015,11 +1015,13 @@ grpc_cc_library(
 grpc_cc_library(
     name = "unique_type_name",
     hdrs = ["src/core/lib/gprpp/unique_type_name.h"],
-    external_deps = [
-        "absl/strings",
-    ],
+    external_deps = ["absl/strings"],
     language = "c++",
-    deps = ["useful"],
+    tags = ["grpc-autodeps"],
+    deps = [
+        "gpr_platform",
+        "useful",
+    ],
 )
 
 grpc_cc_library(
@@ -1082,6 +1084,7 @@ grpc_cc_library(
     public_hdrs = [
         "src/core/lib/config/core_configuration.h",
     ],
+    tags = ["grpc-autodeps"],
     visibility = ["@grpc:client_channel"],
     deps = [
         "channel_args_preconditioning",

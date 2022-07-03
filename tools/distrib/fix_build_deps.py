@@ -251,7 +251,10 @@ def grpc_cc_library(name,
                     deps=[],
                     external_deps=[],
                     **kwargs):
+    global args
     if select_deps or 'nofixdeps' in tags or 'grpc-autodeps' not in tags:
+        if args.whats_left and not select_deps and 'nofixdeps' not in tags:
+            print("Not opted in: {}".format(name))
         no_update.add(name)
     scores[name] = len(public_hdrs + hdrs)
     # avoid_dep is the internal way of saying prefer something else
@@ -341,6 +344,7 @@ parser.add_argument('--score',
                     default='edit_distance',
                     help='scoring function to use: one of ' +
                     ', '.join(SCORERS.keys()))
+parser.add_argument('--whats_left', action='store_true', default=False, help='show what is left to opt in')
 args = parser.parse_args()
 
 exec(
