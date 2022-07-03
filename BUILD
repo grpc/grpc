@@ -4606,9 +4606,10 @@ grpc_cc_library(
         "src/cpp/server/load_reporter/get_cpu_stats.h",
     ],
     language = "c++",
+    tags = ["grpc-autodeps"],
     deps = [
         "gpr_base",
-        "grpc++",
+        "gpr_platform",
     ],
 )
 
