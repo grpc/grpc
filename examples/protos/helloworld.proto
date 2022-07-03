@@ -20,11 +20,11 @@ option java_outer_classname = "HelloWorldProto";
 option objc_class_prefix = "HLW";
 
 package helloworld;
-
-// The greeting service definition.
 service Greeter {
   // Sends a greeting
   rpc SayHello (HelloRequest) returns (HelloReply) {}
+  // Sends another greeting
+  rpc SayHelloAgain (HelloRequest) returns (HelloReply) {}
 }
 
 // The request message containing the user's name.
