@@ -6330,9 +6330,10 @@ grpc_cc_library(
         "src/core/tsi/transport_security_interface.h",
     ],
     language = "c++",
+    tags = ["grpc-autodeps"],
     visibility = ["@grpc:tsi_interface"],
     deps = [
-        "gpr",
+        "gpr_base",
         "grpc_trace",
     ],
 )
