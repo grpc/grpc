@@ -344,7 +344,10 @@ parser.add_argument('--score',
                     default='edit_distance',
                     help='scoring function to use: one of ' +
                     ', '.join(SCORERS.keys()))
-parser.add_argument('--whats_left', action='store_true', default=False, help='show what is left to opt in')
+parser.add_argument('--whats_left',
+                    action='store_true',
+                    default=False,
+                    help='show what is left to opt in')
 args = parser.parse_args()
 
 exec(
