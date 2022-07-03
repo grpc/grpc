@@ -5984,16 +5984,14 @@ grpc_cc_library(
     hdrs = [
         "include/grpcpp/security/authorization_policy_provider.h",
     ],
-    external_deps = [
-        "absl/synchronization",
-        "protobuf_headers",
-    ],
     language = "c++",
+    tags = ["grpc-autodeps"],
     deps = [
         "gpr_base",
         "grpc++",
         "grpc++_codegen_base",
         "grpc_authorization_provider",
+        "grpc_public_hdrs",
     ],
 )
 
