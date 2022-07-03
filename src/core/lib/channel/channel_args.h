@@ -24,6 +24,7 @@
 #include <stddef.h>
 
 #include <algorithm>  // IWYU pragma: keep
+#include <memory>
 #include <string>
 #include <type_traits>
 #include <utility>
