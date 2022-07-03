@@ -301,6 +301,7 @@ void GrpcXdsTransportFactory::GrpcXdsTransport::Orphan() {
       ClientChannel::GetFromChannel(Channel::FromC(channel_));
   GPR_ASSERT(client_channel != nullptr);
   client_channel->RemoveConnectivityWatcher(watcher_);
+  Unref();
 }
 
 OrphanablePtr<XdsTransportFactory::XdsTransport::StreamingCall>
