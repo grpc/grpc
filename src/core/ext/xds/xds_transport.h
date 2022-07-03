@@ -55,12 +55,9 @@ class XdsTransportFactory : public InternallyRefCounted<XdsTransportFactory> {
 
       // Sends a message on the stream.  When the message has been sent,
       // the EventHandler::OnRequestSent() method will be called.
+      // Only one message will be in flight at a time; subsequent
+      // messages will not be sent until this one is done.
       virtual void SendMessage(std::string payload) = 0;
-
-      // Returns true if a SendMessage() operation is in flight (i.e.,
-      // SendMessage() has been called but EventHandler::OnRequestSent()
-      // has not yet been called).
-      virtual bool SendMessagePending() = 0;
     };
 
     // Create a streaming call on this transport for the specified method.

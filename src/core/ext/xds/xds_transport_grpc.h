@@ -99,8 +99,6 @@ class GrpcXdsTransportFactory::GrpcXdsTransport::GrpcStreamingCall
 
   void SendMessage(std::string payload) override;
 
-  bool SendMessagePending() override;
-
  private:
   static void OnRequestSent(void* arg, grpc_error_handle error);
   static void OnResponseReceived(void* arg, grpc_error_handle /*error*/);

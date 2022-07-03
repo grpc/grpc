@@ -170,11 +170,6 @@ void GrpcXdsTransportFactory::GrpcXdsTransport::GrpcStreamingCall::SendMessage(
   GPR_ASSERT(GRPC_CALL_OK == call_error);
 }
 
-bool GrpcXdsTransportFactory::GrpcXdsTransport::GrpcStreamingCall::
-    SendMessagePending() {
-  return send_message_payload_ != nullptr;
-}
-
 void GrpcXdsTransportFactory::GrpcXdsTransport::GrpcStreamingCall::
     OnRequestSent(void* arg, grpc_error_handle error) {
   auto* self = static_cast<GrpcStreamingCall*>(arg);

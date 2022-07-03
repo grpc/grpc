@@ -314,6 +314,7 @@ class XdsClient::ChannelState::AdsCallState
 
   bool sent_initial_message_ = false;
   bool seen_response_ = false;
+  bool send_message_pending_ ABSL_GUARDED_BY(&XdsClient::mu_) = false;
 
   // Resource types for which requests need to be sent.
   std::set<const XdsResourceType*> buffered_requests_;
@@ -331,7 +332,8 @@ class XdsClient::ChannelState::LrsCallState
 
   void Orphan() override;
 
-  void MaybeStartReportingLocked();
+  void MaybeStartReportingLocked()
+      ABSL_EXCLUSIVE_LOCKS_REQUIRED(&XdsClient::mu_);
 
   RetryableCall<LrsCallState>* parent() { return parent_.get(); }
   ChannelState* chand() const { return parent_->chand(); }
@@ -407,6 +409,7 @@ class XdsClient::ChannelState::LrsCallState
   OrphanablePtr<XdsTransportFactory::XdsTransport::StreamingCall> call_;
 
   bool seen_response_ = false;
+  bool send_message_pending_ ABSL_GUARDED_BY(&XdsClient::mu_) = false;
 
   // Load reporting state.
   bool send_all_clusters_ = false;
@@ -880,7 +883,7 @@ void XdsClient::ChannelState::AdsCallState::SendMessageLocked(
     const XdsResourceType* type)
     ABSL_EXCLUSIVE_LOCKS_REQUIRED(&XdsClient::mu_) {
   // Buffer message sending if an existing message is in flight.
-  if (call_->SendMessagePending()) {
+  if (send_message_pending_) {
     buffered_requests_.insert(type);
     return;
   }
@@ -904,6 +907,7 @@ void XdsClient::ChannelState::AdsCallState::SendMessageLocked(
   GRPC_ERROR_UNREF(state.error);
   state.error = GRPC_ERROR_NONE;
   call_->SendMessage(std::move(serialized_message));
+  send_message_pending_ = true;
 }
 
 void XdsClient::ChannelState::AdsCallState::SubscribeLocked(
@@ -936,6 +940,7 @@ bool XdsClient::ChannelState::AdsCallState::HasSubscribedResources() const {
 
 void XdsClient::ChannelState::AdsCallState::OnRequestSent(bool ok) {
   MutexLock lock(&xds_client()->mu_);
+  send_message_pending_ = false;
   if (ok && IsCurrentCallOnChannel()) {
     // Continue to send another pending message if any.
     // TODO(roth): The current code to handle buffered messages has the
@@ -1187,6 +1192,7 @@ bool XdsClient::ChannelState::LrsCallState::Reporter::SendReportLocked() {
   std::string serialized_payload =
       xds_client()->api_.CreateLrsRequest(std::move(snapshot));
   parent_->call_->SendMessage(std::move(serialized_payload));
+  parent_->send_message_pending_ = true;
   return false;
 }
 
@@ -1246,6 +1252,7 @@ XdsClient::ChannelState::LrsCallState::LrsCallState(
   std::string serialized_payload =
       xds_client()->api_.CreateLrsInitialRequest(chand()->server_);
   call_->SendMessage(std::move(serialized_payload));
+  send_message_pending_ = true;
 }
 
 void XdsClient::ChannelState::LrsCallState::Orphan() {
@@ -1261,7 +1268,7 @@ void XdsClient::ChannelState::LrsCallState::MaybeStartReportingLocked() {
   if (reporter_ != nullptr) return;
   // Don't start if the previous send_message op (of the initial request or the
   // last report of the previous reporter) hasn't completed.
-  if (call_ != nullptr && call_->SendMessagePending()) return;
+  if (call_ != nullptr && send_message_pending_) return;
   // Don't start if no LRS response has arrived.
   if (!seen_response()) return;
   // Don't start if the ADS call hasn't received any valid response. Note that
@@ -1279,6 +1286,7 @@ void XdsClient::ChannelState::LrsCallState::MaybeStartReportingLocked() {
 
 void XdsClient::ChannelState::LrsCallState::OnRequestSent(bool /*ok*/) {
   MutexLock lock(&xds_client()->mu_);
+  send_message_pending_ = false;
   if (reporter_ != nullptr) {
     reporter_->OnReportDoneLocked();
   } else {
