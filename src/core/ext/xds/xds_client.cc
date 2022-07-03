@@ -971,101 +971,104 @@ void XdsClient::ChannelState::AdsCallState::OnRequestSent(bool ok) {
 
 void XdsClient::ChannelState::AdsCallState::OnRecvMessage(
     absl::string_view payload) {
-  MutexLock lock(&xds_client()->mu_);
-  if (!IsCurrentCallOnChannel()) return;
-  // Parse and validate the response.
-  AdsResponseParser parser(this);
-  absl::Status status =
-      xds_client()->api_.ParseAdsResponse(chand()->server_, payload, &parser);
-  if (!status.ok()) {
-    // Ignore unparsable response.
-    gpr_log(GPR_ERROR,
-            "[xds_client %p] xds server %s: error parsing ADS response (%s) "
-            "-- ignoring",
+  {
+    MutexLock lock(&xds_client()->mu_);
+    if (!IsCurrentCallOnChannel()) return;
+    // Parse and validate the response.
+    AdsResponseParser parser(this);
+    absl::Status status =
+        xds_client()->api_.ParseAdsResponse(chand()->server_, payload, &parser);
+    if (!status.ok()) {
+      // Ignore unparsable response.
+      gpr_log(GPR_ERROR,
+              "[xds_client %p] xds server %s: error parsing ADS response (%s) "
+              "-- ignoring",
+              xds_client(), chand()->server_.server_uri.c_str(),
+              status.ToString().c_str());
+    } else {
+      seen_response_ = true;
+      AdsResponseParser::Result result = parser.TakeResult();
+      // Update nonce.
+      auto& state = state_map_[result.type];
+      state.nonce = result.nonce;
+      // If we got an error, set state.error so that we'll NACK the update.
+      if (!result.errors.empty()) {
+        std::string error = absl::StrJoin(result.errors, "; ");
+        gpr_log(
+            GPR_ERROR,
+            "[xds_client %p] xds server %s: ADS response invalid for resource "
+            "type %s version %s, will NACK: nonce=%s error=%s",
             xds_client(), chand()->server_.server_uri.c_str(),
-            status.ToString().c_str());
-  } else {
-    seen_response_ = true;
-    AdsResponseParser::Result result = parser.TakeResult();
-    // Update nonce.
-    auto& state = state_map_[result.type];
-    state.nonce = result.nonce;
-    // If we got an error, set state.error so that we'll NACK the update.
-    if (!result.errors.empty()) {
-      std::string error = absl::StrJoin(result.errors, "; ");
-      gpr_log(
-          GPR_ERROR,
-          "[xds_client %p] xds server %s: ADS response invalid for resource "
-          "type %s version %s, will NACK: nonce=%s error=%s",
-          xds_client(), chand()->server_.server_uri.c_str(),
-          result.type_url.c_str(), result.version.c_str(), state.nonce.c_str(),
-          error.c_str());
-      GRPC_ERROR_UNREF(state.error);
-      state.error = grpc_error_set_int(GRPC_ERROR_CREATE_FROM_CPP_STRING(error),
-                                       GRPC_ERROR_INT_GRPC_STATUS,
-                                       GRPC_STATUS_UNAVAILABLE);
-    }
-    // Delete resources not seen in update if needed.
-    if (result.type->AllResourcesRequiredInSotW()) {
-      for (auto& a : xds_client()->authority_state_map_) {
-        const std::string& authority = a.first;
-        AuthorityState& authority_state = a.second;
-        // Skip authorities that are not using this xDS channel.
-        if (authority_state.channel_state != chand()) continue;
-        auto seen_authority_it = result.resources_seen.find(authority);
-        // Find this resource type.
-        auto type_it = authority_state.resource_map.find(result.type);
-        if (type_it == authority_state.resource_map.end()) continue;
-        // Iterate over resource ids.
-        for (auto& r : type_it->second) {
-          const XdsResourceKey& resource_key = r.first;
-          ResourceState& resource_state = r.second;
-          if (seen_authority_it == result.resources_seen.end() ||
-              seen_authority_it->second.find(resource_key) ==
-                  seen_authority_it->second.end()) {
-            // If the resource was newly requested but has not yet been
-            // received, we don't want to generate an error for the watchers,
-            // because this ADS response may be in reaction to an earlier
-            // request that did not yet request the new resource, so its absence
-            // from the response does not necessarily indicate that the resource
-            // does not exist.  For that case, we rely on the request timeout
-            // instead.
-            if (resource_state.resource == nullptr) continue;
-            if (chand()->server_.IgnoreResourceDeletion()) {
-              if (!resource_state.ignored_deletion) {
-                gpr_log(GPR_ERROR,
-                        "[xds_client %p] xds server %s: ignoring deletion "
-                        "for resource type %s name %s",
-                        xds_client(), chand()->server_.server_uri.c_str(),
-                        result.type_url.c_str(),
-                        XdsClient::ConstructFullXdsResourceName(
-                            authority, result.type_url.c_str(), resource_key)
-                            .c_str());
-                resource_state.ignored_deletion = true;
+            result.type_url.c_str(), result.version.c_str(),
+            state.nonce.c_str(), error.c_str());
+        GRPC_ERROR_UNREF(state.error);
+        state.error = grpc_error_set_int(
+            GRPC_ERROR_CREATE_FROM_CPP_STRING(error),
+            GRPC_ERROR_INT_GRPC_STATUS, GRPC_STATUS_UNAVAILABLE);
+      }
+      // Delete resources not seen in update if needed.
+      if (result.type->AllResourcesRequiredInSotW()) {
+        for (auto& a : xds_client()->authority_state_map_) {
+          const std::string& authority = a.first;
+          AuthorityState& authority_state = a.second;
+          // Skip authorities that are not using this xDS channel.
+          if (authority_state.channel_state != chand()) continue;
+          auto seen_authority_it = result.resources_seen.find(authority);
+          // Find this resource type.
+          auto type_it = authority_state.resource_map.find(result.type);
+          if (type_it == authority_state.resource_map.end()) continue;
+          // Iterate over resource ids.
+          for (auto& r : type_it->second) {
+            const XdsResourceKey& resource_key = r.first;
+            ResourceState& resource_state = r.second;
+            if (seen_authority_it == result.resources_seen.end() ||
+                seen_authority_it->second.find(resource_key) ==
+                    seen_authority_it->second.end()) {
+              // If the resource was newly requested but has not yet been
+              // received, we don't want to generate an error for the watchers,
+              // because this ADS response may be in reaction to an earlier
+              // request that did not yet request the new resource, so its
+              // absence from the response does not necessarily indicate that
+              // the resource does not exist.  For that case, we rely on the
+              // request timeout instead.
+              if (resource_state.resource == nullptr) continue;
+              if (chand()->server_.IgnoreResourceDeletion()) {
+                if (!resource_state.ignored_deletion) {
+                  gpr_log(GPR_ERROR,
+                          "[xds_client %p] xds server %s: ignoring deletion "
+                          "for resource type %s name %s",
+                          xds_client(), chand()->server_.server_uri.c_str(),
+                          result.type_url.c_str(),
+                          XdsClient::ConstructFullXdsResourceName(
+                              authority, result.type_url.c_str(), resource_key)
+                              .c_str());
+                  resource_state.ignored_deletion = true;
+                }
+              } else {
+                resource_state.resource.reset();
+                xds_client()->NotifyWatchersOnResourceDoesNotExist(
+                    resource_state.watchers);
               }
-            } else {
-              resource_state.resource.reset();
-              xds_client()->NotifyWatchersOnResourceDoesNotExist(
-                  resource_state.watchers);
             }
           }
         }
       }
-    }
-    // If we had valid resources, update the version.
-    if (result.have_valid_resources) {
-      chand()->resource_type_version_map_[result.type] =
-          std::move(result.version);
-      // Start load reporting if needed.
-      auto& lrs_call = chand()->lrs_calld_;
-      if (lrs_call != nullptr) {
-        LrsCallState* lrs_calld = lrs_call->calld();
-        if (lrs_calld != nullptr) lrs_calld->MaybeStartReportingLocked();
+      // If we had valid resources, update the version.
+      if (result.have_valid_resources) {
+        chand()->resource_type_version_map_[result.type] =
+            std::move(result.version);
+        // Start load reporting if needed.
+        auto& lrs_call = chand()->lrs_calld_;
+        if (lrs_call != nullptr) {
+          LrsCallState* lrs_calld = lrs_call->calld();
+          if (lrs_calld != nullptr) lrs_calld->MaybeStartReportingLocked();
+        }
       }
+      // Send ACK or NACK.
+      SendMessageLocked(result.type);
     }
-    // Send ACK or NACK.
-    SendMessageLocked(result.type);
   }
+  xds_client()->work_serializer_.DrainQueue();
 }
 
 void XdsClient::ChannelState::AdsCallState::OnStatusReceived(
