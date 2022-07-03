@@ -12936,7 +12936,6 @@ target_include_directories(lb_get_cpu_stats_test
 target_link_libraries(lb_get_cpu_stats_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
-  grpc++
   grpc_test_util
 )
 

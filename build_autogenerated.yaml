@@ -6807,7 +6807,6 @@ targets:
   - src/cpp/server/load_reporter/get_cpu_stats_windows.cc
   - test/cpp/server/load_reporter/get_cpu_stats_test.cc
   deps:
-  - grpc++
   - grpc_test_util
 - name: lb_load_data_store_test
   gtest: true
