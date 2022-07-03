@@ -26,6 +26,7 @@
 #include "absl/status/statusor.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
+#include "upb/arena.h"
 #include "upb/def.h"
 #include "upb/upb.h"
 

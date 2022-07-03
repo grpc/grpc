@@ -217,7 +217,7 @@ static PyObject* PyUpb_DescriptorPool_DoAddSerializedFile(
       goto done;
     }
     const upb_MessageDef* m = PyUpb_DescriptorPool_GetFileProtoDef();
-    if (PyUpb_Message_IsEqual(proto, existing, m)) {
+    if (upb_Message_IsEqual(proto, existing, m)) {
       Py_INCREF(Py_None);
       result = Py_None;
       goto done;
@@ -249,8 +249,8 @@ done:
 
 static PyObject* PyUpb_DescriptorPool_DoAdd(PyObject* _self,
                                             PyObject* file_desc) {
-  if (!PyUpb_CMessage_Verify(file_desc)) return NULL;
-  const upb_MessageDef* m = PyUpb_CMessage_GetMsgdef(file_desc);
+  if (!PyUpb_Message_Verify(file_desc)) return NULL;
+  const upb_MessageDef* m = PyUpb_Message_GetMsgdef(file_desc);
   const char* file_proto_name =
       PYUPB_DESCRIPTOR_PROTO_PACKAGE ".FileDescriptorProto";
   if (strcmp(upb_MessageDef_FullName(m), file_proto_name) != 0) {
@@ -259,7 +259,7 @@ static PyObject* PyUpb_DescriptorPool_DoAdd(PyObject* _self,
   PyObject* subargs = PyTuple_New(0);
   if (!subargs) return NULL;
   PyObject* serialized =
-      PyUpb_CMessage_SerializeToString(file_desc, subargs, NULL);
+      PyUpb_Message_SerializeToString(file_desc, subargs, NULL);
   Py_DECREF(subargs);
   if (!serialized) return NULL;
   PyObject* ret = PyUpb_DescriptorPool_DoAddSerializedFile(_self, serialized);
@@ -572,11 +572,18 @@ static PyObject* PyUpb_DescriptorPool_FindAllExtensions(PyObject* _self,
   size_t n;
   const upb_FieldDef** ext = upb_DefPool_GetAllExtensions(self->symtab, m, &n);
   PyObject* ret = PyList_New(n);
+  if (!ret) goto done;
   for (size_t i = 0; i < n; i++) {
     PyObject* field = PyUpb_FieldDescriptor_Get(ext[i]);
-    if (!field) return NULL;
+    if (!field) {
+      Py_DECREF(ret);
+      ret = NULL;
+      goto done;
+    }
     PyList_SetItem(ret, i, field);
   }
+done:
+  free(ext);
   return ret;
 }
 

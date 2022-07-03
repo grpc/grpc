@@ -182,18 +182,18 @@ class ResolveAddressTest : public ::testing::Test {
 
 TEST_F(ResolveAddressTest, Localhost) {
   grpc_core::ExecCtx exec_ctx;
-  grpc_core::GetDNSResolver()->LookupHostname(
-      absl::bind_front(&ResolveAddressTest::MustSucceed, this), "localhost:1",
-      "", grpc_core::kDefaultDNSRequestTimeout, pollset_set(), "");
+  grpc_core::GetDNSResolver()->ResolveName(
+      "localhost:1", "", pollset_set(),
+      absl::bind_front(&ResolveAddressTest::MustSucceed, this));
   grpc_core::ExecCtx::Get()->Flush();
   PollPollsetUntilRequestDone();
 }
 
 TEST_F(ResolveAddressTest, DefaultPort) {
   grpc_core::ExecCtx exec_ctx;
-  grpc_core::GetDNSResolver()->LookupHostname(
-      absl::bind_front(&ResolveAddressTest::MustSucceed, this), "localhost",
-      "1", grpc_core::kDefaultDNSRequestTimeout, pollset_set(), "");
+  grpc_core::GetDNSResolver()->ResolveName(
+      "localhost", "1", pollset_set(),
+      absl::bind_front(&ResolveAddressTest::MustSucceed, this));
   grpc_core::ExecCtx::Get()->Flush();
   PollPollsetUntilRequestDone();
 }
@@ -203,10 +203,9 @@ TEST_F(ResolveAddressTest, LocalhostResultHasIPv6First) {
     GTEST_SKIP() << "this test is only valid with the c-ares resolver";
   }
   grpc_core::ExecCtx exec_ctx;
-  grpc_core::GetDNSResolver()->LookupHostname(
-      absl::bind_front(&ResolveAddressTest::MustSucceedWithIPv6First, this),
-      "localhost:1", "", grpc_core::kDefaultDNSRequestTimeout, pollset_set(),
-      "");
+  grpc_core::GetDNSResolver()->ResolveName(
+      "localhost:1", "", pollset_set(),
+      absl::bind_front(&ResolveAddressTest::MustSucceedWithIPv6First, this));
   grpc_core::ExecCtx::Get()->Flush();
   PollPollsetUntilRequestDone();
 }
@@ -251,47 +250,45 @@ TEST_F(ResolveAddressTest, LocalhostResultHasIPv4FirstWhenIPv6IsntAvalailable) {
   address_sorting_override_source_addr_factory_for_testing(mock);
   // run the test
   grpc_core::ExecCtx exec_ctx;
-  grpc_core::GetDNSResolver()->LookupHostname(
-      absl::bind_front(&ResolveAddressTest::MustSucceedWithIPv4First, this),
-      "localhost:1", "", grpc_core::kDefaultDNSRequestTimeout, pollset_set(),
-      "");
+  grpc_core::GetDNSResolver()->ResolveName(
+      "localhost:1", "", pollset_set(),
+      absl::bind_front(&ResolveAddressTest::MustSucceedWithIPv4First, this));
   grpc_core::ExecCtx::Get()->Flush();
   PollPollsetUntilRequestDone();
 }
 
 TEST_F(ResolveAddressTest, NonNumericDefaultPort) {
   grpc_core::ExecCtx exec_ctx;
-  grpc_core::GetDNSResolver()->LookupHostname(
-      absl::bind_front(&ResolveAddressTest::MustSucceed, this), "localhost",
-      "http", grpc_core::kDefaultDNSRequestTimeout, pollset_set(), "");
+  grpc_core::GetDNSResolver()->ResolveName(
+      "localhost", "http", pollset_set(),
+      absl::bind_front(&ResolveAddressTest::MustSucceed, this));
   grpc_core::ExecCtx::Get()->Flush();
   PollPollsetUntilRequestDone();
 }
 
 TEST_F(ResolveAddressTest, MissingDefaultPort) {
   grpc_core::ExecCtx exec_ctx;
-  grpc_core::GetDNSResolver()->LookupHostname(
-      absl::bind_front(&ResolveAddressTest::MustFail, this), "localhost", "",
-      grpc_core::kDefaultDNSRequestTimeout, pollset_set(), "");
+  grpc_core::GetDNSResolver()->ResolveName(
+      "localhost", "", pollset_set(),
+      absl::bind_front(&ResolveAddressTest::MustFail, this));
   grpc_core::ExecCtx::Get()->Flush();
   PollPollsetUntilRequestDone();
 }
 
 TEST_F(ResolveAddressTest, IPv6WithPort) {
   grpc_core::ExecCtx exec_ctx;
-  grpc_core::GetDNSResolver()->LookupHostname(
-      absl::bind_front(&ResolveAddressTest::MustSucceed, this),
-      "[2001:db8::1]:1", "", grpc_core::kDefaultDNSRequestTimeout,
-      pollset_set(), "");
+  grpc_core::GetDNSResolver()->ResolveName(
+      "[2001:db8::1]:1", "", pollset_set(),
+      absl::bind_front(&ResolveAddressTest::MustSucceed, this));
   grpc_core::ExecCtx::Get()->Flush();
   PollPollsetUntilRequestDone();
 }
 
 void TestIPv6WithoutPort(ResolveAddressTest* test, const char* target) {
   grpc_core::ExecCtx exec_ctx;
-  grpc_core::GetDNSResolver()->LookupHostname(
-      absl::bind_front(&ResolveAddressTest::MustSucceed, test), target, "80",
-      grpc_core::kDefaultDNSRequestTimeout, test->pollset_set(), "");
+  grpc_core::GetDNSResolver()->ResolveName(
+      target, "80", test->pollset_set(),
+      absl::bind_front(&ResolveAddressTest::MustSucceed, test));
   grpc_core::ExecCtx::Get()->Flush();
   test->PollPollsetUntilRequestDone();
 }
@@ -310,9 +307,9 @@ TEST_F(ResolveAddressTest, IPv6WithoutPortV4MappedV6) {
 
 void TestInvalidIPAddress(ResolveAddressTest* test, const char* target) {
   grpc_core::ExecCtx exec_ctx;
-  grpc_core::GetDNSResolver()->LookupHostname(
-      absl::bind_front(&ResolveAddressTest::MustFail, test), target, "",
-      grpc_core::kDefaultDNSRequestTimeout, test->pollset_set(), "");
+  grpc_core::GetDNSResolver()->ResolveName(
+      target, "", test->pollset_set(),
+      absl::bind_front(&ResolveAddressTest::MustFail, test));
   grpc_core::ExecCtx::Get()->Flush();
   test->PollPollsetUntilRequestDone();
 }
@@ -327,9 +324,9 @@ TEST_F(ResolveAddressTest, InvalidIPv6Addresses) {
 
 void TestUnparseableHostPort(ResolveAddressTest* test, const char* target) {
   grpc_core::ExecCtx exec_ctx;
-  grpc_core::GetDNSResolver()->LookupHostname(
-      absl::bind_front(&ResolveAddressTest::MustFail, test), target, "1",
-      grpc_core::kDefaultDNSRequestTimeout, test->pollset_set(), "");
+  grpc_core::GetDNSResolver()->ResolveName(
+      target, "1", test->pollset_set(),
+      absl::bind_front(&ResolveAddressTest::MustFail, test));
   grpc_core::ExecCtx::Get()->Flush();
   test->PollPollsetUntilRequestDone();
 }
@@ -362,9 +359,9 @@ TEST_F(ResolveAddressTest, UnparseableHostPortsBadLocalhostWithPort) {
 // test doesn't care what the result is, just that we don't crash etc.
 TEST_F(ResolveAddressTest, ImmediateCancel) {
   grpc_core::ExecCtx exec_ctx;
-  auto request_handle = grpc_core::GetDNSResolver()->LookupHostname(
-      absl::bind_front(&ResolveAddressTest::DontCare, this), "localhost:1", "1",
-      grpc_core::kDefaultDNSRequestTimeout, pollset_set(), "");
+  auto request_handle = grpc_core::GetDNSResolver()->ResolveName(
+      "localhost:1", "1", pollset_set(),
+      absl::bind_front(&ResolveAddressTest::DontCare, this));
   if (grpc_core::GetDNSResolver()->Cancel(request_handle)) {
     Finish();
   }
@@ -375,9 +372,9 @@ TEST_F(ResolveAddressTest, ImmediateCancel) {
 // Attempt to cancel a request after it has completed.
 TEST_F(ResolveAddressTest, CancelDoesNotSucceed) {
   grpc_core::ExecCtx exec_ctx;
-  auto request_handle = grpc_core::GetDNSResolver()->LookupHostname(
-      absl::bind_front(&ResolveAddressTest::MustSucceed, this), "localhost:1",
-      "1", grpc_core::kDefaultDNSRequestTimeout, pollset_set(), "");
+  auto request_handle = grpc_core::GetDNSResolver()->ResolveName(
+      "localhost:1", "1", pollset_set(),
+      absl::bind_front(&ResolveAddressTest::MustSucceed, this));
   grpc_core::ExecCtx::Get()->Flush();
   PollPollsetUntilRequestDone();
   ASSERT_FALSE(grpc_core::GetDNSResolver()->Cancel(request_handle));
@@ -419,10 +416,9 @@ TEST_F(ResolveAddressTest, CancelWithNonResponsiveDNSServer) {
   grpc_ares_test_only_inject_config = InjectNonResponsiveDNSServer;
   // Run the test
   grpc_core::ExecCtx exec_ctx;
-  auto request_handle = grpc_core::GetDNSResolver()->LookupHostname(
-      absl::bind_front(&ResolveAddressTest::MustNotBeCalled, this),
-      "foo.bar.com:1", "1", grpc_core::kDefaultDNSRequestTimeout, pollset_set(),
-      "");
+  auto request_handle = grpc_core::GetDNSResolver()->ResolveName(
+      "foo.bar.com:1", "1", pollset_set(),
+      absl::bind_front(&ResolveAddressTest::MustNotBeCalled, this));
   grpc_core::ExecCtx::Get()->Flush();  // initiate DNS requests
   ASSERT_TRUE(grpc_core::GetDNSResolver()->Cancel(request_handle));
   Finish();
@@ -483,10 +479,9 @@ TEST_F(ResolveAddressTest, DeleteInterestedPartiesAfterCancellation) {
     // Create a pollset_set, destroyed immediately after cancellation
     std::unique_ptr<PollsetSetWrapper> pss = PollsetSetWrapper::Create();
     // Run the test
-    auto request_handle = grpc_core::GetDNSResolver()->LookupHostname(
-        absl::bind_front(&ResolveAddressTest::MustNotBeCalled, this),
-        "foo.bar.com:1", "1", grpc_core::kDefaultDNSRequestTimeout,
-        pss->pollset_set(), "");
+    auto request_handle = grpc_core::GetDNSResolver()->ResolveName(
+        "foo.bar.com:1", "1", pss->pollset_set(),
+        absl::bind_front(&ResolveAddressTest::MustNotBeCalled, this));
     grpc_core::ExecCtx::Get()->Flush();  // initiate DNS requests
     ASSERT_TRUE(grpc_core::GetDNSResolver()->Cancel(request_handle));
   }
@@ -495,40 +490,6 @@ TEST_F(ResolveAddressTest, DeleteInterestedPartiesAfterCancellation) {
     grpc_core::ExecCtx ctx;
     Finish();
   }
-  PollPollsetUntilRequestDone();
-}
-
-TEST_F(ResolveAddressTest, NativeResolverCannotLookupSRVRecords) {
-  if (absl::string_view(g_resolver_type) == "ares") {
-    GTEST_SKIP() << "this test is only for native resolvers";
-  }
-  grpc_core::ExecCtx exec_ctx;
-  grpc_core::GetDNSResolver()->LookupSRV(
-      [this](absl::StatusOr<std::vector<grpc_resolved_address>> error) {
-        grpc_core::ExecCtx exec_ctx;
-        EXPECT_EQ(error.status().code(), absl::StatusCode::kUnimplemented);
-        Finish();
-      },
-      "localhost", grpc_core::kDefaultDNSRequestTimeout, pollset_set(),
-      /*name_server=*/"");
-  grpc_core::ExecCtx::Get()->Flush();
-  PollPollsetUntilRequestDone();
-}
-
-TEST_F(ResolveAddressTest, NativeResolverCannotLookupTXTRecords) {
-  if (absl::string_view(g_resolver_type) == "ares") {
-    GTEST_SKIP() << "this test is only for native resolvers";
-  }
-  grpc_core::ExecCtx exec_ctx;
-  grpc_core::GetDNSResolver()->LookupTXT(
-      [this](absl::StatusOr<std::string> error) {
-        grpc_core::ExecCtx exec_ctx;
-        EXPECT_EQ(error.status().code(), absl::StatusCode::kUnimplemented);
-        Finish();
-      },
-      "localhost", grpc_core::kDefaultDNSRequestTimeout, pollset_set(),
-      /*name_server=*/"");
-  grpc_core::ExecCtx::Get()->Flush();
   PollPollsetUntilRequestDone();
 }
 

@@ -23,7 +23,7 @@ static const upb_MiniTable_Field google_protobuf_Struct__fields[1] = {
 const upb_MiniTable google_protobuf_Struct_msginit = {
   &google_protobuf_Struct_submsgs[0],
   &google_protobuf_Struct__fields[0],
-  UPB_SIZE(4, 8), 1, kUpb_ExtMode_NonExtendable, 1, 255, 0,
+  UPB_SIZE(8, 8), 1, kUpb_ExtMode_NonExtendable, 1, 255, 0,
 };
 
 static const upb_MiniTable_Sub google_protobuf_Struct_FieldsEntry_submsgs[1] = {
@@ -72,7 +72,7 @@ static const upb_MiniTable_Field google_protobuf_ListValue__fields[1] = {
 const upb_MiniTable google_protobuf_ListValue_msginit = {
   &google_protobuf_ListValue_submsgs[0],
   &google_protobuf_ListValue__fields[0],
-  UPB_SIZE(4, 8), 1, kUpb_ExtMode_NonExtendable, 1, 255, 0,
+  UPB_SIZE(8, 8), 1, kUpb_ExtMode_NonExtendable, 1, 255, 0,
 };
 
 static const upb_MiniTable *messages_layout[4] = {

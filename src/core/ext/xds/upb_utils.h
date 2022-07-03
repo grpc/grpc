@@ -22,6 +22,7 @@
 #include <string>
 
 #include "absl/strings/string_view.h"
+#include "upb/arena.h"
 #include "upb/def.h"
 #include "upb/upb.h"
 

@@ -25,7 +25,7 @@ static const upb_MiniTable_Field envoy_config_core_v3_Pipe__fields[2] = {
 const upb_MiniTable envoy_config_core_v3_Pipe_msginit = {
   NULL,
   &envoy_config_core_v3_Pipe__fields[0],
-  UPB_SIZE(12, 24), 2, kUpb_ExtMode_NonExtendable, 2, 255, 0,
+  UPB_SIZE(16, 24), 2, kUpb_ExtMode_NonExtendable, 2, 255, 0,
 };
 
 static const upb_MiniTable_Field envoy_config_core_v3_EnvoyInternalAddress__fields[1] = {
@@ -35,7 +35,7 @@ static const upb_MiniTable_Field envoy_config_core_v3_EnvoyInternalAddress__fiel
 const upb_MiniTable envoy_config_core_v3_EnvoyInternalAddress_msginit = {
   NULL,
   &envoy_config_core_v3_EnvoyInternalAddress__fields[0],
-  UPB_SIZE(12, 24), 1, kUpb_ExtMode_NonExtendable, 1, 255, 0,
+  UPB_SIZE(16, 24), 1, kUpb_ExtMode_NonExtendable, 1, 255, 0,
 };
 
 static const upb_MiniTable_Field envoy_config_core_v3_SocketAddress__fields[6] = {
@@ -50,7 +50,7 @@ static const upb_MiniTable_Field envoy_config_core_v3_SocketAddress__fields[6] =
 const upb_MiniTable envoy_config_core_v3_SocketAddress_msginit = {
   NULL,
   &envoy_config_core_v3_SocketAddress__fields[0],
-  UPB_SIZE(36, 72), 6, kUpb_ExtMode_NonExtendable, 6, 255, 0,
+  UPB_SIZE(40, 64), 6, kUpb_ExtMode_NonExtendable, 6, 255, 0,
 };
 
 static const upb_MiniTable_Sub envoy_config_core_v3_TcpKeepalive_submsgs[3] = {
@@ -68,7 +68,7 @@ static const upb_MiniTable_Field envoy_config_core_v3_TcpKeepalive__fields[3] = 
 const upb_MiniTable envoy_config_core_v3_TcpKeepalive_msginit = {
   &envoy_config_core_v3_TcpKeepalive_submsgs[0],
   &envoy_config_core_v3_TcpKeepalive__fields[0],
-  UPB_SIZE(16, 40), 3, kUpb_ExtMode_NonExtendable, 3, 255, 0,
+  UPB_SIZE(16, 32), 3, kUpb_ExtMode_NonExtendable, 3, 255, 0,
 };
 
 static const upb_MiniTable_Sub envoy_config_core_v3_BindConfig_submsgs[3] = {
@@ -86,7 +86,7 @@ static const upb_MiniTable_Field envoy_config_core_v3_BindConfig__fields[3] = {
 const upb_MiniTable envoy_config_core_v3_BindConfig_msginit = {
   &envoy_config_core_v3_BindConfig_submsgs[0],
   &envoy_config_core_v3_BindConfig__fields[0],
-  UPB_SIZE(16, 40), 3, kUpb_ExtMode_NonExtendable, 3, 255, 0,
+  UPB_SIZE(16, 32), 3, kUpb_ExtMode_NonExtendable, 3, 255, 0,
 };
 
 static const upb_MiniTable_Sub envoy_config_core_v3_Address_submsgs[3] = {
@@ -104,7 +104,7 @@ static const upb_MiniTable_Field envoy_config_core_v3_Address__fields[3] = {
 const upb_MiniTable envoy_config_core_v3_Address_msginit = {
   &envoy_config_core_v3_Address_submsgs[0],
   &envoy_config_core_v3_Address__fields[0],
-  UPB_SIZE(8, 24), 3, kUpb_ExtMode_NonExtendable, 3, 255, 0,
+  UPB_SIZE(8, 16), 3, kUpb_ExtMode_NonExtendable, 3, 255, 0,
 };
 
 static const upb_MiniTable_Sub envoy_config_core_v3_CidrRange_submsgs[1] = {
@@ -119,7 +119,7 @@ static const upb_MiniTable_Field envoy_config_core_v3_CidrRange__fields[2] = {
 const upb_MiniTable envoy_config_core_v3_CidrRange_msginit = {
   &envoy_config_core_v3_CidrRange_submsgs[0],
   &envoy_config_core_v3_CidrRange__fields[0],
-  UPB_SIZE(16, 40), 2, kUpb_ExtMode_NonExtendable, 2, 255, 0,
+  UPB_SIZE(16, 32), 2, kUpb_ExtMode_NonExtendable, 2, 255, 0,
 };
 
 static const upb_MiniTable *messages_layout[7] = {

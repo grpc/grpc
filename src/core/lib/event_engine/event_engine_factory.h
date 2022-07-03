@@ -20,8 +20,6 @@
 
 #include <grpc/event_engine/event_engine.h>
 
-#include "src/core/lib/config/core_configuration.h"
-
 namespace grpc_event_engine {
 namespace experimental {
 
@@ -36,10 +34,6 @@ std::unique_ptr<EventEngine> DefaultEventEngineFactory();
 
 /// Reset the default event engine
 void ResetDefaultEventEngine();
-
-/// On ingress, ensure that an EventEngine exists in channel args via
-/// preconditioning.
-void RegisterEventEngine(grpc_core::CoreConfiguration::Builder* builder);
 
 }  // namespace experimental
 }  // namespace grpc_event_engine

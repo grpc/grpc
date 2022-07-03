@@ -20,6 +20,7 @@
 #include <grpc/support/port_platform.h>
 
 #include "absl/status/statusor.h"
+#include "upb/arena.h"
 #include "upb/def.h"
 #include "upb/upb.h"
 

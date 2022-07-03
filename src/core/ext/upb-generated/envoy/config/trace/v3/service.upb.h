@@ -53,11 +53,15 @@ UPB_INLINE envoy_config_trace_v3_TraceServiceConfig* envoy_config_trace_v3_Trace
   return ret;
 }
 UPB_INLINE char* envoy_config_trace_v3_TraceServiceConfig_serialize(const envoy_config_trace_v3_TraceServiceConfig* msg, upb_Arena* arena, size_t* len) {
-  return upb_Encode(msg, &envoy_config_trace_v3_TraceServiceConfig_msginit, 0, arena, len);
+  char* ptr;
+  (void)upb_Encode(msg, &envoy_config_trace_v3_TraceServiceConfig_msginit, 0, arena, &ptr, len);
+  return ptr;
 }
 UPB_INLINE char* envoy_config_trace_v3_TraceServiceConfig_serialize_ex(const envoy_config_trace_v3_TraceServiceConfig* msg, int options,
                                  upb_Arena* arena, size_t* len) {
-  return upb_Encode(msg, &envoy_config_trace_v3_TraceServiceConfig_msginit, options, arena, len);
+  char* ptr;
+  (void)upb_Encode(msg, &envoy_config_trace_v3_TraceServiceConfig_msginit, options, arena, &ptr, len);
+  return ptr;
 }
 UPB_INLINE bool envoy_config_trace_v3_TraceServiceConfig_has_grpc_service(const envoy_config_trace_v3_TraceServiceConfig* msg) {
   return _upb_hasbit(msg, 1);

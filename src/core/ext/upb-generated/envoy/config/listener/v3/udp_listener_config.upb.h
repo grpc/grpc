@@ -58,11 +58,15 @@ UPB_INLINE envoy_config_listener_v3_UdpListenerConfig* envoy_config_listener_v3_
   return ret;
 }
 UPB_INLINE char* envoy_config_listener_v3_UdpListenerConfig_serialize(const envoy_config_listener_v3_UdpListenerConfig* msg, upb_Arena* arena, size_t* len) {
-  return upb_Encode(msg, &envoy_config_listener_v3_UdpListenerConfig_msginit, 0, arena, len);
+  char* ptr;
+  (void)upb_Encode(msg, &envoy_config_listener_v3_UdpListenerConfig_msginit, 0, arena, &ptr, len);
+  return ptr;
 }
 UPB_INLINE char* envoy_config_listener_v3_UdpListenerConfig_serialize_ex(const envoy_config_listener_v3_UdpListenerConfig* msg, int options,
                                  upb_Arena* arena, size_t* len) {
-  return upb_Encode(msg, &envoy_config_listener_v3_UdpListenerConfig_msginit, options, arena, len);
+  char* ptr;
+  (void)upb_Encode(msg, &envoy_config_listener_v3_UdpListenerConfig_msginit, options, arena, &ptr, len);
+  return ptr;
 }
 UPB_INLINE bool envoy_config_listener_v3_UdpListenerConfig_has_downstream_socket_config(const envoy_config_listener_v3_UdpListenerConfig* msg) {
   return _upb_hasbit(msg, 1);
@@ -135,11 +139,15 @@ UPB_INLINE envoy_config_listener_v3_ActiveRawUdpListenerConfig* envoy_config_lis
   return ret;
 }
 UPB_INLINE char* envoy_config_listener_v3_ActiveRawUdpListenerConfig_serialize(const envoy_config_listener_v3_ActiveRawUdpListenerConfig* msg, upb_Arena* arena, size_t* len) {
-  return upb_Encode(msg, &envoy_config_listener_v3_ActiveRawUdpListenerConfig_msginit, 0, arena, len);
+  char* ptr;
+  (void)upb_Encode(msg, &envoy_config_listener_v3_ActiveRawUdpListenerConfig_msginit, 0, arena, &ptr, len);
+  return ptr;
 }
 UPB_INLINE char* envoy_config_listener_v3_ActiveRawUdpListenerConfig_serialize_ex(const envoy_config_listener_v3_ActiveRawUdpListenerConfig* msg, int options,
                                  upb_Arena* arena, size_t* len) {
-  return upb_Encode(msg, &envoy_config_listener_v3_ActiveRawUdpListenerConfig_msginit, options, arena, len);
+  char* ptr;
+  (void)upb_Encode(msg, &envoy_config_listener_v3_ActiveRawUdpListenerConfig_msginit, options, arena, &ptr, len);
+  return ptr;
 }
 
 

@@ -23,7 +23,6 @@
 
 #include <deque>
 #include <map>
-#include <memory>
 #include <string>
 
 #include "absl/base/thread_annotations.h"
@@ -419,10 +418,6 @@ class Subchannel : public DualRefCounted<Subchannel> {
 
   // Data producer map.
   std::map<UniqueTypeName, DataProducerInterface*> data_producer_map_
-      ABSL_GUARDED_BY(mu_);
-
-  // Engine used in this Subchannel
-  std::shared_ptr<grpc_event_engine::experimental::EventEngine> event_engine_
       ABSL_GUARDED_BY(mu_);
 };
 
