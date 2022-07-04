@@ -326,10 +326,14 @@ TEST(CmdlineTest, Usage) {
                            nullptr);
 
   std::string usage = gpr_cmdline_usage_string(cl, "test");
-  ASSERT_EQ(usage, "Usage: test [--str=string] [--x=int] " "[--flag|--no-flag] [file...]\n");
+  ASSERT_EQ(usage,
+            "Usage: test [--str=string] [--x=int] "
+            "[--flag|--no-flag] [file...]\n");
 
   usage = gpr_cmdline_usage_string(cl, "/foo/test");
-  ASSERT_EQ(usage, "Usage: test [--str=string] [--x=int] " "[--flag|--no-flag] [file...]\n");
+  ASSERT_EQ(usage,
+            "Usage: test [--str=string] [--x=int] "
+            "[--flag|--no-flag] [file...]\n");
 
   gpr_cmdline_destroy(cl);
 }
@@ -378,7 +382,8 @@ TEST(CmdlineTest, Badargs1) {
   gpr_cmdline_on_extra_arg(cl, "file", "filenames to process", extra_arg_cb,
                            nullptr);
 
-  ASSERT_EQ(0, gpr_cmdline_parse(cl, GPR_ARRAY_SIZE(bad_arg_name), bad_arg_name));
+  ASSERT_EQ(0,
+            gpr_cmdline_parse(cl, GPR_ARRAY_SIZE(bad_arg_name), bad_arg_name));
 
   gpr_cmdline_destroy(cl);
 }
@@ -404,7 +409,8 @@ TEST(CmdlineTest, Badargs2) {
   gpr_cmdline_on_extra_arg(cl, "file", "filenames to process", extra_arg_cb,
                            nullptr);
 
-  ASSERT_EQ( 0, gpr_cmdline_parse(cl, GPR_ARRAY_SIZE(bad_int_value), bad_int_value));
+  ASSERT_EQ(
+      0, gpr_cmdline_parse(cl, GPR_ARRAY_SIZE(bad_int_value), bad_int_value));
 
   gpr_cmdline_destroy(cl);
 }
@@ -429,7 +435,8 @@ TEST(CmdlineTest, Badargs3) {
   gpr_cmdline_on_extra_arg(cl, "file", "filenames to process", extra_arg_cb,
                            nullptr);
 
-  ASSERT_EQ(0, gpr_cmdline_parse(cl, GPR_ARRAY_SIZE(bad_bool_value), bad_bool_value));
+  ASSERT_EQ(
+      0, gpr_cmdline_parse(cl, GPR_ARRAY_SIZE(bad_bool_value), bad_bool_value));
 
   gpr_cmdline_destroy(cl);
 }
@@ -454,7 +461,8 @@ TEST(CmdlineTest, Badargs4) {
   gpr_cmdline_on_extra_arg(cl, "file", "filenames to process", extra_arg_cb,
                            nullptr);
 
-  ASSERT_EQ(0, gpr_cmdline_parse(cl, GPR_ARRAY_SIZE(bad_bool_value), bad_bool_value));
+  ASSERT_EQ(
+      0, gpr_cmdline_parse(cl, GPR_ARRAY_SIZE(bad_bool_value), bad_bool_value));
 
   gpr_cmdline_destroy(cl);
 }
