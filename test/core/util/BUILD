@@ -114,6 +114,7 @@ grpc_cc_library(
 grpc_cc_test(
     name = "cmdline_test",
     srcs = ["cmdline_test.cc"],
+    external_deps = ["gtest"],
     language = "C++",
     uses_event_engine = False,
     uses_polling = False,
