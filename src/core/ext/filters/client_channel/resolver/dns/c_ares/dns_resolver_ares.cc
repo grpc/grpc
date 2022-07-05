@@ -108,12 +108,13 @@ class AresClientChannelDNSResolver : public PollingResolver {
    public:
     explicit AresRequestWrapper(
         RefCountedPtr<AresClientChannelDNSResolver> resolver)
-        : resolver_(std::move(resolver)) {
+        : resolver_(std::move(resolver)),
+          work_serializer_(resolver_->work_serializer()) {
       // TODO(hork): replace this callback bookkeeping with promises.
       // Locking to prevent completion before all records are queried
       Ref(DEBUG_LOCATION, "OnHostnameResolved").release();
-      resolver_->work_serializer()->Run(
-          [this] {
+      work_serializer_->Run(
+          [this]() ABSL_EXCLUSIVE_LOCKS_REQUIRED(*work_serializer_) {
             // Run in the work serializer to ensure all requests are started
             // before any results are processed.
             GRPC_CLOSURE_INIT(&on_hostname_resolved_, OnHostnameResolved, this,
@@ -181,19 +182,26 @@ class AresClientChannelDNSResolver : public PollingResolver {
     static void OnHostnameResolved(void* arg, grpc_error_handle error);
     static void OnSRVResolved(void* arg, grpc_error_handle error);
     static void OnTXTResolved(void* arg, grpc_error_handle error);
-    void OnResolvedLocked(grpc_error_handle error);
+    void OnResolvedLocked(grpc_error_handle error)
+        ABSL_EXCLUSIVE_LOCKS_REQUIRED(*work_serializer_);
 
     RefCountedPtr<AresClientChannelDNSResolver> resolver_;
+    std::shared_ptr<WorkSerializer> work_serializer_;
     grpc_closure on_hostname_resolved_;
-    std::unique_ptr<grpc_ares_request> hostname_request_;
+    std::unique_ptr<grpc_ares_request> hostname_request_
+        ABSL_GUARDED_BY(*work_serializer_);
     grpc_closure on_srv_resolved_;
-    std::unique_ptr<grpc_ares_request> srv_request_;
+    std::unique_ptr<grpc_ares_request> srv_request_
+        ABSL_GUARDED_BY(*work_serializer_);
     grpc_closure on_txt_resolved_;
-    std::unique_ptr<grpc_ares_request> txt_request_;
+    std::unique_ptr<grpc_ares_request> txt_request_
+        ABSL_GUARDED_BY(*work_serializer_);
     // Output fields from ares request.
-    std::unique_ptr<ServerAddressList> addresses_;
-    std::unique_ptr<ServerAddressList> balancer_addresses_;
-    char* service_config_json_ = nullptr;
+    std::unique_ptr<ServerAddressList> addresses_
+        ABSL_GUARDED_BY(*work_serializer_);
+    std::unique_ptr<ServerAddressList> balancer_addresses_
+        ABSL_GUARDED_BY(*work_serializer_);
+    char* service_config_json_ ABSL_GUARDED_BY(*work_serializer_) = nullptr;
   };
 
   ~AresClientChannelDNSResolver() override;
@@ -330,8 +338,8 @@ std::string ChooseServiceConfig(char* service_config_choice_json,
 void AresClientChannelDNSResolver::AresRequestWrapper::OnHostnameResolved(
     void* arg, grpc_error_handle error) {
   auto* self = static_cast<AresRequestWrapper*>(arg);
-  self->resolver_->work_serializer()->Run(
-      [self, error] {
+  self->work_serializer_->Run(
+      [self, error]() ABSL_EXCLUSIVE_LOCKS_REQUIRED(*self->work_serializer_) {
         self->hostname_request_.reset();
         self->OnResolvedLocked(error);
         self->Unref(DEBUG_LOCATION, "OnHostnameResolved");
@@ -342,8 +350,8 @@ void AresClientChannelDNSResolver::AresRequestWrapper::OnHostnameResolved(
 void AresClientChannelDNSResolver::AresRequestWrapper::OnSRVResolved(
     void* arg, grpc_error_handle error) {
   auto* self = static_cast<AresRequestWrapper*>(arg);
-  self->resolver_->work_serializer()->Run(
-      [self, error] {
+  self->work_serializer_->Run(
+      [self, error]() ABSL_EXCLUSIVE_LOCKS_REQUIRED(*self->work_serializer_) {
         self->srv_request_.reset();
         self->OnResolvedLocked(error);
         self->Unref(DEBUG_LOCATION, "OnSRVResolved");
@@ -354,8 +362,8 @@ void AresClientChannelDNSResolver::AresRequestWrapper::OnSRVResolved(
 void AresClientChannelDNSResolver::AresRequestWrapper::OnTXTResolved(
     void* arg, grpc_error_handle error) {
   auto* self = static_cast<AresRequestWrapper*>(arg);
-  self->resolver_->work_serializer()->Run(
-      [self, error] {
+  self->work_serializer_->Run(
+      [self, error]() ABSL_EXCLUSIVE_LOCKS_REQUIRED(*self->work_serializer_) {
         self->txt_request_.reset();
         self->OnResolvedLocked(error);
         self->Unref(DEBUG_LOCATION, "OnTXTResolved");
