@@ -88,7 +88,6 @@ static void test_client_options_api_success() {
 }
 
 int main(int /*argc*/, char** /*argv*/) {
-  /* Test. */
   test_copy_client_options_failure();
   test_client_options_api_success();
   return 0;

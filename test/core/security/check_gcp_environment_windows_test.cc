@@ -81,11 +81,11 @@ static void test_gcp_environment_check_failure() {
 }
 
 int main(int argc, char** argv) {
-  /* Tests. */
   test_gcp_environment_check_success();
   test_gcp_environment_check_failure();
   return 0;
 }
+
 #else  // GPR_WINDOWS
 
 int main(int /*argc*/, char** /*argv*/) { return 0; }

@@ -194,7 +194,6 @@ static void test_alts_peer_to_auth_context_success() {
 }
 
 int main(int /*argc*/, char** /*argv*/) {
-  /* Test. */
   test_invalid_input_failure();
   test_empty_certificate_type_failure();
   test_empty_peer_property_failure();
@@ -202,6 +201,5 @@ int main(int /*argc*/, char** /*argv*/) {
   test_missing_rpc_protocol_versions_property_failure();
   test_missing_security_level_property_failure();
   test_alts_peer_to_auth_context_success();
-
   return 0;
 }
