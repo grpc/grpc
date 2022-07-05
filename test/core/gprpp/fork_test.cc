@@ -134,6 +134,5 @@ int main(int argc, char* argv[]) {
   test_init();
   test_thd_count();
   test_exec_count();
-
   return 0;
 }
