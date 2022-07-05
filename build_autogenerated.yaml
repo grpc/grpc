@@ -3279,17 +3279,6 @@ targets:
   - linux
   - posix
   - mac
-- name: compression_test
-  build: test
-  language: c
-  headers:
-  - test/core/compression/args_utils.h
-  src:
-  - test/core/compression/args_utils.cc
-  - test/core/compression/compression_test.cc
-  deps:
-  - grpc_test_util
-  uses_polling: false
 - name: connection_refused_test
   build: test
   language: c
@@ -3456,15 +3445,6 @@ targets:
   headers: []
   src:
   - test/core/iomgr/load_file_test.cc
-  deps:
-  - grpc_test_util
-  uses_polling: false
-- name: message_compress_test
-  build: test
-  language: c
-  headers: []
-  src:
-  - test/core/compression/message_compress_test.cc
   deps:
   - grpc_test_util
   uses_polling: false
@@ -4919,6 +4899,18 @@ targets:
   - test/core/surface/completion_queue_threading_test.cc
   deps:
   - grpc_test_util
+- name: compression_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - test/core/compression/args_utils.h
+  src:
+  - test/core/compression/args_utils.cc
+  - test/core/compression/compression_test.cc
+  deps:
+  - grpc_test_util
+  uses_polling: false
 - name: concurrent_connectivity_test
   gtest: true
   build: test
@@ -6813,6 +6805,16 @@ targets:
   - test/cpp/end2end/test_service_impl.cc
   deps:
   - grpc++_test_util
+- name: message_compress_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/core/compression/message_compress_test.cc
+  deps:
+  - grpc_test_util
+  uses_polling: false
 - name: metadata_map_test
   gtest: true
   build: test
