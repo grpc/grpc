@@ -21,6 +21,8 @@
 #include <cstdint>
 #include <limits>
 
+#include <gtest/gtest.h>
+
 #include <grpc/grpc.h>
 #include <grpc/support/log.h>
 
@@ -77,38 +79,38 @@ static void add_test(void) {
   /* collect timers.  Only the first batch should be ready. */
   grpc_core::ExecCtx::Get()->TestOnlySetNow(
       start + grpc_core::Duration::Milliseconds(500));
-  GPR_ASSERT(grpc_timer_check(nullptr) == GRPC_TIMERS_FIRED);
+  ASSERT_EQ(grpc_timer_check(nullptr), GRPC_TIMERS_FIRED);
   grpc_core::ExecCtx::Get()->Flush();
   for (i = 0; i < 20; i++) {
-    GPR_ASSERT(cb_called[i][1] == (i < 10));
-    GPR_ASSERT(cb_called[i][0] == 0);
+    ASSERT_EQ(cb_called[i][1], (i < 10));
+    ASSERT_EQ(cb_called[i][0], 0);
   }
 
   grpc_core::ExecCtx::Get()->TestOnlySetNow(
       start + grpc_core::Duration::Milliseconds(600));
-  GPR_ASSERT(grpc_timer_check(nullptr) == GRPC_TIMERS_CHECKED_AND_EMPTY);
+  ASSERT_EQ(grpc_timer_check(nullptr), GRPC_TIMERS_CHECKED_AND_EMPTY);
   grpc_core::ExecCtx::Get()->Flush();
   for (i = 0; i < 30; i++) {
-    GPR_ASSERT(cb_called[i][1] == (i < 10));
-    GPR_ASSERT(cb_called[i][0] == 0);
+    ASSERT_EQ(cb_called[i][1], (i < 10));
+    ASSERT_EQ(cb_called[i][0], 0);
   }
 
   /* collect the rest of the timers */
   grpc_core::ExecCtx::Get()->TestOnlySetNow(
       start + grpc_core::Duration::Milliseconds(1500));
-  GPR_ASSERT(grpc_timer_check(nullptr) == GRPC_TIMERS_FIRED);
+  ASSERT_EQ(grpc_timer_check(nullptr), GRPC_TIMERS_FIRED);
   grpc_core::ExecCtx::Get()->Flush();
   for (i = 0; i < 30; i++) {
-    GPR_ASSERT(cb_called[i][1] == (i < 20));
-    GPR_ASSERT(cb_called[i][0] == 0);
+    ASSERT_EQ(cb_called[i][1], (i < 20));
+    ASSERT_EQ(cb_called[i][0], 0);
   }
 
   grpc_core::ExecCtx::Get()->TestOnlySetNow(
       start + grpc_core::Duration::Milliseconds(1600));
-  GPR_ASSERT(grpc_timer_check(nullptr) == GRPC_TIMERS_CHECKED_AND_EMPTY);
+  ASSERT_EQ(grpc_timer_check(nullptr), GRPC_TIMERS_CHECKED_AND_EMPTY);
   for (i = 0; i < 30; i++) {
-    GPR_ASSERT(cb_called[i][1] == (i < 20));
-    GPR_ASSERT(cb_called[i][0] == 0);
+    ASSERT_EQ(cb_called[i][1], (i < 20));
+    ASSERT_EQ(cb_called[i][0], 0);
   }
 
   grpc_timer_list_shutdown();
@@ -145,19 +147,19 @@ void destruction_test(void) {
       GRPC_CLOSURE_CREATE(cb, (void*)(intptr_t)4, grpc_schedule_on_exec_ctx));
   grpc_core::ExecCtx::Get()->TestOnlySetNow(
       grpc_core::Timestamp::FromMillisecondsAfterProcessEpoch(2));
-  GPR_ASSERT(grpc_timer_check(nullptr) == GRPC_TIMERS_FIRED);
+  ASSERT_EQ(grpc_timer_check(nullptr), GRPC_TIMERS_FIRED);
   grpc_core::ExecCtx::Get()->Flush();
-  GPR_ASSERT(1 == cb_called[4][1]);
+  ASSERT_EQ(1, cb_called[4][1]);
   grpc_timer_cancel(&timers[0]);
   grpc_timer_cancel(&timers[3]);
   grpc_core::ExecCtx::Get()->Flush();
-  GPR_ASSERT(1 == cb_called[0][0]);
-  GPR_ASSERT(1 == cb_called[3][0]);
+  ASSERT_EQ(1, cb_called[0][0]);
+  ASSERT_EQ(1, cb_called[3][0]);
 
   grpc_timer_list_shutdown();
   grpc_core::ExecCtx::Get()->Flush();
-  GPR_ASSERT(1 == cb_called[1][0]);
-  GPR_ASSERT(1 == cb_called[2][0]);
+  ASSERT_EQ(1, cb_called[1][0]);
+  ASSERT_EQ(1, cb_called[2][0]);
 }
 
 /* Cleans up a list with pending timers that simulate long-running-services.
@@ -179,7 +181,7 @@ void long_running_service_cleanup_test(void) {
   gpr_log(GPR_INFO, "long_running_service_cleanup_test");
 
   grpc_core::Timestamp now = grpc_core::ExecCtx::Get()->Now();
-  GPR_ASSERT(now.milliseconds_after_process_epoch() >= k25Days.millis());
+  ASSERT_GE(now.milliseconds_after_process_epoch(), k25Days.millis());
   grpc_timer_list_init();
   grpc_core::testing::grpc_tracer_enable_flag(&grpc_timer_trace);
   grpc_core::testing::grpc_tracer_enable_flag(&grpc_timer_check_trace);
@@ -208,32 +210,31 @@ void long_running_service_cleanup_test(void) {
 
   grpc_core::ExecCtx::Get()->TestOnlySetNow(
       now + grpc_core::Duration::Milliseconds(4));
-  GPR_ASSERT(grpc_timer_check(nullptr) == GRPC_TIMERS_FIRED);
+  ASSERT_EQ(grpc_timer_check(nullptr), GRPC_TIMERS_FIRED);
   grpc_core::ExecCtx::Get()->Flush();
   GPR_ASSERT(0 == cb_called[0][0]);  // Timer 0 not called
-  GPR_ASSERT(0 == cb_called[0][1]);
-  GPR_ASSERT(0 == cb_called[1][0]);
+  ASSERT_EQ(0, cb_called[0][1]);
+  ASSERT_EQ(0, cb_called[1][0]);
   GPR_ASSERT(1 == cb_called[1][1]);  // Timer 1 fired
   GPR_ASSERT(0 == cb_called[2][0]);  // Timer 2 not called
-  GPR_ASSERT(0 == cb_called[2][1]);
+  ASSERT_EQ(0, cb_called[2][1]);
   GPR_ASSERT(0 == cb_called[3][0]);  // Timer 3 not called
-  GPR_ASSERT(0 == cb_called[3][1]);
+  ASSERT_EQ(0, cb_called[3][1]);
 
   grpc_timer_list_shutdown();
   grpc_core::ExecCtx::Get()->Flush();
   /* Timers 0, 2, and 3 were fired with an error during cleanup */
-  GPR_ASSERT(1 == cb_called[0][0]);
-  GPR_ASSERT(0 == cb_called[1][0]);
-  GPR_ASSERT(1 == cb_called[2][0]);
-  GPR_ASSERT(1 == cb_called[3][0]);
+  ASSERT_EQ(1, cb_called[0][0]);
+  ASSERT_EQ(0, cb_called[1][0]);
+  ASSERT_EQ(1, cb_called[2][0]);
+  ASSERT_EQ(1, cb_called[3][0]);
 }
 
-int main(int argc, char** argv) {
+TEST(TimerListTest, MainTest) {
   gpr_time_init();
 
   /* Tests with default g_start_time */
   {
-    grpc::testing::TestEnvironment env(&argc, argv);
     grpc_core::ExecCtx exec_ctx;
     grpc_set_default_iomgr_platform();
     grpc_iomgr_platform_init();
@@ -245,7 +246,6 @@ int main(int argc, char** argv) {
 
   /* Begin long running service tests */
   {
-    grpc::testing::TestEnvironment env(&argc, argv);
     /* Set g_start_time back 25 days. */
     /* We set g_start_time here in case there are any initialization
         dependencies that use g_start_time. */
@@ -262,6 +262,10 @@ int main(int argc, char** argv) {
     destruction_test();
     grpc_iomgr_platform_shutdown();
   }
+}
 
-  return 0;
+int main(int argc, char** argv) {
+  grpc::testing::TestEnvironment env(&argc, argv);
+  ::testing::InitGoogleTest(&argc, argv);
+  return RUN_ALL_TESTS();
 }
