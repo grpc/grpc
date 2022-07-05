@@ -157,6 +157,7 @@ class AresClientChannelDNSResolver : public PollingResolver {
     // OrphanablePtr<>, and there's no way to pass the lock annotation through
     // there.
     void Orphan() override ABSL_NO_THREAD_SAFETY_ANALYSIS {
+      MutexLock lock(&on_resolved_mu_);
       if (hostname_request_ != nullptr) {
         grpc_cancel_ares_request(hostname_request_.get());
       }
@@ -173,7 +174,7 @@ class AresClientChannelDNSResolver : public PollingResolver {
     static void OnHostnameResolved(void* arg, grpc_error_handle error);
     static void OnSRVResolved(void* arg, grpc_error_handle error);
     static void OnTXTResolved(void* arg, grpc_error_handle error);
-    void OnResolvedLocked(grpc_error_handle error)
+    absl::StatusOr<Result> OnResolvedLocked(grpc_error_handle error)
         ABSL_EXCLUSIVE_LOCKS_REQUIRED(on_resolved_mu_);
 
     Mutex on_resolved_mu_;
@@ -329,10 +330,14 @@ std::string ChooseServiceConfig(char* service_config_choice_json,
 void AresClientChannelDNSResolver::AresRequestWrapper::OnHostnameResolved(
     void* arg, grpc_error_handle error) {
   auto* self = static_cast<AresRequestWrapper*>(arg);
+  absl::StatusOr<Result> result;
   {
     MutexLock lock(&self->on_resolved_mu_);
     self->hostname_request_.reset();
-    self->OnResolvedLocked(error);
+    result = self->OnResolvedLocked(error);
+  }
+  if (result.ok()) {
+    self->resolver_->OnRequestComplete(std::move(*result));
   }
   self->Unref(DEBUG_LOCATION, "OnHostnameResolved");
 }
@@ -340,10 +345,14 @@ void AresClientChannelDNSResolver::AresRequestWrapper::OnHostnameResolved(
 void AresClientChannelDNSResolver::AresRequestWrapper::OnSRVResolved(
     void* arg, grpc_error_handle error) {
   auto* self = static_cast<AresRequestWrapper*>(arg);
+  absl::StatusOr<Result> result;
   {
     MutexLock lock(&self->on_resolved_mu_);
     self->srv_request_.reset();
-    self->OnResolvedLocked(error);
+    result = self->OnResolvedLocked(error);
+  }
+  if (result.ok()) {
+    self->resolver_->OnRequestComplete(std::move(*result));
   }
   self->Unref(DEBUG_LOCATION, "OnSRVResolved");
 }
@@ -351,15 +360,24 @@ void AresClientChannelDNSResolver::AresRequestWrapper::OnSRVResolved(
 void AresClientChannelDNSResolver::AresRequestWrapper::OnTXTResolved(
     void* arg, grpc_error_handle error) {
   auto* self = static_cast<AresRequestWrapper*>(arg);
+  absl::StatusOr<Result> result;
   {
     MutexLock lock(&self->on_resolved_mu_);
     self->txt_request_.reset();
-    self->OnResolvedLocked(error);
+    result = self->OnResolvedLocked(error);
+  }
+  if (result.ok()) {
+    self->resolver_->OnRequestComplete(std::move(*result));
   }
   self->Unref(DEBUG_LOCATION, "OnTXTResolved");
 }
 
-void AresClientChannelDNSResolver::AresRequestWrapper::OnResolvedLocked(
+// Returns a Result if resolution is complete, and a non-OK status otherwise;
+// callers must release the lock and call OnRequestComplete if a Result is
+// returned. This is because OnRequestComplete may Orphan the resolver, which
+// requires taking the lock.
+absl::StatusOr<AresClientChannelDNSResolver::Result>
+AresClientChannelDNSResolver::AresRequestWrapper::OnResolvedLocked(
     grpc_error_handle error) ABSL_EXCLUSIVE_LOCKS_REQUIRED(on_resolved_mu_) {
   if (hostname_request_ != nullptr || srv_request_ != nullptr ||
       txt_request_ != nullptr) {
@@ -369,7 +387,7 @@ void AresClientChannelDNSResolver::AresRequestWrapper::OnResolvedLocked(
         this, hostname_request_ != nullptr ? "waiting" : "done",
         srv_request_ != nullptr ? "waiting" : "done",
         txt_request_ != nullptr ? "waiting" : "done");
-    return;
+    return absl::FailedPreconditionError("Waiting for results.");
   }
   GRPC_CARES_TRACE_LOG("resolver:%p OnResolved() proceeding", this);
   Result result;
@@ -421,7 +439,7 @@ void AresClientChannelDNSResolver::AresRequestWrapper::OnResolvedLocked(
   }
   result.args = grpc_channel_args_copy_and_add(
       resolver_->channel_args(), new_args.data(), new_args.size());
-  resolver_->OnRequestComplete(std::move(result));
+  return std::move(result);
 }
 
 //
