@@ -221,7 +221,6 @@ int main(int argc, char** argv) {
                                                GRPC_SLICE_SPLIT_ONE_BYTE};
 
   grpc::testing::TestEnvironment env(&argc, argv);
-  grpc_init();
 
   for (i = 0; i < GPR_ARRAY_SIZE(split_modes); i++) {
     test_succeeds(split_modes[i],
@@ -333,6 +332,8 @@ int main(int argc, char** argv) {
     test_fails(split_modes[i], tmp2.c_str());
   }
 
-  grpc_shutdown();
   return 0;
 }
+
+
+// scope
