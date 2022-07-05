@@ -27,7 +27,7 @@ static const upb_MiniTable_Field grpc_lb_v1_LoadBalanceRequest__fields[2] = {
 const upb_MiniTable grpc_lb_v1_LoadBalanceRequest_msginit = {
   &grpc_lb_v1_LoadBalanceRequest_submsgs[0],
   &grpc_lb_v1_LoadBalanceRequest__fields[0],
-  UPB_SIZE(8, 24), 2, kUpb_ExtMode_NonExtendable, 2, 255, 0,
+  UPB_SIZE(8, 16), 2, kUpb_ExtMode_NonExtendable, 2, 255, 0,
 };
 
 static const upb_MiniTable_Field grpc_lb_v1_InitialLoadBalanceRequest__fields[1] = {
@@ -37,7 +37,7 @@ static const upb_MiniTable_Field grpc_lb_v1_InitialLoadBalanceRequest__fields[1]
 const upb_MiniTable grpc_lb_v1_InitialLoadBalanceRequest_msginit = {
   NULL,
   &grpc_lb_v1_InitialLoadBalanceRequest__fields[0],
-  UPB_SIZE(8, 24), 1, kUpb_ExtMode_NonExtendable, 1, 255, 0,
+  UPB_SIZE(8, 16), 1, kUpb_ExtMode_NonExtendable, 1, 255, 0,
 };
 
 static const upb_MiniTable_Field grpc_lb_v1_ClientStatsPerToken__fields[2] = {
@@ -86,13 +86,13 @@ static const upb_MiniTable_Field grpc_lb_v1_LoadBalanceResponse__fields[3] = {
 const upb_MiniTable grpc_lb_v1_LoadBalanceResponse_msginit = {
   &grpc_lb_v1_LoadBalanceResponse_submsgs[0],
   &grpc_lb_v1_LoadBalanceResponse__fields[0],
-  UPB_SIZE(8, 24), 3, kUpb_ExtMode_NonExtendable, 3, 255, 0,
+  UPB_SIZE(8, 16), 3, kUpb_ExtMode_NonExtendable, 3, 255, 0,
 };
 
 const upb_MiniTable grpc_lb_v1_FallbackResponse_msginit = {
   NULL,
   NULL,
-  UPB_SIZE(0, 8), 0, kUpb_ExtMode_NonExtendable, 0, 255, 0,
+  UPB_SIZE(0, 0), 0, kUpb_ExtMode_NonExtendable, 0, 255, 0,
 };
 
 static const upb_MiniTable_Sub grpc_lb_v1_InitialLoadBalanceResponse_submsgs[1] = {
@@ -106,7 +106,7 @@ static const upb_MiniTable_Field grpc_lb_v1_InitialLoadBalanceResponse__fields[1
 const upb_MiniTable grpc_lb_v1_InitialLoadBalanceResponse_msginit = {
   &grpc_lb_v1_InitialLoadBalanceResponse_submsgs[0],
   &grpc_lb_v1_InitialLoadBalanceResponse__fields[0],
-  UPB_SIZE(8, 24), 1, kUpb_ExtMode_NonExtendable, 0, 255, 0,
+  UPB_SIZE(8, 16), 1, kUpb_ExtMode_NonExtendable, 0, 255, 0,
 };
 
 static const upb_MiniTable_Sub grpc_lb_v1_ServerList_submsgs[1] = {
@@ -120,7 +120,7 @@ static const upb_MiniTable_Field grpc_lb_v1_ServerList__fields[1] = {
 const upb_MiniTable grpc_lb_v1_ServerList_msginit = {
   &grpc_lb_v1_ServerList_submsgs[0],
   &grpc_lb_v1_ServerList__fields[0],
-  UPB_SIZE(4, 8), 1, kUpb_ExtMode_NonExtendable, 1, 255, 0,
+  UPB_SIZE(8, 8), 1, kUpb_ExtMode_NonExtendable, 1, 255, 0,
 };
 
 static const upb_MiniTable_Field grpc_lb_v1_Server__fields[4] = {

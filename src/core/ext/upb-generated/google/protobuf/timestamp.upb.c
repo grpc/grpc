@@ -20,7 +20,7 @@ static const upb_MiniTable_Field google_protobuf_Timestamp__fields[2] = {
 const upb_MiniTable google_protobuf_Timestamp_msginit = {
   NULL,
   &google_protobuf_Timestamp__fields[0],
-  UPB_SIZE(16, 24), 2, kUpb_ExtMode_NonExtendable, 2, 255, 0,
+  UPB_SIZE(16, 16), 2, kUpb_ExtMode_NonExtendable, 2, 255, 0,
 };
 
 static const upb_MiniTable *messages_layout[1] = {

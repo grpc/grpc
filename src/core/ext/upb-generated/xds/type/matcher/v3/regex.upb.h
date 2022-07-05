@@ -54,11 +54,15 @@ UPB_INLINE xds_type_matcher_v3_RegexMatcher* xds_type_matcher_v3_RegexMatcher_pa
   return ret;
 }
 UPB_INLINE char* xds_type_matcher_v3_RegexMatcher_serialize(const xds_type_matcher_v3_RegexMatcher* msg, upb_Arena* arena, size_t* len) {
-  return upb_Encode(msg, &xds_type_matcher_v3_RegexMatcher_msginit, 0, arena, len);
+  char* ptr;
+  (void)upb_Encode(msg, &xds_type_matcher_v3_RegexMatcher_msginit, 0, arena, &ptr, len);
+  return ptr;
 }
 UPB_INLINE char* xds_type_matcher_v3_RegexMatcher_serialize_ex(const xds_type_matcher_v3_RegexMatcher* msg, int options,
                                  upb_Arena* arena, size_t* len) {
-  return upb_Encode(msg, &xds_type_matcher_v3_RegexMatcher_msginit, options, arena, len);
+  char* ptr;
+  (void)upb_Encode(msg, &xds_type_matcher_v3_RegexMatcher_msginit, options, arena, &ptr, len);
+  return ptr;
 }
 typedef enum {
   xds_type_matcher_v3_RegexMatcher_engine_type_google_re2 = 1,
@@ -124,11 +128,15 @@ UPB_INLINE xds_type_matcher_v3_RegexMatcher_GoogleRE2* xds_type_matcher_v3_Regex
   return ret;
 }
 UPB_INLINE char* xds_type_matcher_v3_RegexMatcher_GoogleRE2_serialize(const xds_type_matcher_v3_RegexMatcher_GoogleRE2* msg, upb_Arena* arena, size_t* len) {
-  return upb_Encode(msg, &xds_type_matcher_v3_RegexMatcher_GoogleRE2_msginit, 0, arena, len);
+  char* ptr;
+  (void)upb_Encode(msg, &xds_type_matcher_v3_RegexMatcher_GoogleRE2_msginit, 0, arena, &ptr, len);
+  return ptr;
 }
 UPB_INLINE char* xds_type_matcher_v3_RegexMatcher_GoogleRE2_serialize_ex(const xds_type_matcher_v3_RegexMatcher_GoogleRE2* msg, int options,
                                  upb_Arena* arena, size_t* len) {
-  return upb_Encode(msg, &xds_type_matcher_v3_RegexMatcher_GoogleRE2_msginit, options, arena, len);
+  char* ptr;
+  (void)upb_Encode(msg, &xds_type_matcher_v3_RegexMatcher_GoogleRE2_msginit, options, arena, &ptr, len);
+  return ptr;
 }
 
 

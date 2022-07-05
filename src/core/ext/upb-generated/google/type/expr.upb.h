@@ -51,11 +51,15 @@ UPB_INLINE google_type_Expr* google_type_Expr_parse_ex(const char* buf, size_t s
   return ret;
 }
 UPB_INLINE char* google_type_Expr_serialize(const google_type_Expr* msg, upb_Arena* arena, size_t* len) {
-  return upb_Encode(msg, &google_type_Expr_msginit, 0, arena, len);
+  char* ptr;
+  (void)upb_Encode(msg, &google_type_Expr_msginit, 0, arena, &ptr, len);
+  return ptr;
 }
 UPB_INLINE char* google_type_Expr_serialize_ex(const google_type_Expr* msg, int options,
                                  upb_Arena* arena, size_t* len) {
-  return upb_Encode(msg, &google_type_Expr_msginit, options, arena, len);
+  char* ptr;
+  (void)upb_Encode(msg, &google_type_Expr_msginit, options, arena, &ptr, len);
+  return ptr;
 }
 UPB_INLINE void google_type_Expr_clear_expression(const google_type_Expr* msg) {
   *UPB_PTR_AT(msg, UPB_SIZE(0, 0), upb_StringView) = upb_StringView_FromDataAndSize(NULL, 0);

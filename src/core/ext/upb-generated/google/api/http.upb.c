@@ -24,7 +24,7 @@ static const upb_MiniTable_Field google_api_Http__fields[2] = {
 const upb_MiniTable google_api_Http_msginit = {
   &google_api_Http_submsgs[0],
   &google_api_Http__fields[0],
-  UPB_SIZE(8, 24), 2, kUpb_ExtMode_NonExtendable, 2, 255, 0,
+  UPB_SIZE(8, 16), 2, kUpb_ExtMode_NonExtendable, 2, 255, 0,
 };
 
 static const upb_MiniTable_Sub google_api_HttpRule_submsgs[2] = {
@@ -48,7 +48,7 @@ static const upb_MiniTable_Field google_api_HttpRule__fields[10] = {
 const upb_MiniTable google_api_HttpRule_msginit = {
   &google_api_HttpRule_submsgs[0],
   &google_api_HttpRule__fields[0],
-  UPB_SIZE(40, 88), 10, kUpb_ExtMode_NonExtendable, 8, 255, 0,
+  UPB_SIZE(40, 80), 10, kUpb_ExtMode_NonExtendable, 8, 255, 0,
 };
 
 static const upb_MiniTable_Field google_api_CustomHttpPattern__fields[2] = {
@@ -59,7 +59,7 @@ static const upb_MiniTable_Field google_api_CustomHttpPattern__fields[2] = {
 const upb_MiniTable google_api_CustomHttpPattern_msginit = {
   NULL,
   &google_api_CustomHttpPattern__fields[0],
-  UPB_SIZE(16, 40), 2, kUpb_ExtMode_NonExtendable, 2, 255, 0,
+  UPB_SIZE(16, 32), 2, kUpb_ExtMode_NonExtendable, 2, 255, 0,
 };
 
 static const upb_MiniTable *messages_layout[3] = {

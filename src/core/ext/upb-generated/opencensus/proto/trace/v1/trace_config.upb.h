@@ -66,11 +66,15 @@ UPB_INLINE opencensus_proto_trace_v1_TraceConfig* opencensus_proto_trace_v1_Trac
   return ret;
 }
 UPB_INLINE char* opencensus_proto_trace_v1_TraceConfig_serialize(const opencensus_proto_trace_v1_TraceConfig* msg, upb_Arena* arena, size_t* len) {
-  return upb_Encode(msg, &opencensus_proto_trace_v1_TraceConfig_msginit, 0, arena, len);
+  char* ptr;
+  (void)upb_Encode(msg, &opencensus_proto_trace_v1_TraceConfig_msginit, 0, arena, &ptr, len);
+  return ptr;
 }
 UPB_INLINE char* opencensus_proto_trace_v1_TraceConfig_serialize_ex(const opencensus_proto_trace_v1_TraceConfig* msg, int options,
                                  upb_Arena* arena, size_t* len) {
-  return upb_Encode(msg, &opencensus_proto_trace_v1_TraceConfig_msginit, options, arena, len);
+  char* ptr;
+  (void)upb_Encode(msg, &opencensus_proto_trace_v1_TraceConfig_msginit, options, arena, &ptr, len);
+  return ptr;
 }
 typedef enum {
   opencensus_proto_trace_v1_TraceConfig_sampler_probability_sampler = 1,
@@ -207,11 +211,15 @@ UPB_INLINE opencensus_proto_trace_v1_ProbabilitySampler* opencensus_proto_trace_
   return ret;
 }
 UPB_INLINE char* opencensus_proto_trace_v1_ProbabilitySampler_serialize(const opencensus_proto_trace_v1_ProbabilitySampler* msg, upb_Arena* arena, size_t* len) {
-  return upb_Encode(msg, &opencensus_proto_trace_v1_ProbabilitySampler_msginit, 0, arena, len);
+  char* ptr;
+  (void)upb_Encode(msg, &opencensus_proto_trace_v1_ProbabilitySampler_msginit, 0, arena, &ptr, len);
+  return ptr;
 }
 UPB_INLINE char* opencensus_proto_trace_v1_ProbabilitySampler_serialize_ex(const opencensus_proto_trace_v1_ProbabilitySampler* msg, int options,
                                  upb_Arena* arena, size_t* len) {
-  return upb_Encode(msg, &opencensus_proto_trace_v1_ProbabilitySampler_msginit, options, arena, len);
+  char* ptr;
+  (void)upb_Encode(msg, &opencensus_proto_trace_v1_ProbabilitySampler_msginit, options, arena, &ptr, len);
+  return ptr;
 }
 UPB_INLINE void opencensus_proto_trace_v1_ProbabilitySampler_clear_samplingProbability(const opencensus_proto_trace_v1_ProbabilitySampler* msg) {
   *UPB_PTR_AT(msg, UPB_SIZE(0, 0), double) = 0;
@@ -249,11 +257,15 @@ UPB_INLINE opencensus_proto_trace_v1_ConstantSampler* opencensus_proto_trace_v1_
   return ret;
 }
 UPB_INLINE char* opencensus_proto_trace_v1_ConstantSampler_serialize(const opencensus_proto_trace_v1_ConstantSampler* msg, upb_Arena* arena, size_t* len) {
-  return upb_Encode(msg, &opencensus_proto_trace_v1_ConstantSampler_msginit, 0, arena, len);
+  char* ptr;
+  (void)upb_Encode(msg, &opencensus_proto_trace_v1_ConstantSampler_msginit, 0, arena, &ptr, len);
+  return ptr;
 }
 UPB_INLINE char* opencensus_proto_trace_v1_ConstantSampler_serialize_ex(const opencensus_proto_trace_v1_ConstantSampler* msg, int options,
                                  upb_Arena* arena, size_t* len) {
-  return upb_Encode(msg, &opencensus_proto_trace_v1_ConstantSampler_msginit, options, arena, len);
+  char* ptr;
+  (void)upb_Encode(msg, &opencensus_proto_trace_v1_ConstantSampler_msginit, options, arena, &ptr, len);
+  return ptr;
 }
 UPB_INLINE void opencensus_proto_trace_v1_ConstantSampler_clear_decision(const opencensus_proto_trace_v1_ConstantSampler* msg) {
   *UPB_PTR_AT(msg, UPB_SIZE(0, 0), int32_t) = 0;
@@ -291,11 +303,15 @@ UPB_INLINE opencensus_proto_trace_v1_RateLimitingSampler* opencensus_proto_trace
   return ret;
 }
 UPB_INLINE char* opencensus_proto_trace_v1_RateLimitingSampler_serialize(const opencensus_proto_trace_v1_RateLimitingSampler* msg, upb_Arena* arena, size_t* len) {
-  return upb_Encode(msg, &opencensus_proto_trace_v1_RateLimitingSampler_msginit, 0, arena, len);
+  char* ptr;
+  (void)upb_Encode(msg, &opencensus_proto_trace_v1_RateLimitingSampler_msginit, 0, arena, &ptr, len);
+  return ptr;
 }
 UPB_INLINE char* opencensus_proto_trace_v1_RateLimitingSampler_serialize_ex(const opencensus_proto_trace_v1_RateLimitingSampler* msg, int options,
                                  upb_Arena* arena, size_t* len) {
-  return upb_Encode(msg, &opencensus_proto_trace_v1_RateLimitingSampler_msginit, options, arena, len);
+  char* ptr;
+  (void)upb_Encode(msg, &opencensus_proto_trace_v1_RateLimitingSampler_msginit, options, arena, &ptr, len);
+  return ptr;
 }
 UPB_INLINE void opencensus_proto_trace_v1_RateLimitingSampler_clear_qps(const opencensus_proto_trace_v1_RateLimitingSampler* msg) {
   *UPB_PTR_AT(msg, UPB_SIZE(0, 0), int64_t) = 0;

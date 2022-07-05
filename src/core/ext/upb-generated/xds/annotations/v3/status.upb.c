@@ -20,7 +20,7 @@ static const upb_MiniTable_Field xds_annotations_v3_FileStatusAnnotation__fields
 const upb_MiniTable xds_annotations_v3_FileStatusAnnotation_msginit = {
   NULL,
   &xds_annotations_v3_FileStatusAnnotation__fields[0],
-  UPB_SIZE(1, 8), 1, kUpb_ExtMode_NonExtendable, 1, 255, 0,
+  UPB_SIZE(8, 8), 1, kUpb_ExtMode_NonExtendable, 1, 255, 0,
 };
 
 static const upb_MiniTable_Field xds_annotations_v3_MessageStatusAnnotation__fields[1] = {
@@ -30,7 +30,7 @@ static const upb_MiniTable_Field xds_annotations_v3_MessageStatusAnnotation__fie
 const upb_MiniTable xds_annotations_v3_MessageStatusAnnotation_msginit = {
   NULL,
   &xds_annotations_v3_MessageStatusAnnotation__fields[0],
-  UPB_SIZE(1, 8), 1, kUpb_ExtMode_NonExtendable, 1, 255, 0,
+  UPB_SIZE(8, 8), 1, kUpb_ExtMode_NonExtendable, 1, 255, 0,
 };
 
 static const upb_MiniTable_Field xds_annotations_v3_FieldStatusAnnotation__fields[1] = {
@@ -40,7 +40,7 @@ static const upb_MiniTable_Field xds_annotations_v3_FieldStatusAnnotation__field
 const upb_MiniTable xds_annotations_v3_FieldStatusAnnotation_msginit = {
   NULL,
   &xds_annotations_v3_FieldStatusAnnotation__fields[0],
-  UPB_SIZE(1, 8), 1, kUpb_ExtMode_NonExtendable, 1, 255, 0,
+  UPB_SIZE(8, 8), 1, kUpb_ExtMode_NonExtendable, 1, 255, 0,
 };
 
 static const upb_MiniTable_Field xds_annotations_v3_StatusAnnotation__fields[2] = {

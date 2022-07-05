@@ -22,7 +22,7 @@ static const upb_MiniTable_Field grpc_lookup_v1_NameMatcher__fields[3] = {
 const upb_MiniTable grpc_lookup_v1_NameMatcher_msginit = {
   NULL,
   &grpc_lookup_v1_NameMatcher__fields[0],
-  UPB_SIZE(16, 40), 3, kUpb_ExtMode_NonExtendable, 3, 255, 0,
+  UPB_SIZE(16, 32), 3, kUpb_ExtMode_NonExtendable, 3, 255, 0,
 };
 
 static const upb_MiniTable_Sub grpc_lookup_v1_GrpcKeyBuilder_submsgs[4] = {
@@ -42,7 +42,7 @@ static const upb_MiniTable_Field grpc_lookup_v1_GrpcKeyBuilder__fields[4] = {
 const upb_MiniTable grpc_lookup_v1_GrpcKeyBuilder_msginit = {
   &grpc_lookup_v1_GrpcKeyBuilder_submsgs[0],
   &grpc_lookup_v1_GrpcKeyBuilder__fields[0],
-  UPB_SIZE(20, 40), 4, kUpb_ExtMode_NonExtendable, 4, 255, 0,
+  UPB_SIZE(24, 40), 4, kUpb_ExtMode_NonExtendable, 4, 255, 0,
 };
 
 static const upb_MiniTable_Field grpc_lookup_v1_GrpcKeyBuilder_Name__fields[2] = {
@@ -53,7 +53,7 @@ static const upb_MiniTable_Field grpc_lookup_v1_GrpcKeyBuilder_Name__fields[2] =
 const upb_MiniTable grpc_lookup_v1_GrpcKeyBuilder_Name_msginit = {
   NULL,
   &grpc_lookup_v1_GrpcKeyBuilder_Name__fields[0],
-  UPB_SIZE(16, 40), 2, kUpb_ExtMode_NonExtendable, 2, 255, 0,
+  UPB_SIZE(16, 32), 2, kUpb_ExtMode_NonExtendable, 2, 255, 0,
 };
 
 static const upb_MiniTable_Field grpc_lookup_v1_GrpcKeyBuilder_ExtraKeys__fields[3] = {
@@ -65,7 +65,7 @@ static const upb_MiniTable_Field grpc_lookup_v1_GrpcKeyBuilder_ExtraKeys__fields
 const upb_MiniTable grpc_lookup_v1_GrpcKeyBuilder_ExtraKeys_msginit = {
   NULL,
   &grpc_lookup_v1_GrpcKeyBuilder_ExtraKeys__fields[0],
-  UPB_SIZE(24, 56), 3, kUpb_ExtMode_NonExtendable, 3, 255, 0,
+  UPB_SIZE(24, 48), 3, kUpb_ExtMode_NonExtendable, 3, 255, 0,
 };
 
 static const upb_MiniTable_Field grpc_lookup_v1_GrpcKeyBuilder_ConstantKeysEntry__fields[2] = {
@@ -96,7 +96,7 @@ static const upb_MiniTable_Field grpc_lookup_v1_HttpKeyBuilder__fields[5] = {
 const upb_MiniTable grpc_lookup_v1_HttpKeyBuilder_msginit = {
   &grpc_lookup_v1_HttpKeyBuilder_submsgs[0],
   &grpc_lookup_v1_HttpKeyBuilder__fields[0],
-  UPB_SIZE(20, 40), 5, kUpb_ExtMode_NonExtendable, 5, 255, 0,
+  UPB_SIZE(24, 40), 5, kUpb_ExtMode_NonExtendable, 5, 255, 0,
 };
 
 static const upb_MiniTable_Field grpc_lookup_v1_HttpKeyBuilder_ConstantKeysEntry__fields[2] = {
@@ -133,7 +133,7 @@ static const upb_MiniTable_Field grpc_lookup_v1_RouteLookupConfig__fields[9] = {
 const upb_MiniTable grpc_lookup_v1_RouteLookupConfig_msginit = {
   &grpc_lookup_v1_RouteLookupConfig_submsgs[0],
   &grpc_lookup_v1_RouteLookupConfig__fields[0],
-  UPB_SIZE(56, 104), 9, kUpb_ExtMode_NonExtendable, 9, 255, 0,
+  UPB_SIZE(56, 96), 9, kUpb_ExtMode_NonExtendable, 9, 255, 0,
 };
 
 static const upb_MiniTable_Sub grpc_lookup_v1_RouteLookupClusterSpecifier_submsgs[1] = {
@@ -147,7 +147,7 @@ static const upb_MiniTable_Field grpc_lookup_v1_RouteLookupClusterSpecifier__fie
 const upb_MiniTable grpc_lookup_v1_RouteLookupClusterSpecifier_msginit = {
   &grpc_lookup_v1_RouteLookupClusterSpecifier_submsgs[0],
   &grpc_lookup_v1_RouteLookupClusterSpecifier__fields[0],
-  UPB_SIZE(8, 24), 1, kUpb_ExtMode_NonExtendable, 1, 255, 0,
+  UPB_SIZE(8, 16), 1, kUpb_ExtMode_NonExtendable, 1, 255, 0,
 };
 
 static const upb_MiniTable *messages_layout[9] = {

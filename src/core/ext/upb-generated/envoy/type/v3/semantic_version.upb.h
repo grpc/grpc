@@ -51,11 +51,15 @@ UPB_INLINE envoy_type_v3_SemanticVersion* envoy_type_v3_SemanticVersion_parse_ex
   return ret;
 }
 UPB_INLINE char* envoy_type_v3_SemanticVersion_serialize(const envoy_type_v3_SemanticVersion* msg, upb_Arena* arena, size_t* len) {
-  return upb_Encode(msg, &envoy_type_v3_SemanticVersion_msginit, 0, arena, len);
+  char* ptr;
+  (void)upb_Encode(msg, &envoy_type_v3_SemanticVersion_msginit, 0, arena, &ptr, len);
+  return ptr;
 }
 UPB_INLINE char* envoy_type_v3_SemanticVersion_serialize_ex(const envoy_type_v3_SemanticVersion* msg, int options,
                                  upb_Arena* arena, size_t* len) {
-  return upb_Encode(msg, &envoy_type_v3_SemanticVersion_msginit, options, arena, len);
+  char* ptr;
+  (void)upb_Encode(msg, &envoy_type_v3_SemanticVersion_msginit, options, arena, &ptr, len);
+  return ptr;
 }
 UPB_INLINE void envoy_type_v3_SemanticVersion_clear_major_number(const envoy_type_v3_SemanticVersion* msg) {
   *UPB_PTR_AT(msg, UPB_SIZE(0, 0), uint32_t) = 0;
