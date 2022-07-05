@@ -3442,19 +3442,6 @@ targets:
   - linux
   - posix
   - mac
-- name: fork_test
-  build: test
-  language: c
-  headers: []
-  src:
-  - test/core/gprpp/fork_test.cc
-  deps:
-  - grpc_test_util
-  platforms:
-  - linux
-  - posix
-  - mac
-  uses_polling: false
 - name: format_request_test
   build: test
   language: c
@@ -3492,15 +3479,6 @@ targets:
   headers: []
   src:
   - test/core/util/histogram_test.cc
-  deps:
-  - grpc_test_util
-  uses_polling: false
-- name: host_port_test
-  build: test
-  language: c
-  headers: []
-  src:
-  - test/core/gprpp/host_port_test.cc
   deps:
   - grpc_test_util
   uses_polling: false
@@ -3558,19 +3536,6 @@ targets:
   - test/core/channel/minimal_stack_is_minimal_test.cc
   deps:
   - grpc_test_util
-  uses_polling: false
-- name: mpscq_test
-  build: test
-  language: c
-  headers: []
-  src:
-  - test/core/gprpp/mpscq_test.cc
-  deps:
-  - grpc_test_util
-  platforms:
-  - linux
-  - posix
-  - mac
   uses_polling: false
 - name: multiple_server_queues_test
   build: test
@@ -3807,15 +3772,6 @@ targets:
   headers: []
   src:
   - test/core/iomgr/timer_list_test.cc
-  deps:
-  - grpc_test_util
-  uses_polling: false
-- name: thd_test
-  build: test
-  language: c
-  headers: []
-  src:
-  - test/core/gprpp/thd_test.cc
   deps:
   - grpc_test_util
   uses_polling: false
@@ -5770,6 +5726,20 @@ targets:
   - gpr
   - upb
   uses_polling: false
+- name: fork_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/core/gprpp/fork_test.cc
+  deps:
+  - grpc_test_util
+  platforms:
+  - linux
+  - posix
+  - mac
+  uses_polling: false
 - name: frame_handler_test
   gtest: true
   build: test
@@ -6203,6 +6173,16 @@ targets:
   - test/cpp/end2end/test_service_impl.cc
   deps:
   - grpc++_test_util
+- name: host_port_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/core/gprpp/host_port_test.cc
+  deps:
+  - grpc_test_util
+  uses_polling: false
 - name: hpack_parser_table_test
   gtest: true
   build: test
@@ -6897,6 +6877,20 @@ targets:
   deps:
   - grpc++_test
   - grpc++_test_util
+- name: mpscq_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/core/gprpp/mpscq_test.cc
+  deps:
+  - grpc_test_util
+  platforms:
+  - linux
+  - posix
+  - mac
+  uses_polling: false
 - name: nonblocking_test
   gtest: true
   build: test
@@ -8735,6 +8729,16 @@ targets:
   - test/cpp/util/time_test.cc
   deps:
   - grpc++_test_util
+  uses_polling: false
+- name: thd_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/core/gprpp/thd_test.cc
+  deps:
+  - grpc_test_util
   uses_polling: false
 - name: thread_manager_test
   gtest: true
