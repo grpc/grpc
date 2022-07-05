@@ -3192,15 +3192,6 @@ libs:
   deps:
   - grpc++
 targets:
-- name: b64_test
-  build: test
-  language: c
-  headers: []
-  src:
-  - test/core/slice/b64_test.cc
-  deps:
-  - grpc_test_util
-  uses_polling: false
 - name: bad_server_response_test
   build: test
   language: c
@@ -3247,15 +3238,6 @@ targets:
   - test/core/iomgr/buffer_list_test.cc
   deps:
   - grpc_test_util
-- name: c_slice_buffer_test
-  build: test
-  language: c
-  headers: []
-  src:
-  - test/core/slice/c_slice_buffer_test.cc
-  deps:
-  - grpc_test_util
-  uses_polling: false
 - name: combiner_test
   build: test
   language: c
@@ -3435,15 +3417,6 @@ targets:
   - test/core/end2end/no_server_test.cc
   deps:
   - grpc_test_util
-- name: percent_encoding_test
-  build: test
-  language: c
-  headers: []
-  src:
-  - test/core/slice/percent_encoding_test.cc
-  deps:
-  - grpc_test_util
-  uses_polling: false
 - name: public_headers_must_be_c89
   build: test
   language: c
@@ -3484,23 +3457,6 @@ targets:
   - linux
   - posix
   - mac
-- name: slice_string_helpers_test
-  build: test
-  language: c
-  headers:
-  - src/core/lib/slice/slice.h
-  - src/core/lib/slice/slice_internal.h
-  - src/core/lib/slice/slice_refcount.h
-  - src/core/lib/slice/slice_refcount_base.h
-  - src/core/lib/slice/slice_string_helpers.h
-  src:
-  - src/core/lib/slice/slice.cc
-  - src/core/lib/slice/slice_refcount.cc
-  - src/core/lib/slice/slice_string_helpers.cc
-  - test/core/slice/slice_string_helpers_test.cc
-  deps:
-  - gpr
-  uses_polling: false
 - name: socket_utils_test
   build: test
   language: c
@@ -4100,6 +4056,16 @@ targets:
   - test/core/security/aws_request_signer_test.cc
   deps:
   - grpc_test_util
+- name: b64_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/core/slice/b64_test.cc
+  deps:
+  - grpc_test_util
+  uses_polling: false
 - name: backoff_test
   gtest: true
   build: test
@@ -4312,6 +4278,16 @@ targets:
   - test/cpp/util/byte_buffer_test.cc
   deps:
   - grpc++_test_util
+  uses_polling: false
+- name: c_slice_buffer_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/core/slice/c_slice_buffer_test.cc
+  deps:
+  - grpc_test_util
   uses_polling: false
 - name: call_finalization_test
   gtest: true
@@ -7075,6 +7051,16 @@ targets:
   deps:
   - grpc_test_util
   uses_polling: false
+- name: percent_encoding_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/core/slice/percent_encoding_test.cc
+  deps:
+  - grpc_test_util
+  uses_polling: false
 - name: periodic_update_test
   gtest: true
   build: test
@@ -8026,6 +8012,24 @@ targets:
   - test/core/promise/sleep_test.cc
   deps:
   - grpc
+  uses_polling: false
+- name: slice_string_helpers_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - src/core/lib/slice/slice.h
+  - src/core/lib/slice/slice_internal.h
+  - src/core/lib/slice/slice_refcount.h
+  - src/core/lib/slice/slice_refcount_base.h
+  - src/core/lib/slice/slice_string_helpers.h
+  src:
+  - src/core/lib/slice/slice.cc
+  - src/core/lib/slice/slice_refcount.cc
+  - src/core/lib/slice/slice_string_helpers.cc
+  - test/core/slice/slice_string_helpers_test.cc
+  deps:
+  - gpr
   uses_polling: false
 - name: smoke_test
   gtest: true
