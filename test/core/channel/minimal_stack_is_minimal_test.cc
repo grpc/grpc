@@ -31,6 +31,8 @@
 
 #include <string.h>
 
+#include <gtest/gtest.h>
+
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
 #include "absl/strings/str_join.h"
@@ -62,9 +64,7 @@ static int check_stack(const char* file, int line, const char* transport_name,
 //                                 filters to instantiate, terminated with NULL
 #define CHECK_STACK(...) check_stack(__FILE__, __LINE__, __VA_ARGS__)
 
-int main(int argc, char** argv) {
-  grpc::testing::TestEnvironment env(&argc, argv);
-  grpc_init();
+TEST(MinimalStackIsMinimalTest, MainTest) {
   int errors = 0;
 
   // tests with a minimal stack
@@ -112,9 +112,7 @@ int main(int argc, char** argv) {
   errors += CHECK_STACK(nullptr, nullptr, GRPC_CLIENT_CHANNEL, "client-channel",
                         NULL);
 
-  GPR_ASSERT(errors == 0);
-  grpc_shutdown();
-  return 0;
+  ASSERT_EQ(errors, 0);
 }
 
 /*******************************************************************************
@@ -139,7 +137,7 @@ static int check_stack(const char* file, int line, const char* transport_name,
   }
   {
     grpc_core::ExecCtx exec_ctx;
-    GPR_ASSERT(grpc_core::CoreConfiguration::Get().channel_init().CreateStack(
+    EXPECT_TRUE(grpc_core::CoreConfiguration::Get().channel_init().CreateStack(
         &builder));
   }
 
@@ -183,4 +181,11 @@ static int check_stack(const char* file, int line, const char* transport_name,
   }
 
   return result;
+}
+
+int main(int argc, char** argv) {
+  grpc::testing::TestEnvironment env(&argc, argv);
+  ::testing::InitGoogleTest(&argc, argv);
+  grpc::testing::TestGrpcScope grpc_scope;
+  return RUN_ALL_TESTS();
 }
