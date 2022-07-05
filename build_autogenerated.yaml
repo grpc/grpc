@@ -1670,6 +1670,7 @@ libs:
   - absl/container:flat_hash_map
   - absl/container:flat_hash_set
   - absl/container:inlined_vector
+  - absl/functional:any_invocable
   - absl/functional:bind_front
   - absl/functional:function_ref
   - absl/hash:hash
@@ -2473,6 +2474,7 @@ libs:
   - absl/container:flat_hash_map
   - absl/container:flat_hash_set
   - absl/container:inlined_vector
+  - absl/functional:any_invocable
   - absl/functional:bind_front
   - absl/functional:function_ref
   - absl/hash:hash
@@ -3880,6 +3882,7 @@ targets:
   - src/core/lib/slice/slice_string_helpers.cc
   - test/core/resource_quota/memory_quota_stress_test.cc
   deps:
+  - absl/functional:any_invocable
   - absl/meta:type_traits
   - absl/status:statusor
   - absl/types:variant
@@ -4614,6 +4617,7 @@ targets:
   - src/core/lib/slice/slice_string_helpers.cc
   - test/core/promise/arena_promise_test.cc
   deps:
+  - absl/functional:any_invocable
   - absl/meta:type_traits
   - absl/status:statusor
   - absl/types:variant
@@ -5164,6 +5168,7 @@ targets:
   - src/core/lib/slice/slice_string_helpers.cc
   - test/core/gprpp/chunked_vector_test.cc
   deps:
+  - absl/functional:any_invocable
   - absl/meta:type_traits
   - absl/status:statusor
   - absl/types:variant
@@ -5732,6 +5737,7 @@ targets:
   - src/core/lib/slice/slice_string_helpers.cc
   - test/core/promise/exec_ctx_wakeup_scheduler_test.cc
   deps:
+  - absl/functional:any_invocable
   - absl/meta:type_traits
   - absl/status:statusor
   - absl/types:variant
@@ -5949,6 +5955,7 @@ targets:
   - src/core/lib/transport/pid_controller.cc
   - test/core/transport/chttp2/flow_control_test.cc
   deps:
+  - absl/functional:any_invocable
   - absl/functional:function_ref
   - absl/meta:type_traits
   - absl/status:statusor
@@ -6037,6 +6044,7 @@ targets:
   - test/core/promise/for_each_test.cc
   deps:
   - absl/container:flat_hash_set
+  - absl/functional:any_invocable
   - absl/hash:hash
   - absl/meta:type_traits
   - absl/status:statusor
@@ -6942,6 +6950,7 @@ targets:
   - src/core/lib/slice/slice_string_helpers.cc
   - test/core/resource_quota/memory_quota_test.cc
   deps:
+  - absl/functional:any_invocable
   - absl/meta:type_traits
   - absl/status:statusor
   - absl/types:variant
@@ -7254,6 +7263,7 @@ targets:
   - src/core/lib/slice/slice_string_helpers.cc
   - test/core/resource_quota/periodic_update_test.cc
   deps:
+  - absl/functional:any_invocable
   - absl/status:statusor
   - gpr
   - upb
@@ -7344,6 +7354,7 @@ targets:
   - src/core/lib/slice/slice_string_helpers.cc
   - test/core/promise/pipe_test.cc
   deps:
+  - absl/functional:any_invocable
   - absl/meta:type_traits
   - absl/status:statusor
   - absl/types:variant
@@ -7714,6 +7725,7 @@ targets:
   - src/core/lib/slice/slice_string_helpers.cc
   - test/core/resource_quota/resource_quota_test.cc
   deps:
+  - absl/functional:any_invocable
   - absl/meta:type_traits
   - absl/status:statusor
   - absl/types:variant
@@ -8429,6 +8441,7 @@ targets:
   deps:
   - absl/base:base
   - absl/base:core_headers
+  - absl/functional:any_invocable
   - absl/memory:memory
   - absl/random:random
   - absl/status:status
@@ -8528,6 +8541,7 @@ targets:
   deps:
   - absl/base:base
   - absl/base:core_headers
+  - absl/functional:any_invocable
   - absl/memory:memory
   - absl/random:random
   - absl/status:status
@@ -8630,6 +8644,7 @@ targets:
   deps:
   - absl/base:base
   - absl/base:core_headers
+  - absl/functional:any_invocable
   - absl/memory:memory
   - absl/random:random
   - absl/status:status
