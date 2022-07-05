@@ -23,6 +23,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#include <gtest/gtest.h>
+
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/sync.h>
@@ -110,7 +112,7 @@ static void test(const char* name, void (*body)(void* m), int timeout_s,
               static_cast<long>(m->counter), m->thread_count,
               static_cast<long>(m->iterations));
       fflush(stderr);
-      GPR_ASSERT(0);
+      ASSERT_TRUE(0);
     }
     test_destroy(m);
   }
@@ -148,9 +150,13 @@ static void inctry(void* v /*=m*/) {
 
 /* ------------------------------------------------- */
 
-int main(int argc, char* argv[]) {
-  grpc::testing::TestEnvironment env(&argc, argv);
+TEST(SpinlockTest, MainTest) {
   test("spinlock", &inc, 1, 1);
   test("spinlock try", &inctry, 1, 1);
-  return 0;
+}
+
+int main(int argc, char** argv) {
+  grpc::testing::TestEnvironment env(&argc, argv);
+  ::testing::InitGoogleTest(&argc, argv);
+  return RUN_ALL_TESTS();
 }
