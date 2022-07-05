@@ -18,10 +18,10 @@
 #define GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_LB_POLICY_H
 
 #include <grpc/support/port_platform.h>
+
 #include <stddef.h>
 #include <stdint.h>
-#include <grpc/impl/codegen/connectivity_state.h>
-#include <grpc/impl/codegen/grpc_types.h>
+
 #include <memory>
 #include <string>
 #include <utility>
@@ -32,6 +32,10 @@
 #include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
 #include "absl/types/variant.h"
+
+#include <grpc/impl/codegen/connectivity_state.h>
+#include <grpc/impl/codegen/grpc_types.h>
+
 #include "src/core/ext/filters/client_channel/lb_policy/backend_metric_data.h"
 #include "src/core/ext/filters/client_channel/subchannel_interface.h"
 #include "src/core/lib/channel/channel_args.h"
