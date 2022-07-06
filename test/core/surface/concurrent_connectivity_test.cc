@@ -149,7 +149,7 @@ void bad_server_thread(void* vargs) {
   addr->sa_family = GRPC_AF_INET;
   error = grpc_tcp_server_add_port(s, &resolved_addr, &port);
   ASSERT_TRUE(GRPC_LOG_IF_ERROR("grpc_tcp_server_add_port", error));
-  ASSERT_TRUE(port > 0);
+  ASSERT_GT(port, 0);
   args->addr = absl::StrCat("localhost:", port);
 
   grpc_tcp_server_start(s, &args->pollset, on_connect, args);
@@ -183,8 +183,6 @@ static void done_pollset_shutdown(void* pollset, grpc_error_handle /*error*/) {
 TEST(ConcurrentConnectivityTest, RunConcurrentConnectivityTest) {
   struct ServerThreadArgs args;
 
-  grpc_init();
-
   /* First round, no server */
   {
     gpr_log(GPR_DEBUG, "Wave 1");
@@ -200,8 +198,8 @@ TEST(ConcurrentConnectivityTest, RunConcurrentConnectivityTest) {
     }
   }
 
+  /* Second round, actual grpc server */
   {
-    /* Second round, actual grpc server */
     gpr_log(GPR_DEBUG, "Wave 2");
     int port = grpc_pick_unused_port_or_die();
     args.addr = absl::StrCat("localhost:", port);
@@ -232,8 +230,8 @@ TEST(ConcurrentConnectivityTest, RunConcurrentConnectivityTest) {
     grpc_completion_queue_destroy(args.cq);
   }
 
+  /* Third round, bogus tcp server */
   {
-    /* Third round, bogus tcp server */
     gpr_log(GPR_DEBUG, "Wave 3");
     auto* pollset = static_cast<grpc_pollset*>(gpr_zalloc(grpc_pollset_size()));
     grpc_pollset_init(pollset, &args.mu);
@@ -263,8 +261,6 @@ TEST(ConcurrentConnectivityTest, RunConcurrentConnectivityTest) {
                               grpc_schedule_on_exec_ctx));
     }
   }
-
-  grpc_shutdown();
 }
 
 void watches_with_short_timeouts(void* addr) {
@@ -300,10 +296,7 @@ void watches_with_short_timeouts(void* addr) {
 // With short timeouts on "watches" and long timeouts on cq next calls,
 // so that a QUEUE_TIMEOUT likely means that something is stuck.
 TEST(ConcurrentConnectivityTest, RunConcurrentWatchesWithShortTimeoutsTest) {
-  grpc_init();
-
   grpc_core::Thread threads[NUM_THREADS];
-
   for (auto& th : threads) {
     th = grpc_core::Thread("grpc_short_watches", watches_with_short_timeouts,
                            const_cast<char*>("localhost:54321"));
@@ -312,12 +305,11 @@ TEST(ConcurrentConnectivityTest, RunConcurrentWatchesWithShortTimeoutsTest) {
   for (auto& th : threads) {
     th.Join();
   }
-
-  grpc_shutdown();
 }
 
 int main(int argc, char** argv) {
   grpc::testing::TestEnvironment env(&argc, argv);
   ::testing::InitGoogleTest(&argc, argv);
+  grpc::testing::TestGrpcScope grpc_scope;
   return RUN_ALL_TESTS();
 }
