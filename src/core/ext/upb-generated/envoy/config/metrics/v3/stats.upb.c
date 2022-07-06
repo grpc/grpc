@@ -31,7 +31,7 @@ static const upb_MiniTable_Field envoy_config_metrics_v3_StatsSink__fields[2] = 
 const upb_MiniTable envoy_config_metrics_v3_StatsSink_msginit = {
   &envoy_config_metrics_v3_StatsSink_submsgs[0],
   &envoy_config_metrics_v3_StatsSink__fields[0],
-  UPB_SIZE(16, 40), 2, kUpb_ExtMode_NonExtendable, 1, 255, 0,
+  UPB_SIZE(16, 32), 2, kUpb_ExtMode_NonExtendable, 1, 255, 0,
 };
 
 static const upb_MiniTable_Sub envoy_config_metrics_v3_StatsConfig_submsgs[4] = {
@@ -51,7 +51,7 @@ static const upb_MiniTable_Field envoy_config_metrics_v3_StatsConfig__fields[4] 
 const upb_MiniTable envoy_config_metrics_v3_StatsConfig_msginit = {
   &envoy_config_metrics_v3_StatsConfig_submsgs[0],
   &envoy_config_metrics_v3_StatsConfig__fields[0],
-  UPB_SIZE(20, 40), 4, kUpb_ExtMode_NonExtendable, 4, 255, 0,
+  UPB_SIZE(24, 40), 4, kUpb_ExtMode_NonExtendable, 4, 255, 0,
 };
 
 static const upb_MiniTable_Sub envoy_config_metrics_v3_StatsMatcher_submsgs[2] = {
@@ -68,7 +68,7 @@ static const upb_MiniTable_Field envoy_config_metrics_v3_StatsMatcher__fields[3]
 const upb_MiniTable envoy_config_metrics_v3_StatsMatcher_msginit = {
   &envoy_config_metrics_v3_StatsMatcher_submsgs[0],
   &envoy_config_metrics_v3_StatsMatcher__fields[0],
-  UPB_SIZE(8, 24), 3, kUpb_ExtMode_NonExtendable, 3, 255, 0,
+  UPB_SIZE(8, 16), 3, kUpb_ExtMode_NonExtendable, 3, 255, 0,
 };
 
 static const upb_MiniTable_Field envoy_config_metrics_v3_TagSpecifier__fields[3] = {
@@ -80,7 +80,7 @@ static const upb_MiniTable_Field envoy_config_metrics_v3_TagSpecifier__fields[3]
 const upb_MiniTable envoy_config_metrics_v3_TagSpecifier_msginit = {
   NULL,
   &envoy_config_metrics_v3_TagSpecifier__fields[0],
-  UPB_SIZE(20, 40), 3, kUpb_ExtMode_NonExtendable, 3, 255, 0,
+  UPB_SIZE(24, 40), 3, kUpb_ExtMode_NonExtendable, 3, 255, 0,
 };
 
 static const upb_MiniTable_Sub envoy_config_metrics_v3_HistogramBucketSettings_submsgs[1] = {
@@ -95,7 +95,7 @@ static const upb_MiniTable_Field envoy_config_metrics_v3_HistogramBucketSettings
 const upb_MiniTable envoy_config_metrics_v3_HistogramBucketSettings_msginit = {
   &envoy_config_metrics_v3_HistogramBucketSettings_submsgs[0],
   &envoy_config_metrics_v3_HistogramBucketSettings__fields[0],
-  UPB_SIZE(12, 24), 2, kUpb_ExtMode_NonExtendable, 2, 255, 0,
+  UPB_SIZE(16, 24), 2, kUpb_ExtMode_NonExtendable, 2, 255, 0,
 };
 
 static const upb_MiniTable_Sub envoy_config_metrics_v3_StatsdSink_submsgs[1] = {
@@ -111,7 +111,7 @@ static const upb_MiniTable_Field envoy_config_metrics_v3_StatsdSink__fields[3] =
 const upb_MiniTable envoy_config_metrics_v3_StatsdSink_msginit = {
   &envoy_config_metrics_v3_StatsdSink_submsgs[0],
   &envoy_config_metrics_v3_StatsdSink__fields[0],
-  UPB_SIZE(20, 40), 3, kUpb_ExtMode_NonExtendable, 3, 255, 0,
+  UPB_SIZE(24, 40), 3, kUpb_ExtMode_NonExtendable, 3, 255, 0,
 };
 
 static const upb_MiniTable_Sub envoy_config_metrics_v3_DogStatsdSink_submsgs[2] = {

@@ -29,7 +29,7 @@
 #define UPB_DEF_H_
 
 #include "google/protobuf/descriptor.upb.h"
-#include "upb/table_internal.h"
+#include "upb/internal/table.h"
 #include "upb/upb.h"
 
 /* Must be last. */
@@ -116,6 +116,8 @@ const upb_OneofDef* upb_FieldDef_RealContainingOneof(const upb_FieldDef* f);
 uint32_t upb_FieldDef_Index(const upb_FieldDef* f);
 bool upb_FieldDef_IsSubMessage(const upb_FieldDef* f);
 bool upb_FieldDef_IsString(const upb_FieldDef* f);
+bool upb_FieldDef_IsOptional(const upb_FieldDef* f);
+bool upb_FieldDef_IsRequired(const upb_FieldDef* f);
 bool upb_FieldDef_IsRepeated(const upb_FieldDef* f);
 bool upb_FieldDef_IsPrimitive(const upb_FieldDef* f);
 bool upb_FieldDef_IsMap(const upb_FieldDef* f);
@@ -208,6 +210,11 @@ UPB_INLINE const upb_FieldDef* upb_MessageDef_FindFieldByName(
 
 UPB_INLINE bool upb_MessageDef_IsMapEntry(const upb_MessageDef* m) {
   return google_protobuf_MessageOptions_map_entry(upb_MessageDef_Options(m));
+}
+
+UPB_INLINE bool upb_MessageDef_IsMessageSet(const upb_MessageDef* m) {
+  return google_protobuf_MessageOptions_message_set_wire_format(
+      upb_MessageDef_Options(m));
 }
 
 /* Nested entities. */

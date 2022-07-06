@@ -120,7 +120,7 @@ def _wait_until_backlog_cleared(test_client: XdsTestClient,
 
 def _is_supported(config: skips.TestConfig) -> bool:
     if config.client_lang == _Lang.NODE:
-        return not config.version_lt('v1.4.x')
+        return config.version_gte('v1.4.x')
     return True
 
 

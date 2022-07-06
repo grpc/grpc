@@ -145,7 +145,6 @@ grpc_cc_library(
     hdrs = COMMON_HEADERS,
     external_deps = ["gtest"],
     deps = [
-        "//:exec_ctx",
         "//:grpc",
         "//test/core/util:grpc_test_util",
     ],

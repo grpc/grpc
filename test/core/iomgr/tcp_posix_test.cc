@@ -47,6 +47,8 @@
 static gpr_mu* g_mu;
 static grpc_pollset* g_pollset;
 
+GPR_GLOBAL_CONFIG_DECLARE_BOOL(grpc_experimental_enable_tcp_frame_size_tuning);
+
 /*
    General test notes:
 
@@ -151,6 +153,7 @@ static size_t fill_socket_partial(int fd, size_t bytes) {
 
 struct read_socket_state {
   grpc_endpoint* ep;
+  int min_progress_size;
   size_t read_bytes;
   size_t target_read_bytes;
   grpc_slice_buffer incoming;
@@ -183,6 +186,9 @@ static void read_cb(void* user_data, grpc_error_handle error) {
 
   gpr_mu_lock(g_mu);
   current_data = state->read_bytes % 256;
+  // The number of bytes read each time this callback is invoked must be >=
+  // the min_progress_size.
+  GPR_ASSERT(state->min_progress_size <= state->incoming.length);
   read_bytes = count_slices(state->incoming.slices, state->incoming.count,
                             &current_data);
   state->read_bytes += read_bytes;
@@ -194,13 +200,15 @@ static void read_cb(void* user_data, grpc_error_handle error) {
     gpr_mu_unlock(g_mu);
   } else {
     gpr_mu_unlock(g_mu);
+    state->min_progress_size = state->target_read_bytes - state->read_bytes;
     grpc_endpoint_read(state->ep, &state->incoming, &state->read_cb,
-                       /*urgent=*/false, /*min_progress_size=*/1);
+                       /*urgent=*/false, state->min_progress_size);
   }
 }
 
 /* Write to a socket, then read from it using the grpc_tcp API. */
-static void read_test(size_t num_bytes, size_t slice_size) {
+static void read_test(size_t num_bytes, size_t slice_size,
+                      int min_progress_size) {
   int sv[2];
   grpc_endpoint* ep;
   struct read_socket_state state;
@@ -233,11 +241,13 @@ static void read_test(size_t num_bytes, size_t slice_size) {
   state.ep = ep;
   state.read_bytes = 0;
   state.target_read_bytes = written_bytes;
+  state.min_progress_size =
+      std::min(min_progress_size, static_cast<int>(written_bytes));
   grpc_slice_buffer_init(&state.incoming);
   GRPC_CLOSURE_INIT(&state.read_cb, read_cb, &state, grpc_schedule_on_exec_ctx);
 
   grpc_endpoint_read(ep, &state.incoming, &state.read_cb, /*urgent=*/false,
-                     /*min_progress_size=*/1);
+                     /*min_progress_size=*/state.min_progress_size);
 
   gpr_mu_lock(g_mu);
   while (state.read_bytes < state.target_read_bytes) {
@@ -259,7 +269,7 @@ static void read_test(size_t num_bytes, size_t slice_size) {
 
 /* Write to a socket until it fills up, then read from it using the grpc_tcp
    API. */
-static void large_read_test(size_t slice_size) {
+static void large_read_test(size_t slice_size, int min_progress_size) {
   int sv[2];
   grpc_endpoint* ep;
   struct read_socket_state state;
@@ -291,11 +301,13 @@ static void large_read_test(size_t slice_size) {
   state.ep = ep;
   state.read_bytes = 0;
   state.target_read_bytes = static_cast<size_t>(written_bytes);
+  state.min_progress_size =
+      std::min(min_progress_size, static_cast<int>(written_bytes));
   grpc_slice_buffer_init(&state.incoming);
   GRPC_CLOSURE_INIT(&state.read_cb, read_cb, &state, grpc_schedule_on_exec_ctx);
 
   grpc_endpoint_read(ep, &state.incoming, &state.read_cb, /*urgent=*/false,
-                     /*min_progress_size=*/1);
+                     /*min_progress_size=*/state.min_progress_size);
 
   gpr_mu_lock(g_mu);
   while (state.read_bytes < state.target_read_bytes) {
@@ -544,11 +556,12 @@ static void release_fd_test(size_t num_bytes, size_t slice_size) {
   state.ep = ep;
   state.read_bytes = 0;
   state.target_read_bytes = written_bytes;
+  state.min_progress_size = 1;
   grpc_slice_buffer_init(&state.incoming);
   GRPC_CLOSURE_INIT(&state.read_cb, read_cb, &state, grpc_schedule_on_exec_ctx);
 
   grpc_endpoint_read(ep, &state.incoming, &state.read_cb, /*urgent=*/false,
-                     /*min_progress_size=*/1);
+                     /*min_progress_size=*/state.min_progress_size);
 
   gpr_mu_lock(g_mu);
   while (state.read_bytes < state.target_read_bytes) {
@@ -589,14 +602,14 @@ static void release_fd_test(size_t num_bytes, size_t slice_size) {
 
 void run_tests(void) {
   size_t i = 0;
-
-  read_test(100, 8192);
-  read_test(10000, 8192);
-  read_test(10000, 137);
-  read_test(10000, 1);
-  large_read_test(8192);
-  large_read_test(1);
-
+  for (int i = 1; i <= 8192; i = i * 2) {
+    read_test(100, 8192, i);
+    read_test(10000, 8192, i);
+    read_test(10000, 137, i);
+    read_test(10000, 1, i);
+    large_read_test(8192, i);
+    large_read_test(1, i);
+  }
   write_test(100, 8192, false);
   write_test(100, 1, false);
   write_test(100000, 8192, false);
@@ -658,6 +671,7 @@ static void destroy_pollset(void* p, grpc_error_handle /*error*/) {
 int main(int argc, char** argv) {
   grpc_closure destroyed;
   grpc::testing::TestEnvironment env(&argc, argv);
+  GPR_GLOBAL_CONFIG_SET(grpc_experimental_enable_tcp_frame_size_tuning, true);
   grpc_init();
   grpc_core::grpc_tcp_set_write_timestamps_callback(timestamps_verifier);
   {

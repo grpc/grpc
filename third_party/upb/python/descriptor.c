@@ -123,16 +123,18 @@ static PyObject* PyUpb_DescriptorBase_GetOptions(PyUpb_DescriptorBase* self,
     size_t size;
     PyObject* py_arena = PyUpb_Arena_New();
     upb_Arena* arena = PyUpb_Arena_Get(py_arena);
-    char* pb = upb_Encode(opts, layout, 0, arena, &size);
+    char* pb;
+    // TODO(b/235839510): Need to correctly handle failed return codes.
+    (void)upb_Encode(opts, layout, 0, arena, &pb, &size);
     upb_Message* opts2 = upb_Message_New(m, arena);
     assert(opts2);
-    bool ok = upb_Decode(pb, size, opts2, upb_MessageDef_MiniTable(m),
-                         upb_DefPool_ExtensionRegistry(symtab), 0,
-                         arena) == kUpb_DecodeStatus_Ok;
-    (void)ok;
-    assert(ok);
+    upb_DecodeStatus ds =
+        upb_Decode(pb, size, opts2, upb_MessageDef_MiniTable(m),
+                   upb_DefPool_ExtensionRegistry(symtab), 0, arena);
+    (void)ds;
+    assert(ds == kUpb_DecodeStatus_Ok);
 
-    self->options = PyUpb_CMessage_Get(opts2, m, py_arena);
+    self->options = PyUpb_Message_Get(opts2, m, py_arena);
     Py_DECREF(py_arena);
   }
 
@@ -150,8 +152,9 @@ static PyObject* PyUpb_DescriptorBase_GetSerializedProto(
   upb_Message* proto = func(self->def, arena);
   if (!proto) goto oom;
   size_t size;
-  char* pb = upb_Encode(proto, layout, 0, arena, &size);
-  if (!pb) goto oom;
+  char* pb;
+  upb_EncodeStatus status = upb_Encode(proto, layout, 0, arena, &pb, &size);
+  if (status) goto oom;  // TODO(b/235839510) non-oom errors are possible here
   PyObject* str = PyBytes_FromStringAndSize(pb, size);
   upb_Arena_Free(arena);
   return str;
@@ -167,8 +170,8 @@ static PyObject* PyUpb_DescriptorBase_CopyToProto(PyObject* _self,
                                                   const upb_MiniTable* layout,
                                                   const char* expected_type,
                                                   PyObject* py_proto) {
-  if (!PyUpb_CMessage_Verify(py_proto)) return NULL;
-  const upb_MessageDef* m = PyUpb_CMessage_GetMsgdef(py_proto);
+  if (!PyUpb_Message_Verify(py_proto)) return NULL;
+  const upb_MessageDef* m = PyUpb_Message_GetMsgdef(py_proto);
   const char* type = upb_MessageDef_FullName(m);
   if (strcmp(type, expected_type) != 0) {
     PyErr_Format(
@@ -180,7 +183,7 @@ static PyObject* PyUpb_DescriptorBase_CopyToProto(PyObject* _self,
   PyObject* serialized =
       PyUpb_DescriptorBase_GetSerializedProto(_self, func, layout);
   if (!serialized) return NULL;
-  PyObject* ret = PyUpb_CMessage_MergeFromString(py_proto, serialized);
+  PyObject* ret = PyUpb_Message_MergeFromString(py_proto, serialized);
   Py_DECREF(serialized);
   return ret;
 }
@@ -1011,6 +1014,12 @@ static PyObject* PyUpb_FieldDescriptor_GetHasOptions(
   return PyBool_FromLong(upb_FieldDef_HasOptions(self->def));
 }
 
+static PyObject* PyUpb_FieldDescriptor_GetHasPresence(
+    PyUpb_DescriptorBase* _self, void* closure) {
+  PyUpb_DescriptorBase* self = (void*)_self;
+  return PyBool_FromLong(upb_FieldDef_HasPresence(self->def));
+}
+
 static PyObject* PyUpb_FieldDescriptor_GetOptions(PyObject* _self,
                                                   PyObject* args) {
   PyUpb_DescriptorBase* self = (void*)_self;
@@ -1049,6 +1058,8 @@ static PyGetSetDef PyUpb_FieldDescriptor_Getters[] = {
      "Containing oneof"},
     {"has_options", (getter)PyUpb_FieldDescriptor_GetHasOptions, NULL,
      "Has Options"},
+    {"has_presence", (getter)PyUpb_FieldDescriptor_GetHasPresence, NULL,
+     "Has Presence"},
     // TODO(https://github.com/protocolbuffers/upb/issues/459)
     //{ "_options",
     //(getter)NULL, (setter)SetOptions, "Options"}, { "_serialized_options",

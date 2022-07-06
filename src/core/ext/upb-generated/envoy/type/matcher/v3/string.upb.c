@@ -46,7 +46,7 @@ static const upb_MiniTable_Field envoy_type_matcher_v3_ListStringMatcher__fields
 const upb_MiniTable envoy_type_matcher_v3_ListStringMatcher_msginit = {
   &envoy_type_matcher_v3_ListStringMatcher_submsgs[0],
   &envoy_type_matcher_v3_ListStringMatcher__fields[0],
-  UPB_SIZE(4, 8), 1, kUpb_ExtMode_NonExtendable, 1, 255, 0,
+  UPB_SIZE(8, 8), 1, kUpb_ExtMode_NonExtendable, 1, 255, 0,
 };
 
 static const upb_MiniTable *messages_layout[2] = {

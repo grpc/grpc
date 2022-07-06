@@ -18,14 +18,13 @@
 
 #ifndef GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_LB_POLICY_GRPCLB_LOAD_BALANCER_API_H
 #define GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_LB_POLICY_GRPCLB_LOAD_BALANCER_API_H
-
 #include <grpc/support/port_platform.h>
 
 #include <stdint.h>
 
 #include <vector>
 
-#include "upb/upb.h"
+#include "upb/arena.h"
 
 #include <grpc/slice.h>
 

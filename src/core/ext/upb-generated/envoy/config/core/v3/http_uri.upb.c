@@ -29,7 +29,7 @@ static const upb_MiniTable_Field envoy_config_core_v3_HttpUri__fields[3] = {
 const upb_MiniTable envoy_config_core_v3_HttpUri_msginit = {
   &envoy_config_core_v3_HttpUri_submsgs[0],
   &envoy_config_core_v3_HttpUri__fields[0],
-  UPB_SIZE(28, 56), 3, kUpb_ExtMode_NonExtendable, 3, 255, 0,
+  UPB_SIZE(32, 48), 3, kUpb_ExtMode_NonExtendable, 3, 255, 0,
 };
 
 static const upb_MiniTable *messages_layout[1] = {

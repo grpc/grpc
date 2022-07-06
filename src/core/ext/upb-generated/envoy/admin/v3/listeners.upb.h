@@ -56,11 +56,15 @@ UPB_INLINE envoy_admin_v3_Listeners* envoy_admin_v3_Listeners_parse_ex(const cha
   return ret;
 }
 UPB_INLINE char* envoy_admin_v3_Listeners_serialize(const envoy_admin_v3_Listeners* msg, upb_Arena* arena, size_t* len) {
-  return upb_Encode(msg, &envoy_admin_v3_Listeners_msginit, 0, arena, len);
+  char* ptr;
+  (void)upb_Encode(msg, &envoy_admin_v3_Listeners_msginit, 0, arena, &ptr, len);
+  return ptr;
 }
 UPB_INLINE char* envoy_admin_v3_Listeners_serialize_ex(const envoy_admin_v3_Listeners* msg, int options,
                                  upb_Arena* arena, size_t* len) {
-  return upb_Encode(msg, &envoy_admin_v3_Listeners_msginit, options, arena, len);
+  char* ptr;
+  (void)upb_Encode(msg, &envoy_admin_v3_Listeners_msginit, options, arena, &ptr, len);
+  return ptr;
 }
 UPB_INLINE bool envoy_admin_v3_Listeners_has_listener_statuses(const envoy_admin_v3_Listeners* msg) {
   return _upb_has_submsg_nohasbit(msg, UPB_SIZE(0, 0));
@@ -110,11 +114,15 @@ UPB_INLINE envoy_admin_v3_ListenerStatus* envoy_admin_v3_ListenerStatus_parse_ex
   return ret;
 }
 UPB_INLINE char* envoy_admin_v3_ListenerStatus_serialize(const envoy_admin_v3_ListenerStatus* msg, upb_Arena* arena, size_t* len) {
-  return upb_Encode(msg, &envoy_admin_v3_ListenerStatus_msginit, 0, arena, len);
+  char* ptr;
+  (void)upb_Encode(msg, &envoy_admin_v3_ListenerStatus_msginit, 0, arena, &ptr, len);
+  return ptr;
 }
 UPB_INLINE char* envoy_admin_v3_ListenerStatus_serialize_ex(const envoy_admin_v3_ListenerStatus* msg, int options,
                                  upb_Arena* arena, size_t* len) {
-  return upb_Encode(msg, &envoy_admin_v3_ListenerStatus_msginit, options, arena, len);
+  char* ptr;
+  (void)upb_Encode(msg, &envoy_admin_v3_ListenerStatus_msginit, options, arena, &ptr, len);
+  return ptr;
 }
 UPB_INLINE void envoy_admin_v3_ListenerStatus_clear_name(const envoy_admin_v3_ListenerStatus* msg) {
   *UPB_PTR_AT(msg, UPB_SIZE(4, 8), upb_StringView) = upb_StringView_FromDataAndSize(NULL, 0);
