@@ -56,7 +56,6 @@
 #include "src/core/ext/xds/xds_certificate_provider.h"
 #include "src/core/ext/xds/xds_channel_stack_modifier.h"
 #include "src/core/ext/xds/xds_client.h"
-#include "src/core/ext/xds/xds_client_grpc.h"
 #include "src/core/ext/xds/xds_common_types.h"
 #include "src/core/ext/xds/xds_http_filters.h"
 #include "src/core/ext/xds/xds_listener.h"
@@ -115,7 +114,7 @@ class XdsServerConfigFetcher : public grpc_server_config_fetcher {
 
   // Return the interested parties from the xds client so that it can be polled.
   grpc_pollset_set* interested_parties() override {
-    return static_cast<GrpcXdsClient*>(xds_client_.get())->interested_parties();
+    return xds_client_->interested_parties();
   }
 
  private:
@@ -1344,7 +1343,7 @@ grpc_server_config_fetcher* grpc_server_config_fetcher_xds_create(
       3, (notifier.on_serving_status_update, notifier.user_data, args));
   grpc_error_handle error = GRPC_ERROR_NONE;
   grpc_core::RefCountedPtr<grpc_core::XdsClient> xds_client =
-      grpc_core::GrpcXdsClient::GetOrCreate(args, &error);
+      grpc_core::XdsClient::GetOrCreate(args, &error);
   grpc_channel_args_destroy(args);
   if (!GRPC_ERROR_IS_NONE(error)) {
     gpr_log(GPR_ERROR, "Failed to create xds client: %s",

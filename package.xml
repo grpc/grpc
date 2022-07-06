@@ -855,8 +855,6 @@
     <file baseinstalldir="/" name="src/core/ext/xds/xds_channel_stack_modifier.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/xds/xds_client.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/xds/xds_client.h" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/xds/xds_client_grpc.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/xds/xds_client_grpc.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/xds/xds_client_stats.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/xds/xds_client_stats.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/xds/xds_cluster.cc" role="src" />
@@ -885,9 +883,6 @@
     <file baseinstalldir="/" name="src/core/ext/xds/xds_routing.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/xds/xds_routing.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/xds/xds_server_config_fetcher.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/xds/xds_transport.h" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/xds/xds_transport_grpc.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/xds/xds_transport_grpc.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/address_utils/parse_address.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/address_utils/parse_address.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/address_utils/sockaddr_utils.cc" role="src" />
