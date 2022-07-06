@@ -87,8 +87,7 @@ class OutlierDetectionTest(xds_k8s_testcase.RegularXdsKubernetesTestCase):
                                                       test_servers[1:])
 
         with self.subTest('11_ejected_server_returned_after_failures_stopped'):
-            test_client.update_config.configure(rpc_types=rpc_types, metadata=((RpcTypeEmptyCall,),
-                                                          (RpcTypeUnaryCall,)))
+            test_client.update_config.configure(rpc_types=rpc_types)
             self.assertRpcsEventuallyGoToGivenServers(test_client, test_servers)
 
 
