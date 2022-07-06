@@ -79,7 +79,7 @@ static void worker_thread(void* arg) {
       r = (r * 17) & ((r - i) | (r * i));
     }
     cpu = gpr_cpu_current_cpu();
-    ASSERT_TRUE(cpu < ct->ncores);
+    ASSERT_LT(cpu, ct->ncores);
     gpr_mu_lock(&ct->mu);
     ct->used[cpu] = 1;
     for (j = 0; j < ct->ncores; j++) {
@@ -105,7 +105,7 @@ static void cpu_test(void) {
   int cores_seen = 0;
   struct cpu_test ct;
   ct.ncores = gpr_cpu_num_cores();
-  ASSERT_TRUE(ct.ncores > 0);
+  ASSERT_GT(ct.ncores, 0);
   ct.nthreads = static_cast<int>(ct.ncores) * 3;
   ct.used = static_cast<int*>(gpr_malloc(ct.ncores * sizeof(int)));
   memset(ct.used, 0, ct.ncores * sizeof(int));

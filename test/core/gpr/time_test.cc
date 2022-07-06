@@ -107,15 +107,15 @@ TEST(TimeTest, Values) {
 
   /* Test possible overflow in conversion of -ve values. */
   x = gpr_time_from_micros(-(INT64_MAX - 999997), GPR_TIMESPAN);
-  ASSERT_TRUE(x.tv_sec < 0);
+  ASSERT_LT(x.tv_sec, 0);
   ASSERT_TRUE(x.tv_nsec >= 0 && x.tv_nsec < GPR_NS_PER_SEC);
 
   x = gpr_time_from_nanos(-(INT64_MAX - 999999997), GPR_TIMESPAN);
-  ASSERT_TRUE(x.tv_sec < 0);
+  ASSERT_LT(x.tv_sec, 0);
   ASSERT_TRUE(x.tv_nsec >= 0 && x.tv_nsec < GPR_NS_PER_SEC);
 
   x = gpr_time_from_millis(-(INT64_MAX - 997), GPR_TIMESPAN);
-  ASSERT_TRUE(x.tv_sec < 0);
+  ASSERT_LT(x.tv_sec, 0);
   ASSERT_TRUE(x.tv_nsec >= 0 && x.tv_nsec < GPR_NS_PER_SEC);
 
   /* Test general -ve values. */

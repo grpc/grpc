@@ -245,8 +245,8 @@ TEST(StringTest, Leftpad) {
 TEST(StringTest, Stricmp) {
   ASSERT_EQ(0, gpr_stricmp("hello", "hello"));
   ASSERT_EQ(0, gpr_stricmp("HELLO", "hello"));
-  ASSERT_TRUE(gpr_stricmp("a", "b") < 0);
-  ASSERT_TRUE(gpr_stricmp("b", "a") > 0);
+  ASSERT_LT(gpr_stricmp("a", "b"), 0);
+  ASSERT_GT(gpr_stricmp("b", "a"), 0);
 }
 
 TEST(StringTest, Memrchr) {
