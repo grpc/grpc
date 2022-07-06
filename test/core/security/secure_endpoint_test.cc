@@ -60,9 +60,9 @@ static void me_write(grpc_endpoint* ep, grpc_slice_buffer* slices,
     // Estimate the frame size of the next frame.
     int next_frame_size =
         tsi_fake_zero_copy_grpc_protector_next_frame_size(slices);
-    ASSERT_TRUE(next_frame_size > TSI_FAKE_FRAME_HEADER_SIZE);
+    ASSERT_GT(next_frame_size, TSI_FAKE_FRAME_HEADER_SIZE);
     // Ensure the protected data size does not exceed the max_frame_size.
-    ASSERT_TRUE(next_frame_size - TSI_FAKE_FRAME_HEADER_SIZE <= max_frame_size);
+    ASSERT_LE(next_frame_size - TSI_FAKE_FRAME_HEADER_SIZE, max_frame_size);
     // Move this frame into a staging buffer and repeat.
     grpc_slice_buffer_move_first(slices, next_frame_size, &m->staging_buffer);
     remaining -= next_frame_size;
@@ -191,7 +191,7 @@ static grpc_endpoint_test_fixture secure_endpoint_create_fixture_tcp_socketpair(
         message_bytes += processed_message_size;
         message_size -= processed_message_size;
         cur += protected_buffer_size_to_send;
-        EXPECT_TRUE(buffer_size >= protected_buffer_size_to_send);
+        EXPECT_GE(buffer_size, protected_buffer_size_to_send);
         buffer_size -= protected_buffer_size_to_send;
       }
       grpc_slice_unref(plain);
@@ -203,7 +203,7 @@ static grpc_endpoint_test_fixture secure_endpoint_create_fixture_tcp_socketpair(
                                                  &still_pending_size);
       EXPECT_EQ(result, TSI_OK);
       cur += protected_buffer_size_to_send;
-      EXPECT_TRUE(buffer_size >= protected_buffer_size_to_send);
+      EXPECT_GE(buffer_size, protected_buffer_size_to_send);
       buffer_size -= protected_buffer_size_to_send;
     } while (still_pending_size > 0);
     encrypted_leftover = grpc_slice_from_copied_buffer(
