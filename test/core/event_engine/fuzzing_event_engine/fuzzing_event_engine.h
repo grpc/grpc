@@ -19,8 +19,6 @@
 #include <cstdint>
 #include <map>
 
-#include "absl/functional/any_invocable.h"
-
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/grpc.h>
 
@@ -47,7 +45,7 @@ class FuzzingEventEngine : public EventEngine {
 
   absl::StatusOr<std::unique_ptr<Listener>> CreateListener(
       Listener::AcceptCallback on_accept,
-      absl::AnyInvocable<void(absl::Status)> on_shutdown,
+      std::function<void(absl::Status)> on_shutdown,
       const EndpointConfig& config,
       std::unique_ptr<MemoryAllocatorFactory> memory_allocator_factory)
       override;
@@ -66,10 +64,9 @@ class FuzzingEventEngine : public EventEngine {
       const DNSResolver::ResolverOptions& options) override;
 
   void Run(Closure* closure) override;
-  void Run(absl::AnyInvocable<void()> closure) override;
+  void Run(std::function<void()> closure) override;
   TaskHandle RunAfter(Duration when, Closure* closure) override;
-  TaskHandle RunAfter(Duration when,
-                      absl::AnyInvocable<void()> closure) override;
+  TaskHandle RunAfter(Duration when, std::function<void()> closure) override;
   bool Cancel(TaskHandle handle) override;
 
   using Time = std::chrono::time_point<FuzzingEventEngine, Duration>;
@@ -78,10 +75,10 @@ class FuzzingEventEngine : public EventEngine {
 
  private:
   struct Task {
-    Task(intptr_t id, absl::AnyInvocable<void()> closure)
+    Task(intptr_t id, std::function<void()> closure)
         : id(id), closure(std::move(closure)) {}
     intptr_t id;
-    absl::AnyInvocable<void()> closure;
+    std::function<void()> closure;
   };
 
   gpr_timespec NowAsTimespec(gpr_clock_type clock_type)
