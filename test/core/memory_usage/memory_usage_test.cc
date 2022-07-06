@@ -32,9 +32,15 @@
 #include "test/core/util/port.h"
 #include "test/core/util/subprocess.h"
 
-ABSL_FLAG(int, warmup, 100, "Warmup iterations");
+ABSL_FLAG(std::string, benchmark_name, "call", "Which benchmark to run");
+ABSL_FLAG(int, size, 1000, "Number of channels/calls");
+ABSL_FLAG(std::string, scenario_config, "default",
+          "Use minimal stack/resource quote/secure server");
+ABSL_FLAG(bool, memory_profiling, false, "Run memory profiling");
+
+/*ABSL_FLAG(int, warmup, 100, "Warmup iterations");
 ABSL_FLAG(int, benchmark, 1000, "Benchmark iterations");
-ABSL_FLAG(bool, minstack, false, "Use minimal stack");
+ABSL_FLAG(bool, minstack, false, "Use minimal stack");*/
 
 class Subprocess {
  public:
@@ -72,26 +78,43 @@ int main(int argc, char** argv) {
   } else {
     strcpy(root, ".");
   }
-  /* start the server */
-  Subprocess svr({absl::StrCat(root, "/memory_usage_server",
-                               gpr_subprocess_binary_extension()),
-                  "--bind", grpc_core::JoinHostPort("::", port), "--nosecure",
-                  absl::StrCat("--minstack=", absl::GetFlag(FLAGS_minstack))});
 
-  /* start the client */
-  Subprocess cli({absl::StrCat(root, "/memory_usage_client",
-                               gpr_subprocess_binary_extension()),
-                  "--target", grpc_core::JoinHostPort("127.0.0.1", port),
-                  absl::StrCat("--warmup=", absl::GetFlag(FLAGS_warmup)),
-                  absl::StrCat("--benchmark=", absl::GetFlag(FLAGS_benchmark)),
-                  absl::StrCat("--minstack=", absl::GetFlag(FLAGS_minstack))});
+  /* per-call memory usage benchmark */
+  if (absl::GetFlag(FLAGS_benchmark_name) == "call") {
+    /* Set configurations */
+    std::string minstack_arg = absl::StrCat("--minstack=", false);
+    std::string secure_arg = "--nosecure";
+    if (absl::GetFlag(FLAGS_scenario_config) == "secure")
+      secure_arg = "--secure";
+    if (absl::GetFlag(FLAGS_scenario_config) == "resource_quota") {
+      secure_arg = "--secure";
+      // add in resource quota parameter setting later
+    }
+    if (absl::GetFlag(FLAGS_scenario_config) == "minstack")
+      minstack_arg = absl::StrCat("--minstack=", true);
 
-  /* wait for completion */
-  if ((status = cli.Join()) != 0) {
-    printf("client failed with: %d", status);
-    return 1;
+    /* start the server */
+    Subprocess svr({absl::StrCat(root, "/memory_usage_server",
+                                 gpr_subprocess_binary_extension()),
+                    "--bind", grpc_core::JoinHostPort("::", port), secure_arg,
+                    minstack_arg});
+
+    /* start the client */
+    Subprocess cli({absl::StrCat(root, "/memory_usage_client",
+                                 gpr_subprocess_binary_extension()),
+                    "--target", grpc_core::JoinHostPort("127.0.0.1", port),
+                    absl::StrCat("--warmup=", 10000),
+                    absl::StrCat("--benchmark=", absl::GetFlag(FLAGS_size)),
+                    minstack_arg});
+    /* wait for completion */
+    if ((status = cli.Join()) != 0) {
+      printf("client failed with: %d", status);
+      return 1;
+    }
+
+    svr.Interrupt();
+    return svr.Join() == 0 ? 0 : 2;
   }
 
-  svr.Interrupt();
-  return svr.Join() == 0 ? 0 : 2;
+  // TO DO chennancy, return statement
 }
