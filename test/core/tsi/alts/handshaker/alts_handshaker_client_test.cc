@@ -110,23 +110,23 @@ static bool validate_op(alts_handshaker_client* c, const grpc_op* op,
     ok &= (op->op == GRPC_OP_SEND_INITIAL_METADATA);
     ok &= (op->data.send_initial_metadata.count == 0);
     op++;
-    EXPECT_TRUE((size_t)(op - start_op) <= kHandshakerClientOpNum);
+    EXPECT_LE((size_t)(op - start_op), kHandshakerClientOpNum);
     ok &= (op->op == GRPC_OP_RECV_INITIAL_METADATA);
     ok &= (op->data.recv_initial_metadata.recv_initial_metadata ==
            alts_handshaker_client_get_initial_metadata_for_testing(c));
     op++;
-    EXPECT_TRUE((size_t)(op - start_op) <= kHandshakerClientOpNum);
+    EXPECT_LE((size_t)(op - start_op), kHandshakerClientOpNum);
   }
   ok &= (op->op == GRPC_OP_SEND_MESSAGE);
   ok &= (op->data.send_message.send_message ==
          alts_handshaker_client_get_send_buffer_for_testing(c));
   op++;
-  EXPECT_TRUE((size_t)(op - start_op) <= kHandshakerClientOpNum);
+  EXPECT_LE((size_t)(op - start_op), kHandshakerClientOpNum);
   ok &= (op->op == GRPC_OP_RECV_MESSAGE);
   ok &= (op->data.recv_message.recv_message ==
          alts_handshaker_client_get_recv_buffer_addr_for_testing(c));
   op++;
-  EXPECT_TRUE((size_t)(op - start_op) <= kHandshakerClientOpNum);
+  EXPECT_LE((size_t)(op - start_op), kHandshakerClientOpNum);
   return ok;
 }
 

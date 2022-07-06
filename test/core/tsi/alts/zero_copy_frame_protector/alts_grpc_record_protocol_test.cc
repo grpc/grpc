@@ -69,7 +69,7 @@ static void create_random_slice_buffer(grpc_slice_buffer* sb) {
 
 static uint8_t* pointer_to_nth_byte(grpc_slice_buffer* sb, size_t index) {
   EXPECT_NE(sb, nullptr);
-  EXPECT_TRUE(index < sb->length);
+  EXPECT_LT(index, sb->length);
   for (size_t i = 0; i < sb->count; i++) {
     if (index < GRPC_SLICE_LENGTH(sb->slices[i])) {
       return GRPC_SLICE_START_PTR(sb->slices[i]) + index;
