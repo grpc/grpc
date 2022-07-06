@@ -3474,15 +3474,6 @@ targets:
   - linux
   - posix
   - mac
-- name: completion_queue_threading_test
-  build: test
-  run: false
-  language: c
-  headers: []
-  src:
-  - test/core/surface/completion_queue_threading_test.cc
-  deps:
-  - grpc_test_util
 - name: compression_test
   build: test
   language: c
@@ -3494,14 +3485,6 @@ targets:
   deps:
   - grpc_test_util
   uses_polling: false
-- name: concurrent_connectivity_test
-  build: test
-  language: c
-  headers: []
-  src:
-  - test/core/surface/concurrent_connectivity_test.cc
-  deps:
-  - grpc_test_util
 - name: connection_refused_test
   build: test
   language: c
@@ -3700,23 +3683,6 @@ targets:
   - test/core/security/grpc_alts_credentials_options_test.cc
   deps:
   - grpc_test_util
-- name: grpc_byte_buffer_reader_test
-  build: test
-  language: c
-  headers: []
-  src:
-  - test/core/surface/byte_buffer_reader_test.cc
-  deps:
-  - grpc_test_util
-  uses_polling: false
-- name: grpc_completion_queue_test
-  build: test
-  language: c
-  headers: []
-  src:
-  - test/core/surface/completion_queue_test.cc
-  deps:
-  - grpc_test_util
 - name: grpc_ipv6_loopback_available_test
   build: test
   language: c
@@ -3803,16 +3769,6 @@ targets:
   deps:
   - grpc_test_util
   uses_polling: false
-- name: lame_client_test
-  build: test
-  language: c
-  headers:
-  - test/core/end2end/cq_verifier.h
-  src:
-  - test/core/end2end/cq_verifier.cc
-  - test/core/surface/lame_client_test.cc
-  deps:
-  - grpc_test_util
 - name: load_file_test
   build: test
   language: c
@@ -3964,14 +3920,6 @@ targets:
   - test/core/end2end/no_server_test.cc
   deps:
   - grpc_test_util
-- name: num_external_connectivity_watchers_test
-  build: test
-  language: c
-  headers: []
-  src:
-  - test/core/surface/num_external_connectivity_watchers_test.cc
-  deps:
-  - grpc_test_util
 - name: parse_address_test
   build: test
   language: c
@@ -4056,14 +4004,6 @@ targets:
   - linux
   - posix
   - mac
-- name: secure_channel_create_test
-  build: test
-  language: c
-  headers: []
-  src:
-  - test/core/surface/secure_channel_create_test.cc
-  deps:
-  - grpc_test_util
 - name: secure_endpoint_test
   build: test
   language: c
@@ -4082,15 +4022,6 @@ targets:
   - test/core/security/security_connector_test.cc
   deps:
   - grpc_test_util
-- name: sequential_connectivity_test
-  build: test
-  run: false
-  language: c
-  headers: []
-  src:
-  - test/core/surface/sequential_connectivity_test.cc
-  deps:
-  - grpc_test_util
 - name: server_ssl_test
   build: test
   language: c
@@ -4105,14 +4036,6 @@ targets:
   - linux
   - posix
   - mac
-- name: server_test
-  build: test
-  language: c
-  headers: []
-  src:
-  - test/core/surface/server_test.cc
-  deps:
-  - grpc_test_util
 - name: slice_string_helpers_test
   build: test
   language: c
@@ -5330,6 +5253,25 @@ targets:
   - grpc++
   - grpc_test_util
   uses_polling: false
+- name: completion_queue_threading_test
+  gtest: true
+  build: test
+  run: false
+  language: c++
+  headers: []
+  src:
+  - test/core/surface/completion_queue_threading_test.cc
+  deps:
+  - grpc_test_util
+- name: concurrent_connectivity_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/core/surface/concurrent_connectivity_test.cc
+  deps:
+  - grpc_test_util
 - name: connection_prefix_bad_client_test
   gtest: true
   build: test
@@ -6184,6 +6126,16 @@ targets:
   - test/cpp/end2end/test_service_impl.cc
   deps:
   - grpc++_test_util
+- name: grpc_byte_buffer_reader_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/core/surface/byte_buffer_reader_test.cc
+  deps:
+  - grpc_test_util
+  uses_polling: false
 - name: grpc_cli
   build: test
   run: false
@@ -6209,6 +6161,15 @@ targets:
   - absl/flags:flag
   - grpc++
   - grpc++_test_config
+- name: grpc_completion_queue_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/core/surface/completion_queue_test.cc
+  deps:
+  - grpc_test_util
 - name: grpc_cpp_plugin
   build: protoc
   language: c++
@@ -6674,6 +6635,17 @@ targets:
   deps:
   - grpc_test_util
   uses_polling: false
+- name: lame_client_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - test/core/end2end/cq_verifier.h
+  src:
+  - test/core/end2end/cq_verifier.cc
+  - test/core/surface/lame_client_test.cc
+  deps:
+  - grpc_test_util
 - name: large_metadata_bad_client_test
   gtest: true
   build: test
@@ -7029,6 +7001,15 @@ targets:
   - test/cpp/end2end/nonblocking_test.cc
   deps:
   - grpc++_test_util
+- name: num_external_connectivity_watchers_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/core/surface/num_external_connectivity_watchers_test.cc
+  deps:
+  - grpc_test_util
 - name: observable_test
   gtest: true
   build: test
@@ -7777,6 +7758,15 @@ targets:
   - test/cpp/common/secure_auth_context_test.cc
   deps:
   - grpc++_test_util
+- name: secure_channel_create_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/core/surface/secure_channel_create_test.cc
+  deps:
+  - grpc_test_util
 - name: seq_test
   gtest: true
   build: test
@@ -7796,6 +7786,16 @@ targets:
   - absl/types:variant
   - absl/utility:utility
   uses_polling: false
+- name: sequential_connectivity_test
+  gtest: true
+  build: test
+  run: false
+  language: c++
+  headers: []
+  src:
+  - test/core/surface/sequential_connectivity_test.cc
+  deps:
+  - grpc_test_util
 - name: server_builder_plugin_test
   gtest: true
   build: test
@@ -7938,6 +7938,15 @@ targets:
   - linux
   - posix
   - mac
+- name: server_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/core/surface/server_test.cc
+  deps:
+  - grpc_test_util
 - name: service_config_end2end_test
   gtest: true
   build: test
