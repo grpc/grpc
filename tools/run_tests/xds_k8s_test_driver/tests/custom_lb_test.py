@@ -19,6 +19,7 @@ from absl.testing import absltest
 import grpc
 
 from framework import xds_k8s_testcase
+from framework.helpers import skips
 
 logger = logging.getLogger(__name__)
 flags.adopt_module_key_flags(xds_k8s_testcase)
@@ -26,11 +27,20 @@ flags.adopt_module_key_flags(xds_k8s_testcase)
 # Type aliases
 _XdsTestServer = xds_k8s_testcase.XdsTestServer
 _XdsTestClient = xds_k8s_testcase.XdsTestClient
+_Lang = skips.Lang
 
 _EXPECTED_STATUS = grpc.StatusCode.DATA_LOSS
 
 
 class CustomLbTest(xds_k8s_testcase.RegularXdsKubernetesTestCase):
+
+    # As of 2022-07-06 custom load balancer configuration via xDS is only supported by
+    # Java clients v1.47.x and above.
+    @staticmethod
+    def is_supported(config: skips.TestConfig) -> bool:
+        if config.client_lang == _Lang.JAVA:
+            return config.version_gte('v1.47.x')
+        return False
 
     def test_custom_lb_config(self):
         with self.subTest('0_create_health_check'):
