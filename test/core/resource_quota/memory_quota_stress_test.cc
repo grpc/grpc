@@ -24,8 +24,6 @@
 #include <utility>
 #include <vector>
 
-#include <gtest/gtest.h>
-
 #include "absl/base/thread_annotations.h"
 #include "absl/strings/str_cat.h"
 #include "absl/types/optional.h"
