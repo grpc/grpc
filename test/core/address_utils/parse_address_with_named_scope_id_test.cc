@@ -115,7 +115,7 @@ TEST(ParseAddressWithNamedScopeIdTest, MainTest) {
       break;
     }
   }
-  ASSERT_TRUE(strlen(arbitrary_interface_name) > 0);
+  ASSERT_GT(strlen(arbitrary_interface_name), 0);
   std::string target =
       absl::StrFormat("ipv6:[fe80::1234%%%s]:12345", arbitrary_interface_name);
   struct sockaddr_in6 result_from_getaddrinfo =
