@@ -82,27 +82,27 @@ static tsi_test_fixture* fake_tsi_test_fixture_create() {
   return &fake_fixture->base;
 }
 
-void fake_tsi_test_do_handshake_tiny_handshake_buffer() {
+TEST(FakeTransportSecurityTest, FakeTsiTestDoHandshakeTinyHandshakeBuffer) {
   tsi_test_fixture* fixture = fake_tsi_test_fixture_create();
   fixture->handshake_buffer_size = TSI_TEST_TINY_HANDSHAKE_BUFFER_SIZE;
   tsi_test_do_handshake(fixture);
   tsi_test_fixture_destroy(fixture);
 }
 
-void fake_tsi_test_do_handshake_small_handshake_buffer() {
+TEST(FakeTransportSecurityTest, FakeTsiTestDoHandshakeSmallHandshakeBuffer) {
   tsi_test_fixture* fixture = fake_tsi_test_fixture_create();
   fixture->handshake_buffer_size = TSI_TEST_SMALL_HANDSHAKE_BUFFER_SIZE;
   tsi_test_do_handshake(fixture);
   tsi_test_fixture_destroy(fixture);
 }
 
-void fake_tsi_test_do_handshake() {
+TEST(FakeTransportSecurityTest, FakeTsiTestDoHandshake) {
   tsi_test_fixture* fixture = fake_tsi_test_fixture_create();
   tsi_test_do_handshake(fixture);
   tsi_test_fixture_destroy(fixture);
 }
 
-void fake_tsi_test_do_round_trip_for_all_configs() {
+TEST(FakeTransportSecurityTest, FakeTsiTestDoRoundTripForAllConfigs) {
   unsigned int* bit_array = static_cast<unsigned int*>(
       gpr_zalloc(sizeof(unsigned int) * TSI_TEST_NUM_OF_ARGUMENTS));
   const unsigned int mask = 1U << (TSI_TEST_NUM_OF_ARGUMENTS - 1);
@@ -125,7 +125,7 @@ void fake_tsi_test_do_round_trip_for_all_configs() {
   gpr_free(bit_array);
 }
 
-void fake_tsi_test_do_round_trip_odd_buffer_size() {
+TEST(FakeTransportSecurityTest, FakeTsiTestDoRoundTripOddBufferSize) {
   const size_t odd_sizes[] = {1025, 2051, 4103, 8207, 16409};
   const size_t size = sizeof(odd_sizes) / sizeof(size_t);
   for (size_t ind1 = 0; ind1 < size; ind1++) {
