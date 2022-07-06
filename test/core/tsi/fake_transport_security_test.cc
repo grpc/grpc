@@ -22,6 +22,8 @@
 #include <stdio.h>
 #include <string.h>
 
+#include <gtest/gtest.h>
+
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
@@ -43,19 +45,21 @@ static void fake_test_setup_handshakers(tsi_test_fixture* fixture) {
 }
 
 static void validate_handshaker_peers(tsi_handshaker_result* result) {
-  GPR_ASSERT(result != nullptr);
+  ASSERT_NE(result, nullptr);
   tsi_peer peer;
-  GPR_ASSERT(tsi_handshaker_result_extract_peer(result, &peer) == TSI_OK);
+  ASSERT_EQ(tsi_handshaker_result_extract_peer(result, &peer), TSI_OK);
   const tsi_peer_property* property =
       tsi_peer_get_property_by_name(&peer, TSI_CERTIFICATE_TYPE_PEER_PROPERTY);
-  GPR_ASSERT(property != nullptr);
-  GPR_ASSERT(memcmp(property->value.data, TSI_FAKE_CERTIFICATE_TYPE,
-                    property->value.length) == 0);
+  ASSERT_NE(property, nullptr);
+  ASSERT_EQ(memcmp(property->value.data, TSI_FAKE_CERTIFICATE_TYPE,
+                   property->value.length),
+            0);
   property =
       tsi_peer_get_property_by_name(&peer, TSI_SECURITY_LEVEL_PEER_PROPERTY);
-  GPR_ASSERT(property != nullptr);
-  GPR_ASSERT(memcmp(property->value.data, TSI_FAKE_SECURITY_LEVEL,
-                    property->value.length) == 0);
+  ASSERT_NE(property, nullptr);
+  ASSERT_EQ(memcmp(property->value.data, TSI_FAKE_SECURITY_LEVEL,
+                   property->value.length),
+            0);
   tsi_peer_destruct(&peer);
 }
 
@@ -146,12 +150,7 @@ void fake_tsi_test_do_round_trip_odd_buffer_size() {
 
 int main(int argc, char** argv) {
   grpc::testing::TestEnvironment env(&argc, argv);
-  grpc_init();
-  fake_tsi_test_do_handshake_tiny_handshake_buffer();
-  fake_tsi_test_do_handshake_small_handshake_buffer();
-  fake_tsi_test_do_handshake();
-  fake_tsi_test_do_round_trip_for_all_configs();
-  fake_tsi_test_do_round_trip_odd_buffer_size();
-  grpc_shutdown();
-  return 0;
+  ::testing::InitGoogleTest(&argc, argv);
+  grpc::testing::TestGrpcScope grpc_scope;
+  return RUN_ALL_TESTS();
 }
