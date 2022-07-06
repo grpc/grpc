@@ -40,7 +40,7 @@ void test_slice_buffer_add() {
     grpc_slice_buffer_add(&buf, aaa);
     grpc_slice_buffer_add(&buf, bb);
   }
-  ASSERT_TRUE(buf.count > 0);
+  ASSERT_GT(buf.count, 0);
   ASSERT_EQ(buf.length, 50);
   grpc_slice_buffer_reset_and_unref(&buf);
   ASSERT_EQ(buf.count, 0);
@@ -51,7 +51,7 @@ void test_slice_buffer_add() {
     grpc_slice_buffer_add(&buf, aaa);
     grpc_slice_buffer_add(&buf, bb);
   }
-  ASSERT_TRUE(buf.count > 0);
+  ASSERT_GT(buf.count, 0);
   ASSERT_EQ(buf.length, 50);
   for (i = 0; i < 10; i++) {
     grpc_slice_buffer_pop(&buf);
