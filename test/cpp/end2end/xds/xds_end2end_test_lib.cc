@@ -38,7 +38,7 @@
 
 #include "src/core/ext/filters/http/server/http_server_filter.h"
 #include "src/core/ext/xds/xds_channel_args.h"
-#include "src/core/ext/xds/xds_client_grpc.h"
+#include "src/core/ext/xds/xds_client.h"
 #include "src/core/lib/gpr/env.h"
 #include "src/core/lib/gpr/tmpfile.h"
 #include "src/core/lib/iomgr/load_file.h"
