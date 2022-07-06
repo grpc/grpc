@@ -174,7 +174,7 @@ class AresClientChannelDNSResolver : public PollingResolver {
     static void OnHostnameResolved(void* arg, grpc_error_handle error);
     static void OnSRVResolved(void* arg, grpc_error_handle error);
     static void OnTXTResolved(void* arg, grpc_error_handle error);
-    absl::StatusOr<Result> OnResolvedLocked(grpc_error_handle error)
+    absl::optional<Result> OnResolvedLocked(grpc_error_handle error)
         ABSL_EXCLUSIVE_LOCKS_REQUIRED(on_resolved_mu_);
 
     Mutex on_resolved_mu_;
@@ -330,13 +330,13 @@ std::string ChooseServiceConfig(char* service_config_choice_json,
 void AresClientChannelDNSResolver::AresRequestWrapper::OnHostnameResolved(
     void* arg, grpc_error_handle error) {
   auto* self = static_cast<AresRequestWrapper*>(arg);
-  absl::StatusOr<Result> result;
+  absl::optional<Result> result;
   {
     MutexLock lock(&self->on_resolved_mu_);
     self->hostname_request_.reset();
     result = self->OnResolvedLocked(error);
   }
-  if (result.ok()) {
+  if (result.has_value()) {
     self->resolver_->OnRequestComplete(std::move(*result));
   }
   self->Unref(DEBUG_LOCATION, "OnHostnameResolved");
@@ -345,13 +345,13 @@ void AresClientChannelDNSResolver::AresRequestWrapper::OnHostnameResolved(
 void AresClientChannelDNSResolver::AresRequestWrapper::OnSRVResolved(
     void* arg, grpc_error_handle error) {
   auto* self = static_cast<AresRequestWrapper*>(arg);
-  absl::StatusOr<Result> result;
+  absl::optional<Result> result;
   {
     MutexLock lock(&self->on_resolved_mu_);
     self->srv_request_.reset();
     result = self->OnResolvedLocked(error);
   }
-  if (result.ok()) {
+  if (result.has_value()) {
     self->resolver_->OnRequestComplete(std::move(*result));
   }
   self->Unref(DEBUG_LOCATION, "OnSRVResolved");
@@ -360,23 +360,23 @@ void AresClientChannelDNSResolver::AresRequestWrapper::OnSRVResolved(
 void AresClientChannelDNSResolver::AresRequestWrapper::OnTXTResolved(
     void* arg, grpc_error_handle error) {
   auto* self = static_cast<AresRequestWrapper*>(arg);
-  absl::StatusOr<Result> result;
+  absl::optional<Result> result;
   {
     MutexLock lock(&self->on_resolved_mu_);
     self->txt_request_.reset();
     result = self->OnResolvedLocked(error);
   }
-  if (result.ok()) {
+  if (result.has_value()) {
     self->resolver_->OnRequestComplete(std::move(*result));
   }
   self->Unref(DEBUG_LOCATION, "OnTXTResolved");
 }
 
-// Returns a Result if resolution is complete, and a non-OK status otherwise;
+// Returns a Result if resolution is complete.
 // callers must release the lock and call OnRequestComplete if a Result is
 // returned. This is because OnRequestComplete may Orphan the resolver, which
 // requires taking the lock.
-absl::StatusOr<AresClientChannelDNSResolver::Result>
+absl::optional<AresClientChannelDNSResolver::Result>
 AresClientChannelDNSResolver::AresRequestWrapper::OnResolvedLocked(
     grpc_error_handle error) ABSL_EXCLUSIVE_LOCKS_REQUIRED(on_resolved_mu_) {
   if (hostname_request_ != nullptr || srv_request_ != nullptr ||
@@ -387,7 +387,7 @@ AresClientChannelDNSResolver::AresRequestWrapper::OnResolvedLocked(
         this, hostname_request_ != nullptr ? "waiting" : "done",
         srv_request_ != nullptr ? "waiting" : "done",
         txt_request_ != nullptr ? "waiting" : "done");
-    return absl::FailedPreconditionError("Waiting for results.");
+    return absl::nullopt;
   }
   GRPC_CARES_TRACE_LOG("resolver:%p OnResolved() proceeding", this);
   Result result;
