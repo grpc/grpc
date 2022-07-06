@@ -1646,7 +1646,7 @@ RefCountedPtr<XdsClusterDropStats> XdsClient::AddClusterDropStats(
     // in the load_report_map_ key, so that they have the same lifetime.
     auto server_it =
         xds_load_report_server_map_.emplace(xds_server, LoadReportServer())
-        .first;
+            .first;
     if (server_it->second.channel_state == nullptr) {
       server_it->second.channel_state =
           GetOrCreateChannelStateLocked(xds_server);
@@ -1712,7 +1712,7 @@ RefCountedPtr<XdsClusterLocalityStats> XdsClient::AddClusterLocalityStats(
     // in the load_report_map_ key, so that they have the same lifetime.
     auto server_it =
         xds_load_report_server_map_.emplace(xds_server, LoadReportServer())
-        .first;
+            .first;
     if (server_it->second.channel_state == nullptr) {
       server_it->second.channel_state =
           GetOrCreateChannelStateLocked(xds_server);
