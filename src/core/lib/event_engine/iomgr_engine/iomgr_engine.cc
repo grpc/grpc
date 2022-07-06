@@ -20,7 +20,6 @@
 #include <utility>
 
 #include "absl/container/flat_hash_set.h"
-#include "absl/functional/any_invocable.h"
 #include "absl/strings/str_cat.h"
 
 #include <grpc/event_engine/event_engine.h>
@@ -50,7 +49,7 @@ grpc_core::Timestamp IomgrEventEngine::ToTimestamp(EventEngine::Duration when) {
 }
 
 struct IomgrEventEngine::ClosureData final : public EventEngine::Closure {
-  absl::AnyInvocable<void()> cb;
+  std::function<void()> cb;
   iomgr_engine::Timer timer;
   IomgrEventEngine* engine;
   EventEngine::TaskHandle handle;
@@ -93,7 +92,7 @@ bool IomgrEventEngine::Cancel(EventEngine::TaskHandle handle) {
 }
 
 EventEngine::TaskHandle IomgrEventEngine::RunAfter(
-    Duration when, absl::AnyInvocable<void()> closure) {
+    Duration when, std::function<void()> closure) {
   return RunAfterInternal(when, std::move(closure));
 }
 
@@ -102,8 +101,8 @@ EventEngine::TaskHandle IomgrEventEngine::RunAfter(
   return RunAfterInternal(when, [closure]() { closure->Run(); });
 }
 
-void IomgrEventEngine::Run(absl::AnyInvocable<void()> closure) {
-  thread_pool_.Add(std::move(closure));
+void IomgrEventEngine::Run(std::function<void()> closure) {
+  thread_pool_.Add(closure);
 }
 
 void IomgrEventEngine::Run(EventEngine::Closure* closure) {
@@ -111,7 +110,7 @@ void IomgrEventEngine::Run(EventEngine::Closure* closure) {
 }
 
 EventEngine::TaskHandle IomgrEventEngine::RunAfterInternal(
-    Duration when, absl::AnyInvocable<void()> cb) {
+    Duration when, std::function<void()> cb) {
   auto when_ts = ToTimestamp(when);
   auto* cd = new ClosureData;
   cd->cb = std::move(cb);
@@ -150,7 +149,7 @@ EventEngine::ConnectionHandle IomgrEventEngine::Connect(
 absl::StatusOr<std::unique_ptr<EventEngine::Listener>>
 IomgrEventEngine::CreateListener(
     Listener::AcceptCallback /*on_accept*/,
-    absl::AnyInvocable<void(absl::Status)> /*on_shutdown*/,
+    std::function<void(absl::Status)> /*on_shutdown*/,
     const EndpointConfig& /*config*/,
     std::unique_ptr<MemoryAllocatorFactory> /*memory_allocator_factory*/) {
   GPR_ASSERT(false && "unimplemented");
