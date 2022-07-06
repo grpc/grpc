@@ -287,6 +287,10 @@ void ChannelArgs::ChannelArgsDeleter::operator()(
   grpc_channel_args_destroy(p);
 }
 
+std::ostream& operator<<(std::ostream& os, const ChannelArgs& args) {
+  return os << args.ToString();
+}
+
 }  // namespace grpc_core
 
 static grpc_arg copy_arg(const grpc_arg* src) {

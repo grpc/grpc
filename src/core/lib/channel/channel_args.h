@@ -24,6 +24,7 @@
 #include <stddef.h>
 
 #include <algorithm>  // IWYU pragma: keep
+#include <iosfwd>
 #include <memory>
 #include <string>
 #include <type_traits>
@@ -266,6 +267,8 @@ class ChannelArgs {
 
   AVL<std::string, Value> args_;
 };
+
+std::ostream& operator<<(std::ostream& out, const ChannelArgs& args);
 
 }  // namespace grpc_core
 
