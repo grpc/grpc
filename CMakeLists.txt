@@ -25,13 +25,13 @@
 cmake_minimum_required(VERSION 3.5.1)
 
 set(PACKAGE_NAME          "grpc")
-set(PACKAGE_VERSION       "1.48.0-dev")
+set(PACKAGE_VERSION       "1.49.0-dev")
 set(gRPC_CORE_VERSION     "26.0.0")
 set(gRPC_CORE_SOVERSION   "26")
-set(gRPC_CPP_VERSION      "1.48.0-dev")
-set(gRPC_CPP_SOVERSION    "1.48")
-set(gRPC_CSHARP_VERSION   "2.48.0-dev")
-set(gRPC_CSHARP_SOVERSION "2.48")
+set(gRPC_CPP_VERSION      "1.49.0-dev")
+set(gRPC_CPP_SOVERSION    "1.49")
+set(gRPC_CSHARP_VERSION   "2.49.0-dev")
+set(gRPC_CSHARP_SOVERSION "2.49")
 set(PACKAGE_STRING        "${PACKAGE_NAME} ${PACKAGE_VERSION}")
 set(PACKAGE_TARNAME       "${PACKAGE_NAME}-${PACKAGE_VERSION}")
 set(PACKAGE_BUGREPORT     "https://github.com/grpc/grpc/issues/")
@@ -298,7 +298,7 @@ endif()
 if (gRPC_XDS_USER_AGENT_IS_CSHARP)
   # The value of the defines needs to contain quotes.
   # See https://github.com/grpc/grpc/blob/fbf32836a418cc84f58786700273b65cb9174e1d/src/core/ext/xds/xds_api.cc#L854
-  add_definitions("-DGRPC_XDS_USER_AGENT_NAME_SUFFIX=\"csharp\"" "-DGRPC_XDS_USER_AGENT_VERSION_SUFFIX=\"2.48.0-dev\"")
+  add_definitions("-DGRPC_XDS_USER_AGENT_NAME_SUFFIX=\"csharp\"" "-DGRPC_XDS_USER_AGENT_VERSION_SUFFIX=\"2.49.0-dev\"")
 endif()
 
 if(UNIX AND NOT HAIKU)
@@ -2027,6 +2027,7 @@ add_library(grpc
   src/core/ext/xds/xds_certificate_provider.cc
   src/core/ext/xds/xds_channel_stack_modifier.cc
   src/core/ext/xds/xds_client.cc
+  src/core/ext/xds/xds_client_grpc.cc
   src/core/ext/xds/xds_client_stats.cc
   src/core/ext/xds/xds_cluster.cc
   src/core/ext/xds/xds_cluster_specifier_plugin.cc
@@ -2041,6 +2042,7 @@ add_library(grpc
   src/core/ext/xds/xds_route_config.cc
   src/core/ext/xds/xds_routing.cc
   src/core/ext/xds/xds_server_config_fetcher.cc
+  src/core/ext/xds/xds_transport_grpc.cc
   src/core/lib/address_utils/parse_address.cc
   src/core/lib/address_utils/sockaddr_utils.cc
   src/core/lib/backoff/backoff.cc
