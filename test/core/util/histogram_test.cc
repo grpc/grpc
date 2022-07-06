@@ -33,8 +33,8 @@ static void expect_percentile(grpc_histogram* h, double percentile,
   double got = grpc_histogram_percentile(h, percentile);
   gpr_log(GPR_INFO, "@%f%%, expect %f <= %f <= %f", percentile, min_expect, got,
           max_expect);
-  ASSERT_TRUE(min_expect <= got);
-  ASSERT_TRUE(got <= max_expect);
+  ASSERT_LE(min_expect, got);
+  ASSERT_LE(got, max_expect);
 }
 
 TEST(HistogramTest, Simple) {
@@ -92,7 +92,7 @@ TEST(HistogramTest, Percentile) {
   last = 0.0;
   for (i = 0; i < 100.0; i += 0.01) {
     cur = grpc_histogram_percentile(h, i);
-    ASSERT_TRUE(cur >= last);
+    ASSERT_GE(cur, last);
     last = cur;
   }
 
@@ -149,7 +149,7 @@ TEST(HistogramTest, Merge) {
   last = 0.0;
   for (i = 0; i < 100.0; i += 0.01) {
     cur = grpc_histogram_percentile(h1, i);
-    ASSERT_TRUE(cur >= last);
+    ASSERT_GE(cur, last);
     last = cur;
   }
 
