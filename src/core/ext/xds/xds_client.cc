@@ -56,10 +56,10 @@
 #define GRPC_XDS_RECONNECT_JITTER 0.2
 #define GRPC_XDS_MIN_CLIENT_LOAD_REPORTING_INTERVAL_MS 1000
 
-using grpc_event_engine::experimental::EventEngine;
-using grpc_event_engine::experimental::GetDefaultEventEngine;
-
 namespace grpc_core {
+
+using ::grpc_event_engine::experimental::EventEngine;
+using ::grpc_event_engine::experimental::GetDefaultEventEngine;
 
 TraceFlag grpc_xds_client_trace(false, "xds_client");
 TraceFlag grpc_xds_client_refcount_trace(false, "xds_client_refcount");
