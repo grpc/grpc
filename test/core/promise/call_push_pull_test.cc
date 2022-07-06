@@ -54,8 +54,8 @@ TEST(CallPushPullTest, OneReady) {
 TEST(CallPushPullTest, OneFailed) {
   auto a = CallPushPull(
       []() -> Poll<absl::Status> { return absl::UnknownError("bah"); },
-      []() -> Poll<absl::Status> { return Pending{}; },
-      []() -> Poll<absl::Status> { return Pending{}; });
+      []() -> Poll<absl::Status> { return absl::OkStatus(); },
+      []() -> Poll<absl::Status> { return absl::OkStatus(); });
   EXPECT_EQ(a(), Poll<absl::Status>(absl::UnknownError("bah")));
   auto b = CallPushPull(
       []() -> Poll<absl::Status> { return Pending{}; },
