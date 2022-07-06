@@ -291,11 +291,12 @@ GrpcXdsTransportFactory::GrpcXdsTransport::~GrpcXdsTransport() {
 }
 
 void GrpcXdsTransportFactory::GrpcXdsTransport::Orphan() {
-  if (IsLameChannel(channel_)) return;
-  ClientChannel* client_channel =
-      ClientChannel::GetFromChannel(Channel::FromC(channel_));
-  GPR_ASSERT(client_channel != nullptr);
-  client_channel->RemoveConnectivityWatcher(watcher_);
+  if (!IsLameChannel(channel_)) {
+    ClientChannel* client_channel =
+        ClientChannel::GetFromChannel(Channel::FromC(channel_));
+    GPR_ASSERT(client_channel != nullptr);
+    client_channel->RemoveConnectivityWatcher(watcher_);
+  }
   Unref();
 }
 
