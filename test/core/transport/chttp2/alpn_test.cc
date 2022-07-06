@@ -48,7 +48,7 @@ static size_t alpn_version_index(const char* version, size_t size) {
 
 TEST(AlpnTest, TestAlpnGrpcBeforeH2) {
   // grpc-exp is preferred over h2.
-  ASSERT_TRUE(alpn_version_index("grpc-exp", 8) < alpn_version_index("h2", 2));
+  ASSERT_LT(alpn_version_index("grpc-exp", 8), alpn_version_index("h2", 2));
 }
 
 int main(int argc, char** argv) {
