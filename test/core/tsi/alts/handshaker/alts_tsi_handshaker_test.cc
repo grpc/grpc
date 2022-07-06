@@ -1058,12 +1058,10 @@ void check_handshaker_success() {
   notification_destroy(&tsi_to_caller_notification);
 }
 
-int main(int argc, char** argv) {
+/*
   grpc::testing::TestEnvironment env(&argc, argv);
-  /* Initialization. */
   grpc_init();
   grpc_alts_shared_resource_dedicated_init();
-  /* Tests. */
   should_handshaker_client_api_succeed = true;
   check_handshaker_success();
   check_handshaker_next_invalid_input();
@@ -1078,8 +1076,23 @@ int main(int argc, char** argv) {
   check_handle_response_failed_recv_message_from_handshaker_service();
   check_handle_response_invalid_resp();
   check_handle_response_failure();
-  /* Cleanup. */
   grpc_alts_shared_resource_dedicated_shutdown();
   grpc_shutdown();
+*/
+
+int main(int argc, char** argv) {
+  grpc::testing::TestEnvironment env(&argc, argv);
+  check_handshaker_success();
+  check_handshaker_next_invalid_input();
+  check_handshaker_next_fails_after_shutdown();
+  check_handle_response_after_shutdown();
+  check_handshaker_shutdown_invalid_input();
+  check_handshaker_next_failure();
+  check_handle_response_nullptr_handshaker();
+  check_handle_response_nullptr_recv_bytes();
+  check_handle_response_failed_grpc_call_to_handshaker_service();
+  check_handle_response_failed_recv_message_from_handshaker_service();
+  check_handle_response_invalid_resp();
+  check_handle_response_failure();
   return 0;
 }

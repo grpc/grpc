@@ -502,17 +502,18 @@ static void schedule_request_grpc_call_failure_test() {
   destroy_config(config);
 }
 
+  // /* Initialization. */
+  // grpc_init();
+  // grpc_alts_shared_resource_dedicated_init();
+  // /* Tests. */
+  // /* Cleanup. */
+  // grpc_alts_shared_resource_dedicated_shutdown();
+  // grpc_shutdown();
+
 int main(int argc, char** argv) {
   grpc::testing::TestEnvironment env(&argc, argv);
-  /* Initialization. */
-  grpc_init();
-  grpc_alts_shared_resource_dedicated_init();
-  /* Tests. */
   schedule_request_invalid_arg_test();
   schedule_request_success_test();
   schedule_request_grpc_call_failure_test();
-  /* Cleanup. */
-  grpc_alts_shared_resource_dedicated_shutdown();
-  grpc_shutdown();
   return 0;
 }
