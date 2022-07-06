@@ -226,7 +226,7 @@ PosixOracleEndpoint::~PosixOracleEndpoint() {
   close(socket_fd_);
 }
 
-void PosixOracleEndpoint::Read(std::function<void(absl::Status)> on_read,
+void PosixOracleEndpoint::Read(absl::AnyInvocable<void(absl::Status)> on_read,
                                SliceBuffer* buffer, const ReadArgs* args) {
   GPR_ASSERT(buffer != nullptr);
   int read_hint_bytes =
@@ -236,8 +236,9 @@ void PosixOracleEndpoint::Read(std::function<void(absl::Status)> on_read,
       ReadOperation(read_hint_bytes, buffer, std::move(on_read)));
 }
 
-void PosixOracleEndpoint::Write(std::function<void(absl::Status)> on_writable,
-                                SliceBuffer* data, const WriteArgs* /*args*/) {
+void PosixOracleEndpoint::Write(
+    absl::AnyInvocable<void(absl::Status)> on_writable, SliceBuffer* data,
+    const WriteArgs* /*args*/) {
   GPR_ASSERT(data != nullptr);
   write_ops_channel_.Set(WriteOperation(data, std::move(on_writable)));
 }
@@ -245,8 +246,7 @@ void PosixOracleEndpoint::Write(std::function<void(absl::Status)> on_writable,
 void PosixOracleEndpoint::ProcessReadOperations() {
   gpr_log(GPR_INFO, "Starting thread to process read ops ...");
   while (true) {
-    ReadOperation read_op;
-    read_op = read_ops_channel_.Get();
+    ReadOperation read_op = std::move(read_ops_channel_.Get());
     read_ops_channel_.Reset();
     if (!read_op.IsValid()) {
       read_op(std::string(), absl::CancelledError("Closed"));
@@ -266,8 +266,7 @@ void PosixOracleEndpoint::ProcessReadOperations() {
 void PosixOracleEndpoint::ProcessWriteOperations() {
   gpr_log(GPR_INFO, "Starting thread to process write ops ...");
   while (true) {
-    WriteOperation write_op;
-    write_op = write_ops_channel_.Get();
+    WriteOperation write_op = std::move(write_ops_channel_.Get());
     write_ops_channel_.Reset();
     if (!write_op.IsValid()) {
       write_op(absl::CancelledError("Closed"));
@@ -285,7 +284,7 @@ void PosixOracleEndpoint::ProcessWriteOperations() {
 
 PosixOracleListener::PosixOracleListener(
     EventEngine::Listener::AcceptCallback on_accept,
-    std::function<void(absl::Status)> on_shutdown,
+    absl::AnyInvocable<void(absl::Status)> on_shutdown,
     std::unique_ptr<MemoryAllocatorFactory> memory_allocator_factory)
     : on_accept_(std::move(on_accept)),
       on_shutdown_(std::move(on_shutdown)),

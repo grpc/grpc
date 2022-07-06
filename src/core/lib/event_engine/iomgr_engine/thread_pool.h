@@ -21,9 +21,10 @@
 
 #include <grpc/support/port_platform.h>
 
-#include <functional>
 #include <queue>
 #include <vector>
+
+#include "absl/functional/any_invocable.h"
 
 #include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/gprpp/thd.h"
@@ -36,7 +37,7 @@ class ThreadPool final {
   explicit ThreadPool(int reserve_threads);
   ~ThreadPool();
 
-  void Add(const std::function<void()>& callback);
+  void Add(absl::AnyInvocable<void()> callback);
 
  private:
   class Thread {
@@ -57,7 +58,7 @@ class ThreadPool final {
   grpc_core::CondVar cv_;
   grpc_core::CondVar shutdown_cv_;
   bool shutdown_;
-  std::queue<std::function<void()>> callbacks_;
+  std::queue<absl::AnyInvocable<void()>> callbacks_;
   int reserve_threads_;
   int nthreads_;
   int threads_waiting_;
