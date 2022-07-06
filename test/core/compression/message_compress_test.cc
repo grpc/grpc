@@ -76,7 +76,7 @@ static void assert_passthrough(grpc_slice value,
     grpc_core::ExecCtx exec_ctx;
     was_compressed = grpc_msg_compress(algorithm, &input, &compressed_raw);
   }
-  ASSERT_TRUE(input.count > 0);
+  ASSERT_GT(input.count, 0);
 
   switch (compress_result_check) {
     case SHOULD_NOT_COMPRESS:
@@ -179,8 +179,8 @@ TEST(MessageCompressTest, BadDecompressionDataCrc) {
   /* compress it */
   grpc_msg_compress(GRPC_COMPRESS_GZIP, &input, &corrupted);
   /* corrupt the output by smashing the CRC */
-  ASSERT_TRUE(corrupted.count > 1);
-  ASSERT_TRUE(GRPC_SLICE_LENGTH(corrupted.slices[1]) > 8);
+  ASSERT_GT(corrupted.count, 1);
+  ASSERT_GT(GRPC_SLICE_LENGTH(corrupted.slices[1]), 8);
   idx = GRPC_SLICE_LENGTH(corrupted.slices[1]) - 8;
   memcpy(GRPC_SLICE_START_PTR(corrupted.slices[1]) + idx, &bad, 4);
 
@@ -207,7 +207,7 @@ TEST(MessageCompressTest, BadDecompressionDataMissingTrailer) {
   grpc_core::ExecCtx exec_ctx;
   /* compress it */
   grpc_msg_compress(GRPC_COMPRESS_GZIP, &input, &decompressed);
-  ASSERT_TRUE(decompressed.length > 8);
+  ASSERT_GT(decompressed.length, 8);
   /* Remove the footer from the decompressed message */
   grpc_slice_buffer_trim_end(&decompressed, 8, &garbage);
   /* try (and fail) to decompress the compressed buffer without the footer */
