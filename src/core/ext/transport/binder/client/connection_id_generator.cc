@@ -44,13 +44,11 @@ std::string StripToLength(const std::string& s, size_t len) {
 
 namespace grpc_binder {
 
-std::string ConnectionIdGenerator::Generate(absl::string_view package_name,
-                                            absl::string_view class_name) {
+std::string ConnectionIdGenerator::Generate(absl::string_view uri) {
   // reserve some room for serial number
   const size_t kReserveForNumbers = 15;
-  std::string s = StripToLength(
-      absl::StrCat(Normalize(package_name), "-", Normalize(class_name)),
-      kPathLengthLimit - kReserveForNumbers);
+  std::string s =
+      StripToLength(Normalize(uri), kPathLengthLimit - kReserveForNumbers);
   std::string ret;
   {
     grpc_core::MutexLock l(&m_);
