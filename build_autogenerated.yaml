@@ -3201,14 +3201,6 @@ targets:
   deps:
   - grpc_test_util
   uses_polling: false
-- name: alpn_test
-  build: test
-  language: c
-  headers: []
-  src:
-  - test/core/transport/chttp2/alpn_test.cc
-  deps:
-  - grpc_test_util
 - name: b64_test
   build: test
   language: c
@@ -3256,24 +3248,6 @@ targets:
   - linux
   - posix
   - mac
-- name: bin_decoder_test
-  build: test
-  language: c
-  headers: []
-  src:
-  - test/core/transport/chttp2/bin_decoder_test.cc
-  deps:
-  - grpc_test_util
-  uses_polling: false
-- name: bin_encoder_test
-  build: test
-  language: c
-  headers: []
-  src:
-  - test/core/transport/chttp2/bin_encoder_test.cc
-  deps:
-  - grpc_test_util
-  uses_polling: false
 - name: buffer_list_test
   build: test
   language: c
@@ -3455,15 +3429,6 @@ targets:
   - test/core/iomgr/grpc_ipv6_loopback_available_test.cc
   deps:
   - grpc_test_util
-- name: hpack_encoder_test
-  build: test
-  language: c
-  headers: []
-  src:
-  - test/core/transport/chttp2/hpack_encoder_test.cc
-  deps:
-  - grpc_test_util
-  uses_polling: false
 - name: inproc_callback_test
   build: test
   language: c
@@ -3631,23 +3596,6 @@ targets:
   deps:
   - grpc_test_util
   uses_polling: false
-- name: status_conversion_test
-  build: test
-  language: c
-  headers: []
-  src:
-  - test/core/transport/status_conversion_test.cc
-  deps:
-  - grpc_test_util
-  uses_polling: false
-- name: stream_map_test
-  build: test
-  language: c
-  headers: []
-  src:
-  - test/core/transport/chttp2/stream_map_test.cc
-  deps:
-  - grpc_test_util
 - name: string_test
   build: test
   language: c
@@ -3736,15 +3684,6 @@ targets:
   headers: []
   src:
   - test/core/iomgr/timer_list_test.cc
-  deps:
-  - grpc_test_util
-  uses_polling: false
-- name: varint_test
-  build: test
-  language: c
-  headers: []
-  src:
-  - test/core/transport/chttp2/varint_test.cc
   deps:
   - grpc_test_util
   uses_polling: false
@@ -3931,6 +3870,15 @@ targets:
   - linux
   - posix
   - mac
+- name: alpn_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/core/transport/chttp2/alpn_test.cc
+  deps:
+  - grpc_test_util
 - name: alts_concurrent_connectivity_test
   gtest: true
   build: test
@@ -4301,6 +4249,26 @@ targets:
   - linux
   - posix
   - mac
+  uses_polling: false
+- name: bin_decoder_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/core/transport/chttp2/bin_decoder_test.cc
+  deps:
+  - grpc_test_util
+  uses_polling: false
+- name: bin_encoder_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/core/transport/chttp2/bin_encoder_test.cc
+  deps:
+  - grpc_test_util
   uses_polling: false
 - name: binder_resolver_test
   gtest: true
@@ -6174,6 +6142,16 @@ targets:
   headers: []
   src:
   - test/core/gprpp/host_port_test.cc
+  deps:
+  - grpc_test_util
+  uses_polling: false
+- name: hpack_encoder_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/core/transport/chttp2/hpack_encoder_test.cc
   deps:
   - grpc_test_util
   uses_polling: false
@@ -8164,6 +8142,16 @@ targets:
   deps:
   - grpc_test_util
   uses_polling: false
+- name: status_conversion_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/core/transport/status_conversion_test.cc
+  deps:
+  - grpc_test_util
+  uses_polling: false
 - name: status_helper_test
   gtest: true
   build: test
@@ -8199,6 +8187,15 @@ targets:
   - linux
   - posix
   - mac
+- name: stream_map_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/core/transport/chttp2/stream_map_test.cc
+  deps:
+  - grpc_test_util
 - name: streaming_throughput_test
   gtest: true
   build: test
@@ -9178,6 +9175,16 @@ targets:
   src:
   - test/core/gpr/useful_test.cc
   deps: []
+  uses_polling: false
+- name: varint_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/core/transport/chttp2/varint_test.cc
+  deps:
+  - grpc_test_util
   uses_polling: false
 - name: window_overflow_bad_client_test
   gtest: true

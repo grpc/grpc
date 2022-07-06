@@ -51,6 +51,7 @@ grpc_proto_fuzzer(
 grpc_cc_test(
     name = "alpn_test",
     srcs = ["alpn_test.cc"],
+    external_deps = ["gtest"],
     language = "C++",
     deps = [
         "//:gpr",
@@ -62,6 +63,7 @@ grpc_cc_test(
 grpc_cc_test(
     name = "bin_decoder_test",
     srcs = ["bin_decoder_test.cc"],
+    external_deps = ["gtest"],
     language = "C++",
     uses_event_engine = False,
     uses_polling = False,
@@ -75,6 +77,7 @@ grpc_cc_test(
 grpc_cc_test(
     name = "bin_encoder_test",
     srcs = ["bin_encoder_test.cc"],
+    external_deps = ["gtest"],
     language = "C++",
     uses_event_engine = False,
     uses_polling = False,
@@ -133,6 +136,7 @@ grpc_cc_test(
 grpc_cc_test(
     name = "hpack_encoder_test",
     srcs = ["hpack_encoder_test.cc"],
+    external_deps = ["gtest"],
     language = "C++",
     uses_event_engine = False,
     uses_polling = False,
@@ -174,6 +178,7 @@ grpc_cc_test(
 grpc_cc_test(
     name = "stream_map_test",
     srcs = ["stream_map_test.cc"],
+    external_deps = ["gtest"],
     language = "C++",
     deps = [
         "//:gpr",
@@ -229,6 +234,7 @@ grpc_cc_test(
 grpc_cc_test(
     name = "varint_test",
     srcs = ["varint_test.cc"],
+    external_deps = ["gtest"],
     language = "C++",
     uses_event_engine = False,
     uses_polling = False,
