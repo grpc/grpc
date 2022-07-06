@@ -2409,7 +2409,9 @@ void ClientPromiseBasedCall::PublishStatus(
                                       .value_or(GRPC_STATUS_UNKNOWN);
   *op_args.status = status;
   if (Slice* message = trailing_metadata->get_pointer(GrpcMessageMetadata())) {
-    *op_args.status_details = message->c_slice();
+    *op_args.status_details = message->Ref().TakeCSlice();
+  } else {
+    *op_args.status_details = grpc_empty_slice();
   }
   if (op_args.error_string != nullptr && status != GRPC_STATUS_OK) {
     *op_args.error_string =
