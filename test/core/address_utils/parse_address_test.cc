@@ -25,6 +25,8 @@
 
 #include <gtest/gtest.h>
 
+#include "absl/strings/match.h"
+
 #include <grpc/grpc.h>
 #include <grpc/support/log.h>
 
@@ -45,7 +47,7 @@ static void test_grpc_parse_unix(const char* uri_text, const char* pathname) {
   }
   grpc_resolved_address addr;
 
-  ASSERT_EQ(1, grpc_parse_uri(*uri, &addr));
+  ASSERT_TRUE(grpc_parse_uri(*uri, &addr));
   struct sockaddr_un* addr_un =
       reinterpret_cast<struct sockaddr_un*>(addr.addr);
   ASSERT_EQ(AF_UNIX, addr_un->sun_family);
@@ -62,12 +64,12 @@ static void test_grpc_parse_unix_abstract(const char* uri_text,
   }
   grpc_resolved_address addr;
 
-  ASSERT_EQ(1, grpc_parse_uri(*uri, &addr));
+  ASSERT_TRUE(grpc_parse_uri(*uri, &addr));
   struct sockaddr_un* addr_un =
       reinterpret_cast<struct sockaddr_un*>(addr.addr);
   ASSERT_EQ(AF_UNIX, addr_un->sun_family);
   ASSERT_EQ('\0', addr_un->sun_path[0]);
-  ASSERT_EQ(0, strncmp(addr_un->sun_path + 1, pathname, strlen(pathname)));
+  ASSERT_TRUE(absl::StartsWith(addr_un->sun_path + 1, pathname));
 }
 
 #else /* GRPC_HAVE_UNIX_SOCKET */
@@ -89,7 +91,7 @@ static void test_grpc_parse_ipv4(const char* uri_text, const char* host,
   grpc_resolved_address addr;
   char ntop_buf[GRPC_INET_ADDRSTRLEN];
 
-  ASSERT_EQ(1, grpc_parse_ipv4(*uri, &addr));
+  ASSERT_TRUE(grpc_parse_ipv4(*uri, &addr));
   grpc_sockaddr_in* addr_in = reinterpret_cast<grpc_sockaddr_in*>(addr.addr);
   ASSERT_EQ(GRPC_AF_INET, addr_in->sin_family);
   ASSERT_NE(nullptr, grpc_inet_ntop(GRPC_AF_INET, &addr_in->sin_addr, ntop_buf,
@@ -108,7 +110,7 @@ static void test_grpc_parse_ipv6(const char* uri_text, const char* host,
   }
   grpc_resolved_address addr;
   char ntop_buf[GRPC_INET6_ADDRSTRLEN];
-  ASSERT_EQ(1, grpc_parse_ipv6(*uri, &addr));
+  ASSERT_TRUE(grpc_parse_ipv6(*uri, &addr));
   grpc_sockaddr_in6* addr_in6 = reinterpret_cast<grpc_sockaddr_in6*>(addr.addr);
   ASSERT_EQ(GRPC_AF_INET6, addr_in6->sin6_family);
   ASSERT_NE(nullptr, grpc_inet_ntop(GRPC_AF_INET6, &addr_in6->sin6_addr,
