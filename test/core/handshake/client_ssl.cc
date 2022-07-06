@@ -304,7 +304,8 @@ static bool client_ssl_test(char* server_alpn_preferred) {
       sleep(1);
     }
   }
-  EXPECT_TRUE(server_socket > 0 && port > 0);
+  EXPECT_GT(server_socket, 0);
+  EXPECT_GT(port, 0);
 
   // Launch the TLS server thread.
   SslLibraryInfo ssl_library_info;
