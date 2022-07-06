@@ -81,7 +81,7 @@ static void test_request_succeeds(grpc_slice_split_mode split_mode,
     char* expect_value;
     expect_key = va_arg(args, char*);
     if (!expect_key) break;
-    ASSERT_TRUE(i < request.hdr_count);
+    ASSERT_LT(i, request.hdr_count);
     expect_value = va_arg(args, char*);
     ASSERT_TRUE(expect_value);
     ASSERT_STREQ(expect_key, request.hdrs[i].key);
@@ -136,7 +136,7 @@ static void test_succeeds(grpc_slice_split_mode split_mode,
     char* expect_value;
     expect_key = va_arg(args, char*);
     if (!expect_key) break;
-    ASSERT_TRUE(i < response.hdr_count);
+    ASSERT_LT(i, response.hdr_count);
     expect_value = va_arg(args, char*);
     ASSERT_TRUE(expect_value);
     ASSERT_STREQ(expect_key, response.hdrs[i].key);
