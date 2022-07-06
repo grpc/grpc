@@ -30,7 +30,7 @@ static const upb_MiniTable_Field envoy_service_load_stats_v3_LoadStatsRequest__f
 const upb_MiniTable envoy_service_load_stats_v3_LoadStatsRequest_msginit = {
   &envoy_service_load_stats_v3_LoadStatsRequest_submsgs[0],
   &envoy_service_load_stats_v3_LoadStatsRequest__fields[0],
-  UPB_SIZE(12, 24), 2, kUpb_ExtMode_NonExtendable, 2, 255, 0,
+  UPB_SIZE(16, 24), 2, kUpb_ExtMode_NonExtendable, 2, 255, 0,
 };
 
 static const upb_MiniTable_Sub envoy_service_load_stats_v3_LoadStatsResponse_submsgs[1] = {
@@ -47,7 +47,7 @@ static const upb_MiniTable_Field envoy_service_load_stats_v3_LoadStatsResponse__
 const upb_MiniTable envoy_service_load_stats_v3_LoadStatsResponse_msginit = {
   &envoy_service_load_stats_v3_LoadStatsResponse_submsgs[0],
   &envoy_service_load_stats_v3_LoadStatsResponse__fields[0],
-  UPB_SIZE(12, 24), 4, kUpb_ExtMode_NonExtendable, 4, 255, 0,
+  UPB_SIZE(16, 24), 4, kUpb_ExtMode_NonExtendable, 4, 255, 0,
 };
 
 static const upb_MiniTable *messages_layout[2] = {

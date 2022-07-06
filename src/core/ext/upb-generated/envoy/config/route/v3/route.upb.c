@@ -50,7 +50,7 @@ static const upb_MiniTable_Field envoy_config_route_v3_RouteConfiguration__field
 const upb_MiniTable envoy_config_route_v3_RouteConfiguration_msginit = {
   &envoy_config_route_v3_RouteConfiguration_submsgs[0],
   &envoy_config_route_v3_RouteConfiguration__fields[0],
-  UPB_SIZE(56, 120), 13, kUpb_ExtMode_NonExtendable, 13, 255, 0,
+  UPB_SIZE(56, 112), 13, kUpb_ExtMode_NonExtendable, 13, 255, 0,
 };
 
 static const upb_MiniTable_Sub envoy_config_route_v3_ClusterSpecifierPlugin_submsgs[1] = {
@@ -65,7 +65,7 @@ static const upb_MiniTable_Field envoy_config_route_v3_ClusterSpecifierPlugin__f
 const upb_MiniTable envoy_config_route_v3_ClusterSpecifierPlugin_msginit = {
   &envoy_config_route_v3_ClusterSpecifierPlugin_submsgs[0],
   &envoy_config_route_v3_ClusterSpecifierPlugin__fields[0],
-  UPB_SIZE(8, 24), 2, kUpb_ExtMode_NonExtendable, 2, 255, 0,
+  UPB_SIZE(8, 16), 2, kUpb_ExtMode_NonExtendable, 2, 255, 0,
 };
 
 static const upb_MiniTable_Sub envoy_config_route_v3_Vhds_submsgs[1] = {
@@ -79,7 +79,7 @@ static const upb_MiniTable_Field envoy_config_route_v3_Vhds__fields[1] = {
 const upb_MiniTable envoy_config_route_v3_Vhds_msginit = {
   &envoy_config_route_v3_Vhds_submsgs[0],
   &envoy_config_route_v3_Vhds__fields[0],
-  UPB_SIZE(8, 24), 1, kUpb_ExtMode_NonExtendable, 1, 255, 0,
+  UPB_SIZE(8, 16), 1, kUpb_ExtMode_NonExtendable, 1, 255, 0,
 };
 
 static const upb_MiniTable *messages_layout[3] = {

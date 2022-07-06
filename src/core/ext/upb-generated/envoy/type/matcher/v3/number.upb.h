@@ -53,11 +53,15 @@ UPB_INLINE envoy_type_matcher_v3_DoubleMatcher* envoy_type_matcher_v3_DoubleMatc
   return ret;
 }
 UPB_INLINE char* envoy_type_matcher_v3_DoubleMatcher_serialize(const envoy_type_matcher_v3_DoubleMatcher* msg, upb_Arena* arena, size_t* len) {
-  return upb_Encode(msg, &envoy_type_matcher_v3_DoubleMatcher_msginit, 0, arena, len);
+  char* ptr;
+  (void)upb_Encode(msg, &envoy_type_matcher_v3_DoubleMatcher_msginit, 0, arena, &ptr, len);
+  return ptr;
 }
 UPB_INLINE char* envoy_type_matcher_v3_DoubleMatcher_serialize_ex(const envoy_type_matcher_v3_DoubleMatcher* msg, int options,
                                  upb_Arena* arena, size_t* len) {
-  return upb_Encode(msg, &envoy_type_matcher_v3_DoubleMatcher_msginit, options, arena, len);
+  char* ptr;
+  (void)upb_Encode(msg, &envoy_type_matcher_v3_DoubleMatcher_msginit, options, arena, &ptr, len);
+  return ptr;
 }
 typedef enum {
   envoy_type_matcher_v3_DoubleMatcher_match_pattern_range = 1,

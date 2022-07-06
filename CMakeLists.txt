@@ -25,13 +25,13 @@
 cmake_minimum_required(VERSION 3.5.1)
 
 set(PACKAGE_NAME          "grpc")
-set(PACKAGE_VERSION       "1.48.0-dev")
-set(gRPC_CORE_VERSION     "25.0.0")
-set(gRPC_CORE_SOVERSION   "25")
-set(gRPC_CPP_VERSION      "1.48.0-dev")
-set(gRPC_CPP_SOVERSION    "1.48")
-set(gRPC_CSHARP_VERSION   "2.48.0-dev")
-set(gRPC_CSHARP_SOVERSION "2.48")
+set(PACKAGE_VERSION       "1.49.0-dev")
+set(gRPC_CORE_VERSION     "26.0.0")
+set(gRPC_CORE_SOVERSION   "26")
+set(gRPC_CPP_VERSION      "1.49.0-dev")
+set(gRPC_CPP_SOVERSION    "1.49")
+set(gRPC_CSHARP_VERSION   "2.49.0-dev")
+set(gRPC_CSHARP_SOVERSION "2.49")
 set(PACKAGE_STRING        "${PACKAGE_NAME} ${PACKAGE_VERSION}")
 set(PACKAGE_TARNAME       "${PACKAGE_NAME}-${PACKAGE_VERSION}")
 set(PACKAGE_BUGREPORT     "https://github.com/grpc/grpc/issues/")
@@ -142,7 +142,6 @@ set(gRPC_ABSL_USED_TARGETS
   absl_hash_policy_traits
   absl_hashtable_debug_hooks
   absl_hashtablez_sampler
-  absl_have_sse
   absl_inlined_vector
   absl_inlined_vector_internal
   absl_int128
@@ -154,6 +153,7 @@ set(gRPC_ABSL_USED_TARGETS
   absl_memory
   absl_numeric_representation
   absl_optional
+  absl_prefetch
   absl_random_distributions
   absl_random_internal_distribution_caller
   absl_random_internal_fast_uniform_bits
@@ -188,6 +188,7 @@ set(gRPC_ABSL_USED_TARGETS
   absl_statusor
   absl_str_format
   absl_str_format_internal
+  absl_strerror
   absl_strings
   absl_strings_internal
   absl_symbolize
@@ -297,7 +298,7 @@ endif()
 if (gRPC_XDS_USER_AGENT_IS_CSHARP)
   # The value of the defines needs to contain quotes.
   # See https://github.com/grpc/grpc/blob/fbf32836a418cc84f58786700273b65cb9174e1d/src/core/ext/xds/xds_api.cc#L854
-  add_definitions("-DGRPC_XDS_USER_AGENT_NAME_SUFFIX=\"csharp\"" "-DGRPC_XDS_USER_AGENT_VERSION_SUFFIX=\"2.48.0-dev\"")
+  add_definitions("-DGRPC_XDS_USER_AGENT_NAME_SUFFIX=\"csharp\"" "-DGRPC_XDS_USER_AGENT_VERSION_SUFFIX=\"2.49.0-dev\"")
 endif()
 
 if(UNIX AND NOT HAIKU)
@@ -787,7 +788,6 @@ if(gRPC_BUILD_TESTS)
   add_dependencies(buildtests_c alts_tsi_handshaker_test)
   add_dependencies(buildtests_c alts_tsi_utils_test)
   add_dependencies(buildtests_c alts_zero_copy_grpc_protector_test)
-  add_dependencies(buildtests_c arena_test)
   add_dependencies(buildtests_c auth_context_test)
   add_dependencies(buildtests_c b64_test)
   add_dependencies(buildtests_c bad_server_response_test)
@@ -893,7 +893,6 @@ if(gRPC_BUILD_TESTS)
     add_dependencies(buildtests_c server_ssl_test)
   endif()
   add_dependencies(buildtests_c server_test)
-  add_dependencies(buildtests_c slice_split_test)
   add_dependencies(buildtests_c slice_string_helpers_test)
   add_dependencies(buildtests_c sockaddr_resolver_test)
   if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
@@ -944,6 +943,7 @@ if(gRPC_BUILD_TESTS)
   endif()
   add_dependencies(buildtests_cxx alts_util_test)
   add_dependencies(buildtests_cxx arena_promise_test)
+  add_dependencies(buildtests_cxx arena_test)
   add_dependencies(buildtests_cxx async_end2end_test)
   add_dependencies(buildtests_cxx auth_property_iterator_test)
   add_dependencies(buildtests_cxx authorization_matchers_test)
@@ -2242,7 +2242,6 @@ add_library(grpc
   src/core/lib/slice/slice_buffer.cc
   src/core/lib/slice/slice_buffer_api.cc
   src/core/lib/slice/slice_refcount.cc
-  src/core/lib/slice/slice_split.cc
   src/core/lib/slice/slice_string_helpers.cc
   src/core/lib/surface/api_trace.cc
   src/core/lib/surface/builtins.cc
@@ -2834,7 +2833,6 @@ add_library(grpc_unsecure
   src/core/lib/slice/slice_buffer.cc
   src/core/lib/slice/slice_buffer_api.cc
   src/core/lib/slice/slice_refcount.cc
-  src/core/lib/slice/slice_split.cc
   src/core/lib/slice/slice_string_helpers.cc
   src/core/lib/surface/api_trace.cc
   src/core/lib/surface/builtins.cc
@@ -4187,13 +4185,20 @@ add_library(upb
   third_party/upb/third_party/utf8_range/naive.c
   third_party/upb/third_party/utf8_range/range2-neon.c
   third_party/upb/third_party/utf8_range/range2-sse.c
+  third_party/upb/upb/arena.c
+  third_party/upb/upb/array.c
   third_party/upb/upb/decode_fast.c
   third_party/upb/upb/decode.c
   third_party/upb/upb/def.c
   third_party/upb/upb/encode.c
+  third_party/upb/upb/extension_registry.c
+  third_party/upb/upb/json_decode.c
   third_party/upb/upb/json_encode.c
+  third_party/upb/upb/map.c
+  third_party/upb/upb/mini_table.c
   third_party/upb/upb/msg.c
   third_party/upb/upb/reflection.c
+  third_party/upb/upb/status.c
   third_party/upb/upb/table.c
   third_party/upb/upb/text_encode.c
   third_party/upb/upb/upb.c
@@ -4630,33 +4635,6 @@ target_include_directories(alts_zero_copy_grpc_protector_test
 )
 
 target_link_libraries(alts_zero_copy_grpc_protector_test
-  ${_gRPC_ALLTARGETS_LIBRARIES}
-  grpc_test_util
-)
-
-
-endif()
-if(gRPC_BUILD_TESTS)
-
-add_executable(arena_test
-  test/core/gpr/arena_test.cc
-)
-
-target_include_directories(arena_test
-  PRIVATE
-    ${CMAKE_CURRENT_SOURCE_DIR}
-    ${CMAKE_CURRENT_SOURCE_DIR}/include
-    ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
-    ${_gRPC_RE2_INCLUDE_DIR}
-    ${_gRPC_SSL_INCLUDE_DIR}
-    ${_gRPC_UPB_GENERATED_DIR}
-    ${_gRPC_UPB_GRPC_GENERATED_DIR}
-    ${_gRPC_UPB_INCLUDE_DIR}
-    ${_gRPC_XXHASH_INCLUDE_DIR}
-    ${_gRPC_ZLIB_INCLUDE_DIR}
-)
-
-target_link_libraries(arena_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
 )
@@ -6674,33 +6652,6 @@ target_link_libraries(server_test
 endif()
 if(gRPC_BUILD_TESTS)
 
-add_executable(slice_split_test
-  test/core/slice/slice_split_test.cc
-)
-
-target_include_directories(slice_split_test
-  PRIVATE
-    ${CMAKE_CURRENT_SOURCE_DIR}
-    ${CMAKE_CURRENT_SOURCE_DIR}/include
-    ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
-    ${_gRPC_RE2_INCLUDE_DIR}
-    ${_gRPC_SSL_INCLUDE_DIR}
-    ${_gRPC_UPB_GENERATED_DIR}
-    ${_gRPC_UPB_GRPC_GENERATED_DIR}
-    ${_gRPC_UPB_INCLUDE_DIR}
-    ${_gRPC_XXHASH_INCLUDE_DIR}
-    ${_gRPC_ZLIB_INCLUDE_DIR}
-)
-
-target_link_libraries(slice_split_test
-  ${_gRPC_ALLTARGETS_LIBRARIES}
-  grpc_test_util
-)
-
-
-endif()
-if(gRPC_BUILD_TESTS)
-
 add_executable(slice_string_helpers_test
   src/core/lib/slice/slice.cc
   src/core/lib/slice/slice_refcount.cc
@@ -7718,6 +7669,41 @@ target_link_libraries(arena_promise_test
   absl::utility
   gpr
   upb
+)
+
+
+endif()
+if(gRPC_BUILD_TESTS)
+
+add_executable(arena_test
+  test/core/resource_quota/arena_test.cc
+  third_party/googletest/googletest/src/gtest-all.cc
+  third_party/googletest/googlemock/src/gmock-all.cc
+)
+
+target_include_directories(arena_test
+  PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
+    ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_RE2_INCLUDE_DIR}
+    ${_gRPC_SSL_INCLUDE_DIR}
+    ${_gRPC_UPB_GENERATED_DIR}
+    ${_gRPC_UPB_GRPC_GENERATED_DIR}
+    ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
+    ${_gRPC_ZLIB_INCLUDE_DIR}
+    third_party/googletest/googletest/include
+    third_party/googletest/googletest
+    third_party/googletest/googlemock/include
+    third_party/googletest/googlemock
+    ${_gRPC_PROTO_GENS_DIR}
+)
+
+target_link_libraries(arena_test
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  grpc_test_util
 )
 
 
@@ -18359,6 +18345,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/string.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/string.pb.h
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/string.grpc.pb.h
+    test/cpp/end2end/connection_delay_injector.cc
     test/cpp/end2end/test_service_impl.cc
     test/cpp/end2end/xds/xds_cluster_end2end_test.cc
     test/cpp/end2end/xds/xds_end2end_test_lib.cc

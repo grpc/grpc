@@ -56,11 +56,15 @@ UPB_INLINE grpc_gcp_AltsContext* grpc_gcp_AltsContext_parse_ex(const char* buf, 
   return ret;
 }
 UPB_INLINE char* grpc_gcp_AltsContext_serialize(const grpc_gcp_AltsContext* msg, upb_Arena* arena, size_t* len) {
-  return upb_Encode(msg, &grpc_gcp_AltsContext_msginit, 0, arena, len);
+  char* ptr;
+  (void)upb_Encode(msg, &grpc_gcp_AltsContext_msginit, 0, arena, &ptr, len);
+  return ptr;
 }
 UPB_INLINE char* grpc_gcp_AltsContext_serialize_ex(const grpc_gcp_AltsContext* msg, int options,
                                  upb_Arena* arena, size_t* len) {
-  return upb_Encode(msg, &grpc_gcp_AltsContext_msginit, options, arena, len);
+  char* ptr;
+  (void)upb_Encode(msg, &grpc_gcp_AltsContext_msginit, options, arena, &ptr, len);
+  return ptr;
 }
 UPB_INLINE void grpc_gcp_AltsContext_clear_application_protocol(const grpc_gcp_AltsContext* msg) {
   *UPB_PTR_AT(msg, UPB_SIZE(8, 8), upb_StringView) = upb_StringView_FromDataAndSize(NULL, 0);

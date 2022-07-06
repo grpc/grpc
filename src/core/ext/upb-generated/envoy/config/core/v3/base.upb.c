@@ -35,7 +35,7 @@ static const upb_MiniTable_Field envoy_config_core_v3_Locality__fields[3] = {
 const upb_MiniTable envoy_config_core_v3_Locality_msginit = {
   NULL,
   &envoy_config_core_v3_Locality__fields[0],
-  UPB_SIZE(24, 56), 3, kUpb_ExtMode_NonExtendable, 3, 255, 0,
+  UPB_SIZE(24, 48), 3, kUpb_ExtMode_NonExtendable, 3, 255, 0,
 };
 
 static const upb_MiniTable_Sub envoy_config_core_v3_BuildVersion_submsgs[2] = {
@@ -51,7 +51,7 @@ static const upb_MiniTable_Field envoy_config_core_v3_BuildVersion__fields[2] = 
 const upb_MiniTable envoy_config_core_v3_BuildVersion_msginit = {
   &envoy_config_core_v3_BuildVersion_submsgs[0],
   &envoy_config_core_v3_BuildVersion__fields[0],
-  UPB_SIZE(12, 24), 2, kUpb_ExtMode_NonExtendable, 2, 255, 0,
+  UPB_SIZE(16, 24), 2, kUpb_ExtMode_NonExtendable, 2, 255, 0,
 };
 
 static const upb_MiniTable_Sub envoy_config_core_v3_Extension_submsgs[1] = {
@@ -69,7 +69,7 @@ static const upb_MiniTable_Field envoy_config_core_v3_Extension__fields[5] = {
 const upb_MiniTable envoy_config_core_v3_Extension_msginit = {
   &envoy_config_core_v3_Extension_submsgs[0],
   &envoy_config_core_v3_Extension__fields[0],
-  UPB_SIZE(32, 72), 5, kUpb_ExtMode_NonExtendable, 5, 255, 0,
+  UPB_SIZE(32, 64), 5, kUpb_ExtMode_NonExtendable, 5, 255, 0,
 };
 
 static const upb_MiniTable_Sub envoy_config_core_v3_Node_submsgs[6] = {
@@ -129,7 +129,7 @@ static const upb_MiniTable_Field envoy_config_core_v3_Metadata__fields[2] = {
 const upb_MiniTable envoy_config_core_v3_Metadata_msginit = {
   &envoy_config_core_v3_Metadata_submsgs[0],
   &envoy_config_core_v3_Metadata__fields[0],
-  UPB_SIZE(8, 24), 2, kUpb_ExtMode_NonExtendable, 2, 255, 0,
+  UPB_SIZE(8, 16), 2, kUpb_ExtMode_NonExtendable, 2, 255, 0,
 };
 
 static const upb_MiniTable_Sub envoy_config_core_v3_Metadata_FilterMetadataEntry_submsgs[1] = {
@@ -170,7 +170,7 @@ static const upb_MiniTable_Field envoy_config_core_v3_RuntimeUInt32__fields[2] =
 const upb_MiniTable envoy_config_core_v3_RuntimeUInt32_msginit = {
   NULL,
   &envoy_config_core_v3_RuntimeUInt32__fields[0],
-  UPB_SIZE(12, 24), 2, kUpb_ExtMode_NonExtendable, 0, 255, 0,
+  UPB_SIZE(16, 24), 2, kUpb_ExtMode_NonExtendable, 0, 255, 0,
 };
 
 static const upb_MiniTable_Sub envoy_config_core_v3_RuntimePercent_submsgs[1] = {
@@ -185,7 +185,7 @@ static const upb_MiniTable_Field envoy_config_core_v3_RuntimePercent__fields[2] 
 const upb_MiniTable envoy_config_core_v3_RuntimePercent_msginit = {
   &envoy_config_core_v3_RuntimePercent_submsgs[0],
   &envoy_config_core_v3_RuntimePercent__fields[0],
-  UPB_SIZE(16, 40), 2, kUpb_ExtMode_NonExtendable, 2, 255, 0,
+  UPB_SIZE(16, 32), 2, kUpb_ExtMode_NonExtendable, 2, 255, 0,
 };
 
 static const upb_MiniTable_Field envoy_config_core_v3_RuntimeDouble__fields[2] = {
@@ -211,7 +211,7 @@ static const upb_MiniTable_Field envoy_config_core_v3_RuntimeFeatureFlag__fields
 const upb_MiniTable envoy_config_core_v3_RuntimeFeatureFlag_msginit = {
   &envoy_config_core_v3_RuntimeFeatureFlag_submsgs[0],
   &envoy_config_core_v3_RuntimeFeatureFlag__fields[0],
-  UPB_SIZE(16, 40), 2, kUpb_ExtMode_NonExtendable, 2, 255, 0,
+  UPB_SIZE(16, 32), 2, kUpb_ExtMode_NonExtendable, 2, 255, 0,
 };
 
 static const upb_MiniTable_Field envoy_config_core_v3_QueryParameter__fields[2] = {
@@ -222,7 +222,7 @@ static const upb_MiniTable_Field envoy_config_core_v3_QueryParameter__fields[2] 
 const upb_MiniTable envoy_config_core_v3_QueryParameter_msginit = {
   NULL,
   &envoy_config_core_v3_QueryParameter__fields[0],
-  UPB_SIZE(16, 40), 2, kUpb_ExtMode_NonExtendable, 2, 255, 0,
+  UPB_SIZE(16, 32), 2, kUpb_ExtMode_NonExtendable, 2, 255, 0,
 };
 
 static const upb_MiniTable_Field envoy_config_core_v3_HeaderValue__fields[2] = {
@@ -233,7 +233,7 @@ static const upb_MiniTable_Field envoy_config_core_v3_HeaderValue__fields[2] = {
 const upb_MiniTable envoy_config_core_v3_HeaderValue_msginit = {
   NULL,
   &envoy_config_core_v3_HeaderValue__fields[0],
-  UPB_SIZE(16, 40), 2, kUpb_ExtMode_NonExtendable, 2, 255, 0,
+  UPB_SIZE(16, 32), 2, kUpb_ExtMode_NonExtendable, 2, 255, 0,
 };
 
 static const upb_MiniTable_Sub envoy_config_core_v3_HeaderValueOption_submsgs[2] = {
@@ -264,7 +264,7 @@ static const upb_MiniTable_Field envoy_config_core_v3_HeaderMap__fields[1] = {
 const upb_MiniTable envoy_config_core_v3_HeaderMap_msginit = {
   &envoy_config_core_v3_HeaderMap_submsgs[0],
   &envoy_config_core_v3_HeaderMap__fields[0],
-  UPB_SIZE(4, 8), 1, kUpb_ExtMode_NonExtendable, 1, 255, 0,
+  UPB_SIZE(8, 8), 1, kUpb_ExtMode_NonExtendable, 1, 255, 0,
 };
 
 static const upb_MiniTable_Field envoy_config_core_v3_WatchedDirectory__fields[1] = {
@@ -274,7 +274,7 @@ static const upb_MiniTable_Field envoy_config_core_v3_WatchedDirectory__fields[1
 const upb_MiniTable envoy_config_core_v3_WatchedDirectory_msginit = {
   NULL,
   &envoy_config_core_v3_WatchedDirectory__fields[0],
-  UPB_SIZE(8, 24), 1, kUpb_ExtMode_NonExtendable, 1, 255, 0,
+  UPB_SIZE(8, 16), 1, kUpb_ExtMode_NonExtendable, 1, 255, 0,
 };
 
 static const upb_MiniTable_Field envoy_config_core_v3_DataSource__fields[4] = {
@@ -287,7 +287,7 @@ static const upb_MiniTable_Field envoy_config_core_v3_DataSource__fields[4] = {
 const upb_MiniTable envoy_config_core_v3_DataSource_msginit = {
   NULL,
   &envoy_config_core_v3_DataSource__fields[0],
-  UPB_SIZE(12, 24), 4, kUpb_ExtMode_NonExtendable, 4, 255, 0,
+  UPB_SIZE(16, 24), 4, kUpb_ExtMode_NonExtendable, 4, 255, 0,
 };
 
 static const upb_MiniTable_Sub envoy_config_core_v3_RetryPolicy_submsgs[2] = {
@@ -303,7 +303,7 @@ static const upb_MiniTable_Field envoy_config_core_v3_RetryPolicy__fields[2] = {
 const upb_MiniTable envoy_config_core_v3_RetryPolicy_msginit = {
   &envoy_config_core_v3_RetryPolicy_submsgs[0],
   &envoy_config_core_v3_RetryPolicy__fields[0],
-  UPB_SIZE(12, 24), 2, kUpb_ExtMode_NonExtendable, 2, 255, 0,
+  UPB_SIZE(16, 24), 2, kUpb_ExtMode_NonExtendable, 2, 255, 0,
 };
 
 static const upb_MiniTable_Sub envoy_config_core_v3_RemoteDataSource_submsgs[2] = {
@@ -320,7 +320,7 @@ static const upb_MiniTable_Field envoy_config_core_v3_RemoteDataSource__fields[3
 const upb_MiniTable envoy_config_core_v3_RemoteDataSource_msginit = {
   &envoy_config_core_v3_RemoteDataSource_submsgs[0],
   &envoy_config_core_v3_RemoteDataSource__fields[0],
-  UPB_SIZE(20, 40), 3, kUpb_ExtMode_NonExtendable, 3, 255, 0,
+  UPB_SIZE(24, 40), 3, kUpb_ExtMode_NonExtendable, 3, 255, 0,
 };
 
 static const upb_MiniTable_Sub envoy_config_core_v3_AsyncDataSource_submsgs[2] = {
@@ -336,7 +336,7 @@ static const upb_MiniTable_Field envoy_config_core_v3_AsyncDataSource__fields[2]
 const upb_MiniTable envoy_config_core_v3_AsyncDataSource_msginit = {
   &envoy_config_core_v3_AsyncDataSource_submsgs[0],
   &envoy_config_core_v3_AsyncDataSource__fields[0],
-  UPB_SIZE(8, 24), 2, kUpb_ExtMode_NonExtendable, 2, 255, 0,
+  UPB_SIZE(8, 16), 2, kUpb_ExtMode_NonExtendable, 2, 255, 0,
 };
 
 static const upb_MiniTable_Sub envoy_config_core_v3_TransportSocket_submsgs[1] = {
@@ -351,7 +351,7 @@ static const upb_MiniTable_Field envoy_config_core_v3_TransportSocket__fields[2]
 const upb_MiniTable envoy_config_core_v3_TransportSocket_msginit = {
   &envoy_config_core_v3_TransportSocket_submsgs[0],
   &envoy_config_core_v3_TransportSocket__fields[0],
-  UPB_SIZE(16, 40), 2, kUpb_ExtMode_NonExtendable, 1, 255, 0,
+  UPB_SIZE(16, 32), 2, kUpb_ExtMode_NonExtendable, 1, 255, 0,
 };
 
 static const upb_MiniTable_Sub envoy_config_core_v3_RuntimeFractionalPercent_submsgs[1] = {
@@ -366,7 +366,7 @@ static const upb_MiniTable_Field envoy_config_core_v3_RuntimeFractionalPercent__
 const upb_MiniTable envoy_config_core_v3_RuntimeFractionalPercent_msginit = {
   &envoy_config_core_v3_RuntimeFractionalPercent_submsgs[0],
   &envoy_config_core_v3_RuntimeFractionalPercent__fields[0],
-  UPB_SIZE(16, 40), 2, kUpb_ExtMode_NonExtendable, 2, 255, 0,
+  UPB_SIZE(16, 32), 2, kUpb_ExtMode_NonExtendable, 2, 255, 0,
 };
 
 static const upb_MiniTable_Field envoy_config_core_v3_ControlPlane__fields[1] = {
@@ -376,7 +376,7 @@ static const upb_MiniTable_Field envoy_config_core_v3_ControlPlane__fields[1] = 
 const upb_MiniTable envoy_config_core_v3_ControlPlane_msginit = {
   NULL,
   &envoy_config_core_v3_ControlPlane__fields[0],
-  UPB_SIZE(8, 24), 1, kUpb_ExtMode_NonExtendable, 1, 255, 0,
+  UPB_SIZE(8, 16), 1, kUpb_ExtMode_NonExtendable, 1, 255, 0,
 };
 
 static const upb_MiniTable *messages_layout[24] = {

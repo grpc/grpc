@@ -71,11 +71,15 @@ UPB_INLINE envoy_config_endpoint_v3_UpstreamLocalityStats* envoy_config_endpoint
   return ret;
 }
 UPB_INLINE char* envoy_config_endpoint_v3_UpstreamLocalityStats_serialize(const envoy_config_endpoint_v3_UpstreamLocalityStats* msg, upb_Arena* arena, size_t* len) {
-  return upb_Encode(msg, &envoy_config_endpoint_v3_UpstreamLocalityStats_msginit, 0, arena, len);
+  char* ptr;
+  (void)upb_Encode(msg, &envoy_config_endpoint_v3_UpstreamLocalityStats_msginit, 0, arena, &ptr, len);
+  return ptr;
 }
 UPB_INLINE char* envoy_config_endpoint_v3_UpstreamLocalityStats_serialize_ex(const envoy_config_endpoint_v3_UpstreamLocalityStats* msg, int options,
                                  upb_Arena* arena, size_t* len) {
-  return upb_Encode(msg, &envoy_config_endpoint_v3_UpstreamLocalityStats_msginit, options, arena, len);
+  char* ptr;
+  (void)upb_Encode(msg, &envoy_config_endpoint_v3_UpstreamLocalityStats_msginit, options, arena, &ptr, len);
+  return ptr;
 }
 UPB_INLINE bool envoy_config_endpoint_v3_UpstreamLocalityStats_has_locality(const envoy_config_endpoint_v3_UpstreamLocalityStats* msg) {
   return _upb_hasbit(msg, 1);
@@ -213,11 +217,15 @@ UPB_INLINE envoy_config_endpoint_v3_UpstreamEndpointStats* envoy_config_endpoint
   return ret;
 }
 UPB_INLINE char* envoy_config_endpoint_v3_UpstreamEndpointStats_serialize(const envoy_config_endpoint_v3_UpstreamEndpointStats* msg, upb_Arena* arena, size_t* len) {
-  return upb_Encode(msg, &envoy_config_endpoint_v3_UpstreamEndpointStats_msginit, 0, arena, len);
+  char* ptr;
+  (void)upb_Encode(msg, &envoy_config_endpoint_v3_UpstreamEndpointStats_msginit, 0, arena, &ptr, len);
+  return ptr;
 }
 UPB_INLINE char* envoy_config_endpoint_v3_UpstreamEndpointStats_serialize_ex(const envoy_config_endpoint_v3_UpstreamEndpointStats* msg, int options,
                                  upb_Arena* arena, size_t* len) {
-  return upb_Encode(msg, &envoy_config_endpoint_v3_UpstreamEndpointStats_msginit, options, arena, len);
+  char* ptr;
+  (void)upb_Encode(msg, &envoy_config_endpoint_v3_UpstreamEndpointStats_msginit, options, arena, &ptr, len);
+  return ptr;
 }
 UPB_INLINE bool envoy_config_endpoint_v3_UpstreamEndpointStats_has_address(const envoy_config_endpoint_v3_UpstreamEndpointStats* msg) {
   return _upb_hasbit(msg, 1);
@@ -347,11 +355,15 @@ UPB_INLINE envoy_config_endpoint_v3_EndpointLoadMetricStats* envoy_config_endpoi
   return ret;
 }
 UPB_INLINE char* envoy_config_endpoint_v3_EndpointLoadMetricStats_serialize(const envoy_config_endpoint_v3_EndpointLoadMetricStats* msg, upb_Arena* arena, size_t* len) {
-  return upb_Encode(msg, &envoy_config_endpoint_v3_EndpointLoadMetricStats_msginit, 0, arena, len);
+  char* ptr;
+  (void)upb_Encode(msg, &envoy_config_endpoint_v3_EndpointLoadMetricStats_msginit, 0, arena, &ptr, len);
+  return ptr;
 }
 UPB_INLINE char* envoy_config_endpoint_v3_EndpointLoadMetricStats_serialize_ex(const envoy_config_endpoint_v3_EndpointLoadMetricStats* msg, int options,
                                  upb_Arena* arena, size_t* len) {
-  return upb_Encode(msg, &envoy_config_endpoint_v3_EndpointLoadMetricStats_msginit, options, arena, len);
+  char* ptr;
+  (void)upb_Encode(msg, &envoy_config_endpoint_v3_EndpointLoadMetricStats_msginit, options, arena, &ptr, len);
+  return ptr;
 }
 UPB_INLINE void envoy_config_endpoint_v3_EndpointLoadMetricStats_clear_metric_name(const envoy_config_endpoint_v3_EndpointLoadMetricStats* msg) {
   *UPB_PTR_AT(msg, UPB_SIZE(0, 0), upb_StringView) = upb_StringView_FromDataAndSize(NULL, 0);
@@ -407,11 +419,15 @@ UPB_INLINE envoy_config_endpoint_v3_ClusterStats* envoy_config_endpoint_v3_Clust
   return ret;
 }
 UPB_INLINE char* envoy_config_endpoint_v3_ClusterStats_serialize(const envoy_config_endpoint_v3_ClusterStats* msg, upb_Arena* arena, size_t* len) {
-  return upb_Encode(msg, &envoy_config_endpoint_v3_ClusterStats_msginit, 0, arena, len);
+  char* ptr;
+  (void)upb_Encode(msg, &envoy_config_endpoint_v3_ClusterStats_msginit, 0, arena, &ptr, len);
+  return ptr;
 }
 UPB_INLINE char* envoy_config_endpoint_v3_ClusterStats_serialize_ex(const envoy_config_endpoint_v3_ClusterStats* msg, int options,
                                  upb_Arena* arena, size_t* len) {
-  return upb_Encode(msg, &envoy_config_endpoint_v3_ClusterStats_msginit, options, arena, len);
+  char* ptr;
+  (void)upb_Encode(msg, &envoy_config_endpoint_v3_ClusterStats_msginit, options, arena, &ptr, len);
+  return ptr;
 }
 UPB_INLINE void envoy_config_endpoint_v3_ClusterStats_clear_cluster_name(const envoy_config_endpoint_v3_ClusterStats* msg) {
   *UPB_PTR_AT(msg, UPB_SIZE(4, 8), upb_StringView) = upb_StringView_FromDataAndSize(NULL, 0);
@@ -531,11 +547,15 @@ UPB_INLINE envoy_config_endpoint_v3_ClusterStats_DroppedRequests* envoy_config_e
   return ret;
 }
 UPB_INLINE char* envoy_config_endpoint_v3_ClusterStats_DroppedRequests_serialize(const envoy_config_endpoint_v3_ClusterStats_DroppedRequests* msg, upb_Arena* arena, size_t* len) {
-  return upb_Encode(msg, &envoy_config_endpoint_v3_ClusterStats_DroppedRequests_msginit, 0, arena, len);
+  char* ptr;
+  (void)upb_Encode(msg, &envoy_config_endpoint_v3_ClusterStats_DroppedRequests_msginit, 0, arena, &ptr, len);
+  return ptr;
 }
 UPB_INLINE char* envoy_config_endpoint_v3_ClusterStats_DroppedRequests_serialize_ex(const envoy_config_endpoint_v3_ClusterStats_DroppedRequests* msg, int options,
                                  upb_Arena* arena, size_t* len) {
-  return upb_Encode(msg, &envoy_config_endpoint_v3_ClusterStats_DroppedRequests_msginit, options, arena, len);
+  char* ptr;
+  (void)upb_Encode(msg, &envoy_config_endpoint_v3_ClusterStats_DroppedRequests_msginit, options, arena, &ptr, len);
+  return ptr;
 }
 UPB_INLINE void envoy_config_endpoint_v3_ClusterStats_DroppedRequests_clear_category(const envoy_config_endpoint_v3_ClusterStats_DroppedRequests* msg) {
   *UPB_PTR_AT(msg, UPB_SIZE(0, 0), upb_StringView) = upb_StringView_FromDataAndSize(NULL, 0);

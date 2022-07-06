@@ -74,7 +74,7 @@ static const upb_MiniTable_Field envoy_config_route_v3_VirtualHost__fields[20] =
 const upb_MiniTable envoy_config_route_v3_VirtualHost_msginit = {
   &envoy_config_route_v3_VirtualHost_submsgs[0],
   &envoy_config_route_v3_VirtualHost__fields[0],
-  UPB_SIZE(84, 168), 20, kUpb_ExtMode_NonExtendable, 8, 255, 0,
+  UPB_SIZE(88, 160), 20, kUpb_ExtMode_NonExtendable, 8, 255, 0,
 };
 
 static const upb_MiniTable_Sub envoy_config_route_v3_VirtualHost_TypedPerFilterConfigEntry_submsgs[1] = {
@@ -103,7 +103,7 @@ static const upb_MiniTable_Field envoy_config_route_v3_FilterAction__fields[1] =
 const upb_MiniTable envoy_config_route_v3_FilterAction_msginit = {
   &envoy_config_route_v3_FilterAction_submsgs[0],
   &envoy_config_route_v3_FilterAction__fields[0],
-  UPB_SIZE(8, 24), 1, kUpb_ExtMode_NonExtendable, 1, 255, 0,
+  UPB_SIZE(8, 16), 1, kUpb_ExtMode_NonExtendable, 1, 255, 0,
 };
 
 static const upb_MiniTable_Sub envoy_config_route_v3_Route_submsgs[13] = {
@@ -144,7 +144,7 @@ static const upb_MiniTable_Field envoy_config_route_v3_Route__fields[16] = {
 const upb_MiniTable envoy_config_route_v3_Route_msginit = {
   &envoy_config_route_v3_Route_submsgs[0],
   &envoy_config_route_v3_Route__fields[0],
-  UPB_SIZE(60, 120), 16, kUpb_ExtMode_NonExtendable, 5, 255, 0,
+  UPB_SIZE(64, 112), 16, kUpb_ExtMode_NonExtendable, 5, 255, 0,
 };
 
 static const upb_MiniTable_Sub envoy_config_route_v3_Route_TypedPerFilterConfigEntry_submsgs[1] = {
@@ -204,7 +204,7 @@ static const upb_MiniTable_Field envoy_config_route_v3_WeightedCluster_ClusterWe
 const upb_MiniTable envoy_config_route_v3_WeightedCluster_ClusterWeight_msginit = {
   &envoy_config_route_v3_WeightedCluster_ClusterWeight_submsgs[0],
   &envoy_config_route_v3_WeightedCluster_ClusterWeight__fields[0],
-  UPB_SIZE(60, 120), 10, kUpb_ExtMode_NonExtendable, 6, 255, 0,
+  UPB_SIZE(64, 112), 10, kUpb_ExtMode_NonExtendable, 6, 255, 0,
 };
 
 static const upb_MiniTable_Sub envoy_config_route_v3_WeightedCluster_ClusterWeight_TypedPerFilterConfigEntry_submsgs[1] = {
@@ -251,13 +251,13 @@ static const upb_MiniTable_Field envoy_config_route_v3_RouteMatch__fields[11] = 
 const upb_MiniTable envoy_config_route_v3_RouteMatch_msginit = {
   &envoy_config_route_v3_RouteMatch_submsgs[0],
   &envoy_config_route_v3_RouteMatch__fields[0],
-  UPB_SIZE(44, 88), 11, kUpb_ExtMode_NonExtendable, 2, 255, 0,
+  UPB_SIZE(48, 80), 11, kUpb_ExtMode_NonExtendable, 2, 255, 0,
 };
 
 const upb_MiniTable envoy_config_route_v3_RouteMatch_GrpcRouteMatchOptions_msginit = {
   NULL,
   NULL,
-  UPB_SIZE(0, 8), 0, kUpb_ExtMode_NonExtendable, 0, 255, 0,
+  UPB_SIZE(0, 0), 0, kUpb_ExtMode_NonExtendable, 0, 255, 0,
 };
 
 static const upb_MiniTable_Sub envoy_config_route_v3_RouteMatch_TlsContextMatchOptions_submsgs[2] = {
@@ -273,13 +273,13 @@ static const upb_MiniTable_Field envoy_config_route_v3_RouteMatch_TlsContextMatc
 const upb_MiniTable envoy_config_route_v3_RouteMatch_TlsContextMatchOptions_msginit = {
   &envoy_config_route_v3_RouteMatch_TlsContextMatchOptions_submsgs[0],
   &envoy_config_route_v3_RouteMatch_TlsContextMatchOptions__fields[0],
-  UPB_SIZE(12, 24), 2, kUpb_ExtMode_NonExtendable, 2, 255, 0,
+  UPB_SIZE(16, 24), 2, kUpb_ExtMode_NonExtendable, 2, 255, 0,
 };
 
 const upb_MiniTable envoy_config_route_v3_RouteMatch_ConnectMatcher_msginit = {
   NULL,
   NULL,
-  UPB_SIZE(0, 8), 0, kUpb_ExtMode_NonExtendable, 0, 255, 0,
+  UPB_SIZE(0, 0), 0, kUpb_ExtMode_NonExtendable, 0, 255, 0,
 };
 
 static const upb_MiniTable_Sub envoy_config_route_v3_CorsPolicy_submsgs[4] = {
@@ -367,7 +367,7 @@ static const upb_MiniTable_Field envoy_config_route_v3_RouteAction__fields[31] =
 const upb_MiniTable envoy_config_route_v3_RouteAction_msginit = {
   &envoy_config_route_v3_RouteAction_submsgs[0],
   &envoy_config_route_v3_RouteAction__fields[0],
-  UPB_SIZE(124, 232), 31, kUpb_ExtMode_NonExtendable, 9, 255, 0,
+  UPB_SIZE(128, 224), 31, kUpb_ExtMode_NonExtendable, 9, 255, 0,
 };
 
 static const upb_MiniTable_Sub envoy_config_route_v3_RouteAction_RequestMirrorPolicy_submsgs[2] = {
@@ -384,7 +384,7 @@ static const upb_MiniTable_Field envoy_config_route_v3_RouteAction_RequestMirror
 const upb_MiniTable envoy_config_route_v3_RouteAction_RequestMirrorPolicy_msginit = {
   &envoy_config_route_v3_RouteAction_RequestMirrorPolicy_submsgs[0],
   &envoy_config_route_v3_RouteAction_RequestMirrorPolicy__fields[0],
-  UPB_SIZE(20, 40), 3, kUpb_ExtMode_NonExtendable, 1, 255, 0,
+  UPB_SIZE(24, 40), 3, kUpb_ExtMode_NonExtendable, 1, 255, 0,
 };
 
 static const upb_MiniTable_Sub envoy_config_route_v3_RouteAction_HashPolicy_submsgs[5] = {
@@ -407,7 +407,7 @@ static const upb_MiniTable_Field envoy_config_route_v3_RouteAction_HashPolicy__f
 const upb_MiniTable envoy_config_route_v3_RouteAction_HashPolicy_msginit = {
   &envoy_config_route_v3_RouteAction_HashPolicy_submsgs[0],
   &envoy_config_route_v3_RouteAction_HashPolicy__fields[0],
-  UPB_SIZE(12, 24), 6, kUpb_ExtMode_NonExtendable, 6, 255, 0,
+  UPB_SIZE(16, 16), 6, kUpb_ExtMode_NonExtendable, 6, 255, 0,
 };
 
 static const upb_MiniTable_Sub envoy_config_route_v3_RouteAction_HashPolicy_Header_submsgs[1] = {
@@ -422,7 +422,7 @@ static const upb_MiniTable_Field envoy_config_route_v3_RouteAction_HashPolicy_He
 const upb_MiniTable envoy_config_route_v3_RouteAction_HashPolicy_Header_msginit = {
   &envoy_config_route_v3_RouteAction_HashPolicy_Header_submsgs[0],
   &envoy_config_route_v3_RouteAction_HashPolicy_Header__fields[0],
-  UPB_SIZE(16, 40), 2, kUpb_ExtMode_NonExtendable, 2, 255, 0,
+  UPB_SIZE(16, 32), 2, kUpb_ExtMode_NonExtendable, 2, 255, 0,
 };
 
 static const upb_MiniTable_Sub envoy_config_route_v3_RouteAction_HashPolicy_Cookie_submsgs[1] = {
@@ -438,7 +438,7 @@ static const upb_MiniTable_Field envoy_config_route_v3_RouteAction_HashPolicy_Co
 const upb_MiniTable envoy_config_route_v3_RouteAction_HashPolicy_Cookie_msginit = {
   &envoy_config_route_v3_RouteAction_HashPolicy_Cookie_submsgs[0],
   &envoy_config_route_v3_RouteAction_HashPolicy_Cookie__fields[0],
-  UPB_SIZE(24, 56), 3, kUpb_ExtMode_NonExtendable, 3, 255, 0,
+  UPB_SIZE(24, 48), 3, kUpb_ExtMode_NonExtendable, 3, 255, 0,
 };
 
 static const upb_MiniTable_Field envoy_config_route_v3_RouteAction_HashPolicy_ConnectionProperties__fields[1] = {
@@ -448,7 +448,7 @@ static const upb_MiniTable_Field envoy_config_route_v3_RouteAction_HashPolicy_Co
 const upb_MiniTable envoy_config_route_v3_RouteAction_HashPolicy_ConnectionProperties_msginit = {
   NULL,
   &envoy_config_route_v3_RouteAction_HashPolicy_ConnectionProperties__fields[0],
-  UPB_SIZE(1, 8), 1, kUpb_ExtMode_NonExtendable, 1, 255, 0,
+  UPB_SIZE(8, 8), 1, kUpb_ExtMode_NonExtendable, 1, 255, 0,
 };
 
 static const upb_MiniTable_Field envoy_config_route_v3_RouteAction_HashPolicy_QueryParameter__fields[1] = {
@@ -458,7 +458,7 @@ static const upb_MiniTable_Field envoy_config_route_v3_RouteAction_HashPolicy_Qu
 const upb_MiniTable envoy_config_route_v3_RouteAction_HashPolicy_QueryParameter_msginit = {
   NULL,
   &envoy_config_route_v3_RouteAction_HashPolicy_QueryParameter__fields[0],
-  UPB_SIZE(8, 24), 1, kUpb_ExtMode_NonExtendable, 1, 255, 0,
+  UPB_SIZE(8, 16), 1, kUpb_ExtMode_NonExtendable, 1, 255, 0,
 };
 
 static const upb_MiniTable_Field envoy_config_route_v3_RouteAction_HashPolicy_FilterState__fields[1] = {
@@ -468,7 +468,7 @@ static const upb_MiniTable_Field envoy_config_route_v3_RouteAction_HashPolicy_Fi
 const upb_MiniTable envoy_config_route_v3_RouteAction_HashPolicy_FilterState_msginit = {
   NULL,
   &envoy_config_route_v3_RouteAction_HashPolicy_FilterState__fields[0],
-  UPB_SIZE(8, 24), 1, kUpb_ExtMode_NonExtendable, 1, 255, 0,
+  UPB_SIZE(8, 16), 1, kUpb_ExtMode_NonExtendable, 1, 255, 0,
 };
 
 static const upb_MiniTable_Sub envoy_config_route_v3_RouteAction_UpgradeConfig_submsgs[2] = {
@@ -485,7 +485,7 @@ static const upb_MiniTable_Field envoy_config_route_v3_RouteAction_UpgradeConfig
 const upb_MiniTable envoy_config_route_v3_RouteAction_UpgradeConfig_msginit = {
   &envoy_config_route_v3_RouteAction_UpgradeConfig_submsgs[0],
   &envoy_config_route_v3_RouteAction_UpgradeConfig__fields[0],
-  UPB_SIZE(20, 40), 3, kUpb_ExtMode_NonExtendable, 3, 255, 0,
+  UPB_SIZE(24, 40), 3, kUpb_ExtMode_NonExtendable, 3, 255, 0,
 };
 
 static const upb_MiniTable_Sub envoy_config_route_v3_RouteAction_UpgradeConfig_ConnectConfig_submsgs[1] = {
@@ -500,7 +500,7 @@ static const upb_MiniTable_Field envoy_config_route_v3_RouteAction_UpgradeConfig
 const upb_MiniTable envoy_config_route_v3_RouteAction_UpgradeConfig_ConnectConfig_msginit = {
   &envoy_config_route_v3_RouteAction_UpgradeConfig_ConnectConfig_submsgs[0],
   &envoy_config_route_v3_RouteAction_UpgradeConfig_ConnectConfig__fields[0],
-  UPB_SIZE(8, 24), 2, kUpb_ExtMode_NonExtendable, 2, 255, 0,
+  UPB_SIZE(8, 16), 2, kUpb_ExtMode_NonExtendable, 2, 255, 0,
 };
 
 static const upb_MiniTable_Sub envoy_config_route_v3_RouteAction_MaxStreamDuration_submsgs[3] = {
@@ -518,7 +518,7 @@ static const upb_MiniTable_Field envoy_config_route_v3_RouteAction_MaxStreamDura
 const upb_MiniTable envoy_config_route_v3_RouteAction_MaxStreamDuration_msginit = {
   &envoy_config_route_v3_RouteAction_MaxStreamDuration_submsgs[0],
   &envoy_config_route_v3_RouteAction_MaxStreamDuration__fields[0],
-  UPB_SIZE(16, 40), 3, kUpb_ExtMode_NonExtendable, 3, 255, 0,
+  UPB_SIZE(16, 32), 3, kUpb_ExtMode_NonExtendable, 3, 255, 0,
 };
 
 static const upb_MiniTable_Sub envoy_config_route_v3_RetryPolicy_submsgs[10] = {
@@ -568,7 +568,7 @@ static const upb_MiniTable_Field envoy_config_route_v3_RetryPolicy_RetryPriority
 const upb_MiniTable envoy_config_route_v3_RetryPolicy_RetryPriority_msginit = {
   &envoy_config_route_v3_RetryPolicy_RetryPriority_submsgs[0],
   &envoy_config_route_v3_RetryPolicy_RetryPriority__fields[0],
-  UPB_SIZE(16, 40), 2, kUpb_ExtMode_NonExtendable, 1, 255, 0,
+  UPB_SIZE(16, 32), 2, kUpb_ExtMode_NonExtendable, 1, 255, 0,
 };
 
 static const upb_MiniTable_Sub envoy_config_route_v3_RetryPolicy_RetryHostPredicate_submsgs[1] = {
@@ -583,7 +583,7 @@ static const upb_MiniTable_Field envoy_config_route_v3_RetryPolicy_RetryHostPred
 const upb_MiniTable envoy_config_route_v3_RetryPolicy_RetryHostPredicate_msginit = {
   &envoy_config_route_v3_RetryPolicy_RetryHostPredicate_submsgs[0],
   &envoy_config_route_v3_RetryPolicy_RetryHostPredicate__fields[0],
-  UPB_SIZE(16, 40), 2, kUpb_ExtMode_NonExtendable, 1, 255, 0,
+  UPB_SIZE(16, 32), 2, kUpb_ExtMode_NonExtendable, 1, 255, 0,
 };
 
 static const upb_MiniTable_Sub envoy_config_route_v3_RetryPolicy_RetryBackOff_submsgs[2] = {
@@ -599,7 +599,7 @@ static const upb_MiniTable_Field envoy_config_route_v3_RetryPolicy_RetryBackOff_
 const upb_MiniTable envoy_config_route_v3_RetryPolicy_RetryBackOff_msginit = {
   &envoy_config_route_v3_RetryPolicy_RetryBackOff_submsgs[0],
   &envoy_config_route_v3_RetryPolicy_RetryBackOff__fields[0],
-  UPB_SIZE(12, 24), 2, kUpb_ExtMode_NonExtendable, 2, 255, 0,
+  UPB_SIZE(16, 24), 2, kUpb_ExtMode_NonExtendable, 2, 255, 0,
 };
 
 static const upb_MiniTable_Field envoy_config_route_v3_RetryPolicy_ResetHeader__fields[2] = {
@@ -610,7 +610,7 @@ static const upb_MiniTable_Field envoy_config_route_v3_RetryPolicy_ResetHeader__
 const upb_MiniTable envoy_config_route_v3_RetryPolicy_ResetHeader_msginit = {
   NULL,
   &envoy_config_route_v3_RetryPolicy_ResetHeader__fields[0],
-  UPB_SIZE(12, 24), 2, kUpb_ExtMode_NonExtendable, 2, 255, 0,
+  UPB_SIZE(16, 24), 2, kUpb_ExtMode_NonExtendable, 2, 255, 0,
 };
 
 static const upb_MiniTable_Sub envoy_config_route_v3_RetryPolicy_RateLimitedRetryBackOff_submsgs[2] = {
@@ -626,7 +626,7 @@ static const upb_MiniTable_Field envoy_config_route_v3_RetryPolicy_RateLimitedRe
 const upb_MiniTable envoy_config_route_v3_RetryPolicy_RateLimitedRetryBackOff_msginit = {
   &envoy_config_route_v3_RetryPolicy_RateLimitedRetryBackOff_submsgs[0],
   &envoy_config_route_v3_RetryPolicy_RateLimitedRetryBackOff__fields[0],
-  UPB_SIZE(12, 24), 2, kUpb_ExtMode_NonExtendable, 2, 255, 0,
+  UPB_SIZE(16, 24), 2, kUpb_ExtMode_NonExtendable, 2, 255, 0,
 };
 
 static const upb_MiniTable_Sub envoy_config_route_v3_HedgePolicy_submsgs[2] = {
@@ -643,7 +643,7 @@ static const upb_MiniTable_Field envoy_config_route_v3_HedgePolicy__fields[3] = 
 const upb_MiniTable envoy_config_route_v3_HedgePolicy_msginit = {
   &envoy_config_route_v3_HedgePolicy_submsgs[0],
   &envoy_config_route_v3_HedgePolicy__fields[0],
-  UPB_SIZE(12, 24), 3, kUpb_ExtMode_NonExtendable, 3, 255, 0,
+  UPB_SIZE(16, 24), 3, kUpb_ExtMode_NonExtendable, 3, 255, 0,
 };
 
 static const upb_MiniTable_Sub envoy_config_route_v3_RedirectAction_submsgs[1] = {
@@ -665,7 +665,7 @@ static const upb_MiniTable_Field envoy_config_route_v3_RedirectAction__fields[9]
 const upb_MiniTable envoy_config_route_v3_RedirectAction_msginit = {
   &envoy_config_route_v3_RedirectAction_submsgs[0],
   &envoy_config_route_v3_RedirectAction__fields[0],
-  UPB_SIZE(44, 72), 9, kUpb_ExtMode_NonExtendable, 9, 255, 0,
+  UPB_SIZE(48, 72), 9, kUpb_ExtMode_NonExtendable, 9, 255, 0,
 };
 
 static const upb_MiniTable_Sub envoy_config_route_v3_DirectResponseAction_submsgs[1] = {
@@ -680,13 +680,13 @@ static const upb_MiniTable_Field envoy_config_route_v3_DirectResponseAction__fie
 const upb_MiniTable envoy_config_route_v3_DirectResponseAction_msginit = {
   &envoy_config_route_v3_DirectResponseAction_submsgs[0],
   &envoy_config_route_v3_DirectResponseAction__fields[0],
-  UPB_SIZE(12, 24), 2, kUpb_ExtMode_NonExtendable, 2, 255, 0,
+  UPB_SIZE(16, 16), 2, kUpb_ExtMode_NonExtendable, 2, 255, 0,
 };
 
 const upb_MiniTable envoy_config_route_v3_NonForwardingAction_msginit = {
   NULL,
   NULL,
-  UPB_SIZE(0, 8), 0, kUpb_ExtMode_NonExtendable, 0, 255, 0,
+  UPB_SIZE(0, 0), 0, kUpb_ExtMode_NonExtendable, 0, 255, 0,
 };
 
 static const upb_MiniTable_Sub envoy_config_route_v3_Decorator_submsgs[1] = {
@@ -701,7 +701,7 @@ static const upb_MiniTable_Field envoy_config_route_v3_Decorator__fields[2] = {
 const upb_MiniTable envoy_config_route_v3_Decorator_msginit = {
   &envoy_config_route_v3_Decorator_submsgs[0],
   &envoy_config_route_v3_Decorator__fields[0],
-  UPB_SIZE(16, 40), 2, kUpb_ExtMode_NonExtendable, 2, 255, 0,
+  UPB_SIZE(16, 32), 2, kUpb_ExtMode_NonExtendable, 2, 255, 0,
 };
 
 static const upb_MiniTable_Sub envoy_config_route_v3_Tracing_submsgs[4] = {
@@ -721,7 +721,7 @@ static const upb_MiniTable_Field envoy_config_route_v3_Tracing__fields[4] = {
 const upb_MiniTable envoy_config_route_v3_Tracing_msginit = {
   &envoy_config_route_v3_Tracing_submsgs[0],
   &envoy_config_route_v3_Tracing__fields[0],
-  UPB_SIZE(20, 40), 4, kUpb_ExtMode_NonExtendable, 4, 255, 0,
+  UPB_SIZE(24, 40), 4, kUpb_ExtMode_NonExtendable, 4, 255, 0,
 };
 
 static const upb_MiniTable_Sub envoy_config_route_v3_VirtualCluster_submsgs[1] = {
@@ -736,7 +736,7 @@ static const upb_MiniTable_Field envoy_config_route_v3_VirtualCluster__fields[2]
 const upb_MiniTable envoy_config_route_v3_VirtualCluster_msginit = {
   &envoy_config_route_v3_VirtualCluster_submsgs[0],
   &envoy_config_route_v3_VirtualCluster__fields[0],
-  UPB_SIZE(12, 24), 2, kUpb_ExtMode_NonExtendable, 0, 255, 0,
+  UPB_SIZE(16, 24), 2, kUpb_ExtMode_NonExtendable, 0, 255, 0,
 };
 
 static const upb_MiniTable_Sub envoy_config_route_v3_RateLimit_submsgs[3] = {
@@ -755,7 +755,7 @@ static const upb_MiniTable_Field envoy_config_route_v3_RateLimit__fields[4] = {
 const upb_MiniTable envoy_config_route_v3_RateLimit_msginit = {
   &envoy_config_route_v3_RateLimit_submsgs[0],
   &envoy_config_route_v3_RateLimit__fields[0],
-  UPB_SIZE(24, 56), 4, kUpb_ExtMode_NonExtendable, 4, 255, 0,
+  UPB_SIZE(24, 48), 4, kUpb_ExtMode_NonExtendable, 4, 255, 0,
 };
 
 static const upb_MiniTable_Sub envoy_config_route_v3_RateLimit_Action_submsgs[9] = {
@@ -785,19 +785,19 @@ static const upb_MiniTable_Field envoy_config_route_v3_RateLimit_Action__fields[
 const upb_MiniTable envoy_config_route_v3_RateLimit_Action_msginit = {
   &envoy_config_route_v3_RateLimit_Action_submsgs[0],
   &envoy_config_route_v3_RateLimit_Action__fields[0],
-  UPB_SIZE(8, 24), 9, kUpb_ExtMode_NonExtendable, 9, 255, 0,
+  UPB_SIZE(8, 16), 9, kUpb_ExtMode_NonExtendable, 9, 255, 0,
 };
 
 const upb_MiniTable envoy_config_route_v3_RateLimit_Action_SourceCluster_msginit = {
   NULL,
   NULL,
-  UPB_SIZE(0, 8), 0, kUpb_ExtMode_NonExtendable, 0, 255, 0,
+  UPB_SIZE(0, 0), 0, kUpb_ExtMode_NonExtendable, 0, 255, 0,
 };
 
 const upb_MiniTable envoy_config_route_v3_RateLimit_Action_DestinationCluster_msginit = {
   NULL,
   NULL,
-  UPB_SIZE(0, 8), 0, kUpb_ExtMode_NonExtendable, 0, 255, 0,
+  UPB_SIZE(0, 0), 0, kUpb_ExtMode_NonExtendable, 0, 255, 0,
 };
 
 static const upb_MiniTable_Field envoy_config_route_v3_RateLimit_Action_RequestHeaders__fields[3] = {
@@ -809,13 +809,13 @@ static const upb_MiniTable_Field envoy_config_route_v3_RateLimit_Action_RequestH
 const upb_MiniTable envoy_config_route_v3_RateLimit_Action_RequestHeaders_msginit = {
   NULL,
   &envoy_config_route_v3_RateLimit_Action_RequestHeaders__fields[0],
-  UPB_SIZE(20, 40), 3, kUpb_ExtMode_NonExtendable, 3, 255, 0,
+  UPB_SIZE(24, 40), 3, kUpb_ExtMode_NonExtendable, 3, 255, 0,
 };
 
 const upb_MiniTable envoy_config_route_v3_RateLimit_Action_RemoteAddress_msginit = {
   NULL,
   NULL,
-  UPB_SIZE(0, 8), 0, kUpb_ExtMode_NonExtendable, 0, 255, 0,
+  UPB_SIZE(0, 0), 0, kUpb_ExtMode_NonExtendable, 0, 255, 0,
 };
 
 static const upb_MiniTable_Field envoy_config_route_v3_RateLimit_Action_GenericKey__fields[2] = {
@@ -826,7 +826,7 @@ static const upb_MiniTable_Field envoy_config_route_v3_RateLimit_Action_GenericK
 const upb_MiniTable envoy_config_route_v3_RateLimit_Action_GenericKey_msginit = {
   NULL,
   &envoy_config_route_v3_RateLimit_Action_GenericKey__fields[0],
-  UPB_SIZE(16, 40), 2, kUpb_ExtMode_NonExtendable, 2, 255, 0,
+  UPB_SIZE(16, 32), 2, kUpb_ExtMode_NonExtendable, 2, 255, 0,
 };
 
 static const upb_MiniTable_Sub envoy_config_route_v3_RateLimit_Action_HeaderValueMatch_submsgs[2] = {
@@ -844,7 +844,7 @@ static const upb_MiniTable_Field envoy_config_route_v3_RateLimit_Action_HeaderVa
 const upb_MiniTable envoy_config_route_v3_RateLimit_Action_HeaderValueMatch_msginit = {
   &envoy_config_route_v3_RateLimit_Action_HeaderValueMatch_submsgs[0],
   &envoy_config_route_v3_RateLimit_Action_HeaderValueMatch__fields[0],
-  UPB_SIZE(28, 56), 4, kUpb_ExtMode_NonExtendable, 4, 255, 0,
+  UPB_SIZE(32, 56), 4, kUpb_ExtMode_NonExtendable, 4, 255, 0,
 };
 
 static const upb_MiniTable_Sub envoy_config_route_v3_RateLimit_Action_DynamicMetaData_submsgs[1] = {
@@ -860,7 +860,7 @@ static const upb_MiniTable_Field envoy_config_route_v3_RateLimit_Action_DynamicM
 const upb_MiniTable envoy_config_route_v3_RateLimit_Action_DynamicMetaData_msginit = {
   &envoy_config_route_v3_RateLimit_Action_DynamicMetaData_submsgs[0],
   &envoy_config_route_v3_RateLimit_Action_DynamicMetaData__fields[0],
-  UPB_SIZE(24, 56), 3, kUpb_ExtMode_NonExtendable, 3, 255, 0,
+  UPB_SIZE(24, 48), 3, kUpb_ExtMode_NonExtendable, 3, 255, 0,
 };
 
 static const upb_MiniTable_Sub envoy_config_route_v3_RateLimit_Action_MetaData_submsgs[1] = {
@@ -877,7 +877,7 @@ static const upb_MiniTable_Field envoy_config_route_v3_RateLimit_Action_MetaData
 const upb_MiniTable envoy_config_route_v3_RateLimit_Action_MetaData_msginit = {
   &envoy_config_route_v3_RateLimit_Action_MetaData_submsgs[0],
   &envoy_config_route_v3_RateLimit_Action_MetaData__fields[0],
-  UPB_SIZE(28, 56), 4, kUpb_ExtMode_NonExtendable, 4, 255, 0,
+  UPB_SIZE(32, 48), 4, kUpb_ExtMode_NonExtendable, 4, 255, 0,
 };
 
 static const upb_MiniTable_Sub envoy_config_route_v3_RateLimit_Override_submsgs[1] = {
@@ -891,7 +891,7 @@ static const upb_MiniTable_Field envoy_config_route_v3_RateLimit_Override__field
 const upb_MiniTable envoy_config_route_v3_RateLimit_Override_msginit = {
   &envoy_config_route_v3_RateLimit_Override_submsgs[0],
   &envoy_config_route_v3_RateLimit_Override__fields[0],
-  UPB_SIZE(8, 24), 1, kUpb_ExtMode_NonExtendable, 1, 255, 0,
+  UPB_SIZE(8, 16), 1, kUpb_ExtMode_NonExtendable, 1, 255, 0,
 };
 
 static const upb_MiniTable_Sub envoy_config_route_v3_RateLimit_Override_DynamicMetadata_submsgs[1] = {
@@ -905,7 +905,7 @@ static const upb_MiniTable_Field envoy_config_route_v3_RateLimit_Override_Dynami
 const upb_MiniTable envoy_config_route_v3_RateLimit_Override_DynamicMetadata_msginit = {
   &envoy_config_route_v3_RateLimit_Override_DynamicMetadata_submsgs[0],
   &envoy_config_route_v3_RateLimit_Override_DynamicMetadata__fields[0],
-  UPB_SIZE(8, 24), 1, kUpb_ExtMode_NonExtendable, 1, 255, 0,
+  UPB_SIZE(8, 16), 1, kUpb_ExtMode_NonExtendable, 1, 255, 0,
 };
 
 static const upb_MiniTable_Sub envoy_config_route_v3_HeaderMatcher_submsgs[3] = {
@@ -946,7 +946,7 @@ static const upb_MiniTable_Field envoy_config_route_v3_QueryParameterMatcher__fi
 const upb_MiniTable envoy_config_route_v3_QueryParameterMatcher_msginit = {
   &envoy_config_route_v3_QueryParameterMatcher_submsgs[0],
   &envoy_config_route_v3_QueryParameterMatcher__fields[0],
-  UPB_SIZE(16, 40), 3, kUpb_ExtMode_NonExtendable, 1, 255, 0,
+  UPB_SIZE(16, 32), 3, kUpb_ExtMode_NonExtendable, 1, 255, 0,
 };
 
 static const upb_MiniTable_Sub envoy_config_route_v3_InternalRedirectPolicy_submsgs[2] = {
@@ -964,7 +964,7 @@ static const upb_MiniTable_Field envoy_config_route_v3_InternalRedirectPolicy__f
 const upb_MiniTable envoy_config_route_v3_InternalRedirectPolicy_msginit = {
   &envoy_config_route_v3_InternalRedirectPolicy_submsgs[0],
   &envoy_config_route_v3_InternalRedirectPolicy__fields[0],
-  UPB_SIZE(16, 40), 4, kUpb_ExtMode_NonExtendable, 4, 255, 0,
+  UPB_SIZE(16, 32), 4, kUpb_ExtMode_NonExtendable, 4, 255, 0,
 };
 
 static const upb_MiniTable_Sub envoy_config_route_v3_FilterConfig_submsgs[1] = {
@@ -979,7 +979,7 @@ static const upb_MiniTable_Field envoy_config_route_v3_FilterConfig__fields[2] =
 const upb_MiniTable envoy_config_route_v3_FilterConfig_msginit = {
   &envoy_config_route_v3_FilterConfig_submsgs[0],
   &envoy_config_route_v3_FilterConfig__fields[0],
-  UPB_SIZE(8, 24), 2, kUpb_ExtMode_NonExtendable, 2, 255, 0,
+  UPB_SIZE(8, 16), 2, kUpb_ExtMode_NonExtendable, 2, 255, 0,
 };
 
 static const upb_MiniTable *messages_layout[53] = {

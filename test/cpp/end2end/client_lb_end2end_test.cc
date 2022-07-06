@@ -83,132 +83,6 @@ namespace {
 
 constexpr char kRequestMessage[] = "Live long and prosper.";
 
-// A connection attempt injector that allows us to control timing of
-// connection attempts.
-class ConnectionInjector : public ConnectionAttemptInjector {
- private:
-  grpc_core::Mutex mu_;  // Needs to be declared up front.
-
- public:
-  class Hold {
-   public:
-    Hold(ConnectionInjector* injector, int port, bool intercept_completion)
-        : injector_(injector),
-          port_(port),
-          intercept_completion_(intercept_completion) {}
-
-    void Wait() {
-      gpr_log(GPR_INFO,
-              "=== WAITING FOR CONNECTION ATTEMPT ON PORT %d ===", port_);
-      grpc_core::MutexLock lock(&injector_->mu_);
-      while (queued_attempt_ == nullptr) {
-        start_cv_.Wait(&injector_->mu_);
-      }
-      gpr_log(GPR_INFO, "=== CONNECTION ATTEMPT STARTED ON PORT %d ===", port_);
-    }
-
-    void Resume() {
-      gpr_log(GPR_INFO,
-              "=== RESUMING CONNECTION ATTEMPT ON PORT %d ===", port_);
-      grpc_core::ExecCtx exec_ctx;
-      std::unique_ptr<QueuedAttempt> attempt;
-      {
-        grpc_core::MutexLock lock(&injector_->mu_);
-        attempt = std::move(queued_attempt_);
-      }
-      attempt->Resume();
-    }
-
-    void Fail(grpc_error_handle error) {
-      gpr_log(GPR_INFO, "=== FAILING CONNECTION ATTEMPT ON PORT %d ===", port_);
-      grpc_core::ExecCtx exec_ctx;
-      std::unique_ptr<QueuedAttempt> attempt;
-      {
-        grpc_core::MutexLock lock(&injector_->mu_);
-        attempt = std::move(queued_attempt_);
-      }
-      attempt->Fail(error);
-    }
-
-    void WaitForCompletion() {
-      gpr_log(GPR_INFO,
-              "=== WAITING FOR CONNECTION COMPLETION ON PORT %d ===", port_);
-      grpc_core::MutexLock lock(&injector_->mu_);
-      while (original_on_complete_ != nullptr) {
-        complete_cv_.Wait(&injector_->mu_);
-      }
-      gpr_log(GPR_INFO, "=== CONNECTION COMPLETED ON PORT %d ===", port_);
-    }
-
-   private:
-    friend class ConnectionInjector;
-
-    static void OnComplete(void* arg, grpc_error_handle error) {
-      auto* self = static_cast<Hold*>(arg);
-      grpc_closure* on_complete;
-      {
-        grpc_core::MutexLock lock(&self->injector_->mu_);
-        on_complete = self->original_on_complete_;
-        self->original_on_complete_ = nullptr;
-        self->complete_cv_.Signal();
-      }
-      grpc_core::Closure::Run(DEBUG_LOCATION, on_complete,
-                              GRPC_ERROR_REF(error));
-    }
-
-    ConnectionInjector* injector_;
-    const int port_;
-    const bool intercept_completion_;
-    std::unique_ptr<QueuedAttempt> queued_attempt_
-        ABSL_GUARDED_BY(&ConnectionInjector::mu_);
-    grpc_core::CondVar start_cv_;
-    grpc_closure on_complete_;
-    grpc_closure* original_on_complete_;
-    grpc_core::CondVar complete_cv_;
-  };
-
-  std::unique_ptr<Hold> AddHold(int port, bool intercept_completion = false) {
-    grpc_core::MutexLock lock(&mu_);
-    auto hold = absl::make_unique<Hold>(this, port, intercept_completion);
-    holds_.push_back(hold.get());
-    return hold;
-  }
-
-  void HandleConnection(grpc_closure* closure, grpc_endpoint** ep,
-                        grpc_pollset_set* interested_parties,
-                        const grpc_channel_args* channel_args,
-                        const grpc_resolved_address* addr,
-                        grpc_core::Timestamp deadline) override {
-    const int port = grpc_sockaddr_get_port(addr);
-    gpr_log(GPR_INFO, "==> HandleConnection(): port=%d", port);
-    {
-      grpc_core::MutexLock lock(&mu_);
-      for (auto it = holds_.begin(); it != holds_.end(); ++it) {
-        Hold* hold = *it;
-        if (port == hold->port_) {
-          gpr_log(GPR_INFO, "*** INTERCEPTING CONNECTION ATTEMPT");
-          if (hold->intercept_completion_) {
-            hold->original_on_complete_ = closure;
-            closure = GRPC_CLOSURE_INIT(&hold->on_complete_, Hold::OnComplete,
-                                        hold, nullptr);
-          }
-          hold->queued_attempt_ = absl::make_unique<QueuedAttempt>(
-              closure, ep, interested_parties, channel_args, addr, deadline);
-          hold->start_cv_.Signal();
-          holds_.erase(it);
-          return;
-        }
-      }
-    }
-    // Anything we're not holding should proceed normally.
-    AttemptConnection(closure, ep, interested_parties, channel_args, addr,
-                      deadline);
-  }
-
- private:
-  std::vector<Hold*> holds_;
-};
-
 // Subclass of TestServiceImpl that increments a request counter for
 // every call to the Echo RPC.
 class MyTestServiceImpl : public TestServiceImpl {
@@ -875,7 +749,7 @@ TEST_F(PickFirstTest, ResetConnectionBackoff) {
 TEST_F(ClientLbEnd2endTest,
        ResetConnectionBackoffNextAttemptStartsImmediately) {
   // Start connection injector.
-  ConnectionInjector injector;
+  ConnectionHoldInjector injector;
   injector.Start();
   // Create client.
   const int port = grpc_pick_unused_port_or_die();
@@ -922,7 +796,7 @@ TEST_F(
     PickFirstTest,
     TriesAllSubchannelsBeforeReportingTransientFailureWithSubchannelSharing) {
   // Start connection injector.
-  ConnectionInjector injector;
+  ConnectionHoldInjector injector;
   injector.Start();
   // Get 5 unused ports.  Each channel will have 2 unique ports followed
   // by a common port.
@@ -1707,7 +1581,7 @@ TEST_F(RoundRobinTest, TransientFailureAtStartup) {
 
 TEST_F(RoundRobinTest, StaysInTransientFailureInSubsequentConnecting) {
   // Start connection injector.
-  ConnectionInjector injector;
+  ConnectionHoldInjector injector;
   injector.Start();
   // Get port.
   const int port = grpc_pick_unused_port_or_die();
@@ -1747,7 +1621,7 @@ TEST_F(RoundRobinTest, StaysInTransientFailureInSubsequentConnecting) {
 
 TEST_F(RoundRobinTest, ReportsLatestStatusInTransientFailure) {
   // Start connection injector.
-  ConnectionInjector injector;
+  ConnectionHoldInjector injector;
   injector.Start();
   // Get port.
   const std::vector<int> ports = {grpc_pick_unused_port_or_die(),
@@ -1798,7 +1672,7 @@ TEST_F(RoundRobinTest, ReportsLatestStatusInTransientFailure) {
 
 TEST_F(RoundRobinTest, DoesNotFailRpcsUponDisconnection) {
   // Start connection injector.
-  ConnectionInjector injector;
+  ConnectionHoldInjector injector;
   injector.Start();
   // Start server.
   StartServers(1);

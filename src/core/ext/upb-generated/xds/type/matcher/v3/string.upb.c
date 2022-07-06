@@ -44,7 +44,7 @@ static const upb_MiniTable_Field xds_type_matcher_v3_ListStringMatcher__fields[1
 const upb_MiniTable xds_type_matcher_v3_ListStringMatcher_msginit = {
   &xds_type_matcher_v3_ListStringMatcher_submsgs[0],
   &xds_type_matcher_v3_ListStringMatcher__fields[0],
-  UPB_SIZE(4, 8), 1, kUpb_ExtMode_NonExtendable, 1, 255, 0,
+  UPB_SIZE(8, 8), 1, kUpb_ExtMode_NonExtendable, 1, 255, 0,
 };
 
 static const upb_MiniTable *messages_layout[2] = {

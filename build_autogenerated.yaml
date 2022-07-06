@@ -935,7 +935,6 @@ libs:
   - src/core/lib/slice/slice_internal.h
   - src/core/lib/slice/slice_refcount.h
   - src/core/lib/slice/slice_refcount_base.h
-  - src/core/lib/slice/slice_split.h
   - src/core/lib/slice/slice_string_helpers.h
   - src/core/lib/surface/api_trace.h
   - src/core/lib/surface/builtins.h
@@ -1601,7 +1600,6 @@ libs:
   - src/core/lib/slice/slice_buffer.cc
   - src/core/lib/slice/slice_buffer_api.cc
   - src/core/lib/slice/slice_refcount.cc
-  - src/core/lib/slice/slice_split.cc
   - src/core/lib/slice/slice_string_helpers.cc
   - src/core/lib/surface/api_trace.cc
   - src/core/lib/surface/builtins.cc
@@ -2121,7 +2119,6 @@ libs:
   - src/core/lib/slice/slice_internal.h
   - src/core/lib/slice/slice_refcount.h
   - src/core/lib/slice/slice_refcount_base.h
-  - src/core/lib/slice/slice_split.h
   - src/core/lib/slice/slice_string_helpers.h
   - src/core/lib/surface/api_trace.h
   - src/core/lib/surface/builtins.h
@@ -2430,7 +2427,6 @@ libs:
   - src/core/lib/slice/slice_buffer.cc
   - src/core/lib/slice/slice_buffer_api.cc
   - src/core/lib/slice/slice_refcount.cc
-  - src/core/lib/slice/slice_split.cc
   - src/core/lib/slice/slice_string_helpers.cc
   - src/core/lib/surface/api_trace.cc
   - src/core/lib/surface/builtins.cc
@@ -3324,15 +3320,6 @@ targets:
   - test/core/tsi/alts/zero_copy_frame_protector/alts_zero_copy_grpc_protector_test.cc
   deps:
   - grpc_test_util
-- name: arena_test
-  build: test
-  language: c
-  headers: []
-  src:
-  - test/core/gpr/arena_test.cc
-  deps:
-  - grpc_test_util
-  uses_polling: false
 - name: auth_context_test
   build: test
   language: c
@@ -4121,15 +4108,6 @@ targets:
   - test/core/surface/server_test.cc
   deps:
   - grpc_test_util
-- name: slice_split_test
-  build: test
-  language: c
-  headers: []
-  src:
-  - test/core/slice/slice_split_test.cc
-  deps:
-  - grpc_test_util
-  uses_polling: false
 - name: slice_string_helpers_test
   build: test
   language: c
@@ -4642,6 +4620,16 @@ targets:
   - absl/utility:utility
   - gpr
   - upb
+  uses_polling: false
+- name: arena_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/core/resource_quota/arena_test.cc
+  deps:
+  - grpc_test_util
   uses_polling: false
 - name: async_end2end_test
   gtest: true
@@ -9449,6 +9437,7 @@ targets:
   run: false
   language: c++
   headers:
+  - test/cpp/end2end/connection_delay_injector.h
   - test/cpp/end2end/counted_service.h
   - test/cpp/end2end/test_service_impl.h
   - test/cpp/end2end/xds/xds_end2end_test_lib.h
@@ -9488,6 +9477,7 @@ targets:
   - src/proto/grpc/testing/xds/v3/route.proto
   - src/proto/grpc/testing/xds/v3/router.proto
   - src/proto/grpc/testing/xds/v3/string.proto
+  - test/cpp/end2end/connection_delay_injector.cc
   - test/cpp/end2end/test_service_impl.cc
   - test/cpp/end2end/xds/xds_cluster_end2end_test.cc
   - test/cpp/end2end/xds/xds_end2end_test_lib.cc

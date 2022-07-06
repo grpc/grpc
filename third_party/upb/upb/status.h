@@ -25,26 +25,42 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <Python.h>
+#ifndef UPB_STATUS_H_
+#define UPB_STATUS_H_
 
-static struct PyModuleDef module_def = {
-    PyModuleDef_HEAD_INIT,
-    "google.protobuf.internal._api_implementation",
-    "Protobuf Module",
-    -1,
-    NULL,
-    NULL,
-    NULL,
-    NULL,
-    NULL};
+#include <stdarg.h>
+#include <stdbool.h>
 
-PyMODINIT_FUNC PyInit__api_implementation(void) {
-  PyObject* module = PyModule_Create(&module_def);
+#include "upb/port_def.inc"
 
-  if (PyModule_AddIntConstant(module, "api_version", 2)) {
-    Py_DECREF(module);
-    return NULL;
-  }
+#ifdef __cplusplus
+extern "C" {
+#endif
 
-  return module;
-}
+#define _kUpb_Status_MaxMessage 127
+
+typedef struct {
+  bool ok;
+  char msg[_kUpb_Status_MaxMessage]; /* Error message; NULL-terminated. */
+} upb_Status;
+
+const char* upb_Status_ErrorMessage(const upb_Status* status);
+bool upb_Status_IsOk(const upb_Status* status);
+
+/* These are no-op if |status| is NULL. */
+void upb_Status_Clear(upb_Status* status);
+void upb_Status_SetErrorMessage(upb_Status* status, const char* msg);
+void upb_Status_SetErrorFormat(upb_Status* status, const char* fmt, ...)
+    UPB_PRINTF(2, 3);
+void upb_Status_VSetErrorFormat(upb_Status* status, const char* fmt,
+                                va_list args) UPB_PRINTF(2, 0);
+void upb_Status_VAppendErrorFormat(upb_Status* status, const char* fmt,
+                                   va_list args) UPB_PRINTF(2, 0);
+
+#include "upb/port_undef.inc"
+
+#ifdef __cplusplus
+} /* extern "C" */
+#endif
+
+#endif /* UPB_STATUS_H_ */

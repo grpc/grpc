@@ -37,7 +37,7 @@ static const upb_MiniTable_Field envoy_config_listener_v3_Filter__fields[3] = {
 const upb_MiniTable envoy_config_listener_v3_Filter_msginit = {
   &envoy_config_listener_v3_Filter_submsgs[0],
   &envoy_config_listener_v3_Filter__fields[0],
-  UPB_SIZE(16, 40), 3, kUpb_ExtMode_NonExtendable, 1, 255, 0,
+  UPB_SIZE(16, 32), 3, kUpb_ExtMode_NonExtendable, 1, 255, 0,
 };
 
 static const upb_MiniTable_Sub envoy_config_listener_v3_FilterChainMatch_submsgs[5] = {
@@ -92,7 +92,7 @@ static const upb_MiniTable_Field envoy_config_listener_v3_FilterChain__fields[8]
 const upb_MiniTable envoy_config_listener_v3_FilterChain_msginit = {
   &envoy_config_listener_v3_FilterChain_submsgs[0],
   &envoy_config_listener_v3_FilterChain__fields[0],
-  UPB_SIZE(40, 88), 8, kUpb_ExtMode_NonExtendable, 1, 255, 0,
+  UPB_SIZE(40, 80), 8, kUpb_ExtMode_NonExtendable, 1, 255, 0,
 };
 
 static const upb_MiniTable_Sub envoy_config_listener_v3_FilterChain_OnDemandConfiguration_submsgs[1] = {
@@ -106,7 +106,7 @@ static const upb_MiniTable_Field envoy_config_listener_v3_FilterChain_OnDemandCo
 const upb_MiniTable envoy_config_listener_v3_FilterChain_OnDemandConfiguration_msginit = {
   &envoy_config_listener_v3_FilterChain_OnDemandConfiguration_submsgs[0],
   &envoy_config_listener_v3_FilterChain_OnDemandConfiguration__fields[0],
-  UPB_SIZE(8, 24), 1, kUpb_ExtMode_NonExtendable, 1, 255, 0,
+  UPB_SIZE(8, 16), 1, kUpb_ExtMode_NonExtendable, 1, 255, 0,
 };
 
 static const upb_MiniTable_Sub envoy_config_listener_v3_ListenerFilterChainMatchPredicate_submsgs[4] = {
@@ -127,7 +127,7 @@ static const upb_MiniTable_Field envoy_config_listener_v3_ListenerFilterChainMat
 const upb_MiniTable envoy_config_listener_v3_ListenerFilterChainMatchPredicate_msginit = {
   &envoy_config_listener_v3_ListenerFilterChainMatchPredicate_submsgs[0],
   &envoy_config_listener_v3_ListenerFilterChainMatchPredicate__fields[0],
-  UPB_SIZE(8, 24), 5, kUpb_ExtMode_NonExtendable, 5, 255, 0,
+  UPB_SIZE(8, 16), 5, kUpb_ExtMode_NonExtendable, 5, 255, 0,
 };
 
 static const upb_MiniTable_Sub envoy_config_listener_v3_ListenerFilterChainMatchPredicate_MatchSet_submsgs[1] = {
@@ -141,7 +141,7 @@ static const upb_MiniTable_Field envoy_config_listener_v3_ListenerFilterChainMat
 const upb_MiniTable envoy_config_listener_v3_ListenerFilterChainMatchPredicate_MatchSet_msginit = {
   &envoy_config_listener_v3_ListenerFilterChainMatchPredicate_MatchSet_submsgs[0],
   &envoy_config_listener_v3_ListenerFilterChainMatchPredicate_MatchSet__fields[0],
-  UPB_SIZE(4, 8), 1, kUpb_ExtMode_NonExtendable, 1, 255, 0,
+  UPB_SIZE(8, 8), 1, kUpb_ExtMode_NonExtendable, 1, 255, 0,
 };
 
 static const upb_MiniTable_Sub envoy_config_listener_v3_ListenerFilter_submsgs[3] = {

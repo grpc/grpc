@@ -31,7 +31,7 @@ static const upb_MiniTable_Field envoy_config_cluster_v3_CircuitBreakers__fields
 const upb_MiniTable envoy_config_cluster_v3_CircuitBreakers_msginit = {
   &envoy_config_cluster_v3_CircuitBreakers_submsgs[0],
   &envoy_config_cluster_v3_CircuitBreakers__fields[0],
-  UPB_SIZE(8, 24), 2, kUpb_ExtMode_NonExtendable, 2, 255, 0,
+  UPB_SIZE(8, 16), 2, kUpb_ExtMode_NonExtendable, 2, 255, 0,
 };
 
 static const upb_MiniTable_Sub envoy_config_cluster_v3_CircuitBreakers_Thresholds_submsgs[6] = {
@@ -57,7 +57,7 @@ static const upb_MiniTable_Field envoy_config_cluster_v3_CircuitBreakers_Thresho
 const upb_MiniTable envoy_config_cluster_v3_CircuitBreakers_Thresholds_msginit = {
   &envoy_config_cluster_v3_CircuitBreakers_Thresholds_submsgs[0],
   &envoy_config_cluster_v3_CircuitBreakers_Thresholds__fields[0],
-  UPB_SIZE(36, 72), 8, kUpb_ExtMode_NonExtendable, 8, 255, 0,
+  UPB_SIZE(40, 64), 8, kUpb_ExtMode_NonExtendable, 8, 255, 0,
 };
 
 static const upb_MiniTable_Sub envoy_config_cluster_v3_CircuitBreakers_Thresholds_RetryBudget_submsgs[2] = {
@@ -73,7 +73,7 @@ static const upb_MiniTable_Field envoy_config_cluster_v3_CircuitBreakers_Thresho
 const upb_MiniTable envoy_config_cluster_v3_CircuitBreakers_Thresholds_RetryBudget_msginit = {
   &envoy_config_cluster_v3_CircuitBreakers_Thresholds_RetryBudget_submsgs[0],
   &envoy_config_cluster_v3_CircuitBreakers_Thresholds_RetryBudget__fields[0],
-  UPB_SIZE(12, 24), 2, kUpb_ExtMode_NonExtendable, 2, 255, 0,
+  UPB_SIZE(16, 24), 2, kUpb_ExtMode_NonExtendable, 2, 255, 0,
 };
 
 static const upb_MiniTable *messages_layout[3] = {
