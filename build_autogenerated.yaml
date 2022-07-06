@@ -3499,22 +3499,6 @@ targets:
   deps:
   - grpc_test_util
   uses_polling: false
-- name: dns_resolver_cooldown_test
-  build: test
-  language: c
-  headers: []
-  src:
-  - test/core/client_channel/resolvers/dns_resolver_cooldown_test.cc
-  deps:
-  - grpc_test_util
-- name: dns_resolver_test
-  build: test
-  language: c
-  headers: []
-  src:
-  - test/core/client_channel/resolvers/dns_resolver_test.cc
-  deps:
-  - grpc_test_util
 - name: dualstack_socket_test
   build: test
   language: c
@@ -3548,14 +3532,6 @@ targets:
   deps:
   - grpc_test_util
   uses_polling: false
-- name: fake_resolver_test
-  build: test
-  language: c
-  headers: []
-  src:
-  - test/core/client_channel/resolvers/fake_resolver_test.cc
-  deps:
-  - grpc_test_util
 - name: fake_transport_security_test
   build: test
   language: c
@@ -3975,14 +3951,6 @@ targets:
   deps:
   - gpr
   uses_polling: false
-- name: sockaddr_resolver_test
-  build: test
-  language: c
-  headers: []
-  src:
-  - test/core/client_channel/resolvers/sockaddr_resolver_test.cc
-  deps:
-  - grpc_test_util
 - name: socket_utils_test
   build: test
   language: c
@@ -5311,6 +5279,24 @@ targets:
   - test/cpp/client/destroy_grpclb_channel_with_active_connect_stress_test.cc
   deps:
   - grpc++_test_util
+- name: dns_resolver_cooldown_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/core/client_channel/resolvers/dns_resolver_cooldown_test.cc
+  deps:
+  - grpc_test_util
+- name: dns_resolver_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/core/client_channel/resolvers/dns_resolver_test.cc
+  deps:
+  - grpc_test_util
 - name: dual_ref_counted_test
   gtest: true
   build: test
@@ -5704,6 +5690,15 @@ targets:
   - absl/cleanup:cleanup
   - grpc_test_util
   uses_polling: false
+- name: fake_resolver_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/core/client_channel/resolvers/fake_resolver_test.cc
+  deps:
+  - grpc_test_util
 - name: file_watcher_certificate_provider_factory_test
   gtest: true
   build: test
@@ -8114,6 +8109,15 @@ targets:
   headers: []
   src:
   - test/core/event_engine/smoke_test.cc
+  deps:
+  - grpc_test_util
+- name: sockaddr_resolver_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/core/client_channel/resolvers/sockaddr_resolver_test.cc
   deps:
   - grpc_test_util
 - name: sockaddr_utils_test

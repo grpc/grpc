@@ -18,6 +18,8 @@
 
 #include <string.h>
 
+#include <gtest/gtest.h>
+
 #include <grpc/grpc.h>
 #include <grpc/support/log.h>
 
@@ -44,7 +46,7 @@ static void test_succeeds(grpc_core::ResolverFactory* factory,
   absl::StatusOr<grpc_core::URI> uri = grpc_core::URI::Parse(string);
   if (!uri.ok()) {
     gpr_log(GPR_ERROR, "%s", uri.status().ToString().c_str());
-    GPR_ASSERT(uri.ok());
+    ASSERT_TRUE(uri.ok());
   }
   grpc_core::ResolverArgs args;
   args.uri = std::move(*uri);
@@ -52,7 +54,7 @@ static void test_succeeds(grpc_core::ResolverFactory* factory,
   args.result_handler = absl::make_unique<TestResultHandler>();
   grpc_core::OrphanablePtr<grpc_core::Resolver> resolver =
       factory->CreateResolver(std::move(args));
-  GPR_ASSERT(resolver != nullptr);
+  ASSERT_NE(resolver, nullptr);
 }
 
 static void test_fails(grpc_core::ResolverFactory* factory,
@@ -63,7 +65,7 @@ static void test_fails(grpc_core::ResolverFactory* factory,
   absl::StatusOr<grpc_core::URI> uri = grpc_core::URI::Parse(string);
   if (!uri.ok()) {
     gpr_log(GPR_ERROR, "%s", uri.status().ToString().c_str());
-    GPR_ASSERT(uri.ok());
+    ASSERT_TRUE(uri.ok());
   }
   grpc_core::ResolverArgs args;
   args.uri = std::move(*uri);
@@ -71,13 +73,10 @@ static void test_fails(grpc_core::ResolverFactory* factory,
   args.result_handler = absl::make_unique<TestResultHandler>();
   grpc_core::OrphanablePtr<grpc_core::Resolver> resolver =
       factory->CreateResolver(std::move(args));
-  GPR_ASSERT(resolver == nullptr);
+  ASSERT_EQ(resolver, nullptr);
 }
 
-int main(int argc, char** argv) {
-  grpc::testing::TestEnvironment env(&argc, argv);
-  grpc_init();
-
+TEST(DnsResolverTest, MainTest) {
   auto work_serializer = std::make_shared<grpc_core::WorkSerializer>();
   g_work_serializer = &work_serializer;
 
@@ -96,7 +95,11 @@ int main(int argc, char** argv) {
   } else {
     test_succeeds(dns, "dns://8.8.8.8/8.8.8.8:8888");
   }
-  grpc_shutdown();
+}
 
-  return 0;
+int main(int argc, char** argv) {
+  grpc::testing::TestEnvironment env(&argc, argv);
+  ::testing::InitGoogleTest(&argc, argv);
+  grpc::testing::TestGrpcScope grpc_scope;
+  return RUN_ALL_TESTS();
 }
