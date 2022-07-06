@@ -4716,6 +4716,7 @@ grpc_cc_library(
         "absl/strings",
         "absl/strings:str_format",
         "absl/time",
+        "absl/types:optional",
         "address_sorting",
         "cares",
     ],
