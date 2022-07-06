@@ -84,8 +84,8 @@ class TestDNSResolver : public grpc_core::DNSResolver {
     } else {
       auto now = grpc_core::Timestamp::FromTimespecRoundUp(
           gpr_now(GPR_CLOCK_MONOTONIC));
-      EXPECT_TRUE(now - last_resolution_time >=
-                  grpc_core::Duration::Milliseconds(kMinResolutionPeriodMs));
+      EXPECT_GE(now - last_resolution_time,
+                grpc_core::Duration::Milliseconds(kMinResolutionPeriodMs));
       last_resolution_time = now;
     }
     // For correct time diff comparisons, make sure that any subsequent calls
@@ -128,8 +128,8 @@ static grpc_ares_request* test_dns_lookup_ares(
           last_resolution_time.milliseconds_after_process_epoch(),
           now.milliseconds_after_process_epoch(), kMinResolutionPeriodMs);
   if (last_resolution_time != grpc_core::Timestamp::ProcessEpoch()) {
-    EXPECT_TRUE(now - last_resolution_time >=
-                grpc_core::Duration::Milliseconds(kMinResolutionPeriodMs));
+    EXPECT_GE(now - last_resolution_time,
+              grpc_core::Duration::Milliseconds(kMinResolutionPeriodMs));
   }
   last_resolution_time = now;
   // For correct time diff comparisons, make sure that any subsequent calls
@@ -188,7 +188,7 @@ static void poll_pollset_until_request_done(iomgr_args* args) {
     }
     grpc_core::Duration time_left = deadline - grpc_core::ExecCtx::Get()->Now();
     gpr_log(GPR_DEBUG, "done=%d, time_left=%" PRId64, done, time_left.millis());
-    ASSERT_TRUE(time_left >= grpc_core::Duration::Zero());
+    ASSERT_GE(time_left, grpc_core::Duration::Zero());
     grpc_pollset_worker* worker = nullptr;
     gpr_mu_lock(args->mu);
     GRPC_LOG_IF_ERROR("pollset_work", grpc_pollset_work(args->pollset, &worker,
