@@ -35,7 +35,7 @@ static const upb_MiniTable_Field envoy_config_endpoint_v3_ClusterLoadAssignment_
 const upb_MiniTable envoy_config_endpoint_v3_ClusterLoadAssignment_msginit = {
   &envoy_config_endpoint_v3_ClusterLoadAssignment_submsgs[0],
   &envoy_config_endpoint_v3_ClusterLoadAssignment__fields[0],
-  UPB_SIZE(24, 56), 4, kUpb_ExtMode_NonExtendable, 2, 255, 0,
+  UPB_SIZE(24, 48), 4, kUpb_ExtMode_NonExtendable, 2, 255, 0,
 };
 
 static const upb_MiniTable_Sub envoy_config_endpoint_v3_ClusterLoadAssignment_Policy_submsgs[3] = {
@@ -53,7 +53,7 @@ static const upb_MiniTable_Field envoy_config_endpoint_v3_ClusterLoadAssignment_
 const upb_MiniTable envoy_config_endpoint_v3_ClusterLoadAssignment_Policy_msginit = {
   &envoy_config_endpoint_v3_ClusterLoadAssignment_Policy_submsgs[0],
   &envoy_config_endpoint_v3_ClusterLoadAssignment_Policy__fields[0],
-  UPB_SIZE(16, 40), 3, kUpb_ExtMode_NonExtendable, 0, 255, 0,
+  UPB_SIZE(16, 32), 3, kUpb_ExtMode_NonExtendable, 0, 255, 0,
 };
 
 static const upb_MiniTable_Sub envoy_config_endpoint_v3_ClusterLoadAssignment_Policy_DropOverload_submsgs[1] = {
@@ -68,7 +68,7 @@ static const upb_MiniTable_Field envoy_config_endpoint_v3_ClusterLoadAssignment_
 const upb_MiniTable envoy_config_endpoint_v3_ClusterLoadAssignment_Policy_DropOverload_msginit = {
   &envoy_config_endpoint_v3_ClusterLoadAssignment_Policy_DropOverload_submsgs[0],
   &envoy_config_endpoint_v3_ClusterLoadAssignment_Policy_DropOverload__fields[0],
-  UPB_SIZE(16, 40), 2, kUpb_ExtMode_NonExtendable, 2, 255, 0,
+  UPB_SIZE(16, 32), 2, kUpb_ExtMode_NonExtendable, 2, 255, 0,
 };
 
 static const upb_MiniTable_Sub envoy_config_endpoint_v3_ClusterLoadAssignment_NamedEndpointsEntry_submsgs[1] = {

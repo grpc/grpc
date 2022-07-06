@@ -43,7 +43,7 @@ static const upb_MiniTable_Field envoy_config_listener_v3_QuicProtocolOptions__f
 const upb_MiniTable envoy_config_listener_v3_QuicProtocolOptions_msginit = {
   &envoy_config_listener_v3_QuicProtocolOptions_submsgs[0],
   &envoy_config_listener_v3_QuicProtocolOptions__fields[0],
-  UPB_SIZE(32, 72), 7, kUpb_ExtMode_NonExtendable, 7, 255, 0,
+  UPB_SIZE(32, 64), 7, kUpb_ExtMode_NonExtendable, 7, 255, 0,
 };
 
 static const upb_MiniTable *messages_layout[1] = {

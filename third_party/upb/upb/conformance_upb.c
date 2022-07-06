@@ -37,8 +37,8 @@
 
 #include "conformance/conformance.upb.h"
 #include "conformance/conformance.upbdefs.h"
-#include "src/google/protobuf/test_messages_proto2.upbdefs.h"
-#include "src/google/protobuf/test_messages_proto3.upbdefs.h"
+#include "google/protobuf/test_messages_proto2.upbdefs.h"
+#include "google/protobuf/test_messages_proto3.upbdefs.h"
 #include "upb/decode.h"
 #include "upb/encode.h"
 #include "upb/json_decode.h"
@@ -102,8 +102,10 @@ bool parse_proto(upb_Message* msg, const upb_MessageDef* m, const ctx* c) {
 void serialize_proto(const upb_Message* msg, const upb_MessageDef* m,
                      const ctx* c) {
   size_t len;
-  char* data = upb_Encode(msg, upb_MessageDef_MiniTable(m), 0, c->arena, &len);
-  if (data) {
+  char* data;
+  upb_EncodeStatus status =
+      upb_Encode(msg, upb_MessageDef_MiniTable(m), 0, c->arena, &data, &len);
+  if (status == kUpb_EncodeStatus_Ok) {
     conformance_ConformanceResponse_set_protobuf_payload(
         c->response, upb_StringView_FromDataAndSize(data, len));
   } else {
@@ -325,9 +327,9 @@ int main(void) {
 
 #ifdef REBUILD_MINITABLES
   _upb_DefPool_LoadDefInitEx(
-      symtab, &src_google_protobuf_test_messages_proto2_proto_upbdefinit, true);
+      symtab, &google_protobuf_test_messages_proto2_proto_upbdefinit, true);
   _upb_DefPool_LoadDefInitEx(
-      symtab, &src_google_protobuf_test_messages_proto3_proto_upbdefinit, true);
+      symtab, &google_protobuf_test_messages_proto3_proto_upbdefinit, true);
 #else
   protobuf_test_messages_proto2_TestAllTypesProto2_getmsgdef(symtab);
   protobuf_test_messages_proto3_TestAllTypesProto3_getmsgdef(symtab);

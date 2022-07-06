@@ -23,26 +23,22 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-from google.protobuf.internal import descriptor_pool_test
 import unittest
-import copy
-
-# begin:google_only
-# from google3.testing.pybase import googletest
-# end:google_only
+from google.protobuf.internal.descriptor_pool_test import *
 
 # This is testing that certain methods unconditionally throw TypeError.
 # In the new extension we simply don't define them at all.
-descriptor_pool_test.AddDescriptorTest.testAddTypeError.__unittest_expecting_failure__ = True
+AddDescriptorTest.testAddTypeError.__unittest_expecting_failure__ = True
 
-descriptor_pool_test.SecondaryDescriptorFromDescriptorDB.testErrorCollector.__unittest_expecting_failure__ = True
+SecondaryDescriptorFromDescriptorDB.testErrorCollector.__unittest_expecting_failure__ = True
 
 # begin:github_only
 if __name__ == '__main__':
-  unittest.main(module=descriptor_pool_test, verbosity=2)
+  unittest.main(verbosity=2)
 # end:github_only
 
 # begin:google_only
+# from absl import app
 # if __name__ == '__main__':
-#   googletest.main()
+#   app.run(lambda argv: unittest.main(verbosity=2))
 # end:google_only

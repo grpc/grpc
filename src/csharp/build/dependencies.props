@@ -1,7 +1,7 @@
 <!-- This file is generated -->
 <Project>
   <PropertyGroup>
-    <GrpcCsharpVersion>2.48.0-dev</GrpcCsharpVersion>
+    <GrpcCsharpVersion>2.49.0-dev</GrpcCsharpVersion>
     <GoogleProtobufVersion>3.19.4</GoogleProtobufVersion>
   </PropertyGroup>
 </Project>

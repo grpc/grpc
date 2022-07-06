@@ -27,7 +27,7 @@ static const upb_MiniTable_Field xds_service_orca_v3_OrcaLoadReportRequest__fiel
 const upb_MiniTable xds_service_orca_v3_OrcaLoadReportRequest_msginit = {
   &xds_service_orca_v3_OrcaLoadReportRequest_submsgs[0],
   &xds_service_orca_v3_OrcaLoadReportRequest__fields[0],
-  UPB_SIZE(12, 24), 2, kUpb_ExtMode_NonExtendable, 2, 255, 0,
+  UPB_SIZE(16, 24), 2, kUpb_ExtMode_NonExtendable, 2, 255, 0,
 };
 
 static const upb_MiniTable *messages_layout[1] = {

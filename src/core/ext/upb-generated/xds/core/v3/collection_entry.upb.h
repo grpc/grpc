@@ -58,11 +58,15 @@ UPB_INLINE xds_core_v3_CollectionEntry* xds_core_v3_CollectionEntry_parse_ex(con
   return ret;
 }
 UPB_INLINE char* xds_core_v3_CollectionEntry_serialize(const xds_core_v3_CollectionEntry* msg, upb_Arena* arena, size_t* len) {
-  return upb_Encode(msg, &xds_core_v3_CollectionEntry_msginit, 0, arena, len);
+  char* ptr;
+  (void)upb_Encode(msg, &xds_core_v3_CollectionEntry_msginit, 0, arena, &ptr, len);
+  return ptr;
 }
 UPB_INLINE char* xds_core_v3_CollectionEntry_serialize_ex(const xds_core_v3_CollectionEntry* msg, int options,
                                  upb_Arena* arena, size_t* len) {
-  return upb_Encode(msg, &xds_core_v3_CollectionEntry_msginit, options, arena, len);
+  char* ptr;
+  (void)upb_Encode(msg, &xds_core_v3_CollectionEntry_msginit, options, arena, &ptr, len);
+  return ptr;
 }
 typedef enum {
   xds_core_v3_CollectionEntry_resource_specifier_locator = 1,
@@ -141,11 +145,15 @@ UPB_INLINE xds_core_v3_CollectionEntry_InlineEntry* xds_core_v3_CollectionEntry_
   return ret;
 }
 UPB_INLINE char* xds_core_v3_CollectionEntry_InlineEntry_serialize(const xds_core_v3_CollectionEntry_InlineEntry* msg, upb_Arena* arena, size_t* len) {
-  return upb_Encode(msg, &xds_core_v3_CollectionEntry_InlineEntry_msginit, 0, arena, len);
+  char* ptr;
+  (void)upb_Encode(msg, &xds_core_v3_CollectionEntry_InlineEntry_msginit, 0, arena, &ptr, len);
+  return ptr;
 }
 UPB_INLINE char* xds_core_v3_CollectionEntry_InlineEntry_serialize_ex(const xds_core_v3_CollectionEntry_InlineEntry* msg, int options,
                                  upb_Arena* arena, size_t* len) {
-  return upb_Encode(msg, &xds_core_v3_CollectionEntry_InlineEntry_msginit, options, arena, len);
+  char* ptr;
+  (void)upb_Encode(msg, &xds_core_v3_CollectionEntry_InlineEntry_msginit, options, arena, &ptr, len);
+  return ptr;
 }
 UPB_INLINE void xds_core_v3_CollectionEntry_InlineEntry_clear_name(const xds_core_v3_CollectionEntry_InlineEntry* msg) {
   *UPB_PTR_AT(msg, UPB_SIZE(4, 8), upb_StringView) = upb_StringView_FromDataAndSize(NULL, 0);
