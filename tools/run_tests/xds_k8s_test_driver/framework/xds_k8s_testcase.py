@@ -259,10 +259,11 @@ class XdsKubernetesBaseTestCase(absltest.TestCase):
         try:
             retryer(self._assertRpcsEventuallyGoToGivenServers, test_client,
                     servers, num_rpcs)
-        except retryers.RetryError:
+        except retryers.RetryError as retry_error:
             logger.exception(
                 'Rpcs did not go to expected servers before timeout %s',
                 _TD_CONFIG_MAX_WAIT_SEC)
+            raise retry_error
 
     def _assertRpcsEventuallyGoToGivenServers(self, test_client: XdsTestClient,
                                               servers: List[XdsTestServer],

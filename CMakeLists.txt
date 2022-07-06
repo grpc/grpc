@@ -811,9 +811,7 @@ if(gRPC_BUILD_TESTS)
   if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     add_dependencies(buildtests_c combiner_test)
   endif()
-  add_dependencies(buildtests_c completion_queue_threading_test)
   add_dependencies(buildtests_c compression_test)
-  add_dependencies(buildtests_c concurrent_connectivity_test)
   add_dependencies(buildtests_c connection_refused_test)
   add_dependencies(buildtests_c cpu_test)
   add_dependencies(buildtests_c dns_resolver_cooldown_test)
@@ -844,8 +842,6 @@ if(gRPC_BUILD_TESTS)
   add_dependencies(buildtests_c frame_handler_test)
   add_dependencies(buildtests_c goaway_server_test)
   add_dependencies(buildtests_c grpc_alts_credentials_options_test)
-  add_dependencies(buildtests_c grpc_byte_buffer_reader_test)
-  add_dependencies(buildtests_c grpc_completion_queue_test)
   add_dependencies(buildtests_c grpc_ipv6_loopback_available_test)
   if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     add_dependencies(buildtests_c handshake_server_with_readahead_handshaker_test)
@@ -857,11 +853,7 @@ if(gRPC_BUILD_TESTS)
   add_dependencies(buildtests_c invalid_call_argument_test)
   add_dependencies(buildtests_c json_token_test)
   add_dependencies(buildtests_c jwt_verifier_test)
-  add_dependencies(buildtests_c lame_client_test)
   add_dependencies(buildtests_c load_file_test)
-  if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX)
-    add_dependencies(buildtests_c memory_quota_stress_test)
-  endif()
   add_dependencies(buildtests_c message_compress_test)
   add_dependencies(buildtests_c minimal_stack_is_minimal_test)
   add_dependencies(buildtests_c mpmcqueue_test)
@@ -871,7 +863,6 @@ if(gRPC_BUILD_TESTS)
   add_dependencies(buildtests_c multiple_server_queues_test)
   add_dependencies(buildtests_c murmur_hash_test)
   add_dependencies(buildtests_c no_server_test)
-  add_dependencies(buildtests_c num_external_connectivity_watchers_test)
   add_dependencies(buildtests_c parse_address_test)
   if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     add_dependencies(buildtests_c parse_address_with_named_scope_id_test)
@@ -885,14 +876,11 @@ if(gRPC_BUILD_TESTS)
   if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     add_dependencies(buildtests_c resolve_address_using_native_resolver_posix_test)
   endif()
-  add_dependencies(buildtests_c secure_channel_create_test)
   add_dependencies(buildtests_c secure_endpoint_test)
   add_dependencies(buildtests_c security_connector_test)
-  add_dependencies(buildtests_c sequential_connectivity_test)
   if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     add_dependencies(buildtests_c server_ssl_test)
   endif()
-  add_dependencies(buildtests_c server_test)
   add_dependencies(buildtests_c slice_string_helpers_test)
   add_dependencies(buildtests_c sockaddr_resolver_test)
   if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
@@ -991,6 +979,8 @@ if(gRPC_BUILD_TESTS)
   endif()
   add_dependencies(buildtests_cxx codegen_test_full)
   add_dependencies(buildtests_cxx codegen_test_minimal)
+  add_dependencies(buildtests_cxx completion_queue_threading_test)
+  add_dependencies(buildtests_cxx concurrent_connectivity_test)
   add_dependencies(buildtests_cxx connection_prefix_bad_client_test)
   add_dependencies(buildtests_cxx connectivity_state_test)
   add_dependencies(buildtests_cxx context_allocator_end2end_test)
@@ -1038,7 +1028,9 @@ if(gRPC_BUILD_TESTS)
   add_dependencies(buildtests_cxx grpc_authorization_engine_test)
   add_dependencies(buildtests_cxx grpc_authorization_policy_provider_test)
   add_dependencies(buildtests_cxx grpc_authz_end2end_test)
+  add_dependencies(buildtests_cxx grpc_byte_buffer_reader_test)
   add_dependencies(buildtests_cxx grpc_cli)
+  add_dependencies(buildtests_cxx grpc_completion_queue_test)
   add_dependencies(buildtests_cxx grpc_tls_certificate_distributor_test)
   add_dependencies(buildtests_cxx grpc_tls_certificate_provider_test)
   add_dependencies(buildtests_cxx grpc_tls_certificate_verifier_test)
@@ -1077,6 +1069,7 @@ if(gRPC_BUILD_TESTS)
   add_dependencies(buildtests_cxx istio_echo_server_test)
   add_dependencies(buildtests_cxx join_test)
   add_dependencies(buildtests_cxx json_test)
+  add_dependencies(buildtests_cxx lame_client_test)
   add_dependencies(buildtests_cxx large_metadata_bad_client_test)
   add_dependencies(buildtests_cxx latch_test)
   add_dependencies(buildtests_cxx lb_get_cpu_stats_test)
@@ -1085,6 +1078,9 @@ if(gRPC_BUILD_TESTS)
   add_dependencies(buildtests_cxx loop_test)
   add_dependencies(buildtests_cxx match_test)
   add_dependencies(buildtests_cxx matchers_test)
+  if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX)
+    add_dependencies(buildtests_cxx memory_quota_stress_test)
+  endif()
   add_dependencies(buildtests_cxx memory_quota_test)
   add_dependencies(buildtests_cxx message_allocator_end2end_test)
   add_dependencies(buildtests_cxx metadata_map_test)
@@ -1092,6 +1088,7 @@ if(gRPC_BUILD_TESTS)
   add_dependencies(buildtests_cxx mock_stream_test)
   add_dependencies(buildtests_cxx mock_test)
   add_dependencies(buildtests_cxx nonblocking_test)
+  add_dependencies(buildtests_cxx num_external_connectivity_watchers_test)
   add_dependencies(buildtests_cxx observable_test)
   if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     add_dependencies(buildtests_cxx oracle_event_engine_posix_test)
@@ -1129,7 +1126,9 @@ if(gRPC_BUILD_TESTS)
   add_dependencies(buildtests_cxx rls_end2end_test)
   add_dependencies(buildtests_cxx rls_lb_config_parser_test)
   add_dependencies(buildtests_cxx secure_auth_context_test)
+  add_dependencies(buildtests_cxx secure_channel_create_test)
   add_dependencies(buildtests_cxx seq_test)
+  add_dependencies(buildtests_cxx sequential_connectivity_test)
   add_dependencies(buildtests_cxx server_builder_plugin_test)
   if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     add_dependencies(buildtests_cxx server_builder_test)
@@ -1146,6 +1145,7 @@ if(gRPC_BUILD_TESTS)
   if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     add_dependencies(buildtests_cxx server_request_call_test)
   endif()
+  add_dependencies(buildtests_cxx server_test)
   add_dependencies(buildtests_cxx service_config_end2end_test)
   add_dependencies(buildtests_cxx service_config_test)
   add_dependencies(buildtests_cxx settings_timeout_test)
@@ -5059,33 +5059,6 @@ endif()
 endif()
 if(gRPC_BUILD_TESTS)
 
-add_executable(completion_queue_threading_test
-  test/core/surface/completion_queue_threading_test.cc
-)
-
-target_include_directories(completion_queue_threading_test
-  PRIVATE
-    ${CMAKE_CURRENT_SOURCE_DIR}
-    ${CMAKE_CURRENT_SOURCE_DIR}/include
-    ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
-    ${_gRPC_RE2_INCLUDE_DIR}
-    ${_gRPC_SSL_INCLUDE_DIR}
-    ${_gRPC_UPB_GENERATED_DIR}
-    ${_gRPC_UPB_GRPC_GENERATED_DIR}
-    ${_gRPC_UPB_INCLUDE_DIR}
-    ${_gRPC_XXHASH_INCLUDE_DIR}
-    ${_gRPC_ZLIB_INCLUDE_DIR}
-)
-
-target_link_libraries(completion_queue_threading_test
-  ${_gRPC_ALLTARGETS_LIBRARIES}
-  grpc_test_util
-)
-
-
-endif()
-if(gRPC_BUILD_TESTS)
-
 add_executable(compression_test
   test/core/compression/args_utils.cc
   test/core/compression/compression_test.cc
@@ -5106,33 +5079,6 @@ target_include_directories(compression_test
 )
 
 target_link_libraries(compression_test
-  ${_gRPC_ALLTARGETS_LIBRARIES}
-  grpc_test_util
-)
-
-
-endif()
-if(gRPC_BUILD_TESTS)
-
-add_executable(concurrent_connectivity_test
-  test/core/surface/concurrent_connectivity_test.cc
-)
-
-target_include_directories(concurrent_connectivity_test
-  PRIVATE
-    ${CMAKE_CURRENT_SOURCE_DIR}
-    ${CMAKE_CURRENT_SOURCE_DIR}/include
-    ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
-    ${_gRPC_RE2_INCLUDE_DIR}
-    ${_gRPC_SSL_INCLUDE_DIR}
-    ${_gRPC_UPB_GENERATED_DIR}
-    ${_gRPC_UPB_GRPC_GENERATED_DIR}
-    ${_gRPC_UPB_INCLUDE_DIR}
-    ${_gRPC_XXHASH_INCLUDE_DIR}
-    ${_gRPC_ZLIB_INCLUDE_DIR}
-)
-
-target_link_libraries(concurrent_connectivity_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
 )
@@ -5657,60 +5603,6 @@ target_link_libraries(grpc_alts_credentials_options_test
 endif()
 if(gRPC_BUILD_TESTS)
 
-add_executable(grpc_byte_buffer_reader_test
-  test/core/surface/byte_buffer_reader_test.cc
-)
-
-target_include_directories(grpc_byte_buffer_reader_test
-  PRIVATE
-    ${CMAKE_CURRENT_SOURCE_DIR}
-    ${CMAKE_CURRENT_SOURCE_DIR}/include
-    ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
-    ${_gRPC_RE2_INCLUDE_DIR}
-    ${_gRPC_SSL_INCLUDE_DIR}
-    ${_gRPC_UPB_GENERATED_DIR}
-    ${_gRPC_UPB_GRPC_GENERATED_DIR}
-    ${_gRPC_UPB_INCLUDE_DIR}
-    ${_gRPC_XXHASH_INCLUDE_DIR}
-    ${_gRPC_ZLIB_INCLUDE_DIR}
-)
-
-target_link_libraries(grpc_byte_buffer_reader_test
-  ${_gRPC_ALLTARGETS_LIBRARIES}
-  grpc_test_util
-)
-
-
-endif()
-if(gRPC_BUILD_TESTS)
-
-add_executable(grpc_completion_queue_test
-  test/core/surface/completion_queue_test.cc
-)
-
-target_include_directories(grpc_completion_queue_test
-  PRIVATE
-    ${CMAKE_CURRENT_SOURCE_DIR}
-    ${CMAKE_CURRENT_SOURCE_DIR}/include
-    ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
-    ${_gRPC_RE2_INCLUDE_DIR}
-    ${_gRPC_SSL_INCLUDE_DIR}
-    ${_gRPC_UPB_GENERATED_DIR}
-    ${_gRPC_UPB_GRPC_GENERATED_DIR}
-    ${_gRPC_UPB_INCLUDE_DIR}
-    ${_gRPC_XXHASH_INCLUDE_DIR}
-    ${_gRPC_ZLIB_INCLUDE_DIR}
-)
-
-target_link_libraries(grpc_completion_queue_test
-  ${_gRPC_ALLTARGETS_LIBRARIES}
-  grpc_test_util
-)
-
-
-endif()
-if(gRPC_BUILD_TESTS)
-
 add_executable(grpc_ipv6_loopback_available_test
   test/core/iomgr/grpc_ipv6_loopback_available_test.cc
 )
@@ -5958,34 +5850,6 @@ target_link_libraries(jwt_verifier_test
 endif()
 if(gRPC_BUILD_TESTS)
 
-add_executable(lame_client_test
-  test/core/end2end/cq_verifier.cc
-  test/core/surface/lame_client_test.cc
-)
-
-target_include_directories(lame_client_test
-  PRIVATE
-    ${CMAKE_CURRENT_SOURCE_DIR}
-    ${CMAKE_CURRENT_SOURCE_DIR}/include
-    ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
-    ${_gRPC_RE2_INCLUDE_DIR}
-    ${_gRPC_SSL_INCLUDE_DIR}
-    ${_gRPC_UPB_GENERATED_DIR}
-    ${_gRPC_UPB_GRPC_GENERATED_DIR}
-    ${_gRPC_UPB_INCLUDE_DIR}
-    ${_gRPC_XXHASH_INCLUDE_DIR}
-    ${_gRPC_ZLIB_INCLUDE_DIR}
-)
-
-target_link_libraries(lame_client_test
-  ${_gRPC_ALLTARGETS_LIBRARIES}
-  grpc_test_util
-)
-
-
-endif()
-if(gRPC_BUILD_TESTS)
-
 add_executable(load_file_test
   test/core/iomgr/load_file_test.cc
 )
@@ -6010,58 +5874,6 @@ target_link_libraries(load_file_test
 )
 
 
-endif()
-if(gRPC_BUILD_TESTS)
-if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX)
-
-  add_executable(memory_quota_stress_test
-    src/core/ext/upb-generated/google/protobuf/any.upb.c
-    src/core/ext/upb-generated/google/rpc/status.upb.c
-    src/core/lib/debug/trace.cc
-    src/core/lib/event_engine/memory_allocator.cc
-    src/core/lib/gprpp/status_helper.cc
-    src/core/lib/gprpp/time.cc
-    src/core/lib/iomgr/combiner.cc
-    src/core/lib/iomgr/error.cc
-    src/core/lib/iomgr/exec_ctx.cc
-    src/core/lib/iomgr/executor.cc
-    src/core/lib/iomgr/iomgr_internal.cc
-    src/core/lib/promise/activity.cc
-    src/core/lib/resource_quota/memory_quota.cc
-    src/core/lib/resource_quota/trace.cc
-    src/core/lib/slice/percent_encoding.cc
-    src/core/lib/slice/slice.cc
-    src/core/lib/slice/slice_refcount.cc
-    src/core/lib/slice/slice_string_helpers.cc
-    test/core/resource_quota/memory_quota_stress_test.cc
-  )
-
-  target_include_directories(memory_quota_stress_test
-    PRIVATE
-      ${CMAKE_CURRENT_SOURCE_DIR}
-      ${CMAKE_CURRENT_SOURCE_DIR}/include
-      ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
-      ${_gRPC_RE2_INCLUDE_DIR}
-      ${_gRPC_SSL_INCLUDE_DIR}
-      ${_gRPC_UPB_GENERATED_DIR}
-      ${_gRPC_UPB_GRPC_GENERATED_DIR}
-      ${_gRPC_UPB_INCLUDE_DIR}
-      ${_gRPC_XXHASH_INCLUDE_DIR}
-      ${_gRPC_ZLIB_INCLUDE_DIR}
-  )
-
-  target_link_libraries(memory_quota_stress_test
-    ${_gRPC_ALLTARGETS_LIBRARIES}
-    absl::type_traits
-    absl::statusor
-    absl::variant
-    absl::utility
-    gpr
-    upb
-  )
-
-
-endif()
 endif()
 if(gRPC_BUILD_TESTS)
 
@@ -6250,33 +6062,6 @@ target_include_directories(no_server_test
 )
 
 target_link_libraries(no_server_test
-  ${_gRPC_ALLTARGETS_LIBRARIES}
-  grpc_test_util
-)
-
-
-endif()
-if(gRPC_BUILD_TESTS)
-
-add_executable(num_external_connectivity_watchers_test
-  test/core/surface/num_external_connectivity_watchers_test.cc
-)
-
-target_include_directories(num_external_connectivity_watchers_test
-  PRIVATE
-    ${CMAKE_CURRENT_SOURCE_DIR}
-    ${CMAKE_CURRENT_SOURCE_DIR}/include
-    ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
-    ${_gRPC_RE2_INCLUDE_DIR}
-    ${_gRPC_SSL_INCLUDE_DIR}
-    ${_gRPC_UPB_GENERATED_DIR}
-    ${_gRPC_UPB_GRPC_GENERATED_DIR}
-    ${_gRPC_UPB_INCLUDE_DIR}
-    ${_gRPC_XXHASH_INCLUDE_DIR}
-    ${_gRPC_ZLIB_INCLUDE_DIR}
-)
-
-target_link_libraries(num_external_connectivity_watchers_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
 )
@@ -6486,33 +6271,6 @@ endif()
 endif()
 if(gRPC_BUILD_TESTS)
 
-add_executable(secure_channel_create_test
-  test/core/surface/secure_channel_create_test.cc
-)
-
-target_include_directories(secure_channel_create_test
-  PRIVATE
-    ${CMAKE_CURRENT_SOURCE_DIR}
-    ${CMAKE_CURRENT_SOURCE_DIR}/include
-    ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
-    ${_gRPC_RE2_INCLUDE_DIR}
-    ${_gRPC_SSL_INCLUDE_DIR}
-    ${_gRPC_UPB_GENERATED_DIR}
-    ${_gRPC_UPB_GRPC_GENERATED_DIR}
-    ${_gRPC_UPB_INCLUDE_DIR}
-    ${_gRPC_XXHASH_INCLUDE_DIR}
-    ${_gRPC_ZLIB_INCLUDE_DIR}
-)
-
-target_link_libraries(secure_channel_create_test
-  ${_gRPC_ALLTARGETS_LIBRARIES}
-  grpc_test_util
-)
-
-
-endif()
-if(gRPC_BUILD_TESTS)
-
 add_executable(secure_endpoint_test
   test/core/iomgr/endpoint_tests.cc
   test/core/security/secure_endpoint_test.cc
@@ -6567,33 +6325,6 @@ target_link_libraries(security_connector_test
 
 endif()
 if(gRPC_BUILD_TESTS)
-
-add_executable(sequential_connectivity_test
-  test/core/surface/sequential_connectivity_test.cc
-)
-
-target_include_directories(sequential_connectivity_test
-  PRIVATE
-    ${CMAKE_CURRENT_SOURCE_DIR}
-    ${CMAKE_CURRENT_SOURCE_DIR}/include
-    ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
-    ${_gRPC_RE2_INCLUDE_DIR}
-    ${_gRPC_SSL_INCLUDE_DIR}
-    ${_gRPC_UPB_GENERATED_DIR}
-    ${_gRPC_UPB_GRPC_GENERATED_DIR}
-    ${_gRPC_UPB_INCLUDE_DIR}
-    ${_gRPC_XXHASH_INCLUDE_DIR}
-    ${_gRPC_ZLIB_INCLUDE_DIR}
-)
-
-target_link_libraries(sequential_connectivity_test
-  ${_gRPC_ALLTARGETS_LIBRARIES}
-  grpc_test_util
-)
-
-
-endif()
-if(gRPC_BUILD_TESTS)
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 
   add_executable(server_ssl_test
@@ -6622,33 +6353,6 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 
 
 endif()
-endif()
-if(gRPC_BUILD_TESTS)
-
-add_executable(server_test
-  test/core/surface/server_test.cc
-)
-
-target_include_directories(server_test
-  PRIVATE
-    ${CMAKE_CURRENT_SOURCE_DIR}
-    ${CMAKE_CURRENT_SOURCE_DIR}/include
-    ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
-    ${_gRPC_RE2_INCLUDE_DIR}
-    ${_gRPC_SSL_INCLUDE_DIR}
-    ${_gRPC_UPB_GENERATED_DIR}
-    ${_gRPC_UPB_GRPC_GENERATED_DIR}
-    ${_gRPC_UPB_INCLUDE_DIR}
-    ${_gRPC_XXHASH_INCLUDE_DIR}
-    ${_gRPC_ZLIB_INCLUDE_DIR}
-)
-
-target_link_libraries(server_test
-  ${_gRPC_ALLTARGETS_LIBRARIES}
-  grpc_test_util
-)
-
-
 endif()
 if(gRPC_BUILD_TESTS)
 
@@ -9456,6 +9160,76 @@ target_link_libraries(codegen_test_minimal
 endif()
 if(gRPC_BUILD_TESTS)
 
+add_executable(completion_queue_threading_test
+  test/core/surface/completion_queue_threading_test.cc
+  third_party/googletest/googletest/src/gtest-all.cc
+  third_party/googletest/googlemock/src/gmock-all.cc
+)
+
+target_include_directories(completion_queue_threading_test
+  PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
+    ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_RE2_INCLUDE_DIR}
+    ${_gRPC_SSL_INCLUDE_DIR}
+    ${_gRPC_UPB_GENERATED_DIR}
+    ${_gRPC_UPB_GRPC_GENERATED_DIR}
+    ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
+    ${_gRPC_ZLIB_INCLUDE_DIR}
+    third_party/googletest/googletest/include
+    third_party/googletest/googletest
+    third_party/googletest/googlemock/include
+    third_party/googletest/googlemock
+    ${_gRPC_PROTO_GENS_DIR}
+)
+
+target_link_libraries(completion_queue_threading_test
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  grpc_test_util
+)
+
+
+endif()
+if(gRPC_BUILD_TESTS)
+
+add_executable(concurrent_connectivity_test
+  test/core/surface/concurrent_connectivity_test.cc
+  third_party/googletest/googletest/src/gtest-all.cc
+  third_party/googletest/googlemock/src/gmock-all.cc
+)
+
+target_include_directories(concurrent_connectivity_test
+  PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
+    ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_RE2_INCLUDE_DIR}
+    ${_gRPC_SSL_INCLUDE_DIR}
+    ${_gRPC_UPB_GENERATED_DIR}
+    ${_gRPC_UPB_GRPC_GENERATED_DIR}
+    ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
+    ${_gRPC_ZLIB_INCLUDE_DIR}
+    third_party/googletest/googletest/include
+    third_party/googletest/googletest
+    third_party/googletest/googlemock/include
+    third_party/googletest/googlemock
+    ${_gRPC_PROTO_GENS_DIR}
+)
+
+target_link_libraries(concurrent_connectivity_test
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  grpc_test_util
+)
+
+
+endif()
+if(gRPC_BUILD_TESTS)
+
 add_executable(connection_prefix_bad_client_test
   test/core/bad_client/bad_client.cc
   test/core/bad_client/tests/connection_prefix.cc
@@ -11221,6 +10995,41 @@ target_link_libraries(grpc_authz_end2end_test
 endif()
 if(gRPC_BUILD_TESTS)
 
+add_executable(grpc_byte_buffer_reader_test
+  test/core/surface/byte_buffer_reader_test.cc
+  third_party/googletest/googletest/src/gtest-all.cc
+  third_party/googletest/googlemock/src/gmock-all.cc
+)
+
+target_include_directories(grpc_byte_buffer_reader_test
+  PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
+    ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_RE2_INCLUDE_DIR}
+    ${_gRPC_SSL_INCLUDE_DIR}
+    ${_gRPC_UPB_GENERATED_DIR}
+    ${_gRPC_UPB_GRPC_GENERATED_DIR}
+    ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
+    ${_gRPC_ZLIB_INCLUDE_DIR}
+    third_party/googletest/googletest/include
+    third_party/googletest/googletest
+    third_party/googletest/googlemock/include
+    third_party/googletest/googlemock
+    ${_gRPC_PROTO_GENS_DIR}
+)
+
+target_link_libraries(grpc_byte_buffer_reader_test
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  grpc_test_util
+)
+
+
+endif()
+if(gRPC_BUILD_TESTS)
+
 add_executable(grpc_cli
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/reflection/v1alpha/reflection.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/reflection/v1alpha/reflection.grpc.pb.cc
@@ -11262,6 +11071,41 @@ target_link_libraries(grpc_cli
   absl::flags
   grpc++
   grpc++_test_config
+)
+
+
+endif()
+if(gRPC_BUILD_TESTS)
+
+add_executable(grpc_completion_queue_test
+  test/core/surface/completion_queue_test.cc
+  third_party/googletest/googletest/src/gtest-all.cc
+  third_party/googletest/googlemock/src/gmock-all.cc
+)
+
+target_include_directories(grpc_completion_queue_test
+  PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
+    ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_RE2_INCLUDE_DIR}
+    ${_gRPC_SSL_INCLUDE_DIR}
+    ${_gRPC_UPB_GENERATED_DIR}
+    ${_gRPC_UPB_GRPC_GENERATED_DIR}
+    ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
+    ${_gRPC_ZLIB_INCLUDE_DIR}
+    third_party/googletest/googletest/include
+    third_party/googletest/googletest
+    third_party/googletest/googlemock/include
+    third_party/googletest/googlemock
+    ${_gRPC_PROTO_GENS_DIR}
+)
+
+target_link_libraries(grpc_completion_queue_test
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  grpc_test_util
 )
 
 
@@ -12775,6 +12619,42 @@ target_link_libraries(json_test
 endif()
 if(gRPC_BUILD_TESTS)
 
+add_executable(lame_client_test
+  test/core/end2end/cq_verifier.cc
+  test/core/surface/lame_client_test.cc
+  third_party/googletest/googletest/src/gtest-all.cc
+  third_party/googletest/googlemock/src/gmock-all.cc
+)
+
+target_include_directories(lame_client_test
+  PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
+    ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_RE2_INCLUDE_DIR}
+    ${_gRPC_SSL_INCLUDE_DIR}
+    ${_gRPC_UPB_GENERATED_DIR}
+    ${_gRPC_UPB_GRPC_GENERATED_DIR}
+    ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
+    ${_gRPC_ZLIB_INCLUDE_DIR}
+    third_party/googletest/googletest/include
+    third_party/googletest/googletest
+    third_party/googletest/googlemock/include
+    third_party/googletest/googlemock
+    ${_gRPC_PROTO_GENS_DIR}
+)
+
+target_link_libraries(lame_client_test
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  grpc_test_util
+)
+
+
+endif()
+if(gRPC_BUILD_TESTS)
+
 add_executable(large_metadata_bad_client_test
   test/core/bad_client/bad_client.cc
   test/core/bad_client/tests/large_metadata.cc
@@ -13125,6 +13005,66 @@ target_link_libraries(matchers_test
 
 endif()
 if(gRPC_BUILD_TESTS)
+if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX)
+
+  add_executable(memory_quota_stress_test
+    src/core/ext/upb-generated/google/protobuf/any.upb.c
+    src/core/ext/upb-generated/google/rpc/status.upb.c
+    src/core/lib/debug/trace.cc
+    src/core/lib/event_engine/memory_allocator.cc
+    src/core/lib/gprpp/status_helper.cc
+    src/core/lib/gprpp/time.cc
+    src/core/lib/iomgr/combiner.cc
+    src/core/lib/iomgr/error.cc
+    src/core/lib/iomgr/exec_ctx.cc
+    src/core/lib/iomgr/executor.cc
+    src/core/lib/iomgr/iomgr_internal.cc
+    src/core/lib/promise/activity.cc
+    src/core/lib/resource_quota/memory_quota.cc
+    src/core/lib/resource_quota/trace.cc
+    src/core/lib/slice/percent_encoding.cc
+    src/core/lib/slice/slice.cc
+    src/core/lib/slice/slice_refcount.cc
+    src/core/lib/slice/slice_string_helpers.cc
+    test/core/resource_quota/memory_quota_stress_test.cc
+    third_party/googletest/googletest/src/gtest-all.cc
+    third_party/googletest/googlemock/src/gmock-all.cc
+  )
+
+  target_include_directories(memory_quota_stress_test
+    PRIVATE
+      ${CMAKE_CURRENT_SOURCE_DIR}
+      ${CMAKE_CURRENT_SOURCE_DIR}/include
+      ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+      ${_gRPC_RE2_INCLUDE_DIR}
+      ${_gRPC_SSL_INCLUDE_DIR}
+      ${_gRPC_UPB_GENERATED_DIR}
+      ${_gRPC_UPB_GRPC_GENERATED_DIR}
+      ${_gRPC_UPB_INCLUDE_DIR}
+      ${_gRPC_XXHASH_INCLUDE_DIR}
+      ${_gRPC_ZLIB_INCLUDE_DIR}
+      third_party/googletest/googletest/include
+      third_party/googletest/googletest
+      third_party/googletest/googlemock/include
+      third_party/googletest/googlemock
+      ${_gRPC_PROTO_GENS_DIR}
+  )
+
+  target_link_libraries(memory_quota_stress_test
+    ${_gRPC_PROTOBUF_LIBRARIES}
+    ${_gRPC_ALLTARGETS_LIBRARIES}
+    absl::type_traits
+    absl::statusor
+    absl::variant
+    absl::utility
+    gpr
+    upb
+  )
+
+
+endif()
+endif()
+if(gRPC_BUILD_TESTS)
 
 add_executable(memory_quota_test
   src/core/ext/upb-generated/google/protobuf/any.upb.c
@@ -13458,6 +13398,41 @@ target_link_libraries(nonblocking_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc++_test_util
+)
+
+
+endif()
+if(gRPC_BUILD_TESTS)
+
+add_executable(num_external_connectivity_watchers_test
+  test/core/surface/num_external_connectivity_watchers_test.cc
+  third_party/googletest/googletest/src/gtest-all.cc
+  third_party/googletest/googlemock/src/gmock-all.cc
+)
+
+target_include_directories(num_external_connectivity_watchers_test
+  PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
+    ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_RE2_INCLUDE_DIR}
+    ${_gRPC_SSL_INCLUDE_DIR}
+    ${_gRPC_UPB_GENERATED_DIR}
+    ${_gRPC_UPB_GRPC_GENERATED_DIR}
+    ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
+    ${_gRPC_ZLIB_INCLUDE_DIR}
+    third_party/googletest/googletest/include
+    third_party/googletest/googletest
+    third_party/googletest/googlemock/include
+    third_party/googletest/googlemock
+    ${_gRPC_PROTO_GENS_DIR}
+)
+
+target_link_libraries(num_external_connectivity_watchers_test
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  grpc_test_util
 )
 
 
@@ -14957,6 +14932,41 @@ target_link_libraries(secure_auth_context_test
 endif()
 if(gRPC_BUILD_TESTS)
 
+add_executable(secure_channel_create_test
+  test/core/surface/secure_channel_create_test.cc
+  third_party/googletest/googletest/src/gtest-all.cc
+  third_party/googletest/googlemock/src/gmock-all.cc
+)
+
+target_include_directories(secure_channel_create_test
+  PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
+    ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_RE2_INCLUDE_DIR}
+    ${_gRPC_SSL_INCLUDE_DIR}
+    ${_gRPC_UPB_GENERATED_DIR}
+    ${_gRPC_UPB_GRPC_GENERATED_DIR}
+    ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
+    ${_gRPC_ZLIB_INCLUDE_DIR}
+    third_party/googletest/googletest/include
+    third_party/googletest/googletest
+    third_party/googletest/googlemock/include
+    third_party/googletest/googlemock
+    ${_gRPC_PROTO_GENS_DIR}
+)
+
+target_link_libraries(secure_channel_create_test
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  grpc_test_util
+)
+
+
+endif()
+if(gRPC_BUILD_TESTS)
+
 add_executable(seq_test
   test/core/promise/seq_test.cc
   third_party/googletest/googletest/src/gtest-all.cc
@@ -14988,6 +14998,41 @@ target_link_libraries(seq_test
   absl::type_traits
   absl::variant
   absl::utility
+)
+
+
+endif()
+if(gRPC_BUILD_TESTS)
+
+add_executable(sequential_connectivity_test
+  test/core/surface/sequential_connectivity_test.cc
+  third_party/googletest/googletest/src/gtest-all.cc
+  third_party/googletest/googlemock/src/gmock-all.cc
+)
+
+target_include_directories(sequential_connectivity_test
+  PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
+    ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_RE2_INCLUDE_DIR}
+    ${_gRPC_SSL_INCLUDE_DIR}
+    ${_gRPC_UPB_GENERATED_DIR}
+    ${_gRPC_UPB_GRPC_GENERATED_DIR}
+    ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
+    ${_gRPC_ZLIB_INCLUDE_DIR}
+    third_party/googletest/googletest/include
+    third_party/googletest/googletest
+    third_party/googletest/googlemock/include
+    third_party/googletest/googlemock
+    ${_gRPC_PROTO_GENS_DIR}
+)
+
+target_link_libraries(sequential_connectivity_test
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  grpc_test_util
 )
 
 
@@ -15456,6 +15501,41 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 
 
 endif()
+endif()
+if(gRPC_BUILD_TESTS)
+
+add_executable(server_test
+  test/core/surface/server_test.cc
+  third_party/googletest/googletest/src/gtest-all.cc
+  third_party/googletest/googlemock/src/gmock-all.cc
+)
+
+target_include_directories(server_test
+  PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
+    ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_RE2_INCLUDE_DIR}
+    ${_gRPC_SSL_INCLUDE_DIR}
+    ${_gRPC_UPB_GENERATED_DIR}
+    ${_gRPC_UPB_GRPC_GENERATED_DIR}
+    ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
+    ${_gRPC_ZLIB_INCLUDE_DIR}
+    third_party/googletest/googletest/include
+    third_party/googletest/googletest
+    third_party/googletest/googlemock/include
+    third_party/googletest/googlemock
+    ${_gRPC_PROTO_GENS_DIR}
+)
+
+target_link_libraries(server_test
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  grpc_test_util
+)
+
+
 endif()
 if(gRPC_BUILD_TESTS)
 

@@ -22,6 +22,8 @@
 #include <atomic>
 #include <string>
 
+#include <gtest/gtest.h>
+
 #include "absl/strings/str_cat.h"
 
 #include <grpc/grpc.h>
@@ -82,10 +84,10 @@ void create_loop_destroy(void* addr) {
                                             nullptr);
       gpr_timespec poll_time =
           grpc_timeout_milliseconds_to_deadline(POLL_MILLIS);
-      GPR_ASSERT(grpc_completion_queue_next(cq, poll_time, nullptr).type ==
-                 GRPC_OP_COMPLETE);
+      ASSERT_EQ(grpc_completion_queue_next(cq, poll_time, nullptr).type,
+                GRPC_OP_COMPLETE);
       /* check that the watcher from "watch state" was free'd */
-      GPR_ASSERT(grpc_channel_num_external_connectivity_watchers(chan) == 0);
+      ASSERT_EQ(grpc_channel_num_external_connectivity_watchers(chan), 0);
     }
     grpc_channel_destroy(chan);
     grpc_completion_queue_destroy(cq);
@@ -110,8 +112,8 @@ void server_thread(void* vargs) {
   gpr_timespec deadline =
       grpc_timeout_milliseconds_to_deadline(SERVER_SHUTDOWN_TIMEOUT);
   ev = grpc_completion_queue_next(args->cq, deadline, nullptr);
-  GPR_ASSERT(ev.type == GRPC_OP_COMPLETE);
-  GPR_ASSERT(ev.tag == tag(0xd1e));
+  ASSERT_EQ(ev.type, GRPC_OP_COMPLETE);
+  ASSERT_EQ(ev.tag, tag(0xd1e));
 }
 
 static void on_connect(void* vargs, grpc_endpoint* tcp,
@@ -142,12 +144,12 @@ void bad_server_thread(void* vargs) {
                                               .ToC();
   grpc_error_handle error = grpc_tcp_server_create(nullptr, channel_args, &s);
   grpc_channel_args_destroy(channel_args);
-  GPR_ASSERT(GRPC_ERROR_IS_NONE(error));
+  ASSERT_TRUE(GRPC_ERROR_IS_NONE(error));
   memset(&resolved_addr, 0, sizeof(resolved_addr));
   addr->sa_family = GRPC_AF_INET;
   error = grpc_tcp_server_add_port(s, &resolved_addr, &port);
-  GPR_ASSERT(GRPC_LOG_IF_ERROR("grpc_tcp_server_add_port", error));
-  GPR_ASSERT(port > 0);
+  ASSERT_TRUE(GRPC_LOG_IF_ERROR("grpc_tcp_server_add_port", error));
+  ASSERT_TRUE(port > 0);
   args->addr = absl::StrCat("localhost:", port);
 
   grpc_tcp_server_start(s, &args->pollset, on_connect, args);
@@ -178,7 +180,7 @@ static void done_pollset_shutdown(void* pollset, grpc_error_handle /*error*/) {
   gpr_free(pollset);
 }
 
-int run_concurrent_connectivity_test() {
+TEST(ConcurrentConnectivityTest, RunConcurrentConnectivityTest) {
   struct ServerThreadArgs args;
 
   grpc_init();
@@ -263,7 +265,6 @@ int run_concurrent_connectivity_test() {
   }
 
   grpc_shutdown();
-  return 0;
 }
 
 void watches_with_short_timeouts(void* addr) {
@@ -279,16 +280,16 @@ void watches_with_short_timeouts(void* addr) {
           grpc_timeout_milliseconds_to_deadline(DELAY_MILLIS_SHORT_TIMEOUTS);
       grpc_connectivity_state state =
           grpc_channel_check_connectivity_state(chan, 0);
-      GPR_ASSERT(state == GRPC_CHANNEL_IDLE);
+      ASSERT_EQ(state, GRPC_CHANNEL_IDLE);
       grpc_channel_watch_connectivity_state(chan, state, later_time, cq,
                                             nullptr);
       gpr_timespec poll_time =
           grpc_timeout_milliseconds_to_deadline(POLL_MILLIS_SHORT_TIMEOUTS);
       grpc_event ev = grpc_completion_queue_next(cq, poll_time, nullptr);
-      GPR_ASSERT(ev.type == GRPC_OP_COMPLETE);
-      GPR_ASSERT(ev.success == false);
+      ASSERT_EQ(ev.type, GRPC_OP_COMPLETE);
+      ASSERT_EQ(ev.success, false);
       /* check that the watcher from "watch state" was free'd */
-      GPR_ASSERT(grpc_channel_num_external_connectivity_watchers(chan) == 0);
+      ASSERT_EQ(grpc_channel_num_external_connectivity_watchers(chan), 0);
     }
     grpc_channel_destroy(chan);
     grpc_completion_queue_destroy(cq);
@@ -298,7 +299,7 @@ void watches_with_short_timeouts(void* addr) {
 // This test tries to catch deadlock situations.
 // With short timeouts on "watches" and long timeouts on cq next calls,
 // so that a QUEUE_TIMEOUT likely means that something is stuck.
-int run_concurrent_watches_with_short_timeouts_test() {
+TEST(ConcurrentConnectivityTest, RunConcurrentWatchesWithShortTimeoutsTest) {
   grpc_init();
 
   grpc_core::Thread threads[NUM_THREADS];
@@ -313,12 +314,10 @@ int run_concurrent_watches_with_short_timeouts_test() {
   }
 
   grpc_shutdown();
-  return 0;
 }
 
 int main(int argc, char** argv) {
   grpc::testing::TestEnvironment env(&argc, argv);
-
-  run_concurrent_connectivity_test();
-  run_concurrent_watches_with_short_timeouts_test();
+  ::testing::InitGoogleTest(&argc, argv);
+  return RUN_ALL_TESTS();
 }
