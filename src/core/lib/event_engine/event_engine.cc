@@ -20,6 +20,9 @@
 
 #include <grpc/event_engine/event_engine.h>
 
+#include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/channel/channel_args_preconditioning.h"
+#include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/event_engine/event_engine_factory.h"
 
 namespace grpc_event_engine {
@@ -63,5 +66,27 @@ void ResetDefaultEventEngine() {
   delete g_event_engine.exchange(nullptr, std::memory_order_acq_rel);
 }
 
+namespace {
+grpc_core::ChannelArgs EnsureEventEngineInChannelArgs(
+    grpc_core::ChannelArgs args) {
+  if (args.ContainsObject<EventEngine>()) return args;
+  // TODO(hork): Consider deleting GetDefaultEventEngine(), use the factory
+  // directly when ChannelArgs aren't available. That would eliminate the no-op
+  // deleter below.
+  // Store a shared_ptr with a no-op deleter. The default is expected to live
+  // indefinitely.
+  return args.SetObject<EventEngine>(
+      std::shared_ptr<EventEngine>(GetDefaultEventEngine(), [](auto) {}));
+}
+}  // namespace
+
 }  // namespace experimental
 }  // namespace grpc_event_engine
+
+namespace grpc_core {
+void RegisterEventEngine(CoreConfiguration::Builder* builder) {
+  builder->channel_args_preconditioning()->RegisterStage(
+      grpc_event_engine::experimental::EnsureEventEngineInChannelArgs);
+}
+
+}  // namespace grpc_core

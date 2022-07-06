@@ -2390,6 +2390,9 @@ grpc_cc_library(
         "absl/memory",
     ],
     deps = [
+        "channel_args",
+        "channel_args_preconditioning",
+        "config",
         "event_engine_base_hdrs",
         "event_engine_trace",
         "gpr_base",
@@ -3052,6 +3055,7 @@ grpc_cc_library(
         "avl",
         "channel_stack_type",
         "dual_ref_counted",
+        "event_engine_base_hdrs",
         "gpr_base",
         "gpr_platform",
         "grpc_codegen",
