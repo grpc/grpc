@@ -2259,21 +2259,6 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
-    name = "default_event_engine_factory",
-    srcs = [
-        "src/core/lib/event_engine/default_event_engine_factory.cc",
-    ],
-    external_deps = ["absl/memory"],
-    deps = [
-        "default_event_engine_factory_hdrs",
-        "event_engine_base_hdrs",
-        "gpr_base",
-        "iomgr_event_engine",
-        "iomgr_port",
-    ],
-)
-
-grpc_cc_library(
     name = "iomgr_ee_time_averaged_stats",
     srcs = ["src/core/lib/event_engine/iomgr_engine/time_averaged_stats.cc"],
     hdrs = [
