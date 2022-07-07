@@ -29,6 +29,7 @@
 #include <vector>
 
 #include "absl/memory/memory.h"
+#include "absl/meta/type_traits.h"
 #include "absl/random/random.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"

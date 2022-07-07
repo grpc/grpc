@@ -439,7 +439,7 @@ XdsClient::ChannelState::ChannelState(WeakRefCountedPtr<XdsClient> xds_client,
       },
       &status);
   GPR_ASSERT(transport_ != nullptr);
-  if (!status.ok()) OnConnectivityStateChange(std::move(status));
+  if (!status.ok()) OnConnectivityStateChangeLocked(std::move(status));
 }
 
 XdsClient::ChannelState::~ChannelState() {
@@ -527,19 +527,24 @@ void XdsClient::ChannelState::UnsubscribeLocked(const XdsResourceType* type,
 void XdsClient::ChannelState::OnConnectivityStateChange(absl::Status status) {
   {
     MutexLock lock(&xds_client_->mu_);
-    if (!shutting_down_) {
-      // Notify all watchers of error.
-      gpr_log(GPR_INFO,
-              "[xds_client %p] xds channel for server %s in "
-              "state TRANSIENT_FAILURE: %s",
-              xds_client(), server_.server_uri.c_str(),
-              status.ToString().c_str());
-      xds_client_->NotifyOnErrorLocked(absl::UnavailableError(
-          absl::StrCat("xds channel in TRANSIENT_FAILURE, connectivity error: ",
-                       status.ToString())));
-    }
+    OnConnectivityStateChangeLocked(std::move(status));
   }
   xds_client_->work_serializer_.DrainQueue();
+}
+
+void XdsClient::ChannelState::OnConnectivityStateChangeLocked(
+    absl::Status status) {
+  if (!shutting_down_) {
+    // Notify all watchers of error.
+    gpr_log(GPR_INFO,
+            "[xds_client %p] xds channel for server %s in "
+            "state TRANSIENT_FAILURE: %s",
+            xds_client(), server_.server_uri.c_str(),
+            status.ToString().c_str());
+    xds_client_->NotifyOnErrorLocked(absl::UnavailableError(
+        absl::StrCat("xds channel in TRANSIENT_FAILURE, connectivity error: ",
+                     status.ToString())));
+  }
 }
 
 //
@@ -1612,37 +1617,42 @@ RefCountedPtr<XdsClusterDropStats> XdsClient::AddClusterDropStats(
   if (!bootstrap_->XdsServerExists(xds_server)) return nullptr;
   auto key =
       std::make_pair(std::string(cluster_name), std::string(eds_service_name));
-  MutexLock lock(&mu_);
-  // We jump through some hoops here to make sure that the const
-  // XdsBootstrap::XdsServer& and absl::string_views
-  // stored in the XdsClusterDropStats object point to the
-  // XdsBootstrap::XdsServer and strings
-  // in the load_report_map_ key, so that they have the same lifetime.
-  auto server_it =
-      xds_load_report_server_map_.emplace(xds_server, LoadReportServer()).first;
-  if (server_it->second.channel_state == nullptr) {
-    server_it->second.channel_state = GetOrCreateChannelStateLocked(xds_server);
-  }
-  auto load_report_it = server_it->second.load_report_map
-                            .emplace(std::move(key), LoadReportState())
-                            .first;
-  LoadReportState& load_report_state = load_report_it->second;
   RefCountedPtr<XdsClusterDropStats> cluster_drop_stats;
-  if (load_report_state.drop_stats != nullptr) {
-    cluster_drop_stats = load_report_state.drop_stats->RefIfNonZero();
-  }
-  if (cluster_drop_stats == nullptr) {
-    if (load_report_state.drop_stats != nullptr) {
-      load_report_state.deleted_drop_stats +=
-          load_report_state.drop_stats->GetSnapshotAndReset();
+  {
+    MutexLock lock(&mu_);
+    // We jump through some hoops here to make sure that the const
+    // XdsBootstrap::XdsServer& and absl::string_views
+    // stored in the XdsClusterDropStats object point to the
+    // XdsBootstrap::XdsServer and strings
+    // in the load_report_map_ key, so that they have the same lifetime.
+    auto server_it =
+        xds_load_report_server_map_.emplace(xds_server, LoadReportServer())
+            .first;
+    if (server_it->second.channel_state == nullptr) {
+      server_it->second.channel_state =
+          GetOrCreateChannelStateLocked(xds_server);
     }
-    cluster_drop_stats = MakeRefCounted<XdsClusterDropStats>(
-        Ref(DEBUG_LOCATION, "DropStats"), server_it->first,
-        load_report_it->first.first /*cluster_name*/,
-        load_report_it->first.second /*eds_service_name*/);
-    load_report_state.drop_stats = cluster_drop_stats.get();
+    auto load_report_it = server_it->second.load_report_map
+                              .emplace(std::move(key), LoadReportState())
+                              .first;
+    LoadReportState& load_report_state = load_report_it->second;
+    if (load_report_state.drop_stats != nullptr) {
+      cluster_drop_stats = load_report_state.drop_stats->RefIfNonZero();
+    }
+    if (cluster_drop_stats == nullptr) {
+      if (load_report_state.drop_stats != nullptr) {
+        load_report_state.deleted_drop_stats +=
+            load_report_state.drop_stats->GetSnapshotAndReset();
+      }
+      cluster_drop_stats = MakeRefCounted<XdsClusterDropStats>(
+          Ref(DEBUG_LOCATION, "DropStats"), server_it->first,
+          load_report_it->first.first /*cluster_name*/,
+          load_report_it->first.second /*eds_service_name*/);
+      load_report_state.drop_stats = cluster_drop_stats.get();
+    }
+    server_it->second.channel_state->MaybeStartLrsCall();
   }
-  server_it->second.channel_state->MaybeStartLrsCall();
+  work_serializer_.DrainQueue();
   return cluster_drop_stats;
 }
 
@@ -1673,39 +1683,45 @@ RefCountedPtr<XdsClusterLocalityStats> XdsClient::AddClusterLocalityStats(
   if (!bootstrap_->XdsServerExists(xds_server)) return nullptr;
   auto key =
       std::make_pair(std::string(cluster_name), std::string(eds_service_name));
-  MutexLock lock(&mu_);
-  // We jump through some hoops here to make sure that the const
-  // XdsBootstrap::XdsServer& and absl::string_views
-  // stored in the XdsClusterDropStats object point to the
-  // XdsBootstrap::XdsServer and strings
-  // in the load_report_map_ key, so that they have the same lifetime.
-  auto server_it =
-      xds_load_report_server_map_.emplace(xds_server, LoadReportServer()).first;
-  if (server_it->second.channel_state == nullptr) {
-    server_it->second.channel_state = GetOrCreateChannelStateLocked(xds_server);
-  }
-  auto load_report_it = server_it->second.load_report_map
-                            .emplace(std::move(key), LoadReportState())
-                            .first;
-  LoadReportState& load_report_state = load_report_it->second;
-  LoadReportState::LocalityState& locality_state =
-      load_report_state.locality_stats[locality];
   RefCountedPtr<XdsClusterLocalityStats> cluster_locality_stats;
-  if (locality_state.locality_stats != nullptr) {
-    cluster_locality_stats = locality_state.locality_stats->RefIfNonZero();
-  }
-  if (cluster_locality_stats == nullptr) {
-    if (locality_state.locality_stats != nullptr) {
-      locality_state.deleted_locality_stats +=
-          locality_state.locality_stats->GetSnapshotAndReset();
+  {
+    MutexLock lock(&mu_);
+    // We jump through some hoops here to make sure that the const
+    // XdsBootstrap::XdsServer& and absl::string_views
+    // stored in the XdsClusterDropStats object point to the
+    // XdsBootstrap::XdsServer and strings
+    // in the load_report_map_ key, so that they have the same lifetime.
+    auto server_it =
+        xds_load_report_server_map_.emplace(xds_server, LoadReportServer())
+            .first;
+    if (server_it->second.channel_state == nullptr) {
+      server_it->second.channel_state =
+          GetOrCreateChannelStateLocked(xds_server);
     }
-    cluster_locality_stats = MakeRefCounted<XdsClusterLocalityStats>(
-        Ref(DEBUG_LOCATION, "LocalityStats"), server_it->first,
-        load_report_it->first.first /*cluster_name*/,
-        load_report_it->first.second /*eds_service_name*/, std::move(locality));
-    locality_state.locality_stats = cluster_locality_stats.get();
+    auto load_report_it = server_it->second.load_report_map
+                              .emplace(std::move(key), LoadReportState())
+                              .first;
+    LoadReportState& load_report_state = load_report_it->second;
+    LoadReportState::LocalityState& locality_state =
+        load_report_state.locality_stats[locality];
+    if (locality_state.locality_stats != nullptr) {
+      cluster_locality_stats = locality_state.locality_stats->RefIfNonZero();
+    }
+    if (cluster_locality_stats == nullptr) {
+      if (locality_state.locality_stats != nullptr) {
+        locality_state.deleted_locality_stats +=
+            locality_state.locality_stats->GetSnapshotAndReset();
+      }
+      cluster_locality_stats = MakeRefCounted<XdsClusterLocalityStats>(
+          Ref(DEBUG_LOCATION, "LocalityStats"), server_it->first,
+          load_report_it->first.first /*cluster_name*/,
+          load_report_it->first.second /*eds_service_name*/,
+          std::move(locality));
+      locality_state.locality_stats = cluster_locality_stats.get();
+    }
+    server_it->second.channel_state->MaybeStartLrsCall();
   }
-  server_it->second.channel_state->MaybeStartLrsCall();
+  work_serializer_.DrainQueue();
   return cluster_locality_stats;
 }
 

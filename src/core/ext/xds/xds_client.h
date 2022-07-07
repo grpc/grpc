@@ -206,6 +206,8 @@ class XdsClient : public DualRefCounted<XdsClient> {
 
    private:
     void OnConnectivityStateChange(absl::Status status);
+    void OnConnectivityStateChangeLocked(absl::Status status)
+        ABSL_EXCLUSIVE_LOCKS_REQUIRED(&XdsClient::mu_);
 
     // The owning xds client.
     WeakRefCountedPtr<XdsClient> xds_client_;
