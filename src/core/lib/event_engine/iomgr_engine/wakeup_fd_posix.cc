@@ -22,8 +22,6 @@
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 
-#include "src/core/lib/event_engine/iomgr_engine/wakeup_fd_eventfd.h"
-#include "src/core/lib/event_engine/iomgr_engine/wakeup_fd_pipe.h"
 #include "src/core/lib/iomgr/port.h"
 
 namespace grpc_event_engine {
@@ -32,29 +30,23 @@ namespace iomgr_engine {
 #ifdef GRPC_POSIX_WAKEUP_FD
 
 namespace {
+
+absl::Mutex g_mu;
 std::function<absl::StatusOr<std::unique_ptr<WakeupFd>>()> g_wakeup_fd_fn =
     nullptr;
-
-bool GlobalInit(void) {
-#ifndef GRPC_POSIX_NO_SPECIAL_WAKEUP_FD
-  if (EventFdWakeupFd::IsSupported()) {
-    g_wakeup_fd_fn = &EventFdWakeupFd::CreateEventFdWakeupFd;
-    return true;
-  }
-#endif  // GRPC_POSIX_NO_SPECIAL_WAKEUP_FD
-  if (PipeWakeupFd::IsSupported()) {
-    g_wakeup_fd_fn = &PipeWakeupFd::CreatePipeWakeupFd;
-    return true;
-  } else {
-    g_wakeup_fd_fn = nullptr;
-  }
-  return false;
-}
 }  // namespace
 
+void SetDefaultWakeupFdFactoryIfUnset(
+    std::function<absl::StatusOr<std::unique_ptr<WakeupFd>>()> factory) {
+  absl::MutexLock lock(&g_mu);
+  if (g_wakeup_fd_fn == nullptr) {
+    g_wakeup_fd_fn = factory;
+  }
+}
+
 bool SupportsWakeupFd() {
-  static bool kSupportsWakeupFd = GlobalInit();
-  return kSupportsWakeupFd;
+  absl::MutexLock lock(&g_mu);
+  return g_wakeup_fd_fn != nullptr;
 }
 
 absl::StatusOr<std::unique_ptr<WakeupFd>> CreateWakeupFd() {

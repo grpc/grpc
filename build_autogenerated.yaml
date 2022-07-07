@@ -5677,6 +5677,7 @@ targets:
   - src/core/lib/event_engine/iomgr_engine/wakeup_fd_eventfd.h
   - src/core/lib/event_engine/iomgr_engine/wakeup_fd_pipe.h
   - src/core/lib/event_engine/iomgr_engine/wakeup_fd_posix.h
+  - src/core/lib/event_engine/iomgr_engine/wakeup_fd_posix_default.h
   src:
   - src/core/lib/event_engine/iomgr_engine/ev_epoll1_linux.cc
   - src/core/lib/event_engine/iomgr_engine/ev_poll_posix.cc
@@ -5685,6 +5686,7 @@ targets:
   - src/core/lib/event_engine/iomgr_engine/wakeup_fd_eventfd.cc
   - src/core/lib/event_engine/iomgr_engine/wakeup_fd_pipe.cc
   - src/core/lib/event_engine/iomgr_engine/wakeup_fd_posix.cc
+  - src/core/lib/event_engine/iomgr_engine/wakeup_fd_posix_default.cc
   - test/core/event_engine/iomgr_event_engine/event_poller_posix_test.cc
   deps:
   - grpc_test_util
