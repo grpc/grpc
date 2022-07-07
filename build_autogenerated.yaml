@@ -5671,6 +5671,7 @@ targets:
   headers:
   - src/core/lib/event_engine/iomgr_engine/closure.h
   - src/core/lib/event_engine/iomgr_engine/ev_epoll1_linux.h
+  - src/core/lib/event_engine/iomgr_engine/ev_poll_posix.h
   - src/core/lib/event_engine/iomgr_engine/event_poller.h
   - src/core/lib/event_engine/iomgr_engine/lockfree_event.h
   - src/core/lib/event_engine/iomgr_engine/wakeup_fd_eventfd.h
@@ -5678,6 +5679,7 @@ targets:
   - src/core/lib/event_engine/iomgr_engine/wakeup_fd_posix.h
   src:
   - src/core/lib/event_engine/iomgr_engine/ev_epoll1_linux.cc
+  - src/core/lib/event_engine/iomgr_engine/ev_poll_posix.cc
   - src/core/lib/event_engine/iomgr_engine/event_poller_posix.cc
   - src/core/lib/event_engine/iomgr_engine/lockfree_event.cc
   - src/core/lib/event_engine/iomgr_engine/wakeup_fd_eventfd.cc

@@ -2470,7 +2470,6 @@ grpc_cc_library(
         "src/core/lib/event_engine/iomgr_engine/ev_poll_posix.h",
     ],
     external_deps = [
-        "absl/memory",
         "absl/status:statusor",
         "absl/strings",
         "absl/synchronization",
