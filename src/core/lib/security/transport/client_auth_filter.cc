@@ -21,6 +21,7 @@
 #include <string.h>
 
 #include <functional>
+#include <type_traits>
 #include <utility>
 
 #include "absl/status/status.h"
