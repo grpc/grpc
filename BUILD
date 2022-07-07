@@ -2503,6 +2503,7 @@ grpc_cc_library(
         "gpr_platform",
         "iomgr_ee_poller_common_hdrs",
         "iomgr_ee_wakeup_fd_posix",
+        "iomgr_ee_wakeup_fd_posix_default",
         "iomgr_port",
         "time",
     ],
