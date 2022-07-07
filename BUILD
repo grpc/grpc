@@ -2378,23 +2378,33 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "default_event_engine_factory",
+    srcs = ["src/core/lib/event_engine/default_event_engine_factory.cc"],
+    hdrs = [
+        "src/core/lib/event_engine/default_event_engine_factory.h",
+    ],
+    external_deps = ["absl/memory"],
+    tags = ["grpc-autodeps"],
+    deps = [
+        "event_engine_base_hdrs",
+        "gpr_platform",
+        "iomgr_event_engine",
+    ],
+)
+
+grpc_cc_library(
     name = "event_engine_base",
     srcs = [
-        "src/core/lib/event_engine/default_event_engine_factory.cc",
         "src/core/lib/event_engine/event_engine.cc",
     ],
     hdrs = [
         "src/core/lib/event_engine/event_engine_factory.h",
     ],
-    external_deps = [
-        "absl/memory",
-    ],
+    tags = ["grpc-autodeps"],
     deps = [
+        "default_event_engine_factory",
         "event_engine_base_hdrs",
-        "event_engine_trace",
         "gpr_base",
-        "grpc_trace",
-        "iomgr_event_engine",
     ],
 )
 
