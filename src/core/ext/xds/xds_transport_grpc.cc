@@ -24,8 +24,6 @@
 #include <memory>
 #include <utility>
 
-#include "absl/container/inlined_vector.h"
-
 #include <grpc/byte_buffer.h>
 #include <grpc/byte_buffer_reader.h>
 #include <grpc/grpc.h>
@@ -33,7 +31,6 @@
 #include <grpc/impl/codegen/propagation_bits.h>
 #include <grpc/slice.h>
 #include <grpc/support/log.h>
-#include <grpc/support/time.h>
 
 #include "src/core/ext/filters/client_channel/client_channel.h"
 #include "src/core/ext/xds/xds_bootstrap.h"
@@ -249,7 +246,7 @@ class GrpcXdsTransportFactory::GrpcXdsTransport::StateWatcher
 
 namespace {
 
-grpc_channel* CreateXdsChannel(const grpc_core::ChannelArgs& args,
+grpc_channel* CreateXdsChannel(const ChannelArgs& args,
                                const XdsBootstrap::XdsServer& server) {
   RefCountedPtr<grpc_channel_credentials> channel_creds =
       CoreConfiguration::Get().channel_creds_registry().CreateChannelCreds(
