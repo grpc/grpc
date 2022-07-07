@@ -360,13 +360,31 @@ class ClientConnectedCallPromise {
         }
       }
       if (absl::holds_alternative<Idle>(recv_message_state_)) {
-        recv_message_state_ = absl::optional<Message>();
+        recv_message_state_ = PendingReceiveMessage{};
+        auto& pending_recv_message =
+            absl::get<PendingReceiveMessage>(recv_message_state_);
+        memset(&recv_message_, 0, sizeof(recv_message_));
+        recv_message_.payload = &batch_payload_;
+        recv_message_.on_complete = nullptr;
+        recv_message_.recv_message = true;
+        batch_payload_.recv_message.recv_message =
+            &pending_recv_message.payload;
+        batch_payload_.recv_message.flags = &pending_recv_message.flags;
+        batch_payload_.recv_message.call_failed_before_recv_message = nullptr;
+        batch_payload_.recv_message.recv_message_ready =
+            &recv_message_batch_done_;
+        recv_message_waker_ = Activity::current()->MakeOwningWaker();
         push_recv_message_ = true;
         SchedulePush();
       }
-      if (auto* message = absl::get_if<Message>(&recv_message_state_)) {
-        recv_message_state_ =
-            server_to_client_messages_->Push(std::move(*message));
+      if (auto* message =
+              absl::get_if<absl::optional<Message>>(&recv_message_state_)) {
+        if (message->has_value()) {
+          recv_message_state_ =
+              server_to_client_messages_->Push(std::move(**message));
+        } else {
+          absl::exchange(server_to_client_messages_, nullptr)->Close();
+        }
       }
       if (auto* push = absl::get_if<PipeSender<Message>::PushType>(
               &recv_message_state_)) {
@@ -413,6 +431,18 @@ class ClientConnectedCallPromise {
       send_message_waker_.Wakeup();
     }
 
+    void RecvMessageBatchDone(grpc_error_handle) {
+      auto pending =
+          std::move(absl::get<PendingReceiveMessage>(recv_message_state_));
+      if (pending.payload.has_value()) {
+        recv_message_state_ = absl::optional<Message>(
+            Message(std::move(*pending.payload), pending.flags));
+      } else {
+        recv_message_state_ = absl::optional<Message>();
+      }
+      recv_message_waker_.Wakeup();
+    }
+
     void Push() {
       if (absl::exchange(push_metadata_, false)) {
         grpc_transport_perform_stream_op(transport_, stream_.get(), &metadata_);
@@ -420,6 +450,10 @@ class ClientConnectedCallPromise {
       if (absl::exchange(push_send_message_, false)) {
         grpc_transport_perform_stream_op(transport_, stream_.get(),
                                          &send_message_);
+      }
+      if (absl::exchange(push_recv_message_, false)) {
+        grpc_transport_perform_stream_op(transport_, stream_.get(),
+                                         &recv_message_);
       }
       scheduled_push_ = false;
       call_context_->Unref("push");
@@ -461,6 +495,7 @@ class ClientConnectedCallPromise {
     Waker initial_metadata_waker_;
     Waker trailing_metadata_waker_;
     Waker send_message_waker_;
+    Waker recv_message_waker_;
     grpc_transport* const transport_;
     StreamPtr stream_;
     Latch<ServerMetadata*>* server_initial_metadata_latch_;
@@ -468,7 +503,11 @@ class ClientConnectedCallPromise {
     PipeSender<Message>* server_to_client_messages_;
     absl::variant<Idle, Closed, PipeReceiver<Message>::NextType, Message>
         send_message_state_;
-    absl::variant<Idle, absl::optional<Message>, Message, Closed,
+    struct PendingReceiveMessage {
+      absl::optional<SliceBuffer> payload;
+      uint32_t flags;
+    };
+    absl::variant<Idle, PendingReceiveMessage, absl::optional<Message>, Closed,
                   PipeSender<Message>::PushType>
         recv_message_state_;
     grpc_closure recv_initial_metadata_ready_ =
@@ -486,6 +525,8 @@ class ClientConnectedCallPromise {
     grpc_transport_stream_op_batch send_message_;
     grpc_closure send_message_batch_done_ =
         MakeMemberClosure<Impl, &Impl::SendMessageBatchDone>(this);
+    grpc_closure recv_message_batch_done_ =
+        MakeMemberClosure<Impl, &Impl::RecvMessageBatchDone>(this);
     grpc_transport_stream_op_batch recv_message_;
     grpc_transport_stream_op_batch_payload batch_payload_{
         GetContext<grpc_call_context_element>()};
