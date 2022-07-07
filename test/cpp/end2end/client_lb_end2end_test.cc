@@ -1778,15 +1778,19 @@ TEST_F(RoundRobinTest, SingleReconnect) {
   // Kill the first server.
   servers_[0]->StopListeningAndSendGoaways();
   // Wait for client to notice that the backend is down.  We know that's
-  // happened when one of the remaining backends gets a second request.
+  // happened when we see kNumServers RPCs that do not go to backend 0.
   ResetCounters();
-  SendRpcsUntil(DEBUG_LOCATION, stub, [&](Status status) {
+  SendRpcsUntil(DEBUG_LOCATION, stub,
+    [&, num_rpcs_not_on_backend_0 = 0](Status status) mutable {
     EXPECT_TRUE(status.ok()) << "code=" << status.error_code()
                              << " message=" << status.error_message();
-    for (size_t i = 1; i < servers_.size(); ++i) {
-      if (servers_[i]->service_.request_count() == 2) return false;
+    if (servers_[0]->service_.request_count() == 1) {
+      num_rpcs_not_on_backend_0 = 0;
+    } else {
+      ++num_rpcs_not_on_backend_0;
     }
-    return true;
+    ResetCounters();
+    return num_rpcs_not_on_backend_0 < kNumServers;
   });
   // Send a bunch of RPCs.
   ResetCounters();
