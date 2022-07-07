@@ -20,6 +20,7 @@
 
 #include "src/core/lib/channel/connected_channel.h"
 
+#include <stdint.h>
 #include <string.h>
 
 #include <memory>
@@ -52,6 +53,7 @@
 #include "src/core/lib/promise/pipe.h"
 #include "src/core/lib/promise/poll.h"
 #include "src/core/lib/resource_quota/arena.h"
+#include "src/core/lib/slice/slice_buffer.h"
 #include "src/core/lib/surface/call.h"
 #include "src/core/lib/surface/channel_stack_type.h"
 #include "src/core/lib/transport/metadata_allocator.h"
