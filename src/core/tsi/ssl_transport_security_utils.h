@@ -16,8 +16,8 @@
  *
  */
 
-#ifndef GRPC_CORE_TSI_SSL_TRANSPORT_SECURITY_UTILS_H_
-#define GRPC_CORE_TSI_SSL_TRANSPORT_SECURITY_UTILS_H_
+#ifndef GRPC_CORE_TSI_SSL_TRANSPORT_SECURITY_UTILS_H
+#define GRPC_CORE_TSI_SSL_TRANSPORT_SECURITY_UTILS_H
 
 #include <grpc/support/port_platform.h>
 
@@ -144,4 +144,4 @@ tsi_result SslProtectorUnprotect(const unsigned char* protected_frames_bytes,
 
 }  // namespace grpc_core
 
-#endif  // GRPC_CORE_TSI_SSL_TRANSPORT_SECURITY_UTILS_H_
+#endif  // GRPC_CORE_TSI_SSL_TRANSPORT_SECURITY_UTILS_H

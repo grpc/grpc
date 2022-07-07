@@ -40,7 +40,6 @@ namespace testing {
 
 using ::testing::ContainerEq;
 using ::testing::NotNull;
-using ::testing::Test;
 using ::testing::TestWithParam;
 using ::testing::ValuesIn;
 
@@ -71,7 +70,9 @@ std::vector<FrameProtectorUtilTestData> GenerateTestData() {
 class FlowTest : public TestWithParam<FrameProtectorUtilTestData> {
  protected:
   // Used for debugging.
-  static int VerifySucceed(X509_STORE_CTX* store_ctx, void* arg) { return 1; }
+  static int VerifySucceed(X509_STORE_CTX* /*store_ctx*/, void* /*arg*/) {
+    return 1;
+  }
 
   // Drives two SSL objects to finish a complete handshake with the hard-coded
   // credentials and outputs those two SSL objects to `out_client` and
