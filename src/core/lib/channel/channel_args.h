@@ -61,17 +61,27 @@ namespace grpc_core {
 template <typename T, typename Ignored = void /* for SFINAE */>
 struct ChannelArgTypeTraits;
 
+namespace channel_args_detail {
+// The type returned by calling Ref() on a T - used to determine the basest-type
+// before the crt refcount base class.
+template <typename T>
+using RefType = absl::remove_cvref_t<decltype(*std::declval<T>().Ref())>;
+}  // namespace channel_args_detail
+
 // Specialization for ref-counted pointers.
 // Types should expose:
 // static int ChannelArgsCompare(const T* a, const T* b);
 template <typename T>
 struct ChannelArgTypeTraits<
-    T,
-    absl::enable_if_t<
-        std::is_base_of<RefCounted<T>, T>::value ||
-            std::is_base_of<RefCounted<T, NonPolymorphicRefCount>, T>::value ||
-            std::is_base_of<DualRefCounted<T>, T>::value,
-        void>> {
+    T, absl::enable_if_t<
+           std::is_base_of<RefCounted<channel_args_detail::RefType<T>>,
+                           channel_args_detail::RefType<T>>::value ||
+               std::is_base_of<RefCounted<channel_args_detail::RefType<T>,
+                                          NonPolymorphicRefCount>,
+                               channel_args_detail::RefType<T>>::value ||
+               std::is_base_of<DualRefCounted<channel_args_detail::RefType<T>>,
+                               channel_args_detail::RefType<T>>::value,
+           void>> {
   static const grpc_arg_pointer_vtable* VTable() {
     static const grpc_arg_pointer_vtable tbl = {
         // copy
@@ -194,16 +204,13 @@ class ChannelArgs {
   GRPC_MUST_USE_RESULT auto Set(absl::string_view name,
                                 RefCountedPtr<T> value) const
       -> absl::enable_if_t<
-          std::is_same<
-              const grpc_arg_pointer_vtable*,
-              decltype(ChannelArgTypeTraits<absl::remove_cvref_t<
-                           decltype(*value->Ref())>>::VTable())>::value,
+          std::is_same<const grpc_arg_pointer_vtable*,
+                       decltype(ChannelArgTypeTraits<
+                                absl::remove_cvref_t<T>>::VTable())>::value,
           ChannelArgs> {
     return Set(
-        name,
-        Pointer(value.release(),
-                ChannelArgTypeTraits<
-                    absl::remove_cvref_t<decltype(*value->Ref())>>::VTable()));
+        name, Pointer(value.release(),
+                      ChannelArgTypeTraits<absl::remove_cvref_t<T>>::VTable()));
   }
   template <typename T>
   GRPC_MUST_USE_RESULT ChannelArgs SetIfUnset(absl::string_view name,

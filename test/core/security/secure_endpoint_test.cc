@@ -21,6 +21,8 @@
 #include <fcntl.h>
 #include <sys/types.h>
 
+#include <gtest/gtest.h>
+
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
@@ -58,9 +60,9 @@ static void me_write(grpc_endpoint* ep, grpc_slice_buffer* slices,
     // Estimate the frame size of the next frame.
     int next_frame_size =
         tsi_fake_zero_copy_grpc_protector_next_frame_size(slices);
-    GPR_ASSERT(next_frame_size > TSI_FAKE_FRAME_HEADER_SIZE);
+    ASSERT_GT(next_frame_size, TSI_FAKE_FRAME_HEADER_SIZE);
     // Ensure the protected data size does not exceed the max_frame_size.
-    GPR_ASSERT(next_frame_size - TSI_FAKE_FRAME_HEADER_SIZE <= max_frame_size);
+    ASSERT_LE(next_frame_size - TSI_FAKE_FRAME_HEADER_SIZE, max_frame_size);
     // Move this frame into a staging buffer and repeat.
     grpc_slice_buffer_move_first(slices, next_frame_size, &m->staging_buffer);
     remaining -= next_frame_size;
@@ -185,11 +187,11 @@ static grpc_endpoint_test_fixture secure_endpoint_create_fixture_tcp_socketpair(
         result = tsi_frame_protector_protect(
             fake_write_protector, message_bytes, &processed_message_size, cur,
             &protected_buffer_size_to_send);
-        GPR_ASSERT(result == TSI_OK);
+        EXPECT_EQ(result, TSI_OK);
         message_bytes += processed_message_size;
         message_size -= processed_message_size;
         cur += protected_buffer_size_to_send;
-        GPR_ASSERT(buffer_size >= protected_buffer_size_to_send);
+        EXPECT_GE(buffer_size, protected_buffer_size_to_send);
         buffer_size -= protected_buffer_size_to_send;
       }
       grpc_slice_unref(plain);
@@ -199,9 +201,9 @@ static grpc_endpoint_test_fixture secure_endpoint_create_fixture_tcp_socketpair(
       result = tsi_frame_protector_protect_flush(fake_write_protector, cur,
                                                  &protected_buffer_size_to_send,
                                                  &still_pending_size);
-      GPR_ASSERT(result == TSI_OK);
+      EXPECT_EQ(result, TSI_OK);
       cur += protected_buffer_size_to_send;
-      GPR_ASSERT(buffer_size >= protected_buffer_size_to_send);
+      EXPECT_GE(buffer_size, protected_buffer_size_to_send);
       buffer_size -= protected_buffer_size_to_send;
     } while (still_pending_size > 0);
     encrypted_leftover = grpc_slice_from_copied_buffer(
@@ -286,9 +288,9 @@ static void test_leftover(grpc_endpoint_test_config config, size_t slice_size) {
                      /*min_progress_size=*/1);
 
   grpc_core::ExecCtx::Get()->Flush();
-  GPR_ASSERT(n == 1);
-  GPR_ASSERT(incoming.count == 1);
-  GPR_ASSERT(grpc_slice_eq(s, incoming.slices[0]));
+  ASSERT_EQ(n, 1);
+  ASSERT_EQ(incoming.count, 1);
+  ASSERT_TRUE(grpc_slice_eq(s, incoming.slices[0]));
 
   grpc_endpoint_shutdown(
       f.client_ep, GRPC_ERROR_CREATE_FROM_STATIC_STRING("test_leftover end"));
@@ -307,9 +309,8 @@ static void destroy_pollset(void* p, grpc_error_handle /*error*/) {
   grpc_pollset_destroy(static_cast<grpc_pollset*>(p));
 }
 
-int main(int argc, char** argv) {
+TEST(SecureEndpointTest, MainTest) {
   grpc_closure destroyed;
-  grpc::testing::TestEnvironment env(&argc, argv);
   grpc_init();
 
   {
@@ -328,6 +329,10 @@ int main(int argc, char** argv) {
   grpc_shutdown();
 
   gpr_free(g_pollset);
+}
 
-  return 0;
+int main(int argc, char** argv) {
+  grpc::testing::TestEnvironment env(&argc, argv);
+  ::testing::InitGoogleTest(&argc, argv);
+  return RUN_ALL_TESTS();
 }
