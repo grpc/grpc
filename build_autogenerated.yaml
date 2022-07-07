@@ -3306,18 +3306,6 @@ targets:
   deps:
   - grpc_test_util
   uses_polling: false
-- name: client_ssl_test
-  build: test
-  language: c
-  headers: []
-  src:
-  - test/core/handshake/client_ssl.cc
-  deps:
-  - grpc_test_util
-  platforms:
-  - linux
-  - posix
-  - mac
 - name: cmdline_test
   build: test
   language: c
@@ -3504,20 +3492,6 @@ targets:
   - test/core/iomgr/grpc_ipv6_loopback_available_test.cc
   deps:
   - grpc_test_util
-- name: handshake_server_with_readahead_handshaker_test
-  build: test
-  language: c
-  headers:
-  - test/core/handshake/server_ssl_common.h
-  src:
-  - test/core/handshake/readahead_handshaker_server_ssl.cc
-  - test/core/handshake/server_ssl_common.cc
-  deps:
-  - grpc_test_util
-  platforms:
-  - linux
-  - posix
-  - mac
 - name: histogram_test
   build: test
   language: c
@@ -3701,20 +3675,6 @@ targets:
   - grpc_test_util
   args:
   - --resolver=native
-  platforms:
-  - linux
-  - posix
-  - mac
-- name: server_ssl_test
-  build: test
-  language: c
-  headers:
-  - test/core/handshake/server_ssl_common.h
-  src:
-  - test/core/handshake/server_ssl.cc
-  - test/core/handshake/server_ssl_common.cc
-  deps:
-  - grpc_test_util
   platforms:
   - linux
   - posix
@@ -5017,6 +4977,19 @@ targets:
   - linux
   - posix
   - mac
+- name: client_ssl_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/core/handshake/client_ssl.cc
+  deps:
+  - grpc_test_util
+  platforms:
+  - linux
+  - posix
+  - mac
 - name: codegen_test_full
   gtest: true
   build: test
@@ -6189,6 +6162,21 @@ targets:
   - test/core/end2end/h2_ssl_session_reuse_test.cc
   deps:
   - end2end_tests
+- name: handshake_server_with_readahead_handshaker_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - test/core/handshake/server_ssl_common.h
+  src:
+  - test/core/handshake/readahead_handshaker_server_ssl.cc
+  - test/core/handshake/server_ssl_common.cc
+  deps:
+  - grpc_test_util
+  platforms:
+  - linux
+  - posix
+  - mac
 - name: head_of_line_blocking_bad_client_test
   gtest: true
   build: test
@@ -7915,6 +7903,21 @@ targets:
   deps:
   - grpc++_unsecure
   - grpc_test_util_unsecure
+  platforms:
+  - linux
+  - posix
+  - mac
+- name: server_ssl_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - test/core/handshake/server_ssl_common.h
+  src:
+  - test/core/handshake/server_ssl.cc
+  - test/core/handshake/server_ssl_common.cc
+  deps:
+  - grpc_test_util
   platforms:
   - linux
   - posix
