@@ -2377,6 +2377,9 @@ grpc_cc_library(
     ],
 )
 
+# NOTE: this target gets replaced inside Google's build system to be one that
+# integrates with other internal systems better. Please do not rename or fold
+# this into other targets.
 grpc_cc_library(
     name = "default_event_engine_factory",
     srcs = ["src/core/lib/event_engine/default_event_engine_factory.cc"],
