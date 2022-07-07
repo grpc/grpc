@@ -3210,114 +3210,12 @@ targets:
   - test/core/transport/chttp2/alpn_test.cc
   deps:
   - grpc_test_util
-- name: alts_counter_test
-  build: test
-  language: c
-  headers:
-  - test/core/tsi/alts/crypt/gsec_test_util.h
-  src:
-  - test/core/tsi/alts/crypt/gsec_test_util.cc
-  - test/core/tsi/alts/frame_protector/alts_counter_test.cc
-  deps:
-  - grpc_test_util
-- name: alts_crypt_test
-  build: test
-  language: c
-  headers:
-  - test/core/tsi/alts/crypt/gsec_test_util.h
-  src:
-  - test/core/tsi/alts/crypt/aes_gcm_test.cc
-  - test/core/tsi/alts/crypt/gsec_test_util.cc
-  deps:
-  - grpc_test_util
-- name: alts_crypter_test
-  build: test
-  language: c
-  headers:
-  - test/core/tsi/alts/crypt/gsec_test_util.h
-  src:
-  - test/core/tsi/alts/crypt/gsec_test_util.cc
-  - test/core/tsi/alts/frame_protector/alts_crypter_test.cc
-  deps:
-  - grpc_test_util
-- name: alts_frame_protector_test
-  build: test
-  language: c
-  headers:
-  - test/core/tsi/alts/crypt/gsec_test_util.h
-  - test/core/tsi/transport_security_test_lib.h
-  src:
-  - test/core/tsi/alts/crypt/gsec_test_util.cc
-  - test/core/tsi/alts/frame_protector/alts_frame_protector_test.cc
-  - test/core/tsi/transport_security_test_lib.cc
-  deps:
-  - grpc_test_util
-- name: alts_grpc_record_protocol_test
-  build: test
-  language: c
-  headers:
-  - test/core/tsi/alts/crypt/gsec_test_util.h
-  src:
-  - test/core/tsi/alts/crypt/gsec_test_util.cc
-  - test/core/tsi/alts/zero_copy_frame_protector/alts_grpc_record_protocol_test.cc
-  deps:
-  - grpc_test_util
-- name: alts_handshaker_client_test
-  build: test
-  language: c
-  headers:
-  - test/core/tsi/alts/handshaker/alts_handshaker_service_api_test_lib.h
-  src:
-  - test/core/tsi/alts/handshaker/alts_handshaker_client_test.cc
-  - test/core/tsi/alts/handshaker/alts_handshaker_service_api_test_lib.cc
-  deps:
-  - grpc_test_util
-- name: alts_iovec_record_protocol_test
-  build: test
-  language: c
-  headers:
-  - test/core/tsi/alts/crypt/gsec_test_util.h
-  src:
-  - test/core/tsi/alts/crypt/gsec_test_util.cc
-  - test/core/tsi/alts/zero_copy_frame_protector/alts_iovec_record_protocol_test.cc
-  deps:
-  - grpc_test_util
 - name: alts_security_connector_test
   build: test
   language: c
   headers: []
   src:
   - test/core/security/alts_security_connector_test.cc
-  deps:
-  - grpc_test_util
-- name: alts_tsi_handshaker_test
-  build: test
-  language: c
-  headers:
-  - test/core/tsi/alts/handshaker/alts_handshaker_service_api_test_lib.h
-  src:
-  - test/core/tsi/alts/handshaker/alts_handshaker_service_api_test_lib.cc
-  - test/core/tsi/alts/handshaker/alts_tsi_handshaker_test.cc
-  deps:
-  - grpc_test_util
-- name: alts_tsi_utils_test
-  build: test
-  language: c
-  headers:
-  - test/core/tsi/alts/handshaker/alts_handshaker_service_api_test_lib.h
-  src:
-  - test/core/tsi/alts/handshaker/alts_handshaker_service_api_test_lib.cc
-  - test/core/tsi/alts/handshaker/alts_tsi_utils_test.cc
-  deps:
-  - grpc_test_util
-- name: alts_zero_copy_grpc_protector_test
-  build: test
-  language: c
-  headers:
-  - test/core/tsi/alts/crypt/gsec_test_util.h
-  src:
-  - test/core/tsi/alts/crypt/gsec_test_util.cc
-  - test/core/tsi/alts/zero_copy_frame_protector/alts_zero_copy_grpc_protector_test.cc
   deps:
   - grpc_test_util
 - name: auth_context_test
@@ -3532,16 +3430,6 @@ targets:
   deps:
   - grpc_test_util
   uses_polling: false
-- name: fake_transport_security_test
-  build: test
-  language: c
-  headers:
-  - test/core/tsi/transport_security_test_lib.h
-  src:
-  - test/core/tsi/fake_transport_security_test.cc
-  - test/core/tsi/transport_security_test_lib.cc
-  deps:
-  - grpc_test_util
 - name: fd_conservation_posix_test
   build: test
   language: c
@@ -3624,16 +3512,6 @@ targets:
   - test/core/end2end/data/server1_key.cc
   - test/core/end2end/data/test_root_cert.cc
   - test/core/http/format_request_test.cc
-  deps:
-  - grpc_test_util
-- name: frame_handler_test
-  build: test
-  language: c
-  headers:
-  - test/core/tsi/alts/crypt/gsec_test_util.h
-  src:
-  - test/core/tsi/alts/crypt/gsec_test_util.cc
-  - test/core/tsi/alts/frame_protector/frame_handler_test.cc
   deps:
   - grpc_test_util
 - name: goaway_server_test
@@ -3959,20 +3837,6 @@ targets:
   - test/core/security/ssl_credentials_test.cc
   deps:
   - grpc_test_util
-- name: ssl_transport_security_test
-  build: test
-  language: c
-  headers:
-  - test/core/tsi/transport_security_test_lib.h
-  src:
-  - test/core/tsi/ssl_transport_security_test.cc
-  - test/core/tsi/transport_security_test_lib.cc
-  deps:
-  - grpc_test_util
-  platforms:
-  - linux
-  - posix
-  - mac
 - name: status_conversion_test
   build: test
   language: c
@@ -4099,22 +3963,6 @@ targets:
   deps:
   - grpc_test_util
   uses_polling: false
-- name: transport_security_common_api_test
-  build: test
-  language: c
-  headers: []
-  src:
-  - test/core/tsi/alts/handshaker/transport_security_common_api_test.cc
-  deps:
-  - grpc_test_util
-- name: transport_security_test
-  build: test
-  language: c
-  headers: []
-  src:
-  - test/core/tsi/transport_security_test.cc
-  deps:
-  - grpc_test_util
 - name: varint_test
   build: test
   language: c
@@ -4328,6 +4176,107 @@ targets:
   platforms:
   - linux
   - posix
+- name: alts_counter_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - test/core/tsi/alts/crypt/gsec_test_util.h
+  src:
+  - test/core/tsi/alts/crypt/gsec_test_util.cc
+  - test/core/tsi/alts/frame_protector/alts_counter_test.cc
+  deps:
+  - grpc_test_util
+- name: alts_crypt_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - test/core/tsi/alts/crypt/gsec_test_util.h
+  src:
+  - test/core/tsi/alts/crypt/aes_gcm_test.cc
+  - test/core/tsi/alts/crypt/gsec_test_util.cc
+  deps:
+  - grpc_test_util
+- name: alts_crypter_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - test/core/tsi/alts/crypt/gsec_test_util.h
+  src:
+  - test/core/tsi/alts/crypt/gsec_test_util.cc
+  - test/core/tsi/alts/frame_protector/alts_crypter_test.cc
+  deps:
+  - grpc_test_util
+- name: alts_frame_protector_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - test/core/tsi/alts/crypt/gsec_test_util.h
+  - test/core/tsi/transport_security_test_lib.h
+  src:
+  - test/core/tsi/alts/crypt/gsec_test_util.cc
+  - test/core/tsi/alts/frame_protector/alts_frame_protector_test.cc
+  - test/core/tsi/transport_security_test_lib.cc
+  deps:
+  - grpc_test_util
+- name: alts_grpc_record_protocol_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - test/core/tsi/alts/crypt/gsec_test_util.h
+  src:
+  - test/core/tsi/alts/crypt/gsec_test_util.cc
+  - test/core/tsi/alts/zero_copy_frame_protector/alts_grpc_record_protocol_test.cc
+  deps:
+  - grpc_test_util
+- name: alts_handshaker_client_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - test/core/tsi/alts/handshaker/alts_handshaker_service_api_test_lib.h
+  src:
+  - test/core/tsi/alts/handshaker/alts_handshaker_client_test.cc
+  - test/core/tsi/alts/handshaker/alts_handshaker_service_api_test_lib.cc
+  deps:
+  - grpc_test_util
+- name: alts_iovec_record_protocol_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - test/core/tsi/alts/crypt/gsec_test_util.h
+  src:
+  - test/core/tsi/alts/crypt/gsec_test_util.cc
+  - test/core/tsi/alts/zero_copy_frame_protector/alts_iovec_record_protocol_test.cc
+  deps:
+  - grpc_test_util
+- name: alts_tsi_handshaker_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - test/core/tsi/alts/handshaker/alts_handshaker_service_api_test_lib.h
+  src:
+  - test/core/tsi/alts/handshaker/alts_handshaker_service_api_test_lib.cc
+  - test/core/tsi/alts/handshaker/alts_tsi_handshaker_test.cc
+  deps:
+  - grpc_test_util
+- name: alts_tsi_utils_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - test/core/tsi/alts/handshaker/alts_handshaker_service_api_test_lib.h
+  src:
+  - test/core/tsi/alts/handshaker/alts_handshaker_service_api_test_lib.cc
+  - test/core/tsi/alts/handshaker/alts_tsi_utils_test.cc
+  deps:
+  - grpc_test_util
 - name: alts_util_test
   gtest: true
   build: test
@@ -4338,6 +4287,17 @@ targets:
   deps:
   - grpc++_alts
   - grpc++_test_util
+- name: alts_zero_copy_grpc_protector_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - test/core/tsi/alts/crypt/gsec_test_util.h
+  src:
+  - test/core/tsi/alts/crypt/gsec_test_util.cc
+  - test/core/tsi/alts/zero_copy_frame_protector/alts_zero_copy_grpc_protector_test.cc
+  deps:
+  - grpc_test_util
 - name: arena_promise_test
   gtest: true
   build: test
@@ -5678,6 +5638,17 @@ targets:
   - test/core/client_channel/resolvers/fake_resolver_test.cc
   deps:
   - grpc_test_util
+- name: fake_transport_security_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - test/core/tsi/transport_security_test_lib.h
+  src:
+  - test/core/tsi/fake_transport_security_test.cc
+  - test/core/tsi/transport_security_test_lib.cc
+  deps:
+  - grpc_test_util
 - name: file_watcher_certificate_provider_factory_test
   gtest: true
   build: test
@@ -5888,6 +5859,17 @@ targets:
   - gpr
   - upb
   uses_polling: false
+- name: frame_handler_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - test/core/tsi/alts/crypt/gsec_test_util.h
+  src:
+  - test/core/tsi/alts/crypt/gsec_test_util.cc
+  - test/core/tsi/alts/frame_protector/frame_handler_test.cc
+  deps:
+  - grpc_test_util
 - name: fuzzing_event_engine_test
   gtest: true
   build: test
@@ -8131,6 +8113,21 @@ targets:
   - test/core/address_utils/sockaddr_utils_test.cc
   deps:
   - grpc_test_util
+- name: ssl_transport_security_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - test/core/tsi/transport_security_test_lib.h
+  src:
+  - test/core/tsi/ssl_transport_security_test.cc
+  - test/core/tsi/transport_security_test_lib.cc
+  deps:
+  - grpc_test_util
+  platforms:
+  - linux
+  - posix
+  - mac
 - name: stack_tracer_test
   gtest: true
   build: test
@@ -8956,6 +8953,24 @@ targets:
   deps:
   - grpc++_test_config
   - grpc++_test_util
+- name: transport_security_common_api_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/core/tsi/alts/handshaker/transport_security_common_api_test.cc
+  deps:
+  - grpc_test_util
+- name: transport_security_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/core/tsi/transport_security_test.cc
+  deps:
+  - grpc_test_util
 - name: transport_stream_receiver_test
   gtest: true
   build: test
