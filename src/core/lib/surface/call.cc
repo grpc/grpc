@@ -1913,6 +1913,11 @@ class PromiseBasedCall : public Call, public Activity, public Wakeable {
     uint8_t index() const { return index_; }
     uint8_t TakeIndex() { return absl::exchange(index_, kNullIndex); }
 
+    std::string ToString() const {
+      return index_ == kNullIndex ? "<null>"
+                                  : std::to_string(static_cast<int>(index_));
+    }
+
    private:
     enum : uint8_t { kNullIndex = 0xff };
     uint8_t index_;
@@ -2317,6 +2322,17 @@ grpc_call_error ClientPromiseBasedCall::StartBatch(const grpc_op* ops,
 }
 
 void ClientPromiseBasedCall::UpdateOnce() {
+  gpr_log(GPR_INFO,
+          "ClientPromiseBasedCall::UpdateOnce: "
+          "server_initial_metadata_ready=%s(c=%s) outstanding_send=%s(c=%s) "
+          "outstanding_recv=%s(c=%s) has_promise=%s",
+          server_initial_metadata_ready_.has_value() ? "true" : "false",
+          recv_initial_metadata_completion_.ToString().c_str(),
+          outstanding_send_.has_value() ? "true" : "false",
+          send_message_completion_.ToString().c_str(),
+          outstanding_recv_.has_value() ? "true" : "false",
+          recv_message_completion_.ToString().c_str(),
+          promise_.has_value() ? "true" : "false");
   if (server_initial_metadata_ready_.has_value()) {
     Poll<ServerMetadata**> r = (*server_initial_metadata_ready_)();
     if (ServerMetadata*** server_initial_metadata =
@@ -2332,9 +2348,8 @@ void ClientPromiseBasedCall::UpdateOnce() {
     Poll<bool> r = (*outstanding_send_)();
     if (const bool* result = absl::get_if<bool>(&r)) {
       outstanding_send_.reset();
-      if (*result) {
-        FinishCompletion(&send_message_completion_);
-      } else {
+      FinishCompletion(&send_message_completion_);
+      if (!*result) {
         Finish(ServerMetadataHandle(absl::Status(
             absl::StatusCode::kInternal, "Failed to send message to server")));
       }
