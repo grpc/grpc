@@ -745,6 +745,7 @@ libs:
   - src/core/lib/debug/stats_data.h
   - src/core/lib/debug/trace.h
   - src/core/lib/event_engine/channel_args_endpoint_config.h
+  - src/core/lib/event_engine/default_event_engine_factory.h
   - src/core/lib/event_engine/event_engine_factory.h
   - src/core/lib/event_engine/handle_containers.h
   - src/core/lib/event_engine/iomgr_engine/iomgr_engine.h
@@ -1964,6 +1965,7 @@ libs:
   - src/core/lib/debug/stats_data.h
   - src/core/lib/debug/trace.h
   - src/core/lib/event_engine/channel_args_endpoint_config.h
+  - src/core/lib/event_engine/default_event_engine_factory.h
   - src/core/lib/event_engine/event_engine_factory.h
   - src/core/lib/event_engine/handle_containers.h
   - src/core/lib/event_engine/iomgr_engine/iomgr_engine.h
