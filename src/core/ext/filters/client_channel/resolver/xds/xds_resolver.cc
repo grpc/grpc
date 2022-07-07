@@ -58,6 +58,7 @@
 #include "src/core/ext/filters/client_channel/lb_policy/ring_hash/ring_hash.h"
 #include "src/core/ext/xds/xds_bootstrap.h"
 #include "src/core/ext/xds/xds_client.h"
+#include "src/core/ext/xds/xds_client_grpc.h"
 #include "src/core/ext/xds/xds_http_filters.h"
 #include "src/core/ext/xds/xds_listener.h"
 #include "src/core/ext/xds/xds_resource_type_impl.h"
@@ -790,7 +791,7 @@ ConfigSelector::CallConfig XdsResolver::XdsConfigSelector::GetCallConfig(
 
 void XdsResolver::StartLocked() {
   grpc_error_handle error = GRPC_ERROR_NONE;
-  xds_client_ = XdsClient::GetOrCreate(args_, &error);
+  xds_client_ = GrpcXdsClient::GetOrCreate(args_, &error);
   if (!GRPC_ERROR_IS_NONE(error)) {
     gpr_log(GPR_ERROR,
             "Failed to create xds client -- channel will remain in "
@@ -852,8 +853,9 @@ void XdsResolver::StartLocked() {
     gpr_log(GPR_INFO, "[xds_resolver %p] Started with lds_resource_name %s.",
             this, lds_resource_name_.c_str());
   }
-  grpc_pollset_set_add_pollset_set(xds_client_->interested_parties(),
-                                   interested_parties_);
+  grpc_pollset_set_add_pollset_set(
+      static_cast<GrpcXdsClient*>(xds_client_.get())->interested_parties(),
+      interested_parties_);
   auto watcher = MakeRefCounted<ListenerWatcher>(Ref());
   listener_watcher_ = watcher.get();
   XdsListenerResourceType::StartWatch(xds_client_.get(), lds_resource_name_,
@@ -875,8 +877,9 @@ void XdsResolver::ShutdownLocked() {
           xds_client_.get(), route_config_name_, route_config_watcher_,
           /*delay_unsubscription=*/false);
     }
-    grpc_pollset_set_del_pollset_set(xds_client_->interested_parties(),
-                                     interested_parties_);
+    grpc_pollset_set_del_pollset_set(
+        static_cast<GrpcXdsClient*>(xds_client_.get())->interested_parties(),
+        interested_parties_);
     xds_client_.reset();
   }
 }
@@ -975,7 +978,8 @@ void XdsResolver::OnError(absl::string_view context, absl::Status status) {
   Result result;
   result.addresses = status;
   result.service_config = std::move(status);
-  grpc_arg new_arg = xds_client_->MakeChannelArg();
+  grpc_arg new_arg =
+      static_cast<GrpcXdsClient*>(xds_client_.get())->MakeChannelArg();
   result.args = grpc_channel_args_copy_and_add(args_, &new_arg, 1);
   result_handler_->ReportResult(std::move(result));
 }
@@ -1069,7 +1073,7 @@ void XdsResolver::GenerateResult() {
                 : result.service_config.status().ToString().c_str());
   }
   grpc_arg new_args[] = {
-      xds_client_->MakeChannelArg(),
+      static_cast<GrpcXdsClient*>(xds_client_.get())->MakeChannelArg(),
       config_selector->MakeChannelArg(),
   };
   result.args =

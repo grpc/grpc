@@ -702,6 +702,7 @@ libs:
   - src/core/ext/xds/xds_channel_args.h
   - src/core/ext/xds/xds_channel_stack_modifier.h
   - src/core/ext/xds/xds_client.h
+  - src/core/ext/xds/xds_client_grpc.h
   - src/core/ext/xds/xds_client_stats.h
   - src/core/ext/xds/xds_cluster.h
   - src/core/ext/xds/xds_cluster_specifier_plugin.h
@@ -716,6 +717,8 @@ libs:
   - src/core/ext/xds/xds_resource_type_impl.h
   - src/core/ext/xds/xds_route_config.h
   - src/core/ext/xds/xds_routing.h
+  - src/core/ext/xds/xds_transport.h
+  - src/core/ext/xds/xds_transport_grpc.h
   - src/core/lib/address_utils/parse_address.h
   - src/core/lib/address_utils/sockaddr_utils.h
   - src/core/lib/avl/avl.h
@@ -1385,6 +1388,7 @@ libs:
   - src/core/ext/xds/xds_certificate_provider.cc
   - src/core/ext/xds/xds_channel_stack_modifier.cc
   - src/core/ext/xds/xds_client.cc
+  - src/core/ext/xds/xds_client_grpc.cc
   - src/core/ext/xds/xds_client_stats.cc
   - src/core/ext/xds/xds_cluster.cc
   - src/core/ext/xds/xds_cluster_specifier_plugin.cc
@@ -1399,6 +1403,7 @@ libs:
   - src/core/ext/xds/xds_route_config.cc
   - src/core/ext/xds/xds_routing.cc
   - src/core/ext/xds/xds_server_config_fetcher.cc
+  - src/core/ext/xds/xds_transport_grpc.cc
   - src/core/lib/address_utils/parse_address.cc
   - src/core/lib/address_utils/sockaddr_utils.cc
   - src/core/lib/backoff/backoff.cc
@@ -3210,23 +3215,6 @@ targets:
   - test/core/transport/chttp2/alpn_test.cc
   deps:
   - grpc_test_util
-- name: alts_security_connector_test
-  build: test
-  language: c
-  headers: []
-  src:
-  - test/core/security/alts_security_connector_test.cc
-  deps:
-  - grpc_test_util
-- name: auth_context_test
-  build: test
-  language: c
-  headers: []
-  src:
-  - test/core/security/auth_context_test.cc
-  deps:
-  - grpc_test_util
-  uses_polling: false
 - name: b64_test
   build: test
   language: c
@@ -3318,22 +3306,6 @@ targets:
   deps:
   - grpc_test_util
   uses_polling: false
-- name: check_gcp_environment_linux_test
-  build: test
-  language: c
-  headers: []
-  src:
-  - test/core/security/check_gcp_environment_linux_test.cc
-  deps:
-  - grpc_test_util
-- name: check_gcp_environment_windows_test
-  build: test
-  language: c
-  headers: []
-  src:
-  - test/core/security/check_gcp_environment_windows_test.cc
-  deps:
-  - grpc_test_util
 - name: client_ssl_test
   build: test
   language: c
@@ -3524,14 +3496,6 @@ targets:
   - test/core/end2end/goaway_server_test.cc
   deps:
   - grpc_test_util
-- name: grpc_alts_credentials_options_test
-  build: test
-  language: c
-  headers: []
-  src:
-  - test/core/security/grpc_alts_credentials_options_test.cc
-  deps:
-  - grpc_test_util
 - name: grpc_ipv6_loopback_available_test
   build: test
   language: c
@@ -3600,24 +3564,6 @@ targets:
   - test/core/end2end/invalid_call_argument_test.cc
   deps:
   - grpc_test_util
-- name: json_token_test
-  build: test
-  language: c
-  headers: []
-  src:
-  - test/core/security/json_token_test.cc
-  deps:
-  - grpc_test_util
-  uses_polling: false
-- name: jwt_verifier_test
-  build: test
-  language: c
-  headers: []
-  src:
-  - test/core/security/jwt_verifier_test.cc
-  deps:
-  - grpc_test_util
-  uses_polling: false
 - name: load_file_test
   build: test
   language: c
@@ -3759,24 +3705,6 @@ targets:
   - linux
   - posix
   - mac
-- name: secure_endpoint_test
-  build: test
-  language: c
-  headers:
-  - test/core/iomgr/endpoint_tests.h
-  src:
-  - test/core/iomgr/endpoint_tests.cc
-  - test/core/security/secure_endpoint_test.cc
-  deps:
-  - grpc_test_util
-- name: security_connector_test
-  build: test
-  language: c
-  headers: []
-  src:
-  - test/core/security/security_connector_test.cc
-  deps:
-  - grpc_test_util
 - name: server_ssl_test
   build: test
   language: c
@@ -3829,14 +3757,6 @@ targets:
   deps:
   - grpc_test_util
   uses_polling: false
-- name: ssl_credentials_test
-  build: test
-  language: c
-  headers: []
-  src:
-  - test/core/security/ssl_credentials_test.cc
-  deps:
-  - grpc_test_util
 - name: status_conversion_test
   build: test
   language: c
@@ -4255,6 +4175,15 @@ targets:
   - test/core/tsi/alts/zero_copy_frame_protector/alts_iovec_record_protocol_test.cc
   deps:
   - grpc_test_util
+- name: alts_security_connector_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/core/security/alts_security_connector_test.cc
+  deps:
+  - grpc_test_util
 - name: alts_tsi_handshaker_test
   gtest: true
   build: test
@@ -4403,6 +4332,16 @@ targets:
   - test/cpp/end2end/async_end2end_test.cc
   deps:
   - grpc++_test_util
+- name: auth_context_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/core/security/auth_context_test.cc
+  deps:
+  - grpc_test_util
+  uses_polling: false
 - name: auth_property_iterator_test
   gtest: true
   build: test
@@ -4848,6 +4787,24 @@ targets:
   - test/cpp/util/channel_trace_proto_helper.cc
   deps:
   - grpc++
+  - grpc_test_util
+- name: check_gcp_environment_linux_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/core/security/check_gcp_environment_linux_test.cc
+  deps:
+  - grpc_test_util
+- name: check_gcp_environment_windows_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/core/security/check_gcp_environment_windows_test.cc
+  deps:
   - grpc_test_util
 - name: chunked_vector_test
   gtest: true
@@ -5962,6 +5919,15 @@ targets:
   - test/core/transport/chttp2/graceful_shutdown_test.cc
   deps:
   - grpc_test_util
+- name: grpc_alts_credentials_options_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/core/security/grpc_alts_credentials_options_test.cc
+  deps:
+  - grpc_test_util
 - name: grpc_authorization_engine_test
   gtest: true
   build: test
@@ -6510,6 +6476,26 @@ targets:
   headers: []
   src:
   - test/core/json/json_test.cc
+  deps:
+  - grpc_test_util
+  uses_polling: false
+- name: json_token_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/core/security/json_token_test.cc
+  deps:
+  - grpc_test_util
+  uses_polling: false
+- name: jwt_verifier_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/core/security/jwt_verifier_test.cc
   deps:
   - grpc_test_util
   uses_polling: false
@@ -7742,6 +7728,26 @@ targets:
   - test/core/surface/secure_channel_create_test.cc
   deps:
   - grpc_test_util
+- name: secure_endpoint_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - test/core/iomgr/endpoint_tests.h
+  src:
+  - test/core/iomgr/endpoint_tests.cc
+  - test/core/security/secure_endpoint_test.cc
+  deps:
+  - grpc_test_util
+- name: security_connector_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/core/security/security_connector_test.cc
+  deps:
+  - grpc_test_util
 - name: seq_test
   gtest: true
   build: test
@@ -8111,6 +8117,15 @@ targets:
   headers: []
   src:
   - test/core/address_utils/sockaddr_utils_test.cc
+  deps:
+  - grpc_test_util
+- name: ssl_credentials_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/core/security/ssl_credentials_test.cc
   deps:
   - grpc_test_util
 - name: ssl_transport_security_test
