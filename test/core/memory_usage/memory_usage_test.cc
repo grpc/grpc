@@ -36,7 +36,8 @@ ABSL_FLAG(std::string, benchmark_name, "call", "Which benchmark to run");
 ABSL_FLAG(int, size, 1000, "Number of channels/calls");
 ABSL_FLAG(std::string, scenario_config, "default",
           "Use minimal stack/resource quote/secure server");
-ABSL_FLAG(bool, memory_profiling, false, "Run memory profiling");
+ABSL_FLAG(bool, memory_profiling, false,
+          "Run memory profiling");  // not connected to anything yet
 
 /*ABSL_FLAG(int, warmup, 100, "Warmup iterations");
 ABSL_FLAG(int, benchmark, 1000, "Benchmark iterations");
@@ -79,20 +80,21 @@ int main(int argc, char** argv) {
     strcpy(root, ".");
   }
 
+  /* Set configurations */
+  std::string minstack_arg = "--nominstack";
+  std::string secure_arg = "--nosecure";
+  if (absl::GetFlag(FLAGS_scenario_config) == "secure") secure_arg = "--secure";
+  if (absl::GetFlag(FLAGS_scenario_config) == "resource_quota") {
+    secure_arg = "--secure";
+    // add in resource quota parameter setting later
+  }
+  if (absl::GetFlag(FLAGS_scenario_config) == "minstack")
+    minstack_arg = "--minstack";
+  if (absl::GetFlag(FLAGS_size) == 0) absl::SetFlag(&FLAGS_size, 50000);
+
   /* per-call memory usage benchmark */
   if (absl::GetFlag(FLAGS_benchmark_name) == "call") {
-    /* Set configurations */
-    std::string minstack_arg = absl::StrCat("--minstack=", false);
-    std::string secure_arg = "--nosecure";
-    if (absl::GetFlag(FLAGS_scenario_config) == "secure")
-      secure_arg = "--secure";
-    if (absl::GetFlag(FLAGS_scenario_config) == "resource_quota") {
-      secure_arg = "--secure";
-      // add in resource quota parameter setting later
-    }
-    if (absl::GetFlag(FLAGS_scenario_config) == "minstack")
-      minstack_arg = absl::StrCat("--minstack=", true);
-
+    printf("Running Per-call\n");
     /* start the server */
     Subprocess svr({absl::StrCat(root, "/memory_usage_server",
                                  gpr_subprocess_binary_extension()),
@@ -117,4 +119,5 @@ int main(int argc, char** argv) {
   }
 
   // TO DO chennancy, return statement
+  return 5;
 }
