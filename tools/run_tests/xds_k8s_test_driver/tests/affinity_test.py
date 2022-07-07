@@ -45,7 +45,9 @@ class AffinityTest(xds_k8s_testcase.RegularXdsKubernetesTestCase):
 
     @staticmethod
     def is_supported(config: skips.TestConfig) -> bool:
-        if config.client_lang in _Lang.CPP | _Lang.JAVA:
+        if config.client_lang == _Lang.CPP:
+            return config.version_gte('v1.48.x')
+        elif config.client_lang == _Lang.JAVA:
             return config.version_gte('v1.40.x')
         elif config.client_lang == _Lang.GO:
             return config.version_gte('v1.41.x')

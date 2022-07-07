@@ -56,7 +56,9 @@ _ChannelzChannelState = grpc_channelz.ChannelState
 def _is_supported(config: skips.TestConfig) -> bool:
     # Per "Ring hash" in
     # https://github.com/grpc/grpc/blob/master/doc/grpc_xds_features.md
-    if config.client_lang in _Lang.CPP | _Lang.JAVA:
+    if config.client_lang == _Lang.CPP:
+        return config.version_gte('v1.48.x')
+    elif config.client_lang == _Lang.JAVA:
         return config.version_gte('v1.40.x')
     elif config.client_lang == _Lang.GO:
         return config.version_gte('v1.41.x')
