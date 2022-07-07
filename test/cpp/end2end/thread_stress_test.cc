@@ -314,12 +314,13 @@ TYPED_TEST(End2endTest, ThreadStress) {
   std::vector<std::thread> threads;
   gpr_atm errors;
   gpr_atm_rel_store(&errors, static_cast<gpr_atm>(0));
-  threads.reserve(kNumThreads);
-  for (int i = 0; i < kNumThreads; ++i) {
+  int num_threads = kNumThreads / grpc_test_slowdown_factor();
+  threads.reserve(num_threads);
+  for (int i = 0; i < num_threads; ++i) {
     threads.emplace_back(SendRpc, this->common_.GetStub(), kNumRpcs,
                          this->common_.AllowExhaustion(), &errors);
   }
-  for (int i = 0; i < kNumThreads; ++i) {
+  for (int i = 0; i < num_threads; ++i) {
     threads[i].join();
   }
   uint64_t error_cnt = static_cast<uint64_t>(gpr_atm_no_barrier_load(&errors));
