@@ -33,7 +33,7 @@
 #include "test/core/util/subprocess.h"
 
 ABSL_FLAG(std::string, benchmark_name, "call", "Which benchmark to run");
-ABSL_FLAG(int, size, 1000, "Number of channels/calls");
+ABSL_FLAG(int, size, 50000, "Number of channels/calls");
 ABSL_FLAG(std::string, scenario_config, "default",
           "Use minimal stack/resource quote/secure server");
 ABSL_FLAG(bool, memory_profiling, false,
