@@ -18,6 +18,7 @@
 
 #include "src/core/ext/filters/client_channel/lb_policy/outlier_detection/outlier_detection.h"
 
+#include <inttypes.h>
 #include <stddef.h>
 
 #include <algorithm>
