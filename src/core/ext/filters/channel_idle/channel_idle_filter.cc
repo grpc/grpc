@@ -19,23 +19,34 @@
 
 #include "src/core/ext/filters/channel_idle/channel_idle_filter.h"
 
-#include <limits.h>
 #include <stdlib.h>
 
-#include <atomic>
-#include <limits>
+#include <functional>
+#include <utility>
+
+#include "absl/types/optional.h"
+
+#include <grpc/impl/codegen/grpc_types.h>
+#include <grpc/support/log.h>
 
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_stack_builder.h"
 #include "src/core/lib/channel/promise_based_filter.h"
 #include "src/core/lib/config/core_configuration.h"
-#include "src/core/lib/gprpp/capture.h"
-#include "src/core/lib/iomgr/timer.h"
+#include "src/core/lib/debug/trace.h"
+#include "src/core/lib/gprpp/debug_location.h"
+#include "src/core/lib/gprpp/orphanable.h"
+#include "src/core/lib/iomgr/closure.h"
+#include "src/core/lib/iomgr/error.h"
+#include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/promise/exec_ctx_wakeup_scheduler.h"
 #include "src/core/lib/promise/loop.h"
+#include "src/core/lib/promise/poll.h"
 #include "src/core/lib/promise/promise.h"
 #include "src/core/lib/promise/sleep.h"
 #include "src/core/lib/promise/try_seq.h"
+#include "src/core/lib/surface/channel_init.h"
+#include "src/core/lib/surface/channel_stack_type.h"
 #include "src/core/lib/transport/http2_errors.h"
 
 namespace grpc_core {
@@ -198,14 +209,14 @@ ArenaPromise<ServerMetadataHandle> ChannelIdleFilter::MakeCallPromise(
   using Decrementer = std::unique_ptr<ChannelIdleFilter, CallCountDecreaser>;
   IncreaseCallCount();
   return ArenaPromise<ServerMetadataHandle>(
-      Capture([](Decrementer*, ArenaPromise<ServerMetadataHandle>* next)
-                  -> Poll<ServerMetadataHandle> { return (*next)(); },
-              Decrementer(this), next_promise_factory(std::move(call_args))));
+      [decrementer = Decrementer(this),
+       next = next_promise_factory(std::move(call_args))]() mutable
+      -> Poll<ServerMetadataHandle> { return next(); });
 }
 
 bool ChannelIdleFilter::StartTransportOp(grpc_transport_op* op) {
   // Catch the disconnect_with_error transport op.
-  if (op->disconnect_with_error != GRPC_ERROR_NONE) Shutdown();
+  if (!GRPC_ERROR_IS_NONE(op->disconnect_with_error)) Shutdown();
   // Pass the op to the next filter.
   return false;
 }

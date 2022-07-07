@@ -933,7 +933,7 @@ XdsClusterResolverLb::CreateChildPolicyConfigLocked() {
   grpc_error_handle error = GRPC_ERROR_NONE;
   RefCountedPtr<LoadBalancingPolicy::Config> config =
       LoadBalancingPolicyRegistry::ParseLoadBalancingConfig(json, &error);
-  if (error != GRPC_ERROR_NONE) {
+  if (!GRPC_ERROR_IS_NONE(error)) {
     // This should never happen, but if it does, we basically have no
     // way to fix it, so we put the channel in TRANSIENT_FAILURE.
     gpr_log(GPR_ERROR,
@@ -1032,7 +1032,7 @@ class XdsClusterResolverLbFactory : public LoadBalancingPolicyFactory {
 
   RefCountedPtr<LoadBalancingPolicy::Config> ParseLoadBalancingConfig(
       const Json& json, grpc_error_handle* error) const override {
-    GPR_DEBUG_ASSERT(error != nullptr && *error == GRPC_ERROR_NONE);
+    GPR_DEBUG_ASSERT(error != nullptr && GRPC_ERROR_IS_NONE(*error));
     if (json.type() == Json::Type::JSON_NULL) {
       // xds_cluster_resolver was mentioned as a policy in the deprecated
       // loadBalancingPolicy field or in the client API.
@@ -1152,7 +1152,7 @@ class XdsClusterResolverLbFactory : public LoadBalancingPolicyFactory {
         grpc_error_handle parse_error;
         discovery_mechanism->lrs_load_reporting_server.emplace(
             XdsBootstrap::XdsServer::Parse(it->second, &parse_error));
-        if (parse_error != GRPC_ERROR_NONE) {
+        if (!GRPC_ERROR_IS_NONE(parse_error)) {
           error_list.push_back(GRPC_ERROR_CREATE_FROM_CPP_STRING(
               absl::StrCat("errors parsing lrs_load_reporting_server")));
           error_list.push_back(parse_error);

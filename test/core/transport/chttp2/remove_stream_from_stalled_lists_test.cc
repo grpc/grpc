@@ -232,10 +232,7 @@ class TestServer {
 
   static void HandleOneRpc(grpc_call* call, grpc_completion_queue* call_cq) {
     // Send a large enough payload to get us stalled on outgoing flow control
-    std::string send_payload = "";
-    for (int i = 0; i < 4 * 1e6; i++) {
-      send_payload += "a";
-    }
+    std::string send_payload(4 * 1024 * 1024, 'a');
     grpc_slice request_payload_slice =
         grpc_slice_from_copied_string(send_payload.c_str());
     grpc_byte_buffer* request_payload =

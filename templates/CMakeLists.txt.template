@@ -263,9 +263,9 @@
     set(_gRPC_PLATFORM_WINDOWS ON)
   endif()
 
-   # Use C99 standard
+   # Use C11 standard
   if (NOT DEFINED CMAKE_C_STANDARD)
-    set(CMAKE_C_STANDARD 99)
+    set(CMAKE_C_STANDARD 11)
   endif()
 
   # Add c++14 flags
@@ -308,6 +308,8 @@
     set(_gRPC_C_CXX_FLAGS "<%text>${_gRPC_C_CXX_FLAGS}</%text> /wd4987 /wd4774 /wd4819 /wd4996 /wd4619")
     # Silences thousands of trucation warnings
     set(_gRPC_C_CXX_FLAGS "<%text>${_gRPC_C_CXX_FLAGS}</%text> /wd4503")
+    # Tell MSVC to build grpc using utf-8
+    set(_gRPC_C_CXX_FLAGS "<%text>${_gRPC_C_CXX_FLAGS}</%text> /utf-8")
   endif()
   if (MINGW)
     add_definitions(-D_WIN32_WINNT=0x600)
@@ -342,7 +344,7 @@
     add_definitions("-DGRPC_XDS_USER_AGENT_NAME_SUFFIX=\"csharp\"" "-DGRPC_XDS_USER_AGENT_VERSION_SUFFIX=\"${settings.csharp_version}\"")
   endif()
 
-  if(UNIX)
+  if(UNIX AND NOT HAIKU)
     # -pthread does more than -lpthread
     set(THREADS_PREFER_PTHREAD_FLAG ON)
     find_package(Threads)
@@ -850,7 +852,7 @@
       "<%text>${output_filepath}</%text>"
       @ONLY)
     install(FILES "<%text>${output_filepath}</%text>"
-      DESTINATION "lib/pkgconfig/")
+      DESTINATION "<%text>${gRPC_INSTALL_LIBDIR}/pkgconfig</%text>")
   endfunction()
 
   # gpr .pc file

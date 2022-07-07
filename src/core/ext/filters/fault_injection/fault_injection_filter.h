@@ -19,9 +19,14 @@
 
 #include <grpc/support/port_platform.h>
 
-#include "src/core/ext/filters/fault_injection/service_config_parser.h"
-#include "src/core/lib/channel/channel_stack.h"
+#include <stddef.h>
+
+#include "absl/status/statusor.h"
+
+#include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/channel/channel_fwd.h"
 #include "src/core/lib/channel/promise_based_filter.h"
+#include "src/core/lib/promise/arena_promise.h"
 #include "src/core/lib/transport/transport.h"
 
 // Channel arg key for enabling parsing fault injection via method config.
@@ -53,7 +58,7 @@ class FaultInjectionFilter : public ChannelFilter {
       const ClientMetadataHandle& initial_metadata);
 
   // The relative index of instances of the same filter.
-  int index_;
+  size_t index_;
   const size_t service_config_parser_index_;
 };
 

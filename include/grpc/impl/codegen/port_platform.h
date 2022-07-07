@@ -49,10 +49,11 @@
 #endif  // GPR_ABSEIL_SYNC
 
 /*
- * Defines GRPC_ERROR_IS_ABSEIL_STATUS to use absl::Status for grpc_error_handle
+ * Defines GRPC_ERROR_IS_NOT_ABSEIL_STATUS to not use absl::Status for
+ * grpc_error_handle. This is a temporary knob for migration process.
  */
-#ifndef GRPC_ERROR_IS_ABSEIL_STATUS
-// #define GRPC_ERROR_IS_ABSEIL_STATUS 1
+#ifndef GRPC_ERROR_IS_NOT_ABSEIL_STATUS
+#define GRPC_ERROR_IS_ABSEIL_STATUS 1
 #endif
 
 /* Get windows.h included everywhere (we need it) */
@@ -207,6 +208,7 @@
 #define GPR_CPU_POSIX 1
 #define GPR_PLATFORM_STRING "asylo"
 #define GPR_GCC_SYNC 1
+#define GPR_POSIX_STAT 1
 #define GPR_POSIX_SYNC 1
 #define GPR_POSIX_STRING 1
 #define GPR_POSIX_LOG 1
@@ -219,6 +221,8 @@
 #define GRPC_TIMER_USE_GENERIC 1
 #define GRPC_POSIX_NO_SPECIAL_WAKEUP_FD 1
 #define GRPC_POSIX_WAKEUP_FD 1
+#define GRPC_HAVE_MSG_NOSIGNAL 1
+#define GRPC_HAVE_UNIX_SOCKET 1
 #define GRPC_ARES 0
 #define GPR_NO_AUTODETECT_PLATFORM 1
 #elif defined(__APPLE__)
@@ -352,6 +356,32 @@
 #else /* _LP64 */
 #define GPR_ARCH_32 1
 #endif /* _LP64 */
+#elif defined(__NetBSD__)
+// NetBSD is a community-supported platform.
+// Please contact Thomas Klausner <wiz@NetBSD.org> for support.
+#define GPR_PLATFORM_STRING "netbsd"
+#ifndef _BSD_SOURCE
+#define _BSD_SOURCE
+#endif
+#define GPR_NETBSD 1
+#define GPR_CPU_POSIX 1
+#define GPR_GCC_ATOMIC 1
+#define GPR_GCC_TLS 1
+#define GPR_POSIX_LOG 1
+#define GPR_POSIX_ENV 1
+#define GPR_POSIX_TMPFILE 1
+#define GPR_POSIX_STAT 1
+#define GPR_POSIX_STRING 1
+#define GPR_POSIX_SUBPROCESS 1
+#define GPR_POSIX_SYNC 1
+#define GPR_POSIX_TIME 1
+#define GPR_GETPID_IN_UNISTD_H 1
+#define GPR_SUPPORT_CHANNELS_FROM_FD 1
+#ifdef _LP64
+#define GPR_ARCH_64 1
+#else /* _LP64 */
+#define GPR_ARCH_32 1
+#endif /* _LP64 */
 #elif defined(__native_client__)
 #define GPR_PLATFORM_STRING "nacl"
 #ifndef _BSD_SOURCE
@@ -404,6 +434,32 @@
 #define GPR_HAS_PTHREAD_H 1
 #define GPR_GETPID_IN_UNISTD_H 1
 #define GRPC_ROOT_PEM_PATH "/config/ssl/cert.pem"
+#elif defined(__HAIKU__)
+#define GPR_PLATFORM_STRING "haiku"
+// Haiku is a community-supported platform.
+// Please contact Jerome Duval <jerome.duval@gmail.com> for support.
+#ifndef _BSD_SOURCE
+#define _BSD_SOURCE
+#endif
+#define GPR_HAIKU 1
+#define GPR_CPU_POSIX 1
+#define GPR_GCC_ATOMIC 1
+#define GPR_POSIX_LOG 1
+#define GPR_POSIX_ENV 1
+#define GPR_POSIX_TMPFILE 1
+#define GPR_POSIX_STAT 1
+#define GPR_POSIX_STRING 1
+#define GPR_POSIX_SUBPROCESS 1
+#define GPR_POSIX_SYNC 1
+#define GPR_POSIX_TIME 1
+#define GPR_HAS_PTHREAD_H 1
+#define GPR_GETPID_IN_UNISTD_H 1
+#define GPR_SUPPORT_CHANNELS_FROM_FD 1
+#ifdef _LP64
+#define GPR_ARCH_64 1
+#else /* _LP64 */
+#define GPR_ARCH_32 1
+#endif /* _LP64 */
 #else
 #error "Could not auto-detect platform"
 #endif
@@ -717,21 +773,6 @@ extern void gpr_unreachable_code(const char* reason, const char* file,
 #ifndef __STDC_FORMAT_MACROS
 #define __STDC_FORMAT_MACROS
 #endif
-
-/* Selectively enable EventEngine on specific platforms. This default can be
- * overridden using the GRPC_USE_EVENT_ENGINE compiler flag.
- */
-#ifndef GRPC_USE_EVENT_ENGINE
-/* Not enabled by default on any platforms yet. (2021.06) */
-#elif GRPC_USE_EVENT_ENGINE == 0
-/* Building with `-DGRPC_USE_EVENT_ENGINE=0` will override the default. */
-#undef GRPC_USE_EVENT_ENGINE
-#endif /* GRPC_USE_EVENT_ENGINE */
-
-#ifdef GRPC_USE_EVENT_ENGINE
-#undef GPR_SUPPORT_CHANNELS_FROM_FD
-#define GRPC_ARES 0
-#endif /* GRPC_USE_EVENT_ENGINE */
 
 #define GRPC_CALLBACK_API_NONEXPERIMENTAL
 

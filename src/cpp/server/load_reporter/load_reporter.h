@@ -21,20 +21,29 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <stddef.h>
+#include <stdint.h>
+
 #include <atomic>
 #include <chrono>
+#include <cstdint>
 #include <deque>
+#include <memory>
+#include <string>
+#include <unordered_map>
+#include <utility>
 #include <vector>
+
+#include <google/protobuf/repeated_ptr_field.h>
 
 #include "opencensus/stats/stats.h"
 #include "opencensus/tags/tag_key.h"
 
-#include <grpc/support/log.h>
-#include <grpcpp/impl/codegen/config.h>
+#include <grpcpp/support/config.h>
 
 #include "src/core/lib/gprpp/sync.h"
 #include "src/cpp/server/load_reporter/load_data_store.h"
-#include "src/proto/grpc/lb/v1/load_reporter.grpc.pb.h"
+#include "src/proto/grpc/lb/v1/load_reporter.pb.h"
 
 namespace grpc {
 namespace load_reporter {

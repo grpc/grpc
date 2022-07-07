@@ -625,20 +625,6 @@ class CSharpLanguage(Language):
         return 100
 
     def scenarios(self):
-        yield _ping_pong_scenario(
-            'csharp_protobuf_async_unary_5000rpcs_1KB_psm',
-            rpc_type='UNARY',
-            client_type='ASYNC_CLIENT',
-            server_type='ASYNC_SERVER',
-            req_size=1024,
-            resp_size=1024,
-            outstanding=5000,
-            channels=1,
-            num_clients=1,
-            secure=False,
-            async_server_threads=1,
-            categories=[PSM])
-
         yield _ping_pong_scenario('csharp_generic_async_streaming_ping_pong',
                                   rpc_type='STREAMING',
                                   client_type='ASYNC_CLIENT',
@@ -1139,19 +1125,6 @@ class RubyLanguage(Language):
         return 300
 
     def scenarios(self):
-        yield _ping_pong_scenario('ruby_protobuf_async_unary_5000rpcs_1KB_psm',
-                                  rpc_type='UNARY',
-                                  client_type='ASYNC_CLIENT',
-                                  server_type='ASYNC_SERVER',
-                                  req_size=1024,
-                                  resp_size=1024,
-                                  outstanding=5000,
-                                  channels=1,
-                                  num_clients=1,
-                                  secure=False,
-                                  async_server_threads=1,
-                                  categories=[PSM])
-
         yield _ping_pong_scenario('ruby_protobuf_sync_streaming_ping_pong',
                                   rpc_type='STREAMING',
                                   client_type='SYNC_CLIENT',

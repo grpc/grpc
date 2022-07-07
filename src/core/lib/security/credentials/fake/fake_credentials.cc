@@ -20,21 +20,24 @@
 
 #include "src/core/lib/security/credentials/fake/fake_credentials.h"
 
-#include <string.h>
+#include <stdlib.h>
 
-#include <grpc/support/alloc.h>
-#include <grpc/support/log.h>
-#include <grpc/support/string_util.h>
+#include <utility>
+
+#include "absl/strings/string_view.h"
 
 #include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/gpr/string.h"
-#include "src/core/lib/iomgr/executor.h"
+#include "src/core/lib/gprpp/ref_counted_ptr.h"
+#include "src/core/lib/promise/poll.h"
 #include "src/core/lib/promise/promise.h"
 #include "src/core/lib/security/security_connector/fake/fake_security_connector.h"
+#include "src/core/lib/security/security_connector/security_connector.h"
+#include "src/core/lib/transport/metadata_batch.h"
 
 /* -- Fake transport security credentials. -- */
 
 namespace {
+
 class grpc_fake_channel_credentials final : public grpc_channel_credentials {
  public:
   grpc_core::RefCountedPtr<grpc_channel_security_connector>
@@ -46,7 +49,10 @@ class grpc_fake_channel_credentials final : public grpc_channel_credentials {
         this->Ref(), std::move(call_creds), target, args);
   }
 
-  const char* type() const override { return "Fake"; }
+  grpc_core::UniqueTypeName type() const override {
+    static grpc_core::UniqueTypeName::Factory kFactory("Fake");
+    return kFactory.Create();
+  }
 
  private:
   int cmp_impl(const grpc_channel_credentials* other) const override {
@@ -63,7 +69,10 @@ class grpc_fake_server_credentials final : public grpc_server_credentials {
     return grpc_fake_server_security_connector_create(this->Ref());
   }
 
-  const char* type() const override { return "Fake"; }
+  grpc_core::UniqueTypeName type() const override {
+    static grpc_core::UniqueTypeName::Factory kFactory("Fake");
+    return kFactory.Create();
+  }
 };
 }  // namespace
 
@@ -101,7 +110,10 @@ grpc_md_only_test_credentials::GetRequestMetadata(
   return grpc_core::Immediate(std::move(initial_metadata));
 }
 
-const char* grpc_md_only_test_credentials::Type() { return "MdOnlyTest"; }
+grpc_core::UniqueTypeName grpc_md_only_test_credentials::Type() {
+  static grpc_core::UniqueTypeName::Factory kFactory("MdOnlyTest");
+  return kFactory.Create();
+}
 
 grpc_call_credentials* grpc_md_only_test_credentials_create(
     const char* md_key, const char* md_value) {

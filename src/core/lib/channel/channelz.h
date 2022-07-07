@@ -29,8 +29,8 @@
 #include <set>
 #include <string>
 #include <utility>
+#include <vector>
 
-#include "absl/container/inlined_vector.h"
 #include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
 
@@ -170,8 +170,7 @@ class CallCountingHelper {
   // collects the sharded data into one CounterData struct.
   void CollectData(CounterData* out);
 
-  // Really zero-sized, but 0-sized arrays are illegal on MSVC.
-  absl::InlinedVector<AtomicCounterData, 1> per_cpu_counter_data_storage_;
+  std::vector<AtomicCounterData> per_cpu_counter_data_storage_;
   size_t num_cores_ = 0;
 };
 

@@ -707,7 +707,7 @@ void Server::FailCall(size_t cq_idx, RequestedCall* rc,
                       grpc_error_handle error) {
   *rc->call = nullptr;
   rc->initial_metadata->count = 0;
-  GPR_ASSERT(error != GRPC_ERROR_NONE);
+  GPR_ASSERT(!GRPC_ERROR_IS_NONE(error));
   grpc_cq_end_op(cqs_[cq_idx], rc->tag, error, DoneRequestEvent, rc,
                  &rc->completion);
 }
@@ -829,8 +829,13 @@ void Server::ShutdownAndNotify(grpc_completion_queue* cq, void* tag) {
   if (await_requests != nullptr) {
     await_requests->WaitForNotification();
   }
-  // Shutdown listeners.
+  StopListening();
+  broadcaster.BroadcastShutdown(/*send_goaway=*/true, GRPC_ERROR_NONE);
+}
+
+void Server::StopListening() {
   for (auto& listener : listeners_) {
+    if (listener.listener == nullptr) continue;
     channelz::ListenSocketNode* channelz_listen_socket_node =
         listener.listener->channelz_listen_socket_node();
     if (channelz_node_ != nullptr && channelz_listen_socket_node != nullptr) {
@@ -842,7 +847,6 @@ void Server::ShutdownAndNotify(grpc_completion_queue* cq, void* tag) {
     listener.listener->SetOnDestroyDone(&listener.destroy_done);
     listener.listener.reset();
   }
-  broadcaster.BroadcastShutdown(/*send_goaway=*/true, GRPC_ERROR_NONE);
 }
 
 void Server::CancelAllCalls() {
@@ -1117,7 +1121,7 @@ void Server::ChannelData::AcceptStream(void* arg, grpc_transport* /*transport*/,
   grpc_call_element* elem =
       grpc_call_stack_element(grpc_call_get_call_stack(call), 0);
   auto* calld = static_cast<Server::CallData*>(elem->call_data);
-  if (error != GRPC_ERROR_NONE) {
+  if (!GRPC_ERROR_IS_NONE(error)) {
     GRPC_ERROR_UNREF(error);
     calld->FailCallCreation();
     return;
@@ -1269,7 +1273,7 @@ void Server::CallData::PublishNewRpc(void* arg, grpc_error_handle error) {
   auto* chand = static_cast<Server::ChannelData*>(call_elem->channel_data);
   RequestMatcherInterface* rm = calld->matcher_;
   Server* server = rm->server();
-  if (error != GRPC_ERROR_NONE || server->ShutdownCalled()) {
+  if (!GRPC_ERROR_IS_NONE(error) || server->ShutdownCalled()) {
     calld->state_.store(CallState::ZOMBIED, std::memory_order_relaxed);
     calld->KillZombie();
     return;
@@ -1333,7 +1337,7 @@ void Server::CallData::RecvInitialMetadataBatchComplete(
     void* arg, grpc_error_handle error) {
   grpc_call_element* elem = static_cast<grpc_call_element*>(arg);
   auto* calld = static_cast<Server::CallData*>(elem->call_data);
-  if (error != GRPC_ERROR_NONE) {
+  if (!GRPC_ERROR_IS_NONE(error)) {
     gpr_log(GPR_DEBUG, "Failed call creation: %s",
             grpc_error_std_string(error).c_str());
     calld->FailCallCreation();
@@ -1368,9 +1372,11 @@ void Server::CallData::RecvInitialMetadataReady(void* arg,
                                                 grpc_error_handle error) {
   grpc_call_element* elem = static_cast<grpc_call_element*>(arg);
   CallData* calld = static_cast<CallData*>(elem->call_data);
-  if (error == GRPC_ERROR_NONE) {
+  if (GRPC_ERROR_IS_NONE(error)) {
     calld->path_ = calld->recv_initial_metadata_->Take(HttpPathMetadata());
-    calld->host_ = calld->recv_initial_metadata_->Take(HttpAuthorityMetadata());
+    auto* host =
+        calld->recv_initial_metadata_->get_pointer(HttpAuthorityMetadata());
+    if (host != nullptr) calld->host_.emplace(host->Ref());
   } else {
     (void)GRPC_ERROR_REF(error);
   }

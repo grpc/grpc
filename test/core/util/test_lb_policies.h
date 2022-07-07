@@ -37,8 +37,7 @@ void RegisterTestPickArgsLoadBalancingPolicy(
 
 struct TrailingMetadataArgsSeen {
   absl::Status status;
-  const LoadBalancingPolicy::BackendMetricAccessor::BackendMetricData*
-      backend_metric_data;
+  const BackendMetricData* backend_metric_data;
   MetadataVector metadata;
 };
 
@@ -60,9 +59,8 @@ void RegisterAddressTestLoadBalancingPolicy(AddressTestCallback cb);
 // single subchannel whose address is in its configuration.
 void RegisterFixedAddressLoadBalancingPolicy();
 
-using OobBackendMetricCallback = std::function<void(
-    ServerAddress,
-    const LoadBalancingPolicy::BackendMetricAccessor::BackendMetricData&)>;
+using OobBackendMetricCallback =
+    std::function<void(ServerAddress, const BackendMetricData&)>;
 
 // Registers an LB policy called "oob_backend_metric_test_lb" that invokes
 // cb for each OOB backend metric report on each subchannel.

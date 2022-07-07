@@ -26,13 +26,10 @@
 #include <grpc/support/log.h>
 
 #include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/channel/channel_fwd.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/surface/channel_stack_type.h"
-
-typedef struct grpc_channel_stack grpc_channel_stack;
-typedef struct grpc_channel_element grpc_channel_element;
-typedef struct grpc_channel_filter grpc_channel_filter;
-typedef struct grpc_transport grpc_transport;
+#include "src/core/lib/transport/transport_fwd.h"
 
 namespace grpc_core {
 

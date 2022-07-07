@@ -17,9 +17,25 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <memory>
+
+#include "absl/status/status.h"
+#include "absl/status/statusor.h"
+
+#include <grpc/impl/codegen/connectivity_state.h>
+
 #include "src/core/ext/filters/channel_idle/idle_filter_state.h"
+#include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/channel/channel_fwd.h"
+#include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/channel/promise_based_filter.h"
+#include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/gprpp/single_set_ptr.h"
+#include "src/core/lib/gprpp/time.h"
+#include "src/core/lib/promise/activity.h"
+#include "src/core/lib/promise/arena_promise.h"
+#include "src/core/lib/transport/connectivity_state.h"
+#include "src/core/lib/transport/transport.h"
 
 namespace grpc_core {
 

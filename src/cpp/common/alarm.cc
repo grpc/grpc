@@ -17,15 +17,21 @@
 
 #include <grpc/support/port_platform.h>
 
-#include <memory>
+#include <functional>
+#include <utility>
 
+#include <grpc/impl/codegen/gpr_types.h>
+#include <grpc/impl/codegen/grpc_types.h>
 #include <grpc/support/log.h>
+#include <grpc/support/sync.h>
 #include <grpcpp/alarm.h>
 #include <grpcpp/completion_queue.h>
+#include <grpcpp/impl/codegen/completion_queue_tag.h>
 #include <grpcpp/impl/grpc_library.h>
-#include <grpcpp/support/time.h>
 
-#include "src/core/lib/debug/trace.h"
+#include "src/core/lib/gprpp/time.h"
+#include "src/core/lib/iomgr/closure.h"
+#include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/executor.h"
 #include "src/core/lib/iomgr/timer.h"
@@ -87,7 +93,7 @@ class AlarmImpl : public grpc::internal::CompletionQueueTag {
               GRPC_CLOSURE_CREATE(
                   [](void* arg, grpc_error_handle error) {
                     AlarmImpl* alarm = static_cast<AlarmImpl*>(arg);
-                    alarm->callback_(error == GRPC_ERROR_NONE);
+                    alarm->callback_(GRPC_ERROR_IS_NONE(error));
                     alarm->Unref();
                   },
                   arg, nullptr),

@@ -59,7 +59,7 @@ static void server_setup_transport(void* ts, grpc_transport* transport) {
   grpc_core::Server* core_server = grpc_core::Server::FromC(f->server);
   grpc_error_handle error = core_server->SetupTransport(
       transport, nullptr, core_server->channel_args(), nullptr);
-  if (error == GRPC_ERROR_NONE) {
+  if (GRPC_ERROR_IS_NONE(error)) {
     grpc_chttp2_transport_start_reading(transport, nullptr, nullptr, nullptr);
   } else {
     GRPC_ERROR_UNREF(error);

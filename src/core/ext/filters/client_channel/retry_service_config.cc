@@ -141,14 +141,14 @@ std::unique_ptr<ServiceConfigParser::ParsedConfig>
 RetryServiceConfigParser::ParseGlobalParams(const grpc_channel_args* /*args*/,
                                             const Json& json,
                                             grpc_error_handle* error) {
-  GPR_DEBUG_ASSERT(error != nullptr && *error == GRPC_ERROR_NONE);
+  GPR_DEBUG_ASSERT(error != nullptr && GRPC_ERROR_IS_NONE(*error));
   auto it = json.object_value().find("retryThrottling");
   if (it == json.object_value().end()) return nullptr;
   intptr_t max_milli_tokens = 0;
   intptr_t milli_token_ratio = 0;
   *error =
       ParseRetryThrottling(it->second, &max_milli_tokens, &milli_token_ratio);
-  if (*error != GRPC_ERROR_NONE) return nullptr;
+  if (!GRPC_ERROR_IS_NONE(*error)) return nullptr;
   return absl::make_unique<RetryGlobalConfig>(max_milli_tokens,
                                               milli_token_ratio);
 }
@@ -290,7 +290,7 @@ std::unique_ptr<ServiceConfigParser::ParsedConfig>
 RetryServiceConfigParser::ParsePerMethodParams(const grpc_channel_args* args,
                                                const Json& json,
                                                grpc_error_handle* error) {
-  GPR_DEBUG_ASSERT(error != nullptr && *error == GRPC_ERROR_NONE);
+  GPR_DEBUG_ASSERT(error != nullptr && GRPC_ERROR_IS_NONE(*error));
   // Parse retry policy.
   auto it = json.object_value().find("retryPolicy");
   if (it == json.object_value().end()) return nullptr;
@@ -303,7 +303,7 @@ RetryServiceConfigParser::ParsePerMethodParams(const grpc_channel_args* args,
   *error = ParseRetryPolicy(args, it->second, &max_attempts, &initial_backoff,
                             &max_backoff, &backoff_multiplier,
                             &retryable_status_codes, &per_attempt_recv_timeout);
-  if (*error != GRPC_ERROR_NONE) return nullptr;
+  if (!GRPC_ERROR_IS_NONE(*error)) return nullptr;
   return absl::make_unique<RetryMethodConfig>(
       max_attempts, initial_backoff, max_backoff, backoff_multiplier,
       retryable_status_codes, per_attempt_recv_timeout);

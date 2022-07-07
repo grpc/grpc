@@ -23,6 +23,7 @@
 #include <grpc/grpc.h>
 #include <grpcpp/opencensus.h>
 
+#include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/channel/channel_stack_builder_impl.h"
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/surface/channel_init.h"

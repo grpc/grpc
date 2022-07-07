@@ -18,13 +18,17 @@
 
 #include "src/cpp/common/channel_filter.h"
 
-#include <string.h>
+#include "absl/strings/str_cat.h"
+#include "absl/strings/string_view.h"
 
-#include <grpcpp/impl/codegen/slice.h>
+#include <grpc/support/log.h>
 
+#include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/channel/channel_stack_builder.h"
 #include "src/core/lib/config/core_configuration.h"
+#include "src/core/lib/slice/slice.h"
+#include "src/core/lib/surface/channel_init.h"
 
 namespace grpc {
 

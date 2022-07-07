@@ -36,6 +36,93 @@
 static gpr_mu* g_mu;
 static grpc_pollset* g_pollset;
 
+#define TSI_FAKE_FRAME_HEADER_SIZE 4
+
+typedef struct intercept_endpoint {
+  grpc_endpoint base;
+  grpc_endpoint* wrapped_ep;
+  grpc_slice_buffer staging_buffer;
+} intercept_endpoint;
+
+static void me_read(grpc_endpoint* ep, grpc_slice_buffer* slices,
+                    grpc_closure* cb, bool urgent, int min_progress_size) {
+  intercept_endpoint* m = reinterpret_cast<intercept_endpoint*>(ep);
+  grpc_endpoint_read(m->wrapped_ep, slices, cb, urgent, min_progress_size);
+}
+
+static void me_write(grpc_endpoint* ep, grpc_slice_buffer* slices,
+                     grpc_closure* cb, void* arg, int max_frame_size) {
+  intercept_endpoint* m = reinterpret_cast<intercept_endpoint*>(ep);
+  int remaining = slices->length;
+  while (remaining > 0) {
+    // Estimate the frame size of the next frame.
+    int next_frame_size =
+        tsi_fake_zero_copy_grpc_protector_next_frame_size(slices);
+    GPR_ASSERT(next_frame_size > TSI_FAKE_FRAME_HEADER_SIZE);
+    // Ensure the protected data size does not exceed the max_frame_size.
+    GPR_ASSERT(next_frame_size - TSI_FAKE_FRAME_HEADER_SIZE <= max_frame_size);
+    // Move this frame into a staging buffer and repeat.
+    grpc_slice_buffer_move_first(slices, next_frame_size, &m->staging_buffer);
+    remaining -= next_frame_size;
+  }
+  grpc_slice_buffer_swap(&m->staging_buffer, slices);
+  grpc_endpoint_write(m->wrapped_ep, slices, cb, arg, max_frame_size);
+}
+
+static void me_add_to_pollset(grpc_endpoint* /*ep*/,
+                              grpc_pollset* /*pollset*/) {}
+
+static void me_add_to_pollset_set(grpc_endpoint* /*ep*/,
+                                  grpc_pollset_set* /*pollset*/) {}
+
+static void me_delete_from_pollset_set(grpc_endpoint* /*ep*/,
+                                       grpc_pollset_set* /*pollset*/) {}
+
+static void me_shutdown(grpc_endpoint* ep, grpc_error_handle why) {
+  intercept_endpoint* m = reinterpret_cast<intercept_endpoint*>(ep);
+  grpc_endpoint_shutdown(m->wrapped_ep, why);
+}
+
+static void me_destroy(grpc_endpoint* ep) {
+  intercept_endpoint* m = reinterpret_cast<intercept_endpoint*>(ep);
+  grpc_endpoint_destroy(m->wrapped_ep);
+  grpc_slice_buffer_destroy(&m->staging_buffer);
+  gpr_free(m);
+}
+
+static absl::string_view me_get_peer(grpc_endpoint* /*ep*/) {
+  return "fake:intercept-endpoint";
+}
+
+static absl::string_view me_get_local_address(grpc_endpoint* /*ep*/) {
+  return "fake:intercept-endpoint";
+}
+
+static int me_get_fd(grpc_endpoint* /*ep*/) { return -1; }
+
+static bool me_can_track_err(grpc_endpoint* /*ep*/) { return false; }
+
+static const grpc_endpoint_vtable vtable = {me_read,
+                                            me_write,
+                                            me_add_to_pollset,
+                                            me_add_to_pollset_set,
+                                            me_delete_from_pollset_set,
+                                            me_shutdown,
+                                            me_destroy,
+                                            me_get_peer,
+                                            me_get_local_address,
+                                            me_get_fd,
+                                            me_can_track_err};
+
+grpc_endpoint* wrap_with_intercept_endpoint(grpc_endpoint* wrapped_ep) {
+  intercept_endpoint* m =
+      static_cast<intercept_endpoint*>(gpr_malloc(sizeof(*m)));
+  m->base.vtable = &vtable;
+  m->wrapped_ep = wrapped_ep;
+  grpc_slice_buffer_init(&m->staging_buffer);
+  return &m->base;
+}
+
 static grpc_endpoint_test_fixture secure_endpoint_create_fixture_tcp_socketpair(
     size_t slice_size, grpc_slice* leftover_slices, size_t leftover_nslices,
     bool use_zero_copy_protector) {
@@ -67,6 +154,13 @@ static grpc_endpoint_test_fixture secure_endpoint_create_fixture_tcp_socketpair(
   tcp = grpc_iomgr_create_endpoint_pair("fixture", &args);
   grpc_endpoint_add_to_pollset(tcp.client, g_pollset);
   grpc_endpoint_add_to_pollset(tcp.server, g_pollset);
+
+  // TODO(vigneshbabu): Extend the intercept endpoint logic to cover non-zero
+  // copy based frame protectors as well.
+  if (use_zero_copy_protector && leftover_nslices == 0) {
+    tcp.client = wrap_with_intercept_endpoint(tcp.client);
+    tcp.server = wrap_with_intercept_endpoint(tcp.server);
+  }
 
   if (leftover_nslices == 0) {
     f.client_ep = grpc_secure_endpoint_create(fake_read_protector,
@@ -125,7 +219,6 @@ static grpc_endpoint_test_fixture secure_endpoint_create_fixture_tcp_socketpair(
                                             tcp.server, nullptr, &args, 0);
   grpc_resource_quota_unref(
       static_cast<grpc_resource_quota*>(a[1].value.pointer.p));
-
   return f;
 }
 

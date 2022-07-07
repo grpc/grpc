@@ -16,37 +16,64 @@
 
 #include <grpc/support/port_platform.h>
 
+#include "src/core/ext/xds/xds_route_config.h"
+
+#include <stddef.h>
+#include <stdint.h>
+
+#include <map>
+#include <memory>
+#include <set>
+#include <string>
+#include <type_traits>
+#include <utility>
+#include <vector>
+
 #include "absl/memory/memory.h"
+#include "absl/status/status.h"
+#include "absl/status/statusor.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
 #include "absl/strings/str_join.h"
 #include "absl/strings/str_split.h"
 #include "absl/strings/string_view.h"
+#include "absl/types/optional.h"
+#include "absl/types/variant.h"
 #include "envoy/config/core/v3/base.upb.h"
 #include "envoy/config/core/v3/extension.upb.h"
 #include "envoy/config/route/v3/route.upb.h"
 #include "envoy/config/route/v3/route.upbdefs.h"
 #include "envoy/config/route/v3/route_components.upb.h"
-#include "envoy/config/route/v3/route_components.upbdefs.h"
 #include "envoy/type/matcher/v3/regex.upb.h"
-#include "envoy/type/matcher/v3/string.upb.h"
 #include "envoy/type/v3/percent.upb.h"
 #include "envoy/type/v3/range.upb.h"
 #include "google/protobuf/any.upb.h"
+#include "google/protobuf/duration.upb.h"
 #include "google/protobuf/wrappers.upb.h"
+#include "re2/re2.h"
+#include "upb/def.h"
 #include "upb/text_encode.h"
 #include "upb/upb.h"
-#include "upb/upb.hpp"
+
+#include <grpc/status.h>
+#include <grpc/support/alloc.h>
+#include <grpc/support/log.h>
 
 #include "src/core/ext/xds/upb_utils.h"
-#include "src/core/ext/xds/xds_api.h"
 #include "src/core/ext/xds/xds_cluster_specifier_plugin.h"
 #include "src/core/ext/xds/xds_common_types.h"
+#include "src/core/ext/xds/xds_http_filters.h"
 #include "src/core/ext/xds/xds_resource_type.h"
+#include "src/core/ext/xds/xds_resource_type_impl.h"
 #include "src/core/ext/xds/xds_routing.h"
+#include "src/core/lib/channel/status_util.h"
+#include "src/core/lib/debug/trace.h"
 #include "src/core/lib/gpr/env.h"
 #include "src/core/lib/gpr/string.h"
+#include "src/core/lib/gprpp/status_helper.h"
+#include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/iomgr/error.h"
+#include "src/core/lib/matchers/matchers.h"
 #include "src/core/lib/transport/error_utils.h"
 
 namespace grpc_core {
@@ -336,19 +363,19 @@ grpc_error_handle ClusterSpecifierPluginParse(
       return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
           "Could not obtrain TypedExtensionConfig for plugin config.");
     }
-    absl::string_view plugin_type;
-    grpc_error_handle error =
-        ExtractExtensionTypeName(context, any, &plugin_type);
-    if (error != GRPC_ERROR_NONE) return error;
+    auto plugin_type = ExtractExtensionTypeName(context, any);
+    if (!plugin_type.ok()) {
+      return absl_status_to_grpc_error(plugin_type.status());
+    }
     bool is_optional = envoy_config_route_v3_ClusterSpecifierPlugin_is_optional(
         cluster_specifier_plugin[i]);
     const XdsClusterSpecifierPluginImpl* cluster_specifier_plugin_impl =
-        XdsClusterSpecifierPluginRegistry::GetPluginForType(plugin_type);
+        XdsClusterSpecifierPluginRegistry::GetPluginForType(plugin_type->type);
     std::string lb_policy_config;
     if (cluster_specifier_plugin_impl == nullptr) {
       if (!is_optional) {
-        return GRPC_ERROR_CREATE_FROM_CPP_STRING(
-            absl::StrCat("Unknown ClusterSpecifierPlugin type ", plugin_type));
+        return GRPC_ERROR_CREATE_FROM_CPP_STRING(absl::StrCat(
+            "Unknown ClusterSpecifierPlugin type ", plugin_type->type));
       }
       // Optional plugin, leave lb_policy_config empty.
     } else {
@@ -601,22 +628,23 @@ grpc_error_handle ParseTypedPerFilterConfig(
             absl::StrCat("no filter config specified for filter name ", key));
       }
     }
-    grpc_error_handle error =
-        ExtractExtensionTypeName(context, any, &filter_type);
-    if (error != GRPC_ERROR_NONE) return error;
+    auto type = ExtractExtensionTypeName(context, any);
+    if (!type.ok()) {
+      return absl_status_to_grpc_error(type.status());
+    }
     const XdsHttpFilterImpl* filter_impl =
-        XdsHttpFilterRegistry::GetFilterForType(filter_type);
+        XdsHttpFilterRegistry::GetFilterForType(type->type);
     if (filter_impl == nullptr) {
       if (is_optional) continue;
       return GRPC_ERROR_CREATE_FROM_CPP_STRING(
-          absl::StrCat("no filter registered for config type ", filter_type));
+          absl::StrCat("no filter registered for config type ", type->type));
     }
     absl::StatusOr<XdsHttpFilterImpl::FilterConfig> filter_config =
         filter_impl->GenerateFilterConfigOverride(
             google_protobuf_Any_value(any), context.arena);
     if (!filter_config.ok()) {
       return GRPC_ERROR_CREATE_FROM_CPP_STRING(absl::StrCat(
-          "filter config for type ", filter_type,
+          "filter config for type ", type->type,
           " failed to parse: ", StatusToString(filter_config.status())));
     }
     (*typed_per_filter_config)[std::string(key)] = std::move(*filter_config);
@@ -767,7 +795,7 @@ grpc_error_handle RouteActionParse(
             envoy_config_route_v3_WeightedCluster_ClusterWeight_TypedPerFilterConfigEntry_key,
             envoy_config_route_v3_WeightedCluster_ClusterWeight_TypedPerFilterConfigEntry_value,
             &cluster.typed_per_filter_config);
-        if (error != GRPC_ERROR_NONE) return error;
+        if (!GRPC_ERROR_IS_NONE(error)) return error;
       }
       action_weighted_clusters.emplace_back(std::move(cluster));
     }
@@ -906,7 +934,7 @@ grpc_error_handle RouteActionParse(
   if (retry_policy != nullptr) {
     absl::optional<XdsRouteConfigResource::RetryPolicy> retry;
     grpc_error_handle error = RetryPolicyParse(context, retry_policy, &retry);
-    if (error != GRPC_ERROR_NONE) return error;
+    if (!GRPC_ERROR_IS_NONE(error)) return error;
     route->retry_policy = retry;
   }
   return GRPC_ERROR_NONE;
@@ -922,7 +950,7 @@ grpc_error_handle XdsRouteConfigResource::Parse(
   if (XdsRlsEnabled()) {
     grpc_error_handle error =
         ClusterSpecifierPluginParse(context, route_config, rds_update);
-    if (error != GRPC_ERROR_NONE) return error;
+    if (!GRPC_ERROR_IS_NONE(error)) return error;
   }
   // Get the virtual hosts.
   size_t num_virtual_hosts;
@@ -958,7 +986,7 @@ grpc_error_handle XdsRouteConfigResource::Parse(
           envoy_config_route_v3_VirtualHost_TypedPerFilterConfigEntry_key,
           envoy_config_route_v3_VirtualHost_TypedPerFilterConfigEntry_value,
           &vhost.typed_per_filter_config);
-      if (error != GRPC_ERROR_NONE) return error;
+      if (!GRPC_ERROR_IS_NONE(error)) return error;
     }
     // Parse retry policy.
     absl::optional<XdsRouteConfigResource::RetryPolicy>
@@ -968,7 +996,7 @@ grpc_error_handle XdsRouteConfigResource::Parse(
     if (retry_policy != nullptr) {
       grpc_error_handle error =
           RetryPolicyParse(context, retry_policy, &virtual_host_retry_policy);
-      if (error != GRPC_ERROR_NONE) return error;
+      if (!GRPC_ERROR_IS_NONE(error)) return error;
     }
     // Parse routes.
     size_t num_routes;
@@ -1001,12 +1029,12 @@ grpc_error_handle XdsRouteConfigResource::Parse(
       bool ignore_route = false;
       grpc_error_handle error =
           RoutePathMatchParse(match, &route, &ignore_route);
-      if (error != GRPC_ERROR_NONE) return error;
+      if (!GRPC_ERROR_IS_NONE(error)) return error;
       if (ignore_route) continue;
       error = RouteHeaderMatchersParse(match, &route);
-      if (error != GRPC_ERROR_NONE) return error;
+      if (!GRPC_ERROR_IS_NONE(error)) return error;
       error = RouteRuntimeFractionParse(match, &route);
-      if (error != GRPC_ERROR_NONE) return error;
+      if (!GRPC_ERROR_IS_NONE(error)) return error;
       if (envoy_config_route_v3_Route_has_route(routes[j])) {
         route.action.emplace<XdsRouteConfigResource::Route::RouteAction>();
         auto& route_action =
@@ -1014,7 +1042,7 @@ grpc_error_handle XdsRouteConfigResource::Parse(
         error = RouteActionParse(context, routes[j],
                                  rds_update->cluster_specifier_plugin_map,
                                  &route_action, &ignore_route);
-        if (error != GRPC_ERROR_NONE) return error;
+        if (!GRPC_ERROR_IS_NONE(error)) return error;
         if (ignore_route) continue;
         if (route_action.retry_policy == absl::nullopt &&
             retry_policy != nullptr) {
@@ -1042,7 +1070,7 @@ grpc_error_handle XdsRouteConfigResource::Parse(
             envoy_config_route_v3_Route_TypedPerFilterConfigEntry_key,
             envoy_config_route_v3_Route_TypedPerFilterConfigEntry_value,
             &route.typed_per_filter_config);
-        if (error != GRPC_ERROR_NONE) return error;
+        if (!GRPC_ERROR_IS_NONE(error)) return error;
       }
       vhost.routes.emplace_back(std::move(route));
     }
@@ -1100,7 +1128,7 @@ XdsRouteConfigResourceType::Decode(const XdsEncodingContext& context,
   auto route_config_data = absl::make_unique<ResourceDataSubclass>();
   grpc_error_handle error = XdsRouteConfigResource::Parse(
       context, resource, &route_config_data->resource);
-  if (error != GRPC_ERROR_NONE) {
+  if (!GRPC_ERROR_IS_NONE(error)) {
     std::string error_str = grpc_error_std_string(error);
     GRPC_ERROR_UNREF(error);
     if (GRPC_TRACE_FLAG_ENABLED(*context.tracer)) {

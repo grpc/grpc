@@ -20,12 +20,19 @@
 
 #include "src/core/lib/security/credentials/xds/xds_credentials.h"
 
+#include "absl/strings/string_view.h"
+
+#include <grpc/grpc_security_constants.h>
+#include <grpc/support/log.h>
+
 #include "src/core/ext/filters/client_channel/lb_policy/xds/xds_channel_args.h"
 #include "src/core/ext/xds/xds_certificate_provider.h"
+#include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/gpr/useful.h"
+#include "src/core/lib/security/credentials/tls/grpc_tls_certificate_provider.h"
 #include "src/core/lib/security/credentials/tls/grpc_tls_credentials_options.h"
 #include "src/core/lib/security/credentials/tls/tls_credentials.h"
 #include "src/core/lib/security/credentials/tls/tls_utils.h"
-#include "src/core/lib/uri/uri_parser.h"
 
 namespace grpc_core {
 
@@ -105,7 +112,10 @@ int XdsCertificateVerifier::CompareImpl(
   return cluster_name_.compare(o->cluster_name_);
 }
 
-const char* XdsCertificateVerifier::type() const { return "Xds"; }
+UniqueTypeName XdsCertificateVerifier::type() const {
+  static UniqueTypeName::Factory kFactory("Xds");
+  return kFactory.Create();
+}
 
 bool TestOnlyXdsVerifySubjectAlternativeNames(
     const char* const* subject_alternative_names,
@@ -182,7 +192,10 @@ XdsCredentials::create_security_connector(
       std::move(call_creds), target_name, temp_args.args, new_args);
 }
 
-const char* XdsCredentials::Type() { return "Xds"; }
+UniqueTypeName XdsCredentials::Type() {
+  static UniqueTypeName::Factory kFactory("Xds");
+  return kFactory.Create();
+}
 
 //
 // XdsServerCredentials
@@ -220,7 +233,10 @@ XdsServerCredentials::create_security_connector(const grpc_channel_args* args) {
   return fallback_credentials_->create_security_connector(args);
 }
 
-const char* XdsServerCredentials::Type() { return "Xds"; }
+UniqueTypeName XdsServerCredentials::Type() {
+  static UniqueTypeName::Factory kFactory("Xds");
+  return kFactory.Create();
+}
 
 }  // namespace grpc_core
 

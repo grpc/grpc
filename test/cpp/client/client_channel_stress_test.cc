@@ -43,6 +43,7 @@
 #include "src/core/lib/address_utils/parse_address.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/gprpp/thd.h"
+#include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/sockaddr.h"
 #include "src/core/lib/resolver/server_address.h"
 #include "src/core/lib/service_config/service_config_impl.h"
@@ -244,7 +245,7 @@ class ClientChannelStressTest {
     grpc_error_handle error = GRPC_ERROR_NONE;
     result.service_config = grpc_core::ServiceConfigImpl::Create(
         nullptr, "{\"loadBalancingConfig\":[{\"grpclb\":{}}]}", &error);
-    GPR_ASSERT(error == GRPC_ERROR_NONE);
+    GPR_ASSERT(GRPC_ERROR_IS_NONE(error));
     grpc_core::ServerAddressList balancer_addresses =
         CreateAddressListFromAddressDataList(balancer_address_data);
     grpc_arg arg = CreateGrpclbBalancerAddressesArg(&balancer_addresses);

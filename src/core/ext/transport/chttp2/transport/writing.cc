@@ -22,7 +22,6 @@
 #include <stddef.h>
 
 #include <algorithm>
-#include <memory>
 #include <string>
 
 #include "absl/types/optional.h"
@@ -50,7 +49,6 @@
 #include "src/core/lib/debug/stats.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/gprpp/debug_location.h"
-#include "src/core/lib/gprpp/manual_constructor.h"
 #include "src/core/lib/gprpp/ref_counted.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/gprpp/time.h"
@@ -220,14 +218,14 @@ static void report_stall(grpc_chttp2_transport* t, grpc_chttp2_stream* s,
         s->flow_controlled_buffer.length, s->flow_controlled_bytes_flowed,
         t->settings[GRPC_ACKED_SETTINGS]
                    [GRPC_CHTTP2_SETTINGS_INITIAL_WINDOW_SIZE],
-        t->flow_control->remote_window(),
+        t->flow_control.remote_window(),
         static_cast<uint32_t>(std::max(
             int64_t(0),
-            s->flow_control->remote_window_delta() +
+            s->flow_control.remote_window_delta() +
                 static_cast<int64_t>(
                     t->settings[GRPC_PEER_SETTINGS]
                                [GRPC_CHTTP2_SETTINGS_INITIAL_WINDOW_SIZE]))),
-        s->flow_control->remote_window_delta());
+        s->flow_control.remote_window_delta());
   }
 }
 
@@ -304,7 +302,7 @@ class WriteContext {
 
   void FlushWindowUpdates() {
     uint32_t transport_announce =
-        t_->flow_control->MaybeSendUpdate(t_->outbuf.count > 0);
+        t_->flow_control.MaybeSendUpdate(t_->outbuf.count > 0);
     if (transport_announce) {
       grpc_transport_one_way_stats throwaway_stats;
       grpc_slice_buffer_add(
@@ -331,7 +329,7 @@ class WriteContext {
   void UpdateStreamsNoLongerStalled() {
     grpc_chttp2_stream* s;
     while (grpc_chttp2_list_pop_stalled_by_transport(t_, &s)) {
-      if (t_->closed_with_error == GRPC_ERROR_NONE &&
+      if (GRPC_ERROR_IS_NONE(t_->closed_with_error) &&
           grpc_chttp2_list_add_writable_stream(t_, s)) {
         if (!s->refcount->refs.RefIfNonZero()) {
           grpc_chttp2_list_remove_writable_stream(t_, s);
@@ -392,7 +390,7 @@ class DataSendContext {
   uint32_t stream_remote_window() const {
     return static_cast<uint32_t>(std::max(
         int64_t(0),
-        s_->flow_control->remote_window_delta() +
+        s_->flow_control.remote_window_delta() +
             static_cast<int64_t>(
                 t_->settings[GRPC_PEER_SETTINGS]
                             [GRPC_CHTTP2_SETTINGS_INITIAL_WINDOW_SIZE])));
@@ -402,7 +400,7 @@ class DataSendContext {
     return static_cast<uint32_t>(std::min(
         t_->settings[GRPC_PEER_SETTINGS][GRPC_CHTTP2_SETTINGS_MAX_FRAME_SIZE],
         static_cast<uint32_t>(std::min(int64_t(stream_remote_window()),
-                                       t_->flow_control->remote_window()))));
+                                       t_->flow_control.remote_window()))));
   }
 
   bool AnyOutgoing() const { return max_outgoing() > 0; }
@@ -411,12 +409,11 @@ class DataSendContext {
     uint32_t send_bytes = static_cast<uint32_t>(
         std::min(size_t(max_outgoing()), s_->flow_controlled_buffer.length));
     is_last_frame_ = send_bytes == s_->flow_controlled_buffer.length &&
-                     s_->fetching_send_message == nullptr &&
                      s_->send_trailing_metadata != nullptr &&
                      s_->send_trailing_metadata->empty();
     grpc_chttp2_encode_data(s_->id, &s_->flow_controlled_buffer, send_bytes,
                             is_last_frame_, &s_->stats.outgoing, &t_->outbuf);
-    s_->flow_control->SentData(send_bytes);
+    sfc_upd_.SentData(send_bytes);
     s_->sending_bytes += send_bytes;
   }
 
@@ -436,6 +433,8 @@ class DataSendContext {
   WriteContext* write_context_;
   grpc_chttp2_transport* t_;
   grpc_chttp2_stream* s_;
+  grpc_core::chttp2::StreamFlowControl::OutgoingUpdateContext sfc_upd_{
+      &s_->flow_control};
   const size_t sending_bytes_before_;
   bool is_last_frame_ = false;
 };
@@ -445,11 +444,9 @@ class StreamWriteContext {
   StreamWriteContext(WriteContext* write_context, grpc_chttp2_stream* s)
       : write_context_(write_context), t_(write_context->transport()), s_(s) {
     GRPC_CHTTP2_IF_TRACING(
-        gpr_log(GPR_INFO, "W:%p %s[%d] im-(sent,send)=(%d,%d) announce=%d", t_,
+        gpr_log(GPR_INFO, "W:%p %s[%d] im-(sent,send)=(%d,%d)", t_,
                 t_->is_client ? "CLIENT" : "SERVER", s->id,
-                s->sent_initial_metadata, s->send_initial_metadata != nullptr,
-                (int)(s->flow_control->local_window_delta() -
-                      s->flow_control->announced_window_delta())));
+                s->sent_initial_metadata, s->send_initial_metadata != nullptr));
   }
 
   void FlushInitialMetadata() {
@@ -462,8 +459,7 @@ class StreamWriteContext {
     // trailing metadata.  This results in a Trailers-Only response,
     // which is required for retries, as per:
     // https://github.com/grpc/proposal/blob/master/A6-client-retries.md#when-retries-are-valid
-    if (!t_->is_client && s_->fetching_send_message == nullptr &&
-        s_->flow_controlled_buffer.length == 0 &&
+    if (!t_->is_client && s_->flow_controlled_buffer.length == 0 &&
         s_->send_trailing_metadata != nullptr &&
         is_default_initial_metadata(s_->send_initial_metadata)) {
       ConvertInitialMetadataToTrailingMetadata();
@@ -495,8 +491,10 @@ class StreamWriteContext {
   }
 
   void FlushWindowUpdates() {
+    if (s_->read_closed) return;
+
     /* send any window updates */
-    const uint32_t stream_announce = s_->flow_control->MaybeSendUpdate();
+    const uint32_t stream_announce = s_->flow_control.MaybeSendUpdate();
     if (stream_announce == 0) return;
 
     grpc_slice_buffer_add(
@@ -516,7 +514,7 @@ class StreamWriteContext {
     DataSendContext data_send_context(write_context_, t_, s_);
 
     if (!data_send_context.AnyOutgoing()) {
-      if (t_->flow_control->remote_window() <= 0) {
+      if (t_->flow_control.remote_window() <= 0) {
         report_stall(t_, s_, "transport");
         grpc_chttp2_list_add_stalled_by_transport(t_, s_);
       } else if (data_send_context.stream_remote_window() <= 0) {
@@ -547,7 +545,6 @@ class StreamWriteContext {
     if (!s_->sent_initial_metadata) return;
 
     if (s_->send_trailing_metadata == nullptr) return;
-    if (s_->fetching_send_message != nullptr) return;
     if (s_->flow_controlled_buffer.length != 0) return;
 
     GRPC_CHTTP2_IF_TRACING(gpr_log(GPR_INFO, "sending trailing_metadata"));
@@ -635,7 +632,7 @@ grpc_chttp2_begin_write_result grpc_chttp2_begin_write(
   ctx.FlushQueuedBuffers();
   ctx.EnactHpackSettings();
 
-  if (t->flow_control->remote_window() > 0) {
+  if (t->flow_control.remote_window() > 0) {
     ctx.UpdateStreamsNoLongerStalled();
   }
 

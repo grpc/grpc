@@ -14,11 +14,13 @@
 // limitations under the License.
 //
 
-#include "absl/container/inlined_vector.h"
+#include <string>
+#include <vector>
 
 #include <grpc/grpc_security.h>
-#include <grpc/support/alloc.h>
+#include <grpc/support/log.h>
 #include <grpcpp/security/tls_certificate_provider.h>
+#include <grpcpp/support/config.h>
 
 namespace grpc {
 namespace experimental {

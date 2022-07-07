@@ -21,18 +21,18 @@
 #include "src/core/lib/security/credentials/composite/composite_credentials.h"
 
 #include <cstring>
-#include <new>
 #include <vector>
 
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_join.h"
+#include "absl/strings/string_view.h"
 
-#include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
-#include <grpc/support/string_util.h>
 
+#include "src/core/lib/debug/trace.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
-#include "src/core/lib/iomgr/polling_entity.h"
+#include "src/core/lib/promise/detail/basic_seq.h"
+#include "src/core/lib/promise/poll.h"
 #include "src/core/lib/promise/try_seq.h"
 #include "src/core/lib/surface/api_trace.h"
 #include "src/core/lib/transport/transport.h"
@@ -41,8 +41,9 @@
 // grpc_composite_channel_credentials
 //
 
-const char* grpc_composite_channel_credentials::type() const {
-  return "Composite";
+grpc_core::UniqueTypeName grpc_composite_channel_credentials::type() const {
+  static grpc_core::UniqueTypeName::Factory kFactory("Composite");
+  return kFactory.Create();
 }
 
 /* -- Composite call credentials. -- */
@@ -60,7 +61,10 @@ grpc_composite_call_credentials::GetRequestMetadata(
       });
 }
 
-const char* grpc_composite_call_credentials::Type() { return "Composite"; }
+grpc_core::UniqueTypeName grpc_composite_call_credentials::Type() {
+  static grpc_core::UniqueTypeName::Factory kFactory("Composite");
+  return kFactory.Create();
+}
 
 std::string grpc_composite_call_credentials::debug_string() {
   std::vector<std::string> outputs;

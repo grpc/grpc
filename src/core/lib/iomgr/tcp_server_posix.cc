@@ -191,7 +191,7 @@ static void tcp_server_destroy(grpc_tcp_server* s) {
 static void on_read(void* arg, grpc_error_handle err) {
   grpc_tcp_listener* sp = static_cast<grpc_tcp_listener*>(arg);
   grpc_pollset* read_notifier_pollset;
-  if (err != GRPC_ERROR_NONE) {
+  if (!GRPC_ERROR_IS_NONE(err)) {
     goto error;
   }
 
@@ -253,7 +253,7 @@ static void on_read(void* arg, grpc_error_handle err) {
 
     err = grpc_apply_socket_mutator_in_args(fd, GRPC_FD_SERVER_CONNECTION_USAGE,
                                             sp->server->channel_args);
-    if (err != GRPC_ERROR_NONE) {
+    if (!GRPC_ERROR_IS_NONE(err)) {
       goto error;
     }
 
@@ -344,14 +344,14 @@ static grpc_error_handle add_wildcard_addrs_to_server(grpc_tcp_server* s,
     }
   }
   if (*out_port > 0) {
-    if (v6_err != GRPC_ERROR_NONE) {
+    if (!GRPC_ERROR_IS_NONE(v6_err)) {
       gpr_log(GPR_INFO,
               "Failed to add :: listener, "
               "the environment may not support IPv6: %s",
               grpc_error_std_string(v6_err).c_str());
       GRPC_ERROR_UNREF(v6_err);
     }
-    if (v4_err != GRPC_ERROR_NONE) {
+    if (!GRPC_ERROR_IS_NONE(v4_err)) {
       gpr_log(GPR_INFO,
               "Failed to add 0.0.0.0 listener, "
               "the environment may not support IPv4: %s",
@@ -362,7 +362,7 @@ static grpc_error_handle add_wildcard_addrs_to_server(grpc_tcp_server* s,
   } else {
     grpc_error_handle root_err = GRPC_ERROR_CREATE_FROM_STATIC_STRING(
         "Failed to add any wildcard listeners");
-    GPR_ASSERT(v6_err != GRPC_ERROR_NONE && v4_err != GRPC_ERROR_NONE);
+    GPR_ASSERT(!GRPC_ERROR_IS_NONE(v6_err) && !GRPC_ERROR_IS_NONE(v4_err));
     root_err = grpc_error_add_child(root_err, v6_err);
     root_err = grpc_error_add_child(root_err, v4_err);
     return root_err;
@@ -385,10 +385,10 @@ static grpc_error_handle clone_port(grpc_tcp_listener* listener,
     grpc_dualstack_mode dsmode;
     err = grpc_create_dualstack_socket(&listener->addr, SOCK_STREAM, 0, &dsmode,
                                        &fd);
-    if (err != GRPC_ERROR_NONE) return err;
+    if (!GRPC_ERROR_IS_NONE(err)) return err;
     err = grpc_tcp_server_prepare_socket(listener->server, fd, &listener->addr,
                                          true, &port);
-    if (err != GRPC_ERROR_NONE) return err;
+    if (!GRPC_ERROR_IS_NONE(err)) return err;
     listener->server->nports++;
     addr_str = grpc_sockaddr_to_string(&listener->addr, true);
     if (!addr_str.ok()) {

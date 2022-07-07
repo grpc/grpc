@@ -20,11 +20,24 @@
 
 #include "src/core/lib/security/transport/security_handshaker.h"
 
-#include <stdbool.h>
+#include <limits.h>
+#include <stdint.h>
 #include <string.h>
 
 #include <limits>
+#include <memory>
+#include <string>
 
+#include "absl/base/attributes.h"
+#include "absl/container/inlined_vector.h"
+#include "absl/memory/memory.h"
+#include "absl/strings/str_cat.h"
+#include "absl/strings/string_view.h"
+#include "absl/types/optional.h"
+
+#include <grpc/grpc_security.h>
+#include <grpc/grpc_security_constants.h>
+#include <grpc/slice.h>
 #include <grpc/slice_buffer.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
@@ -32,12 +45,24 @@
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channelz.h"
 #include "src/core/lib/config/core_configuration.h"
+#include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
+#include "src/core/lib/gprpp/sync.h"
+#include "src/core/lib/gprpp/unique_type_name.h"
+#include "src/core/lib/iomgr/closure.h"
+#include "src/core/lib/iomgr/endpoint.h"
+#include "src/core/lib/iomgr/error.h"
+#include "src/core/lib/iomgr/exec_ctx.h"
+#include "src/core/lib/iomgr/iomgr_fwd.h"
+#include "src/core/lib/iomgr/tcp_server.h"
 #include "src/core/lib/security/context/security_context.h"
 #include "src/core/lib/security/transport/secure_endpoint.h"
 #include "src/core/lib/security/transport/tsi_error.h"
 #include "src/core/lib/slice/slice_internal.h"
+#include "src/core/lib/slice/slice_refcount.h"
 #include "src/core/lib/transport/handshaker.h"
+#include "src/core/lib/transport/handshaker_factory.h"
+#include "src/core/lib/transport/handshaker_registry.h"
 #include "src/core/tsi/transport_security_grpc.h"
 
 #define GRPC_INITIAL_HANDSHAKE_BUFFER_SIZE 256
@@ -173,7 +198,7 @@ void SecurityHandshaker::CleanupArgsForFailureLocked() {
 // If the handshake failed or we're shutting down, clean up and invoke the
 // callback with the error.
 void SecurityHandshaker::HandshakeFailedLocked(grpc_error_handle error) {
-  if (error == GRPC_ERROR_NONE) {
+  if (GRPC_ERROR_IS_NONE(error)) {
     // If we were shut down after the handshake succeeded but before an
     // endpoint callback was invoked, we need to generate our own error.
     error = GRPC_ERROR_CREATE_FROM_STATIC_STRING("Handshaker shutdown");
@@ -225,7 +250,7 @@ MakeChannelzSecurityFromAuthContext(grpc_auth_context* auth_context) {
 
 void SecurityHandshaker::OnPeerCheckedInner(grpc_error_handle error) {
   MutexLock lock(&mu_);
-  if (error != GRPC_ERROR_NONE || is_shutdown_) {
+  if (!GRPC_ERROR_IS_NONE(error) || is_shutdown_) {
     HandshakeFailedLocked(error);
     return;
   }
@@ -373,8 +398,16 @@ grpc_error_handle SecurityHandshaker::OnHandshakeNextDoneLocked(
     return error;
   }
   if (result != TSI_OK) {
+    auto* security_connector =
+        grpc_security_connector_find_in_args(args_->args);
+    absl::string_view connector_type = "<unknown>";
+    if (security_connector != nullptr) {
+      connector_type = security_connector->type().name();
+    }
     return grpc_set_tsi_error_result(
-        GRPC_ERROR_CREATE_FROM_STATIC_STRING("Handshake failed"), result);
+        GRPC_ERROR_CREATE_FROM_CPP_STRING(
+            absl::StrCat(connector_type, " handshake failed")),
+        result);
   }
   // Update handshaker result.
   if (handshaker_result != nullptr) {
@@ -418,7 +451,7 @@ void SecurityHandshaker::OnHandshakeNextDoneGrpcWrapper(
   MutexLock lock(&h->mu_);
   grpc_error_handle error = h->OnHandshakeNextDoneLocked(
       result, bytes_to_send, bytes_to_send_size, handshaker_result);
-  if (error != GRPC_ERROR_NONE) {
+  if (!GRPC_ERROR_IS_NONE(error)) {
     h->HandshakeFailedLocked(error);
   } else {
     h.release();  // Avoid unref
@@ -462,7 +495,7 @@ void SecurityHandshaker::OnHandshakeDataReceivedFromPeerFn(
     void* arg, grpc_error_handle error) {
   RefCountedPtr<SecurityHandshaker> h(static_cast<SecurityHandshaker*>(arg));
   MutexLock lock(&h->mu_);
-  if (error != GRPC_ERROR_NONE || h->is_shutdown_) {
+  if (!GRPC_ERROR_IS_NONE(error) || h->is_shutdown_) {
     h->HandshakeFailedLocked(GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(
         "Handshake read failed", &error, 1));
     return;
@@ -471,7 +504,7 @@ void SecurityHandshaker::OnHandshakeDataReceivedFromPeerFn(
   size_t bytes_received_size = h->MoveReadBufferIntoHandshakeBuffer();
   // Call TSI handshaker.
   error = h->DoHandshakerNextLocked(h->handshake_buffer_, bytes_received_size);
-  if (error != GRPC_ERROR_NONE) {
+  if (!GRPC_ERROR_IS_NONE(error)) {
     h->HandshakeFailedLocked(error);
   } else {
     h.release();  // Avoid unref
@@ -495,7 +528,7 @@ void SecurityHandshaker::OnHandshakeDataSentToPeerFn(void* arg,
                                                      grpc_error_handle error) {
   RefCountedPtr<SecurityHandshaker> h(static_cast<SecurityHandshaker*>(arg));
   MutexLock lock(&h->mu_);
-  if (error != GRPC_ERROR_NONE || h->is_shutdown_) {
+  if (!GRPC_ERROR_IS_NONE(error) || h->is_shutdown_) {
     h->HandshakeFailedLocked(GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(
         "Handshake write failed", &error, 1));
     return;
@@ -511,7 +544,7 @@ void SecurityHandshaker::OnHandshakeDataSentToPeerFn(void* arg,
         /*urgent=*/true, /*min_progress_size=*/1);
   } else {
     error = h->CheckPeerLocked();
-    if (error != GRPC_ERROR_NONE) {
+    if (!GRPC_ERROR_IS_NONE(error)) {
       h->HandshakeFailedLocked(error);
       return;
     }
@@ -545,7 +578,7 @@ void SecurityHandshaker::DoHandshake(grpc_tcp_server_acceptor* /*acceptor*/,
   size_t bytes_received_size = MoveReadBufferIntoHandshakeBuffer();
   grpc_error_handle error =
       DoHandshakerNextLocked(handshake_buffer_, bytes_received_size);
-  if (error != GRPC_ERROR_NONE) {
+  if (!GRPC_ERROR_IS_NONE(error)) {
     HandshakeFailedLocked(error);
   } else {
     ref.release();  // Avoid unref

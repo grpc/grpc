@@ -22,12 +22,18 @@
 
 #include <stdint.h>
 
+#include <vector>
+
 #include "absl/strings/string_view.h"
 
 #include <grpc/support/string_util.h>
 
-#include "src/core/lib/iomgr/error_internal.h"
+#include "src/core/lib/gprpp/status_helper.h"
 #include "src/core/lib/transport/status_conversion.h"
+
+#ifndef GRPC_ERROR_IS_ABSEIL_STATUS
+#include "src/core/lib/iomgr/error_internal.h"
+#endif
 
 static grpc_error_handle recursively_find_error_with_field(
     grpc_error_handle error, grpc_error_ints which) {
@@ -40,7 +46,7 @@ static grpc_error_handle recursively_find_error_with_field(
   std::vector<absl::Status> children = grpc_core::StatusGetChildren(error);
   for (const absl::Status& child : children) {
     grpc_error_handle result = recursively_find_error_with_field(child, which);
-    if (result != GRPC_ERROR_NONE) return result;
+    if (!GRPC_ERROR_IS_NONE(result)) return result;
   }
 #else
   if (grpc_error_is_special(error)) return GRPC_ERROR_NONE;
@@ -64,7 +70,7 @@ void grpc_error_get_status(grpc_error_handle error,
                            grpc_http2_error_code* http_error,
                            const char** error_string) {
   // Fast path: We expect no error.
-  if (GPR_LIKELY(error == GRPC_ERROR_NONE)) {
+  if (GPR_LIKELY(GRPC_ERROR_IS_NONE(error))) {
     if (code != nullptr) *code = GRPC_STATUS_OK;
     if (message != nullptr) {
       // Normally, we call grpc_error_get_str(
@@ -87,7 +93,7 @@ void grpc_error_get_status(grpc_error_handle error,
   // until we find the first one that has a status code.
   grpc_error_handle found_error =
       recursively_find_error_with_field(error, GRPC_ERROR_INT_GRPC_STATUS);
-  if (found_error == GRPC_ERROR_NONE) {
+  if (GRPC_ERROR_IS_NONE(found_error)) {
     /// If no grpc-status exists, retry through the tree to find a http2 error
     /// code
     found_error =
@@ -96,7 +102,7 @@ void grpc_error_get_status(grpc_error_handle error,
 
   // If we found an error with a status code above, use that; otherwise,
   // fall back to using the parent error.
-  if (found_error == GRPC_ERROR_NONE) found_error = error;
+  if (GRPC_ERROR_IS_NONE(found_error)) found_error = error;
 
   grpc_status_code status = GRPC_STATUS_UNKNOWN;
   intptr_t integer;
@@ -125,8 +131,8 @@ void grpc_error_get_status(grpc_error_handle error,
       *http_error =
           grpc_status_to_http2_error(static_cast<grpc_status_code>(integer));
     } else {
-      *http_error = found_error == GRPC_ERROR_NONE ? GRPC_HTTP2_NO_ERROR
-                                                   : GRPC_HTTP2_INTERNAL_ERROR;
+      *http_error = GRPC_ERROR_IS_NONE(found_error) ? GRPC_HTTP2_NO_ERROR
+                                                    : GRPC_HTTP2_INTERNAL_ERROR;
     }
   }
 

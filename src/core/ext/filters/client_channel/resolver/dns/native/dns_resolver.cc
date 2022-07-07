@@ -18,12 +18,12 @@
 
 #include <limits.h>
 
+#include <algorithm>
 #include <memory>
 #include <string>
 #include <utility>
 #include <vector>
 
-#include "absl/container/inlined_vector.h"
 #include "absl/functional/bind_front.h"
 #include "absl/memory/memory.h"
 #include "absl/status/status.h"
@@ -76,6 +76,16 @@ class NativeClientChannelDNSResolver : public PollingResolver {
   OrphanablePtr<Orphanable> StartRequest() override;
 
  private:
+  // No-op request class, used so that the PollingResolver code knows
+  // when there is a request in flight, even if the request is not
+  // actually cancellable.
+  class Request : public Orphanable {
+   public:
+    Request() = default;
+
+    void Orphan() override {}
+  };
+
   void OnResolved(
       absl::StatusOr<std::vector<grpc_resolved_address>> addresses_or);
 };
@@ -108,15 +118,15 @@ NativeClientChannelDNSResolver::~NativeClientChannelDNSResolver() {
 
 OrphanablePtr<Orphanable> NativeClientChannelDNSResolver::StartRequest() {
   Ref(DEBUG_LOCATION, "dns_request").release();
-  auto dns_request_handle = GetDNSResolver()->ResolveName(
-      name_to_resolve(), kDefaultSecurePort, interested_parties(),
-      absl::bind_front(&NativeClientChannelDNSResolver::OnResolved, this));
+  auto dns_request_handle = GetDNSResolver()->LookupHostname(
+      absl::bind_front(&NativeClientChannelDNSResolver::OnResolved, this),
+      name_to_resolve(), kDefaultSecurePort, kDefaultDNSRequestTimeout,
+      interested_parties(), /*name_server=*/"");
   if (GRPC_TRACE_FLAG_ENABLED(grpc_trace_dns_resolver)) {
     gpr_log(GPR_DEBUG, "[dns_resolver=%p] starting request=%p", this,
             DNSResolver::HandleToString(dns_request_handle).c_str());
   }
-  // Not cancellable.
-  return nullptr;
+  return MakeOrphanable<Request>();
 }
 
 void NativeClientChannelDNSResolver::OnResolved(

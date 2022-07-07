@@ -19,9 +19,20 @@
 
 #include <grpc/support/port_platform.h>
 
-#include "src/core/lib/gprpp/memory.h"
+#include <map>
+#include <memory>
+#include <string>
+#include <utility>
+
+#include "absl/strings/string_view.h"
+
+#include <grpc/impl/codegen/grpc_types.h>
+
 #include "src/core/lib/gprpp/orphanable.h"
+#include "src/core/lib/iomgr/iomgr_fwd.h"
+#include "src/core/lib/resolver/resolver.h"
 #include "src/core/lib/resolver/resolver_factory.h"
+#include "src/core/lib/uri/uri_parser.h"
 
 namespace grpc_core {
 

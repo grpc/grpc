@@ -120,7 +120,8 @@ class ComputeV1(gcp.api.GcpProjectApiResource):  # pylint: disable=too-many-publ
             health_check: 'GcpResource',
             affinity_header: Optional[str] = None,
             protocol: Optional[BackendServiceProtocol] = None,
-            subset_size: Optional[int] = None) -> 'GcpResource':
+            subset_size: Optional[int] = None,
+            locality_lb_policies: Optional[List[dict]] = None) -> 'GcpResource':
         if not isinstance(protocol, self.BackendServiceProtocol):
             raise TypeError(f'Unexpected Backend Service protocol: {protocol}')
         body = {
@@ -142,6 +143,8 @@ class ComputeV1(gcp.api.GcpProjectApiResource):  # pylint: disable=too-many-publ
                 'policy': 'CONSISTENT_HASH_SUBSETTING',
                 'subsetSize': subset_size
             }
+        if locality_lb_policies:
+            body['localityLbPolicies'] = locality_lb_policies
         return self._insert_resource(self.api.backendServices(), body)
 
     def get_backend_service_traffic_director(self, name: str) -> 'GcpResource':

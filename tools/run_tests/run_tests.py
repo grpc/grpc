@@ -252,25 +252,18 @@ class CLanguage(object):
             _check_compiler(self.args.compiler, [
                 'default',
                 'cmake',
-                'cmake_ninja_vs2015',
                 'cmake_ninja_vs2017',
-                'cmake_vs2015',
                 'cmake_vs2017',
                 'cmake_vs2019',
             ])
             _check_arch(self.args.arch, ['default', 'x64', 'x86'])
 
             activate_vs_tools = ''
-            if self.args.compiler == 'cmake_ninja_vs2015' or self.args.compiler == 'cmake' or self.args.compiler == 'default':
+            if self.args.compiler == 'cmake_ninja_vs2017' or self.args.compiler == 'cmake' or self.args.compiler == 'default':
                 # cmake + ninja build is the default because it is faster and supports boringssl assembly optimizations
-                # the compiler used is exactly the same as for cmake_vs2015
-                cmake_generator = 'Ninja'
-                activate_vs_tools = '2015'
-            elif self.args.compiler == 'cmake_ninja_vs2017':
+                # the compiler used is exactly the same as for cmake_vs2017
                 cmake_generator = 'Ninja'
                 activate_vs_tools = '2017'
-            elif self.args.compiler == 'cmake_vs2015':
-                cmake_generator = 'Visual Studio 14 2015'
             elif self.args.compiler == 'cmake_vs2017':
                 cmake_generator = 'Visual Studio 15 2017'
             elif self.args.compiler == 'cmake_vs2019':
@@ -1029,22 +1022,6 @@ class ObjCLanguage(object):
                 cpu_cost=1e6,
                 environ=_FORCE_ENVIRON_FOR_WRAPPERS))
         # TODO(jtattermusch): Create bazel target for the test and remove the test from here
-        # TODO(jtattermusch): Clarify what do these tests do?
-        out.append(
-            self.config.job_spec(
-                ['src/objective-c/tests/CoreTests/build_and_run_tests.sh'],
-                timeout_seconds=60 * 60,
-                shortname='ios-test-core-tests',
-                cpu_cost=1e6,
-                environ=_FORCE_ENVIRON_FOR_WRAPPERS))
-        # TODO(jtattermusch): Make sure the //src/objective-c/tests:InteropTests bazel test passes reliably and remove the test from there.
-        out.append(
-            self.config.job_spec(['src/objective-c/tests/run_one_test.sh'],
-                                 timeout_seconds=60 * 60,
-                                 shortname='ios-test-interoptests',
-                                 cpu_cost=1e6,
-                                 environ={'SCHEME': 'InteropTests'}))
-        # TODO(jtattermusch): Create bazel target for the test and remove the test from here
         # (how does one add the cronet dependency in bazel?)
         out.append(
             self.config.job_spec(['src/objective-c/tests/run_one_test.sh'],
@@ -1537,9 +1514,7 @@ argp.add_argument(
         'electron1.6',
         'coreclr',
         'cmake',
-        'cmake_ninja_vs2015',
         'cmake_ninja_vs2017',
-        'cmake_vs2015',
         'cmake_vs2017',
         'cmake_vs2019',
         'mono',

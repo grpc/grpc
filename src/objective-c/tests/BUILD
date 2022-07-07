@@ -17,6 +17,7 @@
 load("//bazel:grpc_build_system.bzl", "grpc_sh_test")
 load(
     "//src/objective-c:grpc_objc_internal_library.bzl",
+    "grpc_objc_ios_unit_test",
     "grpc_objc_testing_library",
     "local_objc_grpc_library",
     "proto_library_objc_wrapper",
@@ -60,7 +61,12 @@ apple_resource_bundle(
 # TestConfigs is added to each grpc_objc_testing_library's deps
 grpc_objc_testing_library(
     name = "TestConfigs",
-    hdrs = ["version.h"],
+    srcs = glob([
+        "Common/**/*.m",
+    ]),
+    hdrs = glob([
+        "Common/**/*.h",
+    ]) + ["version.h"],
     data = [":TestCertificates"],
     defines = [
         "DEBUG=1",
@@ -102,7 +108,6 @@ grpc_objc_testing_library(
     hdrs = ["InteropTests/InteropTests.h"],
     deps = [
         ":InteropTestsBlockCallbacks-lib",
-        ":TestBase-lib",
     ],
 )
 
@@ -177,21 +182,10 @@ grpc_objc_testing_library(
         "MacTests/*.m",
     ]),
     hdrs = ["MacTests/StressTests.h"],
-    deps = [
-        ":TestBase-lib",
-    ],
 )
 
-grpc_objc_testing_library(
-    name = "TestBase-lib",
-    srcs = ["TestBase.m"],
-    hdrs = ["TestBase.h"],
-)
-
-ios_unit_test(
+grpc_objc_ios_unit_test(
     name = "UnitTests",
-    minimum_os_version = "9.0",
-    test_host = ":ios-host",
     deps = [
         ":APIv2Tests-lib",
         ":ChannelPoolTest-lib",
@@ -203,13 +197,19 @@ ios_unit_test(
     ],
 )
 
-ios_unit_test(
-    name = "InteropTests",
-    minimum_os_version = "9.0",
-    test_host = ":ios-host",
+grpc_objc_ios_unit_test(
+    name = "InteropTestsLocal",
     deps = [
         ":InteropTestsLocalCleartext-lib",
         ":InteropTestsLocalSSL-lib",
+    ],
+)
+
+ios_unit_test(
+    name = "InteropTestsRemote",
+    minimum_os_version = "9.0",
+    test_host = ":ios-host",
+    deps = [
         ":InteropTestsRemote-lib",
     ],
 )

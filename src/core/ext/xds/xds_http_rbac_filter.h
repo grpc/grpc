@@ -19,7 +19,15 @@
 
 #include <grpc/support/port_platform.h>
 
+#include "absl/status/statusor.h"
+#include "upb/arena.h"
+#include "upb/def.h"
+#include "upb/upb.h"
+
+#include <grpc/impl/codegen/grpc_types.h>
+
 #include "src/core/ext/xds/xds_http_filters.h"
+#include "src/core/lib/channel/channel_fwd.h"
 
 namespace grpc_core {
 

@@ -18,22 +18,40 @@
 
 #include "src/core/ext/filters/fault_injection/fault_injection_filter.h"
 
-#include <atomic>
+#include <stdint.h>
+#include <stdlib.h>
 
+#include <algorithm>
+#include <atomic>
+#include <functional>
+#include <string>
+#include <type_traits>
+#include <utility>
+
+#include "absl/status/status.h"
 #include "absl/strings/numbers.h"
+#include "absl/strings/str_cat.h"
+#include "absl/strings/string_view.h"
+#include "absl/types/optional.h"
+#include "absl/utility/utility.h"
 
 #include <grpc/status.h>
-#include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 
 #include "src/core/ext/filters/fault_injection/service_config_parser.h"
 #include "src/core/lib/channel/channel_stack.h"
+#include "src/core/lib/channel/context.h"
 #include "src/core/lib/channel/status_util.h"
-#include "src/core/lib/gprpp/capture.h"
+#include "src/core/lib/config/core_configuration.h"
+#include "src/core/lib/debug/trace.h"
+#include "src/core/lib/gprpp/time.h"
+#include "src/core/lib/iomgr/exec_ctx.h"
+#include "src/core/lib/promise/context.h"
+#include "src/core/lib/promise/poll.h"
 #include "src/core/lib/promise/sleep.h"
 #include "src/core/lib/promise/try_seq.h"
 #include "src/core/lib/service_config/service_config_call_data.h"
-#include "src/core/lib/transport/status_conversion.h"
+#include "src/core/lib/transport/metadata_batch.h"
 #include "src/core/lib/transport/transport.h"
 
 namespace grpc_core {
@@ -136,9 +154,7 @@ ArenaPromise<ServerMetadataHandle> FaultInjectionFilter::MakeCallPromise(
   auto delay = decision.DelayUntil();
   return TrySeq(
       Sleep(delay),
-      Capture(
-          [](InjectionDecision* decision) { return decision->MaybeAbort(); },
-          std::move(decision)),
+      [decision = std::move(decision)]() { return decision.MaybeAbort(); },
       next_promise_factory(std::move(call_args)));
 }
 

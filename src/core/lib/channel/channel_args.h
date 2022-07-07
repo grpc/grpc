@@ -23,6 +23,7 @@
 
 #include <stddef.h>
 
+#include <algorithm>  // IWYU pragma: keep
 #include <string>
 #include <type_traits>
 #include <utility>

@@ -13,7 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-set -e
+set -ex
 
 # Make sure that there is no path from known unsecure libraries and targets
 # to an SSL library. Any failure among these will make the script fail.

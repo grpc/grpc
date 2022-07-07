@@ -458,6 +458,7 @@ class FixedAddressLoadBalancingPolicy : public ForwardingLoadBalancingPolicy {
       gpr_log(GPR_ERROR,
               "%s: could not parse URI (%s), using empty address list",
               kFixedAddressLbPolicyName, uri.status().ToString().c_str());
+      args.resolution_note = "no address in fixed_address_lb policy";
     }
     ForwardingLoadBalancingPolicy::UpdateLocked(std::move(args));
   }
@@ -565,8 +566,7 @@ class OobBackendMetricTestLoadBalancingPolicy
         : address_(std::move(address)), parent_(std::move(parent)) {}
 
     void OnBackendMetricReport(
-        const LoadBalancingPolicy::BackendMetricAccessor::BackendMetricData&
-            backend_metric_data) override {
+        const BackendMetricData& backend_metric_data) override {
       parent_->cb_(address_, backend_metric_data);
     }
 

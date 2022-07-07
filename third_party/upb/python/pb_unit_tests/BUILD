@@ -23,7 +23,7 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-load("//bazel:pyproto_test_wrapper.bzl", "pyproto_test_wrapper")
+load(":pyproto_test_wrapper.bzl", "pyproto_test_wrapper")
 
 licenses(["notice"])
 
@@ -45,6 +45,10 @@ pyproto_test_wrapper(name = "message_factory_test")
 
 pyproto_test_wrapper(name = "message_test")
 
+# begin:google_only
+# pyproto_test_wrapper(name = "numpy_test")
+# end:google_only
+
 pyproto_test_wrapper(name = "proto_builder_test")
 
 pyproto_test_wrapper(name = "reflection_test")
@@ -62,3 +66,9 @@ pyproto_test_wrapper(name = "unknown_fields_test")
 pyproto_test_wrapper(name = "well_known_types_test")
 
 pyproto_test_wrapper(name = "wire_format_test")
+
+filegroup(
+    name = "test_files",
+    srcs = glob(["*.py"]),
+    visibility = ["//python/dist:__pkg__"],
+)

@@ -18,26 +18,36 @@
 
 #include "src/cpp/client/secure_credentials.h"
 
+#include <string.h>
+
+#include <algorithm>
+#include <map>
+#include <utility>
+
 #include "absl/strings/str_join.h"
 
-#include <grpc/impl/codegen/slice.h>
+#include <grpc/grpc_security_constants.h>
+#include <grpc/impl/codegen/gpr_types.h>
 #include <grpc/slice.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
+#include <grpc/support/time.h>
 #include <grpcpp/channel.h>
-#include <grpcpp/impl/codegen/status.h>
 #include <grpcpp/impl/grpc_library.h>
+#include <grpcpp/security/tls_credentials_options.h>
 #include <grpcpp/support/channel_arguments.h>
+#include <grpcpp/support/slice.h>
+#include <grpcpp/support/status.h>
 
-// TODO(yashykt): We shouldn't be including "src/core" headers.
 #include "src/core/lib/gpr/env.h"
+#include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/executor.h"
 #include "src/core/lib/iomgr/load_file.h"
 #include "src/core/lib/json/json.h"
-#include "src/core/lib/security/transport/auth_filters.h"
 #include "src/core/lib/security/util/json_util.h"
+#include "src/core/lib/slice/slice_refcount.h"
 #include "src/cpp/client/create_channel_internal.h"
 #include "src/cpp/common/secure_auth_context.h"
 
@@ -158,7 +168,7 @@ grpc::Status StsCredentialsOptionsFromJson(const std::string& json_string,
   ClearStsCredentialsOptions(options);
   grpc_error_handle error = GRPC_ERROR_NONE;
   grpc_core::Json json = grpc_core::Json::Parse(json_string.c_str(), &error);
-  if (error != GRPC_ERROR_NONE ||
+  if (!GRPC_ERROR_IS_NONE(error) ||
       json.type() != grpc_core::Json::Type::OBJECT) {
     GRPC_ERROR_UNREF(error);
     return grpc::Status(grpc::StatusCode::INVALID_ARGUMENT, "Invalid json.");
@@ -230,7 +240,7 @@ grpc::Status StsCredentialsOptionsFromEnv(StsCredentialsOptions* options) {
     return cleanup();
   }
   error = grpc_load_file(sts_creds_path, 1, &json_string);
-  if (error != GRPC_ERROR_NONE) {
+  if (!GRPC_ERROR_IS_NONE(error)) {
     status =
         grpc::Status(grpc::StatusCode::NOT_FOUND, grpc_error_std_string(error));
     return cleanup();

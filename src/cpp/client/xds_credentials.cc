@@ -16,6 +16,13 @@
 //
 //
 
+#include <memory>
+
+#include <grpc/grpc.h>
+#include <grpc/grpc_security.h>
+#include <grpc/support/log.h>
+#include <grpcpp/security/credentials.h>
+
 #include "src/cpp/client/secure_credentials.h"
 
 namespace grpc {

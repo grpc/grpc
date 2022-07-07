@@ -20,6 +20,11 @@
 
 #include "src/core/lib/resolver/resolver.h"
 
+#include <algorithm>
+#include <utility>
+
+#include "src/core/lib/channel/channel_args.h"
+
 grpc_core::DebugOnlyTraceFlag grpc_trace_resolver_refcount(false,
                                                            "resolver_refcount");
 

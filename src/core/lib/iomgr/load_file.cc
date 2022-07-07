@@ -66,7 +66,7 @@ grpc_error_handle grpc_load_file(const char* filename, int add_null_terminator,
 end:
   *output = result;
   if (file != nullptr) fclose(file);
-  if (error != GRPC_ERROR_NONE) {
+  if (!GRPC_ERROR_IS_NONE(error)) {
     grpc_error_handle error_out =
         grpc_error_set_str(GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(
                                "Failed to load file", &error, 1),

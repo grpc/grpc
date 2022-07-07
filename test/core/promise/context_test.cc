@@ -14,7 +14,7 @@
 
 #include "src/core/lib/promise/context.h"
 
-#include <gtest/gtest.h>
+#include "gtest/gtest.h"
 
 namespace grpc_core {
 

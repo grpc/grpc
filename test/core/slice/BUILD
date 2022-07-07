@@ -27,6 +27,7 @@ grpc_fuzzer(
     tags = ["no_windows"],
     deps = [
         "//:grpc",
+        "//test/core/util:grpc_suppressions",
     ],
 )
 
@@ -38,6 +39,7 @@ grpc_fuzzer(
     tags = ["no_windows"],
     deps = [
         "//:grpc",
+        "//test/core/util:grpc_suppressions",
     ],
 )
 
@@ -91,6 +93,7 @@ grpc_cc_test(
     uses_polling = False,
     deps = [
         "//:gpr",
+        "//:grpc",
         "//:slice",
         "//test/core/util:build",
         "//test/core/util:grpc_suppressions",
@@ -107,19 +110,6 @@ grpc_cc_test(
         "//:gpr",
         "//:slice",
         "//test/core/util:grpc_suppressions",
-    ],
-)
-
-grpc_cc_test(
-    name = "slice_split_test",
-    srcs = ["slice_split_test.cc"],
-    language = "C++",
-    uses_event_engine = False,
-    uses_polling = False,
-    deps = [
-        "//:gpr",
-        "//:grpc",
-        "//test/core/util:grpc_test_util",
     ],
 )
 

@@ -376,7 +376,7 @@ static void BM_HpackParserParseHeader(benchmark::State& state) {
   auto parse_vec = [&p](const std::vector<grpc_slice>& slices) {
     for (size_t i = 0; i < slices.size(); ++i) {
       auto error = p.Parse(slices[i], i == slices.size() - 1);
-      GPR_ASSERT(error == GRPC_ERROR_NONE);
+      GPR_ASSERT(GRPC_ERROR_IS_NONE(error));
     }
   };
   parse_vec(init_slices);

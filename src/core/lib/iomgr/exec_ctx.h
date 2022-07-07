@@ -204,8 +204,6 @@ class ExecCtx {
   /** Gets pointer to current exec_ctx. */
   static ExecCtx* Get() { return exec_ctx_; }
 
-  static void Set(ExecCtx* exec_ctx) { exec_ctx_ = exec_ctx; }
-
   static void Run(const DebugLocation& location, grpc_closure* closure,
                   grpc_error_handle error);
 
@@ -220,6 +218,7 @@ class ExecCtx {
 
  private:
   /** Set exec_ctx_ to exec_ctx. */
+  static void Set(ExecCtx* exec_ctx) { exec_ctx_ = exec_ctx; }
 
   grpc_closure_list closure_list_ = GRPC_CLOSURE_LIST_INIT;
   CombinerData combiner_data_ = {nullptr, nullptr};

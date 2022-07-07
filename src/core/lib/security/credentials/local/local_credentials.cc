@@ -20,11 +20,12 @@
 
 #include "src/core/lib/security/credentials/local/local_credentials.h"
 
-#include <grpc/grpc.h>
-#include <grpc/support/alloc.h>
-#include <grpc/support/log.h>
+#include <utility>
 
-#include "src/core/lib/channel/channel_args.h"
+#include "absl/strings/string_view.h"
+
+#include <grpc/grpc.h>
+
 #include "src/core/lib/security/security_connector/local/local_security_connector.h"
 
 grpc_core::RefCountedPtr<grpc_channel_security_connector>
@@ -36,7 +37,10 @@ grpc_local_credentials::create_security_connector(
       this->Ref(), std::move(request_metadata_creds), args, target_name);
 }
 
-const char* grpc_local_credentials::type() const { return "Local"; }
+grpc_core::UniqueTypeName grpc_local_credentials::type() const {
+  static grpc_core::UniqueTypeName::Factory kFactory("Local");
+  return kFactory.Create();
+}
 
 grpc_core::RefCountedPtr<grpc_server_security_connector>
 grpc_local_server_credentials::create_security_connector(
@@ -44,7 +48,10 @@ grpc_local_server_credentials::create_security_connector(
   return grpc_local_server_security_connector_create(this->Ref());
 }
 
-const char* grpc_local_server_credentials::type() const { return "Local"; }
+grpc_core::UniqueTypeName grpc_local_server_credentials::type() const {
+  static grpc_core::UniqueTypeName::Factory kFactory("Local");
+  return kFactory.Create();
+}
 
 grpc_local_credentials::grpc_local_credentials(
     grpc_local_connect_type connect_type)

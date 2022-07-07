@@ -194,7 +194,7 @@ struct GrpcAcceptEncodingMetadata {
   }
   static ValueType MementoToValue(MementoType x) { return x; }
   static Slice Encode(ValueType x) { return x.ToSlice(); }
-  static std::string DisplayValue(MementoType x) { return x.ToString(); }
+  static absl::string_view DisplayValue(MementoType x) { return x.ToString(); }
 };
 
 struct SimpleSliceBasedMetadata {
@@ -228,10 +228,10 @@ struct HostMetadata : public SimpleSliceBasedMetadata {
   static absl::string_view key() { return "host"; }
 };
 
-// x-endpoint-load-metrics-bin metadata trait.
-struct XEndpointLoadMetricsBinMetadata : public SimpleSliceBasedMetadata {
+// endpoint-load-metrics-bin metadata trait.
+struct EndpointLoadMetricsBinMetadata : public SimpleSliceBasedMetadata {
   static constexpr bool kRepeatable = false;
-  static absl::string_view key() { return "x-endpoint-load-metrics-bin"; }
+  static absl::string_view key() { return "endpoint-load-metrics-bin"; }
 };
 
 // grpc-server-stats-bin metadata trait.
@@ -1248,7 +1248,7 @@ using grpc_metadata_batch_base = grpc_core::MetadataMap<
     grpc_core::GrpcTimeoutMetadata, grpc_core::GrpcPreviousRpcAttemptsMetadata,
     grpc_core::GrpcRetryPushbackMsMetadata, grpc_core::UserAgentMetadata,
     grpc_core::GrpcMessageMetadata, grpc_core::HostMetadata,
-    grpc_core::XEndpointLoadMetricsBinMetadata,
+    grpc_core::EndpointLoadMetricsBinMetadata,
     grpc_core::GrpcServerStatsBinMetadata, grpc_core::GrpcTraceBinMetadata,
     grpc_core::GrpcTagsBinMetadata, grpc_core::GrpcLbClientStatsMetadata,
     grpc_core::LbCostBinMetadata, grpc_core::LbTokenMetadata,

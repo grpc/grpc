@@ -41,7 +41,8 @@ extern grpc_core::DebugOnlyTraceFlag grpc_trace_pending_tags;
 extern grpc_core::DebugOnlyTraceFlag grpc_trace_cq_refcount;
 
 typedef struct grpc_cq_completion {
-  grpc_core::ManualConstructor<grpc_core::MultiProducerSingleConsumerQueue>
+  grpc_core::ManualConstructor<
+      grpc_core::MultiProducerSingleConsumerQueue::Node>
       node;
 
   /** user supplied tag */

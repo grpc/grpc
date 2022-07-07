@@ -31,6 +31,7 @@
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/security/context/security_context.h"
 #include "src/core/lib/security/security_connector/ssl_utils.h"
+#include "src/core/lib/security/security_connector/ssl_utils_config.h"
 #include "src/core/lib/slice/slice_string_helpers.h"
 #include "src/core/tsi/ssl_transport_security.h"
 #include "src/core/tsi/transport_security.h"
@@ -681,7 +682,7 @@ static void test_peer_alpn_check(void) {
                                                 alpn, strlen(alpn),
                                                 &peer.properties[0]) == TSI_OK);
   grpc_error_handle error = grpc_ssl_check_alpn(&peer);
-  GPR_ASSERT(error != GRPC_ERROR_NONE);
+  GPR_ASSERT(!GRPC_ERROR_IS_NONE(error));
   tsi_peer_destruct(&peer);
   GRPC_ERROR_UNREF(error);
   // peer has a TSI_SSL_ALPN_SELECTED_PROTOCOL property but with an incorrect
@@ -691,7 +692,7 @@ static void test_peer_alpn_check(void) {
                                                 wrong_alpn, strlen(wrong_alpn),
                                                 &peer.properties[0]) == TSI_OK);
   error = grpc_ssl_check_alpn(&peer);
-  GPR_ASSERT(error != GRPC_ERROR_NONE);
+  GPR_ASSERT(!GRPC_ERROR_IS_NONE(error));
   tsi_peer_destruct(&peer);
   GRPC_ERROR_UNREF(error);
   // peer has a TSI_SSL_ALPN_SELECTED_PROTOCOL property with a correct property

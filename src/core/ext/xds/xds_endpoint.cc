@@ -18,7 +18,14 @@
 
 #include "src/core/ext/xds/xds_endpoint.h"
 
+#include <stdlib.h>
+
+#include <algorithm>
+#include <type_traits>
+#include <vector>
+
 #include "absl/memory/memory.h"
+#include "absl/status/status.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_join.h"
 #include "envoy/config/core/v3/address.upb.h"
@@ -30,12 +37,15 @@
 #include "envoy/type/v3/percent.upb.h"
 #include "google/protobuf/wrappers.upb.h"
 #include "upb/text_encode.h"
-#include "upb/upb.h"
-#include "upb/upb.hpp"
+
+#include <grpc/support/log.h>
 
 #include "src/core/ext/xds/upb_utils.h"
+#include "src/core/ext/xds/xds_resource_type.h"
 #include "src/core/lib/address_utils/parse_address.h"
-#include "src/core/lib/address_utils/sockaddr_utils.h"
+#include "src/core/lib/debug/trace.h"
+#include "src/core/lib/iomgr/error.h"
+#include "src/core/lib/iomgr/resolved_address.h"
 
 namespace grpc_core {
 
@@ -154,21 +164,21 @@ grpc_error_handle ServerAddressParseAndAppend(
     return GRPC_ERROR_CREATE_FROM_STATIC_STRING("Invalid port.");
   }
   // Find load_balancing_weight for the endpoint.
+  uint32_t weight = 1;
   const google_protobuf_UInt32Value* load_balancing_weight =
       envoy_config_endpoint_v3_LbEndpoint_load_balancing_weight(lb_endpoint);
-  const int32_t weight =
-      load_balancing_weight != nullptr
-          ? google_protobuf_UInt32Value_value(load_balancing_weight)
-          : 500;
-  if (weight == 0) {
-    return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-        "Invalid endpoint weight of 0.");
+  if (load_balancing_weight != nullptr) {
+    weight = google_protobuf_UInt32Value_value(load_balancing_weight);
+    if (weight == 0) {
+      return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+          "Invalid endpoint weight of 0.");
+    }
   }
   // Populate grpc_resolved_address.
   grpc_resolved_address addr;
   grpc_error_handle error =
       grpc_string_to_sockaddr(&addr, address_str.c_str(), port);
-  if (error != GRPC_ERROR_NONE) return error;
+  if (!GRPC_ERROR_IS_NONE(error)) return error;
   // Append the address to the list.
   std::map<const char*, std::unique_ptr<ServerAddress::AttributeInterface>>
       attributes;
@@ -215,7 +225,7 @@ grpc_error_handle LocalityParse(
   for (size_t i = 0; i < size; ++i) {
     grpc_error_handle error = ServerAddressParseAndAppend(
         lb_endpoints[i], &output_locality->endpoints);
-    if (error != GRPC_ERROR_NONE) return error;
+    if (!GRPC_ERROR_IS_NONE(error)) return error;
   }
   // Parse the priority.
   *priority = envoy_config_endpoint_v3_LocalityLbEndpoints_priority(
@@ -277,7 +287,7 @@ grpc_error_handle EdsResourceParse(
     size_t priority;
     XdsEndpointResource::Priority::Locality locality;
     grpc_error_handle error = LocalityParse(endpoints[j], &locality, &priority);
-    if (error != GRPC_ERROR_NONE) {
+    if (!GRPC_ERROR_IS_NONE(error)) {
       errors.push_back(error);
       continue;
     }
@@ -318,7 +328,7 @@ grpc_error_handle EdsResourceParse(
     for (size_t j = 0; j < drop_size; ++j) {
       grpc_error_handle error =
           DropParseAndAppend(drop_overload[j], eds_update->drop_config.get());
-      if (error != GRPC_ERROR_NONE) {
+      if (!GRPC_ERROR_IS_NONE(error)) {
         errors.push_back(
             grpc_error_add_child(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
                                      "drop config validation error"),
@@ -349,7 +359,7 @@ absl::StatusOr<XdsResourceType::DecodeResult> XdsEndpointResourceType::Decode(
   auto endpoint_data = absl::make_unique<ResourceDataSubclass>();
   grpc_error_handle error =
       EdsResourceParse(context, resource, is_v2, &endpoint_data->resource);
-  if (error != GRPC_ERROR_NONE) {
+  if (!GRPC_ERROR_IS_NONE(error)) {
     std::string error_str = grpc_error_std_string(error);
     GRPC_ERROR_UNREF(error);
     if (GRPC_TRACE_FLAG_ENABLED(*context.tracer)) {

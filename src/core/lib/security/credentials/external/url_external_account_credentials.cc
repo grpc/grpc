@@ -17,13 +17,29 @@
 
 #include "src/core/lib/security/credentials/external/url_external_account_credentials.h"
 
+#include <string.h>
+
+#include <memory>
+#include <utility>
+
+#include "absl/status/status.h"
+#include "absl/status/statusor.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
 #include "absl/strings/str_split.h"
+#include "absl/strings/string_view.h"
 
+#include <grpc/grpc.h>
+#include <grpc/grpc_security.h>
+#include <grpc/support/alloc.h>
+#include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
 
 #include "src/core/lib/http/httpcli_ssl_credentials.h"
+#include "src/core/lib/http/parser.h"
+#include "src/core/lib/iomgr/closure.h"
+#include "src/core/lib/json/json.h"
+#include "src/core/lib/security/credentials/credentials.h"
 #include "src/core/lib/transport/error_utils.h"
 
 namespace grpc_core {
@@ -34,7 +50,7 @@ UrlExternalAccountCredentials::Create(Options options,
                                       grpc_error_handle* error) {
   auto creds = MakeRefCounted<UrlExternalAccountCredentials>(
       std::move(options), std::move(scopes), error);
-  if (*error == GRPC_ERROR_NONE) {
+  if (GRPC_ERROR_IS_NONE(*error)) {
     return creds;
   } else {
     return nullptr;
@@ -179,7 +195,7 @@ void UrlExternalAccountCredentials::OnRetrieveSubjectToken(
 void UrlExternalAccountCredentials::OnRetrieveSubjectTokenInternal(
     grpc_error_handle error) {
   http_request_.reset();
-  if (error != GRPC_ERROR_NONE) {
+  if (!GRPC_ERROR_IS_NONE(error)) {
     FinishRetrieveSubjectToken("", error);
     return;
   }
@@ -188,7 +204,7 @@ void UrlExternalAccountCredentials::OnRetrieveSubjectTokenInternal(
   if (format_type_ == "json") {
     grpc_error_handle error = GRPC_ERROR_NONE;
     Json response_json = Json::Parse(response_body, &error);
-    if (error != GRPC_ERROR_NONE ||
+    if (!GRPC_ERROR_IS_NONE(error) ||
         response_json.type() != Json::Type::OBJECT) {
       FinishRetrieveSubjectToken(
           "", GRPC_ERROR_CREATE_FROM_STATIC_STRING(
@@ -222,7 +238,7 @@ void UrlExternalAccountCredentials::FinishRetrieveSubjectToken(
   auto cb = cb_;
   cb_ = nullptr;
   // Invoke the callback.
-  if (error != GRPC_ERROR_NONE) {
+  if (!GRPC_ERROR_IS_NONE(error)) {
     cb("", error);
   } else {
     cb(subject_token, GRPC_ERROR_NONE);

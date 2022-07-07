@@ -23,6 +23,7 @@
 #include <grpc/grpc.h>
 #include <grpc/support/log.h>
 
+#include "src/core/lib/http/httpcli.h"
 #include "test/core/util/test_config.h"
 
 static void test_format_get_request(void) {

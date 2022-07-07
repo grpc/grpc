@@ -195,7 +195,8 @@ class TrafficDirectorManager:  # pylint: disable=too-many-public-methods
             self,
             protocol: Optional[BackendServiceProtocol] = _BackendGRPC,
             subset_size: Optional[int] = None,
-            affinity_header: Optional[str] = None):
+            affinity_header: Optional[str] = None,
+            locality_lb_policies: Optional[List[dict]] = None):
         if protocol is None:
             protocol = _BackendGRPC
 
@@ -206,7 +207,8 @@ class TrafficDirectorManager:  # pylint: disable=too-many-public-methods
             health_check=self.health_check,
             protocol=protocol,
             subset_size=subset_size,
-            affinity_header=affinity_header)
+            affinity_header=affinity_header,
+            locality_lb_policies=locality_lb_policies)
         self.backend_service = resource
         self.backend_service_protocol = protocol
 

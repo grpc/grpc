@@ -46,4 +46,6 @@
 - 1.44 'g' stands for ['great'](https://github.com/grpc/grpc/tree/v1.44.x)
 - 1.45 'g' stands for ['gravity'](https://github.com/grpc/grpc/tree/v1.45.x)
 - 1.46 'g' stands for ['golazo'](https://github.com/grpc/grpc/tree/v1.46.x)
-- 1.47 'g' stands for ['gridman'](https://github.com/grpc/grpc/tree/master)
+- 1.47 'g' stands for ['gridman'](https://github.com/grpc/grpc/tree/v1.47.x)
+- 1.48 'g' stands for ['garum'](https://github.com/grpc/grpc/tree/v1.48.x)
+- 1.49 'g' stands for ['gamma'](https://github.com/grpc/grpc/tree/master)

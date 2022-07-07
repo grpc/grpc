@@ -20,33 +20,48 @@
 
 #include "src/core/ext/transport/cronet/transport/cronet_transport.h"
 
+#include <stdint.h>
+#include <stdlib.h>
 #include <string.h>
 
+#include <new>
 #include <string>
+#include <utility>
 
+#include "absl/strings/match.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
+#include "absl/strings/string_view.h"
+#include "absl/types/optional.h"
 #include "third_party/objective_c/Cronet/bidirectional_stream_c.h"
 
-#include <grpc/slice_buffer.h>
+#include <grpc/slice.h>
+#include <grpc/status.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
+#include <grpc/support/sync.h>
 
 #include "src/core/ext/transport/chttp2/transport/bin_decoder.h"
 #include "src/core/ext/transport/chttp2/transport/bin_encoder.h"
 #include "src/core/ext/transport/cronet/transport/cronet_status.h"
 #include "src/core/lib/debug/trace.h"
-#include "src/core/lib/gpr/string.h"
-#include "src/core/lib/gprpp/manual_constructor.h"
+#include "src/core/lib/gprpp/debug_location.h"
+#include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/endpoint.h"
+#include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
-#include "src/core/lib/slice/slice_internal.h"
-#include "src/core/lib/slice/slice_string_helpers.h"
-#include "src/core/lib/surface/channel.h"
+#include "src/core/lib/iomgr/iomgr_fwd.h"
+#include "src/core/lib/iomgr/pollset.h"
+#include "src/core/lib/resource_quota/arena.h"
+#include "src/core/lib/slice/slice.h"
+#include "src/core/lib/slice/slice_buffer.h"
+#include "src/core/lib/slice/slice_refcount.h"
 #include "src/core/lib/surface/validate_metadata.h"
 #include "src/core/lib/transport/metadata_batch.h"
-#include "src/core/lib/transport/timeout_encoding.h"
+#include "src/core/lib/transport/transport.h"
 #include "src/core/lib/transport/transport_impl.h"
+
+// IWYU pragma: no_include <type_traits>
 
 #define GRPC_HEADER_SIZE_IN_BYTES 5
 #define GRPC_FLUSH_READ_SIZE 4096
@@ -116,9 +131,7 @@ typedef struct grpc_cronet_transport grpc_cronet_transport;
    http://www.catb.org/esr/structure-packing/#_structure_reordering: */
 struct read_state {
   explicit read_state(grpc_core::Arena* arena)
-      : trailing_metadata(arena), initial_metadata(arena) {
-    grpc_slice_buffer_init(&read_slice_buffer);
-  }
+      : trailing_metadata(arena), initial_metadata(arena) {}
 
   /* vars to store data coming from server */
   char* read_buffer = nullptr;
@@ -132,8 +145,7 @@ struct read_state {
   bool read_stream_closed = false;
 
   /* vars for holding data destined for the application */
-  grpc_core::ManualConstructor<grpc_core::SliceBufferByteStream> sbs;
-  grpc_slice_buffer read_slice_buffer;
+  grpc_core::SliceBuffer read_slice_buffer;
 
   /* vars for trailing metadata */
   grpc_metadata_batch trailing_metadata;
@@ -1071,38 +1083,17 @@ static enum e_op_result execute_stream_op(struct op_and_state* oas) {
       result = NO_ACTION_POSSIBLE;
       CRONET_LOG(GPR_DEBUG, "Stream is either cancelled, failed or finished");
     } else {
-      grpc_slice_buffer write_slice_buffer;
-      grpc_slice slice;
-      grpc_slice_buffer_init(&write_slice_buffer);
-      while (write_slice_buffer.length <
-             stream_op->payload->send_message.send_message->length()) {
-        /* TODO(roth): When we add support for incremental sending,this code
-         * will need to be changed to support asynchronous delivery of the
-         * send_message payload. */
-        if (!stream_op->payload->send_message.send_message->Next(
-                stream_op->payload->send_message.send_message->length(),
-                nullptr)) {
-          /* Should never reach here */
-          GPR_ASSERT(false);
-        }
-        if (GRPC_ERROR_NONE !=
-            stream_op->payload->send_message.send_message->Pull(&slice)) {
-          /* Should never reach here */
-          GPR_ASSERT(false);
-        }
-        grpc_slice_buffer_add(&write_slice_buffer, slice);
-      }
       size_t write_buffer_size;
-      create_grpc_frame(&write_slice_buffer, &stream_state->ws.write_buffer,
-                        &write_buffer_size,
-                        stream_op->payload->send_message.send_message->flags());
+      create_grpc_frame(
+          stream_op->payload->send_message.send_message->c_slice_buffer(),
+          &stream_state->ws.write_buffer, &write_buffer_size,
+          stream_op->payload->send_message.flags);
       if (write_buffer_size > 0) {
         CRONET_LOG(GPR_DEBUG, "bidirectional_stream_write (%p, %p)", s->cbs,
                    stream_state->ws.write_buffer);
         stream_state->state_callback_received[OP_SEND_MESSAGE] = false;
         bidirectional_stream_write(s->cbs, stream_state->ws.write_buffer,
                                    static_cast<int>(write_buffer_size), false);
-        grpc_slice_buffer_destroy_internal(&write_slice_buffer);
         if (t->use_packet_coalescing) {
           if (!stream_op->send_trailing_metadata) {
             CRONET_LOG(GPR_DEBUG, "bidirectional_stream_flush (%p)", s->cbs);
@@ -1122,7 +1113,6 @@ static enum e_op_result execute_stream_op(struct op_and_state* oas) {
     }
     stream_state->state_op_done[OP_SEND_MESSAGE] = true;
     oas->state.state_op_done[OP_SEND_MESSAGE] = true;
-    stream_op->payload->send_message.send_message.reset();
   } else if (stream_op->send_trailing_metadata &&
              op_can_be_run(stream_op, s, &oas->state,
                            OP_SEND_TRAILING_METADATA)) {
@@ -1234,16 +1224,14 @@ static enum e_op_result execute_stream_op(struct op_and_state* oas) {
           stream_state->rs.remaining_bytes = 0;
           CRONET_LOG(GPR_DEBUG, "read operation complete. Empty response.");
           /* Clean up read_slice_buffer in case there is unread data. */
-          grpc_slice_buffer_destroy_internal(
-              &stream_state->rs.read_slice_buffer);
-          grpc_slice_buffer_init(&stream_state->rs.read_slice_buffer);
+          stream_state->rs.read_slice_buffer.Clear();
           uint32_t flags = 0;
           if (stream_state->rs.compressed) {
             flags |= GRPC_WRITE_INTERNAL_COMPRESS;
           }
-          stream_state->rs.sbs.Init(&stream_state->rs.read_slice_buffer, flags);
-          stream_op->payload->recv_message.recv_message->reset(
-              stream_state->rs.sbs.get());
+          *stream_op->payload->recv_message.flags = flags;
+          *stream_op->payload->recv_message.recv_message =
+              std::move(stream_state->rs.read_slice_buffer);
           grpc_core::ExecCtx::Run(
               DEBUG_LOCATION,
               stream_op->payload->recv_message.recv_message_ready,
@@ -1282,17 +1270,16 @@ static enum e_op_result execute_stream_op(struct op_and_state* oas) {
              static_cast<size_t>(stream_state->rs.length_field));
       null_and_maybe_free_read_buffer(s);
       /* Clean up read_slice_buffer in case there is unread data. */
-      grpc_slice_buffer_destroy_internal(&stream_state->rs.read_slice_buffer);
-      grpc_slice_buffer_init(&stream_state->rs.read_slice_buffer);
-      grpc_slice_buffer_add(&stream_state->rs.read_slice_buffer,
-                            read_data_slice);
+      stream_state->rs.read_slice_buffer.Clear();
+      stream_state->rs.read_slice_buffer.Append(
+          grpc_core::Slice(read_data_slice));
       uint32_t flags = 0;
       if (stream_state->rs.compressed) {
         flags = GRPC_WRITE_INTERNAL_COMPRESS;
       }
-      stream_state->rs.sbs.Init(&stream_state->rs.read_slice_buffer, flags);
-      stream_op->payload->recv_message.recv_message->reset(
-          stream_state->rs.sbs.get());
+      *stream_op->payload->recv_message.flags = flags;
+      *stream_op->payload->recv_message.recv_message =
+          std::move(stream_state->rs.read_slice_buffer);
       grpc_core::ExecCtx::Run(
           DEBUG_LOCATION, stream_op->payload->recv_message.recv_message_ready,
           GRPC_ERROR_NONE);
@@ -1339,7 +1326,7 @@ static enum e_op_result execute_stream_op(struct op_and_state* oas) {
       result = ACTION_TAKEN_NO_CALLBACK;
     }
     stream_state->state_op_done[OP_CANCEL_ERROR] = true;
-    if (stream_state->cancel_error == GRPC_ERROR_NONE) {
+    if (GRPC_ERROR_IS_NONE(stream_state->cancel_error)) {
       stream_state->cancel_error =
           GRPC_ERROR_REF(stream_op->payload->cancel_stream.cancel_error);
     }
@@ -1408,8 +1395,6 @@ inline stream_obj::stream_obj(grpc_transport* gt, grpc_stream* gs,
 
 inline stream_obj::~stream_obj() {
   null_and_maybe_free_read_buffer(this);
-  /* Clean up read_slice_buffer in case there is unread data. */
-  grpc_slice_buffer_destroy_internal(&state.rs.read_slice_buffer);
   GRPC_ERROR_UNREF(state.cancel_error);
 }
 

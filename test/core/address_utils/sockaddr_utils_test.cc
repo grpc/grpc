@@ -175,23 +175,24 @@ TEST(SockAddrUtilsTest, SockAddrToString) {
             "[2001:db8::1]:12345");
   EXPECT_EQ(grpc_sockaddr_to_string(&input6, true).value(),
             "[2001:db8::1]:12345");
-  EXPECT_EQ(grpc_sockaddr_to_uri(&input6).value(), "ipv6:[2001:db8::1]:12345");
+  EXPECT_EQ(grpc_sockaddr_to_uri(&input6).value(),
+            "ipv6:%5B2001:db8::1%5D:12345");
 
   SetIPv6ScopeId(&input6, 2);
   EXPECT_EQ(grpc_sockaddr_to_string(&input6, false).value(),
-            "[2001:db8::1%252]:12345");
+            "[2001:db8::1%2]:12345");
   EXPECT_EQ(grpc_sockaddr_to_string(&input6, true).value(),
-            "[2001:db8::1%252]:12345");
+            "[2001:db8::1%2]:12345");
   EXPECT_EQ(grpc_sockaddr_to_uri(&input6).value(),
-            "ipv6:[2001:db8::1%252]:12345");
+            "ipv6:%5B2001:db8::1%252%5D:12345");
 
   SetIPv6ScopeId(&input6, 101);
   EXPECT_EQ(grpc_sockaddr_to_string(&input6, false).value(),
-            "[2001:db8::1%25101]:12345");
+            "[2001:db8::1%101]:12345");
   EXPECT_EQ(grpc_sockaddr_to_string(&input6, true).value(),
-            "[2001:db8::1%25101]:12345");
+            "[2001:db8::1%101]:12345");
   EXPECT_EQ(grpc_sockaddr_to_uri(&input6).value(),
-            "ipv6:[2001:db8::1%25101]:12345");
+            "ipv6:%5B2001:db8::1%25101%5D:12345");
 
   grpc_resolved_address input6x = MakeAddr6(kMapped, sizeof(kMapped));
   EXPECT_EQ(grpc_sockaddr_to_string(&input6x, false).value(),
@@ -206,7 +207,7 @@ TEST(SockAddrUtilsTest, SockAddrToString) {
   EXPECT_EQ(grpc_sockaddr_to_string(&input6y, true).value(),
             "[::fffe:c000:263]:12345");
   EXPECT_EQ(grpc_sockaddr_to_uri(&input6y).value(),
-            "ipv6:[::fffe:c000:263]:12345");
+            "ipv6:%5B::fffe:c000:263%5D:12345");
 
   grpc_resolved_address phony;
   memset(&phony, 0, sizeof(phony));

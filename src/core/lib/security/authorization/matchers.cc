@@ -16,10 +16,18 @@
 
 #include "src/core/lib/security/authorization/matchers.h"
 
+#include <algorithm>
+#include <string>
+
+#include "absl/memory/memory.h"
+#include "absl/strings/string_view.h"
+
 #include <grpc/grpc_security_constants.h>
+#include <grpc/support/log.h>
 
 #include "src/core/lib/address_utils/parse_address.h"
 #include "src/core/lib/address_utils/sockaddr_utils.h"
+#include "src/core/lib/iomgr/error.h"
 
 namespace grpc_core {
 
@@ -145,7 +153,7 @@ IpAuthorizationMatcher::IpAuthorizationMatcher(Type type, Rbac::CidrRange range)
   grpc_error_handle error =
       grpc_string_to_sockaddr(&subnet_address_, range.address_prefix.c_str(),
                               /*port does not matter here*/ 0);
-  if (error == GRPC_ERROR_NONE) {
+  if (GRPC_ERROR_IS_NONE(error)) {
     grpc_sockaddr_mask_bits(&subnet_address_, prefix_len_);
   } else {
     gpr_log(GPR_DEBUG, "CidrRange address %s is not IPv4/IPv6. Error: %s",

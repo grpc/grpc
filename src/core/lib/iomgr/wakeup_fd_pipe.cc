@@ -41,9 +41,9 @@ static grpc_error_handle pipe_init(grpc_wakeup_fd* fd_info) {
   }
   grpc_error_handle err;
   err = grpc_set_socket_nonblocking(pipefd[0], 1);
-  if (err != GRPC_ERROR_NONE) return err;
+  if (!GRPC_ERROR_IS_NONE(err)) return err;
   err = grpc_set_socket_nonblocking(pipefd[1], 1);
-  if (err != GRPC_ERROR_NONE) return err;
+  if (!GRPC_ERROR_IS_NONE(err)) return err;
   fd_info->read_fd = pipefd[0];
   fd_info->write_fd = pipefd[1];
   return GRPC_ERROR_NONE;

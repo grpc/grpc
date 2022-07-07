@@ -13,49 +13,54 @@
 // limitations under the License.
 #include <grpc/support/port_platform.h>
 
+#include <atomic>
 #include <functional>
 #include <memory>
+#include <utility>
 
 #include <grpc/event_engine/event_engine.h>
 
-#include "src/core/lib/debug/trace.h"
 #include "src/core/lib/event_engine/event_engine_factory.h"
-#include "src/core/lib/event_engine/trace.h"
-#include "src/core/lib/gprpp/sync.h"
 
 namespace grpc_event_engine {
 namespace experimental {
 
 namespace {
-const std::function<std::unique_ptr<EventEngine>()>* g_event_engine_factory =
-    nullptr;
-grpc_core::Mutex* g_mu = new grpc_core::Mutex();
+std::atomic<const std::function<std::unique_ptr<EventEngine>()>*>
+    g_event_engine_factory{nullptr};
+std::atomic<EventEngine*> g_event_engine{nullptr};
 }  // namespace
 
 void SetDefaultEventEngineFactory(
-    const std::function<std::unique_ptr<EventEngine>()>* factory) {
-  grpc_core::MutexLock lock(g_mu);
-  g_event_engine_factory = factory;
+    std::function<std::unique_ptr<EventEngine>()> factory) {
+  delete g_event_engine_factory.exchange(
+      new std::function<std::unique_ptr<EventEngine>()>(std::move(factory)));
 }
 
 std::unique_ptr<EventEngine> CreateEventEngine() {
-  grpc_core::MutexLock lock(g_mu);
-  if (g_event_engine_factory != nullptr) {
-    return (*g_event_engine_factory)();
+  if (auto* factory = g_event_engine_factory.load()) {
+    return (*factory)();
   }
   return DefaultEventEngineFactory();
 }
 
 EventEngine* GetDefaultEventEngine() {
-  static EventEngine* default_event_engine = CreateEventEngine().release();
-  return default_event_engine;
+  EventEngine* engine = g_event_engine.load(std::memory_order_acquire);
+  if (engine == nullptr) {
+    auto* created = CreateEventEngine().release();
+    if (g_event_engine.compare_exchange_strong(engine, created,
+                                               std::memory_order_acq_rel,
+                                               std::memory_order_acquire)) {
+      engine = created;
+    } else {
+      delete created;
+    }
+  }
+  return engine;
 }
 
-void InitializeEventEngine() {
-  GetDefaultEventEngine()->Run([]() {
-    GRPC_EVENT_ENGINE_TRACE("EventEngine:%p initialized",
-                            GetDefaultEventEngine());
-  });
+void ResetDefaultEventEngine() {
+  delete g_event_engine.exchange(nullptr, std::memory_order_acq_rel);
 }
 
 }  // namespace experimental

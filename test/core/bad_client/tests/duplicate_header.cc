@@ -90,7 +90,7 @@ static void verifier(grpc_server* server, grpc_completion_queue* cq,
                                 nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
-  CQ_EXPECT_COMPLETION(cqv, tag(102), 1);
+  CQ_EXPECT_COMPLETION_ANY_STATUS(cqv, tag(102));
   cq_verify(cqv);
 
   memset(ops, 0, sizeof(ops));

@@ -19,22 +19,29 @@
 
 #include <grpc/support/port_platform.h>
 
-#include <stdint.h>
+#include <stddef.h>
 
+#include <map>
 #include <set>
+#include <string>
+#include <utility>
+#include <vector>
 
+#include "absl/status/status.h"
+#include "absl/strings/string_view.h"
 #include "envoy/admin/v3/config_dump.upb.h"
 #include "upb/def.hpp"
 
 #include <grpc/slice.h>
 
+#include "src/core/ext/xds/certificate_provider_store.h"
 #include "src/core/ext/xds/upb_utils.h"
 #include "src/core/ext/xds/xds_bootstrap.h"
 #include "src/core/ext/xds/xds_client_stats.h"
-#include "src/core/ext/xds/xds_http_filters.h"
-#include "src/core/lib/channel/status_util.h"
-#include "src/core/lib/matchers/matchers.h"
-#include "src/core/lib/resolver/server_address.h"
+#include "src/core/lib/debug/trace.h"
+#include "src/core/lib/gprpp/ref_counted_ptr.h"
+#include "src/core/lib/gprpp/time.h"
+#include "src/core/lib/iomgr/error.h"
 
 namespace grpc_core {
 

@@ -55,6 +55,7 @@
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/gprpp/time.h"
+#include "src/core/lib/gprpp/unique_type_name.h"
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
@@ -68,8 +69,6 @@ namespace {
 
 TraceFlag grpc_orca_client_trace(false, "orca_client");
 
-constexpr char kProducerType[] = "orca";
-
 class OrcaWatcher;
 
 // This producer is registered with a subchannel.  It creates a
@@ -81,7 +80,12 @@ class OrcaProducer : public Subchannel::DataProducerInterface {
 
   void Orphan() override;
 
-  const char* type() override { return kProducerType; }
+  static UniqueTypeName Type() {
+    static UniqueTypeName::Factory kFactory("orca");
+    return kFactory.Create();
+  }
+
+  UniqueTypeName type() const override { return Type(); }
 
   // Adds and removes watchers.
   void AddWatcher(OrcaWatcher* watcher);
@@ -103,9 +107,7 @@ class OrcaProducer : public Subchannel::DataProducerInterface {
   void OnConnectivityStateChange(grpc_connectivity_state state);
 
   // Called to notify watchers of a new backend metric report.
-  void NotifyWatchers(
-      const LoadBalancingPolicy::BackendMetricAccessor::BackendMetricData&
-          backend_metric_data);
+  void NotifyWatchers(const BackendMetricData& backend_metric_data);
 
   RefCountedPtr<Subchannel> subchannel_;
   RefCountedPtr<ConnectedSubchannel> connected_subchannel_;
@@ -247,8 +249,7 @@ class OrcaProducer::OrcaStreamEventHandler
     explicit BackendMetricAllocator(WeakRefCountedPtr<OrcaProducer> producer)
         : producer_(std::move(producer)) {}
 
-    LoadBalancingPolicy::BackendMetricAccessor::BackendMetricData*
-    AllocateBackendMetricData() override {
+    BackendMetricData* AllocateBackendMetricData() override {
       return &backend_metric_data_;
     }
 
@@ -274,8 +275,7 @@ class OrcaProducer::OrcaStreamEventHandler
     }
 
     WeakRefCountedPtr<OrcaProducer> producer_;
-    LoadBalancingPolicy::BackendMetricAccessor::BackendMetricData
-        backend_metric_data_;
+    BackendMetricData backend_metric_data_;
     std::vector<UniquePtr<char>> string_storage_;
     grpc_closure closure_;
   };
@@ -295,7 +295,6 @@ OrcaProducer::OrcaProducer(RefCountedPtr<Subchannel> subchannel)
   auto connectivity_watcher = MakeRefCounted<ConnectivityWatcher>(WeakRef());
   connectivity_watcher_ = connectivity_watcher.get();
   subchannel_->WatchConnectivityState(
-      connected_subchannel_ == nullptr ? GRPC_CHANNEL_IDLE : GRPC_CHANNEL_READY,
       /*health_check_service_name=*/absl::nullopt,
       std::move(connectivity_watcher));
 }
@@ -354,8 +353,7 @@ void OrcaProducer::MaybeStartStreamLocked() {
 }
 
 void OrcaProducer::NotifyWatchers(
-    const LoadBalancingPolicy::BackendMetricAccessor::BackendMetricData&
-        backend_metric_data) {
+    const BackendMetricData& backend_metric_data) {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_orca_client_trace)) {
     gpr_log(GPR_INFO, "OrcaProducer %p: reporting backend metrics to watchers",
             this);
@@ -388,8 +386,8 @@ OrcaWatcher::~OrcaWatcher() {
 void OrcaWatcher::SetSubchannel(Subchannel* subchannel) {
   // Check if our producer is already registered with the subchannel.
   // If not, create a new one, which will register itself with the subchannel.
-  auto* p =
-      static_cast<OrcaProducer*>(subchannel->GetDataProducer(kProducerType));
+  auto* p = static_cast<OrcaProducer*>(
+      subchannel->GetDataProducer(OrcaProducer::Type()));
   if (p != nullptr) producer_ = p->RefIfNonZero();
   if (producer_ == nullptr) {
     producer_ = MakeRefCounted<OrcaProducer>(subchannel->Ref());

@@ -220,7 +220,7 @@ class ServiceConfigEnd2endTest : public ::testing::Test {
     grpc_error_handle error = GRPC_ERROR_NONE;
     result.service_config =
         grpc_core::ServiceConfigImpl::Create(nullptr, svc_cfg, &error);
-    if (error != GRPC_ERROR_NONE) {
+    if (!GRPC_ERROR_IS_NONE(error)) {
       result.service_config = grpc_error_to_absl_status(error);
       GRPC_ERROR_UNREF(error);
     }

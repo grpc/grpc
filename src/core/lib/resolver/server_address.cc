@@ -20,15 +20,23 @@
 
 #include "src/core/lib/resolver/server_address.h"
 
+#include <string.h>
+
+#include <algorithm>
 #include <memory>
 #include <string>
+#include <utility>
 #include <vector>
 
+#include "absl/status/status.h"
+#include "absl/status/statusor.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
 #include "absl/strings/str_join.h"
 
 #include "src/core/lib/address_utils/sockaddr_utils.h"
+
+// IWYU pragma: no_include <sys/socket.h>
 
 namespace grpc_core {
 

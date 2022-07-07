@@ -26,6 +26,18 @@ source tools/internal_ci/helper_scripts/prepare_build_macos_rc
 # make sure bazel is available
 tools/bazel version
 
+# for kokoro mac workers, exact image version is store in a well-known location on disk
+KOKORO_IMAGE_VERSION="$(cat /VERSION)"
+
+BAZEL_REMOTE_CACHE_ARGS=(
+  # Enable uploading to remote cache. Requires the "roles/remotebuildexecution.actionCacheWriter" permission.
+  --remote_upload_local_results=true
+  # allow invalidating the old cache by setting to a new random key
+  --remote_default_exec_properties="grpc_cache_silo_key1=83d8e488-1ca9-40fd-929e-d37d13529c99"
+  # make sure we only get cache hits from binaries built on exact same macos image
+  --remote_default_exec_properties="grpc_cache_silo_key2=${KOKORO_IMAGE_VERSION}"
+)
+
 ./tools/run_tests/start_port_server.py
 
 # only select ObjC test from the following subdirs
@@ -41,5 +53,6 @@ bazel_cpp_ios_tests/bazel_wrapper \
   --bazelrc=tools/remote_build/include/test_locally_with_resultstore_results.bazelrc \
   test \
   --google_credentials="${KOKORO_GFILE_DIR}/GrpcTesting-d0eeee2db331.json" \
+  "${BAZEL_REMOTE_CACHE_ARGS[@]}" \
   $BAZEL_FLAGS \
   -- ${ios_tests}

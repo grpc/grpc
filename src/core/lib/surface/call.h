@@ -24,13 +24,14 @@
 #include <stddef.h>
 #include <stdint.h>
 
+#include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
 
 #include <grpc/impl/codegen/compression_types.h>
 #include <grpc/impl/codegen/grpc_types.h>
 #include <grpc/support/log.h>
 
-#include "src/core/lib/channel/channel_stack.h"
+#include "src/core/lib/channel/channel_fwd.h"
 #include "src/core/lib/channel/context.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
@@ -124,6 +125,9 @@ grpc_compression_algorithm grpc_call_compression_for_level(
 /* TODO(markdroth): This is currently available only to the C++ API.
                     Move to surface API if requested by other languages. */
 bool grpc_call_is_trailers_only(const grpc_call* call);
+
+// Returns the authority for the call, as seen on the server side.
+absl::string_view grpc_call_server_authority(const grpc_call* call);
 
 extern grpc_core::TraceFlag grpc_call_error_trace;
 extern grpc_core::TraceFlag grpc_compression_trace;

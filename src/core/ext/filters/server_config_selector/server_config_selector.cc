@@ -19,6 +19,7 @@
 #include "src/core/ext/filters/server_config_selector/server_config_selector.h"
 
 #include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/gpr/useful.h"
 
 namespace grpc_core {
 namespace {

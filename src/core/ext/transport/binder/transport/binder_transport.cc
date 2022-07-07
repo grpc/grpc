@@ -37,7 +37,6 @@
 #include "src/core/ext/transport/binder/wire_format/wire_writer.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/slice/slice_internal.h"
-#include "src/core/lib/transport/byte_stream.h"
 #include "src/core/lib/transport/error_utils.h"
 #include "src/core/lib/transport/metadata_batch.h"
 #include "src/core/lib/transport/transport.h"
@@ -152,7 +151,7 @@ static void cancel_stream_locked(grpc_binder_transport* gbt,
                                  grpc_error_handle error) {
   gpr_log(GPR_INFO, "cancel_stream_locked");
   if (!gbs->is_closed) {
-    GPR_ASSERT(gbs->cancel_self_error == GRPC_ERROR_NONE);
+    GPR_ASSERT(GRPC_ERROR_IS_NONE(gbs->cancel_self_error));
     gbs->is_closed = true;
     gbs->cancel_self_error = GRPC_ERROR_REF(error);
     gbt->transport_stream_receiver->CancelStream(gbs->tx_code);
@@ -257,16 +256,13 @@ static void recv_message_locked(void* arg, grpc_error_handle /*error*/) {
           return absl_status_to_grpc_error(args->message.status());
         }
       }
-      grpc_slice_buffer buf;
-      grpc_slice_buffer_init(&buf);
-      grpc_slice_buffer_add(&buf, grpc_slice_from_cpp_string(*args->message));
-
-      gbs->sbs.Init(&buf, 0);
-      gbs->recv_message->reset(gbs->sbs.get());
+      grpc_core::SliceBuffer buf;
+      buf.Append(grpc_core::Slice(grpc_slice_from_cpp_string(*args->message)));
+      *gbs->recv_message = std::move(buf);
       return GRPC_ERROR_NONE;
     }();
 
-    if (error != GRPC_ERROR_NONE &&
+    if (!GRPC_ERROR_IS_NONE(error) &&
         gbs->call_failed_before_recv_message != nullptr) {
       *gbs->call_failed_before_recv_message = true;
     }
@@ -395,10 +391,11 @@ static void perform_stream_op_locked(void* stream_op,
     if (!gbs->is_client) {
       // Send trailing metadata to inform the other end about the cancellation,
       // regardless if we'd already done that or not.
-      grpc_binder::Transaction cancel_tx(gbs->GetTxCode(), gbt->is_client);
-      cancel_tx.SetSuffix(grpc_binder::Metadata{});
-      cancel_tx.SetStatus(1);
-      absl::Status status = gbt->wire_writer->RpcCall(cancel_tx);
+      auto cancel_tx = absl::make_unique<grpc_binder::Transaction>(
+          gbs->GetTxCode(), gbt->is_client);
+      cancel_tx->SetSuffix(grpc_binder::Metadata{});
+      cancel_tx->SetStatus(1);
+      absl::Status status = gbt->wire_writer->RpcCall(std::move(cancel_tx));
     }
     cancel_stream_locked(gbt, gbs, op->payload->cancel_stream.cancel_error);
     if (op->on_complete != nullptr) {
@@ -411,7 +408,7 @@ static void perform_stream_op_locked(void* stream_op,
   if (gbs->is_closed) {
     if (op->send_message) {
       // Reset the send_message payload to prevent memory leaks.
-      op->payload->send_message.send_message.reset();
+      op->payload->send_message.send_message->Clear();
     }
     if (op->recv_initial_metadata) {
       grpc_core::ExecCtx::Run(
@@ -439,40 +436,21 @@ static void perform_stream_op_locked(void* stream_op,
   }
 
   int tx_code = gbs->tx_code;
-  grpc_binder::Transaction tx(tx_code, gbt->is_client);
+  auto tx =
+      absl::make_unique<grpc_binder::Transaction>(tx_code, gbt->is_client);
 
   if (op->send_initial_metadata) {
     gpr_log(GPR_INFO, "send_initial_metadata");
     grpc_binder::Metadata init_md;
     auto batch = op->payload->send_initial_metadata.send_initial_metadata;
 
-    grpc_binder::MetadataEncoder encoder(gbt->is_client, &tx, &init_md);
+    grpc_binder::MetadataEncoder encoder(gbt->is_client, tx.get(), &init_md);
     batch->Encode(&encoder);
-    tx.SetPrefix(init_md);
+    tx->SetPrefix(init_md);
   }
   if (op->send_message) {
     gpr_log(GPR_INFO, "send_message");
-    size_t remaining = op->payload->send_message.send_message->length();
-    std::string message_data;
-    while (remaining > 0) {
-      grpc_slice message_slice;
-      // TODO(waynetu): Temporarily assume that the message is ready.
-      GPR_ASSERT(
-          op->payload->send_message.send_message->Next(SIZE_MAX, nullptr));
-      grpc_error_handle error =
-          op->payload->send_message.send_message->Pull(&message_slice);
-      // TODO(waynetu): Cancel the stream if error is not GRPC_ERROR_NONE.
-      GPR_ASSERT(error == GRPC_ERROR_NONE);
-      uint8_t* p = GRPC_SLICE_START_PTR(message_slice);
-      size_t len = GRPC_SLICE_LENGTH(message_slice);
-      remaining -= len;
-      message_data += std::string(reinterpret_cast<char*>(p), len);
-      grpc_slice_unref_internal(message_slice);
-    }
-    tx.SetData(message_data);
-    // TODO(b/192369787): Are we supposed to reset here to avoid
-    // use-after-free issue in call.cc?
-    op->payload->send_message.send_message.reset();
+    tx->SetData(op->payload->send_message.send_message->JoinIntoString());
   }
 
   if (op->send_trailing_metadata) {
@@ -480,13 +458,13 @@ static void perform_stream_op_locked(void* stream_op,
     auto batch = op->payload->send_trailing_metadata.send_trailing_metadata;
     grpc_binder::Metadata trailing_metadata;
 
-    grpc_binder::MetadataEncoder encoder(gbt->is_client, &tx,
+    grpc_binder::MetadataEncoder encoder(gbt->is_client, tx.get(),
                                          &trailing_metadata);
     batch->Encode(&encoder);
 
     // TODO(mingcl): Will we ever has key-value pair here? According to
     // wireformat client suffix data is always empty.
-    tx.SetSuffix(trailing_metadata);
+    tx->SetSuffix(trailing_metadata);
   }
   if (op->recv_initial_metadata) {
     gpr_log(GPR_INFO, "recv_initial_metadata");
@@ -556,10 +534,7 @@ static void perform_stream_op_locked(void* stream_op,
   absl::Status status = absl::OkStatus();
   if (op->send_initial_metadata || op->send_message ||
       op->send_trailing_metadata) {
-    // TODO(waynetu): RpcCall() is doing a lot of work (including waiting for
-    // acknowledgements from the other side). Consider delaying this operation
-    // with combiner.
-    status = gbt->wire_writer->RpcCall(tx);
+    status = gbt->wire_writer->RpcCall(std::move(tx));
     if (!gbs->is_client && op->send_trailing_metadata) {
       gbs->trailing_metadata_sent = true;
       // According to transport explaineer - "Server extra: This op shouldn't
@@ -633,11 +608,11 @@ static void perform_transport_op_locked(void* transport_op,
     grpc_core::ExecCtx::Run(DEBUG_LOCATION, op->on_consumed, GRPC_ERROR_NONE);
   }
   bool do_close = false;
-  if (op->disconnect_with_error != GRPC_ERROR_NONE) {
+  if (!GRPC_ERROR_IS_NONE(op->disconnect_with_error)) {
     do_close = true;
     GRPC_ERROR_UNREF(op->disconnect_with_error);
   }
-  if (op->goaway_error != GRPC_ERROR_NONE) {
+  if (!GRPC_ERROR_IS_NONE(op->goaway_error)) {
     do_close = true;
     GRPC_ERROR_UNREF(op->goaway_error);
   }

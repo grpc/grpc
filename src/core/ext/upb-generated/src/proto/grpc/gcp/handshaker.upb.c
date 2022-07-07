@@ -38,7 +38,7 @@ static const upb_MiniTable_Field grpc_gcp_Identity__fields[3] = {
 const upb_MiniTable grpc_gcp_Identity_msginit = {
   &grpc_gcp_Identity_submsgs[0],
   &grpc_gcp_Identity__fields[0],
-  UPB_SIZE(16, 40), 3, kUpb_ExtMode_NonExtendable, 3, 255, 0,
+  UPB_SIZE(16, 32), 3, kUpb_ExtMode_NonExtendable, 3, 255, 0,
 };
 
 static const upb_MiniTable_Field grpc_gcp_Identity_AttributesEntry__fields[2] = {
@@ -91,7 +91,7 @@ static const upb_MiniTable_Field grpc_gcp_ServerHandshakeParameters__fields[2] =
 const upb_MiniTable grpc_gcp_ServerHandshakeParameters_msginit = {
   &grpc_gcp_ServerHandshakeParameters_submsgs[0],
   &grpc_gcp_ServerHandshakeParameters__fields[0],
-  UPB_SIZE(8, 24), 2, kUpb_ExtMode_NonExtendable, 2, 255, 0,
+  UPB_SIZE(8, 16), 2, kUpb_ExtMode_NonExtendable, 2, 255, 0,
 };
 
 static const upb_MiniTable_Sub grpc_gcp_StartServerHandshakeReq_submsgs[4] = {
@@ -114,7 +114,7 @@ static const upb_MiniTable_Field grpc_gcp_StartServerHandshakeReq__fields[7] = {
 const upb_MiniTable grpc_gcp_StartServerHandshakeReq_msginit = {
   &grpc_gcp_StartServerHandshakeReq_submsgs[0],
   &grpc_gcp_StartServerHandshakeReq__fields[0],
-  UPB_SIZE(36, 72), 7, kUpb_ExtMode_NonExtendable, 7, 255, 0,
+  UPB_SIZE(40, 64), 7, kUpb_ExtMode_NonExtendable, 7, 255, 0,
 };
 
 static const upb_MiniTable_Sub grpc_gcp_StartServerHandshakeReq_HandshakeParametersEntry_submsgs[1] = {
@@ -139,7 +139,7 @@ static const upb_MiniTable_Field grpc_gcp_NextHandshakeMessageReq__fields[1] = {
 const upb_MiniTable grpc_gcp_NextHandshakeMessageReq_msginit = {
   NULL,
   &grpc_gcp_NextHandshakeMessageReq__fields[0],
-  UPB_SIZE(8, 24), 1, kUpb_ExtMode_NonExtendable, 1, 255, 0,
+  UPB_SIZE(8, 16), 1, kUpb_ExtMode_NonExtendable, 1, 255, 0,
 };
 
 static const upb_MiniTable_Sub grpc_gcp_HandshakerReq_submsgs[3] = {
@@ -157,7 +157,7 @@ static const upb_MiniTable_Field grpc_gcp_HandshakerReq__fields[3] = {
 const upb_MiniTable grpc_gcp_HandshakerReq_msginit = {
   &grpc_gcp_HandshakerReq_submsgs[0],
   &grpc_gcp_HandshakerReq__fields[0],
-  UPB_SIZE(8, 24), 3, kUpb_ExtMode_NonExtendable, 3, 255, 0,
+  UPB_SIZE(8, 16), 3, kUpb_ExtMode_NonExtendable, 3, 255, 0,
 };
 
 static const upb_MiniTable_Sub grpc_gcp_HandshakerResult_submsgs[3] = {
@@ -180,7 +180,7 @@ static const upb_MiniTable_Field grpc_gcp_HandshakerResult__fields[8] = {
 const upb_MiniTable grpc_gcp_HandshakerResult_msginit = {
   &grpc_gcp_HandshakerResult_submsgs[0],
   &grpc_gcp_HandshakerResult__fields[0],
-  UPB_SIZE(44, 88), 8, kUpb_ExtMode_NonExtendable, 8, 255, 0,
+  UPB_SIZE(48, 80), 8, kUpb_ExtMode_NonExtendable, 8, 255, 0,
 };
 
 static const upb_MiniTable_Field grpc_gcp_HandshakerStatus__fields[2] = {
@@ -191,7 +191,7 @@ static const upb_MiniTable_Field grpc_gcp_HandshakerStatus__fields[2] = {
 const upb_MiniTable grpc_gcp_HandshakerStatus_msginit = {
   NULL,
   &grpc_gcp_HandshakerStatus__fields[0],
-  UPB_SIZE(12, 24), 2, kUpb_ExtMode_NonExtendable, 2, 255, 0,
+  UPB_SIZE(16, 24), 2, kUpb_ExtMode_NonExtendable, 2, 255, 0,
 };
 
 static const upb_MiniTable_Sub grpc_gcp_HandshakerResp_submsgs[2] = {

@@ -60,7 +60,7 @@ static grpc_error_handle conforms_to(const grpc_slice& slice,
 }
 
 static int error2int(grpc_error_handle error) {
-  int r = (error == GRPC_ERROR_NONE);
+  int r = (GRPC_ERROR_IS_NONE(error));
   GRPC_ERROR_UNREF(error);
   return r;
 }

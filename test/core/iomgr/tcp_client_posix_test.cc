@@ -64,7 +64,7 @@ static void finish_connection() {
 
 static void must_succeed(void* /*arg*/, grpc_error_handle error) {
   GPR_ASSERT(g_connecting != nullptr);
-  GPR_ASSERT(error == GRPC_ERROR_NONE);
+  GPR_ASSERT(GRPC_ERROR_IS_NONE(error));
   grpc_endpoint_shutdown(g_connecting, GRPC_ERROR_CREATE_FROM_STATIC_STRING(
                                            "must_succeed called"));
   grpc_endpoint_destroy(g_connecting);
@@ -74,7 +74,7 @@ static void must_succeed(void* /*arg*/, grpc_error_handle error) {
 
 static void must_fail(void* /*arg*/, grpc_error_handle error) {
   GPR_ASSERT(g_connecting == nullptr);
-  GPR_ASSERT(error != GRPC_ERROR_NONE);
+  GPR_ASSERT(!GRPC_ERROR_IS_NONE(error));
   finish_connection();
 }
 
@@ -112,8 +112,9 @@ void test_succeeds(void) {
                                       .channel_args_preconditioning()
                                       .PreconditionChannelArgs(nullptr)
                                       .ToC();
-  grpc_tcp_client_connect(&done, &g_connecting, g_pollset_set, args,
-                          &resolved_addr, grpc_core::Timestamp::InfFuture());
+  int64_t connection_handle = grpc_tcp_client_connect(
+      &done, &g_connecting, g_pollset_set, args, &resolved_addr,
+      grpc_core::Timestamp::InfFuture());
   grpc_channel_args_destroy(args);
   /* await the connection */
   do {
@@ -139,6 +140,10 @@ void test_succeeds(void) {
   }
 
   gpr_mu_unlock(g_mu);
+
+  // A cancellation attempt should fail because connect already succeeded.
+  GPR_ASSERT(grpc_tcp_client_cancel_connect(connection_handle) == false);
+
   gpr_log(GPR_ERROR, "---- finished test_succeeds() ----");
 }
 
@@ -161,8 +166,9 @@ void test_fails(void) {
 
   /* connect to a broken address */
   GRPC_CLOSURE_INIT(&done, must_fail, nullptr, grpc_schedule_on_exec_ctx);
-  grpc_tcp_client_connect(&done, &g_connecting, g_pollset_set, nullptr,
-                          &resolved_addr, grpc_core::Timestamp::InfFuture());
+  int64_t connection_handle = grpc_tcp_client_connect(
+      &done, &g_connecting, g_pollset_set, nullptr, &resolved_addr,
+      grpc_core::Timestamp::InfFuture());
   gpr_mu_lock(g_mu);
 
   /* wait for the connection callback to finish */
@@ -187,7 +193,50 @@ void test_fails(void) {
   }
 
   gpr_mu_unlock(g_mu);
+
+  // A cancellation attempt should fail because connect already failed.
+  GPR_ASSERT(grpc_tcp_client_cancel_connect(connection_handle) == false);
+
   gpr_log(GPR_ERROR, "---- finished test_fails() ----");
+}
+
+void test_connect_cancellation_succeeds(void) {
+  gpr_log(GPR_ERROR, "---- starting test_connect_cancellation_succeeds() ----");
+  grpc_resolved_address resolved_addr;
+  struct sockaddr_in* addr =
+      reinterpret_cast<struct sockaddr_in*>(resolved_addr.addr);
+  int svr_fd;
+  grpc_closure done;
+  grpc_core::ExecCtx exec_ctx;
+
+  memset(&resolved_addr, 0, sizeof(resolved_addr));
+  resolved_addr.len = static_cast<socklen_t>(sizeof(struct sockaddr_in));
+  addr->sin_family = AF_INET;
+
+  /* create a phony server */
+  svr_fd = socket(AF_INET, SOCK_STREAM, 0);
+  GPR_ASSERT(svr_fd >= 0);
+  GPR_ASSERT(
+      0 == bind(svr_fd, (struct sockaddr*)addr, (socklen_t)resolved_addr.len));
+  GPR_ASSERT(0 == listen(svr_fd, 1));
+
+  // connect to it. accept() is not called on the bind socket. So the connection
+  // should appear to be stuck giving ample time to try to cancel it.
+  GPR_ASSERT(getsockname(svr_fd, (struct sockaddr*)addr,
+                         (socklen_t*)&resolved_addr.len) == 0);
+  GRPC_CLOSURE_INIT(&done, must_succeed, nullptr, grpc_schedule_on_exec_ctx);
+  const grpc_channel_args* args = grpc_core::CoreConfiguration::Get()
+                                      .channel_args_preconditioning()
+                                      .PreconditionChannelArgs(nullptr)
+                                      .ToC();
+  int64_t connection_handle = grpc_tcp_client_connect(
+      &done, &g_connecting, g_pollset_set, args, &resolved_addr,
+      grpc_core::Timestamp::InfFuture());
+  grpc_channel_args_destroy(args);
+  GPR_ASSERT(connection_handle > 0);
+  GPR_ASSERT(grpc_tcp_client_cancel_connect(connection_handle) == true);
+  close(svr_fd);
+  gpr_log(GPR_ERROR, "---- finished test_connect_cancellation_succeeds() ----");
 }
 
 void test_fails_bad_addr_no_leak(void) {
@@ -250,6 +299,7 @@ int main(int argc, char** argv) {
     grpc_pollset_set_add_pollset(g_pollset_set, g_pollset);
 
     test_succeeds();
+    test_connect_cancellation_succeeds();
     test_fails();
     test_fails_bad_addr_no_leak();
     grpc_pollset_set_destroy(g_pollset_set);

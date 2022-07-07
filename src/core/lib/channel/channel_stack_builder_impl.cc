@@ -77,7 +77,7 @@ ChannelStackBuilderImpl::Build() {
       channel_stack);
   grpc_channel_args_destroy(c_args);
 
-  if (error != GRPC_ERROR_NONE) {
+  if (!GRPC_ERROR_IS_NONE(error)) {
     grpc_channel_stack_destroy(channel_stack);
     gpr_free(channel_stack);
     auto status = grpc_error_to_absl_status(error);

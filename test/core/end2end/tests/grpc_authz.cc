@@ -63,8 +63,7 @@ static void shutdown_server(grpc_end2end_test_fixture* f) {
   grpc_server_shutdown_and_notify(f->server, f->cq, tag(1000));
   grpc_event ev;
   do {
-    ev = grpc_completion_queue_next(f->cq, grpc_timeout_seconds_to_deadline(5),
-                                    nullptr);
+    ev = grpc_completion_queue_next(f->cq, five_seconds_from_now(), nullptr);
   } while (ev.type != GRPC_OP_COMPLETE || ev.tag != tag(1000));
   grpc_server_destroy(f->server);
   f->server = nullptr;
@@ -550,6 +549,17 @@ static void test_file_watcher_valid_policy_reload(
       config, "test_file_watcher_valid_policy_reload", nullptr, &server_args);
   grpc_authorization_policy_provider_release(provider);
   test_allow_authorized_request(f);
+  gpr_event on_reload_done;
+  gpr_event_init(&on_reload_done);
+  std::function<void(bool contents_changed, absl::Status status)> callback =
+      [&on_reload_done](bool contents_changed, absl::Status status) {
+        if (contents_changed) {
+          GPR_ASSERT(status.ok());
+          gpr_event_set(&on_reload_done, reinterpret_cast<void*>(1));
+        }
+      };
+  dynamic_cast<grpc_core::FileWatcherAuthorizationPolicyProvider*>(provider)
+      ->SetCallbackForTesting(std::move(callback));
   // Replace existing policy in file with a different authorization policy.
   authz_policy =
       "{"
@@ -576,9 +586,12 @@ static void test_file_watcher_valid_policy_reload(
       "  ]"
       "}";
   tmp_policy.RewriteFile(authz_policy);
-  // Wait 2 seconds for the provider's refresh thread to read the updated files.
-  gpr_sleep_until(grpc_timeout_seconds_to_deadline(2));
+  GPR_ASSERT(
+      reinterpret_cast<void*>(1) ==
+      gpr_event_wait(&on_reload_done, gpr_inf_future(GPR_CLOCK_MONOTONIC)));
   test_deny_unauthorized_request(f);
+  dynamic_cast<grpc_core::FileWatcherAuthorizationPolicyProvider*>(provider)
+      ->SetCallbackForTesting(nullptr);
 
   end_test(&f);
   config.tear_down_data(&f);
@@ -620,12 +633,27 @@ static void test_file_watcher_invalid_policy_skip_reload(
                  nullptr, &server_args);
   grpc_authorization_policy_provider_release(provider);
   test_allow_authorized_request(f);
+  gpr_event on_reload_done;
+  gpr_event_init(&on_reload_done);
+  std::function<void(bool contents_changed, absl::Status status)> callback =
+      [&on_reload_done](bool contents_changed, absl::Status status) {
+        if (contents_changed) {
+          GPR_ASSERT(absl::StatusCode::kInvalidArgument == status.code());
+          GPR_ASSERT("\"name\" field is not present." == status.message());
+          gpr_event_set(&on_reload_done, reinterpret_cast<void*>(1));
+        }
+      };
+  dynamic_cast<grpc_core::FileWatcherAuthorizationPolicyProvider*>(provider)
+      ->SetCallbackForTesting(std::move(callback));
   // Replace exisiting policy in file with an invalid policy.
   authz_policy = "{}";
   tmp_policy.RewriteFile(authz_policy);
-  // Wait 2 seconds for the provider's refresh thread to read the updated files.
-  gpr_sleep_until(grpc_timeout_seconds_to_deadline(2));
+  GPR_ASSERT(
+      reinterpret_cast<void*>(1) ==
+      gpr_event_wait(&on_reload_done, gpr_inf_future(GPR_CLOCK_MONOTONIC)));
   test_allow_authorized_request(f);
+  dynamic_cast<grpc_core::FileWatcherAuthorizationPolicyProvider*>(provider)
+      ->SetCallbackForTesting(nullptr);
 
   end_test(&f);
   config.tear_down_data(&f);
@@ -663,15 +691,39 @@ static void test_file_watcher_recovers_from_failure(
   grpc_channel_args server_args = {GPR_ARRAY_SIZE(args), args};
 
   grpc_end2end_test_fixture f = begin_test(
-      config, "test_file_watcher_valid_policy_reload", nullptr, &server_args);
+      config, "test_file_watcher_recovers_from_failure", nullptr, &server_args);
   grpc_authorization_policy_provider_release(provider);
   test_allow_authorized_request(f);
+  gpr_event on_first_reload_done;
+  gpr_event_init(&on_first_reload_done);
+  std::function<void(bool contents_changed, absl::Status status)> callback1 =
+      [&on_first_reload_done](bool contents_changed, absl::Status status) {
+        if (contents_changed) {
+          GPR_ASSERT(absl::StatusCode::kInvalidArgument == status.code());
+          GPR_ASSERT("\"name\" field is not present." == status.message());
+          gpr_event_set(&on_first_reload_done, reinterpret_cast<void*>(1));
+        }
+      };
+  dynamic_cast<grpc_core::FileWatcherAuthorizationPolicyProvider*>(provider)
+      ->SetCallbackForTesting(std::move(callback1));
   // Replace exisiting policy in file with an invalid policy.
   authz_policy = "{}";
   tmp_policy.RewriteFile(authz_policy);
-  // Wait 2 seconds for the provider's refresh thread to read the updated files.
-  gpr_sleep_until(grpc_timeout_seconds_to_deadline(2));
+  GPR_ASSERT(reinterpret_cast<void*>(1) ==
+             gpr_event_wait(&on_first_reload_done,
+                            gpr_inf_future(GPR_CLOCK_MONOTONIC)));
   test_allow_authorized_request(f);
+  gpr_event on_second_reload_done;
+  gpr_event_init(&on_second_reload_done);
+  std::function<void(bool contents_changed, absl::Status status)> callback2 =
+      [&on_second_reload_done](bool contents_changed, absl::Status status) {
+        if (contents_changed) {
+          GPR_ASSERT(status.ok());
+          gpr_event_set(&on_second_reload_done, reinterpret_cast<void*>(1));
+        }
+      };
+  dynamic_cast<grpc_core::FileWatcherAuthorizationPolicyProvider*>(provider)
+      ->SetCallbackForTesting(std::move(callback2));
   // Recover from reload errors, by replacing invalid policy in file with a
   // valid policy.
   authz_policy =
@@ -699,9 +751,12 @@ static void test_file_watcher_recovers_from_failure(
       "  ]"
       "}";
   tmp_policy.RewriteFile(authz_policy);
-  // Wait 2 seconds for the provider's refresh thread to read the updated files.
-  gpr_sleep_until(grpc_timeout_seconds_to_deadline(2));
+  GPR_ASSERT(reinterpret_cast<void*>(1) ==
+             gpr_event_wait(&on_second_reload_done,
+                            gpr_inf_future(GPR_CLOCK_MONOTONIC)));
   test_deny_unauthorized_request(f);
+  dynamic_cast<grpc_core::FileWatcherAuthorizationPolicyProvider*>(provider)
+      ->SetCallbackForTesting(nullptr);
 
   end_test(&f);
   config.tear_down_data(&f);

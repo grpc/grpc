@@ -55,7 +55,7 @@ installed by `brew` is being used:
 ## Windows
 
 To prepare for cmake + Microsoft Visual C++ compiler build
-- Install Visual Studio 2015 or 2017 (Visual C++ compiler will be used).
+- Install Visual Studio 2017 or later (Visual C++ compiler will be used).
 - Install [Git](https://git-scm.com/).
 - Install [CMake](https://cmake.org/download/).
 - Install [nasm](https://www.nasm.us/) and add it to `PATH` (`choco install nasm`) - *required by boringssl*

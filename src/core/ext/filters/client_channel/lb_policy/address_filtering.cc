@@ -20,9 +20,9 @@
 
 #include <stddef.h>
 
+#include <algorithm>
 #include <utility>
 
-#include "absl/container/inlined_vector.h"
 #include "absl/memory/memory.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_join.h"

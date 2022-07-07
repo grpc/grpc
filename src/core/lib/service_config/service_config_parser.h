@@ -19,10 +19,17 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <stddef.h>
+
+#include <algorithm>
 #include <memory>
+#include <utility>
 #include <vector>
 
+#include "absl/strings/string_view.h"
+
 #include <grpc/impl/codegen/grpc_types.h>
+#include <grpc/support/log.h>
 
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/json/json.h"

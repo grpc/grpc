@@ -174,7 +174,7 @@ static void test_fails(grpc_slice_split_mode split_mode,
   if (GRPC_ERROR_NONE == error) {
     error = grpc_http_parser_eof(&parser);
   }
-  GPR_ASSERT(error != GRPC_ERROR_NONE);
+  GPR_ASSERT(!GRPC_ERROR_IS_NONE(error));
   GRPC_ERROR_UNREF(error);
 
   grpc_http_response_destroy(&response);
@@ -199,15 +199,15 @@ static void test_request_fails(grpc_slice_split_mode split_mode,
   grpc_http_parser_init(&parser, GRPC_HTTP_REQUEST, &request);
 
   for (i = 0; i < num_slices; i++) {
-    if (error == GRPC_ERROR_NONE) {
+    if (GRPC_ERROR_IS_NONE(error)) {
       error = grpc_http_parser_parse(&parser, slices[i], nullptr);
     }
     grpc_slice_unref(slices[i]);
   }
-  if (error == GRPC_ERROR_NONE) {
+  if (GRPC_ERROR_IS_NONE(error)) {
     error = grpc_http_parser_eof(&parser);
   }
-  GPR_ASSERT(error != GRPC_ERROR_NONE);
+  GPR_ASSERT(!GRPC_ERROR_IS_NONE(error));
   GRPC_ERROR_UNREF(error);
 
   grpc_http_request_destroy(&request);

@@ -27,6 +27,7 @@
 
 #include <grpc/grpc.h>
 #include <grpcpp/grpcpp.h>
+#include <grpcpp/opencensus.h>
 
 #include "src/core/lib/config/core_configuration.h"
 #include "src/cpp/ext/filters/census/grpc_plugin.h"

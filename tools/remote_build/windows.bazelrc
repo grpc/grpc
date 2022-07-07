@@ -1,16 +1,16 @@
 import %workspace%/tools/remote_build/include/rbe_remote_execution.bazelrc
 
 # Next section is windows-specific RBE configuration
-build --host_crosstool_top=//third_party/toolchains/bazel_0.26.0_rbe_windows:toolchain
-build --crosstool_top=//third_party/toolchains/bazel_0.26.0_rbe_windows:toolchain
-build --extra_toolchains=//third_party/toolchains/bazel_0.26.0_rbe_windows:cc-toolchain-x64_windows
+build --host_crosstool_top=//third_party/toolchains/rbe_windows_bazel_5.2.0_vs2019:toolchain
+build --crosstool_top=//third_party/toolchains/rbe_windows_bazel_5.2.0_vs2019:toolchain
+build --extra_toolchains=//third_party/toolchains/rbe_windows_bazel_5.2.0_vs2019:cc-toolchain-x64_windows
 # Use custom execution platforms defined in third_party/toolchains
 build --extra_execution_platforms=//third_party/toolchains:rbe_windows
 build --host_platform=//third_party/toolchains:rbe_windows
 build --platforms=//third_party/toolchains:rbe_windows
-
-build --shell_executable=C:\\tools\\msys64\\usr\\bin\\bash.exe
-build --python_path=C:\\Python27\\python.exe
+# Needs to match the location of binaries in the RBE docker container
+build --shell_executable=C:\\msys64\\usr\\bin\\bash.exe
+build --python_path="C:\\Program Files\\Python310\\python.exe"
 
 build --test_tag_filters=-no_windows
 build --build_tag_filters=-no_windows

@@ -21,13 +21,25 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <stdint.h>
+
+#include <atomic>
+#include <functional>
+#include <memory>
+#include <string>
+#include <utility>
+
 #include <grpc/support/log.h>
 #include <grpcpp/alarm.h>
 #include <grpcpp/grpcpp.h>
+#include <grpcpp/support/async_stream.h>
+#include <grpcpp/support/config.h>
 
 #include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/gprpp/thd.h"
 #include "src/cpp/server/load_reporter/load_reporter.h"
+#include "src/proto/grpc/lb/v1/load_reporter.grpc.pb.h"
+#include "src/proto/grpc/lb/v1/load_reporter.pb.h"
 
 namespace grpc {
 namespace load_reporter {

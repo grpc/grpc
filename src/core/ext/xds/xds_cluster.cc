@@ -18,7 +18,13 @@
 
 #include "src/core/ext/xds/xds_cluster.h"
 
-#include "absl/container/inlined_vector.h"
+#include <stddef.h>
+
+#include <type_traits>
+#include <utility>
+
+#include "absl/memory/memory.h"
+#include "absl/status/status.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
 #include "absl/strings/str_join.h"
@@ -32,16 +38,21 @@
 #include "envoy/config/endpoint/v3/endpoint.upb.h"
 #include "envoy/config/endpoint/v3/endpoint_components.upb.h"
 #include "envoy/extensions/clusters/aggregate/v3/cluster.upb.h"
+#include "envoy/extensions/transport_sockets/tls/v3/tls.upb.h"
 #include "google/protobuf/any.upb.h"
+#include "google/protobuf/duration.upb.h"
 #include "google/protobuf/wrappers.upb.h"
+#include "upb/text_encode.h"
+#include "upb/upb.h"
 
-#include <grpc/support/alloc.h>
+#include <grpc/support/log.h>
 
 #include "src/core/ext/xds/xds_common_types.h"
-#include "src/core/ext/xds/xds_route_config.h"
-#include "src/core/lib/gpr/env.h"
-#include "src/core/lib/gpr/string.h"
+#include "src/core/ext/xds/xds_resource_type.h"
+#include "src/core/lib/debug/trace.h"
 #include "src/core/lib/gprpp/host_port.h"
+#include "src/core/lib/gprpp/time.h"
+#include "src/core/lib/iomgr/error.h"
 
 namespace grpc_core {
 
@@ -50,7 +61,7 @@ namespace grpc_core {
 //
 
 std::string XdsClusterResource::ToString() const {
-  absl::InlinedVector<std::string, 8> contents;
+  std::vector<std::string> contents;
   switch (cluster_type) {
     case EDS:
       contents.push_back("cluster_type=EDS");
@@ -123,7 +134,7 @@ grpc_error_handle UpstreamTlsContextParse(
     if (common_tls_context_proto != nullptr) {
       grpc_error_handle error = CommonTlsContext::Parse(
           context, common_tls_context_proto, common_tls_context);
-      if (error != GRPC_ERROR_NONE) {
+      if (!GRPC_ERROR_IS_NONE(error)) {
         return grpc_error_add_child(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
                                         "Error parsing UpstreamTlsContext"),
                                     error);
@@ -206,19 +217,6 @@ grpc_error_handle CdsLogicalDnsParse(
   return GRPC_ERROR_NONE;
 }
 
-// TODO(donnadionne): Check to see if cluster types aggregate_cluster and
-// logical_dns are enabled, this will be
-// removed once the cluster types are fully integration-tested and enabled by
-// default.
-bool XdsAggregateAndLogicalDnsClusterEnabled() {
-  char* value = gpr_getenv(
-      "GRPC_XDS_EXPERIMENTAL_ENABLE_AGGREGATE_AND_LOGICAL_DNS_CLUSTER");
-  bool parsed_value;
-  bool parse_succeeded = gpr_parse_bool_value(value, &parsed_value);
-  gpr_free(value);
-  return parse_succeeded && parsed_value;
-}
-
 grpc_error_handle CdsResourceParse(
     const XdsEncodingContext& context,
     const envoy_config_cluster_v3_Cluster* cluster, bool /*is_v2*/,
@@ -250,14 +248,11 @@ grpc_error_handle CdsResourceParse(
     if (service_name.size != 0) {
       cds_update->eds_service_name = UpbStringToStdString(service_name);
     }
-  } else if (!XdsAggregateAndLogicalDnsClusterEnabled()) {
-    errors.push_back(
-        GRPC_ERROR_CREATE_FROM_STATIC_STRING("DiscoveryType is not valid."));
   } else if (envoy_config_cluster_v3_Cluster_type(cluster) ==
              envoy_config_cluster_v3_Cluster_LOGICAL_DNS) {
     cds_update->cluster_type = XdsClusterResource::ClusterType::LOGICAL_DNS;
     grpc_error_handle error = CdsLogicalDnsParse(cluster, cds_update);
-    if (error != GRPC_ERROR_NONE) errors.push_back(error);
+    if (!GRPC_ERROR_IS_NONE(error)) errors.push_back(error);
   } else {
     if (!envoy_config_cluster_v3_Cluster_has_cluster_type(cluster)) {
       errors.push_back(
@@ -358,7 +353,7 @@ grpc_error_handle CdsResourceParse(
   if (transport_socket != nullptr) {
     grpc_error_handle error = UpstreamTlsContextParse(
         context, transport_socket, &cds_update->common_tls_context);
-    if (error != GRPC_ERROR_NONE) {
+    if (!GRPC_ERROR_IS_NONE(error)) {
       errors.push_back(
           grpc_error_add_child(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
                                    "Error parsing security configuration"),
@@ -538,7 +533,7 @@ absl::StatusOr<XdsResourceType::DecodeResult> XdsClusterResourceType::Decode(
   auto cluster_data = absl::make_unique<ResourceDataSubclass>();
   grpc_error_handle error =
       CdsResourceParse(context, resource, is_v2, &cluster_data->resource);
-  if (error != GRPC_ERROR_NONE) {
+  if (!GRPC_ERROR_IS_NONE(error)) {
     std::string error_str = grpc_error_std_string(error);
     GRPC_ERROR_UNREF(error);
     if (GRPC_TRACE_FLAG_ENABLED(*context.tracer)) {

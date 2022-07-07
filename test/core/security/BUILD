@@ -174,8 +174,8 @@ grpc_cc_test(
 )
 
 grpc_cc_test(
-    name = "linux_system_roots_test",
-    srcs = ["linux_system_roots_test.cc"],
+    name = "system_roots_test",
+    srcs = ["system_roots_test.cc"],
     data = [
         "//test/core/security/etc:bundle.pem",
         "//test/core/security/etc:test_roots/cert1.pem",

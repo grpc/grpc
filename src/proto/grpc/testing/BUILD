@@ -289,3 +289,9 @@ py_proto_library(
     name = "control_py_pb2",
     deps = [":control_descriptor"],
 )
+
+grpc_proto_library(
+    name = "istio_echo_proto",
+    srcs = ["istio_echo.proto"],
+    well_known_protos = True,
+)

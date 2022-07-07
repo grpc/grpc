@@ -25,14 +25,12 @@
 #import "src/objective-c/tests/RemoteTestClient/Test.pbobjc.h"
 #import "src/objective-c/tests/RemoteTestClient/Test.pbrpc.h"
 
+#import "../Common/TestUtils.h"
 #import "../ConfigureCronet.h"
 #import "InteropTestsBlockCallbacks.h"
 
 #define NSStringize_helper(x) #x
 #define NSStringize(x) @NSStringize_helper(x)
-static NSString *const kRemoteSSLHost = NSStringize(HOST_PORT_REMOTE);
-static NSString *const kLocalSSLHost = NSStringize(HOST_PORT_LOCALSSL);
-static NSString *const kLocalCleartextHost = NSStringize(HOST_PORT_LOCAL);
 
 static const NSTimeInterval TEST_TIMEOUT = 8000;
 
@@ -84,19 +82,23 @@ dispatch_once_t initCronet;
 
   self.continueAfterFailure = NO;
 
-  _remoteService = [RMTTestService serviceWithHost:kRemoteSSLHost callOptions:nil];
+  _remoteService = [RMTTestService serviceWithHost:GRPCGetRemoteInteropTestServerAddress()
+                                       callOptions:nil];
   configureCronet(/*enable_netlog=*/false);
 
   // Default stack with remote host
   GRPCMutableCallOptions *options = [[GRPCMutableCallOptions alloc] init];
   options.transportType = GRPCTransportTypeCronet;
   // Cronet stack with remote host
-  _remoteCronetService = [RMTTestService serviceWithHost:kRemoteSSLHost callOptions:options];
+  _remoteCronetService = [RMTTestService serviceWithHost:GRPCGetRemoteInteropTestServerAddress()
+                                             callOptions:options];
 
   // Local stack with no SSL
   options = [[GRPCMutableCallOptions alloc] init];
   options.transportType = GRPCTransportTypeInsecure;
-  _localCleartextService = [RMTTestService serviceWithHost:kLocalCleartextHost callOptions:options];
+  _localCleartextService =
+      [RMTTestService serviceWithHost:GRPCGetLocalInteropTestServerAddressPlainText()
+                          callOptions:options];
 
   // Local stack with SSL
   NSBundle *bundle = [NSBundle bundleForClass:[self class]];
@@ -112,7 +114,8 @@ dispatch_once_t initCronet;
   options.transportType = GRPCTransportTypeChttp2BoringSSL;
   options.PEMRootCertificates = certs;
   options.hostNameOverride = @"foo.test.google.fr";
-  _localSSLService = [RMTTestService serviceWithHost:kLocalSSLHost callOptions:options];
+  _localSSLService = [RMTTestService serviceWithHost:GRPCGetLocalInteropTestServerAddressSSL()
+                                         callOptions:options];
 }
 
 - (void)testEmptyUnaryRPC {

@@ -85,18 +85,6 @@ grpc_cc_test(
 )
 
 grpc_cc_test(
-    name = "manual_constructor_test",
-    srcs = ["manual_constructor_test.cc"],
-    language = "C++",
-    uses_event_engine = False,
-    uses_polling = False,
-    deps = [
-        "//:gpr",
-        "//test/core/util:grpc_test_util",
-    ],
-)
-
-grpc_cc_test(
     name = "bitset_test",
     srcs = ["bitset_test.cc"],
     external_deps = ["gtest"],
@@ -290,19 +278,6 @@ grpc_cc_test(
 )
 
 grpc_cc_test(
-    name = "capture_test",
-    srcs = ["capture_test.cc"],
-    external_deps = ["gtest"],
-    language = "c++",
-    uses_event_engine = False,
-    uses_polling = False,
-    deps = [
-        "//:capture",
-        "//test/core/util:grpc_suppressions",
-    ],
-)
-
-grpc_cc_test(
     name = "cpp_impl_of_test",
     srcs = ["cpp_impl_of_test.cc"],
     external_deps = ["gtest"],
@@ -368,6 +343,22 @@ grpc_cc_test(
     uses_polling = False,
     deps = [
         "//:single_set_ptr",
+        "//test/core/util:grpc_suppressions",
+    ],
+)
+
+grpc_cc_test(
+    name = "unique_type_name_test",
+    srcs = ["unique_type_name_test.cc"],
+    external_deps = [
+        "gtest",
+        "absl/strings:str_format",
+    ],
+    language = "c++",
+    uses_event_engine = False,
+    uses_polling = False,
+    deps = [
+        "//:unique_type_name",
         "//test/core/util:grpc_suppressions",
     ],
 )
