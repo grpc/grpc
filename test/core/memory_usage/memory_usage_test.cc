@@ -39,10 +39,6 @@ ABSL_FLAG(std::string, scenario_config, "default",
 ABSL_FLAG(bool, memory_profiling, false,
           "Run memory profiling");  // not connected to anything yet
 
-/*ABSL_FLAG(int, warmup, 100, "Warmup iterations");
-ABSL_FLAG(int, benchmark, 1000, "Benchmark iterations");
-ABSL_FLAG(bool, minstack, false, "Use minimal stack");*/
-
 class Subprocess {
  public:
   explicit Subprocess(std::vector<std::string> args) {
@@ -94,7 +90,6 @@ int main(int argc, char** argv) {
 
   /* per-call memory usage benchmark */
   if (absl::GetFlag(FLAGS_benchmark_name) == "call") {
-    printf("Running Per-call\n");
     /* start the server */
     Subprocess svr({absl::StrCat(root, "/memory_usage_server",
                                  gpr_subprocess_binary_extension()),
@@ -118,6 +113,5 @@ int main(int argc, char** argv) {
     return svr.Join() == 0 ? 0 : 2;
   }
 
-  // TO DO chennancy, return statement
   return 5;
 }
