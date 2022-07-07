@@ -1793,7 +1793,6 @@ TEST_F(RoundRobinTest, SingleReconnect) {
     return num_rpcs_not_on_backend_0 < kNumServers;
   });
   // Send a bunch of RPCs.
-  ResetCounters();
   for (int i = 0; i < 10 * kNumServers; ++i) {
     CheckRpcSendOk(DEBUG_LOCATION, stub);
   }
