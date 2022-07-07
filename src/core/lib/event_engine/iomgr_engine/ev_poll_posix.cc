@@ -14,8 +14,6 @@
 
 #include <grpc/support/port_platform.h>
 
-#include "ev_poll_posix.h"
-
 #include <stdint.h>
 
 #include <algorithm>

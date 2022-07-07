@@ -43,7 +43,8 @@
 #include <grpc/support/time.h>
 
 #include "src/core/lib/event_engine/iomgr_engine/closure.h"
-#include "src/core/lib/event_engine/iomgr_engine/event_poller.h"
+#include "src/core/lib/event_engine/iomgr_engine/ev_epoll1_linux.h"
+#include "src/core/lib/event_engine/iomgr_engine/ev_poll_posix.h"
 #include "src/core/lib/event_engine/iomgr_engine/iomgr_engine.h"
 #include "src/core/lib/iomgr/socket_utils_posix.h"
 #include "test/core/util/port.h"
@@ -478,16 +479,20 @@ int main(int argc, char** argv) {
   ::testing::InitGoogleTest(&argc, argv);
   auto engine =
       absl::make_unique<grpc_event_engine::experimental::IomgrEventEngine>();
+  int result = 0;
   EXPECT_NE(engine, nullptr);
   grpc_event_engine::iomgr_engine::TestScheduler scheduler(engine.get());
-  g_event_poller =
-      grpc_event_engine::iomgr_engine::GetDefaultPoller(&scheduler);
-  if (g_event_poller == nullptr) {
-    // Poller is not supported on this system.
-    return 0;
+  // Try both pollers (epoll1 and poll) one after the other.
+  g_event_poller = grpc_event_engine::iomgr_engine::GetEpoll1Poller(&scheduler);
+  if (g_event_poller != nullptr) {
+    result = RUN_ALL_TESTS();
+    g_event_poller->Shutdown();
   }
-  int result = RUN_ALL_TESTS();
-  g_event_poller->Shutdown();
+  g_event_poller = grpc_event_engine::iomgr_engine::GetPollPoller(&scheduler);
+  if (g_event_poller != nullptr) {
+    result |= RUN_ALL_TESTS();
+    g_event_poller->Shutdown();
+  }
   return result;
 }
 
