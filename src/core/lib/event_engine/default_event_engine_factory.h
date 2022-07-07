@@ -30,4 +30,4 @@ std::unique_ptr<EventEngine> DefaultEventEngineFactory();
 }  // namespace experimental
 }  // namespace grpc_event_engine
 
-#endif  // GRPC_CORE_LIB_EVENT_ENGINE_EVENT_ENGINE_FACTORY_H
+#endif  // GRPC_CORE_LIB_EVENT_ENGINE_DEFAULT_EVENT_ENGINE_FACTORY_H
