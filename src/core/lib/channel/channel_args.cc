@@ -287,8 +287,8 @@ void ChannelArgs::ChannelArgsDeleter::operator()(
   grpc_channel_args_destroy(p);
 }
 
-std::ostream& operator<<(std::ostream& os, const ChannelArgs& args) {
-  return os << args.ToString();
+std::ostream& operator<<(std::ostream& out, const ChannelArgs& args) {
+  return out << args.ToString();
 }
 
 }  // namespace grpc_core
