@@ -21,7 +21,7 @@
 #include <string.h>
 
 #include <functional>
-#include <type_traits>
+#include <type_traits>  // IWYU pragma: keep
 #include <utility>
 
 #include "absl/status/status.h"
