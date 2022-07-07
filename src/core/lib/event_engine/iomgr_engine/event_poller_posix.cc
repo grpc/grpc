@@ -15,6 +15,7 @@
 #include <grpc/support/port_platform.h>
 
 #include "src/core/lib/event_engine/iomgr_engine/ev_epoll1_linux.h"
+#include "src/core/lib/event_engine/iomgr_engine/ev_poll_posix.h"
 #include "src/core/lib/event_engine/iomgr_engine/event_poller.h"
 
 namespace grpc_event_engine {
@@ -22,6 +23,10 @@ namespace iomgr_engine {
 
 EventPoller* GetDefaultPoller(Scheduler* scheduler) {
   EventPoller* poller = GetEpoll1Poller(scheduler);
+  if (poller == nullptr) {
+    // Try poll based poller.
+    poller = GetPollPoller(scheduler);
+  }
   return poller;
 }
 

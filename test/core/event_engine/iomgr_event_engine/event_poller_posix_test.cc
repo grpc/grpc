@@ -143,7 +143,7 @@ void SessionShutdownCb(session* se, bool /*success*/) {
       absl::Status(absl::StatusCode::kUnknown, "SessionShutdownCb"));
 }
 
-/* Called when data become readable in a session. */
+// Called when data become readable in a session.
 void SessionReadCb(session* se, absl::Status status) {
   int fd = se->em_fd->WrappedFd();
 
@@ -161,10 +161,11 @@ void SessionReadCb(session* se, absl::Status status) {
   } while (read_once > 0);
   se->sv->read_bytes_total += read_total;
 
-  // read() returns 0 to indicate the TCP connection was closed by the client.
-  // read(fd, read_buf, 0) also returns 0 which should never be called as such.
-  // It is possible to read nothing due to spurious edge event or data has
-  // been drained, In such a case, read() returns -1 and set errno to EAGAIN.
+  // read() returns 0 to indicate the TCP connection was closed by the
+  // client read(fd, read_buf, 0) also returns 0 which should never be called as
+  // such. It is possible to read nothing due to spurious edge event or data has
+  // been drained, In such a case, read() returns -1 and set errno to
+  // EAGAIN.
   if (read_once == 0) {
     SessionShutdownCb(se, true);
   } else if (read_once == -1) {
@@ -180,8 +181,8 @@ void SessionReadCb(session* se, absl::Status status) {
   }
 }
 
-// Called when the listen FD can be safely shutdown. Close listen FD and signal
-// that server can be shutdown.
+// Called when the listen FD can be safely shutdown. Close listen FD and
+// signal that server can be shutdown.
 void ListenShutdownCb(server* sv) {
   sv->em_fd->OrphanHandle(nullptr, nullptr, "b");
   gpr_mu_lock(&g_mu);
@@ -204,8 +205,16 @@ void ListenCb(server* sv, absl::Status status) {
     return;
   }
 
-  fd = accept(listen_em_fd->WrappedFd(),
-              reinterpret_cast<struct sockaddr*>(&ss), &slen);
+  do {
+    fd = accept(listen_em_fd->WrappedFd(),
+                reinterpret_cast<struct sockaddr*>(&ss), &slen);
+  } while (fd < 0 && errno == EINTR);
+  if (fd < 0 && errno == EAGAIN) {
+    sv->listen_closure = IomgrEngineClosure::ToClosure(
+        [sv](absl::Status status) { ListenCb(sv, status); });
+    listen_em_fd->NotifyOnRead(sv->listen_closure);
+    return;
+  }
   EXPECT_GE(fd, 0);
   EXPECT_LT(fd, FD_SETSIZE);
   flags = fcntl(fd, F_GETFL, 0);
@@ -245,7 +254,7 @@ int ServerStart(server* sv) {
   return port;
 }
 
-/* ===An upload client to test notify_on_write=== */
+// ===An upload client to test notify_on_write===
 
 // An upload client.
 typedef struct {
@@ -295,9 +304,9 @@ void ClientSessionWrite(client* cl, absl::Status status) {
   if (cl->client_write_cnt < CLIENT_TOTAL_WRITE_CNT) {
     cl->write_closure = IomgrEngineClosure::ToClosure(
         [cl](absl::Status status) { ClientSessionWrite(cl, status); });
-    cl->em_fd->NotifyOnWrite(cl->write_closure);
     cl->client_write_cnt++;
     gpr_mu_unlock(&g_mu);
+    cl->em_fd->NotifyOnWrite(cl->write_closure);
   } else {
     gpr_mu_unlock(&g_mu);
     ClientSessionShutdownCb(cl);
