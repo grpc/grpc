@@ -18,8 +18,14 @@
 
 #include "src/core/lib/gprpp/work_serializer.h"
 
+#include <stdint.h>
+
 #include <atomic>
 #include <functional>
+#include <memory>
+#include <utility>
+
+#include <grpc/support/log.h>
 
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/gprpp/debug_location.h"
