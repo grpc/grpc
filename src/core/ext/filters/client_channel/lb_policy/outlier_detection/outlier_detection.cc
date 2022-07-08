@@ -40,7 +40,6 @@
 #include "absl/types/variant.h"
 
 #include <grpc/impl/codegen/connectivity_state.h>
-#include <grpc/impl/codegen/grpc_types.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 
@@ -350,7 +349,7 @@ class OutlierDetectionLb : public LoadBalancingPolicy {
     }
 
     RefCountedPtr<SubchannelInterface> CreateSubchannel(
-        ServerAddress address, const grpc_channel_args& args) override;
+        ServerAddress address, const ChannelArgs& args) override;
     void UpdateState(grpc_connectivity_state state, const absl::Status& status,
                      std::unique_ptr<SubchannelPicker> picker) override;
     void RequestReresolution() override;
@@ -390,7 +389,7 @@ class OutlierDetectionLb : public LoadBalancingPolicy {
   void ShutdownLocked() override;
 
   OrphanablePtr<LoadBalancingPolicy> CreateChildPolicyLocked(
-      const grpc_channel_args* args);
+      const ChannelArgs& args);
 
   void MaybeUpdatePickerLocked();
 
@@ -669,7 +668,8 @@ void OutlierDetectionLb::UpdateLocked(UpdateArgs args) {
   UpdateArgs update_args;
   update_args.addresses = std::move(args.addresses);
   update_args.config = config_->child_policy();
-  update_args.args = grpc_channel_args_copy(args.args);
+  // Update the policy.
+  update_args.args = std::move(args.args);
   if (GRPC_TRACE_FLAG_ENABLED(grpc_outlier_detection_lb_trace)) {
     gpr_log(GPR_INFO,
             "[outlier_detection_lb %p] Updating child policy handler %p", this,
@@ -695,7 +695,7 @@ void OutlierDetectionLb::MaybeUpdatePickerLocked() {
 }
 
 OrphanablePtr<LoadBalancingPolicy> OutlierDetectionLb::CreateChildPolicyLocked(
-    const grpc_channel_args* args) {
+    const ChannelArgs& args) {
   LoadBalancingPolicy::Args lb_policy_args;
   lb_policy_args.work_serializer = work_serializer();
   lb_policy_args.args = args;
@@ -722,7 +722,7 @@ OrphanablePtr<LoadBalancingPolicy> OutlierDetectionLb::CreateChildPolicyLocked(
 //
 
 RefCountedPtr<SubchannelInterface> OutlierDetectionLb::Helper::CreateSubchannel(
-    ServerAddress address, const grpc_channel_args& args) {
+    ServerAddress address, const ChannelArgs& args) {
   if (outlier_detection_policy_->shutting_down_) return nullptr;
   std::string key = MakeKeyForAddress(address);
   RefCountedPtr<SubchannelState> subchannel_state;

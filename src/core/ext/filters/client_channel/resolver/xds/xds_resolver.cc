@@ -69,7 +69,6 @@
 #include "src/core/lib/channel/status_util.h"
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/debug/trace.h"
-#include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/dual_ref_counted.h"
 #include "src/core/lib/gprpp/orphanable.h"
@@ -113,11 +112,10 @@ std::string GetDefaultAuthorityInternal(const URI& uri) {
   return uri.path().substr(pos + 1);
 }
 
-std::string GetDataPlaneAuthority(const grpc_channel_args& args,
-                                  const URI& uri) {
-  const char* authority =
-      grpc_channel_args_find_string(&args, GRPC_ARG_DEFAULT_AUTHORITY);
-  if (authority != nullptr) return authority;
+std::string GetDataPlaneAuthority(const ChannelArgs& args, const URI& uri) {
+  absl::optional<std::string> authority =
+      args.GetOwnedString(GRPC_ARG_DEFAULT_AUTHORITY);
+  if (authority.has_value()) return std::move(*authority);
   return GetDefaultAuthorityInternal(uri);
 }
 
@@ -130,10 +128,10 @@ class XdsResolver : public Resolver {
   explicit XdsResolver(ResolverArgs args)
       : work_serializer_(std::move(args.work_serializer)),
         result_handler_(std::move(args.result_handler)),
-        args_(grpc_channel_args_copy(args.args)),
+        args_(std::move(args.args)),
         interested_parties_(args.pollset_set),
         uri_(std::move(args.uri)),
-        data_plane_authority_(GetDataPlaneAuthority(*args.args, uri_)),
+        data_plane_authority_(GetDataPlaneAuthority(args_, uri_)),
         channel_id_(absl::Uniform<uint64_t>(absl::BitGen())) {
     if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_resolver_trace)) {
       gpr_log(
@@ -144,7 +142,6 @@ class XdsResolver : public Resolver {
   }
 
   ~XdsResolver() override {
-    grpc_channel_args_destroy(args_);
     if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_resolver_trace)) {
       gpr_log(GPR_INFO, "[xds_resolver %p] destroyed", this);
     }
@@ -323,7 +320,7 @@ class XdsResolver : public Resolver {
       return filters_;
     }
 
-    grpc_channel_args* ModifyChannelArgs(grpc_channel_args* args) override;
+    ChannelArgs ModifyChannelArgs(const ChannelArgs& args) override;
 
    private:
     struct Route {
@@ -370,10 +367,10 @@ class XdsResolver : public Resolver {
 
   std::shared_ptr<WorkSerializer> work_serializer_;
   std::unique_ptr<ResultHandler> result_handler_;
-  const grpc_channel_args* args_;
+  ChannelArgs args_;
   grpc_pollset_set* interested_parties_;
   URI uri_;
-  RefCountedPtr<XdsClient> xds_client_;
+  RefCountedPtr<GrpcXdsClient> xds_client_;
   std::string lds_resource_name_;
   std::string data_plane_authority_;
   uint64_t channel_id_;
@@ -599,7 +596,7 @@ grpc_error_handle XdsResolver::XdsConfigSelector::CreateMethodConfig(
       XdsRouting::GeneratePerHTTPFilterConfigs(
           resolver_->current_listener_.http_connection_manager.http_filters,
           resolver_->current_virtual_host_, route, cluster_weight,
-          grpc_channel_args_copy(resolver_->args_));
+          resolver_->args_);
   if (!GRPC_ERROR_IS_NONE(result.error)) {
     return result.error;
   }
@@ -624,12 +621,11 @@ grpc_error_handle XdsResolver::XdsConfigSelector::CreateMethodConfig(
     *method_config =
         ServiceConfigImpl::Create(result.args, json.c_str(), &error);
   }
-  grpc_channel_args_destroy(result.args);
   return error;
 }
 
-grpc_channel_args* XdsResolver::XdsConfigSelector::ModifyChannelArgs(
-    grpc_channel_args* args) {
+ChannelArgs XdsResolver::XdsConfigSelector::ModifyChannelArgs(
+    const ChannelArgs& args) {
   return args;
 }
 
@@ -804,7 +800,7 @@ void XdsResolver::StartLocked() {
     Result result;
     result.addresses = status;
     result.service_config = std::move(status);
-    result.args = grpc_channel_args_copy(args_);
+    result.args = args_;
     result_handler_->ReportResult(std::move(result));
     GRPC_ERROR_UNREF(error);
     return;
@@ -821,7 +817,7 @@ void XdsResolver::StartLocked() {
       Result result;
       result.addresses = status;
       result.service_config = std::move(status);
-      result.args = grpc_channel_args_copy(args_);
+      result.args = args_;
       result_handler_->ReportResult(std::move(result));
       return;
     }
@@ -978,9 +974,7 @@ void XdsResolver::OnError(absl::string_view context, absl::Status status) {
   Result result;
   result.addresses = status;
   result.service_config = std::move(status);
-  grpc_arg new_arg =
-      static_cast<GrpcXdsClient*>(xds_client_.get())->MakeChannelArg();
-  result.args = grpc_channel_args_copy_and_add(args_, &new_arg, 1);
+  result.args = args_.SetObject(xds_client_);
   result_handler_->ReportResult(std::move(result));
 }
 
@@ -999,7 +993,7 @@ void XdsResolver::OnResourceDoesNotExist(std::string context) {
   result.service_config = ServiceConfigImpl::Create(args_, "{}", &error);
   GPR_ASSERT(*result.service_config != nullptr);
   result.resolution_note = std::move(context);
-  result.args = grpc_channel_args_copy(args_);
+  result.args = args_;
   result_handler_->ReportResult(std::move(result));
 }
 
@@ -1072,12 +1066,7 @@ void XdsResolver::GenerateResult() {
                 ? std::string((*result.service_config)->json_string()).c_str()
                 : result.service_config.status().ToString().c_str());
   }
-  grpc_arg new_args[] = {
-      static_cast<GrpcXdsClient*>(xds_client_.get())->MakeChannelArg(),
-      config_selector->MakeChannelArg(),
-  };
-  result.args =
-      grpc_channel_args_copy_and_add(args_, new_args, GPR_ARRAY_SIZE(new_args));
+  result.args = args_.SetObject(xds_client_).SetObject(config_selector);
   result_handler_->ReportResult(std::move(result));
 }
 

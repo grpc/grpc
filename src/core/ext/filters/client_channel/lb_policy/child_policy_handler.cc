@@ -31,6 +31,7 @@
 
 #include "src/core/ext/filters/client_channel/lb_policy_registry.h"
 #include "src/core/ext/filters/client_channel/subchannel_interface.h"
+#include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/iomgr/pollset_set.h"
 #include "src/core/lib/resolver/server_address.h"
@@ -51,7 +52,7 @@ class ChildPolicyHandler::Helper
   ~Helper() override { parent_.reset(DEBUG_LOCATION, "Helper"); }
 
   RefCountedPtr<SubchannelInterface> CreateSubchannel(
-      ServerAddress address, const grpc_channel_args& args) override {
+      ServerAddress address, const ChannelArgs& args) override {
     if (parent_->shutting_down_) return nullptr;
     if (!CalledByCurrentChild() && !CalledByPendingChild()) return nullptr;
     return parent_->channel_control_helper()->CreateSubchannel(
@@ -233,7 +234,7 @@ void ChildPolicyHandler::UpdateLocked(UpdateArgs args) {
     }
     auto& lb_policy =
         child_policy_ == nullptr ? child_policy_ : pending_child_policy_;
-    lb_policy = CreateChildPolicy(args.config->name(), *args.args);
+    lb_policy = CreateChildPolicy(args.config->name(), args.args);
     policy_to_update = lb_policy.get();
   } else {
     // Cases 2a and 3a: update an existing policy.
@@ -273,13 +274,13 @@ void ChildPolicyHandler::ResetBackoffLocked() {
 }
 
 OrphanablePtr<LoadBalancingPolicy> ChildPolicyHandler::CreateChildPolicy(
-    const char* child_policy_name, const grpc_channel_args& args) {
+    const char* child_policy_name, const ChannelArgs& args) {
   Helper* helper = new Helper(Ref(DEBUG_LOCATION, "Helper"));
   LoadBalancingPolicy::Args lb_policy_args;
   lb_policy_args.work_serializer = work_serializer();
   lb_policy_args.channel_control_helper =
       std::unique_ptr<ChannelControlHelper>(helper);
-  lb_policy_args.args = &args;
+  lb_policy_args.args = args;
   OrphanablePtr<LoadBalancingPolicy> lb_policy =
       CreateLoadBalancingPolicy(child_policy_name, std::move(lb_policy_args));
   if (GPR_UNLIKELY(lb_policy == nullptr)) {

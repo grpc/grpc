@@ -26,6 +26,7 @@
 
 #include <grpc/impl/codegen/grpc_types.h>
 
+#include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/gprpp/dual_ref_counted.h"
 #include "src/core/lib/gprpp/ref_counted.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
@@ -71,6 +72,10 @@ class ServerConfigSelectorProvider
   virtual void CancelWatch() = 0;
 
   static absl::string_view ChannelArgName();
+  static int ChannelArgsCompare(const ServerConfigSelectorProvider* a,
+                                const ServerConfigSelectorProvider* b) {
+    return QsortCompare(a, b);
+  }
 
   grpc_arg MakeChannelArg() const;
 };
