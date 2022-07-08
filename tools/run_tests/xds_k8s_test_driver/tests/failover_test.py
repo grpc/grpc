@@ -18,6 +18,7 @@ from absl import flags
 from absl.testing import absltest
 
 from framework import xds_k8s_testcase
+from framework.helpers import skips
 from framework.infrastructure import k8s
 from framework.test_app import server_app
 
@@ -27,11 +28,19 @@ flags.adopt_module_key_flags(xds_k8s_testcase)
 # Type aliases
 _XdsTestServer = xds_k8s_testcase.XdsTestServer
 _XdsTestClient = xds_k8s_testcase.XdsTestClient
+_Lang = skips.Lang
 
 
 class FailoverTest(xds_k8s_testcase.RegularXdsKubernetesTestCase):
     REPLICA_COUNT = 3
     MAX_RATE_PER_ENDPOINT = 100
+
+    @staticmethod
+    def is_supported(config: skips.TestConfig) -> bool:
+        # Test case implementation seems to be broken for Java and Go.
+        # Core (cpp and python), and Node seem to work fine.
+        # TODO(b/238226704): Remove when the test is fixed.
+        return config.client_lang not in _Lang.JAVA | _Lang.GO
 
     def setUp(self):
         super().setUp()

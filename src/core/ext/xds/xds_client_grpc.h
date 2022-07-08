@@ -21,10 +21,14 @@
 
 #include <memory>
 
+#include "absl/strings/string_view.h"
+
 #include <grpc/impl/codegen/grpc_types.h>
 
 #include "src/core/ext/xds/xds_bootstrap.h"
 #include "src/core/ext/xds/xds_client.h"
+#include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/iomgr_fwd.h"
@@ -36,20 +40,23 @@ class GrpcXdsClient : public XdsClient {
   // Factory function to get or create the global XdsClient instance.
   // If *error is not GRPC_ERROR_NONE upon return, then there was
   // an error initializing the client.
-  static RefCountedPtr<XdsClient> GetOrCreate(const grpc_channel_args* args,
+  static RefCountedPtr<XdsClient> GetOrCreate(const ChannelArgs& args,
                                               grpc_error_handle* error);
 
   // Do not instantiate directly -- use GetOrCreate() instead.
   GrpcXdsClient(std::unique_ptr<XdsBootstrap> bootstrap,
-                const grpc_channel_args* args);
+                const ChannelArgs& args);
   ~GrpcXdsClient() override;
 
-  grpc_pollset_set* interested_parties() const;
-
   // Helpers for encoding the XdsClient object in channel args.
-  grpc_arg MakeChannelArg() const;
-  static RefCountedPtr<XdsClient> GetFromChannelArgs(
-      const grpc_channel_args& args);
+  static absl::string_view ChannelArgName() {
+    return "grpc.internal.xds_client";
+  }
+  static int ChannelArgsCompare(const XdsClient* a, const XdsClient* b) {
+    return QsortCompare(a, b);
+  }
+
+  grpc_pollset_set* interested_parties() const;
 };
 
 namespace internal {

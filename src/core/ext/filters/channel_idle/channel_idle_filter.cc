@@ -96,7 +96,7 @@ struct MaxAgeFilter::Config {
      connection storms. Note that the MAX_CONNECTION_AGE option without jitter
      would not create connection storms by itself, but if there happened to be a
      connection storm it could cause it to repeat at a fixed period. */
-  static Config FromChannelArgs(ChannelArgs args) {
+  static Config FromChannelArgs(const ChannelArgs& args) {
     const Duration args_max_age =
         args.GetDurationFromIntMillis(GRPC_ARG_MAX_CONNECTION_AGE_MS)
             .value_or(kDefaultMaxConnectionAge);
@@ -118,14 +118,14 @@ struct MaxAgeFilter::Config {
 };
 
 absl::StatusOr<ClientIdleFilter> ClientIdleFilter::Create(
-    ChannelArgs args, ChannelFilter::Args filter_args) {
+    const ChannelArgs& args, ChannelFilter::Args filter_args) {
   ClientIdleFilter filter(filter_args.channel_stack(),
                           GetClientIdleTimeout(args));
   return absl::StatusOr<ClientIdleFilter>(std::move(filter));
 }
 
 absl::StatusOr<MaxAgeFilter> MaxAgeFilter::Create(
-    ChannelArgs args, ChannelFilter::Args filter_args) {
+    const ChannelArgs& args, ChannelFilter::Args filter_args) {
   MaxAgeFilter filter(filter_args.channel_stack(),
                       Config::FromChannelArgs(args));
   return absl::StatusOr<MaxAgeFilter>(std::move(filter));

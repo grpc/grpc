@@ -20,6 +20,7 @@
 #include "src/core/ext/filters/http/client/http_client_filter.h"
 #include "src/core/ext/filters/http/client_authority_filter.h"
 #include "src/core/ext/filters/http/server/http_server_filter.h"
+#include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_stack_builder_impl.h"
 #include "src/core/lib/gpr/env.h"
 #include "src/core/lib/iomgr/executor.h"
@@ -102,7 +103,7 @@ class FakeChannelSecurityConnector final
     };
   }
 
-  void add_handshakers(const grpc_channel_args*, grpc_pollset_set*,
+  void add_handshakers(const ChannelArgs&, grpc_pollset_set*,
                        HandshakeManager*) override {
     abort();
   }
@@ -259,7 +260,7 @@ const grpc_channel_filter* FindFilter(absl::string_view name) {
 class MainLoop {
  public:
   MainLoop(RefCountedPtr<grpc_channel_stack> channel_stack,
-           ChannelArgs channel_args)
+           const ChannelArgs& channel_args)
       : memory_allocator_(channel_args.GetObject<ResourceQuota>()
                               ->memory_quota()
                               ->CreateMemoryAllocator("test")),
@@ -356,7 +357,7 @@ class MainLoop {
     // EndFilter is the last filter that will be invoked for a call
     class EndFilter : public ChannelFilter {
      public:
-      static absl::StatusOr<EndFilter> Create(ChannelArgs,
+      static absl::StatusOr<EndFilter> Create(const ChannelArgs&,
                                               ChannelFilter::Args) {
         return EndFilter{};
       }
@@ -381,7 +382,7 @@ class MainLoop {
     // BottomFilter is the last filter on a channel stack (for sinking ops)
     class BottomFilter : public ChannelFilter {
      public:
-      static absl::StatusOr<BottomFilter> Create(ChannelArgs,
+      static absl::StatusOr<BottomFilter> Create(const ChannelArgs&,
                                                  ChannelFilter::Args) {
         return BottomFilter{};
       }
@@ -619,7 +620,7 @@ DEFINE_PROTO_FUZZER(const filter_fuzzer::Msg& msg) {
   }();
 
   if (stack.ok()) {
-    grpc_core::MainLoop main_loop(std::move(*stack), std::move(channel_args));
+    grpc_core::MainLoop main_loop(std::move(*stack), channel_args);
     for (const auto& action : msg.actions()) {
       grpc_timer_manager_tick();
       main_loop.Run(action, &globals);

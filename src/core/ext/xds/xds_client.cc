@@ -452,14 +452,14 @@ XdsClient::ChannelState::~ChannelState() {
 
 // This method should only ever be called when holding the lock, but we can't
 // use a ABSL_EXCLUSIVE_LOCKS_REQUIRED annotation, because Orphan() will be
-// called from DualRefCounted::Unref, which cannot have a lock annotation for a
-// lock in this subclass.
+// called from DualRefCounted::Unref, which cannot have a lock annotation for
+// a lock in this subclass.
 void XdsClient::ChannelState::Orphan() ABSL_NO_THREAD_SAFETY_ANALYSIS {
   shutting_down_ = true;
   transport_.reset();
   // At this time, all strong refs are removed, remove from channel map to
-  // prevent subsequent subscription from trying to use this ChannelState as it
-  // is shutting down.
+  // prevent subsequent subscription from trying to use this ChannelState as
+  // it is shutting down.
   xds_client_->xds_server_channel_map_.erase(server_);
   ads_calld_.reset();
   lrs_calld_.reset();
@@ -591,10 +591,10 @@ void XdsClient::ChannelState::RetryableCall<T>::StartNewCallLocked() {
   GPR_ASSERT(chand_->transport_ != nullptr);
   GPR_ASSERT(calld_ == nullptr);
   if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_client_trace)) {
-    gpr_log(
-        GPR_INFO,
-        "[xds_client %p] xds server %s: start new call from retryable call %p",
-        chand()->xds_client(), chand()->server_.server_uri.c_str(), this);
+    gpr_log(GPR_INFO,
+            "[xds_client %p] xds server %s: start new call from retryable "
+            "call %p",
+            chand()->xds_client(), chand()->server_.server_uri.c_str(), this);
   }
   calld_ = MakeOrphanable<T>(
       this->Ref(DEBUG_LOCATION, "RetryableCall+start_new_call"));
@@ -978,13 +978,13 @@ void XdsClient::ChannelState::AdsCallState::OnRecvMessage(
       // If we got an error, set state.error so that we'll NACK the update.
       if (!result.errors.empty()) {
         std::string error = absl::StrJoin(result.errors, "; ");
-        gpr_log(
-            GPR_ERROR,
-            "[xds_client %p] xds server %s: ADS response invalid for resource "
-            "type %s version %s, will NACK: nonce=%s error=%s",
-            xds_client(), chand()->server_.server_uri.c_str(),
-            result.type_url.c_str(), result.version.c_str(),
-            state.nonce.c_str(), error.c_str());
+        gpr_log(GPR_ERROR,
+                "[xds_client %p] xds server %s: ADS response invalid for "
+                "resource "
+                "type %s version %s, will NACK: nonce=%s error=%s",
+                xds_client(), chand()->server_.server_uri.c_str(),
+                result.type_url.c_str(), result.version.c_str(),
+                state.nonce.c_str(), error.c_str());
         GRPC_ERROR_UNREF(state.error);
         state.error = grpc_error_set_int(
             GRPC_ERROR_CREATE_FROM_CPP_STRING(error),
@@ -1009,12 +1009,12 @@ void XdsClient::ChannelState::AdsCallState::OnRecvMessage(
                 seen_authority_it->second.find(resource_key) ==
                     seen_authority_it->second.end()) {
               // If the resource was newly requested but has not yet been
-              // received, we don't want to generate an error for the watchers,
-              // because this ADS response may be in reaction to an earlier
-              // request that did not yet request the new resource, so its
-              // absence from the response does not necessarily indicate that
-              // the resource does not exist.  For that case, we rely on the
-              // request timeout instead.
+              // received, we don't want to generate an error for the
+              // watchers, because this ADS response may be in reaction to an
+              // earlier request that did not yet request the new resource, so
+              // its absence from the response does not necessarily indicate
+              // that the resource does not exist.  For that case, we rely on
+              // the request timeout instead.
               if (resource_state.resource == nullptr) continue;
               if (chand()->server_.IgnoreResourceDeletion()) {
                 if (!resource_state.ignored_deletion) {
@@ -1080,8 +1080,8 @@ void XdsClient::ChannelState::AdsCallState::OnStatusReceived(
 }
 
 bool XdsClient::ChannelState::AdsCallState::IsCurrentCallOnChannel() const {
-  // If the retryable ADS call is null (which only happens when the xds channel
-  // is shutting down), all the ADS calls are stale.
+  // If the retryable ADS call is null (which only happens when the xds
+  // channel is shutting down), all the ADS calls are stale.
   if (chand()->ads_calld_ == nullptr) return false;
   return this == chand()->ads_calld_->calld();
 }
@@ -1217,10 +1217,11 @@ XdsClient::ChannelState::LrsCallState::LrsCallState(
   // activity in xds_client()->interested_parties_, which is comprised of
   // the polling entities from client_channel.
   GPR_ASSERT(xds_client() != nullptr);
-  const char* method =
-      chand()->server_.ShouldUseV3()
-          ? "/envoy.service.load_stats.v3.LoadReportingService/StreamLoadStats"
-          : "/envoy.service.load_stats.v2.LoadReportingService/StreamLoadStats";
+  const char* method = chand()->server_.ShouldUseV3()
+                           ? "/envoy.service.load_stats.v3."
+                             "LoadReportingService/StreamLoadStats"
+                           : "/envoy.service.load_stats.v2."
+                             "LoadReportingService/StreamLoadStats";
   call_ = chand()->transport_->CreateStreamingCall(
       method, absl::make_unique<StreamEventHandler>(
                   // Passing the initial ref here.  This ref will go away when
@@ -1229,10 +1230,11 @@ XdsClient::ChannelState::LrsCallState::LrsCallState(
   GPR_ASSERT(call_ != nullptr);
   // Start the call.
   if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_client_trace)) {
-    gpr_log(
-        GPR_INFO,
-        "[xds_client %p] xds server %s: starting LRS call (calld=%p, call=%p)",
-        xds_client(), chand()->server_.server_uri.c_str(), this, call_.get());
+    gpr_log(GPR_INFO,
+            "[xds_client %p] xds server %s: starting LRS call (calld=%p, "
+            "call=%p)",
+            xds_client(), chand()->server_.server_uri.c_str(), this,
+            call_.get());
   }
   // Send the initial request.
   std::string serialized_payload =
@@ -1252,8 +1254,8 @@ void XdsClient::ChannelState::LrsCallState::Orphan() {
 void XdsClient::ChannelState::LrsCallState::MaybeStartReportingLocked() {
   // Don't start again if already started.
   if (reporter_ != nullptr) return;
-  // Don't start if the previous send_message op (of the initial request or the
-  // last report of the previous reporter) hasn't completed.
+  // Don't start if the previous send_message op (of the initial request or
+  // the last report of the previous reporter) hasn't completed.
   if (call_ != nullptr && send_message_pending_) return;
   // Don't start if no LRS response has arrived.
   if (!seen_response()) return;
@@ -1368,8 +1370,8 @@ void XdsClient::ChannelState::LrsCallState::OnStatusReceived(
 }
 
 bool XdsClient::ChannelState::LrsCallState::IsCurrentCallOnChannel() const {
-  // If the retryable LRS call is null (which only happens when the xds channel
-  // is shutting down), all the LRS calls are stale.
+  // If the retryable LRS call is null (which only happens when the xds
+  // channel is shutting down), all the LRS calls are stale.
   if (chand()->lrs_calld_ == nullptr) return false;
   return this == chand()->lrs_calld_->calld();
 }
@@ -1572,7 +1574,8 @@ const XdsResourceType* XdsClient::GetResourceTypeLocked(
 absl::StatusOr<XdsClient::XdsResourceName> XdsClient::ParseXdsResourceName(
     absl::string_view name, const XdsResourceType* type) {
   // Old-style names use the empty string for authority.
-  // authority is prefixed with "old:" to indicate that it's an old-style name.
+  // authority is prefixed with "old:" to indicate that it's an old-style
+  // name.
   if (!xds_federation_enabled_ || !absl::StartsWith(name, "xdstp:")) {
     return XdsResourceName{"old:", {std::string(name), {}}};
   }

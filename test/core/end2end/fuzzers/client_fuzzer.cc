@@ -23,6 +23,7 @@
 #include <grpc/support/string_util.h>
 
 #include "src/core/ext/transport/chttp2/transport/chttp2_transport.h"
+#include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/iomgr/executor.h"
 #include "src/core/lib/resource_quota/api.h"
 #include "src/core/lib/slice/slice_internal.h"
@@ -50,13 +51,11 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
         grpc_resource_quota_create("context_list_test");
     grpc_endpoint* mock_endpoint = grpc_mock_endpoint_create(discard_write);
     grpc_completion_queue* cq = grpc_completion_queue_create_for_next(nullptr);
-    const grpc_channel_args* args = grpc_core::CoreConfiguration::Get()
-                                        .channel_args_preconditioning()
-                                        .PreconditionChannelArgs(nullptr)
-                                        .ToC();
+    grpc_core::ChannelArgs args = grpc_core::CoreConfiguration::Get()
+                                      .channel_args_preconditioning()
+                                      .PreconditionChannelArgs(nullptr);
     grpc_transport* transport =
-        grpc_create_chttp2_transport(args, mock_endpoint, true);
-    grpc_channel_args_destroy(args);
+        grpc_create_chttp2_transport(args.ToC().get(), mock_endpoint, true);
     grpc_resource_quota_unref(resource_quota);
     grpc_chttp2_transport_start_reading(transport, nullptr, nullptr, nullptr);
     auto channel_args =

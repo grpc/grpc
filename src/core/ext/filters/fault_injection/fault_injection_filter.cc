@@ -132,7 +132,7 @@ class FaultInjectionFilter::InjectionDecision {
 };
 
 absl::StatusOr<FaultInjectionFilter> FaultInjectionFilter::Create(
-    ChannelArgs, ChannelFilter::Args filter_args) {
+    const ChannelArgs&, ChannelFilter::Args filter_args) {
   return FaultInjectionFilter(filter_args);
 }
 

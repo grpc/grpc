@@ -24,8 +24,6 @@
 #include <memory>
 #include <utility>
 
-#include "absl/container/inlined_vector.h"
-
 #include <grpc/byte_buffer.h>
 #include <grpc/byte_buffer_reader.h>
 #include <grpc/grpc.h>
@@ -33,7 +31,6 @@
 #include <grpc/impl/codegen/propagation_bits.h>
 #include <grpc/slice.h>
 #include <grpc/support/log.h>
-#include <grpc/support/time.h>
 
 #include "src/core/ext/filters/client_channel/client_channel.h"
 #include "src/core/ext/xds/xds_bootstrap.h"
@@ -249,13 +246,13 @@ class GrpcXdsTransportFactory::GrpcXdsTransport::StateWatcher
 
 namespace {
 
-grpc_channel* CreateXdsChannel(grpc_channel_args* args,
+grpc_channel* CreateXdsChannel(const ChannelArgs& args,
                                const XdsBootstrap::XdsServer& server) {
   RefCountedPtr<grpc_channel_credentials> channel_creds =
       CoreConfiguration::Get().channel_creds_registry().CreateChannelCreds(
           server.channel_creds_type, server.channel_creds_config);
   return grpc_channel_create(server.server_uri.c_str(), channel_creds.get(),
-                             args);
+                             args.ToC().get());
 }
 
 bool IsLameChannel(grpc_channel* channel) {
@@ -319,19 +316,13 @@ void GrpcXdsTransportFactory::GrpcXdsTransport::ResetBackoff() {
 
 namespace {
 
-grpc_channel_args* ModifyChannelArgs(const grpc_channel_args* args) {
-  absl::InlinedVector<grpc_arg, 1> args_to_add = {
-      grpc_channel_arg_integer_create(
-          const_cast<char*>(GRPC_ARG_KEEPALIVE_TIME_MS),
-          5 * 60 * GPR_MS_PER_SEC),
-  };
-  return grpc_channel_args_copy_and_add(args, args_to_add.data(),
-                                        args_to_add.size());
+ChannelArgs ModifyChannelArgs(const ChannelArgs& args) {
+  return args.Set(GRPC_ARG_KEEPALIVE_TIME_MS, Duration::Minutes(5).millis());
 }
 
 }  // namespace
 
-GrpcXdsTransportFactory::GrpcXdsTransportFactory(const grpc_channel_args* args)
+GrpcXdsTransportFactory::GrpcXdsTransportFactory(const ChannelArgs& args)
     : args_(ModifyChannelArgs(args)),
       interested_parties_(grpc_pollset_set_create()) {
   // Calling grpc_init to ensure gRPC does not shut down until the XdsClient is
@@ -340,7 +331,6 @@ GrpcXdsTransportFactory::GrpcXdsTransportFactory(const grpc_channel_args* args)
 }
 
 GrpcXdsTransportFactory::~GrpcXdsTransportFactory() {
-  grpc_channel_args_destroy(args_);
   grpc_pollset_set_destroy(interested_parties_);
   // Calling grpc_shutdown to ensure gRPC does not shut down until the XdsClient
   // is destroyed.

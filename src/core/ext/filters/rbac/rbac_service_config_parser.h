@@ -28,8 +28,7 @@
 
 #include "absl/strings/string_view.h"
 
-#include <grpc/impl/codegen/grpc_types.h>
-
+#include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/json/json.h"
@@ -71,7 +70,7 @@ class RbacServiceConfigParser : public ServiceConfigParser::Parser {
   absl::string_view name() const override { return parser_name(); }
   // Parses the per-method service config for rbac filter.
   std::unique_ptr<ServiceConfigParser::ParsedConfig> ParsePerMethodParams(
-      const grpc_channel_args* args, const Json& json,
+      const ChannelArgs& args, const Json& json,
       grpc_error_handle* error) override;
   // Returns the parser index for RbacServiceConfigParser.
   static size_t ParserIndex();

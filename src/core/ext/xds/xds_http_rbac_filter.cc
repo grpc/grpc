@@ -555,14 +555,9 @@ const grpc_channel_filter* XdsHttpRbacFilter::channel_filter() const {
   return &RbacFilter::kFilterVtable;
 }
 
-grpc_channel_args* XdsHttpRbacFilter::ModifyChannelArgs(
-    grpc_channel_args* args) const {
-  grpc_arg arg_to_add = grpc_channel_arg_integer_create(
-      const_cast<char*>(GRPC_ARG_PARSE_RBAC_METHOD_CONFIG), 1);
-  grpc_channel_args* new_args =
-      grpc_channel_args_copy_and_add(args, &arg_to_add, 1);
-  grpc_channel_args_destroy(args);
-  return new_args;
+ChannelArgs XdsHttpRbacFilter::ModifyChannelArgs(
+    const ChannelArgs& args) const {
+  return args.Set(GRPC_ARG_PARSE_RBAC_METHOD_CONFIG, 1);
 }
 
 absl::StatusOr<XdsHttpFilterImpl::ServiceConfigJsonEntry>
