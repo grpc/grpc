@@ -21,6 +21,7 @@ grpc_package(name = "test/core/surface")
 grpc_cc_test(
     name = "grpc_byte_buffer_reader_test",
     srcs = ["byte_buffer_reader_test.cc"],
+    external_deps = ["gtest"],
     language = "C++",
     uses_event_engine = False,
     uses_polling = False,
@@ -34,6 +35,7 @@ grpc_cc_test(
 grpc_cc_test(
     name = "grpc_completion_queue_test",
     srcs = ["completion_queue_test.cc"],
+    external_deps = ["gtest"],
     language = "C++",
     deps = [
         "//:gpr",
@@ -45,6 +47,7 @@ grpc_cc_test(
 grpc_cc_test(
     name = "completion_queue_threading_test",
     srcs = ["completion_queue_threading_test.cc"],
+    external_deps = ["gtest"],
     flaky = True,  # TODO(b/153064668)
     language = "C++",
     deps = [
@@ -57,6 +60,7 @@ grpc_cc_test(
 grpc_cc_test(
     name = "concurrent_connectivity_test",
     srcs = ["concurrent_connectivity_test.cc"],
+    external_deps = ["gtest"],
     language = "C++",
     deps = [
         "//:gpr",
@@ -84,6 +88,7 @@ grpc_cc_test(
 grpc_cc_test(
     name = "lame_client_test",
     srcs = ["lame_client_test.cc"],
+    external_deps = ["gtest"],
     language = "C++",
     deps = [
         "//:gpr",
@@ -99,6 +104,7 @@ grpc_cc_test(
     data = [
         "//src/core/tsi/test_creds:ca.pem",
     ],
+    external_deps = ["gtest"],
     language = "C++",
     deps = [
         "//:gpr",
@@ -122,6 +128,7 @@ grpc_cc_test(
 grpc_cc_test(
     name = "secure_channel_create_test",
     srcs = ["secure_channel_create_test.cc"],
+    external_deps = ["gtest"],
     language = "C++",
     deps = [
         "//:gpr",
@@ -138,6 +145,7 @@ grpc_cc_test(
         "//src/core/tsi/test_creds:server1.key",
         "//src/core/tsi/test_creds:server1.pem",
     ],
+    external_deps = ["gtest"],
     flaky = True,  # TODO(b/151696318)
     language = "C++",
     deps = [
@@ -164,6 +172,7 @@ grpc_cc_test(
 grpc_cc_test(
     name = "server_test",
     srcs = ["server_test.cc"],
+    external_deps = ["gtest"],
     language = "C++",
     deps = [
         "//:gpr",

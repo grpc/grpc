@@ -63,11 +63,15 @@ UPB_INLINE envoy_config_trace_v3_OpenCensusConfig* envoy_config_trace_v3_OpenCen
   return ret;
 }
 UPB_INLINE char* envoy_config_trace_v3_OpenCensusConfig_serialize(const envoy_config_trace_v3_OpenCensusConfig* msg, upb_Arena* arena, size_t* len) {
-  return upb_Encode(msg, &envoy_config_trace_v3_OpenCensusConfig_msginit, 0, arena, len);
+  char* ptr;
+  (void)upb_Encode(msg, &envoy_config_trace_v3_OpenCensusConfig_msginit, 0, arena, &ptr, len);
+  return ptr;
 }
 UPB_INLINE char* envoy_config_trace_v3_OpenCensusConfig_serialize_ex(const envoy_config_trace_v3_OpenCensusConfig* msg, int options,
                                  upb_Arena* arena, size_t* len) {
-  return upb_Encode(msg, &envoy_config_trace_v3_OpenCensusConfig_msginit, options, arena, len);
+  char* ptr;
+  (void)upb_Encode(msg, &envoy_config_trace_v3_OpenCensusConfig_msginit, options, arena, &ptr, len);
+  return ptr;
 }
 UPB_INLINE bool envoy_config_trace_v3_OpenCensusConfig_has_trace_config(const envoy_config_trace_v3_OpenCensusConfig* msg) {
   return _upb_hasbit(msg, 1);

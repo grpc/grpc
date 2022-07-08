@@ -21,8 +21,10 @@
 #include "src/core/lib/security/credentials/xds/xds_credentials.h"
 
 #include "absl/strings/string_view.h"
+#include "absl/types/optional.h"
 
 #include <grpc/grpc_security_constants.h>
+#include <grpc/impl/codegen/grpc_types.h>
 #include <grpc/support/log.h>
 
 #include "src/core/ext/filters/client_channel/lb_policy/xds/xds_channel_args.h"
@@ -132,33 +134,15 @@ bool TestOnlyXdsVerifySubjectAlternativeNames(
 RefCountedPtr<grpc_channel_security_connector>
 XdsCredentials::create_security_connector(
     RefCountedPtr<grpc_call_credentials> call_creds, const char* target_name,
-    const grpc_channel_args* args, grpc_channel_args** new_args) {
-  struct ChannelArgsDeleter {
-    const grpc_channel_args* args;
-    bool owned;
-    ~ChannelArgsDeleter() {
-      if (owned) grpc_channel_args_destroy(args);
-    }
-  };
-  ChannelArgsDeleter temp_args{args, false};
+    ChannelArgs* args) {
   // TODO(yashykt): This arg will no longer need to be added after b/173119596
   // is fixed.
-  grpc_arg override_arg = grpc_channel_arg_string_create(
-      const_cast<char*>(GRPC_SSL_TARGET_NAME_OVERRIDE_ARG),
-      const_cast<char*>(target_name));
-  const char* override_arg_name = GRPC_SSL_TARGET_NAME_OVERRIDE_ARG;
-  if (grpc_channel_args_find(args, override_arg_name) == nullptr) {
-    temp_args.args = grpc_channel_args_copy_and_add_and_remove(
-        args, &override_arg_name, 1, &override_arg, 1);
-    temp_args.owned = true;
-  }
+  *args = args->SetIfUnset(GRPC_SSL_TARGET_NAME_OVERRIDE_ARG, target_name);
   RefCountedPtr<grpc_channel_security_connector> security_connector;
-  auto xds_certificate_provider =
-      XdsCertificateProvider::GetFromChannelArgs(args);
+  auto xds_certificate_provider = args->GetObjectRef<XdsCertificateProvider>();
   if (xds_certificate_provider != nullptr) {
-    std::string cluster_name =
-        grpc_channel_args_find_string(args, GRPC_ARG_XDS_CLUSTER_NAME);
-    GPR_ASSERT(cluster_name.data() != nullptr);
+    std::string cluster_name(
+        args->GetString(GRPC_ARG_XDS_CLUSTER_NAME).value());
     const bool watch_root =
         xds_certificate_provider->ProvidesRootCerts(cluster_name);
     const bool watch_identity =
@@ -183,13 +167,13 @@ XdsCredentials::create_security_connector(
       tls_credentials_options->set_check_call_host(false);
       auto tls_credentials =
           MakeRefCounted<TlsCredentials>(std::move(tls_credentials_options));
-      return tls_credentials->create_security_connector(
-          std::move(call_creds), target_name, temp_args.args, new_args);
+      return tls_credentials->create_security_connector(std::move(call_creds),
+                                                        target_name, args);
     }
   }
   GPR_ASSERT(fallback_credentials_ != nullptr);
-  return fallback_credentials_->create_security_connector(
-      std::move(call_creds), target_name, temp_args.args, new_args);
+  return fallback_credentials_->create_security_connector(std::move(call_creds),
+                                                          target_name, args);
 }
 
 UniqueTypeName XdsCredentials::Type() {
@@ -202,9 +186,8 @@ UniqueTypeName XdsCredentials::Type() {
 //
 
 RefCountedPtr<grpc_server_security_connector>
-XdsServerCredentials::create_security_connector(const grpc_channel_args* args) {
-  auto xds_certificate_provider =
-      XdsCertificateProvider::GetFromChannelArgs(args);
+XdsServerCredentials::create_security_connector(const ChannelArgs& args) {
+  auto xds_certificate_provider = args.GetObjectRef<XdsCertificateProvider>();
   // Identity certs are a must for TLS.
   if (xds_certificate_provider != nullptr &&
       xds_certificate_provider->ProvidesIdentityCerts("")) {

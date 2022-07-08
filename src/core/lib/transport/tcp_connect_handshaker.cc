@@ -25,8 +25,9 @@
 #include "absl/base/thread_annotations.h"
 #include "absl/memory/memory.h"
 #include "absl/status/statusor.h"
+#include "absl/strings/string_view.h"
+#include "absl/types/optional.h"
 
-#include <grpc/impl/codegen/grpc_types.h>
 #include <grpc/slice.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
@@ -34,7 +35,6 @@
 #include "src/core/lib/address_utils/parse_address.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/config/core_configuration.h"
-#include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/gprpp/sync.h"
@@ -129,25 +129,20 @@ void TCPConnectHandshaker::DoHandshake(grpc_tcp_server_acceptor* /*acceptor*/,
   }
   GPR_ASSERT(args->endpoint == nullptr);
   args_ = args;
-  char* address = grpc_channel_args_find_string(
-      args->args, GRPC_ARG_TCP_HANDSHAKER_RESOLVED_ADDRESS);
-  absl::StatusOr<URI> uri = URI::Parse(address);
+  absl::StatusOr<URI> uri = URI::Parse(
+      args->args.GetString(GRPC_ARG_TCP_HANDSHAKER_RESOLVED_ADDRESS).value());
   if (!uri.ok() || !grpc_parse_uri(*uri, &addr_)) {
     MutexLock lock(&mu_);
     FinishLocked(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
         "Resolved address in invalid format"));
     return;
   }
-  bind_endpoint_to_pollset_ = grpc_channel_args_find_bool(
-      args->args, GRPC_ARG_TCP_HANDSHAKER_BIND_ENDPOINT_TO_POLLSET, false);
-  const char* args_to_remove[] = {
-      GRPC_ARG_TCP_HANDSHAKER_RESOLVED_ADDRESS,
-      GRPC_ARG_TCP_HANDSHAKER_BIND_ENDPOINT_TO_POLLSET};
+  bind_endpoint_to_pollset_ =
+      args->args.GetBool(GRPC_ARG_TCP_HANDSHAKER_BIND_ENDPOINT_TO_POLLSET)
+          .value_or(false);
   // Update args to not contain the args relevant to TCP connect handshaker.
-  grpc_channel_args* channel_args = grpc_channel_args_copy_and_remove(
-      args->args, args_to_remove, GPR_ARRAY_SIZE(args_to_remove));
-  grpc_channel_args_destroy(args->args);
-  args->args = channel_args;
+  args->args = args->args.Remove(GRPC_ARG_TCP_HANDSHAKER_RESOLVED_ADDRESS)
+                   .Remove(GRPC_ARG_TCP_HANDSHAKER_BIND_ENDPOINT_TO_POLLSET);
   // In some implementations, the closure can be flushed before
   // grpc_tcp_client_connect() returns, and since the closure requires access
   // to mu_, this can result in a deadlock (see
@@ -160,7 +155,7 @@ void TCPConnectHandshaker::DoHandshake(grpc_tcp_server_acceptor* /*acceptor*/,
   // Instead pass endpoint_ and swap this endpoint to
   // args endpoint on success.
   grpc_tcp_client_connect(&connected_, &endpoint_to_destroy_,
-                          interested_parties_, args->args, &addr_,
+                          interested_parties_, args->args.ToC().get(), &addr_,
                           args->deadline);
 }
 
@@ -215,8 +210,7 @@ TCPConnectHandshaker::~TCPConnectHandshaker() {
 void TCPConnectHandshaker::CleanupArgsForFailureLocked() {
   read_buffer_to_destroy_ = args_->read_buffer;
   args_->read_buffer = nullptr;
-  grpc_channel_args_destroy(args_->args);
-  args_->args = nullptr;
+  args_->args = ChannelArgs();
 }
 
 void TCPConnectHandshaker::FinishLocked(grpc_error_handle error) {
@@ -233,7 +227,7 @@ void TCPConnectHandshaker::FinishLocked(grpc_error_handle error) {
 
 class TCPConnectHandshakerFactory : public HandshakerFactory {
  public:
-  void AddHandshakers(const grpc_channel_args* /*args*/,
+  void AddHandshakers(const ChannelArgs& /*args*/,
                       grpc_pollset_set* interested_parties,
                       HandshakeManager* handshake_mgr) override {
     handshake_mgr->Add(

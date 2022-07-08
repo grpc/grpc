@@ -36,8 +36,8 @@ namespace grpc_core {
 
 class ServerLoadReportingFilter : public ChannelFilter {
  public:
-  static absl::StatusOr<ServerLoadReportingFilter> Create(ChannelArgs args,
-                                                          ChannelFilter::Args);
+  static absl::StatusOr<ServerLoadReportingFilter> Create(
+      const ChannelArgs& args, ChannelFilter::Args);
 
   // Getters.
   const char* peer_identity() { return peer_identity_.c_str(); }

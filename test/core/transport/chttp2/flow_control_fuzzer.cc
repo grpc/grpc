@@ -377,7 +377,7 @@ void FlowControlFuzzer::AssertNoneStuck() const {
 }
 
 void FlowControlFuzzer::AssertAnnouncedOverInitialWindowSizeCorrect() const {
-  uint64_t value_from_streams = 0;
+  int64_t value_from_streams = 0;
 
   for (const auto& id_stream : streams_) {
     const auto& stream = id_stream.second;

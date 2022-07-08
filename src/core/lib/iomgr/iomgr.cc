@@ -45,6 +45,13 @@ GPR_GLOBAL_CONFIG_DEFINE_BOOL(grpc_abort_on_leaks, false,
                               "A debugging aid to cause a call to abort() when "
                               "gRPC objects are leaked past grpc_shutdown()");
 
+GPR_GLOBAL_CONFIG_DEFINE_BOOL(
+    grpc_experimental_enable_tcp_frame_size_tuning, false,
+    "If set, enables TCP to use RPC size estimation made by higher layers. TCP "
+    "would not indicate completion of a read operation until a specified "
+    "number of bytes have been read over the socket. Buffers are also "
+    "allocated according to estimated RPC sizes.");
+
 static gpr_mu g_mu;
 static gpr_cv g_rcv;
 static int g_shutdown;

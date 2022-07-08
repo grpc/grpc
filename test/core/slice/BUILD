@@ -114,19 +114,6 @@ grpc_cc_test(
 )
 
 grpc_cc_test(
-    name = "slice_split_test",
-    srcs = ["slice_split_test.cc"],
-    language = "C++",
-    uses_event_engine = False,
-    uses_polling = False,
-    deps = [
-        "//:gpr",
-        "//:grpc",
-        "//test/core/util:grpc_test_util",
-    ],
-)
-
-grpc_cc_test(
     name = "slice_buffer_test",
     srcs = ["slice_buffer_test.cc"],
     external_deps = ["gtest"],

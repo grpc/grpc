@@ -54,9 +54,9 @@ class RegistryState {
   }
 
   LoadBalancingPolicyFactory* GetLoadBalancingPolicyFactory(
-      const char* name) const {
+      absl::string_view name) const {
     for (size_t i = 0; i < factories_.size(); ++i) {
-      if (strcmp(name, factories_[i]->name()) == 0) {
+      if (name == factories_[i]->name()) {
         return factories_[i].get();
       }
     }
@@ -107,7 +107,7 @@ LoadBalancingPolicyRegistry::CreateLoadBalancingPolicy(
 }
 
 bool LoadBalancingPolicyRegistry::LoadBalancingPolicyExists(
-    const char* name, bool* requires_config) {
+    absl::string_view name, bool* requires_config) {
   GPR_ASSERT(g_state != nullptr);
   auto* factory = g_state->GetLoadBalancingPolicyFactory(name);
   if (factory == nullptr) {

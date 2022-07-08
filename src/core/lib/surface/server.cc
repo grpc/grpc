@@ -520,7 +520,8 @@ const grpc_channel_filter Server::kServerTopFilter = {
 
 namespace {
 
-RefCountedPtr<channelz::ServerNode> CreateChannelzNode(ChannelArgs args) {
+RefCountedPtr<channelz::ServerNode> CreateChannelzNode(
+    const ChannelArgs& args) {
   RefCountedPtr<channelz::ServerNode> channelz_node;
   if (args.GetBool(GRPC_ARG_ENABLE_CHANNELZ)
           .value_or(GRPC_ENABLE_CHANNELZ_DEFAULT)) {
@@ -538,11 +539,10 @@ RefCountedPtr<channelz::ServerNode> CreateChannelzNode(ChannelArgs args) {
 
 }  // namespace
 
-Server::Server(ChannelArgs args)
-    : channel_args_(args.ToC()), channelz_node_(CreateChannelzNode(args)) {}
+Server::Server(const ChannelArgs& args)
+    : channel_args_(args), channelz_node_(CreateChannelzNode(args)) {}
 
 Server::~Server() {
-  grpc_channel_args_destroy(channel_args_);
   // Remove the cq pollsets from the config_fetcher.
   if (started_ && config_fetcher_ != nullptr &&
       config_fetcher_->interested_parties() != nullptr) {
@@ -604,11 +604,11 @@ void Server::Start() {
 
 grpc_error_handle Server::SetupTransport(
     grpc_transport* transport, grpc_pollset* accepting_pollset,
-    const grpc_channel_args* args,
+    const ChannelArgs& args,
     const RefCountedPtr<channelz::SocketNode>& socket_node) {
   // Create channel.
-  absl::StatusOr<RefCountedPtr<Channel>> channel = Channel::Create(
-      nullptr, ChannelArgs::FromC(args), GRPC_SERVER_CHANNEL, transport);
+  absl::StatusOr<RefCountedPtr<Channel>> channel =
+      Channel::Create(nullptr, args, GRPC_SERVER_CHANNEL, transport);
   if (!channel.ok()) {
     return absl_status_to_grpc_error(channel.status());
   }

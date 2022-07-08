@@ -38,7 +38,7 @@ static const upb_MiniTable_Field envoy_config_listener_v3_ListenerCollection__fi
 const upb_MiniTable envoy_config_listener_v3_ListenerCollection_msginit = {
   &envoy_config_listener_v3_ListenerCollection_submsgs[0],
   &envoy_config_listener_v3_ListenerCollection__fields[0],
-  UPB_SIZE(4, 8), 1, kUpb_ExtMode_NonExtendable, 1, 255, 0,
+  UPB_SIZE(8, 8), 1, kUpb_ExtMode_NonExtendable, 1, 255, 0,
 };
 
 static const upb_MiniTable_Sub envoy_config_listener_v3_Listener_submsgs[21] = {
@@ -100,7 +100,7 @@ static const upb_MiniTable_Field envoy_config_listener_v3_Listener__fields[29] =
 const upb_MiniTable envoy_config_listener_v3_Listener_msginit = {
   &envoy_config_listener_v3_Listener_submsgs[0],
   &envoy_config_listener_v3_Listener__fields[0],
-  UPB_SIZE(124, 232), 29, kUpb_ExtMode_NonExtendable, 13, 255, 0,
+  UPB_SIZE(128, 224), 29, kUpb_ExtMode_NonExtendable, 13, 255, 0,
 };
 
 static const upb_MiniTable_Sub envoy_config_listener_v3_Listener_DeprecatedV1_submsgs[1] = {
@@ -114,7 +114,7 @@ static const upb_MiniTable_Field envoy_config_listener_v3_Listener_DeprecatedV1_
 const upb_MiniTable envoy_config_listener_v3_Listener_DeprecatedV1_msginit = {
   &envoy_config_listener_v3_Listener_DeprecatedV1_submsgs[0],
   &envoy_config_listener_v3_Listener_DeprecatedV1__fields[0],
-  UPB_SIZE(8, 24), 1, kUpb_ExtMode_NonExtendable, 1, 255, 0,
+  UPB_SIZE(8, 16), 1, kUpb_ExtMode_NonExtendable, 1, 255, 0,
 };
 
 static const upb_MiniTable_Sub envoy_config_listener_v3_Listener_ConnectionBalanceConfig_submsgs[1] = {
@@ -128,19 +128,19 @@ static const upb_MiniTable_Field envoy_config_listener_v3_Listener_ConnectionBal
 const upb_MiniTable envoy_config_listener_v3_Listener_ConnectionBalanceConfig_msginit = {
   &envoy_config_listener_v3_Listener_ConnectionBalanceConfig_submsgs[0],
   &envoy_config_listener_v3_Listener_ConnectionBalanceConfig__fields[0],
-  UPB_SIZE(8, 24), 1, kUpb_ExtMode_NonExtendable, 1, 255, 0,
+  UPB_SIZE(8, 16), 1, kUpb_ExtMode_NonExtendable, 1, 255, 0,
 };
 
 const upb_MiniTable envoy_config_listener_v3_Listener_ConnectionBalanceConfig_ExactBalance_msginit = {
   NULL,
   NULL,
-  UPB_SIZE(0, 8), 0, kUpb_ExtMode_NonExtendable, 0, 255, 0,
+  UPB_SIZE(0, 0), 0, kUpb_ExtMode_NonExtendable, 0, 255, 0,
 };
 
 const upb_MiniTable envoy_config_listener_v3_Listener_InternalListenerConfig_msginit = {
   NULL,
   NULL,
-  UPB_SIZE(0, 8), 0, kUpb_ExtMode_NonExtendable, 0, 255, 0,
+  UPB_SIZE(0, 0), 0, kUpb_ExtMode_NonExtendable, 0, 255, 0,
 };
 
 static const upb_MiniTable *messages_layout[6] = {

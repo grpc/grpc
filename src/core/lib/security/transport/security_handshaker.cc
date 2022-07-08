@@ -24,12 +24,11 @@
 #include <stdint.h>
 #include <string.h>
 
-#include <limits>
+#include <algorithm>
 #include <memory>
 #include <string>
 
 #include "absl/base/attributes.h"
-#include "absl/container/inlined_vector.h"
 #include "absl/memory/memory.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
@@ -75,7 +74,7 @@ class SecurityHandshaker : public Handshaker {
  public:
   SecurityHandshaker(tsi_handshaker* handshaker,
                      grpc_security_connector* connector,
-                     const grpc_channel_args* args);
+                     const ChannelArgs& args);
   ~SecurityHandshaker() override;
   void Shutdown(grpc_error_handle why) override;
   void DoHandshake(grpc_tcp_server_acceptor* acceptor,
@@ -136,15 +135,14 @@ class SecurityHandshaker : public Handshaker {
 
 SecurityHandshaker::SecurityHandshaker(tsi_handshaker* handshaker,
                                        grpc_security_connector* connector,
-                                       const grpc_channel_args* args)
+                                       const ChannelArgs& args)
     : handshaker_(handshaker),
       connector_(connector->Ref(DEBUG_LOCATION, "handshake")),
       handshake_buffer_size_(GRPC_INITIAL_HANDSHAKE_BUFFER_SIZE),
       handshake_buffer_(
           static_cast<uint8_t*>(gpr_malloc(handshake_buffer_size_))),
-      max_frame_size_(grpc_channel_args_find_integer(
-          args, GRPC_ARG_TSI_MAX_FRAME_SIZE,
-          {0, 0, std::numeric_limits<int>::max()})) {
+      max_frame_size_(
+          std::max(0, args.GetInt(GRPC_ARG_TSI_MAX_FRAME_SIZE).value_or(0))) {
   grpc_slice_buffer_init(&outgoing_);
   GRPC_CLOSURE_INIT(&on_peer_checked_, &SecurityHandshaker::OnPeerCheckedFn,
                     this, grpc_schedule_on_exec_ctx);
@@ -191,8 +189,7 @@ void SecurityHandshaker::CleanupArgsForFailureLocked() {
   args_->endpoint = nullptr;
   read_buffer_to_destroy_ = args_->read_buffer;
   args_->read_buffer = nullptr;
-  grpc_channel_args_destroy(args_->args);
-  args_->args = nullptr;
+  args_->args = ChannelArgs();
 }
 
 // If the handshake failed or we're shutting down, clean up and invoke the
@@ -319,14 +316,14 @@ void SecurityHandshaker::OnPeerCheckedInner(grpc_error_handle error) {
     if (unused_bytes_size > 0) {
       grpc_slice slice = grpc_slice_from_copied_buffer(
           reinterpret_cast<const char*>(unused_bytes), unused_bytes_size);
-      args_->endpoint =
-          grpc_secure_endpoint_create(protector, zero_copy_protector,
-                                      args_->endpoint, &slice, args_->args, 1);
+      args_->endpoint = grpc_secure_endpoint_create(
+          protector, zero_copy_protector, args_->endpoint, &slice,
+          args_->args.ToC().get(), 1);
       grpc_slice_unref_internal(slice);
     } else {
-      args_->endpoint =
-          grpc_secure_endpoint_create(protector, zero_copy_protector,
-                                      args_->endpoint, nullptr, args_->args, 0);
+      args_->endpoint = grpc_secure_endpoint_create(
+          protector, zero_copy_protector, args_->endpoint, nullptr,
+          args_->args.ToC().get(), 0);
     }
   } else if (unused_bytes_size > 0) {
     // Not wrapping the endpoint, so just pass along unused bytes.
@@ -337,21 +334,12 @@ void SecurityHandshaker::OnPeerCheckedInner(grpc_error_handle error) {
   // Done with handshaker result.
   tsi_handshaker_result_destroy(handshaker_result_);
   handshaker_result_ = nullptr;
-  absl::InlinedVector<grpc_arg, 2> args_to_add = {
-      // Add auth context to channel args.
-      grpc_auth_context_to_arg(auth_context_.get()),
-  };
-  RefCountedPtr<channelz::SocketNode::Security> channelz_security;
+  args_->args = args_->args.SetObject(auth_context_);
   // Add channelz channel args only if frame protector is created.
   if (has_frame_protector) {
-    channelz_security =
-        MakeChannelzSecurityFromAuthContext(auth_context_.get());
-    args_to_add.push_back(channelz_security->MakeChannelArg());
+    args_->args = args_->args.SetObject(
+        MakeChannelzSecurityFromAuthContext(auth_context_.get()));
   }
-  grpc_channel_args* tmp_args = args_->args;
-  args_->args = grpc_channel_args_copy_and_add(tmp_args, args_to_add.data(),
-                                               args_to_add.size());
-  grpc_channel_args_destroy(tmp_args);
   // Invoke callback.
   ExecCtx::Run(DEBUG_LOCATION, on_handshake_done_, GRPC_ERROR_NONE);
   // Set shutdown to true so that subsequent calls to
@@ -398,8 +386,7 @@ grpc_error_handle SecurityHandshaker::OnHandshakeNextDoneLocked(
     return error;
   }
   if (result != TSI_OK) {
-    auto* security_connector =
-        grpc_security_connector_find_in_args(args_->args);
+    auto* security_connector = args_->args.GetObject<grpc_security_connector>();
     absl::string_view connector_type = "<unknown>";
     if (security_connector != nullptr) {
       connector_type = security_connector->type().name();
@@ -601,8 +588,7 @@ class FailHandshaker : public Handshaker {
     grpc_endpoint_shutdown(args->endpoint, GRPC_ERROR_REF(error));
     grpc_endpoint_destroy(args->endpoint);
     args->endpoint = nullptr;
-    grpc_channel_args_destroy(args->args);
-    args->args = nullptr;
+    args->args = ChannelArgs();
     grpc_slice_buffer_destroy_internal(args->read_buffer);
     gpr_free(args->read_buffer);
     args->read_buffer = nullptr;
@@ -619,12 +605,11 @@ class FailHandshaker : public Handshaker {
 
 class ClientSecurityHandshakerFactory : public HandshakerFactory {
  public:
-  void AddHandshakers(const grpc_channel_args* args,
+  void AddHandshakers(const ChannelArgs& args,
                       grpc_pollset_set* interested_parties,
                       HandshakeManager* handshake_mgr) override {
     auto* security_connector =
-        reinterpret_cast<grpc_channel_security_connector*>(
-            grpc_security_connector_find_in_args(args));
+        args.GetObject<grpc_channel_security_connector>();
     if (security_connector) {
       security_connector->add_handshakers(args, interested_parties,
                                           handshake_mgr);
@@ -635,12 +620,10 @@ class ClientSecurityHandshakerFactory : public HandshakerFactory {
 
 class ServerSecurityHandshakerFactory : public HandshakerFactory {
  public:
-  void AddHandshakers(const grpc_channel_args* args,
+  void AddHandshakers(const ChannelArgs& args,
                       grpc_pollset_set* interested_parties,
                       HandshakeManager* handshake_mgr) override {
-    auto* security_connector =
-        reinterpret_cast<grpc_server_security_connector*>(
-            grpc_security_connector_find_in_args(args));
+    auto* security_connector = args.GetObject<grpc_server_security_connector>();
     if (security_connector) {
       security_connector->add_handshakers(args, interested_parties,
                                           handshake_mgr);
@@ -657,7 +640,7 @@ class ServerSecurityHandshakerFactory : public HandshakerFactory {
 
 RefCountedPtr<Handshaker> SecurityHandshakerCreate(
     tsi_handshaker* handshaker, grpc_security_connector* connector,
-    const grpc_channel_args* args) {
+    const ChannelArgs& args) {
   // If no TSI handshaker was created, return a handshaker that always fails.
   // Otherwise, return a real security handshaker.
   if (handshaker == nullptr) {
@@ -681,5 +664,7 @@ void SecurityRegisterHandshakerFactories(CoreConfiguration::Builder* builder) {
 grpc_handshaker* grpc_security_handshaker_create(
     tsi_handshaker* handshaker, grpc_security_connector* connector,
     const grpc_channel_args* args) {
-  return SecurityHandshakerCreate(handshaker, connector, args).release();
+  return SecurityHandshakerCreate(handshaker, connector,
+                                  grpc_core::ChannelArgs::FromC(args))
+      .release();
 }

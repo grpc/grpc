@@ -140,6 +140,13 @@
   name: absl/base:malloc_internal
   src:
   - third_party/abseil-cpp/absl/base/internal/low_level_alloc.cc
+- cmake_target: absl::prefetch
+  deps:
+  - absl/base:config
+  headers:
+  - third_party/abseil-cpp/absl/base/internal/prefetch.h
+  name: absl/base:prefetch
+  src: []
 - cmake_target: absl::pretty_function
   deps: []
   headers:
@@ -151,6 +158,7 @@
   - absl/base:atomic_hook
   - absl/base:config
   - absl/base:core_headers
+  - absl/base:errno_saver
   - absl/base:log_severity
   headers:
   - third_party/abseil-cpp/absl/base/internal/raw_logging.h
@@ -211,6 +219,7 @@
 - cmake_target: absl::btree
   deps:
   - absl/base:core_headers
+  - absl/base:raw_logging_internal
   - absl/base:throw_delegate
   - absl/container:common
   - absl/container:compressed_tuple
@@ -270,6 +279,7 @@
 - cmake_target: absl::flat_hash_map
   deps:
   - absl/algorithm:container
+  - absl/base:core_headers
   - absl/container:container_memory
   - absl/container:hash_function_defaults
   - absl/container:raw_hash_map
@@ -324,8 +334,8 @@
 - cmake_target: absl::hashtablez_sampler
   deps:
   - absl/base:base
+  - absl/base:config
   - absl/base:core_headers
-  - absl/container:have_sse
   - absl/debugging:stacktrace
   - absl/memory:memory
   - absl/profiling:exponential_biased
@@ -338,12 +348,6 @@
   src:
   - third_party/abseil-cpp/absl/container/internal/hashtablez_sampler.cc
   - third_party/abseil-cpp/absl/container/internal/hashtablez_sampler_force_weak_definition.cc
-- cmake_target: absl::have_sse
-  deps: []
-  headers:
-  - third_party/abseil-cpp/absl/container/internal/have_sse.h
-  name: absl/container:have_sse
-  src: []
 - cmake_target: absl::inlined_vector
   deps:
   - absl/algorithm:algorithm
@@ -381,32 +385,34 @@
 - cmake_target: absl::node_hash_map
   deps:
   - absl/algorithm:container
+  - absl/base:core_headers
   - absl/container:container_memory
   - absl/container:hash_function_defaults
-  - absl/container:node_hash_policy
+  - absl/container:node_slot_policy
   - absl/container:raw_hash_map
   - absl/memory:memory
   headers:
   - third_party/abseil-cpp/absl/container/node_hash_map.h
   name: absl/container:node_hash_map
   src: []
-- cmake_target: absl::node_hash_policy
-  deps:
-  - absl/base:config
-  headers:
-  - third_party/abseil-cpp/absl/container/internal/node_hash_policy.h
-  name: absl/container:node_hash_policy
-  src: []
 - cmake_target: absl::node_hash_set
   deps:
   - absl/algorithm:container
+  - absl/base:core_headers
   - absl/container:hash_function_defaults
-  - absl/container:node_hash_policy
+  - absl/container:node_slot_policy
   - absl/container:raw_hash_set
   - absl/memory:memory
   headers:
   - third_party/abseil-cpp/absl/container/node_hash_set.h
   name: absl/container:node_hash_set
+  src: []
+- cmake_target: absl::node_slot_policy
+  deps:
+  - absl/base:config
+  headers:
+  - third_party/abseil-cpp/absl/container/internal/node_slot_policy.h
+  name: absl/container:node_slot_policy
   src: []
 - cmake_target: absl::raw_hash_map
   deps:
@@ -422,13 +428,13 @@
   - absl/base:config
   - absl/base:core_headers
   - absl/base:endian
+  - absl/base:prefetch
   - absl/container:common
   - absl/container:compressed_tuple
   - absl/container:container_memory
   - absl/container:hash_policy_traits
   - absl/container:hashtable_debug_hooks
   - absl/container:hashtablez_sampler
-  - absl/container:have_sse
   - absl/memory:memory
   - absl/meta:type_traits
   - absl/numeric:bits
@@ -481,7 +487,6 @@
   - absl/base:base
   - absl/base:config
   - absl/base:core_headers
-  - absl/base:errno_saver
   - absl/base:raw_logging_internal
   - absl/debugging:examine_stack
   - absl/debugging:stacktrace
@@ -499,13 +504,6 @@
   name: absl/debugging:leak_check
   src:
   - third_party/abseil-cpp/absl/debugging/leak_check.cc
-- cmake_target: absl::leak_check_disable
-  deps:
-  - absl/base:config
-  headers: []
-  name: absl/debugging:leak_check_disable
-  src:
-  - third_party/abseil-cpp/absl/debugging/leak_check_disable.cc
 - cmake_target: absl::stacktrace
   deps:
   - absl/base:config
@@ -604,6 +602,7 @@
   - absl/base:base
   - absl/base:config
   - absl/base:core_headers
+  - absl/base:dynamic_annotations
   - absl/flags:commandlineflag
   - absl/flags:commandlineflag_internal
   - absl/flags:config
@@ -627,6 +626,7 @@
   - absl/base:log_severity
   - absl/strings:str_format
   - absl/strings:strings
+  - absl/types:optional
   headers:
   - third_party/abseil-cpp/absl/flags/marshalling.h
   name: absl/flags:marshalling
@@ -733,6 +733,18 @@
   name: absl/flags:usage_internal
   src:
   - third_party/abseil-cpp/absl/flags/internal/usage.cc
+- cmake_target: absl::any_invocable
+  deps:
+  - absl/base:base_internal
+  - absl/base:config
+  - absl/base:core_headers
+  - absl/meta:type_traits
+  - absl/utility:utility
+  headers:
+  - third_party/abseil-cpp/absl/functional/any_invocable.h
+  - third_party/abseil-cpp/absl/functional/internal/any_invocable.h
+  name: absl/functional:any_invocable
+  src: []
 - cmake_target: absl::bind_front
   deps:
   - absl/base:base_internal
@@ -770,6 +782,7 @@
   - absl/base:core_headers
   - absl/base:endian
   - absl/container:fixed_array
+  - absl/functional:function_ref
   - absl/hash:city
   - absl/hash:low_level_hash
   - absl/meta:type_traits
@@ -879,6 +892,7 @@
   deps:
   - absl/base:config
   - absl/meta:type_traits
+  - absl/random/internal:traits
   headers:
   - third_party/abseil-cpp/absl/random/internal/fast_uniform_bits.h
   name: absl/random/internal:fast_uniform_bits
@@ -931,11 +945,11 @@
 - cmake_target: absl::random_internal_nonsecure_base
   deps:
   - absl/base:core_headers
+  - absl/container:inlined_vector
   - absl/meta:type_traits
   - absl/random/internal:pool_urbg
   - absl/random/internal:salted_seed_seq
   - absl/random/internal:seed_material
-  - absl/types:optional
   - absl/types:span
   headers:
   - third_party/abseil-cpp/absl/random/internal/nonsecure_base.h
@@ -1062,6 +1076,8 @@
 - cmake_target: absl::random_internal_traits
   deps:
   - absl/base:config
+  - absl/numeric:bits
+  - absl/numeric:int128
   headers:
   - third_party/abseil-cpp/absl/random/internal/traits.h
   name: absl/random/internal:traits
@@ -1070,6 +1086,7 @@
   deps:
   - absl/base:config
   - absl/meta:type_traits
+  - absl/numeric:int128
   - absl/random/internal:traits
   headers:
   - third_party/abseil-cpp/absl/random/internal/uniform_helper.h
@@ -1151,8 +1168,7 @@
   - third_party/abseil-cpp/absl/random/seed_gen_exception.cc
 - cmake_target: absl::random_seed_sequences
   deps:
-  - absl/container:inlined_vector
-  - absl/random/internal:nonsecure_base
+  - absl/base:config
   - absl/random/internal:pool_urbg
   - absl/random/internal:salted_seed_seq
   - absl/random/internal:seed_material
@@ -1166,9 +1182,9 @@
 - cmake_target: absl::status
   deps:
   - absl/base:atomic_hook
-  - absl/base:config
   - absl/base:core_headers
   - absl/base:raw_logging_internal
+  - absl/base:strerror
   - absl/container:inlined_vector
   - absl/debugging:stacktrace
   - absl/debugging:symbolize
@@ -1212,6 +1228,7 @@
   - absl/container:inlined_vector
   - absl/functional:function_ref
   - absl/meta:type_traits
+  - absl/numeric:bits
   - absl/strings:cord_internal
   - absl/strings:cordz_functions
   - absl/strings:cordz_info
@@ -1222,11 +1239,16 @@
   - absl/strings:str_format
   - absl/strings:strings
   - absl/types:optional
+  - absl/types:span
   headers:
   - third_party/abseil-cpp/absl/strings/cord.h
+  - third_party/abseil-cpp/absl/strings/cord_analysis.h
+  - third_party/abseil-cpp/absl/strings/cord_buffer.h
   name: absl/strings:cord
   src:
   - third_party/abseil-cpp/absl/strings/cord.cc
+  - third_party/abseil-cpp/absl/strings/cord_analysis.cc
+  - third_party/abseil-cpp/absl/strings/cord_buffer.cc
 - cmake_target: absl::cord_internal
   deps:
   - absl/base:base_internal
@@ -1243,11 +1265,13 @@
   - absl/strings:strings
   - absl/types:span
   headers:
+  - third_party/abseil-cpp/absl/strings/internal/cord_data_edge.h
   - third_party/abseil-cpp/absl/strings/internal/cord_internal.h
   - third_party/abseil-cpp/absl/strings/internal/cord_rep_btree.h
   - third_party/abseil-cpp/absl/strings/internal/cord_rep_btree_navigator.h
   - third_party/abseil-cpp/absl/strings/internal/cord_rep_btree_reader.h
   - third_party/abseil-cpp/absl/strings/internal/cord_rep_consume.h
+  - third_party/abseil-cpp/absl/strings/internal/cord_rep_crc.h
   - third_party/abseil-cpp/absl/strings/internal/cord_rep_flat.h
   - third_party/abseil-cpp/absl/strings/internal/cord_rep_ring.h
   - third_party/abseil-cpp/absl/strings/internal/cord_rep_ring_reader.h
@@ -1258,6 +1282,7 @@
   - third_party/abseil-cpp/absl/strings/internal/cord_rep_btree_navigator.cc
   - third_party/abseil-cpp/absl/strings/internal/cord_rep_btree_reader.cc
   - third_party/abseil-cpp/absl/strings/internal/cord_rep_consume.cc
+  - third_party/abseil-cpp/absl/strings/internal/cord_rep_crc.cc
   - third_party/abseil-cpp/absl/strings/internal/cord_rep_ring.cc
 - cmake_target: absl::cordz_functions
   deps:
@@ -1374,6 +1399,7 @@
   - absl/strings:strings
   - absl/types:optional
   - absl/types:span
+  - absl/utility:utility
   headers:
   - third_party/abseil-cpp/absl/strings/internal/str_format/arg.h
   - third_party/abseil-cpp/absl/strings/internal/str_format/bind.h

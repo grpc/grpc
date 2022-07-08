@@ -58,11 +58,15 @@ UPB_INLINE envoy_config_trace_v3_SkyWalkingConfig* envoy_config_trace_v3_SkyWalk
   return ret;
 }
 UPB_INLINE char* envoy_config_trace_v3_SkyWalkingConfig_serialize(const envoy_config_trace_v3_SkyWalkingConfig* msg, upb_Arena* arena, size_t* len) {
-  return upb_Encode(msg, &envoy_config_trace_v3_SkyWalkingConfig_msginit, 0, arena, len);
+  char* ptr;
+  (void)upb_Encode(msg, &envoy_config_trace_v3_SkyWalkingConfig_msginit, 0, arena, &ptr, len);
+  return ptr;
 }
 UPB_INLINE char* envoy_config_trace_v3_SkyWalkingConfig_serialize_ex(const envoy_config_trace_v3_SkyWalkingConfig* msg, int options,
                                  upb_Arena* arena, size_t* len) {
-  return upb_Encode(msg, &envoy_config_trace_v3_SkyWalkingConfig_msginit, options, arena, len);
+  char* ptr;
+  (void)upb_Encode(msg, &envoy_config_trace_v3_SkyWalkingConfig_msginit, options, arena, &ptr, len);
+  return ptr;
 }
 UPB_INLINE bool envoy_config_trace_v3_SkyWalkingConfig_has_grpc_service(const envoy_config_trace_v3_SkyWalkingConfig* msg) {
   return _upb_hasbit(msg, 1);
@@ -135,11 +139,15 @@ UPB_INLINE envoy_config_trace_v3_ClientConfig* envoy_config_trace_v3_ClientConfi
   return ret;
 }
 UPB_INLINE char* envoy_config_trace_v3_ClientConfig_serialize(const envoy_config_trace_v3_ClientConfig* msg, upb_Arena* arena, size_t* len) {
-  return upb_Encode(msg, &envoy_config_trace_v3_ClientConfig_msginit, 0, arena, len);
+  char* ptr;
+  (void)upb_Encode(msg, &envoy_config_trace_v3_ClientConfig_msginit, 0, arena, &ptr, len);
+  return ptr;
 }
 UPB_INLINE char* envoy_config_trace_v3_ClientConfig_serialize_ex(const envoy_config_trace_v3_ClientConfig* msg, int options,
                                  upb_Arena* arena, size_t* len) {
-  return upb_Encode(msg, &envoy_config_trace_v3_ClientConfig_msginit, options, arena, len);
+  char* ptr;
+  (void)upb_Encode(msg, &envoy_config_trace_v3_ClientConfig_msginit, options, arena, &ptr, len);
+  return ptr;
 }
 typedef enum {
   envoy_config_trace_v3_ClientConfig_backend_token_specifier_backend_token = 3,

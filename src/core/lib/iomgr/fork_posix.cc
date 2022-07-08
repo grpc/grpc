@@ -73,7 +73,7 @@ void grpc_prefork() {
     return;
   }
   if (!grpc_core::Fork::BlockExecCtx()) {
-    gpr_log(GPR_ERROR,
+    gpr_log(GPR_INFO,
             "Other threads are currently calling into gRPC, skipping fork() "
             "handlers");
     return;

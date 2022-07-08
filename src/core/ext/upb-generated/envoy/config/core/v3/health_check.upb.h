@@ -102,11 +102,15 @@ UPB_INLINE envoy_config_core_v3_HealthStatusSet* envoy_config_core_v3_HealthStat
   return ret;
 }
 UPB_INLINE char* envoy_config_core_v3_HealthStatusSet_serialize(const envoy_config_core_v3_HealthStatusSet* msg, upb_Arena* arena, size_t* len) {
-  return upb_Encode(msg, &envoy_config_core_v3_HealthStatusSet_msginit, 0, arena, len);
+  char* ptr;
+  (void)upb_Encode(msg, &envoy_config_core_v3_HealthStatusSet_msginit, 0, arena, &ptr, len);
+  return ptr;
 }
 UPB_INLINE char* envoy_config_core_v3_HealthStatusSet_serialize_ex(const envoy_config_core_v3_HealthStatusSet* msg, int options,
                                  upb_Arena* arena, size_t* len) {
-  return upb_Encode(msg, &envoy_config_core_v3_HealthStatusSet_msginit, options, arena, len);
+  char* ptr;
+  (void)upb_Encode(msg, &envoy_config_core_v3_HealthStatusSet_msginit, options, arena, &ptr, len);
+  return ptr;
 }
 UPB_INLINE void envoy_config_core_v3_HealthStatusSet_clear_statuses(const envoy_config_core_v3_HealthStatusSet* msg) {
   _upb_array_detach(msg, UPB_SIZE(0, 0));
@@ -150,11 +154,15 @@ UPB_INLINE envoy_config_core_v3_HealthCheck* envoy_config_core_v3_HealthCheck_pa
   return ret;
 }
 UPB_INLINE char* envoy_config_core_v3_HealthCheck_serialize(const envoy_config_core_v3_HealthCheck* msg, upb_Arena* arena, size_t* len) {
-  return upb_Encode(msg, &envoy_config_core_v3_HealthCheck_msginit, 0, arena, len);
+  char* ptr;
+  (void)upb_Encode(msg, &envoy_config_core_v3_HealthCheck_msginit, 0, arena, &ptr, len);
+  return ptr;
 }
 UPB_INLINE char* envoy_config_core_v3_HealthCheck_serialize_ex(const envoy_config_core_v3_HealthCheck* msg, int options,
                                  upb_Arena* arena, size_t* len) {
-  return upb_Encode(msg, &envoy_config_core_v3_HealthCheck_msginit, options, arena, len);
+  char* ptr;
+  (void)upb_Encode(msg, &envoy_config_core_v3_HealthCheck_msginit, options, arena, &ptr, len);
+  return ptr;
 }
 typedef enum {
   envoy_config_core_v3_HealthCheck_health_checker_http_health_check = 8,
@@ -656,11 +664,15 @@ UPB_INLINE envoy_config_core_v3_HealthCheck_Payload* envoy_config_core_v3_Health
   return ret;
 }
 UPB_INLINE char* envoy_config_core_v3_HealthCheck_Payload_serialize(const envoy_config_core_v3_HealthCheck_Payload* msg, upb_Arena* arena, size_t* len) {
-  return upb_Encode(msg, &envoy_config_core_v3_HealthCheck_Payload_msginit, 0, arena, len);
+  char* ptr;
+  (void)upb_Encode(msg, &envoy_config_core_v3_HealthCheck_Payload_msginit, 0, arena, &ptr, len);
+  return ptr;
 }
 UPB_INLINE char* envoy_config_core_v3_HealthCheck_Payload_serialize_ex(const envoy_config_core_v3_HealthCheck_Payload* msg, int options,
                                  upb_Arena* arena, size_t* len) {
-  return upb_Encode(msg, &envoy_config_core_v3_HealthCheck_Payload_msginit, options, arena, len);
+  char* ptr;
+  (void)upb_Encode(msg, &envoy_config_core_v3_HealthCheck_Payload_msginit, options, arena, &ptr, len);
+  return ptr;
 }
 typedef enum {
   envoy_config_core_v3_HealthCheck_Payload_payload_text = 1,
@@ -721,11 +733,15 @@ UPB_INLINE envoy_config_core_v3_HealthCheck_HttpHealthCheck* envoy_config_core_v
   return ret;
 }
 UPB_INLINE char* envoy_config_core_v3_HealthCheck_HttpHealthCheck_serialize(const envoy_config_core_v3_HealthCheck_HttpHealthCheck* msg, upb_Arena* arena, size_t* len) {
-  return upb_Encode(msg, &envoy_config_core_v3_HealthCheck_HttpHealthCheck_msginit, 0, arena, len);
+  char* ptr;
+  (void)upb_Encode(msg, &envoy_config_core_v3_HealthCheck_HttpHealthCheck_msginit, 0, arena, &ptr, len);
+  return ptr;
 }
 UPB_INLINE char* envoy_config_core_v3_HealthCheck_HttpHealthCheck_serialize_ex(const envoy_config_core_v3_HealthCheck_HttpHealthCheck* msg, int options,
                                  upb_Arena* arena, size_t* len) {
-  return upb_Encode(msg, &envoy_config_core_v3_HealthCheck_HttpHealthCheck_msginit, options, arena, len);
+  char* ptr;
+  (void)upb_Encode(msg, &envoy_config_core_v3_HealthCheck_HttpHealthCheck_msginit, options, arena, &ptr, len);
+  return ptr;
 }
 UPB_INLINE void envoy_config_core_v3_HealthCheck_HttpHealthCheck_clear_host(const envoy_config_core_v3_HealthCheck_HttpHealthCheck* msg) {
   *UPB_PTR_AT(msg, UPB_SIZE(8, 8), upb_StringView) = upb_StringView_FromDataAndSize(NULL, 0);
@@ -925,11 +941,15 @@ UPB_INLINE envoy_config_core_v3_HealthCheck_TcpHealthCheck* envoy_config_core_v3
   return ret;
 }
 UPB_INLINE char* envoy_config_core_v3_HealthCheck_TcpHealthCheck_serialize(const envoy_config_core_v3_HealthCheck_TcpHealthCheck* msg, upb_Arena* arena, size_t* len) {
-  return upb_Encode(msg, &envoy_config_core_v3_HealthCheck_TcpHealthCheck_msginit, 0, arena, len);
+  char* ptr;
+  (void)upb_Encode(msg, &envoy_config_core_v3_HealthCheck_TcpHealthCheck_msginit, 0, arena, &ptr, len);
+  return ptr;
 }
 UPB_INLINE char* envoy_config_core_v3_HealthCheck_TcpHealthCheck_serialize_ex(const envoy_config_core_v3_HealthCheck_TcpHealthCheck* msg, int options,
                                  upb_Arena* arena, size_t* len) {
-  return upb_Encode(msg, &envoy_config_core_v3_HealthCheck_TcpHealthCheck_msginit, options, arena, len);
+  char* ptr;
+  (void)upb_Encode(msg, &envoy_config_core_v3_HealthCheck_TcpHealthCheck_msginit, options, arena, &ptr, len);
+  return ptr;
 }
 UPB_INLINE bool envoy_config_core_v3_HealthCheck_TcpHealthCheck_has_send(const envoy_config_core_v3_HealthCheck_TcpHealthCheck* msg) {
   return _upb_hasbit(msg, 1);
@@ -1001,11 +1021,15 @@ UPB_INLINE envoy_config_core_v3_HealthCheck_RedisHealthCheck* envoy_config_core_
   return ret;
 }
 UPB_INLINE char* envoy_config_core_v3_HealthCheck_RedisHealthCheck_serialize(const envoy_config_core_v3_HealthCheck_RedisHealthCheck* msg, upb_Arena* arena, size_t* len) {
-  return upb_Encode(msg, &envoy_config_core_v3_HealthCheck_RedisHealthCheck_msginit, 0, arena, len);
+  char* ptr;
+  (void)upb_Encode(msg, &envoy_config_core_v3_HealthCheck_RedisHealthCheck_msginit, 0, arena, &ptr, len);
+  return ptr;
 }
 UPB_INLINE char* envoy_config_core_v3_HealthCheck_RedisHealthCheck_serialize_ex(const envoy_config_core_v3_HealthCheck_RedisHealthCheck* msg, int options,
                                  upb_Arena* arena, size_t* len) {
-  return upb_Encode(msg, &envoy_config_core_v3_HealthCheck_RedisHealthCheck_msginit, options, arena, len);
+  char* ptr;
+  (void)upb_Encode(msg, &envoy_config_core_v3_HealthCheck_RedisHealthCheck_msginit, options, arena, &ptr, len);
+  return ptr;
 }
 UPB_INLINE void envoy_config_core_v3_HealthCheck_RedisHealthCheck_clear_key(const envoy_config_core_v3_HealthCheck_RedisHealthCheck* msg) {
   *UPB_PTR_AT(msg, UPB_SIZE(0, 0), upb_StringView) = upb_StringView_FromDataAndSize(NULL, 0);
@@ -1043,11 +1067,15 @@ UPB_INLINE envoy_config_core_v3_HealthCheck_GrpcHealthCheck* envoy_config_core_v
   return ret;
 }
 UPB_INLINE char* envoy_config_core_v3_HealthCheck_GrpcHealthCheck_serialize(const envoy_config_core_v3_HealthCheck_GrpcHealthCheck* msg, upb_Arena* arena, size_t* len) {
-  return upb_Encode(msg, &envoy_config_core_v3_HealthCheck_GrpcHealthCheck_msginit, 0, arena, len);
+  char* ptr;
+  (void)upb_Encode(msg, &envoy_config_core_v3_HealthCheck_GrpcHealthCheck_msginit, 0, arena, &ptr, len);
+  return ptr;
 }
 UPB_INLINE char* envoy_config_core_v3_HealthCheck_GrpcHealthCheck_serialize_ex(const envoy_config_core_v3_HealthCheck_GrpcHealthCheck* msg, int options,
                                  upb_Arena* arena, size_t* len) {
-  return upb_Encode(msg, &envoy_config_core_v3_HealthCheck_GrpcHealthCheck_msginit, options, arena, len);
+  char* ptr;
+  (void)upb_Encode(msg, &envoy_config_core_v3_HealthCheck_GrpcHealthCheck_msginit, options, arena, &ptr, len);
+  return ptr;
 }
 UPB_INLINE void envoy_config_core_v3_HealthCheck_GrpcHealthCheck_clear_service_name(const envoy_config_core_v3_HealthCheck_GrpcHealthCheck* msg) {
   *UPB_PTR_AT(msg, UPB_SIZE(0, 0), upb_StringView) = upb_StringView_FromDataAndSize(NULL, 0);
@@ -1115,11 +1143,15 @@ UPB_INLINE envoy_config_core_v3_HealthCheck_CustomHealthCheck* envoy_config_core
   return ret;
 }
 UPB_INLINE char* envoy_config_core_v3_HealthCheck_CustomHealthCheck_serialize(const envoy_config_core_v3_HealthCheck_CustomHealthCheck* msg, upb_Arena* arena, size_t* len) {
-  return upb_Encode(msg, &envoy_config_core_v3_HealthCheck_CustomHealthCheck_msginit, 0, arena, len);
+  char* ptr;
+  (void)upb_Encode(msg, &envoy_config_core_v3_HealthCheck_CustomHealthCheck_msginit, 0, arena, &ptr, len);
+  return ptr;
 }
 UPB_INLINE char* envoy_config_core_v3_HealthCheck_CustomHealthCheck_serialize_ex(const envoy_config_core_v3_HealthCheck_CustomHealthCheck* msg, int options,
                                  upb_Arena* arena, size_t* len) {
-  return upb_Encode(msg, &envoy_config_core_v3_HealthCheck_CustomHealthCheck_msginit, options, arena, len);
+  char* ptr;
+  (void)upb_Encode(msg, &envoy_config_core_v3_HealthCheck_CustomHealthCheck_msginit, options, arena, &ptr, len);
+  return ptr;
 }
 typedef enum {
   envoy_config_core_v3_HealthCheck_CustomHealthCheck_config_type_typed_config = 3,
@@ -1185,11 +1217,15 @@ UPB_INLINE envoy_config_core_v3_HealthCheck_TlsOptions* envoy_config_core_v3_Hea
   return ret;
 }
 UPB_INLINE char* envoy_config_core_v3_HealthCheck_TlsOptions_serialize(const envoy_config_core_v3_HealthCheck_TlsOptions* msg, upb_Arena* arena, size_t* len) {
-  return upb_Encode(msg, &envoy_config_core_v3_HealthCheck_TlsOptions_msginit, 0, arena, len);
+  char* ptr;
+  (void)upb_Encode(msg, &envoy_config_core_v3_HealthCheck_TlsOptions_msginit, 0, arena, &ptr, len);
+  return ptr;
 }
 UPB_INLINE char* envoy_config_core_v3_HealthCheck_TlsOptions_serialize_ex(const envoy_config_core_v3_HealthCheck_TlsOptions* msg, int options,
                                  upb_Arena* arena, size_t* len) {
-  return upb_Encode(msg, &envoy_config_core_v3_HealthCheck_TlsOptions_msginit, options, arena, len);
+  char* ptr;
+  (void)upb_Encode(msg, &envoy_config_core_v3_HealthCheck_TlsOptions_msginit, options, arena, &ptr, len);
+  return ptr;
 }
 UPB_INLINE void envoy_config_core_v3_HealthCheck_TlsOptions_clear_alpn_protocols(const envoy_config_core_v3_HealthCheck_TlsOptions* msg) {
   _upb_array_detach(msg, UPB_SIZE(0, 0));

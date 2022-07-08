@@ -21,9 +21,8 @@
 
 #include <utility>
 
-#include <grpc/impl/codegen/grpc_types.h>
-
 #include "src/core/ext/filters/client_channel/lb_policy.h"
+#include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
@@ -65,7 +64,7 @@ class ChildPolicyHandler : public LoadBalancingPolicy {
   void ShutdownLocked() override;
 
   OrphanablePtr<LoadBalancingPolicy> CreateChildPolicy(
-      const char* child_policy_name, const grpc_channel_args& args);
+      const char* child_policy_name, const ChannelArgs& args);
 
   // Passed in from caller at construction time.
   TraceFlag* tracer_;
