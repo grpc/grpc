@@ -41,7 +41,7 @@
 namespace grpc_core {
 
 absl::StatusOr<ClientAuthorityFilter> ClientAuthorityFilter::Create(
-    ChannelArgs args, ChannelFilter::Args) {
+    const ChannelArgs& args, ChannelFilter::Args) {
   absl::optional<absl::string_view> default_authority =
       args.GetString(GRPC_ARG_DEFAULT_AUTHORITY);
   if (!default_authority.has_value()) {

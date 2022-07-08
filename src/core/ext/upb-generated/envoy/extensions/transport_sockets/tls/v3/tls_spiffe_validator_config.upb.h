@@ -56,11 +56,15 @@ UPB_INLINE envoy_extensions_transport_sockets_tls_v3_SPIFFECertValidatorConfig* 
   return ret;
 }
 UPB_INLINE char* envoy_extensions_transport_sockets_tls_v3_SPIFFECertValidatorConfig_serialize(const envoy_extensions_transport_sockets_tls_v3_SPIFFECertValidatorConfig* msg, upb_Arena* arena, size_t* len) {
-  return upb_Encode(msg, &envoy_extensions_transport_sockets_tls_v3_SPIFFECertValidatorConfig_msginit, 0, arena, len);
+  char* ptr;
+  (void)upb_Encode(msg, &envoy_extensions_transport_sockets_tls_v3_SPIFFECertValidatorConfig_msginit, 0, arena, &ptr, len);
+  return ptr;
 }
 UPB_INLINE char* envoy_extensions_transport_sockets_tls_v3_SPIFFECertValidatorConfig_serialize_ex(const envoy_extensions_transport_sockets_tls_v3_SPIFFECertValidatorConfig* msg, int options,
                                  upb_Arena* arena, size_t* len) {
-  return upb_Encode(msg, &envoy_extensions_transport_sockets_tls_v3_SPIFFECertValidatorConfig_msginit, options, arena, len);
+  char* ptr;
+  (void)upb_Encode(msg, &envoy_extensions_transport_sockets_tls_v3_SPIFFECertValidatorConfig_msginit, options, arena, &ptr, len);
+  return ptr;
 }
 UPB_INLINE bool envoy_extensions_transport_sockets_tls_v3_SPIFFECertValidatorConfig_has_trust_domains(const envoy_extensions_transport_sockets_tls_v3_SPIFFECertValidatorConfig* msg) {
   return _upb_has_submsg_nohasbit(msg, UPB_SIZE(0, 0));
@@ -110,11 +114,15 @@ UPB_INLINE envoy_extensions_transport_sockets_tls_v3_SPIFFECertValidatorConfig_T
   return ret;
 }
 UPB_INLINE char* envoy_extensions_transport_sockets_tls_v3_SPIFFECertValidatorConfig_TrustDomain_serialize(const envoy_extensions_transport_sockets_tls_v3_SPIFFECertValidatorConfig_TrustDomain* msg, upb_Arena* arena, size_t* len) {
-  return upb_Encode(msg, &envoy_extensions_transport_sockets_tls_v3_SPIFFECertValidatorConfig_TrustDomain_msginit, 0, arena, len);
+  char* ptr;
+  (void)upb_Encode(msg, &envoy_extensions_transport_sockets_tls_v3_SPIFFECertValidatorConfig_TrustDomain_msginit, 0, arena, &ptr, len);
+  return ptr;
 }
 UPB_INLINE char* envoy_extensions_transport_sockets_tls_v3_SPIFFECertValidatorConfig_TrustDomain_serialize_ex(const envoy_extensions_transport_sockets_tls_v3_SPIFFECertValidatorConfig_TrustDomain* msg, int options,
                                  upb_Arena* arena, size_t* len) {
-  return upb_Encode(msg, &envoy_extensions_transport_sockets_tls_v3_SPIFFECertValidatorConfig_TrustDomain_msginit, options, arena, len);
+  char* ptr;
+  (void)upb_Encode(msg, &envoy_extensions_transport_sockets_tls_v3_SPIFFECertValidatorConfig_TrustDomain_msginit, options, arena, &ptr, len);
+  return ptr;
 }
 UPB_INLINE void envoy_extensions_transport_sockets_tls_v3_SPIFFECertValidatorConfig_TrustDomain_clear_name(const envoy_extensions_transport_sockets_tls_v3_SPIFFECertValidatorConfig_TrustDomain* msg) {
   *UPB_PTR_AT(msg, UPB_SIZE(4, 8), upb_StringView) = upb_StringView_FromDataAndSize(NULL, 0);

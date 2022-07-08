@@ -83,132 +83,6 @@ namespace {
 
 constexpr char kRequestMessage[] = "Live long and prosper.";
 
-// A connection attempt injector that allows us to control timing of
-// connection attempts.
-class ConnectionInjector : public ConnectionAttemptInjector {
- private:
-  grpc_core::Mutex mu_;  // Needs to be declared up front.
-
- public:
-  class Hold {
-   public:
-    Hold(ConnectionInjector* injector, int port, bool intercept_completion)
-        : injector_(injector),
-          port_(port),
-          intercept_completion_(intercept_completion) {}
-
-    void Wait() {
-      gpr_log(GPR_INFO,
-              "=== WAITING FOR CONNECTION ATTEMPT ON PORT %d ===", port_);
-      grpc_core::MutexLock lock(&injector_->mu_);
-      while (queued_attempt_ == nullptr) {
-        start_cv_.Wait(&injector_->mu_);
-      }
-      gpr_log(GPR_INFO, "=== CONNECTION ATTEMPT STARTED ON PORT %d ===", port_);
-    }
-
-    void Resume() {
-      gpr_log(GPR_INFO,
-              "=== RESUMING CONNECTION ATTEMPT ON PORT %d ===", port_);
-      grpc_core::ExecCtx exec_ctx;
-      std::unique_ptr<QueuedAttempt> attempt;
-      {
-        grpc_core::MutexLock lock(&injector_->mu_);
-        attempt = std::move(queued_attempt_);
-      }
-      attempt->Resume();
-    }
-
-    void Fail(grpc_error_handle error) {
-      gpr_log(GPR_INFO, "=== FAILING CONNECTION ATTEMPT ON PORT %d ===", port_);
-      grpc_core::ExecCtx exec_ctx;
-      std::unique_ptr<QueuedAttempt> attempt;
-      {
-        grpc_core::MutexLock lock(&injector_->mu_);
-        attempt = std::move(queued_attempt_);
-      }
-      attempt->Fail(error);
-    }
-
-    void WaitForCompletion() {
-      gpr_log(GPR_INFO,
-              "=== WAITING FOR CONNECTION COMPLETION ON PORT %d ===", port_);
-      grpc_core::MutexLock lock(&injector_->mu_);
-      while (original_on_complete_ != nullptr) {
-        complete_cv_.Wait(&injector_->mu_);
-      }
-      gpr_log(GPR_INFO, "=== CONNECTION COMPLETED ON PORT %d ===", port_);
-    }
-
-   private:
-    friend class ConnectionInjector;
-
-    static void OnComplete(void* arg, grpc_error_handle error) {
-      auto* self = static_cast<Hold*>(arg);
-      grpc_closure* on_complete;
-      {
-        grpc_core::MutexLock lock(&self->injector_->mu_);
-        on_complete = self->original_on_complete_;
-        self->original_on_complete_ = nullptr;
-        self->complete_cv_.Signal();
-      }
-      grpc_core::Closure::Run(DEBUG_LOCATION, on_complete,
-                              GRPC_ERROR_REF(error));
-    }
-
-    ConnectionInjector* injector_;
-    const int port_;
-    const bool intercept_completion_;
-    std::unique_ptr<QueuedAttempt> queued_attempt_
-        ABSL_GUARDED_BY(&ConnectionInjector::mu_);
-    grpc_core::CondVar start_cv_;
-    grpc_closure on_complete_;
-    grpc_closure* original_on_complete_;
-    grpc_core::CondVar complete_cv_;
-  };
-
-  std::unique_ptr<Hold> AddHold(int port, bool intercept_completion = false) {
-    grpc_core::MutexLock lock(&mu_);
-    auto hold = absl::make_unique<Hold>(this, port, intercept_completion);
-    holds_.push_back(hold.get());
-    return hold;
-  }
-
-  void HandleConnection(grpc_closure* closure, grpc_endpoint** ep,
-                        grpc_pollset_set* interested_parties,
-                        const grpc_channel_args* channel_args,
-                        const grpc_resolved_address* addr,
-                        grpc_core::Timestamp deadline) override {
-    const int port = grpc_sockaddr_get_port(addr);
-    gpr_log(GPR_INFO, "==> HandleConnection(): port=%d", port);
-    {
-      grpc_core::MutexLock lock(&mu_);
-      for (auto it = holds_.begin(); it != holds_.end(); ++it) {
-        Hold* hold = *it;
-        if (port == hold->port_) {
-          gpr_log(GPR_INFO, "*** INTERCEPTING CONNECTION ATTEMPT");
-          if (hold->intercept_completion_) {
-            hold->original_on_complete_ = closure;
-            closure = GRPC_CLOSURE_INIT(&hold->on_complete_, Hold::OnComplete,
-                                        hold, nullptr);
-          }
-          hold->queued_attempt_ = absl::make_unique<QueuedAttempt>(
-              closure, ep, interested_parties, channel_args, addr, deadline);
-          hold->start_cv_.Signal();
-          holds_.erase(it);
-          return;
-        }
-      }
-    }
-    // Anything we're not holding should proceed normally.
-    AttemptConnection(closure, ep, interested_parties, channel_args, addr,
-                      deadline);
-  }
-
- private:
-  std::vector<Hold*> holds_;
-};
-
 // Subclass of TestServiceImpl that increments a request counter for
 // every call to the Echo RPC.
 class MyTestServiceImpl : public TestServiceImpl {
@@ -326,7 +200,8 @@ class FakeResolverResponseGeneratorWrapper {
         attributes[attribute_key] = attribute->Copy();
       }
       result.addresses->emplace_back(address.addr, address.len,
-                                     nullptr /* args */, std::move(attributes));
+                                     grpc_core::ChannelArgs(),
+                                     std::move(attributes));
     }
     if (result.addresses->empty()) {
       result.resolution_note = "fake resolver empty address list";
@@ -334,7 +209,7 @@ class FakeResolverResponseGeneratorWrapper {
     if (service_config_json != nullptr) {
       grpc_error_handle error = GRPC_ERROR_NONE;
       result.service_config = grpc_core::ServiceConfigImpl::Create(
-          nullptr, service_config_json, &error);
+          grpc_core::ChannelArgs(), service_config_json, &error);
       GPR_ASSERT(*result.service_config != nullptr);
     }
     return result;
@@ -488,6 +363,25 @@ class ClientLbEnd2endTest : public ::testing::Test {
         << location.file() << ":" << location.line();
   }
 
+  void SendRpcsUntil(
+      const grpc_core::DebugLocation& debug_location,
+      const std::unique_ptr<grpc::testing::EchoTestService::Stub>& stub,
+      std::function<bool(const Status&)> continue_predicate,
+      int timeout_ms = 15000) {
+    absl::Time deadline = absl::InfiniteFuture();
+    if (timeout_ms != 0) {
+      deadline = absl::Now() +
+                 (absl::Milliseconds(timeout_ms) * grpc_test_slowdown_factor());
+    }
+    while (true) {
+      Status status = SendRpc(stub);
+      if (!continue_predicate(status)) return;
+      EXPECT_LE(absl::Now(), deadline)
+          << debug_location.file() << ":" << debug_location.line();
+      if (absl::Now() >= deadline) break;
+    }
+  }
+
   struct ServerData {
     const int port_;
     std::unique_ptr<Server> server_;
@@ -539,6 +433,13 @@ class ClientLbEnd2endTest : public ::testing::Test {
       server_->Shutdown(grpc_timeout_milliseconds_to_deadline(0));
       thread_->join();
       started_ = false;
+    }
+
+    void StopListeningAndSendGoaways() {
+      grpc_core::ExecCtx exec_ctx;
+      auto* server = grpc_core::Server::FromC(server_->c_server());
+      server->StopListening();
+      server->SendGoaways();
     }
 
     void SetServingStatus(const std::string& service, bool serving) {
@@ -875,7 +776,7 @@ TEST_F(PickFirstTest, ResetConnectionBackoff) {
 TEST_F(ClientLbEnd2endTest,
        ResetConnectionBackoffNextAttemptStartsImmediately) {
   // Start connection injector.
-  ConnectionInjector injector;
+  ConnectionHoldInjector injector;
   injector.Start();
   // Create client.
   const int port = grpc_pick_unused_port_or_die();
@@ -922,7 +823,7 @@ TEST_F(
     PickFirstTest,
     TriesAllSubchannelsBeforeReportingTransientFailureWithSubchannelSharing) {
   // Start connection injector.
-  ConnectionInjector injector;
+  ConnectionHoldInjector injector;
   injector.Start();
   // Get 5 unused ports.  Each channel will have 2 unique ports followed
   // by a common port.
@@ -1707,7 +1608,7 @@ TEST_F(RoundRobinTest, TransientFailureAtStartup) {
 
 TEST_F(RoundRobinTest, StaysInTransientFailureInSubsequentConnecting) {
   // Start connection injector.
-  ConnectionInjector injector;
+  ConnectionHoldInjector injector;
   injector.Start();
   // Get port.
   const int port = grpc_pick_unused_port_or_die();
@@ -1747,7 +1648,7 @@ TEST_F(RoundRobinTest, StaysInTransientFailureInSubsequentConnecting) {
 
 TEST_F(RoundRobinTest, ReportsLatestStatusInTransientFailure) {
   // Start connection injector.
-  ConnectionInjector injector;
+  ConnectionHoldInjector injector;
   injector.Start();
   // Get port.
   const std::vector<int> ports = {grpc_pick_unused_port_or_die(),
@@ -1798,7 +1699,7 @@ TEST_F(RoundRobinTest, ReportsLatestStatusInTransientFailure) {
 
 TEST_F(RoundRobinTest, DoesNotFailRpcsUponDisconnection) {
   // Start connection injector.
-  ConnectionInjector injector;
+  ConnectionHoldInjector injector;
   injector.Start();
   // Start server.
   StartServers(1);
@@ -1875,25 +1776,32 @@ TEST_F(RoundRobinTest, SingleReconnect) {
   for (size_t i = 0; i < servers_.size(); ++i) {
     EXPECT_EQ(1, servers_[i]->service_.request_count());
   }
-  const auto pre_death = servers_[0]->service_.request_count();
   // Kill the first server.
-  servers_[0]->Shutdown();
-  // Client request still succeed. May need retrying if RR had returned a pick
-  // before noticing the change in the server's connectivity.
-  while (true) {
-    Status status = SendRpc(stub);
-    if (status.ok()) break;
-    EXPECT_EQ(StatusCode::UNAVAILABLE, status.error_code());
-    EXPECT_EQ("", status.error_message());
-  }
-  // Send a bunch of RPCs that should succeed.
+  servers_[0]->StopListeningAndSendGoaways();
+  // Wait for client to notice that the backend is down.  We know that's
+  // happened when we see kNumServers RPCs that do not go to backend 0.
+  ResetCounters();
+  SendRpcsUntil(DEBUG_LOCATION, stub,
+                [&, num_rpcs_not_on_backend_0 = 0](Status status) mutable {
+                  EXPECT_TRUE(status.ok())
+                      << "code=" << status.error_code()
+                      << " message=" << status.error_message();
+                  if (servers_[0]->service_.request_count() == 1) {
+                    num_rpcs_not_on_backend_0 = 0;
+                  } else {
+                    ++num_rpcs_not_on_backend_0;
+                  }
+                  ResetCounters();
+                  return num_rpcs_not_on_backend_0 < kNumServers;
+                });
+  // Send a bunch of RPCs.
   for (int i = 0; i < 10 * kNumServers; ++i) {
     CheckRpcSendOk(DEBUG_LOCATION, stub);
   }
-  const auto post_death = servers_[0]->service_.request_count();
   // No requests have gone to the deceased server.
-  EXPECT_EQ(pre_death, post_death);
+  EXPECT_EQ(0UL, servers_[0]->service_.request_count());
   // Bring the first server back up.
+  servers_[0]->Shutdown();
   StartServer(0);
   // Requests should start arriving at the first server either right away (if
   // the server managed to start before the RR policy retried the subchannel) or
@@ -2545,7 +2453,7 @@ TEST_F(ClientLbAddressTest, Basic) {
   for (const int port : GetServersPorts()) {
     expected.emplace_back(
         absl::StrCat(ipv6_only_ ? "[::1]:" : "127.0.0.1:", port,
-                     " args={} attributes={", kAttributeKey, "=foo}"));
+                     " attributes={", kAttributeKey, "=foo}"));
   }
   EXPECT_EQ(addresses_seen(), expected);
 }

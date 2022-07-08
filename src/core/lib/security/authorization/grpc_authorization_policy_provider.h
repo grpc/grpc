@@ -17,6 +17,7 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <functional>
 #include <memory>
 #include <string>
 
@@ -83,6 +84,9 @@ class FileWatcherAuthorizationPolicyProvider
                                          unsigned int refresh_interval_sec,
                                          absl::Status* status);
 
+  void SetCallbackForTesting(
+      std::function<void(bool contents_changed, absl::Status Status)> cb);
+
   void Orphan() override;
 
   AuthorizationEngines engines() override {
@@ -102,6 +106,9 @@ class FileWatcherAuthorizationPolicyProvider
   gpr_event shutdown_event_;
 
   Mutex mu_;
+  // Callback is executed on every reload. This is useful for testing purpose.
+  std::function<void(bool contents_changed, absl::Status status)> cb_
+      ABSL_GUARDED_BY(mu_) = nullptr;
   // Engines created using authz_policy_.
   RefCountedPtr<AuthorizationEngine> allow_engine_ ABSL_GUARDED_BY(mu_);
   RefCountedPtr<AuthorizationEngine> deny_engine_ ABSL_GUARDED_BY(mu_);

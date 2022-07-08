@@ -56,11 +56,15 @@ UPB_INLINE envoy_config_core_v3_DnsResolverOptions* envoy_config_core_v3_DnsReso
   return ret;
 }
 UPB_INLINE char* envoy_config_core_v3_DnsResolverOptions_serialize(const envoy_config_core_v3_DnsResolverOptions* msg, upb_Arena* arena, size_t* len) {
-  return upb_Encode(msg, &envoy_config_core_v3_DnsResolverOptions_msginit, 0, arena, len);
+  char* ptr;
+  (void)upb_Encode(msg, &envoy_config_core_v3_DnsResolverOptions_msginit, 0, arena, &ptr, len);
+  return ptr;
 }
 UPB_INLINE char* envoy_config_core_v3_DnsResolverOptions_serialize_ex(const envoy_config_core_v3_DnsResolverOptions* msg, int options,
                                  upb_Arena* arena, size_t* len) {
-  return upb_Encode(msg, &envoy_config_core_v3_DnsResolverOptions_msginit, options, arena, len);
+  char* ptr;
+  (void)upb_Encode(msg, &envoy_config_core_v3_DnsResolverOptions_msginit, options, arena, &ptr, len);
+  return ptr;
 }
 UPB_INLINE void envoy_config_core_v3_DnsResolverOptions_clear_use_tcp_for_dns_lookups(const envoy_config_core_v3_DnsResolverOptions* msg) {
   *UPB_PTR_AT(msg, UPB_SIZE(0, 0), bool) = 0;
@@ -107,11 +111,15 @@ UPB_INLINE envoy_config_core_v3_DnsResolutionConfig* envoy_config_core_v3_DnsRes
   return ret;
 }
 UPB_INLINE char* envoy_config_core_v3_DnsResolutionConfig_serialize(const envoy_config_core_v3_DnsResolutionConfig* msg, upb_Arena* arena, size_t* len) {
-  return upb_Encode(msg, &envoy_config_core_v3_DnsResolutionConfig_msginit, 0, arena, len);
+  char* ptr;
+  (void)upb_Encode(msg, &envoy_config_core_v3_DnsResolutionConfig_msginit, 0, arena, &ptr, len);
+  return ptr;
 }
 UPB_INLINE char* envoy_config_core_v3_DnsResolutionConfig_serialize_ex(const envoy_config_core_v3_DnsResolutionConfig* msg, int options,
                                  upb_Arena* arena, size_t* len) {
-  return upb_Encode(msg, &envoy_config_core_v3_DnsResolutionConfig_msginit, options, arena, len);
+  char* ptr;
+  (void)upb_Encode(msg, &envoy_config_core_v3_DnsResolutionConfig_msginit, options, arena, &ptr, len);
+  return ptr;
 }
 UPB_INLINE bool envoy_config_core_v3_DnsResolutionConfig_has_resolvers(const envoy_config_core_v3_DnsResolutionConfig* msg) {
   return _upb_has_submsg_nohasbit(msg, UPB_SIZE(4, 8));

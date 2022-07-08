@@ -48,7 +48,7 @@ static const upb_MiniTable_Field envoy_extensions_transport_sockets_tls_v3_Priva
 const upb_MiniTable envoy_extensions_transport_sockets_tls_v3_PrivateKeyProvider_msginit = {
   &envoy_extensions_transport_sockets_tls_v3_PrivateKeyProvider_submsgs[0],
   &envoy_extensions_transport_sockets_tls_v3_PrivateKeyProvider__fields[0],
-  UPB_SIZE(16, 40), 2, kUpb_ExtMode_NonExtendable, 1, 255, 0,
+  UPB_SIZE(16, 32), 2, kUpb_ExtMode_NonExtendable, 1, 255, 0,
 };
 
 static const upb_MiniTable_Sub envoy_extensions_transport_sockets_tls_v3_TlsCertificate_submsgs[8] = {
@@ -76,7 +76,7 @@ static const upb_MiniTable_Field envoy_extensions_transport_sockets_tls_v3_TlsCe
 const upb_MiniTable envoy_extensions_transport_sockets_tls_v3_TlsCertificate_msginit = {
   &envoy_extensions_transport_sockets_tls_v3_TlsCertificate_submsgs[0],
   &envoy_extensions_transport_sockets_tls_v3_TlsCertificate__fields[0],
-  UPB_SIZE(36, 72), 8, kUpb_ExtMode_NonExtendable, 8, 255, 0,
+  UPB_SIZE(40, 72), 8, kUpb_ExtMode_NonExtendable, 8, 255, 0,
 };
 
 static const upb_MiniTable_Sub envoy_extensions_transport_sockets_tls_v3_TlsSessionTicketKeys_submsgs[1] = {
@@ -90,7 +90,7 @@ static const upb_MiniTable_Field envoy_extensions_transport_sockets_tls_v3_TlsSe
 const upb_MiniTable envoy_extensions_transport_sockets_tls_v3_TlsSessionTicketKeys_msginit = {
   &envoy_extensions_transport_sockets_tls_v3_TlsSessionTicketKeys_submsgs[0],
   &envoy_extensions_transport_sockets_tls_v3_TlsSessionTicketKeys__fields[0],
-  UPB_SIZE(4, 8), 1, kUpb_ExtMode_NonExtendable, 1, 255, 0,
+  UPB_SIZE(8, 8), 1, kUpb_ExtMode_NonExtendable, 1, 255, 0,
 };
 
 static const upb_MiniTable_Field envoy_extensions_transport_sockets_tls_v3_CertificateProviderPluginInstance__fields[2] = {
@@ -101,7 +101,7 @@ static const upb_MiniTable_Field envoy_extensions_transport_sockets_tls_v3_Certi
 const upb_MiniTable envoy_extensions_transport_sockets_tls_v3_CertificateProviderPluginInstance_msginit = {
   NULL,
   &envoy_extensions_transport_sockets_tls_v3_CertificateProviderPluginInstance__fields[0],
-  UPB_SIZE(16, 40), 2, kUpb_ExtMode_NonExtendable, 2, 255, 0,
+  UPB_SIZE(16, 32), 2, kUpb_ExtMode_NonExtendable, 2, 255, 0,
 };
 
 static const upb_MiniTable_Sub envoy_extensions_transport_sockets_tls_v3_SubjectAltNameMatcher_submsgs[1] = {
@@ -116,7 +116,7 @@ static const upb_MiniTable_Field envoy_extensions_transport_sockets_tls_v3_Subje
 const upb_MiniTable envoy_extensions_transport_sockets_tls_v3_SubjectAltNameMatcher_msginit = {
   &envoy_extensions_transport_sockets_tls_v3_SubjectAltNameMatcher_submsgs[0],
   &envoy_extensions_transport_sockets_tls_v3_SubjectAltNameMatcher__fields[0],
-  UPB_SIZE(12, 24), 2, kUpb_ExtMode_NonExtendable, 2, 255, 0,
+  UPB_SIZE(16, 16), 2, kUpb_ExtMode_NonExtendable, 2, 255, 0,
 };
 
 static const upb_MiniTable_Sub envoy_extensions_transport_sockets_tls_v3_CertificateValidationContext_submsgs[8] = {
@@ -149,7 +149,7 @@ static const upb_MiniTable_Field envoy_extensions_transport_sockets_tls_v3_Certi
 const upb_MiniTable envoy_extensions_transport_sockets_tls_v3_CertificateValidationContext_msginit = {
   &envoy_extensions_transport_sockets_tls_v3_CertificateValidationContext_submsgs[0],
   &envoy_extensions_transport_sockets_tls_v3_CertificateValidationContext__fields[0],
-  UPB_SIZE(52, 104), 13, kUpb_ExtMode_NonExtendable, 3, 255, 0,
+  UPB_SIZE(56, 96), 13, kUpb_ExtMode_NonExtendable, 3, 255, 0,
 };
 
 static const upb_MiniTable *messages_layout[7] = {

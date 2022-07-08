@@ -24,6 +24,7 @@
 
 #include "absl/memory/memory.h"
 #include "absl/strings/str_cat.h"
+#include "absl/types/optional.h"
 
 #include <grpc/support/log.h>
 
@@ -143,11 +144,11 @@ ParseFaultInjectionPolicy(const Json::Array& policies_json_array,
 
 std::unique_ptr<ServiceConfigParser::ParsedConfig>
 FaultInjectionServiceConfigParser::ParsePerMethodParams(
-    const grpc_channel_args* args, const Json& json, grpc_error_handle* error) {
+    const ChannelArgs& args, const Json& json, grpc_error_handle* error) {
   GPR_DEBUG_ASSERT(error != nullptr && GRPC_ERROR_IS_NONE(*error));
   // Only parse fault injection policy if the following channel arg is present.
-  if (!grpc_channel_args_find_bool(
-          args, GRPC_ARG_PARSE_FAULT_INJECTION_METHOD_CONFIG, false)) {
+  if (!args.GetBool(GRPC_ARG_PARSE_FAULT_INJECTION_METHOD_CONFIG)
+           .value_or(false)) {
     return nullptr;
   }
   // Parse fault injection policy from given Json

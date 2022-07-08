@@ -26,7 +26,7 @@ static const upb_MiniTable_Field envoy_admin_v3_Listeners__fields[1] = {
 const upb_MiniTable envoy_admin_v3_Listeners_msginit = {
   &envoy_admin_v3_Listeners_submsgs[0],
   &envoy_admin_v3_Listeners__fields[0],
-  UPB_SIZE(4, 8), 1, kUpb_ExtMode_NonExtendable, 1, 255, 0,
+  UPB_SIZE(8, 8), 1, kUpb_ExtMode_NonExtendable, 1, 255, 0,
 };
 
 static const upb_MiniTable_Sub envoy_admin_v3_ListenerStatus_submsgs[1] = {
@@ -41,7 +41,7 @@ static const upb_MiniTable_Field envoy_admin_v3_ListenerStatus__fields[2] = {
 const upb_MiniTable envoy_admin_v3_ListenerStatus_msginit = {
   &envoy_admin_v3_ListenerStatus_submsgs[0],
   &envoy_admin_v3_ListenerStatus__fields[0],
-  UPB_SIZE(16, 40), 2, kUpb_ExtMode_NonExtendable, 2, 255, 0,
+  UPB_SIZE(16, 32), 2, kUpb_ExtMode_NonExtendable, 2, 255, 0,
 };
 
 static const upb_MiniTable *messages_layout[2] = {
