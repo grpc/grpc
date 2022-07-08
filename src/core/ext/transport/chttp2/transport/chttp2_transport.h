@@ -21,7 +21,6 @@
 
 #include <grpc/support/port_platform.h>
 
-#include <grpc/impl/codegen/grpc_types.h>
 #include <grpc/slice.h>
 
 #include "src/core/lib/channel/channel_args.h"
