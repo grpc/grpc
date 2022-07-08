@@ -33,6 +33,11 @@ class FailoverTest(xds_k8s_testcase.RegularXdsKubernetesTestCase):
     REPLICA_COUNT = 3
     MAX_RATE_PER_ENDPOINT = 100
 
+    @staticmethod
+    def is_supported(config: skips.TestConfig) -> bool:
+        # disabled because test case implementation seems wrong b/238226704
+        return False
+
     def setUp(self):
         super().setUp()
         self.secondary_server_runner = server_app.KubernetesServerRunner(
