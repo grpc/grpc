@@ -53,7 +53,7 @@ ResourceQuotaRefPtr ResourceQuotaFromEndpointConfig(
   return nullptr;
 }
 
-ChannelArgs EnsureResourceQuotaInChannelArgs(ChannelArgs args) {
+ChannelArgs EnsureResourceQuotaInChannelArgs(const ChannelArgs& args) {
   if (args.GetObject<ResourceQuota>() != nullptr) return args;
   // If there's no existing quota, add it to the default one - shared between
   // all channel args declared thusly. This prevents us from accidentally not

@@ -13,8 +13,8 @@
  <date>2019-09-24</date>
  <time>16:06:07</time>
  <version>
-  <release>1.48.0dev</release>
-  <api>1.48.0dev</api>
+  <release>1.49.0dev</release>
+  <api>1.49.0dev</api>
  </version>
  <stability>
   <release>beta</release>
@@ -22,7 +22,7 @@
  </stability>
  <license>Apache 2.0</license>
  <notes>
-- gRPC Core 1.48.0 update
+- gRPC Core 1.49.0 update
  </notes>
  <contents>
   <dir baseinstalldir="/" name="/">
@@ -855,6 +855,8 @@
     <file baseinstalldir="/" name="src/core/ext/xds/xds_channel_stack_modifier.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/xds/xds_client.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/xds/xds_client.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/xds/xds_client_grpc.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/xds/xds_client_grpc.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/xds/xds_client_stats.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/xds/xds_client_stats.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/xds/xds_cluster.cc" role="src" />
@@ -883,6 +885,9 @@
     <file baseinstalldir="/" name="src/core/ext/xds/xds_routing.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/xds/xds_routing.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/xds/xds_server_config_fetcher.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/xds/xds_transport.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/xds/xds_transport_grpc.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/xds/xds_transport_grpc.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/address_utils/parse_address.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/address_utils/parse_address.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/address_utils/sockaddr_utils.cc" role="src" />
@@ -1083,10 +1088,6 @@
     <file baseinstalldir="/" name="src/core/lib/iomgr/exec_ctx.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/executor.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/executor.h" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/iomgr/executor/mpmcqueue.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/iomgr/executor/mpmcqueue.h" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/iomgr/executor/threadpool.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/iomgr/executor/threadpool.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/fork_posix.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/fork_windows.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/gethostname.h" role="src" />
@@ -1625,8 +1626,10 @@
     <file baseinstalldir="/" name="third_party/abseil-cpp/absl/debugging/symbolize_emscripten.inc" role="src" />
     <file baseinstalldir="/" name="third_party/abseil-cpp/absl/debugging/symbolize_unimplemented.inc" role="src" />
     <file baseinstalldir="/" name="third_party/abseil-cpp/absl/debugging/symbolize_win32.inc" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/functional/any_invocable.h" role="src" />
     <file baseinstalldir="/" name="third_party/abseil-cpp/absl/functional/bind_front.h" role="src" />
     <file baseinstalldir="/" name="third_party/abseil-cpp/absl/functional/function_ref.h" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/functional/internal/any_invocable.h" role="src" />
     <file baseinstalldir="/" name="third_party/abseil-cpp/absl/functional/internal/front_binder.h" role="src" />
     <file baseinstalldir="/" name="third_party/abseil-cpp/absl/functional/internal/function_ref.h" role="src" />
     <file baseinstalldir="/" name="third_party/abseil-cpp/absl/hash/hash.h" role="src" />

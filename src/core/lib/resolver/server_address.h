@@ -31,8 +31,6 @@
 
 #include "absl/memory/memory.h"
 
-#include <grpc/impl/codegen/grpc_types.h>
-
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/iomgr/resolved_address.h"
@@ -70,15 +68,13 @@ class ServerAddress {
   };
 
   // Takes ownership of args.
-  ServerAddress(const grpc_resolved_address& address, grpc_channel_args* args,
+  ServerAddress(const grpc_resolved_address& address, const ChannelArgs& args,
                 std::map<const char*, std::unique_ptr<AttributeInterface>>
                     attributes = {});
   ServerAddress(const void* address, size_t address_len,
-                grpc_channel_args* args,
+                const ChannelArgs& args,
                 std::map<const char*, std::unique_ptr<AttributeInterface>>
                     attributes = {});
-
-  ~ServerAddress() { grpc_channel_args_destroy(args_); }
 
   // Copyable.
   ServerAddress(const ServerAddress& other);
@@ -93,7 +89,7 @@ class ServerAddress {
   int Cmp(const ServerAddress& other) const;
 
   const grpc_resolved_address& address() const { return address_; }
-  const grpc_channel_args* args() const { return args_; }
+  const ChannelArgs& args() const { return args_; }
 
   const AttributeInterface* GetAttribute(const char* key) const;
 
@@ -109,7 +105,7 @@ class ServerAddress {
 
  private:
   grpc_resolved_address address_;
-  grpc_channel_args* args_;
+  ChannelArgs args_;
   std::map<const char*, std::unique_ptr<AttributeInterface>> attributes_;
 };
 

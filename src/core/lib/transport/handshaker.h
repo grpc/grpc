@@ -25,9 +25,9 @@
 
 #include "absl/container/inlined_vector.h"
 
-#include <grpc/impl/codegen/grpc_types.h>
 #include <grpc/slice.h>
 
+#include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/gprpp/ref_counted.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/gprpp/sync.h"
@@ -63,7 +63,7 @@ namespace grpc_core {
 /// which the callback takes ownership of.
 struct HandshakerArgs {
   grpc_endpoint* endpoint = nullptr;
-  grpc_channel_args* args = nullptr;
+  ChannelArgs args;
   grpc_slice_buffer* read_buffer = nullptr;
   // A handshaker may set this to true before invoking on_handshake_done
   // to indicate that subsequent handshakers should be skipped.
@@ -120,9 +120,8 @@ class HandshakeManager : public RefCounted<HandshakeManager> {
   /// GRPC_ERROR_NONE, then handshaking failed and the handshaker has done
   /// the necessary clean-up.  Otherwise, the callback takes ownership of
   /// the arguments.
-  void DoHandshake(grpc_endpoint* endpoint,
-                   const grpc_channel_args* channel_args, Timestamp deadline,
-                   grpc_tcp_server_acceptor* acceptor,
+  void DoHandshake(grpc_endpoint* endpoint, const ChannelArgs& channel_args,
+                   Timestamp deadline, grpc_tcp_server_acceptor* acceptor,
                    grpc_iomgr_cb_func on_handshake_done, void* user_data);
 
  private:

@@ -166,34 +166,32 @@ static void on_connect(void* /*arg*/, grpc_endpoint* tcp,
 static void test_no_op(void) {
   grpc_core::ExecCtx exec_ctx;
   grpc_tcp_server* s;
-  const grpc_channel_args* args = grpc_core::CoreConfiguration::Get()
-                                      .channel_args_preconditioning()
-                                      .PreconditionChannelArgs(nullptr)
-                                      .ToC();
-  GPR_ASSERT(
-      GRPC_ERROR_NONE ==
-      grpc_tcp_server_create(
-          nullptr,
-          grpc_event_engine::experimental::ChannelArgsEndpointConfig(args),
-          &s));
-  grpc_channel_args_destroy(args);
+  auto args = grpc_core::CoreConfiguration::Get()
+                  .channel_args_preconditioning()
+                  .PreconditionChannelArgs(nullptr)
+                  .ToC();
+  GPR_ASSERT(GRPC_ERROR_NONE ==
+             grpc_tcp_server_create(
+                 nullptr,
+                 grpc_event_engine::experimental::ChannelArgsEndpointConfig(
+                     args.get()),
+                 &s));
   grpc_tcp_server_unref(s);
 }
 
 static void test_no_op_with_start(void) {
   grpc_core::ExecCtx exec_ctx;
   grpc_tcp_server* s;
-  const grpc_channel_args* args = grpc_core::CoreConfiguration::Get()
-                                      .channel_args_preconditioning()
-                                      .PreconditionChannelArgs(nullptr)
-                                      .ToC();
-  GPR_ASSERT(
-      GRPC_ERROR_NONE ==
-      grpc_tcp_server_create(
-          nullptr,
-          grpc_event_engine::experimental::ChannelArgsEndpointConfig(args),
-          &s));
-  grpc_channel_args_destroy(args);
+  auto args = grpc_core::CoreConfiguration::Get()
+                  .channel_args_preconditioning()
+                  .PreconditionChannelArgs(nullptr)
+                  .ToC();
+  GPR_ASSERT(GRPC_ERROR_NONE ==
+             grpc_tcp_server_create(
+                 nullptr,
+                 grpc_event_engine::experimental::ChannelArgsEndpointConfig(
+                     args.get()),
+                 &s));
   LOG_TEST("test_no_op_with_start");
   std::vector<grpc_pollset*> empty_pollset;
   grpc_tcp_server_start(s, &empty_pollset, on_connect, nullptr);
@@ -206,17 +204,16 @@ static void test_no_op_with_port(void) {
   struct sockaddr_in* addr =
       reinterpret_cast<struct sockaddr_in*>(resolved_addr.addr);
   grpc_tcp_server* s;
-  const grpc_channel_args* args = grpc_core::CoreConfiguration::Get()
-                                      .channel_args_preconditioning()
-                                      .PreconditionChannelArgs(nullptr)
-                                      .ToC();
-  GPR_ASSERT(
-      GRPC_ERROR_NONE ==
-      grpc_tcp_server_create(
-          nullptr,
-          grpc_event_engine::experimental::ChannelArgsEndpointConfig(args),
-          &s));
-  grpc_channel_args_destroy(args);
+  auto args = grpc_core::CoreConfiguration::Get()
+                  .channel_args_preconditioning()
+                  .PreconditionChannelArgs(nullptr)
+                  .ToC();
+  GPR_ASSERT(GRPC_ERROR_NONE ==
+             grpc_tcp_server_create(
+                 nullptr,
+                 grpc_event_engine::experimental::ChannelArgsEndpointConfig(
+                     args.get()),
+                 &s));
   LOG_TEST("test_no_op_with_port");
 
   memset(&resolved_addr, 0, sizeof(resolved_addr));
@@ -236,17 +233,16 @@ static void test_no_op_with_port_and_start(void) {
   struct sockaddr_in* addr =
       reinterpret_cast<struct sockaddr_in*>(resolved_addr.addr);
   grpc_tcp_server* s;
-  const grpc_channel_args* args = grpc_core::CoreConfiguration::Get()
-                                      .channel_args_preconditioning()
-                                      .PreconditionChannelArgs(nullptr)
-                                      .ToC();
-  GPR_ASSERT(
-      GRPC_ERROR_NONE ==
-      grpc_tcp_server_create(
-          nullptr,
-          grpc_event_engine::experimental::ChannelArgsEndpointConfig(args),
-          &s));
-  grpc_channel_args_destroy(args);
+  auto args = grpc_core::CoreConfiguration::Get()
+                  .channel_args_preconditioning()
+                  .PreconditionChannelArgs(nullptr)
+                  .ToC();
+  GPR_ASSERT(GRPC_ERROR_NONE ==
+             grpc_tcp_server_create(
+                 nullptr,
+                 grpc_event_engine::experimental::ChannelArgsEndpointConfig(
+                     args.get()),
+                 &s));
   LOG_TEST("test_no_op_with_port_and_start");
   int port = -1;
 
@@ -342,18 +338,16 @@ static void test_connect(size_t num_connects,
   int svr1_port;
   grpc_tcp_server* s;
   const unsigned num_ports = 2;
-  const grpc_channel_args* new_channel_args =
-      grpc_core::CoreConfiguration::Get()
-          .channel_args_preconditioning()
-          .PreconditionChannelArgs(channel_args)
-          .ToC();
+  auto new_channel_args = grpc_core::CoreConfiguration::Get()
+                              .channel_args_preconditioning()
+                              .PreconditionChannelArgs(channel_args)
+                              .ToC();
   GPR_ASSERT(GRPC_ERROR_NONE ==
              grpc_tcp_server_create(
                  nullptr,
                  grpc_event_engine::experimental::ChannelArgsEndpointConfig(
-                     new_channel_args),
+                     new_channel_args.get()),
                  &s));
-  grpc_channel_args_destroy(new_channel_args);
   unsigned port_num;
   server_weak_ref weak_ref;
   server_weak_ref_init(&weak_ref);
