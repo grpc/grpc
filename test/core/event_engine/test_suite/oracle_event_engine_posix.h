@@ -42,10 +42,10 @@ class PosixOracleEndpoint : public EventEngine::Endpoint {
   explicit PosixOracleEndpoint(int socket_fd);
   static std::unique_ptr<PosixOracleEndpoint> Create(int socket_fd);
   ~PosixOracleEndpoint() override;
-  void Read(std::function<void(absl::Status)> on_read, SliceBuffer* buffer,
+  void Read(absl::AnyInvocable<void(absl::Status)> on_read, SliceBuffer* buffer,
             const ReadArgs* args) override;
-  void Write(std::function<void(absl::Status)> on_writable, SliceBuffer* data,
-             const WriteArgs* args) override;
+  void Write(absl::AnyInvocable<void(absl::Status)> on_writable,
+             SliceBuffer* data, const WriteArgs* args) override;
   void Shutdown();
   EventEngine::ResolvedAddress& GetPeerAddress() const override {
     GPR_ASSERT(false && "unimplemented");
@@ -62,7 +62,7 @@ class PosixOracleEndpoint : public EventEngine::Endpoint {
     ReadOperation()
         : num_bytes_to_read_(-1), buffer_(nullptr), on_complete_(nullptr) {}
     ReadOperation(int num_bytes_to_read, SliceBuffer* buffer,
-                  std::function<void(absl::Status)>&& on_complete)
+                  absl::AnyInvocable<void(absl::Status)>&& on_complete)
         : num_bytes_to_read_(num_bytes_to_read),
           buffer_(buffer),
           on_complete_(std::move(on_complete)) {}
@@ -78,7 +78,7 @@ class PosixOracleEndpoint : public EventEngine::Endpoint {
    private:
     int num_bytes_to_read_;
     SliceBuffer* buffer_;
-    std::function<void(absl::Status)> on_complete_;
+    absl::AnyInvocable<void(absl::Status)> on_complete_;
   };
 
   // An internal helper class definition of Write operations to be performed
@@ -87,7 +87,7 @@ class PosixOracleEndpoint : public EventEngine::Endpoint {
    public:
     WriteOperation() : bytes_to_write_(std::string()), on_complete_(nullptr) {}
     WriteOperation(SliceBuffer* buffer,
-                   std::function<void(absl::Status)>&& on_complete)
+                   absl::AnyInvocable<void(absl::Status)>&& on_complete)
         : bytes_to_write_(ExtractSliceBufferIntoString(buffer)),
           on_complete_(std::move(on_complete)) {}
     bool IsValid() { return bytes_to_write_.length() > 0; }
@@ -100,7 +100,7 @@ class PosixOracleEndpoint : public EventEngine::Endpoint {
 
    private:
     std::string bytes_to_write_;
-    std::function<void(absl::Status)> on_complete_;
+    absl::AnyInvocable<void(absl::Status)> on_complete_;
   };
 
   void ProcessReadOperations();
@@ -119,7 +119,7 @@ class PosixOracleListener : public EventEngine::Listener {
  public:
   PosixOracleListener(
       EventEngine::Listener::AcceptCallback on_accept,
-      std::function<void(absl::Status)> on_shutdown,
+      absl::AnyInvocable<void(absl::Status)> on_shutdown,
       std::unique_ptr<MemoryAllocatorFactory> memory_allocator_factory);
   ~PosixOracleListener() override;
   absl::StatusOr<int> Bind(const EventEngine::ResolvedAddress& addr) override;
@@ -130,7 +130,7 @@ class PosixOracleListener : public EventEngine::Listener {
 
   mutable absl::Mutex mu_;
   EventEngine::Listener::AcceptCallback on_accept_;
-  std::function<void(absl::Status)> on_shutdown_;
+  absl::AnyInvocable<void(absl::Status)> on_shutdown_;
   std::unique_ptr<MemoryAllocatorFactory> memory_allocator_factory_;
   grpc_core::Thread serve_;
   int pipefd_[2];
@@ -146,7 +146,7 @@ class PosixOracleEventEngine final : public EventEngine {
 
   absl::StatusOr<std::unique_ptr<Listener>> CreateListener(
       Listener::AcceptCallback on_accept,
-      std::function<void(absl::Status)> on_shutdown,
+      absl::AnyInvocable<void(absl::Status)> on_shutdown,
       const EndpointConfig& /*config*/,
       std::unique_ptr<MemoryAllocatorFactory> memory_allocator_factory)
       override {
@@ -172,7 +172,7 @@ class PosixOracleEventEngine final : public EventEngine {
   void Run(Closure* /*closure*/) override {
     GPR_ASSERT(false && "unimplemented");
   }
-  void Run(std::function<void()> /*closure*/) override {
+  void Run(absl::AnyInvocable<void()> /*closure*/) override {
     GPR_ASSERT(false && "unimplemented");
   }
   TaskHandle RunAfter(EventEngine::Duration /*duration*/,
@@ -180,7 +180,7 @@ class PosixOracleEventEngine final : public EventEngine {
     GPR_ASSERT(false && "unimplemented");
   }
   TaskHandle RunAfter(EventEngine::Duration /*duration*/,
-                      std::function<void()> /*closure*/) override {
+                      absl::AnyInvocable<void()> /*closure*/) override {
     GPR_ASSERT(false && "unimplemented");
   }
   bool Cancel(TaskHandle /*handle*/) override {
