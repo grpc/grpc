@@ -46,12 +46,17 @@ class RingHashTest : public XdsEnd2endTest {
     logical_dns_cluster_resolver_response_generator_ =
         grpc_core::MakeRefCounted<grpc_core::FakeResolverResponseGenerator>();
     InitClient();
-    ChannelArguments args;
-    args.SetPointerWithVtable(
+    SetUpChannel();
+  }
+
+  void SetUpChannel(ChannelArguments* args = nullptr) {
+    ChannelArguments local_args;
+    if (args == nullptr) args = &local_args;
+    args->SetPointerWithVtable(
         GRPC_ARG_XDS_LOGICAL_DNS_CLUSTER_FAKE_RESOLVER_RESPONSE_GENERATOR,
         logical_dns_cluster_resolver_response_generator_.get(),
         &grpc_core::FakeResolverResponseGenerator::kChannelArgPointerVtable);
-    ResetStub(/*failover_timeout_ms=*/0, &args);
+    ResetStub(/*failover_timeout_ms=*/0, args);
   }
 
   grpc_core::ServerAddressList CreateAddressListFromPortList(
@@ -63,7 +68,8 @@ class RingHashTest : public XdsEnd2endTest {
       GPR_ASSERT(lb_uri.ok());
       grpc_resolved_address address;
       GPR_ASSERT(grpc_parse_uri(*lb_uri, &address));
-      addresses.emplace_back(address.addr, address.len, nullptr);
+      addresses.emplace_back(address.addr, address.len,
+                             grpc_core::ChannelArgs());
     }
     return addresses;
   }
@@ -212,6 +218,106 @@ TEST_P(RingHashTest,
   // Send RPC.  Need the timeout to be long enough to account for the
   // subchannel connection delays.
   CheckRpcSendOk(DEBUG_LOCATION, 1, RpcOptions().set_timeout_ms(5000));
+}
+
+TEST_P(RingHashTest,
+       AggregateClusterFallBackFromRingHashToLogicalDnsAtStartupNoFailedRpcs) {
+  CreateAndStartBackends(1);
+  const char* kEdsClusterName = "eds_cluster";
+  const char* kLogicalDNSClusterName = "logical_dns_cluster";
+  // Populate EDS resource.
+  EdsResourceArgs args({
+      {"locality0",
+       {MakeNonExistantEndpoint(), MakeNonExistantEndpoint()},
+       kDefaultLocalityWeight,
+       0},
+      {"locality1",
+       {MakeNonExistantEndpoint(), MakeNonExistantEndpoint()},
+       kDefaultLocalityWeight,
+       1},
+  });
+  balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
+  // Populate new CDS resources.
+  Cluster eds_cluster = default_cluster_;
+  eds_cluster.set_name(kEdsClusterName);
+  balancer_->ads_service()->SetCdsResource(eds_cluster);
+  // Populate LOGICAL_DNS cluster.
+  auto logical_dns_cluster = default_cluster_;
+  logical_dns_cluster.set_name(kLogicalDNSClusterName);
+  logical_dns_cluster.set_type(Cluster::LOGICAL_DNS);
+  auto* address = logical_dns_cluster.mutable_load_assignment()
+                      ->add_endpoints()
+                      ->add_lb_endpoints()
+                      ->mutable_endpoint()
+                      ->mutable_address()
+                      ->mutable_socket_address();
+  address->set_address(kServerName);
+  address->set_port_value(443);
+  balancer_->ads_service()->SetCdsResource(logical_dns_cluster);
+  // Create Aggregate Cluster
+  auto cluster = default_cluster_;
+  cluster.set_lb_policy(Cluster::RING_HASH);
+  CustomClusterType* custom_cluster = cluster.mutable_cluster_type();
+  custom_cluster->set_name("envoy.clusters.aggregate");
+  ClusterConfig cluster_config;
+  cluster_config.add_clusters(kEdsClusterName);
+  cluster_config.add_clusters(kLogicalDNSClusterName);
+  custom_cluster->mutable_typed_config()->PackFrom(cluster_config);
+  balancer_->ads_service()->SetCdsResource(cluster);
+  // Set up route with channel id hashing
+  auto new_route_config = default_route_config_;
+  auto* route = new_route_config.mutable_virtual_hosts(0)->mutable_routes(0);
+  auto* hash_policy = route->mutable_route()->add_hash_policy();
+  hash_policy->mutable_filter_state()->set_key("io.grpc.channel_id");
+  SetListenerAndRouteConfiguration(balancer_.get(), default_listener_,
+                                   new_route_config);
+  // Set Logical DNS result
+  {
+    grpc_core::ExecCtx exec_ctx;
+    grpc_core::Resolver::Result result;
+    result.addresses = CreateAddressListFromPortList(GetBackendPorts());
+    logical_dns_cluster_resolver_response_generator_->SetResponse(
+        std::move(result));
+  }
+  // Set up connection attempt injector.
+  ConnectionHoldInjector injector;
+  injector.Start();
+  auto hold = injector.AddHold(backends_[0]->port());
+  // Increase subchannel backoff time, so that subchannels stay in
+  // TRANSIENT_FAILURE for long enough to trigger potential problems.
+  ChannelArguments channel_args;
+  channel_args.SetInt(GRPC_ARG_INITIAL_RECONNECT_BACKOFF_MS, 10000);
+  SetUpChannel(&channel_args);
+  // Start an RPC in the background.
+  LongRunningRpc rpc;
+  rpc.StartRpc(stub_.get(), RpcOptions());
+  // Wait for connection attempt to the backend.
+  hold->Wait();
+  // Channel should report CONNECTING here, and any RPC should be queued.
+  EXPECT_EQ(channel_->GetState(false), GRPC_CHANNEL_CONNECTING);
+  // Start a second RPC at this point, which should be queued as well.
+  // This will fail if the priority policy fails to update the picker to
+  // point to the LOGICAL_DNS child; if it leaves it pointing to the EDS
+  // priority 1, then the RPC will fail, because all subchannels are in
+  // TRANSIENT_FAILURE.
+  // Note that sending only the first RPC does not catch this case,
+  // because if the priority policy fails to update the picker, then the
+  // pick for the first RPC will not be retried.
+  LongRunningRpc rpc2;
+  rpc2.StartRpc(stub_.get(), RpcOptions());
+  // Allow the connection attempt to complete.
+  hold->Resume();
+  // Now the RPCs should complete successfully.
+  gpr_log(GPR_INFO, "=== WAITING FOR FIRST RPC TO FINISH ===");
+  Status status = rpc.GetStatus();
+  gpr_log(GPR_INFO, "=== FIRST RPC FINISHED ===");
+  EXPECT_TRUE(status.ok()) << "code=" << status.error_code()
+                           << " message=" << status.error_message();
+  gpr_log(GPR_INFO, "=== WAITING FOR SECOND RPC TO FINISH ===");
+  status = rpc2.GetStatus();
+  gpr_log(GPR_INFO, "=== SECOND RPC FINISHED ===");
+  EXPECT_TRUE(status.ok()) << "code=" << status.error_code()
+                           << " message=" << status.error_message();
 }
 
 // Tests that ring hash policy that hashes using channel id ensures all RPCs

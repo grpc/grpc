@@ -24,8 +24,7 @@
 #include <memory>
 #include <vector>
 
-#include <grpc/impl/codegen/grpc_types.h>
-
+#include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/iomgr/iomgr_fwd.h"
 #include "src/core/lib/transport/handshaker_factory.h"
 
@@ -55,8 +54,7 @@ class HandshakerRegistry {
         factories_[NUM_HANDSHAKER_TYPES];
   };
 
-  void AddHandshakers(HandshakerType handshaker_type,
-                      const grpc_channel_args* args,
+  void AddHandshakers(HandshakerType handshaker_type, const ChannelArgs& args,
                       grpc_pollset_set* interested_parties,
                       HandshakeManager* handshake_mgr) const;
 

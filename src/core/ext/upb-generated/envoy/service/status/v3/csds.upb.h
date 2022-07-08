@@ -98,11 +98,15 @@ UPB_INLINE envoy_service_status_v3_ClientStatusRequest* envoy_service_status_v3_
   return ret;
 }
 UPB_INLINE char* envoy_service_status_v3_ClientStatusRequest_serialize(const envoy_service_status_v3_ClientStatusRequest* msg, upb_Arena* arena, size_t* len) {
-  return upb_Encode(msg, &envoy_service_status_v3_ClientStatusRequest_msginit, 0, arena, len);
+  char* ptr;
+  (void)upb_Encode(msg, &envoy_service_status_v3_ClientStatusRequest_msginit, 0, arena, &ptr, len);
+  return ptr;
 }
 UPB_INLINE char* envoy_service_status_v3_ClientStatusRequest_serialize_ex(const envoy_service_status_v3_ClientStatusRequest* msg, int options,
                                  upb_Arena* arena, size_t* len) {
-  return upb_Encode(msg, &envoy_service_status_v3_ClientStatusRequest_msginit, options, arena, len);
+  char* ptr;
+  (void)upb_Encode(msg, &envoy_service_status_v3_ClientStatusRequest_msginit, options, arena, &ptr, len);
+  return ptr;
 }
 UPB_INLINE bool envoy_service_status_v3_ClientStatusRequest_has_node_matchers(const envoy_service_status_v3_ClientStatusRequest* msg) {
   return _upb_has_submsg_nohasbit(msg, UPB_SIZE(4, 8));
@@ -174,11 +178,15 @@ UPB_INLINE envoy_service_status_v3_PerXdsConfig* envoy_service_status_v3_PerXdsC
   return ret;
 }
 UPB_INLINE char* envoy_service_status_v3_PerXdsConfig_serialize(const envoy_service_status_v3_PerXdsConfig* msg, upb_Arena* arena, size_t* len) {
-  return upb_Encode(msg, &envoy_service_status_v3_PerXdsConfig_msginit, 0, arena, len);
+  char* ptr;
+  (void)upb_Encode(msg, &envoy_service_status_v3_PerXdsConfig_msginit, 0, arena, &ptr, len);
+  return ptr;
 }
 UPB_INLINE char* envoy_service_status_v3_PerXdsConfig_serialize_ex(const envoy_service_status_v3_PerXdsConfig* msg, int options,
                                  upb_Arena* arena, size_t* len) {
-  return upb_Encode(msg, &envoy_service_status_v3_PerXdsConfig_msginit, options, arena, len);
+  char* ptr;
+  (void)upb_Encode(msg, &envoy_service_status_v3_PerXdsConfig_msginit, options, arena, &ptr, len);
+  return ptr;
 }
 typedef enum {
   envoy_service_status_v3_PerXdsConfig_per_xds_config_listener_config = 2,
@@ -341,11 +349,15 @@ UPB_INLINE envoy_service_status_v3_ClientConfig* envoy_service_status_v3_ClientC
   return ret;
 }
 UPB_INLINE char* envoy_service_status_v3_ClientConfig_serialize(const envoy_service_status_v3_ClientConfig* msg, upb_Arena* arena, size_t* len) {
-  return upb_Encode(msg, &envoy_service_status_v3_ClientConfig_msginit, 0, arena, len);
+  char* ptr;
+  (void)upb_Encode(msg, &envoy_service_status_v3_ClientConfig_msginit, 0, arena, &ptr, len);
+  return ptr;
 }
 UPB_INLINE char* envoy_service_status_v3_ClientConfig_serialize_ex(const envoy_service_status_v3_ClientConfig* msg, int options,
                                  upb_Arena* arena, size_t* len) {
-  return upb_Encode(msg, &envoy_service_status_v3_ClientConfig_msginit, options, arena, len);
+  char* ptr;
+  (void)upb_Encode(msg, &envoy_service_status_v3_ClientConfig_msginit, options, arena, &ptr, len);
+  return ptr;
 }
 UPB_INLINE bool envoy_service_status_v3_ClientConfig_has_node(const envoy_service_status_v3_ClientConfig* msg) {
   return _upb_hasbit(msg, 1);
@@ -438,11 +450,15 @@ UPB_INLINE envoy_service_status_v3_ClientConfig_GenericXdsConfig* envoy_service_
   return ret;
 }
 UPB_INLINE char* envoy_service_status_v3_ClientConfig_GenericXdsConfig_serialize(const envoy_service_status_v3_ClientConfig_GenericXdsConfig* msg, upb_Arena* arena, size_t* len) {
-  return upb_Encode(msg, &envoy_service_status_v3_ClientConfig_GenericXdsConfig_msginit, 0, arena, len);
+  char* ptr;
+  (void)upb_Encode(msg, &envoy_service_status_v3_ClientConfig_GenericXdsConfig_msginit, 0, arena, &ptr, len);
+  return ptr;
 }
 UPB_INLINE char* envoy_service_status_v3_ClientConfig_GenericXdsConfig_serialize_ex(const envoy_service_status_v3_ClientConfig_GenericXdsConfig* msg, int options,
                                  upb_Arena* arena, size_t* len) {
-  return upb_Encode(msg, &envoy_service_status_v3_ClientConfig_GenericXdsConfig_msginit, options, arena, len);
+  char* ptr;
+  (void)upb_Encode(msg, &envoy_service_status_v3_ClientConfig_GenericXdsConfig_msginit, options, arena, &ptr, len);
+  return ptr;
 }
 UPB_INLINE void envoy_service_status_v3_ClientConfig_GenericXdsConfig_clear_type_url(const envoy_service_status_v3_ClientConfig_GenericXdsConfig* msg) {
   *UPB_PTR_AT(msg, UPB_SIZE(16, 16), upb_StringView) = upb_StringView_FromDataAndSize(NULL, 0);
@@ -591,11 +607,15 @@ UPB_INLINE envoy_service_status_v3_ClientStatusResponse* envoy_service_status_v3
   return ret;
 }
 UPB_INLINE char* envoy_service_status_v3_ClientStatusResponse_serialize(const envoy_service_status_v3_ClientStatusResponse* msg, upb_Arena* arena, size_t* len) {
-  return upb_Encode(msg, &envoy_service_status_v3_ClientStatusResponse_msginit, 0, arena, len);
+  char* ptr;
+  (void)upb_Encode(msg, &envoy_service_status_v3_ClientStatusResponse_msginit, 0, arena, &ptr, len);
+  return ptr;
 }
 UPB_INLINE char* envoy_service_status_v3_ClientStatusResponse_serialize_ex(const envoy_service_status_v3_ClientStatusResponse* msg, int options,
                                  upb_Arena* arena, size_t* len) {
-  return upb_Encode(msg, &envoy_service_status_v3_ClientStatusResponse_msginit, options, arena, len);
+  char* ptr;
+  (void)upb_Encode(msg, &envoy_service_status_v3_ClientStatusResponse_msginit, options, arena, &ptr, len);
+  return ptr;
 }
 UPB_INLINE bool envoy_service_status_v3_ClientStatusResponse_has_config(const envoy_service_status_v3_ClientStatusResponse* msg) {
   return _upb_has_submsg_nohasbit(msg, UPB_SIZE(0, 0));

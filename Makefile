@@ -454,8 +454,8 @@ Q = @
 endif
 
 CORE_VERSION = 26.0.0
-CPP_VERSION = 1.48.0-dev
-CSHARP_VERSION = 2.48.0-dev
+CPP_VERSION = 1.49.0-dev
+CSHARP_VERSION = 2.49.0-dev
 
 CPPFLAGS_NO_ARCH += $(addprefix -I, $(INCLUDES)) $(addprefix -D, $(DEFINES))
 CPPFLAGS += $(CPPFLAGS_NO_ARCH) $(ARCH_FLAGS)
@@ -1409,6 +1409,7 @@ LIBGRPC_SRC = \
     src/core/ext/xds/xds_certificate_provider.cc \
     src/core/ext/xds/xds_channel_stack_modifier.cc \
     src/core/ext/xds/xds_client.cc \
+    src/core/ext/xds/xds_client_grpc.cc \
     src/core/ext/xds/xds_client_stats.cc \
     src/core/ext/xds/xds_cluster.cc \
     src/core/ext/xds/xds_cluster_specifier_plugin.cc \
@@ -1423,6 +1424,7 @@ LIBGRPC_SRC = \
     src/core/ext/xds/xds_route_config.cc \
     src/core/ext/xds/xds_routing.cc \
     src/core/ext/xds/xds_server_config_fetcher.cc \
+    src/core/ext/xds/xds_transport_grpc.cc \
     src/core/lib/address_utils/parse_address.cc \
     src/core/lib/address_utils/sockaddr_utils.cc \
     src/core/lib/backoff/backoff.cc \
@@ -2526,13 +2528,20 @@ LIBUPB_SRC = \
     third_party/upb/third_party/utf8_range/naive.c \
     third_party/upb/third_party/utf8_range/range2-neon.c \
     third_party/upb/third_party/utf8_range/range2-sse.c \
+    third_party/upb/upb/arena.c \
+    third_party/upb/upb/array.c \
     third_party/upb/upb/decode_fast.c \
     third_party/upb/upb/decode.c \
     third_party/upb/upb/def.c \
     third_party/upb/upb/encode.c \
+    third_party/upb/upb/extension_registry.c \
+    third_party/upb/upb/json_decode.c \
     third_party/upb/upb/json_encode.c \
+    third_party/upb/upb/map.c \
+    third_party/upb/upb/mini_table.c \
     third_party/upb/upb/msg.c \
     third_party/upb/upb/reflection.c \
+    third_party/upb/upb/status.c \
     third_party/upb/upb/table.c \
     third_party/upb/upb/text_encode.c \
     third_party/upb/upb/upb.c \
@@ -3117,6 +3126,7 @@ src/core/ext/xds/xds_bootstrap.cc: $(OPENSSL_DEP)
 src/core/ext/xds/xds_certificate_provider.cc: $(OPENSSL_DEP)
 src/core/ext/xds/xds_channel_stack_modifier.cc: $(OPENSSL_DEP)
 src/core/ext/xds/xds_client.cc: $(OPENSSL_DEP)
+src/core/ext/xds/xds_client_grpc.cc: $(OPENSSL_DEP)
 src/core/ext/xds/xds_client_stats.cc: $(OPENSSL_DEP)
 src/core/ext/xds/xds_cluster.cc: $(OPENSSL_DEP)
 src/core/ext/xds/xds_cluster_specifier_plugin.cc: $(OPENSSL_DEP)
@@ -3131,6 +3141,7 @@ src/core/ext/xds/xds_resource_type.cc: $(OPENSSL_DEP)
 src/core/ext/xds/xds_route_config.cc: $(OPENSSL_DEP)
 src/core/ext/xds/xds_routing.cc: $(OPENSSL_DEP)
 src/core/ext/xds/xds_server_config_fetcher.cc: $(OPENSSL_DEP)
+src/core/ext/xds/xds_transport_grpc.cc: $(OPENSSL_DEP)
 src/core/lib/http/httpcli_security_connector.cc: $(OPENSSL_DEP)
 src/core/lib/matchers/matchers.cc: $(OPENSSL_DEP)
 src/core/lib/security/authorization/grpc_authorization_engine.cc: $(OPENSSL_DEP)

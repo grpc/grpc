@@ -19,6 +19,21 @@ licenses(["notice"])
 
 grpc_package(name = "test/core/resource_quota")
 
+grpc_cc_test(
+    name = "arena_test",
+    srcs = ["arena_test.cc"],
+    external_deps = [
+        "gtest",
+    ],
+    language = "C++",
+    uses_event_engine = False,
+    uses_polling = False,
+    deps = [
+        "//:gpr",
+        "//test/core/util:grpc_test_util",
+    ],
+)
+
 grpc_cc_library(
     name = "call_checker",
     testonly = True,
@@ -91,6 +106,7 @@ grpc_cc_test(
 grpc_cc_test(
     name = "memory_quota_stress_test",
     srcs = ["memory_quota_stress_test.cc"],
+    external_deps = ["gtest"],
     language = "c++",
     # We only run this test under Linux, and really only care about the
     # TSAN results.

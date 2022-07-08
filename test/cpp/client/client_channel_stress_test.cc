@@ -229,12 +229,10 @@ class ClientChannelStressTest {
       GPR_ASSERT(lb_uri.ok());
       grpc_resolved_address address;
       GPR_ASSERT(grpc_parse_uri(*lb_uri, &address));
-      grpc_arg arg = grpc_channel_arg_string_create(
-          const_cast<char*>(GRPC_ARG_DEFAULT_AUTHORITY),
-          const_cast<char*>(addr.balancer_name.c_str()));
-      grpc_channel_args* args =
-          grpc_channel_args_copy_and_add(nullptr, &arg, 1);
-      addresses.emplace_back(address.addr, address.len, args);
+      addresses.emplace_back(
+          address.addr, address.len,
+          grpc_core::ChannelArgs().Set(GRPC_ARG_DEFAULT_AUTHORITY,
+                                       addr.balancer_name));
     }
     return addresses;
   }
@@ -244,12 +242,13 @@ class ClientChannelStressTest {
     grpc_core::Resolver::Result result;
     grpc_error_handle error = GRPC_ERROR_NONE;
     result.service_config = grpc_core::ServiceConfigImpl::Create(
-        nullptr, "{\"loadBalancingConfig\":[{\"grpclb\":{}}]}", &error);
+        grpc_core::ChannelArgs(), "{\"loadBalancingConfig\":[{\"grpclb\":{}}]}",
+        &error);
     GPR_ASSERT(GRPC_ERROR_IS_NONE(error));
     grpc_core::ServerAddressList balancer_addresses =
         CreateAddressListFromAddressDataList(balancer_address_data);
-    grpc_arg arg = CreateGrpclbBalancerAddressesArg(&balancer_addresses);
-    result.args = grpc_channel_args_copy_and_add(nullptr, &arg, 1);
+    result.args = grpc_core::SetGrpcLbBalancerAddresses(
+        grpc_core::ChannelArgs(), std::move(balancer_addresses));
     return result;
   }
 

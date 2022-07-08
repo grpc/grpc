@@ -29,13 +29,13 @@ static const upb_MiniTable_Field envoy_config_listener_v3_UdpListenerConfig__fie
 const upb_MiniTable envoy_config_listener_v3_UdpListenerConfig_msginit = {
   &envoy_config_listener_v3_UdpListenerConfig_submsgs[0],
   &envoy_config_listener_v3_UdpListenerConfig__fields[0],
-  UPB_SIZE(12, 24), 2, kUpb_ExtMode_NonExtendable, 0, 255, 0,
+  UPB_SIZE(16, 24), 2, kUpb_ExtMode_NonExtendable, 0, 255, 0,
 };
 
 const upb_MiniTable envoy_config_listener_v3_ActiveRawUdpListenerConfig_msginit = {
   NULL,
   NULL,
-  UPB_SIZE(0, 8), 0, kUpb_ExtMode_NonExtendable, 0, 255, 0,
+  UPB_SIZE(0, 0), 0, kUpb_ExtMode_NonExtendable, 0, 255, 0,
 };
 
 static const upb_MiniTable *messages_layout[2] = {

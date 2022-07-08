@@ -53,11 +53,15 @@ UPB_INLINE envoy_admin_v3_TapRequest* envoy_admin_v3_TapRequest_parse_ex(const c
   return ret;
 }
 UPB_INLINE char* envoy_admin_v3_TapRequest_serialize(const envoy_admin_v3_TapRequest* msg, upb_Arena* arena, size_t* len) {
-  return upb_Encode(msg, &envoy_admin_v3_TapRequest_msginit, 0, arena, len);
+  char* ptr;
+  (void)upb_Encode(msg, &envoy_admin_v3_TapRequest_msginit, 0, arena, &ptr, len);
+  return ptr;
 }
 UPB_INLINE char* envoy_admin_v3_TapRequest_serialize_ex(const envoy_admin_v3_TapRequest* msg, int options,
                                  upb_Arena* arena, size_t* len) {
-  return upb_Encode(msg, &envoy_admin_v3_TapRequest_msginit, options, arena, len);
+  char* ptr;
+  (void)upb_Encode(msg, &envoy_admin_v3_TapRequest_msginit, options, arena, &ptr, len);
+  return ptr;
 }
 UPB_INLINE void envoy_admin_v3_TapRequest_clear_config_id(const envoy_admin_v3_TapRequest* msg) {
   *UPB_PTR_AT(msg, UPB_SIZE(4, 8), upb_StringView) = upb_StringView_FromDataAndSize(NULL, 0);

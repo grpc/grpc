@@ -34,7 +34,7 @@ static const upb_MiniTable_Field envoy_config_trace_v3_ZipkinConfig__fields[6] =
 const upb_MiniTable envoy_config_trace_v3_ZipkinConfig_msginit = {
   &envoy_config_trace_v3_ZipkinConfig_submsgs[0],
   &envoy_config_trace_v3_ZipkinConfig__fields[0],
-  UPB_SIZE(36, 72), 6, kUpb_ExtMode_NonExtendable, 6, 255, 0,
+  UPB_SIZE(40, 64), 6, kUpb_ExtMode_NonExtendable, 6, 255, 0,
 };
 
 static const upb_MiniTable *messages_layout[1] = {

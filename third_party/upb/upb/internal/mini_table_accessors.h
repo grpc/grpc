@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009-2021, Google LLC
+ * Copyright (c) 2009-2022, Google LLC
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -25,18 +25,35 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef PYUPB_PYTHON_H__
-#define PYUPB_PYTHON_H__
+#ifndef UPB_INTERNAL_MINI_TABLE_ACCESSORS_H_
+#define UPB_INTERNAL_MINI_TABLE_ACCESSORS_H_
 
-// We restrict ourselves to the limited API, so that we will be ABI-compatible
-// with any version of Python >= 3.6.1  (3.6.1 introduce PySlice_Unpack())
-#define Py_LIMITED_API 0x03060100
-#include <Python.h>
+#include "upb/msg_internal.h"
 
-// This function was not officially added to the limited API until Python 3.10.
-// But in practice it has been stable since Python 3.1.  See:
-//   https://bugs.python.org/issue41784
-PyAPI_FUNC(const char*)
-    PyUnicode_AsUTF8AndSize(PyObject* unicode, Py_ssize_t* size);
+// Must be last.
+#include "upb/port_def.inc"
 
-#endif  // PYUPB_PYTHON_H__
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+UPB_INLINE bool _upb_MiniTable_Field_InOneOf(const upb_MiniTable_Field* field) {
+  return field->presence < 0;
+}
+
+UPB_INLINE void _upb_MiniTable_SetPresence(upb_Message* msg,
+                                           const upb_MiniTable_Field* field) {
+  if (field->presence > 0) {
+    _upb_sethas_field(msg, field);
+  } else if (_upb_MiniTable_Field_InOneOf(field)) {
+    *_upb_oneofcase_field(msg, field) = field->number;
+  }
+}
+
+#ifdef __cplusplus
+} /* extern "C" */
+#endif
+
+#include "upb/port_undef.inc"
+
+#endif  // UPB_INTERNAL_MINI_TABLE_ACCESSORS_H_

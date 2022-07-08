@@ -19,12 +19,11 @@
 #include "src/core/ext/xds/xds_client.h"
 
 #include <inttypes.h>
-#include <limits.h>
 #include <string.h>
 
 #include <algorithm>
 
-#include "absl/container/inlined_vector.h"
+#include "absl/memory/memory.h"
 #include "absl/strings/match.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
@@ -33,51 +32,21 @@
 #include "absl/strings/string_view.h"
 #include "absl/strings/strip.h"
 
-#include <grpc/byte_buffer.h>
-#include <grpc/byte_buffer_reader.h>
-#include <grpc/grpc.h>
-#include <grpc/impl/codegen/connectivity_state.h>
-#include <grpc/impl/codegen/propagation_bits.h>
-#include <grpc/slice.h>
 #include <grpc/status.h>
-#include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
-#include <grpc/support/string_util.h>
-#include <grpc/support/time.h>
 
-#include "src/core/ext/filters/client_channel/client_channel.h"
 #include "src/core/ext/xds/upb_utils.h"
 #include "src/core/ext/xds/xds_api.h"
 #include "src/core/ext/xds/xds_bootstrap.h"
-#include "src/core/ext/xds/xds_channel_args.h"
 #include "src/core/ext/xds/xds_client_stats.h"
-#include "src/core/ext/xds/xds_cluster_specifier_plugin.h"
-#include "src/core/ext/xds/xds_http_filters.h"
 #include "src/core/lib/backoff/backoff.h"
-#include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/channel/channel_fwd.h"
-#include "src/core/lib/channel/channel_stack.h"
-#include "src/core/lib/config/core_configuration.h"
-#include "src/core/lib/gpr/env.h"
-#include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/gprpp/debug_location.h"
-#include "src/core/lib/gprpp/memory.h"
 #include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/iomgr/closure.h"
-#include "src/core/lib/iomgr/load_file.h"
-#include "src/core/lib/iomgr/pollset_set.h"
+#include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/timer.h"
-#include "src/core/lib/security/credentials/channel_creds_registry.h"
-#include "src/core/lib/security/credentials/credentials.h"
-#include "src/core/lib/slice/slice.h"
-#include "src/core/lib/slice/slice_internal.h"
-#include "src/core/lib/slice/slice_refcount.h"
-#include "src/core/lib/surface/call.h"
-#include "src/core/lib/surface/channel.h"
-#include "src/core/lib/surface/lame_client.h"
-#include "src/core/lib/transport/connectivity_state.h"
 #include "src/core/lib/uri/uri_parser.h"
 
 #define GRPC_XDS_INITIAL_CONNECT_BACKOFF_SECONDS 1
@@ -90,16 +59,6 @@ namespace grpc_core {
 
 TraceFlag grpc_xds_client_trace(false, "xds_client");
 TraceFlag grpc_xds_client_refcount_trace(false, "xds_client_refcount");
-
-namespace {
-
-Mutex* g_mu = nullptr;
-
-const grpc_channel_args* g_channel_args ABSL_GUARDED_BY(*g_mu) = nullptr;
-XdsClient* g_xds_client ABSL_GUARDED_BY(*g_mu) = nullptr;
-char* g_fallback_bootstrap_config ABSL_GUARDED_BY(*g_mu) = nullptr;
-
-}  // namespace
 
 //
 // Internal class declarations
@@ -149,7 +108,6 @@ class XdsClient::ChannelState::AdsCallState
  public:
   // The ctor and dtor should not be used directly.
   explicit AdsCallState(RefCountedPtr<RetryableCall<AdsCallState>> parent);
-  ~AdsCallState() override;
 
   void Orphan() override;
 
@@ -304,6 +262,24 @@ class XdsClient::ChannelState::AdsCallState
     grpc_closure timer_callback_;
   };
 
+  class StreamEventHandler
+      : public XdsTransportFactory::XdsTransport::StreamingCall::EventHandler {
+   public:
+    explicit StreamEventHandler(RefCountedPtr<AdsCallState> ads_calld)
+        : ads_calld_(std::move(ads_calld)) {}
+
+    void OnRequestSent(bool ok) override { ads_calld_->OnRequestSent(ok); }
+    void OnRecvMessage(absl::string_view payload) override {
+      ads_calld_->OnRecvMessage(payload);
+    }
+    void OnStatusReceived(absl::Status status) override {
+      ads_calld_->OnStatusReceived(std::move(status));
+    }
+
+   private:
+    RefCountedPtr<AdsCallState> ads_calld_;
+  };
+
   struct ResourceTypeState {
     ~ResourceTypeState() { GRPC_ERROR_UNREF(error); }
 
@@ -320,15 +296,9 @@ class XdsClient::ChannelState::AdsCallState
   void SendMessageLocked(const XdsResourceType* type)
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(&XdsClient::mu_);
 
-  static void OnRequestSent(void* arg, grpc_error_handle error);
-  void OnRequestSentLocked(grpc_error_handle error)
-      ABSL_EXCLUSIVE_LOCKS_REQUIRED(&XdsClient::mu_);
-  static void OnResponseReceived(void* arg, grpc_error_handle error);
-  bool OnResponseReceivedLocked()
-      ABSL_EXCLUSIVE_LOCKS_REQUIRED(&XdsClient::mu_);
-  static void OnStatusReceived(void* arg, grpc_error_handle error);
-  void OnStatusReceivedLocked(grpc_error_handle error)
-      ABSL_EXCLUSIVE_LOCKS_REQUIRED(&XdsClient::mu_);
+  void OnRequestSent(bool ok);
+  void OnRecvMessage(absl::string_view payload);
+  void OnStatusReceived(absl::Status status);
 
   bool IsCurrentCallOnChannel() const;
 
@@ -340,28 +310,11 @@ class XdsClient::ChannelState::AdsCallState
   // The owning RetryableCall<>.
   RefCountedPtr<RetryableCall<AdsCallState>> parent_;
 
+  OrphanablePtr<XdsTransportFactory::XdsTransport::StreamingCall> call_;
+
   bool sent_initial_message_ = false;
   bool seen_response_ = false;
-
-  // Always non-NULL.
-  grpc_call* call_;
-
-  // recv_initial_metadata
-  grpc_metadata_array initial_metadata_recv_;
-
-  // send_message
-  grpc_byte_buffer* send_message_payload_ = nullptr;
-  grpc_closure on_request_sent_;
-
-  // recv_message
-  grpc_byte_buffer* recv_message_payload_ = nullptr;
-  grpc_closure on_response_received_;
-
-  // recv_trailing_metadata
-  grpc_metadata_array trailing_metadata_recv_;
-  grpc_status_code status_code_;
-  grpc_slice status_details_;
-  grpc_closure on_status_received_;
+  bool send_message_pending_ ABSL_GUARDED_BY(&XdsClient::mu_) = false;
 
   // Resource types for which requests need to be sent.
   std::set<const XdsResourceType*> buffered_requests_;
@@ -376,11 +329,11 @@ class XdsClient::ChannelState::LrsCallState
  public:
   // The ctor and dtor should not be used directly.
   explicit LrsCallState(RefCountedPtr<RetryableCall<LrsCallState>> parent);
-  ~LrsCallState() override;
 
   void Orphan() override;
 
-  void MaybeStartReportingLocked();
+  void MaybeStartReportingLocked()
+      ABSL_EXCLUSIVE_LOCKS_REQUIRED(&XdsClient::mu_);
 
   RetryableCall<LrsCallState>* parent() { return parent_.get(); }
   ChannelState* chand() const { return parent_->chand(); }
@@ -388,6 +341,24 @@ class XdsClient::ChannelState::LrsCallState
   bool seen_response() const { return seen_response_; }
 
  private:
+  class StreamEventHandler
+      : public XdsTransportFactory::XdsTransport::StreamingCall::EventHandler {
+   public:
+    explicit StreamEventHandler(RefCountedPtr<LrsCallState> lrs_calld)
+        : lrs_calld_(std::move(lrs_calld)) {}
+
+    void OnRequestSent(bool ok) override { lrs_calld_->OnRequestSent(ok); }
+    void OnRecvMessage(absl::string_view payload) override {
+      lrs_calld_->OnRecvMessage(payload);
+    }
+    void OnStatusReceived(absl::Status status) override {
+      lrs_calld_->OnStatusReceived(std::move(status));
+    }
+
+   private:
+    RefCountedPtr<LrsCallState> lrs_calld_;
+  };
+
   // Reports client-side load stats according to a fixed interval.
   class Reporter : public InternallyRefCounted<Reporter> {
    public:
@@ -395,12 +366,12 @@ class XdsClient::ChannelState::LrsCallState
         : parent_(std::move(parent)), report_interval_(report_interval) {
       GRPC_CLOSURE_INIT(&on_next_report_timer_, OnNextReportTimer, this,
                         grpc_schedule_on_exec_ctx);
-      GRPC_CLOSURE_INIT(&on_report_done_, OnReportDone, this,
-                        grpc_schedule_on_exec_ctx);
       ScheduleNextReportLocked();
     }
 
     void Orphan() override;
+
+    void OnReportDoneLocked() ABSL_EXCLUSIVE_LOCKS_REQUIRED(&XdsClient::mu_);
 
    private:
     void ScheduleNextReportLocked()
@@ -409,9 +380,6 @@ class XdsClient::ChannelState::LrsCallState
     bool OnNextReportTimerLocked(grpc_error_handle error)
         ABSL_EXCLUSIVE_LOCKS_REQUIRED(&XdsClient::mu_);
     bool SendReportLocked() ABSL_EXCLUSIVE_LOCKS_REQUIRED(&XdsClient::mu_);
-    static void OnReportDone(void* arg, grpc_error_handle error);
-    bool OnReportDoneLocked(grpc_error_handle error)
-        ABSL_EXCLUSIVE_LOCKS_REQUIRED(&XdsClient::mu_);
 
     bool IsCurrentReporterOnCall() const {
       return this == parent_->reporter_.get();
@@ -427,44 +395,21 @@ class XdsClient::ChannelState::LrsCallState
     bool next_report_timer_callback_pending_ = false;
     grpc_timer next_report_timer_;
     grpc_closure on_next_report_timer_;
-    grpc_closure on_report_done_;
   };
 
-  static void OnInitialRequestSent(void* arg, grpc_error_handle error);
-  void OnInitialRequestSentLocked()
-      ABSL_EXCLUSIVE_LOCKS_REQUIRED(&XdsClient::mu_);
-  static void OnResponseReceived(void* arg, grpc_error_handle error);
-  bool OnResponseReceivedLocked()
-      ABSL_EXCLUSIVE_LOCKS_REQUIRED(&XdsClient::mu_);
-  static void OnStatusReceived(void* arg, grpc_error_handle error);
-  void OnStatusReceivedLocked(grpc_error_handle error)
-      ABSL_EXCLUSIVE_LOCKS_REQUIRED(&XdsClient::mu_);
+  void OnRequestSent(bool ok);
+  void OnRecvMessage(absl::string_view payload);
+  void OnStatusReceived(absl::Status status);
 
   bool IsCurrentCallOnChannel() const;
 
   // The owning RetryableCall<>.
   RefCountedPtr<RetryableCall<LrsCallState>> parent_;
+
+  OrphanablePtr<XdsTransportFactory::XdsTransport::StreamingCall> call_;
+
   bool seen_response_ = false;
-
-  // Always non-NULL.
-  grpc_call* call_;
-
-  // recv_initial_metadata
-  grpc_metadata_array initial_metadata_recv_;
-
-  // send_message
-  grpc_byte_buffer* send_message_payload_ = nullptr;
-  grpc_closure on_initial_request_sent_;
-
-  // recv_message
-  grpc_byte_buffer* recv_message_payload_ = nullptr;
-  grpc_closure on_response_received_;
-
-  // recv_trailing_metadata
-  grpc_metadata_array trailing_metadata_recv_;
-  grpc_status_code status_code_;
-  grpc_slice status_details_;
-  grpc_closure on_status_received_;
+  bool send_message_pending_ ABSL_GUARDED_BY(&XdsClient::mu_) = false;
 
   // Load reporting state.
   bool send_all_clusters_ = false;
@@ -474,56 +419,8 @@ class XdsClient::ChannelState::LrsCallState
 };
 
 //
-// XdsClient::ChannelState::StateWatcher
-//
-
-class XdsClient::ChannelState::StateWatcher
-    : public AsyncConnectivityStateWatcherInterface {
- public:
-  explicit StateWatcher(WeakRefCountedPtr<ChannelState> parent)
-      : parent_(std::move(parent)) {}
-
- private:
-  void OnConnectivityStateChange(grpc_connectivity_state new_state,
-                                 const absl::Status& status) override {
-    {
-      MutexLock lock(&parent_->xds_client_->mu_);
-      if (!parent_->shutting_down_ &&
-          new_state == GRPC_CHANNEL_TRANSIENT_FAILURE) {
-        // In TRANSIENT_FAILURE.  Notify all watchers of error.
-        gpr_log(GPR_INFO,
-                "[xds_client %p] xds channel for server %s in "
-                "state TRANSIENT_FAILURE: %s",
-                parent_->xds_client(), parent_->server_.server_uri.c_str(),
-                status.ToString().c_str());
-        parent_->xds_client_->NotifyOnErrorLocked(
-            absl::UnavailableError(absl::StrCat(
-                "xds channel in TRANSIENT_FAILURE, connectivity error: ",
-                status.ToString())));
-      }
-    }
-    parent_->xds_client()->work_serializer_.DrainQueue();
-  }
-
-  WeakRefCountedPtr<ChannelState> parent_;
-};
-
-//
 // XdsClient::ChannelState
 //
-
-namespace {
-
-grpc_channel* CreateXdsChannel(grpc_channel_args* args,
-                               const XdsBootstrap::XdsServer& server) {
-  RefCountedPtr<grpc_channel_credentials> channel_creds =
-      CoreConfiguration::Get().channel_creds_registry().CreateChannelCreds(
-          server.channel_creds_type, server.channel_creds_config);
-  return grpc_channel_create(server.server_uri.c_str(), channel_creds.get(),
-                             args);
-}
-
-}  // namespace
 
 XdsClient::ChannelState::ChannelState(WeakRefCountedPtr<XdsClient> xds_client,
                                       const XdsBootstrap::XdsServer& server)
@@ -537,9 +434,16 @@ XdsClient::ChannelState::ChannelState(WeakRefCountedPtr<XdsClient> xds_client,
     gpr_log(GPR_INFO, "[xds_client %p] creating channel to %s",
             xds_client_.get(), server.server_uri.c_str());
   }
-  channel_ = CreateXdsChannel(xds_client_->args_, server);
-  GPR_ASSERT(channel_ != nullptr);
-  StartConnectivityWatchLocked();
+  absl::Status status;
+  transport_ = xds_client_->transport_factory_->Create(
+      server,
+      [self = WeakRef(DEBUG_LOCATION, "OnConnectivityFailure")](
+          absl::Status status) {
+        self->OnConnectivityStateChange(std::move(status));
+      },
+      &status);
+  GPR_ASSERT(transport_ != nullptr);
+  if (!status.ok()) OnConnectivityStateChangeLocked(std::move(status));
 }
 
 XdsClient::ChannelState::~ChannelState() {
@@ -547,24 +451,25 @@ XdsClient::ChannelState::~ChannelState() {
     gpr_log(GPR_INFO, "[xds_client %p] destroying xds channel %p for server %s",
             xds_client(), this, server_.server_uri.c_str());
   }
-  grpc_channel_destroy(channel_);
   xds_client_.reset(DEBUG_LOCATION, "ChannelState");
 }
 
 // This method should only ever be called when holding the lock, but we can't
 // use a ABSL_EXCLUSIVE_LOCKS_REQUIRED annotation, because Orphan() will be
-// called from DualRefCounted::Unref, which cannot have a lock annotation for a
-// lock in this subclass.
+// called from DualRefCounted::Unref, which cannot have a lock annotation for
+// a lock in this subclass.
 void XdsClient::ChannelState::Orphan() ABSL_NO_THREAD_SAFETY_ANALYSIS {
   shutting_down_ = true;
-  CancelConnectivityWatchLocked();
+  transport_.reset();
   // At this time, all strong refs are removed, remove from channel map to
-  // prevent subsequent subscription from trying to use this ChannelState as it
-  // is shutting down.
+  // prevent subsequent subscription from trying to use this ChannelState as
+  // it is shutting down.
   xds_client_->xds_server_channel_map_.erase(server_);
   ads_calld_.reset();
   lrs_calld_.reset();
 }
+
+void XdsClient::ChannelState::ResetBackoff() { transport_->ResetBackoff(); }
 
 XdsClient::ChannelState::AdsCallState* XdsClient::ChannelState::ads_calld()
     const {
@@ -589,41 +494,6 @@ void XdsClient::ChannelState::MaybeStartLrsCall() {
 void XdsClient::ChannelState::StopLrsCallLocked() {
   xds_client_->xds_load_report_server_map_.erase(server_);
   lrs_calld_.reset();
-}
-
-namespace {
-
-bool IsLameChannel(grpc_channel* channel) {
-  grpc_channel_element* elem =
-      grpc_channel_stack_last_element(grpc_channel_get_channel_stack(channel));
-  return elem->filter == &LameClientFilter::kFilter;
-}
-
-}  // namespace
-
-void XdsClient::ChannelState::StartConnectivityWatchLocked() {
-  if (IsLameChannel(channel_)) {
-    xds_client()->NotifyOnErrorLocked(
-        absl::UnavailableError("xds client has a lame channel"));
-    return;
-  }
-  ClientChannel* client_channel =
-      ClientChannel::GetFromChannel(Channel::FromC(channel_));
-  GPR_ASSERT(client_channel != nullptr);
-  watcher_ = new StateWatcher(WeakRef(DEBUG_LOCATION, "ChannelState+watch"));
-  client_channel->AddConnectivityWatcher(
-      GRPC_CHANNEL_IDLE,
-      OrphanablePtr<AsyncConnectivityStateWatcherInterface>(watcher_));
-}
-
-void XdsClient::ChannelState::CancelConnectivityWatchLocked() {
-  if (IsLameChannel(channel_)) {
-    return;
-  }
-  ClientChannel* client_channel =
-      ClientChannel::GetFromChannel(Channel::FromC(channel_));
-  GPR_ASSERT(client_channel != nullptr);
-  client_channel->RemoveConnectivityWatcher(watcher_);
 }
 
 void XdsClient::ChannelState::SubscribeLocked(const XdsResourceType* type,
@@ -655,6 +525,29 @@ void XdsClient::ChannelState::UnsubscribeLocked(const XdsResourceType* type,
         ads_calld_.reset();
       }
     }
+  }
+}
+
+void XdsClient::ChannelState::OnConnectivityStateChange(absl::Status status) {
+  {
+    MutexLock lock(&xds_client_->mu_);
+    OnConnectivityStateChangeLocked(std::move(status));
+  }
+  xds_client_->work_serializer_.DrainQueue();
+}
+
+void XdsClient::ChannelState::OnConnectivityStateChangeLocked(
+    absl::Status status) {
+  if (!shutting_down_) {
+    // Notify all watchers of error.
+    gpr_log(GPR_INFO,
+            "[xds_client %p] xds channel for server %s in "
+            "state TRANSIENT_FAILURE: %s",
+            xds_client(), server_.server_uri.c_str(),
+            status.ToString().c_str());
+    xds_client_->NotifyOnErrorLocked(absl::UnavailableError(
+        absl::StrCat("xds channel in TRANSIENT_FAILURE, connectivity error: ",
+                     status.ToString())));
   }
 }
 
@@ -699,13 +592,13 @@ void XdsClient::ChannelState::RetryableCall<T>::OnCallFinishedLocked() {
 template <typename T>
 void XdsClient::ChannelState::RetryableCall<T>::StartNewCallLocked() {
   if (shutting_down_) return;
-  GPR_ASSERT(chand_->channel_ != nullptr);
+  GPR_ASSERT(chand_->transport_ != nullptr);
   GPR_ASSERT(calld_ == nullptr);
   if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_client_trace)) {
-    gpr_log(
-        GPR_INFO,
-        "[xds_client %p] xds server %s: start new call from retryable call %p",
-        chand()->xds_client(), chand()->server_.server_uri.c_str(), this);
+    gpr_log(GPR_INFO,
+            "[xds_client %p] xds server %s: start new call from retryable "
+            "call %p",
+            chand()->xds_client(), chand()->server_.server_uri.c_str(), this);
   }
   calld_ = MakeOrphanable<T>(
       this->Ref(DEBUG_LOCATION, "RetryableCall+start_new_call"));
@@ -941,51 +834,30 @@ XdsClient::ChannelState::AdsCallState::AdsCallState(
               ? "AdsCallState"
               : nullptr),
       parent_(std::move(parent)) {
-  // Init the ADS call. Note that the call will progress every time there's
-  // activity in xds_client()->interested_parties_, which is comprised of
-  // the polling entities from client_channel.
   GPR_ASSERT(xds_client() != nullptr);
-  // Create a call with the specified method name.
+  // Init the ADS call.
   const char* method =
       chand()->server_.ShouldUseV3()
           ? "/envoy.service.discovery.v3.AggregatedDiscoveryService/"
             "StreamAggregatedResources"
           : "/envoy.service.discovery.v2.AggregatedDiscoveryService/"
             "StreamAggregatedResources";
-  call_ = grpc_channel_create_pollset_set_call(
-      chand()->channel_, nullptr, GRPC_PROPAGATE_DEFAULTS,
-      xds_client()->interested_parties_,
-      StaticSlice::FromStaticString(method).c_slice(), nullptr,
-      Timestamp::InfFuture(), nullptr);
+  call_ = chand()->transport_->CreateStreamingCall(
+      method, absl::make_unique<StreamEventHandler>(
+                  // Passing the initial ref here.  This ref will go away when
+                  // the StreamEventHandler is destroyed.
+                  RefCountedPtr<AdsCallState>(this)));
   GPR_ASSERT(call_ != nullptr);
-  // Init data associated with the call.
-  grpc_metadata_array_init(&initial_metadata_recv_);
-  grpc_metadata_array_init(&trailing_metadata_recv_);
   // Start the call.
   if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_client_trace)) {
     gpr_log(GPR_INFO,
             "[xds_client %p] xds server %s: starting ADS call "
             "(calld: %p, call: %p)",
-            xds_client(), chand()->server_.server_uri.c_str(), this, call_);
+            xds_client(), chand()->server_.server_uri.c_str(), this,
+            call_.get());
   }
-  // Create the ops.
-  grpc_call_error call_error;
-  grpc_op ops[3];
-  memset(ops, 0, sizeof(ops));
-  // Op: send initial metadata.
-  grpc_op* op = ops;
-  op->op = GRPC_OP_SEND_INITIAL_METADATA;
-  op->data.send_initial_metadata.count = 0;
-  op->flags = GRPC_INITIAL_METADATA_WAIT_FOR_READY |
-              GRPC_INITIAL_METADATA_WAIT_FOR_READY_EXPLICITLY_SET;
-  op->reserved = nullptr;
-  op++;
-  call_error = grpc_call_start_batch_and_execute(
-      call_, ops, static_cast<size_t>(op - ops), nullptr);
-  GPR_ASSERT(GRPC_CALL_OK == call_error);
-  // Op: send request message.
-  GRPC_CLOSURE_INIT(&on_request_sent_, OnRequestSent, this,
-                    grpc_schedule_on_exec_ctx);
+  // If this is a reconnect, add any necessary subscriptions from what's
+  // already in the cache.
   for (const auto& a : xds_client()->authority_state_map_) {
     const std::string& authority = a.first;
     // Skip authorities that are not using this xDS channel.
@@ -998,81 +870,30 @@ XdsClient::ChannelState::AdsCallState::AdsCallState(
       }
     }
   }
+  // Send initial message if we added any subscriptions above.
   for (const auto& p : state_map_) {
     SendMessageLocked(p.first);
   }
-  // Op: recv initial metadata.
-  op = ops;
-  op->op = GRPC_OP_RECV_INITIAL_METADATA;
-  op->data.recv_initial_metadata.recv_initial_metadata =
-      &initial_metadata_recv_;
-  op->flags = 0;
-  op->reserved = nullptr;
-  op++;
-  // Op: recv response.
-  op->op = GRPC_OP_RECV_MESSAGE;
-  op->data.recv_message.recv_message = &recv_message_payload_;
-  op->flags = 0;
-  op->reserved = nullptr;
-  op++;
-  Ref(DEBUG_LOCATION, "ADS+OnResponseReceivedLocked").release();
-  GRPC_CLOSURE_INIT(&on_response_received_, OnResponseReceived, this,
-                    grpc_schedule_on_exec_ctx);
-  call_error = grpc_call_start_batch_and_execute(
-      call_, ops, static_cast<size_t>(op - ops), &on_response_received_);
-  GPR_ASSERT(GRPC_CALL_OK == call_error);
-  // Op: recv server status.
-  op = ops;
-  op->op = GRPC_OP_RECV_STATUS_ON_CLIENT;
-  op->data.recv_status_on_client.trailing_metadata = &trailing_metadata_recv_;
-  op->data.recv_status_on_client.status = &status_code_;
-  op->data.recv_status_on_client.status_details = &status_details_;
-  op->flags = 0;
-  op->reserved = nullptr;
-  op++;
-  // This callback signals the end of the call, so it relies on the initial
-  // ref instead of a new ref. When it's invoked, it's the initial ref that is
-  // unreffed.
-  GRPC_CLOSURE_INIT(&on_status_received_, OnStatusReceived, this,
-                    grpc_schedule_on_exec_ctx);
-  call_error = grpc_call_start_batch_and_execute(
-      call_, ops, static_cast<size_t>(op - ops), &on_status_received_);
-  GPR_ASSERT(GRPC_CALL_OK == call_error);
-}
-
-XdsClient::ChannelState::AdsCallState::~AdsCallState() {
-  grpc_metadata_array_destroy(&initial_metadata_recv_);
-  grpc_metadata_array_destroy(&trailing_metadata_recv_);
-  grpc_byte_buffer_destroy(send_message_payload_);
-  grpc_byte_buffer_destroy(recv_message_payload_);
-  grpc_slice_unref_internal(status_details_);
-  GPR_ASSERT(call_ != nullptr);
-  grpc_call_unref(call_);
 }
 
 void XdsClient::ChannelState::AdsCallState::Orphan() {
-  GPR_ASSERT(call_ != nullptr);
-  // If we are here because xds_client wants to cancel the call,
-  // on_status_received_ will complete the cancellation and clean up. Otherwise,
-  // we are here because xds_client has to orphan a failed call, then the
-  // following cancellation will be a no-op.
-  grpc_call_cancel_internal(call_);
   state_map_.clear();
-  // Note that the initial ref is hold by on_status_received_. So the
-  // corresponding unref happens in on_status_received_ instead of here.
+  // Note that the initial ref is held by the StreamEventHandler, which
+  // will be destroyed when call_ is destroyed, which may not happen
+  // here, since there may be other refs held to call_ by internal callbacks.
+  call_.reset();
 }
 
 void XdsClient::ChannelState::AdsCallState::SendMessageLocked(
     const XdsResourceType* type)
     ABSL_EXCLUSIVE_LOCKS_REQUIRED(&XdsClient::mu_) {
   // Buffer message sending if an existing message is in flight.
-  if (send_message_payload_ != nullptr) {
+  if (send_message_pending_) {
     buffered_requests_.insert(type);
     return;
   }
   auto& state = state_map_[type];
-  grpc_slice request_payload_slice;
-  request_payload_slice = xds_client()->api_.CreateAdsRequest(
+  std::string serialized_message = xds_client()->api_.CreateAdsRequest(
       chand()->server_,
       chand()->server_.ShouldUseV3() ? type->type_url() : type->v2_type_url(),
       chand()->resource_type_version_map_[type], state.nonce,
@@ -1090,28 +911,8 @@ void XdsClient::ChannelState::AdsCallState::SendMessageLocked(
   }
   GRPC_ERROR_UNREF(state.error);
   state.error = GRPC_ERROR_NONE;
-  // Create message payload.
-  send_message_payload_ =
-      grpc_raw_byte_buffer_create(&request_payload_slice, 1);
-  grpc_slice_unref_internal(request_payload_slice);
-  // Send the message.
-  grpc_op op;
-  memset(&op, 0, sizeof(op));
-  op.op = GRPC_OP_SEND_MESSAGE;
-  op.data.send_message.send_message = send_message_payload_;
-  Ref(DEBUG_LOCATION, "ADS+OnRequestSentLocked").release();
-  GRPC_CLOSURE_INIT(&on_request_sent_, OnRequestSent, this,
-                    grpc_schedule_on_exec_ctx);
-  grpc_call_error call_error =
-      grpc_call_start_batch_and_execute(call_, &op, 1, &on_request_sent_);
-  if (GPR_UNLIKELY(call_error != GRPC_CALL_OK)) {
-    gpr_log(GPR_ERROR,
-            "[xds_client %p] xds server %s: error starting ADS send_message "
-            "batch on calld=%p: call_error=%d",
-            xds_client(), chand()->server_.server_uri.c_str(), this,
-            call_error);
-    GPR_ASSERT(GRPC_CALL_OK == call_error);
-  }
+  call_->SendMessage(std::move(serialized_message));
+  send_message_pending_ = true;
 }
 
 void XdsClient::ChannelState::AdsCallState::SubscribeLocked(
@@ -1142,22 +943,10 @@ bool XdsClient::ChannelState::AdsCallState::HasSubscribedResources() const {
   return false;
 }
 
-void XdsClient::ChannelState::AdsCallState::OnRequestSent(
-    void* arg, grpc_error_handle error) {
-  AdsCallState* ads_calld = static_cast<AdsCallState*>(arg);
-  {
-    MutexLock lock(&ads_calld->xds_client()->mu_);
-    ads_calld->OnRequestSentLocked(GRPC_ERROR_REF(error));
-  }
-  ads_calld->Unref(DEBUG_LOCATION, "ADS+OnRequestSentLocked");
-}
-
-void XdsClient::ChannelState::AdsCallState::OnRequestSentLocked(
-    grpc_error_handle error) {
-  if (IsCurrentCallOnChannel() && GRPC_ERROR_IS_NONE(error)) {
-    // Clean up the sent message.
-    grpc_byte_buffer_destroy(send_message_payload_);
-    send_message_payload_ = nullptr;
+void XdsClient::ChannelState::AdsCallState::OnRequestSent(bool ok) {
+  MutexLock lock(&xds_client()->mu_);
+  send_message_pending_ = false;
+  if (ok && IsCurrentCallOnChannel()) {
     // Continue to send another pending message if any.
     // TODO(roth): The current code to handle buffered messages has the
     // advantage of sending only the most recent list of resource names for
@@ -1173,184 +962,137 @@ void XdsClient::ChannelState::AdsCallState::OnRequestSentLocked(
       buffered_requests_.erase(it);
     }
   }
-  GRPC_ERROR_UNREF(error);
 }
 
-void XdsClient::ChannelState::AdsCallState::OnResponseReceived(
-    void* arg, grpc_error_handle /* error */) {
-  AdsCallState* ads_calld = static_cast<AdsCallState*>(arg);
-  bool done;
+void XdsClient::ChannelState::AdsCallState::OnRecvMessage(
+    absl::string_view payload) {
   {
-    MutexLock lock(&ads_calld->xds_client()->mu_);
-    done = ads_calld->OnResponseReceivedLocked();
-  }
-  ads_calld->xds_client()->work_serializer_.DrainQueue();
-  if (done) ads_calld->Unref(DEBUG_LOCATION, "ADS+OnResponseReceivedLocked");
-}
-
-bool XdsClient::ChannelState::AdsCallState::OnResponseReceivedLocked() {
-  // Empty payload means the call was cancelled.
-  if (!IsCurrentCallOnChannel() || recv_message_payload_ == nullptr) {
-    return true;
-  }
-  // Read the response.
-  grpc_byte_buffer_reader bbr;
-  grpc_byte_buffer_reader_init(&bbr, recv_message_payload_);
-  grpc_slice response_slice = grpc_byte_buffer_reader_readall(&bbr);
-  grpc_byte_buffer_reader_destroy(&bbr);
-  grpc_byte_buffer_destroy(recv_message_payload_);
-  recv_message_payload_ = nullptr;
-  // Parse and validate the response.
-  AdsResponseParser parser(this);
-  absl::Status status = xds_client()->api_.ParseAdsResponse(
-      chand()->server_, response_slice, &parser);
-  grpc_slice_unref_internal(response_slice);
-  if (!status.ok()) {
-    // Ignore unparsable response.
-    gpr_log(GPR_ERROR,
-            "[xds_client %p] xds server %s: error parsing ADS response (%s) "
-            "-- ignoring",
-            xds_client(), chand()->server_.server_uri.c_str(),
-            status.ToString().c_str());
-  } else {
-    seen_response_ = true;
-    AdsResponseParser::Result result = parser.TakeResult();
-    // Update nonce.
-    auto& state = state_map_[result.type];
-    state.nonce = result.nonce;
-    // If we got an error, set state.error so that we'll NACK the update.
-    if (!result.errors.empty()) {
-      std::string error = absl::StrJoin(result.errors, "; ");
-      gpr_log(
-          GPR_ERROR,
-          "[xds_client %p] xds server %s: ADS response invalid for resource "
-          "type %s version %s, will NACK: nonce=%s error=%s",
-          xds_client(), chand()->server_.server_uri.c_str(),
-          result.type_url.c_str(), result.version.c_str(), state.nonce.c_str(),
-          error.c_str());
-      GRPC_ERROR_UNREF(state.error);
-      state.error = grpc_error_set_int(GRPC_ERROR_CREATE_FROM_CPP_STRING(error),
-                                       GRPC_ERROR_INT_GRPC_STATUS,
-                                       GRPC_STATUS_UNAVAILABLE);
-    }
-    // Delete resources not seen in update if needed.
-    if (result.type->AllResourcesRequiredInSotW()) {
-      for (auto& a : xds_client()->authority_state_map_) {
-        const std::string& authority = a.first;
-        AuthorityState& authority_state = a.second;
-        // Skip authorities that are not using this xDS channel.
-        if (authority_state.channel_state != chand()) continue;
-        auto seen_authority_it = result.resources_seen.find(authority);
-        // Find this resource type.
-        auto type_it = authority_state.resource_map.find(result.type);
-        if (type_it == authority_state.resource_map.end()) continue;
-        // Iterate over resource ids.
-        for (auto& r : type_it->second) {
-          const XdsResourceKey& resource_key = r.first;
-          ResourceState& resource_state = r.second;
-          if (seen_authority_it == result.resources_seen.end() ||
-              seen_authority_it->second.find(resource_key) ==
-                  seen_authority_it->second.end()) {
-            // If the resource was newly requested but has not yet been
-            // received, we don't want to generate an error for the watchers,
-            // because this ADS response may be in reaction to an earlier
-            // request that did not yet request the new resource, so its absence
-            // from the response does not necessarily indicate that the resource
-            // does not exist.  For that case, we rely on the request timeout
-            // instead.
-            if (resource_state.resource == nullptr) continue;
-            if (chand()->server_.IgnoreResourceDeletion()) {
-              if (!resource_state.ignored_deletion) {
-                gpr_log(GPR_ERROR,
-                        "[xds_client %p] xds server %s: ignoring deletion "
-                        "for resource type %s name %s",
-                        xds_client(), chand()->server_.server_uri.c_str(),
-                        result.type_url.c_str(),
-                        XdsClient::ConstructFullXdsResourceName(
-                            authority, result.type_url.c_str(), resource_key)
-                            .c_str());
-                resource_state.ignored_deletion = true;
+    MutexLock lock(&xds_client()->mu_);
+    if (!IsCurrentCallOnChannel()) return;
+    // Parse and validate the response.
+    AdsResponseParser parser(this);
+    absl::Status status =
+        xds_client()->api_.ParseAdsResponse(chand()->server_, payload, &parser);
+    if (!status.ok()) {
+      // Ignore unparsable response.
+      gpr_log(GPR_ERROR,
+              "[xds_client %p] xds server %s: error parsing ADS response (%s) "
+              "-- ignoring",
+              xds_client(), chand()->server_.server_uri.c_str(),
+              status.ToString().c_str());
+    } else {
+      seen_response_ = true;
+      AdsResponseParser::Result result = parser.TakeResult();
+      // Update nonce.
+      auto& state = state_map_[result.type];
+      state.nonce = result.nonce;
+      // If we got an error, set state.error so that we'll NACK the update.
+      if (!result.errors.empty()) {
+        std::string error = absl::StrJoin(result.errors, "; ");
+        gpr_log(GPR_ERROR,
+                "[xds_client %p] xds server %s: ADS response invalid for "
+                "resource "
+                "type %s version %s, will NACK: nonce=%s error=%s",
+                xds_client(), chand()->server_.server_uri.c_str(),
+                result.type_url.c_str(), result.version.c_str(),
+                state.nonce.c_str(), error.c_str());
+        GRPC_ERROR_UNREF(state.error);
+        state.error = grpc_error_set_int(
+            GRPC_ERROR_CREATE_FROM_CPP_STRING(error),
+            GRPC_ERROR_INT_GRPC_STATUS, GRPC_STATUS_UNAVAILABLE);
+      }
+      // Delete resources not seen in update if needed.
+      if (result.type->AllResourcesRequiredInSotW()) {
+        for (auto& a : xds_client()->authority_state_map_) {
+          const std::string& authority = a.first;
+          AuthorityState& authority_state = a.second;
+          // Skip authorities that are not using this xDS channel.
+          if (authority_state.channel_state != chand()) continue;
+          auto seen_authority_it = result.resources_seen.find(authority);
+          // Find this resource type.
+          auto type_it = authority_state.resource_map.find(result.type);
+          if (type_it == authority_state.resource_map.end()) continue;
+          // Iterate over resource ids.
+          for (auto& r : type_it->second) {
+            const XdsResourceKey& resource_key = r.first;
+            ResourceState& resource_state = r.second;
+            if (seen_authority_it == result.resources_seen.end() ||
+                seen_authority_it->second.find(resource_key) ==
+                    seen_authority_it->second.end()) {
+              // If the resource was newly requested but has not yet been
+              // received, we don't want to generate an error for the
+              // watchers, because this ADS response may be in reaction to an
+              // earlier request that did not yet request the new resource, so
+              // its absence from the response does not necessarily indicate
+              // that the resource does not exist.  For that case, we rely on
+              // the request timeout instead.
+              if (resource_state.resource == nullptr) continue;
+              if (chand()->server_.IgnoreResourceDeletion()) {
+                if (!resource_state.ignored_deletion) {
+                  gpr_log(GPR_ERROR,
+                          "[xds_client %p] xds server %s: ignoring deletion "
+                          "for resource type %s name %s",
+                          xds_client(), chand()->server_.server_uri.c_str(),
+                          result.type_url.c_str(),
+                          XdsClient::ConstructFullXdsResourceName(
+                              authority, result.type_url.c_str(), resource_key)
+                              .c_str());
+                  resource_state.ignored_deletion = true;
+                }
+              } else {
+                resource_state.resource.reset();
+                xds_client()->NotifyWatchersOnResourceDoesNotExist(
+                    resource_state.watchers);
               }
-            } else {
-              resource_state.resource.reset();
-              xds_client()->NotifyWatchersOnResourceDoesNotExist(
-                  resource_state.watchers);
             }
           }
         }
       }
-    }
-    // If we had valid resources, update the version.
-    if (result.have_valid_resources) {
-      chand()->resource_type_version_map_[result.type] =
-          std::move(result.version);
-      // Start load reporting if needed.
-      auto& lrs_call = chand()->lrs_calld_;
-      if (lrs_call != nullptr) {
-        LrsCallState* lrs_calld = lrs_call->calld();
-        if (lrs_calld != nullptr) lrs_calld->MaybeStartReportingLocked();
+      // If we had valid resources, update the version.
+      if (result.have_valid_resources) {
+        chand()->resource_type_version_map_[result.type] =
+            std::move(result.version);
+        // Start load reporting if needed.
+        auto& lrs_call = chand()->lrs_calld_;
+        if (lrs_call != nullptr) {
+          LrsCallState* lrs_calld = lrs_call->calld();
+          if (lrs_calld != nullptr) lrs_calld->MaybeStartReportingLocked();
+        }
       }
+      // Send ACK or NACK.
+      SendMessageLocked(result.type);
     }
-    // Send ACK or NACK.
-    SendMessageLocked(result.type);
   }
-  if (xds_client()->shutting_down_) return true;
-  // Keep listening for updates.
-  grpc_op op;
-  memset(&op, 0, sizeof(op));
-  op.op = GRPC_OP_RECV_MESSAGE;
-  op.data.recv_message.recv_message = &recv_message_payload_;
-  op.flags = 0;
-  op.reserved = nullptr;
-  GPR_ASSERT(call_ != nullptr);
-  // Reuse the "ADS+OnResponseReceivedLocked" ref taken in ctor.
-  const grpc_call_error call_error =
-      grpc_call_start_batch_and_execute(call_, &op, 1, &on_response_received_);
-  GPR_ASSERT(GRPC_CALL_OK == call_error);
-  return false;
+  xds_client()->work_serializer_.DrainQueue();
 }
 
 void XdsClient::ChannelState::AdsCallState::OnStatusReceived(
-    void* arg, grpc_error_handle error) {
-  AdsCallState* ads_calld = static_cast<AdsCallState*>(arg);
+    absl::Status status) {
   {
-    MutexLock lock(&ads_calld->xds_client()->mu_);
-    ads_calld->OnStatusReceivedLocked(GRPC_ERROR_REF(error));
+    MutexLock lock(&xds_client()->mu_);
+    if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_client_trace)) {
+      gpr_log(GPR_INFO,
+              "[xds_client %p] xds server %s: ADS call status received "
+              "(chand=%p, ads_calld=%p, call=%p): %s",
+              xds_client(), chand()->server_.server_uri.c_str(), chand(), this,
+              call_.get(), status.ToString().c_str());
+    }
+    // Ignore status from a stale call.
+    if (IsCurrentCallOnChannel()) {
+      // Try to restart the call.
+      parent_->OnCallFinishedLocked();
+      // Send error to all watchers.
+      xds_client()->NotifyOnErrorLocked(absl::UnavailableError(absl::StrFormat(
+          "xDS call failed: xDS server: %s, ADS call status: %s",
+          chand()->server_.server_uri, status.ToString().c_str())));
+    }
   }
-  ads_calld->xds_client()->work_serializer_.DrainQueue();
-  ads_calld->Unref(DEBUG_LOCATION, "ADS+OnStatusReceivedLocked");
-}
-
-void XdsClient::ChannelState::AdsCallState::OnStatusReceivedLocked(
-    grpc_error_handle error) {
-  if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_client_trace)) {
-    char* status_details = grpc_slice_to_c_string(status_details_);
-    gpr_log(GPR_INFO,
-            "[xds_client %p] xds server %s: ADS call status received "
-            "(chand=%p, ads_calld=%p, call=%p): "
-            "status=%d, details='%s', error='%s'",
-            xds_client(), chand()->server_.server_uri.c_str(), chand(), this,
-            call_, status_code_, status_details,
-            grpc_error_std_string(error).c_str());
-    gpr_free(status_details);
-  }
-  // Ignore status from a stale call.
-  if (IsCurrentCallOnChannel()) {
-    // Try to restart the call.
-    parent_->OnCallFinishedLocked();
-    // Send error to all watchers.
-    xds_client()->NotifyOnErrorLocked(absl::UnavailableError(absl::StrFormat(
-        "xDS call failed: xDS server: %s, ADS call status code=%d, "
-        "details='%s', error='%s'",
-        chand()->server_.server_uri, status_code_,
-        StringViewFromSlice(status_details_), grpc_error_std_string(error))));
-  }
-  GRPC_ERROR_UNREF(error);
+  xds_client()->work_serializer_.DrainQueue();
 }
 
 bool XdsClient::ChannelState::AdsCallState::IsCurrentCallOnChannel() const {
-  // If the retryable ADS call is null (which only happens when the xds channel
-  // is shutting down), all the ADS calls are stale.
+  // If the retryable ADS call is null (which only happens when the xds
+  // channel is shutting down), all the ADS calls are stale.
   if (chand()->ads_calld_ == nullptr) return false;
   return this == chand()->ads_calld_->calld();
 }
@@ -1451,65 +1193,32 @@ bool XdsClient::ChannelState::LrsCallState::Reporter::SendReportLocked() {
     ScheduleNextReportLocked();
     return false;
   }
-  // Create a request that contains the snapshot.
-  grpc_slice request_payload_slice =
+  // Send a request that contains the snapshot.
+  std::string serialized_payload =
       xds_client()->api_.CreateLrsRequest(std::move(snapshot));
-  parent_->send_message_payload_ =
-      grpc_raw_byte_buffer_create(&request_payload_slice, 1);
-  grpc_slice_unref_internal(request_payload_slice);
-  // Send the report.
-  grpc_op op;
-  memset(&op, 0, sizeof(op));
-  op.op = GRPC_OP_SEND_MESSAGE;
-  op.data.send_message.send_message = parent_->send_message_payload_;
-  grpc_call_error call_error = grpc_call_start_batch_and_execute(
-      parent_->call_, &op, 1, &on_report_done_);
-  if (GPR_UNLIKELY(call_error != GRPC_CALL_OK)) {
-    gpr_log(GPR_ERROR,
-            "[xds_client %p] xds server %s: error starting LRS send_message "
-            "batch on calld=%p: call_error=%d",
-            xds_client(), parent_->chand()->server_.server_uri.c_str(), this,
-            call_error);
-    GPR_ASSERT(GRPC_CALL_OK == call_error);
-  }
+  parent_->call_->SendMessage(std::move(serialized_payload));
+  parent_->send_message_pending_ = true;
   return false;
 }
 
-void XdsClient::ChannelState::LrsCallState::Reporter::OnReportDone(
-    void* arg, grpc_error_handle error) {
-  Reporter* self = static_cast<Reporter*>(arg);
-  bool done;
-  {
-    MutexLock lock(&self->xds_client()->mu_);
-    done = self->OnReportDoneLocked(GRPC_ERROR_REF(error));
-  }
-  if (done) self->Unref(DEBUG_LOCATION, "Reporter+report_done");
-}
-
-bool XdsClient::ChannelState::LrsCallState::Reporter::OnReportDoneLocked(
-    grpc_error_handle error) {
-  grpc_byte_buffer_destroy(parent_->send_message_payload_);
-  parent_->send_message_payload_ = nullptr;
+void XdsClient::ChannelState::LrsCallState::Reporter::OnReportDoneLocked() {
+  // If a reporter starts a send_message op, then the reporting interval
+  // changes and we destroy that reporter and create a new one, and then
+  // the send_message op started by the old reporter finishes, this
+  // method will be called even though it was for a completion started
+  // by the old reporter.  In that case, the timer will be pending, so
+  // we just ignore the completion and wait for the timer to fire.
+  if (next_report_timer_callback_pending_) return;
   // If there are no more registered stats to report, cancel the call.
   auto it =
       xds_client()->xds_load_report_server_map_.find(parent_->chand()->server_);
   if (it == xds_client()->xds_load_report_server_map_.end() ||
       it->second.load_report_map.empty()) {
     it->second.channel_state->StopLrsCallLocked();
-    GRPC_ERROR_UNREF(error);
-    return true;
+    return;
   }
-  if (!GRPC_ERROR_IS_NONE(error) || !IsCurrentReporterOnCall()) {
-    GRPC_ERROR_UNREF(error);
-    // If this reporter is no longer the current one on the call, the reason
-    // might be that it was orphaned for a new one due to config update.
-    if (!IsCurrentReporterOnCall()) {
-      parent_->MaybeStartReportingLocked();
-    }
-    return true;
-  }
+  // Otherwise, schedule the next load report.
   ScheduleNextReportLocked();
-  return false;
 }
 
 //
@@ -1527,124 +1236,46 @@ XdsClient::ChannelState::LrsCallState::LrsCallState(
   // activity in xds_client()->interested_parties_, which is comprised of
   // the polling entities from client_channel.
   GPR_ASSERT(xds_client() != nullptr);
-  const char* method =
-      chand()->server_.ShouldUseV3()
-          ? "/envoy.service.load_stats.v3.LoadReportingService/StreamLoadStats"
-          : "/envoy.service.load_stats.v2.LoadReportingService/StreamLoadStats";
-  call_ = grpc_channel_create_pollset_set_call(
-      chand()->channel_, nullptr, GRPC_PROPAGATE_DEFAULTS,
-      xds_client()->interested_parties_,
-      Slice::FromStaticString(method).c_slice(), nullptr,
-      Timestamp::InfFuture(), nullptr);
+  const char* method = chand()->server_.ShouldUseV3()
+                           ? "/envoy.service.load_stats.v3."
+                             "LoadReportingService/StreamLoadStats"
+                           : "/envoy.service.load_stats.v2."
+                             "LoadReportingService/StreamLoadStats";
+  call_ = chand()->transport_->CreateStreamingCall(
+      method, absl::make_unique<StreamEventHandler>(
+                  // Passing the initial ref here.  This ref will go away when
+                  // the StreamEventHandler is destroyed.
+                  RefCountedPtr<LrsCallState>(this)));
   GPR_ASSERT(call_ != nullptr);
-  // Init the request payload.
-  grpc_slice request_payload_slice =
-      xds_client()->api_.CreateLrsInitialRequest(chand()->server_);
-  send_message_payload_ =
-      grpc_raw_byte_buffer_create(&request_payload_slice, 1);
-  grpc_slice_unref_internal(request_payload_slice);
-  // Init other data associated with the LRS call.
-  grpc_metadata_array_init(&initial_metadata_recv_);
-  grpc_metadata_array_init(&trailing_metadata_recv_);
   // Start the call.
   if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_client_trace)) {
-    gpr_log(
-        GPR_INFO,
-        "[xds_client %p] xds server %s: starting LRS call (calld=%p, call=%p)",
-        xds_client(), chand()->server_.server_uri.c_str(), this, call_);
+    gpr_log(GPR_INFO,
+            "[xds_client %p] xds server %s: starting LRS call (calld=%p, "
+            "call=%p)",
+            xds_client(), chand()->server_.server_uri.c_str(), this,
+            call_.get());
   }
-  // Create the ops.
-  grpc_call_error call_error;
-  grpc_op ops[3];
-  memset(ops, 0, sizeof(ops));
-  // Op: send initial metadata.
-  grpc_op* op = ops;
-  op->op = GRPC_OP_SEND_INITIAL_METADATA;
-  op->data.send_initial_metadata.count = 0;
-  op->flags = GRPC_INITIAL_METADATA_WAIT_FOR_READY |
-              GRPC_INITIAL_METADATA_WAIT_FOR_READY_EXPLICITLY_SET;
-  op->reserved = nullptr;
-  op++;
-  // Op: send request message.
-  GPR_ASSERT(send_message_payload_ != nullptr);
-  op->op = GRPC_OP_SEND_MESSAGE;
-  op->data.send_message.send_message = send_message_payload_;
-  op->flags = 0;
-  op->reserved = nullptr;
-  op++;
-  Ref(DEBUG_LOCATION, "LRS+OnInitialRequestSentLocked").release();
-  GRPC_CLOSURE_INIT(&on_initial_request_sent_, OnInitialRequestSent, this,
-                    grpc_schedule_on_exec_ctx);
-  call_error = grpc_call_start_batch_and_execute(
-      call_, ops, static_cast<size_t>(op - ops), &on_initial_request_sent_);
-  GPR_ASSERT(GRPC_CALL_OK == call_error);
-  // Op: recv initial metadata.
-  op = ops;
-  op->op = GRPC_OP_RECV_INITIAL_METADATA;
-  op->data.recv_initial_metadata.recv_initial_metadata =
-      &initial_metadata_recv_;
-  op->flags = 0;
-  op->reserved = nullptr;
-  op++;
-  // Op: recv response.
-  op->op = GRPC_OP_RECV_MESSAGE;
-  op->data.recv_message.recv_message = &recv_message_payload_;
-  op->flags = 0;
-  op->reserved = nullptr;
-  op++;
-  Ref(DEBUG_LOCATION, "LRS+OnResponseReceivedLocked").release();
-  GRPC_CLOSURE_INIT(&on_response_received_, OnResponseReceived, this,
-                    grpc_schedule_on_exec_ctx);
-  call_error = grpc_call_start_batch_and_execute(
-      call_, ops, static_cast<size_t>(op - ops), &on_response_received_);
-  GPR_ASSERT(GRPC_CALL_OK == call_error);
-  // Op: recv server status.
-  op = ops;
-  op->op = GRPC_OP_RECV_STATUS_ON_CLIENT;
-  op->data.recv_status_on_client.trailing_metadata = &trailing_metadata_recv_;
-  op->data.recv_status_on_client.status = &status_code_;
-  op->data.recv_status_on_client.status_details = &status_details_;
-  op->flags = 0;
-  op->reserved = nullptr;
-  op++;
-  // This callback signals the end of the call, so it relies on the initial
-  // ref instead of a new ref. When it's invoked, it's the initial ref that is
-  // unreffed.
-  GRPC_CLOSURE_INIT(&on_status_received_, OnStatusReceived, this,
-                    grpc_schedule_on_exec_ctx);
-  call_error = grpc_call_start_batch_and_execute(
-      call_, ops, static_cast<size_t>(op - ops), &on_status_received_);
-  GPR_ASSERT(GRPC_CALL_OK == call_error);
-}
-
-XdsClient::ChannelState::LrsCallState::~LrsCallState() {
-  grpc_metadata_array_destroy(&initial_metadata_recv_);
-  grpc_metadata_array_destroy(&trailing_metadata_recv_);
-  grpc_byte_buffer_destroy(send_message_payload_);
-  grpc_byte_buffer_destroy(recv_message_payload_);
-  grpc_slice_unref_internal(status_details_);
-  GPR_ASSERT(call_ != nullptr);
-  grpc_call_unref(call_);
+  // Send the initial request.
+  std::string serialized_payload =
+      xds_client()->api_.CreateLrsInitialRequest(chand()->server_);
+  call_->SendMessage(std::move(serialized_payload));
+  send_message_pending_ = true;
 }
 
 void XdsClient::ChannelState::LrsCallState::Orphan() {
   reporter_.reset();
-  GPR_ASSERT(call_ != nullptr);
-  // If we are here because xds_client wants to cancel the call,
-  // on_status_received_ will complete the cancellation and clean up. Otherwise,
-  // we are here because xds_client has to orphan a failed call, then the
-  // following cancellation will be a no-op.
-  grpc_call_cancel_internal(call_);
-  // Note that the initial ref is hold by on_status_received_. So the
-  // corresponding unref happens in on_status_received_ instead of here.
+  // Note that the initial ref is held by the StreamEventHandler, which
+  // will be destroyed when call_ is destroyed, which may not happen
+  // here, since there may be other refs held to call_ by internal callbacks.
+  call_.reset();
 }
 
 void XdsClient::ChannelState::LrsCallState::MaybeStartReportingLocked() {
   // Don't start again if already started.
   if (reporter_ != nullptr) return;
-  // Don't start if the previous send_message op (of the initial request or the
-  // last report of the previous reporter) hasn't completed.
-  if (send_message_payload_ != nullptr) return;
+  // Don't start if the previous send_message op (of the initial request or
+  // the last report of the previous reporter) hasn't completed.
+  if (call_ != nullptr && send_message_pending_) return;
   // Don't start if no LRS response has arrived.
   if (!seen_response()) return;
   // Don't start if the ADS call hasn't received any valid response. Note that
@@ -1660,166 +1291,106 @@ void XdsClient::ChannelState::LrsCallState::MaybeStartReportingLocked() {
       Ref(DEBUG_LOCATION, "LRS+load_report+start"), load_reporting_interval_);
 }
 
-void XdsClient::ChannelState::LrsCallState::OnInitialRequestSent(
-    void* arg, grpc_error_handle /*error*/) {
-  LrsCallState* lrs_calld = static_cast<LrsCallState*>(arg);
-  {
-    MutexLock lock(&lrs_calld->xds_client()->mu_);
-    lrs_calld->OnInitialRequestSentLocked();
+void XdsClient::ChannelState::LrsCallState::OnRequestSent(bool /*ok*/) {
+  MutexLock lock(&xds_client()->mu_);
+  send_message_pending_ = false;
+  if (reporter_ != nullptr) {
+    reporter_->OnReportDoneLocked();
+  } else {
+    MaybeStartReportingLocked();
   }
-  lrs_calld->Unref(DEBUG_LOCATION, "LRS+OnInitialRequestSentLocked");
 }
 
-void XdsClient::ChannelState::LrsCallState::OnInitialRequestSentLocked() {
-  // Clear the send_message_payload_.
-  grpc_byte_buffer_destroy(send_message_payload_);
-  send_message_payload_ = nullptr;
+void XdsClient::ChannelState::LrsCallState::OnRecvMessage(
+    absl::string_view payload) {
+  MutexLock lock(&xds_client()->mu_);
+  // If we're no longer the current call, ignore the result.
+  if (!IsCurrentCallOnChannel()) return;
+  // Parse the response.
+  bool send_all_clusters = false;
+  std::set<std::string> new_cluster_names;
+  Duration new_load_reporting_interval;
+  grpc_error_handle parse_error = xds_client()->api_.ParseLrsResponse(
+      payload, &send_all_clusters, &new_cluster_names,
+      &new_load_reporting_interval);
+  if (!GRPC_ERROR_IS_NONE(parse_error)) {
+    gpr_log(GPR_ERROR,
+            "[xds_client %p] xds server %s: LRS response parsing failed: %s",
+            xds_client(), chand()->server_.server_uri.c_str(),
+            grpc_error_std_string(parse_error).c_str());
+    GRPC_ERROR_UNREF(parse_error);
+    return;
+  }
+  seen_response_ = true;
+  if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_client_trace)) {
+    gpr_log(
+        GPR_INFO,
+        "[xds_client %p] xds server %s: LRS response received, %" PRIuPTR
+        " cluster names, send_all_clusters=%d, load_report_interval=%" PRId64
+        "ms",
+        xds_client(), chand()->server_.server_uri.c_str(),
+        new_cluster_names.size(), send_all_clusters,
+        new_load_reporting_interval.millis());
+    size_t i = 0;
+    for (const auto& name : new_cluster_names) {
+      gpr_log(GPR_INFO, "[xds_client %p] cluster_name %" PRIuPTR ": %s",
+              xds_client(), i++, name.c_str());
+    }
+  }
+  if (new_load_reporting_interval <
+      Duration::Milliseconds(GRPC_XDS_MIN_CLIENT_LOAD_REPORTING_INTERVAL_MS)) {
+    new_load_reporting_interval =
+        Duration::Milliseconds(GRPC_XDS_MIN_CLIENT_LOAD_REPORTING_INTERVAL_MS);
+    if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_client_trace)) {
+      gpr_log(GPR_INFO,
+              "[xds_client %p] xds server %s: increased load_report_interval "
+              "to minimum value %dms",
+              xds_client(), chand()->server_.server_uri.c_str(),
+              GRPC_XDS_MIN_CLIENT_LOAD_REPORTING_INTERVAL_MS);
+    }
+  }
+  // Ignore identical update.
+  if (send_all_clusters == send_all_clusters_ &&
+      cluster_names_ == new_cluster_names &&
+      load_reporting_interval_ == new_load_reporting_interval) {
+    if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_client_trace)) {
+      gpr_log(GPR_INFO,
+              "[xds_client %p] xds server %s: incoming LRS response identical "
+              "to current, ignoring.",
+              xds_client(), chand()->server_.server_uri.c_str());
+    }
+    return;
+  }
+  // Stop current load reporting (if any) to adopt the new config.
+  reporter_.reset();
+  // Record the new config.
+  send_all_clusters_ = send_all_clusters;
+  cluster_names_ = std::move(new_cluster_names);
+  load_reporting_interval_ = new_load_reporting_interval;
+  // Try starting sending load report.
   MaybeStartReportingLocked();
 }
 
-void XdsClient::ChannelState::LrsCallState::OnResponseReceived(
-    void* arg, grpc_error_handle /*error*/) {
-  LrsCallState* lrs_calld = static_cast<LrsCallState*>(arg);
-  bool done;
-  {
-    MutexLock lock(&lrs_calld->xds_client()->mu_);
-    done = lrs_calld->OnResponseReceivedLocked();
-  }
-  if (done) lrs_calld->Unref(DEBUG_LOCATION, "LRS+OnResponseReceivedLocked");
-}
-
-bool XdsClient::ChannelState::LrsCallState::OnResponseReceivedLocked() {
-  // Empty payload means the call was cancelled.
-  if (!IsCurrentCallOnChannel() || recv_message_payload_ == nullptr) {
-    return true;
-  }
-  // Read the response.
-  grpc_byte_buffer_reader bbr;
-  grpc_byte_buffer_reader_init(&bbr, recv_message_payload_);
-  grpc_slice response_slice = grpc_byte_buffer_reader_readall(&bbr);
-  grpc_byte_buffer_reader_destroy(&bbr);
-  grpc_byte_buffer_destroy(recv_message_payload_);
-  recv_message_payload_ = nullptr;
-  // This anonymous lambda is a hack to avoid the usage of goto.
-  [&]() {
-    // Parse the response.
-    bool send_all_clusters = false;
-    std::set<std::string> new_cluster_names;
-    Duration new_load_reporting_interval;
-    grpc_error_handle parse_error = xds_client()->api_.ParseLrsResponse(
-        response_slice, &send_all_clusters, &new_cluster_names,
-        &new_load_reporting_interval);
-    if (!GRPC_ERROR_IS_NONE(parse_error)) {
-      gpr_log(GPR_ERROR,
-              "[xds_client %p] xds server %s: LRS response parsing failed: %s",
-              xds_client(), chand()->server_.server_uri.c_str(),
-              grpc_error_std_string(parse_error).c_str());
-      GRPC_ERROR_UNREF(parse_error);
-      return;
-    }
-    seen_response_ = true;
-    if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_client_trace)) {
-      gpr_log(
-          GPR_INFO,
-          "[xds_client %p] xds server %s: LRS response received, %" PRIuPTR
-          " cluster names, send_all_clusters=%d, load_report_interval=%" PRId64
-          "ms",
-          xds_client(), chand()->server_.server_uri.c_str(),
-          new_cluster_names.size(), send_all_clusters,
-          new_load_reporting_interval.millis());
-      size_t i = 0;
-      for (const auto& name : new_cluster_names) {
-        gpr_log(GPR_INFO, "[xds_client %p] cluster_name %" PRIuPTR ": %s",
-                xds_client(), i++, name.c_str());
-      }
-    }
-    if (new_load_reporting_interval <
-        Duration::Milliseconds(
-            GRPC_XDS_MIN_CLIENT_LOAD_REPORTING_INTERVAL_MS)) {
-      new_load_reporting_interval = Duration::Milliseconds(
-          GRPC_XDS_MIN_CLIENT_LOAD_REPORTING_INTERVAL_MS);
-      if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_client_trace)) {
-        gpr_log(GPR_INFO,
-                "[xds_client %p] xds server %s: increased load_report_interval "
-                "to minimum value %dms",
-                xds_client(), chand()->server_.server_uri.c_str(),
-                GRPC_XDS_MIN_CLIENT_LOAD_REPORTING_INTERVAL_MS);
-      }
-    }
-    // Ignore identical update.
-    if (send_all_clusters == send_all_clusters_ &&
-        cluster_names_ == new_cluster_names &&
-        load_reporting_interval_ == new_load_reporting_interval) {
-      if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_client_trace)) {
-        gpr_log(
-            GPR_INFO,
-            "[xds_client %p] xds server %s: incoming LRS response identical "
-            "to current, ignoring.",
-            xds_client(), chand()->server_.server_uri.c_str());
-      }
-      return;
-    }
-    // Stop current load reporting (if any) to adopt the new config.
-    reporter_.reset();
-    // Record the new config.
-    send_all_clusters_ = send_all_clusters;
-    cluster_names_ = std::move(new_cluster_names);
-    load_reporting_interval_ = new_load_reporting_interval;
-    // Try starting sending load report.
-    MaybeStartReportingLocked();
-  }();
-  grpc_slice_unref_internal(response_slice);
-  if (xds_client()->shutting_down_) return true;
-  // Keep listening for LRS config updates.
-  grpc_op op;
-  memset(&op, 0, sizeof(op));
-  op.op = GRPC_OP_RECV_MESSAGE;
-  op.data.recv_message.recv_message = &recv_message_payload_;
-  op.flags = 0;
-  op.reserved = nullptr;
-  GPR_ASSERT(call_ != nullptr);
-  // Reuse the "OnResponseReceivedLocked" ref taken in ctor.
-  const grpc_call_error call_error =
-      grpc_call_start_batch_and_execute(call_, &op, 1, &on_response_received_);
-  GPR_ASSERT(GRPC_CALL_OK == call_error);
-  return false;
-}
-
 void XdsClient::ChannelState::LrsCallState::OnStatusReceived(
-    void* arg, grpc_error_handle error) {
-  LrsCallState* lrs_calld = static_cast<LrsCallState*>(arg);
-  {
-    MutexLock lock(&lrs_calld->xds_client()->mu_);
-    lrs_calld->OnStatusReceivedLocked(GRPC_ERROR_REF(error));
-  }
-  lrs_calld->Unref(DEBUG_LOCATION, "LRS+OnStatusReceivedLocked");
-}
-
-void XdsClient::ChannelState::LrsCallState::OnStatusReceivedLocked(
-    grpc_error_handle error) {
-  GPR_ASSERT(call_ != nullptr);
+    absl::Status status) {
+  MutexLock lock(&xds_client()->mu_);
   if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_client_trace)) {
-    char* status_details = grpc_slice_to_c_string(status_details_);
     gpr_log(GPR_INFO,
             "[xds_client %p] xds server %s: LRS call status received "
-            "(chand=%p, calld=%p, call=%p): "
-            "status=%d, details='%s', error='%s'",
+            "(chand=%p, calld=%p, call=%p): %s",
             xds_client(), chand()->server_.server_uri.c_str(), chand(), this,
-            call_, status_code_, status_details,
-            grpc_error_std_string(error).c_str());
-    gpr_free(status_details);
+            call_.get(), status.ToString().c_str());
   }
   // Ignore status from a stale call.
   if (IsCurrentCallOnChannel()) {
     // Try to restart the call.
     parent_->OnCallFinishedLocked();
   }
-  GRPC_ERROR_UNREF(error);
 }
 
 bool XdsClient::ChannelState::LrsCallState::IsCurrentCallOnChannel() const {
-  // If the retryable LRS call is null (which only happens when the xds channel
-  // is shutting down), all the LRS calls are stale.
+  // If the retryable LRS call is null (which only happens when the xds
+  // channel is shutting down), all the LRS calls are stale.
   if (chand()->lrs_calld_ == nullptr) return false;
   return this == chand()->lrs_calld_->calld();
 }
@@ -1828,36 +1399,16 @@ bool XdsClient::ChannelState::LrsCallState::IsCurrentCallOnChannel() const {
 // XdsClient
 //
 
-namespace {
-
-Duration GetRequestTimeout(const grpc_channel_args* args) {
-  return Duration::Milliseconds(grpc_channel_args_find_integer(
-      args, GRPC_ARG_XDS_RESOURCE_DOES_NOT_EXIST_TIMEOUT_MS,
-      {15000, 0, INT_MAX}));
-}
-
-grpc_channel_args* ModifyChannelArgs(const grpc_channel_args* args) {
-  absl::InlinedVector<grpc_arg, 1> args_to_add = {
-      grpc_channel_arg_integer_create(
-          const_cast<char*>(GRPC_ARG_KEEPALIVE_TIME_MS),
-          5 * 60 * GPR_MS_PER_SEC),
-  };
-  return grpc_channel_args_copy_and_add(args, args_to_add.data(),
-                                        args_to_add.size());
-}
-
-}  // namespace
-
 XdsClient::XdsClient(std::unique_ptr<XdsBootstrap> bootstrap,
-                     const grpc_channel_args* args)
+                     OrphanablePtr<XdsTransportFactory> transport_factory,
+                     Duration resource_request_timeout)
     : DualRefCounted<XdsClient>(
           GRPC_TRACE_FLAG_ENABLED(grpc_xds_client_refcount_trace) ? "XdsClient"
                                                                   : nullptr),
       bootstrap_(std::move(bootstrap)),
-      args_(ModifyChannelArgs(args)),
-      request_timeout_(GetRequestTimeout(args)),
+      transport_factory_(std::move(transport_factory)),
+      request_timeout_(resource_request_timeout),
       xds_federation_enabled_(XdsFederationEnabled()),
-      interested_parties_(grpc_pollset_set_create()),
       certificate_provider_store_(MakeOrphanable<CertificateProviderStore>(
           bootstrap_->certificate_providers())),
       api_(this, &grpc_xds_client_trace, bootstrap_->node(),
@@ -1865,37 +1416,23 @@ XdsClient::XdsClient(std::unique_ptr<XdsBootstrap> bootstrap,
   if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_client_trace)) {
     gpr_log(GPR_INFO, "[xds_client %p] creating xds client", this);
   }
-  // Calling grpc_init to ensure gRPC does not shut down until the XdsClient is
-  // destroyed.
-  grpc_init();
 }
 
 XdsClient::~XdsClient() {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_client_trace)) {
     gpr_log(GPR_INFO, "[xds_client %p] destroying xds client", this);
   }
-  grpc_channel_args_destroy(args_);
-  grpc_pollset_set_destroy(interested_parties_);
-  // Calling grpc_shutdown to ensure gRPC does not shut down until the XdsClient
-  // is destroyed.
-  grpc_shutdown();
 }
 
 void XdsClient::Orphan() {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_client_trace)) {
     gpr_log(GPR_INFO, "[xds_client %p] shutting down xds client", this);
   }
-  {
-    MutexLock lock(g_mu);
-    if (g_xds_client == this) g_xds_client = nullptr;
-  }
-  {
-    MutexLock lock(&mu_);
-    shutting_down_ = true;
-    // Clear cache and any remaining watchers that may not have been cancelled.
-    authority_state_map_.clear();
-    invalid_watchers_.clear();
-  }
+  MutexLock lock(&mu_);
+  shutting_down_ = true;
+  // Clear cache and any remaining watchers that may not have been cancelled.
+  authority_state_map_.clear();
+  invalid_watchers_.clear();
 }
 
 RefCountedPtr<XdsClient::ChannelState> XdsClient::GetOrCreateChannelStateLocked(
@@ -2056,7 +1593,8 @@ const XdsResourceType* XdsClient::GetResourceTypeLocked(
 absl::StatusOr<XdsClient::XdsResourceName> XdsClient::ParseXdsResourceName(
     absl::string_view name, const XdsResourceType* type) {
   // Old-style names use the empty string for authority.
-  // authority is prefixed with "old:" to indicate that it's an old-style name.
+  // authority is prefixed with "old:" to indicate that it's an old-style
+  // name.
   if (!xds_federation_enabled_ || !absl::StartsWith(name, "xdstp:")) {
     return XdsResourceName{"old:", {std::string(name), {}}};
   }
@@ -2101,37 +1639,42 @@ RefCountedPtr<XdsClusterDropStats> XdsClient::AddClusterDropStats(
   if (!bootstrap_->XdsServerExists(xds_server)) return nullptr;
   auto key =
       std::make_pair(std::string(cluster_name), std::string(eds_service_name));
-  MutexLock lock(&mu_);
-  // We jump through some hoops here to make sure that the const
-  // XdsBootstrap::XdsServer& and absl::string_views
-  // stored in the XdsClusterDropStats object point to the
-  // XdsBootstrap::XdsServer and strings
-  // in the load_report_map_ key, so that they have the same lifetime.
-  auto server_it =
-      xds_load_report_server_map_.emplace(xds_server, LoadReportServer()).first;
-  if (server_it->second.channel_state == nullptr) {
-    server_it->second.channel_state = GetOrCreateChannelStateLocked(xds_server);
-  }
-  auto load_report_it = server_it->second.load_report_map
-                            .emplace(std::move(key), LoadReportState())
-                            .first;
-  LoadReportState& load_report_state = load_report_it->second;
   RefCountedPtr<XdsClusterDropStats> cluster_drop_stats;
-  if (load_report_state.drop_stats != nullptr) {
-    cluster_drop_stats = load_report_state.drop_stats->RefIfNonZero();
-  }
-  if (cluster_drop_stats == nullptr) {
-    if (load_report_state.drop_stats != nullptr) {
-      load_report_state.deleted_drop_stats +=
-          load_report_state.drop_stats->GetSnapshotAndReset();
+  {
+    MutexLock lock(&mu_);
+    // We jump through some hoops here to make sure that the const
+    // XdsBootstrap::XdsServer& and absl::string_views
+    // stored in the XdsClusterDropStats object point to the
+    // XdsBootstrap::XdsServer and strings
+    // in the load_report_map_ key, so that they have the same lifetime.
+    auto server_it =
+        xds_load_report_server_map_.emplace(xds_server, LoadReportServer())
+            .first;
+    if (server_it->second.channel_state == nullptr) {
+      server_it->second.channel_state =
+          GetOrCreateChannelStateLocked(xds_server);
     }
-    cluster_drop_stats = MakeRefCounted<XdsClusterDropStats>(
-        Ref(DEBUG_LOCATION, "DropStats"), server_it->first,
-        load_report_it->first.first /*cluster_name*/,
-        load_report_it->first.second /*eds_service_name*/);
-    load_report_state.drop_stats = cluster_drop_stats.get();
+    auto load_report_it = server_it->second.load_report_map
+                              .emplace(std::move(key), LoadReportState())
+                              .first;
+    LoadReportState& load_report_state = load_report_it->second;
+    if (load_report_state.drop_stats != nullptr) {
+      cluster_drop_stats = load_report_state.drop_stats->RefIfNonZero();
+    }
+    if (cluster_drop_stats == nullptr) {
+      if (load_report_state.drop_stats != nullptr) {
+        load_report_state.deleted_drop_stats +=
+            load_report_state.drop_stats->GetSnapshotAndReset();
+      }
+      cluster_drop_stats = MakeRefCounted<XdsClusterDropStats>(
+          Ref(DEBUG_LOCATION, "DropStats"), server_it->first,
+          load_report_it->first.first /*cluster_name*/,
+          load_report_it->first.second /*eds_service_name*/);
+      load_report_state.drop_stats = cluster_drop_stats.get();
+    }
+    server_it->second.channel_state->MaybeStartLrsCall();
   }
-  server_it->second.channel_state->MaybeStartLrsCall();
+  work_serializer_.DrainQueue();
   return cluster_drop_stats;
 }
 
@@ -2162,39 +1705,45 @@ RefCountedPtr<XdsClusterLocalityStats> XdsClient::AddClusterLocalityStats(
   if (!bootstrap_->XdsServerExists(xds_server)) return nullptr;
   auto key =
       std::make_pair(std::string(cluster_name), std::string(eds_service_name));
-  MutexLock lock(&mu_);
-  // We jump through some hoops here to make sure that the const
-  // XdsBootstrap::XdsServer& and absl::string_views
-  // stored in the XdsClusterDropStats object point to the
-  // XdsBootstrap::XdsServer and strings
-  // in the load_report_map_ key, so that they have the same lifetime.
-  auto server_it =
-      xds_load_report_server_map_.emplace(xds_server, LoadReportServer()).first;
-  if (server_it->second.channel_state == nullptr) {
-    server_it->second.channel_state = GetOrCreateChannelStateLocked(xds_server);
-  }
-  auto load_report_it = server_it->second.load_report_map
-                            .emplace(std::move(key), LoadReportState())
-                            .first;
-  LoadReportState& load_report_state = load_report_it->second;
-  LoadReportState::LocalityState& locality_state =
-      load_report_state.locality_stats[locality];
   RefCountedPtr<XdsClusterLocalityStats> cluster_locality_stats;
-  if (locality_state.locality_stats != nullptr) {
-    cluster_locality_stats = locality_state.locality_stats->RefIfNonZero();
-  }
-  if (cluster_locality_stats == nullptr) {
-    if (locality_state.locality_stats != nullptr) {
-      locality_state.deleted_locality_stats +=
-          locality_state.locality_stats->GetSnapshotAndReset();
+  {
+    MutexLock lock(&mu_);
+    // We jump through some hoops here to make sure that the const
+    // XdsBootstrap::XdsServer& and absl::string_views
+    // stored in the XdsClusterDropStats object point to the
+    // XdsBootstrap::XdsServer and strings
+    // in the load_report_map_ key, so that they have the same lifetime.
+    auto server_it =
+        xds_load_report_server_map_.emplace(xds_server, LoadReportServer())
+            .first;
+    if (server_it->second.channel_state == nullptr) {
+      server_it->second.channel_state =
+          GetOrCreateChannelStateLocked(xds_server);
     }
-    cluster_locality_stats = MakeRefCounted<XdsClusterLocalityStats>(
-        Ref(DEBUG_LOCATION, "LocalityStats"), server_it->first,
-        load_report_it->first.first /*cluster_name*/,
-        load_report_it->first.second /*eds_service_name*/, std::move(locality));
-    locality_state.locality_stats = cluster_locality_stats.get();
+    auto load_report_it = server_it->second.load_report_map
+                              .emplace(std::move(key), LoadReportState())
+                              .first;
+    LoadReportState& load_report_state = load_report_it->second;
+    LoadReportState::LocalityState& locality_state =
+        load_report_state.locality_stats[locality];
+    if (locality_state.locality_stats != nullptr) {
+      cluster_locality_stats = locality_state.locality_stats->RefIfNonZero();
+    }
+    if (cluster_locality_stats == nullptr) {
+      if (locality_state.locality_stats != nullptr) {
+        locality_state.deleted_locality_stats +=
+            locality_state.locality_stats->GetSnapshotAndReset();
+      }
+      cluster_locality_stats = MakeRefCounted<XdsClusterLocalityStats>(
+          Ref(DEBUG_LOCATION, "LocalityStats"), server_it->first,
+          load_report_it->first.first /*cluster_name*/,
+          load_report_it->first.second /*eds_service_name*/,
+          std::move(locality));
+      locality_state.locality_stats = cluster_locality_stats.get();
+    }
+    server_it->second.channel_state->MaybeStartLrsCall();
   }
-  server_it->second.channel_state->MaybeStartLrsCall();
+  work_serializer_.DrainQueue();
   return cluster_locality_stats;
 }
 
@@ -2225,7 +1774,7 @@ void XdsClient::RemoveClusterLocalityStats(
 void XdsClient::ResetBackoff() {
   MutexLock lock(&mu_);
   for (auto& p : xds_server_channel_map_) {
-    grpc_channel_reset_connect_backoff(p.second->channel());
+    p.second->ResetBackoff();
   }
 }
 
@@ -2394,192 +1943,4 @@ std::string XdsClient::DumpClientConfigBinary() {
   return api_.AssembleClientConfig(resource_type_metadata_map);
 }
 
-//
-// accessors for global state
-//
-
-void XdsClientGlobalInit() {
-  g_mu = new Mutex;
-  XdsHttpFilterRegistry::Init();
-  XdsClusterSpecifierPluginRegistry::Init();
-}
-
-// TODO(roth): Find a better way to clear the fallback config that does
-// not require using ABSL_NO_THREAD_SAFETY_ANALYSIS.
-void XdsClientGlobalShutdown() ABSL_NO_THREAD_SAFETY_ANALYSIS {
-  gpr_free(g_fallback_bootstrap_config);
-  g_fallback_bootstrap_config = nullptr;
-  delete g_mu;
-  g_mu = nullptr;
-  XdsHttpFilterRegistry::Shutdown();
-  XdsClusterSpecifierPluginRegistry::Shutdown();
-}
-
-namespace {
-
-std::string GetBootstrapContents(const char* fallback_config,
-                                 grpc_error_handle* error) {
-  // First, try GRPC_XDS_BOOTSTRAP env var.
-  UniquePtr<char> path(gpr_getenv("GRPC_XDS_BOOTSTRAP"));
-  if (path != nullptr) {
-    if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_client_trace)) {
-      gpr_log(GPR_INFO,
-              "Got bootstrap file location from GRPC_XDS_BOOTSTRAP "
-              "environment variable: %s",
-              path.get());
-    }
-    grpc_slice contents;
-    *error =
-        grpc_load_file(path.get(), /*add_null_terminator=*/true, &contents);
-    if (!GRPC_ERROR_IS_NONE(*error)) return "";
-    std::string contents_str(StringViewFromSlice(contents));
-    grpc_slice_unref_internal(contents);
-    return contents_str;
-  }
-  // Next, try GRPC_XDS_BOOTSTRAP_CONFIG env var.
-  UniquePtr<char> env_config(gpr_getenv("GRPC_XDS_BOOTSTRAP_CONFIG"));
-  if (env_config != nullptr) {
-    if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_client_trace)) {
-      gpr_log(GPR_INFO,
-              "Got bootstrap contents from GRPC_XDS_BOOTSTRAP_CONFIG "
-              "environment variable");
-    }
-    return env_config.get();
-  }
-  // Finally, try fallback config.
-  if (fallback_config != nullptr) {
-    if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_client_trace)) {
-      gpr_log(GPR_INFO, "Got bootstrap contents from fallback config");
-    }
-    return fallback_config;
-  }
-  // No bootstrap config found.
-  *error = GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-      "Environment variables GRPC_XDS_BOOTSTRAP or GRPC_XDS_BOOTSTRAP_CONFIG "
-      "not defined");
-  return "";
-}
-
-}  // namespace
-
-RefCountedPtr<XdsClient> XdsClient::GetOrCreate(const grpc_channel_args* args,
-                                                grpc_error_handle* error) {
-  RefCountedPtr<XdsClient> xds_client;
-  // If getting bootstrap from channel args, create a local XdsClient
-  // instance for the channel or server instead of using the global instance.
-  const char* bootstrap_config = grpc_channel_args_find_string(
-      args, GRPC_ARG_TEST_ONLY_DO_NOT_USE_IN_PROD_XDS_BOOTSTRAP_CONFIG);
-  if (bootstrap_config != nullptr) {
-    std::unique_ptr<XdsBootstrap> bootstrap =
-        XdsBootstrap::Create(bootstrap_config, error);
-    if (GRPC_ERROR_IS_NONE(*error)) {
-      grpc_channel_args* xds_channel_args =
-          grpc_channel_args_find_pointer<grpc_channel_args>(
-              args,
-              GRPC_ARG_TEST_ONLY_DO_NOT_USE_IN_PROD_XDS_CLIENT_CHANNEL_ARGS);
-      return MakeRefCounted<XdsClient>(std::move(bootstrap), xds_channel_args);
-    }
-    return nullptr;
-  }
-  // Otherwise, use the global instance.
-  {
-    MutexLock lock(g_mu);
-    if (g_xds_client != nullptr) {
-      auto xds_client = g_xds_client->RefIfNonZero();
-      if (xds_client != nullptr) return xds_client;
-    }
-    // Find bootstrap contents.
-    std::string bootstrap_contents =
-        GetBootstrapContents(g_fallback_bootstrap_config, error);
-    if (!GRPC_ERROR_IS_NONE(*error)) return nullptr;
-    if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_client_trace)) {
-      gpr_log(GPR_INFO, "xDS bootstrap contents: %s",
-              bootstrap_contents.c_str());
-    }
-    // Parse bootstrap.
-    std::unique_ptr<XdsBootstrap> bootstrap =
-        XdsBootstrap::Create(bootstrap_contents, error);
-    if (!GRPC_ERROR_IS_NONE(*error)) return nullptr;
-    // Instantiate XdsClient.
-    xds_client =
-        MakeRefCounted<XdsClient>(std::move(bootstrap), g_channel_args);
-    g_xds_client = xds_client.get();
-  }
-  return xds_client;
-}
-
-namespace internal {
-
-void SetXdsChannelArgsForTest(grpc_channel_args* args) {
-  MutexLock lock(g_mu);
-  g_channel_args = args;
-}
-
-void UnsetGlobalXdsClientForTest() {
-  MutexLock lock(g_mu);
-  g_xds_client = nullptr;
-}
-
-void SetXdsFallbackBootstrapConfig(const char* config) {
-  MutexLock lock(g_mu);
-  gpr_free(g_fallback_bootstrap_config);
-  g_fallback_bootstrap_config = gpr_strdup(config);
-}
-
-}  // namespace internal
-
-//
-// embedding XdsClient in channel args
-//
-
-#define GRPC_ARG_XDS_CLIENT "grpc.internal.xds_client"
-
-namespace {
-
-void* XdsClientArgCopy(void* p) {
-  XdsClient* xds_client = static_cast<XdsClient*>(p);
-  xds_client->Ref(DEBUG_LOCATION, "channel arg").release();
-  return p;
-}
-
-void XdsClientArgDestroy(void* p) {
-  XdsClient* xds_client = static_cast<XdsClient*>(p);
-  xds_client->Unref(DEBUG_LOCATION, "channel arg");
-}
-
-int XdsClientArgCmp(void* p, void* q) { return QsortCompare(p, q); }
-
-const grpc_arg_pointer_vtable kXdsClientArgVtable = {
-    XdsClientArgCopy, XdsClientArgDestroy, XdsClientArgCmp};
-
-}  // namespace
-
-grpc_arg XdsClient::MakeChannelArg() const {
-  return grpc_channel_arg_pointer_create(const_cast<char*>(GRPC_ARG_XDS_CLIENT),
-                                         const_cast<XdsClient*>(this),
-                                         &kXdsClientArgVtable);
-}
-
-RefCountedPtr<XdsClient> XdsClient::GetFromChannelArgs(
-    const grpc_channel_args& args) {
-  XdsClient* xds_client =
-      grpc_channel_args_find_pointer<XdsClient>(&args, GRPC_ARG_XDS_CLIENT);
-  if (xds_client == nullptr) return nullptr;
-  return xds_client->Ref(DEBUG_LOCATION, "GetFromChannelArgs");
-}
-
 }  // namespace grpc_core
-
-// The returned bytes may contain NULL(0), so we can't use c-string.
-grpc_slice grpc_dump_xds_configs(void) {
-  grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
-  grpc_core::ExecCtx exec_ctx;
-  grpc_error_handle error = GRPC_ERROR_NONE;
-  auto xds_client = grpc_core::XdsClient::GetOrCreate(nullptr, &error);
-  if (!GRPC_ERROR_IS_NONE(error)) {
-    // If we isn't using xDS, just return an empty string.
-    GRPC_ERROR_UNREF(error);
-    return grpc_empty_slice();
-  }
-  return grpc_slice_from_cpp_string(xds_client->DumpClientConfigBinary());
-}

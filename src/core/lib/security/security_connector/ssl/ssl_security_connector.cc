@@ -31,10 +31,10 @@
 #include "absl/strings/str_format.h"
 #include "absl/strings/string_view.h"
 
-#include <grpc/impl/codegen/grpc_types.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 
+#include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/host_port.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
@@ -132,7 +132,7 @@ class grpc_ssl_channel_security_connector final
     return GRPC_SECURITY_OK;
   }
 
-  void add_handshakers(const grpc_channel_args* args,
+  void add_handshakers(const grpc_core::ChannelArgs& args,
                        grpc_pollset_set* /*interested_parties*/,
                        grpc_core::HandshakeManager* handshake_mgr) override {
     // Instantiate TSI handshaker.
@@ -278,7 +278,7 @@ class grpc_ssl_server_security_connector
     return GRPC_SECURITY_OK;
   }
 
-  void add_handshakers(const grpc_channel_args* args,
+  void add_handshakers(const grpc_core::ChannelArgs& args,
                        grpc_pollset_set* /*interested_parties*/,
                        grpc_core::HandshakeManager* handshake_mgr) override {
     // Instantiate TSI handshaker.

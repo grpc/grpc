@@ -30,6 +30,7 @@
 #include <grpc/grpc_security.h>
 #include <grpc/impl/codegen/grpc_types.h>
 
+#include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/gprpp/ref_counted.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
@@ -128,7 +129,7 @@ class grpc_channel_security_connector : public grpc_security_connector {
       absl::string_view host, grpc_auth_context* auth_context) = 0;
 
   /// Registers handshakers with \a handshake_mgr.
-  virtual void add_handshakers(const grpc_channel_args* args,
+  virtual void add_handshakers(const grpc_core::ChannelArgs& args,
                                grpc_pollset_set* interested_parties,
                                grpc_core::HandshakeManager* handshake_mgr) = 0;
 
@@ -174,7 +175,7 @@ class grpc_server_security_connector : public grpc_security_connector {
       absl::string_view url_scheme,
       grpc_core::RefCountedPtr<grpc_server_credentials> server_creds);
 
-  virtual void add_handshakers(const grpc_channel_args* args,
+  virtual void add_handshakers(const grpc_core::ChannelArgs& args,
                                grpc_pollset_set* interested_parties,
                                grpc_core::HandshakeManager* handshake_mgr) = 0;
 

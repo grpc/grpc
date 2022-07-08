@@ -43,6 +43,7 @@
 #include "src/core/ext/xds/upb_utils.h"
 #include "src/core/ext/xds/xds_resource_type.h"
 #include "src/core/lib/address_utils/parse_address.h"
+#include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/resolved_address.h"
@@ -184,7 +185,7 @@ grpc_error_handle ServerAddressParseAndAppend(
       attributes;
   attributes[ServerAddressWeightAttribute::kServerAddressWeightAttributeKey] =
       absl::make_unique<ServerAddressWeightAttribute>(weight);
-  list->emplace_back(addr, nullptr, std::move(attributes));
+  list->emplace_back(addr, ChannelArgs(), std::move(attributes));
   return GRPC_ERROR_NONE;
 }
 

@@ -20,11 +20,6 @@
 
 #include "src/core/lib/resolver/resolver.h"
 
-#include <algorithm>
-#include <utility>
-
-#include "src/core/lib/channel/channel_args.h"
-
 grpc_core::DebugOnlyTraceFlag grpc_trace_resolver_refcount(false,
                                                            "resolver_refcount");
 
@@ -38,47 +33,5 @@ Resolver::Resolver()
     : InternallyRefCounted(GRPC_TRACE_FLAG_ENABLED(grpc_trace_resolver_refcount)
                                ? "Resolver"
                                : nullptr) {}
-
-//
-// Resolver::Result
-//
-
-Resolver::Result::~Result() { grpc_channel_args_destroy(args); }
-
-Resolver::Result::Result(const Result& other)
-    : addresses(other.addresses),
-      service_config(other.service_config),
-      resolution_note(other.resolution_note),
-      args(grpc_channel_args_copy(other.args)) {}
-
-Resolver::Result::Result(Result&& other) noexcept
-    : addresses(std::move(other.addresses)),
-      service_config(std::move(other.service_config)),
-      resolution_note(std::move(other.resolution_note)),
-      // TODO(roth): Use std::move() once channel args is converted to C++.
-      args(other.args) {
-  other.args = nullptr;
-}
-
-Resolver::Result& Resolver::Result::operator=(const Result& other) {
-  if (&other == this) return *this;
-  addresses = other.addresses;
-  service_config = other.service_config;
-  resolution_note = other.resolution_note;
-  grpc_channel_args_destroy(args);
-  args = grpc_channel_args_copy(other.args);
-  return *this;
-}
-
-Resolver::Result& Resolver::Result::operator=(Result&& other) noexcept {
-  addresses = std::move(other.addresses);
-  service_config = std::move(other.service_config);
-  resolution_note = std::move(other.resolution_note);
-  // TODO(roth): Use std::move() once channel args is converted to C++.
-  grpc_channel_args_destroy(args);
-  args = other.args;
-  other.args = nullptr;
-  return *this;
-}
 
 }  // namespace grpc_core
