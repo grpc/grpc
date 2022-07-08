@@ -40,11 +40,12 @@
 #include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
 
+#include "src/core/lib/channel/channel_args.h"
+
 #define XXH_INLINE_ALL
 #include "xxhash.h"
 
 #include <grpc/impl/codegen/connectivity_state.h>
-#include <grpc/impl/codegen/grpc_types.h>
 #include <grpc/support/log.h>
 
 #include "src/core/ext/filters/client_channel/client_channel.h"
@@ -210,7 +211,7 @@ class RingHash : public LoadBalancingPolicy {
       : public SubchannelList<RingHashSubchannelList, RingHashSubchannelData> {
    public:
     RingHashSubchannelList(RingHash* policy, ServerAddressList addresses,
-                           const grpc_channel_args& args)
+                           const ChannelArgs& args)
         : SubchannelList(policy,
                          (GRPC_TRACE_FLAG_ENABLED(grpc_lb_ring_hash_trace)
                               ? "RingHashSubchannelList"
@@ -831,7 +832,7 @@ void RingHash::UpdateLocked(UpdateArgs args) {
             this, latest_pending_subchannel_list_.get());
   }
   latest_pending_subchannel_list_ = MakeOrphanable<RingHashSubchannelList>(
-      this, std::move(addresses), *args.args);
+      this, std::move(addresses), args.args);
   // If we have no existing list or the new list is empty, immediately
   // promote the new list.
   // Otherwise, do nothing; the new list will be promoted when the

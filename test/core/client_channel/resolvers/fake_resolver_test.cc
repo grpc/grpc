@@ -79,7 +79,7 @@ static grpc_core::OrphanablePtr<grpc_core::Resolver> build_fake_resolver(
           response_generator);
   grpc_channel_args channel_args = {1, &generator_arg};
   grpc_core::ResolverArgs args;
-  args.args = &channel_args;
+  args.args = grpc_core::ChannelArgs::FromC(&channel_args);
   args.work_serializer = std::move(work_serializer);
   args.result_handler = std::move(result_handler);
   grpc_core::OrphanablePtr<grpc_core::Resolver> resolver =
@@ -101,8 +101,7 @@ static grpc_core::Resolver::Result create_new_resolver_result() {
     grpc_resolved_address address;
     EXPECT_TRUE(grpc_parse_uri(*uri, &address));
     absl::InlinedVector<grpc_arg, 2> args_to_add;
-    addresses.emplace_back(address.addr, address.len,
-                           grpc_channel_args_copy_and_add(nullptr, nullptr, 0));
+    addresses.emplace_back(address.addr, address.len, grpc_core::ChannelArgs());
   }
   ++test_counter;
   grpc_core::Resolver::Result result;

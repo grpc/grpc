@@ -23,6 +23,8 @@
 
 #include <memory>
 
+#include "absl/strings/string_view.h"
+
 #include "src/core/ext/filters/client_channel/lb_policy.h"
 #include "src/core/ext/filters/client_channel/lb_policy_factory.h"
 #include "src/core/lib/gprpp/orphanable.h"
@@ -56,7 +58,7 @@ class LoadBalancingPolicyRegistry {
   /// Returns true if the LB policy factory specified by \a name exists in this
   /// registry. If the load balancing policy requires a config to be specified
   /// then sets \a requires_config to true.
-  static bool LoadBalancingPolicyExists(const char* name,
+  static bool LoadBalancingPolicyExists(absl::string_view name,
                                         bool* requires_config);
 
   /// Returns a parsed object of the load balancing policy to be used from a

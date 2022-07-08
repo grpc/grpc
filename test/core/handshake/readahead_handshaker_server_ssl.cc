@@ -21,6 +21,7 @@
 #include <sys/socket.h>
 #include <unistd.h>
 
+#include <gtest/gtest.h>
 #include <openssl/err.h>
 #include <openssl/ssl.h>
 
@@ -31,6 +32,7 @@
 #include <grpc/support/string_util.h>
 #include <grpc/support/sync.h>
 
+#include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/iomgr/load_file.h"
 #include "src/core/lib/security/transport/security_handshaker.h"
@@ -66,7 +68,7 @@ class ReadAheadHandshaker : public Handshaker {
 
 class ReadAheadHandshakerFactory : public HandshakerFactory {
  public:
-  void AddHandshakers(const grpc_channel_args* /*args*/,
+  void AddHandshakers(const ChannelArgs& /*args*/,
                       grpc_pollset_set* /*interested_parties*/,
                       HandshakeManager* handshake_mgr) override {
     handshake_mgr->Add(MakeRefCounted<ReadAheadHandshaker>());
@@ -76,7 +78,7 @@ class ReadAheadHandshakerFactory : public HandshakerFactory {
 
 }  // namespace grpc_core
 
-int main(int /*argc*/, char* /*argv*/[]) {
+TEST(HandshakeServerWithReadaheadHandshakerTest, MainTest) {
   grpc_core::CoreConfiguration::BuildSpecialConfiguration(
       [](grpc_core::CoreConfiguration::Builder* builder) {
         BuildCoreConfiguration(builder);
@@ -87,8 +89,13 @@ int main(int /*argc*/, char* /*argv*/[]) {
 
   grpc_init();
   const char* full_alpn_list[] = {"grpc-exp", "h2"};
-  GPR_ASSERT(server_ssl_test(full_alpn_list, 2, "grpc-exp"));
+  ASSERT_TRUE(server_ssl_test(full_alpn_list, 2, "grpc-exp"));
   CleanupSslLibrary();
   grpc_shutdown();
-  return 0;
+}
+
+int main(int argc, char** argv) {
+  grpc::testing::TestEnvironment env(&argc, argv);
+  ::testing::InitGoogleTest(&argc, argv);
+  return RUN_ALL_TESTS();
 }
