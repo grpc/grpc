@@ -106,6 +106,7 @@ grpc_cc_test(
 grpc_cc_test(
     name = "memory_quota_stress_test",
     srcs = ["memory_quota_stress_test.cc"],
+    external_deps = ["gtest"],
     language = "c++",
     # We only run this test under Linux, and really only care about the
     # TSAN results.

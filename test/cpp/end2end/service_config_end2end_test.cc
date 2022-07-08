@@ -184,7 +184,7 @@ class ServiceConfigEnd2endTest : public ::testing::Test {
       grpc_resolved_address address;
       GPR_ASSERT(grpc_parse_uri(*lb_uri, &address));
       result.addresses->emplace_back(address.addr, address.len,
-                                     nullptr /* args */);
+                                     grpc_core::ChannelArgs());
     }
     return result;
   }
@@ -199,8 +199,8 @@ class ServiceConfigEnd2endTest : public ::testing::Test {
     grpc_core::ExecCtx exec_ctx;
     grpc_core::Resolver::Result result = BuildFakeResults(ports);
     grpc_error_handle error = GRPC_ERROR_NONE;
-    result.service_config =
-        grpc_core::ServiceConfigImpl::Create(nullptr, "{}", &error);
+    result.service_config = grpc_core::ServiceConfigImpl::Create(
+        grpc_core::ChannelArgs(), "{}", &error);
     ASSERT_EQ(error, GRPC_ERROR_NONE) << grpc_error_std_string(error);
     response_generator_->SetResponse(result);
   }
@@ -218,8 +218,8 @@ class ServiceConfigEnd2endTest : public ::testing::Test {
     grpc_core::ExecCtx exec_ctx;
     grpc_core::Resolver::Result result = BuildFakeResults(ports);
     grpc_error_handle error = GRPC_ERROR_NONE;
-    result.service_config =
-        grpc_core::ServiceConfigImpl::Create(nullptr, svc_cfg, &error);
+    result.service_config = grpc_core::ServiceConfigImpl::Create(
+        grpc_core::ChannelArgs(), svc_cfg, &error);
     if (!GRPC_ERROR_IS_NONE(error)) {
       result.service_config = grpc_error_to_absl_status(error);
       GRPC_ERROR_UNREF(error);

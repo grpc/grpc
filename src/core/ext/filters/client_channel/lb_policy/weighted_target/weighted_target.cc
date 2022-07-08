@@ -35,7 +35,6 @@
 
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/impl/codegen/connectivity_state.h>
-#include <grpc/impl/codegen/grpc_types.h>
 #include <grpc/support/log.h>
 
 #include "src/core/ext/filters/client_channel/lb_policy.h"
@@ -151,7 +150,7 @@ class WeightedTargetLb : public LoadBalancingPolicy {
 
     void UpdateLocked(const WeightedTargetLbConfig::ChildConfig& config,
                       absl::StatusOr<ServerAddressList> addresses,
-                      const grpc_channel_args* args);
+                      const ChannelArgs& args);
     void ResetBackoffLocked();
     void DeactivateLocked();
 
@@ -172,7 +171,7 @@ class WeightedTargetLb : public LoadBalancingPolicy {
       ~Helper() override { weighted_child_.reset(DEBUG_LOCATION, "Helper"); }
 
       RefCountedPtr<SubchannelInterface> CreateSubchannel(
-          ServerAddress address, const grpc_channel_args& args) override;
+          ServerAddress address, const ChannelArgs& args) override;
       void UpdateState(grpc_connectivity_state state,
                        const absl::Status& status,
                        std::unique_ptr<SubchannelPicker> picker) override;
@@ -201,7 +200,7 @@ class WeightedTargetLb : public LoadBalancingPolicy {
 
     // Methods for dealing with the child policy.
     OrphanablePtr<LoadBalancingPolicy> CreateChildPolicyLocked(
-        const grpc_channel_args* args);
+        const ChannelArgs& args);
 
     void OnConnectivityStateUpdateLocked(
         grpc_connectivity_state state, const absl::Status& status,
@@ -526,7 +525,7 @@ void WeightedTargetLb::WeightedChild::Orphan() {
 
 OrphanablePtr<LoadBalancingPolicy>
 WeightedTargetLb::WeightedChild::CreateChildPolicyLocked(
-    const grpc_channel_args* args) {
+    const ChannelArgs& args) {
   LoadBalancingPolicy::Args lb_policy_args;
   lb_policy_args.work_serializer = weighted_target_policy_->work_serializer();
   lb_policy_args.args = args;
@@ -553,8 +552,7 @@ WeightedTargetLb::WeightedChild::CreateChildPolicyLocked(
 
 void WeightedTargetLb::WeightedChild::UpdateLocked(
     const WeightedTargetLbConfig::ChildConfig& config,
-    absl::StatusOr<ServerAddressList> addresses,
-    const grpc_channel_args* args) {
+    absl::StatusOr<ServerAddressList> addresses, const ChannelArgs& args) {
   if (weighted_target_policy_->shutting_down_) return;
   // Update child weight.
   weight_ = config.weight;
@@ -575,7 +573,7 @@ void WeightedTargetLb::WeightedChild::UpdateLocked(
   UpdateArgs update_args;
   update_args.config = config.config;
   update_args.addresses = std::move(addresses);
-  update_args.args = grpc_channel_args_copy(args);
+  update_args.args = args;
   // Update the policy.
   if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_weighted_target_trace)) {
     gpr_log(GPR_INFO,
@@ -638,7 +636,7 @@ void WeightedTargetLb::WeightedChild::DeactivateLocked() {
 
 RefCountedPtr<SubchannelInterface>
 WeightedTargetLb::WeightedChild::Helper::CreateSubchannel(
-    ServerAddress address, const grpc_channel_args& args) {
+    ServerAddress address, const ChannelArgs& args) {
   if (weighted_child_->weighted_target_policy_->shutting_down_) return nullptr;
   return weighted_child_->weighted_target_policy_->channel_control_helper()
       ->CreateSubchannel(std::move(address), args);

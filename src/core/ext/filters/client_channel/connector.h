@@ -19,8 +19,7 @@
 
 #include <grpc/support/port_platform.h>
 
-#include <grpc/impl/codegen/grpc_types.h>
-
+#include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channelz.h"
 #include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
@@ -46,20 +45,20 @@ class SubchannelConnector : public InternallyRefCounted<SubchannelConnector> {
     // Deadline for connection.
     Timestamp deadline;
     // Channel args to be passed to handshakers and transport.
-    const grpc_channel_args* channel_args;
+    ChannelArgs channel_args;
   };
 
   struct Result {
     // The connected transport.
     grpc_transport* transport = nullptr;
     // Channel args to be passed to filters.
-    const grpc_channel_args* channel_args = nullptr;
+    ChannelArgs channel_args;
     // Channelz socket node of the connected transport, if any.
     RefCountedPtr<channelz::SocketNode> socket_node;
 
     void Reset() {
       transport = nullptr;
-      channel_args = nullptr;
+      channel_args = ChannelArgs();
       socket_node.reset();
     }
   };

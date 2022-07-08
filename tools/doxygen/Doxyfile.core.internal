@@ -1645,6 +1645,8 @@ src/core/ext/xds/xds_channel_stack_modifier.cc \
 src/core/ext/xds/xds_channel_stack_modifier.h \
 src/core/ext/xds/xds_client.cc \
 src/core/ext/xds/xds_client.h \
+src/core/ext/xds/xds_client_grpc.cc \
+src/core/ext/xds/xds_client_grpc.h \
 src/core/ext/xds/xds_client_stats.cc \
 src/core/ext/xds/xds_client_stats.h \
 src/core/ext/xds/xds_cluster.cc \
@@ -1673,6 +1675,9 @@ src/core/ext/xds/xds_route_config.h \
 src/core/ext/xds/xds_routing.cc \
 src/core/ext/xds/xds_routing.h \
 src/core/ext/xds/xds_server_config_fetcher.cc \
+src/core/ext/xds/xds_transport.h \
+src/core/ext/xds/xds_transport_grpc.cc \
+src/core/ext/xds/xds_transport_grpc.h \
 src/core/lib/README.md \
 src/core/lib/address_utils/parse_address.cc \
 src/core/lib/address_utils/parse_address.h \

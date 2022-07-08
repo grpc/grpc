@@ -156,7 +156,7 @@ class Channel : public RefCounted<Channel>,
 
  private:
   Channel(bool is_client, bool is_promising, std::string target,
-          ChannelArgs channel_args,
+          const ChannelArgs& channel_args,
           grpc_compression_options compression_options,
           RefCountedPtr<grpc_channel_stack> channel_stack);
 
