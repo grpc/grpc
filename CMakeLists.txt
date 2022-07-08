@@ -828,7 +828,6 @@ if(gRPC_BUILD_TESTS)
   add_dependencies(buildtests_c load_file_test)
   add_dependencies(buildtests_c message_compress_test)
   add_dependencies(buildtests_c minimal_stack_is_minimal_test)
-  add_dependencies(buildtests_c mpmcqueue_test)
   if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     add_dependencies(buildtests_c mpscq_test)
   endif()
@@ -867,7 +866,6 @@ if(gRPC_BUILD_TESTS)
   add_dependencies(buildtests_c test_core_iomgr_timer_heap_test)
   add_dependencies(buildtests_c test_core_iomgr_timer_list_test)
   add_dependencies(buildtests_c thd_test)
-  add_dependencies(buildtests_c threadpool_test)
   add_dependencies(buildtests_c varint_test)
 
   add_custom_target(buildtests_cxx)
@@ -2102,8 +2100,6 @@ add_library(grpc
   src/core/lib/iomgr/ev_windows.cc
   src/core/lib/iomgr/exec_ctx.cc
   src/core/lib/iomgr/executor.cc
-  src/core/lib/iomgr/executor/mpmcqueue.cc
-  src/core/lib/iomgr/executor/threadpool.cc
   src/core/lib/iomgr/fork_posix.cc
   src/core/lib/iomgr/fork_windows.cc
   src/core/lib/iomgr/gethostname_fallback.cc
@@ -2732,8 +2728,6 @@ add_library(grpc_unsecure
   src/core/lib/iomgr/ev_windows.cc
   src/core/lib/iomgr/exec_ctx.cc
   src/core/lib/iomgr/executor.cc
-  src/core/lib/iomgr/executor/mpmcqueue.cc
-  src/core/lib/iomgr/executor/threadpool.cc
   src/core/lib/iomgr/fork_posix.cc
   src/core/lib/iomgr/fork_windows.cc
   src/core/lib/iomgr/gethostname_fallback.cc
@@ -5266,33 +5260,6 @@ target_link_libraries(minimal_stack_is_minimal_test
 
 endif()
 if(gRPC_BUILD_TESTS)
-
-add_executable(mpmcqueue_test
-  test/core/iomgr/mpmcqueue_test.cc
-)
-
-target_include_directories(mpmcqueue_test
-  PRIVATE
-    ${CMAKE_CURRENT_SOURCE_DIR}
-    ${CMAKE_CURRENT_SOURCE_DIR}/include
-    ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
-    ${_gRPC_RE2_INCLUDE_DIR}
-    ${_gRPC_SSL_INCLUDE_DIR}
-    ${_gRPC_UPB_GENERATED_DIR}
-    ${_gRPC_UPB_GRPC_GENERATED_DIR}
-    ${_gRPC_UPB_INCLUDE_DIR}
-    ${_gRPC_XXHASH_INCLUDE_DIR}
-    ${_gRPC_ZLIB_INCLUDE_DIR}
-)
-
-target_link_libraries(mpmcqueue_test
-  ${_gRPC_ALLTARGETS_LIBRARIES}
-  grpc_test_util
-)
-
-
-endif()
-if(gRPC_BUILD_TESTS)
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 
   add_executable(mpscq_test
@@ -5960,33 +5927,6 @@ target_include_directories(thd_test
 )
 
 target_link_libraries(thd_test
-  ${_gRPC_ALLTARGETS_LIBRARIES}
-  grpc_test_util
-)
-
-
-endif()
-if(gRPC_BUILD_TESTS)
-
-add_executable(threadpool_test
-  test/core/iomgr/threadpool_test.cc
-)
-
-target_include_directories(threadpool_test
-  PRIVATE
-    ${CMAKE_CURRENT_SOURCE_DIR}
-    ${CMAKE_CURRENT_SOURCE_DIR}/include
-    ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
-    ${_gRPC_RE2_INCLUDE_DIR}
-    ${_gRPC_SSL_INCLUDE_DIR}
-    ${_gRPC_UPB_GENERATED_DIR}
-    ${_gRPC_UPB_GRPC_GENERATED_DIR}
-    ${_gRPC_UPB_INCLUDE_DIR}
-    ${_gRPC_XXHASH_INCLUDE_DIR}
-    ${_gRPC_ZLIB_INCLUDE_DIR}
-)
-
-target_link_libraries(threadpool_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
 )
