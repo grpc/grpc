@@ -30,7 +30,6 @@
 #include "absl/types/optional.h"
 
 #include <grpc/event_engine/memory_allocator.h>
-#include <grpc/impl/codegen/grpc_types.h>
 #include <grpc/slice.h>
 
 #include "src/core/ext/transport/chttp2/transport/flow_control.h"
