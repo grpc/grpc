@@ -69,14 +69,16 @@ void ResetDefaultEventEngine() {
 namespace {
 grpc_core::ChannelArgs EnsureEventEngineInChannelArgs(
     grpc_core::ChannelArgs args) {
+  gpr_log(GPR_DEBUG, "DO NOT SUBMIT: ensuring EventEngine");
   if (args.ContainsObject<EventEngine>()) return args;
   // TODO(hork): Consider deleting GetDefaultEventEngine(), use the factory
   // directly when ChannelArgs aren't available. That would eliminate the no-op
   // deleter below.
   // Store a shared_ptr with a no-op deleter. The default is expected to live
   // indefinitely.
-  return args.SetObject<EventEngine>(
-      std::shared_ptr<EventEngine>(GetDefaultEventEngine(), [](auto) {}));
+  return args.SetObject<EventEngine>(std::shared_ptr<EventEngine>(
+      GetDefaultEventEngine(),
+      [](auto) { gpr_log(GPR_DEBUG, "DO NOT SUBMIT: no-op deleter"); }));
 }
 }  // namespace
 

@@ -649,7 +649,7 @@ Subchannel::Subchannel(SubchannelKey key,
   address_for_connect_ = ProxyMapperRegistry::MapAddress(key_.address(), &args_)
                              .value_or(key_.address());
   // Initialize EventEngine
-  event_engine_ = ChannelArgs::FromC(args_).GetObjectRef<EventEngine>();
+  event_engine_ = args_.GetObjectRef<EventEngine>();
   // Initialize channelz.
   const bool channelz_enabled = args_.GetBool(GRPC_ARG_ENABLE_CHANNELZ)
                                     .value_or(GRPC_ENABLE_CHANNELZ_DEFAULT);

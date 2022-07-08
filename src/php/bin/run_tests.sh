@@ -39,6 +39,7 @@ if [[ "$SKIP_PERSISTENT_CHANNEL_TESTS" != "true" ]]; then
      ../tests/unit_tests/PersistentChannelTests
 fi
 
+export GRPC_VERBOSITY=debug
 export ZEND_DONT_UNLOAD_MODULES=1
 export USE_ZEND_ALLOC=0
 # Detect whether valgrind is executable
