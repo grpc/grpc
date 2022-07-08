@@ -68,7 +68,7 @@ class OutlierDetectionTest(xds_k8s_testcase.RegularXdsKubernetesTestCase):
 
         test_client: _XdsTestClient
         with self.subTest('07_start_test_client'):
-            test_client = self.startTestClient(test_servers[0])
+            test_client = self.startTestClient(test_servers[0], qps=100)
 
         with self.subTest('08_test_client_xds_config_exists'):
             self.assertXdsConfigExists(test_client)
@@ -76,13 +76,11 @@ class OutlierDetectionTest(xds_k8s_testcase.RegularXdsKubernetesTestCase):
         with self.subTest('09_test_servers_received_rpcs_from_test_client'):
             self.assertRpcsEventuallyGoToGivenServers(test_client, test_servers)
 
-        rpc_types = [RpcTypeEmptyCall, RpcTypeUnaryCall]
+        rpc_types = [RpcTypeUnaryCall]
         with self.subTest('10_chosen_server_removed_by_outlier_detection'):
             test_client.update_config.configure(rpc_types=rpc_types, metadata=(
-                (RpcTypeEmptyCall, 'rpc-behavior',
-                 f'hostname={test_servers[0].pod_name} error-code-2'),
                 (RpcTypeUnaryCall, 'rpc-behavior',
-                 f'hostname={test_servers[0].pod_name} error-code-2')))
+                 f'hostname={test_servers[0].pod_name} error-code-2'),))
             self.assertRpcsEventuallyGoToGivenServers(test_client,
                                                       test_servers[1:])
 
