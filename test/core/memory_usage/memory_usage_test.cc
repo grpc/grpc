@@ -36,7 +36,7 @@ ABSL_FLAG(std::string, benchmark_name, "call", "Which benchmark to run");
 ABSL_FLAG(int, size, 50000, "Number of channels/calls");
 ABSL_FLAG(std::string, scenario_config, "insecure",
           "Possible Values: minstack (Use minimal stack), resource_quota, "
-          "secure (Use security on server)");
+          "secure (Use SSL credentials on server)");
 ABSL_FLAG(bool, memory_profiling, false,
           "Run memory profiling");  // not connected to anything yet
 
