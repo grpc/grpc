@@ -553,7 +553,7 @@ Epoll1Poller* GetEpoll1Poller(Scheduler* scheduler) {
 namespace grpc_event_engine {
 namespace iomgr_engine {
 
-Epoll1Poller::Epoll1Poller(experimental::EventEngine* /* engine */) {
+Epoll1Poller::Epoll1Poller(Scheduler* /* engine */) {
   GPR_ASSERT(false && "unimplemented");
 }
 

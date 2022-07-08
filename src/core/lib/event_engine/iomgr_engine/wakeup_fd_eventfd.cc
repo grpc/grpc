@@ -20,6 +20,8 @@
 #include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
 
+#include <grpc/support/log.h>
+
 #include "src/core/lib/iomgr/port.h"
 
 #ifdef GRPC_LINUX_EVENTFD

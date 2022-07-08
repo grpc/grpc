@@ -2405,6 +2405,7 @@ grpc_cc_library(
     ],
     tags = ["grpc-autodeps"],
     deps = [
+        "gpr_base",
         "gpr_platform",
         "iomgr_ee_wakeup_fd_posix",
         "iomgr_port",
@@ -2427,6 +2428,7 @@ grpc_cc_library(
     ],
     tags = ["grpc-autodeps"],
     deps = [
+        "gpr_base",
         "gpr_platform",
         "iomgr_ee_wakeup_fd_posix",
         "iomgr_port",
