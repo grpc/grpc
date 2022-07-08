@@ -18,11 +18,6 @@
 
 #include <grpc/support/port_platform.h>
 
-#include "src/core/lib/iomgr/socket_utils_posix.h"
-
-#include <grpc/impl/codegen/grpc_types.h>
-#include <grpc/support/log.h>
-
 #include "src/core/lib/iomgr/port.h"
 
 #ifdef GRPC_POSIX_SOCKETUTILS
@@ -30,7 +25,11 @@
 #include <sys/socket.h>
 #include <unistd.h>
 
+#include <grpc/impl/codegen/grpc_types.h>
+#include <grpc/support/log.h>
+
 #include "src/core/lib/iomgr/sockaddr.h"
+#include "src/core/lib/iomgr/socket_utils_posix.h"
 #endif
 
 #ifdef GRPC_POSIX_SOCKET_TCP
