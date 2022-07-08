@@ -14,37 +14,45 @@
 // limitations under the License.
 //
 
-#ifndef GRPC_CORE_LIB_IOMGR_RESOLVE_ADDRESS_WINDOWS_H
-#define GRPC_CORE_LIB_IOMGR_RESOLVE_ADDRESS_WINDOWS_H
+#ifndef GRPC_CORE_LIB_IOMGR_EVENT_ENGINE_RESOLVER_H
+#define GRPC_CORE_LIB_IOMGR_EVENT_ENGINE_RESOLVER_H
 
 #include <grpc/support/port_platform.h>
 
+#include <string.h>
+#include <sys/types.h>
+
 #include <functional>
+
+#include <grpc/support/alloc.h>
+#include <grpc/support/log.h>
+#include <grpc/support/string_util.h>
+#include <grpc/support/time.h>
 
 #include "src/core/lib/iomgr/port.h"
 #include "src/core/lib/iomgr/resolve_address.h"
 
 namespace grpc_core {
+namespace experimental {
 
-// A DNS resolver which uses the native platform's getaddrinfo API.
-class NativeDNSResolver : public DNSResolver {
+#ifdef GRPC_USE_EVENT_ENGINE
+class EventEngineDNSResolver : public DNSResolver {
  public:
   // Gets the singleton instance, creating it first if it doesn't exist
-  static NativeDNSResolver* GetOrCreate();
+  static EventEngineDNSResolver* GetOrCreate();
 
-  TaskHandle ResolveName(
+  OrphanablePtr<DNSResolver::Request> ResolveName(
       absl::string_view name, absl::string_view default_port,
-      grpc_pollset_set* /* interested_parties */,
+      grpc_pollset_set* interested_parties,
       std::function<void(absl::StatusOr<std::vector<grpc_resolved_address>>)>
           on_done) override;
 
   absl::StatusOr<std::vector<grpc_resolved_address>> ResolveNameBlocking(
       absl::string_view name, absl::string_view default_port) override;
-
-  // NativeDNSResolver does not support cancellation.
-  bool Cancel(TaskHandle handle) override;
 };
+#endif  // GRPC_USE_EVENT_ENGINE
 
+}  // namespace experimental
 }  // namespace grpc_core
 
-#endif  // GRPC_CORE_LIB_IOMGR_RESOLVE_ADDRESS_WINDOWS_H
+#endif  // GRPC_CORE_LIB_IOMGR_EVENT_ENGINE_RESOLVER_H

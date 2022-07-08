@@ -114,7 +114,7 @@ class Client {
   void Connect() {
     ExecCtx exec_ctx;
     absl::StatusOr<std::vector<grpc_resolved_address>> addresses_or =
-        GetDNSResolver()->LookupHostnameBlocking(server_address_, "80");
+        GetDNSResolver()->ResolveNameBlocking(server_address_, "80");
     ASSERT_EQ(absl::OkStatus(), addresses_or.status())
         << addresses_or.status().ToString();
     ASSERT_GE(addresses_or->size(), 1UL);
