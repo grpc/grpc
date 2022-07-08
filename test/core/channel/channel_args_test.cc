@@ -119,9 +119,7 @@ TEST(ChannelArgsTest, ToAndFromC) {
                       .Set("foo", "bar")
                       .Set("ptr", ChannelArgs::Pointer(ptr, &malloc_vtable))
                       .Set("alpha", "beta");
-  const grpc_channel_args* c = a.ToC();
-  ChannelArgs b = ChannelArgs::FromC(c);
-  grpc_channel_args_destroy(c);
+  ChannelArgs b = ChannelArgs::FromC(a.ToC().get());
   EXPECT_EQ(a, b);
   gpr_free(ptr);
 }

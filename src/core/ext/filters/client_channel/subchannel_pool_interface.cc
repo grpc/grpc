@@ -28,7 +28,6 @@
 
 #include "src/core/lib/address_utils/sockaddr_utils.h"
 #include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/gpr/useful.h"
 
 // The subchannel pool to reuse subchannels.
 #define GRPC_ARG_SUBCHANNEL_POOL "grpc.internal.subchannel_pool"
@@ -40,39 +39,8 @@ namespace grpc_core {
 TraceFlag grpc_subchannel_pool_trace(false, "subchannel_pool");
 
 SubchannelKey::SubchannelKey(const grpc_resolved_address& address,
-                             const grpc_channel_args* args) {
-  Init(address, args, grpc_channel_args_normalize);
-}
-
-SubchannelKey::~SubchannelKey() {
-  grpc_channel_args_destroy(const_cast<grpc_channel_args*>(args_));
-}
-
-SubchannelKey::SubchannelKey(const SubchannelKey& other) {
-  Init(other.address_, other.args_, grpc_channel_args_copy);
-}
-
-SubchannelKey& SubchannelKey::operator=(const SubchannelKey& other) {
-  if (&other == this) {
-    return *this;
-  }
-  grpc_channel_args_destroy(const_cast<grpc_channel_args*>(args_));
-  Init(other.address_, other.args_, grpc_channel_args_copy);
-  return *this;
-}
-
-SubchannelKey::SubchannelKey(SubchannelKey&& other) noexcept {
-  address_ = other.address_;
-  args_ = other.args_;
-  other.args_ = nullptr;
-}
-
-SubchannelKey& SubchannelKey::operator=(SubchannelKey&& other) noexcept {
-  address_ = other.address_;
-  args_ = other.args_;
-  other.args_ = nullptr;
-  return *this;
-}
+                             const ChannelArgs& args)
+    : address_(address), args_(args) {}
 
 bool SubchannelKey::operator<(const SubchannelKey& other) const {
   if (address_.len < other.address_.len) return true;
@@ -80,14 +48,7 @@ bool SubchannelKey::operator<(const SubchannelKey& other) const {
   int r = memcmp(address_.addr, other.address_.addr, address_.len);
   if (r < 0) return true;
   if (r > 0) return false;
-  return grpc_channel_args_compare(args_, other.args_) < 0;
-}
-
-void SubchannelKey::Init(
-    const grpc_resolved_address& address, const grpc_channel_args* args,
-    grpc_channel_args* (*copy_channel_args)(const grpc_channel_args* args)) {
-  address_ = address;
-  args_ = copy_channel_args(args);
+  return args_ < other.args();
 }
 
 std::string SubchannelKey::ToString() const {
@@ -95,42 +56,11 @@ std::string SubchannelKey::ToString() const {
   return absl::StrCat(
       "{address=",
       addr_uri.ok() ? addr_uri.value() : addr_uri.status().ToString(),
-      ", args=", grpc_channel_args_string(args_), "}");
+      ", args=", args_.ToString(), "}");
 }
 
-namespace {
-
-void* arg_copy(void* p) {
-  auto* subchannel_pool = static_cast<SubchannelPoolInterface*>(p);
-  subchannel_pool->Ref().release();
-  return p;
-}
-
-void arg_destroy(void* p) {
-  auto* subchannel_pool = static_cast<SubchannelPoolInterface*>(p);
-  subchannel_pool->Unref();
-}
-
-int arg_cmp(void* a, void* b) { return QsortCompare(a, b); }
-
-const grpc_arg_pointer_vtable subchannel_pool_arg_vtable = {
-    arg_copy, arg_destroy, arg_cmp};
-
-}  // namespace
-
-grpc_arg SubchannelPoolInterface::CreateChannelArg(
-    SubchannelPoolInterface* subchannel_pool) {
-  return grpc_channel_arg_pointer_create(
-      const_cast<char*>(GRPC_ARG_SUBCHANNEL_POOL), subchannel_pool,
-      &subchannel_pool_arg_vtable);
-}
-
-SubchannelPoolInterface*
-SubchannelPoolInterface::GetSubchannelPoolFromChannelArgs(
-    const grpc_channel_args* args) {
-  const grpc_arg* arg = grpc_channel_args_find(args, GRPC_ARG_SUBCHANNEL_POOL);
-  if (arg == nullptr || arg->type != GRPC_ARG_POINTER) return nullptr;
-  return static_cast<SubchannelPoolInterface*>(arg->value.pointer.p);
+absl::string_view SubchannelPoolInterface::ChannelArgName() {
+  return GRPC_ARG_SUBCHANNEL_POOL;
 }
 
 }  // namespace grpc_core

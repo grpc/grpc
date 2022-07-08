@@ -40,6 +40,7 @@
 #include <grpc/support/string_util.h>
 #include <grpc/support/time.h>
 
+#include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/gpr/env.h"
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gpr/tmpfile.h"
@@ -507,7 +508,7 @@ class RequestMetadataState : public RefCounted<RequestMetadataState> {
           return Immediate(absl::PermissionDeniedError("should never happen")));
     }
 
-    void add_handshakers(const grpc_channel_args*, grpc_pollset_set*,
+    void add_handshakers(const ChannelArgs&, grpc_pollset_set*,
                          HandshakeManager*) override {
       GPR_ASSERT(false);
     }
@@ -583,8 +584,7 @@ class check_channel_oauth2 final : public grpc_channel_credentials {
  public:
   RefCountedPtr<grpc_channel_security_connector> create_security_connector(
       RefCountedPtr<grpc_call_credentials> call_creds, const char* /*target*/,
-      const grpc_channel_args* /*args*/,
-      grpc_channel_args** /*new_args*/) override {
+      ChannelArgs* /*new_args*/) override {
     GPR_ASSERT(type() == Type());
     GPR_ASSERT(call_creds != nullptr);
     GPR_ASSERT(call_creds->type() == grpc_access_token_credentials::Type());
@@ -608,7 +608,7 @@ class check_channel_oauth2 final : public grpc_channel_credentials {
 
 TEST(CredentialsTest, TestChannelOauth2CompositeCreds) {
   ExecCtx exec_ctx;
-  grpc_channel_args* new_args;
+  ChannelArgs new_args;
   grpc_channel_credentials* channel_creds = new check_channel_oauth2();
   grpc_call_credentials* oauth2_creds =
       grpc_access_token_credentials_create("blah", nullptr);
@@ -617,8 +617,7 @@ TEST(CredentialsTest, TestChannelOauth2CompositeCreds) {
                                                 nullptr);
   grpc_channel_credentials_release(channel_creds);
   grpc_call_credentials_release(oauth2_creds);
-  channel_oauth2_creds->create_security_connector(nullptr, nullptr, nullptr,
-                                                  &new_args);
+  channel_oauth2_creds->create_security_connector(nullptr, nullptr, &new_args);
   grpc_channel_credentials_release(channel_oauth2_creds);
 }
 
@@ -667,8 +666,7 @@ class check_channel_oauth2_google_iam final : public grpc_channel_credentials {
  public:
   RefCountedPtr<grpc_channel_security_connector> create_security_connector(
       RefCountedPtr<grpc_call_credentials> call_creds, const char* /*target*/,
-      const grpc_channel_args* /*args*/,
-      grpc_channel_args** /*new_args*/) override {
+      ChannelArgs* /*new_args*/) override {
     GPR_ASSERT(type() == Type());
     GPR_ASSERT(call_creds != nullptr);
     GPR_ASSERT(call_creds->type() == grpc_composite_call_credentials::Type());
@@ -697,7 +695,7 @@ class check_channel_oauth2_google_iam final : public grpc_channel_credentials {
 
 TEST(CredentialsTest, TestChannelOauth2GoogleIamCompositeCreds) {
   ExecCtx exec_ctx;
-  grpc_channel_args* new_args;
+  ChannelArgs new_args;
   grpc_channel_credentials* channel_creds =
       new check_channel_oauth2_google_iam();
   grpc_call_credentials* oauth2_creds =
@@ -717,7 +715,7 @@ TEST(CredentialsTest, TestChannelOauth2GoogleIamCompositeCreds) {
   grpc_channel_credentials_release(channel_oauth2_creds);
   grpc_call_credentials_release(google_iam_creds);
 
-  channel_oauth2_iam_creds->create_security_connector(nullptr, nullptr, nullptr,
+  channel_oauth2_iam_creds->create_security_connector(nullptr, nullptr,
                                                       &new_args);
 
   grpc_channel_credentials_release(channel_oauth2_iam_creds);

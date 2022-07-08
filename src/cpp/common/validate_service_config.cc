@@ -22,6 +22,7 @@
 #include <grpcpp/support/config.h>
 #include <grpcpp/support/validate_service_config.h>
 
+#include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/service_config/service_config_impl.h"
 
@@ -30,7 +31,7 @@ namespace experimental {
 std::string ValidateServiceConfigJSON(const std::string& service_config_json) {
   grpc_init();
   grpc_error_handle error = GRPC_ERROR_NONE;
-  grpc_core::ServiceConfigImpl::Create(/*args=*/nullptr,
+  grpc_core::ServiceConfigImpl::Create(grpc_core::ChannelArgs(),
                                        service_config_json.c_str(), &error);
   std::string return_value;
   if (!GRPC_ERROR_IS_NONE(error)) {

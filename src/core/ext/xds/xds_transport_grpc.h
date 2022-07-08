@@ -31,6 +31,7 @@
 
 #include "src/core/ext/xds/xds_bootstrap.h"
 #include "src/core/ext/xds/xds_transport.h"
+#include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/iomgr/closure.h"
@@ -43,7 +44,7 @@ class GrpcXdsTransportFactory : public XdsTransportFactory {
  public:
   class GrpcXdsTransport;
 
-  explicit GrpcXdsTransportFactory(const grpc_channel_args* args);
+  explicit GrpcXdsTransportFactory(const ChannelArgs& args);
   ~GrpcXdsTransportFactory() override;
 
   void Orphan() override { Unref(); }
@@ -56,7 +57,7 @@ class GrpcXdsTransportFactory : public XdsTransportFactory {
   grpc_pollset_set* interested_parties() const { return interested_parties_; }
 
  private:
-  grpc_channel_args* args_;
+  ChannelArgs args_;
   grpc_pollset_set* interested_parties_;
 };
 

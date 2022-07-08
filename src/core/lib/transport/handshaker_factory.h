@@ -21,8 +21,7 @@
 
 #include <grpc/support/port_platform.h>
 
-#include <grpc/impl/codegen/grpc_types.h>
-
+#include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/iomgr/iomgr_fwd.h"
 
 // A handshaker factory is used to create handshakers.
@@ -38,7 +37,7 @@ class HandshakeManager;
 
 class HandshakerFactory {
  public:
-  virtual void AddHandshakers(const grpc_channel_args* args,
+  virtual void AddHandshakers(const ChannelArgs& args,
                               grpc_pollset_set* interested_parties,
                               HandshakeManager* handshake_mgr) = 0;
   virtual ~HandshakerFactory() = default;

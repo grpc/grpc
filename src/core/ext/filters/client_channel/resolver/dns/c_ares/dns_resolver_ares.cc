@@ -61,14 +61,12 @@
 
 #if GRPC_ARES == 1
 
-#include <limits.h>
 #include <stdio.h>
 #include <string.h>
 
 #include <address_sorting/address_sorting.h>
 
 #include "absl/container/flat_hash_set.h"
-#include "absl/container/inlined_vector.h"
 #include "absl/strings/str_cat.h"
 
 #include "src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_balancer_addresses.h"
@@ -99,7 +97,7 @@ namespace {
 class AresClientChannelDNSResolver : public PollingResolver {
  public:
   AresClientChannelDNSResolver(ResolverArgs args,
-                               const grpc_channel_args* channel_args);
+                               const ChannelArgs& channel_args);
 
   OrphanablePtr<Orphanable> StartRequest() override;
 
@@ -156,12 +154,14 @@ class AresClientChannelDNSResolver : public PollingResolver {
 };
 
 AresClientChannelDNSResolver::AresClientChannelDNSResolver(
-    ResolverArgs args, const grpc_channel_args* channel_args)
+    ResolverArgs args, const ChannelArgs& channel_args)
     : PollingResolver(
           std::move(args), channel_args,
-          Duration::Milliseconds(grpc_channel_args_find_integer(
-              channel_args, GRPC_ARG_DNS_MIN_TIME_BETWEEN_RESOLUTIONS_MS,
-              {1000 * 30, 0, INT_MAX})),
+          std::max(Duration::Zero(),
+                   channel_args
+                       .GetDurationFromIntMillis(
+                           GRPC_ARG_DNS_MIN_TIME_BETWEEN_RESOLUTIONS_MS)
+                       .value_or(Duration::Seconds(30))),
           BackOff::Options()
               .set_initial_backoff(Duration::Milliseconds(
                   GRPC_DNS_INITIAL_CONNECT_BACKOFF_SECONDS * 1000))
@@ -170,13 +170,14 @@ AresClientChannelDNSResolver::AresClientChannelDNSResolver(
               .set_max_backoff(Duration::Milliseconds(
                   GRPC_DNS_RECONNECT_MAX_BACKOFF_SECONDS * 1000)),
           &grpc_trace_cares_resolver),
-      request_service_config_(!grpc_channel_args_find_bool(
-          channel_args, GRPC_ARG_SERVICE_CONFIG_DISABLE_RESOLUTION, true)),
-      enable_srv_queries_(grpc_channel_args_find_bool(
-          channel_args, GRPC_ARG_DNS_ENABLE_SRV_QUERIES, false)),
-      query_timeout_ms_(grpc_channel_args_find_integer(
-          channel_args, GRPC_ARG_DNS_ARES_QUERY_TIMEOUT_MS,
-          {GRPC_DNS_ARES_DEFAULT_QUERY_TIMEOUT_MS, 0, INT_MAX})) {}
+      request_service_config_(
+          !channel_args.GetBool(GRPC_ARG_SERVICE_CONFIG_DISABLE_RESOLUTION)
+               .value_or(true)),
+      enable_srv_queries_(channel_args.GetBool(GRPC_ARG_DNS_ENABLE_SRV_QUERIES)
+                              .value_or(false)),
+      query_timeout_ms_(
+          std::max(0, channel_args.GetInt(GRPC_ARG_DNS_ARES_QUERY_TIMEOUT_MS)
+                          .value_or(GRPC_DNS_ARES_DEFAULT_QUERY_TIMEOUT_MS))) {}
 
 AresClientChannelDNSResolver::~AresClientChannelDNSResolver() {
   GRPC_CARES_TRACE_LOG("resolver:%p destroying AresClientChannelDNSResolver",
@@ -286,7 +287,7 @@ void AresClientChannelDNSResolver::AresRequestWrapper::OnResolved(
     grpc_error_handle error) {
   GRPC_CARES_TRACE_LOG("resolver:%p OnResolved()", this);
   Result result;
-  absl::InlinedVector<grpc_arg, 1> new_args;
+  result.args = resolver_->channel_args();
   // TODO(roth): Change logic to be able to report failures for addresses
   // and service config independently of each other.
   if (addresses_ != nullptr || balancer_addresses_ != nullptr) {
@@ -318,8 +319,8 @@ void AresClientChannelDNSResolver::AresRequestWrapper::OnResolved(
       }
     }
     if (balancer_addresses_ != nullptr) {
-      new_args.push_back(
-          CreateGrpclbBalancerAddressesArg(balancer_addresses_.get()));
+      result.args = SetGrpcLbBalancerAddresses(
+          result.args, ServerAddressList(*balancer_addresses_));
     }
   } else {
     GRPC_CARES_TRACE_LOG("resolver:%p dns resolution failed: %s", this,
@@ -332,8 +333,6 @@ void AresClientChannelDNSResolver::AresRequestWrapper::OnResolved(
     result.addresses = status;
     result.service_config = status;
   }
-  result.args = grpc_channel_args_copy_and_add(
-      resolver_->channel_args(), new_args.data(), new_args.size());
   resolver_->OnRequestComplete(std::move(result));
   Unref(DEBUG_LOCATION, "OnResolved");
 }
@@ -355,7 +354,7 @@ class AresClientChannelDNSResolverFactory : public ResolverFactory {
   }
 
   OrphanablePtr<Resolver> CreateResolver(ResolverArgs args) const override {
-    const grpc_channel_args* channel_args = args.args;
+    ChannelArgs channel_args = args.args;
     return MakeOrphanable<AresClientChannelDNSResolver>(std::move(args),
                                                         channel_args);
   }
