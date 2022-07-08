@@ -22,7 +22,7 @@
 Pod::Spec.new do |s|
   s.name     = 'gRPC-C++'
   # TODO (mxyan): use version that match gRPC version when pod is stabilized
-  version = '1.48.0-dev'
+  version = '1.49.0-dev'
   s.version  = version
   s.summary  = 'gRPC C++ library'
   s.homepage = 'https://grpc.io'
@@ -634,6 +634,7 @@ Pod::Spec.new do |s|
                       'src/core/ext/xds/xds_channel_args.h',
                       'src/core/ext/xds/xds_channel_stack_modifier.h',
                       'src/core/ext/xds/xds_client.h',
+                      'src/core/ext/xds/xds_client_grpc.h',
                       'src/core/ext/xds/xds_client_stats.h',
                       'src/core/ext/xds/xds_cluster.h',
                       'src/core/ext/xds/xds_cluster_specifier_plugin.h',
@@ -648,6 +649,8 @@ Pod::Spec.new do |s|
                       'src/core/ext/xds/xds_resource_type_impl.h',
                       'src/core/ext/xds/xds_route_config.h',
                       'src/core/ext/xds/xds_routing.h',
+                      'src/core/ext/xds/xds_transport.h',
+                      'src/core/ext/xds/xds_transport_grpc.h',
                       'src/core/lib/address_utils/parse_address.h',
                       'src/core/lib/address_utils/sockaddr_utils.h',
                       'src/core/lib/avl/avl.h',
@@ -1469,6 +1472,7 @@ Pod::Spec.new do |s|
                               'src/core/ext/xds/xds_channel_args.h',
                               'src/core/ext/xds/xds_channel_stack_modifier.h',
                               'src/core/ext/xds/xds_client.h',
+                              'src/core/ext/xds/xds_client_grpc.h',
                               'src/core/ext/xds/xds_client_stats.h',
                               'src/core/ext/xds/xds_cluster.h',
                               'src/core/ext/xds/xds_cluster_specifier_plugin.h',
@@ -1483,6 +1487,8 @@ Pod::Spec.new do |s|
                               'src/core/ext/xds/xds_resource_type_impl.h',
                               'src/core/ext/xds/xds_route_config.h',
                               'src/core/ext/xds/xds_routing.h',
+                              'src/core/ext/xds/xds_transport.h',
+                              'src/core/ext/xds/xds_transport_grpc.h',
                               'src/core/lib/address_utils/parse_address.h',
                               'src/core/lib/address_utils/sockaddr_utils.h',
                               'src/core/lib/avl/avl.h',

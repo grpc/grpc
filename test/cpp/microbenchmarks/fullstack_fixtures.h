@@ -176,9 +176,9 @@ class EndpointPairFixture : public BaseFixture {
     {
       grpc_core::Server* core_server =
           grpc_core::Server::FromC(server_->c_server());
-      const grpc_channel_args* server_args = core_server->channel_args();
+      grpc_core::ChannelArgs server_args = core_server->channel_args();
       server_transport_ = grpc_create_chttp2_transport(
-          server_args, endpoints.server, false /* is_client */);
+          server_args.ToC().get(), endpoints.server, false /* is_client */);
       for (grpc_pollset* pollset : core_server->pollsets()) {
         grpc_endpoint_add_to_pollset(endpoints.server, pollset);
       }

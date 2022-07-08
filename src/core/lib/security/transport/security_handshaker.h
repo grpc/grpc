@@ -23,6 +23,7 @@
 
 #include <grpc/impl/codegen/grpc_types.h>
 
+#include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/security/security_connector/security_connector.h"
@@ -34,7 +35,7 @@ namespace grpc_core {
 /// Creates a security handshaker using \a handshaker.
 RefCountedPtr<Handshaker> SecurityHandshakerCreate(
     tsi_handshaker* handshaker, grpc_security_connector* connector,
-    const grpc_channel_args* args);
+    const ChannelArgs& args);
 
 /// Registers security handshaker factories.
 void SecurityRegisterHandshakerFactories(CoreConfiguration::Builder*);

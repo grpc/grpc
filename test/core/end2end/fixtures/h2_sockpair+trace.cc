@@ -114,7 +114,8 @@ static void chttp2_init_client_socketpair(
   client_args = grpc_core::CoreConfiguration::Get()
                     .channel_args_preconditioning()
                     .PreconditionChannelArgs(client_args)
-                    .ToC();
+                    .ToC()
+                    .release();
   transport =
       grpc_create_chttp2_transport(client_args, fixture_data->ep.client, true);
   grpc_channel_args_destroy(client_args);
@@ -134,7 +135,8 @@ static void chttp2_init_server_socketpair(
   server_args = grpc_core::CoreConfiguration::Get()
                     .channel_args_preconditioning()
                     .PreconditionChannelArgs(server_args)
-                    .ToC();
+                    .ToC()
+                    .release();
   transport =
       grpc_create_chttp2_transport(server_args, fixture_data->ep.server, false);
   grpc_channel_args_destroy(server_args);

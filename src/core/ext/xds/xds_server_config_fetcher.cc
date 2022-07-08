@@ -30,7 +30,6 @@
 #include <vector>
 
 #include "absl/base/thread_annotations.h"
-#include "absl/container/inlined_vector.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/match.h"
@@ -56,6 +55,7 @@
 #include "src/core/ext/xds/xds_certificate_provider.h"
 #include "src/core/ext/xds/xds_channel_stack_modifier.h"
 #include "src/core/ext/xds/xds_client.h"
+#include "src/core/ext/xds/xds_client_grpc.h"
 #include "src/core/ext/xds/xds_common_types.h"
 #include "src/core/ext/xds/xds_http_filters.h"
 #include "src/core/ext/xds/xds_listener.h"
@@ -114,7 +114,7 @@ class XdsServerConfigFetcher : public grpc_server_config_fetcher {
 
   // Return the interested parties from the xds client so that it can be polled.
   grpc_pollset_set* interested_parties() override {
-    return xds_client_->interested_parties();
+    return static_cast<GrpcXdsClient*>(xds_client_.get())->interested_parties();
   }
 
  private:
@@ -197,8 +197,8 @@ class XdsServerConfigFetcher::ListenerWatcher::FilterChainMatchManager
                           absl::optional<XdsListenerResource::FilterChainData>
                               default_filter_chain);
 
-  absl::StatusOr<grpc_channel_args*> UpdateChannelArgsForConnection(
-      grpc_channel_args* args, grpc_endpoint* tcp) override;
+  absl::StatusOr<ChannelArgs> UpdateChannelArgsForConnection(
+      const ChannelArgs& args, grpc_endpoint* tcp) override;
 
   void Orphan() override;
 
@@ -1031,19 +1031,18 @@ const XdsListenerResource::FilterChainData* FindFilterChainDataForDestinationIp(
                                           host);
 }
 
-absl::StatusOr<grpc_channel_args*> XdsServerConfigFetcher::ListenerWatcher::
+absl::StatusOr<ChannelArgs> XdsServerConfigFetcher::ListenerWatcher::
     FilterChainMatchManager::UpdateChannelArgsForConnection(
-        grpc_channel_args* args, grpc_endpoint* tcp) {
+        const ChannelArgs& input_args, grpc_endpoint* tcp) {
+  ChannelArgs args = input_args;
   const auto* filter_chain = FindFilterChainDataForDestinationIp(
       filter_chain_map_.destination_ip_vector, tcp);
   if (filter_chain == nullptr && default_filter_chain_.has_value()) {
     filter_chain = &default_filter_chain_.value();
   }
   if (filter_chain == nullptr) {
-    grpc_channel_args_destroy(args);
     return absl::UnavailableError("No matching filter chain found");
   }
-  absl::InlinedVector<grpc_arg, 3> args_to_add;
   RefCountedPtr<ServerConfigSelectorProvider> server_config_selector_provider;
   RefCountedPtr<XdsChannelStackModifier> channel_stack_modifier;
   RefCountedPtr<XdsCertificateProvider> xds_certificate_provider;
@@ -1089,29 +1088,21 @@ absl::StatusOr<grpc_channel_args*> XdsServerConfigFetcher::ListenerWatcher::
               std::move(initial_resource),
               filter_chain->http_connection_manager.http_filters);
     }
-    args_to_add.emplace_back(server_config_selector_provider->MakeChannelArg());
-    args_to_add.emplace_back(channel_stack_modifier->MakeChannelArg());
+    args = args.SetObject(server_config_selector_provider)
+               .SetObject(channel_stack_modifier);
   }
   // Add XdsCertificateProvider if credentials are xDS.
-  grpc_server_credentials* server_creds =
-      grpc_find_server_credentials_in_args(args);
+  auto* server_creds = args.GetObject<grpc_server_credentials>();
   if (server_creds != nullptr &&
       server_creds->type() == XdsServerCredentials::Type()) {
     absl::StatusOr<RefCountedPtr<XdsCertificateProvider>> result =
         CreateOrGetXdsCertificateProviderFromFilterChainData(filter_chain);
     if (!result.ok()) {
-      grpc_channel_args_destroy(args);
       return result.status();
     }
     xds_certificate_provider = std::move(*result);
     GPR_ASSERT(xds_certificate_provider != nullptr);
-    args_to_add.emplace_back(xds_certificate_provider->MakeChannelArg());
-  }
-  if (!args_to_add.empty()) {
-    grpc_channel_args* updated_args = grpc_channel_args_copy_and_add(
-        args, args_to_add.data(), args_to_add.size());
-    grpc_channel_args_destroy(args);
-    args = updated_args;
+    args = args.SetObject(xds_certificate_provider);
   }
   return args;
 }
@@ -1143,7 +1134,7 @@ XdsServerConfigFetcher::ListenerWatcher::FilterChainMatchManager::
               &route.action) == nullptr;
       XdsRouting::GeneratePerHttpFilterConfigsResult result =
           XdsRouting::GeneratePerHTTPFilterConfigs(http_filters, vhost, route,
-                                                   nullptr, nullptr);
+                                                   nullptr, ChannelArgs());
       if (!GRPC_ERROR_IS_NONE(result.error)) {
         return grpc_error_to_absl_status(result.error);
       }
@@ -1170,7 +1161,6 @@ XdsServerConfigFetcher::ListenerWatcher::FilterChainMatchManager::
             ServiceConfigImpl::Create(result.args, json.c_str(), &error);
         GPR_ASSERT(GRPC_ERROR_IS_NONE(error));
       }
-      grpc_channel_args_destroy(result.args);
     }
   }
   return config_selector;
@@ -1333,18 +1323,16 @@ grpc_server_config_fetcher* grpc_server_config_fetcher_xds_create(
     grpc_server_xds_status_notifier notifier, const grpc_channel_args* args) {
   grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
   grpc_core::ExecCtx exec_ctx;
-  args = grpc_core::CoreConfiguration::Get()
-             .channel_args_preconditioning()
-             .PreconditionChannelArgs(args)
-             .ToC();
+  grpc_core::ChannelArgs channel_args = grpc_core::CoreConfiguration::Get()
+                                            .channel_args_preconditioning()
+                                            .PreconditionChannelArgs(args);
   GRPC_API_TRACE(
       "grpc_server_config_fetcher_xds_create(notifier={on_serving_status_"
       "update=%p, user_data=%p}, args=%p)",
       3, (notifier.on_serving_status_update, notifier.user_data, args));
   grpc_error_handle error = GRPC_ERROR_NONE;
   grpc_core::RefCountedPtr<grpc_core::XdsClient> xds_client =
-      grpc_core::XdsClient::GetOrCreate(args, &error);
-  grpc_channel_args_destroy(args);
+      grpc_core::GrpcXdsClient::GetOrCreate(channel_args, &error);
   if (!GRPC_ERROR_IS_NONE(error)) {
     gpr_log(GPR_ERROR, "Failed to create xds client: %s",
             grpc_error_std_string(error).c_str());

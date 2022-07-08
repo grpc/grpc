@@ -25,8 +25,6 @@
 
 #include "absl/strings/string_view.h"
 
-#include <grpc/impl/codegen/grpc_types.h>
-
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_fwd.h"
 #include "src/core/lib/channel/channel_stack.h"
@@ -67,7 +65,7 @@ class MessageSizeParser : public ServiceConfigParser::Parser {
   absl::string_view name() const override { return parser_name(); }
 
   std::unique_ptr<ServiceConfigParser::ParsedConfig> ParsePerMethodParams(
-      const grpc_channel_args* /*args*/, const Json& json,
+      const ChannelArgs& /*args*/, const Json& json,
       grpc_error_handle* error) override;
 
   static void Register(CoreConfiguration::Builder* builder);
