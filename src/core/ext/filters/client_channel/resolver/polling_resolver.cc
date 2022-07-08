@@ -41,13 +41,13 @@
 namespace grpc_core {
 
 PollingResolver::PollingResolver(ResolverArgs args,
-                                 const grpc_channel_args* channel_args,
+                                 const ChannelArgs& channel_args,
                                  Duration min_time_between_resolutions,
                                  BackOff::Options backoff_options,
                                  TraceFlag* tracer)
     : authority_(args.uri.authority()),
       name_to_resolve_(absl::StripPrefix(args.uri.path(), "/")),
-      channel_args_(grpc_channel_args_copy(channel_args)),
+      channel_args_(channel_args),
       work_serializer_(std::move(args.work_serializer)),
       result_handler_(std::move(args.result_handler)),
       tracer_(tracer),
@@ -63,7 +63,6 @@ PollingResolver::~PollingResolver() {
   if (GPR_UNLIKELY(tracer_ != nullptr && tracer_->enabled())) {
     gpr_log(GPR_INFO, "[polling resolver %p] destroying", this);
   }
-  grpc_channel_args_destroy(channel_args_);
 }
 
 void PollingResolver::StartLocked() { MaybeStartResolvingLocked(); }

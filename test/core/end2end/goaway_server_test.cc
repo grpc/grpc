@@ -164,7 +164,7 @@ static grpc_ares_request* my_dns_lookup_ares(
     sa.sin_family = GRPC_AF_INET;
     sa.sin_addr.s_addr = 0x100007f;
     sa.sin_port = grpc_htons(static_cast<uint16_t>(g_resolve_port));
-    (*addresses)->emplace_back(&sa, sizeof(sa), nullptr);
+    (*addresses)->emplace_back(&sa, sizeof(sa), grpc_core::ChannelArgs());
     gpr_mu_unlock(&g_mu);
   }
   grpc_core::ExecCtx::Run(DEBUG_LOCATION, on_done, error);
