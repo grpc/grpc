@@ -66,8 +66,6 @@ def _run():
         try:
             output = subprocess.check_output([
                 'bazel-bin/test/core/memory_usage/memory_usage_test',
-                '--benchmark_name=call',
-                '--size=50000',
             ] + extra_args)
         except subprocess.CalledProcessError as e:
             print('Error running benchmark:', e)

@@ -34,8 +34,9 @@
 
 ABSL_FLAG(std::string, benchmark_name, "call", "Which benchmark to run");
 ABSL_FLAG(int, size, 50000, "Number of channels/calls");
-ABSL_FLAG(std::string, scenario_config, "default",
-          "Use minimal stack/resource quote/secure server");
+ABSL_FLAG(std::string, scenario_config, "insecure",
+          "Possible Values: minstack (Use minimal stack), resource_quota, "
+          "secure (Use security on server)");
 ABSL_FLAG(bool, memory_profiling, false,
           "Run memory profiling");  // not connected to anything yet
 
@@ -82,7 +83,7 @@ int main(int argc, char** argv) {
   if (absl::GetFlag(FLAGS_scenario_config) == "secure") secure_arg = "--secure";
   if (absl::GetFlag(FLAGS_scenario_config) == "resource_quota") {
     secure_arg = "--secure";
-    // add in resource quota parameter setting later
+    // TODO(chennancy): add in resource quota parameter setting later
   }
   if (absl::GetFlag(FLAGS_scenario_config) == "minstack")
     minstack_arg = "--minstack";
@@ -113,5 +114,6 @@ int main(int argc, char** argv) {
     return svr.Join() == 0 ? 0 : 2;
   }
 
-  return 5;
+  printf("Command line args couldn't be parsed\n");
+  return 2;
 }
