@@ -1030,10 +1030,9 @@ grpc_cc_library(
     hdrs = [
         "src/core/lib/gprpp/work_serializer.h",
     ],
-    external_deps = [
-        "absl/base:core_headers",
-    ],
+    external_deps = ["absl/base:core_headers"],
     language = "c++",
+    tags = ["grpc-autodeps"],
     visibility = ["@grpc:client_channel"],
     deps = [
         "debug_location",
