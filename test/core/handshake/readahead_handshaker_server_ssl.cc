@@ -21,6 +21,7 @@
 #include <sys/socket.h>
 #include <unistd.h>
 
+#include <gtest/gtest.h>
 #include <openssl/err.h>
 #include <openssl/ssl.h>
 
@@ -77,7 +78,7 @@ class ReadAheadHandshakerFactory : public HandshakerFactory {
 
 }  // namespace grpc_core
 
-int main(int /*argc*/, char* /*argv*/[]) {
+TEST(HandshakeServerWithReadaheadHandshakerTest, MainTest) {
   grpc_core::CoreConfiguration::BuildSpecialConfiguration(
       [](grpc_core::CoreConfiguration::Builder* builder) {
         BuildCoreConfiguration(builder);
@@ -88,8 +89,13 @@ int main(int /*argc*/, char* /*argv*/[]) {
 
   grpc_init();
   const char* full_alpn_list[] = {"grpc-exp", "h2"};
-  GPR_ASSERT(server_ssl_test(full_alpn_list, 2, "grpc-exp"));
+  ASSERT_TRUE(server_ssl_test(full_alpn_list, 2, "grpc-exp"));
   CleanupSslLibrary();
   grpc_shutdown();
-  return 0;
+}
+
+int main(int argc, char** argv) {
+  grpc::testing::TestEnvironment env(&argc, argv);
+  ::testing::InitGoogleTest(&argc, argv);
+  return RUN_ALL_TESTS();
 }
