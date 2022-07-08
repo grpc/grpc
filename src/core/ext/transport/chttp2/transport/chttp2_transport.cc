@@ -291,7 +291,7 @@ static void read_channel_args(grpc_chttp2_transport* t,
   const int initial_sequence_number =
       channel_args.GetInt(GRPC_ARG_HTTP2_INITIAL_SEQUENCE_NUMBER).value_or(-1);
   if (initial_sequence_number > 0) {
-    if ((t->next_stream_id & 1) != (*initial_sequence_number & 1)) {
+    if ((t->next_stream_id & 1) != (initial_sequence_number & 1)) {
       gpr_log(GPR_ERROR, "%s: low bit must be %d on %s",
               GRPC_ARG_HTTP2_INITIAL_SEQUENCE_NUMBER, t->next_stream_id & 1,
               is_client ? "client" : "server");
@@ -523,9 +523,7 @@ grpc_chttp2_transport::grpc_chttp2_transport(
   configure_transport_ping_policy(this);
   init_transport_keepalive_settings(this);
 
-  if (channel_args != nullptr) {
-    read_channel_args(this, channel_args, is_client);
-  }
+  read_channel_args(this, channel_args, is_client);
 
   // No pings allowed before receiving a header or data frame.
   ping_state.pings_before_data_required = 0;
@@ -3100,7 +3098,8 @@ grpc_chttp2_transport_get_socket_node(grpc_transport* transport) {
 }
 
 grpc_transport* grpc_create_chttp2_transport(
-    const grpc_channel_args* channel_args, grpc_endpoint* ep, bool is_client) {
+    const grpc_core::ChannelArgs& channel_args, grpc_endpoint* ep,
+    bool is_client) {
   auto t = new grpc_chttp2_transport(channel_args, ep, is_client);
   return &t->base;
 }
