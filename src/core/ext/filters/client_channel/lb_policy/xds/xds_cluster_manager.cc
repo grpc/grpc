@@ -176,7 +176,6 @@ class XdsClusterManagerLb : public LoadBalancingPolicy {
 
     RefCountedPtr<ChildPickerWrapper> picker_wrapper_;
     grpc_connectivity_state connectivity_state_ = GRPC_CHANNEL_IDLE;
-    bool seen_failure_since_ready_ = false;
 
     // States for delayed removal.
     grpc_timer delayed_removal_timer_;
@@ -554,19 +553,13 @@ void XdsClusterManagerLb::ClusterChild::Helper::UpdateState(
       MakeRefCounted<ChildPickerWrapper>(xds_cluster_manager_child_->name_,
                                          std::move(picker));
   // Decide what state to report for aggregation purposes.
-  // If we haven't seen a failure since the last time we were in state
-  // READY, then we report the state change as-is.  However, once we do see
-  // a failure, we report TRANSIENT_FAILURE and ignore any subsequent state
-  // changes until we go back into state READY.
-  if (!xds_cluster_manager_child_->seen_failure_since_ready_) {
-    if (state == GRPC_CHANNEL_TRANSIENT_FAILURE) {
-      xds_cluster_manager_child_->seen_failure_since_ready_ = true;
-    }
-  } else {
-    if (state != GRPC_CHANNEL_READY) return;
-    xds_cluster_manager_child_->seen_failure_since_ready_ = false;
+  // If the last recorded state was TRANSIENT_FAILURE and the new state
+  // is something other than READY, don't change the state.
+  if (xds_cluster_manager_child_->connectivity_state_ !=
+          GRPC_CHANNEL_TRANSIENT_FAILURE ||
+      state == GRPC_CHANNEL_READY) {
+    xds_cluster_manager_child_->connectivity_state_ = state;
   }
-  xds_cluster_manager_child_->connectivity_state_ = state;
   // Notify the LB policy.
   xds_cluster_manager_child_->xds_cluster_manager_policy_->UpdateStateLocked();
 }

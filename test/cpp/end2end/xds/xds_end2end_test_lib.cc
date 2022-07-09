@@ -826,6 +826,19 @@ void XdsEnd2endTest::CheckRpcSendOk(const size_t times,
 }
 
 void XdsEnd2endTest::CheckRpcSendFailure(
+    const grpc_core::DebugLocation& debug_location, StatusCode expected_status,
+    absl::string_view expected_message_regex, const RpcOptions& rpc_options) {
+  const Status status = SendRpc(rpc_options);
+  EXPECT_FALSE(status.ok())
+      << debug_location.file() << ":" << debug_location.line();
+  EXPECT_EQ(expected_status, status.error_code())
+      << debug_location.file() << ":" << debug_location.line();
+  EXPECT_THAT(status.error_message(),
+              ::testing::ContainsRegex(expected_message_regex))
+      << debug_location.file() << ":" << debug_location.line();
+}
+
+void XdsEnd2endTest::CheckRpcSendFailure(
     const CheckRpcSendFailureOptions& options) {
   for (size_t i = 0; options.continue_predicate(i); ++i) {
     const Status status = SendRpc(options.rpc_options);
