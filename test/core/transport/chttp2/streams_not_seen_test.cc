@@ -202,7 +202,7 @@ class StreamsNotSeenTest : public ::testing::Test {
     });
     // Create the channel
     cq_ = grpc_completion_queue_create_for_next(nullptr);
-    cqv_ = absl::make_unique<grpc_core::CqVerifier>(cq_);
+    cqv_ = absl::make_unique<CqVerifier>(cq_);
     grpc_arg client_args[] = {
         grpc_channel_arg_integer_create(
             const_cast<char*>(GRPC_ARG_HTTP2_MAX_PINGS_WITHOUT_DATA), 0),
@@ -386,7 +386,7 @@ class StreamsNotSeenTest : public ::testing::Test {
   std::string read_bytes_ ABSL_GUARDED_BY(mu_);
   grpc_channel* channel_ = nullptr;
   grpc_completion_queue* cq_ = nullptr;
-  std::unique_ptr<grpc_core::CqVerifier> cqv_;
+  std::unique_ptr<CqVerifier> cqv_;
   Mutex mu_;
   CondVar read_cv_;
   std::atomic<bool> shutdown_{false};
