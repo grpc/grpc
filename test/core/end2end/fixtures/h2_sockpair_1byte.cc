@@ -141,7 +141,6 @@ static void chttp2_init_server_socketpair(
                                  .PreconditionChannelArgs(server_args);
   transport = grpc_create_chttp2_transport(server_channel_args,
                                            fixture_data->ep.server, false);
-  grpc_channel_args_destroy(server_args);
   server_setup_transport(f, transport);
 }
 
