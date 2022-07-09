@@ -25,6 +25,7 @@ grpc_cc_library(
     hdrs = ["cq_verifier.h"],
     language = "C++",
     visibility = ["//test:__subpackages__"],
+    external_deps = ["gtest"],
     deps = [
         "//:gpr",
         "//:grpc",

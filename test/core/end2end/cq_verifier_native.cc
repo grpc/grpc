@@ -36,7 +36,7 @@ cq_verifier* cq_verifier_create(grpc_completion_queue* cq) {
 }
 
 void cq_verifier_destroy(cq_verifier* v) {
-  cq_verify(v);
+  v.Verify();
   gpr_free(v);
 }
 

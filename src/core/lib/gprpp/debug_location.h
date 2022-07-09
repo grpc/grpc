@@ -36,7 +36,7 @@ class DebugLocation {
 
  private:
   const char* file_;
-  const int line_;
+  int line_;
 };
 #define DEBUG_LOCATION ::grpc_core::DebugLocation(__FILE__, __LINE__)
 #else
