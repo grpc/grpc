@@ -56,7 +56,7 @@ using ::xds::type::v3::TypedStruct;
 absl::StatusOr<Json::Array> ConvertXdsPolicy(LoadBalancingPolicyProto policy) {
   std::string serialized_policy = policy.SerializeAsString();
   upb::Arena arena;
-  upb::SymbolTable symtab;
+  upb::DefPool symtab;
   XdsEncodingContext context = {nullptr,     XdsBootstrap::XdsServer(),
                                 nullptr,     symtab.ptr(),
                                 arena.ptr(), true,

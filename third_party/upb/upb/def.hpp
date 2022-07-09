@@ -410,7 +410,7 @@ class DefPool {
 };
 
 // TODO(b/236632406): This typedef is deprecated. Delete it.
-using SymbolTable = DefPool;
+using DefPool = DefPool;
 
 inline FileDefPtr MessageDefPtr::file() const {
   return FileDefPtr(upb_MessageDef_File(ptr_));

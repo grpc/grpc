@@ -314,7 +314,7 @@ class XdsClient : public DualRefCounted<XdsClient> {
       resource_types_ ABSL_GUARDED_BY(mu_);
   std::map<absl::string_view /*v2_resource_type*/, const XdsResourceType*>
       v2_resource_types_ ABSL_GUARDED_BY(mu_);
-  upb::SymbolTable symtab_ ABSL_GUARDED_BY(mu_);
+  upb::DefPool symtab_ ABSL_GUARDED_BY(mu_);
 
   //  Map of existing xDS server channels.
   std::map<XdsBootstrap::XdsServer, ChannelState*> xds_server_channel_map_

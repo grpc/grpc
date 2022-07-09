@@ -82,7 +82,7 @@ XdsApi::XdsApi(XdsClient* client, TraceFlag* tracer,
                const XdsBootstrap::Node* node,
                const CertificateProviderStore::PluginDefinitionMap*
                    certificate_provider_definition_map,
-               upb::SymbolTable* symtab)
+               upb::DefPool* symtab)
     : client_(client),
       tracer_(tracer),
       node_(node),
