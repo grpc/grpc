@@ -55,14 +55,6 @@ typedef struct metadata {
   char** values;
 } metadata;
 
-namespace grpc_core {
-
-CqVerifier::CqVerifier(grpc_completion_queue* cq) : cq_(cq) {}
-
-CqVerifier::~CqVerifier() { Verify(); }
-
-}  // namespace grpc_core
-
 static int has_metadata(const grpc_metadata* md, size_t count, const char* key,
                         const char* value) {
   size_t i;
@@ -172,6 +164,10 @@ std::string TagStr(void* tag) {
 }  // namespace
 
 namespace grpc_core {
+
+CqVerifier::CqVerifier(grpc_completion_queue* cq) : cq_(cq) {}
+
+CqVerifier::~CqVerifier() { Verify(); }
 
 std::string CqVerifier::Expectation::ToString() const {
   return absl::StrCat(
