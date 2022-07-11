@@ -3291,15 +3291,6 @@ targets:
   deps:
   - grpc_test_util
   uses_polling: false
-- name: channel_stack_test
-  build: test
-  language: c
-  headers: []
-  src:
-  - test/core/channel/channel_stack_test.cc
-  deps:
-  - grpc_test_util
-  uses_polling: false
 - name: cmdline_test
   build: test
   language: c
@@ -3525,15 +3516,6 @@ targets:
   headers: []
   src:
   - test/core/compression/message_compress_test.cc
-  deps:
-  - grpc_test_util
-  uses_polling: false
-- name: minimal_stack_is_minimal_test
-  build: test
-  language: c
-  headers: []
-  src:
-  - test/core/channel/minimal_stack_is_minimal_test.cc
   deps:
   - grpc_test_util
   uses_polling: false
@@ -4628,6 +4610,16 @@ targets:
   - test/core/channel/channel_stack_builder_test.cc
   deps:
   - grpc_test_util
+- name: channel_stack_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/core/channel/channel_stack_test.cc
+  deps:
+  - grpc_test_util
+  uses_polling: false
 - name: channel_trace_test
   gtest: true
   build: test
@@ -6839,6 +6831,16 @@ targets:
   - test/core/transport/metadata_map_test.cc
   deps:
   - grpc_test_util
+- name: minimal_stack_is_minimal_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/core/channel/minimal_stack_is_minimal_test.cc
+  deps:
+  - grpc_test_util
+  uses_polling: false
 - name: miscompile_with_no_unique_address_test
   gtest: true
   build: test
