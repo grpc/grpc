@@ -1414,6 +1414,13 @@ void XdsClient::Orphan() {
   // Clear cache and any remaining watchers that may not have been cancelled.
   authority_state_map_.clear();
   invalid_watchers_.clear();
+  // We may still be sending lingering queued load report data, so don't
+  // just clear the load reporting map, but we do want to clear the refs
+  // we're holding to the ChannelState objects, to make sure that
+  // everything shuts down properly.
+  for (auto& p : xds_load_report_server_map_) {
+    p.second.channel_state.reset(DEBUG_LOCATION, "XdsClient::Orphan()");
+  }
 }
 
 RefCountedPtr<XdsClient::ChannelState> XdsClient::GetOrCreateChannelStateLocked(
