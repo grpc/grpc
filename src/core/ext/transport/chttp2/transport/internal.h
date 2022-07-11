@@ -30,6 +30,7 @@
 #include "absl/types/optional.h"
 
 #include <grpc/event_engine/memory_allocator.h>
+#include <grpc/impl/codegen/grpc_types.h>
 #include <grpc/slice.h>
 
 #include "src/core/ext/transport/chttp2/transport/flow_control.h"
@@ -774,8 +775,8 @@ void grpc_chttp2_fail_pending_writes(grpc_chttp2_transport* t,
 
 /** Set the default keepalive configurations, must only be called at
     initialization */
-void grpc_chttp2_config_default_keepalive_args(
-    const grpc_core::ChannelArgs& args, bool is_client);
+void grpc_chttp2_config_default_keepalive_args(grpc_channel_args* args,
+                                               bool is_client);
 
 void grpc_chttp2_retry_initiate_ping(void* tp, grpc_error_handle error);
 
