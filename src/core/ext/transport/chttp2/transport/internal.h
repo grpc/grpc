@@ -30,7 +30,6 @@
 #include "absl/types/optional.h"
 
 #include <grpc/event_engine/memory_allocator.h>
-#include <grpc/impl/codegen/grpc_types.h>
 #include <grpc/slice.h>
 
 #include "src/core/ext/transport/chttp2/transport/flow_control.h"
@@ -44,6 +43,7 @@
 #include "src/core/ext/transport/chttp2/transport/hpack_parser.h"
 #include "src/core/ext/transport/chttp2/transport/http2_settings.h"
 #include "src/core/ext/transport/chttp2/transport/stream_map.h"
+#include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channelz.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/gprpp/bitset.h"
@@ -236,7 +236,7 @@ typedef enum {
 } grpc_chttp2_keepalive_state;
 
 struct grpc_chttp2_transport {
-  grpc_chttp2_transport(const grpc_channel_args* channel_args,
+  grpc_chttp2_transport(const grpc_core::ChannelArgs& channel_args,
                         grpc_endpoint* ep, bool is_client);
   ~grpc_chttp2_transport();
 
@@ -774,8 +774,8 @@ void grpc_chttp2_fail_pending_writes(grpc_chttp2_transport* t,
 
 /** Set the default keepalive configurations, must only be called at
     initialization */
-void grpc_chttp2_config_default_keepalive_args(grpc_channel_args* args,
-                                               bool is_client);
+void grpc_chttp2_config_default_keepalive_args(
+    const grpc_core::ChannelArgs& args, bool is_client);
 
 void grpc_chttp2_retry_initiate_ping(void* tp, grpc_error_handle error);
 

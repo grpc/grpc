@@ -2261,6 +2261,7 @@ grpc_cc_library(
         "absl/status",
         "absl/status:statusor",
         "absl/time",
+        "absl/functional:any_invocable",
     ],
     deps = [
         "gpr_base",
@@ -2333,6 +2334,7 @@ grpc_cc_library(
     hdrs = [
         "src/core/lib/event_engine/iomgr_engine/thread_pool.h",
     ],
+    external_deps = ["absl/functional:any_invocable"],
     tags = ["grpc-autodeps"],
     deps = ["gpr_base"],
 )
@@ -2366,6 +2368,7 @@ grpc_cc_library(
     external_deps = [
         "absl/base:core_headers",
         "absl/container:flat_hash_set",
+        "absl/functional:any_invocable",
         "absl/status",
         "absl/status:statusor",
         "absl/strings",
@@ -2427,6 +2430,10 @@ grpc_cc_library(
     name = "event_engine_base",
     srcs = [
         "src/core/lib/event_engine/event_engine.cc",
+    ],
+    external_deps = [
+        "absl/functional:any_invocable",
+        "absl/memory",
     ],
     deps = [
         "default_event_engine_factory",
@@ -2748,7 +2755,9 @@ grpc_cc_library(
         "absl/base:core_headers",
         "absl/container:flat_hash_map",
         "absl/container:inlined_vector",
+        "absl/functional:any_invocable",
         "absl/functional:bind_front",
+        "absl/functional:function_ref",
         "absl/memory",
         "absl/meta:type_traits",
         "absl/status:statusor",
