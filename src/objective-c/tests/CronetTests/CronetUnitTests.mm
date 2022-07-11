@@ -136,7 +136,7 @@ unsigned int parse_h2_length(const char *field) {
   stream_engine *cronetEngine = [Cronet getGlobalEngine];
   grpc_channel *client = grpc_cronet_secure_channel_create(cronetEngine, addr.c_str(), NULL, NULL);
 
-  cq_verifier *grpc_core::CqVerifier cqv(cq);
+  grpc_core::CqVerifier cqv(cq);
   grpc_op ops[6];
   grpc_op *op;
   grpc_metadata_array initial_metadata_recv;
@@ -264,7 +264,7 @@ unsigned int parse_h2_length(const char *field) {
   stream_engine *cronetEngine = [Cronet getGlobalEngine];
   grpc_channel *client = grpc_cronet_secure_channel_create(cronetEngine, addr.c_str(), args, NULL);
 
-  cq_verifier *grpc_core::CqVerifier cqv(cq);
+  grpc_core::CqVerifier cqv(cq);
   grpc_op ops[6];
   grpc_op *op;
   grpc_metadata_array initial_metadata_recv;
