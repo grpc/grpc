@@ -315,6 +315,8 @@ TYPED_TEST(End2endTest, ThreadStress) {
   gpr_atm errors;
   gpr_atm_rel_store(&errors, static_cast<gpr_atm>(0));
   int num_threads = kNumThreads / grpc_test_slowdown_factor();
+  // The number of threads should be > 10 to be able to catch errors
+  ASSERT_GT(num_threads, 10);
   threads.reserve(num_threads);
   for (int i = 0; i < num_threads; ++i) {
     threads.emplace_back(SendRpc, this->common_.GetStub(), kNumRpcs,
