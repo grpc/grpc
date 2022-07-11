@@ -180,10 +180,10 @@ std::string CqVerifier::Expectation::ToString() const {
       Match(
           result,
           [](bool success) {
-            return absl::StrFormat("success=%s", success ? "true" : "false");
+            return absl::StrCat("success=", success ? "true" : "false");
           },
-          [](Maybe) { return absl::StrFormat("maybe"); },
-          [](AnyStatus) { return absl::StrFormat("any success value"); }));
+          [](Maybe) { return std::string("maybe"); },
+          [](AnyStatus) { return std::string("any success value"); }));
 }
 
 std::string CqVerifier::ToString() const {
