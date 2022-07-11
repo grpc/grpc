@@ -121,18 +121,10 @@ size_t Executor::RunClosures(const char* executor_name,
 #else
     EXECUTOR_TRACE("(%s) run %p", executor_name, c);
 #endif
-#ifdef GRPC_ERROR_IS_ABSEIL_STATUS
     grpc_error_handle error =
         internal::StatusMoveFromHeapPtr(c->error_data.error);
     c->error_data.error = 0;
     c->cb(c->cb_arg, std::move(error));
-#else
-    grpc_error_handle error =
-        reinterpret_cast<grpc_error_handle>(c->error_data.error);
-    c->error_data.error = 0;
-    c->cb(c->cb_arg, error);
-    GRPC_ERROR_UNREF(error);
-#endif
     c = next;
     n++;
     ExecCtx::Get()->Flush();
