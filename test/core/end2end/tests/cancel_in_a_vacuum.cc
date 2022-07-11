@@ -93,7 +93,6 @@ static void test_cancel_in_a_vacuum(grpc_end2end_test_config config,
   grpc_call* c;
   grpc_end2end_test_fixture f =
       begin_test(config, "test_cancel_in_a_vacuum", mode, nullptr, nullptr);
-  grpc_core::CqVerifier v_client(f.cq);
 
   gpr_timespec deadline = five_seconds_from_now();
   c = grpc_channel_create_call(f.client, nullptr, GRPC_PROPAGATE_DEFAULTS, f.cq,
