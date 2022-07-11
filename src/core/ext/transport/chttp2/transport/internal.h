@@ -44,6 +44,7 @@
 #include "src/core/ext/transport/chttp2/transport/hpack_parser.h"
 #include "src/core/ext/transport/chttp2/transport/http2_settings.h"
 #include "src/core/ext/transport/chttp2/transport/stream_map.h"
+#include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channelz.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/gprpp/bitset.h"
@@ -236,7 +237,7 @@ typedef enum {
 } grpc_chttp2_keepalive_state;
 
 struct grpc_chttp2_transport {
-  grpc_chttp2_transport(const grpc_channel_args* channel_args,
+  grpc_chttp2_transport(const grpc_core::ChannelArgs& channel_args,
                         grpc_endpoint* ep, bool is_client);
   ~grpc_chttp2_transport();
 

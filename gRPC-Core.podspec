@@ -177,6 +177,7 @@ Pod::Spec.new do |s|
     ss.dependency 'abseil/container/flat_hash_map', abseil_version
     ss.dependency 'abseil/container/flat_hash_set', abseil_version
     ss.dependency 'abseil/container/inlined_vector', abseil_version
+    ss.dependency 'abseil/functional/any_invocable', abseil_version
     ss.dependency 'abseil/functional/bind_front', abseil_version
     ss.dependency 'abseil/functional/function_ref', abseil_version
     ss.dependency 'abseil/hash/hash', abseil_version
@@ -1192,10 +1193,6 @@ Pod::Spec.new do |s|
                       'src/core/lib/iomgr/exec_ctx.h',
                       'src/core/lib/iomgr/executor.cc',
                       'src/core/lib/iomgr/executor.h',
-                      'src/core/lib/iomgr/executor/mpmcqueue.cc',
-                      'src/core/lib/iomgr/executor/mpmcqueue.h',
-                      'src/core/lib/iomgr/executor/threadpool.cc',
-                      'src/core/lib/iomgr/executor/threadpool.h',
                       'src/core/lib/iomgr/fork_posix.cc',
                       'src/core/lib/iomgr/fork_windows.cc',
                       'src/core/lib/iomgr/gethostname.h',
@@ -2203,8 +2200,6 @@ Pod::Spec.new do |s|
                               'src/core/lib/iomgr/ev_posix.h',
                               'src/core/lib/iomgr/exec_ctx.h',
                               'src/core/lib/iomgr/executor.h',
-                              'src/core/lib/iomgr/executor/mpmcqueue.h',
-                              'src/core/lib/iomgr/executor/threadpool.h',
                               'src/core/lib/iomgr/gethostname.h',
                               'src/core/lib/iomgr/grpc_if_nametoindex.h',
                               'src/core/lib/iomgr/internal_errqueue.h',
