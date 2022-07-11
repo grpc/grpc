@@ -199,25 +199,19 @@ void CqVerifier::FailNoEventReceived() const {
   abort();
 }
 
-}  // namespace grpc_core
-
-namespace grpc_core {
+void CqVerifier::FailUnexpectedEvent(grpc_event* ev) const {
+  gpr_log(GPR_ERROR, "cq returned unexpected event: %s",
+          grpc_event_string(ev).c_str());
+  gpr_log(GPR_ERROR, "expected tags:\n%s", ToString().c_str());
+  abort();
+}
 
 void CqVerifier::Verify(Duration timeout) {
   const gpr_timespec deadline =
       grpc_timeout_milliseconds_to_deadline(timeout.millis());
   while (!expectations_.empty()) {
     grpc_event ev = grpc_completion_queue_next(cq_, deadline, nullptr);
-    if (ev.type == GRPC_QUEUE_TIMEOUT) {
-      expectations_.erase(
-          std::remove_if(expectations_.begin(), expectations_.end(),
-                         [](const Expectation& e) {
-                           return absl::holds_alternative<Maybe>(e.result);
-                         }),
-          expectations_.end());
-      if (!expectations_.empty()) FailNoEventReceived();
-      return;
-    }
+    if (ev.type == GRPC_QUEUE_TIMEOUT) break;
     ASSERT_EQ(ev.type, GRPC_OP_COMPLETE);
     bool found = false;
     for (auto it = expectations_.begin(); it != expectations_.end(); ++it) {
@@ -238,12 +232,23 @@ void CqVerifier::Verify(Duration timeout) {
       found = true;
       break;
     }
-    if (found) continue;
-    gpr_log(GPR_ERROR, "cq returned unexpected event: %s",
-            grpc_event_string(&ev).c_str());
-    gpr_log(GPR_ERROR, "expected tags:\n%s", ToString().c_str());
-    abort();
+    if (!found) FailUnexpectedEvent(&ev);
+    if (AllMaybes()) break;
   }
+  expectations_.erase(
+      std::remove_if(expectations_.begin(), expectations_.end(),
+                     [](const Expectation& e) {
+                       return absl::holds_alternative<Maybe>(e.result);
+                     }),
+      expectations_.end());
+  if (!expectations_.empty()) FailNoEventReceived();
+}
+
+bool CqVerifier::AllMaybes() const {
+  for (const auto& e : expectations_) {
+    if (!absl::holds_alternative<Maybe>(e.result)) return false;
+  }
+  return true;
 }
 
 void CqVerifier::VerifyEmpty(Duration timeout) {

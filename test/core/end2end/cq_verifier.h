@@ -77,6 +77,8 @@ class CqVerifier {
   };
 
   void FailNoEventReceived() const;
+  void FailUnexpectedEvent(grpc_event* ev) const;
+  bool AllMaybes() const;
 
   grpc_completion_queue* const cq_;
   std::vector<Expectation> expectations_;
