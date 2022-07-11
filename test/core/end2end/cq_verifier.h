@@ -59,10 +59,10 @@ class CqVerifier {
 
   using ExpectedResult = absl::variant<bool, Maybe, AnyStatus>;
 
-  /* Various expectation matchers
-     Any functions taking ... expect a NULL terminated list of key/value pairs
-     (each pair using two parameter slots) of metadata that MUST be present in
-     the event. */
+  // Match an expectation about a status.
+  // location must be DEBUG_LOCATION.
+  // result can be any of the types in ExpectedResult - a plain bool means
+  // 'expect success to be true/false'.
   void Expect(DebugLocation location, void* tag, ExpectedResult result);
 
   std::string ToString() const;
