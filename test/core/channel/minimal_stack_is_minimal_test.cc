@@ -65,8 +65,6 @@ static void check_stack(const char* file, int line, const char* transport_name,
 #define CHECK_STACK(...) check_stack(__FILE__, __LINE__, __VA_ARGS__)
 
 TEST(MinimalStackIsMinimalTest, MainTest) {
-  int errors = 0;
-
   // tests with a minimal stack
   grpc_arg minimal_stack_arg;
   minimal_stack_arg.type = GRPC_ARG_INTEGER;
@@ -79,7 +77,6 @@ TEST(MinimalStackIsMinimalTest, MainTest) {
               "authority", "connected", NULL);
   CHECK_STACK("unknown", &minimal_stack_args, GRPC_SERVER_CHANNEL, "server",
               "connected", NULL);
-
   CHECK_STACK("chttp2", &minimal_stack_args, GRPC_CLIENT_DIRECT_CHANNEL,
               "authority", "http-client", "connected", NULL);
   CHECK_STACK("chttp2", &minimal_stack_args, GRPC_CLIENT_SUBCHANNEL,
@@ -90,21 +87,18 @@ TEST(MinimalStackIsMinimalTest, MainTest) {
               "client-channel", NULL);
 
   // tests with a default stack
-
   CHECK_STACK("unknown", nullptr, GRPC_CLIENT_DIRECT_CHANNEL, "authority",
               "message_size", "deadline", "connected", NULL);
   CHECK_STACK("unknown", nullptr, GRPC_CLIENT_SUBCHANNEL, "authority",
               "message_size", "connected", NULL);
   CHECK_STACK("unknown", nullptr, GRPC_SERVER_CHANNEL, "server", "message_size",
               "deadline", "connected", NULL);
-
   CHECK_STACK("chttp2", nullptr, GRPC_CLIENT_DIRECT_CHANNEL, "authority",
               "message_size", "deadline", "http-client", "message_decompress",
               "message_compress", "connected", NULL);
   CHECK_STACK("chttp2", nullptr, GRPC_CLIENT_SUBCHANNEL, "authority",
               "message_size", "http-client", "message_decompress",
               "message_compress", "connected", NULL);
-
   CHECK_STACK("chttp2", nullptr, GRPC_SERVER_CHANNEL, "server", "message_size",
               "deadline", "http-server", "message_decompress",
               "message_compress", "connected", NULL);
@@ -159,21 +153,11 @@ static void check_stack(const char* file, int line, const char* transport_name,
   std::string got = absl::StrJoin(parts, ", ");
 
   // figure out result, log if there's an error
-  if (got != expect) {
-    std::string args_str = channel_args.ToString();
-
-    gpr_log(file, line, GPR_LOG_SEVERITY_ERROR,
-            "**************************************************");
-    gpr_log(
-        file, line, GPR_LOG_SEVERITY_ERROR,
-        "FAILED transport=%s; stack_type=%s; channel_args=%s:", transport_name,
-        grpc_channel_stack_type_string(
-            static_cast<grpc_channel_stack_type>(channel_stack_type)),
-        args_str.c_str());
-    gpr_log(file, line, GPR_LOG_SEVERITY_ERROR, "EXPECTED: %s", expect.c_str());
-    gpr_log(file, line, GPR_LOG_SEVERITY_ERROR, "GOT:      %s", got.c_str());
-    EXPECT_TRUE(false);
-  }
+  EXPECT_EQ(got, expect) << "transport=" << transport_name << " stack_type="
+                         << grpc_channel_stack_type_string(
+                                static_cast<grpc_channel_stack_type>(
+                                    channel_stack_type))
+                         << " channel_args=" << channel_args.ToString();
 }
 
 int main(int argc, char** argv) {
