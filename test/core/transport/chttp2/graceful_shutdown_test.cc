@@ -66,7 +66,7 @@ class GracefulShutdownTest : public ::testing::Test {
   void SetupAndStart() {
     ExecCtx exec_ctx;
     cq_ = grpc_completion_queue_create_for_next(nullptr);
-    cqv_ = absl::make_unique<grpc_core::CqVerifier>(cq_);
+    cqv_ = absl::make_unique<CqVerifier>(cq_);
     grpc_arg server_args[] = {
         grpc_channel_arg_integer_create(
             const_cast<char*>(GRPC_ARG_HTTP2_BDP_PROBE), 0),
