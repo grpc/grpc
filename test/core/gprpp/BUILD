@@ -21,19 +21,6 @@ licenses(["notice"])
 grpc_package(name = "test/core/gprpp")
 
 grpc_cc_test(
-    name = "time_averaged_stats_test",
-    srcs = ["time_averaged_stats_test.cc"],
-    external_deps = ["gtest"],
-    language = "C++",
-    uses_event_engine = False,
-    uses_polling = False,
-    deps = [
-        "//:time_averaged_stats",
-        "//test/core/util:grpc_suppressions",
-    ],
-)
-
-grpc_cc_test(
     name = "examine_stack_test",
     srcs = ["examine_stack_test.cc"],
     external_deps = [

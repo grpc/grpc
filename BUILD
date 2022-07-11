@@ -2163,7 +2163,6 @@ grpc_cc_library(
 grpc_cc_library(
     name = "iomgr_timer",
     srcs = [
-        "src/core/lib/iomgr/time_averaged_stats.cc",
         "src/core/lib/iomgr/timer.cc",
         "src/core/lib/iomgr/timer_generic.cc",
         "src/core/lib/iomgr/timer_heap.cc",
@@ -2174,7 +2173,6 @@ grpc_cc_library(
         "src/core/lib/iomgr/timer_generic.h",
         "src/core/lib/iomgr/timer_heap.h",
         "src/core/lib/iomgr/timer_manager.h",
-        "src/core/lib/iomgr/time_averaged_stats.h",
     ] + [
         # TODO(hork): deduplicate
         "src/core/lib/iomgr/iomgr.h",
@@ -2192,6 +2190,7 @@ grpc_cc_library(
         "grpc_trace",
         "iomgr_port",
         "time",
+        "time_averaged_stats",
         "useful",
     ],
 )
