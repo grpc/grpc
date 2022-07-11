@@ -54,7 +54,7 @@ TEST(MpscqTest, Serial) {
   }
   for (size_t i = 0; i < 10000000; i++) {
     test_node* n = reinterpret_cast<test_node*>(q.Pop());
-    ASSERT_TRUE(n);
+    ASSERT_NE(n, nullptr);
     ASSERT_EQ(n->i, i);
     delete n;
   }
