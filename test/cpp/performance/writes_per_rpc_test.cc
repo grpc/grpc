@@ -29,6 +29,7 @@
 
 #include "src/core/ext/transport/chttp2/transport/chttp2_transport.h"
 #include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/iomgr/endpoint.h"
 #include "src/core/lib/iomgr/endpoint_pair.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
@@ -87,8 +88,11 @@ class EndpointPairFixture {
 
     /* create channel */
     {
-      grpc_core::ChannelArgs args;
-      args = args.Set(GRPC_ARG_DEFAULT_AUTHORITY, "test.authority");
+      grpc_core::ChannelArgs args =
+          grpc_core::CoreConfiguration::Get()
+              .channel_args_preconditioning()
+              .PreconditionChannelArgs(nullptr)
+              .Set(GRPC_ARG_DEFAULT_AUTHORITY, "test.authority");
       ApplyCommonChannelArguments(&args);
 
       grpc_transport* transport =
