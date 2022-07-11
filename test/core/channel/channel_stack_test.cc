@@ -117,10 +117,10 @@ TEST(ChannelStackTest, CreateChannelStack) {
       "grpc_channel_stack_init",
       grpc_channel_stack_init(1, free_channel, channel_stack, &filters, 1,
                               &chan_args, "test", channel_stack)));
-  ASSERT_EQ(channel_stack->count, 1);
+  EXPECT_EQ(channel_stack->count, 1);
   channel_elem = grpc_channel_stack_element(channel_stack, 0);
   channel_data = static_cast<int*>(channel_elem->channel_data);
-  ASSERT_EQ(*channel_data, 0);
+  EXPECT_EQ(*channel_data, 0);
 
   call_stack =
       static_cast<grpc_call_stack*>(gpr_malloc(channel_stack->call_stack_size));
@@ -136,18 +136,18 @@ TEST(ChannelStackTest, CreateChannelStack) {
   };
   grpc_error_handle error =
       grpc_call_stack_init(channel_stack, 1, free_call, call_stack, &args);
-  ASSERT_TRUE(GRPC_ERROR_IS_NONE(error));
-  ASSERT_EQ(call_stack->count, 1);
+  ASSERT_TRUE(GRPC_ERROR_IS_NONE(error)) << grpc_error_std_string(error);
+  EXPECT_EQ(call_stack->count, 1);
   call_elem = grpc_call_stack_element(call_stack, 0);
-  ASSERT_EQ(call_elem->filter, channel_elem->filter);
-  ASSERT_EQ(call_elem->channel_data, channel_elem->channel_data);
+  EXPECT_EQ(call_elem->filter, channel_elem->filter);
+  EXPECT_EQ(call_elem->channel_data, channel_elem->channel_data);
   call_data = static_cast<int*>(call_elem->call_data);
-  ASSERT_EQ(*call_data, 0);
-  ASSERT_EQ(*channel_data, 1);
+  EXPECT_EQ(*call_data, 0);
+  EXPECT_EQ(*channel_data, 1);
 
   GRPC_CALL_STACK_UNREF(call_stack, "done");
   grpc_core::ExecCtx::Get()->Flush();
-  ASSERT_EQ(*channel_data, 2);
+  EXPECT_EQ(*channel_data, 2);
 
   GRPC_CHANNEL_STACK_UNREF(channel_stack, "done");
 

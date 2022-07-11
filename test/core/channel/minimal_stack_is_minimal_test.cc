@@ -51,9 +51,9 @@
 #include "test/core/util/test_config.h"
 
 // use CHECK_STACK instead
-static int check_stack(const char* file, int line, const char* transport_name,
-                       grpc_channel_args* init_args,
-                       unsigned channel_stack_type, ...);
+static void check_stack(const char* file, int line, const char* transport_name,
+                        grpc_channel_args* init_args,
+                        unsigned channel_stack_type, ...);
 
 // arguments: const char *transport_name   - the name of the transport type to
 //                                           simulate
@@ -73,55 +73,51 @@ TEST(MinimalStackIsMinimalTest, MainTest) {
   minimal_stack_arg.key = const_cast<char*>(GRPC_ARG_MINIMAL_STACK);
   minimal_stack_arg.value.integer = 1;
   grpc_channel_args minimal_stack_args = {1, &minimal_stack_arg};
-  errors +=
-      CHECK_STACK("unknown", &minimal_stack_args, GRPC_CLIENT_DIRECT_CHANNEL,
-                  "authority", "connected", NULL);
-  errors += CHECK_STACK("unknown", &minimal_stack_args, GRPC_CLIENT_SUBCHANNEL,
-                        "authority", "connected", NULL);
-  errors += CHECK_STACK("unknown", &minimal_stack_args, GRPC_SERVER_CHANNEL,
-                        "server", "connected", NULL);
-  errors +=
-      CHECK_STACK("chttp2", &minimal_stack_args, GRPC_CLIENT_DIRECT_CHANNEL,
-                  "authority", "http-client", "connected", NULL);
-  errors += CHECK_STACK("chttp2", &minimal_stack_args, GRPC_CLIENT_SUBCHANNEL,
-                        "authority", "http-client", "connected", NULL);
-  errors += CHECK_STACK("chttp2", &minimal_stack_args, GRPC_SERVER_CHANNEL,
-                        "server", "http-server", "connected", NULL);
-  errors += CHECK_STACK(nullptr, &minimal_stack_args, GRPC_CLIENT_CHANNEL,
-                        "client-channel", NULL);
+  CHECK_STACK("unknown", &minimal_stack_args, GRPC_CLIENT_DIRECT_CHANNEL,
+              "authority", "connected", NULL);
+  CHECK_STACK("unknown", &minimal_stack_args, GRPC_CLIENT_SUBCHANNEL,
+              "authority", "connected", NULL);
+  CHECK_STACK("unknown", &minimal_stack_args, GRPC_SERVER_CHANNEL, "server",
+              "connected", NULL);
+
+  CHECK_STACK("chttp2", &minimal_stack_args, GRPC_CLIENT_DIRECT_CHANNEL,
+              "authority", "http-client", "connected", NULL);
+  CHECK_STACK("chttp2", &minimal_stack_args, GRPC_CLIENT_SUBCHANNEL,
+              "authority", "http-client", "connected", NULL);
+  CHECK_STACK("chttp2", &minimal_stack_args, GRPC_SERVER_CHANNEL, "server",
+              "http-server", "connected", NULL);
+  CHECK_STACK(nullptr, &minimal_stack_args, GRPC_CLIENT_CHANNEL,
+              "client-channel", NULL);
 
   // tests with a default stack
-  errors +=
-      CHECK_STACK("unknown", nullptr, GRPC_CLIENT_DIRECT_CHANNEL, "authority",
-                  "message_size", "deadline", "connected", NULL);
-  errors += CHECK_STACK("unknown", nullptr, GRPC_CLIENT_SUBCHANNEL, "authority",
-                        "message_size", "connected", NULL);
-  errors += CHECK_STACK("unknown", nullptr, GRPC_SERVER_CHANNEL, "server",
-                        "message_size", "deadline", "connected", NULL);
-  errors +=
-      CHECK_STACK("chttp2", nullptr, GRPC_CLIENT_DIRECT_CHANNEL, "authority",
-                  "message_size", "deadline", "http-client",
-                  "message_decompress", "message_compress", "connected", NULL);
-  errors += CHECK_STACK("chttp2", nullptr, GRPC_CLIENT_SUBCHANNEL, "authority",
-                        "message_size", "http-client", "message_decompress",
-                        "message_compress", "connected", NULL);
-  errors +=
-      CHECK_STACK("chttp2", nullptr, GRPC_SERVER_CHANNEL, "server",
-                  "message_size", "deadline", "http-server",
-                  "message_decompress", "message_compress", "connected", NULL);
-  errors += CHECK_STACK(nullptr, nullptr, GRPC_CLIENT_CHANNEL, "client-channel",
-                        NULL);
 
-  ASSERT_EQ(errors, 0);
+  CHECK_STACK("unknown", nullptr, GRPC_CLIENT_DIRECT_CHANNEL, "authority",
+              "message_size", "deadline", "connected", NULL);
+  CHECK_STACK("unknown", nullptr, GRPC_CLIENT_SUBCHANNEL, "authority",
+              "message_size", "connected", NULL);
+  CHECK_STACK("unknown", nullptr, GRPC_SERVER_CHANNEL, "server", "message_size",
+              "deadline", "connected", NULL);
+
+  CHECK_STACK("chttp2", nullptr, GRPC_CLIENT_DIRECT_CHANNEL, "authority",
+              "message_size", "deadline", "http-client", "message_decompress",
+              "message_compress", "connected", NULL);
+  CHECK_STACK("chttp2", nullptr, GRPC_CLIENT_SUBCHANNEL, "authority",
+              "message_size", "http-client", "message_decompress",
+              "message_compress", "connected", NULL);
+
+  CHECK_STACK("chttp2", nullptr, GRPC_SERVER_CHANNEL, "server", "message_size",
+              "deadline", "http-server", "message_decompress",
+              "message_compress", "connected", NULL);
+  CHECK_STACK(nullptr, nullptr, GRPC_CLIENT_CHANNEL, "client-channel", NULL);
 }
 
 /*******************************************************************************
  * End of tests definitions, start of test infrastructure
  */
 
-static int check_stack(const char* file, int line, const char* transport_name,
-                       grpc_channel_args* init_args,
-                       unsigned channel_stack_type, ...) {
+static void check_stack(const char* file, int line, const char* transport_name,
+                        grpc_channel_args* init_args,
+                        unsigned channel_stack_type, ...) {
   // create phony channel stack
   grpc_core::ChannelStackBuilderImpl builder(
       "test", static_cast<grpc_channel_stack_type>(channel_stack_type));
@@ -137,7 +133,7 @@ static int check_stack(const char* file, int line, const char* transport_name,
   }
   {
     grpc_core::ExecCtx exec_ctx;
-    EXPECT_TRUE(grpc_core::CoreConfiguration::Get().channel_init().CreateStack(
+    ASSERT_TRUE(grpc_core::CoreConfiguration::Get().channel_init().CreateStack(
         &builder));
   }
 
@@ -163,7 +159,6 @@ static int check_stack(const char* file, int line, const char* transport_name,
   std::string got = absl::StrJoin(parts, ", ");
 
   // figure out result, log if there's an error
-  int result = 0;
   if (got != expect) {
     std::string args_str = channel_args.ToString();
 
@@ -177,10 +172,8 @@ static int check_stack(const char* file, int line, const char* transport_name,
         args_str.c_str());
     gpr_log(file, line, GPR_LOG_SEVERITY_ERROR, "EXPECTED: %s", expect.c_str());
     gpr_log(file, line, GPR_LOG_SEVERITY_ERROR, "GOT:      %s", got.c_str());
-    result = 1;
+    EXPECT_TRUE(false);
   }
-
-  return result;
 }
 
 int main(int argc, char** argv) {
