@@ -33,19 +33,6 @@ namespace grpc_core {
 // on a single completion queue
 class CqVerifier {
  public:
-  explicit CqVerifier(grpc_completion_queue* cq);
-  ~CqVerifier();
-
-  CqVerifier(const CqVerifier&) = delete;
-  CqVerifier& operator=(const CqVerifier&) = delete;
-
-  // Ensure all expected events (and only those events) are present on the
-  // bound completion queue within \a timeout.
-  void Verify(Duration timeout = Duration::Seconds(10));
-
-  // Ensure that the completion queue is empty, waiting up to \a timeout.
-  void VerifyEmpty(Duration timeout = Duration::Seconds(1));
-
   // ExpectedResult - if the tag is received, set *seen to true (if seen is
   // non-null).
   struct Maybe {
@@ -58,6 +45,19 @@ class CqVerifier {
   };
 
   using ExpectedResult = absl::variant<bool, Maybe, AnyStatus>;
+
+  explicit CqVerifier(grpc_completion_queue* cq);
+  ~CqVerifier();
+
+  CqVerifier(const CqVerifier&) = delete;
+  CqVerifier& operator=(const CqVerifier&) = delete;
+
+  // Ensure all expected events (and only those events) are present on the
+  // bound completion queue within \a timeout.
+  void Verify(Duration timeout = Duration::Seconds(10));
+
+  // Ensure that the completion queue is empty, waiting up to \a timeout.
+  void VerifyEmpty(Duration timeout = Duration::Seconds(1));
 
   // Match an expectation about a status.
   // location must be DEBUG_LOCATION.
