@@ -63,8 +63,8 @@
   struct ChannelArgTypeTraits;
 
   namespace channel_args_detail {
-  // The type returned by calling Ref() on a T - used to determine the
-  // basest-type before the crt refcount base class.
+  // The type returned by calling Ref() on a T - used to determine the basest-type
+  // before the crt refcount base class.
   template <typename T>
   using RefType = absl::remove_cvref_t<decltype(*std::declval<T>().Ref())>;
   }  // namespace channel_args_detail
@@ -74,8 +74,7 @@
   // static int ChannelArgsCompare(const T* a, const T* b);
   template <typename T>
   struct ChannelArgTypeTraits<
-      T,
-      absl::enable_if_t<
+      T, absl::enable_if_t<
           std::is_base_of<RefCounted<channel_args_detail::RefType<T> >,
                           channel_args_detail::RefType<T> >::value ||
               std::is_base_of<RefCounted<channel_args_detail::RefType<T>,
@@ -133,11 +132,11 @@
   // If a type declares some member 'struct RawPointerChannelArgTag {}' then
   // we automatically generate a vtable for it that does not do any ownership
   // management and compares the type by pointer identity.
-  // This is intended to be relatively ugly because *most types should worry
-  // about ownership*.
+  // This is intended to be relatively ugly because *most types should worry about
+  // ownership*.
   template <typename T>
-  struct ChannelArgTypeTraits<
-      T, absl::void_t<typename T::RawPointerChannelArgTag> > {
+  struct ChannelArgTypeTraits<T,
+      absl::void_t<typename T::RawPointerChannelArgTag> > {
     static void* TakeUnownedPointer(T* p) { return p; }
     static const grpc_arg_pointer_vtable* VTable() {
       static const grpc_arg_pointer_vtable tbl = {
@@ -240,8 +239,8 @@
     struct ChannelArgsDeleter {
       void operator()(const grpc_channel_args* p) const;
     };
-    using CPtr = std::unique_ptr<const grpc_channel_args,
-                                 ChannelArgs::ChannelArgsDeleter>;
+    using CPtr = 
+      std::unique_ptr<const grpc_channel_args, ChannelArgs::ChannelArgsDeleter>;
 
     ChannelArgs();
     ~ChannelArgs();
@@ -261,8 +260,7 @@
     const Value* Get(absl::string_view name) const;
     GRPC_MUST_USE_RESULT ChannelArgs Set(absl::string_view name,
                                          Pointer value) const;
-    GRPC_MUST_USE_RESULT ChannelArgs Set(absl::string_view name,
-                                         int value) const;
+    GRPC_MUST_USE_RESULT ChannelArgs Set(absl::string_view name, int value) const;
     GRPC_MUST_USE_RESULT ChannelArgs Set(absl::string_view name,
                                          absl::string_view value) const;
     GRPC_MUST_USE_RESULT ChannelArgs Set(absl::string_view name,
@@ -276,9 +274,8 @@
                      decltype(ChannelArgTypeTraits<T>::VTable())>::value,
         ChannelArgs>
     Set(absl::string_view name, T* value) const {
-      return Set(name,
-                 Pointer(ChannelArgTypeTraits<T>::TakeUnownedPointer(value),
-                         ChannelArgTypeTraits<T>::VTable()));
+      return Set(name, Pointer(ChannelArgTypeTraits<T>::TakeUnownedPointer(value),
+                               ChannelArgTypeTraits<T>::VTable()));
     }
     template <typename T>
     GRPC_MUST_USE_RESULT auto Set(absl::string_view name,
@@ -289,9 +286,8 @@
                                   absl::remove_cvref_t<T> >::VTable())>::value,
             ChannelArgs> {
       return Set(
-          name,
-          Pointer(value.release(),
-                  ChannelArgTypeTraits<absl::remove_cvref_t<T> >::VTable()));
+          name, Pointer(value.release(),
+                        ChannelArgTypeTraits<absl::remove_cvref_t<T> >::VTable()));
     }
     template <typename T>
     GRPC_MUST_USE_RESULT absl::enable_if_t<
