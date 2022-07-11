@@ -71,7 +71,8 @@ class ClientRequestCreator<SimpleRequest> {
   ClientRequestCreator(SimpleRequest* req,
                        const PayloadConfig& payload_config) {
     if (payload_config.has_bytebuf_params()) {
-      gpr_log(GPR_ERROR, "Invalid PayloadConfig, missing bytebuf_params: %s",
+      gpr_log(GPR_ERROR,
+              "Invalid PayloadConfig, config cannot have bytebuf_params: %s",
               payload_config.DebugString().c_str());
       GPR_ASSERT(false);  // not appropriate for this specialization
     } else if (payload_config.has_simple_params()) {
@@ -83,7 +84,8 @@ class ClientRequestCreator<SimpleRequest> {
       std::unique_ptr<char[]> body(new char[size]);
       req->mutable_payload()->set_body(body.get(), size);
     } else if (payload_config.has_complex_params()) {
-      gpr_log(GPR_ERROR, "Invalid PayloadConfig, missing complex_params: %s",
+      gpr_log(GPR_ERROR,
+              "Invalid PayloadConfig, cannot have complex_params: %s",
               payload_config.DebugString().c_str());
       GPR_ASSERT(false);  // not appropriate for this specialization
     } else {
