@@ -249,11 +249,10 @@ absl::optional<size_t> GrpcMemoryAllocatorImpl::TryReserve(
 
 void GrpcMemoryAllocatorImpl::MaybeDonateBack() {
   size_t free = free_bytes_.load(std::memory_order_relaxed);
-  const size_t kReduceToSize = kMaxQuotaBufferSize / 2;
-  while (true) {
-    if (free <= kReduceToSize) return;
-    size_t ret = free - kReduceToSize;
-    if (free_bytes_.compare_exchange_weak(free, kReduceToSize,
+  while (free > 0) {
+    const size_t ret = free > 8192 ? free / 2 : free;
+    const size_t new_free = free - ret;
+    if (free_bytes_.compare_exchange_weak(free, new_free,
                                           std::memory_order_acq_rel,
                                           std::memory_order_acquire)) {
       if (GRPC_TRACE_FLAG_ENABLED(grpc_resource_quota_trace)) {
