@@ -195,8 +195,13 @@ void GrpcXdsTransportFactory::GrpcXdsTransport::GrpcStreamingCall::
   grpc_byte_buffer_reader_destroy(&bbr);
   grpc_byte_buffer_destroy(self->recv_message_payload_);
   self->recv_message_payload_ = nullptr;
-  self->event_handler_->OnRecvMessage(StringViewFromSlice(response_slice));
+  const bool done =
+      self->event_handler_->OnRecvMessage(StringViewFromSlice(response_slice));
   grpc_slice_unref_internal(response_slice);
+  if (done) {
+    self->Unref(DEBUG_LOCATION, "OnResponseReceived");
+    return;
+  }
   // Keep reading.
   grpc_op op;
   memset(&op, 0, sizeof(op));
