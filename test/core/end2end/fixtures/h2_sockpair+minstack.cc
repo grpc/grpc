@@ -108,11 +108,11 @@ static void chttp2_init_client_socketpair(
   auto final_client_args = grpc_core::CoreConfiguration::Get()
                                .channel_args_preconditioning()
                                .PreconditionChannelArgs(client_args)
-                               .Set(GRPC_ARG_MINIMAL_STACK, true)
-                               .ToC();
-  cs.client_args = final_client_args.get();
+                               .Set(GRPC_ARG_MINIMAL_STACK, true);
+  auto c_client_args = final_client_args.ToC();
+  cs.client_args = c_client_args.get();
   cs.f = f;
-  transport = grpc_create_chttp2_transport(final_client_args.get(),
+  transport = grpc_create_chttp2_transport(final_client_args,
                                            fixture_data->ep.client, true);
   client_setup_transport(&cs, transport);
   GPR_ASSERT(f->client);
@@ -130,9 +130,8 @@ static void chttp2_init_server_socketpair(
   auto final_server_args = grpc_core::CoreConfiguration::Get()
                                .channel_args_preconditioning()
                                .PreconditionChannelArgs(server_args)
-                               .Set(GRPC_ARG_MINIMAL_STACK, true)
-                               .ToC();
-  transport = grpc_create_chttp2_transport(final_server_args.get(),
+                               .Set(GRPC_ARG_MINIMAL_STACK, true);
+  transport = grpc_create_chttp2_transport(final_server_args,
                                            fixture_data->ep.server, false);
   server_setup_transport(f, transport);
 }
