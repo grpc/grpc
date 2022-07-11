@@ -2244,6 +2244,7 @@ grpc_cc_library(
         "absl/status",
         "absl/status:statusor",
         "absl/time",
+        "absl/functional:any_invocable",
     ],
     deps = [
         "gpr_base",
@@ -2316,6 +2317,7 @@ grpc_cc_library(
     hdrs = [
         "src/core/lib/event_engine/iomgr_engine/thread_pool.h",
     ],
+    external_deps = ["absl/functional:any_invocable"],
     tags = ["grpc-autodeps"],
     deps = ["gpr_base"],
 )
@@ -2349,6 +2351,7 @@ grpc_cc_library(
     external_deps = [
         "absl/base:core_headers",
         "absl/container:flat_hash_set",
+        "absl/functional:any_invocable",
         "absl/status",
         "absl/status:statusor",
         "absl/strings",
@@ -2410,6 +2413,10 @@ grpc_cc_library(
     name = "event_engine_base",
     srcs = [
         "src/core/lib/event_engine/event_engine.cc",
+    ],
+    external_deps = [
+        "absl/functional:any_invocable",
+        "absl/memory",
     ],
     deps = [
         "default_event_engine_factory",
@@ -2541,8 +2548,6 @@ grpc_cc_library(
         "src/core/lib/iomgr/ev_poll_posix.cc",
         "src/core/lib/iomgr/ev_posix.cc",
         "src/core/lib/iomgr/ev_windows.cc",
-        "src/core/lib/iomgr/executor/mpmcqueue.cc",
-        "src/core/lib/iomgr/executor/threadpool.cc",
         "src/core/lib/iomgr/fork_posix.cc",
         "src/core/lib/iomgr/fork_windows.cc",
         "src/core/lib/iomgr/gethostname_fallback.cc",
@@ -2658,8 +2663,6 @@ grpc_cc_library(
         "src/core/lib/iomgr/ev_epoll1_linux.h",
         "src/core/lib/iomgr/ev_poll_posix.h",
         "src/core/lib/iomgr/ev_posix.h",
-        "src/core/lib/iomgr/executor/mpmcqueue.h",
-        "src/core/lib/iomgr/executor/threadpool.h",
         "src/core/lib/iomgr/gethostname.h",
         "src/core/lib/iomgr/grpc_if_nametoindex.h",
         "src/core/lib/iomgr/internal_errqueue.h",
@@ -2739,7 +2742,9 @@ grpc_cc_library(
         "absl/base:core_headers",
         "absl/container:flat_hash_map",
         "absl/container:inlined_vector",
+        "absl/functional:any_invocable",
         "absl/functional:bind_front",
+        "absl/functional:function_ref",
         "absl/memory",
         "absl/meta:type_traits",
         "absl/status:statusor",
@@ -3827,6 +3832,7 @@ grpc_cc_library(
         "channel_fwd",
         "config",
         "debug_location",
+        "default_event_engine_factory_hdrs",
         "envoy_admin_upb",
         "envoy_config_cluster_upb",
         "envoy_config_cluster_upbdefs",
