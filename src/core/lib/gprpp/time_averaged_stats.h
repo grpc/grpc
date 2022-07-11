@@ -19,8 +19,7 @@
 #ifndef GRPC_CORE_LIB_EVENT_ENGINE_IOMGR_ENGINE_TIME_AVERAGED_STATS_H
 #define GRPC_CORE_LIB_EVENT_ENGINE_IOMGR_ENGINE_TIME_AVERAGED_STATS_H
 
-namespace grpc_event_engine {
-namespace iomgr_engine {
+namespace grpc_core {
 
 /* This tracks a time-decaying weighted average.  It works by collecting
    batches of samples and then mixing their average into a time-decaying
@@ -75,7 +74,6 @@ class TimeAveragedStats {
   double aggregate_weighted_avg_ = init_avg_;
 };
 
-}  // namespace iomgr_engine
-}  // namespace grpc_event_engine
+}  // namespace grpc_core
 
 #endif /* GRPC_CORE_LIB_EVENT_ENGINE_IOMGR_ENGINE_TIME_AVERAGED_STATS_H */

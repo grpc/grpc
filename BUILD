@@ -2275,10 +2275,10 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
-    name = "iomgr_ee_time_averaged_stats",
-    srcs = ["src/core/lib/event_engine/iomgr_engine/time_averaged_stats.cc"],
+    name = "time_averaged_stats",
+    srcs = ["src/core/lib/gprpp/time_averaged_stats.cc"],
     hdrs = [
-        "src/core/lib/event_engine/iomgr_engine/time_averaged_stats.h",
+        "src/core/lib/gprpp/time_averaged_stats.h",
     ],
     tags = ["grpc-autodeps"],
     deps = ["gpr_base"],
@@ -2302,7 +2302,7 @@ grpc_cc_library(
     deps = [
         "event_engine_base_hdrs",
         "gpr_base",
-        "iomgr_ee_time_averaged_stats",
+        "time_averaged_stats",
         "time",
         "useful",
     ],
