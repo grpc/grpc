@@ -19,6 +19,9 @@
 #include <stdio.h>
 #include <string.h>
 
+#include <map>
+
+#include "absl/algorithm/container.h"
 #include "absl/flags/flag.h"
 #include "absl/flags/parse.h"
 #include "absl/strings/str_cat.h"
@@ -78,32 +81,43 @@ int main(int argc, char** argv) {
   }
 
   /* Set configurations */
-  std::string minstack_arg = "--nominstack";
-  std::string secure_arg = "--nosecure";
-  if (absl::GetFlag(FLAGS_scenario_config) == "secure") secure_arg = "--secure";
-  if (absl::GetFlag(FLAGS_scenario_config) == "resource_quota") {
-    secure_arg = "--secure";
-    // TODO(chennancy): add in resource quota parameter setting later
-  }
-  if (absl::GetFlag(FLAGS_scenario_config) == "minstack")
-    minstack_arg = "--minstack";
   if (absl::GetFlag(FLAGS_size) == 0) absl::SetFlag(&FLAGS_size, 50000);
+
+  struct ScenarioArgs {
+    std::vector<std::string> client;
+    std::vector<std::string> server;
+  };
+  // TODO(chennancy): add in resource quota parameter setting later
+  const std::map<std::string /*scenario*/, ScenarioArgs> scenarios = {
+      {"secure", {/*client=*/{}, /*server=*/{"--secure"}}},
+      {"resource_quota", {/*client=*/{}, /*server=*/{"--secure"}}},
+      {"minstack", {/*client=*/{"--minstack"}, /*server=*/{"--minstack"}}},
+      {"insecure", {{}, {}}},
+  };
+  auto it_scenario = scenarios.find(absl::GetFlag(FLAGS_scenario_config));
+  if (it_scenario == scenarios.end()) {
+    return 2;
+  }
 
   /* per-call memory usage benchmark */
   if (absl::GetFlag(FLAGS_benchmark_name) == "call") {
     /* start the server */
-    Subprocess svr({absl::StrCat(root, "/memory_usage_server",
-                                 gpr_subprocess_binary_extension()),
-                    "--bind", grpc_core::JoinHostPort("::", port), secure_arg,
-                    minstack_arg});
+    std::vector<std::string> server_flags = {
+        absl::StrCat(root, "/memory_usage_server",
+                     gpr_subprocess_binary_extension()),
+        "--bind", grpc_core::JoinHostPort("::", port)};
+    absl::c_move(it_scenario->second.server, std::back_inserter(server_flags));
+    Subprocess svr(server_flags);
 
     /* start the client */
-    Subprocess cli({absl::StrCat(root, "/memory_usage_client",
-                                 gpr_subprocess_binary_extension()),
-                    "--target", grpc_core::JoinHostPort("127.0.0.1", port),
-                    absl::StrCat("--warmup=", 10000),
-                    absl::StrCat("--benchmark=", absl::GetFlag(FLAGS_size)),
-                    minstack_arg});
+    std::vector<std::string> client_flags = {
+        absl::StrCat(root, "/memory_usage_client",
+                     gpr_subprocess_binary_extension()),
+        "--target", grpc_core::JoinHostPort("127.0.0.1", port),
+        absl::StrCat("--warmup=", 10000),
+        absl::StrCat("--benchmark=", absl::GetFlag(FLAGS_size))};
+    absl::c_move(it_scenario->second.client, std::back_inserter(client_flags));
+    Subprocess cli(client_flags);
     /* wait for completion */
     if ((status = cli.Join()) != 0) {
       printf("client failed with: %d", status);
