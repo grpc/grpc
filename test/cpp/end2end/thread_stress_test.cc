@@ -43,7 +43,13 @@
 using grpc::testing::EchoRequest;
 using grpc::testing::EchoResponse;
 
+#if defined(__APPLE__)
+// Use less # of threads on Mac because its test machines are less powerful
+// to finish the test on time. (context: b/185231823)
+const int kNumThreads = 100;  // Number of threads
+#else
 const int kNumThreads = 300;  // Number of threads
+#endif
 const int kNumAsyncSendThreads = 2;
 const int kNumAsyncReceiveThreads = 50;
 const int kNumAsyncServerThreads = 50;
