@@ -46,8 +46,6 @@
 #include "src/core/lib/gprpp/match.h"
 #include "src/core/lib/surface/event_string.h"
 
-#define ROOT_EXPECTATION 1000
-
 // a set of metadata we expect to find on an event
 typedef struct metadata {
   size_t count;
