@@ -217,7 +217,7 @@ static void do_connect(void* arg, grpc_error_handle error) {
 
     grpc_core::Server* core_server = grpc_core::Server::FromC(g_server);
     grpc_transport* transport = grpc_create_chttp2_transport(
-        core_server->channel_args(), server, false);
+        core_server->channel_args().ToC().get(), server, false);
     GPR_ASSERT(GRPC_LOG_IF_ERROR(
         "SetupTransport",
         core_server->SetupTransport(transport, nullptr,

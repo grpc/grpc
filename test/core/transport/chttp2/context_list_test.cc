@@ -75,8 +75,10 @@ TEST_F(ContextListTest, ExecuteFlushesList) {
   grpc_endpoint* mock_endpoint = grpc_mock_endpoint_create(discard_write);
   auto args = CoreConfiguration::Get()
                   .channel_args_preconditioning()
-                  .PreconditionChannelArgs(nullptr);
-  grpc_transport* t = grpc_create_chttp2_transport(args, mock_endpoint, true);
+                  .PreconditionChannelArgs(nullptr)
+                  .ToC();
+  grpc_transport* t =
+      grpc_create_chttp2_transport(args.get(), mock_endpoint, true);
   std::vector<grpc_chttp2_stream*> s;
   s.reserve(kNumElems);
   gpr_atm verifier_called[kNumElems];
@@ -129,8 +131,10 @@ TEST_F(ContextListTest, NonEmptyListEmptyTimestamp) {
   grpc_endpoint* mock_endpoint = grpc_mock_endpoint_create(discard_write);
   auto args = CoreConfiguration::Get()
                   .channel_args_preconditioning()
-                  .PreconditionChannelArgs(nullptr);
-  grpc_transport* t = grpc_create_chttp2_transport(args, mock_endpoint, true);
+                  .PreconditionChannelArgs(nullptr)
+                  .ToC();
+  grpc_transport* t =
+      grpc_create_chttp2_transport(args.get(), mock_endpoint, true);
   std::vector<grpc_chttp2_stream*> s;
   s.reserve(kNumElems);
   gpr_atm verifier_called[kNumElems];
