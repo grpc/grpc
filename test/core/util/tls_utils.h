@@ -24,24 +24,6 @@ namespace grpc_core {
 
 namespace testing {
 
-class TmpFile {
- public:
-  // Create a temporary file with |data| written in.
-  explicit TmpFile(absl::string_view data);
-
-  ~TmpFile();
-
-  const std::string& name() { return name_; }
-
-  // Rewrite |data| to the temporary file, in an atomic way.
-  void RewriteFile(absl::string_view data);
-
- private:
-  std::string CreateTmpFileAndWriteData(absl::string_view data);
-
-  std::string name_;
-};
-
 PemKeyCertPairList MakeCertKeyPairs(absl::string_view private_key,
                                     absl::string_view certs);
 

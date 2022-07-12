@@ -127,6 +127,23 @@ void FileWatcherAuthorizationPolicyProvider::SetCallbackForTesting(
   cb_ = std::move(cb);
 }
 
+absl::StatusOr<std::string>
+FileWatcherAuthorizationPolicyProvider::ReadPolicyFromFile() {
+  MutexLock lock(&file_mu_);
+  grpc_slice policy_slice = grpc_empty_slice();
+  grpc_error_handle error =
+      grpc_load_file(authz_policy_path_.c_str(), 0, &policy_slice);
+  if (error != GRPC_ERROR_NONE) {
+    absl::Status status =
+        absl::InvalidArgumentError(grpc_error_std_string(error));
+    GRPC_ERROR_UNREF(error);
+    return status;
+  }
+  std::string policy_contents(StringViewFromSlice(policy_slice));
+  grpc_slice_unref_internal(policy_slice);
+  return policy_contents;
+}
+
 absl::Status FileWatcherAuthorizationPolicyProvider::ForceUpdate() {
   bool contents_changed = false;
   auto done_early = [&](absl::Status status) {
@@ -136,8 +153,7 @@ absl::Status FileWatcherAuthorizationPolicyProvider::ForceUpdate() {
     }
     return status;
   };
-  absl::StatusOr<std::string> file_contents =
-      ReadPolicyFromFile(authz_policy_path_);
+  absl::StatusOr<std::string> file_contents = ReadPolicyFromFile();
   if (!file_contents.ok()) {
     return done_early(file_contents.status());
   }
@@ -165,23 +181,6 @@ absl::Status FileWatcherAuthorizationPolicyProvider::ForceUpdate() {
             file_contents_.c_str());
   }
   return absl::OkStatus();
-}
-
-absl::StatusOr<std::string>
-FileWatcherAuthorizationPolicyProvider::ReadPolicyFromFile() {
-  MutexLock lock(&file_mu_);
-  grpc_slice policy_slice = grpc_empty_slice();
-  grpc_error_handle error =
-      grpc_load_file(authz_policy_path_.c_str(), 0, &policy_slice);
-  if (error != GRPC_ERROR_NONE) {
-    absl::Status status =
-        absl::InvalidArgumentError(grpc_error_std_string(error));
-    GRPC_ERROR_UNREF(error);
-    return status;
-  }
-  std::string policy_contents(StringViewFromSlice(policy_slice));
-  grpc_slice_unref_internal(policy_slice);
-  return policy_contents;
 }
 
 void FileWatcherAuthorizationPolicyProvider::Orphan() {

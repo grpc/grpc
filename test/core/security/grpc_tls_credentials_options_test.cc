@@ -30,6 +30,7 @@
 #include "src/core/lib/security/credentials/tls/tls_credentials.h"
 #include "src/core/lib/security/security_connector/ssl_utils_config.h"
 #include "src/core/lib/security/security_connector/tls/tls_security_connector.h"
+#include "src/core/lib/security/util/file_util.h"
 #include "test/core/util/test_config.h"
 #include "test/core/util/tls_utils.h"
 

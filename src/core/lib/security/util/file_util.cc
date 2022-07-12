@@ -59,12 +59,4 @@ std::string TmpFile::CreateTmpFileAndWriteData(absl::string_view data) {
   return name_to_return;
 }
 
-std::string GetFileContents(const char* path) {
-  grpc_slice slice = grpc_empty_slice();
-  GPR_ASSERT(GRPC_LOG_IF_ERROR("load_file", grpc_load_file(path, 0, &slice)));
-  std::string data = std::string(StringViewFromSlice(slice));
-  grpc_slice_unref(slice);
-  return data;
-}
-
 }  // namespace grpc_core

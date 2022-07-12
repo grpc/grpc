@@ -40,8 +40,6 @@ class TmpFile {
   std::string name_;
 };
 
-std::string GetFileContents(const char* path);
-
 }  // namespace grpc_core
 
 #endif  // GRPC_CORE_LIB_SECURITY_UTIL_FILE_UTIL_H
