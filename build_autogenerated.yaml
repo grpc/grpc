@@ -3291,15 +3291,6 @@ targets:
   deps:
   - grpc_test_util
   uses_polling: false
-- name: cmdline_test
-  build: test
-  language: c
-  headers: []
-  src:
-  - test/core/util/cmdline_test.cc
-  deps:
-  - grpc_test_util
-  uses_polling: false
 - name: combiner_test
   build: test
   language: c
@@ -3464,15 +3455,6 @@ targets:
   - test/core/iomgr/grpc_ipv6_loopback_available_test.cc
   deps:
   - grpc_test_util
-- name: histogram_test
-  build: test
-  language: c
-  headers: []
-  src:
-  - test/core/util/histogram_test.cc
-  deps:
-  - grpc_test_util
-  uses_polling: false
 - name: hpack_encoder_test
   build: test
   language: c
@@ -4916,6 +4898,16 @@ targets:
   - linux
   - posix
   - mac
+- name: cmdline_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/core/util/cmdline_test.cc
+  deps:
+  - grpc_test_util
+  uses_polling: false
 - name: codegen_test_full
   gtest: true
   build: test
@@ -6165,6 +6157,16 @@ targets:
   - test/cpp/end2end/test_service_impl.cc
   deps:
   - grpc++_test_util
+- name: histogram_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/core/util/histogram_test.cc
+  deps:
+  - grpc_test_util
+  uses_polling: false
 - name: host_port_test
   gtest: true
   build: test
