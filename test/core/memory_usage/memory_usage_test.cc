@@ -94,7 +94,7 @@ int main(int argc, char** argv) {
   };
   auto it_scenario = scenarios.find(absl::GetFlag(FLAGS_scenario_config));
   if (it_scenario == scenarios.end()) {
-    printf("No scenario config matching the name found\n");
+    printf("No scenario matching the name could be found\n");
     return 3;
   }
 
