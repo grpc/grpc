@@ -1225,7 +1225,7 @@ class XdsClusterResolverLbFactory : public LoadBalancingPolicyFactory {
                              &grpc_lb_xds_cluster_resolver_trace),
           xds_client_(std::move(xds_client)) {}
 
-    ~XdsClusterResolverChildHandler() {
+    ~XdsClusterResolverChildHandler() override {
       xds_client_.reset(DEBUG_LOCATION, "XdsClusterResolverChildHandler");
     }
 
