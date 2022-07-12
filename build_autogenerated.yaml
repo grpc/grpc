@@ -3501,6 +3501,15 @@ targets:
   deps:
   - grpc_test_util
   uses_polling: false
+- name: minimal_stack_is_minimal_test
+  build: test
+  language: c
+  headers: []
+  src:
+  - test/core/channel/minimal_stack_is_minimal_test.cc
+  deps:
+  - grpc_test_util
+  uses_polling: false
 - name: multiple_server_queues_test
   build: test
   language: c
@@ -6833,16 +6842,6 @@ targets:
   - test/core/transport/metadata_map_test.cc
   deps:
   - grpc_test_util
-- name: minimal_stack_is_minimal_test
-  gtest: true
-  build: test
-  language: c++
-  headers: []
-  src:
-  - test/core/channel/minimal_stack_is_minimal_test.cc
-  deps:
-  - grpc_test_util
-  uses_polling: false
 - name: miscompile_with_no_unique_address_test
   gtest: true
   build: test
