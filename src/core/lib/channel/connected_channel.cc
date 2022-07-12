@@ -41,6 +41,7 @@
 #include "src/core/lib/channel/context.h"
 #include "src/core/lib/gpr/alloc.h"
 #include "src/core/lib/gprpp/debug_location.h"
+#include "src/core/lib/gprpp/match.h"
 #include "src/core/lib/iomgr/call_combiner.h"
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/error.h"
@@ -440,8 +441,17 @@ class ClientConnectedCallPromise {
 
     void RecvMessageBatchDone(grpc_error_handle error) {
       if (error != GRPC_ERROR_NONE) return;
-      auto pending =
-          std::move(absl::get<PendingReceiveMessage>(recv_message_state_));
+      if (absl::holds_alternative<Closed>(recv_message_state_)) return;
+      auto pending = MatchMutable(
+          &recv_message_state_, [](Idle*) -> PendingReceiveMessage { abort(); },
+          [](PendingReceiveMessage* p) -> PendingReceiveMessage {
+            return std::move(*p);
+          },
+          [](absl::optional<Message>*) -> PendingReceiveMessage { abort(); },
+          [](Closed*) -> PendingReceiveMessage { abort(); },
+          [](PipeSender<Message>::PushType*) -> PendingReceiveMessage {
+            abort();
+          });
       if (pending.payload.has_value()) {
         recv_message_state_ = absl::optional<Message>(
             Message(std::move(*pending.payload), pending.flags));

@@ -2772,7 +2772,7 @@ grpc_cc_library(
         "channel_stack_builder",
         "channel_stack_type",
         "chunked_vector",
-        "closure",
+        "closure","match",
         "config",
         "cpp_impl_of",
         "debug_location",
