@@ -18,6 +18,8 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <asm-generic/errno.h>
+
 #include <grpc/impl/codegen/grpc_types.h>
 
 #include "src/core/lib/iomgr/port.h"
@@ -1607,7 +1609,7 @@ static bool tcp_flush(grpc_tcp* tcp, grpc_error_handle* error) {
     }
 
     if (sent_length < 0) {
-      if (saved_errno == EAGAIN) {
+      if (saved_errno == EAGAIN || saved_errno == ENOBUFS) {
         tcp->outgoing_byte_idx = unwind_byte_idx;
         // unref all and forget about all slices that have been written to this
         // point
