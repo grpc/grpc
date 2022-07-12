@@ -23,18 +23,8 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-from google.protobuf.internal import text_format_test
+from google.protobuf.internal.text_format_test import *
 import unittest
 
-# These rely on the UnknownFields accessor, which we are trying to deprecate.
-text_format_test.OnlyWorksWithProto2RightNowTests.testPrintUnknownFields.__unittest_expecting_failure__ = True
-
-# begin:github_only
-from google.protobuf.internal import _parameterized  # copybara:strip_for_google3
-sep = _parameterized._SEPARATOR
-getattr(text_format_test.TextFormatMessageToStringTests, "testPrintUnknownFieldsEmbeddedMessageInBytes" + sep + "0").__unittest_expecting_failure__ = True
-getattr(text_format_test.TextFormatMessageToStringTests, "testPrintUnknownFieldsEmbeddedMessageInBytes" + sep + "1").__unittest_expecting_failure__ = True
-# end:github_only
-
 if __name__ == '__main__':
-  unittest.main(module=text_format_test, verbosity=2)
+  unittest.main(verbosity=2)

@@ -43,6 +43,7 @@ grpc_cc_test(
 grpc_cc_test(
     name = "fork_test",
     srcs = ["fork_test.cc"],
+    external_deps = ["gtest"],
     language = "C++",
     tags = ["no_windows"],
     uses_event_engine = True,  # engines should behave appropriately on Fork
@@ -76,18 +77,6 @@ grpc_cc_test(
     ],
     language = "C++",
     tags = ["no_windows"],  # TODO(jtattermusch): fix the failure on windows
-    uses_event_engine = False,
-    uses_polling = False,
-    deps = [
-        "//:gpr",
-        "//test/core/util:grpc_test_util",
-    ],
-)
-
-grpc_cc_test(
-    name = "manual_constructor_test",
-    srcs = ["manual_constructor_test.cc"],
-    language = "C++",
     uses_event_engine = False,
     uses_polling = False,
     deps = [
@@ -154,6 +143,7 @@ grpc_cc_test(
 grpc_cc_test(
     name = "host_port_test",
     srcs = ["host_port_test.cc"],
+    external_deps = ["gtest"],
     language = "C++",
     uses_event_engine = False,
     uses_polling = False,
@@ -167,6 +157,7 @@ grpc_cc_test(
     name = "mpscq_test",
     srcs = ["mpscq_test.cc"],
     exec_properties = LARGE_MACHINE,
+    external_deps = ["gtest"],
     language = "C++",
     tags = ["no_windows"],  # LARGE_MACHINE is not configured for windows RBE
     uses_event_engine = False,
@@ -234,6 +225,7 @@ grpc_cc_test(
 grpc_cc_test(
     name = "thd_test",
     srcs = ["thd_test.cc"],
+    external_deps = ["gtest"],
     language = "C++",
     uses_event_engine = False,
     uses_polling = False,

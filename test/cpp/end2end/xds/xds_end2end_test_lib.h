@@ -402,6 +402,10 @@ class XdsEnd2endTest : public ::testing::TestWithParam<XdsTestType> {
       v2_ = true;
       return *this;
     }
+    BootstrapBuilder& SetIgnoreResourceDeletion() {
+      ignore_resource_deletion_ = true;
+      return *this;
+    }
     BootstrapBuilder& SetDefaultServer(const std::string& server) {
       top_server_ = server;
       return *this;
@@ -450,6 +454,7 @@ class XdsEnd2endTest : public ::testing::TestWithParam<XdsTestType> {
     std::string MakeAuthorityText();
 
     bool v2_ = false;
+    bool ignore_resource_deletion_ = false;
     std::string top_server_;
     std::string client_default_listener_resource_name_template_;
     std::map<std::string /*key*/, PluginInfo> plugins_;

@@ -178,7 +178,7 @@ def grpc_cc_library(
                       "//conditions:default": [],
                   }) +
                   select({
-                      "//:use_abseil_status": ["GRPC_ERROR_IS_ABSEIL_STATUS=1"],
+                      "//:disable_use_abseil_status": ["GRPC_ERROR_IS_NOT_ABSEIL_STATUS=1"],
                       "//conditions:default": [],
                   }),
         hdrs = hdrs + public_hdrs,

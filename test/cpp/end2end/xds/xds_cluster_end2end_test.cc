@@ -24,6 +24,8 @@
 #include "absl/strings/str_cat.h"
 
 #include "src/core/ext/filters/client_channel/backup_poller.h"
+#include "src/core/lib/address_utils/sockaddr_utils.h"
+#include "test/cpp/end2end/connection_delay_injector.h"
 #include "test/cpp/end2end/xds/xds_end2end_test_lib.h"
 
 namespace grpc {
@@ -230,30 +232,6 @@ TEST_P(CdsTest, ChangeClusters) {
   WaitForAllBackends(DEBUG_LOCATION, 1, 2);
 }
 
-// Tests that we go into TRANSIENT_FAILURE if the Cluster disappears.
-TEST_P(CdsTest, ClusterRemoved) {
-  CreateAndStartBackends(1);
-  EdsResourceArgs args({{"locality0", CreateEndpointsForBackends()}});
-  balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
-  // We need to wait for all backends to come online.
-  WaitForAllBackends(DEBUG_LOCATION);
-  // Unset CDS resource.
-  balancer_->ads_service()->UnsetResource(kCdsTypeUrl, kDefaultClusterName);
-  // Wait for RPCs to start failing.
-  SendRpcsUntil(DEBUG_LOCATION, [](const RpcResult& result) {
-    if (result.status.ok()) return true;  // Keep going.
-    EXPECT_EQ(StatusCode::UNAVAILABLE, result.status.error_code());
-    EXPECT_EQ(absl::StrCat("CDS resource \"", kDefaultClusterName,
-                           "\" does not exist"),
-              result.status.error_message());
-    return false;
-  });
-  // Make sure we ACK'ed the update.
-  auto response_state = balancer_->ads_service()->cds_response_state();
-  ASSERT_TRUE(response_state.has_value());
-  EXPECT_EQ(response_state->state, AdsServiceImpl::ResponseState::ACKED);
-}
-
 TEST_P(CdsTest, CircuitBreaking) {
   CreateAndStartBackends(1);
   constexpr size_t kMaxConcurrentRequests = 10;
@@ -357,6 +335,79 @@ TEST_P(CdsTest, ClusterChangeAfterAdsCallFails) {
 }
 
 //
+// CDS deletion tests
+//
+
+class CdsDeletionTest : public XdsEnd2endTest {
+ protected:
+  void SetUp() override {}  // Individual tests call InitClient().
+};
+
+INSTANTIATE_TEST_SUITE_P(XdsTest, CdsDeletionTest,
+                         ::testing::Values(XdsTestType()), &XdsTestType::Name);
+
+// Tests that we go into TRANSIENT_FAILURE if the Cluster is deleted.
+TEST_P(CdsDeletionTest, ClusterDeleted) {
+  InitClient();
+  CreateAndStartBackends(1);
+  EdsResourceArgs args({{"locality0", CreateEndpointsForBackends()}});
+  balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
+  // We need to wait for all backends to come online.
+  WaitForAllBackends(DEBUG_LOCATION);
+  // Unset CDS resource.
+  balancer_->ads_service()->UnsetResource(kCdsTypeUrl, kDefaultClusterName);
+  // Wait for RPCs to start failing.
+  SendRpcsUntil(DEBUG_LOCATION, [](const RpcResult& result) {
+    if (result.status.ok()) return true;  // Keep going.
+    EXPECT_EQ(StatusCode::UNAVAILABLE, result.status.error_code());
+    EXPECT_EQ(absl::StrCat("CDS resource \"", kDefaultClusterName,
+                           "\" does not exist"),
+              result.status.error_message());
+    return false;
+  });
+  // Make sure we ACK'ed the update.
+  auto response_state = balancer_->ads_service()->cds_response_state();
+  ASSERT_TRUE(response_state.has_value());
+  EXPECT_EQ(response_state->state, AdsServiceImpl::ResponseState::ACKED);
+}
+
+// Tests that we ignore Cluster deletions if configured to do so.
+TEST_P(CdsDeletionTest, ClusterDeletionIgnored) {
+  InitClient(BootstrapBuilder().SetIgnoreResourceDeletion());
+  CreateAndStartBackends(2);
+  // Bring up client pointing to backend 0 and wait for it to connect.
+  EdsResourceArgs args({{"locality0", CreateEndpointsForBackends(0, 1)}});
+  balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
+  WaitForAllBackends(DEBUG_LOCATION, 0, 1);
+  // Make sure we ACKed the CDS update.
+  auto response_state = balancer_->ads_service()->cds_response_state();
+  ASSERT_TRUE(response_state.has_value());
+  EXPECT_EQ(response_state->state, AdsServiceImpl::ResponseState::ACKED);
+  // Unset CDS resource and wait for client to ACK the update.
+  balancer_->ads_service()->UnsetResource(kCdsTypeUrl, kDefaultClusterName);
+  const auto deadline = absl::Now() + absl::Seconds(30);
+  while (true) {
+    ASSERT_LT(absl::Now(), deadline) << "timed out waiting for CDS ACK";
+    response_state = balancer_->ads_service()->cds_response_state();
+    if (response_state.has_value()) break;
+  }
+  EXPECT_EQ(response_state->state, AdsServiceImpl::ResponseState::ACKED);
+  // Make sure we can still send RPCs.
+  CheckRpcSendOk(DEBUG_LOCATION);
+  // Now recreate the CDS resource pointing to a new EDS resource that
+  // specified backend 1, and make sure the client uses it.
+  const char* kNewEdsResourceName = "new_eds_resource_name";
+  auto cluster = default_cluster_;
+  cluster.mutable_eds_cluster_config()->set_service_name(kNewEdsResourceName);
+  balancer_->ads_service()->SetCdsResource(cluster);
+  args = EdsResourceArgs({{"locality0", CreateEndpointsForBackends(1, 2)}});
+  balancer_->ads_service()->SetEdsResource(
+      BuildEdsResource(args, kNewEdsResourceName));
+  // Wait for client to start using backend 1.
+  WaitForAllBackends(DEBUG_LOCATION, 1, 2);
+}
+
+//
 // EDS tests
 //
 
@@ -446,7 +497,7 @@ TEST_P(EdsTest, InitiallyEmptyServerlist) {
   constexpr char kErrorMessage[] =
       // TODO(roth): Improve this error message as part of
       // https://github.com/grpc/grpc/issues/22883.
-      "weighted_target: all children report state TRANSIENT_FAILURE";
+      "empty address list: ";
   CheckRpcSendFailure(DEBUG_LOCATION, StatusCode::UNAVAILABLE, kErrorMessage);
   // Send non-empty serverlist.
   args = EdsResourceArgs({{"locality0", CreateEndpointsForBackends()}});
@@ -489,16 +540,20 @@ TEST_P(EdsTest, BackendsRestart) {
   WaitForAllBackends(DEBUG_LOCATION);
   // Stop backends.  RPCs should fail.
   ShutdownAllBackends();
-  // Wait for channel to report TRANSIENT_FAILURE.
+  // Wait for channel to transition out of READY, so that we know it has
+  // noticed that all of the subchannels have failed.  Note that it may
+  // be reporting either CONNECTING or TRANSIENT_FAILURE at this point.
   EXPECT_TRUE(channel_->WaitForStateChange(
       GRPC_CHANNEL_READY, grpc_timeout_seconds_to_deadline(5)));
-  EXPECT_EQ(GRPC_CHANNEL_TRANSIENT_FAILURE, channel_->GetState(false));
+  EXPECT_THAT(channel_->GetState(false),
+              ::testing::AnyOf(::testing::Eq(GRPC_CHANNEL_TRANSIENT_FAILURE),
+                               ::testing::Eq(GRPC_CHANNEL_CONNECTING)));
   // RPCs should fail.
   CheckRpcSendFailure(
       DEBUG_LOCATION, StatusCode::UNAVAILABLE,
-      // TODO(roth): Improve this error message as part of
-      // https://github.com/grpc/grpc/issues/22883.
-      "weighted_target: all children report state TRANSIENT_FAILURE");
+      "connections to all backends failing; last error: "
+      "(UNKNOWN: Failed to connect to remote host: Connection refused|"
+      "UNAVAILABLE: Failed to connect to remote host: FD shutdown)");
   // Restart all backends.  RPCs should start succeeding again.
   StartAllBackends();
   CheckRpcSendOk(DEBUG_LOCATION, 1,
@@ -558,6 +613,20 @@ TEST_P(EdsTest, NacksDuplicateLocalityInSamePriority) {
                   "duplicate locality {region=\"xds_default_locality_region\", "
                   "zone=\"xds_default_locality_zone\", sub_zone=\"locality0\"} "
                   "found in priority 0"));
+}
+
+TEST_P(EdsTest, NacksEndpointWeightZero) {
+  EdsResourceArgs args({{"locality0", {MakeNonExistantEndpoint()}}});
+  auto eds_resource = BuildEdsResource(args);
+  eds_resource.mutable_endpoints(0)
+      ->mutable_lb_endpoints(0)
+      ->mutable_load_balancing_weight()
+      ->set_value(0);
+  balancer_->ads_service()->SetEdsResource(eds_resource);
+  const auto response_state = WaitForEdsNack(DEBUG_LOCATION);
+  ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
+  EXPECT_THAT(response_state->error_message,
+              ::testing::HasSubstr("Invalid endpoint weight of 0."));
 }
 
 // Tests that if the balancer is down, the RPCs will still be sent to the
@@ -1057,6 +1126,37 @@ TEST_P(FailoverTest, Failover) {
   EXPECT_EQ(0U, backends_[1]->backend_service()->request_count());
 }
 
+// Reports CONNECTING when failing over to a lower priority.
+TEST_P(FailoverTest, ReportsConnectingDuringFailover) {
+  CreateAndStartBackends(1);
+  // Priority 0 will be unreachable, so we'll use priority 1.
+  EdsResourceArgs args({
+      {"locality0", {MakeNonExistantEndpoint()}, kDefaultLocalityWeight, 0},
+      {"locality1", CreateEndpointsForBackends(), kDefaultLocalityWeight, 1},
+  });
+  balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
+  ConnectionHoldInjector injector;
+  injector.Start();
+  auto hold = injector.AddHold(backends_[0]->port());
+  // Start an RPC in the background, which should cause the channel to
+  // try to connect.
+  LongRunningRpc rpc;
+  rpc.StartRpc(stub_.get(), RpcOptions());
+  // Wait for connection attempt to start to the backend.
+  hold->Wait();
+  // Channel state should be CONNECTING here, and any RPC should be
+  // queued.
+  EXPECT_EQ(channel_->GetState(false), GRPC_CHANNEL_CONNECTING);
+  // Allow the connection attempt to complete.
+  hold->Resume();
+  // Now the RPC should complete successfully.
+  gpr_log(GPR_INFO, "=== WAITING FOR RPC TO FINISH ===");
+  Status status = rpc.GetStatus();
+  gpr_log(GPR_INFO, "=== RPC FINISHED ===");
+  EXPECT_TRUE(status.ok()) << "code=" << status.error_code()
+                           << " message=" << status.error_message();
+}
+
 // If a locality with higher priority than the current one becomes ready,
 // switch to it.
 TEST_P(FailoverTest, SwitchBackToHigherPriority) {
@@ -1093,11 +1193,12 @@ TEST_P(FailoverTest, UpdateInitialUnavailable) {
       {"locality1", {MakeNonExistantEndpoint()}, kDefaultLocalityWeight, 1},
   });
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
-  constexpr char kErrorMessage[] =
-      // TODO(roth): Improve this error message as part of
-      // https://github.com/grpc/grpc/issues/22883.
-      "weighted_target: all children report state TRANSIENT_FAILURE";
-  CheckRpcSendFailure(DEBUG_LOCATION, StatusCode::UNAVAILABLE, kErrorMessage);
+  constexpr char kErrorMessageRegex[] =
+      "connections to all backends failing; last error: "
+      "(UNKNOWN: Failed to connect to remote host: Connection refused|"
+      "UNAVAILABLE: Failed to connect to remote host: FD shutdown)";
+  CheckRpcSendFailure(DEBUG_LOCATION, StatusCode::UNAVAILABLE,
+                      kErrorMessageRegex);
   args = EdsResourceArgs({
       {"locality0", CreateEndpointsForBackends(0, 1), kDefaultLocalityWeight,
        0},
@@ -1108,7 +1209,8 @@ TEST_P(FailoverTest, UpdateInitialUnavailable) {
   WaitForBackend(DEBUG_LOCATION, 0, [&](const RpcResult& result) {
     if (!result.status.ok()) {
       EXPECT_EQ(result.status.error_code(), StatusCode::UNAVAILABLE);
-      EXPECT_EQ(result.status.error_message(), kErrorMessage);
+      EXPECT_THAT(result.status.error_message(),
+                  ::testing::MatchesRegex(kErrorMessageRegex));
     }
   });
 }
@@ -1607,6 +1709,7 @@ int main(int argc, char** argv) {
   gpr_setenv("grpc_cfstream", "0");
 #endif
   grpc_init();
+  grpc::testing::ConnectionAttemptInjector::Init();
   const auto result = RUN_ALL_TESTS();
   grpc_shutdown();
   return result;

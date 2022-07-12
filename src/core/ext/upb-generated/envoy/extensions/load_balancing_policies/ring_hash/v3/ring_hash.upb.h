@@ -61,11 +61,15 @@ UPB_INLINE envoy_extensions_load_balancing_policies_ring_hash_v3_RingHash* envoy
   return ret;
 }
 UPB_INLINE char* envoy_extensions_load_balancing_policies_ring_hash_v3_RingHash_serialize(const envoy_extensions_load_balancing_policies_ring_hash_v3_RingHash* msg, upb_Arena* arena, size_t* len) {
-  return upb_Encode(msg, &envoy_extensions_load_balancing_policies_ring_hash_v3_RingHash_msginit, 0, arena, len);
+  char* ptr;
+  (void)upb_Encode(msg, &envoy_extensions_load_balancing_policies_ring_hash_v3_RingHash_msginit, 0, arena, &ptr, len);
+  return ptr;
 }
 UPB_INLINE char* envoy_extensions_load_balancing_policies_ring_hash_v3_RingHash_serialize_ex(const envoy_extensions_load_balancing_policies_ring_hash_v3_RingHash* msg, int options,
                                  upb_Arena* arena, size_t* len) {
-  return upb_Encode(msg, &envoy_extensions_load_balancing_policies_ring_hash_v3_RingHash_msginit, options, arena, len);
+  char* ptr;
+  (void)upb_Encode(msg, &envoy_extensions_load_balancing_policies_ring_hash_v3_RingHash_msginit, options, arena, &ptr, len);
+  return ptr;
 }
 UPB_INLINE void envoy_extensions_load_balancing_policies_ring_hash_v3_RingHash_clear_hash_function(const envoy_extensions_load_balancing_policies_ring_hash_v3_RingHash* msg) {
   *UPB_PTR_AT(msg, UPB_SIZE(4, 4), int32_t) = 0;

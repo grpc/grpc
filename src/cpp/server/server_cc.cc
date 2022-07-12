@@ -1058,6 +1058,7 @@ bool Server::RegisterService(const std::string* addr, grpc::Service* service) {
       has_callback_methods_ = true;
       grpc::internal::RpcServiceMethod* method_value = method.get();
       grpc::CompletionQueue* cq = CallbackCQ();
+      grpc_server_register_completion_queue(server_, cq->cq(), nullptr);
       grpc_core::Server::FromC(server_)->SetRegisteredMethodAllocator(
           cq->cq(), method_registration_tag, [this, cq, method_value] {
             grpc_core::Server::RegisteredCallAllocation result;
@@ -1149,37 +1150,16 @@ void Server::Start(grpc::ServerCompletionQueue** cqs, size_t num_cqs) {
 
   // Only create default health check service when user did not provide an
   // explicit one.
-  grpc::ServerCompletionQueue* health_check_cq = nullptr;
-  grpc::DefaultHealthCheckService::HealthCheckServiceImpl*
-      default_health_check_service_impl = nullptr;
   if (health_check_service_ == nullptr && !health_check_service_disabled_ &&
       grpc::DefaultHealthCheckServiceEnabled()) {
-    auto* default_hc_service = new grpc::DefaultHealthCheckService;
-    health_check_service_.reset(default_hc_service);
-    // We create a non-polling CQ to avoid impacting application
-    // performance.  This ensures that we don't introduce thread hops
-    // for application requests that wind up on this CQ, which is polled
-    // in its own thread.
-    health_check_cq = new grpc::ServerCompletionQueue(
-        GRPC_CQ_NEXT, GRPC_CQ_NON_POLLING, nullptr);
-    grpc_server_register_completion_queue(server_, health_check_cq->cq(),
-                                          nullptr);
-    default_health_check_service_impl =
-        default_hc_service->GetHealthCheckService(
-            std::unique_ptr<grpc::ServerCompletionQueue>(health_check_cq));
-    RegisterService(nullptr, default_health_check_service_impl);
+    auto default_hc_service = absl::make_unique<DefaultHealthCheckService>();
+    auto* hc_service_impl = default_hc_service->GetHealthCheckService();
+    health_check_service_ = std::move(default_hc_service);
+    RegisterService(nullptr, hc_service_impl);
   }
 
   for (auto& acceptor : acceptors_) {
     acceptor->GetCredentials()->AddPortToServer(acceptor->name(), server_);
-  }
-
-  // If this server uses callback methods, then create a callback generic
-  // service to handle any unimplemented methods using the default reactor
-  // creator
-  if (has_callback_methods_ && !has_callback_generic_service_) {
-    unimplemented_service_ = absl::make_unique<grpc::CallbackGenericService>();
-    RegisterCallbackGenericService(unimplemented_service_.get());
   }
 
 #ifndef NDEBUG
@@ -1188,19 +1168,27 @@ void Server::Start(grpc::ServerCompletionQueue** cqs, size_t num_cqs) {
   }
 #endif
 
-  // If we have a generic service, all unmatched method names go there.
-  // Otherwise, we must provide at least one RPC request for an "unimplemented"
-  // RPC, which covers any RPC for a method name that isn't matched. If we
-  // have a sync service, let it be a sync unimplemented RPC, which must be
-  // registered before server start (to initialize an AllocatingRequestMatcher).
-  // If we have an AllocatingRequestMatcher, we can't also specify other
-  // unimplemented RPCs via explicit async requests, so we won't do so. If we
-  // only have async services, we can specify unimplemented RPCs on each async
-  // CQ so that some user polling thread will move them along as long as some
-  // progress is being made on any RPCs in the system.
+  // We must have exactly one generic service to handle requests for
+  // unmatched method names (i.e., to return UNIMPLEMENTED for any RPC
+  // method for which we don't have a registered implementation).  This
+  // service comes from one of the following places (first match wins):
+  // - If the application supplied a generic service via either the async
+  //   or callback APIs, we use that.
+  // - If there are callback methods, register a callback generic service.
+  // - If there are sync methods, register a sync generic service.
+  //   (This must be done before server start to initialize an
+  //   AllocatingRequestMatcher.)
+  // - Otherwise (we have only async methods), we wait until the server
+  //   is started and then start an UnimplementedAsyncRequest on each
+  //   async CQ, so that the requests will be moved along by polling
+  //   done in application threads.
   bool unknown_rpc_needed =
       !has_async_generic_service_ && !has_callback_generic_service_;
-
+  if (unknown_rpc_needed && has_callback_methods_) {
+    unimplemented_service_ = absl::make_unique<grpc::CallbackGenericService>();
+    RegisterCallbackGenericService(unimplemented_service_.get());
+    unknown_rpc_needed = false;
+  }
   if (unknown_rpc_needed && !sync_req_mgrs_.empty()) {
     sync_req_mgrs_[0]->AddUnknownSyncMethod();
     unknown_rpc_needed = false;
@@ -1213,9 +1201,6 @@ void Server::Start(grpc::ServerCompletionQueue** cqs, size_t num_cqs) {
       if (cqs[i]->IsFrequentlyPolled()) {
         new UnimplementedAsyncRequest(this, cqs[i]);
       }
-    }
-    if (health_check_cq != nullptr) {
-      new UnimplementedAsyncRequest(this, health_check_cq);
     }
     unknown_rpc_needed = false;
   }
@@ -1231,10 +1216,6 @@ void Server::Start(grpc::ServerCompletionQueue** cqs, size_t num_cqs) {
 
   for (const auto& value : sync_req_mgrs_) {
     value->Start();
-  }
-
-  if (default_health_check_service_impl != nullptr) {
-    default_health_check_service_impl->StartServingThread();
   }
 
   for (auto& acceptor : acceptors_) {

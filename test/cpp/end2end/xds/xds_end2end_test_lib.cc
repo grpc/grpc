@@ -38,7 +38,7 @@
 
 #include "src/core/ext/filters/http/server/http_server_filter.h"
 #include "src/core/ext/xds/xds_channel_args.h"
-#include "src/core/ext/xds/xds_client.h"
+#include "src/core/ext/xds/xds_client_grpc.h"
 #include "src/core/lib/gpr/env.h"
 #include "src/core/lib/gpr/tmpfile.h"
 #include "src/core/lib/iomgr/load_file.h"
@@ -336,9 +336,15 @@ std::string XdsEnd2endTest::BootstrapBuilder::MakeXdsServersText(
       "          \"server_features\": [<SERVER_FEATURES>]\n"
       "        }\n"
       "      ]";
+  std::vector<std::string> server_features;
+  if (!v2_) server_features.push_back("\"xds_v3\"");
+  if (ignore_resource_deletion_) {
+    server_features.push_back("\"ignore_resource_deletion\"");
+  }
   return absl::StrReplaceAll(
-      kXdsServerTemplate, {{"<SERVER_URI>", server_uri},
-                           {"<SERVER_FEATURES>", (v2_ ? "" : "\"xds_v3\"")}});
+      kXdsServerTemplate,
+      {{"<SERVER_URI>", server_uri},
+       {"<SERVER_FEATURES>", absl::StrJoin(server_features, ", ")}});
 }
 
 std::string XdsEnd2endTest::BootstrapBuilder::MakeNodeText() {

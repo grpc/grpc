@@ -19,11 +19,12 @@
 #include <inttypes.h>
 #include <string.h>
 
+#include <algorithm>
 #include <memory>
 #include <string>
 #include <utility>
+#include <vector>
 
-#include "absl/container/inlined_vector.h"
 #include "absl/memory/memory.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
@@ -100,7 +101,7 @@ class PickFirst : public LoadBalancingPolicy {
                               PickFirstSubchannelData> {
    public:
     PickFirstSubchannelList(PickFirst* policy, ServerAddressList addresses,
-                            const grpc_channel_args& args)
+                            const ChannelArgs& args)
         : SubchannelList(policy,
                          (GRPC_TRACE_FLAG_ENABLED(grpc_lb_pick_first_trace)
                               ? "PickFirstSubchannelList"
@@ -227,7 +228,7 @@ void PickFirst::AttemptToConnectUsingLatestUpdateArgsLocked() {
             latest_pending_subchannel_list_.get());
   }
   latest_pending_subchannel_list_ = MakeOrphanable<PickFirstSubchannelList>(
-      this, std::move(addresses), *latest_update_args_.args);
+      this, std::move(addresses), latest_update_args_.args);
   // Empty update or no valid subchannels.  Put the channel in
   // TRANSIENT_FAILURE.
   if (latest_pending_subchannel_list_->num_subchannels() == 0) {
@@ -272,12 +273,7 @@ void PickFirst::UpdateLocked(UpdateArgs args) {
     }
   }
   // Add GRPC_ARG_INHIBIT_HEALTH_CHECKING channel arg.
-  grpc_arg new_arg = grpc_channel_arg_integer_create(
-      const_cast<char*>(GRPC_ARG_INHIBIT_HEALTH_CHECKING), 1);
-  const grpc_channel_args* new_args =
-      grpc_channel_args_copy_and_add(args.args, &new_arg, 1);
-  std::swap(new_args, args.args);
-  grpc_channel_args_destroy(new_args);
+  args.args = args.args.Set(GRPC_ARG_INHIBIT_HEALTH_CHECKING, 1);
   // If the update contains a resolver error and we have a previous update
   // that was not a resolver error, keep using the previous addresses.
   if (!args.addresses.ok() && latest_update_args_.config != nullptr) {
@@ -346,6 +342,9 @@ void PickFirst::PickFirstSubchannelData::ProcessConnectivityChangeLocked(
     // TODO(qianchengz): We may want to request re-resolution in
     // ExitIdleLocked().
     p->channel_control_helper()->RequestReresolution();
+    // TODO(roth): We chould check the connectivity states of all the
+    // subchannels here, just in case one of them happens to be READY,
+    // and we could switch to that rather than going IDLE.
     // Enter idle.
     p->idle_ = true;
     p->selected_ = nullptr;
@@ -389,13 +388,10 @@ void PickFirst::PickFirstSubchannelData::ProcessConnectivityChangeLocked(
     case GRPC_CHANNEL_READY:
       // Already handled this case above, so this should not happen.
       GPR_UNREACHABLE_CODE(break);
-    case GRPC_CHANNEL_TRANSIENT_FAILURE:
-    case GRPC_CHANNEL_IDLE: {
-      PickFirstSubchannelData* sd = this;
-      size_t next_index =
-          (sd->Index() + 1) % subchannel_list()->num_subchannels();
+    case GRPC_CHANNEL_TRANSIENT_FAILURE: {
+      size_t next_index = (Index() + 1) % subchannel_list()->num_subchannels();
       subchannel_list()->set_attempting_index(next_index);
-      sd = subchannel_list()->subchannel(next_index);
+      PickFirstSubchannelData* sd = subchannel_list()->subchannel(next_index);
       // If we're tried all subchannels, set state to TRANSIENT_FAILURE.
       if (sd->Index() == 0) {
         if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_pick_first_trace)) {
@@ -432,7 +428,20 @@ void PickFirst::PickFirstSubchannelData::ProcessConnectivityChangeLocked(
               absl::make_unique<TransientFailurePicker>(status));
         }
       }
-      sd->subchannel()->RequestConnection();
+      // If the next subchannel is in IDLE, trigger a connection attempt.
+      // If it's in READY, we can't get here, because we would already
+      // have selected the subchannel above.
+      // If it's already in CONNECTING, we don't need to do this.
+      // If it's in TRANSIENT_FAILURE, then we will trigger the
+      // connection attempt later when it reports IDLE.
+      auto sd_state = sd->connectivity_state();
+      if (sd_state.has_value() && *sd_state == GRPC_CHANNEL_IDLE) {
+        sd->subchannel()->RequestConnection();
+      }
+      break;
+    }
+    case GRPC_CHANNEL_IDLE: {
+      subchannel()->RequestConnection();
       break;
     }
     case GRPC_CHANNEL_CONNECTING: {

@@ -33,7 +33,7 @@
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/iomgr/error.h"
-#include "src/core/lib/transport/byte_stream.h"
+#include "src/core/lib/slice/slice_buffer.h"
 #include "src/core/lib/transport/connectivity_state.h"
 #include "src/core/lib/transport/metadata_batch.h"
 #include "src/core/lib/transport/transport.h"
@@ -54,10 +54,9 @@ std::string grpc_transport_stream_op_batch_string(
 
   if (op->send_message) {
     if (op->payload->send_message.send_message != nullptr) {
-      out.push_back(
-          absl::StrFormat(" SEND_MESSAGE:flags=0x%08x:len=%d",
-                          op->payload->send_message.send_message->flags(),
-                          op->payload->send_message.send_message->length()));
+      out.push_back(absl::StrFormat(
+          " SEND_MESSAGE:flags=0x%08x:len=%d", op->payload->send_message.flags,
+          op->payload->send_message.send_message->Length()));
     } else {
       // This can happen when we check a batch after the transport has
       // processed and cleared the send_message op.

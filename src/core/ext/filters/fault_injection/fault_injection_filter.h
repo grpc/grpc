@@ -44,7 +44,7 @@ class FaultInjectionFilter : public ChannelFilter {
   static const grpc_channel_filter kFilter;
 
   static absl::StatusOr<FaultInjectionFilter> Create(
-      ChannelArgs args, ChannelFilter::Args filter_args);
+      const ChannelArgs& args, ChannelFilter::Args filter_args);
 
   // Construct a promise for one call.
   ArenaPromise<ServerMetadataHandle> MakeCallPromise(
@@ -58,7 +58,7 @@ class FaultInjectionFilter : public ChannelFilter {
       const ClientMetadataHandle& initial_metadata);
 
   // The relative index of instances of the same filter.
-  int index_;
+  size_t index_;
   const size_t service_config_parser_index_;
 };
 

@@ -18,7 +18,8 @@
 
 #include "src/core/lib/security/credentials/tls/grpc_tls_certificate_distributor.h"
 
-#include "absl/container/inlined_vector.h"
+#include <algorithm>
+#include <vector>
 
 #include <grpc/grpc_security.h>
 #include <grpc/support/log.h>

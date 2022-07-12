@@ -634,11 +634,10 @@ INSTANTIATE_TEST_SUITE_P(
 TEST_P(CsdsShortAdsTimeoutTest, XdsConfigDumpListenerDoesNotExist) {
   int kTimeoutMillisecond = 1000000;  // 1000s wait for the transient failure.
   balancer_->ads_service()->UnsetResource(kLdsTypeUrl, kServerName);
-  CheckRpcSendFailure(
-      DEBUG_LOCATION, StatusCode::UNAVAILABLE,
-      // TODO(roth): Improve this error as part of
-      // https://github.com/grpc/grpc/issues/22883.
-      "empty address list: ", RpcOptions().set_timeout_ms(kTimeoutMillisecond));
+  CheckRpcSendFailure(DEBUG_LOCATION, StatusCode::UNAVAILABLE,
+                      absl::StrCat("empty address list: ", kServerName,
+                                   ": xDS listener resource does not exist"),
+                      RpcOptions().set_timeout_ms(kTimeoutMillisecond));
   auto csds_response = FetchCsdsResponse();
   EXPECT_THAT(csds_response.config(0).generic_xds_configs(),
               ::testing::Contains(EqGenericXdsConfig(
@@ -653,9 +652,9 @@ TEST_P(CsdsShortAdsTimeoutTest, XdsConfigDumpRouteConfigDoesNotExist) {
                                           kDefaultRouteConfigurationName);
   CheckRpcSendFailure(
       DEBUG_LOCATION, StatusCode::UNAVAILABLE,
-      // TODO(roth): Improve this error as part of
-      // https://github.com/grpc/grpc/issues/22883.
-      "empty address list: ", RpcOptions().set_timeout_ms(kTimeoutMillisecond));
+      absl::StrCat("empty address list: ", kDefaultRouteConfigurationName,
+                   ": xDS route configuration resource does not exist"),
+      RpcOptions().set_timeout_ms(kTimeoutMillisecond));
   auto csds_response = FetchCsdsResponse();
   EXPECT_THAT(
       csds_response.config(0).generic_xds_configs(),
@@ -681,12 +680,11 @@ TEST_P(CsdsShortAdsTimeoutTest, XdsConfigDumpClusterDoesNotExist) {
 TEST_P(CsdsShortAdsTimeoutTest, XdsConfigDumpEndpointDoesNotExist) {
   int kTimeoutMillisecond = 1000000;  // 1000s wait for the transient failure.
   balancer_->ads_service()->UnsetResource(kEdsTypeUrl, kDefaultEdsServiceName);
-  CheckRpcSendFailure(
-      DEBUG_LOCATION, StatusCode::UNAVAILABLE,
-      // TODO(roth): Improve this error message as part of
-      // https://github.com/grpc/grpc/issues/22883.
-      "weighted_target: all children report state TRANSIENT_FAILURE",
-      RpcOptions().set_timeout_ms(kTimeoutMillisecond));
+  CheckRpcSendFailure(DEBUG_LOCATION, StatusCode::UNAVAILABLE,
+                      // TODO(roth): Improve this error message as part of
+                      // https://github.com/grpc/grpc/issues/22883.
+                      "no children in weighted_target policy: ",
+                      RpcOptions().set_timeout_ms(kTimeoutMillisecond));
   auto csds_response = FetchCsdsResponse();
   EXPECT_THAT(
       csds_response.config(0).generic_xds_configs(),

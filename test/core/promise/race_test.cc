@@ -14,7 +14,9 @@
 
 #include "src/core/lib/promise/race.h"
 
-#include <gtest/gtest.h>
+#include <utility>
+
+#include "gtest/gtest.h"
 
 namespace grpc_core {
 

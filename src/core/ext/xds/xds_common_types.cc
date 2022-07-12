@@ -24,7 +24,6 @@
 #include <map>
 #include <utility>
 
-#include "absl/container/inlined_vector.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/str_cat.h"
@@ -66,7 +65,7 @@ bool CommonTlsContext::CertificateValidationContext::Empty() const {
 
 std::string CommonTlsContext::CertificateProviderPluginInstance::ToString()
     const {
-  absl::InlinedVector<std::string, 2> contents;
+  std::vector<std::string> contents;
   if (!instance_name.empty()) {
     contents.push_back(absl::StrFormat("instance_name=%s", instance_name));
   }
@@ -86,7 +85,7 @@ bool CommonTlsContext::CertificateProviderPluginInstance::Empty() const {
 //
 
 std::string CommonTlsContext::ToString() const {
-  absl::InlinedVector<std::string, 2> contents;
+  std::vector<std::string> contents;
   if (!tls_certificate_provider_instance.Empty()) {
     contents.push_back(
         absl::StrFormat("tls_certificate_provider_instance=%s",

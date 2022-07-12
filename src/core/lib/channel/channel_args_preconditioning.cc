@@ -16,6 +16,7 @@
 
 #include "src/core/lib/channel/channel_args_preconditioning.h"
 
+#include <algorithm>
 #include <utility>
 
 namespace grpc_core {

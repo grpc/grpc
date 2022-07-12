@@ -1036,17 +1036,16 @@ void tsi_ssl_root_certs_store_destroy(tsi_ssl_root_certs_store* self) {
 
 tsi_ssl_session_cache* tsi_ssl_session_cache_create_lru(size_t capacity) {
   /* Pointer will be dereferenced by unref call. */
-  return reinterpret_cast<tsi_ssl_session_cache*>(
-      tsi::SslSessionLRUCache::Create(capacity).release());
+  return tsi::SslSessionLRUCache::Create(capacity).release()->c_ptr();
 }
 
 void tsi_ssl_session_cache_ref(tsi_ssl_session_cache* cache) {
   /* Pointer will be dereferenced by unref call. */
-  reinterpret_cast<tsi::SslSessionLRUCache*>(cache)->Ref().release();
+  tsi::SslSessionLRUCache::FromC(cache)->Ref().release();
 }
 
 void tsi_ssl_session_cache_unref(tsi_ssl_session_cache* cache) {
-  reinterpret_cast<tsi::SslSessionLRUCache*>(cache)->Unref();
+  tsi::SslSessionLRUCache::FromC(cache)->Unref();
 }
 
 /* --- tsi_frame_protector methods implementation. ---*/
@@ -1566,7 +1565,7 @@ static tsi_result ssl_handshaker_write_output_buffer(tsi_handshaker* self,
                                                      size_t* bytes_written) {
   tsi_ssl_handshaker* impl = reinterpret_cast<tsi_ssl_handshaker*>(self);
   tsi_result status = TSI_OK;
-  int offset = *bytes_written;
+  size_t offset = *bytes_written;
   do {
     size_t to_send_size = impl->outgoing_bytes_buffer_size - offset;
     status = ssl_handshaker_get_bytes_to_send_to_peer(

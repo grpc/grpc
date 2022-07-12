@@ -393,6 +393,7 @@ if (PHP_GRPC != "no") {
     "src\\core\\ext\\xds\\xds_certificate_provider.cc " +
     "src\\core\\ext\\xds\\xds_channel_stack_modifier.cc " +
     "src\\core\\ext\\xds\\xds_client.cc " +
+    "src\\core\\ext\\xds\\xds_client_grpc.cc " +
     "src\\core\\ext\\xds\\xds_client_stats.cc " +
     "src\\core\\ext\\xds\\xds_cluster.cc " +
     "src\\core\\ext\\xds\\xds_cluster_specifier_plugin.cc " +
@@ -407,6 +408,7 @@ if (PHP_GRPC != "no") {
     "src\\core\\ext\\xds\\xds_route_config.cc " +
     "src\\core\\ext\\xds\\xds_routing.cc " +
     "src\\core\\ext\\xds\\xds_server_config_fetcher.cc " +
+    "src\\core\\ext\\xds\\xds_transport_grpc.cc " +
     "src\\core\\lib\\address_utils\\parse_address.cc " +
     "src\\core\\lib\\address_utils\\sockaddr_utils.cc " +
     "src\\core\\lib\\backoff\\backoff.cc " +
@@ -431,7 +433,12 @@ if (PHP_GRPC != "no") {
     "src\\core\\lib\\event_engine\\channel_args_endpoint_config.cc " +
     "src\\core\\lib\\event_engine\\default_event_engine_factory.cc " +
     "src\\core\\lib\\event_engine\\event_engine.cc " +
-    "src\\core\\lib\\event_engine\\iomgr_engine.cc " +
+    "src\\core\\lib\\event_engine\\iomgr_engine\\iomgr_engine.cc " +
+    "src\\core\\lib\\event_engine\\iomgr_engine\\thread_pool.cc " +
+    "src\\core\\lib\\event_engine\\iomgr_engine\\time_averaged_stats.cc " +
+    "src\\core\\lib\\event_engine\\iomgr_engine\\timer.cc " +
+    "src\\core\\lib\\event_engine\\iomgr_engine\\timer_heap.cc " +
+    "src\\core\\lib\\event_engine\\iomgr_engine\\timer_manager.cc " +
     "src\\core\\lib\\event_engine\\memory_allocator.cc " +
     "src\\core\\lib\\event_engine\\resolved_address.cc " +
     "src\\core\\lib\\event_engine\\slice.cc " +
@@ -502,8 +509,6 @@ if (PHP_GRPC != "no") {
     "src\\core\\lib\\iomgr\\ev_windows.cc " +
     "src\\core\\lib\\iomgr\\exec_ctx.cc " +
     "src\\core\\lib\\iomgr\\executor.cc " +
-    "src\\core\\lib\\iomgr\\executor\\mpmcqueue.cc " +
-    "src\\core\\lib\\iomgr\\executor\\threadpool.cc " +
     "src\\core\\lib\\iomgr\\fork_posix.cc " +
     "src\\core\\lib\\iomgr\\fork_windows.cc " +
     "src\\core\\lib\\iomgr\\gethostname_fallback.cc " +
@@ -647,7 +652,6 @@ if (PHP_GRPC != "no") {
     "src\\core\\lib\\slice\\slice_buffer.cc " +
     "src\\core\\lib\\slice\\slice_buffer_api.cc " +
     "src\\core\\lib\\slice\\slice_refcount.cc " +
-    "src\\core\\lib\\slice\\slice_split.cc " +
     "src\\core\\lib\\slice\\slice_string_helpers.cc " +
     "src\\core\\lib\\surface\\api_trace.cc " +
     "src\\core\\lib\\surface\\builtins.cc " +
@@ -670,7 +674,6 @@ if (PHP_GRPC != "no") {
     "src\\core\\lib\\surface\\validate_metadata.cc " +
     "src\\core\\lib\\surface\\version.cc " +
     "src\\core\\lib\\transport\\bdp_estimator.cc " +
-    "src\\core\\lib\\transport\\byte_stream.cc " +
     "src\\core\\lib\\transport\\connectivity_state.cc " +
     "src\\core\\lib\\transport\\error_utils.cc " +
     "src\\core\\lib\\transport\\handshaker.cc " +
@@ -730,6 +733,7 @@ if (PHP_GRPC != "no") {
     "third_party\\abseil-cpp\\absl\\base\\internal\\raw_logging.cc " +
     "third_party\\abseil-cpp\\absl\\base\\internal\\spinlock.cc " +
     "third_party\\abseil-cpp\\absl\\base\\internal\\spinlock_wait.cc " +
+    "third_party\\abseil-cpp\\absl\\base\\internal\\strerror.cc " +
     "third_party\\abseil-cpp\\absl\\base\\internal\\sysinfo.cc " +
     "third_party\\abseil-cpp\\absl\\base\\internal\\thread_identity.cc " +
     "third_party\\abseil-cpp\\absl\\base\\internal\\throw_delegate.cc " +
@@ -766,6 +770,8 @@ if (PHP_GRPC != "no") {
     "third_party\\abseil-cpp\\absl\\strings\\ascii.cc " +
     "third_party\\abseil-cpp\\absl\\strings\\charconv.cc " +
     "third_party\\abseil-cpp\\absl\\strings\\cord.cc " +
+    "third_party\\abseil-cpp\\absl\\strings\\cord_analysis.cc " +
+    "third_party\\abseil-cpp\\absl\\strings\\cord_buffer.cc " +
     "third_party\\abseil-cpp\\absl\\strings\\escaping.cc " +
     "third_party\\abseil-cpp\\absl\\strings\\internal\\charconv_bigint.cc " +
     "third_party\\abseil-cpp\\absl\\strings\\internal\\charconv_parse.cc " +
@@ -774,6 +780,7 @@ if (PHP_GRPC != "no") {
     "third_party\\abseil-cpp\\absl\\strings\\internal\\cord_rep_btree_navigator.cc " +
     "third_party\\abseil-cpp\\absl\\strings\\internal\\cord_rep_btree_reader.cc " +
     "third_party\\abseil-cpp\\absl\\strings\\internal\\cord_rep_consume.cc " +
+    "third_party\\abseil-cpp\\absl\\strings\\internal\\cord_rep_crc.cc " +
     "third_party\\abseil-cpp\\absl\\strings\\internal\\cord_rep_ring.cc " +
     "third_party\\abseil-cpp\\absl\\strings\\internal\\cordz_functions.cc " +
     "third_party\\abseil-cpp\\absl\\strings\\internal\\cordz_handle.cc " +
@@ -1116,13 +1123,20 @@ if (PHP_GRPC != "no") {
     "third_party\\upb\\third_party\\utf8_range\\naive.c " +
     "third_party\\upb\\third_party\\utf8_range\\range2-neon.c " +
     "third_party\\upb\\third_party\\utf8_range\\range2-sse.c " +
+    "third_party\\upb\\upb\\arena.c " +
+    "third_party\\upb\\upb\\array.c " +
     "third_party\\upb\\upb\\decode.c " +
     "third_party\\upb\\upb\\decode_fast.c " +
     "third_party\\upb\\upb\\def.c " +
     "third_party\\upb\\upb\\encode.c " +
+    "third_party\\upb\\upb\\extension_registry.c " +
+    "third_party\\upb\\upb\\json_decode.c " +
     "third_party\\upb\\upb\\json_encode.c " +
+    "third_party\\upb\\upb\\map.c " +
+    "third_party\\upb\\upb\\mini_table.c " +
     "third_party\\upb\\upb\\msg.c " +
     "third_party\\upb\\upb\\reflection.c " +
+    "third_party\\upb\\upb\\status.c " +
     "third_party\\upb\\upb\\table.c " +
     "third_party\\upb\\upb\\text_encode.c " +
     "third_party\\upb\\upb\\upb.c " +
@@ -1425,11 +1439,11 @@ if (PHP_GRPC != "no") {
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\lib\\config");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\lib\\debug");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\lib\\event_engine");
+  FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\lib\\event_engine\\iomgr_engine");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\lib\\gpr");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\lib\\gprpp");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\lib\\http");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\lib\\iomgr");
-  FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\lib\\iomgr\\executor");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\lib\\json");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\lib\\matchers");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\lib\\profiling");

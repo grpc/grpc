@@ -16,9 +16,6 @@
 
 #include "src/core/lib/promise/sleep.h"
 
-#include "absl/time/clock.h"
-#include "absl/time/time.h"
-
 #include <grpc/event_engine/event_engine.h>
 
 #include "src/core/lib/event_engine/event_engine_factory.h"
@@ -57,16 +54,6 @@ void Sleep::OnTimer() {
   tmp_waker.Wakeup();
 }
 
-// TODO(hork): refactor gpr_base to allow a separate time_util target.
-namespace {
-absl::Time ToAbslTime(Timestamp timestamp) {
-  if (timestamp == Timestamp::InfFuture()) return absl::InfiniteFuture();
-  if (timestamp == Timestamp::InfPast()) return absl::InfinitePast();
-  return absl::Now() +
-         absl::Milliseconds((timestamp - ExecCtx::Get()->Now()).millis());
-}
-}  // namespace
-
 Poll<absl::Status> Sleep::operator()() {
   MutexLock lock(&mu_);
   switch (stage_) {
@@ -75,8 +62,8 @@ Poll<absl::Status> Sleep::operator()() {
         return absl::OkStatus();
       }
       stage_ = Stage::kStarted;
-      timer_handle_ =
-          GetDefaultEventEngine()->RunAt(ToAbslTime(deadline_), [this] {
+      timer_handle_ = GetDefaultEventEngine()->RunAfter(
+          deadline_ - ExecCtx::Get()->Now(), [this] {
             ApplicationCallbackExecCtx callback_exec_ctx;
             ExecCtx exec_ctx;
             OnTimer();

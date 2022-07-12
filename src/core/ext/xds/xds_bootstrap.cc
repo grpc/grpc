@@ -20,7 +20,6 @@
 
 #include <stdlib.h>
 
-#include <algorithm>
 #include <utility>
 #include <vector>
 
@@ -55,6 +54,10 @@ bool XdsFederationEnabled() {
 }
 
 namespace {
+
+const absl::string_view kServerFeatureXdsV3 = "xds_v3";
+const absl::string_view kServerFeatureIgnoreResourceDeletion =
+    "ignore_resource_deletion";
 
 grpc_error_handle ParseChannelCreds(const Json::Object& json, size_t idx,
                                     XdsBootstrap::XdsServer* server) {
@@ -129,7 +132,9 @@ XdsBootstrap::XdsServer XdsBootstrap::XdsServer::Parse(
   if (server_features_array != nullptr) {
     for (const Json& feature_json : *server_features_array) {
       if (feature_json.type() == Json::Type::STRING &&
-          feature_json.string_value() == "xds_v3") {
+          (feature_json.string_value() == kServerFeatureXdsV3 ||
+           feature_json.string_value() ==
+               kServerFeatureIgnoreResourceDeletion)) {
         server.server_features.insert(feature_json.string_value());
       }
     }
@@ -159,7 +164,13 @@ Json::Object XdsBootstrap::XdsServer::ToJson() const {
 }
 
 bool XdsBootstrap::XdsServer::ShouldUseV3() const {
-  return server_features.find("xds_v3") != server_features.end();
+  return server_features.find(std::string(kServerFeatureXdsV3)) !=
+         server_features.end();
+}
+
+bool XdsBootstrap::XdsServer::IgnoreResourceDeletion() const {
+  return server_features.find(std::string(
+             kServerFeatureIgnoreResourceDeletion)) != server_features.end();
 }
 
 //
@@ -277,7 +288,7 @@ bool XdsBootstrap::XdsServerExists(
 }
 
 grpc_error_handle XdsBootstrap::ParseXdsServerList(
-    Json* json, absl::InlinedVector<XdsServer, 1>* servers) {
+    Json* json, std::vector<XdsServer>* servers) {
   std::vector<grpc_error_handle> error_list;
   for (size_t i = 0; i < json->mutable_array()->size(); ++i) {
     Json& child = json->mutable_array()->at(i);

@@ -671,6 +671,18 @@ TEST_F(GrpcAuthzEnd2EndTest, FileWatcherValidPolicyRefresh) {
   grpc::Status status = SendRpc(channel, &context1, &resp1);
   EXPECT_TRUE(status.ok());
   EXPECT_EQ(resp1.message(), kMessage);
+  gpr_event on_reload_done;
+  gpr_event_init(&on_reload_done);
+  std::function<void(bool contents_changed, absl::Status status)> callback =
+      [&on_reload_done](bool contents_changed, absl::Status status) {
+        if (contents_changed) {
+          EXPECT_TRUE(status.ok());
+          gpr_event_set(&on_reload_done, reinterpret_cast<void*>(1));
+        }
+      };
+  dynamic_cast<grpc_core::FileWatcherAuthorizationPolicyProvider*>(
+      provider->c_provider())
+      ->SetCallbackForTesting(std::move(callback));
   // Replace the existing policy with a new authorization policy.
   policy =
       "{"
@@ -697,14 +709,19 @@ TEST_F(GrpcAuthzEnd2EndTest, FileWatcherValidPolicyRefresh) {
       "  ]"
       "}";
   fw_provider->RewriteFileForTesting(tmp_policy, policy);
-  // Wait 2 seconds for the provider's refresh thread to read the updated files.
-  gpr_sleep_until(grpc_timeout_seconds_to_deadline(2));
+  // Wait for the provider's refresh thread to read the updated files.
+  ASSERT_EQ(
+      gpr_event_wait(&on_reload_done, gpr_inf_future(GPR_CLOCK_MONOTONIC)),
+      reinterpret_cast<void*>(1));
   ClientContext context2;
   grpc::testing::EchoResponse resp2;
   status = SendRpc(channel, &context2, &resp2);
   EXPECT_EQ(status.error_code(), grpc::StatusCode::PERMISSION_DENIED);
   EXPECT_EQ(status.error_message(), "Unauthorized RPC request rejected.");
   EXPECT_TRUE(resp2.message().empty());
+  dynamic_cast<grpc_core::FileWatcherAuthorizationPolicyProvider*>(
+      provider->c_provider())
+      ->SetCallbackForTesting(nullptr);
 }
 
 TEST_F(GrpcAuthzEnd2EndTest, FileWatcherInvalidPolicyRefreshSkipsReload) {
@@ -734,16 +751,34 @@ TEST_F(GrpcAuthzEnd2EndTest, FileWatcherInvalidPolicyRefreshSkipsReload) {
   grpc::Status status = SendRpc(channel, &context1, &resp1);
   EXPECT_TRUE(status.ok());
   EXPECT_EQ(resp1.message(), kMessage);
+  gpr_event on_reload_done;
+  gpr_event_init(&on_reload_done);
+  std::function<void(bool contents_changed, absl::Status status)> callback =
+      [&on_reload_done](bool contents_changed, absl::Status status) {
+        if (contents_changed) {
+          EXPECT_EQ(status.code(), absl::StatusCode::kInvalidArgument);
+          EXPECT_EQ(status.message(), "\"name\" field is not present.");
+          gpr_event_set(&on_reload_done, reinterpret_cast<void*>(1));
+        }
+      };
+  dynamic_cast<grpc_core::FileWatcherAuthorizationPolicyProvider*>(
+      provider->c_provider())
+      ->SetCallbackForTesting(std::move(callback));
   // Replaces existing policy with an invalid authorization policy.
   policy = "{}";
   fw_provider->RewriteFileForTesting(tmp_policy, policy);
-  // Wait 2 seconds for the provider's refresh thread to read the updated files.
-  gpr_sleep_until(grpc_timeout_seconds_to_deadline(2));
+  // Wait for the provider's refresh thread to read the updated files.
+  ASSERT_EQ(
+      gpr_event_wait(&on_reload_done, gpr_inf_future(GPR_CLOCK_MONOTONIC)),
+      reinterpret_cast<void*>(1));
   ClientContext context2;
   grpc::testing::EchoResponse resp2;
   status = SendRpc(channel, &context2, &resp2);
   EXPECT_TRUE(status.ok());
   EXPECT_EQ(resp2.message(), kMessage);
+  dynamic_cast<grpc_core::FileWatcherAuthorizationPolicyProvider*>(
+      provider->c_provider())
+      ->SetCallbackForTesting(nullptr);
 }
 
 TEST_F(GrpcAuthzEnd2EndTest, FileWatcherRecoversFromFailure) {
@@ -773,16 +808,43 @@ TEST_F(GrpcAuthzEnd2EndTest, FileWatcherRecoversFromFailure) {
   grpc::Status status = SendRpc(channel, &context1, &resp1);
   EXPECT_TRUE(status.ok());
   EXPECT_EQ(resp1.message(), kMessage);
+  gpr_event on_first_reload_done;
+  gpr_event_init(&on_first_reload_done);
+  std::function<void(bool contents_changed, absl::Status status)> callback1 =
+      [&on_first_reload_done](bool contents_changed, absl::Status status) {
+        if (contents_changed) {
+          EXPECT_EQ(status.code(), absl::StatusCode::kInvalidArgument);
+          EXPECT_EQ(status.message(), "\"name\" field is not present.");
+          gpr_event_set(&on_first_reload_done, reinterpret_cast<void*>(1));
+        }
+      };
+  dynamic_cast<grpc_core::FileWatcherAuthorizationPolicyProvider*>(
+      provider->c_provider())
+      ->SetCallbackForTesting(std::move(callback1));
   // Replaces existing policy with an invalid authorization policy.
   policy = "{}";
   fw_provider->RewriteFileForTesting(tmp_policy, policy);
-  // Wait 2 seconds for the provider's refresh thread to read the updated files.
-  gpr_sleep_until(grpc_timeout_seconds_to_deadline(2));
+  // Wait for the provider's refresh thread to read the updated files.
+  ASSERT_EQ(gpr_event_wait(&on_first_reload_done,
+                           gpr_inf_future(GPR_CLOCK_MONOTONIC)),
+            reinterpret_cast<void*>(1));
   ClientContext context2;
   grpc::testing::EchoResponse resp2;
   status = SendRpc(channel, &context2, &resp2);
   EXPECT_TRUE(status.ok());
   EXPECT_EQ(resp2.message(), kMessage);
+  gpr_event on_second_reload_done;
+  gpr_event_init(&on_second_reload_done);
+  std::function<void(bool contents_changed, absl::Status status)> callback2 =
+      [&on_second_reload_done](bool contents_changed, absl::Status status) {
+        if (contents_changed) {
+          EXPECT_TRUE(status.ok());
+          gpr_event_set(&on_second_reload_done, reinterpret_cast<void*>(1));
+        }
+      };
+  dynamic_cast<grpc_core::FileWatcherAuthorizationPolicyProvider*>(
+      provider->c_provider())
+      ->SetCallbackForTesting(std::move(callback2));
   // Replace the existing invalid policy with a valid authorization policy.
   policy =
       "{"
@@ -809,14 +871,19 @@ TEST_F(GrpcAuthzEnd2EndTest, FileWatcherRecoversFromFailure) {
       "  ]"
       "}";
   fw_provider->RewriteFileForTesting(tmp_policy, policy);
-  // Wait 2 seconds for the provider's refresh thread to read the updated files.
-  gpr_sleep_until(grpc_timeout_seconds_to_deadline(2));
+  // Wait for the provider's refresh thread to read the updated files.
+  ASSERT_EQ(gpr_event_wait(&on_second_reload_done,
+                           gpr_inf_future(GPR_CLOCK_MONOTONIC)),
+            reinterpret_cast<void*>(1));
   ClientContext context3;
   grpc::testing::EchoResponse resp3;
   status = SendRpc(channel, &context3, &resp3);
   EXPECT_EQ(status.error_code(), grpc::StatusCode::PERMISSION_DENIED);
   EXPECT_EQ(status.error_message(), "Unauthorized RPC request rejected.");
   EXPECT_TRUE(resp3.message().empty());
+  dynamic_cast<grpc_core::FileWatcherAuthorizationPolicyProvider*>(
+      provider->c_provider())
+      ->SetCallbackForTesting(nullptr);
 }
 
 }  // namespace

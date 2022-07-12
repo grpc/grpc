@@ -57,11 +57,15 @@ UPB_INLINE google_api_Http* google_api_Http_parse_ex(const char* buf, size_t siz
   return ret;
 }
 UPB_INLINE char* google_api_Http_serialize(const google_api_Http* msg, upb_Arena* arena, size_t* len) {
-  return upb_Encode(msg, &google_api_Http_msginit, 0, arena, len);
+  char* ptr;
+  (void)upb_Encode(msg, &google_api_Http_msginit, 0, arena, &ptr, len);
+  return ptr;
 }
 UPB_INLINE char* google_api_Http_serialize_ex(const google_api_Http* msg, int options,
                                  upb_Arena* arena, size_t* len) {
-  return upb_Encode(msg, &google_api_Http_msginit, options, arena, len);
+  char* ptr;
+  (void)upb_Encode(msg, &google_api_Http_msginit, options, arena, &ptr, len);
+  return ptr;
 }
 UPB_INLINE bool google_api_Http_has_rules(const google_api_Http* msg) {
   return _upb_has_submsg_nohasbit(msg, UPB_SIZE(4, 8));
@@ -120,11 +124,15 @@ UPB_INLINE google_api_HttpRule* google_api_HttpRule_parse_ex(const char* buf, si
   return ret;
 }
 UPB_INLINE char* google_api_HttpRule_serialize(const google_api_HttpRule* msg, upb_Arena* arena, size_t* len) {
-  return upb_Encode(msg, &google_api_HttpRule_msginit, 0, arena, len);
+  char* ptr;
+  (void)upb_Encode(msg, &google_api_HttpRule_msginit, 0, arena, &ptr, len);
+  return ptr;
 }
 UPB_INLINE char* google_api_HttpRule_serialize_ex(const google_api_HttpRule* msg, int options,
                                  upb_Arena* arena, size_t* len) {
-  return upb_Encode(msg, &google_api_HttpRule_msginit, options, arena, len);
+  char* ptr;
+  (void)upb_Encode(msg, &google_api_HttpRule_msginit, options, arena, &ptr, len);
+  return ptr;
 }
 typedef enum {
   google_api_HttpRule_pattern_get = 2,
@@ -294,11 +302,15 @@ UPB_INLINE google_api_CustomHttpPattern* google_api_CustomHttpPattern_parse_ex(c
   return ret;
 }
 UPB_INLINE char* google_api_CustomHttpPattern_serialize(const google_api_CustomHttpPattern* msg, upb_Arena* arena, size_t* len) {
-  return upb_Encode(msg, &google_api_CustomHttpPattern_msginit, 0, arena, len);
+  char* ptr;
+  (void)upb_Encode(msg, &google_api_CustomHttpPattern_msginit, 0, arena, &ptr, len);
+  return ptr;
 }
 UPB_INLINE char* google_api_CustomHttpPattern_serialize_ex(const google_api_CustomHttpPattern* msg, int options,
                                  upb_Arena* arena, size_t* len) {
-  return upb_Encode(msg, &google_api_CustomHttpPattern_msginit, options, arena, len);
+  char* ptr;
+  (void)upb_Encode(msg, &google_api_CustomHttpPattern_msginit, options, arena, &ptr, len);
+  return ptr;
 }
 UPB_INLINE void google_api_CustomHttpPattern_clear_kind(const google_api_CustomHttpPattern* msg) {
   *UPB_PTR_AT(msg, UPB_SIZE(0, 0), upb_StringView) = upb_StringView_FromDataAndSize(NULL, 0);

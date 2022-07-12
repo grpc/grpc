@@ -22,6 +22,7 @@
 
 #include <stddef.h>
 
+#include <algorithm>
 #include <utility>
 
 namespace grpc_core {
@@ -43,7 +44,7 @@ HandshakerRegistry HandshakerRegistry::Builder::Build() {
 }
 
 void HandshakerRegistry::AddHandshakers(HandshakerType handshaker_type,
-                                        const grpc_channel_args* args,
+                                        const ChannelArgs& args,
                                         grpc_pollset_set* interested_parties,
                                         HandshakeManager* handshake_mgr) const {
   for (const auto& factory : factories_[handshaker_type]) {

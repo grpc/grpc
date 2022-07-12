@@ -35,7 +35,7 @@ static const upb_MiniTable_Field envoy_service_discovery_v3_DiscoveryRequest__fi
 const upb_MiniTable envoy_service_discovery_v3_DiscoveryRequest_msginit = {
   &envoy_service_discovery_v3_DiscoveryRequest_submsgs[0],
   &envoy_service_discovery_v3_DiscoveryRequest__fields[0],
-  UPB_SIZE(40, 88), 6, kUpb_ExtMode_NonExtendable, 6, 255, 0,
+  UPB_SIZE(40, 80), 6, kUpb_ExtMode_NonExtendable, 6, 255, 0,
 };
 
 static const upb_MiniTable_Sub envoy_service_discovery_v3_DiscoveryResponse_submsgs[2] = {
@@ -55,7 +55,7 @@ static const upb_MiniTable_Field envoy_service_discovery_v3_DiscoveryResponse__f
 const upb_MiniTable envoy_service_discovery_v3_DiscoveryResponse_msginit = {
   &envoy_service_discovery_v3_DiscoveryResponse_submsgs[0],
   &envoy_service_discovery_v3_DiscoveryResponse__fields[0],
-  UPB_SIZE(36, 72), 6, kUpb_ExtMode_NonExtendable, 6, 255, 0,
+  UPB_SIZE(40, 72), 6, kUpb_ExtMode_NonExtendable, 6, 255, 0,
 };
 
 static const upb_MiniTable_Sub envoy_service_discovery_v3_DeltaDiscoveryRequest_submsgs[3] = {
@@ -77,7 +77,7 @@ static const upb_MiniTable_Field envoy_service_discovery_v3_DeltaDiscoveryReques
 const upb_MiniTable envoy_service_discovery_v3_DeltaDiscoveryRequest_msginit = {
   &envoy_service_discovery_v3_DeltaDiscoveryRequest_submsgs[0],
   &envoy_service_discovery_v3_DeltaDiscoveryRequest__fields[0],
-  UPB_SIZE(40, 88), 7, kUpb_ExtMode_NonExtendable, 7, 255, 0,
+  UPB_SIZE(40, 80), 7, kUpb_ExtMode_NonExtendable, 7, 255, 0,
 };
 
 static const upb_MiniTable_Field envoy_service_discovery_v3_DeltaDiscoveryRequest_InitialResourceVersionsEntry__fields[2] = {
@@ -108,7 +108,7 @@ static const upb_MiniTable_Field envoy_service_discovery_v3_DeltaDiscoveryRespon
 const upb_MiniTable envoy_service_discovery_v3_DeltaDiscoveryResponse_msginit = {
   &envoy_service_discovery_v3_DeltaDiscoveryResponse_submsgs[0],
   &envoy_service_discovery_v3_DeltaDiscoveryResponse__fields[0],
-  UPB_SIZE(40, 88), 6, kUpb_ExtMode_NonExtendable, 2, 255, 0,
+  UPB_SIZE(40, 80), 6, kUpb_ExtMode_NonExtendable, 2, 255, 0,
 };
 
 static const upb_MiniTable_Sub envoy_service_discovery_v3_Resource_submsgs[3] = {
@@ -129,7 +129,7 @@ static const upb_MiniTable_Field envoy_service_discovery_v3_Resource__fields[6] 
 const upb_MiniTable envoy_service_discovery_v3_Resource_msginit = {
   &envoy_service_discovery_v3_Resource_submsgs[0],
   &envoy_service_discovery_v3_Resource__fields[0],
-  UPB_SIZE(36, 72), 6, kUpb_ExtMode_NonExtendable, 4, 255, 0,
+  UPB_SIZE(40, 72), 6, kUpb_ExtMode_NonExtendable, 4, 255, 0,
 };
 
 static const upb_MiniTable_Field envoy_service_discovery_v3_Resource_CacheControl__fields[1] = {
@@ -139,7 +139,7 @@ static const upb_MiniTable_Field envoy_service_discovery_v3_Resource_CacheContro
 const upb_MiniTable envoy_service_discovery_v3_Resource_CacheControl_msginit = {
   NULL,
   &envoy_service_discovery_v3_Resource_CacheControl__fields[0],
-  UPB_SIZE(1, 8), 1, kUpb_ExtMode_NonExtendable, 1, 255, 0,
+  UPB_SIZE(8, 8), 1, kUpb_ExtMode_NonExtendable, 1, 255, 0,
 };
 
 static const upb_MiniTable *messages_layout[7] = {

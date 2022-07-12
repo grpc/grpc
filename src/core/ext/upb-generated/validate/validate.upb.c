@@ -85,7 +85,7 @@ static const upb_MiniTable_Field validate_FloatRules__fields[8] = {
 const upb_MiniTable validate_FloatRules_msginit = {
   NULL,
   &validate_FloatRules__fields[0],
-  UPB_SIZE(36, 56), 8, kUpb_ExtMode_NonExtendable, 8, 255, 0,
+  UPB_SIZE(40, 48), 8, kUpb_ExtMode_NonExtendable, 8, 255, 0,
 };
 
 static const upb_MiniTable_Field validate_DoubleRules__fields[8] = {
@@ -102,7 +102,7 @@ static const upb_MiniTable_Field validate_DoubleRules__fields[8] = {
 const upb_MiniTable validate_DoubleRules_msginit = {
   NULL,
   &validate_DoubleRules__fields[0],
-  UPB_SIZE(56, 72), 8, kUpb_ExtMode_NonExtendable, 8, 255, 0,
+  UPB_SIZE(56, 64), 8, kUpb_ExtMode_NonExtendable, 8, 255, 0,
 };
 
 static const upb_MiniTable_Field validate_Int32Rules__fields[8] = {
@@ -119,7 +119,7 @@ static const upb_MiniTable_Field validate_Int32Rules__fields[8] = {
 const upb_MiniTable validate_Int32Rules_msginit = {
   NULL,
   &validate_Int32Rules__fields[0],
-  UPB_SIZE(36, 56), 8, kUpb_ExtMode_NonExtendable, 8, 255, 0,
+  UPB_SIZE(40, 48), 8, kUpb_ExtMode_NonExtendable, 8, 255, 0,
 };
 
 static const upb_MiniTable_Field validate_Int64Rules__fields[8] = {
@@ -136,7 +136,7 @@ static const upb_MiniTable_Field validate_Int64Rules__fields[8] = {
 const upb_MiniTable validate_Int64Rules_msginit = {
   NULL,
   &validate_Int64Rules__fields[0],
-  UPB_SIZE(56, 72), 8, kUpb_ExtMode_NonExtendable, 8, 255, 0,
+  UPB_SIZE(56, 64), 8, kUpb_ExtMode_NonExtendable, 8, 255, 0,
 };
 
 static const upb_MiniTable_Field validate_UInt32Rules__fields[8] = {
@@ -153,7 +153,7 @@ static const upb_MiniTable_Field validate_UInt32Rules__fields[8] = {
 const upb_MiniTable validate_UInt32Rules_msginit = {
   NULL,
   &validate_UInt32Rules__fields[0],
-  UPB_SIZE(36, 56), 8, kUpb_ExtMode_NonExtendable, 8, 255, 0,
+  UPB_SIZE(40, 48), 8, kUpb_ExtMode_NonExtendable, 8, 255, 0,
 };
 
 static const upb_MiniTable_Field validate_UInt64Rules__fields[8] = {
@@ -170,7 +170,7 @@ static const upb_MiniTable_Field validate_UInt64Rules__fields[8] = {
 const upb_MiniTable validate_UInt64Rules_msginit = {
   NULL,
   &validate_UInt64Rules__fields[0],
-  UPB_SIZE(56, 72), 8, kUpb_ExtMode_NonExtendable, 8, 255, 0,
+  UPB_SIZE(56, 64), 8, kUpb_ExtMode_NonExtendable, 8, 255, 0,
 };
 
 static const upb_MiniTable_Field validate_SInt32Rules__fields[8] = {
@@ -187,7 +187,7 @@ static const upb_MiniTable_Field validate_SInt32Rules__fields[8] = {
 const upb_MiniTable validate_SInt32Rules_msginit = {
   NULL,
   &validate_SInt32Rules__fields[0],
-  UPB_SIZE(36, 56), 8, kUpb_ExtMode_NonExtendable, 8, 255, 0,
+  UPB_SIZE(40, 48), 8, kUpb_ExtMode_NonExtendable, 8, 255, 0,
 };
 
 static const upb_MiniTable_Field validate_SInt64Rules__fields[8] = {
@@ -204,7 +204,7 @@ static const upb_MiniTable_Field validate_SInt64Rules__fields[8] = {
 const upb_MiniTable validate_SInt64Rules_msginit = {
   NULL,
   &validate_SInt64Rules__fields[0],
-  UPB_SIZE(56, 72), 8, kUpb_ExtMode_NonExtendable, 8, 255, 0,
+  UPB_SIZE(56, 64), 8, kUpb_ExtMode_NonExtendable, 8, 255, 0,
 };
 
 static const upb_MiniTable_Field validate_Fixed32Rules__fields[8] = {
@@ -221,7 +221,7 @@ static const upb_MiniTable_Field validate_Fixed32Rules__fields[8] = {
 const upb_MiniTable validate_Fixed32Rules_msginit = {
   NULL,
   &validate_Fixed32Rules__fields[0],
-  UPB_SIZE(36, 56), 8, kUpb_ExtMode_NonExtendable, 8, 255, 0,
+  UPB_SIZE(40, 48), 8, kUpb_ExtMode_NonExtendable, 8, 255, 0,
 };
 
 static const upb_MiniTable_Field validate_Fixed64Rules__fields[8] = {
@@ -238,7 +238,7 @@ static const upb_MiniTable_Field validate_Fixed64Rules__fields[8] = {
 const upb_MiniTable validate_Fixed64Rules_msginit = {
   NULL,
   &validate_Fixed64Rules__fields[0],
-  UPB_SIZE(56, 72), 8, kUpb_ExtMode_NonExtendable, 8, 255, 0,
+  UPB_SIZE(56, 64), 8, kUpb_ExtMode_NonExtendable, 8, 255, 0,
 };
 
 static const upb_MiniTable_Field validate_SFixed32Rules__fields[8] = {
@@ -255,7 +255,7 @@ static const upb_MiniTable_Field validate_SFixed32Rules__fields[8] = {
 const upb_MiniTable validate_SFixed32Rules_msginit = {
   NULL,
   &validate_SFixed32Rules__fields[0],
-  UPB_SIZE(36, 56), 8, kUpb_ExtMode_NonExtendable, 8, 255, 0,
+  UPB_SIZE(40, 48), 8, kUpb_ExtMode_NonExtendable, 8, 255, 0,
 };
 
 static const upb_MiniTable_Field validate_SFixed64Rules__fields[8] = {
@@ -272,7 +272,7 @@ static const upb_MiniTable_Field validate_SFixed64Rules__fields[8] = {
 const upb_MiniTable validate_SFixed64Rules_msginit = {
   NULL,
   &validate_SFixed64Rules__fields[0],
-  UPB_SIZE(56, 72), 8, kUpb_ExtMode_NonExtendable, 8, 255, 0,
+  UPB_SIZE(56, 64), 8, kUpb_ExtMode_NonExtendable, 8, 255, 0,
 };
 
 static const upb_MiniTable_Field validate_BoolRules__fields[1] = {
@@ -282,7 +282,7 @@ static const upb_MiniTable_Field validate_BoolRules__fields[1] = {
 const upb_MiniTable validate_BoolRules_msginit = {
   NULL,
   &validate_BoolRules__fields[0],
-  UPB_SIZE(2, 8), 1, kUpb_ExtMode_NonExtendable, 1, 255, 0,
+  UPB_SIZE(8, 8), 1, kUpb_ExtMode_NonExtendable, 1, 255, 0,
 };
 
 static const upb_MiniTable_Sub validate_StringRules_submsgs[1] = {
@@ -321,7 +321,7 @@ static const upb_MiniTable_Field validate_StringRules__fields[26] = {
 const upb_MiniTable validate_StringRules_msginit = {
   &validate_StringRules_submsgs[0],
   &validate_StringRules__fields[0],
-  UPB_SIZE(120, 184), 26, kUpb_ExtMode_NonExtendable, 26, 255, 0,
+  UPB_SIZE(120, 176), 26, kUpb_ExtMode_NonExtendable, 26, 255, 0,
 };
 
 static const upb_MiniTable_Field validate_BytesRules__fields[14] = {
@@ -357,7 +357,7 @@ static const upb_MiniTable_Field validate_EnumRules__fields[4] = {
 const upb_MiniTable validate_EnumRules_msginit = {
   NULL,
   &validate_EnumRules__fields[0],
-  UPB_SIZE(20, 40), 4, kUpb_ExtMode_NonExtendable, 4, 255, 0,
+  UPB_SIZE(24, 32), 4, kUpb_ExtMode_NonExtendable, 4, 255, 0,
 };
 
 static const upb_MiniTable_Field validate_MessageRules__fields[2] = {
@@ -368,7 +368,7 @@ static const upb_MiniTable_Field validate_MessageRules__fields[2] = {
 const upb_MiniTable validate_MessageRules_msginit = {
   NULL,
   &validate_MessageRules__fields[0],
-  UPB_SIZE(3, 8), 2, kUpb_ExtMode_NonExtendable, 2, 255, 0,
+  UPB_SIZE(8, 8), 2, kUpb_ExtMode_NonExtendable, 2, 255, 0,
 };
 
 static const upb_MiniTable_Sub validate_RepeatedRules_submsgs[1] = {
@@ -386,7 +386,7 @@ static const upb_MiniTable_Field validate_RepeatedRules__fields[5] = {
 const upb_MiniTable validate_RepeatedRules_msginit = {
   &validate_RepeatedRules_submsgs[0],
   &validate_RepeatedRules__fields[0],
-  UPB_SIZE(24, 40), 5, kUpb_ExtMode_NonExtendable, 5, 255, 0,
+  UPB_SIZE(24, 32), 5, kUpb_ExtMode_NonExtendable, 5, 255, 0,
 };
 
 static const upb_MiniTable_Sub validate_MapRules_submsgs[2] = {
@@ -418,7 +418,7 @@ static const upb_MiniTable_Field validate_AnyRules__fields[3] = {
 const upb_MiniTable validate_AnyRules_msginit = {
   NULL,
   &validate_AnyRules__fields[0],
-  UPB_SIZE(12, 24), 3, kUpb_ExtMode_NonExtendable, 3, 255, 0,
+  UPB_SIZE(16, 24), 3, kUpb_ExtMode_NonExtendable, 3, 255, 0,
 };
 
 static const upb_MiniTable_Sub validate_DurationRules_submsgs[7] = {
@@ -445,7 +445,7 @@ static const upb_MiniTable_Field validate_DurationRules__fields[8] = {
 const upb_MiniTable validate_DurationRules_msginit = {
   &validate_DurationRules_submsgs[0],
   &validate_DurationRules__fields[0],
-  UPB_SIZE(32, 72), 8, kUpb_ExtMode_NonExtendable, 8, 255, 0,
+  UPB_SIZE(32, 64), 8, kUpb_ExtMode_NonExtendable, 8, 255, 0,
 };
 
 static const upb_MiniTable_Sub validate_TimestampRules_submsgs[6] = {
@@ -538,9 +538,9 @@ static const upb_MiniTable_Extension *extensions_layout[4] = {
 };
 
 const upb_MiniTable_Enum validate_KnownRegex_enuminit = {
-  NULL,
-  0x7ULL,
-  0,
+    NULL,
+    0x7ULL,
+    0,
 };
 
 static const upb_MiniTable_Enum *enums_layout[1] = {

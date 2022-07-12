@@ -29,7 +29,7 @@ static const upb_MiniTable_Field xds_core_v3_ResourceName__fields[4] = {
 const upb_MiniTable xds_core_v3_ResourceName_msginit = {
   &xds_core_v3_ResourceName_submsgs[0],
   &xds_core_v3_ResourceName__fields[0],
-  UPB_SIZE(32, 72), 4, kUpb_ExtMode_NonExtendable, 4, 255, 0,
+  UPB_SIZE(32, 64), 4, kUpb_ExtMode_NonExtendable, 4, 255, 0,
 };
 
 static const upb_MiniTable *messages_layout[1] = {
