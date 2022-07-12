@@ -364,7 +364,7 @@ class XdsClient::ChannelState::LrsCallState
         : parent_(std::move(parent)), report_interval_(report_interval) {
       ScheduleNextReportLocked();
     }
-    ~Timer() { parent_.reset(DEBUG_LOCATION, "LRS timer"); }
+    ~Timer() override { parent_.reset(DEBUG_LOCATION, "LRS timer"); }
 
     // Disable thread-safety analysis because this method is called via
     // OrphanablePtr<>, but there's no way to pass the lock annotation
