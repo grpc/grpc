@@ -29,7 +29,7 @@ static const upb_MiniTable_Field envoy_extensions_filters_http_rbac_v3_RBAC__fie
 const upb_MiniTable envoy_extensions_filters_http_rbac_v3_RBAC_msginit = {
   &envoy_extensions_filters_http_rbac_v3_RBAC_submsgs[0],
   &envoy_extensions_filters_http_rbac_v3_RBAC__fields[0],
-  UPB_SIZE(20, 40), 3, kUpb_ExtMode_NonExtendable, 3, 255, 0,
+  UPB_SIZE(24, 40), 3, kUpb_ExtMode_NonExtendable, 3, 255, 0,
 };
 
 static const upb_MiniTable_Sub envoy_extensions_filters_http_rbac_v3_RBACPerRoute_submsgs[1] = {
@@ -43,7 +43,7 @@ static const upb_MiniTable_Field envoy_extensions_filters_http_rbac_v3_RBACPerRo
 const upb_MiniTable envoy_extensions_filters_http_rbac_v3_RBACPerRoute_msginit = {
   &envoy_extensions_filters_http_rbac_v3_RBACPerRoute_submsgs[0],
   &envoy_extensions_filters_http_rbac_v3_RBACPerRoute__fields[0],
-  UPB_SIZE(8, 24), 1, kUpb_ExtMode_NonExtendable, 0, 255, 0,
+  UPB_SIZE(8, 16), 1, kUpb_ExtMode_NonExtendable, 0, 255, 0,
 };
 
 static const upb_MiniTable *messages_layout[2] = {

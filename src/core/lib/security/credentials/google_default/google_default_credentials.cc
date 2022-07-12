@@ -30,9 +30,11 @@
 #include "absl/strings/match.h"
 #include "absl/strings/string_view.h"
 #include "absl/strings/strip.h"
+#include "absl/types/optional.h"
 
 #include <grpc/grpc_security.h>  // IWYU pragma: keep
 #include <grpc/grpc_security_constants.h>
+#include <grpc/impl/codegen/grpc_types.h>
 #include <grpc/slice.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
@@ -103,11 +105,11 @@ struct metadata_server_detector {
 
 namespace {
 
-bool IsXdsNonCfeCluster(const char* xds_cluster) {
-  if (xds_cluster == nullptr) return false;
-  if (absl::StartsWith(xds_cluster, "google_cfe_")) return false;
-  if (!absl::StartsWith(xds_cluster, "xdstp:")) return true;
-  auto uri = grpc_core::URI::Parse(xds_cluster);
+bool IsXdsNonCfeCluster(absl::optional<absl::string_view> xds_cluster) {
+  if (!xds_cluster.has_value()) return false;
+  if (absl::StartsWith(*xds_cluster, "google_cfe_")) return false;
+  if (!absl::StartsWith(*xds_cluster, "xdstp:")) return true;
+  auto uri = grpc_core::URI::Parse(*xds_cluster);
   if (!uri.ok()) return true;  // Shouldn't happen, but assume ALTS.
   return uri->authority() != "traffic-director-c2p.xds.googleapis.com" ||
          !absl::StartsWith(uri->path(),
@@ -119,15 +121,14 @@ bool IsXdsNonCfeCluster(const char* xds_cluster) {
 grpc_core::RefCountedPtr<grpc_channel_security_connector>
 grpc_google_default_channel_credentials::create_security_connector(
     grpc_core::RefCountedPtr<grpc_call_credentials> call_creds,
-    const char* target, const grpc_channel_args* args,
-    grpc_channel_args** new_args) {
-  const bool is_grpclb_load_balancer = grpc_channel_args_find_bool(
-      args, GRPC_ARG_ADDRESS_IS_GRPCLB_LOAD_BALANCER, false);
-  const bool is_backend_from_grpclb_load_balancer = grpc_channel_args_find_bool(
-      args, GRPC_ARG_ADDRESS_IS_BACKEND_FROM_GRPCLB_LOAD_BALANCER, false);
-  const char* xds_cluster =
-      grpc_channel_args_find_string(args, GRPC_ARG_XDS_CLUSTER_NAME);
-  const bool is_xds_non_cfe_cluster = IsXdsNonCfeCluster(xds_cluster);
+    const char* target, grpc_core::ChannelArgs* args) {
+  const bool is_grpclb_load_balancer =
+      args->GetBool(GRPC_ARG_ADDRESS_IS_GRPCLB_LOAD_BALANCER).value_or(false);
+  const bool is_backend_from_grpclb_load_balancer =
+      args->GetBool(GRPC_ARG_ADDRESS_IS_BACKEND_FROM_GRPCLB_LOAD_BALANCER)
+          .value_or(false);
+  const bool is_xds_non_cfe_cluster =
+      IsXdsNonCfeCluster(args->GetString(GRPC_ARG_XDS_CLUSTER_NAME));
   const bool use_alts = is_grpclb_load_balancer ||
                         is_backend_from_grpclb_load_balancer ||
                         is_xds_non_cfe_cluster;
@@ -137,22 +138,17 @@ grpc_google_default_channel_credentials::create_security_connector(
     return nullptr;
   }
   grpc_core::RefCountedPtr<grpc_channel_security_connector> sc =
-      use_alts ? alts_creds_->create_security_connector(call_creds, target,
-                                                        args, new_args)
-               : ssl_creds_->create_security_connector(call_creds, target, args,
-                                                       new_args);
+      use_alts
+          ? alts_creds_->create_security_connector(call_creds, target, args)
+          : ssl_creds_->create_security_connector(call_creds, target, args);
   /* grpclb-specific channel args are removed from the channel args set
    * to ensure backends and fallback adresses will have the same set of channel
    * args. By doing that, it guarantees the connections to backends will not be
    * torn down and re-connected when switching in and out of fallback mode.
    */
   if (use_alts) {
-    static const char* args_to_remove[] = {
-        GRPC_ARG_ADDRESS_IS_GRPCLB_LOAD_BALANCER,
-        GRPC_ARG_ADDRESS_IS_BACKEND_FROM_GRPCLB_LOAD_BALANCER,
-    };
-    *new_args = grpc_channel_args_copy_and_add_and_remove(
-        args, args_to_remove, GPR_ARRAY_SIZE(args_to_remove), nullptr, 0);
+    *args = args->Remove(GRPC_ARG_ADDRESS_IS_GRPCLB_LOAD_BALANCER)
+                .Remove(GRPC_ARG_ADDRESS_IS_BACKEND_FROM_GRPCLB_LOAD_BALANCER);
   }
   return sc;
 }

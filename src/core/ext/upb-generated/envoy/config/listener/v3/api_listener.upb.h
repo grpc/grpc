@@ -53,11 +53,15 @@ UPB_INLINE envoy_config_listener_v3_ApiListener* envoy_config_listener_v3_ApiLis
   return ret;
 }
 UPB_INLINE char* envoy_config_listener_v3_ApiListener_serialize(const envoy_config_listener_v3_ApiListener* msg, upb_Arena* arena, size_t* len) {
-  return upb_Encode(msg, &envoy_config_listener_v3_ApiListener_msginit, 0, arena, len);
+  char* ptr;
+  (void)upb_Encode(msg, &envoy_config_listener_v3_ApiListener_msginit, 0, arena, &ptr, len);
+  return ptr;
 }
 UPB_INLINE char* envoy_config_listener_v3_ApiListener_serialize_ex(const envoy_config_listener_v3_ApiListener* msg, int options,
                                  upb_Arena* arena, size_t* len) {
-  return upb_Encode(msg, &envoy_config_listener_v3_ApiListener_msginit, options, arena, len);
+  char* ptr;
+  (void)upb_Encode(msg, &envoy_config_listener_v3_ApiListener_msginit, options, arena, &ptr, len);
+  return ptr;
 }
 UPB_INLINE bool envoy_config_listener_v3_ApiListener_has_api_listener(const envoy_config_listener_v3_ApiListener* msg) {
   return _upb_hasbit(msg, 1);

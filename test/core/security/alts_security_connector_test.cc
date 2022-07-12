@@ -22,6 +22,8 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include <gtest/gtest.h>
+
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
@@ -34,57 +36,62 @@
 using grpc_core::internal::grpc_alts_auth_context_from_tsi_peer;
 
 /* This file contains unit tests of grpc_alts_auth_context_from_tsi_peer(). */
-static void test_invalid_input_failure() {
+TEST(AltsSecurityConnectorTest, InvalidInputFailure) {
   grpc_core::RefCountedPtr<grpc_auth_context> ctx =
       grpc_alts_auth_context_from_tsi_peer(nullptr);
-  GPR_ASSERT(ctx == nullptr);
+  ASSERT_EQ(ctx, nullptr);
 }
 
-static void test_empty_certificate_type_failure() {
+TEST(AltsSecurityConnectorTest, EmptyCertificateTypeFailure) {
   tsi_peer peer;
-  GPR_ASSERT(tsi_construct_peer(0, &peer) == TSI_OK);
+  ASSERT_EQ(tsi_construct_peer(0, &peer), TSI_OK);
   grpc_core::RefCountedPtr<grpc_auth_context> ctx =
       grpc_alts_auth_context_from_tsi_peer(&peer);
-  GPR_ASSERT(ctx == nullptr);
+  ASSERT_EQ(ctx, nullptr);
   tsi_peer_destruct(&peer);
 }
 
-static void test_empty_peer_property_failure() {
+TEST(AltsSecurityConnectorTest, EmptyPeerPropertyFailure) {
   tsi_peer peer;
-  GPR_ASSERT(tsi_construct_peer(1, &peer) == TSI_OK);
-  GPR_ASSERT(tsi_construct_string_peer_property_from_cstring(
-                 TSI_CERTIFICATE_TYPE_PEER_PROPERTY, TSI_ALTS_CERTIFICATE_TYPE,
-                 &peer.properties[0]) == TSI_OK);
+  ASSERT_EQ(tsi_construct_peer(1, &peer), TSI_OK);
+  ASSERT_EQ(tsi_construct_string_peer_property_from_cstring(
+                TSI_CERTIFICATE_TYPE_PEER_PROPERTY, TSI_ALTS_CERTIFICATE_TYPE,
+                &peer.properties[0]),
+            TSI_OK);
   grpc_core::RefCountedPtr<grpc_auth_context> ctx =
       grpc_alts_auth_context_from_tsi_peer(&peer);
-  GPR_ASSERT(ctx == nullptr);
+  ASSERT_EQ(ctx, nullptr);
   tsi_peer_destruct(&peer);
 }
 
-static void test_missing_rpc_protocol_versions_property_failure() {
+TEST(AltsSecurityConnectorTest, MissingRpcProtocolVersionsPropertyFailure) {
   tsi_peer peer;
-  GPR_ASSERT(tsi_construct_peer(kTsiAltsNumOfPeerProperties, &peer) == TSI_OK);
-  GPR_ASSERT(tsi_construct_string_peer_property_from_cstring(
-                 TSI_CERTIFICATE_TYPE_PEER_PROPERTY, TSI_ALTS_CERTIFICATE_TYPE,
-                 &peer.properties[0]) == TSI_OK);
-  GPR_ASSERT(tsi_construct_string_peer_property_from_cstring(
-                 TSI_ALTS_SERVICE_ACCOUNT_PEER_PROPERTY, "alice",
-                 &peer.properties[1]) == TSI_OK);
+  ASSERT_EQ(tsi_construct_peer(kTsiAltsNumOfPeerProperties, &peer), TSI_OK);
+  ASSERT_EQ(tsi_construct_string_peer_property_from_cstring(
+                TSI_CERTIFICATE_TYPE_PEER_PROPERTY, TSI_ALTS_CERTIFICATE_TYPE,
+                &peer.properties[0]),
+            TSI_OK);
+  ASSERT_EQ(
+      tsi_construct_string_peer_property_from_cstring(
+          TSI_ALTS_SERVICE_ACCOUNT_PEER_PROPERTY, "alice", &peer.properties[1]),
+      TSI_OK);
   grpc_core::RefCountedPtr<grpc_auth_context> ctx =
       grpc_alts_auth_context_from_tsi_peer(&peer);
-  GPR_ASSERT(ctx == nullptr);
+  ASSERT_EQ(ctx, nullptr);
   tsi_peer_destruct(&peer);
 }
 
-static void test_missing_security_level_property_failure() {
+TEST(AltsSecurityConnectorTest, MissingSecurityLevelPropertyFailure) {
   tsi_peer peer;
-  GPR_ASSERT(tsi_construct_peer(kTsiAltsNumOfPeerProperties, &peer) == TSI_OK);
-  GPR_ASSERT(tsi_construct_string_peer_property_from_cstring(
-                 TSI_CERTIFICATE_TYPE_PEER_PROPERTY, TSI_ALTS_CERTIFICATE_TYPE,
-                 &peer.properties[0]) == TSI_OK);
-  GPR_ASSERT(tsi_construct_string_peer_property_from_cstring(
-                 TSI_ALTS_SERVICE_ACCOUNT_PEER_PROPERTY, "alice",
-                 &peer.properties[1]) == TSI_OK);
+  ASSERT_EQ(tsi_construct_peer(kTsiAltsNumOfPeerProperties, &peer), TSI_OK);
+  ASSERT_EQ(tsi_construct_string_peer_property_from_cstring(
+                TSI_CERTIFICATE_TYPE_PEER_PROPERTY, TSI_ALTS_CERTIFICATE_TYPE,
+                &peer.properties[0]),
+            TSI_OK);
+  ASSERT_EQ(
+      tsi_construct_string_peer_property_from_cstring(
+          TSI_ALTS_SERVICE_ACCOUNT_PEER_PROPERTY, "alice", &peer.properties[1]),
+      TSI_OK);
   grpc_gcp_rpc_protocol_versions peer_versions;
   grpc_gcp_rpc_protocol_versions_set_max(&peer_versions,
                                          GRPC_PROTOCOL_VERSION_MAX_MAJOR,
@@ -93,33 +100,36 @@ static void test_missing_security_level_property_failure() {
                                          GRPC_PROTOCOL_VERSION_MIN_MAJOR,
                                          GRPC_PROTOCOL_VERSION_MIN_MINOR);
   grpc_slice serialized_peer_versions;
-  GPR_ASSERT(grpc_gcp_rpc_protocol_versions_encode(&peer_versions,
-                                                   &serialized_peer_versions));
+  ASSERT_TRUE(grpc_gcp_rpc_protocol_versions_encode(&peer_versions,
+                                                    &serialized_peer_versions));
 
-  GPR_ASSERT(tsi_construct_string_peer_property(
-                 TSI_ALTS_RPC_VERSIONS,
-                 reinterpret_cast<char*>(
-                     GRPC_SLICE_START_PTR(serialized_peer_versions)),
-                 GRPC_SLICE_LENGTH(serialized_peer_versions),
-                 &peer.properties[2]) == TSI_OK);
+  ASSERT_EQ(
+      tsi_construct_string_peer_property(
+          TSI_ALTS_RPC_VERSIONS,
+          reinterpret_cast<char*>(
+              GRPC_SLICE_START_PTR(serialized_peer_versions)),
+          GRPC_SLICE_LENGTH(serialized_peer_versions), &peer.properties[2]),
+      TSI_OK);
   grpc_core::RefCountedPtr<grpc_auth_context> ctx =
       grpc_alts_auth_context_from_tsi_peer(&peer);
-  GPR_ASSERT(ctx == nullptr);
+  ASSERT_EQ(ctx, nullptr);
   grpc_slice_unref(serialized_peer_versions);
   tsi_peer_destruct(&peer);
 }
 
-static void test_unknown_peer_property_failure() {
+TEST(AltsSecurityConnectorTest, UnknownPeerPropertyFailure) {
   tsi_peer peer;
-  GPR_ASSERT(tsi_construct_peer(kTsiAltsNumOfPeerProperties, &peer) == TSI_OK);
-  GPR_ASSERT(tsi_construct_string_peer_property_from_cstring(
-                 TSI_CERTIFICATE_TYPE_PEER_PROPERTY, TSI_ALTS_CERTIFICATE_TYPE,
-                 &peer.properties[0]) == TSI_OK);
-  GPR_ASSERT(tsi_construct_string_peer_property_from_cstring(
-                 "unknown", "alice", &peer.properties[1]) == TSI_OK);
+  ASSERT_EQ(tsi_construct_peer(kTsiAltsNumOfPeerProperties, &peer), TSI_OK);
+  ASSERT_EQ(tsi_construct_string_peer_property_from_cstring(
+                TSI_CERTIFICATE_TYPE_PEER_PROPERTY, TSI_ALTS_CERTIFICATE_TYPE,
+                &peer.properties[0]),
+            TSI_OK);
+  ASSERT_EQ(tsi_construct_string_peer_property_from_cstring(
+                "unknown", "alice", &peer.properties[1]),
+            TSI_OK);
   grpc_core::RefCountedPtr<grpc_auth_context> ctx =
       grpc_alts_auth_context_from_tsi_peer(&peer);
-  GPR_ASSERT(ctx == nullptr);
+  ASSERT_EQ(ctx, nullptr);
   tsi_peer_destruct(&peer);
 }
 
@@ -128,10 +138,10 @@ static bool test_identity(const grpc_auth_context* ctx,
                           const char* expected_identity) {
   grpc_auth_property_iterator it;
   const grpc_auth_property* prop;
-  GPR_ASSERT(grpc_auth_context_peer_is_authenticated(ctx));
+  EXPECT_TRUE(grpc_auth_context_peer_is_authenticated(ctx));
   it = grpc_auth_context_peer_identity(ctx);
   prop = grpc_auth_property_iterator_next(&it);
-  GPR_ASSERT(prop != nullptr);
+  EXPECT_NE(prop, nullptr);
   if (strcmp(prop->name, expected_property_name) != 0) {
     gpr_log(GPR_ERROR, "Expected peer identity property name %s and got %s.",
             expected_property_name, prop->name);
@@ -145,15 +155,17 @@ static bool test_identity(const grpc_auth_context* ctx,
   return true;
 }
 
-static void test_alts_peer_to_auth_context_success() {
+TEST(AltsSecurityConnectorTest, AltsPeerToAuthContextSuccess) {
   tsi_peer peer;
-  GPR_ASSERT(tsi_construct_peer(kTsiAltsNumOfPeerProperties, &peer) == TSI_OK);
-  GPR_ASSERT(tsi_construct_string_peer_property_from_cstring(
-                 TSI_CERTIFICATE_TYPE_PEER_PROPERTY, TSI_ALTS_CERTIFICATE_TYPE,
-                 &peer.properties[0]) == TSI_OK);
-  GPR_ASSERT(tsi_construct_string_peer_property_from_cstring(
-                 TSI_ALTS_SERVICE_ACCOUNT_PEER_PROPERTY, "alice",
-                 &peer.properties[1]) == TSI_OK);
+  ASSERT_EQ(tsi_construct_peer(kTsiAltsNumOfPeerProperties, &peer), TSI_OK);
+  ASSERT_EQ(tsi_construct_string_peer_property_from_cstring(
+                TSI_CERTIFICATE_TYPE_PEER_PROPERTY, TSI_ALTS_CERTIFICATE_TYPE,
+                &peer.properties[0]),
+            TSI_OK);
+  ASSERT_EQ(
+      tsi_construct_string_peer_property_from_cstring(
+          TSI_ALTS_SERVICE_ACCOUNT_PEER_PROPERTY, "alice", &peer.properties[1]),
+      TSI_OK);
   grpc_gcp_rpc_protocol_versions peer_versions;
   grpc_gcp_rpc_protocol_versions_set_max(&peer_versions,
                                          GRPC_PROTOCOL_VERSION_MAX_MAJOR,
@@ -162,46 +174,40 @@ static void test_alts_peer_to_auth_context_success() {
                                          GRPC_PROTOCOL_VERSION_MIN_MAJOR,
                                          GRPC_PROTOCOL_VERSION_MIN_MINOR);
   grpc_slice serialized_peer_versions;
-  GPR_ASSERT(grpc_gcp_rpc_protocol_versions_encode(&peer_versions,
-                                                   &serialized_peer_versions));
-  GPR_ASSERT(tsi_construct_string_peer_property(
-                 TSI_ALTS_RPC_VERSIONS,
-                 reinterpret_cast<char*>(
-                     GRPC_SLICE_START_PTR(serialized_peer_versions)),
-                 GRPC_SLICE_LENGTH(serialized_peer_versions),
-                 &peer.properties[2]) == TSI_OK);
-  GPR_ASSERT(tsi_construct_string_peer_property_from_cstring(
-                 TSI_SECURITY_LEVEL_PEER_PROPERTY,
-                 tsi_security_level_to_string(TSI_PRIVACY_AND_INTEGRITY),
-                 &peer.properties[3]) == TSI_OK);
+  ASSERT_TRUE(grpc_gcp_rpc_protocol_versions_encode(&peer_versions,
+                                                    &serialized_peer_versions));
+  ASSERT_EQ(
+      tsi_construct_string_peer_property(
+          TSI_ALTS_RPC_VERSIONS,
+          reinterpret_cast<char*>(
+              GRPC_SLICE_START_PTR(serialized_peer_versions)),
+          GRPC_SLICE_LENGTH(serialized_peer_versions), &peer.properties[2]),
+      TSI_OK);
+  ASSERT_EQ(tsi_construct_string_peer_property_from_cstring(
+                TSI_SECURITY_LEVEL_PEER_PROPERTY,
+                tsi_security_level_to_string(TSI_PRIVACY_AND_INTEGRITY),
+                &peer.properties[3]),
+            TSI_OK);
   char test_ctx[] = "test serialized context";
   grpc_slice serialized_alts_ctx = grpc_slice_from_copied_string(test_ctx);
-  GPR_ASSERT(
+  ASSERT_EQ(
       tsi_construct_string_peer_property(
           TSI_ALTS_CONTEXT,
           reinterpret_cast<char*>(GRPC_SLICE_START_PTR(serialized_alts_ctx)),
-          GRPC_SLICE_LENGTH(serialized_alts_ctx),
-          &peer.properties[4]) == TSI_OK);
+          GRPC_SLICE_LENGTH(serialized_alts_ctx), &peer.properties[4]),
+      TSI_OK);
   grpc_core::RefCountedPtr<grpc_auth_context> ctx =
       grpc_alts_auth_context_from_tsi_peer(&peer);
-  GPR_ASSERT(ctx != nullptr);
-  GPR_ASSERT(test_identity(ctx.get(), TSI_ALTS_SERVICE_ACCOUNT_PEER_PROPERTY,
-                           "alice"));
+  ASSERT_NE(ctx, nullptr);
+  ASSERT_TRUE(test_identity(ctx.get(), TSI_ALTS_SERVICE_ACCOUNT_PEER_PROPERTY,
+                            "alice"));
   ctx.reset(DEBUG_LOCATION, "test");
   grpc_slice_unref(serialized_peer_versions);
   grpc_slice_unref(serialized_alts_ctx);
   tsi_peer_destruct(&peer);
 }
 
-int main(int /*argc*/, char** /*argv*/) {
-  /* Test. */
-  test_invalid_input_failure();
-  test_empty_certificate_type_failure();
-  test_empty_peer_property_failure();
-  test_unknown_peer_property_failure();
-  test_missing_rpc_protocol_versions_property_failure();
-  test_missing_security_level_property_failure();
-  test_alts_peer_to_auth_context_success();
-
-  return 0;
+int main(int argc, char** argv) {
+  ::testing::InitGoogleTest(&argc, argv);
+  return RUN_ALL_TESTS();
 }

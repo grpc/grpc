@@ -18,17 +18,18 @@
 
 #include <grpc/support/port_platform.h>
 
-#include "src/core/lib/security/credentials/alts/check_gcp_environment.h"
-
-#ifdef GPR_WINDOWS
-
 #include <stdio.h>
 #include <string.h>
+
+#include <gtest/gtest.h>
 
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 
 #include "src/core/lib/gpr/tmpfile.h"
+#include "src/core/lib/security/credentials/alts/check_gcp_environment.h"
+
+#ifdef GPR_WINDOWS
 
 namespace grpc_core {
 namespace internal {
@@ -61,33 +62,28 @@ static bool check_bios_data_windows_test(const char* data) {
   return result;
 }
 
-static void test_gcp_environment_check_success() {
+TEST(CheckGcpEnvironmentWindowsTest, GcpEnvironmentCheckSuccess) {
   // This is the only value observed in production.
-  GPR_ASSERT(check_bios_data_windows_test("Google Compute Engine"));
+  ASSERT_TRUE(check_bios_data_windows_test("Google Compute Engine"));
   // Be generous and accept other values that were accepted by the previous
   // implementation.
-  GPR_ASSERT(check_bios_data_windows_test("Google"));
-  GPR_ASSERT(check_bios_data_windows_test("Google\n"));
-  GPR_ASSERT(check_bios_data_windows_test("Google\r"));
-  GPR_ASSERT(check_bios_data_windows_test("Google\r\n"));
-  GPR_ASSERT(check_bios_data_windows_test("   Google   \r\n"));
-  GPR_ASSERT(check_bios_data_windows_test(" \t\t Google\r\n"));
-  GPR_ASSERT(check_bios_data_windows_test(" \t\t Google\t\t  \r\n"));
+  ASSERT_TRUE(check_bios_data_windows_test("Google"));
+  ASSERT_TRUE(check_bios_data_windows_test("Google\n"));
+  ASSERT_TRUE(check_bios_data_windows_test("Google\r"));
+  ASSERT_TRUE(check_bios_data_windows_test("Google\r\n"));
+  ASSERT_TRUE(check_bios_data_windows_test("   Google   \r\n"));
+  ASSERT_TRUE(check_bios_data_windows_test(" \t\t Google\r\n"));
+  ASSERT_TRUE(check_bios_data_windows_test(" \t\t Google\t\t  \r\n"));
 }
 
-static void test_gcp_environment_check_failure() {
-  GPR_ASSERT(!check_bios_data_windows_test("\t\tAmazon\n"));
-  GPR_ASSERT(!check_bios_data_windows_test("  Amazon\r\n"));
+TEST(CheckGcpEnvironmentWindowsTest, GcpEnvironmentCheckFailure) {
+  ASSERT_FALSE(check_bios_data_windows_test("\t\tAmazon\n"));
+  ASSERT_FALSE(check_bios_data_windows_test("  Amazon\r\n"));
 }
-
-int main(int argc, char** argv) {
-  /* Tests. */
-  test_gcp_environment_check_success();
-  test_gcp_environment_check_failure();
-  return 0;
-}
-#else  // GPR_WINDOWS
-
-int main(int /*argc*/, char** /*argv*/) { return 0; }
 
 #endif  // GPR_WINDOWS
+
+int main(int argc, char** argv) {
+  ::testing::InitGoogleTest(&argc, argv);
+  return RUN_ALL_TESTS();
+}

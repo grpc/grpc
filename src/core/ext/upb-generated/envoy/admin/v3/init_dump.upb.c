@@ -24,7 +24,7 @@ static const upb_MiniTable_Field envoy_admin_v3_UnreadyTargetsDumps__fields[1] =
 const upb_MiniTable envoy_admin_v3_UnreadyTargetsDumps_msginit = {
   &envoy_admin_v3_UnreadyTargetsDumps_submsgs[0],
   &envoy_admin_v3_UnreadyTargetsDumps__fields[0],
-  UPB_SIZE(4, 8), 1, kUpb_ExtMode_NonExtendable, 1, 255, 0,
+  UPB_SIZE(8, 8), 1, kUpb_ExtMode_NonExtendable, 1, 255, 0,
 };
 
 static const upb_MiniTable_Field envoy_admin_v3_UnreadyTargetsDumps_UnreadyTargetsDump__fields[2] = {
@@ -35,7 +35,7 @@ static const upb_MiniTable_Field envoy_admin_v3_UnreadyTargetsDumps_UnreadyTarge
 const upb_MiniTable envoy_admin_v3_UnreadyTargetsDumps_UnreadyTargetsDump_msginit = {
   NULL,
   &envoy_admin_v3_UnreadyTargetsDumps_UnreadyTargetsDump__fields[0],
-  UPB_SIZE(12, 24), 2, kUpb_ExtMode_NonExtendable, 2, 255, 0,
+  UPB_SIZE(16, 24), 2, kUpb_ExtMode_NonExtendable, 2, 255, 0,
 };
 
 static const upb_MiniTable *messages_layout[2] = {

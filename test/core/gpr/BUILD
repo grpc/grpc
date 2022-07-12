@@ -31,18 +31,6 @@ grpc_cc_test(
 )
 
 grpc_cc_test(
-    name = "arena_test",
-    srcs = ["arena_test.cc"],
-    language = "C++",
-    uses_event_engine = False,
-    uses_polling = False,
-    deps = [
-        "//:gpr",
-        "//test/core/util:grpc_test_util",
-    ],
-)
-
-grpc_cc_test(
     name = "cpu_test",
     srcs = ["cpu_test.cc"],
     language = "C++",

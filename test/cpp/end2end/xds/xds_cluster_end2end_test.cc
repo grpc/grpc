@@ -24,6 +24,8 @@
 #include "absl/strings/str_cat.h"
 
 #include "src/core/ext/filters/client_channel/backup_poller.h"
+#include "src/core/lib/address_utils/sockaddr_utils.h"
+#include "test/cpp/end2end/connection_delay_injector.h"
 #include "test/cpp/end2end/xds/xds_end2end_test_lib.h"
 
 namespace grpc {
@@ -538,10 +540,14 @@ TEST_P(EdsTest, BackendsRestart) {
   WaitForAllBackends(DEBUG_LOCATION);
   // Stop backends.  RPCs should fail.
   ShutdownAllBackends();
-  // Wait for channel to report TRANSIENT_FAILURE.
+  // Wait for channel to transition out of READY, so that we know it has
+  // noticed that all of the subchannels have failed.  Note that it may
+  // be reporting either CONNECTING or TRANSIENT_FAILURE at this point.
   EXPECT_TRUE(channel_->WaitForStateChange(
       GRPC_CHANNEL_READY, grpc_timeout_seconds_to_deadline(5)));
-  EXPECT_EQ(GRPC_CHANNEL_TRANSIENT_FAILURE, channel_->GetState(false));
+  EXPECT_THAT(channel_->GetState(false),
+              ::testing::AnyOf(::testing::Eq(GRPC_CHANNEL_TRANSIENT_FAILURE),
+                               ::testing::Eq(GRPC_CHANNEL_CONNECTING)));
   // RPCs should fail.
   CheckRpcSendFailure(
       DEBUG_LOCATION, StatusCode::UNAVAILABLE,
@@ -1120,6 +1126,37 @@ TEST_P(FailoverTest, Failover) {
   EXPECT_EQ(0U, backends_[1]->backend_service()->request_count());
 }
 
+// Reports CONNECTING when failing over to a lower priority.
+TEST_P(FailoverTest, ReportsConnectingDuringFailover) {
+  CreateAndStartBackends(1);
+  // Priority 0 will be unreachable, so we'll use priority 1.
+  EdsResourceArgs args({
+      {"locality0", {MakeNonExistantEndpoint()}, kDefaultLocalityWeight, 0},
+      {"locality1", CreateEndpointsForBackends(), kDefaultLocalityWeight, 1},
+  });
+  balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
+  ConnectionHoldInjector injector;
+  injector.Start();
+  auto hold = injector.AddHold(backends_[0]->port());
+  // Start an RPC in the background, which should cause the channel to
+  // try to connect.
+  LongRunningRpc rpc;
+  rpc.StartRpc(stub_.get(), RpcOptions());
+  // Wait for connection attempt to start to the backend.
+  hold->Wait();
+  // Channel state should be CONNECTING here, and any RPC should be
+  // queued.
+  EXPECT_EQ(channel_->GetState(false), GRPC_CHANNEL_CONNECTING);
+  // Allow the connection attempt to complete.
+  hold->Resume();
+  // Now the RPC should complete successfully.
+  gpr_log(GPR_INFO, "=== WAITING FOR RPC TO FINISH ===");
+  Status status = rpc.GetStatus();
+  gpr_log(GPR_INFO, "=== RPC FINISHED ===");
+  EXPECT_TRUE(status.ok()) << "code=" << status.error_code()
+                           << " message=" << status.error_message();
+}
+
 // If a locality with higher priority than the current one becomes ready,
 // switch to it.
 TEST_P(FailoverTest, SwitchBackToHigherPriority) {
@@ -1672,6 +1709,7 @@ int main(int argc, char** argv) {
   gpr_setenv("grpc_cfstream", "0");
 #endif
   grpc_init();
+  grpc::testing::ConnectionAttemptInjector::Init();
   const auto result = RUN_ALL_TESTS();
   grpc_shutdown();
   return result;

@@ -289,21 +289,6 @@ grpc_cc_test(
     deps = [":helpers"],
 )
 
-grpc_cc_test(
-    name = "bm_threadpool",
-    size = "large",
-    srcs = ["bm_threadpool.cc"],
-    args = grpc_benchmark_args(),
-    tags = [
-        "manual",
-        "no_windows",
-        "notap",
-    ],
-    uses_event_engine = False,
-    uses_polling = False,
-    deps = [":helpers"],
-)
-
 grpc_cc_library(
     name = "bm_callback_test_service_impl",
     testonly = 1,

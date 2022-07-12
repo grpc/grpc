@@ -23,18 +23,8 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-from google.protobuf.internal import unknown_fields_test
+from google.protobuf.internal.unknown_fields_test import *
 import unittest
 
-unknown_fields_test.UnknownEnumValuesTest.testCheckUnknownFieldValueForEnum.__unittest_expecting_failure__ = True
-unknown_fields_test.UnknownFieldsAccessorsTest.testCheckUnknownFieldValue.__unittest_expecting_failure__ = True
-unknown_fields_test.UnknownFieldsAccessorsTest.testClear.__unittest_expecting_failure__ = True
-unknown_fields_test.UnknownFieldsAccessorsTest.testMergeFrom.__unittest_expecting_failure__ = True
-unknown_fields_test.UnknownFieldsAccessorsTest.testSubUnknownFields.__unittest_expecting_failure__ = True
-unknown_fields_test.UnknownFieldsAccessorsTest.testUnknownExtensions.__unittest_expecting_failure__ = True
-unknown_fields_test.UnknownFieldsAccessorsTest.testUnknownField.__unittest_expecting_failure__ = True
-unknown_fields_test.UnknownFieldsAccessorsTest.testUnknownFieldsNoMemoryLeak.__unittest_expecting_failure__ = True
-unknown_fields_test.UnknownFieldsTest.testSerializeMessageSetWireFormatUnknownExtension.__unittest_expecting_failure__ = True
-
 if __name__ == '__main__':
-  unittest.main(module=unknown_fields_test, verbosity=2)
+  unittest.main(verbosity=2)

@@ -40,7 +40,7 @@ PROJECT_NAME           = "GRPC C++"
 # could be handy for archiving the generated documentation or if some version
 # control system is used.
 
-PROJECT_NUMBER         = 1.48.0-dev
+PROJECT_NUMBER         = 1.49.0-dev
 
 # Using the PROJECT_BRIEF tag one can provide an optional one line description
 # for a project that appears at the top of each page and should give viewer a
@@ -1856,6 +1856,8 @@ src/core/ext/xds/xds_channel_stack_modifier.cc \
 src/core/ext/xds/xds_channel_stack_modifier.h \
 src/core/ext/xds/xds_client.cc \
 src/core/ext/xds/xds_client.h \
+src/core/ext/xds/xds_client_grpc.cc \
+src/core/ext/xds/xds_client_grpc.h \
 src/core/ext/xds/xds_client_stats.cc \
 src/core/ext/xds/xds_client_stats.h \
 src/core/ext/xds/xds_cluster.cc \
@@ -1884,6 +1886,9 @@ src/core/ext/xds/xds_route_config.h \
 src/core/ext/xds/xds_routing.cc \
 src/core/ext/xds/xds_routing.h \
 src/core/ext/xds/xds_server_config_fetcher.cc \
+src/core/ext/xds/xds_transport.h \
+src/core/ext/xds/xds_transport_grpc.cc \
+src/core/ext/xds/xds_transport_grpc.h \
 src/core/lib/address_utils/parse_address.cc \
 src/core/lib/address_utils/parse_address.h \
 src/core/lib/address_utils/sockaddr_utils.cc \
@@ -2084,10 +2089,6 @@ src/core/lib/iomgr/exec_ctx.cc \
 src/core/lib/iomgr/exec_ctx.h \
 src/core/lib/iomgr/executor.cc \
 src/core/lib/iomgr/executor.h \
-src/core/lib/iomgr/executor/mpmcqueue.cc \
-src/core/lib/iomgr/executor/mpmcqueue.h \
-src/core/lib/iomgr/executor/threadpool.cc \
-src/core/lib/iomgr/executor/threadpool.h \
 src/core/lib/iomgr/fork_posix.cc \
 src/core/lib/iomgr/fork_windows.cc \
 src/core/lib/iomgr/gethostname.h \

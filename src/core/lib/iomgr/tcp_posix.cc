@@ -99,6 +99,8 @@ typedef size_t msg_iovlen_type;
 
 extern grpc_core::TraceFlag grpc_tcp_trace;
 
+GPR_GLOBAL_CONFIG_DECLARE_BOOL(grpc_experimental_enable_tcp_frame_size_tuning);
+
 namespace grpc_core {
 
 class TcpZerocopySendRecord {
@@ -465,6 +467,13 @@ using grpc_core::TcpZerocopySendCtx;
 using grpc_core::TcpZerocopySendRecord;
 
 namespace {
+
+bool ExperimentalTcpFrameSizeTuningEnabled() {
+  static const bool kEnableTcpFrameSizeTuning =
+      GPR_GLOBAL_CONFIG_GET(grpc_experimental_enable_tcp_frame_size_tuning);
+  return kEnableTcpFrameSizeTuning;
+}
+
 struct grpc_tcp {
   grpc_tcp(int max_sends, size_t send_bytes_threshold)
       : tcp_zerocopy_send_ctx(max_sends, send_bytes_threshold) {}
@@ -534,6 +543,11 @@ struct grpc_tcp {
                                       on errors anymore */
   TcpZerocopySendCtx tcp_zerocopy_send_ctx;
   TcpZerocopySendRecord* current_zerocopy_send = nullptr;
+
+  bool frame_size_tuning_enabled;
+  int min_progress_size; /* A hint from upper layers specifying the minimum
+                            number of bytes that need to be read to make
+                            meaningful progress */
 };
 
 struct backup_poller {
@@ -844,6 +858,7 @@ static bool tcp_do_read(grpc_tcp* tcp, grpc_error_handle* error)
   }
 
   GPR_ASSERT(tcp->incoming_buffer->length != 0);
+  GPR_DEBUG_ASSERT(tcp->min_progress_size > 0);
 
   do {
     /* Assume there is something on the queue. If we receive TCP_INQ from
@@ -875,7 +890,8 @@ static bool tcp_do_read(grpc_tcp* tcp, grpc_error_handle* error)
 
     /* We have read something in previous reads. We need to deliver those
      * bytes to the upper layer. */
-    if (read_bytes <= 0 && total_read_bytes > 0) {
+    if (read_bytes <= 0 &&
+        total_read_bytes >= static_cast<size_t>(tcp->min_progress_size)) {
       tcp->inq = 1;
       break;
     }
@@ -884,6 +900,9 @@ static bool tcp_do_read(grpc_tcp* tcp, grpc_error_handle* error)
       /* NB: After calling call_read_cb a parallel call of the read handler may
        * be running. */
       if (errno == EAGAIN) {
+        if (total_read_bytes > 0) {
+          break;
+        }
         finish_estimate(tcp);
         tcp->inq = 0;
         return false;
@@ -956,18 +975,45 @@ static bool tcp_do_read(grpc_tcp* tcp, grpc_error_handle* error)
   }
 
   GPR_DEBUG_ASSERT(total_read_bytes > 0);
+  *error = GRPC_ERROR_NONE;
+  if (tcp->frame_size_tuning_enabled) {
+    // Update min progress size based on the total number of bytes read in
+    // this round.
+    tcp->min_progress_size -= total_read_bytes;
+    if (tcp->min_progress_size > 0) {
+      // There is still some bytes left to be read before we can signal
+      // the read as complete. Append the bytes read so far into
+      // last_read_buffer which serves as a staging buffer. Return false
+      // to indicate tcp_handle_read needs to be scheduled again.
+      grpc_slice_buffer_move_first(tcp->incoming_buffer, total_read_bytes,
+                                   &tcp->last_read_buffer);
+      return false;
+    } else {
+      // The required number of bytes have been read. Append the bytes
+      // read in this round into last_read_buffer. Then swap last_read_buffer
+      // and incoming_buffer. Now incoming buffer contains all the bytes
+      // read since the start of the last tcp_read operation. last_read_buffer
+      // would contain any spare space left in the incoming buffer. This
+      // space will be used in the next tcp_read operation.
+      tcp->min_progress_size = 1;
+      grpc_slice_buffer_move_first(tcp->incoming_buffer, total_read_bytes,
+                                   &tcp->last_read_buffer);
+      grpc_slice_buffer_swap(&tcp->last_read_buffer, tcp->incoming_buffer);
+      return true;
+    }
+  }
   if (total_read_bytes < tcp->incoming_buffer->length) {
     grpc_slice_buffer_trim_end(tcp->incoming_buffer,
                                tcp->incoming_buffer->length - total_read_bytes,
                                &tcp->last_read_buffer);
   }
-  *error = GRPC_ERROR_NONE;
   return true;
 }
 
 static void maybe_make_read_slices(grpc_tcp* tcp)
     ABSL_EXCLUSIVE_LOCKS_REQUIRED(tcp->read_mu) {
-  if (tcp->incoming_buffer->length == 0 &&
+  if (tcp->incoming_buffer->length <
+          static_cast<size_t>(tcp->min_progress_size) &&
       tcp->incoming_buffer->count < MAX_READ_IOVEC) {
     if (GRPC_TRACE_FLAG_ENABLED(grpc_tcp_trace)) {
       gpr_log(GPR_INFO,
@@ -976,15 +1022,20 @@ static void maybe_make_read_slices(grpc_tcp* tcp)
               tcp, tcp->min_read_chunk_size, tcp->max_read_chunk_size,
               tcp->target_length, tcp->incoming_buffer->length);
     }
-    int target_length = static_cast<int>(tcp->target_length);
+    int target_length =
+        std::max(static_cast<int>(tcp->target_length), tcp->min_progress_size);
     int extra_wanted =
         target_length - static_cast<int>(tcp->incoming_buffer->length);
+    int min_read_chunk_size =
+        std::max(tcp->min_read_chunk_size, tcp->min_progress_size);
+    int max_read_chunk_size =
+        std::max(tcp->max_read_chunk_size, tcp->min_progress_size);
     grpc_slice_buffer_add_indexed(
         tcp->incoming_buffer,
         tcp->memory_owner.MakeSlice(grpc_core::MemoryRequest(
-            tcp->min_read_chunk_size,
-            grpc_core::Clamp(extra_wanted, tcp->min_read_chunk_size,
-                             tcp->max_read_chunk_size))));
+            min_read_chunk_size,
+            grpc_core::Clamp(extra_wanted, min_read_chunk_size,
+                             max_read_chunk_size))));
     maybe_post_reclaimer(tcp);
   }
 }
@@ -1020,12 +1071,14 @@ static void tcp_handle_read(void* arg /* grpc_tcp */, grpc_error_handle error) {
 }
 
 static void tcp_read(grpc_endpoint* ep, grpc_slice_buffer* incoming_buffer,
-                     grpc_closure* cb, bool urgent, int /*min_progress_size*/) {
+                     grpc_closure* cb, bool urgent, int min_progress_size) {
   grpc_tcp* tcp = reinterpret_cast<grpc_tcp*>(ep);
   GPR_ASSERT(tcp->read_cb == nullptr);
   tcp->read_cb = cb;
   tcp->read_mu.Lock();
   tcp->incoming_buffer = incoming_buffer;
+  tcp->min_progress_size =
+      tcp->frame_size_tuning_enabled ? min_progress_size : 1;
   grpc_slice_buffer_reset_and_unref_internal(incoming_buffer);
   grpc_slice_buffer_swap(incoming_buffer, &tcp->last_read_buffer);
   tcp->read_mu.Unlock();
@@ -1913,6 +1966,8 @@ grpc_endpoint* grpc_tcp_create(grpc_fd* em_fd,
   tcp->socket_ts_enabled = false;
   tcp->ts_capable = true;
   tcp->outgoing_buffer_arg = nullptr;
+  tcp->frame_size_tuning_enabled = ExperimentalTcpFrameSizeTuningEnabled();
+  tcp->min_progress_size = 1;
   if (tcp_tx_zerocopy_enabled && !tcp->tcp_zerocopy_send_ctx.memory_limited()) {
 #ifdef GRPC_LINUX_ERRQUEUE
     const int enable = 1;

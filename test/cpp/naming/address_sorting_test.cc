@@ -171,7 +171,8 @@ grpc_core::ServerAddressList BuildLbAddrInputs(
     const std::vector<TestAddress>& test_addrs) {
   grpc_core::ServerAddressList addresses;
   for (const auto& addr : test_addrs) {
-    addresses.emplace_back(TestAddressToGrpcResolvedAddress(addr), nullptr);
+    addresses.emplace_back(TestAddressToGrpcResolvedAddress(addr),
+                           grpc_core::ChannelArgs());
   }
   return addresses;
 }

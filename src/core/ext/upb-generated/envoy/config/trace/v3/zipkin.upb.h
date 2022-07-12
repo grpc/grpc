@@ -60,11 +60,15 @@ UPB_INLINE envoy_config_trace_v3_ZipkinConfig* envoy_config_trace_v3_ZipkinConfi
   return ret;
 }
 UPB_INLINE char* envoy_config_trace_v3_ZipkinConfig_serialize(const envoy_config_trace_v3_ZipkinConfig* msg, upb_Arena* arena, size_t* len) {
-  return upb_Encode(msg, &envoy_config_trace_v3_ZipkinConfig_msginit, 0, arena, len);
+  char* ptr;
+  (void)upb_Encode(msg, &envoy_config_trace_v3_ZipkinConfig_msginit, 0, arena, &ptr, len);
+  return ptr;
 }
 UPB_INLINE char* envoy_config_trace_v3_ZipkinConfig_serialize_ex(const envoy_config_trace_v3_ZipkinConfig* msg, int options,
                                  upb_Arena* arena, size_t* len) {
-  return upb_Encode(msg, &envoy_config_trace_v3_ZipkinConfig_msginit, options, arena, len);
+  char* ptr;
+  (void)upb_Encode(msg, &envoy_config_trace_v3_ZipkinConfig_msginit, options, arena, &ptr, len);
+  return ptr;
 }
 UPB_INLINE void envoy_config_trace_v3_ZipkinConfig_clear_collector_cluster(const envoy_config_trace_v3_ZipkinConfig* msg) {
   *UPB_PTR_AT(msg, UPB_SIZE(8, 8), upb_StringView) = upb_StringView_FromDataAndSize(NULL, 0);

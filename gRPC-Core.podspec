@@ -21,7 +21,7 @@
 
 Pod::Spec.new do |s|
   s.name     = 'gRPC-Core'
-  version = '1.48.0-dev'
+  version = '1.49.0-dev'
   s.version  = version
   s.summary  = 'Core cross-platform gRPC library, written in C'
   s.homepage = 'https://grpc.io'
@@ -46,7 +46,7 @@ Pod::Spec.new do |s|
   s.requires_arc = false
 
   name = 'grpc'
-  abseil_version = '1.20211102.0'
+  abseil_version = '1.20220623.0'
 
   # When creating a dynamic framework, name it grpc.framework instead of gRPC-Core.framework.
   # This lets users write their includes like `#include <grpc/grpc.h>` as opposed to `#include
@@ -177,6 +177,7 @@ Pod::Spec.new do |s|
     ss.dependency 'abseil/container/flat_hash_map', abseil_version
     ss.dependency 'abseil/container/flat_hash_set', abseil_version
     ss.dependency 'abseil/container/inlined_vector', abseil_version
+    ss.dependency 'abseil/functional/any_invocable', abseil_version
     ss.dependency 'abseil/functional/bind_front', abseil_version
     ss.dependency 'abseil/functional/function_ref', abseil_version
     ss.dependency 'abseil/hash/hash', abseil_version
@@ -959,6 +960,8 @@ Pod::Spec.new do |s|
                       'src/core/ext/xds/xds_channel_stack_modifier.h',
                       'src/core/ext/xds/xds_client.cc',
                       'src/core/ext/xds/xds_client.h',
+                      'src/core/ext/xds/xds_client_grpc.cc',
+                      'src/core/ext/xds/xds_client_grpc.h',
                       'src/core/ext/xds/xds_client_stats.cc',
                       'src/core/ext/xds/xds_client_stats.h',
                       'src/core/ext/xds/xds_cluster.cc',
@@ -987,6 +990,9 @@ Pod::Spec.new do |s|
                       'src/core/ext/xds/xds_routing.cc',
                       'src/core/ext/xds/xds_routing.h',
                       'src/core/ext/xds/xds_server_config_fetcher.cc',
+                      'src/core/ext/xds/xds_transport.h',
+                      'src/core/ext/xds/xds_transport_grpc.cc',
+                      'src/core/ext/xds/xds_transport_grpc.h',
                       'src/core/lib/address_utils/parse_address.cc',
                       'src/core/lib/address_utils/parse_address.h',
                       'src/core/lib/address_utils/sockaddr_utils.cc',
@@ -1187,10 +1193,6 @@ Pod::Spec.new do |s|
                       'src/core/lib/iomgr/exec_ctx.h',
                       'src/core/lib/iomgr/executor.cc',
                       'src/core/lib/iomgr/executor.h',
-                      'src/core/lib/iomgr/executor/mpmcqueue.cc',
-                      'src/core/lib/iomgr/executor/mpmcqueue.h',
-                      'src/core/lib/iomgr/executor/threadpool.cc',
-                      'src/core/lib/iomgr/executor/threadpool.h',
                       'src/core/lib/iomgr/fork_posix.cc',
                       'src/core/lib/iomgr/fork_windows.cc',
                       'src/core/lib/iomgr/gethostname.h',
@@ -1657,18 +1659,36 @@ Pod::Spec.new do |s|
                       'third_party/upb/third_party/utf8_range/range2-neon.c',
                       'third_party/upb/third_party/utf8_range/range2-sse.c',
                       'third_party/upb/third_party/utf8_range/utf8_range.h',
+                      'third_party/upb/upb/arena.c',
+                      'third_party/upb/upb/arena.h',
+                      'third_party/upb/upb/array.c',
+                      'third_party/upb/upb/array.h',
+                      'third_party/upb/upb/collections.h',
                       'third_party/upb/upb/decode.c',
                       'third_party/upb/upb/decode.h',
                       'third_party/upb/upb/decode_fast.c',
                       'third_party/upb/upb/decode_fast.h',
-                      'third_party/upb/upb/decode_internal.h',
                       'third_party/upb/upb/def.c',
                       'third_party/upb/upb/def.h',
                       'third_party/upb/upb/def.hpp',
                       'third_party/upb/upb/encode.c',
                       'third_party/upb/upb/encode.h',
+                      'third_party/upb/upb/extension_registry.c',
+                      'third_party/upb/upb/extension_registry.h',
+                      'third_party/upb/upb/internal/decode.h',
+                      'third_party/upb/upb/internal/table.h',
+                      'third_party/upb/upb/internal/upb.h',
+                      'third_party/upb/upb/internal/vsnprintf_compat.h',
+                      'third_party/upb/upb/json_decode.c',
+                      'third_party/upb/upb/json_decode.h',
                       'third_party/upb/upb/json_encode.c',
                       'third_party/upb/upb/json_encode.h',
+                      'third_party/upb/upb/map.c',
+                      'third_party/upb/upb/map.h',
+                      'third_party/upb/upb/message_value.h',
+                      'third_party/upb/upb/mini_table.c',
+                      'third_party/upb/upb/mini_table.h',
+                      'third_party/upb/upb/mini_table.hpp',
                       'third_party/upb/upb/msg.c',
                       'third_party/upb/upb/msg.h',
                       'third_party/upb/upb/msg_internal.h',
@@ -1677,6 +1697,8 @@ Pod::Spec.new do |s|
                       'third_party/upb/upb/reflection.c',
                       'third_party/upb/upb/reflection.h',
                       'third_party/upb/upb/reflection.hpp',
+                      'third_party/upb/upb/status.c',
+                      'third_party/upb/upb/status.h',
                       'third_party/upb/upb/table.c',
                       'third_party/upb/upb/table_internal.h',
                       'third_party/upb/upb/text_encode.c',
@@ -1684,7 +1706,6 @@ Pod::Spec.new do |s|
                       'third_party/upb/upb/upb.c',
                       'third_party/upb/upb/upb.h',
                       'third_party/upb/upb/upb.hpp',
-                      'third_party/upb/upb/upb_internal.h',
                       'third_party/xxhash/xxhash.h'
     ss.private_header_files = 'src/core/ext/filters/channel_idle/channel_idle_filter.h',
                               'src/core/ext/filters/channel_idle/idle_filter_state.h',
@@ -2062,6 +2083,7 @@ Pod::Spec.new do |s|
                               'src/core/ext/xds/xds_channel_args.h',
                               'src/core/ext/xds/xds_channel_stack_modifier.h',
                               'src/core/ext/xds/xds_client.h',
+                              'src/core/ext/xds/xds_client_grpc.h',
                               'src/core/ext/xds/xds_client_stats.h',
                               'src/core/ext/xds/xds_cluster.h',
                               'src/core/ext/xds/xds_cluster_specifier_plugin.h',
@@ -2076,6 +2098,8 @@ Pod::Spec.new do |s|
                               'src/core/ext/xds/xds_resource_type_impl.h',
                               'src/core/ext/xds/xds_route_config.h',
                               'src/core/ext/xds/xds_routing.h',
+                              'src/core/ext/xds/xds_transport.h',
+                              'src/core/ext/xds/xds_transport_grpc.h',
                               'src/core/lib/address_utils/parse_address.h',
                               'src/core/lib/address_utils/sockaddr_utils.h',
                               'src/core/lib/avl/avl.h',
@@ -2176,8 +2200,6 @@ Pod::Spec.new do |s|
                               'src/core/lib/iomgr/ev_posix.h',
                               'src/core/lib/iomgr/exec_ctx.h',
                               'src/core/lib/iomgr/executor.h',
-                              'src/core/lib/iomgr/executor/mpmcqueue.h',
-                              'src/core/lib/iomgr/executor/threadpool.h',
                               'src/core/lib/iomgr/gethostname.h',
                               'src/core/lib/iomgr/grpc_if_nametoindex.h',
                               'src/core/lib/iomgr/internal_errqueue.h',
@@ -2410,24 +2432,36 @@ Pod::Spec.new do |s|
                               'third_party/re2/util/utf.h',
                               'third_party/re2/util/util.h',
                               'third_party/upb/third_party/utf8_range/utf8_range.h',
+                              'third_party/upb/upb/arena.h',
+                              'third_party/upb/upb/array.h',
+                              'third_party/upb/upb/collections.h',
                               'third_party/upb/upb/decode.h',
                               'third_party/upb/upb/decode_fast.h',
-                              'third_party/upb/upb/decode_internal.h',
                               'third_party/upb/upb/def.h',
                               'third_party/upb/upb/def.hpp',
                               'third_party/upb/upb/encode.h',
+                              'third_party/upb/upb/extension_registry.h',
+                              'third_party/upb/upb/internal/decode.h',
+                              'third_party/upb/upb/internal/table.h',
+                              'third_party/upb/upb/internal/upb.h',
+                              'third_party/upb/upb/internal/vsnprintf_compat.h',
+                              'third_party/upb/upb/json_decode.h',
                               'third_party/upb/upb/json_encode.h',
+                              'third_party/upb/upb/map.h',
+                              'third_party/upb/upb/message_value.h',
+                              'third_party/upb/upb/mini_table.h',
+                              'third_party/upb/upb/mini_table.hpp',
                               'third_party/upb/upb/msg.h',
                               'third_party/upb/upb/msg_internal.h',
                               'third_party/upb/upb/port_def.inc',
                               'third_party/upb/upb/port_undef.inc',
                               'third_party/upb/upb/reflection.h',
                               'third_party/upb/upb/reflection.hpp',
+                              'third_party/upb/upb/status.h',
                               'third_party/upb/upb/table_internal.h',
                               'third_party/upb/upb/text_encode.h',
                               'third_party/upb/upb/upb.h',
                               'third_party/upb/upb/upb.hpp',
-                              'third_party/upb/upb/upb_internal.h',
                               'third_party/xxhash/xxhash.h'
   end
 

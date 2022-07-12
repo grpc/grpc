@@ -17,6 +17,7 @@
 import argparse
 import collections
 from doctest import SKIP
+import multiprocessing
 import os
 import re
 import subprocess
@@ -57,6 +58,8 @@ EXTERNAL_DEPS = {
         'absl/container:inlined_vector',
     'absl/cleanup/cleanup.h':
         'absl/cleanup',
+    'absl/functional/any_invocable.h':
+        'absl/functional:any_invocable',
     'absl/functional/bind_front.h':
         'absl/functional:bind_front',
     'absl/functional/function_ref.h':
@@ -165,6 +168,8 @@ EXTERNAL_DEPS = {
         'libcrypto',
     're2/re2.h':
         're2',
+    'upb/arena.h':
+        'upb_lib',
     'upb/def.h':
         'upb_lib',
     'upb/json_encode.h':
@@ -363,42 +368,46 @@ exec(
 class Choices:
 
     def __init__(self):
-        self.choices = set()
-        self.choices.add(frozenset())
+        self.to_add = []
+        self.to_remove = []
 
     def add_one_of(self, choices):
         if not choices:
             return
-        new_choices = set()
-        for append_choice in choices:
-            for choice in self.choices:
-                new_choices.add(choice.union([append_choice]))
-        self.choices = new_choices
+        self.to_add.append(tuple(choices))
 
     def add(self, choice):
         self.add_one_of([choice])
 
     def remove(self, remove):
-        new_choices = set()
-        for choice in self.choices:
-            new_choices.add(choice.difference([remove]))
-        self.choices = new_choices
+        self.to_remove.append(remove)
 
     def best(self, scorer):
+        choices = set()
+        choices.add(frozenset())
+
+        for add in sorted(set(self.to_add), key=lambda x: (len(x), x)):
+            new_choices = set()
+            for append_choice in add:
+                for choice in choices:
+                    new_choices.add(choice.union([append_choice]))
+            choices = new_choices
+        for remove in sorted(set(self.to_remove)):
+            new_choices = set()
+            for choice in choices:
+                new_choices.add(choice.difference([remove]))
+            choices = new_choices
+
         best = None
         final_scorer = lambda x: (total_avoidness(x), scorer(x), total_score(x))
-        for choice in self.choices:
+        for choice in choices:
             if best is None or final_scorer(choice) < final_scorer(best):
                 best = choice
         return best
 
 
-error = False
-for library in sorted(consumes.keys()):
-    if library in no_update:
-        continue
-    if args.targets and library not in args.targets:
-        continue
+def make_library(library):
+    error = False
     hdrs = sorted(consumes[library])
     deps = Choices()
     external_deps = Choices()
@@ -479,6 +488,25 @@ for library in sorted(consumes.keys()):
     external_deps = sorted(
         external_deps.best(lambda x: SCORERS[args.score]
                            (x, original_external_deps[library])))
+
+    return (library, error, deps, external_deps)
+
+
+update_libraries = []
+for library in sorted(consumes.keys()):
+    if library in no_update:
+        continue
+    if args.targets and library not in args.targets:
+        continue
+    update_libraries.append(library)
+with multiprocessing.Pool(processes=multiprocessing.cpu_count()) as p:
+    updated_libraries = p.map(make_library, update_libraries, 1)
+
+error = False
+for library, lib_error, deps, external_deps in updated_libraries:
+    if lib_error:
+        error = True
+        continue
     target = ':' + library
     buildozer_set_list('external_deps', external_deps, target, via='deps')
     buildozer_set_list('deps', deps, target)
