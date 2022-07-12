@@ -2044,7 +2044,6 @@ grpc_cc_library(
     ],
     hdrs = [
         "src/core/lib/iomgr/error.h",
-        "src/core/lib/iomgr/error_internal.h",
     ],
     deps = [
         "gpr",
@@ -2718,7 +2717,6 @@ grpc_cc_library(
     [
         "src/core/lib/iomgr/closure.h",
         "src/core/lib/iomgr/error.h",
-        "src/core/lib/iomgr/error_internal.h",
         "src/core/lib/slice/slice_internal.h",
         "src/core/lib/slice/slice_string_helpers.h",
         "src/core/lib/iomgr/exec_ctx.h",

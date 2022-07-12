@@ -1092,7 +1092,6 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/lib/iomgr/error.h )
   s.files += %w( src/core/lib/iomgr/error_cfstream.cc )
   s.files += %w( src/core/lib/iomgr/error_cfstream.h )
-  s.files += %w( src/core/lib/iomgr/error_internal.h )
   s.files += %w( src/core/lib/iomgr/ev_apple.cc )
   s.files += %w( src/core/lib/iomgr/ev_apple.h )
   s.files += %w( src/core/lib/iomgr/ev_epoll1_linux.cc )
