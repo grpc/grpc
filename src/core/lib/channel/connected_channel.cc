@@ -385,6 +385,7 @@ class ClientConnectedCallPromise {
           recv_message_state_ =
               server_to_client_messages_->Push(std::move(**message));
         } else {
+          recv_message_state_ = Closed{};
           absl::exchange(server_to_client_messages_, nullptr)->Close();
         }
       }
@@ -412,28 +413,33 @@ class ClientConnectedCallPromise {
       return Pending{};
     }
 
-    void RecvInitialMetadataReady(grpc_error_handle) {
+    void RecvInitialMetadataReady(grpc_error_handle error) {
+      GPR_ASSERT(error == GRPC_ERROR_NONE);
       queued_initial_metadata_ = true;
       initial_metadata_waker_.Wakeup();
     }
 
-    void RecvTrailingMetadataReady(grpc_error_handle) {
+    void RecvTrailingMetadataReady(grpc_error_handle error) {
+      GPR_ASSERT(error == GRPC_ERROR_NONE);
       queued_trailing_metadata_ = true;
       trailing_metadata_waker_.Wakeup();
     }
 
-    void MetadataBatchDone(grpc_error_handle) {
+    void MetadataBatchDone(grpc_error_handle error) {
+      GPR_ASSERT(error == GRPC_ERROR_NONE);
       call_context_->Unref("metadata_batch_done");
     }
 
-    void SendMessageBatchDone(grpc_error_handle) {
+    void SendMessageBatchDone(grpc_error_handle error) {
+      GPR_ASSERT(error == GRPC_ERROR_NONE);
       if (!absl::holds_alternative<Closed>(send_message_state_)) {
         send_message_state_ = Idle{};
       }
       send_message_waker_.Wakeup();
     }
 
-    void RecvMessageBatchDone(grpc_error_handle) {
+    void RecvMessageBatchDone(grpc_error_handle error) {
+      if (error != GRPC_ERROR_NONE) return;
       auto pending =
           std::move(absl::get<PendingReceiveMessage>(recv_message_state_));
       if (pending.payload.has_value()) {
