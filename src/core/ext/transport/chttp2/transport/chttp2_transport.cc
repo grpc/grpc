@@ -40,6 +40,7 @@
 #include "absl/types/variant.h"
 
 #include <grpc/impl/codegen/connectivity_state.h>
+#include <grpc/impl/codegen/grpc_types.h>
 #include <grpc/slice_buffer.h>
 #include <grpc/status.h>
 #include <grpc/support/alloc.h>
@@ -75,7 +76,6 @@
 #include "src/core/lib/iomgr/timer.h"
 #include "src/core/lib/profiling/timers.h"
 #include "src/core/lib/promise/poll.h"
-#include "src/core/lib/resource_quota/api.h"
 #include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/resource_quota/memory_quota.h"
 #include "src/core/lib/resource_quota/resource_quota.h"
@@ -286,147 +286,126 @@ grpc_chttp2_transport::~grpc_chttp2_transport() {
 static const grpc_transport_vtable* get_vtable(void);
 
 static void read_channel_args(grpc_chttp2_transport* t,
-                              const grpc_channel_args* channel_args,
+                              const grpc_core::ChannelArgs& channel_args,
                               bool is_client) {
-  bool channelz_enabled = GRPC_ENABLE_CHANNELZ_DEFAULT;
-  size_t i;
-  int j;
-
-  for (i = 0; i < channel_args->num_args; i++) {
-    if (0 == strcmp(channel_args->args[i].key,
-                    GRPC_ARG_HTTP2_INITIAL_SEQUENCE_NUMBER)) {
-      const grpc_integer_options options = {-1, 0, INT_MAX};
-      const int value =
-          grpc_channel_arg_get_integer(&channel_args->args[i], options);
-      if (value >= 0) {
-        if ((t->next_stream_id & 1) != (value & 1)) {
-          gpr_log(GPR_ERROR, "%s: low bit must be %d on %s",
-                  GRPC_ARG_HTTP2_INITIAL_SEQUENCE_NUMBER, t->next_stream_id & 1,
-                  is_client ? "client" : "server");
-        } else {
-          t->next_stream_id = static_cast<uint32_t>(value);
-        }
-      }
-    } else if (0 == strcmp(channel_args->args[i].key,
-                           GRPC_ARG_HTTP2_HPACK_TABLE_SIZE_ENCODER)) {
-      const grpc_integer_options options = {-1, 0, INT_MAX};
-      const int value =
-          grpc_channel_arg_get_integer(&channel_args->args[i], options);
-      if (value >= 0) {
-        t->hpack_compressor.SetMaxUsableSize(value);
-      }
-    } else if (0 == strcmp(channel_args->args[i].key,
-                           GRPC_ARG_HTTP2_MAX_PINGS_WITHOUT_DATA)) {
-      t->ping_policy.max_pings_without_data = grpc_channel_arg_get_integer(
-          &channel_args->args[i],
-          {g_default_max_pings_without_data, 0, INT_MAX});
-    } else if (0 == strcmp(channel_args->args[i].key,
-                           GRPC_ARG_HTTP2_MAX_PING_STRIKES)) {
-      t->ping_policy.max_ping_strikes = grpc_channel_arg_get_integer(
-          &channel_args->args[i], {g_default_max_ping_strikes, 0, INT_MAX});
-    } else if (0 ==
-               strcmp(channel_args->args[i].key,
-                      GRPC_ARG_HTTP2_MIN_RECV_PING_INTERVAL_WITHOUT_DATA_MS)) {
-      t->ping_policy.min_recv_ping_interval_without_data =
-          grpc_core::Duration::Milliseconds(grpc_channel_arg_get_integer(
-              &channel_args->args[i],
-              grpc_integer_options{
-                  g_default_min_recv_ping_interval_without_data_ms, 0,
-                  INT_MAX}));
-    } else if (0 == strcmp(channel_args->args[i].key,
-                           GRPC_ARG_HTTP2_WRITE_BUFFER_SIZE)) {
-      t->write_buffer_size = static_cast<uint32_t>(grpc_channel_arg_get_integer(
-          &channel_args->args[i], {0, 0, MAX_WRITE_BUFFER_SIZE}));
-    } else if (0 ==
-               strcmp(channel_args->args[i].key, GRPC_ARG_KEEPALIVE_TIME_MS)) {
-      const int value = grpc_channel_arg_get_integer(
-          &channel_args->args[i],
-          grpc_integer_options{t->is_client
-                                   ? g_default_client_keepalive_time_ms
-                                   : g_default_server_keepalive_time_ms,
-                               1, INT_MAX});
-      t->keepalive_time = value == INT_MAX
-                              ? grpc_core::Duration::Infinity()
-                              : grpc_core::Duration::Milliseconds(value);
-    } else if (0 == strcmp(channel_args->args[i].key,
-                           GRPC_ARG_KEEPALIVE_TIMEOUT_MS)) {
-      const int value = grpc_channel_arg_get_integer(
-          &channel_args->args[i],
-          grpc_integer_options{t->is_client
-                                   ? g_default_client_keepalive_timeout_ms
-                                   : g_default_server_keepalive_timeout_ms,
-                               0, INT_MAX});
-      t->keepalive_timeout = value == INT_MAX
-                                 ? grpc_core::Duration::Infinity()
-                                 : grpc_core::Duration::Milliseconds(value);
-    } else if (0 == strcmp(channel_args->args[i].key,
-                           GRPC_ARG_KEEPALIVE_PERMIT_WITHOUT_CALLS)) {
-      t->keepalive_permit_without_calls = static_cast<uint32_t>(
-          grpc_channel_arg_get_integer(&channel_args->args[i], {0, 0, 1}));
-    } else if (0 == strcmp(channel_args->args[i].key,
-                           GRPC_ARG_OPTIMIZATION_TARGET)) {
-      gpr_log(GPR_INFO, "GRPC_ARG_OPTIMIZATION_TARGET is deprecated");
-    } else if (0 ==
-               strcmp(channel_args->args[i].key, GRPC_ARG_ENABLE_CHANNELZ)) {
-      channelz_enabled = grpc_channel_arg_get_bool(
-          &channel_args->args[i], GRPC_ENABLE_CHANNELZ_DEFAULT);
+  const int initial_sequence_number =
+      channel_args.GetInt(GRPC_ARG_HTTP2_INITIAL_SEQUENCE_NUMBER).value_or(-1);
+  if (initial_sequence_number > 0) {
+    if ((t->next_stream_id & 1) != (initial_sequence_number & 1)) {
+      gpr_log(GPR_ERROR, "%s: low bit must be %d on %s",
+              GRPC_ARG_HTTP2_INITIAL_SEQUENCE_NUMBER, t->next_stream_id & 1,
+              is_client ? "client" : "server");
     } else {
-      static const struct {
-        const char* channel_arg_name;
-        grpc_chttp2_setting_id setting_id;
-        grpc_integer_options integer_options;
-        bool availability[2] /* server, client */;
-      } settings_map[] = {{GRPC_ARG_MAX_CONCURRENT_STREAMS,
-                           GRPC_CHTTP2_SETTINGS_MAX_CONCURRENT_STREAMS,
-                           {-1, 0, INT32_MAX},
-                           {true, false}},
-                          {GRPC_ARG_HTTP2_HPACK_TABLE_SIZE_DECODER,
-                           GRPC_CHTTP2_SETTINGS_HEADER_TABLE_SIZE,
-                           {-1, 0, INT32_MAX},
-                           {true, true}},
-                          {GRPC_ARG_MAX_METADATA_SIZE,
-                           GRPC_CHTTP2_SETTINGS_MAX_HEADER_LIST_SIZE,
-                           {-1, 0, INT32_MAX},
-                           {true, true}},
-                          {GRPC_ARG_HTTP2_MAX_FRAME_SIZE,
-                           GRPC_CHTTP2_SETTINGS_MAX_FRAME_SIZE,
-                           {-1, 16384, 16777215},
-                           {true, true}},
-                          {GRPC_ARG_HTTP2_ENABLE_TRUE_BINARY,
-                           GRPC_CHTTP2_SETTINGS_GRPC_ALLOW_TRUE_BINARY_METADATA,
-                           {1, 0, 1},
-                           {true, true}},
-                          {GRPC_ARG_HTTP2_STREAM_LOOKAHEAD_BYTES,
-                           GRPC_CHTTP2_SETTINGS_INITIAL_WINDOW_SIZE,
-                           {-1, 5, INT32_MAX},
-                           {true, true}}};
-      for (j = 0; j < static_cast<int> GPR_ARRAY_SIZE(settings_map); j++) {
-        if (0 == strcmp(channel_args->args[i].key,
-                        settings_map[j].channel_arg_name)) {
-          if (!settings_map[j].availability[is_client]) {
-            gpr_log(GPR_DEBUG, "%s is not available on %s",
-                    settings_map[j].channel_arg_name,
-                    is_client ? "clients" : "servers");
-          } else {
-            int value = grpc_channel_arg_get_integer(
-                &channel_args->args[i], settings_map[j].integer_options);
-            if (value >= 0) {
-              queue_setting_update(t, settings_map[j].setting_id,
-                                   static_cast<uint32_t>(value));
-            }
-          }
-          break;
-        }
-      }
+      t->next_stream_id = static_cast<uint32_t>(initial_sequence_number);
     }
   }
-  if (channelz_enabled) {
+
+  const int max_hpack_table_size =
+      channel_args.GetInt(GRPC_ARG_HTTP2_HPACK_TABLE_SIZE_ENCODER).value_or(-1);
+  if (max_hpack_table_size >= 0) {
+    t->hpack_compressor.SetMaxUsableSize(max_hpack_table_size);
+  }
+
+  t->ping_policy.max_pings_without_data =
+      std::max(0, channel_args.GetInt(GRPC_ARG_HTTP2_MAX_PINGS_WITHOUT_DATA)
+                      .value_or(g_default_max_pings_without_data));
+  t->ping_policy.max_ping_strikes =
+      std::max(0, channel_args.GetInt(GRPC_ARG_HTTP2_MAX_PING_STRIKES)
+                      .value_or(g_default_max_ping_strikes));
+  t->ping_policy.min_recv_ping_interval_without_data =
+      std::max(grpc_core::Duration::Zero(),
+               channel_args
+                   .GetDurationFromIntMillis(
+                       GRPC_ARG_HTTP2_MIN_RECV_PING_INTERVAL_WITHOUT_DATA_MS)
+                   .value_or(grpc_core::Duration::Milliseconds(
+                       g_default_min_recv_ping_interval_without_data_ms)));
+  t->write_buffer_size =
+      std::max(0, channel_args.GetInt(GRPC_ARG_HTTP2_WRITE_BUFFER_SIZE)
+                      .value_or(grpc_core::chttp2::kDefaultWindow));
+  t->keepalive_time =
+      std::max(grpc_core::Duration::Milliseconds(1),
+               channel_args.GetDurationFromIntMillis(GRPC_ARG_KEEPALIVE_TIME_MS)
+                   .value_or(grpc_core::Duration::Milliseconds(
+                       t->is_client ? g_default_client_keepalive_time_ms
+                                    : g_default_server_keepalive_time_ms)));
+  t->keepalive_timeout = std::max(
+      grpc_core::Duration::Zero(),
+      channel_args.GetDurationFromIntMillis(GRPC_ARG_KEEPALIVE_TIMEOUT_MS)
+          .value_or(grpc_core::Duration::Milliseconds(
+              t->is_client ? g_default_client_keepalive_timeout_ms
+                           : g_default_server_keepalive_timeout_ms)));
+  t->keepalive_permit_without_calls =
+      channel_args.GetBool(GRPC_ARG_KEEPALIVE_PERMIT_WITHOUT_CALLS)
+          .value_or(false);
+
+  if (channel_args.GetBool(GRPC_ARG_ENABLE_CHANNELZ)
+          .value_or(GRPC_ENABLE_CHANNELZ_DEFAULT)) {
     t->channelz_socket =
         grpc_core::MakeRefCounted<grpc_core::channelz::SocketNode>(
             std::string(grpc_endpoint_get_local_address(t->ep)), t->peer_string,
             absl::StrFormat("%s %s", get_vtable()->name, t->peer_string),
-            grpc_core::channelz::SocketNode::Security::GetFromChannelArgs(
-                channel_args));
+            channel_args
+                .GetObjectRef<grpc_core::channelz::SocketNode::Security>());
+  }
+
+  static const struct {
+    absl::string_view channel_arg_name;
+    grpc_chttp2_setting_id setting_id;
+    int default_value;
+    int min;
+    int max;
+    bool availability[2] /* server, client */;
+  } settings_map[] = {{GRPC_ARG_MAX_CONCURRENT_STREAMS,
+                       GRPC_CHTTP2_SETTINGS_MAX_CONCURRENT_STREAMS,
+                       -1,
+                       0,
+                       INT32_MAX,
+                       {true, false}},
+                      {GRPC_ARG_HTTP2_HPACK_TABLE_SIZE_DECODER,
+                       GRPC_CHTTP2_SETTINGS_HEADER_TABLE_SIZE,
+                       -1,
+                       0,
+                       INT32_MAX,
+                       {true, true}},
+                      {GRPC_ARG_MAX_METADATA_SIZE,
+                       GRPC_CHTTP2_SETTINGS_MAX_HEADER_LIST_SIZE,
+                       -1,
+                       0,
+                       INT32_MAX,
+                       {true, true}},
+                      {GRPC_ARG_HTTP2_MAX_FRAME_SIZE,
+                       GRPC_CHTTP2_SETTINGS_MAX_FRAME_SIZE,
+                       -1,
+                       16384,
+                       16777215,
+                       {true, true}},
+                      {GRPC_ARG_HTTP2_ENABLE_TRUE_BINARY,
+                       GRPC_CHTTP2_SETTINGS_GRPC_ALLOW_TRUE_BINARY_METADATA,
+                       1,
+                       0,
+                       1,
+                       {true, true}},
+                      {GRPC_ARG_HTTP2_STREAM_LOOKAHEAD_BYTES,
+                       GRPC_CHTTP2_SETTINGS_INITIAL_WINDOW_SIZE,
+                       -1,
+                       5,
+                       INT32_MAX,
+                       {true, true}}};
+
+  for (size_t i = 0; i < GPR_ARRAY_SIZE(settings_map); i++) {
+    const auto& setting = settings_map[i];
+    if (setting.availability[is_client]) {
+      const int value = channel_args.GetInt(setting.channel_arg_name)
+                            .value_or(setting.default_value);
+      if (value >= 0) {
+        queue_setting_update(t, setting.setting_id,
+                             grpc_core::Clamp(value, setting.min, setting.max));
+      }
+    } else if (channel_args.Contains(setting.channel_arg_name)) {
+      gpr_log(GPR_DEBUG, "%s is not available on %s",
+              std::string(setting.channel_arg_name).c_str(),
+              is_client ? "clients" : "servers");
+    }
   }
 }
 
@@ -481,13 +460,14 @@ static void init_keepalive_pings_if_enabled(grpc_chttp2_transport* t) {
 }
 
 grpc_chttp2_transport::grpc_chttp2_transport(
-    const grpc_channel_args* channel_args, grpc_endpoint* ep, bool is_client)
+    const grpc_core::ChannelArgs& channel_args, grpc_endpoint* ep,
+    bool is_client)
     : refs(1, GRPC_TRACE_FLAG_ENABLED(grpc_trace_chttp2_refcount)
                   ? "chttp2_refcount"
                   : nullptr),
       ep(ep),
       peer_string(grpc_endpoint_get_peer(ep)),
-      memory_owner(grpc_core::ResourceQuotaFromChannelArgs(channel_args)
+      memory_owner(channel_args.GetObject<grpc_core::ResourceQuota>()
                        ->memory_quota()
                        ->CreateMemoryOwner(absl::StrCat(
                            grpc_endpoint_get_peer(ep), ":client_transport"))),
@@ -498,10 +478,10 @@ grpc_chttp2_transport::grpc_chttp2_transport(
                     GRPC_CHANNEL_READY),
       is_client(is_client),
       next_stream_id(is_client ? 1 : 2),
-      flow_control(peer_string.c_str(),
-                   grpc_channel_args_find_bool(channel_args,
-                                               GRPC_ARG_HTTP2_BDP_PROBE, true),
-                   &memory_owner),
+      flow_control(
+          peer_string.c_str(),
+          channel_args.GetBool(GRPC_ARG_HTTP2_BDP_PROBE).value_or(true),
+          &memory_owner),
       deframe_state(is_client ? GRPC_DTS_FH_0 : GRPC_DTS_CLIENT_PREFIX_0) {
   GPR_ASSERT(strlen(GRPC_CHTTP2_CLIENT_CONNECT_STRING) ==
              GRPC_CHTTP2_CLIENT_CONNECT_STRLEN);
@@ -543,9 +523,7 @@ grpc_chttp2_transport::grpc_chttp2_transport(
   configure_transport_ping_policy(this);
   init_transport_keepalive_settings(this);
 
-  if (channel_args != nullptr) {
-    read_channel_args(this, channel_args, is_client);
-  }
+  read_channel_args(this, channel_args, is_client);
 
   // No pings allowed before receiving a header or data frame.
   ping_state.pings_before_data_required = 0;
@@ -3120,7 +3098,8 @@ grpc_chttp2_transport_get_socket_node(grpc_transport* transport) {
 }
 
 grpc_transport* grpc_create_chttp2_transport(
-    const grpc_channel_args* channel_args, grpc_endpoint* ep, bool is_client) {
+    const grpc_core::ChannelArgs& channel_args, grpc_endpoint* ep,
+    bool is_client) {
   auto t = new grpc_chttp2_transport(channel_args, ep, is_client);
   return &t->base;
 }

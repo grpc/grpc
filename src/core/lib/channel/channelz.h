@@ -40,6 +40,7 @@
 
 #include "src/core/lib/channel/channel_trace.h"
 #include "src/core/lib/gpr/time_precise.h"
+#include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/gprpp/ref_counted.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/gprpp/sync.h"
@@ -302,6 +303,14 @@ class SocketNode : public BaseNode {
     absl::optional<Json> other;
 
     Json RenderJson();
+
+    static absl::string_view ChannelArgName() {
+      return GRPC_ARG_CHANNELZ_SECURITY;
+    }
+
+    static int ChannelArgsCompare(const Security* a, const Security* b) {
+      return QsortCompare(a, b);
+    }
 
     grpc_arg MakeChannelArg() const;
 

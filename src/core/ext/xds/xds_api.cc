@@ -258,18 +258,18 @@ void MaybeLogDiscoveryRequest(
   }
 }
 
-grpc_slice SerializeDiscoveryRequest(
+std::string SerializeDiscoveryRequest(
     const XdsEncodingContext& context,
     envoy_service_discovery_v3_DiscoveryRequest* request) {
   size_t output_length;
   char* output = envoy_service_discovery_v3_DiscoveryRequest_serialize(
       request, context.arena, &output_length);
-  return grpc_slice_from_copied_buffer(output, output_length);
+  return std::string(output, output_length);
 }
 
 }  // namespace
 
-grpc_slice XdsApi::CreateAdsRequest(
+std::string XdsApi::CreateAdsRequest(
     const XdsBootstrap::XdsServer& server, absl::string_view type_url,
     absl::string_view version, absl::string_view nonce,
     const std::vector<std::string>& resource_names, grpc_error_handle error,
@@ -356,7 +356,7 @@ void MaybeLogDiscoveryResponse(
 }  // namespace
 
 absl::Status XdsApi::ParseAdsResponse(const XdsBootstrap::XdsServer& server,
-                                      const grpc_slice& encoded_response,
+                                      absl::string_view encoded_response,
                                       AdsResponseParserInterface* parser) {
   upb::Arena arena;
   const XdsEncodingContext context = {client_,
@@ -369,8 +369,7 @@ absl::Status XdsApi::ParseAdsResponse(const XdsBootstrap::XdsServer& server,
   // Decode the response.
   const envoy_service_discovery_v3_DiscoveryResponse* response =
       envoy_service_discovery_v3_DiscoveryResponse_parse(
-          reinterpret_cast<const char*>(GRPC_SLICE_START_PTR(encoded_response)),
-          GRPC_SLICE_LENGTH(encoded_response), arena.ptr());
+          encoded_response.data(), encoded_response.size(), arena.ptr());
   // If decoding fails, report a fatal error and return.
   if (response == nullptr) {
     return absl::InvalidArgumentError("Can't decode DiscoveryResponse.");
@@ -438,18 +437,18 @@ void MaybeLogLrsRequest(
   }
 }
 
-grpc_slice SerializeLrsRequest(
+std::string SerializeLrsRequest(
     const XdsEncodingContext& context,
     const envoy_service_load_stats_v3_LoadStatsRequest* request) {
   size_t output_length;
   char* output = envoy_service_load_stats_v3_LoadStatsRequest_serialize(
       request, context.arena, &output_length);
-  return grpc_slice_from_copied_buffer(output, output_length);
+  return std::string(output, output_length);
 }
 
 }  // namespace
 
-grpc_slice XdsApi::CreateLrsInitialRequest(
+std::string XdsApi::CreateLrsInitialRequest(
     const XdsBootstrap::XdsServer& server) {
   upb::Arena arena;
   const XdsEncodingContext context = {client_,
@@ -526,7 +525,7 @@ void LocalityStatsPopulate(
 
 }  // namespace
 
-grpc_slice XdsApi::CreateLrsRequest(
+std::string XdsApi::CreateLrsRequest(
     ClusterLoadReportMap cluster_load_report_map) {
   upb::Arena arena;
   // The xDS server info is not actually needed here, so we seed it with an
@@ -597,7 +596,7 @@ grpc_slice XdsApi::CreateLrsRequest(
   return SerializeLrsRequest(context, request);
 }
 
-grpc_error_handle XdsApi::ParseLrsResponse(const grpc_slice& encoded_response,
+grpc_error_handle XdsApi::ParseLrsResponse(absl::string_view encoded_response,
                                            bool* send_all_clusters,
                                            std::set<std::string>* cluster_names,
                                            Duration* load_reporting_interval) {
@@ -605,8 +604,7 @@ grpc_error_handle XdsApi::ParseLrsResponse(const grpc_slice& encoded_response,
   // Decode the response.
   const envoy_service_load_stats_v3_LoadStatsResponse* decoded_response =
       envoy_service_load_stats_v3_LoadStatsResponse_parse(
-          reinterpret_cast<const char*>(GRPC_SLICE_START_PTR(encoded_response)),
-          GRPC_SLICE_LENGTH(encoded_response), arena.ptr());
+          encoded_response.data(), encoded_response.size(), arena.ptr());
   // Parse the response.
   if (decoded_response == nullptr) {
     return GRPC_ERROR_CREATE_FROM_STATIC_STRING("Can't decode response.");

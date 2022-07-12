@@ -33,7 +33,7 @@ gpr_once g_resolve_localhost_ipv46 = GPR_ONCE_INIT;
 
 void InitResolveLocalhost() {
   absl::StatusOr<std::vector<grpc_resolved_address>> addresses_or =
-      GetDNSResolver()->ResolveNameBlocking("localhost", "https");
+      GetDNSResolver()->LookupHostnameBlocking("localhost", "https");
   GPR_ASSERT(addresses_or.ok());
   for (const auto& addr : *addresses_or) {
     const grpc_sockaddr* sock_addr =

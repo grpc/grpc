@@ -62,7 +62,8 @@
 
 namespace grpc_core {
 
-Channel::Channel(bool is_client, std::string target, ChannelArgs channel_args,
+Channel::Channel(bool is_client, std::string target,
+                 const ChannelArgs& channel_args,
                  grpc_compression_options compression_options,
                  RefCountedPtr<grpc_channel_stack> channel_stack)
     : is_client_(is_client),
@@ -149,8 +150,8 @@ absl::StatusOr<RefCountedPtr<Channel>> Channel::CreateWithBuilder(
 
   return RefCountedPtr<Channel>(new Channel(
       grpc_channel_stack_type_is_client(builder->channel_stack_type()),
-      std::string(builder->target()), std::move(channel_args),
-      compression_options, std::move(*r)));
+      std::string(builder->target()), channel_args, compression_options,
+      std::move(*r)));
 }
 
 namespace {
@@ -219,9 +220,8 @@ absl::StatusOr<RefCountedPtr<Channel>> Channel::Create(
       args = channel_args_mutator(target, args, channel_stack_type);
     }
   }
-  builder.SetChannelArgs(std::move(args))
-      .SetTarget(target)
-      .SetTransport(optional_transport);
+  builder.SetChannelArgs(args).SetTarget(target).SetTransport(
+      optional_transport);
   if (!CoreConfiguration::Get().channel_init().CreateStack(&builder)) {
     return nullptr;
   }

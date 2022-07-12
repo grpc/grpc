@@ -38,6 +38,7 @@
 #include "src/core/ext/filters/http/message_compress/message_compress_filter.h"
 #include "src/core/ext/filters/http/server/http_server_filter.h"
 #include "src/core/ext/filters/message_size/message_size_filter.h"
+#include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/channel/channel_stack_builder_impl.h"
 #include "src/core/lib/channel/connected_channel.h"
@@ -337,18 +338,10 @@ class FakeClientChannelFactory : public grpc_core::ClientChannelFactory {
  public:
   grpc_core::RefCountedPtr<grpc_core::Subchannel> CreateSubchannel(
       const grpc_resolved_address& /*address*/,
-      const grpc_channel_args* /*args*/) override {
+      const grpc_core::ChannelArgs& /*args*/) override {
     return nullptr;
   }
 };
-
-static grpc_arg StringArg(const char* key, const char* value) {
-  grpc_arg a;
-  a.type = GRPC_ARG_STRING;
-  a.key = const_cast<char*>(key);
-  a.value.string = const_cast<char*>(value);
-  return a;
-}
 
 enum FixtureFlags : uint32_t {
   CHECKS_NOT_LAST = 1,
@@ -524,15 +517,13 @@ static void BM_IsolatedFilter(benchmark::State& state) {
   std::ostringstream label;
   FakeClientChannelFactory fake_client_channel_factory;
 
-  std::vector<grpc_arg> args = {
-      grpc_core::ClientChannelFactory::CreateChannelArg(
-          &fake_client_channel_factory),
-      StringArg(GRPC_ARG_SERVER_URI, "localhost"),
-  };
+  grpc_core::ChannelArgs channel_args =
+      grpc_core::ChannelArgs()
+          .SetObject(&fake_client_channel_factory)
+          .Set(GRPC_ARG_SERVER_URI, "localhost");
   if (fixture.flags & REQUIRES_TRANSPORT) {
-    args.push_back(phony_transport::Arg());
+    channel_args = channel_args.Set(phony_transport::Arg());
   }
-  grpc_channel_args channel_args = {args.size(), args.data()};
 
   std::vector<const grpc_channel_filter*> filters;
   if (fixture.filter != nullptr) {
@@ -552,8 +543,8 @@ static void BM_IsolatedFilter(benchmark::State& state) {
       "channel_stack_init",
       grpc_channel_stack_init(1, FilterDestroy, channel_stack,
                               filters.empty() ? nullptr : &filters[0],
-                              filters.size(), &channel_args, "CHANNEL",
-                              channel_stack)));
+                              filters.size(), channel_args.ToC().get(),
+                              "CHANNEL", channel_stack)));
   grpc_core::ExecCtx::Get()->Flush();
   grpc_call_stack* call_stack =
       static_cast<grpc_call_stack*>(gpr_zalloc(channel_stack->call_stack_size));

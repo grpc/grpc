@@ -30,8 +30,8 @@
 #include "absl/memory/memory.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
+#include "absl/types/optional.h"
 
-#include <grpc/impl/codegen/grpc_types.h>
 #include <grpc/slice.h>
 #include <grpc/slice_buffer.h>
 #include <grpc/support/alloc.h>
@@ -118,8 +118,7 @@ void HttpConnectHandshaker::CleanupArgsForFailureLocked() {
   args_->endpoint = nullptr;
   read_buffer_to_destroy_ = args_->read_buffer;
   args_->read_buffer = nullptr;
-  grpc_channel_args_destroy(args_->args);
-  args_->args = nullptr;
+  args_->args = ChannelArgs();
 }
 
 // If the handshake failed or we're shutting down, clean up and invoke the
@@ -297,10 +296,9 @@ void HttpConnectHandshaker::DoHandshake(grpc_tcp_server_acceptor* /*acceptor*/,
                                         HandshakerArgs* args) {
   // Check for HTTP CONNECT channel arg.
   // If not found, invoke on_handshake_done without doing anything.
-  const grpc_arg* arg =
-      grpc_channel_args_find(args->args, GRPC_ARG_HTTP_CONNECT_SERVER);
-  char* server_name = grpc_channel_arg_get_string(arg);
-  if (server_name == nullptr) {
+  absl::optional<absl::string_view> server_name =
+      args->args.GetString(GRPC_ARG_HTTP_CONNECT_SERVER);
+  if (!server_name.has_value()) {
     // Set shutdown to true so that subsequent calls to
     // http_connect_handshaker_shutdown() do nothing.
     {
@@ -311,14 +309,15 @@ void HttpConnectHandshaker::DoHandshake(grpc_tcp_server_acceptor* /*acceptor*/,
     return;
   }
   // Get headers from channel args.
-  arg = grpc_channel_args_find(args->args, GRPC_ARG_HTTP_CONNECT_HEADERS);
-  char* arg_header_string = grpc_channel_arg_get_string(arg);
+  absl::optional<absl::string_view> arg_header_string =
+      args->args.GetString(GRPC_ARG_HTTP_CONNECT_HEADERS);
   grpc_http_header* headers = nullptr;
   size_t num_headers = 0;
   char** header_strings = nullptr;
   size_t num_header_strings = 0;
-  if (arg_header_string != nullptr) {
-    gpr_string_split(arg_header_string, "\n", &header_strings,
+  if (arg_header_string.has_value()) {
+    std::string buffer(*arg_header_string);
+    gpr_string_split(buffer.c_str(), "\n", &header_strings,
                      &num_header_strings);
     headers = static_cast<grpc_http_header*>(
         gpr_malloc(sizeof(grpc_http_header) * num_header_strings));
@@ -342,8 +341,9 @@ void HttpConnectHandshaker::DoHandshake(grpc_tcp_server_acceptor* /*acceptor*/,
   on_handshake_done_ = on_handshake_done;
   // Log connection via proxy.
   std::string proxy_name(grpc_endpoint_get_peer(args->endpoint));
-  gpr_log(GPR_INFO, "Connecting to server %s via HTTP proxy %s", server_name,
-          proxy_name.c_str());
+  std::string server_name_string(*server_name);
+  gpr_log(GPR_INFO, "Connecting to server %s via HTTP proxy %s",
+          server_name_string.c_str(), proxy_name.c_str());
   // Construct HTTP CONNECT request.
   grpc_http_request request;
   request.method = const_cast<char*>("CONNECT");
@@ -352,8 +352,8 @@ void HttpConnectHandshaker::DoHandshake(grpc_tcp_server_acceptor* /*acceptor*/,
   request.hdr_count = num_headers;
   request.body_length = 0;
   request.body = nullptr;
-  grpc_slice request_slice =
-      grpc_httpcli_format_connect_request(&request, server_name, server_name);
+  grpc_slice request_slice = grpc_httpcli_format_connect_request(
+      &request, server_name_string.c_str(), server_name_string.c_str());
   grpc_slice_buffer_add(&write_buffer_, request_slice);
   // Clean up.
   gpr_free(headers);
@@ -382,7 +382,7 @@ HttpConnectHandshaker::HttpConnectHandshaker() {
 
 class HttpConnectHandshakerFactory : public HandshakerFactory {
  public:
-  void AddHandshakers(const grpc_channel_args* /*args*/,
+  void AddHandshakers(const ChannelArgs& /*args*/,
                       grpc_pollset_set* /*interested_parties*/,
                       HandshakeManager* handshake_mgr) override {
     handshake_mgr->Add(MakeRefCounted<HttpConnectHandshaker>());

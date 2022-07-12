@@ -39,6 +39,8 @@ class SecurityTest(xds_k8s_testcase.SecurityXdsKubernetesTestCase):
             # Versions prior to v1.41.x don't support PSM Security.
             # https://github.com/grpc/grpc/blob/master/doc/grpc_xds_features.md
             return config.version_gte('v1.41.x')
+        elif config.client_lang == _Lang.NODE:
+            return False
         return True
 
     def test_mtls(self):

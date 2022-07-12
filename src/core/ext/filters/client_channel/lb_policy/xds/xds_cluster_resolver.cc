@@ -27,7 +27,6 @@
 #include <utility>
 #include <vector>
 
-#include "absl/container/inlined_vector.h"
 #include "absl/memory/memory.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
@@ -52,6 +51,7 @@
 #include "src/core/ext/filters/client_channel/subchannel_interface.h"
 #include "src/core/ext/xds/xds_bootstrap.h"
 #include "src/core/ext/xds/xds_client.h"
+#include "src/core/ext/xds/xds_client_grpc.h"
 #include "src/core/ext/xds/xds_client_stats.h"
 #include "src/core/ext/xds/xds_endpoint.h"
 #include "src/core/ext/xds/xds_resource_type_impl.h"
@@ -317,7 +317,7 @@ class XdsClusterResolverLb : public LoadBalancingPolicy {
     }
 
     RefCountedPtr<SubchannelInterface> CreateSubchannel(
-        ServerAddress address, const grpc_channel_args& args) override;
+        ServerAddress address, const ChannelArgs& args) override;
     void UpdateState(grpc_connectivity_state state, const absl::Status& status,
                      std::unique_ptr<SubchannelPicker> picker) override;
     // This is a no-op, because we get the addresses from the xds
@@ -343,17 +343,16 @@ class XdsClusterResolverLb : public LoadBalancingPolicy {
 
   void UpdateChildPolicyLocked();
   OrphanablePtr<LoadBalancingPolicy> CreateChildPolicyLocked(
-      const grpc_channel_args* args);
+      const ChannelArgs& args);
   ServerAddressList CreateChildPolicyAddressesLocked();
   RefCountedPtr<Config> CreateChildPolicyConfigLocked();
-  grpc_channel_args* CreateChildPolicyArgsLocked(
-      const grpc_channel_args* args_in);
+  ChannelArgs CreateChildPolicyArgsLocked(const ChannelArgs& args_in);
 
   // The xds client and endpoint watcher.
   RefCountedPtr<XdsClient> xds_client_;
 
   // Current channel args and config from the resolver.
-  const grpc_channel_args* args_ = nullptr;
+  ChannelArgs args_;
   RefCountedPtr<XdsClusterResolverLbConfig> config_;
 
   // Internal state.
@@ -371,7 +370,7 @@ class XdsClusterResolverLb : public LoadBalancingPolicy {
 
 RefCountedPtr<SubchannelInterface>
 XdsClusterResolverLb::Helper::CreateSubchannel(ServerAddress address,
-                                               const grpc_channel_args& args) {
+                                               const ChannelArgs& args) {
   if (xds_cluster_resolver_policy_->shutting_down_) return nullptr;
   return xds_cluster_resolver_policy_->channel_control_helper()
       ->CreateSubchannel(std::move(address), args);
@@ -443,26 +442,21 @@ void XdsClusterResolverLb::EdsDiscoveryMechanism::Orphan() {
 void XdsClusterResolverLb::LogicalDNSDiscoveryMechanism::Start() {
   std::string target =
       parent()->config_->discovery_mechanisms()[index()].dns_hostname;
-  grpc_channel_args* args = nullptr;
-  FakeResolverResponseGenerator* fake_resolver_response_generator =
-      grpc_channel_args_find_pointer<FakeResolverResponseGenerator>(
-          parent()->args_,
+  ChannelArgs args = parent()->args_;
+  auto* fake_resolver_response_generator =
+      args.GetPointer<FakeResolverResponseGenerator>(
           GRPC_ARG_XDS_LOGICAL_DNS_CLUSTER_FAKE_RESOLVER_RESPONSE_GENERATOR);
   if (fake_resolver_response_generator != nullptr) {
     target = absl::StrCat("fake:", target);
-    grpc_arg new_arg = FakeResolverResponseGenerator::MakeChannelArg(
-        fake_resolver_response_generator);
-    args = grpc_channel_args_copy_and_add(parent()->args_, &new_arg, 1);
+    args = args.SetObject(fake_resolver_response_generator->Ref());
   } else {
     target = absl::StrCat("dns:", target);
-    args = grpc_channel_args_copy(parent()->args_);
   }
   resolver_ = CoreConfiguration::Get().resolver_registry().CreateResolver(
       target.c_str(), args, parent()->interested_parties(),
       parent()->work_serializer(),
       absl::make_unique<ResolverResultHandler>(
           Ref(DEBUG_LOCATION, "LogicalDNSDiscoveryMechanism")));
-  grpc_channel_args_destroy(args);
   if (resolver_ == nullptr) {
     parent()->OnResourceDoesNotExist(index());
     return;
@@ -560,9 +554,7 @@ void XdsClusterResolverLb::ShutdownLocked() {
   MaybeDestroyChildPolicyLocked();
   discovery_mechanisms_.clear();
   xds_client_.reset(DEBUG_LOCATION, "XdsClusterResolverLb");
-  // Destroy channel args.
-  grpc_channel_args_destroy(args_);
-  args_ = nullptr;
+  args_ = ChannelArgs();
 }
 
 void XdsClusterResolverLb::MaybeDestroyChildPolicyLocked() {
@@ -577,14 +569,12 @@ void XdsClusterResolverLb::UpdateLocked(UpdateArgs args) {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_xds_cluster_resolver_trace)) {
     gpr_log(GPR_INFO, "[xds_cluster_resolver_lb %p] Received update", this);
   }
-  const bool is_initial_update = args_ == nullptr;
+  const bool is_initial_update = args_ == ChannelArgs();
   // Update config.
   auto old_config = std::move(config_);
   config_ = std::move(args.config);
   // Update args.
-  grpc_channel_args_destroy(args_);
-  args_ = args.args;
-  args.args = nullptr;
+  args_ = std::move(args.args);
   // Update child policy if needed.
   if (child_policy_ != nullptr) UpdateChildPolicyLocked();
   // Create endpoint watcher if needed.
@@ -969,19 +959,15 @@ void XdsClusterResolverLb::UpdateChildPolicyLocked() {
   child_policy_->UpdateLocked(std::move(update_args));
 }
 
-grpc_channel_args* XdsClusterResolverLb::CreateChildPolicyArgsLocked(
-    const grpc_channel_args* args) {
-  absl::InlinedVector<grpc_arg, 2> new_args = {
-      // Inhibit client-side health checking, since the balancer does this
-      // for us.
-      grpc_channel_arg_integer_create(
-          const_cast<char*>(GRPC_ARG_INHIBIT_HEALTH_CHECKING), 1),
-  };
-  return grpc_channel_args_copy_and_add(args, new_args.data(), new_args.size());
+ChannelArgs XdsClusterResolverLb::CreateChildPolicyArgsLocked(
+    const ChannelArgs& args) {
+  // Inhibit client-side health checking, since the balancer does this
+  // for us.
+  return args.Set(GRPC_ARG_INHIBIT_HEALTH_CHECKING, 1);
 }
 
 OrphanablePtr<LoadBalancingPolicy>
-XdsClusterResolverLb::CreateChildPolicyLocked(const grpc_channel_args* args) {
+XdsClusterResolverLb::CreateChildPolicyLocked(const ChannelArgs& args) {
   LoadBalancingPolicy::Args lb_policy_args;
   lb_policy_args.work_serializer = work_serializer();
   lb_policy_args.args = args;
@@ -1016,8 +1002,7 @@ class XdsClusterResolverLbFactory : public LoadBalancingPolicyFactory {
  public:
   OrphanablePtr<LoadBalancingPolicy> CreateLoadBalancingPolicy(
       LoadBalancingPolicy::Args args) const override {
-    RefCountedPtr<XdsClient> xds_client =
-        XdsClient::GetFromChannelArgs(*args.args);
+    auto xds_client = args.args.GetObjectRef<GrpcXdsClient>();
     if (xds_client == nullptr) {
       gpr_log(GPR_ERROR,
               "XdsClient not present in channel args -- cannot instantiate "

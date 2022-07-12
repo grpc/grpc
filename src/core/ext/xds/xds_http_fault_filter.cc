@@ -109,7 +109,7 @@ absl::StatusOr<Json> ParseHttpFaultIntoJson(
       int abort_http_status_code =
           envoy_extensions_filters_http_fault_v3_FaultAbort_http_status(
               fault_abort);
-      if (abort_http_status_code != 0 and abort_http_status_code != 200) {
+      if (abort_http_status_code != 0 && abort_http_status_code != 200) {
         abort_grpc_status_code =
             grpc_http2_status_to_grpc_status(abort_http_status_code);
       }
@@ -203,16 +203,9 @@ const grpc_channel_filter* XdsHttpFaultFilter::channel_filter() const {
   return &FaultInjectionFilter::kFilter;
 }
 
-grpc_channel_args* XdsHttpFaultFilter::ModifyChannelArgs(
-    grpc_channel_args* args) const {
-  grpc_arg args_to_add = grpc_channel_arg_integer_create(
-      const_cast<char*>(GRPC_ARG_PARSE_FAULT_INJECTION_METHOD_CONFIG), 1);
-  grpc_channel_args* new_args =
-      grpc_channel_args_copy_and_add(args, &args_to_add, 1);
-  // Since this function takes the ownership of the channel args, it needs to
-  // deallocate the old ones to prevent leak.
-  grpc_channel_args_destroy(args);
-  return new_args;
+ChannelArgs XdsHttpFaultFilter::ModifyChannelArgs(
+    const ChannelArgs& args) const {
+  return args.Set(GRPC_ARG_PARSE_FAULT_INJECTION_METHOD_CONFIG, 1);
 }
 
 absl::StatusOr<XdsHttpFilterImpl::ServiceConfigJsonEntry>

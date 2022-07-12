@@ -202,6 +202,7 @@ Pod::Spec.new do |s|
     ss.dependency 'abseil/container/flat_hash_map', abseil_version
     ss.dependency 'abseil/container/flat_hash_set', abseil_version
     ss.dependency 'abseil/container/inlined_vector', abseil_version
+    ss.dependency 'abseil/functional/any_invocable', abseil_version
     ss.dependency 'abseil/functional/bind_front', abseil_version
     ss.dependency 'abseil/functional/function_ref', abseil_version
     ss.dependency 'abseil/hash/hash', abseil_version
@@ -634,6 +635,7 @@ Pod::Spec.new do |s|
                       'src/core/ext/xds/xds_channel_args.h',
                       'src/core/ext/xds/xds_channel_stack_modifier.h',
                       'src/core/ext/xds/xds_client.h',
+                      'src/core/ext/xds/xds_client_grpc.h',
                       'src/core/ext/xds/xds_client_stats.h',
                       'src/core/ext/xds/xds_cluster.h',
                       'src/core/ext/xds/xds_cluster_specifier_plugin.h',
@@ -648,6 +650,8 @@ Pod::Spec.new do |s|
                       'src/core/ext/xds/xds_resource_type_impl.h',
                       'src/core/ext/xds/xds_route_config.h',
                       'src/core/ext/xds/xds_routing.h',
+                      'src/core/ext/xds/xds_transport.h',
+                      'src/core/ext/xds/xds_transport_grpc.h',
                       'src/core/lib/address_utils/parse_address.h',
                       'src/core/lib/address_utils/sockaddr_utils.h',
                       'src/core/lib/avl/avl.h',
@@ -748,8 +752,6 @@ Pod::Spec.new do |s|
                       'src/core/lib/iomgr/ev_posix.h',
                       'src/core/lib/iomgr/exec_ctx.h',
                       'src/core/lib/iomgr/executor.h',
-                      'src/core/lib/iomgr/executor/mpmcqueue.h',
-                      'src/core/lib/iomgr/executor/threadpool.h',
                       'src/core/lib/iomgr/gethostname.h',
                       'src/core/lib/iomgr/grpc_if_nametoindex.h',
                       'src/core/lib/iomgr/internal_errqueue.h',
@@ -1471,6 +1473,7 @@ Pod::Spec.new do |s|
                               'src/core/ext/xds/xds_channel_args.h',
                               'src/core/ext/xds/xds_channel_stack_modifier.h',
                               'src/core/ext/xds/xds_client.h',
+                              'src/core/ext/xds/xds_client_grpc.h',
                               'src/core/ext/xds/xds_client_stats.h',
                               'src/core/ext/xds/xds_cluster.h',
                               'src/core/ext/xds/xds_cluster_specifier_plugin.h',
@@ -1485,6 +1488,8 @@ Pod::Spec.new do |s|
                               'src/core/ext/xds/xds_resource_type_impl.h',
                               'src/core/ext/xds/xds_route_config.h',
                               'src/core/ext/xds/xds_routing.h',
+                              'src/core/ext/xds/xds_transport.h',
+                              'src/core/ext/xds/xds_transport_grpc.h',
                               'src/core/lib/address_utils/parse_address.h',
                               'src/core/lib/address_utils/sockaddr_utils.h',
                               'src/core/lib/avl/avl.h',
@@ -1585,8 +1590,6 @@ Pod::Spec.new do |s|
                               'src/core/lib/iomgr/ev_posix.h',
                               'src/core/lib/iomgr/exec_ctx.h',
                               'src/core/lib/iomgr/executor.h',
-                              'src/core/lib/iomgr/executor/mpmcqueue.h',
-                              'src/core/lib/iomgr/executor/threadpool.h',
                               'src/core/lib/iomgr/gethostname.h',
                               'src/core/lib/iomgr/grpc_if_nametoindex.h',
                               'src/core/lib/iomgr/internal_errqueue.h',

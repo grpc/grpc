@@ -27,6 +27,7 @@
 
 #include "absl/strings/str_format.h"
 
+#include <grpc/impl/codegen/grpc_types.h>
 #include <grpc/slice_buffer.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
@@ -45,14 +46,12 @@ TraceFlag grpc_handshaker_trace(false, "handshaker");
 namespace {
 
 std::string HandshakerArgsString(HandshakerArgs* args) {
-  size_t num_args = args->args != nullptr ? args->args->num_args : 0;
   size_t read_buffer_length =
       args->read_buffer != nullptr ? args->read_buffer->length : 0;
   return absl::StrFormat(
-      "{endpoint=%p, args=%p {size=%" PRIuPTR
-      ": %s}, read_buffer=%p (length=%" PRIuPTR "), exit_early=%d}",
-      args->endpoint, args->args, num_args,
-      grpc_channel_args_string(args->args), args->read_buffer,
+      "{endpoint=%p, args=%s, read_buffer=%p (length=%" PRIuPTR
+      "), exit_early=%d}",
+      args->endpoint, args->args.ToString(), args->read_buffer,
       read_buffer_length, args->exit_early);
 }
 
@@ -115,8 +114,7 @@ bool HandshakeManager::CallNextHandshakerLocked(grpc_error_handle error) {
         grpc_endpoint_shutdown(args_.endpoint, GRPC_ERROR_REF(error));
         grpc_endpoint_destroy(args_.endpoint);
         args_.endpoint = nullptr;
-        grpc_channel_args_destroy(args_.args);
-        args_.args = nullptr;
+        args_.args = ChannelArgs();
         grpc_slice_buffer_destroy_internal(args_.read_buffer);
         gpr_free(args_.read_buffer);
         args_.read_buffer = nullptr;
@@ -172,7 +170,7 @@ void HandshakeManager::OnTimeoutFn(void* arg, grpc_error_handle error) {
 }
 
 void HandshakeManager::DoHandshake(grpc_endpoint* endpoint,
-                                   const grpc_channel_args* channel_args,
+                                   const ChannelArgs& channel_args,
                                    Timestamp deadline,
                                    grpc_tcp_server_acceptor* acceptor,
                                    grpc_iomgr_cb_func on_handshake_done,
@@ -185,7 +183,7 @@ void HandshakeManager::DoHandshake(grpc_endpoint* endpoint,
     // handshakers and eventually be freed by the on_handshake_done callback.
     args_.endpoint = endpoint;
     args_.deadline = deadline;
-    args_.args = grpc_channel_args_copy(channel_args);
+    args_.args = channel_args;
     args_.user_data = user_data;
     args_.read_buffer =
         static_cast<grpc_slice_buffer*>(gpr_malloc(sizeof(*args_.read_buffer)));
