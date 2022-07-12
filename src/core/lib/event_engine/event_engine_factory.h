@@ -27,7 +27,7 @@ namespace experimental {
 ///
 /// The concept of a global EventEngine may go away in a post-iomgr world.
 /// Strongly consider whether you could use \a CreateEventEngine instead.
-EventEngine* GetDefaultEventEngine();
+std::shared_ptr<EventEngine> GetDefaultEventEngine();
 
 /// Create an EventEngine using the default factory provided at link time.
 std::unique_ptr<EventEngine> DefaultEventEngineFactory();

@@ -34,6 +34,16 @@ grpc_cc_test(
 )
 
 grpc_cc_test(
+    name = "default_engine_methods_test",
+    srcs = ["default_engine_methods.cc"],
+    external_deps = ["gtest"],
+    deps = [
+        "//:grpc",
+        "//test/core/util:grpc_test_util",
+    ],
+)
+
+grpc_cc_test(
     name = "smoke_test",
     srcs = ["smoke_test.cc"],
     external_deps = ["gtest"],

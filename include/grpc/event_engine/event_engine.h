@@ -72,7 +72,7 @@ namespace experimental {
 ///    server->Wait();
 ///
 ////////////////////////////////////////////////////////////////////////////////
-class EventEngine {
+class EventEngine : public std::enable_shared_from_this<EventEngine> {
  public:
   /// A duration between two events.
   ///
@@ -423,6 +423,8 @@ class EventEngine {
   /// closure may need to be destroyed for things to progress (e.g., if a
   /// closure holds a ref to some ref-counted object).
   virtual bool Cancel(TaskHandle handle) = 0;
+
+  std::shared_ptr<EventEngine> GetSharedPtr() { return shared_from_this(); }
 };
 
 /// Replace gRPC's default EventEngine factory.

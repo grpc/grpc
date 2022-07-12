@@ -34,6 +34,7 @@
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/surface/channel.h"
 #include "test/core/util/test_config.h"
+#include "src/core/lib/event_engine/event_engine_factory.h"
 
 namespace grpc_core {
 
@@ -177,6 +178,7 @@ static const grpc_arg_pointer_vtable fake_pointer_arg_vtable = {
 
 TEST(GrpcChannelArgsTest, ChannelCreateWithArgs) {
   grpc_arg client_a[3];
+  auto engine = grpc_event_engine::experimental::GetDefaultEventEngine();
 
   client_a[0] =
       grpc_channel_arg_integer_create(const_cast<char*>("arg_int"), 0);

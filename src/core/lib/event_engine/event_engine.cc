@@ -22,6 +22,8 @@
 #include <grpc/event_engine/event_engine.h>
 
 #include "src/core/lib/event_engine/event_engine_factory.h"
+#include "src/core/lib/event_engine/trace.h"
+#include "src/core/lib/gprpp/sync.h"
 
 namespace grpc_event_engine {
 namespace experimental {
@@ -29,7 +31,8 @@ namespace experimental {
 namespace {
 std::atomic<absl::AnyInvocable<std::unique_ptr<EventEngine>()>*>
     g_event_engine_factory{nullptr};
-std::atomic<EventEngine*> g_event_engine{nullptr};
+grpc_core::Mutex g_mu;
+EventEngine* g_event_engine{nullptr};
 }  // namespace
 
 void SetDefaultEventEngineFactory(
@@ -46,23 +49,25 @@ std::unique_ptr<EventEngine> CreateEventEngine() {
   return DefaultEventEngineFactory();
 }
 
-EventEngine* GetDefaultEventEngine() {
-  EventEngine* engine = g_event_engine.load(std::memory_order_acquire);
-  if (engine == nullptr) {
-    auto* created = CreateEventEngine().release();
-    if (g_event_engine.compare_exchange_strong(engine, created,
-                                               std::memory_order_acq_rel,
-                                               std::memory_order_acquire)) {
-      engine = created;
-    } else {
-      delete created;
-    }
+std::shared_ptr<EventEngine> GetDefaultEventEngine() {
+  grpc_core::MutexLock lock(&g_mu);
+  if (g_event_engine == nullptr) {
+    g_event_engine = CreateEventEngine().release();
+    GRPC_EVENT_ENGINE_TRACE("Creating new default EventEngine:%p",
+                            g_event_engine);
+    return std::shared_ptr<EventEngine>(g_event_engine, [](auto p) {
+      grpc_core::MutexLock lock(&g_mu);
+      GRPC_EVENT_ENGINE_TRACE("Destroying default EventEngine:%p", p);
+      delete p;
+      g_event_engine = nullptr;
+    });
   }
-  return engine;
+  return g_event_engine->GetSharedPtr();
 }
 
 void ResetDefaultEventEngine() {
-  delete g_event_engine.exchange(nullptr, std::memory_order_acq_rel);
+  grpc_core::MutexLock lock(&g_mu);
+  delete g_event_engine;
 }
 
 }  // namespace experimental
