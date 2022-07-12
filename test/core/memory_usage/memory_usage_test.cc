@@ -41,7 +41,7 @@ ABSL_FLAG(std::string, scenario_config, "insecure",
           "Possible Values: minstack (Use minimal stack), resource_quota, "
           "secure (Use SSL credentials on server)");
 ABSL_FLAG(bool, memory_profiling, false,
-          "Run memory profiling");  // not connected to anything yet
+          "Run memory profiling");  // TODO (chennancy) Connect this flag
 
 class Subprocess {
  public:
@@ -80,9 +80,7 @@ int main(int argc, char** argv) {
     strcpy(root, ".");
   }
 
-  /* Set configurations */
-  if (absl::GetFlag(FLAGS_size) == 0) absl::SetFlag(&FLAGS_size, 50000);
-
+  /* Set configurations based off scenario_config*/
   struct ScenarioArgs {
     std::vector<std::string> client;
     std::vector<std::string> server;
@@ -96,6 +94,7 @@ int main(int argc, char** argv) {
   };
   auto it_scenario = scenarios.find(absl::GetFlag(FLAGS_scenario_config));
   if (it_scenario == scenarios.end()) {
+    printf("No scenario config matching the name found\n");
     return 3;
   }
 
@@ -106,6 +105,7 @@ int main(int argc, char** argv) {
         absl::StrCat(root, "/memory_usage_server",
                      gpr_subprocess_binary_extension()),
         "--bind", grpc_core::JoinHostPort("::", port)};
+    // Add scenario-specific server flags to the end of the server_flags
     absl::c_move(it_scenario->second.server, std::back_inserter(server_flags));
     Subprocess svr(server_flags);
 
@@ -116,6 +116,7 @@ int main(int argc, char** argv) {
         "--target", grpc_core::JoinHostPort("127.0.0.1", port),
         absl::StrCat("--warmup=", 10000),
         absl::StrCat("--benchmark=", absl::GetFlag(FLAGS_size))};
+    // Add scenario-specific client flags to the end of the client_flags
     absl::c_move(it_scenario->second.client, std::back_inserter(client_flags));
     Subprocess cli(client_flags);
     /* wait for completion */
@@ -129,5 +130,5 @@ int main(int argc, char** argv) {
   }
 
   printf("Command line args couldn't be parsed\n");
-  return 2;
+  return 4;
 }
