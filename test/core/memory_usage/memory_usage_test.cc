@@ -96,7 +96,7 @@ int main(int argc, char** argv) {
   };
   auto it_scenario = scenarios.find(absl::GetFlag(FLAGS_scenario_config));
   if (it_scenario == scenarios.end()) {
-    return 2;
+    return 3;
   }
 
   /* per-call memory usage benchmark */
