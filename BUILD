@@ -2417,11 +2417,8 @@ grpc_cc_library(
     hdrs = [
         "src/core/lib/event_engine/event_engine_factory.h",
     ],
+    external_deps = ["absl/functional:any_invocable"],
     tags = ["grpc-autodeps"],
-    external_deps = [
-        "absl/functional:any_invocable",
-        "absl/memory",
-    ],
     deps = [
         "default_event_engine_factory",
         "event_engine_base_hdrs",
