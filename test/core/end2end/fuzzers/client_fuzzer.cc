@@ -55,7 +55,7 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
                                       .channel_args_preconditioning()
                                       .PreconditionChannelArgs(nullptr);
     grpc_transport* transport =
-        grpc_create_chttp2_transport(args.ToC().get(), mock_endpoint, true);
+        grpc_create_chttp2_transport(args, mock_endpoint, true);
     grpc_resource_quota_unref(resource_quota);
     grpc_chttp2_transport_start_reading(transport, nullptr, nullptr, nullptr);
     auto channel_args =

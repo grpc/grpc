@@ -156,15 +156,17 @@ class AresClientChannelDNSResolver : public PollingResolver {
     // OrphanablePtr<>, and there's no way to pass the lock annotation through
     // there.
     void Orphan() override ABSL_NO_THREAD_SAFETY_ANALYSIS {
-      MutexLock lock(&on_resolved_mu_);
-      if (hostname_request_ != nullptr) {
-        grpc_cancel_ares_request(hostname_request_.get());
-      }
-      if (srv_request_ != nullptr) {
-        grpc_cancel_ares_request(srv_request_.get());
-      }
-      if (txt_request_ != nullptr) {
-        grpc_cancel_ares_request(txt_request_.get());
+      {
+        MutexLock lock(&on_resolved_mu_);
+        if (hostname_request_ != nullptr) {
+          grpc_cancel_ares_request(hostname_request_.get());
+        }
+        if (srv_request_ != nullptr) {
+          grpc_cancel_ares_request(srv_request_.get());
+        }
+        if (txt_request_ != nullptr) {
+          grpc_cancel_ares_request(txt_request_.get());
+        }
       }
       Unref(DEBUG_LOCATION, "Orphan");
     }

@@ -794,8 +794,6 @@ libs:
   - src/core/lib/iomgr/ev_posix.h
   - src/core/lib/iomgr/exec_ctx.h
   - src/core/lib/iomgr/executor.h
-  - src/core/lib/iomgr/executor/mpmcqueue.h
-  - src/core/lib/iomgr/executor/threadpool.h
   - src/core/lib/iomgr/gethostname.h
   - src/core/lib/iomgr/grpc_if_nametoindex.h
   - src/core/lib/iomgr/internal_errqueue.h
@@ -1464,8 +1462,6 @@ libs:
   - src/core/lib/iomgr/ev_windows.cc
   - src/core/lib/iomgr/exec_ctx.cc
   - src/core/lib/iomgr/executor.cc
-  - src/core/lib/iomgr/executor/mpmcqueue.cc
-  - src/core/lib/iomgr/executor/threadpool.cc
   - src/core/lib/iomgr/fork_posix.cc
   - src/core/lib/iomgr/fork_windows.cc
   - src/core/lib/iomgr/gethostname_fallback.cc
@@ -1676,6 +1672,7 @@ libs:
   - absl/container:flat_hash_map
   - absl/container:flat_hash_set
   - absl/container:inlined_vector
+  - absl/functional:any_invocable
   - absl/functional:bind_front
   - absl/functional:function_ref
   - absl/hash:hash
@@ -2013,8 +2010,6 @@ libs:
   - src/core/lib/iomgr/ev_posix.h
   - src/core/lib/iomgr/exec_ctx.h
   - src/core/lib/iomgr/executor.h
-  - src/core/lib/iomgr/executor/mpmcqueue.h
-  - src/core/lib/iomgr/executor/threadpool.h
   - src/core/lib/iomgr/gethostname.h
   - src/core/lib/iomgr/grpc_if_nametoindex.h
   - src/core/lib/iomgr/internal_errqueue.h
@@ -2331,8 +2326,6 @@ libs:
   - src/core/lib/iomgr/ev_windows.cc
   - src/core/lib/iomgr/exec_ctx.cc
   - src/core/lib/iomgr/executor.cc
-  - src/core/lib/iomgr/executor/mpmcqueue.cc
-  - src/core/lib/iomgr/executor/threadpool.cc
   - src/core/lib/iomgr/fork_posix.cc
   - src/core/lib/iomgr/fork_windows.cc
   - src/core/lib/iomgr/gethostname_fallback.cc
@@ -2480,6 +2473,7 @@ libs:
   - absl/container:flat_hash_map
   - absl/container:flat_hash_set
   - absl/container:inlined_vector
+  - absl/functional:any_invocable
   - absl/functional:bind_front
   - absl/functional:function_ref
   - absl/hash:hash
@@ -3299,24 +3293,6 @@ targets:
   deps:
   - grpc_test_util
   uses_polling: false
-- name: channel_stack_test
-  build: test
-  language: c
-  headers: []
-  src:
-  - test/core/channel/channel_stack_test.cc
-  deps:
-  - grpc_test_util
-  uses_polling: false
-- name: cmdline_test
-  build: test
-  language: c
-  headers: []
-  src:
-  - test/core/util/cmdline_test.cc
-  deps:
-  - grpc_test_util
-  uses_polling: false
 - name: combiner_test
   build: test
   language: c
@@ -3450,19 +3426,6 @@ targets:
   - linux
   - posix
   - mac
-- name: fork_test
-  build: test
-  language: c
-  headers: []
-  src:
-  - test/core/gprpp/fork_test.cc
-  deps:
-  - grpc_test_util
-  platforms:
-  - linux
-  - posix
-  - mac
-  uses_polling: false
 - name: format_request_test
   build: test
   language: c
@@ -3494,24 +3457,6 @@ targets:
   - test/core/iomgr/grpc_ipv6_loopback_available_test.cc
   deps:
   - grpc_test_util
-- name: histogram_test
-  build: test
-  language: c
-  headers: []
-  src:
-  - test/core/util/histogram_test.cc
-  deps:
-  - grpc_test_util
-  uses_polling: false
-- name: host_port_test
-  build: test
-  language: c
-  headers: []
-  src:
-  - test/core/gprpp/host_port_test.cc
-  deps:
-  - grpc_test_util
-  uses_polling: false
 - name: hpack_encoder_test
   build: test
   language: c
@@ -3566,28 +3511,6 @@ targets:
   - test/core/channel/minimal_stack_is_minimal_test.cc
   deps:
   - grpc_test_util
-  uses_polling: false
-- name: mpmcqueue_test
-  build: test
-  language: c
-  headers: []
-  src:
-  - test/core/iomgr/mpmcqueue_test.cc
-  deps:
-  - grpc_test_util
-  uses_polling: false
-- name: mpscq_test
-  build: test
-  language: c
-  headers: []
-  src:
-  - test/core/gprpp/mpscq_test.cc
-  deps:
-  - grpc_test_util
-  platforms:
-  - linux
-  - posix
-  - mac
   uses_polling: false
 - name: multiple_server_queues_test
   build: test
@@ -3824,24 +3747,6 @@ targets:
   headers: []
   src:
   - test/core/iomgr/timer_list_test.cc
-  deps:
-  - grpc_test_util
-  uses_polling: false
-- name: thd_test
-  build: test
-  language: c
-  headers: []
-  src:
-  - test/core/gprpp/thd_test.cc
-  deps:
-  - grpc_test_util
-  uses_polling: false
-- name: threadpool_test
-  build: test
-  language: c
-  headers: []
-  src:
-  - test/core/iomgr/threadpool_test.cc
   deps:
   - grpc_test_util
   uses_polling: false
@@ -4262,6 +4167,7 @@ targets:
   - src/core/lib/slice/slice_string_helpers.cc
   - test/core/promise/arena_promise_test.cc
   deps:
+  - absl/functional:any_invocable
   - absl/meta:type_traits
   - absl/status:statusor
   - absl/types:variant
@@ -4697,6 +4603,16 @@ targets:
   - test/core/channel/channel_stack_builder_test.cc
   deps:
   - grpc_test_util
+- name: channel_stack_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/core/channel/channel_stack_test.cc
+  deps:
+  - grpc_test_util
+  uses_polling: false
 - name: channel_trace_test
   gtest: true
   build: test
@@ -4840,6 +4756,7 @@ targets:
   - src/core/lib/slice/slice_string_helpers.cc
   - test/core/gprpp/chunked_vector_test.cc
   deps:
+  - absl/functional:any_invocable
   - absl/meta:type_traits
   - absl/status:statusor
   - absl/types:variant
@@ -4992,6 +4909,16 @@ targets:
   - linux
   - posix
   - mac
+- name: cmdline_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/core/util/cmdline_test.cc
+  deps:
+  - grpc_test_util
+  uses_polling: false
 - name: codegen_test_full
   gtest: true
   build: test
@@ -5458,6 +5385,7 @@ targets:
   - src/core/lib/slice/slice_string_helpers.cc
   - test/core/promise/exec_ctx_wakeup_scheduler_test.cc
   deps:
+  - absl/functional:any_invocable
   - absl/meta:type_traits
   - absl/status:statusor
   - absl/types:variant
@@ -5695,6 +5623,7 @@ targets:
   - src/core/lib/transport/pid_controller.cc
   - test/core/transport/chttp2/flow_control_test.cc
   deps:
+  - absl/functional:any_invocable
   - absl/functional:function_ref
   - absl/meta:type_traits
   - absl/status:statusor
@@ -5783,6 +5712,7 @@ targets:
   - test/core/promise/for_each_test.cc
   deps:
   - absl/container:flat_hash_set
+  - absl/functional:any_invocable
   - absl/hash:hash
   - absl/meta:type_traits
   - absl/status:statusor
@@ -5790,6 +5720,20 @@ targets:
   - absl/utility:utility
   - gpr
   - upb
+  uses_polling: false
+- name: fork_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/core/gprpp/fork_test.cc
+  deps:
+  - grpc_test_util
+  platforms:
+  - linux
+  - posix
+  - mac
   uses_polling: false
 - name: frame_handler_test
   gtest: true
@@ -6224,6 +6168,26 @@ targets:
   - test/cpp/end2end/test_service_impl.cc
   deps:
   - grpc++_test_util
+- name: histogram_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/core/util/histogram_test.cc
+  deps:
+  - grpc_test_util
+  uses_polling: false
+- name: host_port_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/core/gprpp/host_port_test.cc
+  deps:
+  - grpc_test_util
+  uses_polling: false
 - name: hpack_parser_table_test
   gtest: true
   build: test
@@ -6772,6 +6736,7 @@ targets:
   - src/core/lib/slice/slice_string_helpers.cc
   - test/core/resource_quota/memory_quota_stress_test.cc
   deps:
+  - absl/functional:any_invocable
   - absl/meta:type_traits
   - absl/status:statusor
   - absl/types:variant
@@ -6847,6 +6812,7 @@ targets:
   - src/core/lib/slice/slice_string_helpers.cc
   - test/core/resource_quota/memory_quota_test.cc
   deps:
+  - absl/functional:any_invocable
   - absl/meta:type_traits
   - absl/status:statusor
   - absl/types:variant
@@ -6916,6 +6882,20 @@ targets:
   deps:
   - grpc++_test
   - grpc++_test_util
+- name: mpscq_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/core/gprpp/mpscq_test.cc
+  deps:
+  - grpc_test_util
+  platforms:
+  - linux
+  - posix
+  - mac
+  uses_polling: false
 - name: nonblocking_test
   gtest: true
   build: test
@@ -7191,6 +7171,7 @@ targets:
   - src/core/lib/slice/slice_string_helpers.cc
   - test/core/resource_quota/periodic_update_test.cc
   deps:
+  - absl/functional:any_invocable
   - absl/status:statusor
   - gpr
   - upb
@@ -7281,6 +7262,7 @@ targets:
   - src/core/lib/slice/slice_string_helpers.cc
   - test/core/promise/pipe_test.cc
   deps:
+  - absl/functional:any_invocable
   - absl/meta:type_traits
   - absl/status:statusor
   - absl/types:variant
@@ -7651,6 +7633,7 @@ targets:
   - src/core/lib/slice/slice_string_helpers.cc
   - test/core/resource_quota/resource_quota_test.cc
   deps:
+  - absl/functional:any_invocable
   - absl/meta:type_traits
   - absl/status:statusor
   - absl/types:variant
@@ -8462,6 +8445,7 @@ targets:
   deps:
   - absl/base:base
   - absl/base:core_headers
+  - absl/functional:any_invocable
   - absl/memory:memory
   - absl/random:random
   - absl/status:status
@@ -8561,6 +8545,7 @@ targets:
   deps:
   - absl/base:base
   - absl/base:core_headers
+  - absl/functional:any_invocable
   - absl/memory:memory
   - absl/random:random
   - absl/status:status
@@ -8663,6 +8648,7 @@ targets:
   deps:
   - absl/base:base
   - absl/base:core_headers
+  - absl/functional:any_invocable
   - absl/memory:memory
   - absl/random:random
   - absl/status:status
@@ -8748,6 +8734,16 @@ targets:
   - test/cpp/util/time_test.cc
   deps:
   - grpc++_test_util
+  uses_polling: false
+- name: thd_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/core/gprpp/thd_test.cc
+  deps:
+  - grpc_test_util
   uses_polling: false
 - name: thread_manager_test
   gtest: true
