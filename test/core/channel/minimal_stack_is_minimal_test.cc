@@ -153,7 +153,8 @@ static void check_stack(const char* file, int line, const char* transport_name,
   std::string got = absl::StrJoin(parts, ", ");
 
   // figure out result, log if there's an error
-  EXPECT_EQ(got, expect) << "transport=" << transport_name << " stack_type="
+  EXPECT_EQ(got, expect) << "file=" << file << " line=" << line
+                         << " transport=" << transport_name << " stack_type="
                          << grpc_channel_stack_type_string(
                                 static_cast<grpc_channel_stack_type>(
                                     channel_stack_type))
