@@ -1330,16 +1330,15 @@ grpc_server_config_fetcher* grpc_server_config_fetcher_xds_create(
       "grpc_server_config_fetcher_xds_create(notifier={on_serving_status_"
       "update=%p, user_data=%p}, args=%p)",
       3, (notifier.on_serving_status_update, notifier.user_data, args));
-  grpc_error_handle error = GRPC_ERROR_NONE;
-  grpc_core::RefCountedPtr<grpc_core::XdsClient> xds_client =
-      grpc_core::GrpcXdsClient::GetOrCreate(channel_args, &error);
-  if (!GRPC_ERROR_IS_NONE(error)) {
+  auto xds_client = grpc_core::GrpcXdsClient::GetOrCreate(
+      channel_args, "XdsServerConfigFetcher");
+  if (!xds_client.ok()) {
     gpr_log(GPR_ERROR, "Failed to create xds client: %s",
-            grpc_error_std_string(error).c_str());
-    GRPC_ERROR_UNREF(error);
+            xds_client.status().ToString().c_str());
     return nullptr;
   }
-  if (xds_client->bootstrap()
+  if ((*xds_client)
+          ->bootstrap()
           .server_listener_resource_name_template()
           .empty()) {
     gpr_log(GPR_ERROR,
@@ -1347,5 +1346,6 @@ grpc_server_config_fetcher* grpc_server_config_fetcher_xds_create(
             "file.");
     return nullptr;
   }
-  return new grpc_core::XdsServerConfigFetcher(std::move(xds_client), notifier);
+  return new grpc_core::XdsServerConfigFetcher(*std::move(xds_client),
+                                               notifier);
 }
