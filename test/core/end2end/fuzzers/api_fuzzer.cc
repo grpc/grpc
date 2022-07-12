@@ -105,6 +105,7 @@ static void finish_resolve(void* arg, grpc_error_handle error) {
 
 namespace {
 
+using ::grpc_event_engine::experimental::FuzzingEventEngine;
 using ::grpc_event_engine::experimental::GetDefaultEventEngine;
 
 class FuzzerDNSResolver : public grpc_core::DNSResolver {
@@ -787,12 +788,10 @@ DEFINE_PROTO_FUZZER(const api_fuzzer::Msg& msg) {
   grpc_set_tcp_client_impl(&fuzz_tcp_client_vtable);
   grpc_event_engine::experimental::SetDefaultEventEngineFactory(
       [actions = msg.event_engine_actions()]() {
-        return absl::make_unique<
-            grpc_event_engine::experimental::FuzzingEventEngine>(
-            grpc_event_engine::experimental::FuzzingEventEngine::Options(),
-            actions);
+        return absl::make_unique<FuzzingEventEngine>(
+            FuzzingEventEngine::Options(), actions);
       });
-  grpc_event_engine::experimental::GetDefaultEventEngine();
+  GetDefaultEventEngine();
   grpc_init();
   grpc_timer_manager_set_threading(false);
   {
@@ -836,13 +835,11 @@ DEFINE_PROTO_FUZZER(const api_fuzzer::Msg& msg) {
   while (action_index < msg.actions_size() || g_channel != nullptr ||
          g_server != nullptr || pending_channel_watches > 0 ||
          pending_pings > 0 || ActiveCall() != nullptr) {
-    static_cast<grpc_event_engine::experimental::FuzzingEventEngine*>(
-        grpc_event_engine::experimental::GetDefaultEventEngine())
+    std::dynamic_pointer_cast<FuzzingEventEngine>(GetDefaultEventEngine())
         ->Tick();
 
     if (action_index == msg.actions_size()) {
-      static_cast<grpc_event_engine::experimental::FuzzingEventEngine*>(
-          grpc_event_engine::experimental::GetDefaultEventEngine())
+      std::dynamic_pointer_cast<FuzzingEventEngine>(GetDefaultEventEngine())
           ->FuzzingDone();
       if (g_channel != nullptr) {
         grpc_channel_destroy(g_channel);
