@@ -876,7 +876,7 @@ void XdsResolver::ShutdownLocked() {
     grpc_pollset_set_del_pollset_set(
         static_cast<GrpcXdsClient*>(xds_client_.get())->interested_parties(),
         interested_parties_);
-    xds_client_.reset();
+    xds_client_.reset(DEBUG_LOCATION, "xds resolver");
   }
 }
 

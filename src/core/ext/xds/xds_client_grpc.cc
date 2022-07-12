@@ -129,7 +129,6 @@ std::string GetBootstrapContents(const char* fallback_config,
 
 RefCountedPtr<XdsClient> GrpcXdsClient::GetOrCreate(const ChannelArgs& args,
                                                     grpc_error_handle* error) {
-  RefCountedPtr<XdsClient> xds_client;
   // If getting bootstrap from channel args, create a local XdsClient
   // instance for the channel or server instead of using the global instance.
   absl::optional<absl::string_view> bootstrap_config = args.GetString(
@@ -146,29 +145,27 @@ RefCountedPtr<XdsClient> GrpcXdsClient::GetOrCreate(const ChannelArgs& args,
     return nullptr;
   }
   // Otherwise, use the global instance.
-  {
-    MutexLock lock(g_mu);
-    if (g_xds_client != nullptr) {
-      auto xds_client = g_xds_client->RefIfNonZero();
-      if (xds_client != nullptr) return xds_client;
-    }
-    // Find bootstrap contents.
-    std::string bootstrap_contents =
-        GetBootstrapContents(g_fallback_bootstrap_config, error);
-    if (!GRPC_ERROR_IS_NONE(*error)) return nullptr;
-    if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_client_trace)) {
-      gpr_log(GPR_INFO, "xDS bootstrap contents: %s",
-              bootstrap_contents.c_str());
-    }
-    // Parse bootstrap.
-    std::unique_ptr<XdsBootstrap> bootstrap =
-        XdsBootstrap::Create(bootstrap_contents, error);
-    if (!GRPC_ERROR_IS_NONE(*error)) return nullptr;
-    // Instantiate XdsClient.
-    xds_client = MakeRefCounted<GrpcXdsClient>(
-        std::move(bootstrap), ChannelArgs::FromC(g_channel_args));
-    g_xds_client = xds_client.get();
+  MutexLock lock(g_mu);
+  if (g_xds_client != nullptr) {
+    auto xds_client =
+        g_xds_client->RefIfNonZero(DEBUG_LOCATION, "GetOrCreate()");
+    if (xds_client != nullptr) return xds_client;
   }
+  // Find bootstrap contents.
+  std::string bootstrap_contents =
+      GetBootstrapContents(g_fallback_bootstrap_config, error);
+  if (!GRPC_ERROR_IS_NONE(*error)) return nullptr;
+  if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_client_trace)) {
+    gpr_log(GPR_INFO, "xDS bootstrap contents: %s", bootstrap_contents.c_str());
+  }
+  // Parse bootstrap.
+  std::unique_ptr<XdsBootstrap> bootstrap =
+      XdsBootstrap::Create(bootstrap_contents, error);
+  if (!GRPC_ERROR_IS_NONE(*error)) return nullptr;
+  // Instantiate XdsClient.
+  auto xds_client = MakeRefCounted<GrpcXdsClient>(
+      std::move(bootstrap), ChannelArgs::FromC(g_channel_args));
+  g_xds_client = xds_client.get();
   return xds_client;
 }
 

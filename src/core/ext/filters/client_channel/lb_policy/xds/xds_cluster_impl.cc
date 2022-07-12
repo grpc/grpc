@@ -465,7 +465,7 @@ void XdsClusterImplLb::ShutdownLocked() {
   // the child.
   picker_.reset();
   drop_stats_.reset();
-  xds_client_.reset();
+  xds_client_.reset(DEBUG_LOCATION, "XdsClusterImpl");
 }
 
 void XdsClusterImplLb::ExitIdleLocked() {

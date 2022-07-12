@@ -1417,10 +1417,10 @@ void XdsClient::Orphan() {
 }
 
 RefCountedPtr<XdsClient::ChannelState> XdsClient::GetOrCreateChannelStateLocked(
-    const XdsBootstrap::XdsServer& server) {
+    const XdsBootstrap::XdsServer& server, const char* reason) {
   auto it = xds_server_channel_map_.find(server);
   if (it != xds_server_channel_map_.end()) {
-    return it->second->Ref(DEBUG_LOCATION, "Authority");
+    return it->second->Ref(DEBUG_LOCATION, reason);
   }
   // Channel not found, so create a new one.
   auto channel_state = MakeRefCounted<ChannelState>(
@@ -1498,7 +1498,7 @@ void XdsClient::WatchResource(const XdsResourceType* type,
     // needed.
     if (authority_state.channel_state == nullptr) {
       authority_state.channel_state =
-          GetOrCreateChannelStateLocked(*xds_server);
+          GetOrCreateChannelStateLocked(*xds_server, "start watch");
     }
     authority_state.channel_state->SubscribeLocked(type, *resource_name);
   }
@@ -1633,7 +1633,8 @@ RefCountedPtr<XdsClusterDropStats> XdsClient::AddClusterDropStats(
             .first;
     if (server_it->second.channel_state == nullptr) {
       server_it->second.channel_state =
-          GetOrCreateChannelStateLocked(xds_server);
+          GetOrCreateChannelStateLocked(xds_server,
+                                        "load report map (drop stats)");
     }
     auto load_report_it = server_it->second.load_report_map
                               .emplace(std::move(key), LoadReportState())
@@ -1699,7 +1700,8 @@ RefCountedPtr<XdsClusterLocalityStats> XdsClient::AddClusterLocalityStats(
             .first;
     if (server_it->second.channel_state == nullptr) {
       server_it->second.channel_state =
-          GetOrCreateChannelStateLocked(xds_server);
+          GetOrCreateChannelStateLocked(xds_server,
+                                        "load report map (locality stats)");
     }
     auto load_report_it = server_it->second.load_report_map
                               .emplace(std::move(key), LoadReportState())
