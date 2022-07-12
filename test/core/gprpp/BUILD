@@ -43,6 +43,7 @@ grpc_cc_test(
 grpc_cc_test(
     name = "fork_test",
     srcs = ["fork_test.cc"],
+    external_deps = ["gtest"],
     language = "C++",
     tags = ["no_windows"],
     uses_event_engine = True,  # engines should behave appropriately on Fork
@@ -142,6 +143,7 @@ grpc_cc_test(
 grpc_cc_test(
     name = "host_port_test",
     srcs = ["host_port_test.cc"],
+    external_deps = ["gtest"],
     language = "C++",
     uses_event_engine = False,
     uses_polling = False,
@@ -155,6 +157,7 @@ grpc_cc_test(
     name = "mpscq_test",
     srcs = ["mpscq_test.cc"],
     exec_properties = LARGE_MACHINE,
+    external_deps = ["gtest"],
     language = "C++",
     tags = ["no_windows"],  # LARGE_MACHINE is not configured for windows RBE
     uses_event_engine = False,
@@ -222,6 +225,7 @@ grpc_cc_test(
 grpc_cc_test(
     name = "thd_test",
     srcs = ["thd_test.cc"],
+    external_deps = ["gtest"],
     language = "C++",
     uses_event_engine = False,
     uses_polling = False,
