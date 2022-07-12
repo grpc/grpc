@@ -2117,6 +2117,7 @@ PromiseBasedCall::Completion PromiseBasedCall::PauseCompletion(
 
 void PromiseBasedCall::FinishCompletion(Completion* completion) {
   const uint8_t i = completion->TakeIndex();
+  GPR_ASSERT(i < GPR_ARRAY_SIZE(completion_info_));
   CompletionInfo::Pending& pending = completion_info_[i].pending;
   --pending.refs;
   if (pending.refs == 0) {
@@ -2220,6 +2221,7 @@ class ClientPromiseBasedCall final : public PromiseBasedCall {
       ABSL_GUARDED_BY(mu());
   absl::optional<Latch<ServerMetadata*>::WaitPromise>
       server_initial_metadata_ready_;
+  absl::optional<grpc_compression_algorithm> incoming_compression_algorithm_;
   Completion recv_initial_metadata_completion_ ABSL_GUARDED_BY(mu());
   Completion recv_status_on_client_completion_ ABSL_GUARDED_BY(mu());
   Completion send_message_completion_ ABSL_GUARDED_BY(mu());
@@ -2291,6 +2293,7 @@ void ClientPromiseBasedCall::CommitBatch(const grpc_op* ops, size_t nops,
       case GRPC_OP_RECV_MESSAGE: {
         GPR_ASSERT(!outstanding_recv_.has_value());
         recv_message_ = op.data.recv_message.recv_message;
+        recv_message_completion_ = PauseCompletion(completion);
         outstanding_recv_.emplace(server_to_client_messages_.receiver.Next());
       } break;
       case GRPC_OP_SEND_CLOSE_FROM_CLIENT: {
@@ -2337,6 +2340,9 @@ void ClientPromiseBasedCall::UpdateOnce() {
     Poll<ServerMetadata**> r = (*server_initial_metadata_ready_)();
     if (ServerMetadata*** server_initial_metadata =
             absl::get_if<ServerMetadata**>(&r)) {
+      incoming_compression_algorithm_ = (**server_initial_metadata)
+                                            ->Take(GrpcEncodingMetadata())
+                                            .value_or(GRPC_COMPRESS_NONE);
       server_initial_metadata_ready_.reset();
       GPR_ASSERT(recv_initial_metadata_ != nullptr);
       PublishMetadataArray(absl::exchange(recv_initial_metadata_, nullptr),
@@ -2355,12 +2361,22 @@ void ClientPromiseBasedCall::UpdateOnce() {
       }
     }
   }
-  if (outstanding_recv_.has_value()) {
+  if (incoming_compression_algorithm_.has_value() &&
+      outstanding_recv_.has_value()) {
     Poll<absl::optional<Message>> r = (*outstanding_recv_)();
     if (auto* result = absl::get_if<absl::optional<Message>>(&r)) {
       outstanding_recv_.reset();
       if (result->has_value()) {
-        abort();  // not implemented
+        Message& message = **result;
+        if ((message.flags() & GRPC_WRITE_INTERNAL_COMPRESS) &&
+            (incoming_compression_algorithm_ != GRPC_COMPRESS_NONE)) {
+          *recv_message_ = grpc_raw_compressed_byte_buffer_create(
+              nullptr, 0, *incoming_compression_algorithm_);
+        } else {
+          *recv_message_ = grpc_raw_byte_buffer_create(nullptr, 0);
+        }
+        grpc_slice_buffer_move_into(message.payload()->c_slice_buffer(),
+                                    &(*recv_message_)->data.raw.slice_buffer);
       } else {
         *recv_message_ = nullptr;
       }

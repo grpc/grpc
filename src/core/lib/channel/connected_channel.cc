@@ -446,16 +446,22 @@ class ClientConnectedCallPromise {
     }
 
     void Push() {
+      auto do_push = [this](grpc_transport_stream_op_batch* batch) {
+        if (stream_ != nullptr) {
+          grpc_transport_perform_stream_op(transport_, stream_.get(), batch);
+        } else {
+          grpc_transport_stream_op_batch_finish_with_failure_without_call_combiner(
+              batch, GRPC_ERROR_CANCELLED);
+        }
+      };
       if (absl::exchange(push_metadata_, false)) {
-        grpc_transport_perform_stream_op(transport_, stream_.get(), &metadata_);
+        do_push(&metadata_);
       }
       if (absl::exchange(push_send_message_, false)) {
-        grpc_transport_perform_stream_op(transport_, stream_.get(),
-                                         &send_message_);
+        do_push(&send_message_);
       }
       if (absl::exchange(push_recv_message_, false)) {
-        grpc_transport_perform_stream_op(transport_, stream_.get(),
-                                         &recv_message_);
+        do_push(&recv_message_);
       }
       scheduled_push_ = false;
       call_context_->Unref("push");
