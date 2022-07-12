@@ -31,6 +31,7 @@
 
 #include <string.h>
 
+#include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
 #include "absl/strings/str_cat.h"
@@ -132,33 +133,30 @@ static void check_stack(const char* file, int line, const char* transport_name,
   }
 
   // build up our expectation list
-  std::vector<std::string> parts;
+  std::vector<std::string> expect;
   va_list args;
   va_start(args, channel_stack_type);
   for (;;) {
     char* a = va_arg(args, char*);
     if (a == nullptr) break;
-    parts.push_back(a);
+    expect.push_back(a);
   }
   va_end(args);
-  std::string expect = absl::StrJoin(parts, ", ");
 
   // build up our "got" list
-  parts.clear();
+  std::vector<std::string> got;
   for (const auto& entry : *builder.mutable_stack()) {
     const char* name = entry->name;
     if (name == nullptr) continue;
-    parts.push_back(name);
+    got.push_back(name);
   }
-  std::string got = absl::StrJoin(parts, ", ");
 
   // figure out result, log if there's an error
-  EXPECT_EQ(got, expect) << "file=" << file << " line=" << line
-                         << " transport=" << transport_name << " stack_type="
-                         << grpc_channel_stack_type_string(
-                                static_cast<grpc_channel_stack_type>(
-                                    channel_stack_type))
-                         << " channel_args=" << channel_args.ToString();
+  EXPECT_THAT(expect, testing::IsSubsetOf(got))
+      << "transport=" << transport_name << " stack_type="
+      << grpc_channel_stack_type_string(
+             static_cast<grpc_channel_stack_type>(channel_stack_type))
+      << " channel_args=" << channel_args.ToString();
 }
 
 int main(int argc, char** argv) {
