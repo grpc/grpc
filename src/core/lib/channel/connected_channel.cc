@@ -21,6 +21,7 @@
 #include "src/core/lib/channel/connected_channel.h"
 
 #include <stdint.h>
+#include <stdlib.h>
 #include <string.h>
 
 #include <memory>
@@ -28,6 +29,7 @@
 #include <type_traits>
 #include <utility>
 
+#include "absl/status/status.h"
 #include "absl/types/optional.h"
 #include "absl/types/variant.h"
 #include "absl/utility/utility.h"
