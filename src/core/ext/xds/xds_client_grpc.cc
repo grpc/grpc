@@ -59,7 +59,7 @@ namespace {
 
 Mutex* g_mu = nullptr;
 const grpc_channel_args* g_channel_args ABSL_GUARDED_BY(*g_mu) = nullptr;
-XdsClient* g_xds_client ABSL_GUARDED_BY(*g_mu) = nullptr;
+GrpcXdsClient* g_xds_client ABSL_GUARDED_BY(*g_mu) = nullptr;
 char* g_fallback_bootstrap_config ABSL_GUARDED_BY(*g_mu) = nullptr;
 
 }  // namespace
@@ -126,7 +126,7 @@ absl::StatusOr<std::string> GetBootstrapContents(const char* fallback_config) {
 
 }  // namespace
 
-absl::StatusOr<RefCountedPtr<XdsClient>> GrpcXdsClient::GetOrCreate(
+absl::StatusOr<RefCountedPtr<GrpcXdsClient>> GrpcXdsClient::GetOrCreate(
     const ChannelArgs& args, const char* reason) {
   // If getting bootstrap from channel args, create a local XdsClient
   // instance for the channel or server instead of using the global instance.

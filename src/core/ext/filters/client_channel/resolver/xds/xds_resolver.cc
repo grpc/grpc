@@ -802,7 +802,7 @@ void XdsResolver::StartLocked() {
     result_handler_->ReportResult(std::move(result));
     return;
   }
-  xds_client_ = *std::move(xds_client);
+  xds_client_ = std::move(*xds_client);
   std::string resource_name_fragment(absl::StripPrefix(uri_.path(), "/"));
   if (!uri_.authority().empty()) {
     // target_uri.authority is set case
@@ -972,7 +972,11 @@ void XdsResolver::OnError(absl::string_view context, absl::Status status) {
   Result result;
   result.addresses = status;
   result.service_config = std::move(status);
-  result.args = args_.SetObject(xds_client_);
+  // Need to explicitly convert to the right RefCountedPtr<> type for
+  // use with ChannelArgs::SetObject().
+  RefCountedPtr<GrpcXdsClient> xds_client =
+      xds_client_->Ref(DEBUG_LOCATION, "xds resolver result");
+  result.args = args_.SetObject(std::move(xds_client));
   result_handler_->ReportResult(std::move(result));
 }
 
@@ -1064,7 +1068,12 @@ void XdsResolver::GenerateResult() {
                 ? std::string((*result.service_config)->json_string()).c_str()
                 : result.service_config.status().ToString().c_str());
   }
-  result.args = args_.SetObject(xds_client_).SetObject(config_selector);
+  // Need to explicitly convert to the right RefCountedPtr<> type for
+  // use with ChannelArgs::SetObject().
+  RefCountedPtr<GrpcXdsClient> xds_client =
+      xds_client_->Ref(DEBUG_LOCATION, "xds resolver result");
+  result.args =
+      args_.SetObject(std::move(xds_client)).SetObject(config_selector);
   result_handler_->ReportResult(std::move(result));
 }
 

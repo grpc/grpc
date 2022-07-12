@@ -39,6 +39,7 @@
 
 #include "src/core/lib/avl/avl.h"
 #include "src/core/lib/gpr/useful.h"
+#include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/dual_ref_counted.h"
 #include "src/core/lib/gprpp/ref_counted.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
@@ -263,6 +264,13 @@ class ChannelArgs {
     auto* p = GetObject<T>();
     if (p == nullptr) return nullptr;
     return p->Ref(DEBUG_LOCATION, "ChannelArgs GetObjectRef()");
+  }
+  template <typename T>
+  RefCountedPtr<T> GetObjectRef(const DebugLocation& location,
+                                const char* reason) const {
+    auto* p = GetObject<T>();
+    if (p == nullptr) return nullptr;
+    return p->Ref(location, reason);
   }
 
   bool operator!=(const ChannelArgs& other) const;

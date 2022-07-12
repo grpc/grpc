@@ -38,7 +38,7 @@ namespace grpc_core {
 class GrpcXdsClient : public XdsClient {
  public:
   // Factory function to get or create the global XdsClient instance.
-  static absl::StatusOr<RefCountedPtr<XdsClient>> GetOrCreate(
+  static absl::StatusOr<RefCountedPtr<GrpcXdsClient>> GetOrCreate(
       const ChannelArgs& args, const char* reason);
 
   // Do not instantiate directly -- use GetOrCreate() instead.

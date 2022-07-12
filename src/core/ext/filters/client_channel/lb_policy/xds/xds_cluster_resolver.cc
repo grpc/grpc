@@ -1002,7 +1002,8 @@ class XdsClusterResolverLbFactory : public LoadBalancingPolicyFactory {
  public:
   OrphanablePtr<LoadBalancingPolicy> CreateLoadBalancingPolicy(
       LoadBalancingPolicy::Args args) const override {
-    auto xds_client = args.args.GetObjectRef<GrpcXdsClient>();
+    auto xds_client = args.args.GetObjectRef<GrpcXdsClient>(
+        DEBUG_LOCATION, "XdsClusterResolverLbFactory");
     if (xds_client == nullptr) {
       gpr_log(GPR_ERROR,
               "XdsClient not present in channel args -- cannot instantiate "
@@ -1224,6 +1225,10 @@ class XdsClusterResolverLbFactory : public LoadBalancingPolicyFactory {
                              &grpc_lb_xds_cluster_resolver_trace),
           xds_client_(std::move(xds_client)) {}
 
+    ~XdsClusterResolverChildHandler() {
+      xds_client_.reset(DEBUG_LOCATION, "XdsClusterResolverChildHandler");
+    }
+
     bool ConfigChangeRequiresNewPolicyInstance(
         LoadBalancingPolicy::Config* old_config,
         LoadBalancingPolicy::Config* new_config) const override {
@@ -1240,7 +1245,7 @@ class XdsClusterResolverLbFactory : public LoadBalancingPolicyFactory {
     OrphanablePtr<LoadBalancingPolicy> CreateLoadBalancingPolicy(
         const char* /*name*/, LoadBalancingPolicy::Args args) const override {
       return MakeOrphanable<XdsClusterResolverLb>(
-          xds_client_->Ref(DEBUG_LOCATION, "create xds_cluster_resolver LB"),
+          xds_client_->Ref(DEBUG_LOCATION, "XdsClusterResolverLb"),
           std::move(args));
     }
 
