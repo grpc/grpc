@@ -2301,8 +2301,8 @@ grpc_cc_library(
     deps = [
         "event_engine_base_hdrs",
         "gpr_base",
-        "time_averaged_stats",
         "time",
+        "time_averaged_stats",
         "useful",
     ],
 )

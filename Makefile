@@ -1451,7 +1451,6 @@ LIBGRPC_SRC = \
     src/core/lib/event_engine/event_engine.cc \
     src/core/lib/event_engine/iomgr_engine/iomgr_engine.cc \
     src/core/lib/event_engine/iomgr_engine/thread_pool.cc \
-    src/core/lib/event_engine/iomgr_engine/time_averaged_stats.cc \
     src/core/lib/event_engine/iomgr_engine/timer.cc \
     src/core/lib/event_engine/iomgr_engine/timer_heap.cc \
     src/core/lib/event_engine/iomgr_engine/timer_manager.cc \
@@ -1462,6 +1461,7 @@ LIBGRPC_SRC = \
     src/core/lib/event_engine/trace.cc \
     src/core/lib/gprpp/status_helper.cc \
     src/core/lib/gprpp/time.cc \
+    src/core/lib/gprpp/time_averaged_stats.cc \
     src/core/lib/http/format_request.cc \
     src/core/lib/http/httpcli.cc \
     src/core/lib/http/httpcli_security_connector.cc \
@@ -1528,7 +1528,6 @@ LIBGRPC_SRC = \
     src/core/lib/iomgr/tcp_server_utils_posix_noifaddrs.cc \
     src/core/lib/iomgr/tcp_server_windows.cc \
     src/core/lib/iomgr/tcp_windows.cc \
-    src/core/lib/iomgr/time_averaged_stats.cc \
     src/core/lib/iomgr/timer.cc \
     src/core/lib/iomgr/timer_generic.cc \
     src/core/lib/iomgr/timer_heap.cc \
@@ -1920,7 +1919,6 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/lib/event_engine/event_engine.cc \
     src/core/lib/event_engine/iomgr_engine/iomgr_engine.cc \
     src/core/lib/event_engine/iomgr_engine/thread_pool.cc \
-    src/core/lib/event_engine/iomgr_engine/time_averaged_stats.cc \
     src/core/lib/event_engine/iomgr_engine/timer.cc \
     src/core/lib/event_engine/iomgr_engine/timer_heap.cc \
     src/core/lib/event_engine/iomgr_engine/timer_manager.cc \
@@ -1931,6 +1929,7 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/lib/event_engine/trace.cc \
     src/core/lib/gprpp/status_helper.cc \
     src/core/lib/gprpp/time.cc \
+    src/core/lib/gprpp/time_averaged_stats.cc \
     src/core/lib/http/format_request.cc \
     src/core/lib/http/httpcli.cc \
     src/core/lib/http/parser.cc \
@@ -1996,7 +1995,6 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/lib/iomgr/tcp_server_utils_posix_noifaddrs.cc \
     src/core/lib/iomgr/tcp_server_windows.cc \
     src/core/lib/iomgr/tcp_windows.cc \
-    src/core/lib/iomgr/time_averaged_stats.cc \
     src/core/lib/iomgr/timer.cc \
     src/core/lib/iomgr/timer_generic.cc \
     src/core/lib/iomgr/timer_heap.cc \
