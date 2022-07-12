@@ -588,6 +588,7 @@ CORE_SOURCE_FILES = [
     'src/core/lib/resource_quota/api.cc',
     'src/core/lib/resource_quota/arena.cc',
     'src/core/lib/resource_quota/memory_quota.cc',
+    'src/core/lib/resource_quota/periodic_update.cc',
     'src/core/lib/resource_quota/resource_quota.cc',
     'src/core/lib/resource_quota/thread_quota.cc',
     'src/core/lib/resource_quota/trace.cc',
