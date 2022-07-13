@@ -1,26 +1,5 @@
-class PerChannelClient {
+class ClientCallbackImpl {
  public:
-    void CallFunction() {
-        int done_count = 0;
-        GetOneFeature(409146138, -746188906, [&mu, &cv, &done_count]() {
-        absl::MutexLock lock(&mu);
-        ++done_count;
-        cv.Signal();
-        });
-        GetOneFeature(
-            0, 0,
-            [&mu, &cv, &done_count]() {
-            absl::MutexLock lock(&mu);
-            ++done_count;
-            cv.Signal();
-            },
-            /*server_debug=*/true);
-        absl::MutexLock lock(&mu);
-        while (done_count != 2) {
-        cv.Wait(&mu);
-        }
-    }
-
     void UnaryCall(std::function<void()> on_done) {
         struct CallParams {
             grpc::ClientContext context;
@@ -29,13 +8,11 @@ class PerChannelClient {
         };
 
         CallParams* params = new CallParams();
-        params->request.set_payloadType(COMPRESSABLE);
-
 
         auto callback = [params, on_done](const grpc::Status& status) {
         if (!status.ok()) {
             LOG(ERROR) << "GetFeature RPC failed.";
-            delete feature_params;
+            delete params;
             on_done();
             return;
         }
@@ -50,3 +27,25 @@ class PerChannelClient {
                                     &params->response, callback);
     }
 };
+
+ABSL_FLAG(std::string, target, "localhost:443", "Target host:port");
+ABSL_FLAG(bool, secure, false, "Use SSL Credentials");
+
+int main(int argc, char **argv) {
+    InitGoogle(argv[0], &argc, &argv, true);
+
+    // Set the authentication mechanism.
+    std::shared_ptr<ChannelCredentials> creds = grpc_insecure_credentials_create();
+    if(absl::GetFlag(FLAGS_secure))
+    {
+        creds = Loas2Credentials(grpc::Loas2CredentialsOptions());
+    }
+
+    // Use gRPC calls to seek for or suggest fortune.
+    std::shared_ptr<Channel> channel =
+        CreateChannel(absl::GetFlag(FLAGS_server), creds);
+    ClientCallbackImpl client(BenchmarkService::NewStub(channel));
+
+    client.UnaryCall(); //may need to add the on done parameter
+    return 0;
+}
