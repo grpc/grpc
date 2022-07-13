@@ -19,8 +19,6 @@ from absl.testing import absltest
 
 from framework import xds_k8s_testcase
 from framework import xds_url_map_testcase
-from framework.infrastructure import k8s
-from framework.test_app import server_app
 
 logger = logging.getLogger(__name__)
 flags.adopt_module_key_flags(xds_k8s_testcase)
@@ -76,7 +74,7 @@ class OutlierDetectionTest(xds_k8s_testcase.RegularXdsKubernetesTestCase):
         with self.subTest('09_test_servers_received_rpcs_from_test_client'):
             self.assertRpcsEventuallyGoToGivenServers(test_client, test_servers)
 
-        rpc_types = [RpcTypeUnaryCall]
+        rpc_types = (RpcTypeUnaryCall, )
         with self.subTest('10_chosen_server_removed_by_outlier_detection'):
             test_client.update_config.configure(
                 rpc_types=rpc_types,
