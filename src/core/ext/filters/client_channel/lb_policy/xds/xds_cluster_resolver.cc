@@ -657,8 +657,9 @@ void XdsClusterResolverLb::ExitIdleLocked() {
   if (child_policy_ != nullptr) child_policy_->ExitIdleLocked();
 }
 
-void XdsClusterResolverLb::OnEndpointChanged(
-    size_t index, XdsEndpointResource update, std::string resolution_note) {
+void XdsClusterResolverLb::OnEndpointChanged(size_t index,
+                                             XdsEndpointResource update,
+                                             std::string resolution_note) {
   if (shutting_down_) return;
   if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_xds_cluster_resolver_trace)) {
     gpr_log(GPR_INFO,
@@ -764,13 +765,12 @@ void XdsClusterResolverLb::OnError(size_t index, std::string resolution_note) {
   if (!discovery_mechanisms_[index].latest_update.has_value()) {
     // Call OnEndpointChanged() with an empty update just like
     // OnResourceDoesNotExist().
-    OnEndpointChanged(index, XdsEndpointResource(),
-                      std::move(resolution_note));
+    OnEndpointChanged(index, XdsEndpointResource(), std::move(resolution_note));
   }
 }
 
-void XdsClusterResolverLb::OnResourceDoesNotExist(
-    size_t index, std::string resolution_note) {
+void XdsClusterResolverLb::OnResourceDoesNotExist(size_t index,
+                                                  std::string resolution_note) {
   gpr_log(GPR_ERROR,
           "[xds_cluster_resolver_lb %p] discovery mechanism %" PRIuPTR
           " resource does not exist: %s",
