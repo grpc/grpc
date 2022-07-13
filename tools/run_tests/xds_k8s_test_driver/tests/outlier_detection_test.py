@@ -33,6 +33,7 @@ _XdsTestClient = xds_k8s_testcase.XdsTestClient
 _QPS = 100
 _REPLICA_COUNT = 5
 
+
 class OutlierDetectionTest(xds_k8s_testcase.RegularXdsKubernetesTestCase):
 
     @staticmethod
@@ -86,7 +87,7 @@ class OutlierDetectionTest(xds_k8s_testcase.RegularXdsKubernetesTestCase):
         with self.subTest('09_test_servers_received_rpcs_from_test_client'):
             self.assertRpcsEventuallyGoToGivenServers(test_client, test_servers)
 
-        rpc_types = (RpcTypeUnaryCall, )
+        rpc_types = (RpcTypeUnaryCall,)
         with self.subTest('10_chosen_server_removed_by_outlier_detection'):
             test_client.update_config.configure(
                 rpc_types=rpc_types,
