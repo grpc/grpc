@@ -1462,6 +1462,7 @@ LIBGRPC_SRC = \
     src/core/lib/event_engine/trace.cc \
     src/core/lib/gprpp/status_helper.cc \
     src/core/lib/gprpp/time.cc \
+    src/core/lib/gprpp/work_serializer.cc \
     src/core/lib/http/format_request.cc \
     src/core/lib/http/httpcli.cc \
     src/core/lib/http/httpcli_security_connector.cc \
@@ -1539,7 +1540,6 @@ LIBGRPC_SRC = \
     src/core/lib/iomgr/wakeup_fd_nospecial.cc \
     src/core/lib/iomgr/wakeup_fd_pipe.cc \
     src/core/lib/iomgr/wakeup_fd_posix.cc \
-    src/core/lib/iomgr/work_serializer.cc \
     src/core/lib/json/json_reader.cc \
     src/core/lib/json/json_util.cc \
     src/core/lib/json/json_writer.cc \
@@ -1931,6 +1931,7 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/lib/event_engine/trace.cc \
     src/core/lib/gprpp/status_helper.cc \
     src/core/lib/gprpp/time.cc \
+    src/core/lib/gprpp/work_serializer.cc \
     src/core/lib/http/format_request.cc \
     src/core/lib/http/httpcli.cc \
     src/core/lib/http/parser.cc \
@@ -2007,7 +2008,6 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/lib/iomgr/wakeup_fd_nospecial.cc \
     src/core/lib/iomgr/wakeup_fd_pipe.cc \
     src/core/lib/iomgr/wakeup_fd_posix.cc \
-    src/core/lib/iomgr/work_serializer.cc \
     src/core/lib/json/json_reader.cc \
     src/core/lib/json/json_util.cc \
     src/core/lib/json/json_writer.cc \

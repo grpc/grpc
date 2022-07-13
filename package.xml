@@ -1043,6 +1043,8 @@
     <file baseinstalldir="/" name="src/core/lib/gprpp/time_util.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gprpp/time_util.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gprpp/unique_type_name.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/gprpp/work_serializer.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/gprpp/work_serializer.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/http/format_request.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/http/format_request.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/http/httpcli.cc" role="src" />
@@ -1187,8 +1189,6 @@
     <file baseinstalldir="/" name="src/core/lib/iomgr/wakeup_fd_pipe.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/wakeup_fd_posix.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/wakeup_fd_posix.h" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/iomgr/work_serializer.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/iomgr/work_serializer.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/json/json.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/json/json_reader.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/json/json_util.cc" role="src" />
