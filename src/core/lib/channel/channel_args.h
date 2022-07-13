@@ -173,6 +173,9 @@ class ChannelArgs {
   ChannelArgs& operator=(ChannelArgs&&) noexcept;
 
   static ChannelArgs FromC(const grpc_channel_args* args);
+  static ChannelArgs FromC(const grpc_channel_args& args) {
+    return FromC(&args);
+  }
   // Construct a new grpc_channel_args struct.
   CPtr ToC() const;
 

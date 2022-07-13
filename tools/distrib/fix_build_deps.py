@@ -47,7 +47,7 @@ EXTERNAL_DEPS = {
         'absl/base',
     # TODO(ctiller) remove this
     'absl/base/internal/endian.h':
-        'absl-base',
+        'absl/base',
     'absl/base/thread_annotations.h':
         'absl/base:core_headers',
     'absl/container/flat_hash_map.h':

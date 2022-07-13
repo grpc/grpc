@@ -3253,24 +3253,6 @@ targets:
   deps:
   - grpc_test_util
   uses_polling: false
-- name: channel_stack_test
-  build: test
-  language: c
-  headers: []
-  src:
-  - test/core/channel/channel_stack_test.cc
-  deps:
-  - grpc_test_util
-  uses_polling: false
-- name: cmdline_test
-  build: test
-  language: c
-  headers: []
-  src:
-  - test/core/util/cmdline_test.cc
-  deps:
-  - grpc_test_util
-  uses_polling: false
 - name: combiner_test
   build: test
   language: c
@@ -3380,19 +3362,6 @@ targets:
   - linux
   - posix
   - mac
-- name: fork_test
-  build: test
-  language: c
-  headers: []
-  src:
-  - test/core/gprpp/fork_test.cc
-  deps:
-  - grpc_test_util
-  platforms:
-  - linux
-  - posix
-  - mac
-  uses_polling: false
 - name: format_request_test
   build: test
   language: c
@@ -3414,24 +3383,6 @@ targets:
   - test/core/iomgr/grpc_ipv6_loopback_available_test.cc
   deps:
   - grpc_test_util
-- name: histogram_test
-  build: test
-  language: c
-  headers: []
-  src:
-  - test/core/util/histogram_test.cc
-  deps:
-  - grpc_test_util
-  uses_polling: false
-- name: host_port_test
-  build: test
-  language: c
-  headers: []
-  src:
-  - test/core/gprpp/host_port_test.cc
-  deps:
-  - grpc_test_util
-  uses_polling: false
 - name: hpack_encoder_test
   build: test
   language: c
@@ -3467,19 +3418,6 @@ targets:
   - test/core/channel/minimal_stack_is_minimal_test.cc
   deps:
   - grpc_test_util
-  uses_polling: false
-- name: mpscq_test
-  build: test
-  language: c
-  headers: []
-  src:
-  - test/core/gprpp/mpscq_test.cc
-  deps:
-  - grpc_test_util
-  platforms:
-  - linux
-  - posix
-  - mac
   uses_polling: false
 - name: murmur_hash_test
   build: test
@@ -3696,15 +3634,6 @@ targets:
   headers: []
   src:
   - test/core/iomgr/timer_list_test.cc
-  deps:
-  - grpc_test_util
-  uses_polling: false
-- name: thd_test
-  build: test
-  language: c
-  headers: []
-  src:
-  - test/core/gprpp/thd_test.cc
   deps:
   - grpc_test_util
   uses_polling: false
@@ -4602,6 +4531,16 @@ targets:
   - test/core/channel/channel_stack_builder_test.cc
   deps:
   - grpc_test_util
+- name: channel_stack_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/core/channel/channel_stack_test.cc
+  deps:
+  - grpc_test_util
+  uses_polling: false
 - name: channel_trace_test
   gtest: true
   build: test
@@ -4898,6 +4837,16 @@ targets:
   - linux
   - posix
   - mac
+- name: cmdline_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/core/util/cmdline_test.cc
+  deps:
+  - grpc_test_util
+  uses_polling: false
 - name: codegen_test_full
   gtest: true
   build: test
@@ -5726,6 +5675,20 @@ targets:
   - gpr
   - upb
   uses_polling: false
+- name: fork_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/core/gprpp/fork_test.cc
+  deps:
+  - grpc_test_util
+  platforms:
+  - linux
+  - posix
+  - mac
+  uses_polling: false
 - name: frame_handler_test
   gtest: true
   build: test
@@ -6170,6 +6133,26 @@ targets:
   - test/cpp/end2end/test_service_impl.cc
   deps:
   - grpc++_test_util
+- name: histogram_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/core/util/histogram_test.cc
+  deps:
+  - grpc_test_util
+  uses_polling: false
+- name: host_port_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/core/gprpp/host_port_test.cc
+  deps:
+  - grpc_test_util
+  uses_polling: false
 - name: hpack_parser_table_test
   gtest: true
   build: test
@@ -6885,6 +6868,20 @@ targets:
   deps:
   - grpc++_test
   - grpc++_test_util
+- name: mpscq_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/core/gprpp/mpscq_test.cc
+  deps:
+  - grpc_test_util
+  platforms:
+  - linux
+  - posix
+  - mac
+  uses_polling: false
 - name: multiple_server_queues_test
   gtest: true
   build: test
@@ -8745,6 +8742,16 @@ targets:
   - test/cpp/util/time_test.cc
   deps:
   - grpc++_test_util
+  uses_polling: false
+- name: thd_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/core/gprpp/thd_test.cc
+  deps:
+  - grpc_test_util
   uses_polling: false
 - name: thread_manager_test
   gtest: true
