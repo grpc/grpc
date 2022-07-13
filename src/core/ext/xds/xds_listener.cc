@@ -438,13 +438,11 @@ HttpConnectionManagerParse(
       const envoy_config_route_v3_RouteConfiguration* route_config =
           envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager_route_config(
               http_connection_manager_proto);
-      XdsRouteConfigResource rds_update;
-      grpc_error_handle error =
-          XdsRouteConfigResource::Parse(context, route_config, &rds_update);
-      if (!GRPC_ERROR_IS_NONE(error)) {
-        errors.emplace_back(grpc_error_std_string(error));
+      auto rds_update = XdsRouteConfigResource::Parse(context, route_config);
+      if (!rds_update.ok()) {
+        errors.emplace_back(rds_update.status().message());
       } else {
-        http_connection_manager.rds_update = std::move(rds_update);
+        http_connection_manager.rds_update = std::move(*rds_update);
       }
     } else {
       // Validate that RDS must be used to get the route_config dynamically.
