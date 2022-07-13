@@ -27,7 +27,7 @@ helloworld_pb2, helloworld_pb2_grpc = grpc.protos_and_services(
 _LOGGER = logging.getLogger(__name__)
 _LOGGER.setLevel(logging.INFO)
 
-_LISTEN_ADDRESS_TEMPLATE = 'localhost:%d'
+_LISTEN_ADDRESS_TEMPLATE = '127.0.0.1:%d'
 _SIGNATURE_HEADER_KEY = 'x-signature'
 
 

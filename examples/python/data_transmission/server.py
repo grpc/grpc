@@ -22,7 +22,7 @@ import demo_pb2
 import demo_pb2_grpc
 
 __all__ = 'DemoServer'
-SERVER_ADDRESS = 'localhost:23333'
+SERVER_ADDRESS = '127.0.0.1:23333'
 SERVER_ID = 1
 
 

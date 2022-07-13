@@ -28,7 +28,7 @@ def run():
     # of the code.
     #
     # For more channel options, please see https://grpc.io/grpc/core/group__grpc__arg__keys.html
-    with grpc.insecure_channel(target='localhost:50051',
+    with grpc.insecure_channel(target='127.0.0.1:50051',
                                options=[('grpc.lb_policy_name', 'pick_first'),
                                         ('grpc.enable_retries', 0),
                                         ('grpc.keepalive_timeout_ms', 10000)

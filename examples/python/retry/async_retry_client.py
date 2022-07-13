@@ -46,7 +46,7 @@ async def run() -> None:
     # NOTE: the retry feature will be enabled by default >=v1.40.0
     options.append(("grpc.enable_retries", 1))
     options.append(("grpc.service_config", service_config_json))
-    async with grpc.aio.insecure_channel('localhost:50051',
+    async with grpc.aio.insecure_channel('127.0.0.1:50051',
                                          options=options) as channel:
         stub = helloworld_pb2_grpc.GreeterStub(channel)
         response = await stub.SayHello(helloworld_pb2.HelloRequest(name='you'))

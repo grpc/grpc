@@ -36,6 +36,6 @@ services = grpc.services("helloworld.proto")
 logging.basicConfig()
 
 response = services.Greeter.SayHello(protos.HelloRequest(name='you'),
-                                     'localhost:50051',
+                                     '127.0.0.1:50051',
                                      insecure=True)
 print("Greeter client received: " + response.message)

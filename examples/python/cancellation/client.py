@@ -75,7 +75,7 @@ def main():
                         type=int,
                         help="The desired Hamming distance.")
     parser.add_argument('--server',
-                        default='localhost:50051',
+                        default='127.0.0.1:50051',
                         type=str,
                         nargs='?',
                         help='The host-port pair at which to reach the server.')

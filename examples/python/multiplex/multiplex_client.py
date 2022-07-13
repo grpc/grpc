@@ -109,7 +109,7 @@ def run():
     # NOTE(gRPC Python Team): .close() is possible on a channel and should be
     # used in circumstances in which the with statement does not fit the needs
     # of the code.
-    with grpc.insecure_channel('localhost:50051') as channel:
+    with grpc.insecure_channel('127.0.0.1:50051') as channel:
         greeter_stub = helloworld_pb2_grpc.GreeterStub(channel)
         route_guide_stub = route_guide_pb2_grpc.RouteGuideStub(channel)
         greeter_response = greeter_stub.SayHello(

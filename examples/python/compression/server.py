@@ -35,7 +35,7 @@ _COMPRESSION_OPTIONS = {
 }
 _LOGGER = logging.getLogger(__name__)
 
-_SERVER_HOST = 'localhost'
+_SERVER_HOST = '127.0.0.1'
 
 
 class Greeter(helloworld_pb2_grpc.GreeterServicer):

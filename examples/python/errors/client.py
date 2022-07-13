@@ -47,7 +47,7 @@ def main():
     # NOTE(gRPC Python Team): .close() is possible on a channel and should be
     # used in circumstances in which the with statement does not fit the needs
     # of the code.
-    with grpc.insecure_channel('localhost:50051') as channel:
+    with grpc.insecure_channel('127.0.0.1:50051') as channel:
         stub = helloworld_pb2_grpc.GreeterStub(channel)
         process(stub)
 

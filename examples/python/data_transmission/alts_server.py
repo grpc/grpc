@@ -22,7 +22,7 @@ import grpc
 import demo_pb2_grpc
 from server import DemoServer
 
-SERVER_ADDRESS = 'localhost:23333'
+SERVER_ADDRESS = '127.0.0.1:23333'
 
 
 def main():

@@ -26,7 +26,7 @@ helloworld_pb2, helloworld_pb2_grpc = grpc.protos_and_services(
 _LOGGER = logging.getLogger(__name__)
 _LOGGER.setLevel(logging.INFO)
 
-_SERVER_ADDR_TEMPLATE = 'localhost:%d'
+_SERVER_ADDR_TEMPLATE = '127.0.0.1:%d'
 _SIGNATURE_HEADER_KEY = 'x-signature'
 
 
@@ -46,7 +46,7 @@ class AuthGateway(grpc.AuthMetadataPlugin):
         """
         # Example AuthMetadataContext object:
         # AuthMetadataContext(
-        #     service_url=u'https://localhost:50051/helloworld.Greeter',
+        #     service_url=u'https://127.0.0.1:50051/helloworld.Greeter',
         #     method_name=u'SayHello')
         signature = context.method_name[::-1]
         callback(((_SIGNATURE_HEADER_KEY, signature),), None)

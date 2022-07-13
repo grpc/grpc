@@ -29,7 +29,7 @@ from examples.python.cancellation import hash_name_pb2
 from examples.python.cancellation import hash_name_pb2_grpc
 
 _LOGGER = logging.getLogger(__name__)
-_SERVER_HOST = 'localhost'
+_SERVER_HOST = '127.0.0.1'
 
 _DESCRIPTION = "A server for finding hashes similar to names."
 

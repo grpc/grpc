@@ -36,7 +36,7 @@ def get_free_loopback_tcp_port():
         tcp_socket = socket.socket(socket.AF_INET)
     tcp_socket.bind(('', 0))
     address_tuple = tcp_socket.getsockname()
-    yield "localhost:%s" % (address_tuple[1])
+    yield "127.0.0.1:%s" % (address_tuple[1])
     tcp_socket.close()
 
 

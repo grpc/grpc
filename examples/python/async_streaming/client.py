@@ -108,7 +108,7 @@ def process_call(executor: ThreadPoolExecutor, channel: grpc.Channel,
 
 def run():
     executor = ThreadPoolExecutor()
-    with grpc.insecure_channel("localhost:50051") as channel:
+    with grpc.insecure_channel("127.0.0.1:50051") as channel:
         future = executor.submit(process_call, executor, channel,
                                  "555-0100-XXXX")
         future.result()

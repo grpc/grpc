@@ -23,7 +23,7 @@ from client import server_streaming_method
 from client import simple_method
 import demo_pb2_grpc
 
-SERVER_ADDRESS = "localhost:23333"
+SERVER_ADDRESS = "127.0.0.1:23333"
 
 
 def main():

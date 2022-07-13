@@ -30,7 +30,7 @@ _LOGGER.setLevel(logging.INFO)
 _FAILURE_RATE = 0.5
 _NUMBER_OF_MESSAGES = 100
 
-_ADDR_TEMPLATE = 'localhost:%d'
+_ADDR_TEMPLATE = '127.0.0.1:%d'
 
 
 class DebugExampleTest(unittest.TestCase):

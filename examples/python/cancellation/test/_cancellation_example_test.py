@@ -46,7 +46,7 @@ def _start_client(server_port,
     interesting_distance_args = () if interesting_distance is None else (
         '--show-inferior', interesting_distance)
     return subprocess.Popen((_CLIENT_PATH, desired_string, '--server',
-                             'localhost:{}'.format(server_port),
+                             '127.0.0.1:{}'.format(server_port),
                              '--ideal-distance', str(ideal_distance)) +
                             interesting_distance_args)
 

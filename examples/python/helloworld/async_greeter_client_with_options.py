@@ -27,7 +27,7 @@ CHANNEL_OPTIONS = [('grpc.lb_policy_name', 'pick_first'),
 
 
 async def run() -> None:
-    async with grpc.aio.insecure_channel(target='localhost:50051',
+    async with grpc.aio.insecure_channel(target='127.0.0.1:50051',
                                          options=CHANNEL_OPTIONS) as channel:
         stub = helloworld_pb2_grpc.GreeterStub(channel)
         # Timeout in seconds.

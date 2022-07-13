@@ -112,7 +112,7 @@ async def guide_route_chat(stub: route_guide_pb2_grpc.RouteGuideStub) -> None:
 
 
 async def main() -> None:
-    async with grpc.aio.insecure_channel('localhost:50051') as channel:
+    async with grpc.aio.insecure_channel('127.0.0.1:50051') as channel:
         stub = route_guide_pb2_grpc.RouteGuideStub(channel)
         print("-------------- GetFeature --------------")
         await guide_get_feature(stub)

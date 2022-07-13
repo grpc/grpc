@@ -24,7 +24,7 @@ from examples.python.auth import async_customized_auth_server
 from examples.python.auth import customized_auth_client
 from examples.python.auth import customized_auth_server
 
-_SERVER_ADDR_TEMPLATE = 'localhost:%d'
+_SERVER_ADDR_TEMPLATE = '127.0.0.1:%d'
 
 
 class AuthExampleTest(unittest.TestCase):

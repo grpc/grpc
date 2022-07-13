@@ -22,7 +22,7 @@ import hellostreamingworld_pb2_grpc
 
 
 async def run() -> None:
-    async with grpc.aio.insecure_channel("localhost:50051") as channel:
+    async with grpc.aio.insecure_channel("127.0.0.1:50051") as channel:
         stub = hellostreamingworld_pb2_grpc.MultiGreeterStub(channel)
 
         # Read from an async generator

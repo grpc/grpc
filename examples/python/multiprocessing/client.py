@@ -77,7 +77,7 @@ def main():
         _MAXIMUM_CANDIDATE)
     parser = argparse.ArgumentParser(description=msg)
     parser.add_argument('server_address',
-                        help='The address of the server (e.g. localhost:50051)')
+                        help='The address of the server (e.g. 127.0.0.1:50051)')
     args = parser.parse_args()
     primes = _calculate_primes(args.server_address)
     print(primes)
