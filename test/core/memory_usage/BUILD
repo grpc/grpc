@@ -75,6 +75,7 @@ grpc_cc_test(
         ":memory_usage_server",
     ],
     external_deps = [
+        "absl/algorithm:container",
         "absl/flags:flag",
         "absl/flags:parse",
     ],
