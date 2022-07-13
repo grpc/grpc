@@ -302,7 +302,7 @@ class XdsResolver : public Resolver {
   class XdsConfigSelector : public ConfigSelector {
    public:
     XdsConfigSelector(RefCountedPtr<XdsResolver> resolver,
-                      grpc_error_handle* error);
+                      absl::Status* status);
     ~XdsConfigSelector() override;
 
     const char* name() const override { return "XdsConfigSelector"; }
@@ -343,11 +343,10 @@ class XdsResolver : public Resolver {
     class RouteListIterator;
 
     void MaybeAddCluster(const std::string& name);
-    grpc_error_handle CreateMethodConfig(
+    absl::StatusOr<RefCountedPtr<ServiceConfig>> CreateMethodConfig(
         const XdsRouteConfigResource::Route& route,
         const XdsRouteConfigResource::Route::RouteAction::ClusterWeight*
-            cluster_weight,
-        RefCountedPtr<ServiceConfig>* method_config);
+            cluster_weight);
 
     RefCountedPtr<XdsResolver> resolver_;
     RouteTable route_table_;
@@ -438,7 +437,7 @@ class XdsResolver::XdsConfigSelector::RouteListIterator
 //
 
 XdsResolver::XdsConfigSelector::XdsConfigSelector(
-    RefCountedPtr<XdsResolver> resolver, grpc_error_handle* error)
+    RefCountedPtr<XdsResolver> resolver, absl::Status* status)
     : resolver_(std::move(resolver)) {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_resolver_trace)) {
     gpr_log(GPR_INFO, "[xds_resolver %p] creating XdsConfigSelector %p",
@@ -475,8 +474,12 @@ XdsResolver::XdsConfigSelector::XdsConfigSelector(
       }
       if (route_action->action.index() ==
           XdsRouteConfigResource::Route::RouteAction::kClusterIndex) {
-        *error = CreateMethodConfig(route_entry.route, nullptr,
-                                    &route_entry.method_config);
+        auto result = CreateMethodConfig(route_entry.route, nullptr);
+        if (!result.ok()) {
+          *status = result.status();
+          return;
+        }
+        route_entry.method_config = std::move(*result);
         MaybeAddCluster(absl::StrCat(
             "cluster:",
             absl::get<
@@ -491,9 +494,13 @@ XdsResolver::XdsConfigSelector::XdsConfigSelector(
         uint32_t end = 0;
         for (const auto& weighted_cluster : action_weighted_clusters) {
           Route::ClusterWeightState cluster_weight_state;
-          *error = CreateMethodConfig(route_entry.route, &weighted_cluster,
-                                      &cluster_weight_state.method_config);
-          if (!GRPC_ERROR_IS_NONE(*error)) return;
+          auto result =
+              CreateMethodConfig(route_entry.route, &weighted_cluster);
+          if (!result.ok()) {
+            *status = result.status();
+            return;
+          }
+          cluster_weight_state.method_config = std::move(*result);
           end += weighted_cluster.weight;
           cluster_weight_state.range_end = end;
           cluster_weight_state.cluster = weighted_cluster.name;
@@ -505,8 +512,12 @@ XdsResolver::XdsConfigSelector::XdsConfigSelector(
                  XdsRouteConfigResource::Route::RouteAction::
                      kClusterSpecifierPluginIndex) {
         // cluster_specifier_plugin case:
-        *error = CreateMethodConfig(route_entry.route, nullptr,
-                                    &route_entry.method_config);
+        auto result = CreateMethodConfig(route_entry.route, nullptr);
+        if (!result.ok()) {
+          *status = result.status();
+          return;
+        }
+        route_entry.method_config = std::move(*result);
         MaybeAddCluster(absl::StrCat(
             "cluster_specifier_plugin:",
             absl::get<XdsRouteConfigResource::Route::RouteAction::
@@ -539,11 +550,11 @@ XdsResolver::XdsConfigSelector::~XdsConfigSelector() {
   resolver_->MaybeRemoveUnusedClusters();
 }
 
-grpc_error_handle XdsResolver::XdsConfigSelector::CreateMethodConfig(
+absl::StatusOr<RefCountedPtr<ServiceConfig>>
+XdsResolver::XdsConfigSelector::CreateMethodConfig(
     const XdsRouteConfigResource::Route& route,
     const XdsRouteConfigResource::Route::RouteAction::ClusterWeight*
-        cluster_weight,
-    RefCountedPtr<ServiceConfig>* method_config) {
+        cluster_weight) {
   std::vector<std::string> fields;
   const auto& route_action =
       absl::get<XdsRouteConfigResource::Route::RouteAction>(route.action);
@@ -592,21 +603,17 @@ grpc_error_handle XdsResolver::XdsConfigSelector::CreateMethodConfig(
                         route_action.max_stream_duration->ToJsonString()));
   }
   // Handle xDS HTTP filters.
-  XdsRouting::GeneratePerHttpFilterConfigsResult result =
-      XdsRouting::GeneratePerHTTPFilterConfigs(
-          resolver_->current_listener_.http_connection_manager.http_filters,
-          resolver_->current_virtual_host_, route, cluster_weight,
-          resolver_->args_);
-  if (!GRPC_ERROR_IS_NONE(result.error)) {
-    return result.error;
-  }
-  for (const auto& p : result.per_filter_configs) {
+  auto result = XdsRouting::GeneratePerHTTPFilterConfigs(
+      resolver_->current_listener_.http_connection_manager.http_filters,
+      resolver_->current_virtual_host_, route, cluster_weight,
+      resolver_->args_);
+  if (!result.ok()) return result.status();
+  for (const auto& p : result->per_filter_configs) {
     fields.emplace_back(absl::StrCat("    \"", p.first, "\": [\n",
                                      absl::StrJoin(p.second, ",\n"),
                                      "\n    ]"));
   }
   // Construct service config.
-  grpc_error_handle error = GRPC_ERROR_NONE;
   if (!fields.empty()) {
     std::string json = absl::StrCat(
         "{\n"
@@ -618,10 +625,17 @@ grpc_error_handle XdsResolver::XdsConfigSelector::CreateMethodConfig(
         absl::StrJoin(fields, ",\n"),
         "\n  } ]\n"
         "}");
-    *method_config =
-        ServiceConfigImpl::Create(result.args, json.c_str(), &error);
+    grpc_error_handle error = GRPC_ERROR_NONE;
+    auto method_config =
+        ServiceConfigImpl::Create(result->args, json.c_str(), &error);
+    if (!GRPC_ERROR_IS_NONE(error)) {
+      absl::Status status = grpc_error_to_absl_status(error);
+      GRPC_ERROR_UNREF(error);
+      return status;
+    }
+    return method_config;
   }
-  return error;
+  return nullptr;
 }
 
 ChannelArgs XdsResolver::XdsConfigSelector::ModifyChannelArgs(
@@ -1049,12 +1063,11 @@ void XdsResolver::GenerateResult() {
   if (current_virtual_host_.routes.empty()) return;
   // First create XdsConfigSelector, which may add new entries to the cluster
   // state map, and then CreateServiceConfig for LB policies.
-  grpc_error_handle error = GRPC_ERROR_NONE;
-  auto config_selector = MakeRefCounted<XdsConfigSelector>(Ref(), &error);
-  if (!GRPC_ERROR_IS_NONE(error)) {
+  absl::Status status;
+  auto config_selector = MakeRefCounted<XdsConfigSelector>(Ref(), &status);
+  if (!status.ok()) {
     OnError("could not create ConfigSelector",
-            absl::UnavailableError(grpc_error_std_string(error)));
-    GRPC_ERROR_UNREF(error);
+            absl::UnavailableError(status.message()));
     return;
   }
   Result result;

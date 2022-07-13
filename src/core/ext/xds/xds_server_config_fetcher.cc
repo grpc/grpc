@@ -1132,15 +1132,13 @@ XdsServerConfigFetcher::ListenerWatcher::FilterChainMatchManager::
       config_selector_route.unsupported_action =
           absl::get_if<XdsRouteConfigResource::Route::NonForwardingAction>(
               &route.action) == nullptr;
-      XdsRouting::GeneratePerHttpFilterConfigsResult result =
+      auto result =
           XdsRouting::GeneratePerHTTPFilterConfigs(http_filters, vhost, route,
                                                    nullptr, ChannelArgs());
-      if (!GRPC_ERROR_IS_NONE(result.error)) {
-        return grpc_error_to_absl_status(result.error);
-      }
+      if (!result.ok()) return result.status();
       std::vector<std::string> fields;
-      fields.reserve(result.per_filter_configs.size());
-      for (const auto& p : result.per_filter_configs) {
+      fields.reserve(result->per_filter_configs.size());
+      for (const auto& p : result->per_filter_configs) {
         fields.emplace_back(absl::StrCat("    \"", p.first, "\": [\n",
                                          absl::StrJoin(p.second, ",\n"),
                                          "\n    ]"));
@@ -1158,7 +1156,7 @@ XdsServerConfigFetcher::ListenerWatcher::FilterChainMatchManager::
             "}");
         grpc_error_handle error = GRPC_ERROR_NONE;
         config_selector_route.method_config =
-            ServiceConfigImpl::Create(result.args, json.c_str(), &error);
+            ServiceConfigImpl::Create(result->args, json.c_str(), &error);
         GPR_ASSERT(GRPC_ERROR_IS_NONE(error));
       }
     }

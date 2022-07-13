@@ -82,15 +82,14 @@ class XdsRouting {
       std::string* concatenated_value);
 
   struct GeneratePerHttpFilterConfigsResult {
-    // Map of field name to list of elements for that field
+    // Map of service config field name to list of elements for that field.
     std::map<std::string, std::vector<std::string>> per_filter_configs;
-    grpc_error_handle error = GRPC_ERROR_NONE;
-    // Guaranteed to be empty if error is not GRPC_ERROR_NONE
     ChannelArgs args;
   };
 
   // Generates a map of per_filter_configs. \a args is consumed.
-  static GeneratePerHttpFilterConfigsResult GeneratePerHTTPFilterConfigs(
+  static absl::StatusOr<GeneratePerHttpFilterConfigsResult>
+  GeneratePerHTTPFilterConfigs(
       const std::vector<XdsListenerResource::HttpConnectionManager::HttpFilter>&
           http_filters,
       const XdsRouteConfigResource::VirtualHost& vhost,
