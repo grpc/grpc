@@ -29,11 +29,21 @@ RpcTypeEmptyCall = xds_url_map_testcase.RpcTypeEmptyCall
 _XdsTestServer = xds_k8s_testcase.XdsTestServer
 _XdsTestClient = xds_k8s_testcase.XdsTestClient
 
+# Testing consts
+_QPS = 100
+_REPLICA_COUNT = 5
 
 class OutlierDetectionTest(xds_k8s_testcase.RegularXdsKubernetesTestCase):
 
+    @staticmethod
+    def is_supported(config: skips.TestConfig) -> bool:
+        if config.client_lang == _Lang.CPP:
+            return not config.version_lt('v1.48.x')
+        if config.client_lang == _Lang.NODE:
+            return not config.version_lt('v1.6.x')
+        return False
+
     def test_outlier_detection(self) -> None:
-        REPLICA_COUNT = 5
 
         with self.subTest('00_create_health_check'):
             self.td.create_health_check()
@@ -59,14 +69,14 @@ class OutlierDetectionTest(xds_k8s_testcase.RegularXdsKubernetesTestCase):
 
         test_servers: List[_XdsTestServer]
         with self.subTest('05_start_test_servers'):
-            test_servers = self.startTestServers(replica_count=REPLICA_COUNT)
+            test_servers = self.startTestServers(replica_count=_REPLICA_COUNT)
 
         with self.subTest('06_add_server_backends_to_backend_services'):
             self.setupServerBackends()
 
         test_client: _XdsTestClient
         with self.subTest('07_start_test_client'):
-            test_client = self.startTestClient(test_servers[0], qps=100)
+            test_client = self.startTestClient(test_servers[0], qps=_QPS)
 
         with self.subTest('08_test_client_xds_config_exists'):
             self.assertXdsConfigExists(test_client)
