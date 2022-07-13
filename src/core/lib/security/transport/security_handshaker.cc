@@ -131,7 +131,6 @@ class SecurityHandshaker : public Handshaker {
   RefCountedPtr<grpc_auth_context> auth_context_;
   tsi_handshaker_result* handshaker_result_ = nullptr;
   size_t max_frame_size_ = 0;
-  std::string tsi_handshake_error_;
 };
 
 SecurityHandshaker::SecurityHandshaker(tsi_handshaker* handshaker,
@@ -393,9 +392,8 @@ grpc_error_handle SecurityHandshaker::OnHandshakeNextDoneLocked(
       connector_type = security_connector->type().name();
     }
     return grpc_set_tsi_error_result(
-        GRPC_ERROR_CREATE_FROM_CPP_STRING(absl::StrCat(
-            connector_type, " handshake failed",
-            (tsi_handshake_error_.empty() ? "" : ": "), tsi_handshake_error_)),
+        GRPC_ERROR_CREATE_FROM_CPP_STRING(
+            absl::StrCat(connector_type, " handshake failed")),
         result);
   }
   // Update handshaker result.
@@ -455,8 +453,7 @@ grpc_error_handle SecurityHandshaker::DoHandshakerNextLocked(
   tsi_handshaker_result* hs_result = nullptr;
   tsi_result result = tsi_handshaker_next(
       handshaker_, bytes_received, bytes_received_size, &bytes_to_send,
-      &bytes_to_send_size, &hs_result, &OnHandshakeNextDoneGrpcWrapper, this,
-      &tsi_handshake_error_);
+      &bytes_to_send_size, &hs_result, &OnHandshakeNextDoneGrpcWrapper, this);
   if (result == TSI_ASYNC) {
     // Handshaker operating asynchronously. Nothing else to do here;
     // callback will be invoked in a TSI thread.
