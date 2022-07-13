@@ -2280,21 +2280,6 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
-    name = "default_event_engine_factory",
-    srcs = [
-        "src/core/lib/event_engine/default_event_engine_factory.cc",
-    ],
-    external_deps = ["absl/memory"],
-    deps = [
-        "default_event_engine_factory_hdrs",
-        "event_engine_base_hdrs",
-        "gpr_base",
-        "iomgr_event_engine",
-        "iomgr_port",
-    ],
-)
-
-grpc_cc_library(
     name = "iomgr_ee_time_averaged_stats",
     srcs = ["src/core/lib/event_engine/iomgr_engine/time_averaged_stats.cc"],
     hdrs = [
@@ -2426,22 +2411,38 @@ grpc_cc_library(
     ],
 )
 
+# NOTE: this target gets replaced inside Google's build system to be one that
+# integrates with other internal systems better. Please do not rename or fold
+# this into other targets.
+grpc_cc_library(
+    name = "default_event_engine_factory",
+    srcs = ["src/core/lib/event_engine/default_event_engine_factory.cc"],
+    hdrs = [
+        "src/core/lib/event_engine/default_event_engine_factory.h",
+    ],
+    external_deps = ["absl/memory"],
+    tags = ["grpc-autodeps"],
+    deps = [
+        "event_engine_base_hdrs",
+        "gpr_platform",
+        "iomgr_event_engine",
+    ],
+)
+
 grpc_cc_library(
     name = "event_engine_base",
     srcs = [
         "src/core/lib/event_engine/event_engine.cc",
     ],
-    external_deps = [
-        "absl/functional:any_invocable",
-        "absl/memory",
+    hdrs = [
+        "src/core/lib/event_engine/event_engine_factory.h",
     ],
+    external_deps = ["absl/functional:any_invocable"],
+    tags = ["grpc-autodeps"],
     deps = [
         "default_event_engine_factory",
-        "default_event_engine_factory_hdrs",
         "event_engine_base_hdrs",
-        "event_engine_trace",
         "gpr_base",
-        "grpc_trace",
     ],
 )
 
