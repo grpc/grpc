@@ -513,10 +513,15 @@ grpc_error_handle DownstreamTlsContextParse(
         envoy_extensions_transport_sockets_tls_v3_DownstreamTlsContext_common_tls_context(
             downstream_tls_context_proto);
     if (common_tls_context != nullptr) {
-      grpc_error_handle error =
-          CommonTlsContext::Parse(context, common_tls_context,
-                                  &downstream_tls_context->common_tls_context);
-      if (!GRPC_ERROR_IS_NONE(error)) errors.push_back(error);
+      auto common_context =
+          CommonTlsContext::Parse(context, common_tls_context);
+      if (!common_context.ok()) {
+        errors.push_back(GRPC_ERROR_CREATE_FROM_CPP_STRING(
+            common_context.status().message()));
+      } else {
+        downstream_tls_context->common_tls_context =
+            std::move(*common_context);
+      }
     }
     auto* require_client_certificate =
         envoy_extensions_transport_sockets_tls_v3_DownstreamTlsContext_require_client_certificate(

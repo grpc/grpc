@@ -132,13 +132,14 @@ grpc_error_handle UpstreamTlsContextParse(
         envoy_extensions_transport_sockets_tls_v3_UpstreamTlsContext_common_tls_context(
             upstream_tls_context);
     if (common_tls_context_proto != nullptr) {
-      grpc_error_handle error = CommonTlsContext::Parse(
-          context, common_tls_context_proto, common_tls_context);
-      if (!GRPC_ERROR_IS_NONE(error)) {
-        return grpc_error_add_child(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-                                        "Error parsing UpstreamTlsContext"),
-                                    error);
+      auto common_context =
+          CommonTlsContext::Parse(context, common_tls_context_proto);
+      if (!common_context.ok()) {
+        return GRPC_ERROR_CREATE_FROM_CPP_STRING(
+            absl::StrCat("Error parsing UpstreamTlsContext: ",
+                         common_context.status().message()));
       }
+      *common_tls_context = std::move(*common_context);
     }
   }
   if (common_tls_context->certificate_validation_context
