@@ -1451,6 +1451,10 @@ target_include_directories(end2end_tests
     ${_gRPC_UPB_INCLUDE_DIR}
     ${_gRPC_XXHASH_INCLUDE_DIR}
     ${_gRPC_ZLIB_INCLUDE_DIR}
+    third_party/googletest/googletest/include
+    third_party/googletest/googletest
+    third_party/googletest/googlemock/include
+    third_party/googletest/googlemock
 )
 target_link_libraries(end2end_tests
   ${_gRPC_ALLTARGETS_LIBRARIES}

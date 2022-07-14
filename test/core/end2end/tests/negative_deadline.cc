@@ -90,7 +90,7 @@ static void end_test(grpc_end2end_test_fixture* f) {
 static void simple_request_body(grpc_end2end_test_config /*config*/,
                                 grpc_end2end_test_fixture f, size_t num_ops) {
   grpc_call* c;
-  cq_verifier* cqv = cq_verifier_create(f.cq);
+  grpc_core::CqVerifier cqv(f.cq);
   grpc_op ops[6];
   grpc_op* op;
   grpc_metadata_array initial_metadata_recv;
@@ -137,8 +137,8 @@ static void simple_request_body(grpc_end2end_test_config /*config*/,
   error = grpc_call_start_batch(c, ops, num_ops, tag(1), nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
-  CQ_EXPECT_COMPLETION(cqv, tag(1), 1);
-  cq_verify(cqv);
+  cqv.Expect(tag(1), true);
+  cqv.Verify();
 
   GPR_ASSERT(status == GRPC_STATUS_DEADLINE_EXCEEDED);
 
@@ -147,8 +147,6 @@ static void simple_request_body(grpc_end2end_test_config /*config*/,
   grpc_metadata_array_destroy(&trailing_metadata_recv);
 
   grpc_call_unref(c);
-
-  cq_verifier_destroy(cqv);
 }
 
 static void test_invoke_simple_request(grpc_end2end_test_config config,

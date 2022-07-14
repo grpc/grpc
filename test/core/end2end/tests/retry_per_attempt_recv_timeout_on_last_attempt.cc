@@ -145,7 +145,7 @@ static void test_retry_per_attempt_recv_timeout_on_last_attempt(
       begin_test(config, "test_retry_per_attempt_recv_timeout_on_last_attempt",
                  &client_args, nullptr);
 
-  cq_verifier* cqv = cq_verifier_create(f.cq);
+  grpc_core::CqVerifier cqv(f.cq);
 
   gpr_timespec deadline = n_seconds_from_now(10);
   c = grpc_channel_create_call(f.client, nullptr, GRPC_PROPAGATE_DEFAULTS, f.cq,
@@ -188,8 +188,8 @@ static void test_retry_per_attempt_recv_timeout_on_last_attempt(
       grpc_server_request_call(f.server, &s0, &call_details,
                                &request_metadata_recv, f.cq, f.cq, tag(101));
   GPR_ASSERT(GRPC_CALL_OK == error);
-  CQ_EXPECT_COMPLETION(cqv, tag(101), true);
-  cq_verify(cqv);
+  cqv.Expect(tag(101), true);
+  cqv.Verify();
 
   // Make sure the "grpc-previous-rpc-attempts" header was not sent in the
   // initial attempt.
@@ -209,8 +209,8 @@ static void test_retry_per_attempt_recv_timeout_on_last_attempt(
       grpc_server_request_call(f.server, &s, &call_details,
                                &request_metadata_recv, f.cq, f.cq, tag(201));
   GPR_ASSERT(GRPC_CALL_OK == error);
-  CQ_EXPECT_COMPLETION(cqv, tag(201), true);
-  cq_verify(cqv);
+  cqv.Expect(tag(201), true);
+  cqv.Verify();
 
   // Now we can unref the first call.
   grpc_call_unref(s0);
@@ -230,8 +230,8 @@ static void test_retry_per_attempt_recv_timeout_on_last_attempt(
   GPR_ASSERT(found_retry_header);
 
   // Client sees call completion.
-  CQ_EXPECT_COMPLETION(cqv, tag(1), true);
-  cq_verify(cqv);
+  cqv.Expect(tag(1), true);
+  cqv.Verify();
 
   GPR_ASSERT(status == GRPC_STATUS_CANCELLED);
   GPR_ASSERT(
@@ -251,8 +251,6 @@ static void test_retry_per_attempt_recv_timeout_on_last_attempt(
 
   grpc_call_unref(c);
   grpc_call_unref(s);
-
-  cq_verifier_destroy(cqv);
 
   end_test(&f);
   config.tear_down_data(&f);

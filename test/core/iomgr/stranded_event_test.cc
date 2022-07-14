@@ -100,10 +100,9 @@ void StartCall(TestCall* test_call) {
   grpc_call_error error = grpc_call_start_batch(
       test_call->call, ops, static_cast<size_t>(op - ops), tag, nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
-  cq_verifier* cqv = cq_verifier_create(test_call->cq);
-  CQ_EXPECT_COMPLETION(cqv, tag, 1);
-  cq_verify(cqv);
-  cq_verifier_destroy(cqv);
+  grpc_core::CqVerifier cqv(test_call->cq);
+  cqv.Expect(tag, true);
+  cqv.Verify();
 }
 
 void SendMessage(grpc_call* call, grpc_completion_queue* cq) {
@@ -122,10 +121,9 @@ void SendMessage(grpc_call* call, grpc_completion_queue* cq) {
   grpc_call_error error = grpc_call_start_batch(
       call, ops, static_cast<size_t>(op - ops), tag, nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
-  cq_verifier* cqv = cq_verifier_create(cq);
-  CQ_EXPECT_COMPLETION(cqv, tag, 1);
-  cq_verify(cqv);
-  cq_verifier_destroy(cqv);
+  grpc_core::CqVerifier cqv(cq);
+  cqv.Expect(tag, true);
+  cqv.Verify();
   grpc_byte_buffer_destroy(request_payload);
 }
 
@@ -143,10 +141,9 @@ void ReceiveMessage(grpc_call* call, grpc_completion_queue* cq) {
   grpc_call_error error = grpc_call_start_batch(
       call, ops, static_cast<size_t>(op - ops), tag, nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
-  cq_verifier* cqv = cq_verifier_create(cq);
-  CQ_EXPECT_COMPLETION(cqv, tag, 1);
-  cq_verify(cqv);
-  cq_verifier_destroy(cqv);
+  grpc_core::CqVerifier cqv(cq);
+  cqv.Expect(tag, true);
+  cqv.Verify();
   grpc_byte_buffer_destroy(request_payload);
 }
 
