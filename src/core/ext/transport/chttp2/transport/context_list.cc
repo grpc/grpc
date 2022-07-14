@@ -24,6 +24,8 @@
 
 #include "src/core/ext/transport/chttp2/transport/internal.h"
 
+using ::grpc_event_engine::experimental::TraceContextList;
+
 namespace {
 void (*write_timestamps_callback_g)(void*, grpc_core::Timestamps*,
                                     grpc_error_handle error) = nullptr;
@@ -31,7 +33,9 @@ void* (*get_copied_context_fn_g)(void*) = nullptr;
 }  // namespace
 
 namespace grpc_core {
-void ContextList::Append(ContextList** head, grpc_chttp2_stream* s) {
+void ContextList::Append(ContextList** head, grpc_chttp2_stream* s,
+                         int64_t traced_bytes_relative_start_pos,
+                         int64_t num_traced_bytes) {
   if (get_copied_context_fn_g == nullptr ||
       write_timestamps_callback_g == nullptr) {
     return;
@@ -39,8 +43,10 @@ void ContextList::Append(ContextList** head, grpc_chttp2_stream* s) {
   /* Create a new element in the list and add it at the front */
   ContextList* elem = new ContextList();
   elem->trace_context_ = get_copied_context_fn_g(s->context);
+  elem->traced_bytes_relative_start_pos_ = traced_bytes_relative_start_pos;
+  elem->num_traced_bytes_ = num_traced_bytes;
   elem->byte_offset_ = s->byte_counter;
-  elem->next_ = *head;
+  elem->next_ = static_cast<TraceContextList*>(*head);
   *head = elem;
 }
 
@@ -55,7 +61,7 @@ void ContextList::Execute(void* arg, Timestamps* ts, grpc_error_handle error) {
       write_timestamps_callback_g(head->trace_context_, ts, error);
     }
     to_be_freed = head;
-    head = head->next_;
+    head = static_cast<ContextList*>(head->next_);
     delete to_be_freed;
   }
 }

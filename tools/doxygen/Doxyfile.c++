@@ -890,6 +890,7 @@ include/grpc/event_engine/memory_request.h \
 include/grpc/event_engine/port.h \
 include/grpc/event_engine/slice.h \
 include/grpc/event_engine/slice_buffer.h \
+include/grpc/event_engine/trace_context_list.h \
 include/grpc/fork.h \
 include/grpc/grpc.h \
 include/grpc/grpc_posix.h \
