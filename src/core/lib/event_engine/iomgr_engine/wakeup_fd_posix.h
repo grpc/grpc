@@ -44,8 +44,6 @@
 
 #include <grpc/support/port_platform.h>
 
-#include <memory>
-
 #include "absl/status/status.h"
 
 namespace grpc_event_engine {

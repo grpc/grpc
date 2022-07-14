@@ -13,13 +13,10 @@
 // limitations under the License.
 
 #include <grpc/support/port_platform.h>
-
-#include <functional>
 #include <memory>
 
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
-
 #include "src/core/lib/event_engine/iomgr_engine/wakeup_fd_eventfd.h"
 #include "src/core/lib/event_engine/iomgr_engine/wakeup_fd_pipe.h"
 #include "src/core/lib/event_engine/iomgr_engine/wakeup_fd_posix.h"
@@ -30,9 +27,13 @@ namespace iomgr_engine {
 
 #ifdef GRPC_POSIX_WAKEUP_FD
 
+absl::StatusOr<std::unique_ptr<WakeupFd>> NotSupported() {
+  return absl::NotFoundError("Wakeup-fd is not supported on this system");
+}
+
 namespace {
-std::function<absl::StatusOr<std::unique_ptr<WakeupFd>>()> g_wakeup_fd_fn =
-    []() -> std::function<absl::StatusOr<std::unique_ptr<WakeupFd>>()> {
+absl::StatusOr<std::unique_ptr<WakeupFd>> (*g_wakeup_fd_fn)() =
+    []() -> absl::StatusOr<std::unique_ptr<WakeupFd>> (*)() {
 #ifndef GRPC_POSIX_NO_SPECIAL_WAKEUP_FD
   if (EventFdWakeupFd::IsSupported()) {
     return &EventFdWakeupFd::CreateEventFdWakeupFd;
@@ -41,16 +42,14 @@ std::function<absl::StatusOr<std::unique_ptr<WakeupFd>>()> g_wakeup_fd_fn =
   if (PipeWakeupFd::IsSupported()) {
     return &PipeWakeupFd::CreatePipeWakeupFd;
   }
-  return nullptr;
+  return NotSupported;
 }();
 }  // namespace
 
-bool SupportsWakeupFd() { return g_wakeup_fd_fn != nullptr; }
+bool SupportsWakeupFd() { return g_wakeup_fd_fn != NotSupported; }
 
 absl::StatusOr<std::unique_ptr<WakeupFd>> CreateWakeupFd() {
-  return g_wakeup_fd_fn != nullptr
-             ? g_wakeup_fd_fn()
-             : absl::NotFoundError("Wakeup-fd is not supported on this system");
+  return g_wakeup_fd_fn();
 }
 
 #else /* GRPC_POSIX_WAKEUP_FD */

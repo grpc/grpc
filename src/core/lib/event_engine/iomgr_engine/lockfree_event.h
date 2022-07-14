@@ -18,12 +18,10 @@
 /* Lock free event notification for file descriptors */
 
 #include <grpc/support/port_platform.h>
+#include <atomic>
+#include <cstdint>
 
 #include "absl/status/status.h"
-
-#include <grpc/event_engine/event_engine.h>
-#include <grpc/support/atm.h>
-
 #include "src/core/lib/event_engine/iomgr_engine/iomgr_engine_closure.h"
 
 namespace grpc_event_engine {
