@@ -120,7 +120,6 @@ static void request_for_disabled_algorithm(
   grpc_call_error error;
   grpc_slice details;
   int was_cancelled = 2;
-  cq_verifier* cqv;
   char str[1024];
 
   memset(str, 'x', 1023);
@@ -150,7 +149,7 @@ static void request_for_disabled_algorithm(
 
   f = begin_test(config, test_name, client_args, server_args,
                  decompress_in_core);
-  cqv = cq_verifier_create(f.cq);
+  grpc_core::CqVerifier cqv(f.cq);
 
   gpr_timespec deadline = five_seconds_from_now();
   c = grpc_channel_create_call(f.client, nullptr, GRPC_PROPAGATE_DEFAULTS, f.cq,
@@ -205,9 +204,9 @@ static void request_for_disabled_algorithm(
                                 nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
-  CQ_EXPECT_COMPLETION(cqv, tag(101), true);
-  CQ_EXPECT_COMPLETION(cqv, tag(1), true);
-  cq_verify(cqv);
+  cqv.Expect(tag(101), true);
+  cqv.Expect(tag(1), true);
+  cqv.Verify();
 
   op = ops;
   op->op = GRPC_OP_SEND_INITIAL_METADATA;
@@ -224,7 +223,7 @@ static void request_for_disabled_algorithm(
                                 nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
-  CQ_EXPECT_COMPLETION(cqv, tag(102), false);
+  cqv.Expect(tag(102), false);
 
   op = ops;
   op->op = GRPC_OP_RECV_CLOSE_ON_SERVER;
@@ -236,8 +235,8 @@ static void request_for_disabled_algorithm(
                                 nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
-  CQ_EXPECT_COMPLETION(cqv, tag(103), true);
-  cq_verify(cqv);
+  cqv.Expect(tag(103), true);
+  cqv.Verify();
 
   /* call was cancelled (closed) ... */
   GPR_ASSERT(was_cancelled != 0);
@@ -260,8 +259,6 @@ static void request_for_disabled_algorithm(
 
   grpc_call_unref(c);
   grpc_call_unref(s);
-
-  cq_verifier_destroy(cqv);
 
   grpc_slice_unref(request_payload_slice);
   grpc_byte_buffer_destroy(request_payload);
@@ -302,7 +299,6 @@ static void request_with_payload_template_inner(
   grpc_call_error error;
   grpc_slice details;
   int was_cancelled = 2;
-  cq_verifier* cqv;
   char request_str[1024];
   char response_str[1024];
 
@@ -335,7 +331,7 @@ static void request_with_payload_template_inner(
   }
   f = begin_test(config, test_name, client_args, server_args,
                  decompress_in_core);
-  cqv = cq_verifier_create(f.cq);
+  grpc_core::CqVerifier cqv(f.cq);
 
   gpr_timespec deadline = five_seconds_from_now();
   c = grpc_channel_create_call(f.client, nullptr, GRPC_PROPAGATE_DEFAULTS, f.cq,
@@ -360,7 +356,7 @@ static void request_with_payload_template_inner(
     error = grpc_call_start_batch(c, ops, static_cast<size_t>(op - ops), tag(2),
                                   nullptr);
     GPR_ASSERT(GRPC_CALL_OK == error);
-    CQ_EXPECT_COMPLETION(cqv, tag(2), true);
+    cqv.Expect(tag(2), true);
   }
   memset(ops, 0, sizeof(ops));
   op = ops;
@@ -394,8 +390,8 @@ static void request_with_payload_template_inner(
       grpc_server_request_call(f.server, &s, &call_details,
                                &request_metadata_recv, f.cq, f.cq, tag(100));
   GPR_ASSERT(GRPC_CALL_OK == error);
-  CQ_EXPECT_COMPLETION(cqv, tag(100), true);
-  cq_verify(cqv);
+  cqv.Expect(tag(100), true);
+  cqv.Verify();
 
   GPR_ASSERT(grpc_core::BitCount(
                  grpc_call_test_only_get_encodings_accepted_by_peer(s)) ==
@@ -444,7 +440,7 @@ static void request_with_payload_template_inner(
       error = grpc_call_start_batch(c, ops, static_cast<size_t>(op - ops),
                                     tag(2), nullptr);
       GPR_ASSERT(GRPC_CALL_OK == error);
-      CQ_EXPECT_COMPLETION(cqv, tag(2), 1);
+      cqv.Expect(tag(2), true);
     }
 
     memset(ops, 0, sizeof(ops));
@@ -458,8 +454,8 @@ static void request_with_payload_template_inner(
                                   tag(102), nullptr);
     GPR_ASSERT(GRPC_CALL_OK == error);
 
-    CQ_EXPECT_COMPLETION(cqv, tag(102), 1);
-    cq_verify(cqv);
+    cqv.Expect(tag(102), true);
+    cqv.Verify();
 
     GPR_ASSERT(request_payload_recv->type == GRPC_BB_RAW);
     GPR_ASSERT(byte_buffer_eq_string(request_payload_recv, request_str));
@@ -489,9 +485,9 @@ static void request_with_payload_template_inner(
                                   nullptr);
     GPR_ASSERT(GRPC_CALL_OK == error);
 
-    CQ_EXPECT_COMPLETION(cqv, tag(103), 1);
-    CQ_EXPECT_COMPLETION(cqv, tag(3), 1);
-    cq_verify(cqv);
+    cqv.Expect(tag(103), true);
+    cqv.Expect(tag(3), true);
+    cqv.Verify();
 
     GPR_ASSERT(response_payload_recv->type == GRPC_BB_RAW);
     GPR_ASSERT(byte_buffer_eq_string(response_payload_recv, response_str));
@@ -539,11 +535,11 @@ static void request_with_payload_template_inner(
                                 nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
-  CQ_EXPECT_COMPLETION(cqv, tag(1), 1);
-  CQ_EXPECT_COMPLETION(cqv, tag(4), 1);
-  CQ_EXPECT_COMPLETION(cqv, tag(101), 1);
-  CQ_EXPECT_COMPLETION(cqv, tag(104), 1);
-  cq_verify(cqv);
+  cqv.Expect(tag(1), true);
+  cqv.Expect(tag(4), true);
+  cqv.Expect(tag(101), true);
+  cqv.Expect(tag(104), true);
+  cqv.Verify();
 
   GPR_ASSERT(status == GRPC_STATUS_OK);
   GPR_ASSERT(0 == grpc_slice_str_cmp(details, "xyz"));
@@ -559,7 +555,6 @@ static void request_with_payload_template_inner(
   grpc_call_unref(c);
   grpc_call_unref(s);
 
-  cq_verifier_destroy(cqv);
   grpc_channel_args_destroy(client_args);
   grpc_channel_args_destroy(server_args);
   end_test(&f);

@@ -38,7 +38,6 @@ static void run_test(bool wait_for_ready, bool use_service_config) {
   grpc_channel* chan;
   grpc_call* call;
   grpc_completion_queue* cq;
-  cq_verifier* cqv;
   grpc_op ops[6];
   grpc_op* op;
   grpc_metadata_array trailing_metadata_recv;
@@ -53,7 +52,7 @@ static void run_test(bool wait_for_ready, bool use_service_config) {
   grpc_metadata_array_init(&trailing_metadata_recv);
 
   cq = grpc_completion_queue_create_for_next(nullptr);
-  cqv = cq_verifier_create(cq);
+  grpc_core::CqVerifier cqv(cq);
 
   /* if using service config, create channel args */
   grpc_channel_args* args = nullptr;
@@ -108,8 +107,8 @@ static void run_test(bool wait_for_ready, bool use_service_config) {
                                                    (size_t)(op - ops), tag(1),
                                                    nullptr));
   /* verify that all tags get completed */
-  CQ_EXPECT_COMPLETION(cqv, tag(1), 1);
-  cq_verify(cqv);
+  cqv.Expect(tag(1), true);
+  cqv.Verify();
 
   if (wait_for_ready) {
     GPR_ASSERT(status == GRPC_STATUS_DEADLINE_EXCEEDED);
@@ -125,7 +124,6 @@ static void run_test(bool wait_for_ready, bool use_service_config) {
   grpc_completion_queue_destroy(cq);
   grpc_call_unref(call);
   grpc_channel_destroy(chan);
-  cq_verifier_destroy(cqv);
 
   grpc_slice_unref(details);
   grpc_metadata_array_destroy(&trailing_metadata_recv);

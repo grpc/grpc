@@ -23,6 +23,7 @@ grpc_cc_library(
     name = "cq_verifier",
     srcs = ["cq_verifier.cc"],
     hdrs = ["cq_verifier.h"],
+    external_deps = ["gtest"],
     language = "C++",
     visibility = ["//test:__subpackages__"],
     deps = [
