@@ -21,8 +21,8 @@
 #include <gtest/gtest.h>
 
 #include "src/core/lib/event_engine/event_engine_factory.h"
-#include "src/core/lib/event_engine/iomgr_engine/iomgr_engine_closure.h"
 #include "src/core/lib/event_engine/iomgr_engine/event_poller.h"
+#include "src/core/lib/event_engine/iomgr_engine/iomgr_engine_closure.h"
 #include "src/core/lib/event_engine/iomgr_engine/lockfree_event.h"
 #include "src/core/lib/gprpp/sync.h"
 
