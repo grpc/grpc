@@ -262,7 +262,7 @@ def grpc_cc_library(name,
     global num_cc_libraries
     global num_opted_out_cc_libraries
     global parsing_path
-    assert(parsing_path is not None)
+    assert (parsing_path is not None)
     name = '//%s:%s' % (parsing_path, name)
     num_cc_libraries += 1
     if select_deps or 'nofixdeps' in tags or 'grpc-autodeps' not in tags:
@@ -284,7 +284,8 @@ def grpc_cc_library(name,
     original_deps[name] = frozenset(deps)
     original_external_deps[name] = frozenset(external_deps)
     for src in hdrs + public_hdrs + srcs:
-        for line in open('%s%s' % ((parsing_path + '/' if parsing_path else ''), src)):
+        for line in open('%s%s' %
+                         ((parsing_path + '/' if parsing_path else ''), src)):
             m = re.search(r'#include <(.*)>', line)
             if m:
                 inc.add(m.group(1))
@@ -393,11 +394,13 @@ if args.whats_left:
 
 
 def make_relative_path(dep, lib):
-    if lib is None: return dep
-    lib_path = lib[:lib.rfind(':')+1]
+    if lib is None:
+        return dep
+    lib_path = lib[:lib.rfind(':') + 1]
     if dep.startswith(lib_path):
         return dep[len(lib_path):]
     return dep
+
 
 if args.whats_left:
     print("{}/{} libraries are opted in".format(
@@ -416,7 +419,9 @@ class Choices:
     def add_one_of(self, choices):
         if not choices:
             return
-        self.to_add.append(tuple(make_relative_path(choice, self.library) for choice in choices))
+        self.to_add.append(
+            tuple(
+                make_relative_path(choice, self.library) for choice in choices))
 
     def add(self, choice):
         self.add_one_of([choice])
