@@ -284,7 +284,7 @@ def grpc_cc_library(name,
     original_deps[name] = frozenset(deps)
     original_external_deps[name] = frozenset(external_deps)
     for src in hdrs + public_hdrs + srcs:
-        for line in open(src):
+        for line in open('%s%s' % ((parsing_path + '/' if parsing_path else ''), src)):
             m = re.search(r'#include <(.*)>', line)
             if m:
                 inc.add(m.group(1))
@@ -364,10 +364,10 @@ parser.add_argument('--whats_left',
                     help='show what is left to opt in')
 args = parser.parse_args()
 
-for dirname in [""]:
+for dirname in ["", "test/core/uri"]:
     parsing_path = dirname
     exec(
-        open('BUILD', 'r').read(), {
+        open('%sBUILD' % (dirname + '/' if dirname else ''), 'r').read(), {
             'load': lambda filename, *args: None,
             'licenses': lambda licenses: None,
             'package': lambda **kwargs: None,
@@ -376,10 +376,13 @@ for dirname in [""]:
             'selects': FakeSelects(),
             'python_config_settings': lambda **kwargs: None,
             'grpc_cc_library': grpc_cc_library,
+            'grpc_cc_test': grpc_cc_library,
+            'grpc_fuzzer': grpc_cc_library,
             'select': lambda d: d["//conditions:default"],
             'grpc_upb_proto_library': lambda name, **kwargs: None,
             'grpc_upb_proto_reflection_library': lambda name, **kwargs: None,
             'grpc_generate_one_off_targets': lambda: None,
+            'grpc_package': lambda **kwargs: None,
             'filegroup': lambda name, **kwargs: None,
         }, {})
     parsing_path = None

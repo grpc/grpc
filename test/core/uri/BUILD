@@ -24,11 +24,14 @@ grpc_fuzzer(
     srcs = ["uri_fuzzer_test.cc"],
     corpus = "uri_corpus",
     language = "C++",
-    tags = ["no_windows"],
+    tags = [
+        "grpc-autodeps",
+        "no_windows",
+    ],
     deps = [
-        "//:gpr",
-        "//:grpc",
-        "//test/core/util:grpc_test_util",
+        "//:gpr_base",
+        "//:grpc_base",
+        "//:uri_parser",
     ],
 )
 
