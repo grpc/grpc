@@ -80,7 +80,7 @@ class DebugLocation {
 };
 #endif
 
-#define DEBUG_LOCATION ::grpc_core::DebugLocation()
+#define DEBUG_LOCATION ::grpc_core::DebugLocation(__FILE__, __LINE__)
 
 }  // namespace grpc_core
 
