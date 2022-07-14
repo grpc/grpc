@@ -1894,7 +1894,6 @@ libs:
   - src/core/ext/filters/http/message_compress/message_decompress_filter.h
   - src/core/ext/filters/http/server/http_server_filter.h
   - src/core/ext/filters/message_size/message_size_filter.h
-  - src/core/ext/transport/chttp2/alpn/alpn.h
   - src/core/ext/transport/chttp2/client/chttp2_connector.h
   - src/core/ext/transport/chttp2/server/chttp2_server.h
   - src/core/ext/transport/chttp2/transport/bin_decoder.h
@@ -2225,7 +2224,6 @@ libs:
   - src/core/ext/filters/http/message_compress/message_decompress_filter.cc
   - src/core/ext/filters/http/server/http_server_filter.cc
   - src/core/ext/filters/message_size/message_size_filter.cc
-  - src/core/ext/transport/chttp2/alpn/alpn.cc
   - src/core/ext/transport/chttp2/client/chttp2_connector.cc
   - src/core/ext/transport/chttp2/server/chttp2_server.cc
   - src/core/ext/transport/chttp2/transport/bin_decoder.cc
@@ -6532,7 +6530,6 @@ targets:
   - src/cpp/server/load_reporter/get_cpu_stats_windows.cc
   - test/cpp/server/load_reporter/get_cpu_stats_test.cc
   deps:
-  - grpc++
   - grpc_test_util
 - name: lb_load_data_store_test
   gtest: true
