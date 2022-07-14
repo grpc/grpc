@@ -47,7 +47,6 @@
 #include <memory>
 
 #include "absl/status/status.h"
-#include "absl/status/statusor.h"
 
 namespace grpc_event_engine {
 namespace iomgr_engine {
@@ -72,15 +71,6 @@ class WakeupFd {
   int read_fd_;
   int write_fd_;
 };
-
-// Returns true if wakeup-fd is supported by the system.
-bool SupportsWakeupFd();
-
-// Create and return an initialized WakeupFd instance if supported.
-absl::StatusOr<std::unique_ptr<WakeupFd>> CreateWakeupFd();
-
-void SetDefaultWakeupFdFactoryIfUnset(
-    std::function<absl::StatusOr<std::unique_ptr<WakeupFd>>()> factory);
 
 }  // namespace iomgr_engine
 }  // namespace grpc_event_engine

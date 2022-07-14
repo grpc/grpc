@@ -49,8 +49,8 @@
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/support/alloc.h>
 
-#include "src/core/lib/event_engine/iomgr_engine/closure.h"
 #include "src/core/lib/event_engine/iomgr_engine/event_poller.h"
+#include "src/core/lib/event_engine/iomgr_engine/iomgr_engine_closure.h"
 #include "src/core/lib/event_engine/iomgr_engine/lockfree_event.h"
 #include "src/core/lib/event_engine/iomgr_engine/wakeup_fd_posix.h"
 #include "src/core/lib/event_engine/iomgr_engine/wakeup_fd_posix_default.h"
@@ -268,7 +268,6 @@ void ResetEventManagerOnFork() {
 // It is possible that GLIBC has epoll but the underlying kernel doesn't.
 // Create epoll_fd to make sure epoll support is available
 void InitEpoll1PollerLinux() {
-  ConfigureDefaultWakeupFdFactories();
   if (!grpc_event_engine::iomgr_engine::SupportsWakeupFd()) {
     kEpoll1PollerSupported = false;
     return;

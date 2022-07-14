@@ -45,7 +45,7 @@ static void simple_request_body(grpc_end2end_test_config /*config*/,
                                 grpc_end2end_test_fixture* f) {
   grpc_call* c;
   grpc_call* s;
-  cq_verifier* cqv = cq_verifier_create(f->cq);
+  grpc_core::CqVerifier cqv(f->cq);
   grpc_op ops[6];
   grpc_op* op;
   grpc_metadata_array initial_metadata_recv;
@@ -105,8 +105,8 @@ static void simple_request_body(grpc_end2end_test_config /*config*/,
       grpc_server_request_call(f->server, &s, &call_details,
                                &request_metadata_recv, f->cq, f->cq, tag(101));
   GPR_ASSERT(GRPC_CALL_OK == error);
-  CQ_EXPECT_COMPLETION(cqv, tag(101), 1);
-  cq_verify(cqv);
+  cqv.Expect(tag(101), true);
+  cqv.Verify();
 
   peer = grpc_call_get_peer(s);
   GPR_ASSERT(peer != nullptr);
@@ -141,9 +141,9 @@ static void simple_request_body(grpc_end2end_test_config /*config*/,
                                 nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
-  CQ_EXPECT_COMPLETION(cqv, tag(102), 1);
-  CQ_EXPECT_COMPLETION(cqv, tag(1), 1);
-  cq_verify(cqv);
+  cqv.Expect(tag(102), true);
+  cqv.Expect(tag(1), true);
+  cqv.Verify();
 
   GPR_ASSERT(status == GRPC_STATUS_UNIMPLEMENTED);
   GPR_ASSERT(0 == grpc_slice_str_cmp(details, "xyz"));
@@ -159,14 +159,12 @@ static void simple_request_body(grpc_end2end_test_config /*config*/,
 
   grpc_call_unref(c);
   grpc_call_unref(s);
-
-  cq_verifier_destroy(cqv);
 }
 
 static void test_max_connection_idle(grpc_end2end_test_config config) {
   grpc_end2end_test_fixture f = config.create_fixture(nullptr, nullptr);
   grpc_connectivity_state state = GRPC_CHANNEL_IDLE;
-  cq_verifier* cqv = cq_verifier_create(f.cq);
+  grpc_core::CqVerifier cqv(f.cq);
 
   grpc_arg client_a[1];
   client_a[0].type = GRPC_ARG_INTEGER;
@@ -194,8 +192,8 @@ static void test_max_connection_idle(grpc_end2end_test_config config) {
   while (state != GRPC_CHANNEL_READY) {
     grpc_channel_watch_connectivity_state(
         f.client, state, grpc_timeout_seconds_to_deadline(3), f.cq, tag(99));
-    CQ_EXPECT_COMPLETION(cqv, tag(99), 1);
-    cq_verify(cqv);
+    cqv.Expect(tag(99), true);
+    cqv.Verify();
     state = grpc_channel_check_connectivity_state(f.client, 0);
     GPR_ASSERT(state == GRPC_CHANNEL_READY ||
                state == GRPC_CHANNEL_CONNECTING ||
@@ -210,15 +208,15 @@ static void test_max_connection_idle(grpc_end2end_test_config config) {
       f.client, GRPC_CHANNEL_READY,
       grpc_timeout_milliseconds_to_deadline(MAX_CONNECTION_IDLE_MS + 3000),
       f.cq, tag(99));
-  CQ_EXPECT_COMPLETION(cqv, tag(99), 1);
-  cq_verify(cqv);
+  cqv.Expect(tag(99), true);
+  cqv.Verify();
   state = grpc_channel_check_connectivity_state(f.client, 0);
   GPR_ASSERT(state == GRPC_CHANNEL_TRANSIENT_FAILURE ||
              state == GRPC_CHANNEL_CONNECTING || state == GRPC_CHANNEL_IDLE);
 
   grpc_server_shutdown_and_notify(f.server, f.cq, tag(0xdead));
-  CQ_EXPECT_COMPLETION(cqv, tag(0xdead), 1);
-  cq_verify(cqv);
+  cqv.Expect(tag(0xdead), true);
+  cqv.Verify();
 
   grpc_server_destroy(f.server);
   grpc_channel_destroy(f.client);
@@ -226,8 +224,6 @@ static void test_max_connection_idle(grpc_end2end_test_config config) {
   drain_cq(f.cq);
   grpc_completion_queue_destroy(f.cq);
   config.tear_down_data(&f);
-
-  cq_verifier_destroy(cqv);
 }
 
 void max_connection_idle(grpc_end2end_test_config config) {

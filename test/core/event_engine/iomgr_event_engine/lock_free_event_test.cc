@@ -21,7 +21,7 @@
 #include <gtest/gtest.h>
 
 #include "src/core/lib/event_engine/event_engine_factory.h"
-#include "src/core/lib/event_engine/iomgr_engine/closure.h"
+#include "src/core/lib/event_engine/iomgr_engine/iomgr_engine_closure.h"
 #include "src/core/lib/event_engine/iomgr_engine/event_poller.h"
 #include "src/core/lib/event_engine/iomgr_engine/lockfree_event.h"
 #include "src/core/lib/gprpp/sync.h"
@@ -56,30 +56,33 @@ TEST(LockFreeEventTest, BasicTest) {
   event.InitEvent();
   grpc_core::MutexLock lock(&mu);
   // Set NotifyOn first and then SetReady
-  event.NotifyOn(IomgrEngineClosure::ToClosure([&mu, &cv](absl::Status status) {
-    grpc_core::MutexLock lock(&mu);
-    EXPECT_TRUE(status.ok());
-    cv.Signal();
-  }));
+  event.NotifyOn(
+      IomgrEngineClosure::TestOnlyToClosure([&mu, &cv](absl::Status status) {
+        grpc_core::MutexLock lock(&mu);
+        EXPECT_TRUE(status.ok());
+        cv.Signal();
+      }));
   event.SetReady();
   EXPECT_FALSE(cv.WaitWithTimeout(&mu, absl::Seconds(10)));
 
   // SetReady first first and then call NotifyOn
   event.SetReady();
-  event.NotifyOn(IomgrEngineClosure::ToClosure([&mu, &cv](absl::Status status) {
-    grpc_core::MutexLock lock(&mu);
-    EXPECT_TRUE(status.ok());
-    cv.Signal();
-  }));
+  event.NotifyOn(
+      IomgrEngineClosure::TestOnlyToClosure([&mu, &cv](absl::Status status) {
+        grpc_core::MutexLock lock(&mu);
+        EXPECT_TRUE(status.ok());
+        cv.Signal();
+      }));
   EXPECT_FALSE(cv.WaitWithTimeout(&mu, absl::Seconds(10)));
 
   // Set NotifyOn and then call SetShutdown
-  event.NotifyOn(IomgrEngineClosure::ToClosure([&mu, &cv](absl::Status status) {
-    grpc_core::MutexLock lock(&mu);
-    EXPECT_FALSE(status.ok());
-    EXPECT_EQ(status, absl::CancelledError("Shutdown"));
-    cv.Signal();
-  }));
+  event.NotifyOn(
+      IomgrEngineClosure::TestOnlyToClosure([&mu, &cv](absl::Status status) {
+        grpc_core::MutexLock lock(&mu);
+        EXPECT_FALSE(status.ok());
+        EXPECT_EQ(status, absl::CancelledError("Shutdown"));
+        cv.Signal();
+      }));
   event.SetShutdown(absl::CancelledError("Shutdown"));
   EXPECT_FALSE(cv.WaitWithTimeout(&mu, absl::Seconds(10)));
   event.DestroyEvent();
@@ -107,7 +110,7 @@ TEST(LockFreeEventTest, MultiThreadedTest) {
         }
         active++;
         if (thread_id == 0) {
-          event.NotifyOn(IomgrEngineClosure::ToClosure(
+          event.NotifyOn(IomgrEngineClosure::TestOnlyToClosure(
               [&mu, &cv, &signalled](absl::Status status) {
                 grpc_core::MutexLock lock(&mu);
                 EXPECT_TRUE(status.ok());

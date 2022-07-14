@@ -42,10 +42,11 @@
 #include <grpc/support/sync.h>
 #include <grpc/support/time.h>
 
-#include "src/core/lib/event_engine/iomgr_engine/closure.h"
 #include "src/core/lib/event_engine/iomgr_engine/ev_epoll1_linux.h"
 #include "src/core/lib/event_engine/iomgr_engine/ev_poll_posix.h"
+#include "src/core/lib/event_engine/iomgr_engine/event_poller.h"
 #include "src/core/lib/event_engine/iomgr_engine/iomgr_engine.h"
+#include "src/core/lib/event_engine/iomgr_engine/iomgr_engine_closure.h"
 #include "src/core/lib/iomgr/socket_utils_posix.h"
 #include "test/core/util/port.h"
 
@@ -176,7 +177,7 @@ void SessionReadCb(session* se, absl::Status status) {
     // in the polling thread, such that polling only happens after this
     // callback, and will catch read edge event if data is available again
     // before notify_on_read.
-    se->session_read_closure = IomgrEngineClosure::ToClosure(
+    se->session_read_closure = IomgrEngineClosure::TestOnlyToClosure(
         [se](absl::Status status) { SessionReadCb(se, status); });
     se->em_fd->NotifyOnRead(se->session_read_closure);
   }
@@ -211,7 +212,7 @@ void ListenCb(server* sv, absl::Status status) {
                 reinterpret_cast<struct sockaddr*>(&ss), &slen);
   } while (fd < 0 && errno == EINTR);
   if (fd < 0 && errno == EAGAIN) {
-    sv->listen_closure = IomgrEngineClosure::ToClosure(
+    sv->listen_closure = IomgrEngineClosure::TestOnlyToClosure(
         [sv](absl::Status status) { ListenCb(sv, status); });
     listen_em_fd->NotifyOnRead(sv->listen_closure);
     return;
@@ -223,10 +224,10 @@ void ListenCb(server* sv, absl::Status status) {
   se = static_cast<session*>(gpr_malloc(sizeof(*se)));
   se->sv = sv;
   se->em_fd = g_event_poller->CreateHandle(fd, "listener", false);
-  se->session_read_closure = IomgrEngineClosure::ToClosure(
+  se->session_read_closure = IomgrEngineClosure::TestOnlyToClosure(
       [se](absl::Status status) { SessionReadCb(se, status); });
   se->em_fd->NotifyOnRead(se->session_read_closure);
-  sv->listen_closure = IomgrEngineClosure::ToClosure(
+  sv->listen_closure = IomgrEngineClosure::TestOnlyToClosure(
       [sv](absl::Status status) { ListenCb(sv, status); });
   listen_em_fd->NotifyOnRead(sv->listen_closure);
 }
@@ -249,7 +250,7 @@ int ServerStart(server* sv) {
   EXPECT_EQ(listen(fd, MAX_NUM_FD), 0);
 
   sv->em_fd = g_event_poller->CreateHandle(fd, "server", false);
-  sv->listen_closure = IomgrEngineClosure::ToClosure(
+  sv->listen_closure = IomgrEngineClosure::TestOnlyToClosure(
       [sv](absl::Status status) { ListenCb(sv, status); });
   sv->em_fd->NotifyOnRead(sv->listen_closure);
   return port;
@@ -303,7 +304,7 @@ void ClientSessionWrite(client* cl, absl::Status status) {
   EXPECT_EQ(errno, EAGAIN);
   gpr_mu_lock(&g_mu);
   if (cl->client_write_cnt < CLIENT_TOTAL_WRITE_CNT) {
-    cl->write_closure = IomgrEngineClosure::ToClosure(
+    cl->write_closure = IomgrEngineClosure::TestOnlyToClosure(
         [cl](absl::Status status) { ClientSessionWrite(cl, status); });
     cl->client_write_cnt++;
     gpr_mu_unlock(&g_mu);
@@ -407,9 +408,9 @@ TEST(EventPollerTest, TestEventPollerHandleChange) {
   int sv[2];
   char data;
   ssize_t result;
-  IomgrEngineClosure* first_closure = IomgrEngineClosure::ToClosure(
+  IomgrEngineClosure* first_closure = IomgrEngineClosure::TestOnlyToClosure(
       [a = &a](absl::Status status) { FirstReadCallback(a, status); });
-  IomgrEngineClosure* second_closure = IomgrEngineClosure::ToClosure(
+  IomgrEngineClosure* second_closure = IomgrEngineClosure::TestOnlyToClosure(
       [b = &b](absl::Status status) { SecondReadCallback(b, status); });
   InitChangeData(&a);
   InitChangeData(&b);

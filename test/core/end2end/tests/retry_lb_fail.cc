@@ -206,7 +206,7 @@ static void test_retry_lb_fail(grpc_end2end_test_config config) {
   grpc_end2end_test_fixture f =
       begin_test(config, "retry_lb_fail", &client_args, nullptr);
 
-  cq_verifier* cqv = cq_verifier_create(f.cq);
+  grpc_core::CqVerifier cqv(f.cq);
 
   gpr_timespec deadline = five_seconds_from_now();
   c = grpc_channel_create_call(f.client, nullptr, GRPC_PROPAGATE_DEFAULTS, f.cq,
@@ -226,8 +226,8 @@ static void test_retry_lb_fail(grpc_end2end_test_config config) {
                                 nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
-  CQ_EXPECT_COMPLETION(cqv, tag(1), false);
-  cq_verify(cqv);
+  cqv.Expect(tag(1), false);
+  cqv.Verify();
 
   memset(ops, 0, sizeof(ops));
   op = ops;
@@ -240,8 +240,8 @@ static void test_retry_lb_fail(grpc_end2end_test_config config) {
                                 nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
-  CQ_EXPECT_COMPLETION(cqv, tag(2), true);
-  cq_verify(cqv);
+  cqv.Expect(tag(2), true);
+  cqv.Verify();
 
   GPR_ASSERT(status == GRPC_STATUS_ABORTED);
   GPR_ASSERT(0 == grpc_slice_str_cmp(details, "LB pick failed"));
@@ -253,8 +253,6 @@ static void test_retry_lb_fail(grpc_end2end_test_config config) {
   grpc_byte_buffer_destroy(response_payload_recv);
 
   grpc_call_unref(c);
-
-  cq_verifier_destroy(cqv);
 
   int num_picks = grpc_core::g_num_lb_picks.load(std::memory_order_relaxed);
   gpr_log(GPR_INFO, "NUM LB PICKS: %d", num_picks);

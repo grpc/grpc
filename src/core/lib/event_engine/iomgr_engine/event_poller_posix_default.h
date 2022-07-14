@@ -1,4 +1,4 @@
-// Copyright 2021 The gRPC Authors
+// Copyright 2022 The gRPC Authors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,26 +12,22 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef GRPC_CORE_LIB_EVENT_ENGINE_EVENT_ENGINE_FACTORY_H
-#define GRPC_CORE_LIB_EVENT_ENGINE_EVENT_ENGINE_FACTORY_H
+#ifndef GRPC_CORE_LIB_EVENT_ENGINE_IOMGR_ENGINE_EVENT_POLLER_POSIX_DEFAULT_H
+#define GRPC_CORE_LIB_EVENT_ENGINE_IOMGR_ENGINE_EVENT_POLLER_POSIX_DEFAULT_H
 
 #include <grpc/support/port_platform.h>
 
-#include <grpc/event_engine/event_engine.h>
-
 namespace grpc_event_engine {
-namespace experimental {
+namespace iomgr_engine {
 
-/// Access the shared global EventEngine instance.
-///
-/// The concept of a global EventEngine may go away in a post-iomgr world.
-/// Strongly consider whether you could use \a CreateEventEngine instead.
-EventEngine* GetDefaultEventEngine();
+class EventPoller;
+class Scheduler;
 
-/// Reset the default event engine
-void ResetDefaultEventEngine();
+// Return an instance of an event poller which is tied to the specified
+// scheduler.
+EventPoller* GetDefaultPoller(Scheduler* scheduler);
 
-}  // namespace experimental
+}  // namespace iomgr_engine
 }  // namespace grpc_event_engine
 
-#endif  // GRPC_CORE_LIB_EVENT_ENGINE_EVENT_ENGINE_FACTORY_H
+#endif  // GRPC_CORE_LIB_EVENT_ENGINE_IOMGR_ENGINE_EVENT_POLLER_POSIX_DEFAULT_H

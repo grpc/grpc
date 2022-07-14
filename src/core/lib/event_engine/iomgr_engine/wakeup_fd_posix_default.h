@@ -17,18 +17,20 @@
 
 #include <grpc/support/port_platform.h>
 
-#include "src/core/lib/iomgr/port.h"
-
-#ifdef GRPC_POSIX_WAKEUP_FD
+#include "absl/status/statusor.h"
 
 namespace grpc_event_engine {
 namespace iomgr_engine {
 
-void ConfigureDefaultWakeupFdFactories();
+class WakeupFd;
+
+// Returns true if wakeup-fd is supported by the system.
+bool SupportsWakeupFd();
+
+// Create and return an initialized WakeupFd instance if supported.
+absl::StatusOr<std::unique_ptr<WakeupFd>> CreateWakeupFd();
 
 }  // namespace iomgr_engine
 }  // namespace grpc_event_engine
-
-#endif
 
 #endif  // GRPC_CORE_LIB_EVENT_ENGINE_IOMGR_ENGINE_WAKEUP_FD_POSIX_DEFAULT_H

@@ -23,8 +23,8 @@
 
 #include <grpc/support/log.h>
 
-#include "src/core/lib/event_engine/iomgr_engine/closure.h"
 #include "src/core/lib/event_engine/iomgr_engine/event_poller.h"
+#include "src/core/lib/event_engine/iomgr_engine/iomgr_engine_closure.h"
 #include "src/core/lib/gprpp/status_helper.h"
 
 //  'state' holds the to call when the fd is readable or writable respectively.
@@ -155,7 +155,7 @@ void LockfreeEvent::NotifyOn(IomgrEngineClosure* closure) {
     }
   }
 
-  GPR_UNREACHABLE_CODE(return );
+  GPR_UNREACHABLE_CODE(return);
 }
 
 bool LockfreeEvent::SetShutdown(absl::Status shutdown_error) {

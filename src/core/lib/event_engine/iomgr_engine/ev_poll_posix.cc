@@ -24,14 +24,14 @@
 
 #include "absl/status/statusor.h"
 #include "absl/strings/str_cat.h"
-#include "closure.h"
-#include "event_poller.h"
 
 #include <grpc/impl/codegen/gpr_types.h>
 #include <grpc/support/log.h>
 #include <grpc/support/sync.h>
 #include <grpc/support/time.h>
 
+#include "src/core/lib/event_engine/iomgr_engine/event_poller.h"
+#include "src/core/lib/event_engine/iomgr_engine/iomgr_engine_closure.h"
 #include "src/core/lib/iomgr/port.h"
 
 #ifdef GRPC_POSIX_SOCKET_EV_POLL
@@ -51,8 +51,8 @@
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/support/alloc.h>
 
-#include "src/core/lib/event_engine/iomgr_engine/closure.h"
 #include "src/core/lib/event_engine/iomgr_engine/event_poller.h"
+#include "src/core/lib/event_engine/iomgr_engine/iomgr_engine_closure.h"
 #include "src/core/lib/event_engine/iomgr_engine/wakeup_fd_posix.h"
 #include "src/core/lib/event_engine/iomgr_engine/wakeup_fd_posix_default.h"
 #include "src/core/lib/gprpp/fork.h"
@@ -318,7 +318,6 @@ void ResetEventManagerOnFork() {
 // It is possible that GLIBC has epoll but the underlying kernel doesn't.
 // Create epoll_fd to make sure epoll support is available
 void InitPollPollerPosix() {
-  ConfigureDefaultWakeupFdFactories();
   if (!grpc_event_engine::iomgr_engine::SupportsWakeupFd()) {
     kPollPollerSupported = false;
     return;

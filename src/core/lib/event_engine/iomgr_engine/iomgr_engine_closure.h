@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef GRPC_CORE_LIB_EVENT_ENGINE_IOMGR_ENGINE_CLOSURE_H
-#define GRPC_CORE_LIB_EVENT_ENGINE_IOMGR_ENGINE_CLOSURE_H
+#ifndef GRPC_CORE_LIB_EVENT_ENGINE_IOMGR_ENGINE_IOMGR_ENGINE_CLOSURE_H
+#define GRPC_CORE_LIB_EVENT_ENGINE_IOMGR_ENGINE_IOMGR_ENGINE_CLOSURE_H
 #include <grpc/support/port_platform.h>
 
 #include <functional>
@@ -27,6 +27,10 @@
 namespace grpc_event_engine {
 namespace iomgr_engine {
 
+// The callbacks for Endpoint read and write take an absl::Status as
+// argument - this is important for the tcp code to function correctly. We need
+// a custom closure type because the default EventEngine::Closure type doesn't
+// provide a way to pass a status when the callback is run.
 class IomgrEngineClosure final
     : public grpc_event_engine::experimental::EventEngine::Closure {
  public:
@@ -44,12 +48,17 @@ class IomgrEngineClosure final
     }
   }
 
+  // This closure clean doesn't itself up after execution. It is expected to be
+  // cleaned up by the caller at the appropriate time.
   static IomgrEngineClosure* ToPermanentClosure(
       std::function<void(absl::Status)>&& cb) {
     return new IomgrEngineClosure(std::move(cb), true);
   }
 
-  static IomgrEngineClosure* ToClosure(std::function<void(absl::Status)>&& cb) {
+  // This closure clean's itself up after execution. It is expected to be
+  // used only in tests.
+  static IomgrEngineClosure* TestOnlyToClosure(
+      std::function<void(absl::Status)>&& cb) {
     return new IomgrEngineClosure(std::move(cb), false);
   }
 
@@ -62,4 +71,4 @@ class IomgrEngineClosure final
 }  // namespace iomgr_engine
 }  // namespace grpc_event_engine
 
-#endif  // GRPC_CORE_LIB_EVENT_ENGINE_IOMGR_ENGINE_CLOSURE_H
+#endif  //  GRPC_CORE_LIB_EVENT_ENGINE_IOMGR_ENGINE_IOMGR_ENGINE_CLOSURE_H
