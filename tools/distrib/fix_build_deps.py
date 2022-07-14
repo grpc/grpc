@@ -494,7 +494,8 @@ def make_library(library):
             # assume a system include
             continue
 
-        print("# ERROR: can't categorize header: %s used by %s" % (hdr, library))
+        print("# ERROR: can't categorize header: %s used by %s" %
+              (hdr, library))
         error = True
 
     if library in needs_codegen_base_src:
