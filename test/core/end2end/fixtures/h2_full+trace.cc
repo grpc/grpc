@@ -22,6 +22,8 @@
 
 #include <grpc/grpc.h>
 
+#include "src/core/lib/iomgr/port.h"  // IWYU pragma: keep
+
 #ifdef GRPC_POSIX_SOCKET
 #include <unistd.h>
 #endif
