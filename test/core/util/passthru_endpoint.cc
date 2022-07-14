@@ -18,7 +18,6 @@
 
 #include "test/core/util/passthru_endpoint.h"
 
-#include <inttypes.h>
 #include <string.h>
 
 #include <algorithm>
