@@ -1023,6 +1023,26 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "work_serializer",
+    srcs = [
+        "src/core/lib/gprpp/work_serializer.cc",
+    ],
+    hdrs = [
+        "src/core/lib/gprpp/work_serializer.h",
+    ],
+    external_deps = ["absl/base:core_headers"],
+    language = "c++",
+    tags = ["grpc-autodeps"],
+    visibility = ["@grpc:client_channel"],
+    deps = [
+        "debug_location",
+        "gpr_base",
+        "grpc_trace",
+        "orphanable",
+    ],
+)
+
+grpc_cc_library(
     name = "gpr_codegen",
     language = "c++",
     public_hdrs = [
@@ -2259,21 +2279,6 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
-    name = "default_event_engine_factory",
-    srcs = [
-        "src/core/lib/event_engine/default_event_engine_factory.cc",
-    ],
-    external_deps = ["absl/memory"],
-    deps = [
-        "default_event_engine_factory_hdrs",
-        "event_engine_base_hdrs",
-        "gpr_base",
-        "iomgr_event_engine",
-        "iomgr_port",
-    ],
-)
-
-grpc_cc_library(
     name = "time_averaged_stats",
     srcs = ["src/core/lib/gprpp/time_averaged_stats.cc"],
     hdrs = [
@@ -2405,22 +2410,38 @@ grpc_cc_library(
     ],
 )
 
+# NOTE: this target gets replaced inside Google's build system to be one that
+# integrates with other internal systems better. Please do not rename or fold
+# this into other targets.
+grpc_cc_library(
+    name = "default_event_engine_factory",
+    srcs = ["src/core/lib/event_engine/default_event_engine_factory.cc"],
+    hdrs = [
+        "src/core/lib/event_engine/default_event_engine_factory.h",
+    ],
+    external_deps = ["absl/memory"],
+    tags = ["grpc-autodeps"],
+    deps = [
+        "event_engine_base_hdrs",
+        "gpr_platform",
+        "iomgr_event_engine",
+    ],
+)
+
 grpc_cc_library(
     name = "event_engine_base",
     srcs = [
         "src/core/lib/event_engine/event_engine.cc",
     ],
-    external_deps = [
-        "absl/functional:any_invocable",
-        "absl/memory",
+    hdrs = [
+        "src/core/lib/event_engine/event_engine_factory.h",
     ],
+    external_deps = ["absl/functional:any_invocable"],
+    tags = ["grpc-autodeps"],
     deps = [
         "default_event_engine_factory",
-        "default_event_engine_factory_hdrs",
         "event_engine_base_hdrs",
-        "event_engine_trace",
         "gpr_base",
-        "grpc_trace",
     ],
 )
 
@@ -2591,7 +2612,6 @@ grpc_cc_library(
         "src/core/lib/iomgr/wakeup_fd_nospecial.cc",
         "src/core/lib/iomgr/wakeup_fd_pipe.cc",
         "src/core/lib/iomgr/wakeup_fd_posix.cc",
-        "src/core/lib/iomgr/work_serializer.cc",
         "src/core/lib/resource_quota/api.cc",
         "src/core/lib/slice/b64.cc",
         "src/core/lib/slice/slice_api.cc",
@@ -2692,7 +2712,6 @@ grpc_cc_library(
         "src/core/lib/iomgr/unix_sockets_posix.h",
         "src/core/lib/iomgr/wakeup_fd_pipe.h",
         "src/core/lib/iomgr/wakeup_fd_posix.h",
-        "src/core/lib/iomgr/work_serializer.h",
         "src/core/lib/slice/b64.h",
         "src/core/lib/surface/api_trace.h",
         "src/core/lib/surface/builtins.h",
@@ -2809,6 +2828,7 @@ grpc_cc_library(
         "transport_fwd",
         "uri_parser",
         "useful",
+        "work_serializer",
     ],
 )
 
@@ -3219,6 +3239,7 @@ grpc_cc_library(
         "unique_type_name",
         "uri_parser",
         "useful",
+        "work_serializer",
         "xds_orca_service_upb",
         "xds_orca_upb",
     ],
@@ -3685,6 +3706,7 @@ grpc_cc_library(
         "time",
         "uri_parser",
         "useful",
+        "work_serializer",
     ],
 )
 
@@ -3742,6 +3764,7 @@ grpc_cc_library(
         "slice_refcount",
         "time",
         "uri_parser",
+        "work_serializer",
     ],
 )
 
@@ -3902,6 +3925,7 @@ grpc_cc_library(
         "tsi_ssl_credentials",
         "uri_parser",
         "useful",
+        "work_serializer",
         "xds_type_upb",
         "xds_type_upbdefs",
     ],
@@ -4058,6 +4082,7 @@ grpc_cc_library(
         "server_address",
         "time",
         "unique_type_name",
+        "work_serializer",
     ],
 )
 
@@ -4124,6 +4149,7 @@ grpc_cc_library(
         "ref_counted_ptr",
         "server_address",
         "time",
+        "work_serializer",
     ],
 )
 
@@ -4197,6 +4223,7 @@ grpc_cc_library(
         "ref_counted_ptr",
         "server_address",
         "time",
+        "work_serializer",
     ],
 )
 
@@ -4317,6 +4344,7 @@ grpc_cc_library(
         "server_address",
         "sockaddr_utils",
         "unique_type_name",
+        "work_serializer",
     ],
 )
 
@@ -4402,6 +4430,7 @@ grpc_cc_library(
         "ref_counted_ptr",
         "server_address",
         "sockaddr_utils",
+        "work_serializer",
     ],
 )
 
@@ -4439,6 +4468,7 @@ grpc_cc_library(
         "ref_counted_ptr",
         "server_address",
         "time",
+        "work_serializer",
     ],
 )
 
@@ -4474,6 +4504,7 @@ grpc_cc_library(
         "ref_counted_ptr",
         "server_address",
         "time",
+        "work_serializer",
     ],
 )
 
@@ -4666,6 +4697,7 @@ grpc_cc_library(
         "orphanable",
         "ref_counted_ptr",
         "uri_parser",
+        "work_serializer",
     ],
 )
 
@@ -4863,6 +4895,7 @@ grpc_cc_library(
         "slice",
         "uri_parser",
         "useful",
+        "work_serializer",
     ],
 )
 
@@ -4922,6 +4955,7 @@ grpc_cc_library(
         "unique_type_name",
         "uri_parser",
         "useful",
+        "work_serializer",
     ],
 )
 
@@ -4957,6 +4991,7 @@ grpc_cc_library(
         "resource_quota",
         "time",
         "uri_parser",
+        "work_serializer",
     ],
 )
 
@@ -6889,12 +6924,12 @@ grpc_cc_library(
         "src/cpp/ext/filters/census/server_filter.h",
     ],
     external_deps = [
-        "absl-base",
-        "absl-time",
+        "absl/base",
         "absl/base:core_headers",
         "absl/status",
-        "absl/types:optional",
         "absl/strings",
+        "absl/time",
+        "absl/types:optional",
         "opencensus-trace",
         "opencensus-trace-context_util",
         "opencensus-trace-propagation",

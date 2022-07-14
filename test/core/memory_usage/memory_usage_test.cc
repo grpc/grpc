@@ -19,6 +19,9 @@
 #include <stdio.h>
 #include <string.h>
 
+#include <map>
+
+#include "absl/algorithm/container.h"
 #include "absl/flags/flag.h"
 #include "absl/flags/parse.h"
 #include "absl/strings/str_cat.h"
@@ -32,9 +35,13 @@
 #include "test/core/util/port.h"
 #include "test/core/util/subprocess.h"
 
-ABSL_FLAG(int, warmup, 100, "Warmup iterations");
-ABSL_FLAG(int, benchmark, 1000, "Benchmark iterations");
-ABSL_FLAG(bool, minstack, false, "Use minimal stack");
+ABSL_FLAG(std::string, benchmark_name, "call", "Which benchmark to run");
+ABSL_FLAG(int, size, 50000, "Number of channels/calls");
+ABSL_FLAG(std::string, scenario_config, "insecure",
+          "Possible Values: minstack (Use minimal stack), resource_quota, "
+          "secure (Use SSL credentials on server)");
+ABSL_FLAG(bool, memory_profiling, false,
+          "Run memory profiling");  // TODO (chennancy) Connect this flag
 
 class Subprocess {
  public:
@@ -72,26 +79,56 @@ int main(int argc, char** argv) {
   } else {
     strcpy(root, ".");
   }
-  /* start the server */
-  Subprocess svr({absl::StrCat(root, "/memory_usage_server",
-                               gpr_subprocess_binary_extension()),
-                  "--bind", grpc_core::JoinHostPort("::", port), "--nosecure",
-                  absl::StrCat("--minstack=", absl::GetFlag(FLAGS_minstack))});
 
-  /* start the client */
-  Subprocess cli({absl::StrCat(root, "/memory_usage_client",
-                               gpr_subprocess_binary_extension()),
-                  "--target", grpc_core::JoinHostPort("127.0.0.1", port),
-                  absl::StrCat("--warmup=", absl::GetFlag(FLAGS_warmup)),
-                  absl::StrCat("--benchmark=", absl::GetFlag(FLAGS_benchmark)),
-                  absl::StrCat("--minstack=", absl::GetFlag(FLAGS_minstack))});
-
-  /* wait for completion */
-  if ((status = cli.Join()) != 0) {
-    printf("client failed with: %d", status);
-    return 1;
+  /* Set configurations based off scenario_config*/
+  struct ScenarioArgs {
+    std::vector<std::string> client;
+    std::vector<std::string> server;
+  };
+  // TODO(chennancy): add in resource quota parameter setting later
+  const std::map<std::string /*scenario*/, ScenarioArgs> scenarios = {
+      {"secure", {/*client=*/{}, /*server=*/{"--secure"}}},
+      {"resource_quota", {/*client=*/{}, /*server=*/{"--secure"}}},
+      {"minstack", {/*client=*/{"--minstack"}, /*server=*/{"--minstack"}}},
+      {"insecure", {{}, {}}},
+  };
+  auto it_scenario = scenarios.find(absl::GetFlag(FLAGS_scenario_config));
+  if (it_scenario == scenarios.end()) {
+    printf("No scenario matching the name could be found\n");
+    return 3;
   }
 
-  svr.Interrupt();
-  return svr.Join() == 0 ? 0 : 2;
+  /* per-call memory usage benchmark */
+  if (absl::GetFlag(FLAGS_benchmark_name) == "call") {
+    /* start the server */
+    std::vector<std::string> server_flags = {
+        absl::StrCat(root, "/memory_usage_server",
+                     gpr_subprocess_binary_extension()),
+        "--bind", grpc_core::JoinHostPort("::", port)};
+    // Add scenario-specific server flags to the end of the server_flags
+    absl::c_move(it_scenario->second.server, std::back_inserter(server_flags));
+    Subprocess svr(server_flags);
+
+    /* start the client */
+    std::vector<std::string> client_flags = {
+        absl::StrCat(root, "/memory_usage_client",
+                     gpr_subprocess_binary_extension()),
+        "--target", grpc_core::JoinHostPort("127.0.0.1", port),
+        absl::StrCat("--warmup=", 10000),
+        absl::StrCat("--benchmark=", absl::GetFlag(FLAGS_size))};
+    // Add scenario-specific client flags to the end of the client_flags
+    absl::c_move(it_scenario->second.client, std::back_inserter(client_flags));
+    Subprocess cli(client_flags);
+    /* wait for completion */
+    if ((status = cli.Join()) != 0) {
+      printf("client failed with: %d", status);
+      return 1;
+    }
+
+    svr.Interrupt();
+    return svr.Join() == 0 ? 0 : 2;
+  }
+
+  printf("Command line args couldn't be parsed\n");
+  return 4;
 }
