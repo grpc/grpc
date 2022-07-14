@@ -143,11 +143,6 @@ config_setting(
     values = {"define": "use_strict_warning=true"},
 )
 
-config_setting(
-    name = "disable_use_abseil_status",
-    values = {"define": "use_abseil_status=false"},
-)
-
 python_config_settings()
 
 # This should be updated along with build_handwritten.yaml
@@ -2075,7 +2070,6 @@ grpc_cc_library(
     ],
     hdrs = [
         "src/core/lib/iomgr/error.h",
-        "src/core/lib/iomgr/error_internal.h",
     ],
     deps = [
         "gpr",
@@ -2747,7 +2741,6 @@ grpc_cc_library(
     [
         "src/core/lib/iomgr/closure.h",
         "src/core/lib/iomgr/error.h",
-        "src/core/lib/iomgr/error_internal.h",
         "src/core/lib/slice/slice_internal.h",
         "src/core/lib/slice/slice_string_helpers.h",
         "src/core/lib/iomgr/exec_ctx.h",
