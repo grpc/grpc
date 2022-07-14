@@ -28,8 +28,6 @@
 #include <string>
 #include <thread>
 
-#include <gtest/gtest.h>
-
 #include "absl/base/thread_annotations.h"
 #include "absl/memory/memory.h"
 #include "absl/status/status.h"

@@ -16,8 +16,6 @@
 
 #include <memory>
 
-#include <gtest/gtest.h>
-
 #include "gtest/gtest.h"
 
 #include "src/core/lib/gprpp/ref_counted_ptr.h"

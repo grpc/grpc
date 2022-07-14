@@ -18,8 +18,6 @@
 
 #include "src/core/lib/transport/status_conversion.h"
 
-#include <gtest/gtest.h>
-
 #include "gtest/gtest.h"
 
 #include <grpc/grpc.h>

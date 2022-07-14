@@ -22,8 +22,6 @@
 
 #include <ostream>
 
-#include <gtest/gtest.h>
-
 #include "gtest/gtest.h"
 
 #include "test/core/util/test_config.h"
