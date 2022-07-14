@@ -491,8 +491,8 @@ class CLanguage(object):
             return ('alpine', [])
         elif compiler == 'clang6':
             return ('clang_6', self._clang_cmake_configure_extra_args())
-        elif compiler == 'clang13':
-            return ('clang_13', self._clang_cmake_configure_extra_args())
+        elif compiler == 'clang14':
+            return ('clang_14', self._clang_cmake_configure_extra_args())
         else:
             raise Exception('Compiler %s not supported.' % compiler)
 
@@ -1499,7 +1499,7 @@ argp.add_argument(
         'gcc11',
         'gcc_musl',
         'clang6',
-        'clang13',
+        'clang14',
         'python2.7',
         'python3.5',
         'python3.6',
