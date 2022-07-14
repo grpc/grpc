@@ -690,7 +690,7 @@
       <%text>${_gRPC_UPB_INCLUDE_DIR}</%text>
       <%text>${_gRPC_XXHASH_INCLUDE_DIR}</%text>
       <%text>${_gRPC_ZLIB_INCLUDE_DIR}</%text>
-  % if lib.build in ['test', 'private'] and lib.language == 'c++':
+  % if (lib.build in ['test', 'private'] and lib.language == 'c++') or lib.name == 'end2end_tests':
       third_party/googletest/googletest/include
       third_party/googletest/googletest
       third_party/googletest/googlemock/include

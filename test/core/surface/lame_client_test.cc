@@ -63,7 +63,6 @@ TEST(LameClientTest, MainTest) {
   grpc_channel* chan;
   grpc_call* call;
   grpc_completion_queue* cq;
-  cq_verifier* cqv;
   grpc_op ops[6];
   grpc_op* op;
   grpc_metadata_array initial_metadata_recv;
@@ -97,7 +96,7 @@ TEST(LameClientTest, MainTest) {
                                grpc_slice_from_static_string("/Foo"), &host,
                                grpc_timeout_seconds_to_deadline(100), nullptr);
   ASSERT_TRUE(call);
-  cqv = cq_verifier_create(cq);
+  grpc_core::CqVerifier cqv(cq);
 
   memset(ops, 0, sizeof(ops));
   op = ops;
@@ -116,8 +115,8 @@ TEST(LameClientTest, MainTest) {
   ASSERT_EQ(GRPC_CALL_OK, error);
 
   /* the call should immediately fail */
-  CQ_EXPECT_COMPLETION(cqv, tag(1), 0);
-  cq_verify(cqv);
+  cqv.Expect(tag(1), false);
+  cqv.Verify();
 
   memset(ops, 0, sizeof(ops));
   op = ops;
@@ -133,8 +132,8 @@ TEST(LameClientTest, MainTest) {
   ASSERT_EQ(GRPC_CALL_OK, error);
 
   /* the call should immediately fail */
-  CQ_EXPECT_COMPLETION(cqv, tag(2), 1);
-  cq_verify(cqv);
+  cqv.Expect(tag(2), true);
+  cqv.Verify();
 
   peer = grpc_call_get_peer(call);
   ASSERT_STREQ(peer, "lampoon:national");
@@ -145,7 +144,6 @@ TEST(LameClientTest, MainTest) {
 
   grpc_call_unref(call);
   grpc_channel_destroy(chan);
-  cq_verifier_destroy(cqv);
   grpc_completion_queue_destroy(cq);
 
   grpc_metadata_array_destroy(&initial_metadata_recv);

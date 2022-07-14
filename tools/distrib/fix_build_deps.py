@@ -399,6 +399,10 @@ def make_relative_path(dep, lib):
         return dep[len(lib_path):]
     return dep
 
+if args.whats_left:
+    print("{}/{} libraries are opted in".format(
+        num_cc_libraries - num_opted_out_cc_libraries, num_cc_libraries))
+
 
 # Keeps track of all possible sets of dependencies that could satify the
 # problem. (models the list monad in Haskell!)
