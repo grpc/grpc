@@ -24,7 +24,7 @@
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/support/atm.h>
 
-#include "src/core/lib/event_engine/iomgr_engine/closure.h"
+#include "src/core/lib/event_engine/iomgr_engine/iomgr_engine_closure.h"
 
 namespace grpc_event_engine {
 namespace iomgr_engine {

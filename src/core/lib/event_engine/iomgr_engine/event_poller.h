@@ -23,7 +23,7 @@
 
 #include <grpc/event_engine/event_engine.h>
 
-#include "src/core/lib/event_engine/iomgr_engine/closure.h"
+#include "src/core/lib/event_engine/iomgr_engine/iomgr_engine_closure.h"
 #include "src/core/lib/gprpp/time.h"
 
 namespace grpc_event_engine {
@@ -98,10 +98,6 @@ class EventPoller {
   virtual void Kick() = 0;
   virtual ~EventPoller() = default;
 };
-
-// Return an instance of an event poller which is tied to the specified
-// event engine.
-EventPoller* GetDefaultPoller(Scheduler* scheduler);
 
 }  // namespace iomgr_engine
 }  // namespace grpc_event_engine

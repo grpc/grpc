@@ -2343,8 +2343,8 @@ grpc_cc_library(
     name = "iomgr_ee_poller_common_hdrs",
     srcs = [],
     hdrs = [
-        "src/core/lib/event_engine/iomgr_engine/closure.h",
         "src/core/lib/event_engine/iomgr_engine/event_poller.h",
+        "src/core/lib/event_engine/iomgr_engine/iomgr_engine_closure.h",
     ],
     deps = [
         "event_engine_base_hdrs",
@@ -2371,16 +2371,12 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
-    name = "iomgr_ee_wakeup_fd_posix",
-    srcs = [
-        "src/core/lib/event_engine/iomgr_engine/wakeup_fd_posix.cc",
-    ],
+    name = "iomgr_ee_wakeup_fd_posix_hdrs",
     hdrs = [
         "src/core/lib/event_engine/iomgr_engine/wakeup_fd_posix.h",
     ],
     external_deps = [
         "absl/status",
-        "absl/status:statusor",
     ],
     tags = ["grpc-autodeps"],
     deps = [
@@ -2407,7 +2403,7 @@ grpc_cc_library(
     deps = [
         "gpr_base",
         "gpr_platform",
-        "iomgr_ee_wakeup_fd_posix",
+        "iomgr_ee_wakeup_fd_posix_hdrs",
         "iomgr_port",
     ],
 )
@@ -2430,7 +2426,7 @@ grpc_cc_library(
     deps = [
         "gpr_base",
         "gpr_platform",
-        "iomgr_ee_wakeup_fd_posix",
+        "iomgr_ee_wakeup_fd_posix_hdrs",
         "iomgr_port",
     ],
 )
@@ -2450,8 +2446,8 @@ grpc_cc_library(
     tags = ["grpc-autodeps"],
     deps = [
         "gpr_platform",
-        "iomgr_ee_wakeup_fd_posix",
         "iomgr_ee_wakeup_fd_posix_eventfd",
+        "iomgr_ee_wakeup_fd_posix_hdrs",
         "iomgr_ee_wakeup_fd_posix_pipe",
         "iomgr_port",
     ],
@@ -2479,17 +2475,20 @@ grpc_cc_library(
         "gpr_platform",
         "iomgr_ee_lockfree_event",
         "iomgr_ee_poller_common_hdrs",
-        "iomgr_ee_wakeup_fd_posix",
         "iomgr_ee_wakeup_fd_posix_default",
+        "iomgr_ee_wakeup_fd_posix_hdrs",
         "iomgr_port",
         "time",
     ],
 )
 
 grpc_cc_library(
-    name = "iomgr_ee_poller_posix",
+    name = "iomgr_ee_poller_posix_default",
     srcs = [
-        "src/core/lib/event_engine/iomgr_engine/event_poller_posix.cc",
+        "src/core/lib/event_engine/iomgr_engine/event_poller_posix_default.cc",
+    ],
+    hdrs = [
+        "src/core/lib/event_engine/iomgr_engine/event_poller_posix_default.h",
     ],
     tags = ["grpc-autodeps"],
     deps = [

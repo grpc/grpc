@@ -25,24 +25,43 @@
 #include "src/core/lib/event_engine/iomgr_engine/wakeup_fd_posix.h"
 #include "src/core/lib/iomgr/port.h"
 
-#ifdef GRPC_POSIX_WAKEUP_FD
-
 namespace grpc_event_engine {
 namespace iomgr_engine {
 
-void ConfigureDefaultWakeupFdFactories() {
+#ifdef GRPC_POSIX_WAKEUP_FD
+
+namespace {
+std::function<absl::StatusOr<std::unique_ptr<WakeupFd>>()> g_wakeup_fd_fn =
+    []() -> std::function<absl::StatusOr<std::unique_ptr<WakeupFd>>()> {
 #ifndef GRPC_POSIX_NO_SPECIAL_WAKEUP_FD
   if (EventFdWakeupFd::IsSupported()) {
-    SetDefaultWakeupFdFactoryIfUnset(&EventFdWakeupFd::CreateEventFdWakeupFd);
-    return;
+    return &EventFdWakeupFd::CreateEventFdWakeupFd;
   }
 #endif  // GRPC_POSIX_NO_SPECIAL_WAKEUP_FD
   if (PipeWakeupFd::IsSupported()) {
-    SetDefaultWakeupFdFactoryIfUnset(&PipeWakeupFd::CreatePipeWakeupFd);
+    return &PipeWakeupFd::CreatePipeWakeupFd;
   }
+  return nullptr;
+}();
+}  // namespace
+
+bool SupportsWakeupFd() { return g_wakeup_fd_fn != nullptr; }
+
+absl::StatusOr<std::unique_ptr<WakeupFd>> CreateWakeupFd() {
+  return g_wakeup_fd_fn != nullptr
+             ? g_wakeup_fd_fn()
+             : absl::NotFoundError("Wakeup-fd is not supported on this system");
 }
+
+#else /* GRPC_POSIX_WAKEUP_FD */
+
+bool SupportsWakeupFd() { return false; }
+
+absl::StatusOr<std::unique_ptr<WakeupFd>> CreateWakeupFd() {
+  return absl::NotFoundError("Wakeup-fd is not supported on this system");
+}
+
+#endif /* GRPC_POSIX_WAKEUP_FD */
 
 }  // namespace iomgr_engine
 }  // namespace grpc_event_engine
-
-#endif

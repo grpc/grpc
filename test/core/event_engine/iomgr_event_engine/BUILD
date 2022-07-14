@@ -73,7 +73,7 @@ grpc_cc_test(
     uses_polling = True,
     deps = [
         "//:iomgr_ee_poller_common_hdrs",
-        "//:iomgr_ee_poller_posix",
+        "//:iomgr_ee_poller_posix_default",
         "//:iomgr_event_engine",
         "//test/core/util:grpc_suppressions",
         "//test/core/util:grpc_test_util",
@@ -107,7 +107,6 @@ grpc_cc_test(
     uses_event_engine = False,
     uses_polling = True,
     deps = [
-        "//:iomgr_ee_wakeup_fd_posix",
         "//:iomgr_ee_wakeup_fd_posix_eventfd",
         "//:iomgr_ee_wakeup_fd_posix_pipe",
         "//test/core/util:grpc_suppressions",
