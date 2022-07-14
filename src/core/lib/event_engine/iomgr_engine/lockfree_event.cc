@@ -11,17 +11,20 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+#include <grpc/support/port_platform.h>
 
 #include "src/core/lib/event_engine/iomgr_engine/lockfree_event.h"
 
-#include <grpc/support/port_platform.h>
-#include <grpc/support/log.h>
-#include <grpc/support/atm.h>
 #include <stdlib.h>
+
 #include <atomic>
 #include <cstdint>
 
 #include "absl/status/status.h"
+
+#include <grpc/support/atm.h>
+#include <grpc/support/log.h>
+
 #include "src/core/lib/event_engine/iomgr_engine/event_poller.h"
 #include "src/core/lib/event_engine/iomgr_engine/iomgr_engine_closure.h"
 #include "src/core/lib/gprpp/status_helper.h"
@@ -154,7 +157,7 @@ void LockfreeEvent::NotifyOn(IomgrEngineClosure* closure) {
     }
   }
 
-  GPR_UNREACHABLE_CODE(return );
+  GPR_UNREACHABLE_CODE(return);
 }
 
 bool LockfreeEvent::SetShutdown(absl::Status shutdown_error) {

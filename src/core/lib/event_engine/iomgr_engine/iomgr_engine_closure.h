@@ -71,4 +71,4 @@ class IomgrEngineClosure final
 }  // namespace iomgr_engine
 }  // namespace grpc_event_engine
 
-#endif  //  GRPC_CORE_LIB_EVENT_ENGINE_IOMGR_ENGINE_IOMGR_ENGINE_CLOSURE_H
+#endif  // GRPC_CORE_LIB_EVENT_ENGINE_IOMGR_ENGINE_IOMGR_ENGINE_CLOSURE_H

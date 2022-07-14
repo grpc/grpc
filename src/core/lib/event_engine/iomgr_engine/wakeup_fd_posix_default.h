@@ -14,8 +14,8 @@
 
 #ifndef GRPC_CORE_LIB_EVENT_ENGINE_IOMGR_ENGINE_WAKEUP_FD_POSIX_DEFAULT_H
 #define GRPC_CORE_LIB_EVENT_ENGINE_IOMGR_ENGINE_WAKEUP_FD_POSIX_DEFAULT_H
-
 #include <grpc/support/port_platform.h>
+
 #include <memory>
 
 #include "absl/status/statusor.h"

@@ -11,21 +11,24 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+#include <grpc/support/port_platform.h>
 
 #include "src/core/lib/event_engine/iomgr_engine/ev_epoll1_linux.h"
 
-#include <grpc/support/port_platform.h>
 #include <stdint.h>
-#include <grpc/impl/codegen/gpr_types.h>
-#include <grpc/support/log.h>
-#include <grpc/support/sync.h>
-#include <grpc/support/time.h>
+
 #include <algorithm>
 #include <memory>
 
 #include "absl/memory/memory.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/str_cat.h"
+
+#include <grpc/impl/codegen/gpr_types.h>
+#include <grpc/support/log.h>
+#include <grpc/support/sync.h>
+#include <grpc/support/time.h>
+
 #include "src/core/lib/iomgr/port.h"
 
 // This polling engine is only relevant on linux kernels supporting epoll
@@ -37,9 +40,11 @@
 #include <sys/epoll.h>
 #include <sys/socket.h>
 #include <unistd.h>
+
 #include <vector>
 
 #include "absl/synchronization/mutex.h"
+
 #include "src/core/lib/event_engine/iomgr_engine/event_poller.h"
 #include "src/core/lib/event_engine/iomgr_engine/iomgr_engine_closure.h"
 #include "src/core/lib/event_engine/iomgr_engine/lockfree_event.h"
