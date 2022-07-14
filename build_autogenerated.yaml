@@ -3194,15 +3194,6 @@ libs:
   deps:
   - grpc++
 targets:
-- name: alloc_test
-  build: test
-  language: c
-  headers: []
-  src:
-  - test/core/gpr/alloc_test.cc
-  deps:
-  - grpc_test_util
-  uses_polling: false
 - name: b64_test
   build: test
   language: c
@@ -3289,15 +3280,6 @@ targets:
   - test/core/end2end/cq_verifier.cc
   deps:
   - grpc_test_util
-- name: cpu_test
-  build: test
-  language: c
-  headers: []
-  src:
-  - test/core/gpr/cpu_test.cc
-  deps:
-  - grpc_test_util
-  uses_polling: false
 - name: dualstack_socket_test
   build: test
   language: c
@@ -3322,15 +3304,6 @@ targets:
   - test/core/iomgr/endpoint_tests.cc
   deps:
   - grpc_test_util
-- name: env_test
-  build: test
-  language: c
-  headers: []
-  src:
-  - test/core/gpr/env_test.cc
-  deps:
-  - grpc_test_util
-  uses_polling: false
 - name: fd_conservation_posix_test
   build: test
   language: c
@@ -3467,15 +3440,6 @@ targets:
   - test/core/end2end/multiple_server_queues_test.cc
   deps:
   - grpc_test_util
-- name: murmur_hash_test
-  build: test
-  language: c
-  headers: []
-  src:
-  - test/core/gpr/murmur_hash_test.cc
-  deps:
-  - grpc_test_util
-  uses_polling: false
 - name: no_server_test
   build: test
   language: c
@@ -3578,33 +3542,6 @@ targets:
   - linux
   - posix
   - mac
-- name: spinlock_test
-  build: test
-  language: c
-  headers: []
-  src:
-  - test/core/gpr/spinlock_test.cc
-  deps:
-  - grpc_test_util
-  uses_polling: false
-- name: string_test
-  build: test
-  language: c
-  headers: []
-  src:
-  - test/core/gpr/string_test.cc
-  deps:
-  - grpc_test_util
-  uses_polling: false
-- name: sync_test
-  build: test
-  language: c
-  headers: []
-  src:
-  - test/core/gpr/sync_test.cc
-  deps:
-  - grpc_test_util
-  uses_polling: false
 - name: tcp_client_posix_test
   build: test
   language: c
@@ -3642,15 +3579,6 @@ targets:
   - linux
   - posix
   - mac
-- name: test_core_gpr_time_test
-  build: test
-  language: c
-  headers: []
-  src:
-  - test/core/gpr/time_test.cc
-  deps:
-  - grpc_test_util
-  uses_polling: false
 - name: test_core_iomgr_time_averaged_stats_test
   build: test
   language: c
@@ -3861,6 +3789,16 @@ targets:
   - linux
   - posix
   - mac
+- name: alloc_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/core/gpr/alloc_test.cc
+  deps:
+  - grpc_test_util
+  uses_polling: false
 - name: alpn_test
   gtest: true
   build: test
@@ -4998,6 +4936,16 @@ targets:
   - test/core/gprpp/cpp_impl_of_test.cc
   deps: []
   uses_polling: false
+- name: cpu_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/core/gpr/cpu_test.cc
+  deps:
+  - grpc_test_util
+  uses_polling: false
 - name: crl_ssl_transport_security_test
   gtest: true
   build: test
@@ -5219,6 +5167,16 @@ targets:
   headers: []
   src:
   - test/core/event_engine/endpoint_config_test.cc
+  deps:
+  - grpc_test_util
+  uses_polling: false
+- name: env_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/core/gpr/env_test.cc
   deps:
   - grpc_test_util
   uses_polling: false
@@ -6876,6 +6834,16 @@ targets:
   - posix
   - mac
   uses_polling: false
+- name: murmur_hash_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/core/gpr/murmur_hash_test.cc
+  deps:
+  - grpc_test_util
+  uses_polling: false
 - name: nonblocking_test
   gtest: true
   build: test
@@ -8087,6 +8055,16 @@ targets:
   - test/core/address_utils/sockaddr_utils_test.cc
   deps:
   - grpc_test_util
+- name: spinlock_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/core/gpr/spinlock_test.cc
+  deps:
+  - grpc_test_util
+  uses_polling: false
 - name: ssl_credentials_test
   gtest: true
   build: test
@@ -8237,6 +8215,26 @@ targets:
   - test/cpp/util/string_ref_test.cc
   deps:
   - grpc++
+  - grpc_test_util
+  uses_polling: false
+- name: string_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/core/gpr/string_test.cc
+  deps:
+  - grpc_test_util
+  uses_polling: false
+- name: sync_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/core/gpr/sync_test.cc
+  deps:
   - grpc_test_util
   uses_polling: false
 - name: system_roots_test
@@ -8565,6 +8563,16 @@ targets:
   - test/core/event_engine/slice_buffer_test.cc
   deps:
   - grpc_test_util
+- name: test_core_gpr_time_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/core/gpr/time_test.cc
+  deps:
+  - grpc_test_util
+  uses_polling: false
 - name: test_core_gprpp_time_test
   gtest: true
   build: test
