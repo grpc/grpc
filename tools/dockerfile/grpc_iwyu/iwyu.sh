@@ -49,6 +49,7 @@ export ENABLED_MODULES='
   test/core/promise
   test/core/resource_quota
   test/core/uri
+  test/core/util
 '
 
 export DISABLED_MODULES='

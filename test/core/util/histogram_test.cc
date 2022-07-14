@@ -20,6 +20,8 @@
 
 #include <gtest/gtest.h>
 
+#include "gtest/gtest.h"
+
 #include <grpc/support/log.h>
 
 #define LOG_TEST(x) gpr_log(GPR_INFO, "%s", x);

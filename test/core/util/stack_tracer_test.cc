@@ -22,8 +22,8 @@
 
 #include <gtest/gtest.h>
 
-#include "absl/debugging/symbolize.h"
 #include "absl/strings/match.h"
+#include "gtest/gtest.h"
 
 #include <grpc/support/log.h>
 
