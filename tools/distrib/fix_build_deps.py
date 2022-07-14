@@ -246,6 +246,7 @@ class FakeSelects:
 
 num_cc_libraries = 0
 num_opted_out_cc_libraries = 0
+parsing_path = None
 
 
 def grpc_cc_library(name,
@@ -260,6 +261,9 @@ def grpc_cc_library(name,
     global args
     global num_cc_libraries
     global num_opted_out_cc_libraries
+    global parsing_path
+    assert(parsing_path is not None)
+    name = '//%s:%s' % (parsing_path, name)
     num_cc_libraries += 1
     if select_deps or 'nofixdeps' in tags or 'grpc-autodeps' not in tags:
         if args.whats_left and not select_deps and 'nofixdeps' not in tags:
@@ -287,7 +291,7 @@ def grpc_cc_library(name,
             m = re.search(r'#include "(.*)"', line)
             if m:
                 inc.add(m.group(1))
-            if 'grpc::g_glip' in line or 'grpc:g_core_codegen_interface' in line:
+            if 'grpc::g_glip' in line or 'grpc::g_core_codegen_interface' in line:
                 needs_codegen_base_src.add(name)
     consumes[name] = list(inc)
 
@@ -360,46 +364,58 @@ parser.add_argument('--whats_left',
                     help='show what is left to opt in')
 args = parser.parse_args()
 
-exec(
-    open('BUILD', 'r').read(), {
-        'load': lambda filename, *args: None,
-        'licenses': lambda licenses: None,
-        'package': lambda **kwargs: None,
-        'exports_files': lambda files: None,
-        'config_setting': lambda **kwargs: None,
-        'selects': FakeSelects(),
-        'python_config_settings': lambda **kwargs: None,
-        'grpc_cc_library': grpc_cc_library,
-        'select': lambda d: d["//conditions:default"],
-        'grpc_upb_proto_library': lambda name, **kwargs: None,
-        'grpc_upb_proto_reflection_library': lambda name, **kwargs: None,
-        'grpc_generate_one_off_targets': lambda: None,
-        'filegroup': lambda name, **kwargs: None,
-    }, {})
+for dirname in [""]:
+    parsing_path = dirname
+    exec(
+        open('BUILD', 'r').read(), {
+            'load': lambda filename, *args: None,
+            'licenses': lambda licenses: None,
+            'package': lambda **kwargs: None,
+            'exports_files': lambda files: None,
+            'config_setting': lambda **kwargs: None,
+            'selects': FakeSelects(),
+            'python_config_settings': lambda **kwargs: None,
+            'grpc_cc_library': grpc_cc_library,
+            'select': lambda d: d["//conditions:default"],
+            'grpc_upb_proto_library': lambda name, **kwargs: None,
+            'grpc_upb_proto_reflection_library': lambda name, **kwargs: None,
+            'grpc_generate_one_off_targets': lambda: None,
+            'filegroup': lambda name, **kwargs: None,
+        }, {})
+    parsing_path = None
 
 if args.whats_left:
     print("{}/{} libraries are opted in".format(
         num_cc_libraries - num_opted_out_cc_libraries, num_cc_libraries))
 
 
+def make_relative_path(dep, lib):
+    if lib is None: return dep
+    lib_path = lib[:lib.rfind(':')+1]
+    if dep.startswith(lib_path):
+        return dep[len(lib_path):]
+    return dep
+
+
 # Keeps track of all possible sets of dependencies that could satify the
 # problem. (models the list monad in Haskell!)
 class Choices:
 
-    def __init__(self):
+    def __init__(self, library):
+        self.library = library
         self.to_add = []
         self.to_remove = []
 
     def add_one_of(self, choices):
         if not choices:
             return
-        self.to_add.append(tuple(choices))
+        self.to_add.append(tuple(make_relative_path(choice, self.library) for choice in choices))
 
     def add(self, choice):
         self.add_one_of([choice])
 
     def remove(self, remove):
-        self.to_remove.append(remove)
+        self.to_remove.append(make_relative_path(remove, self.library))
 
     def best(self, scorer):
         choices = set()
@@ -428,8 +444,8 @@ class Choices:
 def make_library(library):
     error = False
     hdrs = sorted(consumes[library])
-    deps = Choices()
-    external_deps = Choices()
+    deps = Choices(library)
+    external_deps = Choices(None)
     for hdr in hdrs:
         if hdr == 'src/core/lib/profiling/stap_probes.h':
             continue
@@ -526,9 +542,8 @@ for library, lib_error, deps, external_deps in updated_libraries:
     if lib_error:
         error = True
         continue
-    target = ':' + library
-    buildozer_set_list('external_deps', external_deps, target, via='deps')
-    buildozer_set_list('deps', deps, target)
+    buildozer_set_list('external_deps', external_deps, library, via='deps')
+    buildozer_set_list('deps', deps, library)
 
 if buildozer_commands:
     ok_statuses = (0, 3)
