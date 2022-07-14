@@ -2407,7 +2407,7 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
-    name = "iomgr_ee_wakeup_fd_posix_hdrs",
+    name = "iomgr_ee_wakeup_fd_posix",
     hdrs = [
         "src/core/lib/event_engine/iomgr_engine/wakeup_fd_posix.h",
     ],
@@ -2434,7 +2434,7 @@ grpc_cc_library(
     deps = [
         "gpr_base",
         "gpr_platform",
-        "iomgr_ee_wakeup_fd_posix_hdrs",
+        "iomgr_ee_wakeup_fd_posix",
         "iomgr_port",
     ],
 )
@@ -2457,7 +2457,7 @@ grpc_cc_library(
     deps = [
         "gpr_base",
         "gpr_platform",
-        "iomgr_ee_wakeup_fd_posix_hdrs",
+        "iomgr_ee_wakeup_fd_posix",
         "iomgr_port",
     ],
 )
@@ -2477,8 +2477,8 @@ grpc_cc_library(
     tags = ["grpc-autodeps"],
     deps = [
         "gpr_platform",
+        "iomgr_ee_wakeup_fd_posix",
         "iomgr_ee_wakeup_fd_posix_eventfd",
-        "iomgr_ee_wakeup_fd_posix_hdrs",
         "iomgr_ee_wakeup_fd_posix_pipe",
         "iomgr_port",
     ],
@@ -2508,8 +2508,8 @@ grpc_cc_library(
         "iomgr_ee_closure",
         "iomgr_ee_event_poller",
         "iomgr_ee_lockfree_event",
+        "iomgr_ee_wakeup_fd_posix",
         "iomgr_ee_wakeup_fd_posix_default",
-        "iomgr_ee_wakeup_fd_posix_hdrs",
         "iomgr_port",
         "time",
     ],
