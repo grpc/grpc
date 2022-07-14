@@ -14,7 +14,7 @@
 
 #include <grpc/support/port_platform.h>
 
-#include "wakeup_fd_pipe.h"
+#include "src/core/lib/event_engine/iomgr_engine/wakeup_fd_pipe.h"
 
 #include <memory>
 #include <utility>

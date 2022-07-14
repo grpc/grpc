@@ -14,14 +14,13 @@
 
 #ifndef GRPC_CORE_LIB_EVENT_ENGINE_IOMGR_ENGINE_LOCKFREE_EVENT_H
 #define GRPC_CORE_LIB_EVENT_ENGINE_IOMGR_ENGINE_LOCKFREE_EVENT_H
-
-/* Lock free event notification for file descriptors */
-
 #include <grpc/support/port_platform.h>
+
 #include <atomic>
 #include <cstdint>
 
 #include "absl/status/status.h"
+
 #include "src/core/lib/event_engine/iomgr_engine/iomgr_engine_closure.h"
 
 namespace grpc_event_engine {
