@@ -22,19 +22,6 @@ grpc_package(
 )  # Useful for third party devs to test their io manager implementation.
 
 grpc_cc_test(
-    name = "time_averaged_stats_test",
-    srcs = ["time_averaged_stats_test.cc"],
-    external_deps = ["gtest"],
-    language = "C++",
-    uses_event_engine = False,
-    uses_polling = False,
-    deps = [
-        "//:iomgr_ee_time_averaged_stats",
-        "//test/core/util:grpc_suppressions",
-    ],
-)
-
-grpc_cc_test(
     name = "timer_heap_test",
     srcs = ["timer_heap_test.cc"],
     external_deps = ["gtest"],

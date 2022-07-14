@@ -1737,8 +1737,6 @@ src/core/lib/event_engine/iomgr_engine/iomgr_engine.cc \
 src/core/lib/event_engine/iomgr_engine/iomgr_engine.h \
 src/core/lib/event_engine/iomgr_engine/thread_pool.cc \
 src/core/lib/event_engine/iomgr_engine/thread_pool.h \
-src/core/lib/event_engine/iomgr_engine/time_averaged_stats.cc \
-src/core/lib/event_engine/iomgr_engine/time_averaged_stats.h \
 src/core/lib/event_engine/iomgr_engine/timer.cc \
 src/core/lib/event_engine/iomgr_engine/timer.h \
 src/core/lib/event_engine/iomgr_engine/timer_heap.cc \
@@ -1835,6 +1833,8 @@ src/core/lib/gprpp/thd_posix.cc \
 src/core/lib/gprpp/thd_windows.cc \
 src/core/lib/gprpp/time.cc \
 src/core/lib/gprpp/time.h \
+src/core/lib/gprpp/time_averaged_stats.cc \
+src/core/lib/gprpp/time_averaged_stats.h \
 src/core/lib/gprpp/time_util.cc \
 src/core/lib/gprpp/time_util.h \
 src/core/lib/gprpp/unique_type_name.h \
@@ -1966,8 +1966,6 @@ src/core/lib/iomgr/tcp_server_utils_posix_noifaddrs.cc \
 src/core/lib/iomgr/tcp_server_windows.cc \
 src/core/lib/iomgr/tcp_windows.cc \
 src/core/lib/iomgr/tcp_windows.h \
-src/core/lib/iomgr/time_averaged_stats.cc \
-src/core/lib/iomgr/time_averaged_stats.h \
 src/core/lib/iomgr/timer.cc \
 src/core/lib/iomgr/timer.h \
 src/core/lib/iomgr/timer_generic.cc \

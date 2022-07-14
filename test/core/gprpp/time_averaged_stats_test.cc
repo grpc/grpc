@@ -16,14 +16,14 @@
  *
  */
 
-#include "src/core/lib/event_engine/iomgr_engine/time_averaged_stats.h"
+#include "src/core/lib/gprpp/time_averaged_stats.h"
 
 #include <math.h>
 
 #include <gtest/gtest.h>
 
-namespace grpc_event_engine {
-namespace iomgr_engine {
+namespace grpc_core {
+namespace {
 
 TEST(TimeAveragedStatsTest, NoRegressNoPersistTest1) {
   TimeAveragedStats tas(1000, 0, 0.0);
@@ -170,8 +170,8 @@ TEST(TimeAveragedStatsTest, SomeRegressSomePersistTest) {
   EXPECT_DOUBLE_EQ(2.8304, tas.aggregate_total_weight());
 }
 
-}  // namespace iomgr_engine
-}  // namespace grpc_event_engine
+}  // namespace
+}  // namespace grpc_core
 
 int main(int argc, char** argv) {
   ::testing::InitGoogleTest(&argc, argv);
