@@ -21,7 +21,6 @@
 #include <string.h>
 
 #include <algorithm>
-#include <array>
 #include <map>
 #include <memory>
 #include <set>

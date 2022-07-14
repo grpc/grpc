@@ -17,7 +17,6 @@
 #include <functional>
 
 #include "absl/functional/bind_front.h"
-#include "absl/types/variant.h"
 #include "gtest/gtest.h"
 
 #include "src/core/lib/promise/poll.h"
