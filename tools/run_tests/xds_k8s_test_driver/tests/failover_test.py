@@ -40,7 +40,7 @@ class FailoverTest(xds_k8s_testcase.RegularXdsKubernetesTestCase):
         # Test case implementation seems to be broken for Java and Go.
         # Core (cpp and python), and Node seem to work fine.
         # TODO(b/238226704): Remove when the test is fixed.
-        return config.client_lang not in _Lang.JAVA | _Lang.GO
+        return config.client_lang not in _Lang.JAVA | _Lang.GO | _Lang.CPP
 
     def setUp(self):
         super().setUp()

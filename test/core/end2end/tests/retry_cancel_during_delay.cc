@@ -144,7 +144,7 @@ static void test_retry_cancel_during_delay(grpc_end2end_test_config config,
   grpc_end2end_test_fixture f =
       begin_test(config, name.c_str(), &client_args, nullptr);
 
-  cq_verifier* cqv = cq_verifier_create(f.cq);
+  grpc_core::CqVerifier cqv(f.cq);
 
   gpr_timespec expect_finish_before = n_seconds_from_now(10);
   gpr_timespec deadline = five_seconds_from_now();
@@ -195,8 +195,8 @@ static void test_retry_cancel_during_delay(grpc_end2end_test_config config,
       grpc_server_request_call(f.server, &s, &call_details,
                                &request_metadata_recv, f.cq, f.cq, tag(101));
   GPR_ASSERT(GRPC_CALL_OK == error);
-  CQ_EXPECT_COMPLETION(cqv, tag(101), true);
-  cq_verify(cqv);
+  cqv.Expect(tag(101), true);
+  cqv.Verify();
 
   peer = grpc_call_get_peer(s);
   GPR_ASSERT(peer != nullptr);
@@ -224,8 +224,8 @@ static void test_retry_cancel_during_delay(grpc_end2end_test_config config,
                                 nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
-  CQ_EXPECT_COMPLETION(cqv, tag(102), true);
-  cq_verify(cqv);
+  cqv.Expect(tag(102), true);
+  cqv.Verify();
 
   grpc_call_unref(s);
   grpc_metadata_array_destroy(&request_metadata_recv);
@@ -243,8 +243,8 @@ static void test_retry_cancel_during_delay(grpc_end2end_test_config config,
   // Initiate cancellation.
   GPR_ASSERT(GRPC_CALL_OK == mode.initiate_cancel(c, nullptr));
 
-  CQ_EXPECT_COMPLETION(cqv, tag(1), true);
-  cq_verify(cqv);
+  cqv.Expect(tag(1), true);
+  cqv.Verify();
 
   gpr_timespec finish_time = gpr_now(GPR_CLOCK_MONOTONIC);
 
@@ -271,8 +271,6 @@ static void test_retry_cancel_during_delay(grpc_end2end_test_config config,
   grpc_byte_buffer_destroy(response_payload_recv);
 
   grpc_call_unref(c);
-
-  cq_verifier_destroy(cqv);
 
   end_test(&f);
   config.tear_down_data(&f);

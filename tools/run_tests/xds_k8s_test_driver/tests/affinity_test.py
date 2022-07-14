@@ -53,6 +53,8 @@ class AffinityTest(xds_k8s_testcase.RegularXdsKubernetesTestCase):
             # TODO(https://github.com/grpc/grpc/issues/27430): supported after
             #      the issue is fixed.
             return False
+        elif config.client_lang == _Lang.NODE:
+            return False
         return True
 
     def test_affinity(self) -> None:  # pylint: disable=too-many-statements

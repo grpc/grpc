@@ -745,6 +745,7 @@ libs:
   - src/core/lib/debug/stats_data.h
   - src/core/lib/debug/trace.h
   - src/core/lib/event_engine/channel_args_endpoint_config.h
+  - src/core/lib/event_engine/default_event_engine_factory.h
   - src/core/lib/event_engine/event_engine_factory.h
   - src/core/lib/event_engine/handle_containers.h
   - src/core/lib/event_engine/iomgr_engine/iomgr_engine.h
@@ -770,6 +771,7 @@ libs:
   - src/core/lib/gprpp/table.h
   - src/core/lib/gprpp/time.h
   - src/core/lib/gprpp/unique_type_name.h
+  - src/core/lib/gprpp/work_serializer.h
   - src/core/lib/http/format_request.h
   - src/core/lib/http/httpcli.h
   - src/core/lib/http/httpcli_ssl_credentials.h
@@ -837,7 +839,6 @@ libs:
   - src/core/lib/iomgr/unix_sockets_posix.h
   - src/core/lib/iomgr/wakeup_fd_pipe.h
   - src/core/lib/iomgr/wakeup_fd_posix.h
-  - src/core/lib/iomgr/work_serializer.h
   - src/core/lib/json/json.h
   - src/core/lib/json/json_util.h
   - src/core/lib/matchers/matchers.h
@@ -1441,6 +1442,7 @@ libs:
   - src/core/lib/event_engine/trace.cc
   - src/core/lib/gprpp/status_helper.cc
   - src/core/lib/gprpp/time.cc
+  - src/core/lib/gprpp/work_serializer.cc
   - src/core/lib/http/format_request.cc
   - src/core/lib/http/httpcli.cc
   - src/core/lib/http/httpcli_security_connector.cc
@@ -1518,7 +1520,6 @@ libs:
   - src/core/lib/iomgr/wakeup_fd_nospecial.cc
   - src/core/lib/iomgr/wakeup_fd_pipe.cc
   - src/core/lib/iomgr/wakeup_fd_posix.cc
-  - src/core/lib/iomgr/work_serializer.cc
   - src/core/lib/json/json_reader.cc
   - src/core/lib/json/json_util.cc
   - src/core/lib/json/json_writer.cc
@@ -1964,6 +1965,7 @@ libs:
   - src/core/lib/debug/stats_data.h
   - src/core/lib/debug/trace.h
   - src/core/lib/event_engine/channel_args_endpoint_config.h
+  - src/core/lib/event_engine/default_event_engine_factory.h
   - src/core/lib/event_engine/event_engine_factory.h
   - src/core/lib/event_engine/handle_containers.h
   - src/core/lib/event_engine/iomgr_engine/iomgr_engine.h
@@ -1989,6 +1991,7 @@ libs:
   - src/core/lib/gprpp/table.h
   - src/core/lib/gprpp/time.h
   - src/core/lib/gprpp/unique_type_name.h
+  - src/core/lib/gprpp/work_serializer.h
   - src/core/lib/http/format_request.h
   - src/core/lib/http/httpcli.h
   - src/core/lib/http/parser.h
@@ -2055,7 +2058,6 @@ libs:
   - src/core/lib/iomgr/unix_sockets_posix.h
   - src/core/lib/iomgr/wakeup_fd_pipe.h
   - src/core/lib/iomgr/wakeup_fd_posix.h
-  - src/core/lib/iomgr/work_serializer.h
   - src/core/lib/json/json.h
   - src/core/lib/json/json_util.h
   - src/core/lib/promise/activity.h
@@ -2308,6 +2310,7 @@ libs:
   - src/core/lib/event_engine/trace.cc
   - src/core/lib/gprpp/status_helper.cc
   - src/core/lib/gprpp/time.cc
+  - src/core/lib/gprpp/work_serializer.cc
   - src/core/lib/http/format_request.cc
   - src/core/lib/http/httpcli.cc
   - src/core/lib/http/parser.cc
@@ -2384,7 +2387,6 @@ libs:
   - src/core/lib/iomgr/wakeup_fd_nospecial.cc
   - src/core/lib/iomgr/wakeup_fd_pipe.cc
   - src/core/lib/iomgr/wakeup_fd_posix.cc
-  - src/core/lib/iomgr/work_serializer.cc
   - src/core/lib/json/json_reader.cc
   - src/core/lib/json/json_util.cc
   - src/core/lib/json/json_writer.cc
@@ -3207,14 +3209,6 @@ targets:
   deps:
   - grpc_test_util
   uses_polling: false
-- name: alpn_test
-  build: test
-  language: c
-  headers: []
-  src:
-  - test/core/transport/chttp2/alpn_test.cc
-  deps:
-  - grpc_test_util
 - name: b64_test
   build: test
   language: c
@@ -3262,24 +3256,6 @@ targets:
   - linux
   - posix
   - mac
-- name: bin_decoder_test
-  build: test
-  language: c
-  headers: []
-  src:
-  - test/core/transport/chttp2/bin_decoder_test.cc
-  deps:
-  - grpc_test_util
-  uses_polling: false
-- name: bin_encoder_test
-  build: test
-  language: c
-  headers: []
-  src:
-  - test/core/transport/chttp2/bin_encoder_test.cc
-  deps:
-  - grpc_test_util
-  uses_polling: false
 - name: buffer_list_test
   build: test
   language: c
@@ -3461,15 +3437,6 @@ targets:
   - test/core/iomgr/grpc_ipv6_loopback_available_test.cc
   deps:
   - grpc_test_util
-- name: hpack_encoder_test
-  build: test
-  language: c
-  headers: []
-  src:
-  - test/core/transport/chttp2/hpack_encoder_test.cc
-  deps:
-  - grpc_test_util
-  uses_polling: false
 - name: inproc_callback_test
   build: test
   language: c
@@ -3504,6 +3471,15 @@ targets:
   headers: []
   src:
   - test/core/compression/message_compress_test.cc
+  deps:
+  - grpc_test_util
+  uses_polling: false
+- name: minimal_stack_is_minimal_test
+  build: test
+  language: c
+  headers: []
+  src:
+  - test/core/channel/minimal_stack_is_minimal_test.cc
   deps:
   - grpc_test_util
   uses_polling: false
@@ -3637,23 +3613,6 @@ targets:
   deps:
   - grpc_test_util
   uses_polling: false
-- name: status_conversion_test
-  build: test
-  language: c
-  headers: []
-  src:
-  - test/core/transport/status_conversion_test.cc
-  deps:
-  - grpc_test_util
-  uses_polling: false
-- name: stream_map_test
-  build: test
-  language: c
-  headers: []
-  src:
-  - test/core/transport/chttp2/stream_map_test.cc
-  deps:
-  - grpc_test_util
 - name: string_test
   build: test
   language: c
@@ -3742,15 +3701,6 @@ targets:
   headers: []
   src:
   - test/core/iomgr/timer_list_test.cc
-  deps:
-  - grpc_test_util
-  uses_polling: false
-- name: varint_test
-  build: test
-  language: c
-  headers: []
-  src:
-  - test/core/transport/chttp2/varint_test.cc
   deps:
   - grpc_test_util
   uses_polling: false
@@ -3937,6 +3887,15 @@ targets:
   - linux
   - posix
   - mac
+- name: alpn_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/core/transport/chttp2/alpn_test.cc
+  deps:
+  - grpc_test_util
 - name: alts_concurrent_connectivity_test
   gtest: true
   build: test
@@ -4307,6 +4266,26 @@ targets:
   - linux
   - posix
   - mac
+  uses_polling: false
+- name: bin_decoder_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/core/transport/chttp2/bin_decoder_test.cc
+  deps:
+  - grpc_test_util
+  uses_polling: false
+- name: bin_encoder_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/core/transport/chttp2/bin_encoder_test.cc
+  deps:
+  - grpc_test_util
   uses_polling: false
 - name: binder_resolver_test
   gtest: true
@@ -6183,6 +6162,16 @@ targets:
   deps:
   - grpc_test_util
   uses_polling: false
+- name: hpack_encoder_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/core/transport/chttp2/hpack_encoder_test.cc
+  deps:
+  - grpc_test_util
+  uses_polling: false
 - name: hpack_parser_table_test
   gtest: true
   build: test
@@ -6849,16 +6838,6 @@ targets:
   - test/core/transport/metadata_map_test.cc
   deps:
   - grpc_test_util
-- name: minimal_stack_is_minimal_test
-  gtest: true
-  build: test
-  language: c++
-  headers: []
-  src:
-  - test/core/channel/minimal_stack_is_minimal_test.cc
-  deps:
-  - grpc_test_util
-  uses_polling: false
 - name: miscompile_with_no_unique_address_test
   gtest: true
   build: test
@@ -8180,6 +8159,16 @@ targets:
   deps:
   - grpc_test_util
   uses_polling: false
+- name: status_conversion_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/core/transport/status_conversion_test.cc
+  deps:
+  - grpc_test_util
+  uses_polling: false
 - name: status_helper_test
   gtest: true
   build: test
@@ -8215,6 +8204,15 @@ targets:
   - linux
   - posix
   - mac
+- name: stream_map_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/core/transport/chttp2/stream_map_test.cc
+  deps:
+  - grpc_test_util
 - name: streaming_throughput_test
   gtest: true
   build: test
@@ -9195,6 +9193,16 @@ targets:
   - test/core/gpr/useful_test.cc
   deps: []
   uses_polling: false
+- name: varint_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/core/transport/chttp2/varint_test.cc
+  deps:
+  - grpc_test_util
+  uses_polling: false
 - name: window_overflow_bad_client_test
   gtest: true
   build: test
@@ -9406,7 +9414,7 @@ targets:
   language: c++
   headers: []
   src:
-  - test/core/iomgr/work_serializer_test.cc
+  - test/core/gprpp/work_serializer_test.cc
   deps:
   - grpc_test_util
   platforms:
