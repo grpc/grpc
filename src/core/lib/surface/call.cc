@@ -2310,13 +2310,17 @@ void ClientPromiseBasedCall::CommitBatch(const grpc_op* ops, size_t nops,
       } break;
       case GRPC_OP_SEND_MESSAGE: {
         GPR_ASSERT(!outstanding_send_.has_value());
-        send_message_completion_ = PauseCompletion(completion);
-        SliceBuffer send;
-        grpc_slice_buffer_swap(
-            &op.data.send_message.send_message->data.raw.slice_buffer,
-            send.c_slice_buffer());
-        outstanding_send_.emplace(client_to_server_messages_.sender.Push(
-            Message(std::move(send), op.flags)));
+        if (!completed_) {
+          send_message_completion_ = PauseCompletion(completion);
+          SliceBuffer send;
+          grpc_slice_buffer_swap(
+              &op.data.send_message.send_message->data.raw.slice_buffer,
+              send.c_slice_buffer());
+          outstanding_send_.emplace(client_to_server_messages_.sender.Push(
+              Message(std::move(send), op.flags)));
+        } else {
+          FailCompletion(completion);
+        }
       } break;
       case GRPC_OP_RECV_MESSAGE: {
         GPR_ASSERT(!outstanding_recv_.has_value());
@@ -2346,11 +2350,7 @@ grpc_call_error ClientPromiseBasedCall::StartBatch(const grpc_op* ops,
   }
   Completion completion =
       StartCompletion(notify_tag, is_notify_tag_closure, ops, nops);
-  if (!completed_) {
-    CommitBatch(ops, nops, completion);
-  } else {
-    FailCompletion(completion);
-  }
+  CommitBatch(ops, nops, completion);
   Update();
   FinishCompletion(&completion);
   return GRPC_CALL_OK;
@@ -2389,11 +2389,12 @@ void ClientPromiseBasedCall::UpdateOnce() {
     Poll<bool> r = (*outstanding_send_)();
     if (const bool* result = absl::get_if<bool>(&r)) {
       outstanding_send_.reset();
-      FinishCompletion(&send_message_completion_);
       if (!*result) {
+        FailCompletion(send_message_completion_);
         Finish(ServerMetadataHandle(absl::Status(
             absl::StatusCode::kInternal, "Failed to send message to server")));
       }
+      FinishCompletion(&send_message_completion_);
     }
   }
   if (incoming_compression_algorithm_.has_value() &&
