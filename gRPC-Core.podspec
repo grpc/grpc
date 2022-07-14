@@ -177,6 +177,7 @@ Pod::Spec.new do |s|
     ss.dependency 'abseil/container/flat_hash_map', abseil_version
     ss.dependency 'abseil/container/flat_hash_set', abseil_version
     ss.dependency 'abseil/container/inlined_vector', abseil_version
+    ss.dependency 'abseil/functional/any_invocable', abseil_version
     ss.dependency 'abseil/functional/bind_front', abseil_version
     ss.dependency 'abseil/functional/function_ref', abseil_version
     ss.dependency 'abseil/hash/hash', abseil_version
@@ -1041,6 +1042,7 @@ Pod::Spec.new do |s|
                       'src/core/lib/event_engine/channel_args_endpoint_config.cc',
                       'src/core/lib/event_engine/channel_args_endpoint_config.h',
                       'src/core/lib/event_engine/default_event_engine_factory.cc',
+                      'src/core/lib/event_engine/default_event_engine_factory.h',
                       'src/core/lib/event_engine/event_engine.cc',
                       'src/core/lib/event_engine/event_engine_factory.h',
                       'src/core/lib/event_engine/handle_containers.h',
@@ -1147,6 +1149,8 @@ Pod::Spec.new do |s|
                       'src/core/lib/gprpp/time_util.cc',
                       'src/core/lib/gprpp/time_util.h',
                       'src/core/lib/gprpp/unique_type_name.h',
+                      'src/core/lib/gprpp/work_serializer.cc',
+                      'src/core/lib/gprpp/work_serializer.h',
                       'src/core/lib/http/format_request.cc',
                       'src/core/lib/http/format_request.h',
                       'src/core/lib/http/httpcli.cc',
@@ -1291,8 +1295,6 @@ Pod::Spec.new do |s|
                       'src/core/lib/iomgr/wakeup_fd_pipe.h',
                       'src/core/lib/iomgr/wakeup_fd_posix.cc',
                       'src/core/lib/iomgr/wakeup_fd_posix.h',
-                      'src/core/lib/iomgr/work_serializer.cc',
-                      'src/core/lib/iomgr/work_serializer.h',
                       'src/core/lib/json/json.h',
                       'src/core/lib/json/json_reader.cc',
                       'src/core/lib/json/json_util.cc',
@@ -2125,6 +2127,7 @@ Pod::Spec.new do |s|
                               'src/core/lib/debug/stats_data.h',
                               'src/core/lib/debug/trace.h',
                               'src/core/lib/event_engine/channel_args_endpoint_config.h',
+                              'src/core/lib/event_engine/default_event_engine_factory.h',
                               'src/core/lib/event_engine/event_engine_factory.h',
                               'src/core/lib/event_engine/handle_containers.h',
                               'src/core/lib/event_engine/iomgr_engine/iomgr_engine.h',
@@ -2176,6 +2179,7 @@ Pod::Spec.new do |s|
                               'src/core/lib/gprpp/time.h',
                               'src/core/lib/gprpp/time_util.h',
                               'src/core/lib/gprpp/unique_type_name.h',
+                              'src/core/lib/gprpp/work_serializer.h',
                               'src/core/lib/http/format_request.h',
                               'src/core/lib/http/httpcli.h',
                               'src/core/lib/http/httpcli_ssl_credentials.h',
@@ -2243,7 +2247,6 @@ Pod::Spec.new do |s|
                               'src/core/lib/iomgr/unix_sockets_posix.h',
                               'src/core/lib/iomgr/wakeup_fd_pipe.h',
                               'src/core/lib/iomgr/wakeup_fd_posix.h',
-                              'src/core/lib/iomgr/work_serializer.h',
                               'src/core/lib/json/json.h',
                               'src/core/lib/json/json_util.h',
                               'src/core/lib/matchers/matchers.h',

@@ -164,8 +164,8 @@ void Chttp2Connector::OnHandshakeDone(void* arg, grpc_error_handle error) {
       self->result_->Reset();
       NullThenSchedClosure(DEBUG_LOCATION, &self->notify_, error);
     } else if (args->endpoint != nullptr) {
-      self->result_->transport = grpc_create_chttp2_transport(
-          args->args.ToC().get(), args->endpoint, true);
+      self->result_->transport =
+          grpc_create_chttp2_transport(args->args, args->endpoint, true);
       self->result_->socket_node =
           grpc_chttp2_transport_get_socket_node(self->result_->transport);
       self->result_->channel_args = args->args;
@@ -405,7 +405,7 @@ grpc_channel* grpc_channel_create_from_fd(const char* target, int fd,
   grpc_endpoint* client = grpc_tcp_client_create_from_fd(
       grpc_fd_create(fd, "client", true), c_final_args.get(), "fd-client");
   grpc_transport* transport =
-      grpc_create_chttp2_transport(c_final_args.get(), client, true);
+      grpc_create_chttp2_transport(final_args, client, true);
   GPR_ASSERT(transport);
   auto channel = grpc_core::Channel::Create(
       target, final_args, GRPC_CLIENT_DIRECT_CHANNEL, transport);

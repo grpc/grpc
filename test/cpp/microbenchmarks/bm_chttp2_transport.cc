@@ -139,9 +139,8 @@ class Fixture {
     ep_ = new PhonyEndpoint;
     auto final_args = grpc_core::CoreConfiguration::Get()
                           .channel_args_preconditioning()
-                          .PreconditionChannelArgs(&c_args)
-                          .ToC();
-    t_ = grpc_create_chttp2_transport(final_args.get(), ep_, client);
+                          .PreconditionChannelArgs(&c_args);
+    t_ = grpc_create_chttp2_transport(final_args, ep_, client);
     grpc_chttp2_transport_start_reading(t_, nullptr, nullptr, nullptr);
     FlushExecCtx();
   }

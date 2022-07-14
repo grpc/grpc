@@ -91,7 +91,7 @@ static void end_test(grpc_end2end_test_fixture* f) {
 static void simple_request_body(grpc_end2end_test_config /*config*/,
                                 grpc_end2end_test_fixture f, size_t num_ops) {
   grpc_call* c;
-  cq_verifier* cqv = cq_verifier_create(f.cq);
+  grpc_core::CqVerifier cqv(f.cq);
   grpc_op ops[6];
   grpc_op* op;
   grpc_metadata_array initial_metadata_recv;
@@ -145,8 +145,8 @@ static void simple_request_body(grpc_end2end_test_config /*config*/,
   // string, test this guarantee.
   gpr_free(dynamic_string);
 
-  CQ_EXPECT_COMPLETION(cqv, tag(1), 1);
-  cq_verify(cqv);
+  cqv.Expect(tag(1), true);
+  cqv.Verify();
 
   GPR_ASSERT(status == GRPC_STATUS_UNIMPLEMENTED);
   GPR_ASSERT(0 == grpc_slice_str_cmp(details, "xyz"));
@@ -156,8 +156,6 @@ static void simple_request_body(grpc_end2end_test_config /*config*/,
   grpc_metadata_array_destroy(&trailing_metadata_recv);
 
   grpc_call_unref(c);
-
-  cq_verifier_destroy(cqv);
 }
 
 static void test_invoke_simple_request(grpc_end2end_test_config config,

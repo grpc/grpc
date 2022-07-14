@@ -135,7 +135,7 @@ static void test_retry_cancel_after_first_attempt_starts(
   grpc_end2end_test_fixture f = begin_test(
       config, "retry_cancel_after_first_attempt_starts", &client_args, nullptr);
 
-  cq_verifier* cqv = cq_verifier_create(f.cq);
+  grpc_core::CqVerifier cqv(f.cq);
 
   gpr_timespec deadline = five_seconds_from_now();
   c = grpc_channel_create_call(f.client, nullptr, GRPC_PROPAGATE_DEFAULTS, f.cq,
@@ -193,18 +193,16 @@ static void test_retry_cancel_after_first_attempt_starts(
 
   // The send ops batch and the first recv ops batch will fail in most
   // fixtures but will pass in the proxy fixtures on some platforms.
-  CQ_EXPECT_COMPLETION_ANY_STATUS(cqv, tag(1));
-  CQ_EXPECT_COMPLETION_ANY_STATUS(cqv, tag(2));
-  CQ_EXPECT_COMPLETION(cqv, tag(3), true);
-  cq_verify(cqv);
+  cqv.Expect(tag(1), grpc_core::CqVerifier::AnyStatus());
+  cqv.Expect(tag(2), grpc_core::CqVerifier::AnyStatus());
+  cqv.Expect(tag(3), true);
+  cqv.Verify();
 
   grpc_slice_unref(details);
   grpc_metadata_array_destroy(&initial_metadata_recv);
   grpc_metadata_array_destroy(&trailing_metadata_recv);
   grpc_byte_buffer_destroy(request_payload);
   grpc_byte_buffer_destroy(response_payload_recv);
-
-  cq_verifier_destroy(cqv);
 
   end_test(&f);
   config.tear_down_data(&f);

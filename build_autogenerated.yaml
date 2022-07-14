@@ -745,6 +745,7 @@ libs:
   - src/core/lib/debug/stats_data.h
   - src/core/lib/debug/trace.h
   - src/core/lib/event_engine/channel_args_endpoint_config.h
+  - src/core/lib/event_engine/default_event_engine_factory.h
   - src/core/lib/event_engine/event_engine_factory.h
   - src/core/lib/event_engine/handle_containers.h
   - src/core/lib/event_engine/iomgr_engine/iomgr_engine.h
@@ -770,6 +771,7 @@ libs:
   - src/core/lib/gprpp/table.h
   - src/core/lib/gprpp/time.h
   - src/core/lib/gprpp/unique_type_name.h
+  - src/core/lib/gprpp/work_serializer.h
   - src/core/lib/http/format_request.h
   - src/core/lib/http/httpcli.h
   - src/core/lib/http/httpcli_ssl_credentials.h
@@ -837,7 +839,6 @@ libs:
   - src/core/lib/iomgr/unix_sockets_posix.h
   - src/core/lib/iomgr/wakeup_fd_pipe.h
   - src/core/lib/iomgr/wakeup_fd_posix.h
-  - src/core/lib/iomgr/work_serializer.h
   - src/core/lib/json/json.h
   - src/core/lib/json/json_util.h
   - src/core/lib/matchers/matchers.h
@@ -1439,6 +1440,7 @@ libs:
   - src/core/lib/event_engine/trace.cc
   - src/core/lib/gprpp/status_helper.cc
   - src/core/lib/gprpp/time.cc
+  - src/core/lib/gprpp/work_serializer.cc
   - src/core/lib/http/format_request.cc
   - src/core/lib/http/httpcli.cc
   - src/core/lib/http/httpcli_security_connector.cc
@@ -1516,7 +1518,6 @@ libs:
   - src/core/lib/iomgr/wakeup_fd_nospecial.cc
   - src/core/lib/iomgr/wakeup_fd_pipe.cc
   - src/core/lib/iomgr/wakeup_fd_posix.cc
-  - src/core/lib/iomgr/work_serializer.cc
   - src/core/lib/json/json_reader.cc
   - src/core/lib/json/json_util.cc
   - src/core/lib/json/json_writer.cc
@@ -1671,6 +1672,7 @@ libs:
   - absl/container:flat_hash_map
   - absl/container:flat_hash_set
   - absl/container:inlined_vector
+  - absl/functional:any_invocable
   - absl/functional:bind_front
   - absl/functional:function_ref
   - absl/hash:hash
@@ -1892,7 +1894,6 @@ libs:
   - src/core/ext/filters/http/message_compress/message_decompress_filter.h
   - src/core/ext/filters/http/server/http_server_filter.h
   - src/core/ext/filters/message_size/message_size_filter.h
-  - src/core/ext/transport/chttp2/alpn/alpn.h
   - src/core/ext/transport/chttp2/client/chttp2_connector.h
   - src/core/ext/transport/chttp2/server/chttp2_server.h
   - src/core/ext/transport/chttp2/transport/bin_decoder.h
@@ -1960,6 +1961,7 @@ libs:
   - src/core/lib/debug/stats_data.h
   - src/core/lib/debug/trace.h
   - src/core/lib/event_engine/channel_args_endpoint_config.h
+  - src/core/lib/event_engine/default_event_engine_factory.h
   - src/core/lib/event_engine/event_engine_factory.h
   - src/core/lib/event_engine/handle_containers.h
   - src/core/lib/event_engine/iomgr_engine/iomgr_engine.h
@@ -1985,6 +1987,7 @@ libs:
   - src/core/lib/gprpp/table.h
   - src/core/lib/gprpp/time.h
   - src/core/lib/gprpp/unique_type_name.h
+  - src/core/lib/gprpp/work_serializer.h
   - src/core/lib/http/format_request.h
   - src/core/lib/http/httpcli.h
   - src/core/lib/http/parser.h
@@ -2051,7 +2054,6 @@ libs:
   - src/core/lib/iomgr/unix_sockets_posix.h
   - src/core/lib/iomgr/wakeup_fd_pipe.h
   - src/core/lib/iomgr/wakeup_fd_posix.h
-  - src/core/lib/iomgr/work_serializer.h
   - src/core/lib/json/json.h
   - src/core/lib/json/json_util.h
   - src/core/lib/promise/activity.h
@@ -2222,7 +2224,6 @@ libs:
   - src/core/ext/filters/http/message_compress/message_decompress_filter.cc
   - src/core/ext/filters/http/server/http_server_filter.cc
   - src/core/ext/filters/message_size/message_size_filter.cc
-  - src/core/ext/transport/chttp2/alpn/alpn.cc
   - src/core/ext/transport/chttp2/client/chttp2_connector.cc
   - src/core/ext/transport/chttp2/server/chttp2_server.cc
   - src/core/ext/transport/chttp2/transport/bin_decoder.cc
@@ -2302,6 +2303,7 @@ libs:
   - src/core/lib/event_engine/trace.cc
   - src/core/lib/gprpp/status_helper.cc
   - src/core/lib/gprpp/time.cc
+  - src/core/lib/gprpp/work_serializer.cc
   - src/core/lib/http/format_request.cc
   - src/core/lib/http/httpcli.cc
   - src/core/lib/http/parser.cc
@@ -2378,7 +2380,6 @@ libs:
   - src/core/lib/iomgr/wakeup_fd_nospecial.cc
   - src/core/lib/iomgr/wakeup_fd_pipe.cc
   - src/core/lib/iomgr/wakeup_fd_posix.cc
-  - src/core/lib/iomgr/work_serializer.cc
   - src/core/lib/json/json_reader.cc
   - src/core/lib/json/json_util.cc
   - src/core/lib/json/json_writer.cc
@@ -2470,6 +2471,7 @@ libs:
   - absl/container:flat_hash_map
   - absl/container:flat_hash_set
   - absl/container:inlined_vector
+  - absl/functional:any_invocable
   - absl/functional:bind_front
   - absl/functional:function_ref
   - absl/hash:hash
@@ -3190,32 +3192,6 @@ libs:
   deps:
   - grpc++
 targets:
-- name: alloc_test
-  build: test
-  language: c
-  headers: []
-  src:
-  - test/core/gpr/alloc_test.cc
-  deps:
-  - grpc_test_util
-  uses_polling: false
-- name: alpn_test
-  build: test
-  language: c
-  headers: []
-  src:
-  - test/core/transport/chttp2/alpn_test.cc
-  deps:
-  - grpc_test_util
-- name: b64_test
-  build: test
-  language: c
-  headers: []
-  src:
-  - test/core/slice/b64_test.cc
-  deps:
-  - grpc_test_util
-  uses_polling: false
 - name: bad_server_response_test
   build: test
   language: c
@@ -3254,24 +3230,6 @@ targets:
   - linux
   - posix
   - mac
-- name: bin_decoder_test
-  build: test
-  language: c
-  headers: []
-  src:
-  - test/core/transport/chttp2/bin_decoder_test.cc
-  deps:
-  - grpc_test_util
-  uses_polling: false
-- name: bin_encoder_test
-  build: test
-  language: c
-  headers: []
-  src:
-  - test/core/transport/chttp2/bin_encoder_test.cc
-  deps:
-  - grpc_test_util
-  uses_polling: false
 - name: buffer_list_test
   build: test
   language: c
@@ -3280,33 +3238,6 @@ targets:
   - test/core/iomgr/buffer_list_test.cc
   deps:
   - grpc_test_util
-- name: c_slice_buffer_test
-  build: test
-  language: c
-  headers: []
-  src:
-  - test/core/slice/c_slice_buffer_test.cc
-  deps:
-  - grpc_test_util
-  uses_polling: false
-- name: channel_stack_test
-  build: test
-  language: c
-  headers: []
-  src:
-  - test/core/channel/channel_stack_test.cc
-  deps:
-  - grpc_test_util
-  uses_polling: false
-- name: cmdline_test
-  build: test
-  language: c
-  headers: []
-  src:
-  - test/core/util/cmdline_test.cc
-  deps:
-  - grpc_test_util
-  uses_polling: false
 - name: combiner_test
   build: test
   language: c
@@ -3319,17 +3250,6 @@ targets:
   - linux
   - posix
   - mac
-- name: compression_test
-  build: test
-  language: c
-  headers:
-  - test/core/compression/args_utils.h
-  src:
-  - test/core/compression/args_utils.cc
-  - test/core/compression/compression_test.cc
-  deps:
-  - grpc_test_util
-  uses_polling: false
 - name: connection_refused_test
   build: test
   language: c
@@ -3340,15 +3260,6 @@ targets:
   - test/core/end2end/cq_verifier.cc
   deps:
   - grpc_test_util
-- name: cpu_test
-  build: test
-  language: c
-  headers: []
-  src:
-  - test/core/gpr/cpu_test.cc
-  deps:
-  - grpc_test_util
-  uses_polling: false
 - name: dualstack_socket_test
   build: test
   language: c
@@ -3373,15 +3284,6 @@ targets:
   - test/core/iomgr/endpoint_tests.cc
   deps:
   - grpc_test_util
-- name: env_test
-  build: test
-  language: c
-  headers: []
-  src:
-  - test/core/gpr/env_test.cc
-  deps:
-  - grpc_test_util
-  uses_polling: false
 - name: fd_conservation_posix_test
   build: test
   language: c
@@ -3440,32 +3342,6 @@ targets:
   - linux
   - posix
   - mac
-- name: fork_test
-  build: test
-  language: c
-  headers: []
-  src:
-  - test/core/gprpp/fork_test.cc
-  deps:
-  - grpc_test_util
-  platforms:
-  - linux
-  - posix
-  - mac
-  uses_polling: false
-- name: format_request_test
-  build: test
-  language: c
-  headers:
-  - test/core/end2end/data/ssl_test_data.h
-  src:
-  - test/core/end2end/data/client_certs.cc
-  - test/core/end2end/data/server1_cert.cc
-  - test/core/end2end/data/server1_key.cc
-  - test/core/end2end/data/test_root_cert.cc
-  - test/core/http/format_request_test.cc
-  deps:
-  - grpc_test_util
 - name: goaway_server_test
   build: test
   language: c
@@ -3484,33 +3360,6 @@ targets:
   - test/core/iomgr/grpc_ipv6_loopback_available_test.cc
   deps:
   - grpc_test_util
-- name: histogram_test
-  build: test
-  language: c
-  headers: []
-  src:
-  - test/core/util/histogram_test.cc
-  deps:
-  - grpc_test_util
-  uses_polling: false
-- name: host_port_test
-  build: test
-  language: c
-  headers: []
-  src:
-  - test/core/gprpp/host_port_test.cc
-  deps:
-  - grpc_test_util
-  uses_polling: false
-- name: hpack_encoder_test
-  build: test
-  language: c
-  headers: []
-  src:
-  - test/core/transport/chttp2/hpack_encoder_test.cc
-  deps:
-  - grpc_test_util
-  uses_polling: false
 - name: inproc_callback_test
   build: test
   language: c
@@ -3539,15 +3388,6 @@ targets:
   deps:
   - grpc_test_util
   uses_polling: false
-- name: message_compress_test
-  build: test
-  language: c
-  headers: []
-  src:
-  - test/core/compression/message_compress_test.cc
-  deps:
-  - grpc_test_util
-  uses_polling: false
 - name: minimal_stack_is_minimal_test
   build: test
   language: c
@@ -3556,19 +3396,6 @@ targets:
   - test/core/channel/minimal_stack_is_minimal_test.cc
   deps:
   - grpc_test_util
-  uses_polling: false
-- name: mpscq_test
-  build: test
-  language: c
-  headers: []
-  src:
-  - test/core/gprpp/mpscq_test.cc
-  deps:
-  - grpc_test_util
-  platforms:
-  - linux
-  - posix
-  - mac
   uses_polling: false
 - name: multiple_server_queues_test
   build: test
@@ -3580,15 +3407,6 @@ targets:
   - test/core/end2end/multiple_server_queues_test.cc
   deps:
   - grpc_test_util
-- name: murmur_hash_test
-  build: test
-  language: c
-  headers: []
-  src:
-  - test/core/gpr/murmur_hash_test.cc
-  deps:
-  - grpc_test_util
-  uses_polling: false
 - name: no_server_test
   build: test
   language: c
@@ -3599,29 +3417,6 @@ targets:
   - test/core/end2end/no_server_test.cc
   deps:
   - grpc_test_util
-- name: parser_test
-  build: test
-  language: c
-  headers:
-  - test/core/end2end/data/ssl_test_data.h
-  src:
-  - test/core/end2end/data/client_certs.cc
-  - test/core/end2end/data/server1_cert.cc
-  - test/core/end2end/data/server1_key.cc
-  - test/core/end2end/data/test_root_cert.cc
-  - test/core/http/parser_test.cc
-  deps:
-  - grpc_test_util
-  uses_polling: false
-- name: percent_encoding_test
-  build: test
-  language: c
-  headers: []
-  src:
-  - test/core/slice/percent_encoding_test.cc
-  deps:
-  - grpc_test_util
-  uses_polling: false
 - name: public_headers_must_be_c89
   build: test
   language: c
@@ -3662,23 +3457,6 @@ targets:
   - linux
   - posix
   - mac
-- name: slice_string_helpers_test
-  build: test
-  language: c
-  headers:
-  - src/core/lib/slice/slice.h
-  - src/core/lib/slice/slice_internal.h
-  - src/core/lib/slice/slice_refcount.h
-  - src/core/lib/slice/slice_refcount_base.h
-  - src/core/lib/slice/slice_string_helpers.h
-  src:
-  - src/core/lib/slice/slice.cc
-  - src/core/lib/slice/slice_refcount.cc
-  - src/core/lib/slice/slice_string_helpers.cc
-  - test/core/slice/slice_string_helpers_test.cc
-  deps:
-  - gpr
-  uses_polling: false
 - name: socket_utils_test
   build: test
   language: c
@@ -3691,50 +3469,6 @@ targets:
   - linux
   - posix
   - mac
-- name: spinlock_test
-  build: test
-  language: c
-  headers: []
-  src:
-  - test/core/gpr/spinlock_test.cc
-  deps:
-  - grpc_test_util
-  uses_polling: false
-- name: status_conversion_test
-  build: test
-  language: c
-  headers: []
-  src:
-  - test/core/transport/status_conversion_test.cc
-  deps:
-  - grpc_test_util
-  uses_polling: false
-- name: stream_map_test
-  build: test
-  language: c
-  headers: []
-  src:
-  - test/core/transport/chttp2/stream_map_test.cc
-  deps:
-  - grpc_test_util
-- name: string_test
-  build: test
-  language: c
-  headers: []
-  src:
-  - test/core/gpr/string_test.cc
-  deps:
-  - grpc_test_util
-  uses_polling: false
-- name: sync_test
-  build: test
-  language: c
-  headers: []
-  src:
-  - test/core/gpr/sync_test.cc
-  deps:
-  - grpc_test_util
-  uses_polling: false
 - name: tcp_client_posix_test
   build: test
   language: c
@@ -3772,15 +3506,6 @@ targets:
   - linux
   - posix
   - mac
-- name: test_core_gpr_time_test
-  build: test
-  language: c
-  headers: []
-  src:
-  - test/core/gpr/time_test.cc
-  deps:
-  - grpc_test_util
-  uses_polling: false
 - name: test_core_iomgr_time_averaged_stats_test
   build: test
   language: c
@@ -3805,24 +3530,6 @@ targets:
   headers: []
   src:
   - test/core/iomgr/timer_list_test.cc
-  deps:
-  - grpc_test_util
-  uses_polling: false
-- name: thd_test
-  build: test
-  language: c
-  headers: []
-  src:
-  - test/core/gprpp/thd_test.cc
-  deps:
-  - grpc_test_util
-  uses_polling: false
-- name: varint_test
-  build: test
-  language: c
-  headers: []
-  src:
-  - test/core/transport/chttp2/varint_test.cc
   deps:
   - grpc_test_util
   uses_polling: false
@@ -4009,6 +3716,25 @@ targets:
   - linux
   - posix
   - mac
+- name: alloc_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/core/gpr/alloc_test.cc
+  deps:
+  - grpc_test_util
+  uses_polling: false
+- name: alpn_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/core/transport/chttp2/alpn_test.cc
+  deps:
+  - grpc_test_util
 - name: alts_concurrent_connectivity_test
   gtest: true
   build: test
@@ -4234,6 +3960,7 @@ targets:
   - src/core/lib/slice/slice_string_helpers.cc
   - test/core/promise/arena_promise_test.cc
   deps:
+  - absl/functional:any_invocable
   - absl/meta:type_traits
   - absl/status:statusor
   - absl/types:variant
@@ -4329,6 +4056,16 @@ targets:
   - test/core/security/aws_request_signer_test.cc
   deps:
   - grpc_test_util
+- name: b64_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/core/slice/b64_test.cc
+  deps:
+  - grpc_test_util
+  uses_polling: false
 - name: backoff_test
   gtest: true
   build: test
@@ -4378,6 +4115,26 @@ targets:
   - linux
   - posix
   - mac
+  uses_polling: false
+- name: bin_decoder_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/core/transport/chttp2/bin_decoder_test.cc
+  deps:
+  - grpc_test_util
+  uses_polling: false
+- name: bin_encoder_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/core/transport/chttp2/bin_encoder_test.cc
+  deps:
+  - grpc_test_util
   uses_polling: false
 - name: binder_resolver_test
   gtest: true
@@ -4521,6 +4278,16 @@ targets:
   - test/cpp/util/byte_buffer_test.cc
   deps:
   - grpc++_test_util
+  uses_polling: false
+- name: c_slice_buffer_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/core/slice/c_slice_buffer_test.cc
+  deps:
+  - grpc_test_util
   uses_polling: false
 - name: call_finalization_test
   gtest: true
@@ -4669,6 +4436,16 @@ targets:
   - test/core/channel/channel_stack_builder_test.cc
   deps:
   - grpc_test_util
+- name: channel_stack_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/core/channel/channel_stack_test.cc
+  deps:
+  - grpc_test_util
+  uses_polling: false
 - name: channel_trace_test
   gtest: true
   build: test
@@ -4812,6 +4589,7 @@ targets:
   - src/core/lib/slice/slice_string_helpers.cc
   - test/core/gprpp/chunked_vector_test.cc
   deps:
+  - absl/functional:any_invocable
   - absl/meta:type_traits
   - absl/status:statusor
   - absl/types:variant
@@ -4964,6 +4742,16 @@ targets:
   - linux
   - posix
   - mac
+- name: cmdline_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/core/util/cmdline_test.cc
+  deps:
+  - grpc_test_util
+  uses_polling: false
 - name: codegen_test_full
   gtest: true
   build: test
@@ -4996,6 +4784,18 @@ targets:
   - test/core/surface/completion_queue_threading_test.cc
   deps:
   - grpc_test_util
+- name: compression_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - test/core/compression/args_utils.h
+  src:
+  - test/core/compression/args_utils.cc
+  - test/core/compression/compression_test.cc
+  deps:
+  - grpc_test_util
+  uses_polling: false
 - name: concurrent_connectivity_test
   gtest: true
   build: test
@@ -5082,6 +4882,16 @@ targets:
   src:
   - test/core/gprpp/cpp_impl_of_test.cc
   deps: []
+  uses_polling: false
+- name: cpu_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/core/gpr/cpu_test.cc
+  deps:
+  - grpc_test_util
   uses_polling: false
 - name: crl_ssl_transport_security_test
   gtest: true
@@ -5307,6 +5117,16 @@ targets:
   deps:
   - grpc_test_util
   uses_polling: false
+- name: env_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/core/gpr/env_test.cc
+  deps:
+  - grpc_test_util
+  uses_polling: false
 - name: error_details_test
   gtest: true
   build: test
@@ -5458,6 +5278,7 @@ targets:
   - src/core/lib/slice/slice_string_helpers.cc
   - test/core/promise/exec_ctx_wakeup_scheduler_test.cc
   deps:
+  - absl/functional:any_invocable
   - absl/meta:type_traits
   - absl/status:statusor
   - absl/types:variant
@@ -5695,6 +5516,7 @@ targets:
   - src/core/lib/transport/pid_controller.cc
   - test/core/transport/chttp2/flow_control_test.cc
   deps:
+  - absl/functional:any_invocable
   - absl/functional:function_ref
   - absl/meta:type_traits
   - absl/status:statusor
@@ -5783,6 +5605,7 @@ targets:
   - test/core/promise/for_each_test.cc
   deps:
   - absl/container:flat_hash_set
+  - absl/functional:any_invocable
   - absl/hash:hash
   - absl/meta:type_traits
   - absl/status:statusor
@@ -5791,6 +5614,34 @@ targets:
   - gpr
   - upb
   uses_polling: false
+- name: fork_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/core/gprpp/fork_test.cc
+  deps:
+  - grpc_test_util
+  platforms:
+  - linux
+  - posix
+  - mac
+  uses_polling: false
+- name: format_request_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - test/core/end2end/data/ssl_test_data.h
+  src:
+  - test/core/end2end/data/client_certs.cc
+  - test/core/end2end/data/server1_cert.cc
+  - test/core/end2end/data/server1_key.cc
+  - test/core/end2end/data/test_root_cert.cc
+  - test/core/http/format_request_test.cc
+  deps:
+  - grpc_test_util
 - name: frame_handler_test
   gtest: true
   build: test
@@ -6224,6 +6075,36 @@ targets:
   - test/cpp/end2end/test_service_impl.cc
   deps:
   - grpc++_test_util
+- name: histogram_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/core/util/histogram_test.cc
+  deps:
+  - grpc_test_util
+  uses_polling: false
+- name: host_port_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/core/gprpp/host_port_test.cc
+  deps:
+  - grpc_test_util
+  uses_polling: false
+- name: hpack_encoder_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/core/transport/chttp2/hpack_encoder_test.cc
+  deps:
+  - grpc_test_util
+  uses_polling: false
 - name: hpack_parser_table_test
   gtest: true
   build: test
@@ -6640,7 +6521,6 @@ targets:
   - src/cpp/server/load_reporter/get_cpu_stats_windows.cc
   - test/cpp/server/load_reporter/get_cpu_stats_test.cc
   deps:
-  - grpc++
   - grpc_test_util
 - name: lb_load_data_store_test
   gtest: true
@@ -6786,6 +6666,7 @@ targets:
   - src/core/lib/slice/slice_string_helpers.cc
   - test/core/resource_quota/memory_quota_stress_test.cc
   deps:
+  - absl/functional:any_invocable
   - absl/meta:type_traits
   - absl/status:statusor
   - absl/types:variant
@@ -6861,6 +6742,7 @@ targets:
   - src/core/lib/slice/slice_string_helpers.cc
   - test/core/resource_quota/memory_quota_test.cc
   deps:
+  - absl/functional:any_invocable
   - absl/meta:type_traits
   - absl/status:statusor
   - absl/types:variant
@@ -6883,6 +6765,16 @@ targets:
   - test/cpp/end2end/test_service_impl.cc
   deps:
   - grpc++_test_util
+- name: message_compress_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/core/compression/message_compress_test.cc
+  deps:
+  - grpc_test_util
+  uses_polling: false
 - name: metadata_map_test
   gtest: true
   build: test
@@ -6930,6 +6822,30 @@ targets:
   deps:
   - grpc++_test
   - grpc++_test_util
+- name: mpscq_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/core/gprpp/mpscq_test.cc
+  deps:
+  - grpc_test_util
+  platforms:
+  - linux
+  - posix
+  - mac
+  uses_polling: false
+- name: murmur_hash_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/core/gpr/murmur_hash_test.cc
+  deps:
+  - grpc_test_util
+  uses_polling: false
 - name: nonblocking_test
   gtest: true
   build: test
@@ -7162,6 +7078,31 @@ targets:
   - test/core/transport/parsed_metadata_test.cc
   deps:
   - grpc_test_util
+- name: parser_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - test/core/end2end/data/ssl_test_data.h
+  src:
+  - test/core/end2end/data/client_certs.cc
+  - test/core/end2end/data/server1_cert.cc
+  - test/core/end2end/data/server1_key.cc
+  - test/core/end2end/data/test_root_cert.cc
+  - test/core/http/parser_test.cc
+  deps:
+  - grpc_test_util
+  uses_polling: false
+- name: percent_encoding_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/core/slice/percent_encoding_test.cc
+  deps:
+  - grpc_test_util
+  uses_polling: false
 - name: periodic_update_test
   gtest: true
   build: test
@@ -7205,6 +7146,7 @@ targets:
   - src/core/lib/slice/slice_string_helpers.cc
   - test/core/resource_quota/periodic_update_test.cc
   deps:
+  - absl/functional:any_invocable
   - absl/status:statusor
   - gpr
   - upb
@@ -7295,6 +7237,7 @@ targets:
   - src/core/lib/slice/slice_string_helpers.cc
   - test/core/promise/pipe_test.cc
   deps:
+  - absl/functional:any_invocable
   - absl/meta:type_traits
   - absl/status:statusor
   - absl/types:variant
@@ -7665,6 +7608,7 @@ targets:
   - src/core/lib/slice/slice_string_helpers.cc
   - test/core/resource_quota/resource_quota_test.cc
   deps:
+  - absl/functional:any_invocable
   - absl/meta:type_traits
   - absl/status:statusor
   - absl/types:variant
@@ -8111,6 +8055,24 @@ targets:
   deps:
   - grpc
   uses_polling: false
+- name: slice_string_helpers_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - src/core/lib/slice/slice.h
+  - src/core/lib/slice/slice_internal.h
+  - src/core/lib/slice/slice_refcount.h
+  - src/core/lib/slice/slice_refcount_base.h
+  - src/core/lib/slice/slice_string_helpers.h
+  src:
+  - src/core/lib/slice/slice.cc
+  - src/core/lib/slice/slice_refcount.cc
+  - src/core/lib/slice/slice_string_helpers.cc
+  - test/core/slice/slice_string_helpers_test.cc
+  deps:
+  - gpr
+  uses_polling: false
 - name: smoke_test
   gtest: true
   build: test
@@ -8138,6 +8100,16 @@ targets:
   - test/core/address_utils/sockaddr_utils_test.cc
   deps:
   - grpc_test_util
+- name: spinlock_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/core/gpr/spinlock_test.cc
+  deps:
+  - grpc_test_util
+  uses_polling: false
 - name: ssl_credentials_test
   gtest: true
   build: test
@@ -8196,6 +8168,16 @@ targets:
   deps:
   - grpc_test_util
   uses_polling: false
+- name: status_conversion_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/core/transport/status_conversion_test.cc
+  deps:
+  - grpc_test_util
+  uses_polling: false
 - name: status_helper_test
   gtest: true
   build: test
@@ -8231,6 +8213,15 @@ targets:
   - linux
   - posix
   - mac
+- name: stream_map_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/core/transport/chttp2/stream_map_test.cc
+  deps:
+  - grpc_test_util
 - name: streaming_throughput_test
   gtest: true
   build: test
@@ -8269,6 +8260,26 @@ targets:
   - test/cpp/util/string_ref_test.cc
   deps:
   - grpc++
+  - grpc_test_util
+  uses_polling: false
+- name: string_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/core/gpr/string_test.cc
+  deps:
+  - grpc_test_util
+  uses_polling: false
+- name: sync_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/core/gpr/sync_test.cc
+  deps:
   - grpc_test_util
   uses_polling: false
 - name: system_roots_test
@@ -8476,6 +8487,7 @@ targets:
   deps:
   - absl/base:base
   - absl/base:core_headers
+  - absl/functional:any_invocable
   - absl/memory:memory
   - absl/random:random
   - absl/status:status
@@ -8575,6 +8587,7 @@ targets:
   deps:
   - absl/base:base
   - absl/base:core_headers
+  - absl/functional:any_invocable
   - absl/memory:memory
   - absl/random:random
   - absl/status:status
@@ -8595,6 +8608,16 @@ targets:
   - test/core/event_engine/slice_buffer_test.cc
   deps:
   - grpc_test_util
+- name: test_core_gpr_time_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/core/gpr/time_test.cc
+  deps:
+  - grpc_test_util
+  uses_polling: false
 - name: test_core_gprpp_time_test
   gtest: true
   build: test
@@ -8677,6 +8700,7 @@ targets:
   deps:
   - absl/base:base
   - absl/base:core_headers
+  - absl/functional:any_invocable
   - absl/memory:memory
   - absl/random:random
   - absl/status:status
@@ -8762,6 +8786,16 @@ targets:
   - test/cpp/util/time_test.cc
   deps:
   - grpc++_test_util
+  uses_polling: false
+- name: thd_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/core/gprpp/thd_test.cc
+  deps:
+  - grpc_test_util
   uses_polling: false
 - name: thread_manager_test
   gtest: true
@@ -9198,6 +9232,16 @@ targets:
   - test/core/gpr/useful_test.cc
   deps: []
   uses_polling: false
+- name: varint_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/core/transport/chttp2/varint_test.cc
+  deps:
+  - grpc_test_util
+  uses_polling: false
 - name: wakeup_fd_posix_test
   gtest: true
   build: test
@@ -9427,7 +9471,7 @@ targets:
   language: c++
   headers: []
   src:
-  - test/core/iomgr/work_serializer_test.cc
+  - test/core/gprpp/work_serializer_test.cc
   deps:
   - grpc_test_util
   platforms:
