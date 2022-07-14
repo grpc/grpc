@@ -81,7 +81,7 @@ int main(int argc, char** argv) {
   //testing::InitGoogleTest(&argc, argv);
   //LOG(INFO)<< absl::GetFlag(FLAGS_target);
   absl::ParseCommandLine(argc, argv);
-
+  LOG(INFO)<<absl::GetFlag(FLAGS_target);
   //grpc_slice slice = grpc_slice_from_copied_string("x");
   char* fake_argv[1];
 

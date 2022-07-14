@@ -130,11 +130,13 @@ int main(int argc, char** argv) {
   }
   else if (absl::GetFlag(FLAGS_benchmark_name) == "channel") {
     printf("Running Channel\n");
+    printf("Port: %d\n", port);
+
     /* start the server */
     std::vector<std::string> server_flags = {
         absl::StrCat(root, "/memory_usage_callback_server",
                      gpr_subprocess_binary_extension()),
-        "--bind", grpc_core::JoinHostPort("::", port), "--nosecure"};
+        "--bind", grpc_core::JoinHostPort("::", port)};
     Subprocess svr(server_flags);
 
     /* start the client */
@@ -149,9 +151,9 @@ int main(int argc, char** argv) {
       printf("client failed with: %d", status);
       return 1;
     }
-
+    /*
     svr.Interrupt();
-    return svr.Join() == 0 ? 0 : 2;
+    return svr.Join() == 0 ? 0 : 2;*/
   }
 
   printf("Command line args couldn't be parsed\n");

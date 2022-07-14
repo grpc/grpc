@@ -44,6 +44,7 @@ class ServerCallbackImpl final
                                        const grpc::testing::SimpleRequest* request,
                                        grpc::testing::SimpleResponse* response) override {
     LOG(INFO) << "RPC CALL RECEIVED";
+
     auto* reactor = context->DefaultReactor();
     reactor->Finish(grpc::Status::OK);
     return reactor;
@@ -54,10 +55,10 @@ ABSL_FLAG(std::string, bind, "", "Bind host:port");
 ABSL_FLAG(bool, secure, false, "Use SSL Credentials");
 
 int main(int argc, char** argv) {
-    testing::InitGoogleTest(&argc, argv);
+    absl::ParseCommandLine(argc, argv);
+    LOG(INFO) <<"Server Process Started";
     LOG(INFO)<<absl::GetFlag(FLAGS_bind);
-    /*absl::ParseCommandLine(argc, argv);
-
+    /*
     //grpc_slice slice = grpc_slice_from_copied_string("x");
     char* fake_argv[1];
 
@@ -65,20 +66,26 @@ int main(int argc, char** argv) {
     fake_argv[0] = argv[0];
     grpc::testing::TestEnvironment env(&argc, argv);
 
-    grpc_init();*/
+    grpc_init();
 
     //absl::SetFlag(&FLAGS_alsologtostderr, true);
     LOG(INFO)<<"After Server Init";
     std::string server_address = absl::StrCat("[::]:",
     absl::GetFlag(FLAGS_bind));
+    LOG(INFO)<<server_address;
     LOG(INFO)<<"Before Listening port";
+
+
+
+
+
     ServerCallbackImpl callback_server;
     grpc::ServerBuilder builder;
-    
-    if(!absl::GetFlag(FLAGS_secure))
+    builder.AddListeningPort(server_address, grpc::InsecureServerCredentials());
+    /*if(!absl::GetFlag(FLAGS_secure))
     {
         // Listen on the given address with a insecure server.
-        builder.AddListeningPort(server_address, grpc::InsecureServerCredentials());
+        
     }
     else{
         
@@ -86,10 +93,10 @@ int main(int argc, char** argv) {
         /*std::shared_ptr<grpc::ServerCredentials> creds =
         grpc::Loas2ServerCredentials(grpc::Loas2ServerCredentialsOptions());
         // Listen on the given address with a secure server.
-        builder.AddListeningPort(server_address, creds);*/
+        builder.AddListeningPort(server_address, creds);*
         printf("Supposed to be secure \n");
         builder.AddListeningPort(server_address, grpc::InsecureServerCredentials());
-    }
+    }*
     LOG(INFO)<<"After Listening port";
     // Register "service" as the instance through which we'll communicate with
     // clients.
@@ -99,7 +106,7 @@ int main(int argc, char** argv) {
     LOG(INFO) << "Server listening on " << server_address;
 
     // Keep the program running until the server shuts down.
-    server->Wait();
+    server->Wait();*/
 
     return 0;
 }
