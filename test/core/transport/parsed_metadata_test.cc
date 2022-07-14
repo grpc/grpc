@@ -18,8 +18,6 @@
 
 #include <memory>
 
-#include <gtest/gtest.h>
-
 #include "absl/memory/memory.h"
 #include "absl/strings/numbers.h"
 #include "gmock/gmock.h"

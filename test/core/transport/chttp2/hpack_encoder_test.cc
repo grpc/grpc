@@ -19,13 +19,10 @@
 #include "src/core/ext/transport/chttp2/transport/hpack_encoder.h"
 
 #include <stdarg.h>
-#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
 #include <memory>
-
-#include <gtest/gtest.h>
 
 #include "gtest/gtest.h"
 
