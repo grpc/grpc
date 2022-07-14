@@ -77,12 +77,9 @@ ClientContext::ClientContext()
 }
 
 ClientContext::~ClientContext() {
-  {
-    internal::MutexLock lock(&mu_);
-    if (call_) {
-      grpc_call_unref(call_);
-      call_ = nullptr;
-    }
+  if (call_) {
+    grpc_call_unref(call_);
+    call_ = nullptr;
   }
   g_client_callbacks->Destructor(this);
 }
