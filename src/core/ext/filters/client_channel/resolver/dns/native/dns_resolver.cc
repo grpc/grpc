@@ -16,8 +16,6 @@
 
 #include <grpc/support/port_platform.h>
 
-#include <limits.h>
-
 #include <algorithm>
 #include <memory>
 #include <string>
@@ -31,6 +29,7 @@
 #include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
 #include "absl/strings/strip.h"
+#include "absl/types/optional.h"
 
 #include <grpc/impl/codegen/grpc_types.h>
 #include <grpc/support/log.h>
@@ -70,7 +69,7 @@ TraceFlag grpc_trace_dns_resolver(false, "dns_resolver");
 class NativeClientChannelDNSResolver : public PollingResolver {
  public:
   NativeClientChannelDNSResolver(ResolverArgs args,
-                                 const grpc_channel_args* channel_args);
+                                 const ChannelArgs& channel_args);
   ~NativeClientChannelDNSResolver() override;
 
   OrphanablePtr<Orphanable> StartRequest() override;
@@ -91,12 +90,14 @@ class NativeClientChannelDNSResolver : public PollingResolver {
 };
 
 NativeClientChannelDNSResolver::NativeClientChannelDNSResolver(
-    ResolverArgs args, const grpc_channel_args* channel_args)
+    ResolverArgs args, const ChannelArgs& channel_args)
     : PollingResolver(
           std::move(args), channel_args,
-          Duration::Milliseconds(grpc_channel_args_find_integer(
-              channel_args, GRPC_ARG_DNS_MIN_TIME_BETWEEN_RESOLUTIONS_MS,
-              {1000 * 30, 0, INT_MAX})),
+          std::max(Duration::Zero(),
+                   channel_args
+                       .GetDurationFromIntMillis(
+                           GRPC_ARG_DNS_MIN_TIME_BETWEEN_RESOLUTIONS_MS)
+                       .value_or(Duration::Seconds(30))),
           BackOff::Options()
               .set_initial_backoff(Duration::Milliseconds(
                   GRPC_DNS_INITIAL_CONNECT_BACKOFF_SECONDS * 1000))
@@ -140,7 +141,7 @@ void NativeClientChannelDNSResolver::OnResolved(
   if (addresses_or.ok()) {
     ServerAddressList addresses;
     for (auto& addr : *addresses_or) {
-      addresses.emplace_back(addr, nullptr /* args */);
+      addresses.emplace_back(addr, ChannelArgs());
     }
     result.addresses = std::move(addresses);
   } else {
@@ -148,7 +149,7 @@ void NativeClientChannelDNSResolver::OnResolved(
         absl::StrCat("DNS resolution failed for ", name_to_resolve(), ": ",
                      addresses_or.status().ToString()));
   }
-  result.args = grpc_channel_args_copy(channel_args());
+  result.args = channel_args();
   OnRequestComplete(std::move(result));
   Unref(DEBUG_LOCATION, "dns_request");
 }
@@ -175,9 +176,9 @@ class NativeClientChannelDNSResolverFactory : public ResolverFactory {
 
   OrphanablePtr<Resolver> CreateResolver(ResolverArgs args) const override {
     if (!IsValidUri(args.uri)) return nullptr;
-    const grpc_channel_args* channel_args = args.args;
-    return MakeOrphanable<NativeClientChannelDNSResolver>(std::move(args),
-                                                          channel_args);
+    auto channel_args = args.args;
+    return MakeOrphanable<NativeClientChannelDNSResolver>(
+        std::move(args), std::move(channel_args));
   }
 };
 

@@ -21,6 +21,7 @@
 #include <memory>
 #include <set>
 #include <string>
+#include <type_traits>
 #include <utility>
 #include <vector>
 
@@ -34,7 +35,6 @@
 #include <grpc/grpc.h>
 #include <grpc/grpc_security.h>
 #include <grpc/impl/codegen/connectivity_state.h>
-#include <grpc/impl/codegen/grpc_types.h>
 #include <grpc/support/log.h>
 
 #include "src/core/ext/filters/client_channel/lb_policy.h"
@@ -46,6 +46,7 @@
 #include "src/core/ext/xds/xds_bootstrap.h"
 #include "src/core/ext/xds/xds_certificate_provider.h"
 #include "src/core/ext/xds/xds_client.h"
+#include "src/core/ext/xds/xds_client_grpc.h"
 #include "src/core/ext/xds/xds_cluster.h"
 #include "src/core/ext/xds/xds_common_types.h"
 #include "src/core/ext/xds/xds_resource_type_impl.h"
@@ -56,9 +57,9 @@
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/gprpp/unique_type_name.h"
+#include "src/core/lib/gprpp/work_serializer.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/pollset_set.h"
-#include "src/core/lib/iomgr/work_serializer.h"
 #include "src/core/lib/json/json.h"
 #include "src/core/lib/matchers/matchers.h"
 #include "src/core/lib/resolver/server_address.h"
@@ -155,7 +156,7 @@ class CdsLb : public LoadBalancingPolicy {
    public:
     explicit Helper(RefCountedPtr<CdsLb> parent) : parent_(std::move(parent)) {}
     RefCountedPtr<SubchannelInterface> CreateSubchannel(
-        ServerAddress address, const grpc_channel_args& args) override;
+        ServerAddress address, const ChannelArgs& args) override;
     void UpdateState(grpc_connectivity_state state, const absl::Status& status,
                      std::unique_ptr<SubchannelPicker> picker) override;
     void RequestReresolution() override;
@@ -191,7 +192,7 @@ class CdsLb : public LoadBalancingPolicy {
   RefCountedPtr<CdsLbConfig> config_;
 
   // Current channel args from the resolver.
-  const grpc_channel_args* args_ = nullptr;
+  ChannelArgs args_;
 
   // The xds client.
   RefCountedPtr<XdsClient> xds_client_;
@@ -216,7 +217,7 @@ class CdsLb : public LoadBalancingPolicy {
 //
 
 RefCountedPtr<SubchannelInterface> CdsLb::Helper::CreateSubchannel(
-    ServerAddress address, const grpc_channel_args& args) {
+    ServerAddress address, const ChannelArgs& args) {
   if (parent_->shutting_down_) return nullptr;
   return parent_->channel_control_helper()->CreateSubchannel(std::move(address),
                                                              args);
@@ -289,8 +290,7 @@ void CdsLb::ShutdownLocked() {
     watchers_.clear();
     xds_client_.reset(DEBUG_LOCATION, "CdsLb");
   }
-  grpc_channel_args_destroy(args_);
-  args_ = nullptr;
+  args_ = ChannelArgs();
 }
 
 void CdsLb::MaybeDestroyChildPolicyLocked() {
@@ -318,9 +318,7 @@ void CdsLb::UpdateLocked(UpdateArgs args) {
             config_->cluster().c_str());
   }
   // Update args.
-  grpc_channel_args_destroy(args_);
-  args_ = args.args;
-  args.args = nullptr;
+  args_ = std::move(args.args);
   // If cluster name changed, cancel watcher and restart.
   if (old_config == nullptr || old_config->cluster() != config_->cluster()) {
     if (old_config != nullptr) {
@@ -549,10 +547,9 @@ void CdsLb::OnClusterChanged(const std::string& name,
     UpdateArgs args;
     args.config = std::move(config);
     if (xds_certificate_provider_ != nullptr) {
-      grpc_arg arg_to_add = xds_certificate_provider_->MakeChannelArg();
-      args.args = grpc_channel_args_copy_and_add(args_, &arg_to_add, 1);
+      args.args = args_.SetObject(xds_certificate_provider_);
     } else {
-      args.args = grpc_channel_args_copy(args_);
+      args.args = args_;
     }
     child_policy_->UpdateLocked(std::move(args));
   }
@@ -603,8 +600,7 @@ void CdsLb::OnResourceDoesNotExist(const std::string& name) {
 absl::Status CdsLb::UpdateXdsCertificateProvider(
     const std::string& cluster_name, const XdsClusterResource& cluster_data) {
   // Early out if channel is not configured to use xds security.
-  grpc_channel_credentials* channel_credentials =
-      grpc_channel_credentials_find_in_args(args_);
+  auto* channel_credentials = args_.GetObject<grpc_channel_credentials>();
   if (channel_credentials == nullptr ||
       channel_credentials->type() != XdsCredentials::Type()) {
     xds_certificate_provider_ = nullptr;
@@ -718,8 +714,7 @@ class CdsLbFactory : public LoadBalancingPolicyFactory {
  public:
   OrphanablePtr<LoadBalancingPolicy> CreateLoadBalancingPolicy(
       LoadBalancingPolicy::Args args) const override {
-    RefCountedPtr<XdsClient> xds_client =
-        XdsClient::GetFromChannelArgs(*args.args);
+    auto xds_client = args.args.GetObjectRef<GrpcXdsClient>();
     if (xds_client == nullptr) {
       gpr_log(GPR_ERROR,
               "XdsClient not present in channel args -- cannot instantiate "

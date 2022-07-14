@@ -20,7 +20,7 @@ static const upb_MiniTable_Field udpa_annotations_VersioningAnnotation__fields[1
 const upb_MiniTable udpa_annotations_VersioningAnnotation_msginit = {
   NULL,
   &udpa_annotations_VersioningAnnotation__fields[0],
-  UPB_SIZE(8, 24), 1, kUpb_ExtMode_NonExtendable, 1, 255, 0,
+  UPB_SIZE(8, 16), 1, kUpb_ExtMode_NonExtendable, 1, 255, 0,
 };
 
 static const upb_MiniTable *messages_layout[1] = {

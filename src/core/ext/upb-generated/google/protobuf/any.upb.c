@@ -20,7 +20,7 @@ static const upb_MiniTable_Field google_protobuf_Any__fields[2] = {
 const upb_MiniTable google_protobuf_Any_msginit = {
   NULL,
   &google_protobuf_Any__fields[0],
-  UPB_SIZE(16, 40), 2, kUpb_ExtMode_NonExtendable, 2, 255, 0,
+  UPB_SIZE(16, 32), 2, kUpb_ExtMode_NonExtendable, 2, 255, 0,
 };
 
 static const upb_MiniTable *messages_layout[1] = {

@@ -47,7 +47,7 @@ GrpcServerAuthzFilter::GrpcServerAuthzFilter(
       provider_(std::move(provider)) {}
 
 absl::StatusOr<GrpcServerAuthzFilter> GrpcServerAuthzFilter::Create(
-    ChannelArgs args, ChannelFilter::Args) {
+    const ChannelArgs& args, ChannelFilter::Args) {
   auto* auth_context = args.GetObject<grpc_auth_context>();
   auto* provider = args.GetObject<grpc_authorization_policy_provider>();
   if (provider == nullptr) {

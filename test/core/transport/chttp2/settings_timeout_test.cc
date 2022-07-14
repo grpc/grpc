@@ -123,14 +123,13 @@ class Client {
     grpc_pollset_set* pollset_set = grpc_pollset_set_create();
     grpc_pollset_set_add_pollset(pollset_set, pollset_);
     EventState state;
-    const grpc_channel_args* args = CoreConfiguration::Get()
-                                        .channel_args_preconditioning()
-                                        .PreconditionChannelArgs(nullptr)
-                                        .ToC();
-    grpc_tcp_client_connect(state.closure(), &endpoint_, pollset_set, args,
-                            addresses_or->data(),
+    auto args = CoreConfiguration::Get()
+                    .channel_args_preconditioning()
+                    .PreconditionChannelArgs(nullptr)
+                    .ToC();
+    grpc_tcp_client_connect(state.closure(), &endpoint_, pollset_set,
+                            args.get(), addresses_or->data(),
                             ExecCtx::Get()->Now() + Duration::Seconds(1));
-    grpc_channel_args_destroy(args);
     ASSERT_TRUE(PollUntilDone(&state, Timestamp::InfFuture()));
     ASSERT_EQ(GRPC_ERROR_NONE, state.error());
     grpc_pollset_set_destroy(pollset_set);

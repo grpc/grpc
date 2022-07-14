@@ -27,7 +27,7 @@
 
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
-#include "src/google/protobuf/test_messages_proto3.upb.h"
+#include "google/protobuf/test_messages_proto3.upb.h"
 #include "upb/def.hpp"
 #include "upb/json_decode.h"
 #include "upb/json_encode.h"
@@ -57,8 +57,8 @@ TEST(MessageTest, Extensions) {
   // EXPECT_FALSE(upb_test_TestExtensions_Nested_has_optional_int32_ext(ext_msg));
   EXPECT_FALSE(upb_test_has_optional_msg_ext(ext_msg));
 
-  upb::SymbolTable symtab;
-  upb::MessageDefPtr m(upb_test_TestExtensions_getmsgdef(symtab.ptr()));
+  upb::DefPool defpool;
+  upb::MessageDefPtr m(upb_test_TestExtensions_getmsgdef(defpool.ptr()));
   EXPECT_TRUE(m.ptr() != nullptr);
 
   std::string json = R"json(
@@ -70,7 +70,7 @@ TEST(MessageTest, Extensions) {
   )json";
   upb::Status status;
   EXPECT_TRUE(upb_JsonDecode(json.data(), json.size(), ext_msg, m.ptr(),
-                             symtab.ptr(), 0, arena.ptr(), status.ptr()))
+                             defpool.ptr(), 0, arena.ptr(), status.ptr()))
       << status.error_message();
 
   VerifyMessage(ext_msg);
@@ -83,25 +83,26 @@ TEST(MessageTest, Extensions) {
   ASSERT_GE(size, 0);
 
   upb_test_TestExtensions* ext_msg2 = upb_test_TestExtensions_parse_ex(
-      serialized, size, upb_DefPool_ExtensionRegistry(symtab.ptr()), 0,
+      serialized, size, upb_DefPool_ExtensionRegistry(defpool.ptr()), 0,
       arena.ptr());
   VerifyMessage(ext_msg2);
 
   // Test round-trip through JSON format.
   size_t json_size =
-      upb_JsonEncode(ext_msg, m.ptr(), symtab.ptr(), 0, NULL, 0, status.ptr());
+      upb_JsonEncode(ext_msg, m.ptr(), defpool.ptr(), 0, NULL, 0, status.ptr());
   char* json_buf =
       static_cast<char*>(upb_Arena_Malloc(arena.ptr(), json_size + 1));
-  upb_JsonEncode(ext_msg, m.ptr(), symtab.ptr(), 0, json_buf, json_size + 1,
+  upb_JsonEncode(ext_msg, m.ptr(), defpool.ptr(), 0, json_buf, json_size + 1,
                  status.ptr());
   upb_test_TestExtensions* ext_msg3 = upb_test_TestExtensions_new(arena.ptr());
   EXPECT_TRUE(upb_JsonDecode(json_buf, json_size, ext_msg3, m.ptr(),
-                             symtab.ptr(), 0, arena.ptr(), status.ptr()))
+                             defpool.ptr(), 0, arena.ptr(), status.ptr()))
       << status.error_message();
   VerifyMessage(ext_msg3);
 }
 
 void VerifyMessageSet(const upb_test_TestMessageSet* mset_msg) {
+  ASSERT_TRUE(mset_msg != nullptr);
   bool has = upb_test_MessageSetMember_has_message_set_extension(mset_msg);
   EXPECT_TRUE(has);
   if (!has) return;
@@ -118,8 +119,8 @@ TEST(MessageTest, MessageSet) {
 
   EXPECT_FALSE(upb_test_MessageSetMember_has_message_set_extension(ext_msg));
 
-  upb::SymbolTable symtab;
-  upb::MessageDefPtr m(upb_test_TestMessageSet_getmsgdef(symtab.ptr()));
+  upb::DefPool defpool;
+  upb::MessageDefPtr m(upb_test_TestMessageSet_getmsgdef(defpool.ptr()));
   EXPECT_TRUE(m.ptr() != nullptr);
 
   std::string json = R"json(
@@ -129,7 +130,7 @@ TEST(MessageTest, MessageSet) {
   )json";
   upb::Status status;
   EXPECT_TRUE(upb_JsonDecode(json.data(), json.size(), ext_msg, m.ptr(),
-                             symtab.ptr(), 0, arena.ptr(), status.ptr()))
+                             defpool.ptr(), 0, arena.ptr(), status.ptr()))
       << status.error_message();
 
   VerifyMessageSet(ext_msg);
@@ -142,22 +143,83 @@ TEST(MessageTest, MessageSet) {
   ASSERT_GE(size, 0);
 
   upb_test_TestMessageSet* ext_msg2 = upb_test_TestMessageSet_parse_ex(
-      serialized, size, upb_DefPool_ExtensionRegistry(symtab.ptr()), 0,
+      serialized, size, upb_DefPool_ExtensionRegistry(defpool.ptr()), 0,
       arena.ptr());
   VerifyMessageSet(ext_msg2);
 
   // Test round-trip through JSON format.
   size_t json_size =
-      upb_JsonEncode(ext_msg, m.ptr(), symtab.ptr(), 0, NULL, 0, status.ptr());
+      upb_JsonEncode(ext_msg, m.ptr(), defpool.ptr(), 0, NULL, 0, status.ptr());
   char* json_buf =
       static_cast<char*>(upb_Arena_Malloc(arena.ptr(), json_size + 1));
-  upb_JsonEncode(ext_msg, m.ptr(), symtab.ptr(), 0, json_buf, json_size + 1,
+  upb_JsonEncode(ext_msg, m.ptr(), defpool.ptr(), 0, json_buf, json_size + 1,
                  status.ptr());
   upb_test_TestMessageSet* ext_msg3 = upb_test_TestMessageSet_new(arena.ptr());
   EXPECT_TRUE(upb_JsonDecode(json_buf, json_size, ext_msg3, m.ptr(),
-                             symtab.ptr(), 0, arena.ptr(), status.ptr()))
+                             defpool.ptr(), 0, arena.ptr(), status.ptr()))
       << status.error_message();
   VerifyMessageSet(ext_msg3);
+}
+
+TEST(MessageTest, UnknownMessageSet) {
+  static const char data[] = "ABCDE";
+  upb_StringView data_view = upb_StringView_FromString(data);
+  upb::Arena arena;
+  upb_test_FakeMessageSet* fake = upb_test_FakeMessageSet_new(arena.ptr());
+
+  // Add a MessageSet item that is unknown (there is no matching extension in
+  // the .proto file)
+  upb_test_FakeMessageSet_Item* item =
+      upb_test_FakeMessageSet_add_item(fake, arena.ptr());
+  upb_test_FakeMessageSet_Item_set_type_id(item, 12345);
+  upb_test_FakeMessageSet_Item_set_message(item, data_view);
+
+  // Set unknown fields inside the message set to test that we can skip them.
+  upb_test_FakeMessageSet_Item_set_unknown_varint(item, 12345678);
+  upb_test_FakeMessageSet_Item_set_unknown_fixed32(item, 12345678);
+  upb_test_FakeMessageSet_Item_set_unknown_fixed64(item, 12345678);
+  upb_test_FakeMessageSet_Item_set_unknown_bytes(item, data_view);
+  upb_test_FakeMessageSet_Item_mutable_unknowngroup(item, arena.ptr());
+
+  // Round trip through a true MessageSet where this item_id is unknown.
+  size_t size;
+  char* serialized =
+      upb_test_FakeMessageSet_serialize(fake, arena.ptr(), &size);
+  ASSERT_TRUE(serialized != nullptr);
+  ASSERT_GE(size, 0);
+
+  upb::DefPool defpool;
+  upb::MessageDefPtr m(upb_test_TestMessageSet_getmsgdef(defpool.ptr()));
+  EXPECT_TRUE(m.ptr() != nullptr);
+  upb_test_TestMessageSet* message_set = upb_test_TestMessageSet_parse_ex(
+      serialized, size, upb_DefPool_ExtensionRegistry(defpool.ptr()), 0,
+      arena.ptr());
+  ASSERT_TRUE(message_set != nullptr);
+
+  char* serialized2 =
+      upb_test_TestMessageSet_serialize(message_set, arena.ptr(), &size);
+  ASSERT_TRUE(serialized2 != nullptr);
+  ASSERT_GE(size, 0);
+
+  // Parse back into a fake MessageSet and verify that the unknown MessageSet
+  // item was preserved in full (both type_id and message).
+  upb_test_FakeMessageSet* fake2 =
+      upb_test_FakeMessageSet_parse(serialized2, size, arena.ptr());
+  ASSERT_TRUE(fake2 != nullptr);
+
+  const upb_test_FakeMessageSet_Item* const* items =
+      upb_test_FakeMessageSet_item(fake2, &size);
+  ASSERT_EQ(1, size);
+  EXPECT_EQ(12345, upb_test_FakeMessageSet_Item_type_id(items[0]));
+  EXPECT_TRUE(upb_StringView_IsEqual(
+      data_view, upb_test_FakeMessageSet_Item_message(items[0])));
+
+  // The non-MessageSet unknown fields should have been discarded.
+  EXPECT_FALSE(upb_test_FakeMessageSet_Item_has_unknown_varint(items[0]));
+  EXPECT_FALSE(upb_test_FakeMessageSet_Item_has_unknown_fixed32(items[0]));
+  EXPECT_FALSE(upb_test_FakeMessageSet_Item_has_unknown_fixed64(items[0]));
+  EXPECT_FALSE(upb_test_FakeMessageSet_Item_has_unknown_bytes(items[0]));
+  EXPECT_FALSE(upb_test_FakeMessageSet_Item_has_unknowngroup(items[0]));
 }
 
 TEST(MessageTest, Proto2Enum) {
@@ -345,13 +407,13 @@ TEST(MessageTest, EncodeRequiredFields) {
   // Fails, we asked for required field checking but the required field is
   // missing.
   serialized = upb_test_TestRequiredFields_serialize_ex(
-      test_msg, kUpb_Encode_CheckRequired, arena.ptr(), &size);
+      test_msg, kUpb_EncodeOption_CheckRequired, arena.ptr(), &size);
   ASSERT_TRUE(serialized == nullptr);
 
   // Fails, some required fields are present but not others.
   upb_test_TestRequiredFields_set_required_int32(test_msg, 1);
   serialized = upb_test_TestRequiredFields_serialize_ex(
-      test_msg, kUpb_Encode_CheckRequired, arena.ptr(), &size);
+      test_msg, kUpb_EncodeOption_CheckRequired, arena.ptr(), &size);
   ASSERT_TRUE(serialized == nullptr);
 
   // Succeeds, all required fields are set.
@@ -359,7 +421,7 @@ TEST(MessageTest, EncodeRequiredFields) {
   upb_test_TestRequiredFields_set_required_int64(test_msg, 2);
   upb_test_TestRequiredFields_set_required_message(test_msg, empty_msg);
   serialized = upb_test_TestRequiredFields_serialize_ex(
-      test_msg, kUpb_Encode_CheckRequired, arena.ptr(), &size);
+      test_msg, kUpb_EncodeOption_CheckRequired, arena.ptr(), &size);
   ASSERT_TRUE(serialized != nullptr);
 }
 
@@ -372,11 +434,11 @@ TEST(MessageTest, MaxRequiredFields) {
   // missing.
   size_t size;
   char* serialized = upb_test_TestMaxRequiredFields_serialize_ex(
-      test_msg, kUpb_Encode_CheckRequired, arena.ptr(), &size);
+      test_msg, kUpb_EncodeOption_CheckRequired, arena.ptr(), &size);
   ASSERT_TRUE(serialized == nullptr);
 
-  upb::SymbolTable symtab;
-  upb::MessageDefPtr m(upb_test_TestMaxRequiredFields_getmsgdef(symtab.ptr()));
+  upb::DefPool defpool;
+  upb::MessageDefPtr m(upb_test_TestMaxRequiredFields_getmsgdef(defpool.ptr()));
   upb_MessageValue val;
   val.int32_val = 1;
   for (int i = 1; i <= 61; i++) {
@@ -387,7 +449,7 @@ TEST(MessageTest, MaxRequiredFields) {
 
   // Fails, field 63 still isn't set.
   serialized = upb_test_TestMaxRequiredFields_serialize_ex(
-      test_msg, kUpb_Encode_CheckRequired, arena.ptr(), &size);
+      test_msg, kUpb_EncodeOption_CheckRequired, arena.ptr(), &size);
   ASSERT_TRUE(serialized == nullptr);
 
   // Succeeds, all required fields are set.
@@ -395,7 +457,7 @@ TEST(MessageTest, MaxRequiredFields) {
   ASSERT_TRUE(f);
   upb_Message_Set(test_msg, f.ptr(), val, arena.ptr());
   serialized = upb_test_TestMaxRequiredFields_serialize_ex(
-      test_msg, kUpb_Encode_CheckRequired, arena.ptr(), &size);
+      test_msg, kUpb_EncodeOption_CheckRequired, arena.ptr(), &size);
   ASSERT_TRUE(serialized != nullptr);
 }
 

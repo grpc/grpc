@@ -27,7 +27,6 @@
 #include "absl/strings/str_split.h"
 #include "absl/strings/string_view.h"
 
-#include <grpc/impl/codegen/grpc_types.h>
 #include <grpc/support/log.h>
 
 #include "src/core/lib/address_utils/parse_address.h"
@@ -49,7 +48,6 @@ namespace {
 class SockaddrResolver : public Resolver {
  public:
   SockaddrResolver(ServerAddressList addresses, ResolverArgs args);
-  ~SockaddrResolver() override;
 
   void StartLocked() override;
 
@@ -58,25 +56,19 @@ class SockaddrResolver : public Resolver {
  private:
   std::unique_ptr<ResultHandler> result_handler_;
   ServerAddressList addresses_;
-  const grpc_channel_args* channel_args_ = nullptr;
+  ChannelArgs channel_args_;
 };
 
 SockaddrResolver::SockaddrResolver(ServerAddressList addresses,
                                    ResolverArgs args)
     : result_handler_(std::move(args.result_handler)),
       addresses_(std::move(addresses)),
-      channel_args_(grpc_channel_args_copy(args.args)) {}
-
-SockaddrResolver::~SockaddrResolver() {
-  grpc_channel_args_destroy(channel_args_);
-}
+      channel_args_(std::move(args.args)) {}
 
 void SockaddrResolver::StartLocked() {
   Result result;
   result.addresses = std::move(addresses_);
-  // TODO(roth): Use std::move() once channel args is converted to C++.
-  result.args = channel_args_;
-  channel_args_ = nullptr;
+  result.args = std::move(channel_args_);
   result_handler_->ReportResult(std::move(result));
 }
 
@@ -106,7 +98,7 @@ bool ParseUri(const URI& uri,
       break;
     }
     if (addresses != nullptr) {
-      addresses->emplace_back(addr, nullptr /* args */);
+      addresses->emplace_back(addr, ChannelArgs());
     }
   }
   return !errors_found;

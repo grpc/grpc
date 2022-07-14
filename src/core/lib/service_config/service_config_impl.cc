@@ -39,7 +39,7 @@
 namespace grpc_core {
 
 RefCountedPtr<ServiceConfig> ServiceConfigImpl::Create(
-    const grpc_channel_args* args, absl::string_view json_string,
+    const ChannelArgs& args, absl::string_view json_string,
     grpc_error_handle* error) {
   GPR_DEBUG_ASSERT(error != nullptr);
   Json json = Json::Parse(json_string, error);
@@ -48,7 +48,7 @@ RefCountedPtr<ServiceConfig> ServiceConfigImpl::Create(
                                            std::move(json), error);
 }
 
-ServiceConfigImpl::ServiceConfigImpl(const grpc_channel_args* args,
+ServiceConfigImpl::ServiceConfigImpl(const ChannelArgs& args,
                                      std::string json_string, Json json,
                                      grpc_error_handle* error)
     : json_string_(std::move(json_string)), json_(std::move(json)) {
@@ -79,7 +79,7 @@ ServiceConfigImpl::~ServiceConfigImpl() {
 }
 
 grpc_error_handle ServiceConfigImpl::ParseJsonMethodConfig(
-    const grpc_channel_args* args, const Json& json) {
+    const ChannelArgs& args, const Json& json) {
   std::vector<grpc_error_handle> error_list;
   // Parse method config with each registered parser.
   auto parsed_configs =
@@ -141,7 +141,7 @@ grpc_error_handle ServiceConfigImpl::ParseJsonMethodConfig(
 }
 
 grpc_error_handle ServiceConfigImpl::ParsePerMethodParams(
-    const grpc_channel_args* args) {
+    const ChannelArgs& args) {
   std::vector<grpc_error_handle> error_list;
   auto it = json_.object_value().find("methodConfig");
   if (it != json_.object_value().end()) {

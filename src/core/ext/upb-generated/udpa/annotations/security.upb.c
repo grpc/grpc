@@ -22,7 +22,7 @@ static const upb_MiniTable_Field udpa_annotations_FieldSecurityAnnotation__field
 const upb_MiniTable udpa_annotations_FieldSecurityAnnotation_msginit = {
   NULL,
   &udpa_annotations_FieldSecurityAnnotation__fields[0],
-  UPB_SIZE(2, 8), 2, kUpb_ExtMode_NonExtendable, 2, 255, 0,
+  UPB_SIZE(8, 8), 2, kUpb_ExtMode_NonExtendable, 2, 255, 0,
 };
 
 static const upb_MiniTable *messages_layout[1] = {

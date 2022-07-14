@@ -25,8 +25,8 @@
 #include "absl/status/status.h"
 
 #include <grpc/impl/codegen/connectivity_state.h>
-#include <grpc/impl/codegen/grpc_types.h>
 
+#include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/gprpp/ref_counted.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/iomgr/iomgr_fwd.h"
@@ -98,7 +98,7 @@ class SubchannelInterface : public RefCounted<SubchannelInterface> {
       std::unique_ptr<DataWatcherInterface> watcher) = 0;
 
   // TODO(roth): Need a better non-grpc-specific abstraction here.
-  virtual const grpc_channel_args* channel_args() = 0;
+  virtual ChannelArgs channel_args() = 0;
 };
 
 // A class that delegates to another subchannel, to be used in cases
@@ -124,7 +124,7 @@ class DelegatingSubchannel : public SubchannelInterface {
     wrapped_subchannel_->RequestConnection();
   }
   void ResetBackoff() override { wrapped_subchannel_->ResetBackoff(); }
-  const grpc_channel_args* channel_args() override {
+  ChannelArgs channel_args() override {
     return wrapped_subchannel_->channel_args();
   }
   void AddDataWatcher(std::unique_ptr<DataWatcherInterface> watcher) override {

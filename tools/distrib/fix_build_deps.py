@@ -47,7 +47,7 @@ EXTERNAL_DEPS = {
         'absl/base',
     # TODO(ctiller) remove this
     'absl/base/internal/endian.h':
-        'absl-base',
+        'absl/base',
     'absl/base/thread_annotations.h':
         'absl/base:core_headers',
     'absl/container/flat_hash_map.h':
@@ -58,6 +58,8 @@ EXTERNAL_DEPS = {
         'absl/container:inlined_vector',
     'absl/cleanup/cleanup.h':
         'absl/cleanup',
+    'absl/functional/any_invocable.h':
+        'absl/functional:any_invocable',
     'absl/functional/bind_front.h':
         'absl/functional:bind_front',
     'absl/functional/function_ref.h':
@@ -166,6 +168,8 @@ EXTERNAL_DEPS = {
         'libcrypto',
     're2/re2.h':
         're2',
+    'upb/arena.h':
+        'upb_lib',
     'upb/def.h':
         'upb_lib',
     'upb/json_encode.h':

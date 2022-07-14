@@ -33,7 +33,7 @@ static const upb_MiniTable_Field envoy_config_route_v3_ScopedRouteConfiguration_
 const upb_MiniTable envoy_config_route_v3_ScopedRouteConfiguration_msginit = {
   &envoy_config_route_v3_ScopedRouteConfiguration_submsgs[0],
   &envoy_config_route_v3_ScopedRouteConfiguration__fields[0],
-  UPB_SIZE(28, 56), 5, kUpb_ExtMode_NonExtendable, 5, 255, 0,
+  UPB_SIZE(32, 56), 5, kUpb_ExtMode_NonExtendable, 5, 255, 0,
 };
 
 static const upb_MiniTable_Sub envoy_config_route_v3_ScopedRouteConfiguration_Key_submsgs[1] = {
@@ -47,7 +47,7 @@ static const upb_MiniTable_Field envoy_config_route_v3_ScopedRouteConfiguration_
 const upb_MiniTable envoy_config_route_v3_ScopedRouteConfiguration_Key_msginit = {
   &envoy_config_route_v3_ScopedRouteConfiguration_Key_submsgs[0],
   &envoy_config_route_v3_ScopedRouteConfiguration_Key__fields[0],
-  UPB_SIZE(4, 8), 1, kUpb_ExtMode_NonExtendable, 1, 255, 0,
+  UPB_SIZE(8, 8), 1, kUpb_ExtMode_NonExtendable, 1, 255, 0,
 };
 
 static const upb_MiniTable_Field envoy_config_route_v3_ScopedRouteConfiguration_Key_Fragment__fields[1] = {
@@ -57,7 +57,7 @@ static const upb_MiniTable_Field envoy_config_route_v3_ScopedRouteConfiguration_
 const upb_MiniTable envoy_config_route_v3_ScopedRouteConfiguration_Key_Fragment_msginit = {
   NULL,
   &envoy_config_route_v3_ScopedRouteConfiguration_Key_Fragment__fields[0],
-  UPB_SIZE(12, 24), 1, kUpb_ExtMode_NonExtendable, 1, 255, 0,
+  UPB_SIZE(16, 24), 1, kUpb_ExtMode_NonExtendable, 1, 255, 0,
 };
 
 static const upb_MiniTable *messages_layout[3] = {

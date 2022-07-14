@@ -123,7 +123,8 @@ static void finish_resolve(void* arg, grpc_error_handle error) {
     grpc_resolved_address fake_resolved_address;
     GPR_ASSERT(
         grpc_parse_ipv4_hostport("1.2.3.4:5", &fake_resolved_address, false));
-    (*r->addresses)->emplace_back(fake_resolved_address, nullptr);
+    (*r->addresses)
+        ->emplace_back(fake_resolved_address, grpc_core::ChannelArgs());
     grpc_core::ExecCtx::Run(DEBUG_LOCATION, r->on_done, GRPC_ERROR_NONE);
   } else {
     grpc_core::ExecCtx::Run(DEBUG_LOCATION, r->on_done,
