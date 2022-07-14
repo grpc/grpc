@@ -4619,14 +4619,14 @@ grpc_cc_library(
     public_hdrs = [
         "include/grpcpp/ext/server_load_reporting.h",
     ],
-    tags = ["grpc-autodeps"],
     deps = [
         "gpr_base",
         "gpr_platform",
+        "grpc",
         "grpc++",
         "grpc++_codegen_base",
         "grpc_codegen",
-        "grpc_secure",
+        "lb_server_load_reporting_filter",
         "lb_server_load_reporting_service_server_builder_plugin",
     ],
 )
