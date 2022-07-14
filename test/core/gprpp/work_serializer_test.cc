@@ -16,7 +16,7 @@
  *
  */
 
-#include "src/core/lib/iomgr/work_serializer.h"
+#include "src/core/lib/gprpp/work_serializer.h"
 
 #include <memory>
 #include <thread>

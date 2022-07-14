@@ -427,6 +427,7 @@ if test "$PHP_GRPC" != "no"; then
     src/core/ext/xds/xds_certificate_provider.cc \
     src/core/ext/xds/xds_channel_stack_modifier.cc \
     src/core/ext/xds/xds_client.cc \
+    src/core/ext/xds/xds_client_grpc.cc \
     src/core/ext/xds/xds_client_stats.cc \
     src/core/ext/xds/xds_cluster.cc \
     src/core/ext/xds/xds_cluster_specifier_plugin.cc \
@@ -441,6 +442,7 @@ if test "$PHP_GRPC" != "no"; then
     src/core/ext/xds/xds_route_config.cc \
     src/core/ext/xds/xds_routing.cc \
     src/core/ext/xds/xds_server_config_fetcher.cc \
+    src/core/ext/xds/xds_transport_grpc.cc \
     src/core/lib/address_utils/parse_address.cc \
     src/core/lib/address_utils/sockaddr_utils.cc \
     src/core/lib/backoff/backoff.cc \
@@ -519,6 +521,7 @@ if test "$PHP_GRPC" != "no"; then
     src/core/lib/gprpp/thd_windows.cc \
     src/core/lib/gprpp/time.cc \
     src/core/lib/gprpp/time_util.cc \
+    src/core/lib/gprpp/work_serializer.cc \
     src/core/lib/http/format_request.cc \
     src/core/lib/http/httpcli.cc \
     src/core/lib/http/httpcli_security_connector.cc \
@@ -541,8 +544,6 @@ if test "$PHP_GRPC" != "no"; then
     src/core/lib/iomgr/ev_windows.cc \
     src/core/lib/iomgr/exec_ctx.cc \
     src/core/lib/iomgr/executor.cc \
-    src/core/lib/iomgr/executor/mpmcqueue.cc \
-    src/core/lib/iomgr/executor/threadpool.cc \
     src/core/lib/iomgr/fork_posix.cc \
     src/core/lib/iomgr/fork_windows.cc \
     src/core/lib/iomgr/gethostname_fallback.cc \
@@ -598,7 +599,6 @@ if test "$PHP_GRPC" != "no"; then
     src/core/lib/iomgr/wakeup_fd_nospecial.cc \
     src/core/lib/iomgr/wakeup_fd_pipe.cc \
     src/core/lib/iomgr/wakeup_fd_posix.cc \
-    src/core/lib/iomgr/work_serializer.cc \
     src/core/lib/json/json_reader.cc \
     src/core/lib/json/json_util.cc \
     src/core/lib/json/json_writer.cc \
@@ -1178,7 +1178,7 @@ if test "$PHP_GRPC" != "no"; then
     -D_HAS_EXCEPTIONS=0 -DNOMINMAX -DGRPC_ARES=0 \
     -DGRPC_POSIX_FORK_ALLOW_PTHREAD_ATFORK=1 \
     -DGRPC_XDS_USER_AGENT_NAME_SUFFIX='"\"PHP\""' \
-    -DGRPC_XDS_USER_AGENT_VERSION_SUFFIX='"\"1.48.0dev\""')
+    -DGRPC_XDS_USER_AGENT_VERSION_SUFFIX='"\"1.49.0dev\""')
 
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/filters/census)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/filters/channel_idle)
@@ -1321,7 +1321,6 @@ if test "$PHP_GRPC" != "no"; then
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/gprpp)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/http)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/iomgr)
-  PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/iomgr/executor)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/json)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/matchers)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/profiling)

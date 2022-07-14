@@ -40,10 +40,10 @@
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/gprpp/thd.h"
+#include "src/core/lib/gprpp/work_serializer.h"
 #include "src/core/lib/iomgr/iomgr.h"
 #include "src/core/lib/iomgr/pollset.h"
 #include "src/core/lib/iomgr/pollset_set.h"
-#include "src/core/lib/iomgr/work_serializer.h"
 #include "src/core/lib/resolver/resolver.h"
 #include "src/core/lib/resolver/resolver_registry.h"
 #include "test/core/end2end/cq_verifier.h"
@@ -165,7 +165,8 @@ void TestCancelActiveDNSQuery(ArgsStruct* args) {
   // create resolver and resolve
   grpc_core::OrphanablePtr<grpc_core::Resolver> resolver =
       grpc_core::CoreConfiguration::Get().resolver_registry().CreateResolver(
-          client_target.c_str(), nullptr, args->pollset_set, args->lock,
+          client_target.c_str(), grpc_core::ChannelArgs(), args->pollset_set,
+          args->lock,
           std::unique_ptr<grpc_core::Resolver::ResultHandler>(
               new AssertFailureResultHandler(args)));
   resolver->StartLocked();

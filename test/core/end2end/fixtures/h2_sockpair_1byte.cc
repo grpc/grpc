@@ -115,16 +115,15 @@ static void chttp2_init_client_socketpair(
   auto* fixture_data = static_cast<custom_fixture_data*>(f->fixture_data);
   grpc_transport* transport;
   sp_client_setup cs;
-  client_args = grpc_core::CoreConfiguration::Get()
-                    .channel_args_preconditioning()
-                    .PreconditionChannelArgs(client_args)
-                    .ToC();
-  cs.client_args = client_args;
+  auto client_channel_args = grpc_core::CoreConfiguration::Get()
+                                 .channel_args_preconditioning()
+                                 .PreconditionChannelArgs(client_args);
+  cs.client_args = client_channel_args.ToC().release();
   cs.f = f;
-  transport =
-      grpc_create_chttp2_transport(client_args, fixture_data->ep.client, true);
+  transport = grpc_create_chttp2_transport(client_channel_args,
+                                           fixture_data->ep.client, true);
   client_setup_transport(&cs, transport);
-  grpc_channel_args_destroy(client_args);
+  grpc_channel_args_destroy(cs.client_args);
   GPR_ASSERT(f->client);
 }
 
@@ -137,13 +136,11 @@ static void chttp2_init_server_socketpair(
   f->server = grpc_server_create(server_args, nullptr);
   grpc_server_register_completion_queue(f->server, f->cq, nullptr);
   grpc_server_start(f->server);
-  server_args = grpc_core::CoreConfiguration::Get()
-                    .channel_args_preconditioning()
-                    .PreconditionChannelArgs(server_args)
-                    .ToC();
-  transport =
-      grpc_create_chttp2_transport(server_args, fixture_data->ep.server, false);
-  grpc_channel_args_destroy(server_args);
+  auto server_channel_args = grpc_core::CoreConfiguration::Get()
+                                 .channel_args_preconditioning()
+                                 .PreconditionChannelArgs(server_args);
+  transport = grpc_create_chttp2_transport(server_channel_args,
+                                           fixture_data->ep.server, false);
   server_setup_transport(f, transport);
 }
 

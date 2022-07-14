@@ -22,7 +22,7 @@
 Pod::Spec.new do |s|
   s.name     = 'gRPC-C++'
   # TODO (mxyan): use version that match gRPC version when pod is stabilized
-  version = '1.48.0-dev'
+  version = '1.49.0-dev'
   s.version  = version
   s.summary  = 'gRPC C++ library'
   s.homepage = 'https://grpc.io'
@@ -202,6 +202,7 @@ Pod::Spec.new do |s|
     ss.dependency 'abseil/container/flat_hash_map', abseil_version
     ss.dependency 'abseil/container/flat_hash_set', abseil_version
     ss.dependency 'abseil/container/inlined_vector', abseil_version
+    ss.dependency 'abseil/functional/any_invocable', abseil_version
     ss.dependency 'abseil/functional/bind_front', abseil_version
     ss.dependency 'abseil/functional/function_ref', abseil_version
     ss.dependency 'abseil/hash/hash', abseil_version
@@ -634,6 +635,7 @@ Pod::Spec.new do |s|
                       'src/core/ext/xds/xds_channel_args.h',
                       'src/core/ext/xds/xds_channel_stack_modifier.h',
                       'src/core/ext/xds/xds_client.h',
+                      'src/core/ext/xds/xds_client_grpc.h',
                       'src/core/ext/xds/xds_client_stats.h',
                       'src/core/ext/xds/xds_cluster.h',
                       'src/core/ext/xds/xds_cluster_specifier_plugin.h',
@@ -648,6 +650,8 @@ Pod::Spec.new do |s|
                       'src/core/ext/xds/xds_resource_type_impl.h',
                       'src/core/ext/xds/xds_route_config.h',
                       'src/core/ext/xds/xds_routing.h',
+                      'src/core/ext/xds/xds_transport.h',
+                      'src/core/ext/xds/xds_transport_grpc.h',
                       'src/core/lib/address_utils/parse_address.h',
                       'src/core/lib/address_utils/sockaddr_utils.h',
                       'src/core/lib/avl/avl.h',
@@ -674,6 +678,7 @@ Pod::Spec.new do |s|
                       'src/core/lib/debug/stats_data.h',
                       'src/core/lib/debug/trace.h',
                       'src/core/lib/event_engine/channel_args_endpoint_config.h',
+                      'src/core/lib/event_engine/default_event_engine_factory.h',
                       'src/core/lib/event_engine/event_engine_factory.h',
                       'src/core/lib/event_engine/handle_containers.h',
                       'src/core/lib/event_engine/iomgr_engine/iomgr_engine.h',
@@ -725,6 +730,7 @@ Pod::Spec.new do |s|
                       'src/core/lib/gprpp/time.h',
                       'src/core/lib/gprpp/time_util.h',
                       'src/core/lib/gprpp/unique_type_name.h',
+                      'src/core/lib/gprpp/work_serializer.h',
                       'src/core/lib/http/format_request.h',
                       'src/core/lib/http/httpcli.h',
                       'src/core/lib/http/httpcli_ssl_credentials.h',
@@ -748,8 +754,6 @@ Pod::Spec.new do |s|
                       'src/core/lib/iomgr/ev_posix.h',
                       'src/core/lib/iomgr/exec_ctx.h',
                       'src/core/lib/iomgr/executor.h',
-                      'src/core/lib/iomgr/executor/mpmcqueue.h',
-                      'src/core/lib/iomgr/executor/threadpool.h',
                       'src/core/lib/iomgr/gethostname.h',
                       'src/core/lib/iomgr/grpc_if_nametoindex.h',
                       'src/core/lib/iomgr/internal_errqueue.h',
@@ -794,7 +798,6 @@ Pod::Spec.new do |s|
                       'src/core/lib/iomgr/unix_sockets_posix.h',
                       'src/core/lib/iomgr/wakeup_fd_pipe.h',
                       'src/core/lib/iomgr/wakeup_fd_posix.h',
-                      'src/core/lib/iomgr/work_serializer.h',
                       'src/core/lib/json/json.h',
                       'src/core/lib/json/json_util.h',
                       'src/core/lib/matchers/matchers.h',
@@ -1471,6 +1474,7 @@ Pod::Spec.new do |s|
                               'src/core/ext/xds/xds_channel_args.h',
                               'src/core/ext/xds/xds_channel_stack_modifier.h',
                               'src/core/ext/xds/xds_client.h',
+                              'src/core/ext/xds/xds_client_grpc.h',
                               'src/core/ext/xds/xds_client_stats.h',
                               'src/core/ext/xds/xds_cluster.h',
                               'src/core/ext/xds/xds_cluster_specifier_plugin.h',
@@ -1485,6 +1489,8 @@ Pod::Spec.new do |s|
                               'src/core/ext/xds/xds_resource_type_impl.h',
                               'src/core/ext/xds/xds_route_config.h',
                               'src/core/ext/xds/xds_routing.h',
+                              'src/core/ext/xds/xds_transport.h',
+                              'src/core/ext/xds/xds_transport_grpc.h',
                               'src/core/lib/address_utils/parse_address.h',
                               'src/core/lib/address_utils/sockaddr_utils.h',
                               'src/core/lib/avl/avl.h',
@@ -1511,6 +1517,7 @@ Pod::Spec.new do |s|
                               'src/core/lib/debug/stats_data.h',
                               'src/core/lib/debug/trace.h',
                               'src/core/lib/event_engine/channel_args_endpoint_config.h',
+                              'src/core/lib/event_engine/default_event_engine_factory.h',
                               'src/core/lib/event_engine/event_engine_factory.h',
                               'src/core/lib/event_engine/handle_containers.h',
                               'src/core/lib/event_engine/iomgr_engine/iomgr_engine.h',
@@ -1562,6 +1569,7 @@ Pod::Spec.new do |s|
                               'src/core/lib/gprpp/time.h',
                               'src/core/lib/gprpp/time_util.h',
                               'src/core/lib/gprpp/unique_type_name.h',
+                              'src/core/lib/gprpp/work_serializer.h',
                               'src/core/lib/http/format_request.h',
                               'src/core/lib/http/httpcli.h',
                               'src/core/lib/http/httpcli_ssl_credentials.h',
@@ -1585,8 +1593,6 @@ Pod::Spec.new do |s|
                               'src/core/lib/iomgr/ev_posix.h',
                               'src/core/lib/iomgr/exec_ctx.h',
                               'src/core/lib/iomgr/executor.h',
-                              'src/core/lib/iomgr/executor/mpmcqueue.h',
-                              'src/core/lib/iomgr/executor/threadpool.h',
                               'src/core/lib/iomgr/gethostname.h',
                               'src/core/lib/iomgr/grpc_if_nametoindex.h',
                               'src/core/lib/iomgr/internal_errqueue.h',
@@ -1631,7 +1637,6 @@ Pod::Spec.new do |s|
                               'src/core/lib/iomgr/unix_sockets_posix.h',
                               'src/core/lib/iomgr/wakeup_fd_pipe.h',
                               'src/core/lib/iomgr/wakeup_fd_posix.h',
-                              'src/core/lib/iomgr/work_serializer.h',
                               'src/core/lib/json/json.h',
                               'src/core/lib/json/json_util.h',
                               'src/core/lib/matchers/matchers.h',

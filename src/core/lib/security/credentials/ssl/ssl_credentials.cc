@@ -22,10 +22,13 @@
 
 #include <string.h>
 
+#include <string>
 #include <utility>
 
 #include "absl/strings/string_view.h"
+#include "absl/types/optional.h"
 
+#include <grpc/impl/codegen/grpc_types.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
@@ -34,6 +37,7 @@
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/security/security_connector/ssl_utils.h"
 #include "src/core/lib/surface/api_trace.h"
+#include "src/core/tsi/ssl/session_cache/ssl_session_cache.h"
 #include "src/core/tsi/ssl_transport_security.h"
 
 //
@@ -58,32 +62,20 @@ grpc_ssl_credentials::~grpc_ssl_credentials() {
 grpc_core::RefCountedPtr<grpc_channel_security_connector>
 grpc_ssl_credentials::create_security_connector(
     grpc_core::RefCountedPtr<grpc_call_credentials> call_creds,
-    const char* target, const grpc_channel_args* args,
-    grpc_channel_args** new_args) {
-  const char* overridden_target_name = nullptr;
-  tsi_ssl_session_cache* ssl_session_cache = nullptr;
-  for (size_t i = 0; args && i < args->num_args; i++) {
-    grpc_arg* arg = &args->args[i];
-    if (strcmp(arg->key, GRPC_SSL_TARGET_NAME_OVERRIDE_ARG) == 0 &&
-        arg->type == GRPC_ARG_STRING) {
-      overridden_target_name = arg->value.string;
-    }
-    if (strcmp(arg->key, GRPC_SSL_SESSION_CACHE_ARG) == 0 &&
-        arg->type == GRPC_ARG_POINTER) {
-      ssl_session_cache =
-          static_cast<tsi_ssl_session_cache*>(arg->value.pointer.p);
-    }
-  }
+    const char* target, grpc_core::ChannelArgs* args) {
+  absl::optional<std::string> overridden_target_name =
+      args->GetOwnedString(GRPC_SSL_TARGET_NAME_OVERRIDE_ARG);
+  auto* ssl_session_cache = args->GetObject<tsi::SslSessionLRUCache>();
   grpc_core::RefCountedPtr<grpc_channel_security_connector> sc =
       grpc_ssl_channel_security_connector_create(
           this->Ref(), std::move(call_creds), &config_, target,
-          overridden_target_name, ssl_session_cache);
+          overridden_target_name.has_value() ? overridden_target_name->c_str()
+                                             : nullptr,
+          ssl_session_cache == nullptr ? nullptr : ssl_session_cache->c_ptr());
   if (sc == nullptr) {
     return sc;
   }
-  grpc_arg new_arg = grpc_channel_arg_string_create(
-      const_cast<char*>(GRPC_ARG_HTTP2_SCHEME), const_cast<char*>("https"));
-  *new_args = grpc_channel_args_copy_and_add(args, &new_arg, 1);
+  *args = args->Set(GRPC_ARG_HTTP2_SCHEME, "https");
   return sc;
 }
 
@@ -190,7 +182,7 @@ grpc_ssl_server_credentials::~grpc_ssl_server_credentials() {
 }
 grpc_core::RefCountedPtr<grpc_server_security_connector>
 grpc_ssl_server_credentials::create_security_connector(
-    const grpc_channel_args* /* args */) {
+    const grpc_core::ChannelArgs& /* args */) {
   return grpc_ssl_server_security_connector_create(this->Ref());
 }
 
