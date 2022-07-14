@@ -99,7 +99,7 @@ static void test_allow_authorized_request(grpc_end2end_test_fixture f) {
   grpc_slice details = grpc_empty_slice();
   int was_cancelled = 2;
 
-  cq_verifier* cqv = cq_verifier_create(f.cq);
+  grpc_core::CqVerifier cqv(f.cq);
 
   gpr_timespec deadline = five_seconds_from_now();
   c = grpc_channel_create_call(f.client, nullptr, GRPC_PROPAGATE_DEFAULTS, f.cq,
@@ -144,8 +144,8 @@ static void test_allow_authorized_request(grpc_end2end_test_fixture f) {
       grpc_server_request_call(f.server, &s, &call_details,
                                &request_metadata_recv, f.cq, f.cq, tag(101));
   GPR_ASSERT(GRPC_CALL_OK == error);
-  CQ_EXPECT_COMPLETION(cqv, tag(101), 1);
-  cq_verify(cqv);
+  cqv.Expect(tag(101), true);
+  cqv.Verify();
 
   memset(ops, 0, sizeof(ops));
   op = ops;
@@ -171,9 +171,9 @@ static void test_allow_authorized_request(grpc_end2end_test_fixture f) {
                                 nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
-  CQ_EXPECT_COMPLETION(cqv, tag(102), 1);
-  CQ_EXPECT_COMPLETION(cqv, tag(1), 1);
-  cq_verify(cqv);
+  cqv.Expect(tag(102), true);
+  cqv.Expect(tag(1), true);
+  cqv.Verify();
   GPR_ASSERT(GRPC_STATUS_OK == status);
   GPR_ASSERT(0 == grpc_slice_str_cmp(details, "xyz"));
 
@@ -186,7 +186,6 @@ static void test_allow_authorized_request(grpc_end2end_test_fixture f) {
 
   grpc_call_unref(c);
   grpc_call_unref(s);
-  cq_verifier_destroy(cqv);
 }
 
 static void test_deny_unauthorized_request(grpc_end2end_test_fixture f) {
@@ -200,7 +199,7 @@ static void test_deny_unauthorized_request(grpc_end2end_test_fixture f) {
   grpc_call_error error;
   grpc_slice details = grpc_empty_slice();
 
-  cq_verifier* cqv = cq_verifier_create(f.cq);
+  grpc_core::CqVerifier cqv(f.cq);
 
   gpr_timespec deadline = five_seconds_from_now();
   c = grpc_channel_create_call(f.client, nullptr, GRPC_PROPAGATE_DEFAULTS, f.cq,
@@ -238,8 +237,8 @@ static void test_deny_unauthorized_request(grpc_end2end_test_fixture f) {
   error = grpc_call_start_batch(c, ops, static_cast<size_t>(op - ops), tag(1),
                                 nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
-  CQ_EXPECT_COMPLETION(cqv, tag(1), 1);
-  cq_verify(cqv);
+  cqv.Expect(tag(1), true);
+  cqv.Verify();
 
   GPR_ASSERT(GRPC_STATUS_PERMISSION_DENIED == status);
   GPR_ASSERT(0 ==
@@ -251,7 +250,6 @@ static void test_deny_unauthorized_request(grpc_end2end_test_fixture f) {
   grpc_metadata_array_destroy(&trailing_metadata_recv);
 
   grpc_call_unref(c);
-  cq_verifier_destroy(cqv);
 }
 
 static void test_static_init_allow_authorized_request(

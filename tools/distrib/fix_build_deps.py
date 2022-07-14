@@ -244,6 +244,10 @@ class FakeSelects:
         pass
 
 
+num_cc_libraries = 0
+num_opted_out_cc_libraries = 0
+
+
 def grpc_cc_library(name,
                     hdrs=[],
                     public_hdrs=[],
@@ -253,7 +257,14 @@ def grpc_cc_library(name,
                     deps=[],
                     external_deps=[],
                     **kwargs):
+    global args
+    global num_cc_libraries
+    global num_opted_out_cc_libraries
+    num_cc_libraries += 1
     if select_deps or 'nofixdeps' in tags or 'grpc-autodeps' not in tags:
+        if args.whats_left and not select_deps and 'nofixdeps' not in tags:
+            num_opted_out_cc_libraries += 1
+            print("Not opted in: {}".format(name))
         no_update.add(name)
     scores[name] = len(public_hdrs + hdrs)
     # avoid_dep is the internal way of saying prefer something else
@@ -343,6 +354,10 @@ parser.add_argument('--score',
                     default='edit_distance',
                     help='scoring function to use: one of ' +
                     ', '.join(SCORERS.keys()))
+parser.add_argument('--whats_left',
+                    action='store_true',
+                    default=False,
+                    help='show what is left to opt in')
 args = parser.parse_args()
 
 exec(
@@ -361,6 +376,10 @@ exec(
         'grpc_generate_one_off_targets': lambda: None,
         'filegroup': lambda name, **kwargs: None,
     }, {})
+
+if args.whats_left:
+    print("{}/{} libraries are opted in".format(
+        num_cc_libraries - num_opted_out_cc_libraries, num_cc_libraries))
 
 
 # Keeps track of all possible sets of dependencies that could satify the

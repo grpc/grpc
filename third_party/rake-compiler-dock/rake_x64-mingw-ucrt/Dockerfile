@@ -1,4 +1,4 @@
-FROM larskanis/rake-compiler-dock-mri-x64-mingw-ucrt:1.2.1
+FROM larskanis/rake-compiler-dock-mri-x64-mingw-ucrt:1.2.2
 
 RUN find / -name win32.h | while read f ; do sed -i 's/gettimeofday/rb_gettimeofday/' $f ; done
 

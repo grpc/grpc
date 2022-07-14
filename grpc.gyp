@@ -1194,7 +1194,6 @@
         'src/core/ext/filters/http/message_compress/message_decompress_filter.cc',
         'src/core/ext/filters/http/server/http_server_filter.cc',
         'src/core/ext/filters/message_size/message_size_filter.cc',
-        'src/core/ext/transport/chttp2/alpn/alpn.cc',
         'src/core/ext/transport/chttp2/client/chttp2_connector.cc',
         'src/core/ext/transport/chttp2/server/chttp2_server.cc',
         'src/core/ext/transport/chttp2/transport/bin_decoder.cc',

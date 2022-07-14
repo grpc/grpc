@@ -16,6 +16,7 @@ require 'etc'
 require 'mkmf'
 
 windows = RUBY_PLATFORM =~ /mingw|mswin/
+windows_ucrt = RUBY_PLATFORM =~ /(mingw|mswin).*ucrt/
 bsd = RUBY_PLATFORM =~ /bsd/
 darwin = RUBY_PLATFORM =~ /darwin/
 linux = RUBY_PLATFORM =~ /linux/
@@ -85,6 +86,7 @@ end
 
 env_append 'CPPFLAGS', '-DGPR_BACKWARDS_COMPATIBILITY_MODE'
 env_append 'CPPFLAGS', '-DGRPC_XDS_USER_AGENT_NAME_SUFFIX="\"RUBY\""'
+env_append 'CPPFLAGS', '-DGRPC_RUBY_WINDOWS_UCRT' if windows_ucrt
 
 require_relative '../../lib/grpc/version'
 env_append 'CPPFLAGS', '-DGRPC_XDS_USER_AGENT_VERSION_SUFFIX="\"' + GRPC::VERSION + '\""'
