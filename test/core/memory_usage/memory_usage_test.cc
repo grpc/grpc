@@ -35,7 +35,7 @@
 #include "test/core/util/port.h"
 #include "test/core/util/subprocess.h"
 
-ABSL_FLAG(std::string, benchmark_name, "call", "Which benchmark to run");
+ABSL_FLAG(std::string, benchmark_name, "channel", "Which benchmark to run");
 ABSL_FLAG(int, size, 50000, "Number of channels/calls");
 ABSL_FLAG(std::string, scenario_config, "insecure",
           "Possible Values: minstack (Use minimal stack), resource_quota, "
@@ -118,6 +118,31 @@ int main(int argc, char** argv) {
         absl::StrCat("--benchmark=", absl::GetFlag(FLAGS_size))};
     // Add scenario-specific client flags to the end of the client_flags
     absl::c_move(it_scenario->second.client, std::back_inserter(client_flags));
+    Subprocess cli(client_flags);
+    /* wait for completion */
+    if ((status = cli.Join()) != 0) {
+      printf("client failed with: %d", status);
+      return 1;
+    }
+
+    svr.Interrupt();
+    return svr.Join() == 0 ? 0 : 2;
+  }
+  else if (absl::GetFlag(FLAGS_benchmark_name) == "channel") {
+    printf("Running Channel\n");
+    /* start the server */
+    std::vector<std::string> server_flags = {
+        absl::StrCat(root, "/memory_usage_callback_server",
+                     gpr_subprocess_binary_extension()),
+        "--bind", grpc_core::JoinHostPort("::", port), "--nosecure"};
+    Subprocess svr(server_flags);
+
+    /* start the client */
+    std::vector<std::string> client_flags = {
+        absl::StrCat(root, "/memory_usage_callback_client",
+                     gpr_subprocess_binary_extension()),
+        "--target", grpc_core::JoinHostPort("127.0.0.1", port),
+        "--nosecure"};
     Subprocess cli(client_flags);
     /* wait for completion */
     if ((status = cli.Join()) != 0) {
