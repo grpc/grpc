@@ -35,6 +35,7 @@
 #import "src/objective-c/tests/RemoteTestClient/Test.pbobjc.h"
 #import "src/objective-c/tests/RemoteTestClient/Test.pbrpc.h"
 
+#import "../Common/TestUtils.h"
 #import "InteropTestsBlockCallbacks.h"
 
 #define TEST_TIMEOUT 64
@@ -466,12 +467,7 @@ static dispatch_once_t initGlobalInterceptorFactory;
   self.continueAfterFailure = NO;
 
   [GRPCCall resetHostSettings];
-
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Wdeprecated-declarations"
-  [GRPCCall closeOpenConnections];
-#pragma clang diagnostic pop
-
+  GRPCResetCallConnections();
   _service = [[self class] host] ? [RMTTestService serviceWithHost:[[self class] host]] : nil;
 }
 
@@ -480,27 +476,28 @@ static dispatch_once_t initGlobalInterceptorFactory;
 }
 
 - (void)testEmptyUnaryRPC {
-  XCTAssertNotNil([[self class] host]);
-  __weak XCTestExpectation *expectation = [self expectationWithDescription:@"EmptyUnary"];
+  GRPCTestRunWithFlakeRepeats(^(GRPCTestWaiter waiter) {
+    RMTTestService *service = [RMTTestService serviceWithHost:[[self class] host]];
+    __weak XCTestExpectation *expectation = [self expectationWithDescription:@"EmptyUnary"];
 
-  GPBEmpty *request = [GPBEmpty message];
+    GPBEmpty *request = [GPBEmpty message];
 
-  __weak RMTTestService *weakService = _service;
-  [_service emptyCallWithRequest:request
-                         handler:^(GPBEmpty *response, NSError *error) {
-                           if (weakService == nil) {
-                             return;
-                           }
+    __weak RMTTestService *weakService = service;
+    [service emptyCallWithRequest:request
+                          handler:^(GPBEmpty *response, NSError *error) {
+                            if (weakService == nil) {
+                              return;
+                            }
 
-                           XCTAssertNil(error, @"Finished with unexpected error: %@", error);
+                            XCTAssertNil(error, @"Finished with unexpected error: %@", error);
 
-                           id expectedResponse = [GPBEmpty message];
-                           XCTAssertEqualObjects(response, expectedResponse);
+                            id expectedResponse = [GPBEmpty message];
+                            XCTAssertEqualObjects(response, expectedResponse);
 
-                           [expectation fulfill];
-                         }];
-
-  [self waitForExpectationsWithTimeout:TEST_TIMEOUT handler:nil];
+                            [expectation fulfill];
+                          }];
+    waiter(self, @[ expectation ], GRPCInteropTestTimeoutDefault);
+  });
 }
 
 - (void)testEmptyUnaryRPCWithV2API {

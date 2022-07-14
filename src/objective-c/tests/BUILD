@@ -198,9 +198,15 @@ grpc_objc_ios_unit_test(
 )
 
 grpc_objc_ios_unit_test(
-    name = "InteropTestsLocal",
+    name = "InteropTestsLocalCleartext",
     deps = [
         ":InteropTestsLocalCleartext-lib",
+    ],
+)
+
+grpc_objc_ios_unit_test(
+    name = "InteropTestsLocalSSL",
+    deps = [
         ":InteropTestsLocalSSL-lib",
     ],
 )
