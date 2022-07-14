@@ -64,7 +64,7 @@ class CqVerifier {
   // result can be any of the types in ExpectedResult - a plain bool means
   // 'expect success to be true/false'.
   void Expect(void* tag, ExpectedResult result,
-              SourceLocation src_loc = SourceLocation());
+              SourceLocation location = SourceLocation());
 
   std::string ToString() const;
 
