@@ -9698,11 +9698,10 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 
   add_executable(event_poller_posix_test
     src/core/lib/event_engine/iomgr_engine/ev_epoll1_linux.cc
-    src/core/lib/event_engine/iomgr_engine/event_poller_posix.cc
+    src/core/lib/event_engine/iomgr_engine/event_poller_posix_default.cc
     src/core/lib/event_engine/iomgr_engine/lockfree_event.cc
     src/core/lib/event_engine/iomgr_engine/wakeup_fd_eventfd.cc
     src/core/lib/event_engine/iomgr_engine/wakeup_fd_pipe.cc
-    src/core/lib/event_engine/iomgr_engine/wakeup_fd_posix.cc
     src/core/lib/event_engine/iomgr_engine/wakeup_fd_posix_default.cc
     test/core/event_engine/iomgr_event_engine/event_poller_posix_test.cc
     third_party/googletest/googletest/src/gtest-all.cc
@@ -18189,7 +18188,6 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
   add_executable(wakeup_fd_posix_test
     src/core/lib/event_engine/iomgr_engine/wakeup_fd_eventfd.cc
     src/core/lib/event_engine/iomgr_engine/wakeup_fd_pipe.cc
-    src/core/lib/event_engine/iomgr_engine/wakeup_fd_posix.cc
     test/core/event_engine/iomgr_event_engine/wakeup_fd_posix_test.cc
     third_party/googletest/googletest/src/gtest-all.cc
     third_party/googletest/googlemock/src/gmock-all.cc

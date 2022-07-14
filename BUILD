@@ -2375,14 +2375,9 @@ grpc_cc_library(
     hdrs = [
         "src/core/lib/event_engine/iomgr_engine/wakeup_fd_posix.h",
     ],
-    external_deps = [
-        "absl/status",
-    ],
+    external_deps = ["absl/status"],
     tags = ["grpc-autodeps"],
-    deps = [
-        "gpr_platform",
-        "iomgr_port",
-    ],
+    deps = ["gpr_platform"],
 )
 
 grpc_cc_library(
