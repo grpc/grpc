@@ -433,6 +433,11 @@ namespace Grpc.Core.Internal
             return new RpcException(finishedStatus.Value.Status, finishedStatus.Value.Trailers);
         }
 
+        protected override bool IsInErrorStateClientOnly
+        {
+            get { return finishedStatus.HasValue && finishedStatus.Value.Status.StatusCode != StatusCode.OK; }
+        }
+
         protected override Task CheckSendAllowedOrEarlyResult()
         {
             var earlyResult = CheckSendPreconditionsClientSide();

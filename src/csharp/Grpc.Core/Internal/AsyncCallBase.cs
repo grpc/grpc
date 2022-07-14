@@ -154,6 +154,22 @@ namespace Grpc.Core.Internal
                     return streamingReadTcs.Task;
                 }
 
+                if (IsInErrorStateClientOnly)
+                {
+                    // The gRPC call has already failed with an error, so return that error in
+                    // any subsequent MoveNext attempts.
+                    // Without this check an InvalidOperationException would have been thrown
+                    // instead of the expected RcpException.
+
+                    if (streamingReadTcs == null)
+                    {
+                        streamingReadTcs = new TaskCompletionSource<TRead>();
+                        streamingReadTcs.SetException(GetRpcExceptionClientOnly());
+                    }
+
+                    return streamingReadTcs.Task;
+                }
+
                 GrpcPreconditions.CheckState(streamingReadTcs == null, "Only one read can be pending at a time");
                 GrpcPreconditions.CheckState(!disposed);
 
@@ -172,7 +188,8 @@ namespace Grpc.Core.Internal
             if (!disposed && call != null)
             {
                 bool noMoreSendCompletions = streamingWriteTcs == null && (halfcloseRequested || cancelRequested || finished);
-                if (noMoreSendCompletions && readingDone && finished && !receiveResponseHeadersPending)
+                bool readingFinished = readingDone || IsInErrorStateClientOnly;
+                if (noMoreSendCompletions && readingFinished && finished && !receiveResponseHeadersPending)
                 {
                     ReleaseResources();
                     return true;
@@ -191,6 +208,16 @@ namespace Grpc.Core.Internal
         /// It is only allowed to call this method for a call that has already finished.
         /// </summary>
         protected abstract Exception GetRpcExceptionClientOnly();
+
+        /// <summary>
+        /// Client - returns true if the client has received an error status in the
+        /// OnReceivedStatusOnClient callback.
+        /// Server - always returns true as this is a client side method.
+        /// </summary>
+        protected abstract bool IsInErrorStateClientOnly
+        {
+            get;
+        }
 
         protected void ReleaseResources()
         {
