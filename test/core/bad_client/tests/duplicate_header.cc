@@ -68,7 +68,7 @@ static void verifier(grpc_server* server, grpc_completion_queue* cq,
   error = grpc_server_request_call(server, &s, &call_details,
                                    &request_metadata_recv, cq, cq, tag(101));
   GPR_ASSERT(GRPC_CALL_OK == error);
-  cqv.Expect(DEBUG_LOCATION, tag(101), true);
+  cqv.Expect(tag(101), true);
   cqv.Verify();
 
   GPR_ASSERT(0 == grpc_slice_str_cmp(call_details.host, "localhost"));
@@ -90,7 +90,7 @@ static void verifier(grpc_server* server, grpc_completion_queue* cq,
                                 nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
-  cqv.Expect(DEBUG_LOCATION, tag(102), grpc_core::CqVerifier::AnyStatus());
+  cqv.Expect(tag(102), grpc_core::CqVerifier::AnyStatus());
   cqv.Verify();
 
   memset(ops, 0, sizeof(ops));
@@ -112,7 +112,7 @@ static void verifier(grpc_server* server, grpc_completion_queue* cq,
                                 nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
-  cqv.Expect(DEBUG_LOCATION, tag(103), true);
+  cqv.Expect(tag(103), true);
 
   grpc_metadata_array_destroy(&request_metadata_recv);
   grpc_call_details_destroy(&call_details);

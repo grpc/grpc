@@ -200,7 +200,7 @@ static void test_retry_send_op_fails(grpc_end2end_test_config config) {
   GPR_ASSERT(GRPC_CALL_OK == error);
 
   // Client send ops should now complete.
-  cqv.Expect(DEBUG_LOCATION, tag(1), true);
+  cqv.Expect(tag(1), true);
   cqv.Verify();
 
   // Server should get a call.
@@ -208,7 +208,7 @@ static void test_retry_send_op_fails(grpc_end2end_test_config config) {
       grpc_server_request_call(f.server, &s, &call_details,
                                &request_metadata_recv, f.cq, f.cq, tag(101));
   GPR_ASSERT(GRPC_CALL_OK == error);
-  cqv.Expect(DEBUG_LOCATION, tag(101), true);
+  cqv.Expect(tag(101), true);
   cqv.Verify();
 
   // Server fails with status ABORTED.
@@ -232,8 +232,8 @@ static void test_retry_send_op_fails(grpc_end2end_test_config config) {
   // In principle, the server batch should complete before the client
   // recv ops batch, but in the proxy fixtures, there are multiple threads
   // involved, so the completion order tends to be a little racy.
-  cqv.Expect(DEBUG_LOCATION, tag(102), true);
-  cqv.Expect(DEBUG_LOCATION, tag(2), true);
+  cqv.Expect(tag(102), true);
+  cqv.Expect(tag(2), true);
   cqv.Verify();
 
   GPR_ASSERT(status == GRPC_STATUS_ABORTED);

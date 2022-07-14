@@ -216,7 +216,7 @@ unsigned int parse_h2_length(const char *field) {
     close(sl);
   });
 
-  cqv.Expect(DEBUG_LOCATION, (void *)1, true);
+  cqv.Expect((void *)1, true);
   cqv.Verify();
 
   GPR_ASSERT(status == GRPC_STATUS_UNAVAILABLE);
@@ -389,7 +389,7 @@ unsigned int parse_h2_length(const char *field) {
   error = grpc_call_start_batch(c, ops, (size_t)(op - ops), (void *)1, NULL);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
-  cqv.Expect(DEBUG_LOCATION, (void *)1, true);
+  cqv.Expect((void *)1, true);
   cqv.Verify();
 
   grpc_slice_unref(details);

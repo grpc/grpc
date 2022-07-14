@@ -140,7 +140,7 @@ static void test_client_streaming(grpc_end2end_test_config config,
       grpc_server_request_call(f.server, &s, &call_details,
                                &request_metadata_recv, f.cq, f.cq, tag(100));
   GPR_ASSERT(GRPC_CALL_OK == error);
-  cqv.Expect(DEBUG_LOCATION, tag(100), true);
+  cqv.Expect(tag(100), true);
   cqv.Verify();
 
   memset(ops, 0, sizeof(ops));
@@ -154,8 +154,8 @@ static void test_client_streaming(grpc_end2end_test_config config,
                                 nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
-  cqv.Expect(DEBUG_LOCATION, tag(101), true);
-  cqv.Expect(DEBUG_LOCATION, tag(1), true);
+  cqv.Expect(tag(101), true);
+  cqv.Expect(tag(1), true);
   cqv.Verify();
 
   // Client writes bunch of messages and server reads them
@@ -183,8 +183,8 @@ static void test_client_streaming(grpc_end2end_test_config config,
     error = grpc_call_start_batch(s, ops, static_cast<size_t>(op - ops),
                                   tag(102), nullptr);
     GPR_ASSERT(GRPC_CALL_OK == error);
-    cqv.Expect(DEBUG_LOCATION, tag(102), true);
-    cqv.Expect(DEBUG_LOCATION, tag(103), true);
+    cqv.Expect(tag(102), true);
+    cqv.Expect(tag(103), true);
     cqv.Verify();
     GPR_ASSERT(byte_buffer_eq_string(request_payload_recv, "hello world"));
     grpc_byte_buffer_destroy(request_payload_recv);
@@ -204,7 +204,7 @@ static void test_client_streaming(grpc_end2end_test_config config,
   error = grpc_call_start_batch(s, ops, static_cast<size_t>(op - ops), tag(104),
                                 nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
-  cqv.Expect(DEBUG_LOCATION, tag(104), true);
+  cqv.Expect(tag(104), true);
   cqv.Verify();
   // Do an empty verify to make sure that the client receives the status
   cqv.VerifyEmpty();
@@ -222,7 +222,7 @@ static void test_client_streaming(grpc_end2end_test_config config,
                                 nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
   grpc_byte_buffer_destroy(request_payload);
-  cqv.Expect(DEBUG_LOCATION, tag(103), false);
+  cqv.Expect(tag(103), false);
   cqv.Verify();
 
   // Client sends close and requests status
@@ -242,7 +242,7 @@ static void test_client_streaming(grpc_end2end_test_config config,
   error = grpc_call_start_batch(c, ops, static_cast<size_t>(op - ops), tag(3),
                                 nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
-  cqv.Expect(DEBUG_LOCATION, tag(3), true);
+  cqv.Expect(tag(3), true);
   cqv.Verify();
   GPR_ASSERT(status == GRPC_STATUS_UNIMPLEMENTED);
   GPR_ASSERT(0 == grpc_slice_str_cmp(details, "xyz"));

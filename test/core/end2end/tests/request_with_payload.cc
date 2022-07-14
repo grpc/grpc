@@ -152,7 +152,7 @@ static void test_invoke_request_with_payload(grpc_end2end_test_config config) {
   GPR_ASSERT(GRPC_CALL_OK == grpc_server_request_call(
                                  f.server, &s, &call_details,
                                  &request_metadata_recv, f.cq, f.cq, tag(101)));
-  cqv.Expect(DEBUG_LOCATION, tag(101), true);
+  cqv.Expect(tag(101), true);
   cqv.Verify();
 
   memset(ops, 0, sizeof(ops));
@@ -171,7 +171,7 @@ static void test_invoke_request_with_payload(grpc_end2end_test_config config) {
                                 nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
-  cqv.Expect(DEBUG_LOCATION, tag(102), true);
+  cqv.Expect(tag(102), true);
   cqv.Verify();
 
   memset(ops, 0, sizeof(ops));
@@ -193,8 +193,8 @@ static void test_invoke_request_with_payload(grpc_end2end_test_config config) {
                                 nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
-  cqv.Expect(DEBUG_LOCATION, tag(103), true);
-  cqv.Expect(DEBUG_LOCATION, tag(1), true);
+  cqv.Expect(tag(103), true);
+  cqv.Expect(tag(1), true);
   cqv.Verify();
 
   GPR_ASSERT(status == GRPC_STATUS_OK);

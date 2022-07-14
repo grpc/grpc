@@ -107,7 +107,7 @@ static void run_test(bool wait_for_ready, bool use_service_config) {
                                                    (size_t)(op - ops), tag(1),
                                                    nullptr));
   /* verify that all tags get completed */
-  cqv.Expect(DEBUG_LOCATION, tag(1), true);
+  cqv.Expect(tag(1), true);
   cqv.Verify();
 
   if (wait_for_ready) {

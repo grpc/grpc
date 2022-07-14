@@ -27,8 +27,6 @@
 #include <string>
 #include <vector>
 
-#include <gtest/gtest.h>
-
 #include "absl/strings/str_format.h"
 #include "absl/strings/str_join.h"
 
@@ -207,22 +205,25 @@ void CqVerifier::Verify(Duration timeout) {
   while (!expectations_.empty()) {
     grpc_event ev = grpc_completion_queue_next(cq_, deadline, nullptr);
     if (ev.type == GRPC_QUEUE_TIMEOUT) break;
-    ASSERT_EQ(ev.type, GRPC_OP_COMPLETE);
+    if (ev.type != GRPC_OP_COMPLETE) {
+      FailUnexpectedEvent(&ev);
+    }
     bool found = false;
     for (auto it = expectations_.begin(); it != expectations_.end(); ++it) {
       if (it->tag != ev.tag) continue;
-      Match(
-          it->result,
-          [ev, it](bool success) {
-            ASSERT_EQ(ev.success, success) << it->ToString();
-          },
-          [ev, it](Maybe m) {
-            ASSERT_TRUE(ev.success) << it->ToString();
+      const bool expected = Match(
+          it->result, [ev](bool success) { return ev.success == success; },
+          [ev](Maybe m) {
             if (m.seen != nullptr) *m.seen = true;
+            return ev.success != 0;
           },
           [ev](AnyStatus a) {
             if (a.result != nullptr) *a.result = ev.success;
+            return true;
           });
+      if (!expected) {
+        FailUnexpectedEvent(&ev);
+      }
       expectations_.erase(it);
       found = true;
       break;
@@ -249,15 +250,16 @@ bool CqVerifier::AllMaybes() const {
 void CqVerifier::VerifyEmpty(Duration timeout) {
   const gpr_timespec deadline =
       gpr_time_add(gpr_now(GPR_CLOCK_MONOTONIC), timeout.as_timespec());
-  ASSERT_TRUE(expectations_.empty()) << "expectation queue must be empty";
+  GPR_ASSERT(expectations_.empty());
   grpc_event ev = grpc_completion_queue_next(cq_, deadline, nullptr);
-  ASSERT_EQ(ev.type, GRPC_QUEUE_TIMEOUT)
-      << "unexpected event (expected nothing): "
-      << grpc_event_string(&ev).c_str();
+  if (ev.type != GRPC_QUEUE_TIMEOUT) {
+    gpr_log(GPR_ERROR, "unexpected event (expected nothing): %s",
+            grpc_event_string(&ev).c_str());
+  }
 }
 
-void CqVerifier::Expect(DebugLocation location, void* tag,
-                        ExpectedResult result) {
+void CqVerifier::Expect(void* tag, ExpectedResult result,
+                        SourceLocation location) {
   expectations_.push_back(Expectation{location, tag, result});
 }
 

@@ -186,7 +186,7 @@ void do_round_trip(grpc_completion_queue* cq, grpc_server* server,
   error = grpc_server_request_call(server, &s, &call_details,
                                    &request_metadata_recv, cq, cq, tag(101));
   GPR_ASSERT(GRPC_CALL_OK == error);
-  cqv.Expect(DEBUG_LOCATION, tag(101), true);
+  cqv.Expect(tag(101), true);
   cqv.Verify();
 
   grpc_auth_context* auth = grpc_call_auth_context(s);
@@ -223,8 +223,8 @@ void do_round_trip(grpc_completion_queue* cq, grpc_server* server,
                                 nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
-  cqv.Expect(DEBUG_LOCATION, tag(103), true);
-  cqv.Expect(DEBUG_LOCATION, tag(1), true);
+  cqv.Expect(tag(103), true);
+  cqv.Expect(tag(1), true);
   cqv.Verify();
 
   grpc_metadata_array_destroy(&initial_metadata_recv);

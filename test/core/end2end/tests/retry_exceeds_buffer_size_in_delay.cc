@@ -194,7 +194,7 @@ static void test_retry_exceeds_buffer_size_in_delay(
       grpc_server_request_call(f.server, &s, &call_details,
                                &request_metadata_recv, f.cq, f.cq, tag(101));
   GPR_ASSERT(GRPC_CALL_OK == error);
-  cqv.Expect(DEBUG_LOCATION, tag(101), true);
+  cqv.Expect(tag(101), true);
   cqv.Verify();
 
   peer = grpc_call_get_peer(s);
@@ -223,7 +223,7 @@ static void test_retry_exceeds_buffer_size_in_delay(
   error = grpc_call_start_batch(s, ops, static_cast<size_t>(op - ops), tag(102),
                                 nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
-  cqv.Expect(DEBUG_LOCATION, tag(102), true);
+  cqv.Expect(tag(102), true);
   cqv.Verify();
 
   grpc_call_unref(s);
@@ -248,7 +248,7 @@ static void test_retry_exceeds_buffer_size_in_delay(
   error = grpc_call_start_batch(c, ops, static_cast<size_t>(op - ops), tag(2),
                                 nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
-  cqv.Expect(DEBUG_LOCATION, tag(2), true);
+  cqv.Expect(tag(2), true);
   cqv.Verify();
 
   // Server gets another call.
@@ -256,7 +256,7 @@ static void test_retry_exceeds_buffer_size_in_delay(
       grpc_server_request_call(f.server, &s, &call_details,
                                &request_metadata_recv, f.cq, f.cq, tag(201));
   GPR_ASSERT(GRPC_CALL_OK == error);
-  cqv.Expect(DEBUG_LOCATION, tag(201), true);
+  cqv.Expect(tag(201), true);
   cqv.Verify();
 
   // Server again sends ABORTED.  But this time, the client won't retry,
@@ -277,8 +277,8 @@ static void test_retry_exceeds_buffer_size_in_delay(
   error = grpc_call_start_batch(s, ops, static_cast<size_t>(op - ops), tag(202),
                                 nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
-  cqv.Expect(DEBUG_LOCATION, tag(202), true);
-  cqv.Expect(DEBUG_LOCATION, tag(1), true);
+  cqv.Expect(tag(202), true);
+  cqv.Expect(tag(1), true);
   cqv.Verify();
 
   GPR_ASSERT(status == GRPC_STATUS_ABORTED);

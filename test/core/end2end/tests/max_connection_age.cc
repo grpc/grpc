@@ -149,7 +149,7 @@ static void test_max_age_forcibly_close(grpc_end2end_test_config config) {
       grpc_server_request_call(f.server, &s, &call_details,
                                &request_metadata_recv, f.cq, f.cq, tag(101));
   GPR_ASSERT(GRPC_CALL_OK == error);
-  cqv->Expect(DEBUG_LOCATION, tag(101), true);
+  cqv->Expect(tag(101), true);
   cqv->Verify();
 
   gpr_timespec expect_shutdown_time = grpc_timeout_milliseconds_to_deadline(
@@ -163,7 +163,7 @@ static void test_max_age_forcibly_close(grpc_end2end_test_config config) {
 
   /* After the channel reaches its max age, we still do nothing here. And wait
      for it to use up its max age grace period. */
-  cqv->Expect(DEBUG_LOCATION, tag(1), true);
+  cqv->Expect(tag(1), true);
   cqv->Verify();
 
   gpr_timespec channel_shutdown_time = gpr_now(GPR_CLOCK_MONOTONIC);
@@ -192,11 +192,11 @@ static void test_max_age_forcibly_close(grpc_end2end_test_config config) {
   error = grpc_call_start_batch(s, ops, static_cast<size_t>(op - ops), tag(102),
                                 nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
-  cqv->Expect(DEBUG_LOCATION, tag(102), true);
+  cqv->Expect(tag(102), true);
   cqv->Verify();
 
   grpc_server_shutdown_and_notify(f.server, f.cq, tag(0xdead));
-  cqv->Expect(DEBUG_LOCATION, tag(0xdead), true);
+  cqv->Expect(tag(0xdead), true);
   cqv->Verify();
 
   grpc_call_unref(s);
@@ -292,7 +292,7 @@ static void test_max_age_gracefully_close(grpc_end2end_test_config config) {
       grpc_server_request_call(f.server, &s, &call_details,
                                &request_metadata_recv, f.cq, f.cq, tag(101));
   GPR_ASSERT(GRPC_CALL_OK == error);
-  cqv->Expect(DEBUG_LOCATION, tag(101), true);
+  cqv->Expect(tag(101), true);
   cqv->Verify();
 
   /* Wait for the channel to reach its max age */
@@ -328,12 +328,12 @@ static void test_max_age_gracefully_close(grpc_end2end_test_config config) {
                                 nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
-  cqv->Expect(DEBUG_LOCATION, tag(102), true);
-  cqv->Expect(DEBUG_LOCATION, tag(1), true);
+  cqv->Expect(tag(102), true);
+  cqv->Expect(tag(1), true);
   cqv->Verify();
 
   grpc_server_shutdown_and_notify(f.server, f.cq, tag(0xdead));
-  cqv->Expect(DEBUG_LOCATION, tag(0xdead), true);
+  cqv->Expect(tag(0xdead), true);
   cqv->Verify();
 
   grpc_call_unref(s);

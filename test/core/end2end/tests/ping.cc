@@ -56,7 +56,7 @@ static void test_ping(grpc_end2end_test_config config,
   config.init_server(&f, &server_args);
 
   grpc_channel_ping(f.client, f.cq, tag(0), nullptr);
-  cqv.Expect(DEBUG_LOCATION, tag(0), false);
+  cqv.Expect(tag(0), false);
 
   /* check that we're still in idle, and start connecting */
   GPR_ASSERT(grpc_channel_check_connectivity_state(f.client, 1) ==
@@ -70,7 +70,7 @@ static void test_ping(grpc_end2end_test_config config,
                      gpr_time_from_millis(min_time_between_pings_ms * PING_NUM,
                                           GPR_TIMESPAN)),
         f.cq, tag(99));
-    cqv.Expect(DEBUG_LOCATION, tag(99), true);
+    cqv.Expect(tag(99), true);
     cqv.Verify();
     state = grpc_channel_check_connectivity_state(f.client, 0);
     GPR_ASSERT(state == GRPC_CHANNEL_READY ||
@@ -80,12 +80,12 @@ static void test_ping(grpc_end2end_test_config config,
 
   for (i = 1; i <= PING_NUM; i++) {
     grpc_channel_ping(f.client, f.cq, tag(i), nullptr);
-    cqv.Expect(DEBUG_LOCATION, tag(i), true);
+    cqv.Expect(tag(i), true);
     cqv.Verify();
   }
 
   grpc_server_shutdown_and_notify(f.server, f.cq, tag(0xdead));
-  cqv.Expect(DEBUG_LOCATION, tag(0xdead), true);
+  cqv.Expect(tag(0xdead), true);
   cqv.Verify();
 
   /* cleanup server */

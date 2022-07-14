@@ -104,7 +104,7 @@ static void test_connectivity(grpc_end2end_test_config config) {
                                         f.cq, tag(2));
 
   /* and now the watch should trigger */
-  cqv.Expect(DEBUG_LOCATION, tag(2), true);
+  cqv.Expect(tag(2), true);
   cqv.Verify();
   state = grpc_channel_check_connectivity_state(f.client, 0);
   GPR_ASSERT(state == GRPC_CHANNEL_TRANSIENT_FAILURE ||
@@ -114,7 +114,7 @@ static void test_connectivity(grpc_end2end_test_config config) {
   grpc_channel_watch_connectivity_state(f.client, GRPC_CHANNEL_CONNECTING,
                                         grpc_timeout_seconds_to_deadline(3),
                                         f.cq, tag(3));
-  cqv.Expect(DEBUG_LOCATION, tag(3), true);
+  cqv.Expect(tag(3), true);
   cqv.Verify();
   state = grpc_channel_check_connectivity_state(f.client, 0);
   GPR_ASSERT(state == GRPC_CHANNEL_TRANSIENT_FAILURE ||
@@ -132,7 +132,7 @@ static void test_connectivity(grpc_end2end_test_config config) {
   while (state != GRPC_CHANNEL_READY) {
     grpc_channel_watch_connectivity_state(
         f.client, state, grpc_timeout_seconds_to_deadline(3), f.cq, tag(4));
-    cqv.Expect(DEBUG_LOCATION, tag(4), true);
+    cqv.Expect(tag(4), true);
     cqv.Verify();
     state = grpc_channel_check_connectivity_state(f.client, 0);
     GPR_ASSERT(state == GRPC_CHANNEL_READY ||
@@ -150,8 +150,8 @@ static void test_connectivity(grpc_end2end_test_config config) {
 
   grpc_server_shutdown_and_notify(f.server, f.cq, tag(0xdead));
 
-  cqv.Expect(DEBUG_LOCATION, tag(5), true);
-  cqv.Expect(DEBUG_LOCATION, tag(0xdead), true);
+  cqv.Expect(tag(5), true);
+  cqv.Expect(tag(0xdead), true);
   cqv.Verify();
   state = grpc_channel_check_connectivity_state(f.client, 0);
   GPR_ASSERT(state == GRPC_CHANNEL_TRANSIENT_FAILURE ||

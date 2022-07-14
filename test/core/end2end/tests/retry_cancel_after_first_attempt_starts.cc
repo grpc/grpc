@@ -193,9 +193,9 @@ static void test_retry_cancel_after_first_attempt_starts(
 
   // The send ops batch and the first recv ops batch will fail in most
   // fixtures but will pass in the proxy fixtures on some platforms.
-  cqv.Expect(DEBUG_LOCATION, tag(1), grpc_core::CqVerifier::AnyStatus());
-  cqv.Expect(DEBUG_LOCATION, tag(2), grpc_core::CqVerifier::AnyStatus());
-  cqv.Expect(DEBUG_LOCATION, tag(3), true);
+  cqv.Expect(tag(1), grpc_core::CqVerifier::AnyStatus());
+  cqv.Expect(tag(2), grpc_core::CqVerifier::AnyStatus());
+  cqv.Expect(tag(3), true);
   cqv.Verify();
 
   grpc_slice_unref(details);

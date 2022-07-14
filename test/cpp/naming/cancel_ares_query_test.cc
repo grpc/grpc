@@ -380,7 +380,7 @@ void TestCancelDuringActiveQuery(
   grpc_call_error error = grpc_call_start_batch(
       call, ops_base, static_cast<size_t>(op - ops_base), Tag(1), nullptr);
   EXPECT_EQ(GRPC_CALL_OK, error);
-  cqv.Expect(DEBUG_LOCATION, Tag(1), true);
+  cqv.Expect(Tag(1), true);
   cqv.Verify();
   EXPECT_EQ(status, expected_status_code);
   EXPECT_THAT(std::string(error_string),

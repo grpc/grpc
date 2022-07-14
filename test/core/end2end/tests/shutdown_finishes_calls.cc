@@ -132,7 +132,7 @@ static void test_early_server_shutdown_finishes_inflight_calls(
       grpc_server_request_call(f.server, &s, &call_details,
                                &request_metadata_recv, f.cq, f.cq, tag(101));
   GPR_ASSERT(GRPC_CALL_OK == error);
-  cqv.Expect(DEBUG_LOCATION, tag(101), true);
+  cqv.Expect(tag(101), true);
   cqv.Verify();
 
   memset(ops, 0, sizeof(ops));
@@ -157,9 +157,9 @@ static void test_early_server_shutdown_finishes_inflight_calls(
   grpc_server_shutdown_and_notify(f.server, f.cq, tag(1000));
   grpc_server_cancel_all_calls(f.server);
 
-  cqv.Expect(DEBUG_LOCATION, tag(1000), true);
-  cqv.Expect(DEBUG_LOCATION, tag(102), true);
-  cqv.Expect(DEBUG_LOCATION, tag(1), true);
+  cqv.Expect(tag(1000), true);
+  cqv.Expect(tag(102), true);
+  cqv.Expect(tag(1), true);
   cqv.Verify();
 
   grpc_server_destroy(f.server);

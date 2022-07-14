@@ -168,7 +168,7 @@ static void test_server_channel_filter(grpc_end2end_test_config config) {
                                &request_metadata_recv, f.cq, f.cq, tag(101));
   GPR_ASSERT(GRPC_CALL_OK == error);
 
-  cqv.Expect(DEBUG_LOCATION, tag(1), true);
+  cqv.Expect(tag(1), true);
   cqv.Verify();
 
   if (g_channel_filter_init_failure) {
@@ -264,7 +264,7 @@ static void test_client_channel_filter(grpc_end2end_test_config config) {
                                 nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
-  cqv.Expect(DEBUG_LOCATION, tag(1), true);
+  cqv.Expect(tag(1), true);
   cqv.Verify();
 
   if (g_channel_filter_init_failure) {
@@ -356,7 +356,7 @@ static void test_client_subchannel_filter(grpc_end2end_test_config config) {
                                 nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
-  cqv.Expect(DEBUG_LOCATION, tag(1), true);
+  cqv.Expect(tag(1), true);
   cqv.Verify();
 
   if (g_channel_filter_init_failure) {
@@ -383,7 +383,7 @@ static void test_client_subchannel_filter(grpc_end2end_test_config config) {
                                 nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
-  cqv.Expect(DEBUG_LOCATION, tag(2), true);
+  cqv.Expect(tag(2), true);
   cqv.Verify();
 
   if (g_channel_filter_init_failure) {

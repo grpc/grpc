@@ -63,13 +63,14 @@ class CqVerifier {
   // location must be DEBUG_LOCATION.
   // result can be any of the types in ExpectedResult - a plain bool means
   // 'expect success to be true/false'.
-  void Expect(DebugLocation location, void* tag, ExpectedResult result);
+  void Expect(void* tag, ExpectedResult result,
+              SourceLocation src_loc = SourceLocation());
 
   std::string ToString() const;
 
  private:
   struct Expectation {
-    DebugLocation location;
+    SourceLocation location;
     void* tag;
     ExpectedResult result;
 

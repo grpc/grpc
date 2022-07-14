@@ -115,7 +115,7 @@ TEST(LameClientTest, MainTest) {
   ASSERT_EQ(GRPC_CALL_OK, error);
 
   /* the call should immediately fail */
-  cqv.Expect(DEBUG_LOCATION, tag(1), false);
+  cqv.Expect(tag(1), false);
   cqv.Verify();
 
   memset(ops, 0, sizeof(ops));
@@ -132,7 +132,7 @@ TEST(LameClientTest, MainTest) {
   ASSERT_EQ(GRPC_CALL_OK, error);
 
   /* the call should immediately fail */
-  cqv.Expect(DEBUG_LOCATION, tag(2), true);
+  cqv.Expect(tag(2), true);
   cqv.Verify();
 
   peer = grpc_call_get_peer(call);

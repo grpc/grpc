@@ -194,7 +194,7 @@ static void test_retry_server_pushback_disabled(
       grpc_server_request_call(f.server, &s, &call_details,
                                &request_metadata_recv, f.cq, f.cq, tag(101));
   GPR_ASSERT(GRPC_CALL_OK == error);
-  cqv.Expect(DEBUG_LOCATION, tag(101), true);
+  cqv.Expect(tag(101), true);
   cqv.Verify();
 
   peer = grpc_call_get_peer(s);
@@ -223,7 +223,7 @@ static void test_retry_server_pushback_disabled(
                                 nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
-  cqv.Expect(DEBUG_LOCATION, tag(102), true);
+  cqv.Expect(tag(102), true);
   cqv.Verify();
 
   grpc_call_unref(s);
@@ -236,7 +236,7 @@ static void test_retry_server_pushback_disabled(
       grpc_server_request_call(f.server, &s, &call_details,
                                &request_metadata_recv, f.cq, f.cq, tag(201));
   GPR_ASSERT(GRPC_CALL_OK == error);
-  cqv.Expect(DEBUG_LOCATION, tag(201), true);
+  cqv.Expect(tag(201), true);
   cqv.Verify();
 
   peer = grpc_call_get_peer(s);
@@ -266,8 +266,8 @@ static void test_retry_server_pushback_disabled(
                                 nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
-  cqv.Expect(DEBUG_LOCATION, tag(202), true);
-  cqv.Expect(DEBUG_LOCATION, tag(1), true);
+  cqv.Expect(tag(202), true);
+  cqv.Expect(tag(1), true);
   cqv.Verify();
 
   GPR_ASSERT(status == GRPC_STATUS_ABORTED);

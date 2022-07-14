@@ -159,7 +159,7 @@ static void test_cancel_after_invoke(grpc_end2end_test_config config,
 
   GPR_ASSERT(GRPC_CALL_OK == mode.initiate_cancel(c, nullptr));
 
-  cqv.Expect(DEBUG_LOCATION, tag(1), true);
+  cqv.Expect(tag(1), true);
   cqv.Verify();
 
   GPR_ASSERT(status == mode.expect_status || status == GRPC_STATUS_INTERNAL);

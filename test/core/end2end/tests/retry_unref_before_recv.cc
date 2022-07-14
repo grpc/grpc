@@ -180,8 +180,8 @@ static void test_retry_unref_before_recv(grpc_end2end_test_config config) {
       grpc_server_request_call(f.server, &s, &call_details,
                                &request_metadata_recv, f.cq, f.cq, tag(101));
   GPR_ASSERT(GRPC_CALL_OK == error);
-  cqv.Expect(DEBUG_LOCATION, tag(1), true);
-  cqv.Expect(DEBUG_LOCATION, tag(101), true);
+  cqv.Expect(tag(1), true);
+  cqv.Expect(tag(101), true);
   cqv.Verify();
 
   // Client unrefs the call without starting recv_trailing_metadata.
@@ -209,8 +209,8 @@ static void test_retry_unref_before_recv(grpc_end2end_test_config config) {
   GPR_ASSERT(GRPC_CALL_OK == error);
 
   // Server ops complete and client recv ops complete.
-  cqv.Expect(DEBUG_LOCATION, tag(2), false);  // Failure!
-  cqv.Expect(DEBUG_LOCATION, tag(102), true);
+  cqv.Expect(tag(2), false);  // Failure!
+  cqv.Expect(tag(102), true);
   cqv.Verify();
 
   GPR_ASSERT(0 == grpc_slice_str_cmp(call_details.method, "/service/method"));

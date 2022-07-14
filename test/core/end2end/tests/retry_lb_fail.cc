@@ -226,7 +226,7 @@ static void test_retry_lb_fail(grpc_end2end_test_config config) {
                                 nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
-  cqv.Expect(DEBUG_LOCATION, tag(1), false);
+  cqv.Expect(tag(1), false);
   cqv.Verify();
 
   memset(ops, 0, sizeof(ops));
@@ -240,7 +240,7 @@ static void test_retry_lb_fail(grpc_end2end_test_config config) {
                                 nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
-  cqv.Expect(DEBUG_LOCATION, tag(2), true);
+  cqv.Expect(tag(2), true);
   cqv.Verify();
 
   GPR_ASSERT(status == GRPC_STATUS_ABORTED);

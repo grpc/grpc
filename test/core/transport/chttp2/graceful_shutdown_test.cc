@@ -135,7 +135,7 @@ class GracefulShutdownTest : public ::testing::Test {
     ExecCtx::Get()->Flush();
     // Shutdown and destroy server
     grpc_server_shutdown_and_notify(server_, cq_, Tag(1000));
-    cqv_->Expect(DEBUG_LOCATION, Tag(1000), true);
+    cqv_->Expect(Tag(1000), true);
     cqv_->Verify();
     grpc_server_destroy(server_);
     cqv_.reset();
@@ -256,7 +256,7 @@ TEST_F(GracefulShutdownTest, GracefulGoaway) {
   // Wait for final goaway
   WaitForGoaway(0);
   // The shutdown should successfully complete.
-  cqv_->Expect(DEBUG_LOCATION, Tag(1), true);
+  cqv_->Expect(Tag(1), true);
   cqv_->Verify();
 }
 
@@ -297,9 +297,9 @@ TEST_F(GracefulShutdownTest, RequestStartedBeforeFinalGoaway) {
   WaitForGoaway(1);
   // TODO(yashykt): The surface layer automatically cancels calls received after
   // shutdown has been called. Once that is fixed, this should be a success.
-  cqv_->Expect(DEBUG_LOCATION, Tag(100), false);
+  cqv_->Expect(Tag(100), false);
   // The shutdown should successfully complete.
-  cqv_->Expect(DEBUG_LOCATION, Tag(1), true);
+  cqv_->Expect(Tag(1), true);
   cqv_->Verify();
   grpc_metadata_array_destroy(&request_metadata_recv);
   grpc_call_details_destroy(&call_details);
@@ -331,7 +331,7 @@ TEST_F(GracefulShutdownTest, RequestStartedAfterFinalGoawayIsIgnored) {
       "\x10\x02te\x08trailers"
       "\x10\x0auser-agent\x17grpc-c/0.12.0.0 (linux)";
   Write(absl::string_view(kRequestFrame, sizeof(kRequestFrame) - 1));
-  cqv_->Expect(DEBUG_LOCATION, Tag(100), true);
+  cqv_->Expect(Tag(100), true);
   cqv_->Verify();
 
   // Initiate shutdown on the server
@@ -387,9 +387,9 @@ TEST_F(GracefulShutdownTest, RequestStartedAfterFinalGoawayIsIgnored) {
   error = grpc_call_start_batch(s, ops, static_cast<size_t>(op - ops), Tag(101),
                                 nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
-  cqv_->Expect(DEBUG_LOCATION, Tag(101), true);
+  cqv_->Expect(Tag(101), true);
   // The shutdown should successfully complete.
-  cqv_->Expect(DEBUG_LOCATION, Tag(1), true);
+  cqv_->Expect(Tag(1), true);
   cqv_->Verify();
   grpc_call_unref(s);
   grpc_metadata_array_destroy(&request_metadata_recv);
@@ -413,7 +413,7 @@ TEST_F(GracefulShutdownTest, UnresponsiveClient) {
                 absl::Seconds(
                     1) /* clock skew between threads due to time caching */);
   // The shutdown should successfully complete.
-  cqv_->Expect(DEBUG_LOCATION, Tag(1), true);
+  cqv_->Expect(Tag(1), true);
   cqv_->Verify();
 }
 
@@ -428,7 +428,7 @@ TEST_F(GracefulShutdownTest, GoawayReceivedOnServerDisconnect) {
   WaitForGoaway(/*last_stream_id=*/0, /*error_code=*/2,
                 grpc_slice_from_static_string("Cancelling all calls"));
   // The shutdown should successfully complete.
-  cqv_->Expect(DEBUG_LOCATION, Tag(1), true);
+  cqv_->Expect(Tag(1), true);
   cqv_->Verify();
 }
 

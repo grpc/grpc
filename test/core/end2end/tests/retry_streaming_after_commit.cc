@@ -191,7 +191,7 @@ static void test_retry_streaming_after_commit(grpc_end2end_test_config config) {
   error = grpc_call_start_batch(c, ops, static_cast<size_t>(op - ops), tag(3),
                                 nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
-  cqv.Expect(DEBUG_LOCATION, tag(3), true);
+  cqv.Expect(tag(3), true);
   cqv.Verify();
 
   // Server gets a call with received initial metadata.
@@ -199,7 +199,7 @@ static void test_retry_streaming_after_commit(grpc_end2end_test_config config) {
       grpc_server_request_call(f.server, &s, &call_details,
                                &request_metadata_recv, f.cq, f.cq, tag(101));
   GPR_ASSERT(GRPC_CALL_OK == error);
-  cqv.Expect(DEBUG_LOCATION, tag(101), true);
+  cqv.Expect(tag(101), true);
   cqv.Verify();
 
   peer = grpc_call_get_peer(s);
@@ -220,7 +220,7 @@ static void test_retry_streaming_after_commit(grpc_end2end_test_config config) {
   error = grpc_call_start_batch(s, ops, static_cast<size_t>(op - ops), tag(102),
                                 nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
-  cqv.Expect(DEBUG_LOCATION, tag(102), true);
+  cqv.Expect(tag(102), true);
   cqv.Verify();
 
   // Server sends initial metadata and a message.
@@ -235,9 +235,9 @@ static void test_retry_streaming_after_commit(grpc_end2end_test_config config) {
   error = grpc_call_start_batch(s, ops, static_cast<size_t>(op - ops), tag(103),
                                 nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
-  cqv.Expect(DEBUG_LOCATION, tag(103), true);
+  cqv.Expect(tag(103), true);
   // Client receives initial metadata and a message.
-  cqv.Expect(DEBUG_LOCATION, tag(2), true);
+  cqv.Expect(tag(2), true);
   cqv.Verify();
 
   // Client sends a second message and a close.
@@ -251,7 +251,7 @@ static void test_retry_streaming_after_commit(grpc_end2end_test_config config) {
   error = grpc_call_start_batch(c, ops, static_cast<size_t>(op - ops), tag(4),
                                 nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
-  cqv.Expect(DEBUG_LOCATION, tag(4), true);
+  cqv.Expect(tag(4), true);
   cqv.Verify();
 
   // Server receives a second message.
@@ -263,7 +263,7 @@ static void test_retry_streaming_after_commit(grpc_end2end_test_config config) {
   error = grpc_call_start_batch(s, ops, static_cast<size_t>(op - ops), tag(104),
                                 nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
-  cqv.Expect(DEBUG_LOCATION, tag(104), true);
+  cqv.Expect(tag(104), true);
   cqv.Verify();
 
   // Server receives a close, sends a second message, and sends status.
@@ -285,7 +285,7 @@ static void test_retry_streaming_after_commit(grpc_end2end_test_config config) {
   error = grpc_call_start_batch(s, ops, static_cast<size_t>(op - ops), tag(105),
                                 nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
-  cqv.Expect(DEBUG_LOCATION, tag(105), true);
+  cqv.Expect(tag(105), true);
   cqv.Verify();
 
   // Client receives a second message.
@@ -297,7 +297,7 @@ static void test_retry_streaming_after_commit(grpc_end2end_test_config config) {
   error = grpc_call_start_batch(c, ops, static_cast<size_t>(op - ops), tag(5),
                                 nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
-  cqv.Expect(DEBUG_LOCATION, tag(5), true);
+  cqv.Expect(tag(5), true);
   cqv.Verify();
 
   // Client receives status.
@@ -311,7 +311,7 @@ static void test_retry_streaming_after_commit(grpc_end2end_test_config config) {
   error = grpc_call_start_batch(c, ops, static_cast<size_t>(op - ops), tag(1),
                                 nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
-  cqv.Expect(DEBUG_LOCATION, tag(1), true);
+  cqv.Expect(tag(1), true);
   cqv.Verify();
 
   GPR_ASSERT(status == GRPC_STATUS_ABORTED);

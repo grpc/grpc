@@ -189,7 +189,7 @@ static void test_cancel_after_accept(grpc_end2end_test_config config,
   error = grpc_server_request_call(f.server, &s, &call_details,
                                    &request_metadata_recv, f.cq, f.cq, tag(2));
   GPR_ASSERT(GRPC_CALL_OK == error);
-  cqv.Expect(DEBUG_LOCATION, tag(2), true);
+  cqv.Expect(tag(2), true);
   cqv.Verify();
 
   memset(ops, 0, sizeof(ops));
@@ -220,8 +220,8 @@ static void test_cancel_after_accept(grpc_end2end_test_config config,
 
   GPR_ASSERT(GRPC_CALL_OK == mode.initiate_cancel(c, nullptr));
 
-  cqv.Expect(DEBUG_LOCATION, tag(3), true);
-  cqv.Expect(DEBUG_LOCATION, tag(1), true);
+  cqv.Expect(tag(3), true);
+  cqv.Expect(tag(1), true);
   cqv.Verify();
 
   GPR_ASSERT(status == mode.expect_status || status == GRPC_STATUS_INTERNAL);

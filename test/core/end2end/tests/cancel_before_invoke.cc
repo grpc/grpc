@@ -157,7 +157,7 @@ static void test_cancel_before_invoke(grpc_end2end_test_config config,
   error = grpc_call_start_batch(c, ops, test_ops, tag(1), nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
-  cqv.Expect(DEBUG_LOCATION, tag(1), true);
+  cqv.Expect(tag(1), true);
   cqv.Verify();
 
   GPR_ASSERT(status == GRPC_STATUS_CANCELLED);

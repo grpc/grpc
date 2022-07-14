@@ -152,7 +152,7 @@ static void test_keepalive_timeout(grpc_end2end_test_config config) {
                                 nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
-  cqv.Expect(DEBUG_LOCATION, tag(1), true);
+  cqv.Expect(tag(1), true);
   cqv.Verify();
 
   GPR_ASSERT(status == GRPC_STATUS_UNAVAILABLE);
@@ -258,7 +258,7 @@ static void test_read_delays_keepalive(grpc_end2end_test_config config) {
       grpc_server_request_call(f.server, &s, &call_details,
                                &request_metadata_recv, f.cq, f.cq, tag(100));
   GPR_ASSERT(GRPC_CALL_OK == error);
-  cqv.Expect(DEBUG_LOCATION, tag(100), true);
+  cqv.Expect(tag(100), true);
   cqv.Verify();
 
   memset(ops, 0, sizeof(ops));
@@ -307,7 +307,7 @@ static void test_read_delays_keepalive(grpc_end2end_test_config config) {
     error = grpc_call_start_batch(s, ops, static_cast<size_t>(op - ops),
                                   tag(102), nullptr);
     GPR_ASSERT(GRPC_CALL_OK == error);
-    cqv.Expect(DEBUG_LOCATION, tag(102), true);
+    cqv.Expect(tag(102), true);
     cqv.Verify();
 
     memset(ops, 0, sizeof(ops));
@@ -320,8 +320,8 @@ static void test_read_delays_keepalive(grpc_end2end_test_config config) {
     error = grpc_call_start_batch(s, ops, static_cast<size_t>(op - ops),
                                   tag(103), nullptr);
     GPR_ASSERT(GRPC_CALL_OK == error);
-    cqv.Expect(DEBUG_LOCATION, tag(103), true);
-    cqv.Expect(DEBUG_LOCATION, tag(2), true);
+    cqv.Expect(tag(103), true);
+    cqv.Expect(tag(2), true);
     cqv.Verify();
 
     grpc_byte_buffer_destroy(request_payload);
@@ -359,10 +359,10 @@ static void test_read_delays_keepalive(grpc_end2end_test_config config) {
                                 nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
-  cqv.Expect(DEBUG_LOCATION, tag(1), true);
-  cqv.Expect(DEBUG_LOCATION, tag(3), true);
-  cqv.Expect(DEBUG_LOCATION, tag(101), true);
-  cqv.Expect(DEBUG_LOCATION, tag(104), true);
+  cqv.Expect(tag(1), true);
+  cqv.Expect(tag(3), true);
+  cqv.Expect(tag(101), true);
+  cqv.Expect(tag(104), true);
   cqv.Verify();
 
   grpc_call_unref(c);

@@ -123,7 +123,7 @@ static void do_request_and_shutdown_server(grpc_end2end_test_config /*config*/,
       grpc_server_request_call(f->server, &s, &call_details,
                                &request_metadata_recv, f->cq, f->cq, tag(101));
   GPR_ASSERT(GRPC_CALL_OK == error);
-  cqv.Expect(DEBUG_LOCATION, tag(101), true);
+  cqv.Expect(tag(101), true);
   cqv.Verify();
 
   /* should be able to shut down the server early
@@ -154,9 +154,9 @@ static void do_request_and_shutdown_server(grpc_end2end_test_config /*config*/,
                                 nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
-  cqv.Expect(DEBUG_LOCATION, tag(102), true);
-  cqv.Expect(DEBUG_LOCATION, tag(1), true);
-  cqv.Expect(DEBUG_LOCATION, tag(1000), true);
+  cqv.Expect(tag(102), true);
+  cqv.Expect(tag(1), true);
+  cqv.Expect(tag(1000), true);
   cqv.Verify();
   /* Please refer https://github.com/grpc/grpc/issues/21221 for additional
    * details.

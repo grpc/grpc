@@ -297,8 +297,8 @@ int main(int argc, char** argv) {
   set_resolve_port(port1);
 
   /* first call should now start */
-  cqv.Expect(DEBUG_LOCATION, tag(0x101), true);
-  cqv.Expect(DEBUG_LOCATION, tag(0x301), true);
+  cqv.Expect(tag(0x101), true);
+  cqv.Expect(tag(0x301), true);
   cqv.Verify();
 
   GPR_ASSERT(GRPC_CHANNEL_READY ==
@@ -322,7 +322,7 @@ int main(int argc, char** argv) {
    * we should see a connectivity change and then nothing */
   set_resolve_port(-1);
   grpc_server_shutdown_and_notify(server1, cq, tag(0xdead1));
-  cqv.Expect(DEBUG_LOCATION, tag(0x9999), true);
+  cqv.Expect(tag(0x9999), true);
   cqv.Verify();
   cqv.VerifyEmpty();
 
@@ -374,8 +374,8 @@ int main(int argc, char** argv) {
                                       &request_metadata2, cq, cq, tag(0x401)));
 
   /* second call should now start */
-  cqv.Expect(DEBUG_LOCATION, tag(0x201), true);
-  cqv.Expect(DEBUG_LOCATION, tag(0x401), true);
+  cqv.Expect(tag(0x201), true);
+  cqv.Expect(tag(0x401), true);
   cqv.Verify();
 
   /* listen for close on the server call to probe for finishing */
@@ -397,12 +397,12 @@ int main(int argc, char** argv) {
   grpc_call_cancel(call2, nullptr);
 
   /* now everything else should finish */
-  cqv.Expect(DEBUG_LOCATION, tag(0x102), true);
-  cqv.Expect(DEBUG_LOCATION, tag(0x202), true);
-  cqv.Expect(DEBUG_LOCATION, tag(0x302), true);
-  cqv.Expect(DEBUG_LOCATION, tag(0x402), true);
-  cqv.Expect(DEBUG_LOCATION, tag(0xdead1), true);
-  cqv.Expect(DEBUG_LOCATION, tag(0xdead2), true);
+  cqv.Expect(tag(0x102), true);
+  cqv.Expect(tag(0x202), true);
+  cqv.Expect(tag(0x302), true);
+  cqv.Expect(tag(0x402), true);
+  cqv.Expect(tag(0xdead1), true);
+  cqv.Expect(tag(0xdead2), true);
   cqv.Verify();
 
   grpc_call_unref(call1);

@@ -210,10 +210,10 @@ static void test_retry_cancel_with_multiple_send_batches(
   GPR_ASSERT(GRPC_CALL_OK == mode.initiate_cancel(c, nullptr));
 
   // Client ops should now complete.
-  cqv.Expect(DEBUG_LOCATION, tag(1), false);
-  cqv.Expect(DEBUG_LOCATION, tag(2), false);
-  cqv.Expect(DEBUG_LOCATION, tag(3), false);
-  cqv.Expect(DEBUG_LOCATION, tag(4), true);
+  cqv.Expect(tag(1), false);
+  cqv.Expect(tag(2), false);
+  cqv.Expect(tag(3), false);
+  cqv.Expect(tag(4), true);
   cqv.Verify();
 
   gpr_log(GPR_INFO, "status=%d expected=%d", status, mode.expect_status);
