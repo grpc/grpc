@@ -48,6 +48,7 @@ export ENABLED_MODULES='
   src/cpp
   test/core/promise
   test/core/resource_quota
+  test/core/transport
   test/core/uri
 '
 
@@ -55,6 +56,7 @@ export DISABLED_MODULES='
   src/core/lib/gpr
   src/core/lib/iomgr
   src/core/ext/transport/binder
+  test/core/transport/binder
 '
 
 export INCLUSION_REGEX=`echo $ENABLED_MODULES | sed 's/ /|/g' | sed 's,\\(.*\\),^(\\1)/,g'`
