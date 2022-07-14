@@ -168,32 +168,27 @@ TEST(B64Test, UnpaddedDecode) {
 
   grpc_core::ExecCtx exec_ctx;
   decoded = grpc_base64_decode("Zm9vYmFy", 0);
-  ASSERT_FALSE(GRPC_SLICE_IS_EMPTY(decoded));
+
   ASSERT_EQ(grpc_core::StringViewFromSlice(decoded), "foobar");
   grpc_slice_unref(decoded);
 
   decoded = grpc_base64_decode("Zm9vYmE", 0);
-  ASSERT_FALSE(GRPC_SLICE_IS_EMPTY(decoded));
   ASSERT_EQ(grpc_core::StringViewFromSlice(decoded), "fooba");
   grpc_slice_unref(decoded);
 
   decoded = grpc_base64_decode("Zm9vYg", 0);
-  ASSERT_FALSE(GRPC_SLICE_IS_EMPTY(decoded));
   ASSERT_EQ(grpc_core::StringViewFromSlice(decoded), "foob");
   grpc_slice_unref(decoded);
 
   decoded = grpc_base64_decode("Zm9v", 0);
-  ASSERT_FALSE(GRPC_SLICE_IS_EMPTY(decoded));
   ASSERT_EQ(grpc_core::StringViewFromSlice(decoded), "foo");
   grpc_slice_unref(decoded);
 
   decoded = grpc_base64_decode("Zm8", 0);
-  ASSERT_FALSE(GRPC_SLICE_IS_EMPTY(decoded));
   ASSERT_EQ(grpc_core::StringViewFromSlice(decoded), "fo");
   grpc_slice_unref(decoded);
 
   decoded = grpc_base64_decode("Zg", 0);
-  ASSERT_FALSE(GRPC_SLICE_IS_EMPTY(decoded));
   ASSERT_EQ(grpc_core::StringViewFromSlice(decoded), "f");
   grpc_slice_unref(decoded);
 
