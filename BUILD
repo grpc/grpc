@@ -2288,7 +2288,6 @@ grpc_cc_library(
         "absl/status",
         "absl/strings",
     ],
-    tags = ["grpc-autodeps"],
     deps = [
         "event_engine_base_hdrs",
         "gpr_platform",
@@ -2307,7 +2306,6 @@ grpc_cc_library(
         "absl/status",
         "absl/utility",
     ],
-    tags = ["grpc-autodeps"],
     deps = [
         "event_engine_base_hdrs",
         "gpr_platform",
@@ -2323,7 +2321,6 @@ grpc_cc_library(
         "src/core/lib/event_engine/iomgr_engine/lockfree_event.h",
     ],
     external_deps = ["absl/status"],
-    tags = ["grpc-autodeps"],
     deps = [
         "gpr_base",
         "iomgr_ee_closure",
@@ -2338,7 +2335,6 @@ grpc_cc_library(
         "src/core/lib/event_engine/iomgr_engine/wakeup_fd_posix.h",
     ],
     external_deps = ["absl/status"],
-    tags = ["grpc-autodeps"],
     deps = ["gpr_platform"],
 )
 
@@ -2356,10 +2352,8 @@ grpc_cc_library(
         "absl/status:statusor",
         "absl/strings",
     ],
-    tags = ["grpc-autodeps"],
     deps = [
         "gpr_base",
-        "gpr_platform",
         "iomgr_ee_wakeup_fd_posix",
         "iomgr_port",
     ],
@@ -2379,10 +2373,8 @@ grpc_cc_library(
         "absl/status:statusor",
         "absl/strings",
     ],
-    tags = ["grpc-autodeps"],
     deps = [
         "gpr_base",
-        "gpr_platform",
         "iomgr_ee_wakeup_fd_posix",
         "iomgr_port",
     ],
@@ -2400,7 +2392,6 @@ grpc_cc_library(
         "absl/status",
         "absl/status:statusor",
     ],
-    tags = ["grpc-autodeps"],
     deps = [
         "gpr_platform",
         "iomgr_ee_wakeup_fd_posix",
@@ -2426,11 +2417,9 @@ grpc_cc_library(
         "absl/strings",
         "absl/synchronization",
     ],
-    tags = ["grpc-autodeps"],
     deps = [
         "gpr_base",
         "gpr_codegen",
-        "gpr_platform",
         "iomgr_ee_closure",
         "iomgr_ee_event_poller",
         "iomgr_ee_lockfree_event",
@@ -2449,7 +2438,6 @@ grpc_cc_library(
     hdrs = [
         "src/core/lib/event_engine/iomgr_engine/event_poller_posix_default.h",
     ],
-    tags = ["grpc-autodeps"],
     deps = [
         "gpr_platform",
         "iomgr_ee_event_poller",
