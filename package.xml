@@ -13,8 +13,8 @@
  <date>2019-09-24</date>
  <time>16:06:07</time>
  <version>
-  <release>1.48.0dev</release>
-  <api>1.48.0dev</api>
+  <release>1.49.0dev</release>
+  <api>1.49.0dev</api>
  </version>
  <stability>
   <release>beta</release>
@@ -22,7 +22,7 @@
  </stability>
  <license>Apache 2.0</license>
  <notes>
-- gRPC Core 1.48.0 update
+- gRPC Core 1.49.0 update
  </notes>
  <contents>
   <dir baseinstalldir="/" name="/">
@@ -855,6 +855,8 @@
     <file baseinstalldir="/" name="src/core/ext/xds/xds_channel_stack_modifier.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/xds/xds_client.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/xds/xds_client.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/xds/xds_client_grpc.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/xds/xds_client_grpc.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/xds/xds_client_stats.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/xds/xds_client_stats.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/xds/xds_cluster.cc" role="src" />
@@ -883,6 +885,9 @@
     <file baseinstalldir="/" name="src/core/ext/xds/xds_routing.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/xds/xds_routing.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/xds/xds_server_config_fetcher.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/xds/xds_transport.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/xds/xds_transport_grpc.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/xds/xds_transport_grpc.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/address_utils/parse_address.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/address_utils/parse_address.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/address_utils/sockaddr_utils.cc" role="src" />
@@ -932,6 +937,7 @@
     <file baseinstalldir="/" name="src/core/lib/event_engine/channel_args_endpoint_config.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/event_engine/channel_args_endpoint_config.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/event_engine/default_event_engine_factory.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/event_engine/default_event_engine_factory.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/event_engine/event_engine.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/event_engine/event_engine_factory.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/event_engine/handle_containers.h" role="src" />
@@ -939,8 +945,6 @@
     <file baseinstalldir="/" name="src/core/lib/event_engine/iomgr_engine/iomgr_engine.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/event_engine/iomgr_engine/thread_pool.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/event_engine/iomgr_engine/thread_pool.h" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/event_engine/iomgr_engine/time_averaged_stats.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/event_engine/iomgr_engine/time_averaged_stats.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/event_engine/iomgr_engine/timer.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/event_engine/iomgr_engine/timer.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/event_engine/iomgr_engine/timer_heap.cc" role="src" />
@@ -1035,9 +1039,13 @@
     <file baseinstalldir="/" name="src/core/lib/gprpp/thd_windows.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gprpp/time.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gprpp/time.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/gprpp/time_averaged_stats.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/gprpp/time_averaged_stats.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gprpp/time_util.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gprpp/time_util.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gprpp/unique_type_name.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/gprpp/work_serializer.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/gprpp/work_serializer.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/http/format_request.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/http/format_request.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/http/httpcli.cc" role="src" />
@@ -1069,7 +1077,6 @@
     <file baseinstalldir="/" name="src/core/lib/iomgr/error.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/error_cfstream.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/error_cfstream.h" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/iomgr/error_internal.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/ev_apple.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/ev_apple.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/ev_epoll1_linux.cc" role="src" />
@@ -1083,10 +1090,6 @@
     <file baseinstalldir="/" name="src/core/lib/iomgr/exec_ctx.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/executor.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/executor.h" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/iomgr/executor/mpmcqueue.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/iomgr/executor/mpmcqueue.h" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/iomgr/executor/threadpool.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/iomgr/executor/threadpool.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/fork_posix.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/fork_windows.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/gethostname.h" role="src" />
@@ -1167,8 +1170,6 @@
     <file baseinstalldir="/" name="src/core/lib/iomgr/tcp_server_windows.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/tcp_windows.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/tcp_windows.h" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/iomgr/time_averaged_stats.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/iomgr/time_averaged_stats.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/timer.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/timer.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/timer_generic.cc" role="src" />
@@ -1186,8 +1187,6 @@
     <file baseinstalldir="/" name="src/core/lib/iomgr/wakeup_fd_pipe.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/wakeup_fd_posix.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/wakeup_fd_posix.h" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/iomgr/work_serializer.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/iomgr/work_serializer.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/json/json.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/json/json_reader.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/json/json_util.cc" role="src" />
@@ -1625,8 +1624,10 @@
     <file baseinstalldir="/" name="third_party/abseil-cpp/absl/debugging/symbolize_emscripten.inc" role="src" />
     <file baseinstalldir="/" name="third_party/abseil-cpp/absl/debugging/symbolize_unimplemented.inc" role="src" />
     <file baseinstalldir="/" name="third_party/abseil-cpp/absl/debugging/symbolize_win32.inc" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/functional/any_invocable.h" role="src" />
     <file baseinstalldir="/" name="third_party/abseil-cpp/absl/functional/bind_front.h" role="src" />
     <file baseinstalldir="/" name="third_party/abseil-cpp/absl/functional/function_ref.h" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/functional/internal/any_invocable.h" role="src" />
     <file baseinstalldir="/" name="third_party/abseil-cpp/absl/functional/internal/front_binder.h" role="src" />
     <file baseinstalldir="/" name="third_party/abseil-cpp/absl/functional/internal/function_ref.h" role="src" />
     <file baseinstalldir="/" name="third_party/abseil-cpp/absl/hash/hash.h" role="src" />

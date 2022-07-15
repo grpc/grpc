@@ -22,6 +22,7 @@
 
 #include <string>
 
+#include <gtest/gtest.h>
 #include <openssl/crypto.h>
 
 #include "absl/strings/str_format.h"
@@ -265,18 +266,20 @@ static tsi_peer peer_from_cert_name_test_entry(
   parsed_names dns_entries = parse_names(entry->dns_names);
   parsed_names ip_entries = parse_names(entry->ip_names);
   nl = dns_entries.names;
-  GPR_ASSERT(tsi_construct_peer(
-                 1 + dns_entries.name_count + ip_entries.name_count, &peer) ==
-             TSI_OK);
-  GPR_ASSERT(tsi_construct_string_peer_property_from_cstring(
-                 TSI_X509_SUBJECT_COMMON_NAME_PEER_PROPERTY, entry->common_name,
-                 &peer.properties[0]) == TSI_OK);
+  EXPECT_EQ(tsi_construct_peer(
+                1 + dns_entries.name_count + ip_entries.name_count, &peer),
+            TSI_OK);
+  EXPECT_EQ(tsi_construct_string_peer_property_from_cstring(
+                TSI_X509_SUBJECT_COMMON_NAME_PEER_PROPERTY, entry->common_name,
+                &peer.properties[0]),
+            TSI_OK);
   i = 1;
   while (nl != nullptr) {
     char* processed = processed_name(nl->name);
-    GPR_ASSERT(tsi_construct_string_peer_property(
-                   TSI_X509_SUBJECT_ALTERNATIVE_NAME_PEER_PROPERTY, processed,
-                   strlen(nl->name), &peer.properties[i++]) == TSI_OK);
+    EXPECT_EQ(tsi_construct_string_peer_property(
+                  TSI_X509_SUBJECT_ALTERNATIVE_NAME_PEER_PROPERTY, processed,
+                  strlen(nl->name), &peer.properties[i++]),
+              TSI_OK);
     nl = nl->next;
     gpr_free(processed);
   }
@@ -284,9 +287,10 @@ static tsi_peer peer_from_cert_name_test_entry(
   nl = ip_entries.names;
   while (nl != nullptr) {
     char* processed = processed_name(nl->name);
-    GPR_ASSERT(tsi_construct_string_peer_property(
-                   TSI_X509_SUBJECT_ALTERNATIVE_NAME_PEER_PROPERTY, processed,
-                   strlen(nl->name), &peer.properties[i++]) == TSI_OK);
+    EXPECT_EQ(tsi_construct_string_peer_property(
+                  TSI_X509_SUBJECT_ALTERNATIVE_NAME_PEER_PROPERTY, processed,
+                  strlen(nl->name), &peer.properties[i++]),
+              TSI_OK);
     nl = nl->next;
     gpr_free(processed);
   }
@@ -304,7 +308,7 @@ std::string cert_name_test_entry_to_string(const cert_name_test_entry* entry) {
       entry->ip_names != nullptr ? entry->ip_names : "");
 }
 
-static void test_peer_matches_name(void) {
+TEST(TransportSecurityTest, TestPeerMatchesName) {
   size_t i = 0;
   for (i = 0; i < GPR_ARRAY_SIZE(cert_name_test_entries); i++) {
     const cert_name_test_entry* entry = &cert_name_test_entries[i];
@@ -312,7 +316,7 @@ static void test_peer_matches_name(void) {
     int result = tsi_ssl_peer_matches_name(&peer, entry->host_name);
     if (result != entry->expected) {
       gpr_log(GPR_ERROR, "%s", cert_name_test_entry_to_string(entry).c_str());
-      GPR_ASSERT(0); /* Unexpected result. */
+      ASSERT_TRUE(0); /* Unexpected result. */
     }
     tsi_peer_destruct(&peer);
   }
@@ -323,7 +327,7 @@ typedef struct {
   const char* str;
 } tsi_result_string_pair;
 
-static void test_result_strings(void) {
+TEST(TransportSecurityTest, TestResultStrings) {
   const tsi_result_string_pair results[] = {
       {TSI_OK, "TSI_OK"},
       {TSI_UNKNOWN_ERROR, "TSI_UNKNOWN_ERROR"},
@@ -340,51 +344,50 @@ static void test_result_strings(void) {
       {TSI_OUT_OF_RESOURCES, "TSI_OUT_OF_RESOURCES"}};
   size_t i;
   for (i = 0; i < GPR_ARRAY_SIZE(results); i++) {
-    GPR_ASSERT(strcmp(results[i].str, tsi_result_to_string(results[i].res)) ==
-               0);
+    ASSERT_STREQ(results[i].str, tsi_result_to_string(results[i].res));
   }
-  GPR_ASSERT(strcmp("UNKNOWN", tsi_result_to_string((tsi_result)42)) == 0);
+  ASSERT_STREQ("UNKNOWN", tsi_result_to_string((tsi_result)42));
 }
 
-static void test_protector_invalid_args(void) {
-  GPR_ASSERT(tsi_frame_protector_protect(nullptr, nullptr, nullptr, nullptr,
-                                         nullptr) == TSI_INVALID_ARGUMENT);
-  GPR_ASSERT(tsi_frame_protector_protect_flush(
-                 nullptr, nullptr, nullptr, nullptr) == TSI_INVALID_ARGUMENT);
-  GPR_ASSERT(tsi_frame_protector_unprotect(nullptr, nullptr, nullptr, nullptr,
-                                           nullptr) == TSI_INVALID_ARGUMENT);
+TEST(TransportSecurityTest, TestProtectorInvalidArgs) {
+  ASSERT_EQ(
+      tsi_frame_protector_protect(nullptr, nullptr, nullptr, nullptr, nullptr),
+      TSI_INVALID_ARGUMENT);
+  ASSERT_EQ(
+      tsi_frame_protector_protect_flush(nullptr, nullptr, nullptr, nullptr),
+      TSI_INVALID_ARGUMENT);
+  ASSERT_EQ(tsi_frame_protector_unprotect(nullptr, nullptr, nullptr, nullptr,
+                                          nullptr),
+            TSI_INVALID_ARGUMENT);
 }
 
-static void test_handshaker_invalid_args(void) {
-  GPR_ASSERT(tsi_handshaker_get_result(nullptr) == TSI_INVALID_ARGUMENT);
-  GPR_ASSERT(tsi_handshaker_extract_peer(nullptr, nullptr) ==
-             TSI_INVALID_ARGUMENT);
-  GPR_ASSERT(tsi_handshaker_create_frame_protector(nullptr, nullptr, nullptr) ==
-             TSI_INVALID_ARGUMENT);
-  GPR_ASSERT(tsi_handshaker_process_bytes_from_peer(
-                 nullptr, nullptr, nullptr) == TSI_INVALID_ARGUMENT);
-  GPR_ASSERT(tsi_handshaker_get_bytes_to_send_to_peer(
-                 nullptr, nullptr, nullptr) == TSI_INVALID_ARGUMENT);
-  GPR_ASSERT(tsi_handshaker_next(nullptr, nullptr, 0, nullptr, nullptr, nullptr,
-                                 nullptr, nullptr) == TSI_INVALID_ARGUMENT);
+TEST(TransportSecurityTest, TestHandshakerInvalidArgs) {
+  ASSERT_EQ(tsi_handshaker_get_result(nullptr), TSI_INVALID_ARGUMENT);
+  ASSERT_EQ(tsi_handshaker_extract_peer(nullptr, nullptr),
+            TSI_INVALID_ARGUMENT);
+  ASSERT_EQ(tsi_handshaker_create_frame_protector(nullptr, nullptr, nullptr),
+            TSI_INVALID_ARGUMENT);
+  ASSERT_EQ(tsi_handshaker_process_bytes_from_peer(nullptr, nullptr, nullptr),
+            TSI_INVALID_ARGUMENT);
+  ASSERT_EQ(tsi_handshaker_get_bytes_to_send_to_peer(nullptr, nullptr, nullptr),
+            TSI_INVALID_ARGUMENT);
+  ASSERT_EQ(tsi_handshaker_next(nullptr, nullptr, 0, nullptr, nullptr, nullptr,
+                                nullptr, nullptr),
+            TSI_INVALID_ARGUMENT);
 }
 
-static void test_handshaker_invalid_state(void) {
+TEST(TransportSecurityTest, TestHandshakerInvalidState) {
   tsi_handshaker* h = tsi_create_fake_handshaker(0);
   tsi_peer peer;
   tsi_frame_protector* p;
-  GPR_ASSERT(tsi_handshaker_extract_peer(h, &peer) == TSI_FAILED_PRECONDITION);
-  GPR_ASSERT(tsi_handshaker_create_frame_protector(h, nullptr, &p) ==
-             TSI_FAILED_PRECONDITION);
+  ASSERT_EQ(tsi_handshaker_extract_peer(h, &peer), TSI_FAILED_PRECONDITION);
+  ASSERT_EQ(tsi_handshaker_create_frame_protector(h, nullptr, &p),
+            TSI_FAILED_PRECONDITION);
   tsi_handshaker_destroy(h);
 }
 
 int main(int argc, char** argv) {
   grpc::testing::TestEnvironment env(&argc, argv);
-  test_peer_matches_name();
-  test_result_strings();
-  test_protector_invalid_args();
-  test_handshaker_invalid_args();
-  test_handshaker_invalid_state();
-  return 0;
+  ::testing::InitGoogleTest(&argc, argv);
+  return RUN_ALL_TESTS();
 }

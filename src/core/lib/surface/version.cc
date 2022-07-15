@@ -25,4 +25,4 @@
 
 const char* grpc_version_string(void) { return "26.0.0"; }
 
-const char* grpc_g_stands_for(void) { return "garum"; }
+const char* grpc_g_stands_for(void) { return "gamma"; }

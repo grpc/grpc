@@ -35,7 +35,6 @@
 #include "absl/strings/string_view.h"
 #include "absl/strings/strip.h"
 
-#include <grpc/impl/codegen/grpc_types.h>
 #include <grpc/support/log.h>
 
 #include "src/core/lib/channel/channel_args.h"
@@ -58,15 +57,13 @@ class BinderResolver : public Resolver {
   BinderResolver(ServerAddressList addresses, ResolverArgs args)
       : result_handler_(std::move(args.result_handler)),
         addresses_(std::move(addresses)),
-        channel_args_(grpc_channel_args_copy(args.args)) {}
-
-  ~BinderResolver() override { grpc_channel_args_destroy(channel_args_); };
+        channel_args_(std::move(args.args)) {}
 
   void StartLocked() override {
     Result result;
     result.addresses = std::move(addresses_);
     result.args = channel_args_;
-    channel_args_ = nullptr;
+    channel_args_ = ChannelArgs();
     result_handler_->ReportResult(std::move(result));
   }
 
@@ -75,7 +72,7 @@ class BinderResolver : public Resolver {
  private:
   std::unique_ptr<ResultHandler> result_handler_;
   ServerAddressList addresses_;
-  const grpc_channel_args* channel_args_ = nullptr;
+  ChannelArgs channel_args_;
 };
 
 class BinderResolverFactory : public ResolverFactory {
@@ -135,7 +132,7 @@ class BinderResolverFactory : public ResolverFactory {
       }
     }
     if (addresses != nullptr) {
-      addresses->emplace_back(addr, nullptr /* args */);
+      addresses->emplace_back(addr, ChannelArgs());
     }
     return true;
   }

@@ -24,9 +24,8 @@
 #include "upb/def.h"
 #include "upb/upb.h"
 
-#include <grpc/impl/codegen/grpc_types.h>
-
 #include "src/core/ext/xds/xds_http_filters.h"
+#include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_fwd.h"
 
 namespace grpc_core {
@@ -46,7 +45,7 @@ class XdsHttpRbacFilter : public XdsHttpFilterImpl {
 
   const grpc_channel_filter* channel_filter() const override;
 
-  grpc_channel_args* ModifyChannelArgs(grpc_channel_args* args) const override;
+  ChannelArgs ModifyChannelArgs(const ChannelArgs& args) const override;
 
   absl::StatusOr<ServiceConfigJsonEntry> GenerateServiceConfig(
       const FilterConfig& hcm_filter_config,

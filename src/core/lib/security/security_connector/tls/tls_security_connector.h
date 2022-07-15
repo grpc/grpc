@@ -31,8 +31,8 @@
 
 #include <grpc/grpc.h>
 #include <grpc/grpc_security.h>
-#include <grpc/impl/codegen/grpc_types.h>
 
+#include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/iomgr/closure.h"
@@ -74,7 +74,7 @@ class TlsChannelSecurityConnector final
 
   ~TlsChannelSecurityConnector() override;
 
-  void add_handshakers(const grpc_channel_args* args,
+  void add_handshakers(const ChannelArgs& args,
                        grpc_pollset_set* interested_parties,
                        HandshakeManager* handshake_mgr) override;
 
@@ -187,7 +187,7 @@ class TlsServerSecurityConnector final : public grpc_server_security_connector {
       RefCountedPtr<grpc_tls_credentials_options> options);
   ~TlsServerSecurityConnector() override;
 
-  void add_handshakers(const grpc_channel_args* args,
+  void add_handshakers(const ChannelArgs& args,
                        grpc_pollset_set* interested_parties,
                        HandshakeManager* handshake_mgr) override;
 
