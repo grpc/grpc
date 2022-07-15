@@ -58,30 +58,30 @@ int main(int argc, char** argv) {
     absl::ParseCommandLine(argc, argv);
     LOG(INFO) <<"Server Process Started";
     LOG(INFO)<<absl::GetFlag(FLAGS_bind);
-    /*
+    LOG(INFO)<<"IS THIS STILL WORKING";
     //grpc_slice slice = grpc_slice_from_copied_string("x");
     char* fake_argv[1];
-
+    
     GPR_ASSERT(argc >= 1);
     fake_argv[0] = argv[0];
     grpc::testing::TestEnvironment env(&argc, argv);
 
     grpc_init();
-
     //absl::SetFlag(&FLAGS_alsologtostderr, true);
     LOG(INFO)<<"After Server Init";
-    std::string server_address = absl::StrCat("[::]:",
-    absl::GetFlag(FLAGS_bind));
+    std::string server_address = absl::GetFlag(FLAGS_bind);
     LOG(INFO)<<server_address;
+    
     LOG(INFO)<<"Before Listening port";
 
+    /*
 
-
+    
 
 
     ServerCallbackImpl callback_server;
     grpc::ServerBuilder builder;
-    builder.AddListeningPort(server_address, grpc::InsecureServerCredentials());
+    builder.AddListeningPort(server_address, grpc::InsecureServerCredentials());*/
     /*if(!absl::GetFlag(FLAGS_secure))
     {
         // Listen on the given address with a insecure server.

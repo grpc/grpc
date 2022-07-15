@@ -151,9 +151,9 @@ int main(int argc, char** argv) {
       printf("client failed with: %d", status);
       return 1;
     }
-    /*
+    
     svr.Interrupt();
-    return svr.Join() == 0 ? 0 : 2;*/
+    return svr.Join() == 0 ? 0 : 2;
   }
 
   printf("Command line args couldn't be parsed\n");
