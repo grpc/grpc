@@ -57,7 +57,7 @@ class Subprocess {
   }
 
   int Join() { return gpr_subprocess_join(process_); }
-  void Interrupt() { gpr_subprocess_interrupt(process_); }
+  void Interrupt() { gpr_subprocess_interrupt(process_); printf("Interrupt called\n");}
 
   ~Subprocess() { gpr_subprocess_destroy(process_); }
 
@@ -140,7 +140,7 @@ int main(int argc, char** argv) {
                      gpr_subprocess_binary_extension()),
         "--bind", grpc_core::JoinHostPort("::", port)};
     Subprocess svr(server_flags);
-    gpr_sleep_until(grpc_timeout_seconds_to_deadline(10));
+    
     /* start the client */
     std::vector<std::string> client_flags = {
         absl::StrCat(root, "/memory_usage_callback_client",
@@ -153,7 +153,7 @@ int main(int argc, char** argv) {
       printf("client failed with: %d", status);
       return 1;
     }
-    
+    printf("Before Interrupt\n");
     svr.Interrupt();
     return svr.Join() == 0 ? 0 : 2;
   }

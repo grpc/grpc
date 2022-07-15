@@ -63,7 +63,8 @@ class ClientCallbackImpl {
       }
       LOG(INFO) << "UnaryCall RPC succeeded.";
       delete params;
-      on_done();
+      //on_done();
+      return;
     };
 
     // Start a call.
