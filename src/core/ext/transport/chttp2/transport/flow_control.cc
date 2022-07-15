@@ -41,6 +41,10 @@
 
 grpc_core::TraceFlag grpc_flowctl_trace(false, "flowctl");
 
+GPR_GLOBAL_CONFIG_DEFINE_BOOL(
+    grpc_experimental_broad_flow_control_range, false,
+    "use an enlarged memory pressure range for scaling flow control");
+
 namespace grpc_core {
 namespace chttp2 {
 
@@ -212,6 +216,29 @@ double TransportFlowControl::SmoothLogBdp(double value) {
   return pid_controller_.Update(bdp_error, dt > kMaxDt ? kMaxDt : dt);
 }
 
+double
+TransportFlowControl::TargetInitialWindowSizeBasedOnMemoryPressureAndBdp()
+    const {
+  const double bdp = bdp_estimator_.EstimateBdp() * 2.0;
+  const double memory_pressure = memory_owner_->InstantaneousPressure();
+  auto lerp = [](double t, double t_min, double t_max, double a, double b) {
+    return a + (b - a) * (t - t_min) / (t_max - t_min);
+  };
+  const double kAnythingGoesPressure = 0.2;
+  const double kAdjustedToBdpPressure = 0.5;
+  const double kAnythingGoesWindow = std::max(double(1 << 24), bdp);
+  if (memory_pressure < kAnythingGoesPressure) {
+    return kAnythingGoesWindow;
+  } else if (memory_pressure < kAdjustedToBdpPressure) {
+    return lerp(memory_pressure, kAnythingGoesPressure, kAdjustedToBdpPressure,
+                kAnythingGoesWindow, bdp);
+  } else if (memory_pressure < 1.0) {
+    return lerp(memory_pressure, kAdjustedToBdpPressure, 1.0, bdp, 0);
+  } else {
+    return 0;
+  }
+}
+
 void TransportFlowControl::UpdateSetting(
     int64_t* desired_value, int64_t new_desired_value,
     FlowControlAction* action,
@@ -233,7 +260,10 @@ FlowControlAction TransportFlowControl::PeriodicUpdate() {
     // target might change based on how much memory pressure we are under
     // TODO(ncteisen): experiment with setting target to be huge under low
     // memory pressure.
-    double target = pow(2, SmoothLogBdp(TargetLogBdp()));
+    double target =
+        GPR_GLOBAL_CONFIG_GET(grpc_experimental_smooth_memory_presure)
+            ? TargetInitialWindowSizeBasedOnMemoryPressureAndBdp()
+            : pow(2, SmoothLogBdp(TargetLogBdp()));
     if (g_test_only_transport_target_window_estimates_mocker != nullptr) {
       // Hook for simulating unusual flow control situations in tests.
       target = g_test_only_transport_target_window_estimates_mocker

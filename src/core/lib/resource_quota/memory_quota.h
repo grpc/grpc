@@ -41,6 +41,8 @@
 #include "src/core/lib/promise/poll.h"
 #include "src/core/lib/resource_quota/periodic_update.h"
 
+GPR_GLOBAL_CONFIG_DECLARE_BOOL(grpc_experimental_smooth_memory_presure);
+
 namespace grpc_core {
 
 class BasicMemoryQuota;
