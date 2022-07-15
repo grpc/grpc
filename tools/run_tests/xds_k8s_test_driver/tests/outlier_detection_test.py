@@ -19,6 +19,7 @@ from absl.testing import absltest
 
 from framework import xds_k8s_testcase
 from framework import xds_url_map_testcase
+from framework.helpers import skips
 
 logger = logging.getLogger(__name__)
 flags.adopt_module_key_flags(xds_k8s_testcase)
@@ -28,6 +29,7 @@ RpcTypeUnaryCall = xds_url_map_testcase.RpcTypeUnaryCall
 RpcTypeEmptyCall = xds_url_map_testcase.RpcTypeEmptyCall
 _XdsTestServer = xds_k8s_testcase.XdsTestServer
 _XdsTestClient = xds_k8s_testcase.XdsTestClient
+_Lang = skips.Lang
 
 # Testing consts
 _QPS = 100
@@ -35,15 +37,22 @@ _REPLICA_COUNT = 5
 
 
 class OutlierDetectionTest(xds_k8s_testcase.RegularXdsKubernetesTestCase):
+    '''
+    Implementation of https://github.com/grpc/grpc/blob/master/doc/xds-test-descriptions.md#outlier_detection
+
+    This test verifies that the client applies the outlier detection
+    configuration and temporarily drops traffic to a server that fails
+    requests.
+    '''
 
     @staticmethod
     def is_supported(config: skips.TestConfig) -> bool:
         if config.server_lang != _Lang.JAVA:
             return False
-        if config.client_lang == _Lang.CPP:
-            return not config.version_lt('v1.48.x')
+        if config.client_lang in _Lang.CPP | _Lang.PYTHON:
+            return config.version_gte('v1.48.x')
         if config.client_lang == _Lang.NODE:
-            return not config.version_lt('v1.6.x')
+            return config.version_gte('v1.6.x')
         return False
 
     def test_outlier_detection(self) -> None:
