@@ -18,6 +18,7 @@ from absl import flags
 from absl.testing import absltest
 
 from framework import xds_url_map_testcase
+from framework.helpers import skips
 from framework.test_app import client_app
 
 # Type aliases
@@ -28,6 +29,7 @@ DumpedXdsConfig = xds_url_map_testcase.DumpedXdsConfig
 RpcTypeUnaryCall = xds_url_map_testcase.RpcTypeUnaryCall
 RpcTypeEmptyCall = xds_url_map_testcase.RpcTypeEmptyCall
 XdsTestClient = client_app.XdsTestClient
+_Lang = skips.Lang
 
 logger = logging.getLogger(__name__)
 flags.adopt_module_key_flags(xds_url_map_testcase)
@@ -36,6 +38,12 @@ _NUM_RPCS = 50
 
 
 class TestBasicCsds(xds_url_map_testcase.XdsUrlMapTestCase):
+
+    @staticmethod
+    def is_supported(config: skips.TestConfig) -> bool:
+        if config.client_lang == _Lang.NODE:
+            return config.version_gte('v1.5.x')
+        return True
 
     @staticmethod
     def url_map_change(

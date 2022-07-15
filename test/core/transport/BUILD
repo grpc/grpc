@@ -36,22 +36,6 @@ grpc_cc_test(
 )
 
 grpc_cc_test(
-    name = "byte_stream_test",
-    srcs = ["byte_stream_test.cc"],
-    external_deps = [
-        "gtest",
-    ],
-    language = "C++",
-    uses_event_engine = False,
-    uses_polling = False,
-    deps = [
-        "//:gpr",
-        "//:grpc",
-        "//test/core/util:grpc_test_util",
-    ],
-)
-
-grpc_cc_test(
     name = "connectivity_state_test",
     srcs = ["connectivity_state_test.cc"],
     external_deps = [
@@ -124,6 +108,7 @@ grpc_cc_test(
 grpc_cc_test(
     name = "status_conversion_test",
     srcs = ["status_conversion_test.cc"],
+    external_deps = ["gtest"],
     language = "C++",
     uses_event_engine = False,
     uses_polling = False,

@@ -19,11 +19,12 @@
 #include <inttypes.h>
 #include <string.h>
 
+#include <algorithm>
 #include <memory>
 #include <string>
 #include <utility>
+#include <vector>
 
-#include "absl/container/inlined_vector.h"
 #include "absl/memory/memory.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
@@ -100,7 +101,7 @@ class PickFirst : public LoadBalancingPolicy {
                               PickFirstSubchannelData> {
    public:
     PickFirstSubchannelList(PickFirst* policy, ServerAddressList addresses,
-                            const grpc_channel_args& args)
+                            const ChannelArgs& args)
         : SubchannelList(policy,
                          (GRPC_TRACE_FLAG_ENABLED(grpc_lb_pick_first_trace)
                               ? "PickFirstSubchannelList"
@@ -227,7 +228,7 @@ void PickFirst::AttemptToConnectUsingLatestUpdateArgsLocked() {
             latest_pending_subchannel_list_.get());
   }
   latest_pending_subchannel_list_ = MakeOrphanable<PickFirstSubchannelList>(
-      this, std::move(addresses), *latest_update_args_.args);
+      this, std::move(addresses), latest_update_args_.args);
   // Empty update or no valid subchannels.  Put the channel in
   // TRANSIENT_FAILURE.
   if (latest_pending_subchannel_list_->num_subchannels() == 0) {
@@ -272,12 +273,7 @@ void PickFirst::UpdateLocked(UpdateArgs args) {
     }
   }
   // Add GRPC_ARG_INHIBIT_HEALTH_CHECKING channel arg.
-  grpc_arg new_arg = grpc_channel_arg_integer_create(
-      const_cast<char*>(GRPC_ARG_INHIBIT_HEALTH_CHECKING), 1);
-  const grpc_channel_args* new_args =
-      grpc_channel_args_copy_and_add(args.args, &new_arg, 1);
-  std::swap(new_args, args.args);
-  grpc_channel_args_destroy(new_args);
+  args.args = args.args.Set(GRPC_ARG_INHIBIT_HEALTH_CHECKING, 1);
   // If the update contains a resolver error and we have a previous update
   // that was not a resolver error, keep using the previous addresses.
   if (!args.addresses.ok() && latest_update_args_.config != nullptr) {

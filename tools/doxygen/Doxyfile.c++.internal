@@ -40,7 +40,7 @@ PROJECT_NAME           = "GRPC C++"
 # could be handy for archiving the generated documentation or if some version
 # control system is used.
 
-PROJECT_NUMBER         = 1.48.0-dev
+PROJECT_NUMBER         = 1.49.0-dev
 
 # Using the PROJECT_BRIEF tag one can provide an optional one line description
 # for a project that appears at the top of each page and should give viewer a
@@ -1856,6 +1856,8 @@ src/core/ext/xds/xds_channel_stack_modifier.cc \
 src/core/ext/xds/xds_channel_stack_modifier.h \
 src/core/ext/xds/xds_client.cc \
 src/core/ext/xds/xds_client.h \
+src/core/ext/xds/xds_client_grpc.cc \
+src/core/ext/xds/xds_client_grpc.h \
 src/core/ext/xds/xds_client_stats.cc \
 src/core/ext/xds/xds_client_stats.h \
 src/core/ext/xds/xds_cluster.cc \
@@ -1884,6 +1886,9 @@ src/core/ext/xds/xds_route_config.h \
 src/core/ext/xds/xds_routing.cc \
 src/core/ext/xds/xds_routing.h \
 src/core/ext/xds/xds_server_config_fetcher.cc \
+src/core/ext/xds/xds_transport.h \
+src/core/ext/xds/xds_transport_grpc.cc \
+src/core/ext/xds/xds_transport_grpc.h \
 src/core/lib/address_utils/parse_address.cc \
 src/core/lib/address_utils/parse_address.h \
 src/core/lib/address_utils/sockaddr_utils.cc \
@@ -1933,12 +1938,22 @@ src/core/lib/debug/trace.h \
 src/core/lib/event_engine/channel_args_endpoint_config.cc \
 src/core/lib/event_engine/channel_args_endpoint_config.h \
 src/core/lib/event_engine/default_event_engine_factory.cc \
+src/core/lib/event_engine/default_event_engine_factory.h \
 src/core/lib/event_engine/event_engine.cc \
 src/core/lib/event_engine/event_engine_factory.h \
 src/core/lib/event_engine/handle_containers.h \
-src/core/lib/event_engine/iomgr_engine.cc \
-src/core/lib/event_engine/iomgr_engine.h \
+src/core/lib/event_engine/iomgr_engine/iomgr_engine.cc \
+src/core/lib/event_engine/iomgr_engine/iomgr_engine.h \
+src/core/lib/event_engine/iomgr_engine/thread_pool.cc \
+src/core/lib/event_engine/iomgr_engine/thread_pool.h \
+src/core/lib/event_engine/iomgr_engine/timer.cc \
+src/core/lib/event_engine/iomgr_engine/timer.h \
+src/core/lib/event_engine/iomgr_engine/timer_heap.cc \
+src/core/lib/event_engine/iomgr_engine/timer_heap.h \
+src/core/lib/event_engine/iomgr_engine/timer_manager.cc \
+src/core/lib/event_engine/iomgr_engine/timer_manager.h \
 src/core/lib/event_engine/memory_allocator.cc \
+src/core/lib/event_engine/promise.h \
 src/core/lib/event_engine/resolved_address.cc \
 src/core/lib/event_engine/slice.cc \
 src/core/lib/event_engine/slice_buffer.cc \
@@ -2025,9 +2040,13 @@ src/core/lib/gprpp/thd_posix.cc \
 src/core/lib/gprpp/thd_windows.cc \
 src/core/lib/gprpp/time.cc \
 src/core/lib/gprpp/time.h \
+src/core/lib/gprpp/time_averaged_stats.cc \
+src/core/lib/gprpp/time_averaged_stats.h \
 src/core/lib/gprpp/time_util.cc \
 src/core/lib/gprpp/time_util.h \
 src/core/lib/gprpp/unique_type_name.h \
+src/core/lib/gprpp/work_serializer.cc \
+src/core/lib/gprpp/work_serializer.h \
 src/core/lib/http/format_request.cc \
 src/core/lib/http/format_request.h \
 src/core/lib/http/httpcli.cc \
@@ -2059,7 +2078,6 @@ src/core/lib/iomgr/error.cc \
 src/core/lib/iomgr/error.h \
 src/core/lib/iomgr/error_cfstream.cc \
 src/core/lib/iomgr/error_cfstream.h \
-src/core/lib/iomgr/error_internal.h \
 src/core/lib/iomgr/ev_apple.cc \
 src/core/lib/iomgr/ev_apple.h \
 src/core/lib/iomgr/ev_epoll1_linux.cc \
@@ -2073,10 +2091,6 @@ src/core/lib/iomgr/exec_ctx.cc \
 src/core/lib/iomgr/exec_ctx.h \
 src/core/lib/iomgr/executor.cc \
 src/core/lib/iomgr/executor.h \
-src/core/lib/iomgr/executor/mpmcqueue.cc \
-src/core/lib/iomgr/executor/mpmcqueue.h \
-src/core/lib/iomgr/executor/threadpool.cc \
-src/core/lib/iomgr/executor/threadpool.h \
 src/core/lib/iomgr/fork_posix.cc \
 src/core/lib/iomgr/fork_windows.cc \
 src/core/lib/iomgr/gethostname.h \
@@ -2157,8 +2171,6 @@ src/core/lib/iomgr/tcp_server_utils_posix_noifaddrs.cc \
 src/core/lib/iomgr/tcp_server_windows.cc \
 src/core/lib/iomgr/tcp_windows.cc \
 src/core/lib/iomgr/tcp_windows.h \
-src/core/lib/iomgr/time_averaged_stats.cc \
-src/core/lib/iomgr/time_averaged_stats.h \
 src/core/lib/iomgr/timer.cc \
 src/core/lib/iomgr/timer.h \
 src/core/lib/iomgr/timer_generic.cc \
@@ -2176,8 +2188,6 @@ src/core/lib/iomgr/wakeup_fd_pipe.cc \
 src/core/lib/iomgr/wakeup_fd_pipe.h \
 src/core/lib/iomgr/wakeup_fd_posix.cc \
 src/core/lib/iomgr/wakeup_fd_posix.h \
-src/core/lib/iomgr/work_serializer.cc \
-src/core/lib/iomgr/work_serializer.h \
 src/core/lib/json/json.h \
 src/core/lib/json/json_reader.cc \
 src/core/lib/json/json_util.cc \
@@ -2363,8 +2373,6 @@ src/core/lib/slice/slice_internal.h \
 src/core/lib/slice/slice_refcount.cc \
 src/core/lib/slice/slice_refcount.h \
 src/core/lib/slice/slice_refcount_base.h \
-src/core/lib/slice/slice_split.cc \
-src/core/lib/slice/slice_split.h \
 src/core/lib/slice/slice_string_helpers.cc \
 src/core/lib/slice/slice_string_helpers.h \
 src/core/lib/surface/api_trace.cc \
@@ -2403,8 +2411,6 @@ src/core/lib/surface/validate_metadata.h \
 src/core/lib/surface/version.cc \
 src/core/lib/transport/bdp_estimator.cc \
 src/core/lib/transport/bdp_estimator.h \
-src/core/lib/transport/byte_stream.cc \
-src/core/lib/transport/byte_stream.h \
 src/core/lib/transport/connectivity_state.cc \
 src/core/lib/transport/connectivity_state.h \
 src/core/lib/transport/error_utils.cc \

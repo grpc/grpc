@@ -137,7 +137,7 @@ static void test_retry_send_recv_batch(grpc_end2end_test_config config) {
   grpc_end2end_test_fixture f =
       begin_test(config, "retry_send_recv_batch", &client_args, nullptr);
 
-  cq_verifier* cqv = cq_verifier_create(f.cq);
+  grpc_core::CqVerifier cqv(f.cq);
 
   gpr_timespec deadline = five_seconds_from_now();
   c = grpc_channel_create_call(f.client, nullptr, GRPC_PROPAGATE_DEFAULTS, f.cq,
@@ -184,8 +184,8 @@ static void test_retry_send_recv_batch(grpc_end2end_test_config config) {
       grpc_server_request_call(f.server, &s, &call_details,
                                &request_metadata_recv, f.cq, f.cq, tag(101));
   GPR_ASSERT(GRPC_CALL_OK == error);
-  CQ_EXPECT_COMPLETION(cqv, tag(101), true);
-  cq_verify(cqv);
+  cqv.Expect(tag(101), true);
+  cqv.Verify();
 
   // Client starts a batch containing recv_message.
   memset(ops, 0, sizeof(ops));
@@ -215,11 +215,11 @@ static void test_retry_send_recv_batch(grpc_end2end_test_config config) {
                                 nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
-  CQ_EXPECT_COMPLETION(cqv, tag(102), true);
-  CQ_EXPECT_COMPLETION(cqv, tag(1), true);
-  CQ_EXPECT_COMPLETION(cqv, tag(2), true);
-  CQ_EXPECT_COMPLETION(cqv, tag(3), true);
-  cq_verify(cqv);
+  cqv.Expect(tag(102), true);
+  cqv.Expect(tag(1), true);
+  cqv.Expect(tag(2), true);
+  cqv.Expect(tag(3), true);
+  cqv.Verify();
 
   GPR_ASSERT(status == GRPC_STATUS_PERMISSION_DENIED);
   GPR_ASSERT(0 == grpc_slice_str_cmp(details, "xyz"));
@@ -239,8 +239,6 @@ static void test_retry_send_recv_batch(grpc_end2end_test_config config) {
 
   grpc_call_unref(c);
   grpc_call_unref(s);
-
-  cq_verifier_destroy(cqv);
 
   end_test(&f);
   config.tear_down_data(&f);

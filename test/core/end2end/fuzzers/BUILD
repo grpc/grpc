@@ -26,13 +26,20 @@ grpc_proto_fuzzer(
     corpus = "api_fuzzer_corpus",
     language = "C++",
     proto = "api_fuzzer.proto",
-    tags = ["no_windows"],
+    proto_deps = [
+        "//test/core/event_engine/fuzzing_event_engine:fuzzing_event_engine_proto",
+    ],
+    tags = [
+        "no_mac",
+        "no_windows",
+    ],
     uses_event_engine = False,
     uses_polling = False,
     deps = [
         "//:gpr",
         "//:grpc",
         "//test/core/end2end:ssl_test_data",
+        "//test/core/event_engine/fuzzing_event_engine",
         "//test/core/util:grpc_test_util",
     ],
 )

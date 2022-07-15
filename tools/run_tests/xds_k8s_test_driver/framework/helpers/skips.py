@@ -69,20 +69,6 @@ class TestConfig:
             return False
         return self._parse_version(self.version) >= self._parse_version(another)
 
-    def version_lt(self, another: str) -> bool:
-        """Returns a bool for whether the version is < another one.
-
-        Version "master" is always considered latest.
-        E.g., v1.9.x < v1.40.x < v1.41.x < master.
-
-        Unspecified version is treated as 'master', but isn't explicitly set.
-        """
-        if self.version == 'master' or self.version is None:
-            return False
-        if another == 'master':
-            return True
-        return self._parse_version(self.version) < self._parse_version(another)
-
     def __str__(self):
         return (f"TestConfig(client_lang='{self.client_lang}', "
                 f"server_lang='{self.server_lang}', version={self.version!r})")

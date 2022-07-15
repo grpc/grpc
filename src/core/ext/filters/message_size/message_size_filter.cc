@@ -39,13 +39,12 @@
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gprpp/debug_location.h"
-#include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/iomgr/call_combiner.h"
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/service_config/service_config_call_data.h"
+#include "src/core/lib/slice/slice_buffer.h"
 #include "src/core/lib/surface/channel_init.h"
 #include "src/core/lib/surface/channel_stack_type.h"
-#include "src/core/lib/transport/byte_stream.h"
 #include "src/core/lib/transport/transport.h"
 
 static void recv_message_ready(void* user_data, grpc_error_handle error);
@@ -74,7 +73,7 @@ const MessageSizeParsedConfig* MessageSizeParsedConfig::GetFromCallContext(
 //
 
 std::unique_ptr<ServiceConfigParser::ParsedConfig>
-MessageSizeParser::ParsePerMethodParams(const grpc_channel_args* /*args*/,
+MessageSizeParser::ParsePerMethodParams(const ChannelArgs& /*args*/,
                                         const Json& json,
                                         grpc_error_handle* error) {
   GPR_DEBUG_ASSERT(error != nullptr && GRPC_ERROR_IS_NONE(*error));
@@ -194,7 +193,7 @@ struct call_data {
   // The error caused by a message that is too large, or GRPC_ERROR_NONE
   grpc_error_handle error = GRPC_ERROR_NONE;
   // Used by recv_message_ready.
-  grpc_core::OrphanablePtr<grpc_core::ByteStream>* recv_message = nullptr;
+  absl::optional<grpc_core::SliceBuffer>* recv_message = nullptr;
   // Original recv_message_ready callback, invoked after our own.
   grpc_closure* next_recv_message_ready = nullptr;
   // Original recv_trailing_metadata callback, invoked after our own.
@@ -210,13 +209,13 @@ struct call_data {
 static void recv_message_ready(void* user_data, grpc_error_handle error) {
   grpc_call_element* elem = static_cast<grpc_call_element*>(user_data);
   call_data* calld = static_cast<call_data*>(elem->call_data);
-  if (*calld->recv_message != nullptr && calld->limits.max_recv_size >= 0 &&
-      (*calld->recv_message)->length() >
+  if (calld->recv_message->has_value() && calld->limits.max_recv_size >= 0 &&
+      (*calld->recv_message)->Length() >
           static_cast<size_t>(calld->limits.max_recv_size)) {
     grpc_error_handle new_error = grpc_error_set_int(
         GRPC_ERROR_CREATE_FROM_CPP_STRING(absl::StrFormat(
             "Received message larger than max (%u vs. %d)",
-            (*calld->recv_message)->length(), calld->limits.max_recv_size)),
+            (*calld->recv_message)->Length(), calld->limits.max_recv_size)),
         GRPC_ERROR_INT_GRPC_STATUS, GRPC_STATUS_RESOURCE_EXHAUSTED);
     error = grpc_error_add_child(GRPC_ERROR_REF(error), new_error);
     GRPC_ERROR_UNREF(calld->error);
@@ -269,13 +268,13 @@ static void message_size_start_transport_stream_op_batch(
   call_data* calld = static_cast<call_data*>(elem->call_data);
   // Check max send message size.
   if (op->send_message && calld->limits.max_send_size >= 0 &&
-      op->payload->send_message.send_message->length() >
+      op->payload->send_message.send_message->Length() >
           static_cast<size_t>(calld->limits.max_send_size)) {
     grpc_transport_stream_op_batch_finish_with_failure(
         op,
         grpc_error_set_int(GRPC_ERROR_CREATE_FROM_CPP_STRING(absl::StrFormat(
                                "Sent message larger than max (%u vs. %d)",
-                               op->payload->send_message.send_message->length(),
+                               op->payload->send_message.send_message->Length(),
                                calld->limits.max_send_size)),
                            GRPC_ERROR_INT_GRPC_STATUS,
                            GRPC_STATUS_RESOURCE_EXHAUSTED),

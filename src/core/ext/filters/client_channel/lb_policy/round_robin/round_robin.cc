@@ -19,11 +19,12 @@
 #include <inttypes.h>
 #include <stdlib.h>
 
+#include <algorithm>
 #include <memory>
 #include <string>
 #include <utility>
+#include <vector>
 
-#include "absl/container/inlined_vector.h"
 #include "absl/memory/memory.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
@@ -31,7 +32,6 @@
 #include "absl/types/optional.h"
 
 #include <grpc/impl/codegen/connectivity_state.h>
-#include <grpc/impl/codegen/grpc_types.h>
 #include <grpc/support/log.h>
 
 #include "src/core/ext/filters/client_channel/lb_policy.h"
@@ -39,6 +39,7 @@
 #include "src/core/ext/filters/client_channel/lb_policy_factory.h"
 #include "src/core/ext/filters/client_channel/lb_policy_registry.h"
 #include "src/core/ext/filters/client_channel/subchannel_interface.h"
+#include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/orphanable.h"
@@ -101,9 +102,8 @@ class RoundRobin : public LoadBalancingPolicy {
         absl::optional<grpc_connectivity_state> old_state,
         grpc_connectivity_state new_state) override;
 
-    // Updates the logical connectivity state.  Returns true if the
-    // state has changed.
-    bool UpdateLogicalConnectivityStateLocked(
+    // Updates the logical connectivity state.
+    void UpdateLogicalConnectivityStateLocked(
         grpc_connectivity_state connectivity_state);
 
     // The logical connectivity state of the subchannel.
@@ -120,7 +120,7 @@ class RoundRobin : public LoadBalancingPolicy {
                               RoundRobinSubchannelData> {
    public:
     RoundRobinSubchannelList(RoundRobin* policy, ServerAddressList addresses,
-                             const grpc_channel_args& args)
+                             const ChannelArgs& args)
         : SubchannelList(policy,
                          (GRPC_TRACE_FLAG_ENABLED(grpc_lb_round_robin_trace)
                               ? "RoundRobinSubchannelList"
@@ -161,6 +161,8 @@ class RoundRobin : public LoadBalancingPolicy {
     size_t num_ready_ = 0;
     size_t num_connecting_ = 0;
     size_t num_transient_failure_ = 0;
+
+    absl::Status last_failure_;
   };
 
   class Picker : public SubchannelPicker {
@@ -174,7 +176,7 @@ class RoundRobin : public LoadBalancingPolicy {
     RoundRobin* parent_;
 
     size_t last_picked_index_;
-    absl::InlinedVector<RefCountedPtr<SubchannelInterface>, 10> subchannels_;
+    std::vector<RefCountedPtr<SubchannelInterface>> subchannels_;
   };
 
   void ShutdownLocked() override;
@@ -287,7 +289,7 @@ void RoundRobin::UpdateLocked(UpdateArgs args) {
             this, latest_pending_subchannel_list_.get());
   }
   latest_pending_subchannel_list_ = MakeOrphanable<RoundRobinSubchannelList>(
-      this, std::move(addresses), *args.args);
+      this, std::move(addresses), args.args);
   // If the new list is empty, immediately promote it to
   // subchannel_list_ and report TRANSIENT_FAILURE.
   if (latest_pending_subchannel_list_->num_subchannels() == 0) {
@@ -397,9 +399,14 @@ void RoundRobin::RoundRobinSubchannelList::
               "[RR %p] reporting TRANSIENT_FAILURE with subchannel list %p: %s",
               p, this, status_for_tf.ToString().c_str());
     }
+    if (!status_for_tf.ok()) {
+      last_failure_ = absl::UnavailableError(
+          absl::StrCat("connections to all backends failing; last error: ",
+                       status_for_tf.ToString()));
+    }
     p->channel_control_helper()->UpdateState(
-        GRPC_CHANNEL_TRANSIENT_FAILURE, status_for_tf,
-        absl::make_unique<TransientFailurePicker>(status_for_tf));
+        GRPC_CHANNEL_TRANSIENT_FAILURE, last_failure_,
+        absl::make_unique<TransientFailurePicker>(last_failure_));
   }
 }
 
@@ -434,16 +441,13 @@ void RoundRobin::RoundRobinSubchannelData::ProcessConnectivityChangeLocked(
     subchannel()->RequestConnection();
   }
   // Update logical connectivity state.
-  // If it changed, update the policy state.
-  if (UpdateLogicalConnectivityStateLocked(new_state)) {
-    subchannel_list()->MaybeUpdateRoundRobinConnectivityStateLocked(
-        absl::UnavailableError(
-            absl::StrCat("connections to all backends failing; last error: ",
-                         connectivity_status().ToString())));
-  }
+  UpdateLogicalConnectivityStateLocked(new_state);
+  // Update the policy state.
+  subchannel_list()->MaybeUpdateRoundRobinConnectivityStateLocked(
+      connectivity_status());
 }
 
-bool RoundRobin::RoundRobinSubchannelData::UpdateLogicalConnectivityStateLocked(
+void RoundRobin::RoundRobinSubchannelData::UpdateLogicalConnectivityStateLocked(
     grpc_connectivity_state connectivity_state) {
   RoundRobin* p = static_cast<RoundRobin*>(subchannel_list()->policy());
   if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_round_robin_trace)) {
@@ -464,7 +468,7 @@ bool RoundRobin::RoundRobinSubchannelData::UpdateLogicalConnectivityStateLocked(
   if (logical_connectivity_state_.has_value() &&
       *logical_connectivity_state_ == GRPC_CHANNEL_TRANSIENT_FAILURE &&
       connectivity_state != GRPC_CHANNEL_READY) {
-    return false;
+    return;
   }
   // If the new state is IDLE, treat it as CONNECTING, since it will
   // immediately transition into CONNECTING anyway.
@@ -481,13 +485,12 @@ bool RoundRobin::RoundRobinSubchannelData::UpdateLogicalConnectivityStateLocked(
   // If no change, return false.
   if (logical_connectivity_state_.has_value() &&
       *logical_connectivity_state_ == connectivity_state) {
-    return false;
+    return;
   }
   // Otherwise, update counters and logical state.
   subchannel_list()->UpdateStateCountersLocked(logical_connectivity_state_,
                                                connectivity_state);
   logical_connectivity_state_ = connectivity_state;
-  return true;
 }
 
 //

@@ -21,7 +21,9 @@
 #include <stdint.h>
 #include <time.h>
 
+#include <algorithm>
 #include <utility>
+#include <vector>
 
 #include <openssl/bio.h>
 #include <openssl/crypto.h>
@@ -29,7 +31,6 @@
 #include <openssl/pem.h>
 #include <openssl/x509.h>
 
-#include "absl/container/inlined_vector.h"
 #include "absl/status/status.h"
 
 #include <grpc/impl/codegen/gpr_types.h>

@@ -20,7 +20,6 @@
 
 #include <stdlib.h>
 
-#include <algorithm>
 #include <utility>
 #include <vector>
 
@@ -289,7 +288,7 @@ bool XdsBootstrap::XdsServerExists(
 }
 
 grpc_error_handle XdsBootstrap::ParseXdsServerList(
-    Json* json, absl::InlinedVector<XdsServer, 1>* servers) {
+    Json* json, std::vector<XdsServer>* servers) {
   std::vector<grpc_error_handle> error_list;
   for (size_t i = 0; i < json->mutable_array()->size(); ++i) {
     Json& child = json->mutable_array()->at(i);

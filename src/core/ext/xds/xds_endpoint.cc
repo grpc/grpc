@@ -43,6 +43,7 @@
 #include "src/core/ext/xds/upb_utils.h"
 #include "src/core/ext/xds/xds_resource_type.h"
 #include "src/core/lib/address_utils/parse_address.h"
+#include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/resolved_address.h"
@@ -164,15 +165,15 @@ grpc_error_handle ServerAddressParseAndAppend(
     return GRPC_ERROR_CREATE_FROM_STATIC_STRING("Invalid port.");
   }
   // Find load_balancing_weight for the endpoint.
+  uint32_t weight = 1;
   const google_protobuf_UInt32Value* load_balancing_weight =
       envoy_config_endpoint_v3_LbEndpoint_load_balancing_weight(lb_endpoint);
-  const int32_t weight =
-      load_balancing_weight != nullptr
-          ? google_protobuf_UInt32Value_value(load_balancing_weight)
-          : 500;
-  if (weight == 0) {
-    return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-        "Invalid endpoint weight of 0.");
+  if (load_balancing_weight != nullptr) {
+    weight = google_protobuf_UInt32Value_value(load_balancing_weight);
+    if (weight == 0) {
+      return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+          "Invalid endpoint weight of 0.");
+    }
   }
   // Populate grpc_resolved_address.
   grpc_resolved_address addr;
@@ -184,7 +185,7 @@ grpc_error_handle ServerAddressParseAndAppend(
       attributes;
   attributes[ServerAddressWeightAttribute::kServerAddressWeightAttributeKey] =
       absl::make_unique<ServerAddressWeightAttribute>(weight);
-  list->emplace_back(addr, nullptr, std::move(attributes));
+  list->emplace_back(addr, ChannelArgs(), std::move(attributes));
   return GRPC_ERROR_NONE;
 }
 

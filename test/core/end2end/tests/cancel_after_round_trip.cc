@@ -140,7 +140,7 @@ static void test_cancel_after_round_trip(grpc_end2end_test_config config,
   grpc_end2end_test_fixture f =
       begin_test(config, "cancel_after_round_trip", mode, use_service_config,
                  args, nullptr);
-  cq_verifier* cqv = cq_verifier_create(f.cq);
+  grpc_core::CqVerifier cqv(f.cq);
 
   gpr_timespec deadline = use_service_config
                               ? gpr_inf_future(GPR_CLOCK_MONOTONIC)
@@ -185,8 +185,8 @@ static void test_cancel_after_round_trip(grpc_end2end_test_config config,
       grpc_server_request_call(f.server, &s, &call_details,
                                &request_metadata_recv, f.cq, f.cq, tag(101));
   GPR_ASSERT(GRPC_CALL_OK == error);
-  CQ_EXPECT_COMPLETION(cqv, tag(101), 1);
-  cq_verify(cqv);
+  cqv.Expect(tag(101), true);
+  cqv.Verify();
 
   memset(ops, 0, sizeof(ops));
   op = ops;
@@ -209,9 +209,9 @@ static void test_cancel_after_round_trip(grpc_end2end_test_config config,
                                 nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
-  CQ_EXPECT_COMPLETION(cqv, tag(102), 1);
-  CQ_EXPECT_COMPLETION(cqv, tag(1), 1);
-  cq_verify(cqv);
+  cqv.Expect(tag(102), true);
+  cqv.Expect(tag(1), true);
+  cqv.Verify();
 
   grpc_byte_buffer_destroy(request_payload_recv);
   grpc_byte_buffer_destroy(response_payload_recv);
@@ -254,9 +254,9 @@ static void test_cancel_after_round_trip(grpc_end2end_test_config config,
                                 nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
-  CQ_EXPECT_COMPLETION(cqv, tag(2), 1);
-  CQ_EXPECT_COMPLETION(cqv, tag(103), 1);
-  cq_verify(cqv);
+  cqv.Expect(tag(2), true);
+  cqv.Expect(tag(103), true);
+  cqv.Verify();
 
   GPR_ASSERT(status == mode.expect_status || status == GRPC_STATUS_INTERNAL);
   GPR_ASSERT(was_cancelled == 1);
@@ -281,7 +281,6 @@ static void test_cancel_after_round_trip(grpc_end2end_test_config config,
     grpc_channel_args_destroy(args);
   }
 
-  cq_verifier_destroy(cqv);
   end_test(&f);
   config.tear_down_data(&f);
 }

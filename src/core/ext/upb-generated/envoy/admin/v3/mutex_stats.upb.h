@@ -51,11 +51,15 @@ UPB_INLINE envoy_admin_v3_MutexStats* envoy_admin_v3_MutexStats_parse_ex(const c
   return ret;
 }
 UPB_INLINE char* envoy_admin_v3_MutexStats_serialize(const envoy_admin_v3_MutexStats* msg, upb_Arena* arena, size_t* len) {
-  return upb_Encode(msg, &envoy_admin_v3_MutexStats_msginit, 0, arena, len);
+  char* ptr;
+  (void)upb_Encode(msg, &envoy_admin_v3_MutexStats_msginit, 0, arena, &ptr, len);
+  return ptr;
 }
 UPB_INLINE char* envoy_admin_v3_MutexStats_serialize_ex(const envoy_admin_v3_MutexStats* msg, int options,
                                  upb_Arena* arena, size_t* len) {
-  return upb_Encode(msg, &envoy_admin_v3_MutexStats_msginit, options, arena, len);
+  char* ptr;
+  (void)upb_Encode(msg, &envoy_admin_v3_MutexStats_msginit, options, arena, &ptr, len);
+  return ptr;
 }
 UPB_INLINE void envoy_admin_v3_MutexStats_clear_num_contentions(const envoy_admin_v3_MutexStats* msg) {
   *UPB_PTR_AT(msg, UPB_SIZE(0, 0), uint64_t) = 0;

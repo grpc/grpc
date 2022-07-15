@@ -21,6 +21,7 @@
 
 #include <grpc/grpc.h>
 
+#include "test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.h"
 #include "test/core/event_engine/test_suite/event_engine_test.h"
 
 namespace grpc_event_engine {
@@ -30,11 +31,13 @@ namespace {
 class ThreadedFuzzingEventEngine : public FuzzingEventEngine {
  public:
   ThreadedFuzzingEventEngine()
-      : FuzzingEventEngine([]() {
-          Options options;
-          options.final_tick_length = std::chrono::milliseconds(10);
-          return options;
-        }()),
+      : FuzzingEventEngine(
+            []() {
+              Options options;
+              options.final_tick_length = std::chrono::milliseconds(10);
+              return options;
+            }(),
+            fuzzing_event_engine::Actions()),
         main_([this]() {
           while (!done_.load()) {
             auto tick_start = absl::Now();
@@ -61,9 +64,11 @@ class ThreadedFuzzingEventEngine : public FuzzingEventEngine {
 
 int main(int argc, char** argv) {
   testing::InitGoogleTest(&argc, argv);
-  SetEventEngineFactory([]() {
-    return absl::make_unique<
-        grpc_event_engine::experimental::ThreadedFuzzingEventEngine>();
-  });
+  SetEventEngineFactories(
+      []() {
+        return absl::make_unique<
+            grpc_event_engine::experimental::ThreadedFuzzingEventEngine>();
+      },
+      nullptr);
   return RUN_ALL_TESTS();
 }

@@ -53,11 +53,15 @@ UPB_INLINE envoy_config_core_v3_EventServiceConfig* envoy_config_core_v3_EventSe
   return ret;
 }
 UPB_INLINE char* envoy_config_core_v3_EventServiceConfig_serialize(const envoy_config_core_v3_EventServiceConfig* msg, upb_Arena* arena, size_t* len) {
-  return upb_Encode(msg, &envoy_config_core_v3_EventServiceConfig_msginit, 0, arena, len);
+  char* ptr;
+  (void)upb_Encode(msg, &envoy_config_core_v3_EventServiceConfig_msginit, 0, arena, &ptr, len);
+  return ptr;
 }
 UPB_INLINE char* envoy_config_core_v3_EventServiceConfig_serialize_ex(const envoy_config_core_v3_EventServiceConfig* msg, int options,
                                  upb_Arena* arena, size_t* len) {
-  return upb_Encode(msg, &envoy_config_core_v3_EventServiceConfig_msginit, options, arena, len);
+  char* ptr;
+  (void)upb_Encode(msg, &envoy_config_core_v3_EventServiceConfig_msginit, options, arena, &ptr, len);
+  return ptr;
 }
 typedef enum {
   envoy_config_core_v3_EventServiceConfig_config_source_specifier_grpc_service = 1,

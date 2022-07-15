@@ -427,6 +427,7 @@ if test "$PHP_GRPC" != "no"; then
     src/core/ext/xds/xds_certificate_provider.cc \
     src/core/ext/xds/xds_channel_stack_modifier.cc \
     src/core/ext/xds/xds_client.cc \
+    src/core/ext/xds/xds_client_grpc.cc \
     src/core/ext/xds/xds_client_stats.cc \
     src/core/ext/xds/xds_cluster.cc \
     src/core/ext/xds/xds_cluster_specifier_plugin.cc \
@@ -441,6 +442,7 @@ if test "$PHP_GRPC" != "no"; then
     src/core/ext/xds/xds_route_config.cc \
     src/core/ext/xds/xds_routing.cc \
     src/core/ext/xds/xds_server_config_fetcher.cc \
+    src/core/ext/xds/xds_transport_grpc.cc \
     src/core/lib/address_utils/parse_address.cc \
     src/core/lib/address_utils/sockaddr_utils.cc \
     src/core/lib/backoff/backoff.cc \
@@ -465,7 +467,11 @@ if test "$PHP_GRPC" != "no"; then
     src/core/lib/event_engine/channel_args_endpoint_config.cc \
     src/core/lib/event_engine/default_event_engine_factory.cc \
     src/core/lib/event_engine/event_engine.cc \
-    src/core/lib/event_engine/iomgr_engine.cc \
+    src/core/lib/event_engine/iomgr_engine/iomgr_engine.cc \
+    src/core/lib/event_engine/iomgr_engine/thread_pool.cc \
+    src/core/lib/event_engine/iomgr_engine/timer.cc \
+    src/core/lib/event_engine/iomgr_engine/timer_heap.cc \
+    src/core/lib/event_engine/iomgr_engine/timer_manager.cc \
     src/core/lib/event_engine/memory_allocator.cc \
     src/core/lib/event_engine/resolved_address.cc \
     src/core/lib/event_engine/slice.cc \
@@ -513,7 +519,9 @@ if test "$PHP_GRPC" != "no"; then
     src/core/lib/gprpp/thd_posix.cc \
     src/core/lib/gprpp/thd_windows.cc \
     src/core/lib/gprpp/time.cc \
+    src/core/lib/gprpp/time_averaged_stats.cc \
     src/core/lib/gprpp/time_util.cc \
+    src/core/lib/gprpp/work_serializer.cc \
     src/core/lib/http/format_request.cc \
     src/core/lib/http/httpcli.cc \
     src/core/lib/http/httpcli_security_connector.cc \
@@ -536,8 +544,6 @@ if test "$PHP_GRPC" != "no"; then
     src/core/lib/iomgr/ev_windows.cc \
     src/core/lib/iomgr/exec_ctx.cc \
     src/core/lib/iomgr/executor.cc \
-    src/core/lib/iomgr/executor/mpmcqueue.cc \
-    src/core/lib/iomgr/executor/threadpool.cc \
     src/core/lib/iomgr/fork_posix.cc \
     src/core/lib/iomgr/fork_windows.cc \
     src/core/lib/iomgr/gethostname_fallback.cc \
@@ -582,7 +588,6 @@ if test "$PHP_GRPC" != "no"; then
     src/core/lib/iomgr/tcp_server_utils_posix_noifaddrs.cc \
     src/core/lib/iomgr/tcp_server_windows.cc \
     src/core/lib/iomgr/tcp_windows.cc \
-    src/core/lib/iomgr/time_averaged_stats.cc \
     src/core/lib/iomgr/timer.cc \
     src/core/lib/iomgr/timer_generic.cc \
     src/core/lib/iomgr/timer_heap.cc \
@@ -593,7 +598,6 @@ if test "$PHP_GRPC" != "no"; then
     src/core/lib/iomgr/wakeup_fd_nospecial.cc \
     src/core/lib/iomgr/wakeup_fd_pipe.cc \
     src/core/lib/iomgr/wakeup_fd_posix.cc \
-    src/core/lib/iomgr/work_serializer.cc \
     src/core/lib/json/json_reader.cc \
     src/core/lib/json/json_util.cc \
     src/core/lib/json/json_writer.cc \
@@ -680,7 +684,6 @@ if test "$PHP_GRPC" != "no"; then
     src/core/lib/slice/slice_buffer.cc \
     src/core/lib/slice/slice_buffer_api.cc \
     src/core/lib/slice/slice_refcount.cc \
-    src/core/lib/slice/slice_split.cc \
     src/core/lib/slice/slice_string_helpers.cc \
     src/core/lib/surface/api_trace.cc \
     src/core/lib/surface/builtins.cc \
@@ -703,7 +706,6 @@ if test "$PHP_GRPC" != "no"; then
     src/core/lib/surface/validate_metadata.cc \
     src/core/lib/surface/version.cc \
     src/core/lib/transport/bdp_estimator.cc \
-    src/core/lib/transport/byte_stream.cc \
     src/core/lib/transport/connectivity_state.cc \
     src/core/lib/transport/error_utils.cc \
     src/core/lib/transport/handshaker.cc \
@@ -763,6 +765,7 @@ if test "$PHP_GRPC" != "no"; then
     third_party/abseil-cpp/absl/base/internal/raw_logging.cc \
     third_party/abseil-cpp/absl/base/internal/spinlock.cc \
     third_party/abseil-cpp/absl/base/internal/spinlock_wait.cc \
+    third_party/abseil-cpp/absl/base/internal/strerror.cc \
     third_party/abseil-cpp/absl/base/internal/sysinfo.cc \
     third_party/abseil-cpp/absl/base/internal/thread_identity.cc \
     third_party/abseil-cpp/absl/base/internal/throw_delegate.cc \
@@ -799,6 +802,8 @@ if test "$PHP_GRPC" != "no"; then
     third_party/abseil-cpp/absl/strings/ascii.cc \
     third_party/abseil-cpp/absl/strings/charconv.cc \
     third_party/abseil-cpp/absl/strings/cord.cc \
+    third_party/abseil-cpp/absl/strings/cord_analysis.cc \
+    third_party/abseil-cpp/absl/strings/cord_buffer.cc \
     third_party/abseil-cpp/absl/strings/escaping.cc \
     third_party/abseil-cpp/absl/strings/internal/charconv_bigint.cc \
     third_party/abseil-cpp/absl/strings/internal/charconv_parse.cc \
@@ -807,6 +812,7 @@ if test "$PHP_GRPC" != "no"; then
     third_party/abseil-cpp/absl/strings/internal/cord_rep_btree_navigator.cc \
     third_party/abseil-cpp/absl/strings/internal/cord_rep_btree_reader.cc \
     third_party/abseil-cpp/absl/strings/internal/cord_rep_consume.cc \
+    third_party/abseil-cpp/absl/strings/internal/cord_rep_crc.cc \
     third_party/abseil-cpp/absl/strings/internal/cord_rep_ring.cc \
     third_party/abseil-cpp/absl/strings/internal/cordz_functions.cc \
     third_party/abseil-cpp/absl/strings/internal/cordz_handle.cc \
@@ -1149,13 +1155,20 @@ if test "$PHP_GRPC" != "no"; then
     third_party/upb/third_party/utf8_range/naive.c \
     third_party/upb/third_party/utf8_range/range2-neon.c \
     third_party/upb/third_party/utf8_range/range2-sse.c \
+    third_party/upb/upb/arena.c \
+    third_party/upb/upb/array.c \
     third_party/upb/upb/decode.c \
     third_party/upb/upb/decode_fast.c \
     third_party/upb/upb/def.c \
     third_party/upb/upb/encode.c \
+    third_party/upb/upb/extension_registry.c \
+    third_party/upb/upb/json_decode.c \
     third_party/upb/upb/json_encode.c \
+    third_party/upb/upb/map.c \
+    third_party/upb/upb/mini_table.c \
     third_party/upb/upb/msg.c \
     third_party/upb/upb/reflection.c \
+    third_party/upb/upb/status.c \
     third_party/upb/upb/table.c \
     third_party/upb/upb/text_encode.c \
     third_party/upb/upb/upb.c \
@@ -1164,7 +1177,7 @@ if test "$PHP_GRPC" != "no"; then
     -D_HAS_EXCEPTIONS=0 -DNOMINMAX -DGRPC_ARES=0 \
     -DGRPC_POSIX_FORK_ALLOW_PTHREAD_ATFORK=1 \
     -DGRPC_XDS_USER_AGENT_NAME_SUFFIX='"\"PHP\""' \
-    -DGRPC_XDS_USER_AGENT_VERSION_SUFFIX='"\"1.48.0dev\""')
+    -DGRPC_XDS_USER_AGENT_VERSION_SUFFIX='"\"1.49.0dev\""')
 
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/filters/census)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/filters/channel_idle)
@@ -1302,11 +1315,11 @@ if test "$PHP_GRPC" != "no"; then
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/config)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/debug)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/event_engine)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/event_engine/iomgr_engine)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/gpr)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/gprpp)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/http)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/iomgr)
-  PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/iomgr/executor)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/json)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/matchers)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/profiling)

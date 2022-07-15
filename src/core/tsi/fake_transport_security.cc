@@ -143,6 +143,11 @@ static uint32_t read_frame_size(const grpc_slice_buffer* sb) {
   return load32_little_endian(frame_size_buffer);
 }
 
+uint32_t tsi_fake_zero_copy_grpc_protector_next_frame_size(
+    const grpc_slice_buffer* protected_slices) {
+  return read_frame_size(protected_slices);
+}
+
 static void tsi_fake_frame_reset(tsi_fake_frame* frame, int needs_draining) {
   frame->offset = 0;
   frame->needs_draining = needs_draining;

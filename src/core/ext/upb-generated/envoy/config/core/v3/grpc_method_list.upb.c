@@ -26,7 +26,7 @@ static const upb_MiniTable_Field envoy_config_core_v3_GrpcMethodList__fields[1] 
 const upb_MiniTable envoy_config_core_v3_GrpcMethodList_msginit = {
   &envoy_config_core_v3_GrpcMethodList_submsgs[0],
   &envoy_config_core_v3_GrpcMethodList__fields[0],
-  UPB_SIZE(4, 8), 1, kUpb_ExtMode_NonExtendable, 1, 255, 0,
+  UPB_SIZE(8, 8), 1, kUpb_ExtMode_NonExtendable, 1, 255, 0,
 };
 
 static const upb_MiniTable_Field envoy_config_core_v3_GrpcMethodList_Service__fields[2] = {
@@ -37,7 +37,7 @@ static const upb_MiniTable_Field envoy_config_core_v3_GrpcMethodList_Service__fi
 const upb_MiniTable envoy_config_core_v3_GrpcMethodList_Service_msginit = {
   NULL,
   &envoy_config_core_v3_GrpcMethodList_Service__fields[0],
-  UPB_SIZE(12, 24), 2, kUpb_ExtMode_NonExtendable, 2, 255, 0,
+  UPB_SIZE(16, 24), 2, kUpb_ExtMode_NonExtendable, 2, 255, 0,
 };
 
 static const upb_MiniTable *messages_layout[2] = {

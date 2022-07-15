@@ -26,7 +26,7 @@
 #include <grpcpp/security/server_credentials.h>
 
 #include "src/core/lib/surface/call_test_only.h"
-#include "src/core/lib/transport/byte_stream.h"
+#include "src/core/lib/transport/transport.h"
 #include "test/cpp/util/test_credentials_provider.h"
 
 ABSL_DECLARE_FLAG(bool, use_alts);

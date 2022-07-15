@@ -32,7 +32,7 @@ static const upb_MiniTable_Field google_api_expr_v1alpha1_CheckedExpr__fields[4]
 const upb_MiniTable google_api_expr_v1alpha1_CheckedExpr_msginit = {
   &google_api_expr_v1alpha1_CheckedExpr_submsgs[0],
   &google_api_expr_v1alpha1_CheckedExpr__fields[0],
-  UPB_SIZE(20, 40), 4, kUpb_ExtMode_NonExtendable, 0, 255, 0,
+  UPB_SIZE(24, 40), 4, kUpb_ExtMode_NonExtendable, 0, 255, 0,
 };
 
 static const upb_MiniTable_Sub google_api_expr_v1alpha1_CheckedExpr_ReferenceMapEntry_submsgs[1] = {
@@ -94,7 +94,7 @@ static const upb_MiniTable_Field google_api_expr_v1alpha1_Type__fields[13] = {
 const upb_MiniTable google_api_expr_v1alpha1_Type_msginit = {
   &google_api_expr_v1alpha1_Type_submsgs[0],
   &google_api_expr_v1alpha1_Type__fields[0],
-  UPB_SIZE(12, 24), 13, kUpb_ExtMode_NonExtendable, 12, 255, 0,
+  UPB_SIZE(16, 24), 13, kUpb_ExtMode_NonExtendable, 12, 255, 0,
 };
 
 static const upb_MiniTable_Sub google_api_expr_v1alpha1_Type_ListType_submsgs[1] = {
@@ -108,7 +108,7 @@ static const upb_MiniTable_Field google_api_expr_v1alpha1_Type_ListType__fields[
 const upb_MiniTable google_api_expr_v1alpha1_Type_ListType_msginit = {
   &google_api_expr_v1alpha1_Type_ListType_submsgs[0],
   &google_api_expr_v1alpha1_Type_ListType__fields[0],
-  UPB_SIZE(8, 24), 1, kUpb_ExtMode_NonExtendable, 1, 255, 0,
+  UPB_SIZE(8, 16), 1, kUpb_ExtMode_NonExtendable, 1, 255, 0,
 };
 
 static const upb_MiniTable_Sub google_api_expr_v1alpha1_Type_MapType_submsgs[2] = {
@@ -124,7 +124,7 @@ static const upb_MiniTable_Field google_api_expr_v1alpha1_Type_MapType__fields[2
 const upb_MiniTable google_api_expr_v1alpha1_Type_MapType_msginit = {
   &google_api_expr_v1alpha1_Type_MapType_submsgs[0],
   &google_api_expr_v1alpha1_Type_MapType__fields[0],
-  UPB_SIZE(12, 24), 2, kUpb_ExtMode_NonExtendable, 2, 255, 0,
+  UPB_SIZE(16, 24), 2, kUpb_ExtMode_NonExtendable, 2, 255, 0,
 };
 
 static const upb_MiniTable_Sub google_api_expr_v1alpha1_Type_FunctionType_submsgs[2] = {
@@ -140,7 +140,7 @@ static const upb_MiniTable_Field google_api_expr_v1alpha1_Type_FunctionType__fie
 const upb_MiniTable google_api_expr_v1alpha1_Type_FunctionType_msginit = {
   &google_api_expr_v1alpha1_Type_FunctionType_submsgs[0],
   &google_api_expr_v1alpha1_Type_FunctionType__fields[0],
-  UPB_SIZE(12, 24), 2, kUpb_ExtMode_NonExtendable, 2, 255, 0,
+  UPB_SIZE(16, 24), 2, kUpb_ExtMode_NonExtendable, 2, 255, 0,
 };
 
 static const upb_MiniTable_Sub google_api_expr_v1alpha1_Type_AbstractType_submsgs[1] = {
@@ -155,7 +155,7 @@ static const upb_MiniTable_Field google_api_expr_v1alpha1_Type_AbstractType__fie
 const upb_MiniTable google_api_expr_v1alpha1_Type_AbstractType_msginit = {
   &google_api_expr_v1alpha1_Type_AbstractType_submsgs[0],
   &google_api_expr_v1alpha1_Type_AbstractType__fields[0],
-  UPB_SIZE(12, 24), 2, kUpb_ExtMode_NonExtendable, 2, 255, 0,
+  UPB_SIZE(16, 24), 2, kUpb_ExtMode_NonExtendable, 2, 255, 0,
 };
 
 static const upb_MiniTable_Sub google_api_expr_v1alpha1_Decl_submsgs[2] = {
@@ -172,7 +172,7 @@ static const upb_MiniTable_Field google_api_expr_v1alpha1_Decl__fields[3] = {
 const upb_MiniTable google_api_expr_v1alpha1_Decl_msginit = {
   &google_api_expr_v1alpha1_Decl_submsgs[0],
   &google_api_expr_v1alpha1_Decl__fields[0],
-  UPB_SIZE(16, 40), 3, kUpb_ExtMode_NonExtendable, 3, 255, 0,
+  UPB_SIZE(16, 32), 3, kUpb_ExtMode_NonExtendable, 3, 255, 0,
 };
 
 static const upb_MiniTable_Sub google_api_expr_v1alpha1_Decl_IdentDecl_submsgs[2] = {
@@ -189,7 +189,7 @@ static const upb_MiniTable_Field google_api_expr_v1alpha1_Decl_IdentDecl__fields
 const upb_MiniTable google_api_expr_v1alpha1_Decl_IdentDecl_msginit = {
   &google_api_expr_v1alpha1_Decl_IdentDecl_submsgs[0],
   &google_api_expr_v1alpha1_Decl_IdentDecl__fields[0],
-  UPB_SIZE(20, 40), 3, kUpb_ExtMode_NonExtendable, 3, 255, 0,
+  UPB_SIZE(24, 40), 3, kUpb_ExtMode_NonExtendable, 3, 255, 0,
 };
 
 static const upb_MiniTable_Sub google_api_expr_v1alpha1_Decl_FunctionDecl_submsgs[1] = {
@@ -203,7 +203,7 @@ static const upb_MiniTable_Field google_api_expr_v1alpha1_Decl_FunctionDecl__fie
 const upb_MiniTable google_api_expr_v1alpha1_Decl_FunctionDecl_msginit = {
   &google_api_expr_v1alpha1_Decl_FunctionDecl_submsgs[0],
   &google_api_expr_v1alpha1_Decl_FunctionDecl__fields[0],
-  UPB_SIZE(4, 8), 1, kUpb_ExtMode_NonExtendable, 1, 255, 0,
+  UPB_SIZE(8, 8), 1, kUpb_ExtMode_NonExtendable, 1, 255, 0,
 };
 
 static const upb_MiniTable_Sub google_api_expr_v1alpha1_Decl_FunctionDecl_Overload_submsgs[2] = {
@@ -223,7 +223,7 @@ static const upb_MiniTable_Field google_api_expr_v1alpha1_Decl_FunctionDecl_Over
 const upb_MiniTable google_api_expr_v1alpha1_Decl_FunctionDecl_Overload_msginit = {
   &google_api_expr_v1alpha1_Decl_FunctionDecl_Overload_submsgs[0],
   &google_api_expr_v1alpha1_Decl_FunctionDecl_Overload__fields[0],
-  UPB_SIZE(32, 72), 6, kUpb_ExtMode_NonExtendable, 6, 255, 0,
+  UPB_SIZE(32, 64), 6, kUpb_ExtMode_NonExtendable, 6, 255, 0,
 };
 
 static const upb_MiniTable_Sub google_api_expr_v1alpha1_Reference_submsgs[1] = {
@@ -239,7 +239,7 @@ static const upb_MiniTable_Field google_api_expr_v1alpha1_Reference__fields[3] =
 const upb_MiniTable google_api_expr_v1alpha1_Reference_msginit = {
   &google_api_expr_v1alpha1_Reference_submsgs[0],
   &google_api_expr_v1alpha1_Reference__fields[0],
-  UPB_SIZE(20, 40), 3, kUpb_ExtMode_NonExtendable, 1, 255, 0,
+  UPB_SIZE(24, 40), 3, kUpb_ExtMode_NonExtendable, 1, 255, 0,
 };
 
 static const upb_MiniTable *messages_layout[13] = {

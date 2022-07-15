@@ -87,7 +87,7 @@ static void simple_request_body(grpc_end2end_test_config /*config*/,
                                 grpc_end2end_test_fixture f) {
   grpc_call* c;
   grpc_call* s;
-  cq_verifier* cqv = cq_verifier_create(f.cq);
+  grpc_core::CqVerifier cqv(f.cq);
   grpc_op ops[6];
   grpc_op* op;
   grpc_metadata_array initial_metadata_recv;
@@ -141,8 +141,8 @@ static void simple_request_body(grpc_end2end_test_config /*config*/,
       grpc_server_request_call(f.server, &s, &call_details,
                                &request_metadata_recv, f.cq, f.cq, tag(101));
   GPR_ASSERT(GRPC_CALL_OK == error);
-  CQ_EXPECT_COMPLETION(cqv, tag(101), 1);
-  cq_verify(cqv);
+  cqv.Expect(tag(101), true);
+  cqv.Verify();
 
   memset(ops, 0, sizeof(ops));
   op = ops;
@@ -168,9 +168,9 @@ static void simple_request_body(grpc_end2end_test_config /*config*/,
                                 nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
-  CQ_EXPECT_COMPLETION(cqv, tag(102), 1);
-  CQ_EXPECT_COMPLETION(cqv, tag(1), 1);
-  cq_verify(cqv);
+  cqv.Expect(tag(102), true);
+  cqv.Expect(tag(1), true);
+  cqv.Verify();
 
   GPR_ASSERT(status == GRPC_STATUS_UNIMPLEMENTED);
   GPR_ASSERT(0 == grpc_slice_str_cmp(details, "xyz"));
@@ -185,8 +185,6 @@ static void simple_request_body(grpc_end2end_test_config /*config*/,
 
   grpc_call_unref(c);
   grpc_call_unref(s);
-
-  cq_verifier_destroy(cqv);
 }
 
 static void test_max_concurrent_streams(grpc_end2end_test_config config) {
@@ -199,7 +197,6 @@ static void test_max_concurrent_streams(grpc_end2end_test_config config) {
   grpc_call* s2;
   int live_call;
   gpr_timespec deadline;
-  cq_verifier* cqv;
   grpc_event ev;
   grpc_call_details call_details;
   grpc_metadata_array request_metadata_recv;
@@ -226,7 +223,7 @@ static void test_max_concurrent_streams(grpc_end2end_test_config config) {
   server_args.args = &server_arg;
 
   f = begin_test(config, "test_max_concurrent_streams", nullptr, &server_args);
-  cqv = cq_verifier_create(f.cq);
+  grpc_core::CqVerifier cqv(f.cq);
 
   grpc_metadata_array_init(&request_metadata_recv);
   grpc_metadata_array_init(&initial_metadata_recv1);
@@ -373,20 +370,20 @@ static void test_max_concurrent_streams(grpc_end2end_test_config config) {
                                 tag(102), nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
-  CQ_EXPECT_COMPLETION(cqv, tag(102), 1);
-  CQ_EXPECT_COMPLETION(cqv, tag(live_call + 2), 1);
+  cqv.Expect(tag(102), true);
+  cqv.Expect(tag(live_call + 2), true);
   /* first request is finished, we should be able to start the second */
   live_call = (live_call == 300) ? 400 : 300;
-  CQ_EXPECT_COMPLETION(cqv, tag(live_call + 1), 1);
-  cq_verify(cqv);
+  cqv.Expect(tag(live_call + 1), true);
+  cqv.Verify();
 
   grpc_call_details_destroy(&call_details);
 
   GPR_ASSERT(GRPC_CALL_OK == grpc_server_request_call(
                                  f.server, &s2, &call_details,
                                  &request_metadata_recv, f.cq, f.cq, tag(201)));
-  CQ_EXPECT_COMPLETION(cqv, tag(201), 1);
-  cq_verify(cqv);
+  cqv.Expect(tag(201), true);
+  cqv.Verify();
 
   memset(ops, 0, sizeof(ops));
   op = ops;
@@ -411,11 +408,9 @@ static void test_max_concurrent_streams(grpc_end2end_test_config config) {
                                 tag(202), nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
-  CQ_EXPECT_COMPLETION(cqv, tag(live_call + 2), 1);
-  CQ_EXPECT_COMPLETION(cqv, tag(202), 1);
-  cq_verify(cqv);
-
-  cq_verifier_destroy(cqv);
+  cqv.Expect(tag(live_call + 2), true);
+  cqv.Expect(tag(202), true);
+  cqv.Verify();
 
   grpc_call_unref(c1);
   grpc_call_unref(s1);
@@ -444,7 +439,6 @@ static void test_max_concurrent_streams_with_timeout_on_first(
   grpc_call* c2;
   grpc_call* s1;
   grpc_call* s2;
-  cq_verifier* cqv;
   grpc_call_details call_details;
   grpc_metadata_array request_metadata_recv;
   grpc_metadata_array initial_metadata_recv1;
@@ -469,7 +463,7 @@ static void test_max_concurrent_streams_with_timeout_on_first(
 
   f = begin_test(config, "test_max_concurrent_streams_with_timeout_on_first",
                  nullptr, &server_args);
-  cqv = cq_verifier_create(f.cq);
+  grpc_core::CqVerifier cqv(f.cq);
 
   grpc_metadata_array_init(&request_metadata_recv);
   grpc_metadata_array_init(&initial_metadata_recv1);
@@ -533,9 +527,9 @@ static void test_max_concurrent_streams_with_timeout_on_first(
                                 tag(302), nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
-  CQ_EXPECT_COMPLETION(cqv, tag(101), 1);
-  CQ_EXPECT_COMPLETION(cqv, tag(301), 1);
-  cq_verify(cqv);
+  cqv.Expect(tag(101), true);
+  cqv.Expect(tag(301), true);
+  cqv.Verify();
 
   memset(ops, 0, sizeof(ops));
   op = ops;
@@ -577,11 +571,11 @@ static void test_max_concurrent_streams_with_timeout_on_first(
                                  f.server, &s2, &call_details,
                                  &request_metadata_recv, f.cq, f.cq, tag(201)));
 
-  CQ_EXPECT_COMPLETION(cqv, tag(302), 1);
+  cqv.Expect(tag(302), true);
   /* first request is finished, we should be able to start the second */
-  CQ_EXPECT_COMPLETION(cqv, tag(401), 1);
-  CQ_EXPECT_COMPLETION(cqv, tag(201), 1);
-  cq_verify(cqv);
+  cqv.Expect(tag(401), true);
+  cqv.Expect(tag(201), true);
+  cqv.Verify();
 
   memset(ops, 0, sizeof(ops));
   op = ops;
@@ -607,11 +601,9 @@ static void test_max_concurrent_streams_with_timeout_on_first(
                                 tag(202), nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
-  CQ_EXPECT_COMPLETION(cqv, tag(402), 1);
-  CQ_EXPECT_COMPLETION(cqv, tag(202), 1);
-  cq_verify(cqv);
-
-  cq_verifier_destroy(cqv);
+  cqv.Expect(tag(402), true);
+  cqv.Expect(tag(202), true);
+  cqv.Verify();
 
   grpc_call_unref(c1);
   grpc_call_unref(s1);
@@ -639,7 +631,6 @@ static void test_max_concurrent_streams_with_timeout_on_second(
   grpc_call* c1;
   grpc_call* c2;
   grpc_call* s1;
-  cq_verifier* cqv;
   grpc_call_details call_details;
   grpc_metadata_array request_metadata_recv;
   grpc_metadata_array initial_metadata_recv1;
@@ -664,7 +655,7 @@ static void test_max_concurrent_streams_with_timeout_on_second(
 
   f = begin_test(config, "test_max_concurrent_streams_with_timeout_on_second",
                  nullptr, &server_args);
-  cqv = cq_verifier_create(f.cq);
+  grpc_core::CqVerifier cqv(f.cq);
 
   grpc_metadata_array_init(&request_metadata_recv);
   grpc_metadata_array_init(&initial_metadata_recv1);
@@ -729,9 +720,9 @@ static void test_max_concurrent_streams_with_timeout_on_second(
                                 tag(302), nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
-  CQ_EXPECT_COMPLETION(cqv, tag(101), 1);
-  CQ_EXPECT_COMPLETION(cqv, tag(301), 1);
-  cq_verify(cqv);
+  cqv.Expect(tag(101), true);
+  cqv.Expect(tag(301), true);
+  cqv.Verify();
 
   memset(ops, 0, sizeof(ops));
   op = ops;
@@ -768,9 +759,9 @@ static void test_max_concurrent_streams_with_timeout_on_second(
   GPR_ASSERT(GRPC_CALL_OK == error);
 
   /* the second request is time out*/
-  CQ_EXPECT_COMPLETION(cqv, tag(401), 0);
-  CQ_EXPECT_COMPLETION(cqv, tag(402), 1);
-  cq_verify(cqv);
+  cqv.Expect(tag(401), false);
+  cqv.Expect(tag(402), true);
+  cqv.Verify();
 
   /* second request is finished because of time out, so destroy the second call
    */
@@ -801,11 +792,9 @@ static void test_max_concurrent_streams_with_timeout_on_second(
                                 tag(102), nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
-  CQ_EXPECT_COMPLETION(cqv, tag(302), 1);
-  CQ_EXPECT_COMPLETION(cqv, tag(102), 1);
-  cq_verify(cqv);
-
-  cq_verifier_destroy(cqv);
+  cqv.Expect(tag(302), true);
+  cqv.Expect(tag(102), true);
+  cqv.Verify();
 
   grpc_call_unref(c1);
   grpc_call_unref(s1);

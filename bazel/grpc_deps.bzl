@@ -56,21 +56,6 @@ def grpc_deps():
     )
 
     native.bind(
-        name = "absl",
-        actual = "@com_google_absl//absl",
-    )
-
-    native.bind(
-        name = "absl-base",
-        actual = "@com_google_absl//absl/base",
-    )
-
-    native.bind(
-        name = "absl-time",
-        actual = "@com_google_absl//absl/time:time",
-    )
-
-    native.bind(
         name = "libssl",
         actual = "@boringssl//:ssl",
     )
@@ -294,11 +279,11 @@ def grpc_deps():
     if "com_google_absl" not in native.existing_rules():
         http_archive(
             name = "com_google_absl",
-            sha256 = "dcf71b9cba8dc0ca9940c4b316a0c796be8fab42b070bb6b7cab62b48f0e66c4",
-            strip_prefix = "abseil-cpp-20211102.0",
+            sha256 = "4208129b49006089ba1d6710845a45e31c59b0ab6bff9e5788a87f55c5abd602",
+            strip_prefix = "abseil-cpp-20220623.0",
             urls = [
-                "https://storage.googleapis.com/grpc-bazel-mirror/github.com/abseil/abseil-cpp/archive/20211102.0.tar.gz",
-                "https://github.com/abseil/abseil-cpp/archive/20211102.0.tar.gz",
+                "https://storage.googleapis.com/grpc-bazel-mirror/github.com/abseil/abseil-cpp/archive/20220623.0.tar.gz",
+                "https://github.com/abseil/abseil-cpp/archive/20220623.0.tar.gz",
             ],
         )
 
@@ -349,11 +334,11 @@ def grpc_deps():
     if "upb" not in native.existing_rules():
         http_archive(
             name = "upb",
-            sha256 = "d0fe259d650bf9547e75896a1307bfc7034195e4ae89f5139814d295991ba681",
-            strip_prefix = "upb-bef53686ec702607971bd3ea4d4fefd80c6cc6e8",
+            sha256 = "017a7e8e4e842d01dba5dc8aa316323eee080cd1b75986a7d1f94d87220e6502",
+            strip_prefix = "upb-e4635f223e7d36dfbea3b722a4ca4807a7e882e2",
             urls = [
-                "https://storage.googleapis.com/grpc-bazel-mirror/github.com/protocolbuffers/upb/archive/bef53686ec702607971bd3ea4d4fefd80c6cc6e8.tar.gz",
-                "https://github.com/protocolbuffers/upb/archive/bef53686ec702607971bd3ea4d4fefd80c6cc6e8.tar.gz",
+                "https://storage.googleapis.com/grpc-bazel-mirror/github.com/protocolbuffers/upb/archive/e4635f223e7d36dfbea3b722a4ca4807a7e882e2.tar.gz",
+                "https://github.com/protocolbuffers/upb/archive/e4635f223e7d36dfbea3b722a4ca4807a7e882e2.tar.gz",
             ],
         )
 

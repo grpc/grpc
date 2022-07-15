@@ -56,11 +56,15 @@ UPB_INLINE xds_type_matcher_v3_StringMatcher* xds_type_matcher_v3_StringMatcher_
   return ret;
 }
 UPB_INLINE char* xds_type_matcher_v3_StringMatcher_serialize(const xds_type_matcher_v3_StringMatcher* msg, upb_Arena* arena, size_t* len) {
-  return upb_Encode(msg, &xds_type_matcher_v3_StringMatcher_msginit, 0, arena, len);
+  char* ptr;
+  (void)upb_Encode(msg, &xds_type_matcher_v3_StringMatcher_msginit, 0, arena, &ptr, len);
+  return ptr;
 }
 UPB_INLINE char* xds_type_matcher_v3_StringMatcher_serialize_ex(const xds_type_matcher_v3_StringMatcher* msg, int options,
                                  upb_Arena* arena, size_t* len) {
-  return upb_Encode(msg, &xds_type_matcher_v3_StringMatcher_msginit, options, arena, len);
+  char* ptr;
+  (void)upb_Encode(msg, &xds_type_matcher_v3_StringMatcher_msginit, options, arena, &ptr, len);
+  return ptr;
 }
 typedef enum {
   xds_type_matcher_v3_StringMatcher_match_pattern_exact = 1,
@@ -178,11 +182,15 @@ UPB_INLINE xds_type_matcher_v3_ListStringMatcher* xds_type_matcher_v3_ListString
   return ret;
 }
 UPB_INLINE char* xds_type_matcher_v3_ListStringMatcher_serialize(const xds_type_matcher_v3_ListStringMatcher* msg, upb_Arena* arena, size_t* len) {
-  return upb_Encode(msg, &xds_type_matcher_v3_ListStringMatcher_msginit, 0, arena, len);
+  char* ptr;
+  (void)upb_Encode(msg, &xds_type_matcher_v3_ListStringMatcher_msginit, 0, arena, &ptr, len);
+  return ptr;
 }
 UPB_INLINE char* xds_type_matcher_v3_ListStringMatcher_serialize_ex(const xds_type_matcher_v3_ListStringMatcher* msg, int options,
                                  upb_Arena* arena, size_t* len) {
-  return upb_Encode(msg, &xds_type_matcher_v3_ListStringMatcher_msginit, options, arena, len);
+  char* ptr;
+  (void)upb_Encode(msg, &xds_type_matcher_v3_ListStringMatcher_msginit, options, arena, &ptr, len);
+  return ptr;
 }
 UPB_INLINE bool xds_type_matcher_v3_ListStringMatcher_has_patterns(const xds_type_matcher_v3_ListStringMatcher* msg) {
   return _upb_has_submsg_nohasbit(msg, UPB_SIZE(0, 0));

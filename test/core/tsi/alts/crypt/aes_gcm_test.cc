@@ -16,6 +16,8 @@
  *
  */
 
+#include <gtest/gtest.h>
+
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 
@@ -74,13 +76,13 @@ static void gsec_assert_ok(grpc_status_code status, const char* error_detail) {
   if (status != GRPC_STATUS_OK) {
     fprintf(stderr, "Status is not ok: %s\n", error_detail);
   }
-  GPR_ASSERT(status == GRPC_STATUS_OK);
+  ASSERT_EQ(status, GRPC_STATUS_OK);
 }
 
 static void gsec_test_random_encrypt_decrypt(gsec_aead_crypter* crypter,
                                              size_t aad_length,
                                              size_t message_length) {
-  GPR_ASSERT(crypter != nullptr);
+  ASSERT_NE(crypter, nullptr);
   size_t nonce_length, tag_length;
   uint8_t *nonce, *aad, *message;
   gsec_aead_crypter_nonce_length(crypter, &nonce_length, nullptr);
@@ -105,8 +107,8 @@ static void gsec_test_random_encrypt_decrypt(gsec_aead_crypter* crypter,
                                 ciphertext_and_tag_length,
                                 &ciphertext_bytes_written, &error_buffer),
       error_buffer);
-  GPR_ASSERT(message_length + tag_length == ciphertext_and_tag_length);
-  GPR_ASSERT(ciphertext_bytes_written == ciphertext_and_tag_length);
+  ASSERT_EQ(message_length + tag_length, ciphertext_and_tag_length);
+  ASSERT_EQ(ciphertext_bytes_written, ciphertext_and_tag_length);
 
   /* Test decryption */
   size_t plaintext_length, plaintext_bytes_written = 0;
@@ -118,10 +120,10 @@ static void gsec_test_random_encrypt_decrypt(gsec_aead_crypter* crypter,
       ciphertext_bytes_written, plaintext, plaintext_length,
       &plaintext_bytes_written, nullptr);
 
-  GPR_ASSERT(status == GRPC_STATUS_OK);
-  GPR_ASSERT(message_length == plaintext_bytes_written);
+  ASSERT_EQ(status, GRPC_STATUS_OK);
+  ASSERT_EQ(message_length, plaintext_bytes_written);
   if (message_length != 0) {
-    GPR_ASSERT(memcmp(message, plaintext, message_length) == 0);
+    ASSERT_EQ(memcmp(message, plaintext, message_length), 0);
   }
 
   /**
@@ -140,12 +142,12 @@ static void gsec_test_random_encrypt_decrypt(gsec_aead_crypter* crypter,
           ciphertext_and_tag, ciphertext_bytes_written, plaintext,
           plaintext_length, &plaintext_bytes_written, &error_message);
 
-      GPR_ASSERT(gsec_test_expect_compare_code_and_substr(
+      ASSERT_TRUE(gsec_test_expect_compare_code_and_substr(
           status, GRPC_STATUS_FAILED_PRECONDITION, "Checking tag failed.",
           error_message));
-      GPR_ASSERT(plaintext_bytes_written == 0);
+      ASSERT_EQ(plaintext_bytes_written, 0);
       if (plaintext_length != 0) {
-        GPR_ASSERT(memcmp(zero_message, plaintext, plaintext_length) == 0);
+        ASSERT_EQ(memcmp(zero_message, plaintext, plaintext_length), 0);
       }
       gpr_free(corrupt_nonce);
       gpr_free(error_message);
@@ -162,12 +164,12 @@ static void gsec_test_random_encrypt_decrypt(gsec_aead_crypter* crypter,
         corrupt_ciphertext_and_tag, ciphertext_bytes_written, plaintext,
         plaintext_length, &plaintext_bytes_written, &error_message);
 
-    GPR_ASSERT(gsec_test_expect_compare_code_and_substr(
+    ASSERT_TRUE(gsec_test_expect_compare_code_and_substr(
         status, GRPC_STATUS_FAILED_PRECONDITION, error_message,
         "Checking tag failed"));
-    GPR_ASSERT(plaintext_bytes_written == 0);
+    ASSERT_EQ(plaintext_bytes_written, 0);
     if (plaintext_length != 0) {
-      GPR_ASSERT(memcmp(zero_message, plaintext, plaintext_length) == 0);
+      ASSERT_EQ(memcmp(zero_message, plaintext, plaintext_length), 0);
     }
     gpr_free(error_message);
     gpr_free(corrupt_ciphertext_and_tag);
@@ -181,11 +183,11 @@ static void gsec_test_random_encrypt_decrypt(gsec_aead_crypter* crypter,
         crypter, nonce, nonce_length, aad, aad_length,
         corrupt_ciphertext_and_tag, ciphertext_bytes_written, plaintext,
         plaintext_length, &plaintext_bytes_written, &error_message);
-    GPR_ASSERT(plaintext_bytes_written == 0);
+    ASSERT_EQ(plaintext_bytes_written, 0);
     if (plaintext_length != 0) {
-      GPR_ASSERT(memcmp(zero_message, plaintext, plaintext_length) == 0);
+      ASSERT_EQ(memcmp(zero_message, plaintext, plaintext_length), 0);
     }
-    GPR_ASSERT(gsec_test_expect_compare_code_and_substr(
+    ASSERT_TRUE(gsec_test_expect_compare_code_and_substr(
         status, GRPC_STATUS_FAILED_PRECONDITION, error_message,
         "Checking tag failed"));
     gpr_free(error_message);
@@ -202,12 +204,12 @@ static void gsec_test_random_encrypt_decrypt(gsec_aead_crypter* crypter,
         corrupt_ciphertext_and_tag, ciphertext_bytes_written, plaintext,
         plaintext_length, &plaintext_bytes_written, &error_message);
 
-    GPR_ASSERT(gsec_test_expect_compare_code_and_substr(
+    ASSERT_TRUE(gsec_test_expect_compare_code_and_substr(
         status, GRPC_STATUS_FAILED_PRECONDITION, error_message,
         "Checking tag failed"));
-    GPR_ASSERT(plaintext_bytes_written == 0);
+    ASSERT_EQ(plaintext_bytes_written, 0);
     if (plaintext_length != 0) {
-      GPR_ASSERT(memcmp(zero_message, plaintext, plaintext_length) == 0);
+      ASSERT_EQ(memcmp(zero_message, plaintext, plaintext_length), 0);
     }
     gpr_free(error_message);
     gpr_free(corrupt_ciphertext_and_tag);
@@ -222,7 +224,7 @@ static void gsec_test_random_encrypt_decrypt(gsec_aead_crypter* crypter,
 }
 
 static void gsec_test_encrypt_decrypt(gsec_aead_crypter* crypter) {
-  GPR_ASSERT(crypter != nullptr);
+  ASSERT_NE(crypter, nullptr);
   size_t aad_length, message_length;
   aad_length = gsec_test_bias_random_uint32(kTestMaxLength);
   message_length = gsec_test_bias_random_uint32(kTestMaxLength);
@@ -234,7 +236,7 @@ static void gsec_test_encrypt_decrypt(gsec_aead_crypter* crypter) {
 static void gsec_test_multiple_random_encrypt_decrypt(
     gsec_aead_crypter* crypter, size_t* aad_lengths, size_t* message_lengths,
     size_t count) {
-  GPR_ASSERT(crypter != nullptr);
+  ASSERT_NE(crypter, nullptr);
   size_t nonce_length, tag_length;
   uint8_t **nonces, **aads, **messages;
   nonces = static_cast<uint8_t**>(gpr_malloc(sizeof(uint8_t*) * count));
@@ -281,10 +283,9 @@ static void gsec_test_multiple_random_encrypt_decrypt(
         messages[ind], message_length, ciphertext_and_tags[ind],
         ciphertext_and_tag_lengths[ind], &(ciphertext_bytes_writtens[ind]),
         nullptr);
-    GPR_ASSERT(status == GRPC_STATUS_OK);
-    GPR_ASSERT(message_length + tag_length == ciphertext_and_tag_lengths[ind]);
-    GPR_ASSERT(ciphertext_bytes_writtens[ind] ==
-               ciphertext_and_tag_lengths[ind]);
+    ASSERT_EQ(status, GRPC_STATUS_OK);
+    ASSERT_EQ(message_length + tag_length, ciphertext_and_tag_lengths[ind]);
+    ASSERT_EQ(ciphertext_bytes_writtens[ind], ciphertext_and_tag_lengths[ind]);
   }
   /* Do Decryption */
   for (ind = 0; ind < count; ind++) {
@@ -300,10 +301,10 @@ static void gsec_test_multiple_random_encrypt_decrypt(
         ciphertext_and_tags[ind], ciphertext_bytes_writtens[ind],
         plaintexts[ind], plaintext_lengths[ind],
         &(plaintext_bytes_writtens[ind]), nullptr);
-    GPR_ASSERT(status == GRPC_STATUS_OK);
-    GPR_ASSERT(message_length == plaintext_bytes_writtens[ind]);
+    ASSERT_EQ(status, GRPC_STATUS_OK);
+    ASSERT_EQ(message_length, plaintext_bytes_writtens[ind]);
     if (message_length != 0) {
-      GPR_ASSERT(memcmp(messages[ind], plaintexts[ind], message_length) == 0);
+      ASSERT_EQ(memcmp(messages[ind], plaintexts[ind], message_length), 0);
     }
   }
 
@@ -334,8 +335,9 @@ static void gsec_test_multiple_random_encrypt_decrypt(
             message_vecs, message_vecs_length, another_ciphertext_vec,
             &ciphertext_bytes_written, &error_details),
         error_details);
-    GPR_ASSERT(memcmp(ciphertext_and_tags[ind], another_ciphertext_vec.iov_base,
-                      ciphertext_length) == 0);
+    ASSERT_EQ(memcmp(ciphertext_and_tags[ind], another_ciphertext_vec.iov_base,
+                     ciphertext_length),
+              0);
     free(another_ciphertext);
     free(aad_vecs);
     free(message_vecs);
@@ -369,10 +371,10 @@ static void gsec_test_multiple_random_encrypt_decrypt(
                        aad_vecs_length, ciphertext_vecs, ciphertext_vecs_length,
                        decrypted_vec, &decrypted_length, &error_details),
                    error_details);
-    GPR_ASSERT(decrypted_vec.iov_len == message_length);
+    ASSERT_EQ(decrypted_vec.iov_len, message_length);
     if (message_length != 0) {
-      GPR_ASSERT(
-          memcmp(decrypted_vec.iov_base, messages[ind], message_length) == 0);
+      ASSERT_EQ(memcmp(decrypted_vec.iov_base, messages[ind], message_length),
+                0);
     }
     free(decrypted);
     free(aad_vecs);
@@ -398,7 +400,7 @@ static void gsec_test_multiple_random_encrypt_decrypt(
 }
 
 static void gsec_test_multiple_encrypt_decrypt(gsec_aead_crypter* crypter) {
-  GPR_ASSERT(crypter != nullptr);
+  ASSERT_NE(crypter, nullptr);
   size_t count = kTestNumEncryptions;
   size_t* aad_lengths =
       static_cast<size_t*>(gpr_malloc(sizeof(size_t) * count));
@@ -420,7 +422,7 @@ static void gsec_test_multiple_encrypt_decrypt(gsec_aead_crypter* crypter) {
 }
 
 static void gsec_test_encryption_failure(gsec_aead_crypter* crypter) {
-  GPR_ASSERT(crypter != nullptr);
+  ASSERT_NE(crypter, nullptr);
   size_t aad_length = kTestMaxLength;
   size_t message_length = kTestMaxLength;
   size_t nonce_length;
@@ -444,7 +446,7 @@ static void gsec_test_encryption_failure(gsec_aead_crypter* crypter) {
       crypter, nullptr, nonce_length, aad, aad_length, message, message_length,
       ciphertext_and_tag, ciphertext_and_tag_length, &ciphertext_bytes_written,
       &error_message);
-  GPR_ASSERT(gsec_test_expect_compare_code_and_substr(
+  ASSERT_TRUE(gsec_test_expect_compare_code_and_substr(
       status, GRPC_STATUS_INVALID_ARGUMENT, error_message,
       "Nonce buffer is nullptr."));
   gpr_free(error_message);
@@ -454,7 +456,7 @@ static void gsec_test_encryption_failure(gsec_aead_crypter* crypter) {
       crypter, nonce, nonce_length + 1, aad, aad_length, message,
       message_length, ciphertext_and_tag, ciphertext_and_tag_length,
       &ciphertext_bytes_written, &error_message);
-  GPR_ASSERT(gsec_test_expect_compare_code_and_substr(
+  ASSERT_TRUE(gsec_test_expect_compare_code_and_substr(
       status, GRPC_STATUS_INVALID_ARGUMENT, error_message,
       "Nonce buffer has the wrong length."));
   gpr_free(error_message);
@@ -464,7 +466,7 @@ static void gsec_test_encryption_failure(gsec_aead_crypter* crypter) {
       crypter, nonce, nonce_length - 1, aad, aad_length, message,
       message_length, ciphertext_and_tag, ciphertext_and_tag_length,
       &ciphertext_bytes_written, &error_message);
-  GPR_ASSERT(gsec_test_expect_compare_code_and_substr(
+  ASSERT_TRUE(gsec_test_expect_compare_code_and_substr(
       status, GRPC_STATUS_INVALID_ARGUMENT, error_message,
       "Nonce buffer has the wrong length."));
   gpr_free(error_message);
@@ -474,7 +476,7 @@ static void gsec_test_encryption_failure(gsec_aead_crypter* crypter) {
       crypter, nonce, nonce_length, nullptr, aad_length, message,
       message_length, ciphertext_and_tag, ciphertext_and_tag_length,
       &ciphertext_bytes_written, &error_message);
-  GPR_ASSERT(gsec_test_expect_compare_code_and_substr(
+  ASSERT_TRUE(gsec_test_expect_compare_code_and_substr(
       status, GRPC_STATUS_INVALID_ARGUMENT, error_message, "aad is nullptr."));
   gpr_free(error_message);
 
@@ -491,7 +493,7 @@ static void gsec_test_encryption_failure(gsec_aead_crypter* crypter) {
       crypter, nonce, nonce_length, aad, aad_length, nullptr, message_length,
       ciphertext_and_tag, ciphertext_and_tag_length, &ciphertext_bytes_written,
       &error_message);
-  GPR_ASSERT(gsec_test_expect_compare_code_and_substr(
+  ASSERT_TRUE(gsec_test_expect_compare_code_and_substr(
       status, GRPC_STATUS_INVALID_ARGUMENT, error_message,
       "plaintext is nullptr."));
   gpr_free(error_message);
@@ -501,7 +503,7 @@ static void gsec_test_encryption_failure(gsec_aead_crypter* crypter) {
                                      aad_length, message, message_length,
                                      nullptr, ciphertext_and_tag_length,
                                      &ciphertext_bytes_written, &error_message);
-  GPR_ASSERT(gsec_test_expect_compare_code_and_substr(
+  ASSERT_TRUE(gsec_test_expect_compare_code_and_substr(
       status, GRPC_STATUS_INVALID_ARGUMENT, error_message,
       "ciphertext is nullptr."));
   gpr_free(error_message);
@@ -511,7 +513,7 @@ static void gsec_test_encryption_failure(gsec_aead_crypter* crypter) {
       crypter, nonce, nonce_length, aad, aad_length, message, message_length,
       ciphertext_and_tag, ciphertext_and_tag_length - 1,
       &ciphertext_bytes_written, &error_message);
-  GPR_ASSERT(gsec_test_expect_compare_code_and_substr(
+  ASSERT_TRUE(gsec_test_expect_compare_code_and_substr(
       status, GRPC_STATUS_INVALID_ARGUMENT, error_message,
       "ciphertext is too small to hold a tag."));
   gpr_free(error_message);
@@ -520,7 +522,7 @@ static void gsec_test_encryption_failure(gsec_aead_crypter* crypter) {
   status = gsec_aead_crypter_encrypt(
       crypter, nonce, nonce_length, aad, aad_length, message, message_length,
       ciphertext_and_tag, ciphertext_and_tag_length, nullptr, &error_message);
-  GPR_ASSERT(gsec_test_expect_compare_code_and_substr(
+  ASSERT_TRUE(gsec_test_expect_compare_code_and_substr(
       status, GRPC_STATUS_INVALID_ARGUMENT, error_message,
       "bytes_written is nullptr."));
   gpr_free(error_message);
@@ -537,7 +539,7 @@ static void gsec_test_encryption_failure(gsec_aead_crypter* crypter) {
       crypter, nonce, nonce_length, aad, aad_length, message, message_length,
       ciphertext_and_tag, ciphertext_and_tag_length, &ciphertext_bytes_written,
       &error_message);
-  GPR_ASSERT(status == GRPC_STATUS_OK);
+  ASSERT_EQ(status, GRPC_STATUS_OK);
 
   gpr_free(message);
   gpr_free(aad);
@@ -546,7 +548,7 @@ static void gsec_test_encryption_failure(gsec_aead_crypter* crypter) {
 }
 
 static void gsec_test_decryption_failure(gsec_aead_crypter* crypter) {
-  GPR_ASSERT(crypter != nullptr);
+  ASSERT_NE(crypter, nullptr);
   size_t aad_length = kTestMaxLength;
   size_t message_length = kTestMaxLength;
   size_t nonce_length, tag_length;
@@ -569,8 +571,8 @@ static void gsec_test_decryption_failure(gsec_aead_crypter* crypter) {
       crypter, nonce, nonce_length, aad, aad_length, message, message_length,
       ciphertext_and_tag, ciphertext_and_tag_length, &ciphertext_bytes_written,
       nullptr);
-  GPR_ASSERT(status == GRPC_STATUS_OK);
-  GPR_ASSERT(ciphertext_bytes_written == ciphertext_and_tag_length);
+  ASSERT_EQ(status, GRPC_STATUS_OK);
+  ASSERT_EQ(ciphertext_bytes_written, ciphertext_and_tag_length);
 
   size_t plaintext_length, plaintext_bytes_written = 0;
   gsec_aead_crypter_max_plaintext_length(crypter, ciphertext_bytes_written,
@@ -583,7 +585,7 @@ static void gsec_test_decryption_failure(gsec_aead_crypter* crypter) {
       crypter, nullptr, nonce_length, aad, aad_length, ciphertext_and_tag,
       ciphertext_and_tag_length, plaintext, plaintext_length,
       &plaintext_bytes_written, &error_message);
-  GPR_ASSERT(gsec_test_expect_compare_code_and_substr(
+  ASSERT_TRUE(gsec_test_expect_compare_code_and_substr(
       status, GRPC_STATUS_INVALID_ARGUMENT, error_message,
       "Nonce buffer is nullptr."));
   gpr_free(error_message);
@@ -593,7 +595,7 @@ static void gsec_test_decryption_failure(gsec_aead_crypter* crypter) {
       crypter, nonce, nonce_length + 1, aad, aad_length, ciphertext_and_tag,
       ciphertext_and_tag_length, plaintext, plaintext_length,
       &plaintext_bytes_written, &error_message);
-  GPR_ASSERT(gsec_test_expect_compare_code_and_substr(
+  ASSERT_TRUE(gsec_test_expect_compare_code_and_substr(
       status, GRPC_STATUS_INVALID_ARGUMENT, error_message,
       "Nonce buffer has the wrong length."));
   gpr_free(error_message);
@@ -603,7 +605,7 @@ static void gsec_test_decryption_failure(gsec_aead_crypter* crypter) {
       crypter, nonce, nonce_length - 1, aad, aad_length, ciphertext_and_tag,
       ciphertext_and_tag_length, plaintext, plaintext_length,
       &plaintext_bytes_written, &error_message);
-  GPR_ASSERT(gsec_test_expect_compare_code_and_substr(
+  ASSERT_TRUE(gsec_test_expect_compare_code_and_substr(
       status, GRPC_STATUS_INVALID_ARGUMENT, error_message,
       "Nonce buffer has the wrong length."));
   gpr_free(error_message);
@@ -613,7 +615,7 @@ static void gsec_test_decryption_failure(gsec_aead_crypter* crypter) {
       crypter, nonce, nonce_length, nullptr, aad_length, ciphertext_and_tag,
       ciphertext_and_tag_length, plaintext, plaintext_length,
       &plaintext_bytes_written, &error_message);
-  GPR_ASSERT(gsec_test_expect_compare_code_and_substr(
+  ASSERT_TRUE(gsec_test_expect_compare_code_and_substr(
       status, GRPC_STATUS_INVALID_ARGUMENT, error_message, "aad is nullptr."));
   gpr_free(error_message);
 
@@ -622,13 +624,13 @@ static void gsec_test_decryption_failure(gsec_aead_crypter* crypter) {
       crypter, nonce, nonce_length, nullptr, 0, message, message_length,
       ciphertext_and_tag, ciphertext_and_tag_length, &ciphertext_bytes_written,
       &error_message);
-  GPR_ASSERT(status == GRPC_STATUS_OK);
+  ASSERT_EQ(status, GRPC_STATUS_OK);
 
   status = gsec_aead_crypter_decrypt(
       crypter, nonce, nonce_length, nullptr, 0, ciphertext_and_tag,
       ciphertext_and_tag_length, plaintext, plaintext_length,
       &plaintext_bytes_written, &error_message);
-  GPR_ASSERT(status == GRPC_STATUS_OK);
+  ASSERT_EQ(status, GRPC_STATUS_OK);
 
   /* Small ciphertext */
   if (tag_length > 0) {
@@ -637,7 +639,7 @@ static void gsec_test_decryption_failure(gsec_aead_crypter* crypter) {
         tag_length - 1, plaintext, plaintext_length, &plaintext_bytes_written,
         &error_message);
 
-    GPR_ASSERT(gsec_test_expect_compare_code_and_substr(
+    ASSERT_TRUE(gsec_test_expect_compare_code_and_substr(
         status, GRPC_STATUS_INVALID_ARGUMENT, error_message,
         "ciphertext is too small to hold a tag."));
     gpr_free(error_message);
@@ -649,7 +651,7 @@ static void gsec_test_decryption_failure(gsec_aead_crypter* crypter) {
       ciphertext_and_tag_length, plaintext, plaintext_length,
       &plaintext_bytes_written, &error_message);
 
-  GPR_ASSERT(gsec_test_expect_compare_code_and_substr(
+  ASSERT_TRUE(gsec_test_expect_compare_code_and_substr(
       status, GRPC_STATUS_INVALID_ARGUMENT, error_message,
       "ciphertext is nullptr."));
   gpr_free(error_message);
@@ -660,7 +662,7 @@ static void gsec_test_decryption_failure(gsec_aead_crypter* crypter) {
       ciphertext_and_tag_length, nullptr, plaintext_length,
       &plaintext_bytes_written, &error_message);
 
-  GPR_ASSERT(gsec_test_expect_compare_code_and_substr(
+  ASSERT_TRUE(gsec_test_expect_compare_code_and_substr(
       status, GRPC_STATUS_INVALID_ARGUMENT, error_message,
       "plaintext is nullptr, but plaintext_length is positive."));
   gpr_free(error_message);
@@ -671,7 +673,7 @@ static void gsec_test_decryption_failure(gsec_aead_crypter* crypter) {
       ciphertext_and_tag_length, plaintext, plaintext_length - 1,
       &plaintext_bytes_written, &error_message);
 
-  GPR_ASSERT(gsec_test_expect_compare_code_and_substr(
+  ASSERT_TRUE(gsec_test_expect_compare_code_and_substr(
       status, GRPC_STATUS_INVALID_ARGUMENT, error_message,
       "Not enough plaintext buffer to hold encrypted ciphertext."));
   gpr_free(error_message);
@@ -682,7 +684,7 @@ static void gsec_test_decryption_failure(gsec_aead_crypter* crypter) {
                                      ciphertext_and_tag_length, plaintext,
                                      plaintext_length, nullptr, &error_message);
 
-  GPR_ASSERT(gsec_test_expect_compare_code_and_substr(
+  ASSERT_TRUE(gsec_test_expect_compare_code_and_substr(
       status, GRPC_STATUS_INVALID_ARGUMENT, error_message,
       "bytes_written is nullptr."));
   gpr_free(error_message);
@@ -696,7 +698,7 @@ static void gsec_test_decryption_failure(gsec_aead_crypter* crypter) {
 
 static void gsec_test_encrypt_decrypt_test_vector(
     gsec_aead_crypter* crypter, gsec_aead_test_vector* test_vector) {
-  GPR_ASSERT(crypter != nullptr);
+  ASSERT_NE(crypter, nullptr);
   /* Test byte-based encryption interface. */
   size_t ciphertext_and_tag_length, ciphertext_bytes_written = 0;
   gsec_aead_crypter_max_ciphertext_and_tag_length(
@@ -710,10 +712,11 @@ static void gsec_test_encrypt_decrypt_test_vector(
       test_vector->plaintext_length, ciphertext_and_tag_bytes,
       ciphertext_and_tag_length, &ciphertext_bytes_written, nullptr);
 
-  GPR_ASSERT(status == GRPC_STATUS_OK);
-  GPR_ASSERT(ciphertext_bytes_written == ciphertext_and_tag_length);
-  GPR_ASSERT(memcmp(test_vector->ciphertext_and_tag, ciphertext_and_tag_bytes,
-                    ciphertext_and_tag_length) == 0);
+  ASSERT_EQ(status, GRPC_STATUS_OK);
+  ASSERT_EQ(ciphertext_bytes_written, ciphertext_and_tag_length);
+  ASSERT_EQ(memcmp(test_vector->ciphertext_and_tag, ciphertext_and_tag_bytes,
+                   ciphertext_and_tag_length),
+            0);
 
   /* Test byte-based decryption interface */
   size_t plaintext_length, plaintext_bytes_written = 0;
@@ -726,10 +729,11 @@ static void gsec_test_encrypt_decrypt_test_vector(
       test_vector->aad_length, test_vector->ciphertext_and_tag,
       test_vector->ciphertext_and_tag_length, plaintext_bytes, plaintext_length,
       &plaintext_bytes_written, nullptr);
-  GPR_ASSERT(status == GRPC_STATUS_OK);
+  ASSERT_EQ(status, GRPC_STATUS_OK);
   if (plaintext_bytes_written != 0) {
-    GPR_ASSERT(memcmp(test_vector->plaintext, plaintext_bytes,
-                      plaintext_bytes_written) == 0);
+    ASSERT_EQ(memcmp(test_vector->plaintext, plaintext_bytes,
+                     plaintext_bytes_written),
+              0);
   }
 
   gpr_free(ciphertext_and_tag_bytes);
@@ -740,14 +744,14 @@ static void gsec_test_get_crypter_from_test_vector(
     gsec_aead_crypter** crypter, gsec_aead_test_vector* test_vector,
     bool rekey = false) {
   size_t key_length = test_vector->key_length;
-  GPR_ASSERT(key_length == kAes128GcmKeyLength ||
-             key_length == kAes256GcmKeyLength ||
-             key_length == kAes128GcmRekeyKeyLength);
+  ASSERT_TRUE(key_length == kAes128GcmKeyLength ||
+              key_length == kAes256GcmKeyLength ||
+              key_length == kAes128GcmRekeyKeyLength);
   size_t nonce_length = test_vector->nonce_length;
-  GPR_ASSERT(nonce_length == kAesGcmNonceLength);
+  ASSERT_EQ(nonce_length, kAesGcmNonceLength);
   size_t plaintext_length = test_vector->plaintext_length;
   size_t ciphertext_and_tag_length = test_vector->ciphertext_and_tag_length;
-  GPR_ASSERT(ciphertext_and_tag_length == plaintext_length + kAesGcmTagLength);
+  ASSERT_EQ(ciphertext_and_tag_length, plaintext_length + kAesGcmTagLength);
   size_t tag_length = ciphertext_and_tag_length - plaintext_length;
   gsec_aes_gcm_aead_crypter_create(test_vector->key, key_length, nonce_length,
                                    tag_length, rekey, crypter, nullptr);
@@ -817,7 +821,7 @@ static void gsec_test_get_random_aes_gcm_crypters(
       kAesGcmTagLength, /*rekey=*/true);
 }
 
-static void gsec_test_do_generic_crypter_tests() {
+TEST(AltsCryptTest, GsecTestDoGenericCrypterTests) {
   gsec_aead_crypter** crypters;
   gsec_test_get_random_aes_gcm_crypters(&crypters);
   size_t ind;
@@ -833,7 +837,7 @@ static void gsec_test_do_generic_crypter_tests() {
   gpr_free(crypters);
 }
 
-static void gsec_test_do_vector_tests_rekey_nist() {
+TEST(AltsCryptTest, GsecTestDoVectorTestsRekeyNist) {
   // NIST vectors from:
   // http://csrc.nist.gov/groups/ST/toolkit/BCM/documents/proposedmodes/gcm/gcm-revised-spec.pdf
   //
@@ -1048,7 +1052,7 @@ static void gsec_test_do_vector_tests_rekey_nist() {
   gsec_test_verify_crypter_on_test_vector(&vec, /*rekey=*/true);
 }
 
-static void gsec_test_do_vector_tests_rekey_ieee() {
+TEST(AltsCryptTest, GsecTestDoVectorTestsRekeyIeee) {
   // IEEE vectors from:
   // http://www.ieee802.org/1/files/public/docs2011/bn-randall-test-vectors-0511-v1.pdf
   //
@@ -1464,7 +1468,7 @@ static void gsec_test_do_vector_tests_rekey_ieee() {
   gsec_test_verify_crypter_on_test_vector(&vec, /*rekey=*/true);
 }
 
-static void gsec_test_do_vector_tests_nist() {
+TEST(AltsCryptTest, GsecTestDoVectorTestsNist) {
   /**
    * From:
    * http://csrc.nist.gov/groups/ST/toolkit/BCM/documents/proposedmodes/gcm/
@@ -1588,7 +1592,7 @@ static void gsec_test_do_vector_tests_nist() {
   gsec_aead_free_test_vector(test_vector_4);
 }
 
-static void gsec_test_do_vector_tests_ieee() {
+TEST(AltsCryptTest, GsecTestDoVectorTestsIeee) {
   /**
    * From:
    * http://www.ieee802.org/1/files/public/docs2011/
@@ -2112,12 +2116,7 @@ static void gsec_test_do_vector_tests_ieee() {
 
 int main(int argc, char** argv) {
   grpc::testing::TestEnvironment env(&argc, argv);
-  grpc_init();
-  gsec_test_do_generic_crypter_tests();
-  gsec_test_do_vector_tests_nist();
-  gsec_test_do_vector_tests_ieee();
-  gsec_test_do_vector_tests_rekey_nist();
-  gsec_test_do_vector_tests_rekey_ieee();
-  grpc_shutdown();
-  return 0;
+  ::testing::InitGoogleTest(&argc, argv);
+  grpc::testing::TestGrpcScope grpc_scope;
+  return RUN_ALL_TESTS();
 }

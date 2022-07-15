@@ -24,7 +24,6 @@
 #include <type_traits>
 #include <utility>
 
-#include "absl/container/inlined_vector.h"
 #include "absl/memory/memory.h"
 #include "absl/status/status.h"
 #include "absl/strings/str_cat.h"
@@ -83,7 +82,7 @@ bool XdsListenerResource::DownstreamTlsContext::Empty() const {
 //
 
 std::string XdsListenerResource::HttpConnectionManager::ToString() const {
-  absl::InlinedVector<std::string, 4> contents;
+  std::vector<std::string> contents;
   contents.push_back(absl::StrFormat(
       "route_config_name=%s",
       !route_config_name.empty() ? route_config_name.c_str() : "<inlined>"));
@@ -159,7 +158,7 @@ struct FilterChain {
 };
 
 std::string FilterChain::FilterChainMatch::ToString() const {
-  absl::InlinedVector<std::string, 8> contents;
+  std::vector<std::string> contents;
   if (destination_port != 0) {
     contents.push_back(absl::StrCat("destination_port=", destination_port));
   }
@@ -248,7 +247,7 @@ std::string XdsListenerResource::FilterChainMap::ToString() const {
 //
 
 std::string XdsListenerResource::ToString() const {
-  absl::InlinedVector<std::string, 4> contents;
+  std::vector<std::string> contents;
   if (type == ListenerType::kTcpListener) {
     contents.push_back(absl::StrCat("address=", address));
     contents.push_back(

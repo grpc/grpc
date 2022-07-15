@@ -31,6 +31,7 @@
 #include <utility>
 
 #include "absl/base/attributes.h"
+#include "absl/status/status.h"
 #include "absl/strings/match.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
@@ -57,14 +58,6 @@
 #include "src/core/lib/transport/transport.h"
 
 // IWYU pragma: no_include <type_traits>
-
-#if __cplusplus > 201103L
-#define GRPC_HPACK_CONSTEXPR_FN constexpr
-#define GRPC_HPACK_CONSTEXPR_VALUE constexpr
-#else
-#define GRPC_HPACK_CONSTEXPR_FN
-#define GRPC_HPACK_CONSTEXPR_VALUE const
-#endif
 
 namespace grpc_core {
 
@@ -453,7 +446,7 @@ constexpr char kBase64Alphabet[] =
 // any complicated runtime logic.
 struct Base64InverseTable {
   uint8_t table[256]{};
-  GRPC_HPACK_CONSTEXPR_FN Base64InverseTable() {
+  constexpr Base64InverseTable() {
     for (int i = 0; i < 256; i++) {
       table[i] = 255;
     }
@@ -465,7 +458,7 @@ struct Base64InverseTable {
   }
 };
 
-GRPC_HPACK_CONSTEXPR_VALUE Base64InverseTable kBase64InverseTable;
+constexpr Base64InverseTable kBase64InverseTable;
 }  // namespace
 
 // Input tracks the current byte through the input data and provides it

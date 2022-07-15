@@ -23,7 +23,6 @@
 #include <type_traits>
 #include <utility>
 
-#include "absl/container/inlined_vector.h"
 #include "absl/memory/memory.h"
 #include "absl/status/status.h"
 #include "absl/strings/str_cat.h"
@@ -62,7 +61,7 @@ namespace grpc_core {
 //
 
 std::string XdsClusterResource::ToString() const {
-  absl::InlinedVector<std::string, 8> contents;
+  std::vector<std::string> contents;
   switch (cluster_type) {
     case EDS:
       contents.push_back("cluster_type=EDS");
