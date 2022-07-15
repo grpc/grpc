@@ -17,8 +17,20 @@
  */
 
 #import <Foundation/Foundation.h>
+#import <XCTest/XCTest.h>
 
 NS_ASSUME_NONNULL_BEGIN
+
+/* Default test timeout in seconds for interopt test. */
+FOUNDATION_EXPORT const NSTimeInterval GRPCInteropTestTimeoutDefault;
+
+// Block typedef for waiting for a target group of expectations via XCTWaiter.
+typedef void (^GRPCTestWaiter)(XCTestCase *testCase, NSArray<XCTestExpectation *> *expectations,
+                               NSTimeInterval timeout);
+
+// Block typedef for a test run. Test run should call waiter to wait for a group of expectations
+// with timeout.
+typedef void (^GRPCTestRunBlock)(GRPCTestWaiter waiterBlock);
 
 /**
  * Common utility to fetch plain text local interop server address.
@@ -45,5 +57,18 @@ FOUNDATION_EXPORT NSString *GRPCGetRemoteInteropTestServerAddress(void);
  * Common utility to print interop server address information to console via NSLog.
  */
 FOUNDATION_EXPORT void GRPCPrintInteropTestServerDebugInfo(void);
+
+/**
+ * Common utility to run a test block until success, up to predefined number of repeats.
+ * @param testBlock Target test block to be invoked by the utility function. The block will be
+ * invoked synchronously before the function returns.
+ * @return YES if test run succeeded within the repeat limit. NO otherwise.
+ */
+FOUNDATION_EXPORT BOOL GRPCTestRunWithFlakeRepeats(GRPCTestRunBlock testBlock);
+
+/**
+ * Common utility to reset gRPC call's active connections.
+ */
+FOUNDATION_EXPORT void GRPCResetCallConnections(void);
 
 NS_ASSUME_NONNULL_END
