@@ -22,11 +22,7 @@
 #include "test/core/util/test_config.h"
 
 // A regular expression to enter referenced or child errors.
-#ifdef GRPC_ERROR_IS_ABSEIL_STATUS
 #define CHILD_ERROR_TAG ".*children.*"
-#else
-#define CHILD_ERROR_TAG ".*referenced_errors.*"
-#endif
 
 namespace grpc_core {
 namespace testing {

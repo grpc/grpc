@@ -1248,13 +1248,8 @@ void grpc_chttp2_complete_closure_step(grpc_chttp2_transport* t,
         write_state_name(t->write_state));
   }
   if (!GRPC_ERROR_IS_NONE(error)) {
-#ifdef GRPC_ERROR_IS_ABSEIL_STATUS
     grpc_error_handle cl_err =
         grpc_core::internal::StatusMoveFromHeapPtr(closure->error_data.error);
-#else
-    grpc_error_handle cl_err =
-        reinterpret_cast<grpc_error_handle>(closure->error_data.error);
-#endif
     if (GRPC_ERROR_IS_NONE(cl_err)) {
       cl_err = GRPC_ERROR_CREATE_FROM_STATIC_STRING(
           "Error in HTTP transport completing operation");
@@ -1262,24 +1257,15 @@ void grpc_chttp2_complete_closure_step(grpc_chttp2_transport* t,
                                   t->peer_string);
     }
     cl_err = grpc_error_add_child(cl_err, error);
-#ifdef GRPC_ERROR_IS_ABSEIL_STATUS
     closure->error_data.error = grpc_core::internal::StatusAllocHeapPtr(cl_err);
-#else
-    closure->error_data.error = reinterpret_cast<intptr_t>(cl_err);
-#endif
   }
   if (closure->next_data.scratch < CLOSURE_BARRIER_FIRST_REF_BIT) {
     if ((t->write_state == GRPC_CHTTP2_WRITE_STATE_IDLE) ||
         !(closure->next_data.scratch & CLOSURE_BARRIER_MAY_COVER_WRITE)) {
       // Using GRPC_CLOSURE_SCHED instead of GRPC_CLOSURE_RUN to avoid running
       // closures earlier than when it is safe to do so.
-#ifdef GRPC_ERROR_IS_ABSEIL_STATUS
       grpc_error_handle run_error =
           grpc_core::internal::StatusMoveFromHeapPtr(closure->error_data.error);
-#else
-      grpc_error_handle run_error =
-          reinterpret_cast<grpc_error_handle>(closure->error_data.error);
-#endif
       closure->error_data.error = 0;
       grpc_core::ExecCtx::Run(DEBUG_LOCATION, closure, run_error);
     } else {
