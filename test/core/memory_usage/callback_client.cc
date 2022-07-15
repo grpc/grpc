@@ -63,7 +63,7 @@ class ClientCallbackImpl {
       }
       LOG(INFO) << "UnaryCall RPC succeeded.";
       delete params;
-      //on_done();
+      // on_done();
       return;
     };
 
@@ -71,19 +71,20 @@ class ClientCallbackImpl {
     stub_->async()->UnaryCall(&params->context, &params->request,
                               &params->response, callback);
   }
-  private:
-    std::unique_ptr<grpc::testing::BenchmarkService::Stub> stub_;
+
+ private:
+  std::unique_ptr<grpc::testing::BenchmarkService::Stub> stub_;
 };
 
 ABSL_FLAG(std::string, target, "localhost:443", "Target host:port");
 ABSL_FLAG(bool, secure, false, "Use SSL Credentials");
 
 int main(int argc, char** argv) {
-  //testing::InitGoogleTest(&argc, argv);
-  //LOG(INFO)<< absl::GetFlag(FLAGS_target);
+  // testing::InitGoogleTest(&argc, argv);
+  // LOG(INFO)<< absl::GetFlag(FLAGS_target);
   absl::ParseCommandLine(argc, argv);
-  LOG(INFO)<<absl::GetFlag(FLAGS_target);
-  //grpc_slice slice = grpc_slice_from_copied_string("x");
+  LOG(INFO) << absl::GetFlag(FLAGS_target);
+  // grpc_slice slice = grpc_slice_from_copied_string("x");
   char* fake_argv[1];
 
   GPR_ASSERT(argc >= 1);
@@ -91,7 +92,7 @@ int main(int argc, char** argv) {
   grpc::testing::TestEnvironment env(&argc, argv);
 
   grpc_init();
-  LOG(INFO)<<"After Client Init";
+  LOG(INFO) << "After Client Init";
 
   // Set the authentication mechanism.
   std::shared_ptr<grpc::ChannelCredentials> creds =
@@ -107,7 +108,7 @@ int main(int argc, char** argv) {
   ClientCallbackImpl client(grpc::testing::BenchmarkService::NewStub(channel));
 
   client.UnaryCall([]() {
-    LOG(INFO)<<"ON DONE\n";
+    LOG(INFO) << "ON DONE\n";
   });  // may need to add the on done parameter
   LOG(INFO) << "Done";
   return 0;

@@ -39,70 +39,70 @@
 
 class ServerCallbackImpl final
     : public grpc::testing::BenchmarkService::CallbackService {
-
-    grpc::ServerUnaryReactor* UnaryCall(grpc::CallbackServerContext* context,
-                                       const grpc::testing::SimpleRequest* request,
-                                       grpc::testing::SimpleResponse* response) override {
+  grpc::ServerUnaryReactor* UnaryCall(
+      grpc::CallbackServerContext* context,
+      const grpc::testing::SimpleRequest* request,
+      grpc::testing::SimpleResponse* response) override {
     LOG(INFO) << "RPC CALL RECEIVED";
 
     auto* reactor = context->DefaultReactor();
     reactor->Finish(grpc::Status::OK);
     return reactor;
-    }
+  }
 };
 
 ABSL_FLAG(std::string, bind, "", "Bind host:port");
 ABSL_FLAG(bool, secure, false, "Use SSL Credentials");
 
 int main(int argc, char** argv) {
-    absl::ParseCommandLine(argc, argv);
-    LOG(INFO) <<"Server Process Started";
-    LOG(INFO)<<absl::GetFlag(FLAGS_bind);
-    LOG(INFO)<<"IS THIS STILL WORKING";
-    //grpc_slice slice = grpc_slice_from_copied_string("x");
-    char* fake_argv[1];
-    
-    GPR_ASSERT(argc >= 1);
-    fake_argv[0] = argv[0];
-    grpc::testing::TestEnvironment env(&argc, argv);
+  absl::ParseCommandLine(argc, argv);
+  LOG(INFO) << "Server Process Started";
+  LOG(INFO) << absl::GetFlag(FLAGS_bind);
+  LOG(INFO) << "IS THIS STILL WORKING";
+  // grpc_slice slice = grpc_slice_from_copied_string("x");
+  char* fake_argv[1];
 
-    grpc_init();
-    //absl::SetFlag(&FLAGS_alsologtostderr, true);
-    LOG(INFO)<<"After Server Init";
-    std::string server_address = absl::GetFlag(FLAGS_bind);
-    LOG(INFO)<<server_address;
-    
-    LOG(INFO)<<"Before Listening port";
+  GPR_ASSERT(argc >= 1);
+  fake_argv[0] = argv[0];
+  grpc::testing::TestEnvironment env(&argc, argv);
 
+  grpc_init();
+  // absl::SetFlag(&FLAGS_alsologtostderr, true);
+  LOG(INFO) << "After Server Init";
+  std::string server_address = absl::GetFlag(FLAGS_bind);
+  LOG(INFO) << server_address;
 
-    ServerCallbackImpl callback_server;
-    grpc::ServerBuilder builder;
-    builder.AddListeningPort(server_address, grpc::InsecureServerCredentials());
-    /*if(!absl::GetFlag(FLAGS_secure))
-    {
-        // Listen on the given address with a insecure server.
-        
-    }
-    else{
-        
-        // Set the authentication mechanism.
-        /*std::shared_ptr<grpc::ServerCredentials> creds =
-        grpc::Loas2ServerCredentials(grpc::Loas2ServerCredentialsOptions());
-        // Listen on the given address with a secure server.
-        builder.AddListeningPort(server_address, creds);*
-        printf("Supposed to be secure \n");
-        builder.AddListeningPort(server_address, grpc::InsecureServerCredentials());
-    }*/
-    LOG(INFO)<<"After Listening port";
-    // Register "service" as the instance through which we'll communicate with
-    // clients.
-    builder.RegisterService(&callback_server);
-    // Set up the server to start accepting requests.
-    std::unique_ptr<grpc::Server> server(builder.BuildAndStart());
-    LOG(INFO) << "Server listening on " << server_address;
+  LOG(INFO) << "Before Listening port";
 
-    // Keep the program running until the server shuts down.
-    server->Wait();
+  ServerCallbackImpl callback_server;
+  grpc::ServerBuilder builder;
+  builder.AddListeningPort(server_address, grpc::InsecureServerCredentials());
+  /*if(!absl::GetFlag(FLAGS_secure))
+  {
+      // Listen on the given address with a insecure server.
 
-    return 0;
+  }
+  else{
+
+      // Set the authentication mechanism.
+      /*std::shared_ptr<grpc::ServerCredentials> creds =
+      grpc::Loas2ServerCredentials(grpc::Loas2ServerCredentialsOptions());
+      // Listen on the given address with a secure server.
+      builder.AddListeningPort(server_address, creds);*
+      printf("Supposed to be secure \n");
+      builder.AddListeningPort(server_address,
+  grpc::InsecureServerCredentials());
+  }*/
+  LOG(INFO) << "After Listening port";
+  // Register "service" as the instance through which we'll communicate with
+  // clients.
+  builder.RegisterService(&callback_server);
+  // Set up the server to start accepting requests.
+  std::unique_ptr<grpc::Server> server(builder.BuildAndStart());
+  LOG(INFO) << "Server listening on " << server_address;
+
+  // Keep the program running until the server shuts down.
+  server->Wait();
+
+  return 0;
 }

@@ -57,7 +57,10 @@ class Subprocess {
   }
 
   int Join() { return gpr_subprocess_join(process_); }
-  void Interrupt() { gpr_subprocess_interrupt(process_); printf("Interrupt called\n");}
+  void Interrupt() {
+    gpr_subprocess_interrupt(process_);
+    printf("Interrupt called\n");
+  }
 
   ~Subprocess() { gpr_subprocess_destroy(process_); }
 
@@ -129,8 +132,7 @@ int main(int argc, char** argv) {
 
     svr.Interrupt();
     return svr.Join() == 0 ? 0 : 2;
-  }
-  else if (absl::GetFlag(FLAGS_benchmark_name) == "channel") {
+  } else if (absl::GetFlag(FLAGS_benchmark_name) == "channel") {
     printf("Running Channel\n");
     printf("Port: %d\n", port);
 
@@ -140,13 +142,12 @@ int main(int argc, char** argv) {
                      gpr_subprocess_binary_extension()),
         "--bind", grpc_core::JoinHostPort("::", port)};
     Subprocess svr(server_flags);
-    
+
     /* start the client */
     std::vector<std::string> client_flags = {
         absl::StrCat(root, "/memory_usage_callback_client",
                      gpr_subprocess_binary_extension()),
-        "--target", grpc_core::JoinHostPort("127.0.0.1", port),
-        "--nosecure"};
+        "--target", grpc_core::JoinHostPort("127.0.0.1", port), "--nosecure"};
     Subprocess cli(client_flags);
     /* wait for completion */
     if ((status = cli.Join()) != 0) {
