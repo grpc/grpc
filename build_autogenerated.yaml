@@ -5153,6 +5153,34 @@ targets:
   - test/core/security/evaluate_args_test.cc
   deps:
   - grpc_test_util
+- name: event_poller_posix_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - src/core/lib/event_engine/iomgr_engine/ev_epoll1_linux.h
+  - src/core/lib/event_engine/iomgr_engine/event_poller.h
+  - src/core/lib/event_engine/iomgr_engine/event_poller_posix_default.h
+  - src/core/lib/event_engine/iomgr_engine/iomgr_engine_closure.h
+  - src/core/lib/event_engine/iomgr_engine/lockfree_event.h
+  - src/core/lib/event_engine/iomgr_engine/wakeup_fd_eventfd.h
+  - src/core/lib/event_engine/iomgr_engine/wakeup_fd_pipe.h
+  - src/core/lib/event_engine/iomgr_engine/wakeup_fd_posix.h
+  - src/core/lib/event_engine/iomgr_engine/wakeup_fd_posix_default.h
+  src:
+  - src/core/lib/event_engine/iomgr_engine/ev_epoll1_linux.cc
+  - src/core/lib/event_engine/iomgr_engine/event_poller_posix_default.cc
+  - src/core/lib/event_engine/iomgr_engine/lockfree_event.cc
+  - src/core/lib/event_engine/iomgr_engine/wakeup_fd_eventfd.cc
+  - src/core/lib/event_engine/iomgr_engine/wakeup_fd_pipe.cc
+  - src/core/lib/event_engine/iomgr_engine/wakeup_fd_posix_default.cc
+  - test/core/event_engine/iomgr_event_engine/event_poller_posix_test.cc
+  deps:
+  - grpc_test_util
+  platforms:
+  - linux
+  - posix
+  - mac
 - name: examine_stack_test
   gtest: true
   build: test
@@ -6487,6 +6515,20 @@ targets:
   deps:
   - grpc++
   - grpc_test_util
+- name: lock_free_event_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - src/core/lib/event_engine/iomgr_engine/event_poller.h
+  - src/core/lib/event_engine/iomgr_engine/iomgr_engine_closure.h
+  - src/core/lib/event_engine/iomgr_engine/lockfree_event.h
+  src:
+  - src/core/lib/event_engine/iomgr_engine/lockfree_event.cc
+  - test/core/event_engine/iomgr_event_engine/lock_free_event_test.cc
+  deps:
+  - grpc_test_util
+  uses_polling: false
 - name: log_test
   gtest: true
   build: test
@@ -9083,6 +9125,24 @@ targets:
   deps:
   - grpc_test_util
   uses_polling: false
+- name: wakeup_fd_posix_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - src/core/lib/event_engine/iomgr_engine/wakeup_fd_eventfd.h
+  - src/core/lib/event_engine/iomgr_engine/wakeup_fd_pipe.h
+  - src/core/lib/event_engine/iomgr_engine/wakeup_fd_posix.h
+  src:
+  - src/core/lib/event_engine/iomgr_engine/wakeup_fd_eventfd.cc
+  - src/core/lib/event_engine/iomgr_engine/wakeup_fd_pipe.cc
+  - test/core/event_engine/iomgr_event_engine/wakeup_fd_posix_test.cc
+  deps:
+  - grpc_test_util
+  platforms:
+  - linux
+  - posix
+  - mac
 - name: window_overflow_bad_client_test
   gtest: true
   build: test
