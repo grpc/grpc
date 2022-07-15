@@ -38,7 +38,7 @@ static GPR_THREAD_LOCAL(BiggerThanMachineWord) test_var;
 namespace {
 void thd_body(void*) {
   for (size_t i = 0; i < 100000; i++) {
-    BiggerThanMachineWord next = {i, i, uint8_t(i)};
+    BiggerThanMachineWord next = {i, i, static_cast<uint8_t>(i)};
     test_var = next;
     BiggerThanMachineWord read = test_var;
     ASSERT_EQ(read.a, i);

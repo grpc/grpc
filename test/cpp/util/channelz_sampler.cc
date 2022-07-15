@@ -329,7 +329,7 @@ class ChannelzSampler final {
           gpr_log(GPR_ERROR,
                   "GetServers RPC with GetServersRequest.server_start_id=%d, "
                   "failed: %s",
-                  int(server_start_id),
+                  static_cast<int>(server_start_id),
                   get_servers_context.debug_error_string().c_str());
         }
         GPR_ASSERT(0);
@@ -385,7 +385,7 @@ class ChannelzSampler final {
         gpr_log(GPR_ERROR,
                 "GetTopChannels RPC with "
                 "GetTopChannelsRequest.channel_start_id=%d failed: %s",
-                int(channel_start_id),
+                static_cast<int>(channel_start_id),
                 get_top_channels_context.debug_error_string().c_str());
         GPR_ASSERT(0);
       }

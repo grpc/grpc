@@ -119,9 +119,9 @@ uint32_t TransportFlowControl::MaybeSendUpdate(bool writing_anyway) {
       static_cast<uint32_t>(target_window());
   if ((writing_anyway || announced_window_ <= target_announced_window / 2) &&
       announced_window_ != target_announced_window) {
-    const uint32_t announce =
-        static_cast<uint32_t>(Clamp(target_announced_window - announced_window_,
-                                    int64_t(0), kMaxWindowUpdateSize));
+    const uint32_t announce = static_cast<uint32_t>(
+        Clamp(target_announced_window - announced_window_,
+              static_cast<int64_t>(0), kMaxWindowUpdateSize));
     announced_window_ += announce;
     return announce;
   }
@@ -242,22 +242,23 @@ FlowControlAction TransportFlowControl::PeriodicUpdate() {
     }
     // Though initial window 'could' drop to 0, we keep the floor at
     // kMinInitialWindowSize
-    UpdateSetting(
-        &target_initial_window_size_,
-        static_cast<int32_t>(Clamp(target, double(kMinInitialWindowSize),
-                                   double(kMaxInitialWindowSize))),
-        &action, &FlowControlAction::set_send_initial_window_update);
+    UpdateSetting(&target_initial_window_size_,
+                  static_cast<int32_t>(
+                      Clamp(target, static_cast<double>(kMinInitialWindowSize),
+                            static_cast<double>(kMaxInitialWindowSize))),
+                  &action, &FlowControlAction::set_send_initial_window_update);
 
     // get bandwidth estimate and update max_frame accordingly.
     double bw_dbl = bdp_estimator_.EstimateBandwidth();
     // we target the max of BDP or bandwidth in microseconds.
     UpdateSetting(
         &target_frame_size_,
-        static_cast<int32_t>(Clamp(
-            std::max(static_cast<int32_t>(Clamp(bw_dbl, 0.0, double(INT_MAX))) /
-                         1000,
-                     static_cast<int32_t>(target_initial_window_size_)),
-            16384, 16777215)),
+        static_cast<int32_t>(
+            Clamp(std::max(static_cast<int32_t>(Clamp(
+                               bw_dbl, 0.0, static_cast<double>(INT_MAX))) /
+                               1000,
+                           static_cast<int32_t>(target_initial_window_size_)),
+                  16384, 16777215)),
         &action, &FlowControlAction::set_send_max_frame_size_update);
   }
   return UpdateAction(action);
@@ -286,8 +287,8 @@ uint32_t StreamFlowControl::DesiredAnnounceSize() const {
       return std::min(min_progress_size_, kMaxWindowDelta);
     }
   }();
-  return Clamp(desired_window_delta - announced_window_delta_, int64_t(0),
-               kMaxWindowUpdateSize);
+  return Clamp(desired_window_delta - announced_window_delta_,
+               static_cast<int64_t>(0), kMaxWindowUpdateSize);
 }
 
 FlowControlAction StreamFlowControl::UpdateAction(FlowControlAction action) {

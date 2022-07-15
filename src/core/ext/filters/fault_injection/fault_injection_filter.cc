@@ -207,8 +207,8 @@ FaultInjectionFilter::MakeInjectionDecision(
       auto value =
           initial_metadata->GetStringValue(fi_policy->delay_header, &buffer);
       if (value.has_value()) {
-        delay = Duration::Milliseconds(
-            std::max(AsInt<int64_t>(*value).value_or(0), int64_t(0)));
+        delay = Duration::Milliseconds(std::max(
+            AsInt<int64_t>(*value).value_or(0), static_cast<int64_t>(0)));
       }
     }
     if (!fi_policy->delay_percentage_header.empty()) {
