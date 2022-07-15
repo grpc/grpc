@@ -1903,11 +1903,13 @@ grpc_cc_library(
         "loop",
         "map",
         "orphanable",
+        "periodic_update",
         "poll",
         "race",
         "ref_counted_ptr",
         "resource_quota_trace",
         "seq",
+        "time",
         "useful",
     ],
 )
