@@ -15,6 +15,9 @@
 #include "src/core/lib/resource_quota/memory_quota.h"
 
 #include <algorithm>
+#include <atomic>
+#include <random>
+#include <thread>
 #include <vector>
 
 #include "gtest/gtest.h"
@@ -177,6 +180,53 @@ TEST(PressureTrackerTest, ImmediateJump) {
   EXPECT_EQ(tracker.AddSampleAndGetEstimate(0.1), 0.1);
   EXPECT_EQ(tracker.AddSampleAndGetEstimate(0.2), 0.2);
   EXPECT_EQ(tracker.AddSampleAndGetEstimate(0.3), 0.3);
+}
+
+TEST(PressureTrackerTest, Decays) {
+  PressureTracker tracker;
+  {
+    ExecCtx exec_ctx;
+    exec_ctx.TestOnlySetNow(Timestamp::ProcessEpoch() + Duration::Seconds(1));
+    EXPECT_EQ(tracker.AddSampleAndGetEstimate(1.0), 1.0);
+  }
+  double last = 1.0;
+  bool last_decreased = false;
+  for (int i = 0; i < 20000; i++) {
+    ExecCtx exec_ctx;
+    exec_ctx.TestOnlySetNow(Timestamp::ProcessEpoch() + Duration::Seconds(1) +
+                            Duration::Milliseconds(i));
+    double cur = tracker.AddSampleAndGetEstimate(0);
+    if (last_decreased) {
+      EXPECT_EQ(cur, last);  // should not decrease on consequetive milliseconds
+      last_decreased = false;
+    } else {
+      EXPECT_LE(cur, last);
+      last_decreased = cur < last;
+    }
+    last = cur;
+  }
+  EXPECT_LE(last, 0.2);
+}
+
+TEST(PressureTrackerTest, ManyThreads) {
+  PressureTracker tracker;
+  std::vector<std::thread> threads;
+  std::atomic<bool> shutdown{false};
+  for (int i = 0; i < 10; i++) {
+    threads.emplace_back([&tracker, &shutdown] {
+      std::random_device rng;
+      std::uniform_real_distribution<double> dist(0.0, 1.0);
+      while (!shutdown.load(std::memory_order_relaxed)) {
+        ExecCtx exec_ctx;
+        tracker.AddSampleAndGetEstimate(dist(rng));
+      }
+    });
+  }
+  std::this_thread::sleep_for(std::chrono::seconds(5));
+  shutdown.store(true, std::memory_order_relaxed);
+  for (auto& thread : threads) {
+    thread.join();
+  }
 }
 
 }  // namespace testing

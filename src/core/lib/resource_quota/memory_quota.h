@@ -260,7 +260,7 @@ class BasicMemoryQuota final
   void Return(size_t amount);
   // Instantaneous memory pressure approximation.
   std::pair<double, size_t>
-  InstantaneousPressureAndMaxRecommendedAllocationSize() const;
+  InstantaneousPressureAndMaxRecommendedAllocationSize();
   // Get a reclamation queue
   ReclaimerQueue* reclaimer_queue(size_t i) { return &reclaimers_[i]; }
 
