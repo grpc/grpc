@@ -35,13 +35,6 @@ class FailoverTest(xds_k8s_testcase.RegularXdsKubernetesTestCase):
     REPLICA_COUNT = 3
     MAX_RATE_PER_ENDPOINT = 100
 
-    @staticmethod
-    def is_supported(config: skips.TestConfig) -> bool:
-        # Test case implementation seems to be broken for Java and Go.
-        # Core (cpp and python), and Node seem to work fine.
-        # TODO(b/238226704): Remove when the test is fixed.
-        return config.client_lang not in _Lang.JAVA | _Lang.GO | _Lang.CPP
-
     def setUp(self):
         super().setUp()
         self.secondary_server_runner = server_app.KubernetesServerRunner(
