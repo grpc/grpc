@@ -41,6 +41,10 @@
 #include "src/core/lib/promise/activity.h"
 #include "src/core/lib/promise/poll.h"
 
+GPR_GLOBAL_CONFIG_DECLARE_BOOL(
+    grpc_experimental_enable_periodic_resource_quota_reclamation);
+GPR_GLOBAL_CONFIG_DECLARE_INT32(grpc_experimental_max_quota_buffer_size);
+
 namespace grpc_core {
 
 class BasicMemoryQuota;
@@ -299,7 +303,12 @@ class GrpcMemoryAllocatorImpl final : public EventEngineMemoryAllocatorImpl {
     // from  0 to non-zero, then we have more to do, otherwise, we're actually
     // done.
     size_t prev_free = free_bytes_.fetch_add(n, std::memory_order_release);
-    if (donate_back_.Tick()) {
+    const size_t max_quota_buffer_size =
+        GPR_GLOBAL_CONFIG_GET(grpc_experimental_max_quota_buffer_size);
+    if ((max_quota_buffer_size > 0 && prev_free + n > max_quota_buffer_size) ||
+        (GPR_GLOBAL_CONFIG_GET(
+             grpc_experimental_enable_periodic_resource_quota_reclamation) &&
+         donate_back_.Tick())) {
       // Try to immediately return some free'ed memory back to the total quota.
       MaybeDonateBack();
     }

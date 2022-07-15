@@ -37,6 +37,13 @@
 #include "src/core/lib/promise/seq.h"
 #include "src/core/lib/resource_quota/trace.h"
 
+GPR_GLOBAL_CONFIG_DEFINE_BOOL(
+    grpc_experimental_enable_periodic_resource_quota_reclamation, false,
+    "Enable experimental feature to reclaim resource quota periodically");
+GPR_GLOBAL_CONFIG_DEFINE_INT32(
+    grpc_experimental_max_quota_buffer_size, 1024 * 1024,
+    "Maximum size for one memory allocators buffer size against a quota");
+
 namespace grpc_core {
 
 // Maximum number of bytes an allocator will request from a quota in one step.
@@ -250,7 +257,16 @@ absl::optional<size_t> GrpcMemoryAllocatorImpl::TryReserve(
 void GrpcMemoryAllocatorImpl::MaybeDonateBack() {
   size_t free = free_bytes_.load(std::memory_order_relaxed);
   while (free > 0) {
-    const size_t ret = free > 8192 ? free / 2 : free;
+    const size_t max_quota_buffer_size =
+        GPR_GLOBAL_CONFIG_GET(grpc_experimental_max_quota_buffer_size);
+    size_t ret = 0;
+    if (max_quota_buffer_size > 0) {
+      ret = std::max(ret, free - max_quota_buffer_size / 2);
+    }
+    if (GPR_GLOBAL_CONFIG_GET(
+            grpc_experimental_enable_periodic_resource_quota_reclamation)) {
+      ret = std::max(ret, free > 8192 ? free / 2 : free);
+    }
     const size_t new_free = free - ret;
     if (free_bytes_.compare_exchange_weak(free, new_free,
                                           std::memory_order_acq_rel,
