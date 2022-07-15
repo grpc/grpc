@@ -173,6 +173,7 @@ TEST(PressureTrackerTest, NoOp) { PressureTracker(); }
 
 TEST(PressureTrackerTest, ImmediateJump) {
   PressureTracker tracker;
+  ExecCtx exec_ctx;
   EXPECT_EQ(tracker.AddSampleAndGetEstimate(0.1), 0.1);
   EXPECT_EQ(tracker.AddSampleAndGetEstimate(0.2), 0.2);
   EXPECT_EQ(tracker.AddSampleAndGetEstimate(0.3), 0.3);
