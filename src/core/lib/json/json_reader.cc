@@ -128,6 +128,7 @@ class JsonReader {
   std::vector<grpc_error_handle> errors_;
   bool truncated_errors_ = false;
   uint8_t utf8_bytes_remaining_ = 0;
+  uint8_t utf8_first_byte_ = 0;
 
   Json root_value_;
   std::vector<Json*> stack_;
@@ -141,7 +142,7 @@ bool JsonReader::StringAddChar(uint32_t c) {
     case 0:
       if ((c & 0x80) == 0) {
         utf8_bytes_remaining_ = 0;
-      } else if ((c & 0xe0) == 0xc0) {
+      } else if ((c & 0xe0) == 0xc0 && c > 0xc1) {
         utf8_bytes_remaining_ = 1;
       } else if ((c & 0xf0) == 0xe0) {
         utf8_bytes_remaining_ = 2;
@@ -150,10 +151,24 @@ bool JsonReader::StringAddChar(uint32_t c) {
       } else {
         return false;
       }
+      utf8_first_byte_ = c;
       break;
     case 1:
     case 2:
+      /// Reference: http://www.unicode.org/versions/Unicode6.2.0/ch03.pdf
+      /// Table 3-7
+      if ((utf8_first_byte_ == 0xe0 && c < 0xa0) ||
+          (utf8_first_byte_ == 0xed && c > 0x9f)) {
+        return false;
+      }
     case 3:
+      /// Reference: http://www.unicode.org/versions/Unicode6.2.0/ch03.pdf
+      /// Table 3-7
+      if ((utf8_first_byte_ == 0xf0 && c < 0x90) ||
+          (utf8_first_byte_ == 0xf4 && c > 0x8f)) {
+        return false;
+      }
+
       if ((c & 0xc0) != 0x80) return false;
       --utf8_bytes_remaining_;
       break;
