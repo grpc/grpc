@@ -51,6 +51,8 @@ class ServerCallbackImpl final
   }
 };
 
+static void sigint_handler(int /*x*/) { _exit(0); }
+
 ABSL_FLAG(std::string, bind, "", "Bind host:port");
 ABSL_FLAG(bool, secure, false, "Use SSL Credentials");
 
@@ -94,6 +96,8 @@ int main(int argc, char** argv) {
   // clients.
   builder.RegisterService(&callback_server);
   // Set up the server to start accepting requests.
+
+  signal(SIGINT, sigint_handler);
   std::unique_ptr<grpc::Server> server(builder.BuildAndStart());
   LOG(INFO) << "Server listening on " << server_address;
 
