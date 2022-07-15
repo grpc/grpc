@@ -260,7 +260,7 @@ void GrpcMemoryAllocatorImpl::MaybeDonateBack() {
     const size_t max_quota_buffer_size =
         GPR_GLOBAL_CONFIG_GET(grpc_experimental_max_quota_buffer_size);
     size_t ret = 0;
-    if (max_quota_buffer_size > 0) {
+    if (max_quota_buffer_size > 0 && free > max_quota_buffer_size / 2) {
       ret = std::max(ret, free - max_quota_buffer_size / 2);
     }
     if (GPR_GLOBAL_CONFIG_GET(
