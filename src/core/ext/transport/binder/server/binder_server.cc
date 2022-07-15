@@ -174,7 +174,7 @@ class BinderServerListener : public Server::ListenerInterface {
   absl::Status OnSetupTransport(transaction_code_t code,
                                 grpc_binder::ReadableParcel* parcel, int uid) {
     ExecCtx exec_ctx;
-    if (grpc_binder::BinderTransportTxCode(code) !=
+    if (static_cast<grpc_binder::BinderTransportTxCode>(code) !=
         grpc_binder::BinderTransportTxCode::SETUP_TRANSPORT) {
       return absl::InvalidArgumentError("Not a SETUP_TRANSPORT request");
     }

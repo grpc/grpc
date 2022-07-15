@@ -204,8 +204,9 @@ void OpenCensusCallTracer::OpenCensusCallAttemptTracer::RecordEnd(
        {RpcClientReceivedMessagesPerRpc(), recv_message_count_}},
       tags);
   if (status_code_ != absl::StatusCode::kOk) {
-    context_.Span().SetStatus(opencensus::trace::StatusCode(status_code_),
-                              StatusCodeToString(status_code_));
+    context_.Span().SetStatus(
+        static_cast<opencensus::trace::StatusCode>(status_code_),
+        StatusCodeToString(status_code_));
   }
   context_.EndSpan();
   grpc_core::MutexLock lock(&parent_->mu_);
