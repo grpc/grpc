@@ -29,11 +29,13 @@
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
+#include <grpc/support/time.h>
 
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gprpp/host_port.h"
 #include "test/core/util/port.h"
 #include "test/core/util/subprocess.h"
+#include "test/core/util/test_config.h"
 
 ABSL_FLAG(std::string, benchmark_name, "channel", "Which benchmark to run");
 ABSL_FLAG(int, size, 50000, "Number of channels/calls");
@@ -138,7 +140,7 @@ int main(int argc, char** argv) {
                      gpr_subprocess_binary_extension()),
         "--bind", grpc_core::JoinHostPort("::", port)};
     Subprocess svr(server_flags);
-
+    gpr_sleep_until(grpc_timeout_seconds_to_deadline(10));
     /* start the client */
     std::vector<std::string> client_flags = {
         absl::StrCat(root, "/memory_usage_callback_client",

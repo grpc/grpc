@@ -74,14 +74,10 @@ int main(int argc, char** argv) {
     
     LOG(INFO)<<"Before Listening port";
 
-    /*
-
-    
-
 
     ServerCallbackImpl callback_server;
     grpc::ServerBuilder builder;
-    builder.AddListeningPort(server_address, grpc::InsecureServerCredentials());*/
+    builder.AddListeningPort(server_address, grpc::InsecureServerCredentials());
     /*if(!absl::GetFlag(FLAGS_secure))
     {
         // Listen on the given address with a insecure server.
@@ -96,7 +92,7 @@ int main(int argc, char** argv) {
         builder.AddListeningPort(server_address, creds);*
         printf("Supposed to be secure \n");
         builder.AddListeningPort(server_address, grpc::InsecureServerCredentials());
-    }*
+    }*/
     LOG(INFO)<<"After Listening port";
     // Register "service" as the instance through which we'll communicate with
     // clients.
@@ -106,7 +102,7 @@ int main(int argc, char** argv) {
     LOG(INFO) << "Server listening on " << server_address;
 
     // Keep the program running until the server shuts down.
-    server->Wait();*/
+    server->Wait();
 
     return 0;
 }
