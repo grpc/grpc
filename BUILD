@@ -143,11 +143,6 @@ config_setting(
     values = {"define": "use_strict_warning=true"},
 )
 
-config_setting(
-    name = "disable_use_abseil_status",
-    values = {"define": "use_abseil_status=false"},
-)
-
 python_config_settings()
 
 # This should be updated along with build_handwritten.yaml
@@ -2078,7 +2073,6 @@ grpc_cc_library(
     ],
     hdrs = [
         "src/core/lib/iomgr/error.h",
-        "src/core/lib/iomgr/error_internal.h",
     ],
     deps = [
         "gpr",
@@ -2192,7 +2186,6 @@ grpc_cc_library(
 grpc_cc_library(
     name = "iomgr_timer",
     srcs = [
-        "src/core/lib/iomgr/time_averaged_stats.cc",
         "src/core/lib/iomgr/timer.cc",
         "src/core/lib/iomgr/timer_generic.cc",
         "src/core/lib/iomgr/timer_heap.cc",
@@ -2203,7 +2196,6 @@ grpc_cc_library(
         "src/core/lib/iomgr/timer_generic.h",
         "src/core/lib/iomgr/timer_heap.h",
         "src/core/lib/iomgr/timer_manager.h",
-        "src/core/lib/iomgr/time_averaged_stats.h",
     ] + [
         # TODO(hork): deduplicate
         "src/core/lib/iomgr/iomgr.h",
@@ -2221,6 +2213,7 @@ grpc_cc_library(
         "grpc_trace",
         "iomgr_port",
         "time",
+        "time_averaged_stats",
         "useful",
     ],
 )
@@ -2289,10 +2282,10 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
-    name = "iomgr_ee_time_averaged_stats",
-    srcs = ["src/core/lib/event_engine/iomgr_engine/time_averaged_stats.cc"],
+    name = "time_averaged_stats",
+    srcs = ["src/core/lib/gprpp/time_averaged_stats.cc"],
     hdrs = [
-        "src/core/lib/event_engine/iomgr_engine/time_averaged_stats.h",
+        "src/core/lib/gprpp/time_averaged_stats.h",
     ],
     tags = ["grpc-autodeps"],
     deps = ["gpr_base"],
@@ -2316,8 +2309,8 @@ grpc_cc_library(
     deps = [
         "event_engine_base_hdrs",
         "gpr_base",
-        "iomgr_ee_time_averaged_stats",
         "time",
+        "time_averaged_stats",
         "useful",
     ],
 )
@@ -2352,6 +2345,185 @@ grpc_cc_library(
         "gpr_codegen",
         "iomgr_ee_timer",
         "time",
+    ],
+)
+
+grpc_cc_library(
+    name = "iomgr_ee_event_poller",
+    srcs = [],
+    hdrs = [
+        "src/core/lib/event_engine/iomgr_engine/event_poller.h",
+    ],
+    external_deps = [
+        "absl/status",
+        "absl/strings",
+    ],
+    tags = ["grpc-autodeps"],
+    deps = [
+        "event_engine_base_hdrs",
+        "gpr_platform",
+        "iomgr_ee_closure",
+        "time",
+    ],
+)
+
+grpc_cc_library(
+    name = "iomgr_ee_closure",
+    srcs = [],
+    hdrs = [
+        "src/core/lib/event_engine/iomgr_engine/iomgr_engine_closure.h",
+    ],
+    external_deps = [
+        "absl/status",
+        "absl/utility",
+    ],
+    tags = ["grpc-autodeps"],
+    deps = [
+        "event_engine_base_hdrs",
+        "gpr_platform",
+    ],
+)
+
+grpc_cc_library(
+    name = "iomgr_ee_lockfree_event",
+    srcs = [
+        "src/core/lib/event_engine/iomgr_engine/lockfree_event.cc",
+    ],
+    hdrs = [
+        "src/core/lib/event_engine/iomgr_engine/lockfree_event.h",
+    ],
+    external_deps = ["absl/status"],
+    tags = ["grpc-autodeps"],
+    deps = [
+        "gpr_base",
+        "iomgr_ee_closure",
+        "iomgr_ee_event_poller",
+        "status_helper",
+    ],
+)
+
+grpc_cc_library(
+    name = "iomgr_ee_wakeup_fd_posix",
+    hdrs = [
+        "src/core/lib/event_engine/iomgr_engine/wakeup_fd_posix.h",
+    ],
+    external_deps = ["absl/status"],
+    tags = ["grpc-autodeps"],
+    deps = ["gpr_platform"],
+)
+
+grpc_cc_library(
+    name = "iomgr_ee_wakeup_fd_posix_pipe",
+    srcs = [
+        "src/core/lib/event_engine/iomgr_engine/wakeup_fd_pipe.cc",
+    ],
+    hdrs = [
+        "src/core/lib/event_engine/iomgr_engine/wakeup_fd_pipe.h",
+    ],
+    external_deps = [
+        "absl/memory",
+        "absl/status",
+        "absl/status:statusor",
+        "absl/strings",
+    ],
+    tags = ["grpc-autodeps"],
+    deps = [
+        "gpr_base",
+        "gpr_platform",
+        "iomgr_ee_wakeup_fd_posix",
+        "iomgr_port",
+    ],
+)
+
+grpc_cc_library(
+    name = "iomgr_ee_wakeup_fd_posix_eventfd",
+    srcs = [
+        "src/core/lib/event_engine/iomgr_engine/wakeup_fd_eventfd.cc",
+    ],
+    hdrs = [
+        "src/core/lib/event_engine/iomgr_engine/wakeup_fd_eventfd.h",
+    ],
+    external_deps = [
+        "absl/memory",
+        "absl/status",
+        "absl/status:statusor",
+        "absl/strings",
+    ],
+    tags = ["grpc-autodeps"],
+    deps = [
+        "gpr_base",
+        "gpr_platform",
+        "iomgr_ee_wakeup_fd_posix",
+        "iomgr_port",
+    ],
+)
+
+grpc_cc_library(
+    name = "iomgr_ee_wakeup_fd_posix_default",
+    srcs = [
+        "src/core/lib/event_engine/iomgr_engine/wakeup_fd_posix_default.cc",
+    ],
+    hdrs = [
+        "src/core/lib/event_engine/iomgr_engine/wakeup_fd_posix_default.h",
+    ],
+    external_deps = [
+        "absl/status",
+        "absl/status:statusor",
+    ],
+    tags = ["grpc-autodeps"],
+    deps = [
+        "gpr_platform",
+        "iomgr_ee_wakeup_fd_posix",
+        "iomgr_ee_wakeup_fd_posix_eventfd",
+        "iomgr_ee_wakeup_fd_posix_pipe",
+        "iomgr_port",
+    ],
+)
+
+grpc_cc_library(
+    name = "iomgr_ee_poller_posix_epoll1",
+    srcs = [
+        "src/core/lib/event_engine/iomgr_engine/ev_epoll1_linux.cc",
+    ],
+    hdrs = [
+        "src/core/lib/event_engine/iomgr_engine/ev_epoll1_linux.h",
+    ],
+    external_deps = [
+        "absl/base:core_headers",
+        "absl/memory",
+        "absl/status",
+        "absl/status:statusor",
+        "absl/strings",
+        "absl/synchronization",
+    ],
+    tags = ["grpc-autodeps"],
+    deps = [
+        "gpr_base",
+        "gpr_codegen",
+        "gpr_platform",
+        "iomgr_ee_closure",
+        "iomgr_ee_event_poller",
+        "iomgr_ee_lockfree_event",
+        "iomgr_ee_wakeup_fd_posix",
+        "iomgr_ee_wakeup_fd_posix_default",
+        "iomgr_port",
+        "time",
+    ],
+)
+
+grpc_cc_library(
+    name = "iomgr_ee_poller_posix_default",
+    srcs = [
+        "src/core/lib/event_engine/iomgr_engine/event_poller_posix_default.cc",
+    ],
+    hdrs = [
+        "src/core/lib/event_engine/iomgr_engine/event_poller_posix_default.h",
+    ],
+    tags = ["grpc-autodeps"],
+    deps = [
+        "gpr_platform",
+        "iomgr_ee_event_poller",
+        "iomgr_ee_poller_posix_epoll1",
     ],
 )
 
@@ -2753,7 +2925,6 @@ grpc_cc_library(
     [
         "src/core/lib/iomgr/closure.h",
         "src/core/lib/iomgr/error.h",
-        "src/core/lib/iomgr/error_internal.h",
         "src/core/lib/slice/slice_internal.h",
         "src/core/lib/slice/slice_string_helpers.h",
         "src/core/lib/iomgr/exec_ctx.h",
