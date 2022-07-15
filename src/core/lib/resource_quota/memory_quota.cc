@@ -37,6 +37,9 @@
 #include "src/core/lib/promise/seq.h"
 #include "src/core/lib/resource_quota/trace.h"
 
+GPR_GLOBAL_CONFIG_DEFINE_BOOL(grpc_experimental_smooth_memory_presure, false,
+                              "smooth the value of memory pressure over time");
+
 namespace grpc_core {
 
 // Maximum number of bytes an allocator will request from a quota in one step.
@@ -458,6 +461,43 @@ BasicMemoryQuota::InstantaneousPressureAndMaxRecommendedAllocationSize() const {
   if (pressure > 1.0) pressure = 1.0;
   return std::make_pair(pressure, quota_size / 16);
 }
+
+//
+// PressureTracker
+//
+
+namespace memory_quota_detail {
+
+double PressureTracker::AddSampleAndGetEstimate(double sample) {
+  double max_so_far = max_this_round_.load(std::memory_order_relaxed);
+  double current_estimate = current_estimate_.load(std::memory_order_relaxed);
+  const bool new_round = update_.Tick();
+  if (new_round) {
+    // Reset the round tracker with the new sample.
+    max_this_round_.store(sample, std::memory_order_relaxed);
+    // Update the estimate.
+    if (sample > max_so_far) max_so_far = sample;
+    double new_estimate = current_estimate * 0.9 + max_so_far * 0.1;
+    if (max_so_far > new_estimate) new_estimate = sample;
+    current_estimate_.store(new_estimate, std::memory_order_relaxed);
+    return new_estimate;
+  } else {
+    if (sample > max_so_far) {
+      max_this_round_.compare_exchange_weak(max_so_far, sample,
+                                            std::memory_order_relaxed,
+                                            std::memory_order_relaxed);
+    }
+    if (sample > current_estimate) {
+      current_estimate_.compare_exchange_weak(current_estimate, sample,
+                                              std::memory_order_relaxed,
+                                              std::memory_order_relaxed);
+      current_estimate = sample;
+    }
+    return current_estimate;
+  }
+}
+
+}  // namespace memory_quota_detail
 
 //
 // MemoryQuota

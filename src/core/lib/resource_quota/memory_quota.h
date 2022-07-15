@@ -39,6 +39,7 @@
 #include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/promise/activity.h"
 #include "src/core/lib/promise/poll.h"
+#include "src/core/lib/resource_quota/periodic_update.h"
 
 namespace grpc_core {
 
@@ -220,6 +221,21 @@ class ReclaimerQueue {
   std::shared_ptr<State> state_;
 };
 
+namespace memory_quota_detail {
+// Utility to track memory pressure.
+// Tries to be conservative (returns a higher pressure than there may actually
+// be) but to be eventually accurate.
+class PressureTracker {
+ public:
+  double AddSampleAndGetEstimate(double sample);
+
+ private:
+  std::atomic<double> max_this_round_{0.0};
+  std::atomic<double> current_estimate_{0.0};
+  PeriodicUpdate update_{Duration::Seconds(1)};
+};
+}  // namespace memory_quota_detail
+
 class BasicMemoryQuota final
     : public std::enable_shared_from_this<BasicMemoryQuota> {
  public:
@@ -276,6 +292,8 @@ class BasicMemoryQuota final
   // We also increment this counter on completion of a sweep, as an indicator
   // that the wait has ended.
   std::atomic<uint64_t> reclamation_counter_{0};
+  // Memory pressure smoothing
+  memory_quota_detail::PressureTracker pressure_tracker_;
   // The name of this quota - used for debugging/tracing/etc..
   std::string name_;
 };

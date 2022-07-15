@@ -161,6 +161,26 @@ TEST(MemoryQuotaTest, NoBunchingIfIdle) {
 }
 
 }  // namespace testing
+
+//
+// PressureTrackerTest
+//
+
+namespace memory_quota_detail {
+namespace testing {
+
+TEST(PressureTrackerTest, NoOp) { PressureTracker(); }
+
+TEST(PressureTrackerTest, ImmediateJump) {
+  PressureTracker tracker;
+  EXPECT_EQ(tracker.AddSampleAndGetEstimate(0.1), 0.1);
+  EXPECT_EQ(tracker.AddSampleAndGetEstimate(0.2), 0.2);
+  EXPECT_EQ(tracker.AddSampleAndGetEstimate(0.3), 0.3);
+}
+
+}  // namespace testing
+}  // namespace memory_quota_detail
+
 }  // namespace grpc_core
 
 // Hook needed to run ExecCtx outside of iomgr.
