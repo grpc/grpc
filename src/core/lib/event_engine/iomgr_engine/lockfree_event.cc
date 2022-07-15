@@ -157,7 +157,7 @@ void LockfreeEvent::NotifyOn(IomgrEngineClosure* closure) {
     }
   }
 
-  GPR_UNREACHABLE_CODE(return);
+  GPR_UNREACHABLE_CODE(return );
 }
 
 bool LockfreeEvent::SetShutdown(absl::Status shutdown_error) {
