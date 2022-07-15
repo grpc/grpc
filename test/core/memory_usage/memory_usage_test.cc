@@ -25,6 +25,8 @@
 #include "absl/flags/flag.h"
 #include "absl/flags/parse.h"
 #include "absl/strings/str_cat.h"
+#include "util/logging.h"
+
 
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
@@ -59,7 +61,7 @@ class Subprocess {
   int Join() { return gpr_subprocess_join(process_); }
   void Interrupt() {
     gpr_subprocess_interrupt(process_);
-    printf("Interrupt called\n");
+    LOG(INFO)<<"Interrupt called";
   }
 
   ~Subprocess() { gpr_subprocess_destroy(process_); }
@@ -133,8 +135,7 @@ int main(int argc, char** argv) {
     svr.Interrupt();
     return svr.Join() == 0 ? 0 : 2;
   } else if (absl::GetFlag(FLAGS_benchmark_name) == "channel") {
-    printf("Running Channel\n");
-    printf("Port: %d\n", port);
+    LOG(INFO)<<"Port: "<< port;
 
     /* start the server */
     std::vector<std::string> server_flags = {
@@ -154,7 +155,6 @@ int main(int argc, char** argv) {
       printf("client failed with: %d", status);
       return 1;
     }
-    printf("Before Interrupt\n");
     svr.Interrupt();
     return svr.Join() == 0 ? 0 : 2;
   }

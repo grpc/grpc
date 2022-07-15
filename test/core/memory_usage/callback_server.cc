@@ -57,8 +57,6 @@ ABSL_FLAG(bool, secure, false, "Use SSL Credentials");
 int main(int argc, char** argv) {
   absl::ParseCommandLine(argc, argv);
   LOG(INFO) << "Server Process Started";
-  LOG(INFO) << absl::GetFlag(FLAGS_bind);
-  LOG(INFO) << "IS THIS STILL WORKING";
   // grpc_slice slice = grpc_slice_from_copied_string("x");
   char* fake_argv[1];
 
@@ -70,9 +68,8 @@ int main(int argc, char** argv) {
   // absl::SetFlag(&FLAGS_alsologtostderr, true);
   LOG(INFO) << "After Server Init";
   std::string server_address = absl::GetFlag(FLAGS_bind);
-  LOG(INFO) << server_address;
+  //LOG(INFO) << server_address;
 
-  LOG(INFO) << "Before Listening port";
 
   ServerCallbackImpl callback_server;
   grpc::ServerBuilder builder;
@@ -93,7 +90,6 @@ int main(int argc, char** argv) {
       builder.AddListeningPort(server_address,
   grpc::InsecureServerCredentials());
   }*/
-  LOG(INFO) << "After Listening port";
   // Register "service" as the instance through which we'll communicate with
   // clients.
   builder.RegisterService(&callback_server);

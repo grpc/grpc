@@ -91,7 +91,7 @@ int main(int argc, char** argv) {
   fake_argv[0] = argv[0];
   grpc::testing::TestEnvironment env(&argc, argv);
 
-  grpc_init();
+  //grpc_init();
   LOG(INFO) << "After Client Init";
 
   // Set the authentication mechanism.
@@ -110,6 +110,6 @@ int main(int argc, char** argv) {
   client.UnaryCall([]() {
     LOG(INFO) << "ON DONE\n";
   });  // may need to add the on done parameter
-  LOG(INFO) << "Done";
+  LOG(INFO) << "Client Done";
   return 0;
 }
