@@ -20,7 +20,6 @@
 
 #include <errno.h>
 #include <string.h>
-#include <unistd.h>
 
 #include <set>
 #include <utility>
@@ -49,6 +48,7 @@
 #define ERRNO WSAGetLastError()
 #else
 #include <fcntl.h>
+#include <unistd.h>
 
 #define BAD_SOCKET_RETURN_VAL (-1)
 #define CLOSE_SOCKET close
