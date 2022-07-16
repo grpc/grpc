@@ -16,6 +16,7 @@
 
 #include <algorithm>
 #include <atomic>
+#include <chrono>
 #include <random>
 #include <thread>
 #include <vector>
@@ -212,6 +213,7 @@ TEST(PressureTrackerTest, ManyThreads) {
   PressureTracker tracker;
   std::vector<std::thread> threads;
   std::atomic<bool> shutdown{false};
+  threads.reserve(10);
   for (int i = 0; i < 10; i++) {
     threads.emplace_back([&tracker, &shutdown] {
       std::random_device rng;
