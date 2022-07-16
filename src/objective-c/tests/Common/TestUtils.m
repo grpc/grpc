@@ -16,9 +16,20 @@
 
 #import "TestUtils.h"
 
+#import <XCTest/XCTest.h>
+
+#import <GRPCClient/GRPCCall+ChannelArg.h>
+#import <GRPCClient/GRPCCall+Tests.h>
+
 // Utility macro to stringize preprocessor defines
 #define NSStringize_helper(x) #x
 #define NSStringize(x) @NSStringize_helper(x)
+
+// Default test flake repeat counts
+static const NSUInteger kGRPCDefaultTestFlakeRepeats = 2;
+
+// Default interop local test timeout.
+const NSTimeInterval GRPCInteropTestTimeoutDefault = 3.0;
 
 NSString *GRPCGetLocalInteropTestServerAddressPlainText() {
   static NSString *address;
@@ -50,6 +61,26 @@ NSString *GRPCGetRemoteInteropTestServerAddress() {
   return address;
 }
 
+// Helper function to retrieve falke repeat from env variable settings.
+static NSUInteger GRPCGetTestFlakeRepeats() {
+  static NSUInteger repeats = kGRPCDefaultTestFlakeRepeats;
+  static dispatch_once_t onceToken;
+  dispatch_once(&onceToken, ^{
+    NSString *repeatStr = [NSProcessInfo processInfo].environment[@"FLAKE_TEST_REPEATS"];
+    if (repeatStr != nil) {
+      repeats = [repeatStr integerValue];
+    }
+  });
+  return repeats;
+}
+
+void GRPCResetCallConnections() {
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wdeprecated-declarations"
+  [GRPCCall closeOpenConnections];
+#pragma clang diagnostic pop
+}
+
 void GRPCPrintInteropTestServerDebugInfo() {
   NSLog(@"local interop env: %@  macro: %@",
         [NSProcessInfo processInfo].environment[@"HOST_PORT_LOCAL"], NSStringize(HOST_PORT_LOCAL));
@@ -59,4 +90,31 @@ void GRPCPrintInteropTestServerDebugInfo() {
   NSLog(@"remote interop env: %@  macro: %@",
         [NSProcessInfo processInfo].environment[@"HOST_PORT_REMOTE"],
         NSStringize(HOST_PORT_REMOTE));
+}
+
+BOOL GRPCTestRunWithFlakeRepeats(GRPCTestRunBlock testBlock) {
+  NSInteger repeats = GRPCGetTestFlakeRepeats();
+  NSInteger runs = 0;
+
+  while (runs < repeats) {
+    __block XCTWaiterResult result;
+    GRPCResetCallConnections();
+
+    testBlock(^(XCTestCase *testCase, NSArray<XCTestExpectation *> *expectations,
+                NSTimeInterval timeout) {
+      if (runs < repeats - 1) {
+        result = [XCTWaiter waitForExpectations:expectations timeout:timeout];
+      } else {
+        XCTWaiter *waiter = [[XCTWaiter alloc] initWithDelegate:testCase];
+        result = [waiter waitForExpectations:expectations timeout:timeout];
+      }
+    });
+
+    if (result == XCTWaiterResultCompleted) {
+      return YES;
+    }
+    runs += 1;
+  }
+
+  return NO;
 }

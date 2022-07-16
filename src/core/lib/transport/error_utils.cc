@@ -31,10 +31,6 @@
 #include "src/core/lib/gprpp/status_helper.h"
 #include "src/core/lib/transport/status_conversion.h"
 
-#ifndef GRPC_ERROR_IS_ABSEIL_STATUS
-#include "src/core/lib/iomgr/error_internal.h"
-#endif
-
 static grpc_error_handle recursively_find_error_with_field(
     grpc_error_handle error, grpc_error_ints which) {
   intptr_t unused;
@@ -42,25 +38,11 @@ static grpc_error_handle recursively_find_error_with_field(
   if (grpc_error_get_int(error, which, &unused)) {
     return error;
   }
-#ifdef GRPC_ERROR_IS_ABSEIL_STATUS
   std::vector<absl::Status> children = grpc_core::StatusGetChildren(error);
   for (const absl::Status& child : children) {
     grpc_error_handle result = recursively_find_error_with_field(child, which);
     if (!GRPC_ERROR_IS_NONE(result)) return result;
   }
-#else
-  if (grpc_error_is_special(error)) return GRPC_ERROR_NONE;
-  // Otherwise, search through its children.
-  uint8_t slot = error->first_err;
-  while (slot != UINT8_MAX) {
-    grpc_linked_error* lerr =
-        reinterpret_cast<grpc_linked_error*>(error->arena + slot);
-    grpc_error_handle result =
-        recursively_find_error_with_field(lerr->err, which);
-    if (result) return result;
-    slot = lerr->next;
-  }
-#endif
   return GRPC_ERROR_NONE;
 }
 
@@ -113,9 +95,7 @@ void grpc_error_get_status(grpc_error_handle error,
     status = grpc_http2_error_to_grpc_status(
         static_cast<grpc_http2_error_code>(integer), deadline);
   } else {
-#ifdef GRPC_ERROR_IS_ABSEIL_STATUS
     status = static_cast<grpc_status_code>(found_error.code());
-#endif
   }
   if (code != nullptr) *code = status;
 
@@ -143,11 +123,7 @@ void grpc_error_get_status(grpc_error_handle error,
                             message)) {
       if (!grpc_error_get_str(found_error, GRPC_ERROR_STR_DESCRIPTION,
                               message)) {
-#ifdef GRPC_ERROR_IS_ABSEIL_STATUS
         *message = grpc_error_std_string(error);
-#else
-        *message = "unknown error";
-#endif
       }
     }
   }
@@ -179,23 +155,11 @@ bool grpc_error_has_clear_grpc_status(grpc_error_handle error) {
   if (grpc_error_get_int(error, GRPC_ERROR_INT_GRPC_STATUS, &unused)) {
     return true;
   }
-#ifdef GRPC_ERROR_IS_ABSEIL_STATUS
   std::vector<absl::Status> children = grpc_core::StatusGetChildren(error);
   for (const absl::Status& child : children) {
     if (grpc_error_has_clear_grpc_status(child)) {
       return true;
     }
   }
-#else
-  uint8_t slot = error->first_err;
-  while (slot != UINT8_MAX) {
-    grpc_linked_error* lerr =
-        reinterpret_cast<grpc_linked_error*>(error->arena + slot);
-    if (grpc_error_has_clear_grpc_status(lerr->err)) {
-      return true;
-    }
-    slot = lerr->next;
-  }
-#endif
   return false;
 }

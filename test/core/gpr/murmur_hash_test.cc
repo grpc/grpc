@@ -20,6 +20,8 @@
 
 #include <string.h>
 
+#include <gtest/gtest.h>
+
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
 
@@ -65,11 +67,15 @@ static void verification_test(hash_func hash, uint32_t expected) {
   }
 }
 
-int main(int argc, char** argv) {
-  grpc::testing::TestEnvironment env(&argc, argv);
+TEST(MurmurHashTest, MainTest) {
   /* basic tests to verify that things don't crash */
   gpr_murmur_hash3("", 0, 0);
   gpr_murmur_hash3("xyz", 3, 0);
   verification_test(gpr_murmur_hash3, 0xB0F57EE3);
-  return 0;
+}
+
+int main(int argc, char** argv) {
+  grpc::testing::TestEnvironment env(&argc, argv);
+  ::testing::InitGoogleTest(&argc, argv);
+  return RUN_ALL_TESTS();
 }

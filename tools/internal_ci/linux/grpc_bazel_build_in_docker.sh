@@ -30,17 +30,6 @@ bazel_build_with_strict_warnings/bazel_wrapper \
   //examples/... \
   -//examples/android/binder/...
 
-# TODO(veblush): Remove this test after migration to abseil-status is done.
-python3 tools/run_tests/python_utils/bazel_report_helper.py --report_path bazel_build_with_abseil_status
-bazel_build_with_abseil_status/bazel_wrapper \
-  --bazelrc=tools/remote_build/include/test_locally_with_resultstore_results.bazelrc \
-  build \
-  --define=use_strict_warning=true --define=use_abseil_status=false \
-  -- \
-  //src/core/... \
-  //src/compiler/... \
-  //test/...
-
 # TODO(jtattersmusch): Adding a build here for --define=grpc_no_xds is not ideal
 # and we should find a better place for this. Refer
 # https://github.com/grpc/grpc/pull/24536#pullrequestreview-517466531 for more
