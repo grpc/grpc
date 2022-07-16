@@ -28,7 +28,6 @@ flags.adopt_module_key_flags(xds_k8s_testcase)
 # Type aliases
 _XdsTestServer = xds_k8s_testcase.XdsTestServer
 _XdsTestClient = xds_k8s_testcase.XdsTestClient
-_Lang = skips.Lang
 
 
 class FailoverTest(xds_k8s_testcase.RegularXdsKubernetesTestCase):
@@ -37,10 +36,9 @@ class FailoverTest(xds_k8s_testcase.RegularXdsKubernetesTestCase):
 
     @staticmethod
     def is_supported(config: skips.TestConfig) -> bool:
-        # Test case implementation seems to be broken for Java and Go.
-        # Core (cpp and python), and Node seem to work fine.
-        # TODO(b/238226704): Remove when the test is fixed.
-        return config.client_lang not in _Lang.JAVA | _Lang.GO
+        # TODO(b/238226704): Remove when the fix for selecting correct
+        #  cluster is backported.
+        return config.version_gte('master')
 
     def setUp(self):
         super().setUp()

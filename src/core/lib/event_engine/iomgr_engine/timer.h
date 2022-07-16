@@ -33,10 +33,10 @@
 
 #include <grpc/event_engine/event_engine.h>
 
-#include "src/core/lib/event_engine/iomgr_engine/time_averaged_stats.h"
 #include "src/core/lib/event_engine/iomgr_engine/timer_heap.h"
 #include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/gprpp/time.h"
+#include "src/core/lib/gprpp/time_averaged_stats.h"
 
 namespace grpc_event_engine {
 namespace iomgr_engine {
@@ -151,7 +151,7 @@ class TimerList {
         ABSL_LOCKS_EXCLUDED(mu);
 
     grpc_core::Mutex mu;
-    TimeAveragedStats stats ABSL_GUARDED_BY(mu);
+    grpc_core::TimeAveragedStats stats ABSL_GUARDED_BY(mu);
     /* All and only timers with deadlines < this will be in the heap. */
     grpc_core::Timestamp queue_deadline_cap ABSL_GUARDED_BY(mu);
     /* The deadline of the next timer due in this shard. */

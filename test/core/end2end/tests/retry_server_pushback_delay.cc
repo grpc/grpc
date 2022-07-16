@@ -145,7 +145,7 @@ static void test_retry_server_pushback_delay(grpc_end2end_test_config config) {
   grpc_end2end_test_fixture f =
       begin_test(config, "retry_server_pushback_delay", &client_args, nullptr);
 
-  cq_verifier* cqv = cq_verifier_create(f.cq);
+  grpc_core::CqVerifier cqv(f.cq);
 
   gpr_timespec deadline = five_seconds_from_now();
   c = grpc_channel_create_call(f.client, nullptr, GRPC_PROPAGATE_DEFAULTS, f.cq,
@@ -194,8 +194,8 @@ static void test_retry_server_pushback_delay(grpc_end2end_test_config config) {
       grpc_server_request_call(f.server, &s, &call_details,
                                &request_metadata_recv, f.cq, f.cq, tag(101));
   GPR_ASSERT(GRPC_CALL_OK == error);
-  CQ_EXPECT_COMPLETION(cqv, tag(101), true);
-  cq_verify(cqv);
+  cqv.Expect(tag(101), true);
+  cqv.Verify();
 
   peer = grpc_call_get_peer(s);
   GPR_ASSERT(peer != nullptr);
@@ -224,8 +224,8 @@ static void test_retry_server_pushback_delay(grpc_end2end_test_config config) {
                                 nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
-  CQ_EXPECT_COMPLETION(cqv, tag(102), true);
-  cq_verify(cqv);
+  cqv.Expect(tag(102), true);
+  cqv.Verify();
 
   gpr_timespec before_retry = gpr_now(GPR_CLOCK_MONOTONIC);
 
@@ -239,8 +239,8 @@ static void test_retry_server_pushback_delay(grpc_end2end_test_config config) {
       grpc_server_request_call(f.server, &s, &call_details,
                                &request_metadata_recv, f.cq, f.cq, tag(201));
   GPR_ASSERT(GRPC_CALL_OK == error);
-  CQ_EXPECT_COMPLETION(cqv, tag(201), true);
-  cq_verify(cqv);
+  cqv.Expect(tag(201), true);
+  cqv.Verify();
 
   gpr_timespec after_retry = gpr_now(GPR_CLOCK_MONOTONIC);
   gpr_timespec retry_delay = gpr_time_sub(after_retry, before_retry);
@@ -279,9 +279,9 @@ static void test_retry_server_pushback_delay(grpc_end2end_test_config config) {
                                 nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
-  CQ_EXPECT_COMPLETION(cqv, tag(202), true);
-  CQ_EXPECT_COMPLETION(cqv, tag(1), true);
-  cq_verify(cqv);
+  cqv.Expect(tag(202), true);
+  cqv.Expect(tag(1), true);
+  cqv.Verify();
 
   gpr_log(GPR_INFO, "status=%d message=\"%s\"", status,
           std::string(grpc_core::StringViewFromSlice(details)).c_str());
@@ -303,8 +303,6 @@ static void test_retry_server_pushback_delay(grpc_end2end_test_config config) {
 
   grpc_call_unref(c);
   grpc_call_unref(s);
-
-  cq_verifier_destroy(cqv);
 
   end_test(&f);
   config.tear_down_data(&f);
