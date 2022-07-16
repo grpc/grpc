@@ -34,7 +34,6 @@ package(
     ],
 )
 
-
 exports_files([
     "LICENSE",
     "etc/roots.pem",
@@ -1867,6 +1866,7 @@ grpc_cc_library(
         "ref_counted_ptr",
         "resource_quota_trace",
         "seq",
+        "time",
         "useful",
     ],
 )
