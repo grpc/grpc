@@ -50,6 +50,7 @@
 #include "src/core/lib/gprpp/host_port.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/gprpp/sync.h"
+#include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/resolved_address.h"
 #include "src/core/lib/resolver/resolver.h"
@@ -112,7 +113,7 @@ grpc_status_code PerformCall(grpc_channel* channel, grpc_server* server,
                              grpc_completion_queue* cq) {
   grpc_call* c;
   grpc_call* s;
-  cq_verifier* cqv = cq_verifier_create(cq);
+  grpc_core::CqVerifier cqv(cq);
   grpc_op ops[6];
   grpc_op* op;
   grpc_metadata_array trailing_metadata_recv;
@@ -151,12 +152,12 @@ grpc_status_code PerformCall(grpc_channel* channel, grpc_server* server,
   error = grpc_server_request_call(server, &s, &call_details,
                                    &request_metadata_recv, cq, cq, tag(101));
   GPR_ASSERT(GRPC_CALL_OK == error);
-  CQ_EXPECT_COMPLETION(cqv, tag(101), 1);
-  cq_verify(cqv);
+  cqv.Expect(tag(101), true);
+  cqv.Verify();
   grpc_call_cancel_with_status(s, GRPC_STATUS_PERMISSION_DENIED, "test status",
                                nullptr);
-  CQ_EXPECT_COMPLETION(cqv, tag(1), 1);
-  cq_verify(cqv);
+  cqv.Expect(tag(1), true);
+  cqv.Verify();
   // cleanup
   grpc_slice_unref(details);
   grpc_metadata_array_destroy(&trailing_metadata_recv);
@@ -164,7 +165,6 @@ grpc_status_code PerformCall(grpc_channel* channel, grpc_server* server,
   grpc_call_details_destroy(&call_details);
   grpc_call_unref(c);
   grpc_call_unref(s);
-  cq_verifier_destroy(cqv);
   return status;
 }
 
@@ -234,7 +234,7 @@ grpc_status_code PerformWaitingCall(grpc_channel* channel, grpc_server* server,
                                     grpc_completion_queue* cq) {
   grpc_call* c;
   grpc_call* s;
-  cq_verifier* cqv = cq_verifier_create(cq);
+  grpc_core::CqVerifier cqv(cq);
   grpc_op ops[6];
   grpc_op* op;
   grpc_metadata_array trailing_metadata_recv;
@@ -273,8 +273,8 @@ grpc_status_code PerformWaitingCall(grpc_channel* channel, grpc_server* server,
   error = grpc_server_request_call(server, &s, &call_details,
                                    &request_metadata_recv, cq, cq, tag(101));
   GPR_ASSERT(GRPC_CALL_OK == error);
-  CQ_EXPECT_COMPLETION(cqv, tag(101), 1);
-  cq_verify(cqv);
+  cqv.Expect(tag(101), true);
+  cqv.Verify();
   // Since the server is configured to allow only a single ping strike, it would
   // take 3 pings to trigger the GOAWAY frame with "too_many_pings" from the
   // server. (The second ping from the client would be the first bad ping sent
@@ -282,9 +282,9 @@ grpc_status_code PerformWaitingCall(grpc_channel* channel, grpc_server* server,
   // GOAWAY.) If the client settings match with the server's settings, there
   // won't be a bad ping, and the call will end due to the deadline expiring
   // instead.
-  CQ_EXPECT_COMPLETION(cqv, tag(1), 1);
+  cqv.Expect(tag(1), true);
   // The call will end after this
-  cq_verify(cqv, 60);
+  cqv.Verify(grpc_core::Duration::Seconds(60));
   // cleanup
   grpc_slice_unref(details);
   grpc_metadata_array_destroy(&trailing_metadata_recv);
@@ -292,7 +292,6 @@ grpc_status_code PerformWaitingCall(grpc_channel* channel, grpc_server* server,
   grpc_call_details_destroy(&call_details);
   grpc_call_unref(c);
   grpc_call_unref(s);
-  cq_verifier_destroy(cqv);
   return status;
 }
 
@@ -586,7 +585,7 @@ void PerformCallWithResponsePayload(grpc_channel* channel, grpc_server* server,
   grpc_call* s;
   grpc_byte_buffer* response_payload =
       grpc_raw_byte_buffer_create(&response_payload_slice, 1);
-  cq_verifier* cqv = cq_verifier_create(cq);
+  grpc_core::CqVerifier cqv(cq);
   grpc_op ops[6];
   grpc_op* op;
   grpc_metadata_array initial_metadata_recv;
@@ -645,8 +644,8 @@ void PerformCallWithResponsePayload(grpc_channel* channel, grpc_server* server,
   error = grpc_server_request_call(server, &s, &call_details,
                                    &request_metadata_recv, cq, cq, tag(101));
   GPR_ASSERT(GRPC_CALL_OK == error);
-  CQ_EXPECT_COMPLETION(cqv, tag(101), 1);
-  cq_verify(cqv);
+  cqv.Expect(tag(101), true);
+  cqv.Verify();
 
   memset(ops, 0, sizeof(ops));
   op = ops;
@@ -659,8 +658,8 @@ void PerformCallWithResponsePayload(grpc_channel* channel, grpc_server* server,
                                 nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
-  CQ_EXPECT_COMPLETION(cqv, tag(102), 1);
-  cq_verify(cqv);
+  cqv.Expect(tag(102), true);
+  cqv.Verify();
 
   memset(ops, 0, sizeof(ops));
   op = ops;
@@ -686,9 +685,9 @@ void PerformCallWithResponsePayload(grpc_channel* channel, grpc_server* server,
                                 nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
-  CQ_EXPECT_COMPLETION(cqv, tag(103), 1);
-  CQ_EXPECT_COMPLETION(cqv, tag(1), 1);
-  cq_verify(cqv);
+  cqv.Expect(tag(103), true);
+  cqv.Expect(tag(1), true);
+  cqv.Verify();
 
   GPR_ASSERT(status == GRPC_STATUS_OK);
   GPR_ASSERT(0 == grpc_slice_str_cmp(details, "xyz"));
@@ -705,8 +704,6 @@ void PerformCallWithResponsePayload(grpc_channel* channel, grpc_server* server,
 
   grpc_call_unref(c);
   grpc_call_unref(s);
-
-  cq_verifier_destroy(cqv);
 
   grpc_byte_buffer_destroy(response_payload);
   grpc_byte_buffer_destroy(response_payload_recv);
@@ -748,35 +745,34 @@ TEST(TooManyPings, BdpPingNotSentWithoutReceiveSideActivity) {
   grpc_channel_credentials_release(creds);
   VerifyChannelReady(channel, cq);
   EXPECT_EQ(TransportCounter::count(), 2 /* one each for server and client */);
-  cq_verifier* cqv = cq_verifier_create(cq);
+  grpc_core::CqVerifier cqv(cq);
   // Channel should be able to send two pings without disconnect if there was no
   // BDP sent.
   grpc_channel_ping(channel, cq, tag(1), nullptr);
-  CQ_EXPECT_COMPLETION(cqv, tag(1), 1);
-  cq_verify(cqv, 5);
+  cqv.Expect(tag(1), true);
+  cqv.Verify(grpc_core::Duration::Seconds(5));
   // Second ping
   grpc_channel_ping(channel, cq, tag(2), nullptr);
-  CQ_EXPECT_COMPLETION(cqv, tag(2), 1);
-  cq_verify(cqv, 5);
+  cqv.Expect(tag(2), true);
+  cqv.Verify(grpc_core::Duration::Seconds(5));
   ASSERT_EQ(grpc_channel_check_connectivity_state(channel, 0),
             GRPC_CHANNEL_READY);
   PerformCallWithResponsePayload(channel, server, cq);
   // Wait a bit to make sure that the BDP ping goes out.
-  cq_verify_empty_timeout(cqv, 1);
+  cqv.VerifyEmpty(grpc_core::Duration::Seconds(1));
   // The call with a response payload should have triggered a BDP ping.
   // Send two more pings to verify. The second ping should cause a disconnect.
   // If BDP was not sent, the second ping would not cause a disconnect.
   grpc_channel_ping(channel, cq, tag(3), nullptr);
-  CQ_EXPECT_COMPLETION(cqv, tag(3), 1);
-  cq_verify(cqv, 5);
+  cqv.Expect(tag(3), true);
+  cqv.Verify(grpc_core::Duration::Seconds(5));
   // Second ping
   grpc_channel_ping(channel, cq, tag(4), nullptr);
-  CQ_EXPECT_COMPLETION(cqv, tag(4), 1);
-  cq_verify(cqv, 5);
+  cqv.Expect(tag(4), true);
+  cqv.Verify(grpc_core::Duration::Seconds(5));
   // Make sure that the transports have been destroyed
   VerifyChannelDisconnected(channel, cq);
   TransportCounter::WaitForTransportsToBeDestroyed();
-  cq_verifier_destroy(cqv);
   // shutdown and destroy the client and server
   ServerShutdownAndDestroy(server, cq);
   grpc_channel_destroy(channel);
@@ -823,23 +819,22 @@ TEST(TooManyPings, TransportsGetCleanedUpOnDisconnect) {
   grpc_channel_credentials_release(creds);
   VerifyChannelReady(channel, cq);
   EXPECT_EQ(TransportCounter::count(), 2 /* one each for server and client */);
-  cq_verifier* cqv = cq_verifier_create(cq);
+  grpc_core::CqVerifier cqv(cq);
   // First ping
   grpc_channel_ping(channel, cq, tag(1), nullptr);
-  CQ_EXPECT_COMPLETION(cqv, tag(1), 1);
-  cq_verify(cqv, 5);
+  cqv.Expect(tag(1), true);
+  cqv.Verify(grpc_core::Duration::Seconds(5));
   // Second ping
   grpc_channel_ping(channel, cq, tag(2), nullptr);
-  CQ_EXPECT_COMPLETION(cqv, tag(2), 1);
-  cq_verify(cqv, 5);
+  cqv.Expect(tag(2), true);
+  cqv.Verify(grpc_core::Duration::Seconds(5));
   // Third ping caused disconnect
   grpc_channel_ping(channel, cq, tag(2), nullptr);
-  CQ_EXPECT_COMPLETION(cqv, tag(2), 1);
-  cq_verify(cqv, 5);
+  cqv.Expect(tag(2), true);
+  cqv.Verify(grpc_core::Duration::Seconds(5));
   // Make sure that the transports have been destroyed
   VerifyChannelDisconnected(channel, cq);
   TransportCounter::WaitForTransportsToBeDestroyed();
-  cq_verifier_destroy(cqv);
   // shutdown and destroy the client and server
   ServerShutdownAndDestroy(server, cq);
   grpc_channel_destroy(channel);

@@ -61,6 +61,7 @@
 #include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/host_port.h"
 #include "src/core/lib/gprpp/sync.h"
+#include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/endpoint.h"
 #include "src/core/lib/iomgr/error.h"
@@ -237,7 +238,7 @@ class StreamsNotSeenTest : public ::testing::Test {
     });
     // Create the channel
     cq_ = grpc_completion_queue_create_for_next(nullptr);
-    cqv_ = cq_verifier_create(cq_);
+    cqv_ = absl::make_unique<CqVerifier>(cq_);
     grpc_arg client_args[] = {
         grpc_channel_arg_integer_create(
             const_cast<char*>(GRPC_ARG_HTTP2_MAX_PINGS_WITHOUT_DATA), 0),
@@ -257,8 +258,8 @@ class StreamsNotSeenTest : public ::testing::Test {
     while (state != GRPC_CHANNEL_READY) {
       grpc_channel_watch_connectivity_state(
           channel_, state, grpc_timeout_seconds_to_deadline(1), cq_, Tag(1));
-      CQ_EXPECT_COMPLETION(cqv_, Tag(1), true);
-      cq_verify(cqv_, 5);
+      cqv_->Expect(Tag(1), true);
+      cqv_->Verify(Duration::Seconds(5));
       state = grpc_channel_check_connectivity_state(channel_, false);
     }
     ExecCtx::Get()->Flush();
@@ -267,7 +268,7 @@ class StreamsNotSeenTest : public ::testing::Test {
   }
 
   ~StreamsNotSeenTest() override {
-    cq_verifier_destroy(cqv_);
+    cqv_.reset();
     grpc_completion_queue_shutdown(cq_);
     grpc_event ev;
     do {
@@ -421,7 +422,7 @@ class StreamsNotSeenTest : public ::testing::Test {
   std::string read_bytes_ ABSL_GUARDED_BY(mu_);
   grpc_channel* channel_ = nullptr;
   grpc_completion_queue* cq_ = nullptr;
-  cq_verifier* cqv_ = nullptr;
+  std::unique_ptr<CqVerifier> cqv_;
   Mutex mu_;
   CondVar read_cv_;
   std::atomic<bool> shutdown_{false};
@@ -462,8 +463,8 @@ TEST_F(StreamsNotSeenTest, StartStreamBeforeGoaway) {
   op++;
   error = grpc_call_start_batch(c, ops, static_cast<size_t>(op - ops), Tag(101),
                                 nullptr);
-  CQ_EXPECT_COMPLETION(cqv_, Tag(101), 1);
-  cq_verify(cqv_);
+  cqv_->Expect(Tag(101), true);
+  cqv_->Verify();
   // Send a goaway from server signalling that the request was unseen by the
   // server.
   SendGoaway(0);
@@ -485,8 +486,8 @@ TEST_F(StreamsNotSeenTest, StartStreamBeforeGoaway) {
   error = grpc_call_start_batch(c, ops, static_cast<size_t>(op - ops), Tag(102),
                                 nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
-  CQ_EXPECT_COMPLETION(cqv_, Tag(102), 1);
-  cq_verify(cqv_);
+  cqv_->Expect(Tag(102), true);
+  cqv_->Verify();
   // Verify status and metadata
   EXPECT_EQ(status, GRPC_STATUS_UNAVAILABLE);
   ASSERT_TRUE(TrailingMetadataRecordingFilter::trailing_metadata_available());
@@ -536,8 +537,8 @@ TEST_F(StreamsNotSeenTest, TransportDestroyed) {
   op++;
   error = grpc_call_start_batch(c, ops, static_cast<size_t>(op - ops), Tag(101),
                                 nullptr);
-  CQ_EXPECT_COMPLETION(cqv_, Tag(101), 1);
-  cq_verify(cqv_);
+  cqv_->Expect(Tag(101), true);
+  cqv_->Verify();
   // Shutdown the server endpoint
   grpc_endpoint_shutdown(
       tcp_, GRPC_ERROR_CREATE_FROM_STATIC_STRING("Server shutdown"));
@@ -559,8 +560,8 @@ TEST_F(StreamsNotSeenTest, TransportDestroyed) {
   error = grpc_call_start_batch(c, ops, static_cast<size_t>(op - ops), Tag(102),
                                 nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
-  CQ_EXPECT_COMPLETION(cqv_, Tag(102), 1);
-  cq_verify(cqv_);
+  cqv_->Expect(Tag(102), true);
+  cqv_->Verify();
   // Verify status and metadata
   EXPECT_EQ(status, GRPC_STATUS_UNAVAILABLE);
   EXPECT_FALSE(
@@ -624,8 +625,8 @@ TEST_F(StreamsNotSeenTest, StartStreamAfterGoaway) {
   error = grpc_call_start_batch(c, ops, static_cast<size_t>(op - ops), Tag(101),
                                 nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
-  CQ_EXPECT_COMPLETION(cqv_, Tag(101), 1);
-  cq_verify(cqv_);
+  cqv_->Expect(Tag(101), true);
+  cqv_->Verify();
   // Verify status and metadata
   EXPECT_EQ(status, GRPC_STATUS_UNAVAILABLE);
   ASSERT_TRUE(TrailingMetadataRecordingFilter::trailing_metadata_available());
@@ -702,8 +703,8 @@ TEST_F(ZeroConcurrencyTest, StartStreamBeforeGoaway) {
   // for some time to make sure that the RPC reaches the HTTP2 layer.
   SendGoaway(0);
   GPR_ASSERT(GRPC_CALL_OK == error);
-  CQ_EXPECT_COMPLETION(cqv_, Tag(101), 1);
-  cq_verify(cqv_);
+  cqv_->Expect(Tag(101), true);
+  cqv_->Verify();
   // Verify status and metadata
   EXPECT_EQ(status, GRPC_STATUS_UNAVAILABLE);
   ASSERT_TRUE(TrailingMetadataRecordingFilter::trailing_metadata_available());
@@ -768,8 +769,8 @@ TEST_F(ZeroConcurrencyTest, TransportDestroyed) {
   grpc_endpoint_shutdown(
       tcp_, GRPC_ERROR_CREATE_FROM_STATIC_STRING("Server shutdown"));
   GPR_ASSERT(GRPC_CALL_OK == error);
-  CQ_EXPECT_COMPLETION(cqv_, Tag(101), 1);
-  cq_verify(cqv_);
+  cqv_->Expect(Tag(101), true);
+  cqv_->Verify();
   // Verify status and metadata
   EXPECT_EQ(status, GRPC_STATUS_UNAVAILABLE);
   ASSERT_TRUE(TrailingMetadataRecordingFilter::trailing_metadata_available());

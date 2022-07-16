@@ -184,34 +184,6 @@ TEST(ErrorTest, TestOsError) {
   GRPC_ERROR_UNREF(error);
 }
 
-TEST(ErrorTest, Overflow) {
-  // absl::Status doesn't have a limit so there is no overflow
-#ifndef GRPC_ERROR_IS_ABSEIL_STATUS
-  grpc_error_handle error = GRPC_ERROR_CREATE_FROM_STATIC_STRING("Overflow");
-
-  for (size_t i = 0; i < 150; ++i) {
-    error = grpc_error_add_child(error,
-                                 GRPC_ERROR_CREATE_FROM_STATIC_STRING("Child"));
-  }
-
-  error = grpc_error_set_int(error, GRPC_ERROR_INT_HTTP2_ERROR, 5);
-  error = grpc_error_set_str(error, GRPC_ERROR_STR_GRPC_MESSAGE,
-                             "message for child 2");
-  error = grpc_error_set_int(error, GRPC_ERROR_INT_GRPC_STATUS, 5);
-
-  intptr_t i;
-  EXPECT_TRUE(grpc_error_get_int(error, GRPC_ERROR_INT_HTTP2_ERROR, &i));
-  EXPECT_EQ(i, 5);
-  EXPECT_TRUE(!grpc_error_get_int(error, GRPC_ERROR_INT_GRPC_STATUS, &i));
-
-  error = grpc_error_set_int(error, GRPC_ERROR_INT_HTTP2_ERROR, 10);
-  EXPECT_TRUE(grpc_error_get_int(error, GRPC_ERROR_INT_HTTP2_ERROR, &i));
-  EXPECT_EQ(i, 10);
-
-  GRPC_ERROR_UNREF(error);
-#endif
-}
-
 int main(int argc, char** argv) {
   grpc::testing::TestEnvironment env(&argc, argv);
   ::testing::InitGoogleTest(&argc, argv);

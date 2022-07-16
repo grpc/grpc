@@ -116,7 +116,7 @@ static void test_request(grpc_end2end_test_config config) {
   grpc_call* s;
   grpc_end2end_test_fixture f =
       begin_test(config, "filter_status_code", nullptr, nullptr);
-  cq_verifier* cqv = cq_verifier_create(f.cq);
+  grpc_core::CqVerifier cqv(f.cq);
   grpc_op ops[6];
   grpc_op* op;
   grpc_metadata_array initial_metadata_recv;
@@ -182,8 +182,8 @@ static void test_request(grpc_end2end_test_config config) {
                                &request_metadata_recv, f.cq, f.cq, tag(101));
   GPR_ASSERT(GRPC_CALL_OK == error);
 
-  CQ_EXPECT_COMPLETION(cqv, tag(101), 1);
-  cq_verify(cqv);
+  cqv.Expect(tag(101), true);
+  cqv.Verify();
 
   gpr_mu_lock(&g_mu);
   g_server_call_stack = grpc_call_get_call_stack(s);
@@ -213,9 +213,9 @@ static void test_request(grpc_end2end_test_config config) {
                                 nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
-  CQ_EXPECT_COMPLETION(cqv, tag(102), 1);
-  CQ_EXPECT_COMPLETION(cqv, tag(1), 1);
-  cq_verify(cqv);
+  cqv.Expect(tag(102), true);
+  cqv.Expect(tag(1), true);
+  cqv.Verify();
 
   GPR_ASSERT(status == GRPC_STATUS_UNIMPLEMENTED);
   GPR_ASSERT(0 == grpc_slice_str_cmp(details, "xyz"));
@@ -228,8 +228,6 @@ static void test_request(grpc_end2end_test_config config) {
 
   grpc_call_unref(s);
   grpc_call_unref(c);
-
-  cq_verifier_destroy(cqv);
 
   end_test(&f);
   config.tear_down_data(&f);
