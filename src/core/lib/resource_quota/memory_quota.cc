@@ -451,6 +451,8 @@ void BasicMemoryQuota::Return(size_t amount) {
 
 std::pair<double, size_t>
 BasicMemoryQuota::InstantaneousPressureAndMaxRecommendedAllocationSize() {
+  static const bool kSmoothMemoryPressure =
+      GPR_GLOBAL_CONFIG_GET(grpc_experimental_smooth_memory_presure);
   double free = free_bytes_.load();
   if (free < 0) free = 0;
   size_t quota_size = quota_size_.load();
@@ -459,7 +461,7 @@ BasicMemoryQuota::InstantaneousPressureAndMaxRecommendedAllocationSize() {
   double pressure = (size - free) / size;
   if (pressure < 0.0) pressure = 0.0;
   if (pressure > 1.0) pressure = 1.0;
-  if (GPR_GLOBAL_CONFIG_GET(grpc_experimental_smooth_memory_presure)) {
+  if (kSmoothMemoryPressure) {
     pressure = pressure_tracker_.AddSampleAndGetEstimate(pressure);
   }
   return std::make_pair(pressure, quota_size / 16);

@@ -254,16 +254,17 @@ void TransportFlowControl::UpdateSetting(
 }
 
 FlowControlAction TransportFlowControl::PeriodicUpdate() {
+  static const bool kSmoothMemoryPressure =
+      GPR_GLOBAL_CONFIG_GET(grpc_experimental_smooth_memory_presure);
   FlowControlAction action;
   if (enable_bdp_probe_) {
     // get bdp estimate and update initial_window accordingly.
     // target might change based on how much memory pressure we are under
     // TODO(ncteisen): experiment with setting target to be huge under low
     // memory pressure.
-    double target =
-        GPR_GLOBAL_CONFIG_GET(grpc_experimental_smooth_memory_presure)
-            ? TargetInitialWindowSizeBasedOnMemoryPressureAndBdp()
-            : pow(2, SmoothLogBdp(TargetLogBdp()));
+    double target = kSmoothMemoryPressure
+                        ? TargetInitialWindowSizeBasedOnMemoryPressureAndBdp()
+                        : pow(2, SmoothLogBdp(TargetLogBdp()));
     if (g_test_only_transport_target_window_estimates_mocker != nullptr) {
       // Hook for simulating unusual flow control situations in tests.
       target = g_test_only_transport_target_window_estimates_mocker
