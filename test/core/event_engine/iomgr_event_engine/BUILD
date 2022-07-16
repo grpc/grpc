@@ -22,19 +22,6 @@ grpc_package(
 )  # Useful for third party devs to test their io manager implementation.
 
 grpc_cc_test(
-    name = "time_averaged_stats_test",
-    srcs = ["time_averaged_stats_test.cc"],
-    external_deps = ["gtest"],
-    language = "C++",
-    uses_event_engine = False,
-    uses_polling = False,
-    deps = [
-        "//:iomgr_ee_time_averaged_stats",
-        "//test/core/util:grpc_suppressions",
-    ],
-)
-
-grpc_cc_test(
     name = "timer_heap_test",
     srcs = ["timer_heap_test.cc"],
     external_deps = ["gtest"],
@@ -58,5 +45,60 @@ grpc_cc_test(
     deps = [
         "//:iomgr_ee_timer",
         "//test/core/util:grpc_suppressions",
+    ],
+)
+
+grpc_cc_test(
+    name = "event_poller_posix_test",
+    srcs = ["event_poller_posix_test.cc"],
+    external_deps = ["gtest"],
+    language = "C++",
+    tags = [
+        "no_windows",
+    ],
+    uses_event_engine = True,
+    uses_polling = True,
+    deps = [
+        "//:iomgr_ee_closure",
+        "//:iomgr_ee_event_poller",
+        "//:iomgr_ee_poller_posix_default",
+        "//:iomgr_event_engine",
+        "//test/core/util:grpc_suppressions",
+        "//test/core/util:grpc_test_util",
+    ],
+)
+
+grpc_cc_test(
+    name = "lock_free_event_test",
+    srcs = ["lock_free_event_test.cc"],
+    external_deps = ["gtest"],
+    language = "C++",
+    uses_event_engine = True,
+    uses_polling = False,
+    deps = [
+        "//:iomgr_ee_closure",
+        "//:iomgr_ee_event_poller",
+        "//:iomgr_ee_lockfree_event",
+        "//:iomgr_event_engine",
+        "//test/core/util:grpc_suppressions",
+        "//test/core/util:grpc_test_util",
+    ],
+)
+
+grpc_cc_test(
+    name = "wakeup_fd_posix_test",
+    srcs = ["wakeup_fd_posix_test.cc"],
+    external_deps = ["gtest"],
+    language = "C++",
+    tags = [
+        "no_windows",
+    ],
+    uses_event_engine = False,
+    uses_polling = True,
+    deps = [
+        "//:iomgr_ee_wakeup_fd_posix_eventfd",
+        "//:iomgr_ee_wakeup_fd_posix_pipe",
+        "//test/core/util:grpc_suppressions",
+        "//test/core/util:grpc_test_util",
     ],
 )

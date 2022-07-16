@@ -265,7 +265,7 @@ def grpc_cc_library(name,
     assert (parsing_path is not None)
     name = '//%s:%s' % (parsing_path, name)
     num_cc_libraries += 1
-    if select_deps or 'nofixdeps' in tags or 'grpc-autodeps' not in tags:
+    if select_deps or 'nofixdeps' in tags:
         if args.whats_left and not select_deps and 'nofixdeps' not in tags:
             num_opted_out_cc_libraries += 1
             print("Not opted in: {}".format(name))
@@ -522,7 +522,8 @@ def make_library(library):
             # assume a system include
             continue
 
-        print("# ERROR: can't categorize header: %s" % hdr)
+        print("# ERROR: can't categorize header: %s used by %s" %
+              (hdr, library))
         error = True
 
     if library in needs_codegen_base_src:
