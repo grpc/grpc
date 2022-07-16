@@ -257,14 +257,11 @@ absl::optional<size_t> GrpcMemoryAllocatorImpl::TryReserve(
 void GrpcMemoryAllocatorImpl::MaybeDonateBack() {
   size_t free = free_bytes_.load(std::memory_order_relaxed);
   while (free > 0) {
-    const size_t max_quota_buffer_size =
-        GPR_GLOBAL_CONFIG_GET(grpc_experimental_max_quota_buffer_size);
     size_t ret = 0;
-    if (max_quota_buffer_size > 0 && free > max_quota_buffer_size / 2) {
-      ret = std::max(ret, free - max_quota_buffer_size / 2);
+    if (max_quota_buffer_size() > 0 && free > max_quota_buffer_size() / 2) {
+      ret = std::max(ret, free - max_quota_buffer_size() / 2);
     }
-    if (GPR_GLOBAL_CONFIG_GET(
-            grpc_experimental_enable_periodic_resource_quota_reclamation)) {
+    if (periodic_donate_back()) {
       ret = std::max(ret, free > 8192 ? free / 2 : free);
     }
     const size_t new_free = free - ret;
