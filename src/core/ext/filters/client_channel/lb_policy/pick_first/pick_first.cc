@@ -60,13 +60,13 @@ namespace {
 // pick_first LB policy
 //
 
-constexpr char kPickFirst[] = "pick_first";
+constexpr absl::string_view kPickFirst = "pick_first";
 
 class PickFirst : public LoadBalancingPolicy {
  public:
   explicit PickFirst(Args args);
 
-  const char* name() const override { return kPickFirst; }
+  absl::string_view name() const override { return kPickFirst; }
 
   void UpdateLocked(UpdateArgs args) override;
   void ExitIdleLocked() override;
@@ -502,7 +502,7 @@ void PickFirst::PickFirstSubchannelData::ProcessUnselectedReadyLocked() {
 
 class PickFirstConfig : public LoadBalancingPolicy::Config {
  public:
-  const char* name() const override { return kPickFirst; }
+  absl::string_view name() const override { return kPickFirst; }
 };
 
 //
@@ -516,10 +516,10 @@ class PickFirstFactory : public LoadBalancingPolicyFactory {
     return MakeOrphanable<PickFirst>(std::move(args));
   }
 
-  const char* name() const override { return kPickFirst; }
+  absl::string_view name() const override { return kPickFirst; }
 
-  RefCountedPtr<LoadBalancingPolicy::Config> ParseLoadBalancingConfig(
-      const Json& /*json*/, grpc_error_handle* /*error*/) const override {
+  absl::StatusOr<RefCountedPtr<LoadBalancingPolicy::Config>>
+  ParseLoadBalancingConfig(const Json& /*json*/) const override {
     return MakeRefCounted<PickFirstConfig>();
   }
 };

@@ -23,6 +23,8 @@
 
 #include <vector>
 
+#include "absl/status/statusor.h"
+
 #include "src/core/lib/gprpp/unique_type_name.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/json/json.h"
@@ -33,9 +35,11 @@ UniqueTypeName RequestHashAttributeName();
 
 // Helper Parsing method to parse ring hash policy configs; for example, ring
 // hash size validity.
-void ParseRingHashLbConfig(const Json& json, size_t* min_ring_size,
-                           size_t* max_ring_size,
-                           std::vector<grpc_error_handle>* error_list);
+struct RingHashConfig {
+  size_t min_ring_size = 1024;
+  size_t max_ring_size = 8388608;
+};
+absl::StatusOr<RingHashConfig> ParseRingHashLbConfig(const Json& json);
 
 }  // namespace grpc_core
 

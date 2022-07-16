@@ -59,13 +59,13 @@ namespace {
 // round_robin LB policy
 //
 
-constexpr char kRoundRobin[] = "round_robin";
+constexpr absl::string_view kRoundRobin = "round_robin";
 
 class RoundRobin : public LoadBalancingPolicy {
  public:
   explicit RoundRobin(Args args);
 
-  const char* name() const override { return kRoundRobin; }
+  absl::string_view name() const override { return kRoundRobin; }
 
   void UpdateLocked(UpdateArgs args) override;
   void ResetBackoffLocked() override;
@@ -499,7 +499,7 @@ void RoundRobin::RoundRobinSubchannelData::UpdateLogicalConnectivityStateLocked(
 
 class RoundRobinConfig : public LoadBalancingPolicy::Config {
  public:
-  const char* name() const override { return kRoundRobin; }
+  absl::string_view name() const override { return kRoundRobin; }
 };
 
 class RoundRobinFactory : public LoadBalancingPolicyFactory {
@@ -509,10 +509,10 @@ class RoundRobinFactory : public LoadBalancingPolicyFactory {
     return MakeOrphanable<RoundRobin>(std::move(args));
   }
 
-  const char* name() const override { return kRoundRobin; }
+  absl::string_view name() const override { return kRoundRobin; }
 
-  RefCountedPtr<LoadBalancingPolicy::Config> ParseLoadBalancingConfig(
-      const Json& /*json*/, grpc_error_handle* /*error*/) const override {
+  absl::StatusOr<RefCountedPtr<LoadBalancingPolicy::Config>>
+  ParseLoadBalancingConfig(const Json& /*json*/) const override {
     return MakeRefCounted<RoundRobinConfig>();
   }
 };

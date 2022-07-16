@@ -40,7 +40,7 @@ class ChildPolicyHandler : public LoadBalancingPolicy {
   ChildPolicyHandler(Args args, TraceFlag* tracer)
       : LoadBalancingPolicy(std::move(args)), tracer_(tracer) {}
 
-  const char* name() const override { return "child_policy_handler"; }
+  absl::string_view name() const override { return "child_policy_handler"; }
 
   void UpdateLocked(UpdateArgs args) override;
   void ExitIdleLocked() override;
@@ -56,7 +56,7 @@ class ChildPolicyHandler : public LoadBalancingPolicy {
   // May be overridden by subclasses to avoid recursion when an LB
   // policy factory returns a ChildPolicyHandler.
   virtual OrphanablePtr<LoadBalancingPolicy> CreateLoadBalancingPolicy(
-      const char* name, LoadBalancingPolicy::Args args) const;
+      absl::string_view name, LoadBalancingPolicy::Args args) const;
 
  private:
   class Helper;
@@ -64,7 +64,7 @@ class ChildPolicyHandler : public LoadBalancingPolicy {
   void ShutdownLocked() override;
 
   OrphanablePtr<LoadBalancingPolicy> CreateChildPolicy(
-      const char* child_policy_name, const ChannelArgs& args);
+      absl::string_view child_policy_name, const ChannelArgs& args);
 
   // Passed in from caller at construction time.
   TraceFlag* tracer_;
