@@ -150,16 +150,15 @@ bool HeaderAuthorizationMatcher::Matches(const EvaluateArgs& args) const {
 
 IpAuthorizationMatcher::IpAuthorizationMatcher(Type type, Rbac::CidrRange range)
     : type_(type), prefix_len_(range.prefix_len) {
-  grpc_error_handle error =
-      grpc_string_to_sockaddr(&subnet_address_, range.address_prefix.c_str(),
-                              /*port does not matter here*/ 0);
-  if (GRPC_ERROR_IS_NONE(error)) {
-    grpc_sockaddr_mask_bits(&subnet_address_, prefix_len_);
-  } else {
-    gpr_log(GPR_DEBUG, "CidrRange address %s is not IPv4/IPv6. Error: %s",
-            range.address_prefix.c_str(), grpc_error_std_string(error).c_str());
+  auto address =
+      StringToSockaddr(range.address_prefix, 0);  // Port does not matter here.
+  if (!address.ok()) {
+    gpr_log(GPR_DEBUG, "CidrRange address \"%s\" is not IPv4/IPv6. Error: %s",
+            range.address_prefix.c_str(), address.status().ToString().c_str());
+    return;
   }
-  GRPC_ERROR_UNREF(error);
+  subnet_address_ = *address;
+  grpc_sockaddr_mask_bits(&subnet_address_, prefix_len_);
 }
 
 bool IpAuthorizationMatcher::Matches(const EvaluateArgs& args) const {

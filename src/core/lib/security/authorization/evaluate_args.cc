@@ -54,13 +54,12 @@ EvaluateArgs::PerChannelArgs::Address ParseEndpointUri(
             std::string(port_view).c_str());
   }
   address.address_str = std::string(host_view);
-  grpc_error_handle error = grpc_string_to_sockaddr(
-      &address.address, address.address_str.c_str(), address.port);
-  if (!GRPC_ERROR_IS_NONE(error)) {
-    gpr_log(GPR_DEBUG, "Address %s is not IPv4/IPv6. Error: %s",
-            address.address_str.c_str(), grpc_error_std_string(error).c_str());
+  auto resolved_address = StringToSockaddr(uri->path());
+  if (!resolved_address.ok()) {
+    gpr_log(GPR_DEBUG, "Address \"%s\" is not IPv4/IPv6. Error: %s",
+            uri->path().c_str(), resolved_address.status().ToString().c_str());
   }
-  GRPC_ERROR_UNREF(error);
+  address.address = *resolved_address;
   return address;
 }
 

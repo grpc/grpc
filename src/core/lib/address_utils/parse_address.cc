@@ -317,21 +317,23 @@ uint16_t grpc_strhtons(const char* port) {
   return htons(static_cast<unsigned short>(atoi(port)));
 }
 
-grpc_error_handle grpc_string_to_sockaddr(grpc_resolved_address* out,
-                                          const char* addr, int port) {
-  memset(out, 0, sizeof(grpc_resolved_address));
-  grpc_sockaddr_in6* addr6 = reinterpret_cast<grpc_sockaddr_in6*>(out->addr);
-  grpc_sockaddr_in* addr4 = reinterpret_cast<grpc_sockaddr_in*>(out->addr);
-  if (grpc_inet_pton(GRPC_AF_INET6, addr, &addr6->sin6_addr) == 1) {
-    addr6->sin6_family = GRPC_AF_INET6;
-    out->len = sizeof(grpc_sockaddr_in6);
-  } else if (grpc_inet_pton(GRPC_AF_INET, addr, &addr4->sin_addr) == 1) {
-    addr4->sin_family = GRPC_AF_INET;
-    out->len = sizeof(grpc_sockaddr_in);
-  } else {
-    return GRPC_ERROR_CREATE_FROM_CPP_STRING(
-        absl::StrCat("Failed to parse address:", addr));
+namespace grpc_core {
+
+absl::StatusOr<grpc_resolved_address> StringToSockaddr(
+    absl::string_view address_and_port) {
+  grpc_resolved_address out;
+  memset(&out, 0, sizeof(grpc_resolved_address));
+  if (!grpc_parse_ipv4_hostport(address_and_port, &out, /*log_errors=*/false) &&
+      !grpc_parse_ipv6_hostport(address_and_port, &out, /*log_errors=*/false)) {
+    return absl::InvalidArgumentError(
+        absl::StrCat("Failed to parse address:", address_and_port));
   }
-  grpc_sockaddr_set_port(out, port);
-  return GRPC_ERROR_NONE;
+  return out;
 }
+
+absl::StatusOr<grpc_resolved_address> StringToSockaddr(
+    absl::string_view address, int port) {
+  return StringToSockaddr(JoinHostPort(address, port));
+}
+
+}  // namespace grpc_core
