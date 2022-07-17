@@ -64,7 +64,15 @@ package named :code:`python-dev`).
   $ GRPC_PYTHON_BUILD_WITH_CYTHON=1 pip install .
 
 
-If you're on macOS with M1 chip (Apple Silicone), add :code:`GRPC_PYTHON_BUILD_SYSTEM_OPENSSL=1` and :code:`GRPC_PYTHON_BUILD_SYSTEM_ZLIB=1`
+If you're on macOS with M1 chip (Apple Silicone), allow using system OpenSSL and zlib. If you don't have :code:`OpenSSL` and :code:`zlib` installed already, you can install them with Homebrew first, then follow the instructions in the installation output for exporting the two libraries' build flags.
+
+
+::
+
+  $ brew install openssl zlib
+
+
+Then build the package with the following variables:
 
 ::
 
