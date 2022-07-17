@@ -60,8 +60,15 @@ package named :code:`python-dev`).
   $ git submodule update --init
 
   # For the next two commands do `sudo pip install` if you get permission-denied errors
-  $ pip install -rrequirements.txt
+  $ pip install -r requirements.txt
   $ GRPC_PYTHON_BUILD_WITH_CYTHON=1 pip install .
+
+
+If you're on macOS with M1 chip (Apple Silicone), add :code:`GRPC_PYTHON_BUILD_SYSTEM_OPENSSL=1` and :code:`GRPC_PYTHON_BUILD_SYSTEM_ZLIB=1`
+
+::
+
+  $ GRPC_PYTHON_BUILD_SYSTEM_OPENSSL=1 GRPC_PYTHON_BUILD_SYSTEM_ZLIB=1 GRPC_PYTHON_BUILD_WITH_CYTHON=1 pip install .
 
 You cannot currently install Python from source on Windows. Things might work
 out for you in MSYS2 (follow the Linux instructions), but it isn't officially
@@ -107,9 +114,15 @@ Help, I ...
                     ^
     compilation terminated.
 
-  You can fix it by installing `python-dev` package. i.e
+  You can fix it by installing :code:`python-dev` package. i.e
 
   ::
 
     sudo apt-get install python-dev
+    
+  On macOS: append the path to the headers to :code:`CPPFLAGS`. For example:
+
+  ::
+
+    export CPPFLAGS="$CPPFLAGS -I/path/to/python/include/python3.10"
 
