@@ -20,8 +20,6 @@
 
 #include "src/core/lib/channel/channelz.h"
 
-#include <stdlib.h>
-
 #include <algorithm>
 #include <atomic>
 #include <memory>
@@ -42,10 +40,7 @@
 #include "src/core/lib/channel/channelz_registry.h"
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gpr/useful.h"
-#include "src/core/lib/gprpp/host_port.h"
-#include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
-#include "src/core/lib/iomgr/resolved_address.h"
 #include "src/core/lib/transport/connectivity_state.h"
 #include "src/core/lib/uri/uri_parser.h"
 
