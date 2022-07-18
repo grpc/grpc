@@ -176,7 +176,7 @@ class TestPickArgsLbFactory : public LoadBalancingPolicyFactory {
   const char* name() const override { return kTestPickArgsLbPolicyName; }
 
   RefCountedPtr<LoadBalancingPolicy::Config> ParseLoadBalancingConfig(
-      const Json& /*json*/, grpc_error_handle* /*error*/) const override {
+      const Json& /*json*/, absl::Status* /*error*/) const override {
     return MakeRefCounted<TestPickArgsLbConfig>();
   }
 
@@ -317,7 +317,7 @@ class InterceptTrailingFactory : public LoadBalancingPolicyFactory {
   }
 
   RefCountedPtr<LoadBalancingPolicy::Config> ParseLoadBalancingConfig(
-      const Json& /*json*/, grpc_error_handle* /*error*/) const override {
+      const Json& /*json*/, absl::Status* /*error*/) const override {
     return MakeRefCounted<InterceptTrailingConfig>();
   }
 
@@ -402,7 +402,7 @@ class AddressTestFactory : public LoadBalancingPolicyFactory {
   const char* name() const override { return kAddressTestLbPolicyName; }
 
   RefCountedPtr<LoadBalancingPolicy::Config> ParseLoadBalancingConfig(
-      const Json& /*json*/, grpc_error_handle* /*error*/) const override {
+      const Json& /*json*/, absl::Status* /*error*/) const override {
     return MakeRefCounted<AddressTestConfig>();
   }
 
@@ -511,8 +511,8 @@ class FixedAddressFactory : public LoadBalancingPolicyFactory {
   const char* name() const override { return kFixedAddressLbPolicyName; }
 
   RefCountedPtr<LoadBalancingPolicy::Config> ParseLoadBalancingConfig(
-      const Json& json, grpc_error_handle* error) const override {
-    std::vector<grpc_error_handle> error_list;
+      const Json& json, absl::Status* error) const override {
+    std::vector<absl::Status> error_list;
     std::string address;
     ParseJsonObjectField(json.object_value(), "address", &address, &error_list);
     if (!error_list.empty()) {
@@ -634,7 +634,7 @@ class OobBackendMetricTestFactory : public LoadBalancingPolicyFactory {
   }
 
   RefCountedPtr<LoadBalancingPolicy::Config> ParseLoadBalancingConfig(
-      const Json& /*json*/, grpc_error_handle* /*error*/) const override {
+      const Json& /*json*/, absl::Status* /*error*/) const override {
     return MakeRefCounted<OobBackendMetricTestConfig>();
   }
 

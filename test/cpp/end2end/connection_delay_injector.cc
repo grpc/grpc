@@ -111,7 +111,7 @@ ConnectionAttemptInjector::InjectedDelay::InjectedDelay(
 }
 
 void ConnectionAttemptInjector::InjectedDelay::TimerCallback(
-    void* arg, grpc_error_handle /*error*/) {
+    void* arg, absl::Status /*error*/) {
   auto* self = static_cast<InjectedDelay*>(arg);
   self->BeforeResumingAction();
   self->attempt_.Resume();
@@ -160,7 +160,7 @@ void ConnectionHoldInjector::Hold::Resume() {
   attempt->Resume();
 }
 
-void ConnectionHoldInjector::Hold::Fail(grpc_error_handle error) {
+void ConnectionHoldInjector::Hold::Fail(absl::Status error) {
   gpr_log(GPR_INFO, "=== FAILING CONNECTION ATTEMPT ON PORT %d ===", port_);
   grpc_core::ExecCtx exec_ctx;
   std::unique_ptr<QueuedAttempt> attempt;
@@ -186,8 +186,7 @@ bool ConnectionHoldInjector::Hold::IsStarted() {
   return !start_cv_.WaitWithDeadline(&injector_->mu_, absl::Now());
 }
 
-void ConnectionHoldInjector::Hold::OnComplete(void* arg,
-                                              grpc_error_handle error) {
+void ConnectionHoldInjector::Hold::OnComplete(void* arg, absl::Status error) {
   auto* self = static_cast<Hold*>(arg);
   grpc_closure* on_complete;
   {
@@ -196,7 +195,7 @@ void ConnectionHoldInjector::Hold::OnComplete(void* arg,
     self->original_on_complete_ = nullptr;
     self->complete_cv_.Signal();
   }
-  grpc_core::Closure::Run(DEBUG_LOCATION, on_complete, GRPC_ERROR_REF(error));
+  grpc_core::Closure::Run(DEBUG_LOCATION, on_complete, error);
 }
 
 //

@@ -24,6 +24,7 @@
 
 #include <memory>
 
+#include "absl/status/status.h"
 #include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
 
@@ -31,7 +32,6 @@
 #include "src/core/lib/channel/status_util.h"
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/gprpp/time.h"
-#include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/json/json.h"
 #include "src/core/lib/service_config/service_config_parser.h"
 
@@ -91,11 +91,10 @@ class RetryServiceConfigParser : public ServiceConfigParser::Parser {
 
   std::unique_ptr<ServiceConfigParser::ParsedConfig> ParseGlobalParams(
       const ChannelArgs& /*args*/, const Json& json,
-      grpc_error_handle* error) override;
+      absl::Status* error) override;
 
   std::unique_ptr<ServiceConfigParser::ParsedConfig> ParsePerMethodParams(
-      const ChannelArgs& args, const Json& json,
-      grpc_error_handle* error) override;
+      const ChannelArgs& args, const Json& json, absl::Status* error) override;
 
   static size_t ParserIndex();
   static void Register(CoreConfiguration::Builder* builder);

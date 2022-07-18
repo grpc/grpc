@@ -81,7 +81,7 @@ grpc_auth_refresh_token grpc_auth_refresh_token_create_from_json(
   grpc_auth_refresh_token result;
   const char* prop_value;
   int success = 0;
-  grpc_error_handle error = GRPC_ERROR_NONE;
+  absl::Status error = absl::OkStatus();
 
   memset(&result, 0, sizeof(grpc_auth_refresh_token));
   result.type = GRPC_AUTH_JSON_TYPE_INVALID;
@@ -114,12 +114,11 @@ end:
 
 grpc_auth_refresh_token grpc_auth_refresh_token_create_from_string(
     const char* json_string) {
-  grpc_error_handle error = GRPC_ERROR_NONE;
+  absl::Status error = absl::OkStatus();
   Json json = Json::Parse(json_string, &error);
-  if (!GRPC_ERROR_IS_NONE(error)) {
+  if (!error.ok()) {
     gpr_log(GPR_ERROR, "JSON parsing failed: %s",
             grpc_error_std_string(error).c_str());
-    GRPC_ERROR_UNREF(error);
   }
   return grpc_auth_refresh_token_create_from_json(json);
 }
@@ -184,12 +183,11 @@ grpc_oauth2_token_fetcher_credentials_parse_server_response(
     const char* token_type = nullptr;
     const char* expires_in = nullptr;
     Json::Object::const_iterator it;
-    grpc_error_handle error = GRPC_ERROR_NONE;
+    absl::Status error = absl::OkStatus();
     json = Json::Parse(null_terminated_body, &error);
-    if (!GRPC_ERROR_IS_NONE(error)) {
+    if (!error.ok()) {
       gpr_log(GPR_ERROR, "Could not parse JSON from %s: %s",
               null_terminated_body, grpc_error_std_string(error).c_str());
-      GRPC_ERROR_UNREF(error);
       status = GRPC_CREDENTIALS_ERROR;
       goto end;
     }
@@ -236,8 +234,8 @@ end:
 }
 
 static void on_oauth2_token_fetcher_http_response(void* user_data,
-                                                  grpc_error_handle error) {
-  GRPC_LOG_IF_ERROR("oauth_fetch", GRPC_ERROR_REF(error));
+                                                  absl::Status error) {
+  GRPC_LOG_IF_ERROR("oauth_fetch", error);
   grpc_credentials_metadata_request* r =
       static_cast<grpc_credentials_metadata_request*>(user_data);
   grpc_oauth2_token_fetcher_credentials* c =
@@ -246,14 +244,13 @@ static void on_oauth2_token_fetcher_http_response(void* user_data,
 }
 
 void grpc_oauth2_token_fetcher_credentials::on_http_response(
-    grpc_credentials_metadata_request* r, grpc_error_handle error) {
+    grpc_credentials_metadata_request* r, absl::Status error) {
   absl::optional<grpc_core::Slice> access_token_value;
   grpc_core::Duration token_lifetime;
   grpc_credentials_status status =
-      GRPC_ERROR_IS_NONE(error)
-          ? grpc_oauth2_token_fetcher_credentials_parse_server_response(
-                &r->response, &access_token_value, &token_lifetime)
-          : GRPC_CREDENTIALS_ERROR;
+      error.ok() ? grpc_oauth2_token_fetcher_credentials_parse_server_response(
+                       &r->response, &access_token_value, &token_lifetime)
+                 : GRPC_CREDENTIALS_ERROR;
   // Update cache and grab list of pending requests.
   gpr_mu_lock(&mu_);
   token_fetch_pending_ = false;
@@ -280,7 +277,6 @@ void grpc_oauth2_token_fetcher_credentials::on_http_response(
       auto err = GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(
           "Error occurred when fetching oauth2 token.", &error, 1);
       pending_request->result = grpc_error_to_absl_status(err);
-      GRPC_ERROR_UNREF(err);
     }
     pending_request->done.store(true, std::memory_order_release);
     pending_request->waker.Wakeup();
@@ -534,9 +530,9 @@ void MaybeAddToBody(const char* field_name, const char* field,
   body->push_back(absl::StrFormat("&%s=%s", field_name, field));
 }
 
-grpc_error_handle LoadTokenFile(const char* path, gpr_slice* token) {
-  grpc_error_handle err = grpc_load_file(path, 1, token);
-  if (!GRPC_ERROR_IS_NONE(err)) return err;
+absl::Status LoadTokenFile(const char* path, gpr_slice* token) {
+  absl::Status err = grpc_load_file(path, 1, token);
+  if (!err.ok()) return err;
   if (GRPC_SLICE_LENGTH(*token) == 0) {
     gpr_log(GPR_ERROR, "Token file %s is empty", path);
     err = GRPC_ERROR_CREATE_FROM_STATIC_STRING("Token file is empty.");
@@ -573,10 +569,9 @@ class StsTokenFetcherCredentials
                     Timestamp deadline) override {
     grpc_http_request request;
     memset(&request, 0, sizeof(grpc_http_request));
-    grpc_error_handle err = FillBody(&request.body, &request.body_length);
-    if (!GRPC_ERROR_IS_NONE(err)) {
+    absl::Status err = FillBody(&request.body, &request.body_length);
+    if (!err.ok()) {
       response_cb(metadata_req, err);
-      GRPC_ERROR_UNREF(err);
       return;
     }
     grpc_http_header header = {
@@ -603,16 +598,16 @@ class StsTokenFetcherCredentials
     gpr_free(request.body);
   }
 
-  grpc_error_handle FillBody(char** body, size_t* body_length) {
+  absl::Status FillBody(char** body, size_t* body_length) {
     *body = nullptr;
     std::vector<std::string> body_parts;
     grpc_slice subject_token = grpc_empty_slice();
     grpc_slice actor_token = grpc_empty_slice();
-    grpc_error_handle err = GRPC_ERROR_NONE;
+    absl::Status err = absl::OkStatus();
 
     auto cleanup = [&body, &body_length, &body_parts, &subject_token,
                     &actor_token, &err]() {
-      if (GRPC_ERROR_IS_NONE(err)) {
+      if (err.ok()) {
         std::string body_str = absl::StrJoin(body_parts, "");
         *body = gpr_strdup(body_str.c_str());
         *body_length = body_str.size();
@@ -623,7 +618,7 @@ class StsTokenFetcherCredentials
     };
 
     err = LoadTokenFile(subject_token_path_.get(), &subject_token);
-    if (!GRPC_ERROR_IS_NONE(err)) return cleanup();
+    if (!err.ok()) return cleanup();
     body_parts.push_back(absl::StrFormat(
         GRPC_STS_POST_MINIMAL_BODY_FORMAT_STRING,
         reinterpret_cast<const char*>(GRPC_SLICE_START_PTR(subject_token)),
@@ -635,7 +630,7 @@ class StsTokenFetcherCredentials
                    &body_parts);
     if ((actor_token_path_ != nullptr) && *actor_token_path_ != '\0') {
       err = LoadTokenFile(actor_token_path_.get(), &actor_token);
-      if (!GRPC_ERROR_IS_NONE(err)) return cleanup();
+      if (!err.ok()) return cleanup();
       MaybeAddToBody(
           "actor_token",
           reinterpret_cast<const char*>(GRPC_SLICE_START_PTR(actor_token)),
@@ -662,7 +657,7 @@ class StsTokenFetcherCredentials
 
 absl::StatusOr<URI> ValidateStsCredentialsOptions(
     const grpc_sts_credentials_options* options) {
-  std::vector<grpc_error_handle> error_list;
+  std::vector<absl::Status> error_list;
   absl::StatusOr<URI> sts_url =
       URI::Parse(options->token_exchange_service_uri == nullptr
                      ? ""
@@ -692,7 +687,6 @@ absl::StatusOr<URI> ValidateStsCredentialsOptions(
       "Invalid STS Credentials Options", &error_list);
   auto retval =
       absl::InvalidArgumentError(grpc_error_std_string(grpc_error_vec));
-  GRPC_ERROR_UNREF(grpc_error_vec);
   return retval;
 }
 

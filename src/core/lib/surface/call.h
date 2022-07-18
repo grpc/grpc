@@ -24,6 +24,7 @@
 #include <stddef.h>
 #include <stdint.h>
 
+#include "absl/status/status.h"
 #include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
 
@@ -37,7 +38,6 @@
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/iomgr/closure.h"
-#include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/iomgr_fwd.h"
 #include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/slice/slice.h"
@@ -70,8 +70,7 @@ typedef struct grpc_call_create_args {
 /* Create a new call based on \a args.
    Regardless of success or failure, always returns a valid new call into *call
    */
-grpc_error_handle grpc_call_create(grpc_call_create_args* args,
-                                   grpc_call** call);
+absl::Status grpc_call_create(grpc_call_create_args* args, grpc_call** call);
 
 void grpc_call_set_completion_queue(grpc_call* call, grpc_completion_queue* cq);
 

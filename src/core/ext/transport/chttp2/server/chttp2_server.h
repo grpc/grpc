@@ -23,8 +23,9 @@
 
 #include <functional>
 
+#include "absl/status/status.h"
+
 #include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/surface/server.h"
 
 namespace grpc_core {
@@ -34,11 +35,11 @@ namespace grpc_core {
 // configured with a config fetcher. Not invoked if there is no config fetcher
 // added to the server. On failure, the error parameter will be set.
 using Chttp2ServerArgsModifier =
-    std::function<ChannelArgs(const ChannelArgs&, grpc_error_handle*)>;
+    std::function<ChannelArgs(const ChannelArgs&, absl::Status*)>;
 
 /// Adds a port to \a server.  Sets \a port_num to the port number.
 /// Takes ownership of \a args.
-grpc_error_handle Chttp2ServerAddPort(
+absl::Status Chttp2ServerAddPort(
     Server* server, const char* addr, const ChannelArgs& args,
     Chttp2ServerArgsModifier connection_args_modifier, int* port_num);
 

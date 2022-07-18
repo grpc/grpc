@@ -92,7 +92,7 @@ class ConnectionAttemptInjector {
     }
 
     // Caller must invoke this from a thread with an ExecCtx.
-    void Fail(grpc_error_handle error) {
+    void Fail(absl::Status error) {
       GPR_ASSERT(closure_ != nullptr);
       grpc_core::ExecCtx::Run(DEBUG_LOCATION, closure_, error);
       closure_ = nullptr;
@@ -122,7 +122,7 @@ class ConnectionAttemptInjector {
     // Subclasses can override to perform an action when the attempt resumes.
     virtual void BeforeResumingAction() {}
 
-    static void TimerCallback(void* arg, grpc_error_handle /*error*/);
+    static void TimerCallback(void* arg, absl::Status /*error*/);
 
     QueuedAttempt attempt_;
     grpc_timer timer_;
@@ -172,7 +172,7 @@ class ConnectionHoldInjector : public ConnectionAttemptInjector {
     void Resume();
 
     // Fails a connection attempt.  Must be called after Wait().
-    void Fail(grpc_error_handle error);
+    void Fail(absl::Status error);
 
     // If the hold was created with intercept_completion=true, then this
     // can be called after Resume() to wait for the connection attempt
@@ -185,7 +185,7 @@ class ConnectionHoldInjector : public ConnectionAttemptInjector {
    private:
     friend class ConnectionHoldInjector;
 
-    static void OnComplete(void* arg, grpc_error_handle error);
+    static void OnComplete(void* arg, absl::Status error);
 
     ConnectionHoldInjector* injector_;
     const int port_;

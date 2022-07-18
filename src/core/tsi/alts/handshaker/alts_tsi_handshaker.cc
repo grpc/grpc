@@ -383,15 +383,14 @@ tsi_result alts_tsi_handshaker_result_create(grpc_gcp_HandshakerResp* resp,
 }
 
 /* gRPC provided callback used when gRPC thread model is applied. */
-static void on_handshaker_service_resp_recv(void* arg,
-                                            grpc_error_handle error) {
+static void on_handshaker_service_resp_recv(void* arg, absl::Status error) {
   alts_handshaker_client* client = static_cast<alts_handshaker_client*>(arg);
   if (client == nullptr) {
     gpr_log(GPR_ERROR, "ALTS handshaker client is nullptr");
     return;
   }
   bool success = true;
-  if (!GRPC_ERROR_IS_NONE(error)) {
+  if (!error.ok()) {
     gpr_log(GPR_INFO,
             "ALTS handshaker on_handshaker_service_resp_recv error: %s",
             grpc_error_std_string(error).c_str());
@@ -402,12 +401,12 @@ static void on_handshaker_service_resp_recv(void* arg,
 
 /* gRPC provided callback used when dedicatd CQ and thread are used.
  * It serves to safely bring the control back to application. */
-static void on_handshaker_service_resp_recv_dedicated(
-    void* arg, grpc_error_handle /*error*/) {
+static void on_handshaker_service_resp_recv_dedicated(void* arg,
+                                                      absl::Status /*error*/) {
   alts_shared_resource_dedicated* resource =
       grpc_alts_get_shared_resource_dedicated();
   grpc_cq_end_op(
-      resource->cq, arg, GRPC_ERROR_NONE,
+      resource->cq, arg, absl::OkStatus(),
       [](void* /*done_arg*/, grpc_cq_completion* /*storage*/) {}, nullptr,
       &resource->storage);
 }
@@ -493,7 +492,7 @@ struct alts_tsi_handshaker_continue_handshaker_next_args {
 };
 
 static void alts_tsi_handshaker_create_channel(
-    void* arg, grpc_error_handle /* unused_error */) {
+    void* arg, absl::Status /* unused_error */) {
   alts_tsi_handshaker_continue_handshaker_next_args* next_args =
       static_cast<alts_tsi_handshaker_continue_handshaker_next_args*>(arg);
   alts_tsi_handshaker* handshaker = next_args->handshaker;
@@ -556,7 +555,7 @@ static tsi_result handshaker_next(
     // stack. Doing so avoids potential lock cycles between g_init_mu and other
     // mutexes within core that might be held on the current call stack
     // (note that g_init_mu gets acquired during channel creation).
-    grpc_core::ExecCtx::Run(DEBUG_LOCATION, &args->closure, GRPC_ERROR_NONE);
+    grpc_core::ExecCtx::Run(DEBUG_LOCATION, &args->closure, absl::OkStatus());
   } else {
     tsi_result ok = alts_tsi_handshaker_continue_handshaker_next(
         handshaker, received_bytes, received_bytes_size, cb, user_data);

@@ -89,7 +89,7 @@ class FakeChannelSecurityConnector final
     abort();
   }
 
-  void cancel_check_peer(grpc_closure*, grpc_error_handle) override { abort(); }
+  void cancel_check_peer(grpc_closure*, absl::Status) override { abort(); }
 
   int cmp(const grpc_security_connector*) const override { abort(); }
 
@@ -394,9 +394,7 @@ class MainLoop {
       }
 
       bool StartTransportOp(grpc_transport_op* op) override {
-        GRPC_ERROR_UNREF(op->disconnect_with_error);
-        GRPC_ERROR_UNREF(op->goaway_error);
-        ExecCtx::Run(DEBUG_LOCATION, op->on_consumed, GRPC_ERROR_NONE);
+        ExecCtx::Run(DEBUG_LOCATION, op->on_consumed, absl::OkStatus());
         return true;
       }
     };

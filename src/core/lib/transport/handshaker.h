@@ -24,6 +24,7 @@
 #include <stddef.h>
 
 #include "absl/container/inlined_vector.h"
+#include "absl/status/status.h"
 
 #include <grpc/slice.h>
 
@@ -34,7 +35,6 @@
 #include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/endpoint.h"
-#include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/tcp_server.h"
 #include "src/core/lib/iomgr/timer.h"
 
@@ -84,7 +84,7 @@ struct HandshakerArgs {
 class Handshaker : public RefCounted<Handshaker> {
  public:
   ~Handshaker() override = default;
-  virtual void Shutdown(grpc_error_handle why) = 0;
+  virtual void Shutdown(absl::Status why) = 0;
   virtual void DoHandshake(grpc_tcp_server_acceptor* acceptor,
                            grpc_closure* on_handshake_done,
                            HandshakerArgs* args) = 0;
@@ -106,7 +106,7 @@ class HandshakeManager : public RefCounted<HandshakeManager> {
 
   /// Shuts down the handshake manager (e.g., to clean up when the operation is
   /// aborted in the middle).
-  void Shutdown(grpc_error_handle why);
+  void Shutdown(absl::Status why);
 
   /// Invokes handshakers in the order they were added.
   /// Takes ownership of \a endpoint, and then passes that ownership to
@@ -117,7 +117,7 @@ class HandshakeManager : public RefCounted<HandshakeManager> {
   ///
   /// When done, invokes \a on_handshake_done with a HandshakerArgs
   /// object as its argument.  If the callback is invoked with error !=
-  /// GRPC_ERROR_NONE, then handshaking failed and the handshaker has done
+  /// absl::OkStatus(), then handshaking failed and the handshaker has done
   /// the necessary clean-up.  Otherwise, the callback takes ownership of
   /// the arguments.
   void DoHandshake(grpc_endpoint* endpoint, const ChannelArgs& channel_args,
@@ -125,14 +125,14 @@ class HandshakeManager : public RefCounted<HandshakeManager> {
                    grpc_iomgr_cb_func on_handshake_done, void* user_data);
 
  private:
-  bool CallNextHandshakerLocked(grpc_error_handle error);
+  bool CallNextHandshakerLocked(absl::Status error);
 
   // A function used as the handshaker-done callback when chaining
   // handshakers together.
-  static void CallNextHandshakerFn(void* arg, grpc_error_handle error);
+  static void CallNextHandshakerFn(void* arg, absl::Status error);
 
   // Callback invoked when deadline is exceeded.
-  static void OnTimeoutFn(void* arg, grpc_error_handle error);
+  static void OnTimeoutFn(void* arg, absl::Status error);
 
   static const size_t HANDSHAKERS_INIT_SIZE = 2;
 

@@ -104,7 +104,7 @@ std::string XdsClusterResource::ToString() const {
 
 namespace {
 
-grpc_error_handle UpstreamTlsContextParse(
+absl::Status UpstreamTlsContextParse(
     const XdsEncodingContext& context,
     const envoy_config_core_v3_TransportSocket* transport_socket,
     CommonTlsContext* common_tls_context) {
@@ -132,9 +132,9 @@ grpc_error_handle UpstreamTlsContextParse(
         envoy_extensions_transport_sockets_tls_v3_UpstreamTlsContext_common_tls_context(
             upstream_tls_context);
     if (common_tls_context_proto != nullptr) {
-      grpc_error_handle error = CommonTlsContext::Parse(
+      absl::Status error = CommonTlsContext::Parse(
           context, common_tls_context_proto, common_tls_context);
-      if (!GRPC_ERROR_IS_NONE(error)) {
+      if (!error.ok()) {
         return grpc_error_add_child(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
                                         "Error parsing UpstreamTlsContext"),
                                     error);
@@ -147,12 +147,11 @@ grpc_error_handle UpstreamTlsContextParse(
         "UpstreamTlsContext: TLS configuration provided but no "
         "ca_certificate_provider_instance found.");
   }
-  return GRPC_ERROR_NONE;
+  return absl::OkStatus();
 }
 
-grpc_error_handle CdsLogicalDnsParse(
-    const envoy_config_cluster_v3_Cluster* cluster,
-    XdsClusterResource* cds_update) {
+absl::Status CdsLogicalDnsParse(const envoy_config_cluster_v3_Cluster* cluster,
+                                XdsClusterResource* cds_update) {
   const auto* load_assignment =
       envoy_config_cluster_v3_Cluster_load_assignment(cluster);
   if (load_assignment == nullptr) {
@@ -214,14 +213,13 @@ grpc_error_handle CdsLogicalDnsParse(
   cds_update->dns_hostname = JoinHostPort(
       address_str,
       envoy_config_core_v3_SocketAddress_port_value(socket_address));
-  return GRPC_ERROR_NONE;
+  return absl::OkStatus();
 }
 
-grpc_error_handle CdsResourceParse(
-    const XdsEncodingContext& context,
-    const envoy_config_cluster_v3_Cluster* cluster, bool /*is_v2*/,
-    XdsClusterResource* cds_update) {
-  std::vector<grpc_error_handle> errors;
+absl::Status CdsResourceParse(const XdsEncodingContext& context,
+                              const envoy_config_cluster_v3_Cluster* cluster,
+                              bool /*is_v2*/, XdsClusterResource* cds_update) {
+  std::vector<absl::Status> errors;
   // Check the cluster_discovery_type.
   if (!envoy_config_cluster_v3_Cluster_has_type(cluster) &&
       !envoy_config_cluster_v3_Cluster_has_cluster_type(cluster)) {
@@ -251,8 +249,8 @@ grpc_error_handle CdsResourceParse(
   } else if (envoy_config_cluster_v3_Cluster_type(cluster) ==
              envoy_config_cluster_v3_Cluster_LOGICAL_DNS) {
     cds_update->cluster_type = XdsClusterResource::ClusterType::LOGICAL_DNS;
-    grpc_error_handle error = CdsLogicalDnsParse(cluster, cds_update);
-    if (!GRPC_ERROR_IS_NONE(error)) errors.push_back(error);
+    absl::Status error = CdsLogicalDnsParse(cluster, cds_update);
+    if (!error.ok()) errors.push_back(error);
   } else {
     if (!envoy_config_cluster_v3_Cluster_has_cluster_type(cluster)) {
       errors.push_back(
@@ -351,9 +349,9 @@ grpc_error_handle CdsResourceParse(
   auto* transport_socket =
       envoy_config_cluster_v3_Cluster_transport_socket(cluster);
   if (transport_socket != nullptr) {
-    grpc_error_handle error = UpstreamTlsContextParse(
+    absl::Status error = UpstreamTlsContextParse(
         context, transport_socket, &cds_update->common_tls_context);
-    if (!GRPC_ERROR_IS_NONE(error)) {
+    if (!error.ok()) {
       errors.push_back(
           grpc_error_add_child(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
                                    "Error parsing security configuration"),
@@ -531,11 +529,10 @@ absl::StatusOr<XdsResourceType::DecodeResult> XdsClusterResourceType::Decode(
   result.name =
       UpbStringToStdString(envoy_config_cluster_v3_Cluster_name(resource));
   auto cluster_data = absl::make_unique<ResourceDataSubclass>();
-  grpc_error_handle error =
+  absl::Status error =
       CdsResourceParse(context, resource, is_v2, &cluster_data->resource);
-  if (!GRPC_ERROR_IS_NONE(error)) {
+  if (!error.ok()) {
     std::string error_str = grpc_error_std_string(error);
-    GRPC_ERROR_UNREF(error);
     if (GRPC_TRACE_FLAG_ENABLED(*context.tracer)) {
       gpr_log(GPR_ERROR, "[xds_client %p] invalid Cluster %s: %s",
               context.client, result.name.c_str(), error_str.c_str());

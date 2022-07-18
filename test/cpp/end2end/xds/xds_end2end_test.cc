@@ -171,12 +171,9 @@ class FakeCertificateProvider final : public grpc_tls_certificate_provider {
       if (!root_being_watched && !identity_being_watched) return;
       auto it = cert_data_map_.find(cert_name);
       if (it == cert_data_map_.end()) {
-        grpc_error_handle error =
-            GRPC_ERROR_CREATE_FROM_CPP_STRING(absl::StrCat(
-                "No certificates available for cert_name \"", cert_name, "\""));
-        distributor_->SetErrorForCert(cert_name, GRPC_ERROR_REF(error),
-                                      GRPC_ERROR_REF(error));
-        GRPC_ERROR_UNREF(error);
+        absl::Status error = GRPC_ERROR_CREATE_FROM_CPP_STRING(absl::StrCat(
+            "No certificates available for cert_name \"", cert_name, "\""));
+        distributor_->SetErrorForCert(cert_name, error, error);
       } else {
         absl::optional<std::string> root_certificate;
         absl::optional<grpc_core::PemKeyCertPairList> pem_key_cert_pairs;
@@ -243,7 +240,7 @@ class FakeCertificateProviderFactory
 
   grpc_core::RefCountedPtr<grpc_core::CertificateProviderFactory::Config>
   CreateCertificateProviderConfig(const grpc_core::Json& /*config_json*/,
-                                  grpc_error_handle* /*error*/) override {
+                                  absl::Status* /*error*/) override {
     return grpc_core::MakeRefCounted<Config>(name_);
   }
 

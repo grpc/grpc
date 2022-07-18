@@ -142,9 +142,8 @@ void bad_server_thread(void* vargs) {
                           .channel_args_preconditioning()
                           .PreconditionChannelArgs(nullptr)
                           .ToC();
-  grpc_error_handle error =
-      grpc_tcp_server_create(nullptr, channel_args.get(), &s);
-  ASSERT_TRUE(GRPC_ERROR_IS_NONE(error));
+  absl::Status error = grpc_tcp_server_create(nullptr, channel_args.get(), &s);
+  ASSERT_TRUE(error.ok());
   memset(&resolved_addr, 0, sizeof(resolved_addr));
   addr->sa_family = GRPC_AF_INET;
   error = grpc_tcp_server_add_port(s, &resolved_addr, &port);
@@ -175,7 +174,7 @@ void bad_server_thread(void* vargs) {
   grpc_tcp_server_unref(s);
 }
 
-static void done_pollset_shutdown(void* pollset, grpc_error_handle /*error*/) {
+static void done_pollset_shutdown(void* pollset, absl::Status /*error*/) {
   grpc_pollset_destroy(static_cast<grpc_pollset*>(pollset));
   gpr_free(pollset);
 }

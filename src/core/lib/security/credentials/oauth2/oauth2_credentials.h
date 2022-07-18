@@ -25,6 +25,7 @@
 #include <string>
 #include <utility>
 
+#include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/types/optional.h"
 
@@ -41,7 +42,6 @@
 #include "src/core/lib/http/httpcli.h"
 #include "src/core/lib/http/parser.h"
 #include "src/core/lib/iomgr/closure.h"
-#include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/polling_entity.h"
 #include "src/core/lib/json/json.h"
 #include "src/core/lib/promise/activity.h"
@@ -119,7 +119,7 @@ class grpc_oauth2_token_fetcher_credentials : public grpc_call_credentials {
                      const GetRequestMetadataArgs* args) override;
 
   void on_http_response(grpc_credentials_metadata_request* r,
-                        grpc_error_handle error);
+                        absl::Status error);
   std::string debug_string() override;
 
   grpc_core::UniqueTypeName type() const override;

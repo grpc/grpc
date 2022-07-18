@@ -38,7 +38,7 @@ static void test_load_empty_file(void) {
   FILE* tmp = nullptr;
   grpc_slice slice;
   grpc_slice slice_with_null_term;
-  grpc_error_handle error;
+  absl::Status error;
   char* tmp_name;
 
   LOG_TEST_NAME("test_load_empty_file");
@@ -49,11 +49,11 @@ static void test_load_empty_file(void) {
   fclose(tmp);
 
   error = grpc_load_file(tmp_name, 0, &slice);
-  GPR_ASSERT(GRPC_ERROR_IS_NONE(error));
+  GPR_ASSERT(error.ok());
   GPR_ASSERT(GRPC_SLICE_LENGTH(slice) == 0);
 
   error = grpc_load_file(tmp_name, 1, &slice_with_null_term);
-  GPR_ASSERT(GRPC_ERROR_IS_NONE(error));
+  GPR_ASSERT(error.ok());
   GPR_ASSERT(GRPC_SLICE_LENGTH(slice_with_null_term) == 1);
   GPR_ASSERT(GRPC_SLICE_START_PTR(slice_with_null_term)[0] == 0);
 
@@ -66,7 +66,7 @@ static void test_load_empty_file(void) {
 static void test_load_failure(void) {
   FILE* tmp = nullptr;
   grpc_slice slice;
-  grpc_error_handle error;
+  absl::Status error;
   char* tmp_name;
 
   LOG_TEST_NAME("test_load_failure");
@@ -78,8 +78,7 @@ static void test_load_failure(void) {
   remove(tmp_name);
 
   error = grpc_load_file(tmp_name, 0, &slice);
-  GPR_ASSERT(!GRPC_ERROR_IS_NONE(error));
-  GRPC_ERROR_UNREF(error);
+  GPR_ASSERT(!error.ok());
   GPR_ASSERT(GRPC_SLICE_LENGTH(slice) == 0);
   gpr_free(tmp_name);
   grpc_slice_unref(slice);
@@ -89,7 +88,7 @@ static void test_load_small_file(void) {
   FILE* tmp = nullptr;
   grpc_slice slice;
   grpc_slice slice_with_null_term;
-  grpc_error_handle error;
+  absl::Status error;
   char* tmp_name;
   const char* blah = "blah";
 
@@ -102,12 +101,12 @@ static void test_load_small_file(void) {
   fclose(tmp);
 
   error = grpc_load_file(tmp_name, 0, &slice);
-  GPR_ASSERT(GRPC_ERROR_IS_NONE(error));
+  GPR_ASSERT(error.ok());
   GPR_ASSERT(GRPC_SLICE_LENGTH(slice) == strlen(blah));
   GPR_ASSERT(!memcmp(GRPC_SLICE_START_PTR(slice), blah, strlen(blah)));
 
   error = grpc_load_file(tmp_name, 1, &slice_with_null_term);
-  GPR_ASSERT(GRPC_ERROR_IS_NONE(error));
+  GPR_ASSERT(error.ok());
   GPR_ASSERT(GRPC_SLICE_LENGTH(slice_with_null_term) == (strlen(blah) + 1));
   GPR_ASSERT(strcmp((const char*)GRPC_SLICE_START_PTR(slice_with_null_term),
                     blah) == 0);
@@ -121,7 +120,7 @@ static void test_load_small_file(void) {
 static void test_load_big_file(void) {
   FILE* tmp = nullptr;
   grpc_slice slice;
-  grpc_error_handle error;
+  absl::Status error;
   char* tmp_name;
   static const size_t buffer_size = 124631;
   unsigned char* buffer = static_cast<unsigned char*>(gpr_malloc(buffer_size));
@@ -139,7 +138,7 @@ static void test_load_big_file(void) {
   fclose(tmp);
 
   error = grpc_load_file(tmp_name, 0, &slice);
-  GPR_ASSERT(GRPC_ERROR_IS_NONE(error));
+  GPR_ASSERT(error.ok());
   GPR_ASSERT(GRPC_SLICE_LENGTH(slice) == buffer_size);
   current = GRPC_SLICE_START_PTR(slice);
   for (i = 0; i < buffer_size; i++) {

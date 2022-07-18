@@ -78,12 +78,12 @@ class TimerList {
   TimerList& operator=(const TimerList&) = delete;
 
   /* Initialize *timer. When expired or canceled, closure will be called with
-   error set to indicate if it expired (GRPC_ERROR_NONE) or was canceled
-   (GRPC_ERROR_CANCELLED). *closure is guaranteed to be called exactly once, and
-   application code should check the error to determine how it was invoked. The
-   application callback is also responsible for maintaining information about
-   when to free up any user-level state. Behavior is undefined for a deadline of
-   grpc_core::Timestamp::InfFuture(). */
+   error set to indicate if it expired (absl::OkStatus()) or was canceled
+   (absl::CancelledError()). *closure is guaranteed to be called exactly once,
+   and application code should check the error to determine how it was invoked.
+   The application callback is also responsible for maintaining information
+   about when to free up any user-level state. Behavior is undefined for a
+   deadline of grpc_core::Timestamp::InfFuture(). */
   void TimerInit(Timer* timer, grpc_core::Timestamp deadline,
                  experimental::EventEngine::Closure* closure);
 
@@ -103,8 +103,9 @@ class TimerList {
 
      In all of these cases, the cancellation is still considered successful.
      They are essentially distinguished in that the timer_cb will be run
-     exactly once from either the cancellation (with error GRPC_ERROR_CANCELLED)
-     or from the activation (with error GRPC_ERROR_NONE).
+     exactly once from either the cancellation (with error
+     absl::CancelledError()) or from the activation (with error
+     absl::OkStatus()).
 
      Note carefully that the callback function MAY occur in the same callstack
      as grpc_timer_cancel. It's expected that most timers will be cancelled

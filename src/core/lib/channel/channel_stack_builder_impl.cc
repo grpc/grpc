@@ -32,7 +32,6 @@
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/gpr/useful.h"
-#include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/transport/error_utils.h"
 #include "src/core/lib/transport/transport.h"
 
@@ -65,9 +64,9 @@ ChannelStackBuilderImpl::Build() {
   }
 
   // and initialize it
-  grpc_error_handle error = grpc_channel_stack_init(
+  absl::Status error = grpc_channel_stack_init(
       1,
-      [](void* p, grpc_error_handle) {
+      [](void* p, absl::Status) {
         auto* stk = static_cast<grpc_channel_stack*>(p);
         grpc_channel_stack_destroy(stk);
         gpr_free(stk);
@@ -75,11 +74,10 @@ ChannelStackBuilderImpl::Build() {
       channel_stack, stack->data(), stack->size(), final_args.ToC().get(),
       name(), channel_stack);
 
-  if (!GRPC_ERROR_IS_NONE(error)) {
+  if (!error.ok()) {
     grpc_channel_stack_destroy(channel_stack);
     gpr_free(channel_stack);
     auto status = grpc_error_to_absl_status(error);
-    GRPC_ERROR_UNREF(error);
     return status;
   }
 

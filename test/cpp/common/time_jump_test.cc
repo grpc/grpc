@@ -94,8 +94,8 @@ TEST_P(TimeJumpTest, TimerRunning) {
       &timer,
       grpc_core::ExecCtx::Get()->Now() + grpc_core::Duration::Seconds(3),
       GRPC_CLOSURE_CREATE(
-          [](void*, grpc_error_handle error) {
-            GPR_ASSERT(error == GRPC_ERROR_CANCELLED);
+          [](void*, absl::Status error) {
+            GPR_ASSERT(error == absl::CancelledError());
           },
           nullptr, grpc_schedule_on_exec_ctx));
   gpr_sleep_until(grpc_timeout_milliseconds_to_deadline(100));

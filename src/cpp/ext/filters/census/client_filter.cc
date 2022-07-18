@@ -65,15 +65,15 @@ constexpr uint32_t
 constexpr uint32_t
     OpenCensusCallTracer::OpenCensusCallAttemptTracer::kMaxTagsLen;
 
-grpc_error_handle CensusClientCallData::Init(
-    grpc_call_element* /* elem */, const grpc_call_element_args* args) {
+absl::Status CensusClientCallData::Init(grpc_call_element* /* elem */,
+                                        const grpc_call_element_args* args) {
   tracer_ = args->arena->New<OpenCensusCallTracer>(args);
   GPR_DEBUG_ASSERT(args->context[GRPC_CONTEXT_CALL_TRACER].value == nullptr);
   args->context[GRPC_CONTEXT_CALL_TRACER].value = tracer_;
   args->context[GRPC_CONTEXT_CALL_TRACER].destroy = [](void* tracer) {
     (static_cast<OpenCensusCallTracer*>(tracer))->~OpenCensusCallTracer();
   };
-  return GRPC_ERROR_NONE;
+  return absl::OkStatus();
 }
 
 void CensusClientCallData::StartTransportStreamOpBatch(
@@ -186,9 +186,8 @@ void OpenCensusCallTracer::OpenCensusCallAttemptTracer::
 }
 
 void OpenCensusCallTracer::OpenCensusCallAttemptTracer::RecordCancel(
-    grpc_error_handle cancel_error) {
+    absl::Status /*cancel_error*/) {
   status_code_ = absl::StatusCode::kCancelled;
-  GRPC_ERROR_UNREF(cancel_error);
 }
 
 void OpenCensusCallTracer::OpenCensusCallAttemptTracer::RecordEnd(

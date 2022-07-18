@@ -47,9 +47,10 @@ grpc_endpoint* grpc_tcp_client_create_from_fd(
    fd: out parameter. The new FD
    Returns: error, if any. Out parameters are not set on error
 */
-grpc_error_handle grpc_tcp_client_prepare_fd(
-    const grpc_channel_args* channel_args, const grpc_resolved_address* addr,
-    grpc_resolved_address* mapped_addr, int* fd);
+absl::Status grpc_tcp_client_prepare_fd(const grpc_channel_args* channel_args,
+                                        const grpc_resolved_address* addr,
+                                        grpc_resolved_address* mapped_addr,
+                                        int* fd);
 
 /* Connect a configured TCP client fd.
 

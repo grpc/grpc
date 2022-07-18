@@ -65,8 +65,8 @@ static void create_test_socket(int port, int* socket_fd,
   setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, &one, sizeof(one));
   /* Reset the size of socket send buffer to the minimal value to facilitate
      buffer filling up and triggering notify_on_write  */
-  GPR_ASSERT(grpc_set_socket_sndbuf(fd, buffer_size_bytes) == GRPC_ERROR_NONE);
-  GPR_ASSERT(grpc_set_socket_rcvbuf(fd, buffer_size_bytes) == GRPC_ERROR_NONE);
+  GPR_ASSERT(grpc_set_socket_sndbuf(fd, buffer_size_bytes) == absl::OkStatus());
+  GPR_ASSERT(grpc_set_socket_rcvbuf(fd, buffer_size_bytes) == absl::OkStatus());
   /* Make fd non-blocking */
   flags = fcntl(fd, F_GETFL, 0);
   GPR_ASSERT(fcntl(fd, F_SETFL, flags | O_NONBLOCK) == 0);
@@ -122,14 +122,14 @@ static void session_shutdown_cb(void* arg, /*session */
 
 /* Called when data become readable in a session. */
 static void session_read_cb(void* arg, /*session */
-                            grpc_error_handle error) {
+                            absl::Status error) {
   session* se = static_cast<session*>(arg);
   int fd = grpc_fd_wrapped_fd(se->em_fd);
 
   ssize_t read_once = 0;
   ssize_t read_total = 0;
 
-  if (!GRPC_ERROR_IS_NONE(error)) {
+  if (!error.ok()) {
     session_shutdown_cb(arg, true);
     return;
   }
@@ -180,7 +180,7 @@ static void listen_shutdown_cb(void* arg /*server*/, int /*success*/) {
 
 /* Called when a new TCP connection request arrives in the listening port. */
 static void listen_cb(void* arg, /*=sv_arg*/
-                      grpc_error_handle error) {
+                      absl::Status error) {
   server* sv = static_cast<server*>(arg);
   int fd;
   int flags;
@@ -189,7 +189,7 @@ static void listen_cb(void* arg, /*=sv_arg*/
   socklen_t slen = sizeof(ss);
   grpc_fd* listen_em_fd = sv->em_fd;
 
-  if (!GRPC_ERROR_IS_NONE(error)) {
+  if (!error.ok()) {
     listen_shutdown_cb(arg, 1);
     return;
   }
@@ -295,12 +295,12 @@ static void client_session_shutdown_cb(void* arg /*client*/, int /*success*/) {
 
 /* Write as much as possible, then register notify_on_write. */
 static void client_session_write(void* arg, /*client */
-                                 grpc_error_handle error) {
+                                 absl::Status error) {
   client* cl = static_cast<client*>(arg);
   int fd = grpc_fd_wrapped_fd(cl->em_fd);
   ssize_t write_once = 0;
 
-  if (!GRPC_ERROR_IS_NONE(error)) {
+  if (!error.ok()) {
     gpr_mu_lock(g_mu);
     client_session_shutdown_cb(arg, 1);
     gpr_mu_unlock(g_mu);
@@ -354,7 +354,7 @@ static void client_start(client* cl, int port) {
   cl->em_fd = grpc_fd_create(fd, "client", false);
   grpc_pollset_add_fd(g_pollset, cl->em_fd);
 
-  client_session_write(cl, GRPC_ERROR_NONE);
+  client_session_write(cl, absl::OkStatus());
 }
 
 /* Wait for the signal to shutdown a client. */
@@ -402,7 +402,7 @@ void init_change_data(fd_change_data* fdc) { fdc->cb_that_ran = nullptr; }
 void destroy_change_data(fd_change_data* /*fdc*/) {}
 
 static void first_read_callback(void* arg /* fd_change_data */,
-                                grpc_error_handle /*error*/) {
+                                absl::Status /*error*/) {
   fd_change_data* fdc = static_cast<fd_change_data*>(arg);
 
   gpr_mu_lock(g_mu);
@@ -413,7 +413,7 @@ static void first_read_callback(void* arg /* fd_change_data */,
 }
 
 static void second_read_callback(void* arg /* fd_change_data */,
-                                 grpc_error_handle /*error*/) {
+                                 absl::Status /*error*/) {
   fd_change_data* fdc = static_cast<fd_change_data*>(arg);
 
   gpr_mu_lock(g_mu);
@@ -507,7 +507,7 @@ static void test_grpc_fd_change(void) {
   close(sv[1]);
 }
 
-static void destroy_pollset(void* p, grpc_error_handle /*error*/) {
+static void destroy_pollset(void* p, absl::Status /*error*/) {
   grpc_pollset_destroy(static_cast<grpc_pollset*>(p));
 }
 

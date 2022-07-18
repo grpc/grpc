@@ -142,7 +142,7 @@ void MaxAgeFilter::PostInit() {
     MaxAgeFilter* filter;
     grpc_closure closure;
   };
-  auto run_startup = [](void* p, grpc_error_handle) {
+  auto run_startup = [](void* p, absl::Status) {
     auto* startup = static_cast<StartupClosure*>(p);
     // Trigger idle timer
     startup->filter->IncreaseCallCount();
@@ -158,7 +158,7 @@ void MaxAgeFilter::PostInit() {
   auto* startup =
       new StartupClosure{this->channel_stack()->Ref(), this, grpc_closure{}};
   GRPC_CLOSURE_INIT(&startup->closure, run_startup, startup, nullptr);
-  ExecCtx::Run(DEBUG_LOCATION, &startup->closure, GRPC_ERROR_NONE);
+  ExecCtx::Run(DEBUG_LOCATION, &startup->closure, absl::OkStatus());
 
   auto channel_stack = this->channel_stack()->Ref();
 
@@ -173,7 +173,7 @@ void MaxAgeFilter::PostInit() {
               GRPC_CHANNEL_STACK_REF(this->channel_stack(),
                                      "max_age send_goaway");
               // Jump out of the activity to send the goaway.
-              auto fn = [](void* arg, grpc_error_handle) {
+              auto fn = [](void* arg, absl::Status) {
                 auto* channel_stack = static_cast<grpc_channel_stack*>(arg);
                 grpc_transport_op* op = grpc_make_transport_op(nullptr);
                 op->goaway_error = grpc_error_set_int(
@@ -187,7 +187,7 @@ void MaxAgeFilter::PostInit() {
               ExecCtx::Run(
                   DEBUG_LOCATION,
                   GRPC_CLOSURE_CREATE(fn, this->channel_stack(), nullptr),
-                  GRPC_ERROR_NONE);
+                  absl::OkStatus());
               return Immediate(absl::OkStatus());
             },
             // Sleep for the grace period
@@ -216,7 +216,7 @@ ArenaPromise<ServerMetadataHandle> ChannelIdleFilter::MakeCallPromise(
 
 bool ChannelIdleFilter::StartTransportOp(grpc_transport_op* op) {
   // Catch the disconnect_with_error transport op.
-  if (!GRPC_ERROR_IS_NONE(op->disconnect_with_error)) Shutdown();
+  if (!op->disconnect_with_error.ok()) Shutdown();
   // Pass the op to the next filter.
   return false;
 }

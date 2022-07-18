@@ -21,6 +21,7 @@
 
 #include <memory>
 
+#include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/string_view.h"
 
@@ -30,7 +31,6 @@
 #include "src/core/lib/gprpp/dual_ref_counted.h"
 #include "src/core/lib/gprpp/ref_counted.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
-#include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/service_config/service_config.h"
 #include "src/core/lib/service_config/service_config_parser.h"
 #include "src/core/lib/transport/metadata_batch.h"
@@ -43,7 +43,7 @@ class ServerConfigSelector : public RefCounted<ServerConfigSelector> {
  public:
   // Configuration to apply to an incoming call
   struct CallConfig {
-    grpc_error_handle error = GRPC_ERROR_NONE;
+    absl::Status error = absl::OkStatus();
     const ServiceConfigParser::ParsedConfigVector* method_configs = nullptr;
     RefCountedPtr<ServiceConfig> service_config;
   };

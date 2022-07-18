@@ -45,7 +45,6 @@
 #include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
-#include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/json/json.h"
 #include "src/core/lib/resolver/server_address.h"
 #include "src/core/lib/transport/connectivity_state.h"
@@ -519,7 +518,7 @@ class PickFirstFactory : public LoadBalancingPolicyFactory {
   const char* name() const override { return kPickFirst; }
 
   RefCountedPtr<LoadBalancingPolicy::Config> ParseLoadBalancingConfig(
-      const Json& /*json*/, grpc_error_handle* /*error*/) const override {
+      const Json& /*json*/, absl::Status* /*error*/) const override {
     return MakeRefCounted<PickFirstConfig>();
   }
 };

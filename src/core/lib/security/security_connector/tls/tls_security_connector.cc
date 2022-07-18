@@ -41,6 +41,7 @@
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/host_port.h"
+#include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/promise/poll.h"
 #include "src/core/lib/promise/promise.h"
@@ -359,8 +360,8 @@ void TlsChannelSecurityConnector::check_peer(
   const char* target_name = overridden_target_name_.empty()
                                 ? target_name_.c_str()
                                 : overridden_target_name_.c_str();
-  grpc_error_handle error = grpc_ssl_check_alpn(&peer);
-  if (!GRPC_ERROR_IS_NONE(error)) {
+  absl::Status error = grpc_ssl_check_alpn(&peer);
+  if (!error.ok()) {
     ExecCtx::Run(DEBUG_LOCATION, on_peer_checked, error);
     tsi_peer_destruct(&peer);
     return;
@@ -378,12 +379,11 @@ void TlsChannelSecurityConnector::check_peer(
 }
 
 void TlsChannelSecurityConnector::cancel_check_peer(
-    grpc_closure* on_peer_checked, grpc_error_handle error) {
-  if (!GRPC_ERROR_IS_NONE(error)) {
+    grpc_closure* on_peer_checked, absl::Status error) {
+  if (!error.ok()) {
     gpr_log(GPR_ERROR,
             "TlsChannelSecurityConnector::cancel_check_peer error: %s",
             grpc_error_std_string(error).c_str());
-    GRPC_ERROR_UNREF(error);
     return;
   }
   auto* verifier = options_->certificate_verifier();
@@ -456,19 +456,17 @@ void TlsChannelSecurityConnector::TlsChannelCertificateWatcher::
 // TODO(ZhenLian): implement the logic to signal waiting handshakers once
 // BlockOnInitialCredentialHandshaker is implemented.
 void TlsChannelSecurityConnector::TlsChannelCertificateWatcher::OnError(
-    grpc_error_handle root_cert_error, grpc_error_handle identity_cert_error) {
-  if (!GRPC_ERROR_IS_NONE(root_cert_error)) {
+    absl::Status root_cert_error, absl::Status identity_cert_error) {
+  if (!root_cert_error.ok()) {
     gpr_log(GPR_ERROR,
             "TlsChannelCertificateWatcher getting root_cert_error: %s",
             grpc_error_std_string(root_cert_error).c_str());
   }
-  if (!GRPC_ERROR_IS_NONE(identity_cert_error)) {
+  if (!identity_cert_error.ok()) {
     gpr_log(GPR_ERROR,
             "TlsChannelCertificateWatcher getting identity_cert_error: %s",
             grpc_error_std_string(identity_cert_error).c_str());
   }
-  GRPC_ERROR_UNREF(root_cert_error);
-  GRPC_ERROR_UNREF(identity_cert_error);
 }
 
 TlsChannelSecurityConnector::ChannelPendingVerifierRequest::
@@ -506,7 +504,7 @@ void TlsChannelSecurityConnector::ChannelPendingVerifierRequest::OnVerifyDone(
     MutexLock lock(&security_connector_->verifier_request_map_mu_);
     security_connector_->pending_verifier_requests_.erase(on_peer_checked_);
   }
-  grpc_error_handle error = GRPC_ERROR_NONE;
+  absl::Status error = absl::OkStatus();
   if (!status.ok()) {
     error = GRPC_ERROR_CREATE_FROM_COPIED_STRING(
         absl::StrCat("Custom verification check failed with error: ",
@@ -643,8 +641,8 @@ void TlsServerSecurityConnector::check_peer(
     tsi_peer peer, grpc_endpoint* /*ep*/,
     RefCountedPtr<grpc_auth_context>* auth_context,
     grpc_closure* on_peer_checked) {
-  grpc_error_handle error = grpc_ssl_check_alpn(&peer);
-  if (!GRPC_ERROR_IS_NONE(error)) {
+  absl::Status error = grpc_ssl_check_alpn(&peer);
+  if (!error.ok()) {
     ExecCtx::Run(DEBUG_LOCATION, on_peer_checked, error);
     tsi_peer_destruct(&peer);
     return;
@@ -666,12 +664,11 @@ void TlsServerSecurityConnector::check_peer(
 }
 
 void TlsServerSecurityConnector::cancel_check_peer(
-    grpc_closure* on_peer_checked, grpc_error_handle error) {
-  if (!GRPC_ERROR_IS_NONE(error)) {
+    grpc_closure* on_peer_checked, absl::Status error) {
+  if (!error.ok()) {
     gpr_log(GPR_ERROR,
             "TlsServerSecurityConnector::cancel_check_peer error: %s",
             grpc_error_std_string(error).c_str());
-    GRPC_ERROR_UNREF(error);
     return;
   }
   auto* verifier = options_->certificate_verifier();
@@ -734,19 +731,17 @@ void TlsServerSecurityConnector::TlsServerCertificateWatcher::
 // TODO(ZhenLian): implement the logic to signal waiting handshakers once
 // BlockOnInitialCredentialHandshaker is implemented.
 void TlsServerSecurityConnector::TlsServerCertificateWatcher::OnError(
-    grpc_error_handle root_cert_error, grpc_error_handle identity_cert_error) {
-  if (!GRPC_ERROR_IS_NONE(root_cert_error)) {
+    absl::Status root_cert_error, absl::Status identity_cert_error) {
+  if (!root_cert_error.ok()) {
     gpr_log(GPR_ERROR,
             "TlsServerCertificateWatcher getting root_cert_error: %s",
             grpc_error_std_string(root_cert_error).c_str());
   }
-  if (!GRPC_ERROR_IS_NONE(identity_cert_error)) {
+  if (!identity_cert_error.ok()) {
     gpr_log(GPR_ERROR,
             "TlsServerCertificateWatcher getting identity_cert_error: %s",
             grpc_error_std_string(identity_cert_error).c_str());
   }
-  GRPC_ERROR_UNREF(root_cert_error);
-  GRPC_ERROR_UNREF(identity_cert_error);
 }
 
 TlsServerSecurityConnector::ServerPendingVerifierRequest::
@@ -783,7 +778,7 @@ void TlsServerSecurityConnector::ServerPendingVerifierRequest::OnVerifyDone(
     MutexLock lock(&security_connector_->verifier_request_map_mu_);
     security_connector_->pending_verifier_requests_.erase(on_peer_checked_);
   }
-  grpc_error_handle error = GRPC_ERROR_NONE;
+  absl::Status error = absl::OkStatus();
   if (!status.ok()) {
     error = GRPC_ERROR_CREATE_FROM_COPIED_STRING(
         absl::StrCat("Custom verification check failed with error: ",

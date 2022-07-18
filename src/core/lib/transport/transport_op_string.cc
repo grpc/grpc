@@ -23,6 +23,7 @@
 #include <string>
 #include <vector>
 
+#include "absl/status/status.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
 #include "absl/strings/str_join.h"
@@ -107,12 +108,12 @@ std::string grpc_transport_op_string(grpc_transport_op* op) {
                                   op->stop_connectivity_watch));
   }
 
-  if (!GRPC_ERROR_IS_NONE(op->disconnect_with_error)) {
+  if (!op->disconnect_with_error.ok()) {
     out.push_back(absl::StrCat(
         " DISCONNECT:", grpc_error_std_string(op->disconnect_with_error)));
   }
 
-  if (!GRPC_ERROR_IS_NONE(op->goaway_error)) {
+  if (!op->goaway_error.ok()) {
     out.push_back(
         absl::StrCat(" SEND_GOAWAY:", grpc_error_std_string(op->goaway_error)));
   }

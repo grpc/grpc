@@ -193,7 +193,7 @@ typedef struct {
   uint8_t unused;
 } channel_data;
 
-static void recv_im_ready(void* arg, grpc_error_handle error) {
+static void recv_im_ready(void* arg, absl::Status error) {
   grpc_call_element* elem = static_cast<grpc_call_element*>(arg);
   call_data* calld = static_cast<call_data*>(elem->call_data);
   grpc_core::Closure::Run(
@@ -216,18 +216,18 @@ static void start_transport_stream_op_batch(
   grpc_call_next_op(elem, op);
 }
 
-static grpc_error_handle init_call_elem(
-    grpc_call_element* /*elem*/, const grpc_call_element_args* /*args*/) {
-  return GRPC_ERROR_NONE;
+static absl::Status init_call_elem(grpc_call_element* /*elem*/,
+                                   const grpc_call_element_args* /*args*/) {
+  return absl::OkStatus();
 }
 
 static void destroy_call_elem(grpc_call_element* /*elem*/,
                               const grpc_call_final_info* /*final_info*/,
                               grpc_closure* /*ignored*/) {}
 
-static grpc_error_handle init_channel_elem(
-    grpc_channel_element* /*elem*/, grpc_channel_element_args* /*args*/) {
-  return GRPC_ERROR_NONE;
+static absl::Status init_channel_elem(grpc_channel_element* /*elem*/,
+                                      grpc_channel_element_args* /*args*/) {
+  return absl::OkStatus();
 }
 
 static void destroy_channel_elem(grpc_channel_element* /*elem*/) {}

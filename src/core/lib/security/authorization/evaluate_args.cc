@@ -16,6 +16,7 @@
 
 #include "src/core/lib/security/authorization/evaluate_args.h"
 
+#include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/match.h"
 #include "absl/strings/numbers.h"
@@ -54,13 +55,12 @@ EvaluateArgs::PerChannelArgs::Address ParseEndpointUri(
             std::string(port_view).c_str());
   }
   address.address_str = std::string(host_view);
-  grpc_error_handle error = grpc_string_to_sockaddr(
+  absl::Status error = grpc_string_to_sockaddr(
       &address.address, address.address_str.c_str(), address.port);
-  if (!GRPC_ERROR_IS_NONE(error)) {
+  if (!error.ok()) {
     gpr_log(GPR_DEBUG, "Address %s is not IPv4/IPv6. Error: %s",
             address.address_str.c_str(), grpc_error_std_string(error).c_str());
   }
-  GRPC_ERROR_UNREF(error);
   return address;
 }
 

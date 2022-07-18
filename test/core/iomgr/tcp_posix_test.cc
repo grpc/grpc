@@ -176,19 +176,20 @@ static size_t count_slices(grpc_slice* slices, size_t nslices,
   return num_bytes;
 }
 
-static void read_cb(void* user_data, grpc_error_handle error) {
+static void read_cb(void* user_data, absl::Status error) {
   struct read_socket_state* state =
       static_cast<struct read_socket_state*>(user_data);
   size_t read_bytes;
   int current_data;
 
-  GPR_ASSERT(GRPC_ERROR_IS_NONE(error));
+  GPR_ASSERT(error.ok());
 
   gpr_mu_lock(g_mu);
   current_data = state->read_bytes % 256;
   // The number of bytes read each time this callback is invoked must be >=
   // the min_progress_size.
-  GPR_ASSERT(state->min_progress_size <= state->incoming.length);
+  GPR_ASSERT(static_cast<size_t>(state->min_progress_size) <=
+             state->incoming.length);
   read_bytes = count_slices(state->incoming.slices, state->incoming.count,
                             &current_data);
   state->read_bytes += read_bytes;
@@ -357,8 +358,8 @@ static grpc_slice* allocate_blocks(size_t num_bytes, size_t slice_size,
 }
 
 static void write_done(void* user_data /* write_socket_state */,
-                       grpc_error_handle error) {
-  GPR_ASSERT(GRPC_ERROR_IS_NONE(error));
+                       absl::Status error) {
+  GPR_ASSERT(error.ok());
   struct write_socket_state* state =
       static_cast<struct write_socket_state*>(user_data);
   gpr_mu_lock(g_mu);
@@ -410,8 +411,8 @@ void drain_socket_blocking(int fd, size_t num_bytes, size_t read_size) {
 
 /* Verifier for timestamps callback for write_test */
 void timestamps_verifier(void* arg, grpc_core::Timestamps* ts,
-                         grpc_error_handle error) {
-  GPR_ASSERT(GRPC_ERROR_IS_NONE(error));
+                         absl::Status error) {
+  GPR_ASSERT(error.ok());
   GPR_ASSERT(arg != nullptr);
   GPR_ASSERT(ts->sendmsg_time.time.clock_type == GPR_CLOCK_REALTIME);
   GPR_ASSERT(ts->scheduled_time.time.clock_type == GPR_CLOCK_REALTIME);
@@ -507,7 +508,7 @@ static void write_test(size_t num_bytes, size_t slice_size,
       static_cast<grpc_resource_quota*>(a[1].value.pointer.p));
 }
 
-void on_fd_released(void* arg, grpc_error_handle /*errors*/) {
+void on_fd_released(void* arg, absl::Status /*errors*/) {
   int* done = static_cast<int*>(arg);
   *done = 1;
   GPR_ASSERT(
@@ -664,7 +665,7 @@ static grpc_endpoint_test_config configs[] = {
     {"tcp/tcp_socketpair", create_fixture_tcp_socketpair, clean_up},
 };
 
-static void destroy_pollset(void* p, grpc_error_handle /*error*/) {
+static void destroy_pollset(void* p, absl::Status /*error*/) {
   grpc_pollset_destroy(static_cast<grpc_pollset*>(p));
 }
 

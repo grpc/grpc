@@ -22,6 +22,7 @@
 
 #include <new>
 
+#include "absl/status/status.h"
 #include "absl/types/optional.h"
 
 #include <grpc/support/log.h>
@@ -30,14 +31,13 @@
 #include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/iomgr/closure.h"
-#include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/profiling/timers.h"
 #include "src/core/lib/transport/metadata_batch.h"
 #include "src/core/lib/transport/transport.h"
 
-static grpc_error_handle clr_init_channel_elem(
-    grpc_channel_element* /*elem*/, grpc_channel_element_args* /*args*/) {
-  return GRPC_ERROR_NONE;
+static absl::Status clr_init_channel_elem(grpc_channel_element* /*elem*/,
+                                          grpc_channel_element_args* /*args*/) {
+  return absl::OkStatus();
 }
 
 static void clr_destroy_channel_elem(grpc_channel_element* /*elem*/) {}
@@ -59,30 +59,29 @@ struct call_data {
 
 }  // namespace
 
-static void on_complete_for_send(void* arg, grpc_error_handle error) {
+static void on_complete_for_send(void* arg, absl::Status error) {
   call_data* calld = static_cast<call_data*>(arg);
-  if (GRPC_ERROR_IS_NONE(error)) {
+  if (error.ok()) {
     calld->send_initial_metadata_succeeded = true;
   }
   grpc_core::Closure::Run(DEBUG_LOCATION, calld->original_on_complete_for_send,
-                          GRPC_ERROR_REF(error));
+                          error);
 }
 
-static void recv_initial_metadata_ready(void* arg, grpc_error_handle error) {
+static void recv_initial_metadata_ready(void* arg, absl::Status error) {
   call_data* calld = static_cast<call_data*>(arg);
-  if (GRPC_ERROR_IS_NONE(error)) {
+  if (error.ok()) {
     calld->recv_initial_metadata_succeeded = true;
   }
   grpc_core::Closure::Run(DEBUG_LOCATION,
-                          calld->original_recv_initial_metadata_ready,
-                          GRPC_ERROR_REF(error));
+                          calld->original_recv_initial_metadata_ready, error);
 }
 
-static grpc_error_handle clr_init_call_elem(
-    grpc_call_element* elem, const grpc_call_element_args* args) {
+static absl::Status clr_init_call_elem(grpc_call_element* elem,
+                                       const grpc_call_element_args* args) {
   GPR_ASSERT(args->context != nullptr);
   new (elem->call_data) call_data();
-  return GRPC_ERROR_NONE;
+  return absl::OkStatus();
 }
 
 static void clr_destroy_call_elem(grpc_call_element* elem,

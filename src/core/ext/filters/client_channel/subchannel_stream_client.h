@@ -39,7 +39,6 @@
 #include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/iomgr/call_combiner.h"
 #include "src/core/lib/iomgr/closure.h"
-#include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/iomgr_fwd.h"
 #include "src/core/lib/iomgr/polling_entity.h"
 #include "src/core/lib/iomgr/timer.h"
@@ -127,21 +126,21 @@ class SubchannelStreamClient
     void Cancel();
 
     void StartBatch(grpc_transport_stream_op_batch* batch);
-    static void StartBatchInCallCombiner(void* arg, grpc_error_handle error);
+    static void StartBatchInCallCombiner(void* arg, absl::Status error);
 
     void CallEndedLocked(bool retry)
         ABSL_EXCLUSIVE_LOCKS_REQUIRED(&subchannel_stream_client_->mu_);
 
     void RecvMessageReady();
 
-    static void OnComplete(void* arg, grpc_error_handle error);
-    static void RecvInitialMetadataReady(void* arg, grpc_error_handle error);
-    static void RecvMessageReady(void* arg, grpc_error_handle error);
-    static void RecvTrailingMetadataReady(void* arg, grpc_error_handle error);
-    static void StartCancel(void* arg, grpc_error_handle error);
-    static void OnCancelComplete(void* arg, grpc_error_handle error);
+    static void OnComplete(void* arg, absl::Status error);
+    static void RecvInitialMetadataReady(void* arg, absl::Status error);
+    static void RecvMessageReady(void* arg, absl::Status error);
+    static void RecvTrailingMetadataReady(void* arg, absl::Status error);
+    static void StartCancel(void* arg, absl::Status error);
+    static void OnCancelComplete(void* arg, absl::Status error);
 
-    static void AfterCallStackDestruction(void* arg, grpc_error_handle error);
+    static void AfterCallStackDestruction(void* arg, absl::Status error);
 
     RefCountedPtr<SubchannelStreamClient> subchannel_stream_client_;
     grpc_polling_entity pollent_;
@@ -196,7 +195,7 @@ class SubchannelStreamClient
   void StartCallLocked() ABSL_EXCLUSIVE_LOCKS_REQUIRED(&mu_);
 
   void StartRetryTimerLocked() ABSL_EXCLUSIVE_LOCKS_REQUIRED(&mu_);
-  static void OnRetryTimer(void* arg, grpc_error_handle error);
+  static void OnRetryTimer(void* arg, absl::Status error);
 
   RefCountedPtr<ConnectedSubchannel> connected_subchannel_;
   grpc_pollset_set* interested_parties_;  // Do not own.

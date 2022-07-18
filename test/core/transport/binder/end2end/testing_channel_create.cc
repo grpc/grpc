@@ -121,9 +121,9 @@ grpc_channel* grpc_binder_channel_create_for_testing(
   grpc_transport *client_transport, *server_transport;
   std::tie(client_transport, server_transport) =
       grpc_binder::end2end_testing::CreateClientServerBindersPairForTesting();
-  grpc_error_handle error = grpc_core::Server::FromC(server)->SetupTransport(
+  absl::Status error = grpc_core::Server::FromC(server)->SetupTransport(
       server_transport, nullptr, server_args, nullptr);
-  GPR_ASSERT(GRPC_ERROR_IS_NONE(error));
+  GPR_ASSERT(error.ok());
   auto channel = grpc_core::Channel::Create(
       "binder", client_args, GRPC_CLIENT_DIRECT_CHANNEL, client_transport);
   GPR_ASSERT(channel.ok());

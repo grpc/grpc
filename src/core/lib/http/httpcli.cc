@@ -42,6 +42,7 @@
 #include "src/core/lib/http/format_request.h"
 #include "src/core/lib/http/parser.h"
 #include "src/core/lib/iomgr/endpoint.h"
+#include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/iomgr_internal.h"
 #include "src/core/lib/iomgr/pollset_set.h"
 #include "src/core/lib/iomgr/resolve_address.h"
@@ -198,7 +199,6 @@ HttpRequest::~HttpRequest() {
   grpc_iomgr_unregister_object(&iomgr_obj_);
   grpc_slice_buffer_destroy_internal(&incoming_);
   grpc_slice_buffer_destroy_internal(&outgoing_);
-  GRPC_ERROR_UNREF(overall_error_);
   grpc_pollset_set_destroy(pollset_set_);
 }
 
@@ -240,8 +240,8 @@ void HttpRequest::Orphan() {
   Unref();
 }
 
-void HttpRequest::AppendError(grpc_error_handle error) {
-  if (GRPC_ERROR_IS_NONE(overall_error_)) {
+void HttpRequest::AppendError(absl::Status error) {
+  if (overall_error_.ok()) {
     overall_error_ =
         GRPC_ERROR_CREATE_FROM_STATIC_STRING("Failed HTTP/1 client request");
   }
@@ -254,13 +254,13 @@ void HttpRequest::AppendError(grpc_error_handle error) {
           addr_text.ok() ? addr_text.value() : addr_text.status().ToString()));
 }
 
-void HttpRequest::OnReadInternal(grpc_error_handle error) {
+void HttpRequest::OnReadInternal(absl::Status error) {
   for (size_t i = 0; i < incoming_.count; i++) {
     if (GRPC_SLICE_LENGTH(incoming_.slices[i])) {
       have_read_byte_ = 1;
-      grpc_error_handle err =
+      absl::Status err =
           grpc_http_parser_parse(&parser_, incoming_.slices[i], nullptr);
-      if (!GRPC_ERROR_IS_NONE(err)) {
+      if (!err.ok()) {
         Finish(err);
         return;
       }
@@ -269,23 +269,23 @@ void HttpRequest::OnReadInternal(grpc_error_handle error) {
   if (cancelled_) {
     Finish(GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(
         "HTTP1 request cancelled during read", &overall_error_, 1));
-  } else if (GRPC_ERROR_IS_NONE(error)) {
+  } else if (error.ok()) {
     DoRead();
   } else if (!have_read_byte_) {
-    NextAddress(GRPC_ERROR_REF(error));
+    NextAddress(error);
   } else {
     Finish(grpc_http_parser_eof(&parser_));
   }
 }
 
-void HttpRequest::ContinueDoneWriteAfterScheduleOnExecCtx(
-    void* arg, grpc_error_handle error) {
+void HttpRequest::ContinueDoneWriteAfterScheduleOnExecCtx(void* arg,
+                                                          absl::Status error) {
   RefCountedPtr<HttpRequest> req(static_cast<HttpRequest*>(arg));
   MutexLock lock(&req->mu_);
-  if (GRPC_ERROR_IS_NONE(error) && !req->cancelled_) {
+  if (error.ok() && !req->cancelled_) {
     req->OnWritten();
   } else {
-    req->NextAddress(GRPC_ERROR_REF(error));
+    req->NextAddress(error);
   }
 }
 
@@ -297,7 +297,7 @@ void HttpRequest::StartWrite() {
                       /*max_frame_size=*/INT_MAX);
 }
 
-void HttpRequest::OnHandshakeDone(void* arg, grpc_error_handle error) {
+void HttpRequest::OnHandshakeDone(void* arg, absl::Status error) {
   auto* args = static_cast<HandshakerArgs*>(arg);
   RefCountedPtr<HttpRequest> req(static_cast<HttpRequest*>(args->user_data));
   if (g_test_only_on_handshake_done_intercept != nullptr) {
@@ -307,9 +307,9 @@ void HttpRequest::OnHandshakeDone(void* arg, grpc_error_handle error) {
   }
   MutexLock lock(&req->mu_);
   req->own_endpoint_ = true;
-  if (!GRPC_ERROR_IS_NONE(error)) {
+  if (!error.ok()) {
     req->handshake_mgr_.reset();
-    req->NextAddress(GRPC_ERROR_REF(error));
+    req->NextAddress(error);
     return;
   }
   // Handshake completed, so we own fields in args
@@ -357,8 +357,8 @@ void HttpRequest::DoHandshake(const grpc_resolved_address* addr) {
                               /*user_data=*/this);
 }
 
-void HttpRequest::NextAddress(grpc_error_handle error) {
-  if (!GRPC_ERROR_IS_NONE(error)) {
+void HttpRequest::NextAddress(absl::Status error) {
+  if (!error.ok()) {
     AppendError(error);
   }
   if (cancelled_) {
@@ -391,7 +391,7 @@ void HttpRequest::OnResolved(
   }
   addresses_ = std::move(*addresses_or);
   next_address_ = 0;
-  NextAddress(GRPC_ERROR_NONE);
+  NextAddress(absl::OkStatus());
 }
 
 }  // namespace grpc_core

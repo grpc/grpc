@@ -23,13 +23,13 @@
 
 #include <memory>
 
+#include "absl/status/status.h"
 #include "absl/strings/string_view.h"
 
 #include "src/core/ext/filters/client_channel/lb_policy.h"
 #include "src/core/ext/filters/client_channel/lb_policy_factory.h"
 #include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
-#include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/json/json.h"
 
 namespace grpc_core {
@@ -64,7 +64,7 @@ class LoadBalancingPolicyRegistry {
   /// Returns a parsed object of the load balancing policy to be used from a
   /// LoadBalancingConfig array \a json.
   static RefCountedPtr<LoadBalancingPolicy::Config> ParseLoadBalancingConfig(
-      const Json& json, grpc_error_handle* error);
+      const Json& json, absl::Status* error);
 };
 
 }  // namespace grpc_core

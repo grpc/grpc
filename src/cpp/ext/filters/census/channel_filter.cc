@@ -22,9 +22,9 @@
 
 namespace grpc {
 
-grpc_error_handle CensusChannelData::Init(grpc_channel_element* /*elem*/,
-                                          grpc_channel_element_args* /*args*/) {
-  return GRPC_ERROR_NONE;
+absl::Status CensusChannelData::Init(grpc_channel_element* /*elem*/,
+                                     grpc_channel_element_args* /*args*/) {
+  return absl::OkStatus();
 }
 
 }  // namespace grpc

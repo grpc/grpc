@@ -82,15 +82,15 @@ FakeUdpAndTcpServer::FakeUdpAndTcpServer(
             port_, ERRNO);
     GPR_ASSERT(0);
   }
-  grpc_error_handle set_non_block_error;
+  absl::Status set_non_block_error;
   set_non_block_error = grpc_tcp_set_non_block(udp_socket_);
-  if (!GRPC_ERROR_IS_NONE(set_non_block_error)) {
+  if (!set_non_block_error.ok()) {
     gpr_log(GPR_ERROR, "Failed to configure non-blocking socket: %s",
             grpc_error_std_string(set_non_block_error).c_str());
     GPR_ASSERT(0);
   }
   set_non_block_error = grpc_tcp_set_non_block(accept_socket_);
-  if (!GRPC_ERROR_IS_NONE(set_non_block_error)) {
+  if (!set_non_block_error.ok()) {
     gpr_log(GPR_ERROR, "Failed to configure non-blocking socket: %s",
             grpc_error_std_string(set_non_block_error).c_str());
     GPR_ASSERT(0);
@@ -242,9 +242,9 @@ void FakeUdpAndTcpServer::RunServerLoop() {
     if (p != BAD_SOCKET_RETURN_VAL) {
       gpr_log(GPR_DEBUG, "accepted peer socket: %d", p);
 #ifdef GPR_WINDOWS
-      grpc_error_handle set_non_block_error;
+      absl::Status set_non_block_error;
       set_non_block_error = grpc_tcp_set_non_block(p);
-      if (!GRPC_ERROR_IS_NONE(set_non_block_error)) {
+      if (!set_non_block_error.ok()) {
         gpr_log(GPR_ERROR, "Failed to configure non-blocking socket: %s",
                 grpc_error_std_string(set_non_block_error).c_str());
         GPR_ASSERT(0);

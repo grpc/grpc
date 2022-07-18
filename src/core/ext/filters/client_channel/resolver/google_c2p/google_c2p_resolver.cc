@@ -89,12 +89,12 @@ class GoogleCloud2ProdResolver : public Resolver {
     void Orphan() override;
 
    private:
-    static void OnHttpRequestDone(void* arg, grpc_error_handle error);
+    static void OnHttpRequestDone(void* arg, absl::Status error);
 
-    // If error is not GRPC_ERROR_NONE, then it's not safe to look at response.
+    // If error is not absl::OkStatus(), then it's not safe to look at response.
     virtual void OnDone(GoogleCloud2ProdResolver* resolver,
                         const grpc_http_response* response,
-                        grpc_error_handle error) = 0;
+                        absl::Status error) = 0;
 
     RefCountedPtr<GoogleCloud2ProdResolver> resolver_;
     OrphanablePtr<HttpRequest> http_request_;
@@ -111,7 +111,7 @@ class GoogleCloud2ProdResolver : public Resolver {
    private:
     void OnDone(GoogleCloud2ProdResolver* resolver,
                 const grpc_http_response* response,
-                grpc_error_handle error) override;
+                absl::Status error) override;
   };
 
   // A metadata server query to get the IPv6 address.
@@ -123,7 +123,7 @@ class GoogleCloud2ProdResolver : public Resolver {
    private:
     void OnDone(GoogleCloud2ProdResolver* resolver,
                 const grpc_http_response* response,
-                grpc_error_handle error) override;
+                absl::Status error) override;
   };
 
   void ZoneQueryDone(std::string zone);
@@ -188,11 +188,10 @@ void GoogleCloud2ProdResolver::MetadataQuery::Orphan() {
 }
 
 void GoogleCloud2ProdResolver::MetadataQuery::OnHttpRequestDone(
-    void* arg, grpc_error_handle error) {
+    void* arg, absl::Status error) {
   auto* self = static_cast<MetadataQuery*>(arg);
   // Hop back into WorkSerializer to call OnDone().
   // Note: We implicitly pass our ref to the callback here.
-  (void)GRPC_ERROR_REF(error);
   self->resolver_->work_serializer_->Run(
       [self, error]() {
         self->OnDone(self->resolver_.get(), &self->response_, error);
@@ -213,9 +212,9 @@ GoogleCloud2ProdResolver::ZoneQuery::ZoneQuery(
 
 void GoogleCloud2ProdResolver::ZoneQuery::OnDone(
     GoogleCloud2ProdResolver* resolver, const grpc_http_response* response,
-    grpc_error_handle error) {
+    absl::Status error) {
   absl::StatusOr<std::string> zone;
-  if (!GRPC_ERROR_IS_NONE(error)) {
+  if (!error.ok()) {
     zone = absl::UnknownError(
         absl::StrCat("error fetching zone from metadata server: ",
                      grpc_error_std_string(error)));
@@ -239,7 +238,6 @@ void GoogleCloud2ProdResolver::ZoneQuery::OnDone(
   } else {
     resolver->ZoneQueryDone(std::move(*zone));
   }
-  GRPC_ERROR_UNREF(error);
 }
 
 //
@@ -255,13 +253,12 @@ GoogleCloud2ProdResolver::IPv6Query::IPv6Query(
 
 void GoogleCloud2ProdResolver::IPv6Query::OnDone(
     GoogleCloud2ProdResolver* resolver, const grpc_http_response* response,
-    grpc_error_handle error) {
-  if (!GRPC_ERROR_IS_NONE(error)) {
+    absl::Status error) {
+  if (!error.ok()) {
     gpr_log(GPR_ERROR, "error fetching IPv6 address from metadata server: %s",
             grpc_error_std_string(error).c_str());
   }
-  resolver->IPv6QueryDone(GRPC_ERROR_IS_NONE(error) && response->status == 200);
-  GRPC_ERROR_UNREF(error);
+  resolver->IPv6QueryDone(error.ok() && response->status == 200);
 }
 
 //

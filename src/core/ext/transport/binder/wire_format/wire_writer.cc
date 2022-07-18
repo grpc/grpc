@@ -40,7 +40,7 @@ bool CanBeSentInOneTransaction(const Transaction& tx) {
 }
 
 // Simply forward the call to `WireWriterImpl::RunScheduledTx`.
-void RunScheduledTx(void* arg, grpc_error_handle /*error*/) {
+void RunScheduledTx(void* arg, absl::Status /*error*/) {
   auto* run_scheduled_tx_args =
       static_cast<WireWriterImpl::RunScheduledTxArgs*>(arg);
   run_scheduled_tx_args->writer->RunScheduledTxInternal(run_scheduled_tx_args);
@@ -304,7 +304,7 @@ absl::Status WireWriterImpl::SendAck(int64_t num_bytes) {
     args->tx = RunScheduledTxArgs::AckTx();
     absl::get<RunScheduledTxArgs::AckTx>(args->tx).num_bytes = num_bytes;
     auto cl = GRPC_CLOSURE_CREATE(RunScheduledTx, args, nullptr);
-    combiner_->Run(cl, GRPC_ERROR_NONE);
+    combiner_->Run(cl, absl::OkStatus());
     return absl::OkStatus();
   }
   // Otherwise, we can directly send ack.
@@ -381,7 +381,7 @@ void WireWriterImpl::TryScheduleTransaction() {
       num_non_acked_tx_in_combiner_++;
       combiner_->Run(GRPC_CLOSURE_CREATE(RunScheduledTx,
                                          pending_outgoing_tx_.front(), nullptr),
-                     GRPC_ERROR_NONE);
+                     absl::OkStatus());
       pending_outgoing_tx_.pop();
     } else {
       // It is common to fill `kFlowControlWindowSize` completely because

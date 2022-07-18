@@ -337,7 +337,7 @@ std::string XdsRouteConfigResource::ToString() const {
 
 namespace {
 
-grpc_error_handle ClusterSpecifierPluginParse(
+absl::Status ClusterSpecifierPluginParse(
     const XdsEncodingContext& context,
     const envoy_config_route_v3_RouteConfiguration* route_config,
     XdsRouteConfigResource* rds_update) {
@@ -390,12 +390,12 @@ grpc_error_handle ClusterSpecifierPluginParse(
     rds_update->cluster_specifier_plugin_map[std::move(name)] =
         std::move(lb_policy_config);
   }
-  return GRPC_ERROR_NONE;
+  return absl::OkStatus();
 }
 
-grpc_error_handle RoutePathMatchParse(
-    const envoy_config_route_v3_RouteMatch* match,
-    XdsRouteConfigResource::Route* route, bool* ignore_route) {
+absl::Status RoutePathMatchParse(const envoy_config_route_v3_RouteMatch* match,
+                                 XdsRouteConfigResource::Route* route,
+                                 bool* ignore_route) {
   auto* case_sensitive_ptr =
       envoy_config_route_v3_RouteMatch_case_sensitive(match);
   bool case_sensitive = true;
@@ -414,18 +414,18 @@ grpc_error_handle RoutePathMatchParse(
         // Prefix which does not start with a / will never match anything, so
         // ignore this route.
         *ignore_route = true;
-        return GRPC_ERROR_NONE;
+        return absl::OkStatus();
       }
       std::vector<absl::string_view> prefix_elements =
           absl::StrSplit(prefix.substr(1), absl::MaxSplits('/', 2));
       if (prefix_elements.size() > 2) {
         // Prefix cannot have more than 2 slashes.
         *ignore_route = true;
-        return GRPC_ERROR_NONE;
+        return absl::OkStatus();
       } else if (prefix_elements.size() == 2 && prefix_elements[0].empty()) {
         // Prefix contains empty string between the 2 slashes
         *ignore_route = true;
-        return GRPC_ERROR_NONE;
+        return absl::OkStatus();
       }
     }
     type = StringMatcher::Type::kPrefix;
@@ -436,13 +436,13 @@ grpc_error_handle RoutePathMatchParse(
     if (path.empty()) {
       // Path that is empty will never match anything, so ignore this route.
       *ignore_route = true;
-      return GRPC_ERROR_NONE;
+      return absl::OkStatus();
     }
     if (path[0] != '/') {
       // Path which does not start with a / will never match anything, so
       // ignore this route.
       *ignore_route = true;
-      return GRPC_ERROR_NONE;
+      return absl::OkStatus();
     }
     std::vector<absl::string_view> path_elements =
         absl::StrSplit(path.substr(1), absl::MaxSplits('/', 2));
@@ -450,17 +450,17 @@ grpc_error_handle RoutePathMatchParse(
       // Path not in the required format of /service/method will never match
       // anything, so ignore this route.
       *ignore_route = true;
-      return GRPC_ERROR_NONE;
+      return absl::OkStatus();
     } else if (path_elements[0].empty()) {
       // Path contains empty service name will never match anything, so ignore
       // this route.
       *ignore_route = true;
-      return GRPC_ERROR_NONE;
+      return absl::OkStatus();
     } else if (path_elements[1].empty()) {
       // Path contains empty method name will never match anything, so ignore
       // this route.
       *ignore_route = true;
-      return GRPC_ERROR_NONE;
+      return absl::OkStatus();
     }
     type = StringMatcher::Type::kExact;
     match_string = std::string(path);
@@ -482,10 +482,10 @@ grpc_error_handle RoutePathMatchParse(
         absl::StrCat("path matcher: ", string_matcher.status().message()));
   }
   route->matchers.path_matcher = std::move(string_matcher.value());
-  return GRPC_ERROR_NONE;
+  return absl::OkStatus();
 }
 
-grpc_error_handle RouteHeaderMatchersParse(
+absl::Status RouteHeaderMatchersParse(
     const envoy_config_route_v3_RouteMatch* match,
     XdsRouteConfigResource::Route* route) {
   size_t size;
@@ -549,10 +549,10 @@ grpc_error_handle RouteHeaderMatchersParse(
     route->matchers.header_matchers.emplace_back(
         std::move(header_matcher.value()));
   }
-  return GRPC_ERROR_NONE;
+  return absl::OkStatus();
 }
 
-grpc_error_handle RouteRuntimeFractionParse(
+absl::Status RouteRuntimeFractionParse(
     const envoy_config_route_v3_RouteMatch* match,
     XdsRouteConfigResource::Route* route) {
   const envoy_config_core_v3_RuntimeFractionalPercent* runtime_fraction =
@@ -583,11 +583,11 @@ grpc_error_handle RouteRuntimeFractionParse(
       route->matchers.fraction_per_million = numerator;
     }
   }
-  return GRPC_ERROR_NONE;
+  return absl::OkStatus();
 }
 
 template <typename ParentType, typename EntryType>
-grpc_error_handle ParseTypedPerFilterConfig(
+absl::Status ParseTypedPerFilterConfig(
     const XdsEncodingContext& context, const ParentType* parent,
     const EntryType* (*entry_func)(const ParentType*, size_t*),
     upb_StringView (*key_func)(const EntryType*),
@@ -649,14 +649,14 @@ grpc_error_handle ParseTypedPerFilterConfig(
     }
     (*typed_per_filter_config)[std::string(key)] = std::move(*filter_config);
   }
-  return GRPC_ERROR_NONE;
+  return absl::OkStatus();
 }
 
-grpc_error_handle RetryPolicyParse(
+absl::Status RetryPolicyParse(
     const XdsEncodingContext& context,
     const envoy_config_route_v3_RetryPolicy* retry_policy,
     absl::optional<XdsRouteConfigResource::RetryPolicy>* retry) {
-  std::vector<grpc_error_handle> errors;
+  std::vector<absl::Status> errors;
   XdsRouteConfigResource::RetryPolicy retry_to_return;
   auto retry_on = UpbStringToStdString(
       envoy_config_route_v3_RetryPolicy_retry_on(retry_policy));
@@ -720,14 +720,14 @@ grpc_error_handle RetryPolicyParse(
   }
   if (errors.empty()) {
     *retry = retry_to_return;
-    return GRPC_ERROR_NONE;
+    return absl::OkStatus();
   } else {
     return GRPC_ERROR_CREATE_FROM_VECTOR("errors parsing retry policy",
                                          &errors);
   }
 }
 
-grpc_error_handle RouteActionParse(
+absl::Status RouteActionParse(
     const XdsEncodingContext& context,
     const envoy_config_route_v3_Route* route_msg,
     const std::map<std::string /*cluster_specifier_plugin_name*/,
@@ -787,7 +787,7 @@ grpc_error_handle RouteActionParse(
       if (cluster.weight == 0) continue;
       sum_of_weights += cluster.weight;
       if (context.use_v3) {
-        grpc_error_handle error = ParseTypedPerFilterConfig<
+        absl::Status error = ParseTypedPerFilterConfig<
             envoy_config_route_v3_WeightedCluster_ClusterWeight,
             envoy_config_route_v3_WeightedCluster_ClusterWeight_TypedPerFilterConfigEntry>(
             context, cluster_weight,
@@ -795,7 +795,7 @@ grpc_error_handle RouteActionParse(
             envoy_config_route_v3_WeightedCluster_ClusterWeight_TypedPerFilterConfigEntry_key,
             envoy_config_route_v3_WeightedCluster_ClusterWeight_TypedPerFilterConfigEntry_value,
             &cluster.typed_per_filter_config);
-        if (!GRPC_ERROR_IS_NONE(error)) return error;
+        if (!error.ok()) return error;
       }
       action_weighted_clusters.emplace_back(std::move(cluster));
     }
@@ -933,24 +933,24 @@ grpc_error_handle RouteActionParse(
       envoy_config_route_v3_RouteAction_retry_policy(route_action);
   if (retry_policy != nullptr) {
     absl::optional<XdsRouteConfigResource::RetryPolicy> retry;
-    grpc_error_handle error = RetryPolicyParse(context, retry_policy, &retry);
-    if (!GRPC_ERROR_IS_NONE(error)) return error;
+    absl::Status error = RetryPolicyParse(context, retry_policy, &retry);
+    if (!error.ok()) return error;
     route->retry_policy = retry;
   }
-  return GRPC_ERROR_NONE;
+  return absl::OkStatus();
 }
 
 }  // namespace
 
-grpc_error_handle XdsRouteConfigResource::Parse(
+absl::Status XdsRouteConfigResource::Parse(
     const XdsEncodingContext& context,
     const envoy_config_route_v3_RouteConfiguration* route_config,
     XdsRouteConfigResource* rds_update) {
   // Get the cluster spcifier plugins
   if (XdsRlsEnabled()) {
-    grpc_error_handle error =
+    absl::Status error =
         ClusterSpecifierPluginParse(context, route_config, rds_update);
-    if (!GRPC_ERROR_IS_NONE(error)) return error;
+    if (!error.ok()) return error;
   }
   // Get the virtual hosts.
   size_t num_virtual_hosts;
@@ -978,7 +978,7 @@ grpc_error_handle XdsRouteConfigResource::Parse(
     }
     // Parse typed_per_filter_config.
     if (context.use_v3) {
-      grpc_error_handle error = ParseTypedPerFilterConfig<
+      absl::Status error = ParseTypedPerFilterConfig<
           envoy_config_route_v3_VirtualHost,
           envoy_config_route_v3_VirtualHost_TypedPerFilterConfigEntry>(
           context, virtual_hosts[i],
@@ -986,7 +986,7 @@ grpc_error_handle XdsRouteConfigResource::Parse(
           envoy_config_route_v3_VirtualHost_TypedPerFilterConfigEntry_key,
           envoy_config_route_v3_VirtualHost_TypedPerFilterConfigEntry_value,
           &vhost.typed_per_filter_config);
-      if (!GRPC_ERROR_IS_NONE(error)) return error;
+      if (!error.ok()) return error;
     }
     // Parse retry policy.
     absl::optional<XdsRouteConfigResource::RetryPolicy>
@@ -994,9 +994,9 @@ grpc_error_handle XdsRouteConfigResource::Parse(
     const envoy_config_route_v3_RetryPolicy* retry_policy =
         envoy_config_route_v3_VirtualHost_retry_policy(virtual_hosts[i]);
     if (retry_policy != nullptr) {
-      grpc_error_handle error =
+      absl::Status error =
           RetryPolicyParse(context, retry_policy, &virtual_host_retry_policy);
-      if (!GRPC_ERROR_IS_NONE(error)) return error;
+      if (!error.ok()) return error;
     }
     // Parse routes.
     size_t num_routes;
@@ -1027,14 +1027,13 @@ grpc_error_handle XdsRouteConfigResource::Parse(
       }
       XdsRouteConfigResource::Route route;
       bool ignore_route = false;
-      grpc_error_handle error =
-          RoutePathMatchParse(match, &route, &ignore_route);
-      if (!GRPC_ERROR_IS_NONE(error)) return error;
+      absl::Status error = RoutePathMatchParse(match, &route, &ignore_route);
+      if (!error.ok()) return error;
       if (ignore_route) continue;
       error = RouteHeaderMatchersParse(match, &route);
-      if (!GRPC_ERROR_IS_NONE(error)) return error;
+      if (!error.ok()) return error;
       error = RouteRuntimeFractionParse(match, &route);
-      if (!GRPC_ERROR_IS_NONE(error)) return error;
+      if (!error.ok()) return error;
       if (envoy_config_route_v3_Route_has_route(routes[j])) {
         route.action.emplace<XdsRouteConfigResource::Route::RouteAction>();
         auto& route_action =
@@ -1042,7 +1041,7 @@ grpc_error_handle XdsRouteConfigResource::Parse(
         error = RouteActionParse(context, routes[j],
                                  rds_update->cluster_specifier_plugin_map,
                                  &route_action, &ignore_route);
-        if (!GRPC_ERROR_IS_NONE(error)) return error;
+        if (!error.ok()) return error;
         if (ignore_route) continue;
         if (route_action.retry_policy == absl::nullopt &&
             retry_policy != nullptr) {
@@ -1062,7 +1061,7 @@ grpc_error_handle XdsRouteConfigResource::Parse(
             .emplace<XdsRouteConfigResource::Route::NonForwardingAction>();
       }
       if (context.use_v3) {
-        grpc_error_handle error = ParseTypedPerFilterConfig<
+        absl::Status error = ParseTypedPerFilterConfig<
             envoy_config_route_v3_Route,
             envoy_config_route_v3_Route_TypedPerFilterConfigEntry>(
             context, routes[j],
@@ -1070,7 +1069,7 @@ grpc_error_handle XdsRouteConfigResource::Parse(
             envoy_config_route_v3_Route_TypedPerFilterConfigEntry_key,
             envoy_config_route_v3_Route_TypedPerFilterConfigEntry_value,
             &route.typed_per_filter_config);
-        if (!GRPC_ERROR_IS_NONE(error)) return error;
+        if (!error.ok()) return error;
       }
       vhost.routes.emplace_back(std::move(route));
     }
@@ -1084,7 +1083,7 @@ grpc_error_handle XdsRouteConfigResource::Parse(
           std::string(unused_plugin));
     }
   }
-  return GRPC_ERROR_NONE;
+  return absl::OkStatus();
 }
 
 //
@@ -1126,11 +1125,10 @@ XdsRouteConfigResourceType::Decode(const XdsEncodingContext& context,
   result.name = UpbStringToStdString(
       envoy_config_route_v3_RouteConfiguration_name(resource));
   auto route_config_data = absl::make_unique<ResourceDataSubclass>();
-  grpc_error_handle error = XdsRouteConfigResource::Parse(
+  absl::Status error = XdsRouteConfigResource::Parse(
       context, resource, &route_config_data->resource);
-  if (!GRPC_ERROR_IS_NONE(error)) {
+  if (!error.ok()) {
     std::string error_str = grpc_error_std_string(error);
-    GRPC_ERROR_UNREF(error);
     if (GRPC_TRACE_FLAG_ENABLED(*context.tracer)) {
       gpr_log(GPR_ERROR, "[xds_client %p] invalid RouteConfiguration %s: %s",
               context.client, result.name.c_str(), error_str.c_str());

@@ -19,6 +19,8 @@
 
 #include <grpc/support/port_platform.h>
 
+#include "absl/status/status.h"
+
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channelz.h"
 #include "src/core/lib/gprpp/orphanable.h"
@@ -71,7 +73,7 @@ class SubchannelConnector : public InternallyRefCounted<SubchannelConnector> {
 
   // Cancels any in-flight connection attempt and shuts down the
   // connector.
-  virtual void Shutdown(grpc_error_handle error) = 0;
+  virtual void Shutdown(absl::Status error) = 0;
 
   void Orphan() override {
     Shutdown(GRPC_ERROR_CREATE_FROM_STATIC_STRING("Subchannel disconnected"));

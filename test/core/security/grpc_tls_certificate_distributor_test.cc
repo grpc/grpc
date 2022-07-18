@@ -130,25 +130,22 @@ class GrpcTlsCertificateDistributorTest : public ::testing::Test {
                                              std::move(updated_identity));
     }
 
-    void OnError(grpc_error_handle root_cert_error,
-                 grpc_error_handle identity_cert_error) override {
-      GPR_ASSERT(!GRPC_ERROR_IS_NONE(root_cert_error) ||
-                 !GRPC_ERROR_IS_NONE(identity_cert_error));
+    void OnError(absl::Status root_cert_error,
+                 absl::Status identity_cert_error) override {
+      GPR_ASSERT(!root_cert_error.ok() || !identity_cert_error.ok());
       std::string root_error_str;
       std::string identity_error_str;
-      if (!GRPC_ERROR_IS_NONE(root_cert_error)) {
+      if (!root_cert_error.ok()) {
         GPR_ASSERT(grpc_error_get_str(
             root_cert_error, GRPC_ERROR_STR_DESCRIPTION, &root_error_str));
       }
-      if (!GRPC_ERROR_IS_NONE(identity_cert_error)) {
+      if (!identity_cert_error.ok()) {
         GPR_ASSERT(grpc_error_get_str(identity_cert_error,
                                       GRPC_ERROR_STR_DESCRIPTION,
                                       &identity_error_str));
       }
       state_->error_queue.emplace_back(std::move(root_error_str),
                                        std::move(identity_error_str));
-      GRPC_ERROR_UNREF(root_cert_error);
-      GRPC_ERROR_UNREF(identity_cert_error);
     }
 
    private:

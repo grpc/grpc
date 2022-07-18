@@ -31,6 +31,7 @@
 #include "src/core/ext/filters/fault_injection/fault_injection_filter.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/status_util.h"
+#include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/json/json_util.h"
 
 namespace grpc_core {
@@ -39,12 +40,12 @@ namespace {
 
 std::vector<FaultInjectionMethodParsedConfig::FaultInjectionPolicy>
 ParseFaultInjectionPolicy(const Json::Array& policies_json_array,
-                          std::vector<grpc_error_handle>* error_list) {
+                          std::vector<absl::Status>* error_list) {
   std::vector<FaultInjectionMethodParsedConfig::FaultInjectionPolicy> policies;
   for (size_t i = 0; i < policies_json_array.size(); i++) {
     FaultInjectionMethodParsedConfig::FaultInjectionPolicy
         fault_injection_policy;
-    std::vector<grpc_error_handle> sub_error_list;
+    std::vector<absl::Status> sub_error_list;
     if (policies_json_array[i].type() != Json::Type::OBJECT) {
       error_list->push_back(GRPC_ERROR_CREATE_FROM_CPP_STRING(absl::StrCat(
           "faultInjectionPolicy index ", i, " is not a JSON object")));
@@ -143,9 +144,10 @@ ParseFaultInjectionPolicy(const Json::Array& policies_json_array,
 }  // namespace
 
 std::unique_ptr<ServiceConfigParser::ParsedConfig>
-FaultInjectionServiceConfigParser::ParsePerMethodParams(
-    const ChannelArgs& args, const Json& json, grpc_error_handle* error) {
-  GPR_DEBUG_ASSERT(error != nullptr && GRPC_ERROR_IS_NONE(*error));
+FaultInjectionServiceConfigParser::ParsePerMethodParams(const ChannelArgs& args,
+                                                        const Json& json,
+                                                        absl::Status* error) {
+  GPR_DEBUG_ASSERT(error != nullptr && error->ok());
   // Only parse fault injection policy if the following channel arg is present.
   if (!args.GetBool(GRPC_ARG_PARSE_FAULT_INJECTION_METHOD_CONFIG)
            .value_or(false)) {
@@ -154,7 +156,7 @@ FaultInjectionServiceConfigParser::ParsePerMethodParams(
   // Parse fault injection policy from given Json
   std::vector<FaultInjectionMethodParsedConfig::FaultInjectionPolicy>
       fault_injection_policies;
-  std::vector<grpc_error_handle> error_list;
+  std::vector<absl::Status> error_list;
   const Json::Array* policies_json_array;
   if (ParseJsonObjectField(json.object_value(), "faultInjectionPolicy",
                            &policies_json_array, &error_list)) {
@@ -162,7 +164,7 @@ FaultInjectionServiceConfigParser::ParsePerMethodParams(
         ParseFaultInjectionPolicy(*policies_json_array, &error_list);
   }
   *error = GRPC_ERROR_CREATE_FROM_VECTOR("Fault injection parser", &error_list);
-  if (!GRPC_ERROR_IS_NONE(*error) || fault_injection_policies.empty()) {
+  if (!error->ok() || fault_injection_policies.empty()) {
     return nullptr;
   }
   return absl::make_unique<FaultInjectionMethodParsedConfig>(

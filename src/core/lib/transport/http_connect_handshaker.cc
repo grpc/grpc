@@ -28,6 +28,7 @@
 
 #include "absl/base/thread_annotations.h"
 #include "absl/memory/memory.h"
+#include "absl/status/status.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
@@ -63,7 +64,7 @@ namespace {
 class HttpConnectHandshaker : public Handshaker {
  public:
   HttpConnectHandshaker();
-  void Shutdown(grpc_error_handle why) override;
+  void Shutdown(absl::Status why) override;
   void DoHandshake(grpc_tcp_server_acceptor* acceptor,
                    grpc_closure* on_handshake_done,
                    HandshakerArgs* args) override;
@@ -72,12 +73,12 @@ class HttpConnectHandshaker : public Handshaker {
  private:
   ~HttpConnectHandshaker() override;
   void CleanupArgsForFailureLocked() ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
-  void HandshakeFailedLocked(grpc_error_handle error)
+  void HandshakeFailedLocked(absl::Status error)
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
-  static void OnWriteDone(void* arg, grpc_error_handle error);
-  static void OnReadDone(void* arg, grpc_error_handle error);
-  static void OnWriteDoneScheduler(void* arg, grpc_error_handle error);
-  static void OnReadDoneScheduler(void* arg, grpc_error_handle error);
+  static void OnWriteDone(void* arg, absl::Status error);
+  static void OnReadDone(void* arg, absl::Status error);
+  static void OnWriteDoneScheduler(void* arg, absl::Status error);
+  static void OnReadDoneScheduler(void* arg, absl::Status error);
 
   Mutex mu_;
 
@@ -123,8 +124,8 @@ void HttpConnectHandshaker::CleanupArgsForFailureLocked() {
 
 // If the handshake failed or we're shutting down, clean up and invoke the
 // callback with the error.
-void HttpConnectHandshaker::HandshakeFailedLocked(grpc_error_handle error) {
-  if (GRPC_ERROR_IS_NONE(error)) {
+void HttpConnectHandshaker::HandshakeFailedLocked(absl::Status error) {
+  if (error.ok()) {
     // If we were shut down after an endpoint operation succeeded but
     // before the endpoint callback was invoked, we need to generate our
     // own error.
@@ -135,7 +136,7 @@ void HttpConnectHandshaker::HandshakeFailedLocked(grpc_error_handle error) {
     // before destroying them, even if we know that there are no
     // pending read/write callbacks.  This should be fixed, at which
     // point this can be removed.
-    grpc_endpoint_shutdown(args_->endpoint, GRPC_ERROR_REF(error));
+    grpc_endpoint_shutdown(args_->endpoint, error);
     // Not shutting down, so the handshake failed.  Clean up before
     // invoking the callback.
     CleanupArgsForFailureLocked();
@@ -150,23 +151,23 @@ void HttpConnectHandshaker::HandshakeFailedLocked(grpc_error_handle error) {
 // This callback can be invoked inline while already holding onto the mutex. To
 // avoid deadlocks, schedule OnWriteDone on ExecCtx.
 void HttpConnectHandshaker::OnWriteDoneScheduler(void* arg,
-                                                 grpc_error_handle error) {
+                                                 absl::Status error) {
   auto* handshaker = static_cast<HttpConnectHandshaker*>(arg);
   ExecCtx::Run(DEBUG_LOCATION,
                GRPC_CLOSURE_INIT(&handshaker->request_done_closure_,
                                  &HttpConnectHandshaker::OnWriteDone,
                                  handshaker, grpc_schedule_on_exec_ctx),
-               GRPC_ERROR_REF(error));
+               error);
 }
 
 // Callback invoked when finished writing HTTP CONNECT request.
-void HttpConnectHandshaker::OnWriteDone(void* arg, grpc_error_handle error) {
+void HttpConnectHandshaker::OnWriteDone(void* arg, absl::Status error) {
   auto* handshaker = static_cast<HttpConnectHandshaker*>(arg);
   ReleasableMutexLock lock(&handshaker->mu_);
-  if (!GRPC_ERROR_IS_NONE(error) || handshaker->is_shutdown_) {
+  if (!error.ok() || handshaker->is_shutdown_) {
     // If the write failed or we're shutting down, clean up and invoke the
     // callback with the error.
-    handshaker->HandshakeFailedLocked(GRPC_ERROR_REF(error));
+    handshaker->HandshakeFailedLocked(error);
     lock.Release();
     handshaker->Unref();
   } else {
@@ -183,24 +184,23 @@ void HttpConnectHandshaker::OnWriteDone(void* arg, grpc_error_handle error) {
 
 // This callback can be invoked inline while already holding onto the mutex. To
 // avoid deadlocks, schedule OnReadDone on ExecCtx.
-void HttpConnectHandshaker::OnReadDoneScheduler(void* arg,
-                                                grpc_error_handle error) {
+void HttpConnectHandshaker::OnReadDoneScheduler(void* arg, absl::Status error) {
   auto* handshaker = static_cast<HttpConnectHandshaker*>(arg);
   ExecCtx::Run(DEBUG_LOCATION,
                GRPC_CLOSURE_INIT(&handshaker->response_read_closure_,
                                  &HttpConnectHandshaker::OnReadDone, handshaker,
                                  grpc_schedule_on_exec_ctx),
-               GRPC_ERROR_REF(error));
+               error);
 }
 
 // Callback invoked for reading HTTP CONNECT response.
-void HttpConnectHandshaker::OnReadDone(void* arg, grpc_error_handle error) {
+void HttpConnectHandshaker::OnReadDone(void* arg, absl::Status error) {
   auto* handshaker = static_cast<HttpConnectHandshaker*>(arg);
   ReleasableMutexLock lock(&handshaker->mu_);
-  if (!GRPC_ERROR_IS_NONE(error) || handshaker->is_shutdown_) {
+  if (!error.ok() || handshaker->is_shutdown_) {
     // If the read failed or we're shutting down, clean up and invoke the
     // callback with the error.
-    handshaker->HandshakeFailedLocked(GRPC_ERROR_REF(error));
+    handshaker->HandshakeFailedLocked(error);
     goto done;
   }
   // Add buffer to parser.
@@ -210,7 +210,7 @@ void HttpConnectHandshaker::OnReadDone(void* arg, grpc_error_handle error) {
       error = grpc_http_parser_parse(&handshaker->http_parser_,
                                      handshaker->args_->read_buffer->slices[i],
                                      &body_start_offset);
-      if (!GRPC_ERROR_IS_NONE(error)) {
+      if (!error.ok()) {
         handshaker->HandshakeFailedLocked(error);
         goto done;
       }
@@ -279,16 +279,15 @@ done:
 // Public handshaker methods
 //
 
-void HttpConnectHandshaker::Shutdown(grpc_error_handle why) {
+void HttpConnectHandshaker::Shutdown(absl::Status why) {
   {
     MutexLock lock(&mu_);
     if (!is_shutdown_) {
       is_shutdown_ = true;
-      grpc_endpoint_shutdown(args_->endpoint, GRPC_ERROR_REF(why));
+      grpc_endpoint_shutdown(args_->endpoint, why);
       CleanupArgsForFailureLocked();
     }
   }
-  GRPC_ERROR_UNREF(why);
 }
 
 void HttpConnectHandshaker::DoHandshake(grpc_tcp_server_acceptor* /*acceptor*/,
@@ -305,7 +304,7 @@ void HttpConnectHandshaker::DoHandshake(grpc_tcp_server_acceptor* /*acceptor*/,
       MutexLock lock(&mu_);
       is_shutdown_ = true;
     }
-    ExecCtx::Run(DEBUG_LOCATION, on_handshake_done, GRPC_ERROR_NONE);
+    ExecCtx::Run(DEBUG_LOCATION, on_handshake_done, absl::OkStatus());
     return;
   }
   // Get headers from channel args.

@@ -79,10 +79,10 @@ XdsRouteLookupClusterSpecifierPlugin::GenerateLoadBalancingPolicyConfig(
   upb_JsonEncode(plugin_config, msg_type, symtab, 0,
                  reinterpret_cast<char*>(buf), json_size + 1, status.ptr());
   Json::Object rls_policy;
-  grpc_error_handle error = GRPC_ERROR_NONE;
+  absl::Status error = absl::OkStatus();
   rls_policy["routeLookupConfig"] =
       Json::Parse(reinterpret_cast<char*>(buf), &error);
-  GPR_ASSERT(GRPC_ERROR_IS_NONE(error));
+  GPR_ASSERT(error.ok());
   Json::Object cds_policy;
   cds_policy["cds_experimental"] = Json::Object();
   Json::Array child_policy;
@@ -94,19 +94,18 @@ XdsRouteLookupClusterSpecifierPlugin::GenerateLoadBalancingPolicyConfig(
   Json::Array policies;
   policies.emplace_back(std::move(policy));
   Json lb_policy_config(std::move(policies));
-  grpc_error_handle parse_error = GRPC_ERROR_NONE;
+  absl::Status parse_error = absl::OkStatus();
   // TODO(roth): If/when we ever add a second plugin, refactor this code
   // somehow such that we automatically validate the resulting config against
   // the gRPC LB policy registry instead of requiring each plugin to do that
   // itself.
   LoadBalancingPolicyRegistry::ParseLoadBalancingConfig(lb_policy_config,
                                                         &parse_error);
-  if (!GRPC_ERROR_IS_NONE(parse_error)) {
+  if (!parse_error.ok()) {
     absl::Status status = absl::InvalidArgumentError(absl::StrCat(
         kXdsRouteLookupClusterSpecifierPluginConfigName,
         " ClusterSpecifierPlugin returned invalid LB policy config: ",
         grpc_error_std_string(parse_error)));
-    GRPC_ERROR_UNREF(parse_error);
     return status;
   }
   return lb_policy_config.Dump();

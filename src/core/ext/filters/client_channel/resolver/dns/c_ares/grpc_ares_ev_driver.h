@@ -26,11 +26,11 @@
 #include <ares.h>
 
 #include "absl/base/thread_annotations.h"
+#include "absl/status/status.h"
 
 #include "src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper.h"
 #include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/iomgr/closure.h"
-#include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/iomgr_fwd.h"
 
 namespace grpc_core {
@@ -53,7 +53,7 @@ class GrpcPolledFd {
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(&grpc_ares_request::mu) = 0;
   /* Called once and only once. Must cause cancellation of any pending
    * read/write callbacks. */
-  virtual void ShutdownLocked(grpc_error_handle error)
+  virtual void ShutdownLocked(absl::Status error)
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(&grpc_ares_request::mu) = 0;
   /* Get the underlying ares_socket_t that this was created from */
   virtual ares_socket_t GetWrappedAresSocketLocked()

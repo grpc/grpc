@@ -43,6 +43,7 @@
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/gprpp/thd.h"
+#include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/sockaddr.h"
 #include "src/core/lib/resolver/server_address.h"
 #include "src/core/lib/service_config/service_config_impl.h"
@@ -69,11 +70,11 @@ void TryConnectAndDestroy() {
   grpc_core::ServerAddressList addresses;
   addresses.emplace_back(address.addr, address.len, grpc_core::ChannelArgs());
   grpc_core::Resolver::Result lb_address_result;
-  grpc_error_handle error = GRPC_ERROR_NONE;
+  absl::Status error = absl::OkStatus();
   lb_address_result.service_config = grpc_core::ServiceConfigImpl::Create(
       grpc_core::ChannelArgs(), "{\"loadBalancingConfig\":[{\"grpclb\":{}}]}",
       &error);
-  ASSERT_EQ(error, GRPC_ERROR_NONE) << grpc_error_std_string(error);
+  ASSERT_EQ(error, absl::OkStatus()) << grpc_error_std_string(error);
   lb_address_result.args = grpc_core::SetGrpcLbBalancerAddresses(
       grpc_core::ChannelArgs(), addresses);
   response_generator->SetResponse(lb_address_result);

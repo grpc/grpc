@@ -72,7 +72,7 @@ void FilterInitialMetadata(grpc_metadata_batch* b,
 }  // namespace
 
 void CensusServerCallData::OnDoneRecvMessageCb(void* user_data,
-                                               grpc_error_handle error) {
+                                               absl::Status error) {
   grpc_call_element* elem = reinterpret_cast<grpc_call_element*>(user_data);
   CensusServerCallData* calld =
       reinterpret_cast<CensusServerCallData*>(elem->call_data);
@@ -85,16 +85,16 @@ void CensusServerCallData::OnDoneRecvMessageCb(void* user_data,
     ++calld->recv_message_count_;
   }
   grpc_core::Closure::Run(DEBUG_LOCATION, calld->initial_on_done_recv_message_,
-                          GRPC_ERROR_REF(error));
+                          error);
 }
 
-void CensusServerCallData::OnDoneRecvInitialMetadataCb(
-    void* user_data, grpc_error_handle error) {
+void CensusServerCallData::OnDoneRecvInitialMetadataCb(void* user_data,
+                                                       absl::Status error) {
   grpc_call_element* elem = reinterpret_cast<grpc_call_element*>(user_data);
   CensusServerCallData* calld =
       reinterpret_cast<CensusServerCallData*>(elem->call_data);
   GPR_ASSERT(calld != nullptr);
-  if (GRPC_ERROR_IS_NONE(error)) {
+  if (error.ok()) {
     grpc_metadata_batch* initial_metadata = calld->recv_initial_metadata_;
     GPR_ASSERT(initial_metadata != nullptr);
     ServerMetadataElements sml;
@@ -108,8 +108,7 @@ void CensusServerCallData::OnDoneRecvInitialMetadataCb(
         calld->gc_, reinterpret_cast<census_context*>(&calld->context_));
   }
   grpc_core::Closure::Run(DEBUG_LOCATION,
-                          calld->initial_on_done_recv_initial_metadata_,
-                          GRPC_ERROR_REF(error));
+                          calld->initial_on_done_recv_initial_metadata_, error);
 }
 
 void CensusServerCallData::StartTransportStreamOpBatch(
@@ -145,8 +144,8 @@ void CensusServerCallData::StartTransportStreamOpBatch(
   grpc_call_next_op(elem, op->op());
 }
 
-grpc_error_handle CensusServerCallData::Init(
-    grpc_call_element* elem, const grpc_call_element_args* args) {
+absl::Status CensusServerCallData::Init(grpc_call_element* elem,
+                                        const grpc_call_element_args* args) {
   start_time_ = absl::Now();
   gc_ =
       grpc_call_from_top_element(grpc_call_stack_element(args->call_stack, 0));
@@ -156,7 +155,7 @@ grpc_error_handle CensusServerCallData::Init(
   GRPC_CLOSURE_INIT(&on_done_recv_message_, OnDoneRecvMessageCb, elem,
                     grpc_schedule_on_exec_ctx);
   auth_context_ = grpc_call_auth_context(gc_);
-  return GRPC_ERROR_NONE;
+  return absl::OkStatus();
 }
 
 void CensusServerCallData::Destroy(grpc_call_element* /*elem*/,

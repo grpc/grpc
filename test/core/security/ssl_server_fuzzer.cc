@@ -42,7 +42,7 @@ struct handshake_state {
   bool done_callback_called;
 };
 
-static void on_handshake_done(void* arg, grpc_error_handle error) {
+static void on_handshake_done(void* arg, absl::Status error) {
   grpc_core::HandshakerArgs* args =
       static_cast<grpc_core::HandshakerArgs*>(arg);
   struct handshake_state* state =
@@ -50,7 +50,7 @@ static void on_handshake_done(void* arg, grpc_error_handle error) {
   GPR_ASSERT(state->done_callback_called == false);
   state->done_callback_called = true;
   // The fuzzer should not pass the handshake.
-  GPR_ASSERT(!GRPC_ERROR_IS_NONE(error));
+  GPR_ASSERT(!error.ok());
 }
 
 extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {

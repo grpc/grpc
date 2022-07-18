@@ -27,8 +27,8 @@
 
 static void TestShutdownFlushesListVerifier(void* arg,
                                             grpc_core::Timestamps* /*ts*/,
-                                            grpc_error_handle error) {
-  GPR_ASSERT(GRPC_ERROR_IS_NONE(error));
+                                            absl::Status error) {
+  GPR_ASSERT(error.ok());
   GPR_ASSERT(arg != nullptr);
   gpr_atm* done = reinterpret_cast<gpr_atm*>(arg);
   gpr_atm_rel_store(done, static_cast<gpr_atm>(1));
@@ -49,7 +49,7 @@ static void TestShutdownFlushesList() {
     grpc_core::TracedBuffer::AddNewEntry(
         &list, i, 0, static_cast<void*>(&verifier_called[i]));
   }
-  grpc_core::TracedBuffer::Shutdown(&list, nullptr, GRPC_ERROR_NONE);
+  grpc_core::TracedBuffer::Shutdown(&list, nullptr, absl::OkStatus());
   GPR_ASSERT(list == nullptr);
   for (auto i = 0; i < NUM_ELEM; i++) {
     GPR_ASSERT(gpr_atm_acq_load(&verifier_called[i]) ==
@@ -59,8 +59,8 @@ static void TestShutdownFlushesList() {
 
 static void TestVerifierCalledOnAckVerifier(void* arg,
                                             grpc_core::Timestamps* ts,
-                                            grpc_error_handle error) {
-  GPR_ASSERT(GRPC_ERROR_IS_NONE(error));
+                                            absl::Status error) {
+  GPR_ASSERT(error.ok());
   GPR_ASSERT(arg != nullptr);
   GPR_ASSERT(ts->acked_time.time.clock_type == GPR_CLOCK_REALTIME);
   GPR_ASSERT(ts->acked_time.time.tv_sec == 123);
@@ -88,7 +88,7 @@ static void TestVerifierCalledOnAck() {
   grpc_core::TracedBuffer::ProcessTimestamp(&list, &serr, nullptr, &tss);
   GPR_ASSERT(gpr_atm_acq_load(&verifier_called) == static_cast<gpr_atm>(1));
   GPR_ASSERT(list == nullptr);
-  grpc_core::TracedBuffer::Shutdown(&list, nullptr, GRPC_ERROR_NONE);
+  grpc_core::TracedBuffer::Shutdown(&list, nullptr, absl::OkStatus());
 }
 
 /** Tests that shutdown can be called repeatedly.
@@ -109,9 +109,9 @@ static void TestRepeatedShutdown() {
   grpc_core::TracedBuffer::ProcessTimestamp(&list, &serr, nullptr, &tss);
   GPR_ASSERT(gpr_atm_acq_load(&verifier_called) == static_cast<gpr_atm>(1));
   GPR_ASSERT(list == nullptr);
-  grpc_core::TracedBuffer::Shutdown(&list, nullptr, GRPC_ERROR_NONE);
-  grpc_core::TracedBuffer::Shutdown(&list, nullptr, GRPC_ERROR_NONE);
-  grpc_core::TracedBuffer::Shutdown(&list, nullptr, GRPC_ERROR_NONE);
+  grpc_core::TracedBuffer::Shutdown(&list, nullptr, absl::OkStatus());
+  grpc_core::TracedBuffer::Shutdown(&list, nullptr, absl::OkStatus());
+  grpc_core::TracedBuffer::Shutdown(&list, nullptr, absl::OkStatus());
 }
 
 static void TestTcpBufferList() {

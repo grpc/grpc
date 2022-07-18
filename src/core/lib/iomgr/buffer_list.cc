@@ -41,14 +41,13 @@ void fill_gpr_from_timestamp(gpr_timespec* gts, const struct timespec* ts) {
 }
 
 void default_timestamps_callback(void* /*arg*/, Timestamps* /*ts*/,
-                                 grpc_error_handle /*shudown_err*/) {
+                                 absl::Status /*shudown_err*/) {
   gpr_log(GPR_DEBUG, "Timestamps callback has not been registered");
 }
 
 /** The saved callback function that will be invoked when we get all the
  * timestamps that we are going to get for a TracedBuffer. */
-void (*timestamps_callback)(void*, Timestamps*,
-                            grpc_error_handle shutdown_err) =
+void (*timestamps_callback)(void*, Timestamps*, absl::Status shutdown_err) =
     default_timestamps_callback;
 
 /* Used to extract individual opt stats from cmsg, so as to avoid troubles with
@@ -254,7 +253,7 @@ void TracedBuffer::ProcessTimestamp(TracedBuffer** head,
           /* Got all timestamps. Do the callback and free this TracedBuffer.
            * The thing below can be passed by value if we don't want the
            * restriction on the lifetime. */
-          timestamps_callback(elem->arg_, &(elem->ts_), GRPC_ERROR_NONE);
+          timestamps_callback(elem->arg_, &(elem->ts_), absl::OkStatus());
           next = elem->next_;
           delete static_cast<TracedBuffer*>(elem);
           *head = elem = next;
@@ -269,7 +268,7 @@ void TracedBuffer::ProcessTimestamp(TracedBuffer** head,
 }
 
 void TracedBuffer::Shutdown(TracedBuffer** head, void* remaining,
-                            grpc_error_handle shutdown_err) {
+                            absl::Status shutdown_err) {
   GPR_DEBUG_ASSERT(head != nullptr);
   TracedBuffer* elem = *head;
   while (elem != nullptr) {
@@ -282,11 +281,10 @@ void TracedBuffer::Shutdown(TracedBuffer** head, void* remaining,
   if (remaining != nullptr) {
     timestamps_callback(remaining, nullptr, shutdown_err);
   }
-  GRPC_ERROR_UNREF(shutdown_err);
 }
 
-void grpc_tcp_set_write_timestamps_callback(
-    void (*fn)(void*, Timestamps*, grpc_error_handle error)) {
+void grpc_tcp_set_write_timestamps_callback(void (*fn)(void*, Timestamps*,
+                                                       absl::Status error)) {
   timestamps_callback = fn;
 }
 } /* namespace grpc_core */
@@ -294,8 +292,8 @@ void grpc_tcp_set_write_timestamps_callback(
 #else /* GRPC_LINUX_ERRQUEUE */
 
 namespace grpc_core {
-void grpc_tcp_set_write_timestamps_callback(
-    void (*fn)(void*, Timestamps*, grpc_error_handle error)) {
+void grpc_tcp_set_write_timestamps_callback(void (*fn)(void*, Timestamps*,
+                                                       absl::Status error)) {
   // Cast value of fn to void to avoid unused parameter warning.
   // Can't comment out the name because some compilers and formatters don't
   // like the sequence */* , which would arise from */*fn*/.

@@ -57,7 +57,7 @@ class TimerState {
  private:
   // The on_complete callback used when sending a cancel_error batch down the
   // filter stack.  Yields the call combiner when the batch returns.
-  static void YieldCallCombiner(void* arg, grpc_error_handle /*ignored*/) {
+  static void YieldCallCombiner(void* arg, absl::Status /*ignored*/) {
     TimerState* self = static_cast<TimerState*>(arg);
     grpc_deadline_state* deadline_state =
         static_cast<grpc_deadline_state*>(self->elem_->call_data);
@@ -68,25 +68,25 @@ class TimerState {
 
   // This is called via the call combiner, so access to deadline_state is
   // synchronized.
-  static void SendCancelOpInCallCombiner(void* arg, grpc_error_handle error) {
+  static void SendCancelOpInCallCombiner(void* arg, absl::Status error) {
     TimerState* self = static_cast<TimerState*>(arg);
     grpc_transport_stream_op_batch* batch = grpc_make_transport_stream_op(
         GRPC_CLOSURE_INIT(&self->closure_, YieldCallCombiner, self, nullptr));
     batch->cancel_stream = true;
-    batch->payload->cancel_stream.cancel_error = GRPC_ERROR_REF(error);
+    batch->payload->cancel_stream.cancel_error = error;
     self->elem_->filter->start_transport_stream_op_batch(self->elem_, batch);
   }
 
   // Timer callback.
-  static void TimerCallback(void* arg, grpc_error_handle error) {
+  static void TimerCallback(void* arg, absl::Status error) {
     TimerState* self = static_cast<TimerState*>(arg);
     grpc_deadline_state* deadline_state =
         static_cast<grpc_deadline_state*>(self->elem_->call_data);
-    if (error != GRPC_ERROR_CANCELLED) {
+    if (error != absl::CancelledError()) {
       error = grpc_error_set_int(
           GRPC_ERROR_CREATE_FROM_STATIC_STRING("Deadline Exceeded"),
           GRPC_ERROR_INT_GRPC_STATUS, GRPC_STATUS_DEADLINE_EXCEEDED);
-      deadline_state->call_combiner->Cancel(GRPC_ERROR_REF(error));
+      deadline_state->call_combiner->Cancel(error);
       GRPC_CLOSURE_INIT(&self->closure_, SendCancelOpInCallCombiner, self,
                         nullptr);
       GRPC_CALL_COMBINER_START(deadline_state->call_combiner, &self->closure_,
@@ -139,13 +139,13 @@ static void cancel_timer_if_needed(grpc_deadline_state* deadline_state) {
 }
 
 // Callback run when we receive trailing metadata.
-static void recv_trailing_metadata_ready(void* arg, grpc_error_handle error) {
+static void recv_trailing_metadata_ready(void* arg, absl::Status error) {
   grpc_deadline_state* deadline_state = static_cast<grpc_deadline_state*>(arg);
   cancel_timer_if_needed(deadline_state);
   // Invoke the original callback.
   grpc_core::Closure::Run(DEBUG_LOCATION,
                           deadline_state->original_recv_trailing_metadata_ready,
-                          GRPC_ERROR_REF(error));
+                          error);
 }
 
 // Inject our own recv_trailing_metadata_ready callback into op.
@@ -173,7 +173,7 @@ struct start_timer_after_init_state {
   grpc_core::Timestamp deadline;
   grpc_closure closure;
 };
-static void start_timer_after_init(void* arg, grpc_error_handle error) {
+static void start_timer_after_init(void* arg, absl::Status error) {
   struct start_timer_after_init_state* state =
       static_cast<struct start_timer_after_init_state*>(arg);
   grpc_deadline_state* deadline_state =
@@ -183,8 +183,7 @@ static void start_timer_after_init(void* arg, grpc_error_handle error) {
     // need to bounce ourselves into it.
     state->in_call_combiner = true;
     GRPC_CALL_COMBINER_START(deadline_state->call_combiner, &state->closure,
-                             GRPC_ERROR_REF(error),
-                             "scheduling deadline timer");
+                             error, "scheduling deadline timer");
     return;
   }
   delete state;
@@ -212,7 +211,7 @@ grpc_deadline_state::grpc_deadline_state(grpc_call_element* elem,
         new start_timer_after_init_state(elem, deadline);
     GRPC_CLOSURE_INIT(&state->closure, start_timer_after_init, state,
                       grpc_schedule_on_exec_ctx);
-    grpc_core::ExecCtx::Run(DEBUG_LOCATION, &state->closure, GRPC_ERROR_NONE);
+    grpc_core::ExecCtx::Run(DEBUG_LOCATION, &state->closure, absl::OkStatus());
   }
 }
 
@@ -246,10 +245,10 @@ void grpc_deadline_state_client_start_transport_stream_op_batch(
 //
 
 // Constructor for channel_data.  Used for both client and server filters.
-static grpc_error_handle deadline_init_channel_elem(
+static absl::Status deadline_init_channel_elem(
     grpc_channel_element* /*elem*/, grpc_channel_element_args* args) {
   GPR_ASSERT(!args->is_last);
-  return GRPC_ERROR_NONE;
+  return absl::OkStatus();
 }
 
 // Destructor for channel_data.  Used for both client and server filters.
@@ -273,10 +272,10 @@ typedef struct server_call_data {
 } server_call_data;
 
 // Constructor for call_data.  Used for both client and server filters.
-static grpc_error_handle deadline_init_call_elem(
+static absl::Status deadline_init_call_elem(
     grpc_call_element* elem, const grpc_call_element_args* args) {
   new (elem->call_data) grpc_deadline_state(elem, *args, args->deadline);
-  return GRPC_ERROR_NONE;
+  return absl::OkStatus();
 }
 
 // Destructor for call_data.  Used for both client and server filters.
@@ -297,7 +296,7 @@ static void deadline_client_start_transport_stream_op_batch(
 }
 
 // Callback for receiving initial metadata on the server.
-static void recv_initial_metadata_ready(void* arg, grpc_error_handle error) {
+static void recv_initial_metadata_ready(void* arg, absl::Status error) {
   grpc_call_element* elem = static_cast<grpc_call_element*>(arg);
   server_call_data* calld = static_cast<server_call_data*>(elem->call_data);
   start_timer_if_needed(
@@ -305,8 +304,7 @@ static void recv_initial_metadata_ready(void* arg, grpc_error_handle error) {
                 .value_or(grpc_core::Timestamp::InfFuture()));
   // Invoke the next callback.
   grpc_core::Closure::Run(DEBUG_LOCATION,
-                          calld->next_recv_initial_metadata_ready,
-                          GRPC_ERROR_REF(error));
+                          calld->next_recv_initial_metadata_ready, error);
 }
 
 // Method for starting a call op for server filter.

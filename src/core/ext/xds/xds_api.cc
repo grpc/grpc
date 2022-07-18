@@ -271,7 +271,7 @@ std::string SerializeDiscoveryRequest(
 std::string XdsApi::CreateAdsRequest(
     const XdsBootstrap::XdsServer& server, absl::string_view type_url,
     absl::string_view version, absl::string_view nonce,
-    const std::vector<std::string>& resource_names, grpc_error_handle error,
+    const std::vector<std::string>& resource_names, absl::Status error,
     bool populate_node) {
   upb::Arena arena;
   const XdsEncodingContext context = {client_,
@@ -300,7 +300,7 @@ std::string XdsApi::CreateAdsRequest(
   }
   // Set error_detail if it's a NACK.
   std::string error_string_storage;
-  if (!GRPC_ERROR_IS_NONE(error)) {
+  if (!error.ok()) {
     google_rpc_Status* error_detail =
         envoy_service_discovery_v3_DiscoveryRequest_mutable_error_detail(
             request, arena.ptr());
@@ -314,7 +314,6 @@ std::string XdsApi::CreateAdsRequest(
     upb_StringView error_description =
         StdStringToUpbString(error_string_storage);
     google_rpc_Status_set_message(error_detail, error_description);
-    GRPC_ERROR_UNREF(error);
   }
   // Populate node.
   if (populate_node) {
@@ -595,10 +594,10 @@ std::string XdsApi::CreateLrsRequest(
   return SerializeLrsRequest(context, request);
 }
 
-grpc_error_handle XdsApi::ParseLrsResponse(absl::string_view encoded_response,
-                                           bool* send_all_clusters,
-                                           std::set<std::string>* cluster_names,
-                                           Duration* load_reporting_interval) {
+absl::Status XdsApi::ParseLrsResponse(absl::string_view encoded_response,
+                                      bool* send_all_clusters,
+                                      std::set<std::string>* cluster_names,
+                                      Duration* load_reporting_interval) {
   upb::Arena arena;
   // Decode the response.
   const envoy_service_load_stats_v3_LoadStatsResponse* decoded_response =
@@ -629,7 +628,7 @@ grpc_error_handle XdsApi::ParseLrsResponse(absl::string_view encoded_response,
   *load_reporting_interval = Duration::FromSecondsAndNanoseconds(
       google_protobuf_Duration_seconds(load_reporting_interval_duration),
       google_protobuf_Duration_nanos(load_reporting_interval_duration));
-  return GRPC_ERROR_NONE;
+  return absl::OkStatus();
 }
 
 namespace {

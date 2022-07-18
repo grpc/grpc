@@ -23,9 +23,9 @@
 
 #include <stdint.h>
 
+#include "absl/status/status.h"
 #include "absl/strings/string_view.h"
 
-#include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/resolved_address.h"
 #include "src/core/lib/uri/uri_parser.h"
 
@@ -64,19 +64,19 @@ uint16_t grpc_strhtons(const char* port);
 
 // Newer form of grpc_string_to_sockaddr which returns an error instead of
 // crashing if \a addr is not IPv6/IPv6
-grpc_error_handle grpc_string_to_sockaddr(grpc_resolved_address* out,
-                                          const char* addr, int port);
+absl::Status grpc_string_to_sockaddr(grpc_resolved_address* out,
+                                     const char* addr, int port);
 
 namespace grpc_core {
 
 /** Populate \a resolved_addr to be a unix socket at |path| */
-grpc_error_handle UnixSockaddrPopulate(absl::string_view path,
-                                       grpc_resolved_address* resolved_addr);
+absl::Status UnixSockaddrPopulate(absl::string_view path,
+                                  grpc_resolved_address* resolved_addr);
 
 /** Populate \a resolved_addr to be a unix socket in the abstract namespace
  * at |path| */
-grpc_error_handle UnixAbstractSockaddrPopulate(
-    absl::string_view path, grpc_resolved_address* resolved_addr);
+absl::Status UnixAbstractSockaddrPopulate(absl::string_view path,
+                                          grpc_resolved_address* resolved_addr);
 
 }  // namespace grpc_core
 

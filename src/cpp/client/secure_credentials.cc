@@ -24,6 +24,7 @@
 #include <map>
 #include <utility>
 
+#include "absl/status/status.h"
 #include "absl/strings/str_join.h"
 
 #include <grpc/grpc_security_constants.h>
@@ -166,11 +167,9 @@ grpc::Status StsCredentialsOptionsFromJson(const std::string& json_string,
                         "options cannot be nullptr.");
   }
   ClearStsCredentialsOptions(options);
-  grpc_error_handle error = GRPC_ERROR_NONE;
+  absl::Status error = absl::OkStatus();
   grpc_core::Json json = grpc_core::Json::Parse(json_string.c_str(), &error);
-  if (!GRPC_ERROR_IS_NONE(error) ||
-      json.type() != grpc_core::Json::Type::OBJECT) {
-    GRPC_ERROR_UNREF(error);
+  if (!error.ok() || json.type() != grpc_core::Json::Type::OBJECT) {
     return grpc::Status(grpc::StatusCode::INVALID_ARGUMENT, "Invalid json.");
   }
 
@@ -224,13 +223,12 @@ grpc::Status StsCredentialsOptionsFromEnv(StsCredentialsOptions* options) {
   ClearStsCredentialsOptions(options);
   grpc_slice json_string = grpc_empty_slice();
   char* sts_creds_path = gpr_getenv("STS_CREDENTIALS");
-  grpc_error_handle error = GRPC_ERROR_NONE;
+  absl::Status error = absl::OkStatus();
   grpc::Status status;
   // NOLINTNEXTLINE(clang-diagnostic-unused-lambda-capture)
-  auto cleanup = [&json_string, &sts_creds_path, &error, &status]() {
+  auto cleanup = [&json_string, &sts_creds_path, &status]() {
     grpc_slice_unref_internal(json_string);
     gpr_free(sts_creds_path);
-    GRPC_ERROR_UNREF(error);
     return status;
   };
 
@@ -240,7 +238,7 @@ grpc::Status StsCredentialsOptionsFromEnv(StsCredentialsOptions* options) {
     return cleanup();
   }
   error = grpc_load_file(sts_creds_path, 1, &json_string);
-  if (!GRPC_ERROR_IS_NONE(error)) {
+  if (!error.ok()) {
     status =
         grpc::Status(grpc::StatusCode::NOT_FOUND, grpc_error_std_string(error));
     return cleanup();
@@ -416,7 +414,7 @@ std::shared_ptr<CallCredentials> MetadataCredentialsFromPlugin(
 }
 
 namespace {
-void DeleteWrapper(void* wrapper, grpc_error_handle /*ignored*/) {
+void DeleteWrapper(void* wrapper, absl::Status /*ignored*/) {
   MetadataCredentialsPluginWrapper* w =
       static_cast<MetadataCredentialsPluginWrapper*>(wrapper);
   delete w;
@@ -435,7 +433,7 @@ void MetadataCredentialsPluginWrapper::Destroy(void* wrapper) {
   grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
   grpc_core::ExecCtx exec_ctx;
   grpc_core::Executor::Run(GRPC_CLOSURE_CREATE(DeleteWrapper, wrapper, nullptr),
-                           GRPC_ERROR_NONE);
+                           absl::OkStatus());
 }
 
 int MetadataCredentialsPluginWrapper::GetMetadata(

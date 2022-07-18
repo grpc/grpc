@@ -42,8 +42,8 @@ static const int64_t kHoursIn25Days = 25 * 24;
 static const grpc_core::Duration k25Days =
     grpc_core::Duration::Hours(kHoursIn25Days);
 
-static void cb(void* arg, grpc_error_handle error) {
-  cb_called[reinterpret_cast<intptr_t>(arg)][GRPC_ERROR_IS_NONE(error)]++;
+static void cb(void* arg, absl::Status error) {
+  cb_called[reinterpret_cast<intptr_t>(arg)][error.ok()]++;
 }
 
 static void add_test(void) {

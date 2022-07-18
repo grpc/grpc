@@ -141,7 +141,7 @@ void MaybeLogClusterLoadAssignment(
   }
 }
 
-grpc_error_handle ServerAddressParseAndAppend(
+absl::Status ServerAddressParseAndAppend(
     const envoy_config_endpoint_v3_LbEndpoint* lb_endpoint,
     ServerAddressList* list) {
   // If health_status is not HEALTHY or UNKNOWN, skip this endpoint.
@@ -149,7 +149,7 @@ grpc_error_handle ServerAddressParseAndAppend(
       envoy_config_endpoint_v3_LbEndpoint_health_status(lb_endpoint);
   if (health_status != envoy_config_core_v3_UNKNOWN &&
       health_status != envoy_config_core_v3_HEALTHY) {
-    return GRPC_ERROR_NONE;
+    return absl::OkStatus();
   }
   // Find the ip:port.
   const envoy_config_endpoint_v3_Endpoint* endpoint =
@@ -177,19 +177,19 @@ grpc_error_handle ServerAddressParseAndAppend(
   }
   // Populate grpc_resolved_address.
   grpc_resolved_address addr;
-  grpc_error_handle error =
+  absl::Status error =
       grpc_string_to_sockaddr(&addr, address_str.c_str(), port);
-  if (!GRPC_ERROR_IS_NONE(error)) return error;
+  if (!error.ok()) return error;
   // Append the address to the list.
   std::map<const char*, std::unique_ptr<ServerAddress::AttributeInterface>>
       attributes;
   attributes[ServerAddressWeightAttribute::kServerAddressWeightAttributeKey] =
       absl::make_unique<ServerAddressWeightAttribute>(weight);
   list->emplace_back(addr, ChannelArgs(), std::move(attributes));
-  return GRPC_ERROR_NONE;
+  return absl::OkStatus();
 }
 
-grpc_error_handle LocalityParse(
+absl::Status LocalityParse(
     const envoy_config_endpoint_v3_LocalityLbEndpoints* locality_lb_endpoints,
     XdsEndpointResource::Priority::Locality* output_locality,
     size_t* priority) {
@@ -202,7 +202,7 @@ grpc_error_handle LocalityParse(
   // policy, we should change the LB weight handling.
   output_locality->lb_weight =
       lb_weight != nullptr ? google_protobuf_UInt32Value_value(lb_weight) : 0;
-  if (output_locality->lb_weight == 0) return GRPC_ERROR_NONE;
+  if (output_locality->lb_weight == 0) return absl::OkStatus();
   // Parse locality name.
   const envoy_config_core_v3_Locality* locality =
       envoy_config_endpoint_v3_LocalityLbEndpoints_locality(
@@ -224,17 +224,17 @@ grpc_error_handle LocalityParse(
       envoy_config_endpoint_v3_LocalityLbEndpoints_lb_endpoints(
           locality_lb_endpoints, &size);
   for (size_t i = 0; i < size; ++i) {
-    grpc_error_handle error = ServerAddressParseAndAppend(
+    absl::Status error = ServerAddressParseAndAppend(
         lb_endpoints[i], &output_locality->endpoints);
-    if (!GRPC_ERROR_IS_NONE(error)) return error;
+    if (!error.ok()) return error;
   }
   // Parse the priority.
   *priority = envoy_config_endpoint_v3_LocalityLbEndpoints_priority(
       locality_lb_endpoints);
-  return GRPC_ERROR_NONE;
+  return absl::OkStatus();
 }
 
-grpc_error_handle DropParseAndAppend(
+absl::Status DropParseAndAppend(
     const envoy_config_endpoint_v3_ClusterLoadAssignment_Policy_DropOverload*
         drop_overload,
     XdsEndpointResource::DropConfig* drop_config) {
@@ -270,15 +270,15 @@ grpc_error_handle DropParseAndAppend(
   // Cap numerator to 1000000.
   numerator = std::min(numerator, 1000000u);
   drop_config->AddCategory(std::move(category), numerator);
-  return GRPC_ERROR_NONE;
+  return absl::OkStatus();
 }
 
-grpc_error_handle EdsResourceParse(
+absl::Status EdsResourceParse(
     const XdsEncodingContext& /*context*/,
     const envoy_config_endpoint_v3_ClusterLoadAssignment*
         cluster_load_assignment,
     bool /*is_v2*/, XdsEndpointResource* eds_update) {
-  std::vector<grpc_error_handle> errors;
+  std::vector<absl::Status> errors;
   // Get the endpoints.
   size_t locality_size;
   const envoy_config_endpoint_v3_LocalityLbEndpoints* const* endpoints =
@@ -287,8 +287,8 @@ grpc_error_handle EdsResourceParse(
   for (size_t j = 0; j < locality_size; ++j) {
     size_t priority;
     XdsEndpointResource::Priority::Locality locality;
-    grpc_error_handle error = LocalityParse(endpoints[j], &locality, &priority);
-    if (!GRPC_ERROR_IS_NONE(error)) {
+    absl::Status error = LocalityParse(endpoints[j], &locality, &priority);
+    if (!error.ok()) {
       errors.push_back(error);
       continue;
     }
@@ -327,9 +327,9 @@ grpc_error_handle EdsResourceParse(
             envoy_config_endpoint_v3_ClusterLoadAssignment_Policy_drop_overloads(
                 policy, &drop_size);
     for (size_t j = 0; j < drop_size; ++j) {
-      grpc_error_handle error =
+      absl::Status error =
           DropParseAndAppend(drop_overload[j], eds_update->drop_config.get());
-      if (!GRPC_ERROR_IS_NONE(error)) {
+      if (!error.ok()) {
         errors.push_back(
             grpc_error_add_child(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
                                      "drop config validation error"),
@@ -358,11 +358,10 @@ absl::StatusOr<XdsResourceType::DecodeResult> XdsEndpointResourceType::Decode(
   result.name = UpbStringToStdString(
       envoy_config_endpoint_v3_ClusterLoadAssignment_cluster_name(resource));
   auto endpoint_data = absl::make_unique<ResourceDataSubclass>();
-  grpc_error_handle error =
+  absl::Status error =
       EdsResourceParse(context, resource, is_v2, &endpoint_data->resource);
-  if (!GRPC_ERROR_IS_NONE(error)) {
+  if (!error.ok()) {
     std::string error_str = grpc_error_std_string(error);
-    GRPC_ERROR_UNREF(error);
     if (GRPC_TRACE_FLAG_ENABLED(*context.tracer)) {
       gpr_log(GPR_ERROR, "[xds_client %p] invalid ClusterLoadAssignment %s: %s",
               context.client, result.name.c_str(), error_str.c_str());

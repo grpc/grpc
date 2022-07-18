@@ -28,7 +28,6 @@
 #include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/iomgr/closure.h"
-#include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 
 namespace grpc_core {
@@ -65,17 +64,17 @@ class AsyncConnectivityStateWatcherInterface::Notifier {
       : watcher_(std::move(watcher)), state_(state), status_(status) {
     if (work_serializer != nullptr) {
       work_serializer->Run(
-          [this]() { SendNotification(this, GRPC_ERROR_NONE); },
+          [this]() { SendNotification(this, absl::OkStatus()); },
           DEBUG_LOCATION);
     } else {
       GRPC_CLOSURE_INIT(&closure_, SendNotification, this,
                         grpc_schedule_on_exec_ctx);
-      ExecCtx::Run(DEBUG_LOCATION, &closure_, GRPC_ERROR_NONE);
+      ExecCtx::Run(DEBUG_LOCATION, &closure_, absl::OkStatus());
     }
   }
 
  private:
-  static void SendNotification(void* arg, grpc_error_handle /*ignored*/) {
+  static void SendNotification(void* arg, absl::Status /*ignored*/) {
     Notifier* self = static_cast<Notifier*>(arg);
     if (GRPC_TRACE_FLAG_ENABLED(grpc_connectivity_state_trace)) {
       gpr_log(GPR_INFO, "watcher %p: delivering async notification for %s (%s)",

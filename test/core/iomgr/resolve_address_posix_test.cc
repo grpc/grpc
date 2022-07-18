@@ -55,7 +55,7 @@ typedef struct args_struct {
   grpc_pollset_set* pollset_set;
 } args_struct;
 
-static void do_nothing(void* /*arg*/, grpc_error_handle /*error*/) {}
+static void do_nothing(void* /*arg*/, absl::Status /*error*/) {}
 
 void args_init(args_struct* args) {
   gpr_event_init(&args->ev);

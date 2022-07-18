@@ -78,10 +78,10 @@ class TrailingMetadataRecordingFilter {
  private:
   class CallData {
    public:
-    static grpc_error_handle Init(grpc_call_element* elem,
-                                  const grpc_call_element_args* args) {
+    static absl::Status Init(grpc_call_element* elem,
+                             const grpc_call_element_args* args) {
       new (elem->call_data) CallData(args);
-      return GRPC_ERROR_NONE;
+      return absl::OkStatus();
     }
 
     static void Destroy(grpc_call_element* elem,
@@ -121,21 +121,20 @@ class TrailingMetadataRecordingFilter {
                         RecvTrailingMetadataReady, this, nullptr);
     }
 
-    static void RecvInitialMetadataReady(void* arg, grpc_error_handle error) {
+    static void RecvInitialMetadataReady(void* arg, absl::Status error) {
       auto* calld = static_cast<CallData*>(arg);
       TrailingMetadataRecordingFilter::trailing_metadata_available_ =
           *calld->trailing_metadata_available_;
       Closure::Run(DEBUG_LOCATION, calld->original_recv_initial_metadata_ready_,
-                   GRPC_ERROR_REF(error));
+                   error);
     }
 
-    static void RecvTrailingMetadataReady(void* arg, grpc_error_handle error) {
+    static void RecvTrailingMetadataReady(void* arg, absl::Status error) {
       auto* calld = static_cast<CallData*>(arg);
       stream_network_state_ =
           calld->recv_trailing_metadata_->get(GrpcStreamNetworkState());
       Closure::Run(DEBUG_LOCATION,
-                   calld->original_recv_trailing_metadata_ready_,
-                   GRPC_ERROR_REF(error));
+                   calld->original_recv_trailing_metadata_ready_, error);
     }
 
     bool* trailing_metadata_available_ = nullptr;
@@ -146,10 +145,10 @@ class TrailingMetadataRecordingFilter {
     grpc_closure* original_recv_trailing_metadata_ready_ = nullptr;
   };
 
-  static grpc_error_handle Init(grpc_channel_element* elem,
-                                grpc_channel_element_args* /*args*/) {
+  static absl::Status Init(grpc_channel_element* elem,
+                           grpc_channel_element_args* /*args*/) {
     new (elem->channel_data) TrailingMetadataRecordingFilter();
-    return GRPC_ERROR_NONE;
+    return absl::OkStatus();
   }
 
   static void Destroy(grpc_channel_element* elem) {
@@ -324,16 +323,16 @@ class StreamsNotSeenTest : public ::testing::Test {
         absl::Seconds(5)));
   }
 
-  static void OnWriteDone(void* arg, grpc_error_handle error) {
-    GPR_ASSERT(GRPC_ERROR_IS_NONE(error));
+  static void OnWriteDone(void* arg, absl::Status error) {
+    GPR_ASSERT(error.ok());
     absl::Notification* on_write_done_notification_ =
         static_cast<absl::Notification*>(arg);
     on_write_done_notification_->Notify();
   }
 
-  static void OnReadDone(void* arg, grpc_error_handle error) {
+  static void OnReadDone(void* arg, absl::Status error) {
     StreamsNotSeenTest* self = static_cast<StreamsNotSeenTest*>(arg);
-    if (GRPC_ERROR_IS_NONE(error)) {
+    if (error.ok()) {
       {
         MutexLock lock(&self->mu_);
         for (size_t i = 0; i < self->read_buffer_.count; ++i) {

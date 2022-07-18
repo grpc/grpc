@@ -36,11 +36,11 @@ class DNSCallbackExecCtxScheduler {
       absl::StatusOr<std::vector<grpc_resolved_address>> param)
       : on_done_(std::move(on_done)), param_(std::move(param)) {
     GRPC_CLOSURE_INIT(&closure_, RunCallback, this, grpc_schedule_on_exec_ctx);
-    ExecCtx::Run(DEBUG_LOCATION, &closure_, GRPC_ERROR_NONE);
+    ExecCtx::Run(DEBUG_LOCATION, &closure_, absl::OkStatus());
   }
 
  private:
-  static void RunCallback(void* arg, grpc_error_handle /* error */) {
+  static void RunCallback(void* arg, absl::Status /* error */) {
     DNSCallbackExecCtxScheduler* self =
         static_cast<DNSCallbackExecCtxScheduler*>(arg);
     self->on_done_(std::move(self->param_));

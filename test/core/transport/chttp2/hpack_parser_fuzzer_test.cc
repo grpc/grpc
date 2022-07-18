@@ -77,7 +77,7 @@ DEFINE_PROTO_FUZZER(const hpack_parser_fuzzer::Msg& msg) {
       for (const auto& parse : frame.parse()) {
         grpc_slice buffer =
             grpc_slice_from_copied_buffer(parse.data(), parse.size());
-        GRPC_ERROR_UNREF(parser->Parse(buffer, i == msg.frames_size() - 1));
+        (void)parser->Parse(buffer, i == msg.frames_size() - 1);
         grpc_slice_unref(buffer);
         stop_buffering_ctr--;
         if (0 == stop_buffering_ctr) parser->StopBufferingFrame();

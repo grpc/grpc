@@ -80,7 +80,7 @@ static void me_add_to_pollset_set(grpc_endpoint* /*ep*/,
 static void me_delete_from_pollset_set(grpc_endpoint* /*ep*/,
                                        grpc_pollset_set* /*pollset*/) {}
 
-static void me_shutdown(grpc_endpoint* ep, grpc_error_handle why) {
+static void me_shutdown(grpc_endpoint* ep, absl::Status why) {
   intercept_endpoint* m = reinterpret_cast<intercept_endpoint*>(ep);
   grpc_endpoint_shutdown(m->wrapped_ep, why);
 }
@@ -268,7 +268,7 @@ static grpc_endpoint_test_config configs[] = {
      clean_up},
 };
 
-static void inc_call_ctr(void* arg, grpc_error_handle /*error*/) {
+static void inc_call_ctr(void* arg, absl::Status /*error*/) {
   ++*static_cast<int*>(arg);
 }
 
@@ -305,7 +305,7 @@ static void test_leftover(grpc_endpoint_test_config config, size_t slice_size) {
   clean_up();
 }
 
-static void destroy_pollset(void* p, grpc_error_handle /*error*/) {
+static void destroy_pollset(void* p, absl::Status /*error*/) {
   grpc_pollset_destroy(static_cast<grpc_pollset*>(p));
 }
 

@@ -33,7 +33,6 @@
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/endpoint.h"
-#include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/iomgr_fwd.h"
 #include "src/core/lib/promise/arena_promise.h"
 #include "src/core/lib/security/credentials/credentials.h"
@@ -72,9 +71,7 @@ class InsecureChannelSecurityConnector
                   grpc_closure* on_peer_checked) override;
 
   void cancel_check_peer(grpc_closure* /*on_peer_checked*/,
-                         grpc_error_handle error) override {
-    GRPC_ERROR_UNREF(error);
-  }
+                         absl::Status /*error*/) override {}
 
   int cmp(const grpc_security_connector* other_sc) const override;
 };
@@ -95,9 +92,7 @@ class InsecureServerSecurityConnector : public grpc_server_security_connector {
                   grpc_closure* on_peer_checked) override;
 
   void cancel_check_peer(grpc_closure* /*on_peer_checked*/,
-                         grpc_error_handle error) override {
-    GRPC_ERROR_UNREF(error);
-  }
+                         absl::Status /*error*/) override {}
 
   int cmp(const grpc_security_connector* other) const override;
 };

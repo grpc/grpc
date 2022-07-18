@@ -37,7 +37,6 @@
 #include "src/core/lib/gprpp/unique_type_name.h"
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/endpoint.h"
-#include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/iomgr_fwd.h"
 #include "src/core/lib/promise/arena_promise.h"
 #include "src/core/lib/transport/handshaker.h"
@@ -83,7 +82,7 @@ class grpc_security_connector
   // Cancels the pending check_peer() request associated with on_peer_checked.
   // If there is no such request pending, this is a no-op.
   virtual void cancel_check_peer(grpc_closure* on_peer_checked,
-                                 grpc_error_handle error) = 0;
+                                 absl::Status error) = 0;
 
   /* Compares two security connectors. */
   virtual int cmp(const grpc_security_connector* other) const = 0;

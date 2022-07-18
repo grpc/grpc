@@ -42,9 +42,9 @@ const uint32_t kByteOffset = 123;
 void* PhonyArgsCopier(void* arg) { return arg; }
 
 void TestExecuteFlushesListVerifier(void* arg, Timestamps* ts,
-                                    grpc_error_handle error) {
+                                    absl::Status error) {
   ASSERT_NE(arg, nullptr);
-  EXPECT_EQ(error, GRPC_ERROR_NONE);
+  EXPECT_EQ(error, absl::OkStatus());
   if (ts) {
     EXPECT_EQ(ts->byte_offset, kByteOffset);
   }
@@ -92,7 +92,7 @@ TEST_F(ContextListTest, ExecuteFlushesList) {
     ContextList::Append(&list, s[i]);
   }
   Timestamps ts;
-  ContextList::Execute(list, &ts, GRPC_ERROR_NONE);
+  ContextList::Execute(list, &ts, absl::OkStatus());
   for (auto i = 0; i < kNumElems; i++) {
     EXPECT_EQ(gpr_atm_acq_load(&verifier_called[i]), static_cast<gpr_atm>(1));
     grpc_transport_destroy_stream(reinterpret_cast<grpc_transport*>(t),
@@ -109,14 +109,14 @@ TEST_F(ContextListTest, EmptyList) {
   ContextList* list = nullptr;
   ExecCtx exec_ctx;
   Timestamps ts;
-  ContextList::Execute(list, &ts, GRPC_ERROR_NONE);
+  ContextList::Execute(list, &ts, absl::OkStatus());
   exec_ctx.Flush();
 }
 
 TEST_F(ContextListTest, EmptyListEmptyTimestamp) {
   ContextList* list = nullptr;
   ExecCtx exec_ctx;
-  ContextList::Execute(list, nullptr, GRPC_ERROR_NONE);
+  ContextList::Execute(list, nullptr, absl::OkStatus());
   exec_ctx.Flush();
 }
 
@@ -145,7 +145,7 @@ TEST_F(ContextListTest, NonEmptyListEmptyTimestamp) {
     gpr_atm_rel_store(&verifier_called[i], static_cast<gpr_atm>(0));
     ContextList::Append(&list, s[i]);
   }
-  ContextList::Execute(list, nullptr, GRPC_ERROR_NONE);
+  ContextList::Execute(list, nullptr, absl::OkStatus());
   for (auto i = 0; i < kNumElems; i++) {
     EXPECT_EQ(gpr_atm_acq_load(&verifier_called[i]), static_cast<gpr_atm>(1));
     grpc_transport_destroy_stream(reinterpret_cast<grpc_transport*>(t),

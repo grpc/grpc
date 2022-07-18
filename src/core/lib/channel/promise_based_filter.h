@@ -31,6 +31,7 @@
 
 #include "absl/container/inlined_vector.h"
 #include "absl/meta/type_traits.h"
+#include "absl/status/status.h"
 
 #include <grpc/impl/codegen/grpc_types.h>
 #include <grpc/support/log.h>
@@ -44,7 +45,6 @@
 #include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/iomgr/call_combiner.h"
 #include "src/core/lib/iomgr/closure.h"
-#include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/polling_entity.h"
 #include "src/core/lib/promise/activity.h"
@@ -175,18 +175,17 @@ class BaseCallData : public Activity, private Wakeable {
       release_.push_back(batch);
     }
 
-    void Cancel(grpc_transport_stream_op_batch* batch,
-                grpc_error_handle error) {
+    void Cancel(grpc_transport_stream_op_batch* batch, absl::Status error) {
       grpc_transport_stream_op_batch_queue_finish_with_failure(batch, error,
                                                                &call_closures_);
     }
 
     void Complete(grpc_transport_stream_op_batch* batch) {
-      call_closures_.Add(batch->on_complete, GRPC_ERROR_NONE,
+      call_closures_.Add(batch->on_complete, absl::OkStatus(),
                          "Flusher::Complete");
     }
 
-    void AddClosure(grpc_closure* closure, grpc_error_handle error,
+    void AddClosure(grpc_closure* closure, absl::Status error,
                     const char* reason) {
       call_closures_.Add(closure, error, reason);
     }
@@ -218,7 +217,7 @@ class BaseCallData : public Activity, private Wakeable {
     // stack)
     void ResumeWith(Flusher* releaser);
     // Cancel this batch immediately (releases all refs)
-    void CancelWith(grpc_error_handle error, Flusher* releaser);
+    void CancelWith(absl::Status error, Flusher* releaser);
     // Complete this batch (pass it up) assuming refs drop to zero
     void CompleteWith(Flusher* releaser);
 
@@ -319,7 +318,7 @@ class ClientCallData : public BaseCallData {
   class PollContext;
 
   // Handle cancellation.
-  void Cancel(grpc_error_handle error);
+  void Cancel(absl::Status error);
   // Begin running the promise - which will ultimately take some initial
   // metadata and return some trailing metadata.
   void StartPromise(Flusher* flusher);
@@ -337,13 +336,11 @@ class ClientCallData : public BaseCallData {
   // All polls: await receiving the trailing metadata, then return it to the
   // application.
   Poll<ServerMetadataHandle> PollTrailingMetadata();
-  static void RecvTrailingMetadataReadyCallback(void* arg,
-                                                grpc_error_handle error);
-  void RecvTrailingMetadataReady(grpc_error_handle error);
-  void RecvInitialMetadataReady(grpc_error_handle error);
+  static void RecvTrailingMetadataReadyCallback(void* arg, absl::Status error);
+  void RecvTrailingMetadataReady(absl::Status error);
+  void RecvInitialMetadataReady(absl::Status error);
   // Given an error, fill in ServerMetadataHandle to represent that error.
-  void SetStatusFromError(grpc_metadata_batch* metadata,
-                          grpc_error_handle error);
+  void SetStatusFromError(grpc_metadata_batch* metadata, absl::Status error);
   // Wakeup and poll the promise if appropriate.
   void WakeInsideCombiner(Flusher* flusher);
   void OnWakeup() override;
@@ -361,7 +358,7 @@ class ClientCallData : public BaseCallData {
   // Our closure pointing to RecvTrailingMetadataReadyCallback.
   grpc_closure recv_trailing_metadata_ready_;
   // Error received during cancellation.
-  grpc_error_handle cancelled_error_ = GRPC_ERROR_NONE;
+  absl::Status cancelled_error_ = absl::OkStatus();
   // State of the send_initial_metadata op.
   SendInitialState send_initial_state_ = SendInitialState::kInitial;
   // State of the recv_trailing_metadata op.
@@ -412,7 +409,7 @@ class ServerCallData : public BaseCallData {
   struct SendInitialMetadata;
 
   // Handle cancellation.
-  void Cancel(grpc_error_handle error, Flusher* flusher);
+  void Cancel(absl::Status error, Flusher* flusher);
   // Construct a promise that will "call" the next filter.
   // Effectively:
   //   - put the modified initial metadata into the batch being sent up.
@@ -422,9 +419,8 @@ class ServerCallData : public BaseCallData {
   // All polls: await sending the trailing metadata, then foward it down the
   // stack.
   Poll<ServerMetadataHandle> PollTrailingMetadata();
-  static void RecvInitialMetadataReadyCallback(void* arg,
-                                               grpc_error_handle error);
-  void RecvInitialMetadataReady(grpc_error_handle error);
+  static void RecvInitialMetadataReadyCallback(void* arg, absl::Status error);
+  void RecvInitialMetadataReady(absl::Status error);
   // Wakeup and poll the promise if appropriate.
   void WakeInsideCombiner(Flusher* flusher);
   void OnWakeup() override;
@@ -440,7 +436,7 @@ class ServerCallData : public BaseCallData {
   // Our closure pointing to RecvInitialMetadataReadyCallback.
   grpc_closure recv_initial_metadata_ready_;
   // Error received during cancellation.
-  grpc_error_handle cancelled_error_ = GRPC_ERROR_NONE;
+  absl::Status cancelled_error_ = absl::OkStatus();
   // Trailing metadata batch
   CapturedBatch send_trailing_metadata_batch_;
   // State of the send_initial_metadata op.
@@ -511,7 +507,7 @@ MakePromiseBasedFilter(const char* name) {
       // init_call_elem
       [](grpc_call_element* elem, const grpc_call_element_args* args) {
         new (elem->call_data) CallData(elem, args, kFlags);
-        return GRPC_ERROR_NONE;
+        return absl::OkStatus();
       },
       // set_pollset_or_pollset_set
       [](grpc_call_element* elem, grpc_polling_entity* pollent) {
@@ -524,7 +520,7 @@ MakePromiseBasedFilter(const char* name) {
         cd->Finalize(final_info);
         cd->~CallData();
         if ((kFlags & kFilterIsLast) != 0) {
-          ExecCtx::Run(DEBUG_LOCATION, then_schedule_closure, GRPC_ERROR_NONE);
+          ExecCtx::Run(DEBUG_LOCATION, then_schedule_closure, absl::OkStatus());
         } else {
           GPR_ASSERT(then_schedule_closure == nullptr);
         }
@@ -545,7 +541,7 @@ MakePromiseBasedFilter(const char* name) {
           return absl_status_to_grpc_error(status.status());
         }
         new (elem->channel_data) F(std::move(*status));
-        return GRPC_ERROR_NONE;
+        return absl::OkStatus();
       },
       // post_init_channel_elem
       [](grpc_channel_stack*, grpc_channel_element* elem) {

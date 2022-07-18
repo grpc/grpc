@@ -74,7 +74,7 @@ struct passthru_endpoint {
   half server;
 };
 
-static void do_pending_read_op_locked(half* m, grpc_error_handle error) {
+static void do_pending_read_op_locked(half* m, absl::Status error) {
   GPR_ASSERT(m->pending_read_op.is_armed);
   GPR_ASSERT(m->bytes_read_so_far <=
              m->parent->channel_effects->allowed_read_bytes);
@@ -125,7 +125,7 @@ static void me_read(grpc_endpoint* ep, grpc_slice_buffer* slices,
     m->pending_read_op.cb = cb;
     m->pending_read_op.ep = ep;
     m->pending_read_op.slices = slices;
-    do_pending_read_op_locked(m, GRPC_ERROR_NONE);
+    do_pending_read_op_locked(m, absl::OkStatus());
   } else {
     GPR_ASSERT(!m->pending_read_op.is_armed);
     m->on_read = cb;
@@ -155,7 +155,7 @@ static half* other_half(half* h) {
   return &h->parent->client;
 }
 
-static void do_pending_write_op_locked(half* m, grpc_error_handle error) {
+static void do_pending_write_op_locked(half* m, absl::Status error) {
   GPR_ASSERT(m->pending_write_op.is_armed);
   GPR_ASSERT(m->bytes_written_so_far <=
              m->parent->channel_effects->allowed_write_bytes);
@@ -282,16 +282,16 @@ static void me_write(grpc_endpoint* ep, grpc_slice_buffer* slices,
       m->pending_write_op.is_armed = true;
       m->pending_write_op.cb = cb;
       m->pending_write_op.ep = ep;
-      do_pending_write_op_locked(m, GRPC_ERROR_NONE);
+      do_pending_write_op_locked(m, absl::OkStatus());
     } else {
       // There is nothing to write. Schedule callback to be run right away.
-      grpc_core::ExecCtx::Run(DEBUG_LOCATION, cb, GRPC_ERROR_NONE);
+      grpc_core::ExecCtx::Run(DEBUG_LOCATION, cb, absl::OkStatus());
     }
   }
   gpr_mu_unlock(&m->parent->mu);
 }
 
-void flush_pending_ops_locked(half* m, grpc_error_handle error) {
+void flush_pending_ops_locked(half* m, absl::Status error) {
   if (m->pending_read_op.is_armed) {
     do_pending_read_op_locked(m, error);
   }
@@ -309,9 +309,9 @@ static void me_add_to_pollset_set(grpc_endpoint* /*ep*/,
 static void me_delete_from_pollset_set(grpc_endpoint* /*ep*/,
                                        grpc_pollset_set* /*pollset*/) {}
 
-static void shutdown_locked(half* m, grpc_error_handle why) {
+static void shutdown_locked(half* m, absl::Status why) {
   m->parent->shutdown = true;
-  flush_pending_ops_locked(m, GRPC_ERROR_NONE);
+  flush_pending_ops_locked(m, absl::OkStatus());
   if (m->on_read) {
     grpc_core::ExecCtx::Run(
         DEBUG_LOCATION, m->on_read,
@@ -319,7 +319,7 @@ static void shutdown_locked(half* m, grpc_error_handle why) {
     m->on_read = nullptr;
   }
   m = other_half(m);
-  flush_pending_ops_locked(m, GRPC_ERROR_NONE);
+  flush_pending_ops_locked(m, absl::OkStatus());
   if (m->on_read) {
     grpc_core::ExecCtx::Run(
         DEBUG_LOCATION, m->on_read,
@@ -328,12 +328,11 @@ static void shutdown_locked(half* m, grpc_error_handle why) {
   }
 }
 
-static void me_shutdown(grpc_endpoint* ep, grpc_error_handle why) {
+static void me_shutdown(grpc_endpoint* ep, absl::Status why) {
   half* m = reinterpret_cast<half*>(ep);
   gpr_mu_lock(&m->parent->mu);
   shutdown_locked(m, why);
   gpr_mu_unlock(&m->parent->mu);
-  GRPC_ERROR_UNREF(why);
 }
 
 void grpc_passthru_endpoint_destroy(passthru_endpoint* p) {
@@ -454,7 +453,7 @@ void grpc_passthru_endpoint_stats_destroy(grpc_passthru_endpoint_stats* stats) {
 
 static void sched_next_channel_action_locked(half* m);
 
-static void do_next_sched_channel_action(void* arg, grpc_error_handle error) {
+static void do_next_sched_channel_action(void* arg, absl::Status error) {
   half* m = reinterpret_cast<half*>(arg);
   gpr_mu_lock(&m->parent->mu);
   GPR_ASSERT(!m->parent->channel_effects->actions.empty());
@@ -478,10 +477,9 @@ static void do_next_sched_channel_action(void* arg, grpc_error_handle error) {
 
 static void sched_next_channel_action_locked(half* m) {
   if (m->parent->channel_effects->actions.empty()) {
-    grpc_error_handle err =
+    absl::Status err =
         GRPC_ERROR_CREATE_FROM_STATIC_STRING("Channel actions complete");
     shutdown_locked(m, err);
-    GRPC_ERROR_UNREF(err);
     return;
   }
   grpc_timer_init(&m->parent->channel_effects->timer,

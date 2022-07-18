@@ -29,6 +29,7 @@
 
 #include "src/core/ext/transport/chttp2/transport/flow_control.h"
 #include "src/core/ext/transport/chttp2/transport/internal.h"
+#include "src/core/lib/iomgr/error.h"
 
 grpc_slice grpc_chttp2_window_update_create(
     uint32_t id, uint32_t window_delta, grpc_transport_one_way_stats* stats) {
@@ -56,7 +57,7 @@ grpc_slice grpc_chttp2_window_update_create(
   return slice;
 }
 
-grpc_error_handle grpc_chttp2_window_update_parser_begin_frame(
+absl::Status grpc_chttp2_window_update_parser_begin_frame(
     grpc_chttp2_window_update_parser* parser, uint32_t length, uint8_t flags) {
   if (flags || length != 4) {
     return GRPC_ERROR_CREATE_FROM_CPP_STRING(absl::StrFormat(
@@ -64,12 +65,14 @@ grpc_error_handle grpc_chttp2_window_update_parser_begin_frame(
   }
   parser->byte = 0;
   parser->amount = 0;
-  return GRPC_ERROR_NONE;
+  return absl::OkStatus();
 }
 
-grpc_error_handle grpc_chttp2_window_update_parser_parse(
-    void* parser, grpc_chttp2_transport* t, grpc_chttp2_stream* s,
-    const grpc_slice& slice, int is_last) {
+absl::Status grpc_chttp2_window_update_parser_parse(void* parser,
+                                                    grpc_chttp2_transport* t,
+                                                    grpc_chttp2_stream* s,
+                                                    const grpc_slice& slice,
+                                                    int is_last) {
   const uint8_t* const beg = GRPC_SLICE_START_PTR(slice);
   const uint8_t* const end = GRPC_SLICE_END_PTR(slice);
   const uint8_t* cur = beg;
@@ -117,5 +120,5 @@ grpc_error_handle grpc_chttp2_window_update_parser_parse(
     }
   }
 
-  return GRPC_ERROR_NONE;
+  return absl::OkStatus();
 }

@@ -24,6 +24,7 @@
 
 #include "absl/functional/bind_front.h"
 #include "absl/memory/memory.h"
+#include "absl/status/status.h"
 #include "absl/types/optional.h"
 
 #include <grpc/support/log.h>
@@ -58,13 +59,12 @@ class RootCertificatesWatcher
     }
   }
 
-  void OnError(grpc_error_handle root_cert_error,
-               grpc_error_handle identity_cert_error) override {
-    if (!GRPC_ERROR_IS_NONE(root_cert_error)) {
+  void OnError(absl::Status root_cert_error,
+               absl::Status /*identity_cert_error*/) override {
+    if (!root_cert_error.ok()) {
       parent_->SetErrorForCert(cert_name_, root_cert_error /* pass the ref */,
                                absl::nullopt);
     }
-    GRPC_ERROR_UNREF(identity_cert_error);
   }
 
  private:
@@ -93,13 +93,12 @@ class IdentityCertificatesWatcher
     }
   }
 
-  void OnError(grpc_error_handle root_cert_error,
-               grpc_error_handle identity_cert_error) override {
-    if (!GRPC_ERROR_IS_NONE(identity_cert_error)) {
+  void OnError(absl::Status /*root_cert_error*/,
+               absl::Status identity_cert_error) override {
+    if (!identity_cert_error.ok()) {
       parent_->SetErrorForCert(cert_name_, absl::nullopt,
                                identity_cert_error /* pass the ref */);
     }
-    GRPC_ERROR_UNREF(root_cert_error);
   }
 
  private:

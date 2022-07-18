@@ -36,6 +36,7 @@
 
 #include "src/core/ext/xds/xds_http_filters.h"
 #include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/matchers/matchers.h"
 
 namespace grpc_core {

@@ -46,18 +46,18 @@ static void finish_connection() {
   gpr_mu_unlock(&g_mu);
 }
 
-static void must_succeed(void* arg, grpc_error_handle error) {
+static void must_succeed(void* arg, absl::Status error) {
   GPR_ASSERT(g_connecting != nullptr);
-  GPR_ASSERT(GRPC_ERROR_IS_NONE(error));
+  GPR_ASSERT(error.ok());
   grpc_endpoint_shutdown(g_connecting, GRPC_ERROR_CREATE_FROM_STATIC_STRING("must_succeed called"));
   grpc_endpoint_destroy(g_connecting);
   g_connecting = nullptr;
   finish_connection();
 }
 
-static void must_fail(void* arg, grpc_error_handle error) {
+static void must_fail(void* arg, absl::Status error) {
   GPR_ASSERT(g_connecting == nullptr);
-  GPR_ASSERT(!GRPC_ERROR_IS_NONE(error));
+  GPR_ASSERT(!error.ok());
   NSLog(@"%s", grpc_error_std_string(error).c_str());
   finish_connection();
 }
@@ -88,7 +88,7 @@ static void must_fail(void* arg, grpc_error_handle error) {
 
   gpr_log(GPR_DEBUG, "test_succeeds");
 
-  GPR_ASSERT(grpc_string_to_sockaddr(&resolved_addr, "127.0.0.1", 0) == GRPC_ERROR_NONE);
+  GPR_ASSERT(grpc_string_to_sockaddr(&resolved_addr, "127.0.0.1", 0) == absl::OkStatus());
 
   /* create a phony server */
   svr_fd = socket(AF_INET, SOCK_STREAM, 0);
@@ -145,7 +145,7 @@ static void must_fail(void* arg, grpc_error_handle error) {
 
   gpr_log(GPR_DEBUG, "test_fails");
 
-  GPR_ASSERT(grpc_string_to_sockaddr(&resolved_addr, "127.0.0.1", 0) == GRPC_ERROR_NONE);
+  GPR_ASSERT(grpc_string_to_sockaddr(&resolved_addr, "127.0.0.1", 0) == absl::OkStatus());
 
   svr_fd = socket(AF_INET, SOCK_STREAM, 0);
   GPR_ASSERT(svr_fd >= 0);

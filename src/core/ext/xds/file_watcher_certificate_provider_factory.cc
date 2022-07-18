@@ -32,6 +32,7 @@
 #include <grpc/support/time.h>
 
 #include "src/core/ext/xds/certificate_provider_registry.h"
+#include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/json/json_util.h"
 #include "src/core/lib/security/credentials/tls/grpc_tls_certificate_provider.h"
 
@@ -73,14 +74,14 @@ std::string FileWatcherCertificateProviderFactory::Config::ToString() const {
 
 RefCountedPtr<FileWatcherCertificateProviderFactory::Config>
 FileWatcherCertificateProviderFactory::Config::Parse(const Json& config_json,
-                                                     grpc_error_handle* error) {
+                                                     absl::Status* error) {
   auto config = MakeRefCounted<FileWatcherCertificateProviderFactory::Config>();
   if (config_json.type() != Json::Type::OBJECT) {
     *error = GRPC_ERROR_CREATE_FROM_STATIC_STRING(
         "error:config type should be OBJECT.");
     return nullptr;
   }
-  std::vector<grpc_error_handle> error_list;
+  std::vector<absl::Status> error_list;
   ParseJsonObjectField(config_json.object_value(), "certificate_file",
                        &config->identity_cert_file_, &error_list, false);
   ParseJsonObjectField(config_json.object_value(), "private_key_file",
@@ -121,7 +122,7 @@ const char* FileWatcherCertificateProviderFactory::name() const {
 
 RefCountedPtr<CertificateProviderFactory::Config>
 FileWatcherCertificateProviderFactory::CreateCertificateProviderConfig(
-    const Json& config_json, grpc_error_handle* error) {
+    const Json& config_json, absl::Status* error) {
   return FileWatcherCertificateProviderFactory::Config::Parse(config_json,
                                                               error);
 }

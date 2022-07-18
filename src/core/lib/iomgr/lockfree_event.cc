@@ -127,7 +127,7 @@ void LockfreeEvent::NotifyOn(grpc_closure* closure) {
            closure when transitioning out of CLOSURE_NO_READY state (i.e there
            is no other code that needs to 'happen-after' this) */
         if (gpr_atm_no_barrier_cas(&state_, kClosureReady, kClosureNotReady)) {
-          ExecCtx::Run(DEBUG_LOCATION, closure, GRPC_ERROR_NONE);
+          ExecCtx::Run(DEBUG_LOCATION, closure, absl::OkStatus());
           return; /* Successful. Return */
         }
 
@@ -139,7 +139,7 @@ void LockfreeEvent::NotifyOn(grpc_closure* closure) {
            contains a pointer to the shutdown-error). If the fd is shutdown,
            schedule the closure with the shutdown error */
         if ((curr & kShutdownBit) > 0) {
-          grpc_error_handle shutdown_err =
+          absl::Status shutdown_err =
               internal::StatusGetFromHeapPtr(curr & ~kShutdownBit);
           ExecCtx::Run(DEBUG_LOCATION, closure,
                        GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(
@@ -159,7 +159,7 @@ void LockfreeEvent::NotifyOn(grpc_closure* closure) {
   GPR_UNREACHABLE_CODE(return );
 }
 
-bool LockfreeEvent::SetShutdown(grpc_error_handle shutdown_error) {
+bool LockfreeEvent::SetShutdown(absl::Status shutdown_error) {
   intptr_t status_ptr = internal::StatusAllocHeapPtr(shutdown_error);
   gpr_atm new_state = status_ptr | kShutdownBit;
 
@@ -246,7 +246,7 @@ void LockfreeEvent::SetReady() {
            notify_on (or set_shutdown) */
         else if (gpr_atm_full_cas(&state_, curr, kClosureNotReady)) {
           ExecCtx::Run(DEBUG_LOCATION, reinterpret_cast<grpc_closure*>(curr),
-                       GRPC_ERROR_NONE);
+                       absl::OkStatus());
           return;
         }
         /* else the state changed again (only possible by either a racing

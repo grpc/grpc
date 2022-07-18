@@ -20,6 +20,8 @@
 
 #include "src/core/lib/channel/connected_channel.h"
 
+#include "absl/status/status.h"
+
 #include <grpc/impl/codegen/grpc_types.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
@@ -55,13 +57,13 @@ typedef struct connected_channel_call_data {
   callback_state recv_trailing_metadata_ready;
 } call_data;
 
-static void run_in_call_combiner(void* arg, grpc_error_handle error) {
+static void run_in_call_combiner(void* arg, absl::Status error) {
   callback_state* state = static_cast<callback_state*>(arg);
-  GRPC_CALL_COMBINER_START(state->call_combiner, state->original_closure,
-                           GRPC_ERROR_REF(error), state->reason);
+  GRPC_CALL_COMBINER_START(state->call_combiner, state->original_closure, error,
+                           state->reason);
 }
 
-static void run_cancel_in_call_combiner(void* arg, grpc_error_handle error) {
+static void run_cancel_in_call_combiner(void* arg, absl::Status error) {
   run_in_call_combiner(arg, error);
   gpr_free(arg);
 }
@@ -148,7 +150,7 @@ static void connected_channel_start_transport_op(grpc_channel_element* elem,
 }
 
 /* Constructor for call_data */
-static grpc_error_handle connected_channel_init_call_elem(
+static absl::Status connected_channel_init_call_elem(
     grpc_call_element* elem, const grpc_call_element_args* args) {
   call_data* calld = static_cast<call_data*>(elem->call_data);
   channel_data* chand = static_cast<channel_data*>(elem->channel_data);
@@ -156,7 +158,7 @@ static grpc_error_handle connected_channel_init_call_elem(
   int r = grpc_transport_init_stream(
       chand->transport, TRANSPORT_STREAM_FROM_CALL_DATA(calld),
       &args->call_stack->refcount, args->server_transport_data, args->arena);
-  return r == 0 ? GRPC_ERROR_NONE
+  return r == 0 ? absl::OkStatus()
                 : GRPC_ERROR_CREATE_FROM_STATIC_STRING(
                       "transport stream initialization failed");
 }
@@ -181,13 +183,13 @@ static void connected_channel_destroy_call_elem(
 }
 
 /* Constructor for channel_data */
-static grpc_error_handle connected_channel_init_channel_elem(
+static absl::Status connected_channel_init_channel_elem(
     grpc_channel_element* elem, grpc_channel_element_args* args) {
   channel_data* cd = static_cast<channel_data*>(elem->channel_data);
   GPR_ASSERT(args->is_last);
   cd->transport = grpc_channel_args_find_pointer<grpc_transport>(
       args->channel_args, GRPC_ARG_TRANSPORT);
-  return GRPC_ERROR_NONE;
+  return absl::OkStatus();
 }
 
 /* Destructor for channel_data */

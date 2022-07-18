@@ -167,7 +167,7 @@ class ResolveAddressTest : public ::testing::Test {
   grpc_pollset_set* pollset_set() const { return pollset_set_; }
 
  private:
-  static void DoNothing(void* /*arg*/, grpc_error_handle /*error*/) {}
+  static void DoNothing(void* /*arg*/, absl::Status /*error*/) {}
 
   gpr_mu* mu_;
   bool done_ = false;      // guarded by mu

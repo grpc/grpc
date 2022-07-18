@@ -164,7 +164,7 @@ class BinderServerListener : public Server::ListenerInterface {
   ~BinderServerListener() override {
     ExecCtx::Get()->Flush();
     if (on_destroy_done_) {
-      ExecCtx::Run(DEBUG_LOCATION, on_destroy_done_, GRPC_ERROR_NONE);
+      ExecCtx::Run(DEBUG_LOCATION, on_destroy_done_, absl::OkStatus());
       ExecCtx::Get()->Flush();
     }
     grpc_remove_endpoint_binder(addr_);
@@ -213,7 +213,7 @@ class BinderServerListener : public Server::ListenerInterface {
     grpc_transport* server_transport = grpc_create_binder_transport_server(
         std::move(client_binder), security_policy_);
     GPR_ASSERT(server_transport);
-    grpc_error_handle error = server_->SetupTransport(
+    absl::Status error = server_->SetupTransport(
         server_transport, nullptr, server_->channel_args(), nullptr);
     return grpc_error_to_absl_status(error);
   }

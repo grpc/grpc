@@ -38,6 +38,7 @@
 #include <openssl/rsa.h>
 #include <openssl/x509.h>
 
+#include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/string_view.h"
 
@@ -111,12 +112,11 @@ static Json parse_json_part_from_jwt(const char* str, size_t len) {
     return Json();  // JSON null
   }
   absl::string_view string = grpc_core::StringViewFromSlice(slice);
-  grpc_error_handle error = GRPC_ERROR_NONE;
+  absl::Status error = absl::OkStatus();
   Json json = Json::Parse(string, &error);
-  if (!GRPC_ERROR_IS_NONE(error)) {
+  if (!error.ok()) {
     gpr_log(GPR_ERROR, "JSON parse error: %s",
             grpc_error_std_string(error).c_str());
-    GRPC_ERROR_UNREF(error);
     json = Json();  // JSON null
   }
   grpc_slice_unref_internal(slice);
@@ -435,10 +435,10 @@ static Json json_from_http(const grpc_http_response* response) {
             response->status);
     return Json();  // JSON null
   }
-  grpc_error_handle error = GRPC_ERROR_NONE;
+  absl::Status error = absl::OkStatus();
   Json json = Json::Parse(
       absl::string_view(response->body, response->body_length), &error);
-  if (!GRPC_ERROR_IS_NONE(error)) {
+  if (!error.ok()) {
     gpr_log(GPR_ERROR, "Invalid JSON found in response.");
     return Json();  // JSON null
   }
@@ -650,7 +650,7 @@ end:
   return result;
 }
 
-static void on_keys_retrieved(void* user_data, grpc_error_handle /*error*/) {
+static void on_keys_retrieved(void* user_data, absl::Status /*error*/) {
   verifier_cb_ctx* ctx = static_cast<verifier_cb_ctx*>(user_data);
   Json json = json_from_http(&ctx->responses[HTTP_RESPONSE_KEYS]);
   EVP_PKEY* verification_key = nullptr;
@@ -690,7 +690,7 @@ end:
 }
 
 static void on_openid_config_retrieved(void* user_data,
-                                       grpc_error_handle /*error*/) {
+                                       absl::Status /*error*/) {
   verifier_cb_ctx* ctx = static_cast<verifier_cb_ctx*>(user_data);
   const grpc_http_response* response = &ctx->responses[HTTP_RESPONSE_OPENID];
   Json json = json_from_http(response);

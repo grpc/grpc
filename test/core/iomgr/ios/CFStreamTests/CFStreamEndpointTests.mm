@@ -49,13 +49,12 @@ static const int kBufferSize = 10000;
 
 static const int kRunLoopTimeout = 1;
 
-static void set_error_handle_promise(void *arg, grpc_error_handle error) {
-  std::promise<grpc_error_handle> *p = static_cast<std::promise<grpc_error_handle> *>(arg);
+static void set_error_handle_promise(void *arg, absl::Status error) {
+  std::promise<absl::Status> *p = static_cast<std::promise<absl::Status> *>(arg);
   p->set_value(error);
 }
 
-static void init_event_closure(grpc_closure *closure,
-                               std::promise<grpc_error_handle> *error_handle) {
+static void init_event_closure(grpc_closure *closure, std::promise<absl::Status> *error_handle) {
   GRPC_CLOSURE_INIT(closure, set_error_handle_promise, static_cast<void *>(error_handle),
                     grpc_schedule_on_exec_ctx);
 }
@@ -86,7 +85,7 @@ static bool compare_slice_buffer_with_buffer(grpc_slice_buffer *slices, const ch
   int svr_fd_;
 }
 
-- (BOOL)waitForEvent:(std::future<grpc_error_handle> *)event timeout:(int)timeout {
+- (BOOL)waitForEvent:(std::future<absl::Status> *)event timeout:(int)timeout {
   grpc_core::ExecCtx::Get()->Flush();
   return event->wait_for(std::chrono::seconds(timeout)) != std::future_status::timeout;
 }
@@ -110,12 +109,12 @@ static bool compare_slice_buffer_with_buffer(grpc_slice_buffer *slices, const ch
   struct sockaddr_in *addr = reinterpret_cast<struct sockaddr_in *>(resolved_addr.addr);
   int svr_fd;
   int r;
-  std::promise<grpc_error_handle> connected_promise;
+  std::promise<absl::Status> connected_promise;
   grpc_closure done;
 
   gpr_log(GPR_DEBUG, "test_succeeds");
 
-  GPR_ASSERT(grpc_string_to_sockaddr(&resolved_addr, "127.0.0.1", 0) == GRPC_ERROR_NONE);
+  GPR_ASSERT(grpc_string_to_sockaddr(&resolved_addr, "127.0.0.1", 0) == absl::OkStatus());
 
   /* create a phony server */
   svr_fd = socket(AF_INET, SOCK_STREAM, 0);
@@ -144,9 +143,9 @@ static bool compare_slice_buffer_with_buffer(grpc_slice_buffer *slices, const ch
   svr_fd_ = r;
 
   /* wait for the connection callback to finish */
-  std::future<grpc_error_handle> connected_future = connected_promise.get_future();
+  std::future<absl::Status> connected_future = connected_promise.get_future();
   XCTAssertEqual([self waitForEvent:&connected_future timeout:kConnectTimeout], YES);
-  XCTAssertEqual(connected_future.get(), GRPC_ERROR_NONE);
+  XCTAssertEqual(connected_future.get(), absl::OkStatus());
 }
 
 - (void)tearDown {
@@ -161,7 +160,7 @@ static bool compare_slice_buffer_with_buffer(grpc_slice_buffer *slices, const ch
   grpc_closure read_done;
   grpc_slice_buffer read_slices;
   grpc_slice_buffer read_one_slice;
-  std::promise<grpc_error_handle> write_promise;
+  std::promise<absl::Status> write_promise;
   grpc_closure write_done;
   grpc_slice_buffer write_slices;
 
@@ -176,9 +175,9 @@ static bool compare_slice_buffer_with_buffer(grpc_slice_buffer *slices, const ch
   init_event_closure(&write_done, &write_promise);
   grpc_endpoint_write(ep_, &write_slices, &write_done, nullptr, /*max_frame_size=*/INT_MAX);
 
-  std::future<grpc_error_handle> write_future = write_promise.get_future();
+  std::future<absl::Status> write_future = write_promise.get_future();
   XCTAssertEqual([self waitForEvent:&write_future timeout:kWriteTimeout], YES);
-  XCTAssertEqual(write_future.get(), GRPC_ERROR_NONE);
+  XCTAssertEqual(write_future.get(), absl::OkStatus());
 
   while (recv_size < kBufferSize) {
     ssize_t size = recv(svr_fd_, read_buffer, kBufferSize, 0);
@@ -194,19 +193,19 @@ static bool compare_slice_buffer_with_buffer(grpc_slice_buffer *slices, const ch
   grpc_slice_buffer_init(&read_slices);
   grpc_slice_buffer_init(&read_one_slice);
   while (read_slices.length < kBufferSize) {
-    std::promise<grpc_error_handle> read_promise;
+    std::promise<absl::Status> read_promise;
     init_event_closure(&read_done, &read_promise);
     grpc_endpoint_read(ep_, &read_one_slice, &read_done, /*urgent=*/false,
                        /*min_progress_size=*/1);
-    std::future<grpc_error_handle> read_future = read_promise.get_future();
+    std::future<absl::Status> read_future = read_promise.get_future();
     XCTAssertEqual([self waitForEvent:&read_future timeout:kReadTimeout], YES);
-    XCTAssertEqual(read_future.get(), GRPC_ERROR_NONE);
+    XCTAssertEqual(read_future.get(), absl::OkStatus());
     grpc_slice_buffer_move_into(&read_one_slice, &read_slices);
     XCTAssertLessThanOrEqual(read_slices.length, kBufferSize);
   }
   XCTAssertTrue(compare_slice_buffer_with_buffer(&read_slices, read_buffer, kBufferSize));
 
-  grpc_endpoint_shutdown(ep_, GRPC_ERROR_NONE);
+  grpc_endpoint_shutdown(ep_, absl::OkStatus());
   grpc_slice_buffer_reset_and_unref(&read_slices);
   grpc_slice_buffer_reset_and_unref(&write_slices);
   grpc_slice_buffer_reset_and_unref(&read_one_slice);
@@ -215,10 +214,10 @@ static bool compare_slice_buffer_with_buffer(grpc_slice_buffer *slices, const ch
 - (void)testShutdownBeforeRead {
   grpc_core::ExecCtx exec_ctx;
 
-  std::promise<grpc_error_handle> read_promise;
+  std::promise<absl::Status> read_promise;
   grpc_closure read_done;
   grpc_slice_buffer read_slices;
-  std::promise<grpc_error_handle> write_promise;
+  std::promise<absl::Status> write_promise;
   grpc_closure write_done;
   grpc_slice_buffer write_slices;
 
@@ -238,9 +237,9 @@ static bool compare_slice_buffer_with_buffer(grpc_slice_buffer *slices, const ch
   init_event_closure(&write_done, &write_promise);
   grpc_endpoint_write(ep_, &write_slices, &write_done, nullptr, /*max_frame_size=*/INT_MAX);
 
-  std::future<grpc_error_handle> write_future = write_promise.get_future();
+  std::future<absl::Status> write_future = write_promise.get_future();
   XCTAssertEqual([self waitForEvent:&write_future timeout:kWriteTimeout], YES);
-  XCTAssertEqual(write_future.get(), GRPC_ERROR_NONE);
+  XCTAssertEqual(write_future.get(), absl::OkStatus());
 
   while (recv_size < kBufferSize) {
     ssize_t size = recv(svr_fd_, read_buffer, kBufferSize, 0);
@@ -251,14 +250,14 @@ static bool compare_slice_buffer_with_buffer(grpc_slice_buffer *slices, const ch
   XCTAssertEqual(recv_size, kBufferSize);
   XCTAssertEqual(memcmp(read_buffer, write_buffer, kBufferSize), 0);
 
-  std::future<grpc_error_handle> read_future = read_promise.get_future();
+  std::future<absl::Status> read_future = read_promise.get_future();
   XCTAssertEqual([self waitForEvent:&read_future timeout:kReadTimeout], NO);
 
-  grpc_endpoint_shutdown(ep_, GRPC_ERROR_NONE);
+  grpc_endpoint_shutdown(ep_, absl::OkStatus());
 
   grpc_core::ExecCtx::Get()->Flush();
   XCTAssertEqual([self waitForEvent:&read_future timeout:kReadTimeout], YES);
-  XCTAssertNotEqual(read_future.get(), GRPC_ERROR_NONE);
+  XCTAssertNotEqual(read_future.get(), absl::OkStatus());
 
   grpc_slice_buffer_reset_and_unref(&read_slices);
   grpc_slice_buffer_reset_and_unref(&write_slices);
@@ -267,10 +266,10 @@ static bool compare_slice_buffer_with_buffer(grpc_slice_buffer *slices, const ch
 - (void)testRemoteClosed {
   grpc_core::ExecCtx exec_ctx;
 
-  std::promise<grpc_error_handle> read_promise;
+  std::promise<absl::Status> read_promise;
   grpc_closure read_done;
   grpc_slice_buffer read_slices;
-  std::promise<grpc_error_handle> write_promise;
+  std::promise<absl::Status> write_promise;
   grpc_closure write_done;
   grpc_slice_buffer write_slices;
 
@@ -291,9 +290,9 @@ static bool compare_slice_buffer_with_buffer(grpc_slice_buffer *slices, const ch
   init_event_closure(&write_done, &write_promise);
   grpc_endpoint_write(ep_, &write_slices, &write_done, nullptr, /*max_frame_size=*/INT_MAX);
 
-  std::future<grpc_error_handle> write_future = write_promise.get_future();
+  std::future<absl::Status> write_future = write_promise.get_future();
   XCTAssertEqual([self waitForEvent:&write_future timeout:kWriteTimeout], YES);
-  XCTAssertEqual(write_future.get(), GRPC_ERROR_NONE);
+  XCTAssertEqual(write_future.get(), absl::OkStatus());
 
   while (recv_size < kBufferSize) {
     ssize_t size = recv(svr_fd_, read_buffer, kBufferSize, 0);
@@ -306,11 +305,11 @@ static bool compare_slice_buffer_with_buffer(grpc_slice_buffer *slices, const ch
 
   close(svr_fd_);
 
-  std::future<grpc_error_handle> read_future = read_promise.get_future();
+  std::future<absl::Status> read_future = read_promise.get_future();
   XCTAssertEqual([self waitForEvent:&read_future timeout:kReadTimeout], YES);
-  XCTAssertNotEqual(read_future.get(), GRPC_ERROR_NONE);
+  XCTAssertNotEqual(read_future.get(), absl::OkStatus());
 
-  grpc_endpoint_shutdown(ep_, GRPC_ERROR_NONE);
+  grpc_endpoint_shutdown(ep_, absl::OkStatus());
   grpc_slice_buffer_reset_and_unref(&read_slices);
   grpc_slice_buffer_reset_and_unref(&write_slices);
 }
@@ -318,7 +317,7 @@ static bool compare_slice_buffer_with_buffer(grpc_slice_buffer *slices, const ch
 - (void)testRemoteReset {
   grpc_core::ExecCtx exec_ctx;
 
-  std::promise<grpc_error_handle> read_promise;
+  std::promise<absl::Status> read_promise;
   grpc_closure read_done;
   grpc_slice_buffer read_slices;
 
@@ -334,11 +333,11 @@ static bool compare_slice_buffer_with_buffer(grpc_slice_buffer *slices, const ch
 
   close(svr_fd_);
 
-  std::future<grpc_error_handle> read_future = read_promise.get_future();
+  std::future<absl::Status> read_future = read_promise.get_future();
   XCTAssertEqual([self waitForEvent:&read_future timeout:kReadTimeout], YES);
-  XCTAssertNotEqual(read_future.get(), GRPC_ERROR_NONE);
+  XCTAssertNotEqual(read_future.get(), absl::OkStatus());
 
-  grpc_endpoint_shutdown(ep_, GRPC_ERROR_NONE);
+  grpc_endpoint_shutdown(ep_, absl::OkStatus());
   grpc_slice_buffer_reset_and_unref(&read_slices);
 }
 

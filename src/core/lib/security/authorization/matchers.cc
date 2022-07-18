@@ -20,6 +20,7 @@
 #include <string>
 
 #include "absl/memory/memory.h"
+#include "absl/status/status.h"
 #include "absl/strings/string_view.h"
 
 #include <grpc/grpc_security_constants.h>
@@ -150,16 +151,15 @@ bool HeaderAuthorizationMatcher::Matches(const EvaluateArgs& args) const {
 
 IpAuthorizationMatcher::IpAuthorizationMatcher(Type type, Rbac::CidrRange range)
     : type_(type), prefix_len_(range.prefix_len) {
-  grpc_error_handle error =
+  absl::Status error =
       grpc_string_to_sockaddr(&subnet_address_, range.address_prefix.c_str(),
                               /*port does not matter here*/ 0);
-  if (GRPC_ERROR_IS_NONE(error)) {
+  if (error.ok()) {
     grpc_sockaddr_mask_bits(&subnet_address_, prefix_len_);
   } else {
     gpr_log(GPR_DEBUG, "CidrRange address %s is not IPv4/IPv6. Error: %s",
             range.address_prefix.c_str(), grpc_error_std_string(error).c_str());
   }
-  GRPC_ERROR_UNREF(error);
 }
 
 bool IpAuthorizationMatcher::Matches(const EvaluateArgs& args) const {

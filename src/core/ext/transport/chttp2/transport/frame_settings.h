@@ -24,11 +24,12 @@
 #include <stddef.h>
 #include <stdint.h>
 
+#include "absl/status/status.h"
+
 #include <grpc/slice.h>
 
 #include "src/core/ext/transport/chttp2/transport/frame.h"
 #include "src/core/ext/transport/chttp2/transport/http2_settings.h"
-#include "src/core/lib/iomgr/error.h"
 
 typedef enum {
   GRPC_CHTTP2_SPS_ID0,
@@ -54,13 +55,13 @@ grpc_slice grpc_chttp2_settings_create(uint32_t* old_settings,
 /* Create an ack settings frame */
 grpc_slice grpc_chttp2_settings_ack_create(void);
 
-grpc_error_handle grpc_chttp2_settings_parser_begin_frame(
+absl::Status grpc_chttp2_settings_parser_begin_frame(
     grpc_chttp2_settings_parser* parser, uint32_t length, uint8_t flags,
     uint32_t* settings);
-grpc_error_handle grpc_chttp2_settings_parser_parse(void* parser,
-                                                    grpc_chttp2_transport* t,
-                                                    grpc_chttp2_stream* s,
-                                                    const grpc_slice& slice,
-                                                    int is_last);
+absl::Status grpc_chttp2_settings_parser_parse(void* parser,
+                                               grpc_chttp2_transport* t,
+                                               grpc_chttp2_stream* s,
+                                               const grpc_slice& slice,
+                                               int is_last);
 
 #endif /* GRPC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_FRAME_SETTINGS_H */

@@ -35,7 +35,6 @@
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/channel/context.h"
 #include "src/core/lib/gprpp/sync.h"
-#include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/slice/slice_buffer.h"
@@ -67,7 +66,7 @@ class OpenCensusCallTracer : public grpc_core::CallTracer {
     void RecordReceivedTrailingMetadata(
         absl::Status status, grpc_metadata_batch* recv_trailing_metadata,
         const grpc_transport_stream_stats* transport_stream_stats) override;
-    void RecordCancel(grpc_error_handle cancel_error) override;
+    void RecordCancel(absl::Status cancel_error) override;
     void RecordEnd(const gpr_timespec& /*latency*/) override;
 
     CensusContext* context() { return &context_; }

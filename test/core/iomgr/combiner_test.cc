@@ -32,7 +32,7 @@ static void test_no_op(void) {
   GRPC_COMBINER_UNREF(grpc_combiner_create(), "test_no_op");
 }
 
-static void set_event_to_true(void* value, grpc_error_handle /*error*/) {
+static void set_event_to_true(void* value, absl::Status /*error*/) {
   gpr_event_set(static_cast<gpr_event*>(value), reinterpret_cast<void*>(1));
 }
 
@@ -44,7 +44,7 @@ static void test_execute_one(void) {
   gpr_event_init(&done);
   grpc_core::ExecCtx exec_ctx;
   lock->Run(GRPC_CLOSURE_CREATE(set_event_to_true, &done, nullptr),
-            GRPC_ERROR_NONE);
+            absl::OkStatus());
   grpc_core::ExecCtx::Get()->Flush();
   GPR_ASSERT(gpr_event_wait(&done, grpc_timeout_seconds_to_deadline(5)) !=
              nullptr);
@@ -62,7 +62,7 @@ typedef struct {
   size_t value;
 } ex_args;
 
-static void check_one(void* a, grpc_error_handle /*error*/) {
+static void check_one(void* a, absl::Status /*error*/) {
   ex_args* args = static_cast<ex_args*>(a);
   GPR_ASSERT(*args->ctr == args->value - 1);
   *args->ctr = args->value;
@@ -79,7 +79,7 @@ static void execute_many_loop(void* a) {
       c->ctr = &args->ctr;
       c->value = n++;
       args->lock->Run(GRPC_CLOSURE_CREATE(check_one, c, nullptr),
-                      GRPC_ERROR_NONE);
+                      absl::OkStatus());
       grpc_core::ExecCtx::Get()->Flush();
     }
     // sleep for a little bit, to test a combiner draining and another thread
@@ -87,7 +87,7 @@ static void execute_many_loop(void* a) {
     gpr_sleep_until(grpc_timeout_milliseconds_to_deadline(100));
   }
   args->lock->Run(GRPC_CLOSURE_CREATE(set_event_to_true, &args->done, nullptr),
-                  GRPC_ERROR_NONE);
+                  absl::OkStatus());
 }
 
 static void test_execute_many(void) {
@@ -114,13 +114,13 @@ static void test_execute_many(void) {
 
 static gpr_event got_in_finally;
 
-static void in_finally(void* /*arg*/, grpc_error_handle /*error*/) {
+static void in_finally(void* /*arg*/, absl::Status /*error*/) {
   gpr_event_set(&got_in_finally, reinterpret_cast<void*>(1));
 }
 
-static void add_finally(void* arg, grpc_error_handle /*error*/) {
+static void add_finally(void* arg, absl::Status /*error*/) {
   static_cast<grpc_core::Combiner*>(arg)->Run(
-      GRPC_CLOSURE_CREATE(in_finally, arg, nullptr), GRPC_ERROR_NONE);
+      GRPC_CLOSURE_CREATE(in_finally, arg, nullptr), absl::OkStatus());
 }
 
 static void test_execute_finally(void) {
@@ -129,7 +129,7 @@ static void test_execute_finally(void) {
   grpc_core::Combiner* lock = grpc_combiner_create();
   grpc_core::ExecCtx exec_ctx;
   gpr_event_init(&got_in_finally);
-  lock->Run(GRPC_CLOSURE_CREATE(add_finally, lock, nullptr), GRPC_ERROR_NONE);
+  lock->Run(GRPC_CLOSURE_CREATE(add_finally, lock, nullptr), absl::OkStatus());
   grpc_core::ExecCtx::Get()->Flush();
   GPR_ASSERT(gpr_event_wait(&got_in_finally,
                             grpc_timeout_seconds_to_deadline(5)) != nullptr);

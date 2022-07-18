@@ -42,6 +42,7 @@
 #include "src/core/lib/gprpp/host_port.h"
 #include "src/core/lib/gprpp/memory.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
+#include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/load_file.h"
 #include "src/core/lib/security/context/security_context.h"
 #include "src/core/lib/security/security_connector/load_system_roots.h"
@@ -138,7 +139,7 @@ tsi_tls_version grpc_get_tsi_tls_version(grpc_tls_version tls_version) {
   }
 }
 
-grpc_error_handle grpc_ssl_check_alpn(const tsi_peer* peer) {
+absl::Status grpc_ssl_check_alpn(const tsi_peer* peer) {
 #if TSI_OPENSSL_ALPN_SUPPORT
   /* Check the ALPN if ALPN is supported. */
   const tsi_peer_property* p =
@@ -152,17 +153,17 @@ grpc_error_handle grpc_ssl_check_alpn(const tsi_peer* peer) {
         "Cannot check peer: invalid ALPN value.");
   }
 #endif /* TSI_OPENSSL_ALPN_SUPPORT */
-  return GRPC_ERROR_NONE;
+  return absl::OkStatus();
 }
 
-grpc_error_handle grpc_ssl_check_peer_name(absl::string_view peer_name,
-                                           const tsi_peer* peer) {
+absl::Status grpc_ssl_check_peer_name(absl::string_view peer_name,
+                                      const tsi_peer* peer) {
   /* Check the peer name if specified. */
   if (!peer_name.empty() && !grpc_ssl_host_matches_name(peer, peer_name)) {
     return GRPC_ERROR_CREATE_FROM_CPP_STRING(
         absl::StrCat("Peer name ", peer_name, " is not in peer certificate"));
   }
-  return GRPC_ERROR_NONE;
+  return absl::OkStatus();
 }
 
 void grpc_tsi_ssl_pem_key_cert_pairs_destroy(tsi_ssl_pem_key_cert_pair* kp,

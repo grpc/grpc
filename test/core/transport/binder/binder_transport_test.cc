@@ -107,7 +107,7 @@ class BinderTransportTest : public ::testing::Test {
   std::vector<grpc_binder_stream*> stream_buffer_;
 };
 
-void MockCallback(void* arg, grpc_error_handle error);
+void MockCallback(void* arg, absl::Status error);
 
 class MockGrpcClosure {
  public:
@@ -117,7 +117,7 @@ class MockGrpcClosure {
   }
 
   grpc_closure* GetGrpcClosure() { return &closure_; }
-  MOCK_METHOD(void, Callback, (grpc_error_handle), ());
+  MOCK_METHOD(void, Callback, (absl::Status), ());
 
   absl::Notification* notification_;
 
@@ -125,7 +125,7 @@ class MockGrpcClosure {
   grpc_closure closure_;
 };
 
-void MockCallback(void* arg, grpc_error_handle error) {
+void MockCallback(void* arg, absl::Status error) {
   MockGrpcClosure* mock_closure = static_cast<MockGrpcClosure*>(arg);
   mock_closure->Callback(error);
   if (mock_closure->notification_) {
@@ -701,7 +701,7 @@ TEST_F(BinderTransportTest, WireWriterRpcCallErrorPropagates) {
   EXPECT_CALL(GetWireWriter(), RpcCall)
       .WillOnce(Return(absl::OkStatus()))
       .WillOnce(Return(absl::InternalError("WireWriter::RpcCall failed")));
-  EXPECT_CALL(mock_on_complete1, Callback(GRPC_ERROR_NONE));
+  EXPECT_CALL(mock_on_complete1, Callback(absl::OkStatus()));
   EXPECT_CALL(mock_on_complete2,
               Callback(GrpcErrorMessageContains("WireWriter::RpcCall failed")));
 

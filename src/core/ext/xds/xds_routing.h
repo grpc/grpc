@@ -27,13 +27,13 @@
 #include <string>
 #include <vector>
 
+#include "absl/status/status.h"
 #include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
 
 #include "src/core/ext/xds/xds_listener.h"
 #include "src/core/ext/xds/xds_route_config.h"
 #include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/transport/metadata_batch.h"
 
 namespace grpc_core {
@@ -84,8 +84,8 @@ class XdsRouting {
   struct GeneratePerHttpFilterConfigsResult {
     // Map of field name to list of elements for that field
     std::map<std::string, std::vector<std::string>> per_filter_configs;
-    grpc_error_handle error = GRPC_ERROR_NONE;
-    // Guaranteed to be empty if error is not GRPC_ERROR_NONE
+    absl::Status error = absl::OkStatus();
+    // Guaranteed to be empty if error is not absl::OkStatus()
     ChannelArgs args;
   };
 

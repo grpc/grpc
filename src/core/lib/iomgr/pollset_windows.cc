@@ -98,7 +98,7 @@ static void pollset_shutdown(grpc_pollset* pollset, grpc_closure* closure) {
   pollset->shutting_down = 1;
   grpc_pollset_kick(pollset, GRPC_POLLSET_KICK_BROADCAST);
   if (!pollset->is_iocp_worker) {
-    grpc_core::ExecCtx::Run(DEBUG_LOCATION, closure, GRPC_ERROR_NONE);
+    grpc_core::ExecCtx::Run(DEBUG_LOCATION, closure, absl::OkStatus());
   } else {
     pollset->on_shutdown = closure;
   }
@@ -106,9 +106,9 @@ static void pollset_shutdown(grpc_pollset* pollset, grpc_closure* closure) {
 
 static void pollset_destroy(grpc_pollset* pollset) {}
 
-static grpc_error_handle pollset_work(grpc_pollset* pollset,
-                                      grpc_pollset_worker** worker_hdl,
-                                      grpc_core::Timestamp deadline) {
+static absl::Status pollset_work(grpc_pollset* pollset,
+                                 grpc_pollset_worker** worker_hdl,
+                                 grpc_core::Timestamp deadline) {
   grpc_pollset_worker worker;
   if (worker_hdl) *worker_hdl = &worker;
 
@@ -147,7 +147,7 @@ static grpc_error_handle pollset_work(grpc_pollset* pollset,
 
       if (pollset->shutting_down && pollset->on_shutdown != NULL) {
         grpc_core::ExecCtx::Run(DEBUG_LOCATION, pollset->on_shutdown,
-                                GRPC_ERROR_NONE);
+                                absl::OkStatus());
         pollset->on_shutdown = NULL;
       }
       goto done;
@@ -180,11 +180,11 @@ done:
   }
   gpr_cv_destroy(&worker.cv);
   if (worker_hdl) *worker_hdl = NULL;
-  return GRPC_ERROR_NONE;
+  return absl::OkStatus();
 }
 
-static grpc_error_handle pollset_kick(grpc_pollset* p,
-                                      grpc_pollset_worker* specific_worker) {
+static absl::Status pollset_kick(grpc_pollset* p,
+                                 grpc_pollset_worker* specific_worker) {
   bool should_kick_global = false;
   if (specific_worker != NULL) {
     if (specific_worker == GRPC_POLLSET_KICK_BROADCAST) {
@@ -231,7 +231,7 @@ static grpc_error_handle pollset_kick(grpc_pollset* p,
       gpr_cv_signal(&next_global_worker->cv);
     }
   }
-  return GRPC_ERROR_NONE;
+  return absl::OkStatus();
 }
 
 grpc_pollset_vtable grpc_windows_pollset_vtable = {

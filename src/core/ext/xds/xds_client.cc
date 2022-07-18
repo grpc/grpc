@@ -279,11 +279,11 @@ class XdsClient::ChannelState::AdsCallState
   };
 
   struct ResourceTypeState {
-    ~ResourceTypeState() { GRPC_ERROR_UNREF(error); }
+    ~ResourceTypeState() {}
 
     // Nonce and error for this resource type.
     std::string nonce;
-    grpc_error_handle error = GRPC_ERROR_NONE;
+    absl::Status error = absl::OkStatus();
 
     // Subscribed resources of this type.
     std::map<std::string /*authority*/,
@@ -886,8 +886,7 @@ void XdsClient::ChannelState::AdsCallState::SendMessageLocked(
       chand()->server_,
       chand()->server_.ShouldUseV3() ? type->type_url() : type->v2_type_url(),
       chand()->resource_type_version_map_[type], state.nonce,
-      ResourceNamesForRequest(type), GRPC_ERROR_REF(state.error),
-      !sent_initial_message_);
+      ResourceNamesForRequest(type), state.error, !sent_initial_message_);
   sent_initial_message_ = true;
   if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_client_trace)) {
     gpr_log(GPR_INFO,
@@ -898,8 +897,7 @@ void XdsClient::ChannelState::AdsCallState::SendMessageLocked(
             chand()->resource_type_version_map_[type].c_str(),
             state.nonce.c_str(), grpc_error_std_string(state.error).c_str());
   }
-  GRPC_ERROR_UNREF(state.error);
-  state.error = GRPC_ERROR_NONE;
+  state.error = absl::OkStatus();
   call_->SendMessage(std::move(serialized_message));
   send_message_pending_ = true;
 }
@@ -985,7 +983,6 @@ void XdsClient::ChannelState::AdsCallState::OnRecvMessage(
                 xds_client(), chand()->server_.server_uri.c_str(),
                 result.type_url.c_str(), result.version.c_str(),
                 state.nonce.c_str(), error.c_str());
-        GRPC_ERROR_UNREF(state.error);
         state.error = grpc_error_set_int(
             GRPC_ERROR_CREATE_FROM_CPP_STRING(error),
             GRPC_ERROR_INT_GRPC_STATUS, GRPC_STATUS_UNAVAILABLE);
@@ -1293,15 +1290,14 @@ void XdsClient::ChannelState::LrsCallState::OnRecvMessage(
   bool send_all_clusters = false;
   std::set<std::string> new_cluster_names;
   Duration new_load_reporting_interval;
-  grpc_error_handle parse_error = xds_client()->api_.ParseLrsResponse(
+  absl::Status parse_error = xds_client()->api_.ParseLrsResponse(
       payload, &send_all_clusters, &new_cluster_names,
       &new_load_reporting_interval);
-  if (!GRPC_ERROR_IS_NONE(parse_error)) {
+  if (!parse_error.ok()) {
     gpr_log(GPR_ERROR,
             "[xds_client %p] xds server %s: LRS response parsing failed: %s",
             xds_client(), chand()->server_.server_uri.c_str(),
             grpc_error_std_string(parse_error).c_str());
-    GRPC_ERROR_UNREF(parse_error);
     return;
   }
   seen_response_ = true;

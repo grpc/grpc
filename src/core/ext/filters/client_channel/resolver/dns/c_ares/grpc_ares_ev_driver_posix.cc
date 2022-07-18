@@ -22,10 +22,10 @@
 
 #include "absl/base/thread_annotations.h"
 #include "absl/memory/memory.h"
+#include "absl/status/status.h"
 
 #include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/iomgr/closure.h"
-#include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/iomgr_fwd.h"
 #include "src/core/lib/iomgr/port.h"
 #if GRPC_ARES == 1 && defined(GRPC_POSIX_SOCKET_ARES_EV_DRIVER)
@@ -78,7 +78,7 @@ class GrpcPolledFdPosix : public GrpcPolledFd {
            bytes_available > 0;
   }
 
-  void ShutdownLocked(grpc_error_handle error)
+  void ShutdownLocked(absl::Status error)
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(&grpc_ares_request::mu) override {
     grpc_fd_shutdown(fd_, error);
   }

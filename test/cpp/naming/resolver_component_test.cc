@@ -215,7 +215,7 @@ void ArgsInit(ArgsStruct* args) {
   args->channel_args = nullptr;
 }
 
-void DoNothing(void* /*arg*/, grpc_error_handle /*error*/) {}
+void DoNothing(void* /*arg*/, absl::Status /*error*/) {}
 
 void ArgsFinish(ArgsStruct* args) {
   GPR_ASSERT(gpr_event_wait(&args->ev, TestDeadline()));
@@ -315,7 +315,7 @@ void OpenAndCloseSocketsStressLoop(int phony_port, gpr_event* done_ev) {
                   SOCKET_ERROR)
           << "Failed to set socketopt reuseaddr. WSA error: " +
                  std::to_string(WSAGetLastError());
-      ASSERT_TRUE(grpc_tcp_set_non_block(s) == GRPC_ERROR_NONE)
+      ASSERT_TRUE(grpc_tcp_set_non_block(s) == absl::OkStatus())
           << "Failed to set socket non-blocking";
       ASSERT_TRUE(bind(s, (const sockaddr*)&addr, sizeof(addr)) != SOCKET_ERROR)
           << "Failed to bind socket " + std::to_string(s) +

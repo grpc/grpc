@@ -18,6 +18,8 @@
 
 #include <string>
 
+#include "absl/status/status.h"
+
 #include <grpc/grpc.h>
 #include <grpcpp/support/config.h>
 #include <grpcpp/support/validate_service_config.h>
@@ -30,13 +32,12 @@ namespace grpc {
 namespace experimental {
 std::string ValidateServiceConfigJSON(const std::string& service_config_json) {
   grpc_init();
-  grpc_error_handle error = GRPC_ERROR_NONE;
+  absl::Status error = absl::OkStatus();
   grpc_core::ServiceConfigImpl::Create(grpc_core::ChannelArgs(),
                                        service_config_json.c_str(), &error);
   std::string return_value;
-  if (!GRPC_ERROR_IS_NONE(error)) {
+  if (!error.ok()) {
     return_value = grpc_error_std_string(error);
-    GRPC_ERROR_UNREF(error);
   }
   grpc_shutdown();
   return return_value;

@@ -31,6 +31,8 @@
 #include <openssl/pem.h>
 #include <openssl/rsa.h>
 
+#include "absl/status/status.h"
+
 #include <grpc/grpc_security.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
@@ -73,7 +75,7 @@ grpc_auth_json_key grpc_auth_json_key_create_from_json(const Json& json) {
   BIO* bio = nullptr;
   const char* prop_value;
   int success = 0;
-  grpc_error_handle error = GRPC_ERROR_NONE;
+  absl::Status error = absl::OkStatus();
 
   memset(&result, 0, sizeof(grpc_auth_json_key));
   result.type = GRPC_AUTH_JSON_TYPE_INVALID;
@@ -125,7 +127,7 @@ end:
 
 grpc_auth_json_key grpc_auth_json_key_create_from_string(
     const char* json_string) {
-  grpc_error_handle error = GRPC_ERROR_NONE;
+  absl::Status error = absl::OkStatus();
   Json json = Json::Parse(json_string, &error);
   GRPC_LOG_IF_ERROR("JSON key parsing", error);
   return grpc_auth_json_key_create_from_json(json);

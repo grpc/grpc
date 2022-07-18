@@ -62,12 +62,11 @@ namespace {
 
 absl::StatusOr<std::string> ReadPolicyFromFile(absl::string_view policy_path) {
   grpc_slice policy_slice = grpc_empty_slice();
-  grpc_error_handle error =
+  absl::Status error =
       grpc_load_file(std::string(policy_path).c_str(), 0, &policy_slice);
-  if (!GRPC_ERROR_IS_NONE(error)) {
+  if (!error.ok()) {
     absl::Status status =
         absl::InvalidArgumentError(grpc_error_std_string(error));
-    GRPC_ERROR_UNREF(error);
     return status;
   }
   std::string policy_contents(StringViewFromSlice(policy_slice));

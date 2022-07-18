@@ -32,6 +32,7 @@
 
 #include "absl/base/thread_annotations.h"
 #include "absl/memory/memory.h"
+#include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/synchronization/notification.h"
 #include "absl/types/optional.h"
@@ -56,7 +57,6 @@
 #include "src/core/lib/iomgr/call_combiner.h"
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/endpoint.h"
-#include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/iomgr_fwd.h"
 #include "src/core/lib/iomgr/pollset.h"
 #include "src/core/lib/slice/slice.h"
@@ -159,7 +159,7 @@ class Server : public InternallyRefCounted<Server>,
   // Sets up a transport.  Creates a channel stack and binds the transport to
   // the server.  Called from the listener when a new connection is accepted.
   // Takes ownership of a ref on resource_user from the caller.
-  grpc_error_handle SetupTransport(
+  absl::Status SetupTransport(
       grpc_transport* transport, grpc_pollset* accepting_pollset,
       const ChannelArgs& args,
       const RefCountedPtr<channelz::SocketNode>& socket_node);
@@ -236,8 +236,8 @@ class Server : public InternallyRefCounted<Server>,
                                                  const grpc_slice& path);
 
     // Filter vtable functions.
-    static grpc_error_handle InitChannelElement(
-        grpc_channel_element* elem, grpc_channel_element_args* args);
+    static absl::Status InitChannelElement(grpc_channel_element* elem,
+                                           grpc_channel_element_args* args);
     static void DestroyChannelElement(grpc_channel_element* elem);
 
    private:
@@ -248,7 +248,7 @@ class Server : public InternallyRefCounted<Server>,
 
     void Destroy() ABSL_EXCLUSIVE_LOCKS_REQUIRED(server_->mu_global_);
 
-    static void FinishDestroy(void* arg, grpc_error_handle error);
+    static void FinishDestroy(void* arg, absl::Status error);
 
     RefCountedPtr<Server> server_;
     RefCountedPtr<Channel> channel_;
@@ -298,8 +298,8 @@ class Server : public InternallyRefCounted<Server>,
     void FailCallCreation();
 
     // Filter vtable functions.
-    static grpc_error_handle InitCallElement(
-        grpc_call_element* elem, const grpc_call_element_args* args);
+    static absl::Status InitCallElement(grpc_call_element* elem,
+                                        const grpc_call_element_args* args);
     static void DestroyCallElement(grpc_call_element* elem,
                                    const grpc_call_final_info* /*final_info*/,
                                    grpc_closure* /*ignored*/);
@@ -308,16 +308,15 @@ class Server : public InternallyRefCounted<Server>,
 
    private:
     // Helper functions for handling calls at the top of the call stack.
-    static void RecvInitialMetadataBatchComplete(void* arg,
-                                                 grpc_error_handle error);
+    static void RecvInitialMetadataBatchComplete(void* arg, absl::Status error);
     void StartNewRpc(grpc_call_element* elem);
-    static void PublishNewRpc(void* arg, grpc_error_handle error);
+    static void PublishNewRpc(void* arg, absl::Status error);
 
     // Functions used inside the call stack.
     void StartTransportStreamOpBatchImpl(grpc_call_element* elem,
                                          grpc_transport_stream_op_batch* batch);
-    static void RecvInitialMetadataReady(void* arg, grpc_error_handle error);
-    static void RecvTrailingMetadataReady(void* arg, grpc_error_handle error);
+    static void RecvInitialMetadataReady(void* arg, absl::Status error);
+    static void RecvTrailingMetadataReady(void* arg, absl::Status error);
 
     RefCountedPtr<Server> server_;
 
@@ -344,12 +343,12 @@ class Server : public InternallyRefCounted<Server>,
     uint32_t recv_initial_metadata_flags_ = 0;
     grpc_closure recv_initial_metadata_ready_;
     grpc_closure* original_recv_initial_metadata_ready_;
-    grpc_error_handle recv_initial_metadata_error_ = GRPC_ERROR_NONE;
+    absl::Status recv_initial_metadata_error_ = absl::OkStatus();
 
     bool seen_recv_trailing_metadata_ready_ = false;
     grpc_closure recv_trailing_metadata_ready_;
     grpc_closure* original_recv_trailing_metadata_ready_;
-    grpc_error_handle recv_trailing_metadata_error_ = GRPC_ERROR_NONE;
+    absl::Status recv_trailing_metadata_error_ = absl::OkStatus();
 
     grpc_closure publish_;
 
@@ -371,7 +370,7 @@ class Server : public InternallyRefCounted<Server>,
     grpc_cq_completion completion;
   };
 
-  static void ListenerDestroyDone(void* arg, grpc_error_handle error);
+  static void ListenerDestroyDone(void* arg, absl::Status error);
 
   static void DoneShutdownEvent(void* server,
                                 grpc_cq_completion* /*completion*/) {
@@ -380,13 +379,13 @@ class Server : public InternallyRefCounted<Server>,
 
   static void DoneRequestEvent(void* req, grpc_cq_completion* completion);
 
-  void FailCall(size_t cq_idx, RequestedCall* rc, grpc_error_handle error);
+  void FailCall(size_t cq_idx, RequestedCall* rc, absl::Status error);
   grpc_call_error QueueRequestedCall(size_t cq_idx, RequestedCall* rc);
 
   void MaybeFinishShutdown() ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_global_)
       ABSL_LOCKS_EXCLUDED(mu_call_);
 
-  void KillPendingWorkLocked(grpc_error_handle error)
+  void KillPendingWorkLocked(absl::Status error)
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_call_);
 
   static grpc_call_error ValidateServerRequest(

@@ -32,6 +32,7 @@
 #include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/gprpp/time.h"
+#include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/resource_quota/resource_quota.h"
 #include "src/core/lib/transport/error_utils.h"
@@ -142,12 +143,12 @@ void SubchannelStreamClient::StartRetryTimerLocked() {
   grpc_timer_init(&retry_timer_, next_try, &retry_timer_callback_);
 }
 
-void SubchannelStreamClient::OnRetryTimer(void* arg, grpc_error_handle error) {
+void SubchannelStreamClient::OnRetryTimer(void* arg, absl::Status error) {
   auto* self = static_cast<SubchannelStreamClient*>(arg);
   {
     MutexLock lock(&self->mu_);
     self->retry_timer_callback_pending_ = false;
-    if (self->event_handler_ != nullptr && GRPC_ERROR_IS_NONE(error) &&
+    if (self->event_handler_ != nullptr && error.ok() &&
         self->call_state_ == nullptr) {
       if (GPR_UNLIKELY(self->tracer_ != nullptr)) {
         gpr_log(GPR_INFO,
@@ -197,7 +198,7 @@ SubchannelStreamClient::CallState::~CallState() {
 }
 
 void SubchannelStreamClient::CallState::Orphan() {
-  call_combiner_.Cancel(GRPC_ERROR_CANCELLED);
+  call_combiner_.Cancel(absl::CancelledError());
   Cancel();
 }
 
@@ -212,21 +213,19 @@ void SubchannelStreamClient::CallState::StartCallLocked() {
       context_,
       &call_combiner_,
   };
-  grpc_error_handle error = GRPC_ERROR_NONE;
+  absl::Status error = absl::OkStatus();
   call_ = SubchannelCall::Create(std::move(args), &error).release();
   // Register after-destruction callback.
   GRPC_CLOSURE_INIT(&after_call_stack_destruction_, AfterCallStackDestruction,
                     this, grpc_schedule_on_exec_ctx);
   call_->SetAfterCallStackDestroy(&after_call_stack_destruction_);
   // Check if creation failed.
-  if (!GRPC_ERROR_IS_NONE(error) ||
-      subchannel_stream_client_->event_handler_ == nullptr) {
+  if (!error.ok() || subchannel_stream_client_->event_handler_ == nullptr) {
     gpr_log(GPR_ERROR,
             "SubchannelStreamClient %p CallState %p: error creating "
             "stream on subchannel (%s); will retry",
             subchannel_stream_client_.get(), this,
             grpc_error_std_string(error).c_str());
-    GRPC_ERROR_UNREF(error);
     CallEndedLocked(/*retry=*/true);
     return;
   }
@@ -241,7 +240,7 @@ void SubchannelStreamClient::CallState::StartCallLocked() {
   send_initial_metadata_.Set(
       HttpPathMetadata(),
       subchannel_stream_client_->event_handler_->GetPathLocked());
-  GPR_ASSERT(GRPC_ERROR_IS_NONE(error));
+  GPR_ASSERT(error.ok());
   payload_.send_initial_metadata.send_initial_metadata =
       &send_initial_metadata_;
   payload_.send_initial_metadata.send_initial_metadata_flags = 0;
@@ -297,7 +296,7 @@ void SubchannelStreamClient::CallState::StartCallLocked() {
 }
 
 void SubchannelStreamClient::CallState::StartBatchInCallCombiner(
-    void* arg, grpc_error_handle /*error*/) {
+    void* arg, absl::Status /*error*/) {
   auto* batch = static_cast<grpc_transport_stream_op_batch*>(arg);
   auto* call = static_cast<SubchannelCall*>(batch->handler_private.extra_arg);
   call->StartTransportStreamOpBatch(batch);
@@ -309,29 +308,29 @@ void SubchannelStreamClient::CallState::StartBatch(
   GRPC_CLOSURE_INIT(&batch->handler_private.closure, StartBatchInCallCombiner,
                     batch, grpc_schedule_on_exec_ctx);
   GRPC_CALL_COMBINER_START(&call_combiner_, &batch->handler_private.closure,
-                           GRPC_ERROR_NONE, "start_subchannel_batch");
+                           absl::OkStatus(), "start_subchannel_batch");
 }
 
 void SubchannelStreamClient::CallState::AfterCallStackDestruction(
-    void* arg, grpc_error_handle /*error*/) {
+    void* arg, absl::Status /*error*/) {
   auto* self = static_cast<SubchannelStreamClient::CallState*>(arg);
   delete self;
 }
 
 void SubchannelStreamClient::CallState::OnCancelComplete(
-    void* arg, grpc_error_handle /*error*/) {
+    void* arg, absl::Status /*error*/) {
   auto* self = static_cast<SubchannelStreamClient::CallState*>(arg);
   GRPC_CALL_COMBINER_STOP(&self->call_combiner_, "health_cancel");
   self->call_->Unref(DEBUG_LOCATION, "cancel");
 }
 
-void SubchannelStreamClient::CallState::StartCancel(
-    void* arg, grpc_error_handle /*error*/) {
+void SubchannelStreamClient::CallState::StartCancel(void* arg,
+                                                    absl::Status /*error*/) {
   auto* self = static_cast<SubchannelStreamClient::CallState*>(arg);
   auto* batch = grpc_make_transport_stream_op(
       GRPC_CLOSURE_CREATE(OnCancelComplete, self, grpc_schedule_on_exec_ctx));
   batch->cancel_stream = true;
-  batch->payload->cancel_stream.cancel_error = GRPC_ERROR_CANCELLED;
+  batch->payload->cancel_stream.cancel_error = absl::CancelledError();
   self->call_->StartTransportStreamOpBatch(batch);
 }
 
@@ -344,12 +343,12 @@ void SubchannelStreamClient::CallState::Cancel() {
     GRPC_CALL_COMBINER_START(
         &call_combiner_,
         GRPC_CLOSURE_CREATE(StartCancel, this, grpc_schedule_on_exec_ctx),
-        GRPC_ERROR_NONE, "health_cancel");
+        absl::OkStatus(), "health_cancel");
   }
 }
 
-void SubchannelStreamClient::CallState::OnComplete(
-    void* arg, grpc_error_handle /*error*/) {
+void SubchannelStreamClient::CallState::OnComplete(void* arg,
+                                                   absl::Status /*error*/) {
   auto* self = static_cast<SubchannelStreamClient::CallState*>(arg);
   GRPC_CALL_COMBINER_STOP(&self->call_combiner_, "on_complete");
   self->send_initial_metadata_.Clear();
@@ -358,7 +357,7 @@ void SubchannelStreamClient::CallState::OnComplete(
 }
 
 void SubchannelStreamClient::CallState::RecvInitialMetadataReady(
-    void* arg, grpc_error_handle /*error*/) {
+    void* arg, absl::Status /*error*/) {
   auto* self = static_cast<SubchannelStreamClient::CallState*>(arg);
   GRPC_CALL_COMBINER_STOP(&self->call_combiner_, "recv_initial_metadata_ready");
   self->recv_initial_metadata_.Clear();
@@ -406,14 +405,14 @@ void SubchannelStreamClient::CallState::RecvMessageReady() {
 }
 
 void SubchannelStreamClient::CallState::RecvMessageReady(
-    void* arg, grpc_error_handle /*error*/) {
+    void* arg, absl::Status /*error*/) {
   auto* self = static_cast<SubchannelStreamClient::CallState*>(arg);
   GRPC_CALL_COMBINER_STOP(&self->call_combiner_, "recv_message_ready");
   self->RecvMessageReady();
 }
 
 void SubchannelStreamClient::CallState::RecvTrailingMetadataReady(
-    void* arg, grpc_error_handle error) {
+    void* arg, absl::Status error) {
   auto* self = static_cast<SubchannelStreamClient::CallState*>(arg);
   GRPC_CALL_COMBINER_STOP(&self->call_combiner_,
                           "recv_trailing_metadata_ready");
@@ -421,7 +420,7 @@ void SubchannelStreamClient::CallState::RecvTrailingMetadataReady(
   grpc_status_code status =
       self->recv_trailing_metadata_.get(GrpcStatusMetadata())
           .value_or(GRPC_STATUS_UNKNOWN);
-  if (!GRPC_ERROR_IS_NONE(error)) {
+  if (!error.ok()) {
     grpc_error_get_status(error, Timestamp::InfFuture(), &status,
                           nullptr /* slice */, nullptr /* http_error */,
                           nullptr /* error_string */);

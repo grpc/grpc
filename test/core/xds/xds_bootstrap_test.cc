@@ -117,11 +117,11 @@ TEST(XdsBootstrapTest, Basic) {
       "  \"server_listener_resource_name_template\": \"example/resource\","
       "  \"ignore\": {}"
       "}";
-  grpc_error_handle error = GRPC_ERROR_NONE;
+  absl::Status error = absl::OkStatus();
   Json json = Json::Parse(json_str, &error);
-  ASSERT_EQ(error, GRPC_ERROR_NONE) << grpc_error_std_string(error);
+  ASSERT_EQ(error, absl::OkStatus()) << grpc_error_std_string(error);
   XdsBootstrap bootstrap(std::move(json), &error);
-  EXPECT_EQ(error, GRPC_ERROR_NONE) << grpc_error_std_string(error);
+  EXPECT_EQ(error, absl::OkStatus()) << grpc_error_std_string(error);
   EXPECT_EQ(bootstrap.server().server_uri, "fake:///lb");
   EXPECT_EQ(bootstrap.server().channel_creds_type, "fake");
   EXPECT_EQ(bootstrap.server().channel_creds_config.type(),
@@ -183,11 +183,11 @@ TEST(XdsBootstrapTest, ValidWithoutNode) {
       "    }"
       "  ]"
       "}";
-  grpc_error_handle error = GRPC_ERROR_NONE;
+  absl::Status error = absl::OkStatus();
   Json json = Json::Parse(json_str, &error);
-  ASSERT_EQ(error, GRPC_ERROR_NONE) << grpc_error_std_string(error);
+  ASSERT_EQ(error, absl::OkStatus()) << grpc_error_std_string(error);
   XdsBootstrap bootstrap(std::move(json), &error);
-  EXPECT_EQ(error, GRPC_ERROR_NONE) << grpc_error_std_string(error);
+  EXPECT_EQ(error, absl::OkStatus()) << grpc_error_std_string(error);
   EXPECT_EQ(bootstrap.server().server_uri, "fake:///lb");
   EXPECT_EQ(bootstrap.server().channel_creds_type, "fake");
   EXPECT_EQ(bootstrap.node(), nullptr);
@@ -203,11 +203,11 @@ TEST(XdsBootstrapTest, InsecureCreds) {
       "    }"
       "  ]"
       "}";
-  grpc_error_handle error = GRPC_ERROR_NONE;
+  absl::Status error = absl::OkStatus();
   Json json = Json::Parse(json_str, &error);
-  ASSERT_EQ(error, GRPC_ERROR_NONE) << grpc_error_std_string(error);
+  ASSERT_EQ(error, absl::OkStatus()) << grpc_error_std_string(error);
   XdsBootstrap bootstrap(std::move(json), &error);
-  EXPECT_EQ(error, GRPC_ERROR_NONE) << grpc_error_std_string(error);
+  EXPECT_EQ(error, absl::OkStatus()) << grpc_error_std_string(error);
   EXPECT_EQ(bootstrap.server().server_uri, "fake:///lb");
   EXPECT_EQ(bootstrap.server().channel_creds_type, "insecure");
   EXPECT_EQ(bootstrap.node(), nullptr);
@@ -239,11 +239,11 @@ TEST(XdsBootstrapTest, GoogleDefaultCreds) {
       "    }"
       "  ]"
       "}";
-  grpc_error_handle error = GRPC_ERROR_NONE;
+  absl::Status error = absl::OkStatus();
   Json json = Json::Parse(json_str, &error);
-  ASSERT_EQ(error, GRPC_ERROR_NONE) << grpc_error_std_string(error);
+  ASSERT_EQ(error, absl::OkStatus()) << grpc_error_std_string(error);
   XdsBootstrap bootstrap(std::move(json), &error);
-  EXPECT_EQ(error, GRPC_ERROR_NONE) << grpc_error_std_string(error);
+  EXPECT_EQ(error, absl::OkStatus()) << grpc_error_std_string(error);
   EXPECT_EQ(bootstrap.server().server_uri, "fake:///lb");
   EXPECT_EQ(bootstrap.server().channel_creds_type, "google_default");
   EXPECT_EQ(bootstrap.node(), nullptr);
@@ -258,14 +258,13 @@ TEST(XdsBootstrapTest, MissingChannelCreds) {
       "    }"
       "  ]"
       "}";
-  grpc_error_handle error = GRPC_ERROR_NONE;
+  absl::Status error = absl::OkStatus();
   Json json = Json::Parse(json_str, &error);
-  ASSERT_EQ(error, GRPC_ERROR_NONE) << grpc_error_std_string(error);
+  ASSERT_EQ(error, absl::OkStatus()) << grpc_error_std_string(error);
   XdsBootstrap bootstrap(std::move(json), &error);
   EXPECT_THAT(
       grpc_error_std_string(error),
       ::testing::ContainsRegex("field:channel_creds error:does not exist."));
-  GRPC_ERROR_UNREF(error);
 }
 
 TEST(XdsBootstrapTest, NoKnownChannelCreds) {
@@ -278,24 +277,22 @@ TEST(XdsBootstrapTest, NoKnownChannelCreds) {
       "    }"
       "  ]"
       "}";
-  grpc_error_handle error = GRPC_ERROR_NONE;
+  absl::Status error = absl::OkStatus();
   Json json = Json::Parse(json_str, &error);
-  ASSERT_EQ(error, GRPC_ERROR_NONE) << grpc_error_std_string(error);
+  ASSERT_EQ(error, absl::OkStatus()) << grpc_error_std_string(error);
   XdsBootstrap bootstrap(std::move(json), &error);
   EXPECT_THAT(grpc_error_std_string(error),
               ::testing::ContainsRegex(
                   "no known creds type found in \"channel_creds\""));
-  GRPC_ERROR_UNREF(error);
 }
 
 TEST(XdsBootstrapTest, MissingXdsServers) {
-  grpc_error_handle error = GRPC_ERROR_NONE;
+  absl::Status error = absl::OkStatus();
   Json json = Json::Parse("{}", &error);
-  ASSERT_EQ(error, GRPC_ERROR_NONE) << grpc_error_std_string(error);
+  ASSERT_EQ(error, absl::OkStatus()) << grpc_error_std_string(error);
   XdsBootstrap bootstrap(std::move(json), &error);
   EXPECT_THAT(grpc_error_std_string(error),
               ::testing::ContainsRegex("\"xds_servers\" field not present"));
-  GRPC_ERROR_UNREF(error);
 }
 
 TEST(XdsBootstrapTest, TopFieldsWrongTypes) {
@@ -306,9 +303,9 @@ TEST(XdsBootstrapTest, TopFieldsWrongTypes) {
       "  \"server_listener_resource_name_template\":1,"
       "  \"certificate_providers\":1"
       "}";
-  grpc_error_handle error = GRPC_ERROR_NONE;
+  absl::Status error = absl::OkStatus();
   Json json = Json::Parse(json_str, &error);
-  ASSERT_EQ(error, GRPC_ERROR_NONE) << grpc_error_std_string(error);
+  ASSERT_EQ(error, absl::OkStatus()) << grpc_error_std_string(error);
   XdsBootstrap bootstrap(std::move(json), &error);
   EXPECT_THAT(grpc_error_std_string(error),
               ::testing::ContainsRegex("\"xds_servers\" field is not an array.*"
@@ -318,7 +315,6 @@ TEST(XdsBootstrapTest, TopFieldsWrongTypes) {
   EXPECT_THAT(grpc_error_std_string(error),
               ::testing::ContainsRegex(
                   "\"certificate_providers\" field is not an object"));
-  GRPC_ERROR_UNREF(error);
 }
 
 TEST(XdsBootstrapTest, XdsServerMissingServerUri) {
@@ -326,9 +322,9 @@ TEST(XdsBootstrapTest, XdsServerMissingServerUri) {
       "{"
       "  \"xds_servers\":[{}]"
       "}";
-  grpc_error_handle error = GRPC_ERROR_NONE;
+  absl::Status error = absl::OkStatus();
   Json json = Json::Parse(json_str, &error);
-  ASSERT_EQ(error, GRPC_ERROR_NONE) << grpc_error_std_string(error);
+  ASSERT_EQ(error, absl::OkStatus()) << grpc_error_std_string(error);
   XdsBootstrap bootstrap(std::move(json), &error);
   EXPECT_THAT(
       grpc_error_std_string(error),
@@ -336,7 +332,6 @@ TEST(XdsBootstrapTest, XdsServerMissingServerUri) {
                                "errors parsing index 0.*"
                                "errors parsing xds server.*"
                                "field:server_uri error:does not exist."));
-  GRPC_ERROR_UNREF(error);
 }
 
 TEST(XdsBootstrapTest, XdsServerUriAndCredsWrongTypes) {
@@ -349,9 +344,9 @@ TEST(XdsBootstrapTest, XdsServerUriAndCredsWrongTypes) {
       "    }"
       "  ]"
       "}";
-  grpc_error_handle error = GRPC_ERROR_NONE;
+  absl::Status error = absl::OkStatus();
   Json json = Json::Parse(json_str, &error);
-  ASSERT_EQ(error, GRPC_ERROR_NONE) << grpc_error_std_string(error);
+  ASSERT_EQ(error, absl::OkStatus()) << grpc_error_std_string(error);
   XdsBootstrap bootstrap(std::move(json), &error);
   EXPECT_THAT(grpc_error_std_string(error),
               ::testing::ContainsRegex(
@@ -360,7 +355,6 @@ TEST(XdsBootstrapTest, XdsServerUriAndCredsWrongTypes) {
                   "errors parsing xds server.*"
                   "field:server_uri error:type should be STRING.*"
                   "field:channel_creds error:type should be ARRAY"));
-  GRPC_ERROR_UNREF(error);
 }
 
 TEST(XdsBootstrapTest, ChannelCredsFieldsWrongTypes) {
@@ -378,9 +372,9 @@ TEST(XdsBootstrapTest, ChannelCredsFieldsWrongTypes) {
       "    }"
       "  ]"
       "}";
-  grpc_error_handle error = GRPC_ERROR_NONE;
+  absl::Status error = absl::OkStatus();
   Json json = Json::Parse(json_str, &error);
-  ASSERT_EQ(error, GRPC_ERROR_NONE) << grpc_error_std_string(error);
+  ASSERT_EQ(error, absl::OkStatus()) << grpc_error_std_string(error);
   XdsBootstrap bootstrap(std::move(json), &error);
   EXPECT_THAT(
       grpc_error_std_string(error),
@@ -391,7 +385,6 @@ TEST(XdsBootstrapTest, ChannelCredsFieldsWrongTypes) {
                                "errors parsing index 0.*"
                                "field:type error:type should be STRING.*"
                                "field:config error:type should be OBJECT"));
-  GRPC_ERROR_UNREF(error);
 }
 
 TEST(XdsBootstrapTest, NodeFieldsWrongTypes) {
@@ -404,9 +397,9 @@ TEST(XdsBootstrapTest, NodeFieldsWrongTypes) {
       "    \"metadata\":0"
       "  }"
       "}";
-  grpc_error_handle error = GRPC_ERROR_NONE;
+  absl::Status error = absl::OkStatus();
   Json json = Json::Parse(json_str, &error);
-  ASSERT_EQ(error, GRPC_ERROR_NONE) << grpc_error_std_string(error);
+  ASSERT_EQ(error, absl::OkStatus()) << grpc_error_std_string(error);
   XdsBootstrap bootstrap(std::move(json), &error);
   EXPECT_THAT(grpc_error_std_string(error),
               ::testing::ContainsRegex("errors parsing \"node\" object.*"
@@ -414,7 +407,6 @@ TEST(XdsBootstrapTest, NodeFieldsWrongTypes) {
                                        "\"cluster\" field is not a string.*"
                                        "\"locality\" field is not an object.*"
                                        "\"metadata\" field is not an object"));
-  GRPC_ERROR_UNREF(error);
 }
 
 TEST(XdsBootstrapTest, LocalityFieldsWrongType) {
@@ -428,9 +420,9 @@ TEST(XdsBootstrapTest, LocalityFieldsWrongType) {
       "    }"
       "  }"
       "}";
-  grpc_error_handle error = GRPC_ERROR_NONE;
+  absl::Status error = absl::OkStatus();
   Json json = Json::Parse(json_str, &error);
-  ASSERT_EQ(error, GRPC_ERROR_NONE) << grpc_error_std_string(error);
+  ASSERT_EQ(error, absl::OkStatus()) << grpc_error_std_string(error);
   XdsBootstrap bootstrap(std::move(json), &error);
   EXPECT_THAT(grpc_error_std_string(error),
               ::testing::ContainsRegex("errors parsing \"node\" object.*"
@@ -438,7 +430,6 @@ TEST(XdsBootstrapTest, LocalityFieldsWrongType) {
                                        "\"region\" field is not a string.*"
                                        "\"zone\" field is not a string.*"
                                        "\"sub_zone\" field is not a string"));
-  GRPC_ERROR_UNREF(error);
 }
 
 TEST(XdsBootstrapTest, CertificateProvidersElementWrongType) {
@@ -454,15 +445,14 @@ TEST(XdsBootstrapTest, CertificateProvidersElementWrongType) {
       "    \"plugin\":1"
       "  }"
       "}";
-  grpc_error_handle error = GRPC_ERROR_NONE;
+  absl::Status error = absl::OkStatus();
   Json json = Json::Parse(json_str, &error);
-  ASSERT_EQ(error, GRPC_ERROR_NONE) << grpc_error_std_string(error);
+  ASSERT_EQ(error, absl::OkStatus()) << grpc_error_std_string(error);
   XdsBootstrap bootstrap(std::move(json), &error);
   EXPECT_THAT(grpc_error_std_string(error),
               ::testing::ContainsRegex(
                   "errors parsing \"certificate_providers\" object.*"
                   "element \"plugin\" is not an object"));
-  GRPC_ERROR_UNREF(error);
 }
 
 TEST(XdsBootstrapTest, CertificateProvidersPluginNameWrongType) {
@@ -480,16 +470,15 @@ TEST(XdsBootstrapTest, CertificateProvidersPluginNameWrongType) {
       "    }"
       "  }"
       "}";
-  grpc_error_handle error = GRPC_ERROR_NONE;
+  absl::Status error = absl::OkStatus();
   Json json = Json::Parse(json_str, &error);
-  ASSERT_EQ(error, GRPC_ERROR_NONE) << grpc_error_std_string(error);
+  ASSERT_EQ(error, absl::OkStatus()) << grpc_error_std_string(error);
   XdsBootstrap bootstrap(std::move(json), &error);
   EXPECT_THAT(grpc_error_std_string(error),
               ::testing::ContainsRegex(
                   "errors parsing \"certificate_providers\" object.*"
                   "errors parsing element \"plugin\".*"
                   "\"plugin_name\" field is not a string"));
-  GRPC_ERROR_UNREF(error);
 }
 
 TEST(XdsBootstrapTest, CertificateProvidersUnrecognizedPluginName) {
@@ -507,16 +496,15 @@ TEST(XdsBootstrapTest, CertificateProvidersUnrecognizedPluginName) {
       "    }"
       "  }"
       "}";
-  grpc_error_handle error = GRPC_ERROR_NONE;
+  absl::Status error = absl::OkStatus();
   Json json = Json::Parse(json_str, &error);
-  ASSERT_EQ(error, GRPC_ERROR_NONE) << grpc_error_std_string(error);
+  ASSERT_EQ(error, absl::OkStatus()) << grpc_error_std_string(error);
   XdsBootstrap bootstrap(std::move(json), &error);
   EXPECT_THAT(grpc_error_std_string(error),
               ::testing::ContainsRegex(
                   "errors parsing \"certificate_providers\" object.*"
                   "errors parsing element \"plugin\".*"
                   "Unrecognized plugin name: unknown"));
-  GRPC_ERROR_UNREF(error);
 }
 
 TEST(XdsBootstrapTest, AuthorityXdsServerInvalidResourceTemplate) {
@@ -548,16 +536,15 @@ TEST(XdsBootstrapTest, AuthorityXdsServerInvalidResourceTemplate) {
       "    }"
       "  }"
       "}";
-  grpc_error_handle error = GRPC_ERROR_NONE;
+  absl::Status error = absl::OkStatus();
   Json json = Json::Parse(json_str, &error);
-  ASSERT_EQ(error, GRPC_ERROR_NONE) << grpc_error_std_string(error);
+  ASSERT_EQ(error, absl::OkStatus()) << grpc_error_std_string(error);
   XdsBootstrap bootstrap(std::move(json), &error);
   EXPECT_THAT(grpc_error_std_string(error),
               ::testing::ContainsRegex(
                   "errors parsing \"authorities\".*"
                   "errors parsing authority xds.example.com.*"
                   "field must begin with \"xdstp://xds.example.com/\""));
-  GRPC_ERROR_UNREF(error);
   gpr_unsetenv("GRPC_EXPERIMENTAL_XDS_FEDERATION");
 }
 
@@ -580,9 +567,9 @@ TEST(XdsBootstrapTest, AuthorityXdsServerMissingServerUri) {
       "    }"
       "  }"
       "}";
-  grpc_error_handle error = GRPC_ERROR_NONE;
+  absl::Status error = absl::OkStatus();
   Json json = Json::Parse(json_str, &error);
-  ASSERT_EQ(error, GRPC_ERROR_NONE) << grpc_error_std_string(error);
+  ASSERT_EQ(error, absl::OkStatus()) << grpc_error_std_string(error);
   XdsBootstrap bootstrap(std::move(json), &error);
   EXPECT_THAT(
       grpc_error_std_string(error),
@@ -592,7 +579,6 @@ TEST(XdsBootstrapTest, AuthorityXdsServerMissingServerUri) {
                                "errors parsing index 0.*"
                                "errors parsing xds server.*"
                                "field:server_uri error:does not exist."));
-  GRPC_ERROR_UNREF(error);
   gpr_unsetenv("GRPC_EXPERIMENTAL_XDS_FEDERATION");
 }
 
@@ -622,8 +608,8 @@ class FakeCertificateProviderFactory : public CertificateProviderFactory {
 
   RefCountedPtr<CertificateProviderFactory::Config>
   CreateCertificateProviderConfig(const Json& config_json,
-                                  grpc_error_handle* error) override {
-    std::vector<grpc_error_handle> error_list;
+                                  absl::Status* error) override {
+    std::vector<absl::Status> error_list;
     EXPECT_EQ(config_json.type(), Json::Type::OBJECT);
     auto it = config_json.object_value().find("value");
     if (it == config_json.object_value().end()) {
@@ -663,16 +649,15 @@ TEST(XdsBootstrapTest, CertificateProvidersFakePluginParsingError) {
       "    }"
       "  }"
       "}";
-  grpc_error_handle error = GRPC_ERROR_NONE;
+  absl::Status error = absl::OkStatus();
   Json json = Json::Parse(json_str, &error);
-  ASSERT_EQ(error, GRPC_ERROR_NONE) << grpc_error_std_string(error);
+  ASSERT_EQ(error, absl::OkStatus()) << grpc_error_std_string(error);
   XdsBootstrap bootstrap(std::move(json), &error);
   EXPECT_THAT(grpc_error_std_string(error),
               ::testing::ContainsRegex(
                   "errors parsing \"certificate_providers\" object.*"
                   "errors parsing element \"fake_plugin\".*"
                   "field:config field:value not of type number"));
-  GRPC_ERROR_UNREF(error);
 }
 
 TEST(XdsBootstrapTest, CertificateProvidersFakePluginParsingSuccess) {
@@ -693,11 +678,11 @@ TEST(XdsBootstrapTest, CertificateProvidersFakePluginParsingSuccess) {
       "    }"
       "  }"
       "}";
-  grpc_error_handle error = GRPC_ERROR_NONE;
+  absl::Status error = absl::OkStatus();
   Json json = Json::Parse(json_str, &error);
-  ASSERT_EQ(error, GRPC_ERROR_NONE) << grpc_error_std_string(error);
+  ASSERT_EQ(error, absl::OkStatus()) << grpc_error_std_string(error);
   XdsBootstrap bootstrap(std::move(json), &error);
-  ASSERT_TRUE(GRPC_ERROR_IS_NONE(error)) << grpc_error_std_string(error);
+  ASSERT_TRUE(error.ok()) << grpc_error_std_string(error);
   const CertificateProviderStore::PluginDefinition& fake_plugin =
       bootstrap.certificate_providers().at("fake_plugin");
   ASSERT_EQ(fake_plugin.plugin_name, "fake");
@@ -723,11 +708,11 @@ TEST(XdsBootstrapTest, CertificateProvidersFakePluginEmptyConfig) {
       "    }"
       "  }"
       "}";
-  grpc_error_handle error = GRPC_ERROR_NONE;
+  absl::Status error = absl::OkStatus();
   Json json = Json::Parse(json_str, &error);
-  ASSERT_EQ(error, GRPC_ERROR_NONE) << grpc_error_std_string(error);
+  ASSERT_EQ(error, absl::OkStatus()) << grpc_error_std_string(error);
   XdsBootstrap bootstrap(std::move(json), &error);
-  ASSERT_TRUE(GRPC_ERROR_IS_NONE(error)) << grpc_error_std_string(error);
+  ASSERT_TRUE(error.ok()) << grpc_error_std_string(error);
   const CertificateProviderStore::PluginDefinition& fake_plugin =
       bootstrap.certificate_providers().at("fake_plugin");
   ASSERT_EQ(fake_plugin.plugin_name, "fake");
@@ -751,16 +736,16 @@ TEST(XdsBootstrapTest, XdsServerToJsonAndParse) {
       "      ],"
       "      \"ignore\": 0"
       "    }";
-  grpc_error_handle error = GRPC_ERROR_NONE;
+  absl::Status error = absl::OkStatus();
   Json json = Json::Parse(json_str, &error);
-  ASSERT_EQ(error, GRPC_ERROR_NONE) << grpc_error_std_string(error);
+  ASSERT_EQ(error, absl::OkStatus()) << grpc_error_std_string(error);
   XdsBootstrap::XdsServer xds_server =
       XdsBootstrap::XdsServer::Parse(json, &error);
-  ASSERT_EQ(error, GRPC_ERROR_NONE) << grpc_error_std_string(error);
+  ASSERT_EQ(error, absl::OkStatus()) << grpc_error_std_string(error);
   Json::Object output = xds_server.ToJson();
   XdsBootstrap::XdsServer output_xds_server =
       XdsBootstrap::XdsServer::Parse(output, &error);
-  ASSERT_EQ(error, GRPC_ERROR_NONE) << grpc_error_std_string(error);
+  ASSERT_EQ(error, absl::OkStatus()) << grpc_error_std_string(error);
   gpr_unsetenv("GRPC_EXPERIMENTAL_XDS_FEDERATION");
 }
 

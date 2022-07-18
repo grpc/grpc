@@ -28,6 +28,7 @@
 #include <string>
 #include <vector>
 
+#include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
@@ -43,7 +44,6 @@
 #include "src/core/ext/xds/xds_resource_type_impl.h"
 #include "src/core/lib/channel/status_util.h"
 #include "src/core/lib/gprpp/time.h"
-#include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/matchers/matchers.h"
 
 namespace grpc_core {
@@ -195,7 +195,7 @@ struct XdsRouteConfigResource {
   }
   std::string ToString() const;
 
-  static grpc_error_handle Parse(
+  static absl::Status Parse(
       const XdsEncodingContext& context,
       const envoy_config_route_v3_RouteConfiguration* route_config,
       XdsRouteConfigResource* rds_update);

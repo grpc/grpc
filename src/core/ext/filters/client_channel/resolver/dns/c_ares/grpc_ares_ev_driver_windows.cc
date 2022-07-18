@@ -130,12 +130,12 @@ class GrpcPolledFdWindows {
     grpc_winsocket_destroy(winsocket_);
   }
 
-  void ScheduleAndNullReadClosure(grpc_error_handle error) {
+  void ScheduleAndNullReadClosure(absl::Status error) {
     ExecCtx::Run(DEBUG_LOCATION, read_closure_, error);
     read_closure_ = nullptr;
   }
 
-  void ScheduleAndNullWriteClosure(grpc_error_handle error) {
+  void ScheduleAndNullWriteClosure(absl::Status error) {
     ExecCtx::Run(DEBUG_LOCATION, write_closure_, error);
     write_closure_ = nullptr;
   }
@@ -223,13 +223,13 @@ class GrpcPolledFdWindows {
       return;
     }
     if (socket_type_ == SOCK_DGRAM) {
-      ScheduleAndNullWriteClosure(GRPC_ERROR_NONE);
+      ScheduleAndNullWriteClosure(absl::OkStatus());
     } else {
       GPR_ASSERT(socket_type_ == SOCK_STREAM);
       int wsa_error_code = 0;
       switch (tcp_write_state_) {
         case WRITE_IDLE:
-          ScheduleAndNullWriteClosure(GRPC_ERROR_NONE);
+          ScheduleAndNullWriteClosure(absl::OkStatus());
           break;
         case WRITE_REQUESTED:
           tcp_write_state_ = WRITE_PENDING;
@@ -250,7 +250,7 @@ class GrpcPolledFdWindows {
 
   bool IsFdStillReadableLocked() { return read_buf_has_data_; }
 
-  void ShutdownLocked(grpc_error_handle error) {
+  void ShutdownLocked(absl::Status error) {
     grpc_winsocket_shutdown(winsocket_);
   }
 
@@ -417,14 +417,14 @@ class GrpcPolledFdWindows {
     abort();
   }
 
-  static void OnTcpConnect(void* arg, grpc_error_handle error) {
+  static void OnTcpConnect(void* arg, absl::Status error) {
     GrpcPolledFdWindows* grpc_polled_fd =
         static_cast<GrpcPolledFdWindows*>(arg);
     MutexLock lock(grpc_polled_fd->mu_);
     grpc_polled_fd->OnTcpConnectLocked(error);
   }
 
-  void OnTcpConnectLocked(grpc_error_handle error) {
+  void OnTcpConnectLocked(absl::Status error) {
     GRPC_CARES_TRACE_LOG(
         "fd:%s InnerOnTcpConnectLocked error:|%s| "
         "pending_register_for_readable:%d"
@@ -435,7 +435,7 @@ class GrpcPolledFdWindows {
     GPR_ASSERT(!connect_done_);
     connect_done_ = true;
     GPR_ASSERT(wsa_connect_error_ == 0);
-    if (GRPC_ERROR_IS_NONE(error)) {
+    if (error.ok()) {
       DWORD transferred_bytes = 0;
       DWORD flags;
       BOOL wsa_success =
@@ -566,9 +566,8 @@ class GrpcPolledFdWindows {
     return out;
   }
 
-  static void OnIocpReadable(void* arg, grpc_error_handle error) {
+  static void OnIocpReadable(void* arg, absl::Status error) {
     GrpcPolledFdWindows* polled_fd = static_cast<GrpcPolledFdWindows*>(arg);
-    (void)GRPC_ERROR_REF(error);
     MutexLock lock(polled_fd->mu_);
     polled_fd->OnIocpReadableLocked(error);
   }
@@ -578,8 +577,8 @@ class GrpcPolledFdWindows {
   // c-ares reads from this socket later, but it shouldn't necessarily cancel
   // the entire resolution attempt. Doing so will allow the "inject broken
   // nameserver list" test to pass on Windows.
-  void OnIocpReadableLocked(grpc_error_handle error) {
-    if (GRPC_ERROR_IS_NONE(error)) {
+  void OnIocpReadableLocked(absl::Status error) {
+    if (error.ok()) {
       if (winsocket_->read_info.wsa_error != 0) {
         /* WSAEMSGSIZE would be due to receiving more data
          * than our read buffer's fixed capacity. Assume that
@@ -596,7 +595,7 @@ class GrpcPolledFdWindows {
         }
       }
     }
-    if (GRPC_ERROR_IS_NONE(error)) {
+    if (error.ok()) {
       read_buf_ = grpc_slice_sub_no_ref(
           read_buf_, 0, winsocket_->read_info.bytes_transferred);
       read_buf_has_data_ = true;
@@ -610,17 +609,16 @@ class GrpcPolledFdWindows {
     ScheduleAndNullReadClosure(error);
   }
 
-  static void OnIocpWriteable(void* arg, grpc_error_handle error) {
+  static void OnIocpWriteable(void* arg, absl::Status error) {
     GrpcPolledFdWindows* polled_fd = static_cast<GrpcPolledFdWindows*>(arg);
-    (void)GRPC_ERROR_REF(error);
     MutexLock lock(polled_fd->mu_);
     polled_fd->OnIocpWriteableLocked(error);
   }
 
-  void OnIocpWriteableLocked(grpc_error_handle error) {
+  void OnIocpWriteableLocked(absl::Status error) {
     GRPC_CARES_TRACE_LOG("OnIocpWriteableInner. fd:|%s|", GetName());
     GPR_ASSERT(socket_type_ == SOCK_STREAM);
-    if (GRPC_ERROR_IS_NONE(error)) {
+    if (error.ok()) {
       if (winsocket_->write_info.wsa_error != 0) {
         error = GRPC_WSA_ERROR(winsocket_->write_info.wsa_error,
                                "OnIocpWriteableInner");
@@ -632,7 +630,7 @@ class GrpcPolledFdWindows {
       }
     }
     GPR_ASSERT(tcp_write_state_ == WRITE_PENDING);
-    if (GRPC_ERROR_IS_NONE(error)) {
+    if (error.ok()) {
       tcp_write_state_ = WRITE_WAITING_FOR_VERIFICATION_UPON_RETRY;
       write_buf_ = grpc_slice_sub_no_ref(
           write_buf_, 0, winsocket_->write_info.bytes_transferred);
@@ -838,7 +836,7 @@ class GrpcPolledFdWindowsWrapper : public GrpcPolledFd {
     return wrapped_->IsFdStillReadableLocked();
   }
 
-  void ShutdownLocked(grpc_error_handle error) override {
+  void ShutdownLocked(absl::Status error) override {
     wrapped_->ShutdownLocked(error);
   }
 

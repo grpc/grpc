@@ -63,9 +63,9 @@ int grpc_has_wakeup_fd(void);
 typedef struct grpc_wakeup_fd grpc_wakeup_fd;
 
 typedef struct grpc_wakeup_fd_vtable {
-  grpc_error_handle (*init)(grpc_wakeup_fd* fd_info);
-  grpc_error_handle (*consume)(grpc_wakeup_fd* fd_info);
-  grpc_error_handle (*wakeup)(grpc_wakeup_fd* fd_info);
+  absl::Status (*init)(grpc_wakeup_fd* fd_info);
+  absl::Status (*consume)(grpc_wakeup_fd* fd_info);
+  absl::Status (*wakeup)(grpc_wakeup_fd* fd_info);
   void (*destroy)(grpc_wakeup_fd* fd_info);
   /* Must be called before calling any other functions */
   int (*check_availability)(void);
@@ -81,11 +81,10 @@ extern int grpc_allow_pipe_wakeup_fd;
 
 #define GRPC_WAKEUP_FD_GET_READ_FD(fd_info) ((fd_info)->read_fd)
 
-grpc_error_handle grpc_wakeup_fd_init(grpc_wakeup_fd* fd_info)
+absl::Status grpc_wakeup_fd_init(grpc_wakeup_fd* fd_info) GRPC_MUST_USE_RESULT;
+absl::Status grpc_wakeup_fd_consume_wakeup(grpc_wakeup_fd* fd_info)
     GRPC_MUST_USE_RESULT;
-grpc_error_handle grpc_wakeup_fd_consume_wakeup(grpc_wakeup_fd* fd_info)
-    GRPC_MUST_USE_RESULT;
-grpc_error_handle grpc_wakeup_fd_wakeup(grpc_wakeup_fd* fd_info)
+absl::Status grpc_wakeup_fd_wakeup(grpc_wakeup_fd* fd_info)
     GRPC_MUST_USE_RESULT;
 void grpc_wakeup_fd_destroy(grpc_wakeup_fd* fd_info);
 

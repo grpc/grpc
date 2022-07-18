@@ -28,6 +28,7 @@
 #include <vector>
 
 #include "absl/base/attributes.h"
+#include "absl/status/status.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
 #include "absl/strings/string_view.h"
@@ -46,7 +47,7 @@ namespace {
 
 class JsonReader {
  public:
-  static grpc_error_handle Parse(absl::string_view input, Json* output);
+  static absl::Status Parse(absl::string_view input, Json* output);
 
  private:
   enum class Status {
@@ -125,7 +126,7 @@ class JsonReader {
   bool container_just_begun_ = false;
   uint16_t unicode_char_ = 0;
   uint16_t unicode_high_surrogate_ = 0;
-  std::vector<grpc_error_handle> errors_;
+  std::vector<absl::Status> errors_;
   bool truncated_errors_ = false;
   uint8_t utf8_bytes_remaining_ = 0;
 
@@ -871,7 +872,7 @@ JsonReader::Status JsonReader::Run() {
   GPR_UNREACHABLE_CODE(return Status::GRPC_JSON_INTERNAL_ERROR);
 }
 
-grpc_error_handle JsonReader::Parse(absl::string_view input, Json* output) {
+absl::Status JsonReader::Parse(absl::string_view input, Json* output) {
   JsonReader reader(input);
   Status status = reader.Run();
   if (reader.truncated_errors_) {
@@ -891,12 +892,12 @@ grpc_error_handle JsonReader::Parse(absl::string_view input, Json* output) {
                                          &reader.errors_);
   }
   *output = std::move(reader.root_value_);
-  return GRPC_ERROR_NONE;
+  return absl::OkStatus();
 }
 
 }  // namespace
 
-Json Json::Parse(absl::string_view json_str, grpc_error_handle* error) {
+Json Json::Parse(absl::string_view json_str, absl::Status* error) {
   Json value;
   *error = JsonReader::Parse(json_str, &value);
   return value;

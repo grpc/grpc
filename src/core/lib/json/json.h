@@ -26,9 +26,8 @@
 #include <utility>
 #include <vector>
 
+#include "absl/status/status.h"
 #include "absl/strings/string_view.h"
-
-#include "src/core/lib/iomgr/error.h"
 
 namespace grpc_core {
 
@@ -55,7 +54,7 @@ class Json {
   using Array = std::vector<Json>;
 
   // Parses JSON string from json_str.  On error, sets *error.
-  static Json Parse(absl::string_view json_str, grpc_error_handle* error);
+  static Json Parse(absl::string_view json_str, absl::Status* error);
 
   Json() = default;
 

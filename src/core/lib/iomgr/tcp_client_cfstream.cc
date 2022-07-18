@@ -74,7 +74,7 @@ static void CFStreamConnectCleanup(CFStreamConnect* connect) {
   delete connect;
 }
 
-static void OnAlarm(void* arg, grpc_error_handle error) {
+static void OnAlarm(void* arg, absl::Status error) {
   CFStreamConnect* connect = static_cast<CFStreamConnect*>(arg);
   if (grpc_tcp_trace.enabled()) {
     gpr_log(GPR_DEBUG, "CLIENT_CONNECT :%p OnAlarm, error:%s", connect,
@@ -90,13 +90,13 @@ static void OnAlarm(void* arg, grpc_error_handle error) {
   if (done) {
     CFStreamConnectCleanup(connect);
   } else {
-    grpc_error_handle error =
+    absl::Status error =
         GRPC_ERROR_CREATE_FROM_STATIC_STRING("connect() timed out");
     grpc_core::ExecCtx::Run(DEBUG_LOCATION, closure, error);
   }
 }
 
-static void OnOpen(void* arg, grpc_error_handle error) {
+static void OnOpen(void* arg, absl::Status error) {
   CFStreamConnect* connect = static_cast<CFStreamConnect*>(arg);
   if (grpc_tcp_trace.enabled()) {
     gpr_log(GPR_DEBUG, "CLIENT_CONNECT :%p OnOpen, error:%s", connect,
@@ -116,7 +116,7 @@ static void OnOpen(void* arg, grpc_error_handle error) {
     gpr_mu_unlock(&connect->mu);
     CFStreamConnectCleanup(connect);
   } else {
-    if (GRPC_ERROR_IS_NONE(error)) {
+    if (error.ok()) {
       CFErrorRef stream_error = CFReadStreamCopyError(connect->read_stream);
       if (stream_error == NULL) {
         stream_error = CFWriteStreamCopyError(connect->write_stream);
@@ -125,13 +125,11 @@ static void OnOpen(void* arg, grpc_error_handle error) {
         error = GRPC_ERROR_CREATE_FROM_CFERROR(stream_error, "connect() error");
         CFRelease(stream_error);
       }
-      if (GRPC_ERROR_IS_NONE(error)) {
+      if (error.ok()) {
         *endpoint = grpc_cfstream_endpoint_create(
             connect->read_stream, connect->write_stream,
             connect->addr_name.c_str(), connect->stream_handle);
       }
-    } else {
-      (void)GRPC_ERROR_REF(error);
     }
     gpr_mu_unlock(&connect->mu);
     grpc_core::ExecCtx::Run(DEBUG_LOCATION, closure, error);
@@ -156,7 +154,7 @@ static int64_t CFStreamClientConnect(grpc_closure* closure, grpc_endpoint** ep,
                                      grpc_core::Timestamp deadline) {
   auto addr_uri = grpc_sockaddr_to_uri(resolved_addr);
   if (!addr_uri.ok()) {
-    grpc_error_handle error =
+    absl::Status error =
         GRPC_ERROR_CREATE_FROM_CPP_STRING(addr_uri.status().ToString());
     grpc_core::ExecCtx::Run(DEBUG_LOCATION, closure, error);
     return 0;

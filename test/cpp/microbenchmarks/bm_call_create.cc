@@ -328,11 +328,9 @@ static void BM_LameChannelCallCreateCoreSeparateBatch(benchmark::State& state) {
 }
 BENCHMARK(BM_LameChannelCallCreateCoreSeparateBatch);
 
-static void FilterDestroy(void* arg, grpc_error_handle /*error*/) {
-  gpr_free(arg);
-}
+static void FilterDestroy(void* arg, absl::Status /*error*/) { gpr_free(arg); }
 
-static void DoNothing(void* /*arg*/, grpc_error_handle /*error*/) {}
+static void DoNothing(void* /*arg*/, absl::Status /*error*/) {}
 
 class FakeClientChannelFactory : public grpc_core::ClientChannelFactory {
  public:
@@ -362,9 +360,9 @@ static void StartTransportStreamOp(grpc_call_element* /*elem*/,
 static void StartTransportOp(grpc_channel_element* /*elem*/,
                              grpc_transport_op* /*op*/) {}
 
-static grpc_error_handle InitCallElem(grpc_call_element* /*elem*/,
-                                      const grpc_call_element_args* /*args*/) {
-  return GRPC_ERROR_NONE;
+static absl::Status InitCallElem(grpc_call_element* /*elem*/,
+                                 const grpc_call_element_args* /*args*/) {
+  return absl::OkStatus();
 }
 
 static void SetPollsetOrPollsetSet(grpc_call_element* /*elem*/,
@@ -374,9 +372,9 @@ static void DestroyCallElem(grpc_call_element* /*elem*/,
                             const grpc_call_final_info* /*final_info*/,
                             grpc_closure* /*then_sched_closure*/) {}
 
-grpc_error_handle InitChannelElem(grpc_channel_element* /*elem*/,
-                                  grpc_channel_element_args* /*args*/) {
-  return GRPC_ERROR_NONE;
+absl::Status InitChannelElem(grpc_channel_element* /*elem*/,
+                             grpc_channel_element_args* /*args*/) {
+  return absl::OkStatus();
 }
 
 void DestroyChannelElem(grpc_channel_element* /*elem*/) {}
@@ -422,7 +420,7 @@ void SetPollsetSet(grpc_transport* /*self*/, grpc_stream* /*stream*/,
 /* implementation of grpc_transport_perform_stream_op */
 void PerformStreamOp(grpc_transport* /*self*/, grpc_stream* /*stream*/,
                      grpc_transport_stream_op_batch* op) {
-  grpc_core::ExecCtx::Run(DEBUG_LOCATION, op->on_complete, GRPC_ERROR_NONE);
+  grpc_core::ExecCtx::Run(DEBUG_LOCATION, op->on_complete, absl::OkStatus());
 }
 
 /* implementation of grpc_transport_perform_op */
@@ -566,8 +564,8 @@ static void BM_IsolatedFilter(benchmark::State& state) {
       nullptr};
   while (state.KeepRunning()) {
     GPR_TIMER_SCOPE("BenchmarkCycle", 0);
-    GRPC_ERROR_UNREF(
-        grpc_call_stack_init(channel_stack, 1, DoNothing, nullptr, &call_args));
+    (void)grpc_call_stack_init(channel_stack, 1, DoNothing, nullptr,
+                               &call_args);
     typename TestOp::Op op(&test_op_data, call_stack, call_args.arena);
     grpc_call_stack_destroy(call_stack, &final_info, nullptr);
     op.Finish();
@@ -645,19 +643,19 @@ static void StartTransportStreamOp(grpc_call_element* elem,
   grpc_core::CallCombinerClosureList closures;
   if (op->recv_initial_metadata) {
     closures.Add(op->payload->recv_initial_metadata.recv_initial_metadata_ready,
-                 GRPC_ERROR_NONE, "recv_initial_metadata");
+                 absl::OkStatus(), "recv_initial_metadata");
   }
   if (op->recv_message) {
-    closures.Add(op->payload->recv_message.recv_message_ready, GRPC_ERROR_NONE,
+    closures.Add(op->payload->recv_message.recv_message_ready, absl::OkStatus(),
                  "recv_message");
   }
   if (op->recv_trailing_metadata) {
     closures.Add(
         op->payload->recv_trailing_metadata.recv_trailing_metadata_ready,
-        GRPC_ERROR_NONE, "recv_trailing_metadata");
+        absl::OkStatus(), "recv_trailing_metadata");
   }
   if (op->on_complete != nullptr) {
-    closures.Add(op->on_complete, GRPC_ERROR_NONE, "on_complete");
+    closures.Add(op->on_complete, absl::OkStatus(), "on_complete");
   }
   // Execute closures.
   closures.RunClosures(calld->call_combiner);
@@ -665,17 +663,16 @@ static void StartTransportStreamOp(grpc_call_element* elem,
 
 static void StartTransportOp(grpc_channel_element* /*elem*/,
                              grpc_transport_op* op) {
-  if (!GRPC_ERROR_IS_NONE(op->disconnect_with_error)) {
-    GRPC_ERROR_UNREF(op->disconnect_with_error);
+  if (!op->disconnect_with_error.ok()) {
   }
-  grpc_core::ExecCtx::Run(DEBUG_LOCATION, op->on_consumed, GRPC_ERROR_NONE);
+  grpc_core::ExecCtx::Run(DEBUG_LOCATION, op->on_consumed, absl::OkStatus());
 }
 
-static grpc_error_handle InitCallElem(grpc_call_element* elem,
-                                      const grpc_call_element_args* args) {
+static absl::Status InitCallElem(grpc_call_element* elem,
+                                 const grpc_call_element_args* args) {
   call_data* calld = static_cast<call_data*>(elem->call_data);
   calld->call_combiner = args->call_combiner;
-  return GRPC_ERROR_NONE;
+  return absl::OkStatus();
 }
 
 static void SetPollsetOrPollsetSet(grpc_call_element* /*elem*/,
@@ -684,12 +681,12 @@ static void SetPollsetOrPollsetSet(grpc_call_element* /*elem*/,
 static void DestroyCallElem(grpc_call_element* /*elem*/,
                             const grpc_call_final_info* /*final_info*/,
                             grpc_closure* then_sched_closure) {
-  grpc_core::ExecCtx::Run(DEBUG_LOCATION, then_sched_closure, GRPC_ERROR_NONE);
+  grpc_core::ExecCtx::Run(DEBUG_LOCATION, then_sched_closure, absl::OkStatus());
 }
 
-grpc_error_handle InitChannelElem(grpc_channel_element* /*elem*/,
-                                  grpc_channel_element_args* /*args*/) {
-  return GRPC_ERROR_NONE;
+absl::Status InitChannelElem(grpc_channel_element* /*elem*/,
+                             grpc_channel_element_args* /*args*/) {
+  return absl::OkStatus();
 }
 
 void DestroyChannelElem(grpc_channel_element* /*elem*/) {}

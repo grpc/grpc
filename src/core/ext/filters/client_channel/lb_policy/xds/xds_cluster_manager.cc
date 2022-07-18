@@ -183,8 +183,8 @@ class XdsClusterManagerLb : public LoadBalancingPolicy {
     OrphanablePtr<LoadBalancingPolicy> CreateChildPolicyLocked(
         const ChannelArgs& args);
 
-    static void OnDelayedRemovalTimer(void* arg, grpc_error_handle error);
-    void OnDelayedRemovalTimerLocked(grpc_error_handle error);
+    static void OnDelayedRemovalTimer(void* arg, absl::Status error);
+    void OnDelayedRemovalTimerLocked(absl::Status error);
 
     // The owning LB policy.
     RefCountedPtr<XdsClusterManagerLb> xds_cluster_manager_policy_;
@@ -522,22 +522,20 @@ void XdsClusterManagerLb::ClusterChild::DeactivateLocked() {
 }
 
 void XdsClusterManagerLb::ClusterChild::OnDelayedRemovalTimer(
-    void* arg, grpc_error_handle error) {
+    void* arg, absl::Status error) {
   ClusterChild* self = static_cast<ClusterChild*>(arg);
-  (void)GRPC_ERROR_REF(error);  // Ref owned by the lambda
   self->xds_cluster_manager_policy_->work_serializer()->Run(
       [self, error]() { self->OnDelayedRemovalTimerLocked(error); },
       DEBUG_LOCATION);
 }
 
 void XdsClusterManagerLb::ClusterChild::OnDelayedRemovalTimerLocked(
-    grpc_error_handle error) {
+    absl::Status error) {
   delayed_removal_timer_callback_pending_ = false;
-  if (GRPC_ERROR_IS_NONE(error) && !shutdown_) {
+  if (error.ok() && !shutdown_) {
     xds_cluster_manager_policy_->children_.erase(name_);
   }
   Unref(DEBUG_LOCATION, "ClusterChild+timer");
-  GRPC_ERROR_UNREF(error);
 }
 
 //
@@ -625,8 +623,8 @@ class XdsClusterManagerLbFactory : public LoadBalancingPolicyFactory {
   const char* name() const override { return kXdsClusterManager; }
 
   RefCountedPtr<LoadBalancingPolicy::Config> ParseLoadBalancingConfig(
-      const Json& json, grpc_error_handle* error) const override {
-    GPR_DEBUG_ASSERT(error != nullptr && GRPC_ERROR_IS_NONE(*error));
+      const Json& json, absl::Status* error) const override {
+    GPR_DEBUG_ASSERT(error != nullptr && error->ok());
     if (json.type() == Json::Type::JSON_NULL) {
       // xds_cluster_manager was mentioned as a policy in the deprecated
       // loadBalancingPolicy field or in the client API.
@@ -636,7 +634,7 @@ class XdsClusterManagerLbFactory : public LoadBalancingPolicyFactory {
           "config instead.");
       return nullptr;
     }
-    std::vector<grpc_error_handle> error_list;
+    std::vector<absl::Status> error_list;
     XdsClusterManagerLbConfig::ClusterMap cluster_map;
     std::set<std::string /*cluster_name*/> clusters_to_be_used;
     auto it = json.object_value().find("children");
@@ -655,7 +653,7 @@ class XdsClusterManagerLbFactory : public LoadBalancingPolicyFactory {
           continue;
         }
         RefCountedPtr<LoadBalancingPolicy::Config> child_config;
-        std::vector<grpc_error_handle> child_errors =
+        std::vector<absl::Status> child_errors =
             ParseChildConfig(p.second, &child_config);
         if (!child_errors.empty()) {
           error_list.push_back(GRPC_ERROR_CREATE_FROM_VECTOR_AND_CPP_STRING(
@@ -679,10 +677,10 @@ class XdsClusterManagerLbFactory : public LoadBalancingPolicyFactory {
   }
 
  private:
-  static std::vector<grpc_error_handle> ParseChildConfig(
+  static std::vector<absl::Status> ParseChildConfig(
       const Json& json,
       RefCountedPtr<LoadBalancingPolicy::Config>* child_config) {
-    std::vector<grpc_error_handle> error_list;
+    std::vector<absl::Status> error_list;
     if (json.type() != Json::Type::OBJECT) {
       error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
           "value should be of type object"));
@@ -693,12 +691,12 @@ class XdsClusterManagerLbFactory : public LoadBalancingPolicyFactory {
       error_list.push_back(
           GRPC_ERROR_CREATE_FROM_STATIC_STRING("did not find childPolicy"));
     } else {
-      grpc_error_handle parse_error = GRPC_ERROR_NONE;
+      absl::Status parse_error = absl::OkStatus();
       *child_config = LoadBalancingPolicyRegistry::ParseLoadBalancingConfig(
           it->second, &parse_error);
       if (*child_config == nullptr) {
-        GPR_DEBUG_ASSERT(!GRPC_ERROR_IS_NONE(parse_error));
-        std::vector<grpc_error_handle> child_errors;
+        GPR_DEBUG_ASSERT(!parse_error.ok());
+        std::vector<absl::Status> child_errors;
         child_errors.push_back(parse_error);
         error_list.push_back(
             GRPC_ERROR_CREATE_FROM_VECTOR("field:childPolicy", &child_errors));

@@ -31,6 +31,7 @@
 #include <grpc/support/log.h>
 
 #include "src/core/lib/address_utils/parse_address.h"
+#include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/sockaddr.h"
 #include "src/core/lib/iomgr/socket_utils.h"
 #include "test/core/util/test_config.h"
@@ -224,33 +225,33 @@ TEST(SockAddrUtilsTest, SockAddrToString) {
   grpc_resolved_address inputun;
   struct sockaddr_un* sock_un = reinterpret_cast<struct sockaddr_un*>(&inputun);
   ASSERT_EQ(grpc_core::UnixSockaddrPopulate("/some/unix/path", &inputun),
-            GRPC_ERROR_NONE);
+            absl::OkStatus());
   EXPECT_EQ(grpc_sockaddr_to_string(&inputun, true).value(), "/some/unix/path");
 
   std::string max_filepath(sizeof(sock_un->sun_path) - 1, 'x');
   ASSERT_EQ(grpc_core::UnixSockaddrPopulate(max_filepath, &inputun),
-            GRPC_ERROR_NONE);
+            absl::OkStatus());
   EXPECT_EQ(grpc_sockaddr_to_string(&inputun, true).value(), max_filepath);
 
   ASSERT_EQ(grpc_core::UnixSockaddrPopulate(max_filepath, &inputun),
-            GRPC_ERROR_NONE);
+            absl::OkStatus());
   sock_un->sun_path[sizeof(sockaddr_un::sun_path) - 1] = 'x';
   EXPECT_EQ(grpc_sockaddr_to_string(&inputun, true).status(),
             absl::InvalidArgumentError("UDS path is not null-terminated"));
 
   ASSERT_EQ(grpc_core::UnixAbstractSockaddrPopulate("some_unix_path", &inputun),
-            GRPC_ERROR_NONE);
+            absl::OkStatus());
   EXPECT_EQ(grpc_sockaddr_to_string(&inputun, true).value(),
             absl::StrCat(std::string(1, '\0'), "some_unix_path"));
 
   std::string max_abspath(sizeof(sock_un->sun_path) - 1, '\0');
   ASSERT_EQ(grpc_core::UnixAbstractSockaddrPopulate(max_abspath, &inputun),
-            GRPC_ERROR_NONE);
+            absl::OkStatus());
   EXPECT_EQ(grpc_sockaddr_to_string(&inputun, true).value(),
             absl::StrCat(std::string(1, '\0'), max_abspath));
 
   ASSERT_EQ(grpc_core::UnixAbstractSockaddrPopulate("", &inputun),
-            GRPC_ERROR_NONE);
+            absl::OkStatus());
   inputun.len = sizeof(sock_un->sun_family);
   EXPECT_EQ(grpc_sockaddr_to_string(&inputun, true).status(),
             absl::InvalidArgumentError("empty UDS abstract path"));
@@ -261,15 +262,15 @@ TEST(SockAddrUtilsTest, SockAddrToString) {
 
 TEST(SockAddrUtilsTest, UnixSockAddrToUri) {
   grpc_resolved_address addr;
-  ASSERT_TRUE(GRPC_ERROR_NONE ==
+  ASSERT_TRUE(absl::OkStatus() ==
               grpc_core::UnixSockaddrPopulate("sample-path", &addr));
   EXPECT_EQ(grpc_sockaddr_to_uri(&addr).value(), "unix:sample-path");
 
-  ASSERT_TRUE(GRPC_ERROR_NONE ==
+  ASSERT_TRUE(absl::OkStatus() ==
               grpc_core::UnixAbstractSockaddrPopulate("no-nulls", &addr));
   EXPECT_EQ(grpc_sockaddr_to_uri(&addr).value(), "unix-abstract:no-nulls");
 
-  ASSERT_TRUE(GRPC_ERROR_NONE ==
+  ASSERT_TRUE(absl::OkStatus() ==
               grpc_core::UnixAbstractSockaddrPopulate(
                   std::string("path_\0with_null", 15), &addr));
   EXPECT_EQ(grpc_sockaddr_to_uri(&addr).value(),
@@ -302,12 +303,12 @@ void VerifySocketAddressMatch(const std::string& ip_address,
                               bool success) {
   grpc_resolved_address addr;
   ASSERT_EQ(grpc_string_to_sockaddr(&addr, ip_address.c_str(), false),
-            GRPC_ERROR_NONE);
+            absl::OkStatus());
   // Setting the port has no effect on the match.
   grpc_sockaddr_set_port(&addr, 12345);
   grpc_resolved_address subnet_addr;
   ASSERT_EQ(grpc_string_to_sockaddr(&subnet_addr, subnet.c_str(), false),
-            GRPC_ERROR_NONE);
+            absl::OkStatus());
   grpc_sockaddr_mask_bits(&subnet_addr, mask_bits);
   EXPECT_EQ(grpc_sockaddr_match_subnet(&addr, &subnet_addr, mask_bits), success)
       << "IP=" << ip_address << " Subnet=" << subnet << " Mask=" << mask_bits;

@@ -93,8 +93,8 @@ void CreateTestSocket(int port, int* socket_fd, struct sockaddr_in6* sin) {
   setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, &one, sizeof(one));
   // Reset the size of socket send buffer to the minimal value to facilitate
   // buffer filling up and triggering notify_on_write
-  EXPECT_EQ(grpc_set_socket_sndbuf(fd, buffer_size_bytes), GRPC_ERROR_NONE);
-  EXPECT_EQ(grpc_set_socket_rcvbuf(fd, buffer_size_bytes), GRPC_ERROR_NONE);
+  EXPECT_EQ(grpc_set_socket_sndbuf(fd, buffer_size_bytes), absl::OkStatus());
+  EXPECT_EQ(grpc_set_socket_rcvbuf(fd, buffer_size_bytes), absl::OkStatus());
   // Make fd non-blocking.
   flags = fcntl(fd, F_GETFL, 0);
   EXPECT_EQ(fcntl(fd, F_SETFL, flags | O_NONBLOCK), 0);

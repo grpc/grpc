@@ -121,50 +121,48 @@ struct read_and_write_test_state {
   grpc_closure write_scheduler;
 };
 
-static void read_scheduler(void* data, grpc_error_handle /* error */) {
+static void read_scheduler(void* data, absl::Status /* error */) {
   struct read_and_write_test_state* state =
       static_cast<struct read_and_write_test_state*>(data);
   grpc_endpoint_read(state->read_ep, &state->incoming, &state->done_read,
                      /*urgent=*/false, /*min_progress_size=*/1);
 }
 
-static void read_and_write_test_read_handler(void* data,
-                                             grpc_error_handle error) {
+static void read_and_write_test_read_handler(void* data, absl::Status error) {
   struct read_and_write_test_state* state =
       static_cast<struct read_and_write_test_state*>(data);
 
   state->bytes_read += count_slices(
       state->incoming.slices, state->incoming.count, &state->current_read_data);
-  if (state->bytes_read == state->target_bytes || !GRPC_ERROR_IS_NONE(error)) {
+  if (state->bytes_read == state->target_bytes || !error.ok()) {
     gpr_log(GPR_INFO, "Read handler done");
     gpr_mu_lock(g_mu);
-    state->read_done = 1 + (GRPC_ERROR_IS_NONE(error));
+    state->read_done = 1 + (error.ok());
     GRPC_LOG_IF_ERROR("pollset_kick", grpc_pollset_kick(g_pollset, nullptr));
     gpr_mu_unlock(g_mu);
-  } else if (GRPC_ERROR_IS_NONE(error)) {
+  } else if (error.ok()) {
     /* We perform many reads one after another. If grpc_endpoint_read and the
      * read_handler are both run inline, we might end up growing the stack
      * beyond the limit. Schedule the read on ExecCtx to avoid this. */
     grpc_core::ExecCtx::Run(DEBUG_LOCATION, &state->read_scheduler,
-                            GRPC_ERROR_NONE);
+                            absl::OkStatus());
   }
 }
 
-static void write_scheduler(void* data, grpc_error_handle /* error */) {
+static void write_scheduler(void* data, absl::Status /* error */) {
   struct read_and_write_test_state* state =
       static_cast<struct read_and_write_test_state*>(data);
   grpc_endpoint_write(state->write_ep, &state->outgoing, &state->done_write,
                       nullptr, /*max_frame_size=*/state->max_write_frame_size);
 }
 
-static void read_and_write_test_write_handler(void* data,
-                                              grpc_error_handle error) {
+static void read_and_write_test_write_handler(void* data, absl::Status error) {
   struct read_and_write_test_state* state =
       static_cast<struct read_and_write_test_state*>(data);
   grpc_slice* slices = nullptr;
   size_t nslices;
 
-  if (GRPC_ERROR_IS_NONE(error)) {
+  if (error.ok()) {
     state->bytes_written += state->current_write_size;
     if (state->target_bytes - state->bytes_written <
         state->current_write_size) {
@@ -179,7 +177,7 @@ static void read_and_write_test_write_handler(void* data,
        * the write_handler are both run inline, we might end up growing the
        * stack beyond the limit. Schedule the write on ExecCtx to avoid this. */
       grpc_core::ExecCtx::Run(DEBUG_LOCATION, &state->write_scheduler,
-                              GRPC_ERROR_NONE);
+                              absl::OkStatus());
       gpr_free(slices);
       return;
     }
@@ -187,7 +185,7 @@ static void read_and_write_test_write_handler(void* data,
 
   gpr_log(GPR_INFO, "Write handler done");
   gpr_mu_lock(g_mu);
-  state->write_done = 1 + (GRPC_ERROR_IS_NONE(error));
+  state->write_done = 1 + (error.ok());
   GRPC_LOG_IF_ERROR("pollset_kick", grpc_pollset_kick(g_pollset, nullptr));
   gpr_mu_unlock(g_mu);
 }
@@ -247,7 +245,7 @@ static void read_and_write_test(grpc_endpoint_test_config config,
      for the first iteration as for later iterations. It does the right thing
      even when bytes_written is unsigned. */
   state.bytes_written -= state.current_write_size;
-  read_and_write_test_write_handler(&state, GRPC_ERROR_NONE);
+  read_and_write_test_write_handler(&state, absl::OkStatus());
   grpc_core::ExecCtx::Get()->Flush();
 
   grpc_endpoint_read(state.read_ep, &state.incoming, &state.done_read,
@@ -279,9 +277,9 @@ static void read_and_write_test(grpc_endpoint_test_config config,
   grpc_endpoint_destroy(state.write_ep);
 }
 
-static void inc_on_failure(void* arg, grpc_error_handle error) {
+static void inc_on_failure(void* arg, absl::Status error) {
   gpr_mu_lock(g_mu);
-  *static_cast<int*>(arg) += (!GRPC_ERROR_IS_NONE(error));
+  *static_cast<int*>(arg) += (!error.ok());
   GPR_ASSERT(GRPC_LOG_IF_ERROR("kick", grpc_pollset_kick(g_pollset, nullptr)));
   gpr_mu_unlock(g_mu);
 }

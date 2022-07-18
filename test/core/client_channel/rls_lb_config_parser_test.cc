@@ -20,6 +20,7 @@
 #include <grpc/grpc.h>
 
 #include "src/core/lib/gpr/env.h"
+#include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/service_config/service_config_impl.h"
 #include "test/core/util/test_config.h"
 
@@ -63,10 +64,10 @@ TEST_F(RlsConfigParsingTest, ValidConfig) {
       "    }\n"
       "  }]\n"
       "}\n";
-  grpc_error_handle error = GRPC_ERROR_NONE;
+  absl::Status error = absl::OkStatus();
   auto service_config =
       ServiceConfigImpl::Create(ChannelArgs(), service_config_json, &error);
-  EXPECT_EQ(error, GRPC_ERROR_NONE) << grpc_error_std_string(error);
+  EXPECT_EQ(error, absl::OkStatus()) << grpc_error_std_string(error);
   EXPECT_NE(service_config, nullptr);
 }
 
@@ -82,7 +83,7 @@ TEST_F(RlsConfigParsingTest, TopLevelRequiredFieldsMissing) {
       "    }\n"
       "  }]\n"
       "}\n";
-  grpc_error_handle error = GRPC_ERROR_NONE;
+  absl::Status error = absl::OkStatus();
   auto service_config =
       ServiceConfigImpl::Create(ChannelArgs(), service_config_json, &error);
   EXPECT_THAT(
@@ -92,7 +93,6 @@ TEST_F(RlsConfigParsingTest, TopLevelRequiredFieldsMissing) {
           "field:routeLookupConfig error:does not exist.*"
           "field:childPolicyConfigTargetFieldName error:does not exist.*"
           "field:childPolicy error:does not exist"));
-  GRPC_ERROR_UNREF(error);
 }
 
 TEST_F(RlsConfigParsingTest, TopLevelFieldsWrongTypes) {
@@ -107,7 +107,7 @@ TEST_F(RlsConfigParsingTest, TopLevelFieldsWrongTypes) {
       "    }\n"
       "  }]\n"
       "}\n";
-  grpc_error_handle error = GRPC_ERROR_NONE;
+  absl::Status error = absl::OkStatus();
   auto service_config =
       ServiceConfigImpl::Create(ChannelArgs(), service_config_json, &error);
   EXPECT_THAT(
@@ -118,7 +118,6 @@ TEST_F(RlsConfigParsingTest, TopLevelFieldsWrongTypes) {
           "field:routeLookupChannelServiceConfig error:type should be OBJECT.*"
           "field:childPolicyConfigTargetFieldName error:type should be STRING.*"
           "field:childPolicy error:type should be ARRAY"));
-  GRPC_ERROR_UNREF(error);
 }
 
 TEST_F(RlsConfigParsingTest, TopLevelFieldsInvalidValues) {
@@ -133,7 +132,7 @@ TEST_F(RlsConfigParsingTest, TopLevelFieldsInvalidValues) {
       "    }\n"
       "  }]\n"
       "}\n";
-  grpc_error_handle error = GRPC_ERROR_NONE;
+  absl::Status error = absl::OkStatus();
   auto service_config =
       ServiceConfigImpl::Create(ChannelArgs(), service_config_json, &error);
   EXPECT_THAT(
@@ -143,7 +142,6 @@ TEST_F(RlsConfigParsingTest, TopLevelFieldsInvalidValues) {
           "field:childPolicyConfigTargetFieldName error:must be non-empty.*"
           "field:childPolicy" CHILD_ERROR_TAG
           "No known policies in list: unknown"));
-  GRPC_ERROR_UNREF(error);
 }
 
 TEST_F(RlsConfigParsingTest, InvalidChildPolicyConfig) {
@@ -158,7 +156,7 @@ TEST_F(RlsConfigParsingTest, InvalidChildPolicyConfig) {
       "    }\n"
       "  }]\n"
       "}\n";
-  grpc_error_handle error = GRPC_ERROR_NONE;
+  absl::Status error = absl::OkStatus();
   auto service_config =
       ServiceConfigImpl::Create(ChannelArgs(), service_config_json, &error);
   EXPECT_THAT(
@@ -167,7 +165,6 @@ TEST_F(RlsConfigParsingTest, InvalidChildPolicyConfig) {
           "errors parsing RLS LB policy config" CHILD_ERROR_TAG
           "field:childPolicy" CHILD_ERROR_TAG "GrpcLb Parser" CHILD_ERROR_TAG
           "field:childPolicy" CHILD_ERROR_TAG "type should be array"));
-  GRPC_ERROR_UNREF(error);
 }
 
 TEST_F(RlsConfigParsingTest, InvalidRlsChannelServiceConfig) {
@@ -185,7 +182,7 @@ TEST_F(RlsConfigParsingTest, InvalidRlsChannelServiceConfig) {
       "    }\n"
       "  }]\n"
       "}\n";
-  grpc_error_handle error = GRPC_ERROR_NONE;
+  absl::Status error = absl::OkStatus();
   auto service_config =
       ServiceConfigImpl::Create(ChannelArgs(), service_config_json, &error);
   EXPECT_THAT(grpc_error_std_string(error),
@@ -196,7 +193,6 @@ TEST_F(RlsConfigParsingTest, InvalidRlsChannelServiceConfig) {
                   "Global Params" CHILD_ERROR_TAG
                   "Client channel global parser" CHILD_ERROR_TAG
                   "field:loadBalancingPolicy error:Unknown lb policy"));
-  GRPC_ERROR_UNREF(error);
 }
 
 //
@@ -213,7 +209,7 @@ TEST_F(RlsConfigParsingTest, RouteLookupConfigRequiredFieldsMissing) {
       "    }\n"
       "  }]\n"
       "}\n";
-  grpc_error_handle error = GRPC_ERROR_NONE;
+  absl::Status error = absl::OkStatus();
   auto service_config =
       ServiceConfigImpl::Create(ChannelArgs(), service_config_json, &error);
   EXPECT_THAT(grpc_error_std_string(error),
@@ -222,7 +218,6 @@ TEST_F(RlsConfigParsingTest, RouteLookupConfigRequiredFieldsMissing) {
                   "field:routeLookupConfig" CHILD_ERROR_TAG
                   "field:grpcKeybuilders error:does not exist.*"
                   "field:lookupService error:does not exist"));
-  GRPC_ERROR_UNREF(error);
 }
 
 TEST_F(RlsConfigParsingTest, RouteLookupConfigFieldsWrongTypes) {
@@ -243,7 +238,7 @@ TEST_F(RlsConfigParsingTest, RouteLookupConfigFieldsWrongTypes) {
       "    }\n"
       "  }]\n"
       "}\n";
-  grpc_error_handle error = GRPC_ERROR_NONE;
+  absl::Status error = absl::OkStatus();
   auto service_config =
       ServiceConfigImpl::Create(ChannelArgs(), service_config_json, &error);
   EXPECT_THAT(grpc_error_std_string(error),
@@ -256,7 +251,6 @@ TEST_F(RlsConfigParsingTest, RouteLookupConfigFieldsWrongTypes) {
                   "field:staleAge error:type should be STRING.*"
                   "field:cacheSizeBytes error:failed to parse.*"
                   "field:defaultTarget error:type should be STRING"));
-  GRPC_ERROR_UNREF(error);
 }
 
 TEST_F(RlsConfigParsingTest, RouteLookupConfigFieldsInvalidValues) {
@@ -271,7 +265,7 @@ TEST_F(RlsConfigParsingTest, RouteLookupConfigFieldsInvalidValues) {
       "    }\n"
       "  }]\n"
       "}\n";
-  grpc_error_handle error = GRPC_ERROR_NONE;
+  absl::Status error = absl::OkStatus();
   auto service_config =
       ServiceConfigImpl::Create(ChannelArgs(), service_config_json, &error);
   EXPECT_THAT(grpc_error_std_string(error),
@@ -280,7 +274,6 @@ TEST_F(RlsConfigParsingTest, RouteLookupConfigFieldsInvalidValues) {
                   "field:routeLookupConfig" CHILD_ERROR_TAG
                   "field:lookupService error:must be valid gRPC target URI.*"
                   "field:cacheSizeBytes error:must be greater than 0"));
-  GRPC_ERROR_UNREF(error);
 }
 
 //
@@ -301,7 +294,7 @@ TEST_F(RlsConfigParsingTest, GrpcKeybuilderRequiredFieldsMissing) {
       "    }\n"
       "  }]\n"
       "}\n";
-  grpc_error_handle error = GRPC_ERROR_NONE;
+  absl::Status error = absl::OkStatus();
   auto service_config =
       ServiceConfigImpl::Create(ChannelArgs(), service_config_json, &error);
   EXPECT_THAT(
@@ -311,7 +304,6 @@ TEST_F(RlsConfigParsingTest, GrpcKeybuilderRequiredFieldsMissing) {
           "field:routeLookupConfig" CHILD_ERROR_TAG
           "field:grpcKeybuilders" CHILD_ERROR_TAG "index:0" CHILD_ERROR_TAG
           "field:names error:does not exist"));
-  GRPC_ERROR_UNREF(error);
 }
 
 TEST_F(RlsConfigParsingTest, GrpcKeybuilderWrongFieldTypes) {
@@ -332,7 +324,7 @@ TEST_F(RlsConfigParsingTest, GrpcKeybuilderWrongFieldTypes) {
       "    }\n"
       "  }]\n"
       "}\n";
-  grpc_error_handle error = GRPC_ERROR_NONE;
+  absl::Status error = absl::OkStatus();
   auto service_config =
       ServiceConfigImpl::Create(ChannelArgs(), service_config_json, &error);
   EXPECT_THAT(
@@ -345,7 +337,6 @@ TEST_F(RlsConfigParsingTest, GrpcKeybuilderWrongFieldTypes) {
           "field:headers error:type should be ARRAY.*"
           "field:extraKeys error:type should be OBJECT.*"
           "field:constantKeys error:type should be OBJECT"));
-  GRPC_ERROR_UNREF(error);
 }
 
 TEST_F(RlsConfigParsingTest, GrpcKeybuilderInvalidValues) {
@@ -371,7 +362,7 @@ TEST_F(RlsConfigParsingTest, GrpcKeybuilderInvalidValues) {
       "    }\n"
       "  }]\n"
       "}\n";
-  grpc_error_handle error = GRPC_ERROR_NONE;
+  absl::Status error = absl::OkStatus();
   auto service_config =
       ServiceConfigImpl::Create(ChannelArgs(), service_config_json, &error);
   EXPECT_THAT(grpc_error_std_string(error),
@@ -386,7 +377,6 @@ TEST_F(RlsConfigParsingTest, GrpcKeybuilderInvalidValues) {
                   "field:method error:type should be STRING.*"
                   "field:constantKeys" CHILD_ERROR_TAG
                   "field:key error:type should be STRING"));
-  GRPC_ERROR_UNREF(error);
 }
 
 TEST_F(RlsConfigParsingTest, GrpcKeybuilderInvalidHeaders) {
@@ -423,7 +413,7 @@ TEST_F(RlsConfigParsingTest, GrpcKeybuilderInvalidHeaders) {
       "    }\n"
       "  }]\n"
       "}\n";
-  grpc_error_handle error = GRPC_ERROR_NONE;
+  absl::Status error = absl::OkStatus();
   auto service_config =
       ServiceConfigImpl::Create(ChannelArgs(), service_config_json, &error);
   EXPECT_THAT(
@@ -446,7 +436,6 @@ TEST_F(RlsConfigParsingTest, GrpcKeybuilderInvalidHeaders) {
           "field:extraKeys" CHILD_ERROR_TAG
           "field:host error:must be non-empty.*"
           "field:constantKeys" CHILD_ERROR_TAG "error:keys must be non-empty"));
-  GRPC_ERROR_UNREF(error);
 }
 
 TEST_F(RlsConfigParsingTest, GrpcKeybuilderNameWrongFieldTypes) {
@@ -470,7 +459,7 @@ TEST_F(RlsConfigParsingTest, GrpcKeybuilderNameWrongFieldTypes) {
       "    }\n"
       "  }]\n"
       "}\n";
-  grpc_error_handle error = GRPC_ERROR_NONE;
+  absl::Status error = absl::OkStatus();
   auto service_config =
       ServiceConfigImpl::Create(ChannelArgs(), service_config_json, &error);
   EXPECT_THAT(
@@ -483,7 +472,6 @@ TEST_F(RlsConfigParsingTest, GrpcKeybuilderNameWrongFieldTypes) {
           "field:names index:1" CHILD_ERROR_TAG
           "field:service error:type should be STRING.*"
           "field:method error:type should be STRING"));
-  GRPC_ERROR_UNREF(error);
 }
 
 TEST_F(RlsConfigParsingTest, DuplicateMethodNamesInSameKeyBuilder) {
@@ -510,7 +498,7 @@ TEST_F(RlsConfigParsingTest, DuplicateMethodNamesInSameKeyBuilder) {
       "    }\n"
       "  }]\n"
       "}\n";
-  grpc_error_handle error = GRPC_ERROR_NONE;
+  absl::Status error = absl::OkStatus();
   auto service_config =
       ServiceConfigImpl::Create(ChannelArgs(), service_config_json, &error);
   EXPECT_THAT(
@@ -520,7 +508,6 @@ TEST_F(RlsConfigParsingTest, DuplicateMethodNamesInSameKeyBuilder) {
           "field:routeLookupConfig" CHILD_ERROR_TAG
           "field:grpcKeybuilders" CHILD_ERROR_TAG "index:0" CHILD_ERROR_TAG
           "field:names error:duplicate entry for /foo/bar"));
-  GRPC_ERROR_UNREF(error);
 }
 
 TEST_F(RlsConfigParsingTest, DuplicateMethodNamesInDifferentKeyBuilders) {
@@ -551,7 +538,7 @@ TEST_F(RlsConfigParsingTest, DuplicateMethodNamesInDifferentKeyBuilders) {
       "    }\n"
       "  }]\n"
       "}\n";
-  grpc_error_handle error = GRPC_ERROR_NONE;
+  absl::Status error = absl::OkStatus();
   auto service_config =
       ServiceConfigImpl::Create(ChannelArgs(), service_config_json, &error);
   EXPECT_THAT(
@@ -561,7 +548,6 @@ TEST_F(RlsConfigParsingTest, DuplicateMethodNamesInDifferentKeyBuilders) {
           "field:routeLookupConfig" CHILD_ERROR_TAG
           "field:grpcKeybuilders" CHILD_ERROR_TAG "index:1" CHILD_ERROR_TAG
           "field:names error:duplicate entry for /foo/bar"));
-  GRPC_ERROR_UNREF(error);
 }
 
 }  // namespace

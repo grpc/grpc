@@ -78,7 +78,7 @@ class DropPolicyFactory : public LoadBalancingPolicyFactory {
   const char* name() const override { return kDropPolicyName; }
 
   RefCountedPtr<LoadBalancingPolicy::Config> ParseLoadBalancingConfig(
-      const Json& /*json*/, grpc_error_handle* /*error*/) const override {
+      const Json& /*json*/, absl::Status* /*error*/) const override {
     return MakeRefCounted<DropLbConfig>();
   }
 };

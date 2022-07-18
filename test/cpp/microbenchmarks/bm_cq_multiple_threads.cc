@@ -48,7 +48,7 @@ namespace testing {
 static grpc_completion_queue* g_cq;
 
 static void pollset_shutdown(grpc_pollset* /*ps*/, grpc_closure* closure) {
-  grpc_core::ExecCtx::Run(DEBUG_LOCATION, closure, GRPC_ERROR_NONE);
+  grpc_core::ExecCtx::Run(DEBUG_LOCATION, closure, absl::OkStatus());
 }
 
 static void pollset_init(grpc_pollset* ps, gpr_mu** mu) {
@@ -58,9 +58,9 @@ static void pollset_init(grpc_pollset* ps, gpr_mu** mu) {
 
 static void pollset_destroy(grpc_pollset* ps) { gpr_mu_destroy(&ps->mu); }
 
-static grpc_error_handle pollset_kick(grpc_pollset* /*p*/,
-                                      grpc_pollset_worker* /*worker*/) {
-  return GRPC_ERROR_NONE;
+static absl::Status pollset_kick(grpc_pollset* /*p*/,
+                                 grpc_pollset_worker* /*worker*/) {
+  return absl::OkStatus();
 }
 
 /* Callback when the tag is dequeued from the completion queue. Does nothing */
@@ -70,12 +70,12 @@ static void cq_done_cb(void* /*done_arg*/, grpc_cq_completion* cq_completion) {
 
 /* Queues a completion tag if deadline is > 0.
  * Does nothing if deadline is 0 (i.e gpr_time_0(GPR_CLOCK_MONOTONIC)) */
-static grpc_error_handle pollset_work(grpc_pollset* ps,
-                                      grpc_pollset_worker** /*worker*/,
-                                      grpc_core::Timestamp deadline) {
+static absl::Status pollset_work(grpc_pollset* ps,
+                                 grpc_pollset_worker** /*worker*/,
+                                 grpc_core::Timestamp deadline) {
   if (deadline == grpc_core::Timestamp::ProcessEpoch()) {
     gpr_log(GPR_DEBUG, "no-op");
-    return GRPC_ERROR_NONE;
+    return absl::OkStatus();
   }
 
   gpr_mu_unlock(&ps->mu);
@@ -83,11 +83,11 @@ static grpc_error_handle pollset_work(grpc_pollset* ps,
   void* tag = reinterpret_cast<void*>(10);  // Some random number
   GPR_ASSERT(grpc_cq_begin_op(g_cq, tag));
   grpc_cq_end_op(
-      g_cq, tag, GRPC_ERROR_NONE, cq_done_cb, nullptr,
+      g_cq, tag, absl::OkStatus(), cq_done_cb, nullptr,
       static_cast<grpc_cq_completion*>(gpr_malloc(sizeof(grpc_cq_completion))));
   grpc_core::ExecCtx::Get()->Flush();
   gpr_mu_lock(&ps->mu);
-  return GRPC_ERROR_NONE;
+  return absl::OkStatus();
 }
 
 static grpc_event_engine_vtable make_engine_vtable(const char* name) {
@@ -101,10 +101,8 @@ static grpc_event_engine_vtable make_engine_vtable(const char* name) {
   vtable.pollset_work = pollset_work;
   vtable.pollset_kick = pollset_kick;
   vtable.is_any_background_poller_thread = [] { return false; };
-  vtable.add_closure_to_background_poller = [](grpc_closure* /*closure*/,
-                                               grpc_error_handle /*error*/) {
-    return false;
-  };
+  vtable.add_closure_to_background_poller =
+      [](grpc_closure* /*closure*/, absl::Status /*error*/) { return false; };
   vtable.shutdown_background_closure = [] {};
   vtable.shutdown_engine = [] {};
   vtable.check_engine_available = [](bool) { return true; };

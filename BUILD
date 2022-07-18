@@ -1529,11 +1529,11 @@ grpc_cc_library(
     hdrs = [
         "src/core/lib/promise/exec_ctx_wakeup_scheduler.h",
     ],
+    external_deps = ["absl/status"],
     language = "c++",
     deps = [
         "closure",
         "debug_location",
-        "error",
         "exec_ctx",
         "gpr_platform",
     ],
@@ -1675,6 +1675,7 @@ grpc_cc_library(
     ],
     external_deps = [
         "absl/container:inlined_vector",
+        "absl/status",
         "absl/strings:str_format",
     ],
     language = "c++",
@@ -1739,6 +1740,7 @@ grpc_cc_library(
     external_deps = [
         "absl/base:core_headers",
         "absl/memory",
+        "absl/status",
         "absl/strings",
         "absl/types:optional",
     ],
@@ -1775,6 +1777,7 @@ grpc_cc_library(
     external_deps = [
         "absl/base:core_headers",
         "absl/memory",
+        "absl/status",
         "absl/status:statusor",
         "absl/strings",
         "absl/types:optional",
@@ -3053,6 +3056,7 @@ grpc_cc_library(
     ],
     external_deps = [
         "absl/memory",
+        "absl/status",
         "absl/strings",
     ],
     language = "c++",
@@ -3079,7 +3083,10 @@ grpc_cc_library(
     hdrs = [
         "src/core/lib/service_config/service_config_parser.h",
     ],
-    external_deps = ["absl/strings"],
+    external_deps = [
+        "absl/status",
+        "absl/strings",
+    ],
     language = "c++",
     deps = [
         "channel_args",
@@ -3324,6 +3331,7 @@ grpc_cc_library(
         "src/core/ext/filters/server_config_selector/server_config_selector.h",
     ],
     external_deps = [
+        "absl/status",
         "absl/status:statusor",
         "absl/strings",
     ],
@@ -3503,6 +3511,7 @@ grpc_cc_library(
     ],
     external_deps = [
         "absl/memory",
+        "absl/status",
         "absl/strings",
         "absl/strings:str_format",
         "absl/types:optional",
@@ -4085,6 +4094,7 @@ grpc_cc_library(
     hdrs = [
         "src/core/ext/xds/google_mesh_ca_certificate_provider_factory.h",
     ],
+    external_deps = ["absl/status"],
     language = "c++",
     deps = [
         "error",
@@ -4854,6 +4864,7 @@ grpc_cc_library(
     ],
     external_deps = [
         "absl/memory",
+        "absl/status",
         "absl/status:statusor",
         "absl/strings",
     ],
@@ -5322,6 +5333,7 @@ grpc_cc_library(
         "src/core/lib/security/credentials/google_default/google_default_credentials.h",
     ],
     external_deps = [
+        "absl/status",
         "absl/status:statusor",
         "absl/strings",
         "absl/types:optional",
@@ -5751,7 +5763,10 @@ grpc_cc_library(
         "src/core/lib/security/security_connector/load_system_roots_supported.h",
         "src/core/lib/security/util/json_util.h",
     ],
-    external_deps = ["absl/strings"],
+    external_deps = [
+        "absl/status",
+        "absl/strings",
+    ],
     language = "c++",
     visibility = ["@grpc:public"],
     deps = [
@@ -5950,6 +5965,7 @@ grpc_cc_library(
     ],
     external_deps = [
         "absl/memory",
+        "absl/status",
         "absl/strings",
         "absl/strings:str_format",
         "absl/types:optional",
@@ -6409,6 +6425,7 @@ grpc_cc_library(
     hdrs = GRPCXX_HDRS,
     external_deps = [
         "absl/base:core_headers",
+        "absl/status",
         "absl/strings",
         "absl/synchronization",
         "absl/memory",
@@ -6453,6 +6470,7 @@ grpc_cc_library(
     hdrs = GRPCXX_HDRS,
     external_deps = [
         "absl/base:core_headers",
+        "absl/status",
         "absl/strings",
         "absl/synchronization",
         "absl/memory",
@@ -6930,6 +6948,7 @@ grpc_cc_library(
     ],
     external_deps = [
         "absl/base:core_headers",
+        "absl/status",
         "absl/strings",
         "absl/strings:str_format",
     ],
@@ -6943,7 +6962,10 @@ grpc_cc_library(
     name = "json_util",
     srcs = ["src/core/lib/json/json_util.cc"],
     hdrs = ["src/core/lib/json/json_util.h"],
-    external_deps = ["absl/strings"],
+    external_deps = [
+        "absl/status",
+        "absl/strings",
+    ],
     deps = [
         "error",
         "gpr_base",

@@ -51,7 +51,7 @@ TlsSessionKeyLoggerCache::TlsSessionKeyLogger::TlsSessionKeyLogger(
   GPR_ASSERT(cache_ != nullptr);
   fd_ = fopen(tls_session_key_log_file_path_.c_str(), "w+");
   if (fd_ == nullptr) {
-    grpc_error_handle error = GRPC_OS_ERROR(errno, "fopen");
+    absl::Status error = GRPC_OS_ERROR(errno, "fopen");
     gpr_log(GPR_ERROR,
             "Ignoring TLS Key logging. ERROR Opening TLS Keylog "
             "file: %s",
@@ -86,7 +86,7 @@ void TlsSessionKeyLoggerCache::TlsSessionKeyLogger::LogSessionKeys(
              session_keys_info.length() + 1, fd_) < session_keys_info.length();
 
   if (err) {
-    grpc_error_handle error = GRPC_OS_ERROR(errno, "fwrite");
+    absl::Status error = GRPC_OS_ERROR(errno, "fwrite");
     gpr_log(GPR_ERROR, "Error Appending to TLS session key log file: %s",
             grpc_error_std_string(error).c_str());
     fclose(fd_);

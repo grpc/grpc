@@ -62,7 +62,7 @@ void CFStreamHandle::ReadCallback(CFReadStreamRef stream,
                                   void* client_callback_info) {
   grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
   grpc_core::ExecCtx exec_ctx;
-  grpc_error_handle error;
+  absl::Status error;
   CFErrorRef stream_error;
   CFStreamHandle* handle = static_cast<CFStreamHandle*>(client_callback_info);
   if (grpc_tcp_trace.enabled()) {
@@ -83,10 +83,9 @@ void CFStreamHandle::ReadCallback(CFReadStreamRef stream,
           GRPC_ERROR_CREATE_FROM_CFERROR(stream_error, "read error"),
           GRPC_ERROR_INT_GRPC_STATUS, GRPC_STATUS_UNAVAILABLE);
       CFRelease(stream_error);
-      handle->open_event_.SetShutdown(GRPC_ERROR_REF(error));
-      handle->write_event_.SetShutdown(GRPC_ERROR_REF(error));
-      handle->read_event_.SetShutdown(GRPC_ERROR_REF(error));
-      GRPC_ERROR_UNREF(error);
+      handle->open_event_.SetShutdown(error);
+      handle->write_event_.SetShutdown(error);
+      handle->read_event_.SetShutdown(error);
       break;
     default:
       GPR_UNREACHABLE_CODE(return );
@@ -97,7 +96,7 @@ void CFStreamHandle::WriteCallback(CFWriteStreamRef stream,
                                    void* clientCallBackInfo) {
   grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
   grpc_core::ExecCtx exec_ctx;
-  grpc_error_handle error;
+  absl::Status error;
   CFErrorRef stream_error;
   CFStreamHandle* handle = static_cast<CFStreamHandle*>(clientCallBackInfo);
   if (grpc_tcp_trace.enabled()) {
@@ -118,10 +117,9 @@ void CFStreamHandle::WriteCallback(CFWriteStreamRef stream,
           GRPC_ERROR_CREATE_FROM_CFERROR(stream_error, "write error"),
           GRPC_ERROR_INT_GRPC_STATUS, GRPC_STATUS_UNAVAILABLE);
       CFRelease(stream_error);
-      handle->open_event_.SetShutdown(GRPC_ERROR_REF(error));
-      handle->write_event_.SetShutdown(GRPC_ERROR_REF(error));
-      handle->read_event_.SetShutdown(GRPC_ERROR_REF(error));
-      GRPC_ERROR_UNREF(error);
+      handle->open_event_.SetShutdown(error);
+      handle->write_event_.SetShutdown(error);
+      handle->read_event_.SetShutdown(error);
       break;
     default:
       GPR_UNREACHABLE_CODE(return );
@@ -171,11 +169,10 @@ void CFStreamHandle::NotifyOnWrite(grpc_closure* closure) {
   write_event_.NotifyOn(closure);
 }
 
-void CFStreamHandle::Shutdown(grpc_error_handle error) {
-  open_event_.SetShutdown(GRPC_ERROR_REF(error));
-  read_event_.SetShutdown(GRPC_ERROR_REF(error));
-  write_event_.SetShutdown(GRPC_ERROR_REF(error));
-  GRPC_ERROR_UNREF(error);
+void CFStreamHandle::Shutdown(absl::Status error) {
+  open_event_.SetShutdown(error);
+  read_event_.SetShutdown(error);
+  write_event_.SetShutdown(error);
 }
 
 void CFStreamHandle::Ref(const char* file, int line, const char* reason) {

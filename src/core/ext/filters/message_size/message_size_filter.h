@@ -23,6 +23,7 @@
 
 #include <memory>
 
+#include "absl/status/status.h"
 #include "absl/strings/string_view.h"
 
 #include "src/core/lib/channel/channel_args.h"
@@ -30,7 +31,6 @@
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/channel/context.h"
 #include "src/core/lib/config/core_configuration.h"
-#include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/json/json.h"
 #include "src/core/lib/service_config/service_config_parser.h"
 
@@ -66,7 +66,7 @@ class MessageSizeParser : public ServiceConfigParser::Parser {
 
   std::unique_ptr<ServiceConfigParser::ParsedConfig> ParsePerMethodParams(
       const ChannelArgs& /*args*/, const Json& json,
-      grpc_error_handle* error) override;
+      absl::Status* error) override;
 
   static void Register(CoreConfiguration::Builder* builder);
 

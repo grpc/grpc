@@ -27,6 +27,7 @@
 #include <memory>
 #include <type_traits>
 
+#include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/escaping.h"
 #include "absl/strings/strip.h"
@@ -43,7 +44,6 @@
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/gprpp/host_port.h"
-#include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/resolved_address.h"
 #include "src/core/lib/transport/connectivity_state.h"
@@ -436,9 +436,9 @@ void PopulateSocketAddressJson(Json::Object* json, const char* name,
       port_num = atoi(port.data());
     }
     grpc_resolved_address resolved_host;
-    grpc_error_handle error =
+    absl::Status error =
         grpc_string_to_sockaddr(&resolved_host, host.c_str(), port_num);
-    if (GRPC_ERROR_IS_NONE(error)) {
+    if (error.ok()) {
       std::string packed_host = grpc_sockaddr_get_packed_host(&resolved_host);
       std::string b64_host = absl::Base64Escape(packed_host);
       data["tcpip_address"] = Json::Object{
@@ -448,7 +448,6 @@ void PopulateSocketAddressJson(Json::Object* json, const char* name,
       (*json)[name] = std::move(data);
       return;
     }
-    GRPC_ERROR_UNREF(error);
   }
   if (uri.ok() && uri->scheme() == "unix") {
     data["uds_address"] = Json::Object{

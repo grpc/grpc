@@ -21,7 +21,6 @@
 #include "src/core/ext/filters/client_channel/lb_policy.h"
 
 #include "src/core/lib/iomgr/closure.h"
-#include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/pollset_set.h"
 
@@ -75,7 +74,7 @@ LoadBalancingPolicy::PickResult LoadBalancingPolicy::QueuePicker::Pick(
     auto* parent = parent_->Ref().release();  // ref held by lambda.
     ExecCtx::Run(DEBUG_LOCATION,
                  GRPC_CLOSURE_CREATE(
-                     [](void* arg, grpc_error_handle /*error*/) {
+                     [](void* arg, absl::Status /*error*/) {
                        auto* parent = static_cast<LoadBalancingPolicy*>(arg);
                        parent->work_serializer()->Run(
                            [parent]() {
@@ -85,7 +84,7 @@ LoadBalancingPolicy::PickResult LoadBalancingPolicy::QueuePicker::Pick(
                            DEBUG_LOCATION);
                      },
                      parent, nullptr),
-                 GRPC_ERROR_NONE);
+                 absl::OkStatus());
   }
   return PickResult::Queue();
 }

@@ -28,13 +28,13 @@
 #include <ares.h>
 
 #include "absl/base/thread_annotations.h"
+#include "absl/status/status.h"
 
 #include <grpc/support/log.h>
 
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/iomgr/closure.h"
-#include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/iomgr_fwd.h"
 #include "src/core/lib/resolver/server_address.h"
 
@@ -75,7 +75,7 @@ struct grpc_ares_request {
   /** number of ongoing queries */
   size_t pending_queries ABSL_GUARDED_BY(mu) = 0;
   /** the errors explaining query failures, appended to in query callbacks */
-  grpc_error_handle error ABSL_GUARDED_BY(mu) = GRPC_ERROR_NONE;
+  absl::Status error ABSL_GUARDED_BY(mu) = absl::OkStatus();
 };
 
 /* Asynchronously resolve \a name (A/AAAA records only).
@@ -115,7 +115,7 @@ extern void (*grpc_cancel_ares_request)(grpc_ares_request* request);
 
 /* Initialize gRPC ares wrapper. Must be called at least once before
    grpc_resolve_address_ares(). */
-grpc_error_handle grpc_ares_init(void);
+absl::Status grpc_ares_init(void);
 
 /* Uninitialized gRPC ares wrapper. If there was more than one previous call to
    grpc_ares_init(), this function uninitializes the gRPC ares wrapper only if

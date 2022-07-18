@@ -34,7 +34,7 @@ class FakeCertificateProviderFactory1 : public CertificateProviderFactory {
   const char* name() const override { return "fake1"; }
 
   RefCountedPtr<Config> CreateCertificateProviderConfig(
-      const Json& /*config_json*/, grpc_error_handle* /*error*/) override {
+      const Json& /*config_json*/, absl::Status* /*error*/) override {
     return nullptr;
   }
 
@@ -49,7 +49,7 @@ class FakeCertificateProviderFactory2 : public CertificateProviderFactory {
   const char* name() const override { return "fake2"; }
 
   RefCountedPtr<Config> CreateCertificateProviderConfig(
-      const Json& /*config_json*/, grpc_error_handle* /*error*/) override {
+      const Json& /*config_json*/, absl::Status* /*error*/) override {
     return nullptr;
   }
 

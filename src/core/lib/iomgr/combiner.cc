@@ -44,12 +44,11 @@ grpc_core::DebugOnlyTraceFlag grpc_combiner_trace(false, "combiner");
 #define STATE_ELEM_COUNT_LOW_BIT 2
 
 static void combiner_exec(grpc_core::Combiner* lock, grpc_closure* closure,
-                          grpc_error_handle error);
+                          absl::Status error);
 static void combiner_finally_exec(grpc_core::Combiner* lock,
-                                  grpc_closure* closure,
-                                  grpc_error_handle error);
+                                  grpc_closure* closure, absl::Status error);
 
-static void offload(void* arg, grpc_error_handle error);
+static void offload(void* arg, absl::Status error);
 
 grpc_core::Combiner* grpc_combiner_create(void) {
   grpc_core::Combiner* lock = new grpc_core::Combiner();
@@ -125,7 +124,7 @@ static void push_first_on_exec_ctx(grpc_core::Combiner* lock) {
 }
 
 static void combiner_exec(grpc_core::Combiner* lock, grpc_closure* cl,
-                          grpc_error_handle error) {
+                          absl::Status error) {
   gpr_atm last = gpr_atm_full_fetch_add(&lock->state, STATE_ELEM_COUNT_LOW_BIT);
   GRPC_COMBINER_TRACE(gpr_log(GPR_INFO,
                               "C:%p grpc_combiner_execute c=%p last=%" PRIdPTR,
@@ -163,7 +162,7 @@ static void move_next() {
   }
 }
 
-static void offload(void* arg, grpc_error_handle /*error*/) {
+static void offload(void* arg, absl::Status /*error*/) {
   grpc_core::Combiner* lock = static_cast<grpc_core::Combiner*>(arg);
   push_last_on_exec_ctx(lock);
 }
@@ -171,7 +170,7 @@ static void offload(void* arg, grpc_error_handle /*error*/) {
 static void queue_offload(grpc_core::Combiner* lock) {
   move_next();
   GRPC_COMBINER_TRACE(gpr_log(GPR_INFO, "C:%p queue_offload", lock));
-  grpc_core::Executor::Run(&lock->offload, GRPC_ERROR_NONE);
+  grpc_core::Executor::Run(&lock->offload, absl::OkStatus());
 }
 
 bool grpc_combiner_continue_exec_ctx() {
@@ -224,7 +223,7 @@ bool grpc_combiner_continue_exec_ctx() {
 #ifndef NDEBUG
     cl->scheduled = false;
 #endif
-    grpc_error_handle cl_err =
+    absl::Status cl_err =
         grpc_core::internal::StatusMoveFromHeapPtr(cl->error_data.error);
     cl->error_data.error = 0;
     cl->cb(cl->cb_arg, std::move(cl_err));
@@ -240,7 +239,7 @@ bool grpc_combiner_continue_exec_ctx() {
 #ifndef NDEBUG
       c->scheduled = false;
 #endif
-      grpc_error_handle error =
+      absl::Status error =
           grpc_core::internal::StatusMoveFromHeapPtr(c->error_data.error);
       c->error_data.error = 0;
       c->cb(c->cb_arg, std::move(error));
@@ -288,11 +287,10 @@ bool grpc_combiner_continue_exec_ctx() {
   return true;
 }
 
-static void enqueue_finally(void* closure, grpc_error_handle error);
+static void enqueue_finally(void* closure, absl::Status error);
 
 static void combiner_finally_exec(grpc_core::Combiner* lock,
-                                  grpc_closure* closure,
-                                  grpc_error_handle error) {
+                                  grpc_closure* closure, absl::Status error) {
   GPR_ASSERT(lock != nullptr);
   GRPC_COMBINER_TRACE(gpr_log(
       GPR_INFO, "C:%p grpc_combiner_execute_finally c=%p; ac=%p", lock, closure,
@@ -311,20 +309,20 @@ static void combiner_finally_exec(grpc_core::Combiner* lock,
   grpc_closure_list_append(&lock->final_list, closure, error);
 }
 
-static void enqueue_finally(void* closure, grpc_error_handle error) {
+static void enqueue_finally(void* closure, absl::Status error) {
   grpc_closure* cl = static_cast<grpc_closure*>(closure);
   grpc_core::Combiner* lock =
       reinterpret_cast<grpc_core::Combiner*>(cl->error_data.scratch);
   cl->error_data.scratch = 0;
-  combiner_finally_exec(lock, cl, GRPC_ERROR_REF(error));
+  combiner_finally_exec(lock, cl, error);
 }
 
 namespace grpc_core {
-void Combiner::Run(grpc_closure* closure, grpc_error_handle error) {
+void Combiner::Run(grpc_closure* closure, absl::Status error) {
   combiner_exec(this, closure, error);
 }
 
-void Combiner::FinallyRun(grpc_closure* closure, grpc_error_handle error) {
+void Combiner::FinallyRun(grpc_closure* closure, absl::Status error) {
   combiner_finally_exec(this, closure, error);
 }
 }  // namespace grpc_core

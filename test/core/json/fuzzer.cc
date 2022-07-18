@@ -23,21 +23,21 @@
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 
+#include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/json/json.h"
 
 bool squelch = true;
 bool leak_check = true;
 
 extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
-  grpc_error_handle error = GRPC_ERROR_NONE;
+  absl::Status error = absl::OkStatus();
   auto json = grpc_core::Json::Parse(
       absl::string_view(reinterpret_cast<const char*>(data), size), &error);
-  if (GRPC_ERROR_IS_NONE(error)) {
+  if (error.ok()) {
     auto text2 = json.Dump();
     auto json2 = grpc_core::Json::Parse(text2, &error);
-    GPR_ASSERT(GRPC_ERROR_IS_NONE(error));
+    GPR_ASSERT(error.ok());
     GPR_ASSERT(json == json2);
   }
-  GRPC_ERROR_UNREF(error);
   return 0;
 }

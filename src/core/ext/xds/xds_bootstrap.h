@@ -26,10 +26,10 @@
 #include <string>
 #include <vector>
 
+#include "absl/status/status.h"
 #include "absl/strings/string_view.h"
 
 #include "src/core/ext/xds/certificate_provider_store.h"
-#include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/json/json.h"
 
 namespace grpc_core {
@@ -55,7 +55,7 @@ class XdsBootstrap {
     Json channel_creds_config;
     std::set<std::string> server_features;
 
-    static XdsServer Parse(const Json& json, grpc_error_handle* error);
+    static XdsServer Parse(const Json& json, absl::Status* error);
 
     bool operator==(const XdsServer& other) const {
       return (server_uri == other.server_uri &&
@@ -86,13 +86,13 @@ class XdsBootstrap {
   };
 
   // Creates bootstrap object from json_string.
-  // If *error is not GRPC_ERROR_NONE after returning, then there was an
+  // If *error is not absl::OkStatus() after returning, then there was an
   // error parsing the contents.
   static std::unique_ptr<XdsBootstrap> Create(absl::string_view json_string,
-                                              grpc_error_handle* error);
+                                              absl::Status* error);
 
   // Do not instantiate directly -- use Create() above instead.
-  XdsBootstrap(Json json, grpc_error_handle* error);
+  XdsBootstrap(Json json, absl::Status* error);
 
   std::string ToString() const;
 
@@ -118,15 +118,14 @@ class XdsBootstrap {
   bool XdsServerExists(const XdsServer& server) const;
 
  private:
-  grpc_error_handle ParseXdsServerList(Json* json,
-                                       std::vector<XdsServer>* servers);
-  grpc_error_handle ParseAuthorities(Json* json);
-  grpc_error_handle ParseAuthority(Json* json, const std::string& name);
-  grpc_error_handle ParseNode(Json* json);
-  grpc_error_handle ParseLocality(Json* json);
-  grpc_error_handle ParseCertificateProviders(Json* json);
-  grpc_error_handle ParseCertificateProvider(const std::string& instance_name,
-                                             Json* certificate_provider_json);
+  absl::Status ParseXdsServerList(Json* json, std::vector<XdsServer>* servers);
+  absl::Status ParseAuthorities(Json* json);
+  absl::Status ParseAuthority(Json* json, const std::string& name);
+  absl::Status ParseNode(Json* json);
+  absl::Status ParseLocality(Json* json);
+  absl::Status ParseCertificateProviders(Json* json);
+  absl::Status ParseCertificateProvider(const std::string& instance_name,
+                                        Json* certificate_provider_json);
 
   std::vector<XdsServer> servers_;
   std::unique_ptr<Node> node_;

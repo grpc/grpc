@@ -63,9 +63,9 @@ static void finish_connection() {
   gpr_mu_unlock(g_mu);
 }
 
-static void must_succeed(void* /*arg*/, grpc_error_handle error) {
+static void must_succeed(void* /*arg*/, absl::Status error) {
   GPR_ASSERT(g_connecting != nullptr);
-  GPR_ASSERT(GRPC_ERROR_IS_NONE(error));
+  GPR_ASSERT(error.ok());
   grpc_endpoint_shutdown(g_connecting, GRPC_ERROR_CREATE_FROM_STATIC_STRING(
                                            "must_succeed called"));
   grpc_endpoint_destroy(g_connecting);
@@ -73,9 +73,9 @@ static void must_succeed(void* /*arg*/, grpc_error_handle error) {
   finish_connection();
 }
 
-static void must_fail(void* /*arg*/, grpc_error_handle error) {
+static void must_fail(void* /*arg*/, absl::Status error) {
   GPR_ASSERT(g_connecting == nullptr);
-  GPR_ASSERT(!GRPC_ERROR_IS_NONE(error));
+  GPR_ASSERT(!error.ok());
   finish_connection();
 }
 
@@ -279,7 +279,7 @@ void test_fails_bad_addr_no_leak(void) {
   gpr_log(GPR_ERROR, "---- finished test_fails_bad_addr_no_leak() ----");
 }
 
-static void destroy_pollset(void* p, grpc_error_handle /*error*/) {
+static void destroy_pollset(void* p, absl::Status /*error*/) {
   grpc_pollset_destroy(static_cast<grpc_pollset*>(p));
 }
 

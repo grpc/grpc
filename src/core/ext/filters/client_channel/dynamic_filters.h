@@ -21,6 +21,8 @@
 
 #include <vector>
 
+#include "absl/status/status.h"
+
 #include <grpc/impl/codegen/grpc_types.h>
 #include <grpc/slice.h>
 
@@ -33,7 +35,6 @@
 #include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/iomgr/call_combiner.h"
 #include "src/core/lib/iomgr/closure.h"
-#include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/polling_entity.h"
 #include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/transport/transport.h"
@@ -56,7 +57,7 @@ class DynamicFilters : public RefCounted<DynamicFilters> {
       CallCombiner* call_combiner;
     };
 
-    Call(Args args, grpc_error_handle* error);
+    Call(Args args, absl::Status* error);
 
     // Continues processing a transport stream op batch.
     void StartTransportStreamOpBatch(grpc_transport_stream_op_batch* batch);
@@ -83,7 +84,7 @@ class DynamicFilters : public RefCounted<DynamicFilters> {
     void IncrementRefCount();
     void IncrementRefCount(const DebugLocation& location, const char* reason);
 
-    static void Destroy(void* arg, grpc_error_handle error);
+    static void Destroy(void* arg, absl::Status error);
 
     RefCountedPtr<DynamicFilters> channel_stack_;
     grpc_closure* after_call_stack_destroy_ = nullptr;
@@ -98,7 +99,7 @@ class DynamicFilters : public RefCounted<DynamicFilters> {
 
   ~DynamicFilters() override;
 
-  RefCountedPtr<Call> CreateCall(Call::Args args, grpc_error_handle* error);
+  RefCountedPtr<Call> CreateCall(Call::Args args, absl::Status* error);
 
  private:
   grpc_channel_stack* channel_stack_;

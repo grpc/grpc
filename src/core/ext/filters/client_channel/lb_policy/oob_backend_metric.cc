@@ -57,7 +57,6 @@
 #include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/gprpp/unique_type_name.h"
 #include "src/core/lib/iomgr/closure.h"
-#include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/iomgr_fwd.h"
 #include "src/core/lib/iomgr/pollset_set.h"
@@ -263,12 +262,11 @@ class OrcaProducer::OrcaStreamEventHandler
     // BackendMetricAllocator object.
     void AsyncNotifyWatchersAndDelete() {
       GRPC_CLOSURE_INIT(&closure_, NotifyWatchersInExecCtx, this, nullptr);
-      ExecCtx::Run(DEBUG_LOCATION, &closure_, GRPC_ERROR_NONE);
+      ExecCtx::Run(DEBUG_LOCATION, &closure_, absl::OkStatus());
     }
 
    private:
-    static void NotifyWatchersInExecCtx(void* arg,
-                                        grpc_error_handle /*error*/) {
+    static void NotifyWatchersInExecCtx(void* arg, absl::Status /*error*/) {
       auto* self = static_cast<BackendMetricAllocator*>(arg);
       self->producer_->NotifyWatchers(self->backend_metric_data_);
       delete self;

@@ -31,6 +31,7 @@
 
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/gprpp/memory.h"
+#include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/json/json.h"
 #include "src/core/lib/service_config/service_config_parser.h"
 #include "src/core/lib/slice/slice_internal.h"
@@ -40,17 +41,17 @@ namespace grpc_core {
 
 RefCountedPtr<ServiceConfig> ServiceConfigImpl::Create(
     const ChannelArgs& args, absl::string_view json_string,
-    grpc_error_handle* error) {
+    absl::Status* error) {
   GPR_DEBUG_ASSERT(error != nullptr);
   Json json = Json::Parse(json_string, error);
-  if (!GRPC_ERROR_IS_NONE(*error)) return nullptr;
+  if (!error->ok()) return nullptr;
   return MakeRefCounted<ServiceConfigImpl>(args, std::string(json_string),
                                            std::move(json), error);
 }
 
 ServiceConfigImpl::ServiceConfigImpl(const ChannelArgs& args,
                                      std::string json_string, Json json,
-                                     grpc_error_handle* error)
+                                     absl::Status* error)
     : json_string_(std::move(json_string)), json_(std::move(json)) {
   GPR_DEBUG_ASSERT(error != nullptr);
   if (json_.type() != Json::Type::OBJECT) {
@@ -58,14 +59,14 @@ ServiceConfigImpl::ServiceConfigImpl(const ChannelArgs& args,
         GRPC_ERROR_CREATE_FROM_STATIC_STRING("JSON value is not an object");
     return;
   }
-  std::vector<grpc_error_handle> error_list;
-  grpc_error_handle global_error = GRPC_ERROR_NONE;
+  std::vector<absl::Status> error_list;
+  absl::Status global_error = absl::OkStatus();
   parsed_global_configs_ =
       CoreConfiguration::Get().service_config_parser().ParseGlobalParameters(
           args, json_, &global_error);
-  if (!GRPC_ERROR_IS_NONE(global_error)) error_list.push_back(global_error);
-  grpc_error_handle local_error = ParsePerMethodParams(args);
-  if (!GRPC_ERROR_IS_NONE(local_error)) error_list.push_back(local_error);
+  if (!global_error.ok()) error_list.push_back(global_error);
+  absl::Status local_error = ParsePerMethodParams(args);
+  if (!local_error.ok()) error_list.push_back(local_error);
   if (!error_list.empty()) {
     *error = GRPC_ERROR_CREATE_FROM_VECTOR("Service config parsing error",
                                            &error_list);
@@ -78,17 +79,17 @@ ServiceConfigImpl::~ServiceConfigImpl() {
   }
 }
 
-grpc_error_handle ServiceConfigImpl::ParseJsonMethodConfig(
-    const ChannelArgs& args, const Json& json) {
-  std::vector<grpc_error_handle> error_list;
+absl::Status ServiceConfigImpl::ParseJsonMethodConfig(const ChannelArgs& args,
+                                                      const Json& json) {
+  std::vector<absl::Status> error_list;
   // Parse method config with each registered parser.
   auto parsed_configs =
       absl::make_unique<ServiceConfigParser::ParsedConfigVector>();
-  grpc_error_handle parser_error = GRPC_ERROR_NONE;
+  absl::Status parser_error = absl::OkStatus();
   *parsed_configs =
       CoreConfiguration::Get().service_config_parser().ParsePerMethodParameters(
           args, json, &parser_error);
-  if (!GRPC_ERROR_IS_NONE(parser_error)) {
+  if (!parser_error.ok()) {
     error_list.push_back(parser_error);
   }
   parsed_method_config_vectors_storage_.push_back(std::move(parsed_configs));
@@ -104,9 +105,9 @@ grpc_error_handle ServiceConfigImpl::ParseJsonMethodConfig(
     }
     const Json::Array& name_array = it->second.array_value();
     for (const Json& name : name_array) {
-      grpc_error_handle parse_error = GRPC_ERROR_NONE;
+      absl::Status parse_error = absl::OkStatus();
       std::string path = ParseJsonMethodName(name, &parse_error);
-      if (!GRPC_ERROR_IS_NONE(parse_error)) {
+      if (!parse_error.ok()) {
         error_list.push_back(parse_error);
       } else {
         found_name = true;
@@ -140,9 +141,8 @@ grpc_error_handle ServiceConfigImpl::ParseJsonMethodConfig(
   return GRPC_ERROR_CREATE_FROM_VECTOR("methodConfig", &error_list);
 }
 
-grpc_error_handle ServiceConfigImpl::ParsePerMethodParams(
-    const ChannelArgs& args) {
-  std::vector<grpc_error_handle> error_list;
+absl::Status ServiceConfigImpl::ParsePerMethodParams(const ChannelArgs& args) {
+  std::vector<absl::Status> error_list;
   auto it = json_.object_value().find("methodConfig");
   if (it != json_.object_value().end()) {
     if (it->second.type() != Json::Type::ARRAY) {
@@ -155,8 +155,8 @@ grpc_error_handle ServiceConfigImpl::ParsePerMethodParams(
             "field:methodConfig error:not of type Object"));
         continue;
       }
-      grpc_error_handle error = ParseJsonMethodConfig(args, method_config);
-      if (!GRPC_ERROR_IS_NONE(error)) {
+      absl::Status error = ParseJsonMethodConfig(args, method_config);
+      if (!error.ok()) {
         error_list.push_back(error);
       }
     }
@@ -165,7 +165,7 @@ grpc_error_handle ServiceConfigImpl::ParsePerMethodParams(
 }
 
 std::string ServiceConfigImpl::ParseJsonMethodName(const Json& json,
-                                                   grpc_error_handle* error) {
+                                                   absl::Status* error) {
   if (json.type() != Json::Type::OBJECT) {
     *error = GRPC_ERROR_CREATE_FROM_STATIC_STRING(
         "field:name error:type is not object");

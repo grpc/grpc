@@ -21,6 +21,7 @@
 #include <memory>
 #include <utility>
 
+#include "absl/status/status.h"
 #include "absl/strings/str_cat.h"
 #include "absl/types/optional.h"
 
@@ -32,7 +33,6 @@
 #include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/iomgr/closure.h"
-#include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/resource_quota/memory_quota.h"
 #include "src/libfuzzer/libfuzzer_macro.h"
@@ -134,13 +134,13 @@ class Fuzzer {
               };
               auto* args = new Args{std::move(sweep), cfg.msg(), this};
               auto* closure = GRPC_CLOSURE_CREATE(
-                  [](void* arg, grpc_error_handle) {
+                  [](void* arg, absl::Status) {
                     auto* args = static_cast<Args*>(arg);
                     args->fuzzer->RunMsg(args->msg);
                     delete args;
                   },
                   args, nullptr);
-              ExecCtx::Get()->Run(DEBUG_LOCATION, closure, GRPC_ERROR_NONE);
+              ExecCtx::Get()->Run(DEBUG_LOCATION, closure, absl::OkStatus());
             };
             auto pass = MapReclamationPass(cfg.pass());
             WithAllocator(
