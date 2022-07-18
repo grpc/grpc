@@ -278,10 +278,12 @@ class ClientConnectedCallPromise {
           server_to_client_messages_(call_args.server_to_client_messages),
           client_initial_metadata_(
               std::move(call_args.client_initial_metadata)) {
-      gpr_log(GPR_INFO,
-              "ClientConnectedCallPromise::ClientConnectedCallPromise: "
-              "intitial_metadata=%s",
-              client_initial_metadata_->DebugString().c_str());
+      if (grpc_call_trace.enabled()) {
+        gpr_log(GPR_INFO,
+                "ClientConnectedCallPromise::ClientConnectedCallPromise: "
+                "intitial_metadata=%s",
+                client_initial_metadata_->DebugString().c_str());
+      }
     }
 
     void DropStream() { stream_.reset(); }

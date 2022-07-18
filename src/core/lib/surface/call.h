@@ -47,6 +47,8 @@
 #include "src/core/lib/surface/server.h"
 #include "src/core/lib/transport/transport.h"
 
+extern grpc_core::TraceFlag grpc_call_trace;
+
 typedef void (*grpc_ioreq_completion_func)(grpc_call* call, int success,
                                            void* user_data);
 

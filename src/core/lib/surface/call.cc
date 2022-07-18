@@ -97,6 +97,7 @@
 grpc_core::TraceFlag grpc_call_error_trace(false, "call_error");
 grpc_core::TraceFlag grpc_compression_trace(false, "compression");
 grpc_core::TraceFlag grpc_call_trace(false, "call");
+grpc_core::TraceFlag grpc_call_refcount_trace(false, "call_refcount");
 
 namespace grpc_core {
 
@@ -2025,7 +2026,8 @@ class PromiseBasedCall : public Call, public Activity, public Wakeable {
   }
 
   mutable Mutex mu_;
-  RefCount external_refs_{1, "client_call"};
+  RefCount external_refs_{
+      1, grpc_call_refcount_trace.enabled() ? "client_call" : nullptr};
   CallContext call_context_{OnDestroy, this};
   bool keep_polling_ ABSL_GUARDED_BY(mu()) = false;
 
