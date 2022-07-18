@@ -2218,6 +2218,8 @@ class ClientPromiseBasedCall final : public PromiseBasedCall {
   void UpdateOnce() ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu()) override;
   void Finish(ServerMetadataHandle trailing_metadata)
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu());
+  grpc_call_error ValidateBatch(const grpc_op* ops, size_t nops)
+      ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu());
   void CommitBatch(const grpc_op* ops, size_t nops,
                    const Completion& completion)
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu());
@@ -2274,6 +2276,38 @@ void ClientPromiseBasedCall::CancelWithError(grpc_error_handle error) {
   ScopedContext context(this);
   Finish(ServerMetadataHandle(grpc_error_to_absl_status(error)));
   GRPC_ERROR_UNREF(error);
+}
+
+grpc_call_error ClientPromiseBasedCall::ValidateBatch(const grpc_op* ops,
+                                                      size_t nops) {
+  BitSet<8> got_ops;
+  for (size_t op_idx = 0; op_idx < nops; op_idx++) {
+    const grpc_op& op = ops[op_idx];
+    switch (op.op) {
+      case GRPC_OP_SEND_INITIAL_METADATA:
+        if (!AreInitialMetadataFlagsValid(op.flags)) {
+          return GRPC_CALL_ERROR_INVALID_FLAGS;
+        }
+        break;
+      case GRPC_OP_SEND_MESSAGE:
+        if (!AreWriteFlagsValid(op.flags)) {
+          return GRPC_CALL_ERROR_INVALID_FLAGS;
+        }
+        break;
+      case GRPC_OP_RECV_INITIAL_METADATA:
+      case GRPC_OP_RECV_MESSAGE:
+      case GRPC_OP_SEND_CLOSE_FROM_CLIENT:
+      case GRPC_OP_RECV_STATUS_ON_CLIENT:
+        if (op.flags != 0) return GRPC_CALL_ERROR_INVALID_FLAGS;
+        break;
+      case GRPC_OP_RECV_CLOSE_ON_SERVER:
+      case GRPC_OP_SEND_STATUS_FROM_SERVER:
+        return GRPC_CALL_ERROR_NOT_ON_CLIENT;
+    }
+    if (got_ops.is_set(op.op)) return GRPC_CALL_ERROR_TOO_MANY_OPERATIONS;
+    got_ops.set(op.op);
+  }
+  return GRPC_CALL_OK;
 }
 
 void ClientPromiseBasedCall::CommitBatch(const grpc_op* ops, size_t nops,
@@ -2347,6 +2381,10 @@ grpc_call_error ClientPromiseBasedCall::StartBatch(const grpc_op* ops,
   if (nops == 0) {
     EndOpImmediately(cq(), notify_tag, is_notify_tag_closure);
     return GRPC_CALL_OK;
+  }
+  const grpc_call_error validation_result = ValidateBatch(ops, nops);
+  if (validation_result != GRPC_CALL_OK) {
+    return validation_result;
   }
   Completion completion =
       StartCompletion(notify_tag, is_notify_tag_closure, ops, nops);
