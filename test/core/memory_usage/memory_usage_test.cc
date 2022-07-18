@@ -38,9 +38,7 @@
 #include "test/core/util/subprocess.h"
 #include "test/core/util/test_config.h"
 
-ABSL_FLAG(
-    std::string, benchmark_name, "channel",
-    "Which benchmark to run");  // TODO (chennancy) change default back to call
+ABSL_FLAG(std::string, benchmark_name, "call", "Which benchmark to run");
 ABSL_FLAG(int, size, 50000, "Number of channels/calls");
 ABSL_FLAG(std::string, scenario_config, "insecure",
           "Possible Values: minstack (Use minimal stack), resource_quota, "
