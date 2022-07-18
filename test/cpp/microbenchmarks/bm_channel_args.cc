@@ -15,7 +15,11 @@
 /* Benchmark ChannelArgs comparison performance between grpc_channel_args and
  * grpc_core::ChannelArgs */
 
+#include <random>
+
 #include <benchmark/benchmark.h>
+
+#include "absl/container/btree_map.h"
 
 #include <grpcpp/support/channel_arguments.h>
 
@@ -45,6 +49,38 @@ void BM_grpc_channel_args(benchmark::State& state) {
   }
 }
 BENCHMARK(BM_grpc_channel_args);
+
+void BM_ChannelArgsAsKeyIntoMap(benchmark::State& state) {
+  std::map<grpc_core::ChannelArgs, int> m;
+  std::vector<grpc_core::ChannelArgs> v;
+  for (int i = 0; i < 10000; i++) {
+    const auto& a = grpc_core::ChannelArgs().Set(kKey, i);
+    m[a] = i;
+    v.push_back(a);
+  }
+  std::shuffle(v.begin(), v.end(), std::mt19937(std::random_device()()));
+  size_t n = 0;
+  for (auto s : state) {
+    benchmark::DoNotOptimize(m.find(v[n++ % v.size()]));
+  }
+}
+BENCHMARK(BM_ChannelArgsAsKeyIntoMap);
+
+void BM_ChannelArgsAsKeyIntoBTree(benchmark::State& state) {
+  absl::btree_map<grpc_core::ChannelArgs, int> m;
+  std::vector<grpc_core::ChannelArgs> v;
+  for (int i = 0; i < 10000; i++) {
+    const auto& a = grpc_core::ChannelArgs().Set(kKey, i);
+    m[a] = i;
+    v.push_back(a);
+  }
+  std::shuffle(v.begin(), v.end(), std::mt19937(std::random_device()()));
+  size_t n = 0;
+  for (auto s : state) {
+    benchmark::DoNotOptimize(m.find(v[n++ % v.size()]));
+  }
+}
+BENCHMARK(BM_ChannelArgsAsKeyIntoBTree);
 
 // Some distros have RunSpecifiedBenchmarks under the benchmark namespace,
 // and others do not. This allows us to support both modes.

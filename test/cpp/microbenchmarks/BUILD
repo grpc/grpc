@@ -33,6 +33,7 @@ grpc_cc_test(
     srcs = ["bm_channel_args.cc"],
     external_deps = [
         "benchmark",
+        "absl/container:btree",
     ],
     deps = ["//test/core/util:grpc_test_util",        "//:channel_args", "//:grpc++"
 ],

@@ -24,6 +24,8 @@
 #include <utility>
 #include <vector>
 
+#include "src/core/lib/gpr/useful.h"
+
 namespace grpc_core {
 
 template <class K, class V = void>
@@ -58,30 +60,21 @@ class AVL {
 
   bool SameIdentity(const AVL& avl) const { return root_ == avl.root_; }
 
-  bool operator==(const AVL& other) const {
-    Iterator a(root_);
-    Iterator b(other.root_);
-    for (;;) {
-      Node* p = a.current();
-      Node* q = b.current();
-      if (p == nullptr) return q == nullptr;
-      if (q == nullptr) return false;
-      if (p->kv != q->kv) return false;
-      a.MoveNext();
-      b.MoveNext();
-    }
-  }
+  bool operator==(const AVL& other) const { return QsortCompare(other) == 0; }
+  bool operator<(const AVL& other) const { return QsortCompare(other) < 0; }
 
-  bool operator<(const AVL& other) const {
+  int QsortCompare(const AVL& other) const {
     Iterator a(root_);
     Iterator b(other.root_);
     for (;;) {
       Node* p = a.current();
       Node* q = b.current();
-      if (p == nullptr) return q != nullptr;
-      if (q == nullptr) return false;
-      if (p->kv < q->kv) return true;
-      if (p->kv != q->kv) return false;
+      if (p == nullptr) {
+        return q == nullptr ? 0 : -1;
+      }
+      if (q == nullptr) return 1;
+      const int kv = grpc_core::QsortCompare(p->kv, q->kv);
+      if (kv != 0) return kv;
       a.MoveNext();
       b.MoveNext();
     }
