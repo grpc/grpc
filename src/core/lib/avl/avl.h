@@ -115,6 +115,8 @@ class AVL {
 
    private:
     size_t depth_{0};
+    // 32 is the maximum depth we can accept, and corresponds to ~4billion nodes
+    // - which ought to suffice our use cases.
     Node* nodes_[32];
   };
 
