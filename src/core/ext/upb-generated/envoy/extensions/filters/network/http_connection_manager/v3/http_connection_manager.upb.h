@@ -82,6 +82,7 @@ extern const upb_MiniTable envoy_extensions_filters_network_http_connection_mana
 extern const upb_MiniTable envoy_extensions_filters_network_http_connection_manager_v3_EnvoyMobileHttpConnectionManager_msginit;
 struct envoy_config_accesslog_v3_AccessLog;
 struct envoy_config_accesslog_v3_AccessLogFilter;
+struct envoy_config_core_v3_CidrRange;
 struct envoy_config_core_v3_ConfigSource;
 struct envoy_config_core_v3_DataSource;
 struct envoy_config_core_v3_ExtensionConfigSource;
@@ -105,6 +106,7 @@ struct google_protobuf_Duration;
 struct google_protobuf_UInt32Value;
 extern const upb_MiniTable envoy_config_accesslog_v3_AccessLog_msginit;
 extern const upb_MiniTable envoy_config_accesslog_v3_AccessLogFilter_msginit;
+extern const upb_MiniTable envoy_config_core_v3_CidrRange_msginit;
 extern const upb_MiniTable envoy_config_core_v3_ConfigSource_msginit;
 extern const upb_MiniTable envoy_config_core_v3_DataSource_msginit;
 extern const upb_MiniTable envoy_config_core_v3_ExtensionConfigSource_msginit;
@@ -230,19 +232,19 @@ UPB_INLINE bool envoy_extensions_filters_network_http_connection_manager_v3_Http
   return _upb_getoneofcase(msg, UPB_SIZE(24, 24)) == 3;
 }
 UPB_INLINE void envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager_clear_rds(const envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager* msg) {
-  UPB_WRITE_ONEOF(msg, envoy_extensions_filters_network_http_connection_manager_v3_Rds*, UPB_SIZE(184, 320), 0, UPB_SIZE(24, 24), envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager_route_specifier_NOT_SET);
+  UPB_WRITE_ONEOF(msg, envoy_extensions_filters_network_http_connection_manager_v3_Rds*, UPB_SIZE(188, 328), 0, UPB_SIZE(24, 24), envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager_route_specifier_NOT_SET);
 }
 UPB_INLINE const envoy_extensions_filters_network_http_connection_manager_v3_Rds* envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager_rds(const envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager* msg) {
-  return UPB_READ_ONEOF(msg, const envoy_extensions_filters_network_http_connection_manager_v3_Rds*, UPB_SIZE(184, 320), UPB_SIZE(24, 24), 3, NULL);
+  return UPB_READ_ONEOF(msg, const envoy_extensions_filters_network_http_connection_manager_v3_Rds*, UPB_SIZE(188, 328), UPB_SIZE(24, 24), 3, NULL);
 }
 UPB_INLINE bool envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager_has_route_config(const envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager* msg) {
   return _upb_getoneofcase(msg, UPB_SIZE(24, 24)) == 4;
 }
 UPB_INLINE void envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager_clear_route_config(const envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager* msg) {
-  UPB_WRITE_ONEOF(msg, struct envoy_config_route_v3_RouteConfiguration*, UPB_SIZE(184, 320), 0, UPB_SIZE(24, 24), envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager_route_specifier_NOT_SET);
+  UPB_WRITE_ONEOF(msg, struct envoy_config_route_v3_RouteConfiguration*, UPB_SIZE(188, 328), 0, UPB_SIZE(24, 24), envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager_route_specifier_NOT_SET);
 }
 UPB_INLINE const struct envoy_config_route_v3_RouteConfiguration* envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager_route_config(const envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager* msg) {
-  return UPB_READ_ONEOF(msg, const struct envoy_config_route_v3_RouteConfiguration*, UPB_SIZE(184, 320), UPB_SIZE(24, 24), 4, NULL);
+  return UPB_READ_ONEOF(msg, const struct envoy_config_route_v3_RouteConfiguration*, UPB_SIZE(188, 328), UPB_SIZE(24, 24), 4, NULL);
 }
 UPB_INLINE bool envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager_has_http_filters(const envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager* msg) {
   return _upb_has_submsg_nohasbit(msg, UPB_SIZE(60, 72));
@@ -443,10 +445,10 @@ UPB_INLINE bool envoy_extensions_filters_network_http_connection_manager_v3_Http
   return _upb_getoneofcase(msg, UPB_SIZE(24, 24)) == 31;
 }
 UPB_INLINE void envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager_clear_scoped_routes(const envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager* msg) {
-  UPB_WRITE_ONEOF(msg, envoy_extensions_filters_network_http_connection_manager_v3_ScopedRoutes*, UPB_SIZE(184, 320), 0, UPB_SIZE(24, 24), envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager_route_specifier_NOT_SET);
+  UPB_WRITE_ONEOF(msg, envoy_extensions_filters_network_http_connection_manager_v3_ScopedRoutes*, UPB_SIZE(188, 328), 0, UPB_SIZE(24, 24), envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager_route_specifier_NOT_SET);
 }
 UPB_INLINE const envoy_extensions_filters_network_http_connection_manager_v3_ScopedRoutes* envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager_scoped_routes(const envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager* msg) {
-  return UPB_READ_ONEOF(msg, const envoy_extensions_filters_network_http_connection_manager_v3_ScopedRoutes*, UPB_SIZE(184, 320), UPB_SIZE(24, 24), 31, NULL);
+  return UPB_READ_ONEOF(msg, const envoy_extensions_filters_network_http_connection_manager_v3_ScopedRoutes*, UPB_SIZE(188, 328), UPB_SIZE(24, 24), 31, NULL);
 }
 UPB_INLINE void envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager_clear_preserve_external_request_id(const envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager* msg) {
   *UPB_PTR_AT(msg, UPB_SIZE(28, 28), bool) = 0;
@@ -527,10 +529,10 @@ UPB_INLINE bool envoy_extensions_filters_network_http_connection_manager_v3_Http
   return _upb_getoneofcase(msg, UPB_SIZE(40, 40)) == 42;
 }
 UPB_INLINE void envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager_clear_strip_any_host_port(const envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager* msg) {
-  UPB_WRITE_ONEOF(msg, bool, UPB_SIZE(188, 328), 0, UPB_SIZE(40, 40), envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager_strip_port_mode_NOT_SET);
+  UPB_WRITE_ONEOF(msg, bool, UPB_SIZE(192, 336), 0, UPB_SIZE(40, 40), envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager_strip_port_mode_NOT_SET);
 }
 UPB_INLINE bool envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager_strip_any_host_port(const envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager* msg) {
-  return UPB_READ_ONEOF(msg, bool, UPB_SIZE(188, 328), UPB_SIZE(40, 40), 42, false);
+  return UPB_READ_ONEOF(msg, bool, UPB_SIZE(192, 336), UPB_SIZE(40, 40), 42, false);
 }
 UPB_INLINE bool envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager_has_path_normalization_options(const envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager* msg) {
   return _upb_hasbit(msg, 20);
@@ -589,6 +591,15 @@ UPB_INLINE void envoy_extensions_filters_network_http_connection_manager_v3_Http
 UPB_INLINE const envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager_ProxyStatusConfig* envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager_proxy_status_config(const envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager* msg) {
   return *UPB_PTR_AT(msg, UPB_SIZE(180, 312), const envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager_ProxyStatusConfig*);
 }
+UPB_INLINE bool envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager_has_typed_header_validation_config(const envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager* msg) {
+  return _upb_hasbit(msg, 24);
+}
+UPB_INLINE void envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager_clear_typed_header_validation_config(const envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager* msg) {
+  *UPB_PTR_AT(msg, UPB_SIZE(184, 320), const upb_Message*) = NULL;
+}
+UPB_INLINE const struct envoy_config_core_v3_TypedExtensionConfig* envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager_typed_header_validation_config(const envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager* msg) {
+  return *UPB_PTR_AT(msg, UPB_SIZE(184, 320), const struct envoy_config_core_v3_TypedExtensionConfig*);
+}
 
 UPB_INLINE void envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager_set_codec_type(envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager *msg, int32_t value) {
   *UPB_PTR_AT(msg, UPB_SIZE(4, 4), int32_t) = value;
@@ -597,7 +608,7 @@ UPB_INLINE void envoy_extensions_filters_network_http_connection_manager_v3_Http
   *UPB_PTR_AT(msg, UPB_SIZE(52, 56), upb_StringView) = value;
 }
 UPB_INLINE void envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager_set_rds(envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager *msg, envoy_extensions_filters_network_http_connection_manager_v3_Rds* value) {
-  UPB_WRITE_ONEOF(msg, envoy_extensions_filters_network_http_connection_manager_v3_Rds*, UPB_SIZE(184, 320), value, UPB_SIZE(24, 24), 3);
+  UPB_WRITE_ONEOF(msg, envoy_extensions_filters_network_http_connection_manager_v3_Rds*, UPB_SIZE(188, 328), value, UPB_SIZE(24, 24), 3);
 }
 UPB_INLINE struct envoy_extensions_filters_network_http_connection_manager_v3_Rds* envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager_mutable_rds(envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager* msg, upb_Arena* arena) {
   struct envoy_extensions_filters_network_http_connection_manager_v3_Rds* sub = (struct envoy_extensions_filters_network_http_connection_manager_v3_Rds*)envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager_rds(msg);
@@ -609,7 +620,7 @@ UPB_INLINE struct envoy_extensions_filters_network_http_connection_manager_v3_Rd
   return sub;
 }
 UPB_INLINE void envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager_set_route_config(envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager *msg, struct envoy_config_route_v3_RouteConfiguration* value) {
-  UPB_WRITE_ONEOF(msg, struct envoy_config_route_v3_RouteConfiguration*, UPB_SIZE(184, 320), value, UPB_SIZE(24, 24), 4);
+  UPB_WRITE_ONEOF(msg, struct envoy_config_route_v3_RouteConfiguration*, UPB_SIZE(188, 328), value, UPB_SIZE(24, 24), 4);
 }
 UPB_INLINE struct envoy_config_route_v3_RouteConfiguration* envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager_mutable_route_config(envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager* msg, upb_Arena* arena) {
   struct envoy_config_route_v3_RouteConfiguration* sub = (struct envoy_config_route_v3_RouteConfiguration*)envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager_route_config(msg);
@@ -860,7 +871,7 @@ UPB_INLINE struct google_protobuf_BoolValue* envoy_extensions_filters_network_ht
   return sub;
 }
 UPB_INLINE void envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager_set_scoped_routes(envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager *msg, envoy_extensions_filters_network_http_connection_manager_v3_ScopedRoutes* value) {
-  UPB_WRITE_ONEOF(msg, envoy_extensions_filters_network_http_connection_manager_v3_ScopedRoutes*, UPB_SIZE(184, 320), value, UPB_SIZE(24, 24), 31);
+  UPB_WRITE_ONEOF(msg, envoy_extensions_filters_network_http_connection_manager_v3_ScopedRoutes*, UPB_SIZE(188, 328), value, UPB_SIZE(24, 24), 31);
 }
 UPB_INLINE struct envoy_extensions_filters_network_http_connection_manager_v3_ScopedRoutes* envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager_mutable_scoped_routes(envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager* msg, upb_Arena* arena) {
   struct envoy_extensions_filters_network_http_connection_manager_v3_ScopedRoutes* sub = (struct envoy_extensions_filters_network_http_connection_manager_v3_ScopedRoutes*)envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager_scoped_routes(msg);
@@ -952,7 +963,7 @@ UPB_INLINE struct google_protobuf_Duration* envoy_extensions_filters_network_htt
   return sub;
 }
 UPB_INLINE void envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager_set_strip_any_host_port(envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager *msg, bool value) {
-  UPB_WRITE_ONEOF(msg, bool, UPB_SIZE(188, 328), value, UPB_SIZE(40, 40), 42);
+  UPB_WRITE_ONEOF(msg, bool, UPB_SIZE(192, 336), value, UPB_SIZE(40, 40), 42);
 }
 UPB_INLINE void envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager_set_path_normalization_options(envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager *msg, envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager_PathNormalizationOptions* value) {
   _upb_sethas(msg, 20);
@@ -1021,6 +1032,19 @@ UPB_INLINE struct envoy_extensions_filters_network_http_connection_manager_v3_Ht
     sub = (struct envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager_ProxyStatusConfig*)_upb_Message_New(&envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager_ProxyStatusConfig_msginit, arena);
     if (!sub) return NULL;
     envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager_set_proxy_status_config(msg, sub);
+  }
+  return sub;
+}
+UPB_INLINE void envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager_set_typed_header_validation_config(envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager *msg, struct envoy_config_core_v3_TypedExtensionConfig* value) {
+  _upb_sethas(msg, 24);
+  *UPB_PTR_AT(msg, UPB_SIZE(184, 320), struct envoy_config_core_v3_TypedExtensionConfig*) = value;
+}
+UPB_INLINE struct envoy_config_core_v3_TypedExtensionConfig* envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager_mutable_typed_header_validation_config(envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager* msg, upb_Arena* arena) {
+  struct envoy_config_core_v3_TypedExtensionConfig* sub = (struct envoy_config_core_v3_TypedExtensionConfig*)envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager_typed_header_validation_config(msg);
+  if (sub == NULL) {
+    sub = (struct envoy_config_core_v3_TypedExtensionConfig*)_upb_Message_New(&envoy_config_core_v3_TypedExtensionConfig_msginit, arena);
+    if (!sub) return NULL;
+    envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager_set_typed_header_validation_config(msg, sub);
   }
   return sub;
 }
@@ -1243,9 +1267,30 @@ UPB_INLINE void envoy_extensions_filters_network_http_connection_manager_v3_Http
 UPB_INLINE bool envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager_InternalAddressConfig_unix_sockets(const envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager_InternalAddressConfig* msg) {
   return *UPB_PTR_AT(msg, UPB_SIZE(0, 0), bool);
 }
+UPB_INLINE bool envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager_InternalAddressConfig_has_cidr_ranges(const envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager_InternalAddressConfig* msg) {
+  return _upb_has_submsg_nohasbit(msg, UPB_SIZE(4, 8));
+}
+UPB_INLINE void envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager_InternalAddressConfig_clear_cidr_ranges(const envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager_InternalAddressConfig* msg) {
+  _upb_array_detach(msg, UPB_SIZE(4, 8));
+}
+UPB_INLINE const struct envoy_config_core_v3_CidrRange* const* envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager_InternalAddressConfig_cidr_ranges(const envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager_InternalAddressConfig* msg, size_t* len) {
+  return (const struct envoy_config_core_v3_CidrRange* const*)_upb_array_accessor(msg, UPB_SIZE(4, 8), len);
+}
 
 UPB_INLINE void envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager_InternalAddressConfig_set_unix_sockets(envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager_InternalAddressConfig *msg, bool value) {
   *UPB_PTR_AT(msg, UPB_SIZE(0, 0), bool) = value;
+}
+UPB_INLINE struct envoy_config_core_v3_CidrRange** envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager_InternalAddressConfig_mutable_cidr_ranges(envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager_InternalAddressConfig* msg, size_t* len) {
+  return (struct envoy_config_core_v3_CidrRange**)_upb_array_mutable_accessor(msg, UPB_SIZE(4, 8), len);
+}
+UPB_INLINE struct envoy_config_core_v3_CidrRange** envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager_InternalAddressConfig_resize_cidr_ranges(envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager_InternalAddressConfig* msg, size_t len, upb_Arena* arena) {
+  return (struct envoy_config_core_v3_CidrRange**)_upb_Array_Resize_accessor2(msg, UPB_SIZE(4, 8), len, UPB_SIZE(2, 3), arena);
+}
+UPB_INLINE struct envoy_config_core_v3_CidrRange* envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager_InternalAddressConfig_add_cidr_ranges(envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager_InternalAddressConfig* msg, upb_Arena* arena) {
+  struct envoy_config_core_v3_CidrRange* sub = (struct envoy_config_core_v3_CidrRange*)_upb_Message_New(&envoy_config_core_v3_CidrRange_msginit, arena);
+  bool ok = _upb_Array_Append_accessor2(msg, UPB_SIZE(4, 8), UPB_SIZE(2, 3), &sub, arena);
+  if (!ok) return NULL;
+  return sub;
 }
 
 /* envoy.extensions.filters.network.http_connection_manager.v3.HttpConnectionManager.SetCurrentClientCertDetails */

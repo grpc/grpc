@@ -29,6 +29,7 @@ struct envoy_config_tap_v3_HttpGenericBodyMatch_GenericTextMatch;
 struct envoy_config_tap_v3_OutputConfig;
 struct envoy_config_tap_v3_OutputSink;
 struct envoy_config_tap_v3_StreamingAdminSink;
+struct envoy_config_tap_v3_BufferedAdminSink;
 struct envoy_config_tap_v3_FilePerTapSink;
 struct envoy_config_tap_v3_StreamingGrpcSink;
 typedef struct envoy_config_tap_v3_TapConfig envoy_config_tap_v3_TapConfig;
@@ -40,6 +41,7 @@ typedef struct envoy_config_tap_v3_HttpGenericBodyMatch_GenericTextMatch envoy_c
 typedef struct envoy_config_tap_v3_OutputConfig envoy_config_tap_v3_OutputConfig;
 typedef struct envoy_config_tap_v3_OutputSink envoy_config_tap_v3_OutputSink;
 typedef struct envoy_config_tap_v3_StreamingAdminSink envoy_config_tap_v3_StreamingAdminSink;
+typedef struct envoy_config_tap_v3_BufferedAdminSink envoy_config_tap_v3_BufferedAdminSink;
 typedef struct envoy_config_tap_v3_FilePerTapSink envoy_config_tap_v3_FilePerTapSink;
 typedef struct envoy_config_tap_v3_StreamingGrpcSink envoy_config_tap_v3_StreamingGrpcSink;
 extern const upb_MiniTable envoy_config_tap_v3_TapConfig_msginit;
@@ -51,17 +53,20 @@ extern const upb_MiniTable envoy_config_tap_v3_HttpGenericBodyMatch_GenericTextM
 extern const upb_MiniTable envoy_config_tap_v3_OutputConfig_msginit;
 extern const upb_MiniTable envoy_config_tap_v3_OutputSink_msginit;
 extern const upb_MiniTable envoy_config_tap_v3_StreamingAdminSink_msginit;
+extern const upb_MiniTable envoy_config_tap_v3_BufferedAdminSink_msginit;
 extern const upb_MiniTable envoy_config_tap_v3_FilePerTapSink_msginit;
 extern const upb_MiniTable envoy_config_tap_v3_StreamingGrpcSink_msginit;
 struct envoy_config_common_matcher_v3_MatchPredicate;
 struct envoy_config_core_v3_GrpcService;
 struct envoy_config_core_v3_RuntimeFractionalPercent;
 struct envoy_config_route_v3_HeaderMatcher;
+struct google_protobuf_Duration;
 struct google_protobuf_UInt32Value;
 extern const upb_MiniTable envoy_config_common_matcher_v3_MatchPredicate_msginit;
 extern const upb_MiniTable envoy_config_core_v3_GrpcService_msginit;
 extern const upb_MiniTable envoy_config_core_v3_RuntimeFractionalPercent_msginit;
 extern const upb_MiniTable envoy_config_route_v3_HeaderMatcher_msginit;
+extern const upb_MiniTable google_protobuf_Duration_msginit;
 extern const upb_MiniTable google_protobuf_UInt32Value_msginit;
 
 typedef enum {
@@ -855,6 +860,7 @@ typedef enum {
   envoy_config_tap_v3_OutputSink_output_sink_type_streaming_admin = 2,
   envoy_config_tap_v3_OutputSink_output_sink_type_file_per_tap = 3,
   envoy_config_tap_v3_OutputSink_output_sink_type_streaming_grpc = 4,
+  envoy_config_tap_v3_OutputSink_output_sink_type_buffered_admin = 5,
   envoy_config_tap_v3_OutputSink_output_sink_type_NOT_SET = 0
 } envoy_config_tap_v3_OutputSink_output_sink_type_oneofcases;
 UPB_INLINE envoy_config_tap_v3_OutputSink_output_sink_type_oneofcases envoy_config_tap_v3_OutputSink_output_sink_type_case(const envoy_config_tap_v3_OutputSink* msg) {
@@ -892,6 +898,15 @@ UPB_INLINE void envoy_config_tap_v3_OutputSink_clear_streaming_grpc(const envoy_
 }
 UPB_INLINE const envoy_config_tap_v3_StreamingGrpcSink* envoy_config_tap_v3_OutputSink_streaming_grpc(const envoy_config_tap_v3_OutputSink* msg) {
   return UPB_READ_ONEOF(msg, const envoy_config_tap_v3_StreamingGrpcSink*, UPB_SIZE(8, 8), UPB_SIZE(4, 4), 4, NULL);
+}
+UPB_INLINE bool envoy_config_tap_v3_OutputSink_has_buffered_admin(const envoy_config_tap_v3_OutputSink* msg) {
+  return _upb_getoneofcase(msg, UPB_SIZE(4, 4)) == 5;
+}
+UPB_INLINE void envoy_config_tap_v3_OutputSink_clear_buffered_admin(const envoy_config_tap_v3_OutputSink* msg) {
+  UPB_WRITE_ONEOF(msg, envoy_config_tap_v3_BufferedAdminSink*, UPB_SIZE(8, 8), 0, UPB_SIZE(4, 4), envoy_config_tap_v3_OutputSink_output_sink_type_NOT_SET);
+}
+UPB_INLINE const envoy_config_tap_v3_BufferedAdminSink* envoy_config_tap_v3_OutputSink_buffered_admin(const envoy_config_tap_v3_OutputSink* msg) {
+  return UPB_READ_ONEOF(msg, const envoy_config_tap_v3_BufferedAdminSink*, UPB_SIZE(8, 8), UPB_SIZE(4, 4), 5, NULL);
 }
 
 UPB_INLINE void envoy_config_tap_v3_OutputSink_set_format(envoy_config_tap_v3_OutputSink *msg, int32_t value) {
@@ -933,6 +948,18 @@ UPB_INLINE struct envoy_config_tap_v3_StreamingGrpcSink* envoy_config_tap_v3_Out
   }
   return sub;
 }
+UPB_INLINE void envoy_config_tap_v3_OutputSink_set_buffered_admin(envoy_config_tap_v3_OutputSink *msg, envoy_config_tap_v3_BufferedAdminSink* value) {
+  UPB_WRITE_ONEOF(msg, envoy_config_tap_v3_BufferedAdminSink*, UPB_SIZE(8, 8), value, UPB_SIZE(4, 4), 5);
+}
+UPB_INLINE struct envoy_config_tap_v3_BufferedAdminSink* envoy_config_tap_v3_OutputSink_mutable_buffered_admin(envoy_config_tap_v3_OutputSink* msg, upb_Arena* arena) {
+  struct envoy_config_tap_v3_BufferedAdminSink* sub = (struct envoy_config_tap_v3_BufferedAdminSink*)envoy_config_tap_v3_OutputSink_buffered_admin(msg);
+  if (sub == NULL) {
+    sub = (struct envoy_config_tap_v3_BufferedAdminSink*)_upb_Message_New(&envoy_config_tap_v3_BufferedAdminSink_msginit, arena);
+    if (!sub) return NULL;
+    envoy_config_tap_v3_OutputSink_set_buffered_admin(msg, sub);
+  }
+  return sub;
+}
 
 /* envoy.config.tap.v3.StreamingAdminSink */
 
@@ -970,6 +997,74 @@ UPB_INLINE char* envoy_config_tap_v3_StreamingAdminSink_serialize_ex(const envoy
   return ptr;
 }
 
+
+/* envoy.config.tap.v3.BufferedAdminSink */
+
+UPB_INLINE envoy_config_tap_v3_BufferedAdminSink* envoy_config_tap_v3_BufferedAdminSink_new(upb_Arena* arena) {
+  return (envoy_config_tap_v3_BufferedAdminSink*)_upb_Message_New(&envoy_config_tap_v3_BufferedAdminSink_msginit, arena);
+}
+UPB_INLINE envoy_config_tap_v3_BufferedAdminSink* envoy_config_tap_v3_BufferedAdminSink_parse(const char* buf, size_t size, upb_Arena* arena) {
+  envoy_config_tap_v3_BufferedAdminSink* ret = envoy_config_tap_v3_BufferedAdminSink_new(arena);
+  if (!ret) return NULL;
+  if (upb_Decode(buf, size, ret, &envoy_config_tap_v3_BufferedAdminSink_msginit, NULL, 0, arena) != kUpb_DecodeStatus_Ok) {
+    return NULL;
+  }
+  return ret;
+}
+UPB_INLINE envoy_config_tap_v3_BufferedAdminSink* envoy_config_tap_v3_BufferedAdminSink_parse_ex(const char* buf, size_t size,
+                           const upb_ExtensionRegistry* extreg,
+                           int options, upb_Arena* arena) {
+  envoy_config_tap_v3_BufferedAdminSink* ret = envoy_config_tap_v3_BufferedAdminSink_new(arena);
+  if (!ret) return NULL;
+  if (upb_Decode(buf, size, ret, &envoy_config_tap_v3_BufferedAdminSink_msginit, extreg, options, arena) !=
+      kUpb_DecodeStatus_Ok) {
+    return NULL;
+  }
+  return ret;
+}
+UPB_INLINE char* envoy_config_tap_v3_BufferedAdminSink_serialize(const envoy_config_tap_v3_BufferedAdminSink* msg, upb_Arena* arena, size_t* len) {
+  char* ptr;
+  (void)upb_Encode(msg, &envoy_config_tap_v3_BufferedAdminSink_msginit, 0, arena, &ptr, len);
+  return ptr;
+}
+UPB_INLINE char* envoy_config_tap_v3_BufferedAdminSink_serialize_ex(const envoy_config_tap_v3_BufferedAdminSink* msg, int options,
+                                 upb_Arena* arena, size_t* len) {
+  char* ptr;
+  (void)upb_Encode(msg, &envoy_config_tap_v3_BufferedAdminSink_msginit, options, arena, &ptr, len);
+  return ptr;
+}
+UPB_INLINE void envoy_config_tap_v3_BufferedAdminSink_clear_max_traces(const envoy_config_tap_v3_BufferedAdminSink* msg) {
+  *UPB_PTR_AT(msg, UPB_SIZE(8, 16), uint64_t) = 0;
+}
+UPB_INLINE uint64_t envoy_config_tap_v3_BufferedAdminSink_max_traces(const envoy_config_tap_v3_BufferedAdminSink* msg) {
+  return *UPB_PTR_AT(msg, UPB_SIZE(8, 16), uint64_t);
+}
+UPB_INLINE bool envoy_config_tap_v3_BufferedAdminSink_has_timeout(const envoy_config_tap_v3_BufferedAdminSink* msg) {
+  return _upb_hasbit(msg, 1);
+}
+UPB_INLINE void envoy_config_tap_v3_BufferedAdminSink_clear_timeout(const envoy_config_tap_v3_BufferedAdminSink* msg) {
+  *UPB_PTR_AT(msg, UPB_SIZE(4, 8), const upb_Message*) = NULL;
+}
+UPB_INLINE const struct google_protobuf_Duration* envoy_config_tap_v3_BufferedAdminSink_timeout(const envoy_config_tap_v3_BufferedAdminSink* msg) {
+  return *UPB_PTR_AT(msg, UPB_SIZE(4, 8), const struct google_protobuf_Duration*);
+}
+
+UPB_INLINE void envoy_config_tap_v3_BufferedAdminSink_set_max_traces(envoy_config_tap_v3_BufferedAdminSink *msg, uint64_t value) {
+  *UPB_PTR_AT(msg, UPB_SIZE(8, 16), uint64_t) = value;
+}
+UPB_INLINE void envoy_config_tap_v3_BufferedAdminSink_set_timeout(envoy_config_tap_v3_BufferedAdminSink *msg, struct google_protobuf_Duration* value) {
+  _upb_sethas(msg, 1);
+  *UPB_PTR_AT(msg, UPB_SIZE(4, 8), struct google_protobuf_Duration*) = value;
+}
+UPB_INLINE struct google_protobuf_Duration* envoy_config_tap_v3_BufferedAdminSink_mutable_timeout(envoy_config_tap_v3_BufferedAdminSink* msg, upb_Arena* arena) {
+  struct google_protobuf_Duration* sub = (struct google_protobuf_Duration*)envoy_config_tap_v3_BufferedAdminSink_timeout(msg);
+  if (sub == NULL) {
+    sub = (struct google_protobuf_Duration*)_upb_Message_New(&google_protobuf_Duration_msginit, arena);
+    if (!sub) return NULL;
+    envoy_config_tap_v3_BufferedAdminSink_set_timeout(msg, sub);
+  }
+  return sub;
+}
 
 /* envoy.config.tap.v3.FilePerTapSink */
 
