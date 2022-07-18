@@ -97,6 +97,8 @@ typedef size_t msg_iovlen_type;
 
 extern grpc_core::TraceFlag grpc_tcp_trace;
 
+static constexpr int kMaxPerSendmsgBytes = 2 * 1024 * 1024;
+
 GPR_GLOBAL_CONFIG_DECLARE_BOOL(grpc_experimental_enable_tcp_frame_size_tuning);
 
 namespace grpc_core {
@@ -115,7 +117,7 @@ class TcpZerocopySendRecord {
   //   array that will be used for a zerocopy enabled sendmsg().
   msg_iovlen_type PopulateIovs(size_t* unwind_slice_idx,
                                size_t* unwind_byte_idx, size_t* sending_length,
-                               iovec* iov);
+                               iovec* iov, int max_allowed_length);
 
   // A sendmsg() may not be able to send the bytes that we requested at this
   // time, returning EAGAIN (possibly due to backpressure). In this case,
@@ -132,6 +134,9 @@ class TcpZerocopySendRecord {
 
   // Indicates whether all underlying data has been sent or not.
   bool AllSlicesSent() { return out_offset_.slice_idx == buf_.count; }
+
+  // Returns the total length of the underlying data;
+  int Length() { return buf_.length; }
 
   // Reset this structure for a new tcp_write() with zerocopy.
   void PrepareForSends(grpc_slice_buffer* slices_to_send) {
@@ -381,10 +386,15 @@ class TcpZerocopySendCtx {
   //
   // Please refer to the STATE TRANSITION DIAGRAM below for more details.
   //
-  bool UpdateZeroCopyOMemStateAfterSend(bool seen_enobuf) {
+  bool UpdateZeroCopyOMemStateAfterSend(bool seen_enobuf, bool& cont) {
     MutexLock guard(&lock_);
     is_in_write_ = false;
+    cont = false;
     if (seen_enobuf) {
+      if (ctx_lookup_.size() == 1) {
+        // There is no un-acked z-copy record. Retry the sendmsg again.
+        cont = true;
+      }
       if (zcopy_enobuf_state_ == OMemState::CHECK) {
         zcopy_enobuf_state_ = OMemState::OPEN;
         return true;
@@ -489,6 +499,8 @@ struct grpc_tcp {
 
   int min_read_chunk_size;
   int max_read_chunk_size;
+
+  int max_per_sendmsg_length;
 
   /* garbage after the last read */
   grpc_slice_buffer last_read_buffer;
@@ -1111,6 +1123,7 @@ ssize_t tcp_send(int fd, const struct msghdr* msg, int* saved_errno,
   do {
     /* TODO(klempner): Cork if this is a partial write */
     GRPC_STATS_INC_SYSCALL_WRITE();
+    errno = 0;
     sent_length = sendmsg(fd, msg, SENDMSG_FLAGS | additional_flags);
   } while (sent_length < 0 && (*saved_errno = errno) == EINTR);
   return sent_length;
@@ -1460,22 +1473,31 @@ void tcp_shutdown_buffer_list(grpc_tcp* tcp) {
 msg_iovlen_type TcpZerocopySendRecord::PopulateIovs(size_t* unwind_slice_idx,
                                                     size_t* unwind_byte_idx,
                                                     size_t* sending_length,
-                                                    iovec* iov) {
+                                                    iovec* iov,
+                                                    int max_allowed_length) {
+  size_t slice_rem_length;
   msg_iovlen_type iov_size;
   *unwind_slice_idx = out_offset_.slice_idx;
   *unwind_byte_idx = out_offset_.byte_idx;
-  for (iov_size = 0;
-       out_offset_.slice_idx != buf_.count && iov_size != MAX_WRITE_IOVEC;
+  for (iov_size = 0; out_offset_.slice_idx != buf_.count &&
+                     iov_size != MAX_WRITE_IOVEC && max_allowed_length > 0;
        iov_size++) {
     iov[iov_size].iov_base =
         GRPC_SLICE_START_PTR(buf_.slices[out_offset_.slice_idx]) +
         out_offset_.byte_idx;
-    iov[iov_size].iov_len =
-        GRPC_SLICE_LENGTH(buf_.slices[out_offset_.slice_idx]) -
-        out_offset_.byte_idx;
+    slice_rem_length = GRPC_SLICE_LENGTH(buf_.slices[out_offset_.slice_idx]) -
+                       out_offset_.byte_idx;
+    if (max_allowed_length >= slice_rem_length) {
+      ++(out_offset_.slice_idx);
+      out_offset_.byte_idx = 0;
+      iov[iov_size].iov_len = slice_rem_length;
+      max_allowed_length -= slice_rem_length;
+    } else {
+      out_offset_.byte_idx += max_allowed_length;
+      iov[iov_size].iov_len = max_allowed_length;
+      max_allowed_length = 0;
+    }
     *sending_length += iov[iov_size].iov_len;
-    ++(out_offset_.slice_idx);
-    out_offset_.byte_idx = 0;
   }
   GPR_DEBUG_ASSERT(iov_size > 0);
   return iov_size;
@@ -1486,8 +1508,13 @@ void TcpZerocopySendRecord::UpdateOffsetForBytesSent(size_t sending_length,
   size_t trailing = sending_length - actually_sent;
   while (trailing > 0) {
     size_t slice_length;
-    out_offset_.slice_idx--;
-    slice_length = GRPC_SLICE_LENGTH(buf_.slices[out_offset_.slice_idx]);
+    if (out_offset_.byte_idx > 0) {
+      slice_length = out_offset_.byte_idx;
+      out_offset_.byte_idx = 0;
+    } else {
+      out_offset_.slice_idx--;
+      slice_length = GRPC_SLICE_LENGTH(buf_.slices[out_offset_.slice_idx]);
+    }
     if (slice_length > trailing) {
       out_offset_.byte_idx = slice_length - trailing;
       break;
@@ -1508,20 +1535,23 @@ static bool do_tcp_flush_zerocopy(grpc_tcp* tcp, TcpZerocopySendRecord* record,
   bool tried_sending_message;
   int saved_errno;
   msghdr msg;
+  bool cont;
   // iov consumes a large space. Keep it as the last item on the stack to
   // improve locality. After all, we expect only the first elements of it being
   // populated in most cases.
   iovec iov[MAX_WRITE_IOVEC];
   while (true) {
     sending_length = 0;
-    iov_size = record->PopulateIovs(&unwind_slice_idx, &unwind_byte_idx,
-                                    &sending_length, iov);
+    iov_size =
+        record->PopulateIovs(&unwind_slice_idx, &unwind_byte_idx,
+                             &sending_length, iov, tcp->max_per_sendmsg_length);
     msg.msg_name = nullptr;
     msg.msg_namelen = 0;
     msg.msg_iov = iov;
     msg.msg_iovlen = iov_size;
     msg.msg_flags = 0;
     tried_sending_message = false;
+    cont = false;
     // Before calling sendmsg (with or without timestamps): we
     // take a single ref on the zerocopy send record.
     tcp->tcp_zerocopy_send_ctx.NoteSend(record);
@@ -1539,6 +1569,7 @@ static bool do_tcp_flush_zerocopy(grpc_tcp* tcp, TcpZerocopySendRecord* record,
       }
     }
     if (!tried_sending_message) {
+      saved_errno = 0;
       msg.msg_control = nullptr;
       msg.msg_controllen = 0;
       GRPC_STATS_INC_TCP_WRITE_SIZE(sending_length);
@@ -1546,7 +1577,21 @@ static bool do_tcp_flush_zerocopy(grpc_tcp* tcp, TcpZerocopySendRecord* record,
       sent_length = tcp_send(tcp->fd, &msg, &saved_errno, MSG_ZEROCOPY);
     }
     if (tcp->tcp_zerocopy_send_ctx.UpdateZeroCopyOMemStateAfterSend(
-            saved_errno == ENOBUFS)) {
+            saved_errno == ENOBUFS, cont) ||
+        cont) {
+      // If cont, is true it implies that we received an ENOBUFS error but
+      // there are no un-acked z-copy records. This situation may arise because
+      // The output queue for a network interface was full. This generally
+      // indicates that the interface has stopped sending, but may be caused by
+      // transient congestion (source: https://linux.die.net/man/2/sendmsg)
+      // In this case, we reduce the max sendmsg length by half and retry.
+      // This should increase the likely hood of a sendmsg succeeding the next
+      // time around.
+      if (cont) {
+        tcp->max_per_sendmsg_length = std::max(
+            static_cast<int>(tcp->tcp_zerocopy_send_ctx.threshold_bytes()),
+            tcp->max_per_sendmsg_length / 2);
+      }
       grpc_fd_set_writable(tcp->em_fd);
     }
     if (sent_length < 0) {
@@ -1566,6 +1611,9 @@ static bool do_tcp_flush_zerocopy(grpc_tcp* tcp, TcpZerocopySendRecord* record,
       }
     }
     tcp->bytes_counter += sent_length;
+    // After a successfull send, we simply reset the max sendmsg length to its
+    // default original value.
+    tcp->max_per_sendmsg_length = record->Length();
     record->UpdateOffsetForBytesSent(sending_length,
                                      static_cast<size_t>(sent_length));
     if (record->AllSlicesSent()) {
@@ -1786,6 +1834,8 @@ static void tcp_write(grpc_endpoint* ep, grpc_slice_buffer* buf,
     // Either not enough bytes, or couldn't allocate a zerocopy context.
     tcp->outgoing_buffer = buf;
     tcp->outgoing_byte_idx = 0;
+  } else {
+    tcp->max_per_sendmsg_length = zerocopy_send_record->Length();
   }
   tcp->outgoing_buffer_arg = arg;
   if (arg) {
@@ -1966,6 +2016,7 @@ grpc_endpoint* grpc_tcp_create(grpc_fd* em_fd,
   tcp->outgoing_buffer_arg = nullptr;
   tcp->frame_size_tuning_enabled = ExperimentalTcpFrameSizeTuningEnabled();
   tcp->min_progress_size = 1;
+  tcp->max_per_sendmsg_length = kMaxPerSendmsgBytes;
   if (tcp_tx_zerocopy_enabled && !tcp->tcp_zerocopy_send_ctx.memory_limited()) {
 #ifdef GRPC_LINUX_ERRQUEUE
     const int enable = 1;
