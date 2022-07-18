@@ -1193,9 +1193,11 @@ void XdsClient::ChannelState::LrsCallState::Reporter::OnReportDoneLocked() {
   // If there are no more registered stats to report, cancel the call.
   auto it =
       xds_client()->xds_load_report_server_map_.find(parent_->chand()->server_);
-  if (it == xds_client()->xds_load_report_server_map_.end() ||
-      it->second.load_report_map.empty()) {
-    it->second.channel_state->StopLrsCallLocked();
+  if (it == xds_client()->xds_load_report_server_map_.end()) return;
+  if (it->second.load_report_map.empty()) {
+    if (it->second.channel_state != nullptr) {
+      it->second.channel_state->StopLrsCallLocked();
+    }
     return;
   }
   // Otherwise, schedule the next load report.
