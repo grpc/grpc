@@ -31,11 +31,18 @@
 #include "src/core/lib/gprpp/construct_destruct.h"
 #include "src/core/lib/promise/detail/promise_factory.h"
 #include "src/core/lib/promise/detail/promise_like.h"
-#include "src/core/lib/promise/detail/switch.h"
 #include "src/core/lib/promise/poll.h"
 
 namespace grpc_core {
 namespace promise_detail {
+
+// Given f0, ..., fn, call function idx and return the result.
+template <typename R, typename A, R (*... f)(A* arg)>
+R SwitchFn(size_t idx, A* arg) {
+  using Fn = R (*)(A * arg);
+  static const Fn fs[sizeof...(f)] = {f...};
+  return fs[idx](arg);
+}
 
 // Helper for SeqState to evaluate some common types to all partial
 // specializations.
@@ -335,16 +342,14 @@ class BasicSeq {
   // parameter unpacking can work.
   template <char I>
   struct RunStateStruct {
-    BasicSeq* s;
-    Poll<Result> operator()() { return s->RunState<I>(); }
+    static Poll<Result> Run(BasicSeq* s) { return s->RunState<I>(); }
   };
 
   // Similarly placate those compilers for
   // DestructCurrentPromiseAndSubsequentFactories
   template <char I>
   struct DestructCurrentPromiseAndSubsequentFactoriesStruct {
-    BasicSeq* s;
-    void operator()() {
+    static void Run(BasicSeq* s) {
       return s->DestructCurrentPromiseAndSubsequentFactories<I>();
     }
   };
@@ -357,7 +362,8 @@ class BasicSeq {
   // Duff's device like mechanic for evaluating sequences.
   template <char... I>
   Poll<Result> Run(absl::integer_sequence<char, I...>) {
-    return Switch<Poll<Result>>(state_, RunStateStruct<I>{this}...);
+    return SwitchFn<Poll<Result>, BasicSeq, RunStateStruct<I>::Run...>(state_,
+                                                                       this);
   }
 
   // Run the appropriate destructors for a given state.
@@ -367,8 +373,9 @@ class BasicSeq {
   // which can choose the correct instance at runtime to destroy everything.
   template <char... I>
   void RunDestruct(absl::integer_sequence<char, I...>) {
-    Switch<void>(
-        state_, DestructCurrentPromiseAndSubsequentFactoriesStruct<I>{this}...);
+    SwitchFn<void, BasicSeq,
+             DestructCurrentPromiseAndSubsequentFactoriesStruct<I>::Run...>(
+        state_, this);
   }
 
  public:
