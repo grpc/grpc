@@ -43,7 +43,7 @@ class ClientCallbackImpl {
       std::unique_ptr<grpc::testing::BenchmarkService::Stub> stub)
       : stub_(std::move(stub)) {}
 
-  void UnaryCall(std::function<void()> on_done) {
+  void UnaryCall() {
     struct CallParams {
       grpc::ClientContext context;
       grpc::testing::SimpleRequest request;
@@ -52,18 +52,14 @@ class ClientCallbackImpl {
 
     CallParams* params = new CallParams();
 
-    auto callback = [params, on_done](const grpc::Status& status) {
+    auto callback = [params](const grpc::Status& status) {
       if (!status.ok()) {
-        LOG(ERROR) << "UnaryCall RPC failed.";
+        gpr_log(GPR_ERROR, "UnaryCall RPC failed.");
         delete params;
-        LOG(INFO) << "Before on done";
-        on_done();
-        LOG(INFO) << "After on done";
         return;
       }
-      LOG(INFO) << "UnaryCall RPC succeeded.";
+      gpr_log(GPR_INFO, "UnaryCall RPC succeeded.");
       delete params;
-      // on_done();
       return;
     };
 
@@ -80,36 +76,29 @@ ABSL_FLAG(std::string, target, "localhost:443", "Target host:port");
 ABSL_FLAG(bool, secure, false, "Use SSL Credentials");
 
 int main(int argc, char** argv) {
-  // testing::InitGoogleTest(&argc, argv);
-  // LOG(INFO)<< absl::GetFlag(FLAGS_target);
   absl::ParseCommandLine(argc, argv);
-  LOG(INFO) << absl::GetFlag(FLAGS_target);
-  // grpc_slice slice = grpc_slice_from_copied_string("x");
+
   char* fake_argv[1];
 
   GPR_ASSERT(argc >= 1);
   fake_argv[0] = argv[0];
   grpc::testing::TestEnvironment env(&argc, argv);
 
-  //grpc_init();
-  LOG(INFO) << "After Client Init";
-
   // Set the authentication mechanism.
   std::shared_ptr<grpc::ChannelCredentials> creds =
       grpc::InsecureChannelCredentials();
   if (absl::GetFlag(FLAGS_secure)) {
-    printf("Supposed to be secure\n");
-    // creds = Loas2Credentials(grpc::SslCredentialsOptions());
+    gpr_log(GPR_INFO, "Supposed to be secure");
+    // TODO (chennancy) Add in secure credentials
   }
 
-  // Use gRPC calls to seek for or suggest fortune.
+  // Create a channel to the server and a stub
   std::shared_ptr<grpc::Channel> channel =
       CreateChannel(absl::GetFlag(FLAGS_target), creds);
   ClientCallbackImpl client(grpc::testing::BenchmarkService::NewStub(channel));
+  gpr_log(GPR_INFO, "Client Target: %s", absl::GetFlag(FLAGS_target).c_str());
 
-  client.UnaryCall([]() {
-    LOG(INFO) << "ON DONE\n";
-  });  // may need to add the on done parameter
-  LOG(INFO) << "Client Done";
+  client.UnaryCall();
+  gpr_log(GPR_INFO, "Client Done");
   return 0;
 }

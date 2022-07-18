@@ -27,7 +27,6 @@
 #include "absl/strings/str_cat.h"
 #include "util/logging.h"
 
-
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
@@ -39,7 +38,9 @@
 #include "test/core/util/subprocess.h"
 #include "test/core/util/test_config.h"
 
-ABSL_FLAG(std::string, benchmark_name, "channel", "Which benchmark to run");
+ABSL_FLAG(
+    std::string, benchmark_name, "channel",
+    "Which benchmark to run");  // TODO (chennancy) change default back to call
 ABSL_FLAG(int, size, 50000, "Number of channels/calls");
 ABSL_FLAG(std::string, scenario_config, "insecure",
           "Possible Values: minstack (Use minimal stack), resource_quota, "
@@ -59,10 +60,7 @@ class Subprocess {
   }
 
   int Join() { return gpr_subprocess_join(process_); }
-  void Interrupt() {
-    gpr_subprocess_interrupt(process_);
-    LOG(INFO)<<"Interrupt called";
-  }
+  void Interrupt() { gpr_subprocess_interrupt(process_); }
 
   ~Subprocess() { gpr_subprocess_destroy(process_); }
 
@@ -135,14 +133,16 @@ int main(int argc, char** argv) {
     svr.Interrupt();
     return svr.Join() == 0 ? 0 : 2;
   } else if (absl::GetFlag(FLAGS_benchmark_name) == "channel") {
-    LOG(INFO)<<"Port: "<< port;
-
+    /* Per-channel benchmark*/
     /* start the server */
     std::vector<std::string> server_flags = {
         absl::StrCat(root, "/memory_usage_callback_server",
                      gpr_subprocess_binary_extension()),
         "--bind", grpc_core::JoinHostPort("::", port)};
     Subprocess svr(server_flags);
+
+    // Wait one second before starting client to avoid race conditions
+    gpr_sleep_until(grpc_timeout_seconds_to_deadline(1));
 
     /* start the client */
     std::vector<std::string> client_flags = {
