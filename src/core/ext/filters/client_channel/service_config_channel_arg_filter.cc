@@ -23,6 +23,8 @@
 #include <string>
 #include <utility>
 
+#include "absl/status/status.h"
+#include "absl/status/statusor.h"
 #include "absl/types/optional.h"
 
 #include <grpc/impl/codegen/grpc_types.h>

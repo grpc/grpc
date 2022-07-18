@@ -29,8 +29,6 @@
 #include "absl/status/statusor.h"
 #include "absl/strings/string_view.h"
 
-#include <grpc/support/log.h>
-
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/json/json.h"
 
