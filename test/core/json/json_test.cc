@@ -96,6 +96,13 @@ TEST(Json, Utf16) {
                  "\" \\\\\\u0010\\n\\r\"");
 }
 
+MATCHER(ContainsInvalidUtf8, "") {
+  grpc_error_handle error = GRPC_ERROR_NONE;
+  const Json json = Json::Parse(arg, &error);
+  return (error.code() == absl::StatusCode::kUnknown) &&
+         (error.message().find("JSON parsing failed") != std::string::npos);
+}
+
 TEST(Json, Utf8) {
   RunSuccessTest("\"ßâñć௵⇒\"", "ßâñć௵⇒",
                  "\"\\u00df\\u00e2\\u00f1\\u0107\\u0bf5\\u21d2\"");
@@ -109,6 +116,14 @@ TEST(Json, Utf8) {
   RunSuccessTest("{\"\\ud834\\udd1e\":0}",
                  Json::Object{{"\xf0\x9d\x84\x9e", 0}},
                  "{\"\\ud834\\udd1e\":0}");
+
+  EXPECT_THAT("\"\xa0\"", ContainsInvalidUtf8());
+  EXPECT_THAT("\"\xc0\xbc\"", ContainsInvalidUtf8());
+  EXPECT_THAT("\"\xbc\xc0\"", ContainsInvalidUtf8());
+  EXPECT_THAT("\"\xe0\x80\x80\"", ContainsInvalidUtf8());
+  EXPECT_THAT("\"\xed\xa0\x80\"", ContainsInvalidUtf8());
+  EXPECT_THAT("\"\xf0\x80\x80\x80\"", ContainsInvalidUtf8());
+  EXPECT_THAT("\"\xf4\x90\x80\x80\"", ContainsInvalidUtf8());
 }
 
 TEST(Json, NestedEmptyContainers) {
