@@ -155,6 +155,7 @@ IpAuthorizationMatcher::IpAuthorizationMatcher(Type type, Rbac::CidrRange range)
   if (!address.ok()) {
     gpr_log(GPR_DEBUG, "CidrRange address \"%s\" is not IPv4/IPv6. Error: %s",
             range.address_prefix.c_str(), address.status().ToString().c_str());
+    memset(&subnet_address_, 0, sizeof(subnet_address_));
     return;
   }
   subnet_address_ = *address;
