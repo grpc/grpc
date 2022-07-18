@@ -139,6 +139,15 @@ UPB_INLINE void envoy_admin_v3_ListenerStatus_clear_local_address(const envoy_ad
 UPB_INLINE const struct envoy_config_core_v3_Address* envoy_admin_v3_ListenerStatus_local_address(const envoy_admin_v3_ListenerStatus* msg) {
   return *UPB_PTR_AT(msg, UPB_SIZE(12, 24), const struct envoy_config_core_v3_Address*);
 }
+UPB_INLINE bool envoy_admin_v3_ListenerStatus_has_additional_local_addresses(const envoy_admin_v3_ListenerStatus* msg) {
+  return _upb_has_submsg_nohasbit(msg, UPB_SIZE(16, 32));
+}
+UPB_INLINE void envoy_admin_v3_ListenerStatus_clear_additional_local_addresses(const envoy_admin_v3_ListenerStatus* msg) {
+  _upb_array_detach(msg, UPB_SIZE(16, 32));
+}
+UPB_INLINE const struct envoy_config_core_v3_Address* const* envoy_admin_v3_ListenerStatus_additional_local_addresses(const envoy_admin_v3_ListenerStatus* msg, size_t* len) {
+  return (const struct envoy_config_core_v3_Address* const*)_upb_array_accessor(msg, UPB_SIZE(16, 32), len);
+}
 
 UPB_INLINE void envoy_admin_v3_ListenerStatus_set_name(envoy_admin_v3_ListenerStatus *msg, upb_StringView value) {
   *UPB_PTR_AT(msg, UPB_SIZE(4, 8), upb_StringView) = value;
@@ -154,6 +163,18 @@ UPB_INLINE struct envoy_config_core_v3_Address* envoy_admin_v3_ListenerStatus_mu
     if (!sub) return NULL;
     envoy_admin_v3_ListenerStatus_set_local_address(msg, sub);
   }
+  return sub;
+}
+UPB_INLINE struct envoy_config_core_v3_Address** envoy_admin_v3_ListenerStatus_mutable_additional_local_addresses(envoy_admin_v3_ListenerStatus* msg, size_t* len) {
+  return (struct envoy_config_core_v3_Address**)_upb_array_mutable_accessor(msg, UPB_SIZE(16, 32), len);
+}
+UPB_INLINE struct envoy_config_core_v3_Address** envoy_admin_v3_ListenerStatus_resize_additional_local_addresses(envoy_admin_v3_ListenerStatus* msg, size_t len, upb_Arena* arena) {
+  return (struct envoy_config_core_v3_Address**)_upb_Array_Resize_accessor2(msg, UPB_SIZE(16, 32), len, UPB_SIZE(2, 3), arena);
+}
+UPB_INLINE struct envoy_config_core_v3_Address* envoy_admin_v3_ListenerStatus_add_additional_local_addresses(envoy_admin_v3_ListenerStatus* msg, upb_Arena* arena) {
+  struct envoy_config_core_v3_Address* sub = (struct envoy_config_core_v3_Address*)_upb_Message_New(&envoy_config_core_v3_Address_msginit, arena);
+  bool ok = _upb_Array_Append_accessor2(msg, UPB_SIZE(16, 32), UPB_SIZE(2, 3), &sub, arena);
+  if (!ok) return NULL;
   return sub;
 }
 
