@@ -1053,7 +1053,6 @@ static grpc_error_handle pollset_work(grpc_pollset* pollset,
         for (i = 1; i < pfd_count; i++) {
           if (watchers[i].fd == nullptr) {
             fd_end_poll(&watchers[i], 0, 0);
-
           } else {
             if (GRPC_TRACE_FLAG_ENABLED(grpc_polling_trace)) {
               gpr_log(GPR_INFO, "%p got_event: %d r:%d w:%d [%d]", pollset,

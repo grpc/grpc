@@ -42,13 +42,15 @@
 #include <grpc/support/sync.h>
 #include <grpc/support/time.h>
 
-#include "src/core/lib/event_engine/iomgr_engine/ev_epoll1_linux.h"
-#include "src/core/lib/event_engine/iomgr_engine/ev_poll_posix.h"
 #include "src/core/lib/event_engine/iomgr_engine/event_poller.h"
+#include "src/core/lib/event_engine/iomgr_engine/event_poller_posix_default.h"
 #include "src/core/lib/event_engine/iomgr_engine/iomgr_engine.h"
 #include "src/core/lib/event_engine/iomgr_engine/iomgr_engine_closure.h"
 #include "src/core/lib/iomgr/socket_utils_posix.h"
 #include "test/core/util/port.h"
+
+GPR_GLOBAL_CONFIG_DEFINE_STRING(grpc_poll_strategy, "epoll",
+                                "poll strategy to use");
 
 using ::grpc_event_engine::iomgr_engine::EventPoller;
 
@@ -358,14 +360,44 @@ void WaitAndShutdown(server* sv, client* cl) {
   gpr_mu_unlock(&g_mu);
 }
 
+std::string TestScenarioName(
+    const ::testing::TestParamInfo<std::string>& info) {
+  return info.param;
+}
+
+class EventPollerTest : public ::testing::TestWithParam<std::string> {
+  void SetUp() override {
+    engine_ =
+        absl::make_unique<grpc_event_engine::experimental::IomgrEventEngine>();
+    EXPECT_NE(engine_, nullptr);
+    scheduler_ =
+        absl::make_unique<grpc_event_engine::iomgr_engine::TestScheduler>(
+            engine_.get());
+    EXPECT_NE(scheduler_, nullptr);
+    GPR_GLOBAL_CONFIG_SET(grpc_poll_strategy, GetParam().c_str());
+    g_event_poller = GetDefaultPoller(scheduler_.get());
+  }
+  void TearDown() override {
+    if (g_event_poller != nullptr) {
+      g_event_poller->Shutdown();
+    }
+  }
+
+ private:
+  std::unique_ptr<grpc_event_engine::experimental::IomgrEventEngine> engine_;
+  std::unique_ptr<grpc_event_engine::iomgr_engine::TestScheduler> scheduler_;
+};
+
 // Test grpc_fd. Start an upload server and client, upload a stream of bytes
-// from the client to the server, and verify that the total number of sent bytes
-// is equal to the total number of received bytes.
-TEST(EventPollerTest, TestEventPollerHandle) {
+// from the client to the server, and verify that the total number of sent
+// bytes is equal to the total number of received bytes.
+TEST_P(EventPollerTest, TestEventPollerHandle) {
   server sv;
   client cl;
   int port;
-
+  if (g_event_poller == nullptr) {
+    return;
+  }
   ServerInit(&sv);
   port = ServerStart(&sv);
   ClientInit(&cl);
@@ -401,13 +433,16 @@ void SecondReadCallback(FdChangeData* fdc, absl::Status /*status*/) {
 // Note that we have two different but almost identical callbacks above -- the
 // point is to have two different function pointers and two different data
 // pointers and make sure that changing both really works.
-TEST(EventPollerTest, TestEventPollerHandleChange) {
+TEST_P(EventPollerTest, TestEventPollerHandleChange) {
   EventHandle* em_fd;
   FdChangeData a, b;
   int flags;
   int sv[2];
   char data;
   ssize_t result;
+  if (g_event_poller == nullptr) {
+    return;
+  }
   IomgrEngineClosure* first_closure = IomgrEngineClosure::TestOnlyToClosure(
       [a = &a](absl::Status status) { FirstReadCallback(a, status); });
   IomgrEngineClosure* second_closure = IomgrEngineClosure::TestOnlyToClosure(
@@ -472,29 +507,18 @@ TEST(EventPollerTest, TestEventPollerHandleChange) {
   close(sv[1]);
 }
 
+INSTANTIATE_TEST_SUITE_P(EventPoller, EventPollerTest,
+                         ::testing::ValuesIn({std::string("epoll1"),
+                                              std::string("poll")}),
+                         &TestScenarioName);
+
 }  // namespace
 }  // namespace iomgr_engine
 }  // namespace grpc_event_engine
 
 int main(int argc, char** argv) {
   ::testing::InitGoogleTest(&argc, argv);
-  auto engine =
-      absl::make_unique<grpc_event_engine::experimental::IomgrEventEngine>();
-  int result = 0;
-  EXPECT_NE(engine, nullptr);
-  grpc_event_engine::iomgr_engine::TestScheduler scheduler(engine.get());
-  // Try both pollers (epoll1 and poll) one after the other.
-  g_event_poller = grpc_event_engine::iomgr_engine::GetEpoll1Poller(&scheduler);
-  if (g_event_poller != nullptr) {
-    result = RUN_ALL_TESTS();
-    g_event_poller->Shutdown();
-  }
-  g_event_poller = grpc_event_engine::iomgr_engine::GetPollPoller(&scheduler);
-  if (g_event_poller != nullptr) {
-    result |= RUN_ALL_TESTS();
-    g_event_poller->Shutdown();
-  }
-  return result;
+  return RUN_ALL_TESTS();
 }
 
 #else /* GRPC_POSIX_SOCKET_EV */

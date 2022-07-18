@@ -27,8 +27,6 @@
 #include "src/core/lib/event_engine/iomgr_engine/wakeup_fd_posix.h"
 #include "src/core/lib/iomgr/port.h"
 
-#define MAX_EPOLL_EVENTS 100
-
 namespace grpc_event_engine {
 namespace iomgr_engine {
 
@@ -38,6 +36,7 @@ class PollEventHandle;
 class PollPoller : public EventPoller {
  public:
   explicit PollPoller(Scheduler* scheduler);
+  PollPoller(Scheduler* scheduler, bool use_phony_poll);
   EventHandle* CreateHandle(int fd, absl::string_view name,
                             bool track_err) override;
   absl::Status Work(grpc_core::Timestamp deadline,
@@ -68,6 +67,7 @@ class PollPoller : public EventPoller {
   absl::Mutex mu_;
   Scheduler* scheduler_;
   std::atomic<int> ref_count_{1};
+  bool use_phony_poll_;
   bool was_kicked_ ABSL_GUARDED_BY(mu_);
   bool was_kicked_ext_ ABSL_GUARDED_BY(mu_);
   int num_poll_handles_ ABSL_GUARDED_BY(mu_);
@@ -76,7 +76,9 @@ class PollPoller : public EventPoller {
 };
 
 // Return an instance of a poll based poller tied to the specified scheduler.
-PollPoller* GetPollPoller(Scheduler* scheduler);
+// It use_phony_poll is true, it implies that the poller is declared non-polling
+// and any attempt to schedule a blocking poll will result in a crash failure.
+PollPoller* GetPollPoller(Scheduler* scheduler, bool use_phony_poll);
 
 }  // namespace iomgr_engine
 }  // namespace grpc_event_engine

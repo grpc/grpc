@@ -2546,6 +2546,7 @@ grpc_cc_library(
     ],
     tags = ["grpc-autodeps"],
     deps = [
+        "gpr_base",
         "gpr_platform",
         "iomgr_ee_event_poller",
         "iomgr_ee_poller_posix_epoll1",
