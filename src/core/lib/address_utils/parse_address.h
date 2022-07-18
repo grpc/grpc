@@ -68,9 +68,9 @@ namespace grpc_core {
 // Parses an IPv4 or IPv6 address string and returns a sockaddr with the
 // specified address and port.
 absl::StatusOr<grpc_resolved_address> StringToSockaddr(
-    absl::string_view address, int port);
+    absl::string_view address_and_port);
 absl::StatusOr<grpc_resolved_address> StringToSockaddr(
-    absl::string_view addr_and_port);
+    absl::string_view address, int port);
 
 /** Populate \a resolved_addr to be a unix socket at |path| */
 grpc_error_handle UnixSockaddrPopulate(absl::string_view path,
