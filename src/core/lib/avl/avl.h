@@ -104,30 +104,50 @@ class AVL {
   };
   NodePtr root_;
 
+  class IteratorStack {
+   public:
+    void Push(Node* n) {
+      nodes_[depth_] = n;
+      ++depth_;
+    }
+
+    Node* Pop() {
+      --depth_;
+      return nodes_[depth_];
+    }
+
+    Node* Back() const { return nodes_[depth_ - 1]; }
+
+    bool Empty() const { return depth_ == 0; }
+
+   private:
+    size_t depth_{0};
+    Node* nodes_[32];
+  };
+
   class Iterator {
    public:
     explicit Iterator(const NodePtr& root) {
       auto* n = root.get();
       while (n != nullptr) {
-        stack_.push_back(n);
+        stack_.Push(n);
         n = n->left.get();
       }
     }
-    Node* current() const { return stack_.empty() ? nullptr : stack_.back(); }
+    Node* current() const { return stack_.Empty() ? nullptr : stack_.Back(); }
     void MoveNext() {
-      auto* n = stack_.back();
-      stack_.pop_back();
+      auto* n = stack_.Pop();
       if (n->right != nullptr) {
         n = n->right.get();
         while (n != nullptr) {
-          stack_.push_back(n);
+          stack_.Push(n);
           n = n->left.get();
         }
       }
     }
 
    private:
-    std::vector<Node*> stack_;
+    IteratorStack stack_;
   };
 
   explicit AVL(NodePtr root) : root_(std::move(root)) {}
