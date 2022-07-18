@@ -35,6 +35,8 @@
 #include "test/core/util/subprocess.h"
 #include "test/core/util/test_config.h"
 
+int finished_rpcs=0;
+
 class ClientCallbackImpl {
  public:
   ClientCallbackImpl(
@@ -50,13 +52,16 @@ class ClientCallbackImpl {
 
     CallParams* params = new CallParams();
 
-    auto callback = [params](const grpc::Status& status) {
-      if (!status.ok()) {
-        gpr_log(GPR_ERROR, "UnaryCall RPC failed.");
-        delete params;
-        return;
+    auto callback = [this, params](const grpc::Status& status) {
+      if (status.ok()) {
+        gpr_log(GPR_INFO, "UnaryCall RPC succeeded.");
       }
-      gpr_log(GPR_INFO, "UnaryCall RPC succeeded.");
+      else{
+        gpr_log(GPR_ERROR, "UnaryCall RPC failed.");
+      }
+      finished_rpcs++;
+      if(finished_rpcs==1)
+        this->ServerQuit();
       delete params;
       return;
     };
@@ -85,7 +90,6 @@ class ClientCallbackImpl {
       delete params;
       return;
     };
-
     // Start a call.
     stub_->async()->ServerQuit(&params->context, &params->request,
                               &params->response, callback);
@@ -122,7 +126,6 @@ int main(int argc, char** argv) {
   gpr_log(GPR_INFO, "Client Target: %s", absl::GetFlag(FLAGS_target).c_str());
 
   client.UnaryCall();
-  client.ServerQuit();
   gpr_log(GPR_INFO, "Client Done");
   return 0;
 }
