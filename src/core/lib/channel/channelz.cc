@@ -431,27 +431,30 @@ void PopulateSocketAddressJson(Json::Object* json, const char* name,
       if (address.ok()) {
         std::string packed_host = grpc_sockaddr_get_packed_host(&*address);
         (*json)[name] = Json::Object{
-            {"tcpip_address", Json::Object{
-                {"port", grpc_sockaddr_get_port(&*address)},
-                {"ip_address", absl::Base64Escape(packed_host)},
-            }},
+            {"tcpip_address",
+             Json::Object{
+                 {"port", grpc_sockaddr_get_port(&*address)},
+                 {"ip_address", absl::Base64Escape(packed_host)},
+             }},
         };
         return;
       }
     } else if (uri->scheme() == "unix") {
       (*json)[name] = Json::Object{
-          {"uds_address", Json::Object{
-              {"filename", uri->path()},
-          }},
+          {"uds_address",
+           Json::Object{
+               {"filename", uri->path()},
+           }},
       };
       return;
     }
   }
   // Unknown address type.
   (*json)[name] = Json::Object{
-      {"other_address", Json::Object{
-          {"name", addr_str},
-      }},
+      {"other_address",
+       Json::Object{
+           {"name", addr_str},
+       }},
   };
 }
 
