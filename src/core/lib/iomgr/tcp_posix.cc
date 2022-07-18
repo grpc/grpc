@@ -1123,7 +1123,6 @@ ssize_t tcp_send(int fd, const struct msghdr* msg, int* saved_errno,
   do {
     /* TODO(klempner): Cork if this is a partial write */
     GRPC_STATS_INC_SYSCALL_WRITE();
-    errno = 0;
     sent_length = sendmsg(fd, msg, SENDMSG_FLAGS | additional_flags);
   } while (sent_length < 0 && (*saved_errno = errno) == EINTR);
   return sent_length;
@@ -1569,7 +1568,6 @@ static bool do_tcp_flush_zerocopy(grpc_tcp* tcp, TcpZerocopySendRecord* record,
       }
     }
     if (!tried_sending_message) {
-      saved_errno = 0;
       msg.msg_control = nullptr;
       msg.msg_controllen = 0;
       GRPC_STATS_INC_TCP_WRITE_SIZE(sending_length);
