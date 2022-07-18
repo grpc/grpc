@@ -38,11 +38,21 @@ namespace promise_detail {
 
 // Given f0, ..., fn, call function idx and return the result.
 template <typename R, typename A, R (*... f)(A* arg)>
-R SwitchFn(size_t idx, A* arg) {
-  using Fn = R (*)(A * arg);
-  static const Fn fs[sizeof...(f)] = {f...};
-  return fs[idx](arg);
-}
+class JumpTable {
+ public:
+  JumpTable() = delete;
+  JumpTable(const JumpTable&) = delete;
+
+  static R Run(size_t idx, A* arg) { return fs_[idx](arg); }
+
+ private:
+  using Fn = R (*)(A* arg);
+  static const Fn fs_[sizeof...(f)];
+};
+
+template <typename R, typename A, R (*... f)(A* arg)>
+const typename JumpTable<R, A, f...>::Fn
+    JumpTable<R, A, f...>::fs_[sizeof...(f)] = {f...};
 
 // Helper for SeqState to evaluate some common types to all partial
 // specializations.
@@ -362,8 +372,8 @@ class BasicSeq {
   // Duff's device like mechanic for evaluating sequences.
   template <char... I>
   Poll<Result> Run(absl::integer_sequence<char, I...>) {
-    return SwitchFn<Poll<Result>, BasicSeq, RunStateStruct<I>::Run...>(state_,
-                                                                       this);
+    return JumpTable<Poll<Result>, BasicSeq, RunStateStruct<I>::Run...>::Run(
+        state_, this);
   }
 
   // Run the appropriate destructors for a given state.
@@ -373,9 +383,9 @@ class BasicSeq {
   // which can choose the correct instance at runtime to destroy everything.
   template <char... I>
   void RunDestruct(absl::integer_sequence<char, I...>) {
-    SwitchFn<void, BasicSeq,
-             DestructCurrentPromiseAndSubsequentFactoriesStruct<I>::Run...>(
-        state_, this);
+    JumpTable<void, BasicSeq,
+              DestructCurrentPromiseAndSubsequentFactoriesStruct<I>::Run...>::
+        Run(state_, this);
   }
 
  public:
