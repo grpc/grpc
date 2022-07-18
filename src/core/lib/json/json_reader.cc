@@ -138,43 +138,44 @@ class JsonReader {
 };
 
 bool JsonReader::StringAddChar(uint32_t c) {
-  switch (utf8_bytes_remaining_) {
-    case 0:
-      if ((c & 0x80) == 0) {
-        utf8_bytes_remaining_ = 0;
-      } else if ((c & 0xe0) == 0xc0 && c > 0xc1) {
-        utf8_bytes_remaining_ = 1;
-      } else if ((c & 0xf0) == 0xe0) {
-        utf8_bytes_remaining_ = 2;
-      } else if ((c & 0xf8) == 0xf0) {
-        utf8_bytes_remaining_ = 3;
-      } else {
-        return false;
-      }
-      utf8_first_byte_ = c;
-      break;
-    case 1:
-    case 2:
-      /// Reference: http://www.unicode.org/versions/Unicode6.2.0/ch03.pdf
-      /// Table 3-7
-      if ((utf8_first_byte_ == 0xe0 && c < 0xa0) ||
-          (utf8_first_byte_ == 0xed && c > 0x9f)) {
-        return false;
-      }
-    case 3:
-      /// Reference: http://www.unicode.org/versions/Unicode6.2.0/ch03.pdf
-      /// Table 3-7
-      if ((utf8_first_byte_ == 0xf0 && c < 0x90) ||
-          (utf8_first_byte_ == 0xf4 && c > 0x8f)) {
-        return false;
-      }
-
-      if ((c & 0xc0) != 0x80) return false;
-      --utf8_bytes_remaining_;
-      break;
-    default:
-      abort();
+  if (utf8_bytes_remaining_ == 0) {
+    if ((c & 0x80) == 0) {
+      utf8_bytes_remaining_ = 0;
+    } else if ((c & 0xe0) == 0xc0 && c > 0xc1) {
+      utf8_bytes_remaining_ = 1;
+    } else if ((c & 0xf0) == 0xe0) {
+      utf8_bytes_remaining_ = 2;
+    } else if ((c & 0xf8) == 0xf0) {
+      utf8_bytes_remaining_ = 3;
+    } else {
+      return false;
+    }
+    utf8_first_byte_ = c;
+  } else if (utf8_bytes_remaining_ == 1) {
+    if ((c & 0xc0) != 0x80) {
+      return false;
+    }
+    --utf8_bytes_remaining_;
+  } else if (utf8_bytes_remaining_ == 2) {
+    /// Reference: https://www.unicode.org/versions/Unicode14.0.0/ch03.pdf
+    /// Table 3-7
+    if (((c & 0xc0) != 0x80) || (utf8_first_byte_ == 0xe0 && c < 0xa0) ||
+        (utf8_first_byte_ == 0xed && c > 0x9f)) {
+      return false;
+    }
+    --utf8_bytes_remaining_;
+  } else if (utf8_bytes_remaining_ == 3) {
+    /// Reference: https://www.unicode.org/versions/Unicode14.0.0/ch03.pdf
+    /// Table 3-7
+    if (((c & 0xc0) != 0x80) || (utf8_first_byte_ == 0xf0 && c < 0x90) ||
+        (utf8_first_byte_ == 0xf4 && c > 0x8f)) {
+      return false;
+    }
+    --utf8_bytes_remaining_;
+  } else {
+    abort();
   }
+
   string_.push_back(static_cast<uint8_t>(c));
   return true;
 }
