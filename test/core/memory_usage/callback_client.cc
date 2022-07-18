@@ -1,8 +1,6 @@
 #include <stdio.h>
 #include <string.h>
 
-#include <map>
-
 #include <gtest/gtest.h>
 
 #include "absl/algorithm/container.h"
@@ -68,6 +66,31 @@ class ClientCallbackImpl {
                               &params->response, callback);
   }
 
+  void ServerQuit() {
+    struct CallParams {
+      grpc::ClientContext context;
+      grpc::testing::SimpleRequest request;
+      grpc::testing::SimpleResponse response;
+    };
+
+    CallParams* params = new CallParams();
+
+    auto callback = [params](const grpc::Status& status) {
+      if (!status.ok()) {
+        gpr_log(GPR_ERROR, "ServerQuit RPC failed.");
+        delete params;
+        return;
+      }
+      gpr_log(GPR_INFO, "ServerQuit RPC succeeded.");
+      delete params;
+      return;
+    };
+
+    // Start a call.
+    stub_->async()->ServerQuit(&params->context, &params->request,
+                              &params->response, callback);
+  }
+
  private:
   std::unique_ptr<grpc::testing::BenchmarkService::Stub> stub_;
 };
@@ -99,6 +122,7 @@ int main(int argc, char** argv) {
   gpr_log(GPR_INFO, "Client Target: %s", absl::GetFlag(FLAGS_target).c_str());
 
   client.UnaryCall();
+  client.ServerQuit();
   gpr_log(GPR_INFO, "Client Done");
   return 0;
 }
