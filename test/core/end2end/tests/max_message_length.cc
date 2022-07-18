@@ -104,7 +104,6 @@ static void test_max_message_length_on_request(grpc_end2end_test_config config,
   grpc_end2end_test_fixture f;
   grpc_call* c = nullptr;
   grpc_call* s = nullptr;
-  cq_verifier* cqv;
   grpc_op ops[6];
   grpc_op* op;
   grpc_slice request_payload_slice =
@@ -174,7 +173,7 @@ static void test_max_message_length_on_request(grpc_end2end_test_config config,
     if (server_args != nullptr) grpc_channel_args_destroy(server_args);
   }
 
-  cqv = cq_verifier_create(f.cq);
+  grpc_core::CqVerifier cqv(f.cq);
 
   c = grpc_channel_create_call(f.client, nullptr, GRPC_PROPAGATE_DEFAULTS, f.cq,
                                grpc_slice_from_static_string("/service/method"),
@@ -220,8 +219,8 @@ static void test_max_message_length_on_request(grpc_end2end_test_config config,
   GPR_ASSERT(GRPC_CALL_OK == error);
 
   if (send_limit) {
-    CQ_EXPECT_COMPLETION(cqv, tag(1), 1);
-    cq_verify(cqv);
+    cqv.Expect(tag(1), true);
+    cqv.Verify();
     goto done;
   }
 
@@ -229,8 +228,8 @@ static void test_max_message_length_on_request(grpc_end2end_test_config config,
       grpc_server_request_call(f.server, &s, &call_details,
                                &request_metadata_recv, f.cq, f.cq, tag(101));
   GPR_ASSERT(GRPC_CALL_OK == error);
-  CQ_EXPECT_COMPLETION(cqv, tag(101), 1);
-  cq_verify(cqv);
+  cqv.Expect(tag(101), true);
+  cqv.Verify();
 
   memset(ops, 0, sizeof(ops));
   op = ops;
@@ -248,9 +247,9 @@ static void test_max_message_length_on_request(grpc_end2end_test_config config,
                                 nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
-  CQ_EXPECT_COMPLETION(cqv, tag(102), 1);
-  CQ_EXPECT_COMPLETION(cqv, tag(1), 1);
-  cq_verify(cqv);
+  cqv.Expect(tag(102), true);
+  cqv.Expect(tag(1), true);
+  cqv.Verify();
 
   GPR_ASSERT(0 == grpc_slice_str_cmp(call_details.method, "/service/method"));
   GPR_ASSERT(was_cancelled == 1);
@@ -274,8 +273,6 @@ done:
   grpc_call_unref(c);
   if (s != nullptr) grpc_call_unref(s);
 
-  cq_verifier_destroy(cqv);
-
   end_test(&f);
   config.tear_down_data(&f);
 }
@@ -295,7 +292,6 @@ static void test_max_message_length_on_response(grpc_end2end_test_config config,
   grpc_end2end_test_fixture f;
   grpc_call* c = nullptr;
   grpc_call* s = nullptr;
-  cq_verifier* cqv;
   grpc_op ops[6];
   grpc_op* op;
   grpc_slice response_payload_slice =
@@ -362,7 +358,7 @@ static void test_max_message_length_on_response(grpc_end2end_test_config config,
     if (client_args != nullptr) grpc_channel_args_destroy(client_args);
     if (server_args != nullptr) grpc_channel_args_destroy(server_args);
   }
-  cqv = cq_verifier_create(f.cq);
+  grpc_core::CqVerifier cqv(f.cq);
 
   c = grpc_channel_create_call(f.client, nullptr, GRPC_PROPAGATE_DEFAULTS, f.cq,
                                grpc_slice_from_static_string("/service/method"),
@@ -411,8 +407,8 @@ static void test_max_message_length_on_response(grpc_end2end_test_config config,
       grpc_server_request_call(f.server, &s, &call_details,
                                &request_metadata_recv, f.cq, f.cq, tag(101));
   GPR_ASSERT(GRPC_CALL_OK == error);
-  CQ_EXPECT_COMPLETION(cqv, tag(101), 1);
-  cq_verify(cqv);
+  cqv.Expect(tag(101), true);
+  cqv.Verify();
 
   memset(ops, 0, sizeof(ops));
   op = ops;
@@ -443,9 +439,9 @@ static void test_max_message_length_on_response(grpc_end2end_test_config config,
                                 nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
-  CQ_EXPECT_COMPLETION(cqv, tag(102), 1);
-  CQ_EXPECT_COMPLETION(cqv, tag(1), 1);
-  cq_verify(cqv);
+  cqv.Expect(tag(102), true);
+  cqv.Expect(tag(1), true);
+  cqv.Verify();
 
   GPR_ASSERT(0 == grpc_slice_str_cmp(call_details.method, "/service/method"));
   GPR_ASSERT(status == GRPC_STATUS_RESOURCE_EXHAUSTED);
@@ -465,7 +461,6 @@ static void test_max_message_length_on_response(grpc_end2end_test_config config,
 
   grpc_call_unref(c);
   if (s != nullptr) grpc_call_unref(s);
-  cq_verifier_destroy(cqv);
   end_test(&f);
   config.tear_down_data(&f);
 }
@@ -490,7 +485,6 @@ static void test_max_receive_message_length_on_compressed_request(
   grpc_end2end_test_fixture f;
   grpc_call* c = nullptr;
   grpc_call* s = nullptr;
-  cq_verifier* cqv;
   grpc_op ops[6];
   grpc_op* op;
   grpc_slice request_payload_slice = grpc_slice_malloc(1024);
@@ -522,7 +516,7 @@ static void test_max_receive_message_length_on_compressed_request(
     grpc_core::ExecCtx exec_ctx;
     grpc_channel_args_destroy(server_args);
   }
-  cqv = cq_verifier_create(f.cq);
+  grpc_core::CqVerifier cqv(f.cq);
   c = grpc_channel_create_call(f.client, nullptr, GRPC_PROPAGATE_DEFAULTS, f.cq,
                                grpc_slice_from_static_string("/service/method"),
                                nullptr, gpr_inf_future(GPR_CLOCK_REALTIME),
@@ -572,8 +566,8 @@ static void test_max_receive_message_length_on_compressed_request(
       grpc_server_request_call(f.server, &s, &call_details,
                                &request_metadata_recv, f.cq, f.cq, tag(101));
   GPR_ASSERT(GRPC_CALL_OK == error);
-  CQ_EXPECT_COMPLETION(cqv, tag(101), 1);
-  cq_verify(cqv);
+  cqv.Expect(tag(101), true);
+  cqv.Verify();
 
   memset(ops, 0, sizeof(ops));
   op = ops;
@@ -607,9 +601,9 @@ static void test_max_receive_message_length_on_compressed_request(
                                 nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
-  CQ_EXPECT_COMPLETION(cqv, tag(102), 1);
-  CQ_EXPECT_COMPLETION(cqv, tag(1), 1);
-  cq_verify(cqv);
+  cqv.Expect(tag(102), true);
+  cqv.Expect(tag(1), true);
+  cqv.Verify();
 
   GPR_ASSERT(0 == grpc_slice_str_cmp(call_details.method, "/service/method"));
   if (minimal_stack) {
@@ -632,7 +626,6 @@ static void test_max_receive_message_length_on_compressed_request(
   grpc_byte_buffer_destroy(recv_payload);
   grpc_call_unref(c);
   if (s != nullptr) grpc_call_unref(s);
-  cq_verifier_destroy(cqv);
 
   end_test(&f);
   config.tear_down_data(&f);
@@ -648,7 +641,6 @@ static void test_max_receive_message_length_on_compressed_response(
   grpc_end2end_test_fixture f;
   grpc_call* c = nullptr;
   grpc_call* s = nullptr;
-  cq_verifier* cqv;
   grpc_op ops[6];
   grpc_op* op;
   grpc_slice response_payload_slice = grpc_slice_malloc(1024);
@@ -680,7 +672,7 @@ static void test_max_receive_message_length_on_compressed_response(
     grpc_core::ExecCtx exec_ctx;
     grpc_channel_args_destroy(client_args);
   }
-  cqv = cq_verifier_create(f.cq);
+  grpc_core::CqVerifier cqv(f.cq);
 
   c = grpc_channel_create_call(f.client, nullptr, GRPC_PROPAGATE_DEFAULTS, f.cq,
                                grpc_slice_from_static_string("/service/method"),
@@ -729,8 +721,8 @@ static void test_max_receive_message_length_on_compressed_response(
       grpc_server_request_call(f.server, &s, &call_details,
                                &request_metadata_recv, f.cq, f.cq, tag(101));
   GPR_ASSERT(GRPC_CALL_OK == error);
-  CQ_EXPECT_COMPLETION(cqv, tag(101), 1);
-  cq_verify(cqv);
+  cqv.Expect(tag(101), true);
+  cqv.Verify();
 
   grpc_metadata compression_md = gzip_compression_override();
   memset(ops, 0, sizeof(ops));
@@ -763,9 +755,9 @@ static void test_max_receive_message_length_on_compressed_response(
                                 nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
-  CQ_EXPECT_COMPLETION(cqv, tag(102), 1);
-  CQ_EXPECT_COMPLETION(cqv, tag(1), 1);
-  cq_verify(cqv);
+  cqv.Expect(tag(102), true);
+  cqv.Expect(tag(1), true);
+  cqv.Verify();
 
   GPR_ASSERT(0 == grpc_slice_str_cmp(call_details.method, "/service/method"));
   if (minimal_stack) {
@@ -788,8 +780,6 @@ static void test_max_receive_message_length_on_compressed_response(
 
   grpc_call_unref(c);
   if (s != nullptr) grpc_call_unref(s);
-
-  cq_verifier_destroy(cqv);
 
   end_test(&f);
   config.tear_down_data(&f);

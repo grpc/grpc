@@ -67,7 +67,7 @@ static void end_test(grpc_end2end_test_fixture* f) {
 
 static void do_request_and_shutdown_server(grpc_end2end_test_config /*config*/,
                                            grpc_end2end_test_fixture* f,
-                                           cq_verifier* cqv) {
+                                           grpc_core::CqVerifier& cqv) {
   grpc_call* c;
   grpc_call* s;
   grpc_op ops[6];
@@ -123,8 +123,8 @@ static void do_request_and_shutdown_server(grpc_end2end_test_config /*config*/,
       grpc_server_request_call(f->server, &s, &call_details,
                                &request_metadata_recv, f->cq, f->cq, tag(101));
   GPR_ASSERT(GRPC_CALL_OK == error);
-  CQ_EXPECT_COMPLETION(cqv, tag(101), 1);
-  cq_verify(cqv);
+  cqv.Expect(tag(101), true);
+  cqv.Verify();
 
   /* should be able to shut down the server early
      - and still complete the request */
@@ -154,10 +154,10 @@ static void do_request_and_shutdown_server(grpc_end2end_test_config /*config*/,
                                 nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
-  CQ_EXPECT_COMPLETION(cqv, tag(102), 1);
-  CQ_EXPECT_COMPLETION(cqv, tag(1), 1);
-  CQ_EXPECT_COMPLETION(cqv, tag(1000), 1);
-  cq_verify(cqv);
+  cqv.Expect(tag(102), true);
+  cqv.Expect(tag(1), true);
+  cqv.Expect(tag(1000), true);
+  cqv.Verify();
   /* Please refer https://github.com/grpc/grpc/issues/21221 for additional
    * details.
    * TODO(yashykt@) - The following line should be removeable after C-Core
@@ -165,7 +165,7 @@ static void do_request_and_shutdown_server(grpc_end2end_test_config /*config*/,
    * test remains flaky even after this, an alternative fix would be to send a
    * request when the server is in the shut down state.
    */
-  cq_verify_empty(cqv);
+  cqv.VerifyEmpty();
 
   GPR_ASSERT(status == GRPC_STATUS_UNIMPLEMENTED);
   GPR_ASSERT(0 == grpc_slice_str_cmp(details, "xyz"));
@@ -184,7 +184,7 @@ static void do_request_and_shutdown_server(grpc_end2end_test_config /*config*/,
 
 static void disappearing_server_test(grpc_end2end_test_config config) {
   grpc_end2end_test_fixture f = config.create_fixture(nullptr, nullptr);
-  cq_verifier* cqv = cq_verifier_create(f.cq);
+  grpc_core::CqVerifier cqv(f.cq);
 
   gpr_log(GPR_INFO, "Running test: %s/%s", "disappearing_server_test",
           config.name);
@@ -198,8 +198,6 @@ static void disappearing_server_test(grpc_end2end_test_config config) {
   config.init_server(&f, nullptr);
 
   do_request_and_shutdown_server(config, &f, cqv);
-
-  cq_verifier_destroy(cqv);
 
   end_test(&f);
   config.tear_down_data(&f);

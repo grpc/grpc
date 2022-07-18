@@ -11,12 +11,11 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+
 #ifndef GRPC_CORE_LIB_EVENT_ENGINE_EVENT_ENGINE_FACTORY_H
 #define GRPC_CORE_LIB_EVENT_ENGINE_EVENT_ENGINE_FACTORY_H
 
 #include <grpc/support/port_platform.h>
-
-#include <memory>
 
 #include <grpc/event_engine/event_engine.h>
 
@@ -28,9 +27,6 @@ namespace experimental {
 /// The concept of a global EventEngine may go away in a post-iomgr world.
 /// Strongly consider whether you could use \a CreateEventEngine instead.
 EventEngine* GetDefaultEventEngine();
-
-/// Create an EventEngine using the default factory provided at link time.
-std::unique_ptr<EventEngine> DefaultEventEngineFactory();
 
 /// Reset the default event engine
 void ResetDefaultEventEngine();

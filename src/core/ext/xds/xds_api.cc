@@ -28,7 +28,6 @@
 
 #include "absl/strings/str_cat.h"
 #include "absl/strings/strip.h"
-#include "envoy/admin/v3/config_dump.upb.h"
 #include "envoy/config/core/v3/base.upb.h"
 #include "envoy/config/endpoint/v3/load_report.upb.h"
 #include "envoy/service/discovery/v3/discovery.upb.h"

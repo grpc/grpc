@@ -22,10 +22,12 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include <memory>
 #include <thread>
 
 #include <gmock/gmock.h>
 
+#include "absl/memory/memory.h"
 #include "absl/synchronization/mutex.h"
 #include "absl/synchronization/notification.h"
 
@@ -64,7 +66,7 @@ class GracefulShutdownTest : public ::testing::Test {
   void SetupAndStart() {
     ExecCtx exec_ctx;
     cq_ = grpc_completion_queue_create_for_next(nullptr);
-    cqv_ = cq_verifier_create(cq_);
+    cqv_ = absl::make_unique<CqVerifier>(cq_);
     grpc_arg server_args[] = {
         grpc_channel_arg_integer_create(
             const_cast<char*>(GRPC_ARG_HTTP2_BDP_PROBE), 0),
@@ -133,10 +135,10 @@ class GracefulShutdownTest : public ::testing::Test {
     ExecCtx::Get()->Flush();
     // Shutdown and destroy server
     grpc_server_shutdown_and_notify(server_, cq_, Tag(1000));
-    CQ_EXPECT_COMPLETION(cqv_, Tag(1000), true);
-    cq_verify(cqv_);
+    cqv_->Expect(Tag(1000), true);
+    cqv_->Verify();
     grpc_server_destroy(server_);
-    cq_verifier_destroy(cqv_);
+    cqv_.reset();
     grpc_completion_queue_destroy(cq_);
   }
 
@@ -230,7 +232,7 @@ class GracefulShutdownTest : public ::testing::Test {
   grpc_endpoint_pair fds_;
   grpc_server* server_ = nullptr;
   grpc_completion_queue* cq_ = nullptr;
-  cq_verifier* cqv_ = nullptr;
+  std::unique_ptr<CqVerifier> cqv_;
   std::unique_ptr<std::thread> client_poll_thread_;
   std::atomic<bool> shutdown_{false};
   grpc_closure on_read_done_;
@@ -254,8 +256,8 @@ TEST_F(GracefulShutdownTest, GracefulGoaway) {
   // Wait for final goaway
   WaitForGoaway(0);
   // The shutdown should successfully complete.
-  CQ_EXPECT_COMPLETION(cqv_, Tag(1), true);
-  cq_verify(cqv_);
+  cqv_->Expect(Tag(1), true);
+  cqv_->Verify();
 }
 
 TEST_F(GracefulShutdownTest, RequestStartedBeforeFinalGoaway) {
@@ -295,10 +297,10 @@ TEST_F(GracefulShutdownTest, RequestStartedBeforeFinalGoaway) {
   WaitForGoaway(1);
   // TODO(yashykt): The surface layer automatically cancels calls received after
   // shutdown has been called. Once that is fixed, this should be a success.
-  CQ_EXPECT_COMPLETION(cqv_, Tag(100), 0);
+  cqv_->Expect(Tag(100), false);
   // The shutdown should successfully complete.
-  CQ_EXPECT_COMPLETION(cqv_, Tag(1), true);
-  cq_verify(cqv_);
+  cqv_->Expect(Tag(1), true);
+  cqv_->Verify();
   grpc_metadata_array_destroy(&request_metadata_recv);
   grpc_call_details_destroy(&call_details);
 }
@@ -329,8 +331,8 @@ TEST_F(GracefulShutdownTest, RequestStartedAfterFinalGoawayIsIgnored) {
       "\x10\x02te\x08trailers"
       "\x10\x0auser-agent\x17grpc-c/0.12.0.0 (linux)";
   Write(absl::string_view(kRequestFrame, sizeof(kRequestFrame) - 1));
-  CQ_EXPECT_COMPLETION(cqv_, Tag(100), 1);
-  cq_verify(cqv_);
+  cqv_->Expect(Tag(100), true);
+  cqv_->Verify();
 
   // Initiate shutdown on the server
   grpc_server_shutdown_and_notify(server_, cq_, Tag(1));
@@ -385,10 +387,10 @@ TEST_F(GracefulShutdownTest, RequestStartedAfterFinalGoawayIsIgnored) {
   error = grpc_call_start_batch(s, ops, static_cast<size_t>(op - ops), Tag(101),
                                 nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
-  CQ_EXPECT_COMPLETION(cqv_, Tag(101), true);
+  cqv_->Expect(Tag(101), true);
   // The shutdown should successfully complete.
-  CQ_EXPECT_COMPLETION(cqv_, Tag(1), true);
-  cq_verify(cqv_);
+  cqv_->Expect(Tag(1), true);
+  cqv_->Verify();
   grpc_call_unref(s);
   grpc_metadata_array_destroy(&request_metadata_recv);
   grpc_call_details_destroy(&call_details);
@@ -411,8 +413,8 @@ TEST_F(GracefulShutdownTest, UnresponsiveClient) {
                 absl::Seconds(
                     1) /* clock skew between threads due to time caching */);
   // The shutdown should successfully complete.
-  CQ_EXPECT_COMPLETION(cqv_, Tag(1), true);
-  cq_verify(cqv_);
+  cqv_->Expect(Tag(1), true);
+  cqv_->Verify();
 }
 
 // Test that servers send a GOAWAY with the last stream ID even when the
@@ -426,8 +428,8 @@ TEST_F(GracefulShutdownTest, GoawayReceivedOnServerDisconnect) {
   WaitForGoaway(/*last_stream_id=*/0, /*error_code=*/2,
                 grpc_slice_from_static_string("Cancelling all calls"));
   // The shutdown should successfully complete.
-  CQ_EXPECT_COMPLETION(cqv_, Tag(1), true);
-  cq_verify(cqv_);
+  cqv_->Expect(Tag(1), true);
+  cqv_->Verify();
 }
 
 }  // namespace

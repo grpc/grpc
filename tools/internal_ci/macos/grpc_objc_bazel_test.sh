@@ -47,7 +47,8 @@ EXAMPLE_TARGETS=(
 TEST_TARGETS=(
   # TODO(jtattermusch): ideally we'd say "//src/objective-c/tests/..." but not all the targets currently build
   # TODO(jtattermusch): make //src/objective-c/tests:TvTests test pass with bazel
-  //src/objective-c/tests:InteropTestsLocal
+  //src/objective-c/tests:InteropTestsLocalCleartext
+  //src/objective-c/tests:InteropTestsLocalSSL
   //src/objective-c/tests:InteropTestsRemote
   //src/objective-c/tests:MacTests
   //src/objective-c/tests:UnitTests
@@ -99,6 +100,7 @@ objc_bazel_tests/bazel_wrapper \
   $BAZEL_FLAGS \
   --test_env HOST_PORT_LOCAL=localhost:$PLAIN_PORT \
   --test_env HOST_PORT_LOCALSSL=localhost:$TLS_PORT \
+  --test_env FLAKE_TEST_REPEATS=3 \
   -- \
   "${EXAMPLE_TARGETS[@]}" \
   "${TEST_TARGETS[@]}"
