@@ -1578,6 +1578,7 @@ target_link_libraries(gpr
   absl::synchronization
   absl::time
   absl::optional
+  absl::variant
 )
 if(_gRPC_PLATFORM_ANDROID)
   target_link_libraries(gpr
@@ -2364,7 +2365,6 @@ target_link_libraries(grpc
   absl::type_traits
   absl::statusor
   absl::span
-  absl::variant
   absl::utility
   gpr
   ${_gRPC_SSL_LIBRARIES}
@@ -2928,7 +2928,6 @@ target_link_libraries(grpc_unsecure
   absl::type_traits
   absl::statusor
   absl::span
-  absl::variant
   absl::utility
   gpr
   address_sorting
@@ -5989,7 +5988,6 @@ target_link_libraries(arena_promise_test
   absl::any_invocable
   absl::type_traits
   absl::statusor
-  absl::variant
   absl::utility
   gpr
   upb
@@ -6265,6 +6263,8 @@ target_include_directories(avl_test
 target_link_libraries(avl_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
+  absl::strings
+  absl::variant
 )
 
 
@@ -6766,6 +6766,8 @@ target_include_directories(bitset_test
 target_link_libraries(bitset_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
+  absl::strings
+  absl::variant
 )
 
 
@@ -6908,6 +6910,7 @@ target_link_libraries(call_push_pull_test
   absl::type_traits
   absl::status
   absl::statusor
+  absl::strings
   absl::variant
 )
 
@@ -7617,7 +7620,6 @@ target_link_libraries(chunked_vector_test
   absl::any_invocable
   absl::type_traits
   absl::statusor
-  absl::variant
   absl::utility
   gpr
   upb
@@ -9409,7 +9411,6 @@ target_link_libraries(exec_ctx_wakeup_scheduler_test
   absl::any_invocable
   absl::type_traits
   absl::statusor
-  absl::variant
   absl::utility
   gpr
   upb
@@ -9780,7 +9781,6 @@ target_link_libraries(flow_control_test
   absl::function_ref
   absl::type_traits
   absl::statusor
-  absl::variant
   absl::utility
   gpr
   upb
@@ -9844,7 +9844,6 @@ target_link_libraries(for_each_test
   absl::hash
   absl::type_traits
   absl::statusor
-  absl::variant
   absl::utility
   gpr
   upb
@@ -12132,6 +12131,7 @@ target_link_libraries(join_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   absl::type_traits
+  absl::strings
   absl::variant
   absl::utility
 )
@@ -12717,7 +12717,6 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX)
     absl::any_invocable
     absl::type_traits
     absl::statusor
-    absl::variant
     absl::utility
     gpr
     upb
@@ -12777,7 +12776,6 @@ target_link_libraries(memory_quota_test
   absl::any_invocable
   absl::type_traits
   absl::statusor
-  absl::variant
   absl::utility
   gpr
   upb
@@ -13816,7 +13814,6 @@ target_link_libraries(pipe_test
   absl::any_invocable
   absl::type_traits
   absl::statusor
-  absl::variant
   absl::utility
   gpr
   upb
@@ -14673,7 +14670,6 @@ target_link_libraries(resource_quota_test
   absl::any_invocable
   absl::type_traits
   absl::statusor
-  absl::variant
   absl::utility
   gpr
   upb
@@ -15867,6 +15863,7 @@ target_link_libraries(single_set_ptr_test
   absl::synchronization
   absl::time
   absl::optional
+  absl::variant
 )
 
 
@@ -16707,7 +16704,9 @@ target_link_libraries(table_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   absl::type_traits
+  absl::strings
   absl::optional
+  absl::variant
   absl::utility
 )
 
@@ -16803,6 +16802,7 @@ target_link_libraries(test_core_event_engine_iomgr_event_engine_timer_heap_test
   absl::synchronization
   absl::time
   absl::optional
+  absl::variant
 )
 
 
@@ -16897,6 +16897,7 @@ target_link_libraries(test_core_event_engine_iomgr_event_engine_timer_list_test
   absl::synchronization
   absl::time
   absl::optional
+  absl::variant
 )
 
 
@@ -17058,6 +17059,7 @@ target_link_libraries(test_core_gprpp_time_test
   absl::synchronization
   absl::time
   absl::optional
+  absl::variant
 )
 
 
@@ -17468,6 +17470,7 @@ target_link_libraries(thread_quota_test
   absl::synchronization
   absl::time
   absl::optional
+  absl::variant
 )
 
 
@@ -18063,6 +18066,7 @@ target_link_libraries(try_join_test
   absl::type_traits
   absl::status
   absl::statusor
+  absl::strings
   absl::variant
   absl::utility
 )
@@ -18175,6 +18179,7 @@ target_link_libraries(unique_type_name_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   absl::str_format
   absl::strings
+  absl::variant
 )
 
 
@@ -18281,6 +18286,8 @@ target_include_directories(useful_test
 target_link_libraries(useful_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
+  absl::strings
+  absl::variant
 )
 
 
@@ -20960,7 +20967,7 @@ generate_pkgconfig(
   "gpr"
   "gRPC platform support library"
   "${gRPC_CORE_VERSION}"
-  "absl_base absl_cord absl_core_headers absl_memory absl_optional absl_random_random absl_status absl_str_format absl_strings absl_synchronization absl_time"
+  "absl_base absl_cord absl_core_headers absl_memory absl_optional absl_random_random absl_status absl_str_format absl_strings absl_synchronization absl_time absl_variant"
   "-lgpr"
   ""
   "gpr.pc")

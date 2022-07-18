@@ -281,6 +281,7 @@ libs:
   - absl/synchronization:synchronization
   - absl/time:time
   - absl/types:optional
+  - absl/types:variant
 - name: grpc
   build: all
   language: c
@@ -1676,7 +1677,6 @@ libs:
   - absl/meta:type_traits
   - absl/status:statusor
   - absl/types:span
-  - absl/types:variant
   - absl/utility:utility
   - gpr
   - libssl
@@ -2472,7 +2472,6 @@ libs:
   - absl/meta:type_traits
   - absl/status:statusor
   - absl/types:span
-  - absl/types:variant
   - absl/utility:utility
   - gpr
   - address_sorting
@@ -3947,7 +3946,6 @@ targets:
   - absl/functional:any_invocable
   - absl/meta:type_traits
   - absl/status:statusor
-  - absl/types:variant
   - absl/utility:utility
   - gpr
   - upb
@@ -4027,9 +4025,12 @@ targets:
   language: c++
   headers:
   - src/core/lib/avl/avl.h
+  - src/core/lib/gpr/useful.h
   src:
   - test/core/avl/avl_test.cc
-  deps: []
+  deps:
+  - absl/strings:strings
+  - absl/types:variant
   uses_polling: false
 - name: aws_request_signer_test
   gtest: true
@@ -4251,7 +4252,9 @@ targets:
   - src/core/lib/gprpp/bitset.h
   src:
   - test/core/gprpp/bitset_test.cc
-  deps: []
+  deps:
+  - absl/strings:strings
+  - absl/types:variant
   uses_polling: false
 - name: byte_buffer_test
   gtest: true
@@ -4301,6 +4304,7 @@ targets:
   - absl/meta:type_traits
   - absl/status:status
   - absl/status:statusor
+  - absl/strings:strings
   - absl/types:variant
   uses_polling: false
 - name: cancel_ares_query_test
@@ -4575,7 +4579,6 @@ targets:
   - absl/functional:any_invocable
   - absl/meta:type_traits
   - absl/status:statusor
-  - absl/types:variant
   - absl/utility:utility
   - gpr
   - upb
@@ -5263,7 +5266,6 @@ targets:
   - absl/functional:any_invocable
   - absl/meta:type_traits
   - absl/status:statusor
-  - absl/types:variant
   - absl/utility:utility
   - gpr
   - upb
@@ -5501,7 +5503,6 @@ targets:
   - absl/functional:function_ref
   - absl/meta:type_traits
   - absl/status:statusor
-  - absl/types:variant
   - absl/utility:utility
   - gpr
   - upb
@@ -5589,7 +5590,6 @@ targets:
   - absl/hash:hash
   - absl/meta:type_traits
   - absl/status:statusor
-  - absl/types:variant
   - absl/utility:utility
   - gpr
   - upb
@@ -6317,6 +6317,7 @@ targets:
   - test/core/promise/join_test.cc
   deps:
   - absl/meta:type_traits
+  - absl/strings:strings
   - absl/types:variant
   - absl/utility:utility
   uses_polling: false
@@ -6648,7 +6649,6 @@ targets:
   - absl/functional:any_invocable
   - absl/meta:type_traits
   - absl/status:statusor
-  - absl/types:variant
   - absl/utility:utility
   - gpr
   - upb
@@ -6723,7 +6723,6 @@ targets:
   - absl/functional:any_invocable
   - absl/meta:type_traits
   - absl/status:statusor
-  - absl/types:variant
   - absl/utility:utility
   - gpr
   - upb
@@ -7216,7 +7215,6 @@ targets:
   - absl/functional:any_invocable
   - absl/meta:type_traits
   - absl/status:statusor
-  - absl/types:variant
   - absl/utility:utility
   - gpr
   - upb
@@ -7586,7 +7584,6 @@ targets:
   - absl/functional:any_invocable
   - absl/meta:type_traits
   - absl/status:statusor
-  - absl/types:variant
   - absl/utility:utility
   - gpr
   - upb
@@ -8018,6 +8015,7 @@ targets:
   - absl/synchronization:synchronization
   - absl/time:time
   - absl/types:optional
+  - absl/types:variant
   uses_polling: false
 - name: sleep_test
   gtest: true
@@ -8278,7 +8276,9 @@ targets:
   - test/core/gprpp/table_test.cc
   deps:
   - absl/meta:type_traits
+  - absl/strings:strings
   - absl/types:optional
+  - absl/types:variant
   - absl/utility:utility
   uses_polling: false
 - name: test_core_event_engine_iomgr_event_engine_timer_heap_test
@@ -8381,6 +8381,7 @@ targets:
   - absl/synchronization:synchronization
   - absl/time:time
   - absl/types:optional
+  - absl/types:variant
   uses_polling: false
 - name: test_core_event_engine_iomgr_event_engine_timer_list_test
   gtest: true
@@ -8481,6 +8482,7 @@ targets:
   - absl/synchronization:synchronization
   - absl/time:time
   - absl/types:optional
+  - absl/types:variant
   uses_polling: false
 - name: test_core_event_engine_slice_buffer_test
   gtest: true
@@ -8594,6 +8596,7 @@ targets:
   - absl/synchronization:synchronization
   - absl/time:time
   - absl/types:optional
+  - absl/types:variant
   uses_polling: false
 - name: test_core_security_credentials_test
   gtest: true
@@ -8784,6 +8787,7 @@ targets:
   - absl/synchronization:synchronization
   - absl/time:time
   - absl/types:optional
+  - absl/types:variant
   uses_polling: false
 - name: thread_stress_test
   gtest: true
@@ -9035,6 +9039,7 @@ targets:
   - absl/meta:type_traits
   - absl/status:status
   - absl/status:statusor
+  - absl/strings:strings
   - absl/types:variant
   - absl/utility:utility
   uses_polling: false
@@ -9082,6 +9087,7 @@ targets:
   deps:
   - absl/strings:str_format
   - absl/strings:strings
+  - absl/types:variant
   uses_polling: false
 - name: unknown_frame_bad_client_test
   gtest: true
@@ -9113,7 +9119,9 @@ targets:
   - src/core/lib/gpr/useful.h
   src:
   - test/core/gpr/useful_test.cc
-  deps: []
+  deps:
+  - absl/strings:strings
+  - absl/types:variant
   uses_polling: false
 - name: varint_test
   gtest: true
