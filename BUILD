@@ -3060,6 +3060,7 @@ grpc_cc_library(
         "config",
         "error",
         "gpr_base",
+        "grpc_base",
         "grpc_service_config",
         "json",
         "ref_counted_ptr",

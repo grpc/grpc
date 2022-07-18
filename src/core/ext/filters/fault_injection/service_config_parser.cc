@@ -142,10 +142,9 @@ ParseFaultInjectionPolicy(const Json::Array& policies_json_array,
 
 }  // namespace
 
-std::unique_ptr<ServiceConfigParser::ParsedConfig>
-FaultInjectionServiceConfigParser::ParsePerMethodParams(
-    const ChannelArgs& args, const Json& json, grpc_error_handle* error) {
-  GPR_DEBUG_ASSERT(error != nullptr && GRPC_ERROR_IS_NONE(*error));
+absl::StatusOr<std::unique_ptr<ServiceConfigParser::ParsedConfig>>
+FaultInjectionServiceConfigParser::ParsePerMethodParams(const ChannelArgs& args,
+                                                        const Json& json) {
   // Only parse fault injection policy if the following channel arg is present.
   if (!args.GetBool(GRPC_ARG_PARSE_FAULT_INJECTION_METHOD_CONFIG)
            .value_or(false)) {
@@ -161,10 +160,16 @@ FaultInjectionServiceConfigParser::ParsePerMethodParams(
     fault_injection_policies =
         ParseFaultInjectionPolicy(*policies_json_array, &error_list);
   }
-  *error = GRPC_ERROR_CREATE_FROM_VECTOR("Fault injection parser", &error_list);
-  if (!GRPC_ERROR_IS_NONE(*error) || fault_injection_policies.empty()) {
-    return nullptr;
+  if (!error_list.empty()) {
+    grpc_error_handle error =
+        GRPC_ERROR_CREATE_FROM_VECTOR("Fault injection parser", &error_list);
+    absl::Status status = absl::InvalidArgumentError(
+        absl::StrCat("error parsing fault injection method parameters: ",
+                     grpc_error_std_string(error)));
+    GRPC_ERROR_UNREF(error);
+    return status;
   }
+  if (fault_injection_policies.empty()) return nullptr;
   return absl::make_unique<FaultInjectionMethodParsedConfig>(
       std::move(fault_injection_policies));
 }

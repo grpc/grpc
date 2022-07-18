@@ -618,8 +618,13 @@ grpc_error_handle XdsResolver::XdsConfigSelector::CreateMethodConfig(
         absl::StrJoin(fields, ",\n"),
         "\n  } ]\n"
         "}");
-    *method_config =
-        ServiceConfigImpl::Create(result.args, json.c_str(), &error);
+    auto method_config_or =
+        ServiceConfigImpl::Create(result.args, json.c_str());
+    if (!method_config_or.ok()) {
+      error = absl_status_to_grpc_error(method_config_or.status());
+    } else {
+      *method_config = std::move(*method_config_or);
+    }
   }
   return error;
 }
@@ -989,9 +994,8 @@ void XdsResolver::OnResourceDoesNotExist(std::string context) {
   current_virtual_host_.routes.clear();
   Result result;
   result.addresses.emplace();
-  grpc_error_handle error = GRPC_ERROR_NONE;
-  result.service_config = ServiceConfigImpl::Create(args_, "{}", &error);
-  GPR_ASSERT(*result.service_config != nullptr);
+  result.service_config = ServiceConfigImpl::Create(args_, "{}");
+  GPR_ASSERT(result.service_config.ok());
   result.resolution_note = std::move(context);
   result.args = args_;
   result_handler_->ReportResult(std::move(result));
@@ -1035,14 +1039,7 @@ XdsResolver::CreateServiceConfig() {
       "  ]\n"
       "}");
   std::string json = absl::StrJoin(config_parts, "");
-  grpc_error_handle error = GRPC_ERROR_NONE;
-  absl::StatusOr<RefCountedPtr<ServiceConfig>> result =
-      ServiceConfigImpl::Create(args_, json.c_str(), &error);
-  if (!GRPC_ERROR_IS_NONE(error)) {
-    result = grpc_error_to_absl_status(error);
-    GRPC_ERROR_UNREF(error);
-  }
-  return result;
+  return ServiceConfigImpl::Create(args_, json.c_str());
 }
 
 void XdsResolver::GenerateResult() {

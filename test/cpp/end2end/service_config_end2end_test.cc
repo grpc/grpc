@@ -198,10 +198,9 @@ class ServiceConfigEnd2endTest : public ::testing::Test {
   void SetNextResolutionValidServiceConfig(const std::vector<int>& ports) {
     grpc_core::ExecCtx exec_ctx;
     grpc_core::Resolver::Result result = BuildFakeResults(ports);
-    grpc_error_handle error = GRPC_ERROR_NONE;
-    result.service_config = grpc_core::ServiceConfigImpl::Create(
-        grpc_core::ChannelArgs(), "{}", &error);
-    ASSERT_EQ(error, GRPC_ERROR_NONE) << grpc_error_std_string(error);
+    result.service_config =
+        grpc_core::ServiceConfigImpl::Create(grpc_core::ChannelArgs(), "{}");
+    ASSERT_TRUE(result.service_config.ok()) << result.service_config.status();
     response_generator_->SetResponse(result);
   }
 
@@ -217,13 +216,8 @@ class ServiceConfigEnd2endTest : public ::testing::Test {
                                           const char* svc_cfg) {
     grpc_core::ExecCtx exec_ctx;
     grpc_core::Resolver::Result result = BuildFakeResults(ports);
-    grpc_error_handle error = GRPC_ERROR_NONE;
-    result.service_config = grpc_core::ServiceConfigImpl::Create(
-        grpc_core::ChannelArgs(), svc_cfg, &error);
-    if (!GRPC_ERROR_IS_NONE(error)) {
-      result.service_config = grpc_error_to_absl_status(error);
-      GRPC_ERROR_UNREF(error);
-    }
+    result.service_config =
+        grpc_core::ServiceConfigImpl::Create(grpc_core::ChannelArgs(), svc_cfg);
     response_generator_->SetResponse(result);
   }
 

@@ -89,13 +89,11 @@ class RetryServiceConfigParser : public ServiceConfigParser::Parser {
  public:
   absl::string_view name() const override { return parser_name(); }
 
-  std::unique_ptr<ServiceConfigParser::ParsedConfig> ParseGlobalParams(
-      const ChannelArgs& /*args*/, const Json& json,
-      grpc_error_handle* error) override;
+  absl::StatusOr<std::unique_ptr<ServiceConfigParser::ParsedConfig>>
+  ParseGlobalParams(const ChannelArgs& /*args*/, const Json& json) override;
 
-  std::unique_ptr<ServiceConfigParser::ParsedConfig> ParsePerMethodParams(
-      const ChannelArgs& args, const Json& json,
-      grpc_error_handle* error) override;
+  absl::StatusOr<std::unique_ptr<ServiceConfigParser::ParsedConfig>>
+  ParsePerMethodParams(const ChannelArgs& args, const Json& json) override;
 
   static size_t ParserIndex();
   static void Register(CoreConfiguration::Builder* builder);
