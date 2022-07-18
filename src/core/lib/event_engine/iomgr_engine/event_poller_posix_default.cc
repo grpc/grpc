@@ -29,6 +29,8 @@ namespace grpc_event_engine {
 namespace iomgr_engine {
 
 namespace {
+
+// Adapted from src/core/lib/iomgr/ev_posix.cc
 void add(const char* beg, const char* end, char*** ss, size_t* ns) {
   size_t n = *ns;
   size_t np = n + 1;
@@ -43,6 +45,7 @@ void add(const char* beg, const char* end, char*** ss, size_t* ns) {
   *ns = np;
 }
 
+// Adapted from src/core/lib/iomgr/ev_posix.cc
 void split(const char* s, char*** ss, size_t* ns) {
   const char* c = strchr(s, ',');
   if (c == nullptr) {
@@ -53,6 +56,7 @@ void split(const char* s, char*** ss, size_t* ns) {
   }
 }
 
+// Adapted from src/core/lib/iomgr/ev_posix.cc
 bool is(const char* want, const char* have) {
   return 0 == strcmp(want, "all") || 0 == strcmp(want, have);
 }

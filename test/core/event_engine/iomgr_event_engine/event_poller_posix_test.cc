@@ -49,8 +49,10 @@
 #include "src/core/lib/iomgr/socket_utils_posix.h"
 #include "test/core/util/port.h"
 
-GPR_GLOBAL_CONFIG_DEFINE_STRING(grpc_poll_strategy, "epoll",
-                                "poll strategy to use");
+GPR_GLOBAL_CONFIG_DEFINE_STRING(
+    grpc_poll_strategy, "epoll1",
+    "poll strategy to use. It can be a comma separated list of pollers to try "
+    "in order of preference");
 
 using ::grpc_event_engine::iomgr_engine::EventPoller;
 
