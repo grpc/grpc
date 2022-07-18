@@ -5946,6 +5946,8 @@ grpc_cc_library(
     ],
     external_deps = [
         "absl/memory",
+        "absl/status",
+        "absl/status:statusor",
         "absl/strings",
         "absl/strings:str_format",
         "absl/types:optional",

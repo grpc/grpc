@@ -28,12 +28,12 @@
 #endif
 #include <string>
 
+#include "absl/status/status.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/strip.h"
 
 #include <grpc/support/log.h>
 
-#include "src/core/lib/address_utils/sockaddr_utils.h"
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gprpp/host_port.h"
 #include "src/core/lib/iomgr/grpc_if_nametoindex.h"
