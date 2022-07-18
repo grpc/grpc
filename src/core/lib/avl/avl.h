@@ -22,7 +22,6 @@
 #include <algorithm>  // IWYU pragma: keep
 #include <memory>
 #include <utility>
-#include <vector>
 
 #include "src/core/lib/gpr/useful.h"
 

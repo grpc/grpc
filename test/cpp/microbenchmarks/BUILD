@@ -35,8 +35,11 @@ grpc_cc_test(
         "benchmark",
         "absl/container:btree",
     ],
-    deps = ["//test/core/util:grpc_test_util",        "//:channel_args", "//:grpc++"
-],
+    deps = [
+        "//:channel_args",
+        "//:grpc++",
+        "//test/core/util:grpc_test_util",
+    ],
 )
 
 grpc_cc_library(
