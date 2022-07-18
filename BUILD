@@ -3062,7 +3062,6 @@ grpc_cc_library(
         "config",
         "error",
         "gpr_base",
-        "grpc_base",
         "grpc_service_config",
         "json",
         "ref_counted_ptr",
@@ -6413,6 +6412,8 @@ grpc_cc_library(
     hdrs = GRPCXX_HDRS,
     external_deps = [
         "absl/base:core_headers",
+        "absl/status",
+        "absl/status:statusor",
         "absl/strings",
         "absl/synchronization",
         "absl/memory",
@@ -6457,6 +6458,8 @@ grpc_cc_library(
     hdrs = GRPCXX_HDRS,
     external_deps = [
         "absl/base:core_headers",
+        "absl/status",
+        "absl/status:statusor",
         "absl/strings",
         "absl/synchronization",
         "absl/memory",
