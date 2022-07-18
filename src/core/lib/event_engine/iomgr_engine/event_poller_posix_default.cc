@@ -72,11 +72,11 @@ EventPoller* GetDefaultPoller(Scheduler* scheduler) {
   split(poll_strategy.get(), &strings, &nstrings);
 
   for (size_t i = 0; i < nstrings && poller == nullptr; i++) {
-    if (is("epoll1", strings[i])) {
+    if (is(strings[i], "epoll1")) {
       poller = GetEpoll1Poller(scheduler);
-    } else if (is("poll", strings[i])) {
+    } else if (is(strings[i], "poll")) {
       poller = GetPollPoller(scheduler, /*use_phony_poll=*/false);
-    } else if (is("none", strings[i])) {
+    } else if (is(strings[i], "none")) {
       poller = GetPollPoller(scheduler, /*use_phony_poll=*/true);
     }
   }
