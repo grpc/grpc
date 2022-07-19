@@ -37,7 +37,7 @@ class PeriodicUpdate {
   explicit PeriodicUpdate(Duration period) : period_(period) {}
 
   // Tick the update, call f if we think the period expired.
-  void Tick(absl::FunctionRef<void()> f) {
+  void Tick(absl::FunctionRef<void(Duration)> f) {
     // Atomically decrement the remaining ticks counter.
     // If we hit 0 our estimate of period length has expired.
     // See the comment next to the data members for a description of thread
@@ -48,7 +48,7 @@ class PeriodicUpdate {
   }
 
  private:
-  void MaybeEndPeriod(absl::FunctionRef<void()> f);
+  void MaybeEndPeriod(absl::FunctionRef<void(Duration)> f);
 
   // Thread safety:
   // When updates_remaining_ reaches 0 the thread that decremented becomes

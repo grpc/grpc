@@ -42,6 +42,7 @@
 #include "src/core/lib/promise/activity.h"
 #include "src/core/lib/promise/poll.h"
 #include "src/core/lib/resource_quota/periodic_update.h"
+#include "src/core/lib/transport/pid_controller.h"
 
 GPR_GLOBAL_CONFIG_DECLARE_BOOL(grpc_experimental_smooth_memory_presure);
 
@@ -236,6 +237,12 @@ class PressureTracker {
  private:
   std::atomic<double> max_this_round_{0.0};
   std::atomic<double> report_{0.0};
+  PidController pid_{PidController::Args()
+                         .set_gain_p(0.01)
+                         .set_gain_i(0.001)
+                         .set_integral_range(10.0)
+                         .set_min_control_value(0.0)
+                         .set_max_control_value(1.0)};
   PeriodicUpdate update_{Duration::Seconds(1)};
 };
 }  // namespace memory_quota_detail

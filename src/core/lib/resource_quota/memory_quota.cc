@@ -486,25 +486,21 @@ double PressureTracker::AddSampleAndGetEstimate(double sample) {
   if (sample >= 0.99) {
     report_.store(1.0, std::memory_order_relaxed);
   }
-  update_.Tick([&] {
+  update_.Tick([&](Duration dt) {
     // Reset the round tracker with the new sample.
     const double current_estimate =
         max_this_round_.exchange(sample, std::memory_order_relaxed);
-    double report = report_.load(std::memory_order_relaxed);
-    if (current_estimate >= 0.99) {
-      // If memory pressure is almost done, immediately hit the brakes and
-      // report full memory usage.
-      report = 1.0;
-    } else if (current_estimate < 0.6) {
-      // If we're below 60%, start decreasing reported memory pressure so as to
-      // speed things up.
-      report -= 0.01;
-    } else if (current_estimate > 0.8) {
-      // If we're above 80%, start increasing reported memory pressure quickly
-      // to start to stall things off.
-      report = (1.0 + 9.0 * report) / 10.0;
+    double report;
+    if (current_estimate > 0.99) {
+      report = pid_.Update(1e6, 1.0);
+    } else {
+      report = pid_.Update(current_estimate - 0.8, dt.seconds());
     }
-    report_.store(Clamp(report, 0.0, 1.0), std::memory_order_relaxed);
+    if (GRPC_TRACE_FLAG_ENABLED(grpc_resource_quota_trace)) {
+      gpr_log(GPR_INFO, "RQ: pressure:%lf report:%lf error_integral:%lf",
+              current_estimate, report, pid_.error_integral());
+    }
+    report_.store(report, std::memory_order_relaxed);
   });
   return report_.load(std::memory_order_relaxed);
 }

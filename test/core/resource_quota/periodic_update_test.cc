@@ -45,7 +45,7 @@ TEST(PeriodicUpdateTest, SimpleTest) {
   bool done = false;
   while (!done) {
     ExecCtx exec_ctx;
-    upd->Tick([&] { done = true; });
+    upd->Tick([&](Duration) { done = true; });
   }
   // Ensure that took at least 1 second.
   {
@@ -58,7 +58,7 @@ TEST(PeriodicUpdateTest, SimpleTest) {
     done = false;
     while (!done) {
       ExecCtx exec_ctx;
-      upd->Tick([&] { done = true; });
+      upd->Tick([&](Duration) { done = true; });
     }
     // Ensure the time taken was between 1 and 1.5 seconds - we make a little
     // allowance for the presumed inaccuracy of this type.

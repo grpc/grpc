@@ -23,7 +23,7 @@
 
 namespace grpc_core {
 
-void PeriodicUpdate::MaybeEndPeriod(absl::FunctionRef<void()> f) {
+void PeriodicUpdate::MaybeEndPeriod(absl::FunctionRef<void(Duration)> f) {
   if (period_start_ == Timestamp::ProcessEpoch()) {
     period_start_ = ExecCtx::Get()->Now();
     updates_remaining_.store(1, std::memory_order_release);
@@ -70,7 +70,7 @@ void PeriodicUpdate::MaybeEndPeriod(absl::FunctionRef<void()> f) {
       period_.seconds() * expected_updates_per_period_ / time_so_far.seconds();
   if (expected_updates_per_period_ < 1) expected_updates_per_period_ = 1;
   period_start_ = now;
-  f();
+  f(time_so_far);
   updates_remaining_.store(expected_updates_per_period_,
                            std::memory_order_release);
 }
