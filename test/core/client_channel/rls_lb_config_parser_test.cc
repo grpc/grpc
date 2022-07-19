@@ -160,13 +160,12 @@ TEST_F(RlsConfigParsingTest, InvalidChildPolicyConfig) {
   auto service_config =
       ServiceConfigImpl::Create(ChannelArgs(), service_config_json);
   EXPECT_EQ(service_config.status().code(), absl::StatusCode::kInvalidArgument);
-  EXPECT_THAT(
-      std::string(service_config.status().message()),
-      ::testing::ContainsRegex(
-          "errors parsing RLS LB policy config" CHILD_ERROR_TAG
-          "field:childPolicy" CHILD_ERROR_TAG
-          "errors parsing grpclb LB policy config: \\["
-          "error parsing childPolicy field: type should be array\\]"))
+  EXPECT_THAT(std::string(service_config.status().message()),
+              ::testing::ContainsRegex(
+                  "errors parsing RLS LB policy config" CHILD_ERROR_TAG
+                  "field:childPolicy" CHILD_ERROR_TAG
+                  "errors parsing grpclb LB policy config: \\["
+                  "error parsing childPolicy field: type should be array\\]"))
       << service_config.status();
 }
 
