@@ -416,6 +416,7 @@ libs:
   - src/core/ext/upb-generated/envoy/admin/v3/certs.upb.h
   - src/core/ext/upb-generated/envoy/admin/v3/clusters.upb.h
   - src/core/ext/upb-generated/envoy/admin/v3/config_dump.upb.h
+  - src/core/ext/upb-generated/envoy/admin/v3/config_dump_shared.upb.h
   - src/core/ext/upb-generated/envoy/admin/v3/init_dump.upb.h
   - src/core/ext/upb-generated/envoy/admin/v3/listeners.upb.h
   - src/core/ext/upb-generated/envoy/admin/v3/memory.upb.h
@@ -469,6 +470,7 @@ libs:
   - src/core/ext/upb-generated/envoy/config/trace/v3/http_tracer.upb.h
   - src/core/ext/upb-generated/envoy/config/trace/v3/lightstep.upb.h
   - src/core/ext/upb-generated/envoy/config/trace/v3/opencensus.upb.h
+  - src/core/ext/upb-generated/envoy/config/trace/v3/opentelemetry.upb.h
   - src/core/ext/upb-generated/envoy/config/trace/v3/service.upb.h
   - src/core/ext/upb-generated/envoy/config/trace/v3/skywalking.upb.h
   - src/core/ext/upb-generated/envoy/config/trace/v3/trace.upb.h
@@ -509,6 +511,7 @@ libs:
   - src/core/ext/upb-generated/envoy/type/v3/http_status.upb.h
   - src/core/ext/upb-generated/envoy/type/v3/percent.upb.h
   - src/core/ext/upb-generated/envoy/type/v3/range.upb.h
+  - src/core/ext/upb-generated/envoy/type/v3/ratelimit_strategy.upb.h
   - src/core/ext/upb-generated/envoy/type/v3/ratelimit_unit.upb.h
   - src/core/ext/upb-generated/envoy/type/v3/semantic_version.upb.h
   - src/core/ext/upb-generated/envoy/type/v3/token_bucket.upb.h
@@ -560,6 +563,7 @@ libs:
   - src/core/ext/upbdefs-generated/envoy/admin/v3/certs.upbdefs.h
   - src/core/ext/upbdefs-generated/envoy/admin/v3/clusters.upbdefs.h
   - src/core/ext/upbdefs-generated/envoy/admin/v3/config_dump.upbdefs.h
+  - src/core/ext/upbdefs-generated/envoy/admin/v3/config_dump_shared.upbdefs.h
   - src/core/ext/upbdefs-generated/envoy/admin/v3/init_dump.upbdefs.h
   - src/core/ext/upbdefs-generated/envoy/admin/v3/listeners.upbdefs.h
   - src/core/ext/upbdefs-generated/envoy/admin/v3/memory.upbdefs.h
@@ -613,6 +617,7 @@ libs:
   - src/core/ext/upbdefs-generated/envoy/config/trace/v3/http_tracer.upbdefs.h
   - src/core/ext/upbdefs-generated/envoy/config/trace/v3/lightstep.upbdefs.h
   - src/core/ext/upbdefs-generated/envoy/config/trace/v3/opencensus.upbdefs.h
+  - src/core/ext/upbdefs-generated/envoy/config/trace/v3/opentelemetry.upbdefs.h
   - src/core/ext/upbdefs-generated/envoy/config/trace/v3/service.upbdefs.h
   - src/core/ext/upbdefs-generated/envoy/config/trace/v3/skywalking.upbdefs.h
   - src/core/ext/upbdefs-generated/envoy/config/trace/v3/trace.upbdefs.h
@@ -651,6 +656,7 @@ libs:
   - src/core/ext/upbdefs-generated/envoy/type/v3/http_status.upbdefs.h
   - src/core/ext/upbdefs-generated/envoy/type/v3/percent.upbdefs.h
   - src/core/ext/upbdefs-generated/envoy/type/v3/range.upbdefs.h
+  - src/core/ext/upbdefs-generated/envoy/type/v3/ratelimit_strategy.upbdefs.h
   - src/core/ext/upbdefs-generated/envoy/type/v3/ratelimit_unit.upbdefs.h
   - src/core/ext/upbdefs-generated/envoy/type/v3/semantic_version.upbdefs.h
   - src/core/ext/upbdefs-generated/envoy/type/v3/token_bucket.upbdefs.h
@@ -867,6 +873,7 @@ libs:
   - src/core/lib/resource_quota/api.h
   - src/core/lib/resource_quota/arena.h
   - src/core/lib/resource_quota/memory_quota.h
+  - src/core/lib/resource_quota/periodic_update.h
   - src/core/lib/resource_quota/resource_quota.h
   - src/core/lib/resource_quota/thread_quota.h
   - src/core/lib/resource_quota/trace.h
@@ -1102,6 +1109,7 @@ libs:
   - src/core/ext/upb-generated/envoy/admin/v3/certs.upb.c
   - src/core/ext/upb-generated/envoy/admin/v3/clusters.upb.c
   - src/core/ext/upb-generated/envoy/admin/v3/config_dump.upb.c
+  - src/core/ext/upb-generated/envoy/admin/v3/config_dump_shared.upb.c
   - src/core/ext/upb-generated/envoy/admin/v3/init_dump.upb.c
   - src/core/ext/upb-generated/envoy/admin/v3/listeners.upb.c
   - src/core/ext/upb-generated/envoy/admin/v3/memory.upb.c
@@ -1155,6 +1163,7 @@ libs:
   - src/core/ext/upb-generated/envoy/config/trace/v3/http_tracer.upb.c
   - src/core/ext/upb-generated/envoy/config/trace/v3/lightstep.upb.c
   - src/core/ext/upb-generated/envoy/config/trace/v3/opencensus.upb.c
+  - src/core/ext/upb-generated/envoy/config/trace/v3/opentelemetry.upb.c
   - src/core/ext/upb-generated/envoy/config/trace/v3/service.upb.c
   - src/core/ext/upb-generated/envoy/config/trace/v3/skywalking.upb.c
   - src/core/ext/upb-generated/envoy/config/trace/v3/trace.upb.c
@@ -1195,6 +1204,7 @@ libs:
   - src/core/ext/upb-generated/envoy/type/v3/http_status.upb.c
   - src/core/ext/upb-generated/envoy/type/v3/percent.upb.c
   - src/core/ext/upb-generated/envoy/type/v3/range.upb.c
+  - src/core/ext/upb-generated/envoy/type/v3/ratelimit_strategy.upb.c
   - src/core/ext/upb-generated/envoy/type/v3/ratelimit_unit.upb.c
   - src/core/ext/upb-generated/envoy/type/v3/semantic_version.upb.c
   - src/core/ext/upb-generated/envoy/type/v3/token_bucket.upb.c
@@ -1246,6 +1256,7 @@ libs:
   - src/core/ext/upbdefs-generated/envoy/admin/v3/certs.upbdefs.c
   - src/core/ext/upbdefs-generated/envoy/admin/v3/clusters.upbdefs.c
   - src/core/ext/upbdefs-generated/envoy/admin/v3/config_dump.upbdefs.c
+  - src/core/ext/upbdefs-generated/envoy/admin/v3/config_dump_shared.upbdefs.c
   - src/core/ext/upbdefs-generated/envoy/admin/v3/init_dump.upbdefs.c
   - src/core/ext/upbdefs-generated/envoy/admin/v3/listeners.upbdefs.c
   - src/core/ext/upbdefs-generated/envoy/admin/v3/memory.upbdefs.c
@@ -1299,6 +1310,7 @@ libs:
   - src/core/ext/upbdefs-generated/envoy/config/trace/v3/http_tracer.upbdefs.c
   - src/core/ext/upbdefs-generated/envoy/config/trace/v3/lightstep.upbdefs.c
   - src/core/ext/upbdefs-generated/envoy/config/trace/v3/opencensus.upbdefs.c
+  - src/core/ext/upbdefs-generated/envoy/config/trace/v3/opentelemetry.upbdefs.c
   - src/core/ext/upbdefs-generated/envoy/config/trace/v3/service.upbdefs.c
   - src/core/ext/upbdefs-generated/envoy/config/trace/v3/skywalking.upbdefs.c
   - src/core/ext/upbdefs-generated/envoy/config/trace/v3/trace.upbdefs.c
@@ -1337,6 +1349,7 @@ libs:
   - src/core/ext/upbdefs-generated/envoy/type/v3/http_status.upbdefs.c
   - src/core/ext/upbdefs-generated/envoy/type/v3/percent.upbdefs.c
   - src/core/ext/upbdefs-generated/envoy/type/v3/range.upbdefs.c
+  - src/core/ext/upbdefs-generated/envoy/type/v3/ratelimit_strategy.upbdefs.c
   - src/core/ext/upbdefs-generated/envoy/type/v3/ratelimit_unit.upbdefs.c
   - src/core/ext/upbdefs-generated/envoy/type/v3/semantic_version.upbdefs.c
   - src/core/ext/upbdefs-generated/envoy/type/v3/token_bucket.upbdefs.c
@@ -1527,6 +1540,7 @@ libs:
   - src/core/lib/resource_quota/api.cc
   - src/core/lib/resource_quota/arena.cc
   - src/core/lib/resource_quota/memory_quota.cc
+  - src/core/lib/resource_quota/periodic_update.cc
   - src/core/lib/resource_quota/resource_quota.cc
   - src/core/lib/resource_quota/thread_quota.cc
   - src/core/lib/resource_quota/trace.cc
@@ -2078,6 +2092,7 @@ libs:
   - src/core/lib/resource_quota/api.h
   - src/core/lib/resource_quota/arena.h
   - src/core/lib/resource_quota/memory_quota.h
+  - src/core/lib/resource_quota/periodic_update.h
   - src/core/lib/resource_quota/resource_quota.h
   - src/core/lib/resource_quota/thread_quota.h
   - src/core/lib/resource_quota/trace.h
@@ -2385,6 +2400,7 @@ libs:
   - src/core/lib/resource_quota/api.cc
   - src/core/lib/resource_quota/arena.cc
   - src/core/lib/resource_quota/memory_quota.cc
+  - src/core/lib/resource_quota/periodic_update.cc
   - src/core/lib/resource_quota/resource_quota.cc
   - src/core/lib/resource_quota/thread_quota.cc
   - src/core/lib/resource_quota/trace.cc
@@ -3910,6 +3926,7 @@ targets:
   - src/core/lib/promise/seq.h
   - src/core/lib/resource_quota/arena.h
   - src/core/lib/resource_quota/memory_quota.h
+  - src/core/lib/resource_quota/periodic_update.h
   - src/core/lib/resource_quota/resource_quota.h
   - src/core/lib/resource_quota/thread_quota.h
   - src/core/lib/resource_quota/trace.h
@@ -3935,6 +3952,7 @@ targets:
   - src/core/lib/promise/activity.cc
   - src/core/lib/resource_quota/arena.cc
   - src/core/lib/resource_quota/memory_quota.cc
+  - src/core/lib/resource_quota/periodic_update.cc
   - src/core/lib/resource_quota/resource_quota.cc
   - src/core/lib/resource_quota/thread_quota.cc
   - src/core/lib/resource_quota/trace.cc
@@ -4539,6 +4557,7 @@ targets:
   - src/core/lib/promise/seq.h
   - src/core/lib/resource_quota/arena.h
   - src/core/lib/resource_quota/memory_quota.h
+  - src/core/lib/resource_quota/periodic_update.h
   - src/core/lib/resource_quota/resource_quota.h
   - src/core/lib/resource_quota/thread_quota.h
   - src/core/lib/resource_quota/trace.h
@@ -4563,6 +4582,7 @@ targets:
   - src/core/lib/promise/activity.cc
   - src/core/lib/resource_quota/arena.cc
   - src/core/lib/resource_quota/memory_quota.cc
+  - src/core/lib/resource_quota/periodic_update.cc
   - src/core/lib/resource_quota/resource_quota.cc
   - src/core/lib/resource_quota/thread_quota.cc
   - src/core/lib/resource_quota/trace.cc
@@ -4657,6 +4677,15 @@ targets:
   - linux
   - posix
   - mac
+- name: client_channel_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/core/client_channel/client_channel_test.cc
+  deps:
+  - grpc_test_util
 - name: client_context_test_peer_test
   gtest: true
   build: test
@@ -5460,6 +5489,7 @@ targets:
   - src/core/lib/promise/race.h
   - src/core/lib/promise/seq.h
   - src/core/lib/resource_quota/memory_quota.h
+  - src/core/lib/resource_quota/periodic_update.h
   - src/core/lib/resource_quota/resource_quota.h
   - src/core/lib/resource_quota/thread_quota.h
   - src/core/lib/resource_quota/trace.h
@@ -5486,6 +5516,7 @@ targets:
   - src/core/lib/iomgr/iomgr_internal.cc
   - src/core/lib/promise/activity.cc
   - src/core/lib/resource_quota/memory_quota.cc
+  - src/core/lib/resource_quota/periodic_update.cc
   - src/core/lib/resource_quota/resource_quota.cc
   - src/core/lib/resource_quota/thread_quota.cc
   - src/core/lib/resource_quota/trace.cc
@@ -5550,6 +5581,7 @@ targets:
   - src/core/lib/promise/wait_set.h
   - src/core/lib/resource_quota/arena.h
   - src/core/lib/resource_quota/memory_quota.h
+  - src/core/lib/resource_quota/periodic_update.h
   - src/core/lib/resource_quota/resource_quota.h
   - src/core/lib/resource_quota/thread_quota.h
   - src/core/lib/resource_quota/trace.h
@@ -5575,6 +5607,7 @@ targets:
   - src/core/lib/promise/activity.cc
   - src/core/lib/resource_quota/arena.cc
   - src/core/lib/resource_quota/memory_quota.cc
+  - src/core/lib/resource_quota/periodic_update.cc
   - src/core/lib/resource_quota/resource_quota.cc
   - src/core/lib/resource_quota/thread_quota.cc
   - src/core/lib/resource_quota/trace.cc
@@ -6617,6 +6650,7 @@ targets:
   - src/core/lib/promise/race.h
   - src/core/lib/promise/seq.h
   - src/core/lib/resource_quota/memory_quota.h
+  - src/core/lib/resource_quota/periodic_update.h
   - src/core/lib/resource_quota/trace.h
   - src/core/lib/slice/percent_encoding.h
   - src/core/lib/slice/slice.h
@@ -6638,6 +6672,7 @@ targets:
   - src/core/lib/iomgr/iomgr_internal.cc
   - src/core/lib/promise/activity.cc
   - src/core/lib/resource_quota/memory_quota.cc
+  - src/core/lib/resource_quota/periodic_update.cc
   - src/core/lib/resource_quota/trace.cc
   - src/core/lib/slice/percent_encoding.cc
   - src/core/lib/slice/slice.cc
@@ -6691,6 +6726,7 @@ targets:
   - src/core/lib/promise/race.h
   - src/core/lib/promise/seq.h
   - src/core/lib/resource_quota/memory_quota.h
+  - src/core/lib/resource_quota/periodic_update.h
   - src/core/lib/resource_quota/trace.h
   - src/core/lib/slice/percent_encoding.h
   - src/core/lib/slice/slice.h
@@ -6713,6 +6749,7 @@ targets:
   - src/core/lib/iomgr/iomgr_internal.cc
   - src/core/lib/promise/activity.cc
   - src/core/lib/resource_quota/memory_quota.cc
+  - src/core/lib/resource_quota/periodic_update.cc
   - src/core/lib/resource_quota/trace.cc
   - src/core/lib/slice/percent_encoding.cc
   - src/core/lib/slice/slice.cc
@@ -7179,6 +7216,7 @@ targets:
   - src/core/lib/promise/seq.h
   - src/core/lib/resource_quota/arena.h
   - src/core/lib/resource_quota/memory_quota.h
+  - src/core/lib/resource_quota/periodic_update.h
   - src/core/lib/resource_quota/resource_quota.h
   - src/core/lib/resource_quota/thread_quota.h
   - src/core/lib/resource_quota/trace.h
@@ -7204,6 +7242,7 @@ targets:
   - src/core/lib/promise/activity.cc
   - src/core/lib/resource_quota/arena.cc
   - src/core/lib/resource_quota/memory_quota.cc
+  - src/core/lib/resource_quota/periodic_update.cc
   - src/core/lib/resource_quota/resource_quota.cc
   - src/core/lib/resource_quota/thread_quota.cc
   - src/core/lib/resource_quota/trace.cc
@@ -7551,6 +7590,7 @@ targets:
   - src/core/lib/promise/race.h
   - src/core/lib/promise/seq.h
   - src/core/lib/resource_quota/memory_quota.h
+  - src/core/lib/resource_quota/periodic_update.h
   - src/core/lib/resource_quota/resource_quota.h
   - src/core/lib/resource_quota/thread_quota.h
   - src/core/lib/resource_quota/trace.h
@@ -7574,6 +7614,7 @@ targets:
   - src/core/lib/iomgr/iomgr_internal.cc
   - src/core/lib/promise/activity.cc
   - src/core/lib/resource_quota/memory_quota.cc
+  - src/core/lib/resource_quota/periodic_update.cc
   - src/core/lib/resource_quota/resource_quota.cc
   - src/core/lib/resource_quota/thread_quota.cc
   - src/core/lib/resource_quota/trace.cc
@@ -10140,12 +10181,12 @@ targets:
   - mac
 external_proto_libraries:
 - destination: third_party/envoy-api
-  hash: c5807010b67033330915ca5a20483e30538ae5e689aa14b3631d6284beca4630
+  hash: 0fe4c68dea4423f5880c068abbcbc90ac4b98496cf2af15a1fe3fbc0fdb050fd
   proto_prefix: third_party/envoy-api/
-  strip_prefix: data-plane-api-9c42588c956220b48eb3099d186487c2f04d32ec
+  strip_prefix: data-plane-api-bf6154e482bbd5e6f64032993206e66b6116f2bd
   urls:
-  - https://storage.googleapis.com/grpc-bazel-mirror/github.com/envoyproxy/data-plane-api/archive/9c42588c956220b48eb3099d186487c2f04d32ec.tar.gz
-  - https://github.com/envoyproxy/data-plane-api/archive/9c42588c956220b48eb3099d186487c2f04d32ec.tar.gz
+  - https://storage.googleapis.com/grpc-bazel-mirror/github.com/envoyproxy/data-plane-api/archive/bf6154e482bbd5e6f64032993206e66b6116f2bd.tar.gz
+  - https://github.com/envoyproxy/data-plane-api/archive/bf6154e482bbd5e6f64032993206e66b6116f2bd.tar.gz
 - destination: third_party/googleapis
   hash: 5bb6b0253ccf64b53d6c7249625a7e3f6c3bc6402abd52d3778bfa48258703a0
   proto_prefix: third_party/googleapis/

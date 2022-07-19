@@ -151,6 +151,7 @@ class WeightedTargetLb : public LoadBalancingPolicy {
 
     void UpdateLocked(const WeightedTargetLbConfig::ChildConfig& config,
                       absl::StatusOr<ServerAddressList> addresses,
+                      const std::string& resolution_note,
                       const ChannelArgs& args);
     void ResetBackoffLocked();
     void DeactivateLocked();
@@ -334,7 +335,8 @@ void WeightedTargetLb::UpdateLocked(UpdateArgs args) {
     } else {
       addresses = address_map.status();
     }
-    target->UpdateLocked(config, std::move(addresses), args.args);
+    target->UpdateLocked(config, std::move(addresses), args.resolution_note,
+                         args.args);
   }
   update_in_progress_ = false;
   if (config_->target_map().empty()) {
@@ -553,7 +555,8 @@ WeightedTargetLb::WeightedChild::CreateChildPolicyLocked(
 
 void WeightedTargetLb::WeightedChild::UpdateLocked(
     const WeightedTargetLbConfig::ChildConfig& config,
-    absl::StatusOr<ServerAddressList> addresses, const ChannelArgs& args) {
+    absl::StatusOr<ServerAddressList> addresses,
+    const std::string& resolution_note, const ChannelArgs& args) {
   if (weighted_target_policy_->shutting_down_) return;
   // Update child weight.
   weight_ = config.weight;
@@ -574,6 +577,7 @@ void WeightedTargetLb::WeightedChild::UpdateLocked(
   UpdateArgs update_args;
   update_args.config = config.config;
   update_args.addresses = std::move(addresses);
+  update_args.resolution_note = resolution_note;
   update_args.args = args;
   // Update the policy.
   if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_weighted_target_trace)) {

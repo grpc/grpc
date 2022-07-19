@@ -670,6 +670,7 @@ void OutlierDetectionLb::UpdateLocked(UpdateArgs args) {
   // Update child policy.
   UpdateArgs update_args;
   update_args.addresses = std::move(args.addresses);
+  update_args.resolution_note = std::move(args.resolution_note);
   update_args.config = config_->child_policy();
   // Update the policy.
   update_args.args = std::move(args.args);

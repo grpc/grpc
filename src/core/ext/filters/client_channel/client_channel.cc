@@ -862,17 +862,9 @@ class ClientChannel::ClientChannelControlHelper
           args.GetOwnedString(GRPC_ARG_HEALTH_CHECK_SERVICE_NAME);
     }
     // Construct channel args for subchannel.
-    // TODO(roth): add a test that default authority overrides work as intended.
-    ChannelArgs subchannel_args =
-        args.UnionWith(address.args())
-            .SetObject(chand_->subchannel_pool_)
-            // If we haven't already set the default authority arg, add it from
-            // the channel.
-            .SetIfUnset(GRPC_ARG_DEFAULT_AUTHORITY, chand_->default_authority_)
-            // Remove channel args that should not affect subchannel uniqueness.
-            .Remove(GRPC_ARG_HEALTH_CHECK_SERVICE_NAME)
-            .Remove(GRPC_ARG_INHIBIT_HEALTH_CHECKING)
-            .Remove(GRPC_ARG_CHANNELZ_CHANNEL_NODE);
+    ChannelArgs subchannel_args = ClientChannel::MakeSubchannelArgs(
+        args, address.args(), chand_->subchannel_pool_,
+        chand_->default_authority_);
     // Create subchannel.
     RefCountedPtr<Subchannel> subchannel =
         chand_->client_channel_factory_->CreateSubchannel(address.address(),
@@ -1076,6 +1068,29 @@ ClientChannel::CreateLoadBalancedCall(
   return OrphanablePtr<LoadBalancedCall>(args.arena->New<LoadBalancedCall>(
       this, args, pollent, on_call_destruction_complete,
       call_dispatch_controller, is_transparent_retry));
+}
+
+ChannelArgs ClientChannel::MakeSubchannelArgs(
+    const ChannelArgs& channel_args, const ChannelArgs& address_args,
+    const RefCountedPtr<SubchannelPoolInterface>& subchannel_pool,
+    const std::string& channel_default_authority) {
+  // Note that we start with the channel-level args and then apply the
+  // per-address args, so that if a value is present in both, the one
+  // in the channel-level args is used.  This is particularly important
+  // for the GRPC_ARG_DEFAULT_AUTHORITY arg, which we want to allow
+  // resolvers to set on a per-address basis only if the application
+  // did not explicitly set it at the channel level.
+  return channel_args.UnionWith(address_args)
+      .SetObject(subchannel_pool)
+      // If we haven't already set the default authority arg (i.e., it
+      // was not explicitly set by the application nor overridden by
+      // the resolver), add it from the channel's default.
+      .SetIfUnset(GRPC_ARG_DEFAULT_AUTHORITY, channel_default_authority)
+      // Remove channel args that should not affect subchannel
+      // uniqueness.
+      .Remove(GRPC_ARG_HEALTH_CHECK_SERVICE_NAME)
+      .Remove(GRPC_ARG_INHIBIT_HEALTH_CHECKING)
+      .Remove(GRPC_ARG_CHANNELZ_CHANNEL_NODE);
 }
 
 namespace {
