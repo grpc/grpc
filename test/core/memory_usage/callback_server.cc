@@ -1,3 +1,21 @@
+/*
+ *
+ * Copyright 2022 gRPC authors.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ */
+
 #include <stdio.h>
 #include <string.h>
 
@@ -34,7 +52,6 @@
 
 class ServerCallbackImpl final
     : public grpc::testing::BenchmarkService::CallbackService {
-  
   grpc::ServerUnaryReactor* UnaryCall(
       grpc::CallbackServerContext* context,
       const grpc::testing::SimpleRequest* request,
@@ -71,7 +88,7 @@ int main(int argc, char** argv) {
   std::shared_ptr<grpc::ServerCredentials> creds =
       grpc::InsecureServerCredentials();
   if (absl::GetFlag(FLAGS_secure)) {
-    gpr_log(GPR_INFO, "Supposed to be secure");
+    gpr_log(GPR_INFO, "Supposed to be secure, is not yet");
     // TODO (chennancy) Add in secure credentials
   }
   builder.AddListeningPort(server_address, creds);
@@ -84,7 +101,7 @@ int main(int argc, char** argv) {
   // Set up the server to start accepting requests.
   std::shared_ptr<grpc::Server> server(builder.BuildAndStart());
   gpr_log(GPR_INFO, "Server listening on %s", server_address.c_str());
-  
+
   // Keep the program running until the server shuts down.
   server->Wait();
   // TODO (chennancy) Add graceful shutdown

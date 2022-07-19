@@ -1,3 +1,21 @@
+/*
+ *
+ * Copyright 2022 gRPC authors.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ */
+
 #include <stdio.h>
 #include <string.h>
 
@@ -35,44 +53,36 @@
 #include "test/core/util/subprocess.h"
 #include "test/core/util/test_config.h"
 
-
-class ClientCallbackImpl {
- public:
-  ClientCallbackImpl(
-      std::unique_ptr<grpc::testing::BenchmarkService::Stub> stub)
-      : stub_(std::move(stub)) {}
-
-  void UnaryCall() {
-    struct CallParams {
-      grpc::ClientContext context;
-      grpc::testing::SimpleRequest request;
-      grpc::testing::SimpleResponse response;
-    };
-
-    CallParams* params = new CallParams();
-
-    auto callback = [params](const grpc::Status& status) {
-      if (status.ok()) {
-        gpr_log(GPR_INFO, "UnaryCall RPC succeeded.");
-      }
-      else{
-        gpr_log(GPR_ERROR, "UnaryCall RPC failed.");
-      }
-      delete params;
-      return;
-    };
-
-    // Start a call.
-    stub_->async()->UnaryCall(&params->context, &params->request,
-                              &params->response, callback);
-  }
-
- private:
-  std::unique_ptr<grpc::testing::BenchmarkService::Stub> stub_;
-};
-
 ABSL_FLAG(std::string, target, "localhost:443", "Target host:port");
 ABSL_FLAG(bool, secure, false, "Use SSL Credentials");
+
+void UnaryCall(std::shared_ptr<grpc::ChannelCredentials> creds) {
+  // Create a channel to the server and a stub
+  std::shared_ptr<grpc::Channel> channel =
+      CreateChannel(absl::GetFlag(FLAGS_target), creds);
+  std::unique_ptr<grpc::testing::BenchmarkService::Stub> stub_ =
+      grpc::testing::BenchmarkService::NewStub(channel);
+
+  struct CallParams {
+    grpc::ClientContext context;
+    grpc::testing::SimpleRequest request;
+    grpc::testing::SimpleResponse response;
+  };
+
+  CallParams* params = new CallParams();
+
+  auto callback = [](const grpc::Status& status) {
+    if (status.ok()) {
+      gpr_log(GPR_INFO, "UnaryCall RPC succeeded.");
+    } else {
+      gpr_log(GPR_ERROR, "UnaryCall RPC failed.");
+    }
+  };
+
+  // Start a call.
+  stub_->async()->UnaryCall(&params->context, &params->request,
+                            &params->response, callback);
+}
 
 int main(int argc, char** argv) {
   absl::ParseCommandLine(argc, argv);
@@ -87,17 +97,12 @@ int main(int argc, char** argv) {
   std::shared_ptr<grpc::ChannelCredentials> creds =
       grpc::InsecureChannelCredentials();
   if (absl::GetFlag(FLAGS_secure)) {
-    gpr_log(GPR_INFO, "Supposed to be secure");
+    gpr_log(GPR_INFO, "Supposed to be secure, is not yet");
     // TODO (chennancy) Add in secure credentials
   }
-
-  // Create a channel to the server and a stub
-  std::shared_ptr<grpc::Channel> channel =
-      CreateChannel(absl::GetFlag(FLAGS_target), creds);
-  ClientCallbackImpl client(grpc::testing::BenchmarkService::NewStub(channel));
   gpr_log(GPR_INFO, "Client Target: %s", absl::GetFlag(FLAGS_target).c_str());
 
-  client.UnaryCall();
+  UnaryCall(creds);
   gpr_log(GPR_INFO, "Client Done");
   return 0;
 }
