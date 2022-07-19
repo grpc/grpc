@@ -142,7 +142,7 @@ TEST(RbacServiceConfigParsingTest, BadRbacPolicyType) {
   auto service_config = ServiceConfigImpl::Create(args, test_json);
   EXPECT_EQ(service_config.status().code(), absl::StatusCode::kInvalidArgument);
   EXPECT_THAT(
-      service_config.status().message(),
+      std::string(service_config.status().message()),
       ::testing::ContainsRegex("Rbac parser" CHILD_ERROR_TAG
                                "field:rbacPolicy error:type should be ARRAY"))
       << service_config.status();
@@ -162,7 +162,7 @@ TEST(RbacServiceConfigParsingTest, BadRulesType) {
   auto service_config = ServiceConfigImpl::Create(args, test_json);
   EXPECT_EQ(service_config.status().code(), absl::StatusCode::kInvalidArgument);
   EXPECT_THAT(
-      service_config.status().message(),
+      std::string(service_config.status().message()),
       ::testing::ContainsRegex("Rbac parser" CHILD_ERROR_TAG
                                "rbacPolicy\\[0\\]" CHILD_ERROR_TAG
                                "field:rules error:type should be OBJECT"))
@@ -188,7 +188,7 @@ TEST(RbacServiceConfigParsingTest, BadActionAndPolicyType) {
   auto service_config = ServiceConfigImpl::Create(args, test_json);
   EXPECT_EQ(service_config.status().code(), absl::StatusCode::kInvalidArgument);
   EXPECT_THAT(
-      service_config.status().message(),
+      std::string(service_config.status().message()),
       ::testing::ContainsRegex("Rbac parser" CHILD_ERROR_TAG
                                "rbacPolicy\\[0\\]" CHILD_ERROR_TAG
                                "field:action error:type should be NUMBER.*"
@@ -218,7 +218,7 @@ TEST(RbacServiceConfigParsingTest, MissingPermissionAndPrincipals) {
   auto service_config = ServiceConfigImpl::Create(args, test_json);
   EXPECT_EQ(service_config.status().code(), absl::StatusCode::kInvalidArgument);
   EXPECT_THAT(
-      service_config.status().message(),
+      std::string(service_config.status().message()),
       ::testing::ContainsRegex("Rbac parser" CHILD_ERROR_TAG
                                "rbacPolicy\\[0\\]" CHILD_ERROR_TAG
                                "policies key:'policy'" CHILD_ERROR_TAG
@@ -251,7 +251,7 @@ TEST(RbacServiceConfigParsingTest, EmptyPrincipalAndPermission) {
   auto service_config = ServiceConfigImpl::Create(args, test_json);
   EXPECT_EQ(service_config.status().code(), absl::StatusCode::kInvalidArgument);
   EXPECT_THAT(
-      service_config.status().message(),
+      std::string(service_config.status().message()),
       ::testing::ContainsRegex(
           "Rbac parser" CHILD_ERROR_TAG "rbacPolicy\\[0\\]" CHILD_ERROR_TAG
           "policies key:'policy'" CHILD_ERROR_TAG
@@ -364,7 +364,7 @@ TEST(RbacServiceConfigParsingTest, VariousPermissionsAndPrincipalsBadTypes) {
   auto service_config = ServiceConfigImpl::Create(args, test_json);
   EXPECT_EQ(service_config.status().code(), absl::StatusCode::kInvalidArgument);
   EXPECT_THAT(
-      service_config.status().message(),
+      std::string(service_config.status().message()),
       ::testing::ContainsRegex(
           "Rbac parser" CHILD_ERROR_TAG "rbacPolicy\\[0\\]" CHILD_ERROR_TAG
           "policies key:'policy'" CHILD_ERROR_TAG
@@ -490,7 +490,7 @@ TEST(RbacServiceConfigParsingTest, HeaderMatcherBadTypes) {
   auto service_config = ServiceConfigImpl::Create(args, test_json);
   EXPECT_EQ(service_config.status().code(), absl::StatusCode::kInvalidArgument);
   EXPECT_THAT(
-      service_config.status().message(),
+      std::string(service_config.status().message()),
       ::testing::ContainsRegex(
           "Rbac parser" CHILD_ERROR_TAG "rbacPolicy\\[0\\]" CHILD_ERROR_TAG
           "policies key:'policy'" CHILD_ERROR_TAG
@@ -584,7 +584,7 @@ TEST(RbacServiceConfigParsingTest, StringMatcherBadTypes) {
   auto service_config = ServiceConfigImpl::Create(args, test_json);
   EXPECT_EQ(service_config.status().code(), absl::StatusCode::kInvalidArgument);
   EXPECT_THAT(
-      service_config.status().message(),
+      std::string(service_config.status().message()),
       ::testing::ContainsRegex("Rbac parser" CHILD_ERROR_TAG
                                "rbacPolicy\\[0\\]" CHILD_ERROR_TAG
                                "policies key:'policy'" CHILD_ERROR_TAG
