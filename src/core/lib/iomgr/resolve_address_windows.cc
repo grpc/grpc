@@ -106,7 +106,7 @@ NativeDNSResolver::LookupHostnameBlocking(absl::string_view name,
   struct addrinfo *result = NULL, *resp;
   int s;
   size_t i;
-  absl::Status error = absl::OkStatus();
+  absl::Status error;
   std::vector<grpc_resolved_address> addresses;
 
   // parse name, splitting it into host and port parts

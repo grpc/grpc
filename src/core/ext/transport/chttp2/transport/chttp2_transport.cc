@@ -1899,7 +1899,7 @@ void grpc_chttp2_maybe_complete_recv_message(grpc_chttp2_transport* t,
 
   grpc_core::chttp2::StreamFlowControl::IncomingUpdateContext upd(
       &s->flow_control);
-  absl::Status error = absl::OkStatus();
+  absl::Status error;
 
   // Lambda is immediately invoked as a big scoped section that can be
   // exited out of at any point by returning.
@@ -2078,7 +2078,7 @@ static absl::Status removal_error(absl::Status extra_error,
   add_error(s->read_closed_error, refs, &nrefs);
   add_error(s->write_closed_error, refs, &nrefs);
   add_error(extra_error, refs, &nrefs);
-  absl::Status error = absl::OkStatus();
+  absl::Status error;
   if (nrefs > 0) {
     error = GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(main_error_msg,
                                                              refs, nrefs);
@@ -2400,12 +2400,12 @@ void grpc_chttp2_act_on_flowctl_action(
 static absl::Status try_http_parsing(grpc_chttp2_transport* t) {
   grpc_http_parser parser;
   size_t i = 0;
-  absl::Status error = absl::OkStatus();
+  absl::Status error;
   grpc_http_response response;
 
   grpc_http_parser_init(&parser, GRPC_HTTP_RESPONSE, &response);
 
-  absl::Status parse_error = absl::OkStatus();
+  absl::Status parse_error;
   for (; i < t->read_buffer.count && parse_error.ok(); i++) {
     parse_error =
         grpc_http_parser_parse(&parser, t->read_buffer.slices[i], nullptr);

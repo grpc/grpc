@@ -71,7 +71,7 @@ int main(int argc, char** argv) {
   grpc_auth_metadata_context context;
   gpr_cmdline* cl = gpr_cmdline_create("print_google_default_creds_token");
   grpc_pollset* pollset = nullptr;
-  absl::Status error = absl::OkStatus();
+  absl::Status error;
   gpr_cmdline_add_string(cl, "service_url",
                          "Service URL for the token request.", &service_url);
   gpr_cmdline_parse(cl, argc, argv);

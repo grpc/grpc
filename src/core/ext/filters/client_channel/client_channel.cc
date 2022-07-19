@@ -233,7 +233,7 @@ class ClientChannel::CallData {
   grpc_transport_stream_op_batch* pending_batches_[MAX_PENDING_BATCHES] = {};
 
   // Set when we get a cancel_stream op.
-  absl::Status cancel_error_ = absl::OkStatus();
+  absl::Status cancel_error_;
 };
 
 //
@@ -945,7 +945,7 @@ absl::Status ClientChannel::Init(grpc_channel_element* elem,
                                  grpc_channel_element_args* args) {
   GPR_ASSERT(args->is_last);
   GPR_ASSERT(elem->filter == &kFilterVtable);
-  absl::Status error = absl::OkStatus();
+  absl::Status error;
   new (elem->channel_data) ClientChannel(args, &error);
   return error;
 }
@@ -1133,7 +1133,7 @@ RefCountedPtr<LoadBalancingPolicy::Config> ChooseLbPolicy(
   Json config_json = Json::Array{Json::Object{
       {std::string(*policy_name), Json::Object{}},
   }};
-  absl::Status parse_error = absl::OkStatus();
+  absl::Status parse_error;
   auto lb_policy_config = LoadBalancingPolicyRegistry::ParseLoadBalancingConfig(
       config_json, &parse_error);
   // The policy name came from one of three places:
@@ -1298,7 +1298,7 @@ void ClientChannel::OnResolverErrorLocked(absl::Status status) {
            call = call->next) {
         grpc_call_element* elem = call->elem;
         CallData* calld = static_cast<CallData*>(elem->call_data);
-        absl::Status error = absl::OkStatus();
+        absl::Status error;
         if (calld->CheckResolutionLocked(elem, &error)) {
           calld->AsyncResolutionDone(elem, error);
         }
@@ -1466,7 +1466,7 @@ void ClientChannel::UpdateServiceConfigInDataPlaneLocked() {
       ExecCtx::Get()->InvalidateNow();
       grpc_call_element* elem = call->elem;
       CallData* calld = static_cast<CallData*>(elem->call_data);
-      absl::Status error = absl::OkStatus();
+      absl::Status error;
       if (calld->CheckResolutionLocked(elem, &error)) {
         calld->AsyncResolutionDone(elem, error);
       }
@@ -1564,7 +1564,7 @@ void ClientChannel::UpdateStateAndPickerLocked(
       // on the stale value, which results in the timer firing too early. To
       // avoid this, we invalidate the cached value for each call we process.
       ExecCtx::Get()->InvalidateNow();
-      absl::Status error = absl::OkStatus();
+      absl::Status error;
       if (call->lb_call->PickSubchannelLocked(&error)) {
         call->lb_call->AsyncPickDone(error);
       }
@@ -2342,7 +2342,7 @@ void ClientChannel::CallData::CreateDynamicCall(grpc_call_element* elem) {
                                      arena_,
                                      call_context_,
                                      call_combiner_};
-  absl::Status error = absl::OkStatus();
+  absl::Status error;
   DynamicFilters* channel_stack = args.channel_stack.get();
   if (GRPC_TRACE_FLAG_ENABLED(grpc_client_channel_call_trace)) {
     gpr_log(
@@ -2935,7 +2935,7 @@ void ClientChannel::LoadBalancedCall::CreateSubchannelCall() {
       // TODO(roth): When we implement hedging support, we will probably
       // need to use a separate call context for each subchannel call.
       call_context_, call_combiner_};
-  absl::Status error = absl::OkStatus();
+  absl::Status error;
   subchannel_call_ = SubchannelCall::Create(std::move(call_args), &error);
   if (GRPC_TRACE_FLAG_ENABLED(grpc_client_channel_lb_call_trace)) {
     gpr_log(GPR_INFO,

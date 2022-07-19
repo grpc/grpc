@@ -776,7 +776,7 @@ static void on_txt_done_locked(void* arg, int status, int /*timeouts*/,
   const size_t prefix_len = sizeof(g_service_config_attribute_prefix) - 1;
   struct ares_txt_ext* result = nullptr;
   struct ares_txt_ext* reply = nullptr;
-  absl::Status error = absl::OkStatus();
+  absl::Status error;
   if (status != ARES_SUCCESS) goto fail;
   GRPC_CARES_TRACE_LOG("request:%p on_txt_done_locked name=%s ARES_SUCCESS", r,
                        q->name().c_str());
@@ -868,7 +868,7 @@ absl::Status grpc_dns_lookup_ares_continued(
     const char* default_port, grpc_pollset_set* interested_parties,
     int query_timeout_ms, std::string* host, std::string* port, bool check_port)
     ABSL_EXCLUSIVE_LOCKS_REQUIRED(r->mu) {
-  absl::Status error = absl::OkStatus();
+  absl::Status error;
   /* parse name, splitting it into host and port parts */
   grpc_core::SplitHostPort(name, host, port);
   if (host->empty()) {
@@ -1088,7 +1088,7 @@ grpc_ares_request* grpc_dns_lookup_srv_ares_impl(
   r->balancer_addresses_out = balancer_addresses;
   GRPC_CARES_TRACE_LOG(
       "request:%p c-ares grpc_dns_lookup_srv_ares_impl name=%s", r, name);
-  absl::Status error = absl::OkStatus();
+  absl::Status error;
   // Don't query for SRV records if the target is "localhost"
   if (target_matches_localhost(name)) {
     grpc_core::ExecCtx::Run(DEBUG_LOCATION, r->on_done, error);
@@ -1126,7 +1126,7 @@ grpc_ares_request* grpc_dns_lookup_txt_ares_impl(
   r->service_config_json_out = service_config_json;
   GRPC_CARES_TRACE_LOG(
       "request:%p c-ares grpc_dns_lookup_txt_ares_impl name=%s", r, name);
-  absl::Status error = absl::OkStatus();
+  absl::Status error;
   // Don't query for TXT records if the target is "localhost"
   if (target_matches_localhost(name)) {
     grpc_core::ExecCtx::Run(DEBUG_LOCATION, r->on_done, error);

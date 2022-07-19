@@ -504,7 +504,7 @@ void TlsChannelSecurityConnector::ChannelPendingVerifierRequest::OnVerifyDone(
     MutexLock lock(&security_connector_->verifier_request_map_mu_);
     security_connector_->pending_verifier_requests_.erase(on_peer_checked_);
   }
-  absl::Status error = absl::OkStatus();
+  absl::Status error;
   if (!status.ok()) {
     error = GRPC_ERROR_CREATE_FROM_COPIED_STRING(
         absl::StrCat("Custom verification check failed with error: ",
@@ -778,7 +778,7 @@ void TlsServerSecurityConnector::ServerPendingVerifierRequest::OnVerifyDone(
     MutexLock lock(&security_connector_->verifier_request_map_mu_);
     security_connector_->pending_verifier_requests_.erase(on_peer_checked_);
   }
-  absl::Status error = absl::OkStatus();
+  absl::Status error;
   if (!status.ok()) {
     error = GRPC_ERROR_CREATE_FROM_COPIED_STRING(
         absl::StrCat("Custom verification check failed with error: ",

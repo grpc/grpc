@@ -368,7 +368,7 @@ absl::Status SecurityHandshaker::CheckPeerLocked() {
 absl::Status SecurityHandshaker::OnHandshakeNextDoneLocked(
     tsi_result result, const unsigned char* bytes_to_send,
     size_t bytes_to_send_size, tsi_handshaker_result* handshaker_result) {
-  absl::Status error = absl::OkStatus();
+  absl::Status error;
   // Handshaker was shutdown.
   if (is_shutdown_) {
     return GRPC_ERROR_CREATE_FROM_STATIC_STRING("Handshaker shutdown");

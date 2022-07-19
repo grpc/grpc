@@ -150,7 +150,7 @@ absl::Status grpc_tcp_server_prepare_socket(grpc_tcp_server* s, int fd,
                                             const grpc_resolved_address* addr,
                                             bool so_reuseport, int* port) {
   grpc_resolved_address sockname_temp;
-  absl::Status err = absl::OkStatus();
+  absl::Status err;
 
   GPR_ASSERT(fd >= 0);
 

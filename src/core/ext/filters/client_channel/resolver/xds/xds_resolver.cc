@@ -605,7 +605,7 @@ absl::Status XdsResolver::XdsConfigSelector::CreateMethodConfig(
                                      "\n    ]"));
   }
   // Construct service config.
-  absl::Status error = absl::OkStatus();
+  absl::Status error;
   if (!fields.empty()) {
     std::string json = absl::StrCat(
         "{\n"
@@ -785,7 +785,7 @@ ConfigSelector::CallConfig XdsResolver::XdsConfigSelector::GetCallConfig(
 //
 
 void XdsResolver::StartLocked() {
-  absl::Status error = absl::OkStatus();
+  absl::Status error;
   auto xds_client = GrpcXdsClient::GetOrCreate(args_, "xds resolver");
   if (!xds_client.ok()) {
     gpr_log(GPR_ERROR,
@@ -990,7 +990,7 @@ void XdsResolver::OnResourceDoesNotExist(std::string context) {
   current_virtual_host_.routes.clear();
   Result result;
   result.addresses.emplace();
-  absl::Status error = absl::OkStatus();
+  absl::Status error;
   result.service_config = ServiceConfigImpl::Create(args_, "{}", &error);
   GPR_ASSERT(*result.service_config != nullptr);
   result.resolution_note = std::move(context);
@@ -1036,7 +1036,7 @@ XdsResolver::CreateServiceConfig() {
       "  ]\n"
       "}");
   std::string json = absl::StrJoin(config_parts, "");
-  absl::Status error = absl::OkStatus();
+  absl::Status error;
   absl::StatusOr<RefCountedPtr<ServiceConfig>> result =
       ServiceConfigImpl::Create(args_, json.c_str(), &error);
   if (!error.ok()) {
@@ -1049,7 +1049,7 @@ void XdsResolver::GenerateResult() {
   if (current_virtual_host_.routes.empty()) return;
   // First create XdsConfigSelector, which may add new entries to the cluster
   // state map, and then CreateServiceConfig for LB policies.
-  absl::Status error = absl::OkStatus();
+  absl::Status error;
   auto config_selector = MakeRefCounted<XdsConfigSelector>(Ref(), &error);
   if (!error.ok()) {
     OnError("could not create ConfigSelector",

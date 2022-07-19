@@ -201,7 +201,7 @@ class Client {
 
     grpc_closure closure_;
     gpr_atm done_atm_ = 0;
-    absl::Status error_ = absl::OkStatus();
+    absl::Status error_;
   };
 
   // Returns true if done, or false if deadline exceeded.

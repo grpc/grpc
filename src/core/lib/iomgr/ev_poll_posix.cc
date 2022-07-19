@@ -762,7 +762,7 @@ static absl::Status pollset_kick_ext(grpc_pollset* p,
                                      grpc_pollset_worker* specific_worker,
                                      uint32_t flags) {
   GPR_TIMER_SCOPE("pollset_kick_ext", 0);
-  absl::Status error = absl::OkStatus();
+  absl::Status error;
   GRPC_STATS_INC_POLLSET_KICK();
 
   /* pollset->mu already held */
@@ -908,7 +908,7 @@ static absl::Status pollset_work(grpc_pollset* pollset,
   GPR_TIMER_SCOPE("pollset_work", 0);
   grpc_pollset_worker worker;
   if (worker_hdl) *worker_hdl = &worker;
-  absl::Status error = absl::OkStatus();
+  absl::Status error;
 
   /* Avoid malloc for small number of elements. */
   enum { inline_elements = 96 };

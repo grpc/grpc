@@ -56,7 +56,7 @@ ServiceConfigParser::ParseGlobalParameters(const ChannelArgs& args,
   ParsedConfigVector parsed_global_configs;
   std::vector<absl::Status> error_list;
   for (size_t i = 0; i < registered_parsers_.size(); i++) {
-    absl::Status parser_error = absl::OkStatus();
+    absl::Status parser_error;
     auto parsed_config =
         registered_parsers_[i]->ParseGlobalParams(args, json, &parser_error);
     if (!parser_error.ok()) {
@@ -77,7 +77,7 @@ ServiceConfigParser::ParsePerMethodParameters(const ChannelArgs& args,
   ParsedConfigVector parsed_method_configs;
   std::vector<absl::Status> error_list;
   for (size_t i = 0; i < registered_parsers_.size(); ++i) {
-    absl::Status parser_error = absl::OkStatus();
+    absl::Status parser_error;
     auto parsed_config =
         registered_parsers_[i]->ParsePerMethodParams(args, json, &parser_error);
     if (!parser_error.ok()) {

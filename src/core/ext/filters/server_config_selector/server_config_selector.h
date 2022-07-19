@@ -43,7 +43,7 @@ class ServerConfigSelector : public RefCounted<ServerConfigSelector> {
  public:
   // Configuration to apply to an incoming call
   struct CallConfig {
-    absl::Status error = absl::OkStatus();
+    absl::Status error;
     const ServiceConfigParser::ParsedConfigVector* method_configs = nullptr;
     RefCountedPtr<ServiceConfig> service_config;
   };

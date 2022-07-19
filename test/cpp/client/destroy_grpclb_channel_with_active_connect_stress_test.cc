@@ -70,7 +70,7 @@ void TryConnectAndDestroy() {
   grpc_core::ServerAddressList addresses;
   addresses.emplace_back(address.addr, address.len, grpc_core::ChannelArgs());
   grpc_core::Resolver::Result lb_address_result;
-  absl::Status error = absl::OkStatus();
+  absl::Status error;
   lb_address_result.service_config = grpc_core::ServiceConfigImpl::Create(
       grpc_core::ChannelArgs(), "{\"loadBalancingConfig\":[{\"grpclb\":{}}]}",
       &error);

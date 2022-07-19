@@ -505,10 +505,10 @@ class ClientChannel::LoadBalancedCall
   gpr_cycle_counter lb_call_start_time_ = gpr_get_cycle_counter();
 
   // Set when we get a cancel_stream op.
-  absl::Status cancel_error_ = absl::OkStatus();
+  absl::Status cancel_error_;
 
   // Set when we fail inside the LB call.
-  absl::Status failure_error_ = absl::OkStatus();
+  absl::Status failure_error_;
 
   grpc_closure pick_closure_;
 

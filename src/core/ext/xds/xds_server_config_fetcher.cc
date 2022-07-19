@@ -1172,7 +1172,7 @@ XdsServerConfigFetcher::ListenerWatcher::FilterChainMatchManager::
             absl::StrJoin(fields, ",\n"),
             "\n  } ]\n"
             "}");
-        absl::Status error = absl::OkStatus();
+        absl::Status error;
         config_selector_route.method_config =
             ServiceConfigImpl::Create(result.args, json.c_str(), &error);
         GPR_ASSERT(error.ok());

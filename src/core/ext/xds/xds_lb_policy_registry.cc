@@ -167,7 +167,7 @@ absl::StatusOr<Json> ParseStructToJson(const XdsEncodingContext& context,
   void* buf = upb_Arena_Malloc(context.arena, json_size + 1);
   upb_JsonEncode(resource, msg_def, context.symtab, 0,
                  reinterpret_cast<char*>(buf), json_size + 1, status.ptr());
-  absl::Status error = absl::OkStatus();
+  absl::Status error;
   auto json = Json::Parse(reinterpret_cast<char*>(buf), &error);
   if (!error.ok()) {
     // This should not happen

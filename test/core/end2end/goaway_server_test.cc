@@ -152,7 +152,7 @@ static grpc_ares_request* my_dns_lookup_ares(
                                  query_timeout_ms);
   }
 
-  absl::Status error = absl::OkStatus();
+  absl::Status error;
   gpr_mu_lock(&g_mu);
   if (g_resolve_port < 0) {
     gpr_mu_unlock(&g_mu);

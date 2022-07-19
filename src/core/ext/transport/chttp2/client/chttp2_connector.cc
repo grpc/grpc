@@ -342,7 +342,7 @@ grpc_channel* grpc_channel_create(const char* target,
   GRPC_API_TRACE("grpc_secure_channel_create(target=%s, creds=%p, args=%p)", 3,
                  (target, (void*)creds, (void*)c_args));
   grpc_channel* channel = nullptr;
-  absl::Status error = absl::OkStatus();
+  absl::Status error;
   if (creds != nullptr) {
     // Add channel args containing the client channel factory and channel
     // credentials.

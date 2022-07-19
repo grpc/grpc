@@ -73,7 +73,7 @@ class ConfigSelector : public RefCounted<ConfigSelector> {
 
   struct CallConfig {
     // Can be set to indicate the call should be failed.
-    absl::Status error = absl::OkStatus();
+    absl::Status error;
     // The per-method parsed configs that will be passed to
     // ServiceConfigCallData.
     const ServiceConfigParser::ParsedConfigVector* method_configs = nullptr;

@@ -37,7 +37,7 @@ absl::Status grpc_load_file(const char* filename, int add_null_terminator,
   grpc_slice result = grpc_empty_slice();
   FILE* file;
   size_t bytes_read = 0;
-  absl::Status error = absl::OkStatus();
+  absl::Status error;
 
   GRPC_SCHEDULING_START_BLOCKING_REGION;
   file = fopen(filename, "rb");

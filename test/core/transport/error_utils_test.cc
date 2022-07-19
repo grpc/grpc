@@ -27,7 +27,7 @@
 namespace {
 
 TEST(ErrorUtilsTest, GetErrorGetStatusNone) {
-  absl::Status error = absl::OkStatus();
+  absl::Status error;
   grpc_status_code code;
   std::string message;
   grpc_error_get_status(error, grpc_core::Timestamp(), &code, &message, nullptr,

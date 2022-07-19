@@ -60,7 +60,7 @@ ServiceConfigImpl::ServiceConfigImpl(const ChannelArgs& args,
     return;
   }
   std::vector<absl::Status> error_list;
-  absl::Status global_error = absl::OkStatus();
+  absl::Status global_error;
   parsed_global_configs_ =
       CoreConfiguration::Get().service_config_parser().ParseGlobalParameters(
           args, json_, &global_error);
@@ -85,7 +85,7 @@ absl::Status ServiceConfigImpl::ParseJsonMethodConfig(const ChannelArgs& args,
   // Parse method config with each registered parser.
   auto parsed_configs =
       absl::make_unique<ServiceConfigParser::ParsedConfigVector>();
-  absl::Status parser_error = absl::OkStatus();
+  absl::Status parser_error;
   *parsed_configs =
       CoreConfiguration::Get().service_config_parser().ParsePerMethodParameters(
           args, json, &parser_error);
@@ -105,7 +105,7 @@ absl::Status ServiceConfigImpl::ParseJsonMethodConfig(const ChannelArgs& args,
     }
     const Json::Array& name_array = it->second.array_value();
     for (const Json& name : name_array) {
-      absl::Status parse_error = absl::OkStatus();
+      absl::Status parse_error;
       std::string path = ParseJsonMethodName(name, &parse_error);
       if (!parse_error.ok()) {
         error_list.push_back(parse_error);

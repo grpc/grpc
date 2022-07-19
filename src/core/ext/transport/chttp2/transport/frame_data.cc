@@ -84,7 +84,7 @@ grpc_core::Poll<absl::Status> grpc_deframe_unprocessed_incoming_frames(
     grpc_chttp2_stream* s, uint32_t* min_progress_size,
     grpc_core::SliceBuffer* stream_out, uint32_t* message_flags) {
   grpc_slice_buffer* slices = &s->frame_storage;
-  absl::Status error = absl::OkStatus();
+  absl::Status error;
 
   if (slices->length < 5) {
     if (min_progress_size != nullptr) *min_progress_size = 5 - slices->length;

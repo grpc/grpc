@@ -109,7 +109,7 @@ class grpc_httpcli_ssl_channel_security_connector final
   void check_peer(tsi_peer peer, grpc_endpoint* /*ep*/,
                   RefCountedPtr<grpc_auth_context>* /*auth_context*/,
                   grpc_closure* on_peer_checked) override {
-    absl::Status error = absl::OkStatus();
+    absl::Status error;
 
     /* Check the peer name. */
     if (secure_peer_name_ != nullptr &&

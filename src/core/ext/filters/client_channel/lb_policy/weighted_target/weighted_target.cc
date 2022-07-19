@@ -760,7 +760,7 @@ class WeightedTargetLbFactory : public LoadBalancingPolicyFactory {
     // Child policy.
     it = json.object_value().find("childPolicy");
     if (it != json.object_value().end()) {
-      absl::Status parse_error = absl::OkStatus();
+      absl::Status parse_error;
       child_config->config =
           LoadBalancingPolicyRegistry::ParseLoadBalancingConfig(it->second,
                                                                 &parse_error);

@@ -314,8 +314,8 @@ static absl::Status add_wildcard_addrs_to_server(grpc_tcp_server* s,
   grpc_dualstack_mode dsmode;
   grpc_tcp_listener* sp = nullptr;
   grpc_tcp_listener* sp2 = nullptr;
-  absl::Status v6_err = absl::OkStatus();
-  absl::Status v4_err = absl::OkStatus();
+  absl::Status v6_err;
+  absl::Status v4_err;
   *out_port = -1;
 
   if (grpc_tcp_server_have_ifaddrs() && s->expand_wildcard_addrs) {

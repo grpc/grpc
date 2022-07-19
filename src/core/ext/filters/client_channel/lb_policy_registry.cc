@@ -116,7 +116,7 @@ bool LoadBalancingPolicyRegistry::LoadBalancingPolicyExists(
     return false;
   }
   if (requires_config != nullptr) {
-    absl::Status error = absl::OkStatus();
+    absl::Status error;
     // Check if the load balancing policy allows an empty config
     *requires_config =
         factory->ParseLoadBalancingConfig(Json(), &error) == nullptr;

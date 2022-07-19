@@ -2210,7 +2210,7 @@ absl::Status ParseGrpcKeybuilder(size_t idx, const Json& json,
     } else {
       size_t name_idx = 0;
       for (const Json& name_json : *names_array) {
-        absl::Status child_error = absl::OkStatus();
+        absl::Status child_error;
         std::string name =
             ParseJsonMethodName(name_idx++, name_json, &child_error);
         if (!child_error.ok()) {
@@ -2356,7 +2356,7 @@ RlsLbConfig::RouteLookupConfig ParseRouteLookupConfig(const Json::Object& json,
   const Json::Array* keybuilder_list = nullptr;
   ParseJsonObjectField(json, "grpcKeybuilders", &keybuilder_list, &error_list);
   if (keybuilder_list != nullptr) {
-    absl::Status child_error = absl::OkStatus();
+    absl::Status child_error;
     route_lookup_config.key_builder_map =
         ParseGrpcKeybuilders(*keybuilder_list, &child_error);
     if (!child_error.ok()) error_list.push_back(child_error);
@@ -2480,7 +2480,7 @@ class RlsLbFactory : public LoadBalancingPolicyFactory {
     const Json::Object* route_lookup_config_json = nullptr;
     if (ParseJsonObjectField(config.object_value(), "routeLookupConfig",
                              &route_lookup_config_json, &error_list)) {
-      absl::Status child_error = absl::OkStatus();
+      absl::Status child_error;
       route_lookup_config =
           ParseRouteLookupConfig(*route_lookup_config_json, &child_error);
       if (!child_error.ok()) error_list.push_back(child_error);
@@ -2492,7 +2492,7 @@ class RlsLbFactory : public LoadBalancingPolicyFactory {
                              "routeLookupChannelServiceConfig",
                              &rls_channel_service_config_json_obj, &error_list,
                              /*required=*/false)) {
-      absl::Status child_error = absl::OkStatus();
+      absl::Status child_error;
       Json rls_channel_service_config_json(
           *rls_channel_service_config_json_obj);
       rls_channel_service_config = rls_channel_service_config_json.Dump();

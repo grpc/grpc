@@ -88,8 +88,8 @@ class TestCertificatesWatcher
  private:
   absl::optional<std::string> root_certs_;
   absl::optional<PemKeyCertPairList> key_cert_pairs_;
-  absl::Status root_cert_error_ = absl::OkStatus();
-  absl::Status identity_cert_error_ = absl::OkStatus();
+  absl::Status root_cert_error_;
+  absl::Status identity_cert_error_;
 };
 
 TEST(

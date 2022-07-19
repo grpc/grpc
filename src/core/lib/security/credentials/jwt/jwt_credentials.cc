@@ -140,7 +140,7 @@ grpc_service_account_jwt_access_credentials_create_from_auth_json_key(
 }
 
 static char* redact_private_key(const char* json_key) {
-  absl::Status error = absl::OkStatus();
+  absl::Status error;
   Json json = Json::Parse(json_key, &error);
   if (!error.ok() || json.type() != Json::Type::OBJECT) {
     return gpr_strdup("<Json failed to parse.>");

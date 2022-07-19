@@ -261,7 +261,7 @@ struct grpc_chttp2_transport {
   /** is the transport destroying itself? */
   uint8_t destroying = false;
   /** has the upper layer closed the transport? */
-  absl::Status closed_with_error = absl::OkStatus();
+  absl::Status closed_with_error;
 
   /** is there a read request to the endpoint outstanding? */
   uint8_t endpoint_reading = 1;
@@ -310,7 +310,7 @@ struct grpc_chttp2_transport {
 
   /** Set to a grpc_error object if a goaway frame is received. By default, set
    * to absl::OkStatus() */
-  absl::Status goaway_error = absl::OkStatus();
+  absl::Status goaway_error;
 
   grpc_chttp2_sent_goaway_state sent_goaway_state = GRPC_CHTTP2_NO_GOAWAY_SEND;
 
@@ -391,7 +391,7 @@ struct grpc_chttp2_transport {
 
   /* if non-NULL, close the transport with this error when writes are finished
    */
-  absl::Status close_transport_on_writes_finished = absl::OkStatus();
+  absl::Status close_transport_on_writes_finished;
 
   /* a list of closures to run after writes are finished */
   grpc_closure_list run_after_write = GRPC_CLOSURE_LIST_INIT;
@@ -527,9 +527,9 @@ struct grpc_chttp2_stream {
   bool eos_sent = false;
 
   /** the error that resulted in this stream being read-closed */
-  absl::Status read_closed_error = absl::OkStatus();
+  absl::Status read_closed_error;
   /** the error that resulted in this stream being write-closed */
-  absl::Status write_closed_error = absl::OkStatus();
+  absl::Status write_closed_error;
 
   grpc_published_metadata_method published_metadata[2] = {};
   bool final_metadata_requested = false;
@@ -543,7 +543,7 @@ struct grpc_chttp2_stream {
   grpc_core::Timestamp deadline = grpc_core::Timestamp::InfFuture();
 
   /** saw some stream level error */
-  absl::Status forced_close_error = absl::OkStatus();
+  absl::Status forced_close_error;
   /** how many header frames have we received? */
   uint8_t header_frames_received = 0;
   /** number of bytes received - reset at end of parse thread execution */

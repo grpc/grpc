@@ -110,7 +110,7 @@ class CallData {
 
   CallCombiner* call_combiner_;
   // Overall error for the call
-  absl::Status error_ = absl::OkStatus();
+  absl::Status error_;
   // Fields for handling recv_initial_metadata_ready callback
   grpc_closure on_recv_initial_metadata_ready_;
   grpc_closure* original_recv_initial_metadata_ready_ = nullptr;
@@ -127,7 +127,7 @@ class CallData {
   bool seen_recv_trailing_metadata_ready_ = false;
   grpc_closure on_recv_trailing_metadata_ready_;
   grpc_closure* original_recv_trailing_metadata_ready_ = nullptr;
-  absl::Status on_recv_trailing_metadata_ready_error_ = absl::OkStatus();
+  absl::Status on_recv_trailing_metadata_ready_error_;
 };
 
 void CallData::OnRecvInitialMetadataReady(void* arg, absl::Status error) {

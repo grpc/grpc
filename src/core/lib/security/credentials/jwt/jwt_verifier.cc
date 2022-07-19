@@ -112,7 +112,7 @@ static Json parse_json_part_from_jwt(const char* str, size_t len) {
     return Json();  // JSON null
   }
   absl::string_view string = grpc_core::StringViewFromSlice(slice);
-  absl::Status error = absl::OkStatus();
+  absl::Status error;
   Json json = Json::Parse(string, &error);
   if (!error.ok()) {
     gpr_log(GPR_ERROR, "JSON parse error: %s",
@@ -435,7 +435,7 @@ static Json json_from_http(const grpc_http_response* response) {
             response->status);
     return Json();  // JSON null
   }
-  absl::Status error = absl::OkStatus();
+  absl::Status error;
   Json json = Json::Parse(
       absl::string_view(response->body, response->body_length), &error);
   if (!error.ok()) {

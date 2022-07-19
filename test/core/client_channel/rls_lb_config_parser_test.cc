@@ -64,7 +64,7 @@ TEST_F(RlsConfigParsingTest, ValidConfig) {
       "    }\n"
       "  }]\n"
       "}\n";
-  absl::Status error = absl::OkStatus();
+  absl::Status error;
   auto service_config =
       ServiceConfigImpl::Create(ChannelArgs(), service_config_json, &error);
   EXPECT_EQ(error, absl::OkStatus()) << grpc_error_std_string(error);
@@ -83,7 +83,7 @@ TEST_F(RlsConfigParsingTest, TopLevelRequiredFieldsMissing) {
       "    }\n"
       "  }]\n"
       "}\n";
-  absl::Status error = absl::OkStatus();
+  absl::Status error;
   auto service_config =
       ServiceConfigImpl::Create(ChannelArgs(), service_config_json, &error);
   EXPECT_THAT(
@@ -107,7 +107,7 @@ TEST_F(RlsConfigParsingTest, TopLevelFieldsWrongTypes) {
       "    }\n"
       "  }]\n"
       "}\n";
-  absl::Status error = absl::OkStatus();
+  absl::Status error;
   auto service_config =
       ServiceConfigImpl::Create(ChannelArgs(), service_config_json, &error);
   EXPECT_THAT(
@@ -132,7 +132,7 @@ TEST_F(RlsConfigParsingTest, TopLevelFieldsInvalidValues) {
       "    }\n"
       "  }]\n"
       "}\n";
-  absl::Status error = absl::OkStatus();
+  absl::Status error;
   auto service_config =
       ServiceConfigImpl::Create(ChannelArgs(), service_config_json, &error);
   EXPECT_THAT(
@@ -156,7 +156,7 @@ TEST_F(RlsConfigParsingTest, InvalidChildPolicyConfig) {
       "    }\n"
       "  }]\n"
       "}\n";
-  absl::Status error = absl::OkStatus();
+  absl::Status error;
   auto service_config =
       ServiceConfigImpl::Create(ChannelArgs(), service_config_json, &error);
   EXPECT_THAT(
@@ -182,7 +182,7 @@ TEST_F(RlsConfigParsingTest, InvalidRlsChannelServiceConfig) {
       "    }\n"
       "  }]\n"
       "}\n";
-  absl::Status error = absl::OkStatus();
+  absl::Status error;
   auto service_config =
       ServiceConfigImpl::Create(ChannelArgs(), service_config_json, &error);
   EXPECT_THAT(grpc_error_std_string(error),
@@ -209,7 +209,7 @@ TEST_F(RlsConfigParsingTest, RouteLookupConfigRequiredFieldsMissing) {
       "    }\n"
       "  }]\n"
       "}\n";
-  absl::Status error = absl::OkStatus();
+  absl::Status error;
   auto service_config =
       ServiceConfigImpl::Create(ChannelArgs(), service_config_json, &error);
   EXPECT_THAT(grpc_error_std_string(error),
@@ -238,7 +238,7 @@ TEST_F(RlsConfigParsingTest, RouteLookupConfigFieldsWrongTypes) {
       "    }\n"
       "  }]\n"
       "}\n";
-  absl::Status error = absl::OkStatus();
+  absl::Status error;
   auto service_config =
       ServiceConfigImpl::Create(ChannelArgs(), service_config_json, &error);
   EXPECT_THAT(grpc_error_std_string(error),
@@ -265,7 +265,7 @@ TEST_F(RlsConfigParsingTest, RouteLookupConfigFieldsInvalidValues) {
       "    }\n"
       "  }]\n"
       "}\n";
-  absl::Status error = absl::OkStatus();
+  absl::Status error;
   auto service_config =
       ServiceConfigImpl::Create(ChannelArgs(), service_config_json, &error);
   EXPECT_THAT(grpc_error_std_string(error),
@@ -294,7 +294,7 @@ TEST_F(RlsConfigParsingTest, GrpcKeybuilderRequiredFieldsMissing) {
       "    }\n"
       "  }]\n"
       "}\n";
-  absl::Status error = absl::OkStatus();
+  absl::Status error;
   auto service_config =
       ServiceConfigImpl::Create(ChannelArgs(), service_config_json, &error);
   EXPECT_THAT(
@@ -324,7 +324,7 @@ TEST_F(RlsConfigParsingTest, GrpcKeybuilderWrongFieldTypes) {
       "    }\n"
       "  }]\n"
       "}\n";
-  absl::Status error = absl::OkStatus();
+  absl::Status error;
   auto service_config =
       ServiceConfigImpl::Create(ChannelArgs(), service_config_json, &error);
   EXPECT_THAT(
@@ -362,7 +362,7 @@ TEST_F(RlsConfigParsingTest, GrpcKeybuilderInvalidValues) {
       "    }\n"
       "  }]\n"
       "}\n";
-  absl::Status error = absl::OkStatus();
+  absl::Status error;
   auto service_config =
       ServiceConfigImpl::Create(ChannelArgs(), service_config_json, &error);
   EXPECT_THAT(grpc_error_std_string(error),
@@ -413,7 +413,7 @@ TEST_F(RlsConfigParsingTest, GrpcKeybuilderInvalidHeaders) {
       "    }\n"
       "  }]\n"
       "}\n";
-  absl::Status error = absl::OkStatus();
+  absl::Status error;
   auto service_config =
       ServiceConfigImpl::Create(ChannelArgs(), service_config_json, &error);
   EXPECT_THAT(
@@ -459,7 +459,7 @@ TEST_F(RlsConfigParsingTest, GrpcKeybuilderNameWrongFieldTypes) {
       "    }\n"
       "  }]\n"
       "}\n";
-  absl::Status error = absl::OkStatus();
+  absl::Status error;
   auto service_config =
       ServiceConfigImpl::Create(ChannelArgs(), service_config_json, &error);
   EXPECT_THAT(
@@ -498,7 +498,7 @@ TEST_F(RlsConfigParsingTest, DuplicateMethodNamesInSameKeyBuilder) {
       "    }\n"
       "  }]\n"
       "}\n";
-  absl::Status error = absl::OkStatus();
+  absl::Status error;
   auto service_config =
       ServiceConfigImpl::Create(ChannelArgs(), service_config_json, &error);
   EXPECT_THAT(
@@ -538,7 +538,7 @@ TEST_F(RlsConfigParsingTest, DuplicateMethodNamesInDifferentKeyBuilders) {
       "    }\n"
       "  }]\n"
       "}\n";
-  absl::Status error = absl::OkStatus();
+  absl::Status error;
   auto service_config =
       ServiceConfigImpl::Create(ChannelArgs(), service_config_json, &error);
   EXPECT_THAT(

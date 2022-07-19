@@ -89,7 +89,7 @@ ClientChannelServiceConfigParser::ParseGlobalParams(const ChannelArgs& /*args*/,
   RefCountedPtr<LoadBalancingPolicy::Config> parsed_lb_config;
   auto it = json.object_value().find("loadBalancingConfig");
   if (it != json.object_value().end()) {
-    absl::Status parse_error = absl::OkStatus();
+    absl::Status parse_error;
     parsed_lb_config = LoadBalancingPolicyRegistry::ParseLoadBalancingConfig(
         it->second, &parse_error);
     if (!parse_error.ok()) {
@@ -128,7 +128,7 @@ ClientChannelServiceConfigParser::ParseGlobalParams(const ChannelArgs& /*args*/,
   absl::optional<std::string> health_check_service_name;
   it = json.object_value().find("healthCheckConfig");
   if (it != json.object_value().end()) {
-    absl::Status parsing_error = absl::OkStatus();
+    absl::Status parsing_error;
     health_check_service_name =
         ParseHealthCheckConfig(it->second, &parsing_error);
     if (!parsing_error.ok()) {

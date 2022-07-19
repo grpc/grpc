@@ -298,7 +298,7 @@ absl::Status on_handshake_next_done(tsi_result result, void* user_data,
   GPR_ASSERT(args != nullptr);
   GPR_ASSERT(args->fixture != nullptr);
   tsi_test_fixture* fixture = args->fixture;
-  absl::Status error = absl::OkStatus();
+  absl::Status error;
   /* Read more data if we need to. */
   if (result == TSI_INCOMPLETE_DATA) {
     GPR_ASSERT(bytes_to_send_size == 0);

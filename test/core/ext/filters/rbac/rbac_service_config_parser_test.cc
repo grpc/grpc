@@ -40,7 +40,7 @@ TEST(RbacServiceConfigParsingTest, EmptyRbacPolicy) {
       "    } ]"
       "  } ]\n"
       "}";
-  absl::Status error = absl::OkStatus();
+  absl::Status error;
   ChannelArgs args = ChannelArgs().Set(GRPC_ARG_PARSE_RBAC_METHOD_CONFIG, 1);
   auto svc_cfg = ServiceConfigImpl::Create(args, test_json, &error);
   ASSERT_EQ(error, absl::OkStatus()) << grpc_error_std_string(error);
@@ -69,7 +69,7 @@ TEST(RbacServiceConfigParsingTest, MissingChannelArg) {
       "    } ]"
       "  } ]\n"
       "}";
-  absl::Status error = absl::OkStatus();
+  absl::Status error;
   auto svc_cfg = ServiceConfigImpl::Create(ChannelArgs(), test_json, &error);
   ASSERT_EQ(error, absl::OkStatus()) << grpc_error_std_string(error);
   const auto* vector_ptr =
@@ -91,7 +91,7 @@ TEST(RbacServiceConfigParsingTest, EmptyRbacPolicyArray) {
       "    \"rbacPolicy\": []"
       "  } ]\n"
       "}";
-  absl::Status error = absl::OkStatus();
+  absl::Status error;
   ChannelArgs args = ChannelArgs().Set(GRPC_ARG_PARSE_RBAC_METHOD_CONFIG, 1);
   auto svc_cfg = ServiceConfigImpl::Create(args, test_json, &error);
   ASSERT_EQ(error, absl::OkStatus()) << grpc_error_std_string(error);
@@ -114,7 +114,7 @@ TEST(RbacServiceConfigParsingTest, MultipleRbacPolicies) {
       "    \"rbacPolicy\": [ {}, {}, {} ]"
       "  } ]\n"
       "}";
-  absl::Status error = absl::OkStatus();
+  absl::Status error;
   ChannelArgs args = ChannelArgs().Set(GRPC_ARG_PARSE_RBAC_METHOD_CONFIG, 1);
   auto svc_cfg = ServiceConfigImpl::Create(args, test_json, &error);
   ASSERT_EQ(error, absl::OkStatus()) << grpc_error_std_string(error);
@@ -142,7 +142,7 @@ TEST(RbacServiceConfigParsingTest, BadRbacPolicyType) {
       "    \"rbacPolicy\": 1234"
       "  } ]\n"
       "}";
-  absl::Status error = absl::OkStatus();
+  absl::Status error;
   ChannelArgs args = ChannelArgs().Set(GRPC_ARG_PARSE_RBAC_METHOD_CONFIG, 1);
   auto svc_cfg = ServiceConfigImpl::Create(args, test_json, &error);
   EXPECT_THAT(
@@ -161,7 +161,7 @@ TEST(RbacServiceConfigParsingTest, BadRulesType) {
       "    \"rbacPolicy\": [{\"rules\":1}]"
       "  } ]\n"
       "}";
-  absl::Status error = absl::OkStatus();
+  absl::Status error;
   ChannelArgs args = ChannelArgs().Set(GRPC_ARG_PARSE_RBAC_METHOD_CONFIG, 1);
   auto svc_cfg = ServiceConfigImpl::Create(args, test_json, &error);
   EXPECT_THAT(
@@ -186,7 +186,7 @@ TEST(RbacServiceConfigParsingTest, BadActionAndPolicyType) {
       "    } ]\n"
       "  } ]\n"
       "}";
-  absl::Status error = absl::OkStatus();
+  absl::Status error;
   ChannelArgs args = ChannelArgs().Set(GRPC_ARG_PARSE_RBAC_METHOD_CONFIG, 1);
   auto svc_cfg = ServiceConfigImpl::Create(args, test_json, &error);
   EXPECT_THAT(
@@ -215,7 +215,7 @@ TEST(RbacServiceConfigParsingTest, MissingPermissionAndPrincipals) {
       "    } ]\n"
       "  } ]\n"
       "}";
-  absl::Status error = absl::OkStatus();
+  absl::Status error;
   ChannelArgs args = ChannelArgs().Set(GRPC_ARG_PARSE_RBAC_METHOD_CONFIG, 1);
   auto svc_cfg = ServiceConfigImpl::Create(args, test_json, &error);
   EXPECT_THAT(
@@ -247,7 +247,7 @@ TEST(RbacServiceConfigParsingTest, EmptyPrincipalAndPermission) {
       "    } ]\n"
       "  } ]\n"
       "}";
-  absl::Status error = absl::OkStatus();
+  absl::Status error;
   ChannelArgs args = ChannelArgs().Set(GRPC_ARG_PARSE_RBAC_METHOD_CONFIG, 1);
   auto svc_cfg = ServiceConfigImpl::Create(args, test_json, &error);
   EXPECT_THAT(
@@ -303,7 +303,7 @@ TEST(RbacServiceConfigParsingTest, VariousPermissionsAndPrincipalsTypes) {
       "    } ]\n"
       "  } ]\n"
       "}";
-  absl::Status error = absl::OkStatus();
+  absl::Status error;
   ChannelArgs args = ChannelArgs().Set(GRPC_ARG_PARSE_RBAC_METHOD_CONFIG, 1);
   auto svc_cfg = ServiceConfigImpl::Create(args, test_json, &error);
   ASSERT_EQ(error, absl::OkStatus()) << grpc_error_std_string(error);
@@ -360,7 +360,7 @@ TEST(RbacServiceConfigParsingTest, VariousPermissionsAndPrincipalsBadTypes) {
       "    } ]\n"
       "  } ]\n"
       "}";
-  absl::Status error = absl::OkStatus();
+  absl::Status error;
   ChannelArgs args = ChannelArgs().Set(GRPC_ARG_PARSE_RBAC_METHOD_CONFIG, 1);
   auto svc_cfg = ServiceConfigImpl::Create(args, test_json, &error);
   EXPECT_THAT(
@@ -443,7 +443,7 @@ TEST(RbacServiceConfigParsingTest, HeaderMatcherVariousTypes) {
       "    } ]\n"
       "  } ]\n"
       "}";
-  absl::Status error = absl::OkStatus();
+  absl::Status error;
   ChannelArgs args = ChannelArgs().Set(GRPC_ARG_PARSE_RBAC_METHOD_CONFIG, 1);
   auto svc_cfg = ServiceConfigImpl::Create(args, test_json, &error);
   ASSERT_EQ(error, absl::OkStatus()) << grpc_error_std_string(error);
@@ -486,7 +486,7 @@ TEST(RbacServiceConfigParsingTest, HeaderMatcherBadTypes) {
       "    } ]\n"
       "  } ]\n"
       "}";
-  absl::Status error = absl::OkStatus();
+  absl::Status error;
   ChannelArgs args = ChannelArgs().Set(GRPC_ARG_PARSE_RBAC_METHOD_CONFIG, 1);
   auto svc_cfg = ServiceConfigImpl::Create(args, test_json, &error);
   EXPECT_THAT(
@@ -539,7 +539,7 @@ TEST(RbacServiceConfigParsingTest, StringMatcherVariousTypes) {
       "    } ]\n"
       "  } ]\n"
       "}";
-  absl::Status error = absl::OkStatus();
+  absl::Status error;
   ChannelArgs args = ChannelArgs().Set(GRPC_ARG_PARSE_RBAC_METHOD_CONFIG, 1);
   auto svc_cfg = ServiceConfigImpl::Create(args, test_json, &error);
   ASSERT_EQ(error, absl::OkStatus()) << grpc_error_std_string(error);
@@ -580,7 +580,7 @@ TEST(RbacServiceConfigParsingTest, StringMatcherBadTypes) {
       "    } ]\n"
       "  } ]\n"
       "}";
-  absl::Status error = absl::OkStatus();
+  absl::Status error;
   ChannelArgs args = ChannelArgs().Set(GRPC_ARG_PARSE_RBAC_METHOD_CONFIG, 1);
   auto svc_cfg = ServiceConfigImpl::Create(args, test_json, &error);
   EXPECT_THAT(

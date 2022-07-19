@@ -962,7 +962,7 @@ class PriorityLbFactory : public LoadBalancingPolicyFactory {
                 absl::StrCat("field:children key:", child_name,
                              " error:missing 'config' field")));
           } else {
-            absl::Status parse_error = absl::OkStatus();
+            absl::Status parse_error;
             auto config = LoadBalancingPolicyRegistry::ParseLoadBalancingConfig(
                 it2->second, &parse_error);
             bool ignore_resolution_requests = false;

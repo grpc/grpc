@@ -190,7 +190,7 @@ struct call_data {
   grpc_closure recv_message_ready;
   grpc_closure recv_trailing_metadata_ready;
   // The error caused by a message that is too large, or absl::OkStatus()
-  absl::Status error = absl::OkStatus();
+  absl::Status error;
   // Used by recv_message_ready.
   absl::optional<grpc_core::SliceBuffer>* recv_message = nullptr;
   // Original recv_message_ready callback, invoked after our own.

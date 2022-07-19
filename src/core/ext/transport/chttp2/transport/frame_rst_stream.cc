@@ -112,7 +112,7 @@ absl::Status grpc_chttp2_rst_stream_parser_parse(void* parser,
               "[chttp2 transport=%p stream=%p] received RST_STREAM(reason=%d)",
               t, s, reason);
     }
-    absl::Status error = absl::OkStatus();
+    absl::Status error;
     if (reason != GRPC_HTTP2_NO_ERROR || s->trailing_metadata_buffer.empty()) {
       error = grpc_error_set_int(
           grpc_error_set_str(

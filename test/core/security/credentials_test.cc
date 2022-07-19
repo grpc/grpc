@@ -2615,7 +2615,7 @@ TEST(CredentialsTest,
 
 TEST(CredentialsTest, TestUrlExternalAccountCredsSuccessFormatText) {
   ExecCtx exec_ctx;
-  absl::Status error = absl::OkStatus();
+  absl::Status error;
   Json credential_source = Json::Parse(
       valid_url_external_account_creds_options_credential_source_format_text,
       &error);
@@ -2653,7 +2653,7 @@ TEST(CredentialsTest,
   std::map<std::string, std::string> emd = {
       {"authorization", "Bearer token_exchange_access_token"}};
   ExecCtx exec_ctx;
-  absl::Status error = absl::OkStatus();
+  absl::Status error;
   Json credential_source = Json::Parse(
       valid_url_external_account_creds_options_credential_source_with_qurey_params_format_text,
       &error);
@@ -2688,7 +2688,7 @@ TEST(CredentialsTest,
 
 TEST(CredentialsTest, TestUrlExternalAccountCredsSuccessFormatJson) {
   ExecCtx exec_ctx;
-  absl::Status error = absl::OkStatus();
+  absl::Status error;
   Json credential_source = Json::Parse(
       valid_url_external_account_creds_options_credential_source_format_json,
       &error);
@@ -2723,7 +2723,7 @@ TEST(CredentialsTest, TestUrlExternalAccountCredsSuccessFormatJson) {
 
 TEST(CredentialsTest,
      TestUrlExternalAccountCredsFailureInvalidCredentialSourceUrl) {
-  absl::Status error = absl::OkStatus();
+  absl::Status error;
   Json credential_source = Json::Parse(
       invalid_url_external_account_creds_options_credential_source, &error);
   GPR_ASSERT(error.ok());
@@ -2750,7 +2750,7 @@ TEST(CredentialsTest,
 
 TEST(CredentialsTest, TestFileExternalAccountCredsSuccessFormatText) {
   ExecCtx exec_ctx;
-  absl::Status error = absl::OkStatus();
+  absl::Status error;
   char* subject_token_path = write_tmp_jwt_file("test_subject_token");
   Json credential_source = Json::Parse(
       absl::StrFormat(
@@ -2789,7 +2789,7 @@ TEST(CredentialsTest, TestFileExternalAccountCredsSuccessFormatText) {
 
 TEST(CredentialsTest, TestFileExternalAccountCredsSuccessFormatJson) {
   ExecCtx exec_ctx;
-  absl::Status error = absl::OkStatus();
+  absl::Status error;
   char* subject_token_path =
       write_tmp_jwt_file("{\"access_token\":\"test_subject_token\"}");
   Json credential_source = Json::Parse(
@@ -2836,7 +2836,7 @@ TEST(CredentialsTest, TestFileExternalAccountCredsSuccessFormatJson) {
 
 TEST(CredentialsTest, TestFileExternalAccountCredsFailureFileNotFound) {
   ExecCtx exec_ctx;
-  absl::Status error = absl::OkStatus();
+  absl::Status error;
   Json credential_source =
       Json::Parse("{\"file\":\"non_exisiting_file\"}", &error);
   GPR_ASSERT(error.ok());
@@ -2872,7 +2872,7 @@ TEST(CredentialsTest, TestFileExternalAccountCredsFailureFileNotFound) {
 
 TEST(CredentialsTest, TestFileExternalAccountCredsFailureInvalidJsonContent) {
   ExecCtx exec_ctx;
-  absl::Status error = absl::OkStatus();
+  absl::Status error;
   char* subject_token_path = write_tmp_jwt_file("not_a_valid_json_file");
   Json credential_source = Json::Parse(
       absl::StrFormat(
@@ -2921,7 +2921,7 @@ TEST(CredentialsTest, TestFileExternalAccountCredsFailureInvalidJsonContent) {
 
 TEST(CredentialsTest, TestAwsExternalAccountCredsSuccess) {
   ExecCtx exec_ctx;
-  absl::Status error = absl::OkStatus();
+  absl::Status error;
   Json credential_source = Json::Parse(
       valid_aws_external_account_creds_options_credential_source, &error);
   GPR_ASSERT(error.ok());
@@ -2955,7 +2955,7 @@ TEST(CredentialsTest, TestAwsExternalAccountCredsSuccess) {
 
 TEST(CredentialsTest, TestAwsImdsv2ExternalAccountCredsSuccess) {
   ExecCtx exec_ctx;
-  absl::Status error = absl::OkStatus();
+  absl::Status error;
   Json credential_source = Json::Parse(
       valid_aws_imdsv2_external_account_creds_options_credential_source,
       &error);
@@ -2992,7 +2992,7 @@ TEST(CredentialsTest, TestAwsImdsv2ExternalAccountCredsSuccess) {
 TEST(CredentialsTest, TestAwsExternalAccountCredsSuccessPathRegionEnvKeysUrl) {
   ExecCtx exec_ctx;
   gpr_setenv("AWS_REGION", "test_regionz");
-  absl::Status error = absl::OkStatus();
+  absl::Status error;
   Json credential_source = Json::Parse(
       valid_aws_external_account_creds_options_credential_source, &error);
   GPR_ASSERT(error.ok());
@@ -3029,7 +3029,7 @@ TEST(CredentialsTest,
      TestAwsExternalAccountCredsSuccessPathDefaultRegionEnvKeysUrl) {
   ExecCtx exec_ctx;
   gpr_setenv("AWS_DEFAULT_REGION", "test_regionz");
-  absl::Status error = absl::OkStatus();
+  absl::Status error;
   Json credential_source = Json::Parse(
       valid_aws_external_account_creds_options_credential_source, &error);
   GPR_ASSERT(error.ok());
@@ -3068,7 +3068,7 @@ TEST(CredentialsTest,
   // Make sure that AWS_REGION gets used over AWS_DEFAULT_REGION
   gpr_setenv("AWS_REGION", "test_regionz");
   gpr_setenv("AWS_DEFAULT_REGION", "ERROR_REGION");
-  absl::Status error = absl::OkStatus();
+  absl::Status error;
   Json credential_source = Json::Parse(
       valid_aws_external_account_creds_options_credential_source, &error);
   GPR_ASSERT(error.ok());
@@ -3107,7 +3107,7 @@ TEST(CredentialsTest, TestAwsExternalAccountCredsSuccessPathRegionUrlKeysEnv) {
   gpr_setenv("AWS_ACCESS_KEY_ID", "test_access_key_id");
   gpr_setenv("AWS_SECRET_ACCESS_KEY", "test_secret_access_key");
   gpr_setenv("AWS_SESSION_TOKEN", "test_token");
-  absl::Status error = absl::OkStatus();
+  absl::Status error;
   Json credential_source = Json::Parse(
       valid_aws_external_account_creds_options_credential_source, &error);
   GPR_ASSERT(error.ok());
@@ -3148,7 +3148,7 @@ TEST(CredentialsTest, TestAwsExternalAccountCredsSuccessPathRegionEnvKeysEnv) {
   gpr_setenv("AWS_ACCESS_KEY_ID", "test_access_key_id");
   gpr_setenv("AWS_SECRET_ACCESS_KEY", "test_secret_access_key");
   gpr_setenv("AWS_SESSION_TOKEN", "test_token");
-  absl::Status error = absl::OkStatus();
+  absl::Status error;
   Json credential_source = Json::Parse(
       valid_aws_external_account_creds_options_credential_source, &error);
   GPR_ASSERT(error.ok());
@@ -3193,7 +3193,7 @@ TEST(CredentialsTest,
   gpr_setenv("AWS_ACCESS_KEY_ID", "test_access_key_id");
   gpr_setenv("AWS_SECRET_ACCESS_KEY", "test_secret_access_key");
   gpr_setenv("AWS_SESSION_TOKEN", "test_token");
-  absl::Status error = absl::OkStatus();
+  absl::Status error;
   Json credential_source = Json::Parse(
       valid_aws_external_account_creds_options_credential_source, &error);
   GPR_ASSERT(error.ok());
@@ -3238,7 +3238,7 @@ TEST(CredentialsTest,
   gpr_setenv("AWS_ACCESS_KEY_ID", "test_access_key_id");
   gpr_setenv("AWS_SECRET_ACCESS_KEY", "test_secret_access_key");
   gpr_setenv("AWS_SESSION_TOKEN", "test_token");
-  absl::Status error = absl::OkStatus();
+  absl::Status error;
   Json credential_source = Json::Parse(
       valid_aws_external_account_creds_options_credential_source, &error);
   GPR_ASSERT(error.ok());
@@ -3277,7 +3277,7 @@ TEST(CredentialsTest,
 
 TEST(CredentialsTest,
      TestAwsExternalAccountCredsFailureUnmatchedEnvironmentId) {
-  absl::Status error = absl::OkStatus();
+  absl::Status error;
   Json credential_source = Json::Parse(
       invalid_aws_external_account_creds_options_credential_source_unmatched_environment_id,
       &error);
@@ -3306,7 +3306,7 @@ TEST(CredentialsTest,
 
 TEST(CredentialsTest, TestAwsExternalAccountCredsFailureInvalidRegionUrl) {
   ExecCtx exec_ctx;
-  absl::Status error = absl::OkStatus();
+  absl::Status error;
   Json credential_source = Json::Parse(
       invalid_aws_external_account_creds_options_credential_source_invalid_region_url,
       &error);
@@ -3345,7 +3345,7 @@ TEST(CredentialsTest, TestAwsExternalAccountCredsFailureInvalidRegionUrl) {
 
 TEST(CredentialsTest, TestAwsExternalAccountCredsFailureInvalidUrl) {
   ExecCtx exec_ctx;
-  absl::Status error = absl::OkStatus();
+  absl::Status error;
   Json credential_source = Json::Parse(
       invalid_aws_external_account_creds_options_credential_source_invalid_url,
       &error);
@@ -3383,7 +3383,7 @@ TEST(CredentialsTest, TestAwsExternalAccountCredsFailureInvalidUrl) {
 
 TEST(CredentialsTest, TestAwsExternalAccountCredsFailureMissingRoleName) {
   ExecCtx exec_ctx;
-  absl::Status error = absl::OkStatus();
+  absl::Status error;
   Json credential_source = Json::Parse(
       invalid_aws_external_account_creds_options_credential_source_missing_role_name,
       &error);
@@ -3423,7 +3423,7 @@ TEST(CredentialsTest, TestAwsExternalAccountCredsFailureMissingRoleName) {
 TEST(CredentialsTest,
      TestAwsExternalAccountCredsFailureInvalidRegionalCredVerificationUrl) {
   ExecCtx exec_ctx;
-  absl::Status error = absl::OkStatus();
+  absl::Status error;
   Json credential_source = Json::Parse(
       invalid_aws_external_account_creds_options_credential_source_invalid_regional_cred_verification_url,
       &error);

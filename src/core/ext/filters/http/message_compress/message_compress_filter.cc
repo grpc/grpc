@@ -123,7 +123,7 @@ class CallData {
 
   grpc_core::CallCombiner* call_combiner_;
   grpc_compression_algorithm compression_algorithm_ = GRPC_COMPRESS_NONE;
-  absl::Status cancel_error_ = absl::OkStatus();
+  absl::Status cancel_error_;
   grpc_transport_stream_op_batch* send_message_batch_ = nullptr;
   bool seen_initial_metadata_ = false;
   grpc_closure forward_send_message_batch_in_call_combiner_;

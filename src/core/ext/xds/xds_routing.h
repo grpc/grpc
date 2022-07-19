@@ -84,7 +84,7 @@ class XdsRouting {
   struct GeneratePerHttpFilterConfigsResult {
     // Map of field name to list of elements for that field
     std::map<std::string, std::vector<std::string>> per_filter_configs;
-    absl::Status error = absl::OkStatus();
+    absl::Status error;
     // Guaranteed to be empty if error is not absl::OkStatus()
     ChannelArgs args;
   };

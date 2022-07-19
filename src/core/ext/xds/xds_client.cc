@@ -283,7 +283,7 @@ class XdsClient::ChannelState::AdsCallState
 
     // Nonce and error for this resource type.
     std::string nonce;
-    absl::Status error = absl::OkStatus();
+    absl::Status error;
 
     // Subscribed resources of this type.
     std::map<std::string /*authority*/,

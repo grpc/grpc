@@ -405,7 +405,7 @@ AresClientChannelDNSResolver::AresRequestWrapper::OnResolvedLocked(
       result.addresses = ServerAddressList();
     }
     if (service_config_json_ != nullptr) {
-      absl::Status service_config_error = absl::OkStatus();
+      absl::Status service_config_error;
       std::string service_config_string =
           ChooseServiceConfig(service_config_json_, &service_config_error);
       RefCountedPtr<ServiceConfig> service_config;

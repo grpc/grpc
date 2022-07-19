@@ -112,7 +112,7 @@ void grpc_tls_certificate_distributor::SetErrorForCert(
       GPR_ASSERT(watcher_it != watchers_.end());
       // identity_cert_error_to_report is the error of the identity cert this
       // watcher is watching, if there is any.
-      absl::Status identity_cert_error_to_report = absl::OkStatus();
+      absl::Status identity_cert_error_to_report;
       if (identity_cert_error.has_value() &&
           watcher_it->second.identity_cert_name == cert_name) {
         identity_cert_error_to_report = *identity_cert_error;
@@ -132,7 +132,7 @@ void grpc_tls_certificate_distributor::SetErrorForCert(
       GPR_ASSERT(watcher_it != watchers_.end());
       // root_cert_error_to_report is the error of the root cert this watcher is
       // watching, if there is any.
-      absl::Status root_cert_error_to_report = absl::OkStatus();
+      absl::Status root_cert_error_to_report;
       if (root_cert_error.has_value() &&
           watcher_it->second.root_cert_name == cert_name) {
         // In this case, We've already sent the error updates at the time when
@@ -189,8 +189,8 @@ void grpc_tls_certificate_distributor::WatchTlsCertificates(
                               identity_cert_name};
     absl::optional<absl::string_view> updated_root_certs;
     absl::optional<grpc_core::PemKeyCertPairList> updated_identity_pairs;
-    absl::Status root_error = absl::OkStatus();
-    absl::Status identity_error = absl::OkStatus();
+    absl::Status root_error;
+    absl::Status identity_error;
     if (root_cert_name.has_value()) {
       CertificateInfo& cert_info = certificate_info_map_[*root_cert_name];
       start_watching_root_cert = cert_info.root_cert_watchers.empty();

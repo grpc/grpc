@@ -97,7 +97,7 @@ absl::Status grpc_tcp_server_add_all_local_addrs(grpc_tcp_server* s,
   struct ifaddrs* ifa_it;
   unsigned fd_index = 0;
   grpc_tcp_listener* sp = nullptr;
-  absl::Status err = absl::OkStatus();
+  absl::Status err;
   if (requested_port == 0) {
     /* Note: There could be a race where some local addrs can listen on the
        selected port and some can't. The sane way to handle this would be to

@@ -406,7 +406,7 @@ static void fd_shutdown(grpc_fd* fd, absl::Status why) {
 
 static void fd_orphan(grpc_fd* fd, grpc_closure* on_done, int* release_fd,
                       const char* reason) {
-  absl::Status error = absl::OkStatus();
+  absl::Status error;
   bool is_release_fd = (release_fd != nullptr);
 
   if (!fd->read_closure->IsShutdown()) {
@@ -586,7 +586,7 @@ static void pollset_destroy(grpc_pollset* pollset) {
 
 static absl::Status pollset_kick_all(grpc_pollset* pollset) {
   GPR_TIMER_SCOPE("pollset_kick_all", 0);
-  absl::Status error = absl::OkStatus();
+  absl::Status error;
   if (pollset->root_worker != nullptr) {
     grpc_pollset_worker* worker = pollset->root_worker;
     do {
@@ -662,7 +662,7 @@ static absl::Status process_epoll_events(grpc_pollset* /*pollset*/) {
   GPR_TIMER_SCOPE("process_epoll_events", 0);
 
   static const char* err_desc = "process_events";
-  absl::Status error = absl::OkStatus();
+  absl::Status error;
   long num_events = gpr_atm_acq_load(&g_epoll_set.num_events);
   long cursor = gpr_atm_acq_load(&g_epoll_set.cursor);
   for (int idx = 0;
@@ -1015,7 +1015,7 @@ static absl::Status pollset_work(grpc_pollset* ps,
                                  grpc_core::Timestamp deadline) {
   GPR_TIMER_SCOPE("pollset_work", 0);
   grpc_pollset_worker worker;
-  absl::Status error = absl::OkStatus();
+  absl::Status error;
   static const char* err_desc = "pollset_work";
   if (ps->kicked_without_poller) {
     ps->kicked_without_poller = false;
@@ -1065,7 +1065,7 @@ static absl::Status pollset_kick(grpc_pollset* pollset,
                                  grpc_pollset_worker* specific_worker) {
   GPR_TIMER_SCOPE("pollset_kick", 0);
   GRPC_STATS_INC_POLLSET_KICK();
-  absl::Status ret_err = absl::OkStatus();
+  absl::Status ret_err;
   if (GRPC_TRACE_FLAG_ENABLED(grpc_polling_trace)) {
     std::vector<std::string> log;
     log.push_back(absl::StrFormat(

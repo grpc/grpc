@@ -330,7 +330,7 @@ absl::StatusOr<Rbac> ParseAllowRulesArray(const Json& json,
 
 absl::StatusOr<RbacPolicies> GenerateRbacPolicies(
     absl::string_view authz_policy) {
-  absl::Status error = absl::OkStatus();
+  absl::Status error;
   Json json = Json::Parse(authz_policy, &error);
   if (!error.ok()) {
     absl::Status status = absl::InvalidArgumentError(

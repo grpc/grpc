@@ -213,7 +213,7 @@ void SubchannelStreamClient::CallState::StartCallLocked() {
       context_,
       &call_combiner_,
   };
-  absl::Status error = absl::OkStatus();
+  absl::Status error;
   call_ = SubchannelCall::Create(std::move(args), &error).release();
   // Register after-destruction callback.
   GRPC_CLOSURE_INIT(&after_call_stack_destruction_, AfterCallStackDestruction,

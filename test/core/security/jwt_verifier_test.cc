@@ -208,7 +208,7 @@ TEST(JwtVerifierTest, JwtIssuerEmailDomain) {
 
 TEST(JwtVerifierTest, ClaimsSuccess) {
   grpc_jwt_claims* claims;
-  absl::Status error = absl::OkStatus();
+  absl::Status error;
   Json json = Json::Parse(claims_without_time_constraint, &error);
   if (!error.ok()) {
     gpr_log(GPR_ERROR, "JSON parse error: %s",
@@ -231,7 +231,7 @@ TEST(JwtVerifierTest, ClaimsSuccess) {
 
 TEST(JwtVerifierTest, ExpiredClaimsFailure) {
   grpc_jwt_claims* claims;
-  absl::Status error = absl::OkStatus();
+  absl::Status error;
   Json json = Json::Parse(expired_claims, &error);
   if (!error.ok()) {
     gpr_log(GPR_ERROR, "JSON parse error: %s",
@@ -260,7 +260,7 @@ TEST(JwtVerifierTest, ExpiredClaimsFailure) {
 }
 
 TEST(JwtVerifierTest, InvalidClaimsFailure) {
-  absl::Status error = absl::OkStatus();
+  absl::Status error;
   Json json = Json::Parse(invalid_claims, &error);
   if (!error.ok()) {
     gpr_log(GPR_ERROR, "JSON parse error: %s",
@@ -274,7 +274,7 @@ TEST(JwtVerifierTest, InvalidClaimsFailure) {
 
 TEST(JwtVerifierTest, BadAudienceClaimsFailure) {
   grpc_jwt_claims* claims;
-  absl::Status error = absl::OkStatus();
+  absl::Status error;
   Json json = Json::Parse(claims_without_time_constraint, &error);
   if (!error.ok()) {
     gpr_log(GPR_ERROR, "JSON parse error: %s",
@@ -292,7 +292,7 @@ TEST(JwtVerifierTest, BadAudienceClaimsFailure) {
 
 TEST(JwtVerifierTest, BadSubjectClaimsFailure) {
   grpc_jwt_claims* claims;
-  absl::Status error = absl::OkStatus();
+  absl::Status error;
   Json json = Json::Parse(claims_with_bad_subject, &error);
   if (!error.ok()) {
     gpr_log(GPR_ERROR, "JSON parse error: %s",

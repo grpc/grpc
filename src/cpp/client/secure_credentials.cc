@@ -167,7 +167,7 @@ grpc::Status StsCredentialsOptionsFromJson(const std::string& json_string,
                         "options cannot be nullptr.");
   }
   ClearStsCredentialsOptions(options);
-  absl::Status error = absl::OkStatus();
+  absl::Status error;
   grpc_core::Json json = grpc_core::Json::Parse(json_string.c_str(), &error);
   if (!error.ok() || json.type() != grpc_core::Json::Type::OBJECT) {
     return grpc::Status(grpc::StatusCode::INVALID_ARGUMENT, "Invalid json.");
@@ -223,7 +223,7 @@ grpc::Status StsCredentialsOptionsFromEnv(StsCredentialsOptions* options) {
   ClearStsCredentialsOptions(options);
   grpc_slice json_string = grpc_empty_slice();
   char* sts_creds_path = gpr_getenv("STS_CREDENTIALS");
-  absl::Status error = absl::OkStatus();
+  absl::Status error;
   grpc::Status status;
   // NOLINTNEXTLINE(clang-diagnostic-unused-lambda-capture)
   auto cleanup = [&json_string, &sts_creds_path, &status]() {

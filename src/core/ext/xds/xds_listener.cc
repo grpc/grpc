@@ -1003,7 +1003,7 @@ absl::Status LdsResourceParse(const XdsEncodingContext& context,
         "Listener has neither address nor ApiListener");
   }
   // Validate Listener fields.
-  absl::Status error = absl::OkStatus();
+  absl::Status error;
   if (api_listener != nullptr) {
     error = LdsResourceParseClient(context, api_listener, is_v2, lds_update);
   } else {

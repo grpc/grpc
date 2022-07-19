@@ -193,7 +193,7 @@ static absl::Status prepare_socket(SOCKET sock,
                                    const grpc_resolved_address* addr,
                                    int* port) {
   grpc_resolved_address sockname_temp;
-  absl::Status error = absl::OkStatus();
+  absl::Status error;
   int sockname_temp_len;
 
   error = grpc_tcp_prepare_socket(sock);
@@ -252,7 +252,7 @@ static absl::Status start_accept_locked(grpc_tcp_listener* port) {
   BOOL success;
   DWORD addrlen = sizeof(grpc_sockaddr_in6) + 16;
   DWORD bytes_received = 0;
-  absl::Status error = absl::OkStatus();
+  absl::Status error;
 
   if (port->shutting_down) {
     return absl::OkStatus();
@@ -401,7 +401,7 @@ static absl::Status add_socket_to_server(grpc_tcp_server* s, SOCKET sock,
   GUID guid = WSAID_ACCEPTEX;
   DWORD ioctl_num_bytes;
   LPFN_ACCEPTEX AcceptEx;
-  absl::Status error = absl::OkStatus();
+  absl::Status error;
 
   /* We need to grab the AcceptEx pointer for that port, as it may be
      interface-dependent. We'll cache it to avoid doing that again. */
@@ -459,7 +459,7 @@ static absl::Status tcp_server_add_port(grpc_tcp_server* s,
   grpc_resolved_address* allocated_addr = NULL;
   grpc_resolved_address sockname_temp;
   unsigned port_index = 0;
-  absl::Status error = absl::OkStatus();
+  absl::Status error;
 
   if (s->tail != NULL) {
     port_index = s->tail->port_index + 1;

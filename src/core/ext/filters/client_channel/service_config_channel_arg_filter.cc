@@ -56,7 +56,7 @@ class ServiceConfigChannelArgChannelData {
     const char* service_config_str = grpc_channel_args_find_string(
         args->channel_args, GRPC_ARG_SERVICE_CONFIG);
     if (service_config_str != nullptr) {
-      absl::Status service_config_error = absl::OkStatus();
+      absl::Status service_config_error;
       auto service_config =
           ServiceConfigImpl::Create(ChannelArgs::FromC(args->channel_args),
                                     service_config_str, &service_config_error);

@@ -176,9 +176,9 @@ struct grpc_tls_certificate_distributor
     // The contents of the identity key-certificate pairs.
     grpc_core::PemKeyCertPairList pem_key_cert_pairs;
     // The root cert reloading error propagated by the caller.
-    absl::Status root_cert_error = absl::OkStatus();
+    absl::Status root_cert_error;
     // The identity cert reloading error propagated by the caller.
-    absl::Status identity_cert_error = absl::OkStatus();
+    absl::Status identity_cert_error;
     // The set of watchers watching root certificates.
     // This is mainly used for quickly looking up the affected watchers while
     // performing a credential reloading.

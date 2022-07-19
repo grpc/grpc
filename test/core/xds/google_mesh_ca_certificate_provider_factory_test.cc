@@ -69,7 +69,7 @@ TEST(GoogleMeshCaConfigTest, Basic) {
       "\"https://container.googleapis.com/v1/project/test-project1/locations/"
       "test-zone2/clusters/test-cluster3\""
       "}";
-  absl::Status error = absl::OkStatus();
+  absl::Status error;
   Json json = Json::Parse(json_str, &error);
   ASSERT_EQ(error, absl::OkStatus()) << grpc_error_std_string(error);
   auto config =
@@ -122,7 +122,7 @@ TEST(GoogleMeshCaConfigTest, Defaults) {
       "\"https://container.googleapis.com/v1/project/test-project1/locations/"
       "test-zone2/clusters/test-cluster3\""
       "}";
-  absl::Status error = absl::OkStatus();
+  absl::Status error;
   Json json = Json::Parse(json_str, &error);
   ASSERT_EQ(error, absl::OkStatus()) << grpc_error_std_string(error);
   auto config =
@@ -174,7 +174,7 @@ TEST(GoogleMeshCaConfigTest, WrongExpectedValues) {
       "\"https://container.googleapis.com/v1/project/test-project1/locations/"
       "test-zone2/clusters/test-cluster3\""
       "}";
-  absl::Status error = absl::OkStatus();
+  absl::Status error;
   Json json = Json::Parse(json_str, &error);
   ASSERT_EQ(error, absl::OkStatus()) << grpc_error_std_string(error);
   auto config =
@@ -216,7 +216,7 @@ TEST(GoogleMeshCaConfigTest, WrongTypes) {
       "  \"key_size\": \"1024A\","
       "  \"location\": 123"
       "}";
-  absl::Status error = absl::OkStatus();
+  absl::Status error;
   Json json = Json::Parse(json_str, &error);
   ASSERT_EQ(error, absl::OkStatus()) << grpc_error_std_string(error);
   auto config =
@@ -259,7 +259,7 @@ TEST(GoogleMeshCaConfigTest, GrpcServicesNotAnArray) {
       "\"https://container.googleapis.com/v1/project/test-project1/locations/"
       "test-zone2/clusters/test-cluster3\""
       "}";
-  absl::Status error = absl::OkStatus();
+  absl::Status error;
   Json json = Json::Parse(json_str, &error);
   ASSERT_EQ(error, absl::OkStatus()) << grpc_error_std_string(error);
   auto config =
@@ -283,7 +283,7 @@ TEST(GoogleMeshCaConfigTest, GoogleGrpcNotAnObject) {
       "\"https://container.googleapis.com/v1/project/test-project1/locations/"
       "test-zone2/clusters/test-cluster3\""
       "}";
-  absl::Status error = absl::OkStatus();
+  absl::Status error;
   Json json = Json::Parse(json_str, &error);
   ASSERT_EQ(error, absl::OkStatus()) << grpc_error_std_string(error);
   auto config =
@@ -309,7 +309,7 @@ TEST(GoogleMeshCaConfigTest, CallCredentialsNotAnArray) {
       "\"https://container.googleapis.com/v1/project/test-project1/locations/"
       "test-zone2/clusters/test-cluster3\""
       "}";
-  absl::Status error = absl::OkStatus();
+  absl::Status error;
   Json json = Json::Parse(json_str, &error);
   ASSERT_EQ(error, absl::OkStatus()) << grpc_error_std_string(error);
   auto config =
@@ -337,7 +337,7 @@ TEST(GoogleMeshCaConfigTest, StsServiceNotAnObject) {
       "\"https://container.googleapis.com/v1/project/test-project1/locations/"
       "test-zone2/clusters/test-cluster3\""
       "}";
-  absl::Status error = absl::OkStatus();
+  absl::Status error;
   Json json = Json::Parse(json_str, &error);
   ASSERT_EQ(error, absl::OkStatus()) << grpc_error_std_string(error);
   auto config =

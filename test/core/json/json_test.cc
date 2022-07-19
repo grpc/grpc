@@ -76,7 +76,7 @@ void ValidateValue(const Json& actual, const Json& expected) {
 void RunSuccessTest(const char* input, const Json& expected,
                     const char* expected_output) {
   gpr_log(GPR_INFO, "parsing string \"%s\" - should succeed", input);
-  absl::Status error = absl::OkStatus();
+  absl::Status error;
   Json json = Json::Parse(input, &error);
   ASSERT_EQ(error, absl::OkStatus()) << grpc_error_std_string(error);
   ValidateValue(json, expected);
@@ -166,7 +166,7 @@ TEST(Json, Keywords) {
 
 void RunParseFailureTest(const char* input) {
   gpr_log(GPR_INFO, "parsing string \"%s\" - should fail", input);
-  absl::Status error = absl::OkStatus();
+  absl::Status error;
   Json json = Json::Parse(input, &error);
   gpr_log(GPR_INFO, "error: %s", grpc_error_std_string(error).c_str());
   EXPECT_NE(error, absl::OkStatus());

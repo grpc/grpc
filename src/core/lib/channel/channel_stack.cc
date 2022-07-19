@@ -133,7 +133,7 @@ absl::Status grpc_channel_stack_init(
                                              sizeof(grpc_channel_element));
 
   /* init per-filter data */
-  absl::Status first_error = absl::OkStatus();
+  absl::Status first_error;
   for (i = 0; i < filter_count; i++) {
     args.channel_stack = stack;
     args.channel_args = channel_args;
@@ -192,7 +192,7 @@ absl::Status grpc_call_stack_init(grpc_channel_stack* channel_stack,
               GPR_ROUND_UP_TO_ALIGNMENT_SIZE(count * sizeof(grpc_call_element));
 
   /* init per-filter data */
-  absl::Status first_error = absl::OkStatus();
+  absl::Status first_error;
   for (size_t i = 0; i < count; i++) {
     call_elems[i].filter = channel_elems[i].filter;
     call_elems[i].channel_data = channel_elems[i].channel_data;

@@ -176,7 +176,7 @@ struct op_state {
   /* User requested RECV_TRAILING_METADATA */
   bool pending_recv_trailing_metadata = false;
   cronet_net_error_code net_error = OK;
-  absl::Status cancel_error = absl::OkStatus();
+  absl::Status cancel_error;
   /* data structure for storing data coming from server */
   struct read_state rs;
   /* data structure for storing data going to the server */
@@ -1296,7 +1296,7 @@ static enum e_op_result execute_stream_op(struct op_and_state* oas) {
              op_can_be_run(stream_op, s, &oas->state,
                            OP_RECV_TRAILING_METADATA)) {
     CRONET_LOG(GPR_DEBUG, "running: %p  OP_RECV_TRAILING_METADATA", oas);
-    absl::Status error = absl::OkStatus();
+    absl::Status error;
     if (stream_state->state_op_done[OP_CANCEL_ERROR]) {
       error = stream_state->cancel_error;
     } else if (stream_state->state_callback_received[OP_FAILED]) {

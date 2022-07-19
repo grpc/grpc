@@ -259,7 +259,7 @@ struct inproc_stream {
       grpc_core::Timestamp::InfFuture();
   grpc_metadata_batch write_buffer_trailing_md{arena};
   bool write_buffer_trailing_md_filled = false;
-  absl::Status write_buffer_cancel_error = absl::OkStatus();
+  absl::Status write_buffer_cancel_error;
 
   struct inproc_stream* other_side;
   bool other_side_closed = false;               // won't talk anymore
@@ -283,8 +283,8 @@ struct inproc_stream {
 
   bool closed = false;
 
-  absl::Status cancel_self_error = absl::OkStatus();
-  absl::Status cancel_other_error = absl::OkStatus();
+  absl::Status cancel_self_error;
+  absl::Status cancel_other_error;
 
   grpc_core::Timestamp deadline = grpc_core::Timestamp::InfFuture();
 
@@ -587,7 +587,7 @@ void op_state_machine_locked(inproc_stream* s, absl::Status error) {
   // Schedule our appropriate closures
   // and then return to ops_needed state if still needed
 
-  absl::Status new_err = absl::OkStatus();
+  absl::Status new_err;
 
   bool needs_close = false;
 
@@ -941,7 +941,7 @@ void perform_stream_op(grpc_transport* gt, grpc_stream* gs,
                    s->t->is_client, false);
     }
   }
-  absl::Status error = absl::OkStatus();
+  absl::Status error;
   grpc_closure* on_complete = op->on_complete;
   // TODO(roth): This is a hack needed because we use data inside of the
   // closure itself to do the barrier calculation (i.e., to ensure that

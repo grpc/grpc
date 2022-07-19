@@ -198,7 +198,7 @@ class ServiceConfigEnd2endTest : public ::testing::Test {
   void SetNextResolutionValidServiceConfig(const std::vector<int>& ports) {
     grpc_core::ExecCtx exec_ctx;
     grpc_core::Resolver::Result result = BuildFakeResults(ports);
-    absl::Status error = absl::OkStatus();
+    absl::Status error;
     result.service_config = grpc_core::ServiceConfigImpl::Create(
         grpc_core::ChannelArgs(), "{}", &error);
     ASSERT_EQ(error, absl::OkStatus()) << grpc_error_std_string(error);
@@ -217,7 +217,7 @@ class ServiceConfigEnd2endTest : public ::testing::Test {
                                           const char* svc_cfg) {
     grpc_core::ExecCtx exec_ctx;
     grpc_core::Resolver::Result result = BuildFakeResults(ports);
-    absl::Status error = absl::OkStatus();
+    absl::Status error;
     result.service_config = grpc_core::ServiceConfigImpl::Create(
         grpc_core::ChannelArgs(), svc_cfg, &error);
     if (!error.ok()) {

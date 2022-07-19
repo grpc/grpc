@@ -529,7 +529,7 @@ absl::Status FilterStackCall::Create(grpc_call_create_args* args,
 
   Arena* arena;
   FilterStackCall* call;
-  absl::Status error = absl::OkStatus();
+  absl::Status error;
   grpc_channel_stack* channel_stack = channel->channel_stack();
   size_t initial_size = channel->CallSizeEstimate();
   GRPC_STATS_INC_CALL_INITIAL_SIZE(initial_size);
@@ -954,7 +954,7 @@ void FilterStackCall::RecvTrailingFilter(grpc_metadata_batch* b,
         b->Take(GrpcStatusMetadata());
     if (grpc_status.has_value()) {
       grpc_status_code status_code = *grpc_status;
-      absl::Status error = absl::OkStatus();
+      absl::Status error;
       if (status_code != GRPC_STATUS_OK) {
         char* peer = GetPeer();
         error = grpc_error_set_int(

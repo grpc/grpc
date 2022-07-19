@@ -87,7 +87,7 @@ struct grpc_binder_stream {
   grpc_closure destroy_stream;
 
   // The reason why this stream is cancelled and closed.
-  absl::Status cancel_self_error = absl::OkStatus();
+  absl::Status cancel_self_error;
 
   grpc_closure recv_initial_metadata_closure;
   RecvInitialMetadataArgs recv_initial_metadata_args;

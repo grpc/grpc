@@ -528,7 +528,7 @@ class GrpclbEnd2endTest : public ::testing::Test {
     grpc_core::Resolver::Result result;
     result.addresses =
         CreateLbAddressesFromAddressDataList(backend_address_data);
-    absl::Status error = absl::OkStatus();
+    absl::Status error;
     result.service_config = grpc_core::ServiceConfigImpl::Create(
         grpc_core::ChannelArgs(), service_config_json, &error);
     GPR_ASSERT(error.ok());

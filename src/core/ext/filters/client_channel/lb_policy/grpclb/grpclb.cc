@@ -1864,7 +1864,7 @@ class GrpcLbFactory : public LoadBalancingPolicyFactory {
     } else {
       child_policy_config_json = &it->second;
     }
-    absl::Status parse_error = absl::OkStatus();
+    absl::Status parse_error;
     RefCountedPtr<LoadBalancingPolicy::Config> child_policy_config =
         LoadBalancingPolicyRegistry::ParseLoadBalancingConfig(
             *child_policy_config_json, &parse_error);

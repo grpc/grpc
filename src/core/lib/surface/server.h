@@ -343,12 +343,12 @@ class Server : public InternallyRefCounted<Server>,
     uint32_t recv_initial_metadata_flags_ = 0;
     grpc_closure recv_initial_metadata_ready_;
     grpc_closure* original_recv_initial_metadata_ready_;
-    absl::Status recv_initial_metadata_error_ = absl::OkStatus();
+    absl::Status recv_initial_metadata_error_;
 
     bool seen_recv_trailing_metadata_ready_ = false;
     grpc_closure recv_trailing_metadata_ready_;
     grpc_closure* original_recv_trailing_metadata_ready_;
-    absl::Status recv_trailing_metadata_error_ = absl::OkStatus();
+    absl::Status recv_trailing_metadata_error_;
 
     grpc_closure publish_;
 

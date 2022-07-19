@@ -650,7 +650,7 @@ class HPackParser::Input {
   // Frontier denotes the first byte past successfully processed input
   const uint8_t* frontier_;
   // Current error
-  absl::Status error_ = absl::OkStatus();
+  absl::Status error_;
   // If the error was EOF, we flag it here..
   bool eof_error_ = false;
 };

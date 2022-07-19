@@ -976,7 +976,7 @@ XdsClusterResolverLb::CreateChildPolicyConfigLocked() {
         "[xds_cluster_resolver_lb %p] generated config for child policy: %s",
         this, json_str.c_str());
   }
-  absl::Status error = absl::OkStatus();
+  absl::Status error;
   RefCountedPtr<LoadBalancingPolicy::Config> config =
       LoadBalancingPolicyRegistry::ParseLoadBalancingConfig(json, &error);
   if (!error.ok()) {

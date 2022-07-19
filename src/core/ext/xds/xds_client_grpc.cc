@@ -136,7 +136,7 @@ absl::StatusOr<RefCountedPtr<GrpcXdsClient>> GrpcXdsClient::GetOrCreate(
   absl::optional<absl::string_view> bootstrap_config = args.GetString(
       GRPC_ARG_TEST_ONLY_DO_NOT_USE_IN_PROD_XDS_BOOTSTRAP_CONFIG);
   if (bootstrap_config.has_value()) {
-    absl::Status error = absl::OkStatus();
+    absl::Status error;
     std::unique_ptr<XdsBootstrap> bootstrap =
         XdsBootstrap::Create(*bootstrap_config, &error);
     if (!error.ok()) return grpc_error_to_absl_status(error);
@@ -159,7 +159,7 @@ absl::StatusOr<RefCountedPtr<GrpcXdsClient>> GrpcXdsClient::GetOrCreate(
             bootstrap_contents->c_str());
   }
   // Parse bootstrap.
-  absl::Status error = absl::OkStatus();
+  absl::Status error;
   std::unique_ptr<XdsBootstrap> bootstrap =
       XdsBootstrap::Create(*bootstrap_contents, &error);
   if (!error.ok()) return grpc_error_to_absl_status(error);

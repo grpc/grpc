@@ -675,7 +675,7 @@ absl::Status Chttp2ServerListener::Create(
   // The bulk of this method is inside of a lambda to make cleanup
   // easier without using goto.
   absl::Status error = [&]() {
-    absl::Status error = absl::OkStatus();
+    absl::Status error;
     // Create Chttp2ServerListener.
     listener = new Chttp2ServerListener(server, args, args_modifier);
     error = grpc_tcp_server_create(&listener->tcp_server_shutdown_complete_,
@@ -819,7 +819,7 @@ void Chttp2ServerListener::OnAccept(void* arg, grpc_endpoint* tcp,
           GRPC_ERROR_CREATE_FROM_CPP_STRING(args_result.status().ToString()));
       return;
     }
-    absl::Status error = absl::OkStatus();
+    absl::Status error;
     args = self->args_modifier_(*args_result, &error);
     if (!error.ok()) {
       gpr_log(GPR_DEBUG, "Closing connection: %s",
@@ -920,7 +920,7 @@ absl::Status Chttp2ServerAddPort(Server* server, const char* addr,
   absl::string_view parsed_addr_unprefixed{parsed_addr};
   // Using lambda to avoid use of goto.
   absl::Status error = [&]() {
-    absl::Status error = absl::OkStatus();
+    absl::Status error;
     if (absl::ConsumePrefix(&parsed_addr_unprefixed, kUnixUriPrefix)) {
       resolved_or = grpc_resolve_unix_domain_address(parsed_addr_unprefixed);
     } else if (absl::ConsumePrefix(&parsed_addr_unprefixed,
@@ -1002,7 +1002,7 @@ ChannelArgs ModifyArgsForConnection(const ChannelArgs& args,
 int grpc_server_add_http2_port(grpc_server* server, const char* addr,
                                grpc_server_credentials* creds) {
   grpc_core::ExecCtx exec_ctx;
-  absl::Status err = absl::OkStatus();
+  absl::Status err;
   grpc_core::RefCountedPtr<grpc_server_security_connector> sc;
   int port_num = 0;
   grpc_core::Server* core_server = grpc_core::Server::FromC(server);

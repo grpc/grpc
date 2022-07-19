@@ -481,7 +481,7 @@ absl::Status XdsBootstrap::ParseCertificateProvider(
           error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
               "\"config\" field is not an object"));
         } else {
-          absl::Status parse_error = absl::OkStatus();
+          absl::Status parse_error;
           config = factory->CreateCertificateProviderConfig(it->second,
                                                             &parse_error);
           if (!parse_error.ok()) {
@@ -490,7 +490,7 @@ absl::Status XdsBootstrap::ParseCertificateProvider(
         }
       } else {
         // "config" is an optional field, so create an empty JSON object.
-        absl::Status parse_error = absl::OkStatus();
+        absl::Status parse_error;
         config = factory->CreateCertificateProviderConfig(Json::Object(),
                                                           &parse_error);
         if (!parse_error.ok()) error_list.push_back(parse_error);

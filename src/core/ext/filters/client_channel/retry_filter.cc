@@ -151,7 +151,7 @@ class RetryFilter {
                            grpc_channel_element_args* args) {
     GPR_ASSERT(args->is_last);
     GPR_ASSERT(elem->filter == &kRetryFilterVtable);
-    absl::Status error = absl::OkStatus();
+    absl::Status error;
     new (elem->channel_data) RetryFilter(args->channel_args, &error);
     return error;
   }
@@ -489,9 +489,9 @@ class RetryFilter::CallData {
     bool sent_cancel_stream_ : 1;
     // State for callback processing.
     RefCountedPtr<BatchData> recv_initial_metadata_ready_deferred_batch_;
-    absl::Status recv_initial_metadata_error_ = absl::OkStatus();
+    absl::Status recv_initial_metadata_error_;
     RefCountedPtr<BatchData> recv_message_ready_deferred_batch_;
-    absl::Status recv_message_error_ = absl::OkStatus();
+    absl::Status recv_message_error_;
     struct OnCompleteDeferredBatch {
       OnCompleteDeferredBatch(RefCountedPtr<BatchData> batch,
                               absl::Status error)
@@ -503,7 +503,7 @@ class RetryFilter::CallData {
     absl::InlinedVector<OnCompleteDeferredBatch, 3>
         on_complete_deferred_batches_;
     RefCountedPtr<BatchData> recv_trailing_metadata_internal_batch_;
-    absl::Status recv_trailing_metadata_error_ = absl::OkStatus();
+    absl::Status recv_trailing_metadata_error_;
     bool seen_recv_trailing_metadata_from_surface_ : 1;
     // NOTE: Do not move this next to the metadata bitfields above. That would
     //       save space but will also result in a data race because compiler
@@ -572,7 +572,7 @@ class RetryFilter::CallData {
   CallCombiner* call_combiner_;
   grpc_call_context_element* call_context_;
 
-  absl::Status cancelled_from_surface_ = absl::OkStatus();
+  absl::Status cancelled_from_surface_;
 
   RefCountedPtr<CallStackDestructionBarrier> call_stack_destruction_barrier_;
 

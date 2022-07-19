@@ -691,7 +691,7 @@ class XdsClusterManagerLbFactory : public LoadBalancingPolicyFactory {
       error_list.push_back(
           GRPC_ERROR_CREATE_FROM_STATIC_STRING("did not find childPolicy"));
     } else {
-      absl::Status parse_error = absl::OkStatus();
+      absl::Status parse_error;
       *child_config = LoadBalancingPolicyRegistry::ParseLoadBalancingConfig(
           it->second, &parse_error);
       if (*child_config == nullptr) {

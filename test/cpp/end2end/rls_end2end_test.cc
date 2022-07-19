@@ -145,7 +145,7 @@ class FakeResolverResponseGeneratorWrapper {
   static grpc_core::Resolver::Result BuildFakeResults(
       absl::string_view service_config_json) {
     grpc_core::Resolver::Result result;
-    absl::Status error = absl::OkStatus();
+    absl::Status error;
     result.service_config = grpc_core::ServiceConfigImpl::Create(
         result.args, service_config_json, &error);
     EXPECT_EQ(error, absl::OkStatus())

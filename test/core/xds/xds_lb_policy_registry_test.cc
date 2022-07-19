@@ -133,7 +133,7 @@ TEST(XdsLbPolicyRegistryTest, RingHashRingSizeDefaults) {
   auto result = ConvertXdsPolicy(policy);
   EXPECT_TRUE(result.ok());
   EXPECT_EQ(result->size(), 1);
-  absl::Status error = absl::OkStatus();
+  absl::Status error;
   EXPECT_EQ((*result)[0], Json::Parse("{"
                                       "\"ring_hash_experimental\": {"
                                       "}}",
@@ -152,7 +152,7 @@ TEST(XdsLbPolicyRegistryTest, RingHashRingSizeCustom) {
   auto result = ConvertXdsPolicy(policy);
   EXPECT_TRUE(result.ok());
   EXPECT_EQ(result->size(), 1);
-  absl::Status error = absl::OkStatus();
+  absl::Status error;
   EXPECT_EQ((*result)[0], Json::Parse("{"
                                       "\"ring_hash_experimental\": {"
                                       "  \"minRingSize\": 1234,"
@@ -169,7 +169,7 @@ TEST(XdsLbPolicyRegistryTest, RoundRobin) {
   auto result = ConvertXdsPolicy(policy);
   EXPECT_TRUE(result.ok());
   EXPECT_EQ(result->size(), 1);
-  absl::Status error = absl::OkStatus();
+  absl::Status error;
   EXPECT_EQ((*result)[0], Json::Parse("{"
                                       "\"round_robin\": {}"
                                       "}",
@@ -190,7 +190,7 @@ TEST(XdsLbPolicyRegistryTest, WrrLocality) {
   auto result = ConvertXdsPolicy(policy);
   EXPECT_TRUE(result.ok());
   EXPECT_EQ(result->size(), 1);
-  absl::Status error = absl::OkStatus();
+  absl::Status error;
   EXPECT_EQ((*result)[0], Json::Parse("{"
                                       "\"xds_wrr_locality_experimental\": {"
                                       "  \"child_policy\": [{"
@@ -256,7 +256,7 @@ TEST(XdsLbPolicyRegistryTest, WrrLocalityUnsupportedTypeSkipped) {
   auto result = ConvertXdsPolicy(policy);
   EXPECT_TRUE(result.ok());
   EXPECT_EQ(result->size(), 1);
-  absl::Status error = absl::OkStatus();
+  absl::Status error;
   EXPECT_EQ((*result)[0], Json::Parse("{"
                                       "\"xds_wrr_locality_experimental\": {"
                                       "  \"child_policy\": [{"
@@ -292,7 +292,7 @@ TEST(XdsLbPolicyRegistryTest, CustomLbPolicy) {
   auto result = ConvertXdsPolicy(policy);
   EXPECT_TRUE(result.ok());
   EXPECT_EQ(result->size(), 1);
-  absl::Status error = absl::OkStatus();
+  absl::Status error;
   EXPECT_EQ((*result)[0], Json::Parse("{"
                                       "\"test.CustomLb\": null}",
                                       &error));
@@ -308,7 +308,7 @@ TEST(XdsLbPolicyRegistryTest, CustomLbPolicyUdpaTyped) {
   auto result = ConvertXdsPolicy(policy);
   EXPECT_TRUE(result.ok());
   EXPECT_EQ(result->size(), 1);
-  absl::Status error = absl::OkStatus();
+  absl::Status error;
   EXPECT_EQ((*result)[0], Json::Parse("{"
                                       "\"test.CustomLb\": null}",
                                       &error));
@@ -408,7 +408,7 @@ TEST(XdsLbPolicyRegistryTest, CustomLbPolicyJsonConversion) {
   auto result = ConvertXdsPolicy(policy);
   EXPECT_TRUE(result.ok());
   EXPECT_EQ(result->size(), 1);
-  absl::Status error = absl::OkStatus();
+  absl::Status error;
   EXPECT_EQ((*result)[0], Json::Parse(
                               R"json({
                                 "test.CustomLb":{
@@ -458,7 +458,7 @@ TEST(XdsLbPolicyRegistryTest, UnsupportedBuiltInTypeSkipped) {
   auto result = ConvertXdsPolicy(policy);
   EXPECT_TRUE(result.ok());
   EXPECT_EQ(result->size(), 1);
-  absl::Status error = absl::OkStatus();
+  absl::Status error;
   EXPECT_EQ((*result)[0], Json::Parse("{"
                                       "\"round_robin\": {}"
                                       "}",
@@ -481,7 +481,7 @@ TEST(XdsLbPolicyRegistryTest, UnsupportedCustomTypeSkipped) {
   auto result = ConvertXdsPolicy(policy);
   EXPECT_TRUE(result.ok());
   EXPECT_EQ(result->size(), 1);
-  absl::Status error = absl::OkStatus();
+  absl::Status error;
   EXPECT_EQ((*result)[0], Json::Parse("{"
                                       "\"round_robin\": {}"
                                       "}",

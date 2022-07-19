@@ -203,7 +203,7 @@ void UrlExternalAccountCredentials::OnRetrieveSubjectTokenInternal(
   absl::string_view response_body(ctx_->response.body,
                                   ctx_->response.body_length);
   if (format_type_ == "json") {
-    absl::Status error = absl::OkStatus();
+    absl::Status error;
     Json response_json = Json::Parse(response_body, &error);
     if (!error.ok() || response_json.type() != Json::Type::OBJECT) {
       FinishRetrieveSubjectToken(

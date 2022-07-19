@@ -80,8 +80,8 @@ StaticDataCertificateProvider::StaticDataCertificateProvider(
       distributor_->SetKeyMaterials(cert_name, std::move(root_certificate),
                                     std::move(pem_key_cert_pairs));
     }
-    absl::Status root_cert_error = absl::OkStatus();
-    absl::Status identity_cert_error = absl::OkStatus();
+    absl::Status root_cert_error;
+    absl::Status identity_cert_error;
     if (root_being_watched && !root_has_update) {
       root_cert_error = GRPC_ERROR_CREATE_FROM_STATIC_STRING(
           "Unable to get latest root certificates.");
@@ -174,8 +174,8 @@ FileWatcherCertificateProvider::FileWatcherCertificateProvider(
       distributor_->SetKeyMaterials(cert_name, root_certificate,
                                     pem_key_cert_pairs);
     }
-    absl::Status root_cert_error = absl::OkStatus();
-    absl::Status identity_cert_error = absl::OkStatus();
+    absl::Status root_cert_error;
+    absl::Status identity_cert_error;
     if (root_being_watched && !root_certificate.has_value()) {
       root_cert_error = GRPC_ERROR_CREATE_FROM_STATIC_STRING(
           "Unable to get latest root certificates.");

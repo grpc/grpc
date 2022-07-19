@@ -258,7 +258,7 @@ class HttpRequest : public InternallyRefCounted<HttpRequest> {
   grpc_iomgr_object iomgr_obj_ ABSL_GUARDED_BY(mu_);
   grpc_slice_buffer incoming_ ABSL_GUARDED_BY(mu_);
   grpc_slice_buffer outgoing_ ABSL_GUARDED_BY(mu_);
-  absl::Status overall_error_ ABSL_GUARDED_BY(mu_) = absl::OkStatus();
+  absl::Status overall_error_ ABSL_GUARDED_BY(mu_);
   absl::optional<DNSResolver::TaskHandle> dns_request_handle_
       ABSL_GUARDED_BY(mu_) = DNSResolver::kNullHandle;
 };

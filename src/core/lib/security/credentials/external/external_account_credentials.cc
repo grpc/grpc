@@ -392,7 +392,7 @@ void ExternalAccountCredentials::OnExchangeTokenInternal(absl::Status error) {
 }
 
 void ExternalAccountCredentials::ImpersenateServiceAccount() {
-  absl::Status error = absl::OkStatus();
+  absl::Status error;
   absl::string_view response_body(ctx_->response.body,
                                   ctx_->response.body_length);
   Json json = Json::Parse(response_body, &error);
@@ -533,7 +533,7 @@ void ExternalAccountCredentials::FinishTokenFetch(absl::Status error) {
 
 grpc_call_credentials* grpc_external_account_credentials_create(
     const char* json_string, const char* scopes_string) {
-  absl::Status error = absl::OkStatus();
+  absl::Status error;
   grpc_core::Json json = grpc_core::Json::Parse(json_string, &error);
   if (!error.ok()) {
     gpr_log(GPR_ERROR,

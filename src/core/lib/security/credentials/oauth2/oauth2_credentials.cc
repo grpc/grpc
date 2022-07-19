@@ -81,7 +81,7 @@ grpc_auth_refresh_token grpc_auth_refresh_token_create_from_json(
   grpc_auth_refresh_token result;
   const char* prop_value;
   int success = 0;
-  absl::Status error = absl::OkStatus();
+  absl::Status error;
 
   memset(&result, 0, sizeof(grpc_auth_refresh_token));
   result.type = GRPC_AUTH_JSON_TYPE_INVALID;
@@ -114,7 +114,7 @@ end:
 
 grpc_auth_refresh_token grpc_auth_refresh_token_create_from_string(
     const char* json_string) {
-  absl::Status error = absl::OkStatus();
+  absl::Status error;
   Json json = Json::Parse(json_string, &error);
   if (!error.ok()) {
     gpr_log(GPR_ERROR, "JSON parsing failed: %s",
@@ -183,7 +183,7 @@ grpc_oauth2_token_fetcher_credentials_parse_server_response(
     const char* token_type = nullptr;
     const char* expires_in = nullptr;
     Json::Object::const_iterator it;
-    absl::Status error = absl::OkStatus();
+    absl::Status error;
     json = Json::Parse(null_terminated_body, &error);
     if (!error.ok()) {
       gpr_log(GPR_ERROR, "Could not parse JSON from %s: %s",
@@ -603,7 +603,7 @@ class StsTokenFetcherCredentials
     std::vector<std::string> body_parts;
     grpc_slice subject_token = grpc_empty_slice();
     grpc_slice actor_token = grpc_empty_slice();
-    absl::Status err = absl::OkStatus();
+    absl::Status err;
 
     auto cleanup = [&body, &body_length, &body_parts, &subject_token,
                     &actor_token, &err]() {

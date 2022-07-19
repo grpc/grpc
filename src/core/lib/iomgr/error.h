@@ -183,7 +183,7 @@ template <typename VectorType>
 static absl::Status grpc_status_create_from_vector(
     const grpc_core::DebugLocation& location, absl::string_view desc,
     VectorType* error_list) {
-  absl::Status error = absl::OkStatus();
+  absl::Status error;
   if (error_list->size() != 0) {
     error = grpc_status_create(absl::StatusCode::kUnknown, desc, location,
                                error_list->size(), error_list->data());

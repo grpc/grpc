@@ -358,7 +358,7 @@ class ClientCallData : public BaseCallData {
   // Our closure pointing to RecvTrailingMetadataReadyCallback.
   grpc_closure recv_trailing_metadata_ready_;
   // Error received during cancellation.
-  absl::Status cancelled_error_ = absl::OkStatus();
+  absl::Status cancelled_error_;
   // State of the send_initial_metadata op.
   SendInitialState send_initial_state_ = SendInitialState::kInitial;
   // State of the recv_trailing_metadata op.
@@ -436,7 +436,7 @@ class ServerCallData : public BaseCallData {
   // Our closure pointing to RecvInitialMetadataReadyCallback.
   grpc_closure recv_initial_metadata_ready_;
   // Error received during cancellation.
-  absl::Status cancelled_error_ = absl::OkStatus();
+  absl::Status cancelled_error_;
   // Trailing metadata batch
   CapturedBatch send_trailing_metadata_batch_;
   // State of the send_initial_metadata op.

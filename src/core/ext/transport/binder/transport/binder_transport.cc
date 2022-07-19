@@ -524,7 +524,7 @@ static void perform_stream_op_locked(void* stream_op, absl::Status /*error*/) {
         });
   }
   // Only send transaction when there's a send op presented.
-  absl::Status status = absl::OkStatus();
+  absl::Status status;
   if (op->send_initial_metadata || op->send_message ||
       op->send_trailing_metadata) {
     status = gbt->wire_writer->RpcCall(std::move(tx));

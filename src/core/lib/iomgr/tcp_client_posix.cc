@@ -92,7 +92,7 @@ void grpc_tcp_client_global_init() {
 
 static absl::Status prepare_socket(const grpc_resolved_address* addr, int fd,
                                    const grpc_channel_args* channel_args) {
-  absl::Status err = absl::OkStatus();
+  absl::Status err;
 
   GPR_ASSERT(fd >= 0);
 

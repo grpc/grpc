@@ -455,7 +455,7 @@ void AwsExternalAccountCredentials::OnRetrieveSigningKeysInternal(
 }
 
 void AwsExternalAccountCredentials::BuildSubjectToken() {
-  absl::Status error = absl::OkStatus();
+  absl::Status error;
   if (signer_ == nullptr) {
     cred_verification_url_ = absl::StrReplaceAll(
         regional_cred_verification_url_, {{"{region}", region_}});

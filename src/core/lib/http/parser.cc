@@ -181,7 +181,7 @@ static absl::Status add_header(grpc_http_parser* parser) {
   size_t size = 0;
   grpc_http_header** hdrs = nullptr;
   grpc_http_header hdr = {nullptr, nullptr};
-  absl::Status error = absl::OkStatus();
+  absl::Status error;
 
   GPR_ASSERT(cur != end);
 

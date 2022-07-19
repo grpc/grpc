@@ -103,7 +103,7 @@ struct call_data {
   grpc_transport_stream_op_batch* recv_initial_metadata_batch;
   grpc_closure* original_recv_initial_metadata_ready;
   grpc_closure recv_initial_metadata_ready;
-  absl::Status recv_initial_metadata_error = absl::OkStatus();
+  absl::Status recv_initial_metadata_error;
   grpc_closure recv_trailing_metadata_ready;
   grpc_closure* original_recv_trailing_metadata_ready;
   absl::Status recv_trailing_metadata_error;
@@ -202,7 +202,7 @@ static void on_md_processing_done(
   // If the call was not cancelled while we were in flight, process the result.
   if (gpr_atm_full_cas(&calld->state, static_cast<gpr_atm>(STATE_INIT),
                        static_cast<gpr_atm>(STATE_DONE))) {
-    absl::Status error = absl::OkStatus();
+    absl::Status error;
     if (status != GRPC_STATUS_OK) {
       if (error_details == nullptr) {
         error_details = "Authentication metadata processing failed.";

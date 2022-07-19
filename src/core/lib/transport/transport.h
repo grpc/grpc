@@ -440,7 +440,7 @@ struct grpc_transport_stream_op_batch_payload {
   struct {
     // Error contract: the transport that gets this op must cause cancel_error
     //                 to be unref'ed after processing it
-    absl::Status cancel_error = absl::OkStatus();
+    absl::Status cancel_error;
   } cancel_stream;
 
   /* Indexes correspond to grpc_context_index enum values */
@@ -460,11 +460,11 @@ typedef struct grpc_transport_op {
   /** should the transport be disconnected
    * Error contract: the transport that gets this op must cause
    *                 disconnect_with_error to be unref'ed after processing it */
-  absl::Status disconnect_with_error = absl::OkStatus();
+  absl::Status disconnect_with_error;
   /** what should the goaway contain?
    * Error contract: the transport that gets this op must cause
    *                 goaway_error to be unref'ed after processing it */
-  absl::Status goaway_error = absl::OkStatus();
+  absl::Status goaway_error;
   /** set the callback for accepting new streams;
       this is a permanent callback, unlike the other one-shot closures.
       If true, the callback is set to set_accept_stream_fn, with its
