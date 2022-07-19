@@ -36,7 +36,7 @@
 
 #include "upb/port_def.inc"
 
-static const upb_MiniTable_Sub envoy_config_bootstrap_v3_Bootstrap_submsgs[23] = {
+static const upb_MiniTable_Sub envoy_config_bootstrap_v3_Bootstrap_submsgs[24] = {
   {.submsg = &envoy_config_core_v3_Node_msginit},
   {.submsg = &envoy_config_bootstrap_v3_Bootstrap_StaticResources_msginit},
   {.submsg = &envoy_config_bootstrap_v3_Bootstrap_DynamicResources_msginit},
@@ -60,9 +60,10 @@ static const upb_MiniTable_Sub envoy_config_bootstrap_v3_Bootstrap_submsgs[23] =
   {.submsg = &envoy_config_core_v3_DnsResolutionConfig_msginit},
   {.submsg = &envoy_config_core_v3_TypedExtensionConfig_msginit},
   {.submsg = &envoy_config_bootstrap_v3_CustomInlineHeader_msginit},
+  {.submsg = &envoy_config_core_v3_TypedExtensionConfig_msginit},
 };
 
-static const upb_MiniTable_Field envoy_config_bootstrap_v3_Bootstrap__fields[31] = {
+static const upb_MiniTable_Field envoy_config_bootstrap_v3_Bootstrap__fields[32] = {
   {1, UPB_SIZE(12, 16), UPB_SIZE(1, 1), 0, 11, kUpb_FieldMode_Scalar | (kUpb_FieldRep_Pointer << kUpb_FieldRep_Shift)},
   {2, UPB_SIZE(16, 24), UPB_SIZE(2, 2), 1, 11, kUpb_FieldMode_Scalar | (kUpb_FieldRep_Pointer << kUpb_FieldRep_Shift)},
   {3, UPB_SIZE(20, 32), UPB_SIZE(3, 3), 2, 11, kUpb_FieldMode_Scalar | (kUpb_FieldRep_Pointer << kUpb_FieldRep_Shift)},
@@ -94,12 +95,13 @@ static const upb_MiniTable_Field envoy_config_bootstrap_v3_Bootstrap__fields[31]
   {31, UPB_SIZE(124, 240), UPB_SIZE(17, 17), 21, 11, kUpb_FieldMode_Scalar | (kUpb_FieldRep_Pointer << kUpb_FieldRep_Shift)},
   {32, UPB_SIZE(128, 248), UPB_SIZE(0, 0), 22, 11, kUpb_FieldMode_Array | (kUpb_FieldRep_Pointer << kUpb_FieldRep_Shift)},
   {33, UPB_SIZE(132, 256), UPB_SIZE(0, 0), kUpb_NoSub, 9, kUpb_FieldMode_Scalar | (kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)},
+  {34, UPB_SIZE(140, 272), UPB_SIZE(18, 18), 23, 11, kUpb_FieldMode_Scalar | (kUpb_FieldRep_Pointer << kUpb_FieldRep_Shift)},
 };
 
 const upb_MiniTable envoy_config_bootstrap_v3_Bootstrap_msginit = {
   &envoy_config_bootstrap_v3_Bootstrap_submsgs[0],
   &envoy_config_bootstrap_v3_Bootstrap__fields[0],
-  UPB_SIZE(144, 272), 31, kUpb_ExtMode_NonExtendable, 9, 255, 0,
+  UPB_SIZE(144, 280), 32, kUpb_ExtMode_NonExtendable, 9, 255, 0,
 };
 
 static const upb_MiniTable_Sub envoy_config_bootstrap_v3_Bootstrap_StaticResources_submsgs[3] = {
