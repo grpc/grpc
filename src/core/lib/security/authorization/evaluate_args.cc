@@ -16,6 +16,8 @@
 
 #include "src/core/lib/security/authorization/evaluate_args.h"
 
+#include <string.h>
+
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/match.h"
