@@ -235,7 +235,7 @@ class PressureTracker {
 
  private:
   std::atomic<double> max_this_round_{0.0};
-  std::atomic<double> current_estimate_{0.0};
+  std::atomic<double> report_{0.0};
   PeriodicUpdate update_{Duration::Seconds(1)};
 };
 }  // namespace memory_quota_detail

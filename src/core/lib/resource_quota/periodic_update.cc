@@ -23,11 +23,11 @@
 
 namespace grpc_core {
 
-bool PeriodicUpdate::MaybeEndPeriod() {
+void PeriodicUpdate::MaybeEndPeriod(absl::FunctionRef<void()> f) {
   if (period_start_ == Timestamp::ProcessEpoch()) {
     period_start_ = ExecCtx::Get()->Now();
     updates_remaining_.store(1, std::memory_order_release);
-    return false;
+    return;
   }
   // updates_remaining_ just reached 0 and the thread calling this function was
   // the decrementer that got us there.
@@ -59,8 +59,8 @@ bool PeriodicUpdate::MaybeEndPeriod() {
     // we simply discard those decrements.
     updates_remaining_.store(better_guess - expected_updates_per_period_,
                              std::memory_order_release);
-    // Not quite done, return false, try for longer.
-    return false;
+    // Not quite done, return, try for longer.
+    return;
   }
   // Finished period, start a new one and return true.
   // We try to predict how many update periods we'd need to cover the full time
@@ -70,9 +70,9 @@ bool PeriodicUpdate::MaybeEndPeriod() {
       period_.seconds() * expected_updates_per_period_ / time_so_far.seconds();
   if (expected_updates_per_period_ < 1) expected_updates_per_period_ = 1;
   period_start_ = now;
+  f();
   updates_remaining_.store(expected_updates_per_period_,
                            std::memory_order_release);
-  return true;
 }
 
 }  // namespace grpc_core

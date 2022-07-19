@@ -476,31 +476,37 @@ namespace memory_quota_detail {
 
 double PressureTracker::AddSampleAndGetEstimate(double sample) {
   double max_so_far = max_this_round_.load(std::memory_order_relaxed);
-  double current_estimate = current_estimate_.load(std::memory_order_relaxed);
-  const bool new_round = update_.Tick();
-  if (new_round) {
-    // Reset the round tracker with the new sample.
-    max_this_round_.store(sample, std::memory_order_relaxed);
-    // Update the estimate.
-    if (sample > max_so_far) max_so_far = sample;
-    double new_estimate = current_estimate * 0.9 + max_so_far * 0.1;
-    if (max_so_far > new_estimate) new_estimate = sample;
-    current_estimate_.store(new_estimate, std::memory_order_relaxed);
-    return new_estimate;
-  } else {
-    if (sample > max_so_far) {
-      max_this_round_.compare_exchange_weak(max_so_far, sample,
-                                            std::memory_order_relaxed,
-                                            std::memory_order_relaxed);
-    }
-    if (sample > current_estimate) {
-      current_estimate_.compare_exchange_weak(current_estimate, sample,
-                                              std::memory_order_relaxed,
-                                              std::memory_order_relaxed);
-      current_estimate = sample;
-    }
-    return current_estimate;
+  if (sample > max_so_far) {
+    max_this_round_.compare_exchange_weak(max_so_far, sample,
+                                          std::memory_order_relaxed,
+                                          std::memory_order_relaxed);
   }
+  // If memory pressure is almost done, immediately hit the brakes and report
+  // full memory usage.
+  if (sample >= 0.99) {
+    report_.store(1.0, std::memory_order_relaxed);
+  }
+  update_.Tick([&] {
+    // Reset the round tracker with the new sample.
+    const double current_estimate =
+        max_this_round_.exchange(sample, std::memory_order_relaxed);
+    double report = report_.load(std::memory_order_relaxed);
+    if (current_estimate >= 0.99) {
+      // If memory pressure is almost done, immediately hit the brakes and
+      // report full memory usage.
+      report = 1.0;
+    } else if (current_estimate < 0.6) {
+      // If we're below 60%, start decreasing reported memory pressure so as to
+      // speed things up.
+      report -= 0.01;
+    } else if (current_estimate > 0.8) {
+      // If we're above 80%, start increasing reported memory pressure quickly
+      // to start to stall things off.
+      report = (1.0 + 9.0 * report) / 10.0;
+    }
+    report_.store(Clamp(report, 0.0, 1.0), std::memory_order_relaxed);
+  });
+  return report_.load(std::memory_order_relaxed);
 }
 
 }  // namespace memory_quota_detail

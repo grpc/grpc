@@ -175,38 +175,27 @@ namespace testing {
 
 TEST(PressureTrackerTest, NoOp) { PressureTracker(); }
 
-TEST(PressureTrackerTest, ImmediateJump) {
-  PressureTracker tracker;
-  ExecCtx exec_ctx;
-  EXPECT_EQ(tracker.AddSampleAndGetEstimate(0.1), 0.1);
-  EXPECT_EQ(tracker.AddSampleAndGetEstimate(0.2), 0.2);
-  EXPECT_EQ(tracker.AddSampleAndGetEstimate(0.3), 0.3);
-}
-
 TEST(PressureTrackerTest, Decays) {
   PressureTracker tracker;
-  {
+  int cur_ms = 0;
+  auto step_time = [&] {
+    ++cur_ms;
+    return Timestamp::ProcessEpoch() + Duration::Seconds(1) +
+           Duration::Milliseconds(cur_ms);
+  };
+  while (true) {
     ExecCtx exec_ctx;
-    exec_ctx.TestOnlySetNow(Timestamp::ProcessEpoch() + Duration::Seconds(1));
-    EXPECT_EQ(tracker.AddSampleAndGetEstimate(1.0), 1.0);
+    exec_ctx.TestOnlySetNow(step_time());
+    if (tracker.AddSampleAndGetEstimate(1.0) > 0.99) break;
   }
-  double last = 1.0;
-  bool last_decreased = false;
-  for (int i = 0; i < 20000; i++) {
+  ASSERT_LE(cur_ms, 10000);
+  const int got_full = cur_ms;
+  while (true) {
     ExecCtx exec_ctx;
-    exec_ctx.TestOnlySetNow(Timestamp::ProcessEpoch() + Duration::Seconds(1) +
-                            Duration::Milliseconds(i));
-    double cur = tracker.AddSampleAndGetEstimate(0);
-    if (last_decreased) {
-      EXPECT_EQ(cur, last);  // should not decrease on consequetive milliseconds
-      last_decreased = false;
-    } else {
-      EXPECT_LE(cur, last);
-      last_decreased = cur < last;
-    }
-    last = cur;
+    exec_ctx.TestOnlySetNow(step_time());
+    if (tracker.AddSampleAndGetEstimate(0.0) < 0.1) break;
   }
-  EXPECT_LE(last, 0.2);
+  ASSERT_LE(cur_ms, got_full + 100000);
 }
 
 TEST(PressureTrackerTest, ManyThreads) {
