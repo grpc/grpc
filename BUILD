@@ -2521,7 +2521,6 @@ grpc_cc_library(
         "absl/strings",
         "absl/synchronization",
     ],
-    tags = ["grpc-autodeps"],
     deps = [
         "event_engine_base_hdrs",
         "gpr_base",
@@ -2544,7 +2543,9 @@ grpc_cc_library(
     hdrs = [
         "src/core/lib/event_engine/iomgr_engine/event_poller_posix_default.h",
     ],
-    tags = ["grpc-autodeps"],
+    external_deps = [
+        "absl/strings",
+    ],
     deps = [
         "gpr_base",
         "gpr_platform",
