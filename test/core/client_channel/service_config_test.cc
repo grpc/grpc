@@ -555,7 +555,7 @@ TEST_F(ClientChannelParserTest, UnknownLoadBalancingConfig) {
   auto service_config = ServiceConfigImpl::Create(ChannelArgs(), test_json);
   EXPECT_EQ(service_config.status().code(), absl::StatusCode::kInvalidArgument);
   EXPECT_THAT(
-      service_config.status().message(),
+      std::string(service_config.status().message()),
       ::testing::MatchesRegex(
           "Service config parsing errors: \\["
           "error parsing client channel global parameters:" CHILD_ERROR_TAG
@@ -573,7 +573,7 @@ TEST_F(ClientChannelParserTest, InvalidGrpclbLoadBalancingConfig) {
   auto service_config = ServiceConfigImpl::Create(ChannelArgs(), test_json);
   EXPECT_EQ(service_config.status().code(), absl::StatusCode::kInvalidArgument);
   EXPECT_THAT(
-      service_config.status().message(),
+      std::string(service_config.status().message()),
       ::testing::MatchesRegex(
           "Service config parsing errors: \\["
           "error parsing client channel global parameters:" CHILD_ERROR_TAG
@@ -608,7 +608,7 @@ TEST_F(ClientChannelParserTest, UnknownLoadBalancingPolicy) {
   auto service_config = ServiceConfigImpl::Create(ChannelArgs(), test_json);
   EXPECT_EQ(service_config.status().code(), absl::StatusCode::kInvalidArgument);
   EXPECT_THAT(
-      service_config.status().message(),
+      std::string(service_config.status().message()),
       ::testing::MatchesRegex(
           "Service config parsing errors: \\["
           "error parsing client channel global parameters:" CHILD_ERROR_TAG
@@ -622,7 +622,7 @@ TEST_F(ClientChannelParserTest, LoadBalancingPolicyXdsNotAllowed) {
   auto service_config = ServiceConfigImpl::Create(ChannelArgs(), test_json);
   EXPECT_EQ(service_config.status().code(), absl::StatusCode::kInvalidArgument);
   EXPECT_THAT(
-      service_config.status().message(),
+      std::string(service_config.status().message()),
       ::testing::MatchesRegex(
           "Service config parsing errors: \\["
           "error parsing client channel global parameters:" CHILD_ERROR_TAG
@@ -669,7 +669,7 @@ TEST_F(ClientChannelParserTest, InvalidTimeout) {
   auto service_config = ServiceConfigImpl::Create(ChannelArgs(), test_json);
   EXPECT_EQ(service_config.status().code(), absl::StatusCode::kInvalidArgument);
   EXPECT_THAT(
-      service_config.status().message(),
+      std::string(service_config.status().message()),
       ::testing::MatchesRegex(
           "Service config parsing errors: \\["
           "errors parsing methodConfig: \\["
@@ -721,7 +721,7 @@ TEST_F(ClientChannelParserTest, InvalidWaitForReady) {
   auto service_config = ServiceConfigImpl::Create(ChannelArgs(), test_json);
   EXPECT_EQ(service_config.status().code(), absl::StatusCode::kInvalidArgument);
   EXPECT_THAT(
-      service_config.status().message(),
+      std::string(service_config.status().message()),
       ::testing::MatchesRegex(
           "Service config parsing errors: \\["
           "errors parsing methodConfig: \\["
