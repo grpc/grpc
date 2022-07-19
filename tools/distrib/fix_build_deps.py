@@ -276,8 +276,6 @@ def grpc_cc_library(name,
     # other, whilst not biasing dependent projects
     if 'avoid_dep' in tags or 'grpc_avoid_dep' in tags:
         avoidness[name] += 10
-    if 'nofixdeps' in tags:
-        avoidness[name] += 1
     for hdr in hdrs + public_hdrs:
         vendors[hdr].append(name)
     inc = set()
@@ -460,6 +458,11 @@ def make_library(library):
     external_deps = Choices(None)
     for hdr in hdrs:
         if hdr == 'src/core/lib/profiling/stap_probes.h':
+            continue
+
+        if hdr == 'grpc/grpc.h' and not library.startswith('//:'):
+            # not the root build including grpc.h ==> //:grpc
+            deps.add('//:grpc')
             continue
 
         if hdr in INTERNAL_DEPS:
