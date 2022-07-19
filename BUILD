@@ -1880,6 +1880,7 @@ grpc_cc_library(
     hdrs = [
         "src/core/lib/resource_quota/periodic_update.h",
     ],
+    external_deps = ["absl/functional:function_ref"],
     deps = [
         "exec_ctx",
         "gpr_platform",

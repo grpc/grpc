@@ -3963,6 +3963,7 @@ targets:
   - test/core/promise/arena_promise_test.cc
   deps:
   - absl/functional:any_invocable
+  - absl/functional:function_ref
   - absl/meta:type_traits
   - absl/status:statusor
   - absl/types:variant
@@ -4593,6 +4594,7 @@ targets:
   - test/core/gprpp/chunked_vector_test.cc
   deps:
   - absl/functional:any_invocable
+  - absl/functional:function_ref
   - absl/meta:type_traits
   - absl/status:statusor
   - absl/types:variant
@@ -5619,6 +5621,7 @@ targets:
   deps:
   - absl/container:flat_hash_set
   - absl/functional:any_invocable
+  - absl/functional:function_ref
   - absl/hash:hash
   - absl/meta:type_traits
   - absl/status:statusor
@@ -6681,6 +6684,7 @@ targets:
   - test/core/resource_quota/memory_quota_stress_test.cc
   deps:
   - absl/functional:any_invocable
+  - absl/functional:function_ref
   - absl/meta:type_traits
   - absl/status:statusor
   - absl/types:variant
@@ -6758,6 +6762,7 @@ targets:
   - test/core/resource_quota/memory_quota_test.cc
   deps:
   - absl/functional:any_invocable
+  - absl/functional:function_ref
   - absl/meta:type_traits
   - absl/status:statusor
   - absl/types:variant
@@ -7161,6 +7166,7 @@ targets:
   - test/core/resource_quota/periodic_update_test.cc
   deps:
   - absl/functional:any_invocable
+  - absl/functional:function_ref
   - absl/status:statusor
   - gpr
   - upb
@@ -7253,6 +7259,7 @@ targets:
   - test/core/promise/pipe_test.cc
   deps:
   - absl/functional:any_invocable
+  - absl/functional:function_ref
   - absl/meta:type_traits
   - absl/status:statusor
   - absl/types:variant
@@ -7625,6 +7632,7 @@ targets:
   - test/core/resource_quota/resource_quota_test.cc
   deps:
   - absl/functional:any_invocable
+  - absl/functional:function_ref
   - absl/meta:type_traits
   - absl/status:statusor
   - absl/types:variant

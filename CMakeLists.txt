@@ -5997,6 +5997,7 @@ target_link_libraries(arena_promise_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   absl::any_invocable
+  absl::function_ref
   absl::type_traits
   absl::statusor
   absl::variant
@@ -7626,6 +7627,7 @@ target_link_libraries(chunked_vector_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   absl::any_invocable
+  absl::function_ref
   absl::type_traits
   absl::statusor
   absl::variant
@@ -9889,6 +9891,7 @@ target_link_libraries(for_each_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   absl::flat_hash_set
   absl::any_invocable
+  absl::function_ref
   absl::hash
   absl::type_traits
   absl::statusor
@@ -12764,6 +12767,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX)
     ${_gRPC_PROTOBUF_LIBRARIES}
     ${_gRPC_ALLTARGETS_LIBRARIES}
     absl::any_invocable
+    absl::function_ref
     absl::type_traits
     absl::statusor
     absl::variant
@@ -12825,6 +12829,7 @@ target_link_libraries(memory_quota_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   absl::any_invocable
+  absl::function_ref
   absl::type_traits
   absl::statusor
   absl::variant
@@ -13770,6 +13775,7 @@ target_link_libraries(periodic_update_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   absl::any_invocable
+  absl::function_ref
   absl::statusor
   gpr
   upb
@@ -13865,6 +13871,7 @@ target_link_libraries(pipe_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   absl::any_invocable
+  absl::function_ref
   absl::type_traits
   absl::statusor
   absl::variant
@@ -14723,6 +14730,7 @@ target_link_libraries(resource_quota_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   absl::any_invocable
+  absl::function_ref
   absl::type_traits
   absl::statusor
   absl::variant
