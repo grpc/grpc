@@ -859,6 +859,10 @@ grpc_cc_library(
 grpc_cc_library(
     name = "useful",
     hdrs = ["src/core/lib/gpr/useful.h"],
+    external_deps = [
+        "absl/strings",
+        "absl/types:variant",
+    ],
     language = "c++",
     deps = ["gpr_platform"],
 )
@@ -2187,7 +2191,10 @@ grpc_cc_library(
     hdrs = [
         "src/core/lib/avl/avl.h",
     ],
-    deps = ["gpr_platform"],
+    deps = [
+        "gpr_platform",
+        "useful",
+    ],
 )
 
 grpc_cc_library(

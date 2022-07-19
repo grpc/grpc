@@ -63,6 +63,16 @@ template <typename T, typename Ignored = void /* for SFINAE */>
 struct ChannelArgTypeTraits;
 
 namespace channel_args_detail {
+inline int PointerCompare(void* a_ptr, const grpc_arg_pointer_vtable* a_vtable,
+                          void* b_ptr,
+                          const grpc_arg_pointer_vtable* b_vtable) {
+  int c = QsortCompare(a_ptr, b_ptr);
+  if (c == 0) return 0;
+  c = QsortCompare(a_vtable, b_vtable);
+  if (c != 0) return c;
+  return a_vtable->cmp(a_ptr, b_ptr);
+}
+
 // The type returned by calling Ref() on a T - used to determine the basest-type
 // before the crt refcount base class.
 template <typename T>
@@ -150,9 +160,20 @@ class ChannelArgs {
       return *this;
     }
 
-    bool operator==(const Pointer& rhs) const;
-    bool operator<(const Pointer& rhs) const;
-    bool operator!=(const Pointer& rhs) const;
+    friend int QsortCompare(const Pointer& a, const Pointer& b) {
+      return channel_args_detail::PointerCompare(a.p_, a.vtable_, b.p_,
+                                                 b.vtable_);
+    }
+
+    bool operator==(const Pointer& rhs) const {
+      return QsortCompare(*this, rhs) == 0;
+    }
+    bool operator<(const Pointer& rhs) const {
+      return QsortCompare(*this, rhs) < 0;
+    }
+    bool operator!=(const Pointer& rhs) const {
+      return QsortCompare(*this, rhs) != 0;
+    }
 
     void* c_pointer() const { return p_; }
     const grpc_arg_pointer_vtable* c_vtable() const { return vtable_; }
@@ -163,6 +184,7 @@ class ChannelArgs {
     void* p_;
     const grpc_arg_pointer_vtable* vtable_;
   };
+
   using Value = absl::variant<int, std::string, Pointer>;
 
   struct ChannelArgsDeleter {
