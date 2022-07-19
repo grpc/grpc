@@ -21,6 +21,8 @@
 
 #include <atomic>
 
+#include "absl/functional/function_ref.h"
+
 #include "src/core/lib/gprpp/time.h"
 
 namespace grpc_core {
