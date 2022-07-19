@@ -172,7 +172,7 @@ class ServiceConfigTest : public ::testing::Test {
 TEST_F(ServiceConfigTest, ErrorCheck1) {
   auto service_config = ServiceConfigImpl::Create(ChannelArgs(), "");
   EXPECT_EQ(service_config.status().code(), absl::StatusCode::kInvalidArgument);
-  EXPECT_THAT(service_config.status().message(),
+  EXPECT_THAT(std::string(service_config.status().message()),
               ::testing::ContainsRegex("JSON parse error"));
 }
 
@@ -763,7 +763,7 @@ TEST_F(ClientChannelParserTest, InvalidHealthCheckMultipleEntries) {
   // TODO(roth): When we convert the JSON API to return absl::Status
   // instead of grpc_error, change this expectation to be a fixed string
   // equality match.
-  EXPECT_THAT(service_config.status().message(),
+  EXPECT_THAT(std::string(service_config.status().message()),
               ::testing::ContainsRegex(
                   "JSON parsing failed" CHILD_ERROR_TAG
                   "duplicate key \"healthCheckConfig\" at index 104"))
@@ -814,7 +814,7 @@ TEST_F(RetryParserTest, RetryThrottlingMissingFields) {
       "}";
   auto service_config = ServiceConfigImpl::Create(ChannelArgs(), test_json);
   EXPECT_EQ(service_config.status().code(), absl::StatusCode::kInvalidArgument);
-  EXPECT_THAT(service_config.status().message(),
+  EXPECT_THAT(std::string(service_config.status().message()),
               ::testing::ContainsRegex(
                   "Service config parsing errors: \\["
                   "error parsing retry global parameters:"
@@ -834,7 +834,7 @@ TEST_F(RetryParserTest, InvalidRetryThrottlingNegativeMaxTokens) {
       "}";
   auto service_config = ServiceConfigImpl::Create(ChannelArgs(), test_json);
   EXPECT_EQ(service_config.status().code(), absl::StatusCode::kInvalidArgument);
-  EXPECT_THAT(service_config.status().message(),
+  EXPECT_THAT(std::string(service_config.status().message()),
               ::testing::ContainsRegex(
                   "Service config parsing errors: \\["
                   "error parsing retry global parameters:"
@@ -854,7 +854,7 @@ TEST_F(RetryParserTest, InvalidRetryThrottlingInvalidTokenRatio) {
       "}";
   auto service_config = ServiceConfigImpl::Create(ChannelArgs(), test_json);
   EXPECT_EQ(service_config.status().code(), absl::StatusCode::kInvalidArgument);
-  EXPECT_THAT(service_config.status().message(),
+  EXPECT_THAT(std::string(service_config.status().message()),
               ::testing::ContainsRegex("Service config parsing errors: \\["
                                        "error parsing retry global parameters:"
                                        ".*retryThrottling" CHILD_ERROR_TAG
@@ -910,7 +910,7 @@ TEST_F(RetryParserTest, InvalidRetryPolicyWrongType) {
       "}";
   auto service_config = ServiceConfigImpl::Create(ChannelArgs(), test_json);
   EXPECT_EQ(service_config.status().code(), absl::StatusCode::kInvalidArgument);
-  EXPECT_THAT(service_config.status().message(),
+  EXPECT_THAT(std::string(service_config.status().message()),
               ::testing::ContainsRegex(
                   "Service config parsing errors: \\["
                   "errors parsing methodConfig: \\["
@@ -934,7 +934,7 @@ TEST_F(RetryParserTest, InvalidRetryPolicyRequiredFieldsMissing) {
       "}";
   auto service_config = ServiceConfigImpl::Create(ChannelArgs(), test_json);
   EXPECT_EQ(service_config.status().code(), absl::StatusCode::kInvalidArgument);
-  EXPECT_THAT(service_config.status().message(),
+  EXPECT_THAT(std::string(service_config.status().message()),
               ::testing::ContainsRegex(
                   "Service config parsing errors: \\["
                   "errors parsing methodConfig: \\["
@@ -966,7 +966,7 @@ TEST_F(RetryParserTest, InvalidRetryPolicyMaxAttemptsWrongType) {
       "}";
   auto service_config = ServiceConfigImpl::Create(ChannelArgs(), test_json);
   EXPECT_EQ(service_config.status().code(), absl::StatusCode::kInvalidArgument);
-  EXPECT_THAT(service_config.status().message(),
+  EXPECT_THAT(std::string(service_config.status().message()),
               ::testing::ContainsRegex(
                   "Service config parsing errors: \\["
                   "errors parsing methodConfig: \\["
@@ -996,7 +996,7 @@ TEST_F(RetryParserTest, InvalidRetryPolicyMaxAttemptsBadValue) {
   auto service_config = ServiceConfigImpl::Create(ChannelArgs(), test_json);
   EXPECT_EQ(service_config.status().code(), absl::StatusCode::kInvalidArgument);
   EXPECT_THAT(
-      service_config.status().message(),
+      std::string(service_config.status().message()),
       ::testing::ContainsRegex("Service config parsing errors: \\["
                                "errors parsing methodConfig: \\["
                                "index 0: \\["
@@ -1024,7 +1024,7 @@ TEST_F(RetryParserTest, InvalidRetryPolicyInitialBackoffWrongType) {
       "}";
   auto service_config = ServiceConfigImpl::Create(ChannelArgs(), test_json);
   EXPECT_EQ(service_config.status().code(), absl::StatusCode::kInvalidArgument);
-  EXPECT_THAT(service_config.status().message(),
+  EXPECT_THAT(std::string(service_config.status().message()),
               ::testing::ContainsRegex(
                   "Service config parsing errors: \\["
                   "errors parsing methodConfig: \\["
@@ -1054,7 +1054,7 @@ TEST_F(RetryParserTest, InvalidRetryPolicyInitialBackoffBadValue) {
       "}";
   auto service_config = ServiceConfigImpl::Create(ChannelArgs(), test_json);
   EXPECT_EQ(service_config.status().code(), absl::StatusCode::kInvalidArgument);
-  EXPECT_THAT(service_config.status().message(),
+  EXPECT_THAT(std::string(service_config.status().message()),
               ::testing::ContainsRegex(
                   "Service config parsing errors: \\["
                   "errors parsing methodConfig: \\["
@@ -1083,7 +1083,7 @@ TEST_F(RetryParserTest, InvalidRetryPolicyMaxBackoffWrongType) {
       "}";
   auto service_config = ServiceConfigImpl::Create(ChannelArgs(), test_json);
   EXPECT_EQ(service_config.status().code(), absl::StatusCode::kInvalidArgument);
-  EXPECT_THAT(service_config.status().message(),
+  EXPECT_THAT(std::string(service_config.status().message()),
               ::testing::ContainsRegex(
                   "Service config parsing errors: \\["
                   "errors parsing methodConfig: \\["
@@ -1114,7 +1114,7 @@ TEST_F(RetryParserTest, InvalidRetryPolicyMaxBackoffBadValue) {
   auto service_config = ServiceConfigImpl::Create(ChannelArgs(), test_json);
   EXPECT_EQ(service_config.status().code(), absl::StatusCode::kInvalidArgument);
   EXPECT_THAT(
-      service_config.status().message(),
+      std::string(service_config.status().message()),
       ::testing::ContainsRegex("Service config parsing errors: \\["
                                "errors parsing methodConfig: \\["
                                "index 0: \\["
@@ -1142,7 +1142,7 @@ TEST_F(RetryParserTest, InvalidRetryPolicyBackoffMultiplierWrongType) {
       "}";
   auto service_config = ServiceConfigImpl::Create(ChannelArgs(), test_json);
   EXPECT_EQ(service_config.status().code(), absl::StatusCode::kInvalidArgument);
-  EXPECT_THAT(service_config.status().message(),
+  EXPECT_THAT(std::string(service_config.status().message()),
               ::testing::ContainsRegex(
                   "Service config parsing errors: \\["
                   "errors parsing methodConfig: \\["
@@ -1171,7 +1171,7 @@ TEST_F(RetryParserTest, InvalidRetryPolicyBackoffMultiplierBadValue) {
       "}";
   auto service_config = ServiceConfigImpl::Create(ChannelArgs(), test_json);
   EXPECT_EQ(service_config.status().code(), absl::StatusCode::kInvalidArgument);
-  EXPECT_THAT(service_config.status().message(),
+  EXPECT_THAT(std::string(service_config.status().message()),
               ::testing::ContainsRegex(
                   "Service config parsing errors: \\["
                   "errors parsing methodConfig: \\["
@@ -1200,7 +1200,7 @@ TEST_F(RetryParserTest, InvalidRetryPolicyEmptyRetryableStatusCodes) {
       "}";
   auto service_config = ServiceConfigImpl::Create(ChannelArgs(), test_json);
   EXPECT_EQ(service_config.status().code(), absl::StatusCode::kInvalidArgument);
-  EXPECT_THAT(service_config.status().message(),
+  EXPECT_THAT(std::string(service_config.status().message()),
               ::testing::ContainsRegex(
                   "Service config parsing errors: \\["
                   "errors parsing methodConfig: \\["
@@ -1229,7 +1229,7 @@ TEST_F(RetryParserTest, InvalidRetryPolicyRetryableStatusCodesWrongType) {
       "}";
   auto service_config = ServiceConfigImpl::Create(ChannelArgs(), test_json);
   EXPECT_EQ(service_config.status().code(), absl::StatusCode::kInvalidArgument);
-  EXPECT_THAT(service_config.status().message(),
+  EXPECT_THAT(std::string(service_config.status().message()),
               ::testing::ContainsRegex(
                   "Service config parsing errors: \\["
                   "errors parsing methodConfig: \\["
@@ -1258,7 +1258,7 @@ TEST_F(RetryParserTest, InvalidRetryPolicyUnparseableRetryableStatusCodes) {
       "}";
   auto service_config = ServiceConfigImpl::Create(ChannelArgs(), test_json);
   EXPECT_EQ(service_config.status().code(), absl::StatusCode::kInvalidArgument);
-  EXPECT_THAT(service_config.status().message(),
+  EXPECT_THAT(std::string(service_config.status().message()),
               ::testing::ContainsRegex(
                   "Service config parsing errors: \\["
                   "errors parsing methodConfig: \\["
@@ -1404,7 +1404,7 @@ TEST_F(RetryParserTest, InvalidRetryPolicyPerAttemptRecvTimeoutUnparseable) {
       ChannelArgs().Set(GRPC_ARG_EXPERIMENTAL_ENABLE_HEDGING, 1);
   auto service_config = ServiceConfigImpl::Create(args, test_json);
   EXPECT_EQ(service_config.status().code(), absl::StatusCode::kInvalidArgument);
-  EXPECT_THAT(service_config.status().message(),
+  EXPECT_THAT(std::string(service_config.status().message()),
               ::testing::ContainsRegex(
                   "Service config parsing errors: \\["
                   "errors parsing methodConfig: \\["
@@ -1437,7 +1437,7 @@ TEST_F(RetryParserTest, InvalidRetryPolicyPerAttemptRecvTimeoutWrongType) {
       ChannelArgs().Set(GRPC_ARG_EXPERIMENTAL_ENABLE_HEDGING, 1);
   auto service_config = ServiceConfigImpl::Create(args, test_json);
   EXPECT_EQ(service_config.status().code(), absl::StatusCode::kInvalidArgument);
-  EXPECT_THAT(service_config.status().message(),
+  EXPECT_THAT(std::string(service_config.status().message()),
               ::testing::ContainsRegex(
                   "Service config parsing errors: \\["
                   "errors parsing methodConfig: \\["
@@ -1470,7 +1470,7 @@ TEST_F(RetryParserTest, InvalidRetryPolicyPerAttemptRecvTimeoutBadValue) {
       ChannelArgs().Set(GRPC_ARG_EXPERIMENTAL_ENABLE_HEDGING, 1);
   auto service_config = ServiceConfigImpl::Create(args, test_json);
   EXPECT_EQ(service_config.status().code(), absl::StatusCode::kInvalidArgument);
-  EXPECT_THAT(service_config.status().message(),
+  EXPECT_THAT(std::string(service_config.status().message()),
               ::testing::ContainsRegex(
                   "Service config parsing errors: \\["
                   "errors parsing methodConfig: \\["
@@ -1537,7 +1537,7 @@ TEST_F(MessageSizeParserTest, InvalidMaxRequestMessageBytes) {
       "}";
   auto service_config = ServiceConfigImpl::Create(ChannelArgs(), test_json);
   EXPECT_EQ(service_config.status().code(), absl::StatusCode::kInvalidArgument);
-  EXPECT_THAT(service_config.status().message(),
+  EXPECT_THAT(std::string(service_config.status().message()),
               ::testing::ContainsRegex(
                   "Service config parsing errors: \\["
                   "errors parsing methodConfig: \\["
@@ -1560,7 +1560,7 @@ TEST_F(MessageSizeParserTest, InvalidMaxResponseMessageBytes) {
       "}";
   auto service_config = ServiceConfigImpl::Create(ChannelArgs(), test_json);
   EXPECT_EQ(service_config.status().code(), absl::StatusCode::kInvalidArgument);
-  EXPECT_THAT(service_config.status().message(),
+  EXPECT_THAT(std::string(service_config.status().message()),
               ::testing::ContainsRegex(
                   "Service config parsing errors: \\["
                   "errors parsing methodConfig: \\["
