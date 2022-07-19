@@ -29,6 +29,7 @@
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/str_cat.h"
+#include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
 
 #include <grpc/impl/codegen/connectivity_state.h>
@@ -45,7 +46,6 @@
 #include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
-#include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/json/json.h"
 #include "src/core/lib/resolver/server_address.h"
 #include "src/core/lib/transport/connectivity_state.h"
@@ -60,13 +60,13 @@ namespace {
 // pick_first LB policy
 //
 
-constexpr char kPickFirst[] = "pick_first";
+constexpr absl::string_view kPickFirst = "pick_first";
 
 class PickFirst : public LoadBalancingPolicy {
  public:
   explicit PickFirst(Args args);
 
-  const char* name() const override { return kPickFirst; }
+  absl::string_view name() const override { return kPickFirst; }
 
   void UpdateLocked(UpdateArgs args) override;
   void ExitIdleLocked() override;
@@ -502,7 +502,7 @@ void PickFirst::PickFirstSubchannelData::ProcessUnselectedReadyLocked() {
 
 class PickFirstConfig : public LoadBalancingPolicy::Config {
  public:
-  const char* name() const override { return kPickFirst; }
+  absl::string_view name() const override { return kPickFirst; }
 };
 
 //
@@ -516,10 +516,10 @@ class PickFirstFactory : public LoadBalancingPolicyFactory {
     return MakeOrphanable<PickFirst>(std::move(args));
   }
 
-  const char* name() const override { return kPickFirst; }
+  absl::string_view name() const override { return kPickFirst; }
 
-  RefCountedPtr<LoadBalancingPolicy::Config> ParseLoadBalancingConfig(
-      const Json& /*json*/, grpc_error_handle* /*error*/) const override {
+  absl::StatusOr<RefCountedPtr<LoadBalancingPolicy::Config>>
+  ParseLoadBalancingConfig(const Json& /*json*/) const override {
     return MakeRefCounted<PickFirstConfig>();
   }
 };

@@ -29,6 +29,7 @@
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/str_cat.h"
+#include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
 
 #include <grpc/impl/codegen/connectivity_state.h>
@@ -44,7 +45,6 @@
 #include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
-#include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/json/json.h"
 #include "src/core/lib/resolver/server_address.h"
 #include "src/core/lib/transport/connectivity_state.h"
@@ -59,13 +59,13 @@ namespace {
 // round_robin LB policy
 //
 
-constexpr char kRoundRobin[] = "round_robin";
+constexpr absl::string_view kRoundRobin = "round_robin";
 
 class RoundRobin : public LoadBalancingPolicy {
  public:
   explicit RoundRobin(Args args);
 
-  const char* name() const override { return kRoundRobin; }
+  absl::string_view name() const override { return kRoundRobin; }
 
   void UpdateLocked(UpdateArgs args) override;
   void ResetBackoffLocked() override;
@@ -499,7 +499,7 @@ void RoundRobin::RoundRobinSubchannelData::UpdateLogicalConnectivityStateLocked(
 
 class RoundRobinConfig : public LoadBalancingPolicy::Config {
  public:
-  const char* name() const override { return kRoundRobin; }
+  absl::string_view name() const override { return kRoundRobin; }
 };
 
 class RoundRobinFactory : public LoadBalancingPolicyFactory {
@@ -509,10 +509,10 @@ class RoundRobinFactory : public LoadBalancingPolicyFactory {
     return MakeOrphanable<RoundRobin>(std::move(args));
   }
 
-  const char* name() const override { return kRoundRobin; }
+  absl::string_view name() const override { return kRoundRobin; }
 
-  RefCountedPtr<LoadBalancingPolicy::Config> ParseLoadBalancingConfig(
-      const Json& /*json*/, grpc_error_handle* /*error*/) const override {
+  absl::StatusOr<RefCountedPtr<LoadBalancingPolicy::Config>>
+  ParseLoadBalancingConfig(const Json& /*json*/) const override {
     return MakeRefCounted<RoundRobinConfig>();
   }
 };
