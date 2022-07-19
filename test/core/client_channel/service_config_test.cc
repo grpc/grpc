@@ -534,7 +534,7 @@ TEST_F(ClientChannelParserTest, ValidLoadBalancingConfigPickFirst) {
       static_cast<internal::ClientChannelGlobalParsedConfig*>(
           svc_cfg->GetGlobalParsedConfig(0));
   auto lb_config = parsed_config->parsed_lb_config();
-  EXPECT_STREQ(lb_config->name(), "pick_first");
+  EXPECT_EQ(lb_config->name(), "pick_first");
 }
 
 TEST_F(ClientChannelParserTest, ValidLoadBalancingConfigRoundRobin) {
@@ -546,7 +546,7 @@ TEST_F(ClientChannelParserTest, ValidLoadBalancingConfigRoundRobin) {
   auto parsed_config = static_cast<internal::ClientChannelGlobalParsedConfig*>(
       svc_cfg->GetGlobalParsedConfig(0));
   auto lb_config = parsed_config->parsed_lb_config();
-  EXPECT_STREQ(lb_config->name(), "round_robin");
+  EXPECT_EQ(lb_config->name(), "round_robin");
 }
 
 TEST_F(ClientChannelParserTest, ValidLoadBalancingConfigGrpclb) {
@@ -560,7 +560,7 @@ TEST_F(ClientChannelParserTest, ValidLoadBalancingConfigGrpclb) {
       static_cast<internal::ClientChannelGlobalParsedConfig*>(
           svc_cfg->GetGlobalParsedConfig(0));
   auto lb_config = parsed_config->parsed_lb_config();
-  EXPECT_STREQ(lb_config->name(), "grpclb");
+  EXPECT_EQ(lb_config->name(), "grpclb");
 }
 
 TEST_F(ClientChannelParserTest, ValidLoadBalancingConfigXds) {
@@ -583,7 +583,7 @@ TEST_F(ClientChannelParserTest, ValidLoadBalancingConfigXds) {
       static_cast<internal::ClientChannelGlobalParsedConfig*>(
           svc_cfg->GetGlobalParsedConfig(0));
   auto lb_config = parsed_config->parsed_lb_config();
-  EXPECT_STREQ(lb_config->name(), "xds_cluster_resolver_experimental");
+  EXPECT_EQ(lb_config->name(), "xds_cluster_resolver_experimental");
 }
 
 TEST_F(ClientChannelParserTest, UnknownLoadBalancingConfig) {
