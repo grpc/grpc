@@ -346,7 +346,7 @@ EventHandle* PollPoller::CreateHandle(int fd, absl::string_view /*name*/,
 }
 
 void PollEventHandle::OrphanHandle(IomgrEngineClosure* on_done, int* release_fd,
-                                   absl::string_view reason) {
+                                   absl::string_view /* reason */) {
   ForkFdListRemoveHandle(this);
   ForceRemoveHandleFromPoller();
   {

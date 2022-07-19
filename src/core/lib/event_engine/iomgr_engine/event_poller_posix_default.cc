@@ -15,7 +15,6 @@
 #include <grpc/support/port_platform.h>
 
 #include "absl/strings/str_split.h"
-#include "event_poller.h"
 
 #include "src/core/lib/event_engine/iomgr_engine/ev_epoll1_linux.h"
 #include "src/core/lib/event_engine/iomgr_engine/ev_poll_posix.h"
