@@ -452,7 +452,9 @@ class ClientConnectedCallPromise {
     }
 
     void SendMessageBatchDone(grpc_error_handle error) {
-      GPR_ASSERT(error == GRPC_ERROR_NONE);
+      if (error != GRPC_ERROR_NONE) {
+        send_message_state_ = Closed{};
+      }
       if (!absl::holds_alternative<Closed>(send_message_state_)) {
         send_message_state_ = Idle{};
       }
