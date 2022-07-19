@@ -165,8 +165,9 @@ TEST_F(RlsConfigParsingTest, InvalidChildPolicyConfig) {
       grpc_error_std_string(error),
       ::testing::ContainsRegex(
           "errors parsing RLS LB policy config" CHILD_ERROR_TAG
-          "field:childPolicy" CHILD_ERROR_TAG "GrpcLb Parser" CHILD_ERROR_TAG
-          "field:childPolicy" CHILD_ERROR_TAG "type should be array"));
+          "field:childPolicy" CHILD_ERROR_TAG
+          "errors parsing grpclb LB policy config: \\["
+          "error parsing childPolicy field: type should be array\\]"));
   GRPC_ERROR_UNREF(error);
 }
 

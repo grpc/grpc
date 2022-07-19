@@ -595,8 +595,8 @@ TEST_F(ClientChannelParserTest, UnknownLoadBalancingConfig) {
       ::testing::ContainsRegex("Service config parsing error" CHILD_ERROR_TAG
                                "Global Params" CHILD_ERROR_TAG
                                "Client channel global parser" CHILD_ERROR_TAG
-                               "field:loadBalancingConfig" CHILD_ERROR_TAG
-                               "No known policies in list: unknown"));
+                               "field:loadBalancingConfig "
+                               "error:No known policies in list: unknown"));
   GRPC_ERROR_UNREF(error);
 }
 
@@ -613,9 +613,9 @@ TEST_F(ClientChannelParserTest, InvalidGrpclbLoadBalancingConfig) {
                   "Service config parsing error" CHILD_ERROR_TAG
                   "Global Params" CHILD_ERROR_TAG
                   "Client channel global parser" CHILD_ERROR_TAG
-                  "field:loadBalancingConfig" CHILD_ERROR_TAG
-                  "GrpcLb Parser" CHILD_ERROR_TAG
-                  "field:childPolicy" CHILD_ERROR_TAG "type should be array"));
+                  "field:loadBalancingConfig error:"
+                  "errors parsing grpclb LB policy config: \\["
+                  "error parsing childPolicy field: type should be array\\]"));
   GRPC_ERROR_UNREF(error);
 }
 
