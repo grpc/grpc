@@ -3166,6 +3166,7 @@ grpc_cc_library(
     deps = [
         "avl",
         "channel_stack_type",
+        "debug_location",
         "dual_ref_counted",
         "gpr_base",
         "grpc_codegen",
@@ -4027,6 +4028,7 @@ grpc_cc_library(
         "channel_args_preconditioning",
         "channel_fwd",
         "config",
+        "debug_location",
         "exec_ctx",
         "gpr_base",
         "grpc_base",
