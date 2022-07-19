@@ -492,11 +492,12 @@ double PressureTracker::AddSampleAndGetEstimate(double sample) {
         max_this_round_.exchange(sample, std::memory_order_relaxed);
     double report;
     if (current_estimate > 0.99) {
-      report = pid_.Update(1e6, 1.0);
+      // Under very high memory pressure we... just max things out.
+      report = pid_.Update(1e99, 1.0);
     } else {
       report = pid_.Update(current_estimate - 0.8, dt.seconds());
     }
-    if (GRPC_TRACE_FLAG_ENABLED(grpc_resource_quota_trace)) {
+    if (true || GRPC_TRACE_FLAG_ENABLED(grpc_resource_quota_trace)) {
       gpr_log(GPR_INFO, "RQ: pressure:%lf report:%lf error_integral:%lf",
               current_estimate, report, pid_.error_integral());
     }
