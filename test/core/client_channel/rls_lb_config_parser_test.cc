@@ -85,7 +85,7 @@ TEST_F(RlsConfigParsingTest, TopLevelRequiredFieldsMissing) {
       ServiceConfigImpl::Create(ChannelArgs(), service_config_json);
   EXPECT_EQ(service_config.status().code(), absl::StatusCode::kInvalidArgument);
   EXPECT_THAT(
-      service_config.status().message(),
+      std::string(service_config.status().message()),
       ::testing::ContainsRegex(
           "errors parsing RLS LB policy config" CHILD_ERROR_TAG
           "field:routeLookupConfig error:does not exist.*"
@@ -110,7 +110,7 @@ TEST_F(RlsConfigParsingTest, TopLevelFieldsWrongTypes) {
       ServiceConfigImpl::Create(ChannelArgs(), service_config_json);
   EXPECT_EQ(service_config.status().code(), absl::StatusCode::kInvalidArgument);
   EXPECT_THAT(
-      service_config.status().message(),
+      std::string(service_config.status().message()),
       ::testing::ContainsRegex(
           "errors parsing RLS LB policy config" CHILD_ERROR_TAG
           "field:routeLookupConfig error:type should be OBJECT.*"
@@ -136,7 +136,7 @@ TEST_F(RlsConfigParsingTest, TopLevelFieldsInvalidValues) {
       ServiceConfigImpl::Create(ChannelArgs(), service_config_json);
   EXPECT_EQ(service_config.status().code(), absl::StatusCode::kInvalidArgument);
   EXPECT_THAT(
-      service_config.status().message(),
+      std::string(service_config.status().message()),
       ::testing::ContainsRegex(
           "errors parsing RLS LB policy config" CHILD_ERROR_TAG
           "field:childPolicyConfigTargetFieldName error:must be non-empty.*"
@@ -161,7 +161,7 @@ TEST_F(RlsConfigParsingTest, InvalidChildPolicyConfig) {
       ServiceConfigImpl::Create(ChannelArgs(), service_config_json);
   EXPECT_EQ(service_config.status().code(), absl::StatusCode::kInvalidArgument);
   EXPECT_THAT(
-      service_config.status().message(),
+      std::string(service_config.status().message()),
       ::testing::ContainsRegex(
           "errors parsing RLS LB policy config" CHILD_ERROR_TAG
           "field:childPolicy" CHILD_ERROR_TAG "GrpcLb Parser" CHILD_ERROR_TAG
@@ -188,7 +188,7 @@ TEST_F(RlsConfigParsingTest, InvalidRlsChannelServiceConfig) {
       ServiceConfigImpl::Create(ChannelArgs(), service_config_json);
   EXPECT_EQ(service_config.status().code(), absl::StatusCode::kInvalidArgument);
   EXPECT_THAT(
-      service_config.status().message(),
+      std::string(service_config.status().message()),
       ::testing::ContainsRegex(
           "errors parsing RLS LB policy config" CHILD_ERROR_TAG
           "field:routeLookupChannelServiceConfig" CHILD_ERROR_TAG
@@ -215,7 +215,7 @@ TEST_F(RlsConfigParsingTest, RouteLookupConfigRequiredFieldsMissing) {
   auto service_config =
       ServiceConfigImpl::Create(ChannelArgs(), service_config_json);
   EXPECT_EQ(service_config.status().code(), absl::StatusCode::kInvalidArgument);
-  EXPECT_THAT(service_config.status().message(),
+  EXPECT_THAT(std::string(service_config.status().message()),
               ::testing::ContainsRegex(
                   "errors parsing RLS LB policy config" CHILD_ERROR_TAG
                   "field:routeLookupConfig" CHILD_ERROR_TAG
@@ -245,7 +245,7 @@ TEST_F(RlsConfigParsingTest, RouteLookupConfigFieldsWrongTypes) {
   auto service_config =
       ServiceConfigImpl::Create(ChannelArgs(), service_config_json);
   EXPECT_EQ(service_config.status().code(), absl::StatusCode::kInvalidArgument);
-  EXPECT_THAT(service_config.status().message(),
+  EXPECT_THAT(std::string(service_config.status().message()),
               ::testing::ContainsRegex(
                   "errors parsing RLS LB policy config" CHILD_ERROR_TAG
                   "field:routeLookupConfig" CHILD_ERROR_TAG
@@ -273,7 +273,7 @@ TEST_F(RlsConfigParsingTest, RouteLookupConfigFieldsInvalidValues) {
   auto service_config =
       ServiceConfigImpl::Create(ChannelArgs(), service_config_json);
   EXPECT_EQ(service_config.status().code(), absl::StatusCode::kInvalidArgument);
-  EXPECT_THAT(service_config.status().message(),
+  EXPECT_THAT(std::string(service_config.status().message()),
               ::testing::ContainsRegex(
                   "errors parsing RLS LB policy config" CHILD_ERROR_TAG
                   "field:routeLookupConfig" CHILD_ERROR_TAG
@@ -303,7 +303,7 @@ TEST_F(RlsConfigParsingTest, GrpcKeybuilderRequiredFieldsMissing) {
   auto service_config =
       ServiceConfigImpl::Create(ChannelArgs(), service_config_json);
   EXPECT_EQ(service_config.status().code(), absl::StatusCode::kInvalidArgument);
-  EXPECT_THAT(service_config.status().message(),
+  EXPECT_THAT(std::string(service_config.status().message()),
               ::testing::ContainsRegex(
                   "errors parsing RLS LB policy config" CHILD_ERROR_TAG
                   "field:routeLookupConfig" CHILD_ERROR_TAG
@@ -334,7 +334,7 @@ TEST_F(RlsConfigParsingTest, GrpcKeybuilderWrongFieldTypes) {
       ServiceConfigImpl::Create(ChannelArgs(), service_config_json);
   EXPECT_EQ(service_config.status().code(), absl::StatusCode::kInvalidArgument);
   EXPECT_THAT(
-      service_config.status().message(),
+      std::string(service_config.status().message()),
       ::testing::ContainsRegex(
           "errors parsing RLS LB policy config" CHILD_ERROR_TAG
           "field:routeLookupConfig" CHILD_ERROR_TAG
@@ -372,7 +372,7 @@ TEST_F(RlsConfigParsingTest, GrpcKeybuilderInvalidValues) {
   auto service_config =
       ServiceConfigImpl::Create(ChannelArgs(), service_config_json);
   EXPECT_EQ(service_config.status().code(), absl::StatusCode::kInvalidArgument);
-  EXPECT_THAT(service_config.status().message(),
+  EXPECT_THAT(std::string(service_config.status().message()),
               ::testing::ContainsRegex(
                   "errors parsing RLS LB policy config" CHILD_ERROR_TAG
                   "field:routeLookupConfig" CHILD_ERROR_TAG
@@ -425,7 +425,7 @@ TEST_F(RlsConfigParsingTest, GrpcKeybuilderInvalidHeaders) {
       ServiceConfigImpl::Create(ChannelArgs(), service_config_json);
   EXPECT_EQ(service_config.status().code(), absl::StatusCode::kInvalidArgument);
   EXPECT_THAT(
-      service_config.status().message(),
+      std::string(service_config.status().message()),
       ::testing::ContainsRegex(
           "errors parsing RLS LB policy config" CHILD_ERROR_TAG
           "field:routeLookupConfig" CHILD_ERROR_TAG
@@ -472,7 +472,7 @@ TEST_F(RlsConfigParsingTest, GrpcKeybuilderNameWrongFieldTypes) {
       ServiceConfigImpl::Create(ChannelArgs(), service_config_json);
   EXPECT_EQ(service_config.status().code(), absl::StatusCode::kInvalidArgument);
   EXPECT_THAT(
-      service_config.status().message(),
+      std::string(service_config.status().message()),
       ::testing::ContainsRegex(
           "errors parsing RLS LB policy config" CHILD_ERROR_TAG
           "field:routeLookupConfig" CHILD_ERROR_TAG
@@ -512,7 +512,7 @@ TEST_F(RlsConfigParsingTest, DuplicateMethodNamesInSameKeyBuilder) {
       ServiceConfigImpl::Create(ChannelArgs(), service_config_json);
   EXPECT_EQ(service_config.status().code(), absl::StatusCode::kInvalidArgument);
   EXPECT_THAT(
-      service_config.status().message(),
+      std::string(service_config.status().message()),
       ::testing::ContainsRegex(
           "errors parsing RLS LB policy config" CHILD_ERROR_TAG
           "field:routeLookupConfig" CHILD_ERROR_TAG
@@ -553,7 +553,7 @@ TEST_F(RlsConfigParsingTest, DuplicateMethodNamesInDifferentKeyBuilders) {
       ServiceConfigImpl::Create(ChannelArgs(), service_config_json);
   EXPECT_EQ(service_config.status().code(), absl::StatusCode::kInvalidArgument);
   EXPECT_THAT(
-      service_config.status().message(),
+      std::string(service_config.status().message()),
       ::testing::ContainsRegex(
           "errors parsing RLS LB policy config" CHILD_ERROR_TAG
           "field:routeLookupConfig" CHILD_ERROR_TAG
