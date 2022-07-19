@@ -2546,7 +2546,7 @@ class RlsLbFactory : public LoadBalancingPolicyFactory {
           "errors parsing RLS LB policy config", &error_list);
       std::string error_string = grpc_error_std_string(error);
       GRPC_ERROR_UNREF(error);
-      return absl::InvalidArgumentError(std::move(error_string));
+      return absl::InvalidArgumentError(error_string);
     }
     return MakeRefCounted<RlsLbConfig>(
         std::move(route_lookup_config), std::move(rls_channel_service_config),

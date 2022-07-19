@@ -21,12 +21,9 @@
 
 #include <stdlib.h>
 
-#include <vector>
-
 #include "absl/status/statusor.h"
 
 #include "src/core/lib/gprpp/unique_type_name.h"
-#include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/json/json.h"
 
 namespace grpc_core {
