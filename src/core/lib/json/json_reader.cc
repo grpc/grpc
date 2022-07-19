@@ -142,6 +142,9 @@ bool JsonReader::StringAddChar(uint32_t c) {
     if ((c & 0x80) == 0) {
       utf8_bytes_remaining_ = 0;
     } else if ((c & 0xe0) == 0xc0 && c > 0xc1) {
+      /// For the UTF-8 characters with length of 2 bytes, the range of the
+      /// first byte is [0xc2, 0xdf]. Reference: Table 3-7 in
+      /// https://www.unicode.org/versions/Unicode14.0.0/ch03.pdf
       utf8_bytes_remaining_ = 1;
     } else if ((c & 0xf0) == 0xe0) {
       utf8_bytes_remaining_ = 2;
@@ -157,16 +160,22 @@ bool JsonReader::StringAddChar(uint32_t c) {
     }
     --utf8_bytes_remaining_;
   } else if (utf8_bytes_remaining_ == 2) {
-    /// Reference: https://www.unicode.org/versions/Unicode14.0.0/ch03.pdf
-    /// Table 3-7
+    /// For UTF-8 characters starting with 0xe0, their length is 3 bytes, and
+    /// the range of the second byte is [0xa0, 0xbf]. For UTF-8 characters
+    /// starting with 0xed, their length is 3 bytes, and the range of the second
+    /// byte is [0x80, 0x9f]. Reference: Table 3-7 in
+    /// https://www.unicode.org/versions/Unicode14.0.0/ch03.pdf
     if (((c & 0xc0) != 0x80) || (utf8_first_byte_ == 0xe0 && c < 0xa0) ||
         (utf8_first_byte_ == 0xed && c > 0x9f)) {
       return false;
     }
     --utf8_bytes_remaining_;
   } else if (utf8_bytes_remaining_ == 3) {
-    /// Reference: https://www.unicode.org/versions/Unicode14.0.0/ch03.pdf
-    /// Table 3-7
+    /// For UTF-8 characters starting with 0xf0, their length is 4 bytes, and
+    /// the range of the second byte is [0x90, 0xbf]. For UTF-8 characters
+    /// starting with 0xf4, their length is 4 bytes, and the range of the second
+    /// byte is [0x80, 0x8f]. Reference: Table 3-7 in
+    /// https://www.unicode.org/versions/Unicode14.0.0/ch03.pdf
     if (((c & 0xc0) != 0x80) || (utf8_first_byte_ == 0xf0 && c < 0x90) ||
         (utf8_first_byte_ == 0xf4 && c > 0x8f)) {
       return false;

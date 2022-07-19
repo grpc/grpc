@@ -96,7 +96,9 @@ TEST(Json, Utf16) {
                  "\" \\\\\\u0010\\n\\r\"");
 }
 
-MATCHER(ContainsInvalidUtf8, "") {
+MATCHER(ContainsInvalidUtf8,
+        absl::StrCat(negation ? "Does" : "Does not",
+                     " contain invalid UTF-8 characters.")) {
   grpc_error_handle error = GRPC_ERROR_NONE;
   const Json json = Json::Parse(arg, &error);
   return (error.code() == absl::StatusCode::kUnknown) &&
@@ -117,12 +119,25 @@ TEST(Json, Utf8) {
                  Json::Object{{"\xf0\x9d\x84\x9e", 0}},
                  "{\"\\ud834\\udd1e\":0}");
 
+  /// For UTF-8 characters with length of 1 byte, the range of it is [0x00,
+  /// 0x7f].
   EXPECT_THAT("\"\xa0\"", ContainsInvalidUtf8());
+
+  /// For UTF-8 characters with length of 2 bytes, the range of the first byte
+  /// is [0xc2, 0xdf], and the range of the second byte is [0x80, 0xbf].
   EXPECT_THAT("\"\xc0\xbc\"", ContainsInvalidUtf8());
   EXPECT_THAT("\"\xbc\xc0\"", ContainsInvalidUtf8());
+
+  /// Corner cases for UTF-8 characters with length of 3 bytes.
+  /// If the first byte is 0xe0, the range of second byte is [0xa0, 0xbf].
   EXPECT_THAT("\"\xe0\x80\x80\"", ContainsInvalidUtf8());
+  /// If the first byte is 0xed, the range of second byte is [0x80, 0x9f].
   EXPECT_THAT("\"\xed\xa0\x80\"", ContainsInvalidUtf8());
+
+  /// Corner cases for UTF-8 characters with length of 4 bytes.
+  /// If the first byte is 0xf0, the range of second byte is [0x90, 0xbf].
   EXPECT_THAT("\"\xf0\x80\x80\x80\"", ContainsInvalidUtf8());
+  /// If the first byte is 0xf4, the range of second byte is [0x80, 0x8f].
   EXPECT_THAT("\"\xf4\x90\x80\x80\"", ContainsInvalidUtf8());
 }
 
