@@ -56,7 +56,7 @@ class ForwardingLoadBalancingPolicy : public LoadBalancingPolicy {
     Args delegate_args;
     delegate_args.work_serializer = work_serializer();
     delegate_args.channel_control_helper = std::move(delegating_helper);
-    delegate_args.args = args.args;
+    delegate_args.args = channel_args();
     delegate_ = LoadBalancingPolicyRegistry::CreateLoadBalancingPolicy(
         delegate_policy_name, std::move(delegate_args));
     grpc_pollset_set_add_pollset_set(delegate_->interested_parties(),
