@@ -300,16 +300,14 @@ TEST(SockAddrUtilsTest, SockAddrSetGetPort) {
 void VerifySocketAddressMatch(const std::string& ip_address,
                               const std::string& subnet, uint32_t mask_bits,
                               bool success) {
-  grpc_resolved_address addr;
-  ASSERT_EQ(grpc_string_to_sockaddr(&addr, ip_address.c_str(), false),
-            GRPC_ERROR_NONE);
   // Setting the port has no effect on the match.
-  grpc_sockaddr_set_port(&addr, 12345);
-  grpc_resolved_address subnet_addr;
-  ASSERT_EQ(grpc_string_to_sockaddr(&subnet_addr, subnet.c_str(), false),
-            GRPC_ERROR_NONE);
-  grpc_sockaddr_mask_bits(&subnet_addr, mask_bits);
-  EXPECT_EQ(grpc_sockaddr_match_subnet(&addr, &subnet_addr, mask_bits), success)
+  auto addr = grpc_core::StringToSockaddr(ip_address, /*port=*/12345);
+  ASSERT_TRUE(addr.ok()) << addr.status();
+  auto subnet_addr = grpc_core::StringToSockaddr(subnet, /*port=*/0);
+  ASSERT_TRUE(subnet_addr.ok()) << subnet_addr.status();
+  grpc_sockaddr_mask_bits(&*subnet_addr, mask_bits);
+  EXPECT_EQ(grpc_sockaddr_match_subnet(&*addr, &*subnet_addr, mask_bits),
+            success)
       << "IP=" << ip_address << " Subnet=" << subnet << " Mask=" << mask_bits;
 }
 

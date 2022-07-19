@@ -1860,11 +1860,13 @@ grpc_cc_library(
         "loop",
         "map",
         "orphanable",
+        "periodic_update",
         "poll",
         "race",
         "ref_counted_ptr",
         "resource_quota_trace",
         "seq",
+        "time",
         "useful",
     ],
 )
@@ -3169,6 +3171,7 @@ grpc_cc_library(
     deps = [
         "avl",
         "channel_stack_type",
+        "debug_location",
         "dual_ref_counted",
         "gpr_base",
         "grpc_codegen",
@@ -4032,6 +4035,7 @@ grpc_cc_library(
         "channel_args_preconditioning",
         "channel_fwd",
         "config",
+        "debug_location",
         "exec_ctx",
         "gpr_base",
         "grpc_base",
@@ -5953,6 +5957,8 @@ grpc_cc_library(
     ],
     external_deps = [
         "absl/memory",
+        "absl/status",
+        "absl/status:statusor",
         "absl/strings",
         "absl/strings:str_format",
         "absl/types:optional",

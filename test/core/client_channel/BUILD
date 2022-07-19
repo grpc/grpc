@@ -19,6 +19,18 @@ grpc_package(name = "test/core/client_channel")
 licenses(["notice"])
 
 grpc_cc_test(
+    name = "client_channel_test",
+    srcs = ["client_channel_test.cc"],
+    external_deps = ["gtest"],
+    language = "C++",
+    deps = [
+        "//:channel_args",
+        "//:grpc_client_channel",
+        "//test/core/util:grpc_test_util",
+    ],
+)
+
+grpc_cc_test(
     name = "certificate_provider_registry_test",
     srcs = ["certificate_provider_registry_test.cc"],
     external_deps = ["gtest"],

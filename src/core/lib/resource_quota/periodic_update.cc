@@ -19,10 +19,16 @@
 #include <atomic>
 
 #include "src/core/lib/gpr/useful.h"
+#include "src/core/lib/iomgr/exec_ctx.h"
 
 namespace grpc_core {
 
 bool PeriodicUpdate::MaybeEndPeriod() {
+  if (period_start_ == Timestamp::ProcessEpoch()) {
+    period_start_ = ExecCtx::Get()->Now();
+    updates_remaining_.store(1, std::memory_order_release);
+    return false;
+  }
   // updates_remaining_ just reached 0 and the thread calling this function was
   // the decrementer that got us there.
   // We can now safely mutate any non-atomic mutable variables (we've got a

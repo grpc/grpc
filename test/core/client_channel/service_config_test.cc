@@ -211,8 +211,7 @@ TEST_F(ServiceConfigTest, ErrorDuplicateMethodConfigNames) {
             "Service config parsing errors: ["
             "errors parsing methodConfig: ["
             "index 1: ["
-            "field:name error:multiple method configs with same name]]]")
-      << service_config.status();
+            "field:name error:multiple method configs with same name]]]");
 }
 
 TEST_F(ServiceConfigTest, ErrorDuplicateMethodConfigNamesWithNullMethod) {
@@ -227,8 +226,7 @@ TEST_F(ServiceConfigTest, ErrorDuplicateMethodConfigNamesWithNullMethod) {
             "Service config parsing errors: ["
             "errors parsing methodConfig: ["
             "index 1: ["
-            "field:name error:multiple method configs with same name]]]")
-      << service_config.status();
+            "field:name error:multiple method configs with same name]]]");
 }
 
 TEST_F(ServiceConfigTest, ErrorDuplicateMethodConfigNamesWithEmptyMethod) {
@@ -243,8 +241,7 @@ TEST_F(ServiceConfigTest, ErrorDuplicateMethodConfigNamesWithEmptyMethod) {
             "Service config parsing errors: ["
             "errors parsing methodConfig: ["
             "index 1: ["
-            "field:name error:multiple method configs with same name]]]")
-      << service_config.status();
+            "field:name error:multiple method configs with same name]]]");
 }
 
 TEST_F(ServiceConfigTest, ErrorDuplicateDefaultMethodConfigs) {
@@ -259,8 +256,7 @@ TEST_F(ServiceConfigTest, ErrorDuplicateDefaultMethodConfigs) {
             "Service config parsing errors: ["
             "errors parsing methodConfig: ["
             "index 1: ["
-            "field:name error:multiple default method configs]]]")
-      << service_config.status();
+            "field:name error:multiple default method configs]]]");
 }
 
 TEST_F(ServiceConfigTest, ErrorDuplicateDefaultMethodConfigsWithNullService) {
@@ -275,8 +271,7 @@ TEST_F(ServiceConfigTest, ErrorDuplicateDefaultMethodConfigsWithNullService) {
             "Service config parsing errors: ["
             "errors parsing methodConfig: ["
             "index 1: ["
-            "field:name error:multiple default method configs]]]")
-      << service_config.status();
+            "field:name error:multiple default method configs]]]");
 }
 
 TEST_F(ServiceConfigTest, ErrorDuplicateDefaultMethodConfigsWithEmptyService) {
@@ -291,8 +286,7 @@ TEST_F(ServiceConfigTest, ErrorDuplicateDefaultMethodConfigsWithEmptyService) {
             "Service config parsing errors: ["
             "errors parsing methodConfig: ["
             "index 1: ["
-            "field:name error:multiple default method configs]]]")
-      << service_config.status();
+            "field:name error:multiple default method configs]]]");
 }
 
 TEST_F(ServiceConfigTest, ValidMethodConfig) {
@@ -340,8 +334,7 @@ TEST_F(ServiceConfigTest, Parser1ErrorInvalidType) {
   EXPECT_EQ(service_config.status().code(), absl::StatusCode::kInvalidArgument);
   EXPECT_EQ(service_config.status().message(),
             absl::StrCat("Service config parsing errors: [",
-                         TestParser1::InvalidTypeErrorMessage(), "]"))
-      << service_config.status();
+                         TestParser1::InvalidTypeErrorMessage(), "]"));
 }
 
 TEST_F(ServiceConfigTest, Parser1ErrorInvalidValue) {
@@ -350,8 +343,7 @@ TEST_F(ServiceConfigTest, Parser1ErrorInvalidValue) {
   EXPECT_EQ(service_config.status().code(), absl::StatusCode::kInvalidArgument);
   EXPECT_EQ(service_config.status().message(),
             absl::StrCat("Service config parsing errors: [",
-                         TestParser1::InvalidValueErrorMessage(), "]"))
-      << service_config.status();
+                         TestParser1::InvalidValueErrorMessage(), "]"));
 }
 
 TEST_F(ServiceConfigTest, Parser2BasicTest) {
@@ -395,8 +387,7 @@ TEST_F(ServiceConfigTest, Parser2ErrorInvalidType) {
             absl::StrCat("Service config parsing errors: ["
                          "errors parsing methodConfig: ["
                          "index 0: [",
-                         TestParser2::InvalidTypeErrorMessage(), "]]]"))
-      << service_config.status();
+                         TestParser2::InvalidTypeErrorMessage(), "]]]"));
 }
 
 TEST_F(ServiceConfigTest, Parser2ErrorInvalidValue) {
@@ -409,8 +400,7 @@ TEST_F(ServiceConfigTest, Parser2ErrorInvalidValue) {
             absl::StrCat("Service config parsing errors: ["
                          "errors parsing methodConfig: ["
                          "index 0: [",
-                         TestParser2::InvalidValueErrorMessage(), "]]]"))
-      << service_config.status();
+                         TestParser2::InvalidValueErrorMessage(), "]]]"));
 }
 
 TEST(ServiceConfigParserTest, DoubleRegistration) {
@@ -454,8 +444,7 @@ TEST_F(ErroredParsersScopingTest, GlobalParams) {
   EXPECT_EQ(service_config.status().message(),
             absl::StrCat("Service config parsing errors: [",
                          ErrorParser::GlobalError(), "; ",
-                         ErrorParser::GlobalError(), "]"))
-      << service_config.status();
+                         ErrorParser::GlobalError(), "]"));
 }
 
 TEST_F(ErroredParsersScopingTest, MethodParams) {
@@ -470,8 +459,7 @@ TEST_F(ErroredParsersScopingTest, MethodParams) {
                    "errors parsing methodConfig: ["
                    "index 0: [",
                    ErrorParser::MethodError(), "; ", ErrorParser::MethodError(),
-                   "]]]"))
-      << service_config.status();
+                   "]]]"));
 }
 
 //
@@ -501,7 +489,7 @@ TEST_F(ClientChannelParserTest, ValidLoadBalancingConfigPickFirst) {
       static_cast<internal::ClientChannelGlobalParsedConfig*>(
           (*service_config)->GetGlobalParsedConfig(0));
   auto lb_config = parsed_config->parsed_lb_config();
-  EXPECT_STREQ(lb_config->name(), "pick_first");
+  EXPECT_EQ(lb_config->name(), "pick_first");
 }
 
 TEST_F(ClientChannelParserTest, ValidLoadBalancingConfigRoundRobin) {
@@ -512,7 +500,7 @@ TEST_F(ClientChannelParserTest, ValidLoadBalancingConfigRoundRobin) {
   auto parsed_config = static_cast<internal::ClientChannelGlobalParsedConfig*>(
       (*service_config)->GetGlobalParsedConfig(0));
   auto lb_config = parsed_config->parsed_lb_config();
-  EXPECT_STREQ(lb_config->name(), "round_robin");
+  EXPECT_EQ(lb_config->name(), "round_robin");
 }
 
 TEST_F(ClientChannelParserTest, ValidLoadBalancingConfigGrpclb) {
@@ -525,7 +513,7 @@ TEST_F(ClientChannelParserTest, ValidLoadBalancingConfigGrpclb) {
       static_cast<internal::ClientChannelGlobalParsedConfig*>(
           (*service_config)->GetGlobalParsedConfig(0));
   auto lb_config = parsed_config->parsed_lb_config();
-  EXPECT_STREQ(lb_config->name(), "grpclb");
+  EXPECT_EQ(lb_config->name(), "grpclb");
 }
 
 TEST_F(ClientChannelParserTest, ValidLoadBalancingConfigXds) {
@@ -547,7 +535,7 @@ TEST_F(ClientChannelParserTest, ValidLoadBalancingConfigXds) {
       static_cast<internal::ClientChannelGlobalParsedConfig*>(
           (*service_config)->GetGlobalParsedConfig(0));
   auto lb_config = parsed_config->parsed_lb_config();
-  EXPECT_STREQ(lb_config->name(), "xds_cluster_resolver_experimental");
+  EXPECT_EQ(lb_config->name(), "xds_cluster_resolver_experimental");
 }
 
 TEST_F(ClientChannelParserTest, UnknownLoadBalancingConfig) {
@@ -559,9 +547,8 @@ TEST_F(ClientChannelParserTest, UnknownLoadBalancingConfig) {
       ::testing::MatchesRegex(
           "Service config parsing errors: \\["
           "error parsing client channel global parameters:" CHILD_ERROR_TAG
-          "field:loadBalancingConfig" CHILD_ERROR_TAG
-          "No known policies in list: unknown.*"))
-      << service_config.status();
+          "field:loadBalancingConfig "
+          "error:No known policies in list: unknown.*"));
 }
 
 TEST_F(ClientChannelParserTest, InvalidGrpclbLoadBalancingConfig) {
@@ -577,10 +564,9 @@ TEST_F(ClientChannelParserTest, InvalidGrpclbLoadBalancingConfig) {
       ::testing::MatchesRegex(
           "Service config parsing errors: \\["
           "error parsing client channel global parameters:" CHILD_ERROR_TAG
-          "field:loadBalancingConfig" CHILD_ERROR_TAG
-          "GrpcLb Parser" CHILD_ERROR_TAG "field:childPolicy" CHILD_ERROR_TAG
-          "type should be array.*"))
-      << service_config.status();
+          "field:loadBalancingConfig error:"
+          "errors parsing grpclb LB policy config: \\["
+          "error parsing childPolicy field: type should be array\\].*"));
 }
 
 TEST_F(ClientChannelParserTest, ValidLoadBalancingPolicy) {
@@ -612,8 +598,7 @@ TEST_F(ClientChannelParserTest, UnknownLoadBalancingPolicy) {
       ::testing::MatchesRegex(
           "Service config parsing errors: \\["
           "error parsing client channel global parameters:" CHILD_ERROR_TAG
-          "field:loadBalancingPolicy error:Unknown lb policy.*"))
-      << service_config.status();
+          "field:loadBalancingPolicy error:Unknown lb policy.*"));
 }
 
 TEST_F(ClientChannelParserTest, LoadBalancingPolicyXdsNotAllowed) {
@@ -628,8 +613,7 @@ TEST_F(ClientChannelParserTest, LoadBalancingPolicyXdsNotAllowed) {
           "error parsing client channel global parameters:" CHILD_ERROR_TAG
           "field:loadBalancingPolicy "
           "error:xds_cluster_resolver_experimental requires "
-          "a config. Please use loadBalancingConfig instead.*"))
-      << service_config.status();
+          "a config. Please use loadBalancingConfig instead.*"));
 }
 
 TEST_F(ClientChannelParserTest, ValidTimeout) {
@@ -676,8 +660,7 @@ TEST_F(ClientChannelParserTest, InvalidTimeout) {
           "index 0: \\["
           "error parsing client channel method parameters: " CHILD_ERROR_TAG
           "field:timeout error:type should be STRING of the form given "
-          "by google.proto.Duration.*"))
-      << service_config.status();
+          "by google.proto.Duration.*"));
 }
 
 TEST_F(ClientChannelParserTest, ValidWaitForReady) {
@@ -727,8 +710,7 @@ TEST_F(ClientChannelParserTest, InvalidWaitForReady) {
           "errors parsing methodConfig: \\["
           "index 0: \\["
           "error parsing client channel method parameters: " CHILD_ERROR_TAG
-          "field:waitForReady error:Type should be true/false.*"))
-      << service_config.status();
+          "field:waitForReady error:Type should be true/false.*"));
 }
 
 TEST_F(ClientChannelParserTest, ValidHealthCheck) {
@@ -766,8 +748,7 @@ TEST_F(ClientChannelParserTest, InvalidHealthCheckMultipleEntries) {
   EXPECT_THAT(std::string(service_config.status().message()),
               ::testing::ContainsRegex(
                   "JSON parsing failed" CHILD_ERROR_TAG
-                  "duplicate key \"healthCheckConfig\" at index 104"))
-      << service_config.status();
+                  "duplicate key \"healthCheckConfig\" at index 104"));
 }
 
 //
@@ -820,8 +801,7 @@ TEST_F(RetryParserTest, RetryThrottlingMissingFields) {
                   "error parsing retry global parameters:"
                   ".*retryThrottling" CHILD_ERROR_TAG
                   "field:retryThrottling field:maxTokens error:Not found"
-                  ".*field:retryThrottling field:tokenRatio error:Not found"))
-      << service_config.status();
+                  ".*field:retryThrottling field:tokenRatio error:Not found"));
 }
 
 TEST_F(RetryParserTest, InvalidRetryThrottlingNegativeMaxTokens) {
@@ -840,8 +820,7 @@ TEST_F(RetryParserTest, InvalidRetryThrottlingNegativeMaxTokens) {
                   "error parsing retry global parameters:"
                   ".*retryThrottling" CHILD_ERROR_TAG
                   "field:retryThrottling field:maxTokens error:should "
-                  "be greater than zero"))
-      << service_config.status();
+                  "be greater than zero"));
 }
 
 TEST_F(RetryParserTest, InvalidRetryThrottlingInvalidTokenRatio) {
@@ -859,8 +838,7 @@ TEST_F(RetryParserTest, InvalidRetryThrottlingInvalidTokenRatio) {
                                        "error parsing retry global parameters:"
                                        ".*retryThrottling" CHILD_ERROR_TAG
                                        "field:retryThrottling field:tokenRatio "
-                                       "error:Failed parsing"))
-      << service_config.status();
+                                       "error:Failed parsing"));
 }
 
 TEST_F(RetryParserTest, ValidRetryPolicy) {
@@ -916,8 +894,7 @@ TEST_F(RetryParserTest, InvalidRetryPolicyWrongType) {
                   "errors parsing methodConfig: \\["
                   "index 0: \\["
                   "error parsing retry method parameters:.*"
-                  "field:retryPolicy error:should be of type object"))
-      << service_config.status();
+                  "field:retryPolicy error:should be of type object"));
 }
 
 TEST_F(RetryParserTest, InvalidRetryPolicyRequiredFieldsMissing) {
@@ -944,9 +921,7 @@ TEST_F(RetryParserTest, InvalidRetryPolicyRequiredFieldsMissing) {
                   ".*field:maxAttempts error:required field missing"
                   ".*field:initialBackoff error:does not exist"
                   ".*field:maxBackoff error:does not exist"
-                  ".*field:backoffMultiplier error:required field missing"))
-      << service_config.status();
-}
+                  ".*field:backoffMultiplier error:required field missing")); }
 
 TEST_F(RetryParserTest, InvalidRetryPolicyMaxAttemptsWrongType) {
   const char* test_json =
@@ -973,8 +948,7 @@ TEST_F(RetryParserTest, InvalidRetryPolicyMaxAttemptsWrongType) {
                   "index 0: \\["
                   "error parsing retry method parameters:.*"
                   "retryPolicy" CHILD_ERROR_TAG
-                  "field:maxAttempts error:should be of type number"))
-      << service_config.status();
+                  "field:maxAttempts error:should be of type number"));
 }
 
 TEST_F(RetryParserTest, InvalidRetryPolicyMaxAttemptsBadValue) {
@@ -1002,8 +976,7 @@ TEST_F(RetryParserTest, InvalidRetryPolicyMaxAttemptsBadValue) {
                                "index 0: \\["
                                "error parsing retry method parameters:.*"
                                "retryPolicy" CHILD_ERROR_TAG
-                               "field:maxAttempts error:should be at least 2"))
-      << service_config.status();
+                               "field:maxAttempts error:should be at least 2"));
 }
 
 TEST_F(RetryParserTest, InvalidRetryPolicyInitialBackoffWrongType) {
@@ -1032,8 +1005,7 @@ TEST_F(RetryParserTest, InvalidRetryPolicyInitialBackoffWrongType) {
                   "error parsing retry method parameters:.*"
                   "retryPolicy" CHILD_ERROR_TAG
                   "field:initialBackoff error:type should be STRING of the "
-                  "form given by google.proto.Duration"))
-      << service_config.status();
+                  "form given by google.proto.Duration"));
 }
 
 TEST_F(RetryParserTest, InvalidRetryPolicyInitialBackoffBadValue) {
@@ -1061,8 +1033,7 @@ TEST_F(RetryParserTest, InvalidRetryPolicyInitialBackoffBadValue) {
                   "index 0: \\["
                   "error parsing retry method parameters:.*"
                   "retryPolicy" CHILD_ERROR_TAG
-                  "field:initialBackoff error:must be greater than 0"))
-      << service_config.status();
+                  "field:initialBackoff error:must be greater than 0"));
 }
 
 TEST_F(RetryParserTest, InvalidRetryPolicyMaxBackoffWrongType) {
@@ -1091,8 +1062,7 @@ TEST_F(RetryParserTest, InvalidRetryPolicyMaxBackoffWrongType) {
                   "error parsing retry method parameters:.*"
                   "retryPolicy" CHILD_ERROR_TAG
                   "field:maxBackoff error:type should be STRING of the form "
-                  "given by google.proto.Duration"))
-      << service_config.status();
+                  "given by google.proto.Duration"));
 }
 
 TEST_F(RetryParserTest, InvalidRetryPolicyMaxBackoffBadValue) {
@@ -1113,15 +1083,14 @@ TEST_F(RetryParserTest, InvalidRetryPolicyMaxBackoffBadValue) {
       "}";
   auto service_config = ServiceConfigImpl::Create(ChannelArgs(), test_json);
   EXPECT_EQ(service_config.status().code(), absl::StatusCode::kInvalidArgument);
-  EXPECT_THAT(
-      std::string(service_config.status().message()),
-      ::testing::ContainsRegex("Service config parsing errors: \\["
-                               "errors parsing methodConfig: \\["
-                               "index 0: \\["
-                               "error parsing retry method parameters:.*"
-                               "retryPolicy" CHILD_ERROR_TAG
-                               "field:maxBackoff error:must be greater than 0"))
-      << service_config.status();
+  EXPECT_THAT(std::string(service_config.status().message()),
+              ::testing::ContainsRegex(
+                  "Service config parsing errors: \\["
+                  "errors parsing methodConfig: \\["
+                  "index 0: \\["
+                  "error parsing retry method parameters:.*"
+                  "retryPolicy" CHILD_ERROR_TAG
+                  "field:maxBackoff error:must be greater than 0"));
 }
 
 TEST_F(RetryParserTest, InvalidRetryPolicyBackoffMultiplierWrongType) {
@@ -1149,8 +1118,7 @@ TEST_F(RetryParserTest, InvalidRetryPolicyBackoffMultiplierWrongType) {
                   "index 0: \\["
                   "error parsing retry method parameters:.*"
                   "retryPolicy" CHILD_ERROR_TAG
-                  "field:backoffMultiplier error:should be of type number"))
-      << service_config.status();
+                  "field:backoffMultiplier error:should be of type number"));
 }
 
 TEST_F(RetryParserTest, InvalidRetryPolicyBackoffMultiplierBadValue) {
@@ -1178,8 +1146,7 @@ TEST_F(RetryParserTest, InvalidRetryPolicyBackoffMultiplierBadValue) {
                   "index 0: \\["
                   "error parsing retry method parameters:.*"
                   "retryPolicy" CHILD_ERROR_TAG
-                  "field:backoffMultiplier error:must be greater than 0"))
-      << service_config.status();
+                  "field:backoffMultiplier error:must be greater than 0"));
 }
 
 TEST_F(RetryParserTest, InvalidRetryPolicyEmptyRetryableStatusCodes) {
@@ -1207,8 +1174,7 @@ TEST_F(RetryParserTest, InvalidRetryPolicyEmptyRetryableStatusCodes) {
                   "index 0: \\["
                   "error parsing retry method parameters:.*"
                   "retryPolicy" CHILD_ERROR_TAG
-                  "field:retryableStatusCodes error:must be non-empty"))
-      << service_config.status();
+                  "field:retryableStatusCodes error:must be non-empty"));
 }
 
 TEST_F(RetryParserTest, InvalidRetryPolicyRetryableStatusCodesWrongType) {
@@ -1236,8 +1202,7 @@ TEST_F(RetryParserTest, InvalidRetryPolicyRetryableStatusCodesWrongType) {
                   "index 0: \\["
                   "error parsing retry method parameters:.*"
                   "retryPolicy" CHILD_ERROR_TAG
-                  "field:retryableStatusCodes error:must be of type array"))
-      << service_config.status();
+                  "field:retryableStatusCodes error:must be of type array"));
 }
 
 TEST_F(RetryParserTest, InvalidRetryPolicyUnparseableRetryableStatusCodes) {
@@ -1267,8 +1232,7 @@ TEST_F(RetryParserTest, InvalidRetryPolicyUnparseableRetryableStatusCodes) {
                   "retryPolicy" CHILD_ERROR_TAG "field:retryableStatusCodes "
                   "error:failed to parse status code"
                   ".*field:retryableStatusCodes "
-                  "error:status codes should be of type string"))
-      << service_config.status();
+                  "error:status codes should be of type string"));
 }
 
 TEST_F(RetryParserTest, ValidRetryPolicyWithPerAttemptRecvTimeout) {
@@ -1412,8 +1376,7 @@ TEST_F(RetryParserTest, InvalidRetryPolicyPerAttemptRecvTimeoutUnparseable) {
                   "error parsing retry method parameters:.*"
                   "retryPolicy" CHILD_ERROR_TAG
                   "field:perAttemptRecvTimeout error:type must be STRING "
-                  "of the form given by google.proto.Duration."))
-      << service_config.status();
+                  "of the form given by google.proto.Duration."));
 }
 
 TEST_F(RetryParserTest, InvalidRetryPolicyPerAttemptRecvTimeoutWrongType) {
@@ -1445,8 +1408,7 @@ TEST_F(RetryParserTest, InvalidRetryPolicyPerAttemptRecvTimeoutWrongType) {
                   "error parsing retry method parameters:.*"
                   "retryPolicy" CHILD_ERROR_TAG
                   "field:perAttemptRecvTimeout error:type must be STRING "
-                  "of the form given by google.proto.Duration."))
-      << service_config.status();
+                  "of the form given by google.proto.Duration."));
 }
 
 TEST_F(RetryParserTest, InvalidRetryPolicyPerAttemptRecvTimeoutBadValue) {
@@ -1477,8 +1439,7 @@ TEST_F(RetryParserTest, InvalidRetryPolicyPerAttemptRecvTimeoutBadValue) {
                   "index 0: \\["
                   "error parsing retry method parameters:.*"
                   "retryPolicy" CHILD_ERROR_TAG
-                  "field:perAttemptRecvTimeout error:must be greater than 0"))
-      << service_config.status();
+                  "field:perAttemptRecvTimeout error:must be greater than 0"));
 }
 
 //
@@ -1544,8 +1505,7 @@ TEST_F(MessageSizeParserTest, InvalidMaxRequestMessageBytes) {
                   "index 0: \\["
                   "error parsing message size method parameters:.*"
                   "Message size parser" CHILD_ERROR_TAG
-                  "field:maxRequestMessageBytes error:should be non-negative"))
-      << service_config.status();
+                  "field:maxRequestMessageBytes error:should be non-negative"));
 }
 
 TEST_F(MessageSizeParserTest, InvalidMaxResponseMessageBytes) {
@@ -1568,8 +1528,7 @@ TEST_F(MessageSizeParserTest, InvalidMaxResponseMessageBytes) {
                   "error parsing message size method parameters:.*"
                   "Message size parser" CHILD_ERROR_TAG
                   "field:maxResponseMessageBytes error:should be of type "
-                  "number"))
-      << service_config.status();
+                  "number"));
 }
 
 }  // namespace testing
