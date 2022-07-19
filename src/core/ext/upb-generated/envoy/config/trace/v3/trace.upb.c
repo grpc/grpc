@@ -14,6 +14,7 @@
 #include "envoy/config/trace/v3/http_tracer.upb.h"
 #include "envoy/config/trace/v3/lightstep.upb.h"
 #include "envoy/config/trace/v3/opencensus.upb.h"
+#include "envoy/config/trace/v3/opentelemetry.upb.h"
 #include "envoy/config/trace/v3/service.upb.h"
 #include "envoy/config/trace/v3/zipkin.upb.h"
 

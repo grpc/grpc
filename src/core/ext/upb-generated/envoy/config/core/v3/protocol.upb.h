@@ -777,10 +777,10 @@ UPB_INLINE bool envoy_config_core_v3_Http1ProtocolOptions_has_allow_absolute_url
   return _upb_hasbit(msg, 1);
 }
 UPB_INLINE void envoy_config_core_v3_Http1ProtocolOptions_clear_allow_absolute_url(const envoy_config_core_v3_Http1ProtocolOptions* msg) {
-  *UPB_PTR_AT(msg, UPB_SIZE(4, 8), const upb_Message*) = NULL;
+  *UPB_PTR_AT(msg, UPB_SIZE(8, 8), const upb_Message*) = NULL;
 }
 UPB_INLINE const struct google_protobuf_BoolValue* envoy_config_core_v3_Http1ProtocolOptions_allow_absolute_url(const envoy_config_core_v3_Http1ProtocolOptions* msg) {
-  return *UPB_PTR_AT(msg, UPB_SIZE(4, 8), const struct google_protobuf_BoolValue*);
+  return *UPB_PTR_AT(msg, UPB_SIZE(8, 8), const struct google_protobuf_BoolValue*);
 }
 UPB_INLINE void envoy_config_core_v3_Http1ProtocolOptions_clear_accept_http_10(const envoy_config_core_v3_Http1ProtocolOptions* msg) {
   *UPB_PTR_AT(msg, UPB_SIZE(1, 1), bool) = 0;
@@ -789,19 +789,19 @@ UPB_INLINE bool envoy_config_core_v3_Http1ProtocolOptions_accept_http_10(const e
   return *UPB_PTR_AT(msg, UPB_SIZE(1, 1), bool);
 }
 UPB_INLINE void envoy_config_core_v3_Http1ProtocolOptions_clear_default_host_for_http_10(const envoy_config_core_v3_Http1ProtocolOptions* msg) {
-  *UPB_PTR_AT(msg, UPB_SIZE(8, 16), upb_StringView) = upb_StringView_FromDataAndSize(NULL, 0);
+  *UPB_PTR_AT(msg, UPB_SIZE(12, 16), upb_StringView) = upb_StringView_FromDataAndSize(NULL, 0);
 }
 UPB_INLINE upb_StringView envoy_config_core_v3_Http1ProtocolOptions_default_host_for_http_10(const envoy_config_core_v3_Http1ProtocolOptions* msg) {
-  return *UPB_PTR_AT(msg, UPB_SIZE(8, 16), upb_StringView);
+  return *UPB_PTR_AT(msg, UPB_SIZE(12, 16), upb_StringView);
 }
 UPB_INLINE bool envoy_config_core_v3_Http1ProtocolOptions_has_header_key_format(const envoy_config_core_v3_Http1ProtocolOptions* msg) {
   return _upb_hasbit(msg, 2);
 }
 UPB_INLINE void envoy_config_core_v3_Http1ProtocolOptions_clear_header_key_format(const envoy_config_core_v3_Http1ProtocolOptions* msg) {
-  *UPB_PTR_AT(msg, UPB_SIZE(16, 32), const upb_Message*) = NULL;
+  *UPB_PTR_AT(msg, UPB_SIZE(20, 32), const upb_Message*) = NULL;
 }
 UPB_INLINE const envoy_config_core_v3_Http1ProtocolOptions_HeaderKeyFormat* envoy_config_core_v3_Http1ProtocolOptions_header_key_format(const envoy_config_core_v3_Http1ProtocolOptions* msg) {
-  return *UPB_PTR_AT(msg, UPB_SIZE(16, 32), const envoy_config_core_v3_Http1ProtocolOptions_HeaderKeyFormat*);
+  return *UPB_PTR_AT(msg, UPB_SIZE(20, 32), const envoy_config_core_v3_Http1ProtocolOptions_HeaderKeyFormat*);
 }
 UPB_INLINE void envoy_config_core_v3_Http1ProtocolOptions_clear_enable_trailers(const envoy_config_core_v3_Http1ProtocolOptions* msg) {
   *UPB_PTR_AT(msg, UPB_SIZE(2, 2), bool) = 0;
@@ -819,15 +819,21 @@ UPB_INLINE bool envoy_config_core_v3_Http1ProtocolOptions_has_override_stream_er
   return _upb_hasbit(msg, 3);
 }
 UPB_INLINE void envoy_config_core_v3_Http1ProtocolOptions_clear_override_stream_error_on_invalid_http_message(const envoy_config_core_v3_Http1ProtocolOptions* msg) {
-  *UPB_PTR_AT(msg, UPB_SIZE(20, 40), const upb_Message*) = NULL;
+  *UPB_PTR_AT(msg, UPB_SIZE(24, 40), const upb_Message*) = NULL;
 }
 UPB_INLINE const struct google_protobuf_BoolValue* envoy_config_core_v3_Http1ProtocolOptions_override_stream_error_on_invalid_http_message(const envoy_config_core_v3_Http1ProtocolOptions* msg) {
-  return *UPB_PTR_AT(msg, UPB_SIZE(20, 40), const struct google_protobuf_BoolValue*);
+  return *UPB_PTR_AT(msg, UPB_SIZE(24, 40), const struct google_protobuf_BoolValue*);
+}
+UPB_INLINE void envoy_config_core_v3_Http1ProtocolOptions_clear_send_fully_qualified_url(const envoy_config_core_v3_Http1ProtocolOptions* msg) {
+  *UPB_PTR_AT(msg, UPB_SIZE(4, 4), bool) = 0;
+}
+UPB_INLINE bool envoy_config_core_v3_Http1ProtocolOptions_send_fully_qualified_url(const envoy_config_core_v3_Http1ProtocolOptions* msg) {
+  return *UPB_PTR_AT(msg, UPB_SIZE(4, 4), bool);
 }
 
 UPB_INLINE void envoy_config_core_v3_Http1ProtocolOptions_set_allow_absolute_url(envoy_config_core_v3_Http1ProtocolOptions *msg, struct google_protobuf_BoolValue* value) {
   _upb_sethas(msg, 1);
-  *UPB_PTR_AT(msg, UPB_SIZE(4, 8), struct google_protobuf_BoolValue*) = value;
+  *UPB_PTR_AT(msg, UPB_SIZE(8, 8), struct google_protobuf_BoolValue*) = value;
 }
 UPB_INLINE struct google_protobuf_BoolValue* envoy_config_core_v3_Http1ProtocolOptions_mutable_allow_absolute_url(envoy_config_core_v3_Http1ProtocolOptions* msg, upb_Arena* arena) {
   struct google_protobuf_BoolValue* sub = (struct google_protobuf_BoolValue*)envoy_config_core_v3_Http1ProtocolOptions_allow_absolute_url(msg);
@@ -842,11 +848,11 @@ UPB_INLINE void envoy_config_core_v3_Http1ProtocolOptions_set_accept_http_10(env
   *UPB_PTR_AT(msg, UPB_SIZE(1, 1), bool) = value;
 }
 UPB_INLINE void envoy_config_core_v3_Http1ProtocolOptions_set_default_host_for_http_10(envoy_config_core_v3_Http1ProtocolOptions *msg, upb_StringView value) {
-  *UPB_PTR_AT(msg, UPB_SIZE(8, 16), upb_StringView) = value;
+  *UPB_PTR_AT(msg, UPB_SIZE(12, 16), upb_StringView) = value;
 }
 UPB_INLINE void envoy_config_core_v3_Http1ProtocolOptions_set_header_key_format(envoy_config_core_v3_Http1ProtocolOptions *msg, envoy_config_core_v3_Http1ProtocolOptions_HeaderKeyFormat* value) {
   _upb_sethas(msg, 2);
-  *UPB_PTR_AT(msg, UPB_SIZE(16, 32), envoy_config_core_v3_Http1ProtocolOptions_HeaderKeyFormat*) = value;
+  *UPB_PTR_AT(msg, UPB_SIZE(20, 32), envoy_config_core_v3_Http1ProtocolOptions_HeaderKeyFormat*) = value;
 }
 UPB_INLINE struct envoy_config_core_v3_Http1ProtocolOptions_HeaderKeyFormat* envoy_config_core_v3_Http1ProtocolOptions_mutable_header_key_format(envoy_config_core_v3_Http1ProtocolOptions* msg, upb_Arena* arena) {
   struct envoy_config_core_v3_Http1ProtocolOptions_HeaderKeyFormat* sub = (struct envoy_config_core_v3_Http1ProtocolOptions_HeaderKeyFormat*)envoy_config_core_v3_Http1ProtocolOptions_header_key_format(msg);
@@ -865,7 +871,7 @@ UPB_INLINE void envoy_config_core_v3_Http1ProtocolOptions_set_allow_chunked_leng
 }
 UPB_INLINE void envoy_config_core_v3_Http1ProtocolOptions_set_override_stream_error_on_invalid_http_message(envoy_config_core_v3_Http1ProtocolOptions *msg, struct google_protobuf_BoolValue* value) {
   _upb_sethas(msg, 3);
-  *UPB_PTR_AT(msg, UPB_SIZE(20, 40), struct google_protobuf_BoolValue*) = value;
+  *UPB_PTR_AT(msg, UPB_SIZE(24, 40), struct google_protobuf_BoolValue*) = value;
 }
 UPB_INLINE struct google_protobuf_BoolValue* envoy_config_core_v3_Http1ProtocolOptions_mutable_override_stream_error_on_invalid_http_message(envoy_config_core_v3_Http1ProtocolOptions* msg, upb_Arena* arena) {
   struct google_protobuf_BoolValue* sub = (struct google_protobuf_BoolValue*)envoy_config_core_v3_Http1ProtocolOptions_override_stream_error_on_invalid_http_message(msg);
@@ -875,6 +881,9 @@ UPB_INLINE struct google_protobuf_BoolValue* envoy_config_core_v3_Http1ProtocolO
     envoy_config_core_v3_Http1ProtocolOptions_set_override_stream_error_on_invalid_http_message(msg, sub);
   }
   return sub;
+}
+UPB_INLINE void envoy_config_core_v3_Http1ProtocolOptions_set_send_fully_qualified_url(envoy_config_core_v3_Http1ProtocolOptions *msg, bool value) {
+  *UPB_PTR_AT(msg, UPB_SIZE(4, 4), bool) = value;
 }
 
 /* envoy.config.core.v3.Http1ProtocolOptions.HeaderKeyFormat */

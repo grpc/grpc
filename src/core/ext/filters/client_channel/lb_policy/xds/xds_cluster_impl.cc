@@ -266,6 +266,7 @@ class XdsClusterImplLb : public LoadBalancingPolicy {
   OrphanablePtr<LoadBalancingPolicy> CreateChildPolicyLocked(
       const ChannelArgs& args);
   void UpdateChildPolicyLocked(absl::StatusOr<ServerAddressList> addresses,
+                               std::string resolution_note,
                                const ChannelArgs& args);
 
   void MaybeUpdatePickerLocked();
@@ -519,7 +520,8 @@ void XdsClusterImplLb::UpdateLocked(UpdateArgs args) {
     MaybeUpdatePickerLocked();
   }
   // Update child policy.
-  UpdateChildPolicyLocked(std::move(args.addresses), args.args);
+  UpdateChildPolicyLocked(std::move(args.addresses),
+                          std::move(args.resolution_note), args.args);
 }
 
 void XdsClusterImplLb::MaybeUpdatePickerLocked() {
@@ -576,7 +578,8 @@ OrphanablePtr<LoadBalancingPolicy> XdsClusterImplLb::CreateChildPolicyLocked(
 }
 
 void XdsClusterImplLb::UpdateChildPolicyLocked(
-    absl::StatusOr<ServerAddressList> addresses, const ChannelArgs& args) {
+    absl::StatusOr<ServerAddressList> addresses, std::string resolution_note,
+    const ChannelArgs& args) {
   // Create policy if needed.
   if (child_policy_ == nullptr) {
     child_policy_ = CreateChildPolicyLocked(args);
@@ -584,6 +587,7 @@ void XdsClusterImplLb::UpdateChildPolicyLocked(
   // Construct update args.
   UpdateArgs update_args;
   update_args.addresses = std::move(addresses);
+  update_args.resolution_note = std::move(resolution_note);
   update_args.config = config_->child_policy();
   update_args.args =
       args.Set(GRPC_ARG_XDS_CLUSTER_NAME, config_->cluster_name());

@@ -457,7 +457,7 @@ static dispatch_once_t initGlobalInterceptorFactory;
 }
 
 - (void)setUp {
-  self.continueAfterFailure = NO;
+  self.continueAfterFailure = YES;
   [GRPCCall resetHostSettings];
   GRPCResetCallConnections();
   XCTAssertNotNil([[self class] host]);
@@ -1152,12 +1152,13 @@ static dispatch_once_t initGlobalInterceptorFactory;
     options.PEMRootCertificates = [[self class] PEMRootCertificates];
     options.hostNameOverride = [[self class] hostNameOverride];
 
-    __weak RMTTestService *weakService = service;
-    __block GRPCStreamingProtoCall *call = [service
+    __weak __block GRPCStreamingProtoCall *weakCall;
+    GRPCStreamingProtoCall *call = [service
         fullDuplexCallWithResponseHandler:[[InteropTestsBlockCallbacks alloc]
                                               initWithInitialMetadataCallback:nil
                                               messageCallback:^(id message) {
-                                                if (weakService == nil) {
+                                                GRPCStreamingProtoCall *localCall = weakCall;
+                                                if (localCall == nil) {
                                                   return;
                                                 }
                                                 XCTAssertLessThan(
@@ -1170,14 +1171,14 @@ static dispatch_once_t initGlobalInterceptorFactory;
                                                   id request = [RMTStreamingOutputCallRequest
                                                       messageWithPayloadSize:requests[index]
                                                        requestedResponseSize:responses[index]];
-                                                  [call writeMessage:request];
+                                                  [localCall writeMessage:request];
                                                 } else {
-                                                  [call finish];
+                                                  [localCall finish];
                                                 }
                                               }
                                               closeCallback:^(NSDictionary *trailingMetadata,
                                                               NSError *error) {
-                                                if (weakService == nil) {
+                                                if (weakCall == nil) {
                                                   return;
                                                 }
                                                 XCTAssertNil(error,
@@ -1189,6 +1190,7 @@ static dispatch_once_t initGlobalInterceptorFactory;
                                                 [expectation fulfill];
                                               }]
                               callOptions:options];
+    weakCall = call;
     [call start];
     [call writeMessage:request];
 
@@ -1217,14 +1219,16 @@ static dispatch_once_t initGlobalInterceptorFactory;
     options.flowControlEnabled = YES;
     __block int writeMessageCount = 0;
 
-    __weak RMTTestService *weakService = service;
-    __block GRPCStreamingProtoCall *call = [service
+    __weak __block GRPCStreamingProtoCall *weakCall;
+    GRPCStreamingProtoCall *call = [service
         fullDuplexCallWithResponseHandler:[[InteropTestsBlockCallbacks alloc]
                                               initWithInitialMetadataCallback:nil
                                               messageCallback:^(id message) {
-                                                if (weakService == nil) {
+                                                GRPCStreamingProtoCall *localCall = weakCall;
+                                                if (localCall == nil) {
                                                   return;
                                                 }
+
                                                 XCTAssertLessThan(
                                                     index, 4, @"More than 4 responses received.");
                                                 id expected = [RMTStreamingOutputCallResponse
@@ -1235,15 +1239,15 @@ static dispatch_once_t initGlobalInterceptorFactory;
                                                   id request = [RMTStreamingOutputCallRequest
                                                       messageWithPayloadSize:requests[index]
                                                        requestedResponseSize:responses[index]];
-                                                  [call writeMessage:request];
-                                                  [call receiveNextMessage];
+                                                  [localCall writeMessage:request];
+                                                  [localCall receiveNextMessage];
                                                 } else {
-                                                  [call finish];
+                                                  [localCall finish];
                                                 }
                                               }
                                               closeCallback:^(NSDictionary *trailingMetadata,
                                                               NSError *error) {
-                                                if (weakService == nil) {
+                                                if (weakCall == nil) {
                                                   return;
                                                 }
                                                 XCTAssertNil(error,
@@ -1258,6 +1262,7 @@ static dispatch_once_t initGlobalInterceptorFactory;
                                                 writeMessageCount++;
                                               }]
                               callOptions:options];
+    weakCall = call;
     [call start];
     [call receiveNextMessage];
     [call writeMessage:request];
@@ -1326,7 +1331,7 @@ static dispatch_once_t initGlobalInterceptorFactory;
 
     // A buffered pipe to which we never write any value acts as a writer that just hangs.
     __weak RMTTestService *weakService = service;
-    __block GRPCStreamingProtoCall *call = [service
+    GRPCStreamingProtoCall *call = [service
         streamingInputCallWithResponseHandler:[[InteropTestsBlockCallbacks alloc]
                                                   initWithInitialMetadataCallback:nil
                                                   messageCallback:^(id message) {
@@ -1414,28 +1419,30 @@ static dispatch_once_t initGlobalInterceptorFactory;
     id request = [RMTStreamingOutputCallRequest messageWithPayloadSize:@21782
                                                  requestedResponseSize:@31415];
 
-    __weak RMTTestService *weakService = service;
-    __block GRPCStreamingProtoCall *call = [service
+    __weak __block GRPCStreamingProtoCall *weakCall;
+    GRPCStreamingProtoCall *call = [service
         fullDuplexCallWithResponseHandler:[[InteropTestsBlockCallbacks alloc]
                                               initWithInitialMetadataCallback:nil
                                               messageCallback:^(id message) {
-                                                if (weakService == nil) {
+                                                GRPCStreamingProtoCall *localCall = weakCall;
+                                                if (localCall == nil) {
                                                   return;
                                                 }
                                                 XCTAssertFalse(receivedResponse);
                                                 receivedResponse = YES;
-                                                [call cancel];
+                                                [localCall cancel];
                                                 [responseExpectation fulfill];
                                               }
                                               closeCallback:^(NSDictionary *trailingMetadata,
                                                               NSError *error) {
-                                                if (weakService == nil) {
+                                                if (weakCall == nil) {
                                                   return;
                                                 }
                                                 XCTAssertEqual(error.code, GRPC_STATUS_CANCELLED);
                                                 [completionExpectation fulfill];
                                               }]
                               callOptions:options];
+    weakCall = call;
     [call start];
     [call writeMessage:request];
     waiterBlock(self, @[ completionExpectation, responseExpectation ],
@@ -1460,7 +1467,7 @@ static dispatch_once_t initGlobalInterceptorFactory;
                                                  requestedResponseSize:@31415];
 
     __weak RMTTestService *weakService = service;
-    __block GRPCStreamingProtoCall *call = [service
+    GRPCStreamingProtoCall *call = [service
         fullDuplexCallWithResponseHandler:[[InteropTestsBlockCallbacks alloc]
                                               initWithInitialMetadataCallback:nil
                                               messageCallback:^(id message) {
@@ -1586,7 +1593,7 @@ static dispatch_once_t initGlobalInterceptorFactory;
     options.keepaliveTimeout = 0;
 
     __weak RMTTestService *weakService = service;
-    __block GRPCStreamingProtoCall *call = [service
+    GRPCStreamingProtoCall *call = [service
         fullDuplexCallWithResponseHandler:
             [[InteropTestsBlockCallbacks alloc]
                 initWithInitialMetadataCallback:nil
@@ -1632,12 +1639,13 @@ static dispatch_once_t initGlobalInterceptorFactory;
     options.hostNameOverride = [[self class] hostNameOverride];
     options.interceptorFactories = @[ [[DefaultInterceptorFactory alloc] init] ];
 
-    __weak RMTTestService *weakService = service;
-    __block GRPCStreamingProtoCall *call = [service
+    __weak __block GRPCStreamingProtoCall *weakCall;
+    GRPCStreamingProtoCall *call = [service
         fullDuplexCallWithResponseHandler:[[InteropTestsBlockCallbacks alloc]
                                               initWithInitialMetadataCallback:nil
                                               messageCallback:^(id message) {
-                                                if (weakService == nil) {
+                                                GRPCStreamingProtoCall *localCall = weakCall;
+                                                if (localCall == nil) {
                                                   return;
                                                 }
                                                 XCTAssertLessThan(
@@ -1650,14 +1658,14 @@ static dispatch_once_t initGlobalInterceptorFactory;
                                                   id request = [RMTStreamingOutputCallRequest
                                                       messageWithPayloadSize:requests[index]
                                                        requestedResponseSize:responses[index]];
-                                                  [call writeMessage:request];
+                                                  [localCall writeMessage:request];
                                                 } else {
-                                                  [call finish];
+                                                  [localCall finish];
                                                 }
                                               }
                                               closeCallback:^(NSDictionary *trailingMetadata,
                                                               NSError *error) {
-                                                if (weakService == nil) {
+                                                if (weakCall == nil) {
                                                   return;
                                                 }
                                                 XCTAssertNil(error,
@@ -1669,6 +1677,7 @@ static dispatch_once_t initGlobalInterceptorFactory;
                                                 [expectation fulfill];
                                               }]
                               callOptions:options];
+    weakCall = call;
     [call start];
     [call writeMessage:request];
 
@@ -1703,6 +1712,7 @@ static dispatch_once_t initGlobalInterceptorFactory;
         }
         writeDataHook:^(id data, GRPCInterceptorManager *manager) {
           writeDataCount++;
+          NSLog(@"writeDataHook %@", @(writeDataCount));
           [manager writeNextInterceptorWithData:data];
         }
         finishHook:^(GRPCInterceptorManager *manager) {
@@ -1749,13 +1759,13 @@ static dispatch_once_t initGlobalInterceptorFactory;
     options.interceptorFactories = @[ factory ];
 
     __block int writeMessageCount = 0;
-
-    __weak RMTTestService *weakService = service;
-    __block GRPCStreamingProtoCall *call =
+    __block __weak GRPCStreamingProtoCall *weakCall;
+    GRPCStreamingProtoCall *call =
         [service fullDuplexCallWithResponseHandler:
                      [[InteropTestsBlockCallbacks alloc] initWithInitialMetadataCallback:nil
                          messageCallback:^(id message) {
-                           if (weakService == nil) {
+                           GRPCStreamingProtoCall *localCall = weakCall;
+                           if (localCall == nil) {
                              return;
                            }
                            XCTAssertLessThan(messageIndex, 4, @"More than 4 responses received.");
@@ -1767,14 +1777,14 @@ static dispatch_once_t initGlobalInterceptorFactory;
                              id request = [RMTStreamingOutputCallRequest
                                  messageWithPayloadSize:requests[messageIndex]
                                   requestedResponseSize:responses[messageIndex]];
-                             [call writeMessage:request];
-                             [call receiveNextMessage];
+                             [localCall writeMessage:request];
+                             [localCall receiveNextMessage];
                            } else {
-                             [call finish];
+                             [localCall finish];
                            }
                          }
                          closeCallback:^(NSDictionary *trailingMetadata, NSError *error) {
-                           if (weakService == nil) {
+                           if (weakCall == nil) {
                              return;
                            }
                            XCTAssertNil(error, @"Finished with unexpected error: %@", error);
@@ -1786,6 +1796,8 @@ static dispatch_once_t initGlobalInterceptorFactory;
                            writeMessageCount++;
                          }]
                                        callOptions:options];
+
+    weakCall = call;
     [call start];
     [call receiveNextMessage];
     [call writeMessage:request];
@@ -1886,14 +1898,16 @@ static dispatch_once_t initGlobalInterceptorFactory;
     options.hostNameOverride = [[self class] hostNameOverride];
     options.interceptorFactories = @[ [[DefaultInterceptorFactory alloc] init], factory ];
 
-    __weak RMTTestService *weakService = service;
-    __block GRPCStreamingProtoCall *call = [service
+    __weak __block GRPCStreamingProtoCall *weakCall;
+    GRPCStreamingProtoCall *call = [service
         fullDuplexCallWithResponseHandler:
             [[InteropTestsBlockCallbacks alloc] initWithInitialMetadataCallback:nil
                 messageCallback:^(id message) {
-                  if (weakService == nil) {
+                  GRPCStreamingProtoCall *localCall = weakCall;
+                  if (localCall == nil) {
                     return;
                   }
+
                   XCTAssertLessThan(index, 4, @"More than 4 responses received.");
                   id expected =
                       [RMTStreamingOutputCallResponse messageWithPayloadSize:responses[index]];
@@ -1903,16 +1917,16 @@ static dispatch_once_t initGlobalInterceptorFactory;
                     id request =
                         [RMTStreamingOutputCallRequest messageWithPayloadSize:requests[index]
                                                         requestedResponseSize:responses[index]];
-                    [call writeMessage:request];
-                    [call receiveNextMessage];
+                    [localCall writeMessage:request];
+                    [localCall receiveNextMessage];
                   } else {
                     [self waitForExpectations:@[ expectResponseCallbackComplete ]
                                       timeout:GRPCInteropTestTimeoutDefault];
-                    [call finish];
+                    [localCall finish];
                   }
                 }
                 closeCallback:^(NSDictionary *trailingMetadata, NSError *error) {
-                  if (weakService == nil) {
+                  if (weakCall == nil) {
                     return;
                   }
                   XCTAssertNil(error, @"Finished with unexpected error: %@", error);
@@ -1920,6 +1934,7 @@ static dispatch_once_t initGlobalInterceptorFactory;
                   [expectUserCallComplete fulfill];
                 }]
                               callOptions:options];
+    weakCall = call;
     [call start];
     [call receiveNextMessage];
     [call writeMessage:request];
@@ -2007,12 +2022,13 @@ static dispatch_once_t initGlobalInterceptorFactory;
     globalInterceptorFactory.enabled = YES;
 
     __block int writeMessageCount = 0;
-    __weak RMTTestService *weakService = service;
+    __weak __block GRPCStreamingProtoCall *weakCall;
     __block GRPCStreamingProtoCall *call = [service
         fullDuplexCallWithResponseHandler:[[InteropTestsBlockCallbacks alloc]
                                               initWithInitialMetadataCallback:nil
                                               messageCallback:^(id message) {
-                                                if (weakService == nil) {
+                                                GRPCStreamingProtoCall *localCall = weakCall;
+                                                if (localCall == nil) {
                                                   return;
                                                 }
                                                 XCTAssertLessThan(
@@ -2022,15 +2038,15 @@ static dispatch_once_t initGlobalInterceptorFactory;
                                                   id request = [RMTStreamingOutputCallRequest
                                                       messageWithPayloadSize:requests[index]
                                                        requestedResponseSize:responses[index]];
-                                                  [call writeMessage:request];
-                                                  [call receiveNextMessage];
+                                                  [localCall writeMessage:request];
+                                                  [localCall receiveNextMessage];
                                                 } else {
-                                                  [call finish];
+                                                  [localCall finish];
                                                 }
                                               }
                                               closeCallback:^(NSDictionary *trailingMetadata,
                                                               NSError *error) {
-                                                if (weakService == nil) {
+                                                if (weakCall == nil) {
                                                   return;
                                                 }
                                                 XCTAssertNil(error,
@@ -2042,6 +2058,7 @@ static dispatch_once_t initGlobalInterceptorFactory;
                                                 writeMessageCount++;
                                               }]
                               callOptions:options];
+    weakCall = call;
     [call start];
     [call receiveNextMessage];
     [call writeMessage:request];
@@ -2204,12 +2221,13 @@ static dispatch_once_t initGlobalInterceptorFactory;
     globalInterceptorFactory.enabled = YES;
 
     __block int writeMessageCount = 0;
-    __weak RMTTestService *weakService = service;
-    __block GRPCStreamingProtoCall *call = [service
+    __weak __block GRPCStreamingProtoCall *weakCall;
+    GRPCStreamingProtoCall *call = [service
         fullDuplexCallWithResponseHandler:[[InteropTestsBlockCallbacks alloc]
                                               initWithInitialMetadataCallback:nil
                                               messageCallback:^(id message) {
-                                                if (weakService == nil) {
+                                                GRPCStreamingProtoCall *localCall = weakCall;
+                                                if (localCall == nil) {
                                                   return;
                                                 }
                                                 index += 1;
@@ -2217,15 +2235,15 @@ static dispatch_once_t initGlobalInterceptorFactory;
                                                   id request = [RMTStreamingOutputCallRequest
                                                       messageWithPayloadSize:requests[index]
                                                        requestedResponseSize:responses[index]];
-                                                  [call writeMessage:request];
-                                                  [call receiveNextMessage];
+                                                  [localCall writeMessage:request];
+                                                  [localCall receiveNextMessage];
                                                 } else {
-                                                  [call finish];
+                                                  [localCall finish];
                                                 }
                                               }
                                               closeCallback:^(NSDictionary *trailingMetadata,
                                                               NSError *error) {
-                                                if (weakService == nil) {
+                                                if (weakCall == nil) {
                                                   return;
                                                 }
                                                 [expectation fulfill];
@@ -2234,6 +2252,7 @@ static dispatch_once_t initGlobalInterceptorFactory;
                                                 writeMessageCount++;
                                               }]
                               callOptions:options];
+    weakCall = call;
     [call start];
     [call receiveNextMessage];
     [call writeMessage:request];
