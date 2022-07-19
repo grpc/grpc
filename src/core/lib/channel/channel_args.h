@@ -65,9 +65,9 @@ namespace channel_args_detail {
 inline int PointerCompare(void* a_ptr, const grpc_arg_pointer_vtable* a_vtable,
                           void* b_ptr,
                           const grpc_arg_pointer_vtable* b_vtable) {
-  int c = grpc_core::QsortCompare(a_ptr, b_ptr);
+  int c = QsortCompare(a_ptr, b_ptr);
   if (c == 0) return 0;
-  c = grpc_core::QsortCompare(a_vtable, b_vtable);
+  c = QsortCompare(a_vtable, b_vtable);
   if (c != 0) return c;
   return a_vtable->cmp(a_ptr, b_ptr);
 }
