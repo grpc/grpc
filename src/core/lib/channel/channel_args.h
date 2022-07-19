@@ -39,6 +39,7 @@
 
 #include "src/core/lib/avl/avl.h"
 #include "src/core/lib/gpr/useful.h"
+#include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/dual_ref_counted.h"
 #include "src/core/lib/gprpp/ref_counted.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
@@ -96,11 +97,16 @@ struct ChannelArgTypeTraits<
     static const grpc_arg_pointer_vtable tbl = {
         // copy
         [](void* p) -> void* {
-          return p == nullptr ? nullptr : static_cast<T*>(p)->Ref().release();
+          return p == nullptr ? nullptr
+                              : static_cast<T*>(p)
+                                    ->Ref(DEBUG_LOCATION, "ChannelArgs copy")
+                                    .release();
         },
         // destroy
         [](void* p) {
-          if (p != nullptr) static_cast<T*>(p)->Unref();
+          if (p != nullptr) {
+            static_cast<T*>(p)->Unref(DEBUG_LOCATION, "ChannelArgs destroy");
+          }
         },
         // compare
         [](void* p1, void* p2) {
@@ -279,7 +285,14 @@ class ChannelArgs {
   RefCountedPtr<T> GetObjectRef() const {
     auto* p = GetObject<T>();
     if (p == nullptr) return nullptr;
-    return p->Ref();
+    return p->Ref(DEBUG_LOCATION, "ChannelArgs GetObjectRef()");
+  }
+  template <typename T>
+  RefCountedPtr<T> GetObjectRef(const DebugLocation& location,
+                                const char* reason) const {
+    auto* p = GetObject<T>();
+    if (p == nullptr) return nullptr;
+    return p->Ref(location, reason);
   }
 
   bool operator!=(const ChannelArgs& other) const;

@@ -2185,6 +2185,7 @@ add_library(grpc
   src/core/lib/resource_quota/api.cc
   src/core/lib/resource_quota/arena.cc
   src/core/lib/resource_quota/memory_quota.cc
+  src/core/lib/resource_quota/periodic_update.cc
   src/core/lib/resource_quota/resource_quota.cc
   src/core/lib/resource_quota/thread_quota.cc
   src/core/lib/resource_quota/trace.cc
@@ -2810,6 +2811,7 @@ add_library(grpc_unsecure
   src/core/lib/resource_quota/api.cc
   src/core/lib/resource_quota/arena.cc
   src/core/lib/resource_quota/memory_quota.cc
+  src/core/lib/resource_quota/periodic_update.cc
   src/core/lib/resource_quota/resource_quota.cc
   src/core/lib/resource_quota/thread_quota.cc
   src/core/lib/resource_quota/trace.cc
@@ -5958,6 +5960,7 @@ add_executable(arena_promise_test
   src/core/lib/promise/activity.cc
   src/core/lib/resource_quota/arena.cc
   src/core/lib/resource_quota/memory_quota.cc
+  src/core/lib/resource_quota/periodic_update.cc
   src/core/lib/resource_quota/resource_quota.cc
   src/core/lib/resource_quota/thread_quota.cc
   src/core/lib/resource_quota/trace.cc
@@ -7590,6 +7593,7 @@ add_executable(chunked_vector_test
   src/core/lib/promise/activity.cc
   src/core/lib/resource_quota/arena.cc
   src/core/lib/resource_quota/memory_quota.cc
+  src/core/lib/resource_quota/periodic_update.cc
   src/core/lib/resource_quota/resource_quota.cc
   src/core/lib/resource_quota/thread_quota.cc
   src/core/lib/resource_quota/trace.cc
@@ -9783,6 +9787,7 @@ add_executable(flow_control_test
   src/core/lib/iomgr/iomgr_internal.cc
   src/core/lib/promise/activity.cc
   src/core/lib/resource_quota/memory_quota.cc
+  src/core/lib/resource_quota/periodic_update.cc
   src/core/lib/resource_quota/resource_quota.cc
   src/core/lib/resource_quota/thread_quota.cc
   src/core/lib/resource_quota/trace.cc
@@ -9847,6 +9852,7 @@ add_executable(for_each_test
   src/core/lib/promise/activity.cc
   src/core/lib/resource_quota/arena.cc
   src/core/lib/resource_quota/memory_quota.cc
+  src/core/lib/resource_quota/periodic_update.cc
   src/core/lib/resource_quota/resource_quota.cc
   src/core/lib/resource_quota/thread_quota.cc
   src/core/lib/resource_quota/trace.cc
@@ -12724,6 +12730,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX)
     src/core/lib/iomgr/iomgr_internal.cc
     src/core/lib/promise/activity.cc
     src/core/lib/resource_quota/memory_quota.cc
+    src/core/lib/resource_quota/periodic_update.cc
     src/core/lib/resource_quota/trace.cc
     src/core/lib/slice/percent_encoding.cc
     src/core/lib/slice/slice.cc
@@ -12783,6 +12790,7 @@ add_executable(memory_quota_test
   src/core/lib/iomgr/iomgr_internal.cc
   src/core/lib/promise/activity.cc
   src/core/lib/resource_quota/memory_quota.cc
+  src/core/lib/resource_quota/periodic_update.cc
   src/core/lib/resource_quota/trace.cc
   src/core/lib/slice/percent_encoding.cc
   src/core/lib/slice/slice.cc
@@ -13819,6 +13827,7 @@ add_executable(pipe_test
   src/core/lib/promise/activity.cc
   src/core/lib/resource_quota/arena.cc
   src/core/lib/resource_quota/memory_quota.cc
+  src/core/lib/resource_quota/periodic_update.cc
   src/core/lib/resource_quota/resource_quota.cc
   src/core/lib/resource_quota/thread_quota.cc
   src/core/lib/resource_quota/trace.cc
@@ -14675,6 +14684,7 @@ add_executable(resource_quota_test
   src/core/lib/iomgr/iomgr_internal.cc
   src/core/lib/promise/activity.cc
   src/core/lib/resource_quota/memory_quota.cc
+  src/core/lib/resource_quota/periodic_update.cc
   src/core/lib/resource_quota/resource_quota.cc
   src/core/lib/resource_quota/thread_quota.cc
   src/core/lib/resource_quota/trace.cc

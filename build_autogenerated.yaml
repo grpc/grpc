@@ -874,6 +874,7 @@ libs:
   - src/core/lib/resource_quota/api.h
   - src/core/lib/resource_quota/arena.h
   - src/core/lib/resource_quota/memory_quota.h
+  - src/core/lib/resource_quota/periodic_update.h
   - src/core/lib/resource_quota/resource_quota.h
   - src/core/lib/resource_quota/thread_quota.h
   - src/core/lib/resource_quota/trace.h
@@ -1540,6 +1541,7 @@ libs:
   - src/core/lib/resource_quota/api.cc
   - src/core/lib/resource_quota/arena.cc
   - src/core/lib/resource_quota/memory_quota.cc
+  - src/core/lib/resource_quota/periodic_update.cc
   - src/core/lib/resource_quota/resource_quota.cc
   - src/core/lib/resource_quota/thread_quota.cc
   - src/core/lib/resource_quota/trace.cc
@@ -2090,6 +2092,7 @@ libs:
   - src/core/lib/resource_quota/api.h
   - src/core/lib/resource_quota/arena.h
   - src/core/lib/resource_quota/memory_quota.h
+  - src/core/lib/resource_quota/periodic_update.h
   - src/core/lib/resource_quota/resource_quota.h
   - src/core/lib/resource_quota/thread_quota.h
   - src/core/lib/resource_quota/trace.h
@@ -2397,6 +2400,7 @@ libs:
   - src/core/lib/resource_quota/api.cc
   - src/core/lib/resource_quota/arena.cc
   - src/core/lib/resource_quota/memory_quota.cc
+  - src/core/lib/resource_quota/periodic_update.cc
   - src/core/lib/resource_quota/resource_quota.cc
   - src/core/lib/resource_quota/thread_quota.cc
   - src/core/lib/resource_quota/trace.cc
@@ -3921,6 +3925,7 @@ targets:
   - src/core/lib/promise/seq.h
   - src/core/lib/resource_quota/arena.h
   - src/core/lib/resource_quota/memory_quota.h
+  - src/core/lib/resource_quota/periodic_update.h
   - src/core/lib/resource_quota/resource_quota.h
   - src/core/lib/resource_quota/thread_quota.h
   - src/core/lib/resource_quota/trace.h
@@ -3946,6 +3951,7 @@ targets:
   - src/core/lib/promise/activity.cc
   - src/core/lib/resource_quota/arena.cc
   - src/core/lib/resource_quota/memory_quota.cc
+  - src/core/lib/resource_quota/periodic_update.cc
   - src/core/lib/resource_quota/resource_quota.cc
   - src/core/lib/resource_quota/thread_quota.cc
   - src/core/lib/resource_quota/trace.cc
@@ -4555,6 +4561,7 @@ targets:
   - src/core/lib/promise/seq.h
   - src/core/lib/resource_quota/arena.h
   - src/core/lib/resource_quota/memory_quota.h
+  - src/core/lib/resource_quota/periodic_update.h
   - src/core/lib/resource_quota/resource_quota.h
   - src/core/lib/resource_quota/thread_quota.h
   - src/core/lib/resource_quota/trace.h
@@ -4579,6 +4586,7 @@ targets:
   - src/core/lib/promise/activity.cc
   - src/core/lib/resource_quota/arena.cc
   - src/core/lib/resource_quota/memory_quota.cc
+  - src/core/lib/resource_quota/periodic_update.cc
   - src/core/lib/resource_quota/resource_quota.cc
   - src/core/lib/resource_quota/thread_quota.cc
   - src/core/lib/resource_quota/trace.cc
@@ -5483,6 +5491,7 @@ targets:
   - src/core/lib/promise/race.h
   - src/core/lib/promise/seq.h
   - src/core/lib/resource_quota/memory_quota.h
+  - src/core/lib/resource_quota/periodic_update.h
   - src/core/lib/resource_quota/resource_quota.h
   - src/core/lib/resource_quota/thread_quota.h
   - src/core/lib/resource_quota/trace.h
@@ -5509,6 +5518,7 @@ targets:
   - src/core/lib/iomgr/iomgr_internal.cc
   - src/core/lib/promise/activity.cc
   - src/core/lib/resource_quota/memory_quota.cc
+  - src/core/lib/resource_quota/periodic_update.cc
   - src/core/lib/resource_quota/resource_quota.cc
   - src/core/lib/resource_quota/thread_quota.cc
   - src/core/lib/resource_quota/trace.cc
@@ -5572,6 +5582,7 @@ targets:
   - src/core/lib/promise/wait_set.h
   - src/core/lib/resource_quota/arena.h
   - src/core/lib/resource_quota/memory_quota.h
+  - src/core/lib/resource_quota/periodic_update.h
   - src/core/lib/resource_quota/resource_quota.h
   - src/core/lib/resource_quota/thread_quota.h
   - src/core/lib/resource_quota/trace.h
@@ -5597,6 +5608,7 @@ targets:
   - src/core/lib/promise/activity.cc
   - src/core/lib/resource_quota/arena.cc
   - src/core/lib/resource_quota/memory_quota.cc
+  - src/core/lib/resource_quota/periodic_update.cc
   - src/core/lib/resource_quota/resource_quota.cc
   - src/core/lib/resource_quota/thread_quota.cc
   - src/core/lib/resource_quota/trace.cc
@@ -6639,6 +6651,7 @@ targets:
   - src/core/lib/promise/race.h
   - src/core/lib/promise/seq.h
   - src/core/lib/resource_quota/memory_quota.h
+  - src/core/lib/resource_quota/periodic_update.h
   - src/core/lib/resource_quota/trace.h
   - src/core/lib/slice/percent_encoding.h
   - src/core/lib/slice/slice.h
@@ -6660,6 +6673,7 @@ targets:
   - src/core/lib/iomgr/iomgr_internal.cc
   - src/core/lib/promise/activity.cc
   - src/core/lib/resource_quota/memory_quota.cc
+  - src/core/lib/resource_quota/periodic_update.cc
   - src/core/lib/resource_quota/trace.cc
   - src/core/lib/slice/percent_encoding.cc
   - src/core/lib/slice/slice.cc
@@ -6712,6 +6726,7 @@ targets:
   - src/core/lib/promise/race.h
   - src/core/lib/promise/seq.h
   - src/core/lib/resource_quota/memory_quota.h
+  - src/core/lib/resource_quota/periodic_update.h
   - src/core/lib/resource_quota/trace.h
   - src/core/lib/slice/percent_encoding.h
   - src/core/lib/slice/slice.h
@@ -6734,6 +6749,7 @@ targets:
   - src/core/lib/iomgr/iomgr_internal.cc
   - src/core/lib/promise/activity.cc
   - src/core/lib/resource_quota/memory_quota.cc
+  - src/core/lib/resource_quota/periodic_update.cc
   - src/core/lib/resource_quota/trace.cc
   - src/core/lib/slice/percent_encoding.cc
   - src/core/lib/slice/slice.cc
@@ -7199,6 +7215,7 @@ targets:
   - src/core/lib/promise/seq.h
   - src/core/lib/resource_quota/arena.h
   - src/core/lib/resource_quota/memory_quota.h
+  - src/core/lib/resource_quota/periodic_update.h
   - src/core/lib/resource_quota/resource_quota.h
   - src/core/lib/resource_quota/thread_quota.h
   - src/core/lib/resource_quota/trace.h
@@ -7224,6 +7241,7 @@ targets:
   - src/core/lib/promise/activity.cc
   - src/core/lib/resource_quota/arena.cc
   - src/core/lib/resource_quota/memory_quota.cc
+  - src/core/lib/resource_quota/periodic_update.cc
   - src/core/lib/resource_quota/resource_quota.cc
   - src/core/lib/resource_quota/thread_quota.cc
   - src/core/lib/resource_quota/trace.cc
@@ -7570,6 +7588,7 @@ targets:
   - src/core/lib/promise/race.h
   - src/core/lib/promise/seq.h
   - src/core/lib/resource_quota/memory_quota.h
+  - src/core/lib/resource_quota/periodic_update.h
   - src/core/lib/resource_quota/resource_quota.h
   - src/core/lib/resource_quota/thread_quota.h
   - src/core/lib/resource_quota/trace.h
@@ -7593,6 +7612,7 @@ targets:
   - src/core/lib/iomgr/iomgr_internal.cc
   - src/core/lib/promise/activity.cc
   - src/core/lib/resource_quota/memory_quota.cc
+  - src/core/lib/resource_quota/periodic_update.cc
   - src/core/lib/resource_quota/resource_quota.cc
   - src/core/lib/resource_quota/thread_quota.cc
   - src/core/lib/resource_quota/trace.cc
