@@ -497,7 +497,7 @@ double PressureTracker::AddSampleAndGetEstimate(double sample) {
     } else {
       report = pid_.Update(current_estimate - 0.8, dt.seconds());
     }
-    if (true || GRPC_TRACE_FLAG_ENABLED(grpc_resource_quota_trace)) {
+    if (GRPC_TRACE_FLAG_ENABLED(grpc_resource_quota_trace)) {
       gpr_log(GPR_INFO, "RQ: pressure:%lf report:%lf error_integral:%lf",
               current_estimate, report, pid_.error_integral());
     }

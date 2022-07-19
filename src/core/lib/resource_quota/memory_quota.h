@@ -240,7 +240,7 @@ class PressureTracker {
   PidController pid_{PidController::Args()
                          .set_gain_p(0.01)
                          .set_gain_i(0.001)
-                         .set_integral_range(10.0)
+                         .set_integral_range(100.0)
                          .set_min_control_value(0.0)
                          .set_max_control_value(1.0)};
   PeriodicUpdate update_{Duration::Seconds(1)};
