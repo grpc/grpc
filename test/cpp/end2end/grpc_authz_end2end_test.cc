@@ -452,7 +452,7 @@ TEST_F(GrpcAuthzEnd2EndTest,
       "    }"
       "  ]"
       "}";
-  grpc_core::testing::TmpFile tmp_policy(policy);
+  grpc_core::TmpFile tmp_policy(policy);
   InitServer(CreateFileWatcherAuthzPolicyProvider(tmp_policy.name(), 5));
   auto channel = BuildChannel();
   ClientContext context;
@@ -491,7 +491,7 @@ TEST_F(GrpcAuthzEnd2EndTest,
       "    }"
       "  ]"
       "}";
-  grpc_core::testing::TmpFile tmp_policy(policy);
+  grpc_core::TmpFile tmp_policy(policy);
   InitServer(CreateFileWatcherAuthzPolicyProvider(tmp_policy.name(), 5));
   auto channel = BuildChannel();
   ClientContext context;
@@ -523,7 +523,7 @@ TEST_F(GrpcAuthzEnd2EndTest,
       "    }"
       "  ]"
       "}";
-  grpc_core::testing::TmpFile tmp_policy(policy);
+  grpc_core::TmpFile tmp_policy(policy);
   InitServer(CreateFileWatcherAuthzPolicyProvider(tmp_policy.name(), 5));
   auto channel = BuildChannel();
   ClientContext context;
@@ -560,7 +560,7 @@ TEST_F(GrpcAuthzEnd2EndTest,
       "    }"
       "  ]"
       "}";
-  grpc_core::testing::TmpFile tmp_policy(policy);
+  grpc_core::TmpFile tmp_policy(policy);
   InitServer(CreateFileWatcherAuthzPolicyProvider(tmp_policy.name(), 5));
   auto channel = BuildChannel();
   ClientContext context;
@@ -597,7 +597,7 @@ TEST_F(GrpcAuthzEnd2EndTest,
       "    }"
       "  ]"
       "}";
-  grpc_core::testing::TmpFile tmp_policy(policy);
+  grpc_core::TmpFile tmp_policy(policy);
   InitServer(CreateFileWatcherAuthzPolicyProvider(tmp_policy.name(), 5));
   auto channel = BuildChannel();
   ClientContext context;
@@ -632,7 +632,7 @@ TEST_F(GrpcAuthzEnd2EndTest,
       "    }"
       "  ]"
       "}";
-  grpc_core::testing::TmpFile tmp_policy(policy);
+  grpc_core::TmpFile tmp_policy(policy);
   InitServer(CreateFileWatcherAuthzPolicyProvider(tmp_policy.name(), 5));
   auto channel = BuildChannel();
   ClientContext context;
