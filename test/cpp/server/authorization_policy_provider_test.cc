@@ -16,6 +16,7 @@
 
 #include <grpcpp/security/authorization_policy_provider.h>
 
+#include "src/core/lib/security/util/file_util.h"
 #include "test/core/util/test_config.h"
 #include "test/core/util/tls_utils.h"
 
@@ -48,7 +49,7 @@ TEST(AuthorizationPolicyProviderTest, StaticDataCreateReturnsErrorStatus) {
 }
 
 TEST(AuthorizationPolicyProviderTest, FileWatcherCreateReturnsProvider) {
-  auto tmp_authz_policy = absl::make_unique<grpc_core::testing::TmpFile>(
+  auto tmp_authz_policy = absl::make_unique<grpc_core::TmpFile>(
       grpc_core::testing::GetFileContents(VALID_POLICY_PATH_1));
   grpc::Status status;
   auto provider = experimental::FileWatcherAuthorizationPolicyProvider::Create(
@@ -60,7 +61,7 @@ TEST(AuthorizationPolicyProviderTest, FileWatcherCreateReturnsProvider) {
 }
 
 TEST(AuthorizationPolicyProviderTest, FileWatcherCreateReturnsErrorStatus) {
-  auto tmp_authz_policy = absl::make_unique<grpc_core::testing::TmpFile>(
+  auto tmp_authz_policy = absl::make_unique<grpc_core::TmpFile>(
       grpc_core::testing::GetFileContents(INVALID_POLICY_PATH));
   grpc::Status status;
   auto provider = experimental::FileWatcherAuthorizationPolicyProvider::Create(
