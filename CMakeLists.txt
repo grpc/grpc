@@ -332,18 +332,18 @@ if (NOT EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/third_party/envoy-api)
   # Download the archive via HTTP, validate the checksum, and extract to third_party/envoy-api.
   download_archive(
     ${CMAKE_CURRENT_SOURCE_DIR}/third_party/envoy-api
-    https://storage.googleapis.com/grpc-bazel-mirror/github.com/envoyproxy/data-plane-api/archive/9c42588c956220b48eb3099d186487c2f04d32ec.tar.gz
-    c5807010b67033330915ca5a20483e30538ae5e689aa14b3631d6284beca4630
-    data-plane-api-9c42588c956220b48eb3099d186487c2f04d32ec
+    https://storage.googleapis.com/grpc-bazel-mirror/github.com/envoyproxy/data-plane-api/archive/bf6154e482bbd5e6f64032993206e66b6116f2bd.tar.gz
+    0fe4c68dea4423f5880c068abbcbc90ac4b98496cf2af15a1fe3fbc0fdb050fd
+    data-plane-api-bf6154e482bbd5e6f64032993206e66b6116f2bd
   )
 endif()
 if (NOT EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/third_party/envoy-api)
   # Download the archive via HTTP, validate the checksum, and extract to third_party/envoy-api.
   download_archive(
     ${CMAKE_CURRENT_SOURCE_DIR}/third_party/envoy-api
-    https://github.com/envoyproxy/data-plane-api/archive/9c42588c956220b48eb3099d186487c2f04d32ec.tar.gz
-    c5807010b67033330915ca5a20483e30538ae5e689aa14b3631d6284beca4630
-    data-plane-api-9c42588c956220b48eb3099d186487c2f04d32ec
+    https://github.com/envoyproxy/data-plane-api/archive/bf6154e482bbd5e6f64032993206e66b6116f2bd.tar.gz
+    0fe4c68dea4423f5880c068abbcbc90ac4b98496cf2af15a1fe3fbc0fdb050fd
+    data-plane-api-bf6154e482bbd5e6f64032993206e66b6116f2bd
   )
 endif()
 # Setup external proto library at third_party/googleapis with 2 download URLs
@@ -913,6 +913,7 @@ if(gRPC_BUILD_TESTS)
   if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     add_dependencies(buildtests_cxx client_channel_stress_test)
   endif()
+  add_dependencies(buildtests_cxx client_channel_test)
   add_dependencies(buildtests_cxx client_context_test_peer_test)
   add_dependencies(buildtests_cxx client_interceptors_end2end_test)
   if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
@@ -1752,6 +1753,7 @@ add_library(grpc
   src/core/ext/upb-generated/envoy/admin/v3/certs.upb.c
   src/core/ext/upb-generated/envoy/admin/v3/clusters.upb.c
   src/core/ext/upb-generated/envoy/admin/v3/config_dump.upb.c
+  src/core/ext/upb-generated/envoy/admin/v3/config_dump_shared.upb.c
   src/core/ext/upb-generated/envoy/admin/v3/init_dump.upb.c
   src/core/ext/upb-generated/envoy/admin/v3/listeners.upb.c
   src/core/ext/upb-generated/envoy/admin/v3/memory.upb.c
@@ -1805,6 +1807,7 @@ add_library(grpc
   src/core/ext/upb-generated/envoy/config/trace/v3/http_tracer.upb.c
   src/core/ext/upb-generated/envoy/config/trace/v3/lightstep.upb.c
   src/core/ext/upb-generated/envoy/config/trace/v3/opencensus.upb.c
+  src/core/ext/upb-generated/envoy/config/trace/v3/opentelemetry.upb.c
   src/core/ext/upb-generated/envoy/config/trace/v3/service.upb.c
   src/core/ext/upb-generated/envoy/config/trace/v3/skywalking.upb.c
   src/core/ext/upb-generated/envoy/config/trace/v3/trace.upb.c
@@ -1845,6 +1848,7 @@ add_library(grpc
   src/core/ext/upb-generated/envoy/type/v3/http_status.upb.c
   src/core/ext/upb-generated/envoy/type/v3/percent.upb.c
   src/core/ext/upb-generated/envoy/type/v3/range.upb.c
+  src/core/ext/upb-generated/envoy/type/v3/ratelimit_strategy.upb.c
   src/core/ext/upb-generated/envoy/type/v3/ratelimit_unit.upb.c
   src/core/ext/upb-generated/envoy/type/v3/semantic_version.upb.c
   src/core/ext/upb-generated/envoy/type/v3/token_bucket.upb.c
@@ -1896,6 +1900,7 @@ add_library(grpc
   src/core/ext/upbdefs-generated/envoy/admin/v3/certs.upbdefs.c
   src/core/ext/upbdefs-generated/envoy/admin/v3/clusters.upbdefs.c
   src/core/ext/upbdefs-generated/envoy/admin/v3/config_dump.upbdefs.c
+  src/core/ext/upbdefs-generated/envoy/admin/v3/config_dump_shared.upbdefs.c
   src/core/ext/upbdefs-generated/envoy/admin/v3/init_dump.upbdefs.c
   src/core/ext/upbdefs-generated/envoy/admin/v3/listeners.upbdefs.c
   src/core/ext/upbdefs-generated/envoy/admin/v3/memory.upbdefs.c
@@ -1949,6 +1954,7 @@ add_library(grpc
   src/core/ext/upbdefs-generated/envoy/config/trace/v3/http_tracer.upbdefs.c
   src/core/ext/upbdefs-generated/envoy/config/trace/v3/lightstep.upbdefs.c
   src/core/ext/upbdefs-generated/envoy/config/trace/v3/opencensus.upbdefs.c
+  src/core/ext/upbdefs-generated/envoy/config/trace/v3/opentelemetry.upbdefs.c
   src/core/ext/upbdefs-generated/envoy/config/trace/v3/service.upbdefs.c
   src/core/ext/upbdefs-generated/envoy/config/trace/v3/skywalking.upbdefs.c
   src/core/ext/upbdefs-generated/envoy/config/trace/v3/trace.upbdefs.c
@@ -1987,6 +1993,7 @@ add_library(grpc
   src/core/ext/upbdefs-generated/envoy/type/v3/http_status.upbdefs.c
   src/core/ext/upbdefs-generated/envoy/type/v3/percent.upbdefs.c
   src/core/ext/upbdefs-generated/envoy/type/v3/range.upbdefs.c
+  src/core/ext/upbdefs-generated/envoy/type/v3/ratelimit_strategy.upbdefs.c
   src/core/ext/upbdefs-generated/envoy/type/v3/ratelimit_unit.upbdefs.c
   src/core/ext/upbdefs-generated/envoy/type/v3/semantic_version.upbdefs.c
   src/core/ext/upbdefs-generated/envoy/type/v3/token_bucket.upbdefs.c
@@ -7839,6 +7846,41 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 
 
 endif()
+endif()
+if(gRPC_BUILD_TESTS)
+
+add_executable(client_channel_test
+  test/core/client_channel/client_channel_test.cc
+  third_party/googletest/googletest/src/gtest-all.cc
+  third_party/googletest/googlemock/src/gmock-all.cc
+)
+
+target_include_directories(client_channel_test
+  PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
+    ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_RE2_INCLUDE_DIR}
+    ${_gRPC_SSL_INCLUDE_DIR}
+    ${_gRPC_UPB_GENERATED_DIR}
+    ${_gRPC_UPB_GRPC_GENERATED_DIR}
+    ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
+    ${_gRPC_ZLIB_INCLUDE_DIR}
+    third_party/googletest/googletest/include
+    third_party/googletest/googletest
+    third_party/googletest/googlemock/include
+    third_party/googletest/googlemock
+    ${_gRPC_PROTO_GENS_DIR}
+)
+
+target_link_libraries(client_channel_test
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  grpc_test_util
+)
+
+
 endif()
 if(gRPC_BUILD_TESTS)
 
