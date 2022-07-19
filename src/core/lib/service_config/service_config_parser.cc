@@ -65,7 +65,7 @@ ServiceConfigParser::ParseGlobalParameters(const ChannelArgs& args,
   if (!errors.empty()) {
     return absl::InvalidArgumentError(absl::StrJoin(errors, "; "));
   }
-  return parsed_global_configs;
+  return std::move(parsed_global_configs);
 }
 
 absl::StatusOr<ServiceConfigParser::ParsedConfigVector>
@@ -85,7 +85,7 @@ ServiceConfigParser::ParsePerMethodParameters(const ChannelArgs& args,
   if (!errors.empty()) {
     return absl::InvalidArgumentError(absl::StrJoin(errors, "; "));
   }
-  return parsed_method_configs;
+  return std::move(parsed_method_configs);
 }
 
 size_t ServiceConfigParser::GetParserIndex(absl::string_view name) const {
