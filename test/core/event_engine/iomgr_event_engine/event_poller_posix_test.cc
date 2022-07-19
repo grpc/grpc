@@ -46,13 +46,10 @@
 #include "src/core/lib/event_engine/iomgr_engine/event_poller_posix_default.h"
 #include "src/core/lib/event_engine/iomgr_engine/iomgr_engine.h"
 #include "src/core/lib/event_engine/iomgr_engine/iomgr_engine_closure.h"
-#include "src/core/lib/iomgr/socket_utils_posix.h"
+#include "src/core/lib/gprpp/global_config.h"
 #include "test/core/util/port.h"
 
-GPR_GLOBAL_CONFIG_DEFINE_STRING(
-    grpc_poll_strategy, "epoll1",
-    "poll strategy to use. It can be a comma separated list of pollers to try "
-    "in order of preference");
+GPR_GLOBAL_CONFIG_DECLARE_STRING(grpc_poll_strategy);
 
 using ::grpc_event_engine::iomgr_engine::EventPoller;
 
@@ -85,6 +82,13 @@ class TestScheduler : public Scheduler {
   experimental::EventEngine* engine_;
 };
 
+absl::Status SetSocketSendBuf(int fd, int buffer_size_bytes) {
+  return 0 == setsockopt(fd, SOL_SOCKET, SO_SNDBUF, &buffer_size_bytes,
+                         sizeof(buffer_size_bytes))
+             ? absl::OkStatus()
+             : absl::Status(absl::StatusCode::kInternal, strerror(errno));
+}
+
 // Create a test socket with the right properties for testing.
 // port is the TCP port to listen or connect to.
 // Return a socket FD and sockaddr_in.
@@ -98,8 +102,8 @@ void CreateTestSocket(int port, int* socket_fd, struct sockaddr_in6* sin) {
   setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, &one, sizeof(one));
   // Reset the size of socket send buffer to the minimal value to facilitate
   // buffer filling up and triggering notify_on_write
-  EXPECT_EQ(grpc_set_socket_sndbuf(fd, buffer_size_bytes), GRPC_ERROR_NONE);
-  EXPECT_EQ(grpc_set_socket_rcvbuf(fd, buffer_size_bytes), GRPC_ERROR_NONE);
+  EXPECT_TRUE(SetSocketSendBuf(fd, buffer_size_bytes).ok());
+  EXPECT_TRUE(SetSocketSendBuf(fd, buffer_size_bytes).ok());
   // Make fd non-blocking.
   flags = fcntl(fd, F_GETFL, 0);
   EXPECT_EQ(fcntl(fd, F_SETFL, flags | O_NONBLOCK), 0);
@@ -520,6 +524,7 @@ INSTANTIATE_TEST_SUITE_P(EventPoller, EventPollerTest,
 
 int main(int argc, char** argv) {
   ::testing::InitGoogleTest(&argc, argv);
+  gpr_mu_init(&g_mu);
   return RUN_ALL_TESTS();
 }
 
