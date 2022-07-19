@@ -56,53 +56,47 @@
 ABSL_FLAG(std::string, target, "localhost:443", "Target host:port");
 ABSL_FLAG(bool, secure, false, "Use SSL Credentials");
 
-void UnaryCall(std::shared_ptr<grpc::ChannelCredentials> creds) {
+void UnaryCall() {
+  // Set the authentication mechanism.
+  std::shared_ptr<grpc::ChannelCredentials> creds =
+      grpc::InsecureChannelCredentials();
+  if (absl::GetFlag(FLAGS_secure)) {
+    // TODO (chennancy) Add in secure credentials
+    gpr_log(GPR_INFO, "Supposed to be secure, is not yet");
+  }
+
   // Create a channel to the server and a stub
   std::shared_ptr<grpc::Channel> channel =
       CreateChannel(absl::GetFlag(FLAGS_target), creds);
-  std::unique_ptr<grpc::testing::BenchmarkService::Stub> stub_ =
+  std::unique_ptr<grpc::testing::BenchmarkService::Stub> stub =
       grpc::testing::BenchmarkService::NewStub(channel);
 
+  // Start a call.
   struct CallParams {
     grpc::ClientContext context;
     grpc::testing::SimpleRequest request;
     grpc::testing::SimpleResponse response;
   };
-
   CallParams* params = new CallParams();
-
-  auto callback = [](const grpc::Status& status) {
-    if (status.ok()) {
-      gpr_log(GPR_INFO, "UnaryCall RPC succeeded.");
-    } else {
-      gpr_log(GPR_ERROR, "UnaryCall RPC failed.");
-    }
-  };
-
-  // Start a call.
-  stub_->async()->UnaryCall(&params->context, &params->request,
-                            &params->response, callback);
+  stub->async()->UnaryCall(&params->context, &params->request,
+                           &params->response, [](const grpc::Status& status) {
+                             if (status.ok()) {
+                               gpr_log(GPR_INFO, "UnaryCall RPC succeeded.");
+                             } else {
+                               gpr_log(GPR_ERROR, "UnaryCall RPC failed.");
+                             }
+                           });
 }
 
 int main(int argc, char** argv) {
   absl::ParseCommandLine(argc, argv);
-
   char* fake_argv[1];
-
   GPR_ASSERT(argc >= 1);
   fake_argv[0] = argv[0];
   grpc::testing::TestEnvironment env(&argc, argv);
-
-  // Set the authentication mechanism.
-  std::shared_ptr<grpc::ChannelCredentials> creds =
-      grpc::InsecureChannelCredentials();
-  if (absl::GetFlag(FLAGS_secure)) {
-    gpr_log(GPR_INFO, "Supposed to be secure, is not yet");
-    // TODO (chennancy) Add in secure credentials
-  }
   gpr_log(GPR_INFO, "Client Target: %s", absl::GetFlag(FLAGS_target).c_str());
 
-  UnaryCall(creds);
+  UnaryCall();
   gpr_log(GPR_INFO, "Client Done");
   return 0;
 }
