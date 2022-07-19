@@ -16,10 +16,11 @@
 
 #ifndef GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_LB_POLICY_CHILD_POLICY_HANDLER_H
 #define GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_LB_POLICY_CHILD_POLICY_HANDLER_H
-
 #include <grpc/support/port_platform.h>
 
 #include <utility>
+
+#include "absl/strings/string_view.h"
 
 #include "src/core/ext/filters/client_channel/lb_policy.h"
 #include "src/core/lib/channel/channel_args.h"

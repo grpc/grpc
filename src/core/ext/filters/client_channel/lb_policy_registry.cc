@@ -18,14 +18,13 @@
 
 #include "src/core/ext/filters/client_channel/lb_policy_registry.h"
 
-#include <string.h>
-
 #include <algorithm>
 #include <map>
 #include <string>
 #include <utility>
 #include <vector>
 
+#include "absl/status/status.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
 #include "absl/strings/str_join.h"
