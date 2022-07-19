@@ -35,7 +35,6 @@
 #include "test/core/util/subprocess.h"
 #include "test/core/util/test_config.h"
 
-int finished_rpcs=0;
 
 class ClientCallbackImpl {
  public:
@@ -52,46 +51,19 @@ class ClientCallbackImpl {
 
     CallParams* params = new CallParams();
 
-    auto callback = [this, params](const grpc::Status& status) {
+    auto callback = [params](const grpc::Status& status) {
       if (status.ok()) {
         gpr_log(GPR_INFO, "UnaryCall RPC succeeded.");
       }
       else{
         gpr_log(GPR_ERROR, "UnaryCall RPC failed.");
       }
-      finished_rpcs++;
-      if(finished_rpcs==1)
-        this->ServerQuit();
       delete params;
       return;
     };
 
     // Start a call.
     stub_->async()->UnaryCall(&params->context, &params->request,
-                              &params->response, callback);
-  }
-
-  void ServerQuit() {
-    struct CallParams {
-      grpc::ClientContext context;
-      grpc::testing::SimpleRequest request;
-      grpc::testing::SimpleResponse response;
-    };
-
-    CallParams* params = new CallParams();
-
-    auto callback = [params](const grpc::Status& status) {
-      if (!status.ok()) {
-        gpr_log(GPR_ERROR, "ServerQuit RPC failed.");
-        delete params;
-        return;
-      }
-      gpr_log(GPR_INFO, "ServerQuit RPC succeeded.");
-      delete params;
-      return;
-    };
-    // Start a call.
-    stub_->async()->ServerQuit(&params->context, &params->request,
                               &params->response, callback);
   }
 

@@ -41,6 +41,4 @@ service BenchmarkService {
   // Two-sided unbounded streaming between server to client
   // Both sides send the content of their own choice to the other
   rpc StreamingBothWays(stream SimpleRequest) returns (stream SimpleResponse);
-
-  rpc ServerQuit(SimpleRequest) returns (SimpleResponse);
 }

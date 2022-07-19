@@ -34,7 +34,6 @@
 
 class ServerCallbackImpl final
     : public grpc::testing::BenchmarkService::CallbackService {
-  std::shared_ptr<grpc::Server> server;
   
   grpc::ServerUnaryReactor* UnaryCall(
       grpc::CallbackServerContext* context,
@@ -46,27 +45,6 @@ class ServerCallbackImpl final
     reactor->Finish(grpc::Status::OK);
     return reactor;
   }
-
-  grpc::ServerUnaryReactor* ServerQuit(
-      grpc::CallbackServerContext* context,
-      const grpc::testing::SimpleRequest* request,
-      grpc::testing::SimpleResponse* response) override {
-    gpr_log(GPR_INFO, "SHUTDOWN CALL RECEIVED");
-
-    std::thread([this]() {
-        gpr_log(GPR_INFO, "Shutdown thread started");
-        this->server->Shutdown();
-        gpr_log(GPR_INFO, "Shutdown thread finished");
-    }).detach();
-    auto* reactor = context->DefaultReactor();
-    reactor->Finish(grpc::Status::OK);
-    return reactor;
-  }
-
-  public:
-    void SetServer(std::shared_ptr<grpc::Server> server){
-        this->server=server;
-    }
 };
 
 static void sigint_handler(int /*x*/) { _exit(0); }
@@ -106,7 +84,7 @@ int main(int argc, char** argv) {
   // Set up the server to start accepting requests.
   std::shared_ptr<grpc::Server> server(builder.BuildAndStart());
   gpr_log(GPR_INFO, "Server listening on %s", server_address.c_str());
-  callback_server.SetServer(server);
+  
   // Keep the program running until the server shuts down.
   server->Wait();
   // TODO (chennancy) Add graceful shutdown
